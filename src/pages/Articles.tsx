@@ -34,7 +34,7 @@ export default function Articles() {
               <article className="border-t-2 border-accent pt-5">
                 <span className="text-[.76rem] font-semibold uppercase tracking-[.1em] text-accent">{e.tag}</span>
                 <h2 className="my-3 font-display text-[1.34rem] font-medium text-ink">{e.title}</h2>
-                <blockquote className="font-display text-[1.02rem] leading-[1.75] text-[#54606f]">{e.quote}</blockquote>
+                <blockquote className="font-display text-[1.02rem] leading-[1.75] text-soft">{e.quote}</blockquote>
               </article>
             </FadeUp>
           ))}

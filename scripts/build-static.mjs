@@ -48,11 +48,11 @@ const papers = [...grab('papers').matchAll(/slug: '([^']+)', title: '([^']+)', m
   .map((m) => ({ slug: m[1], title: m[2], desc: m[3] }))
 
 const STATIC = [
-  { path: '/', title: 'د. أحمد الفيلكاوي — أستاذ تكنولوجيا التعليم', desc: 'الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم المشارك. تسعة كتب، ثمانية عشر بحثاً محكّماً، واثنان وسبعون مقالاً.' },
+  { path: '/', title: 'د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم والذكاء الاصطناعي', desc: 'الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي. تسعة كتب، ثمانية عشر بحثاً محكّماً، وأكثر من 160 مقالاً فكرياً منذ 2016.' },
   { path: '/publications', title: 'الكتب المنشورة', desc: 'تسعة كتب في التعليم والتكنولوجيا والتغيير المجتمعي.' },
   { path: '/research', title: 'المساهمات العلمية', desc: 'ثمانية عشر بحثاً محكّماً في تكنولوجيا التعليم.' },
-  { path: '/articles', title: 'مقالاتي الفكرية', desc: 'اثنان وسبعون مقالاً في التعليم والتقنية والمجتمع.' },
-  { path: '/atlas', title: 'سماء المقالات', desc: 'خريطة بصرية لاثنين وسبعين مقالاً عبر سبع سنوات.' },
+  { path: '/articles', title: 'مقالاتي الفكرية', desc: 'أكثر من 160 مقالاً فكرياً في التعليم والتقنية والمجتمع، منذ 2016.' },
+  { path: '/atlas', title: 'سماء المقالات', desc: 'خريطة بصرية لأكثر من 160 مقالاً عبر عشر سنوات.' },
   { path: '/media', title: 'الظهور الإعلامي', desc: 'لقاءات تلفزيونية وإذاعية.' },
   { path: '/questions', title: 'سؤال يُقلق التعليم', desc: 'زاوية أسبوعية: كل جمعة سؤال جديد يوقظ التفكير في التعليم — بالعربية والإنجليزية.' },
   { path: '/radar', title: 'أرشيف الرادار', desc: 'كل ما التقطه الرادار من مصادر موثوقة — حصاد أسبوعي مؤرشف كمرجع بحثي، بالعربية والإنجليزية.' },
@@ -87,7 +87,7 @@ function stripManagedHead(html) {
 }
 
 function render({ path, title, desc, type = 'website', iso, cat, image, robots }) {
-  const full = path === '/' ? title : `${title} — د. أحمد الفيلكاوي`
+  const full = path === '/' ? title : `${title} — د. أحمد حسين الفيلكاوي`
   const url = SITE + path
   const img = `${SITE}${image || '/og.png'}`
 
@@ -106,7 +106,7 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots }
     <meta property="og:url" content="${url}" />
     <meta property="og:image" content="${img}" />
     <meta property="og:locale" content="ar_KW" />
-    <meta property="og:site_name" content="د. أحمد الفيلكاوي" />
+    <meta property="og:site_name" content="د. أحمد حسين الفيلكاوي" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${esc(full)}" />
     <meta name="twitter:description" content="${esc(desc)}" />

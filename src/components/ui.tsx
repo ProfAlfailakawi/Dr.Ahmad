@@ -262,7 +262,8 @@ export function Accordion({
 }
 
 /* ---------- Nav: closed menu, opens full-screen ---------- */
-const GROUPS = [
+type NavItem = { to: string; label: string; sub?: { to: string; label: string }[] }
+const GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: 'هويتي الأكاديمية',
     items: [
@@ -285,9 +286,11 @@ const GROUPS = [
   {
     label: 'من اختياراتي',
     items: [
-      { to: '/curated', label: 'المختارات' },
-      { to: '/questions', label: 'سؤال يُقلق التعليم' },
-      { to: '/radar', label: 'أرشيف الرادار' },
+      // المختارات هي الأمّ، وتحتها فرعان (بدل تكرارهما كبنود مستقلة)
+      { to: '/curated', label: 'المختارات', sub: [
+        { to: '/questions', label: 'سؤال يُقلق التعليم' },
+        { to: '/radar', label: 'أرشيف الرادار' },
+      ] },
       { to: '/inbox', label: 'من بريدي الوارد' },
     ],
   },
@@ -338,6 +341,23 @@ function Overlay({ close }: { close: () => void }) {
                       >
                         {it.label}
                       </Link>
+                      {it.sub && (
+                        <ul className="mb-1 me-2 mt-0.5 space-y-0 border-r border-hair pr-4">
+                          {it.sub.map((s) => (
+                            <li key={s.to}>
+                              <Link
+                                to={s.to}
+                                onClick={close}
+                                className={`block py-1 font-display text-[1.02rem] font-light transition-colors duration-300 hover:text-accent ${
+                                  loc.pathname === s.to ? 'text-accent' : 'text-soft'
+                                }`}
+                              >
+                                {s.label}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </motion.div>
                   </li>
                 ))}

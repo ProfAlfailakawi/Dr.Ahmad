@@ -20,3 +20,6 @@ public/files
 # نظام
 .DS_Store
 *.log
+
+# Firebase deploy cache (يتولّد آلياً — لا يُتتبّع)
+.firebase/

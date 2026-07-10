@@ -68,6 +68,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // تقرير حارس الجودة الأسبوعي — يكتبه السكربت المجدول بحساب الخدمة، للمشرف قراءةً.
+    match /site_health/{date} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // عدادات المشاهدة في مجموعة واحدة:
     //   total:<encoded-path>             إجمالي الصفحة
     //   day:YYYY-MM-DD:<encoded-path>    عداد يومي لاتجاه آخر 7 أيام

@@ -218,6 +218,12 @@ export default function ArticleDetail() {
   })
   useTrackView(`/articles/${slug || ''}`, a?.title || 'مقال', Boolean(a))
 
+  // يتذكّر جهازُك آخر مقالٍ فتحتَه — بلا حساب ولا تتبّع خارجي، ليُقدَّم لك عند العودة
+  useEffect(() => {
+    if (!a) return
+    try { localStorage.setItem('read:last', JSON.stringify({ slug: a.slug, title: a.title, at: Date.now() })) } catch { /* noop */ }
+  }, [a])
+
   if (!a && loading)
     return (
       <Page>

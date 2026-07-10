@@ -224,30 +224,49 @@ function SinceLastVisit() {
       return prev ? +prev : null
     } catch { return null }
   })
-  if (!last || Date.now() - last < 12 * 3600e3) return null
+  // آخر مقالٍ فتحه الزائر (من جهازه فقط) — يُعرض له بهدوء ليُكمل من حيث توقّف
+  const [lastRead] = useState<{ slug: string; title: string; at: number } | null>(() => {
+    try { return JSON.parse(localStorage.getItem('read:last') || 'null') } catch { return null }
+  })
 
-  const lastIso = new Date(last).toISOString().slice(0, 10)
-  const newArticles = articles.filter((a) => a.iso > lastIso).length
-  const weekOf = (ms: number) => Math.floor((ms / 864e5 - 4) / 7) // الجمعة حدّ الأسبوع
-  const newQuestion = weekOf(Date.now()) !== weekOf(last)
-  const daysGone = Math.floor((Date.now() - last) / 864e5)
+  const away = last ? Date.now() - last : 0
+  const showSince = last && away >= 12 * 3600e3
+  const lastIso = last ? new Date(last).toISOString().slice(0, 10) : ''
+  const newArticles = showSince ? articles.filter((a) => a.iso > lastIso).length : 0
+  const weekOf = (ms: number) => Math.floor((ms / 864e5 - 4) / 7)
+  const newQuestion = showSince && weekOf(Date.now()) !== weekOf(last!)
+  const daysGone = showSince ? Math.floor(away / 864e5) : 0
 
   const bits: { to: string; t: string }[] = []
   if (newArticles > 0) bits.push({ to: '/articles', t: newArticles === 1 ? 'مقال جديد' : `${newArticles} مقالات جديدة` })
   if (newQuestion) bits.push({ to: '/questions', t: 'سؤال أسبوعي جديد' })
   if (daysGone >= 1) bits.push({ to: '/curated', t: 'اختيارات تبدّلت' })
-  if (!bits.length) return null
+
+  // «أكمل قراءتك» يظهر متى وُجد مقالٌ سابق (حتى دون غياب طويل)
+  const resume = lastRead && Date.now() - lastRead.at < 45 * 864e5 ? lastRead : null
+  if (!bits.length && !resume) return null
 
   return (
     <div className="border-t border-hair bg-wash px-6 py-3.5 md:px-11">
-      <p className="mx-auto flex max-w-shell flex-wrap items-center gap-x-4 gap-y-1 text-[.82rem] text-soft">
-        <span className="font-semibold text-accent">✦ منذ زيارتك الأخيرة</span>
-        {bits.map((b, i) => (
-          <Link key={b.to} to={b.to} className="transition-colors hover:text-accent">
-            {b.t}{i < bits.length - 1 ? ' ·' : ''}
+      <div className="mx-auto flex max-w-shell flex-col gap-1.5">
+        {resume && (
+          <Link to={`/articles/${resume.slug}`} className="group flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[.82rem] text-soft">
+            <span className="font-semibold text-accent">↩ أكمل قراءتك</span>
+            <span className="text-ink transition-colors group-hover:text-accent">«{resume.title}»</span>
+            <span className="text-accent opacity-0 transition-opacity duration-300 group-hover:opacity-100">←</span>
           </Link>
-        ))}
-      </p>
+        )}
+        {bits.length > 0 && (
+          <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[.82rem] text-soft">
+            <span className="font-semibold text-accent">✦ منذ زيارتك الأخيرة</span>
+            {bits.map((b, i) => (
+              <Link key={b.to} to={b.to} className="transition-colors hover:text-accent">
+                {b.t}{i < bits.length - 1 ? ' ·' : ''}
+              </Link>
+            ))}
+          </p>
+        )}
+      </div>
     </div>
   )
 }

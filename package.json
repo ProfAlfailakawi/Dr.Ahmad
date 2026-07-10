@@ -18,7 +18,8 @@
     "radar": "node scripts/daily-radar.mjs",
     "report:monthly": "node scripts/monthly-report.mjs",
     "report:monthly:dry-run": "node scripts/monthly-report.mjs --dry-run",
-    "set-admin": "node scripts/set-admin.mjs"
+    "set-admin": "node scripts/set-admin.mjs",
+    "health": "node scripts/health-check.mjs"
   },
   "dependencies": {
     "firebase": "^12.15.0",

@@ -7,7 +7,7 @@
  *   3) feed.xml  (RSS)
  *   4) 404.html
  */
-import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, readdirSync, rmSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -218,6 +218,54 @@ writeFileSync(resolve(DIST, 'feed.xml'), `<?xml version="1.0" encoding="UTF-8"?>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
 ${items}
 </channel></rss>
+`, 'utf8')
+
+/* ---------- بودكاست: خلاصة RSS قياسية من الأرشيف الصوتي (صوت فهد) ----------
+   كل مقالٍ له MP3 يصبح حلقة؛ تُقبل مباشرة في Apple Podcasts وSpotify.
+   بلا أثر بصري على الموقع — قناة موازية للمستمعين. */
+const podcastArt = `${SITE}/podcast-cover.png`
+const podcastEpisodes = articles
+  .map((a) => ({ a, file: resolve(ROOT, 'audio', `${a.slug}.mp3`) }))
+  .filter((e) => existsSync(e.file))
+  .sort((x, y) => (y.a.iso || '').localeCompare(x.a.iso || ''))
+  .map(({ a, file }) => {
+    const bytes = statSync(file).size
+    const url = `${SITE}/audio/${a.slug}.mp3`
+    return `    <item>
+      <title>${esc(a.title)}</title>
+      <itunes:author>د. أحمد حسين الفيلكاوي</itunes:author>
+      <itunes:subtitle>${esc(a.excerpt).slice(0, 120)}</itunes:subtitle>
+      <description>${esc(a.excerpt)}</description>
+      <itunes:summary>${esc(a.excerpt)}</itunes:summary>
+      <link>${SITE}/articles/${a.slug}</link>
+      <guid isPermaLink="false">podcast-${a.slug}</guid>
+      <pubDate>${new Date(`${a.iso}T08:00:00Z`).toUTCString()}</pubDate>
+      <enclosure url="${url}" length="${bytes}" type="audio/mpeg"/>
+      <itunes:image href="${podcastArt}"/>
+      <itunes:explicit>false</itunes:explicit>
+    </item>`
+  }).join('\n')
+
+writeFileSync(resolve(DIST, 'podcast.xml'), `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>مقالات د. أحمد حسين الفيلكاوي — المسموعة</title>
+    <link>${SITE}</link>
+    <language>ar</language>
+    <copyright>© د. أحمد حسين الفيلكاوي</copyright>
+    <description>مقالات فكرية في التعليم والتقنية والمجتمع والذكاء الاصطناعي — بصوت الدكتور. تصعد الحلقات تلقائياً مع كل مقال جديد.</description>
+    <itunes:author>د. أحمد حسين الفيلكاوي</itunes:author>
+    <itunes:summary>مقالات فكرية في التعليم والتقنية والمجتمع والذكاء الاصطناعي — بصوت الدكتور.</itunes:summary>
+    <itunes:type>episodic</itunes:type>
+    <itunes:owner><itunes:name>د. أحمد حسين الفيلكاوي</itunes:name><itunes:email>ah_f@hotmail.com</itunes:email></itunes:owner>
+    <itunes:image href="${podcastArt}"/>
+    <itunes:category text="Education"/>
+    <itunes:category text="Society &amp; Culture"/>
+    <itunes:explicit>false</itunes:explicit>
+    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+${podcastEpisodes}
+  </channel>
+</rss>
 `, 'utf8')
 
 /* ---------- أصول الإنتاج ----------

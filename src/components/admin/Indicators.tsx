@@ -66,6 +66,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
   const [kind, setKind] = useState<Kind>('الكل')
   const [q, setQ] = useState('')
   const [report, setReport] = useState<MonthlyReport | null>(null)
+  const [health, setHealth] = useState<{ date: string; status: string; issueCount: number; issues?: string[] } | null>(null)
 
   const load = async () => {
     setLoading(true)
@@ -74,10 +75,15 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       const db = await getDb()
       if (!db) throw new Error('Firebase غير متاح')
       const { collection, getDocs } = await import('firebase/firestore')
-      const [snapshot, reportsSnapshot] = await Promise.all([
+      const [snapshot, reportsSnapshot, healthSnapshot] = await Promise.all([
         getDocs(collection(db, 'views')),
         getDocs(collection(db, 'admin_reports')),
+        getDocs(collection(db, 'site_health')),
       ])
+      const latestHealth = healthSnapshot.docs
+        .map((d) => d.data() as { date: string; status: string; issueCount: number; issues?: string[] })
+        .sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0]
+      setHealth(latestHealth || null)
       setRows(snapshot.docs.map((item) => {
         const data = item.data() as { count?: number; title?: string }
         return { id: item.id, count: Number(data.count || 0), title: data.title }
@@ -153,6 +159,30 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       </div>
 
       {error && <div className={`${card} border-accent/40 text-[.9rem] text-soft`}>{error}</div>}
+
+      {health && (
+        <section className={`${card} ${health.status === 'سليم' ? '' : 'border-accent/50'}`} aria-label="حارس الجودة">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className={`flex h-9 w-9 items-center justify-center rounded-full text-[1.1rem] ${health.status === 'سليم' ? 'bg-accent/10 text-accent' : 'bg-accent text-white'}`}>
+                {health.status === 'سليم' ? '✓' : '!'}
+              </span>
+              <div>
+                <p className="text-[.76rem] font-semibold uppercase text-accent">حارس الجودة · فحص أسبوعي آلي</p>
+                <h2 className="font-display text-lg font-semibold text-ink">
+                  {health.status === 'سليم' ? 'الموقع سليم بالكامل.' : `${ar(health.issueCount)} تنبيهاً يحتاج انتباهك.`}
+                </h2>
+              </div>
+            </div>
+            <span className="text-[.72rem] text-soft">آخر فحص: {health.date}</span>
+          </div>
+          {health.issueCount > 0 && health.issues && (
+            <ul className="mt-4 grid gap-1.5 border-t border-hair pt-4 text-[.85rem] text-soft">
+              {health.issues.slice(0, 10).map((i, n) => <li key={n}>⚠ {i}</li>)}
+            </ul>
+          )}
+        </section>
+      )}
 
       {report && (
         <section className={`${card} border-accent/30 bg-accent/[.045]`} aria-label={`التقرير الشهري ${report.period}`}>

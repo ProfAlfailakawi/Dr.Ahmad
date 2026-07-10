@@ -5,7 +5,10 @@ dist
 # أسرار — لا تُرفع أبداً
 .env
 .env.local
+.env.*.local
 sa.json
+*service-account*.json
+*firebase-adminsdk*.json
 scripts/cloud-radar.gs
 
 # أصول مكرّرة (المصدر المعتمد للبناء هو مجلدات الجذر audio/ covers/ files/)

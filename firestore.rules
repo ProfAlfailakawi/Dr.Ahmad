@@ -22,6 +22,26 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
+    match /content_overrides/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /site_books/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /site_papers/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /site_media/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /cv_overrides/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
     match /site_questions/{id} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
@@ -41,6 +61,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // عدادات المشاهدة في مجموعة واحدة:
+    //   total:<encoded-path>             إجمالي الصفحة
+    //   day:YYYY-MM-DD:<encoded-path>    عداد يومي لاتجاه آخر 7 أيام
+    // القراءة للمشرف فقط. الزائر لا يستطيع إلا إنشاء العداد من 1 أو زيادته 1.
+    match /views/{id} {
+      allow read, delete: if isAdmin();
+      allow create: if isAdmin() || isValidViewCreate(id);
+      allow update: if isAdmin() || isValidViewUpdate(id);
+    }
+
     // كل ما عدا ذلك: مغلق.
     match /{document=**} {
       allow read, write: if false;
@@ -53,6 +83,33 @@ service cloud.firestore {
 
   function isAdmin() {
     return request.auth != null && request.auth.token.admin == true;
+  }
+
+  function isValidViewId(id) {
+    return id.size() <= 512
+      && (id.matches('^total:.+$')
+        || id.matches('^day:[0-9]{4}-[0-9]{2}-[0-9]{2}:.+$'));
+  }
+
+  function hasValidViewFields(d) {
+    return d.keys().hasOnly(['count', 'title', 'updatedAt'])
+      && d.count is int
+      && d.title is string && d.title.size() > 0 && d.title.size() <= 300
+      && d.updatedAt == request.time;
+  }
+
+  function isValidViewCreate(id) {
+    return isValidViewId(id)
+      && hasValidViewFields(request.resource.data)
+      && request.resource.data.count == 1;
+  }
+
+  function isValidViewUpdate(id) {
+    return isValidViewId(id)
+      && hasValidViewFields(request.resource.data)
+      && request.resource.data.count == resource.data.count + 1
+      && request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['count', 'updatedAt']);
   }
 
   function isValidMessage() {

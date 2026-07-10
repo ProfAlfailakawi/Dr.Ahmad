@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { articleCats } from '../data'
-import { articleYears, searchArticles, topKeywordsFor } from '../lib/cms'
+import { searchArticles, topKeywordsFor } from '../lib/cms'
+import { useCmsContent } from '../lib/content'
 
 const ar = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 
 export default function Search() {
+  const { articles } = useCmsContent()
   useSeo({
     title: 'البحث العميق',
     path: '/search',
@@ -18,7 +20,9 @@ export default function Search() {
   const [cat, setCat] = useState('الكل')
   const [year, setYear] = useState('الكل')
 
-  const results = useMemo(() => searchArticles({ query, cat, year }), [query, cat, year])
+  const years = useMemo(() => Array.from(new Set(articles.map((article) => article.iso.slice(0, 4))))
+    .sort((a, b) => b.localeCompare(a)), [articles])
+  const results = useMemo(() => searchArticles({ query, cat, year }, articles), [articles, query, cat, year])
   const keywords = useMemo(() => topKeywordsFor(results.slice(0, 18), 12), [results])
 
   return (
@@ -59,7 +63,7 @@ export default function Search() {
               </div>
 
               <div className="mt-3 flex flex-wrap gap-2">
-                {['الكل', ...articleYears].map((item) => (
+                {['الكل', ...years].map((item) => (
                   <button
                     key={item}
                     onClick={() => setYear(item)}

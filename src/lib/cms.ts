@@ -1,21 +1,362 @@
 import audioManifest from '../data/audio.json'
 import bodies from '../data/bodies.json'
-import { articleCats, articles, books, papers } from '../data'
+import {
+  articleCats,
+  articles as staticArticles,
+  books as staticBooks,
+  media as staticMedia,
+  papers as staticPapers,
+} from '../data'
 
-export type ArticleRecord = (typeof articles)[number] & {
+export type ContentKind = 'article' | 'book' | 'paper' | 'media'
+export type ContentOrigin = 'base' | 'added'
+export type AudioValue = boolean | string
+export type ArticleAudio = { fahed?: AudioValue; noura?: AudioValue }
+
+export type CmsMeta = {
+  kind: ContentKind
+  origin: ContentOrigin
+  modified: boolean
+  hidden: boolean
+  docId: string
+  baseSlug: string
+  createdAt?: unknown
+  updatedAt?: unknown
+}
+
+export type ArticleRecord = {
+  slug: string
+  title: string
+  date: string
+  iso: string
+  cat: string
+  excerpt: string
   body?: string
+  source?: string
+  url?: string
+  audio?: ArticleAudio
   words: number
   year: string
   hasAudio: boolean
   missing: boolean
+  _cms: CmsMeta
 }
 
-type AudioEntry = boolean | { fahed?: boolean; noura?: boolean }
+export type BookRecord = {
+  slug: string
+  title: string
+  isbn: string
+  desc: string
+  cover: string
+  pdf: string
+  _cms: CmsMeta
+}
+
+export type PaperRecord = {
+  slug: string
+  title: string
+  meta: string
+  journal?: string
+  source?: string
+  url?: string
+  pdf?: string
+  iso?: string
+  date?: string
+  _cms: CmsMeta
+}
+
+export type MediaRecord = {
+  slug: string
+  title: string
+  outlet: string
+  platform?: string
+  url: string
+  iso?: string
+  date?: string
+  _cms: CmsMeta
+}
+
+export type CmsSnapshot = {
+  articles: ArticleRecord[]
+  books: BookRecord[]
+  papers: PaperRecord[]
+  media: MediaRecord[]
+}
+
+export type RemoteDocument = Record<string, unknown> & { id: string }
+export type RemoteCmsData = {
+  overrides?: RemoteDocument[]
+  articles?: RemoteDocument[]
+  books?: RemoteDocument[]
+  papers?: RemoteDocument[]
+  media?: RemoteDocument[]
+}
+
+type AudioEntry = boolean | ArticleAudio
+type AnyRecord = ArticleRecord | BookRecord | PaperRecord | MediaRecord
 
 const bodyMap = bodies as Record<string, string>
 const audioMap = audioManifest as Record<string, AudioEntry>
 
-const requiredArticleFields = ['slug', 'title', 'date', 'iso', 'cat', 'excerpt'] as const
+const fieldsByKind: Record<ContentKind, readonly string[]> = {
+  article: ['title', 'date', 'iso', 'cat', 'excerpt', 'body', 'source', 'url', 'audio'],
+  book: ['title', 'isbn', 'desc', 'cover', 'pdf'],
+  paper: ['title', 'meta', 'journal', 'source', 'url', 'pdf', 'iso', 'date'],
+  media: ['title', 'outlet', 'platform', 'url', 'iso', 'date'],
+}
+
+const wordCount = (text = '') => text.trim().split(/\s+/).filter(Boolean).length
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value && typeof value === 'object' && !Array.isArray(value))
+
+const stringValue = (value: unknown, fallback = '') =>
+  typeof value === 'string' ? value.trim() : fallback
+
+function metadata(kind: ContentKind, slug: string, value: Partial<CmsMeta> = {}): CmsMeta {
+  return {
+    kind,
+    origin: value.origin ?? 'base',
+    modified: Boolean(value.modified),
+    hidden: Boolean(value.hidden),
+    docId: value.docId || slug,
+    baseSlug: value.baseSlug || slug,
+    createdAt: value.createdAt,
+    updatedAt: value.updatedAt,
+  }
+}
+
+function audioVoices(value: unknown): ArticleAudio | undefined {
+  if (value === true) return { fahed: true }
+  if (!isObject(value)) return undefined
+  const valid = (entry: unknown): AudioValue | undefined =>
+    typeof entry === 'boolean' || typeof entry === 'string' ? entry : undefined
+  const result = { fahed: valid(value.fahed), noura: valid(value.noura) }
+  return result.fahed || result.noura ? result : undefined
+}
+
+function buildArticle(value: Record<string, unknown>, cms: CmsMeta): ArticleRecord {
+  const slug = stringValue(value.slug, cms.baseSlug)
+  const body = stringValue(value.body) || undefined
+  const audio = audioVoices(value.audio)
+  return {
+    slug,
+    title: stringValue(value.title),
+    date: stringValue(value.date),
+    iso: stringValue(value.iso),
+    cat: stringValue(value.cat, 'التعليم'),
+    excerpt: stringValue(value.excerpt),
+    body,
+    source: stringValue(value.source) || undefined,
+    url: stringValue(value.url) || undefined,
+    audio,
+    words: wordCount(body || stringValue(value.excerpt)),
+    year: stringValue(value.iso).slice(0, 4),
+    hasAudio: Boolean(audio?.fahed || audio?.noura),
+    missing: !body,
+    _cms: cms,
+  }
+}
+
+function buildBook(value: Record<string, unknown>, cms: CmsMeta): BookRecord {
+  return {
+    slug: stringValue(value.slug, cms.baseSlug),
+    title: stringValue(value.title),
+    isbn: stringValue(value.isbn),
+    desc: stringValue(value.desc),
+    cover: stringValue(value.cover),
+    pdf: stringValue(value.pdf),
+    _cms: cms,
+  }
+}
+
+function buildPaper(value: Record<string, unknown>, cms: CmsMeta): PaperRecord {
+  return {
+    slug: stringValue(value.slug, cms.baseSlug),
+    title: stringValue(value.title),
+    meta: stringValue(value.meta),
+    journal: stringValue(value.journal) || undefined,
+    source: stringValue(value.source) || undefined,
+    url: stringValue(value.url) || undefined,
+    pdf: stringValue(value.pdf) || undefined,
+    iso: stringValue(value.iso) || undefined,
+    date: stringValue(value.date) || undefined,
+    _cms: cms,
+  }
+}
+
+function buildMedia(value: Record<string, unknown>, cms: CmsMeta): MediaRecord {
+  const outlet = stringValue(value.outlet) || stringValue(value.platform)
+  return {
+    slug: stringValue(value.slug, cms.baseSlug),
+    title: stringValue(value.title),
+    outlet,
+    platform: stringValue(value.platform, outlet) || undefined,
+    url: stringValue(value.url),
+    iso: stringValue(value.iso) || undefined,
+    date: stringValue(value.date) || undefined,
+    _cms: cms,
+  }
+}
+
+function buildRecord(kind: ContentKind, value: Record<string, unknown>, cms: CmsMeta): AnyRecord {
+  if (kind === 'article') return buildArticle(value, cms)
+  if (kind === 'book') return buildBook(value, cms)
+  if (kind === 'paper') return buildPaper(value, cms)
+  return buildMedia(value, cms)
+}
+
+function youtubeId(url: string) {
+  return (url.match(/[?&]v=([\w-]{6,})/) || url.match(/youtu\.be\/([\w-]{6,})/))?.[1]
+}
+
+const baseArticles: ArticleRecord[] = staticArticles.map((article) => {
+  const slug = article.slug
+  const manifest = audioMap[slug]
+  const audio = manifest === true ? { fahed: true } : audioVoices(manifest)
+  return buildArticle({
+    ...article,
+    body: bodyMap[slug] || undefined,
+    audio,
+  }, metadata('article', slug))
+})
+
+const baseBooks: BookRecord[] = staticBooks.map((book) =>
+  buildBook(book, metadata('book', book.slug)))
+
+const basePapers: PaperRecord[] = staticPapers.map((paper) =>
+  buildPaper(paper, metadata('paper', paper.slug)))
+
+const baseMedia: MediaRecord[] = staticMedia.map((item, index) => {
+  const slug = 'media-' + (youtubeId(item.url) || index + 1)
+  return buildMedia({ ...item, slug }, metadata('media', slug))
+})
+
+export const baseCmsSnapshot: CmsSnapshot = {
+  articles: baseArticles,
+  books: baseBooks,
+  papers: basePapers,
+  media: baseMedia,
+}
+
+const baseMaps: Record<ContentKind, Map<string, AnyRecord>> = {
+  article: new Map(baseArticles.map((item) => [item.slug, item])),
+  book: new Map(baseBooks.map((item) => [item.slug, item])),
+  paper: new Map(basePapers.map((item) => [item.slug, item])),
+  media: new Map(baseMedia.map((item) => [item.slug, item])),
+}
+
+export function getBaseRecord(kind: ContentKind, slug: string): Record<string, unknown> | undefined {
+  const record = baseMaps[kind].get(slug)
+  if (!record) return undefined
+  const { _cms, ...content } = record
+  void _cms
+  return { ...content }
+}
+
+function cleanPatch(kind: ContentKind, value: unknown) {
+  if (!isObject(value)) return {}
+  return Object.fromEntries(fieldsByKind[kind]
+    .filter((field) => Object.prototype.hasOwnProperty.call(value, field))
+    .map((field) => [field, value[field]]))
+}
+
+export function diffContentPatch(
+  kind: ContentKind,
+  base: Record<string, unknown>,
+  next: Record<string, unknown>,
+) {
+  return Object.fromEntries(fieldsByKind[kind].flatMap((field) => {
+    const left = base[field]
+    const right = next[field]
+    if (JSON.stringify(left ?? '') === JSON.stringify(right ?? '')) return []
+    return [[field, right ?? '']]
+  }))
+}
+
+function applyOriginals<T extends AnyRecord>(
+  kind: ContentKind,
+  originals: readonly T[],
+  overrides: Map<string, RemoteDocument>,
+  includeHidden: boolean,
+): T[] {
+  return originals.flatMap((original) => {
+    const override = overrides.get(kind + ':' + original.slug)
+    const patch = cleanPatch(kind, override?.patch)
+    const hidden = override?.hidden === true
+    if (hidden && !includeHidden) return []
+    const base = getBaseRecord(kind, original.slug) || {}
+    const merged = { ...base, ...patch, slug: original.slug }
+    return [buildRecord(kind, merged, metadata(kind, original.slug, {
+      modified: Object.keys(patch).length > 0,
+      hidden,
+      updatedAt: override?.updatedAt,
+    })) as T]
+  })
+}
+
+function additions<T extends AnyRecord>(
+  kind: ContentKind,
+  documents: readonly RemoteDocument[],
+  occupied: Set<string>,
+  includeHidden: boolean,
+): T[] {
+  return documents.flatMap((document) => {
+    const slug = stringValue(document.slug, document.id)
+    if (!slug || occupied.has(slug)) return []
+    const hidden = document.hidden === true
+    if (hidden && !includeHidden) return []
+    const record = buildRecord(kind, { ...document, slug }, metadata(kind, slug, {
+      origin: 'added',
+      modified: false,
+      hidden,
+      docId: document.id,
+      baseSlug: slug,
+      createdAt: document.createdAt,
+      updatedAt: document.updatedAt,
+    })) as T
+    if (!record.title) return []
+    occupied.add(slug)
+    return [record]
+  })
+}
+
+const timeValue = (value: unknown) => {
+  if (typeof value === 'string') return Date.parse(value) || 0
+  if (isObject(value) && typeof value.seconds === 'number') return value.seconds * 1000
+  if (isObject(value) && typeof value.toMillis === 'function') {
+    try { return Number((value.toMillis as () => number)()) || 0 } catch { return 0 }
+  }
+  return 0
+}
+
+const newestFirst = <T extends AnyRecord>(left: T, right: T) => {
+  const leftIso = 'iso' in left ? String(left.iso || '') : ''
+  const rightIso = 'iso' in right ? String(right.iso || '') : ''
+  const iso = rightIso.localeCompare(leftIso)
+  if (iso) return iso
+  return timeValue(right._cms.createdAt) - timeValue(left._cms.createdAt)
+}
+
+export function mergeCmsContent(remote: RemoteCmsData = {}, includeHidden = false): CmsSnapshot {
+  const overrides = new Map((remote.overrides || []).map((item) => [item.id, item]))
+
+  const originalArticles = applyOriginals('article', baseArticles, overrides, includeHidden)
+  const originalBooks = applyOriginals('book', baseBooks, overrides, includeHidden)
+  const originalPapers = applyOriginals('paper', basePapers, overrides, includeHidden)
+  const originalMedia = applyOriginals('media', baseMedia, overrides, includeHidden)
+
+  const articleAdditions = additions<ArticleRecord>('article', remote.articles || [], new Set(originalArticles.map((item) => item.slug)), includeHidden)
+  const bookAdditions = additions<BookRecord>('book', remote.books || [], new Set(originalBooks.map((item) => item.slug)), includeHidden)
+  const paperAdditions = additions<PaperRecord>('paper', remote.papers || [], new Set(originalPapers.map((item) => item.slug)), includeHidden)
+  const mediaAdditions = additions<MediaRecord>('media', remote.media || [], new Set(originalMedia.map((item) => item.slug)), includeHidden)
+
+  return {
+    articles: [...articleAdditions, ...originalArticles].sort(newestFirst),
+    books: [...bookAdditions.sort(newestFirst), ...originalBooks],
+    papers: [...paperAdditions.sort(newestFirst), ...originalPapers],
+    media: [...mediaAdditions, ...originalMedia].sort(newestFirst),
+  }
+}
 
 export type CmsIssue = {
   kind: 'article' | 'book' | 'paper'
@@ -23,27 +364,12 @@ export type CmsIssue = {
   message: string
 }
 
-const wordCount = (text = '') => text.trim().split(/\s+/).filter(Boolean).length
+const requiredArticleFields = ['slug', 'title', 'date', 'iso', 'cat', 'excerpt'] as const
 
-const hasAudio = (slug: string) => {
-  const entry = audioMap[slug]
-  if (entry === true) return true
-  return Boolean(entry && typeof entry === 'object' && (entry.fahed || entry.noura))
-}
-
-export const allArticles: ArticleRecord[] = articles.map((article) => {
-  const body = bodyMap[article.slug]
-  return {
-    ...article,
-    body,
-    words: wordCount(body || article.excerpt),
-    year: article.iso.slice(0, 4),
-    hasAudio: hasAudio(article.slug),
-    missing: !body,
-  }
-})
-
-export const articleYears = Array.from(new Set(allArticles.map((article) => article.year))).sort((a, b) => b.localeCompare(a))
+export const allArticles: ArticleRecord[] = baseArticles
+export const articleYears = Array.from(new Set(allArticles.map((article) => article.year)))
+  .filter(Boolean)
+  .sort((a, b) => b.localeCompare(a))
 
 export const cmsIssues: CmsIssue[] = [
   ...allArticles.flatMap((article) => {
@@ -52,12 +378,12 @@ export const cmsIssues: CmsIssue[] = [
       ...missingFields.map((field) => ({
         kind: 'article' as const,
         id: article.slug || article.title,
-        message: `الحقل ${field} ناقص`,
+        message: 'الحقل ' + field + ' ناقص',
       })),
       ...(articleCats.includes(article.cat) ? [] : [{
         kind: 'article' as const,
         id: article.slug,
-        message: `تصنيف غير معروف: ${article.cat}`,
+        message: 'تصنيف غير معروف: ' + article.cat,
       }]),
       ...(article.missing ? [{
         kind: 'article' as const,
@@ -66,18 +392,13 @@ export const cmsIssues: CmsIssue[] = [
       }] : []),
     ]
   }),
-  ...books.flatMap((book) => [
+  ...baseBooks.flatMap((book) => [
     ...(!book.cover ? [{ kind: 'book' as const, id: book.slug, message: 'غلاف الكتاب غير محدد' }] : []),
     ...(!book.pdf ? [{ kind: 'book' as const, id: book.slug, message: 'ملف PDF غير محدد' }] : []),
   ]),
-  ...papers.flatMap((paper) => {
-    const item = paper as { slug?: string; title: string }
-    return [
-      ...(!item.slug || !String(item.slug).trim()
-        ? [{ kind: 'paper' as const, id: item.title, message: 'مسار البحث غير محدد' }]
-        : []),
-    ]
-  }),
+  ...basePapers.flatMap((paper) => !paper.slug
+    ? [{ kind: 'paper' as const, id: paper.title, message: 'مسار البحث غير محدد' }]
+    : []),
 ]
 
 export const cmsStats = {
@@ -100,14 +421,15 @@ export const cmsStats = {
   ).filter(([, count]) => count > 1),
 }
 
-export const getArticleBySlug = (slug?: string) => allArticles.find((article) => article.slug === slug)
+export const getArticleBySlug = (slug?: string, source: ArticleRecord[] = allArticles) =>
+  source.find((article) => article.slug === slug)
 
-export const getArticleNeighbors = (slug?: string) => {
-  const index = allArticles.findIndex((article) => article.slug === slug)
+export const getArticleNeighbors = (slug?: string, source: ArticleRecord[] = allArticles) => {
+  const index = source.findIndex((article) => article.slug === slug)
   return {
     index,
-    prev: index > -1 ? allArticles[index - 1] : undefined,
-    next: index > -1 ? allArticles[index + 1] : undefined,
+    prev: index > -1 ? source[index - 1] : undefined,
+    next: index > -1 ? source[index + 1] : undefined,
   }
 }
 
@@ -130,7 +452,7 @@ export function normalizeArabic(value: string) {
 }
 
 export function articleKeywords(article: Pick<ArticleRecord, 'title' | 'excerpt' | 'body'>, limit = 7) {
-  const text = normalizeArabic(`${article.title} ${article.excerpt || ''} ${article.body || ''}`)
+  const text = normalizeArabic(article.title + ' ' + (article.excerpt || '') + ' ' + (article.body || ''))
   const counts = new Map<string, number>()
   for (const word of text.split(/\s+/)) {
     if (word.length < 4 || arabicStopWords.has(word)) continue
@@ -142,9 +464,13 @@ export function articleKeywords(article: Pick<ArticleRecord, 'title' | 'excerpt'
     .map(([word]) => word)
 }
 
-export function relatedArticles(article: ArticleRecord, limit = 3) {
+export function relatedArticles(
+  article: ArticleRecord,
+  limit = 3,
+  source: ArticleRecord[] = allArticles,
+) {
   const base = new Set(articleKeywords(article, 12))
-  return allArticles
+  return source
     .filter((candidate) => candidate.slug !== article.slug)
     .map((candidate) => {
       const overlap = articleKeywords(candidate, 12).filter((keyword) => base.has(keyword)).length
@@ -164,18 +490,18 @@ export function searchArticles({
   query: string
   cat?: string
   year?: string
-}) {
+}, source: ArticleRecord[] = allArticles) {
   const term = normalizeArabic(query)
   const terms = term ? term.split(/\s+/).filter(Boolean) : []
 
-  return allArticles
+  return source
     .filter((article) => (cat === 'الكل' ? true : article.cat === cat))
     .filter((article) => (year === 'الكل' ? true : article.year === year))
     .map((article) => {
       const title = normalizeArabic(article.title)
       const excerpt = normalizeArabic(article.excerpt || '')
       const body = normalizeArabic(article.body || '')
-      const haystack = `${title} ${excerpt} ${body}`
+      const haystack = title + ' ' + excerpt + ' ' + body
       const score = terms.length
         ? terms.reduce((sum, part) => {
             if (!haystack.includes(part)) return sum

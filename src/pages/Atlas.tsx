@@ -3,7 +3,8 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { EASE, FadeUp, Page, PageHead } from '../components/ui'
 import { useSeo } from '../components/seo'
-import { articleCats, articlesWithBody as articles } from '../data'
+import { articleCats } from '../data'
+import { useCmsContent } from '../lib/content'
 
 /* الأبعاد */
 const W = 1160
@@ -18,10 +19,11 @@ const H = TOP + cats.length * ROW + 46
 const arDigits = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 
 export default function Atlas() {
+  const { articles } = useCmsContent()
   useSeo({
     title: 'سماء المقالات',
     path: '/atlas',
-    description: 'خريطة بصرية لاثنين وسبعين مقالاً عبر سبع سنوات — كل نجمة مقال، وحجمها طوله.',
+    description: `خريطة بصرية لـ${articles.length} مقالاً — كل نجمة مقال، وحجمها طوله.`,
   })
   const reduce = useReducedMotion()
   const nav = useNavigate()
@@ -48,7 +50,7 @@ export default function Atlas() {
       const r = 3.4 + ((w - wMin) / (wMax - wMin || 1)) * 8.6
       return { ...a, x, y, r, words: w, i }
     })
-  }, [])
+  }, [articles])
 
   const years = useMemo(() => {
     const map = new Map<string, number[]>()

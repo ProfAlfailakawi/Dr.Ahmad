@@ -11,7 +11,10 @@
     "preview": "vite preview",
     "import": "node scripts/import-articles.mjs",
     "prerender": "node scripts/build-static.mjs",
-    "audio": "node scripts/generate-audio.mjs",
+    "audio": "node scripts/auto-audio.mjs",
+    "audio:dry-run": "node scripts/auto-audio.mjs --dry-run",
+    "audio:base": "node scripts/auto-audio.mjs --base-only",
+    "audio:legacy": "node scripts/generate-audio.mjs",
     "radar": "node scripts/daily-radar.mjs",
     "set-admin": "node scripts/set-admin.mjs"
   },

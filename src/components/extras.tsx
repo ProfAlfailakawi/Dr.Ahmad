@@ -208,14 +208,16 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
    ١) إن وُجد ملف MP3 مولّد مسبقاً (npm run audio) → مشغّل حقيقي بصوت طبيعي.
    ٢) وإلا → لا شيء. صوت المتصفّح الآلي رديء للعربية، ولا نعرضه إلا بطلب صريح
       عبر ALLOW_BROWSER_TTS في data.ts. */
-export function Listen({ slug, title, text, audio }: { slug: string; title: string; text: string; audio?: { fahed?: boolean; noura?: boolean } }) {
+type ArticleAudio = { fahed?: boolean | string; noura?: boolean | string }
+
+export function Listen({ slug, title, text, audio }: { slug: string; title: string; text: string; audio?: ArticleAudio }) {
   // الفهرس: { slug: { fahed: true, noura: true } } — أو true بالصيغة القديمة (= فهد فقط)
   // مقالات لوحة التحكم تمرر audio من وثيقتها (يولّده سكربت الصوت الليلي)
-  const entry = (audioManifest as Record<string, boolean | { fahed?: boolean; noura?: boolean }>)[slug]
+  const entry = (audioManifest as Record<string, boolean | ArticleAudio>)[slug]
   const voices = audio ?? (entry === true ? { fahed: true } : entry || {})
   const sources = [
-    ...(voices.fahed ? [{ key: 'fahed', label: 'فهد', src: `/audio/${slug}.mp3` }] : []),
-    ...(voices.noura ? [{ key: 'noura', label: 'نورة', src: `/audio/${slug}.noura.mp3` }] : []),
+    ...(voices.fahed ? [{ key: 'fahed', label: 'فهد', src: typeof voices.fahed === 'string' ? voices.fahed : `/audio/${slug}.mp3` }] : []),
+    ...(voices.noura ? [{ key: 'noura', label: 'نورة', src: typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3` }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)
 

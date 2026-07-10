@@ -1,16 +1,22 @@
 import { Link, useParams } from 'react-router-dom'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { useSeo } from '../components/seo'
-import { papers, profile } from '../data'
-
-type Paper = (typeof papers)[number] & { slug: string; journal?: string; source?: string }
-const paperList = papers as Paper[]
+import { profile } from '../data'
+import { useCmsContent } from '../lib/content'
 
 export default function PaperDetail() {
   const { slug } = useParams()
-  const i = paperList.findIndex((p) => p.slug === slug)
-  const p = paperList[i]
+  const { papers, loading } = useCmsContent()
+  const i = papers.findIndex((paper) => paper.slug === slug)
+  const p = papers[i]
   useSeo({ title: p?.title ?? 'بحث', description: p?.meta, path: `/research/${slug}`, type: 'article' })
+
+  if (!p && loading)
+    return (
+      <Page>
+        <div className="px-6 pt-44 text-center text-soft">لحظة…</div>
+      </Page>
+    )
 
   if (!p)
     return (
@@ -19,8 +25,9 @@ export default function PaperDetail() {
       </Page>
     )
 
-  const prev = paperList[i - 1]
-  const next = paperList[i + 1]
+  const prev = papers[i - 1]
+  const next = papers[i + 1]
+  const paperLink = p.source || p.pdf || p.url
 
   return (
     <Page>
@@ -42,10 +49,12 @@ export default function PaperDetail() {
 
           <FadeUp delay={0.1}>
             <dl className="mt-10 divide-y divide-hair border-y border-hair">
-              <div className="flex flex-wrap gap-4 py-5">
-                <dt className="w-32 shrink-0 text-[.85rem] text-soft">الموضوع</dt>
-                <dd className="text-[.98rem] text-ink">{p.meta}</dd>
-              </div>
+              {p.meta && (
+                <div className="flex flex-wrap gap-4 py-5">
+                  <dt className="w-32 shrink-0 text-[.85rem] text-soft">الموضوع</dt>
+                  <dd className="text-[.98rem] text-ink">{p.meta}</dd>
+                </div>
+              )}
               <div className="flex flex-wrap gap-4 py-5">
                 <dt className="w-32 shrink-0 text-[.85rem] text-soft">الباحث</dt>
                 <dd className="text-[.98rem] text-ink">{profile.fullName}</dd>
@@ -60,9 +69,9 @@ export default function PaperDetail() {
           </FadeUp>
 
           <FadeUp delay={0.14}>
-            {p.source ? (
+            {paperLink ? (
               <a
-                href={p.source}
+                href={paperLink}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-10 inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep"

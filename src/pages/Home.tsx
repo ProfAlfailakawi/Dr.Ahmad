@@ -3,14 +3,14 @@ import { useEffect, useState } from 'react'
 import { motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, FadeUp, Label, Magnetic, Page, Reveal, SectionHead } from '../components/ui'
-import { articles, books, latest, media, papers, profile, upcoming } from '../data'
+import { profile, upcoming } from '../data'
+import { useCmsContent } from '../lib/content'
 import { Newsletter } from '../components/extras'
 import { curatedBank, thisMonthsBook, type Curio } from '../data-curated'
 import { staticQuestions, LAUNCH_DATE } from './Questions'
 
 const arNum = (n: number) => String(n).padStart(2, '0')
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
-type Paper = (typeof papers)[number] & { slug: string }
 
 /* ---------- «فكرة اليوم» — بطاقة واحدة هادئة تتبدل كل منتصف ليل ----------
    تعيد استخدام محرك المختارات اليومي؛ تُحمَّل كسولاً فلا تُثقل الرئيسية */
@@ -67,7 +67,7 @@ const PERSONAS: {
   { key: 'reader', label: 'قارئ متأمّل', gate: 'للقارئ المتأمل',
     d: 'أكثر من 160 مقالاً فكرياً — اقرأها، وبعضها بصوتي.',
     greet: 'بدأتُ لك من الكلمة.', to: '/articles',
-    links: [{ to: `/articles/${articles[0]?.slug ?? ''}`, t: 'أحدث ما كتبت' }, { to: '/articles', t: 'كل المقالات' }] },
+    links: [{ to: '/articles', t: 'أحدث ما كتبت' }, { to: '/articles', t: 'كل المقالات' }] },
   { key: 'scholar', label: 'معلّم وباحث', gate: 'للمعلم والباحث',
     d: 'ثمانية عشر بحثاً محكّماً، وأدوات ومفاهيم منتقاة.',
     greet: 'من المعرفة المحكّمة.', to: '/research',
@@ -166,6 +166,7 @@ function WhoAreYou() {
 /* ---------- لمحة «سماء المقالات» — نجوم هادئة تمهد للخريطة الكاملة ---------- */
 function MiniAtlas() {
   const reduce = useReducedMotion()
+  const { articles } = useCmsContent()
   // موضع حتمي: الزمن أفقياً (الأقدم يميناً كما في السماء الكاملة)، وتشتت رأسي من بصمة العنوان
   const t0 = new Date('2019-01-01').getTime()
   const t1 = new Date('2026-12-31').getTime()
@@ -212,6 +213,7 @@ function MiniAtlas() {
 /* ---------- «بوصلة الفكر» (فكرة نووية ٣) ----------
    تصفّح بالفكرة لا بنوع الملف: كل محور يصله أعماله. أرشيف → عقل يُستكشف. */
 function ThoughtCompass() {
+  const { articles } = useCmsContent()
   const axes = [
     { key: 'التعليم', label: 'التعليم' },
     { key: 'التربية', label: 'التربية' },
@@ -326,7 +328,9 @@ function WeeklyPoll() {
 /* ---------- «الأثر» — رحلة فكر لا أرقام صاخبة (فكرة نووية ٥) ----------
    خط زمني هادئ يُحسب من المحتوى نفسه، فيقول «ماذا صنعت» لا «كم». */
 function ImpactTimeline() {
+  const { articles, books, papers } = useCmsContent()
   const years = articles.map((a) => +a.iso.slice(0, 4))
+  if (!articles.length) return null
   const firstYear = Math.min(...years)
   const latestYear = Math.max(...years)
   const byYear: Record<number, number> = {}
@@ -374,6 +378,9 @@ function ImpactTimeline() {
 /* ---------- The single "Latest" card ---------- */
 function LatestCard() {
   const reduce = useReducedMotion()
+  const { articles } = useCmsContent()
+  const latest = articles[0]
+  if (!latest) return null
   return (
     <section className="px-6 pb-[70px] md:px-11 md:pb-[100px]">
       <div className="mx-auto max-w-shell">
@@ -388,14 +395,14 @@ function LatestCard() {
               <div className="min-w-0 flex-1">
                 <span className="inline-flex items-center gap-2.5 text-[.78rem] font-semibold text-accent">
                   <span className="pulse relative h-2 w-2 rounded-full bg-accent" />
-                  الأحدث · {latest.kind}
+                  الأحدث · مقال
                 </span>
                 <h2 className="mt-4 max-w-[720px] font-display text-[clamp(1.6rem,3.6vw,2.5rem)] font-semibold leading-[1.35] text-ink">
                   {latest.title}
                 </h2>
               </div>
               <Link
-                to={latest.to}
+                to={`/articles/${latest.slug}`}
                 data-hover
                 className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-[1.5px] border-accent text-[1.4rem] text-accent transition-all duration-300 group-hover:bg-accent group-hover:text-white md:h-20 md:w-20"
                 aria-label="اقرأ المزيد"
@@ -429,6 +436,7 @@ function Card({ children, delay = 0, className = '' }: { children: React.ReactNo
 
 export default function Home() {
   useSeo({ title: 'د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم والذكاء الاصطناعي', path: '/' })
+  const { articles, books, papers, media } = useCmsContent()
   const reduce = useReducedMotion()
   const { scrollY } = useScroll()
   const parY = useTransform(scrollY, [0, 800], [0, 40])
@@ -448,7 +456,7 @@ export default function Home() {
   }, [reduce, tx, ty])
 
   const topArticles = articles.slice(0, 3)
-  const topPapers = (papers as Paper[]).slice(0, 3)
+  const topPapers = papers.slice(0, 3)
   // موحّد مع نظام «المختارات» الجديد: كتاب الشهر + مختارتان موثّقتان
   const topPicks: Curio[] = [thisMonthsBook(), curatedBank[6], curatedBank[11]]
   const topMedia = media.slice(0, 3)
@@ -464,10 +472,11 @@ export default function Home() {
             {/* الجملة التي تراها أول ثانية — بيان الدكتور الفكري، لا نبذة */}
             <h1 className="font-display text-[clamp(2.1rem,5.4vw,4rem)] font-bold leading-[1.28] text-ink">
               {['أُبقي الإنسانَ', 'في قلبِ الآلة.'].map((line, i) => (
-                <span key={line} className="block overflow-hidden">
+                // حشوة تحمي الهمزة والضمة فوق الألف من القصّ، وهامش سالب يحيّد أثرها
+                <span key={line} className="-my-[0.3em] block overflow-hidden py-[0.3em]">
                   <motion.span
                     className="block"
-                    initial={reduce ? false : { y: '115%' }}
+                    initial={reduce ? false : { y: '150%' }}
                     animate={{ y: 0 }}
                     transition={{ duration: 1, delay: 0.25 + i * 0.14, ease: EASE }}
                   >
@@ -558,11 +567,11 @@ export default function Home() {
       {/* books */}
       <section className="border-t border-hair bg-wash py-[70px] md:py-[100px]">
         <div className="mx-auto max-w-shell px-6 md:px-11">
-          <SectionHead label="المؤلفات" title="تسعة كتب." to="/publications" />
+          <SectionHead label="المؤلفات" title={`${books.length} كتب.`} to="/publications" />
         </div>
         <div className="rail flex snap-x snap-mandatory gap-6 overflow-x-auto px-6 pb-4 md:px-11">
           {books.map((b, i) => (
-            <Card key={b.isbn} delay={Math.min(i * 0.05, 0.3)} className="w-[240px] shrink-0 snap-start md:w-[300px]">
+            <Card key={b.slug} delay={Math.min(i * 0.05, 0.3)} className="w-[240px] shrink-0 snap-start md:w-[300px]">
               <Link to={`/publications/${b.slug}`} data-hover className="group block">
                 <div className="overflow-hidden rounded-xl bg-white shadow-[0_22px_44px_-26px_rgba(21,22,26,.4)] transition-transform duration-500 group-hover:-translate-y-1.5" style={{ aspectRatio: '1024 / 700' }}>
                   <img src={b.cover} alt={b.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -588,7 +597,7 @@ export default function Home() {
           <SectionHead label="مقالاتي الفكرية" title="بصوتي الخاص." to="/articles" />
           <div className="grid gap-8 md:grid-cols-[1.5fr_.5fr] md:gap-12">
             <FadeUp>
-              <Link to={`/articles/${topArticles[0].slug}`} data-hover className="group block">
+              {topArticles[0] && <Link to={`/articles/${topArticles[0].slug}`} data-hover className="group block">
                 <div className="flex items-center gap-2.5 text-[.78rem]">
                   <span className="font-semibold text-accent">{topArticles[0].cat}</span>
                   <span className="h-1 w-1 rounded-full bg-hair" />
@@ -599,7 +608,7 @@ export default function Home() {
                 </h3>
                 {topArticles[0].excerpt && <p className="mt-4 max-w-xl text-[1.02rem] font-light leading-[1.9] text-ink/80">{topArticles[0].excerpt}</p>}
                 <span className="mt-6 inline-block text-[.9rem] font-semibold text-accent">اقرأ المقال ←</span>
-              </Link>
+              </Link>}
             </FadeUp>
             <FadeUp delay={0.12}>
               <div className="flex flex-col divide-y divide-hair border-t border-hair md:border-r md:border-t-0 md:pr-8">
@@ -621,7 +630,7 @@ export default function Home() {
           <SectionHead label="المساهمات العلمية" title="أبحاث محكّمة." to="/research" />
           <ol className="mt-2">
             {topPapers.map((p, i) => (
-              <FadeUp key={p.url} delay={Math.min(i * 0.06, 0.24)}>
+              <FadeUp key={p.slug} delay={Math.min(i * 0.06, 0.24)}>
                 <li className={i === 0 ? '' : 'border-t border-hair'}>
                   <Link to={`/research/${p.slug}`} data-hover className="group flex items-baseline gap-6 py-6 transition-[padding] duration-300 hover:pe-3">
                     <span className="w-8 shrink-0 font-display text-[1.4rem] font-bold text-accent/70 transition-colors group-hover:text-accent">{arNum(i + 1)}</span>
@@ -644,7 +653,7 @@ export default function Home() {
           <SectionHead label="الظهور الإعلامي" title="على الشاشة." to="/media" />
           <div className="grid gap-8 md:grid-cols-[1.55fr_.45fr] md:gap-12">
             <FadeUp>
-              <a href={topMedia[0].url} target="_blank" rel="noreferrer" data-hover className="group block overflow-hidden rounded-2xl">
+              {topMedia[0] && <a href={topMedia[0].url} target="_blank" rel="noreferrer" data-hover className="group block overflow-hidden rounded-2xl">
                 <div className="relative overflow-hidden bg-wash" style={{ aspectRatio: '16 / 9' }}>
                   {ytId(topMedia[0].url) && (
                     <img src={`https://i.ytimg.com/vi/${ytId(topMedia[0].url)}/hqdefault.jpg`} alt={topMedia[0].title} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -656,7 +665,7 @@ export default function Home() {
                   <span className="text-[.74rem] font-semibold text-accent">{topMedia[0].outlet}</span>
                   <h3 className="mt-1.5 font-display text-[1.2rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{topMedia[0].title}</h3>
                 </div>
-              </a>
+              </a>}
             </FadeUp>
             <FadeUp delay={0.12}>
               <div className="flex flex-col divide-y divide-hair border-t border-hair md:border-r md:border-t-0 md:pr-8">

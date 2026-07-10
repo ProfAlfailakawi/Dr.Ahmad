@@ -3,19 +3,19 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { EASE, FadeUp, Page, Reveal } from '../components/ui'
 import { useSeo } from '../components/seo'
-import { articlesWithBody as articles } from '../data'
-
-const LINKS = [
-  { to: '/articles', label: 'المقالات الفكرية', n: '72' },
-  { to: '/publications', label: 'الكتب المنشورة', n: '9' },
-  { to: '/research', label: 'المساهمات العلمية', n: '18' },
-  { to: '/cv', label: 'السيرة الأكاديمية' },
-]
+import { useCmsContent } from '../lib/content'
 
 export default function NotFound() {
+  const { articles, books, papers } = useCmsContent()
   useSeo({ title: 'الصفحة غير موجودة', description: 'الصفحة المطلوبة غير موجودة.' })
   const nav = useNavigate()
   const [q, setQ] = useState('')
+  const links = [
+    { to: '/articles', label: 'المقالات الفكرية', n: String(articles.length) },
+    { to: '/publications', label: 'الكتب المنشورة', n: String(books.length) },
+    { to: '/research', label: 'المساهمات العلمية', n: String(papers.length) },
+    { to: '/cv', label: 'السيرة الأكاديمية' },
+  ]
 
   const hits = q.trim().length > 1
     ? articles.filter((a) => (a.title + ' ' + (a.excerpt || '')).includes(q.trim())).slice(0, 4)
@@ -74,7 +74,7 @@ export default function NotFound() {
           {/* وجهات */}
           <FadeUp delay={0.14}>
             <ul className="mx-auto mt-12 max-w-[440px] border-t border-hair text-right">
-              {LINKS.map((l) => (
+              {links.map((l) => (
                 <li key={l.to} className="border-b border-hair">
                   <Link to={l.to} className="group flex items-center justify-between py-4 transition-[padding] duration-300 hover:pe-2">
                     <span className="font-display text-[1.15rem] font-medium text-ink transition-colors group-hover:text-accent">{l.label}</span>

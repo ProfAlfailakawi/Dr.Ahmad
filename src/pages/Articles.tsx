@@ -1,19 +1,16 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FadeUp, Page, PageHead } from '../components/ui'
-import { articleCats, essays, articlesWithBody as staticArticles } from '../data'
-import { useExtras, type ExtraArticle } from '../lib/content'
+import { articleCats, essays } from '../data'
+import { useCmsContent } from '../lib/content'
 import { useSeo } from '../components/seo'
 
 export default function Articles() {
-  useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: 'أكثر من 160 مقالاً فكرياً في التعليم والتقنية والمجتمع، منذ 2016.' })
+  const { articles } = useCmsContent()
+  useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: `${articles.length} مقالاً فكرياً في التعليم والتقنية والمجتمع، منذ 2016.` })
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('الكل')
   const [showAll, setShowAll] = useState(false)
-
-  // مقالات لوحة التحكم تتصدر القائمة (الأحدث أولاً)
-  const extra = useExtras<ExtraArticle>('site_articles')
-  const articles = [...extra, ...staticArticles]
 
   const term = q.trim()
   const filtered = articles
@@ -87,7 +84,7 @@ export default function Articles() {
 
           <ul className="mt-10">
             {shown.map((a, i) => (
-              <li key={a.slug + i} className={i === 0 ? '' : 'border-t border-hair'}>
+              <li key={a.slug} className={i === 0 ? '' : 'border-t border-hair'}>
                 <Link
                   to={`/articles/${a.slug}`}
                   className="group flex flex-col gap-1 py-5 sm:flex-row sm:items-baseline sm:gap-6"

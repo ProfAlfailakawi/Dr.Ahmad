@@ -1,57 +1,72 @@
 import { useSeo } from '../components/seo'
 import { motion, useReducedMotion } from 'framer-motion'
 import { EASE, FadeUp, Page, PageHead } from '../components/ui'
-import { media, projects } from '../data'
+import { projects } from '../data'
+import { useCmsContent } from '../lib/content'
 
-const id = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
+const id = (url: string) => (url.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || ''
+const mediaCount = (count: number) => {
+  if (count === 1) return 'لقاء واحد'
+  if (count === 2) return 'لقاءان'
+  return `${count} لقاءات`
+}
 
 export default function Media() {
-  useSeo({ title: 'الظهور الإعلامي', path: '/media', description: 'لقاءات تلفزيونية وإذاعية.' })
+  const { media } = useCmsContent()
+  const count = mediaCount(media.length)
+  useSeo({ title: 'الظهور الإعلامي', path: '/media', description: `${count} تلفزيونياً وإذاعياً.` })
   const reduce = useReducedMotion()
   return (
     <Page>
       <PageHead
         label="الظهور الإعلامي"
-        title="على الشاشة."
+        title={`${count}.`}
         sub="مقتطفات من لقاءاتي الإذاعية والتلفزيونية، حيث يتحوّل الحوار إلى منصة للفكر."
       />
 
       <section className="px-6 py-20 md:px-11 md:py-24">
         <div className="mx-auto grid max-w-shell gap-6 md:grid-cols-2 md:gap-7">
-          {media.map((m, i) => (
-            <motion.a
-              key={m.url}
-              href={m.url}
-              target="_blank"
-              rel="noreferrer"
-              data-hover
-              initial={reduce ? false : { opacity: 0, y: 26 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.7, delay: Math.min(i * 0.06, 0.3), ease: EASE }}
-              whileHover={reduce ? {} : { y: -6 }}
-              className="group block overflow-hidden rounded-2xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent"
-            >
-              <div className="relative overflow-hidden bg-wash" style={{ aspectRatio: '16 / 9' }}>
-                {id(m.url) ? (
-                  <img
-                    src={`https://i.ytimg.com/vi/${id(m.url)}/hqdefault.jpg`}
-                    alt={m.title}
-                    loading="lazy"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                ) : null}
-                <span className="absolute inset-0 bg-ink/0 transition-colors duration-400 group-hover:bg-ink/20" />
-                <span className="absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[1.5px] border-white/80 bg-ink/40 text-[1rem] text-white backdrop-blur-sm transition-all duration-400 group-hover:scale-110 group-hover:bg-accent group-hover:border-accent">
-                  ▶
-                </span>
-              </div>
-              <div className="p-6">
-                <span className="text-[.74rem] font-semibold text-accent">{m.outlet}</span>
-                <h2 className="mt-2 text-[1.05rem] font-medium leading-[1.6] text-ink">{m.title}</h2>
-              </div>
-            </motion.a>
-          ))}
+          {media.map((m, i) => {
+            const videoUrl = m.url || ''
+            const videoId = id(videoUrl)
+            return (
+              <motion.a
+                key={m.slug}
+                href={videoUrl || undefined}
+                target={videoUrl ? '_blank' : undefined}
+                rel={videoUrl ? 'noreferrer' : undefined}
+                data-hover
+                initial={reduce ? false : { opacity: 0, y: 26 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.7, delay: Math.min(i * 0.06, 0.3), ease: EASE }}
+                whileHover={reduce ? {} : { y: -6 }}
+                className="group block overflow-hidden rounded-2xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent"
+              >
+                <div className="relative overflow-hidden bg-wash" style={{ aspectRatio: '16 / 9' }}>
+                  {videoId && (
+                    <img
+                      src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}
+                      alt={m.title}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  )}
+                  <span className="absolute inset-0 bg-ink/0 transition-colors duration-400 group-hover:bg-ink/20" />
+                  <span className="absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[1.5px] border-white/80 bg-ink/40 text-[1rem] text-white backdrop-blur-sm transition-all duration-400 group-hover:scale-110 group-hover:border-accent group-hover:bg-accent">
+                    ▶
+                  </span>
+                </div>
+                <div className="p-6">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[.74rem]">
+                    <span className="font-semibold text-accent">{m.outlet || 'ظهور إعلامي'}</span>
+                    {m.date && <time className="text-soft">{m.date}</time>}
+                  </div>
+                  <h2 className="mt-2 text-[1.05rem] font-medium leading-[1.6] text-ink">{m.title}</h2>
+                </div>
+              </motion.a>
+            )
+          })}
         </div>
 
         <div className="mx-auto mt-20 max-w-shell border-t border-hair pt-14">

@@ -32,11 +32,12 @@ export function Reveal({ children, delay = 0, className = '' }: { children: Reac
   const show = reduce || inView || safety
 
   return (
-    <span ref={ref} className={`-mb-[0.22em] block overflow-hidden pb-[0.22em] ${className}`}>
+    // الحشوة العمودية تمنع قصّ التنوين والهمزات فوق الحروف وذيولها تحتها، والهامش السالب يلغي أثرها على التخطيط
+    <span ref={ref} className={`-my-[0.3em] block overflow-hidden py-[0.3em] ${className}`}>
       <motion.span
         className="block"
-        initial={reduce ? false : { y: '115%' }}
-        animate={show ? { y: 0 } : { y: '115%' }}
+        initial={reduce ? false : { y: '150%' }}
+        animate={show ? { y: 0 } : { y: '150%' }}
         transition={{ duration: 1, ease: EASE, delay }}
       >
         {children}
@@ -323,9 +324,9 @@ function Overlay({ close }: { close: () => void }) {
 
               <ul className="mt-4 space-y-0.5">
                 {g.items.map((it, ii) => (
-                  <li key={it.to} className="overflow-hidden">
+                  <li key={it.to} className="-my-[0.2em] overflow-hidden py-[0.2em]">
                     <motion.div
-                      initial={reduce ? false : { y: '110%' }}
+                      initial={reduce ? false : { y: '150%' }}
                       animate={{ y: 0 }}
                       transition={{ duration: 0.7, delay: 0.45 + gi * 0.08 + ii * 0.06, ease: EASE }}
                     >

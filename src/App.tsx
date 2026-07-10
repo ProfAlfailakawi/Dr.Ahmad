@@ -3,6 +3,8 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { Cursor, EASE, Footer, Nav } from './components/ui'
 import { FloatingActions } from './components/extras'
+import { CmsProvider } from './lib/content'
+import { useTrackView } from './lib/views'
 import Home from './pages/Home'
 
 /* تقسيم الكود: الرئيسية فورية، وبقية الصفحات تُحمَّل عند زيارتها فقط —
@@ -103,6 +105,22 @@ function AnimatedRoutes() {
   )
 }
 
+/** ينتظر تحديث وسوم SEO للصفحة، ثم يسجل مشاهدة واحدة للمسار في الجلسة. */
+function RouteViewTracker() {
+  const location = useLocation()
+  const [page, setPage] = useState({ path: '', title: '' })
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setPage({ path: location.pathname, title: document.title })
+    }, 80)
+    return () => window.clearTimeout(timer)
+  }, [location.pathname])
+
+  useTrackView(page.path, page.title, Boolean(page.path))
+  return null
+}
+
 export default function App() {
   // الفخامة سلاسة لا بطء: أول زيارة مشهد قصير، وزيارات الجلسة التالية بلا شاشة كاملة
   const seenThisSession = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('seen') === '1'
@@ -127,16 +145,19 @@ export default function App() {
   }, [loaded, gone])
 
   return (
-    <BrowserRouter>
-      <AnimatePresence>{!gone && <Preloader key="pre" done={loaded} />}</AnimatePresence>
-      <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>
-      <Cursor />
-      <Nav />
-      <main id="main">
-        <AnimatedRoutes />
-      </main>
-      <FloatingActions />
-      <Footer />
-    </BrowserRouter>
+    <CmsProvider>
+      <BrowserRouter>
+        <RouteViewTracker />
+        <AnimatePresence>{!gone && <Preloader key="pre" done={loaded} />}</AnimatePresence>
+        <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>
+        <Cursor />
+        <Nav />
+        <main id="main">
+          <AnimatedRoutes />
+        </main>
+        <FloatingActions />
+        <Footer />
+      </BrowserRouter>
+    </CmsProvider>
   )
 }

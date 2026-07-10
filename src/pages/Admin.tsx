@@ -12,7 +12,10 @@ import { useEffect, useState } from 'react'
 import { Page } from '../components/ui'
 import { firebaseEnabled, getDb, getFirebaseApp } from '../lib/firebase'
 import { articleCats } from '../data'
-import { allArticles, cmsIssues, cmsStats } from '../lib/cms'
+import { getBaseRecord, type ArticleRecord } from '../lib/cms'
+import { useCmsContent } from '../lib/content'
+import { ContentManager, type ManagedKind, type ManagedRecord } from '../components/admin/ContentManager'
+import { Indicators } from '../components/admin/Indicators'
 import { useSeo } from '../components/seo'
 import type { User } from 'firebase/auth'
 
@@ -149,10 +152,11 @@ function AccessDenied({ email }: { email: string }) {
 
 /* ---------- ٣) اللوحة ---------- */
 // السؤال الأسبوعي والمختارة اليومية يتولّدان تلقائياً (بنك دوّار) فلا لزوم لهما في اللوحة
-type Tab = 'dashboard' | 'inbox' | 'article' | 'event'
+type Tab = 'dashboard' | 'articles' | 'books' | 'papers' | 'media' | 'inbox' | 'event'
 
 function Panel({ email }: { email: string }) {
   const [tab, setTab] = useState<Tab>('dashboard')
+  const cms = useCmsContent({ includeHidden: true })
 
   const signOut = async () => {
     const app = await getFirebaseApp()
@@ -162,7 +166,7 @@ function Panel({ email }: { email: string }) {
 
   return (
     <Page>
-      <div className="mx-auto max-w-3xl px-6 pb-24 pt-40 md:pt-44">
+      <div className="mx-auto max-w-[1480px] px-4 pb-24 pt-36 sm:px-6 md:px-10 md:pt-40">
         <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="mb-1 text-[.82rem] font-semibold uppercase tracking-widest text-accent">لوحة التحكم</p>
@@ -174,7 +178,7 @@ function Panel({ email }: { email: string }) {
         </div>
 
         <div className="mb-8 flex flex-wrap gap-2">
-          {([['dashboard', 'المؤشرات'], ['inbox', 'الرسائل الواردة'], ['article', 'مقال جديد'], ['event', 'لقاء قادم']] as [Tab, string][]).map(([k, label]) => (
+          {([['dashboard', 'المؤشرات'], ['articles', 'المقالات'], ['books', 'الكتب'], ['papers', 'الأبحاث'], ['media', 'الإعلام'], ['inbox', 'الرسائل'], ['event', 'اللقاءات']] as [Tab, string][]).map(([k, label]) => (
             <button key={k} onClick={() => setTab(k)}
               className={`rounded-full px-5 py-2 text-[.88rem] transition-colors ${tab === k ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}>
               {label}
@@ -182,83 +186,17 @@ function Panel({ email }: { email: string }) {
           ))}
         </div>
 
-        {tab === 'dashboard' && <DashboardPanel />}
+        {cms.error && <p className="mb-5 rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.85rem] text-soft">تعذّر تحديث المحتوى الحي: {cms.error}</p>}
+        {cms.loading && <p className="mb-5 text-[.84rem] text-soft">أحمّل آخر تعديلات المحتوى…</p>}
+        {tab === 'dashboard' && <Indicators articles={cms.articles} />}
+        {tab === 'articles' && <ContentManager kind="article" items={cms.articles as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
+        {tab === 'books' && <ContentManager kind="book" items={cms.books as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
+        {tab === 'papers' && <ContentManager kind="paper" items={cms.papers as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
+        {tab === 'media' && <ContentManager kind="media" items={cms.media as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
         {tab === 'inbox' && <InboxPanel />}
-        {tab === 'article' && <ArticleForm />}
         {tab === 'event' && <EventForm />}
       </div>
     </Page>
-  )
-}
-
-function DashboardPanel() {
-  const missingAudio = allArticles.filter((article) => article.body && !article.hasAudio)
-  const missingBodies = cmsStats.missingArticles
-  const missingSources = allArticles.filter((article) => !article.source)
-  const invalidSources = allArticles.filter((article) => article.source && !/^https?:\/\//.test(article.source))
-  const issueCount = cmsIssues.length
-  const topCategory = cmsStats.categories[0]
-
-  return (
-    <div className="grid gap-5">
-      <div className="grid gap-4 md:grid-cols-4">
-        {[
-          { n: cmsStats.articles, label: 'مقال' },
-          { n: cmsStats.completeArticles, label: 'نص كامل' },
-          { n: cmsStats.audioReady, label: 'صوت جاهز' },
-          { n: issueCount, label: 'تنبيه محتوى' },
-        ].map((item) => (
-          <div key={item.label} className={card}>
-            <span className="block font-display text-3xl font-bold text-accent">{String(item.n).replace(/[0-9]/g, (d) => '0123456789'[+d])}</span>
-            <span className="mt-1 block text-[.82rem] text-soft">{item.label}</span>
-          </div>
-        ))}
-      </div>
-
-      <div className={`${card} grid gap-7 md:grid-cols-2`}>
-        <div>
-          <p className="text-[.78rem] font-semibold uppercase tracking-widest text-accent">توزيع التصنيفات</p>
-          <div className="mt-5 grid gap-3">
-            {cmsStats.categories.map((item) => (
-              <div key={item.cat}>
-                <div className="mb-1 flex justify-between text-[.82rem] text-soft">
-                  <span>{item.cat}</span>
-                  <span>{String(item.count).replace(/[0-9]/g, (d) => '0123456789'[+d])}</span>
-                </div>
-                <div className="h-2 rounded-full bg-canvas">
-                  <div className="h-full rounded-full bg-accent" style={{ width: `${topCategory ? (item.count / topCategory.count) * 100 : 0}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div>
-          <p className="text-[.78rem] font-semibold uppercase tracking-widest text-accent">حالة الأصول</p>
-          <ul className="mt-5 space-y-3 text-[.9rem] text-soft">
-            <li className="flex justify-between border-b border-hair pb-2"><span>نصوص ناقصة</span><span>{missingBodies.length}</span></li>
-            <li className="flex justify-between border-b border-hair pb-2"><span>أصوات ناقصة</span><span>{missingAudio.length}</span></li>
-            <li className="flex justify-between border-b border-hair pb-2"><span>مصادر ناقصة</span><span>{missingSources.length}</span></li>
-            <li className="flex justify-between border-b border-hair pb-2"><span>روابط مصدر غير صالحة</span><span>{invalidSources.length}</span></li>
-            <li className="flex justify-between border-b border-hair pb-2"><span>تكرار Slug</span><span>{cmsStats.duplicateSlugs.length}</span></li>
-            <li className="flex justify-between"><span>سنوات الأرشيف</span><span>{cmsStats.years}</span></li>
-          </ul>
-        </div>
-      </div>
-
-      {(missingBodies.length > 0 || missingAudio.length > 0) && (
-        <div className={card}>
-          <p className="mb-4 text-[.78rem] font-semibold uppercase tracking-widest text-accent">نواقص تحتاج إغلاق</p>
-          <ul className="grid gap-2">
-            {[...missingBodies, ...missingAudio].slice(0, 10).map((article) => (
-              <li key={article.slug} className="flex flex-wrap justify-between gap-3 rounded-xl border border-hair bg-canvas px-4 py-3">
-                <span className="text-[.9rem] text-ink">{article.title}</span>
-                <span className="text-[.78rem] text-soft">{article.body ? 'الصوت ناقص' : 'النص ناقص'}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
   )
 }
 

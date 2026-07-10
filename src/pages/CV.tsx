@@ -1,6 +1,10 @@
 import { useSeo } from '../components/seo'
 import { Accordion, FadeUp, Page, PageHead } from '../components/ui'
-import { advisory, bio, books, conferences, doctorate, links, memberships, papers, stats } from '../data'
+import { CvSectionEditor } from '../components/admin/CvSectionEditor'
+import { bio, books, doctorate, links, papers, stats } from '../data'
+import { useAdminAuth } from '../lib/admin-auth'
+import { useCv, type CvTextItem } from '../lib/cv'
+import { useTrackView } from '../lib/views'
 
 const ar = (n: number) => String(n)
 
@@ -16,12 +20,12 @@ function Open({ title, children }: { title: string; children: React.ReactNode })
   )
 }
 
-const Dots = ({ items }: { items: string[] }) => (
+const Dots = ({ items }: { items: CvTextItem[] }) => (
   <ul className="grid gap-2.5 md:grid-cols-2 md:gap-x-10">
-    {items.map((m) => (
-      <li key={m} className="relative ps-5 text-[.95rem] font-light leading-[1.8] text-ink">
+    {items.map((item) => (
+      <li key={item.id} className="relative ps-5 text-[.95rem] font-light leading-[1.8] text-ink">
         <span className="absolute right-0 top-[.75em] h-1.5 w-1.5 rounded-full bg-accent" />
-        {m}
+        {item.text}
       </li>
     ))}
   </ul>
@@ -29,12 +33,22 @@ const Dots = ({ items }: { items: string[] }) => (
 
 export default function CV() {
   useSeo({ title: 'السيرة الأكاديمية', path: '/cv', description: 'التعليم والخبرات والعضويات والمؤتمرات.' })
+  useTrackView('/cv', 'السيرة الأكاديمية')
+  const { isAdmin } = useAdminAuth()
+  const { cv, error: cvError, saveSection } = useCv()
+
   return (
     <Page>
       <PageHead label="السيرة الأكاديمية" title="أحمد حسين الفيلكاوي" sub={bio.intro} />
 
       <div className="px-6 py-14 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">
+          {isAdmin && cvError && (
+            <div role="alert" className="mb-8 rounded-xl border border-hair bg-wash px-5 py-4 text-[.85rem] leading-relaxed text-soft">
+              تعذّر تحميل تعديلات السيرة حالياً، لذلك تُعرض النسخة الأصلية. يمكنك المحاولة مجدداً بعد التحقق من الاتصال.
+            </div>
+          )}
+
           {/* أثرٌ موثّق — أختام هادئة لا أرقام صاخبة */}
           <FadeUp>
             <p className="mb-8 text-center text-[.76rem] font-semibold uppercase tracking-[.18em] text-accent">أثرٌ موثّق</p>
@@ -58,61 +72,67 @@ export default function CV() {
 
           {/* ── الجوهر: مفتوح دائماً ── */}
           <Open title="التعليم">
-            <ul className="space-y-6">
-              {bio.education.map((e) => (
-                <li key={e.degree} className="relative border-r-2 border-hair pe-0 ps-0 pr-6 transition-colors hover:border-accent">
-                  <span className="block text-[1.06rem] font-medium text-ink">{e.degree}</span>
-                  <span className="mt-1 block text-[.92rem] text-soft">{e.org}</span>
-                  <span className="text-[.86rem] text-accent">{e.note}</span>
-                </li>
-              ))}
-            </ul>
+            <CvSectionEditor section="education" items={cv.education} isAdmin={isAdmin} onSave={saveSection}>
+              <ul className="space-y-6">
+                {cv.education.map((item) => (
+                  <li key={item.id} className="relative border-r-2 border-hair pe-0 ps-0 pr-6 transition-colors hover:border-accent">
+                    <span className="block text-[1.06rem] font-medium text-ink">{item.degree}</span>
+                    <span className="mt-1 block text-[.92rem] text-soft">{item.org}</span>
+                    {item.note && <span className="text-[.86rem] text-accent">{item.note}</span>}
+                  </li>
+                ))}
+              </ul>
+            </CvSectionEditor>
           </Open>
 
           <Open title="الخبرات التدريسية">
-            <ul className="space-y-5">
-              {bio.teaching.map((t) => (
-                <li key={t.role} className="border-r-2 border-hair pr-6 transition-colors hover:border-accent">
-                  <span className="block text-[1.04rem] font-medium text-ink">{t.role}</span>
-                  <span className="mt-0.5 block text-[.9rem] text-soft">{t.org}</span>
-                </li>
-              ))}
-            </ul>
+            <CvSectionEditor section="teaching" items={cv.teaching} isAdmin={isAdmin} onSave={saveSection}>
+              <ul className="space-y-5">
+                {cv.teaching.map((item) => (
+                  <li key={item.id} className="border-r-2 border-hair pr-6 transition-colors hover:border-accent">
+                    <span className="block text-[1.04rem] font-medium text-ink">{item.role}</span>
+                    <span className="mt-0.5 block text-[.9rem] text-soft">{item.org}</span>
+                  </li>
+                ))}
+              </ul>
+            </CvSectionEditor>
           </Open>
 
           {/* ── التفاصيل: مطويّات ── */}
           <FadeUp>
             <div className="mt-6">
-              <Accordion title="الخبرات الوظيفية والاستشارية" count={advisory.length}>
-                <ul className="grid gap-7 md:grid-cols-2">
-                  {bio.work.map((w) => (
-                    <li key={w.org}>
-                      <span className="block text-[1.02rem] font-medium text-ink">{w.org}</span>
-                      <span className="mt-0.5 block text-[.88rem] text-soft">{w.role}</span>
-                      {'items' in w && w.items && (
-                        <ul className="mt-2.5 space-y-1">
-                          {w.items.map((it) => (
-                            <li key={it} className="relative ps-4 text-[.85rem] font-light text-soft">
-                              <span className="absolute right-0 top-[.7em] h-1 w-1 rounded-full bg-accent/60" />
-                              {it}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </Accordion>
+              <CvSectionEditor section="work" items={cv.work} isAdmin={isAdmin} onSave={saveSection}>
+                <Accordion title="الخبرات الوظيفية والاستشارية" count={cv.work.length}>
+                  <ul className="grid gap-7 md:grid-cols-2">
+                    {cv.work.map((item) => (
+                      <li key={item.id}>
+                        <span className="block text-[1.02rem] font-medium text-ink">{item.org}</span>
+                        <span className="mt-0.5 block text-[.88rem] text-soft">{item.role}</span>
+                        {item.items.length > 0 && (
+                          <ul className="mt-2.5 space-y-1">
+                            {item.items.map((detail, index) => (
+                              <li key={`${item.id}:${index}`} className="relative ps-4 text-[.85rem] font-light text-soft">
+                                <span className="absolute right-0 top-[.7em] h-1 w-1 rounded-full bg-accent/60" />
+                                {detail}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </Accordion>
+              </CvSectionEditor>
 
               <Accordion title="الأبحاث والكتب" count={`${books.length} + ${papers.length}`}>
                 <div className="grid gap-10 md:grid-cols-2">
                   <div>
                     <h3 className="font-display text-[1.05rem] font-semibold text-ink">المؤلفات</h3>
                     <ul className="mt-3.5 space-y-2">
-                      {books.map((b) => (
-                        <li key={b.isbn} className="relative ps-5 text-[.93rem] font-light leading-[1.7] text-ink">
+                      {books.map((book) => (
+                        <li key={book.isbn} className="relative ps-5 text-[.93rem] font-light leading-[1.7] text-ink">
                           <span className="absolute right-0 top-[.7em] h-1.5 w-1.5 rounded-full bg-accent" />
-                          {b.title}
+                          {book.title}
                         </li>
                       ))}
                     </ul>
@@ -127,41 +147,53 @@ export default function CV() {
                 </div>
               </Accordion>
 
-              <Accordion title="اللجان والعضويات المحلية" count={bio.committees.length}>
-                <Dots items={bio.committees} />
-              </Accordion>
+              <CvSectionEditor section="committees" items={cv.committees} isAdmin={isAdmin} onSave={saveSection}>
+                <Accordion title="اللجان والعضويات المحلية" count={cv.committees.length}>
+                  <Dots items={cv.committees} />
+                </Accordion>
+              </CvSectionEditor>
 
-              <Accordion title="العضويات الدولية" count={memberships.length}>
-                <Dots items={memberships} />
-              </Accordion>
+              <CvSectionEditor section="memberships" items={cv.memberships} isAdmin={isAdmin} onSave={saveSection}>
+                <Accordion title="العضويات الدولية" count={cv.memberships.length}>
+                  <Dots items={cv.memberships} />
+                </Accordion>
+              </CvSectionEditor>
 
-              <Accordion title="المؤتمرات والزيارات العلمية" count={conferences.length}>
-                <ul className="grid gap-4 md:grid-cols-2 md:gap-x-10">
-                  {conferences.map((c) => (
-                    <li key={c.title}>
-                      <span className="block text-[.96rem] font-medium leading-[1.55] text-ink">{c.title}</span>
-                      <span className="text-[.84rem] text-soft">{c.place}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Accordion>
+              <CvSectionEditor section="conferences" items={cv.conferences} isAdmin={isAdmin} onSave={saveSection}>
+                <Accordion title="المؤتمرات والزيارات العلمية" count={cv.conferences.length}>
+                  <ul className="grid gap-4 md:grid-cols-2 md:gap-x-10">
+                    {cv.conferences.map((item) => (
+                      <li key={item.id}>
+                        <span className="block text-[.96rem] font-medium leading-[1.55] text-ink">{item.title}</span>
+                        <span className="text-[.84rem] text-soft">{item.place}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </Accordion>
+              </CvSectionEditor>
 
-              <Accordion title="ورش العمل والمحاضرات" count={bio.workshops.length}>
-                <Dots items={bio.workshops} />
-              </Accordion>
+              <CvSectionEditor section="workshops" items={cv.workshops} isAdmin={isAdmin} onSave={saveSection}>
+                <Accordion title="ورش العمل والمحاضرات" count={cv.workshops.length}>
+                  <Dots items={cv.workshops} />
+                </Accordion>
+              </CvSectionEditor>
 
-              <Accordion title="الشهادات والدورات" count="+100">
-                <Dots items={bio.certifications} />
-                <p className="mt-6 text-[.85rem] text-soft">وأكثر من مئة شهادة تدريبية أخرى في التعليم والتقنية والقيادة.</p>
-              </Accordion>
+              <CvSectionEditor section="certifications" items={cv.certifications} isAdmin={isAdmin} onSave={saveSection}>
+                <Accordion title="الشهادات والدورات" count="+100">
+                  <Dots items={cv.certifications} />
+                  <p className="mt-6 text-[.85rem] text-soft">وأكثر من مئة شهادة تدريبية أخرى في التعليم والتقنية والقيادة.</p>
+                </Accordion>
+              </CvSectionEditor>
 
-              <Accordion title="مهارات الكمبيوتر" count={bio.skills.length}>
-                <div className="flex flex-wrap gap-2.5">
-                  {bio.skills.map((s) => (
-                    <span key={s} className="rounded-full border border-hair px-4 py-1.5 text-[.88rem] text-ink">{s}</span>
-                  ))}
-                </div>
-              </Accordion>
+              <CvSectionEditor section="skills" items={cv.skills} isAdmin={isAdmin} onSave={saveSection}>
+                <Accordion title="مهارات الكمبيوتر" count={cv.skills.length}>
+                  <div className="flex flex-wrap gap-2.5">
+                    {cv.skills.map((item) => (
+                      <span key={item.id} className="rounded-full border border-hair px-4 py-1.5 text-[.88rem] text-ink">{item.text}</span>
+                    ))}
+                  </div>
+                </Accordion>
+              </CvSectionEditor>
             </div>
           </FadeUp>
 

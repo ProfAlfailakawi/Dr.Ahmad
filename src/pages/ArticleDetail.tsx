@@ -2,11 +2,12 @@ import { Link, useParams } from 'react-router-dom'
 import { motion, useScroll, useSpring } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 import { FadeUp, Page, Reveal } from '../components/ui'
-import { allArticles, getArticleNeighbors, relatedArticles, type ArticleRecord } from '../lib/cms'
-import { useExtras, type ExtraArticle } from '../lib/content'
+import { getArticleNeighbors, relatedArticles } from '../lib/cms'
+import { useCmsContent } from '../lib/content'
 import { Listen, Share } from '../components/extras'
 import { QuoteCard } from '../components/QuoteCard'
 import { JsonLd, useSeo } from '../components/seo'
+import { useTrackView } from '../lib/views'
 
 /** تقدير زمن القراءة — ٢٠٠ كلمة/دقيقة للعربية */
 const readTime = (t?: string) => {
@@ -91,14 +92,13 @@ function ReaderPanel({ slug }: { slug: string }) {
 
 export default function ArticleDetail() {
   const { slug } = useParams()
-  // مقالات لوحة التحكم تُدمج مع الثابتة — فتُفتح من نفس الرابط
-  const extra = useExtras<ExtraArticle>('site_articles')
-  const articles = useMemo(() => [...extra, ...allArticles], [extra])
-  const i = articles.findIndex((a) => a.slug === slug)
-  const a = articles[i]
+  const { articles, loading } = useCmsContent()
+  const a = articles.find((article) => article.slug === slug)
 
   const { scrollYProgress } = useScroll()
   const bar = useSpring(scrollYProgress, { stiffness: 200, damping: 40 })
+  const neighbors = useMemo(() => a ? getArticleNeighbors(a.slug, articles) : { prev: undefined, next: undefined }, [a, articles])
+  const related = useMemo(() => a ? relatedArticles(a, 3, articles) : [], [a, articles])
 
   useSeo({
     title: a?.title ?? 'مقال',
@@ -107,6 +107,14 @@ export default function ArticleDetail() {
     type: 'article',
     image: slug ? `/og/articles/${slug}.svg` : undefined,
   })
+  useTrackView(`/articles/${slug || ''}`, a?.title || 'مقال', Boolean(a))
+
+  if (!a && loading)
+    return (
+      <Page>
+        <div className="px-6 pt-44 text-center text-soft">لحظة…</div>
+      </Page>
+    )
 
   if (!a)
     return (
@@ -115,11 +123,8 @@ export default function ArticleDetail() {
       </Page>
     )
 
-  const staticNeighbors = getArticleNeighbors(a.slug)
-  const prev = articles[i - 1] || staticNeighbors.prev
-  const next = articles[i + 1] || staticNeighbors.next
+  const { prev, next } = neighbors
   const rt = readTime(a.body)
-  const related = 'words' in a ? relatedArticles(a as ArticleRecord, 3) : articles.filter((x) => x.cat === a.cat && x.slug !== a.slug).slice(0, 3)
 
   return (
     <Page>
@@ -163,7 +168,7 @@ export default function ArticleDetail() {
               <Reveal>{a.title}</Reveal>
             </h1>
             <div className="mt-7 h-[2px] w-16 bg-accent" />
-            {a.body && <Listen slug={a.slug} title={a.title} text={a.body} audio={(a as { audio?: { fahed?: boolean; noura?: boolean } }).audio} />}
+            {a.body && <Listen slug={a.slug} title={a.title} text={a.body} audio={(a as { audio?: { fahed?: boolean | string; noura?: boolean | string } }).audio} />}
             {a.body && <ReaderPanel slug={a.slug} />}
           </FadeUp>
 

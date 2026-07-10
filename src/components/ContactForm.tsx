@@ -23,7 +23,7 @@ export function ContactForm() {
     if (website.trim()) return
     const last = Number(localStorage.getItem('contact:last-submit') || 0)
     if (Date.now() - last < 60_000) { setErr('تم الإرسال قبل قليل. انتظر دقيقة ثم حاول مرة أخرى.'); setState('error'); return }
-    if (!valid) { setErr('أكمل الحقول: الاسم، بريد صحيح، ورسالة لا تقلّ عن ١٠ أحرف.'); setState('error'); return }
+    if (!valid) { setErr('أكمل الحقول: الاسم، بريد صحيح، ورسالة لا تقلّ عن 10 أحرف.'); setState('error'); return }
     if (!firebaseEnabled) { setErr('النموذج غير مفعّل بعد. استخدم روابط التواصل أدناه.'); setState('error'); return }
 
     setState('sending')

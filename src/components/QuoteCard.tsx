@@ -175,7 +175,7 @@ export function QuoteCard() {
                   إغلاق
                 </button>
               </div>
-              <p className="mt-4 text-center text-[.82rem] text-canvas/70">١٠٨٠×١٠٨٠ — جاهزة لإنستغرام و X</p>
+              <p className="mt-4 text-center text-[.82rem] text-canvas/70">1080×1080 — جاهزة لإنستغرام و X</p>
             </motion.div>
           </motion.div>
         )}

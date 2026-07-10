@@ -5,7 +5,7 @@ import { useSeo } from '../components/seo'
 import { articleCats } from '../data'
 import { articleYears, searchArticles, topKeywordsFor } from '../lib/cms'
 
-const ar = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])
+const ar = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 
 export default function Search() {
   useSeo({

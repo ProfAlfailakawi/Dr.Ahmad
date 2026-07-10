@@ -2,12 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { EASE } from './motion'
 
-const ar = (n: number) => String(n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])
+const ar = (n: number) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 const clock = (seconds: number) => {
-  if (!Number.isFinite(seconds) || seconds < 0) return '٠:٠٠'
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
   const minutes = Math.floor(seconds / 60)
   const rest = Math.floor(seconds % 60)
-  return `${ar(minutes)}:${ar(rest).padStart(2, '٠')}`
+  return `${ar(minutes)}:${ar(rest).padStart(2, '0')}`
 }
 
 const SPEEDS = [1, 1.25, 1.5] as const
@@ -249,10 +249,10 @@ export function AudioPlayer({ sources, title }: { sources: AudioSource[]; title:
 
       <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-hair pt-4">
         <button type="button" onClick={() => jump(-15)} disabled={!duration} className="rounded-full border border-hair px-3.5 py-1.5 text-[.8rem] text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-40">
-          ↺ ١٥ث
+          ↺ 15ث
         </button>
         <button type="button" onClick={() => jump(15)} disabled={!duration} className="rounded-full border border-hair px-3.5 py-1.5 text-[.8rem] text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-40">
-          ↻ ١٥ث
+          ↻ 15ث
         </button>
         <button type="button" onClick={cycleSpeed} className="rounded-full border border-hair px-3.5 py-1.5 text-[.8rem] text-soft transition-colors hover:border-accent hover:text-accent">
           السرعة {ar(speed)}×

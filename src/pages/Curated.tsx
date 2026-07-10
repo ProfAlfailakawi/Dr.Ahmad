@@ -93,7 +93,7 @@ export default function Curated() {
   const [today, setToday] = useState('')
 
   useEffect(() => {
-    try { setToday(new Date().toLocaleDateString('ar', { weekday: 'long', day: 'numeric', month: 'long' })) } catch { /* noop */ }
+    try { setToday(new Date().toLocaleDateString('ar-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' })) } catch { /* noop */ }
   }, [])
 
   // مختارات لوحة التحكم تنضم للمخزون

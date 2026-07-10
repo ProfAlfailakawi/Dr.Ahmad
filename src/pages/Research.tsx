@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { doctorate, papers } from '../data'
 
-const ar = (n: number) => String(n).padStart(2, '0').replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])
+const ar = (n: number) => String(n).padStart(2, '0').replace(/[0-9]/g, (d) => '0123456789'[+d])
 type Paper = (typeof papers)[number] & { slug: string; journal?: string }
 const paperList = papers as Paper[]
 

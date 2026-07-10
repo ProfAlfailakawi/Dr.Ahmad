@@ -7,7 +7,7 @@ import { articles, books, latest, media, papers, profile, upcoming } from '../da
 import { Newsletter } from '../components/extras'
 import { curatedBank, thisMonthsBook, type Curio } from '../data-curated'
 
-const arNum = (n: number) => String(n).padStart(2, '0').replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])
+const arNum = (n: number) => String(n).padStart(2, '0').replace(/[0-9]/g, (d) => '0123456789'[+d])
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
 type Paper = (typeof papers)[number] & { slug: string }
 
@@ -210,10 +210,11 @@ export default function Home() {
   return (
     <Page>
       {/* hero — البيان الفكري أولاً (100svh للجوال) */}
-      <header className="relative flex min-h-[100svh] items-center px-6 pb-24 pt-28 md:px-11">
+      <header className="relative flex min-h-[100svh] items-center px-6 pb-16 pt-24 md:px-11 md:pb-24 md:pt-28">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_50%_at_78%_40%,rgba(62,92,120,.06),transparent_62%)]" />
-        <div className="relative z-10 mx-auto grid w-full max-w-shell items-center gap-12 md:grid-cols-[1.15fr_.85fr] md:gap-16">
-          <div className="order-2 md:order-1">
+        <div className="relative z-10 mx-auto grid w-full max-w-shell items-center gap-8 md:grid-cols-[1.15fr_.85fr] md:gap-16">
+          {/* البيان أولاً — على الجوال والكمبيوتر */}
+          <div className="order-1">
             {/* الجملة التي تراها أول ثانية — بيان الدكتور الفكري، لا نبذة */}
             <h1 className="font-display text-[clamp(2.1rem,5.4vw,4rem)] font-bold leading-[1.28] text-ink">
               {['أُبقي الإنسانَ', 'في قلبِ الآلة.'].map((line, i) => (
@@ -255,11 +256,11 @@ export default function Home() {
             </motion.div>
           </div>
 
-          <div className="order-1 flex justify-center md:order-2">
+          <div className="order-2 flex justify-center">
             <motion.div style={{ y: parY }}>
               <motion.div style={{ x: stx, y: sty }} className="portrait-wrap" data-hover>
                 <motion.div
-                  className="portrait relative max-w-[300px] overflow-hidden rounded-2xl shadow-[0_36px_64px_-36px_rgba(21,22,26,.42)] md:max-w-[400px]"
+                  className="portrait relative max-w-[210px] overflow-hidden rounded-2xl shadow-[0_36px_64px_-36px_rgba(21,22,26,.42)] sm:max-w-[260px] md:max-w-[400px]"
                   initial={reduce ? false : { opacity: 0, y: 26, scale: 1.03 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 1.1, delay: 0.75, ease: EASE }}

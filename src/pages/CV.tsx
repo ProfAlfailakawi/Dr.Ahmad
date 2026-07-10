@@ -2,7 +2,7 @@ import { useSeo } from '../components/seo'
 import { Accordion, FadeUp, Page, PageHead } from '../components/ui'
 import { advisory, bio, books, conferences, doctorate, links, memberships, papers, stats } from '../data'
 
-const ar = (n: number) => String(n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])
+const ar = (n: number) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 
 /* الأقسام المفتوحة دائماً — الجوهر */
 function Open({ title, children }: { title: string; children: React.ReactNode }) {
@@ -150,7 +150,7 @@ export default function CV() {
                 <Dots items={bio.workshops} />
               </Accordion>
 
-              <Accordion title="الشهادات والدورات" count="+١٠٠">
+              <Accordion title="الشهادات والدورات" count="+100">
                 <Dots items={bio.certifications} />
                 <p className="mt-6 text-[.85rem] text-soft">وأكثر من مئة شهادة تدريبية أخرى في التعليم والتقنية والقيادة.</p>
               </Accordion>

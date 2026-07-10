@@ -65,7 +65,7 @@ const staticQuestions: Question[] = [
   {
     ar: 'كم فكرةً عظيمة… قتلها جدول الحصص؟',
     en: 'How many great ideas… were killed by the timetable?',
-    take: 'الإبداع لا يعرف أن الحصة ٤٥ دقيقة. نصمم اليوم الدراسي للإدارة لا للدهشة، ثم نسأل: أين المبدعون؟',
+    take: 'الإبداع لا يعرف أن الحصة 45 دقيقة. نصمم اليوم الدراسي للإدارة لا للدهشة، ثم نسأل: أين المبدعون؟',
     takeEn: 'Creativity does not know the lesson lasts 45 minutes. We design the school day for administration, not wonder — then wonder where the innovators went.',
   },
   {
@@ -88,7 +88,7 @@ const staticQuestions: Question[] = [
   },
 ]
 
-const d = (l: number | string) => String(l).replace(/[0-9]/g, (t) => '٠١٢٣٤٥٦٧٨٩'[+t])
+const d = (l: number | string) => String(l).replace(/[0-9]/g, (t) => '0123456789'[+t])
 
 function b(length: number) {
   const elapsed = Date.now() - new Date(LAUNCH_DATE).getTime()

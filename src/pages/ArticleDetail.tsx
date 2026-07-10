@@ -13,7 +13,7 @@ const readTime = (t?: string) => {
   if (!t) return null
   const words = t.trim().split(/\s+/).length
   const m = Math.max(1, Math.round(words / 200))
-  return `${m.toLocaleString('ar-EG')} دقائق قراءة`.replace('١ دقائق', 'دقيقة واحدة')
+  return `${m.toLocaleString('en-US')} دقائق قراءة`.replace('1 دقائق', 'دقيقة واحدة')
 }
 
 function ReaderPanel({ slug }: { slug: string }) {
@@ -59,7 +59,7 @@ function ReaderPanel({ slug }: { slug: string }) {
     <div className="mt-7 flex flex-wrap items-center gap-2 border-y border-hair py-3">
       {saved > 0.08 && saved < 0.92 && (
         <button onClick={restore} className="rounded-full border border-hair px-4 py-1.5 text-[.8rem] text-soft transition-colors hover:border-accent hover:text-accent">
-          متابعة من {Math.round(saved * 100).toLocaleString('ar-EG')}٪
+          متابعة من {Math.round(saved * 100).toLocaleString('en-US')}٪
         </button>
       )}
       <button

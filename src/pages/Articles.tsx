@@ -26,7 +26,7 @@ export default function Articles() {
       <PageHead
         label="المقالات الفكرية"
         title="بصوتي الخاص."
-        sub={`${articles.length} مقالاً في التعليم والتقنية والمجتمع، منشورة في الصحافة الكويتية منذ ٢٠١٩.`}
+        sub={`${articles.length} مقالاً في التعليم والتقنية والمجتمع، منشورة في الصحافة الكويتية منذ 2019.`}
       />
 
       {/* featured trio */}

@@ -25,7 +25,7 @@ const today = () => {
   const d = new Date()
   return {
     iso: d.toISOString().slice(0, 10),
-    ar: new Intl.DateTimeFormat('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' }).format(d),
+    ar: new Intl.DateTimeFormat('ar-EG-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }).format(d),
   }
 }
 
@@ -87,7 +87,7 @@ function SetupGuide() {
             ['انسخ المفاتيح', 'Project settings (⚙) ← Your apps ← أيقونة الويب </> ← سجّل التطبيق ← انسخ القيم الست، ويمكن إضافة App Check لاحقاً.'],
           ].map(([t, d], i) => (
             <li key={t} className={card}>
-              <p className="mb-1 font-semibold text-ink"><span className="text-accent">{['١', '٢', '٣', '٤', '٥'][i]}.</span> {t}</p>
+              <p className="mb-1 font-semibold text-ink"><span className="text-accent">{['1', '2', '3', '4', '5'][i]}.</span> {t}</p>
               <p className="text-[.92rem] leading-relaxed text-soft">{d}</p>
             </li>
           ))}
@@ -210,7 +210,7 @@ function DashboardPanel() {
           { n: issueCount, label: 'تنبيه محتوى' },
         ].map((item) => (
           <div key={item.label} className={card}>
-            <span className="block font-display text-3xl font-bold text-accent">{String(item.n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])}</span>
+            <span className="block font-display text-3xl font-bold text-accent">{String(item.n).replace(/[0-9]/g, (d) => '0123456789'[+d])}</span>
             <span className="mt-1 block text-[.82rem] text-soft">{item.label}</span>
           </div>
         ))}
@@ -224,7 +224,7 @@ function DashboardPanel() {
               <div key={item.cat}>
                 <div className="mb-1 flex justify-between text-[.82rem] text-soft">
                   <span>{item.cat}</span>
-                  <span>{String(item.count).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])}</span>
+                  <span>{String(item.count).replace(/[0-9]/g, (d) => '0123456789'[+d])}</span>
                 </div>
                 <div className="h-2 rounded-full bg-canvas">
                   <div className="h-full rounded-full bg-accent" style={{ width: `${topCategory ? (item.count / topCategory.count) * 100 : 0}%` }} />
@@ -290,7 +290,7 @@ function InboxPanel() {
 
   const when = (m: Message) => {
     if (!m.createdAt?.seconds) return ''
-    try { return new Date(m.createdAt.seconds * 1000).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' }) } catch { return '' }
+    try { return new Date(m.createdAt.seconds * 1000).toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }) } catch { return '' }
   }
 
   if (loading) return <div className={card}>لحظة… أجلب رسائلك.</div>
@@ -303,7 +303,7 @@ function InboxPanel() {
 
   return (
     <div className="grid gap-4">
-      <p className="text-[.85rem] text-soft">{String(items.length).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])} رسالة — الأحدث أولاً</p>
+      <p className="text-[.85rem] text-soft">{String(items.length).replace(/[0-9]/g, (d) => '0123456789'[+d])} رسالة — الأحدث أولاً</p>
       {items.map((m) => (
         <div key={m.id} className={card}>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -365,7 +365,7 @@ function Existing({ items, remove, label }: { items: { id: string; title?: strin
   if (!items.length) return null
   return (
     <div className="mt-8">
-      <p className="mb-3 text-[.8rem] font-semibold text-soft">{label} المنشورة من اللوحة ({String(items.length).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])})</p>
+      <p className="mb-3 text-[.8rem] font-semibold text-soft">{label} المنشورة من اللوحة ({String(items.length).replace(/[0-9]/g, (d) => '0123456789'[+d])})</p>
       <ul className="grid gap-2">
         {items.map((it) => (
           <li key={it.id} className="flex items-center justify-between gap-3 rounded-xl border border-hair px-4 py-2.5">
@@ -494,7 +494,7 @@ function EventForm() {
 
   const publish = async () => {
     setBusy(true)
-    const ar = new Intl.DateTimeFormat('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(f.iso))
+    const ar = new Intl.DateTimeFormat('ar-EG-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(f.iso))
     await save({ title: f.title.trim(), org: f.org.trim(), place: f.place.trim(), date: ar, iso: f.iso, time: f.time.trim(), url: f.url.trim(), kind: f.kind })
     setF({ title: '', org: '', place: '', iso: '', time: '', url: '', kind: 'محاضرة' })
     setBusy(false)
@@ -508,7 +508,7 @@ function EventForm() {
         <input className={input} placeholder="الجهة المنظمة" value={f.org} onChange={(e) => set('org', e.target.value)} />
         <div className="grid grid-cols-2 gap-4">
           <input className={input} placeholder="المكان" value={f.place} onChange={(e) => set('place', e.target.value)} />
-          <input className={input} placeholder="الوقت (مثال: ٦:٠٠ م)" value={f.time} onChange={(e) => set('time', e.target.value)} />
+          <input className={input} placeholder="الوقت (مثال: 6:00 م)" value={f.time} onChange={(e) => set('time', e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <input className={input} dir="ltr" type="date" value={f.iso} onChange={(e) => set('iso', e.target.value)} />

@@ -15,7 +15,7 @@ const TOP = 54
 const cats = articleCats.filter((c) => c !== 'الكل')
 const H = TOP + cats.length * ROW + 46
 
-const arDigits = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])
+const arDigits = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 
 export default function Atlas() {
   useSeo({

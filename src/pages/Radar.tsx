@@ -12,7 +12,7 @@ import { useExtras } from '../lib/content'
 
 type RadarItem = { ar: string; arNote?: string; en: string; enNote?: string; source: string; url: string; day: string; status?: string }
 
-const arNum = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])
+const arNum = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 
 /** رقم الأسبوع ISO + مداه للعرض */
 function weekOf(dayIso: string) {
@@ -20,7 +20,7 @@ function weekOf(dayIso: string) {
   const day = (d.getUTCDay() + 6) % 7 // الاثنين = 0
   const monday = new Date(d); monday.setUTCDate(d.getUTCDate() - day)
   const sunday = new Date(monday); sunday.setUTCDate(monday.getUTCDate() + 6)
-  const fmt = (x: Date) => x.toLocaleDateString('ar', { day: 'numeric', month: 'long' })
+  const fmt = (x: Date) => x.toLocaleDateString('ar-u-nu-latn', { day: 'numeric', month: 'long' })
   return { key: monday.toISOString().slice(0, 10), label: `${fmt(monday)} — ${fmt(sunday)}`, year: monday.getUTCFullYear() }
 }
 

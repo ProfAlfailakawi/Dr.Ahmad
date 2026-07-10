@@ -6,9 +6,9 @@ import { useSeo } from '../components/seo'
 import { articlesWithBody as articles } from '../data'
 
 const LINKS = [
-  { to: '/articles', label: 'المقالات الفكرية', n: '٧٢' },
-  { to: '/publications', label: 'الكتب المنشورة', n: '٩' },
-  { to: '/research', label: 'المساهمات العلمية', n: '١٨' },
+  { to: '/articles', label: 'المقالات الفكرية', n: '72' },
+  { to: '/publications', label: 'الكتب المنشورة', n: '9' },
+  { to: '/research', label: 'المساهمات العلمية', n: '18' },
   { to: '/cv', label: 'السيرة الأكاديمية' },
 ]
 
@@ -32,7 +32,7 @@ export default function NotFound() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, ease: EASE }}
             >
-              ٤٠٤
+              404
             </motion.span>
 
             <h1 className="mt-4 font-display text-[clamp(1.7rem,4.2vw,2.6rem)] font-semibold text-ink">

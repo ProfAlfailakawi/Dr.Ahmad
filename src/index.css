@@ -187,3 +187,31 @@ html.reader-focus .article-body {
 
 /* الخريطة */
 iframe { color-scheme: light; }
+
+/* «كوكبة التوقيعات» — نجوم فوق أفق شعري، تتلألأ وتتوهج عند اللمس */
+.sig-star {
+  position: absolute;
+  top: 13px;
+  right: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: rgb(var(--c-accent) / 0.9);
+  transform: translate(50%, var(--dy, -8px)) scale(1);
+  transition: transform 0.45s var(--E), box-shadow 0.45s var(--E);
+  animation: sig-twinkle 4.5s ease-in-out infinite;
+  animation-delay: var(--tw, 0s);
+}
+.sig-item:hover .sig-star {
+  transform: translate(50%, var(--dy, -8px)) scale(1.9);
+  box-shadow: 0 0 16px 3px rgb(var(--c-accent) / 0.4);
+  animation-play-state: paused;
+  opacity: 1;
+}
+@keyframes sig-twinkle {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sig-star { animation: none; }
+}

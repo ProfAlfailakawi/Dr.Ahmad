@@ -8,7 +8,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FadeUp, Page, PageHead } from '../components/ui'
-import { articlesWithBody } from '../data'
+import { articlesWithBody, books, papers } from '../data'
 import { useSeo } from '../components/seo'
 
 /* تطبيع عربي للمطابقة: إسقاط التشكيل وتوحيد الهمزات */
@@ -22,10 +22,26 @@ const STOP = new Set(['على','الى','من','في','عن','مع','هذا','ه
 const tokenize = (s: string) => norm(s).split(/\s+/).filter((w) => w.length > 2 && !STOP.has(w))
 
 type Hit = { slug: string; title: string; iso: string; para: string; score: number }
+type Ref = { kind: 'كتاب' | 'بحث محكّم'; slug: string; title: string; href: string }
 
-function answer(question: string): { hits: Hit[]; near: { slug: string; title: string; iso: string }[] } {
+function matchRefs(qTokens: string[]): Ref[] {
+  const refs: (Ref & { score: number })[] = []
+  for (const b of books) {
+    const nb = norm(b.title + ' ' + (b.desc || ''))
+    let s = 0; for (const w of qTokens) if (nb.includes(w)) s++
+    if (s >= 2) refs.push({ kind: 'كتاب', slug: b.slug, title: b.title, href: `/publications/${b.slug}`, score: s })
+  }
+  for (const p of papers) {
+    const np = norm(p.title + ' ' + ((p as { meta?: string }).meta || ''))
+    let s = 0; for (const w of qTokens) if (np.includes(w)) s++
+    if (s >= 2) refs.push({ kind: 'بحث محكّم', slug: p.slug, title: p.title, href: `/research/${p.slug}`, score: s })
+  }
+  return refs.sort((a, b) => b.score - a.score).slice(0, 2)
+}
+
+function answer(question: string): { hits: Hit[]; near: { slug: string; title: string; iso: string }[]; refs: Ref[] } {
   const q = tokenize(question)
-  if (!q.length) return { hits: [], near: [] }
+  if (!q.length) return { hits: [], near: [], refs: [] }
 
   const scored = articlesWithBody.map((a) => {
     const nt = norm(a.title)
@@ -46,7 +62,8 @@ function answer(question: string): { hits: Hit[]; near: { slug: string; title: s
 
   const top = scored.filter((s) => s.score >= 6).slice(0, 2)
   const near = scored.slice(0, 3).filter((s) => s.score > 0).map((s) => ({ slug: s.a.slug, title: s.a.title, iso: s.a.iso }))
-  if (!top.length) return { hits: [], near }
+  const refs = matchRefs(q)
+  if (!top.length) return { hits: [], near, refs }
 
   // أفضل فقرة من كل مقال — بكلماته حرفياً
   const hits: Hit[] = []
@@ -72,7 +89,7 @@ function answer(question: string): { hits: Hit[]; near: { slug: string; title: s
     }
     hits.push({ slug: a.slug, title: a.title, iso: a.iso, para: text, score: bestScore })
   }
-  return { hits, near }
+  return { hits, near, refs }
 }
 
 const SUGGESTIONS = [
@@ -101,7 +118,7 @@ export default function AskLibrary() {
       <PageHead
         label="اسأل مكتبتي"
         title="اسألني عمّا كتبتُ فيه."
-        sub="تُجيبك مكتبتي بكلماتي أنا — فقراتٌ حرفية من مقالاتي المنشورة، مع مصدر كل جواب. وما لم أكتب فيه بعد، تُصارِحك."
+        sub="إجاباتٌ مستندة إلى ما كتبتُ ونشرت، لا إلى الإنترنت المفتوح — فقراتٌ حرفية بمصدرها. وما لم أكتب فيه بعد، تُصارِحك."
       />
 
       <section className="px-6 py-14 md:px-11 md:py-16">
@@ -162,6 +179,22 @@ export default function AskLibrary() {
                         </FadeUp>
                       ))}
                     </div>
+                    {result.refs.length > 0 && (
+                      <div className="mt-8 border-t border-hair pt-5">
+                        <p className="text-[.8rem] text-soft">ومن أعمالي الموثّقة في هذا:</p>
+                        <ul className="mt-2.5 space-y-1.5">
+                          {result.refs.map((r) => (
+                            <li key={r.slug}>
+                              <Link to={r.href} className="group text-[.92rem] text-ink transition-colors hover:text-accent">
+                                <span className="me-2 rounded-full border border-hair px-2 py-0.5 text-[.7rem] text-soft">{r.kind}</span>
+                                {r.title}
+                                <span className="inline-block text-accent transition-transform duration-300 group-hover:-translate-x-1"> ←</span>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     <p className="mt-10 border-t border-hair pt-5 text-[.8rem] font-light leading-[1.9] text-soft">
                       ✦ كل جوابٍ هنا فقرةٌ حرفية مما كتبتُ — لا تُولِّده آلة ولا تُعيد صياغته. هكذا أُبقي الإنسانَ في قلبِ الآلة.
                     </p>

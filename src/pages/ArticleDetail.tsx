@@ -3,6 +3,7 @@ import { motion, useScroll, useSpring } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { getArticleNeighbors, relatedArticles } from '../lib/cms'
+import { books, papers } from '../data'
 import { useCmsContent } from '../lib/content'
 import { Listen, Share } from '../components/extras'
 import { QuoteCard } from '../components/QuoteCard'
@@ -155,6 +156,25 @@ function TimeDialogue({ a, articles }: { a: { slug: string; title: string; iso: 
   )
 }
 
+
+/* «مسار قراءة» لا مجرد مقالات مرتبطة: أفضل بحثٍ وكتابٍ يلامسان فكرة المقال */
+function deepDive(a: { title: string; excerpt?: string }) {
+  const mine = tokensOf(a.title + ' ' + (a.excerpt || ''))
+  const best = <T extends { title: string }>(items: T[], extra: (x: T) => string) => {
+    let top: T | null = null, topScore = 1
+    for (const it of items) {
+      let s = 0
+      for (const w of tokensOf(it.title + ' ' + extra(it))) if (mine.has(w)) s++
+      if (s > topScore) { topScore = s; top = it }
+    }
+    return top
+  }
+  return {
+    paper: best(papers as { slug: string; title: string; meta?: string }[], (p) => p.meta || ''),
+    book: best(books as { slug: string; title: string; desc?: string }[], (b) => b.desc || ''),
+  }
+}
+
 export default function ArticleDetail() {
   const { slug } = useParams()
   const { articles, loading } = useCmsContent()
@@ -164,6 +184,7 @@ export default function ArticleDetail() {
   const bar = useSpring(scrollYProgress, { stiffness: 200, damping: 40 })
   const neighbors = useMemo(() => a ? getArticleNeighbors(a.slug, articles) : { prev: undefined, next: undefined }, [a, articles])
   const related = useMemo(() => a ? relatedArticles(a, 3, articles) : [], [a, articles])
+  const dive = useMemo(() => (a ? deepDive(a) : { paper: null, book: null }), [a])
 
   useSeo({
     title: a?.title ?? 'مقال',
@@ -294,16 +315,39 @@ export default function ArticleDetail() {
                 <span className="text-[.76rem] font-semibold uppercase text-accent">أكمل هذا المسار</span>
                 <p className="mt-2 text-[.9rem] font-light text-soft">مقالاتٌ على الخيط الفكري نفسه.</p>
                 <ul className="mt-6 grid gap-6 sm:grid-cols-3">
-                  {related.map((r) => (
+                  {related.slice(0, dive.paper || dive.book ? 2 : 3).map((r) => (
                     <li key={r.slug}>
                       <Link to={`/articles/${r.slug}`} className="group block">
-                        <time className="text-[.76rem] text-soft">{r.date}</time>
+                        <span className="text-[.72rem] font-semibold text-accent">مقال</span>
                         <span className="mt-1.5 block font-display text-[1.05rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">
                           {r.title}
                         </span>
+                        <time className="mt-1 block text-[.76rem] text-soft">{r.date}</time>
                       </Link>
                     </li>
                   ))}
+                  {dive.paper && (
+                    <li key={dive.paper.slug}>
+                      <Link to={`/research/${dive.paper.slug}`} className="group block">
+                        <span className="text-[.72rem] font-semibold text-accent">بحث محكّم</span>
+                        <span className="mt-1.5 block font-display text-[1.05rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">
+                          {dive.paper.title}
+                        </span>
+                        <span className="mt-1 block text-[.76rem] text-soft">للتعمّق الأكاديمي</span>
+                      </Link>
+                    </li>
+                  )}
+                  {dive.book && !dive.paper && (
+                    <li key={dive.book.slug}>
+                      <Link to={`/publications/${dive.book.slug}`} className="group block">
+                        <span className="text-[.72rem] font-semibold text-accent">كتاب</span>
+                        <span className="mt-1.5 block font-display text-[1.05rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">
+                          {dive.book.title}
+                        </span>
+                        <span className="mt-1 block text-[.76rem] text-soft">للإحاطة الكاملة</span>
+                      </Link>
+                    </li>
+                  )}
                 </ul>
               </section>
             </FadeUp>

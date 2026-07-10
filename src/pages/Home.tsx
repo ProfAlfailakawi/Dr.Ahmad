@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, FadeUp, Label, Magnetic, Page, Reveal, SectionHead } from '../components/ui'
-import { profile, upcoming } from '../data'
+import { books as staticBooks, papers as staticPapers, profile, upcoming } from '../data'
 import { useCmsContent } from '../lib/content'
 import { Newsletter } from '../components/extras'
 import { curatedBank, thisMonthsBook, type Curio } from '../data-curated'
@@ -171,7 +171,10 @@ function MiniAtlas() {
   const t0 = new Date('2019-01-01').getTime()
   const t1 = new Date('2026-12-31').getTime()
   const hash = (s: string) => [...s].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 997, 7)
-  const stars = articles.map((a) => ({
+  // عيّنة هادئة موزعة عبر الزمن — لا كل الأرشيف (الزحام يقتل السحر، والسماء الكاملة في /atlas)
+  const step = Math.max(1, Math.ceil(articles.length / 54))
+  const sample = articles.filter((_, i) => i % step === 0)
+  const stars = sample.map((a) => ({
     slug: a.slug, title: a.title,
     x: 100 - ((new Date(a.iso).getTime() - t0) / (t1 - t0)) * 100,
     y: 12 + (hash(a.slug) % 76),
@@ -207,6 +210,45 @@ function MiniAtlas() {
         </FadeUp>
       </div>
     </section>
+  )
+}
+
+/* ---------- «منذ زيارتك الأخيرة» — الموقع يتذكّر (فكرة نووية ٣ لصديقه) ----------
+   تخزين محلي بسيط: يظهر سطر هادئ للعائد بعد ٱ٢ ساعة+ يخبره بالجديد فقط. */
+function SinceLastVisit() {
+  const { articles } = useCmsContent()
+  const [last] = useState<number | null>(() => {
+    try {
+      const prev = localStorage.getItem('visit:last')
+      localStorage.setItem('visit:last', String(Date.now()))
+      return prev ? +prev : null
+    } catch { return null }
+  })
+  if (!last || Date.now() - last < 12 * 3600e3) return null
+
+  const lastIso = new Date(last).toISOString().slice(0, 10)
+  const newArticles = articles.filter((a) => a.iso > lastIso).length
+  const weekOf = (ms: number) => Math.floor((ms / 864e5 - 4) / 7) // الجمعة حدّ الأسبوع
+  const newQuestion = weekOf(Date.now()) !== weekOf(last)
+  const daysGone = Math.floor((Date.now() - last) / 864e5)
+
+  const bits: { to: string; t: string }[] = []
+  if (newArticles > 0) bits.push({ to: '/articles', t: newArticles === 1 ? 'مقال جديد' : `${newArticles} مقالات جديدة` })
+  if (newQuestion) bits.push({ to: '/questions', t: 'سؤال أسبوعي جديد' })
+  if (daysGone >= 1) bits.push({ to: '/curated', t: 'اختيارات تبدّلت' })
+  if (!bits.length) return null
+
+  return (
+    <div className="border-t border-hair bg-wash px-6 py-3.5 md:px-11">
+      <p className="mx-auto flex max-w-shell flex-wrap items-center gap-x-4 gap-y-1 text-[.82rem] text-soft">
+        <span className="font-semibold text-accent">✦ منذ زيارتك الأخيرة</span>
+        {bits.map((b, i) => (
+          <Link key={b.to} to={b.to} className="transition-colors hover:text-accent">
+            {b.t}{i < bits.length - 1 ? ' ·' : ''}
+          </Link>
+        ))}
+      </p>
+    </div>
   )
 }
 
@@ -264,6 +306,30 @@ function OnThisWeek() {
 
 /* ---------- «بوصلة الفكر» (فكرة نووية ٣) ----------
    تصفّح بالفكرة لا بنوع الملف: كل محور يصله أعماله. أرشيف → عقل يُستكشف. */
+const AXIS_KEYS: Record<string, string[]> = {
+  'التعليم': ['تعليم', 'تدريس', 'مناهج', 'تعلم', 'التعلم', 'مدرس', 'طلبة', 'التعليمية'],
+  'التربية': ['تربية', 'طفل', 'أطفال', 'أبناء', 'أسرة'],
+  'مجتمع': ['مجتمع', 'إعلام', 'شباب', 'اجتماعي'],
+  'تقنية': ['تكنولوجيا', 'ذكاء', 'رقمي', 'بيانات', 'تطبيقات', 'أجهزة', 'افتراضي'],
+  'هوية': ['هوية', 'تراث', 'لغة', 'قيم', 'احتياجات'],
+}
+function axisDeepDive(axis: string) {
+  const keys = AXIS_KEYS[axis] || []
+  const hit = <T extends { title: string }>(items: T[], extra: (x: T) => string) => {
+    let top: T | null = null, best = 0
+    for (const it of items) {
+      const text = it.title + ' ' + extra(it)
+      let s = 0; for (const k of keys) if (text.includes(k)) s++
+      if (s > best) { best = s; top = it }
+    }
+    return top
+  }
+  return {
+    paper: hit(staticPapers as { slug: string; title: string; meta?: string }[], (p) => p.meta || ''),
+    book: hit(staticBooks as { slug: string; title: string; desc?: string }[], (b) => b.desc || ''),
+  }
+}
+
 function ThoughtCompass() {
   const { articles } = useCmsContent()
   const axes = [
@@ -275,6 +341,7 @@ function ThoughtCompass() {
   ]
   const [active, setActive] = useState(axes[0].key)
   const related = articles.filter((a) => a.cat === active).slice(0, 3)
+  const dive = axisDeepDive(active)
 
   return (
     <section className="border-t border-hair px-6 py-[70px] md:px-11 md:py-[100px]">
@@ -318,7 +385,19 @@ function ThoughtCompass() {
           ))}
         </div>
         <FadeUp delay={0.15}>
-          <Link to="/articles" className="mt-8 inline-block text-[.9rem] font-semibold text-accent">كل ما كتبته في {axes.find((a) => a.key === active)?.label} ←</Link>
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[.9rem]">
+            <Link to="/articles" className="font-semibold text-accent">كل ما كتبته في {axes.find((a) => a.key === active)?.label} ←</Link>
+            {dive.paper && (
+              <Link to={`/research/${dive.paper.slug}`} className="group text-soft transition-colors hover:text-accent">
+                <span className="me-1.5 rounded-full border border-hair px-2 py-0.5 text-[.7rem]">بحث</span>{dive.paper.title.slice(0, 42)}{dive.paper.title.length > 42 ? '…' : ''} <span className="text-accent">←</span>
+              </Link>
+            )}
+            {dive.book && (
+              <Link to={`/publications/${dive.book.slug}`} className="group text-soft transition-colors hover:text-accent">
+                <span className="me-1.5 rounded-full border border-hair px-2 py-0.5 text-[.7rem]">كتاب</span>{dive.book.title.slice(0, 42)}{dive.book.title.length > 42 ? '…' : ''} <span className="text-accent">←</span>
+              </Link>
+            )}
+          </div>
         </FadeUp>
       </div>
     </section>
@@ -591,6 +670,8 @@ export default function Home() {
       </header>
 
       <LatestCard />
+
+      <SinceLastVisit />
 
       <DailySpark />
 

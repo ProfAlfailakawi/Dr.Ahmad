@@ -134,23 +134,32 @@ export default function Atlas() {
                 {/* النجوم */}
                 {stars.map((s) => {
                   const isHover = hover === s.i
+                  // منطق اللمس: اللمسة الأولى تُحدّد النجمة (تُظهر بطاقتها)، والثانية تفتح المقال.
+                  // على الكمبيوتر لا يتغير شيء: التحويم يحدّد والنقر يفتح.
+                  const pick = () => (hover === s.i ? nav(`/articles/${s.slug}`) : setHover(s.i))
                   return (
-                    <motion.circle
-                      key={s.slug}
-                      cx={s.x}
-                      cy={s.y}
-                      r={s.r}
-                      className="cursor-pointer fill-accent"
-                      initial={reduce ? false : { opacity: 0, scale: 0 }}
-                      animate={{ opacity: dim(s) * (isHover ? 1 : 0.62), scale: isHover ? 1.7 : 1 }}
-                      transition={{ duration: 0.5, delay: reduce ? 0 : Math.min(s.i * 0.008, 0.5), ease: EASE }}
-                      style={{ transformOrigin: `${s.x}px ${s.y}px` }}
-                      onMouseEnter={() => setHover(s.i)}
-                      onMouseLeave={() => setHover(null)}
-                      onClick={() => nav(`/articles/${s.slug}`)}
-                    >
-                      <title>{s.title}</title>
-                    </motion.circle>
+                    <g key={s.slug}>
+                      {/* هدف لمس أوسع وشفاف حول النجمة */}
+                      <circle
+                        cx={s.x} cy={s.y} r={s.r + 9}
+                        className="cursor-pointer fill-transparent"
+                        onMouseEnter={() => setHover(s.i)}
+                        onMouseLeave={() => setHover(null)}
+                        onClick={pick}
+                      />
+                      <motion.circle
+                        cx={s.x}
+                        cy={s.y}
+                        r={s.r}
+                        className="pointer-events-none fill-accent"
+                        initial={reduce ? false : { opacity: 0, scale: 0 }}
+                        animate={{ opacity: dim(s) * (isHover ? 1 : 0.62), scale: isHover ? 1.7 : 1 }}
+                        transition={{ duration: 0.5, delay: reduce ? 0 : Math.min(s.i * 0.008, 0.5), ease: EASE }}
+                        style={{ transformOrigin: `${s.x}px ${s.y}px` }}
+                      >
+                        <title>{s.title}</title>
+                      </motion.circle>
+                    </g>
                   )
                 })}
 
@@ -187,7 +196,7 @@ export default function Atlas() {
               </motion.div>
             ) : (
               <p className="pt-6 text-center text-[.9rem] font-light text-soft">
-                مرّر فوق أي نجمة… {arDigits(articles.length)} مقالاً عبر {arDigits(years.length)} سنوات.
+                مرّر فوق أي نجمة — وبالجوال المسّها مرة لتعرفها ومرة لتفتحها… {arDigits(articles.length)} مقالاً عبر {arDigits(years.length)} سنوات.
               </p>
             )}
           </div>

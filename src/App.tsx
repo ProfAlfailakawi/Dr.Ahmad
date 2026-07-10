@@ -126,6 +126,8 @@ function RouteViewTracker() {
 export default function App() {
   // الفخامة سلاسة لا بطء: أول زيارة مشهد قصير، وزيارات الجلسة التالية بلا شاشة كاملة
   const seenThisSession = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('seen') === '1'
+  // الزائر العائد (جلسة جديدة): ومضة شعار 400م‌ث فقط — أول زيارة في العمر: 1000م‌ث
+  const returning = (() => { try { return localStorage.getItem('visited') === '1' } catch { return false } })()
   const [loaded, setLoaded] = useState(seenThisSession)
   const [gone, setGone] = useState(seenThisSession)
   const reduce = useReducedMotion()
@@ -133,9 +135,10 @@ export default function App() {
   useEffect(() => {
     if (reduce || seenThisSession) { setLoaded(true); setGone(true); return }
     document.body.classList.add('loading')
-    const t = setTimeout(() => setLoaded(true), 1000)
+    const t = setTimeout(() => setLoaded(true), returning ? 400 : 1000)
+    try { localStorage.setItem('visited', '1') } catch { /* noop */ }
     return () => clearTimeout(t)
-  }, [reduce, seenThisSession])
+  }, [reduce, seenThisSession, returning])
 
   useEffect(() => {
     if (!loaded) return

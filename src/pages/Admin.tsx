@@ -148,7 +148,8 @@ function AccessDenied({ email }: { email: string }) {
 }
 
 /* ---------- ٣) اللوحة ---------- */
-type Tab = 'dashboard' | 'inbox' | 'article' | 'question' | 'event' | 'pick'
+// السؤال الأسبوعي والمختارة اليومية يتولّدان تلقائياً (بنك دوّار) فلا لزوم لهما في اللوحة
+type Tab = 'dashboard' | 'inbox' | 'article' | 'event'
 
 function Panel({ email }: { email: string }) {
   const [tab, setTab] = useState<Tab>('dashboard')
@@ -173,7 +174,7 @@ function Panel({ email }: { email: string }) {
         </div>
 
         <div className="mb-8 flex flex-wrap gap-2">
-          {([['dashboard', 'المؤشرات'], ['inbox', 'الرسائل الواردة'], ['article', 'مقال جديد'], ['question', 'سؤال الأسبوع'], ['event', 'لقاء قادم'], ['pick', 'مختارة جديدة']] as [Tab, string][]).map(([k, label]) => (
+          {([['dashboard', 'المؤشرات'], ['inbox', 'الرسائل الواردة'], ['article', 'مقال جديد'], ['event', 'لقاء قادم']] as [Tab, string][]).map(([k, label]) => (
             <button key={k} onClick={() => setTab(k)}
               className={`rounded-full px-5 py-2 text-[.88rem] transition-colors ${tab === k ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}>
               {label}
@@ -184,9 +185,7 @@ function Panel({ email }: { email: string }) {
         {tab === 'dashboard' && <DashboardPanel />}
         {tab === 'inbox' && <InboxPanel />}
         {tab === 'article' && <ArticleForm />}
-        {tab === 'question' && <QuestionForm />}
         {tab === 'event' && <EventForm />}
-        {tab === 'pick' && <PickForm />}
       </div>
     </Page>
   )

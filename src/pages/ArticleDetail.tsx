@@ -90,6 +90,71 @@ function ReaderPanel({ slug }: { slug: string }) {
   )
 }
 
+
+/* ---------- «حوار عبر الزمن» — الأرشيف يتحاور مع نفسه ----------
+   يربط المقال بأقربه موضوعاً على بُعد ٣ سنوات فأكثر: القديم يشير للعودة،
+   والجديد يشير للجذر — فيرى القارئ فكراً يتطوّر عبر عقد، لا أرشيفاً يتكدّس. */
+const AR_STOP = new Set(['على','إلى','من','في','عن','مع','هذا','هذه','ذلك','التي','الذي','بين','بعد','قبل','عند','حتى','كان','كانت','هل','ما','لا','لم','لن','قد','ثم','أو','أم','بل','كل','بعض','غير','نحو','لدى','منذ','حين','حول','أن','إن','لأن','كيف','أين','ليس','وهو','وهي'])
+const normAr = (s: string) => s
+  .replace(/[\u064B-\u0652\u0670]/g, '')
+  .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي')
+  .replace(/[^\w\u0600-\u06FF ]/g, ' ')
+const tokensOf = (s: string) => new Set(normAr(s).split(/\s+/).filter((w) => w.length > 2 && !AR_STOP.has(w) && !/^ال..$/.test(w)))
+
+function TimeDialogue({ a, articles }: { a: { slug: string; title: string; iso: string; cat: string; excerpt?: string }; articles: { slug: string; title: string; iso: string; cat: string; excerpt?: string }[] }) {
+  const pair = useMemo(() => {
+    const mine = tokensOf(a.title + ' ' + (a.excerpt || ''))
+    const myYear = +a.iso.slice(0, 4)
+    let older: { art: typeof a; score: number } | null = null
+    let newer: { art: typeof a; score: number } | null = null
+    for (const o of articles) {
+      if (o.slug === a.slug) continue
+      const gap = +o.iso.slice(0, 4) - myYear
+      if (Math.abs(gap) < 3) continue
+      let score = 0
+      for (const w of tokensOf(o.title + ' ' + (o.excerpt || ''))) if (mine.has(w)) score++
+      if (o.cat === a.cat) score += 1
+      if (score < 3) continue
+      if (gap < 0 && (!older || score > older.score)) older = { art: o, score }
+      if (gap > 0 && (!newer || score > newer.score)) newer = { art: o, score }
+    }
+    return { older: older?.art ?? null, newer: newer?.art ?? null }
+  }, [a, articles])
+
+  if (!pair.older && !pair.newer) return null
+  const yr = (iso: string) => iso.slice(0, 4)
+  const diff = (iso: string) => Math.abs(+yr(iso) - +yr(a.iso))
+  const yearsWord = (n: number) => (n === 1 ? 'سنة' : n === 2 ? 'سنتين' : n <= 10 ? `${n} سنوات` : `${n} سنة`)
+
+  return (
+    <FadeUp>
+      <aside className="mt-14 border-t border-hair pt-8">
+        <p className="text-[.76rem] font-semibold text-accent">✦ حوار عبر الزمن</p>
+        <div className="mt-4 space-y-4">
+          {pair.older && (
+            <Link to={`/articles/${pair.older.slug}`} className="group block">
+              <p className="text-[.95rem] font-light leading-[1.9] text-soft">
+                كتبتُ في هذا قبل {yearsWord(diff(pair.older.iso))} —{' '}
+                <span className="font-medium text-ink transition-colors group-hover:text-accent">«{pair.older.title}» ({yr(pair.older.iso)})</span>. كيف تغيّر المشهد؟ قارن بنفسك{' '}
+                <span className="inline-block text-accent transition-transform duration-300 group-hover:-translate-x-1">←</span>
+              </p>
+            </Link>
+          )}
+          {pair.newer && (
+            <Link to={`/articles/${pair.newer.slug}`} className="group block">
+              <p className="text-[.95rem] font-light leading-[1.9] text-soft">
+                ثم عدتُ إلى هذا الموضوع عام {yr(pair.newer.iso)} —{' '}
+                <span className="font-medium text-ink transition-colors group-hover:text-accent">«{pair.newer.title}»</span>{' '}
+                <span className="inline-block text-accent transition-transform duration-300 group-hover:-translate-x-1">←</span>
+              </p>
+            </Link>
+          )}
+        </div>
+      </aside>
+    </FadeUp>
+  )
+}
+
 export default function ArticleDetail() {
   const { slug } = useParams()
   const { articles, loading } = useCmsContent()
@@ -219,12 +284,14 @@ export default function ArticleDetail() {
             </FadeUp>
           )}
 
+          <TimeDialogue a={a} articles={articles} />
+
           <Share title={a.title} path={`/articles/${a.slug}`} />
 
           {related.length > 0 && (
             <FadeUp>
               <section className="mt-16 border-t border-hair pt-9">
-                <span className="text-[.76rem] font-semibold uppercase tracking-[.12em] text-accent">أكمل هذا المسار</span>
+                <span className="text-[.76rem] font-semibold uppercase text-accent">أكمل هذا المسار</span>
                 <p className="mt-2 text-[.9rem] font-light text-soft">مقالاتٌ على الخيط الفكري نفسه.</p>
                 <ul className="mt-6 grid gap-6 sm:grid-cols-3">
                   {related.map((r) => (

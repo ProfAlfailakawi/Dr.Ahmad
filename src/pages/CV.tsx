@@ -13,7 +13,7 @@ function Open({ title, children }: { title: string; children: React.ReactNode })
   return (
     <FadeUp>
       <section className="border-b border-hair py-10">
-        <h2 className="text-[.76rem] font-semibold uppercase tracking-[.12em] text-accent">{title}</h2>
+        <h2 className="text-[.76rem] font-semibold uppercase text-accent">{title}</h2>
         <div className="mt-6">{children}</div>
       </section>
     </FadeUp>
@@ -51,7 +51,7 @@ export default function CV() {
 
           {/* أثرٌ موثّق — أختام هادئة لا أرقام صاخبة */}
           <FadeUp>
-            <p className="mb-8 text-center text-[.76rem] font-semibold uppercase tracking-[.18em] text-accent">أثرٌ موثّق</p>
+            <p className="mb-8 text-center text-[.76rem] font-semibold uppercase text-accent">أثرٌ موثّق</p>
             <div className="mb-14 grid grid-cols-2 gap-6 border-b border-hair pb-14 md:grid-cols-4">
               {[
                 { n: ar(books.length), l: 'كتاباً منشوراً' },
@@ -64,7 +64,7 @@ export default function CV() {
                     <span className="pointer-events-none absolute inset-1.5 rounded-full border border-hair" />
                     <span dir="ltr" className="font-display text-[clamp(1.7rem,3vw,2.3rem)] font-bold leading-none text-accent">{s.n}</span>
                   </span>
-                  <span className="mt-4 text-[.85rem] font-light tracking-wide text-soft">{s.l}</span>
+                  <span className="mt-4 text-[.85rem] font-light text-soft">{s.l}</span>
                 </div>
               ))}
             </div>

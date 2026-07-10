@@ -250,7 +250,7 @@ function Editor({
       <div className="mx-auto max-w-3xl rounded-3xl border border-hair bg-canvas p-5 shadow-2xl md:p-8">
         <div className="mb-7 flex items-start justify-between gap-4">
           <div>
-            <p className="text-[.76rem] font-semibold uppercase tracking-widest text-accent">{current ? 'تعديل' : 'إضافة جديدة'}</p>
+            <p className="text-[.76rem] font-semibold uppercase text-accent">{current ? 'تعديل' : 'إضافة جديدة'}</p>
             <h2 className="mt-1 font-display text-2xl font-bold text-ink">{labels[kind].singular}</h2>
           </div>
           <button type="button" onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft hover:border-accent hover:text-accent" aria-label="إغلاق">×</button>
@@ -445,7 +445,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged }: Props)
     <section className="grid gap-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[.76rem] font-semibold uppercase tracking-widest text-accent">إدارة المحتوى</p>
+          <p className="text-[.76rem] font-semibold uppercase text-accent">إدارة المحتوى</p>
           <h2 className="mt-1 font-display text-2xl font-bold text-ink">{labels[kind].plural}</h2>
           <p className="mt-1 text-[.82rem] text-soft">{items.length} عنصراً — الأصل والإضافات في قائمة واحدة.</p>
         </div>

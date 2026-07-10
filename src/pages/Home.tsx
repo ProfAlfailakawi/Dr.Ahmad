@@ -109,7 +109,7 @@ function WhoAreYou() {
           /* ── مُشخصَن: لمحة تُقدّم الأنسب له ── */
           <FadeUp>
             <div className="rounded-2xl border border-hair bg-canvas p-7 md:p-9">
-              <p className="text-[.76rem] font-semibold uppercase tracking-[.14em] text-accent">بما أنك {active.label}</p>
+              <p className="text-[.76rem] font-semibold uppercase text-accent">بما أنك {active.label}</p>
               <h2 className="mt-3 font-display text-[clamp(1.5rem,3.4vw,2.2rem)] font-semibold leading-[1.4] text-ink">{active.greet}</h2>
               <div className="mt-6 flex flex-wrap gap-3">
                 {active.links.map((l, i) => (
@@ -204,6 +204,58 @@ function MiniAtlas() {
             ))}
             <span className="pointer-events-none absolute bottom-3 right-4 text-[.72rem] text-soft">مرّر على نجمة — واضغطها لتقرأ</span>
           </div>
+        </FadeUp>
+      </div>
+    </section>
+  )
+}
+
+/* ---------- «في مثل هذا الأسبوع» — الذاكرة الحيّة ----------
+   يطابق أسبوع السنة الحالي مع الأرشيف (٢٠١٦ فصاعداً) ويُخرج مقالاً كتبه الدكتور
+   في مثل هذه الأيام قبل سنوات — يتبدّل أسبوعياً، بلا خادم وبلا تدخل. */
+const yearsAgo = (n: number) => (n === 1 ? 'قبل سنة' : n === 2 ? 'قبل سنتين' : n <= 10 ? `قبل ${n} سنوات` : `قبل ${n} سنة`)
+
+function OnThisWeek() {
+  const { articles } = useCmsContent()
+  const today = new Date()
+  const doy = (d: Date) => Math.floor((d.getTime() - new Date(d.getFullYear(), 0, 1).getTime()) / 864e5)
+  const t = doy(today)
+  const y = today.getFullYear()
+
+  const cands = articles
+    .map((a) => ({ a, d: new Date(a.iso + 'T12:00:00') }))
+    .filter((x) => !Number.isNaN(x.d.getTime()) && x.d.getFullYear() < y)
+    .map((x) => {
+      let diff = Math.abs(doy(x.d) - t)
+      if (diff > 182) diff = 365 - diff
+      return { ...x, diff }
+    })
+    .filter((x) => x.diff <= 7)
+    .sort((p, q) => p.diff - q.diff || p.d.getFullYear() - q.d.getFullYear())
+
+  if (!cands.length) return null
+  // اختيار حتمي يتبدّل مع رقم الأسبوع — نفس المقال طوال الأسبوع لكل الزوار
+  const week = Math.floor(today.getTime() / (7 * 864e5))
+  const pick = cands[week % cands.length]
+  const n = y - pick.d.getFullYear()
+  const when = pick.d.toLocaleDateString('ar-u-nu-latn', { month: 'long', year: 'numeric' })
+
+  return (
+    <section className="border-t border-hair px-6 py-[56px] md:px-11 md:py-[72px]">
+      <div className="mx-auto max-w-shell">
+        <FadeUp>
+          <Link to={`/articles/${pick.a.slug}`} data-hover className="group block max-w-3xl">
+            <p className="flex items-center gap-3 text-[.8rem] font-semibold text-accent">
+              <span className="h-[1.5px] w-7 bg-accent" />
+              في مثل هذا الأسبوع · {yearsAgo(n)}
+            </p>
+            <h2 className="mt-4 font-display text-[clamp(1.4rem,3.2vw,2.1rem)] font-semibold leading-[1.6] text-ink transition-colors duration-300 group-hover:text-accent">
+              «{pick.a.title}»
+            </h2>
+            <p className="mt-3 text-[.9rem] text-soft transition-colors group-hover:text-accent">
+              اقرأ ما كتبتُه في {when} <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1">←</span>
+            </p>
+          </Link>
         </FadeUp>
       </div>
     </section>
@@ -588,6 +640,8 @@ export default function Home() {
       </section>
 
       <MiniAtlas />
+
+      <OnThisWeek />
 
       <ThoughtCompass />
 

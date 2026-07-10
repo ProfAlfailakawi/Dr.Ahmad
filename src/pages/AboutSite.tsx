@@ -16,7 +16,7 @@ export default function AboutSite() {
           <div className="grid gap-12 border-b border-hair pb-16 md:grid-cols-2 md:gap-14">
             {aboutSite.sections.map((s, i) => (
               <FadeUp key={s.title} delay={i * 0.08}>
-                <span className="text-[.76rem] font-semibold uppercase tracking-[.12em] text-accent">✦ {s.title}</span>
+                <span className="text-[.76rem] font-semibold uppercase text-accent">✦ {s.title}</span>
                 <p className="mt-5 text-[1.12rem] font-light leading-[2] text-ink/80">{s.body}</p>
               </FadeUp>
             ))}
@@ -25,7 +25,7 @@ export default function AboutSite() {
           {/* ما يميّزه */}
           <section className="border-b border-hair py-16">
             <FadeUp>
-              <span className="text-[.76rem] font-semibold uppercase tracking-[.12em] text-accent">✦ ما الذي يميّز هذا الموقع؟</span>
+              <span className="text-[.76rem] font-semibold uppercase text-accent">✦ ما الذي يميّز هذا الموقع؟</span>
             </FadeUp>
             <ul className="mt-8 grid gap-6 md:grid-cols-2 md:gap-x-12">
               {aboutSite.distinct.map((t, i) => (
@@ -42,7 +42,7 @@ export default function AboutSite() {
           {/* لمن هذا الموقع؟ — بطاقات إنسانية */}
           <section className="border-b border-hair py-16">
             <FadeUp>
-              <span className="text-[.76rem] font-semibold uppercase tracking-[.12em] text-accent">✦ لمن هذا الموقع؟</span>
+              <span className="text-[.76rem] font-semibold uppercase text-accent">✦ لمن هذا الموقع؟</span>
             </FadeUp>
             <div className="mt-8 grid gap-5 sm:grid-cols-2">
               {aboutSite.audience.map((t, i) => (

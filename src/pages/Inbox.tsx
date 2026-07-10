@@ -16,7 +16,7 @@ export default function Inbox() {
       <section className="border-b border-hair px-6 py-16 md:px-11 md:py-20">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <span className="text-[.76rem] font-semibold uppercase tracking-[.12em] text-accent">ماذا قالوا</span>
+            <span className="text-[.76rem] font-semibold uppercase text-accent">ماذا قالوا</span>
           </FadeUp>
           <div className="mt-8 grid gap-6 md:grid-cols-2">
             {testimonials.map((t, i) => (
@@ -40,7 +40,7 @@ export default function Inbox() {
       <section className="border-b border-hair px-6 py-16 md:px-11 md:py-20">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <span className="text-[.76rem] font-semibold uppercase tracking-[.12em] text-accent">روابط تستحق وقتك</span>
+            <span className="text-[.76rem] font-semibold uppercase text-accent">روابط تستحق وقتك</span>
           </FadeUp>
           <ul className="mt-8">
             {inboxLinks.map((l, i) => (
@@ -72,7 +72,7 @@ export default function Inbox() {
       <section className="px-6 py-16 md:px-11 md:py-20">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <span className="text-[.76rem] font-semibold uppercase tracking-[.12em] text-accent">أسئلة تصلني</span>
+            <span className="text-[.76rem] font-semibold uppercase text-accent">أسئلة تصلني</span>
           </FadeUp>
           <div className="mt-9 grid gap-10 md:grid-cols-3">
             {faqs.map((f, i) => (

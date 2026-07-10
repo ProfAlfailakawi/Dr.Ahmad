@@ -21,6 +21,18 @@ export default function Research() {
 
       <section className="px-6 py-20 md:px-11 md:py-24">
         <div className="mx-auto max-w-shell">
+          {/* ملفاي العلميان الرسميان — سطر هادئ لا بطاقات */}
+          <FadeUp>
+            <p className="mb-10 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-hair pb-6 text-[.88rem] text-soft">
+              <span>ملفي العلمي:</span>
+              <a href="https://scholar.google.com/citations?user=WVAtInIAAAAJ&hl=en" target="_blank" rel="noreferrer" className="group font-semibold text-accent transition-colors hover:text-accent-deep">
+                Google Scholar <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1">←</span>
+              </a>
+              <a href="https://www.researchgate.net/profile/Ahmad-Alfailakawi" target="_blank" rel="noreferrer" className="group font-semibold text-accent transition-colors hover:text-accent-deep">
+                ResearchGate <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1">←</span>
+              </a>
+            </p>
+          </FadeUp>
           <ul>
             {papers.map((p, i) => (
               <FadeUp key={p.slug} delay={Math.min(i * 0.03, 0.3)}>
@@ -40,7 +52,7 @@ export default function Research() {
 
           <FadeUp delay={0.15}>
             <div className="mt-16 rounded-2xl border border-hair bg-wash p-8 md:p-10">
-              <span className="text-[.76rem] font-semibold uppercase tracking-[.1em] text-accent">أطروحة الدكتوراه</span>
+              <span className="text-[.76rem] font-semibold uppercase text-accent">أطروحة الدكتوراه</span>
               <h2 className="mt-4 text-[1.1rem] font-medium leading-[1.75] text-ink">{doctorate.title}</h2>
               <p className="mt-4 text-[.92rem] text-soft">{doctorate.university}</p>
               <p className="mt-1 text-[.92rem] text-soft">{doctorate.note}</p>

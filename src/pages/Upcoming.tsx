@@ -40,7 +40,7 @@ export default function Upcoming() {
                     </div>
 
                     <div className="flex-1">
-                      {e.kind && <span className="text-[.74rem] font-semibold uppercase tracking-[.1em] text-accent">{e.kind}</span>}
+                      {e.kind && <span className="text-[.74rem] font-semibold uppercase text-accent">{e.kind}</span>}
                       <h2 className="mt-1.5 font-display text-[1.4rem] font-medium leading-[1.5] text-ink md:text-[1.6rem]">{e.title}</h2>
                       <p className="mt-1.5 text-[.9rem] text-soft">{e.org} · {e.place}</p>
                     </div>

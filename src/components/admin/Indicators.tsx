@@ -110,7 +110,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       <section className={card}>
         <div className="mb-6 flex items-center justify-between gap-3">
           <div>
-            <p className="text-[.76rem] font-semibold uppercase tracking-widest text-accent">الأكثر قراءة</p>
+            <p className="text-[.76rem] font-semibold uppercase text-accent">الأكثر قراءة</p>
             <h2 className="mt-1 font-display text-xl font-semibold text-ink">أعلى 10 مقالات</h2>
           </div>
         </div>
@@ -132,7 +132,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       </section>
 
       <section className={card}>
-        <p className="text-[.76rem] font-semibold uppercase tracking-widest text-accent">آخر 7 أيام</p>
+        <p className="text-[.76rem] font-semibold uppercase text-accent">آخر 7 أيام</p>
         <h2 className="mt-1 font-display text-xl font-semibold text-ink">اتجاه المشاهدات</h2>
         <div className="mt-8 grid h-48 grid-cols-7 items-end gap-2 sm:gap-4" aria-label="مشاهدات الأيام السبعة الأخيرة">
           {summary.trend.map((day) => (

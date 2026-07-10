@@ -1,10 +1,10 @@
 /**
  * «أرشيف الرادار» — /radar
- * كل صيدات الرادار اليومية مؤرشفة كمرجع بحثي:
+ * كل التقاطات الرادار اليومية مؤرشفة كمرجع بحثي:
  *   · مجمّعة «حصاد أسبوع» أسبوعاً بأسبوع (الأحدث أولاً)
  *   · عناوين سنوية عند تغيّر السنة
  *   · كل بطاقة تقود للمصدر الأصلي مباشرة
- * يقرأ من site_radar (المنشور فقط) — يتحدث تلقائياً بلا أي رفع.
+ * يقرأ من site_radar (المنشور فقط) — يُحدَّث تلقائياً بلا أي رفع.
  */
 import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead } from '../components/ui'
@@ -59,14 +59,14 @@ export default function Radar() {
           {items.length === 0 ? (
             <FadeUp>
               <div className="rounded-2xl border border-hair bg-wash py-20 text-center">
-                <p className="text-[1.05rem] font-light text-soft">الرادار يبدأ الالتقاط قريباً — أول صيدة تظهر هنا تلقائياً.</p>
+                <p className="text-[1.05rem] font-light text-soft">الرادار يبدأ الالتقاط قريباً — أول التقاطة تظهر هنا تلقائياً.</p>
               </div>
             </FadeUp>
           ) : (
             <>
               <FadeUp>
                 <p className="mb-12 text-[.9rem] text-soft">
-                  {arNum(items.length)} صيدة · {arNum(sources.size)} مصادر موثوقة · يتحدث تلقائياً كل يوم
+                  {arNum(items.length)} التقاطة · {arNum(sources.size)} مصادر موثوقة · يُحدَّث تلقائياً كل يوم
                 </p>
               </FadeUp>
 
@@ -80,7 +80,7 @@ export default function Radar() {
                   <FadeUp>
                     <h3 className="mb-6 flex flex-wrap items-baseline gap-3">
                       <span className="font-display text-lg font-semibold text-ink">حصاد الأسبوع</span>
-                      <span className="text-[.85rem] text-soft">{w.label} · {arNum(w.items.length)} {w.items.length === 1 ? 'صيدة' : 'صيدات'}</span>
+                      <span className="text-[.85rem] text-soft">{w.label} · {arNum(w.items.length)} {w.items.length === 1 ? 'التقاطة' : 'التقاطات'}</span>
                     </h3>
                   </FadeUp>
                   <div className="grid gap-5 md:grid-cols-2">

@@ -40,7 +40,7 @@ export default function PaperDetail() {
           </FadeUp>
 
           <FadeUp delay={0.05}>
-            <span className="mt-8 block text-[.76rem] font-semibold uppercase tracking-[.12em] text-accent">بحث محكّم</span>
+            <span className="mt-8 block text-[.76rem] font-semibold uppercase text-accent">بحث محكّم</span>
             <h1 className="mt-4 font-display text-[clamp(1.7rem,4vw,2.7rem)] font-bold leading-[1.45] text-ink">
               <Reveal>{p.title}</Reveal>
             </h1>

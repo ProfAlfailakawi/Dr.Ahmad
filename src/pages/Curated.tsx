@@ -39,12 +39,19 @@ function CurioBody({ c }: { c: Curio }) {
   )
 }
 
+const fmtAdded = (iso: string) => {
+  try { return new Date(iso + 'T12:00:00').toLocaleDateString('ar-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }) } catch { return iso }
+}
+
 function SourceLine({ c }: { c: Curio }) {
   return (
-    <p className="mt-4 flex items-center justify-between gap-3 border-t border-hair pt-3 text-[.78rem] text-soft">
-      <span>المصدر: {c.source}</span>
-      {c.url && <span className="shrink-0 text-accent transition-transform duration-300 group-hover:-translate-x-1">اذهب للمصدر ←</span>}
-    </p>
+    <div className="mt-4 border-t border-hair pt-3 text-[.78rem] text-soft">
+      <p className="flex items-center justify-between gap-3">
+        <span>المصدر: {c.source}</span>
+        {c.url && <span className="shrink-0 text-accent transition-transform duration-300 group-hover:-translate-x-1">اذهب للمصدر ←</span>}
+      </p>
+      {c.added && <p className="mt-1.5 text-[.7rem] font-light text-soft/70">أُضيفت في {fmtAdded(c.added)}</p>}
+    </div>
   )
 }
 
@@ -97,10 +104,13 @@ export default function Curated() {
   }, [])
 
   // مختارات لوحة التحكم تنضم للمخزون
-  const extra = useExtras<Curio>('site_picks')
+  const extra = useExtras<Curio & { createdAt?: string }>('site_picks')
   const daily = todaysPick(extra)
   const book = thisMonthsBook()
-  const all = [...extra, ...curatedBank]
+  const all = [
+    ...extra.map((p) => ({ ...p, added: p.added ?? (typeof p.createdAt === 'string' ? p.createdAt.slice(0, 10) : undefined) })),
+    ...curatedBank.map((c) => ({ ...c, added: c.added ?? '2026-07-09' })),
+  ]
   const shown = kind === 'الكل' ? all : all.filter((c) => c.kind === kind)
 
   return (

@@ -137,7 +137,7 @@ export default function Questions() {
       <section className="border-b border-hair px-6 py-16 md:px-11 md:py-24">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <p className="mb-6 text-[.82rem] font-semibold uppercase tracking-widest text-accent">
+            <p className="mb-6 text-[.82rem] font-semibold uppercase text-accent">
               سؤال الأسبوع {d(activeIndex + 1)}
             </p>
           </FadeUp>

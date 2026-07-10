@@ -65,7 +65,7 @@ export function ContactForm() {
 
   return (
     <div className="rounded-2xl border border-hair bg-wash p-8 text-right md:p-10">
-      <span className="text-[.76rem] font-semibold uppercase tracking-[.12em] text-accent">راسلني مباشرة</span>
+      <span className="text-[.76rem] font-semibold uppercase text-accent">راسلني مباشرة</span>
       <h3 className="mt-3 font-display text-[1.5rem] font-semibold text-ink">كيف أخدمك؟</h3>
 
       {/* الموضوع */}

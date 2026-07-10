@@ -75,7 +75,7 @@ function SetupGuide() {
   return (
     <Page>
       <div className="mx-auto max-w-3xl px-6 pb-24 pt-40 md:pt-44">
-        <p className="mb-3 text-[.82rem] font-semibold uppercase tracking-widest text-accent">لوحة التحكم</p>
+        <p className="mb-3 text-[.82rem] font-semibold uppercase text-accent">لوحة التحكم</p>
         <h1 className="mb-6 font-display text-3xl font-bold text-ink">خطوة واحدة تفصلك عنها.</h1>
         <p className="mb-10 leading-loose text-soft">
           لوحة التحكم جاهزة بالكامل — تحتاج فقط تفعيل Firebase (مجاني، مثل ما فعّلنا Azure).
@@ -138,7 +138,7 @@ function AccessDenied({ email }: { email: string }) {
   return (
     <Page>
       <div className="mx-auto max-w-xl px-6 pb-24 pt-40 md:pt-44">
-        <p className="mb-3 text-[.82rem] font-semibold uppercase tracking-widest text-accent">حماية الإنتاج</p>
+        <p className="mb-3 text-[.82rem] font-semibold uppercase text-accent">حماية الإنتاج</p>
         <h1 className="font-display text-3xl font-bold text-ink">الحساب ليس مشرفاً بعد.</h1>
         <p className="mt-5 leading-loose text-soft">
           تم تسجيل الدخول باسم {email}، لكن قواعد الإنتاج تحتاج custom claim باسم
@@ -169,7 +169,7 @@ function Panel({ email }: { email: string }) {
       <div className="mx-auto max-w-[1480px] px-4 pb-24 pt-36 sm:px-6 md:px-10 md:pt-40">
         <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="mb-1 text-[.82rem] font-semibold uppercase tracking-widest text-accent">لوحة التحكم</p>
+            <p className="mb-1 text-[.82rem] font-semibold uppercase text-accent">لوحة التحكم</p>
             <h1 className="font-display text-3xl font-bold text-ink">أهلاً دكتور.</h1>
           </div>
           <button onClick={signOut} className="rounded-full border border-hair px-4 py-1.5 text-[.8rem] text-soft transition-colors hover:border-accent hover:text-accent">

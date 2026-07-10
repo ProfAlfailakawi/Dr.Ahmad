@@ -24,6 +24,7 @@ export type Curio = {
   enNote?: string      // English one-liner
   source: string       // المصدر الموثوق — يظهر دائماً
   url?: string         // رابط المصدر إنوُجد — الكرت كله يقود إليه
+  added?: string       // تاريخ إضافة المختارة للموقع (iso) — يظهر بخط نحيف ليُحسّ التجدد
 }
 
 export const CURATED_EPOCH = '2026-07-01'

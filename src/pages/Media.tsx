@@ -71,7 +71,7 @@ export default function Media() {
 
         <div className="mx-auto mt-20 max-w-shell border-t border-hair pt-14">
           <FadeUp>
-            <span className="text-[.78rem] font-semibold uppercase tracking-[.1em] text-accent">المشاريع التقنية</span>
+            <span className="text-[.78rem] font-semibold uppercase text-accent">المشاريع التقنية</span>
             <div className="mt-7 grid gap-8 md:grid-cols-2">
               {projects.map((p) => (
                 <div key={p.title}>

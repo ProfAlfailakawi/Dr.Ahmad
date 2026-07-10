@@ -160,7 +160,7 @@ export function CvSectionEditor({ section, items, isAdmin, onSave, children }: P
     <section className="my-4 rounded-2xl border border-accent/40 bg-wash p-4 sm:p-6" aria-label={`محرر قسم ${label}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[.76rem] font-semibold uppercase tracking-[.1em] text-accent">تحرير موضعي</p>
+          <p className="text-[.76rem] font-semibold uppercase text-accent">تحرير موضعي</p>
           <h3 className="mt-1 font-display text-[1.25rem] font-semibold text-ink">{label}</h3>
           <p className="mt-1 text-[.82rem] text-soft">رتّب البنود وعدّلها، ثم اضغط «حفظ القسم».</p>
         </div>

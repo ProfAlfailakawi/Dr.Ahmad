@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useScroll } from 'framer-motion'
 import { EASE } from './motion'
+import { SocialIcon } from './icons'
 import { ALLOW_BROWSER_TTS, NEWSLETTER_ENDPOINT, links } from '../data'
 import audioManifest from '../data/audio.json'
 import { AudioPlayer } from './AudioPlayer'
@@ -45,15 +46,15 @@ export function Newsletter({ compact = false }: { compact?: boolean }) {
     )
 
   return (
-    <div className={compact ? '' : 'rounded-2xl border border-hair bg-wash p-6'}>
+    // نحيفة وهادئة — سطر واحد لا بطاقة كبيرة
+    <div className={compact ? '' : 'rounded-xl border border-hair p-5'}>
       {!compact && (
-        <>
-          <span className="text-[.72rem] font-semibold uppercase tracking-[.12em] text-accent">النشرة البريدية</span>
-          <h3 className="mt-2 font-display text-[1.15rem] font-semibold text-ink">جديدي يصلك أولاً.</h3>
-          <p className="mt-1 text-[.88rem] font-light text-soft">مقال كل أسبوع، ومختارات منتقاة.</p>
-        </>
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h3 className="font-display text-[1rem] font-semibold text-ink">النشرة البريدية — جديدي يصلك أولاً.</h3>
+          <p className="text-[.8rem] font-light text-soft">مقال كل أسبوع، ومختارات منتقاة.</p>
+        </div>
       )}
-      <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
         <input
           type="email"
           dir="ltr"
@@ -62,12 +63,12 @@ export function Newsletter({ compact = false }: { compact?: boolean }) {
           onKeyDown={(e) => e.key === 'Enter' && submit()}
           placeholder="your@email.com"
           aria-label="البريد الإلكتروني"
-          className="flex-1 rounded-full border border-hair bg-canvas px-5 py-3 text-[.95rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
+          className="flex-1 rounded-full border border-hair bg-canvas px-4 py-2.5 text-[.9rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
         />
         <button
           onClick={submit}
           disabled={state === 'sending'}
-          className="rounded-full bg-accent px-7 py-3 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep disabled:opacity-60"
+          className="rounded-full bg-accent px-5 py-2.5 text-[.9rem] font-semibold text-white transition-colors duration-300 hover:bg-accent-deep disabled:opacity-60"
         >
           {state === 'sending' ? '…' : 'اشتراك'}
         </button>
@@ -129,34 +130,27 @@ export function Share({ title, path }: { title: string; path: string }) {
   const u = encodeURIComponent(url)
 
   const items = [
-    { label: 'X', href: `https://twitter.com/intent/tweet?text=${t}&url=${u}` },
-    { label: 'واتساب', href: `https://wa.me/?text=${t}%20${u}` },
-    { label: 'لينكدإن', href: `https://www.linkedin.com/sharing/share-offsite/?url=${u}` },
+    { label: 'X', icon: 'X', href: `https://twitter.com/intent/tweet?text=${t}&url=${u}` },
+    { label: 'واتساب', icon: 'WhatsApp', href: `https://wa.me/?text=${t}%20${u}` },
+    { label: 'لينكدإن', icon: 'LinkedIn', href: `https://www.linkedin.com/sharing/share-offsite/?url=${u}` },
   ]
 
   const copy = async () => {
     try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { /* noop */ }
   }
 
+  // أيقونات فقط — صغيرة نحيفة بلا كلام
+  const btn = 'flex h-8 w-8 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent'
   return (
-    <div className="mt-12 flex flex-wrap items-center gap-3 border-t border-hair pt-7">
-      <span className="text-[.82rem] text-soft">شارك المقال</span>
+    <div className="mt-12 flex flex-wrap items-center gap-2.5 border-t border-hair pt-6">
+      <span className="me-1 text-[.8rem] text-soft">شارك المقال</span>
       {items.map((i) => (
-        <a
-          key={i.label}
-          href={i.href}
-          target="_blank"
-          rel="noreferrer"
-          className="rounded-full border border-hair px-4 py-1.5 text-[.84rem] text-ink transition-colors hover:border-accent hover:text-accent"
-        >
-          {i.label}
+        <a key={i.label} href={i.href} target="_blank" rel="noreferrer" aria-label={i.label} title={i.label} className={btn}>
+          <SocialIcon name={i.icon} size={15} />
         </a>
       ))}
-      <button
-        onClick={copy}
-        className="rounded-full border border-hair px-4 py-1.5 text-[.84rem] text-ink transition-colors hover:border-accent hover:text-accent"
-      >
-        {copied ? 'نُسخ ✓' : 'نسخ الرابط'}
+      <button onClick={copy} aria-label="نسخ الرابط" title={copied ? 'نُسخ ✓' : 'نسخ الرابط'} className={`${btn} ${copied ? 'border-accent text-accent' : ''}`}>
+        <SocialIcon name={copied ? 'Check' : 'Link'} size={15} />
       </button>
     </div>
   )

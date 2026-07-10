@@ -31,7 +31,7 @@ export default function BookDetail() {
             </FadeUp>
 
             <FadeUp delay={0.1}>
-              <span className="text-[.8rem] font-semibold uppercase tracking-[.13em] text-accent">كتاب</span>
+              <span className="text-[.8rem] font-semibold uppercase text-accent">كتاب</span>
               <h1 className="mt-4 font-display text-[clamp(2rem,4.6vw,3.2rem)] font-bold leading-[1.25] text-ink">
                 <Reveal>{book.title}</Reveal>
               </h1>

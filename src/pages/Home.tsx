@@ -6,6 +6,7 @@ import { EASE, FadeUp, Label, Magnetic, Page, Reveal, SectionHead } from '../com
 import { articles, books, latest, media, papers, profile, upcoming } from '../data'
 import { Newsletter } from '../components/extras'
 import { curatedBank, thisMonthsBook, type Curio } from '../data-curated'
+import { staticQuestions, LAUNCH_DATE } from './Questions'
 
 const arNum = (n: number) => String(n).padStart(2, '0').replace(/[0-9]/g, (d) => '0123456789'[+d])
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
@@ -120,6 +121,58 @@ function MiniAtlas() {
             <span className="pointer-events-none absolute bottom-3 right-4 text-[.72rem] text-soft">مرّر على نجمة — واضغطها لتقرأ</span>
           </div>
         </FadeUp>
+      </div>
+    </section>
+  )
+}
+
+/* ---------- سؤال الأسبوع التفاعلي (فكرة نووية ٧) ----------
+   الزائر يصوّت بلا تسجيل ولا تتبّع، فيُكشف له رأي الدكتور — مشاركٌ لا متفرّج. */
+function WeeklyPoll() {
+  const week = Math.max(0, Math.min(staticQuestions.length - 1,
+    Math.floor((Date.now() - new Date(LAUNCH_DATE).getTime()) / (7 * 24 * 60 * 60 * 1000))))
+  const q = staticQuestions[week]
+  const key = `poll:${week}`
+  const [voted, setVoted] = useState<string | null>(null)
+  useEffect(() => { try { setVoted(localStorage.getItem(key)) } catch { /* noop */ } }, [key])
+  const vote = (o: string) => { setVoted(o); try { localStorage.setItem(key, o) } catch { /* noop */ } }
+  const options = ['أوافق', 'لا أوافق', 'المسألة أعقد']
+
+  return (
+    <section className="border-t border-hair bg-wash px-6 py-[70px] md:px-11 md:py-[100px]">
+      <div className="mx-auto max-w-shell">
+        <FadeUp><Label>سؤال الأسبوع</Label></FadeUp>
+        <FadeUp delay={0.05}>
+          <h2 className="max-w-3xl font-display text-[clamp(1.5rem,3.6vw,2.4rem)] font-semibold leading-[1.5] text-ink">{q.ar}</h2>
+          <p className="mt-3 max-w-2xl text-[.95rem] font-light text-soft" dir="ltr" style={{ textAlign: 'left' }}>{q.en}</p>
+        </FadeUp>
+
+        {!voted ? (
+          <FadeUp delay={0.12}>
+            <div className="mt-8 flex flex-wrap gap-3">
+              {options.map((o) => (
+                <button key={o} onClick={() => vote(o)} data-hover
+                  className="rounded-full border-[1.5px] border-hair px-7 py-3 text-[.95rem] font-semibold text-ink transition-colors duration-300 hover:border-accent hover:text-accent">
+                  {o}
+                </button>
+              ))}
+            </div>
+            <p className="mt-4 text-[.8rem] text-soft">رأيك يبقى على جهازك — بلا تسجيل، بلا تتبّع.</p>
+          </FadeUp>
+        ) : (
+          <FadeUp delay={0.05}>
+            <div className="mt-8">
+              <p className="text-[.9rem] text-soft">اخترت: <span className="font-semibold text-accent">{voted}</span></p>
+              <div className="mt-5 max-w-3xl rounded-2xl border border-accent/40 bg-canvas p-7 md:p-8">
+                <p className="mb-3 text-[.8rem] font-semibold text-accent">رأيي في المسألة</p>
+                <p className="text-[1.05rem] leading-[2] text-ink">{q.take}</p>
+              </div>
+              <Link to="/questions" className="mt-6 inline-block text-[.9rem] font-semibold text-accent">
+                إلى زاوية «سؤال يُقلق التعليم» ←
+              </Link>
+            </div>
+          </FadeUp>
+        )}
       </div>
     </section>
   )
@@ -477,44 +530,7 @@ export default function Home() {
 
       <ImpactTimeline />
 
-      {/* curated — latest 3 */}
-      <section className="border-t border-hair bg-wash px-6 py-[70px] md:px-11 md:py-[100px]">
-        <div className="mx-auto max-w-shell">
-          <div className="mb-10 flex items-end justify-between gap-6">
-            <FadeUp>
-              <span className="mb-4 inline-flex items-center gap-2.5 text-[.8rem] font-semibold text-accent">
-                <span className="pulse relative h-2 w-2 rounded-full bg-accent" />
-                يتجدّد باستمرار
-              </span>
-              <h2 className="font-display text-[clamp(2rem,5vw,3.3rem)] font-semibold leading-[1.25] text-ink">
-                <Reveal>من اختياراتي.</Reveal>
-              </h2>
-            </FadeUp>
-            <Link to="/curated" className="group shrink-0 pb-2 text-[.92rem] font-semibold text-accent">
-              الكل<span className="inline-block transition-transform duration-300 group-hover:-translate-x-1.5"> ←</span>
-            </Link>
-          </div>
-
-          <div className="grid gap-5 md:grid-cols-3 md:gap-6">
-            {topPicks.map((p, i) => {
-              const Wrap = (p.url ? 'a' : Link) as React.ElementType
-              const props = p.url ? { href: p.url, target: '_blank', rel: 'noreferrer' } : { to: '/curated' }
-              return (
-                <Card key={p.ar} delay={i * 0.07}>
-                  <Wrap {...props} data-hover className="group flex h-full flex-col rounded-2xl border border-hair bg-canvas p-6 transition-colors md:p-7 duration-300 hover:border-accent">
-                    <span className="text-[.74rem] font-semibold text-accent">{p.kind}</span>
-                    <h3 className="mt-3.5 font-display text-[1.2rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">
-                      {p.ar}
-                    </h3>
-                    {p.arNote && <p className="mt-2.5 text-[.88rem] font-light text-soft">{p.arNote}</p>}
-                    <span className="mt-auto pt-7 text-[.82rem] text-soft transition-colors group-hover:text-accent">{p.source} ←</span>
-                  </Wrap>
-                </Card>
-              )
-            })}
-          </div>
-        </div>
-      </section>
+      <WeeklyPoll />
 
       {/* upcoming + newsletter */}
       <section className="border-t border-hair px-6 py-[70px] md:px-11 md:py-[100px]">

@@ -11,9 +11,9 @@ interface Question {
   takeEn: string
 }
 
-const LAUNCH_DATE = '2026-07-10'
+export const LAUNCH_DATE = '2026-07-10'
 
-const staticQuestions: Question[] = [
+export const staticQuestions: Question[] = [
   {
     ar: 'إذا كان الامتحان يقيس التذكّر… فمن يقيس الفهم؟',
     en: 'If exams measure recall… who measures understanding?',

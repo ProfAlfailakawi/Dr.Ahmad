@@ -511,7 +511,7 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 1.1, delay: 0.75, ease: EASE }}
                 >
-                  <img src="/portrait.webp" alt={`د. ${profile.fullName}`} className="block w-full" />
+                  <img src="/portrait.jpg" alt={`د. ${profile.fullName}`} className="block w-full" />
                 </motion.div>
               </motion.div>
             </motion.div>

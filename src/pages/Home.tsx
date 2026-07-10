@@ -57,24 +57,107 @@ function DailySpark() {
 }
 
 /* ---------- «ابدأ من هنا» — ثلاث بوابات هادئة (لا إجبار ولا ازدحام) ---------- */
-function StartHere() {
-  const gates = [
-    { to: '/articles', t: 'للقارئ المتأمل', d: 'أكثر من 160 مقالاً فكرياً — اقرأها، وبعضها بصوتي.' },
-    { to: '/research', t: 'للمعلم والباحث', d: 'ثمانية عشر بحثاً محكّماً، وأدوات ومفاهيم منتقاة.' },
-    { to: '/contact', t: 'للجهات وصنّاع القرار', d: 'استشارة، محاضرة، أو مشروع تحول رقمي — بصيرة لا أرقام فقط.' },
-  ]
+/* ---------- الشخصنة: «الموقع يعرف من دخل» (فكرة نووية ١) ----------
+   سؤال هادئ مرّة واحدة، يُحفظ محلياً، فتتكيّف الرئيسية — بلا نافذة حاجزة ولا ألوان جديدة. */
+type Persona = 'reader' | 'scholar' | 'org'
+const PERSONAS: {
+  key: Persona; label: string; gate: string; d: string; greet: string
+  to: string; links: { to: string; t: string }[]
+}[] = [
+  { key: 'reader', label: 'قارئ متأمّل', gate: 'للقارئ المتأمل',
+    d: 'أكثر من 160 مقالاً فكرياً — اقرأها، وبعضها بصوتي.',
+    greet: 'بدأتُ لك من الكلمة.', to: '/articles',
+    links: [{ to: `/articles/${articles[0]?.slug ?? ''}`, t: 'أحدث ما كتبت' }, { to: '/articles', t: 'كل المقالات' }] },
+  { key: 'scholar', label: 'معلّم وباحث', gate: 'للمعلم والباحث',
+    d: 'ثمانية عشر بحثاً محكّماً، وأدوات ومفاهيم منتقاة.',
+    greet: 'من المعرفة المحكّمة.', to: '/research',
+    links: [{ to: '/research', t: 'المساهمات العلمية' }, { to: '/publications', t: 'الكتب المنشورة' }] },
+  { key: 'org', label: 'جهة أو صانع قرار', gate: 'للجهات وصنّاع القرار',
+    d: 'استشارة، محاضرة، أو مشروع تحول رقمي — بصيرة لا أرقام فقط.',
+    greet: 'جاهزٌ للتعاون.', to: '/contact',
+    links: [{ to: '/contact', t: 'احجز موعداً' }, { to: '/cv', t: 'السيرة الذاتية' }, { to: '/upcoming', t: 'اللقاءات القادمة' }] },
+]
+
+function WhoAreYou() {
+  // القراءة في المُهيّئ (createRoot) تمنع أي وميض للزائر العائد
+  const [persona, setPersona] = useState<Persona | null>(() => {
+    try { return (localStorage.getItem('visitor:persona') as Persona) || null } catch { return null }
+  })
+  const [skipped, setSkipped] = useState(() => {
+    try { return localStorage.getItem('visitor:skip') === '1' } catch { return false }
+  })
+
+  const choose = (p: Persona) => {
+    setPersona(p); setSkipped(false)
+    try { localStorage.setItem('visitor:persona', p); localStorage.removeItem('visitor:skip') } catch { /* noop */ }
+  }
+  const skip = () => {
+    setSkipped(true)
+    try { localStorage.setItem('visitor:skip', '1') } catch { /* noop */ }
+  }
+  const reset = () => {
+    setPersona(null); setSkipped(false)
+    try { localStorage.removeItem('visitor:persona'); localStorage.removeItem('visitor:skip') } catch { /* noop */ }
+  }
+
+  const active = persona ? PERSONAS.find((x) => x.key === persona) ?? null : null
+
   return (
     <section className="border-t border-hair bg-wash px-6 py-[56px] md:px-11 md:py-[72px]">
-      <div className="mx-auto grid max-w-shell gap-5 md:grid-cols-3">
-        {gates.map((g, i) => (
-          <FadeUp key={g.to} delay={i * 0.08}>
-            <Link to={g.to} data-hover className="group flex h-full flex-col rounded-2xl border border-hair bg-canvas p-7 transition-colors duration-300 hover:border-accent">
-              <h3 className="font-display text-[1.15rem] font-semibold text-ink">{g.t}</h3>
-              <p className="mt-2.5 text-[.92rem] font-light leading-relaxed text-soft">{g.d}</p>
-              <span className="mt-auto pt-5 text-[.85rem] text-soft transition-colors group-hover:text-accent">ابدأ ←</span>
-            </Link>
+      <div className="mx-auto max-w-shell">
+        {active ? (
+          /* ── مُشخصَن: لمحة تُقدّم الأنسب له ── */
+          <FadeUp>
+            <div className="rounded-2xl border border-hair bg-canvas p-7 md:p-9">
+              <p className="text-[.76rem] font-semibold uppercase tracking-[.14em] text-accent">بما أنك {active.label}</p>
+              <h2 className="mt-3 font-display text-[clamp(1.5rem,3.4vw,2.2rem)] font-semibold leading-[1.4] text-ink">{active.greet}</h2>
+              <div className="mt-6 flex flex-wrap gap-3">
+                {active.links.map((l, i) => (
+                  <Magnetic key={l.to} to={l.to}
+                    className={`inline-block rounded-full px-6 py-3 text-[.9rem] font-semibold transition-colors duration-300 ${i === 0 ? 'bg-accent text-white hover:bg-accent-deep' : 'border border-hair text-ink hover:border-accent hover:text-accent'}`}>
+                    {l.t} ←
+                  </Magnetic>
+                ))}
+              </div>
+              <button onClick={reset} className="mt-6 text-[.8rem] text-soft transition-colors hover:text-accent">لستَ {active.label}؟ غيّر اختيارك</button>
+            </div>
           </FadeUp>
-        ))}
+        ) : skipped ? (
+          /* ── تصفّح حرّ: البوابات الثلاث كروابط ── */
+          <div className="grid gap-5 md:grid-cols-3">
+            {PERSONAS.map((g, i) => (
+              <FadeUp key={g.key} delay={i * 0.08}>
+                <Link to={g.to} data-hover className="group flex h-full flex-col rounded-2xl border border-hair bg-canvas p-7 transition-colors duration-300 hover:border-accent">
+                  <h3 className="font-display text-[1.15rem] font-semibold text-ink">{g.gate}</h3>
+                  <p className="mt-2.5 text-[.92rem] font-light leading-relaxed text-soft">{g.d}</p>
+                  <span className="mt-auto pt-5 text-[.85rem] text-soft transition-colors group-hover:text-accent">ابدأ ←</span>
+                </Link>
+              </FadeUp>
+            ))}
+          </div>
+        ) : (
+          /* ── الزيارة الأولى: سؤال هادئ ── */
+          <>
+            <FadeUp><Label>قبل أن تبدأ</Label></FadeUp>
+            <FadeUp delay={0.05}>
+              <h2 className="mb-8 font-display text-[clamp(1.6rem,4vw,2.6rem)] font-semibold leading-[1.3] text-ink">ما الذي جاء بك؟</h2>
+            </FadeUp>
+            <div className="grid gap-5 md:grid-cols-3">
+              {PERSONAS.map((g, i) => (
+                <FadeUp key={g.key} delay={0.1 + i * 0.08}>
+                  <button onClick={() => choose(g.key)} data-hover className="group flex h-full w-full flex-col rounded-2xl border border-hair bg-canvas p-7 text-right transition-colors duration-300 hover:border-accent">
+                    <h3 className="font-display text-[1.15rem] font-semibold text-ink">{g.gate}</h3>
+                    <p className="mt-2.5 text-[.92rem] font-light leading-relaxed text-soft">{g.d}</p>
+                    <span className="mt-auto pt-5 text-[.85rem] text-soft transition-colors group-hover:text-accent">هذا أنا ←</span>
+                  </button>
+                </FadeUp>
+              ))}
+            </div>
+            <FadeUp delay={0.34}>
+              <button onClick={skip} className="mt-7 text-[.85rem] text-soft transition-colors hover:text-accent">أتصفّح بحرّية ←</button>
+            </FadeUp>
+          </>
+        )}
       </div>
     </section>
   )
@@ -470,7 +553,7 @@ export default function Home() {
         </div>
       </section>
 
-      <StartHere />
+      <WhoAreYou />
 
       {/* books */}
       <section className="border-t border-hair bg-wash py-[70px] md:py-[100px]">

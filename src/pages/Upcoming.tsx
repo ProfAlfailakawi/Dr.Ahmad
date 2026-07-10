@@ -73,7 +73,7 @@ export default function Upcoming() {
                   اشترك في النشرة ليصلك إعلان اللقاء القادم أولاً — أو احجز موعداً مباشراً.
                 </p>
                 <div className="mt-9 flex flex-wrap justify-center gap-3">
-                  <Magnetic href={links.booking} className="inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
+                  <Magnetic to="/contact" className="inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
                     احجز موعداً
                   </Magnetic>
                 </div>

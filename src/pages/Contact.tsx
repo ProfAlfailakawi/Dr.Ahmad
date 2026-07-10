@@ -1,4 +1,4 @@
-import { FadeUp, Label, Magnetic, Page, Reveal } from '../components/ui'
+import { FadeUp, Label, Page, Reveal, SocialIcon } from '../components/ui'
 import { links, place, socials } from '../data'
 import { Newsletter } from '../components/extras'
 import { ContactForm } from '../components/ContactForm'
@@ -20,17 +20,17 @@ export default function Contact() {
             </p>
 
             <div className="mt-10 flex flex-wrap justify-center gap-3">
-              <Magnetic href={links.booking} className="inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
+              <a href="#booking-form" className="inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
                 احجز موعداً
-              </Magnetic>
+              </a>
               <a href={links.cv} target="_blank" rel="noreferrer" className="inline-block rounded-full border-[1.5px] border-hair px-8 py-3.5 font-semibold text-ink transition-colors duration-300 hover:border-accent hover:text-accent">
                 السيرة الذاتية
               </a>
             </div>
 
-            <div className="mt-16 flex flex-wrap justify-center gap-7 border-t border-hair pt-10 text-[.92rem] text-soft">
+            <div className="mt-16 flex flex-wrap items-center justify-center gap-6 border-t border-hair pt-10 text-soft">
               {socials.map((s) => (
-                <a key={s.label} href={s.url} target="_blank" rel="noreferrer" className="transition-colors hover:text-accent">{s.label}</a>
+                <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} className="transition-colors hover:text-accent"><SocialIcon name={s.label} /></a>
               ))}
             </div>
 
@@ -51,7 +51,7 @@ export default function Contact() {
           </FadeUp>
 
           <FadeUp delay={0.12}>
-            <div className="mt-16">
+            <div id="booking-form" className="mt-16 scroll-mt-28">
               <ContactForm />
             </div>
           </FadeUp>

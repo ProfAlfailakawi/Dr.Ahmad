@@ -252,24 +252,45 @@ function SinceLastVisit() {
   )
 }
 
-/* ---------- «توقيعات الموقع» — العائلة المعلنة لما لا يشبه غيره ---------- */
+/* ---------- «كوكبة التوقيعات» — العائلة المعلنة لما لا يشبه غيره ----------
+   أفقٌ شعري تعلوه نجوم بارتفاعات متفاوتة (صدى «سماء المقالات»)؛ كل نجمة
+   تتلألأ بهدوء وتتوهج حين يلمس الزائر اسمها. لون واحد، حركة همس. */
 function Signatures() {
   const sigs = [
-    { to: '/atlas', t: 'سماء المقالات' },
-    { to: '/thought-paths', t: 'مسار الفكرة' },
-    { to: '/ask', t: 'اسأل مكتبتي' },
-    { to: '/decade', t: 'وثيقة العقد' },
-    { to: '/questions', t: 'سؤال يُقلق التعليم' },
+    { to: '/atlas', t: 'سماء المقالات', dy: -14 },
+    { to: '/thought-paths', t: 'مسار الفكرة', dy: -4 },
+    { to: '/ask', t: 'اسأل مكتبتي', dy: -18 },
+    { to: '/decade', t: 'وثيقة العقد', dy: -8 },
+    { to: '/questions', t: 'سؤال يُقلق التعليم', dy: -12 },
   ]
   return (
-    <section className="border-t border-hair px-6 py-9 md:px-11">
-      <div className="mx-auto flex max-w-shell flex-wrap items-baseline gap-x-6 gap-y-2.5">
-        <span className="text-[.78rem] font-semibold text-accent">✦ توقيعات الموقع</span>
-        {sigs.map((s) => (
-          <Link key={s.to} to={s.to} className="group font-display text-[.95rem] font-medium text-soft transition-colors hover:text-accent">
-            {s.t}<span className="inline-block text-accent opacity-0 transition-all duration-300 group-hover:translate-x-[-3px] group-hover:opacity-100"> ←</span>
-          </Link>
-        ))}
+    <section className="border-t border-hair px-6 py-12 md:px-11 md:py-14">
+      <div className="mx-auto max-w-shell">
+        <FadeUp>
+          <p className="text-[.78rem] font-semibold text-accent">✦ توقيعات الموقع</p>
+        </FadeUp>
+        <FadeUp delay={0.08}>
+          <div className="relative mt-9">
+            {/* الأفق */}
+            <span aria-hidden className="pointer-events-none absolute left-0 right-0 top-[13px] h-px bg-hair" />
+            <div className="flex flex-wrap items-end gap-x-10 gap-y-8 md:gap-x-14">
+              {sigs.map((s, i) => (
+                <Link
+                  key={s.to}
+                  to={s.to}
+                  data-hover
+                  className="sig-item group relative pt-8"
+                  style={{ ['--dy' as string]: `${s.dy}px`, ['--tw' as string]: `${(i * 0.9).toFixed(1)}s` }}
+                >
+                  <span aria-hidden className="sig-star" />
+                  <span className="block font-display text-[.98rem] font-medium text-soft transition-colors duration-300 group-hover:text-ink">
+                    {s.t}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </FadeUp>
       </div>
     </section>
   )

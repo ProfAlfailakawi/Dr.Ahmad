@@ -247,17 +247,21 @@ export default function Home() {
               {profile.tagline}
             </motion.p>
 
+            {/* ثلاثة أزرار مركّزة فقط: اقرأ · استكشف · تواصل */}
             <motion.div
               className="mt-9 flex flex-wrap gap-3"
               initial={reduce ? false : { opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.9, delay: 1.2, ease: EASE }}
             >
-              <Magnetic to="/publications" className="inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
-                تصفّح الأعمال
+              <Magnetic to="/articles" className="inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
+                اقرأ
               </Magnetic>
+              <Link to="/curated" className="inline-block rounded-full border-[1.5px] border-hair px-8 py-3.5 font-semibold text-ink transition-colors duration-300 hover:border-accent hover:text-accent">
+                استكشف
+              </Link>
               <Link to="/contact" className="inline-block rounded-full border-[1.5px] border-hair px-8 py-3.5 font-semibold text-ink transition-colors duration-300 hover:border-accent hover:text-accent">
-                للاستشارة أو التعاون
+                تواصل
               </Link>
             </motion.div>
           </div>

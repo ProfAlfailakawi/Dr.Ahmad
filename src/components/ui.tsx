@@ -96,7 +96,7 @@ export function PageHead({ label, title, sub }: { label: string; title: string; 
           <h1 className="font-display text-[clamp(2.4rem,6vw,4rem)] font-bold leading-[1.15] text-ink">
             <Reveal>{title}</Reveal>
           </h1>
-          {sub && <p className="mt-4 max-w-[620px] text-[1.05rem] font-light text-[#3f454f]">{sub}</p>}
+          {sub && <p className="mt-4 max-w-[620px] text-[1.05rem] font-light text-ink/80">{sub}</p>}
         </FadeUp>
       </div>
     </header>
@@ -307,7 +307,8 @@ function Overlay({ close }: { close: () => void }) {
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_55%_at_75%_35%,rgba(62,92,120,.07),transparent_65%)]" />
 
-      <div className="relative flex flex-1 items-center px-6 pt-24 md:px-11">
+      <div className="relative flex-1 overflow-y-auto">
+        <div className="flex min-h-full items-center px-6 pb-12 pt-24 md:px-11">
         <div className="mx-auto grid w-full max-w-shell gap-y-10 md:grid-cols-3 md:gap-x-12">
           {GROUPS.map((g, gi) => (
             <div key={g.label}>
@@ -343,6 +344,7 @@ function Overlay({ close }: { close: () => void }) {
               </ul>
             </div>
           ))}
+        </div>
         </div>
       </div>
 

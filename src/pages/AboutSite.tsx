@@ -17,7 +17,7 @@ export default function AboutSite() {
             {aboutSite.sections.map((s, i) => (
               <FadeUp key={s.title} delay={i * 0.08}>
                 <span className="text-[.76rem] font-semibold uppercase tracking-[.12em] text-accent">✦ {s.title}</span>
-                <p className="mt-5 text-[1.12rem] font-light leading-[2] text-[#3f454f]">{s.body}</p>
+                <p className="mt-5 text-[1.12rem] font-light leading-[2] text-ink/80">{s.body}</p>
               </FadeUp>
             ))}
           </div>
@@ -60,7 +60,7 @@ export default function AboutSite() {
             <div className="rounded-2xl border border-hair bg-wash p-9 md:p-12">
               {aboutSite.creed.map((t, i) => (
                 <FadeUp key={t} delay={i * 0.08}>
-                  <p className={`font-display text-[1.15rem] font-light leading-[1.9] text-[#2f343c] md:text-[1.3rem] ${i ? 'mt-5' : ''}`}>
+                  <p className={`font-display text-[1.15rem] font-light leading-[1.9] text-ink/90 md:text-[1.3rem] ${i ? 'mt-5' : ''}`}>
                     <span className="me-2.5 text-accent">◆</span>
                     {t}
                   </p>

@@ -61,7 +61,7 @@ export default function Media() {
               {projects.map((p) => (
                 <div key={p.title}>
                   <h3 className="font-display text-[1.35rem] font-semibold text-ink">{p.title}</h3>
-                  <p className="mt-2 text-[.98rem] font-light leading-[1.8] text-[#3f454f]">{p.desc}</p>
+                  <p className="mt-2 text-[.98rem] font-light leading-[1.8] text-ink/80">{p.desc}</p>
                 </div>
               ))}
             </div>

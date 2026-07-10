@@ -177,7 +177,7 @@ export default function ArticleDetail() {
             ) : (
               <>
                 {a.excerpt && (
-                  <p className="mt-11 border-r-2 border-accent ps-6 font-display text-[1.28rem] font-light leading-[1.95] text-[#2f343c]">
+                  <p className="mt-11 border-r-2 border-accent ps-6 font-display text-[1.28rem] font-light leading-[1.95] text-ink/90">
                     {a.excerpt}
                   </p>
                 )}

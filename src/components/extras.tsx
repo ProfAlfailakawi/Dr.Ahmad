@@ -74,7 +74,7 @@ export function Newsletter({ compact = false }: { compact?: boolean }) {
       </div>
       {state === 'error' && (
         <p className="mt-3 text-[.85rem] text-soft">
-          {firebaseEnabled || NEWSLETTER_ENDPOINT ? 'تعذّر الاشتراك — تحقّق من بريدك.' : 'النشرة غير مفعّلة بعد (اضبط Firebase أو NEWSLETTER_ENDPOINT).'}
+          {firebaseEnabled || NEWSLETTER_ENDPOINT ? 'تعذّر الاشتراك — تحقّق من بريدك.' : 'النشرة قيد الإعداد — تابعني عبر القنوات الرسمية.'}
         </p>
       )}
     </div>

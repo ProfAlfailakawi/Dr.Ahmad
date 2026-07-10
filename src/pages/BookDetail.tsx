@@ -29,7 +29,7 @@ export default function BookDetail() {
               <h1 className="mt-4 font-display text-[clamp(2rem,4.6vw,3.2rem)] font-bold leading-[1.25] text-ink">
                 <Reveal>{book.title}</Reveal>
               </h1>
-              <p className="mt-5 text-[1.08rem] font-light leading-[1.9] text-[#3f454f]">{book.desc}</p>
+              <p className="mt-5 text-[1.08rem] font-light leading-[1.9] text-ink/80">{book.desc}</p>
 
               <dl className="mt-8 border-t border-hair pt-6">
                 <div className="flex gap-4">

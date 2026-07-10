@@ -71,7 +71,7 @@ export default function PaperDetail() {
               </a>
             ) : (
               <div className="mt-10 rounded-2xl border border-hair bg-wash p-8 text-center">
-                <p className="text-[1rem] font-light leading-[1.9] text-[#3f454f] dark:text-soft">
+                <p className="text-[1rem] font-light leading-[1.9] text-ink/80 dark:text-soft">
                   ملخّص هذا البحث لم يُضَف بعد.
                 </p>
                 <p className="mt-2 text-[.85rem] text-soft">للحصول على نسخة، تواصل معي مباشرة.</p>

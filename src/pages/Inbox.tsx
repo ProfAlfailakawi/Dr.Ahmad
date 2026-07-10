@@ -29,7 +29,7 @@ export default function Inbox() {
                 className="relative rounded-2xl border border-hair bg-wash p-8 md:p-9"
               >
                 <span className="absolute right-7 top-3 font-display text-[3.5rem] leading-none text-accent/20">”</span>
-                <p className="relative font-display text-[1.16rem] font-light leading-[1.95] text-[#2f343c]">{t.quote}</p>
+                <p className="relative font-display text-[1.16rem] font-light leading-[1.95] text-ink/90">{t.quote}</p>
               </motion.blockquote>
             ))}
           </div>
@@ -79,7 +79,7 @@ export default function Inbox() {
               <FadeUp key={f.q} delay={i * 0.07}>
                 <div className="border-t-2 border-accent pt-5">
                   <h3 className="font-display text-[1.18rem] font-medium leading-[1.6] text-ink">{f.q}</h3>
-                  <p className="mt-3.5 text-[.98rem] font-light leading-[1.9] text-[#3f454f]">{f.a}</p>
+                  <p className="mt-3.5 text-[.98rem] font-light leading-[1.9] text-ink/80">{f.a}</p>
                 </div>
               </FadeUp>
             ))}

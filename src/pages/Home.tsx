@@ -209,60 +209,49 @@ export default function Home() {
 
   return (
     <Page>
-      {/* hero */}
-      <header className="relative flex min-h-screen items-center px-6 pb-24 pt-28 md:px-11">
+      {/* hero — البيان الفكري أولاً (100svh للجوال) */}
+      <header className="relative flex min-h-[100svh] items-center px-6 pb-24 pt-28 md:px-11">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_50%_at_78%_40%,rgba(62,92,120,.06),transparent_62%)]" />
-        <div className="relative z-10 mx-auto grid w-full max-w-shell items-center gap-12 md:grid-cols-[1.1fr_.9fr] md:gap-16">
+        <div className="relative z-10 mx-auto grid w-full max-w-shell items-center gap-12 md:grid-cols-[1.15fr_.85fr] md:gap-16">
           <div className="order-2 md:order-1">
-            <motion.span
-              className="block text-[.8rem] font-medium uppercase tracking-[.14em] text-accent"
-              initial={reduce ? false : { opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.5, ease: EASE }}
-            >
-              {profile.eyebrow}
-            </motion.span>
-
-            <h1 className="mt-5 font-display text-[clamp(3rem,7.4vw,5.6rem)] font-bold leading-[1.06] text-ink">
-              <span className="block overflow-hidden">
-                <motion.span
-                  className="block"
-                  initial={reduce ? false : { y: '115%' }}
-                  animate={{ y: 0 }}
-                  transition={{ duration: 1.1, delay: 0.6, ease: EASE }}
-                >
-                  {profile.name}
-                </motion.span>
-              </span>
+            {/* الجملة التي تراها أول ثانية — بيان الدكتور الفكري، لا نبذة */}
+            <h1 className="font-display text-[clamp(2.1rem,5.4vw,4rem)] font-bold leading-[1.28] text-ink">
+              {['أُبقي الإنسانَ', 'في قلبِ الآلة.'].map((line, i) => (
+                <span key={line} className="block overflow-hidden">
+                  <motion.span
+                    className="block"
+                    initial={reduce ? false : { y: '115%' }}
+                    animate={{ y: 0 }}
+                    transition={{ duration: 1, delay: 0.25 + i * 0.14, ease: EASE }}
+                  >
+                    {line}
+                  </motion.span>
+                </span>
+              ))}
             </h1>
 
-            <motion.div className="my-6 h-[2px] bg-accent" initial={{ width: 0 }} animate={{ width: 74 }} transition={{ duration: 1, delay: 1.15, ease: EASE }} />
+            <motion.div className="my-7 h-[2px] bg-accent" initial={{ width: 0 }} animate={{ width: 74 }} transition={{ duration: 0.9, delay: 0.7, ease: EASE }} />
 
-            <motion.p
-              className="max-w-[430px] text-[clamp(1.05rem,2.3vw,1.35rem)] font-light text-[#454b55]"
-              initial={reduce ? false : { opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, delay: 1, ease: EASE }}
-            >
-              {profile.tagline}
-            </motion.p>
-
-            {/* ثلاثة أزرار مركّزة فقط: اقرأ · استكشف · تواصل */}
+            {/* الاسم والصفة — أصغر، ثانويّان */}
             <motion.div
-              className="mt-9 flex flex-wrap gap-3"
+              initial={reduce ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.85, ease: EASE }}
+            >
+              <p className="font-display text-[clamp(1.15rem,2.4vw,1.6rem)] font-semibold text-ink">د. {profile.name}</p>
+              <p className="mt-1.5 text-[.95rem] font-light text-soft">أستاذ تكنولوجيا التعليم · مؤلف · باحث · مستشار</p>
+            </motion.div>
+
+            {/* زرّ واحد فقط */}
+            <motion.div
+              className="mt-9"
               initial={reduce ? false : { opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, delay: 1.2, ease: EASE }}
+              transition={{ duration: 0.8, delay: 1, ease: EASE }}
             >
-              <Magnetic to="/articles" className="inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
-                اقرأ
+              <Magnetic to="/articles" className="inline-block rounded-full bg-accent px-9 py-4 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
+                ادخل إلى عالمي الفكري ←
               </Magnetic>
-              <Link to="/curated" className="inline-block rounded-full border-[1.5px] border-hair px-8 py-3.5 font-semibold text-ink transition-colors duration-300 hover:border-accent hover:text-accent">
-                استكشف
-              </Link>
-              <Link to="/contact" className="inline-block rounded-full border-[1.5px] border-hair px-8 py-3.5 font-semibold text-ink transition-colors duration-300 hover:border-accent hover:text-accent">
-                تواصل
-              </Link>
             </motion.div>
           </div>
 
@@ -309,7 +298,7 @@ export default function Home() {
             </h2>
           </FadeUp>
           <FadeUp delay={0.1}>
-            <p className="text-[1.12rem] font-light leading-[1.9] text-[#3f454f]">{profile.about}</p>
+            <p className="text-[1.12rem] font-light leading-[1.9] text-ink/80">{profile.about}</p>
             <Link to="/cv" className="mt-7 inline-block border-b-[1.5px] border-accent pb-1 font-semibold text-accent">
               السيرة الكاملة ←
             </Link>

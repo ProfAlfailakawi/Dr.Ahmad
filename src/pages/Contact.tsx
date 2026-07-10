@@ -15,7 +15,7 @@ export default function Contact() {
             <h1 className="font-display text-[clamp(2.6rem,8vw,5.2rem)] font-bold text-ink">
               <Reveal>لنعمل معاً.</Reveal>
             </h1>
-            <p className="mx-auto mt-6 max-w-[520px] text-[1.12rem] font-light leading-[1.9] text-[#3f454f]">
+            <p className="mx-auto mt-6 max-w-[520px] text-[1.12rem] font-light leading-[1.9] text-ink/80">
               استشارات في تكنولوجيا التعليم، محاضرات وورش عمل، ومشاريع تحوّل رقمي في المؤسسات التعليمية.
             </p>
 

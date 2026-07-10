@@ -86,6 +86,8 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
   content: ""; position: absolute; top: -30px; left: 0; width: 100%; height: 30px;
   background: rgb(var(--c-accent)); animation: drop 2.6s ease-in-out infinite;
 }
+/* الشاشات القصيرة: يختفي مؤشر «اكتشف» كي لا يزاحم الأزرار */
+@media (max-height: 720px) { .cue { display: none; } }
 
 /* pulsing dot */
 @keyframes pulse { 0% { transform: scale(1); opacity: 0.55 } 100% { transform: scale(3.4); opacity: 0 } }

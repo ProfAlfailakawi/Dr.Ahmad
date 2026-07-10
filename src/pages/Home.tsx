@@ -126,6 +126,68 @@ function MiniAtlas() {
   )
 }
 
+/* ---------- «بوصلة الفكر» (فكرة نووية ٣) ----------
+   تصفّح بالفكرة لا بنوع الملف: كل محور يصله أعماله. أرشيف → عقل يُستكشف. */
+function ThoughtCompass() {
+  const axes = [
+    { key: 'التعليم', label: 'التعليم' },
+    { key: 'التربية', label: 'التربية' },
+    { key: 'مجتمع', label: 'المجتمع' },
+    { key: 'تقنية', label: 'التقنية' },
+    { key: 'هوية', label: 'الهوية' },
+  ]
+  const [active, setActive] = useState(axes[0].key)
+  const related = articles.filter((a) => a.cat === active).slice(0, 3)
+
+  return (
+    <section className="border-t border-hair px-6 py-[70px] md:px-11 md:py-[100px]">
+      <div className="mx-auto max-w-shell">
+        <FadeUp><Label>بوصلة الفكر</Label></FadeUp>
+        <FadeUp delay={0.05}>
+          <h2 className="mb-10 font-display text-[clamp(2rem,5vw,3.3rem)] font-semibold leading-[1.25] text-ink">
+            <Reveal>تصفّح بالفكرة.</Reveal>
+          </h2>
+        </FadeUp>
+
+        {/* المحاور */}
+        <FadeUp delay={0.1}>
+          <div className="flex flex-wrap gap-2.5">
+            {axes.map((a) => (
+              <button
+                key={a.key}
+                onMouseEnter={() => setActive(a.key)}
+                onClick={() => setActive(a.key)}
+                data-hover
+                className={`rounded-full border px-5 py-2 font-display text-[1.02rem] transition-colors duration-300 ${
+                  active === a.key ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'
+                }`}
+              >
+                {a.label}
+              </button>
+            ))}
+          </div>
+        </FadeUp>
+
+        {/* أعمال المحور */}
+        <div className="mt-10 grid gap-5 md:grid-cols-3 md:gap-6">
+          {related.map((a, i) => (
+            <FadeUp key={a.slug} delay={Math.min(i * 0.06, 0.2)}>
+              <Link to={`/articles/${a.slug}`} data-hover className="group flex h-full flex-col rounded-2xl border border-hair bg-canvas p-6 transition-colors duration-300 hover:border-accent">
+                <time className="text-[.76rem] text-soft">{a.date}</time>
+                <h3 className="mt-3 font-display text-[1.12rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">{a.title}</h3>
+                <span className="mt-auto pt-6 text-[.82rem] text-soft transition-colors group-hover:text-accent">اقرأ ←</span>
+              </Link>
+            </FadeUp>
+          ))}
+        </div>
+        <FadeUp delay={0.15}>
+          <Link to="/articles" className="mt-8 inline-block text-[.9rem] font-semibold text-accent">كل ما كتبته في {axes.find((a) => a.key === active)?.label} ←</Link>
+        </FadeUp>
+      </div>
+    </section>
+  )
+}
+
 /* ---------- سؤال الأسبوع التفاعلي (فكرة نووية ٧) ----------
    الزائر يصوّت بلا تسجيل ولا تتبّع، فيُكشف له رأي الدكتور — مشاركٌ لا متفرّج. */
 function WeeklyPoll() {
@@ -434,6 +496,8 @@ export default function Home() {
       </section>
 
       <MiniAtlas />
+
+      <ThoughtCompass />
 
       {/* المقالات — لغة: مقال كبير مميّز + عنوانان فقط */}
       <section className="border-t border-hair px-6 py-[70px] md:px-11 md:py-[100px]">

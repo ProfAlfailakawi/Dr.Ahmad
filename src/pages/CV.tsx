@@ -2,7 +2,7 @@ import { useSeo } from '../components/seo'
 import { Accordion, FadeUp, Page, PageHead } from '../components/ui'
 import { advisory, bio, books, conferences, doctorate, links, memberships, papers, stats } from '../data'
 
-const ar = (n: number) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
+const ar = (n: number) => String(n)
 
 /* الأقسام المفتوحة دائماً — الجوهر */
 function Open({ title, children }: { title: string; children: React.ReactNode }) {
@@ -43,12 +43,12 @@ export default function CV() {
                 { n: ar(books.length), l: 'كتاباً منشوراً' },
                 { n: ar(papers.length), l: 'بحثاً محكّماً' },
                 { n: ar(stats.articles), l: 'مقالاً فكرياً' },
-                { n: ar(Math.round(stats.words / 1000)) + 'ك', l: 'كلمة منشورة' },
+                { n: ar(Math.round(stats.words / 1000)) + 'K', l: 'كلمة منشورة' },
               ].map((s) => (
                 <div key={s.l} className="flex flex-col items-center text-center">
                   <span className="relative flex h-24 w-24 items-center justify-center rounded-full border border-accent/30 md:h-28 md:w-28">
                     <span className="pointer-events-none absolute inset-1.5 rounded-full border border-hair" />
-                    <span className="font-display text-[clamp(1.7rem,3vw,2.3rem)] font-bold leading-none text-accent">{s.n}</span>
+                    <span dir="ltr" className="font-display text-[clamp(1.7rem,3vw,2.3rem)] font-bold leading-none text-accent">{s.n}</span>
                   </span>
                   <span className="mt-4 text-[.85rem] font-light tracking-wide text-soft">{s.l}</span>
                 </div>

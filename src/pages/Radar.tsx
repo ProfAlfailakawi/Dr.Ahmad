@@ -12,7 +12,7 @@ import { useExtras } from '../lib/content'
 
 type RadarItem = { ar: string; arNote?: string; en: string; enNote?: string; source: string; url: string; day: string; status?: string }
 
-const arNum = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
+const arNum = (n: number | string) => String(n)
 
 /** رقم الأسبوع ISO + مداه للعرض */
 function weekOf(dayIso: string) {

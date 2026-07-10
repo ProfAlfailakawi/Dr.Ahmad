@@ -8,7 +8,7 @@ import { Newsletter } from '../components/extras'
 import { curatedBank, thisMonthsBook, type Curio } from '../data-curated'
 import { staticQuestions, LAUNCH_DATE } from './Questions'
 
-const arNum = (n: number) => String(n).padStart(2, '0').replace(/[0-9]/g, (d) => '0123456789'[+d])
+const arNum = (n: number) => String(n).padStart(2, '0')
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
 type Paper = (typeof papers)[number] & { slug: string }
 
@@ -345,7 +345,7 @@ function Card({ children, delay = 0, className = '' }: { children: React.ReactNo
 }
 
 export default function Home() {
-  useSeo({ title: 'د. أحمد الفيلكاوي — أستاذ تكنولوجيا التعليم', path: '/' })
+  useSeo({ title: 'د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم والذكاء الاصطناعي', path: '/' })
   const reduce = useReducedMotion()
   const { scrollY } = useScroll()
   const parY = useTransform(scrollY, [0, 800], [0, 40])
@@ -403,7 +403,7 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.85, ease: EASE }}
             >
               <p className="font-display text-[clamp(1.15rem,2.4vw,1.6rem)] font-semibold text-ink">د. {profile.name}</p>
-              <p className="mt-1.5 text-[.95rem] font-light text-soft">أستاذ تكنولوجيا التعليم · مؤلف · باحث · مستشار</p>
+              <p className="mt-1.5 text-[.95rem] font-light text-soft">أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · مؤلف · باحث · مستشار</p>
             </motion.div>
 
             {/* زرّ واحد فقط */}

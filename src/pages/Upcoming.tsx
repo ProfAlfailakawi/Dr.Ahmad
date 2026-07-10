@@ -5,7 +5,7 @@ import { useSeo } from '../components/seo'
 import { links, upcoming } from '../data'
 
 export default function Upcoming() {
-  useSeo({ title: 'اللقاءات القادمة', path: '/upcoming', description: 'محاضرات وورش عمل ومؤتمرات قادمة للدكتور أحمد الفيلكاوي.' })
+  useSeo({ title: 'اللقاءات القادمة', path: '/upcoming', description: 'محاضرات وورش عمل ومؤتمرات قادمة للدكتور أحمد حسين الفيلكاوي.' })
   const reduce = useReducedMotion()
 
   const today = new Date().toISOString().slice(0, 10)

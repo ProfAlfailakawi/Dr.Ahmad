@@ -43,7 +43,7 @@ export function useSeo({
   robots?: string
 }) {
   useEffect(() => {
-    const full = title === site.title ? title : `${title} — د. أحمد الفيلكاوي`
+    const full = title === site.title ? title : `${title} — د. أحمد حسين الفيلكاوي`
     const desc = description || site.description
     const url = site.url + path
     const img = site.url + (image || site.ogImage)

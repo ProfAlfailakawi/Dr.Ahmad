@@ -316,7 +316,7 @@ function InboxPanel() {
           </div>
           <p className="mt-4 whitespace-pre-wrap leading-relaxed text-ink">{m.message}</p>
           <div className="mt-4 flex items-center gap-4 border-t border-hair pt-3 text-[.82rem]">
-            <a href={`mailto:${m.email}?subject=${encodeURIComponent('رد على رسالتك — د. أحمد الفيلكاوي')}`} className="font-semibold text-accent transition-colors hover:text-accent-deep">الردّ بالبريد ←</a>
+            <a href={`mailto:${m.email}?subject=${encodeURIComponent('رد على رسالتك — د. أحمد حسين الفيلكاوي')}`} className="font-semibold text-accent transition-colors hover:text-accent-deep">الردّ بالبريد ←</a>
             <button onClick={() => { if (confirm('حذف الرسالة نهائياً؟')) remove(m.id) }} className="text-soft transition-colors hover:text-red-500">حذف</button>
           </div>
         </div>

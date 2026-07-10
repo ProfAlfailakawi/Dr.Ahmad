@@ -167,9 +167,9 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
   const [dark, setDark] = useState(false)
 
   useEffect(() => {
+    // الوضع النهاري هو الأصل دائماً — لا يتحوّل للّيلي إلا إذا اختاره الزائر بنفسه (يُحفظ اختياره)
     const saved = (() => { try { return localStorage.getItem('theme') } catch { return null } })()
-    const prefers = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const on = saved ? saved === 'dark' : prefers
+    const on = saved === 'dark'
     setDark(on)
     document.documentElement.classList.toggle('dark', on)
   }, [])

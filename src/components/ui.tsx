@@ -32,7 +32,7 @@ export function Reveal({ children, delay = 0, className = '' }: { children: Reac
   const show = reduce || inView || safety
 
   return (
-    <span ref={ref} className={`block overflow-hidden ${className}`}>
+    <span ref={ref} className={`-mb-[0.22em] block overflow-hidden pb-[0.22em] ${className}`}>
       <motion.span
         className="block"
         initial={reduce ? false : { y: '115%' }}

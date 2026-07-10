@@ -74,7 +74,7 @@ function draw(quote: string, dark: boolean): string {
 
   g.font = '600 34px "Tajawal", sans-serif'
   g.fillStyle = ink
-  g.fillText('د. أحمد الفيلكاوي', W - 110, H - 152)
+  g.fillText('د. أحمد حسين الفيلكاوي', W - 110, H - 152)
 
   g.font = '400 26px "Tajawal", sans-serif'
   g.fillStyle = soft

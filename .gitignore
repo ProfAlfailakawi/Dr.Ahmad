@@ -31,3 +31,4 @@ public/files
 !/index.html
 /sitemap.xml
 /feed.xml
+.notify-state.json

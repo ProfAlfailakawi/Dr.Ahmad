@@ -305,6 +305,18 @@ export default function ArticleDetail() {
             </FadeUp>
           )}
 
+          {/* «ما الجملة التي بقيت معك؟» — لحظة الأثر (فكرة نووية ٦): دعوة صريحة لا أداة مخفية */}
+          {a.body && (
+            <FadeUp>
+              <div className="mt-14 rounded-2xl border border-hair bg-wash p-7 text-center md:p-8">
+                <p className="font-display text-[clamp(1.15rem,2.4vw,1.5rem)] font-semibold leading-[1.7] text-ink">ما الجملة التي بقيت معك؟</p>
+                <p className="mx-auto mt-2 max-w-[440px] text-[.88rem] font-light leading-[1.9] text-soft">
+                  ظلّل أيّ جملةٍ من المقال بإصبعك أو مؤشرك، وستظهر لك بطاقة اقتباسٍ أنيقة تحفظها أو تشاركها.
+                </p>
+              </div>
+            </FadeUp>
+          )}
+
           <TimeDialogue a={a} articles={articles} />
 
           <Share title={a.title} path={`/articles/${a.slug}`} />

@@ -69,6 +69,34 @@ const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.9
 const primary = 'rounded-full bg-accent px-6 py-2.5 text-[.9rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-50'
 const secondary = 'rounded-full border border-hair px-5 py-2.5 text-[.86rem] text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50'
 
+/* اقتراح محلي فوري — احتياط زر الذكاء الاصطناعي حين لا يتوفر الخادم.
+   نفس المنطق الحدسي الذي صنّف مقالات الأرشيف الـ96. */
+const CAT_KEYS: [string, string[]][] = [
+  ['تقنية', ['تقني', 'تكنولوج', 'ذكاء اصطناعي', 'روبوت', 'تطبيق', 'جوال', 'يوتيوب', 'إنترنت', 'رقمي', 'واقع معزز', 'افتراضي', 'بيانات', 'برمج', 'سوشيال']],
+  ['التعليم', ['تعليم', 'التعلّم', 'التعلم', 'مدرس', 'معلم', 'طالب', 'جامع', 'منهج', 'امتحان', 'صف', 'تربوي', 'التدريس', 'مدرسة']],
+  ['التربية', ['تربية', 'ابن', 'أبناء', 'طفل', 'أسرة', 'والدين', 'بيت', 'قيم']],
+  ['إعلام', ['إعلام', 'صحافة', 'قناة', 'خبر', 'تلفزيون', 'فضائي', 'بث']],
+  ['هوية', ['هوية', 'تراث', 'لغة', 'عربي', 'أصالة', 'انتماء', 'وطن', 'مواطن']],
+  ['مجتمع', ['مجتمع', 'ناس', 'اجتماع', 'شباب', 'ظاهرة', 'سلوك', 'عادات', 'إدمان']],
+]
+function localSuggest(title: string, body: string) {
+  const sample = title + ' ' + body.slice(0, 600)
+  let cat = 'التعليم', best = 0
+  for (const [name, keys] of CAT_KEYS) {
+    let score = 0
+    for (const k of keys) score += sample.split(k).length - 1
+    if (score > best) { best = score; cat = name }
+  }
+  const flat = body.replace(/\s+/g, ' ').trim()
+  const parts = flat.split(/(?<=[.!؟])\s/)
+  let excerpt = ''
+  for (const p of parts) {
+    if (excerpt.length + p.length > 170 && excerpt) break
+    excerpt = (excerpt + ' ' + p).trim()
+  }
+  return { cat, excerpt: excerpt.slice(0, 200).trim() }
+}
+
 function dateArabic(iso: string) {
   if (!iso) return ''
   const date = new Date(`${iso}T12:00:00+03:00`)
@@ -240,8 +268,10 @@ function Editor({
       const payload = await response.json() as { cat?: string; excerpt?: string; error?: string }
       if (!response.ok) throw new Error(payload.error || 'تعذّر الاقتراح')
       setForm((previous) => ({ ...previous, cat: payload.cat || previous.cat, excerpt: payload.excerpt || previous.excerpt, _aiBusy: '', _aiError: '' }))
-    } catch (reason) {
-      setForm((previous) => ({ ...previous, _aiBusy: '', _aiError: reason instanceof Error ? reason.message : 'تعذّر الاقتراح' }))
+    } catch {
+      // لا خادم؟ اقتراح محلي فوري (نفس منطق استيراد الأرشيف) — الزر لا يموت أبداً
+      const local = localSuggest(form.title || '', form.body || '')
+      setForm((previous) => ({ ...previous, cat: local.cat, excerpt: previous.excerpt || local.excerpt, _aiBusy: '', _aiError: '' }))
     }
   }
 

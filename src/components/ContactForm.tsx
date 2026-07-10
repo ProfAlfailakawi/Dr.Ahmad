@@ -3,16 +3,27 @@ import { motion } from 'framer-motion'
 import { EASE } from './ui'
 import { firebaseEnabled, getDb } from '../lib/firebase'
 
-const TOPICS = ['استشارة', 'محاضرة أو ورشة', 'لقاء إعلامي', 'أخرى'] as const
+/* «مساعد اختيار» لا نموذج طويل (فكرة نووية ٩ للصديق):
+   يبدأ بسؤال واحد، وبعد الاختيار تظهر الحقول الضرورية فقط بإرشادٍ يناسب نوع الطلب.
+   حقول فايرستور نفسها (name/email/topic/message) — القواعد الأمنية بلا تغيير. */
+const TOPICS = [
+  { key: 'استشارة', d: 'رأي خبير في مشروع أو تحدٍّ تعليمي/تقني', hint: 'صف التحدي أو المشروع باختصار: المجال، والجهة إن وُجدت، وما تطمح إليه.' },
+  { key: 'محاضرة أو ورشة', d: 'حضورياً أو عن بُعد — للجهات والمؤتمرات', hint: 'الجهة، الموضوع المقترح، التاريخ التقريبي، والمكان (أو عن بُعد).' },
+  { key: 'لقاء إعلامي', d: 'تلفزيون، إذاعة، بودكاست، صحافة', hint: 'اسم البرنامج أو الوسيلة، محور الحلقة، وموعد التسجيل أو البث.' },
+  { key: 'أخرى', d: 'تعاون بحثي، فكرة، أو أي شيء آخر', hint: 'اكتب ما يدور في بالك بحرية…' },
+] as const
+type TopicKey = (typeof TOPICS)[number]['key']
 
 export function ContactForm() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [topic, setTopic] = useState<(typeof TOPICS)[number]>('استشارة')
+  const [topic, setTopic] = useState<TopicKey | null>(null)
   const [message, setMessage] = useState('')
   const [website, setWebsite] = useState('')
   const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
   const [err, setErr] = useState('')
+
+  const active = TOPICS.find((t) => t.key === topic)
 
   const valid =
     name.trim().length > 1 &&
@@ -34,7 +45,7 @@ export function ContactForm() {
       await addDoc(collection(db, 'messages'), {
         name: name.trim(),
         email: email.trim(),
-        topic,
+        topic: topic || 'أخرى',
         message: message.trim(),
         createdAt: serverTimestamp(),
       })
@@ -66,56 +77,67 @@ export function ContactForm() {
   return (
     <div className="rounded-2xl border border-hair bg-wash p-8 text-right md:p-10">
       <span className="text-[.76rem] font-semibold uppercase text-accent">راسلني مباشرة</span>
-      <h3 className="mt-3 font-display text-[1.5rem] font-semibold text-ink">كيف أخدمك؟</h3>
+      <h3 className="mt-3 font-display text-[1.5rem] font-semibold text-ink">كيف يمكن أن أساعدك؟</h3>
 
-      {/* الموضوع */}
-      <div className="mt-6 flex flex-wrap gap-2">
-        {TOPICS.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTopic(t)}
-            className={`rounded-full border px-4 py-1.5 text-[.84rem] font-medium transition-colors duration-300 ${
-              topic === t ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
-            }`}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
+      {!active ? (
+        /* ── الخطوة الأولى: الاختيار وحده — لا حقول تُربك ── */
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          {TOPICS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTopic(t.key)}
+              className="group rounded-xl border border-hair bg-canvas p-5 text-right transition-colors duration-300 hover:border-accent"
+            >
+              <span className="block font-display text-[1.05rem] font-semibold text-ink transition-colors group-hover:text-accent">{t.key}</span>
+              <span className="mt-1 block text-[.84rem] font-light text-soft">{t.d}</span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        /* ── الخطوة الثانية: الحقول الضرورية فقط، بإرشاد يناسب الطلب ── */
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: EASE }}>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <span className="rounded-full bg-accent px-4 py-1.5 text-[.84rem] font-medium text-canvas">{active.key}</span>
+            <button onClick={() => { setTopic(null); setState('idle') }} className="text-[.8rem] text-soft transition-colors hover:text-accent">
+              غيّر نوع الطلب
+            </button>
+          </div>
 
-      <div className="mt-5 grid gap-3.5 sm:grid-cols-2">
-        <input value={name} onChange={(e) => { setName(e.target.value); setState('idle') }} placeholder="الاسم" aria-label="الاسم" className={field} />
-        <input value={email} onChange={(e) => { setEmail(e.target.value); setState('idle') }} placeholder="البريد الإلكتروني" aria-label="البريد" dir="ltr" className={`${field} text-right`} />
-      </div>
-      <input
-        value={website}
-        onChange={(e) => setWebsite(e.target.value)}
-        tabIndex={-1}
-        autoComplete="off"
-        aria-hidden="true"
-        className="hidden"
-        placeholder="Website"
-      />
+          <div className="mt-5 grid gap-3.5 sm:grid-cols-2">
+            <input value={name} onChange={(e) => { setName(e.target.value); setState('idle') }} placeholder="الاسم" aria-label="الاسم" className={field} />
+            <input value={email} onChange={(e) => { setEmail(e.target.value); setState('idle') }} placeholder="البريد الإلكتروني" aria-label="البريد" dir="ltr" className={`${field} text-right`} />
+          </div>
+          <input
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="hidden"
+            placeholder="Website"
+          />
 
-      <textarea
-        value={message}
-        onChange={(e) => { setMessage(e.target.value); setState('idle') }}
-        placeholder="رسالتك…"
-        aria-label="الرسالة"
-        rows={5}
-        className={`${field} mt-3.5 resize-none leading-[1.9]`}
-      />
+          <textarea
+            value={message}
+            onChange={(e) => { setMessage(e.target.value); setState('idle') }}
+            placeholder={active.hint}
+            aria-label="الرسالة"
+            rows={5}
+            className={`${field} mt-3.5 resize-none leading-[1.9]`}
+          />
 
-      <div className="mt-5 flex flex-wrap items-center gap-4">
-        <button
-          onClick={submit}
-          disabled={state === 'sending'}
-          className="rounded-full bg-accent px-8 py-3.5 font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep disabled:opacity-60"
-        >
-          {state === 'sending' ? 'جارٍ الإرسال…' : 'إرسال'}
-        </button>
-        {state === 'error' && <span className="text-[.86rem] text-soft">{err}</span>}
-      </div>
+          <div className="mt-5 flex flex-wrap items-center gap-4">
+            <button
+              onClick={submit}
+              disabled={state === 'sending'}
+              className="rounded-full bg-accent px-8 py-3.5 font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep disabled:opacity-60"
+            >
+              {state === 'sending' ? 'جارٍ الإرسال…' : 'إرسال'}
+            </button>
+            {state === 'error' && <span className="text-[.86rem] text-soft">{err}</span>}
+          </div>
+        </motion.div>
+      )}
     </div>
   )
 }

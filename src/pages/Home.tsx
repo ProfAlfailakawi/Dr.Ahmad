@@ -125,6 +125,54 @@ function MiniAtlas() {
   )
 }
 
+/* ---------- «الأثر» — رحلة فكر لا أرقام صاخبة (فكرة نووية ٥) ----------
+   خط زمني هادئ يُحسب من المحتوى نفسه، فيقول «ماذا صنعت» لا «كم». */
+function ImpactTimeline() {
+  const years = articles.map((a) => +a.iso.slice(0, 4))
+  const firstYear = Math.min(...years)
+  const latestYear = Math.max(...years)
+  const byYear: Record<number, number> = {}
+  years.forEach((y) => { byYear[y] = (byYear[y] || 0) + 1 })
+  const peakYear = Object.entries(byYear).sort((a, b) => b[1] - a[1])[0]
+  const latest = articles[0]
+
+  const steps = [
+    { y: String(firstYear), t: 'البداية — أول مقالٍ فكري في الصحافة الكويتية.' },
+    { y: `${peakYear[0]}`, t: `ذروة الإنتاج — ${peakYear[1]} مقالاً في عامٍ واحد.` },
+    { y: 'مرجع', t: `أرشيفٌ مؤلَّف — ${books.length} كتب و${papers.length} بحثاً محكّماً.` },
+    { y: String(latestYear), t: `الأحدث — «${latest.title}».` },
+  ]
+
+  return (
+    <section className="border-t border-hair px-6 py-[70px] md:px-11 md:py-[100px]">
+      <div className="mx-auto max-w-shell">
+        <FadeUp><Label>الأثر</Label></FadeUp>
+        <FadeUp delay={0.05}>
+          <h2 className="mb-12 font-display text-[clamp(2rem,5vw,3.3rem)] font-semibold leading-[1.25] text-ink">
+            <Reveal>رحلة فكر.</Reveal>
+          </h2>
+        </FadeUp>
+        <ol className="relative mr-2 border-r-2 border-hair pr-8">
+          {steps.map((s, i) => (
+            <FadeUp key={s.t} delay={Math.min(i * 0.1, 0.4)}>
+              <li className="relative pb-10 last:pb-0">
+                <span className="absolute right-[-2.6rem] top-1.5 h-3 w-3 rounded-full border-2 border-accent bg-canvas" />
+                <span className="font-display text-[1.05rem] font-bold text-accent">{s.y}</span>
+                <p className="mt-1.5 max-w-xl text-[1.05rem] font-light leading-[1.85] text-ink/80">{s.t}</p>
+              </li>
+            </FadeUp>
+          ))}
+        </ol>
+        <FadeUp delay={0.2}>
+          <p className="mt-10 border-t border-hair pt-8 font-display text-[clamp(1.2rem,2.6vw,1.7rem)] font-semibold leading-relaxed text-ink">
+            هذا ليس أرشيفاً… هذه رحلة فكر.
+          </p>
+        </FadeUp>
+      </div>
+    </section>
+  )
+}
+
 /* ---------- The single "Latest" card ---------- */
 function LatestCard() {
   const reduce = useReducedMotion()
@@ -334,96 +382,100 @@ export default function Home() {
 
       <MiniAtlas />
 
-      {/* articles — latest 3 */}
+      {/* المقالات — لغة: مقال كبير مميّز + عنوانان فقط */}
       <section className="border-t border-hair px-6 py-[70px] md:px-11 md:py-[100px]">
         <div className="mx-auto max-w-shell">
           <SectionHead label="مقالاتي الفكرية" title="بصوتي الخاص." to="/articles" />
-          <div className="grid gap-5 md:grid-cols-3 md:gap-6">
-            {topArticles.map((a, i) => (
-              <Card key={a.slug} delay={i * 0.07}>
-                <Link
-                  to={`/articles/${a.slug}`}
-                  data-hover
-                  className="group flex h-full flex-col rounded-2xl border border-hair bg-canvas p-6 transition-colors md:p-7 duration-300 hover:border-accent"
-                >
-                  <div className="flex items-center gap-2.5 text-[.75rem]">
-                    <span className="font-semibold text-accent">{a.cat}</span>
-                    <span className="h-1 w-1 rounded-full bg-hair" />
-                    <time className="text-soft">{a.date}</time>
-                  </div>
-                  <h3 className="mt-4 font-display text-[1.28rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">
-                    {a.title}
-                  </h3>
-                  <span className="mt-auto pt-7 text-[.85rem] text-soft transition-colors group-hover:text-accent">اقرأ ←</span>
-                </Link>
-              </Card>
-            ))}
+          <div className="grid gap-8 md:grid-cols-[1.5fr_.5fr] md:gap-12">
+            <FadeUp>
+              <Link to={`/articles/${topArticles[0].slug}`} data-hover className="group block">
+                <div className="flex items-center gap-2.5 text-[.78rem]">
+                  <span className="font-semibold text-accent">{topArticles[0].cat}</span>
+                  <span className="h-1 w-1 rounded-full bg-hair" />
+                  <time className="text-soft">{topArticles[0].date}</time>
+                </div>
+                <h3 className="mt-4 font-display text-[clamp(1.6rem,3.4vw,2.4rem)] font-semibold leading-[1.4] text-ink transition-colors group-hover:text-accent">
+                  {topArticles[0].title}
+                </h3>
+                {topArticles[0].excerpt && <p className="mt-4 max-w-xl text-[1.02rem] font-light leading-[1.9] text-ink/80">{topArticles[0].excerpt}</p>}
+                <span className="mt-6 inline-block text-[.9rem] font-semibold text-accent">اقرأ المقال ←</span>
+              </Link>
+            </FadeUp>
+            <FadeUp delay={0.12}>
+              <div className="flex flex-col divide-y divide-hair border-t border-hair md:border-r md:border-t-0 md:pr-8">
+                {topArticles.slice(1, 3).map((a) => (
+                  <Link key={a.slug} to={`/articles/${a.slug}`} data-hover className="group py-6 first:pt-6 md:first:pt-0">
+                    <time className="text-[.76rem] text-soft">{a.date}</time>
+                    <h4 className="mt-2 font-display text-[1.1rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">{a.title}</h4>
+                  </Link>
+                ))}
+              </div>
+            </FadeUp>
           </div>
         </div>
       </section>
 
-      {/* research — latest 3 */}
+      {/* الأبحاث — لغة: قائمة مرقّمة أنيقة، لا بطاقات */}
       <section className="border-t border-hair bg-wash px-6 py-[70px] md:px-11 md:py-[100px]">
         <div className="mx-auto max-w-shell">
           <SectionHead label="المساهمات العلمية" title="أبحاث محكّمة." to="/research" />
-          <div className="grid gap-5 md:grid-cols-3 md:gap-6">
+          <ol className="mt-2">
             {topPapers.map((p, i) => (
-              <Card key={p.url} delay={i * 0.07}>
-                <Link
-                  to={`/research/${p.slug}`}
-                  data-hover
-                  className="group flex h-full flex-col rounded-2xl border border-hair bg-canvas p-6 transition-colors md:p-7 duration-300 hover:border-accent"
-                >
-                  <span className="font-display text-[1.5rem] font-semibold text-accent">{arNum(i + 1)}</span>
-                  <h3 className="mt-4 text-[1.08rem] font-medium leading-[1.7] text-ink transition-colors group-hover:text-accent">
-                    {p.title}
-                  </h3>
-                  <span className="mt-3 text-[.78rem] text-soft">{p.meta}</span>
-                </Link>
-              </Card>
+              <FadeUp key={p.url} delay={Math.min(i * 0.06, 0.24)}>
+                <li className={i === 0 ? '' : 'border-t border-hair'}>
+                  <Link to={`/research/${p.slug}`} data-hover className="group flex items-baseline gap-6 py-6 transition-[padding] duration-300 hover:pe-3">
+                    <span className="w-8 shrink-0 font-display text-[1.4rem] font-bold text-accent/70 transition-colors group-hover:text-accent">{arNum(i + 1)}</span>
+                    <span className="flex-1">
+                      <span className="block text-[1.1rem] font-medium leading-[1.7] text-ink transition-colors group-hover:text-accent">{p.title}</span>
+                      <span className="mt-1 block text-[.8rem] text-soft">{p.meta}</span>
+                    </span>
+                    <span className="shrink-0 text-soft transition-transform duration-300 group-hover:-translate-x-1">←</span>
+                  </Link>
+                </li>
+              </FadeUp>
             ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* الإعلام — لغة: فيديو سينمائي واحد + رابطان نصيان */}
+      <section className="border-t border-hair px-6 py-[70px] md:px-11 md:py-[100px]">
+        <div className="mx-auto max-w-shell">
+          <SectionHead label="الظهور الإعلامي" title="على الشاشة." to="/media" />
+          <div className="grid gap-8 md:grid-cols-[1.55fr_.45fr] md:gap-12">
+            <FadeUp>
+              <a href={topMedia[0].url} target="_blank" rel="noreferrer" data-hover className="group block overflow-hidden rounded-2xl">
+                <div className="relative overflow-hidden bg-wash" style={{ aspectRatio: '16 / 9' }}>
+                  {ytId(topMedia[0].url) && (
+                    <img src={`https://i.ytimg.com/vi/${ytId(topMedia[0].url)}/hqdefault.jpg`} alt={topMedia[0].title} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  )}
+                  <span className="absolute inset-0 bg-ink/10 transition-colors duration-300 group-hover:bg-ink/25" />
+                  <span className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[1.5px] border-white/80 bg-ink/40 text-white backdrop-blur-sm transition-all duration-300 group-hover:scale-110 group-hover:border-accent group-hover:bg-accent">▶</span>
+                </div>
+                <div className="mt-4">
+                  <span className="text-[.74rem] font-semibold text-accent">{topMedia[0].outlet}</span>
+                  <h3 className="mt-1.5 font-display text-[1.2rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{topMedia[0].title}</h3>
+                </div>
+              </a>
+            </FadeUp>
+            <FadeUp delay={0.12}>
+              <div className="flex flex-col divide-y divide-hair border-t border-hair md:border-r md:border-t-0 md:pr-8">
+                {topMedia.slice(1, 3).map((m) => (
+                  <a key={m.url} href={m.url} target="_blank" rel="noreferrer" data-hover className="group flex items-start gap-3 py-5 first:pt-5 md:first:pt-0">
+                    <span className="mt-1 text-[.7rem] text-accent">▶</span>
+                    <span>
+                      <span className="block text-[.72rem] font-semibold text-accent">{m.outlet}</span>
+                      <span className="mt-1 block text-[.98rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{m.title}</span>
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </FadeUp>
           </div>
         </div>
       </section>
 
-      {/* media — latest 3 */}
-      <section className="border-t border-hair px-6 py-[70px] md:px-11 md:py-[100px]">
-        <div className="mx-auto max-w-shell">
-          <SectionHead label="الظهور الإعلامي" title="على الشاشة." to="/media" />
-          <div className="grid gap-5 md:grid-cols-3 md:gap-6">
-            {topMedia.map((m, i) => (
-              <Card key={m.url} delay={i * 0.07}>
-                <a
-                  href={m.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  data-hover
-                  className="group block h-full overflow-hidden rounded-2xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent"
-                >
-                  <div className="relative overflow-hidden bg-wash" style={{ aspectRatio: '16 / 9' }}>
-                    {ytId(m.url) && (
-                      <img
-                        src={`https://i.ytimg.com/vi/${ytId(m.url)}/hqdefault.jpg`}
-                        alt={m.title}
-                        loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    )}
-                    <span className="absolute inset-0 bg-ink/0 transition-colors duration-300 group-hover:bg-ink/20" />
-                    <span className="absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[1.5px] border-white/80 bg-ink/40 text-[.85rem] text-white backdrop-blur-sm transition-all duration-300 group-hover:scale-110 group-hover:border-accent group-hover:bg-accent">
-                      ▶
-                    </span>
-                  </div>
-                  <div className="p-6">
-                    <span className="text-[.72rem] font-semibold text-accent">{m.outlet}</span>
-                    <h3 className="mt-2 text-[1.02rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">{m.title}</h3>
-                  </div>
-                </a>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+      <ImpactTimeline />
 
       {/* curated — latest 3 */}
       <section className="border-t border-hair bg-wash px-6 py-[70px] md:px-11 md:py-[100px]">

@@ -39,6 +39,8 @@ type Props = {
   items: ManagedRecord[]
   getBaseRecord: (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined
   onChanged: () => Promise<unknown> | unknown
+  /* تحرير موضعي: يفتح نموذج هذا الـslug فور الوصول (رابط ✎ من صفحة العرض) */
+  openSlug?: string
 }
 
 type Form = Record<string, string>
@@ -482,10 +484,17 @@ function Editor({
   )
 }
 
-export function ContentManager({ kind, items, getBaseRecord, onChanged }: Props) {
+export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlug }: Props) {
   const [query, setQuery] = useState('')
   const [descending, setDescending] = useState(true)
   const [current, setCurrent] = useState<ManagedRecord | null | undefined>(undefined)
+  // ✎ من الموقع: افتح النموذج على العنصر المطلوب أول ما تتوفر القائمة (مرة واحدة)
+  const [consumedOpen, setConsumedOpen] = useState(false)
+  useEffect(() => {
+    if (consumedOpen || !openSlug || current !== undefined) return
+    const target = items.find((it) => it.slug === openSlug)
+    if (target) { setCurrent(target); setConsumedOpen(true) }
+  }, [openSlug, items, current, consumedOpen])
   const [form, setForm] = useState<Form>(blank(kind))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')

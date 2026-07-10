@@ -252,6 +252,29 @@ function SinceLastVisit() {
   )
 }
 
+/* ---------- «توقيعات الموقع» — العائلة المعلنة لما لا يشبه غيره ---------- */
+function Signatures() {
+  const sigs = [
+    { to: '/atlas', t: 'سماء المقالات' },
+    { to: '/thought-paths', t: 'مسار الفكرة' },
+    { to: '/ask', t: 'اسأل مكتبتي' },
+    { to: '/decade', t: 'وثيقة العقد' },
+    { to: '/questions', t: 'سؤال يُقلق التعليم' },
+  ]
+  return (
+    <section className="border-t border-hair px-6 py-9 md:px-11">
+      <div className="mx-auto flex max-w-shell flex-wrap items-baseline gap-x-6 gap-y-2.5">
+        <span className="text-[.78rem] font-semibold text-accent">✦ توقيعات الموقع</span>
+        {sigs.map((s) => (
+          <Link key={s.to} to={s.to} className="group font-display text-[.95rem] font-medium text-soft transition-colors hover:text-accent">
+            {s.t}<span className="inline-block text-accent opacity-0 transition-all duration-300 group-hover:translate-x-[-3px] group-hover:opacity-100"> ←</span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 /* ---------- «في مثل هذا الأسبوع» — الذاكرة الحيّة ----------
    يطابق أسبوع السنة الحالي مع الأرشيف (٢٠١٦ فصاعداً) ويُخرج مقالاً كتبه الدكتور
    في مثل هذه الأيام قبل سنوات — يتبدّل أسبوعياً، بلا خادم وبلا تدخل. */
@@ -827,6 +850,8 @@ export default function Home() {
       <ImpactTimeline />
 
       <WeeklyPoll />
+
+      <Signatures />
 
       {/* اللقاءات + النشرة — شريط خفيف لا كتلة عملاقة */}
       <section className="border-t border-hair px-6 py-12 md:px-11 md:py-16">

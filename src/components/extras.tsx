@@ -7,6 +7,8 @@ import audioManifest from '../data/audio.json'
 import { AudioPlayer } from './AudioPlayer'
 import { firebaseEnabled, getDb } from '../lib/firebase'
 import { trackShare } from '../lib/views'
+import { useAdminAuth } from '../lib/admin-auth'
+import { Link as RouterLink } from 'react-router-dom'
 
 /* ---------- النشرة البريدية ---------- */
 export function Newsletter({ compact = false }: { compact?: boolean }) {
@@ -146,6 +148,22 @@ export function Share({ title, path }: { title: string; path: string }) {
   )
 }
 
+
+
+/* ---------- ✎ تحرير موضعي — يظهر للمشرف وحده على صفحات العرض ---------- */
+export function OwnerEdit({ tab, slug, className = '' }: { tab: 'articles' | 'books' | 'papers' | 'media'; slug: string; className?: string }) {
+  const { isAdmin } = useAdminAuth()
+  if (!isAdmin) return null
+  return (
+    <RouterLink
+      to={`/admin?tab=${tab}&edit=${encodeURIComponent(slug)}`}
+      title="تحرير (يظهر لك وحدك)"
+      className={`inline-flex h-8 w-8 items-center justify-center rounded-full border border-hair align-middle text-[.9rem] text-soft transition-colors hover:border-accent hover:text-accent ${className}`}
+    >
+      ✎
+    </RouterLink>
+  )
+}
 
 /* ---------- «انسخ الاستشهاد» — APA وMLA بنقرة، باسم الدكتور ---------- */
 export function CiteButton({ title, year, container, url }: { title: string; year: string; container: string; url: string }) {

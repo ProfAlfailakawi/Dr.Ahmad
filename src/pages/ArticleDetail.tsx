@@ -5,7 +5,7 @@ import { FadeUp, Page, Reveal } from '../components/ui'
 import { getArticleNeighbors, relatedArticles } from '../lib/cms'
 import { books, papers } from '../data'
 import { useCmsContent } from '../lib/content'
-import { CiteButton, Listen, Share } from '../components/extras'
+import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
 import { QuoteCard } from '../components/QuoteCard'
 import { JsonLd, useSeo } from '../components/seo'
 import { fetchOwnerCounts, useTrackView } from '../lib/views'
@@ -277,6 +277,7 @@ export default function ArticleDetail() {
               <Reveal>{a.title}</Reveal>
             </h1>
             <OwnerBadge path={`/articles/${a.slug}`} />
+            <OwnerEdit tab="articles" slug={a.slug} className="ms-2" />
             <div className="mt-7 h-[2px] w-16 bg-accent" />
             {a.body && <Listen slug={a.slug} title={a.title} text={a.body} audio={(a as { audio?: { fahed?: boolean | string; noura?: boolean | string } }).audio} />}
             {a.body && <ReaderPanel slug={a.slug} />}

@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { useSeo } from '../components/seo'
+import { OwnerEdit } from '../components/extras'
 import { useCmsContent } from '../lib/content'
 
 export default function BookDetail() {
@@ -35,6 +36,7 @@ export default function BookDetail() {
               <h1 className="mt-4 font-display text-[clamp(2rem,4.6vw,3.2rem)] font-bold leading-[1.25] text-ink">
                 <Reveal>{book.title}</Reveal>
               </h1>
+            <OwnerEdit tab="books" slug={book.slug} className="mt-3" />
               {book.desc && <p className="mt-5 text-[1.08rem] font-light leading-[1.9] text-ink/80">{book.desc}</p>}
 
               {book.isbn && (

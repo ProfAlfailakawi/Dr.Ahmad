@@ -12,9 +12,8 @@
       {
         "source": "/api/**",
         "run": {
-          "serviceId": "dr-alfailakawi-api",
-          "region": "europe-west3",
-          "pinTag": true
+          "serviceId": "dr-api",
+          "region": "europe-west1"
         }
       },
       {

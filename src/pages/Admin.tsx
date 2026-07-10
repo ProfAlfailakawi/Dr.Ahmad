@@ -155,7 +155,11 @@ function AccessDenied({ email }: { email: string }) {
 type Tab = 'dashboard' | 'articles' | 'books' | 'papers' | 'media' | 'inbox' | 'event'
 
 function Panel({ email }: { email: string }) {
-  const [tab, setTab] = useState<Tab>('dashboard')
+  // تحرير موضعي: /admin?tab=articles&edit=slug يفتح التبويب والنموذج مباشرة
+  const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
+  const initialTab = (params.get('tab') as Tab) || 'dashboard'
+  const editSlug = params.get('edit') || undefined
+  const [tab, setTab] = useState<Tab>(['dashboard','articles','books','papers','media','inbox','event'].includes(initialTab) ? initialTab : 'dashboard')
   const cms = useCmsContent({ includeHidden: true })
 
   const signOut = async () => {
@@ -189,10 +193,10 @@ function Panel({ email }: { email: string }) {
         {cms.error && <p className="mb-5 rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.85rem] text-soft">تعذّر تحديث المحتوى الحي: {cms.error}</p>}
         {cms.loading && <p className="mb-5 text-[.84rem] text-soft">أحمّل آخر تعديلات المحتوى…</p>}
         {tab === 'dashboard' && <Indicators articles={cms.articles} />}
-        {tab === 'articles' && <ContentManager kind="article" items={cms.articles as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
-        {tab === 'books' && <ContentManager kind="book" items={cms.books as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
-        {tab === 'papers' && <ContentManager kind="paper" items={cms.papers as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
-        {tab === 'media' && <ContentManager kind="media" items={cms.media as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
+        {tab === 'articles' && <ContentManager openSlug={editSlug} kind="article" items={cms.articles as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
+        {tab === 'books' && <ContentManager openSlug={editSlug} kind="book" items={cms.books as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
+        {tab === 'papers' && <ContentManager openSlug={editSlug} kind="paper" items={cms.papers as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
+        {tab === 'media' && <ContentManager openSlug={editSlug} kind="media" items={cms.media as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
         {tab === 'inbox' && <InboxPanel />}
         {tab === 'event' && <EventForm />}
       </div>

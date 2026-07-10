@@ -32,3 +32,4 @@ public/files
 /sitemap.xml
 /feed.xml
 .notify-state.json
+.cron-secret.local

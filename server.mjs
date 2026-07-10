@@ -17,6 +17,16 @@ if (existsSync(localEnvFile)) {
 }
 
 const root = resolve(process.cwd(), 'dist')
+
+// الرادار السحابي: sa يصل كسرّ في GOOGLE_SA_JSON — نكتبه ملفاً مؤقتاً للسكربت
+import { writeFileSync as __wfs } from 'node:fs'
+if (process.env.GOOGLE_SA_JSON && !process.env.FIREBASE_SERVICE_ACCOUNT) {
+  try {
+    __wfs('/tmp/sa.json', process.env.GOOGLE_SA_JSON)
+    process.env.FIREBASE_SERVICE_ACCOUNT = '/tmp/sa.json'
+  } catch { /* بيئة قراءة فقط؟ الرادار سيبلّغ */ }
+}
+
 const port = Number(process.env.PORT || 8080)
 const articleSuggestionPath = '/api/ai/article-suggestion'
 const contentSuggestionPath = '/api/ai/content-suggestion'
@@ -568,6 +578,25 @@ export function createRequestHandler({
     const method = req.method || 'GET'
     try {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`)
+
+
+    if (url.pathname === '/api/cron/radar') {
+      if (method !== 'POST') throw new HttpError(405, 'Method not allowed')
+      const secret = process.env.CRON_SECRET
+      if (!secret || req.headers['x-cron-secret'] !== secret) throw new HttpError(401, 'Unauthorized')
+      const { spawn } = await import('node:child_process')
+      const out = await new Promise((resolveRun) => {
+        const child = spawn(process.execPath, ['scripts/daily-radar.mjs'], { cwd: process.cwd(), env: process.env, timeout: 120_000 })
+        let log = ''
+        child.stdout.on('data', (d) => { log += d })
+        child.stderr.on('data', (d) => { log += d })
+        child.on('close', (code) => resolveRun({ code, log: log.slice(-1500) }))
+        child.on('error', (e) => resolveRun({ code: -1, log: String(e) }))
+      })
+      res.writeHead(out.code === 0 ? 200 : 500, { 'Content-Type': 'application/json; charset=utf-8' })
+      res.end(JSON.stringify({ ok: out.code === 0, log: out.log }))
+      return
+    }
 
     if (url.pathname === articleSuggestionPath || url.pathname === contentSuggestionPath) {
       if (method !== 'POST') {

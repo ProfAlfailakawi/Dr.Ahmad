@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { useSeo } from '../components/seo'
-import { CiteButton } from '../components/extras'
+import {CiteButton, OwnerEdit } from '../components/extras'
 import { profile } from '../data'
 import { useCmsContent } from '../lib/content'
 import { CitationCopy } from '../components/CitationCopy'
@@ -46,6 +46,7 @@ export default function PaperDetail() {
             <h1 className="mt-4 font-display text-[clamp(1.7rem,4vw,2.7rem)] font-bold leading-[1.45] text-ink">
               <Reveal>{p.title}</Reveal>
             </h1>
+            <OwnerEdit tab="papers" slug={p.slug} className="mt-3" />
             <div className="mt-7 h-[2px] w-16 bg-accent" />
           </FadeUp>
 

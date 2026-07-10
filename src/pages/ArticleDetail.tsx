@@ -219,7 +219,8 @@ export default function ArticleDetail() {
           {related.length > 0 && (
             <FadeUp>
               <section className="mt-16 border-t border-hair pt-9">
-                <span className="text-[.76rem] font-semibold uppercase tracking-[.12em] text-accent">اقرأ أيضاً</span>
+                <span className="text-[.76rem] font-semibold uppercase tracking-[.12em] text-accent">أكمل هذا المسار</span>
+                <p className="mt-2 text-[.9rem] font-light text-soft">مقالاتٌ على الخيط الفكري نفسه.</p>
                 <ul className="mt-6 grid gap-6 sm:grid-cols-3">
                   {related.map((r) => (
                     <li key={r.slug}>

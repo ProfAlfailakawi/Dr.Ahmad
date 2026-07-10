@@ -6,7 +6,7 @@ import { useExtras, type ExtraArticle } from '../lib/content'
 import { useSeo } from '../components/seo'
 
 export default function Articles() {
-  useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: 'اثنان وسبعون مقالاً في التعليم والتقنية والمجتمع.' })
+  useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: 'أكثر من 160 مقالاً فكرياً في التعليم والتقنية والمجتمع، منذ 2016.' })
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('الكل')
   const [showAll, setShowAll] = useState(false)
@@ -26,7 +26,7 @@ export default function Articles() {
       <PageHead
         label="المقالات الفكرية"
         title="بصوتي الخاص."
-        sub={`${articles.length} مقالاً في التعليم والتقنية والمجتمع، منشورة في الصحافة الكويتية منذ 2019.`}
+        sub={`${articles.length} مقالاً في التعليم والتقنية والمجتمع، منشورة في الصحافة الكويتية منذ 2016.`}
       />
 
       {/* featured trio */}

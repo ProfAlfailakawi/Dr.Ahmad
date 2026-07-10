@@ -10,9 +10,10 @@ const PAGE_NAMES: Record<string, string> = {
   '/curated': 'المختارات', '/questions': 'سؤال يُقلق التعليم', '/radar': 'أرشيف الرادار', '/inbox': 'من بريدي الوارد',
   '/atlas': 'سماء المقالات', '/search': 'البحث العميق', '/ask': 'اسأل مكتبتي', '/upcoming': 'اللقاءات القادمة',
 }
-type Kind = 'الكل' | 'مقالات' | 'كتب' | 'أبحاث' | 'صفحات'
+type Kind = 'الكل' | 'مقالات' | 'كتب' | 'أبحاث' | 'صفحات' | 'مشاركات'
 const kindOf = (path: string): Exclude<Kind, 'الكل'> =>
-  path.startsWith('/articles/') ? 'مقالات'
+  path.startsWith('/_share') ? 'مشاركات'
+  : path.startsWith('/articles/') ? 'مقالات'
   : path.startsWith('/publications/') ? 'كتب'
   : path.startsWith('/research/') ? 'أبحاث'
   : 'صفحات'
@@ -21,6 +22,21 @@ type ViewRow = {
   id: string
   count: number
   title?: string
+}
+
+type MonthlyReport = {
+  period: string
+  notification?: string
+  monthlyTotal?: number
+  lifetimeTotal?: number
+  days?: { date: string; count: number }[]
+  topArticles?: { path: string; slug: string; title: string; count: number }[]
+  trend?: {
+    firstHalf?: number
+    secondHalf?: number
+    direction?: 'up' | 'down' | 'stable'
+    changePercent?: number
+  }
 }
 
 const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
@@ -44,10 +60,12 @@ function decodePath(value: string) {
 
 export function Indicators({ articles }: { articles: ArticleRecord[] }) {
   const [rows, setRows] = useState<ViewRow[]>([])
+  const [subscribers, setSubscribers] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [kind, setKind] = useState<Kind>('الكل')
   const [q, setQ] = useState('')
+  const [report, setReport] = useState<MonthlyReport | null>(null)
 
   const load = async () => {
     setLoading(true)
@@ -56,11 +74,19 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       const db = await getDb()
       if (!db) throw new Error('Firebase غير متاح')
       const { collection, getDocs } = await import('firebase/firestore')
-      const snapshot = await getDocs(collection(db, 'views'))
+      const [snapshot, reportsSnapshot] = await Promise.all([
+        getDocs(collection(db, 'views')),
+        getDocs(collection(db, 'admin_reports')),
+      ])
       setRows(snapshot.docs.map((item) => {
         const data = item.data() as { count?: number; title?: string }
         return { id: item.id, count: Number(data.count || 0), title: data.title }
       }))
+      const latest = reportsSnapshot.docs
+        .map((item) => ({ ...(item.data() as MonthlyReport), period: String((item.data() as MonthlyReport).period || item.id) }))
+        .filter((item) => /^\d{4}-\d{2}$/.test(item.period))
+        .sort((left, right) => right.period.localeCompare(left.period))[0]
+      setReport(latest || null)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر جلب المؤشرات')
     } finally {
@@ -92,7 +118,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         .reduce((sum, row) => sum + row.count, 0),
     }))
     // إجمالي كل نوع — نظرة سريعة قبل الجدول المفصّل
-    const byKind = { مقالات: 0, كتب: 0, أبحاث: 0, صفحات: 0 } as Record<Exclude<Kind, 'الكل'>, number>
+    const byKind = { مقالات: 0, كتب: 0, أبحاث: 0, صفحات: 0, مشاركات: 0 } as Record<Exclude<Kind, 'الكل'>, number>
     for (const row of totals) byKind[row.kind] += row.count
     return {
       total: totals.reduce((sum, row) => sum + row.count, 0),
@@ -128,7 +154,45 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
 
       {error && <div className={`${card} border-accent/40 text-[.9rem] text-soft`}>{error}</div>}
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
+      {report && (
+        <section className={`${card} border-accent/30 bg-accent/[.045]`} aria-label={`التقرير الشهري ${report.period}`}>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="max-w-3xl">
+              <p className="text-[.76rem] font-semibold uppercase text-accent">إشعار التقرير الشهري · {report.period}</p>
+              <h2 className="mt-1 font-display text-xl font-semibold text-ink">{report.notification || 'أصبح تقرير الشهر جاهزاً.'}</h2>
+            </div>
+            <div className="flex gap-5 text-center">
+              <span>
+                <strong className="block font-display text-2xl text-accent">{ar(Number(report.monthlyTotal || 0))}</strong>
+                <small className="text-[.7rem] text-soft">مشاهدة الشهر</small>
+              </span>
+              <span>
+                <strong className="block font-display text-2xl text-ink">{ar(Number(report.lifetimeTotal || 0))}</strong>
+                <small className="text-[.7rem] text-soft">الإجمالي حتى صدوره</small>
+              </span>
+            </div>
+          </div>
+          <div className="mt-5 grid gap-4 border-t border-hair pt-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+            <ol className="grid gap-2">
+              {(report.topArticles || []).slice(0, 3).map((article, index) => (
+                <li key={article.path} className="flex items-center justify-between gap-4 text-[.82rem]">
+                  <span className="min-w-0 truncate text-ink"><span className="me-2 text-accent">{index + 1}.</span>{article.title}</span>
+                  <span className="shrink-0 text-soft">{ar(Number(article.count || 0))}</span>
+                </li>
+              ))}
+              {!report.topArticles?.length && <li className="text-[.82rem] text-soft">لا توجد قراءات مقالات مسجلة في هذا التقرير.</li>}
+            </ol>
+            {report.trend && (
+              <p className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.78rem] text-soft">
+                الاتجاه: <strong className="text-ink">{report.trend.direction === 'up' ? 'صاعد ↑' : report.trend.direction === 'down' ? 'هابط ↓' : 'مستقر'}</strong>
+                {' · '}{Math.abs(Number(report.trend.changePercent || 0))}% بين نصفي الشهر
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-8">
         <div className={card}>
           <span className="block font-display text-4xl font-bold text-accent">{ar(summary.total)}</span>
           <span className="mt-2 block text-[.86rem] text-soft">إجمالي المشاهدات</span>
@@ -136,6 +200,14 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         <div className={card}>
           <span className="block font-display text-4xl font-bold text-accent">{ar(summary.pages)}</span>
           <span className="mt-2 block text-[.86rem] text-soft">صفحات شوهدت</span>
+        </div>
+        <div className={card}>
+          <span className="block font-display text-2xl font-bold text-ink">{ar(subscribers)}</span>
+          <span className="mt-2 block text-[.82rem] text-soft">مشتركو النشرة</span>
+        </div>
+        <div className={card}>
+          <span className="block font-display text-2xl font-bold text-ink">{ar(summary.byKind['مشاركات'])}</span>
+          <span className="mt-2 block text-[.82rem] text-soft">مشاركات المحتوى</span>
         </div>
         {(['مقالات', 'كتب', 'أبحاث', 'صفحات'] as const).map((k) => (
           <div key={k} className={card}>
@@ -199,7 +271,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
           />
         </div>
         <div className="mb-5 flex flex-wrap gap-2">
-          {(['الكل', 'مقالات', 'كتب', 'أبحاث', 'صفحات'] as Kind[]).map((k) => (
+          {(['الكل', 'مقالات', 'كتب', 'أبحاث', 'صفحات', 'مشاركات'] as Kind[]).map((k) => (
             <button
               key={k}
               onClick={() => setKind(k)}

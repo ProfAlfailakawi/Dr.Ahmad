@@ -106,6 +106,9 @@ export default function AskLibrary() {
 
   const result = useMemo(() => (asked ? answer(asked) : null), [asked])
 
+  const inputRef = useRef<HTMLInputElement>(null)
+  const again = () => { setAsked(''); setQ(''); setTimeout(() => inputRef.current?.focus(), 60); window.scrollTo({ top: 0, behavior: 'smooth' }) }
+
   const ask = (text: string) => {
     const t = text.trim()
     if (t.length < 4) return
@@ -127,6 +130,7 @@ export default function AskLibrary() {
           <FadeUp>
             <div className="flex flex-col gap-2.5 sm:flex-row">
               <input
+                ref={inputRef}
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && ask(q)}
@@ -223,6 +227,13 @@ export default function AskLibrary() {
                     </div>
                   </FadeUp>
                 )}
+              </div>
+            )}
+            {result && (
+              <div className="mt-10 text-center">
+                <button onClick={again} className="rounded-full border border-hair px-6 py-2.5 text-[.9rem] font-medium text-soft transition-colors hover:border-accent hover:text-accent">
+                  اسأل سؤالاً آخر ↺
+                </button>
               </div>
             )}
           </div>

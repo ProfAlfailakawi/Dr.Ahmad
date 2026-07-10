@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useScroll } from 'framer-motion'
 import { EASE } from './motion'
 import { SocialIcon } from './icons'
-import { ALLOW_BROWSER_TTS, NEWSLETTER_ENDPOINT, links } from '../data'
+import { ALLOW_BROWSER_TTS, NEWSLETTER_ENDPOINT } from '../data'
 import audioManifest from '../data/audio.json'
 import { AudioPlayer } from './AudioPlayer'
 import { firebaseEnabled, getDb } from '../lib/firebase'
+import { trackShare } from '../lib/views'
 
 /* ---------- النشرة البريدية ---------- */
 export function Newsletter({ compact = false }: { compact?: boolean }) {
@@ -82,14 +83,14 @@ export function Newsletter({ compact = false }: { compact?: boolean }) {
   )
 }
 
-/* ---------- أزرار عائمة: أعلى + السيرة ---------- */
+/* ---------- زر العودة للأعلى ---------- */
 export function FloatingActions() {
   const [show, setShow] = useState(false)
   const { scrollY } = useScroll()
   useEffect(() => scrollY.on('change', (v) => setShow(v > 700)), [scrollY])
 
   return (
-    <div className="reader-hide-focus fixed bottom-6 left-6 z-[210] flex flex-col gap-3">
+    <div className="reader-hide-focus fixed bottom-6 left-6 z-[210]">
       <AnimatePresence>
         {show && (
           <motion.button
@@ -106,18 +107,6 @@ export function FloatingActions() {
           </motion.button>
         )}
       </AnimatePresence>
-
-      {/* في الجوال: يختفي عند التعمق في القراءة كي لا يغطي النص */}
-      <a
-        href={links.cv}
-        target="_blank"
-        rel="noreferrer"
-        aria-label="السيرة الذاتية PDF"
-        className={`${show ? 'hidden sm:flex' : 'flex'} h-11 items-center gap-2 rounded-full bg-accent px-4 text-[.82rem] font-semibold text-white shadow-[0_10px_28px_-12px_rgba(62,92,120,.8)] transition-colors hover:bg-accent-deep`}
-      >
-        <span>السيرة</span>
-        <span className="text-[.7rem] opacity-75">PDF</span>
-      </a>
     </div>
   )
 }
@@ -136,6 +125,7 @@ export function Share({ title, path }: { title: string; path: string }) {
   ]
 
   const copy = async () => {
+    trackShare(path, title)
     try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { /* noop */ }
   }
 
@@ -145,13 +135,47 @@ export function Share({ title, path }: { title: string; path: string }) {
     <div className="mt-12 flex flex-wrap items-center gap-2.5 border-t border-hair pt-6">
       <span className="me-1 text-[.8rem] text-soft">شارك المقال</span>
       {items.map((i) => (
-        <a key={i.label} href={i.href} target="_blank" rel="noreferrer" aria-label={i.label} title={i.label} className={btn}>
+        <a key={i.label} href={i.href} target="_blank" rel="noreferrer" aria-label={i.label} title={i.label} className={btn} onClick={() => trackShare(path, title)}>
           <SocialIcon name={i.icon} size={15} />
         </a>
       ))}
       <button onClick={copy} aria-label="نسخ الرابط" title={copied ? 'نُسخ ✓' : 'نسخ الرابط'} className={`${btn} ${copied ? 'border-accent text-accent' : ''}`}>
         <SocialIcon name={copied ? 'Check' : 'Link'} size={15} />
       </button>
+    </div>
+  )
+}
+
+
+/* ---------- «انسخ الاستشهاد» — APA وMLA بنقرة، باسم الدكتور ---------- */
+export function CiteButton({ title, year, container, url }: { title: string; year: string; container: string; url: string }) {
+  const [open, setOpen] = useState(false)
+  const [copied, setCopied] = useState<'apa' | 'mla' | null>(null)
+  const apa = `الفيلكاوي، أحمد حسين. (${year}). ${title}. ${container}. ${url}`
+  const mla = `الفيلكاوي، أحمد حسين. «${title}». ${container}، ${year}، ${url}.`
+  const copy = async (kind: 'apa' | 'mla', text: string) => {
+    try { await navigator.clipboard.writeText(text); setCopied(kind); setTimeout(() => setCopied(null), 1800) } catch { /* noop */ }
+  }
+  return (
+    <div className="mt-8 rounded-xl border border-hair">
+      <button onClick={() => setOpen(!open)} aria-expanded={open}
+        className="flex w-full items-center justify-between px-5 py-3 text-[.88rem] font-medium text-soft transition-colors hover:text-accent">
+        <span>✍ انسخ الاستشهاد الأكاديمي</span>
+        <span className={`transition-transform duration-300 ${open ? 'rotate-180' : ''}`}>⌄</span>
+      </button>
+      {open && (
+        <div className="grid gap-3 border-t border-hair p-5">
+          {([['apa', 'APA', apa], ['mla', 'MLA', mla]] as const).map(([k, label, text]) => (
+            <div key={k} className="flex items-start gap-3">
+              <button onClick={() => copy(k, text)}
+                className={`shrink-0 rounded-full border px-3 py-1 text-[.72rem] font-semibold transition-colors ${copied === k ? 'border-accent text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
+                {copied === k ? '✓ نُسخ' : label}
+              </button>
+              <p className="text-[.82rem] font-light leading-[1.9] text-soft">{text}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

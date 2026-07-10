@@ -61,6 +61,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // تقرير شهري تنشئه المهمة المجدولة بحساب الخدمة (يتجاوز القواعد).
+    // يظهر داخل لوحة المؤشرات للمشرف فقط، ولا يستطيع عميل المتصفح كتابته.
+    match /admin_reports/{month} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // عدادات المشاهدة في مجموعة واحدة:
     //   total:<encoded-path>             إجمالي الصفحة
     //   day:YYYY-MM-DD:<encoded-path>    عداد يومي لاتجاه آخر 7 أيام

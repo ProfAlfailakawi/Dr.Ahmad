@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { FadeUp, Label, Page, Reveal, SocialIcon } from '../components/ui'
 import { links, place, socials } from '../data'
 import { Newsletter } from '../components/extras'
@@ -5,7 +7,19 @@ import { ContactForm } from '../components/ContactForm'
 import { useSeo } from '../components/seo'
 
 export default function Contact() {
+  const location = useLocation()
   useSeo({ title: 'للاستشارة أو التعاون', path: '/contact' })
+
+  useEffect(() => {
+    if (location.hash !== '#booking-form') return
+    const timer = window.setTimeout(() => {
+      const form = document.getElementById('booking-form')
+      form?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      form?.focus({ preventScroll: true })
+    }, 80)
+    return () => window.clearTimeout(timer)
+  }, [location.hash])
+
   return (
     <Page>
       <section className="flex min-h-[86vh] items-center px-6 py-32 text-center md:px-11">
@@ -51,7 +65,7 @@ export default function Contact() {
           </FadeUp>
 
           <FadeUp delay={0.12}>
-            <div id="booking-form" className="mt-16 scroll-mt-28">
+            <div id="booking-form" tabIndex={-1} aria-label="نموذج حجز موعد" className="mt-16 scroll-mt-24 outline-none">
               <ContactForm />
             </div>
           </FadeUp>

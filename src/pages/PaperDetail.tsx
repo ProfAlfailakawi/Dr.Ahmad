@@ -1,8 +1,10 @@
 import { Link, useParams } from 'react-router-dom'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { useSeo } from '../components/seo'
+import { CiteButton } from '../components/extras'
 import { profile } from '../data'
 import { useCmsContent } from '../lib/content'
+import { CitationCopy } from '../components/CitationCopy'
 
 export default function PaperDetail() {
   const { slug } = useParams()
@@ -89,6 +91,18 @@ export default function PaperDetail() {
                 </Link>
               </div>
             )}
+            <CiteButton title={p.title} year={(p.journal?.match(/20[0-2][0-9]/) || ['2022'])[0]} container={p.journal || 'بحث محكّم'} url={`https://dr-alfailakawi.com/research/${p.slug}`} />
+          </FadeUp>
+
+          <FadeUp>
+            <CitationCopy
+              title={p.title}
+              path={`/research/${p.slug}`}
+              iso={p.iso}
+              date={p.date}
+              source={p.journal || p.source}
+              url={paperLink}
+            />
           </FadeUp>
 
           <FadeUp>

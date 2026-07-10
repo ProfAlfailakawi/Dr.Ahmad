@@ -1,5 +1,4 @@
-import { useMemo, useState } from 'react'
-import { articleCats } from '../../data'
+import { useEffect, useMemo, useState } from 'react'
 import { getDb, getFirebaseApp } from '../../lib/firebase'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
@@ -78,6 +77,7 @@ const CAT_KEYS: [string, string[]][] = [
   ['إعلام', ['إعلام', 'صحافة', 'قناة', 'خبر', 'تلفزيون', 'فضائي', 'بث']],
   ['هوية', ['هوية', 'تراث', 'لغة', 'عربي', 'أصالة', 'انتماء', 'وطن', 'مواطن']],
   ['مجتمع', ['مجتمع', 'ناس', 'اجتماع', 'شباب', 'ظاهرة', 'سلوك', 'عادات', 'إدمان']],
+  ['بحث', ['بحث', 'دراسة', 'أكاديمي', 'منهجية', 'نتائج', 'عينة', 'استبانة']],
 ]
 function localSuggest(title: string, body: string) {
   const sample = title + ' ' + body.slice(0, 600)
@@ -95,6 +95,41 @@ function localSuggest(title: string, body: string) {
     excerpt = (excerpt + ' ' + p).trim()
   }
   return { cat, excerpt: excerpt.slice(0, 200).trim() }
+}
+
+async function requestContentSuggestion(kind: ManagedKind, form: Form): Promise<Form> {
+  try {
+    const app = await getFirebaseApp()
+    if (!app) throw new Error('Firebase غير متاح')
+    const { getAuth } = await import('firebase/auth')
+    const token = await getAuth(app).currentUser?.getIdToken()
+    if (!token) throw new Error('انتهت جلسة الدخول')
+    const response = await fetch('/api/ai/content-suggestion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        kind,
+        title: form.title || '',
+        text: kind === 'article' ? form.body || '' : kind === 'book' ? form.desc || '' : kind === 'paper' ? form.meta || '' : '',
+        url: form.url || form.source || form.pdf || '',
+      }),
+    })
+    const payload = await response.json() as Form & { error?: string }
+    if (!response.ok) throw new Error(payload.error || 'تعذّر إنشاء الاقتراح')
+    return payload
+  } catch (reason) {
+    if (kind !== 'article') throw reason
+    const fallback = localSuggest(form.title || '', form.body || '')
+    if (!fallback.cat || !fallback.excerpt) throw new Error('نص المقال قصير جداً لإنشاء المقتطف')
+    return { ...fallback, _aiFallback: '1' }
+  }
+}
+
+function suggestionKey(kind: ManagedKind, form: Form) {
+  if (kind === 'article') return `${form.title || ''}\u0000${form.body || ''}`
+  if (kind === 'media') return form.url || ''
+  if (kind === 'book') return `${form.title || ''}\u0000${form.pdf || ''}`
+  return `${form.title || ''}\u0000${form.url || form.source || ''}`
 }
 
 function dateArabic(iso: string) {
@@ -132,14 +167,16 @@ function slugify(value: string) {
 
 function blank(kind: ManagedKind): Form {
   const iso = todayIso()
-  if (kind === 'article') return { slug: '', title: '', iso, date: dateArabic(iso), cat: 'التعليم', excerpt: '', body: '', source: '', url: '' }
+  if (kind === 'article') return { slug: '', title: '', iso, date: dateArabic(iso), cat: '', excerpt: '', body: '', source: '', url: '', _aiReady: '' }
   if (kind === 'book') return { slug: '', title: '', isbn: '', desc: '', cover: '', pdf: '' }
   if (kind === 'paper') return { slug: '', title: '', meta: '', journal: '', source: '', url: '' }
   return { slug: '', title: '', outlet: '', url: '', iso, date: dateArabic(iso) }
 }
 
 function asForm(kind: ManagedKind, item: ManagedRecord): Form {
-  return Object.fromEntries(editableFields[kind].map((field) => [field, String(item[field] ?? '')]))
+  const form = Object.fromEntries(editableFields[kind].map((field) => [field, String(item[field] ?? '')]))
+  if (kind === 'article' && form.cat && form.excerpt) form._aiReady = '1'
+  return form
 }
 
 function cleanData(kind: ManagedKind, form: Form) {
@@ -149,7 +186,12 @@ function cleanData(kind: ManagedKind, form: Form) {
     if (value || ['slug', 'title', 'date', 'iso', 'cat', 'excerpt', 'body', 'desc', 'meta', 'outlet'].includes(field)) data[field] = value
   }
   if ((kind === 'article' || kind === 'media') && data.iso) data.date = dateArabic(data.iso)
-  if (kind === 'article' && !data.excerpt) data.excerpt = data.body.replace(/\s+/g, ' ').slice(0, 200)
+  if (kind === 'article') {
+    const fallback = localSuggest(data.title || '', data.body || '')
+    if (!data.cat) data.cat = fallback.cat
+    if (!data.excerpt) data.excerpt = fallback.excerpt
+    data.excerpt = Array.from(data.excerpt.replace(/\s+/g, ' ').trim()).slice(0, 200).join('')
+  }
   return data
 }
 
@@ -244,36 +286,92 @@ function Editor({
   onClose: () => void
   onSave: () => void
 }) {
+  // أي رقم هندي يكتبه الدكتور يتحوّل غربياً فوراً — قاعدة الموقع في كل الخانات
+  const west = (s: string) => s.replace(/[٠-٩]/g, (d) => '0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)])
   const set = (field: string, value: string) => setForm((previous) => {
+    value = west(value)
     const next = { ...previous, [field]: value }
     if (!current && field === 'title' && (!previous.slug || previous.slug === slugify(previous.title))) next.slug = slugify(value)
     if ((kind === 'article' || kind === 'media') && field === 'iso') next.date = dateArabic(value)
+    if (kind === 'article' && (field === 'title' || field === 'body')) {
+      next.cat = ''
+      next.excerpt = ''
+      next._aiReady = ''
+      next._aiFallback = ''
+    }
+    if (kind === 'media' && field === 'url' && value !== previous.url) {
+      if (previous.title && previous.title === previous._aiGeneratedTitle) {
+        if (!current && previous.slug === slugify(previous.title)) next.slug = ''
+        next.title = ''
+      }
+      if (previous.outlet && previous.outlet === previous._aiGeneratedOutlet) next.outlet = ''
+      next._aiInput = ''
+    }
+    if (kind === 'book' && field === 'title' && previous.desc === previous._aiGeneratedDesc) {
+      next.desc = ''
+      next._aiInput = ''
+    }
+    if (kind === 'paper' && ['title', 'source', 'url'].includes(field) && previous.meta === previous._aiGeneratedMeta) {
+      next.meta = ''
+      next._aiInput = ''
+    }
     return next
   })
 
-  const suggest = async () => {
-    if (!form.body?.trim()) return
+  const suggest = async (automatic = false) => {
+    if (form._aiBusy === '1') return
+    if (kind === 'article' && !form.body?.trim()) return
+    const key = suggestionKey(kind, form)
     setForm((previous) => ({ ...previous, _aiBusy: '1', _aiError: '' }))
     try {
-      const app = await getFirebaseApp()
-      if (!app) throw new Error('Firebase غير متاح')
-      const { getAuth } = await import('firebase/auth')
-      const token = await getAuth(app).currentUser?.getIdToken()
-      if (!token) throw new Error('انتهت جلسة الدخول')
-      const response = await fetch('/api/ai/article-suggestion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ title: form.title, text: form.body }),
+      const payload = await requestContentSuggestion(kind, form)
+      setForm((previous) => {
+        const next: Form = { ...previous, _aiBusy: '', _aiError: '', _aiInput: key }
+        for (const [field, value] of Object.entries(payload)) {
+          if (field.startsWith('_')) continue
+          if (!automatic || !String(previous[field] || '').trim()) next[field] = String(value || '')
+        }
+        if (kind === 'article') {
+          next.cat = payload.cat || previous.cat
+          next.excerpt = Array.from(payload.excerpt || previous.excerpt || '').slice(0, 200).join('')
+          next._aiReady = next.cat && next.excerpt ? '1' : ''
+          next._aiFallback = payload._aiFallback || ''
+        }
+        if (kind === 'book' && next.desc !== previous.desc) next._aiGeneratedDesc = next.desc
+        if (kind === 'paper' && next.meta !== previous.meta) next._aiGeneratedMeta = next.meta
+        if (kind === 'media') {
+          if (next.title !== previous.title) next._aiGeneratedTitle = next.title
+          if (next.outlet !== previous.outlet) next._aiGeneratedOutlet = next.outlet
+        }
+        if (!current && next.title && !previous.slug) next.slug = slugify(next.title)
+        return next
       })
-      const payload = await response.json() as { cat?: string; excerpt?: string; error?: string }
-      if (!response.ok) throw new Error(payload.error || 'تعذّر الاقتراح')
-      setForm((previous) => ({ ...previous, cat: payload.cat || previous.cat, excerpt: payload.excerpt || previous.excerpt, _aiBusy: '', _aiError: '' }))
-    } catch {
-      // لا خادم؟ اقتراح محلي فوري (نفس منطق استيراد الأرشيف) — الزر لا يموت أبداً
-      const local = localSuggest(form.title || '', form.body || '')
-      setForm((previous) => ({ ...previous, cat: local.cat, excerpt: previous.excerpt || local.excerpt, _aiBusy: '', _aiError: '' }))
+    } catch (reason) {
+      setForm((previous) => ({
+        ...previous,
+        _aiBusy: '',
+        _aiError: reason instanceof Error ? reason.message : 'تعذّر إنشاء الاقتراح',
+        _aiInput: automatic ? key : previous._aiInput || '',
+      }))
     }
   }
+
+  useEffect(() => {
+    if (form._aiBusy === '1') return
+    const key = suggestionKey(kind, form)
+    if (!key || form._aiInput === key) return
+    const hasUrl = /^https?:\/\//i.test(form.url || form.source || form.pdf || '')
+    const shouldSuggest = kind === 'media'
+      ? hasUrl && (!form.title?.trim() || !form.outlet?.trim())
+      : kind === 'book'
+        ? Boolean(form.title?.trim().length >= 3 && !form.desc?.trim())
+        : kind === 'paper'
+          ? Boolean((form.title?.trim().length >= 3 || hasUrl) && !form.meta?.trim())
+          : false
+    if (!shouldSuggest) return
+    const timer = window.setTimeout(() => void suggest(true), 900)
+    return () => window.clearTimeout(timer)
+  }, [form._aiBusy, form._aiInput, form.desc, form.meta, form.outlet, form.pdf, form.source, form.title, form.url, kind])
 
   return (
     <div className="fixed inset-0 z-[400] overflow-y-auto bg-ink/45 px-4 py-8 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={`تحرير ${labels[kind].singular}`}>
@@ -287,7 +385,9 @@ function Editor({
         </div>
 
         <div className="grid gap-5">
-          <Field label="العنوان"><input className={input} value={form.title || ''} onChange={(event) => set('title', event.target.value)} /></Field>
+          <Field label="العنوان" hint={kind === 'media' ? 'يمكنك لصق رابط الفيديو أولاً؛ سنملأ العنوان تلقائياً ثم تراجعه قبل النشر.' : undefined}>
+            <input className={input} value={form.title || ''} onChange={(event) => set('title', event.target.value)} />
+          </Field>
           <Field label="الرابط المختصر (slug)" hint={current ? 'يثبت بعد النشر حتى لا تنكسر الروابط والصوت والإحصاءات.' : 'تولّد تلقائياً، ويمكنك مراجعته قبل النشر.'}>
             <input className={input} dir="ltr" value={form.slug || ''} disabled={Boolean(current)} onChange={(event) => set('slug', slugify(event.target.value))} />
           </Field>
@@ -298,19 +398,17 @@ function Editor({
                 <Field label="التاريخ"><input className={input} dir="ltr" type="date" value={form.iso || ''} onChange={(event) => set('iso', event.target.value)} /></Field>
                 <Field label="التاريخ العربي (تلقائي)"><input className={input} value={form.date || ''} readOnly /></Field>
               </div>
-              <Field label="التصنيف">
-                <select className={input} value={form.cat || 'التعليم'} onChange={(event) => set('cat', event.target.value)}>
-                  {articleCats.filter((category) => category !== 'الكل').map((category) => <option key={category}>{category}</option>)}
-                </select>
+              <Field label="نص المقال" hint="افصل بين الفقرات بسطر فارغ. يظهر النص بمحاذاة كاملة أثناء الكتابة واللصق.">
+                <textarea dir="rtl" style={{ textAlign: 'justify' }} className={`${input} min-h-[320px] text-justify leading-loose`} value={form.body || ''} onChange={(event) => set('body', event.target.value)} />
               </Field>
-              <Field label="نص المقال" hint="افصل بين الفقرات بسطر فارغ."><textarea className={`${input} min-h-[320px] leading-loose`} value={form.body || ''} onChange={(event) => set('body', event.target.value)} /></Field>
               <div className="flex flex-wrap items-center gap-3">
                 <button type="button" onClick={() => void suggest()} disabled={form._aiBusy === '1' || !form.body?.trim()} className={secondary}>
-                  {form._aiBusy === '1' ? 'أفكّر…' : '✦ اقترح التصنيف والمقتطف'}
+                  {form._aiBusy === '1' ? 'أفكّر…' : '✦ تجهيز التصنيف والمقتطف الآن'}
                 </button>
+                {form._aiReady === '1' && <span className="text-[.78rem] text-accent">✓ التصنيف والمقتطف جاهزان تلقائياً{form._aiFallback === '1' ? ' (احتياط محلي)' : ''}.</span>}
                 {form._aiError && <span className="text-[.78rem] text-soft">{form._aiError}</span>}
               </div>
-              <Field label="المقتطف" hint={`${(form.excerpt || '').length}/200 حرف`}><textarea className={`${input} min-h-24`} maxLength={200} value={form.excerpt || ''} onChange={(event) => set('excerpt', event.target.value)} /></Field>
+              <p className="text-[.75rem] leading-relaxed text-soft">عند الضغط على «حفظ ونشر» يُنشأ التصنيف والمقتطف (بحد أقصى 200 حرف) تلقائياً إن لم يكونا جاهزين؛ لا يلزم إدخالهما يدوياً.</p>
               <Field label="رابط المصدر (اختياري)"><input className={input} dir="ltr" type="url" value={form.source || ''} onChange={(event) => set('source', event.target.value)} /></Field>
             </>
           )}
@@ -319,6 +417,11 @@ function Editor({
             <>
               <Field label="ISBN / ردمك"><input className={input} dir="ltr" value={form.isbn || ''} onChange={(event) => set('isbn', event.target.value)} /></Field>
               <Field label="الوصف"><textarea className={`${input} min-h-28 leading-loose`} value={form.desc || ''} onChange={(event) => set('desc', event.target.value)} /></Field>
+              <div className="flex flex-wrap items-center gap-3">
+                <button type="button" onClick={() => void suggest()} disabled={form._aiBusy === '1' || !form.title?.trim()} className={secondary}>{form._aiBusy === '1' ? 'أفكّر…' : '✦ اقترح وصفاً'}</button>
+                <span className="text-[.75rem] text-soft">الاقتراح قابل للتعديل والمراجعة قبل الحفظ.</span>
+                {form._aiError && <span className="text-[.78rem] text-soft">{form._aiError}</span>}
+              </div>
               <UploadField label="الغلاف" value={form.cover || ''} accept="image/jpeg,image/png,image/webp" folder="covers" slug={form.slug || form.title} maxMb={12} onChange={(value) => set('cover', value)} />
               <UploadField label="ملف PDF" value={form.pdf || ''} accept="application/pdf" folder="files" slug={form.slug || form.title} maxMb={100} onChange={(value) => set('pdf', value)} />
             </>
@@ -327,6 +430,11 @@ function Editor({
           {kind === 'paper' && (
             <>
               <Field label="الوصف / الميتا"><textarea className={`${input} min-h-24`} value={form.meta || ''} onChange={(event) => set('meta', event.target.value)} /></Field>
+              <div className="flex flex-wrap items-center gap-3">
+                <button type="button" onClick={() => void suggest()} disabled={form._aiBusy === '1' || (!form.title?.trim() && !form.url?.trim() && !form.source?.trim())} className={secondary}>{form._aiBusy === '1' ? 'أفكّر…' : '✦ اقترح وصف الميتا'}</button>
+                <span className="text-[.75rem] text-soft">الاقتراح قابل للتعديل والمراجعة قبل الحفظ.</span>
+                {form._aiError && <span className="text-[.78rem] text-soft">{form._aiError}</span>}
+              </div>
               <Field label="بيانات المجلة (اختياري)"><input className={input} value={form.journal || ''} onChange={(event) => set('journal', event.target.value)} /></Field>
               <UploadField label="رابط البحث أو PDF" value={form.source || form.url || ''} accept="application/pdf" folder="files" slug={form.slug || form.title} maxMb={100} onChange={(value) => { set('source', value); set('url', value) }} />
             </>
@@ -335,7 +443,25 @@ function Editor({
           {kind === 'media' && (
             <>
               <Field label="المنصّة / القناة"><input className={input} value={form.outlet || ''} onChange={(event) => set('outlet', event.target.value)} /></Field>
-              <Field label="رابط الفيديو"><input className={input} dir="ltr" type="url" value={form.url || ''} onChange={(event) => set('url', event.target.value)} /></Field>
+              <Field label="رابط الفيديو" hint="الصق رابط يوتيوب — يُجلب العنوان والقناة تلقائياً إن كانا فارغين.">
+                <input className={input} dir="ltr" type="url" value={form.url || ''} onChange={(event) => set('url', event.target.value)}
+                  onBlur={async () => {
+                    const u = (form.url || '').trim()
+                    if (!u) return
+                    try {
+                      const r = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(u)}&format=json`)
+                      if (!r.ok) return
+                      const j = await r.json() as { title?: string; author_name?: string }
+                      if (j.title && !form.title?.trim()) set('title', j.title)
+                      if (j.author_name && !form.outlet?.trim()) set('outlet', j.author_name)
+                    } catch { /* noop */ }
+                  }} />
+              </Field>
+              <div className="flex flex-wrap items-center gap-3">
+                <button type="button" onClick={() => void suggest()} disabled={form._aiBusy === '1' || !form.url?.trim()} className={secondary}>{form._aiBusy === '1' ? 'أقرأ الرابط…' : '✦ جلب العنوان والقناة'}</button>
+                <span className="text-[.75rem] text-soft">راجع الحقول أعلاه وعدّلها قبل الحفظ.</span>
+                {form._aiError && <span className="text-[.78rem] text-soft">{form._aiError}</span>}
+              </div>
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field label="التاريخ"><input className={input} dir="ltr" type="date" value={form.iso || ''} onChange={(event) => set('iso', event.target.value)} /></Field>
                 <Field label="التاريخ العربي (تلقائي)"><input className={input} value={form.date || ''} readOnly /></Field>
@@ -345,7 +471,9 @@ function Editor({
 
           {error && <p className="rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.86rem] text-soft">{error}</p>}
           <div className="flex flex-wrap items-center gap-3 border-t border-hair pt-5">
-            <button type="button" onClick={onSave} disabled={busy || !form.title?.trim() || !form.slug?.trim()} className={primary}>{busy ? 'جارٍ الحفظ…' : 'حفظ ونشر'}</button>
+            <button type="button" onClick={onSave} disabled={busy || !form.title?.trim() || !form.slug?.trim() || (kind === 'article' && (form.body || '').trim().length < 40)} className={primary}>
+              {busy && kind === 'article' && form._aiReady !== '1' ? 'جارٍ تجهيز التصنيف والمقتطف…' : busy ? 'جارٍ الحفظ…' : 'حفظ ونشر'}
+            </button>
             <button type="button" onClick={onClose} disabled={busy} className={secondary}>إلغاء</button>
           </div>
         </div>
@@ -396,10 +524,28 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged }: Props)
     setBusy(true)
     setError('')
     try {
+      let preparedForm = { ...form }
+      if (kind === 'article') {
+        if ((preparedForm.body || '').trim().length < 40) throw new Error('نص المقال يجب أن يكون 40 حرفاً على الأقل.')
+        if (preparedForm._aiReady !== '1' || !preparedForm.cat || !preparedForm.excerpt) {
+          setForm((previous) => ({ ...previous, _aiBusy: '1', _aiError: '' }))
+          const suggestion = await requestContentSuggestion('article', preparedForm)
+          preparedForm = {
+            ...preparedForm,
+            cat: suggestion.cat,
+            excerpt: Array.from(suggestion.excerpt || '').slice(0, 200).join(''),
+            _aiReady: '1',
+            _aiFallback: suggestion._aiFallback || '',
+            _aiBusy: '',
+          }
+          if (!preparedForm.cat || !preparedForm.excerpt) throw new Error('تعذّر إنشاء التصنيف والمقتطف؛ لم يُنشر المقال.')
+          setForm(preparedForm)
+        }
+      }
       const db = await getDb()
       if (!db) throw new Error('Firebase غير متاح')
       const { deleteDoc, doc, serverTimestamp, setDoc } = await import('firebase/firestore')
-      const data = cleanData(kind, form)
+      const data = cleanData(kind, preparedForm)
       const slug = data.slug
       if (!slug) throw new Error('الرابط المختصر مطلوب')
 
@@ -424,6 +570,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged }: Props)
       await done('✓ حُفظ التعديل ويظهر للزوار فوراً.')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر الحفظ')
+      setForm((previous) => ({ ...previous, _aiBusy: '', _aiError: previous._aiError || '' }))
     } finally {
       setBusy(false)
     }

@@ -135,3 +135,25 @@ export function useTrackView(path: string, title: string, enabled = true) {
     })
   }, [enabled, path, title])
 }
+
+/** نقرة مشاركة تُحصى على مسار «_share» الموازي — نفس آلية المشاهدات وقواعدها */
+export function trackShare(path: string, title: string) {
+  const p = `/_share${normalizePath(path)}`
+  const ids = viewDocumentIds(p)
+  void incrementViewDocument(ids.total, `مشاركة: ${title.trim().slice(0, 180)}`)
+  void incrementViewDocument(ids.day, `مشاركة: ${title.trim().slice(0, 180)}`)
+}
+
+/** للمشرف فقط: عدّادا المقال (مشاهدات ومشاركات) ليظهرا بجانب العنوان */
+export async function fetchOwnerCounts(path: string): Promise<{ views: number; shares: number } | null> {
+  try {
+    const db = await getDb()
+    if (!db) return null
+    const { doc, getDoc } = await import('firebase/firestore')
+    const [v, s] = await Promise.all([
+      getDoc(doc(db, 'views', `total:${encodeViewPath(path)}`)),
+      getDoc(doc(db, 'views', `total:${encodeViewPath(`/_share${normalizePath(path)}`)}`)),
+    ])
+    return { views: Number(v.data()?.count || 0), shares: Number(s.data()?.count || 0) }
+  } catch { return null }
+}

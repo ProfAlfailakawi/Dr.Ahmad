@@ -16,6 +16,8 @@
     "audio:base": "node scripts/auto-audio.mjs --base-only",
     "audio:legacy": "node scripts/generate-audio.mjs",
     "radar": "node scripts/daily-radar.mjs",
+    "report:monthly": "node scripts/monthly-report.mjs",
+    "report:monthly:dry-run": "node scripts/monthly-report.mjs --dry-run",
     "set-admin": "node scripts/set-admin.mjs"
   },
   "dependencies": {

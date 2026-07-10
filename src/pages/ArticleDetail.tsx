@@ -5,10 +5,12 @@ import { FadeUp, Page, Reveal } from '../components/ui'
 import { getArticleNeighbors, relatedArticles } from '../lib/cms'
 import { books, papers } from '../data'
 import { useCmsContent } from '../lib/content'
-import { Listen, Share } from '../components/extras'
+import { CiteButton, Listen, Share } from '../components/extras'
 import { QuoteCard } from '../components/QuoteCard'
 import { JsonLd, useSeo } from '../components/seo'
-import { useTrackView } from '../lib/views'
+import { fetchOwnerCounts, useTrackView } from '../lib/views'
+import { useAdminAuth } from '../lib/admin-auth'
+import { CitationCopy } from '../components/CitationCopy'
 
 /** تقدير زمن القراءة — ٢٠٠ كلمة/دقيقة للعربية */
 const readTime = (t?: string) => {
@@ -175,6 +177,27 @@ function deepDive(a: { title: string; excerpt?: string }) {
   }
 }
 
+
+/* شارة المالك: تظهر للمشرف وحده بجانب العنوان — مشاهدات ومشاركات المقال */
+function OwnerBadge({ path }: { path: string }) {
+  const { isAdmin } = useAdminAuth()
+  const [c, setC] = useState<{ views: number; shares: number } | null>(null)
+  useEffect(() => {
+    if (!isAdmin) return
+    let on = true
+    fetchOwnerCounts(path).then((r) => { if (on) setC(r) })
+    return () => { on = false }
+  }, [isAdmin, path])
+  if (!isAdmin || !c) return null
+  return (
+    <span className="ms-3 inline-flex items-center gap-2 rounded-full border border-hair px-3 py-1 align-middle text-[.72rem] font-medium text-soft" title="يظهر لك وحدك">
+      <span>{c.views} مشاهدة</span>
+      <span className="text-hair">·</span>
+      <span>{c.shares} مشاركة</span>
+    </span>
+  )
+}
+
 export default function ArticleDetail() {
   const { slug } = useParams()
   const { articles, loading } = useCmsContent()
@@ -253,6 +276,7 @@ export default function ArticleDetail() {
             <h1 className="mt-5 font-display text-[clamp(2rem,4.6vw,3.1rem)] font-bold leading-[1.3] text-ink">
               <Reveal>{a.title}</Reveal>
             </h1>
+            <OwnerBadge path={`/articles/${a.slug}`} />
             <div className="mt-7 h-[2px] w-16 bg-accent" />
             {a.body && <Listen slug={a.slug} title={a.title} text={a.body} audio={(a as { audio?: { fahed?: boolean | string; noura?: boolean | string } }).audio} />}
             {a.body && <ReaderPanel slug={a.slug} />}
@@ -305,6 +329,17 @@ export default function ArticleDetail() {
             </FadeUp>
           )}
 
+          <FadeUp>
+            <CitationCopy
+              title={a.title}
+              path={`/articles/${a.slug}`}
+              iso={a.iso}
+              date={a.date}
+              source={a.source}
+              url={a.source}
+            />
+          </FadeUp>
+
           {/* «ما الجملة التي بقيت معك؟» — لحظة الأثر (فكرة نووية ٦): دعوة صريحة لا أداة مخفية */}
           {a.body && (
             <FadeUp>
@@ -320,6 +355,8 @@ export default function ArticleDetail() {
           <TimeDialogue a={a} articles={articles} />
 
           <Share title={a.title} path={`/articles/${a.slug}`} />
+
+          <CiteButton title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`https://dr-alfailakawi.com/articles/${a.slug}`} />
 
           {related.length > 0 && (
             <FadeUp>

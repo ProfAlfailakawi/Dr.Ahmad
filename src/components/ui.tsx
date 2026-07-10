@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, useInView, useMotionValue, useReducedMotion, useScroll, useSpring, AnimatePresence } from 'framer-motion'
 import { Link, useLocation } from 'react-router-dom'
 import { LINK_OUT, profile, socials, links } from '../data'
@@ -265,13 +265,13 @@ export function Accordion({
 }
 
 /* ---------- Nav: closed menu, opens full-screen ---------- */
-type NavItem = { to: string; label: string; sub?: { to: string; label: string }[] }
+type NavItem = { to: string; label: string; allLabel?: string; sub?: { to: string; label: string }[] }
 const GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: 'هويتي الأكاديمية',
     items: [
-      { to: '/', label: 'الرئيسية' },
       { to: '/cv', label: 'السيرة الأكاديمية' },
+      { to: '/decade', label: 'وثيقة العقد' },
       { to: '/research', label: 'المساهمات العلمية' },
       { to: '/publications', label: 'الكتب المنشورة' },
     ],
@@ -279,10 +279,11 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: 'محتواي المعرفي',
     items: [
-      { to: '/articles', label: 'مقالاتي الفكرية', sub: [
+      { to: '/articles', label: 'مقالاتي الفكرية', allLabel: 'عرض كل المقالات', sub: [
         { to: '/search', label: 'البحث العميق' },
         { to: '/atlas', label: 'سماء المقالات' },
       ] },
+      { to: '/thought-paths', label: 'مسار الفكرة' },
       { to: '/ask', label: 'اسأل مكتبتي' },
       { to: '/media', label: 'الظهور الإعلامي' },
       { to: '/upcoming', label: 'اللقاءات القادمة' },
@@ -292,7 +293,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     label: 'من اختياراتي',
     items: [
       // المختارات هي الأمّ، وفروعها تحتها (بدل تكرارها كبنود مستقلة)
-      { to: '/curated', label: 'المختارات', sub: [
+      { to: '/curated', label: 'المختارات', allLabel: 'عرض كل المختارات', sub: [
         { to: '/questions', label: 'سؤال يُقلق التعليم' },
         { to: '/radar', label: 'أرشيف الرادار' },
         { to: '/inbox', label: 'من بريدي الوارد' },
@@ -304,12 +305,61 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
 function Overlay({ close }: { close: () => void }) {
   const reduce = useReducedMotion()
   const loc = useLocation()
-  // الفروع مطويّة دائماً عند فتح القائمة — تُفتح بسهم البند فقط
+  const dialogRef = useRef<HTMLDivElement>(null)
+  // الفروع مطويّة عند فتح القائمة، والعنوان الأبّ نفسه يفتحها.
   const [openSub, setOpenSub] = useState<string | null>(null)
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const focusable = () => Array.from(dialog.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    )).filter((element) => element.offsetParent !== null)
+
+    const frame = window.requestAnimationFrame(() => (focusable()[0] || dialog).focus())
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        close()
+        return
+      }
+      if (event.key !== 'Tab') return
+      const items = focusable()
+      if (!items.length) {
+        event.preventDefault()
+        dialog.focus()
+        return
+      }
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      document.removeEventListener('keydown', onKeyDown)
+      previouslyFocused?.focus()
+    }
+  }, [close])
 
   return (
     <motion.div
-      className="fixed inset-0 z-[220] flex flex-col bg-canvas"
+      ref={dialogRef}
+      id="site-menu-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-label="القائمة الرئيسية"
+      tabIndex={-1}
+      className="fixed inset-0 z-[220] isolate flex flex-col bg-canvas outline-none"
+      style={{ backgroundColor: 'rgb(var(--c-canvas))' }}
       initial={reduce ? { opacity: 0 } : { y: '-100%' }}
       animate={reduce ? { opacity: 1 } : { y: 0 }}
       exit={reduce ? { opacity: 0 } : { y: '-100%' }}
@@ -317,14 +367,13 @@ function Overlay({ close }: { close: () => void }) {
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_55%_at_75%_35%,rgba(62,92,120,.07),transparent_65%)]" />
 
-      <div className="relative flex-1 overflow-y-auto">
-        <div className="flex min-h-full items-center px-6 pb-12 pt-24 md:px-11">
-        {/* ثلاثة أعمدة دائماً — حتى في الجوال (لا قائمة طويلة تحت بعض) */}
-        <div className="mx-auto grid w-full max-w-shell grid-cols-3 gap-x-3 gap-y-8 md:gap-x-12 md:gap-y-10">
+      <div className="relative flex-1 overflow-y-auto overscroll-contain">
+        <div className="flex min-h-full items-start px-6 pb-10 pt-[calc(6rem+env(safe-area-inset-top))] md:items-center md:px-11 md:py-28">
+        <div className="mx-auto grid w-full max-w-shell grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 md:gap-x-12 md:gap-y-10">
           {GROUPS.map((g, gi) => (
             <div key={g.label}>
               <motion.span
-                className="block text-[.6rem] font-semibold uppercase text-accent md:text-[.7rem]"
+                className="block text-[.68rem] font-semibold uppercase text-accent md:text-[.72rem]"
                 initial={reduce ? false : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.35 + gi * 0.08, ease: EASE }}
@@ -332,54 +381,82 @@ function Overlay({ close }: { close: () => void }) {
                 {g.label}
               </motion.span>
 
-              <ul className="mt-3 space-y-0.5 md:mt-4">
-                {g.items.map((it, ii) => (
+              <ul className="mt-3 space-y-1 md:mt-4">
+                {g.items.map((it, ii) => {
+                  const expanded = openSub === it.to
+                  const active = loc.pathname === it.to || Boolean(it.sub?.some((sub) => sub.to === loc.pathname))
+                  const subId = `menu-sub-${gi}-${ii}`
+                  return (
                   <li key={it.to} className="-my-[0.2em] overflow-hidden py-[0.2em]">
                     <motion.div
                       initial={reduce ? false : { y: '150%' }}
                       animate={{ y: 0 }}
                       transition={{ duration: 0.7, delay: 0.45 + gi * 0.08 + ii * 0.06, ease: EASE }}
                     >
-                      <span className="flex items-center gap-1.5">
+                      {it.sub ? (
+                        <button
+                          type="button"
+                          onClick={() => setOpenSub(expanded ? null : it.to)}
+                          aria-expanded={expanded}
+                          aria-controls={subId}
+                          className={`group flex w-full items-center justify-between gap-3 py-1 text-right font-display text-[1.15rem] font-medium leading-[1.5] transition-colors duration-300 hover:text-accent md:py-1.5 md:text-[1.35rem] ${
+                            active ? 'text-accent' : 'text-ink'
+                          }`}
+                        >
+                          <span>{it.label}</span>
+                          <motion.svg
+                            aria-hidden
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.4"
+                            strokeLinecap="round"
+                            animate={{ rotate: expanded ? 180 : 0 }}
+                            transition={{ duration: 0.3, ease: EASE }}
+                            className="shrink-0 text-soft group-hover:text-accent"
+                          >
+                            <path d="M6 9l6 6 6-6" />
+                          </motion.svg>
+                        </button>
+                      ) : (
                         <Link
                           to={it.to}
                           onClick={close}
-                          className={`block py-1 font-display text-[clamp(.95rem,2.6vw,1.5rem)] font-medium leading-[1.5] transition-colors duration-300 hover:text-accent md:py-1.5 ${
+                          className={`block py-1 font-display text-[1.15rem] font-medium leading-[1.5] transition-colors duration-300 hover:text-accent md:py-1.5 md:text-[1.35rem] ${
                             loc.pathname === it.to ? 'text-accent' : 'text-ink'
                           }`}
                         >
                           {it.label}
                         </Link>
-                        {it.sub && (
-                          <button
-                            onClick={() => setOpenSub(openSub === it.to ? null : it.to)}
-                            aria-expanded={openSub === it.to}
-                            aria-label={`فروع ${it.label}`}
-                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-soft transition-colors hover:text-accent"
-                          >
-                            <motion.svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"
-                              animate={{ rotate: openSub === it.to ? 180 : 0 }} transition={{ duration: 0.3, ease: EASE }}>
-                              <path d="M6 9l6 6 6-6" />
-                            </motion.svg>
-                          </button>
-                        )}
-                      </span>
+                      )}
                       {it.sub && (
                         <AnimatePresence initial={false}>
-                          {openSub === it.to && (
+                          {expanded && (
                             <motion.ul
+                              id={subId}
                               initial={{ height: 0, opacity: 0 }}
                               animate={{ height: 'auto', opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
                               transition={{ duration: 0.35, ease: EASE }}
-                              className="overflow-hidden border-r border-hair pr-3 md:pr-4"
+                              className="mt-1 overflow-hidden border-r border-hair pr-4"
                             >
+                              <li>
+                                <Link
+                                  to={it.to}
+                                  onClick={close}
+                                  className={`block py-1.5 text-[.9rem] font-semibold transition-colors hover:text-accent ${loc.pathname === it.to ? 'text-accent' : 'text-soft'}`}
+                                >
+                                  {it.allLabel || `عرض ${it.label}`}
+                                </Link>
+                              </li>
                               {it.sub.map((s) => (
                                 <li key={s.to}>
                                   <Link
                                     to={s.to}
                                     onClick={close}
-                                    className={`block py-1 font-display text-[clamp(.82rem,2.2vw,1.02rem)] font-light transition-colors duration-300 hover:text-accent ${
+                                    className={`block py-1.5 text-[.9rem] font-light transition-colors duration-300 hover:text-accent ${
                                       loc.pathname === s.to ? 'text-accent' : 'text-soft'
                                     }`}
                                   >
@@ -393,7 +470,7 @@ function Overlay({ close }: { close: () => void }) {
                       )}
                     </motion.div>
                   </li>
-                ))}
+                )})}
               </ul>
             </div>
           ))}
@@ -402,18 +479,18 @@ function Overlay({ close }: { close: () => void }) {
       </div>
 
       <motion.div
-        className="relative border-t border-hair px-6 py-8 md:px-11"
+        className="relative border-t border-hair px-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 md:px-11 md:py-7"
         initial={reduce ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.8 }}
       >
         <div className="mx-auto flex max-w-shell flex-wrap items-center justify-between gap-5">
           <Link
-            to="/contact"
+            to="/contact#booking-form"
             onClick={close}
-            className="rounded-full bg-accent px-7 py-3 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep"
+            className="rounded-full bg-accent px-6 py-2.5 text-[.88rem] font-semibold text-white transition-colors duration-300 hover:bg-accent-deep"
           >
-            للاستشارة أو التعاون
+            احجز موعداً مباشراً
           </Link>
           <div className="flex flex-wrap items-center gap-5 text-soft">
             {socials.map((s) => (
@@ -434,6 +511,7 @@ export function Nav() {
   const { scrollY, scrollYProgress } = useScroll()
   const progress = useSpring(scrollYProgress, { stiffness: 200, damping: 40 })
   const loc = useLocation()
+  const closeMenu = useCallback(() => setOpen(false), [])
 
   useEffect(() => scrollY.on('change', (v) => setScrolled(v > 50)), [scrollY])
   useEffect(() => setOpen(false), [loc.pathname])
@@ -448,20 +526,29 @@ export function Nav() {
     <>
       <motion.div className="fixed right-0 top-0 z-[240] h-[2px] w-full origin-right bg-accent" style={{ scaleX: progress }} />
 
-      <AnimatePresence>{open && <Overlay key="ov" close={() => setOpen(false)} />}</AnimatePresence>
+      <AnimatePresence>{open && <Overlay key="ov" close={closeMenu} />}</AnimatePresence>
 
-      <nav className={`fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.82] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
+      <nav aria-label="التنقّل الرئيسي" className={`fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.82] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
         <div className={`mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
           <Link to="/" aria-label={profile.name}>
             <img src="/logo.png" alt="" className="h-[34px] w-14 object-contain opacity-90 dark:invert" style={{ objectPosition: 'right' }} />
           </Link>
 
           <div className="flex items-center gap-3">
-            <ThemeToggle />
+            <ThemeToggle className={open ? 'invisible pointer-events-none' : ''} />
+            <Link
+              to="/contact#booking-form"
+              aria-label="الانتقال مباشرة إلى نموذج حجز موعد"
+              className={`rounded-full border border-accent px-3.5 py-2 text-[.76rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white sm:px-4 sm:text-[.82rem] ${open ? 'invisible pointer-events-none' : ''}`}
+            >
+              حجز موعد
+            </Link>
           <button
+            type="button"
             onClick={() => setOpen(!open)}
             aria-label={open ? 'إغلاق القائمة' : 'فتح القائمة'}
             aria-expanded={open}
+            aria-controls="site-menu-dialog"
             className="group flex items-center gap-3.5"
           >
             <span className="hidden text-[.9rem] font-medium text-ink transition-colors group-hover:text-accent sm:block">

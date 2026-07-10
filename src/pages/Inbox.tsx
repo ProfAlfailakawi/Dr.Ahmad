@@ -4,6 +4,11 @@ import { Newsletter } from '../components/extras'
 import { useSeo } from '../components/seo'
 import { faqs, inboxLinks, testimonials } from '../data'
 
+/* «يتجدد وحده»: تدوير أسبوعي حتمي — كل أسبوع يتقدّم الصف فيتغير الترتيب والوجوه أولاً
+   دون أي تدخل؛ ومع كل إضافة من لوحة التحكم (مختارات) يكبر المخزون. */
+const week = Math.floor(Date.now() / 6048e5)
+const rotate = <T,>(arr: T[]): T[] => arr.length ? [...arr.slice(week % arr.length), ...arr.slice(0, week % arr.length)] : arr
+
 export default function Inbox() {
   useSeo({ title: 'من بريدي الوارد', path: '/inbox', description: 'مختارات من رسائل وروابط وصلتني، وأسئلة يتكرّر ورودها.' })
   const reduce = useReducedMotion()
@@ -19,7 +24,7 @@ export default function Inbox() {
             <span className="text-[.76rem] font-semibold uppercase text-accent">ماذا قالوا</span>
           </FadeUp>
           <div className="mt-8 grid gap-6 md:grid-cols-2">
-            {testimonials.map((t, i) => (
+            {rotate(testimonials).map((t, i) => (
               <motion.blockquote
                 key={i}
                 initial={reduce ? false : { opacity: 0, y: 24 }}
@@ -43,7 +48,7 @@ export default function Inbox() {
             <span className="text-[.76rem] font-semibold uppercase text-accent">روابط تستحق وقتك</span>
           </FadeUp>
           <ul className="mt-8">
-            {inboxLinks.map((l, i) => (
+            {rotate(inboxLinks).map((l, i) => (
               <FadeUp key={l.url} delay={i * 0.06}>
                 <li className={i === 0 ? '' : 'border-t border-hair'}>
                   <a
@@ -75,7 +80,7 @@ export default function Inbox() {
             <span className="text-[.76rem] font-semibold uppercase text-accent">أسئلة تصلني</span>
           </FadeUp>
           <div className="mt-9 grid gap-10 md:grid-cols-3">
-            {faqs.map((f, i) => (
+            {rotate(faqs).map((f, i) => (
               <FadeUp key={f.q} delay={i * 0.07}>
                 <div className="border-t-2 border-accent pt-5">
                   <h3 className="font-display text-[1.18rem] font-medium leading-[1.6] text-ink">{f.q}</h3>

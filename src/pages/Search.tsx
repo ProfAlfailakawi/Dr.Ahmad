@@ -8,6 +8,15 @@ import { useCmsContent } from '../lib/content'
 
 const ar = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 
+const suggestedTopics = [
+  'الذكاء الاصطناعي',
+  'التعليم',
+  'الأسرة',
+  'الهوية',
+  'التقنية',
+  'المستقبل',
+]
+
 export default function Search() {
   const { articles } = useCmsContent()
   useSeo({
@@ -19,11 +28,25 @@ export default function Search() {
   const [query, setQuery] = useState('')
   const [cat, setCat] = useState('الكل')
   const [year, setYear] = useState('الكل')
+  const [visibleCount, setVisibleCount] = useState(24)
 
   const years = useMemo(() => Array.from(new Set(articles.map((article) => article.iso.slice(0, 4))))
     .sort((a, b) => b.localeCompare(a)), [articles])
-  const results = useMemo(() => searchArticles({ query, cat, year }, articles), [articles, query, cat, year])
+  const normalizedQuery = query.trim()
+  const searchStarted = normalizedQuery.length >= 2
+  const results = useMemo(
+    () => searchStarted ? searchArticles({ query: normalizedQuery, cat, year }, articles) : [],
+    [articles, normalizedQuery, cat, year, searchStarted],
+  )
   const keywords = useMemo(() => topKeywordsFor(results.slice(0, 18), 12), [results])
+  const visibleResults = results.slice(0, visibleCount)
+
+  const chooseTopic = (topic: string) => {
+    setQuery(topic)
+    setCat('الكل')
+    setYear('الكل')
+    setVisibleCount(24)
+  }
 
   return (
     <Page>
@@ -40,7 +63,7 @@ export default function Search() {
               <div className="relative">
                 <input
                   value={query}
-                  onChange={(event) => setQuery(event.target.value)}
+                  onChange={(event) => { setQuery(event.target.value); setVisibleCount(24) }}
                   placeholder="كلمة، فكرة، عنوان، أو سؤال..."
                   aria-label="بحث في المقالات"
                   className="w-full rounded-none border-0 border-b border-hair bg-transparent py-5 pe-14 ps-4 font-display text-[clamp(1.45rem,4vw,2.5rem)] font-semibold leading-[1.5] text-ink outline-none transition-colors placeholder:text-soft/45 focus:border-accent"
@@ -48,41 +71,62 @@ export default function Search() {
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[1.4rem] text-accent">⌕</span>
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-2">
-                {articleCats.map((item) => (
-                  <button
-                    key={item}
-                    onClick={() => setCat(item)}
-                    className={`rounded-full border px-4 py-1.5 text-[.84rem] font-medium transition-colors ${
-                      cat === item ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
-                    }`}
-                  >
-                    {item}
-                  </button>
-                ))}
+              <div className="mt-7">
+                <p className="mb-3 text-[.82rem] font-medium text-soft">أو ابدأ بمحور</p>
+                <div className="flex flex-wrap gap-2">
+                  {suggestedTopics.map((topic) => (
+                    <button
+                      key={topic}
+                      onClick={() => chooseTopic(topic)}
+                      className={`rounded-full border px-4 py-2 text-[.84rem] font-medium transition-colors ${
+                        normalizedQuery === topic
+                          ? 'border-accent bg-accent text-white'
+                          : 'border-hair text-soft hover:border-accent hover:text-accent'
+                      }`}
+                    >
+                      {topic}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="mt-3 flex flex-wrap gap-2">
-                {['الكل', ...years].map((item) => (
-                  <button
-                    key={item}
-                    onClick={() => setYear(item)}
-                    className={`rounded-full border px-4 py-1.5 text-[.8rem] transition-colors ${
-                      year === item ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
-                    }`}
-                  >
-                    {item === 'الكل' ? 'كل السنوات' : ar(item)}
-                  </button>
-                ))}
-              </div>
+              {searchStarted && <div className="mt-7 border-t border-hair pt-5">
+                <div className="flex flex-wrap gap-2">
+                  {articleCats.map((item) => (
+                    <button
+                      key={item}
+                      onClick={() => { setCat(item); setVisibleCount(24) }}
+                      className={`rounded-full border px-4 py-1.5 text-[.84rem] font-medium transition-colors ${
+                        cat === item ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {['الكل', ...years].map((item) => (
+                    <button
+                      key={item}
+                      onClick={() => { setYear(item); setVisibleCount(24) }}
+                      className={`rounded-full border px-4 py-1.5 text-[.8rem] transition-colors ${
+                        year === item ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
+                      }`}
+                    >
+                      {item === 'الكل' ? 'كل السنوات' : ar(item)}
+                    </button>
+                  ))}
+                </div>
+              </div>}
             </div>
           </FadeUp>
 
-          <FadeUp delay={0.05}>
+          {searchStarted && <FadeUp delay={0.05}>
             <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-              <p className="text-[.9rem] text-soft">
+              <p className="text-[.9rem] text-soft" aria-live="polite">
                 {ar(results.length)} نتيجة
-                {query.trim() && <span> عن «{query.trim()}»</span>}
+                <span> عن «{normalizedQuery}»</span>
               </p>
               {keywords.length > 0 && (
                 <div className="flex flex-wrap gap-2">
@@ -98,10 +142,10 @@ export default function Search() {
                 </div>
               )}
             </div>
-          </FadeUp>
+          </FadeUp>}
 
-          <ul className="mt-8">
-            {results.map((article, index) => (
+          {searchStarted && <ul className="mt-8">
+            {visibleResults.map((article, index) => (
               <FadeUp key={article.slug} delay={Math.min(index * 0.025, 0.25)}>
                 <li className={index === 0 ? '' : 'border-t border-hair'}>
                   <Link to={`/articles/${article.slug}`} className="group grid gap-3 py-6 md:grid-cols-[10rem_1fr_7rem] md:items-baseline">
@@ -119,9 +163,34 @@ export default function Search() {
                 </li>
               </FadeUp>
             ))}
-          </ul>
+          </ul>}
 
-          {results.length === 0 && (
+          {searchStarted && visibleCount < results.length && (
+            <FadeUp>
+              <div className="border-t border-hair pt-8 text-center">
+                <button
+                  onClick={() => setVisibleCount((count) => count + 24)}
+                  className="rounded-full border border-accent px-7 py-3 text-[.9rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
+                >
+                  عرض ٢٤ نتيجة أخرى
+                </button>
+              </div>
+            </FadeUp>
+          )}
+
+          {!searchStarted && (
+            <FadeUp delay={0.05}>
+              <div className="py-16 text-center md:py-20">
+                <span aria-hidden className="text-[1.7rem] text-accent">⌕</span>
+                <h2 className="mt-3 font-display text-[clamp(1.35rem,3vw,1.8rem)] font-semibold text-ink">عمّ تبحث اليوم؟</h2>
+                <p className="mx-auto mt-2 max-w-md text-[.9rem] leading-[1.8] text-soft">
+                  اكتب حرفين على الأقل، أو اختر أحد المحاور المقترحة أعلاه.
+                </p>
+              </div>
+            </FadeUp>
+          )}
+
+          {searchStarted && results.length === 0 && (
             <FadeUp>
               <div className="border-t border-hair py-20 text-center">
                 <p className="font-display text-[1.5rem] font-semibold text-ink">لا نتائج دقيقة.</p>

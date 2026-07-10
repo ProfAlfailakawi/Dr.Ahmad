@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react'
 import { motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, FadeUp, Label, Magnetic, Page, Reveal, SectionHead } from '../components/ui'
-import { books as staticBooks, papers as staticPapers, profile, upcoming } from '../data'
-import { useCmsContent } from '../lib/content'
+import { books as staticBooks, papers as staticPapers, profile, upcoming, type Event as SiteEvent } from '../data'
+import { useCmsContent, useExtras } from '../lib/content'
 import { Newsletter } from '../components/extras'
-import { curatedBank, thisMonthsBook, type Curio } from '../data-curated'
+import { type Curio } from '../data-curated'
 import { staticQuestions, LAUNCH_DATE } from './Questions'
 
 const arNum = (n: number) => String(n).padStart(2, '0')
@@ -103,7 +103,7 @@ function WhoAreYou() {
   const active = persona ? PERSONAS.find((x) => x.key === persona) ?? null : null
 
   return (
-    <section className="border-t border-hair bg-wash px-6 py-[56px] md:px-11 md:py-[72px]">
+    <section className="border-t border-hair bg-wash px-6 py-11 md:px-11 md:py-[72px]">
       <div className="mx-auto max-w-shell">
         {active ? (
           /* ── مُشخصَن: لمحة تُقدّم الأنسب له ── */
@@ -124,9 +124,9 @@ function WhoAreYou() {
           </FadeUp>
         ) : skipped ? (
           /* ── تصفّح حرّ: البوابات الثلاث كروابط ── */
-          <div className="grid gap-5 md:grid-cols-3">
+          <div className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 md:pb-0">
             {PERSONAS.map((g, i) => (
-              <FadeUp key={g.key} delay={i * 0.08}>
+              <FadeUp key={g.key} delay={i * 0.08} className="w-[78vw] shrink-0 snap-start md:w-auto">
                 <Link to={g.to} data-hover className="group flex h-full flex-col rounded-2xl border border-hair bg-canvas p-7 transition-colors duration-300 hover:border-accent">
                   <h3 className="font-display text-[1.15rem] font-semibold text-ink">{g.gate}</h3>
                   <p className="mt-2.5 text-[.92rem] font-light leading-relaxed text-soft">{g.d}</p>
@@ -142,9 +142,9 @@ function WhoAreYou() {
             <FadeUp delay={0.05}>
               <h2 className="mb-8 font-display text-[clamp(1.6rem,4vw,2.6rem)] font-semibold leading-[1.3] text-ink">ما الذي جاء بك؟</h2>
             </FadeUp>
-            <div className="grid gap-5 md:grid-cols-3">
+            <div className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 md:pb-0">
               {PERSONAS.map((g, i) => (
-                <FadeUp key={g.key} delay={0.1 + i * 0.08}>
+                <FadeUp key={g.key} delay={0.1 + i * 0.08} className="w-[78vw] shrink-0 snap-start md:w-auto">
                   <button onClick={() => choose(g.key)} data-hover className="group flex h-full w-full flex-col rounded-2xl border border-hair bg-canvas p-7 text-right transition-colors duration-300 hover:border-accent">
                     <h3 className="font-display text-[1.15rem] font-semibold text-ink">{g.gate}</h3>
                     <p className="mt-2.5 text-[.92rem] font-light leading-relaxed text-soft">{g.d}</p>
@@ -181,11 +181,11 @@ function MiniAtlas() {
     r: 2 + (hash(a.title) % 3),
   }))
   return (
-    <section className="border-t border-hair px-6 py-[56px] md:px-11 md:py-[72px]">
+    <section className="border-t border-hair px-6 py-11 md:px-11 md:py-[72px]">
       <div className="mx-auto max-w-shell">
         <SectionHead label="سماء المقالات" title="كل نجمة مقال." to="/atlas" cta="الخريطة الكاملة" />
         <FadeUp>
-          <div className="relative mt-10 h-[150px] overflow-hidden rounded-2xl border border-hair bg-wash">
+          <div className="relative mt-7 h-[120px] overflow-hidden rounded-2xl border border-hair bg-wash md:mt-10 md:h-[150px]">
             {stars.map((s, i) => (
               <Link
                 key={s.slug}
@@ -283,7 +283,7 @@ function OnThisWeek() {
   const when = pick.d.toLocaleDateString('ar-u-nu-latn', { month: 'long', year: 'numeric' })
 
   return (
-    <section className="border-t border-hair px-6 py-[56px] md:px-11 md:py-[72px]">
+    <section className="border-t border-hair px-6 py-11 md:px-11 md:py-[72px]">
       <div className="mx-auto max-w-shell">
         <FadeUp>
           <Link to={`/articles/${pick.a.slug}`} data-hover className="group block max-w-3xl">
@@ -344,11 +344,11 @@ function ThoughtCompass() {
   const dive = axisDeepDive(active)
 
   return (
-    <section className="border-t border-hair px-6 py-[70px] md:px-11 md:py-[100px]">
+    <section className="border-t border-hair px-6 py-11 md:px-11 md:py-[100px]">
       <div className="mx-auto max-w-shell">
         <FadeUp><Label>بوصلة الفكر</Label></FadeUp>
         <FadeUp delay={0.05}>
-          <h2 className="mb-10 font-display text-[clamp(2rem,5vw,3.3rem)] font-semibold leading-[1.25] text-ink">
+          <h2 className="mb-7 font-display text-[clamp(2rem,5vw,3.3rem)] font-semibold leading-[1.25] text-ink md:mb-10">
             <Reveal>تصفّح بالفكرة.</Reveal>
           </h2>
         </FadeUp>
@@ -373,9 +373,9 @@ function ThoughtCompass() {
         </FadeUp>
 
         {/* أعمال المحور */}
-        <div className="mt-10 grid gap-5 md:grid-cols-3 md:gap-6">
+        <div className="mt-8 grid gap-5 md:mt-10 md:grid-cols-3 md:gap-6">
           {related.map((a, i) => (
-            <FadeUp key={a.slug} delay={Math.min(i * 0.06, 0.2)}>
+            <FadeUp key={a.slug} delay={Math.min(i * 0.06, 0.2)} className={i > 0 ? 'hidden md:block' : ''}>
               <Link to={`/articles/${a.slug}`} data-hover className="group flex h-full flex-col rounded-2xl border border-hair bg-canvas p-6 transition-colors duration-300 hover:border-accent">
                 <time className="text-[.76rem] text-soft">{a.date}</time>
                 <h3 className="mt-3 font-display text-[1.12rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">{a.title}</h3>
@@ -386,7 +386,8 @@ function ThoughtCompass() {
         </div>
         <FadeUp delay={0.15}>
           <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[.9rem]">
-            <Link to="/articles" className="font-semibold text-accent">كل ما كتبته في {axes.find((a) => a.key === active)?.label} ←</Link>
+            <Link to="/thought-paths" className="font-semibold text-accent">مسار الفكرة الكامل ←</Link>
+            <Link to="/articles" className="text-soft transition-colors hover:text-accent">كل ما كتبته في {axes.find((a) => a.key === active)?.label} ←</Link>
             {dive.paper && (
               <Link to={`/research/${dive.paper.slug}`} className="group text-soft transition-colors hover:text-accent">
                 <span className="me-1.5 rounded-full border border-hair px-2 py-0.5 text-[.7rem]">بحث</span>{dive.paper.title.slice(0, 42)}{dive.paper.title.length > 42 ? '…' : ''} <span className="text-accent">←</span>
@@ -407,8 +408,8 @@ function ThoughtCompass() {
 /* ---------- سؤال الأسبوع التفاعلي (فكرة نووية ٧) ----------
    الزائر يصوّت بلا تسجيل ولا تتبّع، فيُكشف له رأي الدكتور — مشاركٌ لا متفرّج. */
 function WeeklyPoll() {
-  const week = Math.max(0, Math.min(staticQuestions.length - 1,
-    Math.floor((Date.now() - new Date(LAUNCH_DATE).getTime()) / (7 * 24 * 60 * 60 * 1000))))
+  // يدور على البنك بلا توقف — كل جمعة سؤال، وبعد نفاد البنك يعيد الدورة
+  const week = Math.max(0, Math.floor((Date.now() - new Date(LAUNCH_DATE).getTime()) / (7 * 24 * 60 * 60 * 1000))) % staticQuestions.length
   const q = staticQuestions[week]
   const key = `poll:${week}`
   const [voted, setVoted] = useState<string | null>(null)
@@ -417,7 +418,7 @@ function WeeklyPoll() {
   const options = ['أوافق', 'لا أوافق', 'المسألة أعقد']
 
   return (
-    <section className="border-t border-hair bg-wash px-6 py-[70px] md:px-11 md:py-[100px]">
+    <section className="border-t border-hair bg-wash px-6 py-11 md:px-11 md:py-[100px]">
       <div className="mx-auto max-w-shell">
         <FadeUp><Label>سؤال الأسبوع</Label></FadeUp>
         <FadeUp delay={0.05}>
@@ -477,18 +478,18 @@ function ImpactTimeline() {
   ]
 
   return (
-    <section className="border-t border-hair px-6 py-[70px] md:px-11 md:py-[100px]">
+    <section className="border-t border-hair px-6 py-11 md:px-11 md:py-[100px]">
       <div className="mx-auto max-w-shell">
         <FadeUp><Label>الأثر</Label></FadeUp>
         <FadeUp delay={0.05}>
-          <h2 className="mb-12 font-display text-[clamp(2rem,5vw,3.3rem)] font-semibold leading-[1.25] text-ink">
+          <h2 className="mb-8 font-display text-[clamp(2rem,5vw,3.3rem)] font-semibold leading-[1.25] text-ink md:mb-12">
             <Reveal>رحلة فكر.</Reveal>
           </h2>
         </FadeUp>
         <ol className="relative mr-2 border-r-2 border-hair pr-8">
           {steps.map((s, i) => (
-            <FadeUp key={s.t} delay={Math.min(i * 0.1, 0.4)}>
-              <li className="relative pb-10 last:pb-0">
+            <FadeUp key={s.t} delay={Math.min(i * 0.1, 0.4)} className={i > 0 && i < steps.length - 1 ? 'hidden md:block' : ''}>
+              <li className="relative pb-7 last:pb-0 md:pb-10">
                 <span className="absolute right-[-2.6rem] top-1.5 h-3 w-3 rounded-full border-2 border-accent bg-canvas" />
                 <span className="font-display text-[1.05rem] font-bold text-accent">{s.y}</span>
                 <p className="mt-1.5 max-w-xl text-[1.05rem] font-light leading-[1.85] text-ink/80">{s.t}</p>
@@ -497,9 +498,10 @@ function ImpactTimeline() {
           ))}
         </ol>
         <FadeUp delay={0.2}>
-          <p className="mt-10 border-t border-hair pt-8 font-display text-[clamp(1.2rem,2.6vw,1.7rem)] font-semibold leading-relaxed text-ink">
-            هذا ليس أرشيفاً… هذه رحلة فكر.
-          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-6 md:mt-10 md:pt-8">
+            <p className="font-display text-[clamp(1.2rem,2.6vw,1.7rem)] font-semibold leading-relaxed text-ink">هذا ليس أرشيفاً… هذه رحلة فكر.</p>
+            <Link to="/decade" className="text-[.88rem] font-semibold text-accent">اقرأ «وثيقة العقد» ←</Link>
+          </div>
         </FadeUp>
       </div>
     </section>
@@ -513,7 +515,7 @@ function LatestCard() {
   const latest = articles[0]
   if (!latest) return null
   return (
-    <section className="px-6 pb-[70px] md:px-11 md:pb-[100px]">
+    <section className="px-6 pb-[56px] md:px-11 md:pb-[100px]">
       <div className="mx-auto max-w-shell">
         <FadeUp>
           <motion.div
@@ -568,6 +570,11 @@ function Card({ children, delay = 0, className = '' }: { children: React.ReactNo
 export default function Home() {
   useSeo({ title: 'د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم والذكاء الاصطناعي', path: '/' })
   const { articles, books, papers, media } = useCmsContent()
+  const addedEvents = useExtras<SiteEvent & { id: string }>('site_upcoming')
+  const upcomingItems = [...addedEvents, ...upcoming]
+    .filter((event, index, list) => list.findIndex((candidate) => candidate.iso === event.iso && candidate.title === event.title) === index)
+    .filter((event) => event.iso >= new Date().toISOString().slice(0, 10))
+    .sort((left, right) => left.iso.localeCompare(right.iso))
   const reduce = useReducedMotion()
   const { scrollY } = useScroll()
   const parY = useTransform(scrollY, [0, 800], [0, 40])
@@ -588,8 +595,6 @@ export default function Home() {
 
   const topArticles = articles.slice(0, 3)
   const topPapers = papers.slice(0, 3)
-  // موحّد مع نظام «المختارات» الجديد: كتاب الشهر + مختارتان موثّقتان
-  const topPicks: Curio[] = [thisMonthsBook(), curatedBank[6], curatedBank[11]]
   const topMedia = media.slice(0, 3)
 
   return (
@@ -676,7 +681,7 @@ export default function Home() {
       <DailySpark />
 
       {/* about */}
-      <section className="border-t border-hair px-6 py-[70px] md:px-11 md:py-[100px]">
+      <section className="border-t border-hair px-6 py-11 md:px-11 md:py-[100px]">
         <div className="mx-auto grid max-w-shell items-start gap-10 md:grid-cols-2 md:gap-14">
           <FadeUp>
             <Label>نبذة</Label>
@@ -698,7 +703,7 @@ export default function Home() {
       <WhoAreYou />
 
       {/* books */}
-      <section className="border-t border-hair bg-wash py-[70px] md:py-[100px]">
+      <section className="border-t border-hair bg-wash py-[56px] md:py-[100px]">
         <div className="mx-auto max-w-shell px-6 md:px-11">
           <SectionHead label="المؤلفات" title={`${books.length} كتب.`} to="/publications" />
         </div>
@@ -727,9 +732,9 @@ export default function Home() {
       <ThoughtCompass />
 
       {/* المقالات — لغة: مقال كبير مميّز + عنوانان فقط */}
-      <section className="border-t border-hair px-6 py-[70px] md:px-11 md:py-[100px]">
+      <section className="border-t border-hair px-6 py-[56px] md:px-11 md:py-[100px]">
         <div className="mx-auto max-w-shell">
-          <SectionHead label="مقالاتي الفكرية" title="بصوتي الخاص." to="/articles" />
+          <SectionHead label="مقالاتي الفكرية" title="بصوتي الخاص." to="/articles" cta="عرض الكل" />
           <div className="grid gap-8 md:grid-cols-[1.5fr_.5fr] md:gap-12">
             <FadeUp>
               {topArticles[0] && <Link to={`/articles/${topArticles[0].slug}`} data-hover className="group block">
@@ -745,7 +750,7 @@ export default function Home() {
                 <span className="mt-6 inline-block text-[.9rem] font-semibold text-accent">اقرأ المقال ←</span>
               </Link>}
             </FadeUp>
-            <FadeUp delay={0.12}>
+            <FadeUp delay={0.12} className="hidden md:block">
               <div className="flex flex-col divide-y divide-hair border-t border-hair md:border-r md:border-t-0 md:pr-8">
                 {topArticles.slice(1, 3).map((a) => (
                   <Link key={a.slug} to={`/articles/${a.slug}`} data-hover className="group py-6 first:pt-6 md:first:pt-0">
@@ -760,12 +765,12 @@ export default function Home() {
       </section>
 
       {/* الأبحاث — لغة: قائمة مرقّمة أنيقة، لا بطاقات */}
-      <section className="border-t border-hair bg-wash px-6 py-[70px] md:px-11 md:py-[100px]">
+      <section className="border-t border-hair bg-wash px-6 py-11 md:px-11 md:py-[100px]">
         <div className="mx-auto max-w-shell">
-          <SectionHead label="المساهمات العلمية" title="أبحاث محكّمة." to="/research" />
+          <SectionHead label="المساهمات العلمية" title="أبحاث محكّمة." to="/research" cta="عرض الكل" />
           <ol className="mt-2">
             {topPapers.map((p, i) => (
-              <FadeUp key={p.slug} delay={Math.min(i * 0.06, 0.24)}>
+              <FadeUp key={p.slug} delay={Math.min(i * 0.06, 0.24)} className={i > 1 ? 'hidden md:block' : ''}>
                 <li className={i === 0 ? '' : 'border-t border-hair'}>
                   <Link to={`/research/${p.slug}`} data-hover className="group flex items-baseline gap-6 py-6 transition-[padding] duration-300 hover:pe-3">
                     <span className="w-8 shrink-0 font-display text-[1.4rem] font-bold text-accent/70 transition-colors group-hover:text-accent">{arNum(i + 1)}</span>
@@ -783,9 +788,9 @@ export default function Home() {
       </section>
 
       {/* الإعلام — لغة: فيديو سينمائي واحد + رابطان نصيان */}
-      <section className="border-t border-hair px-6 py-[70px] md:px-11 md:py-[100px]">
+      <section className="border-t border-hair px-6 py-11 md:px-11 md:py-[100px]">
         <div className="mx-auto max-w-shell">
-          <SectionHead label="الظهور الإعلامي" title="على الشاشة." to="/media" />
+          <SectionHead label="الظهور الإعلامي" title="على الشاشة." to="/media" cta="عرض الكل" />
           <div className="grid gap-8 md:grid-cols-[1.55fr_.45fr] md:gap-12">
             <FadeUp>
               {topMedia[0] && <a href={topMedia[0].url} target="_blank" rel="noreferrer" data-hover className="group block overflow-hidden rounded-2xl">
@@ -802,7 +807,7 @@ export default function Home() {
                 </div>
               </a>}
             </FadeUp>
-            <FadeUp delay={0.12}>
+            <FadeUp delay={0.12} className="hidden md:block">
               <div className="flex flex-col divide-y divide-hair border-t border-hair md:border-r md:border-t-0 md:pr-8">
                 {topMedia.slice(1, 3).map((m) => (
                   <a key={m.url} href={m.url} target="_blank" rel="noreferrer" data-hover className="group flex items-start gap-3 py-5 first:pt-5 md:first:pt-0">
@@ -823,25 +828,35 @@ export default function Home() {
 
       <WeeklyPoll />
 
-      {/* upcoming + newsletter */}
-      <section className="border-t border-hair px-6 py-[70px] md:px-11 md:py-[100px]">
-        <div className="mx-auto grid max-w-shell gap-12 md:grid-cols-2 md:gap-14">
+      {/* اللقاءات + النشرة — شريط خفيف لا كتلة عملاقة */}
+      <section className="border-t border-hair px-6 py-12 md:px-11 md:py-16">
+        <div className="mx-auto grid max-w-shell gap-9 md:grid-cols-[1.1fr_.9fr] md:gap-14">
           <FadeUp>
-            <SectionHead label="اللقاءات القادمة" title="أين ألتقيك؟" to="/upcoming" cta="الجدول" />
-            {upcoming.length > 0 ? (
-              <ul className="space-y-5">
-                {upcoming.slice(0, 2).map((e) => (
-                  <li key={e.iso + e.title} className="border-r-2 border-hair pr-6 transition-colors hover:border-accent">
-                    <span className="block text-[.84rem] font-semibold text-accent">{e.date}</span>
-                    <span className="mt-1 block font-display text-[1.15rem] font-medium leading-[1.55] text-ink">{e.title}</span>
-                    <span className="text-[.85rem] text-soft">{e.org} · {e.place}</span>
+            <div className="mb-6 flex items-end justify-between gap-5">
+              <div>
+                <Label>اللقاءات القادمة</Label>
+                <h2 className="font-display text-[clamp(1.5rem,3.2vw,2rem)] font-semibold leading-[1.35] text-ink">أين ألتقيك؟</h2>
+              </div>
+              <Link to="/upcoming" className="shrink-0 pb-1 text-[.84rem] font-semibold text-accent">الجدول ←</Link>
+            </div>
+            {upcomingItems.length > 0 ? (
+              <ul className="space-y-2.5">
+                {upcomingItems.slice(0, 2).map((e) => (
+                  <li key={e.iso + e.title} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-hair px-4 py-3 transition-colors hover:border-accent">
+                    <time className="shrink-0 text-[.78rem] font-semibold text-accent">{e.date}</time>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-display text-[1rem] font-medium leading-[1.5] text-ink">{e.title}</span>
+                      <span className="block text-[.76rem] text-soft">{e.org} · {e.place}</span>
+                    </span>
+                    {e.url && <a href={e.url} target="_blank" rel="noreferrer" className="text-[.76rem] font-semibold text-accent">التسجيل ←</a>}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-[1.02rem] font-light leading-[1.9] text-soft">
-                لا لقاءات معلنة حالياً. اشترك في النشرة ليصلك الإعلان أولاً.
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hair bg-wash px-4 py-3">
+                <p className="text-[.88rem] font-light leading-[1.7] text-soft">لا لقاءات معلنة حالياً.</p>
+                <Link to="/contact#booking-form" className="text-[.82rem] font-semibold text-accent">احجز موعداً ←</Link>
+              </div>
             )}
           </FadeUp>
 

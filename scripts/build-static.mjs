@@ -249,13 +249,15 @@ const podcastEpisodes = articles
 writeFileSync(resolve(DIST, 'podcast.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>مقالات د. أحمد حسين الفيلكاوي — المسموعة</title>
+    <title>د. أحمد الفيلكاوي — مقالاتي المسموعة · Dr. Ahmad Alfailakawi</title>
     <link>${SITE}</link>
     <language>ar</language>
     <copyright>© د. أحمد حسين الفيلكاوي</copyright>
-    <description>مقالات فكرية في التعليم والتقنية والمجتمع والذكاء الاصطناعي — بصوت الدكتور. تصعد الحلقات تلقائياً مع كل مقال جديد.</description>
-    <itunes:author>د. أحمد حسين الفيلكاوي</itunes:author>
-    <itunes:summary>مقالات فكرية في التعليم والتقنية والمجتمع والذكاء الاصطناعي — بصوت الدكتور.</itunes:summary>
+    <description>أفكاري عن التعليم والتقنية والمجتمع، وكيف نُبقي الإنسان في قلب الآلة — بصوتي، مقالاً تلو الآخر. حلقة جديدة مع كل مقال.
+
+My reflections on education, technology, and society — and how we keep the human at the heart of the machine. In my own voice, essay by essay. A new episode with every article.</description>
+    <itunes:author>د. أحمد حسين الفيلكاوي · Dr. Ahmad Alfailakawi</itunes:author>
+    <itunes:summary>أفكاري عن التعليم والتقنية والمجتمع، وكيف نُبقي الإنسان في قلب الآلة — بصوتي. · My reflections on education, technology, and society, in my own voice.</itunes:summary>
     <itunes:type>episodic</itunes:type>
     <itunes:owner><itunes:name>د. أحمد حسين الفيلكاوي</itunes:name><itunes:email>ah_f@hotmail.com</itunes:email></itunes:owner>
     <itunes:image href="${podcastArt}"/>

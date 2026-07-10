@@ -1,0 +1,12 @@
+# This file instructs gcloud directory uploads to ignore the following:
+.gcloudignore
+.git
+.gitignore
+
+# Node.js artifacts
+node_modules/
+dist/
+
+# Large local files
+audio/
+audio

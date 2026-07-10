@@ -1,0 +1,67 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // رسائل التواصل: يُسمح بالإرسال فقط.
+    // القراءة والتعديل والحذف للمشرف المصادَق عليه حصراً.
+    match /messages/{messageId} {
+      allow create: if isValidMessage();
+      allow read, update, delete: if isAdmin();
+    }
+
+    // المشتركون في النشرة: إضافة فقط.
+    match /subscribers/{email} {
+      allow create: if isValidEmail(request.resource.data.email);
+      allow read, update, delete: if isAdmin();
+    }
+
+    // محتوى لوحة التحكم /admin: قراءة عامة (يعرضه الموقع)،
+    // والكتابة والتعديل والحذف للمشرف المصادَق عليه حصراً.
+    match /site_articles/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /site_questions/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /site_upcoming/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /site_picks/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    // رادار الشبكة: يكتبه سكربت الالتقاط اليومي بحساب الخدمة
+    // (حساب الخدمة يتجاوز القواعد) — للزوار قراءة فقط.
+    match /site_radar/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // كل ما عدا ذلك: مغلق.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+
+  function isValidEmail(e) {
+    return e is string && e.size() <= 200 && e.matches('^[^@]+@[^@]+\\.[^@]+$');
+  }
+
+  function isAdmin() {
+    return request.auth != null && request.auth.token.admin == true;
+  }
+
+  function isValidMessage() {
+    let d = request.resource.data;
+    return d.keys().hasOnly(['name', 'email', 'topic', 'message', 'createdAt'])
+      && d.name is string && d.name.size() > 1 && d.name.size() <= 80
+      && isValidEmail(d.email)
+      && d.topic in ['استشارة', 'محاضرة أو ورشة', 'لقاء إعلامي', 'أخرى']
+      && d.message is string && d.message.size() > 10 && d.message.size() <= 3000
+      && d.createdAt == request.time;
+  }
+}

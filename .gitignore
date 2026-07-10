@@ -1,0 +1,22 @@
+# اعتماديات ومخرجات
+node_modules
+dist
+
+# أسرار — لا تُرفع أبداً
+.env
+.env.local
+sa.json
+scripts/cloud-radar.gs
+
+# أصول مكرّرة (المصدر المعتمد للبناء هو مجلدات الجذر audio/ covers/ files/)
+public/audio
+public/covers
+public/files
+
+# بقايا بناء قديمة في الجذر
+/assets/*.js
+/assets/.aistudio
+
+# نظام
+.DS_Store
+*.log

@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans Arabic", system-ui, -apple-system, sans-serif;
+  --font-display: "Cairo", system-ui, sans-serif;
+  --font-serif: "Amiri", "Playfair Display", serif;
+  
+  --color-brand-beige: #f9f6f0;
+  --color-brand-dark: #12151c;
+  --color-brand-accent: #8b7355; /* Refined academic bronze/gold */
+  --color-brand-muted: #5e6675;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-brand-beige);
+  color: var(--color-brand-dark);
+  direction: rtl;
+  overflow-x: hidden;
+}
+
+/* Custom styles for Awwwards vibe */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f9f6f0;
+}
+::-webkit-scrollbar-thumb {
+  background: #8b7355;
+  border-radius: 3px;
+}

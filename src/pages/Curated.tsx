@@ -63,7 +63,7 @@ function RadarSection() {
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <div className="flex flex-wrap items-baseline gap-3">
               <h2 className="font-display text-xl font-bold text-ink">رادار الشبكة</h2>
-              <span className="text-[.8rem] text-soft">يُلتقط آلياً كل يوم من مصادر موثوقة، ويُلخَّص بالعربية والإنجليزية</span>
+              <span className="text-[.8rem] text-soft">التقاط يومي من مصادر موثوقة</span>
             </div>
             <Link to="/radar" data-hover className="text-[.85rem] text-accent transition-colors hover:text-accent-deep">الأرشيف الكامل ←</Link>
           </div>
@@ -108,7 +108,7 @@ export default function Curated() {
       <PageHead
         label="من اختياراتي"
         title="المختارات."
-        sub="إيقاع ثابت: كل يوم اختيار، كل جمعة سؤال، كل شهر كتاب — بالعربية والإنجليزية، من مصادر موثوقة فقط."
+        sub="كل يوم اختيار، كل جمعة سؤال، كل شهر كتاب."
       />
 
       {/* ─── جديد اليوم ─── */}

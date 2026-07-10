@@ -99,6 +99,7 @@ export const socials = [
   { label: 'LinkedIn', url: 'https://www.linkedin.com/in/prof-ahmad-alfailakawi-5922251a5' },
   { label: 'X', url: 'https://twitter.com/drahmadkw' },
   { label: 'Instagram', url: 'https://www.instagram.com/DrAhmadkw/' },
+  { label: 'Facebook', url: 'https://www.facebook.com/DrAhmadkw' }, // ⚠️ تأكّد من الرابط الدقيق
   { label: 'YouTube', url: 'https://youtube.com/@drahmadalfailakawi' },
 ]
 

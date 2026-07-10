@@ -45,15 +45,15 @@ export function Newsletter({ compact = false }: { compact?: boolean }) {
     )
 
   return (
-    <div className={compact ? '' : 'rounded-2xl border border-hair bg-wash p-8 md:p-10'}>
+    <div className={compact ? '' : 'rounded-2xl border border-hair bg-wash p-6'}>
       {!compact && (
         <>
-          <span className="text-[.76rem] font-semibold uppercase tracking-[.12em] text-accent">النشرة البريدية</span>
-          <h3 className="mt-3 font-display text-[1.5rem] font-semibold text-ink">جديدي يصلك أولاً.</h3>
-          <p className="mt-2 text-[.95rem] font-light text-soft">مقال كل أسبوع، ومختارات لا تجدها في مكان آخر.</p>
+          <span className="text-[.72rem] font-semibold uppercase tracking-[.12em] text-accent">النشرة البريدية</span>
+          <h3 className="mt-2 font-display text-[1.15rem] font-semibold text-ink">جديدي يصلك أولاً.</h3>
+          <p className="mt-1 text-[.88rem] font-light text-soft">مقال كل أسبوع، ومختارات منتقاة.</p>
         </>
       )}
-      <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
+      <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
         <input
           type="email"
           dir="ltr"

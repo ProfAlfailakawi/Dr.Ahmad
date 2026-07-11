@@ -5,6 +5,10 @@ export const LINK_OUT = false
 /** صوت المتصفّح الآلي رديء للعربية. اجعله true فقط إن لم تولّد ملفات MP3. */
 export const ALLOW_BROWSER_TTS = false
 
+/** المرآة الإنجليزية تُبنى بهدوء: صفحاتها حية على /en لكن زرّها مخفي.
+    عند الجاهزية للكشف: اجعله true — يظهر زر EN في الهيدر فوراً. */
+export const SHOW_EN_TOGGLE = false
+
 // نصوص المقالات الكاملة — تُملأ بتشغيل: npm run import
 import bodies from './data/bodies.json'
 

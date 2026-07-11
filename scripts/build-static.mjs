@@ -93,11 +93,16 @@ function stripManagedHead(html) {
     .replace(/<script\s+type=["']application\/ld\+json["'][\s\S]*?<\/script>/gi, '')
 }
 
-/* المرآة الإنجليزية — أزواج hreflang بين اللغتين */
-const LANG_PAIRS = { '/': '/en', '/cv': '/en/cv', '/research': '/en/research' }
+/* المرآة الإنجليزية — أزواج hreflang بين اللغتين.
+   ما دام زرّها مخفياً (SHOW_EN_TOGGLE=false) تبقى صفحاتها خارج فهرسة جوجل:
+   noindex + بلا hreflang — فلا تنكشف قبل أوانها. الكشف بقلب المفتاح في data.ts. */
+const SHOW_EN = /export const SHOW_EN_TOGGLE = true/.test(src)
+const LANG_PAIRS = SHOW_EN ? { '/': '/en', '/cv': '/en/cv', '/research': '/en/research' } : {}
 
 function render({ path, title, desc, type = 'website', iso, cat, image, robots, lang = 'ar' }) {
   const en = lang === 'en'
+  // ما دامت المرآة مخفية: صفحاتها الإنجليزية لا تُفهرس
+  if (en && !SHOW_EN) robots = 'noindex, nofollow'
   // لا تُلحق الاسم إن كان العنوان يحمله أصلاً — يمنع تضاعفه
   const hasName = title.includes('Alfailakawi') || title.includes('د. أحمد حسين الفيلكاوي')
   const full = path === '/' || hasName ? title : en ? `${title} — Dr. Ahmad H. Alfailakawi` : `${title} — د. أحمد حسين الفيلكاوي`
@@ -214,7 +219,7 @@ generateArticleOg()
 /* ---------- sitemap ---------- */
 const sm = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${routes.map((r) => `  <url><loc>${SITE}${r.path}</loc>${r.iso ? `<lastmod>${r.iso}</lastmod>` : ''}<priority>${r.path === '/' ? '1.0' : r.type === 'article' ? '0.6' : '0.8'}</priority></url>`).join('\n')}
+${routes.filter((r) => SHOW_EN || r.lang !== 'en').map((r) => `  <url><loc>${SITE}${r.path}</loc>${r.iso ? `<lastmod>${r.iso}</lastmod>` : ''}<priority>${r.path === '/' ? '1.0' : r.type === 'article' ? '0.6' : '0.8'}</priority></url>`).join('\n')}
 </urlset>
 `
 writeFileSync(resolve(DIST, 'sitemap.xml'), sm, 'utf8')

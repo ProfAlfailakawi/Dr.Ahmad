@@ -1,11 +1,31 @@
-/* اختبار الأصوات الأعمى — يعرض النسخ الخمس بلا أسماء (نسخة ١..٥)، فالتقييم أعمى غير
-   متأثر باسم الدولة أو الصوت. عند الاعتماد يُكشف الاسم ويُحفظ الزوج الفائز في
-   site_settings/podcast_voices فيصبح الصوت الافتراضي الثابت للبودكاست. */
+/* اختبار أصوات أعمى حقيقي: الـmanifest العام لا يحمل أسماء الأصوات أو الدول.
+   اللوحة تحفظ optionKey + sampleHash فقط؛ سكربت الخادم وحده يطابقهما مع التدقيق
+   الخاص ويمنع الإنتاج إن لم يكن الخيار مجتازاً. */
 import { useEffect, useRef, useState } from 'react'
 import { getDb } from '../../lib/firebase'
 
-type Option = { key: string; pairId: string; country: string; voiceA: string; voiceB: string; durationSec: number }
-type Manifest = { generatedAt: string; title: string; criteria: string[]; options: Option[] }
+type Option = { key: string; durationSec: number; audio: string; audioHash: string; eligible: boolean }
+type Manifest = {
+  schemaVersion: 2
+  generatedAt: string
+  title: string
+  sampleHash: string
+  approvalHash: string
+  status: 'awaiting_human_approval' | 'failed_closed'
+  sampleGate: { pass: boolean; reason?: string }
+  criteria: string[]
+  options: Option[]
+}
+
+const isManifest = (value: unknown): value is Manifest => {
+  if (!value || typeof value !== 'object') return false
+  const item = value as Partial<Manifest>
+  return item.schemaVersion === 2 && typeof item.sampleHash === 'string' && typeof item.approvalHash === 'string'
+    && typeof item.sampleGate?.pass === 'boolean' && Array.isArray(item.criteria) && Array.isArray(item.options)
+    && item.options.every((option) => typeof option?.key === 'string' && typeof option?.audio === 'string'
+      && typeof option?.audioHash === 'string' && typeof option?.durationSec === 'number'
+      && typeof option?.eligible === 'boolean')
+}
 
 const card = 'rounded-2xl border border-hair bg-wash p-6 md:p-7'
 const ar = (n: number) => String(n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])
@@ -14,8 +34,7 @@ const clock = (s: number) => `${ar(Math.floor(s / 60))}:${ar(Math.floor(s % 60))
 export function VoiceBakeoffCard() {
   const [manifest, setManifest] = useState<Manifest | null>(null)
   const [missing, setMissing] = useState(false)
-  const [revealed, setRevealed] = useState(false)
-  const [approved, setApproved] = useState<{ male?: string; female?: string; country?: string; status?: string } | null>(null)
+  const [approved, setApproved] = useState<{ optionKey?: string; sampleHash?: string; approvalHash?: string; status?: string } | null>(null)
   const [saved, setSaved] = useState('')
   const [playing, setPlaying] = useState<string | null>(null)
   const audios = useRef<Record<string, HTMLAudioElement>>({})
@@ -23,7 +42,7 @@ export function VoiceBakeoffCard() {
   useEffect(() => {
     fetch('/audio/bakeoff/manifest.json', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((m: Manifest) => setManifest(m))
+      .then((m: unknown) => { if (!isManifest(m)) throw new Error('stale manifest'); setManifest(m) })
       .catch(() => setMissing(true))
     ;(async () => {
       try {
@@ -31,7 +50,7 @@ export function VoiceBakeoffCard() {
         if (!db) return
         const { doc, getDoc } = await import('firebase/firestore')
         const snap = await getDoc(doc(db, 'site_settings', 'podcast_voices'))
-        if (snap.exists()) setApproved(snap.data() as { male?: string; female?: string; country?: string; status?: string })
+        if (snap.exists()) setApproved(snap.data() as { optionKey?: string; sampleHash?: string; approvalHash?: string; status?: string })
       } catch { /* noop */ }
     })()
   }, [])
@@ -52,10 +71,12 @@ export function VoiceBakeoffCard() {
 
   const approve = async (opt: Option) => {
     try {
-      await persist({ male: opt.voiceA, female: opt.voiceB, country: opt.country, status: 'approved' })
-      setApproved({ male: opt.voiceA, female: opt.voiceB, country: opt.country, status: 'approved' })
-      setRevealed(true)
-      setSaved(`اعتُمد الصوت (${opt.country}) كافتراضي ثابت للبودكاست ✓`)
+      if (!manifest?.sampleGate.pass || !opt.eligible) throw new Error('sample gate failed')
+      await persist({ optionKey: opt.key, sampleHash: manifest.sampleHash,
+        approvalHash: manifest.approvalHash, status: 'approved' })
+      setApproved({ optionKey: opt.key, sampleHash: manifest.sampleHash,
+        approvalHash: manifest.approvalHash, status: 'approved' })
+      setSaved(`سُجّل اعتماد النسخة ${ar(manifest.options.indexOf(opt) + 1)}؛ وسيثبتها الخادم بعد مطابقة التدقيق الخاص ✓`)
       setTimeout(() => setSaved(''), 4000)
     } catch { setSaved('تعذّر الحفظ') }
   }
@@ -64,7 +85,6 @@ export function VoiceBakeoffCard() {
     try {
       await persist({ status: 'none_acceptable' })
       setApproved({ status: 'none_acceptable' })
-      setRevealed(true)
       setSaved('سُجّل: لا زوج جاهز يحقق الجودة — يُجهَّز النظام لاحقاً لـ Azure Custom Voice.')
       setTimeout(() => setSaved(''), 6000)
     } catch { setSaved('تعذّر الحفظ') }
@@ -84,13 +104,18 @@ export function VoiceBakeoffCard() {
     <div className={card}>
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <p className="text-[.76rem] font-semibold uppercase text-accent">اختبار الأصوات الأعمى</p>
-        {approved?.status === 'approved' && !revealed && (
-          <span className="text-[.78rem] text-soft">المعتمد حالياً: <span className="text-accent">{approved.country}</span></span>
+        {approved?.status === 'approved' && (
+          <span className="text-[.78rem] text-soft">الاختيار المسجل: <span className="text-accent">{approved.optionKey}</span></span>
         )}
       </div>
       <p className="mt-1 text-[.85rem] font-light leading-relaxed text-soft">
-        النسخ الخمس بالنص والموسيقى والوقفات نفسها — المتغيّر الوحيد هو الصوت. استمع دون النظر إلى الأسماء، ثم اعتمد الأنسب.
+        النسخ الخمس بالنص والموسيقى والوقفات نفسها — المتغيّر الوحيد هو الصوت. لا يحمل هذا الملف العام أسماءً أو دولاً؛ استمع ثم اعتمد الأنسب.
       </p>
+      {!manifest.sampleGate.pass && (
+        <p className="mt-3 rounded-xl border border-red-400/40 bg-red-500/5 px-4 py-3 text-[.8rem] leading-relaxed text-red-700 dark:text-red-300">
+          العينة مغلقة آلياً ولم تجتز كل شروط القبول. يمكن الاستماع للتشخيص، لكن لا يمكن اعتماد أي نسخة: {manifest.sampleGate.reason || 'فشل غير محدد'}
+        </p>
+      )}
 
       {/* المعايير التسعة — تذكير أثناء التقييم */}
       <div className="mt-4 flex flex-wrap gap-1.5">
@@ -115,21 +140,21 @@ export function VoiceBakeoffCard() {
               <div className="min-w-0 flex-1">
                 <p className="text-[.95rem] font-semibold text-ink">
                   النسخة {ar(i + 1)}
-                  {revealed && <span className="ms-2 text-[.82rem] font-normal text-accent">({opt.country})</span>}
                 </p>
-                <p className="text-[.78rem] text-soft" dir="ltr">{clock(opt.durationSec)}{revealed && ` · ${opt.voiceA} / ${opt.voiceB}`}</p>
+                <p className="text-[.78rem] text-soft" dir="ltr">{clock(opt.durationSec)}</p>
               </div>
               <button
                 type="button"
                 onClick={() => approve(opt)}
-                className="shrink-0 rounded-full border border-accent px-4 py-1.5 text-[.8rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas"
+                disabled={!manifest.sampleGate.pass || !opt.eligible}
+                className="shrink-0 rounded-full border border-accent px-4 py-1.5 text-[.8rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas disabled:cursor-not-allowed disabled:opacity-40"
               >
-                اعتمد هذا
+                {opt.eligible ? 'اعتمد هذا' : 'مستبعد آلياً'}
               </button>
             </div>
             <audio
               ref={(el) => { if (el) audios.current[opt.key] = el }}
-              src={`/audio/bakeoff/${opt.key}.mp3`}
+              src={opt.audio}
               preload="none"
               onEnded={() => setPlaying(null)}
             />
@@ -141,7 +166,7 @@ export function VoiceBakeoffCard() {
         <button type="button" onClick={rejectAll} className="text-[.8rem] text-soft underline underline-offset-4 transition-colors hover:text-accent">
           لا شيء منها يكفي — سجّل «غير مقبول»
         </button>
-        {!revealed && <button type="button" onClick={() => setRevealed(true)} className="text-[.8rem] text-soft transition-colors hover:text-accent">اكشف الأسماء</button>}
+        <span className="text-[.75rem] text-soft">تُحفظ خريطة الأصوات خارج الملفات العامة لحماية عمى الاختبار.</span>
       </div>
 
       {saved && <p className="mt-3 text-[.82rem] font-medium text-accent">{saved}</p>}

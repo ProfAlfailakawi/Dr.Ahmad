@@ -129,6 +129,15 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
 }
 .article-body p:last-child { margin-bottom: 0; }
 
+/* ---------- محاذاة كاملة (justify) لكل النصوص القرائية في الموقع ----------
+   الفقرات وعناصر القوائم النصية تُضبط من الحافتين. المتمركزة عمداً مستثناة،
+   وjustify على السطر الواحد بلا أثر — فالعناوين والوسوم القصيرة تبقى كما هي. */
+main :is(p, li):not(.text-center):not([class*="text-center"]):not([style*="center"]) {
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: none;
+}
+
 /* الحرف الأول من الفقرة الأولى — جمالية أصيلة، تبقى بطلب الدكتور */
 .article-body p:first-of-type::first-letter {
   float: right;

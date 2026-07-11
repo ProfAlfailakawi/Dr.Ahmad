@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, useInView, useMotionValue, useReducedMotion, useScroll, useSpring, AnimatePresence } from 'framer-motion'
 import { Link, useLocation } from 'react-router-dom'
-import { LINK_OUT, profile, socials, links } from '../data'
+import { LINK_OUT, SHOW_EN_TOGGLE, profile, socials, links } from '../data'
 import { ThemeToggle } from './extras'
 import { useCvLinks } from '../lib/settings'
 import { SocialIcon } from './icons'
@@ -580,14 +580,17 @@ export function Nav() {
           </Link>
 
           <div className="flex items-center gap-3">
-            <Link
-              to={EN_OF[loc.pathname] || '/en'}
-              aria-label="English version"
-              title="English"
-              className={`flex h-9 w-9 items-center justify-center rounded-full border border-hair text-[.68rem] font-semibold tracking-wide text-soft transition-colors hover:border-accent hover:text-accent ${open ? 'invisible pointer-events-none' : ''}`}
-            >
-              EN
-            </Link>
+            {/* زر الإنجليزية مخفي حتى بناء الموقع كاملاً بالإنجليزية — الكشف بقلب SHOW_EN_TOGGLE في data.ts */}
+            {SHOW_EN_TOGGLE && (
+              <Link
+                to={EN_OF[loc.pathname] || '/en'}
+                aria-label="English version"
+                title="English"
+                className={`flex h-9 w-9 items-center justify-center rounded-full border border-hair text-[.68rem] font-semibold tracking-wide text-soft transition-colors hover:border-accent hover:text-accent ${open ? 'invisible pointer-events-none' : ''}`}
+              >
+                EN
+              </Link>
+            )}
             <ThemeToggle className={open ? 'invisible pointer-events-none' : ''} />
             <Link
               to="/contact#booking-form"

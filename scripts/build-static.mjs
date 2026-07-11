@@ -9,6 +9,7 @@
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -30,6 +31,17 @@ if (audioCheck.status !== 0) {
 
 const SITE = 'https://dr-alfailakawi.com'
 const AUTHOR = 'أحمد حسين الفيلكاوي'
+const podcastStatePath = resolve(ROOT, '.podcast-state.json')
+const podcastState = existsSync(podcastStatePath) ? JSON.parse(readFileSync(podcastStatePath, 'utf8')) : { done: {} }
+const sha256File = (file) => createHash('sha256').update(readFileSync(file)).digest('hex')
+const acceptedArabicDialogue = (slug, audioFile, transcriptFile = '') => {
+  const accepted = podcastState?.done?.[`${slug}:ar`]
+  if (!accepted || typeof accepted !== 'object' || accepted.status !== 'accepted_automated') return false
+  if (!audioFile || !existsSync(audioFile) || !accepted.audioHash || sha256File(audioFile) !== accepted.audioHash) return false
+  if (transcriptFile && (!existsSync(transcriptFile) || !accepted.transcriptHash
+    || sha256File(transcriptFile) !== accepted.transcriptHash)) return false
+  return true
+}
 const src = readFileSync(resolve(ROOT, 'src/data.ts'), 'utf8')
 const esc = (s = '') => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 const attr = (s = '') => esc(s).replace(/'/g, '&#39;')
@@ -93,11 +105,15 @@ function stripManagedHead(html) {
     .replace(/<script\s+type=["']application\/ld\+json["'][\s\S]*?<\/script>/gi, '')
 }
 
-/* المرآة الإنجليزية — أزواج hreflang بين اللغتين */
-const LANG_PAIRS = { '/': '/en', '/cv': '/en/cv', '/research': '/en/research' }
+/* المرآة الإنجليزية — أزواج hreflang بين اللغتين.
+   ما دام زرّها مخفياً (SHOW_EN_TOGGLE=false) تبقى صفحاتها noindex وبلا hreflang وخارج sitemap. */
+const SHOW_EN = /export const SHOW_EN_TOGGLE = true/.test(src)
+const LANG_PAIRS = SHOW_EN ? { '/': '/en', '/cv': '/en/cv', '/research': '/en/research' } : {}
 
 function render({ path, title, desc, type = 'website', iso, cat, image, robots, lang = 'ar' }) {
   const en = lang === 'en'
+  // ما دامت المرآة مخفية: صفحاتها الإنجليزية لا تُفهرس
+  if (en && !SHOW_EN) robots = 'noindex, nofollow'
   // لا تُلحق الاسم إن كان العنوان يحمله أصلاً — يمنع تضاعفه
   const hasName = title.includes('Alfailakawi') || title.includes('د. أحمد حسين الفيلكاوي')
   const full = path === '/' || hasName ? title : en ? `${title} — Dr. Ahmad H. Alfailakawi` : `${title} — د. أحمد حسين الفيلكاوي`
@@ -214,7 +230,7 @@ generateArticleOg()
 /* ---------- sitemap ---------- */
 const sm = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${routes.map((r) => `  <url><loc>${SITE}${r.path}</loc>${r.iso ? `<lastmod>${r.iso}</lastmod>` : ''}<priority>${r.path === '/' ? '1.0' : r.type === 'article' ? '0.6' : '0.8'}</priority></url>`).join('\n')}
+${routes.filter((r) => SHOW_EN || r.lang !== 'en').map((r) => `  <url><loc>${SITE}${r.path}</loc>${r.iso ? `<lastmod>${r.iso}</lastmod>` : ''}<priority>${r.path === '/' ? '1.0' : r.type === 'article' ? '0.6' : '0.8'}</priority></url>`).join('\n')}
 </urlset>
 `
 writeFileSync(resolve(DIST, 'sitemap.xml'), sm, 'utf8')
@@ -252,7 +268,8 @@ const podcastEpisodes = episodeItem(articles, (a) => {
     // الحلقة الحوارية (فهد ونورة) هي حلقة القناة؛ وإلى أن تُولَّد لمقالٍ ما،
     // تبقى قراءته العادية حلقةً بنفس الـGUID — فلا تختفي حلقة ولا تتكرر.
     const dlg = resolve(ROOT, 'audio', `${a.slug}.dialogue.mp3`)
-    if (existsSync(dlg)) return { file: dlg, rel: `${a.slug}.dialogue.mp3` }
+    const transcript = resolve(ROOT, 'audio', `${a.slug}.dialogue.json`)
+    if (acceptedArabicDialogue(a.slug, dlg, transcript)) return { file: dlg, rel: `${a.slug}.dialogue.mp3` }
     const plain = resolve(ROOT, 'audio', `${a.slug}.mp3`)
     return { file: existsSync(plain) ? plain : null, rel: `${a.slug}.mp3` }
   })
@@ -353,6 +370,13 @@ function syncDirectory(name, extension) {
   const extensions = Array.isArray(extension) ? extension : [extension]
   const files = readdirSync(from, { withFileTypes: true })
     .filter((entry) => entry.isFile() && extensions.some((suffix) => entry.name.endsWith(suffix)))
+    .filter((entry) => {
+      if (name !== 'audio') return true
+      const match = entry.name.match(/^(.*)\.dialogue\.(mp3|json)$/)
+      if (!match) return true // القراءات العادية والنسخ الإنجليزية لا تتبع بوابة الحلقة العربية
+      const slug = match[1]
+      return acceptedArabicDialogue(slug, resolve(from, `${slug}.dialogue.mp3`), resolve(from, `${slug}.dialogue.json`))
+    })
   for (const entry of files) copyFileSync(resolve(from, entry.name), resolve(to, entry.name))
   return files.length
 }

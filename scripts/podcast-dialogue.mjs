@@ -106,12 +106,7 @@ async function gemini(systemPrompt, userText, temperature = 0.85) {
 
 /* ═══════════ ٢) فحص السيناريو الآلي ═══════════ */
 const AR_BANNED = ['مما لا شك فيه','بناءً على ما سبق','ومن هذا المنطلق','تجدر الإشارة','وعليه فإن','في خضم','لا يخفى على أحد','أعزائي المستمعين','مستمعينا الكرام','المحور التالي','وفي الختام','خلاصة القول','أهلاً وسهلاً بكم','حلقة جديدة']
-const AR_TOO_LOCAL = ['شالسالفة','جذي','هني','وايد','شلون','يا معود','تدري عاد','تدري شنو']
-/* رقابة العامية الصارمة: أي كلمة عامية = عربية مكسورة = إعادة كتابة فورية.
-   كلمات مستقلة (حدود كلمة) كي لا تُظلم «موضوع» بسبب «مو» أو «عادة» بسبب «عاد». */
-const AR_COLLOQUIAL_WORDS = ['مو','ليش','شنو','عشان','خل','خلنا','خلّنا','صج','عاد','أبي','أبغى','ودي','ماكو','أكو','اكو','إيش','ايش','ليه','دلوقتي','إزاي','ازاي','شلونك','زين','چذي','هالحين','الحين','توه','يبيلها','يبي','تبي','مب','مهب','شكو','هسة','هسه','بلكي','يمعود']
-const AR_COLLOQUIAL_PREFIX = ['هال']  // هالموضوع، هالفكرة…
-const arWord = (w) => new RegExp(`(^|[\\s،؛:.!؟»("])${w}($|[\\s،؛:.!؟«)"])`)
+const AR_TOO_LOCAL = ['شالسالفة','جذي','هني','وايد','شلون','صج يا','عاد ','يا معود','تدري عاد','تدري شنو اللافت']
 const EN_BANNED = ['Dear listeners','Welcome to another episode','Today we are going to','Moving on to our next','In conclusion','As previously mentioned','It is important to note','dive deep into this fascinating','Moreover,','Furthermore,']
 
 function lintScript(sc, lang) {
@@ -123,12 +118,6 @@ function lintScript(sc, lang) {
   if (words < lo || words > hi) issues.push(`طول السيناريو ${words} كلمة (المدى ${lo}-${hi})`)
   const banned = lang === 'ar' ? [...AR_BANNED, ...AR_TOO_LOCAL] : EN_BANNED
   for (const b of banned) if (utts.some((u) => (u.text || '').includes(b))) issues.push(`عبارة ممنوعة: «${b}»`)
-  if (lang === 'ar') {
-    for (const w of AR_COLLOQUIAL_WORDS)
-      if (utts.some((u) => arWord(w).test(u.text || ''))) issues.push(`كلمة عامية تكسر الفصحى: «${w}» — استبدلها بفصحى نظيفة`)
-    for (const p of AR_COLLOQUIAL_PREFIX)
-      if (utts.some((u) => new RegExp(`(^|\\s)${p}[\\u0621-\\u064A]`).test(u.text || ''))) issues.push(`بادئة عامية: «${p}ـ» — استخدم هذا/هذه`)
-  }
   // توازن الصوتين 30-70% على الأقل
   const aWords = utts.filter((u) => u.speaker === 'A').reduce((n, u) => n + u.text.split(/\s+/).length, 0)
   const ratio = aWords / Math.max(1, words)
@@ -155,8 +144,8 @@ function lintScript(sc, lang) {
 const escXml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
 function utteranceSSML(u, voice, lang) {
-  // الإيقاع: هادئ مسموع بوضوح — الأساس أبطأ من الافتراضي (كان سريعاً جداً)، بلا عبث بالـpitch
-  const rate = u.delivery === 'reflective' ? '-16%' : u.delivery === 'hook' ? '-4%' : u.delivery === 'question' ? '-12%' : '-10%'
+  // سرعة حسب الأداء المطلوب — فروق خفيفة فقط، بلا عبث بالـpitch
+  const rate = u.delivery === 'reflective' ? '-6%' : u.delivery === 'hook' ? '+4%' : '0%'
   let text = escXml(u.text)
   for (const w of u.emphasisWords || []) {
     const ew = escXml(w)
@@ -217,9 +206,8 @@ function assemble(segments, outMp3, music) {
   let mixInputs = timeline.map((_, i) => `[u${i}]`).join('')
   let n = timeline.length
   if (music) {
-    inputs.push('-stream_loop', '-1', '-i', music.file)
-    // فراش موسيقي هامس طوال الحلقة: التفاف على المدة + دخول وخروج ناعمان
-    filters.push(`[${n}:a]atrim=0:${total.toFixed(2)},volume=${music.bedVol},afade=t=in:d=2.5,afade=t=out:st=${(total - music.outroSec - 1).toFixed(2)}:d=${music.outroSec}[mus]`)
+    inputs.push('-i', music.file)
+    filters.push(`[${n}:a]volume=${music.bedVol},afade=t=in:d=1.2,afade=t=out:st=${(total - music.outroSec - 1).toFixed(2)}:d=${music.outroSec}[mus]`)
     mixInputs += '[mus]'; n++
   }
   // room tone خفيف جداً يمنع إحساس القص واللصق
@@ -250,8 +238,7 @@ function auditAudio(mp3, expectedMinSec) {
 async function produce(article, lang) {
   const suffix = lang === 'ar' ? '.dialogue.mp3' : '.dialogue-en.mp3'
   const outMp3 = resolve(AUDIO, article.slug + suffix)
-  // v2: فصحى صارمة + إيقاع أهدأ + موسيقى — تغيير الرقم يعيد توليد كل القديم تلقائياً
-  const contentHash = createHash('sha1').update(article.body + '|' + lang + '|v2').digest('hex').slice(0, 12)
+  const contentHash = createHash('sha1').update(article.body + '|' + lang + '|v1').digest('hex').slice(0, 12)
   const key = `${article.slug}:${lang}`
   if (!FORCE && state.done[key] === contentHash && existsSync(outMp3)) { console.log(`↷ ${article.title} (${lang}) — منجز`); return 'skip' }
 
@@ -287,7 +274,7 @@ async function produce(article, lang) {
     const ok = await synthUtterance(u, voice, lang, wav)
     if (!ok) { console.log(`  ✘ فشل توليد المداخلة ${i}`); return 'fail' }
     // وقفة متفاوتة الطبيعة (jitter ±20%) حول قيمة السيناريو
-    const base = Math.min(1200, Math.max(160, u.pauseAfterMs ?? 380))
+    const base = Math.min(1100, Math.max(90, u.pauseAfterMs ?? 320))
     const jitter = base * (0.8 + ((i * 2654435761) % 100) / 250)
     segments.push({ file: wav, pauseAfterMs: Math.round(jitter), overlapMs: u.allowOverlap ? Math.min(280, Math.max(80, u.overlapMs || 150)) : 0 })
     process.stdout.write(`  🎙 ${i + 1}/${utts.length}\r`)

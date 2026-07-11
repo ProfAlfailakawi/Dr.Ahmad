@@ -144,6 +144,15 @@ export function trackShare(path: string, title: string) {
   void incrementViewDocument(ids.day, `مشاركة: ${title.trim().slice(0, 180)}`)
 }
 
+/** معلم استماع (25/50/75٪) على مسار «_listen» الموازي — مرة لكل معلم في الجلسة (من برومت البودكاست) */
+export function trackListen(path: string, title: string, pct: number, voice: string) {
+  const p = `/_listen${pct}${normalizePath(path)}`
+  const ids = viewDocumentIds(p)
+  const t = `استماع ${pct}٪ (${voice}): ${title.trim().slice(0, 160)}`
+  void incrementViewDocument(ids.total, t)
+  void incrementViewDocument(ids.day, t)
+}
+
 /** للمشرف فقط: عدّادا المقال (مشاهدات ومشاركات) ليظهرا بجانب العنوان */
 export async function fetchOwnerCounts(path: string): Promise<{ views: number; shares: number } | null> {
   try {

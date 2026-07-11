@@ -132,8 +132,7 @@ if (!existsSync(AUDIO_DIR)) {
 }
 
 const knownSlugs = new Set(Object.keys(JSON.parse(readFileSync(BODIES, 'utf8'))))
-// ملفات الحوار البودكاستي (<slug>.dialogue.mp3 / .dialogue-en.mp3) خارج فهرس القراءة العادية
-const files = readdirSync(AUDIO_DIR).filter((name) => name.endsWith('.mp3') && !name.includes('.dialogue')).sort()
+const files = readdirSync(AUDIO_DIR).filter((name) => name.endsWith('.mp3')).sort()
 const next = {}
 const invalid = []
 let totalBytes = 0

@@ -224,21 +224,13 @@ ${items}
    كل مقالٍ له MP3 يصبح حلقة؛ تُقبل مباشرة في Apple Podcasts وSpotify.
    بلا أثر بصري على الموقع — قناة موازية للمستمعين. */
 const podcastArt = `${SITE}/podcast-cover.png`
-const episodeItem = (articleList, fileOf, guidPrefix) => articleList
-  .map((a) => ({ a, ...fileOf(a) }))
-  .filter((e) => e.file && existsSync(e.file))
+const podcastEpisodes = articles
+  .map((a) => ({ a, file: resolve(ROOT, 'audio', `${a.slug}.mp3`) }))
+  .filter((e) => existsSync(e.file))
   .sort((x, y) => (y.a.iso || '').localeCompare(x.a.iso || ''))
-const podcastEpisodes = episodeItem(articles, (a) => {
-    // الحلقة الحوارية (فهد ونورة) هي حلقة القناة؛ وإلى أن تُولَّد لمقالٍ ما،
-    // تبقى قراءته العادية حلقةً بنفس الـGUID — فلا تختفي حلقة ولا تتكرر.
-    const dlg = resolve(ROOT, 'audio', `${a.slug}.dialogue.mp3`)
-    if (existsSync(dlg)) return { file: dlg, rel: `${a.slug}.dialogue.mp3` }
-    const plain = resolve(ROOT, 'audio', `${a.slug}.mp3`)
-    return { file: existsSync(plain) ? plain : null, rel: `${a.slug}.mp3` }
-  })
-  .map(({ a, file, rel }) => {
+  .map(({ a, file }) => {
     const bytes = statSync(file).size
-    const url = `${SITE}/audio/${rel}`
+    const url = `${SITE}/audio/${a.slug}.mp3`
     return `    <item>
       <title>${esc(a.title)}</title>
       <itunes:author>د. أحمد حسين الفيلكاوي</itunes:author>
@@ -263,9 +255,7 @@ writeFileSync(resolve(DIST, 'podcast.xml'), `<?xml version="1.0" encoding="UTF-8
     <copyright>© د. أحمد حسين الفيلكاوي</copyright>
     <description>أفكاري عن التعليم والتقنية والمجتمع، وكيف نُبقي الإنسان في قلب الآلة — بصوتي، مقالاً تلو الآخر. حلقة جديدة مع كل مقال.
 
-My reflections on education, technology, and society — and how we keep the human at the heart of the machine. In my own voice, essay by essay. A new episode with every article.
-
-تُنتج النسخة الصوتية باستخدام تقنيات صوتية متقدمة، تحت الإشراف والتحرير الكامل للدكتور أحمد الفيلكاوي.</description>
+My reflections on education, technology, and society — and how we keep the human at the heart of the machine. In my own voice, essay by essay. A new episode with every article.</description>
     <itunes:author>د. أحمد حسين الفيلكاوي · Dr. Ahmad Alfailakawi</itunes:author>
     <itunes:summary>أفكاري عن التعليم والتقنية والمجتمع، وكيف نُبقي الإنسان في قلب الآلة — بصوتي. · My reflections on education, technology, and society, in my own voice.</itunes:summary>
     <itunes:type>episodic</itunes:type>
@@ -276,47 +266,6 @@ My reflections on education, technology, and society — and how we keep the hum
     <itunes:explicit>false</itunes:explicit>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
 ${podcastEpisodes}
-  </channel>
-</rss>
-`, 'utf8')
-
-
-/* ---------- podcast-en.xml: القناة الإنجليزية المستقلة (حوار Andrew وAva) ---------- */
-const enEpisodes = episodeItem(articles, (a) => {
-    const f = resolve(ROOT, 'audio', `${a.slug}.dialogue-en.mp3`)
-    return { file: existsSync(f) ? f : null, rel: `${a.slug}.dialogue-en.mp3` }
-  })
-  .map(({ a, file, rel }) => {
-    const bytes = statSync(file).size
-    return `    <item>
-      <title>${esc(a.title)}</title>
-      <itunes:author>Dr. Ahmad Alfailakawi</itunes:author>
-      <description>${esc(a.excerpt)}</description>
-      <link>${SITE}/articles/${a.slug}</link>
-      <guid isPermaLink="false">podcast-en-${a.slug}</guid>
-      <pubDate>${new Date(`${a.iso}T09:00:00Z`).toUTCString()}</pubDate>
-      <enclosure url="${SITE}/audio/${rel}" length="${bytes}" type="audio/mpeg"/>
-      <itunes:image href="${podcastArt}"/>
-      <itunes:explicit>false</itunes:explicit>
-    </item>`
-  }).join('\n')
-
-if (enEpisodes) writeFileSync(resolve(DIST, 'podcast-en.xml'), `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
-  <channel>
-    <title>Dr. Ahmad Alfailakawi — The Human at the Heart of the Machine</title>
-    <link>${SITE}</link>
-    <language>en</language>
-    <copyright>© Dr. Ahmad Alfailakawi</copyright>
-    <description>Conversations on education, technology, and society — inspired by the Arabic essays of Dr. Ahmad Alfailakawi, professor of educational technology and AI. Produced with advanced voice technology under the author's full editorial supervision.</description>
-    <itunes:author>Dr. Ahmad Alfailakawi</itunes:author>
-    <itunes:type>episodic</itunes:type>
-    <itunes:owner><itunes:name>Dr. Ahmad Alfailakawi</itunes:name><itunes:email>ah_f@hotmail.com</itunes:email></itunes:owner>
-    <itunes:image href="${podcastArt}"/>
-    <itunes:category text="Education"/>
-    <itunes:explicit>false</itunes:explicit>
-    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
-${enEpisodes}
   </channel>
 </rss>
 `, 'utf8')

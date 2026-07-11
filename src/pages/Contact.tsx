@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Link } from 'react-router-dom'
 import { FadeUp, Label, Page, Reveal, SocialIcon } from '../components/ui'
 import { links, place, socials } from '../data'
 import { Newsletter } from '../components/extras'
@@ -38,9 +37,9 @@ export default function Contact() {
               <a href="#booking-form" className="inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
                 احجز موعداً
               </a>
-              <Link to="/cv" className="inline-block rounded-full border-[1.5px] border-hair px-8 py-3.5 font-semibold text-ink transition-colors duration-300 hover:border-accent hover:text-accent">
-                السيرة الأكاديمية
-              </Link>
+              <a href={links.cv} target="_blank" rel="noreferrer" className="inline-block rounded-full border-[1.5px] border-hair px-8 py-3.5 font-semibold text-ink transition-colors duration-300 hover:border-accent hover:text-accent">
+                السيرة الذاتية
+              </a>
             </div>
 
             <div className="mt-16 flex flex-wrap items-center justify-center gap-6 border-t border-hair pt-10 text-soft">

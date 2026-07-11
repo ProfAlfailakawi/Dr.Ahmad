@@ -538,11 +538,10 @@ export function Nav() {
             <ThemeToggle className={open ? 'invisible pointer-events-none' : ''} />
             <Link
               to="/contact#booking-form"
-              aria-label="حجز موعد"
-              title="حجز موعد"
-              className={`flex h-9 w-9 items-center justify-center rounded-full border border-accent text-accent transition-colors hover:bg-accent hover:text-white ${open ? 'invisible pointer-events-none' : ''}`}
+              aria-label="الانتقال مباشرة إلى نموذج حجز موعد"
+              className={`rounded-full border border-accent px-3.5 py-2 text-[.76rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white sm:px-4 sm:text-[.82rem] ${open ? 'invisible pointer-events-none' : ''}`}
             >
-              <SocialIcon name="Calendar" size={16} />
+              حجز موعد
             </Link>
           <button
             type="button"

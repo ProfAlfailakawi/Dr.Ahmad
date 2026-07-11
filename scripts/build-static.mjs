@@ -362,6 +362,15 @@ const copiedAssets = Object.fromEntries(
     .map(([name, extension]) => [name, syncDirectory(name, extension)]),
 )
 
+/* مجلد اختبار الأصوات الأعمى — يعيش في public/audio/bakeoff؛ يُنسخ بعد إعادة بناء dist/audio
+   (syncDirectory يمسح dist/audio) كي يصل الموقع الحي على /audio/bakeoff */
+const bakeoffSrc = resolve(ROOT, 'public/audio/bakeoff')
+if (existsSync(bakeoffSrc)) {
+  const bakeoffDst = resolve(DIST, 'audio/bakeoff')
+  mkdirSync(bakeoffDst, { recursive: true })
+  for (const f of readdirSync(bakeoffSrc)) if (/\.(mp3|json)$/.test(f)) copyFileSync(resolve(bakeoffSrc, f), resolve(bakeoffDst, f))
+}
+
 const firebaseAppletConfig = resolve(ROOT, 'firebase-applet-config.json')
 if (!existsSync(firebaseAppletConfig)) throw new Error('firebase-applet-config.json مفقود')
 copyFileSync(firebaseAppletConfig, resolve(DIST, 'firebase-applet-config.json'))

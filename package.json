@@ -26,7 +26,8 @@
     "podcast:ar:dry-run": "node scripts/podcast-dialogue.mjs --lang=ar --dry-run",
     "podcast:ar:plan": "node scripts/podcast-dialogue.mjs --lang=ar --plan --reuse-dialogue",
     "podcast:ar:regenerate": "node scripts/podcast-dialogue.mjs --lang=ar --force",
-    "podcast:ar:nightly": "node scripts/podcast-dialogue.mjs --lang=ar --nightly"
+    "podcast:ar:nightly": "node scripts/podcast-dialogue.mjs --lang=ar --nightly",
+    "podcast:ar:bakeoff": "node scripts/podcast-dialogue.mjs --voice-bakeoff"
   },
   "dependencies": {
     "firebase": "^12.15.0",

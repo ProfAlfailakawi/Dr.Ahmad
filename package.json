@@ -19,14 +19,7 @@
     "report:monthly": "node scripts/monthly-report.mjs",
     "report:monthly:dry-run": "node scripts/monthly-report.mjs --dry-run",
     "set-admin": "node scripts/set-admin.mjs",
-    "health": "node scripts/health-check.mjs",
-    "podcast:ar:self-test": "node scripts/podcast-dialogue.mjs --self-test",
-    "podcast:ar:preflight": "node scripts/podcast-dialogue.mjs --preflight --lang=ar",
-    "podcast:ar:canary": "node scripts/podcast-dialogue.mjs --canary --lang=ar",
-    "podcast:ar:dry-run": "node scripts/podcast-dialogue.mjs --lang=ar --dry-run",
-    "podcast:ar:plan": "node scripts/podcast-dialogue.mjs --lang=ar --plan --reuse-dialogue",
-    "podcast:ar:regenerate": "node scripts/podcast-dialogue.mjs --lang=ar --force",
-    "podcast:ar:nightly": "node scripts/podcast-dialogue.mjs --lang=ar --nightly"
+    "health": "node scripts/health-check.mjs"
   },
   "dependencies": {
     "firebase": "^12.15.0",

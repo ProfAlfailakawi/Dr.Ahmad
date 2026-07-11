@@ -63,26 +63,8 @@ const executable = (name, configured) => {
 const FFMPEG = executable('ffmpeg', env.FFMPEG_BIN)
 const FFPROBE = executable('ffprobe', env.FFPROBE_BIN)
 
-/* locale الصوت يُشتق من اسمه: «ar-KW-FahedNeural» → «ar-KW». يعمّم المحرك لأي صوت عربي
-   (SSML وSTT يتبعان الصوت المستخدم لا ثابت ar-KW). */
-const localeOf = (voice) => (String(voice).match(/^([a-z]{2}-[A-Z]{2})/) || [])[1] || 'ar-KW'
-
-/* أزواج الأصوات العربية للاختبار الأعمى (bakeoff). المتغير الوحيد بين النسخ هو الصوت. */
-const AR_VOICE_PAIRS = [
-  { id: 'kw', country: 'الكويت', A: 'ar-KW-FahedNeural', B: 'ar-KW-NouraNeural' },
-  { id: 'sa', country: 'السعودية', A: 'ar-SA-HamedNeural', B: 'ar-SA-ZariyahNeural' },
-  { id: 'ae', country: 'الإمارات', A: 'ar-AE-HamdanNeural', B: 'ar-AE-FatimaNeural' },
-  { id: 'qa', country: 'قطر', A: 'ar-QA-MoazNeural', B: 'ar-QA-AmalNeural' },
-  { id: 'om', country: 'عُمان', A: 'ar-OM-AbdullahNeural', B: 'ar-OM-AyshaNeural' },
-]
-
-/* الزوج الافتراضي الثابت — يُقرأ من البيئة (يحرّره الدكتور من اللوحة عبر site_settings)،
-   ويسقط إلى فهد ونورة حتى يُعتمد زوجٌ من الاختبار الأعمى. لا تثبيت نهائي هنا. */
 const VOICES = {
-  ar: {
-    A: { name: env.PODCAST_AR_MALE_NAME || 'فهد', azure: env.PODCAST_AR_MALE || 'ar-KW-FahedNeural' },
-    B: { name: env.PODCAST_AR_FEMALE_NAME || 'نورة', azure: env.PODCAST_AR_FEMALE || 'ar-KW-NouraNeural' },
-  },
+  ar: { A: { name: 'فهد', azure: 'ar-KW-FahedNeural' }, B: { name: 'نورة', azure: 'ar-KW-NouraNeural' } },
   en: {
     A: { name: 'Andrew', azure: env.PODCAST_EN_MALE || 'en-US-AndrewMultilingualNeural' },
     B: { name: 'Ava', azure: env.PODCAST_EN_FEMALE || 'en-US-AvaMultilingualNeural' },
@@ -100,7 +82,6 @@ const PREFLIGHT = flag('preflight')
 const PLAN = flag('plan')
 const REUSE_DIALOGUE = flag('reuse-dialogue')
 const CANARY = flag('canary')
-const BAKEOFF = flag('voice-bakeoff')
 if (!SELF_TEST && (!GEMINI_KEY || !AZURE_KEY)) { console.error('✘ GEMINI_API_KEY أو AZURE_SPEECH_KEY مفقود'); process.exit(1) }
 
 /* ── حالة idempotent + قاموس + ذاكرة ── */
@@ -396,9 +377,7 @@ function buildSSML(u, pronText, subs, voice, lang) {
     const ew = escXml(w)
     if (!text.includes('<sub') && text.includes(ew)) text = text.replace(ew, `<emphasis level="moderate">${ew}</emphasis>`)
   }
-  // locale يتبع الصوت المستخدم (يعمّم لأي صوت عربي، لا ثابت ar-KW)
-  const xmlLang = lang === 'ar' ? localeOf(voice) : 'en-US'
-  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${xmlLang}">
+  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${lang === 'ar' ? 'ar-KW' : 'en-US'}">
   <voice name="${voice}"><prosody rate="${rate}">${text}</prosody></voice>
 </speak>`
 }
@@ -424,37 +403,32 @@ async function synthSSML(ssml, outPath) {
   return false
 }
 
-/** الفحص المغلق: الملف الصوتي ← Azure STT ← النص المسموع فعلاً.
-    locale يتبع الصوت المولّد (يعمّم لأي لهجة)، مع تراجع إلى ar-SA (الأوسع دعماً) عند تعذّره. */
-async function sttRecognize(wavPath, locale = 'ar-KW') {
+/** الفحص المغلق: الملف الصوتي ← Azure STT ← النص المسموع فعلاً */
+async function sttRecognize(wavPath) {
   const wav16 = wavPath.replace(/\.wav$/, '.16k.wav')
   ff(['-i', wavPath, '-ar', '16000', '-ac', '1', wav16])
-  const locales = [...new Set([locale, 'ar-SA'])]
-  try {
-    for (const loc of locales) {
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        try {
-          const res = await fetch(`https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${loc}&format=detailed&profanity=raw`, {
-            method: 'POST',
-            headers: { 'Ocp-Apim-Subscription-Key': AZURE_KEY, 'Content-Type': 'audio/wav; codecs=audio/pcm; samplerate=16000' },
-            body: readFileSync(wav16),
-          })
-          if (res.ok) {
-            const j = await res.json()
-            const best = j.NBest?.[0] || {}
-            return {
-              text: best.Display || best.Lexical || j.DisplayText || '',
-              lexical: best.Lexical || '',
-              confidence: Number(best.Confidence || 0),
-              words: Array.isArray(best.Words) ? best.Words : [],
-            }
-          }
-          if (res.status === 400 || res.status === 404) break // locale غير مدعوم → جرّب التالي
-          if (res.status === 429) await new Promise((r) => setTimeout(r, 3000 * attempt))
-        } catch { /* أعد */ }
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await fetch(`https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=ar-KW&format=detailed&profanity=raw`, {
+        method: 'POST',
+        headers: { 'Ocp-Apim-Subscription-Key': AZURE_KEY, 'Content-Type': 'audio/wav; codecs=audio/pcm; samplerate=16000' },
+        body: readFileSync(wav16),
+      })
+      if (res.ok) {
+        const j = await res.json()
+        rmSync(wav16, { force: true })
+        const best = j.NBest?.[0] || {}
+        return {
+          text: best.Display || best.Lexical || j.DisplayText || '',
+          lexical: best.Lexical || '',
+          confidence: Number(best.Confidence || 0),
+          words: Array.isArray(best.Words) ? best.Words : [],
+        }
       }
-    }
-  } finally { rmSync(wav16, { force: true }) }
+      if (res.status === 429) await new Promise((r) => setTimeout(r, 3000 * attempt))
+    } catch { /* أعد */ }
+  }
+  rmSync(wav16, { force: true })
   return null
 }
 
@@ -497,9 +471,9 @@ async function probeSsmlCapabilities(force = false) {
     }
     const run = async (name, inner, expected = '') => {
       const file = resolve(dir, `${voice}.${name}.wav`)
-      const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${localeOf(voice)}"><voice name="${voice}">${inner}</voice></speak>`
+      const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="ar-KW"><voice name="${voice}">${inner}</voice></speak>`
       if (!await synthSSML(ssml, file)) return false
-      const heard = await sttRecognize(file, localeOf(voice))
+      const heard = await sttRecognize(file)
       rmSync(file, { force: true })
       if (!heard?.text) return false
       return !expected || normalizeAr(heard.text).replace(/\s+/g, '').includes(normalizeAr(expected).replace(/\s+/g, ''))
@@ -785,7 +759,7 @@ async function evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnal
     attemptInsert.run(runId, utteranceId, variant.id, voice, variant.text, ssml, '', 0, 0, 0, new Date().toISOString())
     return { pass: false, score: -1, reason: 'فشل Azure TTS', variant, ssml, path }
   }
-  const heard = await sttRecognize(path, lang === 'ar' ? localeOf(voice) : 'en-US')
+  const heard = await sttRecognize(path)
   if (!heard) {
     attemptInsert.run(runId, utteranceId, variant.id, voice, variant.text, ssml, '', 0, 0, 0, new Date().toISOString())
     return { pass: false, score: -1, reason: 'تعذر Azure STT', variant, ssml, path }
@@ -987,7 +961,7 @@ async function validateDialogueFidelity(article, script) {
   return verdict
 }
 
-async function transcribeAssembledEpisode(mp3, timeline, locale = 'ar-KW') {
+async function transcribeAssembledEpisode(mp3, timeline) {
   const groups = []
   let current = []
   for (const item of timeline) {
@@ -1005,7 +979,7 @@ async function transcribeAssembledEpisode(mp3, timeline, locale = 'ar-KW') {
     const end = group.at(-1).start + group.at(-1).dur + 0.12
     const chunk = resolve(TMP, `episode-chunk-${index}.wav`)
     ff(['-ss', start.toFixed(3), '-i', mp3, '-t', (end - start).toFixed(3), '-ar', '24000', '-ac', '1', chunk])
-    const heard = await sttRecognize(chunk, locale)
+    const heard = await sttRecognize(chunk)
     rmSync(chunk, { force: true })
     if (!heard) throw new Error(`تعذر STT النهائي للمقطع ${index + 1}`)
     chunks.push({ index, start, end, ...heard })
@@ -1227,7 +1201,7 @@ async function produce(article, lang) {
     const assembled = assemble(segments, candidateMp3, music)
     const technicalAudit = auditAudio(candidateMp3, Math.min(150, utts.length * 6))
     if (technicalAudit.issues.length) return quarantine(`الفحص التقني: ${technicalAudit.issues.join(' · ')}`)
-    const fullStt = await transcribeAssembledEpisode(candidateMp3, assembled.timeline, lang === 'ar' ? localeOf(voices.A.azure) : 'en-US')
+    const fullStt = await transcribeAssembledEpisode(candidateMp3, assembled.timeline)
     const intendedFull = pronunciation.map((item) => item.intendedText.replace(/\|/g, ' ')).join(' ')
     const fullComparison = compareTexts(intendedFull, fullStt.text)
     const missingNegations = fullComparison.missing.filter((word) => ['لا', 'لم', 'لن', 'ليس', 'ليست', 'ما', 'غير', 'دون'].includes(word))
@@ -1335,73 +1309,6 @@ if (CANARY) {
   process.exit(failures ? 2 : 0)
 }
 
-/* ═══════════ اختبار الأصوات الأعمى (voice bake-off) ═══════════
-   نفس المقطع، نفس النص النطقي، نفس الموسيقى والوقفات والمستوى — المتغير الوحيد الصوت.
-   يمر كل صوت بالمسار الصوتي (SSML بلغته + توليد Azure). لا Gemini (النص النطقي جاهز). */
-if (BAKEOFF) {
-  const sampleFile = resolve(ROOT, 'scripts/bakeoff-sample.json')
-  if (!existsSync(sampleFile)) { console.error('✘ scripts/bakeoff-sample.json مفقود'); process.exit(1) }
-  const sample = JSON.parse(readFileSync(sampleFile, 'utf8'))
-  // يُكتب في public/audio ليُخدَم مباشرةً (dev + vite build) على /audio/bakeoff
-  const outDir = resolve(ROOT, 'public/audio/bakeoff')
-  rmSync(outDir, { recursive: true, force: true }); mkdirSync(outDir, { recursive: true })
-
-  /* موسيقى واحدة ثابتة لكل النسخ (إن وُجدت مرخصة بمزاج المقطع) */
-  let music = null
-  if (existsSync(MUSIC_LIB)) {
-    const library = JSON.parse(readFileSync(MUSIC_LIB, 'utf8'))
-    const track = (library.tracks || []).find((item) => item.licensed && (item.moods || []).includes(sample.mood)) || (library.tracks || []).find((item) => item.licensed)
-    if (track && existsSync(resolve(ROOT, track.path)))
-      music = { file: resolve(ROOT, track.path), bedVol: track.bedVolume ?? 0.035, introSec: 5, outroSec: 4 }
-  }
-
-  /* ترتيب عشوائي للأزواج كي يكون العرض في اللوحة أعمى (option-1..5 بلا أسماء) */
-  const shuffled = [...AR_VOICE_PAIRS].sort(() => Math.random() - 0.5)
-  const options = []
-  console.log(`\n▶ اختبار الأصوات الأعمى — ${sample.utterances.length} مداخلة × ${shuffled.length} أزواج${music ? ' + موسيقى ثابتة' : ' (بلا موسيقى)'}`)
-  rmSync(TMP, { recursive: true, force: true }); mkdirSync(TMP, { recursive: true })
-
-  for (let i = 0; i < shuffled.length; i++) {
-    const pair = shuffled[i]
-    const optionKey = `option-${i + 1}`
-    const segments = []
-    let ok = true
-    for (let j = 0; j < sample.utterances.length; j++) {
-      const u = sample.utterances[j]
-      const voice = u.speaker === 'A' ? pair.A : pair.B
-      const wav = resolve(TMP, `${pair.id}-${String(j).padStart(2, '0')}.wav`)
-      // النص النطقي جاهز ومكتفٍ (بلا subs) — يعمّم على كل صوت دون اعتماد على دعم <sub>
-      const ssml = buildSSML({ delivery: u.delivery, emphasisWords: [] }, u.pronunciationText, [], voice, 'ar')
-      if (!await synthSSML(ssml, wav)) { ok = false; console.log(`  ✘ فشل توليد ${pair.country} / مداخلة ${j + 1}`); break }
-      segments.push({ file: wav, pauseAfterMs: u.pauseAfterMs ?? 400, overlapMs: u.allowOverlap ? (u.overlapMs || 150) : 0 })
-      process.stdout.write(`  🎙 ${pair.country}: ${j + 1}/${sample.utterances.length}\r`)
-    }
-    if (!ok) continue
-    const outMp3 = resolve(outDir, `${optionKey}.mp3`)
-    const total = assemble(segments, outMp3, music)
-    const dur = probeDur(outMp3)
-    options.push({ key: optionKey, pairId: pair.id, country: pair.country, voiceA: pair.A, voiceB: pair.B, durationSec: Math.round(dur) })
-    console.log(`\n  ✅ ${optionKey} · ${(dur / 60).toFixed(1)} دقيقة (${pair.country} — مخفي في اللوحة)`)
-  }
-  rmSync(TMP, { recursive: true, force: true })
-
-  /* البيان: يُعرض بلا أسماء؛ الكشف (reveal) لا يُقرأ إلا بعد الاعتماد */
-  const manifest = {
-    generatedAt: new Date().toISOString().slice(0, 10),
-    title: sample.title,
-    criteria: [
-      'صحة النطق', 'صحة التشكيل المسموع', 'وضوح الفصحى', 'عدم ظهور لهجة محلية ثقيلة',
-      'دفء الصوت', 'طبيعية الأسئلة والجمل التأملية', 'عدم الظهور كنشرة أخبار',
-      'انسجام صوت الرجل مع المرأة', 'الراحة عند الاستماع عدة دقائق',
-    ],
-    options, // مخلوط عشوائياً — الأسماء مخفية في اللوحة، تُكشف بعد الاعتماد
-  }
-  writeFileSync(resolve(outDir, 'manifest.json'), JSON.stringify(manifest, null, 1))
-  console.log(`\n═══ اكتمل الاختبار الأعمى: ${options.length}/${shuffled.length} نسخة في audio/bakeoff ═══`)
-  console.log('اعرضها في لوحة التحكم للتقييم الأعمى، ثم اعتمد الأفضل.')
-  process.exit(options.length === shuffled.length ? 0 : 2)
-}
-
 const ARTICLES = await loadArticles()
 const targetSlug = opt('slug')
 const latest = Number(opt('latest') || 0)
@@ -1423,26 +1330,6 @@ else if (nightly) {
 }
 else { console.log('حدد --slug= أو --latest=N أو --nightly'); process.exit(1) }
 if (!queue.length) { console.log(targetSlug ? `لا يوجد مقال مطابق: ${targetSlug}` : 'لا حلقات ناقصة ضمن حد الليلة'); process.exit(targetSlug ? 1 : 0) }
-
-/* الزوج المعتمد من الاختبار الأعمى (site_settings/podcast_voices) يصبح الافتراضي الثابت.
-   يُقرأ عبر حساب الخدمة إن توفّر؛ وإلا يبقى فهد ونورة (أو ما في البيئة). */
-async function loadApprovedVoices() {
-  try {
-    const saPath = resolve(ROOT, env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')
-    if (!existsSync(saPath)) return
-    const { initializeApp, cert, getApps } = await import('firebase-admin/app')
-    const { getFirestore } = await import('firebase-admin/firestore')
-    if (!getApps().length) initializeApp({ credential: cert(JSON.parse(readFileSync(saPath, 'utf8'))) })
-    const snap = await getFirestore().collection('site_settings').doc('podcast_voices').get()
-    const d = snap.exists ? snap.data() : null
-    if (d?.status === 'approved' && d.male && d.female) {
-      VOICES.ar.A.azure = d.male
-      VOICES.ar.B.azure = d.female
-      console.log(`♪ الصوت المعتمد من اللوحة: ${d.country || ''} (${d.male} / ${d.female})`)
-    }
-  } catch { /* يبقى الافتراضي */ }
-}
-if (LANG === 'ar' || LANG === 'both' || nightly) await loadApprovedVoices()
 
 const langs = LANG === 'both' ? ['ar', 'en'] : [LANG]
 const autoEn = (env.AUTO_GENERATE_ENGLISH || 'false') === 'true'

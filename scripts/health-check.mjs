@@ -84,7 +84,7 @@ try {
 } catch { /* noop */ }
 
 // ٢) روابط حيّة (عيّنة صفحات أساسية + كل PDF + عيّنة مصادر مقالات)
-const corePages = ['/', '/articles', '/publications', '/research', '/cv', '/contact', '/ask', '/thought-paths', '/decade', '/podcast.xml', '/feed.xml', '/sitemap.xml', '/podcast-cover.png']
+const corePages = ['/', '/articles', '/publications', '/research', '/cv', '/contact', '/ask', '/thought-paths', '/decade', '/en', '/en/cv', '/en/research', '/podcast.xml', '/feed.xml', '/sitemap.xml', '/podcast-cover.png']
 for (const p of corePages) {
   const code = await head(SITE + p); stat.checkedLinks++
   if (code < 200 || code >= 400) issues.push(`صفحة لا تُفتح (${code}): ${p}`)

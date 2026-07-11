@@ -506,6 +506,10 @@ function Overlay({ close }: { close: () => void }) {
   )
 }
 
+/* خريطة التبديل بين المرآتين — الصفحات الثلاث تتقابل، وما عداها يذهب لرئيسية اللغة الأخرى */
+const EN_OF: Record<string, string> = { '/': '/en', '/cv': '/en/cv', '/research': '/en/research' }
+const AR_OF: Record<string, string> = { '/en': '/', '/en/cv': '/cv', '/en/research': '/research' }
+
 export function Nav() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
@@ -521,7 +525,47 @@ export function Nav() {
     return () => { document.body.style.overflow = '' }
   }, [open])
 
-  const solid = (scrolled || loc.pathname !== '/') && !open
+  const english = loc.pathname === '/en' || loc.pathname.startsWith('/en/')
+  const solid = (scrolled || (loc.pathname !== '/' && loc.pathname !== '/en')) && !open
+
+  /* ---- الهيدر الإنجليزي: ثلاثة روابط هادئة بلا قائمة ---- */
+  if (english) {
+    const items = [
+      { to: '/en', label: 'Home' },
+      { to: '/en/cv', label: 'CV' },
+      { to: '/en/research', label: 'Research' },
+    ]
+    return (
+      <>
+        <motion.div className="fixed left-0 top-0 z-[240] h-[2px] w-full origin-left bg-accent" style={{ scaleX: progress }} />
+        <nav aria-label="Main navigation" dir="ltr" className={`fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.82] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
+          <div className={`mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
+            <Link to="/en" aria-label="Ahmad H. Alfailakawi">
+              <img src="/logo.png" alt="" className="h-[34px] w-14 object-contain opacity-90 dark:invert" style={{ objectPosition: 'left' }} />
+            </Link>
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-5 pe-2 text-[.88rem]">
+                {items.map((it) => (
+                  <Link key={it.to} to={it.to} className={`transition-colors hover:text-accent ${loc.pathname === it.to ? 'font-semibold text-accent' : 'font-medium text-ink'}`}>
+                    {it.label}
+                  </Link>
+                ))}
+              </span>
+              <ThemeToggle />
+              <Link
+                to={AR_OF[loc.pathname] || '/'}
+                aria-label="النسخة العربية"
+                title="النسخة العربية"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-[.82rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent"
+              >
+                ع
+              </Link>
+            </div>
+          </div>
+        </nav>
+      </>
+    )
+  }
 
   return (
     <>
@@ -536,6 +580,14 @@ export function Nav() {
           </Link>
 
           <div className="flex items-center gap-3">
+            <Link
+              to={EN_OF[loc.pathname] || '/en'}
+              aria-label="English version"
+              title="English"
+              className={`flex h-9 w-9 items-center justify-center rounded-full border border-hair text-[.68rem] font-semibold tracking-wide text-soft transition-colors hover:border-accent hover:text-accent ${open ? 'invisible pointer-events-none' : ''}`}
+            >
+              EN
+            </Link>
             <ThemeToggle className={open ? 'invisible pointer-events-none' : ''} />
             <Link
               to="/contact#booking-form"
@@ -579,6 +631,39 @@ export function Nav() {
 /* ---------- Footer ---------- */
 export function Footer() {
   const cv = useCvLinks()
+  const loc = useLocation()
+  const english = loc.pathname === '/en' || loc.pathname.startsWith('/en/')
+
+  if (english) {
+    return (
+      <footer dir="ltr" className="border-t border-hair px-6 py-12 md:px-11">
+        <div className="mx-auto max-w-shell">
+          <div className="flex flex-wrap items-center justify-between gap-5">
+            <Link to="/en">
+              <img src="/logo.png" alt="Ahmad H. Alfailakawi" className="h-10 w-16 object-contain dark:invert" style={{ objectPosition: 'left' }} />
+            </Link>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-[.9rem] text-soft">
+              <Link to="/" className="transition-colors hover:text-accent">العربية</Link>
+              <span className="flex items-center gap-3">
+                <a href={cv.en || cv.ar} target="_blank" rel="noreferrer" aria-label="CV (PDF)" title="CV (PDF)" className="text-soft transition-colors hover:text-accent">
+                  <SocialIcon name="CV" />
+                </a>
+                {socials.map((s) => (
+                  <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className="text-soft transition-colors hover:text-accent">
+                    <SocialIcon name={s.label} />
+                  </a>
+                ))}
+              </span>
+            </div>
+          </div>
+          <div className="mt-8 flex flex-wrap justify-between gap-2.5 border-t border-hair pt-5 text-[.78rem] text-soft">
+            <span>© {new Date().getFullYear()} Ahmad H. Alfailakawi — All rights reserved</span>
+          </div>
+        </div>
+      </footer>
+    )
+  }
+
   return (
     <footer className="border-t border-hair px-6 py-12 md:px-11">
       <div className="mx-auto max-w-shell">

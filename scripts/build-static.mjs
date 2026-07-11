@@ -67,6 +67,10 @@ const STATIC = [
   { path: '/thought-paths', title: 'مسار الفكرة', desc: 'رحلات تربط المقال بالسؤال والبحث والكتاب واللقاء لتكشف كيف تطورت الفكرة عبر السنوات.' },
   { path: '/search', title: 'البحث العميق', desc: 'بحث متقدم في عناوين المقالات ونصوصها وتصنيفاتها وسنواتها.' },
   { path: '/admin', title: 'لوحة التحكم', desc: 'لوحة إدارة خاصة.', robots: 'noindex, nofollow' },
+  /* المرآة الإنجليزية */
+  { path: '/en', title: 'Dr. Ahmad H. Alfailakawi — Professor of Educational Technology & AI', desc: 'Official website of Dr. Ahmad H. Alfailakawi, Professor of Educational Technology and Artificial Intelligence in Kuwait. Nine books, eighteen peer-reviewed papers, and over 160 essays since 2016.', lang: 'en' },
+  { path: '/en/cv', title: 'Curriculum Vitae', desc: 'Education, academic appointments, advisory roles and international memberships of Dr. Ahmad H. Alfailakawi.', lang: 'en' },
+  { path: '/en/research', title: 'Research', desc: 'Eighteen peer-reviewed papers on educational technology, e-learning systems and emerging technologies in higher education.', lang: 'en' },
 ]
 
 const routes = [
@@ -89,27 +93,41 @@ function stripManagedHead(html) {
     .replace(/<script\s+type=["']application\/ld\+json["'][\s\S]*?<\/script>/gi, '')
 }
 
-function render({ path, title, desc, type = 'website', iso, cat, image, robots }) {
-  const full = path === '/' ? title : `${title} — د. أحمد حسين الفيلكاوي`
+/* المرآة الإنجليزية — أزواج hreflang بين اللغتين */
+const LANG_PAIRS = { '/': '/en', '/cv': '/en/cv', '/research': '/en/research' }
+
+function render({ path, title, desc, type = 'website', iso, cat, image, robots, lang = 'ar' }) {
+  const en = lang === 'en'
+  const full = path === '/' ? title : en ? `${title} — Dr. Ahmad H. Alfailakawi` : `${title} — د. أحمد حسين الفيلكاوي`
   const url = SITE + path
   const img = `${SITE}${image || '/og.png'}`
 
   const ld = type === 'article'
-    ? { '@context': 'https://schema.org', '@type': 'Article', headline: title, description: desc, datePublished: iso, articleSection: cat, image: img, inLanguage: 'ar', author: { '@type': 'Person', name: AUTHOR }, mainEntityOfPage: url }
-    : { '@context': 'https://schema.org', '@type': 'WebPage', name: full, description: desc, url, inLanguage: 'ar' }
+    ? { '@context': 'https://schema.org', '@type': 'Article', headline: title, description: desc, datePublished: iso, articleSection: cat, image: img, inLanguage: lang, author: { '@type': 'Person', name: AUTHOR }, mainEntityOfPage: url }
+    : { '@context': 'https://schema.org', '@type': 'WebPage', name: full, description: desc, url, inLanguage: lang }
+
+  // hreflang للصفحات المتقابلة عربي↔إنجليزي
+  const arPath = en ? Object.keys(LANG_PAIRS).find((k) => LANG_PAIRS[k] === path) : path
+  const enPath = en ? path : LANG_PAIRS[path]
+  const hreflang = arPath !== undefined && enPath
+    ? `<link rel="alternate" hreflang="ar" href="${SITE + arPath}" />
+    <link rel="alternate" hreflang="en" href="${SITE + enPath}" />
+    <link rel="alternate" hreflang="x-default" href="${SITE + arPath}" />`
+    : ''
 
   const head = `
     <title>${esc(full)}</title>
     <meta name="description" content="${esc(desc)}" />
     ${robots ? `<meta name="robots" content="${robots}" />` : ''}
     <link rel="canonical" href="${url}" />
+    ${hreflang}
     <meta property="og:type" content="${type}" />
     <meta property="og:title" content="${esc(full)}" />
     <meta property="og:description" content="${esc(desc)}" />
     <meta property="og:url" content="${url}" />
     <meta property="og:image" content="${img}" />
-    <meta property="og:locale" content="ar_KW" />
-    <meta property="og:site_name" content="د. أحمد حسين الفيلكاوي" />
+    <meta property="og:locale" content="${en ? 'en_US' : 'ar_KW'}" />
+    <meta property="og:site_name" content="${en ? 'Dr. Ahmad H. Alfailakawi' : 'د. أحمد حسين الفيلكاوي'}" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${esc(full)}" />
     <meta name="twitter:description" content="${esc(desc)}" />

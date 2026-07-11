@@ -54,7 +54,7 @@ export default function Upcoming() {
                       <p className="mt-1 text-[.8rem] text-soft">{e.org} · {e.place}</p>
                     </div>
 
-                    {e.url && (
+                    {/^https?:\/\//.test(e.url || '') && (
                       <a
                         href={e.url}
                         target="_blank"

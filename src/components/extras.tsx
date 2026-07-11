@@ -245,6 +245,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
    ٢) وإلا → لا شيء. صوت المتصفّح الآلي رديء للعربية، ولا نعرضه إلا بطلب صريح
       عبر ALLOW_BROWSER_TTS في data.ts. */
 type ArticleAudio = { fahed?: boolean | string; noura?: boolean | string }
+type DialogueTranscript = { title: string; utterances: { speaker: string; text: string }[] }
 
 export function Listen({ slug, title, text, audio }: { slug: string; title: string; text: string; audio?: ArticleAudio }) {
   // الفهرس: { slug: { fahed: true, noura: true } } — أو true بالصيغة القديمة (= فهد فقط)
@@ -254,11 +255,16 @@ export function Listen({ slug, title, text, audio }: { slug: string; title: stri
   // الحلقة الحوارية (فهد ونورة يتحاوران) تنضم كخيار ثالث فور توفر ملفها —
   // القراءة الأمينة تبقى الأصل، والحوار إضاءة تفسيرية بجانبها لا بديلاً عنها.
   const [dialogueOk, setDialogueOk] = useState(false)
+  const [transcript, setTranscript] = useState<DialogueTranscript | null>(null)
   useEffect(() => {
     let on = true
     fetch(`/audio/${slug}.dialogue.mp3`, { method: 'HEAD' })
       .then((r) => { if (on && r.ok) setDialogueOk(true) })
       .catch(() => { /* noop */ })
+    fetch(`/audio/${slug}.dialogue.json`)
+      .then((response) => response.ok ? response.json() : null)
+      .then((value) => { if (on && value?.utterances?.length) setTranscript(value) })
+      .catch(() => { /* لا Transcript للحلقات القديمة */ })
     return () => { on = false }
   }, [slug])
 
@@ -269,7 +275,24 @@ export function Listen({ slug, title, text, audio }: { slug: string; title: stri
   ]
   const [ttsOn, setTtsOn] = useState(false)
 
-  if (sources.length) return <AudioPlayer sources={sources} title={title} />
+  if (sources.length) return (
+    <>
+      <AudioPlayer sources={sources} title={title} />
+      {dialogueOk && transcript && (
+        <details className="mt-3 rounded-2xl border border-hair bg-canvas px-5 py-4">
+          <summary className="cursor-pointer text-[.86rem] font-semibold text-accent">نص الحلقة الحوارية</summary>
+          <div className="mt-5 space-y-4 border-t border-hair pt-5">
+            {transcript.utterances.map((utterance, index) => (
+              <p key={`${utterance.speaker}-${index}`} className="text-[.96rem] leading-[1.9] text-ink/85">
+                <strong className="me-2 font-semibold text-accent">{utterance.speaker}:</strong>
+                {utterance.text}
+              </p>
+            ))}
+          </div>
+        </details>
+      )}
+    </>
+  )
   if (!ALLOW_BROWSER_TTS) return null
   return <BrowserTts text={text} active={ttsOn} setActive={setTtsOn} />
 }

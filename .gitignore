@@ -35,4 +35,5 @@ public/files
 .cron-secret.local
 .podcast-state.json
 .podcast-tmp/
+ArabicPronunciationMemory.sqlite*
 .firebase/hosting.ZGlzdA.cache

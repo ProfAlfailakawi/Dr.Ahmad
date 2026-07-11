@@ -350,14 +350,15 @@ function syncDirectory(name, extension) {
   if (!existsSync(from)) throw new Error(`مجلد الأصول مفقود: ${name}`)
   rmSync(to, { recursive: true, force: true })
   mkdirSync(to, { recursive: true })
+  const extensions = Array.isArray(extension) ? extension : [extension]
   const files = readdirSync(from, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith(extension))
+    .filter((entry) => entry.isFile() && extensions.some((suffix) => entry.name.endsWith(suffix)))
   for (const entry of files) copyFileSync(resolve(from, entry.name), resolve(to, entry.name))
   return files.length
 }
 
 const copiedAssets = Object.fromEntries(
-  [['audio', '.mp3'], ['covers', '.png'], ['files', '.pdf']]
+  [['audio', ['.mp3', '.dialogue.json']], ['covers', '.png'], ['files', '.pdf']]
     .map(([name, extension]) => [name, syncDirectory(name, extension)]),
 )
 

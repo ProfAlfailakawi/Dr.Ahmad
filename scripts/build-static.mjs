@@ -98,7 +98,9 @@ const LANG_PAIRS = { '/': '/en', '/cv': '/en/cv', '/research': '/en/research' }
 
 function render({ path, title, desc, type = 'website', iso, cat, image, robots, lang = 'ar' }) {
   const en = lang === 'en'
-  const full = path === '/' ? title : en ? `${title} — Dr. Ahmad H. Alfailakawi` : `${title} — د. أحمد حسين الفيلكاوي`
+  // لا تُلحق الاسم إن كان العنوان يحمله أصلاً — يمنع تضاعفه
+  const hasName = title.includes('Alfailakawi') || title.includes('د. أحمد حسين الفيلكاوي')
+  const full = path === '/' || hasName ? title : en ? `${title} — Dr. Ahmad H. Alfailakawi` : `${title} — د. أحمد حسين الفيلكاوي`
   const url = SITE + path
   const img = `${SITE}${image || '/og.png'}`
 

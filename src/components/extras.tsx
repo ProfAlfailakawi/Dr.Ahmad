@@ -251,9 +251,21 @@ export function Listen({ slug, title, text, audio }: { slug: string; title: stri
   // مقالات لوحة التحكم تمرر audio من وثيقتها (يولّده سكربت الصوت الليلي)
   const entry = (audioManifest as Record<string, boolean | ArticleAudio>)[slug]
   const voices = audio ?? (entry === true ? { fahed: true } : entry || {})
+  // الحلقة الحوارية (فهد ونورة يتحاوران) تنضم كخيار ثالث فور توفر ملفها —
+  // القراءة الأمينة تبقى الأصل، والحوار إضاءة تفسيرية بجانبها لا بديلاً عنها.
+  const [dialogueOk, setDialogueOk] = useState(false)
+  useEffect(() => {
+    let on = true
+    fetch(`/audio/${slug}.dialogue.mp3`, { method: 'HEAD' })
+      .then((r) => { if (on && r.ok) setDialogueOk(true) })
+      .catch(() => { /* noop */ })
+    return () => { on = false }
+  }, [slug])
+
   const sources = [
     ...(voices.fahed ? [{ key: 'fahed', label: 'فهد', src: typeof voices.fahed === 'string' ? voices.fahed : `/audio/${slug}.mp3` }] : []),
     ...(voices.noura ? [{ key: 'noura', label: 'نورة', src: typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3` }] : []),
+    ...(dialogueOk ? [{ key: 'dialogue', label: '🎙 الحلقة الحوارية', src: `/audio/${slug}.dialogue.mp3` }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)
 

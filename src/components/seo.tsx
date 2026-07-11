@@ -43,8 +43,7 @@ export function useSeo({
   robots?: string
 }) {
   useEffect(() => {
-    // لا تُلحق الاسم إن كان العنوان يحمله أصلاً (رئيسية الموقع مثلاً) — يمنع تضاعفه في التبويب
-    const full = title === site.title || title.includes('د. أحمد حسين الفيلكاوي') ? title : `${title} — د. أحمد حسين الفيلكاوي`
+    const full = title === site.title ? title : `${title} — د. أحمد حسين الفيلكاوي`
     const desc = description || site.description
     const url = site.url + path
     const img = site.url + (image || site.ogImage)

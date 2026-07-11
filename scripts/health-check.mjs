@@ -69,8 +69,22 @@ for (const b of books) {
   if (b.cover.startsWith('/') && !existsSync(resolve(ROOT, 'public', b.cover.slice(1))) && !existsSync(resolve(ROOT, b.cover.slice(1)))) { stat.coverMissing++; issues.push(`غلاف مفقود: ${b.slug}`) }
 }
 
+
+// درع الحلقات الحوارية: أي حلقة سبق توليدها (في .podcast-state.json) يجب أن يبقى ملفها
+try {
+  const ps = resolve(ROOT, '.podcast-state.json')
+  if (existsSync(ps)) {
+    const done = JSON.parse(readFileSync(ps, 'utf8')).done || {}
+    for (const key of Object.keys(done)) {
+      const [slug, lang] = key.split(':')
+      const f = resolve(ROOT, 'audio', `${slug}.dialogue${lang === 'en' ? '-en' : ''}.mp3`)
+      if (!existsSync(f)) issues.push(`حلقة حوارية مفقودة (دهس محتمل من AI Studio): ${slug} (${lang})`)
+    }
+  }
+} catch { /* noop */ }
+
 // ٢) روابط حيّة (عيّنة صفحات أساسية + كل PDF + عيّنة مصادر مقالات)
-const corePages = ['/', '/articles', '/publications', '/research', '/cv', '/contact', '/ask', '/thought-paths', '/decade', '/podcast.xml', '/feed.xml', '/sitemap.xml', '/podcast-cover.png']
+const corePages = ['/', '/articles', '/publications', '/research', '/cv', '/contact', '/ask', '/thought-paths', '/decade', '/en', '/en/cv', '/en/research', '/podcast.xml', '/feed.xml', '/sitemap.xml', '/podcast-cover.png']
 for (const p of corePages) {
   const code = await head(SITE + p); stat.checkedLinks++
   if (code < 200 || code >= 400) issues.push(`صفحة لا تُفتح (${code}): ${p}`)

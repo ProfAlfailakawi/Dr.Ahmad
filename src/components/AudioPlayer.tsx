@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { EASE } from './motion'
+import { trackListen } from '../lib/views'
 
 const ar = (n: number) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 const clock = (seconds: number) => {
@@ -35,6 +36,14 @@ export function AudioPlayer({ sources, title }: { sources: AudioSource[]; title:
     [selectedKey, sources],
   )
 
+  // معالم الاستماع 25/50/75٪ — تُطلق مرة لكل صوت في الصفحة (والجلسة تمنع التكرار بعدها)
+  const milestonesFired = useRef<Set<number>>(new Set())
+  const sourceLabelRef = useRef('')
+  useEffect(() => {
+    milestonesFired.current = new Set()
+    sourceLabelRef.current = source?.label ?? ''
+  }, [source?.src, source?.label])
+
   useEffect(() => {
     if (!source && selectedKey) setSelectedKey('')
     else if (source && source.key !== selectedKey) setSelectedKey(source.key)
@@ -58,7 +67,17 @@ export function AudioPlayer({ sources, title }: { sources: AudioSource[]; title:
     const el = audio.current
     if (!el) return
 
-    const onTime = () => setCurrent(el.currentTime)
+    const onTime = () => {
+      setCurrent(el.currentTime)
+      if (el.duration && Number.isFinite(el.duration)) {
+        const ratio = el.currentTime / el.duration
+        for (const m of [25, 50, 75])
+          if (ratio >= m / 100 && !milestonesFired.current.has(m)) {
+            milestonesFired.current.add(m)
+            trackListen(window.location.pathname, title, m, sourceLabelRef.current)
+          }
+      }
+    }
     const onMeta = () => {
       setDuration(Number.isFinite(el.duration) ? el.duration : 0)
       setStatus('ready')

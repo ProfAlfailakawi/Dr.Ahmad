@@ -35,3 +35,4 @@ public/files
 .cron-secret.local
 .podcast-state.json
 .podcast-tmp/
+.firebase/hosting.ZGlzdA.cache

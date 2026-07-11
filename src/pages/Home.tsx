@@ -741,6 +741,8 @@ export default function Home() {
 
       <SinceLastVisit />
 
+      <WhoAreYou />
+
       <DailySpark />
 
       {/* about */}
@@ -762,8 +764,6 @@ export default function Home() {
           </FadeUp>
         </div>
       </section>
-
-      <WhoAreYou />
 
       {/* books */}
       <section className="border-t border-hair bg-wash py-[56px] md:py-[100px]">

@@ -33,3 +33,5 @@ public/files
 /feed.xml
 .notify-state.json
 .cron-secret.local
+.podcast-state.json
+.podcast-tmp/

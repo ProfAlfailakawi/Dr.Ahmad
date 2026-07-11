@@ -258,8 +258,10 @@ export function Listen({ slug, title, text, audio }: { slug: string; title: stri
   const [transcript, setTranscript] = useState<DialogueTranscript | null>(null)
   useEffect(() => {
     let on = true
+    // تأكّد أنه ملف صوتي فعلاً: الاستضافة (SPA) تُعيد index.html بـ200 لأي مسار غير موجود،
+    // فلا يكفي r.ok — نتحقق أن نوع المحتوى صوت حتى لا يظهر زر «حلقة حوارية» مكسور.
     fetch(`/audio/${slug}.dialogue.mp3`, { method: 'HEAD' })
-      .then((r) => { if (on && r.ok) setDialogueOk(true) })
+      .then((r) => { if (on && r.ok && (r.headers.get('content-type') || '').includes('audio')) setDialogueOk(true) })
       .catch(() => { /* noop */ })
     fetch(`/audio/${slug}.dialogue.json`)
       .then((response) => response.ok ? response.json() : null)

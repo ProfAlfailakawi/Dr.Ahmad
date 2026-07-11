@@ -68,6 +68,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // إعدادات عامة يحررها المشرف من اللوحة (روابط السيرة PDF ونحوها) — قراءة عامة.
+    match /site_settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // تقرير حارس الجودة الأسبوعي — يكتبه السكربت المجدول بحساب الخدمة، للمشرف قراءةً.
     match /site_health/{date} {
       allow read: if isAdmin();

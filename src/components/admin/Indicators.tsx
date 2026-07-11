@@ -257,12 +257,12 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         {summary.topArticles.length ? (
           <ol className="grid gap-4">
             {summary.topArticles.map((row, index) => (
-              <li key={row.id} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(180px,.8fr)_auto] sm:items-center">
+              <li key={row.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 sm:grid-cols-[minmax(0,1fr)_minmax(180px,.8fr)_auto]">
                 <span className="truncate text-[.88rem] text-ink"><span className="me-2 text-accent">{index + 1}.</span>{row.label}</span>
-                <span className="h-2 overflow-hidden rounded-full bg-canvas">
+                <span className="text-[.8rem] font-semibold text-accent sm:order-3 sm:font-normal sm:text-soft">{ar(row.count)}</span>
+                <span className="col-span-2 h-2 overflow-hidden rounded-full bg-canvas sm:order-2 sm:col-span-1">
                   <span className="block h-full rounded-full bg-accent" style={{ width: `${Math.max((row.count / topMax) * 100, 3)}%` }} />
                 </span>
-                <span className="text-[.8rem] text-soft">{ar(row.count)}</span>
               </li>
             ))}
           </ol>
@@ -274,12 +274,12 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       <section className={card}>
         <p className="text-[.76rem] font-semibold uppercase text-accent">آخر 7 أيام</p>
         <h2 className="mt-1 font-display text-xl font-semibold text-ink">اتجاه المشاهدات</h2>
-        <div className="mt-8 grid h-48 grid-cols-7 items-end gap-2 sm:gap-4" aria-label="مشاهدات الأيام السبعة الأخيرة">
+        <div className="mt-8 grid h-36 grid-cols-7 items-end gap-1.5 sm:h-48 sm:gap-4" aria-label="مشاهدات الأيام السبعة الأخيرة">
           {summary.trend.map((day) => (
             <div key={day.date} className="flex h-full min-w-0 flex-col items-center justify-end gap-2">
               <span className="text-[.72rem] text-soft">{ar(day.count)}</span>
               <span className="w-full max-w-10 rounded-t-md bg-accent/80 transition-[height]" style={{ height: `${day.count ? Math.max((day.count / trendMax) * 120, 5) : 2}px` }} />
-              <time className="text-[.65rem] text-soft" dateTime={day.date}>{day.date.slice(5).replace('-', '/')}</time>
+              <time className="text-[.58rem] text-soft sm:text-[.65rem]" dateTime={day.date}>{day.date.slice(5).replace('-', '/')}</time>
             </div>
           ))}
         </div>

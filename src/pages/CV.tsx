@@ -5,6 +5,7 @@ import { bio, books, doctorate, links, papers, stats } from '../data'
 import { useAdminAuth } from '../lib/admin-auth'
 import { useCv, type CvTextItem } from '../lib/cv'
 import { useTrackView } from '../lib/views'
+import { useCvLinks } from '../lib/settings'
 
 const ar = (n: number) => String(n)
 
@@ -32,6 +33,7 @@ const Dots = ({ items }: { items: CvTextItem[] }) => (
 )
 
 export default function CV() {
+  const cvLinks = useCvLinks()
   useSeo({ title: 'السيرة الأكاديمية', path: '/cv', description: 'التعليم والخبرات والعضويات والمؤتمرات.' })
   useTrackView('/cv', 'السيرة الأكاديمية')
   const { isAdmin } = useAdminAuth()
@@ -199,7 +201,7 @@ export default function CV() {
 
           <FadeUp>
             <div className="mt-14">
-              <a href={links.cv} target="_blank" rel="noreferrer" className="inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
+              <a href={cvLinks.ar} target="_blank" rel="noreferrer" className="inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
                 تحميل السيرة الذاتية (PDF)
               </a>
             </div>

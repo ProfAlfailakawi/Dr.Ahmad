@@ -32,7 +32,7 @@ function DailySpark() {
             data-hover
             className="group relative block overflow-hidden rounded-2xl border border-hair border-r-[3px] border-r-accent bg-wash p-8 transition-colors duration-300 hover:border-accent md:p-11"
           >
-            <span aria-hidden className="pointer-events-none absolute -top-6 left-6 select-none font-display text-[8rem] leading-none text-accent/10 md:text-[11rem]">”</span>
+            <span aria-hidden className="pointer-events-none absolute left-5 top-2 select-none font-display text-[5.5rem] leading-none text-accent/10 md:left-8 md:top-3 md:text-[9rem]">”</span>
             <p className="relative mb-5 flex items-center gap-2.5 text-[.8rem] font-semibold text-accent">
               <span className="pulse relative h-1.5 w-1.5 rounded-full bg-accent" />
               فكرة اليوم · {c.kind}

@@ -16,6 +16,7 @@ import { getBaseRecord, type ArticleRecord } from '../lib/cms'
 import { useCmsContent } from '../lib/content'
 import { ContentManager, type ManagedKind, type ManagedRecord } from '../components/admin/ContentManager'
 import { Indicators } from '../components/admin/Indicators'
+import { UploadField } from '../components/admin/ContentManager'
 import { useSeo } from '../components/seo'
 import type { User } from 'firebase/auth'
 
@@ -154,6 +155,47 @@ function AccessDenied({ email }: { email: string }) {
 // السؤال الأسبوعي والمختارة اليومية يتولّدان تلقائياً (بنك دوّار) فلا لزوم لهما في اللوحة
 type Tab = 'dashboard' | 'articles' | 'books' | 'papers' | 'media' | 'inbox' | 'event'
 
+
+/* رفع السيرة الذاتية PDF (عربي + إنجليزي) — يحفظ الرابط في site_settings/cv
+   فيتحدث زر التحميل في الموقع فوراً، بلا أي بناء أو رفع ملفات يدوي. */
+function CvPdfCard() {
+  const [links, setLinks] = useState<{ url?: string; urlEn?: string }>({})
+  const [saved, setSaved] = useState('')
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const db = await getDb()
+        if (!db) return
+        const { doc, getDoc } = await import('firebase/firestore')
+        const snap = await getDoc(doc(db, 'site_settings', 'cv'))
+        if (snap.exists()) setLinks(snap.data() as { url?: string; urlEn?: string })
+      } catch { /* noop */ }
+    })()
+  }, [])
+  const save = async (patch: { url?: string; urlEn?: string }) => {
+    try {
+      const db = await getDb()
+      if (!db) return
+      const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+      await setDoc(doc(db, 'site_settings', 'cv'), { ...patch, updatedAt: serverTimestamp() }, { merge: true })
+      setLinks((prev) => ({ ...prev, ...patch }))
+      setSaved('حُدّث رابط السيرة في الموقع فوراً ✓')
+      setTimeout(() => setSaved(''), 3000)
+    } catch { setSaved('تعذّر الحفظ') }
+  }
+  return (
+    <div className={card}>
+      <p className="text-[.76rem] font-semibold uppercase text-accent">سيرتي الذاتية PDF</p>
+      <p className="mt-1 text-[.85rem] font-light text-soft">ارفع الملف الجديد وسيتبدل زر التحميل في الموقع فوراً — عربي وإنجليزي.</p>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <UploadField label="السيرة (عربي)" value={links.url || ''} accept="application/pdf" folder="files" slug="cv" maxMb={30} onChange={(url) => void save({ url })} />
+        <UploadField label="English CV" value={links.urlEn || ''} accept="application/pdf" folder="files" slug="cv-en" maxMb={30} onChange={(urlEn) => void save({ urlEn })} />
+      </div>
+      {saved && <p className="mt-3 text-[.8rem] font-medium text-accent">{saved}</p>}
+    </div>
+  )
+}
+
 function Panel({ email }: { email: string }) {
   // تحرير موضعي: /admin?tab=articles&edit=slug يفتح التبويب والنموذج مباشرة
   const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
@@ -192,7 +234,7 @@ function Panel({ email }: { email: string }) {
 
         {cms.error && <p className="mb-5 rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.85rem] text-soft">تعذّر تحديث المحتوى الحي: {cms.error}</p>}
         {cms.loading && <p className="mb-5 text-[.84rem] text-soft">أحمّل آخر تعديلات المحتوى…</p>}
-        {tab === 'dashboard' && <Indicators articles={cms.articles} />}
+        {tab === 'dashboard' && <><CvPdfCard /><div className="mt-5"><Indicators articles={cms.articles} /></div></>}
         {tab === 'articles' && <ContentManager openSlug={editSlug} kind="article" items={cms.articles as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
         {tab === 'books' && <ContentManager openSlug={editSlug} kind="book" items={cms.books as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
         {tab === 'papers' && <ContentManager openSlug={editSlug} kind="paper" items={cms.papers as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}

@@ -3,6 +3,7 @@ import { motion, useInView, useMotionValue, useReducedMotion, useScroll, useSpri
 import { Link, useLocation } from 'react-router-dom'
 import { LINK_OUT, profile, socials, links } from '../data'
 import { ThemeToggle } from './extras'
+import { useCvLinks } from '../lib/settings'
 import { SocialIcon } from './icons'
 
 export { EASE } from './motion'
@@ -577,6 +578,7 @@ export function Nav() {
 
 /* ---------- Footer ---------- */
 export function Footer() {
+  const cv = useCvLinks()
   return (
     <footer className="border-t border-hair px-6 py-12 md:px-11">
       <div className="mx-auto max-w-shell">
@@ -587,7 +589,7 @@ export function Footer() {
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-[.9rem] text-soft">
             <Link to="/about" className="transition-colors hover:text-accent">حول الموقع</Link>
             <span className="flex items-center gap-3">
-              <a href={links.cv} target="_blank" rel="noreferrer" aria-label="السيرة الذاتية PDF" title="السيرة الذاتية PDF" className="text-soft transition-colors hover:text-accent">
+              <a href={cv.ar} target="_blank" rel="noreferrer" aria-label="السيرة الذاتية PDF" title="السيرة الذاتية PDF" className="text-soft transition-colors hover:text-accent">
                 <SocialIcon name="CV" />
               </a>
               {socials.map((s) => (

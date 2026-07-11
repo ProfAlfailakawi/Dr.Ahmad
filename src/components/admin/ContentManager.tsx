@@ -211,7 +211,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   )
 }
 
-function UploadField({
+export function UploadField({
   label,
   value,
   accept,

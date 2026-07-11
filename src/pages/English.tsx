@@ -288,6 +288,18 @@ export function EnglishResearch() {
       <PageHead label="Research" title="Peer-reviewed contributions" sub="Eighteen published papers on educational technology, e-learning systems and emerging technologies in higher education." />
       <div className="px-6 py-14 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">
+          {/* الملفان العلميان الرسميان — سطر هادئ يطابق الصفحة العربية */}
+          <FadeUp>
+            <p className="mb-10 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-hair pb-6 text-[.88rem] text-soft">
+              <span>Academic profiles:</span>
+              <a href="https://scholar.google.com/citations?user=WVAtInIAAAAJ&hl=en" target="_blank" rel="noreferrer" className="group font-semibold text-accent transition-colors hover:text-accent-deep">
+                Google Scholar <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
+              </a>
+              <a href="https://www.researchgate.net/profile/Ahmad-Alfailakawi" target="_blank" rel="noreferrer" className="group font-semibold text-accent transition-colors hover:text-accent-deep">
+                ResearchGate <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
+              </a>
+            </p>
+          </FadeUp>
           <ul>
             {papers.map((p, i) => (
               <FadeUp key={p.slug}>

@@ -493,8 +493,9 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
   useEffect(() => {
     if (consumedOpen || !openSlug || current !== undefined) return
     const target = items.find((it) => it.slug === openSlug)
-    if (target) { setCurrent(target); setConsumedOpen(true) }
-  }, [openSlug, items, current, consumedOpen])
+    // لا بد من ملء النموذج أيضاً (كما في openEdit) وإلا فتحت شاشة تحرير فارغة
+    if (target) { setForm(asForm(kind, target)); setCurrent(target); setConsumedOpen(true) }
+  }, [openSlug, items, current, consumedOpen, kind])
   const [form, setForm] = useState<Form>(blank(kind))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')

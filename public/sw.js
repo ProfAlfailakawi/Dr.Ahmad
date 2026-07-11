@@ -21,14 +21,21 @@ self.addEventListener('fetch', (e) => {
   const { request } = e
   if (request.method !== 'GET' || new URL(request.url).origin !== location.origin) return
 
+  // طلبات النطاق (Range) — تشغيل الصوت يطلب أجزاء الملف فيرد الخادم 206 (Partial).
+  // المتصفح يرفض تخزين 206 في الكاش؛ فلا نعترضها إطلاقاً ونتركها للمتصفح مباشرة.
+  if (request.headers.has('range')) return
+
+  // الصوت (بثّ، ملفات كبيرة) لا يُخزَّن في الكاش — يُطلب من الشبكة دائماً.
+  const isAudio = new URL(request.url).pathname.startsWith('/audio/')
+
   // الصفحات: الشبكة أولاً، ثم الذاكرة
   if (request.mode === 'navigate') {
     e.respondWith(
       fetch(request)
         .then((r) => {
-          if (r.ok) {
+          if (r.status === 200) {
             const copy = r.clone()
-            caches.open(CACHE).then((c) => c.put(request, copy))
+            caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {})
           }
           return r
         })
@@ -37,14 +44,14 @@ self.addEventListener('fetch', (e) => {
     return
   }
 
-  // الأصول: الذاكرة أولاً
+  // الأصول: الذاكرة أولاً — والتخزين فقط للاستجابات الكاملة (200 لا 206)، وليس الصوت ولا /admin
   e.respondWith(
     caches.match(request).then((cached) =>
       cached ||
       fetch(request).then((r) => {
-        if (r.ok && !request.url.includes('/admin')) {
+        if (r.status === 200 && !isAudio && !request.url.includes('/admin')) {
           const copy = r.clone()
-          caches.open(CACHE).then((c) => c.put(request, copy))
+          caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {})
         }
         return r
       })

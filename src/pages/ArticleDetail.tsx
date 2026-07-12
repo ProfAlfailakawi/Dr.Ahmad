@@ -2,7 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import { motion, useScroll, useSpring } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 import { FadeUp, Page, Reveal } from '../components/ui'
-import { getArticleNeighbors, relatedArticles } from '../lib/cms'
+import { getArticleNeighbors, relatedArticles, type ArticleRecord } from '../lib/cms'
 import { books, papers, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
@@ -10,6 +10,7 @@ import { SelectionTools } from '../components/IdeaFeatures'
 import { JsonLd, useSeo } from '../components/seo'
 import { fetchOwnerCounts, useTrackView } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
+import { articleSystem, ideaTokens } from '../lib/intelligence'
 
 /** تقدير زمن القراءة — ٢٠٠ كلمة/دقيقة للعربية */
 const readTime = (t?: string) => {
@@ -197,6 +198,38 @@ function OwnerBadge({ path }: { path: string }) {
   )
 }
 
+function StudentArchive({ a, articles }: { a: ArticleRecord; articles: ArticleRecord[] }) {
+  const pack = useMemo(() => articleSystem(a, articles, books, papers), [a, articles])
+  const terms = Array.from(new Set(ideaTokens(`${a.title} ${a.excerpt || ''} ${a.body || ''}`))).slice(0, 5)
+  return (
+    <FadeUp>
+      <details className="mt-14 rounded-2xl border border-hair bg-wash px-6 py-5">
+        <summary className="cursor-pointer list-none font-display text-[1.15rem] font-semibold text-ink marker:hidden">
+          للطلاب والباحثين <span className="text-accent">＋</span>
+        </summary>
+        <div className="mt-5 grid gap-5 border-t border-hair pt-5 md:grid-cols-2">
+          <div>
+            <p className="text-[.76rem] font-semibold text-accent">سؤال نقاش</p>
+            <p className="mt-2 text-[.9rem] leading-relaxed text-soft">{pack.studentQuestion}</p>
+          </div>
+          <div>
+            <p className="text-[.76rem] font-semibold text-accent">فكرة بحثية</p>
+            <p className="mt-2 text-[.9rem] leading-relaxed text-soft">اختبر أثر هذه الفكرة في سياق تعليمي محدد: طالب، معلم، أداة، ونتيجة إنسانية قابلة للملاحظة.</p>
+          </div>
+          <div>
+            <p className="text-[.76rem] font-semibold text-accent">مصطلحات مفتاحية</p>
+            <p className="mt-2 text-[.9rem] leading-relaxed text-soft">{terms.join(' · ') || a.cat}</p>
+          </div>
+          <div>
+            <p className="text-[.76rem] font-semibold text-accent">للإحالة السريعة</p>
+            <p className="mt-2 text-[.9rem] leading-relaxed text-soft">استخدم زر «انسخ الاستشهاد» أسفل المقال، ثم اربطه بالمقال أو البحث الأقرب في «أكمل هذا المسار».</p>
+          </div>
+        </div>
+      </details>
+    </FadeUp>
+  )
+}
+
 export default function ArticleDetail() {
   const { slug } = useParams()
   const { articles, loading } = useCmsContent()
@@ -297,6 +330,7 @@ export default function ArticleDetail() {
                 </div>
                 {/* أداة تحديد واحدة: خيط الفكرة + بطاقة اقتباس (بلا تداخل) */}
                 <SelectionTools current={a} articles={articles} body={a.body} excerpt={a.excerpt} />
+                <StudentArchive a={a} articles={articles} />
               </>
             ) : (
               <>

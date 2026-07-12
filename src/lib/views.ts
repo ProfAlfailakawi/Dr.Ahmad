@@ -131,6 +131,28 @@ function incrementViewDocument(id: string, title: string): Promise<boolean> {
   return write
 }
 
+function journeyId(from: string, to: string) {
+  return `${encodeViewPath(from)}>${encodeViewPath(to)}`.slice(0, 900)
+}
+
+async function trackJourney(from: string, to: string) {
+  if (!from || from === to || from === '/admin' || to === '/admin') return
+  const sessionKey = `journey:${journeyId(from, to)}`
+  if (wasSeen(sessionKey)) return
+  try {
+    const db = await getDb()
+    if (!db) return
+    const { doc, increment, serverTimestamp, setDoc } = await import('firebase/firestore')
+    await setDoc(doc(db, 'journeys', journeyId(from, to)), {
+      from,
+      to,
+      count: increment(1),
+      updatedAt: serverTimestamp(),
+    }, { merge: true })
+    markSeen(sessionKey)
+  } catch { /* لا تؤثر على تجربة الزائر */ }
+}
+
 /**
  * يسجل مشاهدة واحدة للمسار في الجلسة: إجمالي للمسار + عدّاد يومي بتوقيت الكويت.
  * لا يقرأ مستند views، ولذلك يعمل للزائر العام مع قواعد القراءة الخاصة بالمشرف.
@@ -146,6 +168,11 @@ export function useTrackView(path: string, title: string, enabled = true) {
     if (wasSeen(pathSessionKey)) return
 
     return afterFirstPaint(() => {
+      try {
+        const previous = window.sessionStorage.getItem('view:last-path') || ''
+        void trackJourney(previous, normalizedPath)
+        window.sessionStorage.setItem('view:last-path', normalizedPath)
+      } catch { /* noop */ }
       void Promise.all([
         incrementViewDocument(ids.total, safeTitle),
         incrementViewDocument(ids.day, safeTitle),

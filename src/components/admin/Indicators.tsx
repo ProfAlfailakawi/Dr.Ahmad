@@ -24,6 +24,13 @@ type ViewRow = {
   title?: string
 }
 
+type JourneyRow = {
+  id: string
+  from?: string
+  to?: string
+  count: number
+}
+
 type MonthlyReport = {
   period: string
   notification?: string
@@ -60,6 +67,7 @@ function decodePath(value: string) {
 
 export function Indicators({ articles }: { articles: ArticleRecord[] }) {
   const [rows, setRows] = useState<ViewRow[]>([])
+  const [journeys, setJourneys] = useState<JourneyRow[]>([])
   const [subscribers, setSubscribers] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -75,11 +83,18 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       const db = await getDb()
       if (!db) throw new Error('Firebase غير متاح')
       const { collection, getDocs } = await import('firebase/firestore')
-      const [snapshot, reportsSnapshot, healthSnapshot] = await Promise.all([
+      const [snapshot, reportsSnapshot, healthSnapshot, journeysSnapshot, subscribersSnapshot] = await Promise.all([
         getDocs(collection(db, 'views')),
         getDocs(collection(db, 'admin_reports')),
         getDocs(collection(db, 'site_health')),
+        getDocs(collection(db, 'journeys')),
+        getDocs(collection(db, 'subscribers')),
       ])
+      setSubscribers(subscribersSnapshot.size)
+      setJourneys(journeysSnapshot.docs.map((item) => {
+        const data = item.data() as { from?: string; to?: string; count?: number }
+        return { id: item.id, from: data.from, to: data.to, count: Number(data.count || 0) }
+      }))
       const latestHealth = healthSnapshot.docs
         .map((d) => d.data() as { date: string; status: string; issueCount: number; issues?: string[] })
         .sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0]
@@ -133,8 +148,9 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       trend,
       totals,
       byKind,
+      journeys: journeys.sort((a, b) => b.count - a.count),
     }
-  }, [articles, rows])
+  }, [articles, journeys, rows])
 
   // الجدول المفصّل: فلترة بالنوع + بحث بالاسم
   const detailed = useMemo(() => {
@@ -268,6 +284,37 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
           </ol>
         ) : (
           <p className="text-[.9rem] text-soft">تظهر المقالات هنا بعد أول مشاهدة.</p>
+        )}
+      </section>
+
+      <section className={card}>
+        <p className="text-[.76rem] font-semibold uppercase text-accent">أثر المقال</p>
+        <h2 className="mt-1 font-display text-xl font-semibold text-ink">ما الذي يحدث بعد القراءة؟</h2>
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <div className="rounded-xl border border-hair bg-canvas p-4">
+            <span className="block font-display text-2xl font-semibold text-accent">{ar(summary.byKind['مقالات'])}</span>
+            <span className="mt-1 block text-[.78rem] text-soft">مشاهدات المقالات</span>
+          </div>
+          <div className="rounded-xl border border-hair bg-canvas p-4">
+            <span className="block font-display text-2xl font-semibold text-accent">{ar(summary.byKind['مشاركات'])}</span>
+            <span className="mt-1 block text-[.78rem] text-soft">مشاركات بعد القراءة</span>
+          </div>
+          <div className="rounded-xl border border-hair bg-canvas p-4">
+            <span className="block font-display text-2xl font-semibold text-accent">{ar(summary.journeys.filter((row) => row.to === '/cv' || row.to === '/contact').reduce((sum, row) => sum + row.count, 0))}</span>
+            <span className="mt-1 block text-[.78rem] text-soft">تحولات إلى السيرة/التواصل</span>
+          </div>
+        </div>
+        {summary.journeys.length ? (
+          <ol className="mt-5 grid gap-2">
+            {summary.journeys.slice(0, 6).map((row) => (
+              <li key={row.id} className="flex items-center justify-between gap-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.82rem]">
+                <span className="min-w-0 truncate text-ink" dir="ltr">{row.from} ← {row.to}</span>
+                <span className="shrink-0 text-accent">{ar(row.count)}</span>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="mt-4 text-[.86rem] leading-relaxed text-soft">ستظهر خريطة الانتقال بعد زيارات جديدة؛ لا توجد بيانات كافية الآن.</p>
         )}
       </section>
 

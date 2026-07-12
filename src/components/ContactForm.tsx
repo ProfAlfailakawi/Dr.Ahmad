@@ -14,6 +14,26 @@ const TOPICS = [
 ] as const
 type TopicKey = (typeof TOPICS)[number]['key']
 
+function contactInsight(topic: TopicKey | null, message: string) {
+  const text = message.toLowerCase()
+  const hasDate = /\d{4}|يناير|فبراير|مارس|أبريل|ابريل|مايو|يونيو|يوليو|أغسطس|اغسطس|سبتمبر|أكتوبر|اكتوبر|نوفمبر|ديسمبر/.test(text)
+  const hasOrg = /جامعة|مدرسة|وزارة|هيئة|مؤتمر|ملتقى|شركة|كلية|مركز/.test(text)
+  const kind = topic === 'محاضرة أو ورشة'
+    ? 'طلب فعالية'
+    : topic === 'لقاء إعلامي'
+      ? 'طلب إعلامي'
+      : topic === 'استشارة'
+        ? 'استشارة'
+        : /بحث|دراسة|ورقة/.test(text)
+          ? 'تعاون أكاديمي'
+          : 'طلب عام'
+  const clarity = [hasDate, hasOrg, message.length > 160].filter(Boolean).length
+  return {
+    intent: kind,
+    quality: clarity >= 2 ? 'جاد وواضح' : clarity === 1 ? 'يحتاج تفصيل بسيط' : 'يحتاج توضيح',
+  }
+}
+
 export function ContactForm() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -42,11 +62,14 @@ export function ContactForm() {
       const db = await getDb()
       if (!db) throw new Error('no-db')
       const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
+      const insight = contactInsight(topic, message)
       await addDoc(collection(db, 'messages'), {
         name: name.trim(),
         email: email.trim(),
         topic: topic || 'أخرى',
         message: message.trim(),
+        intent: insight.intent,
+        quality: insight.quality,
         createdAt: serverTimestamp(),
       })
       try { localStorage.setItem('contact:last-submit', String(Date.now())) } catch { /* noop */ }

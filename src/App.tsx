@@ -29,6 +29,7 @@ const Inbox = lazy(() => import('./pages/Inbox'))
 const AboutSite = lazy(() => import('./pages/AboutSite'))
 const Questions = lazy(() => import('./pages/Questions'))
 const Radar = lazy(() => import('./pages/Radar'))
+const Now = lazy(() => import('./pages/Now'))
 const Admin = lazy(() => import('./pages/Admin'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const EnglishHome = lazy(() => import('./pages/English').then((m) => ({ default: m.EnglishHome })))
@@ -92,6 +93,7 @@ function AnimatedRoutes() {
         <Route path="/media" element={<Media />} />
         <Route path="/questions" element={<Questions />} />
         <Route path="/radar" element={<Radar />} />
+        <Route path="/now" element={<Now />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/curated" element={<Curated />} />
         <Route path="/upcoming" element={<Upcoming />} />

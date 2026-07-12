@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getDb, getFirebaseApp } from '../../lib/firebase'
+import { books, papers } from '../../data'
+import { publicationGate, topicMemory } from '../../lib/intelligence'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
 
@@ -287,6 +289,7 @@ function Editor({
   setForm,
   onClose,
   onSave,
+  allItems,
 }: {
   kind: ManagedKind
   current: ManagedRecord | null
@@ -296,6 +299,7 @@ function Editor({
   setForm: React.Dispatch<React.SetStateAction<Form>>
   onClose: () => void
   onSave: () => void
+  allItems: ManagedRecord[]
 }) {
   // أي رقم هندي يكتبه الدكتور يتحوّل غربياً فوراً — قاعدة الموقع في كل الخانات
   const west = (s: string) => s.replace(/[٠-٩]/g, (d) => '0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)])
@@ -366,6 +370,22 @@ function Editor({
       }))
     }
   }
+
+  const articleMemory = useMemo(() => {
+    if (kind !== 'article') return null
+    const comparable = allItems.filter((item) => item.slug !== current?.slug)
+    return {
+      memory: topicMemory(form.title || '', form.body || '', comparable as never, books as never, papers as never),
+      gate: publicationGate({
+        title: form.title,
+        slug: form.slug,
+        excerpt: form.excerpt,
+        body: form.body,
+        cat: form.cat,
+        hasAudio: Boolean(current?.hasAudio),
+      }, comparable as never),
+    }
+  }, [allItems, current?.hasAudio, current?.slug, form.body, form.cat, form.excerpt, form.slug, form.title, kind])
 
   useEffect(() => {
     if (form._aiBusy === '1') return
@@ -438,6 +458,27 @@ function Editor({
               <Field label="نص المقال" hint="افصل بين الفقرات بسطر فارغ. يظهر النص بمحاذاة كاملة أثناء الكتابة واللصق.">
                 <textarea dir="rtl" style={{ textAlign: 'justify' }} className={`${input} min-h-[320px] text-justify leading-loose`} value={form.body || ''} onChange={(event) => set('body', event.target.value)} />
               </Field>
+              {articleMemory && (form.title?.trim() || form.body?.trim()) && (
+                <div className="rounded-2xl border border-hair bg-wash p-4">
+                  <p className="text-[.82rem] font-semibold text-ink">ذاكرة المقال قبل النشر</p>
+                  <p className="mt-2 text-[.8rem] leading-relaxed text-soft">{articleMemory.memory.note}</p>
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    <div className="rounded-xl border border-hair bg-canvas p-3">
+                      <p className="text-[.75rem] font-semibold text-accent">أقرب مقالات</p>
+                      <ul className="mt-2 grid gap-1 text-[.78rem] text-soft">
+                        {articleMemory.memory.relatedArticles.slice(0, 3).map((item) => <li key={item.slug}>• {item.title}</li>)}
+                        {!articleMemory.memory.relatedArticles.length && <li>لا تشابه واضح؛ زاوية جديدة.</li>}
+                      </ul>
+                    </div>
+                    <div className="rounded-xl border border-hair bg-canvas p-3">
+                      <p className="text-[.75rem] font-semibold text-accent">{articleMemory.gate.ready ? 'بوابة النشر: جاهز' : 'بوابة النشر: يحتاج انتباه'}</p>
+                      <ul className="mt-2 grid gap-1 text-[.78rem] text-soft">
+                        {(articleMemory.gate.issues.length ? articleMemory.gate.issues : ['العناصر الأساسية مكتملة.']).slice(0, 5).map((issue) => <li key={issue}>• {issue}</li>)}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="flex flex-wrap items-center gap-3">
                 <button type="button" onClick={() => void suggest()} disabled={form._aiBusy === '1' || !form.body?.trim()} className={secondary}>
                   {form._aiBusy === '1' ? 'أفكّر…' : '✦ تجهيز التصنيف والمقتطف الآن'}
@@ -747,6 +788,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
           setForm={setForm}
           onClose={() => setCurrent(undefined)}
           onSave={() => void save()}
+          allItems={items}
         />
       )}
     </section>

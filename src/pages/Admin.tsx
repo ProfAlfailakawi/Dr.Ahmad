@@ -16,6 +16,7 @@ import { getBaseRecord, type ArticleRecord } from '../lib/cms'
 import { useCmsContent } from '../lib/content'
 import { ContentManager, type ManagedKind, type ManagedRecord } from '../components/admin/ContentManager'
 import { Indicators } from '../components/admin/Indicators'
+import { IntelligenceLab } from '../components/admin/IntelligenceLab'
 import { VoiceBakeoffCard } from '../components/admin/VoiceBakeoff'
 import { UploadField } from '../components/admin/ContentManager'
 import { useSeo } from '../components/seo'
@@ -154,7 +155,7 @@ function AccessDenied({ email }: { email: string }) {
 
 /* ---------- ٣) اللوحة ---------- */
 // السؤال الأسبوعي والمختارة اليومية يتولّدان تلقائياً (بنك دوّار) فلا لزوم لهما في اللوحة
-type Tab = 'dashboard' | 'articles' | 'books' | 'papers' | 'media' | 'inbox' | 'event'
+type Tab = 'dashboard' | 'lab' | 'articles' | 'books' | 'papers' | 'media' | 'inbox' | 'event'
 
 
 /* رفع السيرة الذاتية PDF (عربي + إنجليزي) — يحفظ الرابط في site_settings/cv
@@ -202,7 +203,7 @@ function Panel({ email }: { email: string }) {
   const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const initialTab = (params.get('tab') as Tab) || 'dashboard'
   const editSlug = params.get('edit') || undefined
-  const [tab, setTab] = useState<Tab>(['dashboard','articles','books','papers','media','inbox','event'].includes(initialTab) ? initialTab : 'dashboard')
+  const [tab, setTab] = useState<Tab>(['dashboard','lab','articles','books','papers','media','inbox','event'].includes(initialTab) ? initialTab : 'dashboard')
   const cms = useCmsContent({ includeHidden: true })
 
   const signOut = async () => {
@@ -225,7 +226,7 @@ function Panel({ email }: { email: string }) {
         </div>
 
         <div className="mb-8 flex flex-wrap gap-2">
-          {([['dashboard', 'المؤشرات'], ['articles', 'المقالات'], ['books', 'الكتب'], ['papers', 'الأبحاث'], ['media', 'الإعلام'], ['inbox', 'الرسائل'], ['event', 'اللقاءات']] as [Tab, string][]).map(([k, label]) => (
+          {([['dashboard', 'المؤشرات'], ['lab', 'المختبر'], ['articles', 'المقالات'], ['books', 'الكتب'], ['papers', 'الأبحاث'], ['media', 'الإعلام'], ['inbox', 'الرسائل'], ['event', 'اللقاءات']] as [Tab, string][]).map(([k, label]) => (
             <button key={k} onClick={() => setTab(k)}
               className={`rounded-full px-5 py-2 text-[.88rem] transition-colors ${tab === k ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}>
               {label}
@@ -236,6 +237,7 @@ function Panel({ email }: { email: string }) {
         {cms.error && <p className="mb-5 rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.85rem] text-soft">تعذّر تحديث المحتوى الحي: {cms.error}</p>}
         {cms.loading && <p className="mb-5 text-[.84rem] text-soft">أحمّل آخر تعديلات المحتوى…</p>}
         {tab === 'dashboard' && <><CvPdfCard /><div className="mt-5"><VoiceBakeoffCard /></div><div className="mt-5"><Indicators articles={cms.articles} /></div></>}
+        {tab === 'lab' && <IntelligenceLab articles={cms.articles} />}
         {tab === 'articles' && <ContentManager openSlug={editSlug} kind="article" items={cms.articles as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
         {tab === 'books' && <ContentManager openSlug={editSlug} kind="book" items={cms.books as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
         {tab === 'papers' && <ContentManager openSlug={editSlug} kind="paper" items={cms.papers as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
@@ -248,7 +250,7 @@ function Panel({ email }: { email: string }) {
 }
 
 /* ── صندوق الرسائل الواردة — استشاراتك وطلبات التعاون ── */
-type Message = { id: string; name?: string; email?: string; topic?: string; message?: string; createdAt?: { seconds: number } }
+type Message = { id: string; name?: string; email?: string; topic?: string; intent?: string; quality?: string; message?: string; createdAt?: { seconds: number } }
 
 function InboxPanel() {
   const [items, setItems] = useState<Message[]>([])
@@ -293,6 +295,8 @@ function InboxPanel() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="rounded-full bg-accent/10 px-3 py-1 text-[.75rem] font-semibold text-accent">{m.topic || 'أخرى'}</span>
+              {m.intent && <span className="rounded-full border border-hair px-3 py-1 text-[.72rem] text-soft">{m.intent}</span>}
+              {m.quality && <span className="rounded-full border border-hair px-3 py-1 text-[.72rem] text-soft">{m.quality}</span>}
               <span className="font-semibold text-ink">{m.name}</span>
               <span className="text-[.85rem] text-soft" dir="ltr">{m.email}</span>
             </div>

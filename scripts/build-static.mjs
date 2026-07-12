@@ -139,6 +139,403 @@ function stripManagedHead(html) {
 const SHOW_EN = /export const SHOW_EN_TOGGLE = true/.test(src)
 const LANG_PAIRS = SHOW_EN ? { '/': '/en', '/cv': '/en/cv', '/research': '/en/research' } : {}
 
+const bodiesPath = resolve(ROOT, 'src/data/bodies.json')
+const bodies = existsSync(bodiesPath) ? JSON.parse(readFileSync(bodiesPath, 'utf8')) : {}
+
+function generateBodyHtml(path, lang = 'ar') {
+  const en = lang === 'en'
+  // Header
+  const headerHtml = en ? `
+    <header style="border-bottom: 1px solid rgba(62, 92, 120, 0.1); padding: 1.5rem 1rem;">
+      <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div style="font-size: 1.5rem; font-weight: bold; color: #15161A;">د. أحمد حسين الفيلكاوي</div>
+        <nav style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+          <a href="/en" style="color: #3E5C78; text-decoration: none; font-weight: 500;">Home</a>
+          <a href="/en/cv" style="color: #3E5C78; text-decoration: none; font-weight: 500;">CV</a>
+          <a href="/en/research" style="color: #3E5C78; text-decoration: none; font-weight: 500;">Research</a>
+        </nav>
+      </div>
+    </header>
+  ` : `
+    <header style="border-bottom: 1px solid rgba(62, 92, 120, 0.1); padding: 1.5rem 1rem;" dir="rtl">
+      <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div style="font-size: 1.5rem; font-weight: bold; font-family: 'El Messiri', serif; color: #15161A;">د. أحمد حسين الفيلكاوي</div>
+        <nav style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+          <a href="/" style="color: #3E5C78; text-decoration: none; font-weight: 500;">الرئيسية</a>
+          <a href="/articles" style="color: #3E5C78; text-decoration: none; font-weight: 500;">المقالات</a>
+          <a href="/publications" style="color: #3E5C78; text-decoration: none; font-weight: 500;">الكتب</a>
+          <a href="/research" style="color: #3E5C78; text-decoration: none; font-weight: 500;">الأبحاث</a>
+          <a href="/cv" style="color: #3E5C78; text-decoration: none; font-weight: 500;">السيرة</a>
+          <a href="/about" style="color: #3E5C78; text-decoration: none; font-weight: 500;">حول</a>
+          <a href="/contact" style="color: #3E5C78; text-decoration: none; font-weight: 500;">اتصل بي</a>
+        </nav>
+      </div>
+    </header>
+  `
+
+  // Footer
+  const footerHtml = en ? `
+    <footer style="background: #111215; color: #EAEAE7; padding: 3rem 1rem; margin-top: 4rem; text-align: center;">
+      <div style="max-width: 1200px; margin: 0 auto;">
+        <p style="margin-bottom: 1rem; font-weight: bold;">د. أحمد حسين الفيلكاوي</p>
+        <p style="color: #8AADCC; font-size: 0.9rem;">Professor of Educational Technology and Artificial Intelligence</p>
+        <p style="font-size: 0.8rem; color: #626A76; margin-top: 1.5rem;">&copy; ${new Date().getFullYear()} All Rights Reserved.</p>
+      </div>
+    </footer>
+  ` : `
+    <footer style="background: #111215; color: #EAEAE7; padding: 3rem 1rem; margin-top: 4rem; text-align: center;" dir="rtl">
+      <div style="max-width: 1200px; margin: 0 auto;">
+        <p style="margin-bottom: 1rem; font-weight: bold; font-family: 'El Messiri', serif; font-size: 1.25rem;">د. أحمد حسين الفيلكاوي</p>
+        <p style="color: #8AADCC; font-size: 0.9rem;">أستاذ تكنولوجيا التعليم والذكاء الاصطناعي</p>
+        <p style="font-size: 0.8rem; color: #626A76; margin-top: 1.5rem;">&copy; ${new Date().getFullYear()} جميع الحقوق محفوظة.</p>
+      </div>
+    </footer>
+  `
+
+  let contentHtml = ''
+
+  if (path === '/' || path === '/en') {
+    if (en) {
+      contentHtml = `
+        <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem; text-align: center;">
+          <h1 style="font-size: 3rem; margin-bottom: 1rem; font-weight: bold; color: #15161A;">I keep the human at the heart of the machine.</h1>
+          <p style="font-size: 1.25rem; color: #626A76; line-height: 1.6; margin-bottom: 2rem;">
+            Official website of Dr. Ahmad H. Alfailakawi, Professor of Educational Technology and Artificial Intelligence in Kuwait.
+          </p>
+          <div style="background: rgba(62, 92, 120, 0.05); padding: 2rem; border-radius: 8px; margin-bottom: 3rem; text-align: left;">
+            <h2 style="font-size: 1.5rem; margin-bottom: 1rem; font-weight: bold; color: #3E5C78;">Academic Bio</h2>
+            <p style="line-height: 1.7; color: #15161A;">
+              Ph.D. in Education, Educational Technology major from University of Northern Colorado. Associate Professor at College of Basic Education (PAAET) and delegated professor at College of Education in Kuwait University. Expert and Consultant at Ministry of Information.
+            </p>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 3rem;">
+            <div style="padding: 1.5rem; border: 1px solid rgba(62, 92, 120, 0.1); border-radius: 6px;">
+              <h3 style="font-size: 2rem; color: #3E5C78; font-weight: bold; margin-bottom: 0.5rem;">${nBooks}</h3>
+              <p style="color: #626A76; font-size: 0.9rem; margin: 0;">Published Books</p>
+            </div>
+            <div style="padding: 1.5rem; border: 1px solid rgba(62, 92, 120, 0.1); border-radius: 6px;">
+              <h3 style="font-size: 2rem; color: #3E5C78; font-weight: bold; margin-bottom: 0.5rem;">${nPapers}</h3>
+              <p style="color: #626A76; font-size: 0.9rem; margin: 0;">Peer-reviewed Papers</p>
+            </div>
+            <div style="padding: 1.5rem; border: 1px solid rgba(62, 92, 120, 0.1); border-radius: 6px;">
+              <h3 style="font-size: 2rem; color: #3E5C78; font-weight: bold; margin-bottom: 0.5rem;">${articles.length}</h3>
+              <p style="color: #626A76; font-size: 0.9rem; margin: 0;">Intellectual Articles</p>
+            </div>
+          </div>
+        </main>
+      `
+    } else {
+      contentHtml = `
+        <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem; text-align: center;" dir="rtl">
+          <h1 style="font-size: 3rem; margin-bottom: 1.5rem; font-family: 'El Messiri', serif; font-weight: bold; color: #15161A; line-height: 1.2;">أُبقي الإنسان<br>في قلب الآلة.</h1>
+          <p style="font-size: 1.25rem; color: #626A76; line-height: 1.7; margin-bottom: 2.5rem; font-family: 'Tajawal', sans-serif;">
+            الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، الكاتب والباحث والمستشار التربوي الكويتي.
+          </p>
+          <div style="background: rgba(62, 92, 120, 0.05); padding: 2rem; border-radius: 8px; margin-bottom: 3rem; text-align: right; border-right: 4px solid #3E5C78;">
+            <h2 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'El Messiri', serif; font-weight: bold; color: #3E5C78;">السيرة الأكاديمية والمهنية</h2>
+            <p style="line-height: 1.8; color: #15161A; font-family: 'Tajawal', sans-serif;">
+              حاصل على دكتوراه الفلسفة في التربية، تخصص تكنولوجيا التعليم من جامعة شمال كولورادو. أستاذ مشارك في كلية التربية الأساسية (PAAET) وأستاذ منتدب في كلية التربية بجامعة الكويت. خبير ومستشار في وزارة الإعلام والمجلس الوطني للثقافة والفنون والآداب ومكتبة الكويت الوطنية والهيئة العامة للشباب.
+            </p>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 3rem; font-family: 'Tajawal', sans-serif;">
+            <div style="padding: 1.5rem; border: 1px solid rgba(62, 92, 120, 0.1); border-radius: 6px;">
+              <h3 style="font-size: 2rem; color: #3E5C78; font-weight: bold; margin-bottom: 0.5rem;">${nBooks}</h3>
+              <p style="color: #626A76; font-size: 0.9rem; margin: 0;">كتب منشورة</p>
+            </div>
+            <div style="padding: 1.5rem; border: 1px solid rgba(62, 92, 120, 0.1); border-radius: 6px;">
+              <h3 style="font-size: 2rem; color: #3E5C78; font-weight: bold; margin-bottom: 0.5rem;">${nPapers}</h3>
+              <p style="color: #626A76; font-size: 0.9rem; margin: 0;">أبحاثاً محكّمة</p>
+            </div>
+            <div style="padding: 1.5rem; border: 1px solid rgba(62, 92, 120, 0.1); border-radius: 6px;">
+              <h3 style="font-size: 2rem; color: #3E5C78; font-weight: bold; margin-bottom: 0.5rem;">${articles.length}</h3>
+              <p style="color: #626A76; font-size: 0.9rem; margin: 0;">مقالات فكرية</p>
+            </div>
+          </div>
+        </main>
+      `
+    }
+  } else if (path === '/articles') {
+    const listHtml = articles.map(a => `
+      <article style="margin-bottom: 2.5rem; border-bottom: 1px solid rgba(62, 92, 120, 0.1); padding-bottom: 2rem; text-align: right;">
+        <h2 style="font-size: 1.75rem; font-family: 'El Messiri', serif; margin-bottom: 0.75rem;">
+          <a href="/articles/${a.slug}" style="color: #15161A; text-decoration: none; transition: color 0.2s;">${esc(a.title)}</a>
+        </h2>
+        <div style="color: #626A76; font-size: 0.9rem; margin-bottom: 1rem; font-family: 'Tajawal', sans-serif;">
+          <span>${esc(a.cat)}</span> &middot; <span>${esc(a.date)}</span>
+        </div>
+        <p style="color: #15161A; line-height: 1.7; font-size: 1.05rem; font-family: 'Tajawal', sans-serif;">${esc(a.excerpt)}</p>
+        <div style="margin-top: 1rem;">
+          <a href="/articles/${a.slug}" style="color: #3E5C78; text-decoration: none; font-weight: bold; font-size: 0.95rem; font-family: 'Tajawal', sans-serif;">اقرأ المقال بالكامل &larr;</a>
+        </div>
+      </article>
+    `).join('')
+
+    contentHtml = `
+      <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem;" dir="rtl">
+        <h1 style="font-size: 2.5rem; font-family: 'El Messiri', serif; font-weight: bold; margin-bottom: 1rem; text-align: right; color: #15161A;">مقالاتي الفكرية</h1>
+        <p style="font-size: 1.15rem; color: #626A76; line-height: 1.7; margin-bottom: 3rem; text-align: right; font-family: 'Tajawal', sans-serif;">
+          أرشيف المقالات الفكرية والتربوية والتقنية المنشورة في جريدة الجريدة وجريدة القبس ومختلف المنابر الثقافية.
+        </p>
+        <div style="margin-top: 2rem;">
+          ${listHtml}
+        </div>
+      </main>
+    `
+  } else if (path.startsWith('/articles/')) {
+    const slug = path.split('/').pop()
+    const a = articles.find(x => x.slug === slug)
+    if (a) {
+      const bodyKey = a.slug + 'arabic'
+      const fullText = bodies[bodyKey] || bodies[a.slug] || a.excerpt
+      const paragraphs = fullText.split(/\n+/).filter(Boolean).map(p => `
+        <p style="line-height: 1.8; margin-bottom: 1.5rem; font-size: 1.15rem; color: #15161A; text-align: justify; font-family: 'Tajawal', sans-serif;">${esc(p)}</p>
+      `).join('')
+
+      contentHtml = `
+        <main style="max-width: 740px; margin: 4rem auto; padding: 0 1rem;" dir="rtl">
+          <div style="margin-bottom: 2rem; text-align: right;">
+            <a href="/articles" style="color: #3E5C78; text-decoration: none; font-weight: 500; font-family: 'Tajawal', sans-serif;">&rarr; العودة للمقالات</a>
+          </div>
+          <article>
+            <header style="margin-bottom: 3rem; text-align: right;">
+              <div style="color: #3E5C78; font-weight: bold; font-size: 1rem; margin-bottom: 0.5rem; font-family: 'Tajawal', sans-serif;">${esc(a.cat)}</div>
+              <h1 style="font-size: 2.5rem; font-family: 'El Messiri', serif; font-weight: bold; color: #15161A; margin-bottom: 1rem; line-height: 1.3;">${esc(a.title)}</h1>
+              <div style="color: #626A76; font-size: 0.95rem; font-family: 'Tajawal', sans-serif;">
+                تاريخ النشر: <span>${esc(a.date)}</span> &middot; الكاتب: د. أحمد حسين الفيلكاوي
+              </div>
+            </header>
+            <section style="margin-top: 2rem;">
+              ${paragraphs}
+            </section>
+          </article>
+        </main>
+      `
+    }
+  } else if (path === '/publications') {
+    const booksHtml = books.map(b => `
+      <div style="margin-bottom: 3rem; border: 1px solid rgba(62, 92, 120, 0.1); padding: 2rem; border-radius: 8px; text-align: right;">
+        <h2 style="font-size: 1.75rem; font-family: 'El Messiri', serif; margin-bottom: 0.5rem; color: #15161A;">
+          <a href="/publications/${b.slug}" style="color: #15161A; text-decoration: none;">${esc(b.title)}</a>
+        </h2>
+        <p style="color: #626A76; font-size: 1.05rem; line-height: 1.7; font-family: 'Tajawal', sans-serif; margin-bottom: 1.5rem;">${esc(b.desc)}</p>
+        <div>
+          <a href="/publications/${b.slug}" style="color: #3E5C78; text-decoration: none; font-weight: bold; font-family: 'Tajawal', sans-serif;">عرض تفاصيل الكتاب &larr;</a>
+        </div>
+      </div>
+    `).join('')
+
+    contentHtml = `
+      <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem;" dir="rtl">
+        <h1 style="font-size: 2.5rem; font-family: 'El Messiri', serif; font-weight: bold; margin-bottom: 1rem; text-align: right; color: #15161A;">الكتب والمؤلفات</h1>
+        <p style="font-size: 1.15rem; color: #626A76; line-height: 1.7; margin-bottom: 3rem; text-align: right; font-family: 'Tajawal', sans-serif;">
+          المؤلفات والكتب العلمية والتربوية والمنهجية المنشورة للدكتور أحمد حسين الفيلكاوي في مجالات تكنولوجيا التعليم والتغيير المعرفي.
+        </p>
+        <div style="margin-top: 2rem;">
+          ${booksHtml}
+        </div>
+      </main>
+    `
+  } else if (path.startsWith('/publications/')) {
+    const slug = path.split('/').pop()
+    const b = books.find(x => x.slug === slug)
+    if (b) {
+      contentHtml = `
+        <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem;" dir="rtl">
+          <div style="margin-bottom: 2rem; text-align: right;">
+            <a href="/publications" style="color: #3E5C78; text-decoration: none; font-weight: 500; font-family: 'Tajawal', sans-serif;">&rarr; العودة للكتب</a>
+          </div>
+          <article style="text-align: right;">
+            <header style="margin-bottom: 2rem;">
+              <h1 style="font-size: 2.5rem; font-family: 'El Messiri', serif; font-weight: bold; color: #15161A; margin-bottom: 1rem;">كتاب: ${esc(b.title)}</h1>
+              <p style="color: #626A76; font-size: 1.05rem; font-family: 'Tajawal', sans-serif;">المؤلف: د. أحمد حسين الفيلكاوي</p>
+            </header>
+            <section style="background: rgba(62, 92, 120, 0.03); padding: 2.5rem; border-radius: 8px; border-right: 4px solid #3E5C78; margin-bottom: 2rem;">
+              <p style="line-height: 1.8; font-size: 1.15rem; color: #15161A; font-family: 'Tajawal', sans-serif; margin: 0;">${esc(b.desc)}</p>
+            </section>
+          </article>
+        </main>
+      `
+    }
+  } else if (path === '/research' || path === '/en/research') {
+    if (en) {
+      const papersHtml = papers.map(p => `
+        <div style="margin-bottom: 2rem; border-bottom: 1px solid rgba(62, 92, 120, 0.1); padding-bottom: 1.5rem; text-align: left;">
+          <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; color: #15161A;">
+            <a href="/research/${p.slug}" style="color: #15161A; text-decoration: none;">${esc(p.title)}</a>
+          </h2>
+          <p style="color: #626A76; font-size: 0.95rem; margin-bottom: 0.5rem;">${esc(p.desc)}</p>
+          <p style="color: #3E5C78; font-size: 0.85rem; font-weight: 500; margin: 0;">Co-author: د. عبدالعزيز دخيل العنزي</p>
+        </div>
+      `).join('')
+
+      contentHtml = `
+        <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem;">
+          <h1 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 1rem; text-align: left; color: #15161A;">Scholarly Contributions</h1>
+          <p style="font-size: 1.1rem; color: #626A76; line-height: 1.6; margin-bottom: 3rem; text-align: left;">
+            Peer-reviewed papers and academic contributions on educational technology, virtual classrooms, and e-learning systems.
+          </p>
+          <div style="margin-top: 2rem;">
+            ${papersHtml}
+          </div>
+        </main>
+      `
+    } else {
+      const papersHtml = papers.map(p => `
+        <div style="margin-bottom: 2rem; border-bottom: 1px solid rgba(62, 92, 120, 0.1); padding-bottom: 1.5rem; text-align: right;">
+          <h2 style="font-size: 1.5rem; font-family: 'El Messiri', serif; margin-bottom: 0.5rem; color: #15161A;">
+            <a href="/research/${p.slug}" style="color: #15161A; text-decoration: none;">${esc(p.title)}</a>
+          </h2>
+          <p style="color: #626A76; font-size: 0.95rem; font-family: 'Tajawal', sans-serif; margin-bottom: 0.5rem;">${esc(p.desc)}</p>
+          <p style="color: #3E5C78; font-size: 0.85rem; font-family: 'Tajawal', sans-serif; font-weight: 500; margin: 0;">الباحث المشارك: د. عبدالعزيز دخيل العنزي</p>
+        </div>
+      `).join('')
+
+      contentHtml = `
+        <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem;" dir="rtl">
+          <h1 style="font-size: 2.5rem; font-family: 'El Messiri', serif; font-weight: bold; margin-bottom: 1rem; text-align: right; color: #15161A;">المساهمات والأوراق العلمية المحكّمة</h1>
+          <p style="font-size: 1.15rem; color: #626A76; line-height: 1.7; margin-bottom: 3rem; text-align: right; font-family: 'Tajawal', sans-serif;">
+            الأبحاث والدراسات العلمية المحكّمة المنشورة في المجلات والدوريات الأكاديمية العالمية والمحلية في مجالات تكنولوجيا التعليم والتحول الرقمي.
+          </p>
+          <div style="margin-top: 2rem;">
+            ${papersHtml}
+          </div>
+        </main>
+      `
+    }
+  } else if (path.startsWith('/research/')) {
+    const slug = path.split('/').pop()
+    const p = papers.find(x => x.slug === slug)
+    if (p) {
+      contentHtml = `
+        <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem;" dir="rtl">
+          <div style="margin-bottom: 2rem; text-align: right;">
+            <a href="/research" style="color: #3E5C78; text-decoration: none; font-weight: 500; font-family: 'Tajawal', sans-serif;">&rarr; العودة للأبحاث</a>
+          </div>
+          <article style="text-align: right;">
+            <header style="margin-bottom: 2rem;">
+              <h1 style="font-size: 2.25rem; font-family: 'El Messiri', serif; font-weight: bold; color: #15161A; margin-bottom: 1rem; line-height: 1.3;">بحث محكّم: ${esc(p.title)}</h1>
+              <p style="color: #626A76; font-size: 1.05rem; font-family: 'Tajawal', sans-serif;">الباحث الرئيسي: د. أحمد حسين الفيلكاوي &middot; الباحث المشارك: د. عبدالعزيز دخيل العنزي</p>
+            </header>
+            <section style="background: rgba(62, 92, 120, 0.03); padding: 2.5rem; border-radius: 8px; border-right: 4px solid #3E5C78; margin-bottom: 2rem;">
+              <p style="line-height: 1.8; font-size: 1.15rem; color: #15161A; font-family: 'Tajawal', sans-serif; margin: 0;">${esc(p.desc)}</p>
+            </section>
+          </article>
+        </main>
+      `
+    }
+  } else if (path === '/cv' || path === '/en/cv') {
+    if (en) {
+      contentHtml = `
+        <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem;">
+          <h1 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 1.5rem; color: #15161A;">Academic Curriculum Vitae</h1>
+          <p style="font-size: 1.15rem; color: #626A76; line-height: 1.6; margin-bottom: 3rem;">
+            Dr. Ahmad H. Alfailakawi - Professor of Educational Technology and AI.
+          </p>
+          
+          <section style="margin-bottom: 3rem;">
+            <h2 style="font-size: 1.75rem; font-weight: bold; color: #3E5C78; border-bottom: 2px solid rgba(62, 92, 120, 0.1); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">Education</h2>
+            <ul style="list-style-type: none; padding: 0; line-height: 1.8;">
+              <li style="margin-bottom: 1rem;">
+                <strong>Ph.D. in Education (Educational Technology)</strong><br>
+                University of Northern Colorado, Greeley, Colorado - Summa Cum Laude
+              </li>
+              <li style="margin-bottom: 1rem;">
+                <strong>Master in Educational Technology</strong><br>
+                University of Northern Colorado - Summa Cum Laude
+              </li>
+              <li style="margin-bottom: 1rem;">
+                <strong>B.Ed. in Educational Technology</strong><br>
+                The Public Authority for Applied Education and Training (PAAET) - Summa Cum Laude
+              </li>
+            </ul>
+          </section>
+
+          <section style="margin-bottom: 3rem;">
+            <h2 style="font-size: 1.75rem; font-weight: bold; color: #3E5C78; border-bottom: 2px solid rgba(62, 92, 120, 0.1); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">Academic Teaching</h2>
+            <ul style="list-style-type: none; padding: 0; line-height: 1.8;">
+              <li style="margin-bottom: 1rem;">
+                <strong>Associate Professor</strong> (Jan 2020 - Present)<br>
+                College of Basic Education, PAAET
+              </li>
+              <li style="margin-bottom: 1rem;">
+                <strong>Assistant Professor</strong> (Until Jan 2020)<br>
+                College of Basic Education, PAAET
+              </li>
+              <li style="margin-bottom: 1rem;">
+                <strong>Delegated Professor</strong><br>
+                College of Education, Kuwait University
+              </li>
+            </ul>
+          </section>
+        </main>
+      `
+    } else {
+      contentHtml = `
+        <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem;" dir="rtl">
+          <h1 style="font-size: 2.5rem; font-family: 'El Messiri', serif; font-weight: bold; margin-bottom: 1.5rem; text-align: right; color: #15161A;">السيرة الأكاديمية والمهنية</h1>
+          <p style="font-size: 1.15rem; color: #626A76; line-height: 1.7; margin-bottom: 3rem; text-align: right; font-family: 'Tajawal', sans-serif;">
+            د. أحمد حسين الفيلكاوي - أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، الكاتب والمستشار التربوي.
+          </p>
+
+          <section style="margin-bottom: 3rem; text-align: right;">
+            <h2 style="font-size: 1.75rem; font-family: 'El Messiri', serif; font-weight: bold; color: #3E5C78; border-bottom: 2px solid rgba(62, 92, 120, 0.1); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">الدرجات الأكاديمية</h2>
+            <ul style="list-style-type: none; padding: 0; line-height: 2; font-family: 'Tajawal', sans-serif;">
+              <li style="margin-bottom: 1rem; border-right: 3px solid #3E5C78; padding-right: 1rem;">
+                <strong>دكتوراه الفلسفة في التربية — تكنولوجيا التعليم</strong><br>
+                جامعة شمال كولورادو، غريلي، كولورادو &middot; بدرجة امتياز مع مرتبة الشرف
+              </li>
+              <li style="margin-bottom: 1rem; border-right: 3px solid #3E5C78; padding-right: 1rem;">
+                <strong>ماجستير في تكنولوجيا التعليم</strong><br>
+                جامعة شمال كولورادو &middot; بدرجة امتياز مع مرتبة الشرف
+              </li>
+              <li style="margin-bottom: 1rem; border-right: 3px solid #3E5C78; padding-right: 1rem;">
+                <strong>بكالوريوس التربية في تكنولوجيا التعليم</strong><br>
+                الهيئة العامة للتعليم التطبيقي والتدريب (PAAET) &middot; بدرجة امتياز مع مرتبة الشرف
+              </li>
+            </ul>
+          </section>
+
+          <section style="margin-bottom: 3rem; text-align: right;">
+            <h2 style="font-size: 1.75rem; font-family: 'El Messiri', serif; font-weight: bold; color: #3E5C78; border-bottom: 2px solid rgba(62, 92, 120, 0.1); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">الخبرة الأكاديمية والتدريس</h2>
+            <ul style="list-style-type: none; padding: 0; line-height: 2; font-family: 'Tajawal', sans-serif;">
+              <li style="margin-bottom: 1rem;">
+                <strong>أستاذ مشارك</strong> (يناير 2020 حتى الآن) &middot; كلية التربية الأساسية (PAAET)
+              </li>
+              <li style="margin-bottom: 1rem;">
+                <strong>أستاذ مساعد</strong> (حتى يناير 2020) &middot; كلية التربية الأساسية (PAAET)
+              </li>
+              <li style="margin-bottom: 1rem;">
+                <strong>أستاذ منتدب</strong> &middot; كلية التربية بجامعة الكويت
+              </li>
+            </ul>
+          </section>
+
+          <section style="margin-bottom: 3rem; text-align: right;">
+            <h2 style="font-size: 1.75rem; font-family: 'El Messiri', serif; font-weight: bold; color: #3E5C78; border-bottom: 2px solid rgba(62, 92, 120, 0.1); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">الاستشارات والخبرة المهنية</h2>
+            <ul style="list-style-type: none; padding: 0; line-height: 2; font-family: 'Tajawal', sans-serif;">
+              <li style="margin-bottom: 0.75rem;">&bull; خبير ومستشار مكتب الوزير &middot; وزارة الإعلام</li>
+              <li style="margin-bottom: 0.75rem;">&bull; مستشار &middot; المجلس الوطني للثقافة والفنون والآداب</li>
+              <li style="margin-bottom: 0.75rem;">&bull; مستشار &middot; مكتبة الكويت الوطنية</li>
+              <li style="margin-bottom: 0.75rem;">&bull; خبير ومستشار &middot; الهيئة العامة للشباب</li>
+            </ul>
+          </section>
+        </main>
+      `
+    }
+  } else {
+    contentHtml = `
+      <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem; text-align: ${en ? 'left' : 'right'};" ${en ? '' : 'dir="rtl"'}>
+        <h1 style="font-size: 2.5rem; font-family: ${en ? 'inherit' : "'El Messiri', serif"}; font-weight: bold; color: #15161A; margin-bottom: 1rem;">د. أحمد حسين الفيلكاوي</h1>
+        <p style="font-size: 1.15rem; color: #626A76; line-height: 1.7; font-family: ${en ? 'inherit' : "'Tajawal', sans-serif"};">
+          أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · باحث · مستشار تربوي
+        </p>
+      </main>
+    `
+  }
+
+  return `${headerHtml}\n${contentHtml}\n${footerHtml}`
+}
+
 function render({ path, title, desc, type = 'website', iso, cat, image, robots, lang = 'ar' }) {
   const en = lang === 'en'
   // ما دامت المرآة مخفية: صفحاتها الإنجليزية لا تُفهرس
@@ -213,8 +610,11 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
     <script type="application/ld+json">${JSON.stringify(ld)}</script>
   `
 
-  const html = stripManagedHead(shell)
-  return html.replace('</head>', `${head}\n  </head>`)
+  let html = stripManagedHead(shell)
+  html = html.replace('</head>', `${head}\n  </head>`)
+  const bodyHtml = generateBodyHtml(path, lang)
+  html = html.replace('<div id="root"></div>', `<div id="root">${bodyHtml}</div>`)
+  return html
 }
 
 function writeRoute(path, html) {
@@ -269,7 +669,7 @@ function generateArticleOg() {
   ${titleLines.map((line, i) => `<text x="1080" y="${226 + i * 74}" text-anchor="end" class="display ink" font-size="58" font-weight="700">${attr(line)}</text>`).join('\n  ')}
   ${excerptLines.map((line, i) => `<text x="1080" y="${466 + i * 42}" text-anchor="end" class="soft" font-size="29" font-weight="400">${attr(line)}</text>`).join('\n  ')}
   <rect x="898" y="526" width="182" height="4" class="accent"/>
-  <text x="1080" y="564" text-anchor="end" class="ink" font-size="26" font-weight="700">د. أحمد الفيلكاوي</text>
+  <text x="1080" y="564" text-anchor="end" class="ink" font-size="26" font-weight="700">د. أحمد حسين الفيلكاوي</text>
   <text x="1080" y="596" text-anchor="end" class="soft" font-size="21">dr-alfailakawi.com</text>
 </svg>`
     writeFileSync(resolve(out, `${article.slug}.svg`), svg, 'utf8')
@@ -317,7 +717,7 @@ const items = articles.slice(0, 30).map((a) => `    <item>
 
 writeFileSync(resolve(DIST, 'feed.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"><channel>
-    <title>د. أحمد الفيلكاوي — مقالات فكرية</title>
+    <title>د. أحمد حسين الفيلكاوي — مقالات فكرية</title>
     <link>${SITE}</link>
     <description>مقالات في التعليم والتقنية والمجتمع.</description>
     <language>ar</language>
@@ -364,7 +764,7 @@ const podcastEpisodes = episodeItem(articles, (a) => {
 writeFileSync(resolve(DIST, 'podcast.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>د. أحمد الفيلكاوي — مقالاتي المسموعة · Dr. Ahmad Alfailakawi</title>
+    <title>د. أحمد حسين الفيلكاوي — مقالاتي المسموعة · Dr. Ahmad Alfailakawi</title>
     <link>${SITE}</link>
     <language>ar</language>
     <copyright>© د. أحمد حسين الفيلكاوي</copyright>
@@ -372,7 +772,7 @@ writeFileSync(resolve(DIST, 'podcast.xml'), `<?xml version="1.0" encoding="UTF-8
 
 My reflections on education, technology, and society — and how we keep the human at the heart of the machine. In my own voice, essay by essay. A new episode with every article.
 
-تُنتج النسخة الصوتية باستخدام تقنيات صوتية متقدمة، تحت الإشراف والتحرير الكامل للدكتور أحمد الفيلكاوي.</description>
+تُنتج النسخة الصوتية باستخدام تقنيات صوتية متقدمة، تحت الإشراف والتحرير الكامل للدكتور أحمد حسين الفيلكاوي.</description>
     <itunes:author>د. أحمد حسين الفيلكاوي · Dr. Ahmad Alfailakawi</itunes:author>
     <itunes:summary>أفكاري عن التعليم والتقنية والمجتمع، وكيف نُبقي الإنسان في قلب الآلة — بصوتي. · My reflections on education, technology, and society, in my own voice.</itunes:summary>
     <itunes:type>episodic</itunes:type>

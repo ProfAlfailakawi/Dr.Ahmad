@@ -67,7 +67,7 @@ async function pickAndSummarize(pool) {
     ? [env.GEMINI_MODEL]
     : ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-pro-latest']
 
-  const prompt = `أنت محرر أكاديمي لموقع أستاذ تكنولوجيا التعليم د. أحمد الفيلكاوي (الكويت).
+  const prompt = `أنت محرر أكاديمي لموقع أستاذ تكنولوجيا التعليم د. أحمد حسين الفيلكاوي (الكويت).
 أمامك مواد اليوم من مصادر موثوقة، مرقّمة. اختر «الأنفع» واحدة فقط لقارئ عربي مهتم بالتعليم والتقنية والذكاء الاصطناعي.
 أعد JSON فقط بلا أي نص آخر، بهذه الحقول حصراً:
 {"pick": رقم_المادة_المختارة, "ar":"عنوان عربي دقيق يلخص المادة", "arNote":"سطر عربي واحد: لماذا تهم القارئ التربوي", "enNote":"one short English line on why it matters"}

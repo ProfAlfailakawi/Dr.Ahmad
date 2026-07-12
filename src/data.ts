@@ -13,8 +13,8 @@ export const SHOW_EN_TOGGLE = false
 import bodies from './data/bodies.json'
 
 export const profile = {
-  name: 'أحمد حسين الفيلكاوي',
-  fullName: 'أحمد حسين الفيلكاوي',
+  name: 'د. أحمد حسين الفيلكاوي',
+  fullName: 'د. أحمد حسين الفيلكاوي',
   eyebrow: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي',
   tagline: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · باحث · مستشار',
   scholar: 'https://scholar.google.com/citations?user=WVAtInIAAAAJ&hl=en',
@@ -935,7 +935,7 @@ export const NEWSLETTER_ENDPOINT = '' // مثال: 'https://formspree.io/f/xxxxx
 export const SITE_URL = ((import.meta as { env?: Record<string, string> }).env?.VITE_SITE_URL) || 'https://dr-alfailakawi.web.app'
 export const site = {
   url: SITE_URL,
-  title: 'د. أحمد الفيلكاوي — أستاذ تكنولوجيا التعليم',
+  title: 'د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم',
   // الأرقام تُحسب من المحتوى نفسه — تتجدّد تلقائياً مع أي إضافة
   description:
     `الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي. ${stats.books} كتب، ${stats.papers} بحثاً محكّماً، وأكثر من ${roundDown10(stats.articles)} مقالاً فكرياً في التعليم والتقنية والمجتمع، منذ ${stats.firstYear}.`,

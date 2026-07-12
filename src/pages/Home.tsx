@@ -719,7 +719,7 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 1.1, delay: 0.75, ease: EASE }}
                 >
-                  <img src="/portrait.jpg" alt={`د. ${profile.fullName}`} width={900} height={1350} fetchPriority="high" decoding="async" className="block h-auto w-full" />
+                  <img src="/portrait.jpg" alt={`د. ${profile.fullName}`} width={900} height={1350} fetchpriority="high" decoding="async" className="block h-auto w-full" />
                 </motion.div>
               </motion.div>
             </motion.div>

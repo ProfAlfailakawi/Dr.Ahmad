@@ -244,7 +244,7 @@ export default function App() {
             </div>
 
             <p className="text-brand-muted text-base sm:text-lg md:text-xl font-normal leading-relaxed max-w-2xl">
-              مرحباً بكم في الموقع الرسمي للبروفيسور المساعد <span className="font-semibold text-brand-dark">د. أحمد الفيلكاوي</span>. 
+              مرحباً بكم في الموقع الرسمي للبروفيسور المساعد <span className="font-semibold text-brand-dark">د. أحمد حسين الفيلكاوي</span>. 
               هنا تجتمع أصالة البحث التربوي مع طفرات الابتكار الرقمي والتصميم التعليمي، لنؤسس فضاءً أكاديمياً يتجاوز حدود الفصول التقليدية.
             </p>
 
@@ -396,7 +396,7 @@ export default function App() {
           <div className="max-w-7xl mx-auto space-y-12">
             
             <div className="text-center space-y-4 max-w-2xl mx-auto">
-              <span className="font-mono text-xs uppercase tracking-widest text-brand-accent block font-semibold">فلسفة د. أحمد الفيلكاوي</span>
+              <span className="font-mono text-xs uppercase tracking-widest text-brand-accent block font-semibold">فلسفة د. أحمد حسين الفيلكاوي</span>
               <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-brand-beige">الركائز التربوية والتعليمية</h2>
               <p className="text-gray-400 text-sm sm:text-base">
                 نؤمن بأن تكنولوجيا التعليم ليست مجرد أدوات وشاشات، بل فلسفة متكاملة تهدف لإعادة صياغة تجربة الاكتشاف وصقل المهارات لحل مشكلات العالم الحقيقي.
@@ -910,7 +910,7 @@ export default function App() {
               <span className="font-display font-extrabold text-lg text-brand-beige">{portfolioData.name}</span>
             </div>
             <p className="text-xs sm:text-sm text-gray-400 leading-relaxed max-w-md font-light">
-              موقع مكرس للتواصل والابتكار وتصميم بيئات التعلم الرقمية الذكية بإشراف د. أحمد الفيلكاوي، أستاذ تكنولوجيا التعليم المشارك بكلية التربية الأساسية بدولة الكويت.
+              موقع مكرس للتواصل والابتكار وتصميم بيئات التعلم الرقمية الذكية بإشراف د. أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم المشارك بكلية التربية الأساسية بدولة الكويت.
             </p>
           </div>
 

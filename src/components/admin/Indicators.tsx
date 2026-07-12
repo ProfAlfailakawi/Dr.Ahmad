@@ -83,19 +83,33 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       const db = await getDb()
       if (!db) throw new Error('Firebase غير متاح')
       const { collection, getDocs } = await import('firebase/firestore')
+      const failures: string[] = []
+      const safeDocs = async (name: string) => {
+        try {
+          return await getDocs(collection(db, name))
+        } catch (reason) {
+          const message = reason instanceof Error ? reason.message : 'تعذّر الجلب'
+          failures.push(`${name}: ${message}`)
+          return null
+        }
+      }
       const [snapshot, reportsSnapshot, healthSnapshot, journeysSnapshot, subscribersSnapshot] = await Promise.all([
-        getDocs(collection(db, 'views')),
-        getDocs(collection(db, 'admin_reports')),
-        getDocs(collection(db, 'site_health')),
-        getDocs(collection(db, 'journeys')),
-        getDocs(collection(db, 'subscribers')),
+        safeDocs('views'),
+        safeDocs('admin_reports'),
+        safeDocs('site_health'),
+        safeDocs('journeys'),
+        safeDocs('subscribers'),
       ])
-      setSubscribers(subscribersSnapshot.size)
-      setJourneys(journeysSnapshot.docs.map((item) => {
+      if (!snapshot) {
+        setRows([])
+        throw new Error('تعذّر جلب عدادات المشاهدة. غالبًا تحتاج تحديث صلاحية المشرف أو نشر قواعد Firestore الأخيرة.')
+      }
+      setSubscribers(subscribersSnapshot?.size || 0)
+      setJourneys((journeysSnapshot?.docs || []).map((item) => {
         const data = item.data() as { from?: string; to?: string; count?: number }
         return { id: item.id, from: data.from, to: data.to, count: Number(data.count || 0) }
       }))
-      const latestHealth = healthSnapshot.docs
+      const latestHealth = (healthSnapshot?.docs || [])
         .map((d) => d.data() as { date: string; status: string; issueCount: number; issues?: string[] })
         .sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0]
       setHealth(latestHealth || null)
@@ -103,11 +117,14 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         const data = item.data() as { count?: number; title?: string }
         return { id: item.id, count: Number(data.count || 0), title: data.title }
       }))
-      const latest = reportsSnapshot.docs
+      const latest = (reportsSnapshot?.docs || [])
         .map((item) => ({ ...(item.data() as MonthlyReport), period: String((item.data() as MonthlyReport).period || item.id) }))
         .filter((item) => /^\d{4}-\d{2}$/.test(item.period))
         .sort((left, right) => right.period.localeCompare(left.period))[0]
       setReport(latest || null)
+      if (failures.length) {
+        setError(`تنبيه: ظهرت المؤشرات الأساسية، لكن تعذّر جلب بعض التفاصيل (${failures.map((f) => f.split(':')[0]).join('، ')}).`)
+      }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر جلب المؤشرات')
     } finally {

@@ -4,10 +4,20 @@ import { Newsletter } from '../components/extras'
 import { useSeo } from '../components/seo'
 import { faqs, inboxLinks, testimonials } from '../data'
 
-/* «يتجدد وحده»: تدوير يومي حتمي — كل يوم يتقدّم الصف فيتغير الترتيب والوجوه أولاً
-   دون أي تدخل؛ ومع كل إضافة من لوحة التحكم (مختارات) يكبر المخزون. */
-const day = Math.floor(Date.now() / 864e5)
-const rotate = <T,>(arr: T[]): T[] => arr.length ? [...arr.slice(day % arr.length), ...arr.slice(0, day % arr.length)] : arr
+/* «يتجدد بذكاء»: ليس يومياً فيبدو آلياً، وليس أسبوعياً فيبدو جامداً.
+   يتبدّل غالباً كل ثلاثة أيام، ويتحرك قليلاً حول بداية الشهر ونهاية الأسبوع
+   لأنها أوقات طبيعية لوصول أسئلة وروابط تستحق الظهور. */
+function smartPulse() {
+  const now = new Date()
+  const dayIndex = Math.floor(Date.now() / 86_400_000)
+  const threeDayPulse = Math.floor(dayIndex / 3)
+  const weekendNudge = [4, 5].includes(now.getDay()) ? 1 : 0
+  const monthTurnNudge = now.getDate() <= 3 ? 1 : 0
+  return threeDayPulse + weekendNudge + monthTurnNudge
+}
+
+const pulse = smartPulse()
+const rotate = <T,>(arr: T[]): T[] => arr.length ? [...arr.slice(pulse % arr.length), ...arr.slice(0, pulse % arr.length)] : arr
 
 export default function Inbox() {
   useSeo({ title: 'من بريدي الوارد', path: '/inbox', description: 'مختارات من رسائل وروابط وصلتني، وأسئلة يتكرّر ورودها.' })

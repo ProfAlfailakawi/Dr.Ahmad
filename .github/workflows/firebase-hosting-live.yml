@@ -22,7 +22,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -35,8 +35,8 @@ jobs:
 
       - name: Verify Firebase service account secret
         run: |
-          if [ -z '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}' ]; then
-            echo 'Missing GitHub secret: FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2'
+          if [ -z '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}' ]; then
+            echo 'Missing GitHub secret: FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670'
             echo 'Add a Firebase service-account JSON with Hosting Admin permissions to this repository secret.'
             exit 1
           fi
@@ -45,6 +45,6 @@ jobs:
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
-          projectId: drahmad-8e9e2
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
+          projectId: gen-lang-client-0200723670
           channelId: live

@@ -91,9 +91,11 @@ export const staticQuestions: Question[] = [
 const d = (l: number | string) => String(l).replace(/[0-9]/g, (t) => '0123456789'[+t])
 
 function b(length: number) {
+  if (length <= 0) return 0
   const elapsed = Date.now() - new Date(LAUNCH_DATE).getTime()
-  const weeks = Math.floor(elapsed / (7 * 24 * 60 * 60 * 1000))
-  return Math.max(0, Math.min(length - 1, weeks))
+  const weeks = Math.max(0, Math.floor(elapsed / (7 * 24 * 60 * 60 * 1000)))
+  // دوران دائري: يتبدّل السؤال كل جمعة ولا يتوقف عند آخر سؤال — يعود للبداية
+  return weeks % length
 }
 
 function useCollectionData<T>(collectionName: string) {

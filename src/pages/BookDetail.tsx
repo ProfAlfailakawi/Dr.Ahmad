@@ -37,6 +37,9 @@ export default function BookDetail() {
                 <Reveal>{book.title}</Reveal>
               </h1>
             <OwnerEdit tab="books" slug={book.slug} className="mt-3" />
+              {(book as { coAuthors?: string }).coAuthors?.trim() && (
+                <p className="mt-4 text-[.92rem] text-soft">بالاشتراك مع {(book as { coAuthors?: string }).coAuthors}</p>
+              )}
               {book.desc && <p className="mt-5 text-[1.08rem] font-light leading-[1.9] text-ink/80">{book.desc}</p>}
 
               {book.isbn && (

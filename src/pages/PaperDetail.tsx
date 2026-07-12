@@ -60,7 +60,12 @@ export default function PaperDetail() {
               )}
               <div className="flex flex-wrap gap-4 py-5">
                 <dt className="w-32 shrink-0 text-[.85rem] text-soft">الباحث</dt>
-                <dd className="text-[.98rem] text-ink">{profile.fullName}</dd>
+                <dd className="text-[.98rem] text-ink">
+                  {profile.fullName}
+                  {(p as { coAuthors?: string }).coAuthors?.trim() && (
+                    <span className="text-soft"> — بالاشتراك مع {(p as { coAuthors?: string }).coAuthors}</span>
+                  )}
+                </dd>
               </div>
               {p.journal && (
                 <div className="flex flex-wrap gap-4 py-5">
@@ -92,6 +97,26 @@ export default function PaperDetail() {
                 </Link>
               </div>
             )}
+            {/* روابط الفهرسة الأكاديمية — تظهر فقط إن أُضيفت من لوحة التحكم */}
+            {(() => {
+              const links = p as { scholar?: string; researchgate?: string }
+              if (!links.scholar && !links.researchgate) return null
+              return (
+                <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-[.86rem]">
+                  <span className="text-soft">اطّلع على البحث أيضاً في:</span>
+                  {links.scholar && (
+                    <a href={links.scholar} target="_blank" rel="noreferrer" className="group font-semibold text-accent transition-opacity hover:opacity-70">
+                      Google Scholar <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1">←</span>
+                    </a>
+                  )}
+                  {links.researchgate && (
+                    <a href={links.researchgate} target="_blank" rel="noreferrer" className="group font-semibold text-accent transition-opacity hover:opacity-70">
+                      ResearchGate <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1">←</span>
+                    </a>
+                  )}
+                </div>
+              )
+            })()}
             <CiteButton title={p.title} year={(p.journal?.match(/20[0-2][0-9]/) || ['2022'])[0]} container={p.journal || 'بحث محكّم'} url={`https://dr-alfailakawi.com/research/${p.slug}`} />
           </FadeUp>
 

@@ -61,8 +61,8 @@ const labels: Record<ManagedKind, { singular: string; plural: string }> = {
 
 const editableFields: Record<ManagedKind, string[]> = {
   article: ['slug', 'title', 'iso', 'date', 'cat', 'excerpt', 'body', 'source', 'url'],
-  book: ['slug', 'title', 'isbn', 'desc', 'cover', 'pdf'],
-  paper: ['slug', 'title', 'meta', 'journal', 'source', 'url'],
+  book: ['slug', 'title', 'isbn', 'desc', 'cover', 'pdf', 'coAuthors'],
+  paper: ['slug', 'title', 'meta', 'journal', 'source', 'url', 'scholar', 'researchgate', 'coAuthors'],
   media: ['slug', 'title', 'outlet', 'url', 'iso', 'date'],
 }
 
@@ -170,8 +170,8 @@ function slugify(value: string) {
 function blank(kind: ManagedKind): Form {
   const iso = todayIso()
   if (kind === 'article') return { slug: '', title: '', iso, date: dateArabic(iso), cat: '', excerpt: '', body: '', source: '', url: '', _aiReady: '' }
-  if (kind === 'book') return { slug: '', title: '', isbn: '', desc: '', cover: '', pdf: '' }
-  if (kind === 'paper') return { slug: '', title: '', meta: '', journal: '', source: '', url: '' }
+  if (kind === 'book') return { slug: '', title: '', isbn: '', desc: '', cover: '', pdf: '', coAuthors: '' }
+  if (kind === 'paper') return { slug: '', title: '', meta: '', journal: '', source: '', url: '', scholar: '', researchgate: '', coAuthors: '' }
   return { slug: '', title: '', outlet: '', url: '', iso, date: dateArabic(iso) }
 }
 
@@ -426,6 +426,7 @@ function Editor({
               </div>
               <UploadField label="الغلاف" value={form.cover || ''} accept="image/jpeg,image/png,image/webp" folder="covers" slug={form.slug || form.title} maxMb={12} onChange={(value) => set('cover', value)} />
               <UploadField label="ملف PDF" value={form.pdf || ''} accept="application/pdf" folder="files" slug={form.slug || form.title} maxMb={100} onChange={(value) => set('pdf', value)} />
+              <Field label="مؤلفون مشاركون (اختياري)" hint="افصل بين الأسماء بفاصلة — تظهر «بالاشتراك مع…» في صفحة الكتاب."><input className={input} placeholder="مثال: د. فلان الفلاني، د. علّان العلّاني" value={form.coAuthors || ''} onChange={(event) => set('coAuthors', event.target.value)} /></Field>
             </>
           )}
 
@@ -439,6 +440,11 @@ function Editor({
               </div>
               <Field label="بيانات المجلة (اختياري)"><input className={input} value={form.journal || ''} onChange={(event) => set('journal', event.target.value)} /></Field>
               <UploadField label="رابط البحث أو PDF" value={form.source || form.url || ''} accept="application/pdf" folder="files" slug={form.slug || form.title} maxMb={100} onChange={(value) => { set('source', value); set('url', value) }} />
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field label="رابط Google Scholar (اختياري)" hint="يظهر كأيقونة في صفحة البحث إن مُلئ."><input className={input} dir="ltr" type="url" placeholder="https://scholar.google.com/…" value={form.scholar || ''} onChange={(event) => set('scholar', event.target.value)} /></Field>
+                <Field label="رابط ResearchGate (اختياري)"><input className={input} dir="ltr" type="url" placeholder="https://www.researchgate.net/…" value={form.researchgate || ''} onChange={(event) => set('researchgate', event.target.value)} /></Field>
+              </div>
+              <Field label="باحثون مشاركون (اختياري)" hint="افصل بين الأسماء بفاصلة — تظهر «بالاشتراك مع…» في صفحة البحث."><input className={input} placeholder="مثال: د. فلان الفلاني، د. علّان العلّاني" value={form.coAuthors || ''} onChange={(event) => set('coAuthors', event.target.value)} /></Field>
             </>
           )}
 

@@ -269,7 +269,7 @@ export function Accordion({
 }
 
 /* ---------- Nav: closed menu, opens full-screen ---------- */
-type NavItem = { to: string; label: string; allLabel?: string; sub?: { to: string; label: string }[] }
+type NavItem = { to: string; label: string; allLabel?: string; highlight?: boolean; sub?: { to: string; label: string }[] }
 const GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: 'هويتي الأكاديمية',
@@ -287,8 +287,8 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
         { to: '/search', label: 'البحث العميق' },
         { to: '/atlas', label: 'سماء المقالات' },
       ] },
+      { to: '/ask', label: 'اسأل مكتبتي', highlight: true },
       { to: '/thought-paths', label: 'مسار الفكرة' },
-      { to: '/ask', label: 'اسأل مكتبتي' },
       { to: '/media', label: 'الظهور الإعلامي' },
       { to: '/upcoming', label: 'اللقاءات القادمة' },
     ],
@@ -428,10 +428,11 @@ function Overlay({ close }: { close: () => void }) {
                         <Link
                           to={it.to}
                           onClick={close}
-                          className={`block py-1 font-display text-[1.15rem] font-medium leading-[1.5] transition-colors duration-300 hover:text-accent md:py-1.5 md:text-[1.35rem] ${
-                            loc.pathname === it.to ? 'text-accent' : 'text-ink'
+                          className={`flex items-center gap-2.5 py-1 font-display text-[1.15rem] font-medium leading-[1.5] transition-colors duration-300 hover:text-accent md:py-1.5 md:text-[1.35rem] ${
+                            loc.pathname === it.to ? 'text-accent' : it.highlight ? 'text-accent' : 'text-ink'
                           }`}
                         >
+                          {it.highlight && <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden />}
                           {it.label}
                         </Link>
                       )}

@@ -22,6 +22,8 @@ export type ManagedRecord = {
   body?: string
   source?: string
   url?: string
+  status?: string
+  scheduledAt?: string
   isbn?: string
   desc?: string
   cover?: string
@@ -60,7 +62,7 @@ const labels: Record<ManagedKind, { singular: string; plural: string }> = {
 }
 
 const editableFields: Record<ManagedKind, string[]> = {
-  article: ['slug', 'title', 'iso', 'date', 'cat', 'excerpt', 'body', 'source', 'url'],
+  article: ['slug', 'title', 'iso', 'date', 'cat', 'excerpt', 'body', 'source', 'url', 'status', 'scheduledAt'],
   book: ['slug', 'title', 'isbn', 'desc', 'cover', 'pdf', 'coAuthors'],
   paper: ['slug', 'title', 'meta', 'journal', 'source', 'url', 'scholar', 'researchgate', 'coAuthors'],
   media: ['slug', 'title', 'outlet', 'url', 'iso', 'date'],
@@ -149,6 +151,11 @@ function todayIso() {
   return `${get('year')}-${get('month')}-${get('day')}`
 }
 
+function localDateTimeValue(date = new Date(Date.now() + 60 * 60 * 1000)) {
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
 function slugify(value: string) {
   const arabic: Record<string, string> = {
     ا: 'a', أ: 'a', إ: 'i', آ: 'a', ب: 'b', ت: 't', ث: 'th', ج: 'j', ح: 'h', خ: 'kh',
@@ -169,7 +176,7 @@ function slugify(value: string) {
 
 function blank(kind: ManagedKind): Form {
   const iso = todayIso()
-  if (kind === 'article') return { slug: '', title: '', iso, date: dateArabic(iso), cat: '', excerpt: '', body: '', source: '', url: '', _aiReady: '' }
+  if (kind === 'article') return { slug: '', title: '', iso, date: dateArabic(iso), cat: '', excerpt: '', body: '', source: '', url: '', status: 'published', scheduledAt: '', _aiReady: '' }
   if (kind === 'book') return { slug: '', title: '', isbn: '', desc: '', cover: '', pdf: '', coAuthors: '' }
   if (kind === 'paper') return { slug: '', title: '', meta: '', journal: '', source: '', url: '', scholar: '', researchgate: '', coAuthors: '' }
   return { slug: '', title: '', outlet: '', url: '', iso, date: dateArabic(iso) }
@@ -177,6 +184,7 @@ function blank(kind: ManagedKind): Form {
 
 function asForm(kind: ManagedKind, item: ManagedRecord): Form {
   const form = Object.fromEntries(editableFields[kind].map((field) => [field, String(item[field] ?? '')]))
+  if (kind === 'article' && !form.status) form.status = 'published'
   if (kind === 'article' && form.cat && form.excerpt) form._aiReady = '1'
   return form
 }
@@ -193,6 +201,7 @@ function cleanData(kind: ManagedKind, form: Form) {
     if (!data.cat) data.cat = fallback.cat
     if (!data.excerpt) data.excerpt = fallback.excerpt
     data.excerpt = Array.from(data.excerpt.replace(/\s+/g, ' ').trim()).slice(0, 200).join('')
+    if (data.status !== 'scheduled') data.scheduledAt = ''
   }
   return data
 }
@@ -400,6 +409,32 @@ function Editor({
                 <Field label="التاريخ"><input className={input} dir="ltr" type="date" value={form.iso || ''} onChange={(event) => set('iso', event.target.value)} /></Field>
                 <Field label="التاريخ العربي (تلقائي)"><input className={input} value={form.date || ''} readOnly /></Field>
               </div>
+              <div className="rounded-2xl border border-hair bg-wash p-4">
+                <p className="text-[.82rem] font-semibold text-ink">النشر</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm((previous) => ({ ...previous, status: 'published', scheduledAt: '' }))}
+                    className={`rounded-full border px-4 py-2 text-[.82rem] transition-colors ${form.status === 'scheduled' ? 'border-hair text-soft hover:border-accent hover:text-accent' : 'border-accent bg-accent text-white'}`}
+                  >
+                    نشر الآن
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm((previous) => ({ ...previous, status: 'scheduled', scheduledAt: previous.scheduledAt || localDateTimeValue() }))}
+                    className={`rounded-full border px-4 py-2 text-[.82rem] transition-colors ${form.status === 'scheduled' ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
+                  >
+                    جدولة النشر
+                  </button>
+                </div>
+                {form.status === 'scheduled' && (
+                  <div className="mt-4 max-w-sm">
+                    <Field label="موعد النشر" hint="لن يظهر المقال للزوار إلا بعد هذا الوقت، وسيبقى ظاهرًا لك داخل اللوحة.">
+                      <input className={input} dir="ltr" type="datetime-local" value={form.scheduledAt || ''} onChange={(event) => set('scheduledAt', event.target.value)} />
+                    </Field>
+                  </div>
+                )}
+              </div>
               <Field label="نص المقال" hint="افصل بين الفقرات بسطر فارغ. يظهر النص بمحاذاة كاملة أثناء الكتابة واللصق.">
                 <textarea dir="rtl" style={{ textAlign: 'justify' }} className={`${input} min-h-[320px] text-justify leading-loose`} value={form.body || ''} onChange={(event) => set('body', event.target.value)} />
               </Field>
@@ -480,7 +515,7 @@ function Editor({
           {error && <p className="rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.86rem] text-soft">{error}</p>}
           <div className="flex flex-wrap items-center gap-3 border-t border-hair pt-5">
             <button type="button" onClick={onSave} disabled={busy || !form.title?.trim() || !form.slug?.trim() || (kind === 'article' && (form.body || '').trim().length < 40)} className={primary}>
-              {busy && kind === 'article' && form._aiReady !== '1' ? 'جارٍ تجهيز التصنيف والمقتطف…' : busy ? 'جارٍ الحفظ…' : 'حفظ ونشر'}
+              {busy && kind === 'article' && form._aiReady !== '1' ? 'جارٍ تجهيز التصنيف والمقتطف…' : busy ? 'جارٍ الحفظ…' : kind === 'article' && form.status === 'scheduled' ? 'حفظ وجدولة' : 'حفظ ونشر'}
             </button>
             <button type="button" onClick={onClose} disabled={busy} className={secondary}>إلغاء</button>
           </div>
@@ -543,6 +578,11 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
       let preparedForm = { ...form }
       if (kind === 'article') {
         if ((preparedForm.body || '').trim().length < 40) throw new Error('نص المقال يجب أن يكون 40 حرفاً على الأقل.')
+        if (preparedForm.status === 'scheduled') {
+          const scheduled = Date.parse(preparedForm.scheduledAt || '')
+          if (!Number.isFinite(scheduled)) throw new Error('حدد موعد نشر صحيح قبل الجدولة.')
+          if (scheduled <= Date.now() - 60 * 1000) throw new Error('موعد الجدولة يجب أن يكون في المستقبل.')
+        }
         if (preparedForm._aiReady !== '1' || !preparedForm.cat || !preparedForm.excerpt) {
           setForm((previous) => ({ ...previous, _aiBusy: '1', _aiError: '' }))
           const suggestion = await requestContentSuggestion('article', preparedForm)
@@ -583,7 +623,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
         else await setDoc(overrideRef, { patch, hidden: Boolean(current._cms.hidden), updatedAt: serverTimestamp() })
       }
       setCurrent(undefined)
-      await done('✓ حُفظ التعديل ويظهر للزوار فوراً.')
+      await done(kind === 'article' && data.status === 'scheduled' ? '✓ حُفظ المقال مجدولاً ولن يظهر للزوار قبل موعده.' : '✓ حُفظ التعديل ويظهر للزوار فوراً.')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر الحفظ')
       setForm((previous) => ({ ...previous, _aiBusy: '', _aiError: previous._aiError || '' }))
@@ -675,6 +715,8 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
                     <span className="rounded-full border border-hair px-2.5 py-1 text-[.7rem] text-soft">{item._cms.origin === 'base' ? 'أصل' : 'مُضاف'}</span>
                     {item._cms.modified && <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[.7rem] text-accent">مُعدّل</span>}
                     {item._cms.hidden && <span className="rounded-full border border-accent/30 px-2.5 py-1 text-[.7rem] text-accent">مخفي</span>}
+                    {kind === 'article' && item.status === 'scheduled' && <span className="rounded-full border border-accent/30 px-2.5 py-1 text-[.7rem] text-accent">مجدول</span>}
+                    {kind === 'article' && item.status === 'draft' && <span className="rounded-full border border-hair px-2.5 py-1 text-[.7rem] text-soft">مسودة</span>}
                   </div>
                 </td>
                 <td className="px-5 py-4">

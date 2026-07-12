@@ -245,6 +245,22 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
 type ArticleAudio = { fahed?: boolean | string; noura?: boolean | string }
 type DialogueTranscript = { title: string; utterances: { speaker: string; text: string }[] }
 
+async function hasDialogueAudio(slug: string) {
+  const path = `/audio/${slug}.dialogue.mp3`
+  try {
+    const response = await fetch(path, { method: 'HEAD', cache: 'no-store' })
+    const type = (response.headers.get('content-type') || '').toLowerCase()
+    if (response.ok && !type.includes('text/html')) return true
+  } catch { /* جرّب Range أدناه */ }
+  try {
+    const response = await fetch(path, { headers: { Range: 'bytes=0-0' }, cache: 'no-store' })
+    const type = (response.headers.get('content-type') || '').toLowerCase()
+    return response.ok && !type.includes('text/html')
+  } catch {
+    return false
+  }
+}
+
 export function Listen({ slug, title, text, audio }: { slug: string; title: string; text: string; audio?: ArticleAudio }) {
   // الفهرس: { slug: { fahed: true, noura: true } } — أو true بالصيغة القديمة (= فهد فقط)
   // مقالات لوحة التحكم تمرر audio من وثيقتها (يولّده سكربت الصوت الليلي)
@@ -256,11 +272,7 @@ export function Listen({ slug, title, text, audio }: { slug: string; title: stri
   const [transcript, setTranscript] = useState<DialogueTranscript | null>(null)
   useEffect(() => {
     let on = true
-    // تأكّد أنه ملف صوتي فعلاً: الاستضافة (SPA) تُعيد index.html بـ200 لأي مسار غير موجود،
-    // فلا يكفي r.ok — نتحقق أن نوع المحتوى صوت حتى لا يظهر زر «حلقة حوارية» مكسور.
-    fetch(`/audio/${slug}.dialogue.mp3`, { method: 'HEAD' })
-      .then((r) => { if (on && r.ok && (r.headers.get('content-type') || '').includes('audio')) setDialogueOk(true) })
-      .catch(() => { /* noop */ })
+    hasDialogueAudio(slug).then((ok) => { if (on) setDialogueOk(ok) })
     fetch(`/audio/${slug}.dialogue.json`)
       .then((response) => response.ok ? response.json() : null)
       .then((value) => { if (on && value?.utterances?.length) setTranscript(value) })
@@ -278,7 +290,7 @@ export function Listen({ slug, title, text, audio }: { slug: string; title: stri
   if (sources.length) return (
     <>
       <AudioPlayer sources={sources} title={title} />
-      {dialogueOk && transcript && (
+      {transcript && (
         <details className="mt-3 rounded-2xl border border-hair bg-canvas px-5 py-4">
           <summary className="cursor-pointer text-[.86rem] font-semibold text-accent">نص الحلقة الحوارية</summary>
           <div className="mt-5 space-y-4 border-t border-hair pt-5">

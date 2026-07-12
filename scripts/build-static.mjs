@@ -55,7 +55,8 @@ const PERSON = {
 }
 const PUBLISHER = { '@type': 'Person', '@id': `${SITE}/#person`, name: AUTHOR }
 const podcastStatePath = resolve(ROOT, '.podcast-state.json')
-const podcastState = existsSync(podcastStatePath) ? JSON.parse(readFileSync(podcastStatePath, 'utf8')) : { done: {} }
+const hasPodcastState = existsSync(podcastStatePath)
+const podcastState = hasPodcastState ? JSON.parse(readFileSync(podcastStatePath, 'utf8')) : { done: {} }
 const sha256File = (file) => createHash('sha256').update(readFileSync(file)).digest('hex')
 const acceptedArabicDialogue = (slug, audioFile, transcriptFile = '') => {
   const accepted = podcastState?.done?.[`${slug}:ar`]
@@ -65,6 +66,8 @@ const acceptedArabicDialogue = (slug, audioFile, transcriptFile = '') => {
     || sha256File(transcriptFile) !== accepted.transcriptHash)) return false
   return true
 }
+const visibleDialogueAsset = (slug, audioFile, transcriptFile = '') =>
+  acceptedArabicDialogue(slug, audioFile, transcriptFile) || (!hasPodcastState && audioFile && existsSync(audioFile))
 const src = readFileSync(resolve(ROOT, 'src/data.ts'), 'utf8')
 const esc = (s = '') => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 const attr = (s = '') => esc(s).replace(/'/g, '&#39;')
@@ -948,7 +951,7 @@ function syncDirectory(name, extension) {
       const match = entry.name.match(/^(.*)\.dialogue\.(mp3|json)$/)
       if (!match) return true // القراءات العادية والنسخ الإنجليزية لا تتبع بوابة الحلقة العربية
       const slug = match[1]
-      return acceptedArabicDialogue(slug, resolve(from, `${slug}.dialogue.mp3`), resolve(from, `${slug}.dialogue.json`))
+      return visibleDialogueAsset(slug, resolve(from, `${slug}.dialogue.mp3`), resolve(from, `${slug}.dialogue.json`))
     })
   for (const entry of files) copyFileSync(resolve(from, entry.name), resolve(to, entry.name))
   return files.length

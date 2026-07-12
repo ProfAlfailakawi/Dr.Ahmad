@@ -34,6 +34,8 @@ export type ArticleRecord = {
   body?: string
   source?: string
   url?: string
+  status?: string
+  scheduledAt?: string
   audio?: ArticleAudio
   words: number
   year: string
@@ -103,7 +105,7 @@ const bodyMap = bodies as Record<string, string>
 const audioMap = audioManifest as Record<string, AudioEntry>
 
 const fieldsByKind: Record<ContentKind, readonly string[]> = {
-  article: ['title', 'date', 'iso', 'cat', 'excerpt', 'body', 'source', 'url', 'audio'],
+  article: ['title', 'date', 'iso', 'cat', 'excerpt', 'body', 'source', 'url', 'status', 'scheduledAt', 'audio'],
   book: ['title', 'isbn', 'desc', 'cover', 'pdf'],
   paper: ['title', 'meta', 'journal', 'source', 'url', 'pdf', 'iso', 'date'],
   media: ['title', 'outlet', 'platform', 'url', 'iso', 'date'],
@@ -152,6 +154,8 @@ function buildArticle(value: Record<string, unknown>, cms: CmsMeta): ArticleReco
     body,
     source: stringValue(value.source) || undefined,
     url: stringValue(value.url) || undefined,
+    status: stringValue(value.status) || undefined,
+    scheduledAt: stringValue(value.scheduledAt) || undefined,
     audio,
     words: wordCount(body || stringValue(value.excerpt)),
     year: stringValue(value.iso).slice(0, 4),
@@ -294,6 +298,7 @@ function applyOriginals<T extends AnyRecord>(
     if (hidden && !includeHidden) return []
     const base = getBaseRecord(kind, original.slug) || {}
     const merged = { ...base, ...patch, slug: original.slug }
+    if (kind === 'article' && !includeHidden && !isPubliclyPublished({ id: original.slug, ...merged })) return []
     return [buildRecord(kind, merged, metadata(kind, original.slug, {
       modified: Object.keys(patch).length > 0,
       hidden,
@@ -313,6 +318,7 @@ function additions<T extends AnyRecord>(
     if (!slug || occupied.has(slug)) return []
     const hidden = document.hidden === true
     if (hidden && !includeHidden) return []
+    if (kind === 'article' && !includeHidden && !isPubliclyPublished(document)) return []
     const record = buildRecord(kind, { ...document, slug }, metadata(kind, slug, {
       origin: 'added',
       modified: false,
@@ -335,6 +341,21 @@ const timeValue = (value: unknown) => {
     try { return Number((value.toMillis as () => number)()) || 0 } catch { return 0 }
   }
   return 0
+}
+
+const scheduledTime = (value: unknown) => {
+  if (typeof value !== 'string' || !value.trim()) return 0
+  const parsed = Date.parse(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+const isPubliclyPublished = (document: RemoteDocument) => {
+  const status = stringValue(document.status, 'published')
+  if (status === 'draft') return false
+  const scheduledAt = scheduledTime(document.scheduledAt)
+  if (status === 'scheduled') return scheduledAt > 0 && scheduledAt <= Date.now()
+  if (scheduledAt > Date.now()) return false
+  return status === 'published' || !status
 }
 
 const newestFirst = <T extends AnyRecord>(left: T, right: T) => {

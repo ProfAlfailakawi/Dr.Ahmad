@@ -150,7 +150,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
   if (loading) return <div className={card}>لحظة… أجمع المشاهدات.</div>
 
   return (
-    <div className="grid gap-5">
+    <div className="grid min-w-0 gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[.85rem] text-soft">تُحتسب الصفحة مرة واحدة في الجلسة لكل زائر.</p>
         <button type="button" onClick={() => void load()} className="rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent">
@@ -222,26 +222,26 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         </section>
       )}
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-8">
-        <div className={card}>
-          <span className="block font-display text-4xl font-bold text-accent">{ar(summary.total)}</span>
-          <span className="mt-2 block text-[.86rem] text-soft">إجمالي المشاهدات</span>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-8">
+        <div className={`${card} min-w-0`}>
+          <span className="block truncate font-display text-[clamp(1.5rem,7vw,2.25rem)] font-bold tabular-nums text-accent">{ar(summary.total)}</span>
+          <span className="mt-2 block text-[.82rem] text-soft">إجمالي المشاهدات</span>
         </div>
-        <div className={card}>
-          <span className="block font-display text-4xl font-bold text-accent">{ar(summary.pages)}</span>
-          <span className="mt-2 block text-[.86rem] text-soft">صفحات شوهدت</span>
+        <div className={`${card} min-w-0`}>
+          <span className="block truncate font-display text-[clamp(1.5rem,7vw,2.25rem)] font-bold tabular-nums text-accent">{ar(summary.pages)}</span>
+          <span className="mt-2 block text-[.82rem] text-soft">صفحات شوهدت</span>
         </div>
-        <div className={card}>
-          <span className="block font-display text-2xl font-bold text-ink">{ar(subscribers)}</span>
+        <div className={`${card} min-w-0`}>
+          <span className="block truncate font-display text-[clamp(1.15rem,5.5vw,1.5rem)] font-bold tabular-nums text-ink">{ar(subscribers)}</span>
           <span className="mt-2 block text-[.82rem] text-soft">مشتركو النشرة</span>
         </div>
-        <div className={card}>
-          <span className="block font-display text-2xl font-bold text-ink">{ar(summary.byKind['مشاركات'])}</span>
+        <div className={`${card} min-w-0`}>
+          <span className="block truncate font-display text-[clamp(1.15rem,5.5vw,1.5rem)] font-bold tabular-nums text-ink">{ar(summary.byKind['مشاركات'])}</span>
           <span className="mt-2 block text-[.82rem] text-soft">مشاركات المحتوى</span>
         </div>
         {(['مقالات', 'كتب', 'أبحاث', 'صفحات'] as const).map((k) => (
-          <div key={k} className={card}>
-            <span className="block font-display text-2xl font-bold text-ink">{ar(summary.byKind[k])}</span>
+          <div key={k} className={`${card} min-w-0`}>
+            <span className="block truncate font-display text-[clamp(1.15rem,5.5vw,1.5rem)] font-bold tabular-nums text-ink">{ar(summary.byKind[k])}</span>
             <span className="mt-2 block text-[.82rem] text-soft">مشاهدات ال{k === 'صفحات' ? 'صفحات' : k}</span>
           </div>
         ))}

@@ -213,7 +213,7 @@ function Panel({ email }: { email: string }) {
 
   return (
     <Page>
-      <div className="mx-auto max-w-[1480px] px-4 pb-24 pt-36 sm:px-6 md:px-10 md:pt-40">
+      <div className="mx-auto max-w-[1480px] overflow-x-clip px-4 pb-24 pt-36 sm:px-6 md:px-10 md:pt-40">
         <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="mb-1 text-[.82rem] font-semibold uppercase text-accent">لوحة التحكم</p>

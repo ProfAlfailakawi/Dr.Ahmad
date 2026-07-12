@@ -49,6 +49,7 @@ export type BookRecord = {
   desc: string
   cover: string
   pdf: string
+  coAuthors?: string
   _cms: CmsMeta
 }
 
@@ -62,6 +63,9 @@ export type PaperRecord = {
   pdf?: string
   iso?: string
   date?: string
+  coAuthors?: string
+  scholar?: string
+  researchgate?: string
   _cms: CmsMeta
 }
 
@@ -165,6 +169,7 @@ function buildBook(value: Record<string, unknown>, cms: CmsMeta): BookRecord {
     desc: stringValue(value.desc),
     cover: stringValue(value.cover),
     pdf: stringValue(value.pdf),
+    coAuthors: stringValue(value.coAuthors) || undefined,
     _cms: cms,
   }
 }
@@ -180,6 +185,9 @@ function buildPaper(value: Record<string, unknown>, cms: CmsMeta): PaperRecord {
     pdf: stringValue(value.pdf) || undefined,
     iso: stringValue(value.iso) || undefined,
     date: stringValue(value.date) || undefined,
+    coAuthors: stringValue(value.coAuthors) || undefined,
+    scholar: stringValue(value.scholar) || undefined,
+    researchgate: stringValue(value.researchgate) || undefined,
     _cms: cms,
   }
 }

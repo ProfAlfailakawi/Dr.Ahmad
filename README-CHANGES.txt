@@ -1,23 +1,21 @@
 =========================================================
- تعديلات الجلسة — للرفع في AI Studio
+ تعديلات الجلسة — للرفع في AI Studio  (ارفع بنفس المسارات ثم Publish)
 =========================================================
-
-ارفع الملفات المرفقة بنفس مساراتها، ثم Publish.
 
 ⚠️ متغيّر بيئة جديد واحد — أضِفه في إعدادات AI Studio (Environment):
    VITE_SITE_URL = https://dr-alfailakawi.web.app
-   (عند ربط الدومين الرسمي لاحقاً: غيّره إلى https://dr-alfailakawi.com — سطر واحد يوحّد كل canonical/OG/RSS/Schema)
+   (عند ربط الدومين لاحقاً: غيّره إلى https://dr-alfailakawi.com)
 
 ملخّص التعديلات:
-• index.html            : preload لصورة LCP (البورتريه)
-• src/data.ts           : النطاق المركزي SITE_URL + روابط Scholar/ResearchGate + إصلاحات
-• src/pages/ArticleDetail.tsx : أداة التحديد الموحّدة + استشهاد واحد + النطاق المركزي
-• src/pages/PaperDetail.tsx   : أيقونتا Scholar/ResearchGate + استشهاد واحد + النطاق المركزي
-• src/pages/Home.tsx    : تحسين LCP للبورتريه (fetchpriority + أبعاد)
-• src/components/IdeaFeatures.tsx : شريط التحديد الموحّد (خيط الفكرة + بطاقة اقتباس، بلا تداخل)
-• scripts/build-static.mjs : النطاق المركزي + robots مولّد + Schema كامل (Person/Article/ScholarlyArticle/Book/Breadcrumb)
-• scripts/podcast-dialogue.mjs : الوضع المجاني (حوار Azure بلا حَكَم مدفوع) + وضع اختبار الأصوات + إصلاحات
-• scripts/audition-sample.json : عيّنة اختبار الأصوات النسائية (سريعة، فصحى)
-• scripts/prompts/*, bakeoff-sample.json, VoiceBakeoff.tsx : ضبط محرك البودكاست
+• src/data.ts               : النطاق المركزي + المؤلف المشارك (د. عبدالعزيز دخيل العنزي) في كل الكتب والأبحاث + Scholar/RG
+• src/lib/cms.ts            : تمرير coAuthors + scholar + researchgate للكتب/الأبحاث (كانت تُحذف)
+• src/pages/ArticleDetail.tsx: أداة تحديد موحّدة + استشهاد واحد + النطاق المركزي
+• src/pages/PaperDetail.tsx  : أيقونتا Scholar/RG + استشهاد واحد + النطاق المركزي
+• src/pages/Home.tsx        : تحسين LCP للبورتريه
+• src/components/IdeaFeatures.tsx : شريط التحديد الموحّد (خيط الفكرة + بطاقة اقتباس)
+• index.html                : preload لصورة LCP
+• scripts/build-static.mjs  : النطاق المركزي + robots مولّد + Schema كامل + مُحلّل يتحمّل حقولاً إضافية
+• scripts/podcast-dialogue.mjs + audition-sample.json + prompts + bakeoff-sample.json + VoiceBakeoff.tsx : محرك البودكاست + الوضع المجاني + اختبار الأصوات
 
-ملاحظة: ملف .env لم يُرفق (يحوي مفاتيح سرية) — احتفظ بنسختك، وأضِف فقط VITE_SITE_URL أعلاه.
+ملاحظة: المؤلف المشارك أُضيف إلى كل الأبحاث (18) وكل الكتب (9) — احذف بنفسك أي عملٍ لم يشاركك فيه.
+ملف .env لم يُرفق (أسرار) — أضِف فقط VITE_SITE_URL.

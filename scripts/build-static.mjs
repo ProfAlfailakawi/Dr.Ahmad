@@ -75,10 +75,10 @@ const articles = [...grab('articles').matchAll(
   /\{ slug: '([^']+)', title: '([^']+)', date: '([^']*)', iso: '([^']*)', cat: '([^']*)',\s*excerpt: '([^']*)'/g
 )].map((m) => ({ slug: m[1], title: m[2].replace(/\\'/g, "'"), date: m[3], iso: m[4], cat: m[5], excerpt: m[6].replace(/\\'/g, "'") }))
 
-const books = [...grab('books').matchAll(/slug: '([^']+)', title: '([^']+)'[\s\S]*?desc: '([^']*)'/g)]
+const books = [...grab('books').matchAll(/slug: '([^']+)',[^\n]*?title: '([^']+)'[\s\S]*?desc: '([^']*)'/g)]
   .map((m) => ({ slug: m[1], title: m[2], desc: m[3] }))
 
-const papers = [...grab('papers').matchAll(/slug: '([^']+)', title: '([^']+)', meta: '([^']*)'/g)]
+const papers = [...grab('papers').matchAll(/slug: '([^']+)',[^\n]*?title: '([^']+)',[^\n]*?meta: '([^']*)'/g)]
   .map((m) => ({ slug: m[1], title: m[2], desc: m[3] }))
 
 /* أعداد وسنوات تُحسب من المحتوى — تتجدّد أوصاف SEO تلقائياً مع أي إضافة */

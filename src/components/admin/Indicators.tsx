@@ -238,7 +238,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         </section>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-8">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <div className={`${card} min-w-0`}>
           <span className="block truncate font-display text-[clamp(1.5rem,7vw,2.25rem)] font-bold tabular-nums text-accent">{ar(summary.total)}</span>
           <span className="mt-2 block text-[.82rem] text-soft">إجمالي المشاهدات</span>
@@ -273,7 +273,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         {summary.topArticles.length ? (
           <ol className="grid gap-4">
             {summary.topArticles.map((row, index) => (
-              <li key={row.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 sm:grid-cols-[minmax(0,1fr)_minmax(180px,.8fr)_auto]">
+              <li key={row.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 sm:grid-cols-[minmax(0,1fr)_minmax(120px,360px)_auto]">
                 <span className="truncate text-[.88rem] text-ink"><span className="me-2 text-accent">{index + 1}.</span>{row.label}</span>
                 <span className="text-[.8rem] font-semibold text-accent sm:order-3 sm:font-normal sm:text-soft">{ar(row.count)}</span>
                 <span className="col-span-2 h-2 overflow-hidden rounded-full bg-canvas sm:order-2 sm:col-span-1">
@@ -344,7 +344,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
             onChange={(e) => setQ(e.target.value)}
             placeholder="ابحث بالعنوان…"
             aria-label="بحث في المشاهدات"
-            className="w-56 rounded-full border border-hair bg-canvas px-4 py-2 text-[.85rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
+            className="w-full rounded-full border border-hair bg-canvas px-4 py-2 text-[.85rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent sm:w-56"
           />
         </div>
         <div className="mb-5 flex flex-wrap gap-2">

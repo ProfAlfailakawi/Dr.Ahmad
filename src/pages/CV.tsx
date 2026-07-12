@@ -41,7 +41,7 @@ export default function CV() {
 
   return (
     <Page>
-      <PageHead label="السيرة الأكاديمية" title="أحمد حسين الفيلكاوي" sub={bio.intro} />
+      <PageHead label="السيرة الأكاديمية" title="د. أحمد حسين الفيلكاوي" sub={bio.intro} />
 
       <div className="px-6 py-14 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">

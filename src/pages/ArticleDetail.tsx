@@ -284,7 +284,7 @@ export default function ArticleDetail() {
           '@type': 'Article',
           headline: a.title,
           datePublished: a.iso,
-          author: { '@type': 'Person', name: 'أحمد حسين الفيلكاوي' },
+          author: { '@type': 'Person', name: 'د. أحمد حسين الفيلكاوي' },
           articleSection: a.cat,
           inLanguage: 'ar',
         }}

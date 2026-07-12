@@ -290,17 +290,23 @@ export function Listen({ slug, title, text, audio }: { slug: string; title: stri
   if (sources.length) return (
     <>
       <AudioPlayer sources={sources} title={title} />
-      {transcript && (
+      {dialogueOk && (
         <details className="mt-3 rounded-2xl border border-hair bg-canvas px-5 py-4">
           <summary className="cursor-pointer text-[.86rem] font-semibold text-accent">نص الحلقة الحوارية</summary>
-          <div className="mt-5 space-y-4 border-t border-hair pt-5">
-            {transcript.utterances.map((utterance, index) => (
-              <p key={`${utterance.speaker}-${index}`} className="text-[.96rem] leading-[1.9] text-ink/85">
-                <strong className="me-2 font-semibold text-accent">{utterance.speaker}:</strong>
-                {utterance.text}
-              </p>
-            ))}
-          </div>
+          {transcript ? (
+            <div className="mt-5 space-y-4 border-t border-hair pt-5">
+              {transcript.utterances.map((utterance, index) => (
+                <p key={`${utterance.speaker}-${index}`} className="text-[.96rem] leading-[1.9] text-ink/85">
+                  <strong className="me-2 font-semibold text-accent">{utterance.speaker}:</strong>
+                  {utterance.text}
+                </p>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 border-t border-hair pt-4 text-[.86rem] leading-relaxed text-soft">
+              الحلقة الحوارية متاحة للاستماع. نص الحوار سيظهر هنا فور اعتماد ملف الـTranscript لهذه الحلقة.
+            </p>
+          )}
         </details>
       )}
     </>

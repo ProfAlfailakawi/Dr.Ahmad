@@ -33,7 +33,7 @@ try { process.loadEnvFile(resolve(ROOT, '.env')) } catch { /* .env اختيار�
 // النطاق المركزي نفسه الذي يقرؤه العميل (VITE_SITE_URL) — canonical/OG/RSS/sitemap/robots كلها منه.
 const SITE = (process.env.VITE_SITE_URL || 'https://dr-alfailakawi.web.app').replace(/\/+$/, '')
 const SITE_HOST = new URL(SITE).hostname
-const AUTHOR = 'أحمد حسين الفيلكاوي'
+const AUTHOR = 'د. أحمد حسين الفيلكاوي'
 // كيان الهوية المركزي (Person) — يُربط عبر @id في كل Schema، فيبني غوغل كِيان المؤلف الواحد
 const PERSON = {
   '@type': 'Person',

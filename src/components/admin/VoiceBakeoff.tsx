@@ -4,9 +4,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { getDb } from '../../lib/firebase'
 
-type Option = { key: string; durationSec: number; audio: string; audioHash: string; eligible: boolean }
+type Option = { key: string; label?: string; durationSec: number; audio: string; audioHash: string; eligible: boolean }
 type Manifest = {
-  schemaVersion: 2
+  schemaVersion: 3
   generatedAt: string
   title: string
   sampleHash: string
@@ -20,7 +20,7 @@ type Manifest = {
 const isManifest = (value: unknown): value is Manifest => {
   if (!value || typeof value !== 'object') return false
   const item = value as Partial<Manifest>
-  return item.schemaVersion === 2 && typeof item.sampleHash === 'string' && typeof item.approvalHash === 'string'
+  return item.schemaVersion === 3 && typeof item.sampleHash === 'string' && typeof item.approvalHash === 'string'
     && typeof item.sampleGate?.pass === 'boolean' && Array.isArray(item.criteria) && Array.isArray(item.options)
     && item.options.every((option) => typeof option?.key === 'string' && typeof option?.audio === 'string'
       && typeof option?.audioHash === 'string' && typeof option?.durationSec === 'number'
@@ -94,7 +94,7 @@ export function VoiceBakeoffCard() {
     <div className={card}>
       <p className="text-[.76rem] font-semibold uppercase text-accent">اختبار الأصوات الأعمى</p>
       <p className="mt-2 text-[.85rem] font-light leading-relaxed text-soft">
-        لم تُولَّد نسخ الاختبار بعد. شغّل <code className="rounded bg-canvas px-1.5 py-0.5 text-[.8rem] text-ink">npm run podcast:ar:bakeoff</code> فتظهر هنا خمس نسخ بلا أسماء للتقييم الأعمى.
+        لم تُولَّد عينات القبول الجديدة بعد. شغّل <code className="rounded bg-canvas px-1.5 py-0.5 text-[.8rem] text-ink">npm run podcast:ar:sample</code> فتظهر هنا أفضل ثلاث عينات بلا أسماء.
       </p>
     </div>
   )
@@ -109,7 +109,7 @@ export function VoiceBakeoffCard() {
         )}
       </div>
       <p className="mt-1 text-[.85rem] font-light leading-relaxed text-soft">
-        النسخ الخمس بالنص والموسيقى والوقفات نفسها — المتغيّر الوحيد هو الصوت. لا يحمل هذا الملف العام أسماءً أو دولاً؛ استمع ثم اعتمد الأنسب.
+        اكتُشفت الأصوات العربية حيًا، واختُبرت النساء أولًا ثم الأزواج. هذه أفضل ثلاث عينات خام بلا موسيقى أو EQ، ولا يحمل الملف العام أسماءً أو دولًا؛ استمع ثم اعتمد الأنسب.
       </p>
       {!manifest.sampleGate.pass && (
         <p className="mt-3 rounded-xl border border-red-400/40 bg-red-500/5 px-4 py-3 text-[.8rem] leading-relaxed text-red-700 dark:text-red-300">
@@ -139,7 +139,7 @@ export function VoiceBakeoffCard() {
               </button>
               <div className="min-w-0 flex-1">
                 <p className="text-[.95rem] font-semibold text-ink">
-                  النسخة {ar(i + 1)}
+                  {opt.label || `Sample ${String.fromCharCode(65 + i)}`}
                 </p>
                 <p className="text-[.78rem] text-soft" dir="ltr">{clock(opt.durationSec)}</p>
               </div>

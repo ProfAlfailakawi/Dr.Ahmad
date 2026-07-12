@@ -50,13 +50,13 @@ export default function Decade() {
     const dated = articles.filter((article) => /^(?:19|20)\d{2}/.test(article.iso))
     if (!dated.length) return null
 
-    const latestYear = Math.max(...dated.map((article) => Number(article.iso.slice(0, 4))))
-    const firstYear = latestYear - 9
-    const decadeArticles = dated.filter((article) => {
-      const year = Number(article.iso.slice(0, 4))
-      return year >= firstYear && year <= latestYear
-    })
-    const chapters: YearChapter[] = Array.from({ length: 10 }, (_, offset) => {
+    // النطاق الكامل من أول مقال فعلي إلى آخره — يتجدّد تلقائياً مع أي إضافة (لا يبدأ من latestYear-9)
+    const allYears = dated.map((article) => Number(article.iso.slice(0, 4)))
+    const latestYear = Math.max(...allYears)
+    const firstYear = Math.min(...allYears)
+    const span = latestYear - firstYear + 1
+    const decadeArticles = dated
+    const chapters: YearChapter[] = Array.from({ length: span }, (_, offset) => {
       const year = firstYear + offset
       const yearArticles = decadeArticles.filter((article) => Number(article.iso.slice(0, 4)) === year)
       const dominant = dominantCategory(yearArticles)
@@ -113,6 +113,7 @@ export default function Decade() {
     return {
       firstYear,
       latestYear,
+      span,
       articles: decadeArticles,
       chapters,
       categories: categoryCounts,
@@ -139,7 +140,7 @@ export default function Decade() {
             <div className="mx-auto max-w-shell">
               <FadeUp>
                 <p className="max-w-3xl font-display text-[clamp(1.35rem,3vw,2rem)] font-medium leading-[1.8] text-ink">
-                  من {document.firstYear} إلى {document.latestYear}: عشر سنوات تقرأ نفسها من خلال {number.format(document.articles.length)} مقالاً، لا لتختصر الفكرة في رقم، بل لتكشف حركتها.
+                  من {document.firstYear} إلى {document.latestYear}: {document.span === 10 ? 'عشر سنوات' : `${number.format(document.span)} سنة`} تقرأ نفسها من خلال {number.format(document.articles.length)} مقالاً، لا لتختصر الفكرة في رقم، بل لتكشف حركتها.
                 </p>
                 <p className="mt-5 max-w-2xl text-[.86rem] font-light leading-[1.9] text-soft">
                   تُحدَّث هذه الصفحة تلقائياً مع كل إضافة أو تعديل في لوحة المحتوى. واختيار النص الممثل يعتمد على اكتماله وحضور موضوع المرحلة، لا على ادعاء أنه الأكثر قراءة.
@@ -232,20 +233,19 @@ export default function Decade() {
                 <h2 className="mt-3 font-display text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-ink">العقد، سنةً سنة.</h2>
               </FadeUp>
               <ol className="mt-10 divide-y divide-hair border-y border-hair">
-                {document.chapters.map((chapter, index) => (
+                {/* السنوات ذات المقالات فقط — لا نعرض سنوات فارغة */}
+                {document.chapters.filter((chapter) => chapter.articles.length > 0).map((chapter, index) => (
                   <FadeUp key={chapter.year} delay={Math.min(index * 0.025, 0.18)}>
                     <li className="grid gap-3 py-6 sm:grid-cols-[90px_1fr] sm:gap-7">
                       <time className="font-display text-[1.35rem] font-semibold text-accent">{chapter.year}</time>
-                      {chapter.representative ? (
-                        <div>
-                          <p className="text-[.78rem] text-soft">{number.format(chapter.articles.length)} مقالاً · {chapter.dominant}</p>
+                      <div>
+                        <p className="text-[.78rem] text-soft">{number.format(chapter.articles.length)} مقالاً · {chapter.dominant}</p>
+                        {chapter.representative && (
                           <Link to={`/articles/${chapter.representative.slug}`} className="mt-1.5 block font-display text-[1.05rem] font-medium leading-[1.65] text-ink transition-colors hover:text-accent">
                             {chapter.representative.title} ←
                           </Link>
-                        </div>
-                      ) : (
-                        <p className="text-[.84rem] text-soft">لا توجد مقالة مؤرخة في الأرشيف لهذه السنة.</p>
-                      )}
+                        )}
+                      </div>
                     </li>
                   </FadeUp>
                 ))}

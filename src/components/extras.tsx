@@ -168,11 +168,11 @@ export function OwnerEdit({ tab, slug, className = '' }: { tab: 'articles' | 'bo
 /* ---------- «انسخ الاستشهاد» — APA وMLA بنقرة، باسم الدكتور ---------- */
 export function CiteButton({ title, year, container, url }: { title: string; year: string; container: string; url: string }) {
   const [open, setOpen] = useState(false)
-  const [copied, setCopied] = useState<'apa' | 'mla' | null>(null)
-  const apa = `الفيلكاوي، أحمد حسين. (${year}). ${title}. ${container}. ${url}`
-  const mla = `الفيلكاوي، أحمد حسين. «${title}». ${container}، ${year}، ${url}.`
-  const copy = async (kind: 'apa' | 'mla', text: string) => {
-    try { await navigator.clipboard.writeText(text); setCopied(kind); setTimeout(() => setCopied(null), 1800) } catch { /* noop */ }
+  const [copied, setCopied] = useState(false)
+  // صيغة واحدة أنيقة معتمدة (على نمط MLA بعلامتَي التنصيص «»)
+  const citation = `الفيلكاوي، أحمد حسين. «${title}». ${container}، ${year}، ${url}.`
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(citation); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { /* noop */ }
   }
   return (
     <div className="mt-8 rounded-xl border border-hair">
@@ -182,16 +182,14 @@ export function CiteButton({ title, year, container, url }: { title: string; yea
         <span className={`transition-transform duration-300 ${open ? 'rotate-180' : ''}`}>⌄</span>
       </button>
       {open && (
-        <div className="grid gap-3 border-t border-hair p-5">
-          {([['apa', 'APA', apa], ['mla', 'MLA', mla]] as const).map(([k, label, text]) => (
-            <div key={k} className="flex items-start gap-3">
-              <button onClick={() => copy(k, text)}
-                className={`shrink-0 rounded-full border px-3 py-1 text-[.72rem] font-semibold transition-colors ${copied === k ? 'border-accent text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
-                {copied === k ? '✓ نُسخ' : label}
-              </button>
-              <p className="text-[.82rem] font-light leading-[1.9] text-soft">{text}</p>
-            </div>
-          ))}
+        <div className="border-t border-hair p-5">
+          <div className="flex items-start gap-3">
+            <button onClick={copy}
+              className={`shrink-0 rounded-full border px-3.5 py-1 text-[.72rem] font-semibold transition-colors ${copied ? 'border-accent text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
+              {copied ? '✓ نُسخ' : 'نسخ'}
+            </button>
+            <p className="text-[.82rem] font-light leading-[1.9] text-soft">{citation}</p>
+          </div>
         </div>
       )}
     </div>

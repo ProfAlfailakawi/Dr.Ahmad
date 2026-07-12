@@ -16,7 +16,7 @@ export const profile = {
   name: 'أحمد حسين الفيلكاوي',
   fullName: 'أحمد حسين الفيلكاوي',
   eyebrow: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي',
-  tagline: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · مؤلف · باحث · مستشار',
+  tagline: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · باحث · مستشار',
   aboutHeading: 'أُبقي الإنسان\nفي قلب الآلة.',
   about:
     'حاصل على درجة دكتوراه الفلسفة في التربية، تخصص تكنولوجيا التعليم من جامعة شمال كولورادو. أستاذ مشارك في كلية التربية الأساسية (PAAET) وأستاذ منتدب في كلية التربية بجامعة الكويت. خبير ومستشار في وزارة الإعلام والمجلس الوطني للثقافة والفنون والآداب ومكتبة الكويت الوطنية والهيئة العامة للشباب.',
@@ -629,12 +629,20 @@ export const articlesWithBody: Article[] = articles.map((a) => ({
   body: (bodies as Record<string, string>)[a.slug] || undefined,
 }))
 
-/** إحصاءات حيّة — تُحسب من المحتوى نفسه، لا تُكتب يدوياً */
+/** إحصاءات حيّة — تُحسب من المحتوى نفسه، لا تُكتب يدوياً.
+    أي مقال/كتاب/بحث جديد يُحدّث كل الأرقام في الموقع تلقائياً (بما فيها السنوات). */
+const articleYears = articles.map((a) => Number(a.iso.slice(0, 4))).filter((y) => y >= 1990)
 export const stats = {
   articles: articles.length,
+  books: books.length,
+  papers: papers.length,
   words: Object.values(bodies as Record<string, string>).reduce((n, t) => n + t.trim().split(/\s+/).length, 0),
   years: new Set(articles.map((a) => a.iso.slice(0, 4))).size,
+  firstYear: articleYears.length ? Math.min(...articleYears) : new Date().getFullYear(),
+  latestYear: articleYears.length ? Math.max(...articleYears) : new Date().getFullYear(),
 }
+/** عدد مُقرّب لأسفل إلى أقرب عشرة، لصياغة «أكثر من ١٦٠» ديناميكياً */
+export const roundDown10 = (n: number) => Math.floor(n / 10) * 10
 
 // الظهور الإعلامي — لقاءات تلفزيونية (مسحوبة من الموقع)
 export const media = [
@@ -923,7 +931,8 @@ export const NEWSLETTER_ENDPOINT = '' // مثال: 'https://formspree.io/f/xxxxx
 export const site = {
   url: 'https://dr-alfailakawi.com',
   title: 'د. أحمد الفيلكاوي — أستاذ تكنولوجيا التعليم',
+  // الأرقام تُحسب من المحتوى نفسه — تتجدّد تلقائياً مع أي إضافة
   description:
-    'الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي. تسعة كتب، ثمانية عشر بحثاً محكّماً، وأكثر من 160 مقالاً فكرياً في التعليم والتقنية والمجتمع.',
+    `الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي. ${stats.books} كتب، ${stats.papers} بحثاً محكّماً، وأكثر من ${roundDown10(stats.articles)} مقالاً فكرياً في التعليم والتقنية والمجتمع، منذ ${stats.firstYear}.`,
   ogImage: '/og.png',
 }

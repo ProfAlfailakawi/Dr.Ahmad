@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, FadeUp, Label, Magnetic, Page, Reveal, SectionHead } from '../components/ui'
-import { books as staticBooks, papers as staticPapers, profile, upcoming, type Event as SiteEvent } from '../data'
+import { books as staticBooks, papers as staticPapers, profile, roundDown10, stats, upcoming, type Event as SiteEvent } from '../data'
 import { useCmsContent, useExtras } from '../lib/content'
 import { Newsletter } from '../components/extras'
 import { type Curio } from '../data-curated'
@@ -65,11 +65,11 @@ const PERSONAS: {
   to: string; links: { to: string; t: string }[]
 }[] = [
   { key: 'reader', label: 'قارئ متأمّل', gate: 'للقارئ المتأمل',
-    d: 'أكثر من 160 مقالاً فكرياً — اقرأها، وبعضها بصوتي.',
+    d: `أكثر من ${roundDown10(stats.articles)} مقالاً فكرياً — اقرأها، وبعضها بصوتي.`,
     greet: 'بدأتُ لك من الكلمة.', to: '/articles',
     links: [{ to: '/articles', t: 'أحدث ما كتبت' }, { to: '/articles', t: 'كل المقالات' }] },
   { key: 'scholar', label: 'معلّم وباحث', gate: 'للمعلم والباحث',
-    d: 'ثمانية عشر بحثاً محكّماً، وأدوات ومفاهيم منتقاة.',
+    d: `${stats.papers} بحثاً محكّماً، وأدوات ومفاهيم منتقاة.`,
     greet: 'من المعرفة المحكّمة.', to: '/research',
     links: [{ to: '/research', t: 'المساهمات العلمية' }, { to: '/publications', t: 'الكتب المنشورة' }] },
   { key: 'org', label: 'جهة أو صانع قرار', gate: 'للجهات وصنّاع القرار',
@@ -694,7 +694,7 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.85, ease: EASE }}
             >
               <p className="font-display text-[clamp(1.15rem,2.4vw,1.6rem)] font-semibold text-ink">د. {profile.name}</p>
-              <p className="mt-1.5 text-[.95rem] font-light text-soft">أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · مؤلف · باحث · مستشار</p>
+              <p className="mt-1.5 text-[.95rem] font-light text-soft">أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · باحث · مستشار</p>
             </motion.div>
 
             {/* زرّ واحد فقط */}

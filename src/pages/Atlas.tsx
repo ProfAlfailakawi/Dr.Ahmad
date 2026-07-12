@@ -8,8 +8,9 @@ import { useCmsContent } from '../lib/content'
 
 /* الأبعاد */
 const W = 1160
-const PAD_R = 132   // مساحة أسماء التصنيفات (يمين)
+const PAD_R = 150       // مساحة أسماء التصنيفات (يمين)
 const PAD_L = 26
+const STAR_R_MAX = 12   // أكبر نصف قطر نجمة — يُترك هامشاً كي لا تتداخل النجوم مع العناوين
 const ROW = 74
 const TOP = 54
 
@@ -40,8 +41,8 @@ export default function Atlas() {
 
     return articles.map((a, i) => {
       const t = (new Date(a.iso).getTime() - min) / (max - min || 1)
-      // RTL: الأقدم يمين، الأحدث يسار
-      const x = W - PAD_R - t * (W - PAD_R - PAD_L)
+      // RTL: الأقدم يمين، الأحدث يسار — مع هامش نصف القطر يمينًا ويسارًا كي لا تلمس النجوم العناوين
+      const x = W - PAD_R - STAR_R_MAX - t * (W - PAD_R - STAR_R_MAX - PAD_L)
       const row = cats.indexOf(a.cat)
       // إزاحة عمودية خفيفة مشتقّة من الفهرس — تكسر الصف المستقيم
       const jitter = ((i * 37) % 21) - 10

@@ -164,17 +164,20 @@ export function Cursor() {
   const rx = useSpring(x, { stiffness: 400, damping: 40, mass: 0.4 })
   const ry = useSpring(y, { stiffness: 400, damping: 40, mass: 0.4 })
   const loc = useLocation()
+  // المؤشر المخصص أنيق على صفحات العرض، لكنه مزعج في لوحة التحكم (عمل ودقّة) — يُطفأ هناك
+  const isAdmin = loc.pathname.startsWith('/admin')
 
   useEffect(() => {
     const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (!fine || reduce) return
     setEnabled(true)
+    if (isAdmin) { document.body.classList.remove('cursor-none-desktop'); return }
     document.body.classList.add('cursor-none-desktop')
     const move = (e: MouseEvent) => { x.set(e.clientX); y.set(e.clientY) }
     window.addEventListener('mousemove', move)
     return () => { window.removeEventListener('mousemove', move); document.body.classList.remove('cursor-none-desktop') }
-  }, [x, y])
+  }, [x, y, isAdmin])
 
   useEffect(() => {
     if (!enabled) return
@@ -185,7 +188,7 @@ export function Cursor() {
     return () => targets.forEach((t) => { t.removeEventListener('mouseenter', on); t.removeEventListener('mouseleave', off) })
   }, [enabled, loc.pathname])
 
-  if (!enabled) return null
+  if (!enabled || isAdmin) return null
   return (
     <>
       <motion.div

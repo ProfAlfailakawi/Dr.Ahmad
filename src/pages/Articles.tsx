@@ -7,7 +7,10 @@ import { useSeo } from '../components/seo'
 
 export default function Articles() {
   const { articles } = useCmsContent()
-  useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: `${articles.length} مقالاً فكرياً في التعليم والتقنية والمجتمع، منذ 2016.` })
+  // السنة الأولى تُحسب من المقالات نفسها — تتحدّث تلقائياً مع أي إضافة
+  const years = articles.map((a) => Number(a.iso.slice(0, 4))).filter((y) => y >= 1990)
+  const firstYear = years.length ? Math.min(...years) : new Date().getFullYear()
+  useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: `${articles.length} مقالاً فكرياً في التعليم والتقنية والمجتمع، منذ ${firstYear}.` })
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('الكل')
   const [showAll, setShowAll] = useState(false)
@@ -23,7 +26,7 @@ export default function Articles() {
       <PageHead
         label="المقالات الفكرية"
         title="بصوتي الخاص."
-        sub={`${articles.length} مقالاً في التعليم والتقنية والمجتمع، منشورة في الصحافة الكويتية منذ 2016.`}
+        sub={`${articles.length} مقالاً في التعليم والتقنية والمجتمع، منشورة في الصحافة الكويتية منذ ${firstYear}.`}
       />
 
       {/* featured trio */}

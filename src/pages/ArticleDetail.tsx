@@ -6,7 +6,6 @@ import { getArticleNeighbors, relatedArticles } from '../lib/cms'
 import { books, papers } from '../data'
 import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
-import { IdeaThread, ShareQuoteCard } from '../components/IdeaFeatures'
 import { QuoteCard } from '../components/QuoteCard'
 import { JsonLd, useSeo } from '../components/seo'
 import { fetchOwnerCounts, useTrackView } from '../lib/views'
@@ -292,16 +291,11 @@ export default function ArticleDetail() {
 
           <FadeUp delay={0.12}>
             {a.body ? (
-              <>
-                <div className="article-body mt-11">
-                  {a.body.split('\n\n').map((p, k) => (
-                    <p key={k}>{p}</p>
-                  ))}
-                </div>
-                {/* خيط الفكرة (حدّد نصاً) + بطاقة اقتباس للمشاركة */}
-                <IdeaThread current={a} articles={articles} />
-                <ShareQuoteCard title={a.title} body={a.body} excerpt={a.excerpt} />
-              </>
+              <div className="article-body mt-11">
+                {a.body.split('\n\n').map((p, k) => (
+                  <p key={k}>{p}</p>
+                ))}
+              </div>
             ) : (
               <>
                 {a.excerpt && (

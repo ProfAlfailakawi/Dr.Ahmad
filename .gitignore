@@ -34,6 +34,10 @@ public/files
 .notify-state.json
 .cron-secret.local
 .podcast-state.json
+.podcast-dialogue.lock
+.podcast-bakeoff-public.backup/
+podcast-audits/voice-bakeoff.private.json
+podcast-rejected/
 .podcast-tmp/
 ArabicPronunciationMemory.sqlite*
 .firebase/hosting.ZGlzdA.cache

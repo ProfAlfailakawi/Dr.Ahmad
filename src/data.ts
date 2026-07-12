@@ -930,8 +930,11 @@ export const place = {
 export const NEWSLETTER_ENDPOINT = '' // مثال: 'https://formspree.io/f/xxxxxxx'
 
 /* بيانات الموقع لمحرّكات البحث */
+// النطاق المركزي — مصدر واحد لكل canonical/OG/RSS/Schema. يُضبط من VITE_SITE_URL،
+// وافتراضه الرابط الحيّ حتى يُربط الدومين الرسمي (فقط بتغيير المتغيّر، بلا لمس الكود).
+export const SITE_URL = ((import.meta as { env?: Record<string, string> }).env?.VITE_SITE_URL) || 'https://dr-alfailakawi.web.app'
 export const site = {
-  url: 'https://dr-alfailakawi.com',
+  url: SITE_URL,
   title: 'د. أحمد الفيلكاوي — أستاذ تكنولوجيا التعليم',
   // الأرقام تُحسب من المحتوى نفسه — تتجدّد تلقائياً مع أي إضافة
   description:

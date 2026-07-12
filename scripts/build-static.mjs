@@ -29,8 +29,30 @@ if (audioCheck.status !== 0) {
   process.exit(1)
 }
 
-const SITE = 'https://dr-alfailakawi.com'
+try { process.loadEnvFile(resolve(ROOT, '.env')) } catch { /* .env اختياري */ }
+// النطاق المركزي نفسه الذي يقرؤه العميل (VITE_SITE_URL) — canonical/OG/RSS/sitemap/robots كلها منه.
+const SITE = process.env.VITE_SITE_URL || 'https://dr-alfailakawi.web.app'
 const AUTHOR = 'أحمد حسين الفيلكاوي'
+// كيان الهوية المركزي (Person) — يُربط عبر @id في كل Schema، فيبني غوغل كِيان المؤلف الواحد
+const PERSON = {
+  '@type': 'Person',
+  '@id': `${SITE}/#person`,
+  name: AUTHOR,
+  alternateName: 'Dr. Ahmad H. Alfailakawi',
+  url: SITE,
+  image: `${SITE}/og.png`,
+  jobTitle: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي',
+  affiliation: [
+    { '@type': 'CollegeOrUniversity', name: 'كلية التربية الأساسية — الهيئة العامة للتعليم التطبيقي والتدريب (PAAET)' },
+    { '@type': 'CollegeOrUniversity', name: 'جامعة الكويت' },
+  ],
+  alumniOf: { '@type': 'CollegeOrUniversity', name: 'University of Northern Colorado' },
+  sameAs: [
+    'https://scholar.google.com/citations?user=WVAtInIAAAAJ&hl=en',
+    'https://www.researchgate.net/profile/Ahmad-Alfailakawi',
+  ],
+}
+const PUBLISHER = { '@type': 'Person', '@id': `${SITE}/#person`, name: AUTHOR }
 const podcastStatePath = resolve(ROOT, '.podcast-state.json')
 const podcastState = existsSync(podcastStatePath) ? JSON.parse(readFileSync(podcastStatePath, 'utf8')) : { done: {} }
 const sha256File = (file) => createHash('sha256').update(readFileSync(file)).digest('hex')
@@ -127,9 +149,39 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
   const url = SITE + path
   const img = `${SITE}${image || '/og.png'}`
 
-  const ld = type === 'article'
-    ? { '@context': 'https://schema.org', '@type': 'Article', headline: title, description: desc, datePublished: iso, articleSection: cat, image: img, inLanguage: lang, author: { '@type': 'Person', name: AUTHOR }, mainEntityOfPage: url }
-    : { '@context': 'https://schema.org', '@type': 'WebPage', name: full, description: desc, url, inLanguage: lang }
+  // مسار التفصيل يحدّد نوع Schema والفتات (Breadcrumb)
+  const isArticlePage = /^\/(?:en\/)?articles\//.test(path)
+  const isPaperPage = /^\/(?:en\/)?research\//.test(path)
+  const isBookPage = /^\/(?:en\/)?publications\//.test(path)
+  const section = isArticlePage ? ['المقالات', '/articles']
+    : isPaperPage ? ['المساهمات العلمية', '/research']
+    : isBookPage ? ['المؤلفات', '/publications'] : null
+  const crumb = section && {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: en ? 'Home' : 'الرئيسية', item: SITE + '/' },
+      { '@type': 'ListItem', position: 2, name: section[0], item: SITE + section[1] },
+      { '@type': 'ListItem', position: 3, name: title, item: url },
+    ],
+  }
+
+  let graph
+  if (path === '/' || path === '/en') {
+    // الرئيسية: هوية الموقع + المؤلف (ProfilePage) — أساس كِيان غوغل
+    graph = [
+      { '@type': 'WebSite', '@id': `${SITE}/#website`, url: SITE, name: full, inLanguage: lang, publisher: { '@id': `${SITE}/#person` } },
+      { '@type': 'ProfilePage', '@id': url + '#profile', url, name: full, inLanguage: lang, mainEntity: { '@id': `${SITE}/#person` } },
+    ]
+  } else if (isPaperPage) {
+    graph = [{ '@type': 'ScholarlyArticle', headline: title, name: title, description: desc, image: img, inLanguage: lang, author: { '@id': `${SITE}/#person` }, publisher: PUBLISHER, mainEntityOfPage: url, ...(iso ? { datePublished: iso } : {}) }, crumb].filter(Boolean)
+  } else if (isBookPage) {
+    graph = [{ '@type': 'Book', name: title, description: desc, image: img, inLanguage: lang, author: { '@id': `${SITE}/#person` }, url }, crumb].filter(Boolean)
+  } else if (type === 'article') {
+    graph = [{ '@type': 'Article', headline: title, description: desc, datePublished: iso, dateModified: iso, articleSection: cat, image: img, inLanguage: lang, author: { '@id': `${SITE}/#person` }, publisher: PUBLISHER, mainEntityOfPage: url }, crumb].filter(Boolean)
+  } else {
+    graph = [{ '@type': 'WebPage', name: full, description: desc, url, inLanguage: lang }]
+  }
+  const ld = { '@context': 'https://schema.org', '@graph': [PERSON, ...graph] }
 
   // hreflang للصفحات المتقابلة عربي↔إنجليزي
   const arPath = en ? Object.keys(LANG_PAIRS).find((k) => LANG_PAIRS[k] === path) : path
@@ -241,6 +293,17 @@ ${routes.filter((r) => SHOW_EN || r.lang !== 'en').map((r) => `  <url><loc>${SIT
 </urlset>
 `
 writeFileSync(resolve(DIST, 'sitemap.xml'), sm, 'utf8')
+
+/* ---------- robots.txt (مولّد من النطاق المركزي — لا يتقادم أبداً) ---------- */
+writeFileSync(resolve(DIST, 'robots.txt'), `User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /login
+Disallow: /_share
+Disallow: /*?*
+
+Sitemap: ${SITE}/sitemap.xml
+`, 'utf8')
 
 /* ---------- RSS ---------- */
 const items = articles.slice(0, 30).map((a) => `    <item>

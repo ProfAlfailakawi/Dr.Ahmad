@@ -3,7 +3,7 @@ import { motion, useScroll, useSpring } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { getArticleNeighbors, relatedArticles } from '../lib/cms'
-import { books, papers } from '../data'
+import { books, papers, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
 import { SelectionTools } from '../components/IdeaFeatures'
@@ -354,7 +354,7 @@ export default function ArticleDetail() {
 
           <Share title={a.title} path={`/articles/${a.slug}`} />
 
-          <CiteButton title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`https://dr-alfailakawi.com/articles/${a.slug}`} />
+          <CiteButton title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} />
 
           {related.length > 0 && (
             <FadeUp>

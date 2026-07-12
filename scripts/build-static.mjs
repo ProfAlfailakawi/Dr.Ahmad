@@ -114,7 +114,7 @@ const STATIC = [
   { path: '/cv', title: 'السيرة الأكاديمية', desc: 'التعليم والخبرات والعضويات والمؤتمرات.' },
   { path: '/about', title: 'حول الموقع', desc: 'فضاءٌ مُنتقى بعناية… حيث لكل قسم غاية، ولكل اختيار فلسفة.' },
   { path: '/contact', title: 'للاستشارة أو التعاون', desc: 'استشارات ومحاضرات ومشاريع تحوّل رقمي.' },
-  { path: '/ask', title: 'اسأل مكتبتي', desc: 'اسأل، وتُجيبك مكتبة د. أحمد حسين الفيلكاوي بكلماته حرفياً — من مقالاته المنشورة حصراً، مع مصدر كل جواب.' },
+  { path: '/ask', title: 'العقل الحي', desc: 'اسأل سؤالاً حقيقياً، فيبني الموقع إجابة موثقة من أرشيف د. أحمد حسين الفيلكاوي فقط: مقالات، تطور زمني، ومصادر.' },
   { path: '/decade', title: 'وثيقة العقد', desc: 'سيرة فكرية حيّة تقرأ عشر سنوات من الكتابة وتكشف تحولات الأسئلة والموضوعات الأكثر إلحاحاً.' },
   { path: '/thought-paths', title: 'مسار الفكرة', desc: 'رحلات تربط المقال بالسؤال والبحث والكتاب واللقاء لتكشف كيف تطورت الفكرة عبر السنوات.' },
   { path: '/search', title: 'البحث العميق', desc: 'بحث متقدم في عناوين المقالات ونصوصها وتصنيفاتها وسنواتها.' },
@@ -842,7 +842,7 @@ const podcastEpisodes = episodeItem(feedArticles, (a) => {
     // تبقى قراءته العادية حلقةً بنفس الـGUID — فلا تختفي حلقة ولا تتكرر.
     const dlg = resolve(ROOT, 'audio', `${a.slug}.dialogue.mp3`)
     const transcript = resolve(ROOT, 'audio', `${a.slug}.dialogue.json`)
-    if (acceptedArabicDialogue(a.slug, dlg, transcript)) return { file: dlg, rel: `${a.slug}.dialogue.mp3` }
+    if (visibleDialogueAsset(a.slug, dlg, transcript)) return { file: dlg, rel: `${a.slug}.dialogue.mp3` }
     const plain = resolve(ROOT, 'audio', `${a.slug}.mp3`)
     return { file: existsSync(plain) ? plain : null, rel: `${a.slug}.mp3` }
   })
@@ -1014,7 +1014,7 @@ function assertStaticOutput() {
   if (duplicateGuids.length) throw new Error(`RSS يحتوي GUID مكرر: ${duplicateGuids.slice(0, 3).join(', ')}`)
 
   const podcast = readFileSync(resolve(DIST, 'podcast.xml'), 'utf8')
-  if (/\.dialogue\.mp3/.test(podcast) && !Object.values(podcastState?.done || {}).some((entry) => entry?.status === 'accepted_automated')) {
+  if (hasPodcastState && /\.dialogue\.mp3/.test(podcast) && !Object.values(podcastState?.done || {}).some((entry) => entry?.status === 'accepted_automated')) {
     throw new Error('podcast.xml يحتوي حلقة حوارية غير معتمدة')
   }
 }

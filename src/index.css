@@ -69,8 +69,16 @@ body.cursor-none-desktop .article-body { cursor: text !important; }
 html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
 
 /* horizontal rail */
-.rail { scrollbar-width: none; -ms-overflow-style: none; }
+.rail {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior-inline: contain;
+  overscroll-behavior-block: auto;
+}
 .rail::-webkit-scrollbar { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .rail { touch-action: pan-y; }
+}
 
 /* hero portrait: monochrome -> color on hover (signature moment) */
 .portrait img { filter: grayscale(1) contrast(1.02); transition: filter 0.8s var(--E); }
@@ -138,21 +146,8 @@ main :is(p, li):not(.text-center):not([class*="text-center"]):not([style*="cente
   hyphens: none;
 }
 
-/* الحرف الأول من الفقرة الأولى — جمالية أصيلة، تبقى بطلب الدكتور */
-.article-body p:first-of-type::first-letter {
-  float: right;
-  font-family: 'El Messiri', serif;
-  font-size: 3.1em;
-  font-weight: 600;
-  line-height: .86;
-  margin-inline-start: .12em;
-  margin-block-start: .06em;
-  color: rgb(var(--c-accent));
-}
-
 @media (max-width: 640px) {
   .article-body p { font-size: calc(1.06rem * var(--article-scale, 1)); line-height: 2.05; text-align: right; }
-  .article-body p:first-of-type::first-letter { font-size: 2.6em; }
 }
 
 html.reader-focus nav,

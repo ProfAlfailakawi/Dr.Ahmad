@@ -1,5 +1,4 @@
 import audioManifest from '../data/audio.json'
-import bodies from '../data/bodies.json'
 import {
   articleCats,
   articles as staticArticles,
@@ -101,7 +100,6 @@ export type RemoteCmsData = {
 type AudioEntry = boolean | ArticleAudio
 type AnyRecord = ArticleRecord | BookRecord | PaperRecord | MediaRecord
 
-const bodyMap = bodies as Record<string, string>
 const audioMap = audioManifest as Record<string, AudioEntry>
 
 const fieldsByKind: Record<ContentKind, readonly string[]> = {
@@ -227,7 +225,6 @@ const baseArticles: ArticleRecord[] = staticArticles.map((article) => {
   const audio = manifest === true ? { fahed: true } : audioVoices(manifest)
   return buildArticle({
     ...article,
-    body: bodyMap[slug] || undefined,
     audio,
   }, metadata('article', slug))
 })

@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getDb, getFirebaseApp } from '../../lib/firebase'
 import { books, papers } from '../../data'
 import { publicationGate, topicMemory } from '../../lib/intelligence'
+import { getArticleBody } from '../../lib/article-bodies'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
 
@@ -572,12 +573,26 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
   const [current, setCurrent] = useState<ManagedRecord | null | undefined>(undefined)
   // ✎ من الموقع: افتح النموذج على العنصر المطلوب أول ما تتوفر القائمة (مرة واحدة)
   const [consumedOpen, setConsumedOpen] = useState(false)
+  const hydrateArticleBody = useCallback((item: ManagedRecord) => {
+    if (kind !== 'article' || item.body || item._cms.origin !== 'base') return
+    void getArticleBody(item.slug).then((body) => {
+      if (!body) return
+      setForm((previous) => (
+        previous.slug === item.slug && !previous.body ? { ...previous, body } : previous
+      ))
+    })
+  }, [kind])
   useEffect(() => {
     if (consumedOpen || !openSlug || current !== undefined) return
     const target = items.find((it) => it.slug === openSlug)
     // لا بد من ملء النموذج أيضاً (كما في openEdit) وإلا فتحت شاشة تحرير فارغة
-    if (target) { setForm(asForm(kind, target)); setCurrent(target); setConsumedOpen(true) }
-  }, [openSlug, items, current, consumedOpen, kind])
+    if (target) {
+      setForm(asForm(kind, target))
+      setCurrent(target)
+      hydrateArticleBody(target)
+      setConsumedOpen(true)
+    }
+  }, [openSlug, items, current, consumedOpen, kind, hydrateArticleBody])
   const [form, setForm] = useState<Form>(blank(kind))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -604,6 +619,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
     setError('')
     setForm(asForm(kind, item))
     setCurrent(item)
+    hydrateArticleBody(item)
   }
 
   const done = async (message: string) => {
@@ -745,10 +761,27 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
           </thead>
           <tbody className="divide-y divide-hair">
             {filtered.map((item) => (
-              <tr key={`${item._cms.origin}:${item.slug}`} className={item._cms.hidden ? 'opacity-55' : ''}>
+              <tr
+                key={`${item._cms.origin}:${item.slug}`}
+                tabIndex={0}
+                onClick={(event) => {
+                  if ((event.target as HTMLElement).closest('button,a,input,select,textarea')) return
+                  openEdit(item)
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    openEdit(item)
+                  }
+                }}
+                className={`cursor-pointer transition-colors hover:bg-wash/70 focus-visible:bg-wash ${item._cms.hidden ? 'opacity-55' : ''}`}
+                aria-label={`تعديل ${item.title}`}
+              >
                 <td className="max-w-md px-5 py-4">
-                  <span className="block font-medium leading-relaxed text-ink">{item.title}</span>
-                  <span className="mt-1 block truncate text-[.72rem] text-soft" dir="ltr">{item.slug}</span>
+                  <button type="button" onClick={() => openEdit(item)} className="block w-full text-right">
+                    <span className="block font-medium leading-relaxed text-ink transition-colors hover:text-accent">{item.title}</span>
+                    <span className="mt-1 block truncate text-[.72rem] text-soft" dir="ltr">{item.slug}</span>
+                  </button>
                 </td>
                 <td className="px-4 py-4 text-[.82rem] text-soft">{item.date || item.cat || item.outlet || item.isbn || '—'}</td>
                 <td className="px-4 py-4">

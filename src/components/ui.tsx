@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useInView, useMotionValue, useReducedMotion, useScroll, useSpring, AnimatePresence } from 'framer-motion'
 import { Link, useLocation } from 'react-router-dom'
-import { LINK_OUT, SHOW_EN_TOGGLE, profile, socials, links } from '../data'
+import { LINK_OUT, SHOW_EN_TOGGLE, articles, books, papers, profile, socials, links } from '../data'
 import { ThemeToggle } from './extras'
 import { useCvLinks } from '../lib/settings'
 import { SocialIcon } from './icons'
@@ -287,7 +287,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
         { to: '/search', label: 'البحث العميق' },
         { to: '/atlas', label: 'سماء المقالات' },
       ] },
-      { to: '/ask', label: 'اسأل مكتبتي', highlight: true },
+      { to: '/ask', label: 'العقل الحي', highlight: true },
       { to: '/thought-paths', label: 'مسار الفكرة' },
       { to: '/media', label: 'الظهور الإعلامي' },
       { to: '/upcoming', label: 'اللقاءات القادمة' },
@@ -310,7 +310,7 @@ function Overlay({ close }: { close: () => void }) {
   const reduce = useReducedMotion()
   const loc = useLocation()
   const dialogRef = useRef<HTMLDivElement>(null)
-  // الفروع مطويّة عند فتح القائمة، والعنوان الأبّ نفسه يفتحها.
+  // الفروع مطويّة عند فتح القائمة؛ العنوان يفتح الصفحة والسهم وحده يفتح الفروع.
   const [openSub, setOpenSub] = useState<string | null>(null)
 
   useEffect(() => {
@@ -398,32 +398,40 @@ function Overlay({ close }: { close: () => void }) {
                       transition={{ duration: 0.7, delay: 0.45 + gi * 0.08 + ii * 0.06, ease: EASE }}
                     >
                       {it.sub ? (
-                        <button
-                          type="button"
-                          onClick={() => setOpenSub(expanded ? null : it.to)}
-                          aria-expanded={expanded}
-                          aria-controls={subId}
-                          className={`group flex w-full items-center justify-between gap-3 py-1 text-right font-display text-[1.15rem] font-medium leading-[1.5] transition-colors duration-300 hover:text-accent md:py-1.5 md:text-[1.35rem] ${
-                            active ? 'text-accent' : 'text-ink'
-                          }`}
-                        >
-                          <span>{it.label}</span>
-                          <motion.svg
-                            aria-hidden
-                            width="13"
-                            height="13"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.4"
-                            strokeLinecap="round"
-                            animate={{ rotate: expanded ? 180 : 0 }}
-                            transition={{ duration: 0.3, ease: EASE }}
-                            className="shrink-0 text-soft group-hover:text-accent"
+                        <div className={`group flex w-full items-center justify-between gap-3 py-1 font-display text-[1.15rem] font-medium leading-[1.5] md:py-1.5 md:text-[1.35rem] ${
+                          active ? 'text-accent' : 'text-ink'
+                        }`}>
+                          <Link
+                            to={it.to}
+                            onClick={close}
+                            className="flex-1 text-right transition-colors duration-300 hover:text-accent"
                           >
-                            <path d="M6 9l6 6 6-6" />
-                          </motion.svg>
-                        </button>
+                            {it.label}
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => setOpenSub(expanded ? null : it.to)}
+                            aria-expanded={expanded}
+                            aria-controls={subId}
+                            aria-label={`فتح فروع ${it.label}`}
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-soft transition-colors hover:text-accent"
+                          >
+                            <motion.svg
+                              aria-hidden
+                              width="13"
+                              height="13"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.4"
+                              strokeLinecap="round"
+                              animate={{ rotate: expanded ? 180 : 0 }}
+                              transition={{ duration: 0.3, ease: EASE }}
+                            >
+                              <path d="M6 9l6 6 6-6" />
+                            </motion.svg>
+                          </button>
+                        </div>
                       ) : (
                         <Link
                           to={it.to}
@@ -447,15 +455,6 @@ function Overlay({ close }: { close: () => void }) {
                               transition={{ duration: 0.35, ease: EASE }}
                               className="mt-1 overflow-hidden border-r border-hair pr-4"
                             >
-                              <li>
-                                <Link
-                                  to={it.to}
-                                  onClick={close}
-                                  className={`block py-1.5 text-[.9rem] font-semibold transition-colors hover:text-accent ${loc.pathname === it.to ? 'text-accent' : 'text-soft'}`}
-                                >
-                                  {it.allLabel || `عرض ${it.label}`}
-                                </Link>
-                              </li>
                               {it.sub.map((s) => (
                                 <li key={s.to}>
                                   <Link
@@ -514,13 +513,134 @@ function Overlay({ close }: { close: () => void }) {
 const EN_OF: Record<string, string> = { '/': '/en', '/cv': '/en/cv', '/research': '/en/research' }
 const AR_OF: Record<string, string> = { '/en': '/', '/en/cv': '/cv', '/en/research': '/research' }
 
+const normalizeSearch = (value: string) => value
+  .replace(/[\u064B-\u0652\u0670]/g, '')
+  .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي')
+  .toLowerCase()
+
+type QuickResult = { to: string; title: string; meta: string; text: string }
+
+function SearchPalette({ close }: { close: () => void }) {
+  const [query, setQuery] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+  const reduce = useReducedMotion()
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => inputRef.current?.focus())
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') close()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [close])
+
+  const index = useMemo<QuickResult[]>(() => [
+    ...articles.map((item) => ({
+      to: `/articles/${item.slug}`,
+      title: item.title,
+      meta: `مقال · ${item.date}`,
+      text: `${item.title} ${item.excerpt || ''} ${item.cat}`,
+    })),
+    ...books.map((item) => ({
+      to: `/publications/${item.slug}`,
+      title: item.title,
+      meta: 'كتاب',
+      text: `${item.title} ${item.desc || ''} ${item.isbn || ''}`,
+    })),
+    ...papers.map((item) => ({
+      to: `/research/${item.slug}`,
+      title: item.title,
+      meta: 'بحث محكّم',
+      text: `${item.title} ${(item as { meta?: string }).meta || ''} ${(item as { journal?: string }).journal || ''}`,
+    })),
+    { to: '/ask', title: 'العقل الحي', meta: 'اسأل مكتبتي', text: 'اسأل مكتبتي العقل الحي سؤال ارشيف جواب موثق' },
+    { to: '/search', title: 'البحث العميق', meta: 'بحث', text: 'البحث العميق المقالات الكتب الابحاث الصوتيات' },
+    { to: '/cv', title: 'السيرة الأكاديمية', meta: 'صفحة', text: 'السيرة الاكاديمية الدكتور احمد حسين الفيلكاوي' },
+    { to: '/contact#booking-form', title: 'الحجز والتواصل', meta: 'صفحة', text: 'حجز موعد محاضرة ورشة لقاء تواصل' },
+  ], [])
+
+  const results = useMemo(() => {
+    const q = normalizeSearch(query.trim())
+    if (!q) return index.slice(0, 8)
+    const tokens = q.split(/\s+/).filter(Boolean)
+    return index
+      .map((item) => {
+        const hay = normalizeSearch(`${item.title} ${item.text}`)
+        const score = tokens.reduce((total, token) => total + (hay.includes(token) ? 1 : 0), 0)
+        return { item, score }
+      })
+      .filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10)
+      .map(({ item }) => item)
+  }, [index, query])
+
+  return (
+    <motion.div
+      role="dialog"
+      aria-modal="true"
+      aria-label="بحث سريع"
+      className="fixed inset-0 z-[260] bg-ink/25 px-4 pt-[calc(5.5rem+env(safe-area-inset-top))] backdrop-blur-sm"
+      initial={reduce ? { opacity: 0 } : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) close()
+      }}
+    >
+      <motion.div
+        className="mx-auto max-w-2xl overflow-hidden rounded-3xl border border-hair bg-canvas shadow-2xl"
+        initial={reduce ? false : { y: -12, scale: 0.98 }}
+        animate={{ y: 0, scale: 1 }}
+        exit={reduce ? undefined : { y: -8, scale: 0.98 }}
+        transition={{ duration: 0.28, ease: EASE }}
+      >
+        <div className="flex items-center gap-3 border-b border-hair px-5 py-3.5">
+          <SocialIcon name="Search" size={18} />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="ابحث في الموقع…"
+            aria-label="بحث سريع"
+            className="min-w-0 flex-1 bg-transparent text-[1rem] text-ink outline-none placeholder:text-soft/70"
+          />
+          <button type="button" onClick={close} className="rounded-full border border-hair px-3 py-1 text-[.75rem] text-soft transition-colors hover:border-accent hover:text-accent">
+            Esc
+          </button>
+        </div>
+        <div className="max-h-[62vh] overflow-y-auto p-2">
+          {results.length ? results.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              onClick={close}
+              className="group block rounded-2xl px-4 py-3 transition-colors hover:bg-wash"
+            >
+              <span className="text-[.72rem] font-semibold text-accent">{item.meta}</span>
+              <span className="mt-1 block font-display text-[1rem] font-medium leading-relaxed text-ink transition-colors group-hover:text-accent">{item.title}</span>
+            </Link>
+          )) : (
+            <div className="px-5 py-10 text-center text-soft">لا توجد نتيجة واضحة. جرّب كلمة أوسع.</div>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
 export function Nav() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const { scrollY, scrollYProgress } = useScroll()
   const progress = useSpring(scrollYProgress, { stiffness: 200, damping: 40 })
   const loc = useLocation()
   const closeMenu = useCallback(() => setOpen(false), [])
+  const closeSearch = useCallback(() => setSearchOpen(false), [])
 
   useEffect(() => scrollY.on('change', (v) => setScrolled(v > 50)), [scrollY])
   useEffect(() => setOpen(false), [loc.pathname])
@@ -528,6 +648,16 @@ export function Nav() {
     document.body.style.overflow = open ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [open])
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setSearchOpen(true)
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   const english = loc.pathname === '/en' || loc.pathname.startsWith('/en/')
   const solid = (scrolled || (loc.pathname !== '/' && loc.pathname !== '/en')) && !open
@@ -542,6 +672,7 @@ export function Nav() {
     return (
       <>
         <motion.div className="fixed left-0 top-0 z-[240] h-[2px] w-full origin-left bg-accent" style={{ scaleX: progress }} />
+        <AnimatePresence>{searchOpen && <SearchPalette key="search" close={closeSearch} />}</AnimatePresence>
         <nav aria-label="Main navigation" dir="ltr" className={`fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.82] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
           <div className={`mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
             <Link to="/en" aria-label="Ahmad H. Alfailakawi">
@@ -555,6 +686,15 @@ export function Nav() {
                   </Link>
                 ))}
               </span>
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                aria-label="Quick search"
+                title="Quick search (⌘K)"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"
+              >
+                <SocialIcon name="Search" size={16} />
+              </button>
               <ThemeToggle />
               <Link
                 to={AR_OF[loc.pathname] || '/'}
@@ -576,6 +716,7 @@ export function Nav() {
       <motion.div className="fixed right-0 top-0 z-[240] h-[2px] w-full origin-right bg-accent" style={{ scaleX: progress }} />
 
       <AnimatePresence>{open && <Overlay key="ov" close={closeMenu} />}</AnimatePresence>
+      <AnimatePresence>{searchOpen && <SearchPalette key="search" close={closeSearch} />}</AnimatePresence>
 
       <nav aria-label="التنقّل الرئيسي" className={`fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.82] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
         <div className={`mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
@@ -596,6 +737,15 @@ export function Nav() {
               </Link>
             )}
             <ThemeToggle className={open ? 'invisible pointer-events-none' : ''} />
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              aria-label="بحث سريع"
+              title="بحث سريع (⌘K)"
+              className={`flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent ${open ? 'invisible pointer-events-none' : ''}`}
+            >
+              <SocialIcon name="Search" size={16} />
+            </button>
             <Link
               to="/contact#booking-form"
               aria-label="حجز موعد"

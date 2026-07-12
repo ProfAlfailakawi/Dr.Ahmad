@@ -186,9 +186,17 @@ function MemoryAndGateCard({ articles }: { articles: ArticleRecord[] }) {
   const [body, setBody] = useState('')
   const memory = useMemo(() => topicMemory(title, body, articles, books, papers), [articles, body, title])
   const gate = useMemo(() => publicationGate({ title, body, slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), excerpt: body.slice(0, 160), cat: 'تلقائي' }, articles), [articles, body, title])
+  const strongLine = useMemo(() => {
+    const sentences = body.replace(/\s+/g, ' ').split(/(?<=[.!؟])\s+/)
+    return sentences.find((sentence) => sentence.length >= 55 && sentence.length <= 170)
+      || body.replace(/\s+/g, ' ').slice(0, 150)
+  }, [body])
+  const closestPaper = memory.relatedPapers[0]
+  const closestBook = memory.relatedBooks[0]
   return (
     <section className={card}>
-      <p className="text-[.76rem] font-semibold uppercase text-accent">ذاكرة المواضيع + بوابة قبل النشر</p>
+      <p className="text-[.76rem] font-semibold uppercase text-accent">المحرر الذي يعرفك</p>
+      <h2 className="mt-1 font-display text-xl font-semibold text-ink">ناقد فكري هادئ قبل النشر.</h2>
       <div className="mt-4 grid gap-3">
         <input className={input} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="عنوان المقال الجديد أو فكرته" />
         <textarea className={`${input} min-h-32 leading-loose`} value={body} onChange={(event) => setBody(event.target.value)} placeholder="اكتب مسودة قصيرة…" />
@@ -204,6 +212,22 @@ function MemoryAndGateCard({ articles }: { articles: ArticleRecord[] }) {
           <ul className="mt-2 grid gap-1.5 text-[.84rem] text-soft">
             {(gate.issues.length ? gate.issues : ['العنوان، النص، المقتطف، والـslug تبدو سليمة.']).map((issue) => <li key={issue}>• {issue}</li>)}
           </ul>
+        </div>
+        <div className="rounded-xl border border-hair bg-canvas p-4">
+          <p className="font-semibold text-ink">بصمة الفكرة</p>
+          <p className="mt-2 text-[.86rem] leading-relaxed text-soft">
+            {strongLine || 'اكتب فقرة أطول قليلاً، وسألتقط الجملة التي تصلح كبصمة للمقال.'}
+          </p>
+        </div>
+        <div className="rounded-xl border border-hair bg-canvas p-4">
+          <p className="font-semibold text-ink">ما الذي يربطه؟</p>
+          <p className="mt-2 text-[.86rem] leading-relaxed text-soft">
+            {closestPaper
+              ? `هذا المقال يمكن أن يسد فراغاً بين الكتابة العامة والبحث: «${closestPaper.title}».`
+              : closestBook
+                ? `هناك صلة واضحة بكتاب «${closestBook.title}»؛ اربطه داخل المقال إذا كان مناسباً.`
+                : 'لا تظهر صلة أكاديمية قوية بعد؛ ربما يحتاج النص إلى زاوية أوضح.'}
+          </p>
         </div>
       </div>
     </section>
@@ -293,7 +317,7 @@ function DoctorRadarCard({ articles }: { articles: ArticleRecord[] }) {
   return (
     <section className={card}>
       <p className="text-[.76rem] font-semibold uppercase text-accent">رادار الدكتور</p>
-      <h2 className="mt-1 font-display text-xl font-semibold text-ink">خمس صيدات تستحق تعليقك.</h2>
+      <h2 className="mt-1 font-display text-xl font-semibold text-ink">خمس لقطات تستحق تعليقك.</h2>
       <div className="mt-5 grid gap-3">
         {items.length ? items.map((item) => {
           const related = ideaLab(`${item.ar || ''} ${item.arNote || ''}`, articles, books, papers).relatedArticles[0]
@@ -304,13 +328,17 @@ function DoctorRadarCard({ articles }: { articles: ArticleRecord[] }) {
                 <div className="min-w-0 flex-1">
                   <p className="text-[.9rem] font-semibold leading-relaxed text-ink">{item.ar}</p>
                   {item.arNote && <p className="mt-1 text-[.82rem] leading-relaxed text-soft">{item.arNote}</p>}
-                  {related && <p className="mt-2 text-[.78rem] text-accent">يرتبط بمقال: {related.title}</p>}
+                  {related && (
+                    <a href={`/articles/${related.slug}`} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[.78rem] text-accent transition-colors hover:text-accent-deep">
+                      يرتبط بمقال: {related.title} ←
+                    </a>
+                  )}
                 </div>
                 <CopyButton value={draft} label="اكتب تعليقاً" />
               </div>
             </div>
           )
-        }) : <p className="rounded-xl border border-hair bg-canvas p-4 text-[.86rem] text-soft">تظهر هنا صيدات الرادار بعد تشغيل/نشر الرادار اليومي.</p>}
+        }) : <p className="rounded-xl border border-hair bg-canvas p-4 text-[.86rem] text-soft">تظهر هنا لقطات الرادار بعد تشغيل/نشر الرادار اليومي.</p>}
       </div>
     </section>
   )

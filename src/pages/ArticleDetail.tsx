@@ -11,6 +11,7 @@ import { JsonLd, useSeo } from '../components/seo'
 import { fetchOwnerCounts, useTrackView } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
 import { articleSystem, ideaTokens } from '../lib/intelligence'
+import { getArticleBody } from '../lib/article-bodies'
 
 /** تقدير زمن القراءة — ٢٠٠ كلمة/دقيقة للعربية */
 const readTime = (t?: string) => {
@@ -198,9 +199,42 @@ function OwnerBadge({ path }: { path: string }) {
   )
 }
 
+function ArchiveContext({ a }: { a: ArticleRecord }) {
+  const year = Number(a.iso.slice(0, 4))
+  if (!year || year > 2019) return null
+  const needsTimeContext = /(تقنية|إعلام|بحث|التعليم|التربية)/.test(a.cat)
+  return (
+    <FadeUp>
+      <aside className="mt-8 rounded-2xl border border-hair bg-wash px-5 py-4">
+        <p className="text-[.74rem] font-semibold text-accent">مقال من الأرشيف</p>
+        <p className="mt-1 text-[.86rem] font-light leading-[1.8] text-soft">
+          نُشر عام {year.toLocaleString('en-US')}، ويُقرأ بوصفه جزءاً من سياقه الزمني ومسار تطوّر الفكرة.
+          {needsTimeContext ? ' بعض النقاشات التقنية والتربوية تتغير مع الزمن، لذلك يبقى التاريخ هنا جزءاً من معنى النص.' : ''}
+        </p>
+      </aside>
+    </FadeUp>
+  )
+}
+
 function StudentArchive({ a, articles }: { a: ArticleRecord; articles: ArticleRecord[] }) {
   const pack = useMemo(() => articleSystem(a, articles, books, papers), [a, articles])
   const terms = Array.from(new Set(ideaTokens(`${a.title} ${a.excerpt || ''} ${a.body || ''}`))).slice(0, 5)
+  const relatedArticle = pack.relatedArticles[0]
+  const relatedPaper = pack.relatedPapers[0]
+  const relatedBook = pack.relatedBooks[0]
+  const topic = terms.slice(0, 2).join(' و') || a.cat
+  const researchIdea = relatedPaper
+    ? `قارن هذا المقال بنتائج بحث «${relatedPaper.title}»: أين يلتقي النص الفكري مع الدليل الأكاديمي، وأين يفتح سؤالاً جديداً؟`
+    : relatedBook
+      ? `اقرأ الفكرة بجوار كتاب «${relatedBook.title}»: كيف تتحول من تأمل صحفي إلى إطار تعليمي أوسع؟`
+      : `اختبر حضور «${topic}» في موقف تعليمي واقعي: ما الذي يتغير في الطالب أو المعلم عندما نأخذ هذه الفكرة بجدية؟`
+  const quickPath = relatedArticle
+    ? { label: `ابدأ بمقال «${relatedArticle.title}»`, to: `/articles/${relatedArticle.slug}` }
+    : relatedPaper
+      ? { label: `ابدأ ببحث «${relatedPaper.title}»`, to: `/research/${relatedPaper.slug}` }
+      : relatedBook
+        ? { label: `ابدأ بكتاب «${relatedBook.title}»`, to: `/publications/${relatedBook.slug}` }
+        : null
   return (
     <FadeUp>
       <details className="mt-14 rounded-2xl border border-hair bg-wash px-6 py-5">
@@ -214,7 +248,7 @@ function StudentArchive({ a, articles }: { a: ArticleRecord; articles: ArticleRe
           </div>
           <div>
             <p className="text-[.76rem] font-semibold text-accent">فكرة بحثية</p>
-            <p className="mt-2 text-[.9rem] leading-relaxed text-soft">اختبر أثر هذه الفكرة في سياق تعليمي محدد: طالب، معلم، أداة، ونتيجة إنسانية قابلة للملاحظة.</p>
+            <p className="mt-2 text-[.9rem] leading-relaxed text-soft">{researchIdea}</p>
           </div>
           <div>
             <p className="text-[.76rem] font-semibold text-accent">مصطلحات مفتاحية</p>
@@ -222,7 +256,13 @@ function StudentArchive({ a, articles }: { a: ArticleRecord; articles: ArticleRe
           </div>
           <div>
             <p className="text-[.76rem] font-semibold text-accent">للإحالة السريعة</p>
-            <p className="mt-2 text-[.9rem] leading-relaxed text-soft">استخدم زر «انسخ الاستشهاد» أسفل المقال، ثم اربطه بالمقال أو البحث الأقرب في «أكمل هذا المسار».</p>
+            {quickPath ? (
+              <Link to={quickPath.to} className="mt-2 inline-block text-[.9rem] leading-relaxed text-soft transition-colors hover:text-accent">
+                {quickPath.label} ←
+              </Link>
+            ) : (
+              <p className="mt-2 text-[.9rem] leading-relaxed text-soft">استخدم زر «انسخ الاستشهاد» أسفل المقال، ثم اربطه بأقرب مصدر من «أكمل هذا المسار».</p>
+            )}
           </div>
         </div>
       </details>
@@ -234,6 +274,8 @@ export default function ArticleDetail() {
   const { slug } = useParams()
   const { articles, loading } = useCmsContent()
   const a = articles.find((article) => article.slug === slug)
+  const [staticBody, setStaticBody] = useState<string | undefined>()
+  const [bodyLoading, setBodyLoading] = useState(false)
 
   const { scrollYProgress } = useScroll()
   const bar = useSpring(scrollYProgress, { stiffness: 200, damping: 40 })
@@ -249,6 +291,27 @@ export default function ArticleDetail() {
     image: slug ? `/og/articles/${slug}.svg` : undefined,
   })
   useTrackView(`/articles/${slug || ''}`, a?.title || 'مقال', Boolean(a))
+
+  useEffect(() => {
+    let active = true
+    setStaticBody(undefined)
+    if (!a || a.body) {
+      setBodyLoading(false)
+      return () => { active = false }
+    }
+    setBodyLoading(true)
+    getArticleBody(a.slug)
+      .then((body) => {
+        if (active) setStaticBody(body)
+      })
+      .catch(() => {
+        if (active) setStaticBody(undefined)
+      })
+      .finally(() => {
+        if (active) setBodyLoading(false)
+      })
+    return () => { active = false }
+  }, [a?.slug, a?.body])
 
   // يتذكّر جهازُك آخر مقالٍ فتحتَه — بلا حساب ولا تتبّع خارجي، ليُقدَّم لك عند العودة
   useEffect(() => {
@@ -271,7 +334,8 @@ export default function ArticleDetail() {
     )
 
   const { prev, next } = neighbors
-  const rt = readTime(a.body)
+  const article: ArticleRecord = { ...a, body: a.body || staticBody }
+  const rt = readTime(article.body)
 
   return (
     <Page>
@@ -316,21 +380,26 @@ export default function ArticleDetail() {
             <OwnerBadge path={`/articles/${a.slug}`} />
             <OwnerEdit tab="articles" slug={a.slug} className="ms-2" />
             <div className="mt-7 h-[2px] w-16 bg-accent" />
-            {a.body && <Listen slug={a.slug} title={a.title} text={a.body} audio={(a as { audio?: { fahed?: boolean | string; noura?: boolean | string } }).audio} />}
-            {a.body && <ReaderPanel slug={a.slug} />}
+            {article.body && <Listen slug={article.slug} title={article.title} text={article.body} audio={(article as { audio?: { fahed?: boolean | string; noura?: boolean | string } }).audio} />}
+            {article.body && <ReaderPanel slug={article.slug} />}
+            <ArchiveContext a={article} />
           </FadeUp>
 
           <FadeUp delay={0.12}>
-            {a.body ? (
+            {bodyLoading ? (
+              <div className="mt-11 rounded-2xl border border-hair bg-wash p-8 text-center text-soft">
+                أفتح نص المقال الكامل…
+              </div>
+            ) : article.body ? (
               <>
                 <div className="article-body mt-11">
-                  {a.body.split('\n\n').map((p, k) => (
+                  {article.body.split('\n\n').map((p, k) => (
                     <p key={k}>{p}</p>
                   ))}
                 </div>
                 {/* أداة تحديد واحدة: خيط الفكرة + بطاقة اقتباس (بلا تداخل) */}
-                <SelectionTools current={a} articles={articles} body={a.body} excerpt={a.excerpt} />
-                <StudentArchive a={a} articles={articles} />
+                <SelectionTools current={article} articles={articles} body={article.body} excerpt={article.excerpt} />
+                <StudentArchive a={article} articles={articles} />
               </>
             ) : (
               <>
@@ -361,11 +430,11 @@ export default function ArticleDetail() {
             )}
           </FadeUp>
 
-          {a.body && a.source && (
+          {article.body && article.source && (
             <FadeUp>
               <p className="mt-14 border-t border-hair pt-6 text-[.85rem] text-soft">
                 نُشر أولاً في{' '}
-                <a href={a.source} target="_blank" rel="noreferrer" className="text-accent underline underline-offset-4">
+                <a href={article.source} target="_blank" rel="noreferrer" className="text-accent underline underline-offset-4">
                   المصدر الأصلي
                 </a>
               </p>
@@ -373,7 +442,7 @@ export default function ArticleDetail() {
           )}
 
           {/* «ما الجملة التي بقيت معك؟» — دعوة صريحة لأداة التحديد (خيط الفكرة + بطاقة اقتباس) */}
-          {a.body && (
+          {article.body && (
             <FadeUp>
               <div className="mt-14 rounded-2xl border border-hair bg-wash p-7 text-center md:p-8">
                 <p className="font-display text-[clamp(1.15rem,2.4vw,1.5rem)] font-semibold leading-[1.7] text-ink">ما الجملة التي بقيت معك؟</p>

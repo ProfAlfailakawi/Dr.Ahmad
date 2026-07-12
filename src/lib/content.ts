@@ -74,7 +74,10 @@ const errorMessage = (error: unknown) =>
 const documents = (snapshot: { docs: { id: string; data: () => Record<string, unknown> }[] }): RemoteDocument[] =>
   snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))
 
-const afterFirstPaint = (callback: () => void) => {
+const isAdminRoute = () =>
+  typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+
+const afterFirstPaint = (callback: () => void, timeout = 2500) => {
   if (typeof window === 'undefined') return () => {}
   let cancelled = false
   const run = () => { if (!cancelled) callback() }
@@ -83,8 +86,8 @@ const afterFirstPaint = (callback: () => void) => {
     cancelIdleCallback?: (id: number) => void
   }
   const id = win.requestIdleCallback
-    ? win.requestIdleCallback(run, { timeout: 2500 })
-    : window.setTimeout(run, 1200)
+    ? win.requestIdleCallback(run, { timeout })
+    : window.setTimeout(run, Math.min(timeout, 1200))
   return () => {
     cancelled = true
     if (win.cancelIdleCallback && typeof id === 'number') win.cancelIdleCallback(id)
@@ -94,7 +97,7 @@ const afterFirstPaint = (callback: () => void) => {
 
 export function CmsProvider({ children }: { children: ReactNode }) {
   const [remote, setRemote] = useState<RemoteCmsData>({})
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(isAdminRoute)
   const [error, setError] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
@@ -125,7 +128,7 @@ export function CmsProvider({ children }: { children: ReactNode }) {
     const unsubscribers: (() => void)[] = []
     let cancelStart = () => {}
 
-    const start = async () => {
+    const startRealtime = async () => {
       try {
         const db = await getDb()
         if (!active) return
@@ -165,14 +168,20 @@ export function CmsProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    cancelStart = afterFirstPaint(() => { void start() })
+    if (isAdminRoute()) {
+      cancelStart = afterFirstPaint(() => { void startRealtime() }, 500)
+    } else {
+      setLoading(false)
+      // الزائر العام لا يحتاج خمس مراقبات لحظية. جلب واحد مؤجل يكفي لتعديلات المحتوى الحي.
+      cancelStart = afterFirstPaint(() => { void reload() }, 6000)
+    }
 
     return () => {
       active = false
       cancelStart()
       unsubscribers.forEach((unsubscribe) => unsubscribe())
     }
-  }, [])
+  }, [reload])
 
   const value = useMemo<CmsContextValue>(() => ({
     remote,

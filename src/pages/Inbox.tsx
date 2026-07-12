@@ -4,10 +4,10 @@ import { Newsletter } from '../components/extras'
 import { useSeo } from '../components/seo'
 import { faqs, inboxLinks, testimonials } from '../data'
 
-/* «يتجدد وحده»: تدوير أسبوعي حتمي — كل أسبوع يتقدّم الصف فيتغير الترتيب والوجوه أولاً
+/* «يتجدد وحده»: تدوير يومي حتمي — كل يوم يتقدّم الصف فيتغير الترتيب والوجوه أولاً
    دون أي تدخل؛ ومع كل إضافة من لوحة التحكم (مختارات) يكبر المخزون. */
-const week = Math.floor(Date.now() / 6048e5)
-const rotate = <T,>(arr: T[]): T[] => arr.length ? [...arr.slice(week % arr.length), ...arr.slice(0, week % arr.length)] : arr
+const day = Math.floor(Date.now() / 864e5)
+const rotate = <T,>(arr: T[]): T[] => arr.length ? [...arr.slice(day % arr.length), ...arr.slice(0, day % arr.length)] : arr
 
 export default function Inbox() {
   useSeo({ title: 'من بريدي الوارد', path: '/inbox', description: 'مختارات من رسائل وروابط وصلتني، وأسئلة يتكرّر ورودها.' })

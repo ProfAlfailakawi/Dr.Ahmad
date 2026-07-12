@@ -278,7 +278,7 @@ function Signatures() {
   const sigs = [
     { to: '/atlas', t: 'سماء المقالات', dy: -14 },
     { to: '/thought-paths', t: 'مسار الفكرة', dy: -4 },
-    { to: '/ask', t: 'اسأل مكتبتي', dy: -18 },
+    { to: '/ask', t: 'العقل الحي', dy: -18 },
     { to: '/decade', t: 'وثيقة العقد', dy: -8 },
     { to: '/questions', t: 'سؤال يُقلق التعليم', dy: -12 },
   ]
@@ -693,7 +693,7 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.85, ease: EASE }}
             >
-              <p className="font-display text-[clamp(1.15rem,2.4vw,1.6rem)] font-semibold text-ink">د. {profile.name}</p>
+              <p className="font-display text-[clamp(1.15rem,2.4vw,1.6rem)] font-semibold text-ink">{profile.name}</p>
               <p className="mt-1.5 text-[.95rem] font-light text-soft">أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · باحث · مستشار</p>
             </motion.div>
 
@@ -719,7 +719,7 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 1.1, delay: 0.75, ease: EASE }}
                 >
-                  <img src="/portrait.jpg" alt={`د. ${profile.fullName}`} width={900} height={1350} fetchPriority="high" decoding="async" className="block h-auto w-full" />
+                  <img src="/portrait.jpg" alt={profile.fullName} width={900} height={1350} fetchPriority="high" decoding="async" className="block h-auto w-full" />
                 </motion.div>
               </motion.div>
             </motion.div>

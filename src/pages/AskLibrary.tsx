@@ -1,17 +1,15 @@
 /**
- * «اسأل مكتبتي» — /ask
- * الزائر يسأل، والمكتبة تُجيب بكلمات الدكتور أنفسِها: فقرات مقتبسة حرفياً من
- * مقالاته المنشورة حصراً، مع استشهادٍ يقود للمقال الكامل. لا اختلاق ولا توليد —
- * وما لم يكتب فيه بعد، تُصارِح به: «لم أكتب في هذا بعد».
- * تجسيدٌ حرفي لأطروحته: أُبقي الإنسانَ في قلبِ الآلة.
+ * «العقل الحي» — /ask
+ * يسأل الزائر سؤالاً حقيقياً، فيعيد الموقع ترتيب أرشيف الدكتور فقط:
+ * اقتباسات حرفية، خط زمني، أحدث موقف منشور، وكتاب شخصي خفيف.
  */
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FadeUp, Page, PageHead } from '../components/ui'
-import { articlesWithBody, books, papers } from '../data'
+import { articles, books, papers } from '../data'
 import { useSeo } from '../components/seo'
+import { loadArticleBodies } from '../lib/article-bodies'
 
-/* تطبيع عربي للمطابقة: إسقاط التشكيل وتوحيد الهمزات */
 const norm = (s: string) => s
   .replace(/[ً-ْٰ]/g, '')
   .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي')
@@ -21,112 +19,247 @@ const norm = (s: string) => s
 const STOP = new Set(['على','الى','من','في','عن','مع','هذا','هذه','ذلك','التي','الذي','بين','بعد','قبل','عند','حتي','كان','كانت','هل','ما','لا','لم','لن','قد','ثم','او','ام','بل','كل','بعض','غير','نحو','لدي','منذ','حين','حول','ان','لان','كيف','اين','ليس','وهو','وهي','راي','رايك','الدكتور','دكتور','احمد','الفيلكاوي','برايك','شنو','ماذا','لماذا'])
 const tokenize = (s: string) => norm(s).split(/\s+/).filter((w) => w.length > 2 && !STOP.has(w))
 
-type Hit = { slug: string; title: string; iso: string; para: string; score: number }
+type Hit = { slug: string; title: string; iso: string; cat?: string; excerpt?: string; para: string; score: number }
+type TimelineItem = { slug: string; title: string; iso: string; cat?: string; excerpt?: string; score: number }
 type Ref = { kind: 'كتاب' | 'بحث محكّم'; slug: string; title: string; href: string }
+type AskArticle = (typeof articles)[number] & { body?: string }
+type Answer = {
+  hits: Hit[]
+  near: TimelineItem[]
+  refs: Ref[]
+  timeline: TimelineItem[]
+  latest?: TimelineItem
+  earliest?: TimelineItem
+  tension?: string
+}
 
 function matchRefs(qTokens: string[]): Ref[] {
   const refs: (Ref & { score: number })[] = []
   for (const b of books) {
     const nb = norm(b.title + ' ' + (b.desc || ''))
-    let s = 0; for (const w of qTokens) if (nb.includes(w)) s++
-    if (s >= 2) refs.push({ kind: 'كتاب', slug: b.slug, title: b.title, href: `/publications/${b.slug}`, score: s })
+    let score = 0
+    for (const w of qTokens) if (nb.includes(w)) score++
+    if (score >= 2) refs.push({ kind: 'كتاب', slug: b.slug, title: b.title, href: `/publications/${b.slug}`, score })
   }
   for (const p of papers) {
     const np = norm(p.title + ' ' + ((p as { meta?: string }).meta || ''))
-    let s = 0; for (const w of qTokens) if (np.includes(w)) s++
-    if (s >= 2) refs.push({ kind: 'بحث محكّم', slug: p.slug, title: p.title, href: `/research/${p.slug}`, score: s })
+    let score = 0
+    for (const w of qTokens) if (np.includes(w)) score++
+    if (score >= 2) refs.push({ kind: 'بحث محكّم', slug: p.slug, title: p.title, href: `/research/${p.slug}`, score })
   }
-  return refs.sort((a, b) => b.score - a.score).slice(0, 2)
+  return refs.sort((a, b) => b.score - a.score).slice(0, 3)
 }
 
-function answer(question: string): { hits: Hit[]; near: { slug: string; title: string; iso: string }[]; refs: Ref[] } {
-  const q = tokenize(question)
-  if (!q.length) return { hits: [], near: [], refs: [] }
+function compactText(text = '', limit = 460) {
+  const clean = text.replace(/\s+/g, ' ').trim()
+  if (clean.length <= limit) return clean
+  const cut = clean.slice(0, limit)
+  const end = Math.max(cut.lastIndexOf('.'), cut.lastIndexOf('؟'), cut.lastIndexOf('!'), cut.lastIndexOf('،'))
+  return (end > 200 ? cut.slice(0, end + 1) : cut).trim() + (end > 200 ? '' : '…')
+}
 
-  const scored = articlesWithBody.map((a) => {
-    const nt = norm(a.title)
-    const ne = norm(a.excerpt || '')
-    const nb = a.body ? norm(a.body) : ''
+function toTimelineItem(entry: { a: AskArticle; score: number }): TimelineItem {
+  return {
+    slug: entry.a.slug,
+    title: entry.a.title,
+    iso: entry.a.iso,
+    cat: entry.a.cat,
+    excerpt: entry.a.excerpt,
+    score: entry.score,
+  }
+}
+
+function answer(question: string, bodies: Record<string, string>): Answer {
+  const q = tokenize(question)
+  if (!q.length) return { hits: [], near: [], refs: [], timeline: [] }
+
+  const scored = articles.map((article) => {
+    const a: AskArticle = { ...article, body: bodies[article.slug] || undefined }
+    const title = norm(a.title)
+    const excerpt = norm(a.excerpt || '')
+    const body = a.body ? norm(a.body) : ''
     let score = 0
     for (const w of q) {
-      if (nt.includes(w)) score += 4
-      if (ne.includes(w)) score += 2
-      if (nb) {
-        let i = 0, c = 0
-        while (c < 6 && (i = nb.indexOf(w, i)) !== -1) { c++; i += w.length }
-        score += c
+      if (title.includes(w)) score += 4
+      if (excerpt.includes(w)) score += 2
+      if (body) {
+        let index = 0
+        let count = 0
+        while (count < 6 && (index = body.indexOf(w, index)) !== -1) {
+          count++
+          index += w.length
+        }
+        score += count
       }
     }
     return { a, score }
-  }).sort((x, y) => y.score - x.score)
+  }).sort((left, right) => right.score - left.score || right.a.iso.localeCompare(left.a.iso))
 
-  const top = scored.filter((s) => s.score >= 6).slice(0, 2)
-  const near = scored.slice(0, 3).filter((s) => s.score > 0).map((s) => ({ slug: s.a.slug, title: s.a.title, iso: s.a.iso }))
+  const near = scored.slice(0, 4).filter((item) => item.score > 0).map(toTimelineItem)
+  const relevant = scored.filter((item) => item.score >= 3).map(toTimelineItem)
+  const chronological = [...relevant].sort((left, right) => left.iso.localeCompare(right.iso))
+  const timeline = chronological
+    .filter((item, index, all) => index === 0 || index === all.length - 1 || index % Math.max(1, Math.ceil(all.length / 4)) === 0)
+    .slice(0, 6)
+  const earliest = chronological[0]
+  const latest = [...relevant].sort((left, right) => right.iso.localeCompare(left.iso))[0]
+  const cats = Array.from(new Set(relevant.map((item) => item.cat).filter(Boolean)))
+  const tension = cats.length > 1
+    ? `هذا السؤال لا يظهر في باب واحد فقط؛ يمرّ بين ${cats.slice(0, 3).map((cat) => `«${cat}»`).join(' و')}، وكأن الفكرة عند الدكتور ليست تقنية أو تربوية وحدها، بل سؤال إنساني يتغير سياقه.`
+    : undefined
   const refs = matchRefs(q)
-  if (!top.length) return { hits: [], near, refs }
+  const top = scored.filter((item) => item.score >= 6).slice(0, 2)
 
-  // أفضل فقرة من كل مقال — بكلماته حرفياً
   const hits: Hit[] = []
   for (const { a } of top) {
     if (!a.body) continue
     const paras = a.body.split(/\n\n+/).map((p) => p.trim()).filter((p) => p.length > 60)
-    let best = '', bestScore = -1
+    let best = ''
+    let bestScore = -1
     for (const p of paras) {
-      const np = norm(p)
-      let s = 0
-      for (const w of q) if (np.includes(w)) s += 1 + Math.min(2, (np.split(w).length - 1) - 1)
-      // فقرة متوسطة الطول أوضح من الطويلة جداً
-      if (p.length > 700) s -= 1
-      if (s > bestScore) { bestScore = s; best = p }
+      const paragraph = norm(p)
+      let score = 0
+      for (const w of q) if (paragraph.includes(w)) score += 1 + Math.min(2, (paragraph.split(w).length - 1) - 1)
+      if (p.length > 700) score -= 1
+      if (score > bestScore) {
+        bestScore = score
+        best = p
+      }
     }
-    if (bestScore <= 0) continue
-    // اقتصاص أنيق عند نهاية جملة
-    let text = best
-    if (text.length > 460) {
-      const cut = text.slice(0, 460)
-      const end = Math.max(cut.lastIndexOf('.'), cut.lastIndexOf('؟'), cut.lastIndexOf('!'), cut.lastIndexOf('،'))
-      text = (end > 200 ? cut.slice(0, end + 1) : cut) + (end > 200 ? '' : '…')
-    }
-    hits.push({ slug: a.slug, title: a.title, iso: a.iso, para: text, score: bestScore })
+    if (bestScore > 0) hits.push({
+      slug: a.slug,
+      title: a.title,
+      iso: a.iso,
+      cat: a.cat,
+      excerpt: a.excerpt,
+      para: compactText(best),
+      score: bestScore,
+    })
   }
-  return { hits, near, refs }
+
+  return { hits, near, refs, timeline, latest, earliest, tension }
 }
 
 const SUGGESTIONS = [
-  'ما رأيك في الهواتف بيد الأطفال؟',
   'هل الذكاء الاصطناعي يهدد المعلم؟',
-  'كيف نحمي أبناءنا من إدمان السوشيال ميديا؟',
+  'ما أثر الهاتف على الطفل؟',
+  'كيف صار الامتحان مصدر خوف؟',
 ]
 
+const PERSONAS = [
+  { id: 'teacher', label: 'معلم', intro: 'كتاب شخصي للمعلم: يبدأ من السؤال، ثم يحوله إلى مسار قابل للنقاش داخل الصف.' },
+  { id: 'parent', label: 'ولي أمر', intro: 'كتاب شخصي لولي الأمر: يقرأ الفكرة من أثرها على الطفل والبيت والطمأنينة.' },
+  { id: 'student', label: 'طالب باحث', intro: 'كتاب شخصي للطالب: مصادر مرتبة، سؤال بحثي، ومداخل موثقة للاستشهاد.' },
+  { id: 'media', label: 'إعلامي', intro: 'كتاب تحضيري للقاء: خلاصة، زوايا سؤال، ومصادر تساعد على حوار عميق.' },
+]
+
+function PersonalBook({ asked, result }: { asked: string; result: Answer }) {
+  const [persona, setPersona] = useState(PERSONAS[0].id)
+  const active = PERSONAS.find((item) => item.id === persona) || PERSONAS[0]
+  const chapters = [
+    result.earliest && { label: 'الفصل الأول', item: result.earliest, note: 'أول موضع واضح في الأرشيف يلامس السؤال.' },
+    ...result.timeline.slice(1, 4).map((item, index) => ({ label: `الفصل ${index + 2}`, item, note: 'محطة لاحقة في تطور الفكرة.' })),
+    result.latest && { label: 'أحدث موقف', item: result.latest, note: 'أقرب إجابة منشورة تمثل الموقف الآن.' },
+  ].filter(Boolean) as { label: string; item: TimelineItem; note: string }[]
+
+  if (!chapters.length) return null
+  return (
+    <FadeUp>
+      <section className="mt-10 rounded-2xl border border-hair bg-wash p-6 md:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-[.76rem] font-semibold text-accent">الكتاب الذي يكتب نفسه</p>
+            <h2 className="mt-1 font-display text-[1.35rem] font-semibold leading-relaxed text-ink">كتاب شخصي من الأرشيف، لا من الخيال.</h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent"
+          >
+            تجهيز PDF
+          </button>
+        </div>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {PERSONAS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setPersona(item.id)}
+              className={`rounded-full px-4 py-1.5 text-[.82rem] transition-colors ${persona === item.id ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <div className="mt-6 rounded-xl border border-hair bg-canvas p-5">
+          <p className="text-[.86rem] leading-relaxed text-soft">{active.intro}</p>
+          <p className="mt-4 font-display text-[1.1rem] font-semibold leading-relaxed text-ink">«{asked}»</p>
+          <ol className="mt-5 grid gap-3">
+            {chapters.map(({ label, item, note }) => (
+              <li key={`${label}-${item.slug}`} className="border-t border-hair pt-3 first:border-t-0 first:pt-0">
+                <span className="text-[.72rem] font-semibold text-accent">{label} · {item.iso.slice(0, 4)}</span>
+                <Link to={`/articles/${item.slug}`} className="mt-1 block font-display text-[1rem] font-medium leading-relaxed text-ink transition-colors hover:text-accent">
+                  {item.title}
+                </Link>
+                <p className="mt-1 text-[.8rem] leading-relaxed text-soft">{note}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+    </FadeUp>
+  )
+}
+
 export default function AskLibrary() {
-  useSeo({ title: 'اسأل مكتبتي', path: '/ask', description: 'اسأل، وتُجيبك مكتبة د. أحمد حسين الفيلكاوي بكلماته حرفياً — من مقالاته المنشورة حصراً، مع مصدر كل جواب.' })
+  useSeo({
+    title: 'العقل الحي',
+    path: '/ask',
+    description: 'اسأل سؤالاً حقيقياً، فيبني الموقع إجابة موثقة من أرشيف د. أحمد حسين الفيلكاوي فقط: مقالات، تطور زمني، ومصادر.',
+  })
   const [q, setQ] = useState('')
   const [asked, setAsked] = useState('')
+  const [bodies, setBodies] = useState<Record<string, string> | null>(null)
+  const [bodiesLoading, setBodiesLoading] = useState(false)
   const resRef = useRef<HTMLDivElement>(null)
-
-  const result = useMemo(() => (asked ? answer(asked) : null), [asked])
-
   const inputRef = useRef<HTMLInputElement>(null)
-  const again = () => { setAsked(''); setQ(''); setTimeout(() => inputRef.current?.focus(), 60); window.scrollTo({ top: 0, behavior: 'smooth' }) }
+  const result = useMemo(() => (asked && bodies ? answer(asked, bodies) : null), [asked, bodies])
+
+  useEffect(() => {
+    let active = true
+    if (!asked || bodies) return () => { active = false }
+    setBodiesLoading(true)
+    loadArticleBodies()
+      .then((map) => { if (active) setBodies(map) })
+      .finally(() => { if (active) setBodiesLoading(false) })
+    return () => { active = false }
+  }, [asked, bodies])
+
+  const again = () => {
+    setAsked('')
+    setQ('')
+    setTimeout(() => inputRef.current?.focus(), 60)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const ask = (text: string) => {
-    const t = text.trim()
-    if (t.length < 4) return
-    setQ(t); setAsked(t)
+    const trimmed = text.trim()
+    if (trimmed.length < 4) return
+    setQ(trimmed)
+    setAsked(trimmed)
     setTimeout(() => resRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
   }
 
   return (
     <Page>
       <PageHead
-        label="اسأل مكتبتي"
-        title="اسألني عمّا كتبتُ فيه."
-        sub="إجاباتٌ مستندة إلى ما كتبتُ ونشرت، لا إلى الإنترنت المفتوح — فقراتٌ حرفية بمصدرها. وما لم أكتب فيه بعد، تُصارِحك."
+        label="العقل الحي"
+        title="اسأل الأرشيف سؤالاً حقيقياً."
+        sub="لا يتقمص الموقع رأيي ولا يخترع جواباً باسمي. يعيد بناء المسار من مقالاتي وأبحاثي وكتبي فقط: ماذا كتبت، متى بدأ الخيط، وأين يقف أحدث نص منشور."
       />
 
       <section className="px-6 py-14 md:px-11 md:py-16">
         <div className="mx-auto max-w-3xl">
-          {/* السؤال */}
           <FadeUp>
             <div className="flex flex-col gap-2.5 sm:flex-row">
               <input
@@ -134,7 +267,7 @@ export default function AskLibrary() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && ask(q)}
-                placeholder="اكتب سؤالك…"
+                placeholder="هل سيستبدل الذكاء الاصطناعي المعلم؟"
                 aria-label="سؤالك"
                 className="flex-1 rounded-full border border-hair bg-canvas px-6 py-3.5 text-[1rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
               />
@@ -147,7 +280,6 @@ export default function AskLibrary() {
             </div>
           </FadeUp>
 
-          {/* أمثلة — تختفي بعد أول سؤال */}
           {!asked && (
             <FadeUp delay={0.08}>
               <div className="mt-6 flex flex-wrap items-center gap-2">
@@ -161,13 +293,19 @@ export default function AskLibrary() {
             </FadeUp>
           )}
 
-          {/* الجواب */}
           <div ref={resRef} className="scroll-mt-28">
+            {asked && bodiesLoading && (
+              <FadeUp>
+                <div className="mt-12 rounded-2xl border border-hair bg-wash p-8 text-center text-soft">
+                  أفتح الأرشيف الكامل… لحظة واحدة.
+                </div>
+              </FadeUp>
+            )}
             {result && (
               <div className="mt-12">
                 {result.hits.length > 0 ? (
                   <>
-                    <p className="text-[.8rem] font-semibold text-accent">من مكتبتي — بكلماتي حرفياً</p>
+                    <p className="text-[.8rem] font-semibold text-accent">إجابة موثقة — بكلماتي حرفياً</p>
                     <div className="mt-5 space-y-8">
                       {result.hits.map((h) => (
                         <FadeUp key={h.slug}>
@@ -183,6 +321,41 @@ export default function AskLibrary() {
                         </FadeUp>
                       ))}
                     </div>
+
+                    {result.timeline.length > 1 && (
+                      <FadeUp>
+                        <section className="mt-10 border-t border-hair pt-7">
+                          <p className="text-[.8rem] font-semibold text-accent">كيف تحرك السؤال عبر الأرشيف؟</p>
+                          <ol className="mt-5 grid gap-4">
+                            {result.timeline.map((item) => (
+                              <li key={item.slug} className="relative border-r border-hair pr-5">
+                                <span className="absolute right-[-5px] top-2 h-2.5 w-2.5 rounded-full bg-accent" />
+                                <span className="text-[.74rem] font-semibold text-accent">{item.iso.slice(0, 4)} · {item.cat}</span>
+                                <Link to={`/articles/${item.slug}`} className="mt-1 block font-display text-[1.02rem] font-medium leading-relaxed text-ink transition-colors hover:text-accent">
+                                  {item.title}
+                                </Link>
+                                {item.excerpt && <p className="mt-1 text-[.84rem] leading-relaxed text-soft">{item.excerpt}</p>}
+                              </li>
+                            ))}
+                          </ol>
+                        </section>
+                      </FadeUp>
+                    )}
+
+                    {(result.latest || result.tension) && (
+                      <FadeUp>
+                        <section className="mt-9 rounded-2xl border border-hair bg-wash p-6">
+                          <p className="text-[.76rem] font-semibold text-accent">أحدث إجابة منشورة الآن</p>
+                          {result.latest && (
+                            <Link to={`/articles/${result.latest.slug}`} className="mt-2 block font-display text-[1.15rem] font-semibold leading-relaxed text-ink transition-colors hover:text-accent">
+                              {result.latest.title} <span className="text-[.85rem] text-soft">({result.latest.iso.slice(0, 4)})</span>
+                            </Link>
+                          )}
+                          {result.tension && <p className="mt-3 text-[.88rem] font-light leading-relaxed text-soft">{result.tension}</p>}
+                        </section>
+                      </FadeUp>
+                    )}
+
                     {result.refs.length > 0 && (
                       <div className="mt-8 border-t border-hair pt-5">
                         <p className="text-[.8rem] text-soft">ومن أعمالي الموثّقة في هذا:</p>
@@ -199,9 +372,11 @@ export default function AskLibrary() {
                         </ul>
                       </div>
                     )}
+
                     <p className="mt-10 border-t border-hair pt-5 text-[.8rem] font-light leading-[1.9] text-soft">
-                      ✦ كل جوابٍ هنا فقرةٌ حرفية مما كتبتُ — لا تُولِّده آلة ولا تُعيد صياغته. هكذا أُبقي الإنسانَ في قلبِ الآلة.
+                      كل فقرة مرتبطة بمصدر حقيقي. التحليل هنا ترتيبٌ للأرشيف لا اختراعٌ لرأي جديد.
                     </p>
+                    <PersonalBook asked={asked} result={result} />
                   </>
                 ) : (
                   <FadeUp>

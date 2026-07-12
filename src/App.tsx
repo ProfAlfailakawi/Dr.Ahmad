@@ -48,14 +48,14 @@ function Preloader({ done }: { done: boolean }) {
       className="fixed inset-0 z-[300] flex flex-col items-center justify-center bg-canvas"
       initial={{ y: 0 }}
       animate={done ? { y: '-100%' } : { y: 0 }}
-      transition={{ duration: 0.7, ease: EASE }}
+      transition={{ duration: 0.48, ease: EASE }}
       aria-hidden
     >
       <motion.p
         className="px-8 text-center font-display text-[clamp(1.3rem,3.6vw,2.1rem)] font-semibold leading-relaxed text-ink"
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.05, ease: EASE }}
+        transition={{ duration: 0.38, delay: 0.02, ease: EASE }}
       >
         «أُبقي الإنسانَ في قلبِ الآلة.»
       </motion.p>
@@ -65,9 +65,9 @@ function Preloader({ done }: { done: boolean }) {
         className="mt-7 h-12 w-auto dark:invert"
         initial={{ opacity: 0, y: 10, scale: 0.96 }}
         animate={{ opacity: 0.92, y: 0, scale: 1 }}
-        transition={{ duration: 0.6, delay: 0.35, ease: EASE }}
+        transition={{ duration: 0.36, delay: 0.16, ease: EASE }}
       />
-      <motion.div className="mt-5 h-[2px] bg-accent" initial={{ width: 0 }} animate={{ width: 120 }} transition={{ duration: 0.7, delay: 0.5, ease: EASE }} />
+      <motion.div className="mt-5 h-[2px] bg-accent" initial={{ width: 0 }} animate={{ width: 120 }} transition={{ duration: 0.38, delay: 0.22, ease: EASE }} />
     </motion.div>
   )
 }
@@ -137,28 +137,28 @@ function RouteViewTracker() {
 }
 
 export default function App() {
-  // الفخامة سلاسة لا بطء: أول زيارة مشهد قصير، وزيارات الجلسة التالية بلا شاشة كاملة
+  // الفخامة سلاسة لا بطء: أول زيارة مشهد قصير، والزيارات اللاحقة بلا شاشة كاملة
   const seenThisSession = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('seen') === '1'
-  // الزائر العائد (جلسة جديدة): ومضة شعار 400م‌ث فقط — أول زيارة في العمر: 1000م‌ث
   const returning = (() => { try { return localStorage.getItem('visited') === '1' } catch { return false } })()
-  const [loaded, setLoaded] = useState(seenThisSession)
-  const [gone, setGone] = useState(seenThisSession)
   const reduce = useReducedMotion()
+  const showPreloader = !reduce && !seenThisSession && !returning
+  const [loaded, setLoaded] = useState(!showPreloader)
+  const [gone, setGone] = useState(!showPreloader)
 
   useEffect(() => {
-    if (reduce || seenThisSession) { setLoaded(true); setGone(true); return }
+    if (!showPreloader) { setLoaded(true); setGone(true); return }
     document.body.classList.add('loading')
-    const t = setTimeout(() => setLoaded(true), returning ? 400 : 1000)
+    const t = setTimeout(() => setLoaded(true), 580)
     try { localStorage.setItem('visited', '1') } catch { /* noop */ }
     return () => clearTimeout(t)
-  }, [reduce, seenThisSession, returning])
+  }, [showPreloader])
 
   useEffect(() => {
     if (!loaded) return
     document.body.classList.remove('loading')
     try { sessionStorage.setItem('seen', '1') } catch { /* noop */ }
     if (gone) return
-    const t = setTimeout(() => setGone(true), 620)
+    const t = setTimeout(() => setGone(true), 500)
     return () => clearTimeout(t)
   }, [loaded, gone])
 

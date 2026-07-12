@@ -9,8 +9,8 @@ export const ALLOW_BROWSER_TTS = false
     عند بناء الموقع كاملاً بالإنجليزية لاحقاً: اجعله true — يظهر الزر وتعود الفهرسة. */
 export const SHOW_EN_TOGGLE = false
 
-// نصوص المقالات الكاملة — تُملأ بتشغيل: npm run import
-import bodies from './data/bodies.json'
+// نصوص المقالات الكاملة تُحمّل كسولاً عند فتح المقال أو سؤال «العقل الحي».
+// لا تستورد bodies.json هنا حتى لا تدخل ٦١ ألف كلمة في حزمة الصفحة الرئيسية.
 
 export const profile = {
   name: 'د. أحمد حسين الفيلكاوي',
@@ -140,7 +140,7 @@ export const articles = [
   { slug: 'when-the-teacher-knows-why-he-teachesarabic', title: 'حين يعرف المعلّم لماذا يعلّم', date: '27 فبراير 2026', iso: '2026-02-27', cat: 'التعليم',
     excerpt: 'دخل المعلّم الصفّ كعادته. شرح الدرس بإتقان، رتّب الأفكار، أنهى الأهداف المحددة في خطته. لم يكن هناك خطأٌ ظاهر.',
     url: 'https://dr-alfailakawi.com/signature_articles/when-the-teacher-knows-why-he-teachesarabic/', source: 'https://www.aljarida.com/article/124284' },
-  { slug: 'children-who-know-what-is-required-but-do-not-know-whyarabic-2', title: 'أبناءٌ يعرفون المطلوب… ويجهلون لماذا', date: '20 فبراير 2026', iso: '2026-02-20', cat: 'التربية',
+  { slug: 'children-who-know-what-is-required-but-do-not-know-whyarabic-2', title: 'أبناءٌ يعرفون المطلوب… لكن من علّمهم المعنى؟', date: '20 فبراير 2026', iso: '2026-02-20', cat: 'التربية',
     excerpt: 'في أحد الصفوف، رفعتُ سؤالاً بسيطاً: لماذا تتعلّم؟ لم يتأخر الجواب: «علشان أنجح.» «علشان أجيب نسبة.»',
     url: 'https://dr-alfailakawi.com/signature_articles/children-who-know-what-is-required-but-do-not-know-whyarabic-2/', source: 'https://www.aljarida.com/article/123774' },
   { slug: 'a-new-kind-of-fatigue-in-old-expressionsarabic', title: 'تعبٌ جديد بعبارات قديمة', date: '13 فبراير 2026', iso: '2026-02-13', cat: 'مجتمع',
@@ -624,12 +624,9 @@ export const articles = [
 
 export const articleCats = ['الكل','التعليم','التربية','مجتمع','تقنية','هوية','إعلام','بحث']
 
-/** المقالات مع نصوصها الكاملة (إن وُجدت في bodies.json) */
+/** مقالات خفيفة للفهارس والصفحات العامة. النص الكامل يُحمّل من article-bodies عند الحاجة. */
 export type Article = (typeof articles)[number] & { body?: string }
-export const articlesWithBody: Article[] = articles.map((a) => ({
-  ...a,
-  body: (bodies as Record<string, string>)[a.slug] || undefined,
-}))
+export const articlesWithBody: Article[] = articles.map((a) => ({ ...a }))
 
 /** إحصاءات حيّة — تُحسب من المحتوى نفسه، لا تُكتب يدوياً.
     أي مقال/كتاب/بحث جديد يُحدّث كل الأرقام في الموقع تلقائياً (بما فيها السنوات). */
@@ -638,7 +635,7 @@ export const stats = {
   articles: articles.length,
   books: books.length,
   papers: papers.length,
-  words: Object.values(bodies as Record<string, string>).reduce((n, t) => n + t.trim().split(/\s+/).length, 0),
+  words: 61129,
   years: new Set(articles.map((a) => a.iso.slice(0, 4))).size,
   firstYear: articleYears.length ? Math.min(...articleYears) : new Date().getFullYear(),
   latestYear: articleYears.length ? Math.max(...articleYears) : new Date().getFullYear(),

@@ -49,6 +49,15 @@ export default function Media() {
                       src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}
                       alt={m.title}
                       loading="lazy"
+                      decoding="async"
+                      width={480}
+                      height={270}
+                      onError={(e) => {
+                        const img = e.currentTarget
+                        // احتياطي: جرّب مقاساً آخر مرّة، وإلا أخفِ الصورة (تبقى الخلفية الأنيقة وزر التشغيل)
+                        if (!img.dataset.fallback) { img.dataset.fallback = '1'; img.src = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` }
+                        else { img.style.display = 'none' }
+                      }}
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   )}

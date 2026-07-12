@@ -167,7 +167,7 @@ export const articles = [
   { slug: 'a-generation-without-rootsarabic', title: 'جيلٌ بلا جذور', date: '19 ديسمبر 2025', iso: '2025-12-19', cat: 'هوية',
     excerpt: 'هذا جيلٌ يعرف كثيراً عن العالم… وقليلاً عن نفسه. يتنقّل بإصبعه بين قاراتٍ لا يعيش فيها.',
     url: 'https://dr-alfailakawi.com/signature_articles/a-generation-without-rootsarabic/', source: 'https://www.aljarida.com/article/117895' },
-  { slug: 'a-society-that-fears-the-different-scheduledarabbic', title: 'المجتمع الذي يخاف من المختلف', date: '12 ديسمبر 2025', iso: '2025-12-12', cat: 'مجتمع',
+  { slug: 'a-society-that-fears-the-different-arabic', title: 'المجتمع الذي يخاف من المختلف', date: '12 ديسمبر 2025', iso: '2025-12-12', cat: 'مجتمع',
     excerpt: 'المجتمع الذي يخاف من المختلف يربّي أبناءه على فضيلة واحدة: أن يختفوا في الصف.',
     url: 'https://dr-alfailakawi.com/signature_articles/a-society-that-fears-the-different-scheduledarabbic/', source: 'https://www.aljarida.com/article/117250' },
   { slug: 'the-human-who-forgot-himselfarabic', title: 'الإنسان الذي نسي نفسه', date: '5 ديسمبر 2025', iso: '2025-12-05', cat: 'مجتمع',

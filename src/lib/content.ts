@@ -74,6 +74,24 @@ const errorMessage = (error: unknown) =>
 const documents = (snapshot: { docs: { id: string; data: () => Record<string, unknown> }[] }): RemoteDocument[] =>
   snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))
 
+const afterFirstPaint = (callback: () => void) => {
+  if (typeof window === 'undefined') return () => {}
+  let cancelled = false
+  const run = () => { if (!cancelled) callback() }
+  const win = window as typeof window & {
+    requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number
+    cancelIdleCallback?: (id: number) => void
+  }
+  const id = win.requestIdleCallback
+    ? win.requestIdleCallback(run, { timeout: 2500 })
+    : window.setTimeout(run, 1200)
+  return () => {
+    cancelled = true
+    if (win.cancelIdleCallback && typeof id === 'number') win.cancelIdleCallback(id)
+    else window.clearTimeout(id)
+  }
+}
+
 export function CmsProvider({ children }: { children: ReactNode }) {
   const [remote, setRemote] = useState<RemoteCmsData>({})
   const [loading, setLoading] = useState(true)
@@ -105,8 +123,9 @@ export function CmsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true
     const unsubscribers: (() => void)[] = []
+    let cancelStart = () => {}
 
-    ;(async () => {
+    const start = async () => {
       try {
         const db = await getDb()
         if (!active) return
@@ -144,10 +163,13 @@ export function CmsProvider({ children }: { children: ReactNode }) {
         setError(errorMessage(loadError))
         setLoading(false)
       }
-    })()
+    }
+
+    cancelStart = afterFirstPaint(() => { void start() })
 
     return () => {
       active = false
+      cancelStart()
       unsubscribers.forEach((unsubscribe) => unsubscribe())
     }
   }, [])

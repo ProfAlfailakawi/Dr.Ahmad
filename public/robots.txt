@@ -1,5 +1,8 @@
 User-agent: *
 Allow: /
 Disallow: /admin
+Disallow: /login
+Disallow: /_share
+Disallow: /*?*
 
-Sitemap: https://dr-alfailakawi.com/sitemap.xml
+Sitemap: https://dr-alfailakawi.web.app/sitemap.xml

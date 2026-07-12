@@ -72,6 +72,24 @@ const markSeen = (key: string) => {
   }
 }
 
+const afterFirstPaint = (callback: () => void) => {
+  if (typeof window === 'undefined') return () => {}
+  let cancelled = false
+  const run = () => { if (!cancelled) callback() }
+  const win = window as typeof window & {
+    requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number
+    cancelIdleCallback?: (id: number) => void
+  }
+  const id = win.requestIdleCallback
+    ? win.requestIdleCallback(run, { timeout: 3000 })
+    : window.setTimeout(run, 1400)
+  return () => {
+    cancelled = true
+    if (win.cancelIdleCallback && typeof id === 'number') win.cancelIdleCallback(id)
+    else window.clearTimeout(id)
+  }
+}
+
 function incrementViewDocument(id: string, title: string): Promise<boolean> {
   const sessionKey = `view:${id}`
   if (wasSeen(sessionKey)) return Promise.resolve(true)
@@ -127,11 +145,13 @@ export function useTrackView(path: string, title: string, enabled = true) {
     const pathSessionKey = `view:path:${encodeViewPath(normalizedPath)}`
     if (wasSeen(pathSessionKey)) return
 
-    void Promise.all([
-      incrementViewDocument(ids.total, safeTitle),
-      incrementViewDocument(ids.day, safeTitle),
-    ]).then(([totalSaved, daySaved]) => {
-      if (totalSaved && daySaved) markSeen(pathSessionKey)
+    return afterFirstPaint(() => {
+      void Promise.all([
+        incrementViewDocument(ids.total, safeTitle),
+        incrementViewDocument(ids.day, safeTitle),
+      ]).then(([totalSaved, daySaved]) => {
+        if (totalSaved && daySaved) markSeen(pathSessionKey)
+      })
     })
   }, [enabled, path, title])
 }

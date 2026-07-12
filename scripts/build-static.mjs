@@ -31,7 +31,8 @@ if (audioCheck.status !== 0) {
 
 try { process.loadEnvFile(resolve(ROOT, '.env')) } catch { /* .env اختياري */ }
 // النطاق المركزي نفسه الذي يقرؤه العميل (VITE_SITE_URL) — canonical/OG/RSS/sitemap/robots كلها منه.
-const SITE = process.env.VITE_SITE_URL || 'https://dr-alfailakawi.web.app'
+const SITE = (process.env.VITE_SITE_URL || 'https://dr-alfailakawi.web.app').replace(/\/+$/, '')
+const SITE_HOST = new URL(SITE).hostname
 const AUTHOR = 'أحمد حسين الفيلكاوي'
 // كيان الهوية المركزي (Person) — يُربط عبر @id في كل Schema، فيبني غوغل كِيان المؤلف الواحد
 const PERSON = {
@@ -75,11 +76,17 @@ const articles = [...grab('articles').matchAll(
   /\{ slug: '([^']+)', title: '([^']+)', date: '([^']*)', iso: '([^']*)', cat: '([^']*)',\s*excerpt: '([^']*)'/g
 )].map((m) => ({ slug: m[1], title: m[2].replace(/\\'/g, "'"), date: m[3], iso: m[4], cat: m[5], excerpt: m[6].replace(/\\'/g, "'") }))
 
-const books = [...grab('books').matchAll(/slug: '([^']+)',[^\n]*?title: '([^']+)'[\s\S]*?desc: '([^']*)'/g)]
-  .map((m) => ({ slug: m[1], title: m[2], desc: m[3] }))
+const books = [...grab('books').matchAll(/\{ slug: '([^']+)'[\s\S]*?title: '([^']+)'[\s\S]*?isbn: '([^']*)'[\s\S]*?cover: '([^']*)'[\s\S]*?pdf: '([^']*)'[\s\S]*?desc: '([^']*)'/g)]
+  .map((m) => ({ slug: m[1], title: m[2], isbn: m[3], cover: m[4], pdf: m[5], desc: m[6] }))
 
 const papers = [...grab('papers').matchAll(/slug: '([^']+)',[^\n]*?title: '([^']+)',[^\n]*?meta: '([^']*)'/g)]
   .map((m) => ({ slug: m[1], title: m[2], desc: m[3] }))
+
+const media = [...grab('media').matchAll(/\{ title: '([^']+)', outlet: '([^']*)', url: '([^']*)'/g)]
+  .map((m, index) => {
+    const id = (m[3].match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || String(index + 1)
+    return { slug: `media-${id}`, title: m[1], outlet: m[2], url: m[3] }
+  })
 
 /* أعداد وسنوات تُحسب من المحتوى — تتجدّد أوصاف SEO تلقائياً مع أي إضافة */
 const artYears = articles.map((a) => Number(a.iso.slice(0, 4))).filter((y) => y >= 1990)
@@ -116,10 +123,33 @@ const STATIC = [
 
 const routes = [
   ...STATIC,
-  ...books.map((b) => ({ path: `/publications/${b.slug}`, title: b.title, desc: b.desc })),
+  ...books.map((b) => ({ path: `/publications/${b.slug}`, title: b.title, desc: b.desc, image: b.cover, isbn: b.isbn })),
   ...papers.map((p) => ({ path: `/research/${p.slug}`, title: p.title, desc: `بحث محكّم — ${p.desc}`, type: 'article' })),
   ...articles.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt, type: 'article', iso: a.iso, cat: a.cat, image: `/og/articles/${a.slug}.svg` })),
 ]
+
+const LEGACY_REDIRECTS = [
+  ['/articles/a-society-that-fears-the-different-scheduledarabbic', '/articles/a-society-that-fears-the-different-arabic'],
+  ['/signature_articles/a-society-that-fears-the-different-scheduledarabbic', '/articles/a-society-that-fears-the-different-arabic'],
+]
+
+const uniqueRoutes = (items) => {
+  const seen = new Set()
+  return items.filter((item) => {
+    const key = item.path.replace(/\/+$/, '') || '/'
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+const uniqueBySlug = (items) => {
+  const seen = new Set()
+  return items.filter((item) => {
+    if (!item.slug || seen.has(item.slug)) return false
+    seen.add(item.slug)
+    return true
+  })
+}
 
 /* ---------- حقن الوسوم ---------- */
 const shell = readFileSync(resolve(DIST, 'index.html'), 'utf8')
@@ -423,6 +453,45 @@ function generateBodyHtml(path, lang = 'ar') {
         </main>
       `
     }
+  } else if (path === '/media') {
+    const mediaHtml = media.map((item) => `
+      <article style="margin-bottom: 2rem; border-bottom: 1px solid rgba(62, 92, 120, 0.1); padding-bottom: 1.5rem; text-align: right;">
+        <h2 style="font-size: 1.45rem; font-family: 'El Messiri', serif; margin-bottom: 0.5rem; color: #15161A;">
+          <a href="${attr(item.url)}" style="color: #15161A; text-decoration: none;">${esc(item.title)}</a>
+        </h2>
+        <p style="color: #626A76; font-size: 0.95rem; font-family: 'Tajawal', sans-serif; margin: 0;">${esc(item.outlet || 'ظهور إعلامي')}</p>
+      </article>
+    `).join('')
+
+    contentHtml = `
+      <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem;" dir="rtl">
+        <h1 style="font-size: 2.5rem; font-family: 'El Messiri', serif; font-weight: bold; margin-bottom: 1rem; text-align: right; color: #15161A;">الظهور الإعلامي</h1>
+        <p style="font-size: 1.15rem; color: #626A76; line-height: 1.7; margin-bottom: 3rem; text-align: right; font-family: 'Tajawal', sans-serif;">
+          مقتطفات من اللقاءات الإذاعية والتلفزيونية حيث يتحول الحوار إلى منصة للفكر.
+        </p>
+        ${mediaHtml}
+      </main>
+    `
+  } else if (['/about', '/contact', '/ask', '/decade', '/thought-paths', '/search', '/atlas', '/questions', '/radar', '/curated', '/upcoming', '/inbox'].includes(path)) {
+    const current = STATIC.find((item) => item.path === path)
+    const links = [
+      ['/', 'الرئيسية'],
+      ['/articles', 'المقالات'],
+      ['/publications', 'الكتب'],
+      ['/research', 'الأبحاث'],
+      ['/media', 'الإعلام'],
+      ['/cv', 'السيرة'],
+      ['/contact', 'التواصل'],
+    ].map(([href, label]) => `<a href="${href}" style="color:#3E5C78;text-decoration:none;font-weight:600;">${label}</a>`).join(' · ')
+    contentHtml = `
+      <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem;" dir="rtl">
+        <h1 style="font-size: 2.5rem; font-family: 'El Messiri', serif; font-weight: bold; margin-bottom: 1rem; text-align: right; color: #15161A;">${esc(current?.title || 'د. أحمد حسين الفيلكاوي')}</h1>
+        <p style="font-size: 1.15rem; color: #626A76; line-height: 1.8; margin-bottom: 2rem; text-align: right; font-family: 'Tajawal', sans-serif;">
+          ${esc(current?.desc || 'صفحة عامة من الموقع الرسمي للدكتور أحمد حسين الفيلكاوي.')}
+        </p>
+        <nav aria-label="روابط داخلية" style="line-height:2;font-family:'Tajawal',sans-serif;text-align:right;">${links}</nav>
+      </main>
+    `
   } else if (path === '/cv' || path === '/en/cv') {
     if (en) {
       contentHtml = `
@@ -536,7 +605,7 @@ function generateBodyHtml(path, lang = 'ar') {
   return `${headerHtml}\n${contentHtml}\n${footerHtml}`
 }
 
-function render({ path, title, desc, type = 'website', iso, cat, image, robots, lang = 'ar' }) {
+function render({ path, title, desc, type = 'website', iso, cat, image, robots, lang = 'ar', isbn }) {
   const en = lang === 'en'
   // ما دامت المرآة مخفية: صفحاتها الإنجليزية لا تُفهرس
   if (en && !SHOW_EN) robots = 'noindex, nofollow'
@@ -569,10 +638,18 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
       { '@type': 'WebSite', '@id': `${SITE}/#website`, url: SITE, name: full, inLanguage: lang, publisher: { '@id': `${SITE}/#person` } },
       { '@type': 'ProfilePage', '@id': url + '#profile', url, name: full, inLanguage: lang, mainEntity: { '@id': `${SITE}/#person` } },
     ]
+  } else if (path === '/cv' || path === '/en/cv') {
+    graph = [
+      { '@type': 'ProfilePage', '@id': url + '#profile', url, name: full, description: desc, inLanguage: lang, mainEntity: { '@id': `${SITE}/#person` } },
+      { '@type': 'BreadcrumbList', itemListElement: [
+        { '@type': 'ListItem', position: 1, name: en ? 'Home' : 'الرئيسية', item: SITE + '/' },
+        { '@type': 'ListItem', position: 2, name: title, item: url },
+      ] },
+    ]
   } else if (isPaperPage) {
     graph = [{ '@type': 'ScholarlyArticle', headline: title, name: title, description: desc, image: img, inLanguage: lang, author: { '@id': `${SITE}/#person` }, publisher: PUBLISHER, mainEntityOfPage: url, ...(iso ? { datePublished: iso } : {}) }, crumb].filter(Boolean)
   } else if (isBookPage) {
-    graph = [{ '@type': 'Book', name: title, description: desc, image: img, inLanguage: lang, author: { '@id': `${SITE}/#person` }, url }, crumb].filter(Boolean)
+    graph = [{ '@type': 'Book', name: title, description: desc, image: img, inLanguage: lang, author: { '@id': `${SITE}/#person` }, url, ...(isbn ? { isbn } : {}) }, crumb].filter(Boolean)
   } else if (type === 'article') {
     graph = [{ '@type': 'Article', headline: title, description: desc, datePublished: iso, dateModified: iso, articleSection: cat, image: img, inLanguage: lang, author: { '@id': `${SITE}/#person` }, publisher: PUBLISHER, mainEntityOfPage: url }, crumb].filter(Boolean)
   } else {
@@ -602,6 +679,10 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
     <meta property="og:image" content="${img}" />
     <meta property="og:locale" content="${en ? 'en_US' : 'ar_KW'}" />
     <meta property="og:site_name" content="${en ? 'Dr. Ahmad H. Alfailakawi' : 'د. أحمد حسين الفيلكاوي'}" />
+    ${type === 'article' ? `<meta property="article:author" content="${AUTHOR}" />
+    ${iso ? `<meta property="article:published_time" content="${iso}" />
+    <meta property="article:modified_time" content="${iso}" />` : ''}
+    ${cat ? `<meta property="article:section" content="${esc(cat)}" />` : ''}` : ''}
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${esc(full)}" />
     <meta name="twitter:description" content="${esc(desc)}" />
@@ -670,14 +751,16 @@ function generateArticleOg() {
   ${excerptLines.map((line, i) => `<text x="1080" y="${466 + i * 42}" text-anchor="end" class="soft" font-size="29" font-weight="400">${attr(line)}</text>`).join('\n  ')}
   <rect x="898" y="526" width="182" height="4" class="accent"/>
   <text x="1080" y="564" text-anchor="end" class="ink" font-size="26" font-weight="700">د. أحمد حسين الفيلكاوي</text>
-  <text x="1080" y="596" text-anchor="end" class="soft" font-size="21">dr-alfailakawi.com</text>
+  <text x="1080" y="596" text-anchor="end" class="soft" font-size="21">${attr(SITE_HOST)}</text>
 </svg>`
     writeFileSync(resolve(out, `${article.slug}.svg`), svg, 'utf8')
   }
 }
 
+const publicRoutes = uniqueRoutes(routes)
+
 let n = 0
-for (const r of routes) {
+for (const r of publicRoutes) {
   writeRoute(r.path, render(r))
   n++
 }
@@ -689,7 +772,7 @@ generateArticleOg()
 /* ---------- sitemap ---------- */
 const sm = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${routes.filter((r) => SHOW_EN || r.lang !== 'en').map((r) => `  <url><loc>${SITE}${r.path}</loc>${r.iso ? `<lastmod>${r.iso}</lastmod>` : ''}<priority>${r.path === '/' ? '1.0' : r.type === 'article' ? '0.6' : '0.8'}</priority></url>`).join('\n')}
+${publicRoutes.filter((r) => (SHOW_EN || r.lang !== 'en') && !r.robots).map((r) => `  <url><loc>${SITE}${r.path}</loc>${r.iso ? `<lastmod>${r.iso}</lastmod>` : ''}<priority>${r.path === '/' ? '1.0' : r.type === 'article' ? '0.6' : '0.8'}</priority></url>`).join('\n')}
 </urlset>
 `
 writeFileSync(resolve(DIST, 'sitemap.xml'), sm, 'utf8')
@@ -706,7 +789,8 @@ Sitemap: ${SITE}/sitemap.xml
 `, 'utf8')
 
 /* ---------- RSS ---------- */
-const items = articles.slice(0, 30).map((a) => `    <item>
+const feedArticles = uniqueBySlug(articles).filter((a) => a.slug && a.title && a.iso)
+const items = feedArticles.map((a) => `    <item>
       <title>${esc(a.title)}</title>
       <link>${SITE}/articles/${a.slug}</link>
       <guid isPermaLink="true">${SITE}/articles/${a.slug}</guid>
@@ -734,7 +818,22 @@ const episodeItem = (articleList, fileOf, guidPrefix) => articleList
   .map((a) => ({ a, ...fileOf(a) }))
   .filter((e) => e.file && existsSync(e.file))
   .sort((x, y) => (y.a.iso || '').localeCompare(x.a.iso || ''))
-const podcastEpisodes = episodeItem(articles, (a) => {
+const durationOf = (file) => {
+  const result = spawnSync('ffprobe', [
+    '-v', 'error',
+    '-show_entries', 'format=duration',
+    '-of', 'default=noprint_wrappers=1:nokey=1',
+    file,
+  ], { encoding: 'utf8', timeout: 20_000 })
+  if (result.status !== 0) return ''
+  const seconds = Math.round(Number(result.stdout.trim()))
+  if (!Number.isFinite(seconds) || seconds <= 0) return ''
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`
+}
+const podcastEpisodes = episodeItem(feedArticles, (a) => {
     // الحلقة الحوارية (فهد ونورة) هي حلقة القناة؛ وإلى أن تُولَّد لمقالٍ ما،
     // تبقى قراءته العادية حلقةً بنفس الـGUID — فلا تختفي حلقة ولا تتكرر.
     const dlg = resolve(ROOT, 'audio', `${a.slug}.dialogue.mp3`)
@@ -746,6 +845,7 @@ const podcastEpisodes = episodeItem(articles, (a) => {
   .map(({ a, file, rel }) => {
     const bytes = statSync(file).size
     const url = `${SITE}/audio/${rel}`
+    const duration = durationOf(file)
     return `    <item>
       <title>${esc(a.title)}</title>
       <itunes:author>د. أحمد حسين الفيلكاوي</itunes:author>
@@ -756,6 +856,7 @@ const podcastEpisodes = episodeItem(articles, (a) => {
       <guid isPermaLink="false">podcast-${a.slug}</guid>
       <pubDate>${new Date(`${a.iso}T08:00:00Z`).toUTCString()}</pubDate>
       <enclosure url="${url}" length="${bytes}" type="audio/mpeg"/>
+      ${duration ? `<itunes:duration>${duration}</itunes:duration>` : ''}
       <itunes:image href="${podcastArt}"/>
       <itunes:explicit>false</itunes:explicit>
     </item>`
@@ -795,6 +896,7 @@ const enEpisodes = episodeItem(articles, (a) => {
   })
   .map(({ a, file, rel }) => {
     const bytes = statSync(file).size
+    const duration = durationOf(file)
     return `    <item>
       <title>${esc(a.title)}</title>
       <itunes:author>Dr. Ahmad Alfailakawi</itunes:author>
@@ -803,6 +905,7 @@ const enEpisodes = episodeItem(articles, (a) => {
       <guid isPermaLink="false">podcast-en-${a.slug}</guid>
       <pubDate>${new Date(`${a.iso}T09:00:00Z`).toUTCString()}</pubDate>
       <enclosure url="${SITE}/audio/${rel}" length="${bytes}" type="audio/mpeg"/>
+      ${duration ? `<itunes:duration>${duration}</itunes:duration>` : ''}
       <itunes:image href="${podcastArt}"/>
       <itunes:explicit>false</itunes:explicit>
     </item>`
@@ -877,6 +980,41 @@ if (existsSync(sw)) {
   writeFileSync(sw, text, 'utf8')
 }
 
+function assertStaticOutput() {
+  const badPages = publicRoutes
+    .filter((route) => !route.robots)
+    .map((route) => route.path === '/' ? resolve(DIST, 'index.html') : resolve(DIST, route.path.replace(/^\/+/, ''), 'index.html'))
+    .filter((file) => {
+      if (!existsSync(file)) return true
+      const html = readFileSync(file, 'utf8')
+      return !/<div id="root">[\s\S]*<main\b[\s\S]*<\/main>[\s\S]*<\/div>/.test(html)
+        || !/<link rel="canonical" href="https:\/\/[^"]+" \/>/.test(html)
+        || !/<script type="application\/ld\+json">/.test(html)
+    })
+  if (badPages.length) throw new Error(`Prerender ناقص في ${badPages.length} صفحة: ${badPages.slice(0, 5).map((file) => file.replace(ROOT, '')).join(', ')}`)
+
+  const sitemap = readFileSync(resolve(DIST, 'sitemap.xml'), 'utf8')
+  const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1])
+  const duplicateLocs = locs.filter((loc, index) => locs.indexOf(loc) !== index)
+  if (duplicateLocs.length) throw new Error(`sitemap يحتوي روابط مكررة: ${duplicateLocs.slice(0, 3).join(', ')}`)
+  if (/scheduledarabbic|localhost|127\.0\.0\.1/.test(sitemap)) throw new Error('sitemap يحتوي رابط اختبار أو slug غير نظيف')
+
+  const robots = readFileSync(resolve(DIST, 'robots.txt'), 'utf8')
+  if (!robots.includes(`Sitemap: ${SITE}/sitemap.xml`) || /localhost|127\.0\.0\.1/.test(robots)) {
+    throw new Error('robots.txt لا يستخدم النطاق المركزي الصحيح')
+  }
+
+  const feed = readFileSync(resolve(DIST, 'feed.xml'), 'utf8')
+  const guids = [...feed.matchAll(/<guid[^>]*>([^<]+)<\/guid>/g)].map((match) => match[1])
+  const duplicateGuids = guids.filter((guid, index) => guids.indexOf(guid) !== index)
+  if (duplicateGuids.length) throw new Error(`RSS يحتوي GUID مكرر: ${duplicateGuids.slice(0, 3).join(', ')}`)
+
+  const podcast = readFileSync(resolve(DIST, 'podcast.xml'), 'utf8')
+  if (/\.dialogue\.mp3/.test(podcast) && !Object.values(podcastState?.done || {}).some((entry) => entry?.status === 'accepted_automated')) {
+    throw new Error('podcast.xml يحتوي حلقة حوارية غير معتمدة')
+  }
+}
+
 /* بعض بيئات Cloud Run/App Hosting تتعامل مع assets المستوردة من Vite بشكل مختلف.
    إبقاء نسخة public واضحة من الشعار والبورتريه يحمي الواجهة من 404 إن تغيّر مسار الحزمة. */
 for (const [from, to] of [
@@ -887,5 +1025,7 @@ for (const [from, to] of [
   if (existsSync(srcFile)) copyFileSync(srcFile, resolve(ROOT, to))
 }
 
-console.log(`✔ ${n} صفحة ثابتة · sitemap (${routes.length}) · feed.xml · 404.html`)
+assertStaticOutput()
+
+console.log(`✔ ${n} صفحة ثابتة · sitemap (${publicRoutes.length}) · feed.xml · 404.html`)
 console.log(`✔ أصول الإنتاج: audio ${copiedAssets.audio} · covers ${copiedAssets.covers} · files ${copiedAssets.files} · Firebase config`)

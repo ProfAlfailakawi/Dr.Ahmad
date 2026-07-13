@@ -183,7 +183,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
   if (loading) return <div className={card}>لحظة… أجمع المشاهدات.</div>
 
   return (
-    <div className="grid min-w-0 max-w-full gap-5 overflow-x-hidden">
+    <div className="grid min-w-0 gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[.85rem] text-soft">تُحتسب الصفحة مرة واحدة في الجلسة لكل زائر.</p>
         <button type="button" onClick={() => void load()} className="rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent">
@@ -255,7 +255,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         </section>
       )}
 
-      <div className="grid max-w-full grid-cols-[repeat(auto-fit,minmax(min(100%,12.5rem),1fr))] gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <div className={`${card} min-w-0`}>
           <span className="block truncate font-display text-[clamp(1.5rem,7vw,2.25rem)] font-bold tabular-nums text-accent">{ar(summary.total)}</span>
           <span className="mt-2 block text-[.82rem] text-soft">إجمالي المشاهدات</span>
@@ -326,8 +326,8 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         {summary.journeys.length ? (
           <ol className="mt-5 grid gap-2">
             {summary.journeys.slice(0, 6).map((row) => (
-              <li key={row.id} className="flex min-w-0 items-center justify-between gap-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.82rem]">
-                <span className="min-w-0 break-all text-ink" dir="ltr">{row.from} ← {row.to}</span>
+              <li key={row.id} className="flex items-center justify-between gap-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.82rem]">
+                <span className="min-w-0 truncate text-ink" dir="ltr">{row.from} ← {row.to}</span>
                 <span className="shrink-0 text-accent">{ar(row.count)}</span>
               </li>
             ))}
@@ -380,7 +380,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         {detailed.length ? (
           <ol className="max-h-[520px] divide-y divide-hair overflow-y-auto">
             {detailed.map((row, index) => (
-              <li key={row.id} className="flex min-w-0 items-center gap-3 py-2.5">
+              <li key={row.id} className="flex items-center gap-3 py-2.5">
                 <span className="w-7 shrink-0 text-[.78rem] text-soft">{index + 1}.</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[.88rem] text-ink">{row.label}</span>

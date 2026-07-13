@@ -232,7 +232,30 @@ const memory = {
   books,
 }
 
+const safeLinks = {
+  warning: 'SAFE DERIVED LINKS ONLY — لا يحتوي نصوص الكتب أو مساراتها الخاصة.',
+  generatedAt: memory.generatedAt,
+  books: books.map((book) => ({
+    title: book.title,
+    pages: book.pages,
+    sampledPages: book.sampledPages,
+    linkedPublicBook: book.linkedPublicBook
+      ? { slug: book.linkedPublicBook.slug, title: book.linkedPublicBook.title, confidence: book.linkedPublicBook.confidence }
+      : null,
+    topTerms: book.topTerms.slice(0, 10).map((item) => item.term),
+    relatedPublicArticles: book.relatedPublicArticles.slice(0, 8).map((article) => ({
+      slug: article.slug,
+      title: article.title,
+      date: article.date,
+      category: article.category,
+      confidence: article.score,
+    })),
+    privateUse: 'هذا الكتاب مادة خام سرية لتغذية الربط الداخلي فقط؛ لا يظهر للزوار ولا يُنشر نصه.',
+  })),
+}
+
 writeFileSync(resolve(OUT_DIR, 'books-memory.json'), `${JSON.stringify(memory, null, 2)}\n`, 'utf8')
+writeFileSync(resolve(ROOT, 'src/data/private-book-links.json'), `${JSON.stringify(safeLinks, null, 2)}\n`, 'utf8')
 writeFileSync(resolve(OUT_DIR, 'books-memory.report.md'), [
   '# ذاكرة الكتب الخاصة',
   '',
@@ -255,3 +278,4 @@ writeFileSync(resolve(OUT_DIR, 'books-memory.report.md'), [
 console.log(`\n✔ بُنيت الذاكرة الخاصة في ${OUT_DIR}`)
 console.log('  - books-memory.json')
 console.log('  - books-memory.report.md')
+console.log('  - src/data/private-book-links.json (مشتق آمن للوحة فقط)')

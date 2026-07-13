@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { articleCats, books, papers } from '../../data'
+import privateBookLinks from '../../data/private-book-links.json'
 import type { ArticleRecord } from '../../lib/cms'
 import { loadArticleBodies } from '../../lib/article-bodies'
 import { useAdminAuth } from '../../lib/admin-auth'
-import { getDb } from '../../lib/firebase'
-import { ideaLab, relatedForIdea, styleFingerprint, suggestStrongTitle } from '../../lib/intelligence'
+import { fetchPublishedExtras, getDb } from '../../lib/firebase'
+import { ideaLab, relatedForIdea, styleFingerprint, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
 
 const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
@@ -25,6 +26,24 @@ type Bundle = {
   books: { slug: string; title: string }[]
   papers: { slug: string; title: string }[]
   quality: string[]
+}
+
+type RadarItem = { id: string; ar?: string; arNote?: string; en?: string; source?: string; url?: string }
+type PrivateBookLink = {
+  title: string
+  pages?: number
+  topTerms?: string[]
+  linkedPublicBook?: { slug: string; title: string; confidence?: number } | null
+  relatedPublicArticles?: { slug: string; title: string; confidence?: number }[]
+}
+type WeeklyPack = {
+  linkedin: string[]
+  x: string[]
+  generalX: string[]
+  instagram: string
+  question: string
+  quote: string
+  radarComment: string
 }
 
 const normalize = (value = '') => value
@@ -125,6 +144,87 @@ function buildSocial(bundle: Pick<Bundle, 'title' | 'excerpt' | 'body'>, audienc
   }
 }
 
+function qualityGate(bundle: Bundle, articles: ArticleRecord[]) {
+  const usedSlug = articles.some((article) => article.slug === bundle.slug)
+  const words = wordCount(bundle.body)
+  const linked = bundle.related.length + bundle.books.length + bundle.papers.length
+  const hasQuestion = /[؟?]/.test(bundle.body) || /السؤال|لماذا|كيف/.test(bundle.body)
+  const socialOk = bundle.social.x.length <= 280 && bundle.social.linkedin.length >= 120 && bundle.social.instagram.length >= 90
+  const checks = [
+    { key: 'title', label: 'عنوان قوي وواضح', ok: bundle.title.trim().length >= 12 && !/^مقال|فكرة/.test(bundle.title.trim()) },
+    { key: 'excerpt', label: 'مقتطف صالح للمشاركة', ok: bundle.excerpt.trim().length >= 70 && bundle.excerpt.trim().length <= 200 },
+    { key: 'slug', label: 'Slug نظيف وغير مكرر', ok: /^[a-z0-9-]{8,}$/.test(bundle.slug) && !usedSlug },
+    { key: 'links', label: 'روابط داخلية/معرفية', ok: linked >= 2 },
+    { key: 'image', label: 'صورة مشاركة افتراضية متاحة', ok: true },
+    { key: 'duplicate', label: 'لا يظهر تكرار مباشر', ok: !articles.some((article) => normalize(article.title) === normalize(bundle.title)) },
+    { key: 'voice', label: 'قابلية صوتية', ok: words >= 305 && words <= 450 && hasQuestion },
+    { key: 'social', label: 'قابلية سوشال', ok: socialOk },
+  ]
+  return {
+    checks,
+    ready: checks.every((check) => check.ok),
+    blocking: checks.filter((check) => !check.ok).map((check) => check.label),
+  }
+}
+
+function buildWeeklyPack(bundle: Bundle, articles: ArticleRecord[], radar: RadarItem[]): WeeklyPack {
+  const related = bundle.related
+    .map((item) => articles.find((article) => article.slug === item.slug))
+    .filter(Boolean) as ArticleRecord[]
+  const pool = related.length ? related : articles.slice(0, 5)
+  const quote = strongestQuote(pool.map((article) => `${article.excerpt || ''} ${article.body || ''}`).join(' ') || bundle.body)
+  const radarTop = radar[0]
+  const radarComment = radarTop
+    ? `${radarTop.ar}\n\nاللافت في هذا الحدث أنه لا يخص التقنية وحدها؛ بل يفتح سؤالًا تربويًا أعمق: كيف نحافظ على الإنسان داخل موجة التغيير؟\n\nيرتبط ذلك بما كتبته في «${bundle.related[0]?.title || bundle.title}».`
+    : `لا توجد صيدة رادار منشورة اليوم. التعليق الجاهز:\n\n${bundle.title}\n\nقد يبدو الموضوع تقنيًا، لكنه في التعليم سؤال إنساني أولًا: ماذا يتغير في الطالب والمعلم حين تتغير الأداة؟`
+  return {
+    linkedin: [
+      `${bundle.title}\n\n${bundle.excerpt}\n\nالفكرة ليست في سرعة التغيير، بل في المعنى الذي نحافظ عليه ونحن نتغير.`,
+      `حين نناقش ${bundle.title}، لا أبدأ من الأداة، بل من أثرها في الإنسان.\n\nالتعليم لا يحتاج انبهارًا إضافيًا؛ يحتاج سؤالًا أعدل: ماذا يحدث للطالب والمعلم عندما تتحول الفكرة إلى ممارسة؟`,
+      `${quote}\n\nهذه الجملة تصلح كبداية نقاش طويل مع المعلمين والباحثين: هل نطوّر التعليم أم نسرّع إجراءاته فقط؟`,
+    ],
+    x: [
+      `${quote}\n\n${bundle.title}`,
+      `السؤال ليس: ما الأداة؟\nالسؤال: ماذا تفعل الأداة في وعي الطالب والمعلم؟`,
+      `كل تطوير تعليمي لا يبدأ من الإنسان، ينتهي غالبًا إلى إجراء جميل… ومعنى ناقص.`,
+    ],
+    generalX: [
+      `ليست المشكلة أن التقنية تتقدم بسرعة.\nالمشكلة أن أسئلتنا التربوية أحيانًا تتأخر عنها.`,
+      `في التعليم، لا يكفي أن نعرف ماذا يستطيع الذكاء الاصطناعي أن يفعل.\nالأهم: ماذا يجب ألا نسمح له أن يختصر؟`,
+      `المعلم لا يفقد قيمته حين تظهر أداة جديدة.\nيفقدها فقط إذا اختزلنا التعليم في نقل المعلومة، ونسينا بناء الإنسان.`,
+    ],
+    instagram: `${bundle.title}\n\n${quote}\n\nفكرة للنقاش: كيف نجعل التقنية تخدم الإنسان لا تختصره؟\n\n#التعليم #الذكاء_الاصطناعي #تكنولوجيا_التعليم`,
+    question: `لو كنت في قاعة تدريب: ما السؤال الأول الذي ستطرحه حول «${bundle.title}»؟`,
+    quote,
+    radarComment,
+  }
+}
+
+function suggestArticleIdeas(articles: ArticleRecord[], radar: RadarItem[], privateLinks: PrivateBookLink[]) {
+  const strategic = [
+    { title: 'المعلم حين يصبح الذكاء الاصطناعي زميلًا لا بديلًا', idea: 'زاوية عن العلاقة العملية بين المعلم والأدوات الذكية داخل الصف.' },
+    { title: 'الطالب الذي يعرف الإجابة ولا يعرف الطريق إليها', idea: 'عن أثر الإجابات الفورية في بناء التفكير والصبر المعرفي.' },
+    { title: 'من يربّي الخوارزمية؟', idea: 'سؤال أخلاقي حول البيانات والقيم والتحيز في التعليم.' },
+    { title: 'الأسرة أمام واجب رقمي جديد', idea: 'كيف يتغير دور ولي الأمر حين تصبح التقنية جزءًا من التعلم اليومي؟' },
+    { title: 'الجامعة في زمن المحتوى المتولد', idea: 'ما الذي يبقى من البحث والكتابة الأكاديمية حين تتغير أدوات الإنتاج؟' },
+  ]
+  const radarIdeas = radar.slice(0, 3).map((item) => ({
+    title: `ماذا يعني ${item.ar || item.en || 'هذا الحدث'} للتعليم؟`,
+    idea: item.arNote || 'تعليق تربوي على حدث تقني/تعليمي راهن وربطه بأرشيف الدكتور.',
+  }))
+  const privateIdeas = privateLinks.slice(0, 3).map((book) => ({
+    title: `من كتاب «${book.title}» إلى سؤال جديد في التعليم`,
+    idea: `استخرج زاوية عامة من محاور الكتاب الخاصة: ${(book.topTerms || []).slice(0, 4).join('، ')} — من دون كشف نص الكتاب.`,
+  }))
+  return [...radarIdeas, ...privateIdeas, ...strategic]
+    .map((item) => ({
+      ...item,
+      coverage: relatedForIdea(`${item.title} ${item.idea}`, articles, (article) => `${article.excerpt || ''} ${article.body || ''}`, 4),
+    }))
+    .sort((a, b) => a.coverage.length - b.coverage.length)
+    .slice(0, 8)
+}
+
 function buildBundle(idea: string, audience: string, angle: string, articles: ArticleRecord[]): Bundle {
   const title = suggestStrongTitle(idea)
   const cat = chooseCat(`${idea} ${angle}`)
@@ -138,6 +238,8 @@ function buildBundle(idea: string, audience: string, angle: string, articles: Ar
     wordCount(body) >= 305 && wordCount(body) <= 450 ? `عدد الكلمات مناسب: ${wordCount(body)} كلمة.` : `عدد الكلمات يحتاج ضبطًا: ${wordCount(body)} كلمة.`,
     related.length ? `مرتبط بـ ${related.length} مقالات من أرشيفك.` : 'لم أجد ربطًا قويًا؛ أضف كلمات من قاموسك الفكري.',
     relatedBooks.length || relatedPapers.length ? 'يوجد امتداد أكاديمي/كتابي مناسب.' : 'لا يوجد امتداد كتابي أو بحثي واضح بعد.',
+    'صورة المشاركة الافتراضية جاهزة إذا لم ترفع صورة خاصة.',
+    'الحزمة الاجتماعية تولّدت للمقال، ويمكن حفظها في طابور الموافقة.',
     'التصنيف والمقتطف والـslug جاهزة مبدئيًا.',
     'بعد النشر: الصوت الآلي وR2 ينتظران مفاتيح Azure/Gemini ليصبحا تلقائيين بالكامل.',
   ]
@@ -191,9 +293,144 @@ function SocialCard({ title, text }: { title: string; text: string }) {
   )
 }
 
+function IdeaSuggestionsCard({
+  suggestions,
+  onPick,
+}: {
+  suggestions: ReturnType<typeof suggestArticleIdeas>
+  onPick: (title: string, idea: string) => void
+}) {
+  return (
+    <section className={card}>
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[.76rem] font-semibold uppercase text-accent">ما لم أكتب فيه بعد</p>
+          <h2 className="mt-1 font-display text-2xl font-semibold text-ink">اقتراحات مقالات جديدة قبل الكتابة.</h2>
+        </div>
+        <p className="max-w-xl text-[.84rem] leading-relaxed text-soft">يراقب الرادار المنشور + كتبك الخاصة المشتقة + فجوات الأرشيف، ثم يقترح عناوين لا تزاحم ما كتبته.</p>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        {suggestions.map((item) => (
+          <button
+            key={`${item.title}-${item.idea}`}
+            type="button"
+            onClick={() => onPick(item.title, item.idea)}
+            className="rounded-2xl border border-hair bg-canvas p-4 text-right transition-colors hover:border-accent"
+          >
+            <span className="block font-display text-lg font-semibold leading-relaxed text-ink">{item.title}</span>
+            <span className="mt-2 block text-[.84rem] leading-relaxed text-soft">{item.idea}</span>
+            <span className="mt-3 block text-[.74rem] text-accent">
+              {item.coverage.length ? `الأرشيف يغطيها جزئيًا: ${item.coverage.length} روابط` : 'فجوة شبه جديدة — مناسبة لمقال'}
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function PrivateArchiveCard({
+  links,
+  bundle,
+}: {
+  links: PrivateBookLink[]
+  bundle: Bundle
+}) {
+  const related = relatedForIdea(`${bundle.title} ${bundle.excerpt}`, links, (book) => `${book.topTerms?.join(' ') || ''} ${book.relatedPublicArticles?.map((article) => article.title).join(' ') || ''}`, 4)
+  return (
+    <section className={card}>
+      <p className="text-[.76rem] font-semibold uppercase text-accent">أرشيف الدكتور السري</p>
+      <h2 className="mt-1 font-display text-xl font-semibold text-ink">كتبك الخاصة لا تظهر للناس… لكنها تربط الفكرة بذاكرتك.</h2>
+      {links.length ? (
+        <div className="mt-4 grid gap-3">
+          {related.map((book) => (
+            <div key={book.title} className="rounded-xl border border-hair bg-canvas p-4">
+              <p className="font-semibold text-ink">{book.title}</p>
+              <p className="mt-1 text-[.78rem] leading-relaxed text-soft">
+                قريب من هذا المقال عبر محاور: {(book.topTerms || []).slice(0, 5).join('، ') || 'محاور مشتقة'}.
+              </p>
+              {book.linkedPublicBook && (
+                <a href={`/publications/${book.linkedPublicBook.slug}`} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[.78rem] text-accent hover:text-accent-deep">
+                  الكتاب المنشور الأقرب: {book.linkedPublicBook.title} ←
+                </a>
+              )}
+            </div>
+          ))}
+          {!related.length && <p className="rounded-xl border border-hair bg-canvas p-4 text-[.84rem] text-soft">لا توجد صلة قوية بهذه الفكرة في الذاكرة الخاصة حتى الآن.</p>}
+        </div>
+      ) : (
+        <p className="mt-4 rounded-xl border border-hair bg-canvas p-4 text-[.84rem] leading-relaxed text-soft">
+          الذاكرة الخاصة لم تُبنَ بعد في هذه النسخة. شغّل <span dir="ltr">npm run private-books:memory</span> بعد وضع الكتب في <span dir="ltr">PrivateBooks</span>، وسيظهر هنا الربط المشتق الآمن فقط.
+        </p>
+      )}
+    </section>
+  )
+}
+
+function QualityGateCard({ gate }: { gate: ReturnType<typeof qualityGate> }) {
+  return (
+    <section className={card}>
+      <p className="text-[.76rem] font-semibold uppercase text-accent">بوابة جودة قبل النشر</p>
+      <h2 className="mt-1 font-display text-xl font-semibold text-ink">{gate.ready ? 'جاهز للاعتماد.' : 'يحتاج انتباه قبل النشر.'}</h2>
+      <div className="mt-4 grid gap-2">
+        {gate.checks.map((check) => (
+          <div key={check.key} className="flex items-center justify-between gap-3 rounded-xl border border-hair bg-canvas px-4 py-3">
+            <span className="text-[.84rem] text-ink">{check.label}</span>
+            <span className={`text-[.78rem] font-semibold ${check.ok ? 'text-accent' : 'text-soft'}`}>{check.ok ? '✓' : 'يحتاج ضبط'}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function WeeklyPackCard({
+  pack,
+  onSave,
+  busy,
+}: {
+  pack: WeeklyPack
+  onSave: () => void
+  busy: boolean
+}) {
+  const all = [
+    ...pack.linkedin.map((text, index) => `LinkedIn ${index + 1}:\n${text}`),
+    ...pack.x.map((text, index) => `X ${index + 1}:\n${text}`),
+    ...pack.generalX.map((text, index) => `X عام ${index + 1}:\n${text}`),
+    `Instagram:\n${pack.instagram}`,
+    `سؤال تفاعلي:\n${pack.question}`,
+    `اقتباس:\n${pack.quote}`,
+    `تعليق على حدث راهن:\n${pack.radarComment}`,
+  ].join('\n\n---\n\n')
+  return (
+    <section className={card}>
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[.76rem] font-semibold uppercase text-accent">حزمة الأسبوع</p>
+          <h2 className="mt-1 font-display text-2xl font-semibold text-ink">محتوى أسبوع كامل ينتظر موافقتك.</h2>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <CopyButton value={all} label="نسخ الكل" />
+          <button type="button" className={primary} disabled={busy} onClick={onSave}>{busy ? 'أحفظ…' : 'حفظ في طابور الموافقة'}</button>
+        </div>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {pack.linkedin.map((text, index) => <SocialCard key={`li-${index}`} title={`LinkedIn ${index + 1}`} text={text} />)}
+        {pack.x.map((text, index) => <SocialCard key={`x-${index}`} title={`X للمقال ${index + 1}`} text={text} />)}
+        {pack.generalX.map((text, index) => <SocialCard key={`gx-${index}`} title={`X عام ${index + 1}`} text={text} />)}
+        <SocialCard title="Instagram" text={pack.instagram} />
+        <SocialCard title="سؤال تفاعلي" text={pack.question} />
+        <SocialCard title="اقتباس من الأرشيف" text={pack.quote} />
+        <SocialCard title="تعليق على حدث راهن" text={pack.radarComment} />
+      </div>
+    </section>
+  )
+}
+
 export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
   const { isAdmin, refresh } = useAdminAuth()
   const [richArticles, setRichArticles] = useState<ArticleRecord[]>(articles)
+  const [radar, setRadar] = useState<RadarItem[]>([])
   const [idea, setIdea] = useState('الذكاء الاصطناعي في التعليم')
   const [audience, setAudience] = useState('المعلمين والقيادات التعليمية')
   const [angle, setAngle] = useState('الأثر الإنساني قبل بريق الأداة')
@@ -203,6 +440,7 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [queueBusy, setQueueBusy] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -216,11 +454,31 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
 
   const style = useMemo(() => styleFingerprint(richArticles), [richArticles])
   const lab = useMemo(() => ideaLab(idea, richArticles, books, papers), [idea, richArticles])
+  const privateLinks = (privateBookLinks as { books?: PrivateBookLink[] }).books || []
+  const gate = useMemo(() => qualityGate(bundle, richArticles), [bundle, richArticles])
+  const weeklyPack = useMemo(() => buildWeeklyPack(bundle, richArticles, radar), [bundle, radar, richArticles])
+  const articleSuggestions = useMemo(() => suggestArticleIdeas(richArticles, radar, privateLinks), [privateLinks, radar, richArticles])
+
+  useEffect(() => {
+    let active = true
+    fetchPublishedExtras<RadarItem>('site_radar').then((items) => {
+      if (active) setRadar(items.slice(0, 5))
+    }).catch(() => undefined)
+    return () => { active = false }
+  }, [])
 
   const rebuild = () => {
     setBundle(buildBundle(idea, audience, angle, richArticles))
     setNotice('بُنيت الحزمة من أرشيف الدكتور وأسلوبه ✓')
     window.setTimeout(() => setNotice(''), 2200)
+  }
+
+  const pickSuggestion = (title: string, suggestion: string) => {
+    setIdea(title)
+    setAngle(suggestion)
+    const next = buildBundle(`${title}. ${suggestion}`, audience, suggestion, richArticles)
+    setBundle({ ...next, title })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const updateBundle = (patch: Partial<Bundle>) => {
@@ -243,6 +501,7 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
       if (!ok) throw new Error('جلسة المشرف تحتاج تحديثًا. سجّل خروجك وادخل من جديد.')
       if (mode === 'scheduled' && !scheduledAt) throw new Error('اختر موعد الجدولة أولًا.')
       if (wordCount(bundle.body) < 305 || wordCount(bundle.body) > 450) throw new Error('المقال يجب أن يبقى بين 305 و450 كلمة.')
+      if (mode === 'published' && !gate.ready) throw new Error(`بوابة الجودة لم تجتز بعد: ${gate.blocking.join('، ')}`)
       if (richArticles.some((article) => article.slug === bundle.slug)) throw new Error('هذا الـslug مستخدم سابقًا. عدّل العنوان أو الرابط.')
       const db = await getDb()
       if (!db) throw new Error('Firebase غير متاح الآن.')
@@ -282,6 +541,45 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
       setError(reason instanceof Error ? reason.message : 'تعذّر الحفظ.')
     } finally {
       setBusy(false)
+    }
+  }
+
+  const saveWeeklyQueue = async () => {
+    setError('')
+    setNotice('')
+    setQueueBusy(true)
+    try {
+      const ok = isAdmin || await refresh()
+      if (!ok) throw new Error('جلسة المشرف تحتاج تحديثًا. سجّل خروجك وادخل من جديد.')
+      const db = await getDb()
+      if (!db) throw new Error('Firebase غير متاح الآن.')
+      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
+      await addDoc(collection(db, 'social_queue'), {
+        status: 'ready_for_review',
+        source: 'publishing_studio',
+        articleSlug: bundle.slug,
+        articleTitle: bundle.title,
+        idea,
+        audience,
+        posts: {
+          linkedin: weeklyPack.linkedin,
+          x: weeklyPack.x,
+          generalX: weeklyPack.generalX,
+          instagram: weeklyPack.instagram,
+          interactiveQuestion: weeklyPack.question,
+          archiveQuote: weeklyPack.quote,
+          radarComment: weeklyPack.radarComment,
+        },
+        relatedArticles: bundle.related,
+        radar: radar.slice(0, 3),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+      setNotice('حُفظت حزمة الأسبوع في طابور الموافقة. لاحقًا نربطها بالنشر المباشر لحساباتك.')
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'تعذّر حفظ حزمة الأسبوع.')
+    } finally {
+      setQueueBusy(false)
     }
   }
 
@@ -349,6 +647,8 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
         </div>
       </section>
 
+      <IdeaSuggestionsCard suggestions={articleSuggestions} onPick={pickSuggestion} />
+
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(340px,.75fr)]">
         <div className={card}>
           <div className="grid gap-4">
@@ -375,6 +675,8 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
         </div>
 
         <aside className="grid content-start gap-5">
+          <QualityGateCard gate={gate} />
+
           <section className={card}>
             <p className="text-[.76rem] font-semibold uppercase text-accent">بوابة الاعتماد</p>
             <ul className="mt-3 grid gap-2 text-[.84rem] leading-relaxed text-soft">
@@ -407,6 +709,8 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
               {!bundle.related.length && <p className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-soft">لا توجد روابط كافية بعد.</p>}
             </div>
           </section>
+
+          <PrivateArchiveCard links={privateLinks} bundle={bundle} />
         </aside>
       </section>
 
@@ -427,6 +731,8 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
           <SocialCard title="النشرة البريدية" text={bundle.social.newsletter} />
         </div>
       </section>
+
+      <WeeklyPackCard pack={weeklyPack} onSave={saveWeeklyQueue} busy={queueBusy} />
 
       <section className={card}>
         <p className="text-[.76rem] font-semibold uppercase text-accent">ماذا يحدث بعد اعتماد المقال؟</p>

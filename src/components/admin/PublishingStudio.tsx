@@ -1,0 +1,449 @@
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { articleCats, books, papers } from '../../data'
+import type { ArticleRecord } from '../../lib/cms'
+import { loadArticleBodies } from '../../lib/article-bodies'
+import { useAdminAuth } from '../../lib/admin-auth'
+import { getDb } from '../../lib/firebase'
+import { ideaLab, relatedForIdea, styleFingerprint, suggestStrongTitle } from '../../lib/intelligence'
+
+const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
+const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
+const primary = 'rounded-full bg-accent px-6 py-2.5 text-[.84rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
+const ghost = 'rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50'
+
+type StudioStatus = 'draft' | 'published' | 'scheduled'
+type SocialKey = 'x' | 'linkedin' | 'instagram' | 'threads' | 'whatsapp' | 'newsletter'
+
+type Bundle = {
+  title: string
+  slug: string
+  cat: string
+  excerpt: string
+  body: string
+  social: Record<SocialKey, string>
+  related: { slug: string; title: string; iso?: string }[]
+  books: { slug: string; title: string }[]
+  papers: { slug: string; title: string }[]
+  quality: string[]
+}
+
+const normalize = (value = '') => value
+  .toLowerCase()
+  .replace(/[ًٌٍَُِّْـ]/g, '')
+  .replace(/[أإآٱ]/g, 'ا')
+  .replace(/ى/g, 'ي')
+  .replace(/ة/g, 'ه')
+  .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
+  .trim()
+
+const wordCount = (value = '') => value.trim().split(/\s+/).filter(Boolean).length
+
+function today() {
+  const date = new Date()
+  return {
+    iso: date.toISOString().slice(0, 10),
+    ar: new Intl.DateTimeFormat('ar-EG-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }).format(date),
+  }
+}
+
+function makeSlug(title: string) {
+  const dictionary: Record<string, string> = {
+    الذكاء: 'ai',
+    اصطناعي: 'ai',
+    التعليم: 'education',
+    المعلم: 'teacher',
+    الطالب: 'student',
+    الطفل: 'child',
+    الأسرة: 'family',
+    الاسرة: 'family',
+    الخوف: 'fear',
+    الامتحان: 'exam',
+    الاختبار: 'exam',
+    الهوية: 'identity',
+    التقنية: 'technology',
+    التكنولوجيا: 'technology',
+    الإنسان: 'human',
+    الانسان: 'human',
+    المستقبل: 'future',
+  }
+  const tokens = normalize(title)
+    .split(/\s+/)
+    .map((token) => dictionary[token] || dictionary[token.replace(/^ال/, '')])
+    .filter(Boolean)
+  const base = tokens.length ? tokens.slice(0, 5).join('-') : 'thought-article'
+  return `${base}-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}`
+}
+
+function chooseCat(idea: string) {
+  const text = normalize(idea)
+  if (/ذكاء|تقني|تكنولوجيا|رقمي|شاشه|شاشة/.test(text)) return 'تقنية'
+  if (/هويه|لغه|ثقافه|قيم/.test(text)) return 'هوية'
+  if (/اعلام|منصه|سوشال|ميديا/.test(text)) return 'إعلام'
+  if (/بحث|دراسه|جامعه|اكاديمي/.test(text)) return 'بحث'
+  if (/اسره|طفل|ابناء|بيت/.test(text)) return 'مجتمع'
+  if (/تعليم|معلم|طالب|امتحان|اختبار|مدرسه/.test(text)) return 'التعليم'
+  return articleCats.includes('التربية') ? 'التربية' : 'التعليم'
+}
+
+function clampExcerpt(text: string) {
+  return Array.from(text.replace(/\s+/g, ' ').trim()).slice(0, 195).join('')
+}
+
+function buildArticleDraft(idea: string, audience: string, angle: string, related: ArticleRecord[]) {
+  const seed = related[0]
+  const second = related[1]
+  const topic = idea.trim() || 'السؤال التربوي الجديد'
+  const p1 = `ليست قيمة ${topic} في أنه موضوع جديد يملأ العناوين، بل في أنه يكشف طريقة نظرنا إلى الإنسان داخل التعليم. كل أداة أو فكرة تبدأ جذابة حين نراها من بعيد، لكنها تصبح أكثر تعقيدًا عندما تقترب من الطالب والمعلم والأسرة والقرار اليومي داخل الصف. هنا لا يكفي أن نسأل: ما الذي تغيّر؟ بل ينبغي أن نسأل: ماذا فعل هذا التغيّر في المعنى؟`
+  const p2 = `بالنسبة إلى ${audience}، تبدو الزاوية الأهم في ${angle}. فالتعليم لا يتحرك بالأدوات وحدها، ولا يعيش بالشعارات وحدها. يعيش حين تتحول الفكرة إلى ممارسة عادلة، وإلى سؤال يحفظ كرامة المتعلم، وإلى قرار لا يختصر الإنسان في رقم أو سرعة أو نتيجة عابرة. ولذلك فإن أي نقاش جاد يجب أن يبدأ من أثر الفكرة لا من بريقها.`
+  const p3 = seed
+    ? `وقد كتبت من قبل في «${seed.title}» ما يقترب من هذا المعنى؛ فهناك خيط واضح بين السؤال القديم والسؤال الحالي: كيف نحافظ على حضور الإنسان بينما تتبدل اللغة والأدوات؟ وإذا كان المقال القديم قد فتح الباب، فإن اللحظة الحالية تطلب خطوة أهدأ وأكثر دقة: أن نميّز بين التطوير الذي يخدم التعلم، والتطوير الذي يجعل الإنسان تابعًا للإجراء.`
+    : `هذه الفكرة تحتاج إلى أن تُقرأ من الداخل لا من الحافة. فكل تغيير تعليمي يحمل وعدًا وخطرًا في الوقت نفسه؛ الوعد أن يساعدنا على الفهم، والخطر أن يجعلنا ننسى لماذا نتعلم أصلًا.`
+  const p4 = second
+    ? `واللافت أن هذا الخيط يظهر أيضًا في «${second.title}». هذا لا يعني تكرار الفكرة، بل يعني أن المسألة عادت إلينا بوجه جديد. فالأفكار الحقيقية لا تنتهي بعد مقال واحد؛ إنها تتطور، وتراجع نفسها، وتطلب منا لغة أكثر إنصافًا كلما تغيّر الزمن.`
+    : `المسألة إذن ليست رفضًا ولا اندفاعًا. هي دعوة إلى بطء عاقل داخل زمن سريع؛ بطء لا يعطل التطوير، لكنه يمنحه ضميرًا واتجاهًا.`
+  const p5 = `لهذا أرى أن السؤال العملي ليس: هل نقبل ${topic} أو نرفضه؟ السؤال الأقرب إلى التعليم هو: كيف نجعله أداة تخدم الإنسان ولا تختصره؟ عندما نبدأ من هذا السؤال، يصبح التطوير أكثر تواضعًا، وأكثر صدقًا، وأقرب إلى روح التربية.`
+  let draft = [p1, p2, p3, p4, p5].join('\n\n')
+  const words = wordCount(draft)
+  if (words > 450) draft = draft.split(/\s+/).slice(0, 445).join(' ') + '.'
+  if (words < 305) draft += '\n\nوالأهم أن يبقى السؤال مفتوحًا: ما الأثر الإنساني الذي لا نريد أن نخسره ونحن نطارد الحلول السريعة؟'
+  return draft
+}
+
+function buildSocial(bundle: Pick<Bundle, 'title' | 'excerpt' | 'body'>, audience: string) {
+  const quote = bundle.body
+    .replace(/\s+/g, ' ')
+    .split(/(?<=[.!؟])\s+/)
+    .find((sentence) => sentence.length > 65 && sentence.length < 165)
+    || bundle.excerpt
+  return {
+    x: `${quote}\n\n${bundle.title}`,
+    linkedin: `${bundle.title}\n\n${bundle.excerpt}\n\nالسؤال الذي يستحق النقاش: كيف نحافظ على الإنسان في قلب التطوير؟`,
+    instagram: `${bundle.title}\n\n${quote}\n\n#التعليم #الذكاء_الاصطناعي #د_أحمد_الفيلكاوي`,
+    threads: `${bundle.excerpt}\n\nأحيانًا لا نحتاج إجابة أسرع، بل سؤالًا أعدل.`,
+    whatsapp: `مقال جديد: ${bundle.title}\n${bundle.excerpt}`,
+    newsletter: `اقتراح للنشرة: ${bundle.title}\n\nلماذا يهم هذا الموضوع ${audience}؟\n${bundle.excerpt}`,
+  }
+}
+
+function buildBundle(idea: string, audience: string, angle: string, articles: ArticleRecord[]): Bundle {
+  const title = suggestStrongTitle(idea)
+  const cat = chooseCat(`${idea} ${angle}`)
+  const related = relatedForIdea(`${idea} ${angle}`, articles, (article) => `${article.excerpt || ''} ${article.body || ''}`, 5)
+  const relatedBooks = relatedForIdea(`${idea} ${angle}`, books, (book) => book.desc || '', 3)
+  const relatedPapers = relatedForIdea(`${idea} ${angle}`, papers, (paper) => paper.meta || '', 3)
+  const body = buildArticleDraft(idea, audience, angle, related)
+  const excerpt = clampExcerpt(body.split('\n\n')[0])
+  const partial = { title, excerpt, body }
+  const quality = [
+    wordCount(body) >= 305 && wordCount(body) <= 450 ? `عدد الكلمات مناسب: ${wordCount(body)} كلمة.` : `عدد الكلمات يحتاج ضبطًا: ${wordCount(body)} كلمة.`,
+    related.length ? `مرتبط بـ ${related.length} مقالات من أرشيفك.` : 'لم أجد ربطًا قويًا؛ أضف كلمات من قاموسك الفكري.',
+    relatedBooks.length || relatedPapers.length ? 'يوجد امتداد أكاديمي/كتابي مناسب.' : 'لا يوجد امتداد كتابي أو بحثي واضح بعد.',
+    'التصنيف والمقتطف والـslug جاهزة مبدئيًا.',
+    'بعد النشر: الصوت الآلي وR2 ينتظران مفاتيح Azure/Gemini ليصبحا تلقائيين بالكامل.',
+  ]
+  return {
+    ...partial,
+    slug: makeSlug(title),
+    cat,
+    social: buildSocial(partial, audience),
+    related: related.map(({ slug, title, iso }) => ({ slug, title, iso })),
+    books: relatedBooks.map(({ slug, title }) => ({ slug, title })),
+    papers: relatedPapers.map(({ slug, title }) => ({ slug, title })),
+    quality,
+  }
+}
+
+function CopyButton({ value, label = 'نسخ' }: { value: string; label?: string }) {
+  const [done, setDone] = useState(false)
+  return (
+    <button
+      type="button"
+      className={ghost}
+      onClick={async () => {
+        await navigator.clipboard.writeText(value)
+        setDone(true)
+        window.setTimeout(() => setDone(false), 1600)
+      }}
+    >
+      {done ? 'تم النسخ ✓' : label}
+    </button>
+  )
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="grid gap-2">
+      <span className="text-[.76rem] font-semibold text-accent">{label}</span>
+      {children}
+    </label>
+  )
+}
+
+function SocialCard({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-2xl border border-hair bg-canvas p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-semibold text-ink">{title}</p>
+        <CopyButton value={text} />
+      </div>
+      <p className="mt-3 whitespace-pre-wrap text-[.84rem] leading-relaxed text-soft">{text}</p>
+    </div>
+  )
+}
+
+export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
+  const { isAdmin, refresh } = useAdminAuth()
+  const [richArticles, setRichArticles] = useState<ArticleRecord[]>(articles)
+  const [idea, setIdea] = useState('الذكاء الاصطناعي في التعليم')
+  const [audience, setAudience] = useState('المعلمين والقيادات التعليمية')
+  const [angle, setAngle] = useState('الأثر الإنساني قبل بريق الأداة')
+  const [bundle, setBundle] = useState<Bundle>(() => buildBundle(idea, audience, angle, articles))
+  const [status, setStatus] = useState<StudioStatus>('draft')
+  const [scheduledAt, setScheduledAt] = useState('')
+  const [notice, setNotice] = useState('')
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    setRichArticles(articles)
+    loadArticleBodies().then((bodies) => {
+      if (!active) return
+      setRichArticles(articles.map((article) => ({ ...article, body: article.body || bodies[article.slug] })))
+    }).catch(() => undefined)
+    return () => { active = false }
+  }, [articles])
+
+  const style = useMemo(() => styleFingerprint(richArticles), [richArticles])
+  const lab = useMemo(() => ideaLab(idea, richArticles, books, papers), [idea, richArticles])
+
+  const rebuild = () => {
+    setBundle(buildBundle(idea, audience, angle, richArticles))
+    setNotice('بُنيت الحزمة من أرشيف الدكتور وأسلوبه ✓')
+    window.setTimeout(() => setNotice(''), 2200)
+  }
+
+  const updateBundle = (patch: Partial<Bundle>) => {
+    setBundle((previous) => {
+      const next = { ...previous, ...patch }
+      if ('title' in patch && patch.title) next.slug = makeSlug(patch.title)
+      if ('body' in patch || 'excerpt' in patch || 'title' in patch) {
+        next.social = buildSocial({ title: next.title, excerpt: next.excerpt, body: next.body }, audience)
+      }
+      return next
+    })
+  }
+
+  const save = async (mode: StudioStatus) => {
+    setError('')
+    setNotice('')
+    setBusy(true)
+    try {
+      const ok = isAdmin || await refresh()
+      if (!ok) throw new Error('جلسة المشرف تحتاج تحديثًا. سجّل خروجك وادخل من جديد.')
+      if (mode === 'scheduled' && !scheduledAt) throw new Error('اختر موعد الجدولة أولًا.')
+      if (wordCount(bundle.body) < 305 || wordCount(bundle.body) > 450) throw new Error('المقال يجب أن يبقى بين 305 و450 كلمة.')
+      if (richArticles.some((article) => article.slug === bundle.slug)) throw new Error('هذا الـslug مستخدم سابقًا. عدّل العنوان أو الرابط.')
+      const db = await getDb()
+      if (!db) throw new Error('Firebase غير متاح الآن.')
+      const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
+      const date = today()
+      await setDoc(doc(db, 'site_articles', bundle.slug), {
+        slug: bundle.slug,
+        title: bundle.title.trim(),
+        cat: bundle.cat,
+        excerpt: bundle.excerpt.trim(),
+        body: bundle.body.trim(),
+        iso: date.iso,
+        date: date.ar,
+        status: mode,
+        scheduledAt: mode === 'scheduled' ? scheduledAt : '',
+        publishingStudio: {
+          idea,
+          audience,
+          angle,
+          social: bundle.social,
+          relatedArticles: bundle.related,
+          relatedBooks: bundle.books,
+          relatedPapers: bundle.papers,
+          quality: bundle.quality,
+          generatedBy: 'local-archive-studio',
+        },
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+      setStatus(mode)
+      setNotice(mode === 'published'
+        ? 'نُشر المقال فورًا. سيظهر للزوار، وسيدخل دورة الصوت التلقائي بعد إضافة مفاتيح Azure/Gemini.'
+        : mode === 'scheduled'
+          ? 'حُفظ المقال مجدولًا ولن يظهر قبل موعده.'
+          : 'حُفظ كمسودة داخل مقالات اللوحة.')
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'تعذّر الحفظ.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const fullPackage = [
+    `العنوان: ${bundle.title}`,
+    `التصنيف: ${bundle.cat}`,
+    `المقتطف: ${bundle.excerpt}`,
+    `المقال:\n${bundle.body}`,
+    `X:\n${bundle.social.x}`,
+    `LinkedIn:\n${bundle.social.linkedin}`,
+    `Instagram:\n${bundle.social.instagram}`,
+    `Newsletter:\n${bundle.social.newsletter}`,
+  ].join('\n\n---\n\n')
+
+  return (
+    <div className="grid gap-5">
+      <section className={card}>
+        <p className="text-[.76rem] font-semibold uppercase text-accent">استوديو النشر الذكي</p>
+        <h1 className="mt-1 font-display text-3xl font-bold text-ink">من فكرة واحدة إلى مقال ومنظومة نشر.</h1>
+        <p className="mt-3 max-w-4xl text-[.92rem] leading-loose text-soft">
+          هذه أداة خاصة داخل اللوحة فقط. تبني المقال والقوالب من أرشيف الدكتور محليًا الآن، وبعد ربط OpenAI/Gemini تتحول نفس الواجهة إلى محرر أعمق بلا تغيير بصري.
+        </p>
+      </section>
+
+      <section className={card}>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_14rem_14rem_auto]">
+          <Field label="الفكرة الخام">
+            <input className={input} value={idea} onChange={(event) => setIdea(event.target.value)} placeholder="مثال: الخوف من الامتحان" />
+          </Field>
+          <Field label="الجمهور">
+            <select className={input} value={audience} onChange={(event) => setAudience(event.target.value)}>
+              <option>المعلمين والقيادات التعليمية</option>
+              <option>أولياء الأمور</option>
+              <option>الطلاب والباحثين</option>
+              <option>الإعلاميين</option>
+              <option>الجمهور العام</option>
+            </select>
+          </Field>
+          <Field label="الزاوية">
+            <select className={input} value={angle} onChange={(event) => setAngle(event.target.value)}>
+              <option>الأثر الإنساني قبل بريق الأداة</option>
+              <option>زاوية تربوية عملية</option>
+              <option>سؤال أخلاقي وفكري</option>
+              <option>مدخل إعلامي سريع</option>
+              <option>امتداد أكاديمي من الأرشيف</option>
+            </select>
+          </Field>
+          <div className="flex items-end">
+            <button type="button" className={`${primary} w-full`} onClick={rebuild}>ابنِ الحزمة</button>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-3">
+          <div className="rounded-xl border border-hair bg-canvas p-4">
+            <strong className="block font-display text-2xl text-accent">{style.articleCount}</strong>
+            <span className="text-[.78rem] text-soft">مقالًا يتعلم منها محليًا</span>
+          </div>
+          <div className="rounded-xl border border-hair bg-canvas p-4">
+            <strong className="block font-display text-2xl text-accent">{style.avgSentenceWords || '—'}</strong>
+            <span className="text-[.78rem] text-soft">متوسط كلمات الجملة في الأرشيف</span>
+          </div>
+          <div className="rounded-xl border border-hair bg-canvas p-4">
+            <strong className="block font-display text-2xl text-accent">{bundle.related.length}</strong>
+            <span className="text-[.78rem] text-soft">روابط فكرية مقترحة</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(340px,.75fr)]">
+        <div className={card}>
+          <div className="grid gap-4">
+            <Field label="العنوان">
+              <input className={input} value={bundle.title} onChange={(event) => updateBundle({ title: event.target.value })} />
+            </Field>
+            <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_14rem]">
+              <Field label="الرابط المختصر">
+                <input className={input} dir="ltr" value={bundle.slug} onChange={(event) => updateBundle({ slug: event.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, '') })} />
+              </Field>
+              <Field label="التصنيف">
+                <select className={input} value={bundle.cat} onChange={(event) => updateBundle({ cat: event.target.value })}>
+                  {articleCats.filter((cat) => cat !== 'الكل').map((cat) => <option key={cat}>{cat}</option>)}
+                </select>
+              </Field>
+            </div>
+            <Field label="المقتطف">
+              <textarea className={`${input} min-h-24 leading-loose`} value={bundle.excerpt} onChange={(event) => updateBundle({ excerpt: event.target.value })} />
+            </Field>
+            <Field label={`المقال (${wordCount(bundle.body)} كلمة)`}>
+              <textarea className={`${input} min-h-[520px] leading-loose`} value={bundle.body} onChange={(event) => updateBundle({ body: event.target.value })} />
+            </Field>
+          </div>
+        </div>
+
+        <aside className="grid content-start gap-5">
+          <section className={card}>
+            <p className="text-[.76rem] font-semibold uppercase text-accent">بوابة الاعتماد</p>
+            <ul className="mt-3 grid gap-2 text-[.84rem] leading-relaxed text-soft">
+              {bundle.quality.map((item) => <li key={item}>• {item}</li>)}
+            </ul>
+            <div className="mt-5 grid gap-3">
+              <button type="button" disabled={busy} className={primary} onClick={() => save('published')}>اعتماد ونشر فورًا</button>
+              <button type="button" disabled={busy} className={ghost} onClick={() => save('draft')}>حفظ كمسودة</button>
+              <div className="grid gap-2">
+                <input className={input} dir="ltr" type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} />
+                <button type="button" disabled={busy || !scheduledAt} className={ghost} onClick={() => save('scheduled')}>حفظ وجدولة</button>
+              </div>
+              <CopyButton value={fullPackage} label="نسخ الحزمة كاملة" />
+            </div>
+            {notice && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-accent">{notice}</p>}
+            {error && <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-soft">{error}</p>}
+            <p className="mt-4 text-[.76rem] leading-relaxed text-soft">آخر وضع محفوظ: {status === 'published' ? 'منشور' : status === 'scheduled' ? 'مجدول' : 'مسودة'}</p>
+          </section>
+
+          <section className={card}>
+            <p className="text-[.76rem] font-semibold uppercase text-accent">ذاكرة الفكرة</p>
+            <p className="mt-2 text-[.86rem] leading-relaxed text-soft">{lab.angle}</p>
+            <div className="mt-4 grid gap-3">
+              {bundle.related.map((item) => (
+                <a key={item.slug} href={`/articles/${item.slug}`} target="_blank" rel="noreferrer" className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-ink transition-colors hover:border-accent hover:text-accent">
+                  {item.title}
+                  {item.iso && <span className="ms-2 text-soft">{item.iso.slice(0, 4)}</span>}
+                </a>
+              ))}
+              {!bundle.related.length && <p className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-soft">لا توجد روابط كافية بعد.</p>}
+            </div>
+          </section>
+        </aside>
+      </section>
+
+      <section className={card}>
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-[.76rem] font-semibold uppercase text-accent">قوالب السوشال الجاهزة</p>
+            <h2 className="mt-1 font-display text-2xl font-semibold text-ink">من المقال نفسه… بلا إعادة تفكير.</h2>
+          </div>
+          <p className="max-w-xl text-[.84rem] leading-relaxed text-soft">لا تُنشر تلقائيًا على حساباتك الآن؛ تحفظ لك النصوص الجاهزة. عند ربط APIs للحسابات لاحقًا نجعلها Queue اعتماد ونشر.</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <SocialCard title="X" text={bundle.social.x} />
+          <SocialCard title="LinkedIn" text={bundle.social.linkedin} />
+          <SocialCard title="Instagram" text={bundle.social.instagram} />
+          <SocialCard title="Threads" text={bundle.social.threads} />
+          <SocialCard title="WhatsApp / Broadcast" text={bundle.social.whatsapp} />
+          <SocialCard title="النشرة البريدية" text={bundle.social.newsletter} />
+        </div>
+      </section>
+
+      <section className={card}>
+        <p className="text-[.76rem] font-semibold uppercase text-accent">ماذا يحدث بعد اعتماد المقال؟</p>
+        <div className="mt-4 grid gap-3 md:grid-cols-4">
+          {[
+            ['١', 'ينتقل المقال إلى Firestore ويظهر فورًا إذا كان منشورًا.'],
+            ['٢', 'يدخل في Sitemap/RSS بعد البناء والنشر التالي.'],
+            ['٣', 'الصوت الآلي يلتقطه في Workflow الساعة التالية بعد إضافة Azure.'],
+            ['٤', 'الحوار والبودكاست يعتمدان على Gemini/Azure ثم يُرفعان إلى R2.'],
+          ].map(([num, text]) => (
+            <div key={num} className="rounded-xl border border-hair bg-canvas p-4">
+              <span className="font-display text-2xl text-accent">{num}</span>
+              <p className="mt-2 text-[.84rem] leading-relaxed text-soft">{text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}

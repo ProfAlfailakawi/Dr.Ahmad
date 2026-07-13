@@ -1,8 +1,7 @@
 تعديلات الجلسة — ارفعها بنفس المسارات في AI Studio ثم Publish.
 
 ⚠️ أضِف متغيّراً واحداً في إعدادات AI Studio (Environment):
-   VITE_SITE_URL = https://dr-alfailakawi.web.app
-   (عند ربط الدومين لاحقاً: غيّره إلى https://dr-alfailakawi.com)
+   VITE_SITE_URL = https://dr-alfailakawi.com
 
 أبرز التعديلات:
 • data.ts / cms.ts     : النطاق المركزي + المؤلف المشارك (د. عبدالعزيز دخيل العنزي) في كل الكتب والأبحاث + تمرير coAuthors/scholar/researchgate

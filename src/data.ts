@@ -110,7 +110,7 @@ export const socials = [
 ]
 
 export const links = {
-  booking: 'http://schedule.dr-alfailakawi.com/',
+  booking: 'https://schedule.dr-alfailakawi.com/',
   cv: '/files/cv.pdf',
 }
 
@@ -928,8 +928,8 @@ export const NEWSLETTER_ENDPOINT = '' // مثال: 'https://formspree.io/f/xxxxx
 
 /* بيانات الموقع لمحرّكات البحث */
 // النطاق المركزي — مصدر واحد لكل canonical/OG/RSS/Schema. يُضبط من VITE_SITE_URL،
-// وافتراضه الرابط الحيّ حتى يُربط الدومين الرسمي (فقط بتغيير المتغيّر، بلا لمس الكود).
-export const SITE_URL = ((import.meta as { env?: Record<string, string> }).env?.VITE_SITE_URL) || 'https://dr-alfailakawi.web.app'
+// وافتراضه الدومين الرسمي الوحيد للمشاركة والفهرسة والروابط المطلقة.
+export const SITE_URL = ((import.meta as { env?: Record<string, string> }).env?.VITE_SITE_URL) || 'https://dr-alfailakawi.com'
 export const site = {
   url: SITE_URL,
   title: 'د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم',

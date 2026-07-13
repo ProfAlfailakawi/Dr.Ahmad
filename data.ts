@@ -110,7 +110,7 @@ export const socials = [
 ]
 
 export const links = {
-  booking: 'http://schedule.dr-alfailakawi.com/',
+  booking: 'https://schedule.dr-alfailakawi.com/',
   cv: '/files/cv.pdf',
 }
 

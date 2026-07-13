@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const SITE = 'https://dr-alfailakawi.web.app'
+const SITE = (process.env.VITE_SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
 const DRY = process.argv.includes('--dry-run')
 
 const notify = (title, body) => {

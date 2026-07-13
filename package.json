@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/sync-audio.mjs && node scripts/prune-orphan-audio.mjs && node scripts/build-podcast-admin.mjs && vite build && node scripts/build-static.mjs",
+    "build": "node scripts/sync-audio.mjs && node scripts/prune-orphan-audio.mjs && node scripts/build-podcast-admin.mjs && vite build && node scripts/build-static.mjs && node scripts/verify-domain-migration.mjs --dist",
     "gcp-build": "npm run build",
     "start": "node server.mjs",
     "preview": "vite preview",
@@ -34,7 +34,10 @@
     "audio:r2:build": "AUDIO_PUBLIC_BASE_URL=$AUDIO_PUBLIC_BASE_URL VITE_AUDIO_BASE_URL=$AUDIO_PUBLIC_BASE_URL npm run build",
     "audio:external:verify": "node scripts/verify-external-audio.mjs",
     "audio:external:finalize": "node scripts/finalize-external-audio.mjs",
-    "audio:r2:publish": "node scripts/publish-audio-r2.mjs"
+    "audio:r2:publish": "node scripts/publish-audio-r2.mjs",
+    "verify:domain": "node scripts/verify-domain-migration.mjs",
+    "deploy:hosting": "firebase deploy --only hosting --project gen-lang-client-0200723670",
+    "deploy:data-rules": "firebase deploy --config firebase.data.json --only firestore:rules,storage --project drahmad-8e9e2"
   },
   "dependencies": {
     "firebase": "^12.15.0",

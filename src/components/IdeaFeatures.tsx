@@ -45,7 +45,7 @@ function drawQuote(quote: string, dark: boolean): string {
   for (const l of lines.slice(0, 8)) { g.fillText(l, W - 110, y); y += lh }
   g.strokeStyle = accent; g.lineWidth = 3; g.beginPath(); g.moveTo(W - 110, W - 214); g.lineTo(W - 210, W - 214); g.stroke()
   g.font = '600 34px "Tajawal", sans-serif'; g.fillStyle = ink; g.fillText('د. أحمد حسين الفيلكاوي', W - 110, W - 152)
-  g.font = '400 26px "Tajawal", sans-serif'; g.fillStyle = soft; g.fillText('dr-alfailakawi.web.app', W - 110, W - 106)
+  g.font = '400 26px "Tajawal", sans-serif'; g.fillStyle = soft; g.fillText('dr-alfailakawi.com', W - 110, W - 106)
   return c.toDataURL('image/png')
 }
 function firstStrongSentence(body?: string, excerpt?: string) {

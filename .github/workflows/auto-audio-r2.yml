@@ -48,7 +48,7 @@ jobs:
           test -n "$FIREBASE_SERVICE_ACCOUNT_JSON" || (echo "Missing FIREBASE service account secret" && exit 1)
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
         env:
-          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
 
       - name: Generate article readings and publish to R2
         run: |
@@ -59,7 +59,8 @@ jobs:
           npm run audio -- --limit=8
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
-          FIREBASE_PROJECT_ID: gen-lang-client-0200723670
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          FIREBASE_STORAGE_BUCKET: drahmad-8e9e2.firebasestorage.app
           AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
           AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
           AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
@@ -79,7 +80,7 @@ jobs:
           npm run podcast:ar:nightly
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
-          FIREBASE_PROJECT_ID: gen-lang-client-0200723670
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
           AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
           AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -102,7 +103,7 @@ jobs:
           npm run audio:external:verify
           npm run build
         env:
-          VITE_SITE_URL: https://dr-alfailakawi.web.app
+          VITE_SITE_URL: https://dr-alfailakawi.com
           AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
           VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
 

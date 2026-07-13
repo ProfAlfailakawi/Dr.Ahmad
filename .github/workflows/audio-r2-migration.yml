@@ -97,7 +97,7 @@ jobs:
       - name: Build in external-audio mode
         run: npm run build
         env:
-          VITE_SITE_URL: https://dr-alfailakawi.web.app
+          VITE_SITE_URL: https://dr-alfailakawi.com
           AUDIO_PUBLIC_BASE_URL: ${{ inputs.public_base_url }}
           VITE_AUDIO_BASE_URL: ${{ inputs.public_base_url }}
 

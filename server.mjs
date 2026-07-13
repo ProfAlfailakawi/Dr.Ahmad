@@ -29,6 +29,31 @@ if (process.env.GOOGLE_SA_JSON && !process.env.FIREBASE_SERVICE_ACCOUNT) {
 }
 
 const port = Number(process.env.PORT || 8080)
+const canonicalHost = String(process.env.CANONICAL_HOST || 'dr-alfailakawi.com').trim().toLowerCase()
+const firebaseDataProjectId = String(process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || 'drahmad-8e9e2').trim()
+const legacyHosts = new Set([
+  'www.dr-alfailakawi.com',
+  'dr-alfailakawi.web.app',
+  'dr-alfailakawi.firebaseapp.com',
+  '208.115.236.10',
+])
+
+function firstForwardedValue(value) {
+  return String(Array.isArray(value) ? value[0] : value || '').split(',', 1)[0].trim()
+}
+
+function canonicalRedirectLocation(req) {
+  const forwardedHost = firstForwardedValue(req.headers['x-forwarded-host'])
+  const hostHeader = forwardedHost || firstForwardedValue(req.headers.host)
+  const host = hostHeader.replace(/:\d+$/, '').toLowerCase()
+  const protocol = firstForwardedValue(req.headers['x-forwarded-proto']).toLowerCase()
+  const needsHostRedirect = legacyHosts.has(host)
+  const needsHttpsRedirect = host === canonicalHost && protocol && protocol !== 'https'
+  if (!needsHostRedirect && !needsHttpsRedirect) return ''
+  const path = String(req.url || '/').startsWith('/') ? String(req.url || '/') : '/'
+  return `https://${canonicalHost}${path}`
+}
+
 const articleSuggestionPath = '/api/ai/article-suggestion'
 const contentSuggestionPath = '/api/ai/content-suggestion'
 const perfectArticlePath = '/api/ai/perfect-article'
@@ -176,10 +201,7 @@ export async function verifyFirebaseAdminToken(token, fetchImpl = fetch) {
   )
   if (!validSignature) throw new HttpError(401, 'Invalid authentication token')
 
-  const projectId = process.env.FIREBASE_PROJECT_ID
-    || process.env.GOOGLE_CLOUD_PROJECT
-    || process.env.GCLOUD_PROJECT
-    || process.env.VITE_FIREBASE_PROJECT_ID
+  const projectId = firebaseDataProjectId
   if (!projectId) throw new HttpError(503, 'Firebase project is not configured')
 
   const now = Math.floor(Date.now() / 1000)
@@ -1048,10 +1070,7 @@ async function getAdminFirestore() {
       import('firebase-admin/app'),
       import('firebase-admin/firestore'),
     ])
-    const projectId = process.env.FIREBASE_PROJECT_ID
-      || process.env.GOOGLE_CLOUD_PROJECT
-      || process.env.GCLOUD_PROJECT
-      || process.env.VITE_FIREBASE_PROJECT_ID
+    const projectId = firebaseDataProjectId
     let credential
     if (process.env.GOOGLE_SA_JSON) {
       credential = cert(JSON.parse(process.env.GOOGLE_SA_JSON))
@@ -1209,6 +1228,16 @@ export function createRequestHandler({
   return async (req, res) => {
     const method = req.method || 'GET'
     try {
+    const redirectLocation = canonicalRedirectLocation(req)
+    if (redirectLocation) {
+      res.writeHead(301, {
+        location: redirectLocation,
+        'cache-control': 'public, max-age=86400',
+        'x-content-type-options': 'nosniff',
+      })
+      res.end()
+      return
+    }
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`)
 
 

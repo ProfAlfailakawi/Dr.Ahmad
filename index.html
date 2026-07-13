@@ -19,6 +19,21 @@
     <link href="/fonts/fonts.css" rel="stylesheet" />
     <!-- صورة LCP (البورتريه) — تحميل مبكّر لتسريع أكبر عنصر مرئي -->
     <link rel="preload" href="/portrait.jpg" as="image" fetchpriority="high" />
+    <script id="canonical-host-redirect">
+      (function () {
+        var canonicalHost = 'dr-alfailakawi.com';
+        var legacyHosts = {
+          'www.dr-alfailakawi.com': true,
+          'dr-alfailakawi.web.app': true,
+          'dr-alfailakawi.firebaseapp.com': true,
+          '208.115.236.10': true
+        };
+        var host = window.location.hostname.toLowerCase();
+        if (legacyHosts[host] || (host === canonicalHost && window.location.protocol !== 'https:')) {
+          window.location.replace('https://' + canonicalHost + window.location.pathname + window.location.search + window.location.hash);
+        }
+      })();
+    </script>
     <script id="theme-init">
       (function () {
         try {

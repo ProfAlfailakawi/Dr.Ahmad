@@ -254,12 +254,11 @@ async function projectConfig() {
 
   return {
     projectId: process.env.RADAR_FIREBASE_PROJECT_ID
-      || process.env.GOOGLE_CLOUD_PROJECT
-      || process.env.GCLOUD_PROJECT
-      || firebaseConfig.projectId
+      || process.env.FIREBASE_PROJECT_ID
       || envFile.VITE_FIREBASE_PROJECT_ID
       || applet.projectId
-      || undefined,
+      || firebaseConfig.projectId
+      || 'drahmad-8e9e2',
     databaseId: process.env.RADAR_FIRESTORE_DATABASE_ID
       || firebaseConfig.databaseId
       || applet.firestoreDatabaseId

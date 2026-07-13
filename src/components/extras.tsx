@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useScroll } from 'framer-motion'
 import { EASE } from './motion'
 import { SocialIcon } from './icons'
-import { ALLOW_BROWSER_TTS, NEWSLETTER_ENDPOINT } from '../data'
+import { ALLOW_BROWSER_TTS, NEWSLETTER_ENDPOINT, site } from '../data'
 import audioManifest from '../data/audio.json'
 import { AudioPlayer } from './AudioPlayer'
 import { firebaseEnabled, getDb } from '../lib/firebase'
@@ -124,7 +124,7 @@ export function FloatingActions() {
 /* ---------- مشاركة المقال ---------- */
 export function Share({ title, path }: { title: string; path: string }) {
   const [copied, setCopied] = useState(false)
-  const url = typeof window !== 'undefined' ? window.location.origin + path : path
+  const url = `${site.url}${path}`
   const t = encodeURIComponent(title)
   const u = encodeURIComponent(url)
 

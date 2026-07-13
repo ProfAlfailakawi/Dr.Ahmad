@@ -99,6 +99,72 @@ function ReaderPanel({ slug }: { slug: string }) {
 }
 
 
+function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
+  const audio = usePersistentAudio()
+  const [follow, setFollow] = useState(false)
+  const refs = useRef<(HTMLParagraphElement | null)[]>([])
+  const paragraphs = useMemo(() => body.split('\n\n').map((text) => ({ text, words: Math.max(1, text.trim().split(/\s+/).length) })), [body])
+  const totalWords = paragraphs.reduce((sum, item) => sum + item.words, 0)
+  const activeAudio = Boolean(audio.track?.path === `/articles/${slug}` && !audio.track?.label.includes('الحوار') && audio.duration > 0)
+  const activeIndex = useMemo(() => {
+    if (!activeAudio || !audio.duration || !totalWords) return -1
+    const target = Math.min(Math.max(audio.current / audio.duration, 0), 0.999999) * totalWords
+    let cursor = 0
+    for (let index = 0; index < paragraphs.length; index++) {
+      cursor += paragraphs[index].words
+      if (target < cursor) return index
+    }
+    return paragraphs.length - 1
+  }, [activeAudio, audio.current, audio.duration, paragraphs, totalWords])
+
+  useEffect(() => {
+    if (!follow || activeIndex < 0 || !audio.playing) return
+    const element = refs.current[activeIndex]
+    if (!element) return
+    const rect = element.getBoundingClientRect()
+    const safeTop = window.innerHeight * 0.2
+    const safeBottom = window.innerHeight * 0.72
+    if (rect.top < safeTop || rect.bottom > safeBottom) element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [activeIndex, follow, audio.playing])
+
+  const seekParagraph = (index: number) => {
+    if (!activeAudio || !audio.duration) return
+    const previousWords = paragraphs.slice(0, index).reduce((sum, item) => sum + item.words, 0)
+    audio.seekTo((previousWords / totalWords) * audio.duration)
+    if (!audio.playing) void audio.toggle()
+  }
+
+  return (
+    <>
+      {activeAudio && (
+        <div className="synced-reading-toolbar mt-9 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-hair bg-wash px-4 py-3">
+          <div>
+            <p className="text-[.78rem] font-semibold text-accent">القراءة المتزامنة</p>
+            <p className="mt-0.5 text-[.72rem] text-soft">اضغط أي فقرة لينتقل الصوت إليها.</p>
+          </div>
+          <button type="button" onClick={() => setFollow(!follow)} aria-pressed={follow} className={`rounded-full border px-4 py-2 text-[.76rem] font-semibold transition-colors ${follow ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
+            {follow ? 'متابعة النص مفعّلة' : 'تابع النص مع الصوت'}
+          </button>
+        </div>
+      )}
+      <div className={`article-body mt-11 ${activeAudio ? 'article-body-synced' : ''}`}>
+        {paragraphs.map((paragraph, index) => (
+          <p
+            key={index}
+            ref={(element) => { refs.current[index] = element }}
+            onClick={() => seekParagraph(index)}
+            aria-current={activeIndex === index ? 'true' : undefined}
+            className={`${index === 0 && canUseDropCap(paragraph.text) ? 'dropcap ' : ''}${activeAudio ? 'synced-paragraph ' : ''}${activeIndex === index ? 'is-audio-active' : ''}`.trim() || undefined}
+          >
+            {paragraph.text}
+          </p>
+        ))}
+      </div>
+    </>
+  )
+}
+
+
 /* ---------- «حوار عبر الزمن» — الأرشيف يتحاور مع نفسه ----------
    يربط المقال بأقربه موضوعاً على بُعد ٣ سنوات فأكثر: القديم يشير للعودة،
    والجديد يشير للجذر — فيرى القارئ فكراً يتطوّر عبر عقد، لا أرشيفاً يتكدّس. */
@@ -274,57 +340,6 @@ function StudentArchive({ a, articles }: { a: ArticleRecord; articles: ArticleRe
   )
 }
 
-
-function SyncedArticleBody({ body, slug }: { body: string; slug: string }) {
-  const audio = usePersistentAudio()
-  const paragraphs = useMemo(() => body.split('\n\n').filter(Boolean), [body])
-  const refs = useRef<(HTMLParagraphElement | null)[]>([])
-  const [follow, setFollow] = useState(false)
-  const activeReading = audio.track?.path === `/articles/${slug}` && !audio.track.label.includes('حوار') && audio.duration > 0
-  const weights = useMemo(() => paragraphs.map((paragraph) => Math.max(1, paragraph.trim().split(/\s+/).length)), [paragraphs])
-  const total = weights.reduce((sum, weight) => sum + weight, 0)
-  const starts = useMemo(() => {
-    let cursor = 0
-    return weights.map((weight) => { const start = cursor / total; cursor += weight; return start })
-  }, [total, weights])
-  const ratio = activeReading ? Math.min(Math.max(audio.current / audio.duration, 0), 1) : 0
-  const activeIndex = activeReading ? Math.max(0, starts.reduce((found, start, index) => start <= ratio ? index : found, -1)) : -1
-
-  useEffect(() => {
-    if (!follow || !audio.playing || activeIndex < 0) return
-    refs.current[activeIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }, [activeIndex, audio.playing, follow])
-
-  return (
-    <>
-      {activeReading && (
-        <div className="mt-9 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent/25 bg-accent/[.045] px-4 py-3">
-          <div>
-            <p className="text-[.78rem] font-semibold text-accent">القراءة المتزامنة</p>
-            <p className="mt-0.5 text-[.74rem] text-soft">اضغط أي فقرة للانتقال إلى موضعها التقريبي في الصوت.</p>
-          </div>
-          <button onClick={() => setFollow((value) => !value)} className={`rounded-full border px-4 py-2 text-[.78rem] font-semibold transition-colors ${follow ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>{follow ? 'إيقاف المتابعة التلقائية' : 'تابع النص مع الصوت'}</button>
-        </div>
-      )}
-      <div className={`article-body mt-11 ${activeReading ? 'audio-synced-body' : ''}`}>
-        {paragraphs.map((paragraph, index) => (
-          <p
-            key={index}
-            ref={(node) => { refs.current[index] = node }}
-            className={`${index === 0 && canUseDropCap(paragraph) ? 'dropcap ' : ''}${activeReading && index === activeIndex ? 'audio-paragraph-active' : ''}` || undefined}
-            onClick={() => { if (activeReading) audio.seekTo(starts[index] * audio.duration) }}
-            role={activeReading ? 'button' : undefined}
-            tabIndex={activeReading ? 0 : undefined}
-            onKeyDown={(event) => { if (activeReading && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); audio.seekTo(starts[index] * audio.duration) } }}
-          >
-            {paragraph}
-          </p>
-        ))}
-      </div>
-    </>
-  )
-}
-
 export default function ArticleDetail() {
   const { slug } = useParams()
   const { articles, loading } = useCmsContent()
@@ -447,7 +462,7 @@ export default function ArticleDetail() {
               </div>
             ) : article.body ? (
               <>
-                <SyncedArticleBody body={article.body} slug={article.slug} />
+                <SyncedArticleBody slug={article.slug} body={article.body} />
                 {/* أداة تحديد واحدة: خيط الفكرة + بطاقة اقتباس (بلا تداخل) */}
                 <SelectionTools current={article} articles={articles} body={article.body} excerpt={article.excerpt} />
                 <StudentArchive a={article} articles={articles} />

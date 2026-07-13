@@ -50,14 +50,14 @@ export function Newsletter({ compact = false }: { compact?: boolean }) {
 
   return (
     // نحيفة وهادئة — سطر واحد لا بطاقة كبيرة
-    <div className={compact ? '' : 'rounded-xl border border-hair p-5'}>
+    <div className={compact ? 'w-full' : 'rounded-xl border border-hair p-5'}>
       {!compact && (
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h3 className="font-display text-[1rem] font-semibold text-ink">النشرة البريدية — جديدي يصلك أولاً.</h3>
           <p className="text-[.8rem] font-light text-soft">مقال كل أسبوع، ومختارات منتقاة.</p>
         </div>
       )}
-      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+      <div className={compact ? 'flex items-center gap-2' : 'mt-3 flex flex-col gap-2 sm:flex-row'}>
         <input
           type="email"
           dir="ltr"
@@ -66,12 +66,12 @@ export function Newsletter({ compact = false }: { compact?: boolean }) {
           onKeyDown={(e) => e.key === 'Enter' && submit()}
           placeholder="your@email.com"
           aria-label="البريد الإلكتروني"
-          className="flex-1 rounded-full border border-hair bg-canvas px-4 py-2.5 text-[.9rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
+          className={`min-w-0 flex-1 rounded-full border border-hair bg-canvas text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent ${compact ? 'px-3 py-2 text-[.78rem]' : 'px-4 py-2.5 text-[.9rem]'}`}
         />
         <button
           onClick={submit}
           disabled={state === 'sending'}
-          className="rounded-full bg-accent px-5 py-2.5 text-[.9rem] font-semibold text-white transition-colors duration-300 hover:bg-accent-deep disabled:opacity-60"
+          className={`shrink-0 rounded-full bg-accent font-semibold text-white transition-colors duration-300 hover:bg-accent-deep disabled:opacity-60 ${compact ? 'px-4 py-2 text-[.78rem]' : 'px-5 py-2.5 text-[.9rem]'}`}
         >
           {state === 'sending' ? '…' : 'اشتراك'}
         </button>

@@ -42,33 +42,47 @@ const LegacyLang = lazy(() => import('./pages/Legacy').then((m) => ({ default: m
 const LegacyPage = lazy(() => import('./pages/Legacy').then((m) => ({ default: m.LegacyPage })))
 const LegacyPaper = lazy(() => import('./pages/Legacy').then((m) => ({ default: m.LegacyPaper })))
 
-/* ---------- Preloader — «الضربة الأولى»: جملة الهوية قبل كل شيء ---------- */
+/* ---------- البوابة الصامتة — حركة توقيع قصيرة بلا معلومات أو انتظار ---------- */
 function Preloader({ done }: { done: boolean }) {
   return (
     <motion.div
-      className="fixed inset-0 z-[300] flex flex-col items-center justify-center bg-canvas"
-      initial={{ y: 0 }}
-      animate={done ? { y: '-100%' } : { y: 0 }}
-      transition={{ duration: 0.48, ease: EASE }}
+      className="fixed inset-0 z-[300] isolate overflow-hidden bg-canvas"
+      initial={{ opacity: 1 }}
+      animate={done ? { opacity: 0 } : { opacity: 1 }}
+      transition={{ duration: 0.26, ease: EASE }}
       aria-hidden
     >
-      <motion.p
-        className="px-8 text-center font-display text-[clamp(1.3rem,3.6vw,2.1rem)] font-semibold leading-relaxed text-ink"
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.38, delay: 0.02, ease: EASE }}
-      >
-        «أُبقي الإنسانَ في قلبِ الآلة.»
-      </motion.p>
-      <motion.img
-        src="/logo.png"
-        alt=""
-        className="mt-7 h-12 w-auto dark:invert"
-        initial={{ opacity: 0, y: 10, scale: 0.96 }}
-        animate={{ opacity: 0.92, y: 0, scale: 1 }}
-        transition={{ duration: 0.36, delay: 0.16, ease: EASE }}
+      <motion.div
+        className="absolute inset-y-0 right-0 w-1/2 bg-canvas"
+        animate={done ? { x: '102%' } : { x: 0 }}
+        transition={{ duration: 0.46, ease: EASE }}
       />
-      <motion.div className="mt-5 h-[2px] bg-accent" initial={{ width: 0 }} animate={{ width: 120 }} transition={{ duration: 0.38, delay: 0.22, ease: EASE }} />
+      <motion.div
+        className="absolute inset-y-0 left-0 w-1/2 bg-canvas"
+        animate={done ? { x: '-102%' } : { x: 0 }}
+        transition={{ duration: 0.46, ease: EASE }}
+      />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <motion.div
+          className="relative flex h-16 w-16 items-center justify-center rounded-full border border-hair"
+          initial={{ opacity: 0, scale: .84 }}
+          animate={done ? { opacity: 0, scale: 1.08 } : { opacity: 1, scale: 1 }}
+          transition={{ duration: 0.34, ease: EASE }}
+        >
+          <motion.span
+            className="absolute h-2.5 w-2.5 rounded-full bg-accent"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.22, delay: 0.06, ease: EASE }}
+          />
+          <motion.span
+            className="absolute h-px bg-accent"
+            initial={{ width: 0 }}
+            animate={{ width: 86 }}
+            transition={{ duration: 0.34, delay: 0.1, ease: EASE }}
+          />
+        </motion.div>
+      </div>
     </motion.div>
   )
 }
@@ -122,6 +136,11 @@ function AnimatedRoutes() {
 }
 
 /** ينتظر تحديث وسوم SEO للصفحة، ثم يسجل مشاهدة واحدة للمسار في الجلسة. */
+function ConditionalFooter() {
+  const location = useLocation()
+  return location.pathname === '/' ? null : <Footer />
+}
+
 function RouteViewTracker() {
   const location = useLocation()
   const [page, setPage] = useState({ path: '', title: '' })
@@ -149,7 +168,7 @@ export default function App() {
   useEffect(() => {
     if (!showPreloader) { setLoaded(true); setGone(true); return }
     document.body.classList.add('loading')
-    const t = setTimeout(() => setLoaded(true), 580)
+    const t = setTimeout(() => setLoaded(true), 260)
     try { localStorage.setItem('visited', '1') } catch { /* noop */ }
     return () => clearTimeout(t)
   }, [showPreloader])
@@ -159,7 +178,7 @@ export default function App() {
     document.body.classList.remove('loading')
     try { sessionStorage.setItem('seen', '1') } catch { /* noop */ }
     if (gone) return
-    const t = setTimeout(() => setGone(true), 500)
+    const t = setTimeout(() => setGone(true), 480)
     return () => clearTimeout(t)
   }, [loaded, gone])
 
@@ -177,7 +196,7 @@ export default function App() {
           </main>
           <FloatingActions />
           <PersistentAudioDock />
-          <Footer />
+          <ConditionalFooter />
         </PersistentAudioProvider>
       </BrowserRouter>
     </CmsProvider>

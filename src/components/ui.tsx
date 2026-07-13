@@ -272,36 +272,38 @@ export function Accordion({
 type NavItem = { to: string; label: string; allLabel?: string; highlight?: boolean; sub?: { to: string; label: string }[] }
 const GROUPS: { label: string; items: NavItem[] }[] = [
   {
-    label: 'هويتي الأكاديمية',
+    label: 'ابدأ من هنا',
     items: [
-      { to: '/cv', label: 'السيرة الأكاديمية' },
-      { to: '/decade', label: 'وثيقة العقد' },
-      { to: '/research', label: 'المساهمات العلمية' },
-      { to: '/publications', label: 'الكتب المنشورة' },
-    ],
-  },
-  {
-    label: 'محتواي المعرفي',
-    items: [
-      { to: '/articles', label: 'مقالاتي الفكرية', allLabel: 'عرض كل المقالات', sub: [
-        { to: '/search', label: 'البحث العميق' },
+      { to: '/now', label: 'الآن' },
+      { to: '/articles', label: 'المقالات الفكرية', allLabel: 'عرض كل المقالات', sub: [
         { to: '/atlas', label: 'سماء المقالات' },
+        { to: '/thought-paths', label: 'مسارات الفكرة' },
       ] },
-      { to: '/ask', label: 'العقل الحي', highlight: true },
-      { to: '/thought-paths', label: 'مسار الفكرة' },
-      { to: '/media', label: 'الظهور الإعلامي' },
-      { to: '/upcoming', label: 'اللقاءات القادمة' },
+      { to: '/search', label: 'مركز البحث', highlight: true, allLabel: 'افتح البحث الموحد', sub: [
+        { to: '/search', label: 'البحث العميق' },
+        { to: '/ask', label: 'اسأل العقل الحي' },
+      ] },
     ],
   },
   {
-    label: 'من اختياراتي',
+    label: 'المكتبة',
     items: [
-      // المختارات هي الأمّ، وفروعها تحتها (بدل تكرارها كبنود مستقلة)
+      { to: '/research', label: 'الأبحاث المحكمة' },
+      { to: '/publications', label: 'الكتب المنشورة' },
       { to: '/curated', label: 'المختارات', allLabel: 'عرض كل المختارات', sub: [
         { to: '/questions', label: 'سؤال يُقلق التعليم' },
         { to: '/radar', label: 'أرشيف الرادار' },
         { to: '/inbox', label: 'من بريدي الوارد' },
       ] },
+    ],
+  },
+  {
+    label: 'عن الدكتور',
+    items: [
+      { to: '/cv', label: 'السيرة الأكاديمية' },
+      { to: '/media', label: 'الظهور الإعلامي' },
+      { to: '/upcoming', label: 'اللقاءات القادمة' },
+      { to: '/decade', label: 'وثيقة العقد' },
     ],
   },
 ]
@@ -373,9 +375,9 @@ function Overlay({ close }: { close: () => void }) {
 
       <div className="relative flex-1 overflow-y-auto overscroll-contain">
         <div className="flex min-h-full items-start px-6 pb-10 pt-[calc(6rem+env(safe-area-inset-top))] md:items-center md:px-11 md:py-28">
-        <div className="mx-auto grid w-full max-w-shell grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 md:gap-x-12 md:gap-y-10">
+        <div className="rail mx-auto flex w-full max-w-shell snap-x snap-mandatory gap-4 overflow-x-auto pb-4 md:grid md:grid-cols-3 md:gap-x-12 md:gap-y-10 md:overflow-visible md:pb-0">
           {GROUPS.map((g, gi) => (
-            <div key={g.label}>
+            <div key={g.label} className="w-[82vw] shrink-0 snap-start rounded-3xl border border-hair bg-wash/40 p-5 md:w-auto md:rounded-none md:border-0 md:bg-transparent md:p-0">
               <motion.span
                 className="block text-[.68rem] font-semibold uppercase text-accent md:text-[.72rem]"
                 initial={reduce ? false : { opacity: 0, y: 12 }}
@@ -501,11 +503,14 @@ function Overlay({ close }: { close: () => void }) {
           >
             احجز موعداً مباشراً
           </Link>
-          <div className="flex flex-wrap items-center gap-4 text-soft">
+          <div className="flex flex-wrap items-center gap-3 text-soft">
             <div className="flex items-center gap-2 sm:hidden">
               <ThemeToggle />
-              {SHOW_EN_TOGGLE && <Link to="/en" onClick={close} className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-[.68rem] font-semibold">EN</Link>}
+              {SHOW_EN_TOGGLE && (
+                <Link to="/en" onClick={close} className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-[.66rem] font-semibold">EN</Link>
+              )}
             </div>
+            <span className="mx-1 hidden h-5 w-px bg-hair sm:block" />
             {socials.map((s) => (
               <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} className="transition-colors hover:text-accent">
                 <SocialIcon name={s.label} />
@@ -565,8 +570,6 @@ function SearchPalette({ close }: { close: () => void }) {
       meta: 'بحث محكّم',
       text: `${item.title} ${(item as { meta?: string }).meta || ''} ${(item as { journal?: string }).journal || ''}`,
     })),
-    { to: '/ask', title: 'العقل الحي', meta: 'اسأل مكتبتي', text: 'اسأل مكتبتي العقل الحي سؤال ارشيف جواب موثق' },
-    { to: '/search', title: 'البحث العميق', meta: 'بحث', text: 'البحث العميق المقالات الكتب الابحاث الصوتيات' },
     { to: '/cv', title: 'السيرة الأكاديمية', meta: 'صفحة', text: 'السيرة الاكاديمية الدكتور احمد حسين الفيلكاوي' },
     { to: '/contact#booking-form', title: 'الحجز والتواصل', meta: 'صفحة', text: 'حجز موعد محاضرة ورشة لقاء تواصل' },
   ], [])
@@ -587,11 +590,15 @@ function SearchPalette({ close }: { close: () => void }) {
       .map(({ item }) => item)
   }, [index, query])
 
+  const encodedQuery = encodeURIComponent(query.trim())
+  const deepTo = encodedQuery ? `/search?q=${encodedQuery}` : '/search'
+  const askTo = encodedQuery ? `/ask?q=${encodedQuery}` : '/ask'
+
   return (
     <motion.div
       role="dialog"
       aria-modal="true"
-      aria-label="بحث سريع"
+      aria-label="مركز البحث الموحد"
       className="fixed inset-0 z-[260] bg-ink/25 px-4 pt-[calc(5.5rem+env(safe-area-inset-top))] backdrop-blur-sm"
       initial={reduce ? { opacity: 0 } : { opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -613,15 +620,32 @@ function SearchPalette({ close }: { close: () => void }) {
             ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="ابحث في الموقع…"
-            aria-label="بحث سريع"
+            placeholder="اكتب كلمة أو سؤالاً واحداً…"
+            aria-label="مركز البحث الموحد"
             className="min-w-0 flex-1 bg-transparent text-[1rem] text-ink outline-none placeholder:text-soft/70"
           />
           <button type="button" onClick={close} className="rounded-full border border-hair px-3 py-1 text-[.75rem] text-soft transition-colors hover:border-accent hover:text-accent">
             Esc
           </button>
         </div>
-        <div className="max-h-[62vh] overflow-y-auto p-2">
+        <div className="rail flex snap-x snap-mandatory gap-2 border-b border-hair bg-wash/45 px-3 py-3">
+          <div className="min-w-[12rem] flex-1 snap-start rounded-2xl border border-hair bg-canvas px-4 py-3">
+            <span className="text-[.7rem] font-semibold text-accent">الآن</span>
+            <strong className="mt-1 block font-display text-[.92rem] text-ink">نتائج فورية</strong>
+            <span className="mt-1 block text-[.68rem] text-soft">مقالات وكتب وأبحاث في لحظتها</span>
+          </div>
+          <Link to={deepTo} onClick={close} className="group min-w-[12rem] flex-1 snap-start rounded-2xl border border-hair bg-canvas px-4 py-3 transition-colors hover:border-accent">
+            <span className="text-[.7rem] font-semibold text-accent">تصفية دقيقة</span>
+            <strong className="mt-1 block font-display text-[.92rem] text-ink group-hover:text-accent">البحث العميق ←</strong>
+            <span className="mt-1 block text-[.68rem] text-soft">النص الكامل والسنة والموضوع</span>
+          </Link>
+          <Link to={askTo} onClick={close} className="group min-w-[12rem] flex-1 snap-start rounded-2xl border border-hair bg-canvas px-4 py-3 transition-colors hover:border-accent">
+            <span className="text-[.7rem] font-semibold text-accent">سؤال لا كلمة</span>
+            <strong className="mt-1 block font-display text-[.92rem] text-ink group-hover:text-accent">العقل الحي ←</strong>
+            <span className="mt-1 block text-[.68rem] text-soft">إجابة موثقة من الأرشيف</span>
+          </Link>
+        </div>
+        <div className="max-h-[48vh] overflow-y-auto p-2">
           {results.length ? results.map((item) => (
             <Link
               key={item.to}
@@ -659,7 +683,8 @@ export function Nav() {
   }, [open])
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && !loc.pathname.startsWith('/admin')) {
+      if (loc.pathname.startsWith('/admin')) return
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault()
         setSearchOpen(true)
       }
@@ -740,7 +765,7 @@ export function Nav() {
                 to={EN_OF[loc.pathname] || '/en'}
                 aria-label="English version"
                 title="English"
-                className={`hidden h-9 w-9 items-center justify-center rounded-full border border-hair text-[.68rem] font-semibold tracking-wide text-soft transition-colors hover:border-accent hover:text-accent sm:flex ${open ? 'invisible pointer-events-none' : ''}`}
+                className={`flex h-9 w-9 items-center justify-center rounded-full border border-hair text-[.68rem] font-semibold tracking-wide text-soft transition-colors hover:border-accent hover:text-accent ${open ? 'invisible pointer-events-none' : ''}`}
               >
                 EN
               </Link>
@@ -749,8 +774,8 @@ export function Nav() {
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              aria-label="بحث سريع"
-              title="بحث سريع (⌘K)"
+              aria-label="مركز البحث الموحد"
+              title="مركز البحث (⌘K)"
               className={`flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent ${open ? 'invisible pointer-events-none' : ''}`}
             >
               <SocialIcon name="Search" size={16} />

@@ -4,7 +4,7 @@
  * اقتباسات حرفية، خط زمني، أحدث موقف منشور، وكتاب شخصي خفيف.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { articles, books, papers } from '../data'
 import { useSeo } from '../components/seo'
@@ -212,13 +212,15 @@ function PersonalBook({ asked, result }: { asked: string; result: Answer }) {
 }
 
 export default function AskLibrary() {
+  const [searchParams] = useSearchParams()
+  const initialQuestion = (searchParams.get('q') || '').trim()
   useSeo({
     title: 'العقل الحي',
     path: '/ask',
     description: 'اسأل سؤالاً حقيقياً، فيبني الموقع إجابة موثقة من أرشيف د. أحمد حسين الفيلكاوي فقط: مقالات، تطور زمني، ومصادر.',
   })
-  const [q, setQ] = useState('')
-  const [asked, setAsked] = useState('')
+  const [q, setQ] = useState(initialQuestion)
+  const [asked, setAsked] = useState(initialQuestion.length >= 4 ? initialQuestion : '')
   const [bodies, setBodies] = useState<Record<string, string> | null>(null)
   const [bodiesLoading, setBodiesLoading] = useState(false)
   const resRef = useRef<HTMLDivElement>(null)

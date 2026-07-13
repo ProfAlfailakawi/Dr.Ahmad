@@ -1,22 +1,21 @@
 import { useSeo } from '../components/seo'
 import { useEffect, useState } from 'react'
-import { motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
+import { AnimatePresence, motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, FadeUp, Label, Magnetic, Page, Reveal, SectionHead } from '../components/ui'
 import { books as staticBooks, papers as staticPapers, profile, roundDown10, stats, upcoming, type Event as SiteEvent } from '../data'
 import { useCmsContent, useExtras } from '../lib/content'
+import { firebaseEnabled, getDb } from '../lib/firebase'
 import { Newsletter } from '../components/extras'
 import { type Curio } from '../data-curated'
-import { staticQuestions, LAUNCH_DATE } from './Questions'
-import { ClosingStation, NowStation, SelectedWorksStation, ThoughtCompassStation } from '../components/home/HomeExperience'
-import { useLaunchMode } from '../lib/settings'
+import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../lib/cms'
 
 const arNum = (n: number) => String(n).padStart(2, '0')
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
 
 /* ---------- «فكرة اليوم» — بطاقة واحدة هادئة تتبدل كل منتصف ليل ----------
    تعيد استخدام محرك المختارات اليومي؛ تُحمَّل كسولاً فلا تُثقل الرئيسية */
-function DailySpark() {
+function DailySpark({ compact = false }: { compact?: boolean }) {
   const [c, setC] = useState<Curio | null>(null)
   useEffect(() => {
     let on = true
@@ -24,36 +23,36 @@ function DailySpark() {
     return () => { on = false }
   }, [])
   if (!c) return null
+
+  const card = (
+    <Link
+      to="/curated"
+      data-hover
+      className={`group relative block h-full overflow-hidden rounded-2xl border border-hair border-r-[3px] border-r-accent bg-wash transition-colors duration-300 hover:border-accent ${compact ? 'p-6 md:p-7' : 'p-8 md:p-11'}`}
+    >
+      <span aria-hidden className={`pointer-events-none absolute left-5 top-2 select-none font-display leading-none text-accent/10 ${compact ? 'text-[5rem]' : 'text-[5.5rem] md:left-8 md:top-3 md:text-[9rem]'}`}>”</span>
+      <p className="relative mb-4 flex items-center gap-2.5 text-[.76rem] font-semibold text-accent">
+        <span className="pulse relative h-1.5 w-1.5 rounded-full bg-accent" />
+        فكرة اليوم · {c.kind}
+      </p>
+      <p className={`relative font-display font-semibold leading-[1.75] text-ink transition-colors group-hover:text-accent ${compact ? 'text-[1.08rem]' : 'max-w-3xl text-[clamp(1.35rem,3vw,2rem)]'}`}>
+        {c.ar}
+      </p>
+      {!compact && c.en && (
+        <p className="relative mt-3 max-w-2xl text-[.95rem] font-light text-soft" dir="ltr" style={{ textAlign: 'left' }}>{c.en}</p>
+      )}
+      <p className={`relative flex flex-wrap items-center gap-2 border-t border-hair text-soft ${compact ? 'mt-5 pt-4 text-[.74rem]' : 'mt-6 pt-4 text-[.82rem]'}`}>
+        <span>{c.source}</span>
+        {!compact && <><span className="text-hair">·</span><span>تتبدّل كل منتصف ليل</span></>}
+        <span className="ms-auto text-accent transition-transform duration-300 group-hover:-translate-x-1">المزيد ←</span>
+      </p>
+    </Link>
+  )
+
+  if (compact) return card
   return (
     <section className="border-t border-hair px-6 py-[56px] md:px-11 md:py-[72px]">
-      <div className="mx-auto max-w-shell">
-        <FadeUp>
-          {/* بطاقة مميّزة بنفس الثيم: حافة مميّزة + علامة اقتباس كبيرة خافتة */}
-          <Link
-            to="/curated"
-            data-hover
-            className="group relative block overflow-hidden rounded-2xl border border-hair border-r-[3px] border-r-accent bg-wash p-8 transition-colors duration-300 hover:border-accent md:p-11"
-          >
-            <span aria-hidden className="pointer-events-none absolute left-5 top-2 select-none font-display text-[5.5rem] leading-none text-accent/10 md:left-8 md:top-3 md:text-[9rem]">”</span>
-            <p className="relative mb-5 flex items-center gap-2.5 text-[.8rem] font-semibold text-accent">
-              <span className="pulse relative h-1.5 w-1.5 rounded-full bg-accent" />
-              فكرة اليوم · {c.kind}
-            </p>
-            <p className="relative max-w-3xl font-display text-[clamp(1.35rem,3vw,2rem)] font-semibold leading-[1.7] text-ink transition-colors group-hover:text-accent">
-              {c.ar}
-            </p>
-            {c.en && (
-              <p className="relative mt-3 max-w-2xl text-[.95rem] font-light text-soft" dir="ltr" style={{ textAlign: 'left' }}>{c.en}</p>
-            )}
-            <p className="relative mt-6 flex flex-wrap items-center gap-2 border-t border-hair pt-4 text-[.82rem] text-soft">
-              <span>{c.source}</span>
-              <span className="text-hair">·</span>
-              <span>تتبدّل كل منتصف ليل</span>
-              <span className="ms-auto text-accent transition-transform duration-300 group-hover:-translate-x-1">المزيد في المختارات ←</span>
-            </p>
-          </Link>
-        </FadeUp>
-      </div>
+      <div className="mx-auto max-w-shell"><FadeUp>{card}</FadeUp></div>
     </section>
   )
 }
@@ -235,13 +234,10 @@ function SinceLastVisit() {
   const showSince = last && away >= 12 * 3600e3
   const lastIso = last ? new Date(last).toISOString().slice(0, 10) : ''
   const newArticles = showSince ? articles.filter((a) => a.iso > lastIso).length : 0
-  const weekOf = (ms: number) => Math.floor((ms / 864e5 - 4) / 7)
-  const newQuestion = showSince && weekOf(Date.now()) !== weekOf(last!)
   const daysGone = showSince ? Math.floor(away / 864e5) : 0
 
   const bits: { to: string; t: string }[] = []
   if (newArticles > 0) bits.push({ to: '/articles', t: newArticles === 1 ? 'مقال جديد' : `${newArticles} مقالات جديدة` })
-  if (newQuestion) bits.push({ to: '/questions', t: 'سؤال أسبوعي جديد' })
   if (daysGone >= 1) bits.push({ to: '/curated', t: 'اختيارات تبدّلت' })
 
   // «أكمل قراءتك» يظهر متى وُجد مقالٌ سابق (حتى دون غياب طويل)
@@ -250,16 +246,16 @@ function SinceLastVisit() {
 
   return (
     <div className="border-t border-hair bg-wash px-6 py-3.5 md:px-11">
-      <div className="mx-auto flex max-w-shell flex-col gap-1.5">
+      <div className="rail mx-auto flex max-w-shell items-center gap-5 overflow-x-auto whitespace-nowrap">
         {resume && (
-          <Link to={`/articles/${resume.slug}`} className="group flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[.82rem] text-soft">
+          <Link to={`/articles/${resume.slug}`} className="group flex shrink-0 items-center gap-2.5 text-[.82rem] text-soft">
             <span className="font-semibold text-accent">↩ أكمل قراءتك</span>
             <span className="text-ink transition-colors group-hover:text-accent">«{resume.title}»</span>
             <span className="text-accent opacity-0 transition-opacity duration-300 group-hover:opacity-100">←</span>
           </Link>
         )}
         {bits.length > 0 && (
-          <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[.82rem] text-soft">
+          <p className="flex shrink-0 items-center gap-x-4 text-[.82rem] text-soft">
             <span className="font-semibold text-accent">✦ منذ زيارتك الأخيرة</span>
             {bits.map((b, i) => (
               <Link key={b.to} to={b.to} className="transition-colors hover:text-accent">
@@ -322,7 +318,7 @@ function Signatures() {
    في مثل هذه الأيام قبل سنوات — يتبدّل أسبوعياً، بلا خادم وبلا تدخل. */
 const yearsAgo = (n: number) => (n === 1 ? 'قبل سنة' : n === 2 ? 'قبل سنتين' : n <= 10 ? `قبل ${n} سنوات` : `قبل ${n} سنة`)
 
-function OnThisWeek() {
+function OnThisWeek({ compact = false }: { compact?: boolean }) {
   const { articles } = useCmsContent()
   const today = new Date()
   const doy = (d: Date) => Math.floor((d.getTime() - new Date(d.getFullYear(), 0, 1).getTime()) / 864e5)
@@ -341,30 +337,30 @@ function OnThisWeek() {
     .sort((p, q) => p.diff - q.diff || p.d.getFullYear() - q.d.getFullYear())
 
   if (!cands.length) return null
-  // اختيار حتمي يتبدّل مع رقم الأسبوع — نفس المقال طوال الأسبوع لكل الزوار
   const week = Math.floor(today.getTime() / (7 * 864e5))
   const pick = cands[week % cands.length]
   const n = y - pick.d.getFullYear()
   const when = pick.d.toLocaleDateString('ar-u-nu-latn', { month: 'long', year: 'numeric' })
 
+  const card = (
+    <Link to={`/articles/${pick.a.slug}`} data-hover className={`group block h-full rounded-2xl border border-hair bg-canvas transition-colors hover:border-accent ${compact ? 'p-6 md:p-7' : 'max-w-3xl border-0 p-0'}`}>
+      <p className="flex items-center gap-3 text-[.76rem] font-semibold text-accent">
+        <span className="h-[1.5px] w-7 bg-accent" />
+        في مثل هذا الأسبوع · {yearsAgo(n)}
+      </p>
+      <h2 className={`mt-4 font-display font-semibold leading-[1.6] text-ink transition-colors duration-300 group-hover:text-accent ${compact ? 'text-[1.08rem]' : 'text-[clamp(1.4rem,3.2vw,2.1rem)]'}`}>
+        «{pick.a.title}»
+      </h2>
+      <p className="mt-3 text-[.78rem] text-soft transition-colors group-hover:text-accent">
+        كُتب في {when} <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1">←</span>
+      </p>
+    </Link>
+  )
+
+  if (compact) return card
   return (
     <section className="border-t border-hair px-6 py-11 md:px-11 md:py-[72px]">
-      <div className="mx-auto max-w-shell">
-        <FadeUp>
-          <Link to={`/articles/${pick.a.slug}`} data-hover className="group block max-w-3xl">
-            <p className="flex items-center gap-3 text-[.8rem] font-semibold text-accent">
-              <span className="h-[1.5px] w-7 bg-accent" />
-              في مثل هذا الأسبوع · {yearsAgo(n)}
-            </p>
-            <h2 className="mt-4 font-display text-[clamp(1.4rem,3.2vw,2.1rem)] font-semibold leading-[1.6] text-ink transition-colors duration-300 group-hover:text-accent">
-              «{pick.a.title}»
-            </h2>
-            <p className="mt-3 text-[.9rem] text-soft transition-colors group-hover:text-accent">
-              اقرأ ما كتبتُه في {when} <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1">←</span>
-            </p>
-          </Link>
-        </FadeUp>
-      </div>
+      <div className="mx-auto max-w-shell"><FadeUp>{card}</FadeUp></div>
     </section>
   )
 }
@@ -438,9 +434,9 @@ function ThoughtCompass() {
         </FadeUp>
 
         {/* أعمال المحور */}
-        <div className="mt-8 grid gap-5 md:mt-10 md:grid-cols-3 md:gap-6">
+        <div className="rail -mx-6 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-4 md:mx-0 md:mt-10 md:gap-5 md:px-0">
           {related.map((a, i) => (
-            <FadeUp key={a.slug} delay={Math.min(i * 0.06, 0.2)} className={i > 0 ? 'hidden md:block' : ''}>
+            <FadeUp key={a.slug} delay={Math.min(i * 0.06, 0.2)} className="w-[72vw] max-w-[350px] shrink-0 snap-start md:w-[31%]">
               <Link to={`/articles/${a.slug}`} data-hover className="group flex h-full flex-col rounded-2xl border border-hair bg-canvas p-6 transition-colors duration-300 hover:border-accent">
                 <time className="text-[.76rem] text-soft">{a.date}</time>
                 <h3 className="mt-3 font-display text-[1.12rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">{a.title}</h3>
@@ -465,58 +461,6 @@ function ThoughtCompass() {
             )}
           </div>
         </FadeUp>
-      </div>
-    </section>
-  )
-}
-
-/* ---------- سؤال الأسبوع التفاعلي (فكرة نووية ٧) ----------
-   الزائر يصوّت بلا تسجيل ولا تتبّع، فيُكشف له رأي الدكتور — مشاركٌ لا متفرّج. */
-function WeeklyPoll() {
-  // يدور على البنك بلا توقف — كل جمعة سؤال، وبعد نفاد البنك يعيد الدورة
-  const week = Math.max(0, Math.floor((Date.now() - new Date(LAUNCH_DATE).getTime()) / (7 * 24 * 60 * 60 * 1000))) % staticQuestions.length
-  const q = staticQuestions[week]
-  const key = `poll:${week}`
-  const [voted, setVoted] = useState<string | null>(null)
-  useEffect(() => { try { setVoted(localStorage.getItem(key)) } catch { /* noop */ } }, [key])
-  const vote = (o: string) => { setVoted(o); try { localStorage.setItem(key, o) } catch { /* noop */ } }
-  const options = ['أوافق', 'لا أوافق', 'المسألة أعقد']
-
-  return (
-    <section className="border-t border-hair bg-wash px-6 py-11 md:px-11 md:py-[100px]">
-      <div className="mx-auto max-w-shell">
-        <FadeUp><Label>سؤال الأسبوع</Label></FadeUp>
-        <FadeUp delay={0.05}>
-          <h2 className="max-w-3xl font-display text-[clamp(1.5rem,3.6vw,2.4rem)] font-semibold leading-[1.5] text-ink">{q.ar}</h2>
-          <p className="mt-3 max-w-2xl text-[.95rem] font-light text-soft" dir="ltr" style={{ textAlign: 'left' }}>{q.en}</p>
-        </FadeUp>
-
-        {!voted ? (
-          <FadeUp delay={0.12}>
-            <div className="mt-8 flex flex-wrap gap-3">
-              {options.map((o) => (
-                <button key={o} onClick={() => vote(o)} data-hover
-                  className="rounded-full border-[1.5px] border-hair px-7 py-3 text-[.95rem] font-semibold text-ink transition-colors duration-300 hover:border-accent hover:text-accent">
-                  {o}
-                </button>
-              ))}
-            </div>
-            <p className="mt-4 text-[.8rem] text-soft">رأيك يبقى على جهازك — بلا تسجيل، بلا تتبّع.</p>
-          </FadeUp>
-        ) : (
-          <FadeUp delay={0.05}>
-            <div className="mt-8">
-              <p className="text-[.9rem] text-soft">اخترت: <span className="font-semibold text-accent">{voted}</span></p>
-              <div className="mt-5 max-w-3xl rounded-2xl border border-accent/40 bg-canvas p-7 md:p-8">
-                <p className="mb-3 text-[.8rem] font-semibold text-accent">رأيي في المسألة</p>
-                <p className="text-[1.05rem] leading-[2] text-ink">{q.take}</p>
-              </div>
-              <Link to="/questions" className="mt-6 inline-block text-[.9rem] font-semibold text-accent">
-                إلى زاوية «سؤال يُقلق التعليم» ←
-              </Link>
-            </div>
-          </FadeUp>
-        )}
       </div>
     </section>
   )
@@ -574,44 +518,331 @@ function ImpactTimeline() {
 }
 
 /* ---------- The single "Latest" card ---------- */
-function LatestCard() {
+function LatestCard({ compact = false }: { compact?: boolean }) {
   const reduce = useReducedMotion()
   const { articles } = useCmsContent()
   const latest = articles[0]
   if (!latest) return null
+  const content = (
+    <motion.div
+      whileHover={reduce ? {} : { y: -4 }}
+      transition={{ duration: 0.4, ease: EASE }}
+      className={`group relative h-full overflow-hidden rounded-2xl border border-hair bg-wash ${compact ? 'p-7 md:p-9' : 'p-8 md:p-12'}`}
+    >
+      <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-accent/[.07] blur-3xl" />
+      <div className="relative flex h-full flex-col justify-between gap-7">
+        <div>
+          <span className="inline-flex items-center gap-2.5 text-[.76rem] font-semibold text-accent">
+            <span className="pulse relative h-2 w-2 rounded-full bg-accent" />
+            الأحدث · مقال
+          </span>
+          <h2 className={`mt-4 font-display font-semibold leading-[1.45] text-ink ${compact ? 'text-[clamp(1.45rem,3vw,2.2rem)]' : 'max-w-[720px] text-[clamp(1.6rem,3.6vw,2.5rem)]'}`}>
+            {latest.title}
+          </h2>
+          {compact && latest.excerpt && <p className="mt-4 max-w-2xl text-[.94rem] font-light leading-[1.9] text-ink/75">{latest.excerpt}</p>}
+        </div>
+        <span className="inline-flex w-fit items-center gap-2 text-[.86rem] font-semibold text-accent">اقرأ المقال <span className="transition-transform duration-300 group-hover:-translate-x-1">←</span></span>
+      </div>
+    </motion.div>
+  )
+  if (compact) return <Link to={`/articles/${latest.slug}`} data-hover className="block h-full">{content}</Link>
   return (
     <section className="px-6 pb-[56px] md:px-11 md:pb-[100px]">
-      <div className="mx-auto max-w-shell">
+      <div className="mx-auto max-w-shell"><FadeUp><Link to={`/articles/${latest.slug}`} data-hover className="block">{content}</Link></FadeUp></div>
+    </section>
+  )
+}
+
+type LaunchSettings = {
+  active?: boolean
+  kind?: 'article' | 'book' | 'paper' | 'media'
+  slug?: string
+  eyebrow?: string
+  note?: string
+  endsAt?: { seconds?: number } | string | null
+}
+
+function launchEndsAt(value: LaunchSettings['endsAt']) {
+  if (!value) return 0
+  if (typeof value === 'string') return Date.parse(value) || 0
+  return Number(value.seconds || 0) * 1000
+}
+
+function LaunchSpotlight({ articles, books, papers, media }: { articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[]; media: MediaRecord[] }) {
+  const [settings, setSettings] = useState<LaunchSettings | null>(null)
+  useEffect(() => {
+    let active = true
+    if (!firebaseEnabled) return
+    ;(async () => {
+      try {
+        const db = await getDb()
+        if (!db) return
+        const { doc, getDoc } = await import('firebase/firestore')
+        const snap = await getDoc(doc(db, 'site_settings', 'launch'))
+        if (active && snap.exists()) setSettings(snap.data() as LaunchSettings)
+      } catch { /* وضع الإطلاق اختياري؛ لا يؤثر في الرئيسية */ }
+    })()
+    return () => { active = false }
+  }, [])
+
+  if (!settings?.active || !settings.kind || !settings.slug) return null
+  const ends = launchEndsAt(settings.endsAt)
+  if (ends && ends < Date.now()) return null
+
+  const article = settings.kind === 'article' ? articles.find((item) => item.slug === settings.slug) : undefined
+  const book = settings.kind === 'book' ? books.find((item) => item.slug === settings.slug) : undefined
+  const paper = settings.kind === 'paper' ? papers.find((item) => item.slug === settings.slug) : undefined
+  const mediaItem = settings.kind === 'media' ? media.find((item) => item.slug === settings.slug) : undefined
+  const item = article || book || paper || mediaItem
+  if (!item) return null
+
+  const title = item.title
+  const description = settings.note || (article?.excerpt ?? book?.desc ?? paper?.meta ?? mediaItem?.outlet ?? '')
+  const to = article ? `/articles/${article.slug}` : book ? `/publications/${book.slug}` : paper ? `/research/${paper.slug}` : mediaItem?.url || '/'
+  const kindLabel = article ? 'مقال جديد' : book ? 'إصدار جديد' : paper ? 'بحث جديد' : 'ظهور جديد'
+  const cover = book?.cover || (mediaItem && ytId(mediaItem.url) ? `https://i.ytimg.com/vi/${ytId(mediaItem.url)}/hqdefault.jpg` : '')
+  const LinkTag = mediaItem ? 'a' : Link
+  const linkProps = mediaItem ? { href: to, target: '_blank', rel: 'noreferrer' } : { to }
+
+  return (
+    <section className="relative flex min-h-[92svh] items-center overflow-hidden border-b border-hair bg-ink px-6 py-28 text-canvas md:px-11">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_65%_at_75%_45%,rgba(138,173,204,.23),transparent_66%)]" />
+      <div className="relative mx-auto grid w-full max-w-shell items-center gap-12 md:grid-cols-[1.15fr_.85fr] md:gap-16">
         <FadeUp>
-          <motion.div
-            whileHover={reduce ? {} : { y: -4 }}
-            transition={{ duration: 0.4, ease: EASE }}
-            className="group relative overflow-hidden rounded-2xl border border-hair bg-wash p-8 md:p-12"
-          >
-            <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-accent/[.07] blur-3xl" />
-            <div className="relative flex flex-wrap items-center justify-between gap-6">
-              <div className="min-w-0 flex-1">
-                <span className="inline-flex items-center gap-2.5 text-[.78rem] font-semibold text-accent">
-                  <span className="pulse relative h-2 w-2 rounded-full bg-accent" />
-                  الأحدث · مقال
-                </span>
-                <h2 className="mt-4 max-w-[720px] font-display text-[clamp(1.6rem,3.6vw,2.5rem)] font-semibold leading-[1.35] text-ink">
-                  {latest.title}
-                </h2>
+          <p className="flex items-center gap-3 text-[.78rem] font-semibold text-[rgb(var(--c-accent))]">
+            <span className="pulse relative h-2 w-2 rounded-full bg-[rgb(var(--c-accent))]" />
+            {settings.eyebrow || 'وضع الإطلاق'} · {kindLabel}
+          </p>
+          <h2 className="mt-6 max-w-3xl font-display text-[clamp(2.35rem,6vw,4.7rem)] font-bold leading-[1.24] text-white">{title}</h2>
+          {description && <p className="mt-6 max-w-2xl text-[1.05rem] font-light leading-[2] text-white/70">{description}</p>}
+          <LinkTag {...(linkProps as any)} className="mt-9 inline-flex rounded-full bg-white px-8 py-3.5 font-semibold text-ink transition-transform duration-300 hover:-translate-y-1">
+            اكتشف الآن ←
+          </LinkTag>
+        </FadeUp>
+        <FadeUp delay={0.12}>
+          <div className="relative mx-auto max-w-[420px]">
+            {cover ? (
+              <div className="overflow-hidden rounded-3xl border border-white/15 bg-white/5 shadow-[0_40px_90px_-34px_rgba(0,0,0,.9)]">
+                <img src={cover} alt={title} className="aspect-[4/3] h-full w-full object-cover" />
               </div>
-              <Link
-                to={`/articles/${latest.slug}`}
-                data-hover
-                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-[1.5px] border-accent text-[1.4rem] text-accent transition-all duration-300 group-hover:bg-accent group-hover:text-white md:h-20 md:w-20"
-                aria-label="اقرأ المزيد"
-              >
-                ←
-              </Link>
-            </div>
-          </motion.div>
+            ) : (
+              <div className="flex aspect-square items-center justify-center rounded-full border border-white/15 bg-white/[.04] p-12 text-center">
+                <span className="font-display text-[clamp(1.35rem,3vw,2.1rem)] font-semibold leading-[1.7] text-white/90">فكرة تستحق أن تتصدّر المشهد.</span>
+              </div>
+            )}
+          </div>
         </FadeUp>
       </div>
     </section>
+  )
+}
+
+function NowHub() {
+  return (
+    <section className="border-t border-hair py-[52px] md:py-[78px]">
+      <div className="mx-auto max-w-shell px-6 md:px-11">
+        <SectionHead label="الآن" title="ما يستحق انتباهك." to="/now" cta="المشهد الكامل" />
+      </div>
+      <div className="rail home-motion-rail mt-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-5 md:gap-5 md:px-[max(2.75rem,calc((100vw-1180px)/2))]">
+        <FadeUp className="w-[86vw] max-w-[620px] shrink-0 snap-start md:w-[48vw]"><LatestCard compact /></FadeUp>
+        <FadeUp delay={0.08} className="w-[78vw] max-w-[430px] shrink-0 snap-start md:w-[34vw]"><DailySpark compact /></FadeUp>
+        <FadeUp delay={0.14} className="w-[74vw] max-w-[390px] shrink-0 snap-start md:w-[31vw]"><OnThisWeek compact /></FadeUp>
+        <span aria-hidden className="w-px shrink-0" />
+      </div>
+    </section>
+  )
+}
+
+function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[]; media: MediaRecord[] }) {
+  const article = articles[1] || articles[0]
+  const book = books[0]
+  const paper = papers[0]
+  const mediaItem = media[0]
+  const items = [
+    article && { type: 'مقال مختار', title: article.title, note: article.excerpt, to: `/articles/${article.slug}`, image: '' },
+    book && { type: 'كتاب مختار', title: book.title, note: book.desc, to: `/publications/${book.slug}`, image: book.cover },
+    paper && { type: 'بحث محكّم', title: paper.title, note: paper.meta, to: `/research/${paper.slug}`, image: '' },
+    mediaItem && { type: 'ظهور إعلامي', title: mediaItem.title, note: mediaItem.outlet, to: mediaItem.url, image: ytId(mediaItem.url) ? `https://i.ytimg.com/vi/${ytId(mediaItem.url)}/hqdefault.jpg` : '', external: true },
+  ].filter(Boolean) as { type: string; title: string; note?: string; to: string; image?: string; external?: boolean }[]
+
+  return (
+    <section className="border-t border-hair bg-wash px-6 py-[60px] md:px-11 md:py-[100px]">
+      <div className="mx-auto max-w-shell">
+        <SectionHead label="أعمال مختارة" title="أربع نوافذ تكفي." to="/articles" cta="استكشف المكتبة" />
+        <div className="rail -mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-5 md:mx-0 md:gap-5 md:px-0">
+          {items.map((item, index) => {
+            const inner = (
+              <div className="group flex h-full min-h-[250px] flex-col overflow-hidden rounded-2xl border border-hair bg-canvas transition-all duration-300 hover:-translate-y-1 hover:border-accent">
+                {item.image && <img src={item.image} alt="" loading="lazy" className="h-32 w-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-[1.03]" />}
+                <div className="flex flex-1 flex-col p-6 md:p-7">
+                  <span className="text-[.75rem] font-semibold text-accent">{item.type}</span>
+                  <h3 className="mt-3 font-display text-[1.3rem] font-semibold leading-[1.55] text-ink transition-colors group-hover:text-accent">{item.title}</h3>
+                  {item.note && <p className="mt-3 line-clamp-3 text-[.88rem] font-light leading-[1.85] text-soft">{item.note}</p>}
+                  <span className="mt-auto pt-6 text-[.82rem] font-semibold text-accent">افتح العمل ←</span>
+                </div>
+              </div>
+            )
+            return (
+              <FadeUp key={`${item.type}-${item.to}`} delay={index * 0.06} className="w-[76vw] max-w-[360px] shrink-0 snap-start md:w-[31vw]">
+                {item.external ? <a href={item.to} target="_blank" rel="noreferrer" className="block h-full">{inner}</a> : <Link to={item.to} className="block h-full">{inner}</Link>}
+              </FadeUp>
+            )
+          })}
+        </div>
+        <div className="rail mt-5 flex gap-2 overflow-x-auto pb-1">
+          {[['/publications','كل الكتب'],['/research','كل الأبحاث'],['/articles','كل المقالات'],['/media','كل الظهور الإعلامي']].map(([to, label]) => (
+            <Link key={to} to={to} className="shrink-0 rounded-full border border-hair bg-canvas px-5 py-2 text-[.82rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">{label} ←</Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+
+function ProfileAndBooksLayer({ books }: { books: BookRecord[] }) {
+  return (
+    <>
+      <section className="px-6 py-11 md:px-11 md:py-[80px]">
+        <div className="mx-auto grid max-w-shell items-start gap-10 md:grid-cols-2 md:gap-14">
+          <FadeUp>
+            <Label>نبذة</Label>
+            <h2 className="font-display text-[clamp(2rem,5vw,3.3rem)] font-semibold leading-[1.25] text-ink">
+              {profile.aboutHeading.split('\n').map((line, i) => <Reveal key={i} delay={i * 0.08}>{line}</Reveal>)}
+            </h2>
+          </FadeUp>
+          <FadeUp delay={0.1}>
+            <p className="text-[1.12rem] font-light leading-[1.9] text-ink/80">{profile.about}</p>
+            <Link to="/cv" className="mt-7 inline-block border-b-[1.5px] border-accent pb-1 font-semibold text-accent">السيرة الكاملة ←</Link>
+          </FadeUp>
+        </div>
+      </section>
+      <section className="border-t border-hair bg-wash py-[56px] md:py-[80px]">
+        <div className="mx-auto max-w-shell px-6 md:px-11">
+          <SectionHead label="المؤلفات" title={`${books.length} كتب.`} to="/publications" />
+        </div>
+        <div className="rail flex snap-x snap-mandatory gap-6 overflow-x-auto px-6 pb-10 ps-[max(1.5rem,env(safe-area-inset-right))] pe-[max(1.5rem,env(safe-area-inset-left))] md:px-11 md:pb-5">
+          {books.map((book, i) => (
+            <Card key={book.slug} delay={Math.min(i * 0.05, 0.3)} className="w-[min(76vw,260px)] shrink-0 snap-start md:w-[300px]">
+              <Link to={`/publications/${book.slug}`} data-hover className="group block">
+                <div className="overflow-hidden rounded-xl bg-white shadow-[0_22px_44px_-26px_rgba(21,22,26,.4)] transition-transform duration-500 group-hover:-translate-y-1.5" style={{ aspectRatio: '1024 / 700' }}>
+                  <img src={book.cover} alt={book.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                </div>
+                <div aria-hidden className="mt-0.5 h-10 overflow-hidden rounded-b-xl opacity-25 [mask-image:linear-gradient(to_bottom,rgba(0,0,0,.5),transparent)]" style={{ transform: 'scaleY(-1)' }}>
+                  <img src={book.cover} alt="" loading="lazy" className="h-full w-full object-cover object-top" />
+                </div>
+                <h3 className="mt-2 font-display text-[1.15rem] font-medium leading-[1.45] text-ink transition-colors group-hover:text-accent">{book.title}</h3>
+              </Link>
+            </Card>
+          ))}
+          <span aria-hidden className="w-px shrink-0" />
+        </div>
+      </section>
+    </>
+  )
+}
+
+function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]; papers: PaperRecord[]; media: MediaRecord[] }) {
+  const topArticles = articles.slice(0, 3)
+  const topPapers = papers.slice(0, 3)
+  const topMedia = media.slice(0, 3)
+  return (
+    <>
+      <section className="px-6 py-[56px] md:px-11 md:py-[80px]">
+        <div className="mx-auto max-w-shell">
+          <SectionHead label="مقالاتي الفكرية" title="بصوتي الخاص." to="/articles" cta="عرض الكل" />
+          <div className="grid gap-8 md:grid-cols-[1.5fr_.5fr] md:gap-12">
+            <FadeUp>
+              {topArticles[0] && <Link to={`/articles/${topArticles[0].slug}`} data-hover className="group block">
+                <div className="flex items-center gap-2.5 text-[.78rem]"><span className="font-semibold text-accent">{topArticles[0].cat}</span><span className="h-1 w-1 rounded-full bg-hair" /><time className="text-soft">{topArticles[0].date}</time></div>
+                <h3 className="mt-4 font-display text-[clamp(1.6rem,3.4vw,2.4rem)] font-semibold leading-[1.4] text-ink transition-colors group-hover:text-accent">{topArticles[0].title}</h3>
+                {topArticles[0].excerpt && <p className="mt-4 max-w-xl text-[1.02rem] font-light leading-[1.9] text-ink/80">{topArticles[0].excerpt}</p>}
+                <span className="mt-6 inline-block text-[.9rem] font-semibold text-accent">اقرأ المقال ←</span>
+              </Link>}
+            </FadeUp>
+            <FadeUp delay={0.12} className="hidden md:block">
+              <div className="flex flex-col divide-y divide-hair border-r border-hair pr-8">
+                {topArticles.slice(1, 3).map((article) => <Link key={article.slug} to={`/articles/${article.slug}`} className="group py-6 first:pt-0"><time className="text-[.76rem] text-soft">{article.date}</time><h4 className="mt-2 font-display text-[1.1rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">{article.title}</h4></Link>)}
+              </div>
+            </FadeUp>
+          </div>
+        </div>
+      </section>
+      <section className="border-t border-hair bg-wash px-6 py-11 md:px-11 md:py-[80px]">
+        <div className="mx-auto max-w-shell">
+          <SectionHead label="المساهمات العلمية" title="أبحاث محكّمة." to="/research" cta="عرض الكل" />
+          <ol className="mt-2">
+            {topPapers.map((paper, i) => <FadeUp key={paper.slug} delay={Math.min(i * 0.06, 0.24)}><li className={i ? 'border-t border-hair' : ''}><Link to={`/research/${paper.slug}`} className="group flex items-baseline gap-6 py-6"><span className="w-8 shrink-0 font-display text-[1.4rem] font-bold text-accent/70">{arNum(i + 1)}</span><span className="flex-1"><span className="block text-[1.1rem] font-medium leading-[1.7] text-ink transition-colors group-hover:text-accent">{paper.title}</span><span className="mt-1 block text-[.8rem] text-soft">{paper.meta}</span></span><span className="text-soft">←</span></Link></li></FadeUp>)}
+          </ol>
+        </div>
+      </section>
+      <section className="border-t border-hair px-6 py-11 md:px-11 md:py-[80px]">
+        <div className="mx-auto max-w-shell">
+          <SectionHead label="الظهور الإعلامي" title="على الشاشة." to="/media" cta="عرض الكل" />
+          <div className="grid gap-8 md:grid-cols-[1.55fr_.45fr] md:gap-12">
+            <FadeUp>
+              {topMedia[0] && <a href={topMedia[0].url} target="_blank" rel="noreferrer" className="group block overflow-hidden rounded-2xl"><div className="relative overflow-hidden bg-wash" style={{ aspectRatio: '16 / 9' }}>{ytId(topMedia[0].url) && <img src={`https://i.ytimg.com/vi/${ytId(topMedia[0].url)}/hqdefault.jpg`} alt={topMedia[0].title} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />}<span className="absolute inset-0 bg-ink/10 group-hover:bg-ink/25" /><span className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-ink/40 text-white">▶</span></div><div className="mt-4"><span className="text-[.74rem] font-semibold text-accent">{topMedia[0].outlet}</span><h3 className="mt-1.5 font-display text-[1.2rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{topMedia[0].title}</h3></div></a>}
+            </FadeUp>
+            <FadeUp delay={0.12} className="hidden md:block"><div className="flex flex-col divide-y divide-hair border-r border-hair pr-8">{topMedia.slice(1, 3).map((item) => <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="group flex items-start gap-3 py-5 first:pt-0"><span className="mt-1 text-[.7rem] text-accent">▶</span><span><span className="block text-[.72rem] font-semibold text-accent">{item.outlet}</span><span className="mt-1 block text-[.98rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{item.title}</span></span></a>)}</div></FadeUp>
+          </div>
+        </div>
+      </section>
+    </>
+  )
+}
+
+function HomeDepth({ articles, books, papers, media }: { articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[]; media: MediaRecord[] }) {
+  const [active, setActive] = useState<'profile' | 'maps' | 'interaction' | 'archive' | null>(null)
+  const tabs = [
+    { key: 'profile' as const, title: 'عنّي والمؤلفات', note: 'السيرة والمعرض الكامل للكتب.' },
+    { key: 'maps' as const, title: 'خرائط الفكر والأثر', note: 'السماء، الرحلة، وتوقيعات الموقع.' },
+    { key: 'interaction' as const, title: 'تجربة مخصّصة', note: 'مسار اختياري لمن يريد بداية أدق.' },
+    { key: 'archive' as const, title: 'المشهد التحريري', note: 'المقالات والأبحاث والإعلام بتفصيل أكبر.' },
+  ]
+
+  useEffect(() => {
+    if (!active) return
+    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setActive(null) }
+    document.addEventListener('keydown', close)
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.removeEventListener('keydown', close); document.body.style.overflow = previous }
+  }, [active])
+
+  return (
+    <>
+      <section className="border-t border-hair py-5 md:py-6">
+        <div className="rail mx-auto flex max-w-shell snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-1 md:px-11">
+          <span className="flex shrink-0 items-center text-[.72rem] font-semibold text-accent">تجارب الموقع</span>
+          {tabs.map((tab, index) => (
+            <FadeUp key={tab.key} delay={index * 0.04} className="w-[58vw] max-w-[260px] shrink-0 snap-start">
+              <button type="button" onClick={() => setActive(tab.key)} className="flex min-h-[76px] w-full items-center justify-between gap-4 rounded-2xl border border-hair bg-wash px-4 py-3 text-right transition-colors hover:border-accent">
+                <span className="min-w-0"><span className="block truncate font-display text-[.92rem] font-semibold text-ink">{tab.title}</span><span className="mt-0.5 block truncate text-[.68rem] text-soft">{tab.note}</span></span>
+                <span className="shrink-0 text-accent">↗</span>
+              </button>
+            </FadeUp>
+          ))}
+          <span aria-hidden className="w-px shrink-0" />
+        </div>
+      </section>
+
+      <AnimatePresence>
+        {active && (
+          <motion.div className="fixed inset-0 z-[290] bg-ink/35 p-3 pt-[calc(4.75rem+env(safe-area-inset-top))] backdrop-blur-sm md:p-8 md:pt-24" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && setActive(null)}>
+            <motion.div className="mx-auto h-full max-w-6xl overflow-y-auto rounded-3xl border border-hair bg-canvas shadow-2xl" initial={{ y: 18, scale: .985 }} animate={{ y: 0, scale: 1 }} exit={{ y: 12, scale: .99 }} transition={{ duration: .28, ease: EASE }}>
+              <div className="sticky top-0 z-20 flex items-center justify-between border-b border-hair bg-canvas/90 px-5 py-3 backdrop-blur md:px-7">
+                <span className="font-display text-[1rem] font-semibold text-ink">{tabs.find((tab) => tab.key === active)?.title}</span>
+                <button onClick={() => setActive(null)} className="rounded-full border border-hair px-4 py-1.5 text-[.76rem] text-soft transition-colors hover:border-accent hover:text-accent">إغلاق</button>
+              </div>
+              {active === 'profile' && <ProfileAndBooksLayer books={books} />}
+              {active === 'maps' && <><MiniAtlas /><ImpactTimeline /><Signatures /></>}
+              {active === 'interaction' && <WhoAreYou />}
+              {active === 'archive' && <EditorialLayer articles={articles} papers={papers} media={media} />}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
 
@@ -635,7 +866,6 @@ function Card({ children, delay = 0, className = '' }: { children: React.ReactNo
 export default function Home() {
   useSeo({ title: 'د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم والذكاء الاصطناعي', path: '/' })
   const { articles, books, papers, media } = useCmsContent()
-  const launch = useLaunchMode()
   const addedEvents = useExtras<SiteEvent & { id: string }>('site_upcoming')
   const upcomingItems = [...addedEvents, ...upcoming]
     .filter((event, index, list) => list.findIndex((candidate) => candidate.iso === event.iso && candidate.title === event.title) === index)
@@ -651,89 +881,117 @@ export default function Home() {
 
   useEffect(() => {
     if (reduce) return
-    const move = (event: MouseEvent) => {
-      tx.set((event.clientX / window.innerWidth - 0.5) * 14)
-      ty.set((event.clientY / window.innerHeight - 0.5) * 14)
+    const m = (e: MouseEvent) => {
+      tx.set((e.clientX / window.innerWidth - 0.5) * 14)
+      ty.set((e.clientY / window.innerHeight - 0.5) * 14)
     }
-    window.addEventListener('mousemove', move)
-    return () => window.removeEventListener('mousemove', move)
+    window.addEventListener('mousemove', m)
+    return () => window.removeEventListener('mousemove', m)
   }, [reduce, tx, ty])
-
-  const launchView = (() => {
-    if (!launch.enabled || !launch.slug) return null
-    if (launch.kind === 'book') {
-      const item = books.find((entry) => entry.slug === launch.slug)
-      return item ? { title: item.title, path: `/publications/${item.slug}`, label: launch.eyebrow || 'إطلاق كتاب', note: launch.note || item.desc, image: item.cover, external: false } : null
-    }
-    if (launch.kind === 'paper') {
-      const item = papers.find((entry) => entry.slug === launch.slug)
-      return item ? { title: item.title, path: `/research/${item.slug}`, label: launch.eyebrow || 'بحث جديد', note: launch.note || item.meta, image: '', external: false } : null
-    }
-    if (launch.kind === 'media') {
-      const item = media.find((entry) => entry.slug === launch.slug)
-      const video = item ? ytId(item.url) : ''
-      return item ? { title: item.title, path: item.url, label: launch.eyebrow || 'ظهور جديد', note: launch.note || item.outlet, image: video ? `https://i.ytimg.com/vi/${video}/hqdefault.jpg` : '', external: true } : null
-    }
-    const item = articles.find((entry) => entry.slug === launch.slug)
-    return item ? { title: item.title, path: `/articles/${item.slug}`, label: launch.eyebrow || 'مقال جديد', note: launch.note || item.excerpt, image: '', external: false } : null
-  })()
 
   return (
     <Page>
-      {/* المحطة ١: الغلاف — الهوية الأصلية، أو وضع إطلاق مؤقت يفعّله الدكتور بنفسه */}
+      <LaunchSpotlight articles={articles} books={books} papers={papers} media={media} />
+
+      {/* hero — البيان الفكري أولاً (100svh للجوال) */}
       <header className="relative flex min-h-[100svh] items-center px-6 pb-16 pt-24 md:px-11 md:pb-24 md:pt-28">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_50%_at_78%_40%,rgba(62,92,120,.06),transparent_62%)]" />
         <div className="relative z-10 mx-auto grid w-full max-w-shell items-center gap-8 md:grid-cols-[1.15fr_.85fr] md:gap-16">
+          {/* البيان أولاً — على الجوال والكمبيوتر */}
           <div className="order-1">
-            {launchView ? (
-              <>
-                <motion.p className="mb-5 flex items-center gap-2.5 text-[.8rem] font-semibold text-accent" initial={reduce ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6, delay: .2, ease: EASE }}>
-                  <span className="pulse relative h-2 w-2 rounded-full bg-accent" />{launchView.label}
-                </motion.p>
-                <h1 className="font-display text-[clamp(2rem,5vw,3.75rem)] font-bold leading-[1.32] text-ink">
-                  <span className="-my-[0.3em] block overflow-hidden py-[0.3em]"><motion.span className="block" initial={reduce ? false : { y: '150%' }} animate={{ y: 0 }} transition={{ duration: 1, delay: .3, ease: EASE }}>{launchView.title}</motion.span></span>
-                </h1>
-                {launchView.note && <motion.p className="mt-6 max-w-[650px] text-[1.02rem] font-light leading-[1.95] text-soft" initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .65, ease: EASE }}>{launchView.note}</motion.p>}
-                <motion.div className="mt-8 flex flex-wrap items-center gap-4" initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .82, ease: EASE }}>
-                  {launchView.external ? <a href={launchView.path} target="_blank" rel="noreferrer" className="rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors hover:bg-accent-deep">شاهد الآن ←</a> : <Link to={launchView.path} className="rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors hover:bg-accent-deep">اكتشف الآن ←</Link>}
-                  <span className="font-display text-[.92rem] text-soft">«أُبقي الإنسانَ في قلبِ الآلة.»</span>
-                </motion.div>
-              </>
-            ) : (
-              <>
-                <h1 className="font-display text-[clamp(2.1rem,5.4vw,4rem)] font-bold leading-[1.28] text-ink">
-                  {['أُبقي الإنسانَ', 'في قلبِ الآلة.'].map((line, index) => (
-                    <span key={line} className="-my-[0.3em] block overflow-hidden py-[0.3em]"><motion.span className="block" initial={reduce ? false : { y: '150%' }} animate={{ y: 0 }} transition={{ duration: 1, delay: 0.25 + index * 0.14, ease: EASE }}>{line}</motion.span></span>
-                  ))}
-                </h1>
-                <motion.div className="my-7 h-[2px] bg-accent" initial={{ width: 0 }} animate={{ width: 74 }} transition={{ duration: 0.9, delay: 0.7, ease: EASE }} />
-                <motion.div initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.85, ease: EASE }}>
-                  <p className="font-display text-[clamp(1.15rem,2.4vw,1.6rem)] font-semibold text-ink">{profile.name}</p>
-                  <p className="mt-1.5 text-[.95rem] font-light text-soft">أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · باحث · مستشار</p>
-                </motion.div>
-                <motion.div className="mt-9" initial={reduce ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 1, ease: EASE }}>
-                  <Magnetic to="/articles" className="inline-block rounded-full bg-accent px-9 py-4 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">ادخل إلى عالمي الفكري ←</Magnetic>
-                </motion.div>
-              </>
-            )}
+            {/* الجملة التي تراها أول ثانية — بيان الدكتور الفكري، لا نبذة */}
+            <h1 className="font-display text-[clamp(2.1rem,5.4vw,4rem)] font-bold leading-[1.28] text-ink">
+              {['أُبقي الإنسانَ', 'في قلبِ الآلة.'].map((line, i) => (
+                // حشوة تحمي الهمزة والضمة فوق الألف من القصّ، وهامش سالب يحيّد أثرها
+                <span key={line} className="-my-[0.3em] block overflow-hidden py-[0.3em]">
+                  <motion.span
+                    className="block"
+                    initial={reduce ? false : { y: '150%' }}
+                    animate={{ y: 0 }}
+                    transition={{ duration: 1, delay: 0.25 + i * 0.14, ease: EASE }}
+                  >
+                    {line}
+                  </motion.span>
+                </span>
+              ))}
+            </h1>
+
+            <motion.div className="my-7 h-[2px] bg-accent" initial={{ width: 0 }} animate={{ width: 74 }} transition={{ duration: 0.9, delay: 0.7, ease: EASE }} />
+
+            {/* الاسم والصفة — أصغر، ثانويّان */}
+            <motion.div
+              initial={reduce ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.85, ease: EASE }}
+            >
+              <p className="font-display text-[clamp(1.15rem,2.4vw,1.6rem)] font-semibold text-ink">{profile.name}</p>
+              <p className="mt-1.5 text-[.95rem] font-light text-soft">أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · باحث · مستشار</p>
+            </motion.div>
           </div>
 
           <div className="order-2 flex justify-center">
-            <motion.div style={{ y: parY }}><motion.div style={{ x: stx, y: sty }} className="portrait-wrap" data-hover>
-              <motion.div className="portrait relative max-w-[210px] overflow-hidden rounded-2xl shadow-[0_36px_64px_-36px_rgba(21,22,26,.42)] sm:max-w-[260px] md:max-w-[400px]" initial={reduce ? false : { opacity: 0, y: 26, scale: 1.03 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 1.1, delay: 0.75, ease: EASE }}>
-                <img src={launchView?.image || '/portrait.jpg'} alt={launchView?.title || profile.fullName} width={900} height={1350} fetchPriority="high" decoding="async" className={`block h-auto w-full ${launchView?.image ? 'aspect-[3/4] object-cover' : ''}`} />
+            <motion.div style={{ y: parY }}>
+              <motion.div style={{ x: stx, y: sty }} className="portrait-wrap" data-hover>
+                <motion.div
+                  className="portrait relative max-w-[210px] overflow-hidden rounded-2xl shadow-[0_36px_64px_-36px_rgba(21,22,26,.42)] sm:max-w-[260px] md:max-w-[400px]"
+                  initial={reduce ? false : { opacity: 0, y: 26, scale: 1.03 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 1.1, delay: 0.75, ease: EASE }}
+                >
+                  <img src="/portrait.jpg" alt={profile.fullName} width={900} height={1350} fetchPriority="high" decoding="async" className="block h-auto w-full" />
+                </motion.div>
               </motion.div>
-            </motion.div></motion.div>
+            </motion.div>
           </div>
         </div>
-        <motion.div className="cue absolute bottom-8 left-1/2 -translate-x-1/2 text-[.74rem] text-soft" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 2 }}>اكتشف<span className="relative mx-auto mt-2.5 block h-[30px] w-px overflow-hidden bg-hair" /></motion.div>
+
+        <motion.div
+          className="cue absolute bottom-8 left-1/2 -translate-x-1/2 text-[.74rem] text-soft"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 2 }}
+        >
+          اكتشف
+          <span className="relative mx-auto mt-2.5 block h-[30px] w-px overflow-hidden bg-hair" />
+        </motion.div>
       </header>
 
-      {/* المحطات ٢–٥: الآن، البوصلة، الأعمال المختارة، النهاية الهادئة */}
-      <NowStation articles={articles} />
-      <ThoughtCompassStation articles={articles} books={books} papers={papers} />
-      <SelectedWorksStation articles={articles} books={books} papers={papers} media={media} />
-      <ClosingStation upcoming={upcomingItems} aboutHeading={profile.aboutHeading} about={profile.about} />
+      <SinceLastVisit />
+
+      <NowHub />
+
+      <ThoughtCompass />
+
+      <SelectedWorks articles={articles} books={books} papers={papers} media={media} />
+
+      <HomeDepth articles={articles} books={books} papers={papers} media={media} />
+
+      {/* اللقاءات + النشرة — فائدتان ثانويتان داخل شريط واحد صغير */}
+      <section className="border-t border-hair py-5 md:py-6">
+        <div className="rail mx-auto flex max-w-shell snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-1 md:px-11">
+          <FadeUp className="w-[78vw] max-w-[430px] shrink-0 snap-start">
+            <div className="flex min-h-[76px] items-center gap-4 rounded-2xl border border-hair bg-wash px-4 py-3">
+              <span className="shrink-0 text-[.72rem] font-semibold text-accent">اللقاءات</span>
+              {upcomingItems[0] ? (
+                <Link to="/upcoming" className="group min-w-0 flex-1">
+                  <span className="block truncate font-display text-[.92rem] font-semibold text-ink transition-colors group-hover:text-accent">{upcomingItems[0].title}</span>
+                  <span className="mt-0.5 block truncate text-[.7rem] text-soft">{upcomingItems[0].date} · {upcomingItems[0].place}</span>
+                </Link>
+              ) : (
+                <Link to="/contact#booking-form" className="min-w-0 flex-1 text-[.8rem] text-soft transition-colors hover:text-accent">لا مواعيد معلنة · احجز موعداً ←</Link>
+              )}
+              <Link to="/upcoming" aria-label="كل اللقاءات" className="shrink-0 text-accent">←</Link>
+            </div>
+          </FadeUp>
+          <FadeUp delay={0.06} className="w-[82vw] max-w-[520px] shrink-0 snap-start">
+            <div className="flex min-h-[76px] items-center gap-3 rounded-2xl border border-hair px-4 py-3">
+              <span className="shrink-0 text-[.72rem] font-semibold text-accent">النشرة</span>
+              <div className="min-w-0 flex-1"><Newsletter compact /></div>
+            </div>
+          </FadeUp>
+          <span aria-hidden className="w-px shrink-0" />
+        </div>
+      </section>
     </Page>
   )
 }

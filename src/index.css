@@ -254,28 +254,44 @@ iframe { color-scheme: light; }
   .sig-star { animation: none; }
 }
 
-/* القراءة المتزامنة مع الصوت — إبراز هادئ، بلا قفزات أو تغيير في بنية المقال */
-.audio-synced-body p {
+/* القراءة المتزامنة — إبراز هادئ للفقرة الحالية من دون تغيير تنسيق المقال الأصلي */
+.article-body-synced .synced-paragraph {
   position: relative;
+  margin-inline: -0.75rem;
+  padding: 0.32rem 0.75rem;
+  border-radius: 1rem;
   cursor: pointer;
-  border-radius: 0.75rem;
-  transition: background-color .35s var(--E), color .35s var(--E), padding .35s var(--E), transform .35s var(--E);
+  transition: background-color 320ms var(--E), box-shadow 320ms var(--E), transform 320ms var(--E);
 }
-.audio-synced-body p:hover {
-  background: rgb(var(--c-accent) / .045);
+
+.article-body-synced .synced-paragraph:hover {
+  background: rgb(var(--c-accent) / 0.055);
 }
-.audio-synced-body p.audio-paragraph-active {
-  background: rgb(var(--c-accent) / .085);
-  color: rgb(var(--c-ink));
-  padding: .8rem 1rem;
-  transform: translateX(-.2rem);
+
+.article-body-synced .synced-paragraph.is-audio-active {
+  background: rgb(var(--c-accent) / 0.09);
+  box-shadow: inset -3px 0 0 rgb(var(--c-accent));
+  transform: translateX(-2px);
 }
-.audio-synced-body p.audio-paragraph-active::before {
-  content: "";
-  position: absolute;
-  inset-block: .8rem;
-  right: 0;
-  width: 2px;
-  border-radius: 999px;
-  background: rgb(var(--c-accent));
+
+.synced-reading-toolbar {
+  box-shadow: 0 18px 45px rgb(var(--c-ink) / 0.035);
+}
+
+@media (max-width: 640px) {
+  .article-body-synced .synced-paragraph {
+    margin-inline: -0.45rem;
+    padding-inline: 0.45rem;
+    border-radius: 0.75rem;
+  }
+
+  .article-body-synced .synced-paragraph.is-audio-active {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .article-body-synced .synced-paragraph {
+    transition: none;
+  }
 }

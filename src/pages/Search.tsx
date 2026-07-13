@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { articleCats } from '../data'
@@ -19,13 +19,14 @@ const suggestedTopics = [
 
 export default function Search() {
   const { articles } = useCmsContent()
+  const [searchParams] = useSearchParams()
   useSeo({
     title: 'البحث العميق',
     path: '/search',
     description: 'بحث متقدم في المقالات حسب النص الكامل والتصنيف والسنة والكلمات المفتاحية.',
   })
 
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(() => searchParams.get('q') || '')
   const [cat, setCat] = useState('الكل')
   const [year, setYear] = useState('الكل')
   const [visibleCount, setVisibleCount] = useState(24)

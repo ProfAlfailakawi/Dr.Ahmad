@@ -398,39 +398,44 @@ function Overlay({ close }: { close: () => void }) {
                       transition={{ duration: 0.7, delay: 0.45 + gi * 0.08 + ii * 0.06, ease: EASE }}
                     >
                       {it.sub ? (
-                        <div className={`group flex w-full items-center justify-between gap-3 py-1 font-display text-[1.15rem] font-medium leading-[1.5] md:py-1.5 md:text-[1.35rem] ${
-                          active ? 'text-accent' : 'text-ink'
+                        <div className={`group rounded-2xl border border-transparent py-1 transition-colors duration-300 ${
+                          expanded ? 'border-hair bg-wash/45 px-3' : ''
                         }`}>
-                          <Link
-                            to={it.to}
-                            onClick={close}
-                            className="flex-1 text-right transition-colors duration-300 hover:text-accent"
-                          >
-                            {it.label}
-                          </Link>
                           <button
                             type="button"
                             onClick={() => setOpenSub(expanded ? null : it.to)}
                             aria-expanded={expanded}
                             aria-controls={subId}
-                            aria-label={`فتح فروع ${it.label}`}
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-soft transition-colors hover:text-accent"
+                            className={`flex w-full items-center justify-between gap-3 text-right font-display text-[1.15rem] font-medium leading-[1.5] transition-colors duration-300 hover:text-accent md:text-[1.35rem] ${
+                              active || expanded ? 'text-accent' : 'text-ink'
+                            }`}
                           >
-                            <motion.svg
-                              aria-hidden
-                              width="13"
-                              height="13"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2.4"
-                              strokeLinecap="round"
-                              animate={{ rotate: expanded ? 180 : 0 }}
-                              transition={{ duration: 0.3, ease: EASE }}
-                            >
-                              <path d="M6 9l6 6 6-6" />
-                            </motion.svg>
+                            <span className="min-w-0 flex-1">{it.label}</span>
+                            <span className="flex items-center gap-2 text-[.72rem] font-sans font-semibold text-soft">
+                              <span className="hidden sm:inline">{expanded ? 'إخفاء الفروع' : 'استكشف الفروع'}</span>
+                              <motion.svg
+                                aria-hidden
+                                width="13"
+                                height="13"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.4"
+                                strokeLinecap="round"
+                                animate={{ rotate: expanded ? 180 : 0 }}
+                                transition={{ duration: 0.3, ease: EASE }}
+                              >
+                                <path d="M6 9l6 6 6-6" />
+                              </motion.svg>
+                            </span>
                           </button>
+                          <Link
+                            to={it.to}
+                            onClick={close}
+                            className="mt-1 inline-flex rounded-full border border-hair px-3 py-1 text-[.72rem] font-semibold text-soft transition-colors duration-300 hover:border-accent hover:text-accent"
+                          >
+                            {it.allLabel || `فتح ${it.label}`}
+                          </Link>
                         </div>
                       ) : (
                         <Link

@@ -17,6 +17,7 @@ import { useCmsContent } from '../lib/content'
 import { ContentManager, type ManagedKind, type ManagedRecord } from '../components/admin/ContentManager'
 import { Indicators } from '../components/admin/Indicators'
 import { IntelligenceLab } from '../components/admin/IntelligenceLab'
+import { PublishingStudio } from '../components/admin/PublishingStudio'
 import { VoiceBakeoffCard } from '../components/admin/VoiceBakeoff'
 import { UploadField } from '../components/admin/ContentManager'
 import { useSeo } from '../components/seo'
@@ -155,7 +156,7 @@ function AccessDenied({ email }: { email: string }) {
 
 /* ---------- ٣) اللوحة ---------- */
 // السؤال الأسبوعي والمختارة اليومية يتولّدان تلقائياً (بنك دوّار) فلا لزوم لهما في اللوحة
-type Tab = 'dashboard' | 'lab' | 'articles' | 'books' | 'papers' | 'media' | 'inbox' | 'event'
+type Tab = 'dashboard' | 'studio' | 'lab' | 'articles' | 'books' | 'papers' | 'media' | 'inbox' | 'event'
 
 
 /* رفع السيرة الذاتية PDF (عربي + إنجليزي) — يحفظ الرابط في site_settings/cv
@@ -203,7 +204,7 @@ function Panel({ email }: { email: string }) {
   const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const initialTab = (params.get('tab') as Tab) || 'dashboard'
   const editSlug = params.get('edit') || undefined
-  const [tab, setTab] = useState<Tab>(['dashboard','lab','articles','books','papers','media','inbox','event'].includes(initialTab) ? initialTab : 'dashboard')
+  const [tab, setTab] = useState<Tab>(['dashboard','studio','lab','articles','books','papers','media','inbox','event'].includes(initialTab) ? initialTab : 'dashboard')
   const cms = useCmsContent({ includeHidden: true })
 
   const signOut = async () => {
@@ -226,7 +227,7 @@ function Panel({ email }: { email: string }) {
         </div>
 
         <div className="rail mb-8 flex max-w-full gap-2 overflow-x-auto pb-2 sm:flex-wrap">
-          {([['dashboard', 'المؤشرات'], ['lab', 'المختبر'], ['articles', 'المقالات'], ['books', 'الكتب'], ['papers', 'الأبحاث'], ['media', 'الإعلام'], ['inbox', 'الرسائل'], ['event', 'اللقاءات']] as [Tab, string][]).map(([k, label]) => (
+          {([['dashboard', 'المؤشرات'], ['studio', 'استوديو النشر'], ['lab', 'المختبر'], ['articles', 'المقالات'], ['books', 'الكتب'], ['papers', 'الأبحاث'], ['media', 'الإعلام'], ['inbox', 'الرسائل'], ['event', 'اللقاءات']] as [Tab, string][]).map(([k, label]) => (
             <button key={k} onClick={() => setTab(k)}
               className={`shrink-0 rounded-full px-5 py-2 text-[.88rem] transition-colors ${tab === k ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}>
               {label}
@@ -237,6 +238,7 @@ function Panel({ email }: { email: string }) {
         {cms.error && <p className="mb-5 rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.85rem] text-soft">تعذّر تحديث المحتوى الحي: {cms.error}</p>}
         {cms.loading && <p className="mb-5 text-[.84rem] text-soft">أحمّل آخر تعديلات المحتوى…</p>}
         {tab === 'dashboard' && <><CvPdfCard /><div className="mt-5"><VoiceBakeoffCard /></div><div className="mt-5"><Indicators articles={cms.articles} /></div></>}
+        {tab === 'studio' && <PublishingStudio articles={cms.articles} />}
         {tab === 'lab' && <IntelligenceLab articles={cms.articles} />}
         {tab === 'articles' && <ContentManager openSlug={editSlug} kind="article" items={cms.articles as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
         {tab === 'books' && <ContentManager openSlug={editSlug} kind="book" items={cms.books as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}

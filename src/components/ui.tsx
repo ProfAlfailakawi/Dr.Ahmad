@@ -614,7 +614,7 @@ function SearchPalette({ close }: { close: () => void }) {
 
   const results = useMemo(() => {
     const { normalized, terms } = expandSearchTerms(query)
-    if (!normalized) return index.slice(0, 9)
+    if (!normalized) return []
     return index
       .map((item) => {
         const title = normalizeSearch(item.title)
@@ -697,7 +697,7 @@ function SearchPalette({ close }: { close: () => void }) {
         )}
 
         <div className="min-h-0 flex-1 overflow-y-auto p-2 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-h-[48vh]">
-          {results.length ? results.map((item) => (
+          {!query.trim() ? null : results.length ? results.map((item) => (
             <Link
               key={item.to}
               to={item.to}
@@ -710,7 +710,7 @@ function SearchPalette({ close }: { close: () => void }) {
           )) : (
             <div className="px-5 py-10 text-center">
               <p className="font-display text-[1rem] font-semibold text-ink">لم أجد تطابقاً واضحاً.</p>
-              <p className="mt-2 text-[.8rem] text-soft">أرسل السؤال نفسه إلى «العقل الحي» أو افتح البحث العميق.</p>
+              <p className="mt-2 text-[.8rem] text-soft">جرّب عبارة أقصر، أو أرسل السؤال نفسه إلى «العقل الحي».</p>
               <div className="mt-4 flex justify-center gap-2"><Link to={askTo} onClick={close} className="rounded-full bg-accent px-4 py-2 text-[.76rem] font-semibold text-white">العقل الحي</Link><Link to={deepTo} onClick={close} className="rounded-full border border-hair px-4 py-2 text-[.76rem] font-semibold text-soft">البحث العميق</Link></div>
             </div>
           )}

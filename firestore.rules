@@ -98,7 +98,8 @@ service cloud.firestore {
     }
     match /journeys/{id} {
       allow read, delete: if isAdmin();
-      allow create, update: if isValidJourney();
+      allow create: if isValidJourneyCreate();
+      allow update: if isValidJourneyUpdate();
     }
 
     // كل ما عدا ذلك: مغلق.
@@ -154,13 +155,26 @@ service cloud.firestore {
       && d.createdAt == request.time;
   }
 
-  function isValidJourney() {
-    let d = request.resource.data;
+  function hasValidJourneyFields(d) {
     return d.keys().hasOnly(['from', 'to', 'count', 'updatedAt'])
       && d.from is string && d.from.size() > 0 && d.from.size() <= 300
       && d.to is string && d.to.size() > 0 && d.to.size() <= 300
+      && d.from != d.to
       && d.count is int
-      && d.count >= 1
       && d.updatedAt == request.time;
+  }
+
+  function isValidJourneyCreate() {
+    return hasValidJourneyFields(request.resource.data)
+      && request.resource.data.count == 1;
+  }
+
+  function isValidJourneyUpdate() {
+    return hasValidJourneyFields(request.resource.data)
+      && request.resource.data.from == resource.data.from
+      && request.resource.data.to == resource.data.to
+      && request.resource.data.count == resource.data.count + 1
+      && request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['count', 'updatedAt']);
   }
 }

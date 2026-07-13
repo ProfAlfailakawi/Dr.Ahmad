@@ -69,7 +69,7 @@ export const defaultTabForArea = (area: AdminArea): AdminTab =>
 export function AdminAreaTabs({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
   const activeArea = areaOfTab(tab)
   return (
-    <div className="rail mb-3 flex gap-2 overflow-x-auto pb-1">
+    <div className="rail mb-3 hidden gap-2 overflow-x-auto pb-1 md:flex">
       {ADMIN_GROUPS.map((group) => {
         const active = activeArea === group.area
         return (

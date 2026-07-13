@@ -165,14 +165,19 @@ export function useTrackView(path: string, title: string, enabled = true) {
     const safeTitle = title.trim().slice(0, 200) || normalizedPath
     const ids = viewDocumentIds(normalizedPath)
     const pathSessionKey = `view:path:${encodeViewPath(normalizedPath)}`
-    if (wasSeen(pathSessionKey)) return
 
     return afterFirstPaint(() => {
+      // رحلة الزائر منفصلة عن عدّاد الصفحة: حتى الرجوع إلى صفحة شوهدت سابقاً
+      // لا يقطع سلسلة الانتقال الحالية. التكرار نفسه يُمنع داخل trackJourney.
       try {
         const previous = window.sessionStorage.getItem('view:last-path') || ''
-        void trackJourney(previous, normalizedPath)
-        window.sessionStorage.setItem('view:last-path', normalizedPath)
-      } catch { /* noop */ }
+        if (previous !== normalizedPath) {
+          void trackJourney(previous, normalizedPath)
+          window.sessionStorage.setItem('view:last-path', normalizedPath)
+        }
+      } catch { /* لا تؤثر على عدّاد الصفحة */ }
+
+      if (wasSeen(pathSessionKey)) return
       void Promise.all([
         incrementViewDocument(ids.total, safeTitle),
         incrementViewDocument(ids.day, safeTitle),

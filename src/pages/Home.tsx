@@ -344,15 +344,19 @@ function OnThisWeek({ compact = false }: { compact?: boolean }) {
 
   const card = (
     <Link to={`/articles/${pick.a.slug}`} data-hover className={`group block h-full rounded-2xl border border-hair bg-canvas transition-colors hover:border-accent ${compact ? 'p-6 md:p-7' : 'max-w-3xl border-0 p-0'}`}>
-      <p className="flex items-center gap-3 text-[.76rem] font-semibold text-accent">
-        <span className="h-[1.5px] w-7 bg-accent" />
-        في مثل هذا الأسبوع · {yearsAgo(n)}
-      </p>
-      <h2 className={`mt-4 font-display font-semibold leading-[1.6] text-ink transition-colors duration-300 group-hover:text-accent ${compact ? 'text-[1.08rem]' : 'text-[clamp(1.4rem,3.2vw,2.1rem)]'}`}>
+      <div className="flex items-start gap-3 text-accent">
+        <span className="mt-[.7em] h-[1.5px] w-7 shrink-0 bg-accent" />
+        <p className="min-w-0 text-[.74rem] font-semibold leading-[1.7]">
+          <span className="block sm:inline">في مثل هذا الأسبوع</span>
+          <span className="hidden px-1 sm:inline">·</span>
+          <span className="block sm:inline">{yearsAgo(n)}</span>
+        </p>
+      </div>
+      <h2 className={`mt-4 font-display font-semibold leading-[1.55] text-ink transition-colors duration-300 group-hover:text-accent ${compact ? 'text-[1.02rem] md:text-[1.08rem]' : 'text-[clamp(1.4rem,3.2vw,2.1rem)]'}`}>
         «{pick.a.title}»
       </h2>
-      <p className="mt-3 text-[.78rem] text-soft transition-colors group-hover:text-accent">
-        كُتب في {when} <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1">←</span>
+      <p className="mt-3 text-[.76rem] leading-relaxed text-soft transition-colors group-hover:text-accent">
+        كُتب في {when}
       </p>
     </Link>
   )
@@ -971,18 +975,23 @@ export default function Home() {
                   <img src="/portrait.jpg" alt={profile.fullName} width={900} height={1350} decoding="async" className="block h-auto w-full" />
                 </motion.div>
               </motion.div>
-              <motion.div initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .75, delay: 1.05, ease: EASE }}>
-                <Link to="/cv" className="group mt-4 grid w-full grid-cols-[minmax(0,1fr)_2.75rem] items-center gap-3 overflow-hidden rounded-2xl border border-hair bg-wash px-4 py-3.5 text-right transition-colors hover:border-accent">
-                  <span className="min-w-0">
-                    <span className="block text-[.68rem] font-semibold text-accent">ما وراء الصورة</span>
-                    <span className="mt-0.5 block truncate font-display text-[.98rem] font-semibold text-ink transition-colors group-hover:text-accent md:text-[1.05rem]">رحلة أكاديمية صنعت الفكرة.</span>
-                    <span className="mt-0.5 block truncate text-[.72rem] text-soft">السيرة المهنية والعلمية الكاملة</span>
-                  </span>
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-transform duration-300 group-hover:-translate-y-0.5"><SocialIcon name="CV" size={17} /></span>
-                </Link>
-              </motion.div>
             </motion.div>
           </div>
+
+          <motion.div
+            className="order-3 md:col-span-2"
+            initial={reduce ? false : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: .75, delay: 1.05, ease: EASE }}
+          >
+            <Link to="/cv" className="group mx-auto flex w-full max-w-[620px] items-center justify-between gap-4 rounded-2xl border border-hair bg-wash/70 px-5 py-4 text-right transition-colors hover:border-accent md:px-6">
+              <span className="min-w-0">
+                <span className="block text-[.7rem] font-semibold text-accent">المسار الأكاديمي والمهني</span>
+                <span className="mt-1 block font-display text-[1rem] font-semibold leading-[1.5] text-ink transition-colors group-hover:text-accent md:text-[1.15rem]">السيرة الكاملة… بلا اختصار.</span>
+              </span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-transform duration-300 group-hover:-translate-y-0.5"><SocialIcon name="CV" size={17} /></span>
+            </Link>
+          </motion.div>
         </div>
 
         <motion.div

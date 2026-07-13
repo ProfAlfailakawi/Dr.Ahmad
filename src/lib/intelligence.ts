@@ -217,3 +217,180 @@ export function monthlyPlan(articles: ArticleLike[], books: SimpleBook[], papers
       || 'منشور قصير يمهد للفكرة',
   }))
 }
+
+/* ---------- محرك الأسلوب والأصالة التحريرية ---------- */
+export type StyleSample = {
+  slug: string
+  title: string
+  cat: string
+  year: string
+  words: number
+  opening: string
+  middle: string
+  closing: string
+}
+
+export type SimilarityMatch = {
+  slug: string
+  title: string
+  score: number
+  titleScore: number
+  ideaScore: number
+  phraseScore: number
+}
+
+const arabicWordCount = (value = '') => value.trim().split(/\s+/).filter(Boolean).length
+
+function textTokens(value = '') {
+  return ideaTokens(value).filter((token) => token.length >= 3)
+}
+
+function ngrams(tokens: string[], size = 3) {
+  const out = new Set<string>()
+  for (let index = 0; index <= tokens.length - size; index += 1) {
+    out.add(tokens.slice(index, index + size).join(' '))
+  }
+  return out
+}
+
+function jaccard(left: Iterable<string>, right: Iterable<string>) {
+  const a = new Set(left)
+  const b = new Set(right)
+  if (!a.size || !b.size) return 0
+  let intersection = 0
+  for (const item of a) if (b.has(item)) intersection += 1
+  return intersection / (a.size + b.size - intersection)
+}
+
+function cleanSegment(value = '', maximum = 900) {
+  return Array.from(value.replace(/\s+/g, ' ').trim()).slice(0, maximum).join('')
+}
+
+/**
+ * عينات متنوعة تمثل أسلوب الكاتب، لا مجرد أحدث المقالات. نرسل مقتطفات قصيرة
+ * فقط إلى المولّد حتى يتعلم الإيقاع والبناء من دون نسخ عبارات كاملة.
+ */
+export function representativeStyleSamples(articles: ArticleLike[], limit = 6): StyleSample[] {
+  const complete = articles
+    .filter((article) => (article.body || '').trim().length >= 500)
+    .map((article) => {
+      const body = (article.body || '').trim()
+      const paragraphs = body.split(/\n\s*\n/).map((paragraph) => paragraph.trim()).filter(Boolean)
+      const words = arabicWordCount(body)
+      const middleIndex = Math.max(0, Math.floor(paragraphs.length / 2))
+      return {
+        slug: article.slug,
+        title: article.title,
+        cat: article.cat,
+        year: article.iso?.slice(0, 4) || '',
+        words,
+        opening: cleanSegment(paragraphs[0] || body, 700),
+        middle: cleanSegment(paragraphs[middleIndex] || body, 700),
+        closing: cleanSegment(paragraphs.at(-1) || body, 700),
+      }
+    })
+
+  if (complete.length <= limit) return complete
+  const average = complete.reduce((sum, item) => sum + item.words, 0) / complete.length
+  const selected: StyleSample[] = []
+  const usedCategories = new Set<string>()
+  const usedYears = new Set<string>()
+
+  const ranked = [...complete].sort((left, right) => {
+    const leftDiversity = (usedCategories.has(left.cat) ? 1 : 0) + (usedYears.has(left.year) ? .4 : 0)
+    const rightDiversity = (usedCategories.has(right.cat) ? 1 : 0) + (usedYears.has(right.year) ? .4 : 0)
+    return leftDiversity - rightDiversity || Math.abs(left.words - average) - Math.abs(right.words - average)
+  })
+
+  while (selected.length < limit && ranked.length) {
+    ranked.sort((left, right) => {
+      const leftPenalty = (usedCategories.has(left.cat) ? 1 : 0) + (usedYears.has(left.year) ? .35 : 0)
+      const rightPenalty = (usedCategories.has(right.cat) ? 1 : 0) + (usedYears.has(right.year) ? .35 : 0)
+      return leftPenalty - rightPenalty || Math.abs(left.words - average) - Math.abs(right.words - average)
+    })
+    const next = ranked.shift()
+    if (!next) break
+    selected.push(next)
+    usedCategories.add(next.cat)
+    usedYears.add(next.year)
+  }
+  return selected
+}
+
+/** يقيس التشابه الفكري واللفظي مع كل الأرشيف، لا العنوان فقط. */
+export function articleSimilarityReport(title: string, body: string, articles: ArticleLike[], limit = 5) {
+  const titleTokens = textTokens(title)
+  const bodyTokens = textTokens(body)
+  const bodyPhrases = ngrams(bodyTokens, 3)
+  const matches: SimilarityMatch[] = articles.map((article) => {
+    const sourceTitle = textTokens(article.title)
+    const sourceIdea = textTokens(`${article.title} ${article.excerpt || ''}`)
+    const sourceBody = textTokens(article.body || article.excerpt || '')
+    const titleScore = jaccard(titleTokens, sourceTitle)
+    const ideaScore = jaccard([...titleTokens, ...bodyTokens.slice(0, 90)], sourceIdea)
+    const phraseScore = jaccard(bodyPhrases, ngrams(sourceBody, 3))
+    // الوزن الأعلى للزاوية والمعنى، ثم العبارات، ثم العنوان.
+    const score = titleScore * .28 + ideaScore * .42 + phraseScore * .30
+    return {
+      slug: article.slug,
+      title: article.title,
+      score: Math.round(score * 1000) / 1000,
+      titleScore: Math.round(titleScore * 1000) / 1000,
+      ideaScore: Math.round(ideaScore * 1000) / 1000,
+      phraseScore: Math.round(phraseScore * 1000) / 1000,
+    }
+  }).sort((left, right) => right.score - left.score).slice(0, limit)
+
+  const highest = matches[0]?.score || 0
+  return {
+    matches,
+    highest,
+    originality: Math.max(0, Math.round((1 - highest) * 100)),
+    repeated: highest >= .52,
+    warning: highest >= .40,
+  }
+}
+
+/** ملف أسلوب أكثر عمقاً للاستخدام في التوليد والتحكيم. */
+export function editorialStyleProfile(articles: ArticleLike[]) {
+  const base = styleFingerprint(articles)
+  const complete = articles.filter((article) => (article.body || '').trim().length >= 300)
+  const articleWords = complete.map((article) => arabicWordCount(article.body || ''))
+  const paragraphs = complete.map((article) => (article.body || '').split(/\n\s*\n/).filter((part) => part.trim()).length)
+  const corpus = complete.map((article) => article.body || '').join('\n\n')
+  const sentences = corpus.replace(/\s+/g, ' ').split(/(?<=[.!؟])\s+/).filter((sentence) => sentence.trim().length > 15)
+  const questionRate = sentences.length ? sentences.filter((sentence) => sentence.includes('؟')).length / sentences.length : 0
+  const shortSentenceRate = sentences.length ? sentences.filter((sentence) => arabicWordCount(sentence) <= 9).length / sentences.length : 0
+  const openings = complete.map((article) => (article.body || '').trim().split(/\s+/).slice(0, 8).join(' '))
+  const openingModes = {
+    question: openings.filter((value) => /هل|كيف|لماذا|ماذا|متى|أين/.test(value)).length,
+    contrast: openings.filter((value) => /ليس|ليست|لكن|بينما|قد يبدو/.test(value)).length,
+    scene: openings.filter((value) => /حين|عندما|في صباح|داخل|أمام/.test(value)).length,
+    direct: 0,
+  }
+  openingModes.direct = Math.max(0, openings.length - openingModes.question - openingModes.contrast - openingModes.scene)
+  const connectors = ['لكن', 'لذلك', 'لهذا', 'وحين', 'ومع ذلك', 'في المقابل', 'والأهم', 'المشكلة', 'السؤال']
+    .map((term) => ({ term, count: normalizeIdea(corpus).split(normalizeIdea(term)).length - 1 }))
+    .filter((item) => item.count > 0)
+    .sort((left, right) => right.count - left.count)
+    .slice(0, 8)
+  const average = (values: number[]) => values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : 0
+
+  return {
+    ...base,
+    avgArticleWords: average(articleWords),
+    avgParagraphs: average(paragraphs),
+    questionRate: Math.round(questionRate * 100),
+    shortSentenceRate: Math.round(shortSentenceRate * 100),
+    openingModes,
+    connectors,
+    styleRules: [
+      'الافتتاحية تبدأ بصورة إنسانية أو مفارقة حقيقية، لا بتعريف مدرسي.',
+      'النبرة تأملية واثقة، قريبة من القارئ، بلا وعظ ولا استعراض اصطلاحي.',
+      'الجمل متفاوتة الطول؛ جملة قصيرة للحسم ثم جملة أوسع للتحليل.',
+      'السؤال البلاغي يستخدم عند الحاجة فقط، ولا يتحول المقال إلى سلسلة أسئلة.',
+      'الخاتمة تفتح معنى أو موقفاً، ولا تعيد المقدمة بصياغة أخرى.',
+      'يُمنع نسخ جملة من الأرشيف؛ المطلوب محاكاة الإيقاع والبناء لا العبارات.',
+    ],
+  }
+}

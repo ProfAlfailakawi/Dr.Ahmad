@@ -206,15 +206,43 @@ export function automaticSeries(articles: ArticleLike[]) {
     .filter((series) => series.items.length >= 2)
 }
 
-export function monthlyPlan(articles: ArticleLike[], books: SimpleBook[], papers: SimplePaper[]) {
-  const top = [...articles].sort((a, b) => (b.iso || '').localeCompare(a.iso || '')).slice(0, 4)
-  return top.map((article, index) => ({
+export function monthlyPlan(articles: ArticleLike[], books: SimpleBook[], papers: SimplePaper[], date = new Date()) {
+  const period = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+  const seed = Number(period.replace('-', '')) || 1
+  const hash = (value: string) => [...value].reduce((total, char) => (total * 33 + char.charCodeAt(0)) % 2_147_483_647, seed)
+  const categories = new Set<string>()
+  const pool = [...articles]
+    .filter((article) => article.title && article.slug)
+    .sort((left, right) => hash(`${left.slug}:${period}`) - hash(`${right.slug}:${period}`))
+  const selected: ArticleLike[] = []
+
+  for (const article of pool) {
+    const category = article.cat || 'عام'
+    if (selected.length < 3 && categories.has(category)) continue
+    selected.push(article)
+    categories.add(category)
+    if (selected.length === 4) break
+  }
+  for (const article of pool) {
+    if (selected.length === 4) break
+    if (!selected.some((item) => item.slug === article.slug)) selected.push(article)
+  }
+
+  const actions = [
+    'مقال جديد من زاوية لم تُكتب بهذا الشكل',
+    'إعادة إحياء مقال قديم بمدخل راهن',
+    'منشور قصير يختبر الفكرة قبل توسيعها',
+    'مقال تحليلي يربط الأرشيف بسؤال الشهر',
+  ]
+
+  return selected.map((article, index) => ({
     week: index + 1,
+    period,
     article,
-    action: index === 0 ? 'مقال جديد أو إعادة نشر واعية' : 'إعادة إحياء مقال قديم',
-    companion: relatedForIdea(article.title, papers, (p) => p.meta || '', 1)[0]?.title
-      || relatedForIdea(article.title, books, (b) => b.desc || '', 1)[0]?.title
-      || 'منشور قصير يمهد للفكرة',
+    action: actions[(index + seed) % actions.length],
+    companion: relatedForIdea(article.title, papers, (paper) => paper.meta || '', 1)[0]?.title
+      || relatedForIdea(article.title, books, (book) => book.desc || '', 1)[0]?.title
+      || 'منشور مستقل يمهّد للفكرة',
   }))
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getDb } from '../../lib/firebase'
+import { getDb, getFirebaseApp } from '../../lib/firebase'
 import type { ArticleRecord } from '../../lib/cms'
 import { books, papers } from '../../data'
 
@@ -85,31 +85,52 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       if (!db) throw new Error('Firebase غير متاح')
       const { collection, getDocs } = await import('firebase/firestore')
       const failures: string[] = []
-      const safeDocs = async (name: string) => {
+      const safeDocs = async (name: string, reportFailure = true) => {
         try {
           return await getDocs(collection(db, name))
         } catch (reason) {
           const message = reason instanceof Error ? reason.message : 'تعذّر الجلب'
-          failures.push(`${name}: ${message}`)
+          if (reportFailure) failures.push(`${name}: ${message}`)
           return null
         }
       }
-      const [snapshot, reportsSnapshot, healthSnapshot, journeysSnapshot, subscribersSnapshot] = await Promise.all([
+      const fetchServerJourneys = async (): Promise<JourneyRow[] | null> => {
+        try {
+          const app = await getFirebaseApp()
+          if (!app) return null
+          const { getAuth } = await import('firebase/auth')
+          const user = getAuth(app).currentUser
+          if (!user) return null
+          const token = await user.getIdToken()
+          const response = await fetch('/api/admin/journeys', {
+            headers: { authorization: `Bearer ${token}` },
+            cache: 'no-store',
+          })
+          if (!response.ok) return null
+          const payload = await response.json() as { items?: JourneyRow[] }
+          return Array.isArray(payload.items) ? payload.items : []
+        } catch { return null }
+      }
+      const [snapshot, reportsSnapshot, healthSnapshot, journeysSnapshot, subscribersSnapshot, serverJourneys] = await Promise.all([
         safeDocs('views'),
         safeDocs('admin_reports'),
         safeDocs('site_health'),
-        safeDocs('journeys'),
+        safeDocs('journeys', false),
         safeDocs('subscribers'),
+        fetchServerJourneys(),
       ])
       if (!snapshot) {
         setRows([])
         throw new Error('تعذّر جلب عدادات المشاهدة. غالبًا تحتاج تحديث صلاحية المشرف أو نشر قواعد Firestore الأخيرة.')
       }
       setSubscribers(subscribersSnapshot?.size || 0)
-      setJourneys((journeysSnapshot?.docs || []).map((item) => {
+      const directJourneys = journeysSnapshot?.docs.map((item) => {
         const data = item.data() as { from?: string; to?: string; count?: number }
         return { id: item.id, from: data.from, to: data.to, count: Number(data.count || 0) }
-      }))
+      }) || null
+      const resolvedJourneys = serverJourneys ?? directJourneys
+      setJourneys(resolvedJourneys || [])
+      if (!resolvedJourneys) failures.push('journeys: تعذّر جلب رحلة الزائر')
       const latestHealth = (healthSnapshot?.docs || [])
         .map((d) => d.data() as { date: string; status: string; issueCount: number; issues?: string[] })
         .sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0]

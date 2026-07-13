@@ -34,7 +34,6 @@ export const ADMIN_GROUPS: NavGroup[] = [
     area: 'publishing', label: 'النشر', icon: '↗', items: [
       { tab: 'studio', label: 'استوديو النشر', note: 'من الفكرة إلى الحزمة' },
       { tab: 'launch', label: 'وضع الإطلاق', note: 'ضع عملاً في الواجهة' },
-      { tab: 'event', label: 'اللقاءات', note: 'إضافة موعد قادم' },
     ],
   },
   {
@@ -43,6 +42,7 @@ export const ADMIN_GROUPS: NavGroup[] = [
       { tab: 'books', label: 'الكتب', note: 'المؤلفات والملفات' },
       { tab: 'papers', label: 'الأبحاث', note: 'المساهمات العلمية' },
       { tab: 'media', label: 'الإعلام', note: 'الظهور واللقاءات' },
+      { tab: 'event', label: 'اللقاءات', note: 'إضافة موعد قادم' },
     ],
   },
   {
@@ -247,13 +247,6 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
         <button onClick={() => onOpen('analytics')} className={`${card} p-3.5 text-right transition-colors hover:border-accent sm:p-5 md:p-6`}><span className="text-[.72rem] font-semibold text-accent">الأكثر قراءة</span><strong className="mt-2 line-clamp-2 block font-display text-[.9rem] leading-[1.55] text-ink sm:text-[1.05rem]">{data.topTitle}</strong><span className="mt-2 block text-[.72rem] text-soft">{data.topCount} مشاهدة</span></button>
         <button onClick={() => onOpen('inbox')} className={`${card} p-3.5 text-right transition-colors hover:border-accent sm:p-5 md:p-6`}><span className="text-[.72rem] font-semibold text-accent">رسائل حديثة</span><strong className="mt-2 block font-display text-2xl text-ink sm:text-3xl">{data.recentMessages}</strong><span className="mt-2 block text-[.72rem] text-soft">آخر 7 أيام ←</span></button>
         <button onClick={() => onOpen(data.issues ? 'lab' : 'launch')} className={`${card} p-3.5 text-right transition-colors hover:border-accent sm:p-5 md:p-6`}><span className="text-[.72rem] font-semibold text-accent">حالة النظام</span><strong className="mt-2 block font-display text-[1rem] text-ink sm:text-[1.25rem]">{data.issues ? 'يحتاج انتباه' : data.healthStatus}</strong><span className="mt-2 block text-[.72rem] text-soft">{data.launchActive ? 'وضع الإطلاق نشط' : 'لا إطلاق نشط'}</span></button>
-      </section>
-
-      <section className={card}>
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div><p className="text-[.74rem] font-semibold text-accent">الخطوة التالية</p><h2 className="mt-1 font-display text-xl font-semibold text-ink">ابدأ من المهمة، لا من القائمة.</h2></div>
-          <div className="flex flex-wrap gap-2"><button onClick={() => onOpen('studio')} className={button}>مقال جديد</button><button onClick={() => onOpen('launch')} className={button}>وضع الإطلاق</button><button onClick={() => onOpen('inbox')} className={button}>الرسائل</button></div>
-        </div>
       </section>
     </div>
   )

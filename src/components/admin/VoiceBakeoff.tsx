@@ -3,6 +3,7 @@
    الخاص ويمنع الإنتاج إن لم يكن الخيار مجتازاً. */
 import { useEffect, useRef, useState } from 'react'
 import { getDb } from '../../lib/firebase'
+import audioMeta from '../../data/audio-meta.json'
 
 type Option = { key: string; label?: string; durationSec: number; audio: string; audioHash: string; eligible: boolean }
 type Manifest = {
@@ -27,6 +28,21 @@ const isManifest = (value: unknown): value is Manifest => {
       && typeof option?.eligible === 'boolean')
 }
 
+
+type AudioMetaItem = { bytes?: number; durationSeconds?: number }
+const audioLibrary = audioMeta as Record<string, AudioMetaItem>
+const audioBase = String(import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
+const audioUrl = (name: string) => `${audioBase || '/audio'}/${encodeURIComponent(name)}`
+const libraryPairs = Object.keys(audioLibrary)
+  .filter((name) => name.endsWith('.mp3') && !name.endsWith('.noura.mp3') && audioLibrary[name.replace(/\.mp3$/, '.noura.mp3')])
+  .map((male) => ({
+    male,
+    female: male.replace(/\.mp3$/, '.noura.mp3'),
+    duration: Number(audioLibrary[male]?.durationSeconds || 0),
+  }))
+  .sort((left, right) => left.duration - right.duration)
+const fallbackPair = libraryPairs[0] || null
+
 const card = 'rounded-2xl border border-hair bg-wash p-6 md:p-7'
 const ar = (n: number) => String(n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])
 const clock = (s: number) => `${ar(Math.floor(s / 60))}:${ar(Math.floor(s % 60)).padStart(2, '٠')}`
@@ -43,7 +59,7 @@ export function VoiceBakeoffCard() {
     fetch('/audio/bakeoff/manifest.json', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((m: unknown) => { if (!isManifest(m)) throw new Error('stale manifest'); setManifest(m) })
-      .catch(() => setMissing(true))
+      .catch(() => setMissing(!fallbackPair))
     ;(async () => {
       try {
         const db = await getDb()
@@ -88,6 +104,39 @@ export function VoiceBakeoffCard() {
       setSaved('سُجّل: لا زوج جاهز يحقق الجودة — يُجهَّز النظام لاحقاً لـ Azure Custom Voice.')
       setTimeout(() => setSaved(''), 6000)
     } catch { setSaved('تعذّر الحفظ') }
+  }
+
+  if (!manifest && fallbackPair) {
+    const options = [
+      { key: 'othman', label: 'عثمان', audio: audioUrl(fallbackPair.male), duration: Number(audioLibrary[fallbackPair.male]?.durationSeconds || 0) },
+      { key: 'daughters', label: 'أزيان + درة + بسمة', audio: audioUrl(fallbackPair.female), duration: Number(audioLibrary[fallbackPair.female]?.durationSeconds || 0) },
+    ]
+    return (
+      <div className={card}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-[.76rem] font-semibold uppercase text-accent">المكتبة الصوتية الحالية</p>
+            <h2 className="mt-1 font-display text-xl font-semibold text-ink">الصوت موجود ومقروء من ملفات المشروع.</h2>
+          </div>
+          <span className="rounded-full border border-hair px-3 py-1.5 text-[.74rem] text-soft">{ar(Object.keys(audioLibrary).length)} ملفًا · {ar(libraryPairs.length)} زوجًا</span>
+        </div>
+        <p className="mt-3 text-[.84rem] leading-relaxed text-soft">لم يظهر Manifest الاختبار الأعمى، لذلك يعرض النظام عينة فعلية من المكتبة الموجودة بدل الادعاء أن الملفات غير موجودة. تشغيل أي عينة يؤكد الرابط والصوت مباشرة.</p>
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          {options.map((option) => (
+            <div key={option.key} className="rounded-xl border border-hair bg-canvas p-4">
+              <div className="flex items-center gap-4">
+                <button type="button" onClick={() => toggle(option.key)} aria-label={playing === option.key ? 'إيقاف' : 'تشغيل'} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-canvas">
+                  <span className="text-[.9rem]">{playing === option.key ? '❚❚' : '▶'}</span>
+                </button>
+                <div className="min-w-0 flex-1"><p className="font-semibold text-ink">{option.label}</p><p className="mt-1 text-[.76rem] text-soft">{clock(option.duration)}</p></div>
+              </div>
+              <audio ref={(el) => { if (el) audios.current[option.key] = el }} src={option.audio} preload="metadata" onEnded={() => setPlaying(null)} onError={() => setSaved('ملفات الصوت معروفة في الفهرس، لكن رابط التخزين العام يحتاج VITE_AUDIO_BASE_URL أو رفع مجلد audio.')} />
+            </div>
+          ))}
+        </div>
+        {saved && <p className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{saved}</p>}
+      </div>
+    )
   }
 
   if (missing) return (

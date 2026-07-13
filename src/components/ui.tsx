@@ -676,19 +676,6 @@ function SearchPalette({ close }: { close: () => void }) {
           <button type="button" onClick={close} className="rounded-full border border-hair px-3 py-1.5 text-[.75rem] text-soft transition-colors hover:border-accent hover:text-accent">إغلاق</button>
         </div>
 
-        <div className="rail grid grid-cols-2 gap-2 border-b border-hair bg-wash/45 px-3 py-3">
-          <Link to={deepTo} onClick={close} className="group min-w-0 rounded-2xl border border-hair bg-canvas px-3.5 py-2.5 transition-colors hover:border-accent">
-            <span className="text-[.68rem] font-semibold text-accent">تصفية دقيقة</span>
-            <strong className="mt-0.5 block font-display text-[.88rem] text-ink group-hover:text-accent">البحث العميق</strong>
-            <span className="mt-0.5 block text-[.65rem] text-soft">النص الكامل والسنة والموضوع</span>
-          </Link>
-          <Link to={askTo} onClick={close} className="group min-w-0 rounded-2xl border border-hair bg-canvas px-3.5 py-2.5 transition-colors hover:border-accent">
-            <span className="text-[.68rem] font-semibold text-accent">سؤال كامل</span>
-            <strong className="mt-0.5 block font-display text-[.88rem] text-ink group-hover:text-accent">العقل الحي</strong>
-            <span className="mt-0.5 block text-[.65rem] text-soft">إجابة موثقة من الأرشيف</span>
-          </Link>
-        </div>
-
         {suggested && (
           <Link to={suggested.to} onClick={close} className="group mx-3 mt-3 flex items-center justify-between gap-3 rounded-2xl border border-accent/30 bg-accent/[.055] px-4 py-3 sm:mx-4">
             <span className="min-w-0"><span className="block text-[.68rem] font-semibold text-accent">أفضل تطابق</span><span className="mt-0.5 block truncate font-display text-[.94rem] font-semibold text-ink group-hover:text-accent">{suggested.title}</span></span>

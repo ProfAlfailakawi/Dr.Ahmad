@@ -139,6 +139,23 @@ async function trackJourney(from: string, to: string) {
   if (!from || from === to || from === '/admin' || to === '/admin') return
   const sessionKey = `journey:${journeyId(from, to)}`
   if (wasSeen(sessionKey)) return
+
+  // المسار الأساسي يمر عبر الخادم. هذا يتجاوز مشكلة أن قواعد Firestore قد لا
+  // تكون نُشرت بعد، ويستمر حتى لو أغلق الزائر الصفحة سريعاً بفضل keepalive.
+  try {
+    const response = await fetch('/api/journey', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ from, to }),
+      keepalive: true,
+      cache: 'no-store',
+    })
+    if (response.ok) {
+      markSeen(sessionKey)
+      return
+    }
+  } catch { /* نجرّب Firestore مباشرة كمسار احتياطي */ }
+
   try {
     const db = await getDb()
     if (!db) return

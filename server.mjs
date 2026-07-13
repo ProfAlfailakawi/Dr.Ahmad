@@ -1,4 +1,4 @@
-import { createPublicKey, verify as verifySignature } from 'node:crypto'
+import { createHash, createPublicKey, verify as verifySignature } from 'node:crypto'
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { extname, join, resolve, sep } from 'node:path'
@@ -34,6 +34,9 @@ const contentSuggestionPath = '/api/ai/content-suggestion'
 const perfectArticlePath = '/api/ai/perfect-article'
 const socialPackPath = '/api/ai/social-pack'
 const currentContextPath = '/api/ai/current-context'
+const journeyPath = '/api/journey'
+const adminNowPath = '/api/admin/site-now'
+const adminJourneysPath = '/api/admin/journeys'
 const maxArticleRequestBytes = 128 * 1024
 const firebaseJwksUrl = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
 const articleCategories = Object.freeze(['التعليم', 'التربية', 'مجتمع', 'تقنية', 'هوية', 'إعلام', 'بحث'])
@@ -534,12 +537,17 @@ function perfectArticleInput(value) {
 
 function socialPackInput(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new HttpError(400, 'Expected a JSON object')
+  const standalone = value.standalone === true
   const title = boundedString(value.title, 300)
   const excerpt = boundedString(value.excerpt, 500)
   const body = boundedString(value.body, 20_000)
-  if (!title || body.length < 100) throw new HttpError(400, 'Article content is incomplete')
+  const minimumBodyLength = standalone ? 10 : 100
+  if (!title || body.length < minimumBodyLength) {
+    throw new HttpError(400, standalone ? 'Standalone idea is incomplete' : 'Article content is incomplete')
+  }
   return {
-    title, excerpt, body,
+    standalone, title, excerpt, body,
+    purpose: boundedString(value.purpose, 120),
     audience: boundedString(value.audience, 200),
     styleProfile: value.styleProfile && typeof value.styleProfile === 'object' ? value.styleProfile : {},
     selectedEventIds: boundedArray(value.selectedEventIds, 12, (item) => typeof item === 'string' ? boundedString(item, 200) : null),
@@ -777,20 +785,33 @@ function trimAtWord(value, maximum) {
 }
 
 export async function generatePerfectSocialPack(input, fetchImpl = fetch) {
-  const events = await currentContextForIdea(`${input.title} ${input.excerpt}`, input.selectedEventIds, fetchImpl)
+  const events = await currentContextForIdea(`${input.title} ${input.excerpt} ${input.body.slice(0, 500)}`, input.selectedEventIds, fetchImpl)
+  const contentKind = input.standalone ? 'فكرة مستقلة' : 'مقال منشور'
   const response = await callGeminiStructured({
-    instruction: `أنت مدير محتوى للدكتور أحمد حسين الفيلكاوي. حوّل المقال إلى منظومة سوشيال متنوعة، لا نسخ متكرر بين المنصات. حافظ على أسلوبه الإنساني والفكري وثيم موقعه الهادئ.\n
-قواعد:\n
-- X: ثلاث صيغ مختلفة، كل واحدة 280 حرفاً أو أقل.\n
-- LinkedIn: صيغتان؛ واحدة تحليلية وأخرى تبدأ بمشهد.\n
-- Instagram: ثلاث تسميات مختلفة، وكاروسيل من 6 شرائح؛ الغلاف ثم 4 أفكار ثم خاتمة/سؤال.\n
-- Stories: 4 إطارات قصيرة.\n
-- Reel: نص 45-60 ثانية، جمل قصيرة قابلة للأداء.\n
-- لا تكرر الجملة نفسها بين المنصات.\n
-- الحدث الراهن اختياري، ولا يُستخدم إلا إذا كان الارتباط حقيقياً. اذكر المصدر بوضوح ولا تختلق أي معلومة.\n
-- أعط 4 اتجاهات بصرية متنوعة من هذه العائلة: editorial, quote, split, dark, event.\n
+    instruction: `أنت مدير محتوى للدكتور أحمد حسين الفيلكاوي. حوّل ${contentKind} إلى منظومة سوشيال متنوعة، لا نسخ متكرر بين المنصات. حافظ على أسلوبه الإنساني والفكري وثيم موقعه الهادئ.
+
+قواعد:
+
+- إذا كانت الفكرة مستقلة، لا تتعامل معها كملخص مقال ولا تخترع رابطاً أو دراسة أو واقعة غير موجودة. ابنِ منها منشورات أصلية مكتفية بذاتها.
+
+- X: ثلاث صيغ مختلفة، كل واحدة 280 حرفاً أو أقل.
+
+- LinkedIn: صيغتان؛ واحدة تحليلية وأخرى تبدأ بمشهد.
+
+- Instagram: ثلاث تسميات مختلفة، وكاروسيل من 6 شرائح؛ الغلاف ثم 4 أفكار ثم خاتمة/سؤال.
+
+- Stories: 4 إطارات قصيرة.
+
+- Reel: نص 45-60 ثانية، جمل قصيرة قابلة للأداء.
+
+- لا تكرر الجملة نفسها بين المنصات.
+
+- الحدث الراهن اختياري، ولا يُستخدم إلا إذا كان الارتباط حقيقياً. اذكر المصدر بوضوح ولا تختلق أي معلومة.
+
+- أعط 4 اتجاهات بصرية متنوعة من هذه العائلة: editorial, quote, split, dark, event.
+
 - أعد JSON فقط.`,
-    prompt: JSON.stringify({ article: { title: input.title, excerpt: input.excerpt, body: input.body }, audience: input.audience, styleProfile: input.styleProfile, currentEvents: events }),
+    prompt: JSON.stringify({ contentKind, content: { title: input.title, excerpt: input.excerpt, body: input.body, purpose: input.purpose }, audience: input.audience, styleProfile: input.styleProfile, currentEvents: events }),
     properties: socialSchema(),
     required: ['x','linkedin','threads','instagramCaptions','carouselSlides','stories','reelScript','whatsapp','newsletter','hashtags','eventId','eventHook','visualDirections'],
     maxOutputTokens: 6_000,
@@ -818,6 +839,44 @@ export async function generatePerfectSocialPack(input, fetchImpl = fetch) {
   }
 }
 
+
+let adminFirestorePromise
+async function getAdminFirestore() {
+  if (adminFirestorePromise) return adminFirestorePromise
+  adminFirestorePromise = (async () => {
+    const [{ applicationDefault, cert, getApps, initializeApp }, { FieldValue, Timestamp, getFirestore }] = await Promise.all([
+      import('firebase-admin/app'),
+      import('firebase-admin/firestore'),
+    ])
+    const projectId = process.env.FIREBASE_PROJECT_ID
+      || process.env.GOOGLE_CLOUD_PROJECT
+      || process.env.GCLOUD_PROJECT
+      || process.env.VITE_FIREBASE_PROJECT_ID
+    let credential
+    if (process.env.GOOGLE_SA_JSON) {
+      credential = cert(JSON.parse(process.env.GOOGLE_SA_JSON))
+    } else if (process.env.FIREBASE_SERVICE_ACCOUNT && existsSync(process.env.FIREBASE_SERVICE_ACCOUNT)) {
+      credential = cert(JSON.parse(readFileSync(process.env.FIREBASE_SERVICE_ACCOUNT, 'utf8')))
+    } else {
+      credential = applicationDefault()
+    }
+    const app = getApps()[0] || initializeApp({ credential, ...(projectId ? { projectId } : {}) })
+    return { db: getFirestore(app), FieldValue, Timestamp }
+  })()
+  return adminFirestorePromise
+}
+
+function safePublicPath(value) {
+  const text = typeof value === 'string' ? value.trim() : ''
+  if (!text || text.length > 300 || !text.startsWith('/') || text.includes('\0')) throw new HttpError(400, 'Invalid path')
+  const path = text.length > 1 ? text.replace(/\/+$/, '') : text
+  if (path === '/admin' || path.startsWith('/admin?')) throw new HttpError(400, 'Invalid path')
+  return path
+}
+
+function clientAddress(req) {
+  return String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim().slice(0, 100)
+}
 function createRateLimiter(limit = envNumber('AI_RATE_LIMIT_PER_MINUTE', 12, 1, 60)) {
   const entries = new Map()
   return (key) => {
@@ -944,12 +1003,127 @@ export function createRequestHandler({
   getCurrentContext = currentContextForIdea,
 } = {}) {
   const withinAiRateLimit = createRateLimiter()
+  const withinJourneyRateLimit = createRateLimiter(120)
 
   return async (req, res) => {
     const method = req.method || 'GET'
     try {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`)
 
+
+    if (url.pathname === journeyPath) {
+      if (method !== 'POST') { sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' }); return }
+      if (!withinJourneyRateLimit(clientAddress(req))) throw new HttpError(429, 'Too many requests', { 'retry-after': '60' })
+      const contentType = String(req.headers['content-type'] || '').toLowerCase()
+      if (contentType.split(';', 1)[0].trim() !== 'application/json') throw new HttpError(415, 'Content-Type must be application/json')
+      const body = await readJsonBody(req, 4_096)
+      const from = safePublicPath(body?.from)
+      const to = safePublicPath(body?.to)
+      if (from === to) { res.writeHead(204); res.end(); return }
+      const { db, FieldValue } = await getAdminFirestore()
+      const id = createHash('sha256').update(`${from}\n${to}`).digest('hex')
+      await db.collection('journeys').doc(id).set({
+        from,
+        to,
+        count: FieldValue.increment(1),
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true })
+      res.writeHead(204, { 'cache-control': 'no-store' })
+      res.end()
+      return
+    }
+
+    if (url.pathname === adminJourneysPath) {
+      if (method !== 'GET') { sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'GET' }); return }
+      const token = bearerToken(req.headers.authorization)
+      const claims = await verifyToken(token)
+      if (claims?.admin !== true) throw new HttpError(403, 'Admin access required')
+      const { db } = await getAdminFirestore()
+      const snapshot = await db.collection('journeys').orderBy('count', 'desc').limit(250).get()
+      sendJson(res, 200, {
+        items: snapshot.docs.map((doc) => {
+          const data = doc.data() || {}
+          return {
+            id: doc.id,
+            from: boundedString(data.from, 300),
+            to: boundedString(data.to, 300),
+            count: Number(data.count || 0),
+          }
+        }),
+      }, { 'cache-control': 'no-store' })
+      return
+    }
+
+    if (url.pathname === adminNowPath) {
+      if (!['GET', 'POST', 'PATCH', 'DELETE'].includes(method)) {
+        sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'GET, POST, PATCH, DELETE' })
+        return
+      }
+      const token = bearerToken(req.headers.authorization)
+      const claims = await verifyToken(token)
+      if (claims?.admin !== true) throw new HttpError(403, 'Admin access required')
+      const { db, FieldValue, Timestamp } = await getAdminFirestore()
+
+      if (method === 'GET') {
+        const snapshot = await db.collection('site_now').orderBy('createdAt', 'desc').limit(30).get()
+        const timestamp = (value) => value && typeof value.seconds === 'number' ? { seconds: value.seconds } : null
+        sendJson(res, 200, {
+          items: snapshot.docs.map((doc) => {
+            const data = doc.data() || {}
+            return {
+              id: doc.id,
+              question: boundedString(data.question, 300),
+              note: boundedString(data.note, 2_000),
+              link: boundedString(data.link, 2_000),
+              duration: boundedString(data.duration, 50),
+              status: boundedString(data.status, 30),
+              createdAt: timestamp(data.createdAt),
+              expiresAt: timestamp(data.expiresAt),
+            }
+          }),
+        }, { 'cache-control': 'no-store' })
+        return
+      }
+
+      if (method === 'DELETE') {
+        const id = boundedString(url.searchParams.get('id'), 200)
+        if (!id || !/^[A-Za-z0-9_-]+$/.test(id)) throw new HttpError(400, 'Valid id is required')
+        await db.collection('site_now').doc(id).delete()
+        res.writeHead(204, { 'cache-control': 'no-store' })
+        res.end()
+        return
+      }
+
+      const body = await readJsonBody(req, 16_384)
+      if (method === 'PATCH') {
+        const id = boundedString(body?.id, 200)
+        const status = boundedString(body?.status, 30)
+        if (!id || !/^[A-Za-z0-9_-]+$/.test(id)) throw new HttpError(400, 'Valid id is required')
+        if (!['published', 'hidden', 'draft'].includes(status)) throw new HttpError(400, 'Invalid status')
+        await db.collection('site_now').doc(id).set({ status, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
+        sendJson(res, 200, { ok: true, id, status }, { 'cache-control': 'no-store' })
+        return
+      }
+
+      const question = boundedString(body?.question, 300)
+      const note = boundedString(body?.note, 2_000)
+      if (!question) throw new HttpError(400, 'Question is required')
+      const duration = boundedString(body?.duration, 50) || '14'
+      const days = duration === 'forever' ? 0 : clamp(Number(duration) || 14, 1, 365)
+      const ref = db.collection('site_now').doc()
+      await ref.set({
+        question,
+        note,
+        link: boundedString(body?.link, 2_000),
+        duration,
+        expiresAt: days ? Timestamp.fromDate(new Date(Date.now() + days * 86_400_000)) : null,
+        status: body?.status === 'draft' ? 'draft' : 'published',
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      })
+      sendJson(res, 200, { ok: true, id: ref.id }, { 'cache-control': 'no-store' })
+      return
+    }
 
     if (url.pathname === '/api/cron/radar') {
       if (method !== 'POST') throw new HttpError(405, 'Method not allowed')

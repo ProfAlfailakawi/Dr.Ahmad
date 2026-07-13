@@ -436,7 +436,7 @@ function Editor({
                   <button
                     type="button"
                     onClick={() => setForm((previous) => ({ ...previous, status: 'published', scheduledAt: '' }))}
-                    className={`rounded-full border px-4 py-2 text-[.82rem] transition-colors ${form.status === 'scheduled' ? 'border-hair text-soft hover:border-accent hover:text-accent' : 'border-accent bg-accent text-white'}`}
+                    className={`rounded-full border px-4 py-2 text-[.82rem] transition-colors ${form.status === 'published' ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
                   >
                     نشر الآن
                   </button>
@@ -446,6 +446,13 @@ function Editor({
                     className={`rounded-full border px-4 py-2 text-[.82rem] transition-colors ${form.status === 'scheduled' ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
                   >
                     جدولة النشر
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm((previous) => ({ ...previous, status: 'draft', scheduledAt: '' }))}
+                    className={`rounded-full border px-4 py-2 text-[.82rem] transition-colors ${form.status === 'draft' ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
+                  >
+                    حفظ كمسودة
                   </button>
                 </div>
                 {form.status === 'scheduled' && (
@@ -557,7 +564,7 @@ function Editor({
           {error && <p className="rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.86rem] text-soft">{error}</p>}
           <div className="flex flex-wrap items-center gap-3 border-t border-hair pt-5">
             <button type="button" onClick={onSave} disabled={busy || !form.title?.trim() || !form.slug?.trim() || (kind === 'article' && (form.body || '').trim().length < 40)} className={primary}>
-              {busy && kind === 'article' && form._aiReady !== '1' ? 'جارٍ تجهيز التصنيف والمقتطف…' : busy ? 'جارٍ الحفظ…' : kind === 'article' && form.status === 'scheduled' ? 'حفظ وجدولة' : 'حفظ ونشر'}
+              {busy && kind === 'article' && form._aiReady !== '1' ? 'جارٍ تجهيز التصنيف والمقتطف…' : busy ? 'جارٍ الحفظ…' : kind === 'article' && form.status === 'scheduled' ? 'حفظ وجدولة' : kind === 'article' && form.status === 'draft' ? 'حفظ كمسودة' : 'حفظ ونشر'}
             </button>
             <button type="button" onClick={onClose} disabled={busy} className={secondary}>إلغاء</button>
           </div>
@@ -680,7 +687,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
         else await setDoc(overrideRef, { patch, hidden: Boolean(current._cms.hidden), updatedAt: serverTimestamp() })
       }
       setCurrent(undefined)
-      await done(kind === 'article' && data.status === 'scheduled' ? '✓ حُفظ المقال مجدولاً ولن يظهر للزوار قبل موعده.' : '✓ حُفظ التعديل ويظهر للزوار فوراً.')
+      await done(kind === 'article' && data.status === 'scheduled' ? '✓ حُفظ المقال مجدولاً ولن يظهر للزوار قبل موعده.' : kind === 'article' && data.status === 'draft' ? '✓ حُفظ المقال كمسودة ولم يظهر للزوار.' : '✓ حُفظ التعديل ويظهر للزوار فوراً.')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر الحفظ')
       setForm((previous) => ({ ...previous, _aiBusy: '', _aiError: previous._aiError || '' }))

@@ -11,9 +11,6 @@ import {
   automaticSeries,
   ideaLab,
   monthlyPlan,
-  publicationGate,
-  styleFingerprint,
-  topicMemory,
 } from '../../lib/intelligence'
 
 const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
@@ -226,74 +223,6 @@ function ArticleSystemCard({ articles }: { articles: ArticleRecord[] }) {
   )
 }
 
-function MemoryAndGateCard({ articles }: { articles: ArticleRecord[] }) {
-  const [title, setTitle] = useState('')
-  const [body, setBody] = useState('')
-  const memory = useMemo(() => topicMemory(title, body, articles, books, papers), [articles, body, title])
-  const gate = useMemo(() => publicationGate({ title, body, slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), excerpt: body.slice(0, 160), cat: 'تلقائي' }, articles), [articles, body, title])
-  const style = useMemo(() => styleFingerprint(articles), [articles])
-  const strongLine = useMemo(() => {
-    const sentences = body.replace(/\s+/g, ' ').split(/(?<=[.!؟])\s+/)
-    return sentences.find((sentence) => sentence.length >= 55 && sentence.length <= 170)
-      || body.replace(/\s+/g, ' ').slice(0, 150)
-  }, [body])
-  const closestPaper = memory.relatedPapers[0]
-  const closestBook = memory.relatedBooks[0]
-  return (
-    <section className={card}>
-      <p className="text-[.76rem] font-semibold uppercase text-accent">المحرر الذي يعرفك</p>
-      <h2 className="mt-1 font-display text-xl font-semibold text-ink">ناقد فكري هادئ قبل النشر.</h2>
-      <div className="mt-4 grid gap-3">
-        <input className={input} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="عنوان المقال الجديد أو فكرته" />
-        <textarea className={`${input} min-h-32 leading-loose`} value={body} onChange={(event) => setBody(event.target.value)} placeholder="اكتب مسودة قصيرة…" />
-      </div>
-      <div className="mt-5 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-hair bg-canvas p-4 lg:col-span-2">
-          <p className="font-semibold text-ink">بصمة أسلوب الدكتور</p>
-          <p className="mt-2 text-[.86rem] leading-relaxed text-soft">
-            يتعلم الناقد هنا من {style.articleCount} مقالاً عبر {style.years.length} سنوات إنتاج، بمتوسط يقارب {style.avgSentenceWords || '—'} كلمة في الجملة.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {style.recurringTerms.slice(0, 10).map((term) => (
-              <span key={term} className="rounded-full border border-hair px-3 py-1 text-[.74rem] text-soft">{term}</span>
-            ))}
-          </div>
-          <ul className="mt-4 grid gap-1.5 text-[.82rem] leading-relaxed text-soft md:grid-cols-2">
-            {style.guidance.map((line) => <li key={line}>• {line}</li>)}
-          </ul>
-        </div>
-        <div className="rounded-xl border border-hair bg-canvas p-4">
-          <p className="font-semibold text-ink">ذاكرة الفكرة</p>
-          <p className="mt-2 text-[.86rem] leading-relaxed text-soft">{memory.note}</p>
-          <SmallList title="أقرب مقالات" items={memory.relatedArticles} path="/articles" />
-        </div>
-        <div className="rounded-xl border border-hair bg-canvas p-4">
-          <p className="font-semibold text-ink">{gate.ready ? 'جاهز مبدئياً' : 'يحتاج ضبطاً قبل النشر'}</p>
-          <ul className="mt-2 grid gap-1.5 text-[.84rem] text-soft">
-            {(gate.issues.length ? gate.issues : ['العنوان، النص، المقتطف، والـslug تبدو سليمة.']).map((issue) => <li key={issue}>• {issue}</li>)}
-          </ul>
-        </div>
-        <div className="rounded-xl border border-hair bg-canvas p-4">
-          <p className="font-semibold text-ink">بصمة الفكرة</p>
-          <p className="mt-2 text-[.86rem] leading-relaxed text-soft">
-            {strongLine || 'اكتب فقرة أطول قليلاً، وسألتقط الجملة التي تصلح كبصمة للمقال.'}
-          </p>
-        </div>
-        <div className="rounded-xl border border-hair bg-canvas p-4">
-          <p className="font-semibold text-ink">ما الذي يربطه؟</p>
-          <p className="mt-2 text-[.86rem] leading-relaxed text-soft">
-            {closestPaper
-              ? `هذا المقال يمكن أن يسد فراغاً بين الكتابة العامة والبحث: «${closestPaper.title}».`
-              : closestBook
-                ? `هناك صلة واضحة بكتاب «${closestBook.title}»؛ اربطه داخل المقال إذا كان مناسباً.`
-                : 'لا تظهر صلة أكاديمية قوية بعد؛ ربما يحتاج النص إلى زاوية أوضح.'}
-          </p>
-        </div>
-      </div>
-    </section>
-  )
-}
-
 function AudioControlCard({ articles }: { articles: ArticleRecord[] }) {
   const noAudio = articles.filter((article) => !article.hasAudio)
   const withAudio = articles.filter((article) => article.hasAudio)
@@ -352,15 +281,19 @@ function AudioControlCard({ articles }: { articles: ArticleRecord[] }) {
 }
 
 function MonthlyPlanDetails({ articles }: { articles: ArticleRecord[] }) {
-  const plan = useMemo(() => monthlyPlan(articles, books, papers), [articles])
+  const now = new Date()
+  const period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const monthLabel = new Intl.DateTimeFormat('ar-KW-u-nu-arab', { month: 'long', year: 'numeric' }).format(now)
+  const plan = useMemo(() => monthlyPlan(articles, books, papers, now), [articles, period])
   return (
-    <ToolDetails title="خطة النشر الشهرية" note="اقتراح داخلي فقط. لا يظهر للزوار، ولا ينشر شيئًا حتى تختار أنت.">
-      <ol className="grid gap-2">
+    <ToolDetails title={`خطة ${monthLabel}`} note="تتبدّل تلقائيًا مع بداية كل شهر، وتنوّع بين التصنيفات والأرشيف والزوايا الجديدة.">
+      <ol className="grid gap-2 md:grid-cols-2">
         {plan.map((week) => (
-          <li key={week.week} className="rounded-xl border border-hair bg-canvas p-3 text-[.84rem] leading-relaxed">
+          <li key={`${week.period}-${week.week}`} className="rounded-xl border border-hair bg-canvas p-4 text-[.84rem] leading-relaxed">
             <span className="font-semibold text-accent">الأسبوع {week.week}: </span>
             <span className="text-ink">{week.article.title}</span>
-            <span className="block text-soft">{week.action} · مرافق: {week.companion}</span>
+            <span className="mt-1 block text-soft">{week.action}</span>
+            <span className="mt-1 block text-[.76rem] text-soft">المرافق: {week.companion}</span>
           </li>
         ))}
       </ol>
@@ -404,21 +337,53 @@ const expiresLabel = (item: NowAdminItem) => {
 }
 
 function NowCard() {
-  const { isAdmin, refresh } = useAdminAuth()
+  const { isAdmin, refresh, user } = useAdminAuth()
   const [form, setForm] = useState({ question: '', note: '', link: '', duration: '14' })
   const [items, setItems] = useState<NowAdminItem[]>([])
   const [saved, setSaved] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+
+  const serverRequest = async (method: 'GET' | 'POST' | 'PATCH' | 'DELETE', body?: Record<string, unknown>, id?: string) => {
+    if (!user) return null
+    const token = await user.getIdToken()
+    const query = id ? `?id=${encodeURIComponent(id)}` : ''
+    const response = await fetch(`/api/admin/site-now${query}`, {
+      method,
+      headers: {
+        authorization: `Bearer ${token}`,
+        ...(body ? { 'content-type': 'application/json' } : {}),
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+      cache: 'no-store',
+    })
+    if (response.status === 404) return null
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null)
+      throw new Error(payload?.error || 'تعذّر تنفيذ العملية عبر الخادم.')
+    }
+    if (response.status === 204) return { ok: true }
+    return response.json().catch(() => ({ ok: true }))
+  }
+
   const load = async () => {
     try {
+      if (user) {
+        const payload = await serverRequest('GET') as { items?: NowAdminItem[] } | null
+        if (payload?.items) {
+          setItems(payload.items.slice(0, 8))
+          setError('')
+          return
+        }
+      }
       const value = await fetchExtras<NowAdminItem>('site_now')
       setItems(value.slice(0, 8))
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر جلب الأفكار المحفوظة.')
     }
   }
-  useEffect(() => { void load() }, [])
+  useEffect(() => { void load() }, [user])
+
   const save = async () => {
     setError('')
     setSaved('')
@@ -430,12 +395,15 @@ function NowCard() {
     try {
       const ok = isAdmin || await refresh()
       if (!ok) throw new Error('صلاحية المشرف غير مفعّلة في جلسة المتصفح. سجّل خروجك وادخل من جديد أو شغّل set-admin.')
-      const db = await getDb()
-      if (!db) throw new Error('Firebase غير متاح الآن.')
-      const { Timestamp, collection, addDoc, serverTimestamp } = await import('firebase/firestore')
-      const days = form.duration === 'forever' ? 0 : Number(form.duration || 14)
-      const expiresAt = days ? Timestamp.fromDate(new Date(Date.now() + days * 86_400_000)) : null
-      await addDoc(collection(db, 'site_now'), { ...form, status: 'published', expiresAt, createdAt: serverTimestamp() })
+      const serverResult = await serverRequest('POST', { ...form, status: 'published' })
+      if (!serverResult) {
+        const db = await getDb()
+        if (!db) throw new Error('Firebase غير متاح الآن.')
+        const { Timestamp, collection, addDoc, serverTimestamp } = await import('firebase/firestore')
+        const days = form.duration === 'forever' ? 0 : Number(form.duration || 14)
+        const expiresAt = days ? Timestamp.fromDate(new Date(Date.now() + days * 86_400_000)) : null
+        await addDoc(collection(db, 'site_now'), { ...form, status: 'published', expiresAt, createdAt: serverTimestamp() })
+      }
       setForm({ question: '', note: '', link: '', duration: '14' })
       setSaved('حُفظت الفكرة في صفحة ماذا أفكر الآن ✓')
       await load()
@@ -443,29 +411,37 @@ function NowCard() {
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : 'فشل الحفظ.'
       setError(message.includes('permission') || message.includes('Missing or insufficient permissions')
-        ? 'رفض Firestore الحفظ. غالبًا قواعد Firestore لم تُنشر أو صلاحية admin غير مفعّلة.'
+        ? 'تعذّر الحفظ بسبب صلاحيات قاعدة البيانات. تأكد من نشر الخادم الجديد ثم أعد تسجيل الدخول.'
         : message)
     } finally {
       setBusy(false)
     }
   }
+
   const hide = async (id: string) => {
     try {
-      const db = await getDb()
-      if (!db) return
-      const { doc, updateDoc } = await import('firebase/firestore')
-      await updateDoc(doc(db, 'site_now', id), { status: 'hidden' })
+      const result = await serverRequest('PATCH', { id, status: 'hidden' })
+      if (!result) {
+        const db = await getDb()
+        if (!db) return
+        const { doc, updateDoc } = await import('firebase/firestore')
+        await updateDoc(doc(db, 'site_now', id), { status: 'hidden' })
+      }
       await load()
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر إخفاء الفكرة.')
     }
   }
+
   const remove = async (id: string) => {
     try {
-      const db = await getDb()
-      if (!db) return
-      const { deleteDoc, doc } = await import('firebase/firestore')
-      await deleteDoc(doc(db, 'site_now', id))
+      const result = await serverRequest('DELETE', undefined, id)
+      if (!result) {
+        const db = await getDb()
+        if (!db) return
+        const { deleteDoc, doc } = await import('firebase/firestore')
+        await deleteDoc(doc(db, 'site_now', id))
+      }
       await load()
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر حذف الفكرة.')
@@ -479,8 +455,8 @@ function NowCard() {
         <input className={input} value={form.note} onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))} placeholder="ملاحظة قصيرة" />
         <input className={input} dir="ltr" value={form.link} onChange={(e) => setForm((p) => ({ ...p, link: e.target.value }))} placeholder="/articles/..." />
         <select className={`${input} min-w-[8.5rem]`} value={form.duration} onChange={(e) => setForm((p) => ({ ...p, duration: e.target.value }))} aria-label="مدة ظهور الفكرة">
-          <option value="7">7 أيام</option>
-          <option value="14">14 يومًا</option>
+          <option value="7">٧ أيام</option>
+          <option value="14">١٤ يومًا</option>
           <option value="forever">دائم</option>
         </select>
       </div>
@@ -554,39 +530,6 @@ function DoctorRadarCard({ articles }: { articles: ArticleRecord[] }) {
   )
 }
 
-function SecretArchiveCard({ articles }: { articles: ArticleRecord[] }) {
-  const linked = useMemo(() => books.slice(0, 4).map((book) => {
-    const related = ideaLab(`${book.title} ${book.desc}`, articles, books, papers).relatedArticles.slice(0, 2)
-    return { book, related }
-  }), [articles])
-  return (
-    <section className={card}>
-      <p className="text-[.76rem] font-semibold uppercase text-accent">أرشيف الدكتور السري</p>
-      <h2 className="mt-1 font-display text-xl font-semibold text-ink">الكتب الخاصة تغذّي الربط الذكي — ولا تظهر للناس.</h2>
-      <p className="mt-2 text-[.86rem] leading-relaxed text-soft">
-        ملفات PDF تبقى خارج الموقع وGitHub. الذاكرة المشتقة تُبنى محليًا عبر <span dir="ltr">npm run private-books:memory</span> لتقترح: هذا المقال قريب من كتاب/فصل/محور، من دون كشف الكتاب نفسه.
-      </p>
-      <div className="mt-5 grid gap-3 md:grid-cols-2">
-        {linked.map(({ book, related }) => (
-          <div key={book.slug} className="rounded-xl border border-hair bg-canvas p-4">
-            <p className="font-display text-lg font-semibold text-ink">{book.title}</p>
-            <p className="mt-1 text-[.78rem] text-soft">ربط داخلي مقترح من الذاكرة الخاصة</p>
-            {related.length ? (
-              <ul className="mt-3 grid gap-1.5">
-                {related.map((article) => (
-                  <li key={article.slug}>
-                    <a href={`/articles/${article.slug}`} target="_blank" rel="noreferrer" className="text-[.82rem] text-accent hover:text-accent-deep">{article.title} ←</a>
-                  </li>
-                ))}
-              </ul>
-            ) : <p className="mt-3 text-[.82rem] text-soft">لا يوجد ربط كافٍ من البيانات الخفيفة.</p>}
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
 function AudioQualityGateCard() {
   const episodes = (podcastAdmin as { episodes?: { slug: string; title: string; status: string; hasTranscript?: boolean; bytes?: number; quality?: { issues?: string[] } }[] }).episodes || []
   const blocked = episodes.filter((episode) => episode.status !== 'published')
@@ -612,18 +555,6 @@ function AudioQualityGateCard() {
           ))}
         </ol>
       ) : <p className="mt-4 rounded-xl border border-hair bg-canvas p-4 text-[.84rem] text-soft">كل الحلقات الحوارية المنشورة اجتازت البوابة.</p>}
-    </section>
-  )
-}
-
-function R2AudioCard() {
-  return (
-    <section className={card}>
-      <p className="text-[.76rem] font-semibold uppercase text-accent">نقل الصوت إلى R2</p>
-      <h2 className="mt-1 font-display text-xl font-semibold text-ink">الريبو يبقى للكود، والصوت يخرج إلى مستودع صوتي.</h2>
-      <p className="mt-2 text-[.86rem] leading-relaxed text-soft">
-        الحجم الحالي للصوت يقارب 450MB. أضفت دعم <span dir="ltr">AUDIO_PUBLIC_BASE_URL</span> و <span dir="ltr">VITE_AUDIO_BASE_URL</span>، وسكربت <span dir="ltr">npm run audio:r2:plan</span>. عند جاهزية R2 نرفع الملفات، ثم يبقى GitHub خفيفًا.
-      </p>
     </section>
   )
 }
@@ -656,11 +587,11 @@ export function IntelligenceLab({ articles }: { articles: ArticleRecord[] }) {
         </div>
       </section>
 
-      {view === 'before' && <LabLayer title="قبل النشر" note="فحص الجودة والذاكرة الفكرية قبل أن يتحول النص إلى مادة منشورة."><ReadinessCard articles={richArticles} /><MemoryAndGateCard articles={richArticles} /><SecretArchiveCard articles={richArticles} /><MonthlyPlanDetails articles={richArticles} /></LabLayer>}
+      {view === 'before' && <LabLayer title="قبل النشر" note="فحص الجاهزية وخطة نشر تتغير تلقائيًا كل شهر."><ReadinessCard articles={richArticles} /><MonthlyPlanDetails articles={richArticles} /></LabLayer>}
 
       {view === 'develop' && <LabLayer title="تطوير الفكرة" note="مساحة هادئة لتطوير سؤال أو خبر أو ملاحظة، وربطه بتاريخك الفكري."><IdeaLabCard articles={richArticles} /><DoctorRadarCard articles={richArticles} /><SeriesDetails articles={richArticles} /><ToolDetails title="ماذا أفكر الآن؟" note="هذه الأداة الوحيدة هنا التي تحفظ شيئًا يمكن أن يظهر للعامة إذا ضغطت حفظ."><NowCard /></ToolDetails></LabLayer>}
 
-      {view === 'system' && <LabLayer title="تحويل المقال إلى منظومة" note="تحويل المقال الواحد إلى محاضرة، منشورات، سؤال طلاب، وبودكاست — من دون نشر تلقائي."><ArticleSystemCard articles={richArticles} /><AudioQualityGateCard /><AudioControlCard articles={richArticles} /><R2AudioCard /></LabLayer>}
+      {view === 'system' && <LabLayer title="تحويل المقال إلى منظومة" note="تحويل المقال الواحد إلى محاضرة، منشورات، سؤال طلاب، وبودكاست — من دون نشر تلقائي."><ArticleSystemCard articles={richArticles} /><AudioQualityGateCard /><AudioControlCard articles={richArticles} /></LabLayer>}
     </div>
   )
 }

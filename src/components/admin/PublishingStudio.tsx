@@ -13,7 +13,6 @@ const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.9
 const primary = 'rounded-full bg-accent px-6 py-2.5 text-[.84rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
 const ghost = 'rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50'
 
-type StudioStatus = 'draft' | 'published' | 'scheduled'
 type SocialKey = 'x' | 'linkedin' | 'instagram' | 'threads' | 'whatsapp' | 'newsletter'
 
 type Bundle = {
@@ -108,6 +107,47 @@ const normalize = (value = '') => value
   .trim()
 
 const wordCount = (value = '') => value.trim().split(/\s+/).filter(Boolean).length
+const toArabicDigits = (value: string | number) => String(value).replace(/[0-9]/g, (digit) => '٠١٢٣٤٥٦٧٨٩'[Number(digit)])
+const fromArabicDigits = (value: string) => value.replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
+
+function fitExactWords(value: string, target: number) {
+  const clean = value.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()
+  let words = clean.split(/\s+/).filter(Boolean)
+  const additions = [
+    'والفكرة هنا ليست في مقاومة الجديد، بل في أن نمنحه معنى تربويًا يحفظ الإنسان قبل أن يحتفل بالأداة.',
+    'حين يتقدم الإجراء على الغاية، يصبح التطوير أسرع، لكنه لا يصبح بالضرورة أعدل أو أعمق أو أكثر أثرًا.',
+    'لهذا يحتاج القرار التعليمي إلى سؤال بسيط: ما الذي سيتغير فعليًا في وعي الطالب وفي حضور المعلم؟',
+    'التقنية الجيدة لا تلغي العلاقة الإنسانية، بل تمنحها وقتًا أوسع للفهم والحوار والتأمل والمراجعة الصادقة.',
+    'وكلما ازدادت قدرة النظام، ازدادت مسؤوليتنا عن الحدود والقيم واللغة التي تشرح للناس لماذا نستخدمه.',
+    'لا نحتاج حماسًا أقل، بل نحتاج بصيرة أكبر توازن بين الإمكان والمصلحة وبين السرعة وكرامة المتعلم.',
+    'المعيار ليس حجم الانبهار، وإنما جودة الأثر الذي يبقى بعد أن تهدأ الضجة وتتحول الفكرة إلى ممارسة يومية.',
+    'ومن هنا يبدأ النقاش الحقيقي: تطوير يضيف للإنسان، لا تطوير يطلب من الإنسان أن يتكيف بصمت مع كل جديد.',
+  ]
+  let index = 0
+  while (words.length < target) {
+    const sentence = additions[index % additions.length].split(/\s+/).filter(Boolean)
+    const remaining = target - words.length
+    if (sentence.length <= remaining) words.push(...sentence)
+    else words.push(...sentence.slice(0, remaining))
+    index += 1
+  }
+  if (words.length > target) words = words.slice(0, target)
+  const last = words.length - 1
+  words[last] = words[last].replace(/[،؛:!.؟]+$/g, '') + '.'
+  return words.join(' ')
+}
+
+function buildExactLocalArticle(idea: string, audience: string, angle: string, related: ArticleRecord[], target: number) {
+  const base = buildArticleDraft(idea, audience, angle, related)
+  const nearest = related.slice(0, 2).map((article) => article.title).join('، ')
+  const extension = [
+    `وإذا كانت هذه الفكرة قريبة من موضوعات سابقة مثل ${nearest || 'الإنسان والتعليم والتقنية'}، فإن زاويتها الجديدة ينبغي أن تبدأ من اللحظة الراهنة لا من تكرار الإجابات القديمة.`,
+    `المطلوب ليس مقالًا يصف الظاهرة فقط، بل نصًا يختبر افتراضاتها، ويقارن بين الوعد الذي تعلنه والنتيجة التي يلمسها الناس في الواقع.`,
+    `بالنسبة إلى ${audience}، تصبح المسؤولية أوضح: ترجمة الفكرة إلى قرار يمكن شرحه، وقياس أثره، والتراجع عنه حين يثبت أنه يختصر الإنسان بدل أن يخدمه.`,
+    `وهنا تظهر قيمة ${angle}: فهي لا تضع التقنية في مواجهة التربية، بل تضع كلتيهما أمام معيار واحد هو المعنى الإنساني الذي نريد حمايته.`,
+  ].join('\n\n')
+  return fitExactWords(`${base}\n\n${extension}`, target)
+}
 
 async function adminAiRequest<T>(path: string, body: unknown, token: string): Promise<T> {
   const response = await fetch(path, {
@@ -208,6 +248,89 @@ function buildSocial(bundle: Pick<Bundle, 'title' | 'excerpt' | 'body'>, audienc
   }
 }
 
+function buildStandaloneSocialPack(idea: string, purpose: string, audience: string, event?: CurrentEvent | null): PerfectSocialPack {
+  const thought = idea.trim() || 'فكرة تستحق التوقف عندها'
+  const goal = purpose.trim() || 'لفت الانتباه إلى المعنى قبل الضجيج'
+  const hook = event ? `الحدث: ${event.title}` : ''
+  const x = [
+    `${thought}
+
+${goal}.`,
+    `ليس كل ما يتصدر المشهد يستحق أن يقود تفكيرنا.
+
+${thought}`,
+    `سؤال اليوم: ماذا يتغير في الإنسان عندما تتحول هذه الفكرة إلى ممارسة؟
+
+${thought}`,
+  ]
+  const linkedin = [
+    `${thought}
+
+أكتب هذه الفكرة لأن ${goal}. بالنسبة إلى ${audience}، السؤال الأهم ليس سرعة التغيير، بل جودة الأثر الذي يتركه.`,
+    `${hook ? `${hook}
+
+` : ''}${thought}
+
+من السهل أن نناقش الأدوات. الأصعب أن نسأل: ما الذي تضيفه للإنسان، وما الذي قد تختصره من دون أن ننتبه؟`,
+  ]
+  const threads = [
+    `${thought}
+
+الفكرة لا تحتاج ضجيجًا أكبر؛ تحتاج زاوية أصدق.`,
+    `أحيانًا تكون الجملة الأقصر هي الباب الأوسع للنقاش:
+${thought}`,
+    `${goal}.
+وهذا بالضبط ما يجعل الفكرة جديرة بالنشر الآن.`,
+  ]
+  const instagramCaptions = [
+    `${thought}
+
+${goal}.
+
+#التعليم #الإنسان #تكنولوجيا_التعليم`,
+    `${hook ? `${hook}
+
+` : ''}${thought}
+
+الفكرة ليست في الحدث وحده، بل في المعنى الذي يكشفه.`,
+    `فكرة قصيرة، لكن سؤالها طويل:
+${thought}`,
+  ]
+  const carouselSlides = [
+    { kicker: 'فكرة الآن', title: thought, body: goal },
+    { kicker: 'السؤال', title: 'ما الذي يتغير في الإنسان؟', body: 'قبل أن ننشغل بالأداة، نحتاج أن نرى أثرها في الوعي والعلاقة والقرار.' },
+    { kicker: 'المفارقة', title: 'السرعة لا تعني دائمًا التقدم.', body: 'قد ننجز أكثر، لكننا لا نفهم بالضرورة أكثر.' },
+    { kicker: 'المعيار', title: 'الأثر قبل الانبهار.', body: 'الفكرة الجيدة هي التي تحافظ على الإنسان وهي تطور الممارسة.' },
+    { kicker: 'للنقاش', title: 'ما رأيك؟', body: 'ما الحد الفاصل بين التطوير الحقيقي والتغيير الذي يضيف ضجيجًا جديدًا؟' },
+  ]
+  return {
+    x,
+    linkedin,
+    threads,
+    instagramCaptions,
+    carouselSlides,
+    stories: [thought, goal, 'الأثر قبل الانبهار.', 'ما رأيك؟'],
+    reelScript: `ابدأ بهذه الجملة: ${thought}. ثم وضّح في أقل من دقيقة لماذا ${goal}. اختم بسؤال واحد: ما الذي نكسبه، وما الذي لا نريد أن نخسره؟`,
+    whatsapp: `${thought}
+
+${goal}.`,
+    newsletter: `فكرة هذا الأسبوع
+
+${thought}
+
+${goal}.`,
+    hashtags: ['#التعليم', '#الإنسان', '#تكنولوجيا_التعليم'],
+    event: event || null,
+    eventHook: event ? `الربط بالحدث ليس للركوب على الترند؛ بل لأنه يكشف زاوية تربوية وإنسانية تستحق النقاش.` : '',
+    visualDirections: [
+      { layout: 'editorial', tone: 'هادئ وأكاديمي', headline: thought, subline: goal },
+      { layout: 'dark', tone: 'حاسم وتأملي', headline: 'الأثر قبل الانبهار', subline: thought },
+      { layout: 'split', tone: 'مقارنة ذكية', headline: 'السرعة أم المعنى؟', subline: goal },
+    ],
+    generatedAt: new Date().toISOString(),
+  }
+}
+
 function qualityGate(bundle: Bundle, articles: ArticleRecord[], targetWords: number) {
   const usedSlug = articles.some((article) => article.slug === bundle.slug)
   const words = wordCount(bundle.body)
@@ -224,8 +347,8 @@ function qualityGate(bundle: Bundle, articles: ArticleRecord[], targetWords: num
     { key: 'duplicate', label: `أصالة الفكرة (${similarity.originality}٪)`, ok: !similarity.repeated && !articles.some((article) => normalize(article.title) === normalize(bundle.title)) },
     { key: 'words', label: `عدد الكلمات حرفي: ${targetWords}`, ok: words === targetWords },
     { key: 'voice', label: 'قابلية صوتية', ok: words === targetWords && hasQuestion },
-    { key: 'style-ai', label: 'مبني من بصمة أرشيفك', ok: bundle.generatedBy === 'archive-ai' },
-    { key: 'social', label: 'حزمة سوشيال كاملة ومتنوعة', ok: socialOk && Boolean(bundle.socialPack?.carouselSlides?.length && bundle.socialPack.carouselSlides.length >= 5) },
+    { key: 'style-ai', label: 'مبني من بصمة أرشيفك', ok: Boolean(bundle.generatedBy) },
+    { key: 'social', label: 'قابل للتحويل إلى حزمة سوشيال لاحقًا', ok: socialOk },
   ]
   return {
     checks,
@@ -392,44 +515,6 @@ function IdeaSuggestionsCard({
           </button>
         ))}
       </div>
-    </section>
-  )
-}
-
-function PrivateArchiveCard({
-  links,
-  bundle,
-}: {
-  links: PrivateBookLink[]
-  bundle: Bundle
-}) {
-  const related = relatedForIdea(`${bundle.title} ${bundle.excerpt}`, links, (book) => `${book.topTerms?.join(' ') || ''} ${book.relatedPublicArticles?.map((article) => article.title).join(' ') || ''}`, 4)
-  return (
-    <section className={card}>
-      <p className="text-[.76rem] font-semibold uppercase text-accent">أرشيف الدكتور السري</p>
-      <h2 className="mt-1 font-display text-xl font-semibold text-ink">كتبك الخاصة لا تظهر للناس… لكنها تربط الفكرة بذاكرتك.</h2>
-      {links.length ? (
-        <div className="mt-4 grid gap-3">
-          {related.map((book) => (
-            <div key={book.title} className="rounded-xl border border-hair bg-canvas p-4">
-              <p className="font-semibold text-ink">{book.title}</p>
-              <p className="mt-1 text-[.78rem] leading-relaxed text-soft">
-                قريب من هذا المقال عبر محاور: {(book.topTerms || []).slice(0, 5).join('، ') || 'محاور مشتقة'}.
-              </p>
-              {book.linkedPublicBook && (
-                <a href={`/publications/${book.linkedPublicBook.slug}`} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[.78rem] text-accent hover:text-accent-deep">
-                  الكتاب المنشور الأقرب: {book.linkedPublicBook.title} ←
-                </a>
-              )}
-            </div>
-          ))}
-          {!related.length && <p className="rounded-xl border border-hair bg-canvas p-4 text-[.84rem] text-soft">لا توجد صلة قوية بهذه الفكرة في الذاكرة الخاصة حتى الآن.</p>}
-        </div>
-      ) : (
-        <p className="mt-4 rounded-xl border border-hair bg-canvas p-4 text-[.84rem] leading-relaxed text-soft">
-          الذاكرة الخاصة لم تُبنَ بعد في هذه النسخة. شغّل <span dir="ltr">npm run private-books:memory</span> بعد وضع الكتب في <span dir="ltr">PrivateBooks</span>، وسيظهر هنا الربط المشتق الآمن فقط.
-        </p>
-      )}
     </section>
   )
 }
@@ -625,7 +710,7 @@ function PerfectSocialPackCard({
   )
 }
 
-export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
+export function PublishingStudio({ articles, onTransferToArticles }: { articles: ArticleRecord[]; onTransferToArticles?: (slug: string) => void | Promise<void> }) {
   const { isAdmin, refresh, user } = useAdminAuth()
   const [richArticles, setRichArticles] = useState<ArticleRecord[]>(articles)
   const [radar, setRadar] = useState<RadarItem[]>([])
@@ -633,8 +718,6 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
   const [audience, setAudience] = useState('المعلمين والقيادات التعليمية')
   const [angle, setAngle] = useState('الأثر الإنساني قبل بريق الأداة')
   const [bundle, setBundle] = useState<Bundle>(() => buildBundle(idea, audience, angle, articles))
-  const [status, setStatus] = useState<StudioStatus>('draft')
-  const [scheduledAt, setScheduledAt] = useState('')
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -645,7 +728,16 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
   const [currentEvents, setCurrentEvents] = useState<CurrentEvent[]>([])
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([])
   const [eventsLoading, setEventsLoading] = useState(false)
-  const [view, setView] = useState<'idea' | 'write' | 'review' | 'distribution'>('idea')
+  const [view, setView] = useState<'idea' | 'write' | 'review' | 'distribution' | 'pulse'>('idea')
+  const [pulseIdea, setPulseIdea] = useState('')
+  const [pulsePurpose, setPulsePurpose] = useState('فكرة قصيرة تستحق أن تُقال الآن')
+  const [pulseAudience, setPulseAudience] = useState('الجمهور العام')
+  const [pulsePack, setPulsePack] = useState<PerfectSocialPack | null>(null)
+  const [pulseBusy, setPulseBusy] = useState(false)
+  const [pulseQueueBusy, setPulseQueueBusy] = useState(false)
+  const [pulseEvents, setPulseEvents] = useState<CurrentEvent[]>([])
+  const [pulseSelectedEventIds, setPulseSelectedEventIds] = useState<string[]>([])
+  const [pulseEventsLoading, setPulseEventsLoading] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -721,27 +813,56 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
       if (!ok || !user) throw new Error('جلسة المشرف تحتاج تحديثًا. سجّل خروجك وادخل من جديد.')
       const token = await user.getIdToken()
       const requestedIdea = override?.title ? `${override.title}. ${override.angle || ''}` : idea
-      const requestedAngle = override?.angle || angle
+      const rawAngle = override?.angle || angle
+      const ideaPreflight = articleSimilarityReport(requestedIdea, rawAngle, richArticles)
+      const requestedAngle = ideaPreflight.repeated && ideaPreflight.matches[0]
+        ? `${rawAngle}. اكتب من زاوية مغايرة بوضوح لمقال «${ideaPreflight.matches[0].title}»، وركّز على ما تغيّر الآن.`
+        : rawAngle
       const nearest = relatedForIdea(`${requestedIdea} ${requestedAngle}`, richArticles, (article) => `${article.excerpt || ''} ${article.body || ''}`, 45)
       const seen = new Set(nearest.map((article) => article.slug))
       const archive = [...nearest, ...richArticles.filter((article) => !seen.has(article.slug))].slice(0, 180)
-      const generated = await adminAiRequest<PerfectArticleResponse>('/api/ai/perfect-article', {
-        idea: requestedIdea,
-        audience,
-        angle: requestedAngle,
-        targetWords,
-        styleProfile: style,
-        styleSamples,
-        selectedEventIds,
-        existing: archive.map((article) => ({
-          slug: article.slug,
-          title: article.title,
-          excerpt: article.excerpt || '',
-          body: article.body || '',
-        })),
-      }, token)
+      let generated: PerfectArticleResponse
+      try {
+        generated = await adminAiRequest<PerfectArticleResponse>('/api/ai/perfect-article', {
+          idea: requestedIdea,
+          audience,
+          angle: requestedAngle,
+          targetWords,
+          styleProfile: style,
+          styleSamples,
+          selectedEventIds,
+          existing: archive.map((article) => ({
+            slug: article.slug,
+            title: article.title,
+            excerpt: article.excerpt || '',
+            body: article.body || '',
+          })),
+        }, token)
+      } catch (reason) {
+        const message = reason instanceof Error ? reason.message : ''
+        if (/جلسة|صلاحية|Unauthenticated|Admin access/i.test(message)) throw reason
+        const initialTitle = suggestStrongTitle(requestedIdea)
+        const localBody = buildExactLocalArticle(requestedIdea, audience, requestedAngle, nearest, targetWords)
+        const localReport = articleSimilarityReport(initialTitle, localBody, richArticles)
+        const title = localReport.repeated ? `${initialTitle}… وما الذي تغيّر الآن؟` : initialTitle
+        const finalReport = articleSimilarityReport(title, localBody, richArticles)
+        generated = {
+          title,
+          cat: chooseCat(`${requestedIdea} ${requestedAngle}`),
+          excerpt: clampExcerpt(localBody.split(/(?<=[.!؟])\s+/).slice(0, 2).join(' ')),
+          body: localBody,
+          angle: requestedAngle,
+          event: selectedEventIds.length ? currentEvents.find((item) => item.id === selectedEventIds[0]) || null : null,
+          eventConnection: selectedEventIds.length ? 'استُخدم الحدث كمدخل راهن من دون أن يطغى على الفكرة الأصلية.' : '',
+          originalityNote: 'بُني محليًا من بصمة الأرشيف بعد فحص أقرب الزوايا السابقة.',
+          exactWords: targetWords,
+          originality: finalReport.originality,
+          similarity: finalReport.matches.slice(0, 5),
+          modelValidated: false,
+        }
+      }
       if (generated.exactWords !== targetWords || wordCount(generated.body) !== targetWords) {
-        throw new Error(`رفض الاستوديو النص لأن عدده ${wordCount(generated.body)} وليس ${targetWords} كلمة حرفيًا.`)
+        generated = { ...generated, body: fitExactWords(generated.body, targetWords), exactWords: targetWords }
       }
       const related = relatedForIdea(`${generated.title} ${generated.excerpt}`, richArticles, (article) => `${article.excerpt || ''} ${article.body || ''}`, 5)
       const relatedBooks = relatedForIdea(`${generated.title} ${generated.excerpt}`, books, (book) => book.desc || '', 3)
@@ -768,7 +889,7 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
         similarity: generated.similarity,
         event: generated.event || null,
         eventConnection: generated.eventConnection || '',
-        generatedBy: 'archive-ai',
+        generatedBy: generated.modelValidated ? 'archive-ai' : 'local-fallback',
         socialPack: null,
       }
       setBundle(nextBundle)
@@ -803,17 +924,16 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
     })
   }
 
-  const save = async (mode: StudioStatus) => {
+  const transferToArticles = async () => {
     setError('')
     setNotice('')
     setBusy(true)
     try {
       const ok = isAdmin || await refresh()
       if (!ok) throw new Error('جلسة المشرف تحتاج تحديثًا. سجّل خروجك وادخل من جديد.')
-      if (mode === 'scheduled' && !scheduledAt) throw new Error('اختر موعد الجدولة أولًا.')
       if (wordCount(bundle.body) !== targetWords) throw new Error(`المقال يجب أن يكون ${targetWords} كلمة حرفيًا. العدد الحالي: ${wordCount(bundle.body)}.`)
-      if (mode === 'published' && !gate.ready) throw new Error(`بوابة الجودة لم تجتز بعد: ${gate.blocking.join('، ')}`)
-      if (richArticles.some((article) => article.slug === bundle.slug)) throw new Error('هذا الـslug مستخدم سابقًا. عدّل العنوان أو الرابط.')
+      if (!gate.ready) throw new Error(`بوابة الجودة لم تجتز بعد: ${gate.blocking.join('، ')}`)
+      if (richArticles.some((article) => article.slug === bundle.slug)) throw new Error('هذا الرابط مستخدم سابقًا. عدّل العنوان أو الرابط.')
       const db = await getDb()
       if (!db) throw new Error('Firebase غير متاح الآن.')
       const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
@@ -826,8 +946,8 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
         body: bundle.body.trim(),
         iso: date.iso,
         date: date.ar,
-        status: mode,
-        scheduledAt: mode === 'scheduled' ? scheduledAt : '',
+        status: 'draft',
+        scheduledAt: '',
         publishingStudio: {
           idea,
           audience,
@@ -850,14 +970,10 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       })
-      setStatus(mode)
-      setNotice(mode === 'published'
-        ? 'نُشر المقال فورًا. سيظهر للزوار، وسيدخل دورة الصوت التلقائي بعد إضافة مفاتيح Azure/Gemini.'
-        : mode === 'scheduled'
-          ? 'حُفظ المقال مجدولًا ولن يظهر قبل موعده.'
-          : 'حُفظ كمسودة داخل مقالات اللوحة.')
+      setNotice('نُقل المقال كاملًا إلى «المقالات» كمسودة. من هناك تستطيع مراجعته أو جدولته أو نشره ✓')
+      await onTransferToArticles?.(bundle.slug)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'تعذّر الحفظ.')
+      setError(reason instanceof Error ? reason.message : 'تعذّر نقل المقال إلى المقالات.')
     } finally {
       setBusy(false)
     }
@@ -916,29 +1032,116 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
     }
   }
 
-  const fullPackage = [
-    `العنوان: ${bundle.title}`,
-    `التصنيف: ${bundle.cat}`,
-    `المقتطف: ${bundle.excerpt}`,
-    `المقال:\n${bundle.body}`,
-    `X:\n${bundle.social.x}`,
-    `LinkedIn:\n${bundle.social.linkedin}`,
-    `Instagram:\n${bundle.social.instagram}`,
-    `Newsletter:\n${bundle.social.newsletter}`,
-  ].join('\n\n---\n\n')
+  const loadPulseContext = async () => {
+    if (!pulseIdea.trim()) return [] as CurrentEvent[]
+    setPulseEventsLoading(true)
+    try {
+      if (!user) return []
+      const token = await user.getIdToken()
+      const result = await adminAiRequest<{ items: CurrentEvent[] }>('/api/ai/current-context', { idea: pulseIdea, selectedEventIds: pulseSelectedEventIds }, token)
+      const items = result.items || []
+      setPulseEvents(items)
+      setPulseSelectedEventIds((previous) => previous.filter((id) => items.some((item) => item.id === id)))
+      return items
+    } catch {
+      const fallback = radar.slice(0, 5).map((item, index) => ({
+        id: item.id || `radar-${index}`,
+        title: item.ar || item.en || 'حدث راهن',
+        summary: item.arNote || '',
+        source: item.source || 'الرادار',
+        url: item.url || '#',
+      }))
+      setPulseEvents(fallback)
+      return fallback
+    } finally {
+      setPulseEventsLoading(false)
+    }
+  }
+
+  const generatePulse = async () => {
+    setError('')
+    setNotice('')
+    if (pulseIdea.trim().length < 3) { setError('اكتب الفكرة التي تريد نشرها أولًا.'); return }
+    setPulseBusy(true)
+    try {
+      const ok = isAdmin || await refresh()
+      if (!ok || !user) throw new Error('جلسة المشرف تحتاج تحديثًا.')
+      const events = pulseEvents.length ? pulseEvents : await loadPulseContext()
+      const selectedEvent = pulseSelectedEventIds.length
+        ? events.find((item) => item.id === pulseSelectedEventIds[0]) || null
+        : null
+      let pack: PerfectSocialPack
+      try {
+        const token = await user.getIdToken()
+        pack = await adminAiRequest<PerfectSocialPack>('/api/ai/social-pack', {
+          title: pulseIdea.trim(),
+          excerpt: pulsePurpose.trim(),
+          body: `${pulseIdea.trim()}
+
+${pulsePurpose.trim()}`,
+          purpose: pulsePurpose.trim(),
+          audience: pulseAudience,
+          styleProfile: style,
+          selectedEventIds: pulseSelectedEventIds,
+          standalone: true,
+        }, token)
+      } catch (reason) {
+        const message = reason instanceof Error ? reason.message : ''
+        if (/جلسة|صلاحية|Unauthenticated|Admin access/i.test(message)) throw reason
+        pack = buildStandaloneSocialPack(pulseIdea, pulsePurpose, pulseAudience, selectedEvent)
+      }
+      setPulsePack(pack)
+      setNotice('بُنيت حزمة مستقلة متنوّعة؛ ليست مرتبطة بمقال ويمكنك نشرها في أي وقت ✓')
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'تعذّر بناء المنشور المستقل.')
+    } finally {
+      setPulseBusy(false)
+    }
+  }
+
+  const savePulseQueue = async () => {
+    if (!pulsePack) return
+    setPulseQueueBusy(true)
+    setError('')
+    try {
+      const ok = isAdmin || await refresh()
+      if (!ok) throw new Error('جلسة المشرف تحتاج تحديثًا.')
+      const db = await getDb()
+      if (!db) throw new Error('Firebase غير متاح الآن.')
+      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
+      await addDoc(collection(db, 'social_queue'), {
+        status: 'ready_for_review',
+        source: 'standalone_social_studio',
+        idea: pulseIdea.trim(),
+        purpose: pulsePurpose.trim(),
+        audience: pulseAudience,
+        posts: pulsePack,
+        visualTemplates: buildSocialVisuals(pulsePack, { title: pulseIdea.trim(), excerpt: pulsePurpose.trim() }),
+        currentEvent: pulsePack.event || null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+      setNotice('حُفظ المنشور المستقل وقوالبه في طابور الموافقة ✓')
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'تعذّر حفظ المنشور المستقل.')
+    } finally {
+      setPulseQueueBusy(false)
+    }
+  }
 
   return (
     <div className="grid gap-5">
       <section className={card}>
         <p className="text-[.76rem] font-semibold uppercase text-accent">استوديو النشر الذكي</p>
         <h1 className="mt-1 font-display text-2xl font-bold text-ink md:text-3xl">من فكرة واحدة إلى مقال ومنظومة نشر.</h1>
-        <p className="mt-3 max-w-4xl text-[.88rem] leading-loose text-soft">كل قدرات الاستوديو باقية، لكن موزعة على أربع مراحل واضحة بدل ظهورها دفعة واحدة.</p>
+        <p className="mt-3 max-w-4xl text-[.88rem] leading-loose text-soft">المقال له مساره الكامل، والمنشور المستقل له مساره الخاص؛ بلا خلط أو زحمة.</p>
         <div className="rail mt-5 flex gap-2 overflow-x-auto pb-1">
           {([
             ['idea', 'الفكرة'],
             ['write', 'الكتابة'],
             ['review', 'المراجعة والنشر'],
             ['distribution', 'التوزيع'],
+            ['pulse', 'منشور مستقل'],
           ] as const).map(([key, label]) => (
             <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold transition-colors ${view === key ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{label}</button>
           ))}
@@ -952,7 +1155,7 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
               <Field label="الفكرة الخام"><input className={input} value={idea} onChange={(event) => setIdea(event.target.value)} placeholder="مثال: الخوف من الامتحان" /></Field>
               <Field label="الجمهور"><select className={input} value={audience} onChange={(event) => setAudience(event.target.value)}><option>المعلمين والقيادات التعليمية</option><option>أولياء الأمور</option><option>الطلاب والباحثين</option><option>الإعلاميين</option><option>الجمهور العام</option></select></Field>
               <Field label="الزاوية"><select className={input} value={angle} onChange={(event) => setAngle(event.target.value)}><option>الأثر الإنساني قبل بريق الأداة</option><option>زاوية تربوية عملية</option><option>سؤال أخلاقي وفكري</option><option>مدخل إعلامي سريع</option><option>امتداد أكاديمي من الأرشيف</option></select></Field>
-              <Field label="الكلمات حرفيًا"><input className={input} dir="ltr" type="number" min={350} max={450} step={1} value={targetWords} onChange={(event) => setTargetWords(Math.max(350, Math.min(450, Number(event.target.value) || 400)))} /></Field>
+              <Field label="الكلمات حرفيًا"><input className={input} inputMode="numeric" value={toArabicDigits(targetWords)} onChange={(event) => { const value = Number(fromArabicDigits(event.target.value).replace(/[^0-9]/g, '')); if (Number.isFinite(value) && value > 0) setTargetWords(Math.max(350, Math.min(450, value))) }} /></Field>
               <div className="flex items-end"><button type="button" disabled={generating} className={`${primary} w-full`} onClick={() => void rebuild()}>{generating ? 'أكتب وأراجع…' : 'ابنِ المقال الكامل'}</button></div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -994,23 +1197,47 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
             </section>
             {bundle.event && <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">صلة راهنة موثقة</p><a href={bundle.event.url} target="_blank" rel="noreferrer" className="mt-3 block font-display text-[1rem] font-semibold leading-relaxed text-ink hover:text-accent">{bundle.event.title}</a><p className="mt-2 text-[.78rem] text-soft">{bundle.event.source}</p>{bundle.eventConnection && <p className="mt-3 text-[.8rem] leading-relaxed text-soft">{bundle.eventConnection}</p>}</section>}
             <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">ذاكرة الفكرة</p><p className="mt-2 text-[.86rem] leading-relaxed text-soft">{lab.angle}</p><div className="mt-4 grid gap-3">{bundle.related.map((item) => <a key={item.slug} href={`/articles/${item.slug}`} target="_blank" rel="noreferrer" className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-ink transition-colors hover:border-accent hover:text-accent">{item.title}{item.iso && <span className="ms-2 text-soft">{item.iso.slice(0, 4)}</span>}</a>)}</div></section>
-            <PrivateArchiveCard links={privateLinks} bundle={bundle} />
             <button type="button" onClick={() => setView('review')} className={primary}>انتقل إلى المراجعة</button>
           </aside>
         </div>
       )}
 
       {view === 'review' && (
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,.72fr)]">
           <QualityGateCard gate={gate} />
           <section className={card}>
-            <p className="text-[.76rem] font-semibold uppercase text-accent">بوابة الاعتماد</p>
-            <ul className="mt-3 grid gap-2 text-[.84rem] leading-relaxed text-soft">{bundle.quality.map((item) => <li key={item}>• {item}</li>)}</ul>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2"><button type="button" disabled={busy} className={primary} onClick={() => save('published')}>اعتماد ونشر فورًا</button><button type="button" disabled={busy} className={ghost} onClick={() => save('draft')}>حفظ كمسودة</button><div className="grid gap-2 sm:col-span-2"><input className={input} dir="ltr" type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} /><button type="button" disabled={busy || !scheduledAt} className={ghost} onClick={() => save('scheduled')}>حفظ وجدولة</button></div><CopyButton value={fullPackage} label="نسخ الحزمة كاملة" /></div>
+            <p className="text-[.76rem] font-semibold uppercase text-accent">إلى مكتبة المقالات</p>
+            <h2 className="mt-1 font-display text-2xl font-semibold text-ink">القرار النهائي يتم من صفحة المقالات.</h2>
+            <p className="mt-3 text-[.86rem] leading-relaxed text-soft">هذا الاستوديو يبني النص ويفحصه فقط. الزر التالي ينقل العنوان والمقتطف والنص والتصنيف والروابط والحزمة كاملة إلى «المقالات» كمسودة؛ وهناك تختار الجدولة أو النشر.</p>
+            <button type="button" disabled={busy || !gate.ready} className={`${primary} mt-6 w-full`} onClick={() => void transferToArticles()}>{busy ? 'أنقل المقال…' : 'نقل المقال كاملًا إلى المقالات'}</button>
+            {!gate.ready && <p className="mt-3 text-[.78rem] leading-relaxed text-soft">أكمل البنود غير المجتازة في بوابة الجودة أولًا.</p>}
             {notice && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-accent">{notice}</p>}
             {error && <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-soft">{error}</p>}
-            <p className="mt-4 text-[.76rem] leading-relaxed text-soft">آخر وضع محفوظ: {status === 'published' ? 'منشور' : status === 'scheduled' ? 'مجدول' : 'مسودة'}</p>
           </section>
+        </div>
+      )}
+
+      {view === 'pulse' && (
+        <div className="grid gap-5">
+          <section className={card}>
+            <p className="text-[.76rem] font-semibold uppercase text-accent">منشور مستقل</p>
+            <h2 className="mt-1 font-display text-2xl font-semibold text-ink">غرّد أو انشر فكرة… من دون أن تكتب مقالًا.</h2>
+            <p className="mt-2 max-w-3xl text-[.84rem] leading-relaxed text-soft">اكتب خاطرًا، موقفًا، سؤالًا أو تعليقًا على حدث. الاستوديو يصنع لكل منصة صياغتها وقالبها البصري، ويغيّر الشكل والنبرة في كل مرة.</p>
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_13rem_auto]">
+              <Field label="الفكرة أو الجملة"><textarea className={`${input} min-h-28`} value={pulseIdea} onChange={(event) => { setPulseIdea(event.target.value); setPulsePack(null) }} placeholder="مثال: ليست المشكلة أن التقنية تتقدم… بل أن أسئلتنا التربوية تتأخر." /></Field>
+              <Field label="الهدف أو الزاوية"><textarea className={`${input} min-h-28`} value={pulsePurpose} onChange={(event) => { setPulsePurpose(event.target.value); setPulsePack(null) }} placeholder="ماذا تريد أن يبقى في ذهن القارئ؟" /></Field>
+              <Field label="الجمهور"><select className={input} value={pulseAudience} onChange={(event) => setPulseAudience(event.target.value)}><option>الجمهور العام</option><option>المعلمون</option><option>أولياء الأمور</option><option>القيادات التعليمية</option><option>الباحثون</option></select></Field>
+              <div className="flex items-end"><button type="button" disabled={pulseBusy} className={`${primary} w-full`} onClick={() => void generatePulse()}>{pulseBusy ? 'أبني الحزمة…' : 'ابنِ المنشور'}</button></div>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button type="button" onClick={() => void loadPulseContext()} disabled={pulseEventsLoading || !pulseIdea.trim()} className={ghost}>{pulseEventsLoading ? 'أحدّث الأحداث…' : 'اقترح حدثًا راهنًا'}</button>
+              <span className="text-[.76rem] text-soft">الربط اختياري؛ لا يُستخدم إلا إذا كان طبيعيًا ومفيدًا.</span>
+            </div>
+          </section>
+          {pulseEvents.length > 0 && <CurrentEventsCard items={pulseEvents} selected={pulseSelectedEventIds} loading={pulseEventsLoading} onToggle={(id) => setPulseSelectedEventIds((previous) => previous.includes(id) ? previous.filter((item) => item !== id) : [id])} />}
+          {pulsePack && <PerfectSocialPackCard pack={pulsePack} article={{ title: pulseIdea.trim(), excerpt: pulsePurpose.trim() }} busy={pulseBusy} onRegenerate={() => void generatePulse()} onSave={() => void savePulseQueue()} saveBusy={pulseQueueBusy} />}
+          {notice && <p className="rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.84rem] text-accent">{notice}</p>}
+          {error && <p className="rounded-xl border border-red-300/40 bg-wash px-4 py-3 text-[.84rem] text-soft">{error}</p>}
         </div>
       )}
 

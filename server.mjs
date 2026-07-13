@@ -33,6 +33,7 @@ const articleSuggestionPath = '/api/ai/article-suggestion'
 const contentSuggestionPath = '/api/ai/content-suggestion'
 const perfectArticlePath = '/api/ai/perfect-article'
 const socialPackPath = '/api/ai/social-pack'
+const socialIdeasPath = '/api/ai/social-ideas'
 const currentContextPath = '/api/ai/current-context'
 const journeyPath = '/api/journey'
 const adminNowPath = '/api/admin/site-now'
@@ -461,6 +462,36 @@ export async function generateArticleSuggestion(input, fetchImpl = fetch) {
 /* ---------- الاستوديو التحريري الكامل: أسلوب + أصالة + عدد كلمات حرفي ---------- */
 const exactWordCount = (value = '') => String(value).trim().split(/\s+/).filter(Boolean).length
 
+function humanParagraphs(value = '', preferred = 7) {
+  const words = String(value).replace(/[ \t]+/g, ' ').replace(/\n+/g, ' ').trim().split(/\s+/).filter(Boolean)
+  if (!words.length) return ''
+  const count = clamp(Math.trunc(preferred || Math.round(words.length / 58)), 5, 8)
+  if (words.length < count * 12) return words.join(' ')
+  const chunks = []
+  let start = 0
+  for (let index = 0; index < count; index += 1) {
+    const remainingParagraphs = count - index
+    const remainingWords = words.length - start
+    if (remainingParagraphs === 1) { chunks.push(words.slice(start).join(' ')); break }
+    const ideal = start + Math.round(remainingWords / remainingParagraphs)
+    const minimum = Math.max(start + 28, ideal - 12)
+    const maximum = Math.min(words.length - (remainingParagraphs - 1) * 28, ideal + 12)
+    let end = ideal
+    for (let cursor = minimum; cursor <= maximum; cursor += 1) {
+      if (/[.!؟…][”"']?$/.test(words[cursor - 1] || '')) { end = cursor; break }
+    }
+    end = clamp(end, start + 1, words.length)
+    chunks.push(words.slice(start, end).join(' '))
+    start = end
+  }
+  return chunks.filter(Boolean).join('\n\n')
+}
+
+export function normalizeArticleParagraphs(value = '', targetWords = 400) {
+  const preferred = targetWords >= 430 ? 8 : targetWords >= 385 ? 7 : 6
+  return humanParagraphs(value, preferred)
+}
+
 function normalizeArabicForSimilarity(value = '') {
   return String(value)
     .toLowerCase()
@@ -551,6 +582,32 @@ function socialPackInput(value) {
     audience: boundedString(value.audience, 200),
     styleProfile: value.styleProfile && typeof value.styleProfile === 'object' ? value.styleProfile : {},
     selectedEventIds: boundedArray(value.selectedEventIds, 12, (item) => typeof item === 'string' ? boundedString(item, 200) : null),
+  }
+}
+
+function socialIdeasInput(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new HttpError(400, 'Expected a JSON object')
+  const archive = boundedArray(value.archive, 90, (item) => item && typeof item === 'object' ? {
+    slug: boundedString(item.slug, 220), title: boundedString(item.title, 300), cat: boundedString(item.cat, 80),
+    iso: boundedString(item.iso, 20), excerpt: boundedString(item.excerpt, 420), body: boundedString(item.body, 520),
+  } : null)
+  const books = boundedArray(value.books, 30, (item) => item && typeof item === 'object' ? {
+    slug: boundedString(item.slug, 220), title: boundedString(item.title, 300), desc: boundedString(item.desc, 700),
+  } : null)
+  const papers = boundedArray(value.papers, 40, (item) => item && typeof item === 'object' ? {
+    slug: boundedString(item.slug, 220), title: boundedString(item.title, 300), meta: boundedString(item.meta, 700),
+  } : null)
+  const privateBooks = boundedArray(value.privateBooks, 30, (item) => item && typeof item === 'object' ? {
+    title: boundedString(item.title, 300), topTerms: boundedArray(item.topTerms, 18, (term) => boundedString(term, 80)),
+    linkedPublicBook: item.linkedPublicBook && typeof item.linkedPublicBook === 'object' ? { title: boundedString(item.linkedPublicBook.title, 300) } : null,
+  } : null)
+  const radar = boundedArray(value.radar, 20, (item) => item && typeof item === 'object' ? {
+    ar: boundedString(item.ar, 500), arNote: boundedString(item.arNote, 600), source: boundedString(item.source, 160), url: boundedString(item.url, 600),
+  } : null)
+  return {
+    archive, books, papers, privateBooks, radar,
+    styleProfile: value.styleProfile && typeof value.styleProfile === 'object' ? value.styleProfile : {},
+    count: clamp(Math.trunc(Number(value.count || 9)), 6, 12),
   }
 }
 
@@ -681,7 +738,7 @@ function perfectArticleSchema() {
 async function repairArticleWords(article, input, context, attempt, fetchImpl) {
   const actual = exactWordCount(article.body)
   return callGeminiStructured({
-    instruction: `أنت محرر عربي صارم. أعد تحرير المقال نفسه ليصبح ${input.targetWords} كلمة بالضبط وفق العد بالفصل بالمسافات. لا تغيّر الفكرة أو الوقائع أو النبرة. لا تضف عنواناً داخل النص. أعد JSON فقط.`,
+    instruction: `أنت محرر عربي صارم. أعد تحرير المقال نفسه ليصبح ${input.targetWords} كلمة بالضبط وفق العد بالفصل بالمسافات. لا تغيّر الفكرة أو الوقائع أو النبرة. اجعله 6 إلى 8 فقرات بشرية متوسطة، وبين كل فقرتين سطر فارغ، بلا عناوين فرعية أو تعداد. لا تضف عنواناً داخل النص. أعد JSON فقط.`,
     prompt: [
       `العدد الحالي: ${actual}. العدد المطلوب حرفياً: ${input.targetWords}. محاولة الضبط: ${attempt}.`,
       'احتفظ بعنوان المقال وتصنيفه ومقتطفه، واضبط الجسم فقط. راجع العد داخلياً قبل الإخراج.',
@@ -703,7 +760,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
 1) جسم المقال يجب أن يكون ${input.targetWords} كلمة بالضبط، لا كلمة أقل ولا أكثر، وفق فصل الكلمات بالمسافات.\n
 2) العربية بيضاء، فكرية، إنسانية، قريبة من القارئ، بلا حشو ولا وعظ ولا عبارات ذكاء اصطناعي نمطية.\n
 3) ابدأ بمشهد أو مفارقة إنسانية، ثم حلّل، ثم اختم بومضة تفتح المعنى ولا تكرر المقدمة.\n
-4) لا تستخدم عناوين فرعية أو تعداداً داخل المقال.\n
+4) قسّم الجسم إلى 6–8 فقرات بشرية متوسطة، وبين كل فقرتين سطر فارغ. لا تستخدم عناوين فرعية أو تعداداً داخل المقال.\n
 5) ممنوع تكرار فكرة مركزية أو عنوان أو بناء حجاجي من القائمة المنشورة. إذا كانت الفكرة قريبة، ابتكر زاوية جديدة واضحة.\n
 6) عينات الأسلوب مادة إيقاعية فقط؛ يُمنع نسخ عباراتها.\n
 7) الحدث الراهن اختياري: اربطه فقط إن كان الارتباط عضويًا ومفيدًا. لا تخترع أي واقعة، ولا تستخدم سوى العنوان والملخص والمصدر والرابط المقدم.\n
@@ -726,8 +783,10 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     maxOutputTokens: 4_096,
     temperature: .62,
   }, fetchImpl)
+  article.body = normalizeArticleParagraphs(article.body, input.targetWords)
 
   for (let attempt = 1; attempt <= 4; attempt += 1) {
+    article.body = normalizeArticleParagraphs(article.body, input.targetWords)
     const words = exactWordCount(article.body)
     const similarity = serverArticleSimilarity(article.title, article.body, input.existing)
     const duplicateTitle = existingTitles.some((title) => normalizeArabicForSimilarity(title) === normalizeArabicForSimilarity(article.title))
@@ -755,6 +814,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
       maxOutputTokens: 4_096, temperature: similarity.repeated ? .7 : .22,
     }, fetchImpl)
     if (exactWordCount(article.body) !== input.targetWords) article = await repairArticleWords(article, input, currentEvents, attempt, fetchImpl)
+    article.body = normalizeArticleParagraphs(article.body, input.targetWords)
   }
   throw new HttpError(502, `تعذّر إنتاج مقال يحقق ${input.targetWords} كلمة حرفياً مع شرط الأصالة. لم يُحفظ أي نص ناقص.`)
 }
@@ -837,6 +897,146 @@ export async function generatePerfectSocialPack(input, fetchImpl = fetch) {
     } : null),
     generatedAt: new Date().toISOString(),
   }
+}
+
+
+function socialIdeasSchema() {
+  return {
+    items: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          title: { type: 'STRING' },
+          idea: { type: 'STRING' },
+          purpose: { type: 'STRING' },
+          audience: { type: 'STRING' },
+          format: { type: 'STRING' },
+          reason: { type: 'STRING' },
+          eventId: { type: 'STRING' },
+        },
+        required: ['title','idea','purpose','audience','format','reason','eventId'],
+      },
+    },
+  }
+}
+
+function fallbackStandaloneIdeas(input, world) {
+  const items = []
+  const add = (title, idea, purpose, audience, format, reason, event = null) => {
+    if (!title || !idea || items.length >= input.count) return
+    items.push({
+      id: `idea-${items.length + 1}-${createHash('sha1').update(`${title}|${idea}`).digest('hex').slice(0, 10)}`,
+      title, idea, purpose, audience, format, reason,
+      event: event ? { id: event.id, title: event.title, source: event.source, url: event.url, publishedAt: event.publishedAt } : null,
+    })
+  }
+  for (const event of world.slice(0, 3)) {
+    add(
+      `ما الذي لا يقوله الخبر عن «${trimAtWord(event.title, 74)}»؟`,
+      `الخبر يشرح ما حدث، لكن السؤال التربوي الأهم هو: ما الذي سيتغير في الإنسان بعد أن تهدأ الضجة؟`,
+      'تعليق راهن قصير يربط الحدث بالمعنى الإنساني من دون إعادة صياغة الخبر.',
+      'الجمهور العام', 'تعليق راهن', `حدث حديث من ${event.source} ويمكن ربطه طبيعيًا بمجال التعليم والتقنية.`, event,
+    )
+  }
+  for (const book of input.books.slice(0, 2)) {
+    add(
+      `فكرة من «${trimAtWord(book.title, 70)}» تستحق أن تعود اليوم`,
+      `استخرج سؤالًا واحدًا من الكتاب، ثم اختبره أمام واقع التعليم اليوم بدل تلخيص الكتاب أو الترويج له.`,
+      'إحياء فكرة عميقة من المؤلفات بصيغة منشور مستقل جديد.',
+      'المعلمون والباحثون', 'فكرة من كتاب', 'يربط المؤلفات القديمة بسؤال حديث من دون تكرار نص الكتاب.', null,
+    )
+  }
+  for (const paper of input.papers.slice(0, 2)) {
+    add(
+      `ماذا لو خرج هذا البحث من الجامعة إلى الصف؟`,
+      `حوّل نتيجة واحدة من «${trimAtWord(paper.title, 70)}» إلى سؤال عملي: ماذا سيفعل المعلم أو ولي الأمر غدًا؟`,
+      'تحويل المعرفة المحكمة إلى فكرة إنسانية قابلة للنقاش.',
+      'المعلمون والقيادات التعليمية', 'سؤال بحثي', 'يمد الجسر بين البحث والممارسة اليومية.', null,
+    )
+  }
+  const evergreen = [
+    ['السرعة ليست دائمًا تقدمًا', 'كلما اختصرنا الوقت بالتقنية، اسأل: هل اختصرنا الفهم أيضًا؟', 'ومضة نقدية قصيرة قابلة للنشر في X وInstagram.', 'الجمهور العام', 'ومضة'],
+    ['سؤال لا يُطرح في اجتماعات التطوير', 'قبل شراء الأداة الجديدة: ما المشكلة الإنسانية التي ستحلها فعلًا؟', 'فتح نقاش مهني بلا وعظ أو ضجيج.', 'القيادات التعليمية', 'سؤال'],
+    ['مشهد صغير يكشف نظامًا كاملًا', 'ابدأ بموقف يومي بين معلم وطالب، ثم اترك القارئ يرى المشكلة الأكبر من خلاله.', 'منشور إنساني مبني على مشهد لا على تقرير.', 'المعلمون وأولياء الأمور', 'مشهد'],
+    ['الفكرة التي تبدو صحيحة أكثر من اللازم', 'اختر مسلمة تربوية شائعة، واكشف الحد الذي تتحول عنده من حل إلى مشكلة.', 'منشور مفارق يثير التفكير من دون استفزاز مصطنع.', 'الجمهور العام', 'مفارقة'],
+    ['جملة يسمعها الطالب وتبقى معه', 'اختر عبارة مدرسية يومية تبدو عادية، ثم بيّن كيف تصنع صورة الطالب عن نفسه.', 'منشور إنساني قصير يصلح لكاروسيل أو تغريدة.', 'المعلمون وأولياء الأمور', 'مشهد إنساني'],
+    ['ما الذي نربحه وما الذي نخسره؟', 'ضع قرارًا تعليميًا حديثًا في ميزان مزدوج: المكسب السريع والخسارة البعيدة.', 'منشور تحليلي متوازن بعيد عن الرفض أو الانبهار.', 'القيادات التعليمية', 'ميزان'],
+    ['السؤال الذي يجب أن يسبق الأرقام', 'قبل عرض نسبة النجاح أو الإنجاز، اسأل عن الإنسان الذي تقف خلفه هذه النسبة.', 'ومضة تربط القياس بالكرامة والمعنى.', 'الجمهور العام', 'سؤال'],
+    ['رسالة قصيرة إلى معلم متعب', 'اكتب جملة صادقة تعترف بتعب المعلم، ثم تمنحه معنى عمليًا صغيرًا لليوم التالي.', 'منشور دافئ غير وعظي يبني صلة إنسانية.', 'المعلمون', 'رسالة'],
+    ['فكرة تستحق أن تُقال بهدوء', 'اختر قضية يعلو حولها الضجيج، ثم قدّم جملة واحدة تعيدها إلى أصلها الإنساني.', 'منشور هادئ يعاكس سرعة المنصات من دون أن ينعزل عنها.', 'الجمهور العام', 'تأمل'],
+  ]
+  for (const [title, idea, purpose, audience, format] of evergreen) add(title, idea, purpose, audience, format, 'فجوة دائمة تصلح بين المنشورات المرتبطة بالأحداث.', null)
+  return items.slice(0, input.count)
+}
+
+export async function generateStandaloneIdeas(input, fetchImpl = fetch) {
+  const world = (await fetchLiveContextPool(fetchImpl)).slice(0, 45)
+  let response
+  try {
+    response = await callGeminiStructured({
+      instruction: `أنت مستشار أفكار المحتوى الشخصي للدكتور أحمد حسين الفيلكاوي. اقترح منشورات مستقلة قصيرة يمكنه نشرها بين المقالات، وليست ملخصات لمقالات.
+
+حلّل معًا: أرشيف مقالاته، مؤلفاته، أبحاثه، الذاكرة المشتقة من كتبه الخاصة، الرادار التحريري، وأحدث الأخبار العالمية الموثوقة المقدمة لك.
+
+قواعد صارمة:
+- اقترح ${input.count} أفكار متنوعة، وكل فكرة قابلة للاختيار والكتابة فورًا.
+- لا تكرر عنوانًا أو حجة أو زاوية موجودة في الأرشيف.
+- نوّع بين: تعليق راهن، سؤال تربوي، مفارقة، مشهد إنساني، فكرة من كتاب، نتيجة بحث، ومضة قصيرة، وموقف يصلح لـInstagram أو X.
+- لا تربط حدثًا راهنًا إلا إذا كان الارتباط طبيعيًا؛ لا تخترع خبرًا أو رقمًا أو دراسة.
+- الفكرة يجب أن تبدو من عالم الدكتور وأسلوبه، لكن لا تنسخ جملة من مقالاته.
+- purpose يشرح ما الذي ينبغي أن يبقى في ذهن القارئ.
+- reason يشرح باختصار لماذا الاقتراح جديد الآن وما مصدره: فجوة أرشيف، كتاب، بحث، أو حدث.
+- eventId يكون معرف الحدث المقدم حرفيًا أو سلسلة فارغة.
+- أعد JSON فقط.`,
+      prompt: JSON.stringify({
+        styleProfile: input.styleProfile,
+        archive: input.archive,
+        books: input.books,
+        papers: input.papers,
+        privateBookMemory: input.privateBooks,
+        editorialRadar: input.radar,
+        trustedWorldContext: world.map((item) => ({ id: item.id, title: item.title, summary: item.summary, source: item.source, url: item.url, publishedAt: item.publishedAt })),
+      }),
+      properties: socialIdeasSchema(),
+      required: ['items'],
+      maxOutputTokens: 5_000,
+      temperature: .78,
+    }, fetchImpl)
+  } catch {
+    return { items: fallbackStandaloneIdeas(input, world), generatedAt: new Date().toISOString(), sourceCount: world.length, fallback: true }
+  }
+
+  const seen = new Set()
+  const items = boundedArray(response.items, input.count * 2, (item) => {
+    if (!item || typeof item !== 'object') return null
+    const title = boundedString(item.title, 180)
+    const idea = boundedString(item.idea, 700)
+    const purpose = boundedString(item.purpose, 450)
+    if (!title || !idea || !purpose) return null
+    const signature = normalizeArabicForSimilarity(`${title}|${idea}`)
+    if (!signature || seen.has(signature)) return null
+    const similarity = serverArticleSimilarity(title, idea, input.archive)
+    if (similarity.repeated) return null
+    seen.add(signature)
+    const event = world.find((candidate) => candidate.id === boundedString(item.eventId, 220)) || null
+    return {
+      id: `idea-${createHash('sha1').update(signature).digest('hex').slice(0, 12)}`,
+      title, idea, purpose,
+      audience: boundedString(item.audience, 160) || 'الجمهور العام',
+      format: boundedString(item.format, 80) || 'منشور مستقل',
+      reason: boundedString(item.reason, 500),
+      originality: similarity.originality,
+      event: event ? { id: event.id, title: event.title, source: event.source, url: event.url, publishedAt: event.publishedAt } : null,
+    }
+  })
+  const fallbacks = fallbackStandaloneIdeas(input, world)
+  for (const item of fallbacks) {
+    if (items.length >= input.count) break
+    const key = normalizeArabicForSimilarity(`${item.title}|${item.idea}`)
+    if (!seen.has(key)) { seen.add(key); items.push(item) }
+  }
+  return { items: items.slice(0, input.count), generatedAt: new Date().toISOString(), sourceCount: world.length, fallback: false }
 }
 
 
@@ -1000,6 +1200,7 @@ export function createRequestHandler({
   suggestContent = generateContentSuggestion,
   createPerfectArticle = generatePerfectArticle,
   createSocialPack = generatePerfectSocialPack,
+  createSocialIdeas = generateStandaloneIdeas,
   getCurrentContext = currentContextForIdea,
 } = {}) {
   const withinAiRateLimit = createRateLimiter()
@@ -1143,7 +1344,7 @@ export function createRequestHandler({
       return
     }
 
-    if ([articleSuggestionPath, contentSuggestionPath, perfectArticlePath, socialPackPath, currentContextPath].includes(url.pathname)) {
+    if ([articleSuggestionPath, contentSuggestionPath, perfectArticlePath, socialPackPath, socialIdeasPath, currentContextPath].includes(url.pathname)) {
       if (method !== 'POST') {
         sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' })
         return
@@ -1173,6 +1374,11 @@ export function createRequestHandler({
       if (url.pathname === socialPackPath) {
         const input = socialPackInput(body)
         sendJson(res, 200, await createSocialPack(input))
+        return
+      }
+      if (url.pathname === socialIdeasPath) {
+        const input = socialIdeasInput(body)
+        sendJson(res, 200, await createSocialIdeas(input))
         return
       }
       if (url.pathname === currentContextPath) {

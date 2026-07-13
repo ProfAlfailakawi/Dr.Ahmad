@@ -8,7 +8,7 @@
  * ٣) ثلاث بطاقات: مقال جديد · سؤال الأسبوع · لقاء قادم.
  *    كل ما يُنشر هنا يظهر في الموقع فوراً — بلا رفع ملفات.
  */
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Page } from '../components/ui'
 import { firebaseEnabled, getDb, getFirebaseApp } from '../lib/firebase'
 import { articleCats } from '../data'
@@ -35,23 +35,6 @@ import {
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.95rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
 const btn = 'rounded-full bg-accent px-7 py-2.5 font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
 const card = 'rounded-2xl border border-hair bg-wash p-6 md:p-7'
-
-const arabicDigits = (value: string) => value.replace(/[0-9]/g, (digit) => '٠١٢٣٤٥٦٧٨٩'[Number(digit)])
-
-function localizeAdminDigits(root: HTMLElement) {
-  const skip = (element: Element | null) => Boolean(element?.closest('input, textarea, select, option, code, pre, script, style, [dir="ltr"], [data-latin-digits]'))
-  const walk = (node: Node) => {
-    if (node.nodeType === Node.TEXT_NODE) {
-      const parent = node.parentElement
-      if (!skip(parent) && node.nodeValue && /[0-9]/.test(node.nodeValue)) node.nodeValue = arabicDigits(node.nodeValue)
-      return
-    }
-    if (node.nodeType !== Node.ELEMENT_NODE) return
-    if (skip(node as Element)) return
-    node.childNodes.forEach(walk)
-  }
-  walk(root)
-}
 
 /* التاريخ العربي من اليوم — مثل بقية الموقع */
 const today = () => {
@@ -252,22 +235,6 @@ function Panel({ email }: { email: string }) {
   const [tab, setTab] = useState<AdminTab>(initialTab)
   const [commandsOpen, setCommandsOpen] = useState(false)
   const cms = useCmsContent({ includeHidden: true })
-  const adminRoot = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const root = adminRoot.current
-    if (!root) return
-    localizeAdminDigits(root)
-    const observer = new MutationObserver((records) => {
-      records.forEach((record) => {
-        if (record.type === 'characterData' && record.target.parentElement) localizeAdminDigits(record.target.parentElement)
-        record.addedNodes.forEach((node) => { if (node instanceof HTMLElement) localizeAdminDigits(node) })
-      })
-    })
-    observer.observe(root, { childList: true, subtree: true, characterData: true })
-    return () => observer.disconnect()
-  }, [])
-
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
@@ -306,7 +273,7 @@ function Panel({ email }: { email: string }) {
 
   return (
     <Page>
-      <div ref={adminRoot} className="admin-shell mx-auto box-border w-full max-w-[1440px] overflow-x-hidden px-4 pb-32 pt-28 sm:px-6 md:px-10 md:pb-24 md:pt-32">
+      <div className="admin-shell mx-auto box-border w-full max-w-[1440px] overflow-x-hidden px-4 pb-32 pt-28 sm:px-6 md:px-10 md:pb-24 md:pt-32">
         <div className="mb-7 flex flex-wrap items-center justify-between gap-4 md:mb-9">
           <div>
             <p className="mb-1 text-[.78rem] font-semibold uppercase text-accent">لوحة التحكم</p>

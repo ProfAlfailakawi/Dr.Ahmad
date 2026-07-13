@@ -42,6 +42,52 @@ const LegacyLang = lazy(() => import('./pages/Legacy').then((m) => ({ default: m
 const LegacyPage = lazy(() => import('./pages/Legacy').then((m) => ({ default: m.LegacyPage })))
 const LegacyPaper = lazy(() => import('./pages/Legacy').then((m) => ({ default: m.LegacyPaper })))
 
+function WesternDigitsGuard() {
+  useEffect(() => {
+    const western = (value: string) => value
+      .replace(/[٠-٩]/g, (digit) => '0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(digit)] || digit)
+      .replace(/[۰-۹]/g, (digit) => '0123456789'['۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)] || digit)
+
+    const skipped = (node: Node) => {
+      const element = node.parentElement
+      return Boolean(element?.closest('script,style,noscript,code,pre,[data-preserve-digits="true"]'))
+    }
+
+    const normalizeText = (node: Node) => {
+      if (node.nodeType !== Node.TEXT_NODE || skipped(node)) return
+      const current = node.nodeValue || ''
+      const next = western(current)
+      if (next !== current) node.nodeValue = next
+    }
+
+    const normalizeElement = (element: Element) => {
+      if (element.matches('script,style,noscript,code,pre,[data-preserve-digits="true"]')) return
+      for (const attribute of ['title', 'aria-label', 'placeholder']) {
+        const current = element.getAttribute(attribute)
+        if (!current) continue
+        const next = western(current)
+        if (next !== current) element.setAttribute(attribute, next)
+      }
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
+      while (walker.nextNode()) normalizeText(walker.currentNode)
+    }
+
+    normalizeElement(document.body)
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === 'characterData') normalizeText(mutation.target)
+        for (const node of mutation.addedNodes) {
+          if (node.nodeType === Node.TEXT_NODE) normalizeText(node)
+          else if (node instanceof Element) normalizeElement(node)
+        }
+      }
+    })
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true })
+    return () => observer.disconnect()
+  }, [])
+  return null
+}
+
 function AnimatedRoutes() {
   const loc = useLocation()
   return (
@@ -116,6 +162,7 @@ export default function App() {
     <CmsProvider>
       <BrowserRouter>
         <PersistentAudioProvider>
+          <WesternDigitsGuard />
           <RouteViewTracker />
           <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>
           <Cursor />

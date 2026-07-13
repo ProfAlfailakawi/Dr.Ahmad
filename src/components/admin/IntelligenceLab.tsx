@@ -283,7 +283,7 @@ function AudioControlCard({ articles }: { articles: ArticleRecord[] }) {
 function MonthlyPlanDetails({ articles }: { articles: ArticleRecord[] }) {
   const now = new Date()
   const period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  const monthLabel = new Intl.DateTimeFormat('ar-KW-u-nu-arab', { month: 'long', year: 'numeric' }).format(now)
+  const monthLabel = new Intl.DateTimeFormat('ar-KW-u-nu-latn', { month: 'long', year: 'numeric' }).format(now)
   const plan = useMemo(() => monthlyPlan(articles, books, papers, now), [articles, period])
   return (
     <ToolDetails title={`خطة ${monthLabel}`} note="تتبدّل تلقائيًا مع بداية كل شهر، وتنوّع بين التصنيفات والأرشيف والزوايا الجديدة.">

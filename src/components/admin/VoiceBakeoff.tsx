@@ -44,7 +44,7 @@ const libraryPairs = Object.keys(audioLibrary)
 const fallbackPair = libraryPairs[0] || null
 
 const card = 'rounded-2xl border border-hair bg-wash p-6 md:p-7'
-const ar = (n: number) => String(n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])
+const ar = (n: number) => String(n)
 const clock = (s: number) => `${ar(Math.floor(s / 60))}:${ar(Math.floor(s % 60)).padStart(2, '٠')}`
 
 export function VoiceBakeoffCard() {

@@ -14,7 +14,7 @@ const norm = (s: string) => s.replace(/[ًٌٍَُِّْـ]/g, '').replace(/[أ�
 const tokens = (s: string) => norm(s).replace(/[^ء-ي\s]/g, ' ').split(/\s+/)
   .map((w) => w.replace(/^(وال|فال|بال|كال|ال|و|ف|ب|ل|ك)/, '')).filter((w) => w.length >= 4 && !AR_STOP.has(w))
 
-const ar = (n: number) => String(n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])
+const ar = (n: number) => String(n)
 
 /* ── بطاقة الاقتباس: رسمٌ أحادي اللون واعٍ بالوضع الداكن ── */
 const W = 1080

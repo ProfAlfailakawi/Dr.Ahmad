@@ -162,7 +162,7 @@ export function LaunchModeCard({ articles, books, papers, media }: { articles: A
         <div className="flex flex-wrap items-center gap-2"><span className="text-[.78rem] text-soft">مدة سريعة:</span>{[[1, '24 ساعة'], [3, '3 أيام'], [7, 'أسبوع']].map(([days, label]) => <button key={String(days)} onClick={() => setDuration(Number(days))} className={softButton}>{label}</button>)}</div>
         <label className="grid gap-2 text-[.78rem] font-semibold text-soft">أو حدّد موعد النهاية بدقة<input type="datetime-local" className={input} value={toLocalInput(form.until)} onChange={(event) => setForm((previous) => ({ ...previous, enabled: true, until: event.target.value ? new Date(event.target.value).toISOString() : '' }))} /></label>
       </div>
-      {form.until && <p className="mt-3 text-[.78rem] text-soft">ينتهي تلقائياً: {new Date(form.until).toLocaleString('ar-KW', { dateStyle: 'long', timeStyle: 'short' })}</p>}
+      {form.until && <p className="mt-3 text-[.78rem] text-soft">ينتهي تلقائياً: {new Date(form.until).toLocaleString('ar-KW-u-nu-latn', { dateStyle: 'long', timeStyle: 'short' })}</p>}
       <div className="mt-6 flex flex-wrap items-center gap-3"><button disabled={busy || !form.slug} onClick={() => void save(true)} className={primaryButton}>{busy ? 'أحفظ…' : form.enabled ? 'تحديث الإطلاق' : 'ضعه في الواجهة'}</button>{form.enabled && <button disabled={busy} onClick={() => void save(false)} className={softButton}>إنهاء الآن</button>}{message && <span className="text-[.8rem] font-semibold text-accent">{message}</span>}</div>
     </section>
   )

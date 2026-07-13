@@ -47,6 +47,18 @@ type CurrentEvent = {
   relevance?: number
 }
 
+type StandaloneIdea = {
+  id: string
+  title: string
+  idea: string
+  purpose: string
+  audience: string
+  format: string
+  reason: string
+  originality?: number
+  event?: CurrentEvent | null
+}
+
 type PerfectSocialPack = {
   x: string[]
   linkedin: string[]
@@ -107,8 +119,31 @@ const normalize = (value = '') => value
   .trim()
 
 const wordCount = (value = '') => value.trim().split(/\s+/).filter(Boolean).length
-const toArabicDigits = (value: string | number) => String(value).replace(/[0-9]/g, (digit) => '٠١٢٣٤٥٦٧٨٩'[Number(digit)])
 const fromArabicDigits = (value: string) => value.replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
+
+function humanParagraphs(value: string, target: number) {
+  const words = value.replace(/[ \t]+/g, ' ').replace(/\n+/g, ' ').trim().split(/\s+/).filter(Boolean)
+  if (!words.length) return ''
+  const paragraphCount = target >= 430 ? 8 : target >= 385 ? 7 : 6
+  const chunks: string[] = []
+  let start = 0
+  for (let index = 0; index < paragraphCount; index += 1) {
+    const remainingParagraphs = paragraphCount - index
+    const remainingWords = words.length - start
+    if (remainingParagraphs === 1) { chunks.push(words.slice(start).join(' ')); break }
+    const ideal = start + Math.round(remainingWords / remainingParagraphs)
+    const minimum = Math.max(start + 28, ideal - 12)
+    const maximum = Math.min(words.length - (remainingParagraphs - 1) * 28, ideal + 12)
+    let end = ideal
+    for (let cursor = minimum; cursor <= maximum; cursor += 1) {
+      if (/[.!؟…][”"']?$/.test(words[cursor - 1] || '')) { end = cursor; break }
+    }
+    end = Math.max(start + 1, Math.min(words.length, end))
+    chunks.push(words.slice(start, end).join(' '))
+    start = end
+  }
+  return chunks.filter(Boolean).join('\n\n')
+}
 
 function fitExactWords(value: string, target: number) {
   const clean = value.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()
@@ -134,7 +169,7 @@ function fitExactWords(value: string, target: number) {
   if (words.length > target) words = words.slice(0, target)
   const last = words.length - 1
   words[last] = words[last].replace(/[،؛:!.؟]+$/g, '') + '.'
-  return words.join(' ')
+  return humanParagraphs(words.join(' '), target)
 }
 
 function buildExactLocalArticle(idea: string, audience: string, angle: string, related: ArticleRecord[], target: number) {
@@ -738,6 +773,9 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const [pulseEvents, setPulseEvents] = useState<CurrentEvent[]>([])
   const [pulseSelectedEventIds, setPulseSelectedEventIds] = useState<string[]>([])
   const [pulseEventsLoading, setPulseEventsLoading] = useState(false)
+  const [pulseSuggestions, setPulseSuggestions] = useState<StandaloneIdea[]>([])
+  const [pulseSuggestionsLoading, setPulseSuggestionsLoading] = useState(false)
+  const [pulseSuggestionsError, setPulseSuggestionsError] = useState('')
 
   useEffect(() => {
     let active = true
@@ -863,6 +901,8 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
       }
       if (generated.exactWords !== targetWords || wordCount(generated.body) !== targetWords) {
         generated = { ...generated, body: fitExactWords(generated.body, targetWords), exactWords: targetWords }
+      } else {
+        generated = { ...generated, body: humanParagraphs(generated.body, targetWords) }
       }
       const related = relatedForIdea(`${generated.title} ${generated.excerpt}`, richArticles, (article) => `${article.excerpt || ''} ${article.body || ''}`, 5)
       const relatedBooks = relatedForIdea(`${generated.title} ${generated.excerpt}`, books, (book) => book.desc || '', 3)
@@ -1032,6 +1072,57 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
     }
   }
 
+  const loadPulseSuggestions = async (force = false) => {
+    if (pulseSuggestionsLoading || (!force && pulseSuggestions.length)) return
+    setPulseSuggestionsLoading(true)
+    setPulseSuggestionsError('')
+    try {
+      const ok = isAdmin || await refresh()
+      if (!ok || !user) throw new Error('جلسة المشرف تحتاج تحديثًا.')
+      const token = await user.getIdToken()
+      const result = await adminAiRequest<{ items: StandaloneIdea[] }>('/api/ai/social-ideas', {
+        count: 9,
+        styleProfile: style,
+        archive: richArticles.slice(0, 90).map((article) => ({
+          slug: article.slug,
+          title: article.title,
+          cat: article.cat,
+          iso: article.iso,
+          excerpt: article.excerpt || '',
+          body: (article.body || '').slice(0, 520),
+        })),
+        books: books.slice(0, 30).map((book) => ({ slug: book.slug, title: book.title, desc: book.desc || '' })),
+        papers: papers.slice(0, 40).map((paper) => ({ slug: paper.slug, title: paper.title, meta: paper.meta || '' })),
+        privateBooks: privateLinks,
+        radar,
+      }, token)
+      setPulseSuggestions(result.items || [])
+    } catch (reason) {
+      setPulseSuggestionsError(reason instanceof Error ? reason.message : 'تعذّر اقتراح الأفكار الآن.')
+    } finally {
+      setPulseSuggestionsLoading(false)
+    }
+  }
+
+  const pickPulseSuggestion = (item: StandaloneIdea) => {
+    setPulseIdea(item.idea)
+    setPulsePurpose(item.purpose)
+    setPulseAudience(item.audience || 'الجمهور العام')
+    setPulsePack(null)
+    if (item.event) {
+      setPulseEvents((previous) => previous.some((event) => event.id === item.event?.id) ? previous : [item.event!, ...previous])
+      setPulseSelectedEventIds([item.event.id])
+    } else {
+      setPulseSelectedEventIds([])
+    }
+    window.setTimeout(() => document.getElementById('standalone-compose')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
+  }
+
+  useEffect(() => {
+    if (view !== 'pulse' || !user || pulseSuggestions.length || pulseSuggestionsLoading) return
+    void loadPulseSuggestions()
+  }, [view, user, richArticles.length, radar.length])
+
   const loadPulseContext = async () => {
     if (!pulseIdea.trim()) return [] as CurrentEvent[]
     setPulseEventsLoading(true)
@@ -1155,7 +1246,7 @@ ${pulsePurpose.trim()}`,
               <Field label="الفكرة الخام"><input className={input} value={idea} onChange={(event) => setIdea(event.target.value)} placeholder="مثال: الخوف من الامتحان" /></Field>
               <Field label="الجمهور"><select className={input} value={audience} onChange={(event) => setAudience(event.target.value)}><option>المعلمين والقيادات التعليمية</option><option>أولياء الأمور</option><option>الطلاب والباحثين</option><option>الإعلاميين</option><option>الجمهور العام</option></select></Field>
               <Field label="الزاوية"><select className={input} value={angle} onChange={(event) => setAngle(event.target.value)}><option>الأثر الإنساني قبل بريق الأداة</option><option>زاوية تربوية عملية</option><option>سؤال أخلاقي وفكري</option><option>مدخل إعلامي سريع</option><option>امتداد أكاديمي من الأرشيف</option></select></Field>
-              <Field label="الكلمات حرفيًا"><input className={input} inputMode="numeric" value={toArabicDigits(targetWords)} onChange={(event) => { const value = Number(fromArabicDigits(event.target.value).replace(/[^0-9]/g, '')); if (Number.isFinite(value) && value > 0) setTargetWords(Math.max(350, Math.min(450, value))) }} /></Field>
+              <Field label="الكلمات حرفيًا"><input className={input} inputMode="numeric" value={String(targetWords)} onChange={(event) => { const value = Number(fromArabicDigits(event.target.value).replace(/[^0-9]/g, '')); if (Number.isFinite(value) && value > 0) setTargetWords(Math.max(350, Math.min(450, value))) }} /></Field>
               <div className="flex items-end"><button type="button" disabled={generating} className={`${primary} w-full`} onClick={() => void rebuild()}>{generating ? 'أكتب وأراجع…' : 'ابنِ المقال الكامل'}</button></div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -1220,6 +1311,34 @@ ${pulsePurpose.trim()}`,
       {view === 'pulse' && (
         <div className="grid gap-5">
           <section className={card}>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-[.76rem] font-semibold uppercase text-accent">اقتراحات ذكية لك</p>
+                <h2 className="mt-1 font-display text-2xl font-semibold text-ink">اختر فكرة… والاستوديو يكملها.</h2>
+                <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">يقرأ أرشيف مقالاتك، كتبك وأبحاثك، الذاكرة المشتقة من الكتب الخاصة، الرادار، وأحدث المصادر العالمية الموثوقة؛ ثم يستبعد الزوايا المكررة.</p>
+              </div>
+              <button type="button" className={ghost} disabled={pulseSuggestionsLoading} onClick={() => void loadPulseSuggestions(true)}>{pulseSuggestionsLoading ? 'أبحث الآن…' : 'اقتراحات جديدة'}</button>
+            </div>
+            {pulseSuggestionsLoading && !pulseSuggestions.length ? (
+              <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-44 animate-pulse rounded-2xl border border-hair bg-canvas" />)}</div>
+            ) : pulseSuggestions.length ? (
+              <div className="rail -mx-1 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-3">
+                {pulseSuggestions.map((item) => (
+                  <button key={item.id} type="button" onClick={() => pickPulseSuggestion(item)} className="group flex w-[78vw] max-w-[340px] shrink-0 snap-start flex-col rounded-2xl border border-hair bg-canvas p-4 text-right transition-all hover:-translate-y-0.5 hover:border-accent md:w-auto md:max-w-none">
+                    <span className="flex items-center justify-between gap-3 text-[.68rem] font-semibold text-accent"><span>{item.format}</span><span>{item.event ? item.event.source : 'من أرشيفك'}</span></span>
+                    <strong className="mt-3 block font-display text-[1.02rem] leading-[1.55] text-ink transition-colors group-hover:text-accent">{item.title}</strong>
+                    <span className="mt-2 line-clamp-3 text-[.8rem] leading-[1.75] text-soft">{item.idea}</span>
+                    <span className="mt-auto pt-4 text-[.72rem] leading-relaxed text-soft">{item.reason}</span>
+                    <span className="mt-3 text-[.76rem] font-semibold text-accent">استخدم هذه الفكرة</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-5 rounded-xl border border-hair bg-canvas p-4 text-[.82rem] text-soft">{pulseSuggestionsError || 'اضغط «اقتراحات جديدة» ليقرأ الاستوديو أرشيفك والمشهد العالمي الآن.'}</p>
+            )}
+          </section>
+
+          <section id="standalone-compose" className={card}>
             <p className="text-[.76rem] font-semibold uppercase text-accent">منشور مستقل</p>
             <h2 className="mt-1 font-display text-2xl font-semibold text-ink">غرّد أو انشر فكرة… من دون أن تكتب مقالًا.</h2>
             <p className="mt-2 max-w-3xl text-[.84rem] leading-relaxed text-soft">اكتب خاطرًا، موقفًا، سؤالًا أو تعليقًا على حدث. الاستوديو يصنع لكل منصة صياغتها وقالبها البصري، ويغيّر الشكل والنبرة في كل مرة.</p>

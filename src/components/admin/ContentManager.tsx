@@ -143,7 +143,7 @@ function dateArabic(iso: string) {
   if (!iso) return ''
   const date = new Date(`${iso}T12:00:00+03:00`)
   if (Number.isNaN(date.getTime())) return ''
-  return new Intl.DateTimeFormat('ar-KW', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kuwait' }).format(date)
+  return new Intl.DateTimeFormat('ar-KW-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kuwait' }).format(date)
 }
 
 function todayIso() {

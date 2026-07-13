@@ -287,10 +287,16 @@ export function Listen({ slug, title, text, audio }: { slug: string; title: stri
     return () => { on = false }
   }, [slug])
 
+  // أسماء العرض العائلية ثابتة لكل مقال: الصوت الرجالي «عثمان»، والصوت
+  // النسائي يتناوب بين أزيان ودرة وبسمة وفق بصمة الرابط، فلا يتغير عشوائياً
+  // كل مرة يفتح فيها القارئ الصفحة.
+  const daughters = ['أزيان', 'درة', 'بسمة']
+  const daughterIndex = [...slug].reduce((total, char) => total + char.charCodeAt(0), 0) % daughters.length
+  const daughterName = daughters[daughterIndex]
   const sources = [
-    ...(voices.fahed ? [{ key: 'fahed', label: 'قراءة فهد', src: typeof voices.fahed === 'string' ? voices.fahed : audioUrl(`/audio/${slug}.mp3`) }] : []),
-    ...(voices.noura ? [{ key: 'noura', label: 'قراءة نورة', src: typeof voices.noura === 'string' ? voices.noura : audioUrl(`/audio/${slug}.noura.mp3`) }] : []),
-    ...(dialogueOk ? [{ key: 'dialogue', label: '🎙 الحلقة الحوارية', src: audioUrl(`/audio/${slug}.dialogue.mp3`) }] : []),
+    ...(voices.fahed ? [{ key: 'fahed', label: 'قراءة عثمان', src: typeof voices.fahed === 'string' ? voices.fahed : audioUrl(`/audio/${slug}.mp3`) }] : []),
+    ...(voices.noura ? [{ key: 'noura', label: `قراءة ${daughterName}`, src: typeof voices.noura === 'string' ? voices.noura : audioUrl(`/audio/${slug}.noura.mp3`) }] : []),
+    ...(dialogueOk ? [{ key: 'dialogue', label: 'الحلقة الحوارية', src: audioUrl(`/audio/${slug}.dialogue.mp3`) }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)
 

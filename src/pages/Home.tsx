@@ -928,7 +928,7 @@ export default function Home() {
       <LaunchSpotlight articles={articles} books={books} papers={papers} media={media} />
 
       {/* hero — البيان الفكري أولاً (100svh للجوال) */}
-      <header className="relative flex min-h-[100svh] items-center px-6 pb-16 pt-24 md:px-11 md:pb-24 md:pt-28">
+      <header className="relative flex min-h-[100svh] items-center px-6 pb-28 pt-24 md:px-11 md:pb-28 md:pt-28">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_50%_at_78%_40%,rgba(62,92,120,.06),transparent_62%)]" />
         <div className="relative z-10 mx-auto grid w-full max-w-shell items-center gap-8 md:grid-cols-[1.15fr_.85fr] md:gap-16">
           {/* البيان أولاً — على الجوال والكمبيوتر */}
@@ -995,7 +995,7 @@ export default function Home() {
         </div>
 
         <motion.div
-          className="cue absolute bottom-8 left-1/2 -translate-x-1/2 text-[.74rem] text-soft"
+          className="cue absolute bottom-3 left-1/2 -translate-x-1/2 text-[.74rem] text-soft md:bottom-7"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 2 }}

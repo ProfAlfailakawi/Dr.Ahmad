@@ -272,8 +272,16 @@ function Panel({ email }: { email: string }) {
             <p className="mt-1 text-[.78rem] text-soft">كل الأدوات موجودة، لكن لا يظهر أمامك إلا ما تحتاجه الآن.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button onClick={() => setCommandsOpen(true)} className="rounded-full border border-hair px-4 py-2 text-[.78rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">
-              لوحة الأوامر <span className="ms-1 text-[.68rem]">⌘K</span>
+            <button
+              type="button"
+              onClick={() => setCommandsOpen(true)}
+              aria-label="فتح لوحة الأوامر"
+              title="لوحة الأوامر — ⌘K"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-all duration-300 hover:-translate-y-0.5 hover:border-accent hover:text-accent"
+            >
+              <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 6V4a2 2 0 1 0-2 2h10a2 2 0 1 0-2-2v16a2 2 0 1 0 2-2H7a2 2 0 1 0 2 2V4"/>
+              </svg>
             </button>
             <button onClick={signOut} className="rounded-full border border-hair px-4 py-2 text-[.76rem] text-soft transition-colors hover:border-accent hover:text-accent">
               خروج ({email})

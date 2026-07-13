@@ -166,17 +166,16 @@ export function useTrackView(path: string, title: string, enabled = true) {
     const ids = viewDocumentIds(normalizedPath)
     const pathSessionKey = `view:path:${encodeViewPath(normalizedPath)}`
 
-    return afterFirstPaint(() => {
-      // رحلة الزائر منفصلة عن عدّاد الصفحة: حتى الرجوع إلى صفحة شوهدت سابقاً
-      // لا يقطع سلسلة الانتقال الحالية. التكرار نفسه يُمنع داخل trackJourney.
-      try {
-        const previous = window.sessionStorage.getItem('view:last-path') || ''
-        if (previous !== normalizedPath) {
-          void trackJourney(previous, normalizedPath)
-          window.sessionStorage.setItem('view:last-path', normalizedPath)
-        }
-      } catch { /* لا تؤثر على عدّاد الصفحة */ }
+    // رحلة الزائر تُسجَّل فور تغيّر المسار؛ لا ننتظر requestIdleCallback لأن
+    // الزائر قد ينتقل سريعاً قبل تنفيذ المهمة المؤجلة. عدّاد الصفحة وحده يبقى
+    // مؤجلاً حتى لا يؤثر على الطلاء الأول أو سرعة التنقّل.
+    try {
+      const previous = normalizePath(window.sessionStorage.getItem('view:last-path') || '')
+      if (previous && previous !== normalizedPath) void trackJourney(previous, normalizedPath)
+      window.sessionStorage.setItem('view:last-path', normalizedPath)
+    } catch { /* لا تؤثر على عدّاد الصفحة */ }
 
+    return afterFirstPaint(() => {
       if (wasSeen(pathSessionKey)) return
       void Promise.all([
         incrementViewDocument(ids.total, safeTitle),

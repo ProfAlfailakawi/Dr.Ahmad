@@ -67,9 +67,15 @@ export function AudioPlayer({ sources, title }: { sources: AudioSource[]; title:
         <button
           type="button"
           onClick={() => active && player.playing ? void player.toggle() : void play()}
-          className="rounded-full bg-accent px-5 py-2.5 text-[.86rem] font-semibold text-white transition-colors hover:bg-accent-deep"
+          aria-label={active && player.playing ? 'إيقاف مؤقت' : 'تشغيل القراءة'}
+          title={active && player.playing ? 'إيقاف مؤقت' : 'تشغيل القراءة'}
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent-deep"
         >
-          {active && player.playing ? 'إيقاف مؤقت' : 'تشغيل'}
+          {active && player.playing ? (
+            <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="5" width="4" height="14" rx="1"/><rect x="13.5" y="5" width="4" height="14" rx="1"/></svg>
+          ) : (
+            <svg aria-hidden width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="-translate-x-[1px]"><path d="M8 5.7v12.6c0 .9 1 1.5 1.8 1l9.2-6.3a1.2 1.2 0 0 0 0-2L9.8 4.7A1.2 1.2 0 0 0 8 5.7Z"/></svg>
+          )}
         </button>
       </div>
 

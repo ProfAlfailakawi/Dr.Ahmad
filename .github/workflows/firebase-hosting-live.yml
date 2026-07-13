@@ -32,6 +32,8 @@ jobs:
         run: npm run build
         env:
           VITE_SITE_URL: https://dr-alfailakawi.web.app
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
 
       - name: Verify Firebase service account secret
         run: |
@@ -40,14 +42,6 @@ jobs:
             echo 'Add a Firebase service-account JSON with Hosting Admin permissions to this repository secret.'
             exit 1
           fi
-
-      - name: Deploy Firestore rules
-        continue-on-error: true
-        run: |
-          node -e "require('fs').writeFileSync(process.env.RUNNER_TEMP + '/firebase-sa.json', process.env.FIREBASE_SERVICE_ACCOUNT)"
-          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json" npx firebase-tools@latest deploy --only firestore:rules --project gen-lang-client-0200723670 --non-interactive
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
 
       - name: Deploy to Firebase Hosting live
         uses: FirebaseExtended/action-hosting-deploy@v0

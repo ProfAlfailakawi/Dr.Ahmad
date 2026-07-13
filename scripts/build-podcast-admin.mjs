@@ -12,8 +12,13 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const AUDIO = resolve(ROOT, 'audio')
 const DATA = readFileSync(resolve(ROOT, 'src/data.ts'), 'utf8')
 const OUT = resolve(ROOT, 'src/data/podcast-admin.json')
+try { process.loadEnvFile(resolve(ROOT, '.env')) } catch { /* .env اختياري */ }
+const AUDIO_PUBLIC_BASE_URL = (process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
+const USE_EXTERNAL_AUDIO = Boolean(AUDIO_PUBLIC_BASE_URL)
 const podcastStatePath = resolve(ROOT, '.podcast-state.json')
 const podcastState = existsSync(podcastStatePath) ? JSON.parse(readFileSync(podcastStatePath, 'utf8')) : { done: {} }
+const audioMetaPath = resolve(ROOT, 'src/data/audio-meta.json')
+const audioMeta = existsSync(audioMetaPath) ? JSON.parse(readFileSync(audioMetaPath, 'utf8')) : {}
 
 const articlesSource = DATA.slice(DATA.indexOf('export const articles = ['), DATA.indexOf('export const articlesWithBody'))
 const pick = (block, key) => block.match(new RegExp(`${key}:\\s*'([^']*)'`))?.[1] || ''
@@ -26,9 +31,15 @@ const articles = [...articlesSource.matchAll(/\{\s*slug:\s*'[^']+'[\s\S]*?\},/g)
 
 const articleBySlug = new Map(articles.map((article) => [article.slug, article]))
 const files = existsSync(AUDIO) ? readdirSync(AUDIO) : []
-const dialogue = files.filter((name) => name.endsWith('.dialogue.mp3')).sort()
+const localDialogue = files.filter((name) => name.endsWith('.dialogue.mp3'))
+const externalDialogue = USE_EXTERNAL_AUDIO
+  ? Object.keys(audioMeta).filter((name) => name.endsWith('.dialogue.mp3'))
+  : []
+const dialogue = [...new Set([...localDialogue, ...externalDialogue])].sort()
 const generatedAt = dialogue.length
-  ? new Date(Math.max(...dialogue.map((name) => statSync(resolve(AUDIO, name)).mtimeMs))).toISOString()
+  ? new Date(Math.max(...dialogue.map((name) => existsSync(resolve(AUDIO, name))
+      ? statSync(resolve(AUDIO, name)).mtimeMs
+      : Date.now()))).toISOString()
   : null
 
 const episodes = dialogue.map((name) => {
@@ -36,11 +47,13 @@ const episodes = dialogue.map((name) => {
   const article = articleBySlug.get(slug)
   const file = resolve(AUDIO, name)
   const transcriptFile = resolve(AUDIO, `${slug}.dialogue.json`)
-  const bytes = readFileSync(file)
+  const localAudio = existsSync(file)
+  const bytes = localAudio ? readFileSync(file) : null
   const hasTranscript = existsSync(transcriptFile)
-  const hash = createHash('sha256').update(bytes).digest('hex')
+  const hash = bytes ? createHash('sha256').update(bytes).digest('hex') : ''
   const accepted = podcastState?.done?.[`${slug}:ar`]
-  const approved = accepted?.status === 'accepted_automated' && accepted.audioHash === hash
+  const approved = accepted?.status === 'accepted_automated'
+    && ((hash && accepted.audioHash === hash) || (!localAudio && USE_EXTERNAL_AUDIO && audioMeta[name]?.bytes))
   let utterances = 0
   if (hasTranscript) {
     try {
@@ -55,9 +68,9 @@ const episodes = dialogue.map((name) => {
     date: article?.date || '',
     iso: article?.iso || '',
     status: approved ? 'published' : 'under_review',
-    audio: `/audio/${name}`,
-    bytes: statSync(file).size,
-    audioHash: hash.slice(0, 16),
+    audio: USE_EXTERNAL_AUDIO ? `${AUDIO_PUBLIC_BASE_URL}/${name}` : `/audio/${name}`,
+    bytes: localAudio ? statSync(file).size : Number(audioMeta[name]?.bytes || 0),
+    audioHash: hash ? hash.slice(0, 16) : accepted?.audioHash?.slice(0, 16) || '',
     hasTranscript,
     utterances,
     quality: {

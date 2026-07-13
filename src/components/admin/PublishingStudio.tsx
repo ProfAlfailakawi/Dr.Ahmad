@@ -12,6 +12,8 @@ const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
 const primary = 'rounded-full bg-accent px-6 py-2.5 text-[.84rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
 const ghost = 'rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50'
+const MIN_ARTICLE_WORDS = 350
+const MAX_GENERATION_WORDS = 4000
 
 type SocialKey = 'x' | 'linkedin' | 'instagram' | 'threads' | 'whatsapp' | 'newsletter'
 
@@ -28,6 +30,7 @@ type Bundle = {
   quality: string[]
   exactTarget?: number
   originality?: number
+  originalityBypassed?: boolean
   similarity?: { slug: string; title: string; score: number }[]
   event?: CurrentEvent | null
   eventConnection?: string
@@ -112,7 +115,7 @@ const fromArabicDigits = (value: string) => value.replace(/[٠-٩]/g, (digit) =>
 function humanParagraphs(value: string, target: number) {
   const words = value.replace(/[ \t]+/g, ' ').replace(/\n+/g, ' ').trim().split(/\s+/).filter(Boolean)
   if (!words.length) return ''
-  const paragraphCount = target >= 430 ? 8 : target >= 385 ? 7 : 6
+  const paragraphCount = Math.max(6, Math.min(24, Math.round(Math.max(MIN_ARTICLE_WORDS, target) / 70)))
   const chunks: string[] = []
   let start = 0
   for (let index = 0; index < paragraphCount; index += 1) {
@@ -354,7 +357,7 @@ ${goal}.`,
   }
 }
 
-function qualityGate(bundle: Bundle, articles: ArticleRecord[], targetWords: number) {
+function qualityGate(bundle: Bundle, articles: ArticleRecord[], targetWords: number, skipOriginality: boolean) {
   const usedSlug = articles.some((article) => article.slug === bundle.slug)
   const words = wordCount(bundle.body)
   const linked = bundle.related.length + bundle.books.length + bundle.papers.length
@@ -367,9 +370,9 @@ function qualityGate(bundle: Bundle, articles: ArticleRecord[], targetWords: num
     { key: 'slug', label: 'Slug نظيف وغير مكرر', ok: /^[a-z0-9-]{8,}$/.test(bundle.slug) && !usedSlug },
     { key: 'links', label: 'روابط داخلية/معرفية', ok: linked >= 2 },
     { key: 'image', label: 'صورة مشاركة افتراضية متاحة', ok: true },
-    { key: 'duplicate', label: `أصالة الفكرة (${similarity.originality}٪)`, ok: !similarity.repeated && !articles.some((article) => normalize(article.title) === normalize(bundle.title)) },
-    { key: 'words', label: `عدد الكلمات حرفي: ${targetWords}`, ok: words === targetWords },
-    { key: 'voice', label: 'قابلية صوتية', ok: words === targetWords && hasQuestion },
+    { key: 'duplicate', label: skipOriginality ? 'الأصالة: مستثناة بإقرار الكاتب' : `أصالة الفكرة (${similarity.originality}٪)`, ok: skipOriginality || (!similarity.repeated && !articles.some((article) => normalize(article.title) === normalize(bundle.title))) },
+    { key: 'words', label: `الحد الأدنى: ${MIN_ARTICLE_WORDS} كلمة (الحالي ${words})`, ok: words >= MIN_ARTICLE_WORDS },
+    { key: 'voice', label: 'قابلية صوتية', ok: words >= MIN_ARTICLE_WORDS && hasQuestion },
     { key: 'style-ai', label: 'مبني من بصمة أرشيفك', ok: Boolean(bundle.generatedBy) },
     { key: 'social', label: 'قابل للتحويل إلى حزمة سوشيال لاحقًا', ok: socialOk },
   ]
@@ -747,7 +750,8 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const [queueBusy, setQueueBusy] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [socialGenerating, setSocialGenerating] = useState(false)
-  const [targetWords, setTargetWords] = useState(350)
+  const [targetWords, setTargetWords] = useState(MIN_ARTICLE_WORDS)
+  const [skipOriginality, setSkipOriginality] = useState(false)
   const [currentEvents, setCurrentEvents] = useState<CurrentEvent[]>([])
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([])
   const [eventsLoading, setEventsLoading] = useState(false)
@@ -776,7 +780,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const styleSamples = useMemo(() => representativeStyleSamples(richArticles, 6), [richArticles])
   const lab = useMemo(() => ideaLab(idea, richArticles, books, papers), [idea, richArticles])
   const privateLinks = (privateBookLinks as { books?: PrivateBookLink[] }).books || []
-  const gate = useMemo(() => qualityGate(bundle, richArticles, targetWords), [bundle, richArticles, targetWords])
+  const gate = useMemo(() => qualityGate(bundle, richArticles, targetWords, skipOriginality), [bundle, richArticles, skipOriginality, targetWords])
   const similarity = useMemo(() => articleSimilarityReport(bundle.title, bundle.body, richArticles), [bundle.title, bundle.body, richArticles])
   const weeklyPack = useMemo(() => buildWeeklyPack(bundle, richArticles, radar), [bundle, radar, richArticles])
   const articleSuggestions = useMemo(() => suggestArticleIdeas(richArticles, radar, privateLinks), [privateLinks, radar, richArticles])
@@ -838,7 +842,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
       const requestedIdea = override?.title ? `${override.title}. ${override.angle || ''}` : idea
       const rawAngle = override?.angle || angle
       const ideaPreflight = articleSimilarityReport(requestedIdea, rawAngle, richArticles)
-      const requestedAngle = ideaPreflight.repeated && ideaPreflight.matches[0]
+      const requestedAngle = !skipOriginality && ideaPreflight.repeated && ideaPreflight.matches[0]
         ? `${rawAngle}. اكتب من زاوية مغايرة بوضوح لمقال «${ideaPreflight.matches[0].title}»، وركّز على ما تغيّر الآن.`
         : rawAngle
       const nearest = relatedForIdea(`${requestedIdea} ${requestedAngle}`, richArticles, (article) => `${article.excerpt || ''} ${article.body || ''}`, 45)
@@ -851,6 +855,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
           audience,
           angle: requestedAngle,
           targetWords,
+          skipOriginality,
           styleProfile: style,
           styleSamples,
           selectedEventIds,
@@ -867,7 +872,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
         const initialTitle = suggestStrongTitle(requestedIdea)
         const localBody = buildExactLocalArticle(requestedIdea, audience, requestedAngle, nearest, targetWords)
         const localReport = articleSimilarityReport(initialTitle, localBody, richArticles)
-        const title = localReport.repeated ? `${initialTitle}… وما الذي تغيّر الآن؟` : initialTitle
+        const title = !skipOriginality && localReport.repeated ? `${initialTitle}… وما الذي تغيّر الآن؟` : initialTitle
         const finalReport = articleSimilarityReport(title, localBody, richArticles)
         generated = {
           title,
@@ -884,10 +889,11 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
           modelValidated: false,
         }
       }
-      if (generated.exactWords !== targetWords || wordCount(generated.body) !== targetWords) {
+      const generatedWords = wordCount(generated.body)
+      if (generatedWords < targetWords) {
         generated = { ...generated, body: fitExactWords(generated.body, targetWords), exactWords: targetWords }
       } else {
-        generated = { ...generated, body: humanParagraphs(generated.body, targetWords) }
+        generated = { ...generated, body: humanParagraphs(generated.body, generatedWords), exactWords: generatedWords }
       }
       const related = relatedForIdea(`${generated.title} ${generated.excerpt}`, richArticles, (article) => `${article.excerpt || ''} ${article.body || ''}`, 5)
       const relatedBooks = relatedForIdea(`${generated.title} ${generated.excerpt}`, books, (book) => book.desc || '', 3)
@@ -902,15 +908,16 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
         books: relatedBooks.map(({ slug, title }) => ({ slug, title })),
         papers: relatedPapers.map(({ slug, title }) => ({ slug, title })),
         quality: [
-          `العدد مقفول حرفيًا: ${generated.exactWords} كلمة.`,
+          `الحد الأدنى 350 كلمة؛ النسخة المولّدة الآن ${generated.exactWords} كلمة ويمكنك زيادتها بحرية.`,
           `درجة الأصالة مقابل الأرشيف: ${generated.originality}٪.`,
           `تعلّم من ${style.articleCount} مقالًا ومن ${styleSamples.length} عينات أسلوب متنوعة.`,
           generated.event ? `ربط راهن موثّق: ${generated.event.source} — ${generated.event.title}` : 'لم يُفرض حدث راهن لأن الصلة لم تكن عضوية.',
-          generated.originalityNote || 'اجتاز فحص عدم تكرار الزاوية والحجة.',
+          skipOriginality ? 'استُثني فحص الأصالة بإقرار الكاتب لأن النص أو فكرته أصلية له.' : (generated.originalityNote || 'اجتاز فحص عدم تكرار الزاوية والحجة.'),
           'قوالب السوشيال تُبنى منفصلة لكل منصة لمنع النسخ المتكرر.',
         ],
         exactTarget: targetWords,
         originality: generated.originality,
+        originalityBypassed: skipOriginality,
         similarity: generated.similarity,
         event: generated.event || null,
         eventConnection: generated.eventConnection || '',
@@ -920,7 +927,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
       setBundle(nextBundle)
       setIdea(override?.title || idea)
       if (override?.angle) setAngle(override.angle)
-      setNotice(`مقال أصيل بأسلوبك، ${targetWords} كلمة حرفيًا، اجتاز بوابة عدم التكرار ✓`)
+      setNotice(`بُني المقال بطول مبدئي ${generated.exactWords} كلمة. الحد الأدنى 350، ويمكنك الكتابة حتى 4000 كلمة وأكثر يدويًا${skipOriginality ? '، مع تسجيل استثناء الأصالة بإقرارك' : ''} ✓`)
       setView('write')
       void requestSocialPack(nextBundle).catch(() => undefined)
     } catch (reason) {
@@ -956,7 +963,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
     try {
       const ok = isAdmin || await refresh()
       if (!ok) throw new Error('جلسة المشرف تحتاج تحديثًا. سجّل خروجك وادخل من جديد.')
-      if (wordCount(bundle.body) !== targetWords) throw new Error(`المقال يجب أن يكون ${targetWords} كلمة حرفيًا. العدد الحالي: ${wordCount(bundle.body)}.`)
+      if (wordCount(bundle.body) < MIN_ARTICLE_WORDS) throw new Error(`المقال يجب ألا يقل عن ${MIN_ARTICLE_WORDS} كلمة. العدد الحالي: ${wordCount(bundle.body)}.`)
       if (!gate.ready) throw new Error(`بوابة الجودة لم تجتز بعد: ${gate.blocking.join('، ')}`)
       if (richArticles.some((article) => article.slug === bundle.slug)) throw new Error('هذا الرابط مستخدم سابقًا. عدّل العنوان أو الرابط.')
       const db = await getDb()
@@ -982,8 +989,10 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
           relatedBooks: bundle.books,
           relatedPapers: bundle.papers,
           quality: bundle.quality,
-          exactWords: targetWords,
+          requestedGenerationWords: targetWords,
+          actualWords: wordCount(bundle.body),
           originality: similarity.originality,
+          originalityBypassed: skipOriginality,
           nearestArchive: similarity.matches,
           styleProfile: style,
           styleSamples: styleSamples.map((sample) => ({ slug: sample.slug, title: sample.title, cat: sample.cat, year: sample.year })),
@@ -1181,14 +1190,14 @@ ${pulsePurpose.trim()}`,
               <Field label="الفكرة الخام"><input className={input} value={idea} onChange={(event) => setIdea(event.target.value)} placeholder="مثال: الخوف من الامتحان" /></Field>
               <Field label="الجمهور"><select className={input} value={audience} onChange={(event) => setAudience(event.target.value)}><option>المعلمين والقيادات التعليمية</option><option>أولياء الأمور</option><option>الطلاب والباحثين</option><option>الإعلاميين</option><option>الجمهور العام</option></select></Field>
               <Field label="الزاوية"><select className={input} value={angle} onChange={(event) => setAngle(event.target.value)}><option>الأثر الإنساني قبل بريق الأداة</option><option>زاوية تربوية عملية</option><option>سؤال أخلاقي وفكري</option><option>مدخل إعلامي سريع</option><option>امتداد أكاديمي من الأرشيف</option></select></Field>
-              <Field label="عدد الكلمات (الحد الأدنى 350)"><input className={input} inputMode="numeric" min={350} max={450} value={String(targetWords)} onChange={(event) => { const value = Number(fromArabicDigits(event.target.value).replace(/[^0-9]/g, '')); if (Number.isFinite(value) && value > 0) setTargetWords(Math.max(350, Math.min(450, value))) }} /></Field>
+              <Field label="طول التوليد المبدئي (350–4000 كلمة)"><input className={input} inputMode="numeric" min={MIN_ARTICLE_WORDS} max={MAX_GENERATION_WORDS} value={String(targetWords)} onChange={(event) => { const value = Number(fromArabicDigits(event.target.value).replace(/[^0-9]/g, '')); if (Number.isFinite(value) && value > 0) setTargetWords(Math.max(MIN_ARTICLE_WORDS, Math.min(MAX_GENERATION_WORDS, value))) }} /></Field>
               <div className="flex items-end"><button type="button" disabled={generating} className={`${primary} w-full`} onClick={() => void rebuild()}>{generating ? 'أكتب وأراجع…' : 'ابنِ المقال الكامل'}</button></div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
               <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.articleCount}</strong><span className="text-[.76rem] text-soft">مقالًا يحلل أسلوبها</span></div>
               <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.avgSentenceWords || '—'}</strong><span className="text-[.76rem] text-soft">متوسط الجملة</span></div>
               <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.avgParagraphs || '—'}</strong><span className="text-[.76rem] text-soft">متوسط الفقرات</span></div>
-              <div className="rounded-xl border border-accent/40 bg-accent/[.05] p-4"><strong className="block font-display text-2xl text-accent">{targetWords}</strong><span className="text-[.76rem] text-soft">عدد مقفول بلا زيادة أو نقص</span></div>
+              <div className="rounded-xl border border-accent/40 bg-accent/[.05] p-4"><strong className="block font-display text-2xl text-accent">{targetWords}</strong><span className="text-[.76rem] text-soft">للتوليد الأول فقط — ليس سقفًا للتحرير</span></div>
             </div>
             {notice && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.84rem] text-accent">{notice}</p>}
             {error && <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.84rem] text-soft">{error}</p>}
@@ -1208,18 +1217,19 @@ ${pulsePurpose.trim()}`,
                 <Field label="التصنيف"><select className={input} value={bundle.cat} onChange={(event) => updateBundle({ cat: event.target.value })}>{articleCats.filter((cat) => cat !== 'الكل').map((cat) => <option key={cat}>{cat}</option>)}</select></Field>
               </div>
               <Field label="المقتطف"><textarea className={`${input} min-h-24 leading-loose`} value={bundle.excerpt} onChange={(event) => updateBundle({ excerpt: event.target.value })} /></Field>
-              <Field label={`المقال — ${wordCount(bundle.body)} / ${targetWords} كلمة ${wordCount(bundle.body) === targetWords ? '✓' : '— يحتاج ضبط'}`}><textarea className={`${input} min-h-[500px] leading-loose`} value={bundle.body} onChange={(event) => updateBundle({ body: event.target.value })} /></Field>
+              <Field label={`المقال — ${wordCount(bundle.body)} كلمة ${wordCount(bundle.body) >= MIN_ARTICLE_WORDS ? '✓' : `— بقي ${MIN_ARTICLE_WORDS - wordCount(bundle.body)}`}`}><textarea className={`${input} min-h-[500px] leading-loose`} value={bundle.body} onChange={(event) => updateBundle({ body: event.target.value })} /></Field>
             </div>
           </section>
           <aside className="grid content-start gap-5">
             <section className={card}>
-              <p className="text-[.76rem] font-semibold uppercase text-accent">قفل الكلمات والأصالة</p>
+              <p className="text-[.76rem] font-semibold uppercase text-accent">الحد الأدنى والأصالة</p>
               <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className={`rounded-xl border p-4 ${wordCount(bundle.body) === targetWords ? 'border-accent/40 bg-accent/[.05]' : 'border-hair bg-canvas'}`}><strong className="block font-display text-2xl text-accent">{wordCount(bundle.body)}</strong><span className="text-[.72rem] text-soft">المطلوب {targetWords}</span></div>
-                <div className={`rounded-xl border p-4 ${!similarity.repeated ? 'border-accent/40 bg-accent/[.05]' : 'border-hair bg-canvas'}`}><strong className="block font-display text-2xl text-accent">{similarity.originality}٪</strong><span className="text-[.72rem] text-soft">أصالة مقابل الأرشيف</span></div>
+                <div className={`rounded-xl border p-4 ${wordCount(bundle.body) >= MIN_ARTICLE_WORDS ? 'border-accent/40 bg-accent/[.05]' : 'border-hair bg-canvas'}`}><strong className="block font-display text-2xl text-accent">{wordCount(bundle.body)}</strong><span className="text-[.72rem] text-soft">الحد الأدنى {MIN_ARTICLE_WORDS} — بلا سقف مقفول</span></div>
+                <div className={`rounded-xl border p-4 ${skipOriginality || !similarity.repeated ? 'border-accent/40 bg-accent/[.05]' : 'border-hair bg-canvas'}`}><strong className="block font-display text-2xl text-accent">{similarity.originality}٪</strong><span className="text-[.72rem] text-soft">{skipOriginality ? 'مستثناة بإقرار الكاتب' : 'أصالة مقابل الأرشيف'}</span></div>
               </div>
               {similarity.matches[0] && <p className="mt-3 text-[.78rem] leading-relaxed text-soft">الأقرب موضوعيًا: «{similarity.matches[0].title}» — التشابه {Math.round(similarity.matches[0].score * 100)}٪.</p>}
-              {(wordCount(bundle.body) !== targetWords || similarity.repeated) && <button type="button" disabled={generating} onClick={() => void rebuild()} className={`${ghost} mt-4 w-full`}>{generating ? 'أعيد التحرير…' : 'إعادة بناء بضبط حرفي'}</button>}
+              <button type="button" aria-pressed={skipOriginality} onClick={() => setSkipOriginality((value) => !value)} className={`mt-4 w-full rounded-xl border px-4 py-3 text-start transition-colors ${skipOriginality ? 'border-accent bg-accent/[.07] text-accent' : 'border-hair bg-canvas text-soft hover:border-accent'}`}><strong className="block text-[.84rem]">أنا الكاتب — استثناء فحص الأصالة {skipOriginality ? '✓' : ''}</strong><span className="mt-1 block text-[.74rem] leading-relaxed">يُعطّل منع التشابه لهذه النسخة فقط، ويُسجّل داخل بيانات المقال للمراجعة. لا يعطّل بقية بوابة الجودة.</span></button>
+              {(wordCount(bundle.body) < MIN_ARTICLE_WORDS || (similarity.repeated && !skipOriginality)) && <button type="button" disabled={generating} onClick={() => void rebuild()} className={`${ghost} mt-4 w-full`}>{generating ? 'أعيد التحرير…' : 'إعادة بناء واستكمال الحد الأدنى'}</button>}
             </section>
             {bundle.event && <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">صلة راهنة موثقة</p><a href={bundle.event.url} target="_blank" rel="noreferrer" className="mt-3 block font-display text-[1rem] font-semibold leading-relaxed text-ink hover:text-accent">{bundle.event.title}</a><p className="mt-2 text-[.78rem] text-soft">{bundle.event.source}</p>{bundle.eventConnection && <p className="mt-3 text-[.8rem] leading-relaxed text-soft">{bundle.eventConnection}</p>}</section>}
             <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">ذاكرة الفكرة</p><p className="mt-2 text-[.86rem] leading-relaxed text-soft">{lab.angle}</p><div className="mt-4 grid gap-3">{bundle.related.map((item) => <a key={item.slug} href={`/articles/${item.slug}`} target="_blank" rel="noreferrer" className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-ink transition-colors hover:border-accent hover:text-accent">{item.title}{item.iso && <span className="ms-2 text-soft">{item.iso.slice(0, 4)}</span>}</a>)}</div></section>
@@ -1284,10 +1294,10 @@ ${pulsePurpose.trim()}`,
               <p className="text-[.76rem] font-semibold uppercase text-accent">منظومة السوشيال</p>
               <h2 className="mt-1 font-display text-2xl font-semibold text-ink">القوالب تُبنى من النسخة النهائية للمقال.</h2>
               <p className="mt-3 max-w-3xl text-[.84rem] leading-relaxed text-soft">لكل منصة صياغة مختلفة، مع كاروسيل وStories وReel وقوالب PNG من ثيم الموقع وربط راهن موثق عند وجود صلة حقيقية.</p>
-              <button type="button" disabled={socialGenerating || wordCount(bundle.body) !== targetWords} onClick={() => void requestSocialPack(bundle).catch((reason) => setError(reason instanceof Error ? reason.message : 'تعذّر بناء الحزمة.'))} className={`${primary} mt-5`}>
+              <button type="button" disabled={socialGenerating || wordCount(bundle.body) < MIN_ARTICLE_WORDS} onClick={() => void requestSocialPack(bundle).catch((reason) => setError(reason instanceof Error ? reason.message : 'تعذّر بناء الحزمة.'))} className={`${primary} mt-5`}>
                 {socialGenerating ? 'أبني النصوص والتصاميم…' : 'ابنِ منظومة السوشيال'}
               </button>
-              {wordCount(bundle.body) !== targetWords && <p className="mt-3 text-[.78rem] text-soft">أكمل ضبط المقال إلى {targetWords} كلمة أولًا.</p>}
+              {wordCount(bundle.body) < MIN_ARTICLE_WORDS && <p className="mt-3 text-[.78rem] text-soft">أكمل المقال إلى الحد الأدنى: {MIN_ARTICLE_WORDS} كلمة.</p>}
             </section>
           )}
 
@@ -1301,7 +1311,7 @@ ${pulsePurpose.trim()}`,
 
           {notice && <p className="rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.84rem] text-accent">{notice}</p>}
           {error && <p className="rounded-xl border border-red-300/40 bg-wash px-4 py-3 text-[.84rem] text-soft">{error}</p>}
-          <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">ما بعد الاعتماد</p><div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">{[['١','المقال لا يُقبل إلا بعد قفل العدد والأصالة.'],['٢','القوالب البصرية تُنزّل PNG جاهزة.'],['٣','مصدر الحدث يُحفظ مع الحزمة للمراجعة.'],['٤','الطابور يحتفظ بكل نسخة قبل النشر المباشر.']].map(([num, note]) => <div key={num} className="rounded-xl border border-hair bg-canvas p-4"><span className="font-display text-2xl text-accent">{num}</span><p className="mt-2 text-[.8rem] leading-relaxed text-soft">{note}</p></div>)}</div></section>
+          <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">ما بعد الاعتماد</p><div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">{[['١','المقال لا يُقبل قبل 350 كلمة؛ الأصالة قابلة للاستثناء بإقرار الكاتب.'],['٢','القوالب البصرية تُنزّل PNG جاهزة.'],['٣','مصدر الحدث يُحفظ مع الحزمة للمراجعة.'],['٤','الطابور يحتفظ بكل نسخة قبل النشر المباشر.']].map(([num, note]) => <div key={num} className="rounded-xl border border-hair bg-canvas p-4"><span className="font-display text-2xl text-accent">{num}</span><p className="mt-2 text-[.8rem] leading-relaxed text-soft">{note}</p></div>)}</div></section>
         </>
       )}
     </div>

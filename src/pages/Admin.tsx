@@ -331,23 +331,90 @@ type Message = { id: string; name?: string; email?: string; topic?: string; inte
 function InboxPanel() {
   const [items, setItems] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
+  const [working, setWorking] = useState<string | null>(null)
+  const [notice, setNotice] = useState('')
 
-  const load = async () => {
-    const db = await getDb()
-    if (!db) { setLoading(false); return }
-    const { collection, getDocs, query, orderBy } = await import('firebase/firestore')
-    const snap = await getDocs(query(collection(db, 'messages'), orderBy('createdAt', 'desc')))
-    setItems(snap.docs.map((d) => ({ id: d.id, ...(d.data() as object) })))
-    setLoading(false)
-  }
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    let active = true
+    let unsubscribe = () => {}
+    ;(async () => {
+      const db = await getDb()
+      if (!db || !active) { setLoading(false); return }
+      const { collection, onSnapshot, orderBy, query } = await import('firebase/firestore')
+      unsubscribe = onSnapshot(
+        query(collection(db, 'messages'), orderBy('createdAt', 'desc')),
+        (snapshot) => {
+          if (!active) return
+          setItems(snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as object) })))
+          setLoading(false)
+        },
+        () => { if (active) setLoading(false) },
+      )
+    })()
+    return () => { active = false; unsubscribe() }
+  }, [])
 
   const remove = async (id: string) => {
     const db = await getDb()
     if (!db) return
     const { doc, deleteDoc } = await import('firebase/firestore')
     await deleteDoc(doc(db, 'messages', id))
-    load()
+  }
+
+  const publishInboxNote = async (message: Message) => {
+    const title = window.prompt('عنوان مختصر يظهر في «من بريدي» من دون اسم المرسل أو بريده:', message.topic || 'رسالة تستحق التوقف')?.trim()
+    if (!title) return
+    const note = window.prompt('اكتب الخلاصة المنشورة فقط. احذف أي اسم أو بريد أو معلومة خاصة:', message.message || '')?.trim()
+    if (!note) return
+    const url = window.prompt('رابط اختياري. اتركه فارغًا إذا كانت الخلاصة نصية:', '')?.trim() || ''
+    const db = await getDb()
+    if (!db) return
+    setWorking(`${message.id}:inbox`)
+    setNotice('')
+    try {
+      const { addDoc, collection, serverTimestamp } = await import('firebase/firestore')
+      await addDoc(collection(db, 'site_inbox'), {
+        title,
+        note,
+        url,
+        status: 'published',
+        published: true,
+        sourceMessageId: message.id,
+        createdAt: serverTimestamp(),
+      })
+      setNotice('أُضيفت الخلاصة إلى «من بريدي» فورًا من دون نشر اسم المرسل أو بريده ✓')
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'تعذّر نشر الخلاصة.')
+    } finally {
+      setWorking(null)
+    }
+  }
+
+  const publishFaq = async (message: Message) => {
+    const question = window.prompt('صغ السؤال كما تريد أن يظهر للزائر، من دون بيانات شخصية:', message.message || '')?.trim()
+    if (!question) return
+    const answer = window.prompt('اكتب إجابتك المختصرة التي ستظهر تحت السؤال:', '')?.trim()
+    if (!answer) return
+    const db = await getDb()
+    if (!db) return
+    setWorking(`${message.id}:faq`)
+    setNotice('')
+    try {
+      const { addDoc, collection, serverTimestamp } = await import('firebase/firestore')
+      await addDoc(collection(db, 'site_faqs'), {
+        q: question,
+        a: answer,
+        status: 'published',
+        published: true,
+        sourceMessageId: message.id,
+        createdAt: serverTimestamp(),
+      })
+      setNotice('أُضيف السؤال والإجابة إلى «أسئلة تصلني» فورًا ✓')
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'تعذّر نشر السؤال.')
+    } finally {
+      setWorking(null)
+    }
   }
 
   const when = (m: Message) => {
@@ -355,16 +422,20 @@ function InboxPanel() {
     try { return new Date(m.createdAt.seconds * 1000).toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }) } catch { return '' }
   }
 
-  if (loading) return <div className={card}>لحظة… أجلب رسائلك.</div>
+  if (loading) return <div className={card}>لحظة… أجلب رسائلك وأراقب الجديد لحظيًا.</div>
   if (!items.length) return (
     <div className={`${card} text-center`}>
       <p className="text-[1.05rem] text-ink">صندوقك فارغ حالياً.</p>
-      <p className="mt-2 text-[.88rem] text-soft">أي استشارة أو طلب تعاون يُرسل من صفحة «التواصل» يظهر هنا فوراً.</p>
+      <p className="mt-2 text-[.88rem] text-soft">أي استشارة أو طلب تعاون يُرسل من صفحة «التواصل» يظهر هنا فوراً، من دون إعادة تحميل الصفحة.</p>
     </div>
   )
 
   return (
     <div className="grid gap-4">
+      <div className="rounded-2xl border border-accent/25 bg-accent/[.045] p-4 text-[.84rem] leading-relaxed text-soft">
+        <strong className="text-ink">التحديث مباشر الآن.</strong> الرسائل الجديدة تظهر فور وصولها. ولا تُنشر أي رسالة تلقائيًا للزوار حفاظًا على الخصوصية؛ تختار أنت «من بريدي» أو «أسئلة تصلني»، وتراجع النص قبل نشره.
+      </div>
+      {notice && <p className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-soft">{notice}</p>}
       <p className="text-[.85rem] text-soft">{String(items.length).replace(/[0-9]/g, (d) => '0123456789'[+d])} رسالة — الأحدث أولاً</p>
       {items.map((m) => (
         <div key={m.id} className={card}>
@@ -379,9 +450,11 @@ function InboxPanel() {
             <span className="text-[.78rem] text-soft">{when(m)}</span>
           </div>
           <p className="mt-4 whitespace-pre-wrap leading-relaxed text-ink">{m.message}</p>
-          <div className="mt-4 flex items-center gap-4 border-t border-hair pt-3 text-[.82rem]">
+          <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-hair pt-3 text-[.82rem]">
             <a href={`mailto:${m.email}?subject=${encodeURIComponent('رد على رسالتك — د. أحمد حسين الفيلكاوي')}`} className="font-semibold text-accent transition-colors hover:text-accent-deep">الردّ بالبريد ←</a>
-            <button onClick={() => { if (confirm('حذف الرسالة نهائياً؟')) remove(m.id) }} className="text-soft transition-colors hover:text-red-500">حذف</button>
+            <button type="button" disabled={working !== null} onClick={() => void publishInboxNote(m)} className="rounded-full border border-hair px-3 py-1.5 text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50">{working === `${m.id}:inbox` ? 'أنشر…' : 'إضافة إلى «من بريدي»'}</button>
+            <button type="button" disabled={working !== null} onClick={() => void publishFaq(m)} className="rounded-full border border-hair px-3 py-1.5 text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50">{working === `${m.id}:faq` ? 'أنشر…' : 'إضافة إلى «أسئلة تصلني»'}</button>
+            <button onClick={() => { if (confirm('حذف الرسالة نهائياً؟')) void remove(m.id) }} className="text-soft transition-colors hover:text-red-500">حذف</button>
           </div>
         </div>
       ))}

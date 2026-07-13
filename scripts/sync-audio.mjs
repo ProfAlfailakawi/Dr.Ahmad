@@ -147,10 +147,11 @@ if (EXTERNAL_AUDIO_BASE_URL) {
   let totalDuration = 0
 
   for (const [name, info] of Object.entries(meta).sort(([a], [b]) => a.localeCompare(b))) {
-    if (!name.endsWith('.mp3') || name.includes('.dialogue')) continue
+    if (!name.endsWith('.mp3') || name.endsWith('.dialogue-en.mp3')) continue
+    const dialogue = name.endsWith('.dialogue.mp3')
     const noura = name.endsWith('.noura.mp3')
-    const slug = noura ? name.slice(0, -'.noura.mp3'.length) : name.slice(0, -'.mp3'.length)
-    const voice = noura ? 'noura' : 'fahed'
+    const slug = dialogue ? name.slice(0, -'.dialogue.mp3'.length) : noura ? name.slice(0, -'.noura.mp3'.length) : name.slice(0, -'.mp3'.length)
+    const voice = dialogue ? 'dialogue' : noura ? 'noura' : 'fahed'
     if (!slug || !knownSlugs.has(slug)) {
       invalid.push(`${name}: لا يطابق slug لمقال ذي نص كامل`)
       continue
@@ -175,7 +176,7 @@ if (EXTERNAL_AUDIO_BASE_URL) {
   const sorted = Object.fromEntries(Object.entries(next).sort(([a], [b]) => a.localeCompare(b)))
   const rendered = `${JSON.stringify(sorted, null, 2)}\n`
   const current = existsSync(MANIFEST) ? readFileSync(MANIFEST, 'utf8') : ''
-  const voices = Object.values(sorted).reduce((sum, item) => sum + Number(Boolean(item.fahed)) + Number(Boolean(item.noura)), 0)
+  const voices = Object.values(sorted).reduce((sum, item) => sum + Number(Boolean(item.fahed)) + Number(Boolean(item.noura)) + Number(Boolean(item.dialogue)), 0)
   const summary = `${Object.keys(sorted).length} مقالاً · ${voices} ملفاً خارجياً · ${(totalBytes / 1024 / 1024).toFixed(1)}MB`
   const durationSummary = totalDuration ? ` · ${(totalDuration / 60).toFixed(1)} دقيقة` : ''
 
@@ -209,17 +210,18 @@ if (!existsSync(AUDIO_DIR)) {
   console.error('✘ مجلد audio غير موجود.')
   process.exit(1)
 }
-// ملفات الحوار البودكاستي (<slug>.dialogue.mp3 / .dialogue-en.mp3) خارج فهرس القراءة العادية
-const files = readdirSync(AUDIO_DIR).filter((name) => name.endsWith('.mp3') && !name.includes('.dialogue')).sort()
+// القراءة العادية والحلقة الحوارية العربية تدخلان الفهرس؛ الإنجليزية لها قناة مستقلة.
+const files = readdirSync(AUDIO_DIR).filter((name) => name.endsWith('.mp3') && !name.endsWith('.dialogue-en.mp3')).sort()
 const next = {}
 const invalid = []
 let totalBytes = 0
 let totalDuration = 0
 
 for (const name of files) {
+  const dialogue = name.endsWith('.dialogue.mp3')
   const noura = name.endsWith('.noura.mp3')
-  const slug = noura ? name.slice(0, -'.noura.mp3'.length) : name.slice(0, -'.mp3'.length)
-  const voice = noura ? 'noura' : 'fahed'
+  const slug = dialogue ? name.slice(0, -'.dialogue.mp3'.length) : noura ? name.slice(0, -'.noura.mp3'.length) : name.slice(0, -'.mp3'.length)
+  const voice = dialogue ? 'dialogue' : noura ? 'noura' : 'fahed'
   const file = resolve(AUDIO_DIR, name)
 
   if (!slug || !knownSlugs.has(slug)) {
@@ -248,7 +250,7 @@ if (invalid.length) {
 const sorted = Object.fromEntries(Object.entries(next).sort(([a], [b]) => a.localeCompare(b)))
 const rendered = `${JSON.stringify(sorted, null, 2)}\n`
 const current = existsSync(MANIFEST) ? readFileSync(MANIFEST, 'utf8') : ''
-const voices = Object.values(sorted).reduce((sum, item) => sum + Number(Boolean(item.fahed)) + Number(Boolean(item.noura)), 0)
+const voices = Object.values(sorted).reduce((sum, item) => sum + Number(Boolean(item.fahed)) + Number(Boolean(item.noura)) + Number(Boolean(item.dialogue)), 0)
 const summary = `${Object.keys(sorted).length} مقالاً · ${voices} ملفاً · ${(totalBytes / 1024 / 1024).toFixed(1)}MB`
 const durationSummary = totalDuration ? ` · ${(totalDuration / 60).toFixed(1)} دقيقة` : ''
 
@@ -276,4 +278,4 @@ try {
 
 console.log(`✔ بُني audio.json من ${AUDIO_DIR}`)
 console.log(`  ${summary}${durationSummary}`)
-console.log(`  فهد ${Object.values(sorted).filter((item) => item.fahed).length} · نورة ${Object.values(sorted).filter((item) => item.noura).length}`)
+console.log(`  فهد ${Object.values(sorted).filter((item) => item.fahed).length} · نورة ${Object.values(sorted).filter((item) => item.noura).length} · حوار ${Object.values(sorted).filter((item) => item.dialogue).length}`)

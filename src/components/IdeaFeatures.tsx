@@ -62,35 +62,68 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   const [img, setImg] = useState<string | null>(null)
 
   useEffect(() => {
-    const onUp = () => {
-      if (view) return
-      const s = window.getSelection()
-      const text = s?.toString().trim() || ''
-      const within = s && s.anchorNode && s.anchorNode.parentElement?.closest('.article-body')
-      if (text.length >= 20 && text.length <= 400 && within && s!.rangeCount) {
-        const range = s!.getRangeAt(0).getBoundingClientRect()
+    let timer = 0
+    const inspectSelection = () => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => {
+        if (view) return
+        const selection = window.getSelection()
+        const text = selection?.toString().replace(/\s+/g, ' ').trim() || ''
+        if (!selection || !selection.rangeCount || text.length < 12 || text.length > 800) {
+          setPos(null)
+          return
+        }
+        const range = selection.getRangeAt(0)
+        const ancestor = range.commonAncestorContainer
+        const element = ancestor.nodeType === Node.ELEMENT_NODE
+          ? ancestor as Element
+          : ancestor.parentElement
+        if (!element?.closest('.article-body')) {
+          setPos(null)
+          return
+        }
+        const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0)
+        const rect = rects[0] || range.getBoundingClientRect()
+        if (!rect || (!rect.width && !rect.height)) return
+        const x = Math.min(window.innerWidth - 132, Math.max(132, rect.left + rect.width / 2))
+        const y = Math.max(74, rect.top - 10)
         setSel(text)
-        setPos({ x: range.left + range.width / 2, y: range.top - 10 })
-      } else { setPos(null) }
+        setPos({ x, y })
+      }, 90)
     }
-    document.addEventListener('mouseup', onUp)
-    document.addEventListener('touchend', onUp)
-    return () => { document.removeEventListener('mouseup', onUp); document.removeEventListener('touchend', onUp) }
+    document.addEventListener('selectionchange', inspectSelection)
+    document.addEventListener('pointerup', inspectSelection)
+    document.addEventListener('touchend', inspectSelection, { passive: true })
+    return () => {
+      window.clearTimeout(timer)
+      document.removeEventListener('selectionchange', inspectSelection)
+      document.removeEventListener('pointerup', inspectSelection)
+      document.removeEventListener('touchend', inspectSelection)
+    }
   }, [view])
 
-  // مطابقة خيط الفكرة: تقاطع الكلمات الدالة، مرتّبة زمنياً
+  // مطابقة خيط الفكرة: تبحث في العنوان والمقتطف والنص الكامل، ثم تضمن
+  // بديلاً زمنياً من التصنيف نفسه كي لا تتحول الأداة الجميلة إلى لوحة فارغة.
   const seed = new Set(tokens(sel))
-  const matches = articles
-    .filter((a) => a.slug !== current.slug)
+  const currentYear = current.iso.slice(0, 4)
+  const scored = articles
+    .filter((a) => a.slug !== current.slug && a.iso.slice(0, 4) !== currentYear)
     .map((a) => {
-      const bag = new Set(tokens(`${a.title} ${a.excerpt || ''}`))
+      const bag = new Set(tokens(`${a.title} ${a.excerpt || ''} ${(a.body || '').slice(0, 5000)}`))
       let overlap = 0
       for (const t of seed) if (bag.has(t)) overlap++
-      return { a, overlap }
+      const categoryBoost = a.cat === current.cat ? 0.75 : 0
+      return { a, overlap, score: overlap + categoryBoost }
     })
-    .filter((m) => m.overlap >= 1)
-    .sort((x, y) => y.overlap - x.overlap || y.a.iso.localeCompare(x.a.iso))
+  const semantic = scored
+    .filter((item) => item.overlap >= 1)
+    .sort((x, y) => y.score - x.score || y.a.iso.localeCompare(x.a.iso))
     .slice(0, 6)
+  const fallback = scored
+    .filter((item) => item.a.cat === current.cat)
+    .sort((x, y) => Math.abs(Number(x.a.iso.slice(0, 4)) - Number(currentYear)) - Math.abs(Number(y.a.iso.slice(0, 4)) - Number(currentYear)))
+    .slice(0, 6)
+  const matches = (semantic.length ? semantic : fallback)
     .sort((x, y) => x.a.iso.localeCompare(y.a.iso))
 
   const openCard = async () => {
@@ -154,12 +187,12 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                         <Link to={`/articles/${a.slug}`} onClick={close} className="mt-0.5 block font-display text-[1.02rem] font-medium leading-[1.6] text-ink transition-colors hover:text-accent">
                           {a.title}
                         </Link>
-                        <span className="mt-1 block text-[.72rem] text-soft">{a.cat} · {ar(overlap)} {overlap === 1 ? 'صلة' : 'صلات'} مشتركة</span>
+                        <span className="mt-1 block text-[.72rem] text-soft">{a.cat} · {overlap > 0 ? `${ar(overlap)} ${overlap === 1 ? 'صلة' : 'صلات'} مشتركة` : 'امتداد من المرحلة نفسها'}</span>
                       </li>
                     ))}
                   </ol>
                 ) : (
-                  <p className="text-[.9rem] font-light leading-relaxed text-soft">لم أعثر على مقالٍ آخر يلامس هذه الفكرة بعد — لعلّها فكرة بِكر في أرشيفك.</p>
+                  <p className="text-[.9rem] font-light leading-relaxed text-soft">لم أعثر على امتداد زمني واضح لهذه الفكرة بعد — وستظهر الصلة هنا تلقائياً كلما اتسع الأرشيف.</p>
                 )}
               </div>
               <p className="mt-6 text-[.72rem] leading-relaxed text-soft/80">حدّد أي جملة في المقال لتتبّع فكرتها عبر سنوات الكتابة.</p>

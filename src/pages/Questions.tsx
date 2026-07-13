@@ -1,8 +1,7 @@
 import { useSeo } from '../components/seo'
 import { Page, PageHead, FadeUp, Reveal } from '../components/ui'
 import { Share } from '../components/extras'
-import { useState, useEffect } from 'react'
-import { firebaseEnabled, fetchExtras } from '../lib/firebase'
+import { useExtras } from '../lib/content'
 import { Question, LAUNCH_DATE, staticQuestions } from '../questions-data'
 export { LAUNCH_DATE, staticQuestions }
 
@@ -16,24 +15,6 @@ function b(length: number) {
   return weeks % length
 }
 
-function useCollectionData<T>(collectionName: string) {
-  const [data, setData] = useState<T[]>([])
-
-  useEffect(() => {
-    let active = true
-    if (firebaseEnabled) {
-      fetchExtras<T>(collectionName).then((items) => {
-        if (active) setData(items as any)
-      })
-    }
-    return () => {
-      active = false
-    }
-  }, [collectionName])
-
-  return data
-}
-
 export default function Questions() {
   useSeo({
     title: 'سؤال يُقلق التعليم',
@@ -41,7 +22,7 @@ export default function Questions() {
     description: 'زاوية أسبوعية: كل جمعة سؤال جديد يوقظ التفكير في التعليم — بالعربية والإنجليزية.',
   })
 
-  const fbQuestions = useCollectionData<Question>('site_questions')
+  const fbQuestions = useExtras<Question>('site_questions', { realtime: true })
   const allQuestions = [...staticQuestions, ...fbQuestions]
   const activeIndex = b(allQuestions.length)
   const currentQuestion = allQuestions[activeIndex]

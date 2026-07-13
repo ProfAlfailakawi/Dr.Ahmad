@@ -407,9 +407,9 @@ function Overlay({ close }: { close: () => void }) {
 
       <div className="relative flex-1 overflow-y-auto overscroll-contain">
         <div className="flex min-h-full items-start px-6 pb-10 pt-[calc(6rem+env(safe-area-inset-top))] md:items-center md:px-11 md:py-28">
-        <div className="rail mx-auto flex w-full max-w-shell snap-x snap-mandatory gap-4 overflow-x-auto pb-4 md:grid md:grid-cols-3 md:gap-x-12 md:gap-y-10 md:overflow-visible md:pb-0">
+        <div className="rail mx-auto flex w-full max-w-shell snap-x snap-mandatory gap-4 overflow-x-auto pb-4 pe-[18vw] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-x-12 md:gap-y-10 md:overflow-visible md:pe-0 md:pb-0">
           {GROUPS.map((g, gi) => (
-            <div key={g.label} className="w-[82vw] shrink-0 snap-start rounded-3xl border border-hair bg-wash/40 p-5 md:w-auto md:rounded-none md:border-0 md:bg-transparent md:p-0">
+            <div key={g.label} className="w-[76vw] shrink-0 snap-start rounded-3xl border border-hair bg-wash/40 p-5 md:w-auto md:rounded-none md:border-0 md:bg-transparent md:p-0">
               <motion.span
                 className="block text-[.68rem] font-semibold uppercase text-accent md:text-[.72rem]"
                 initial={reduce ? false : { opacity: 0, y: 12 }}
@@ -470,6 +470,28 @@ function Overlay({ close }: { close: () => void }) {
                           >
                             {it.allLabel || `فتح ${it.label}`}
                           </Link>
+                          {it.to === '/search' && (
+                            <div className="mt-4 grid grid-cols-2 gap-2" aria-label="أدوات مركز البحث">
+                              <Link
+                                to="/search"
+                                onClick={close}
+                                className="group/tool flex min-w-0 items-center gap-2 rounded-2xl border border-hair bg-canvas px-3 py-3 transition-all hover:-translate-y-0.5 hover:border-accent"
+                              >
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent transition-colors group-hover/tool:bg-accent group-hover/tool:text-white">
+                                  <SocialIcon name="Search" size={16} />
+                                </span>
+                                <span className="min-w-0 text-[.75rem] font-semibold leading-snug text-ink">البحث<br />العميق</span>
+                              </Link>
+                              <Link
+                                to="/ask"
+                                onClick={close}
+                                className="group/tool flex min-w-0 items-center gap-2 rounded-2xl border border-hair bg-canvas px-3 py-3 transition-all hover:-translate-y-0.5 hover:border-accent"
+                              >
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 font-display text-lg font-bold text-accent transition-colors group-hover/tool:bg-accent group-hover/tool:text-white">؟</span>
+                                <span className="min-w-0 text-[.75rem] font-semibold leading-snug text-ink">اسأل العقل<br />الحي</span>
+                              </Link>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <Link
@@ -515,6 +537,17 @@ function Overlay({ close }: { close: () => void }) {
                   </li>
                 )})}
               </ul>
+              {gi === 0 && (
+                <div className="mt-7 flex items-center justify-between gap-3 rounded-2xl border border-accent/25 bg-accent/[.055] px-4 py-3 md:hidden" aria-label="إرشاد السحب">
+                  <span className="text-[.74rem] font-semibold leading-relaxed text-accent">بقية الأقسام موجودة يساراً</span>
+                  <motion.span
+                    aria-hidden="true"
+                    className="text-xl text-accent"
+                    animate={reduce ? undefined : { x: [0, -7, 0] }}
+                    transition={{ duration: 1.25, repeat: Infinity, ease: 'easeInOut' }}
+                  >←</motion.span>
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -31,7 +31,7 @@ export default function Radar() {
     description: 'كل ما التقطه الرادار من مصادر موثوقة، يوماً بيوم — حصاد أسبوعي مؤرشف كمرجع بحثي، بالعربية والإنجليزية.',
   })
 
-  const items = useExtras<RadarItem>('site_radar')
+  const items = useExtras<RadarItem>('site_radar', { realtime: true })
     .filter((r) => (!r.status || r.status === 'published') && r.day)
     .sort((a, b) => b.day.localeCompare(a.day))
 

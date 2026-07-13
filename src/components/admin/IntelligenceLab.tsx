@@ -17,6 +17,8 @@ const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
 const softBtn = 'rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent'
 const primaryBtn = 'rounded-full bg-accent px-5 py-2 text-[.84rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
+const adminAudioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
+const adminAudioUrl = (path: string) => adminAudioBase ? `${adminAudioBase}/${path.replace(/^\/?audio\//, '')}` : path
 
 function CopyButton({ value, label = 'نسخ' }: { value: string; label?: string }) {
   const [done, setDone] = useState(false)
@@ -250,7 +252,7 @@ function AudioControlCard({ articles }: { articles: ArticleRecord[] }) {
                 </p>
                 {episode.quality?.issues?.length ? <p className="mt-1 text-[.78rem] text-soft">{episode.quality.issues[0]}</p> : null}
               </div>
-              <a href={episode.audio} target="_blank" rel="noreferrer" className={softBtn}>استماع</a>
+              <a href={adminAudioUrl(episode.audio)} target="_blank" rel="noreferrer" className={softBtn}>استماع</a>
             </div>
           </div>
         )) : (

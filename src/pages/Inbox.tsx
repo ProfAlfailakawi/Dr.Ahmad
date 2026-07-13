@@ -3,6 +3,38 @@ import { EASE, FadeUp, Page, PageHead } from '../components/ui'
 import { Newsletter } from '../components/extras'
 import { useSeo } from '../components/seo'
 import { faqs, inboxLinks, testimonials } from '../data'
+import { useExtras } from '../lib/content'
+
+type LiveInboxItem = {
+  id: string
+  title?: string
+  note?: string
+  url?: string
+  status?: string
+  published?: boolean
+  createdAt?: { seconds?: number }
+}
+
+type LiveFaq = {
+  id: string
+  q?: string
+  a?: string
+  question?: string
+  answer?: string
+  status?: string
+  published?: boolean
+  createdAt?: { seconds?: number }
+}
+
+type WeeklyQuestion = {
+  id: string
+  ar?: string
+  arNote?: string
+  take?: string
+  status?: string
+  published?: boolean
+  createdAt?: { seconds?: number }
+}
 
 /* «يتجدد بذكاء»: ليس يومياً فيبدو آلياً، وليس أسبوعياً فيبدو جامداً.
    يتبدّل غالباً كل ثلاثة أيام، ويتحرك قليلاً حول بداية الشهر ونهاية الأسبوع
@@ -18,10 +50,35 @@ function smartPulse() {
 
 const pulse = smartPulse()
 const rotate = <T,>(arr: T[]): T[] => arr.length ? [...arr.slice(pulse % arr.length), ...arr.slice(0, pulse % arr.length)] : arr
+const isPublished = (item: { status?: string; published?: boolean }) => item.published !== false && item.status !== 'draft' && item.status !== 'hidden'
+const clean = (value = '') => value.replace(/\s+/g, ' ').trim()
 
 export default function Inbox() {
   useSeo({ title: 'من بريدي الوارد', path: '/inbox', description: 'مختارات من رسائل وروابط وصلتني، وأسئلة يتكرّر ورودها.' })
   const reduce = useReducedMotion()
+  const liveInbox = useExtras<LiveInboxItem>('site_inbox', { realtime: true })
+  const liveFaqs = useExtras<LiveFaq>('site_faqs', { realtime: true })
+  const liveQuestions = useExtras<WeeklyQuestion>('site_questions', { realtime: true })
+
+  const links = [
+    ...liveInbox
+      .filter(isPublished)
+      .map((item) => ({ title: clean(item.title), note: clean(item.note), url: clean(item.url) }))
+      .filter((item) => item.title && item.note),
+    ...inboxLinks,
+  ].filter((item, index, all) => all.findIndex((candidate) => clean(candidate.url || candidate.title) === clean(item.url || item.title)) === index)
+
+  const questions = [
+    ...liveFaqs
+      .filter(isPublished)
+      .map((item) => ({ q: clean(item.q || item.question), a: clean(item.a || item.answer) }))
+      .filter((item) => item.q && item.a),
+    ...liveQuestions
+      .filter(isPublished)
+      .map((item) => ({ q: clean(item.ar), a: clean(item.take || item.arNote) }))
+      .filter((item) => item.q && item.a),
+    ...faqs,
+  ].filter((item, index, all) => all.findIndex((candidate) => clean(candidate.q) === clean(item.q)) === index)
 
   return (
     <Page>
@@ -58,24 +115,29 @@ export default function Inbox() {
             <span className="text-[.76rem] font-semibold uppercase text-accent">روابط تستحق وقتك</span>
           </FadeUp>
           <ul className="mt-8">
-            {rotate(inboxLinks).map((l, i) => (
-              <FadeUp key={l.url} delay={i * 0.06}>
+            {rotate(links).map((l, i) => (
+              <FadeUp key={`${l.url || 'note'}-${l.title}`} delay={i * 0.06}>
                 <li className={i === 0 ? '' : 'border-t border-hair'}>
-                  <a
-                    href={l.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    data-hover
-                    className="group flex items-center gap-6 py-7 transition-[padding] duration-400 hover:pe-3"
-                  >
-                    <span className="flex-1">
-                      <span className="block font-display text-[1.2rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent md:text-[1.35rem]">
-                        {l.title}
+                  {l.url ? (
+                    <a
+                      href={l.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      data-hover
+                      className="group flex items-center gap-6 py-7 transition-[padding] duration-400 hover:pe-3"
+                    >
+                      <span className="flex-1">
+                        <span className="block font-display text-[1.2rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent md:text-[1.35rem]">{l.title}</span>
+                        <span className="mt-1.5 block text-[.88rem] font-light text-soft">{l.note}</span>
                       </span>
-                      <span className="mt-1.5 block text-[.88rem] font-light text-soft">{l.note}</span>
-                    </span>
-                    <span className="shrink-0 text-[1.2rem] text-accent opacity-0 transition-all duration-400 group-hover:opacity-100">←</span>
-                  </a>
+                      <span className="shrink-0 text-[1.2rem] text-accent opacity-0 transition-all duration-400 group-hover:opacity-100">←</span>
+                    </a>
+                  ) : (
+                    <div className="py-7">
+                      <span className="block font-display text-[1.2rem] font-medium leading-[1.6] text-ink md:text-[1.35rem]">{l.title}</span>
+                      <span className="mt-1.5 block text-[.88rem] font-light leading-relaxed text-soft">{l.note}</span>
+                    </div>
+                  )}
                 </li>
               </FadeUp>
             ))}
@@ -90,7 +152,7 @@ export default function Inbox() {
             <span className="text-[.76rem] font-semibold uppercase text-accent">أسئلة تصلني</span>
           </FadeUp>
           <div className="mt-9 grid gap-10 md:grid-cols-3">
-            {rotate(faqs).map((f, i) => (
+            {rotate(questions).map((f, i) => (
               <FadeUp key={f.q} delay={i * 0.07}>
                 <div className="border-t-2 border-accent pt-5">
                   <h3 className="font-display text-[1.18rem] font-medium leading-[1.6] text-ink">{f.q}</h3>

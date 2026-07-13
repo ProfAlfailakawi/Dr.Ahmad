@@ -2,8 +2,9 @@ name: رادار الدكتور اليومي
 
 on:
   schedule:
-    # 8:20 صباحاً بتوقيت الكويت تقريباً
-    - cron: '20 5 * * *'
+    # ثلاث محاولات يومية بتوقيت الكويت: 08:20، 14:20، 20:20.
+    # السكربت يمنع التكرار تلقائياً إذا نُشرت صيدة اليوم.
+    - cron: '20 5,11,17 * * *'
   workflow_dispatch:
 
 permissions:
@@ -16,7 +17,6 @@ concurrency:
 jobs:
   radar:
     runs-on: ubuntu-latest
-    environment: CLOUDFLARE_R2_ACCESS_KEY_ID
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,16 +35,23 @@ jobs:
       - name: Install dependencies
         run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 
-      - name: Run radar if secrets are available
+      - name: Validate radar secrets
         run: |
           if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then
-            echo "Gemini key is missing; skipping radar quietly."
-            exit 0
+            echo "::error::GEMINI_API_KEY or GOOGLE_API_KEY is missing. Radar cannot update."
+            exit 1
           fi
           if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
-            echo "Firebase service account is missing; skipping radar quietly."
-            exit 0
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing. Radar cannot publish."
+            exit 1
           fi
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
+      - name: Run radar and publish to Firestore
+        run: |
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
           npm run radar
           rm -f sa.json

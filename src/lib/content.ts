@@ -32,18 +32,44 @@ export interface ExtraArticle {
   audio?: { fahed?: boolean | string; noura?: boolean | string }
 }
 
-export function useExtras<T>(collectionName: string): T[] {
+export function useExtras<T>(collectionName: string, options: { realtime?: boolean } = {}): T[] {
   const [data, setData] = useState<T[]>([])
+  const realtime = Boolean(options.realtime)
 
   useEffect(() => {
     let active = true
-    if (firebaseEnabled) {
+    let unsubscribe = () => {}
+    if (!firebaseEnabled) return () => { active = false }
+
+    if (!realtime) {
       fetchExtras<T>(collectionName).then((items) => {
         if (active) setData(items as T[])
       })
+      return () => { active = false }
     }
-    return () => { active = false }
-  }, [collectionName])
+
+    ;(async () => {
+      try {
+        const db = await getDb()
+        if (!db || !active) return
+        const { collection, onSnapshot, orderBy, query } = await import('firebase/firestore')
+        unsubscribe = onSnapshot(
+          query(collection(db, collectionName), orderBy('createdAt', 'desc')),
+          (snapshot) => {
+            if (!active) return
+            setData(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })) as T[])
+          },
+          () => {
+            fetchExtras<T>(collectionName).then((items) => { if (active) setData(items as T[]) })
+          },
+        )
+      } catch {
+        fetchExtras<T>(collectionName).then((items) => { if (active) setData(items as T[]) })
+      }
+    })()
+
+    return () => { active = false; unsubscribe() }
+  }, [collectionName, realtime])
 
   return data
 }

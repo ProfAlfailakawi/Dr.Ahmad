@@ -46,6 +46,16 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
+    // مختارات «من بريدي» وأسئلته: لا تُنشر الرسائل الخاصة تلقائياً؛
+    // المشرف وحده يراجع خلاصة منزوعة البيانات الشخصية ثم ينشرها.
+    match /site_inbox/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /site_faqs/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
     match /site_upcoming/{id} {
       allow read: if true;
       allow create, update, delete: if isAdmin();

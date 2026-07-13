@@ -1,5 +1,5 @@
 import { useSeo } from '../components/seo'
-import { Accordion, FadeUp, Page, PageHead } from '../components/ui'
+import { Accordion, FadeUp, Label, Page, Reveal } from '../components/ui'
 import { CvSectionEditor } from '../components/admin/CvSectionEditor'
 import { bio, books, doctorate, links, papers, stats } from '../data'
 import { useAdminAuth } from '../lib/admin-auth'
@@ -41,7 +41,32 @@ export default function CV() {
 
   return (
     <Page>
-      <PageHead label="السيرة الأكاديمية" title="د. أحمد حسين الفيلكاوي" sub={bio.intro} />
+      <header className="relative overflow-hidden border-b border-hair px-6 pb-14 pt-32 md:px-11 md:pb-16 md:pt-40">
+        <div className="pointer-events-none absolute inset-y-0 left-[8%] hidden w-px bg-gradient-to-b from-transparent via-accent/20 to-transparent md:block" aria-hidden="true" />
+        <div className="mx-auto max-w-shell">
+          <FadeUp>
+            <Label>د. أحمد حسين الفيلكاوي</Label>
+            <h1 className="max-w-[900px] font-display text-[clamp(2.55rem,7vw,5.2rem)] font-bold leading-[1.08] tracking-[-0.025em] text-ink">
+              <Reveal>كلُّ ما تعلّمتُه…</Reveal>
+              <span className="mt-2 block text-accent">
+                <Reveal delay={0.12}>حاولتُ أن أحوّله إلى أثر.</Reveal>
+              </span>
+            </h1>
+            <p className="mt-7 max-w-[690px] text-[clamp(1rem,2vw,1.15rem)] font-light leading-[1.9] text-ink/75">
+              مسارٌ امتد من قاعة الدرس إلى البحث والتأليف والاستشارة وصناعة المبادرات؛ لا ليجمع محطاتٍ أكثر، بل ليجعل المعرفة أقرب إلى الإنسان والحياة.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-[.78rem] font-semibold text-soft" aria-label="مجالات السيرة">
+              <span>التعليم</span>
+              <span className="h-1 w-1 rounded-full bg-accent" aria-hidden="true" />
+              <span>البحث</span>
+              <span className="h-1 w-1 rounded-full bg-accent" aria-hidden="true" />
+              <span>التأليف</span>
+              <span className="h-1 w-1 rounded-full bg-accent" aria-hidden="true" />
+              <span>صناعة المبادرات</span>
+            </div>
+          </FadeUp>
+        </div>
+      </header>
 
       <div className="px-6 py-14 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">

@@ -27,26 +27,24 @@ const articles = [...articlesSource.matchAll(/\{\s*slug:\s*'[^']+'[\s\S]*?\},/g)
 
 const articleBySlug = new Map(articles.map((article) => [article.slug, article]))
 const files = existsSync(AUDIO) ? readdirSync(AUDIO) : []
-const dialogue = files.filter((name) => name.endsWith('.dialogue.mp3')).sort()
-if (EXTERNAL_AUDIO_BASE_URL && !dialogue.length && existsSync(OUT)) {
-  const current = JSON.parse(readFileSync(OUT, 'utf8'))
-  console.log(`✔ podcast-admin.json محفوظ كما هو · ${current.episodes?.length || 0} حلقات حوارية · ${current.playlists?.length || 0} قوائم`)
-  process.exit(0)
-}
-const generatedAt = dialogue.length
-  ? new Date(Math.max(...dialogue.map((name) => statSync(resolve(AUDIO, name)).mtimeMs))).toISOString()
-  : null
+const metaPath = resolve(ROOT, 'src/data/audio-meta.json')
+const audioMeta = EXTERNAL_AUDIO_BASE_URL && existsSync(metaPath) ? JSON.parse(readFileSync(metaPath, 'utf8')) : {}
+const externalDialogue = Object.keys(audioMeta).filter((name) => name.endsWith('.dialogue.mp3'))
+const dialogue = [...new Set([...files.filter((name) => name.endsWith('.dialogue.mp3')), ...externalDialogue])].sort()
+const generatedAt = dialogue.length ? new Date().toISOString() : null
 
 const episodes = dialogue.map((name) => {
   const slug = name.slice(0, -'.dialogue.mp3'.length)
   const article = articleBySlug.get(slug)
   const file = resolve(AUDIO, name)
+  const localAudio = existsSync(file)
   const transcriptFile = resolve(AUDIO, `${slug}.dialogue.json`)
-  const bytes = readFileSync(file)
   const hasTranscript = existsSync(transcriptFile)
-  const hash = createHash('sha256').update(bytes).digest('hex')
+  const hash = localAudio ? createHash('sha256').update(readFileSync(file)).digest('hex') : ''
   const accepted = podcastState?.done?.[`${slug}:ar`]
-  const approved = accepted?.status === 'accepted_automated' && accepted.audioHash === hash
+  const approved = accepted?.status === 'accepted_automated' && (!localAudio || accepted.audioHash === hash)
+  const meta = audioMeta?.[name] || {}
+  const byteSize = localAudio ? statSync(file).size : Number(meta.bytes || 0)
   let utterances = 0
   if (hasTranscript) {
     try {
@@ -62,8 +60,8 @@ const episodes = dialogue.map((name) => {
     iso: article?.iso || '',
     status: approved ? 'published' : 'under_review',
     audio: `/audio/${name}`,
-    bytes: statSync(file).size,
-    audioHash: hash.slice(0, 16),
+    bytes: byteSize,
+    audioHash: hash ? hash.slice(0, 16) : '',
     hasTranscript,
     utterances,
     quality: {

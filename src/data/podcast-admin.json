@@ -1,5 +1,83 @@
 {
-  "generatedAt": null,
-  "episodes": [],
-  "playlists": []
+  "generatedAt": "2026-07-13T23:33:15.466Z",
+  "episodes": [
+    {
+      "slug": "how-do-we-assess-without-breaking-the-human-beingarabic",
+      "title": "كيف نقيس دون أن نكسر الإنسان",
+      "category": "التعليم",
+      "date": "24 أبريل 2026",
+      "iso": "2026-04-24",
+      "status": "under_review",
+      "audio": "/audio/how-do-we-assess-without-breaking-the-human-beingarabic.dialogue.mp3",
+      "bytes": 5043139,
+      "audioHash": "",
+      "hasTranscript": false,
+      "utterances": 0,
+      "quality": {
+        "pronunciation": "يحتاج Transcript",
+        "pace": "ينتظر تقرير الجودة",
+        "pauses": "ينتظر تقرير الجودة",
+        "issues": [
+          "لا يوجد Transcript منشور لهذه الحلقة بعد.",
+          "لن تُنشر الحلقة الحوارية في RSS قبل اعتماد بوابة الجودة."
+        ]
+      }
+    }
+  ],
+  "playlists": [
+    {
+      "title": "الإنسان في قلب الآلة",
+      "episodes": [
+        {
+          "slug": "how-do-we-assess-without-breaking-the-human-beingarabic",
+          "title": "كيف نقيس دون أن نكسر الإنسان",
+          "category": "التعليم",
+          "date": "24 أبريل 2026",
+          "iso": "2026-04-24",
+          "status": "under_review",
+          "audio": "/audio/how-do-we-assess-without-breaking-the-human-beingarabic.dialogue.mp3",
+          "bytes": 5043139,
+          "audioHash": "",
+          "hasTranscript": false,
+          "utterances": 0,
+          "quality": {
+            "pronunciation": "يحتاج Transcript",
+            "pace": "ينتظر تقرير الجودة",
+            "pauses": "ينتظر تقرير الجودة",
+            "issues": [
+              "لا يوجد Transcript منشور لهذه الحلقة بعد.",
+              "لن تُنشر الحلقة الحوارية في RSS قبل اعتماد بوابة الجودة."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "title": "مستقبل المعلم",
+      "episodes": [
+        {
+          "slug": "how-do-we-assess-without-breaking-the-human-beingarabic",
+          "title": "كيف نقيس دون أن نكسر الإنسان",
+          "category": "التعليم",
+          "date": "24 أبريل 2026",
+          "iso": "2026-04-24",
+          "status": "under_review",
+          "audio": "/audio/how-do-we-assess-without-breaking-the-human-beingarabic.dialogue.mp3",
+          "bytes": 5043139,
+          "audioHash": "",
+          "hasTranscript": false,
+          "utterances": 0,
+          "quality": {
+            "pronunciation": "يحتاج Transcript",
+            "pace": "ينتظر تقرير الجودة",
+            "pauses": "ينتظر تقرير الجودة",
+            "issues": [
+              "لا يوجد Transcript منشور لهذه الحلقة بعد.",
+              "لن تُنشر الحلقة الحوارية في RSS قبل اعتماد بوابة الجودة."
+            ]
+          }
+        }
+      ]
+    }
+  ]
 }

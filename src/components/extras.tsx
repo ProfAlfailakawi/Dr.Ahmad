@@ -250,7 +250,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
    ١) إن وُجد ملف MP3 مولّد مسبقاً (npm run audio) → مشغّل حقيقي بصوت طبيعي.
    ٢) وإلا → لا شيء. صوت المتصفّح الآلي رديء للعربية، ولا نعرضه إلا بطلب صريح
       عبر ALLOW_BROWSER_TTS في data.ts. */
-type ArticleAudio = { fahed?: boolean | string; noura?: boolean | string }
+type ArticleAudio = { fahed?: boolean | string; noura?: boolean | string; dialogue?: boolean | string }
 type DialogueTranscript = { title: string; utterances: { speaker: string; text: string }[] }
 const audioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const audioUrl = (path: string) => audioBase ? `${audioBase}/${path.replace(/^\/?audio\//, '')}` : path
@@ -278,17 +278,19 @@ export function Listen({ slug, title, text, audio }: { slug: string; title: stri
   const voices = audio ?? (entry === true ? { fahed: true } : entry || {})
   // الحلقة الحوارية (فهد ونورة يتحاوران) تنضم كخيار ثالث فور توفر ملفها —
   // القراءة الأمينة تبقى الأصل، والحوار إضاءة تفسيرية بجانبها لا بديلاً عنها.
-  const [dialogueOk, setDialogueOk] = useState(false)
+  const dialogueListed = Boolean(voices.dialogue)
+  const [dialogueOk, setDialogueOk] = useState(dialogueListed)
   const [transcript, setTranscript] = useState<DialogueTranscript | null>(null)
   useEffect(() => {
     let on = true
-    hasDialogueAudio(slug).then((ok) => { if (on) setDialogueOk(ok) })
+    setDialogueOk(dialogueListed)
+    if (!dialogueListed) hasDialogueAudio(slug).then((ok) => { if (on) setDialogueOk(ok) })
     fetch(audioUrl(`/audio/${slug}.dialogue.json`))
       .then((response) => response.ok ? response.json() : null)
       .then((value) => { if (on && value?.utterances?.length) setTranscript(value) })
       .catch(() => { /* لا Transcript للحلقات القديمة */ })
     return () => { on = false }
-  }, [slug])
+  }, [dialogueListed, slug])
 
   // أسماء العرض العائلية ثابتة لكل مقال: الصوت الرجالي «عثمان»، والصوت
   // النسائي يتناوب بين أزيان ودرة وبسمة وفق بصمة الرابط، فلا يتغير عشوائياً
@@ -299,7 +301,7 @@ export function Listen({ slug, title, text, audio }: { slug: string; title: stri
   const sources = [
     ...(voices.fahed ? [{ key: 'fahed', label: 'قراءة عثمان', src: typeof voices.fahed === 'string' ? voices.fahed : audioUrl(`/audio/${slug}.mp3`) }] : []),
     ...(voices.noura ? [{ key: 'noura', label: `قراءة ${daughterName}`, src: typeof voices.noura === 'string' ? voices.noura : audioUrl(`/audio/${slug}.noura.mp3`) }] : []),
-    ...(dialogueOk ? [{ key: 'dialogue', label: 'الحلقة الحوارية', src: audioUrl(`/audio/${slug}.dialogue.mp3`) }] : []),
+    ...(dialogueOk ? [{ key: 'dialogue', label: 'الحلقة الحوارية', src: typeof voices.dialogue === 'string' ? voices.dialogue : audioUrl(`/audio/${slug}.dialogue.mp3`) }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)
 

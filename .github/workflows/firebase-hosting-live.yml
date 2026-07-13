@@ -32,6 +32,8 @@ jobs:
         run: npm run build
         env:
           VITE_SITE_URL: https://dr-alfailakawi.web.app
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
 
       - name: Verify Firebase service account secret
         run: |

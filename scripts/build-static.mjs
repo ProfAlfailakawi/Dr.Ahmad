@@ -120,16 +120,15 @@ const STATIC = [
   { path: '/media', title: 'الظهور الإعلامي', desc: 'لقاءات تلفزيونية وإذاعية.' },
   { path: '/questions', title: 'سؤال يُقلق التعليم', desc: 'زاوية أسبوعية: كل جمعة سؤال جديد يوقظ التفكير في التعليم — بالعربية والإنجليزية.' },
   { path: '/radar', title: 'أرشيف الرادار', desc: 'كل ما التقطه الرادار من مصادر موثوقة — حصاد أسبوعي مؤرشف كمرجع بحثي، بالعربية والإنجليزية.' },
-  { path: '/now', title: 'ماذا أفكر الآن', desc: 'أسئلة وملاحظات قصيرة تتشكّل بين المقالات الكبيرة.' },
   { path: '/upcoming', title: 'اللقاءات القادمة', desc: 'محاضرات وورش عمل ومؤتمرات قادمة.' },
   { path: '/curated', title: 'من اختياراتي', desc: 'كتاب، ومقالة، وأداة، واقتباس — مساحة تتجدّد.' },
   { path: '/inbox', title: 'من بريدي الوارد', desc: 'مختارات من رسائل وروابط وصلتني.' },
   { path: '/cv', title: 'السيرة الأكاديمية', desc: 'التعليم والخبرات والعضويات والمؤتمرات.' },
   { path: '/about', title: 'حول الموقع', desc: 'فضاءٌ مُنتقى بعناية… حيث لكل قسم غاية، ولكل اختيار فلسفة.' },
   { path: '/contact', title: 'للاستشارة أو التعاون', desc: 'استشارات ومحاضرات ومشاريع تحوّل رقمي.' },
-  { path: '/privacy', title: 'سياسة الخصوصية', desc: 'سياسة الخصوصية للموقع الرسمي وأداة Dr Alfailakawi Publishing وربط Meta وLinkedIn.' },
-  { path: '/terms', title: 'شروط الاستخدام', desc: 'شروط استخدام الموقع وأداة إدارة المحتوى والنشر على المنصات المرتبطة.' },
-  { path: '/data-deletion', title: 'تعليمات حذف البيانات', desc: 'تعليمات إلغاء الربط وطلب حذف بيانات Facebook وInstagram وLinkedIn.' },
+  { path: '/privacy', title: 'سياسة الخصوصية', desc: 'سياسة الخصوصية للموقع الرسمي وأداة Dr Alfailakawi Publishing وربط Meta وLinkedIn.', robots: 'noindex, nofollow' },
+  { path: '/terms', title: 'شروط الاستخدام', desc: 'شروط استخدام الموقع وأداة إدارة المحتوى والنشر على المنصات المرتبطة.', robots: 'noindex, nofollow' },
+  { path: '/data-deletion', title: 'تعليمات حذف البيانات', desc: 'تعليمات إلغاء الربط وطلب حذف بيانات Facebook وInstagram وLinkedIn.', robots: 'noindex, nofollow' },
   { path: '/ask', title: 'العقل الحي', desc: 'اسأل سؤالاً حقيقياً، فيبني الموقع إجابة موثقة من أرشيف د. أحمد حسين الفيلكاوي فقط: مقالات، تطور زمني، ومصادر.' },
   { path: '/decade', title: 'وثيقة العقد', desc: 'سيرة فكرية حيّة تقرأ عشر سنوات من الكتابة وتكشف تحولات الأسئلة والموضوعات الأكثر إلحاحاً.' },
   { path: '/thought-paths', title: 'مسار الفكرة', desc: 'رحلات تربط المقال بالسؤال والبحث والكتاب واللقاء لتكشف كيف تطورت الفكرة عبر السنوات.' },
@@ -283,7 +282,19 @@ function legalStaticHtml(path) {
 }
 
 function generateBodyHtml(path, lang = 'ar') {
+  if (path === '/admin') {
+    return `
+      <main style="min-height:100vh;display:grid;place-items:center;background:#FCFCFA;padding:2rem;" dir="rtl">
+        <div style="width:min(440px,100%);border:1px solid rgba(62,92,120,.14);border-radius:22px;background:#fff;padding:2rem;text-align:center;">
+          <div style="width:42px;height:42px;margin:0 auto 1rem;border:2px solid rgba(62,92,120,.18);border-top-color:#3E5C78;border-radius:999px;animation:admin-spin .8s linear infinite;"></div>
+          <p style="margin:0;color:#3E5C78;font:600 1rem 'Tajawal',sans-serif;">جاري فتح لوحة التحكم الآمنة…</p>
+          <style>@keyframes admin-spin{to{transform:rotate(360deg)}}</style>
+        </div>
+      </main>`
+  }
+
   const en = lang === 'en'
+  const isAdmin = path === '/admin'
   // Header
   const headerHtml = en ? `
     <header style="border-bottom: 1px solid rgba(62, 92, 120, 0.1); padding: 1.5rem 1rem;">
@@ -719,11 +730,12 @@ function generateBodyHtml(path, lang = 'ar') {
 
 function render({ path, title, desc, type = 'website', iso, cat, image, robots, lang = 'ar', isbn }) {
   const en = lang === 'en'
+  const isAdmin = path === '/admin'
   // ما دامت المرآة مخفية: صفحاتها الإنجليزية لا تُفهرس
   if (en && !SHOW_EN) robots = 'noindex, nofollow'
   // لا تُلحق الاسم إن كان العنوان يحمله أصلاً — يمنع تضاعفه
   const hasName = title.includes('Alfailakawi') || title.includes('د. أحمد حسين الفيلكاوي')
-  const full = path === '/' || hasName ? title : en ? `${title} — Dr. Ahmad H. Alfailakawi` : `${title} — د. أحمد حسين الفيلكاوي`
+  const full = isAdmin ? title : path === '/' || hasName ? title : en ? `${title} — Dr. Ahmad H. Alfailakawi` : `${title} — د. أحمد حسين الفيلكاوي`
   const url = SITE + path
   const img = `${SITE}${image || '/og.png'}`
 
@@ -767,7 +779,7 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
   } else {
     graph = [{ '@type': 'WebPage', name: full, description: desc, url, inLanguage: lang }]
   }
-  const ld = { '@context': 'https://schema.org', '@graph': [PERSON, ...graph] }
+  const ld = { '@context': 'https://schema.org', '@graph': isAdmin ? graph : [PERSON, ...graph] }
 
   // hreflang للصفحات المتقابلة عربي↔إنجليزي
   const arPath = en ? Object.keys(LANG_PAIRS).find((k) => LANG_PAIRS[k] === path) : path
@@ -778,7 +790,13 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
     <link rel="alternate" hreflang="x-default" href="${SITE + arPath}" />`
     : ''
 
-  const head = `
+  const head = isAdmin ? `
+    <title>${esc(title)}</title>
+    <meta name="description" content="${esc(desc)}" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <link rel="canonical" href="${url}" />
+    <script type="application/ld+json">${JSON.stringify(ld)}</script>
+  ` : `
     <title>${esc(full)}</title>
     <meta name="description" content="${esc(desc)}" />
     ${robots ? `<meta name="robots" content="${robots}" />` : ''}
@@ -804,6 +822,12 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
   `
 
   let html = stripManagedHead(shell)
+  if (isAdmin) {
+    html = html
+      .replace(/<meta\s+name=["']author["'][^>]*>/gi, '')
+      .replace(/<link\s+rel=["']alternate["'][^>]*>/gi, '')
+      .replace(/<link\s+rel=["']preload["'][^>]+(?:portrait|og\.png)[^>]*>/gi, '')
+  }
   html = html.replace('</head>', `${head}\n  </head>`)
   const bodyHtml = generateBodyHtml(path, lang)
   html = html.replace('<div id="root"></div>', `<div id="root">${bodyHtml}</div>`)

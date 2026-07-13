@@ -28,7 +28,21 @@ self.addEventListener('fetch', (e) => {
   // الصوت (بثّ، ملفات كبيرة) لا يُخزَّن في الكاش — يُطلب من الشبكة دائماً.
   const isAudio = new URL(request.url).pathname.startsWith('/audio/')
 
-  // الصفحات: الشبكة أولاً، ثم الذاكرة
+  const pathname = new URL(request.url).pathname
+
+  // لوحة التحكم لا تمر عبر كاش الصفحات إطلاقاً. هذا يمنع ظهور نسخة قديمة من
+  // الرئيسية أو بيانات الملف الشخصي عند فتح /admin بعد تحديثات النشر.
+  if (request.mode === 'navigate' && (pathname === '/admin' || pathname.startsWith('/admin/'))) {
+    e.respondWith(
+      fetch(request, { cache: 'no-store' }).catch(() => new Response(
+        '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>لوحة التحكم</title><main dir="rtl" style="min-height:100vh;display:grid;place-items:center;font-family:sans-serif"><p>تعذّر فتح لوحة التحكم دون اتصال.</p></main>',
+        { status: 503, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } },
+      )),
+    )
+    return
+  }
+
+  // الصفحات العامة: الشبكة أولاً، ثم الذاكرة.
   if (request.mode === 'navigate') {
     e.respondWith(
       fetch(request)

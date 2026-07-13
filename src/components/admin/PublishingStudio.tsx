@@ -47,18 +47,6 @@ type CurrentEvent = {
   relevance?: number
 }
 
-type StandaloneIdea = {
-  id: string
-  title: string
-  idea: string
-  purpose: string
-  audience: string
-  format: string
-  reason: string
-  originality?: number
-  event?: CurrentEvent | null
-}
-
 type PerfectSocialPack = {
   x: string[]
   linkedin: string[]
@@ -263,7 +251,7 @@ function buildArticleDraft(idea: string, audience: string, angle: string, relate
   let draft = [p1, p2, p3, p4, p5].join('\n\n')
   const words = wordCount(draft)
   if (words > 450) draft = draft.split(/\s+/).slice(0, 445).join(' ') + '.'
-  if (words < 305) draft += '\n\nوالأهم أن يبقى السؤال مفتوحًا: ما الأثر الإنساني الذي لا نريد أن نخسره ونحن نطارد الحلول السريعة؟'
+  if (words < 350) draft += '\n\nوالأهم أن يبقى السؤال مفتوحًا: ما الأثر الإنساني الذي لا نريد أن نخسره ونحن نطارد الحلول السريعة؟'
   return draft
 }
 
@@ -460,7 +448,7 @@ function buildBundle(idea: string, audience: string, angle: string, articles: Ar
   const excerpt = clampExcerpt(body.split('\n\n')[0])
   const partial = { title, excerpt, body }
   const quality = [
-    wordCount(body) >= 305 && wordCount(body) <= 450 ? `عدد الكلمات مناسب: ${wordCount(body)} كلمة.` : `عدد الكلمات يحتاج ضبطًا: ${wordCount(body)} كلمة.`,
+    wordCount(body) >= 350 && wordCount(body) <= 450 ? `عدد الكلمات مناسب: ${wordCount(body)} كلمة.` : `عدد الكلمات يحتاج ضبطًا: ${wordCount(body)} كلمة.`,
     related.length ? `مرتبط بـ ${related.length} مقالات من أرشيفك.` : 'لم أجد ربطًا قويًا؛ أضف كلمات من قاموسك الفكري.',
     relatedBooks.length || relatedPapers.length ? 'يوجد امتداد أكاديمي/كتابي مناسب.' : 'لا يوجد امتداد كتابي أو بحثي واضح بعد.',
     'صورة المشاركة الافتراضية جاهزة إذا لم ترفع صورة خاصة.',
@@ -759,7 +747,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const [queueBusy, setQueueBusy] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [socialGenerating, setSocialGenerating] = useState(false)
-  const [targetWords, setTargetWords] = useState(400)
+  const [targetWords, setTargetWords] = useState(350)
   const [currentEvents, setCurrentEvents] = useState<CurrentEvent[]>([])
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([])
   const [eventsLoading, setEventsLoading] = useState(false)
@@ -773,9 +761,6 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const [pulseEvents, setPulseEvents] = useState<CurrentEvent[]>([])
   const [pulseSelectedEventIds, setPulseSelectedEventIds] = useState<string[]>([])
   const [pulseEventsLoading, setPulseEventsLoading] = useState(false)
-  const [pulseSuggestions, setPulseSuggestions] = useState<StandaloneIdea[]>([])
-  const [pulseSuggestionsLoading, setPulseSuggestionsLoading] = useState(false)
-  const [pulseSuggestionsError, setPulseSuggestionsError] = useState('')
 
   useEffect(() => {
     let active = true
@@ -1072,56 +1057,6 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
     }
   }
 
-  const loadPulseSuggestions = async (force = false) => {
-    if (pulseSuggestionsLoading || (!force && pulseSuggestions.length)) return
-    setPulseSuggestionsLoading(true)
-    setPulseSuggestionsError('')
-    try {
-      const ok = isAdmin || await refresh()
-      if (!ok || !user) throw new Error('جلسة المشرف تحتاج تحديثًا.')
-      const token = await user.getIdToken()
-      const result = await adminAiRequest<{ items: StandaloneIdea[] }>('/api/ai/social-ideas', {
-        count: 9,
-        styleProfile: style,
-        archive: richArticles.slice(0, 90).map((article) => ({
-          slug: article.slug,
-          title: article.title,
-          cat: article.cat,
-          iso: article.iso,
-          excerpt: article.excerpt || '',
-          body: (article.body || '').slice(0, 520),
-        })),
-        books: books.slice(0, 30).map((book) => ({ slug: book.slug, title: book.title, desc: book.desc || '' })),
-        papers: papers.slice(0, 40).map((paper) => ({ slug: paper.slug, title: paper.title, meta: paper.meta || '' })),
-        privateBooks: privateLinks,
-        radar,
-      }, token)
-      setPulseSuggestions(result.items || [])
-    } catch (reason) {
-      setPulseSuggestionsError(reason instanceof Error ? reason.message : 'تعذّر اقتراح الأفكار الآن.')
-    } finally {
-      setPulseSuggestionsLoading(false)
-    }
-  }
-
-  const pickPulseSuggestion = (item: StandaloneIdea) => {
-    setPulseIdea(item.idea)
-    setPulsePurpose(item.purpose)
-    setPulseAudience(item.audience || 'الجمهور العام')
-    setPulsePack(null)
-    if (item.event) {
-      setPulseEvents((previous) => previous.some((event) => event.id === item.event?.id) ? previous : [item.event!, ...previous])
-      setPulseSelectedEventIds([item.event.id])
-    } else {
-      setPulseSelectedEventIds([])
-    }
-    window.setTimeout(() => document.getElementById('standalone-compose')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
-  }
-
-  useEffect(() => {
-    if (view !== 'pulse' || !user || pulseSuggestions.length || pulseSuggestionsLoading) return
-    void loadPulseSuggestions()
-  }, [view, user, richArticles.length, radar.length])
 
   const loadPulseContext = async () => {
     if (!pulseIdea.trim()) return [] as CurrentEvent[]
@@ -1246,7 +1181,7 @@ ${pulsePurpose.trim()}`,
               <Field label="الفكرة الخام"><input className={input} value={idea} onChange={(event) => setIdea(event.target.value)} placeholder="مثال: الخوف من الامتحان" /></Field>
               <Field label="الجمهور"><select className={input} value={audience} onChange={(event) => setAudience(event.target.value)}><option>المعلمين والقيادات التعليمية</option><option>أولياء الأمور</option><option>الطلاب والباحثين</option><option>الإعلاميين</option><option>الجمهور العام</option></select></Field>
               <Field label="الزاوية"><select className={input} value={angle} onChange={(event) => setAngle(event.target.value)}><option>الأثر الإنساني قبل بريق الأداة</option><option>زاوية تربوية عملية</option><option>سؤال أخلاقي وفكري</option><option>مدخل إعلامي سريع</option><option>امتداد أكاديمي من الأرشيف</option></select></Field>
-              <Field label="الكلمات حرفيًا"><input className={input} inputMode="numeric" value={String(targetWords)} onChange={(event) => { const value = Number(fromArabicDigits(event.target.value).replace(/[^0-9]/g, '')); if (Number.isFinite(value) && value > 0) setTargetWords(Math.max(350, Math.min(450, value))) }} /></Field>
+              <Field label="عدد الكلمات (الحد الأدنى 350)"><input className={input} inputMode="numeric" min={350} max={450} value={String(targetWords)} onChange={(event) => { const value = Number(fromArabicDigits(event.target.value).replace(/[^0-9]/g, '')); if (Number.isFinite(value) && value > 0) setTargetWords(Math.max(350, Math.min(450, value))) }} /></Field>
               <div className="flex items-end"><button type="button" disabled={generating} className={`${primary} w-full`} onClick={() => void rebuild()}>{generating ? 'أكتب وأراجع…' : 'ابنِ المقال الكامل'}</button></div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -1310,33 +1245,6 @@ ${pulsePurpose.trim()}`,
 
       {view === 'pulse' && (
         <div className="grid gap-5">
-          <section className={card}>
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-[.76rem] font-semibold uppercase text-accent">اقتراحات ذكية لك</p>
-                <h2 className="mt-1 font-display text-2xl font-semibold text-ink">اختر فكرة… والاستوديو يكملها.</h2>
-                <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">يقرأ أرشيف مقالاتك، كتبك وأبحاثك، الذاكرة المشتقة من الكتب الخاصة، الرادار، وأحدث المصادر العالمية الموثوقة؛ ثم يستبعد الزوايا المكررة.</p>
-              </div>
-              <button type="button" className={ghost} disabled={pulseSuggestionsLoading} onClick={() => void loadPulseSuggestions(true)}>{pulseSuggestionsLoading ? 'أبحث الآن…' : 'اقتراحات جديدة'}</button>
-            </div>
-            {pulseSuggestionsLoading && !pulseSuggestions.length ? (
-              <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-44 animate-pulse rounded-2xl border border-hair bg-canvas" />)}</div>
-            ) : pulseSuggestions.length ? (
-              <div className="rail -mx-1 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-3">
-                {pulseSuggestions.map((item) => (
-                  <button key={item.id} type="button" onClick={() => pickPulseSuggestion(item)} className="group flex w-[78vw] max-w-[340px] shrink-0 snap-start flex-col rounded-2xl border border-hair bg-canvas p-4 text-right transition-all hover:-translate-y-0.5 hover:border-accent md:w-auto md:max-w-none">
-                    <span className="flex items-center justify-between gap-3 text-[.68rem] font-semibold text-accent"><span>{item.format}</span><span>{item.event ? item.event.source : 'من أرشيفك'}</span></span>
-                    <strong className="mt-3 block font-display text-[1.02rem] leading-[1.55] text-ink transition-colors group-hover:text-accent">{item.title}</strong>
-                    <span className="mt-2 line-clamp-3 text-[.8rem] leading-[1.75] text-soft">{item.idea}</span>
-                    <span className="mt-auto pt-4 text-[.72rem] leading-relaxed text-soft">{item.reason}</span>
-                    <span className="mt-3 text-[.76rem] font-semibold text-accent">استخدم هذه الفكرة</span>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-5 rounded-xl border border-hair bg-canvas p-4 text-[.82rem] text-soft">{pulseSuggestionsError || 'اضغط «اقتراحات جديدة» ليقرأ الاستوديو أرشيفك والمشهد العالمي الآن.'}</p>
-            )}
-          </section>
 
           <section id="standalone-compose" className={card}>
             <p className="text-[.76rem] font-semibold uppercase text-accent">منشور مستقل</p>

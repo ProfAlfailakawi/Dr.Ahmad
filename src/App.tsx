@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { Cursor, Footer, Nav } from './components/ui'
 import { FloatingActions } from './components/extras'
 import { CmsProvider } from './lib/content'
@@ -30,7 +30,6 @@ const Inbox = lazy(() => import('./pages/Inbox'))
 const AboutSite = lazy(() => import('./pages/AboutSite'))
 const Questions = lazy(() => import('./pages/Questions'))
 const Radar = lazy(() => import('./pages/Radar'))
-const Now = lazy(() => import('./pages/Now'))
 const Admin = lazy(() => import('./pages/Admin'))
 const PrivacyPolicy = lazy(() => import('./pages/Legal').then((m) => ({ default: m.PrivacyPolicy })))
 const TermsOfUse = lazy(() => import('./pages/Legal').then((m) => ({ default: m.TermsOfUse })))
@@ -112,7 +111,7 @@ function AnimatedRoutes() {
         <Route path="/media" element={<Media />} />
         <Route path="/questions" element={<Questions />} />
         <Route path="/radar" element={<Radar />} />
-        <Route path="/now" element={<Now />} />
+        <Route path="/now" element={<Navigate to="/" replace />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/curated" element={<Curated />} />
         <Route path="/upcoming" element={<Upcoming />} />
@@ -143,9 +142,25 @@ function AnimatedRoutes() {
 }
 
 /** ينتظر تحديث وسوم SEO للصفحة، ثم يسجل مشاهدة واحدة للمسار في الجلسة. */
+function ConditionalNav() {
+  const location = useLocation()
+  return location.pathname === '/admin' ? null : <Nav />
+}
+
+function ConditionalActions() {
+  const location = useLocation()
+  if (location.pathname === '/admin') return null
+  return (
+    <>
+      <FloatingActions />
+      <PersistentAudioDock />
+    </>
+  )
+}
+
 function ConditionalFooter() {
   const location = useLocation()
-  return location.pathname === '/' ? null : <Footer />
+  return location.pathname === '/' || location.pathname === '/admin' ? null : <Footer />
 }
 
 function RouteViewTracker() {
@@ -172,12 +187,11 @@ export default function App() {
           <RouteViewTracker />
           <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>
           <Cursor />
-          <Nav />
+          <ConditionalNav />
           <main id="main">
             <AnimatedRoutes />
           </main>
-          <FloatingActions />
-          <PersistentAudioDock />
+          <ConditionalActions />
           <ConditionalFooter />
         </PersistentAudioProvider>
       </BrowserRouter>

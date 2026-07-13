@@ -10,6 +10,11 @@
     ],
     "redirects": [
       {
+        "source": "/now",
+        "destination": "/",
+        "type": 301
+      },
+      {
         "source": "/articles/a-society-that-fears-the-different-scheduledarabbic",
         "destination": "/articles/a-society-that-fears-the-different-arabic",
         "type": 301

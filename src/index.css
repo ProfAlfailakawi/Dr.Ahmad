@@ -63,6 +63,12 @@ body.cursor-none-desktop [contenteditable] { cursor: text !important; }
 /* والنصّ القابل للتحديد داخل المقال */
 body.cursor-none-desktop .article-body { cursor: text !important; }
 
+/* لوحة التحكم: لا يُسمح لأي غلاف إداري بأن يوسّع الصفحة أفقياً أو يُقصّ من اليسار */
+.admin-shell {
+  max-width: min(1320px, 100vw);
+  box-sizing: border-box;
+}
+
 :focus-visible { outline: 2px solid rgb(var(--c-accent)); outline-offset: 3px; border-radius: 3px; }
 
 /* في الوضع الليلي: صورة الهيرو أهدأ */

@@ -14,6 +14,9 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const { request } = e
+  if (location.hostname.includes('ais-dev-') || location.hostname.includes('localhost') || location.hostname.includes('127.0.0.1')) {
+    return
+  }
   if (request.method !== 'GET' || new URL(request.url).origin !== location.origin) return
 
   // الصفحات: الشبكة أولاً، ثم الذاكرة

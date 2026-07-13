@@ -31,9 +31,7 @@
     "podcast:ar:bakeoff": "node scripts/podcast-dialogue.mjs --voice-bakeoff",
     "private-books:memory": "node scripts/private-books-memory.mjs",
     "audio:r2:plan": "node scripts/audio-r2-plan.mjs",
-    "audio:r2:build": "AUDIO_PUBLIC_BASE_URL=$AUDIO_PUBLIC_BASE_URL VITE_AUDIO_BASE_URL=$AUDIO_PUBLIC_BASE_URL npm run build",
-    "audio:external:verify": "node scripts/verify-external-audio.mjs",
-    "audio:external:finalize": "node scripts/finalize-external-audio.mjs"
+    "audio:r2:build": "AUDIO_PUBLIC_BASE_URL=$AUDIO_PUBLIC_BASE_URL VITE_AUDIO_BASE_URL=$AUDIO_PUBLIC_BASE_URL npm run build"
   },
   "dependencies": {
     "firebase": "^12.15.0",

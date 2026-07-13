@@ -17,28 +17,22 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = resolve(ROOT, 'dist')
 if (!existsSync(DIST)) { console.error('✘ شغّل `npm run build` أولاً.'); process.exit(1) }
 
+/* لا نسمح ببناء ينسخ أصواتاً لا يعرفها bundle. لأن Vite يعمل قبل هذا
+   السكربت، فالحل الآمن عند الاختلاف هو إيقاف البناء وطلب المزامنة ثم الإعادة. */
+const audioCheck = spawnSync(process.execPath, [resolve(ROOT, 'scripts/sync-audio.mjs'), '--check'], {
+  cwd: ROOT,
+  encoding: 'utf8',
+})
+if (audioCheck.status !== 0) {
+  console.error(audioCheck.stderr.trim() || 'audio.json غير متزامن')
+  console.error('شغّل: node scripts/sync-audio.mjs ثم أعد npm run build')
+  process.exit(1)
+}
+
 try { process.loadEnvFile(resolve(ROOT, '.env')) } catch { /* .env اختياري */ }
 // النطاق المركزي نفسه الذي يقرؤه العميل (VITE_SITE_URL) — canonical/OG/RSS/sitemap/robots كلها منه.
 const SITE = (process.env.VITE_SITE_URL || 'https://dr-alfailakawi.web.app').replace(/\/+$/, '')
 const AUDIO_PUBLIC_BASE_URL = (process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
-const USE_EXTERNAL_AUDIO = Boolean(AUDIO_PUBLIC_BASE_URL)
-
-/* لا نسمح ببناء ينسخ أصواتاً لا يعرفها bundle. لأن Vite يعمل قبل هذا
-   السكربت، فالحل الآمن عند الاختلاف هو إيقاف البناء وطلب المزامنة ثم الإعادة. */
-if (!USE_EXTERNAL_AUDIO) {
-  const audioCheck = spawnSync(process.execPath, [resolve(ROOT, 'scripts/sync-audio.mjs'), '--check'], {
-    cwd: ROOT,
-    encoding: 'utf8',
-  })
-  if (audioCheck.status !== 0) {
-    console.error(audioCheck.stderr.trim() || 'audio.json غير متزامن')
-    console.error('شغّل: node scripts/sync-audio.mjs ثم أعد npm run build')
-    process.exit(1)
-  }
-} else {
-  console.log(`✔ وضع الصوت الخارجي مفعل: ${AUDIO_PUBLIC_BASE_URL}`)
-}
-
 const SITE_HOST = new URL(SITE).hostname
 const AUTHOR = 'د. أحمد حسين الفيلكاوي'
 // كيان الهوية المركزي (Person) — يُربط عبر @id في كل Schema، فيبني غوغل كِيان المؤلف الواحد
@@ -64,16 +58,11 @@ const PUBLISHER = { '@type': 'Person', '@id': `${SITE}/#person`, name: AUTHOR }
 const podcastStatePath = resolve(ROOT, '.podcast-state.json')
 const hasPodcastState = existsSync(podcastStatePath)
 const podcastState = hasPodcastState ? JSON.parse(readFileSync(podcastStatePath, 'utf8')) : { done: {} }
-const audioMetaPath = resolve(ROOT, 'src/data/audio-meta.json')
-const audioMeta = existsSync(audioMetaPath) ? JSON.parse(readFileSync(audioMetaPath, 'utf8')) : {}
-const audioMetaFor = (rel = '') => audioMeta[String(rel).replace(/^\/?audio\//, '')] || {}
 const sha256File = (file) => createHash('sha256').update(readFileSync(file)).digest('hex')
 const acceptedArabicDialogue = (slug, audioFile, transcriptFile = '') => {
   const accepted = podcastState?.done?.[`${slug}:ar`]
   if (!accepted || typeof accepted !== 'object' || accepted.status !== 'accepted_automated') return false
-  if (!audioFile || !existsSync(audioFile) || !accepted.audioHash || sha256File(audioFile) !== accepted.audioHash) {
-    return USE_EXTERNAL_AUDIO && Boolean(audioMetaFor(`${slug}.dialogue.mp3`).bytes)
-  }
+  if (!audioFile || !existsSync(audioFile) || !accepted.audioHash || sha256File(audioFile) !== accepted.audioHash) return false
   if (transcriptFile && (!existsSync(transcriptFile) || !accepted.transcriptHash
     || sha256File(transcriptFile) !== accepted.transcriptHash)) return false
   return true
@@ -81,8 +70,6 @@ const acceptedArabicDialogue = (slug, audioFile, transcriptFile = '') => {
 const visibleDialogueAsset = (slug, audioFile, transcriptFile = '') =>
   acceptedArabicDialogue(slug, audioFile, transcriptFile)
 const audioPublicUrl = (rel) => AUDIO_PUBLIC_BASE_URL ? `${AUDIO_PUBLIC_BASE_URL}/${rel}` : `${SITE}/audio/${rel}`
-const audioAssetExists = (rel, file) => existsSync(file) || (USE_EXTERNAL_AUDIO && Boolean(audioMetaFor(rel).bytes))
-const audioBytes = (rel, file) => existsSync(file) ? statSync(file).size : Number(audioMetaFor(rel).bytes || 1)
 const src = readFileSync(resolve(ROOT, 'src/data.ts'), 'utf8')
 const esc = (s = '') => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 const attr = (s = '') => esc(s).replace(/'/g, '&#39;')
@@ -835,18 +822,9 @@ ${items}
 const podcastArt = `${SITE}/podcast-cover.png`
 const episodeItem = (articleList, fileOf, guidPrefix) => articleList
   .map((a) => ({ a, ...fileOf(a) }))
-  .filter((e) => e.rel && e.file && audioAssetExists(e.rel, e.file))
+  .filter((e) => e.file && existsSync(e.file))
   .sort((x, y) => (y.a.iso || '').localeCompare(x.a.iso || ''))
-const formatDuration = (seconds) => {
-  seconds = Math.round(Number(seconds))
-  if (!Number.isFinite(seconds) || seconds <= 0) return ''
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-  return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`
-}
-const durationOf = (file, rel = '') => {
-  if (!existsSync(file)) return formatDuration(audioMetaFor(rel).durationSeconds)
+const durationOf = (file) => {
   const result = spawnSync('ffprobe', [
     '-v', 'error',
     '-show_entries', 'format=duration',
@@ -854,7 +832,12 @@ const durationOf = (file, rel = '') => {
     file,
   ], { encoding: 'utf8', timeout: 20_000 })
   if (result.status !== 0) return ''
-  return formatDuration(result.stdout.trim())
+  const seconds = Math.round(Number(result.stdout.trim()))
+  if (!Number.isFinite(seconds) || seconds <= 0) return ''
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`
 }
 const podcastEpisodes = episodeItem(feedArticles, (a) => {
     // الحلقة الحوارية (فهد ونورة) هي حلقة القناة؛ وإلى أن تُولَّد لمقالٍ ما،
@@ -863,12 +846,12 @@ const podcastEpisodes = episodeItem(feedArticles, (a) => {
     const transcript = resolve(ROOT, 'audio', `${a.slug}.dialogue.json`)
     if (visibleDialogueAsset(a.slug, dlg, transcript)) return { file: dlg, rel: `${a.slug}.dialogue.mp3` }
     const plain = resolve(ROOT, 'audio', `${a.slug}.mp3`)
-    return { file: plain, rel: `${a.slug}.mp3` }
+    return { file: existsSync(plain) ? plain : null, rel: `${a.slug}.mp3` }
   })
   .map(({ a, file, rel }) => {
-    const bytes = audioBytes(rel, file)
+    const bytes = statSync(file).size
     const url = audioPublicUrl(rel)
-    const duration = durationOf(file, rel)
+    const duration = durationOf(file)
     return `    <item>
       <title>${esc(a.title)}</title>
       <itunes:author>د. أحمد حسين الفيلكاوي</itunes:author>
@@ -915,11 +898,11 @@ ${podcastEpisodes}
 /* ---------- podcast-en.xml: القناة الإنجليزية المستقلة (حوار Andrew وAva) ---------- */
 const enEpisodes = episodeItem(articles, (a) => {
     const f = resolve(ROOT, 'audio', `${a.slug}.dialogue-en.mp3`)
-    return { file: f, rel: `${a.slug}.dialogue-en.mp3` }
+    return { file: existsSync(f) ? f : null, rel: `${a.slug}.dialogue-en.mp3` }
   })
   .map(({ a, file, rel }) => {
-    const bytes = audioBytes(rel, file)
-    const duration = durationOf(file, rel)
+    const bytes = statSync(file).size
+    const duration = durationOf(file)
     return `    <item>
       <title>${esc(a.title)}</title>
       <itunes:author>Dr. Ahmad Alfailakawi</itunes:author>
@@ -963,7 +946,6 @@ function syncDirectory(name, extension) {
   if (!existsSync(from)) throw new Error(`مجلد الأصول مفقود: ${name}`)
   rmSync(to, { recursive: true, force: true })
   mkdirSync(to, { recursive: true })
-  if (name === 'audio' && USE_EXTERNAL_AUDIO) return 0
   const extensions = Array.isArray(extension) ? extension : [extension]
   const files = readdirSync(from, { withFileTypes: true })
     .filter((entry) => entry.isFile() && extensions.some((suffix) => entry.name.endsWith(suffix)))

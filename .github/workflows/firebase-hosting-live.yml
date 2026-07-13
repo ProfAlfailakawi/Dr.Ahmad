@@ -37,7 +37,7 @@ jobs:
         run: |
           if [ -z '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}' ]; then
             echo 'Missing GitHub secret: FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670'
-            echo 'Add a Firebase service-account JSON for the Hosting project gen-lang-client-0200723670 with Hosting Admin permissions to this repository secret.'
+            echo 'Add a Firebase service-account JSON with Hosting Admin permissions to this repository secret.'
             exit 1
           fi
 

@@ -856,6 +856,7 @@ export function Page({ children }: { children: React.ReactNode }) {
   useEffect(() => { window.scrollTo(0, 0) }, [])
   return (
     <motion.div
+      className="w-full max-w-full overflow-x-hidden"
       initial={reduce ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={reduce ? undefined : { opacity: 0, y: -8 }}

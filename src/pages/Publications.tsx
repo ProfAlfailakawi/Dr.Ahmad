@@ -18,8 +18,8 @@ export default function Publications() {
   return (
     <Page>
       <PageHead label="المؤلفات" title={`${count}.`} sub="مؤلفاتي العلمية والفكرية في التعليم والتكنولوجيا والتغيير المجتمعي." />
-      <section className="px-6 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-20 md:px-11 md:py-24">
-        <div className="mx-auto grid max-w-shell min-w-0 gap-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-10">
+      <section className="overflow-hidden px-6 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-20 md:px-11 md:py-24">
+        <div className="mx-auto grid w-full max-w-shell min-w-0 grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-10">
           {books.map((b, i) => (
             <motion.div
               key={b.slug}

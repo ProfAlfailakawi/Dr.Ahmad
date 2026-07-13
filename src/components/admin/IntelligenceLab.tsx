@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { books, papers } from '../../data'
 import podcastAdmin from '../../data/podcast-admin.json'
 import type { ArticleRecord } from '../../lib/cms'
+import { loadArticleBodies } from '../../lib/article-bodies'
 import { fetchExtras, fetchPublishedExtras, getDb } from '../../lib/firebase'
 import {
   articleSystem,
@@ -10,6 +11,7 @@ import {
   ideaLab,
   monthlyPlan,
   publicationGate,
+  styleFingerprint,
   topicMemory,
 } from '../../lib/intelligence'
 
@@ -228,6 +230,7 @@ function MemoryAndGateCard({ articles }: { articles: ArticleRecord[] }) {
   const [body, setBody] = useState('')
   const memory = useMemo(() => topicMemory(title, body, articles, books, papers), [articles, body, title])
   const gate = useMemo(() => publicationGate({ title, body, slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), excerpt: body.slice(0, 160), cat: 'تلقائي' }, articles), [articles, body, title])
+  const style = useMemo(() => styleFingerprint(articles), [articles])
   const strongLine = useMemo(() => {
     const sentences = body.replace(/\s+/g, ' ').split(/(?<=[.!؟])\s+/)
     return sentences.find((sentence) => sentence.length >= 55 && sentence.length <= 170)
@@ -244,6 +247,20 @@ function MemoryAndGateCard({ articles }: { articles: ArticleRecord[] }) {
         <textarea className={`${input} min-h-32 leading-loose`} value={body} onChange={(event) => setBody(event.target.value)} placeholder="اكتب مسودة قصيرة…" />
       </div>
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        <div className="rounded-xl border border-hair bg-canvas p-4 lg:col-span-2">
+          <p className="font-semibold text-ink">بصمة أسلوب الدكتور</p>
+          <p className="mt-2 text-[.86rem] leading-relaxed text-soft">
+            يتعلم الناقد هنا من {style.articleCount} مقالاً عبر {style.years.length} سنوات إنتاج، بمتوسط يقارب {style.avgSentenceWords || '—'} كلمة في الجملة.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {style.recurringTerms.slice(0, 10).map((term) => (
+              <span key={term} className="rounded-full border border-hair px-3 py-1 text-[.74rem] text-soft">{term}</span>
+            ))}
+          </div>
+          <ul className="mt-4 grid gap-1.5 text-[.82rem] leading-relaxed text-soft md:grid-cols-2">
+            {style.guidance.map((line) => <li key={line}>• {line}</li>)}
+          </ul>
+        </div>
         <div className="rounded-xl border border-hair bg-canvas p-4">
           <p className="font-semibold text-ink">ذاكرة الفكرة</p>
           <p className="mt-2 text-[.86rem] leading-relaxed text-soft">{memory.note}</p>
@@ -608,6 +625,22 @@ function R2AudioCard() {
 }
 
 export function IntelligenceLab({ articles }: { articles: ArticleRecord[] }) {
+  const [richArticles, setRichArticles] = useState<ArticleRecord[]>(articles)
+
+  useEffect(() => {
+    let active = true
+    setRichArticles(articles)
+    loadArticleBodies()
+      .then((bodies) => {
+        if (!active) return
+        setRichArticles(articles.map((article) => ({ ...article, body: article.body || bodies[article.slug] })))
+      })
+      .catch(() => {
+        if (active) setRichArticles(articles)
+      })
+    return () => { active = false }
+  }, [articles])
+
   return (
     <div className="grid gap-5">
       <section className={card}>
@@ -618,25 +651,25 @@ export function IntelligenceLab({ articles }: { articles: ArticleRecord[] }) {
       </section>
 
       <LabLayer title="قبل النشر" note="فحص الجودة والذاكرة الفكرية قبل أن يتحول النص إلى مادة منشورة.">
-        <ReadinessCard articles={articles} />
-        <MemoryAndGateCard articles={articles} />
-        <SecretArchiveCard articles={articles} />
-        <MonthlyPlanDetails articles={articles} />
+        <ReadinessCard articles={richArticles} />
+        <MemoryAndGateCard articles={richArticles} />
+        <SecretArchiveCard articles={richArticles} />
+        <MonthlyPlanDetails articles={richArticles} />
       </LabLayer>
 
       <LabLayer title="تطوير الفكرة" note="مساحة هادئة لتطوير سؤال أو خبر أو ملاحظة، وربطه بتاريخك الفكري.">
-        <IdeaLabCard articles={articles} />
-        <DoctorRadarCard articles={articles} />
-        <SeriesDetails articles={articles} />
+        <IdeaLabCard articles={richArticles} />
+        <DoctorRadarCard articles={richArticles} />
+        <SeriesDetails articles={richArticles} />
         <ToolDetails title="ماذا أفكر الآن؟" note="هذه الأداة الوحيدة هنا التي تحفظ شيئًا يمكن أن يظهر للعامة إذا ضغطت حفظ.">
           <NowCard />
         </ToolDetails>
       </LabLayer>
 
       <LabLayer title="تحويل المقال إلى منظومة" note="تحويل المقال الواحد إلى محاضرة، منشورات، سؤال طلاب، وبودكاست — من دون نشر تلقائي.">
-        <ArticleSystemCard articles={articles} />
+        <ArticleSystemCard articles={richArticles} />
         <AudioQualityGateCard />
-        <AudioControlCard articles={articles} />
+        <AudioControlCard articles={richArticles} />
         <R2AudioCard />
       </LabLayer>
     </div>

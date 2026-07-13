@@ -96,6 +96,54 @@ export function strongestQuote(text = '') {
     || 'الفكرة القوية تبدأ حين نرى الإنسان قبل الأداة.'
 }
 
+export function styleFingerprint(articles: ArticleLike[]) {
+  const complete = articles.filter((article) => (article.body || article.excerpt || '').trim().length > 80)
+  const corpus = complete.map((article) => `${article.title}. ${article.excerpt || ''}. ${article.body || ''}`).join('\n\n')
+  const sentences = corpus
+    .replace(/\s+/g, ' ')
+    .split(/(?<=[.!؟])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length > 18)
+  const sentenceWords = sentences.map((sentence) => sentence.split(/\s+/).filter(Boolean).length)
+  const avgSentenceWords = sentenceWords.length
+    ? Math.round(sentenceWords.reduce((sum, n) => sum + n, 0) / sentenceWords.length)
+    : 0
+  const terms = new Map<string, number>()
+  for (const token of ideaTokens(corpus)) {
+    if (token.length < 4 || /^\d+$/.test(token)) continue
+    terms.set(token, (terms.get(token) || 0) + 1)
+  }
+  const recurringTerms = Array.from(terms)
+    .filter(([, count]) => count >= 3)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 12)
+    .map(([term]) => term)
+  const categories = Array.from(complete.reduce((map, article) => {
+    map.set(article.cat, (map.get(article.cat) || 0) + 1)
+    return map
+  }, new Map<string, number>()))
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([cat, count]) => ({ cat, count }))
+  const years = Array.from(new Set(complete.map((article) => article.iso?.slice(0, 4)).filter(Boolean))).sort()
+  const humanAnchors = ['الإنسان', 'الطالب', 'المعلم', 'المعنى', 'الخوف', 'الوعي', 'القيمة']
+    .filter((word) => corpus.includes(word))
+  return {
+    articleCount: complete.length,
+    years,
+    avgSentenceWords,
+    recurringTerms,
+    categories,
+    humanAnchors,
+    guidance: [
+      'ابدأ غالباً من موقف إنساني صغير، لا من تعريف أكاديمي مباشر.',
+      'اجعل التقنية أو النظام وسيلة لفهم أثرها في الطالب والمعلم والإنسان.',
+      'استخدم سؤالاً واضحاً يفتح المعنى، ثم فقرة قصيرة تضيء المفارقة.',
+      'تجنب النبرة الوعظية المباشرة، وفضّل التأمل الهادئ المدعوم بمثال.',
+    ],
+  }
+}
+
 export function articleSystem(article: ArticleLike, articles: ArticleLike[], books: SimpleBook[], papers: SimplePaper[]) {
   const body = article.body || article.excerpt || article.title
   const first = body.replace(/\s+/g, ' ').slice(0, 280)
@@ -169,4 +217,3 @@ export function monthlyPlan(articles: ArticleLike[], books: SimpleBook[], papers
       || 'منشور قصير يمهد للفكرة',
   }))
 }
-

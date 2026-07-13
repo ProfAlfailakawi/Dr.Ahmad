@@ -4,6 +4,24 @@ import { useSeo } from '../components/seo'
 import { OwnerEdit } from '../components/extras'
 import { useCmsContent } from '../lib/content'
 
+function bookAudience(title: string) {
+  if (/طفل|الطفولة/.test(title)) return 'للآباء والمعلمين والباحثين في أثر التقنية على الطفل.'
+  if (/ذوي الاحتياجات|الاحتياجات الخاصة/.test(title)) return 'للمعلمين ومصممي بيئات التعلم الشاملة.'
+  if (/ذكاء|بيانات|حوكمة/.test(title)) return 'لصنّاع القرار والباحثين في التقنية والتعليم.'
+  if (/العالم الافتراضي|افتراضي|واقع/.test(title)) return 'لمن يريد فهم البيئات الافتراضية بوصفها تجربة تعلم لا مجرد أداة.'
+  if (/التلعيب|الألعاب/.test(title)) return 'للمهتمين بتحويل الدافعية واللعب إلى تصميم تعليمي واعٍ.'
+  if (/مناهج|طرق التدريس/.test(title)) return 'للمعلم والطالب الجامعي ومن يصمم تعلمًا قابلًا للتطبيق.'
+  return 'للمهتمين بتكنولوجيا التعليم بوصفها معرفة عملية وإنسانية.'
+}
+
+function bookKey(title: string, desc?: string) {
+  if (/موسوعة/.test(title)) return 'مدخل مرجعي واسع؛ يعود إليه القارئ ليبني لغة مشتركة حول المجال.'
+  if (/الطفل/.test(title)) return 'يسأل عن الطفل قبل الجهاز: ماذا تفعل الشاشة في النمو والمعنى؟'
+  if (/ذكاء|بيانات/.test(title)) return 'يربط التقنية بالمسؤولية: من يملك القرار حين تتضخم البيانات؟'
+  if (/مدارس ذكية/.test(title)) return 'ينقل المدرسة الذكية من شعار تقني إلى بيئة تعلم قابلة للقياس.'
+  return desc || 'يضع المفهوم في سياقه التعليمي، ثم يفتح طريقًا عمليًا للفهم والتطبيق.'
+}
+
 export default function BookDetail() {
   const { slug } = useParams()
   const { books, loading } = useCmsContent()
@@ -51,19 +69,32 @@ export default function BookDetail() {
                 </dl>
               )}
 
+              <div className="mt-9 grid gap-3">
+                {[
+                  ['فكرة الكتاب', bookKey(book.title, book.desc)],
+                  ['لمن يناسب؟', bookAudience(book.title)],
+                  ['طريقة الدخول', 'ابدأ بالفكرة العامة، ثم انتقل إلى الفهرس لتختار الفصل الأقرب لسؤالك.'],
+                ].map(([title, text]) => (
+                  <div key={title} className="rounded-2xl border border-hair bg-wash p-4">
+                    <p className="text-[.78rem] font-semibold text-accent">{title}</p>
+                    <p className="mt-1 text-[.9rem] leading-relaxed text-soft">{text}</p>
+                  </div>
+                ))}
+              </div>
+
               {book.pdf && (
-                <>
+                <div className="mt-7 flex flex-wrap items-center gap-3">
                   <a
                     href={book.pdf}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-9 inline-flex items-center gap-3 rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep"
+                    className="inline-flex items-center gap-3 rounded-full bg-accent px-7 py-3 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep"
                   >
-                    <span>المقدّمة والفهرس</span>
+                    <span>عرض عيّنة الكتاب</span>
                     <span className="text-[.85rem] opacity-80">PDF</span>
                   </a>
-                  <p className="mt-3 text-[.8rem] text-soft">يفتح ملف الفهرس ومقدّمة الكتاب.</p>
-                </>
+                  <p className="text-[.8rem] text-soft">ملف هادئ للمقدمة والفهرس، وليس الكتاب الكامل.</p>
+                </div>
               )}
             </FadeUp>
           </div>

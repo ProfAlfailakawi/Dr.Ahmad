@@ -46,7 +46,7 @@ type MonthlyReport = {
   }
 }
 
-const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
+const card = 'min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const ar = (value: number) => String(value)
 
 function kuwaitDate(offset = 0) {
@@ -183,7 +183,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
   if (loading) return <div className={card}>لحظة… أجمع المشاهدات.</div>
 
   return (
-    <div className="admin-dashboard grid min-w-0 max-w-full gap-5 overflow-x-hidden">
+    <div className="admin-dashboard grid min-w-0 w-full max-w-full gap-4 overflow-x-hidden sm:gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[.85rem] text-soft">تُحتسب الصفحة مرة واحدة في الجلسة لكل زائر.</p>
         <button type="button" onClick={() => void load()} className="rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent">
@@ -255,7 +255,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         </section>
       )}
 
-      <div className="grid max-w-full grid-cols-[repeat(auto-fit,minmax(min(100%,12.5rem),1fr))] gap-3 sm:gap-4">
+      <div className="grid min-w-0 w-full max-w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className={`${card} min-w-0`}>
           <span className="block truncate font-display text-[clamp(1.5rem,7vw,2.25rem)] font-bold tabular-nums text-accent">{ar(summary.total)}</span>
           <span className="mt-2 block text-[.82rem] text-soft">إجمالي المشاهدات</span>
@@ -309,7 +309,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       <section className={card}>
         <p className="text-[.76rem] font-semibold uppercase text-accent">أثر المقال</p>
         <h2 className="mt-1 font-display text-xl font-semibold text-ink">ما الذي يحدث بعد القراءة؟</h2>
-        <div className="mt-5 grid gap-4 md:grid-cols-3">
+        <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-xl border border-hair bg-canvas p-4">
             <span className="block font-display text-2xl font-semibold text-accent">{ar(summary.byKind['مقالات'])}</span>
             <span className="mt-1 block text-[.78rem] text-soft">مشاهدات المقالات</span>
@@ -324,10 +324,10 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
           </div>
         </div>
         {summary.journeys.length ? (
-          <ol className="mt-5 grid gap-2">
+          <ol className="mt-5 grid min-w-0 gap-2">
             {summary.journeys.slice(0, 6).map((row) => (
-              <li key={row.id} className="flex min-w-0 items-center justify-between gap-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.82rem]">
-                <span className="min-w-0 break-all text-ink" dir="ltr">{row.from} ← {row.to}</span>
+              <li key={row.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-hair bg-canvas px-3 py-3 text-[.78rem] sm:px-4 sm:text-[.82rem]">
+                <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-ink" dir="ltr" title={`${row.from} ← ${row.to}`}>{row.from} ← {row.to}</span>
                 <span className="shrink-0 text-accent">{ar(row.count)}</span>
               </li>
             ))}
@@ -340,7 +340,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       <section className={card}>
         <p className="text-[.76rem] font-semibold uppercase text-accent">آخر 7 أيام</p>
         <h2 className="mt-1 font-display text-xl font-semibold text-ink">اتجاه المشاهدات</h2>
-        <div className="mt-8 grid h-36 grid-cols-7 items-end gap-1.5 sm:h-48 sm:gap-4" aria-label="مشاهدات الأيام السبعة الأخيرة">
+        <div className="mt-8 grid h-36 min-w-0 grid-cols-7 items-end gap-1 sm:h-48 sm:gap-3" aria-label="مشاهدات الأيام السبعة الأخيرة">
           {summary.trend.map((day) => (
             <div key={day.date} className="flex h-full min-w-0 flex-col items-center justify-end gap-2">
               <span className="text-[.72rem] text-soft">{ar(day.count)}</span>
@@ -366,7 +366,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
             className="w-full rounded-full border border-hair bg-canvas px-4 py-2 text-[.85rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent sm:w-56"
           />
         </div>
-        <div className="mb-5 flex flex-wrap gap-2">
+        <div className="mb-5 flex max-w-full flex-wrap gap-2">
           {(['الكل', 'مقالات', 'كتب', 'أبحاث', 'صفحات', 'مشاركات'] as Kind[]).map((k) => (
             <button
               key={k}
@@ -378,9 +378,9 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
           ))}
         </div>
         {detailed.length ? (
-          <ol className="max-h-[520px] divide-y divide-hair overflow-y-auto">
+          <ol className="max-h-[520px] min-w-0 divide-y divide-hair overflow-y-auto overflow-x-hidden">
             {detailed.map((row, index) => (
-              <li key={row.id} className="flex min-w-0 items-center gap-3 py-2.5">
+              <li key={row.id} className="grid min-w-0 grid-cols-[1.75rem_minmax(0,1fr)_auto_auto] items-center gap-2 py-2.5 sm:gap-3">
                 <span className="w-7 shrink-0 text-[.78rem] text-soft">{index + 1}.</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[.88rem] text-ink">{row.label}</span>

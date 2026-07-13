@@ -32,15 +32,23 @@ export default function Atlas() {
   const [activeCat, setActiveCat] = useState<string | null>(null)
 
   const stars = useMemo(() => {
-    const times = articles.map((a) => new Date(a.iso).getTime())
-    const min = Math.min(...times)
-    const max = Math.max(...times)
+    const activeYears = Array.from(new Set(articles.map((a) => a.iso.slice(0, 4)).filter(Boolean)))
+      .sort((a, b) => Number(a) - Number(b))
+    const yearIndex = new Map(activeYears.map((year, index) => [year, index]))
+    const yearDenominator = Math.max(activeYears.length - 1 + 0.72, 1)
     const words = articles.map((a) => (a.body ? a.body.trim().split(/\s+/).length : 260))
     const wMin = Math.min(...words)
     const wMax = Math.max(...words)
 
     return articles.map((a, i) => {
-      const t = (new Date(a.iso).getTime() - min) / (max - min || 1)
+      const date = new Date(a.iso)
+      const year = a.iso.slice(0, 4)
+      const start = new Date(`${year}-01-01T00:00:00Z`).getTime()
+      const end = new Date(`${Number(year) + 1}-01-01T00:00:00Z`).getTime()
+      const withinYear = Math.min(Math.max((date.getTime() - start) / (end - start || 1), 0), 1)
+      // لا نترك فراغاً لسنوات بلا إنتاج: كل سنة نشطة تأخذ محطة، والتاريخ داخلها يتحرك قليلاً فقط.
+      const ordinal = (yearIndex.get(year) || 0) + withinYear * 0.72
+      const t = activeYears.length <= 1 ? 0.5 : ordinal / yearDenominator
       // RTL: الأقدم يمين، الأحدث يسار — مع هامش نصف القطر يمينًا ويسارًا كي لا تلمس النجوم العناوين
       const x = W - PAD_R - STAR_R_MAX - t * (W - PAD_R - STAR_R_MAX - PAD_L)
       const row = cats.indexOf(a.cat)

@@ -38,9 +38,13 @@ html.dark {
 
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden;
+  overflow-x: clip;
   max-width: 100%;
   transition: background-color 0.5s var(--E);
+}
+
+html, body, #root {
+  max-width: 100%;
 }
 
 body {
@@ -49,7 +53,7 @@ body {
   font-family: "Tajawal", system-ui, sans-serif;
   line-height: 1.85;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overflow-x: clip;
   transition: background-color 0.5s var(--E), color 0.5s var(--E);
 }
 
@@ -66,14 +70,18 @@ body.cursor-none-desktop .article-body { cursor: text !important; }
 /* لوحة التحكم: حماية من أي تمدد أفقي في الجداول أو المسارات الطويلة */
 .admin-shell {
   box-sizing: border-box;
-  max-width: min(1320px, 100vw);
+  width: 100%;
+  max-width: min(1320px, calc(100vw - 1px));
+  overflow-x: hidden;
 }
 .admin-dashboard * {
   min-width: 0;
 }
 .admin-dashboard {
+  inline-size: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
+  contain: inline-size;
 }
 
 :focus-visible { outline: 2px solid rgb(var(--c-accent)); outline-offset: 3px; border-radius: 3px; }

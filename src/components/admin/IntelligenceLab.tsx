@@ -389,66 +389,36 @@ function NowCard() {
   const [form, setForm] = useState({ question: '', note: '', link: '', duration: '14' })
   const [items, setItems] = useState<NowAdminItem[]>([])
   const [saved, setSaved] = useState('')
-  const [error, setError] = useState('')
-  const [busy, setBusy] = useState(false)
   const load = async () => {
-    try {
-      const value = await fetchExtras<NowAdminItem>('site_now')
-      setItems(value.slice(0, 8))
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'تعذّر جلب الأفكار المحفوظة.')
-    }
+    const value = await fetchExtras<NowAdminItem>('site_now')
+    setItems(value.slice(0, 8))
   }
   useEffect(() => { void load() }, [])
   const save = async () => {
-    setError('')
-    setSaved('')
-    if (!form.question.trim()) {
-      setError('اكتب السؤال أو الفكرة أولاً.')
-      return
-    }
-    setBusy(true)
-    try {
-      const db = await getDb()
-      if (!db) throw new Error('Firebase غير متاح الآن.')
-      const { Timestamp, collection, addDoc, serverTimestamp } = await import('firebase/firestore')
-      const days = form.duration === 'forever' ? 0 : Number(form.duration || 14)
-      const expiresAt = days ? Timestamp.fromDate(new Date(Date.now() + days * 86_400_000)) : null
-      await addDoc(collection(db, 'site_now'), { ...form, status: 'published', expiresAt, createdAt: serverTimestamp() })
-      setForm({ question: '', note: '', link: '', duration: '14' })
-      setSaved('حُفظت الفكرة في صفحة ماذا أفكر الآن ✓')
-      await load()
-      window.setTimeout(() => setSaved(''), 2500)
-    } catch (reason) {
-      const message = reason instanceof Error ? reason.message : 'فشل الحفظ.'
-      setError(message.includes('permission') || message.includes('Missing or insufficient permissions')
-        ? 'رفض Firestore الحفظ. غالبًا قواعد Firestore لم تُنشر أو صلاحية admin غير مفعّلة.'
-        : message)
-    } finally {
-      setBusy(false)
-    }
+    const db = await getDb()
+    if (!db || !form.question.trim()) return
+    const { Timestamp, collection, addDoc, serverTimestamp } = await import('firebase/firestore')
+    const days = form.duration === 'forever' ? 0 : Number(form.duration || 14)
+    const expiresAt = days ? Timestamp.fromDate(new Date(Date.now() + days * 86_400_000)) : null
+    await addDoc(collection(db, 'site_now'), { ...form, status: 'published', expiresAt, createdAt: serverTimestamp() })
+    setForm({ question: '', note: '', link: '', duration: '14' })
+    setSaved('حُفظت الفكرة في صفحة ماذا أفكر الآن ✓')
+    await load()
+    window.setTimeout(() => setSaved(''), 2500)
   }
   const hide = async (id: string) => {
-    try {
-      const db = await getDb()
-      if (!db) return
-      const { doc, updateDoc } = await import('firebase/firestore')
-      await updateDoc(doc(db, 'site_now', id), { status: 'hidden' })
-      await load()
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'تعذّر إخفاء الفكرة.')
-    }
+    const db = await getDb()
+    if (!db) return
+    const { doc, updateDoc } = await import('firebase/firestore')
+    await updateDoc(doc(db, 'site_now', id), { status: 'hidden' })
+    await load()
   }
   const remove = async (id: string) => {
-    try {
-      const db = await getDb()
-      if (!db) return
-      const { deleteDoc, doc } = await import('firebase/firestore')
-      await deleteDoc(doc(db, 'site_now', id))
-      await load()
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'تعذّر حذف الفكرة.')
-    }
+    const db = await getDb()
+    if (!db) return
+    const { deleteDoc, doc } = await import('firebase/firestore')
+    await deleteDoc(doc(db, 'site_now', id))
+    await load()
   }
   return (
     <section className={card}>
@@ -464,10 +434,9 @@ function NowCard() {
         </select>
       </div>
       <div className="mt-4 flex items-center gap-3">
-        <button type="button" onClick={save} disabled={busy} className={primaryBtn}>{busy ? 'أحفظ…' : 'حفظ فكرة'}</button>
+        <button type="button" onClick={save} className={primaryBtn}>حفظ فكرة</button>
         {saved && <span className="text-[.82rem] text-accent">{saved}</span>}
       </div>
-      {error && <p className="mt-3 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.82rem] leading-relaxed text-soft">{error}</p>}
       <div className="mt-6 border-t border-hair pt-4">
         <p className="text-[.78rem] font-semibold text-soft">آخر الأفكار المحفوظة</p>
         {items.length ? (
@@ -533,80 +502,6 @@ function DoctorRadarCard({ articles }: { articles: ArticleRecord[] }) {
   )
 }
 
-function SecretArchiveCard({ articles }: { articles: ArticleRecord[] }) {
-  const linked = useMemo(() => books.slice(0, 4).map((book) => {
-    const related = ideaLab(`${book.title} ${book.desc}`, articles, books, papers).relatedArticles.slice(0, 2)
-    return { book, related }
-  }), [articles])
-  return (
-    <section className={card}>
-      <p className="text-[.76rem] font-semibold uppercase text-accent">أرشيف الدكتور السري</p>
-      <h2 className="mt-1 font-display text-xl font-semibold text-ink">الكتب الخاصة تغذّي الربط الذكي — ولا تظهر للناس.</h2>
-      <p className="mt-2 text-[.86rem] leading-relaxed text-soft">
-        ملفات PDF تبقى خارج الموقع وGitHub. الذاكرة المشتقة تُبنى محليًا عبر <span dir="ltr">npm run private-books:memory</span> لتقترح: هذا المقال قريب من كتاب/فصل/محور، من دون كشف الكتاب نفسه.
-      </p>
-      <div className="mt-5 grid gap-3 md:grid-cols-2">
-        {linked.map(({ book, related }) => (
-          <div key={book.slug} className="rounded-xl border border-hair bg-canvas p-4">
-            <p className="font-display text-lg font-semibold text-ink">{book.title}</p>
-            <p className="mt-1 text-[.78rem] text-soft">ربط داخلي مقترح من الذاكرة الخاصة</p>
-            {related.length ? (
-              <ul className="mt-3 grid gap-1.5">
-                {related.map((article) => (
-                  <li key={article.slug}>
-                    <a href={`/articles/${article.slug}`} target="_blank" rel="noreferrer" className="text-[.82rem] text-accent hover:text-accent-deep">{article.title} ←</a>
-                  </li>
-                ))}
-              </ul>
-            ) : <p className="mt-3 text-[.82rem] text-soft">لا يوجد ربط كافٍ من البيانات الخفيفة.</p>}
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-function AudioQualityGateCard() {
-  const episodes = (podcastAdmin as { episodes?: { slug: string; title: string; status: string; hasTranscript?: boolean; bytes?: number; quality?: { issues?: string[] } }[] }).episodes || []
-  const blocked = episodes.filter((episode) => episode.status !== 'published')
-  return (
-    <section className={card}>
-      <p className="text-[.76rem] font-semibold uppercase text-accent">نظام جودة صوتي</p>
-      <h2 className="mt-1 font-display text-xl font-semibold text-ink">لا تُنشر الحلقة الحوارية قبل اجتياز البوابة.</h2>
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-hair bg-canvas p-4"><span className="block font-display text-2xl text-accent">{episodes.length}</span><span className="text-[.78rem] text-soft">حلقات حوارية</span></div>
-        <div className="rounded-xl border border-hair bg-canvas p-4"><span className="block font-display text-2xl text-accent">{episodes.length - blocked.length}</span><span className="text-[.78rem] text-soft">منشورة</span></div>
-        <div className="rounded-xl border border-hair bg-canvas p-4"><span className="block font-display text-2xl text-accent">{blocked.length}</span><span className="text-[.78rem] text-soft">تحت المراجعة</span></div>
-      </div>
-      <p className="mt-4 text-[.86rem] leading-relaxed text-soft">
-        البوابة تفحص: Transcript، حجم الملف، الرابط الدائم، مدة الحلقة، واعتماد الجودة. أي حلقة غير معتمدة تُحجب عن RSS والإنتاج حتى تنجح.
-      </p>
-      {blocked.length ? (
-        <ol className="mt-4 grid gap-2">
-          {blocked.slice(0, 5).map((episode) => (
-            <li key={episode.slug} className="rounded-xl border border-hair bg-canvas p-4">
-              <p className="font-semibold text-ink">{episode.title}</p>
-              <p className="mt-1 text-[.78rem] text-soft">{episode.quality?.issues?.join(' · ') || 'تحتاج اعتماد الجودة قبل النشر.'}</p>
-            </li>
-          ))}
-        </ol>
-      ) : <p className="mt-4 rounded-xl border border-hair bg-canvas p-4 text-[.84rem] text-soft">كل الحلقات الحوارية المنشورة اجتازت البوابة.</p>}
-    </section>
-  )
-}
-
-function R2AudioCard() {
-  return (
-    <section className={card}>
-      <p className="text-[.76rem] font-semibold uppercase text-accent">نقل الصوت إلى R2</p>
-      <h2 className="mt-1 font-display text-xl font-semibold text-ink">الريبو يبقى للكود، والصوت يخرج إلى مستودع صوتي.</h2>
-      <p className="mt-2 text-[.86rem] leading-relaxed text-soft">
-        الحجم الحالي للصوت يقارب 450MB. أضفت دعم <span dir="ltr">AUDIO_PUBLIC_BASE_URL</span> و <span dir="ltr">VITE_AUDIO_BASE_URL</span>، وسكربت <span dir="ltr">npm run audio:r2:plan</span>. عند جاهزية R2 نرفع الملفات، ثم يبقى GitHub خفيفًا.
-      </p>
-    </section>
-  )
-}
-
 export function IntelligenceLab({ articles }: { articles: ArticleRecord[] }) {
   return (
     <div className="grid gap-5">
@@ -620,7 +515,6 @@ export function IntelligenceLab({ articles }: { articles: ArticleRecord[] }) {
       <LabLayer title="قبل النشر" note="فحص الجودة والذاكرة الفكرية قبل أن يتحول النص إلى مادة منشورة.">
         <ReadinessCard articles={articles} />
         <MemoryAndGateCard articles={articles} />
-        <SecretArchiveCard articles={articles} />
         <MonthlyPlanDetails articles={articles} />
       </LabLayer>
 
@@ -635,9 +529,7 @@ export function IntelligenceLab({ articles }: { articles: ArticleRecord[] }) {
 
       <LabLayer title="تحويل المقال إلى منظومة" note="تحويل المقال الواحد إلى محاضرة، منشورات، سؤال طلاب، وبودكاست — من دون نشر تلقائي.">
         <ArticleSystemCard articles={articles} />
-        <AudioQualityGateCard />
         <AudioControlCard articles={articles} />
-        <R2AudioCard />
       </LabLayer>
     </div>
   )

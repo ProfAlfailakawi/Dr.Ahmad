@@ -43,8 +43,3 @@ ArabicPronunciationMemory.sqlite*
 .private-memory/
 PrivateBooks/
 .firebase/hosting.ZGlzdA.cache
-
-# الصوت الجديد لا يضاف إلى Git بعد الانتقال إلى R2
-audio/*.mp3
-audio/*.dialogue.json
-.audio-r2-plan.json

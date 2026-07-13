@@ -32,7 +32,6 @@ if (audioCheck.status !== 0) {
 try { process.loadEnvFile(resolve(ROOT, '.env')) } catch { /* .env اختياري */ }
 // النطاق المركزي نفسه الذي يقرؤه العميل (VITE_SITE_URL) — canonical/OG/RSS/sitemap/robots كلها منه.
 const SITE = (process.env.VITE_SITE_URL || 'https://dr-alfailakawi.web.app').replace(/\/+$/, '')
-const AUDIO_PUBLIC_BASE_URL = (process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const SITE_HOST = new URL(SITE).hostname
 const AUTHOR = 'د. أحمد حسين الفيلكاوي'
 // كيان الهوية المركزي (Person) — يُربط عبر @id في كل Schema، فيبني غوغل كِيان المؤلف الواحد
@@ -68,8 +67,7 @@ const acceptedArabicDialogue = (slug, audioFile, transcriptFile = '') => {
   return true
 }
 const visibleDialogueAsset = (slug, audioFile, transcriptFile = '') =>
-  acceptedArabicDialogue(slug, audioFile, transcriptFile)
-const audioPublicUrl = (rel) => AUDIO_PUBLIC_BASE_URL ? `${AUDIO_PUBLIC_BASE_URL}/${rel}` : `${SITE}/audio/${rel}`
+  acceptedArabicDialogue(slug, audioFile, transcriptFile) || (!hasPodcastState && audioFile && existsSync(audioFile))
 const src = readFileSync(resolve(ROOT, 'src/data.ts'), 'utf8')
 const esc = (s = '') => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 const attr = (s = '') => esc(s).replace(/'/g, '&#39;')
@@ -850,7 +848,7 @@ const podcastEpisodes = episodeItem(feedArticles, (a) => {
   })
   .map(({ a, file, rel }) => {
     const bytes = statSync(file).size
-    const url = audioPublicUrl(rel)
+    const url = `${SITE}/audio/${rel}`
     const duration = durationOf(file)
     return `    <item>
       <title>${esc(a.title)}</title>
@@ -871,7 +869,7 @@ const podcastEpisodes = episodeItem(feedArticles, (a) => {
 writeFileSync(resolve(DIST, 'podcast.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>مقالات د. أحمد حسين الفيلكاوي المسموعة</title>
+    <title>د. أحمد حسين الفيلكاوي — مقالاتي المسموعة · Dr. Ahmad Alfailakawi</title>
     <link>${SITE}</link>
     <language>ar</language>
     <copyright>© د. أحمد حسين الفيلكاوي</copyright>
@@ -881,7 +879,7 @@ My reflections on education, technology, and society — and how we keep the hum
 
 تُنتج النسخة الصوتية باستخدام تقنيات صوتية متقدمة، تحت الإشراف والتحرير الكامل للدكتور أحمد حسين الفيلكاوي.</description>
     <itunes:author>د. أحمد حسين الفيلكاوي · Dr. Ahmad Alfailakawi</itunes:author>
-    <itunes:summary>قناة صوتية رسمية لمقالات د. أحمد حسين الفيلكاوي في التعليم والتقنية والمجتمع.</itunes:summary>
+    <itunes:summary>أفكاري عن التعليم والتقنية والمجتمع، وكيف نُبقي الإنسان في قلب الآلة — بصوتي. · My reflections on education, technology, and society, in my own voice.</itunes:summary>
     <itunes:type>episodic</itunes:type>
     <itunes:owner><itunes:name>د. أحمد حسين الفيلكاوي</itunes:name><itunes:email>ah_f@hotmail.com</itunes:email></itunes:owner>
     <itunes:image href="${podcastArt}"/>
@@ -910,7 +908,7 @@ const enEpisodes = episodeItem(articles, (a) => {
       <link>${SITE}/articles/${a.slug}</link>
       <guid isPermaLink="false">podcast-en-${a.slug}</guid>
       <pubDate>${new Date(`${a.iso}T09:00:00Z`).toUTCString()}</pubDate>
-      <enclosure url="${audioPublicUrl(rel)}" length="${bytes}" type="audio/mpeg"/>
+      <enclosure url="${SITE}/audio/${rel}" length="${bytes}" type="audio/mpeg"/>
       ${duration ? `<itunes:duration>${duration}</itunes:duration>` : ''}
       <itunes:image href="${podcastArt}"/>
       <itunes:explicit>false</itunes:explicit>

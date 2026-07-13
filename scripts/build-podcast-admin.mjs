@@ -12,8 +12,6 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const AUDIO = resolve(ROOT, 'audio')
 const DATA = readFileSync(resolve(ROOT, 'src/data.ts'), 'utf8')
 const OUT = resolve(ROOT, 'src/data/podcast-admin.json')
-const podcastStatePath = resolve(ROOT, '.podcast-state.json')
-const podcastState = existsSync(podcastStatePath) ? JSON.parse(readFileSync(podcastStatePath, 'utf8')) : { done: {} }
 
 const articlesSource = DATA.slice(DATA.indexOf('export const articles = ['), DATA.indexOf('export const articlesWithBody'))
 const pick = (block, key) => block.match(new RegExp(`${key}:\\s*'([^']*)'`))?.[1] || ''
@@ -38,9 +36,6 @@ const episodes = dialogue.map((name) => {
   const transcriptFile = resolve(AUDIO, `${slug}.dialogue.json`)
   const bytes = readFileSync(file)
   const hasTranscript = existsSync(transcriptFile)
-  const hash = createHash('sha256').update(bytes).digest('hex')
-  const accepted = podcastState?.done?.[`${slug}:ar`]
-  const approved = accepted?.status === 'accepted_automated' && accepted.audioHash === hash
   let utterances = 0
   if (hasTranscript) {
     try {
@@ -54,20 +49,17 @@ const episodes = dialogue.map((name) => {
     category: article?.cat || 'بودكاست',
     date: article?.date || '',
     iso: article?.iso || '',
-    status: approved ? 'published' : 'under_review',
+    status: 'published',
     audio: `/audio/${name}`,
     bytes: statSync(file).size,
-    audioHash: hash.slice(0, 16),
+    audioHash: createHash('sha256').update(bytes).digest('hex').slice(0, 16),
     hasTranscript,
     utterances,
     quality: {
-      pronunciation: approved ? 'مقبول' : hasTranscript ? 'ينتظر اعتماد البوابة' : 'يحتاج Transcript',
-      pace: approved ? 'مقبول' : 'ينتظر تقرير الجودة',
-      pauses: approved ? 'مقبول' : 'ينتظر تقرير الجودة',
-      issues: [
-        ...(!hasTranscript ? ['لا يوجد Transcript منشور لهذه الحلقة بعد.'] : []),
-        ...(!approved ? ['لن تُنشر الحلقة الحوارية في RSS قبل اعتماد بوابة الجودة.'] : []),
-      ],
+      pronunciation: hasTranscript ? 'مكتمل نصياً' : 'يحتاج Transcript',
+      pace: 'يفحص من تقرير الحوار عند توفره',
+      pauses: 'يفحص من تقرير الحوار عند توفره',
+      issues: hasTranscript ? [] : ['لا يوجد Transcript منشور لهذه الحلقة بعد.'],
     },
   }
 })

@@ -46,12 +46,7 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
 
       - name: Generate article readings and publish to R2
-        run: |
-          if [ -z "$AZURE_SPEECH_KEY" ]; then
-            echo "AZURE_SPEECH_KEY is missing; skipping automatic audio generation."
-            exit 0
-          fi
-          npm run audio -- --limit=8
+        run: npm run audio -- --limit=8
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
           FIREBASE_PROJECT_ID: gen-lang-client-0200723670
@@ -66,12 +61,7 @@ jobs:
 
       - name: Generate approved dialogue podcast if gate is ready
         continue-on-error: true
-        run: |
-          if [ -z "$AZURE_SPEECH_KEY" ] || { [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; }; then
-            echo "Azure/Gemini secrets are missing; skipping dialogue podcast generation."
-            exit 0
-          fi
-          npm run podcast:ar:nightly
+        run: npm run podcast:ar:nightly
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
           FIREBASE_PROJECT_ID: gen-lang-client-0200723670

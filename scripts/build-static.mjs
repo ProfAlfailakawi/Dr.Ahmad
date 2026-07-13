@@ -35,7 +35,12 @@ if (audioCheck.status !== 0) {
 
 try { process.loadEnvFile(resolve(ROOT, '.env')) } catch { /* .env اختياري */ }
 // النطاق المركزي نفسه الذي يقرؤه العميل (VITE_SITE_URL) — canonical/OG/RSS/sitemap/robots كلها منه.
-const SITE = (process.env.VITE_SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
+const OFFICIAL_SITE = 'https://dr-alfailakawi.com'
+const SITE = (process.env.VITE_SITE_URL || OFFICIAL_SITE).replace(/\/+$/, '')
+if (SITE !== OFFICIAL_SITE) {
+  console.error(`✘ VITE_SITE_URL يجب أن يكون ${OFFICIAL_SITE} فقط، والقيمة الحالية: ${SITE}`)
+  process.exit(1)
+}
 const AUDIO_PUBLIC_BASE_URL = (process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const SITE_HOST = new URL(SITE).hostname
 const AUTHOR = 'د. أحمد حسين الفيلكاوي'

@@ -35,7 +35,6 @@ const legacyHosts = new Set([
   'www.dr-alfailakawi.com',
   'dr-alfailakawi.web.app',
   'dr-alfailakawi.firebaseapp.com',
-  '208.115.236.10',
 ])
 
 function firstForwardedValue(value) {

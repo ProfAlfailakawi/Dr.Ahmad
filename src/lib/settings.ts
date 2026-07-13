@@ -8,7 +8,7 @@ export type CvLinks = { ar: string; en?: string }
 let cache: CvLinks | null = null
 
 export function useCvLinks(): CvLinks {
-  const [cv, setCv] = useState<CvLinks>(cache ?? { ar: links.cv })
+  const [cv, setCv] = useState<CvLinks>(cache ?? { ar: links.cv, en: links.cvEn })
   useEffect(() => {
     if (cache || !firebaseEnabled) return
     let on = true
@@ -19,7 +19,7 @@ export function useCvLinks(): CvLinks {
         const { doc, getDoc } = await import('firebase/firestore')
         const snap = await getDoc(doc(db, 'site_settings', 'cv'))
         const d = snap.data() as { url?: string; urlEn?: string } | undefined
-        cache = { ar: d?.url || links.cv, en: d?.urlEn }
+        cache = { ar: d?.url || links.cv, en: d?.urlEn || links.cvEn }
         if (on) setCv(cache)
       } catch { /* noop */ }
     })()

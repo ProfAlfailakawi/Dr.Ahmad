@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/sync-audio.mjs && node scripts/prune-orphan-audio.mjs && node scripts/build-podcast-admin.mjs && vite build && node scripts/build-static.mjs && node scripts/verify-domain-migration.mjs --dist",
+    "build": "node scripts/sync-audio.mjs && node scripts/prune-orphan-audio.mjs && node scripts/build-podcast-admin.mjs && vite build && node scripts/build-static.mjs && node scripts/verify-domain-migration.mjs --dist && node scripts/verify-legacy-retirement.mjs",
     "gcp-build": "npm run build",
     "start": "node server.mjs",
     "preview": "vite preview",
@@ -37,7 +37,8 @@
     "audio:r2:publish": "node scripts/publish-audio-r2.mjs",
     "verify:domain": "node scripts/verify-domain-migration.mjs",
     "deploy:hosting": "firebase deploy --only hosting --project gen-lang-client-0200723670",
-    "deploy:data-rules": "firebase deploy --config firebase.data.json --only firestore:rules,storage --project drahmad-8e9e2"
+    "deploy:data-rules": "firebase deploy --config firebase.data.json --only firestore:rules,storage --project drahmad-8e9e2",
+    "verify:legacy-retired": "node scripts/verify-legacy-retirement.mjs"
   },
   "dependencies": {
     "firebase": "^12.15.0",

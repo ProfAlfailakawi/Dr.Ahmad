@@ -45,9 +45,44 @@ function stripCanonicalRedirect(html) {
   return html.replace(/<script id="canonical-host-redirect">[\s\S]*?<\/script>/gi, '')
 }
 
+function isOfficialUrl(value) {
+  try {
+    const parsed = new URL(String(value))
+    return parsed.protocol === 'https:' && parsed.origin === OFFICIAL
+  } catch {
+    return false
+  }
+}
+
+function checkJsonLdUrls(value, rel, path = '$') {
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) => checkJsonLdUrls(entry, rel, `${path}[${index}]`))
+    return
+  }
+  if (!value || typeof value !== 'object') return
+  const protectedKeys = new Set(['url', 'mainEntityOfPage', 'image', 'logo', 'contentUrl', 'thumbnailUrl'])
+  for (const [key, entry] of Object.entries(value)) {
+    const child = `${path}.${key}`
+    if (protectedKeys.has(key)) {
+      const candidates = typeof entry === 'string'
+        ? [entry]
+        : entry && typeof entry === 'object' && typeof entry['@id'] === 'string'
+          ? [entry['@id']]
+          : []
+      for (const candidate of candidates) {
+        if (/^https?:\/\//i.test(candidate)) expect(isOfficialUrl(candidate), `${rel}: Schema ${child} خارج الدومين الرسمي`)
+      }
+    }
+    checkJsonLdUrls(entry, rel, child)
+  }
+}
+
 function checkRepository() {
   const production = read('.env.production')
   expect(production.includes(`VITE_SITE_URL=${OFFICIAL}`), '.env.production لا يعتمد الدومين الرسمي')
+  expect(!existsSync(resolve(ROOT, 'public/sitemap.xml')), 'public/sitemap.xml نسخة ثابتة قد تتقادم؛ يجب أن يولّدها build-static فقط')
+  const staticBuilder = read('scripts/build-static.mjs')
+  expect(staticBuilder.includes(`const OFFICIAL_SITE = '${OFFICIAL}'`), 'مولّد sitemap/SEO لا يقفل الدومين الرسمي')
   expect(production.includes(`VITE_FIREBASE_PROJECT_ID=${DATA_PROJECT}`), '.env.production لا يعتمد مشروع البيانات الصحيح')
   expect(production.includes(`VITE_FIREBASE_STORAGE_BUCKET=${DATA_BUCKET}`), '.env.production لا يعتمد Storage الصحيح')
 
@@ -89,6 +124,7 @@ function checkRepository() {
     'index.html',
     'server.mjs',
     'scripts/verify-domain-migration.mjs',
+    'scripts/verify-legacy-retirement.mjs',
     'DOMAIN-CUTOVER.md',
     'src/components/CitationCopy.tsx',
   ])
@@ -132,13 +168,18 @@ function checkDist() {
   const podcast = readFileSync(resolve(dist, 'podcast.xml'), 'utf8')
   const runtimeFirebase = JSON.parse(readFileSync(resolve(dist, 'firebase-applet-config.json'), 'utf8'))
 
-  expect([...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].every((match) => match[1].startsWith(OFFICIAL)), 'sitemap.xml يحتوي رابطاً خارج الدومين الرسمي')
+  const sitemapLocs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1].trim())
+  expect(sitemapLocs.length > 0, 'sitemap.xml لا يحتوي أي رابط <loc>')
+  expect(sitemapLocs.every(isOfficialUrl), 'sitemap.xml يحتوي رابطاً خارج الدومين الرسمي')
+  expect(new Set(sitemapLocs).size === sitemapLocs.length, 'sitemap.xml يحتوي روابط مكررة')
+  expect(!sitemapLocs.some((url) => /scheduledarabbic|\/wp-|\/signature_articles\/|\/scholarly_contributi\//i.test(url)), 'sitemap.xml يحتوي مساراً قديماً أو slug غير نظيف')
   expect(robots.includes(`Sitemap: ${OFFICIAL}/sitemap.xml`), 'robots.txt لا يشير إلى خريطة الموقع الرسمية')
   expect(feed.includes(`<link>${OFFICIAL}</link>`), 'feed.xml لا يعتمد الدومين الرسمي')
   expect(podcast.includes(`<link>${OFFICIAL}</link>`), 'podcast.xml لا يعتمد الدومين الرسمي')
   expect(runtimeFirebase.projectId === DATA_PROJECT, 'إعداد Firebase المنشور لا يعتمد مشروع البيانات')
+  note(`sitemap.xml: ${sitemapLocs.length} رابطاً على الدومين الرسمي`)
 
-  const unsafeHttp = /http:\/\/(?!www\.w3\.org\/|www\.sitemaps\.org\/|www\.itunes\.com\/|purl\.org\/)/i
+  const unsafeHttp = /http:\/\/(?!www\.w3\.org\/|www\.sitemaps\.org\/|www\.itunes\.com\/|purl\.org\/|www\.apache\.org\/licenses\/)/i
   const legacy = /(?:dr-alfailakawi\.web\.app|dr-alfailakawi\.firebaseapp\.com|www\.dr-alfailakawi\.com|208\.115\.236\.10|website-34704073784)/i
   let htmlCount = 0
 
@@ -149,12 +190,20 @@ function checkDist() {
       htmlCount += 1
       const canonical = content.match(/<link\s+rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]
       const ogUrl = content.match(/<meta\s+property=["']og:url["'][^>]*content=["']([^"']+)/i)?.[1]
-      if (canonical) expect(canonical.startsWith(OFFICIAL), `${rel}: canonical خارج الدومين الرسمي`)
-      if (ogUrl) expect(ogUrl.startsWith(OFFICIAL), `${rel}: og:url خارج الدومين الرسمي`)
+      if (canonical) expect(isOfficialUrl(canonical), `${rel}: canonical خارج الدومين الرسمي`)
+      if (ogUrl) expect(isOfficialUrl(ogUrl), `${rel}: og:url خارج الدومين الرسمي`)
+      for (const match of content.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+        try {
+          checkJsonLdUrls(JSON.parse(match[1]), rel)
+        } catch {
+          fail(`${rel}: Schema JSON-LD غير صالح`)
+        }
+      }
       content = stripCanonicalRedirect(content)
     }
     if (legacy.test(content)) fail(`${rel}: يحتوي أثراً قديماً خارج كود التحويل المبكر`)
-    if (unsafeHttp.test(content)) fail(`${rel}: يحتوي رابط HTTP قابل للتحميل وقد يسبب Mixed Content`)
+    const thirdPartyVendorBundle = /^dist\/assets\/vendor-[^/]+\.js$/i.test(rel)
+    if (!thirdPartyVendorBundle && unsafeHttp.test(content)) fail(`${rel}: يحتوي رابط HTTP قابل للتحميل وقد يسبب Mixed Content`)
   }
   note(`تم فحص ${htmlCount} صفحة HTML منشورة`)
 }

@@ -2,7 +2,7 @@ import { Navigate, useLocation, useParams } from 'react-router-dom'
 import NotFound from './NotFound'
 
 /**
- * جسر الروابط القديمة (ووردبريس) → المسارات الجديدة.
+ * جسر روابط الموقع السابق → المسارات الجديدة.
  * يحافظ على كل رابط نُشر أو فُهرس سابقاً، ويمنع فقدان أرشفة غوغل.
  */
 
@@ -82,10 +82,27 @@ export function LegacyBook() {
   return <Navigate to={s ? `/publications/${s}` : '/publications'} replace />
 }
 
-/** /ar/... و /en/... — يزيل بادئة اللغة */
+/** /ar/... و /en/... — يحافظ على الوجهة الصحيحة داخل الموقع الجديد. */
 export function LegacyLang() {
   const { pathname, search } = useLocation()
-  const stripped = pathname.replace(/^\/(ar|en)/, '') || '/'
-  if (stripped === pathname) return <NotFound />
+  const match = pathname.match(/^\/(ar|en)(?:\/(.*))?$/)
+  if (!match) return <NotFound />
+
+  const lang = match[1]
+  const rest = (match[2] || '').replace(/\/+$/, '')
+  if (!rest) return <Navigate to={(lang === 'en' ? '/en' : '/') + search} replace />
+
+  if (lang === 'en' && /^(academic-biography(?:-2)?)$/.test(rest)) {
+    return <Navigate to={'/en/cv' + search} replace />
+  }
+  if (lang === 'en' && /^(scholarly-contributions(?:-2)?)$/.test(rest)) {
+    return <Navigate to={'/en/research' + search} replace />
+  }
+
+  const leaf = rest.split('/').filter(Boolean).at(-1) || ''
+  const page = LEGACY_PAGES[rest] || LEGACY_PAGES[leaf]
+  if (page) return <Navigate to={page + search} replace />
+
+  const stripped = `/${rest}`
   return <Navigate to={stripped + search} replace />
 }

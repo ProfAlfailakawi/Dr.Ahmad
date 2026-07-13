@@ -28,7 +28,7 @@ export default function PaperDetail() {
 
   const prev = papers[i - 1]
   const next = papers[i + 1]
-  const paperLink = p.source || p.pdf || p.url
+  const paperLink = p.source || p.pdf
 
   return (
     <Page>

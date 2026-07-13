@@ -10,8 +10,153 @@
     ],
     "redirects": [
       {
+        "source": "/wp-content/uploads/2025/08/Resume-Prof.-Ahmad-Eng-1.pdf",
+        "destination": "/files/cv-en.pdf",
+        "type": 301
+      },
+      {
+        "source": "/wp-content/uploads/2025/08/Resume-Prof.-Ahmad-Arabic-1.pdf",
+        "destination": "/files/cv.pdf",
+        "type": 301
+      },
+      {
+        "source": "/wp-content/uploads/2025/07/01-Digital-education-Inside.pdf",
+        "destination": "/files/digital-education.pdf",
+        "type": 301
+      },
+      {
         "source": "/now",
         "destination": "/",
+        "type": 301
+      },
+      {
+        "source": "/wp-sitemap.xml",
+        "destination": "/sitemap.xml",
+        "type": 301
+      },
+      {
+        "source": "/sitemap_index.xml",
+        "destination": "/sitemap.xml",
+        "type": 301
+      },
+      {
+        "source": "/feed",
+        "destination": "/feed.xml",
+        "type": 301
+      },
+      {
+        "source": "/rss",
+        "destination": "/feed.xml",
+        "type": 301
+      },
+      {
+        "source": "/podcast",
+        "destination": "/podcast.xml",
+        "type": 301
+      },
+      {
+        "regex": "^/en/(?:home|home-2)/?$",
+        "destination": "/en",
+        "type": 301
+      },
+      {
+        "regex": "^/en/(?:academic-biography|academic-biography-2)/?$",
+        "destination": "/en/cv",
+        "type": 301
+      },
+      {
+        "regex": "^/en/(?:scholarly-contributions|scholarly-contributions-2)/?$",
+        "destination": "/en/research",
+        "type": 301
+      },
+      {
+        "regex": "^/en/(?:my-published-books|published-books|published-books-2)/?$",
+        "destination": "/publications",
+        "type": 301
+      },
+      {
+        "regex": "^/en/(?:signature-thought-articles|signature-thought-articles-2)/?$",
+        "destination": "/articles",
+        "type": 301
+      },
+      {
+        "regex": "^/en/(?:recorded-interviews-media-appearances|recorded-interviews-media-appearances-2)/?$",
+        "destination": "/media",
+        "type": 301
+      },
+      {
+        "regex": "^/en/(?:upcoming-speaking-engagements|upcoming-speaking-engagements-2)/?$",
+        "destination": "/upcoming",
+        "type": 301
+      },
+      {
+        "regex": "^/en/(?:curated-insights/)?from-my-inbox/?$",
+        "destination": "/inbox",
+        "type": 301
+      },
+      {
+        "regex": "^/en/(?:about-the-website|about-the-website-2)/?$",
+        "destination": "/about",
+        "type": 301
+      },
+      {
+        "regex": "^/en/(?:contact-consultation|contact-consultation-2)/?$",
+        "destination": "/contact",
+        "type": 301
+      },
+      {
+        "regex": "^/(?:ar/)?(?:home|home-2)/?$",
+        "destination": "/",
+        "type": 301
+      },
+      {
+        "regex": "^/(?:ar/)?(?:academic-biography|academic-biography-2)/?$",
+        "destination": "/cv",
+        "type": 301
+      },
+      {
+        "regex": "^/(?:ar/)?(?:scholarly-contributions|scholarly-contributions-2)/?$",
+        "destination": "/research",
+        "type": 301
+      },
+      {
+        "regex": "^/(?:ar/)?(?:my-published-books|published-books|published-books-2)/?$",
+        "destination": "/publications",
+        "type": 301
+      },
+      {
+        "regex": "^/(?:ar/)?(?:signature-thought-articles|signature-thought-articles-2)/?$",
+        "destination": "/articles",
+        "type": 301
+      },
+      {
+        "regex": "^/(?:ar/)?(?:recorded-interviews-media-appearances|recorded-interviews-media-appearances-2)/?$",
+        "destination": "/media",
+        "type": 301
+      },
+      {
+        "regex": "^/(?:ar/)?(?:upcoming-speaking-engagements|upcoming-speaking-engagements-2)/?$",
+        "destination": "/upcoming",
+        "type": 301
+      },
+      {
+        "regex": "^/(?:ar/)?(?:curated-insights/)?from-my-inbox/?$",
+        "destination": "/inbox",
+        "type": 301
+      },
+      {
+        "regex": "^/(?:ar/)?(?:about-the-website|about-the-website-2)/?$",
+        "destination": "/about",
+        "type": 301
+      },
+      {
+        "regex": "^/(?:ar/)?(?:contact-consultation|contact-consultation-2)/?$",
+        "destination": "/contact",
+        "type": 301
+      },
+      {
+        "regex": "^/(?:en/|ar/)?(?:(?:reading-room|watch-listen|watch-listen-2|thought-reflection|visual-zone|ai-tools|curated-insights|education-society)/)?(?:book-of-the-month|article-worth-reading|scientific-research|video-pick|audio-pick|from-xtwitter|from-x-twitter|watch-listen-2|quote-reflection|thought-experiment|disruptive-question|reframe-it|silent-wisdom|behind-the-ideas|visual-insights|infographic|mind-map-visual-notes|map-of-meaning|image-that-says-it-all|tool-of-the-week|ai-summary-corner|emerging-concept|trend-watch|web-platform-i-recommended|mini-library|mini-library-ai-society|behind-the-quote|flash-insight|the-misunderstood-term|what-schools-dont-teach|spotlight-on-innovation|spotlight-on-innovation-2|arabic-revival|debatable)/?$",
+        "destination": "/curated",
         "type": 301
       },
       {
@@ -25,8 +170,28 @@
         "type": 301
       },
       {
+        "source": "/en/signature_articles/:slug",
+        "destination": "/articles/:slug",
+        "type": 301
+      },
+      {
+        "source": "/ar/signature_articles/:slug",
+        "destination": "/articles/:slug",
+        "type": 301
+      },
+      {
         "source": "/signature_articles/:slug",
         "destination": "/articles/:slug",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/:slug",
+        "destination": "/research/:slug",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/:slug",
+        "destination": "/research/:slug",
         "type": 301
       },
       {
@@ -60,8 +225,33 @@
         "type": 301
       },
       {
+        "source": "/en/books/:slug",
+        "destination": "/publications/:slug",
+        "type": 301
+      },
+      {
+        "source": "/ar/books/:slug",
+        "destination": "/publications/:slug",
+        "type": 301
+      },
+      {
         "source": "/books/:slug",
         "destination": "/publications/:slug",
+        "type": 301
+      },
+      {
+        "source": "/category{,/**}",
+        "destination": "/articles",
+        "type": 301
+      },
+      {
+        "source": "/tag{,/**}",
+        "destination": "/search",
+        "type": 301
+      },
+      {
+        "source": "/author{,/**}",
+        "destination": "/about",
         "type": 301
       }
     ],
@@ -162,6 +352,7 @@
           }
         ]
       }
-    ]
+    ],
+    "trailingSlash": false
   }
 }

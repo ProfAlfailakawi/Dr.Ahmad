@@ -25,6 +25,9 @@ const articles = [...articlesSource.matchAll(/\{\s*slug:\s*'[^']+'[\s\S]*?\},/g)
 const articleBySlug = new Map(articles.map((article) => [article.slug, article]))
 const files = existsSync(AUDIO) ? readdirSync(AUDIO) : []
 const dialogue = files.filter((name) => name.endsWith('.dialogue.mp3')).sort()
+const generatedAt = dialogue.length
+  ? new Date(Math.max(...dialogue.map((name) => statSync(resolve(AUDIO, name)).mtimeMs))).toISOString()
+  : null
 
 const episodes = dialogue.map((name) => {
   const slug = name.slice(0, -'.dialogue.mp3'.length)
@@ -77,5 +80,5 @@ const playlists = themes.map((theme) => ({
 })).filter((playlist) => playlist.episodes.length)
 
 mkdirSync(dirname(OUT), { recursive: true })
-writeFileSync(OUT, `${JSON.stringify({ generatedAt: new Date().toISOString(), episodes, playlists }, null, 2)}\n`, 'utf8')
+writeFileSync(OUT, `${JSON.stringify({ generatedAt, episodes, playlists }, null, 2)}\n`, 'utf8')
 console.log(`✔ podcast-admin.json · ${episodes.length} حلقات حوارية · ${playlists.length} قوائم`)

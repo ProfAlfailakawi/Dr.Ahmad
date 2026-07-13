@@ -42,6 +42,7 @@ jobs:
           fi
 
       - name: Deploy Firestore rules
+        continue-on-error: true
         run: |
           node -e "require('fs').writeFileSync(process.env.RUNNER_TEMP + '/firebase-sa.json', process.env.FIREBASE_SERVICE_ACCOUNT)"
           GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json" npx firebase-tools@latest deploy --only firestore:rules --project gen-lang-client-0200723670 --non-interactive

@@ -1,0 +1,117 @@
+name: نقل الصوت إلى Cloudflare R2
+
+on:
+  workflow_dispatch:
+    inputs:
+      public_base_url:
+        description: 'رابط R2 العام للصوت'
+        required: true
+        default: 'https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev'
+      bucket:
+        description: 'اسم R2 bucket'
+        required: true
+        default: 'dr-alfailakawi-audio'
+      finalize:
+        description: 'بعد نجاح الرفع والفحص، احذف الصوت من Git'
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: audio-r2-migration
+  cancel-in-progress: false
+
+jobs:
+  migrate-audio:
+    runs-on: ubuntu-latest
+    environment: CLOUDFLARE_R2_ACCESS_KEY_ID
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install AWS CLI
+        run: |
+          python -m pip install --user awscli
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Verify R2 secrets
+        run: |
+          test -n "$AWS_ACCESS_KEY_ID" || (echo "Missing CLOUDFLARE_R2_ACCESS_KEY_ID" && exit 1)
+          test -n "$AWS_SECRET_ACCESS_KEY" || (echo "Missing CLOUDFLARE_R2_SECRET_ACCESS_KEY" && exit 1)
+          test -n "$CLOUDFLARE_R2_ENDPOINT" || (echo "Missing CLOUDFLARE_R2_ENDPOINT" && exit 1)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+
+      - name: Upload MP3 files to R2
+        run: |
+          aws s3 sync audio/ "s3://${R2_BUCKET}/" \
+            --endpoint-url "$CLOUDFLARE_R2_ENDPOINT" \
+            --exclude "*" \
+            --include "*.mp3" \
+            --cache-control "public, max-age=31536000, immutable" \
+            --content-type "audio/mpeg" \
+            --no-progress
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_EC2_METADATA_DISABLED: true
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          R2_BUCKET: ${{ inputs.bucket }}
+
+      - name: Verify public audio URLs
+        run: npm run audio:external:verify
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ inputs.public_base_url }}
+          VITE_AUDIO_BASE_URL: ${{ inputs.public_base_url }}
+
+      - name: Save AUDIO_PUBLIC_BASE_URL repository variable
+        run: |
+          gh variable set AUDIO_PUBLIC_BASE_URL --body "$AUDIO_PUBLIC_BASE_URL" --repo "$GITHUB_REPOSITORY" \
+            || echo "AUDIO_PUBLIC_BASE_URL was not saved by the workflow; keep/update it from repository variables."
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUDIO_PUBLIC_BASE_URL: ${{ inputs.public_base_url }}
+
+      - name: Build in external-audio mode
+        run: npm run build
+        env:
+          VITE_SITE_URL: https://dr-alfailakawi.web.app
+          AUDIO_PUBLIC_BASE_URL: ${{ inputs.public_base_url }}
+          VITE_AUDIO_BASE_URL: ${{ inputs.public_base_url }}
+
+      - name: Remove audio files from Git after successful R2 verification
+        if: ${{ inputs.finalize }}
+        run: npm run audio:external:finalize -- --apply
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ inputs.public_base_url }}
+          VITE_AUDIO_BASE_URL: ${{ inputs.public_base_url }}
+
+      - name: Commit external audio migration
+        if: ${{ inputs.finalize }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/audio-r2-migration.yml package.json scripts/verify-external-audio.mjs scripts/finalize-external-audio.mjs src/data/audio-meta.json src/data/podcast-admin.json audio/.gitkeep
+          if git diff --cached --quiet; then
+            echo "No migration changes to commit."
+          else
+            git commit -m "chore: move audio assets to Cloudflare R2"
+            git push origin HEAD:main
+          fi

@@ -8,7 +8,7 @@ import { AudioPlayer } from './AudioPlayer'
 import { firebaseEnabled, getDb } from '../lib/firebase'
 import { trackShare } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
-import { Link as RouterLink } from 'react-router-dom'
+import { Link as RouterLink, useLocation } from 'react-router-dom'
 
 /* ---------- النشرة البريدية ---------- */
 export function Newsletter({ compact = false }: { compact?: boolean }) {
@@ -87,6 +87,7 @@ export function Newsletter({ compact = false }: { compact?: boolean }) {
 
 /* ---------- زر العودة للأعلى ---------- */
 export function FloatingActions() {
+  const location = useLocation()
   const [show, setShow] = useState(false)
   const [nearBottom, setNearBottom] = useState(false)
   const { scrollY } = useScroll()
@@ -96,8 +97,10 @@ export function FloatingActions() {
     setNearBottom(remaining < 170)
   }), [scrollY])
 
+  if (location.pathname.startsWith('/admin')) return null
+
   return (
-    <div className="reader-hide-focus fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[210] md:right-6">
+    <div className="floating-actions reader-hide-focus fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[210] transition-[bottom] duration-300 md:right-6">
       <AnimatePresence>
         {show && !nearBottom && (
           <motion.button

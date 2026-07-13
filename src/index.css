@@ -295,3 +295,17 @@ iframe { color-scheme: light; }
     transition: none;
   }
 }
+
+/* المشغّل العائم: يرفع زر العودة للأعلى عندما يكون الصوت مفتوحاً، فلا يتداخلان. */
+body.audio-dock-open .floating-actions {
+  bottom: calc(6.25rem + env(safe-area-inset-bottom));
+}
+@media (min-width: 768px) {
+  body.audio-dock-open .floating-actions { bottom: 6.5rem; }
+}
+
+/* المؤشر المخصص يبقى مرئياً فوق أي نافذة أو طبقة متداخلة. */
+.cursor-ring, .cursor-dot {
+  isolation: isolate;
+  will-change: transform, opacity;
+}

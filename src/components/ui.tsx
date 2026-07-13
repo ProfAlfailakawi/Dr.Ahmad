@@ -159,50 +159,83 @@ export function Magnetic({ children, className = '', to, href }: { children: Rea
 export function Cursor() {
   const [enabled, setEnabled] = useState(false)
   const [big, setBig] = useState(false)
+  const [visible, setVisible] = useState(false)
   const x = useMotionValue(-100)
   const y = useMotionValue(-100)
   const rx = useSpring(x, { stiffness: 400, damping: 40, mass: 0.4 })
   const ry = useSpring(y, { stiffness: 400, damping: 40, mass: 0.4 })
   const loc = useLocation()
-  // المؤشر المخصص أنيق على صفحات العرض، لكنه مزعج في لوحة التحكم (عمل ودقّة) — يُطفأ هناك
+  // لوحة التحكم تحتاج مؤشر النظام الدقيق؛ المؤشر المخصص مخصص لواجهة الزائر فقط.
   const isAdmin = loc.pathname.startsWith('/admin')
 
   useEffect(() => {
     const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (!fine || reduce) return
-    setEnabled(true)
-    if (isAdmin) { document.body.classList.remove('cursor-none-desktop'); return }
-    document.body.classList.add('cursor-none-desktop')
-    const move = (e: MouseEvent) => { x.set(e.clientX); y.set(e.clientY) }
-    window.addEventListener('mousemove', move)
-    return () => { window.removeEventListener('mousemove', move); document.body.classList.remove('cursor-none-desktop') }
-  }, [x, y, isAdmin])
+    if (!fine || reduce || isAdmin) {
+      setEnabled(false)
+      setVisible(false)
+      document.body.classList.remove('cursor-none-desktop')
+      return
+    }
 
-  useEffect(() => {
-    if (!enabled) return
-    const targets = document.querySelectorAll('a, button, img, [data-hover]')
-    const on = () => setBig(true)
-    const off = () => setBig(false)
-    targets.forEach((t) => { t.addEventListener('mouseenter', on); t.addEventListener('mouseleave', off) })
-    return () => targets.forEach((t) => { t.removeEventListener('mouseenter', on); t.removeEventListener('mouseleave', off) })
-  }, [enabled, loc.pathname])
+    setEnabled(true)
+    document.body.classList.add('cursor-none-desktop')
+
+    const move = (event: MouseEvent) => {
+      x.set(event.clientX)
+      y.set(event.clientY)
+      setVisible(true)
+    }
+    const leave = () => setVisible(false)
+    const enter = () => setVisible(true)
+    const over = (event: PointerEvent) => {
+      const target = event.target instanceof Element ? event.target.closest('a, button, [role="button"], input, textarea, select, summary, [data-hover]') : null
+      setBig(Boolean(target))
+    }
+    const out = (event: PointerEvent) => {
+      const next = event.relatedTarget instanceof Element ? event.relatedTarget.closest('a, button, [role="button"], input, textarea, select, summary, [data-hover]') : null
+      if (!next) setBig(false)
+    }
+
+    window.addEventListener('mousemove', move, { passive: true })
+    document.addEventListener('mouseleave', leave)
+    document.addEventListener('mouseenter', enter)
+    document.addEventListener('pointerover', over, { passive: true })
+    document.addEventListener('pointerout', out, { passive: true })
+
+    return () => {
+      window.removeEventListener('mousemove', move)
+      document.removeEventListener('mouseleave', leave)
+      document.removeEventListener('mouseenter', enter)
+      document.removeEventListener('pointerover', over)
+      document.removeEventListener('pointerout', out)
+      document.body.classList.remove('cursor-none-desktop')
+    }
+  }, [x, y, isAdmin])
 
   if (!enabled || isAdmin) return null
   return (
     <>
       <motion.div
-        className="cursor-ring pointer-events-none fixed z-[251] rounded-full border-[1.5px]"
+        aria-hidden
+        className="cursor-ring pointer-events-none fixed z-[9998] rounded-full border-[1.5px]"
         style={{ left: rx, top: ry, x: '-50%', y: '-50%' }}
         animate={{
+          opacity: visible ? 1 : 0,
           width: big ? 70 : 34,
           height: big ? 70 : 34,
           borderColor: big ? 'rgba(0,0,0,0)' : '#3E5C78',
-          backgroundColor: big ? 'rgba(62,92,120,.07)' : 'rgba(0,0,0,0)',
+          backgroundColor: big ? 'rgba(62,92,120,.09)' : 'rgba(0,0,0,0)',
         }}
-        transition={{ duration: 0.28 }}
+        transition={{ duration: 0.2 }}
       />
-      <motion.div className="cursor-dot pointer-events-none fixed z-[252] h-[5px] w-[5px] rounded-full bg-accent" style={{ left: x, top: y, x: '-50%', y: '-50%' }} />
+      <motion.div
+        aria-hidden
+        className="cursor-dot pointer-events-none fixed z-[9999] h-[5px] w-[5px] rounded-full bg-accent"
+        style={{ left: x, top: y, x: '-50%', y: '-50%' }}
+        animate={{ opacity: visible ? 1 : 0 }}
+        transition={{ duration: 0.12 }}
+      />
     </>
   )
 }

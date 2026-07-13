@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import { useLocation } from 'react-router-dom'
 import { trackListen } from './views'
 
 const ar = (n: number) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
@@ -197,8 +198,52 @@ export function usePersistentAudio() {
 
 export function PersistentAudioDock() {
   const audio = usePersistentAudio()
+  const location = useLocation()
+  const isAdmin = location.pathname.startsWith('/admin')
+
+  useEffect(() => {
+    document.body.classList.toggle('audio-dock-open', Boolean(audio.track))
+    document.body.classList.toggle('audio-dock-admin', Boolean(audio.track && isAdmin))
+    return () => {
+      document.body.classList.remove('audio-dock-open')
+      document.body.classList.remove('audio-dock-admin')
+    }
+  }, [audio.track, isAdmin])
+
   if (!audio.track) return null
   const percent = audio.duration ? Math.min((audio.current / audio.duration) * 100, 100) : 0
+
+  if (isAdmin) {
+    return (
+      <div className="fixed inset-x-3 bottom-[calc(5.7rem+env(safe-area-inset-bottom))] z-[275] mx-auto max-w-[520px] rounded-2xl border border-hair bg-canvas/97 p-2.5 shadow-[0_22px_65px_-34px_rgba(21,22,26,.6)] backdrop-blur md:bottom-5 md:left-5 md:right-auto md:mx-0 md:w-[min(420px,calc(100vw-2.5rem))]">
+        <div className="flex items-center gap-2.5">
+          <button onClick={() => void audio.toggle()} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-white" aria-label={audio.playing ? 'إيقاف مؤقت' : 'تشغيل'}>
+            {audio.playing ? '❚❚' : '▶'}
+          </button>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate text-[.78rem] font-semibold text-ink">{audio.track.title}</p>
+              <span className="shrink-0 text-[.68rem] text-soft">{clock(audio.current)} / {clock(audio.duration)}</span>
+            </div>
+            <button
+              type="button"
+              onClick={(event) => {
+                const rect = event.currentTarget.getBoundingClientRect()
+                audio.seekTo(((rect.right - event.clientX) / rect.width) * audio.duration)
+              }}
+              className="mt-1.5 block h-1.5 w-full overflow-hidden rounded-full bg-wash"
+              aria-label="شريط تقدم الصوت"
+            >
+              <span className="block h-full rounded-full bg-accent" style={{ width: `${percent}%` }} />
+            </button>
+          </div>
+          <button onClick={audio.cycleSpeed} className="hidden rounded-full border border-hair px-2 py-1 text-[.68rem] text-soft sm:inline-flex">{audio.speed}x</button>
+          <button onClick={audio.close} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-soft" aria-label="إغلاق المشغل">×</button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="reader-hide-focus fixed inset-x-3 bottom-[calc(.75rem+env(safe-area-inset-bottom))] z-[230] mx-auto max-w-3xl rounded-2xl border border-hair bg-canvas/95 p-3 shadow-[0_24px_70px_-34px_rgba(21,22,26,.55)] backdrop-blur md:bottom-5">
       <div className="flex items-center gap-3">
@@ -225,9 +270,9 @@ export function PersistentAudioDock() {
             <p className="mt-1 text-[.72rem] text-soft">{clock(audio.current)} / {clock(audio.duration)}</p>
           )}
         </div>
-        <button onClick={() => audio.jump(-15)} className="hidden rounded-full border border-hair px-2.5 py-1 text-[.75rem] text-soft sm:inline-flex">15-</button>
-        <button onClick={() => audio.jump(15)} className="hidden rounded-full border border-hair px-2.5 py-1 text-[.75rem] text-soft sm:inline-flex">15+</button>
-        <button onClick={audio.cycleSpeed} className="rounded-full border border-hair px-2.5 py-1 text-[.75rem] text-soft">{audio.speed}x</button>
+        <button onClick={() => audio.jump(-15)} className="hidden rounded-full border border-hair px-2.5 py-1 text-[.75rem] text-soft sm:inline-flex">١٥-</button>
+        <button onClick={() => audio.jump(15)} className="hidden rounded-full border border-hair px-2.5 py-1 text-[.75rem] text-soft sm:inline-flex">١٥+</button>
+        <button onClick={audio.cycleSpeed} className="rounded-full border border-hair px-2.5 py-1 text-[.75rem] text-soft">{ar(audio.speed)}x</button>
         <button onClick={audio.close} className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-soft" aria-label="إغلاق المشغل">×</button>
       </div>
     </div>

@@ -922,8 +922,13 @@ export function Footer() {
               </span>
             </div>
           </div>
-          <div className="mt-8 flex flex-wrap justify-between gap-2.5 border-t border-hair pt-5 text-[.78rem] text-soft">
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-x-5 gap-y-3 border-t border-hair pt-5 text-[.78rem] text-soft">
             <span>© {new Date().getFullYear()} Ahmad H. Alfailakawi — All rights reserved</span>
+            <nav aria-label="Legal pages" className="flex flex-wrap gap-x-4 gap-y-2">
+              <Link to="/privacy" className="transition-colors hover:text-accent">Privacy</Link>
+              <Link to="/terms" className="transition-colors hover:text-accent">Terms</Link>
+              <Link to="/data-deletion" className="transition-colors hover:text-accent">Data deletion</Link>
+            </nav>
           </div>
         </div>
       </footer>
@@ -950,8 +955,13 @@ export function Footer() {
             </span>
           </div>
         </div>
-        <div className="mt-8 flex flex-wrap justify-between gap-2.5 border-t border-hair pt-5 text-[.78rem] text-soft">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-x-5 gap-y-3 border-t border-hair pt-5 text-[.78rem] text-soft">
           <span>© {new Date().getFullYear()} {profile.fullName} — جميع الحقوق محفوظة</span>
+          <nav aria-label="الصفحات القانونية" className="flex flex-wrap gap-x-4 gap-y-2">
+            <Link to="/privacy" className="transition-colors hover:text-accent">الخصوصية</Link>
+            <Link to="/terms" className="transition-colors hover:text-accent">الشروط</Link>
+            <Link to="/data-deletion" className="transition-colors hover:text-accent">حذف البيانات</Link>
+          </nav>
         </div>
       </div>
     </footer>

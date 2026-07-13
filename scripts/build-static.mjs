@@ -127,6 +127,9 @@ const STATIC = [
   { path: '/cv', title: 'السيرة الأكاديمية', desc: 'التعليم والخبرات والعضويات والمؤتمرات.' },
   { path: '/about', title: 'حول الموقع', desc: 'فضاءٌ مُنتقى بعناية… حيث لكل قسم غاية، ولكل اختيار فلسفة.' },
   { path: '/contact', title: 'للاستشارة أو التعاون', desc: 'استشارات ومحاضرات ومشاريع تحوّل رقمي.' },
+  { path: '/privacy', title: 'سياسة الخصوصية', desc: 'سياسة الخصوصية للموقع الرسمي وأداة Dr Alfailakawi Publishing وربط Meta وLinkedIn.' },
+  { path: '/terms', title: 'شروط الاستخدام', desc: 'شروط استخدام الموقع وأداة إدارة المحتوى والنشر على المنصات المرتبطة.' },
+  { path: '/data-deletion', title: 'تعليمات حذف البيانات', desc: 'تعليمات إلغاء الربط وطلب حذف بيانات Facebook وInstagram وLinkedIn.' },
   { path: '/ask', title: 'العقل الحي', desc: 'اسأل سؤالاً حقيقياً، فيبني الموقع إجابة موثقة من أرشيف د. أحمد حسين الفيلكاوي فقط: مقالات، تطور زمني، ومصادر.' },
   { path: '/decade', title: 'وثيقة العقد', desc: 'سيرة فكرية حيّة تقرأ عشر سنوات من الكتابة وتكشف تحولات الأسئلة والموضوعات الأكثر إلحاحاً.' },
   { path: '/thought-paths', title: 'مسار الفكرة', desc: 'رحلات تربط المقال بالسؤال والبحث والكتاب واللقاء لتكشف كيف تطورت الفكرة عبر السنوات.' },
@@ -190,6 +193,95 @@ const LANG_PAIRS = SHOW_EN ? { '/': '/en', '/cv': '/en/cv', '/research': '/en/re
 const bodiesPath = resolve(ROOT, 'src/data/bodies.json')
 const bodies = existsSync(bodiesPath) ? JSON.parse(readFileSync(bodiesPath, 'utf8')) : {}
 
+const LEGAL_STATIC = {
+  '/privacy': {
+    arTitle: 'سياسة الخصوصية', enTitle: 'Privacy Policy',
+    ar: [
+      ['من نحن ونطاق السياسة', 'تنطبق هذه السياسة على الموقع الرسمي للدكتور أحمد حسين الفيلكاوي وأداة Dr Alfailakawi Publishing. وهي تغطي زيارة الموقع، رسائل التواصل، لوحة الإدارة، والربط الاختياري مع Meta وLinkedIn.'],
+      ['البيانات التي قد نعالجها', 'قد نعالج الاسم والبريد ومحتوى الرسالة، بيانات تشغيل وأمان محدودة، تفضيلات محفوظة محلياً في المتصفح، بيانات مصادقة المسؤول، وعند ربط حساب اجتماعي: معرّفات الحساب أو الصفحة، الصلاحيات، رموز الوصول المشفرة، المحتوى المختار ونتيجة النشر.'],
+      ['أغراض الاستخدام', 'نستخدم البيانات لتشغيل الموقع وتأمينه، الرد على الرسائل، تحسين الأداء، إنشاء محتوى أو صوت عند الطلب، وربط الحسابات والنشر فقط بعد موافقة مستخدم مخول.'],
+      ['الخدمات التقنية', 'قد نستعين بـ Google Cloud وFirebase وGemini وMicrosoft Azure Speech وMeta وLinkedIn بالقدر اللازم للوظيفة المطلوبة. لا نبيع البيانات الشخصية ولا نؤجرها.'],
+      ['الذكاء الاصطناعي', 'قد يرسل نص يختاره المسؤول إلى Gemini لتجهيز مسودة أو إلى Azure Speech لإنشاء صوت. يجب عدم إدخال أسرار أو بيانات حساسة، ومراجعة المخرجات قبل النشر.'],
+      ['الاحتفاظ والحماية', 'نحتفظ بالبيانات للمدة اللازمة للتشغيل والأمان والالتزامات القانونية. تُحذف أو تُعطل رموز الوصول بعد فصل الحساب أو قبول طلب حذف موثق، مع احتمال بقاء نسخ محدودة مؤقتاً في النسخ الاحتياطية.'],
+      ['حقوقك', 'يمكنك طلب الوصول أو التصحيح أو الحذف حيث ينطبق، وإلغاء صلاحيات Meta أو LinkedIn من إعدادات المنصة، ومسح بيانات الموقع المحلية من المتصفح.'],
+      ['التواصل', 'لطلبات الخصوصية: ah.alfailakawi@paaet.edu.kw. آخر تحديث: 13 يوليو 2026.'],
+    ],
+    en: [
+      ['Scope', 'This policy applies to the official website of Dr. Ahmad Hussein Alfailakawi and Dr Alfailakawi Publishing, including website visits, contact messages, authorized administration and optional Meta or LinkedIn connections.'],
+      ['Data we may process', 'We may process submitted contact details, limited operational and security data, browser-local preferences, administrator authentication records and, when a social account is connected, account or Page identifiers, granted scopes, encrypted access tokens, selected content and publishing results.'],
+      ['Purposes', 'Data is used to operate and secure the service, respond to inquiries, improve performance, generate content or audio when requested, and publish only after authorization.'],
+      ['Providers', 'We may use Google Cloud, Firebase, Gemini, Microsoft Azure Speech, Meta and LinkedIn as necessary. We do not sell or rent personal data.'],
+      ['AI', 'Text selected by an administrator may be sent to Gemini or Azure Speech. Do not submit secrets or sensitive personal information, and review all output before publication.'],
+      ['Retention and security', 'We retain data only as reasonably necessary. Connection data and tokens are deleted or disabled after verified deletion or disconnection, subject to limited backup and security-log retention.'],
+      ['Your choices', 'You may request access, correction or deletion where applicable, revoke platform permissions, and clear local website data through your browser.'],
+      ['Contact', 'Privacy requests: ah.alfailakawi@paaet.edu.kw. Last updated: July 13, 2026.'],
+    ],
+  },
+  '/terms': {
+    arTitle: 'شروط الاستخدام', enTitle: 'Terms of Use',
+    ar: [
+      ['قبول الشروط', 'باستخدام الموقع أو أداة Dr Alfailakawi Publishing فإنك توافق على هذه الشروط وعلى شروط الخدمات الخارجية التي تختار ربطها.'],
+      ['الخدمة', 'يوفر الموقع محتوى أكاديمياً وأداة لإدارة المقالات وتجهيز محتوى السوشيال وربط منصات النشر. لا تمثل المواد استشارة قانونية أو طبية أو مالية.'],
+      ['الحسابات', 'يجب أن تكون مخولاً لربط الحساب أو الصفحة، وأن تحمي بيانات الدخول والأسرار، وألا تربط حساباً لا تملكه أو لا تديره.'],
+      ['المراجعة قبل النشر', 'لا يُفترض نشر محتوى إلا بعد اختيار الوجهة واعتماد المحتوى من مستخدم مخول. المستخدم مسؤول عن الدقة والحقوق والالتزام بسياسة المنصة.'],
+      ['الذكاء الاصطناعي', 'قد تحتوي المسودات على أخطاء. يجب مراجعة الحقائق والاستشهادات وحقوق النشر، وعدم إدخال معلومات سرية دون سلطة قانونية.'],
+      ['الاستخدام المحظور', 'يُحظر الوصول غير المصرح، تجاوز الأمان، نشر محتوى غير قانوني أو مضلل، إساءة استخدام الرموز، أو تنفيذ رسائل مزعجة ونشر مخالف لسياسات المنصات.'],
+      ['الخدمات الخارجية', 'قد تتغير Firebase وGemini وAzure وMeta وLinkedIn أو تتوقف أو تفرض حدوداً أو مراجعات أو أسعاراً. لا نضمن استمرار أي واجهة خارجية.'],
+      ['القانون والتواصل', 'تخضع الشروط للقوانين السارية في دولة الكويت مع مراعاة الحقوق الإلزامية المنطبقة. التواصل: ah.alfailakawi@paaet.edu.kw. آخر تحديث: 13 يوليو 2026.'],
+    ],
+    en: [
+      ['Acceptance', 'By using the website or Dr Alfailakawi Publishing, you accept these terms and the terms of any third-party service you choose to connect.'],
+      ['Service', 'The website provides academic content and a tool for article management, social content preparation and publishing connections. Content is not legal, medical or financial advice.'],
+      ['Accounts', 'You must be authorized to connect each account or Page, protect credentials and secrets, and never connect an account you do not own or administer.'],
+      ['Approval before publishing', 'Content should be published only after an authorized user selects the destination and approves it. The user remains responsible for accuracy, rights and platform compliance.'],
+      ['AI', 'AI drafts may contain errors. Facts, citations and rights must be reviewed, and confidential information must not be submitted without authority.'],
+      ['Prohibited use', 'Unauthorized access, security bypass, unlawful or deceptive content, token misuse, spam and automation that violates platform rules are prohibited.'],
+      ['Third-party services', 'Firebase, Gemini, Azure, Meta and LinkedIn may change, stop, impose limits, require review or change pricing. Continued API availability is not guaranteed.'],
+      ['Law and contact', 'These terms are governed by applicable Kuwait law, subject to mandatory rights that may apply. Contact: ah.alfailakawi@paaet.edu.kw. Last updated: July 13, 2026.'],
+    ],
+  },
+  '/data-deletion': {
+    arTitle: 'تعليمات حذف البيانات', enTitle: 'Data Deletion Instructions',
+    ar: [
+      ['إلغاء صلاحية المنصة', 'يمكنك إزالة التطبيق من إعدادات التطبيقات والمواقع أو تكاملات الأعمال في Facebook وInstagram، أو من أذونات البيانات والخدمات المسموح بها في LinkedIn.'],
+      ['إرسال طلب مباشر', 'أرسل إلى ah.alfailakawi@paaet.edu.kw بعنوان «طلب حذف بيانات التطبيق»، واذكر المنصة واسم الحساب أو الصفحة ورابط الملف أو المعرّف والبريد الذي يمكن الرد عليه. لا ترسل كلمة مرور أو App Secret أو Access Token.'],
+      ['التحقق والتنفيذ', 'قد نطلب إثباتاً مناسباً لملكية الحساب دون طلب كلمة المرور. بعد التحقق نحذف أو نعطل رموز الوصول ومعرّفات الربط وبيانات الحساب وسجلات النشر القابلة للتحديد. تتم المعالجة عادة خلال 30 يوماً.'],
+      ['حدود الحذف', 'حذف البيانات من خدمتنا لا يحذف منشوراً سبق نشره على منصة خارجية؛ احذفه من المنصة مباشرة. قد تبقى نسخة مؤقتة في نسخة احتياطية آمنة إلى أن تدور دورة النسخ الاعتيادية.'],
+      ['التأكيد', 'نرسل تأكيداً عند إتمام المعالجة ما لم يمنع القانون أو الأمن ذلك. آخر تحديث: 13 يوليو 2026.'],
+    ],
+    en: [
+      ['Revoke platform access', 'Remove the app from Apps and Websites or Business Integrations in Facebook and Instagram, or from permitted services and data permissions in LinkedIn.'],
+      ['Send a direct request', 'Email ah.alfailakawi@paaet.edu.kw with the subject “App Data Deletion Request”. Include the platform, account or Page name, profile link or identifier and a reply email. Never send a password, App Secret or access token.'],
+      ['Verification and action', 'We may request proportionate proof of account ownership without asking for a password. After verification, we delete or disable tokens, connection identifiers, stored account details and identifiable publishing logs. Requests are normally processed within 30 days.'],
+      ['Deletion limits', 'Deleting data from our service does not remove a post already published on a third-party platform. Delete it directly on that platform. A limited backup copy may remain until routine backup rotation.'],
+      ['Confirmation', 'We send confirmation after processing unless law or security prevents it. Last updated: July 13, 2026.'],
+    ],
+  },
+}
+
+function legalStaticHtml(path) {
+  const doc = LEGAL_STATIC[path]
+  if (!doc) return ''
+  const sections = (items, dir) => items.map(([title, body]) => `
+    <section style="padding:1.5rem 0;border-bottom:1px solid rgba(62,92,120,.12);text-align:${dir === 'rtl' ? 'right' : 'left'};">
+      <h2 style="font-size:1.35rem;margin:0 0 .65rem;color:#15161A;">${esc(title)}</h2>
+      <p style="margin:0;color:#3D4650;line-height:1.9;font-size:1rem;">${esc(body)}</p>
+    </section>`).join('')
+  return `
+    <main style="max-width:900px;margin:4rem auto;padding:0 1rem;">
+      <article dir="rtl" lang="ar" style="padding:2rem;border:1px solid rgba(62,92,120,.14);border-radius:18px;background:#fff;">
+        <h1 style="font-size:2.4rem;margin:0 0 .5rem;color:#15161A;">${esc(doc.arTitle)}</h1>
+        <p style="color:#626A76;margin:0 0 1rem;">آخر تحديث: 13 يوليو 2026</p>
+        ${sections(doc.ar, 'rtl')}
+      </article>
+      <article dir="ltr" lang="en" style="margin-top:2rem;padding:2rem;border:1px solid rgba(62,92,120,.14);border-radius:18px;background:#F7F8F8;">
+        <h1 style="font-size:2.2rem;margin:0 0 .5rem;color:#15161A;">${esc(doc.enTitle)}</h1>
+        <p style="color:#626A76;margin:0 0 1rem;">Last updated: July 13, 2026</p>
+        ${sections(doc.en, 'ltr')}
+      </article>
+    </main>`
+}
+
 function generateBodyHtml(path, lang = 'ar') {
   const en = lang === 'en'
   // Header
@@ -242,7 +334,9 @@ function generateBodyHtml(path, lang = 'ar') {
 
   let contentHtml = ''
 
-  if (path === '/' || path === '/en') {
+  if (LEGAL_STATIC[path]) {
+    contentHtml = legalStaticHtml(path)
+  } else if (path === '/' || path === '/en') {
     if (en) {
       contentHtml = `
         <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem; text-align: center;">

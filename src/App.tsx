@@ -32,6 +32,9 @@ const Questions = lazy(() => import('./pages/Questions'))
 const Radar = lazy(() => import('./pages/Radar'))
 const Now = lazy(() => import('./pages/Now'))
 const Admin = lazy(() => import('./pages/Admin'))
+const PrivacyPolicy = lazy(() => import('./pages/Legal').then((m) => ({ default: m.PrivacyPolicy })))
+const TermsOfUse = lazy(() => import('./pages/Legal').then((m) => ({ default: m.TermsOfUse })))
+const DataDeletion = lazy(() => import('./pages/Legal').then((m) => ({ default: m.DataDeletion })))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const EnglishHome = lazy(() => import('./pages/English').then((m) => ({ default: m.EnglishHome })))
 const EnglishCV = lazy(() => import('./pages/English').then((m) => ({ default: m.EnglishCV })))
@@ -117,6 +120,9 @@ function AnimatedRoutes() {
         <Route path="/about" element={<AboutSite />} />
         <Route path="/cv" element={<CV />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfUse />} />
+        <Route path="/data-deletion" element={<DataDeletion />} />
         {/* المرآة الإنجليزية — الرئيسية والسيرة والأبحاث */}
         <Route path="/en" element={<EnglishHome />} />
         <Route path="/en/cv" element={<EnglishCV />} />

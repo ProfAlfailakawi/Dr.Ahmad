@@ -34,6 +34,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const AUDIO_DIR = resolve(ROOT, 'audio')
 const PUBLIC_AUDIO_DIR = resolve(ROOT, 'public/audio')
 const MANIFEST = resolve(ROOT, 'src/data/audio.json')
+const AUDIO_META = resolve(ROOT, 'src/data/audio-meta.json')
+const SITE_FEED = resolve(ROOT, 'src/data/site-articles-feed.json')
 const DRY_RUN = process.argv.includes('--dry-run')
 const BASE_ONLY = DRY_RUN || process.argv.includes('--base-only') || process.argv.includes('--local-only')
 const limitArg = process.argv.find((arg) => arg.startsWith('--limit='))
@@ -59,6 +61,12 @@ function loadEnvironment() {
 }
 
 const env = loadEnvironment()
+const AUDIO_PUBLIC_BASE_URL = (env.AUDIO_PUBLIC_BASE_URL || env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
+const R2_BUCKET = env.CLOUDFLARE_R2_BUCKET || env.R2_BUCKET || ''
+const R2_ENDPOINT = env.CLOUDFLARE_R2_ENDPOINT || ''
+const R2_ACCESS_KEY_ID = env.CLOUDFLARE_R2_ACCESS_KEY_ID || env.AWS_ACCESS_KEY_ID || ''
+const R2_SECRET_ACCESS_KEY = env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || env.AWS_SECRET_ACCESS_KEY || ''
+const USE_R2 = Boolean(AUDIO_PUBLIC_BASE_URL)
 const sleep = (milliseconds) => new Promise((resolveSleep) => setTimeout(resolveSleep, milliseconds))
 const xml = (value) => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;')
   .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;')
@@ -176,6 +184,80 @@ function atomicJson(file, value) {
   } finally {
     if (existsSync(temporary)) unlinkSync(temporary)
   }
+}
+
+function loadJson(file, fallback) {
+  if (!existsSync(file)) return fallback
+  return JSON.parse(readFileSync(file, 'utf8'))
+}
+
+function audioMeta() {
+  return loadJson(AUDIO_META, {})
+}
+
+function writeAudioMeta(next) {
+  atomicJson(AUDIO_META, Object.fromEntries(Object.entries(next).sort(([left], [right]) => left.localeCompare(right))))
+}
+
+function publicAudioUrl(fileName) {
+  return AUDIO_PUBLIC_BASE_URL ? `${AUDIO_PUBLIC_BASE_URL}/${fileName}` : `/audio/${fileName}`
+}
+
+async function externalObjectExists(fileName, meta = audioMeta()) {
+  if (!USE_R2) return false
+  if (!meta[fileName]?.bytes) return false
+  try {
+    const response = await fetch(publicAudioUrl(fileName), { method: 'HEAD' })
+    return response.ok
+  } catch {
+    return false
+  }
+}
+
+function uploadToR2(fileName, file) {
+  if (!USE_R2) return
+  if (!R2_BUCKET || !R2_ENDPOINT || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
+    throw new Error('إعدادات Cloudflare R2 غير مكتملة: CLOUDFLARE_R2_BUCKET / ENDPOINT / ACCESS_KEY_ID / SECRET_ACCESS_KEY')
+  }
+  const result = spawnSync('aws', [
+    's3', 'cp', file, `s3://${R2_BUCKET}/${fileName}`,
+    '--endpoint-url', R2_ENDPOINT,
+    '--cache-control', 'public, max-age=31536000, immutable',
+    '--content-type', 'audio/mpeg',
+    '--no-progress',
+  ], {
+    cwd: ROOT,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      AWS_ACCESS_KEY_ID: R2_ACCESS_KEY_ID,
+      AWS_SECRET_ACCESS_KEY: R2_SECRET_ACCESS_KEY,
+      AWS_EC2_METADATA_DISABLED: 'true',
+    },
+    timeout: 120_000,
+  })
+  if (result.status !== 0) {
+    throw new Error(`تعذر رفع ${fileName} إلى R2: ${(result.stderr || result.stdout || '').trim()}`)
+  }
+}
+
+function durationSeconds(file) {
+  const probe = spawnSync('ffprobe', [
+    '-v', 'error', '-show_entries', 'format=duration',
+    '-of', 'default=noprint_wrappers=1:nokey=1', file,
+  ], { encoding: 'utf8', timeout: 20_000 })
+  if (probe.status !== 0) return null
+  const seconds = Math.round(Number(probe.stdout.trim()))
+  return Number.isFinite(seconds) && seconds > 0 ? seconds : null
+}
+
+function rememberAudio(fileName, file) {
+  const next = audioMeta()
+  next[fileName] = {
+    bytes: statSync(file).size,
+    durationSeconds: durationSeconds(file) || next[fileName]?.durationSeconds || null,
+  }
+  writeAudioMeta(next)
 }
 
 async function azureChunk(text, title, voice) {
@@ -404,6 +486,7 @@ async function loadRemoteContent(originals) {
   const siteArticles = siteDocuments.flatMap((document) => {
     const fields = firestoreFields(document.fields)
     if (fields.hidden === true) return []
+    if (['draft', 'generated', 'failed', 'under_review'].includes(String(fields.status || '').toLowerCase())) return []
     const body = fields.body || fields.text || fields.content
     if (typeof body !== 'string' || !body.trim()) return []
     return [{
@@ -411,6 +494,10 @@ async function loadRemoteContent(originals) {
       documentName: document.name,
       slug: safeSlug(fields.slug || document.name.split('/').pop()),
       title: typeof fields.title === 'string' && fields.title.trim() ? fields.title.trim() : String(fields.slug || ''),
+      excerpt: typeof fields.excerpt === 'string' ? fields.excerpt.trim() : '',
+      date: typeof fields.date === 'string' ? fields.date : '',
+      iso: typeof fields.iso === 'string' ? fields.iso : typeof fields.date === 'string' ? fields.date.slice(0, 10) : '',
+      cat: typeof fields.cat === 'string' ? fields.cat : typeof fields.category === 'string' ? fields.category : '',
       body: body.trim(),
       currentAudio: fields.audio && typeof fields.audio === 'object' ? fields.audio : {},
     }]
@@ -420,15 +507,33 @@ async function loadRemoteContent(originals) {
 
 function rebuildOriginalManifest(allOriginals) {
   const manifest = {}
+  const meta = audioMeta()
   for (const article of allOriginals) {
     const voices = {}
     for (const voice of VOICES) {
-      const file = resolve(AUDIO_DIR, `${article.slug}${voice.suffix}.mp3`)
-      if (validLocalMp3(file)) voices[voice.key] = true
+      const fileName = `${article.slug}${voice.suffix}.mp3`
+      const file = resolve(AUDIO_DIR, fileName)
+      if ((USE_R2 && meta[fileName]?.bytes) || validLocalMp3(file)) voices[voice.key] = true
     }
     if (Object.keys(voices).length) manifest[article.slug] = voices
   }
   return Object.fromEntries(Object.entries(manifest).sort(([left], [right]) => left.localeCompare(right)))
+}
+
+function writeSiteArticlesFeed(articles) {
+  const rows = articles
+    .filter((article) => article.slug && article.title && article.iso)
+    .map((article) => ({
+      slug: article.slug,
+      title: article.title,
+      iso: article.iso,
+      date: article.date || article.iso,
+      cat: article.cat || 'مقال',
+      excerpt: article.excerpt || '',
+      audio: article.currentAudio || {},
+    }))
+    .sort((left, right) => String(right.iso).localeCompare(String(left.iso)))
+  atomicJson(SITE_FEED, rows)
 }
 
 async function processOriginals(articles, allOriginals, budget) {
@@ -441,8 +546,13 @@ async function processOriginals(articles, allOriginals, budget) {
       const fileName = `${article.slug}${voice.suffix}.mp3`
       const target = resolve(AUDIO_DIR, fileName)
       const publicTarget = resolve(PUBLIC_AUDIO_DIR, fileName)
-      if (validLocalMp3(target)) {
-        if (!DRY_RUN && !validLocalMp3(publicTarget)) atomicCopy(target, publicTarget)
+      if ((USE_R2 && await externalObjectExists(fileName)) || validLocalMp3(target)) {
+        if (!DRY_RUN && USE_R2 && validLocalMp3(target)) {
+          uploadToR2(fileName, target)
+          rememberAudio(fileName, target)
+        } else if (!DRY_RUN && !USE_R2 && !validLocalMp3(publicTarget)) {
+          atomicCopy(target, publicTarget)
+        }
         continue
       }
       missing += 1
@@ -451,7 +561,12 @@ async function processOriginals(articles, allOriginals, budget) {
       if (DRY_RUN || budget.used >= JOB_LIMIT) continue
       const buffer = await synthesize(article, voice)
       atomicWrite(target, buffer)
-      atomicCopy(target, publicTarget)
+      if (USE_R2) {
+        uploadToR2(fileName, target)
+        rememberAudio(fileName, target)
+      } else {
+        atomicCopy(target, publicTarget)
+      }
       atomicJson(MANIFEST, rebuildOriginalManifest(allOriginals))
       budget.used += 1
       generated += 1
@@ -468,28 +583,38 @@ async function processSiteArticles(articles, budget) {
   for (const article of articles) {
     const audio = {}
     for (const voice of VOICES) {
-      const objectName = `site-content/audio/${article.slug}${voice.suffix}.mp3`
-      let exists = await storageObjectExists(objectName)
+      const fileName = `${article.slug}${voice.suffix}.mp3`
+      const objectName = `site-content/audio/${fileName}`
+      let exists = USE_R2 ? await externalObjectExists(fileName) : await storageObjectExists(objectName)
       if (!exists) {
         missing += 1
         missingArticles.add(article.slug)
         console.log(`  ${DRY_RUN ? '○' : '◈'} مُضاف · ${voice.label} · ${article.title.slice(0, 55)}`)
         if (!DRY_RUN && budget.used < JOB_LIMIT) {
           const buffer = await synthesize(article, voice)
-          await uploadStorageObject(objectName, buffer)
+          const target = resolve(AUDIO_DIR, fileName)
+          atomicWrite(target, buffer)
+          if (USE_R2) {
+            uploadToR2(fileName, target)
+            rememberAudio(fileName, target)
+          } else {
+            await uploadStorageObject(objectName, buffer)
+          }
           exists = true
           budget.used += 1
           generated += 1
           await sleep(600)
         }
       }
-      if (exists) audio[voice.key] = storageObjectUrl(objectName)
+      if (exists) audio[voice.key] = USE_R2 ? publicAudioUrl(fileName) : storageObjectUrl(objectName)
     }
     if (!DRY_RUN && Object.keys(audio).length
       && (audio.fahed !== article.currentAudio.fahed || audio.noura !== article.currentAudio.noura)) {
       await patchSiteArticle(article.documentName, audio)
+      article.currentAudio = audio
     }
   }
+  if (!DRY_RUN) writeSiteArticlesFeed(articles)
   return { generated, missing, missingArticles: missingArticles.size }
 }
 
@@ -517,7 +642,14 @@ const siteResult = BASE_ONLY
 
 if (!DRY_RUN) {
   const check = spawnSync(process.execPath, [resolve(ROOT, 'scripts/sync-audio.mjs'), '--check'], {
-    cwd: ROOT, encoding: 'utf8', timeout: 120_000,
+    cwd: ROOT,
+    encoding: 'utf8',
+    timeout: 120_000,
+    env: {
+      ...process.env,
+      AUDIO_PUBLIC_BASE_URL,
+      VITE_AUDIO_BASE_URL: AUDIO_PUBLIC_BASE_URL,
+    },
   })
   if (check.status !== 0) throw new Error(check.stderr.trim() || 'فشل التحقق من audio.json')
 }

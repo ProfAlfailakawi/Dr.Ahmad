@@ -1,0 +1,106 @@
+name: توليد الصوت تلقائياً إلى R2
+
+on:
+  schedule:
+    - cron: '12 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-audio-r2
+  cancel-in-progress: false
+
+jobs:
+  generate-and-publish:
+    runs-on: ubuntu-latest
+    environment: CLOUDFLARE_R2_ACCESS_KEY_ID
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install media and R2 tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --user awscli
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Write Firebase service account
+        run: |
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON" || (echo "Missing FIREBASE service account secret" && exit 1)
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
+
+      - name: Generate article readings and publish to R2
+        run: npm run audio -- --limit=8
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: gen-lang-client-0200723670
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Generate approved dialogue podcast if gate is ready
+        continue-on-error: true
+        run: npm run podcast:ar:nightly
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: gen-lang-client-0200723670
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+
+      - name: Publish generated local audio/transcripts to R2
+        run: npm run audio:r2:publish
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Verify manifests and build
+        run: |
+          npm run audio:external:verify
+          npm run build
+        env:
+          VITE_SITE_URL: https://dr-alfailakawi.web.app
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+
+      - name: Commit generated manifests only
+        run: |
+          rm -f sa.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/data/audio.json src/data/audio-meta.json src/data/site-articles-feed.json src/data/podcast-admin.json package.json scripts/auto-audio.mjs scripts/publish-audio-r2.mjs scripts/build-static.mjs src/components/admin/IntelligenceLab.tsx .github/workflows/auto-audio-r2.yml
+          git add .podcast-state.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No audio changes to commit."
+          else
+            git commit -m "chore: auto-publish new audio to R2"
+            git push origin HEAD:main
+          fi

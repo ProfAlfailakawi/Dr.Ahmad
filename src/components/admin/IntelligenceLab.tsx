@@ -5,6 +5,7 @@ import podcastAdmin from '../../data/podcast-admin.json'
 import type { ArticleRecord } from '../../lib/cms'
 import { loadArticleBodies } from '../../lib/article-bodies'
 import { fetchExtras, fetchPublishedExtras, getDb } from '../../lib/firebase'
+import { useAdminAuth } from '../../lib/admin-auth'
 import {
   articleSystem,
   automaticSeries,
@@ -403,6 +404,7 @@ const expiresLabel = (item: NowAdminItem) => {
 }
 
 function NowCard() {
+  const { isAdmin, refresh } = useAdminAuth()
   const [form, setForm] = useState({ question: '', note: '', link: '', duration: '14' })
   const [items, setItems] = useState<NowAdminItem[]>([])
   const [saved, setSaved] = useState('')
@@ -426,6 +428,8 @@ function NowCard() {
     }
     setBusy(true)
     try {
+      const ok = isAdmin || await refresh()
+      if (!ok) throw new Error('صلاحية المشرف غير مفعّلة في جلسة المتصفح. سجّل خروجك وادخل من جديد أو شغّل set-admin.')
       const db = await getDb()
       if (!db) throw new Error('Firebase غير متاح الآن.')
       const { Timestamp, collection, addDoc, serverTimestamp } = await import('firebase/firestore')

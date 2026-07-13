@@ -95,6 +95,11 @@ const media = [...grab('media').matchAll(/\{ title: '([^']+)', outlet: '([^']*)'
     return { slug: `media-${id}`, title: m[1], outlet: m[2], url: m[3] }
   })
 
+const siteArticlesFeedPath = resolve(ROOT, 'src/data/site-articles-feed.json')
+const siteArticlesFeed = existsSync(siteArticlesFeedPath)
+  ? JSON.parse(readFileSync(siteArticlesFeedPath, 'utf8')).filter((item) => item?.slug && item?.title && item?.iso)
+  : []
+
 /* أعداد وسنوات تُحسب من المحتوى — تتجدّد أوصاف SEO تلقائياً مع أي إضافة */
 const artYears = articles.map((a) => Number(a.iso.slice(0, 4))).filter((y) => y >= 1990)
 const firstYear = artYears.length ? Math.min(...artYears) : new Date().getFullYear()
@@ -134,6 +139,7 @@ const routes = [
   ...books.map((b) => ({ path: `/publications/${b.slug}`, title: b.title, desc: b.desc, image: b.cover, isbn: b.isbn })),
   ...papers.map((p) => ({ path: `/research/${p.slug}`, title: p.title, desc: `بحث محكّم — ${p.desc}`, type: 'article' })),
   ...articles.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt, type: 'article', iso: a.iso, cat: a.cat, image: `/og/articles/${a.slug}.svg` })),
+  ...siteArticlesFeed.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt || a.title, type: 'article', iso: a.iso, cat: a.cat || 'مقال', image: `/og/articles/${a.slug}.svg` })),
 ]
 
 const LEGACY_REDIRECTS = [
@@ -797,7 +803,7 @@ Sitemap: ${SITE}/sitemap.xml
 `, 'utf8')
 
 /* ---------- RSS ---------- */
-const feedArticles = uniqueBySlug(articles).filter((a) => a.slug && a.title && a.iso)
+const feedArticles = uniqueBySlug([...siteArticlesFeed, ...articles]).filter((a) => a.slug && a.title && a.iso)
 const items = feedArticles.map((a) => `    <item>
       <title>${esc(a.title)}</title>
       <link>${SITE}/articles/${a.slug}</link>
@@ -970,6 +976,7 @@ function syncDirectory(name, extension) {
   if (!existsSync(from)) throw new Error(`مجلد الأصول مفقود: ${name}`)
   rmSync(to, { recursive: true, force: true })
   mkdirSync(to, { recursive: true })
+  if (name === 'audio' && AUDIO_PUBLIC_BASE_URL) return 0
   const extensions = Array.isArray(extension) ? extension : [extension]
   const files = readdirSync(from, { withFileTypes: true })
     .filter((entry) => entry.isFile() && extensions.some((suffix) => entry.name.endsWith(suffix)))

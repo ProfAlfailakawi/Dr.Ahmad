@@ -281,8 +281,8 @@ export function Listen({ slug, title, text, audio }: { slug: string; title: stri
   }, [slug])
 
   const sources = [
-    ...(voices.fahed ? [{ key: 'fahed', label: 'فهد', src: typeof voices.fahed === 'string' ? voices.fahed : `/audio/${slug}.mp3` }] : []),
-    ...(voices.noura ? [{ key: 'noura', label: 'نورة', src: typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3` }] : []),
+    ...(voices.fahed ? [{ key: 'fahed', label: 'قراءة فهد', src: typeof voices.fahed === 'string' ? voices.fahed : `/audio/${slug}.mp3` }] : []),
+    ...(voices.noura ? [{ key: 'noura', label: 'قراءة نورة', src: typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3` }] : []),
     ...(dialogueOk ? [{ key: 'dialogue', label: '🎙 الحلقة الحوارية', src: `/audio/${slug}.dialogue.mp3` }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)

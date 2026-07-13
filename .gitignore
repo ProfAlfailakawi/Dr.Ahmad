@@ -40,4 +40,6 @@ podcast-audits/voice-bakeoff.private.json
 podcast-rejected/
 .podcast-tmp/
 ArabicPronunciationMemory.sqlite*
+.private-memory/
+PrivateBooks/
 .firebase/hosting.ZGlzdA.cache

@@ -1,0 +1,80 @@
+{
+  "generatedAt": "2026-07-13T00:42:54.251Z",
+  "episodes": [
+    {
+      "slug": "how-do-we-assess-without-breaking-the-human-beingarabic",
+      "title": "كيف نقيس دون أن نكسر الإنسان",
+      "category": "التعليم",
+      "date": "24 أبريل 2026",
+      "iso": "2026-04-24",
+      "status": "published",
+      "audio": "/audio/how-do-we-assess-without-breaking-the-human-beingarabic.dialogue.mp3",
+      "bytes": 5043139,
+      "audioHash": "c215983c8056d2ce",
+      "hasTranscript": false,
+      "utterances": 0,
+      "quality": {
+        "pronunciation": "يحتاج Transcript",
+        "pace": "يفحص من تقرير الحوار عند توفره",
+        "pauses": "يفحص من تقرير الحوار عند توفره",
+        "issues": [
+          "لا يوجد Transcript منشور لهذه الحلقة بعد."
+        ]
+      }
+    }
+  ],
+  "playlists": [
+    {
+      "title": "الإنسان في قلب الآلة",
+      "episodes": [
+        {
+          "slug": "how-do-we-assess-without-breaking-the-human-beingarabic",
+          "title": "كيف نقيس دون أن نكسر الإنسان",
+          "category": "التعليم",
+          "date": "24 أبريل 2026",
+          "iso": "2026-04-24",
+          "status": "published",
+          "audio": "/audio/how-do-we-assess-without-breaking-the-human-beingarabic.dialogue.mp3",
+          "bytes": 5043139,
+          "audioHash": "c215983c8056d2ce",
+          "hasTranscript": false,
+          "utterances": 0,
+          "quality": {
+            "pronunciation": "يحتاج Transcript",
+            "pace": "يفحص من تقرير الحوار عند توفره",
+            "pauses": "يفحص من تقرير الحوار عند توفره",
+            "issues": [
+              "لا يوجد Transcript منشور لهذه الحلقة بعد."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "title": "مستقبل المعلم",
+      "episodes": [
+        {
+          "slug": "how-do-we-assess-without-breaking-the-human-beingarabic",
+          "title": "كيف نقيس دون أن نكسر الإنسان",
+          "category": "التعليم",
+          "date": "24 أبريل 2026",
+          "iso": "2026-04-24",
+          "status": "published",
+          "audio": "/audio/how-do-we-assess-without-breaking-the-human-beingarabic.dialogue.mp3",
+          "bytes": 5043139,
+          "audioHash": "c215983c8056d2ce",
+          "hasTranscript": false,
+          "utterances": 0,
+          "quality": {
+            "pronunciation": "يحتاج Transcript",
+            "pace": "يفحص من تقرير الحوار عند توفره",
+            "pauses": "يفحص من تقرير الحوار عند توفره",
+            "issues": [
+              "لا يوجد Transcript منشور لهذه الحلقة بعد."
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

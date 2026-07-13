@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/prune-orphan-audio.mjs && vite build && node scripts/build-static.mjs",
+    "build": "node scripts/prune-orphan-audio.mjs && node scripts/build-podcast-admin.mjs && vite build && node scripts/build-static.mjs",
     "gcp-build": "npm run build",
     "start": "node server.mjs",
     "preview": "vite preview",
@@ -28,7 +28,8 @@
     "podcast:ar:plan": "node scripts/podcast-dialogue.mjs --lang=ar --plan --reuse-dialogue",
     "podcast:ar:regenerate": "node scripts/podcast-dialogue.mjs --lang=ar --force",
     "podcast:ar:nightly": "node scripts/podcast-dialogue.mjs --lang=ar --nightly",
-    "podcast:ar:bakeoff": "node scripts/podcast-dialogue.mjs --voice-bakeoff"
+    "podcast:ar:bakeoff": "node scripts/podcast-dialogue.mjs --voice-bakeoff",
+    "private-books:memory": "node scripts/private-books-memory.mjs"
   },
   "dependencies": {
     "firebase": "^12.15.0",

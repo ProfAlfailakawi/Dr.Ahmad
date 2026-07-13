@@ -5,6 +5,7 @@ import { Cursor, EASE, Footer, Nav } from './components/ui'
 import { FloatingActions } from './components/extras'
 import { CmsProvider } from './lib/content'
 import { useTrackView } from './lib/views'
+import { PersistentAudioDock, PersistentAudioProvider } from './lib/persistent-audio'
 import Home from './pages/Home'
 
 /* تقسيم الكود: الرئيسية فورية، وبقية الصفحات تُحمَّل عند زيارتها فقط —
@@ -165,16 +166,19 @@ export default function App() {
   return (
     <CmsProvider>
       <BrowserRouter>
-        <RouteViewTracker />
-        <AnimatePresence>{!gone && <Preloader key="pre" done={loaded} />}</AnimatePresence>
-        <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>
-        <Cursor />
-        <Nav />
-        <main id="main">
-          <AnimatedRoutes />
-        </main>
-        <FloatingActions />
-        <Footer />
+        <PersistentAudioProvider>
+          <RouteViewTracker />
+          <AnimatePresence>{!gone && <Preloader key="pre" done={loaded} />}</AnimatePresence>
+          <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>
+          <Cursor />
+          <Nav />
+          <main id="main">
+            <AnimatedRoutes />
+          </main>
+          <FloatingActions />
+          <PersistentAudioDock />
+          <Footer />
+        </PersistentAudioProvider>
       </BrowserRouter>
     </CmsProvider>
   )

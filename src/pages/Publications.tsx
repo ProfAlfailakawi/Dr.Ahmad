@@ -18,8 +18,8 @@ export default function Publications() {
   return (
     <Page>
       <PageHead label="المؤلفات" title={`${count}.`} sub="مؤلفاتي العلمية والفكرية في التعليم والتكنولوجيا والتغيير المجتمعي." />
-      <section className="px-6 py-20 md:px-11 md:py-24">
-        <div className="mx-auto grid max-w-shell gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-10">
+      <section className="px-6 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-20 md:px-11 md:py-24">
+        <div className="mx-auto grid max-w-shell min-w-0 gap-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-10">
           {books.map((b, i) => (
             <motion.div
               key={b.slug}
@@ -38,7 +38,7 @@ export default function Publications() {
                     <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>
                   )}
                 </div>
-                <h2 className="mt-5 font-display text-[1.3rem] font-medium leading-[1.4] text-ink">{b.title}</h2>
+                <h2 className="mt-5 break-words font-display text-[1.3rem] font-medium leading-[1.4] text-ink">{b.title}</h2>
                 {b.isbn && <span className="mt-1 block text-[.78rem] text-soft">ردمك {b.isbn}</span>}
                 <span className="mt-2 block text-[.84rem] text-accent opacity-0 transition-opacity duration-300 group-hover:opacity-100">المقدّمة والفهرس ←</span>
               </Link>

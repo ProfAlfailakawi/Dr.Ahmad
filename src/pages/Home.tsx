@@ -770,9 +770,9 @@ export default function Home() {
         <div className="mx-auto max-w-shell px-6 md:px-11">
           <SectionHead label="المؤلفات" title={`${books.length} كتب.`} to="/publications" />
         </div>
-        <div className="rail flex snap-x snap-mandatory gap-6 overflow-x-auto px-6 pb-4 md:px-11">
+        <div className="rail flex snap-x snap-mandatory gap-6 overflow-x-auto px-6 pb-10 ps-[max(1.5rem,env(safe-area-inset-right))] pe-[max(1.5rem,env(safe-area-inset-left))] md:px-11 md:pb-5">
           {books.map((b, i) => (
-            <Card key={b.slug} delay={Math.min(i * 0.05, 0.3)} className="w-[240px] shrink-0 snap-start md:w-[300px]">
+            <Card key={b.slug} delay={Math.min(i * 0.05, 0.3)} className="w-[min(76vw,260px)] shrink-0 snap-start md:w-[300px]">
               <Link to={`/publications/${b.slug}`} data-hover className="group block">
                 <div className="overflow-hidden rounded-xl bg-white shadow-[0_22px_44px_-26px_rgba(21,22,26,.4)] transition-transform duration-500 group-hover:-translate-y-1.5" style={{ aspectRatio: '1024 / 700' }}>
                   <img src={b.cover} alt={b.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -785,6 +785,7 @@ export default function Home() {
               </Link>
             </Card>
           ))}
+          <span aria-hidden className="w-px shrink-0" />
         </div>
       </section>
 

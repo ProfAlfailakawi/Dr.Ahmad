@@ -1,5 +1,5 @@
-/* خدمة العمل — قراءة المقالات دون إنترنت */
-const CACHE = 'alfailakawi-v1'
+/* خدمة العمل — قراءة المقالات دون إنترنت — المعرّف: __BUILD_ID__ */
+const CACHE = 'alfailakawi-v1-__BUILD_ID__'
 const CORE = ['/', '/index.html', '/favicon.png', '/manifest.webmanifest']
 
 self.addEventListener('install', (e) => {

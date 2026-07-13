@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/prune-orphan-audio.mjs && node scripts/build-podcast-admin.mjs && vite build && node scripts/build-static.mjs",
+    "build": "node scripts/sync-audio.mjs && node scripts/prune-orphan-audio.mjs && node scripts/build-podcast-admin.mjs && vite build && node scripts/build-static.mjs",
     "gcp-build": "npm run build",
     "start": "node server.mjs",
     "preview": "vite preview",

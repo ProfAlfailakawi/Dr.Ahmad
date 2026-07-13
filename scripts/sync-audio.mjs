@@ -30,10 +30,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const AUDIO_DIR = resolve(ROOT, 'audio')
 const BODIES = resolve(ROOT, 'src/data/bodies.json')
 const MANIFEST = resolve(ROOT, 'src/data/audio.json')
-const META = resolve(ROOT, 'src/data/audio-meta.json')
 const CHECK_ONLY = process.argv.includes('--check')
 const MIN_BYTES = 5_000
-const EXTERNAL_AUDIO_BASE_URL = (process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 
 const BITRATES_V1 = {
   1: [0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448],
@@ -128,77 +126,12 @@ function validateMp3(file) {
   return { size, duration: probeDuration(file) }
 }
 
-const knownSlugs = new Set(Object.keys(JSON.parse(readFileSync(BODIES, 'utf8'))))
-
-if (EXTERNAL_AUDIO_BASE_URL) {
-  if (!existsSync(META)) {
-    console.error('✘ الصوت الخارجي مفعّل لكن src/data/audio-meta.json غير موجود.')
-    process.exit(1)
-  }
-  const meta = JSON.parse(readFileSync(META, 'utf8'))
-  const next = {}
-  const invalid = []
-  let totalBytes = 0
-  let totalDuration = 0
-
-  for (const [name, info] of Object.entries(meta).sort(([a], [b]) => a.localeCompare(b))) {
-    if (!name.endsWith('.mp3') || name.includes('.dialogue')) continue
-    const noura = name.endsWith('.noura.mp3')
-    const slug = noura ? name.slice(0, -'.noura.mp3'.length) : name.slice(0, -'.mp3'.length)
-    const voice = noura ? 'noura' : 'fahed'
-    if (!slug || !knownSlugs.has(slug)) {
-      invalid.push(`${name}: لا يطابق slug لمقال ذي نص كامل`)
-      continue
-    }
-    const bytes = Number(info?.bytes || 0)
-    if (!Number.isFinite(bytes) || bytes < MIN_BYTES) {
-      invalid.push(`${name}: حجم غير صالح في audio-meta.json`)
-      continue
-    }
-    next[slug] ||= {}
-    next[slug][voice] = true
-    totalBytes += bytes
-    totalDuration += Number(info?.durationSeconds || 0)
-  }
-
-  if (invalid.length) {
-    console.error(`✘ وُجد ${invalid.length} ملفاً غير صالح في audio-meta.json:`)
-    invalid.forEach((message) => console.error(`  - ${message}`))
-    process.exit(1)
-  }
-
-  const sorted = Object.fromEntries(Object.entries(next).sort(([a], [b]) => a.localeCompare(b)))
-  const rendered = `${JSON.stringify(sorted, null, 2)}\n`
-  const current = existsSync(MANIFEST) ? readFileSync(MANIFEST, 'utf8') : ''
-  const voices = Object.values(sorted).reduce((sum, item) => sum + Number(Boolean(item.fahed)) + Number(Boolean(item.noura)), 0)
-  const summary = `${Object.keys(sorted).length} مقالاً · ${voices} ملفاً خارجياً · ${(totalBytes / 1024 / 1024).toFixed(1)}MB`
-  const durationSummary = totalDuration ? ` · ${(totalDuration / 60).toFixed(1)} دقيقة` : ''
-
-  if (CHECK_ONLY) {
-    if (current !== rendered) {
-      console.error(`✘ audio.json غير متزامن مع audio-meta.json (${summary}). شغّل: AUDIO_PUBLIC_BASE_URL=${EXTERNAL_AUDIO_BASE_URL} node scripts/sync-audio.mjs`)
-      process.exit(1)
-    }
-    console.log(`✔ audio.json متزامن مع R2: ${summary}${durationSummary}`)
-    process.exit(0)
-  }
-
-  const temp = `${MANIFEST}.tmp-${process.pid}`
-  try {
-    writeFileSync(temp, rendered, 'utf8')
-    renameSync(temp, MANIFEST)
-  } finally {
-    if (existsSync(temp)) unlinkSync(temp)
-  }
-  console.log(`✔ بُني audio.json من audio-meta.json`)
-  console.log(`  ${summary}${durationSummary}`)
-  process.exit(0)
-}
-
 if (!existsSync(AUDIO_DIR)) {
   console.error('✘ مجلد audio غير موجود.')
   process.exit(1)
 }
+
+const knownSlugs = new Set(Object.keys(JSON.parse(readFileSync(BODIES, 'utf8'))))
 // ملفات الحوار البودكاستي (<slug>.dialogue.mp3 / .dialogue-en.mp3) خارج فهرس القراءة العادية
 const files = readdirSync(AUDIO_DIR).filter((name) => name.endsWith('.mp3') && !name.includes('.dialogue')).sort()
 const next = {}

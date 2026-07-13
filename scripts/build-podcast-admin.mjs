@@ -12,7 +12,6 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const AUDIO = resolve(ROOT, 'audio')
 const DATA = readFileSync(resolve(ROOT, 'src/data.ts'), 'utf8')
 const OUT = resolve(ROOT, 'src/data/podcast-admin.json')
-const EXTERNAL_AUDIO_BASE_URL = (process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const podcastStatePath = resolve(ROOT, '.podcast-state.json')
 const podcastState = existsSync(podcastStatePath) ? JSON.parse(readFileSync(podcastStatePath, 'utf8')) : { done: {} }
 
@@ -28,11 +27,6 @@ const articles = [...articlesSource.matchAll(/\{\s*slug:\s*'[^']+'[\s\S]*?\},/g)
 const articleBySlug = new Map(articles.map((article) => [article.slug, article]))
 const files = existsSync(AUDIO) ? readdirSync(AUDIO) : []
 const dialogue = files.filter((name) => name.endsWith('.dialogue.mp3')).sort()
-if (EXTERNAL_AUDIO_BASE_URL && !dialogue.length && existsSync(OUT)) {
-  const current = JSON.parse(readFileSync(OUT, 'utf8'))
-  console.log(`✔ podcast-admin.json محفوظ كما هو · ${current.episodes?.length || 0} حلقات حوارية · ${current.playlists?.length || 0} قوائم`)
-  process.exit(0)
-}
 const generatedAt = dialogue.length
   ? new Date(Math.max(...dialogue.map((name) => statSync(resolve(AUDIO, name)).mtimeMs))).toISOString()
   : null

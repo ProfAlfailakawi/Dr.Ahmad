@@ -58,8 +58,6 @@ const PUBLISHER = { '@type': 'Person', '@id': `${SITE}/#person`, name: AUTHOR }
 const podcastStatePath = resolve(ROOT, '.podcast-state.json')
 const hasPodcastState = existsSync(podcastStatePath)
 const podcastState = hasPodcastState ? JSON.parse(readFileSync(podcastStatePath, 'utf8')) : { done: {} }
-const audioMetaPath = resolve(ROOT, 'src/data/audio-meta.json')
-const audioMeta = AUDIO_PUBLIC_BASE_URL && existsSync(audioMetaPath) ? JSON.parse(readFileSync(audioMetaPath, 'utf8')) : {}
 const sha256File = (file) => createHash('sha256').update(readFileSync(file)).digest('hex')
 const acceptedArabicDialogue = (slug, audioFile, transcriptFile = '') => {
   const accepted = podcastState?.done?.[`${slug}:ar`]
@@ -822,6 +820,10 @@ ${items}
    كل مقالٍ له MP3 يصبح حلقة؛ تُقبل مباشرة في Apple Podcasts وSpotify.
    بلا أثر بصري على الموقع — قناة موازية للمستمعين. */
 const podcastArt = `${SITE}/podcast-cover.png`
+const episodeItem = (articleList, fileOf, guidPrefix) => articleList
+  .map((a) => ({ a, ...fileOf(a) }))
+  .filter((e) => e.file && existsSync(e.file))
+  .sort((x, y) => (y.a.iso || '').localeCompare(x.a.iso || ''))
 const durationOf = (file) => {
   const result = spawnSync('ffprobe', [
     '-v', 'error',
@@ -837,32 +839,6 @@ const durationOf = (file) => {
   const s = seconds % 60
   return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`
 }
-const durationLabel = (seconds) => {
-  seconds = Math.round(Number(seconds || 0))
-  if (!Number.isFinite(seconds) || seconds <= 0) return ''
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-  return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`
-}
-const audioAssetInfo = (rel, file = '') => {
-  if (file && existsSync(file)) {
-    return { bytes: statSync(file).size, duration: durationOf(file) }
-  }
-  const meta = audioMeta?.[rel]
-  if (!meta) return null
-  const bytes = Number(meta.bytes || 0)
-  if (!Number.isFinite(bytes) || bytes <= 0) return null
-  return { bytes, duration: durationLabel(meta.durationSeconds) }
-}
-const episodeItem = (articleList, fileOf) => articleList
-  .map((a) => {
-    const item = fileOf(a)
-    const asset = item?.rel ? audioAssetInfo(item.rel, item.file) : null
-    return { a, ...item, asset }
-  })
-  .filter((e) => e.rel && e.asset)
-  .sort((x, y) => (y.a.iso || '').localeCompare(x.a.iso || ''))
 const podcastEpisodes = episodeItem(feedArticles, (a) => {
     // الحلقة الحوارية (فهد ونورة) هي حلقة القناة؛ وإلى أن تُولَّد لمقالٍ ما،
     // تبقى قراءته العادية حلقةً بنفس الـGUID — فلا تختفي حلقة ولا تتكرر.
@@ -872,10 +848,10 @@ const podcastEpisodes = episodeItem(feedArticles, (a) => {
     const plain = resolve(ROOT, 'audio', `${a.slug}.mp3`)
     return { file: existsSync(plain) ? plain : null, rel: `${a.slug}.mp3` }
   })
-  .map(({ a, rel, asset }) => {
-    const bytes = asset.bytes
+  .map(({ a, file, rel }) => {
+    const bytes = statSync(file).size
     const url = audioPublicUrl(rel)
-    const duration = asset.duration
+    const duration = durationOf(file)
     return `    <item>
       <title>${esc(a.title)}</title>
       <itunes:author>د. أحمد حسين الفيلكاوي</itunes:author>
@@ -924,9 +900,9 @@ const enEpisodes = episodeItem(articles, (a) => {
     const f = resolve(ROOT, 'audio', `${a.slug}.dialogue-en.mp3`)
     return { file: existsSync(f) ? f : null, rel: `${a.slug}.dialogue-en.mp3` }
   })
-  .map(({ a, rel, asset }) => {
-    const bytes = asset.bytes
-    const duration = asset.duration
+  .map(({ a, file, rel }) => {
+    const bytes = statSync(file).size
+    const duration = durationOf(file)
     return `    <item>
       <title>${esc(a.title)}</title>
       <itunes:author>Dr. Ahmad Alfailakawi</itunes:author>

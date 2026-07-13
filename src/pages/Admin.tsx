@@ -23,10 +23,10 @@ import { UploadField } from '../components/admin/ContentManager'
 import { useSeo } from '../components/seo'
 import type { User } from 'firebase/auth'
 import {
+  AdminAreaTabs,
   AdminCommandPalette,
   AdminMobileNav,
-  AdminMobileSubnav,
-  AdminSidebar,
+  AdminSectionTabs,
   LaunchModeCard,
   TodayDashboard,
   type AdminTab,
@@ -53,27 +53,47 @@ export default function Admin() {
 
   useEffect(() => {
     if (!firebaseEnabled) return
+    let active = true
     let unsub = () => {}
+    const safety = window.setTimeout(() => {
+      if (active) setChecking(false)
+    }, 8000)
     ;(async () => {
-      const app = await getFirebaseApp()
-      const { getAuth, getIdTokenResult, onAuthStateChanged } = await import('firebase/auth')
-      unsub = onAuthStateChanged(getAuth(app!), async (u) => {
-        setUser(u)
-        if (!u) {
-          setAllowed(false)
-          setChecking(false)
+      try {
+        const app = await getFirebaseApp()
+        if (!app || !active) {
+          if (active) setChecking(false)
           return
         }
-        try {
-          const token = await getIdTokenResult(u, true)
-          setAllowed(token.claims.admin === true)
-        } catch {
+        const { getAuth, getIdTokenResult, onAuthStateChanged } = await import('firebase/auth')
+        unsub = onAuthStateChanged(getAuth(app), async (u) => {
+          if (!active) return
+          setUser(u)
+          if (!u) {
+            setAllowed(false)
+            setChecking(false)
+            return
+          }
+          try {
+            const token = await getIdTokenResult(u, true)
+            if (active) setAllowed(token.claims.admin === true)
+          } catch {
+            if (active) setAllowed(false)
+          }
+          if (active) setChecking(false)
+        })
+      } catch {
+        if (active) {
           setAllowed(false)
+          setChecking(false)
         }
-        setChecking(false)
-      })
+      }
     })()
-    return () => unsub()
+    return () => {
+      active = false
+      window.clearTimeout(safety)
+      unsub()
+    }
   }, [])
 
   if (!firebaseEnabled) return <SetupGuide />

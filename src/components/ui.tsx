@@ -530,9 +530,39 @@ const AR_OF: Record<string, string> = { '/en': '/', '/en/cv': '/cv', '/en/resear
 const normalizeSearch = (value: string) => value
   .replace(/[\u064B-\u0652\u0670]/g, '')
   .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي')
+  .replace(/[ـ،؛؟!?.,:()«»"']/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
   .toLowerCase()
 
-type QuickResult = { to: string; title: string; meta: string; text: string }
+const SMART_GROUPS = [
+  ['تقييم', 'تقويم', 'قياس', 'درجات', 'اختبار', 'امتحان', 'اقيم', 'نقيس'],
+  ['ذكاء اصطناعي', 'الذكاء الاصطناعي', 'ai', 'شات جي بي تي', 'chatgpt', 'تقنيه', 'رقمي'],
+  ['طالب', 'طلاب', 'طلبه', 'متعلم', 'طفل', 'ابناء'],
+  ['معلم', 'مدرس', 'استاذ', 'تدريس'],
+  ['تعليم', 'تعلم', 'مدرسه', 'منهج', 'مناهج'],
+  ['تربيه', 'اسره', 'والدين', 'اب', 'ام'],
+  ['هويه', 'قيم', 'لغه', 'تراث'],
+  ['بحث', 'دراسه', 'علمي', 'محكم'],
+  ['كتاب', 'مؤلف', 'اصدار', 'موسوعه'],
+  ['سيره', 'cv', 'خبره', 'مسار اكاديمي'],
+  ['تواصل', 'حجز', 'موعد', 'محاضره', 'ورشه', 'استشاره'],
+]
+
+const expandSearchTerms = (value: string) => {
+  const normalized = normalizeSearch(value)
+  const base = normalized.split(' ').filter((token) => token.length > 1)
+  const terms = new Set(base)
+  for (const group of SMART_GROUPS) {
+    const normalizedGroup = group.map(normalizeSearch)
+    if (normalizedGroup.some((term) => normalized.includes(term) || base.includes(term))) {
+      normalizedGroup.forEach((term) => terms.add(term))
+    }
+  }
+  return { normalized, terms: [...terms] }
+}
+
+type QuickResult = { to: string; title: string; meta: string; text: string; kind: 'article' | 'book' | 'paper' | 'page' }
 
 function SearchPalette({ close }: { close: () => void }) {
   const [query, setQuery] = useState('')
@@ -545,9 +575,12 @@ function SearchPalette({ close }: { close: () => void }) {
       if (event.key === 'Escape') close()
     }
     document.addEventListener('keydown', onKey)
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     return () => {
       window.cancelAnimationFrame(frame)
       document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = previous
     }
   }, [close])
 
@@ -556,51 +589,66 @@ function SearchPalette({ close }: { close: () => void }) {
       to: `/articles/${item.slug}`,
       title: item.title,
       meta: `مقال · ${item.date}`,
+      kind: 'article' as const,
       text: `${item.title} ${item.excerpt || ''} ${item.cat}`,
     })),
     ...books.map((item) => ({
       to: `/publications/${item.slug}`,
       title: item.title,
       meta: 'كتاب',
+      kind: 'book' as const,
       text: `${item.title} ${item.desc || ''} ${item.isbn || ''}`,
     })),
     ...papers.map((item) => ({
       to: `/research/${item.slug}`,
       title: item.title,
       meta: 'بحث محكّم',
+      kind: 'paper' as const,
       text: `${item.title} ${(item as { meta?: string }).meta || ''} ${(item as { journal?: string }).journal || ''}`,
     })),
-    { to: '/cv', title: 'السيرة الأكاديمية', meta: 'صفحة', text: 'السيرة الاكاديمية الدكتور احمد حسين الفيلكاوي' },
-    { to: '/contact#booking-form', title: 'الحجز والتواصل', meta: 'صفحة', text: 'حجز موعد محاضرة ورشة لقاء تواصل' },
+    { to: '/cv', title: 'السيرة الأكاديمية والمهنية', meta: 'صفحة', kind: 'page' as const, text: 'السيرة الاكاديمية الدكتور احمد حسين الفيلكاوي الخبرة المسار المهني cv' },
+    { to: '/contact#booking-form', title: 'الحجز والتواصل', meta: 'صفحة', kind: 'page' as const, text: 'حجز موعد محاضرة ورشة لقاء تواصل استشارة' },
+    { to: '/atlas', title: 'سماء المقالات', meta: 'خريطة', kind: 'page' as const, text: 'سماء المقالات خريطة الارشيف الزمن' },
+    { to: '/thought-paths', title: 'مسارات الفكرة', meta: 'مسار', kind: 'page' as const, text: 'مسارات الفكر الفكرة موضوع تعليم تربية تقنية هوية مجتمع' },
   ], [])
 
   const results = useMemo(() => {
-    const q = normalizeSearch(query.trim())
-    if (!q) return index.slice(0, 8)
-    const tokens = q.split(/\s+/).filter(Boolean)
+    const { normalized, terms } = expandSearchTerms(query)
+    if (!normalized) return index.slice(0, 9)
     return index
       .map((item) => {
+        const title = normalizeSearch(item.title)
         const hay = normalizeSearch(`${item.title} ${item.text}`)
-        const score = tokens.reduce((total, token) => total + (hay.includes(token) ? 1 : 0), 0)
+        let score = 0
+        if (title === normalized) score += 120
+        if (title.startsWith(normalized)) score += 70
+        if (title.includes(normalized)) score += 48
+        if (hay.includes(normalized)) score += 25
+        for (const term of terms) {
+          if (title.includes(term)) score += 12
+          else if (hay.includes(term)) score += 5
+        }
+        if (item.kind === 'article') score += 1
         return { item, score }
       })
       .filter(({ score }) => score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10)
+      .sort((a, b) => b.score - a.score || a.item.title.length - b.item.title.length)
+      .slice(0, 12)
       .map(({ item }) => item)
   }, [index, query])
 
   const encodedQuery = encodeURIComponent(query.trim())
   const deepTo = encodedQuery ? `/search?q=${encodedQuery}` : '/search'
   const askTo = encodedQuery ? `/ask?q=${encodedQuery}` : '/ask'
+  const suggested = query.trim() && results.length ? results[0] : null
 
   return (
     <motion.div
       role="dialog"
       aria-modal="true"
-      aria-label="مركز البحث الموحد"
-      className="fixed inset-0 z-[260] bg-ink/25 px-4 pt-[calc(5.5rem+env(safe-area-inset-top))] backdrop-blur-sm"
-      initial={reduce ? { opacity: 0 } : { opacity: 0 }}
+      aria-label="مركز البحث الذكي"
+      className="fixed inset-0 z-[260] bg-ink/25 p-0 backdrop-blur-sm sm:px-4 sm:pt-[calc(5.5rem+env(safe-area-inset-top))]"
+      initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onMouseDown={(event) => {
@@ -608,44 +656,52 @@ function SearchPalette({ close }: { close: () => void }) {
       }}
     >
       <motion.div
-        className="mx-auto max-w-2xl overflow-hidden rounded-3xl border border-hair bg-canvas shadow-2xl"
-        initial={reduce ? false : { y: -12, scale: 0.98 }}
+        className="mx-auto flex h-[100dvh] max-w-2xl flex-col overflow-hidden bg-canvas shadow-2xl sm:h-auto sm:max-h-[82dvh] sm:rounded-3xl sm:border sm:border-hair"
+        initial={reduce ? false : { y: -12, scale: 0.985 }}
         animate={{ y: 0, scale: 1 }}
-        exit={reduce ? undefined : { y: -8, scale: 0.98 }}
-        transition={{ duration: 0.28, ease: EASE }}
+        exit={reduce ? undefined : { y: -8, scale: 0.985 }}
+        transition={{ duration: 0.25, ease: EASE }}
       >
-        <div className="flex items-center gap-3 border-b border-hair px-5 py-3.5">
-          <SocialIcon name="Search" size={18} />
+        <div className="flex items-center gap-3 border-b border-hair px-4 pb-3 pt-[calc(.85rem+env(safe-area-inset-top))] sm:px-5 sm:py-3.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent"><SocialIcon name="Search" size={17} /></span>
           <input
             ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="اكتب كلمة أو سؤالاً واحداً…"
-            aria-label="مركز البحث الموحد"
+            placeholder="اكتب سؤالاً بطريقتك…"
+            aria-label="مركز البحث الذكي"
             className="min-w-0 flex-1 bg-transparent text-[1rem] text-ink outline-none placeholder:text-soft/70"
           />
-          <button type="button" onClick={close} className="rounded-full border border-hair px-3 py-1 text-[.75rem] text-soft transition-colors hover:border-accent hover:text-accent">
-            Esc
-          </button>
+          {query && <button type="button" onClick={() => setQuery('')} className="text-[.76rem] text-soft transition-colors hover:text-accent">مسح</button>}
+          <button type="button" onClick={close} className="rounded-full border border-hair px-3 py-1.5 text-[.75rem] text-soft transition-colors hover:border-accent hover:text-accent">إغلاق</button>
         </div>
+
         <div className="rail flex snap-x snap-mandatory gap-2 border-b border-hair bg-wash/45 px-3 py-3">
-          <div className="min-w-[12rem] flex-1 snap-start rounded-2xl border border-hair bg-canvas px-4 py-3">
-            <span className="text-[.7rem] font-semibold text-accent">الآن</span>
-            <strong className="mt-1 block font-display text-[.92rem] text-ink">نتائج فورية</strong>
-            <span className="mt-1 block text-[.68rem] text-soft">مقالات وكتب وأبحاث في لحظتها</span>
+          <div className="min-w-[10.5rem] flex-1 snap-start rounded-2xl border border-accent/35 bg-canvas px-3.5 py-2.5">
+            <span className="text-[.68rem] font-semibold text-accent">ذكي وفوري</span>
+            <strong className="mt-0.5 block font-display text-[.88rem] text-ink">يفهم المرادفات</strong>
+            <span className="mt-0.5 block text-[.65rem] text-soft">تقييم، قياس، تقويم… نتيجة واحدة</span>
           </div>
-          <Link to={deepTo} onClick={close} className="group min-w-[12rem] flex-1 snap-start rounded-2xl border border-hair bg-canvas px-4 py-3 transition-colors hover:border-accent">
-            <span className="text-[.7rem] font-semibold text-accent">تصفية دقيقة</span>
-            <strong className="mt-1 block font-display text-[.92rem] text-ink group-hover:text-accent">البحث العميق ←</strong>
-            <span className="mt-1 block text-[.68rem] text-soft">النص الكامل والسنة والموضوع</span>
+          <Link to={deepTo} onClick={close} className="group min-w-[10.5rem] flex-1 snap-start rounded-2xl border border-hair bg-canvas px-3.5 py-2.5 transition-colors hover:border-accent">
+            <span className="text-[.68rem] font-semibold text-accent">تصفية دقيقة</span>
+            <strong className="mt-0.5 block font-display text-[.88rem] text-ink group-hover:text-accent">البحث العميق</strong>
+            <span className="mt-0.5 block text-[.65rem] text-soft">النص الكامل والسنة والموضوع</span>
           </Link>
-          <Link to={askTo} onClick={close} className="group min-w-[12rem] flex-1 snap-start rounded-2xl border border-hair bg-canvas px-4 py-3 transition-colors hover:border-accent">
-            <span className="text-[.7rem] font-semibold text-accent">سؤال لا كلمة</span>
-            <strong className="mt-1 block font-display text-[.92rem] text-ink group-hover:text-accent">العقل الحي ←</strong>
-            <span className="mt-1 block text-[.68rem] text-soft">إجابة موثقة من الأرشيف</span>
+          <Link to={askTo} onClick={close} className="group min-w-[10.5rem] flex-1 snap-start rounded-2xl border border-hair bg-canvas px-3.5 py-2.5 transition-colors hover:border-accent">
+            <span className="text-[.68rem] font-semibold text-accent">سؤال كامل</span>
+            <strong className="mt-0.5 block font-display text-[.88rem] text-ink group-hover:text-accent">العقل الحي</strong>
+            <span className="mt-0.5 block text-[.65rem] text-soft">إجابة موثقة من الأرشيف</span>
           </Link>
         </div>
-        <div className="max-h-[48vh] overflow-y-auto p-2">
+
+        {suggested && (
+          <Link to={suggested.to} onClick={close} className="group mx-3 mt-3 flex items-center justify-between gap-3 rounded-2xl border border-accent/30 bg-accent/[.055] px-4 py-3 sm:mx-4">
+            <span className="min-w-0"><span className="block text-[.68rem] font-semibold text-accent">أفضل تطابق</span><span className="mt-0.5 block truncate font-display text-[.94rem] font-semibold text-ink group-hover:text-accent">{suggested.title}</span></span>
+            <span className="text-accent">↗</span>
+          </Link>
+        )}
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-2 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-h-[48vh]">
           {results.length ? results.map((item) => (
             <Link
               key={item.to}
@@ -653,11 +709,15 @@ function SearchPalette({ close }: { close: () => void }) {
               onClick={close}
               className="group block rounded-2xl px-4 py-3 transition-colors hover:bg-wash"
             >
-              <span className="text-[.72rem] font-semibold text-accent">{item.meta}</span>
-              <span className="mt-1 block font-display text-[1rem] font-medium leading-relaxed text-ink transition-colors group-hover:text-accent">{item.title}</span>
+              <span className="text-[.7rem] font-semibold text-accent">{item.meta}</span>
+              <span className="mt-1 block font-display text-[.98rem] font-medium leading-relaxed text-ink transition-colors group-hover:text-accent">{item.title}</span>
             </Link>
           )) : (
-            <div className="px-5 py-10 text-center text-soft">لا توجد نتيجة واضحة. جرّب كلمة أوسع.</div>
+            <div className="px-5 py-10 text-center">
+              <p className="font-display text-[1rem] font-semibold text-ink">لم أجد تطابقاً واضحاً.</p>
+              <p className="mt-2 text-[.8rem] text-soft">أرسل السؤال نفسه إلى «العقل الحي» أو افتح البحث العميق.</p>
+              <div className="mt-4 flex justify-center gap-2"><Link to={askTo} onClick={close} className="rounded-full bg-accent px-4 py-2 text-[.76rem] font-semibold text-white">العقل الحي</Link><Link to={deepTo} onClick={close} className="rounded-full border border-hair px-4 py-2 text-[.76rem] font-semibold text-soft">البحث العميق</Link></div>
+            </div>
           )}
         </div>
       </motion.div>

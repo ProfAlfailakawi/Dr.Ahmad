@@ -76,8 +76,8 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
   const [report, setReport] = useState<MonthlyReport | null>(null)
   const [health, setHealth] = useState<{ date: string; status: string; issueCount: number; issues?: string[] } | null>(null)
 
-  const load = async () => {
-    setLoading(true)
+  const load = async (showLoading = true) => {
+    if (showLoading) setLoading(true)
     setError('')
     try {
       const db = await getDb()

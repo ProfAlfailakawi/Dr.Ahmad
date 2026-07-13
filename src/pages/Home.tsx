@@ -452,16 +452,15 @@ function ThoughtCompass() {
           ))}
         </div>
         <FadeUp delay={0.15}>
-          <div className="mt-7 grid gap-2 sm:grid-cols-2">
+          <div className="rail -mx-6 mt-7 flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-2 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
             {quickLinks.map((item) => (
-              <Link key={`${item.tag}-${item.to}`} to={item.to} className="group flex items-center justify-between gap-3 rounded-2xl border border-hair bg-wash px-4 py-3 text-right transition-colors hover:border-accent">
-                <span className="min-w-0">
-                  <span className="mb-1 inline-flex rounded-full border border-hair px-2 py-0.5 text-[.66rem] text-soft">{item.tag}</span>
-                  <span className="block truncate text-[.88rem] font-medium text-ink transition-colors group-hover:text-accent">{item.label}</span>
-                </span>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform duration-300 group-hover:-translate-y-0.5">↗</span>
+              <Link key={`${item.tag}-${item.to}`} to={item.to} className="group flex min-h-[108px] w-[66vw] max-w-[270px] shrink-0 snap-start flex-col justify-between rounded-2xl border border-hair bg-wash px-4 py-3.5 text-right transition-colors hover:border-accent md:w-auto md:max-w-none">
+                <span className="inline-flex w-fit rounded-full border border-hair px-2 py-0.5 text-[.66rem] text-soft">{item.tag}</span>
+                <span className="line-clamp-2 text-[.86rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">{item.label}</span>
+                <span className="text-[.72rem] font-semibold text-accent">افتح المسار</span>
               </Link>
             ))}
+            <span aria-hidden className="w-px shrink-0 md:hidden" />
           </div>
         </FadeUp>
       </div>
@@ -803,6 +802,7 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
 
 function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[]; media: MediaRecord[] }) {
   const [active, setActive] = useState<'maps' | null>(null)
+  const [newsletterOpen, setNewsletterOpen] = useState(false)
 
   useEffect(() => {
     if (!active) return
@@ -816,42 +816,50 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
   return (
     <>
       <section className="border-t border-hair px-6 py-8 md:px-11 md:py-10">
-        <div className="mx-auto grid max-w-shell gap-3 md:grid-cols-[1.2fr_.95fr_.95fr] md:gap-4">
+        <div className="mx-auto max-w-shell">
           <FadeUp>
-            <button type="button" onClick={() => setActive('maps')} className="group flex min-h-[130px] w-full items-start justify-between rounded-3xl border border-hair bg-wash px-5 py-5 text-right transition-colors hover:border-accent md:min-h-[150px] md:px-6">
+            <button type="button" onClick={() => setActive('maps')} className="group flex w-full items-center justify-between gap-5 rounded-3xl border border-hair bg-wash px-5 py-5 text-right transition-colors hover:border-accent md:px-7 md:py-6">
               <span className="min-w-0">
                 <span className="block text-[.74rem] font-semibold text-accent">خرائط الفكر</span>
-                <span className="mt-2 block font-display text-[1.1rem] font-semibold leading-[1.45] text-ink md:text-[1.25rem]">السماء، المسارات، والأثر… في عرض أجمل.</span>
-                <span className="mt-3 block text-[.8rem] text-soft">افتح العرض الكامل</span>
+                <span className="mt-1.5 block font-display text-[1.12rem] font-semibold leading-[1.5] text-ink md:text-[1.35rem]">سماء المقالات، رحلة الأثر، وتوقيعات الموقع.</span>
+                <span className="mt-2 block text-[.78rem] text-soft">عرض بصري واحد بلا تكرار لبوصلة الفكرة.</span>
               </span>
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform duration-300 group-hover:-translate-y-0.5">↗</span>
             </button>
           </FadeUp>
 
-          <FadeUp delay={0.05}>
-            <Link to="/cv" className="group flex min-h-[130px] items-start justify-between rounded-3xl border border-hair bg-canvas px-5 py-5 transition-colors hover:border-accent md:min-h-[150px] md:px-6">
-              <span className="min-w-0 text-right">
-                <span className="block text-[.74rem] font-semibold text-accent">أُبقي الإنسان هنا</span>
-                <span className="mt-2 block font-display text-[1.08rem] font-semibold leading-[1.45] text-ink md:text-[1.22rem]">سيرتي الذاتية.</span>
-                <span className="mt-3 block text-[.8rem] text-soft">المسار الأكاديمي والمهني الكامل</span>
-              </span>
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white">↓</span>
-            </Link>
-          </FadeUp>
-
-          <FadeUp delay={0.1}>
-            <div className="flex min-h-[130px] flex-col rounded-3xl border border-hair bg-canvas px-5 py-5 md:min-h-[150px] md:px-6">
-              <span className="block text-[.74rem] font-semibold text-accent">مواقع التواصل</span>
-              <div className="mt-4 flex flex-wrap gap-2.5">
+          <FadeUp delay={0.06}>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-5">
+              <div>
+                <span className="block text-[.72rem] font-semibold text-accent">ابقَ قريباً</span>
+                <span className="mt-1 block text-[.8rem] text-soft">قنواتي الرسمية، والنشرة حين تريدها فقط.</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2.5">
                 {socials.map((s) => (
                   <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className="flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent">
                     <SocialIcon name={s.label} size={16} />
                   </a>
                 ))}
+                <button type="button" onClick={() => setNewsletterOpen((value) => !value)} aria-expanded={newsletterOpen} aria-label="النشرة البريدية" title="النشرة البريدية" className={`flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${newsletterOpen ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
+                  <SocialIcon name="Mail" size={16} />
+                </button>
               </div>
-              <div className="mt-auto pt-4 text-[.8rem] text-soft">تواصل مباشر وواضح من الرئيسية.</div>
             </div>
           </FadeUp>
+
+          <AnimatePresence initial={false}>
+            {newsletterOpen && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: .3, ease: EASE }} className="overflow-hidden">
+                <div className="mt-4 rounded-2xl border border-hair bg-wash p-4 md:max-w-xl md:p-5">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <span className="font-display text-[.95rem] font-semibold text-ink">رسالة واحدة حين يكون هناك ما يستحق.</span>
+                    <button type="button" onClick={() => setNewsletterOpen(false)} className="text-[.72rem] text-soft transition-colors hover:text-accent">إغلاق</button>
+                  </div>
+                  <Newsletter compact />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </section>
 
@@ -864,7 +872,6 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
                 <button onClick={() => setActive(null)} className="rounded-full border border-hair px-4 py-1.5 text-[.76rem] text-soft transition-colors hover:border-accent hover:text-accent">إغلاق</button>
               </div>
               <MiniAtlas />
-              <ThoughtCompass />
               <ImpactTimeline />
               <Signatures />
             </motion.div>
@@ -956,31 +963,29 @@ export default function Home() {
             >
               <p className="font-display text-[clamp(1.15rem,2.4vw,1.6rem)] font-semibold text-ink">{profile.name}</p>
               <p className="mt-1.5 text-[.95rem] font-light text-soft">أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · باحث · مستشار</p>
-              <div className="mt-5 flex flex-wrap items-center gap-2.5">
-                <Link to="/cv" className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-[.82rem] font-semibold text-white transition-colors hover:bg-accent-deep">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/14">↓</span>
-                  سيرتي الذاتية
-                </Link>
-                {socials.slice(0, 4).map((s) => (
-                  <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent">
-                    <SocialIcon name={s.label} size={15} />
-                  </a>
-                ))}
-              </div>
             </motion.div>
           </div>
 
           <div className="order-2 flex justify-center">
-            <motion.div style={{ y: parY }}>
+            <motion.div style={{ y: parY }} className="w-full max-w-[260px] md:max-w-[400px]">
               <motion.div style={{ x: stx, y: sty }} className="portrait-wrap" data-hover>
                 <motion.div
-                  className="portrait relative max-w-[210px] overflow-hidden rounded-2xl shadow-[0_36px_64px_-36px_rgba(21,22,26,.42)] sm:max-w-[260px] md:max-w-[400px]"
+                  className="portrait relative overflow-hidden rounded-2xl shadow-[0_36px_64px_-36px_rgba(21,22,26,.42)]"
                   initial={reduce ? false : { opacity: 0, y: 26, scale: 1.03 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 1.1, delay: 0.75, ease: EASE }}
                 >
                   <img src="/portrait.jpg" alt={profile.fullName} width={900} height={1350} decoding="async" className="block h-auto w-full" />
                 </motion.div>
+              </motion.div>
+              <motion.div initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .75, delay: 1.05, ease: EASE }}>
+                <Link to="/cv" className="group mt-4 flex items-center justify-between gap-4 border-t border-hair pt-4 text-right">
+                  <span className="min-w-0">
+                    <span className="block text-[.7rem] font-semibold text-accent">خلف الفكرة… مسار.</span>
+                    <span className="mt-1 block font-display text-[1rem] font-semibold text-ink transition-colors group-hover:text-accent md:text-[1.1rem]">السيرة الأكاديمية والمهنية</span>
+                  </span>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-transform duration-300 group-hover:-translate-y-0.5"><SocialIcon name="CV" size={17} /></span>
+                </Link>
               </motion.div>
             </motion.div>
           </div>
@@ -1007,30 +1012,23 @@ export default function Home() {
 
       <HomeDepth articles={articles} books={books} papers={papers} media={media} />
 
-      {/* اللقاءات + النشرة — فائدتان ثانويتان داخل شريط واحد صغير */}
+      {/* اللقاء القادم — شريط صغير؛ النشرة أصبحت أيقونة بجانب التواصل */}
       <section className="border-t border-hair py-5 md:py-6">
-        <div className="rail mx-auto flex max-w-shell snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-1 md:px-11">
-          <FadeUp className="w-[68vw] max-w-[360px] shrink-0 snap-start">
-            <div className="flex min-h-[76px] items-center gap-4 rounded-2xl border border-hair bg-wash px-4 py-3">
-              <span className="shrink-0 text-[.72rem] font-semibold text-accent">اللقاءات</span>
+        <div className="mx-auto max-w-shell px-6 md:px-11">
+          <FadeUp>
+            <div className="flex min-h-[72px] items-center gap-4 rounded-2xl border border-hair bg-wash px-4 py-3 md:px-5">
+              <span className="shrink-0 text-[.72rem] font-semibold text-accent">اللقاء القادم</span>
               {upcomingItems[0] ? (
                 <Link to="/upcoming" className="group min-w-0 flex-1">
-                  <span className="mb-1 inline-flex rounded-full border border-hair px-2 py-0.5 text-[.65rem] text-soft">{upcomingItems[0].kind || "لقاء"}</span><span className="block truncate font-display text-[1rem] font-semibold text-ink transition-colors group-hover:text-accent">{upcomingItems[0].title}</span>
+                  <span className="block truncate font-display text-[.95rem] font-semibold text-ink transition-colors group-hover:text-accent">{upcomingItems[0].title}</span>
                   <span className="mt-0.5 block truncate text-[.7rem] text-soft">{upcomingItems[0].date} · {upcomingItems[0].place}</span>
                 </Link>
               ) : (
-                <Link to="/contact#booking-form" className="min-w-0 flex-1 text-[.8rem] text-soft transition-colors hover:text-accent">لا مواعيد معلنة · احجز موعداً ←</Link>
+                <Link to="/contact#booking-form" className="min-w-0 flex-1 text-[.8rem] text-soft transition-colors hover:text-accent">لا مواعيد معلنة حالياً.</Link>
               )}
-              <Link to="/upcoming" aria-label="كل اللقاءات" className="shrink-0 text-accent">←</Link>
+              <Link to="/upcoming" aria-label="كل اللقاءات" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent">↗</Link>
             </div>
           </FadeUp>
-          <FadeUp delay={0.06} className="w-[72vw] max-w-[420px] shrink-0 snap-start">
-            <div className="flex min-h-[76px] items-center gap-3 rounded-2xl border border-hair px-4 py-3">
-              <span className="shrink-0 text-[.72rem] font-semibold text-accent">النشرة</span>
-              <div className="min-w-0 flex-1"><Newsletter compact /></div>
-            </div>
-          </FadeUp>
-          <span aria-hidden className="w-px shrink-0" />
         </div>
       </section>
     </Page>

@@ -244,9 +244,11 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       عبر ALLOW_BROWSER_TTS في data.ts. */
 type ArticleAudio = { fahed?: boolean | string; noura?: boolean | string }
 type DialogueTranscript = { title: string; utterances: { speaker: string; text: string }[] }
+const audioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
+const audioUrl = (path: string) => audioBase ? `${audioBase}/${path.replace(/^\/?audio\//, '')}` : path
 
 async function hasDialogueAudio(slug: string) {
-  const path = `/audio/${slug}.dialogue.mp3`
+  const path = audioUrl(`/audio/${slug}.dialogue.mp3`)
   try {
     const response = await fetch(path, { method: 'HEAD', cache: 'no-store' })
     const type = (response.headers.get('content-type') || '').toLowerCase()
@@ -273,7 +275,7 @@ export function Listen({ slug, title, text, audio }: { slug: string; title: stri
   useEffect(() => {
     let on = true
     hasDialogueAudio(slug).then((ok) => { if (on) setDialogueOk(ok) })
-    fetch(`/audio/${slug}.dialogue.json`)
+    fetch(audioUrl(`/audio/${slug}.dialogue.json`))
       .then((response) => response.ok ? response.json() : null)
       .then((value) => { if (on && value?.utterances?.length) setTranscript(value) })
       .catch(() => { /* لا Transcript للحلقات القديمة */ })
@@ -281,9 +283,9 @@ export function Listen({ slug, title, text, audio }: { slug: string; title: stri
   }, [slug])
 
   const sources = [
-    ...(voices.fahed ? [{ key: 'fahed', label: 'قراءة فهد', src: typeof voices.fahed === 'string' ? voices.fahed : `/audio/${slug}.mp3` }] : []),
-    ...(voices.noura ? [{ key: 'noura', label: 'قراءة نورة', src: typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3` }] : []),
-    ...(dialogueOk ? [{ key: 'dialogue', label: '🎙 الحلقة الحوارية', src: `/audio/${slug}.dialogue.mp3` }] : []),
+    ...(voices.fahed ? [{ key: 'fahed', label: 'قراءة فهد', src: typeof voices.fahed === 'string' ? voices.fahed : audioUrl(`/audio/${slug}.mp3`) }] : []),
+    ...(voices.noura ? [{ key: 'noura', label: 'قراءة نورة', src: typeof voices.noura === 'string' ? voices.noura : audioUrl(`/audio/${slug}.noura.mp3`) }] : []),
+    ...(dialogueOk ? [{ key: 'dialogue', label: '🎙 الحلقة الحوارية', src: audioUrl(`/audio/${slug}.dialogue.mp3`) }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)
 

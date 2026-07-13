@@ -214,7 +214,7 @@ function Panel({ email }: { email: string }) {
 
   return (
     <Page>
-      <div className="mx-auto max-w-[1320px] overflow-x-clip px-4 pb-24 pt-36 sm:px-6 md:px-10 md:pt-40">
+      <div className="admin-shell mx-auto box-border w-full max-w-[1320px] overflow-x-hidden px-4 pb-24 pt-36 sm:px-6 md:px-10 md:pt-40">
         <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="mb-1 text-[.82rem] font-semibold uppercase text-accent">لوحة التحكم</p>
@@ -225,7 +225,7 @@ function Panel({ email }: { email: string }) {
           </button>
         </div>
 
-        <div className="rail -mx-4 mb-8 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:px-0">
+        <div className="rail mb-8 flex max-w-full gap-2 overflow-x-auto pb-2 sm:flex-wrap">
           {([['dashboard', 'المؤشرات'], ['lab', 'المختبر'], ['articles', 'المقالات'], ['books', 'الكتب'], ['papers', 'الأبحاث'], ['media', 'الإعلام'], ['inbox', 'الرسائل'], ['event', 'اللقاءات']] as [Tab, string][]).map(([k, label]) => (
             <button key={k} onClick={() => setTab(k)}
               className={`shrink-0 rounded-full px-5 py-2 text-[.88rem] transition-colors ${tab === k ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}>

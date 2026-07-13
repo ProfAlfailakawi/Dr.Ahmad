@@ -7,7 +7,7 @@
       "category": "التعليم",
       "date": "24 أبريل 2026",
       "iso": "2026-04-24",
-      "status": "published",
+      "status": "under_review",
       "audio": "/audio/how-do-we-assess-without-breaking-the-human-beingarabic.dialogue.mp3",
       "bytes": 5043139,
       "audioHash": "c215983c8056d2ce",
@@ -15,10 +15,11 @@
       "utterances": 0,
       "quality": {
         "pronunciation": "يحتاج Transcript",
-        "pace": "يفحص من تقرير الحوار عند توفره",
-        "pauses": "يفحص من تقرير الحوار عند توفره",
+        "pace": "ينتظر تقرير الجودة",
+        "pauses": "ينتظر تقرير الجودة",
         "issues": [
-          "لا يوجد Transcript منشور لهذه الحلقة بعد."
+          "لا يوجد Transcript منشور لهذه الحلقة بعد.",
+          "لن تُنشر الحلقة الحوارية في RSS قبل اعتماد بوابة الجودة."
         ]
       }
     }
@@ -33,7 +34,7 @@
           "category": "التعليم",
           "date": "24 أبريل 2026",
           "iso": "2026-04-24",
-          "status": "published",
+          "status": "under_review",
           "audio": "/audio/how-do-we-assess-without-breaking-the-human-beingarabic.dialogue.mp3",
           "bytes": 5043139,
           "audioHash": "c215983c8056d2ce",
@@ -41,10 +42,11 @@
           "utterances": 0,
           "quality": {
             "pronunciation": "يحتاج Transcript",
-            "pace": "يفحص من تقرير الحوار عند توفره",
-            "pauses": "يفحص من تقرير الحوار عند توفره",
+            "pace": "ينتظر تقرير الجودة",
+            "pauses": "ينتظر تقرير الجودة",
             "issues": [
-              "لا يوجد Transcript منشور لهذه الحلقة بعد."
+              "لا يوجد Transcript منشور لهذه الحلقة بعد.",
+              "لن تُنشر الحلقة الحوارية في RSS قبل اعتماد بوابة الجودة."
             ]
           }
         }
@@ -59,7 +61,7 @@
           "category": "التعليم",
           "date": "24 أبريل 2026",
           "iso": "2026-04-24",
-          "status": "published",
+          "status": "under_review",
           "audio": "/audio/how-do-we-assess-without-breaking-the-human-beingarabic.dialogue.mp3",
           "bytes": 5043139,
           "audioHash": "c215983c8056d2ce",
@@ -67,10 +69,11 @@
           "utterances": 0,
           "quality": {
             "pronunciation": "يحتاج Transcript",
-            "pace": "يفحص من تقرير الحوار عند توفره",
-            "pauses": "يفحص من تقرير الحوار عند توفره",
+            "pace": "ينتظر تقرير الجودة",
+            "pauses": "ينتظر تقرير الجودة",
             "issues": [
-              "لا يوجد Transcript منشور لهذه الحلقة بعد."
+              "لا يوجد Transcript منشور لهذه الحلقة بعد.",
+              "لن تُنشر الحلقة الحوارية في RSS قبل اعتماد بوابة الجودة."
             ]
           }
         }

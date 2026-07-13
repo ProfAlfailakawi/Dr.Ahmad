@@ -63,10 +63,17 @@ body.cursor-none-desktop [contenteditable] { cursor: text !important; }
 /* والنصّ القابل للتحديد داخل المقال */
 body.cursor-none-desktop .article-body { cursor: text !important; }
 
-/* لوحة التحكم: لا يُسمح لأي غلاف إداري بأن يوسّع الصفحة أفقياً أو يُقصّ من اليسار */
+/* لوحة التحكم: حماية من أي تمدد أفقي في الجداول أو المسارات الطويلة */
 .admin-shell {
-  max-width: min(1320px, 100vw);
   box-sizing: border-box;
+  max-width: min(1320px, 100vw);
+}
+.admin-dashboard * {
+  min-width: 0;
+}
+.admin-dashboard {
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 :focus-visible { outline: 2px solid rgb(var(--c-accent)); outline-offset: 3px; border-radius: 3px; }

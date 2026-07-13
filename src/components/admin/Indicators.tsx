@@ -183,7 +183,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
   if (loading) return <div className={card}>لحظة… أجمع المشاهدات.</div>
 
   return (
-    <div className="grid min-w-0 max-w-full gap-5 overflow-x-hidden">
+    <div className="admin-dashboard grid min-w-0 max-w-full gap-5 overflow-x-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[.85rem] text-soft">تُحتسب الصفحة مرة واحدة في الجلسة لكل زائر.</p>
         <button type="button" onClick={() => void load()} className="rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent">

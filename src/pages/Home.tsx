@@ -802,7 +802,6 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
 
 function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[]; media: MediaRecord[] }) {
   const [active, setActive] = useState<'maps' | null>(null)
-  const [newsletterOpen, setNewsletterOpen] = useState(false)
 
   useEffect(() => {
     if (!active) return
@@ -822,44 +821,11 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
               <span className="min-w-0">
                 <span className="block text-[.74rem] font-semibold text-accent">خرائط الفكر</span>
                 <span className="mt-1.5 block font-display text-[1.12rem] font-semibold leading-[1.5] text-ink md:text-[1.35rem]">سماء المقالات، رحلة الأثر، وتوقيعات الموقع.</span>
-                <span className="mt-2 block text-[.78rem] text-soft">عرض بصري واحد بلا تكرار لبوصلة الفكرة.</span>
+                <span className="mt-2 block text-[.78rem] text-soft">عرض بصري واحد بلا تكرار.</span>
               </span>
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform duration-300 group-hover:-translate-y-0.5">↗</span>
             </button>
           </FadeUp>
-
-          <FadeUp delay={0.06}>
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-5">
-              <div>
-                <span className="block text-[.72rem] font-semibold text-accent">ابقَ قريباً</span>
-                <span className="mt-1 block text-[.8rem] text-soft">قنواتي الرسمية، والنشرة حين تريدها فقط.</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-2.5">
-                {socials.map((s) => (
-                  <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className="flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent">
-                    <SocialIcon name={s.label} size={16} />
-                  </a>
-                ))}
-                <button type="button" onClick={() => setNewsletterOpen((value) => !value)} aria-expanded={newsletterOpen} aria-label="النشرة البريدية" title="النشرة البريدية" className={`flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${newsletterOpen ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
-                  <SocialIcon name="Mail" size={16} />
-                </button>
-              </div>
-            </div>
-          </FadeUp>
-
-          <AnimatePresence initial={false}>
-            {newsletterOpen && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: .3, ease: EASE }} className="overflow-hidden">
-                <div className="mt-4 rounded-2xl border border-hair bg-wash p-4 md:max-w-xl md:p-5">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <span className="font-display text-[.95rem] font-semibold text-ink">رسالة واحدة حين يكون هناك ما يستحق.</span>
-                    <button type="button" onClick={() => setNewsletterOpen(false)} className="text-[.72rem] text-soft transition-colors hover:text-accent">إغلاق</button>
-                  </div>
-                  <Newsletter compact />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </section>
 
@@ -879,6 +845,33 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
         )}
       </AnimatePresence>
     </>
+  )
+}
+
+function HomeSocialFooter() {
+  const [newsletterOpen, setNewsletterOpen] = useState(false)
+  return (
+    <section className="border-t border-hair px-6 py-7 md:px-11 md:py-9">
+      <div className="mx-auto max-w-shell">
+        <div className="flex items-center justify-center gap-2.5">
+          {socials.map((s) => (
+            <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className="flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent">
+              <SocialIcon name={s.label} size={16} />
+            </a>
+          ))}
+          <button type="button" onClick={() => setNewsletterOpen((value) => !value)} aria-expanded={newsletterOpen} aria-label="النشرة البريدية" title="النشرة البريدية" className={`flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${newsletterOpen ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
+            <SocialIcon name="Mail" size={16} />
+          </button>
+        </div>
+        <AnimatePresence initial={false}>
+          {newsletterOpen && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: .28, ease: EASE }} className="overflow-hidden">
+              <div className="mx-auto mt-4 max-w-xl rounded-2xl border border-hair bg-wash p-4"><Newsletter compact /></div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </section>
   )
 }
 
@@ -979,12 +972,13 @@ export default function Home() {
                 </motion.div>
               </motion.div>
               <motion.div initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .75, delay: 1.05, ease: EASE }}>
-                <Link to="/cv" className="group mt-4 flex items-center justify-between gap-4 border-t border-hair pt-4 text-right">
+                <Link to="/cv" className="group mt-4 grid w-full grid-cols-[minmax(0,1fr)_2.75rem] items-center gap-3 overflow-hidden rounded-2xl border border-hair bg-wash px-4 py-3.5 text-right transition-colors hover:border-accent">
                   <span className="min-w-0">
-                    <span className="block text-[.7rem] font-semibold text-accent">خلف الفكرة… مسار.</span>
-                    <span className="mt-1 block font-display text-[1rem] font-semibold text-ink transition-colors group-hover:text-accent md:text-[1.1rem]">السيرة الأكاديمية والمهنية</span>
+                    <span className="block text-[.68rem] font-semibold text-accent">ما وراء الصورة</span>
+                    <span className="mt-0.5 block truncate font-display text-[.98rem] font-semibold text-ink transition-colors group-hover:text-accent md:text-[1.05rem]">رحلة أكاديمية صنعت الفكرة.</span>
+                    <span className="mt-0.5 block truncate text-[.72rem] text-soft">السيرة المهنية والعلمية الكاملة</span>
                   </span>
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-transform duration-300 group-hover:-translate-y-0.5"><SocialIcon name="CV" size={17} /></span>
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-transform duration-300 group-hover:-translate-y-0.5"><SocialIcon name="CV" size={17} /></span>
                 </Link>
               </motion.div>
             </motion.div>
@@ -1031,6 +1025,8 @@ export default function Home() {
           </FadeUp>
         </div>
       </section>
+
+      <HomeSocialFooter />
     </Page>
   )
 }

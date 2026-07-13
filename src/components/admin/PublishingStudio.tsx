@@ -441,6 +441,7 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [queueBusy, setQueueBusy] = useState(false)
+  const [view, setView] = useState<'idea' | 'write' | 'review' | 'distribution'>('idea')
 
   useEffect(() => {
     let active = true
@@ -598,158 +599,85 @@ export function PublishingStudio({ articles }: { articles: ArticleRecord[] }) {
     <div className="grid gap-5">
       <section className={card}>
         <p className="text-[.76rem] font-semibold uppercase text-accent">استوديو النشر الذكي</p>
-        <h1 className="mt-1 font-display text-3xl font-bold text-ink">من فكرة واحدة إلى مقال ومنظومة نشر.</h1>
-        <p className="mt-3 max-w-4xl text-[.92rem] leading-loose text-soft">
-          هذه أداة خاصة داخل اللوحة فقط. تبني المقال والقوالب من أرشيف الدكتور محليًا الآن، وبعد ربط OpenAI/Gemini تتحول نفس الواجهة إلى محرر أعمق بلا تغيير بصري.
-        </p>
-      </section>
-
-      <section className={card}>
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_14rem_14rem_auto]">
-          <Field label="الفكرة الخام">
-            <input className={input} value={idea} onChange={(event) => setIdea(event.target.value)} placeholder="مثال: الخوف من الامتحان" />
-          </Field>
-          <Field label="الجمهور">
-            <select className={input} value={audience} onChange={(event) => setAudience(event.target.value)}>
-              <option>المعلمين والقيادات التعليمية</option>
-              <option>أولياء الأمور</option>
-              <option>الطلاب والباحثين</option>
-              <option>الإعلاميين</option>
-              <option>الجمهور العام</option>
-            </select>
-          </Field>
-          <Field label="الزاوية">
-            <select className={input} value={angle} onChange={(event) => setAngle(event.target.value)}>
-              <option>الأثر الإنساني قبل بريق الأداة</option>
-              <option>زاوية تربوية عملية</option>
-              <option>سؤال أخلاقي وفكري</option>
-              <option>مدخل إعلامي سريع</option>
-              <option>امتداد أكاديمي من الأرشيف</option>
-            </select>
-          </Field>
-          <div className="flex items-end">
-            <button type="button" className={`${primary} w-full`} onClick={rebuild}>ابنِ الحزمة</button>
-          </div>
-        </div>
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
-          <div className="rounded-xl border border-hair bg-canvas p-4">
-            <strong className="block font-display text-2xl text-accent">{style.articleCount}</strong>
-            <span className="text-[.78rem] text-soft">مقالًا يتعلم منها محليًا</span>
-          </div>
-          <div className="rounded-xl border border-hair bg-canvas p-4">
-            <strong className="block font-display text-2xl text-accent">{style.avgSentenceWords || '—'}</strong>
-            <span className="text-[.78rem] text-soft">متوسط كلمات الجملة في الأرشيف</span>
-          </div>
-          <div className="rounded-xl border border-hair bg-canvas p-4">
-            <strong className="block font-display text-2xl text-accent">{bundle.related.length}</strong>
-            <span className="text-[.78rem] text-soft">روابط فكرية مقترحة</span>
-          </div>
+        <h1 className="mt-1 font-display text-2xl font-bold text-ink md:text-3xl">من فكرة واحدة إلى مقال ومنظومة نشر.</h1>
+        <p className="mt-3 max-w-4xl text-[.88rem] leading-loose text-soft">كل قدرات الاستوديو باقية، لكن موزعة على أربع مراحل واضحة بدل ظهورها دفعة واحدة.</p>
+        <div className="rail mt-5 flex gap-2 overflow-x-auto pb-1">
+          {([
+            ['idea', 'الفكرة'],
+            ['write', 'الكتابة'],
+            ['review', 'المراجعة والنشر'],
+            ['distribution', 'التوزيع'],
+          ] as const).map(([key, label]) => (
+            <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold transition-colors ${view === key ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{label}</button>
+          ))}
         </div>
       </section>
 
-      <IdeaSuggestionsCard suggestions={articleSuggestions} onPick={pickSuggestion} />
-
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(340px,.75fr)]">
-        <div className={card}>
-          <div className="grid gap-4">
-            <Field label="العنوان">
-              <input className={input} value={bundle.title} onChange={(event) => updateBundle({ title: event.target.value })} />
-            </Field>
-            <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_14rem]">
-              <Field label="الرابط المختصر">
-                <input className={input} dir="ltr" value={bundle.slug} onChange={(event) => updateBundle({ slug: event.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, '') })} />
-              </Field>
-              <Field label="التصنيف">
-                <select className={input} value={bundle.cat} onChange={(event) => updateBundle({ cat: event.target.value })}>
-                  {articleCats.filter((cat) => cat !== 'الكل').map((cat) => <option key={cat}>{cat}</option>)}
-                </select>
-              </Field>
+      {view === 'idea' && (
+        <>
+          <section className={card}>
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_14rem_14rem_auto]">
+              <Field label="الفكرة الخام"><input className={input} value={idea} onChange={(event) => setIdea(event.target.value)} placeholder="مثال: الخوف من الامتحان" /></Field>
+              <Field label="الجمهور"><select className={input} value={audience} onChange={(event) => setAudience(event.target.value)}><option>المعلمين والقيادات التعليمية</option><option>أولياء الأمور</option><option>الطلاب والباحثين</option><option>الإعلاميين</option><option>الجمهور العام</option></select></Field>
+              <Field label="الزاوية"><select className={input} value={angle} onChange={(event) => setAngle(event.target.value)}><option>الأثر الإنساني قبل بريق الأداة</option><option>زاوية تربوية عملية</option><option>سؤال أخلاقي وفكري</option><option>مدخل إعلامي سريع</option><option>امتداد أكاديمي من الأرشيف</option></select></Field>
+              <div className="flex items-end"><button type="button" className={`${primary} w-full`} onClick={() => { rebuild(); setView('write') }}>ابنِ الحزمة</button></div>
             </div>
-            <Field label="المقتطف">
-              <textarea className={`${input} min-h-24 leading-loose`} value={bundle.excerpt} onChange={(event) => updateBundle({ excerpt: event.target.value })} />
-            </Field>
-            <Field label={`المقال (${wordCount(bundle.body)} كلمة)`}>
-              <textarea className={`${input} min-h-[520px] leading-loose`} value={bundle.body} onChange={(event) => updateBundle({ body: event.target.value })} />
-            </Field>
-          </div>
+            <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-3">
+              <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.articleCount}</strong><span className="text-[.76rem] text-soft">مقالًا يتعلم منها</span></div>
+              <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.avgSentenceWords || '—'}</strong><span className="text-[.76rem] text-soft">متوسط الجملة</span></div>
+              <div className="col-span-2 rounded-xl border border-hair bg-canvas p-4 lg:col-span-1"><strong className="block font-display text-2xl text-accent">{bundle.related.length}</strong><span className="text-[.76rem] text-soft">روابط فكرية</span></div>
+            </div>
+          </section>
+          <IdeaSuggestionsCard suggestions={articleSuggestions} onPick={(title, suggestion) => { pickSuggestion(title, suggestion); setView('write') }} />
+        </>
+      )}
+
+      {view === 'write' && (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(300px,.7fr)]">
+          <section className={card}>
+            <div className="grid gap-4">
+              <Field label="العنوان"><input className={input} value={bundle.title} onChange={(event) => updateBundle({ title: event.target.value })} /></Field>
+              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_14rem]">
+                <Field label="الرابط المختصر"><input className={input} dir="ltr" value={bundle.slug} onChange={(event) => updateBundle({ slug: event.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, '') })} /></Field>
+                <Field label="التصنيف"><select className={input} value={bundle.cat} onChange={(event) => updateBundle({ cat: event.target.value })}>{articleCats.filter((cat) => cat !== 'الكل').map((cat) => <option key={cat}>{cat}</option>)}</select></Field>
+              </div>
+              <Field label="المقتطف"><textarea className={`${input} min-h-24 leading-loose`} value={bundle.excerpt} onChange={(event) => updateBundle({ excerpt: event.target.value })} /></Field>
+              <Field label={`المقال (${wordCount(bundle.body)} كلمة)`}><textarea className={`${input} min-h-[500px] leading-loose`} value={bundle.body} onChange={(event) => updateBundle({ body: event.target.value })} /></Field>
+            </div>
+          </section>
+          <aside className="grid content-start gap-5">
+            <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">ذاكرة الفكرة</p><p className="mt-2 text-[.86rem] leading-relaxed text-soft">{lab.angle}</p><div className="mt-4 grid gap-3">{bundle.related.map((item) => <a key={item.slug} href={`/articles/${item.slug}`} target="_blank" rel="noreferrer" className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-ink transition-colors hover:border-accent hover:text-accent">{item.title}{item.iso && <span className="ms-2 text-soft">{item.iso.slice(0, 4)}</span>}</a>)}</div></section>
+            <PrivateArchiveCard links={privateLinks} bundle={bundle} />
+            <button type="button" onClick={() => setView('review')} className={primary}>انتقل إلى المراجعة</button>
+          </aside>
         </div>
+      )}
 
-        <aside className="grid content-start gap-5">
+      {view === 'review' && (
+        <div className="grid gap-5 lg:grid-cols-2">
           <QualityGateCard gate={gate} />
-
           <section className={card}>
             <p className="text-[.76rem] font-semibold uppercase text-accent">بوابة الاعتماد</p>
-            <ul className="mt-3 grid gap-2 text-[.84rem] leading-relaxed text-soft">
-              {bundle.quality.map((item) => <li key={item}>• {item}</li>)}
-            </ul>
-            <div className="mt-5 grid gap-3">
-              <button type="button" disabled={busy} className={primary} onClick={() => save('published')}>اعتماد ونشر فورًا</button>
-              <button type="button" disabled={busy} className={ghost} onClick={() => save('draft')}>حفظ كمسودة</button>
-              <div className="grid gap-2">
-                <input className={input} dir="ltr" type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} />
-                <button type="button" disabled={busy || !scheduledAt} className={ghost} onClick={() => save('scheduled')}>حفظ وجدولة</button>
-              </div>
-              <CopyButton value={fullPackage} label="نسخ الحزمة كاملة" />
-            </div>
+            <ul className="mt-3 grid gap-2 text-[.84rem] leading-relaxed text-soft">{bundle.quality.map((item) => <li key={item}>• {item}</li>)}</ul>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2"><button type="button" disabled={busy} className={primary} onClick={() => save('published')}>اعتماد ونشر فورًا</button><button type="button" disabled={busy} className={ghost} onClick={() => save('draft')}>حفظ كمسودة</button><div className="grid gap-2 sm:col-span-2"><input className={input} dir="ltr" type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} /><button type="button" disabled={busy || !scheduledAt} className={ghost} onClick={() => save('scheduled')}>حفظ وجدولة</button></div><CopyButton value={fullPackage} label="نسخ الحزمة كاملة" /></div>
             {notice && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-accent">{notice}</p>}
             {error && <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-soft">{error}</p>}
             <p className="mt-4 text-[.76rem] leading-relaxed text-soft">آخر وضع محفوظ: {status === 'published' ? 'منشور' : status === 'scheduled' ? 'مجدول' : 'مسودة'}</p>
           </section>
+        </div>
+      )}
 
+      {view === 'distribution' && (
+        <>
           <section className={card}>
-            <p className="text-[.76rem] font-semibold uppercase text-accent">ذاكرة الفكرة</p>
-            <p className="mt-2 text-[.86rem] leading-relaxed text-soft">{lab.angle}</p>
-            <div className="mt-4 grid gap-3">
-              {bundle.related.map((item) => (
-                <a key={item.slug} href={`/articles/${item.slug}`} target="_blank" rel="noreferrer" className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-ink transition-colors hover:border-accent hover:text-accent">
-                  {item.title}
-                  {item.iso && <span className="ms-2 text-soft">{item.iso.slice(0, 4)}</span>}
-                </a>
-              ))}
-              {!bundle.related.length && <p className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-soft">لا توجد روابط كافية بعد.</p>}
-            </div>
+            <div className="mb-4"><p className="text-[.76rem] font-semibold uppercase text-accent">قوالب السوشال الجاهزة</p><h2 className="mt-1 font-display text-2xl font-semibold text-ink">من المقال نفسه… بلا إعادة تفكير.</h2></div>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"><SocialCard title="X" text={bundle.social.x} /><SocialCard title="LinkedIn" text={bundle.social.linkedin} /><SocialCard title="Instagram" text={bundle.social.instagram} /><SocialCard title="Threads" text={bundle.social.threads} /><SocialCard title="WhatsApp / Broadcast" text={bundle.social.whatsapp} /><SocialCard title="النشرة البريدية" text={bundle.social.newsletter} /></div>
           </section>
-
-          <PrivateArchiveCard links={privateLinks} bundle={bundle} />
-        </aside>
-      </section>
-
-      <section className={card}>
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-[.76rem] font-semibold uppercase text-accent">قوالب السوشال الجاهزة</p>
-            <h2 className="mt-1 font-display text-2xl font-semibold text-ink">من المقال نفسه… بلا إعادة تفكير.</h2>
-          </div>
-          <p className="max-w-xl text-[.84rem] leading-relaxed text-soft">لا تُنشر تلقائيًا على حساباتك الآن؛ تحفظ لك النصوص الجاهزة. عند ربط APIs للحسابات لاحقًا نجعلها Queue اعتماد ونشر.</p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <SocialCard title="X" text={bundle.social.x} />
-          <SocialCard title="LinkedIn" text={bundle.social.linkedin} />
-          <SocialCard title="Instagram" text={bundle.social.instagram} />
-          <SocialCard title="Threads" text={bundle.social.threads} />
-          <SocialCard title="WhatsApp / Broadcast" text={bundle.social.whatsapp} />
-          <SocialCard title="النشرة البريدية" text={bundle.social.newsletter} />
-        </div>
-      </section>
-
-      <WeeklyPackCard pack={weeklyPack} onSave={saveWeeklyQueue} busy={queueBusy} />
-
-      <section className={card}>
-        <p className="text-[.76rem] font-semibold uppercase text-accent">ماذا يحدث بعد اعتماد المقال؟</p>
-        <div className="mt-4 grid gap-3 md:grid-cols-4">
-          {[
-            ['١', 'ينتقل المقال إلى Firestore ويظهر فورًا إذا كان منشورًا.'],
-            ['٢', 'يدخل في Sitemap/RSS بعد البناء والنشر التالي.'],
-            ['٣', 'الصوت الآلي يلتقطه في Workflow الساعة التالية بعد إضافة Azure.'],
-            ['٤', 'الحوار والبودكاست يعتمدان على Gemini/Azure ثم يُرفعان إلى R2.'],
-          ].map(([num, text]) => (
-            <div key={num} className="rounded-xl border border-hair bg-canvas p-4">
-              <span className="font-display text-2xl text-accent">{num}</span>
-              <p className="mt-2 text-[.84rem] leading-relaxed text-soft">{text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+          <WeeklyPackCard pack={weeklyPack} onSave={saveWeeklyQueue} busy={queueBusy} />
+          <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">ما بعد الاعتماد</p><div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">{[['١','يظهر في Firestore فورًا.'],['٢','يدخل Sitemap/RSS في البناء التالي.'],['٣','يلتقطه Workflow الصوت بعد ربط Azure.'],['٤','تُرفع الحوارات إلى R2 بعد الاعتماد.']].map(([num, note]) => <div key={num} className="rounded-xl border border-hair bg-canvas p-4"><span className="font-display text-2xl text-accent">{num}</span><p className="mt-2 text-[.8rem] leading-relaxed text-soft">{note}</p></div>)}</div></section>
+        </>
+      )}
     </div>
   )
+
 }

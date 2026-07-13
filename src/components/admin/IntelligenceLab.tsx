@@ -630,6 +630,7 @@ function R2AudioCard() {
 
 export function IntelligenceLab({ articles }: { articles: ArticleRecord[] }) {
   const [richArticles, setRichArticles] = useState<ArticleRecord[]>(articles)
+  const [view, setView] = useState<'before' | 'develop' | 'system'>('before')
 
   useEffect(() => {
     let active = true
@@ -648,34 +649,18 @@ export function IntelligenceLab({ articles }: { articles: ArticleRecord[] }) {
   return (
     <div className="grid gap-5">
       <section className={card}>
-        <p className="text-[.76rem] font-semibold uppercase text-accent">ملاحظة مهمة</p>
-        <p className="mt-2 text-[.9rem] leading-relaxed text-soft">
-          كل ما في المختبر أدوات خاصة داخل لوحة التحكم ولا يظهر للزوار. الشيء الوحيد الذي قد يظهر للعامة هو ما تحفظه أنت صراحة في «ماذا أفكر الآن؟» أو ما تنشره من تبويبات المحتوى.
-        </p>
+        <p className="text-[.76rem] font-semibold uppercase text-accent">المختبر المتقدم</p>
+        <p className="mt-2 text-[.88rem] leading-relaxed text-soft">الأدوات نفسها باقية، لكنها موزعة على ثلاث غرف حتى لا تظهر كلها في شاشة واحدة.</p>
+        <div className="rail mt-5 flex gap-2 overflow-x-auto pb-1">
+          {([['before','قبل النشر'],['develop','تطوير الفكرة'],['system','تحويل المقال والصوت']] as const).map(([key,label]) => <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold ${view === key ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>{label}</button>)}
+        </div>
       </section>
 
-      <LabLayer title="قبل النشر" note="فحص الجودة والذاكرة الفكرية قبل أن يتحول النص إلى مادة منشورة.">
-        <ReadinessCard articles={richArticles} />
-        <MemoryAndGateCard articles={richArticles} />
-        <SecretArchiveCard articles={richArticles} />
-        <MonthlyPlanDetails articles={richArticles} />
-      </LabLayer>
+      {view === 'before' && <LabLayer title="قبل النشر" note="فحص الجودة والذاكرة الفكرية قبل أن يتحول النص إلى مادة منشورة."><ReadinessCard articles={richArticles} /><MemoryAndGateCard articles={richArticles} /><SecretArchiveCard articles={richArticles} /><MonthlyPlanDetails articles={richArticles} /></LabLayer>}
 
-      <LabLayer title="تطوير الفكرة" note="مساحة هادئة لتطوير سؤال أو خبر أو ملاحظة، وربطه بتاريخك الفكري.">
-        <IdeaLabCard articles={richArticles} />
-        <DoctorRadarCard articles={richArticles} />
-        <SeriesDetails articles={richArticles} />
-        <ToolDetails title="ماذا أفكر الآن؟" note="هذه الأداة الوحيدة هنا التي تحفظ شيئًا يمكن أن يظهر للعامة إذا ضغطت حفظ.">
-          <NowCard />
-        </ToolDetails>
-      </LabLayer>
+      {view === 'develop' && <LabLayer title="تطوير الفكرة" note="مساحة هادئة لتطوير سؤال أو خبر أو ملاحظة، وربطه بتاريخك الفكري."><IdeaLabCard articles={richArticles} /><DoctorRadarCard articles={richArticles} /><SeriesDetails articles={richArticles} /><ToolDetails title="ماذا أفكر الآن؟" note="هذه الأداة الوحيدة هنا التي تحفظ شيئًا يمكن أن يظهر للعامة إذا ضغطت حفظ."><NowCard /></ToolDetails></LabLayer>}
 
-      <LabLayer title="تحويل المقال إلى منظومة" note="تحويل المقال الواحد إلى محاضرة، منشورات، سؤال طلاب، وبودكاست — من دون نشر تلقائي.">
-        <ArticleSystemCard articles={richArticles} />
-        <AudioQualityGateCard />
-        <AudioControlCard articles={richArticles} />
-        <R2AudioCard />
-      </LabLayer>
+      {view === 'system' && <LabLayer title="تحويل المقال إلى منظومة" note="تحويل المقال الواحد إلى محاضرة، منشورات، سؤال طلاب، وبودكاست — من دون نشر تلقائي."><ArticleSystemCard articles={richArticles} /><AudioQualityGateCard /><AudioControlCard articles={richArticles} /><R2AudioCard /></LabLayer>}
     </div>
   )
 }

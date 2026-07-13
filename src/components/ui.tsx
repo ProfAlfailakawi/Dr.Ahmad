@@ -676,18 +676,13 @@ function SearchPalette({ close }: { close: () => void }) {
           <button type="button" onClick={close} className="rounded-full border border-hair px-3 py-1.5 text-[.75rem] text-soft transition-colors hover:border-accent hover:text-accent">إغلاق</button>
         </div>
 
-        <div className="rail flex snap-x snap-mandatory gap-2 border-b border-hair bg-wash/45 px-3 py-3">
-          <div className="min-w-[10.5rem] flex-1 snap-start rounded-2xl border border-accent/35 bg-canvas px-3.5 py-2.5">
-            <span className="text-[.68rem] font-semibold text-accent">ذكي وفوري</span>
-            <strong className="mt-0.5 block font-display text-[.88rem] text-ink">يفهم المرادفات</strong>
-            <span className="mt-0.5 block text-[.65rem] text-soft">تقييم، قياس، تقويم… نتيجة واحدة</span>
-          </div>
-          <Link to={deepTo} onClick={close} className="group min-w-[10.5rem] flex-1 snap-start rounded-2xl border border-hair bg-canvas px-3.5 py-2.5 transition-colors hover:border-accent">
+        <div className="rail grid grid-cols-2 gap-2 border-b border-hair bg-wash/45 px-3 py-3">
+          <Link to={deepTo} onClick={close} className="group min-w-0 rounded-2xl border border-hair bg-canvas px-3.5 py-2.5 transition-colors hover:border-accent">
             <span className="text-[.68rem] font-semibold text-accent">تصفية دقيقة</span>
             <strong className="mt-0.5 block font-display text-[.88rem] text-ink group-hover:text-accent">البحث العميق</strong>
             <span className="mt-0.5 block text-[.65rem] text-soft">النص الكامل والسنة والموضوع</span>
           </Link>
-          <Link to={askTo} onClick={close} className="group min-w-[10.5rem] flex-1 snap-start rounded-2xl border border-hair bg-canvas px-3.5 py-2.5 transition-colors hover:border-accent">
+          <Link to={askTo} onClick={close} className="group min-w-0 rounded-2xl border border-hair bg-canvas px-3.5 py-2.5 transition-colors hover:border-accent">
             <span className="text-[.68rem] font-semibold text-accent">سؤال كامل</span>
             <strong className="mt-0.5 block font-display text-[.88rem] text-ink group-hover:text-accent">العقل الحي</strong>
             <span className="mt-0.5 block text-[.65rem] text-soft">إجابة موثقة من الأرشيف</span>
@@ -923,7 +918,6 @@ export function Footer() {
             <img src="/logo.png" alt={profile.name} className="h-10 w-16 object-contain dark:invert" style={{ objectPosition: 'right' }} />
           </Link>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-[.9rem] text-soft">
-            <Link to="/about" className="transition-colors hover:text-accent">حول الموقع</Link>
             <span className="flex items-center gap-3">
               <a href={cv.ar} target="_blank" rel="noreferrer" aria-label="السيرة الذاتية PDF" title="السيرة الذاتية PDF" className="text-soft transition-colors hover:text-accent">
                 <SocialIcon name="CV" />

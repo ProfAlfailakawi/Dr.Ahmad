@@ -88,13 +88,18 @@ export function Newsletter({ compact = false }: { compact?: boolean }) {
 /* ---------- زر العودة للأعلى ---------- */
 export function FloatingActions() {
   const [show, setShow] = useState(false)
+  const [nearBottom, setNearBottom] = useState(false)
   const { scrollY } = useScroll()
-  useEffect(() => scrollY.on('change', (v) => setShow(v > 700)), [scrollY])
+  useEffect(() => scrollY.on('change', (v) => {
+    setShow(v > 700)
+    const remaining = document.documentElement.scrollHeight - (v + window.innerHeight)
+    setNearBottom(remaining < 170)
+  }), [scrollY])
 
   return (
-    <div className="reader-hide-focus fixed bottom-6 left-6 z-[210]">
+    <div className="reader-hide-focus fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[210] md:right-6">
       <AnimatePresence>
-        {show && (
+        {show && !nearBottom && (
           <motion.button
             key="top"
             initial={{ opacity: 0, scale: 0.8, y: 10 }}
@@ -103,7 +108,7 @@ export function FloatingActions() {
             transition={{ duration: 0.3, ease: EASE }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             aria-label="العودة للأعلى"
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-hair bg-canvas/90 text-ink shadow-[0_10px_28px_-14px_rgba(21,22,26,.5)] backdrop-blur transition-colors hover:border-accent hover:text-accent"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-hair bg-canvas/90 text-ink shadow-[0_10px_28px_-14px_rgba(21,22,26,.5)] backdrop-blur transition-colors hover:border-accent hover:text-accent"
           >
             ↑
           </motion.button>

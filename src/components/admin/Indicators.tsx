@@ -46,7 +46,7 @@ type MonthlyReport = {
   }
 }
 
-const card = 'min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
+const card = 'min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair bg-wash p-3.5 sm:p-5 md:p-6'
 const ar = (value: number) => String(value)
 
 function kuwaitDate(offset = 0) {
@@ -75,6 +75,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
   const [q, setQ] = useState('')
   const [report, setReport] = useState<MonthlyReport | null>(null)
   const [health, setHealth] = useState<{ date: string; status: string; issueCount: number; issues?: string[] } | null>(null)
+  const [view, setView] = useState<'overview' | 'content' | 'journey' | 'details'>('overview')
 
   const load = async (showLoading = true) => {
     if (showLoading) setLoading(true)
@@ -194,10 +195,13 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         <p className="text-[.85rem] text-soft">تُحتسب الصفحة مرة واحدة في الجلسة لكل زائر.</p>
         <span className="rounded-full border border-hair px-4 py-2 text-[.78rem] text-soft">يتحدّث تلقائياً كل دقيقة</span>
       </div>
+      <div className="rail flex gap-2 overflow-x-auto pb-1">
+        {([['overview','النظرة العامة'],['content','المحتوى'],['journey','رحلة الزائر'],['details','كل البيانات']] as const).map(([key,label]) => <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold ${view === key ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>{label}</button>)}
+      </div>
 
       {error && <div className={`${card} border-accent/40 text-[.9rem] text-soft`}>{error}</div>}
 
-      {health && (
+      {view === 'overview' && health && (
         <section className={`${card} ${health.status === 'سليم' ? '' : 'border-accent/50'}`} aria-label="حارس الجودة">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -221,7 +225,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         </section>
       )}
 
-      {report && (
+      {view === 'overview' && report && (
         <section className={`${card} border-accent/30 bg-accent/[.045]`} aria-label={`التقرير الشهري ${report.period}`}>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-3xl">
@@ -259,7 +263,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         </section>
       )}
 
-      <div className="grid min-w-0 w-full max-w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {view === 'overview' && <div className="grid min-w-0 w-full max-w-full grid-cols-2 gap-3 lg:grid-cols-4">
         <div className={`${card} min-w-0`}>
           <span className="block truncate font-display text-[clamp(1.5rem,7vw,2.25rem)] font-bold tabular-nums text-accent">{ar(summary.total)}</span>
           <span className="mt-2 block text-[.82rem] text-soft">إجمالي المشاهدات</span>
@@ -282,9 +286,9 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
             <span className="mt-2 block text-[.82rem] text-soft">مشاهدات ال{k === 'صفحات' ? 'صفحات' : k}</span>
           </div>
         ))}
-      </div>
+      </div>}
 
-      <section className={card}>
+      {view === 'content' && <section className={card}>
         <div className="mb-6 flex items-center justify-between gap-3">
           <div>
             <p className="text-[.76rem] font-semibold uppercase text-accent">الأكثر قراءة</p>
@@ -308,9 +312,9 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         ) : (
           <p className="text-[.9rem] text-soft">تظهر المقالات هنا بعد أول مشاهدة.</p>
         )}
-      </section>
+      </section>}
 
-      <section className={card}>
+      {view === 'content' && <section className={card}>
         <p className="text-[.76rem] font-semibold uppercase text-accent">أثر المقال</p>
         <h2 className="mt-1 font-display text-xl font-semibold text-ink">ما الذي يحدث بعد القراءة؟</h2>
         <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -339,9 +343,9 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         ) : (
           <p className="mt-4 text-[.86rem] leading-relaxed text-soft">ستظهر خريطة الانتقال بعد زيارات جديدة؛ لا توجد بيانات كافية الآن.</p>
         )}
-      </section>
+      </section>}
 
-      <section className={card}>
+      {view === 'overview' && <section className={card}>
         <p className="text-[.76rem] font-semibold uppercase text-accent">آخر 7 أيام</p>
         <h2 className="mt-1 font-display text-xl font-semibold text-ink">اتجاه المشاهدات</h2>
         <div className="mt-8 grid h-36 min-w-0 grid-cols-7 items-end gap-1 sm:h-48 sm:gap-3" aria-label="مشاهدات الأيام السبعة الأخيرة">
@@ -353,10 +357,16 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
             </div>
           ))}
         </div>
-      </section>
+      </section>}
+
+      {view === 'journey' && <section className={card}>
+        <p className="text-[.76rem] font-semibold uppercase text-accent">رحلة الزائر</p>
+        <h2 className="mt-1 font-display text-xl font-semibold text-ink">أكثر الانتقالات تكراراً</h2>
+        {summary.journeys.length ? <ol className="mt-5 grid gap-2 sm:grid-cols-2">{summary.journeys.slice(0, 12).map((row) => <li key={row.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem]"><span className="min-w-0 truncate text-ink" dir="ltr">{row.from} ← {row.to}</span><span className="text-accent">{ar(row.count)}</span></li>)}</ol> : <p className="mt-4 text-[.86rem] text-soft">لا توجد بيانات كافية بعد.</p>}
+      </section>}
 
       {/* ── التفصيل الممل: كل مسارٍ شوهد، بلا استثناء ── */}
-      <section className={card}>
+      {view === 'details' && <section className={card}>
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-[.76rem] font-semibold uppercase text-accent">بالتفصيل الممل</p>
@@ -398,7 +408,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         ) : (
           <p className="text-[.9rem] text-soft">لا مشاهدات مطابقة بعد.</p>
         )}
-      </section>
+      </section>}
     </div>
   )
 }

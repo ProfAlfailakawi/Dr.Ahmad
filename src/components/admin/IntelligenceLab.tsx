@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { books, papers } from '../../data'
 import podcastAdmin from '../../data/podcast-admin.json'
 import type { ArticleRecord } from '../../lib/cms'
-import { fetchPublishedExtras, getDb } from '../../lib/firebase'
+import { fetchExtras, fetchPublishedExtras, getDb } from '../../lib/firebase'
 import {
   articleSystem,
   automaticSeries,
@@ -368,29 +368,97 @@ function SeriesDetails({ articles }: { articles: ArticleRecord[] }) {
   )
 }
 
+type NowAdminItem = {
+  id: string
+  question?: string
+  note?: string
+  link?: string
+  status?: string
+  duration?: string
+  createdAt?: { seconds?: number }
+  expiresAt?: { seconds?: number } | null
+}
+
+const expiresLabel = (item: NowAdminItem) => {
+  if (!item.expiresAt?.seconds) return 'دائمة'
+  const date = new Date(item.expiresAt.seconds * 1000)
+  return date.getTime() < Date.now() ? 'انتهت' : `حتى ${date.toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'short' })}`
+}
+
 function NowCard() {
-  const [form, setForm] = useState({ question: '', note: '', link: '' })
+  const [form, setForm] = useState({ question: '', note: '', link: '', duration: '14' })
+  const [items, setItems] = useState<NowAdminItem[]>([])
   const [saved, setSaved] = useState('')
+  const load = async () => {
+    const value = await fetchExtras<NowAdminItem>('site_now')
+    setItems(value.slice(0, 8))
+  }
+  useEffect(() => { void load() }, [])
   const save = async () => {
     const db = await getDb()
     if (!db || !form.question.trim()) return
-    const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
-    await addDoc(collection(db, 'site_now'), { ...form, status: 'published', createdAt: serverTimestamp() })
-    setForm({ question: '', note: '', link: '' })
+    const { Timestamp, collection, addDoc, serverTimestamp } = await import('firebase/firestore')
+    const days = form.duration === 'forever' ? 0 : Number(form.duration || 14)
+    const expiresAt = days ? Timestamp.fromDate(new Date(Date.now() + days * 86_400_000)) : null
+    await addDoc(collection(db, 'site_now'), { ...form, status: 'published', expiresAt, createdAt: serverTimestamp() })
+    setForm({ question: '', note: '', link: '', duration: '14' })
     setSaved('حُفظت الفكرة في صفحة ماذا أفكر الآن ✓')
+    await load()
     window.setTimeout(() => setSaved(''), 2500)
+  }
+  const hide = async (id: string) => {
+    const db = await getDb()
+    if (!db) return
+    const { doc, updateDoc } = await import('firebase/firestore')
+    await updateDoc(doc(db, 'site_now', id), { status: 'hidden' })
+    await load()
+  }
+  const remove = async (id: string) => {
+    const db = await getDb()
+    if (!db) return
+    const { deleteDoc, doc } = await import('firebase/firestore')
+    await deleteDoc(doc(db, 'site_now', id))
+    await load()
   }
   return (
     <section className={card}>
       <p className="text-[.76rem] font-semibold uppercase text-accent">ماذا أفكر الآن؟</p>
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
+      <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
         <input className={input} value={form.question} onChange={(e) => setForm((p) => ({ ...p, question: e.target.value }))} placeholder="سؤال يشغلني" />
         <input className={input} value={form.note} onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))} placeholder="ملاحظة قصيرة" />
         <input className={input} dir="ltr" value={form.link} onChange={(e) => setForm((p) => ({ ...p, link: e.target.value }))} placeholder="/articles/..." />
+        <select className={`${input} min-w-[8.5rem]`} value={form.duration} onChange={(e) => setForm((p) => ({ ...p, duration: e.target.value }))} aria-label="مدة ظهور الفكرة">
+          <option value="7">7 أيام</option>
+          <option value="14">14 يومًا</option>
+          <option value="forever">دائم</option>
+        </select>
       </div>
       <div className="mt-4 flex items-center gap-3">
         <button type="button" onClick={save} className={primaryBtn}>حفظ فكرة</button>
         {saved && <span className="text-[.82rem] text-accent">{saved}</span>}
+      </div>
+      <div className="mt-6 border-t border-hair pt-4">
+        <p className="text-[.78rem] font-semibold text-soft">آخر الأفكار المحفوظة</p>
+        {items.length ? (
+          <ol className="mt-3 grid gap-2">
+            {items.map((item) => (
+              <li key={item.id} className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-hair bg-canvas px-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[.9rem] font-semibold text-ink">{item.question || 'فكرة بلا عنوان'}</p>
+                  <p className="mt-0.5 text-[.74rem] text-soft">
+                    {item.status === 'published' ? 'ظاهرة' : 'مخفية'} · {expiresLabel(item)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  {item.status === 'published' && <button type="button" onClick={() => hide(item.id)} className={softBtn}>إخفاء</button>}
+                  <button type="button" onClick={() => remove(item.id)} className="rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-red-400 hover:text-red-500">حذف</button>
+                </div>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.82rem] text-soft">لا توجد أفكار محفوظة بعد.</p>
+        )}
       </div>
     </section>
   )

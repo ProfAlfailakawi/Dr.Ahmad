@@ -9,6 +9,14 @@ type NowItem = {
   question?: string
   note?: string
   link?: string
+  createdAt?: { seconds?: number }
+  expiresAt?: { seconds?: number } | null
+}
+
+const timeValue = (value?: { seconds?: number } | null) => Number(value?.seconds || 0) * 1000
+const isActive = (item: NowItem) => {
+  const expires = timeValue(item.expiresAt)
+  return !expires || expires > Date.now()
 }
 
 export default function Now() {
@@ -22,7 +30,12 @@ export default function Now() {
   useEffect(() => {
     let active = true
     fetchPublishedExtras<NowItem>('site_now').then((value) => {
-      if (active) setItems(value.slice(0, 3))
+      if (active) {
+        setItems(value
+          .filter(isActive)
+          .sort((a, b) => timeValue(b.createdAt) - timeValue(a.createdAt))
+          .slice(0, 3))
+      }
     })
     return () => { active = false }
   }, [])
@@ -67,4 +80,3 @@ export default function Now() {
     </Page>
   )
 }
-

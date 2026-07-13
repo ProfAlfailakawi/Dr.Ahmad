@@ -21,6 +21,9 @@ const readTime = (t?: string) => {
   return `${m.toLocaleString('en-US')} دقائق قراءة`.replace('1 دقائق', 'دقيقة واحدة')
 }
 
+const canUseDropCap = (paragraph: string) =>
+  /^[\s\u061C\u200E\u200F]*[\u0621-\u064A]/.test(paragraph)
+
 function ReaderPanel({ slug }: { slug: string }) {
   const [focus, setFocus] = useState(false)
   const [scale, setScale] = useState(1)
@@ -394,7 +397,7 @@ export default function ArticleDetail() {
               <>
                 <div className="article-body mt-11">
                   {article.body.split('\n\n').map((p, k) => (
-                    <p key={k}>{p}</p>
+                    <p key={k} className={k === 0 && canUseDropCap(p) ? 'dropcap' : undefined}>{p}</p>
                   ))}
                 </div>
                 {/* أداة تحديد واحدة: خيط الفكرة + بطاقة اقتباس (بلا تداخل) */}

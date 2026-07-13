@@ -290,10 +290,12 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         {summary.topArticles.length ? (
           <ol className="grid gap-4">
             {summary.topArticles.map((row, index) => (
-              <li key={row.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 sm:grid-cols-[minmax(0,1fr)_minmax(120px,360px)_auto]">
-                <span className="truncate text-[.88rem] text-ink"><span className="me-2 text-accent">{index + 1}.</span>{row.label}</span>
-                <span className="text-[.8rem] font-semibold text-accent sm:order-3 sm:font-normal sm:text-soft">{ar(row.count)}</span>
-                <span className="col-span-2 h-2 overflow-hidden rounded-full bg-canvas sm:order-2 sm:col-span-1">
+              <li key={row.id} className="min-w-0 rounded-xl border border-hair bg-canvas px-4 py-3">
+                <div className="flex min-w-0 items-center justify-between gap-4">
+                  <span className="min-w-0 flex-1 truncate text-[.88rem] text-ink"><span className="me-2 text-accent">{index + 1}.</span>{row.label}</span>
+                  <span className="shrink-0 text-[.8rem] font-semibold text-accent">{ar(row.count)}</span>
+                </div>
+                <span className="mt-2 block h-2 w-full overflow-hidden rounded-full bg-wash">
                   <span className="block h-full rounded-full bg-accent" style={{ width: `${Math.max((row.count / topMax) * 100, 3)}%` }} />
                 </span>
               </li>

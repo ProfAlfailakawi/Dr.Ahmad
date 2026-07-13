@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { books, papers } from '../../data'
 import type { ArticleRecord } from '../../lib/cms'
 import { fetchPublishedExtras, getDb } from '../../lib/firebase'
@@ -49,6 +50,46 @@ function SmallList({ title, items, path }: { title: string; items: { slug: strin
         </ul>
       ) : <p className="mt-2 text-[.84rem] text-soft">لا رابط واضح بعد.</p>}
     </div>
+  )
+}
+
+function LabLayer({ title, note, children }: { title: string; note: string; children: ReactNode }) {
+  return (
+    <section className="rounded-3xl border border-hair bg-canvas p-4 md:p-5">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-hair pb-4">
+        <div>
+          <p className="text-[.76rem] font-semibold uppercase text-accent">طبقة عمل</p>
+          <h2 className="mt-1 font-display text-2xl font-semibold text-ink">{title}</h2>
+        </div>
+        <p className="max-w-2xl text-[.86rem] leading-relaxed text-soft">{note}</p>
+      </div>
+      <div className="grid gap-4">{children}</div>
+    </section>
+  )
+}
+
+function ToolDetails({
+  title,
+  note,
+  children,
+  defaultOpen = false,
+}: {
+  title: string
+  note: string
+  children: ReactNode
+  defaultOpen?: boolean
+}) {
+  return (
+    <details className={`${card} group`} open={defaultOpen}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
+        <span>
+          <span className="block font-display text-lg font-semibold text-ink">{title}</span>
+          <span className="mt-1 block text-[.82rem] leading-relaxed text-soft">{note}</span>
+        </span>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span>
+      </summary>
+      <div className="mt-5 border-t border-hair pt-5">{children}</div>
+    </details>
   )
 }
 
@@ -234,47 +275,52 @@ function MemoryAndGateCard({ articles }: { articles: ArticleRecord[] }) {
   )
 }
 
-function StrategyCards({ articles }: { articles: ArticleRecord[] }) {
-  const series = useMemo(() => automaticSeries(articles), [articles])
-  const plan = useMemo(() => monthlyPlan(articles, books, papers), [articles])
+function AudioControlCard({ articles }: { articles: ArticleRecord[] }) {
   const noAudio = articles.filter((article) => !article.hasAudio)
   const withAudio = articles.filter((article) => article.hasAudio)
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
-      <section className={card}>
-        <p className="text-[.76rem] font-semibold uppercase text-accent">غرفة التحكم الصوتية</p>
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <span className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{withAudio.length}</strong><small className="text-soft">مقالات بصوت</small></span>
-          <span className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-ink">{noAudio.length}</strong><small className="text-soft">تحتاج صوت</small></span>
-        </div>
-        <p className="mt-4 text-[.84rem] leading-relaxed text-soft">الحلقات الحوارية المعتمدة تبقى في خلاصة البودكاست فقط بعد اجتياز بوابة الجودة. إعادة التوليد تتم من سكربت الصوت حتى لا نضيف زرًا خطيرًا داخل المتصفح.</p>
-      </section>
-      <section className={card}>
-        <p className="text-[.76rem] font-semibold uppercase text-accent">مدير النشر الشهري</p>
-        <ol className="mt-4 grid gap-2">
-          {plan.map((week) => (
-            <li key={week.week} className="rounded-xl border border-hair bg-canvas p-3 text-[.84rem] leading-relaxed">
-              <span className="font-semibold text-accent">الأسبوع {week.week}: </span>
-              <span className="text-ink">{week.article.title}</span>
-              <span className="block text-soft">{week.action} · مرافق: {week.companion}</span>
-            </li>
-          ))}
-        </ol>
-      </section>
-      <section className={`${card} lg:col-span-2`}>
-        <p className="text-[.76rem] font-semibold uppercase text-accent">سلاسل فكرية تلقائية</p>
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {series.map((group) => (
-            <div key={group.title} className="rounded-xl border border-hair bg-canvas p-4">
-              <p className="font-display text-lg font-semibold text-ink">{group.title}</p>
-              <ul className="mt-3 grid gap-1.5">
-                {group.items.slice(0, 4).map((item) => <li key={item.slug}><a className="text-[.83rem] text-soft hover:text-accent" href={`/articles/${item.slug}`} target="_blank" rel="noreferrer">{item.title}</a></li>)}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </section>
-    </div>
+    <ToolDetails title="غرفة التحكم الصوتية" note="خاصة لك فقط: تلخص حالة الصوت، ولا تنشر حلقة جديدة من المتصفح." defaultOpen>
+      <div className="grid grid-cols-2 gap-3">
+        <span className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{withAudio.length}</strong><small className="text-soft">مقالات بصوت</small></span>
+        <span className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-ink">{noAudio.length}</strong><small className="text-soft">تحتاج صوت</small></span>
+      </div>
+      <p className="mt-4 text-[.84rem] leading-relaxed text-soft">الحلقات الحوارية المعتمدة تبقى في خلاصة البودكاست فقط بعد اجتياز بوابة الجودة. إعادة التوليد تتم من سكربت الصوت حتى لا نضيف زرًا خطيرًا داخل المتصفح.</p>
+    </ToolDetails>
+  )
+}
+
+function MonthlyPlanDetails({ articles }: { articles: ArticleRecord[] }) {
+  const plan = useMemo(() => monthlyPlan(articles, books, papers), [articles])
+  return (
+    <ToolDetails title="خطة النشر الشهرية" note="اقتراح داخلي فقط. لا يظهر للزوار، ولا ينشر شيئًا حتى تختار أنت.">
+      <ol className="grid gap-2">
+        {plan.map((week) => (
+          <li key={week.week} className="rounded-xl border border-hair bg-canvas p-3 text-[.84rem] leading-relaxed">
+            <span className="font-semibold text-accent">الأسبوع {week.week}: </span>
+            <span className="text-ink">{week.article.title}</span>
+            <span className="block text-soft">{week.action} · مرافق: {week.companion}</span>
+          </li>
+        ))}
+      </ol>
+    </ToolDetails>
+  )
+}
+
+function SeriesDetails({ articles }: { articles: ArticleRecord[] }) {
+  const series = useMemo(() => automaticSeries(articles), [articles])
+  return (
+    <ToolDetails title="سلاسل فكرية تلقائية" note="ترتيب داخلي يساعدك على رؤية المسارات. لا يظهر للناس إلا إذا حوّلناه لاحقًا إلى صفحة عامة.">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {series.map((group) => (
+          <div key={group.title} className="rounded-xl border border-hair bg-canvas p-4">
+            <p className="font-display text-lg font-semibold text-ink">{group.title}</p>
+            <ul className="mt-3 grid gap-1.5">
+              {group.items.slice(0, 4).map((item) => <li key={item.slug}><a className="text-[.83rem] text-soft hover:text-accent" href={`/articles/${item.slug}`} target="_blank" rel="noreferrer">{item.title}</a></li>)}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </ToolDetails>
   )
 }
 
@@ -347,13 +393,32 @@ function DoctorRadarCard({ articles }: { articles: ArticleRecord[] }) {
 export function IntelligenceLab({ articles }: { articles: ArticleRecord[] }) {
   return (
     <div className="grid gap-5">
-      <ReadinessCard articles={articles} />
-      <IdeaLabCard articles={articles} />
-      <DoctorRadarCard articles={articles} />
-      <ArticleSystemCard articles={articles} />
-      <MemoryAndGateCard articles={articles} />
-      <StrategyCards articles={articles} />
-      <NowCard />
+      <section className={card}>
+        <p className="text-[.76rem] font-semibold uppercase text-accent">ملاحظة مهمة</p>
+        <p className="mt-2 text-[.9rem] leading-relaxed text-soft">
+          كل ما في المختبر أدوات خاصة داخل لوحة التحكم ولا يظهر للزوار. الشيء الوحيد الذي قد يظهر للعامة هو ما تحفظه أنت صراحة في «ماذا أفكر الآن؟» أو ما تنشره من تبويبات المحتوى.
+        </p>
+      </section>
+
+      <LabLayer title="قبل النشر" note="فحص الجودة والذاكرة الفكرية قبل أن يتحول النص إلى مادة منشورة.">
+        <ReadinessCard articles={articles} />
+        <MemoryAndGateCard articles={articles} />
+        <MonthlyPlanDetails articles={articles} />
+      </LabLayer>
+
+      <LabLayer title="تطوير الفكرة" note="مساحة هادئة لتطوير سؤال أو خبر أو ملاحظة، وربطه بتاريخك الفكري.">
+        <IdeaLabCard articles={articles} />
+        <DoctorRadarCard articles={articles} />
+        <SeriesDetails articles={articles} />
+        <ToolDetails title="ماذا أفكر الآن؟" note="هذه الأداة الوحيدة هنا التي تحفظ شيئًا يمكن أن يظهر للعامة إذا ضغطت حفظ.">
+          <NowCard />
+        </ToolDetails>
+      </LabLayer>
+
+      <LabLayer title="تحويل المقال إلى منظومة" note="تحويل المقال الواحد إلى محاضرة، منشورات، سؤال طلاب، وبودكاست — من دون نشر تلقائي.">
+        <ArticleSystemCard articles={articles} />
+        <AudioControlCard articles={articles} />
+      </LabLayer>
     </div>
   )
 }

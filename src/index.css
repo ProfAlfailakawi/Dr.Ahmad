@@ -136,6 +136,15 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
   hyphens: none;
 }
 .article-body p:last-child { margin-bottom: 0; }
+.article-body p.dropcap::first-letter {
+  float: right;
+  margin: .16em 0 0 .28em;
+  font-family: "El Messiri", "Tajawal", serif;
+  font-size: calc(4.15rem * var(--article-scale, 1));
+  font-weight: 600;
+  line-height: .82;
+  color: rgb(var(--c-accent));
+}
 
 /* ---------- محاذاة كاملة (justify) لكل النصوص القرائية في الموقع ----------
    الفقرات وعناصر القوائم النصية تُضبط من الحافتين. المتمركزة عمداً مستثناة،
@@ -148,6 +157,10 @@ main :is(p, li):not(.text-center):not([class*="text-center"]):not([style*="cente
 
 @media (max-width: 640px) {
   .article-body p { font-size: calc(1.06rem * var(--article-scale, 1)); line-height: 2.05; text-align: right; }
+  .article-body p.dropcap::first-letter {
+    margin: .14em 0 0 .22em;
+    font-size: calc(3.35rem * var(--article-scale, 1));
+  }
 }
 
 html.reader-focus nav,

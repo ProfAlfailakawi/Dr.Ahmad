@@ -66,6 +66,43 @@ export const areaOfTab = (tab: AdminTab): AdminArea =>
 export const defaultTabForArea = (area: AdminArea): AdminTab =>
   ADMIN_GROUPS.find((group) => group.area === area)?.items[0].tab || 'dashboard'
 
+export function AdminAreaTabs({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
+  const activeArea = areaOfTab(tab)
+  return (
+    <div className="rail mb-3 flex gap-2 overflow-x-auto pb-1">
+      {ADMIN_GROUPS.map((group) => {
+        const active = activeArea === group.area
+        return (
+          <button
+            key={group.area}
+            type="button"
+            onClick={() => onSelect(defaultTabForArea(group.area))}
+            className={`shrink-0 rounded-full px-4 py-2 text-[.82rem] font-semibold transition-colors ${active ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+          >
+            {group.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+export function AdminSectionTabs({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
+  const area = areaOfTab(tab)
+  const group = ADMIN_GROUPS.find((item) => item.area === area)
+  if (!group) return null
+  return (
+    <div className="rail mb-6 flex gap-2 overflow-x-auto pb-1">
+      {group.items.map((item) => (
+        <button key={item.tab} type="button" onClick={() => onSelect(item.tab)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold transition-colors ${tab === item.tab ? 'bg-ink text-white' : 'border border-hair bg-wash text-soft hover:border-accent hover:text-accent'}`}>
+          {item.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+
 export function AdminSidebar({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
   return (
     <aside className="hidden md:block">
@@ -112,39 +149,16 @@ export function AdminMobileSubnav({ tab, onSelect }: { tab: AdminTab; onSelect: 
 }
 
 export function AdminMobileNav({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
-  const [more, setMore] = useState(false)
   const area = areaOfTab(tab)
-  const items: { area: AdminArea | 'more'; label: string; icon: string }[] = [
-    { area: 'today', label: 'اليوم', icon: '◉' },
-    { area: 'publishing', label: 'نشر', icon: '↗' },
-    { area: 'library', label: 'المكتبة', icon: '▦' },
-    { area: 'more', label: 'المزيد', icon: '•••' },
-  ]
   return (
-    <>
-      <AnimatePresence>
-        {more && (
-          <motion.div className="fixed inset-0 z-[270] bg-ink/25 px-4 pb-24 pt-28 backdrop-blur-sm md:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && setMore(false)}>
-            <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 14, opacity: 0 }} className="mx-auto max-w-md rounded-3xl border border-hair bg-canvas p-4 shadow-2xl">
-              {ADMIN_GROUPS.filter((group) => group.area === 'audience' || group.area === 'system').map((group) => (
-                <div key={group.area} className="mb-4 last:mb-0">
-                  <p className="px-2 pb-2 text-[.74rem] font-semibold text-accent">{group.label}</p>
-                  <div className="grid gap-2">
-                    {group.items.map((item) => <button key={item.tab} onClick={() => { onSelect(item.tab); setMore(false) }} className="rounded-2xl border border-hair bg-wash px-4 py-3 text-right"><span className="block text-[.9rem] font-semibold text-ink">{item.label}</span><span className="mt-1 block text-[.72rem] text-soft">{item.note}</span></button>)}
-                  </div>
-                </div>
-              ))}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <nav aria-label="تنقل لوحة التحكم" className="fixed inset-x-3 bottom-[calc(.75rem+env(safe-area-inset-bottom))] z-[280] grid grid-cols-4 rounded-2xl border border-hair bg-canvas/95 p-1.5 shadow-[0_24px_70px_-34px_rgba(21,22,26,.65)] backdrop-blur md:hidden">
-        {items.map((item) => {
-          const active = item.area === 'more' ? more || area === 'audience' || area === 'system' : area === item.area
-          return <button key={item.area} type="button" onClick={() => item.area === 'more' ? setMore(!more) : onSelect(defaultTabForArea(item.area))} className={`flex min-w-0 flex-col items-center rounded-xl px-1 py-2 text-[.68rem] font-semibold transition-colors ${active ? 'bg-accent text-white' : 'text-soft'}`}><span className="mb-0.5 text-[.9rem]" aria-hidden>{item.icon}</span><span>{item.label}</span></button>
+    <nav aria-label="تنقل لوحة التحكم" className="fixed inset-x-3 bottom-[calc(.75rem+env(safe-area-inset-bottom))] z-[280] rounded-2xl border border-hair bg-canvas/95 p-2 shadow-[0_24px_70px_-34px_rgba(21,22,26,.65)] backdrop-blur md:hidden">
+      <div className="rail flex gap-2 overflow-x-auto pb-0.5">
+        {ADMIN_GROUPS.map((group) => {
+          const active = area === group.area
+          return <button key={group.area} type="button" onClick={() => onSelect(defaultTabForArea(group.area))} className={`shrink-0 rounded-full px-4 py-2 text-[.74rem] font-semibold transition-colors ${active ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>{group.label}</button>
         })}
-      </nav>
-    </>
+      </div>
+    </nav>
   )
 }
 

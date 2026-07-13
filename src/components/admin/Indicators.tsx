@@ -132,7 +132,13 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
     }
   }
 
-  useEffect(() => { void load() }, [])
+  useEffect(() => {
+    void load()
+    const timer = window.setInterval(() => { void load(false) }, 60000)
+    const onFocus = () => { void load(false) }
+    window.addEventListener('focus', onFocus)
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', onFocus) }
+  }, [])
 
   const summary = useMemo(() => {
     const labels = new Map<string, string>(articles.map((article) => [`/articles/${article.slug}`, article.title]))
@@ -186,9 +192,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
     <div className="admin-dashboard grid min-w-0 w-full max-w-full gap-4 overflow-x-hidden sm:gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[.85rem] text-soft">تُحتسب الصفحة مرة واحدة في الجلسة لكل زائر.</p>
-        <button type="button" onClick={() => void load()} className="rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent">
-          تحديث المؤشرات
-        </button>
+        <span className="rounded-full border border-hair px-4 py-2 text-[.78rem] text-soft">يتحدّث تلقائياً كل دقيقة</span>
       </div>
 
       {error && <div className={`${card} border-accent/40 text-[.9rem] text-soft`}>{error}</div>}

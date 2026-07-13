@@ -264,10 +264,9 @@ function Panel({ email }: { email: string }) {
         {cms.error && <p className="mb-5 rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.85rem] text-soft">تعذّر تحديث المحتوى الحي: {cms.error}</p>}
         {cms.loading && <p className="mb-5 text-[.84rem] text-soft">أحمّل آخر تعديلات المحتوى…</p>}
 
-        <div className="grid min-w-0 gap-6 md:grid-cols-[220px_minmax(0,1fr)] md:gap-8">
-          <AdminSidebar tab={tab} onSelect={chooseTab} />
-          <section className="min-w-0">
-            <AdminMobileSubnav tab={tab} onSelect={chooseTab} />
+        <section className="min-w-0">
+          <AdminAreaTabs tab={tab} onSelect={chooseTab} />
+          <AdminSectionTabs tab={tab} onSelect={chooseTab} />
             {tab === 'dashboard' && <TodayDashboard articles={cms.articles} onOpen={chooseTab} />}
             {tab === 'analytics' && <Indicators articles={cms.articles} />}
             {tab === 'studio' && <PublishingStudio articles={cms.articles} />}
@@ -281,8 +280,7 @@ function Panel({ email }: { email: string }) {
             {tab === 'media' && <ContentManager openSlug={editSlug} kind="media" items={cms.media as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
             {tab === 'inbox' && <InboxPanel />}
             {tab === 'event' && <EventForm />}
-          </section>
-        </div>
+        </section>
       </div>
       <AdminMobileNav tab={tab} onSelect={chooseTab} />
       <AdminCommandPalette open={commandsOpen} close={() => setCommandsOpen(false)} onSelect={chooseTab} />

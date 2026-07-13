@@ -49,37 +49,55 @@ function Preloader({ done }: { done: boolean }) {
       className="fixed inset-0 z-[300] isolate overflow-hidden bg-canvas"
       initial={{ opacity: 1 }}
       animate={done ? { opacity: 0 } : { opacity: 1 }}
-      transition={{ duration: 0.26, ease: EASE }}
+      transition={{ duration: 0.24, ease: EASE }}
       aria-hidden
     >
       <motion.div
-        className="absolute inset-y-0 right-0 w-1/2 bg-canvas"
-        animate={done ? { x: '102%' } : { x: 0 }}
-        transition={{ duration: 0.46, ease: EASE }}
+        className="absolute inset-x-0 top-0 h-[3px] origin-right bg-accent"
+        initial={{ scaleX: 0 }}
+        animate={done ? { scaleX: 1, opacity: 0 } : { scaleX: 1, opacity: 1 }}
+        transition={{ duration: done ? 0.32 : 0.72, ease: EASE }}
       />
+
       <motion.div
-        className="absolute inset-y-0 left-0 w-1/2 bg-canvas"
-        animate={done ? { x: '-102%' } : { x: 0 }}
-        transition={{ duration: 0.46, ease: EASE }}
+        className="absolute inset-0 bg-[radial-gradient(42%_42%_at_50%_46%,rgba(62,92,120,.08),transparent_72%)]"
+        initial={{ opacity: 0.35 }}
+        animate={done ? { opacity: 0 } : { opacity: 1 }}
+        transition={{ duration: 0.3, ease: EASE }}
       />
-      <div className="absolute inset-0 flex items-center justify-center">
+
+      <div className="absolute inset-0 flex items-center justify-center px-6">
         <motion.div
-          className="relative flex h-16 w-16 items-center justify-center rounded-full border border-hair"
-          initial={{ opacity: 0, scale: .84 }}
-          animate={done ? { opacity: 0, scale: 1.08 } : { opacity: 1, scale: 1 }}
+          className="relative flex items-center justify-center"
+          initial={{ opacity: 0, scale: 0.94 }}
+          animate={done ? { opacity: 0, scale: 1.04 } : { opacity: 1, scale: 1 }}
           transition={{ duration: 0.34, ease: EASE }}
         >
           <motion.span
-            className="absolute h-2.5 w-2.5 rounded-full bg-accent"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.22, delay: 0.06, ease: EASE }}
+            className="absolute inset-[-18px] rounded-[2rem] border border-hair/80"
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={done ? { opacity: 0, scale: 1.08 } : { opacity: 1, scale: 1 }}
+            transition={{ duration: 0.34, delay: 0.02, ease: EASE }}
           />
           <motion.span
-            className="absolute h-px bg-accent"
-            initial={{ width: 0 }}
-            animate={{ width: 86 }}
-            transition={{ duration: 0.34, delay: 0.1, ease: EASE }}
+            className="absolute inset-[-34px] rounded-[2.5rem] border border-hair/40"
+            initial={{ opacity: 0, scale: 0.86 }}
+            animate={done ? { opacity: 0, scale: 1.12 } : { opacity: 1, scale: 1 }}
+            transition={{ duration: 0.42, delay: 0.05, ease: EASE }}
+          />
+          <motion.img
+            src="/logo.png"
+            alt=""
+            className="h-[58px] w-[94px] object-contain opacity-95 dark:invert sm:h-[66px] sm:w-[108px]"
+            initial={{ opacity: 0, y: 8 }}
+            animate={done ? { opacity: 0, y: -6 } : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.34, delay: 0.08, ease: EASE }}
+          />
+          <motion.span
+            className="absolute -bottom-6 h-px w-20 bg-accent/70"
+            initial={{ width: 0, opacity: 0 }}
+            animate={done ? { width: 96, opacity: 0 } : { width: 80, opacity: 1 }}
+            transition={{ duration: 0.38, delay: 0.14, ease: EASE }}
           />
         </motion.div>
       </div>

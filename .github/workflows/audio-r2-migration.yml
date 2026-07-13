@@ -82,7 +82,9 @@ jobs:
           VITE_AUDIO_BASE_URL: ${{ inputs.public_base_url }}
 
       - name: Save AUDIO_PUBLIC_BASE_URL repository variable
-        run: gh variable set AUDIO_PUBLIC_BASE_URL --body "$AUDIO_PUBLIC_BASE_URL" --repo "$GITHUB_REPOSITORY"
+        run: |
+          gh variable set AUDIO_PUBLIC_BASE_URL --body "$AUDIO_PUBLIC_BASE_URL" --repo "$GITHUB_REPOSITORY" \
+            || echo "AUDIO_PUBLIC_BASE_URL was not saved by the workflow; keep/update it from repository variables."
         env:
           GH_TOKEN: ${{ github.token }}
           AUDIO_PUBLIC_BASE_URL: ${{ inputs.public_base_url }}

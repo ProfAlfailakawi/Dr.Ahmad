@@ -31,13 +31,50 @@ if (!PRIVATE_BOOKS_DIR) {
 const siteBooks = [...DATA.matchAll(/\{\s*slug:\s*'([^']+)'.*?title:\s*'([^']+)'.*?desc:\s*'([^']*)'/gs)]
   .map((m) => ({ slug: m[1], title: m[2], desc: m[3] }))
 
+const siteArticlesSource = DATA.slice(DATA.indexOf('export const articles = ['), DATA.indexOf('export const articlesWithBody'))
+const pick = (block, key) => block.match(new RegExp(`${key}:\\s*'([^']*)'`))?.[1] || ''
+const siteArticles = [...siteArticlesSource.matchAll(/\{\s*slug:\s*'[^']+'[\s\S]*?\},/g)]
+  .map((m) => {
+    const block = m[0]
+    return {
+      slug: pick(block, 'slug'),
+      title: pick(block, 'title'),
+      excerpt: pick(block, 'excerpt'),
+      cat: pick(block, 'cat'),
+      date: pick(block, 'date'),
+    }
+  })
+  .filter((article) => article.slug && article.title)
+
+const reverseArabicWord = (word) => [...word].reverse().join('')
+
+function decodeGlyphRun(value = '') {
+  const decoded = value
+    .replace(/\/uni([0-9A-Fa-f]{4})/g, (_, hex) => String.fromCharCode(Number.parseInt(hex, 16)))
+    .normalize('NFKC')
+  return decoded.replace(/[\u0600-\u06FF]+/g, reverseArabicWord)
+}
+
+const cleanExtractedText = (value = '') => value
+  .replace(/(?:\/uni[0-9A-Fa-f]{4})(?:[\s/]*uni[0-9A-Fa-f]{4})*/g, (run) => decodeGlyphRun(run.replace(/\s+(?=\/?uni)/g, '')))
+  .normalize('NFKC')
+  .replace(/ـ+/g, '')
+  .replace(/Dr Ahmed Book Design[^\\n]*/gi, ' ')
+  .replace(/[A-Za-z0-9_-]+\\.indd[^\\n]*/g, ' ')
+  .replace(/\buni[0-9A-Fa-f]{4}\b/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
 const normalize = (value = '') => value
+  .replace(/\/uni[0-9A-Fa-f]{4}/g, ' ')
+  .normalize('NFKC')
+  .replace(/ـ+/g, '')
   .toLowerCase()
   .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
   .replace(/\s+/g, ' ')
   .trim()
 
-const stop = new Set('في من على إلى عن أن إن كان كانت هذا هذه ذلك تلك وهو وهي مع كما أو ثم لقد دون عند بين بعد قبل كل غير أكثر أقل حيث وقد حتى التي الذي الذين وهو وهي the and for with from into inside digital education'.split(/\s+/))
+const stop = new Set('في من على إلى عن أن إن كان كانت هذا هذه ذلك تلك وهو وهي مع كما أو ثم لقد دون عند بين بعد قبل كل غير أكثر أقل حيث وقد حتى التي الذي الذين حيث خلال بشكل يمكن يوجد تكون يكون أيضًا ايضا وهناك لدى عبر ضمن أجل ndd indd the and for with from into inside digital education ahmed book'.split(/\s+/))
 const tokenize = (value = '') => normalize(value).split(/\s+/).filter((word) => word.length > 2 && !stop.has(word))
 
 function pageLimitFor(file, overrideLimit = null) {
@@ -45,7 +82,7 @@ function pageLimitFor(file, overrideLimit = null) {
   const manual = Number(process.env.PRIVATE_BOOKS_MAX_PAGES || 0)
   if (manual > 0) return manual
   const name = basename(file)
-  if (/موسوعة|encyclopedia/i.test(name)) return 120
+  if (/موسوعة|encyclopedia/i.test(name)) return 0
   return 0
 }
 
@@ -69,7 +106,7 @@ for i, page in enumerate(reader.pages):
     pages.append({"page": i + 1, "text": text})
 print(json.dumps({"pages": pages, "totalPages": total, "limit": limit}, ensure_ascii=False))
 `
-  const result = spawnSync('python3', ['-c', py, file, String(limit)], { encoding: 'utf8', maxBuffer: 80 * 1024 * 1024, timeout: 120_000 })
+  const result = spawnSync('python3', ['-c', py, file, String(limit)], { encoding: 'utf8', maxBuffer: 160 * 1024 * 1024, timeout: 360_000 })
   if (result.error) {
     if (result.error.code === 'ETIMEDOUT') throw new Error('انتهى وقت استخراج PDF')
     throw result.error
@@ -82,6 +119,19 @@ print(json.dumps({"pages": pages, "totalPages": total, "limit": limit}, ensure_a
     throw new Error(message.trim())
   }
   return JSON.parse(result.stdout)
+}
+
+function bestArticles(terms) {
+  const needle = new Set(terms.slice(0, 20))
+  return siteArticles
+    .map((article) => {
+      const hay = new Set(tokenize(`${article.title} ${article.excerpt} ${article.cat}`))
+      const score = [...needle].reduce((sum, word) => sum + Number(hay.has(word)), 0)
+      return { slug: article.slug, title: article.title, date: article.date, category: article.cat, score }
+    })
+    .filter((article) => article.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8)
 }
 
 function bestSiteBook(fileTitle, terms) {
@@ -142,11 +192,13 @@ for (const file of files) {
     extractionNote = error instanceof Error ? error.message : 'تعذّر الاستخراج الكامل'
     extracted = extractPdf(file, 120)
   }
-  const text = extracted.pages.map((page) => page.text).join('\n\n')
+  const pages = extracted.pages.map((page) => ({ ...page, text: cleanExtractedText(page.text) }))
+  const text = pages.map((page) => page.text).join('\n\n')
   const terms = topTerms(text)
   const title = basename(file, extname(file)).replace(/^\d+[-\s]*/, '').replace(/[-_]?inside$/i, '').trim()
   const siteBook = bestSiteBook(title, terms.map((item) => item.term))
   const bytes = readFileSync(file)
+  const articleLinks = bestArticles(terms.map((item) => item.term))
   books.push({
     fileName: basename(file),
     localPath: file,
@@ -162,7 +214,14 @@ for (const file of files) {
     textLength: text.length,
     linkedPublicBook: siteBook?.score > 0 ? { slug: siteBook.slug, title: siteBook.title, confidence: siteBook.score } : null,
     topTerms: terms,
-    snippets: snippets(extracted.pages, terms),
+    snippets: snippets(pages, terms),
+    relatedPublicArticles: articleLinks,
+    privateUses: [
+      'اقتراح روابط داخلية دقيقة من المقالات إلى هذا الكتاب من دون كشف PDF.',
+      'اقتراح مادة داعمة للمحاضرات والورش اعتمادًا على مفاهيم الكتاب.',
+      'تقوية اسأل مكتبتي بإجابة موثقة من إنتاج الدكتور فقط، مع إظهار المصدر العام لا الملف الخاص.',
+      'اقتراح حلقات بودكاست أو قوائم استماع مرتبطة بمحاور الكتاب.',
+    ],
   })
 }
 
@@ -188,6 +247,7 @@ writeFileSync(resolve(OUT_DIR, 'books-memory.report.md'), [
     `- أولوية بصرية/OCR: ${book.visualPriority ? 'نعم — كتاب غني بالصور والتصميم' : 'لا'}`,
     `- الربط العام: ${book.linkedPublicBook ? `${book.linkedPublicBook.title} (${book.linkedPublicBook.slug})` : 'لا يوجد ربط واثق'}`,
     `- أهم المفاهيم: ${book.topTerms.slice(0, 12).map((item) => item.term).join('، ')}`,
+    `- أقرب المقالات العامة: ${book.relatedPublicArticles.length ? book.relatedPublicArticles.slice(0, 3).map((article) => `${article.title} (${article.slug})`).join('؛ ') : 'لا يوجد ربط كافٍ من البيانات الخفيفة'}`,
     '',
   ].join('\n')),
 ].join('\n'), 'utf8')

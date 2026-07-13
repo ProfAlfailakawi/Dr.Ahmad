@@ -501,7 +501,11 @@ function Overlay({ close }: { close: () => void }) {
           >
             احجز موعداً مباشراً
           </Link>
-          <div className="flex flex-wrap items-center gap-5 text-soft">
+          <div className="flex flex-wrap items-center gap-4 text-soft">
+            <div className="flex items-center gap-2 sm:hidden">
+              <ThemeToggle />
+              {SHOW_EN_TOGGLE && <Link to="/en" onClick={close} className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-[.68rem] font-semibold">EN</Link>}
+            </div>
             {socials.map((s) => (
               <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} className="transition-colors hover:text-accent">
                 <SocialIcon name={s.label} />
@@ -655,14 +659,14 @@ export function Nav() {
   }, [open])
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && !loc.pathname.startsWith('/admin')) {
         event.preventDefault()
         setSearchOpen(true)
       }
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [])
+  }, [loc.pathname])
 
   const english = loc.pathname === '/en' || loc.pathname.startsWith('/en/')
   const solid = (scrolled || (loc.pathname !== '/' && loc.pathname !== '/en')) && !open
@@ -736,12 +740,12 @@ export function Nav() {
                 to={EN_OF[loc.pathname] || '/en'}
                 aria-label="English version"
                 title="English"
-                className={`flex h-9 w-9 items-center justify-center rounded-full border border-hair text-[.68rem] font-semibold tracking-wide text-soft transition-colors hover:border-accent hover:text-accent ${open ? 'invisible pointer-events-none' : ''}`}
+                className={`hidden h-9 w-9 items-center justify-center rounded-full border border-hair text-[.68rem] font-semibold tracking-wide text-soft transition-colors hover:border-accent hover:text-accent sm:flex ${open ? 'invisible pointer-events-none' : ''}`}
               >
                 EN
               </Link>
             )}
-            <ThemeToggle className={open ? 'invisible pointer-events-none' : ''} />
+            <ThemeToggle className={`hidden sm:flex ${open ? 'invisible pointer-events-none' : ''}`} />
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
@@ -755,7 +759,7 @@ export function Nav() {
               to="/contact#booking-form"
               aria-label="حجز موعد"
               title="حجز موعد"
-              className={`flex h-9 w-9 items-center justify-center rounded-full border border-accent text-accent transition-colors hover:bg-accent hover:text-white ${open ? 'invisible pointer-events-none' : ''}`}
+              className={`hidden h-9 w-9 items-center justify-center rounded-full border border-accent text-accent transition-colors hover:bg-accent hover:text-white sm:flex ${open ? 'invisible pointer-events-none' : ''}`}
             >
               <SocialIcon name="Calendar" size={16} />
             </Link>

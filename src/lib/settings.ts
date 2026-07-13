@@ -27,3 +27,49 @@ export function useCvLinks(): CvLinks {
   }, [])
   return cv
 }
+
+export type LaunchKind = 'article' | 'book' | 'paper' | 'media'
+export type LaunchMode = {
+  enabled: boolean
+  kind: LaunchKind
+  slug: string
+  until?: string
+  eyebrow?: string
+  note?: string
+}
+
+const launchFallback: LaunchMode = { enabled: false, kind: 'article', slug: '' }
+
+/**
+ * وضع الإطلاق: إعداد واحد اختياري من لوحة التحكم.
+ * لا يغيّر المحتوى ولا يحذفه؛ يغيّر غلاف الرئيسية مؤقتاً فقط ثم ينتهي تلقائياً.
+ */
+export function useLaunchMode(): LaunchMode {
+  const [launch, setLaunch] = useState<LaunchMode>(launchFallback)
+  useEffect(() => {
+    if (!firebaseEnabled) return
+    let unsubscribe = () => {}
+    ;(async () => {
+      try {
+        const db = await getDb()
+        if (!db) return
+        const { doc, onSnapshot } = await import('firebase/firestore')
+        unsubscribe = onSnapshot(doc(db, 'site_settings', 'launch'), (snapshot) => {
+          const value = snapshot.data() as Partial<LaunchMode> | undefined
+          const until = value?.until ? new Date(value.until).getTime() : 0
+          const expired = Boolean(until && until <= Date.now())
+          setLaunch({
+            enabled: Boolean(value?.enabled && !expired),
+            kind: value?.kind || 'article',
+            slug: value?.slug || '',
+            until: value?.until,
+            eyebrow: value?.eyebrow,
+            note: value?.note,
+          })
+        }, () => setLaunch(launchFallback))
+      } catch { setLaunch(launchFallback) }
+    })()
+    return () => unsubscribe()
+  }, [])
+  return launch
+}

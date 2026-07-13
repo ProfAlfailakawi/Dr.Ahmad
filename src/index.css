@@ -253,3 +253,29 @@ iframe { color-scheme: light; }
 @media (prefers-reduced-motion: reduce) {
   .sig-star { animation: none; }
 }
+
+/* القراءة المتزامنة مع الصوت — إبراز هادئ، بلا قفزات أو تغيير في بنية المقال */
+.audio-synced-body p {
+  position: relative;
+  cursor: pointer;
+  border-radius: 0.75rem;
+  transition: background-color .35s var(--E), color .35s var(--E), padding .35s var(--E), transform .35s var(--E);
+}
+.audio-synced-body p:hover {
+  background: rgb(var(--c-accent) / .045);
+}
+.audio-synced-body p.audio-paragraph-active {
+  background: rgb(var(--c-accent) / .085);
+  color: rgb(var(--c-ink));
+  padding: .8rem 1rem;
+  transform: translateX(-.2rem);
+}
+.audio-synced-body p.audio-paragraph-active::before {
+  content: "";
+  position: absolute;
+  inset-block: .8rem;
+  right: 0;
+  width: 2px;
+  border-radius: 999px;
+  background: rgb(var(--c-accent));
+}

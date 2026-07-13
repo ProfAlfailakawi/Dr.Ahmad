@@ -8,6 +8,8 @@ import { useCmsContent, useExtras } from '../lib/content'
 import { Newsletter } from '../components/extras'
 import { type Curio } from '../data-curated'
 import { staticQuestions, LAUNCH_DATE } from './Questions'
+import { ClosingStation, NowStation, SelectedWorksStation, ThoughtCompassStation } from '../components/home/HomeExperience'
+import { useLaunchMode } from '../lib/settings'
 
 const arNum = (n: number) => String(n).padStart(2, '0')
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
@@ -633,6 +635,7 @@ function Card({ children, delay = 0, className = '' }: { children: React.ReactNo
 export default function Home() {
   useSeo({ title: 'د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم والذكاء الاصطناعي', path: '/' })
   const { articles, books, papers, media } = useCmsContent()
+  const launch = useLaunchMode()
   const addedEvents = useExtras<SiteEvent & { id: string }>('site_upcoming')
   const upcomingItems = [...addedEvents, ...upcoming]
     .filter((event, index, list) => list.findIndex((candidate) => candidate.iso === event.iso && candidate.title === event.title) === index)
@@ -648,289 +651,89 @@ export default function Home() {
 
   useEffect(() => {
     if (reduce) return
-    const m = (e: MouseEvent) => {
-      tx.set((e.clientX / window.innerWidth - 0.5) * 14)
-      ty.set((e.clientY / window.innerHeight - 0.5) * 14)
+    const move = (event: MouseEvent) => {
+      tx.set((event.clientX / window.innerWidth - 0.5) * 14)
+      ty.set((event.clientY / window.innerHeight - 0.5) * 14)
     }
-    window.addEventListener('mousemove', m)
-    return () => window.removeEventListener('mousemove', m)
+    window.addEventListener('mousemove', move)
+    return () => window.removeEventListener('mousemove', move)
   }, [reduce, tx, ty])
 
-  const topArticles = articles.slice(0, 3)
-  const topPapers = papers.slice(0, 3)
-  const topMedia = media.slice(0, 3)
+  const launchView = (() => {
+    if (!launch.enabled || !launch.slug) return null
+    if (launch.kind === 'book') {
+      const item = books.find((entry) => entry.slug === launch.slug)
+      return item ? { title: item.title, path: `/publications/${item.slug}`, label: launch.eyebrow || 'إطلاق كتاب', note: launch.note || item.desc, image: item.cover, external: false } : null
+    }
+    if (launch.kind === 'paper') {
+      const item = papers.find((entry) => entry.slug === launch.slug)
+      return item ? { title: item.title, path: `/research/${item.slug}`, label: launch.eyebrow || 'بحث جديد', note: launch.note || item.meta, image: '', external: false } : null
+    }
+    if (launch.kind === 'media') {
+      const item = media.find((entry) => entry.slug === launch.slug)
+      const video = item ? ytId(item.url) : ''
+      return item ? { title: item.title, path: item.url, label: launch.eyebrow || 'ظهور جديد', note: launch.note || item.outlet, image: video ? `https://i.ytimg.com/vi/${video}/hqdefault.jpg` : '', external: true } : null
+    }
+    const item = articles.find((entry) => entry.slug === launch.slug)
+    return item ? { title: item.title, path: `/articles/${item.slug}`, label: launch.eyebrow || 'مقال جديد', note: launch.note || item.excerpt, image: '', external: false } : null
+  })()
 
   return (
     <Page>
-      {/* hero — البيان الفكري أولاً (100svh للجوال) */}
+      {/* المحطة ١: الغلاف — الهوية الأصلية، أو وضع إطلاق مؤقت يفعّله الدكتور بنفسه */}
       <header className="relative flex min-h-[100svh] items-center px-6 pb-16 pt-24 md:px-11 md:pb-24 md:pt-28">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_50%_at_78%_40%,rgba(62,92,120,.06),transparent_62%)]" />
         <div className="relative z-10 mx-auto grid w-full max-w-shell items-center gap-8 md:grid-cols-[1.15fr_.85fr] md:gap-16">
-          {/* البيان أولاً — على الجوال والكمبيوتر */}
           <div className="order-1">
-            {/* الجملة التي تراها أول ثانية — بيان الدكتور الفكري، لا نبذة */}
-            <h1 className="font-display text-[clamp(2.1rem,5.4vw,4rem)] font-bold leading-[1.28] text-ink">
-              {['أُبقي الإنسانَ', 'في قلبِ الآلة.'].map((line, i) => (
-                // حشوة تحمي الهمزة والضمة فوق الألف من القصّ، وهامش سالب يحيّد أثرها
-                <span key={line} className="-my-[0.3em] block overflow-hidden py-[0.3em]">
-                  <motion.span
-                    className="block"
-                    initial={reduce ? false : { y: '150%' }}
-                    animate={{ y: 0 }}
-                    transition={{ duration: 1, delay: 0.25 + i * 0.14, ease: EASE }}
-                  >
-                    {line}
-                  </motion.span>
-                </span>
-              ))}
-            </h1>
-
-            <motion.div className="my-7 h-[2px] bg-accent" initial={{ width: 0 }} animate={{ width: 74 }} transition={{ duration: 0.9, delay: 0.7, ease: EASE }} />
-
-            {/* الاسم والصفة — أصغر، ثانويّان */}
-            <motion.div
-              initial={reduce ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.85, ease: EASE }}
-            >
-              <p className="font-display text-[clamp(1.15rem,2.4vw,1.6rem)] font-semibold text-ink">{profile.name}</p>
-              <p className="mt-1.5 text-[.95rem] font-light text-soft">أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · باحث · مستشار</p>
-            </motion.div>
-
-            {/* زرّ واحد فقط */}
-            <motion.div
-              className="mt-9"
-              initial={reduce ? false : { opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 1, ease: EASE }}
-            >
-              <Magnetic to="/articles" className="inline-block rounded-full bg-accent px-9 py-4 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
-                ادخل إلى عالمي الفكري ←
-              </Magnetic>
-            </motion.div>
+            {launchView ? (
+              <>
+                <motion.p className="mb-5 flex items-center gap-2.5 text-[.8rem] font-semibold text-accent" initial={reduce ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6, delay: .2, ease: EASE }}>
+                  <span className="pulse relative h-2 w-2 rounded-full bg-accent" />{launchView.label}
+                </motion.p>
+                <h1 className="font-display text-[clamp(2rem,5vw,3.75rem)] font-bold leading-[1.32] text-ink">
+                  <span className="-my-[0.3em] block overflow-hidden py-[0.3em]"><motion.span className="block" initial={reduce ? false : { y: '150%' }} animate={{ y: 0 }} transition={{ duration: 1, delay: .3, ease: EASE }}>{launchView.title}</motion.span></span>
+                </h1>
+                {launchView.note && <motion.p className="mt-6 max-w-[650px] text-[1.02rem] font-light leading-[1.95] text-soft" initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .65, ease: EASE }}>{launchView.note}</motion.p>}
+                <motion.div className="mt-8 flex flex-wrap items-center gap-4" initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .82, ease: EASE }}>
+                  {launchView.external ? <a href={launchView.path} target="_blank" rel="noreferrer" className="rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors hover:bg-accent-deep">شاهد الآن ←</a> : <Link to={launchView.path} className="rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors hover:bg-accent-deep">اكتشف الآن ←</Link>}
+                  <span className="font-display text-[.92rem] text-soft">«أُبقي الإنسانَ في قلبِ الآلة.»</span>
+                </motion.div>
+              </>
+            ) : (
+              <>
+                <h1 className="font-display text-[clamp(2.1rem,5.4vw,4rem)] font-bold leading-[1.28] text-ink">
+                  {['أُبقي الإنسانَ', 'في قلبِ الآلة.'].map((line, index) => (
+                    <span key={line} className="-my-[0.3em] block overflow-hidden py-[0.3em]"><motion.span className="block" initial={reduce ? false : { y: '150%' }} animate={{ y: 0 }} transition={{ duration: 1, delay: 0.25 + index * 0.14, ease: EASE }}>{line}</motion.span></span>
+                  ))}
+                </h1>
+                <motion.div className="my-7 h-[2px] bg-accent" initial={{ width: 0 }} animate={{ width: 74 }} transition={{ duration: 0.9, delay: 0.7, ease: EASE }} />
+                <motion.div initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.85, ease: EASE }}>
+                  <p className="font-display text-[clamp(1.15rem,2.4vw,1.6rem)] font-semibold text-ink">{profile.name}</p>
+                  <p className="mt-1.5 text-[.95rem] font-light text-soft">أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · باحث · مستشار</p>
+                </motion.div>
+                <motion.div className="mt-9" initial={reduce ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 1, ease: EASE }}>
+                  <Magnetic to="/articles" className="inline-block rounded-full bg-accent px-9 py-4 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">ادخل إلى عالمي الفكري ←</Magnetic>
+                </motion.div>
+              </>
+            )}
           </div>
 
           <div className="order-2 flex justify-center">
-            <motion.div style={{ y: parY }}>
-              <motion.div style={{ x: stx, y: sty }} className="portrait-wrap" data-hover>
-                <motion.div
-                  className="portrait relative max-w-[210px] overflow-hidden rounded-2xl shadow-[0_36px_64px_-36px_rgba(21,22,26,.42)] sm:max-w-[260px] md:max-w-[400px]"
-                  initial={reduce ? false : { opacity: 0, y: 26, scale: 1.03 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 1.1, delay: 0.75, ease: EASE }}
-                >
-                  <img src="/portrait.jpg" alt={profile.fullName} width={900} height={1350} fetchpriority="high" decoding="async" className="block h-auto w-full" />
-                </motion.div>
+            <motion.div style={{ y: parY }}><motion.div style={{ x: stx, y: sty }} className="portrait-wrap" data-hover>
+              <motion.div className="portrait relative max-w-[210px] overflow-hidden rounded-2xl shadow-[0_36px_64px_-36px_rgba(21,22,26,.42)] sm:max-w-[260px] md:max-w-[400px]" initial={reduce ? false : { opacity: 0, y: 26, scale: 1.03 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 1.1, delay: 0.75, ease: EASE }}>
+                <img src={launchView?.image || '/portrait.jpg'} alt={launchView?.title || profile.fullName} width={900} height={1350} fetchPriority="high" decoding="async" className={`block h-auto w-full ${launchView?.image ? 'aspect-[3/4] object-cover' : ''}`} />
               </motion.div>
-            </motion.div>
+            </motion.div></motion.div>
           </div>
         </div>
-
-        <motion.div
-          className="cue absolute bottom-8 left-1/2 -translate-x-1/2 text-[.74rem] text-soft"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 2 }}
-        >
-          اكتشف
-          <span className="relative mx-auto mt-2.5 block h-[30px] w-px overflow-hidden bg-hair" />
-        </motion.div>
+        <motion.div className="cue absolute bottom-8 left-1/2 -translate-x-1/2 text-[.74rem] text-soft" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 2 }}>اكتشف<span className="relative mx-auto mt-2.5 block h-[30px] w-px overflow-hidden bg-hair" /></motion.div>
       </header>
 
-      <LatestCard />
-
-      <SinceLastVisit />
-
-      <WhoAreYou />
-
-      <DailySpark />
-
-      {/* about */}
-      <section className="border-t border-hair px-6 py-11 md:px-11 md:py-[100px]">
-        <div className="mx-auto grid max-w-shell items-start gap-10 md:grid-cols-2 md:gap-14">
-          <FadeUp>
-            <Label>نبذة</Label>
-            <h2 className="font-display text-[clamp(2rem,5vw,3.3rem)] font-semibold leading-[1.25] text-ink">
-              {profile.aboutHeading.split('\n').map((line, i) => (
-                <Reveal key={i} delay={i * 0.08}>{line}</Reveal>
-              ))}
-            </h2>
-          </FadeUp>
-          <FadeUp delay={0.1}>
-            <p className="text-[1.12rem] font-light leading-[1.9] text-ink/80">{profile.about}</p>
-            <Link to="/cv" className="mt-7 inline-block border-b-[1.5px] border-accent pb-1 font-semibold text-accent">
-              السيرة الكاملة ←
-            </Link>
-          </FadeUp>
-        </div>
-      </section>
-
-      {/* books */}
-      <section className="border-t border-hair bg-wash py-[56px] md:py-[100px]">
-        <div className="mx-auto max-w-shell px-6 md:px-11">
-          <SectionHead label="المؤلفات" title={`${books.length} كتب.`} to="/publications" />
-        </div>
-        <div className="rail flex snap-x snap-mandatory gap-6 overflow-x-auto px-6 pb-10 ps-[max(1.5rem,env(safe-area-inset-right))] pe-[max(1.5rem,env(safe-area-inset-left))] md:px-11 md:pb-5">
-          {books.map((b, i) => (
-            <Card key={b.slug} delay={Math.min(i * 0.05, 0.3)} className="w-[min(76vw,260px)] shrink-0 snap-start md:w-[300px]">
-              <Link to={`/publications/${b.slug}`} data-hover className="group block">
-                <div className="overflow-hidden rounded-xl bg-white shadow-[0_22px_44px_-26px_rgba(21,22,26,.4)] transition-transform duration-500 group-hover:-translate-y-1.5" style={{ aspectRatio: '1024 / 700' }}>
-                  <img src={b.cover} alt={b.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                </div>
-                {/* انعكاس فاخر خافت — معرض لا شبكة منتجات */}
-                <div aria-hidden className="mt-0.5 h-10 overflow-hidden rounded-b-xl opacity-25 [mask-image:linear-gradient(to_bottom,rgba(0,0,0,.5),transparent)]" style={{ transform: 'scaleY(-1)' }}>
-                  <img src={b.cover} alt="" loading="lazy" className="h-full w-full object-cover object-top" />
-                </div>
-                <h3 className="mt-2 font-display text-[1.15rem] font-medium leading-[1.45] text-ink transition-colors group-hover:text-accent">{b.title}</h3>
-              </Link>
-            </Card>
-          ))}
-          <span aria-hidden className="w-px shrink-0" />
-        </div>
-      </section>
-
-      <MiniAtlas />
-
-      <OnThisWeek />
-
-      <ThoughtCompass />
-
-      {/* المقالات — لغة: مقال كبير مميّز + عنوانان فقط */}
-      <section className="border-t border-hair px-6 py-[56px] md:px-11 md:py-[100px]">
-        <div className="mx-auto max-w-shell">
-          <SectionHead label="مقالاتي الفكرية" title="بصوتي الخاص." to="/articles" cta="عرض الكل" />
-          <div className="grid gap-8 md:grid-cols-[1.5fr_.5fr] md:gap-12">
-            <FadeUp>
-              {topArticles[0] && <Link to={`/articles/${topArticles[0].slug}`} data-hover className="group block">
-                <div className="flex items-center gap-2.5 text-[.78rem]">
-                  <span className="font-semibold text-accent">{topArticles[0].cat}</span>
-                  <span className="h-1 w-1 rounded-full bg-hair" />
-                  <time className="text-soft">{topArticles[0].date}</time>
-                </div>
-                <h3 className="mt-4 font-display text-[clamp(1.6rem,3.4vw,2.4rem)] font-semibold leading-[1.4] text-ink transition-colors group-hover:text-accent">
-                  {topArticles[0].title}
-                </h3>
-                {topArticles[0].excerpt && <p className="mt-4 max-w-xl text-[1.02rem] font-light leading-[1.9] text-ink/80">{topArticles[0].excerpt}</p>}
-                <span className="mt-6 inline-block text-[.9rem] font-semibold text-accent">اقرأ المقال ←</span>
-              </Link>}
-            </FadeUp>
-            <FadeUp delay={0.12} className="hidden md:block">
-              <div className="flex flex-col divide-y divide-hair border-t border-hair md:border-r md:border-t-0 md:pr-8">
-                {topArticles.slice(1, 3).map((a) => (
-                  <Link key={a.slug} to={`/articles/${a.slug}`} data-hover className="group py-6 first:pt-6 md:first:pt-0">
-                    <time className="text-[.76rem] text-soft">{a.date}</time>
-                    <h4 className="mt-2 font-display text-[1.1rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">{a.title}</h4>
-                  </Link>
-                ))}
-              </div>
-            </FadeUp>
-          </div>
-        </div>
-      </section>
-
-      {/* الأبحاث — لغة: قائمة مرقّمة أنيقة، لا بطاقات */}
-      <section className="border-t border-hair bg-wash px-6 py-11 md:px-11 md:py-[100px]">
-        <div className="mx-auto max-w-shell">
-          <SectionHead label="المساهمات العلمية" title="أبحاث محكّمة." to="/research" cta="عرض الكل" />
-          <ol className="mt-2">
-            {topPapers.map((p, i) => (
-              <FadeUp key={p.slug} delay={Math.min(i * 0.06, 0.24)} className={i > 1 ? 'hidden md:block' : ''}>
-                <li className={i === 0 ? '' : 'border-t border-hair'}>
-                  <Link to={`/research/${p.slug}`} data-hover className="group flex items-baseline gap-6 py-6 transition-[padding] duration-300 hover:pe-3">
-                    <span className="w-8 shrink-0 font-display text-[1.4rem] font-bold text-accent/70 transition-colors group-hover:text-accent">{arNum(i + 1)}</span>
-                    <span className="flex-1">
-                      <span className="block text-[1.1rem] font-medium leading-[1.7] text-ink transition-colors group-hover:text-accent">{p.title}</span>
-                      <span className="mt-1 block text-[.8rem] text-soft">{p.meta}</span>
-                    </span>
-                    <span className="shrink-0 text-soft transition-transform duration-300 group-hover:-translate-x-1">←</span>
-                  </Link>
-                </li>
-              </FadeUp>
-            ))}
-          </ol>
-        </div>
-      </section>
-
-      {/* الإعلام — لغة: فيديو سينمائي واحد + رابطان نصيان */}
-      <section className="border-t border-hair px-6 py-11 md:px-11 md:py-[100px]">
-        <div className="mx-auto max-w-shell">
-          <SectionHead label="الظهور الإعلامي" title="على الشاشة." to="/media" cta="عرض الكل" />
-          <div className="grid gap-8 md:grid-cols-[1.55fr_.45fr] md:gap-12">
-            <FadeUp>
-              {topMedia[0] && <a href={topMedia[0].url} target="_blank" rel="noreferrer" data-hover className="group block overflow-hidden rounded-2xl">
-                <div className="relative overflow-hidden bg-wash" style={{ aspectRatio: '16 / 9' }}>
-                  {ytId(topMedia[0].url) && (
-                    <img src={`https://i.ytimg.com/vi/${ytId(topMedia[0].url)}/hqdefault.jpg`} alt={topMedia[0].title} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                  )}
-                  <span className="absolute inset-0 bg-ink/10 transition-colors duration-300 group-hover:bg-ink/25" />
-                  <span className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[1.5px] border-white/80 bg-ink/40 text-white backdrop-blur-sm transition-all duration-300 group-hover:scale-110 group-hover:border-accent group-hover:bg-accent">▶</span>
-                </div>
-                <div className="mt-4">
-                  <span className="text-[.74rem] font-semibold text-accent">{topMedia[0].outlet}</span>
-                  <h3 className="mt-1.5 font-display text-[1.2rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{topMedia[0].title}</h3>
-                </div>
-              </a>}
-            </FadeUp>
-            <FadeUp delay={0.12} className="hidden md:block">
-              <div className="flex flex-col divide-y divide-hair border-t border-hair md:border-r md:border-t-0 md:pr-8">
-                {topMedia.slice(1, 3).map((m) => (
-                  <a key={m.url} href={m.url} target="_blank" rel="noreferrer" data-hover className="group flex items-start gap-3 py-5 first:pt-5 md:first:pt-0">
-                    <span className="mt-1 text-[.7rem] text-accent">▶</span>
-                    <span>
-                      <span className="block text-[.72rem] font-semibold text-accent">{m.outlet}</span>
-                      <span className="mt-1 block text-[.98rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{m.title}</span>
-                    </span>
-                  </a>
-                ))}
-              </div>
-            </FadeUp>
-          </div>
-        </div>
-      </section>
-
-      <ImpactTimeline />
-
-      <WeeklyPoll />
-
-      <Signatures />
-
-      {/* اللقاءات + النشرة — شريط خفيف لا كتلة عملاقة */}
-      <section className="border-t border-hair px-6 py-12 md:px-11 md:py-16">
-        <div className="mx-auto grid max-w-shell gap-9 md:grid-cols-[1.1fr_.9fr] md:gap-14">
-          <FadeUp>
-            <div className="mb-6 flex items-end justify-between gap-5">
-              <div>
-                <Label>اللقاءات القادمة</Label>
-                <h2 className="font-display text-[clamp(1.5rem,3.2vw,2rem)] font-semibold leading-[1.35] text-ink">أين ألتقيك؟</h2>
-              </div>
-              <Link to="/upcoming" className="shrink-0 pb-1 text-[.84rem] font-semibold text-accent">الجدول ←</Link>
-            </div>
-            {upcomingItems.length > 0 ? (
-              <ul className="space-y-2.5">
-                {upcomingItems.slice(0, 2).map((e) => (
-                  <li key={e.iso + e.title} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-hair px-4 py-3 transition-colors hover:border-accent">
-                    <time className="shrink-0 text-[.78rem] font-semibold text-accent">{e.date}</time>
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-display text-[1rem] font-medium leading-[1.5] text-ink">{e.title}</span>
-                      <span className="block text-[.76rem] text-soft">{e.org} · {e.place}</span>
-                    </span>
-                    {e.url && <a href={e.url} target="_blank" rel="noreferrer" className="text-[.76rem] font-semibold text-accent">التسجيل ←</a>}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hair bg-wash px-4 py-3">
-                <p className="text-[.88rem] font-light leading-[1.7] text-soft">لا لقاءات معلنة حالياً.</p>
-                <Link to="/contact#booking-form" className="text-[.82rem] font-semibold text-accent">احجز موعداً ←</Link>
-              </div>
-            )}
-          </FadeUp>
-
-          <FadeUp delay={0.1}>
-            <Newsletter />
-          </FadeUp>
-        </div>
-      </section>
+      {/* المحطات ٢–٥: الآن، البوصلة، الأعمال المختارة، النهاية الهادئة */}
+      <NowStation articles={articles} />
+      <ThoughtCompassStation articles={articles} books={books} papers={papers} />
+      <SelectedWorksStation articles={articles} books={books} papers={papers} media={media} />
+      <ClosingStation upcoming={upcomingItems} aboutHeading={profile.aboutHeading} about={profile.about} />
     </Page>
   )
 }

@@ -8,7 +8,7 @@
  * ٣) ثلاث بطاقات: مقال جديد · سؤال الأسبوع · لقاء قادم.
  *    كل ما يُنشر هنا يظهر في الموقع فوراً — بلا رفع ملفات.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Page } from '../components/ui'
 import { firebaseEnabled, getDb, getFirebaseApp } from '../lib/firebase'
 import { articleCats } from '../data'
@@ -19,6 +19,7 @@ import { Indicators } from '../components/admin/Indicators'
 import { IntelligenceLab } from '../components/admin/IntelligenceLab'
 import { PublishingStudio } from '../components/admin/PublishingStudio'
 import { VoiceBakeoffCard } from '../components/admin/VoiceBakeoff'
+import { LaunchModeCard, QuietCommandCenter } from '../components/admin/AdminDashboard'
 import { UploadField } from '../components/admin/ContentManager'
 import { useSeo } from '../components/seo'
 import type { User } from 'firebase/auth'
@@ -156,7 +157,18 @@ function AccessDenied({ email }: { email: string }) {
 
 /* ---------- ٣) اللوحة ---------- */
 // السؤال الأسبوعي والمختارة اليومية يتولّدان تلقائياً (بنك دوّار) فلا لزوم لهما في اللوحة
-type Tab = 'dashboard' | 'studio' | 'lab' | 'articles' | 'books' | 'papers' | 'media' | 'inbox' | 'event'
+type Tab = 'dashboard' | 'studio' | 'launch' | 'lab' | 'articles' | 'books' | 'papers' | 'media' | 'inbox' | 'event' | 'analytics' | 'system'
+type AdminArea = 'today' | 'publish' | 'library' | 'audience' | 'system'
+
+const ADMIN_AREAS: { key: AdminArea; label: string; note: string; tabs: { key: Tab; label: string }[] }[] = [
+  { key: 'today', label: 'اليوم', note: 'ما يحتاج قرارك الآن', tabs: [{ key: 'dashboard', label: 'نظرة اليوم' }] },
+  { key: 'publish', label: 'النشر', note: 'من الفكرة إلى الإطلاق', tabs: [{ key: 'studio', label: 'استوديو النشر' }, { key: 'launch', label: 'وضع الإطلاق' }, { key: 'event', label: 'اللقاءات' }] },
+  { key: 'library', label: 'المكتبة', note: 'إدارة كل المحتوى', tabs: [{ key: 'articles', label: 'المقالات' }, { key: 'books', label: 'الكتب' }, { key: 'papers', label: 'الأبحاث' }, { key: 'media', label: 'الإعلام' }] },
+  { key: 'audience', label: 'الجمهور', note: 'الرسائل والسلوك', tabs: [{ key: 'inbox', label: 'الرسائل' }, { key: 'analytics', label: 'التحليلات' }] },
+  { key: 'system', label: 'النظام', note: 'الأدوات المتقدمة والإعدادات', tabs: [{ key: 'lab', label: 'المختبر المتقدم' }, { key: 'system', label: 'الصوت والسيرة' }] },
+]
+
+const TAB_AREA = Object.fromEntries(ADMIN_AREAS.flatMap((area) => area.tabs.map((tab) => [tab.key, area.key]))) as Record<Tab, AdminArea>
 
 
 /* رفع السيرة الذاتية PDF (عربي + إنجليزي) — يحفظ الرابط في site_settings/cv
@@ -199,13 +211,58 @@ function CvPdfCard() {
   )
 }
 
+function AdminCommandPalette({ open, close, setTab }: { open: boolean; close: () => void; setTab: (tab: Tab) => void }) {
+  const [query, setQuery] = useState('')
+  const commands = useMemo(() => ADMIN_AREAS.flatMap((area) => area.tabs.map((tab) => ({ ...tab, area: area.label, search: `${area.label} ${area.note} ${tab.label}` }))), [])
+  const results = commands.filter((command) => !query.trim() || command.search.includes(query.trim()))
+  useEffect(() => {
+    if (!open) { setQuery(''); return }
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') close() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [close, open])
+  if (!open) return null
+  return (
+    <div className="fixed inset-0 z-[280] flex items-start justify-center bg-ink/35 px-4 pt-[12vh] backdrop-blur-sm" onMouseDown={close}>
+      <div role="dialog" aria-modal="true" aria-label="لوحة أوامر الإدارة" onMouseDown={(event) => event.stopPropagation()} className="w-full max-w-2xl overflow-hidden rounded-3xl border border-hair bg-canvas shadow-2xl">
+        <div className="border-b border-hair p-4"><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} className={`${input} border-0 bg-wash text-[1rem]`} placeholder="اكتب: مقال، إطلاق، رسائل، صوت…" /></div>
+        <div className="max-h-[58vh] overflow-y-auto p-2">
+          {results.map((command) => <button key={command.key} onClick={() => { setTab(command.key); close() }} className="group flex w-full items-center justify-between gap-4 rounded-2xl px-4 py-3 text-right transition-colors hover:bg-wash"><span><span className="block font-semibold text-ink group-hover:text-accent">{command.label}</span><span className="mt-1 block text-[.74rem] text-soft">{command.area}</span></span><span className="text-accent">←</span></button>)}
+          {!results.length && <p className="px-5 py-10 text-center text-soft">لا توجد نتيجة واضحة.</p>}
+        </div>
+        <div className="border-t border-hair px-5 py-3 text-[.72rem] text-soft">⌘K أو Ctrl+K لفتحها من أي مكان داخل اللوحة.</div>
+      </div>
+    </div>
+  )
+}
+
 function Panel({ email }: { email: string }) {
-  // تحرير موضعي: /admin?tab=articles&edit=slug يفتح التبويب والنموذج مباشرة
   const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const initialTab = (params.get('tab') as Tab) || 'dashboard'
   const editSlug = params.get('edit') || undefined
-  const [tab, setTab] = useState<Tab>(['dashboard','studio','lab','articles','books','papers','media','inbox','event'].includes(initialTab) ? initialTab : 'dashboard')
+  const allTabs = ADMIN_AREAS.flatMap((area) => area.tabs.map((item) => item.key))
+  const [tab, setTab] = useState<Tab>(allTabs.includes(initialTab) ? initialTab : 'dashboard')
+  const [mobileMore, setMobileMore] = useState(false)
+  const [commandOpen, setCommandOpen] = useState(false)
   const cms = useCmsContent({ includeHidden: true })
+  const area = TAB_AREA[tab] || 'today'
+  const areaInfo = ADMIN_AREAS.find((item) => item.key === area) || ADMIN_AREAS[0]
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault(); setCommandOpen(true)
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [])
+
+  const navigate = (next: string) => {
+    if (allTabs.includes(next as Tab)) setTab(next as Tab)
+    setMobileMore(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const signOut = async () => {
     const app = await getFirebaseApp()
@@ -215,38 +272,56 @@ function Panel({ email }: { email: string }) {
 
   return (
     <Page>
-      <div className="admin-shell mx-auto box-border w-full max-w-[1320px] overflow-x-hidden px-4 pb-24 pt-36 sm:px-6 md:px-10 md:pt-40">
-        <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="mb-1 text-[.82rem] font-semibold uppercase text-accent">لوحة التحكم</p>
-            <h1 className="font-display text-3xl font-bold text-ink">أهلاً دكتور.</h1>
+      <AdminCommandPalette open={commandOpen} close={() => setCommandOpen(false)} setTab={setTab} />
+      <div className="admin-shell mx-auto box-border w-full max-w-[1440px] overflow-x-hidden px-4 pb-32 pt-28 sm:px-6 md:px-8 md:pt-32 lg:grid lg:grid-cols-[235px_minmax(0,1fr)] lg:gap-8 lg:pb-24">
+        <aside className="hidden lg:block">
+          <div className="sticky top-28 rounded-3xl border border-hair bg-wash p-4">
+            <div className="border-b border-hair px-2 pb-5">
+              <p className="text-[.75rem] font-semibold uppercase text-accent">لوحة التحكم</p>
+              <h1 className="mt-1 font-display text-2xl font-bold text-ink">أهلاً دكتور.</h1>
+              <button onClick={() => setCommandOpen(true)} className="mt-4 flex w-full items-center justify-between rounded-xl border border-hair bg-canvas px-3 py-2 text-[.76rem] text-soft transition-colors hover:border-accent hover:text-accent"><span>الأوامر السريعة</span><span dir="ltr">⌘K</span></button>
+            </div>
+            <nav className="mt-4 grid gap-2" aria-label="أقسام لوحة التحكم">
+              {ADMIN_AREAS.map((group) => <div key={group.key} className={`rounded-2xl border p-2 transition-colors ${area === group.key ? 'border-accent/30 bg-canvas' : 'border-transparent'}`}>
+                <button onClick={() => navigate(group.tabs[0].key)} className="w-full px-2 py-1.5 text-right"><span className={`block font-display text-[1rem] font-semibold ${area === group.key ? 'text-accent' : 'text-ink'}`}>{group.label}</span><span className="mt-0.5 block text-[.7rem] leading-relaxed text-soft">{group.note}</span></button>
+                {area === group.key && group.tabs.length > 1 && <div className="mt-2 grid gap-1 border-r border-hair pr-3">{group.tabs.map((item) => <button key={item.key} onClick={() => navigate(item.key)} className={`rounded-lg px-2 py-1.5 text-right text-[.78rem] transition-colors ${tab === item.key ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>{item.label}</button>)}</div>}
+              </div>)}
+            </nav>
+            <button onClick={signOut} className="mt-5 w-full rounded-full border border-hair px-3 py-2 text-[.72rem] text-soft hover:border-accent hover:text-accent">خروج ({email})</button>
           </div>
-          <button onClick={signOut} className="rounded-full border border-hair px-4 py-1.5 text-[.8rem] text-soft transition-colors hover:border-accent hover:text-accent">
-            خروج ({email})
-          </button>
-        </div>
+        </aside>
 
-        <div className="rail mb-8 flex max-w-full gap-2 overflow-x-auto pb-2 sm:flex-wrap">
-          {([['dashboard', 'المؤشرات'], ['studio', 'استوديو النشر'], ['lab', 'المختبر'], ['articles', 'المقالات'], ['books', 'الكتب'], ['papers', 'الأبحاث'], ['media', 'الإعلام'], ['inbox', 'الرسائل'], ['event', 'اللقاءات']] as [Tab, string][]).map(([k, label]) => (
-            <button key={k} onClick={() => setTab(k)}
-              className={`shrink-0 rounded-full px-5 py-2 text-[.88rem] transition-colors ${tab === k ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}>
-              {label}
-            </button>
-          ))}
-        </div>
+        <main className="min-w-0">
+          <header className="mb-7 flex flex-wrap items-end justify-between gap-4 border-b border-hair pb-6">
+            <div><p className="text-[.76rem] font-semibold uppercase text-accent">{areaInfo.label}</p><h2 className="mt-1 font-display text-[clamp(1.75rem,3.4vw,2.5rem)] font-bold text-ink">{areaInfo.tabs.find((item) => item.key === tab)?.label}</h2><p className="mt-1 text-[.82rem] text-soft">{areaInfo.note}</p></div>
+            <div className="flex items-center gap-2 lg:hidden"><button onClick={() => setCommandOpen(true)} className="rounded-full border border-hair px-4 py-2 text-[.78rem] text-soft">الأوامر</button><button onClick={signOut} className="rounded-full border border-hair px-4 py-2 text-[.78rem] text-soft">خروج</button></div>
+          </header>
 
-        {cms.error && <p className="mb-5 rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.85rem] text-soft">تعذّر تحديث المحتوى الحي: {cms.error}</p>}
-        {cms.loading && <p className="mb-5 text-[.84rem] text-soft">أحمّل آخر تعديلات المحتوى…</p>}
-        {tab === 'dashboard' && <><CvPdfCard /><div className="mt-5"><VoiceBakeoffCard /></div><div className="mt-5"><Indicators articles={cms.articles} /></div></>}
-        {tab === 'studio' && <PublishingStudio articles={cms.articles} />}
-        {tab === 'lab' && <IntelligenceLab articles={cms.articles} />}
-        {tab === 'articles' && <ContentManager openSlug={editSlug} kind="article" items={cms.articles as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
-        {tab === 'books' && <ContentManager openSlug={editSlug} kind="book" items={cms.books as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
-        {tab === 'papers' && <ContentManager openSlug={editSlug} kind="paper" items={cms.papers as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
-        {tab === 'media' && <ContentManager openSlug={editSlug} kind="media" items={cms.media as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
-        {tab === 'inbox' && <InboxPanel />}
-        {tab === 'event' && <EventForm />}
+          {areaInfo.tabs.length > 1 && <div className="rail mb-6 flex gap-2 overflow-x-auto pb-2 lg:hidden">{areaInfo.tabs.map((item) => <button key={item.key} onClick={() => navigate(item.key)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold ${tab === item.key ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>{item.label}</button>)}</div>}
+
+          {cms.error && <p className="mb-5 rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.85rem] text-soft">تعذّر تحديث المحتوى الحي: {cms.error}</p>}
+          {cms.loading && <p className="mb-5 text-[.84rem] text-soft">أحمّل آخر تعديلات المحتوى…</p>}
+
+          {tab === 'dashboard' && <QuietCommandCenter articles={cms.articles} onNavigate={navigate} />}
+          {tab === 'studio' && <PublishingStudio articles={cms.articles} />}
+          {tab === 'launch' && <LaunchModeCard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} />}
+          {tab === 'lab' && <IntelligenceLab articles={cms.articles} />}
+          {tab === 'analytics' && <Indicators articles={cms.articles} />}
+          {tab === 'system' && <div className="grid gap-5"><CvPdfCard /><VoiceBakeoffCard /></div>}
+          {tab === 'articles' && <ContentManager openSlug={editSlug} kind="article" items={cms.articles as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
+          {tab === 'books' && <ContentManager openSlug={editSlug} kind="book" items={cms.books as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
+          {tab === 'papers' && <ContentManager openSlug={editSlug} kind="paper" items={cms.papers as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
+          {tab === 'media' && <ContentManager openSlug={editSlug} kind="media" items={cms.media as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
+          {tab === 'inbox' && <InboxPanel />}
+          {tab === 'event' && <EventForm />}
+        </main>
       </div>
+
+      <nav className="fixed inset-x-3 bottom-[max(.75rem,env(safe-area-inset-bottom))] z-[250] grid grid-cols-4 rounded-2xl border border-hair bg-canvas/95 p-1.5 shadow-[0_20px_55px_-28px_rgba(21,22,26,.6)] backdrop-blur-lg lg:hidden" aria-label="التنقل السريع في لوحة التحكم">
+        {[{ key: 'today', label: 'اليوم', tab: 'dashboard' }, { key: 'publish', label: 'نشر', tab: 'studio' }, { key: 'library', label: 'المكتبة', tab: 'articles' }].map((item) => <button key={item.key} onClick={() => navigate(item.tab)} className={`rounded-xl px-2 py-2.5 text-[.76rem] font-semibold ${area === item.key ? 'bg-accent text-white' : 'text-soft'}`}>{item.label}</button>)}
+        <button onClick={() => setMobileMore(!mobileMore)} className={`rounded-xl px-2 py-2.5 text-[.76rem] font-semibold ${area === 'audience' || area === 'system' ? 'bg-accent text-white' : 'text-soft'}`}>المزيد</button>
+      </nav>
+      {mobileMore && <div className="fixed inset-0 z-[245] bg-ink/25 lg:hidden" onClick={() => setMobileMore(false)}><div onClick={(event) => event.stopPropagation()} className="absolute inset-x-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] rounded-3xl border border-hair bg-canvas p-4 shadow-2xl"><p className="px-2 pb-3 text-[.72rem] font-semibold text-accent">المزيد</p><div className="grid grid-cols-2 gap-2">{ADMIN_AREAS.filter((item) => item.key === 'audience' || item.key === 'system').flatMap((group) => group.tabs.map((item) => <button key={item.key} onClick={() => navigate(item.key)} className="rounded-xl border border-hair bg-wash px-3 py-3 text-right"><span className="block text-[.8rem] font-semibold text-ink">{item.label}</span><span className="mt-1 block text-[.68rem] text-soft">{group.label}</span></button>))}</div></div></div>}
     </Page>
   )
 }

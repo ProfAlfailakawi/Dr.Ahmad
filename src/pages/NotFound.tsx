@@ -27,7 +27,7 @@ export default function NotFound() {
         <div className="mx-auto max-w-[680px] text-center">
           <FadeUp>
             <motion.span
-              className="block font-display text-[clamp(5rem,15vw,9rem)] font-bold leading-none text-accent/15"
+              className="not-found-code block font-display text-[clamp(5rem,15vw,9rem)] font-bold leading-none text-accent/15"
               initial={{ opacity: 0, scale: 0.94 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, ease: EASE }}
@@ -39,7 +39,7 @@ export default function NotFound() {
               <Reveal>لا شيء هنا.</Reveal>
             </h1>
 
-            <p className="mx-auto mt-5 max-w-[460px] text-[1.02rem] font-light leading-[1.9] text-soft">
+            <p className="not-found-copy mx-auto mt-5 max-w-[460px] text-[1.02rem] font-light leading-[1.9] text-soft">
               الصفحة التي تبحث عنها غير موجودة — أو ربما تغيّر عنوانها بعد تجديد الموقع.
             </p>
           </FadeUp>
@@ -53,7 +53,7 @@ export default function NotFound() {
                 onKeyDown={(e) => e.key === 'Enter' && hits[0] && nav(`/articles/${hits[0].slug}`)}
                 placeholder="ابحث في المقالات…"
                 aria-label="بحث"
-                className="w-full rounded-full border border-hair bg-canvas py-3.5 pe-12 ps-5 text-center text-[.98rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
+                className="not-found-search w-full rounded-full border border-hair bg-canvas py-3.5 pe-12 ps-5 text-center text-[.98rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
               />
               <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-soft">⌕</span>
             </div>

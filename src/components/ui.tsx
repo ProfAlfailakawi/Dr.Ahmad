@@ -28,7 +28,7 @@ export function Reveal({ children, delay = 0, className = '' }: { children: Reac
       const r = el.getBoundingClientRect()
       // داخل الشاشة رأسياً؟ اكشفه.
       if (r.top < window.innerHeight && r.bottom > 0) setSafety(true)
-    }, 900)
+    }, 700)
     return () => clearTimeout(t)
   }, [reduce])
 
@@ -73,9 +73,9 @@ export function FadeUp({ children, delay = 0, className = '' }: { children: Reac
     <motion.div
       ref={ref}
       className={className}
-      initial={reduce ? false : { opacity: 0, y: 28 }}
-      animate={show ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
-      transition={{ duration: 0.9, ease: EASE, delay }}
+      initial={reduce ? false : { opacity: 0, y: 22 }}
+      animate={show ? { opacity: 1, y: 0 } : { opacity: 0, y: 22 }}
+      transition={{ duration: 0.72, ease: EASE, delay }}
     >
       {children}
     </motion.div>
@@ -396,17 +396,17 @@ function Overlay({ close }: { close: () => void }) {
       aria-modal="true"
       aria-label="القائمة الرئيسية"
       tabIndex={-1}
-      className="fixed inset-0 z-[220] isolate flex flex-col bg-canvas outline-none"
+      className="site-menu-overlay fixed inset-0 z-[220] isolate flex flex-col bg-canvas outline-none"
       style={{ backgroundColor: 'rgb(var(--c-canvas))' }}
       initial={reduce ? { opacity: 0 } : { y: '-100%' }}
       animate={reduce ? { opacity: 1 } : { y: 0 }}
       exit={reduce ? { opacity: 0 } : { y: '-100%' }}
       transition={{ duration: 0.75, ease: EASE }}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_55%_at_75%_35%,rgba(62,92,120,.07),transparent_65%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_55%_at_75%_35%,rgba(62,92,120,.055),transparent_65%)]" />
 
       <div className="relative flex-1 overflow-y-auto overscroll-contain">
-        <div className="flex min-h-full items-start px-6 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-[calc(6rem+env(safe-area-inset-top))] md:items-center md:px-11 md:py-28">
+        <div className="flex min-h-full items-start px-6 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(5.4rem+env(safe-area-inset-top))] md:items-center md:px-11 md:py-28">
         <div className="mx-auto grid w-full max-w-shell gap-5 md:grid-cols-3 md:gap-x-12 md:gap-y-10">
           {GROUPS.map((g, gi) => (
             <div key={g.label} className="border-b border-hair pb-5 md:border-0 md:pb-0">
@@ -522,16 +522,16 @@ function Overlay({ close }: { close: () => void }) {
       </div>
 
       <motion.div
-        className="relative border-t border-hair px-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 md:px-11 md:py-7"
+        className="site-menu-footer relative border-t border-hair px-6 pb-[max(.85rem,env(safe-area-inset-bottom))] pt-3.5 md:px-11 md:py-7"
         initial={reduce ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.8 }}
       >
-        <div className="mx-auto flex max-w-shell flex-wrap items-center justify-between gap-5">
+        <div className="mx-auto flex max-w-shell flex-wrap items-center justify-between gap-3.5 md:gap-5">
           <Link
             to="/contact#booking-form"
             onClick={close}
-            className="rounded-full bg-accent px-6 py-2.5 text-[.88rem] font-semibold text-white transition-colors duration-300 hover:bg-accent-deep"
+            className="rounded-full bg-accent px-5 py-2 text-[.82rem] font-semibold text-white transition-colors duration-300 hover:bg-accent-deep md:px-6 md:py-2.5 md:text-[.88rem]"
           >
             احجز موعداً مباشراً
           </Link>
@@ -810,10 +810,10 @@ export function Nav() {
       <>
         <motion.div className="fixed left-0 top-0 z-[240] h-[2px] w-full origin-left bg-accent" style={{ scaleX: progress }} />
         <AnimatePresence>{searchOpen && <SearchPalette key="search" close={closeSearch} />}</AnimatePresence>
-        <nav aria-label="Main navigation" dir="ltr" className={`site-nav ${solid ? 'is-solid' : ''} fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.82] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
+        <nav aria-label="Main navigation" dir="ltr" className={`site-nav ${solid ? 'is-solid' : ''} fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.9] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
           <div className={`mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
             <Link to="/en" aria-label="Ahmad H. Alfailakawi">
-              <img src="/logo.png" alt="" className="h-[34px] w-14 object-contain opacity-90 dark:invert" style={{ objectPosition: 'left' }} />
+              <img src="/logo.png" alt="" className="h-[36px] w-[60px] object-contain opacity-90 dark:invert" style={{ objectPosition: 'left' }} />
             </Link>
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-5 pe-2 text-[.88rem]">
@@ -855,10 +855,10 @@ export function Nav() {
       <AnimatePresence>{open && <Overlay key="ov" close={closeMenu} />}</AnimatePresence>
       <AnimatePresence>{searchOpen && <SearchPalette key="search" close={closeSearch} />}</AnimatePresence>
 
-      <nav aria-label="التنقّل الرئيسي" className={`site-nav ${solid ? 'is-solid' : ''} fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.82] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
+      <nav aria-label="التنقّل الرئيسي" className={`site-nav ${solid ? 'is-solid' : ''} fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.9] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
         <div className={`mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
           <Link to="/" aria-label={profile.name}>
-            <img src="/logo.png" alt="" className="h-[34px] w-14 object-contain opacity-90 dark:invert" style={{ objectPosition: 'right' }} />
+            <img src="/logo.png" alt="" className="h-[36px] w-[60px] object-contain opacity-90 dark:invert" style={{ objectPosition: 'right' }} />
           </Link>
 
           <div className="flex items-center gap-3">

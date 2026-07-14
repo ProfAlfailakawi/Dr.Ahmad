@@ -40,7 +40,7 @@ export default function BookDetail() {
 
           <div className="mt-10 grid gap-12 md:grid-cols-[1fr_1.1fr] md:gap-16">
             <FadeUp>
-              <div className="overflow-hidden rounded-xl bg-white shadow-[0_30px_60px_-30px_rgba(21,22,26,.45)]">
+              <div className="book-detail-cover overflow-hidden rounded-xl bg-white shadow-[0_30px_60px_-30px_rgba(21,22,26,.45)]">
                 {book.cover ? (
                   <img src={book.cover} alt={book.title} className="w-full" />
                 ) : (

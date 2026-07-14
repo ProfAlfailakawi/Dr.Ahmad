@@ -258,7 +258,7 @@ export default function ThoughtPaths() {
                 return (
                   <FadeUp key={`${active.id}-${node.key}`} delay={Math.min(index * 0.055, 0.25)}>
                     <li className="relative pb-11 last:pb-0">
-                      <span className="absolute -right-[calc(1.75rem+5px)] top-2 h-2.5 w-2.5 rounded-full border-2 border-canvas bg-accent md:-right-[calc(2.5rem+5px)]" />
+                      <span className="absolute -right-[5px] top-2 h-2.5 w-2.5 rounded-full border-2 border-canvas bg-accent" />
                       {node.to ? (
                         <Link to={node.to} className="group block">{content}</Link>
                       ) : node.href ? (

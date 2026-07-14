@@ -44,6 +44,10 @@ const LegacyLang = lazy(() => import('./pages/Legacy').then((m) => ({ default: m
 const LegacyPage = lazy(() => import('./pages/Legacy').then((m) => ({ default: m.LegacyPage })))
 const LegacyPaper = lazy(() => import('./pages/Legacy').then((m) => ({ default: m.LegacyPaper })))
 
+function RouteLoadingLine() {
+  return <div className="route-loading-line" aria-hidden="true" />
+}
+
 function WesternDigitsGuard() {
   useEffect(() => {
     const western = (value: string) => value
@@ -94,7 +98,7 @@ function AnimatedRoutes() {
   const loc = useLocation()
   return (
     <AnimatePresence mode="sync">
-      <Suspense fallback={null}>
+      <Suspense fallback={<RouteLoadingLine />}>
       <Routes location={loc} key={loc.pathname}>
         <Route path="/" element={<Home />} />
         <Route path="/publications" element={<Publications />} />

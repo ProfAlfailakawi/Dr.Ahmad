@@ -688,7 +688,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
     <section className="border-t border-hair bg-wash px-6 py-[60px] md:px-11 md:py-[100px]">
       <div className="mx-auto max-w-shell">
         <SectionHead label="أعمال مختارة" title="أربع نوافذ تكفي." to="/articles" cta="استكشف المكتبة" />
-        <div className="rail -mx-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-5 md:mx-0 md:gap-5 md:px-0">
+        <div className="rail -mx-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-5 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0">
           {items.map((item, index) => {
             const isBook = item.type === 'كتاب مختار'
             const inner = (
@@ -707,7 +707,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
               </div>
             )
             return (
-              <FadeUp key={`${item.type}-${item.to}`} delay={index * 0.06} className="w-[62vw] max-w-[292px] shrink-0 snap-start md:w-[31vw] md:max-w-none">
+              <FadeUp key={`${item.type}-${item.to}`} delay={index * 0.06} className="w-[62vw] max-w-[292px] shrink-0 snap-start md:w-auto md:max-w-none md:shrink">
                 {item.external ? <a href={item.to} target="_blank" rel="noreferrer" className="block h-full">{inner}</a> : <Link to={item.to} className="block h-full">{inner}</Link>}
               </FadeUp>
             )

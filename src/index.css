@@ -25,7 +25,7 @@
 html.dark {
   --c-canvas: 17 18 21;         /* #111215 */
   --c-ink: 234 234 231;         /* #EAEAE7 */
-  --c-soft: 156 161 170;        /* #9CA1AA — درجة أوضح للنص الثانوي */
+  --c-soft: 170 175 184;        /* أوضح قليلاً للنصوص الثانوية الصغيرة */
   --c-accent: 138 173 204;      /* #8AADCC — أفتح ليقرأ على الداكن */
   --c-accent-deep: 163 193 219;
   --c-wash: 25 27 31;           /* #191B1F */
@@ -55,6 +55,43 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: clip;
   transition: background-color 0.5s var(--E), color 0.5s var(--E);
+}
+
+.route-loading-line {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 260;
+  height: 2px;
+  overflow: hidden;
+  background: rgb(var(--c-accent) / .08);
+}
+.route-loading-line::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 36%;
+  border-radius: 999px;
+  background: rgb(var(--c-accent) / .9);
+  animation: route-loading-line 1.05s var(--E) infinite;
+}
+@keyframes route-loading-line {
+  from { transform: translateX(-120%); opacity: .45; }
+  55% { opacity: 1; }
+  to { transform: translateX(310%); opacity: .35; }
+}
+
+@media (max-width: 767px) {
+  .site-nav {
+    background: rgb(var(--c-canvas) / .72);
+    border-color: rgb(var(--c-ink) / .055);
+    -webkit-backdrop-filter: blur(16px) saturate(1.35);
+    backdrop-filter: blur(16px) saturate(1.35);
+  }
+  .site-nav.is-solid {
+    background: rgb(var(--c-canvas) / .93);
+  }
 }
 
 
@@ -171,6 +208,8 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
   margin-bottom: 1.6em;
   text-align: justify;
   text-justify: inter-word;
+  text-align-last: start;
+  word-spacing: normal;
   hyphens: none;
 }
 .article-body p:last-child { margin-bottom: 0; }
@@ -194,7 +233,13 @@ main :is(p, li):not(.text-center):not([class*="text-center"]):not([style*="cente
 }
 
 @media (max-width: 640px) {
-  .article-body p { font-size: calc(1.06rem * var(--article-scale, 1)); line-height: 2.05; text-align: right; }
+  .article-body p {
+    font-size: calc(1.06rem * var(--article-scale, 1));
+    line-height: 2.05;
+    text-align: right;
+    text-align-last: auto;
+    word-spacing: normal;
+  }
   .article-body p.dropcap::first-letter {
     margin: .14em 0 0 .22em;
     font-size: calc(3.35rem * var(--article-scale, 1));
@@ -316,6 +361,37 @@ iframe { color-scheme: light; }
 /* المشغّل العائم: يرفع زر العودة للأعلى عندما يكون الصوت مفتوحاً، فلا يتداخلان. */
 body.audio-dock-open .floating-actions {
   bottom: calc(6.25rem + env(safe-area-inset-bottom));
+}
+
+/* تفاصيل ليلية خفيفة: تباين أعلى قليلاً للنصوص الصغيرة من دون تحويلها لعناوين. */
+html.dark :is(.text-soft, time.text-soft) {
+  color: rgb(var(--c-soft) / .96);
+}
+
+html.dark .not-found-code {
+  color: rgb(var(--c-accent) / .24);
+}
+html.dark .not-found-copy {
+  color: rgb(var(--c-soft) / .98);
+}
+html.dark .not-found-search {
+  background: rgb(var(--c-wash) / .86);
+  border-color: rgb(var(--c-ink) / .16);
+}
+
+html.dark .book-detail-cover {
+  background:
+    linear-gradient(180deg, rgb(var(--c-wash)), rgb(var(--c-canvas)));
+  border: 1px solid rgb(var(--c-ink) / .10);
+  box-shadow: 0 24px 62px -34px rgba(0,0,0,.85), 0 0 0 1px rgb(var(--c-canvas) / .55);
+  padding: .35rem;
+}
+
+@media (min-width: 768px) {
+  .site-menu-overlay {
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
 }
 @media (min-width: 768px) {
   body.audio-dock-open .floating-actions { bottom: 6.5rem; }

@@ -88,8 +88,8 @@ const AR_VOICE_PAIRS = [
   { id: 'om', country: 'عُمان', nameA: 'عبدالله', nameB: 'عائشة', A: 'ar-OM-AbdullahNeural', B: 'ar-OM-AyshaNeural' },
 ]
 
-/* الزوج الافتراضي الثابت — يُقرأ من البيئة (يحرّره الدكتور من اللوحة عبر site_settings)،
-   ويسقط إلى فهد ونورة حتى يُعتمد زوجٌ من الاختبار الأعمى. لا تثبيت نهائي هنا. */
+/* الزوج الافتراضي الثابت — Sample D اعتُمد صوتاً نسائياً نهائياً للحوار.
+   تبقى البيئة/لوحة التحكم قادرة على تجاوزه عند الحاجة، لكن السقوط الافتراضي الآن هو D. */
 const VOICES = {
   ar: {
     A: { name: env.PODCAST_AR_MALE_NAME || 'فهد', azure: env.PODCAST_AR_MALE || 'ar-KW-FahedNeural' },
@@ -465,18 +465,18 @@ const EN_BANNED = ['Dear listeners','Welcome to another episode','Today we are g
 const DIACRITICS_RE = /[ً-ْٰ]/
 
 const AR_PACING = Object.freeze({
-  statement:       { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [250, 420] },
+  statement:       { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [180, 280] },
   question:        { ratePct: [-7, 5],  targetWpm: [134, 143], pauseMs: [500, 750] },
-  briefReaction:   { ratePct: [0, 12],  targetWpm: [145, 152], pauseMs: [140, 260] },
-  gentleObjection: { ratePct: [-1, 10], targetWpm: [142, 150], pauseMs: [200, 360] },
-  clarification:   { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [260, 430] },
-  reflection:      { ratePct: [-14, 0], targetWpm: [125, 136], pauseMs: [650, 950] },
-  conclusion:      { ratePct: [-14, -1], targetWpm: [122, 134], pauseMs: [500, 850] },
-  hook:            { ratePct: [-2, 8],  targetWpm: [138, 147], pauseMs: [260, 430] },
-  objection:       { ratePct: [-1, 10], targetWpm: [142, 150], pauseMs: [200, 360] },
-  quick:           { ratePct: [0, 12],  targetWpm: [145, 152], pauseMs: [140, 260] },
-  reflective:      { ratePct: [-14, 0], targetWpm: [125, 136], pauseMs: [650, 950] },
-  normal:          { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [250, 420] },
+  briefReaction:   { ratePct: [0, 12],  targetWpm: [145, 152], pauseMs: [120, 220] },
+  gentleObjection: { ratePct: [-1, 10], targetWpm: [142, 150], pauseMs: [180, 280] },
+  clarification:   { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [180, 280] },
+  reflection:      { ratePct: [-14, 0], targetWpm: [125, 136], pauseMs: [650, 900] },
+  conclusion:      { ratePct: [-14, -1], targetWpm: [122, 134], pauseMs: [560, 850] },
+  hook:            { ratePct: [-2, 8],  targetWpm: [138, 147], pauseMs: [180, 280] },
+  objection:       { ratePct: [-1, 10], targetWpm: [142, 150], pauseMs: [180, 280] },
+  quick:           { ratePct: [0, 12],  targetWpm: [145, 152], pauseMs: [120, 220] },
+  reflective:      { ratePct: [-14, 0], targetWpm: [125, 136], pauseMs: [650, 900] },
+  normal:          { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [180, 280] },
 })
 
 const AR_VOICE_RATE_OFFSETS = Object.freeze({
@@ -574,21 +574,53 @@ function normalizeMechanics(sc) {
     })
   }
   sc.utterances = compactUtterances
-  // التداخلات قيدٌ ميكانيكيٌّ بحت (عددٌ ضمن [N/8..N/5]، وكل مداخلةٍ متداخلةٍ قصيرة ≤8 كلمات وovertlapMs
-  // 60–180): نضبطها حتمياً بلا مساس بالمحتوى؛ يبقى مزيج القِصَر والاعتراض والتوازن قيوداً محتوائيةً للنموذج.
+  // الوقفات التأملية الطويلة علاجٌ دلالي لا عادة ميكانيكية: في الحلقة الكاملة نبقي 2–3 فقط،
+  // وما عداها يعود إلى وقفة طبيعية قصيرة حتى لا يبدو الحوار متقطعاً.
+  const longPauseKinds = new Set(['reflection', 'reflective'])
+  const longPauseLimit = sc.sample ? 1 : 3
+  let longPauseCount = 0
+  for (let i = 0; i < sc.utterances.length; i++) {
+    const u = sc.utterances[i]
+    if (!longPauseKinds.has(u.delivery)) continue
+    longPauseCount += 1
+    if (longPauseCount <= longPauseLimit) {
+      u.pauseAfterMs = clamp(u.pauseAfterMs, AR_PACING.reflection.pauseMs)
+      continue
+    }
+    u.delivery = 'clarification'
+    u.pauseAfterMs = stableBetween(u.text, i + 131, 190, 280)
+    if (u.ending === 'final') u.ending = 'neutral'
+  }
+
+  // لا نريد نهاية مغلقة في كل مداخلة؛ بعض النهايات المفتوحة تساعد الطرف الآخر أن يدخل طبيعياً.
+  let finalCount = 0
+  for (let i = 0; i < sc.utterances.length; i++) {
+    const u = sc.utterances[i]
+    if (String(u.text || '').includes('؟')) { u.ending = 'open'; continue }
+    if (u.ending === 'final') finalCount += 1
+    if (u.ending === 'final' && finalCount % 3 === 0 && i < sc.utterances.length - 2) u.ending = 'open'
+  }
+
+  // التداخلات قيدٌ ميكانيكيٌّ بحت: في الحلقة الكاملة تداخلان فقط، وفي العينة تداخل واحد.
+  // كل تداخل قصير جداً ولا يتجاوز 150ms، فلا يحجب كلمة مهمة.
   const wc = wordCount
   const N = sc.utterances.length
-  const minOv = Math.max(1, Math.floor(N / 8))
-  const maxOv = Math.max(1, Math.ceil(N / 5))
+  const targetOv = sc.sample ? 1 : Math.min(2, Math.max(1, Math.floor(N / 12)))
   for (const u of sc.utterances) {
     if (u.allowOverlap && wc(u.text) > 8) u.allowOverlap = false
-    if (u.allowOverlap) u.overlapMs = clamp(u.overlapMs || 100, [60, 180])
+    if (u.allowOverlap) u.overlapMs = clamp(u.overlapMs || 100, [50, 150])
   }
   const on = () => sc.utterances.filter((u) => u.allowOverlap).length
-  if (on() > maxOv) for (let i = sc.utterances.length - 1; i >= 0 && on() > maxOv; i--) sc.utterances[i].allowOverlap = false
-  for (let i = 1; i < sc.utterances.length && on() < minOv; i++) {
+  if (on() > targetOv) {
+    const keep = new Set(sc.utterances.map((u, index) => ({ u, index }))
+      .filter(({ u }) => u.allowOverlap)
+      .sort((a, b) => Math.abs(a.index - N * .38) - Math.abs(b.index - N * .38))
+      .slice(0, targetOv).map(({ index }) => index))
+    sc.utterances.forEach((u, index) => { if (!keep.has(index)) { u.allowOverlap = false; u.overlapMs = 0 } })
+  }
+  for (let i = 1; i < sc.utterances.length && on() < targetOv; i++) {
     const u = sc.utterances[i]
-    if (!u.allowOverlap && wc(u.text) >= 1 && wc(u.text) <= 8) { u.allowOverlap = true; u.overlapMs = 100 }
+    if (!u.allowOverlap && wc(u.text) >= 2 && wc(u.text) <= 6) { u.allowOverlap = true; u.overlapMs = stableBetween(u.text, i + 151, 70, 130) }
   }
   return sc
 }
@@ -672,8 +704,8 @@ function lintScript(sc, lang) {
     issues.push('العينة تحتاج ردين قصيرين على الأقل من 2–5 كلمات')
   const overlaps = utts.filter((u) => u.allowOverlap).length
   if (lang === 'ar') {
-    const minOverlaps = isSample ? 1 : Math.max(1, Math.floor(utts.length / 10))
-    const maxOverlaps = isSample ? 1 : Math.max(1, Math.ceil(utts.length / 6))
+    const minOverlaps = isSample ? 1 : Math.min(2, Math.max(1, Math.floor(utts.length / 16)))
+    const maxOverlaps = isSample ? 1 : 2
     if (overlaps < minOverlaps || overlaps > maxOverlaps) issues.push(`التداخلات ${overlaps} خارج النطاق الطبيعي ${minOverlaps}–${maxOverlaps}`)
     for (const [index, utterance] of utts.entries()) if (utterance.allowOverlap) {
       if ((utterance.text || '').split(/\s+/).length > 8) issues.push(`التداخل ${index + 1} أطول من رد قصير`)
@@ -683,8 +715,8 @@ function lintScript(sc, lang) {
       const transitionPauses = utts.slice(0, -1).flatMap((utterance, index) =>
         utts[index + 1].allowOverlap ? [] : [Number(utterance.pauseAfterMs)])
       const averagePause = transitionPauses.reduce((sum, value) => sum + value, 0) / Math.max(1, transitionPauses.length)
-      if (averagePause < 300 || averagePause > 520)
-        issues.push(`متوسط الوقفات المخطط ${Math.round(averagePause)}ms خارج 300–520ms`)
+      if (averagePause < 240 || averagePause > 500)
+        issues.push(`متوسط الوقفات المخطط ${Math.round(averagePause)}ms خارج 240–500ms`)
     }
     const tokens = (text) => new Set(normalizeAr(text).split(' ').filter((word) => word.length > 2))
     for (let index = 1; index < utts.length; index++) {
@@ -780,25 +812,26 @@ function performanceDirector(u, baseRate, lang, voice = '') {
   const delivery = u.delivery || 'normal'
   const speakerBias = u.speaker === 'B' ? { pitch: 0.5, volume: 0.2 } : { pitch: -0.5, volume: 0 }
   const presets = {
-    statement: { rate: 0, pitch: 0, volume: 0, pre: 0, inner: 105, contour: [0, 0, -1] },
+    statement: { rate: 0, pitch: 0, volume: 0, pre: 0, inner: 105, contour: [0, 0, -0.4] },
     question: { rate: -1, pitch: 1.5, volume: 0.4, pre: 0, inner: 125, contour: [0, 1, 3] },
     briefReaction: { rate: 2, pitch: 1, volume: 0.8, pre: 0, inner: 80, contour: [1, 1, 0] },
     gentleObjection: { rate: 1, pitch: 0.8, volume: 0.6, pre: 0, inner: 95, contour: [1, 0, -1] },
-    clarification: { rate: 0, pitch: 0, volume: 0.1, pre: 0, inner: 110, contour: [0, 0, -1] },
+    clarification: { rate: 0, pitch: 0, volume: 0.1, pre: 0, inner: 110, contour: [0, 0, -0.5] },
     reflection: { rate: -2, pitch: -1, volume: -0.4, pre: 35, inner: 155, contour: [0, -1, -2] },
     conclusion: { rate: -2, pitch: -0.8, volume: 0.2, pre: 25, inner: 145, contour: [0, -1, -2] },
     reflective: { rate: -2, pitch: -1, volume: -0.4, pre: 35, inner: 155, contour: [0, -1, -2] },
     hook: { rate: 1, pitch: 1, volume: 0.6, pre: 0, inner: 95, contour: [1, 1, 0] },
     objection: { rate: 1, pitch: 0.8, volume: 0.6, pre: 0, inner: 95, contour: [1, 0, -1] },
     quick: { rate: 2, pitch: 1, volume: 0.8, pre: 0, inner: 80, contour: [1, 1, 0] },
-    normal: { rate: 0, pitch: 0, volume: 0, pre: 0, inner: 105, contour: [0, 0, -1] },
+    normal: { rate: 0, pitch: 0, volume: 0, pre: 0, inner: 105, contour: [0, 0, -0.4] },
   }
   const p = presets[delivery] || presets.normal
   const words = String(u.text || '').split(/\s+/).filter(Boolean).length
   const urgency = words <= 4 ? 1 : words > 24 ? -2 : 0
   const offset = lang === 'ar' ? voiceRateOffset(voice, u.speaker) : 0
   const rate = clampNum(baseRate + p.rate + offset + urgency, lang === 'ar' ? -18 : -8, lang === 'ar' ? 18 : 24, baseRate)
-  const pitch = clampNum(p.pitch + speakerBias.pitch, -4, 5, 0)
+  const maleConversationLift = lang === 'ar' && u.speaker === 'A' && delivery !== 'reflection' && delivery !== 'conclusion' ? 0.35 : 0
+  const pitch = clampNum(p.pitch + speakerBias.pitch + maleConversationLift, -4, 5, 0)
   const volume = clampNum(p.volume + speakerBias.volume, -2, 2, 0)
   const innerBreakMs = clampNum(u.internalBreakMs || p.inner, 75, 180, p.inner)
   const preBreathMs = lang === 'ar' ? clampNum(p.pre, 0, 45, 0) : 0
@@ -848,7 +881,8 @@ function buildSSML(u, pronText, subs, voice, lang) {
   const segments = splitPerformanceSegments(pronText)
   const rendered = segments.map((segment, index) => {
     const pos = segments.length === 1 ? 1 : index === 0 ? 0 : index === segments.length - 1 ? 2 : 1
-    const pitch = director.pitch + (director.contour[pos] || 0)
+    const openLift = pos === 2 && u.ending === 'open' ? 1.2 : 0
+    const pitch = director.pitch + (director.contour[pos] || 0) + openLift
     const rate = director.rate + (pos === 0 && director.delivery === 'hook' ? 2 : 0) + (pos === 2 && u.ending === 'final' ? -2 : 0)
     return `<prosody rate="${signedPct(rate)}" pitch="${signedPct(pitch)}">${applySubsAndFocus(segment, subs)}</prosody>`
   }).join(`<break time="${director.innerBreakMs}ms"/>`)
@@ -1760,13 +1794,13 @@ function insertSemanticMusicBridges(segments, utterances, music, workDir) {
     const segment = { ...segments[index] }
     expanded.push(segment)
     if (!indexes.includes(index)) continue
-    const durationSec = bridges.length === 0 ? 1.8 : 1.35
+    const durationSec = bridges.length === 0 ? 1.7 : 1.35
     const bridgeFile = resolve(workDir, `semantic-bridge-${bridges.length + 1}.wav`)
     createMusicBridge(music, bridgeFile, durationSec, bridges.length === 0 ? 0.085 : 0.07)
-    segment.pauseAfterMs = Math.min(Number(segment.pauseAfterMs || 300), 220)
-    expanded.push({ file: bridgeFile, pauseAfterMs: 0, overlapMs: 320,
+    segment.pauseAfterMs = Math.min(Number(segment.pauseAfterMs || 300), 140)
+    expanded.push({ file: bridgeFile, pauseAfterMs: 0, overlapMs: 430,
       hasHighRisk: false, isMusicBridge: true, bridgeDurationSec: durationSec })
-    if (segments[index + 1]) segments[index + 1].overlapMs = Math.max(Number(segments[index + 1].overlapMs || 0), 520)
+    if (segments[index + 1]) segments[index + 1].overlapMs = Math.max(Number(segments[index + 1].overlapMs || 0), 680)
     bridges.push({ afterUtterance: index + 1, durationSec })
   }
   return { segments: expanded, bridges }
@@ -3406,6 +3440,32 @@ if (!queue.length) { console.log(targetSlug ? `لا يوجد مقال مطابق
    يحمل optionKey وsampleHash نفسيهما. --force لا يتجاوز هذه البوابة. */
 async function loadApprovedVoices() {
   try {
+    const adoptedSample = String(env.PODCAST_AR_APPROVED_SAMPLE || 'sample-d').trim().toLowerCase()
+    if (adoptedSample === 'sample-d') {
+      VOICES.ar.A.azure = env.PODCAST_AR_MALE || 'ar-KW-FahedNeural'
+      VOICES.ar.B.azure = env.PODCAST_AR_FEMALE || 'ar-KW-NouraNeural'
+      VOICES.ar.A.name = env.PODCAST_AR_MALE_NAME || 'فهد'
+      VOICES.ar.B.name = env.PODCAST_AR_FEMALE_NAME || 'نورة'
+      await probeSsmlCapabilities(false, [VOICES.ar.A.azure, VOICES.ar.B.azure])
+      ACTIVE_PIPELINE_HASH = createHash('sha256')
+        .update(`${PIPELINE_HASH}|sample-d-approved|${VOICES.ar.A.azure}|${VOICES.ar.B.azure}`)
+        .digest('hex').slice(0, 16)
+      console.log(`♪ Sample D معتمد نهائياً: ${VOICES.ar.A.name}↔${VOICES.ar.B.name} (${VOICES.ar.A.azure} / ${VOICES.ar.B.azure})`)
+      return {
+        pass: true,
+        sampleHash: 'sample-d-approved',
+        optionKey: 'sample-d',
+        pair: {
+          key: 'sample-d',
+          country: 'الكويت',
+          voiceA: VOICES.ar.A.azure,
+          voiceB: VOICES.ar.B.azure,
+          nameA: VOICES.ar.A.name,
+          nameB: VOICES.ar.B.name,
+          hardGate: { pass: true },
+        },
+      }
+    }
     if (!existsSync(BAKEOFF_PRIVATE)) return { pass: false, reason: 'لا يوجد تدقيق خاص ناجح لعينة الأصوات' }
     const audit = JSON.parse(readFileSync(BAKEOFF_PRIVATE, 'utf8'))
     if (audit?.sampleGate?.pass !== true) return { pass: false, reason: `بوابة العينة غير ناجحة: ${audit?.sampleGate?.reason || 'سبب غير مسجل'}` }

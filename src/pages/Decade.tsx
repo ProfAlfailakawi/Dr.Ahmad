@@ -214,7 +214,7 @@ export default function Decade() {
                   {document.turns.map((turn, index) => (
                     <FadeUp key={`${turn.title}-${turn.year}`} delay={index * 0.06}>
                       <li className="relative pb-9 last:pb-0">
-                        <span className="absolute -right-[calc(1.5rem+5px)] top-2 h-2.5 w-2.5 rounded-full border-2 border-canvas bg-accent md:-right-[calc(2.25rem+5px)]" />
+                        <span className="absolute -right-[5px] top-2 h-2.5 w-2.5 rounded-full border-2 border-canvas bg-accent" />
                         <time className="text-[.75rem] font-semibold text-accent">{turn.year}</time>
                         <h3 className="mt-1 font-display text-[1.18rem] font-semibold text-ink">{turn.title}</h3>
                         <p className="mt-2 text-[.88rem] font-light leading-[1.9] text-soft">{turn.description}</p>

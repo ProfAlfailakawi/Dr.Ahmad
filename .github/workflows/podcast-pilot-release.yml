@@ -1,12 +1,12 @@
-name: إطلاق البودكاست التجريبي الثلاثي
+name: إطلاق البودكاست الحواري المعتمد
 
 on:
   workflow_dispatch:
     inputs:
       slugs:
-        description: 'ثلاثة slugs مفصولة بفواصل'
+        description: 'Slug واحد أو أكثر مفصولة بفواصل'
         required: false
-        default: 'how-do-we-assess-without-breaking-the-human-beingarabic,the-classroom-that-fears-mistakesarabic,success-that-does-not-bring-joy-to-its-ownerarabic'
+        default: 'how-do-we-assess-without-breaking-the-human-beingarabic'
 
 permissions:
   contents: write
@@ -66,12 +66,12 @@ jobs:
           npm run podcast:ar:self-test
           npm run podcast:release:self-test
 
-      - name: Generate three full Arabic episodes
+      - name: Generate requested full Arabic episodes
         shell: bash
         run: |
           IFS=',' read -ra ITEMS <<< "${{ inputs.slugs }}"
-          if [ "${#ITEMS[@]}" -ne 3 ]; then
-            echo "::error::Exactly three slugs are required"
+          if [ "${#ITEMS[@]}" -lt 1 ] || [ "${#ITEMS[@]}" -gt 3 ]; then
+            echo "::error::Provide between one and three slugs"
             exit 1
           fi
           for slug in "${ITEMS[@]}"; do
@@ -88,7 +88,7 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           PODCAST_RELEASE_MIN_SCORE: '94'
 
-      - name: Validate all three local episodes
+      - name: Validate requested local episodes
         run: node scripts/podcast-release-gate.mjs --local --slugs="${{ inputs.slugs }}"
         env:
           PODCAST_RELEASE_MIN_SCORE: '94'
@@ -124,7 +124,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No manifest changes to commit."
           else
-            git commit -m "chore: publish three validated podcast episodes"
+            git commit -m "chore: publish validated podcast dialogue episodes"
             git push origin HEAD:main
           fi
 

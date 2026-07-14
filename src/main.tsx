@@ -1,11 +1,33 @@
-import React from 'react'
+import React, { useLayoutEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+declare global {
+  interface Window {
+    __appBootFallbackTimer?: number
+  }
+}
+
+function AppBoot() {
+  useLayoutEffect(() => {
+    const html = document.documentElement
+    html.setAttribute('data-app-ready', 'true')
+    if (window.__appBootFallbackTimer) {
+      window.clearTimeout(window.__appBootFallbackTimer)
+      window.__appBootFallbackTimer = undefined
+    }
+  }, [])
+
+  return <App />
+}
+
+const root = document.getElementById('root')
+if (!root) throw new Error('Missing application root')
+
+ReactDOM.createRoot(root).render(
   <React.StrictMode>
-    <App />
+    <AppBoot />
   </React.StrictMode>,
 )
 

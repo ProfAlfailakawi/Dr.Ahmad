@@ -41,6 +41,26 @@
         } catch (e) {}
       })();
     </script>
+    <!--
+      نسخة الـSEO الثابتة تُحفظ خارج جذر React كي تفهمها محركات البحث،
+      لكنها لا تُعرض للزائر أثناء إقلاع التطبيق. إذا تعذر JavaScript فعلاً،
+      تُكشف النسخة الثابتة تلقائياً بعد مهلة أمان بدل ترك صفحة فارغة.
+    -->
+    <script id="app-boot-state">
+      (function () {
+        var html = document.documentElement;
+        html.classList.add('js');
+        window.__appBootFallbackTimer = window.setTimeout(function () {
+          if (!html.hasAttribute('data-app-ready')) html.classList.remove('js');
+        }, 8000);
+      })();
+    </script>
+    <style id="app-boot-style">
+      html, body { background: #FCFCFA; }
+      html.dark, html.dark body { background: #111215; }
+      html.js #seo-fallback { display: none !important; }
+      #root:empty { min-height: 100svh; }
+    </style>
     <script type="module" src="/src/main.tsx"></script>
     <title>د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم والذكاء الاصطناعي</title>
     <meta name="description" content="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي. تسعة كتب، ثمانية عشر بحثاً محكّماً، وأكثر من 160 مقالاً فكرياً منذ 2016." />
@@ -66,7 +86,7 @@
           window.addEventListener('load', function () {
             navigator.serviceWorker.register('/sw.js').catch(function () {});
           });
-          // لا إعادة تحميل إجبارية عند تحديث الخدمة؛ النسخة الجديدة تعمل في الزيارة التالية بلا شاشة فاصلة.
+          // التحديث الجديد يُستخدم في الزيارة التالية بلا إعادة تحميل مفاجئة.
         }
       }
     </script>

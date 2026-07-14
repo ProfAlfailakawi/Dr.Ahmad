@@ -631,7 +631,7 @@ function lintScript(sc, lang) {
   const isSample = Boolean(sc.sample)
   if (utts.length < (isSample ? 12 : 8)) issues.push(`مداخلات قليلة (${utts.length})`)
   const words = utts.reduce((n, u) => n + (u.text || '').split(/\s+/).length, 0)
-  const [lo, hi] = isSample ? [165, 210] : (lang === 'ar' ? [430, 620] : [420, 900])
+  const [lo, hi] = isSample ? [165, 210] : (lang === 'ar' ? [390, 570] : [420, 900])
   if (words < lo || words > hi) issues.push(`طول السيناريو ${words} كلمة (المدى ${lo}-${hi})`)
   const banned = lang === 'ar' ? AR_BANNED : EN_BANNED
   for (const b of banned) if (utts.some((u) => (u.text || '').includes(b))) issues.push(`عبارة ممنوعة: «${b}»`)

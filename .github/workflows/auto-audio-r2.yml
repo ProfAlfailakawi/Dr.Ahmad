@@ -42,6 +42,12 @@ jobs:
           python -m pip install --user awscli
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
+      - name: Verify podcast safety engines
+        run: |
+          npm run podcast:ar:self-test
+          npm run podcast:release:self-test
+          npm run audio:r2:self-test
+
       - name: Write Firebase service account
         run: |
           if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
@@ -99,7 +105,12 @@ jobs:
           AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
           VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
 
-      - name: Publish generated local audio/transcripts to R2
+      - name: Strict local podcast release gate
+        run: npm run podcast:release:local -- --allow-empty
+        env:
+          PODCAST_RELEASE_MIN_SCORE: '94'
+
+      - name: Publish generated local audio/transcripts to R2 atomically
         run: npm run audio:r2:publish
         env:
           AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
@@ -118,13 +129,19 @@ jobs:
           AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
           VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
 
+      - name: Validate final podcast RSS and public audio ranges
+        run: npm run podcast:release:dist
+        env:
+          PODCAST_RELEASE_MIN_SCORE: '94'
+          PODCAST_VERIFY_REMOTE_AUDIO: 'true'
+
       - name: Commit generated manifests only
         run: |
           rm -f sa.json
           npm run audio:guard
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/data/audio.json src/data/audio-meta.json src/data/site-articles-feed.json src/data/podcast-admin.json package.json scripts/auto-audio.mjs scripts/publish-audio-r2.mjs scripts/build-static.mjs src/components/admin/IntelligenceLab.tsx .github/workflows/auto-audio-r2.yml
+          git add src/data/audio.json src/data/audio-meta.json src/data/site-articles-feed.json src/data/podcast-admin.json package.json scripts/auto-audio.mjs scripts/publish-audio-r2.mjs scripts/podcast-release-gate.mjs scripts/build-static.mjs scripts/sync-audio.mjs scripts/build-podcast-admin.mjs src/components/admin/IntelligenceLab.tsx .github/workflows/auto-audio-r2.yml
           git add .podcast-state.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No audio changes to commit."
@@ -132,3 +149,21 @@ jobs:
             git commit -m "chore: auto-publish new audio to R2"
             git push origin HEAD:main
           fi
+
+
+      - name: Finalize R2 transaction after successful commit
+        run: npm run audio:r2:commit
+        env:
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Roll back R2 transaction on any failure
+        if: failure()
+        run: npm run audio:r2:rollback
+        env:
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}

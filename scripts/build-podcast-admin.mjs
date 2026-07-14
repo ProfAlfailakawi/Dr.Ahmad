@@ -107,10 +107,13 @@ const episodes = dialogue.map((name) => {
   const file = resolve(AUDIO, name)
   const localAudio = existsSync(file)
   const transcriptFile = resolve(AUDIO, `${slug}.dialogue.json`)
-  const hasTranscript = existsSync(transcriptFile)
-  const hash = localAudio ? createHash('sha256').update(readFileSync(file)).digest('hex') : ''
+  const transcriptMeta = audioMeta?.[`${slug}.dialogue.json`] || {}
+  const hasTranscript = existsSync(transcriptFile) || Boolean(transcriptMeta.sha256 && Number(transcriptMeta.bytes || 0) > 100)
+  const hash = localAudio ? createHash('sha256').update(readFileSync(file)).digest('hex') : String(audioMeta?.[name]?.sha256 || '')
   const accepted = podcastState?.done?.[`${slug}:ar`]
-  const approved = accepted?.status === 'accepted_automated' && (!localAudio || accepted.audioHash === hash)
+  const transcriptHash = existsSync(transcriptFile) ? createHash('sha256').update(readFileSync(transcriptFile)).digest('hex') : String(transcriptMeta.sha256 || '')
+  const approved = accepted?.status === 'accepted_automated' && accepted.audioHash === hash
+    && accepted.transcriptHash === transcriptHash
   const meta = audioMeta?.[name] || {}
   const byteSize = localAudio ? statSync(file).size : Number(meta.bytes || 0)
   const audit = readAudit(slug)

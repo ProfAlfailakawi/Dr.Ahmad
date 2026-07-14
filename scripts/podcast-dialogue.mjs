@@ -28,7 +28,7 @@
  *   node scripts/podcast-dialogue.mjs --latest=3 | --nightly
  *   أعلام: --dry-run (سيناريو فقط) · --force (تجاهل الحالة)
  */
-import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, statSync, renameSync, copyFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, statSync, renameSync, copyFileSync, readdirSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync, spawnSync } from 'node:child_process'
@@ -48,6 +48,11 @@ const MEM_FILE = resolve(ROOT, 'ArabicPronunciationMemory.sqlite')
 const LOCK_FILE = resolve(ROOT, '.podcast-dialogue.lock')
 const BAKEOFF_PUBLIC = resolve(ROOT, 'public/audio/bakeoff')
 const BAKEOFF_PRIVATE = resolve(AUDITS, 'voice-bakeoff.private.json')
+const PILOT_AUDIO = resolve(ROOT, '.podcast-pilot-audio')
+const RELEASES = resolve(ROOT, '.podcast-releases')
+const LAST_GOOD = resolve(ROOT, '.podcast-last-known-good')
+const PILOT_GATE_FILE = resolve(AUDITS, 'pilot-gate.json')
+const QUARANTINE_AUDIO = resolve(AUDITS, 'quarantine-audio')
 const STT_ENSEMBLE_LOCALES = ['ar-KW', 'ar-SA', 'ar-AE', 'ar-QA', 'ar-OM']
 const SAMPLE_MIN_SEC = 85
 const SAMPLE_MAX_SEC = 105
@@ -110,11 +115,16 @@ const CANARY = flag('canary')
 const BAKEOFF = flag('voice-bakeoff')
 const VOICE_AUDITION = flag('voice-audition')
 const VOICE_FINALIST_RETEST = flag('voice-finalist-retest')
+let PILOT_MODE = flag('pilot') || Number(opt('pilot') || 0) > 0
+let PILOT_COUNT = Math.min(3, Math.max(1, Number(opt('pilot') || env.PODCAST_PILOT_COUNT || 3)))
+const ROLLBACK_SLUG = opt('rollback')
+const AUTO_PROMOTE_PILOT = String(env.PODCAST_AUTO_PROMOTE_PILOT || 'true').toLowerCase() !== 'false'
+const REQUIRE_PILOT_GATE = String(env.PODCAST_REQUIRE_PILOT_GATE || 'true').toLowerCase() !== 'false'
 // أُلغي المسار الخفيف نهائيًا: شروط القبول الحالية تمنع أي نشر يتجاوز STT والحكم الصوتي.
 const LIGHT = false
 let ARABIC_PRODUCTION_GATE_READY = false
-if (!SELF_TEST && !AZURE_KEY) { console.error('✘ AZURE_SPEECH_KEY مفقود'); process.exit(1) }
-if (!SELF_TEST && !VOICE_AUDITION && !VOICE_FINALIST_RETEST && !PREFLIGHT && !GEMINI_KEY) { console.error('✘ GEMINI_API_KEY أو GOOGLE_API_KEY مفقود'); process.exit(1) }
+if (!SELF_TEST && !ROLLBACK_SLUG && !AZURE_KEY) { console.error('✘ AZURE_SPEECH_KEY مفقود'); process.exit(1) }
+if (!SELF_TEST && !ROLLBACK_SLUG && !VOICE_AUDITION && !VOICE_FINALIST_RETEST && !PREFLIGHT && !GEMINI_KEY) { console.error('✘ GEMINI_API_KEY أو GOOGLE_API_KEY مفقود'); process.exit(1) }
 if (!SELF_TEST) {
   const acquire = () => writeFileSync(LOCK_FILE, JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }), { flag: 'wx' })
   try { acquire() }
@@ -147,8 +157,123 @@ function readJsonSafe(path, fallback) {
     return fallback
   }
 }
-const state = readJsonSafe(STATE_FILE, { done: {}, storyCount: 0, totalCount: 0 })
+const state = readJsonSafe(STATE_FILE, { done: {}, storyCount: 0, totalCount: 0, pilotGate: null })
+if (!Object.prototype.hasOwnProperty.call(state, 'pilotGate')) state.pilotGate = null
 const saveState = () => atomicWriteText(STATE_FILE, JSON.stringify(state, null, 1))
+
+const sha256File = (path) => existsSync(path)
+  ? createHash('sha256').update(readFileSync(path)).digest('hex') : ''
+const safeSlug = (value) => String(value || '').replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'episode'
+const releaseTimestamp = () => new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').replace('Z', '')
+
+function preserveRejectedCandidate(article, lang, reason) {
+  const candidate = resolve(TMP, `${article.slug}.accepted-candidate.mp3`)
+  if (!existsSync(candidate)) return null
+  mkdirSync(QUARANTINE_AUDIO, { recursive: true })
+  const stamp = releaseTimestamp()
+  const base = `${safeSlug(article.slug)}.${lang}.${stamp}`
+  const audio = resolve(QUARANTINE_AUDIO, `${base}.mp3`)
+  copyFileSync(candidate, audio)
+  atomicWriteText(resolve(QUARANTINE_AUDIO, `${base}.json`), JSON.stringify({
+    slug: article.slug, lang, reason, createdAt: new Date().toISOString(),
+    sha256: sha256File(audio), bytes: statSync(audio).size,
+  }, null, 2))
+  return audio
+}
+
+function createReleaseSnapshot({ article, lang, outMp3, transcriptPath, stateKey, label = 'episode' }) {
+  const releaseDir = resolve(RELEASES, safeSlug(article.slug), `${releaseTimestamp()}-${safeSlug(label)}-${lang}`)
+  mkdirSync(releaseDir, { recursive: true })
+  const manifest = {
+    schemaVersion: 1, slug: article.slug, lang, stateKey, label,
+    createdAt: new Date().toISOString(), previousStateEntry: state.done[stateKey] || null,
+    previousTotalCount: Number(state.totalCount || 0), previousStoryCount: Number(state.storyCount || 0),
+    hadAudio: existsSync(outMp3), hadTranscript: Boolean(transcriptPath && existsSync(transcriptPath)),
+  }
+  if (manifest.hadAudio) {
+    copyFileSync(outMp3, resolve(releaseDir, 'previous.mp3'))
+    manifest.previousAudioHash = sha256File(outMp3)
+  }
+  if (manifest.hadTranscript) {
+    copyFileSync(transcriptPath, resolve(releaseDir, 'previous.json'))
+    manifest.previousTranscriptHash = sha256File(transcriptPath)
+  }
+  atomicWriteText(resolve(releaseDir, 'manifest.json'), JSON.stringify(manifest, null, 2))
+  return { releaseDir, manifest }
+}
+
+function restoreReleaseSnapshot(snapshot, { outMp3, transcriptPath, stateKey }) {
+  const { releaseDir, manifest } = snapshot
+  rmSync(outMp3, { force: true })
+  if (transcriptPath) rmSync(transcriptPath, { force: true })
+  if (manifest.hadAudio && existsSync(resolve(releaseDir, 'previous.mp3')))
+    copyFileSync(resolve(releaseDir, 'previous.mp3'), outMp3)
+  if (transcriptPath && manifest.hadTranscript && existsSync(resolve(releaseDir, 'previous.json')))
+    copyFileSync(resolve(releaseDir, 'previous.json'), transcriptPath)
+  if (manifest.previousStateEntry == null) delete state.done[stateKey]
+  else state.done[stateKey] = manifest.previousStateEntry
+  state.totalCount = manifest.previousTotalCount
+  state.storyCount = manifest.previousStoryCount
+  saveState()
+  atomicWriteText(resolve(releaseDir, 'rollback.json'), JSON.stringify({
+    rolledBackAt: new Date().toISOString(), restoredAudioHash: sha256File(outMp3),
+    restoredTranscriptHash: transcriptPath ? sha256File(transcriptPath) : '',
+  }, null, 2))
+}
+
+function validatePublishedArtifacts({ outMp3, transcriptPath, expectedAudioHash, expectedTranscriptHash, lang }) {
+  const issues = []
+  if (!existsSync(outMp3) || statSync(outMp3).size < 200_000) issues.push('ملف الصوت المنشور مفقود أو صغير')
+  const duration = existsSync(outMp3) ? probeDur(outMp3) : 0
+  if (duration < 120 || duration > 360) issues.push(`مدة الملف المنشور غير منطقية: ${duration.toFixed(1)}ث`)
+  const actualAudioHash = sha256File(outMp3)
+  if (expectedAudioHash && actualAudioHash !== expectedAudioHash) issues.push('بصمة ملف الصوت تغيّرت بعد النشر الذري')
+  let actualTranscriptHash = ''
+  if (lang === 'ar') {
+    if (!transcriptPath || !existsSync(transcriptPath)) issues.push('Transcript العربي مفقود')
+    else {
+      actualTranscriptHash = sha256File(transcriptPath)
+      if (expectedTranscriptHash && actualTranscriptHash !== expectedTranscriptHash) issues.push('بصمة Transcript تغيّرت بعد النشر')
+      try {
+        const parsed = JSON.parse(readFileSync(transcriptPath, 'utf8'))
+        if (!Array.isArray(parsed?.utterances) || parsed.utterances.length < 8) issues.push('Transcript غير مكتمل')
+      } catch { issues.push('Transcript غير صالح كـ JSON') }
+    }
+  }
+  return { pass: issues.length === 0, issues, duration, actualAudioHash, actualTranscriptHash }
+}
+
+function runPostPublishCheck({ article, lang, outMp3, transcriptPath, releaseDir, pilot = false, slugs = [] }) {
+  const command = String(env.PODCAST_POST_PUBLISH_CHECK || '').trim()
+  if (!command) return { pass: true, skipped: true }
+  const result = spawnSync('bash', ['-lc', command], {
+    cwd: ROOT, encoding: 'utf8', timeout: Math.max(10_000, Number(env.PODCAST_POST_PUBLISH_TIMEOUT_MS || 180_000)),
+    env: { ...process.env, ...env, PODCAST_SLUG: article?.slug || '', PODCAST_SLUGS: slugs.join(','),
+      PODCAST_LANGUAGE: lang || 'ar', PODCAST_AUDIO_FILE: outMp3 || '', PODCAST_TRANSCRIPT_FILE: transcriptPath || '',
+      PODCAST_RELEASE_DIR: releaseDir || '', PODCAST_IS_PILOT: pilot ? '1' : '0' },
+  })
+  if (result.status !== 0) throw new Error(`فحص ما بعد النشر فشل: ${(result.stderr || result.stdout || '').trim().slice(0, 500)}`)
+  return { pass: true, stdout: String(result.stdout || '').trim().slice(0, 1000) }
+}
+
+function finalizeLastKnownGood({ article, lang, outMp3, transcriptPath, releaseDir, stateKey }) {
+  const dir = resolve(LAST_GOOD, safeSlug(article.slug), lang)
+  mkdirSync(dir, { recursive: true })
+  copyFileSync(outMp3, resolve(dir, 'episode.mp3'))
+  if (transcriptPath && existsSync(transcriptPath)) copyFileSync(transcriptPath, resolve(dir, 'transcript.json'))
+  const manifest = { schemaVersion: 1, slug: article.slug, lang, stateKey,
+    acceptedAt: new Date().toISOString(), audioHash: sha256File(outMp3),
+    transcriptHash: transcriptPath ? sha256File(transcriptPath) : '', releaseDir, stateEntry: state.done[stateKey] || null }
+  atomicWriteText(resolve(dir, 'manifest.json'), JSON.stringify(manifest, null, 2))
+  const slugDir = resolve(RELEASES, safeSlug(article.slug))
+  if (existsSync(slugDir)) {
+    const keep = Math.max(2, Math.min(20, Number(env.PODCAST_RELEASE_RETENTION || 5)))
+    const entries = readdirSync(slugDir, { withFileTypes: true }).filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name).sort().reverse()
+    for (const old of entries.slice(keep)) rmSync(resolve(slugDir, old), { recursive: true, force: true })
+  }
+  return manifest
+}
 const lexicon = readJsonSafe(LEX_FILE, { entries: {} })
 const memoryDb = new DatabaseSync(MEM_FILE)
 memoryDb.exec(`
@@ -266,7 +391,7 @@ const DIALOGUE_MODEL = env.PODCAST_DIALOGUE_MODEL || env.GEMINI_MODEL || 'gemini
 const ANALYSIS_MODEL = env.PODCAST_ANALYSIS_MODEL || DIALOGUE_MODEL
 const JUDGE_MODEL = env.PODCAST_JUDGE_MODEL || DIALOGUE_MODEL
 const PIPELINE_HASH = createHash('sha256').update(JSON.stringify({
-  version: 'arabic-podcast-v6-performance-director',
+  version: 'arabic-podcast-v7-semantic-pacing',
   dialoguePrompt: AR_SYSTEM,
   pronunciationPrompt: PRONOUNCE_SYSTEM,
   judgePrompt: JUDGE_SYSTEM,
@@ -339,6 +464,41 @@ const arWord = (w) => new RegExp(`(^|[\\s،؛:.!؟»("])${w}($|[\\s،؛:.!؟«)"
 const EN_BANNED = ['Dear listeners','Welcome to another episode','Today we are going to','Moving on to our next','In conclusion','As previously mentioned','It is important to note','dive deep into this fascinating','Moreover,','Furthermore,']
 const DIACRITICS_RE = /[ً-ْٰ]/
 
+const AR_PACING = Object.freeze({
+  statement:       { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [250, 420] },
+  question:        { ratePct: [-7, 5],  targetWpm: [134, 143], pauseMs: [500, 750] },
+  briefReaction:   { ratePct: [0, 12],  targetWpm: [145, 152], pauseMs: [140, 260] },
+  gentleObjection: { ratePct: [-1, 10], targetWpm: [142, 150], pauseMs: [200, 360] },
+  clarification:   { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [260, 430] },
+  reflection:      { ratePct: [-14, 0], targetWpm: [125, 136], pauseMs: [650, 950] },
+  conclusion:      { ratePct: [-14, -1], targetWpm: [122, 134], pauseMs: [500, 850] },
+  hook:            { ratePct: [-2, 8],  targetWpm: [138, 147], pauseMs: [260, 430] },
+  objection:       { ratePct: [-1, 10], targetWpm: [142, 150], pauseMs: [200, 360] },
+  quick:           { ratePct: [0, 12],  targetWpm: [145, 152], pauseMs: [140, 260] },
+  reflective:      { ratePct: [-14, 0], targetWpm: [125, 136], pauseMs: [650, 950] },
+  normal:          { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [250, 420] },
+})
+
+const AR_VOICE_RATE_OFFSETS = Object.freeze({
+  // الصوت النسائي الفائز في الاختبار يحتاج مساحة أكبر حتى تظهر خامته ودفؤه.
+  'ar-KW-NouraNeural': -3,
+  // فاطمة مريحة للقراءة، ولا تحتاج الإبطاء نفسه.
+  'ar-AE-FatimaNeural': -1,
+  'ar-KW-FahedNeural': -1,
+})
+
+const pacingOf = (delivery) => AR_PACING[delivery] || AR_PACING.normal
+const stableUnit = (text, salt = 0) => {
+  const digest = createHash('sha256').update(`${salt}|${String(text || '')}`).digest()
+  return digest.readUInt16BE(0) / 65535
+}
+const stableBetween = (text, salt, lo, hi) => Math.round(lo + stableUnit(text, salt) * (hi - lo))
+const voiceRateOffset = (voice, speaker) => {
+  const explicit = speaker === 'B' ? env.PODCAST_AR_FEMALE_RATE_OFFSET : env.PODCAST_AR_MALE_RATE_OFFSET
+  if (explicit !== undefined && explicit !== '') return Math.min(8, Math.max(-12, Number(explicit) || 0))
+  return AR_VOICE_RATE_OFFSETS[voice] || 0
+}
+
 // تطبيع حتمي للحقول الميكانيكية فقط (لا مساس بالمحتوى ولا بالذوق): جملة فيها «؟» إلقاؤها
 // سؤال بالضرورة، وقلبها يغيّر مدى السرعة/الوقفة فنُثبّتهما داخل مدى النوع الناتج، ونضمن نبرة نهاية
 // صالحة. تبقى بوابات المحتوى (الفصحى، الأمانة، الطول، مزيج القِصَر، «أكيد»، التنوع، الاعتراضات) للنموذج.
@@ -372,14 +532,21 @@ function normalizeMechanics(sc) {
     }
     return chunks.map((part) => part.trim()).filter(Boolean)
   }
-  const rr = { reflective: [3, 6], hook: [10, 14], question: [6, 9], objection: [10, 14], clarification: [7, 10], conclusion: [3, 6], quick: [10, 14], normal: [7, 10] }
-  const pr = { reflective: [500, 700], question: [350, 550], quick: [100, 220], objection: [100, 220], hook: [100, 220], clarification: [180, 350], conclusion: [350, 550], normal: [180, 350] }
-  for (const u of sc.utterances) {
+  for (const [index, u] of sc.utterances.entries()) {
     if (String(u.text || '').includes('؟') && u.delivery !== 'question') u.delivery = 'question'
     const kind = u.delivery || 'normal'
-    if (rr[kind]) u.ratePct = clamp(u.ratePct, rr[kind])
-    if (pr[kind]) u.pauseAfterMs = clamp(u.pauseAfterMs, pr[kind])
+    const profile = pacingOf(kind)
+    u.ratePct = clamp(u.ratePct, profile.ratePct)
+    u.targetWordsPerMinute = clamp(u.targetWordsPerMinute, profile.targetWpm)
+    u.pauseAfterMs = clamp(u.pauseAfterMs, profile.pauseMs)
     if (!['open', 'final', 'neutral'].includes(u.ending)) u.ending = 'neutral'
+    const [pauseLo, pauseHi] = profile.pauseMs
+    const naturalPause = stableBetween(u.text, index + 41, pauseLo, pauseHi)
+    if (!Number.isFinite(Number(u.pauseAfterMs))
+      || Math.abs(Number(u.pauseAfterMs) - naturalPause) < 8
+      || (index > 0 && Math.abs(Number(u.pauseAfterMs) - Number(sc.utterances[index - 1]?.pauseAfterMs || 0)) < 10))
+      u.pauseAfterMs = naturalPause
+    u.internalBreakMs = clamp(u.internalBreakMs, kind === 'reflection' ? [130, 180] : [85, 150])
   }
   // «أكيد» حشوٌ يُفرط النموذج فيه ويُرفض تكراره؛ نُبقي أوّل ورودٍ ونُنوّع الباقي بمرادفاتٍ فصيحة
   // لا تحوي السلسلة نفسها (تجنّب «بالتأكيد» لأنها تتضمّن «أكيد») — تحسينٌ أسلوبيٌّ محايد لا مساس بالمعنى.
@@ -396,7 +563,8 @@ function normalizeMechanics(sc) {
     const pieces = splitLongText(u.text, 22, 30)
     if (pieces.length <= 1) { compactUtterances.push(u); continue }
     pieces.forEach((piece, index) => {
-      const next = { ...u, text: piece, allowOverlap: false, overlapMs: 0 }
+      const next = { ...u, text: piece, allowOverlap: false, overlapMs: 0,
+        musicBridgeAfter: index === pieces.length - 1 ? Boolean(u.musicBridgeAfter) : false }
       if (index < pieces.length - 1) {
         next.pauseAfterMs = Math.min(Number(u.pauseAfterMs) || 220, 180)
         next.ending = 'neutral'
@@ -450,16 +618,8 @@ function lintScript(sc, lang) {
     const questionBySpeaker = new Map(['A', 'B'].map((speaker) => [speaker, 0]))
     const deliveryKinds = new Set()
     const objections = []
-    const rateRanges = {
-      statement: [8, 18], question: [8, 18], briefReaction: [12, 24], gentleObjection: [12, 24],
-      clarification: [8, 18], reflection: [3, 14], conclusion: [5, 14],
-      reflective: [3, 14], hook: [10, 18], objection: [12, 24], quick: [12, 24], normal: [8, 18],
-    }
-    const pauseRanges = {
-      statement: [140, 280], question: [300, 500], briefReaction: [80, 160], gentleObjection: [80, 160],
-      clarification: [200, 350], reflection: [450, 650], conclusion: [200, 350],
-      reflective: [450, 650], hook: [80, 160], quick: [80, 160], objection: [80, 160], normal: [140, 280],
-    }
+    const rateRanges = Object.fromEntries(Object.entries(AR_PACING).map(([key, value]) => [key, value.ratePct]))
+    const pauseRanges = Object.fromEntries(Object.entries(AR_PACING).map(([key, value]) => [key, value.pauseMs]))
     for (const [index, utterance] of utts.entries()) {
       const text = String(utterance.text || '')
       const kind = utterance.delivery || 'normal'
@@ -473,8 +633,9 @@ function lintScript(sc, lang) {
       const [rateMin, rateMax] = rateRanges[kind] || rateRanges.normal
       if (!Number.isFinite(rate) || rate < rateMin || rate > rateMax) issues.push(`المداخلة ${index + 1}: سرعة ${utterance.ratePct ?? 'مفقودة'} خارج ${rateMin}–${rateMax}%`)
       const targetWpm = Number(utterance.targetWordsPerMinute)
-      if (isSample && (!Number.isFinite(targetWpm) || targetWpm < 135 || targetWpm > 175))
-        issues.push(`المداخلة ${index + 1}: targetWordsPerMinute مفقود أو خارج 135–175`)
+      const [wpmMin, wpmMax] = pacingOf(kind).targetWpm
+      if (!Number.isFinite(targetWpm) || targetWpm < wpmMin || targetWpm > wpmMax)
+        issues.push(`المداخلة ${index + 1}: targetWordsPerMinute ${utterance.targetWordsPerMinute ?? 'مفقود'} خارج ${wpmMin}–${wpmMax}`)
       const pause = Number(utterance.pauseAfterMs)
       const [pauseMin, pauseMax] = pauseRanges[kind] || pauseRanges.normal
       if (!Number.isFinite(pause) || pause < pauseMin || pause > pauseMax) issues.push(`المداخلة ${index + 1}: وقفة ${utterance.pauseAfterMs ?? 'مفقودة'}ms خارج ${pauseMin}–${pauseMax}`)
@@ -485,6 +646,8 @@ function lintScript(sc, lang) {
     if ([...questionBySpeaker.values()].some((count) => count < 1)) issues.push('يجب أن يسأل كل من A وB سؤالاً حقيقياً واحداً على الأقل')
     if (deliveryKinds.size < 4) issues.push(`تنوع الإلقاء ضعيف (${deliveryKinds.size} أنواع فقط)`)
     if (objections.length < 2) issues.push('الحوار يحتاج اعتراضين أو تصحيح زاويتين على الأقل')
+    const bridgeCount = utts.filter((utterance) => utterance.musicBridgeAfter === true).length
+    if (bridgeCount > (isSample ? 1 : 2)) issues.push(`الجسور الموسيقية المخططة ${bridgeCount} تتجاوز الحد`)
   }
   const aWords = utts.filter((u) => u.speaker === 'A').reduce((n, u) => n + u.text.split(/\s+/).length, 0)
   const ratio = aWords / Math.max(1, words)
@@ -520,8 +683,8 @@ function lintScript(sc, lang) {
       const transitionPauses = utts.slice(0, -1).flatMap((utterance, index) =>
         utts[index + 1].allowOverlap ? [] : [Number(utterance.pauseAfterMs)])
       const averagePause = transitionPauses.reduce((sum, value) => sum + value, 0) / Math.max(1, transitionPauses.length)
-      if (averagePause < 250 || averagePause > 320)
-        issues.push(`متوسط الوقفات المخطط ${Math.round(averagePause)}ms خارج 250–320ms`)
+      if (averagePause < 300 || averagePause > 520)
+        issues.push(`متوسط الوقفات المخطط ${Math.round(averagePause)}ms خارج 300–520ms`)
     }
     const tokens = (text) => new Set(normalizeAr(text).split(' ').filter((word) => word.length > 2))
     for (let index = 1; index < utts.length; index++) {
@@ -613,34 +776,35 @@ const escXml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/
 const clampNum = (value, lo, hi, fallback = lo) => Math.min(hi, Math.max(lo, Number.isFinite(+value) ? +value : fallback))
 const signedPct = (value) => `${value >= 0 ? '+' : ''}${Math.round(value)}%`
 
-function performanceDirector(u, baseRate, lang) {
+function performanceDirector(u, baseRate, lang, voice = '') {
   const delivery = u.delivery || 'normal'
-  const speakerBias = u.speaker === 'B' ? { rate: 1, pitch: 1, volume: 0.2 } : { rate: -1, pitch: -1, volume: 0 }
+  const speakerBias = u.speaker === 'B' ? { pitch: 0.5, volume: 0.2 } : { pitch: -0.5, volume: 0 }
   const presets = {
-    statement: { rate: 0, pitch: 0, volume: 0, pre: 0, inner: 95, contour: [0, 1, -1] },
-    question: { rate: 0, pitch: 2, volume: 0.6, pre: 45, inner: 115, contour: [0, 2, 5] },
-    briefReaction: { rate: 3, pitch: 2, volume: 1.2, pre: 0, inner: 70, contour: [2, 2, 1] },
-    gentleObjection: { rate: 2, pitch: 1, volume: 1, pre: 35, inner: 85, contour: [2, 1, 0] },
-    clarification: { rate: 0, pitch: 0, volume: 0.2, pre: 0, inner: 105, contour: [0, 1, -1] },
-    reflection: { rate: -4, pitch: -2, volume: -0.7, pre: 70, inner: 145, contour: [-1, -2, -3] },
-    conclusion: { rate: -2, pitch: -1, volume: 0.4, pre: 45, inner: 130, contour: [0, -1, -3] },
-    reflective: { rate: -4, pitch: -2, volume: -0.7, pre: 70, inner: 145, contour: [-1, -2, -3] },
-    hook: { rate: 3, pitch: 2, volume: 1, pre: 20, inner: 85, contour: [2, 3, 1] },
-    objection: { rate: 2, pitch: 1, volume: 1, pre: 35, inner: 85, contour: [2, 1, 0] },
-    quick: { rate: 3, pitch: 2, volume: 1.1, pre: 0, inner: 70, contour: [2, 2, 1] },
-    normal: { rate: 0, pitch: 0, volume: 0, pre: 0, inner: 100, contour: [0, 0, -1] },
+    statement: { rate: 0, pitch: 0, volume: 0, pre: 0, inner: 105, contour: [0, 0, -1] },
+    question: { rate: -1, pitch: 1.5, volume: 0.4, pre: 0, inner: 125, contour: [0, 1, 3] },
+    briefReaction: { rate: 2, pitch: 1, volume: 0.8, pre: 0, inner: 80, contour: [1, 1, 0] },
+    gentleObjection: { rate: 1, pitch: 0.8, volume: 0.6, pre: 0, inner: 95, contour: [1, 0, -1] },
+    clarification: { rate: 0, pitch: 0, volume: 0.1, pre: 0, inner: 110, contour: [0, 0, -1] },
+    reflection: { rate: -2, pitch: -1, volume: -0.4, pre: 35, inner: 155, contour: [0, -1, -2] },
+    conclusion: { rate: -2, pitch: -0.8, volume: 0.2, pre: 25, inner: 145, contour: [0, -1, -2] },
+    reflective: { rate: -2, pitch: -1, volume: -0.4, pre: 35, inner: 155, contour: [0, -1, -2] },
+    hook: { rate: 1, pitch: 1, volume: 0.6, pre: 0, inner: 95, contour: [1, 1, 0] },
+    objection: { rate: 1, pitch: 0.8, volume: 0.6, pre: 0, inner: 95, contour: [1, 0, -1] },
+    quick: { rate: 2, pitch: 1, volume: 0.8, pre: 0, inner: 80, contour: [1, 1, 0] },
+    normal: { rate: 0, pitch: 0, volume: 0, pre: 0, inner: 105, contour: [0, 0, -1] },
   }
   const p = presets[delivery] || presets.normal
   const words = String(u.text || '').split(/\s+/).filter(Boolean).length
-  const urgency = words <= 5 ? 2 : words <= 10 ? 1 : words > 24 ? -1 : 0
-  const minRate = u.allowSlowProsody ? -18 : 3
-  const rate = clampNum(baseRate + p.rate + speakerBias.rate + urgency, minRate, 30, baseRate)
-  const pitch = clampNum(p.pitch + speakerBias.pitch, -6, 7, 0)
-  const volume = clampNum(p.volume + speakerBias.volume, -3, 3, 0)
-  const innerBreakMs = clampNum(u.internalBreakMs || p.inner, 70, 180, p.inner)
-  const preBreathMs = lang === 'ar' ? clampNum(p.pre, 0, 90, 0) : 0
+  const urgency = words <= 4 ? 1 : words > 24 ? -2 : 0
+  const offset = lang === 'ar' ? voiceRateOffset(voice, u.speaker) : 0
+  const rate = clampNum(baseRate + p.rate + offset + urgency, lang === 'ar' ? -18 : -8, lang === 'ar' ? 18 : 24, baseRate)
+  const pitch = clampNum(p.pitch + speakerBias.pitch, -4, 5, 0)
+  const volume = clampNum(p.volume + speakerBias.volume, -2, 2, 0)
+  const innerBreakMs = clampNum(u.internalBreakMs || p.inner, 75, 180, p.inner)
+  const preBreathMs = lang === 'ar' ? clampNum(p.pre, 0, 45, 0) : 0
   return { delivery, rate, pitch, volume, innerBreakMs, preBreathMs,
-    contour: p.contour, energy: Math.round((rate / 30) * 100), warmth: delivery === 'reflection' || delivery === 'conclusion' ? 88 : 76 }
+    contour: p.contour, energy: Math.round(((rate + 18) / 36) * 100),
+    warmth: delivery === 'reflection' || delivery === 'conclusion' ? 90 : 80 }
 }
 
 function splitPerformanceSegments(pronText) {
@@ -670,12 +834,12 @@ function applySubsAndFocus(segment, subs) {
 /** يبني SSML من النص النطقي: إخراج أدائي داخل الجملة، لا prosody واحد مسطّح. */
 function buildSSML(u, pronText, subs, voice, lang) {
   const ratePlan = {
-    statement: 12, question: 12, briefReaction: 18, gentleObjection: 17,
-    clarification: 12, reflection: 8, conclusion: 10,
-    reflective: 8, hook: 16, objection: 17, quick: 18, normal: 12,
+    statement: 0, question: -1, briefReaction: 6, gentleObjection: 4,
+    clarification: 0, reflection: -7, conclusion: -7,
+    reflective: -7, hook: 3, objection: 4, quick: 6, normal: 0,
   }
   const requestedRate = Number.isFinite(Number(u.ratePct)) ? Number(u.ratePct) : (ratePlan[u.delivery] ?? ratePlan.normal)
-  const director = performanceDirector(u, requestedRate, lang)
+  const director = performanceDirector(u, requestedRate, lang, voice)
   const profile = capabilityProfiles.get(voice)
   if (lang === 'ar' && profile && !profile.subSupported) {
     for (const { word, alias } of subs) pronText = pronText.split(word).join(alias)
@@ -798,8 +962,9 @@ async function audioJudge(wavPath, intended, heard, risks, context, delivery = {
     `الكلمات الخطرة: ${JSON.stringify(risks)}`,
     `سياق المعنى: ${context}`,
     `خطة الأداء: ${JSON.stringify({ type: delivery.delivery || 'normal', ratePct: delivery.ratePct,
+      targetWordsPerMinute: delivery.targetWordsPerMinute, actualWordsPerMinute: delivery.actualWordsPerMinute,
       ending: delivery.ending, isQuestion: String(context).includes('؟') })}`,
-    'ارفض السؤال إذا سُمِع كنص تقريري. ارفض الإيقاع المدرسي، والنهاية المبتورة، والوقف الطويل، وأي عامية أو حركة تقلب المعنى.',
+    'ارفض السؤال إذا سُمِع كنص تقريري. ارفض السرعة المستعجلة، والبطء المتمطّط، والإيقاع المدرسي، والحركة الإعرابية الخاطئة أو الثقيلة عند الوقف، والنهاية المبتورة، وأي عامية.',
     'استمع إلى ملف WAV المرفق بنفسك. لا تعتمد على STT وحده. أعد حكم JSON وفق المخطط فقط.',
   ].join('\n')
   const verdict = await gemini(JUDGE_SYSTEM, prompt, 0.1, JUDGE_MODEL, [{
@@ -926,6 +1091,7 @@ function computeSampleContentHashes(sample, sourceArticle, music) {
     delivery: utterance.delivery, ratePct: utterance.ratePct, pauseAfterMs: utterance.pauseAfterMs,
     ending: utterance.ending, internalBreakMs: utterance.internalBreakMs,
     allowOverlap: utterance.allowOverlap, overlapMs: utterance.overlapMs,
+    musicBridgeAfter: Boolean(utterance.musicBridgeAfter),
   })))).digest('hex')
   const musicHash = music ? createHash('sha256').update(readFileSync(music.file))
     .update(JSON.stringify({ bedVol: music.bedVol, introVol: music.introVol, outroVol: music.outroVol,
@@ -1280,7 +1446,7 @@ async function evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnal
 
   let verdict
   try {
-    verdict = await audioJudge(path, intended, heard, riskAnalysis.risks, dialogueText, u)
+    verdict = await audioJudge(path, intended, heard, riskAnalysis.risks, dialogueText, { ...u, actualWordsPerMinute: technical.wpm })
   } catch (error) {
     /* Fail closed: لا يستطيع STT وحده إثبات الفتحة والكسرة أو النبرة. */
     verdict = { pass: false, problems: [{ word: '', issue: `تعذر الحكم الصوتي الإلزامي: ${error.message}` }] }
@@ -1327,12 +1493,13 @@ async function calibrateAndEvaluateAudition({ runId, utteranceId, utterance, voi
   const intended = spokenText(variant.text, [])
   const trialTrim = trimGeneratedBoundaryPadding(trialPath, intended)
   const trialAudit = auditSegment(trialPath, intended, {})
-  const target = Number(plan.targetWordsPerMinute || 155)
+  const target = Number(plan.targetWordsPerMinute || 140)
   const measured = Math.max(1, Number(trialAudit.wpm || 1))
-  const correction = (target / measured - 1) * 100
-  const calibratedRate = Math.round(Math.min(30, Math.max(3, Number(plan.ratePct || 12) + correction)))
+  const rawCorrection = (target / measured - 1) * 100
+  const correction = Math.min(10, Math.max(-10, rawCorrection))
+  const calibratedRate = Math.round(Math.min(18, Math.max(-18, Number(plan.ratePct || 0) + correction)))
   plan = { ...plan, ratePct: calibratedRate }
-  if (Math.abs(calibratedRate - Number(utterance.ratePct || 12)) <= 1) renameSync(trialPath, path)
+  if (Math.abs(calibratedRate - Number(utterance.ratePct || 0)) <= 1) renameSync(trialPath, path)
   else {
     rmSync(trialPath, { force: true })
     if (!await synthSSML(buildSSML(plan, variant.text, [], voice, 'ar'), path))
@@ -1344,6 +1511,25 @@ async function calibrateAndEvaluateAudition({ runId, utteranceId, utterance, voi
     variant, path, sttLocale: 'ar-SA', preGenerated: true })
   return { ...audit, plan, calibration: { initialRatePct: utterance.ratePct,
     trialWpm: trialAudit.wpm, targetWpm: target, calibratedRatePct: calibratedRate, trialTrim } }
+}
+
+async function calibrateProductionPlan({ utterance, voice, text, subs, lang, tempBase }) {
+  if (lang !== 'ar' || !Number(utterance.targetWordsPerMinute)) return { plan: { ...utterance }, calibration: null }
+  const trial = `${tempBase}.pace.wav`
+  const plan = { ...utterance }
+  if (!await synthSSML(buildSSML(plan, text, subs, voice, lang), trial))
+    return { plan, calibration: { pass: false, reason: 'فشل عينة معايرة السرعة' } }
+  const intended = spokenText(text, subs)
+  trimGeneratedBoundaryPadding(trial, intended)
+  const audit = auditSegment(trial, intended, {})
+  rmSync(trial, { force: true })
+  const target = Number(plan.targetWordsPerMinute)
+  const measured = Math.max(1, Number(audit.wpm || target))
+  const correction = Math.min(10, Math.max(-10, (target / measured - 1) * 100))
+  const calibratedRatePct = Math.round(Math.min(18, Math.max(-18, Number(plan.ratePct || 0) + correction)))
+  return { plan: { ...plan, ratePct: calibratedRatePct },
+    calibration: { pass: true, measuredWpm: measured, targetWpm: target,
+      originalRatePct: Number(plan.ratePct || 0), calibratedRatePct } }
 }
 
 async function safeRephrase(dialogueText, sourceText, reason, stubbornWords = []) {
@@ -1389,15 +1575,23 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
   let dialogueText = u.text
   let currentAnalysis = analysis
   const allAudits = []
+  let deliveryPlan = { ...u }
+  let paceCalibration = null
 
   for (let round = 0; round < 3; round++) {
     const applied = applyLexicon(currentAnalysis.pronunciationText || dialogueText, currentAnalysis.risks, voice, dialogueText)
+    const calibrated = await calibrateProductionPlan({ utterance: deliveryPlan, voice, text: applied.text,
+      subs: applied.subs, lang, tempBase: wavPath.replace(/\.wav$/, `.r${round + 1}`) })
+    deliveryPlan = calibrated.plan
+    paceCalibration = calibrated.calibration
+    if (paceCalibration?.pass === false)
+      return { ok: false, verified: false, reason: paceCalibration.reason, dialogueText, candidates: allAudits }
     const variants = candidateVariants(dialogueText, applied.text, applied.subs, currentAnalysis.risks)
     const audits = []
     for (let index = 0; index < variants.length; index++) {
       const variant = { ...variants[index], id: `r${round + 1}-${variants[index].id}` }
       const candidatePath = wavPath.replace(/\.wav$/, `.${round}-${index}.wav`)
-      audits.push(await evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnalysis: currentAnalysis,
+      audits.push(await evaluateCandidate({ runId, utteranceId, u: deliveryPlan, dialogueText, riskAnalysis: currentAnalysis,
         voice, lang, variant, path: candidatePath }))
     }
     allAudits.push(...audits)
@@ -1419,6 +1613,8 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
         pronunciationText: selected.variant.text,
         intendedText: selected.intended,
         risks: currentAnalysis.risks,
+        deliveryPlan,
+        paceCalibration,
         heard: selected.heard,
         selectedCandidate: selected.variant.id,
         candidates: allAudits.map((audit) => ({ id: audit.variant.id, pass: audit.pass, score: audit.score,
@@ -1517,6 +1713,63 @@ function trimGeneratedBoundaryPadding(file, intendedText) {
   renameSync(temporary, file)
   return { startTrimMs: Math.round(startTrimSec * 1000), endTrimMs: Math.round(endTrimSec * 1000),
     classification: 'tts_boundary_padding_removed' }
+}
+
+
+function selectMusicBridgeIndexes(utterances) {
+  const total = utterances.length
+  if (total < 14) return []
+  const explicit = utterances.map((utterance, index) => ({ utterance, index }))
+    .filter(({ utterance, index }) => utterance.musicBridgeAfter === true
+      && index < total - 2 && !utterance.allowOverlap)
+    .slice(0, total >= 26 ? 2 : 1)
+    .map((item) => item.index)
+  if (explicit.length) return explicit
+  const candidates = utterances.map((utterance, index) => ({ utterance, index }))
+    .filter(({ utterance, index }) => index >= Math.floor(total * 0.28) && index <= Math.floor(total * 0.82)
+      && ['question', 'reflection', 'gentleObjection', 'clarification'].includes(utterance.delivery)
+      && !utterance.allowOverlap)
+  const primaryTarget = total * 0.52
+  const primary = [...candidates].sort((left, right) =>
+    Math.abs(left.index - primaryTarget) - Math.abs(right.index - primaryTarget))[0]
+  if (!primary) return []
+  const result = [primary.index]
+  if (total >= 26) {
+    const secondaryTarget = total * 0.78
+    const secondary = candidates.filter((item) => Math.abs(item.index - primary.index) >= 6)
+      .sort((left, right) => Math.abs(left.index - secondaryTarget) - Math.abs(right.index - secondaryTarget))[0]
+    if (secondary) result.push(secondary.index)
+  }
+  return result.sort((a, b) => a - b)
+}
+
+function createMusicBridge(track, outPath, durationSec = 1.8, volume = 0.085) {
+  ff(['-i', track.file, '-t', durationSec.toFixed(2), '-af',
+    `afade=t=in:d=0.35,afade=t=out:st=${Math.max(0.55, durationSec - 0.65).toFixed(2)}:d=0.65,volume=${volume}`,
+    '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', outPath])
+  return outPath
+}
+
+function insertSemanticMusicBridges(segments, utterances, music, workDir) {
+  if (!music || !segments.length) return { segments, bridges: [] }
+  const indexes = selectMusicBridgeIndexes(utterances)
+  if (!indexes.length) return { segments, bridges: [] }
+  const expanded = []
+  const bridges = []
+  for (let index = 0; index < segments.length; index++) {
+    const segment = { ...segments[index] }
+    expanded.push(segment)
+    if (!indexes.includes(index)) continue
+    const durationSec = bridges.length === 0 ? 1.8 : 1.35
+    const bridgeFile = resolve(workDir, `semantic-bridge-${bridges.length + 1}.wav`)
+    createMusicBridge(music, bridgeFile, durationSec, bridges.length === 0 ? 0.085 : 0.07)
+    segment.pauseAfterMs = Math.min(Number(segment.pauseAfterMs || 300), 220)
+    expanded.push({ file: bridgeFile, pauseAfterMs: 0, overlapMs: 320,
+      hasHighRisk: false, isMusicBridge: true, bridgeDurationSec: durationSec })
+    if (segments[index + 1]) segments[index + 1].overlapMs = Math.max(Number(segments[index + 1].overlapMs || 0), 520)
+    bridges.push({ afterUtterance: index + 1, durationSec })
+  }
+  return { segments: expanded, bridges }
 }
 
 function planTimeline(segments, music) {
@@ -1693,7 +1946,7 @@ async function judgeFullEpisode(mp3, intended, stt, transcript, risks) {
     `STT للحلقة المدمجة: ${stt.text}`,
     `Transcript الظاهر: ${transcript.map((item) => `${item.speaker}: ${item.text}`).join('\n')}`,
     `الكلمات الخطرة: ${JSON.stringify(risks)}`,
-    'افحص ثبات الفصحى، اتساق الأسماء بين الصوتين، البتر عند الحدود، الوقفات، وأي تداخل يبتلع حرفاً. أعد JSON فقط.',
+    'افحص ثبات الفصحى، صحة الفتحة والكسرة والوقف، عدم إظهار الإعراب المدرسي عند نهايات الجمل، اتساق الأسماء، البتر عند الحدود، السرعة، الوقفات، الجسور الموسيقية، وأي تداخل يبتلع حرفاً. ارفض الحلقة إذا بدت مستعجلة أو كقارئين يتناوبان. أعد JSON فقط.',
   ].join('\n'), 0.1, JUDGE_MODEL, [{ inlineData: { mimeType: 'audio/mpeg', data: bytes.toString('base64') } }])
   if (typeof verdict?.pass !== 'boolean' || !Array.isArray(verdict?.problems)) throw new Error('حكم الحلقة الكاملة غير صالح')
   return { ...verdict, pass: verdict.pass === true && verdict.problems.length === 0 }
@@ -1753,21 +2006,29 @@ async function blindRankingRound(options, round) {
   const labels = ['A', 'B', 'C', 'D', 'E'].slice(0, options.length)
   const shuffled = secureShuffle(options)
   const mapping = new Map(shuffled.map((option, index) => [labels[index], option]))
-  const ranking = labels.map((label) => ({
-    label,
-    scores: {
-      pronunciationMeaning: 95,
-      fushaNeutrality: 95,
-      naturalDialogue: 95,
-      questionAndObjectionIntonation: 95,
-      pairHarmony: 95,
-      listeningComfort: 95
-    },
-    reason: 'أداء صوتي متميز وتناغم ممتزج بالكامل.'
-  }))
-  return { round, ranking: ranking.map((item, rank) => ({ optionKey: mapping.get(item.label).key,
-    blindLabel: item.label, rank: rank + 1, score: weightedVoiceScore(item.scores), scores: item.scores,
-    reason: String(item.reason || '') })) }
+  const parts = []
+  const descriptions = []
+  for (const label of labels) {
+    const option = mapping.get(label)
+    const audio = readFileSync(option.file)
+    descriptions.push(`${label}: عينة مجهولة الهوية`)
+    parts.push({ inlineData: { mimeType: 'audio/mpeg', data: audio.toString('base64') } })
+  }
+  const system = `أنت لجنة استماع عمياء صارمة لبودكاست عربي تربوي. استمع إلى جميع الملفات بالترتيب A ثم B ثم C ثم D ثم E. لا تعرف الأصوات أو الدول. رتّبها من الأفضل إلى الأسوأ وفق: صحة الحركات والنحو والوقف، طبيعية الحوار، جمال ودفء الصوت النسائي، وضوح السؤال، السرعة المريحة غير المستعجلة، الوقفات ذات المعنى، انسجام الزوج، والراحة لأربع دقائق. لا تمنح درجات متقاربة مجاملة. أعد JSON فقط: {"ranking":[{"label":"A","scores":{"pronunciationMeaning":0,"fushaNeutrality":0,"naturalDialogue":0,"questionAndObjectionIntonation":0,"pairHarmony":0,"listeningComfort":0},"reason":""}]}. يجب أن تظهر كل تسمية مرة واحدة.`
+  const verdict = await gemini(system, `الجولة ${round}. ترتيب الملفات المرفقة مطابق لهذه القائمة:\n${descriptions.join('\n')}`,
+    0.04, JUDGE_MODEL, parts)
+  if (!Array.isArray(verdict?.ranking) || verdict.ranking.length !== labels.length)
+    throw new Error('لجنة الترتيب العمياء أعادت ترتيباً غير صالح')
+  const seen = new Set()
+  const ranking = verdict.ranking.map((item, index) => {
+    const label = String(item.label || '').toUpperCase()
+    if (!mapping.has(label) || seen.has(label) || !validVoiceScores(item.scores))
+      throw new Error('لجنة الترتيب العمياء أعادت تسمية أو درجات غير صالحة')
+    seen.add(label)
+    return { optionKey: mapping.get(label).key, blindLabel: label, rank: index + 1,
+      score: weightedVoiceScore(item.scores), scores: item.scores, reason: String(item.reason || '') }
+  })
+  return { round, ranking }
 }
 
 function chooseBlindWinner(options, rounds) {
@@ -1881,7 +2142,7 @@ async function renderStandaloneAudition({ voice, utterances, outputDir, key, gen
   const judge = await judgeStandaloneVoice(mp3, utterances, ensemble, risks, gender)
   const metrics = auditionMetrics(utterances, audits, assembled)
   const pass = audits.every((audit) => audit.pass) && technical.issues.length === 0 && ensemble.pass
-    && judge.pass && metrics.averageWordsPerMinute >= 140 && metrics.averageWordsPerMinute <= 170
+    && judge.pass && metrics.averageWordsPerMinute >= 125 && metrics.averageWordsPerMinute <= 152
   return { key, voice, file: mp3, audits, technical, ensemble, judge, metrics, pass,
     reason: pass ? '' : 'فشل واحد أو أكثر من: النطق، السؤال، السرعة، المدة، أو تقييم الصوت 85/100' }
 }
@@ -1910,7 +2171,7 @@ async function renderPairAudition({ male, female, utterances, outputDir, key, fe
   if (segments.length !== utterances.length) return { key, male, female, pass: false, reason: 'لم تتولد كل المداخلات' }
   const mp3 = resolve(outputDir, `${key}.mp3`)
   const assembled = assemble(segments, mp3, null, { raw: true })
-  const technical = auditAudio(mp3, { minSec: 75, maxSec: 90, maxLongSilences: 0 })
+  const technical = auditAudio(mp3, { minSec: SAMPLE_MIN_SEC, maxSec: SAMPLE_MAX_SEC, maxLongSilences: 1 })
   const fullWav = resolve(pairDir, 'full.wav')
   ff(['-i', mp3, '-ar', '24000', '-ac', '1', fullWav])
   const intended = utterances.map((utterance) => utterance.pronunciationText.replace(/\|/g, ' ')).join(' ')
@@ -1923,10 +2184,10 @@ async function renderPairAudition({ male, female, utterances, outputDir, key, fe
   const femaleMean = audits.filter((audit) => audit.speaker === 'B').map((audit) => audit.technical?.meanDb).filter(Number.isFinite)
   const meanOf = (values) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0
   const levelDifferenceDb = Math.round(Math.abs(meanOf(maleMean) - meanOf(femaleMean)) * 10) / 10
-  const silencePass = metrics.silence.averagePauseMs >= 250 && metrics.silence.averagePauseMs <= 320
-    && metrics.silence.longestPauseMs <= 700 && metrics.silence.silenceRatio >= 8 && metrics.silence.silenceRatio <= 11
+  const silencePass = metrics.silence.averagePauseMs >= 300 && metrics.silence.averagePauseMs <= 520
+    && metrics.silence.longestPauseMs <= 1000 && metrics.silence.silenceRatio >= 10 && metrics.silence.silenceRatio <= 18
   const pass = audits.every((audit) => audit.pass) && technical.issues.length === 0 && ensemble.pass && judge.pass
-    && femaleResult.judge.score >= 85 && metrics.averageWordsPerMinute >= 145 && metrics.averageWordsPerMinute <= 165
+    && femaleResult.judge.score >= 85 && metrics.averageWordsPerMinute >= 132 && metrics.averageWordsPerMinute <= 148
     && metrics.silence.overlapCount === 1 && silencePass && levelDifferenceDb <= 4
   return { key, male, female, femaleStandaloneScore: femaleResult.judge.score, file: mp3, audits,
     technical, ensemble, judge, metrics: { ...metrics, levelDifferenceDb }, pass,
@@ -1935,7 +2196,7 @@ async function renderPairAudition({ male, female, utterances, outputDir, key, fe
 
 function auditPath(article, lang) {
   mkdirSync(AUDITS, { recursive: true })
-  return resolve(AUDITS, `${article.slug}.${lang}.json`)
+  return resolve(AUDITS, `${article.slug}.${lang}${PILOT_MODE ? '.pilot' : ''}.json`)
 }
 
 function writeAudit(article, lang, payload) {
@@ -1951,19 +2212,22 @@ async function produce(article, lang) {
   if (lang === 'ar' && !DRY && !PLAN && !ARABIC_PRODUCTION_GATE_READY)
     throw new Error('بوابة عينة الصوت غير معتمدة؛ ممنوع إنتاج الحلقة العربية الكاملة')
   const suffix = lang === 'ar' ? '.dialogue.mp3' : '.dialogue-en.mp3'
-  const outMp3 = resolve(AUDIO, article.slug + suffix)
-  const transcriptPath = resolve(AUDIO, `${article.slug}.dialogue.json`)
+  const outputRoot = PILOT_MODE ? PILOT_AUDIO : AUDIO
+  mkdirSync(outputRoot, { recursive: true })
+  const outMp3 = resolve(outputRoot, article.slug + suffix)
+  const transcriptPath = resolve(outputRoot, `${article.slug}.dialogue.json`)
   const sourceHash = createHash('sha256').update(article.body).digest('hex')
   const contentHash = createHash('sha256').update(`${sourceHash}|${lang}|${ACTIVE_PIPELINE_HASH}`).digest('hex').slice(0, 16)
-  const key = `${article.slug}:${lang}`
+  const key = `${PILOT_MODE ? 'pilot:' : ''}${article.slug}:${lang}`
   const completed = state.done[key]
   const audioMatches = existsSync(outMp3) && typeof completed?.audioHash === 'string'
     && createHash('sha256').update(readFileSync(outMp3)).digest('hex') === completed.audioHash
   const transcriptMatches = lang !== 'ar' || (existsSync(transcriptPath) && typeof completed?.transcriptHash === 'string'
     && createHash('sha256').update(readFileSync(transcriptPath)).digest('hex') === completed.transcriptHash)
-  if (!FORCE && completed?.contentHash === contentHash && completed?.status === 'accepted_automated'
+  const acceptedStatus = PILOT_MODE ? 'accepted_pilot' : 'accepted_automated'
+  if (!FORCE && completed?.contentHash === contentHash && completed?.status === acceptedStatus
     && audioMatches && transcriptMatches) {
-    console.log(`↷ ${article.title} (${lang}) — منجز ومفحوص`)
+    console.log(`↷ ${article.title} (${lang}) — منجز ومفحوص${PILOT_MODE ? ' ضمن التجربة الثلاثية' : ''}`)
     return 'skip'
   }
 
@@ -1991,6 +2255,8 @@ async function produce(article, lang) {
     auditRecord.status = 'quarantined'
     auditRecord.finishedAt = new Date().toISOString()
     auditRecord.finalGate = { ...auditRecord.finalGate, pass: false, reasonCodes: [reason], ...extra }
+    const quarantinedAudio = preserveRejectedCandidate(article, lang, reason)
+    if (quarantinedAudio) auditRecord.finalGate.quarantinedAudio = quarantinedAudio.replace(ROOT, '')
     writeAudit(article, lang, auditRecord)
     runInsert.run(runId, article.slug, sourceHash, ACTIVE_PIPELINE_HASH, 'quarantined', reason, startedAt, auditRecord.finishedAt)
     pendingMemory.length = 0
@@ -2012,9 +2278,11 @@ async function produce(article, lang) {
         script = { mood: previous.dialogue.mood || 'تأملي', storyIntro: Boolean(previous.dialogue.storyIntro),
           utterances: previous.dialogue.utterances.map((utterance, index) => ({ speaker: utterance.speaker,
             text: utterance.dialogueText, delivery: utterance.delivery || 'normal', ratePct: utterance.ratePct,
+            targetWordsPerMinute: utterance.targetWordsPerMinute,
             pauseAfterMs: utterance.pauseAfterMs,
             ending: utterance.ending, internalBreakMs: utterance.internalBreakMs,
             allowOverlap: Boolean(utterance.allowOverlap), overlapMs: utterance.overlapMs || 0,
+            musicBridgeAfter: Boolean(utterance.musicBridgeAfter),
             emphasisWords: utterance.emphasisWords || [], pronunciationNotes: '', _index: index })) }
         normalizeMechanics(script)
         lintIssues = lintScript(script, lang)
@@ -2041,7 +2309,8 @@ async function produce(article, lang) {
     auditRecord.dialogue = { mood: script.mood, storyIntro: isStory,
       utterances: utts.map((utterance, index) => {
         const { text, _index, ...metadata } = utterance
-        return { id: `u${String(index + 1).padStart(3, '0')}`, ...metadata, dialogueText: text }
+        return { id: `u${String(index + 1).padStart(3, '0')}`, ...metadata,
+          musicBridgeAfter: Boolean(utterance.musicBridgeAfter), dialogueText: text }
       }) }
     console.log(`  ✓ dialogueText فصيح ومسنَد: ${utts.length} مداخلة · قصة: ${isStory ? 'نعم' : 'لا'}`)
     if (DRY) {
@@ -2100,18 +2369,25 @@ async function produce(article, lang) {
         { runId, utteranceId, sourceText: article.body })
       if (!result.ok || (lang === 'ar' && !result.verified)) return quarantine(`المداخلة ${utteranceId}: ${result.reason || 'غير موثقة'}`)
       const risks = result.risks || []
+      const deliveryPlan = result.deliveryPlan || utterance
       const hasHighRisk = risks.some((risk) => risk.riskLevel === 'high')
       allRisks.push(...risks.map((risk) => ({ ...risk, utteranceId, voice: voiceInfo.azure })))
       transcript.push({ speaker: voiceInfo.name, speakerKey: utterance.speaker, text: result.dialogueText || utterance.text,
-        delivery: utterance.delivery, ratePct: utterance.ratePct, pauseAfterMs: utterance.pauseAfterMs,
-        ending: utterance.ending, internalBreakMs: utterance.internalBreakMs,
-        allowOverlap: Boolean(utterance.allowOverlap), overlapMs: Number(utterance.overlapMs || 0) })
+        delivery: deliveryPlan.delivery, ratePct: deliveryPlan.ratePct,
+        targetWordsPerMinute: deliveryPlan.targetWordsPerMinute,
+        pauseAfterMs: deliveryPlan.pauseAfterMs, ending: deliveryPlan.ending,
+        internalBreakMs: deliveryPlan.internalBreakMs,
+        allowOverlap: Boolean(deliveryPlan.allowOverlap), overlapMs: Number(deliveryPlan.overlapMs || 0),
+        musicBridgeAfter: Boolean(deliveryPlan.musicBridgeAfter),
+        paceCalibration: result.paceCalibration || null })
       pronunciation.push({ id: utteranceId, speaker: utterance.speaker, voice: voiceInfo.azure,
         pronunciationText: result.pronunciationText || utterance.text, intendedText: result.intendedText || result.pronunciationText || utterance.text, risks,
         selectedCandidateId: result.selectedCandidate, candidates: result.candidates, stt: result.heard })
-      const pauseAfterMs = Math.min(700, Math.max(100, Number(utterance.pauseAfterMs || 220)))
-      const overlapMs = !hasHighRisk && !previousHasHighRisk && utterance.allowOverlap
-        ? Math.min(180, Math.max(60, Number(utterance.overlapMs || 100))) : 0
+      const pauseProfile = pacingOf(deliveryPlan.delivery)
+      const pauseAfterMs = Math.min(pauseProfile.pauseMs[1], Math.max(pauseProfile.pauseMs[0],
+        Number(deliveryPlan.pauseAfterMs || stableBetween(deliveryPlan.text, index + 71, ...pauseProfile.pauseMs))))
+      const overlapMs = !hasHighRisk && !previousHasHighRisk && deliveryPlan.allowOverlap
+        ? Math.min(150, Math.max(50, Number(deliveryPlan.overlapMs || 90))) : 0
       segments.push({ file: wav, pauseAfterMs, overlapMs, hasHighRisk })
       previousHasHighRisk = hasHighRisk
       process.stdout.write(`  🎙 ${index + 1}/${utts.length} (TTS→STT→Judge)\r`)
@@ -2119,12 +2395,15 @@ async function produce(article, lang) {
     console.log('')
     auditRecord.dialogue.utterances = transcript.map((item, index) => ({ id: `u${String(index + 1).padStart(3, '0')}`,
       speaker: item.speakerKey, dialogueText: item.text, delivery: item.delivery, ratePct: item.ratePct,
-      pauseAfterMs: item.pauseAfterMs, ending: item.ending, internalBreakMs: item.internalBreakMs,
-      allowOverlap: item.allowOverlap, overlapMs: item.overlapMs }))
+      targetWordsPerMinute: item.targetWordsPerMinute, pauseAfterMs: item.pauseAfterMs,
+      ending: item.ending, internalBreakMs: item.internalBreakMs,
+      allowOverlap: item.allowOverlap, overlapMs: item.overlapMs,
+      musicBridgeAfter: item.musicBridgeAfter, paceCalibration: item.paceCalibration }))
     auditRecord.pronunciation.utterances = pronunciation
 
     const finalLanguageIssues = lintScript({ utterances: transcript.map((item) => ({ speaker: item.speakerKey,
-      text: item.text, delivery: item.delivery, ratePct: item.ratePct, pauseAfterMs: item.pauseAfterMs,
+      text: item.text, delivery: item.delivery, ratePct: item.ratePct,
+      targetWordsPerMinute: item.targetWordsPerMinute, pauseAfterMs: item.pauseAfterMs,
       ending: item.ending, internalBreakMs: item.internalBreakMs,
       allowOverlap: item.allowOverlap, overlapMs: item.overlapMs })) }, lang)
     if (finalLanguageIssues.length) return quarantine(`بوابة اللغة بعد الإصلاح: ${finalLanguageIssues.join(' · ')}`)
@@ -2149,13 +2428,22 @@ async function produce(article, lang) {
     }
     if (!music) console.log('  ♪ إخراج بلا موسيقى — لا يوجد مسار مرخّص مطابق')
 
-    /* ٥) تركيب مؤقت ثم فحص الحلقة كاملة؛ الملف الحالي لا يُمس */
+    /* ٥) جسور موسيقية دلالية ثم تركيب مؤقت؛ لا صمت ميت ولا موسيقى بعد كل جملة. */
+    const bridged = insertSemanticMusicBridges(segments, transcript, music, TMP)
+    auditRecord.musicBridges = bridged.bridges
     const candidateMp3 = resolve(TMP, `${article.slug}.accepted-candidate.mp3`)
-    const assembled = assemble(segments, candidateMp3, music)
-    const sourceWordCount = article.body.trim().split(/\s+/).length
-    const durationRange = sourceWordCount >= 350 && sourceWordCount <= 450
-      ? { minSec: 225, maxSec: 285, maxLongSilences: 0 }
-      : { minSec: 180, maxSec: 300, maxLongSilences: 0 }
+    const assembled = assemble(bridged.segments, candidateMp3, music)
+    const dialogueWords = transcript.reduce((total, item) => total + String(item.text).split(/\s+/).filter(Boolean).length, 0)
+    const weightedTargetWpm = transcript.reduce((total, item) => total
+      + Number(item.targetWordsPerMinute || 140) * String(item.text).split(/\s+/).filter(Boolean).length, 0)
+      / Math.max(1, dialogueWords)
+    const plannedPauseSec = bridged.segments.reduce((total, item) => total
+      + Math.max(0, Number(item.pauseAfterMs || 0)) / 1000, 0)
+    const bridgeSec = bridged.bridges.reduce((total, item) => total + item.durationSec, 0)
+    const expectedDurationSec = dialogueWords / Math.max(122, weightedTargetWpm) * 60
+      + plannedPauseSec + bridgeSec + (music ? Number(music.introSec || 5) + Number(music.outroSec || 4) : 1)
+    const durationRange = { minSec: Math.max(165, expectedDurationSec * 0.84),
+      maxSec: Math.min(310, expectedDurationSec * 1.18), maxLongSilences: 2 }
     // الوضع المجاني: الوقفات التأملية المقصودة (حتى 700ms) مع حدود المقاطع قد تتجاوز 800ms طبيعياً؛
     // عتبة «صفر» موجّهة لكشف عطل التركيب لا للوقفات المقصودة. وحدود المدة الضيقة (225–285ث) مضبوطة
     // للمسار المدفوع؛ في المجاني نقبل المدى الطبيعي (بضع ثوانٍ فرق لا يُعزل حلقةً سليمة).
@@ -2180,52 +2468,58 @@ async function produce(article, lang) {
       if (!finalJudge.pass) return quarantine(`Arabic Audio Judge للحلقة: ${(finalJudge.problems || []).map((problem) => problem.issue).join(' · ')}`, { fullStt, finalJudge })
     }
 
-    /* ٦) نشر ذري بعد النجاح وحده + تثبيت الذاكرة الناجحة */
+    /* ٦) بوابة score قبل لمس أي ملف منشور، ثم نشر ذري مع Last-Known-Good وRollback دائم. */
+    const qualityScore = episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript })
+    if (!qualityScore.pass) return quarantine(`بوابة score النهائية أقل من الحد: ${qualityScore.score}/100`)
     const publicTranscript = { title: article.title, generatedAt: new Date().toISOString().slice(0, 10),
       language: 'ar', utterances: transcript.map(({ speaker, text }) => ({ speaker, text })) }
     const tempTranscript = resolve(TMP, `${article.slug}.dialogue.json`)
     if (lang === 'ar') writeFileSync(tempTranscript, JSON.stringify(publicTranscript, null, 2))
-    const backupAudio = resolve(TMP, `${article.slug}.previous.mp3`)
-    const backupTranscript = resolve(TMP, `${article.slug}.previous.json`)
-    const previousStateEntry = Object.prototype.hasOwnProperty.call(state.done, key) ? structuredClone(state.done[key]) : undefined
+    const snapshot = createReleaseSnapshot({ article, lang, outMp3, transcriptPath, stateKey: key,
+      label: PILOT_MODE ? 'pilot' : 'production' })
     const previousTotalCount = Number(state.totalCount || 0)
     const previousStoryCount = Number(state.storyCount || 0)
-    if (existsSync(outMp3)) renameSync(outMp3, backupAudio)
-    if (lang === 'ar' && existsSync(transcriptPath)) renameSync(transcriptPath, backupTranscript)
     try {
-      renameSync(candidateMp3, outMp3)
-      if (lang === 'ar') renameSync(tempTranscript, transcriptPath)
-      const audioHash = createHash('sha256').update(readFileSync(outMp3)).digest('hex')
-      const transcriptHash = lang === 'ar' ? createHash('sha256').update(readFileSync(transcriptPath)).digest('hex') : ''
+      const stagedAudio = `${outMp3}.next-${process.pid}`
+      copyFileSync(candidateMp3, stagedAudio)
+      renameSync(stagedAudio, outMp3)
+      if (lang === 'ar') {
+        const stagedTranscript = `${transcriptPath}.next-${process.pid}`
+        copyFileSync(tempTranscript, stagedTranscript)
+        renameSync(stagedTranscript, transcriptPath)
+      }
+      const audioHash = sha256File(outMp3)
+      const transcriptHash = lang === 'ar' ? sha256File(transcriptPath) : ''
       state.done[key] = { contentHash, pipelineHash: ACTIVE_PIPELINE_HASH, sourceHash, audioHash, transcriptHash,
-        status: 'accepted_automated', acceptedAt: new Date().toISOString() }
-      state.totalCount = previousTotalCount + 1
-      if (isStory) state.storyCount = previousStoryCount + 1
+        status: acceptedStatus, acceptedAt: new Date().toISOString(), pilot: PILOT_MODE }
+      if (!PILOT_MODE) {
+        state.totalCount = previousTotalCount + 1
+        if (isStory) state.storyCount = previousStoryCount + 1
+      }
       saveState()
-      const qualityScore = episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript })
-      if (!qualityScore.pass) throw new Error(`بوابة score النهائية أقل من الحد: ${qualityScore.score}/100`)
-      auditRecord.status = 'accepted_automated'
+      const localValidation = validatePublishedArtifacts({ outMp3, transcriptPath, expectedAudioHash: audioHash,
+        expectedTranscriptHash: transcriptHash, lang })
+      if (!localValidation.pass) throw new Error(`فحص ما بعد الاستبدال المحلي: ${localValidation.issues.join(' · ')}`)
+      const postPublish = runPostPublishCheck({ article, lang, outMp3, transcriptPath,
+        releaseDir: snapshot.releaseDir, pilot: PILOT_MODE })
+      auditRecord.status = acceptedStatus
       auditRecord.finishedAt = new Date().toISOString()
       auditRecord.finalGate = { pass: true, score: qualityScore.score, scoreChecks: qualityScore.checks,
-        reasonCodes: LIGHT ? ['light_free_mode'] : [], technicalAudit, fullStt,
+        reasonCodes: PILOT_MODE ? ['three_episode_pilot'] : [], technicalAudit, localValidation, postPublish, fullStt,
         fullComparison: fullComparison ? { ratio: fullComparison.ratio, importantRatio: fullComparison.importantRatio,
           missing: fullComparison.missing, missingImportant: fullComparison.missingImportant } : null, finalJudge }
       writeAudit(article, lang, auditRecord)
-      runInsert.run(runId, article.slug, sourceHash, ACTIVE_PIPELINE_HASH, 'accepted_automated', '', startedAt, auditRecord.finishedAt)
+      runInsert.run(runId, article.slug, sourceHash, ACTIVE_PIPELINE_HASH, acceptedStatus, '', startedAt, auditRecord.finishedAt)
       const riskMap = new Map(allRisks.map((risk) => [normalizeAr(risk.word), risk]))
       commitPendingMemory(riskMap)
-      rmSync(backupAudio, { force: true })
-      rmSync(backupTranscript, { force: true })
+      if (!PILOT_MODE) finalizeLastKnownGood({ article, lang, outMp3, transcriptPath,
+        releaseDir: snapshot.releaseDir, stateKey: key })
+      atomicWriteText(resolve(snapshot.releaseDir, 'accepted.json'), JSON.stringify({
+        acceptedAt: auditRecord.finishedAt, status: acceptedStatus, qualityScore: qualityScore.score,
+        audioHash, transcriptHash, localValidation, postPublish,
+      }, null, 2))
     } catch (publishError) {
-      rmSync(outMp3, { force: true })
-      if (lang === 'ar') rmSync(transcriptPath, { force: true })
-      if (existsSync(backupAudio)) renameSync(backupAudio, outMp3)
-      if (lang === 'ar' && existsSync(backupTranscript)) renameSync(backupTranscript, transcriptPath)
-      if (previousStateEntry === undefined) delete state.done[key]
-      else state.done[key] = previousStateEntry
-      state.totalCount = previousTotalCount
-      state.storyCount = previousStoryCount
-      saveState()
+      restoreReleaseSnapshot(snapshot, { outMp3, transcriptPath, stateKey: key })
       throw publishError
     }
     rmSync(TMP, { recursive: true, force: true })
@@ -2234,6 +2528,148 @@ async function produce(article, lang) {
   } catch (error) {
     return quarantine(error?.message || String(error))
   }
+}
+
+/* ═══════════ التجربة الثلاثية المتنوعة + الترقية الجماعية الآمنة ═══════════ */
+function articlePilotScores(article) {
+  const text = `${article.title} ${article.body}`
+  const count = (pattern) => (text.match(pattern) || []).length
+  return {
+    human: count(/قال|قالت|كان|كانت|عاد|دخل|رفع|سأل|طالب|طفل|معلم|أب|أم|شعر|خاف|قلب|إنسان/g),
+    analytical: count(/دراسة|بحث|نتائج|أظهرت|بيّنت|نسبة|جامعة|نظرية|باحث|عام\s+20|٪|%|\d{2,}/g),
+    reflective: count(/لماذا|ماذا لو|ربما|حين|ليس|ليست|المعنى|القيمة|الكرامة|نتأمل|السؤال/g),
+  }
+}
+
+function selectDiversePilotArticles(articles, count = 3) {
+  const explicit = String(env.PODCAST_PILOT_SLUGS || '').split(',').map((slug) => slug.trim()).filter(Boolean)
+  if (explicit.length) {
+    const selected = explicit.map((slug) => articles.find((article) => article.slug === slug)).filter(Boolean)
+    if (selected.length < Math.min(count, explicit.length)) throw new Error('بعض PODCAST_PILOT_SLUGS غير موجودة')
+    return selected.slice(0, count).map((article, index) => ({ ...article, pilotCategory: ['human', 'analytical', 'reflective'][index] || 'mixed' }))
+  }
+  const pool = articles.slice(0, Math.min(50, articles.length)).map((article) => ({ article, scores: articlePilotScores(article) }))
+  const selected = []
+  for (const category of ['human', 'analytical', 'reflective']) {
+    const best = pool.filter((item) => !selected.some((picked) => picked.article.slug === item.article.slug))
+      .sort((left, right) => right.scores[category] - left.scores[category]
+        || (right.article.iso || '').localeCompare(left.article.iso || ''))[0]
+    if (best) selected.push({ ...best, category })
+  }
+  for (const item of pool) {
+    if (selected.length >= count) break
+    if (!selected.some((picked) => picked.article.slug === item.article.slug)) selected.push({ ...item, category: 'mixed' })
+  }
+  return selected.slice(0, count).map(({ article, category }) => ({ ...article, pilotCategory: category }))
+}
+
+function productionAuditPath(article, lang) {
+  mkdirSync(AUDITS, { recursive: true })
+  return resolve(AUDITS, `${article.slug}.${lang}.json`)
+}
+
+function promotePilotBatch(articles, lang = 'ar') {
+  const batchDir = resolve(RELEASES, `pilot-batch-${releaseTimestamp()}`)
+  mkdirSync(batchDir, { recursive: true })
+  const stateBefore = JSON.stringify(state)
+  const items = []
+  try {
+    for (const article of articles) {
+      const suffix = lang === 'ar' ? '.dialogue.mp3' : '.dialogue-en.mp3'
+      const pilotAudio = resolve(PILOT_AUDIO, `${article.slug}${suffix}`)
+      const pilotTranscript = resolve(PILOT_AUDIO, `${article.slug}.dialogue.json`)
+      const pilotKey = `pilot:${article.slug}:${lang}`
+      const productionKey = `${article.slug}:${lang}`
+      const pilotState = state.done[pilotKey]
+      const pilotAuditFile = resolve(AUDITS, `${article.slug}.${lang}.pilot.json`)
+      const pilotAudit = existsSync(pilotAuditFile) ? JSON.parse(readFileSync(pilotAuditFile, 'utf8')) : null
+      if (!pilotState || pilotState.status !== 'accepted_pilot' || !pilotAudit?.finalGate?.pass)
+        throw new Error(`التجربة غير مكتملة أو غير ناجحة: ${article.slug}`)
+      if (!existsSync(pilotAudio) || sha256File(pilotAudio) !== pilotState.audioHash)
+        throw new Error(`ملف التجربة تغيّر أو اختفى: ${article.slug}`)
+      if (lang === 'ar' && (!existsSync(pilotTranscript) || sha256File(pilotTranscript) !== pilotState.transcriptHash))
+        throw new Error(`Transcript التجربة تغيّر أو اختفى: ${article.slug}`)
+      const itemDir = resolve(batchDir, safeSlug(article.slug)); mkdirSync(itemDir, { recursive: true })
+      const outMp3 = resolve(AUDIO, `${article.slug}${suffix}`)
+      const transcriptPath = resolve(AUDIO, `${article.slug}.dialogue.json`)
+      const hadAudio = existsSync(outMp3), hadTranscript = lang === 'ar' && existsSync(transcriptPath)
+      if (hadAudio) copyFileSync(outMp3, resolve(itemDir, 'previous.mp3'))
+      if (hadTranscript) copyFileSync(transcriptPath, resolve(itemDir, 'previous.json'))
+      items.push({ article, outMp3, transcriptPath, pilotAudio, pilotTranscript, itemDir,
+        hadAudio, hadTranscript, hadProductionState: Boolean(state.done[productionKey]), productionKey, pilotState, pilotAudit })
+    }
+
+    mkdirSync(AUDIO, { recursive: true })
+    for (const item of items) {
+      const stagedAudio = `${item.outMp3}.pilot-next-${process.pid}`
+      copyFileSync(item.pilotAudio, stagedAudio); renameSync(stagedAudio, item.outMp3)
+      if (lang === 'ar') {
+        const stagedTranscript = `${item.transcriptPath}.pilot-next-${process.pid}`
+        copyFileSync(item.pilotTranscript, stagedTranscript); renameSync(stagedTranscript, item.transcriptPath)
+      }
+      const audioHash = sha256File(item.outMp3)
+      const transcriptHash = lang === 'ar' ? sha256File(item.transcriptPath) : ''
+      state.done[item.productionKey] = { ...item.pilotState, status: 'accepted_automated', pilot: false,
+        audioHash, transcriptHash, promotedFromPilot: true, promotedAt: new Date().toISOString() }
+      const validation = validatePublishedArtifacts({ outMp3: item.outMp3, transcriptPath: item.transcriptPath,
+        expectedAudioHash: audioHash, expectedTranscriptHash: transcriptHash, lang })
+      if (!validation.pass) throw new Error(`${item.article.slug}: ${validation.issues.join(' · ')}`)
+      item.validation = validation
+    }
+    state.totalCount = Number(state.totalCount || 0) + items.filter((item) => !item.hadProductionState).length
+    state.pilotGate = { pass: true, pipelineHash: ACTIVE_PIPELINE_HASH, promoted: true,
+      acceptedAt: new Date().toISOString(), articles: items.map((item) => ({ slug: item.article.slug,
+        category: item.article.pilotCategory || 'mixed', score: item.pilotAudit.finalGate.score,
+        audioHash: sha256File(item.outMp3) })) }
+    saveState()
+    const postPublish = runPostPublishCheck({ article: null, lang, outMp3: '', transcriptPath: '',
+      releaseDir: batchDir, pilot: true, slugs: items.map((item) => item.article.slug) })
+    for (const item of items) {
+      finalizeLastKnownGood({ article: item.article, lang, outMp3: item.outMp3,
+        transcriptPath: item.transcriptPath, releaseDir: item.itemDir, stateKey: item.productionKey })
+      const promotedAudit = { ...item.pilotAudit, status: 'accepted_automated',
+        pilotPromotion: { promotedAt: state.pilotGate.acceptedAt, batchDir, postPublish },
+        finishedAt: new Date().toISOString() }
+      atomicWriteText(productionAuditPath(item.article, lang), JSON.stringify(promotedAudit, null, 2))
+    }
+    atomicWriteText(resolve(batchDir, 'accepted.json'), JSON.stringify({
+      acceptedAt: state.pilotGate.acceptedAt, articles: state.pilotGate.articles, postPublish,
+    }, null, 2))
+    atomicWriteText(PILOT_GATE_FILE, JSON.stringify(state.pilotGate, null, 2))
+    return { pass: true, items, batchDir }
+  } catch (error) {
+    for (const item of items) {
+      rmSync(item.outMp3, { force: true }); if (lang === 'ar') rmSync(item.transcriptPath, { force: true })
+      if (item.hadAudio && existsSync(resolve(item.itemDir, 'previous.mp3'))) copyFileSync(resolve(item.itemDir, 'previous.mp3'), item.outMp3)
+      if (lang === 'ar' && item.hadTranscript && existsSync(resolve(item.itemDir, 'previous.json'))) copyFileSync(resolve(item.itemDir, 'previous.json'), item.transcriptPath)
+    }
+    const restored = JSON.parse(stateBefore)
+    for (const key of Object.keys(state)) delete state[key]
+    Object.assign(state, restored)
+    saveState()
+    atomicWriteText(resolve(batchDir, 'rollback.json'), JSON.stringify({ rolledBackAt: new Date().toISOString(), reason: error.message }, null, 2))
+    throw error
+  }
+}
+
+function rollbackToLastKnownGood(slug, lang = 'ar') {
+  const dir = resolve(LAST_GOOD, safeSlug(slug), lang)
+  const manifestFile = resolve(dir, 'manifest.json')
+  if (!existsSync(manifestFile) || !existsSync(resolve(dir, 'episode.mp3'))) throw new Error(`لا توجد Last-Known-Good للحلقة: ${slug}`)
+  const manifest = JSON.parse(readFileSync(manifestFile, 'utf8'))
+  const suffix = lang === 'ar' ? '.dialogue.mp3' : '.dialogue-en.mp3'
+  const outMp3 = resolve(AUDIO, `${slug}${suffix}`)
+  const transcriptPath = resolve(AUDIO, `${slug}.dialogue.json`)
+  mkdirSync(AUDIO, { recursive: true })
+  copyFileSync(resolve(dir, 'episode.mp3'), outMp3)
+  if (lang === 'ar' && existsSync(resolve(dir, 'transcript.json'))) copyFileSync(resolve(dir, 'transcript.json'), transcriptPath)
+  if (manifest.stateEntry) state.done[manifest.stateKey || `${slug}:${lang}`] = manifest.stateEntry
+  else if (state.done[manifest.stateKey || `${slug}:${lang}`]) {
+    state.done[manifest.stateKey || `${slug}:${lang}`].audioHash = sha256File(outMp3)
+    if (lang === 'ar') state.done[manifest.stateKey || `${slug}:${lang}`].transcriptHash = sha256File(transcriptPath)
+  }
+  saveState()
+  console.log(`↶ أُعيدت Last-Known-Good: ${slug} (${lang})`)
 }
 
 /* ═══════════ التشغيل ═══════════ */
@@ -2261,9 +2697,21 @@ if (SELF_TEST) {
   assert.deepEqual(lintScript({ ...sampleFixture, sample: true }, 'ar'), [], 'عينة الأصوات يجب أن تجتاز بوابة اللغة والإلقاء')
   assert.equal(sampleFixture.schemaVersion, 3, 'عينة الأصوات الديناميكية يجب أن تكون v3')
   assert.equal(sampleFixture.femaleVoiceTest.utterances.length, 3, 'اختبار المرأة: خبر + سؤال + تأمل')
-  assert(sampleFixture.utterances.every((utterance) => utterance.ratePct >= 3 && utterance.ratePct <= 30), 'كل سرعة في العينة ضمن المجال الآمن')
+  assert(sampleFixture.utterances.every((utterance) => { const [lo, hi] = pacingOf(utterance.delivery).ratePct; return utterance.ratePct >= lo && utterance.ratePct <= hi }), 'كل سرعة في العينة ضمن المجال التربوي المتوازن')
   assert(existsSync(FFMPEG) && existsSync(FFPROBE), 'ffmpeg/ffprobe يجب أن يكونا قابلين للتنفيذ خارج PATH')
-  console.log('✓ اختبارات بوابة البودكاست العربي: 14/14')
+  assert.equal(blindRankingRound.toString().includes('pronunciationMeaning: 95'), false, 'ممنوع ترتيب وهمي ثابت للأصوات')
+  const normalizedSample = normalizeMechanics(structuredClone(sampleFixture))
+  assert(normalizedSample.utterances.every((utterance) => {
+    const profile = pacingOf(utterance.delivery)
+    return utterance.targetWordsPerMinute >= profile.targetWpm[0]
+      && utterance.targetWordsPerMinute <= profile.targetWpm[1]
+  }), 'تطبيع السرعة يجب أن يبقى داخل النطاق التربوي لكل نوع')
+  assert(performanceDirector({ speaker: 'B', text: 'سؤال قصير', delivery: 'question' }, 0, 'ar',
+    'ar-KW-NouraNeural').rate < performanceDirector({ speaker: 'B', text: 'سؤال قصير',
+      delivery: 'question' }, 0, 'ar', 'ar-AE-FatimaNeural').rate,
+  'نورة تحتاج إبطاءً أدائياً أكبر من فاطمة وفق الاختبار السمعي')
+  assert(selectMusicBridgeIndexes(normalizedSample.utterances).length <= 1, 'العينة القصيرة لا تحتمل أكثر من جسر موسيقي واحد')
+  console.log('✓ اختبارات بوابة البودكاست العربي: 18/18')
   process.exit(0)
 }
 
@@ -2340,7 +2788,7 @@ if (flag('voice-finalist-retest')) {
     const female = finalists[vi]
     const label = labels[vi] || `Sample ${String.fromCharCode(68 + vi)} v2`
     const key = label.toLowerCase().replace(/\s+/g, '-')
-    const voiceRateOffset = /Noura/i.test(female) ? -3 : -1
+    const voiceRateOffset = /Noura/i.test(female) ? -4 : -2
     const utterances = sample.utterances.map((u, index) => retime(u, index, voiceRateOffset))
     const tmp = resolve(TMP, `finalist-${vi}`); rmSync(tmp, { recursive: true, force: true }); mkdirSync(tmp, { recursive: true })
     const bridge = makeBridge(tmp, key)
@@ -2355,11 +2803,12 @@ if (flag('voice-finalist-retest')) {
       if (!ok) { regenerated++; ok = await synthSSML(ssml, wav) }
       if (!ok) { console.error(`\n✘ فشل تركيب المداخلة ${i + 1} لصوت ${female}`); process.exit(5) }
       trimSilence(wav)
+      const followsBridge = segments.at(-1)?.isMusicBridge === true
       segments.push({ file: wav, pauseAfterMs: Number(u.pauseAfterMs || 330),
-        overlapMs: Number(u.overlapMs || 0), hasHighRisk: false })
+        overlapMs: followsBridge ? 520 : Number(u.overlapMs || 0), hasHighRisk: false })
       if (bridge && i === bridgeAfterIndex) {
-        segments[segments.length - 1].pauseAfterMs = 940
-        segments.push({ file: bridge, pauseAfterMs: 120, overlapMs: 430, hasHighRisk: false, isMusicBridge: true })
+        segments[segments.length - 1].pauseAfterMs = 220
+        segments.push({ file: bridge, pauseAfterMs: 0, overlapMs: 320, hasHighRisk: false, isMusicBridge: true })
       }
       process.stdout.write('.')
     }
@@ -2562,8 +3011,8 @@ if (BAKEOFF && !flag('legacy-fixed-bakeoff')) {
   console.log(`▶ اكتشاف حي: ${discovered.female.length} صوتًا نسائيًا + ${discovered.male.length} صوتًا رجاليًا`)
 
   const diverseShortlist = (voices, limit, requiredVoice = '') => {
-    const ordered = [...voices].sort((left, right) => Math.abs((left.wordsPerMinute || 0) - 155)
-      - Math.abs((right.wordsPerMinute || 0) - 155))
+    const ordered = [...voices].sort((left, right) => Math.abs((left.wordsPerMinute || 0) - 140)
+      - Math.abs((right.wordsPerMinute || 0) - 140))
     const selected = []
     if (requiredVoice) {
       const required = ordered.find((voice) => voice.voiceName === requiredVoice)
@@ -2893,7 +3342,12 @@ if (BAKEOFF && flag('legacy-fixed-bakeoff')) {
   process.exit(sampleGate.pass ? 0 : 2)
 }
 
-const needsArabicProductionGate = (LANG === 'ar' || LANG === 'both' || flag('nightly')) && !DRY && !PLAN
+if (ROLLBACK_SLUG) {
+  rollbackToLastKnownGood(ROLLBACK_SLUG, LANG === 'en' ? 'en' : 'ar')
+  process.exit(0)
+}
+
+const needsArabicProductionGate = (LANG === 'ar' || LANG === 'both' || flag('nightly') || PILOT_MODE) && !DRY && !PLAN
 // وضع تجريبي: يُنتج حلقةً كاملةً بصوتَي فهد↔نورة الافتراضيين لسماع الجودة قبل الاعتماد الأعمى.
 // لا يتجاوز أي بوابة جودة صوتية (حَكَم النطق يبقى صارماً)؛ يتجاوز فقط بوابة «اختيار الصوت»
 // التي هي قرار ذوقي بشري. يوسم المخرجات بـ trial حتى لا تُحسب حلقةً معتمَدة.
@@ -2918,9 +3372,16 @@ const ARTICLES = await loadArticles()
 const targetSlug = opt('slug')
 const latest = Number(opt('latest') || 0)
 const nightly = flag('nightly')
+const currentPilotGate = state.pilotGate?.pass === true && state.pilotGate?.pipelineHash === ACTIVE_PIPELINE_HASH
+if (!PILOT_MODE && nightly && REQUIRE_PILOT_GATE && !currentPilotGate) {
+  PILOT_MODE = true
+  PILOT_COUNT = Math.min(3, Math.max(3, Number(env.PODCAST_PILOT_COUNT || 3)))
+  console.log('🧪 لا توجد تجربة ثلاثية صالحة للمحرك الحالي؛ سيُنتج ثلاث حلقات متنوعة في منطقة معزولة قبل أي نشر عام.')
+}
 
 let queue = []
-if (targetSlug) queue = ARTICLES.filter((a) => a.slug === targetSlug)
+if (PILOT_MODE) queue = selectDiversePilotArticles(ARTICLES, PILOT_COUNT)
+else if (targetSlug) queue = ARTICLES.filter((a) => a.slug === targetSlug)
 else if (latest) queue = ARTICLES.slice(0, latest)
 else if (nightly) {
   const limit = Math.min(5, Math.max(1, Number(env.PODCAST_NIGHTLY_LIMIT || 1)))
@@ -2931,14 +3392,14 @@ else if (nightly) {
     const audioFile = resolve(AUDIO, `${article.slug}.dialogue.mp3`)
     const transcriptFile = resolve(AUDIO, `${article.slug}.dialogue.json`)
     const audioIntact = existsSync(audioFile) && typeof saved?.audioHash === 'string'
-      && createHash('sha256').update(readFileSync(audioFile)).digest('hex') === saved.audioHash
+      && sha256File(audioFile) === saved.audioHash
     const transcriptIntact = existsSync(transcriptFile) && typeof saved?.transcriptHash === 'string'
-      && createHash('sha256').update(readFileSync(transcriptFile)).digest('hex') === saved.transcriptHash
+      && sha256File(transcriptFile) === saved.transcriptHash
     return saved?.contentHash !== expected || saved?.status !== 'accepted_automated'
       || !audioIntact || !transcriptIntact
   }).slice(0, limit)
 }
-else { console.log('حدد --slug= أو --latest=N أو --nightly'); process.exit(1) }
+else { console.log('حدد --slug= أو --latest=N أو --nightly أو --pilot=3'); process.exit(1) }
 if (!queue.length) { console.log(targetSlug ? `لا يوجد مقال مطابق: ${targetSlug}` : 'لا حلقات ناقصة ضمن حد الليلة'); process.exit(targetSlug ? 1 : 0) }
 
 /* لا fallback صامتاً: الحلقة العربية الكاملة تحتاج عينة محلية ناجحة + اعتماد Firestore
@@ -3001,10 +3462,38 @@ const langs = LANG === 'both' ? ['ar', 'en'] : [LANG]
 const autoEn = (env.AUTO_GENERATE_ENGLISH || 'false') === 'true'
 let done = 0, failed = 0
 for (const a of queue) {
-  for (const l of nightly ? (autoEn ? ['ar', 'en'] : ['ar']) : langs) {
+  const executionLangs = PILOT_MODE ? ['ar'] : (nightly ? (autoEn ? ['ar', 'en'] : ['ar']) : langs)
+  for (const l of executionLangs) {
     const r = await produce(a, l).catch((e) => { console.error('  ✘', String(e).slice(0, 150)); return 'fail' })
-    if (r === 'ok') done++
+    if (r === 'ok' || (PILOT_MODE && r === 'skip')) done++
     if (r === 'fail') failed++
+  }
+}
+if (PILOT_MODE) {
+  const pilotSummary = { schemaVersion: 1, generatedAt: new Date().toISOString(), pipelineHash: ACTIVE_PIPELINE_HASH,
+    required: queue.length, passed: done, failed, autoPromote: AUTO_PROMOTE_PILOT,
+    articles: queue.map((article) => ({ slug: article.slug, title: article.title, category: article.pilotCategory || 'mixed',
+      status: state.done[`pilot:${article.slug}:ar`]?.status || 'missing' })) }
+  if (failed || done !== queue.length) {
+    state.pilotGate = { ...pilotSummary, pass: false, promoted: false }
+    saveState(); atomicWriteText(PILOT_GATE_FILE, JSON.stringify(state.pilotGate, null, 2))
+    console.log(`\n⛔ التجربة الثلاثية لم تنجح كاملة: ${done}/${queue.length}. لم يُمس النشر العام.`)
+    process.exit(2)
+  }
+  if (AUTO_PROMOTE_PILOT) {
+    try {
+      const promotion = promotePilotBatch(queue, 'ar')
+      console.log(`\n🚀 نجحت التجربة الثلاثية ورُقّيت دفعة واحدة مع Rollback جماعي: ${promotion.items.length} حلقات.`)
+    } catch (error) {
+      state.pilotGate = { ...pilotSummary, pass: false, promoted: false, reason: error.message }
+      saveState(); atomicWriteText(PILOT_GATE_FILE, JSON.stringify(state.pilotGate, null, 2))
+      console.error(`\n↶ فشلت الترقية ورجعت كل الملفات السابقة تلقائياً: ${error.message}`)
+      process.exit(2)
+    }
+  } else {
+    state.pilotGate = { ...pilotSummary, pass: true, promoted: false }
+    saveState(); atomicWriteText(PILOT_GATE_FILE, JSON.stringify(state.pilotGate, null, 2))
+    console.log('\n✓ نجحت التجربة الثلاثية وبقيت معزولة حسب الإعداد PODCAST_AUTO_PROMOTE_PILOT=false.')
   }
 }
 console.log(`\n═══ اكتمل: ${done} · فشل: ${failed} ═══`)

@@ -1,4 +1,4 @@
-name: إعادة اختبار D و B للحوار
+name: إعادة اختبار D و B بإيقاع متوازن
 
 on:
   workflow_dispatch:
@@ -51,7 +51,7 @@ jobs:
           AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
           AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
 
-      - name: Generate slower D/B finalist samples
+      - name: Generate balanced D/B finalist samples
         run: node scripts/podcast-dialogue.mjs --voice-finalist-retest
         env:
           AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}

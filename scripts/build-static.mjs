@@ -73,9 +73,19 @@ const sha256File = (file) => createHash('sha256').update(readFileSync(file)).dig
 const acceptedArabicDialogue = (slug, audioFile, transcriptFile = '') => {
   const accepted = podcastState?.done?.[`${slug}:ar`]
   if (!accepted || typeof accepted !== 'object' || accepted.status !== 'accepted_automated') return false
-  if (!audioFile || !existsSync(audioFile) || !accepted.audioHash || sha256File(audioFile) !== accepted.audioHash) return false
-  if (transcriptFile && (!existsSync(transcriptFile) || !accepted.transcriptHash
-    || sha256File(transcriptFile) !== accepted.transcriptHash)) return false
+  const audioName = `${slug}.dialogue.mp3`
+  const transcriptName = `${slug}.dialogue.json`
+  const localAudioOk = Boolean(audioFile && existsSync(audioFile) && accepted.audioHash && sha256File(audioFile) === accepted.audioHash)
+  const externalAudioOk = Boolean(AUDIO_PUBLIC_BASE_URL && audioMeta?.[audioName]?.sha256
+    && audioMeta[audioName].sha256 === accepted.audioHash && Number(audioMeta[audioName].bytes || 0) >= 200_000)
+  if (!localAudioOk && !externalAudioOk) return false
+  if (transcriptFile) {
+    const localTranscriptOk = Boolean(existsSync(transcriptFile) && accepted.transcriptHash
+      && sha256File(transcriptFile) === accepted.transcriptHash)
+    const externalTranscriptOk = Boolean(AUDIO_PUBLIC_BASE_URL && audioMeta?.[transcriptName]?.sha256
+      && audioMeta[transcriptName].sha256 === accepted.transcriptHash && Number(audioMeta[transcriptName].bytes || 0) > 100)
+    if (!localTranscriptOk && !externalTranscriptOk) return false
+  }
   return true
 }
 const visibleDialogueAsset = (slug, audioFile, transcriptFile = '') =>
@@ -996,6 +1006,9 @@ const episodeItem = (articleList, fileOf) => articleList
   })
   .filter((e) => e.rel && e.asset)
   .sort((x, y) => (y.a.iso || '').localeCompare(x.a.iso || ''))
+const podcastEpisodeNumbers = new Map([...feedArticles]
+  .sort((left, right) => (left.iso || '').localeCompare(right.iso || ''))
+  .map((article, index) => [article.slug, index + 1]))
 const podcastEpisodes = episodeItem(feedArticles, (a) => {
     // الحلقة الحوارية (فهد ونورة) هي حلقة القناة؛ وإلى أن تُولَّد لمقالٍ ما،
     // تبقى قراءته العادية حلقةً بنفس الـGUID — فلا تختفي حلقة ولا تتكرر.
@@ -1020,17 +1033,22 @@ const podcastEpisodes = episodeItem(feedArticles, (a) => {
       <pubDate>${new Date(`${a.iso}T08:00:00Z`).toUTCString()}</pubDate>
       <enclosure url="${url}" length="${bytes}" type="audio/mpeg"/>
       ${duration ? `<itunes:duration>${duration}</itunes:duration>` : ''}
+      <itunes:episode>${podcastEpisodeNumbers.get(a.slug) || 1}</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      ${rel.endsWith('.dialogue.mp3') ? `<podcast:transcript url="${audioPublicUrl(`${a.slug}.dialogue.json`)}" type="application/json"/>` : ''}
       <itunes:image href="${podcastArt}"/>
       <itunes:explicit>false</itunes:explicit>
     </item>`
   }).join('\n')
 
 writeFileSync(resolve(DIST, 'podcast.xml'), `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:podcast="https://podcastindex.org/namespace/1.0">
   <channel>
     <title>مقالات د. أحمد حسين الفيلكاوي المسموعة</title>
     <link>${SITE}</link>
-    <language>ar</language>
+    <atom:link href="${SITE}/podcast.xml" rel="self" type="application/rss+xml"/>
+    <language>ar-KW</language>
+    <generator>Dr. Ahmad Alfailakawi Podcast Engine</generator>
     <copyright>© د. أحمد حسين الفيلكاوي</copyright>
     <description>أفكاري عن التعليم والتقنية والمجتمع، وكيف نُبقي الإنسان في قلب الآلة — بصوتي، مقالاً تلو الآخر. حلقة جديدة مع كل مقال.
 
@@ -1176,6 +1194,21 @@ function assertStaticOutput() {
   const podcast = readFileSync(resolve(DIST, 'podcast.xml'), 'utf8')
   if (hasPodcastState && /\.dialogue\.mp3/.test(podcast) && !Object.values(podcastState?.done || {}).some((entry) => entry?.status === 'accepted_automated')) {
     throw new Error('podcast.xml يحتوي حلقة حوارية غير معتمدة')
+  }
+  if (!/<atom:link\b[^>]*rel="self"/.test(podcast)) throw new Error('podcast.xml يفتقد atom:link self')
+  const podcastItems = [...podcast.matchAll(/<item>([\s\S]*?)<\/item>/g)].map((match) => match[1])
+  const podcastGuids = podcastItems.map((item) => (item.match(/<guid[^>]*>([^<]+)<\/guid>/) || [])[1]).filter(Boolean)
+  const podcastEnclosures = podcastItems.map((item) => (item.match(/<enclosure\s[^>]*url="([^"]+)"/) || [])[1]).filter(Boolean)
+  if (new Set(podcastGuids).size !== podcastGuids.length) throw new Error('podcast.xml يحتوي GUID مكرراً')
+  if (new Set(podcastEnclosures).size !== podcastEnclosures.length) throw new Error('podcast.xml يحتوي enclosure URL مكرراً')
+  for (const item of podcastItems) {
+    const enclosureTag = (item.match(/<enclosure\s[^>]*\/?>(?:<\/enclosure>)?/) || [])[0] || ''
+    const enclosureLength = Number((enclosureTag.match(/length="([0-9]+)"/) || [])[1] || 0)
+    const enclosureType = (enclosureTag.match(/type="([^"]+)"/) || [])[1] || ''
+    if (enclosureLength < 200_000 || enclosureType !== 'audio/mpeg')
+      throw new Error('podcast.xml يحتوي enclosure ناقصاً أو صغيراً')
+    if (!/<itunes:duration>[^<]+<\/itunes:duration>/.test(item)) throw new Error('حلقة بودكاست بلا مدة')
+    if (!/<itunes:episodeType>full<\/itunes:episodeType>/.test(item)) throw new Error('حلقة بودكاست بلا episodeType')
   }
 }
 

@@ -38,7 +38,9 @@
     "verify:domain": "node scripts/verify-domain-migration.mjs",
     "deploy:hosting": "firebase deploy --only hosting --project gen-lang-client-0200723670",
     "deploy:data-rules": "firebase deploy --config firebase.data.json --only firestore:rules,storage --project drahmad-8e9e2",
-    "verify:legacy-retired": "node scripts/verify-legacy-retirement.mjs"
+    "verify:legacy-retired": "node scripts/verify-legacy-retirement.mjs",
+    "content:auto": "node scripts/auto-site-content.mjs",
+    "content:auto:self-test": "node scripts/auto-site-content.mjs --self-test"
   },
   "dependencies": {
     "firebase": "^12.15.0",

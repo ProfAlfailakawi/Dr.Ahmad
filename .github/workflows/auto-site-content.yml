@@ -1,0 +1,84 @@
+name: نشر الرسائل والأسئلة تلقائياً
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/auto-site-content.mjs'
+      - '.github/workflows/auto-site-content.yml'
+      - 'data.ts'
+      - 'src/data.ts'
+      - 'src/data/bodies.json'
+  schedule:
+    # فحص يومي 09:35 صباحاً بتوقيت الكويت؛ السكربت نفسه يحدد إن كان موعد النشر قد حان.
+    - cron: '35 6 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'توليد عنصر جديد من كل قسم الآن'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auto-site-content
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Force public npm registry
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          node scripts/normalize-npm-registry.mjs
+
+      - name: Install dependencies
+        run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+
+      - name: Validate secrets
+        run: |
+          if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then
+            echo "::error::GEMINI_API_KEY or GOOGLE_API_KEY is missing."
+            exit 1
+          fi
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing."
+            exit 1
+          fi
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
+      - name: Write Firebase service account
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
+      - name: Generate and publish due content
+        run: |
+          EXTRA_ARGS=""
+          if [ "${{ inputs.force }}" = "true" ]; then EXTRA_ARGS="--force"; fi
+          npm run content:auto -- $EXTRA_ARGS
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+
+      - name: Remove temporary credentials
+        if: always()
+        run: rm -f sa.json

@@ -325,7 +325,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
       { to: '/curated', label: 'المختارات', allLabel: 'عرض كل المختارات', sub: [
         { to: '/questions', label: 'سؤال يُقلق التعليم' },
         { to: '/radar', label: 'أرشيف الرادار' },
-        { to: '/inbox', label: 'من بريدي الوارد' },
+        { to: '/inbox', label: 'رسائل على الهامش' },
       ] },
     ],
   },

@@ -46,8 +46,8 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
-    // مختارات «من بريدي» وأسئلته: لا تُنشر الرسائل الخاصة تلقائياً؛
-    // المشرف وحده يراجع خلاصة منزوعة البيانات الشخصية ثم ينشرها.
+    // «رسائل على الهامش» و«أسئلة تصلني»: يكتبها نظام النشر المجدول
+    // بحساب الخدمة (يتجاوز القواعد). القراءة عامة، والتعديل اليدوي للمشرف فقط.
     match /site_inbox/{id} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
@@ -55,6 +55,10 @@ service cloud.firestore {
     match /site_faqs/{id} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
+    }
+    // حالة الجدولة الداخلية للنشر الذاتي — لا تظهر للزوار ولا يكتبها المتصفح.
+    match /automation_state/{id} {
+      allow read, write: if false;
     }
     match /site_upcoming/{id} {
       allow read: if true;

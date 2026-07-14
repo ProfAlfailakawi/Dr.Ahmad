@@ -2227,6 +2227,7 @@ if (flag('voice-audition')) {
   const females = (opt('females') || 'ar-EG-SalmaNeural,ar-SA-ZariyahNeural,ar-AE-FatimaNeural,ar-JO-SanaNeural,ar-KW-NouraNeural')
     .split(',').map((v) => v.trim()).filter(Boolean)
   const outDir = resolve(ROOT, 'public/audio/audition')
+  mkdirSync(AUDITS, { recursive: true })
   rmSync(outDir, { recursive: true, force: true }); mkdirSync(outDir, { recursive: true })
   const analyzeSilence = (mp3) => {
     const det = spawnSync(FFMPEG, ['-hide_banner', '-i', mp3, '-af', 'silencedetect=noise=-35dB:d=0.12', '-f', 'null', '-'], { encoding: 'utf8' }).stderr || ''

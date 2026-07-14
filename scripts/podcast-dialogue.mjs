@@ -109,11 +109,12 @@ const REUSE_DIALOGUE = flag('reuse-dialogue')
 const CANARY = flag('canary')
 const BAKEOFF = flag('voice-bakeoff')
 const VOICE_AUDITION = flag('voice-audition')
+const VOICE_FINALIST_RETEST = flag('voice-finalist-retest')
 // أُلغي المسار الخفيف نهائيًا: شروط القبول الحالية تمنع أي نشر يتجاوز STT والحكم الصوتي.
 const LIGHT = false
 let ARABIC_PRODUCTION_GATE_READY = false
 if (!SELF_TEST && !AZURE_KEY) { console.error('✘ AZURE_SPEECH_KEY مفقود'); process.exit(1) }
-if (!SELF_TEST && !VOICE_AUDITION && !PREFLIGHT && !GEMINI_KEY) { console.error('✘ GEMINI_API_KEY أو GOOGLE_API_KEY مفقود'); process.exit(1) }
+if (!SELF_TEST && !VOICE_AUDITION && !VOICE_FINALIST_RETEST && !PREFLIGHT && !GEMINI_KEY) { console.error('✘ GEMINI_API_KEY أو GOOGLE_API_KEY مفقود'); process.exit(1) }
 if (!SELF_TEST) {
   const acquire = () => writeFileSync(LOCK_FILE, JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }), { flag: 'wx' })
   try { acquire() }
@@ -2261,6 +2262,126 @@ if (SELF_TEST) {
   assert(sampleFixture.utterances.every((utterance) => utterance.ratePct >= 3 && utterance.ratePct <= 30), 'كل سرعة في العينة ضمن المجال الآمن')
   assert(existsSync(FFMPEG) && existsSync(FFPROBE), 'ffmpeg/ffprobe يجب أن يكونا قابلين للتنفيذ خارج PATH')
   console.log('✓ اختبارات بوابة البودكاست العربي: 14/14')
+  process.exit(0)
+}
+
+/* ═══════════ اختبار الاعتماد النهائي لصوتين فقط (D/B) ═══════════
+   بعد اختيار الدكتور للخامة: نعيد العينة نفسها، لا نغيّر النص، لكن نعيد إخراجها
+   بسرعات تربوية أهدأ ووقفات وظيفية وجسر موسيقي واحد. هذا ليس تبطيئ MP3؛ كل مداخلة
+   تولَّد بإيقاعها الجديد من Azure. */
+if (flag('voice-finalist-retest')) {
+  const sample = JSON.parse(readFileSync(resolve(ROOT, 'scripts/audition-sample.json'), 'utf8'))
+  const male = opt('male') || 'ar-KW-FahedNeural'
+  const finalists = (opt('females') || 'ar-KW-NouraNeural,ar-AE-FatimaNeural')
+    .split(',').map((voice) => voice.trim()).filter(Boolean)
+  const labels = (opt('labels') || 'Sample D new,Sample B new')
+    .split(',').map((label) => label.trim()).filter(Boolean)
+  const outDir = resolve(ROOT, 'public/audio/audition-finalists')
+  mkdirSync(AUDITS, { recursive: true })
+  rmSync(outDir, { recursive: true, force: true }); mkdirSync(outDir, { recursive: true })
+
+  const retime = (u, index) => {
+    const delivery = u.delivery || 'normal'
+    const rateByType = {
+      hook: 7, statement: 5, question: 5, briefReaction: 9, gentleObjection: 7,
+      clarification: 5, reflection: 0, conclusion: 1, normal: 5,
+    }
+    const pauseByType = {
+      hook: 360, statement: 330, question: 640, briefReaction: 230, gentleObjection: 350,
+      clarification: 330, reflection: 820, conclusion: 760, normal: 330,
+    }
+    const internalByType = {
+      hook: 130, statement: 125, question: 150, briefReaction: 95, gentleObjection: 130,
+      clarification: 125, reflection: 175, conclusion: 165, normal: 125,
+    }
+    const influential = /التعليم الذي يخيف|الإنسان، فيبقى|كيف نقيس|ارتجف قلبه/.test(u.text)
+    return {
+      ...u,
+      ratePct: influential ? Math.min(rateByType[delivery] ?? 5, 2) : (rateByType[delivery] ?? 5),
+      pauseAfterMs: influential ? Math.max(pauseByType[delivery] ?? 330, 720) : (pauseByType[delivery] ?? 330),
+      internalBreakMs: internalByType[delivery] ?? 125,
+      allowOverlap: false,
+      overlapMs: 0,
+      targetWordsPerMinute: delivery === 'briefReaction' ? 148
+        : delivery === 'reflection' || delivery === 'conclusion' || influential ? 130
+          : delivery === 'question' ? 140 : 142,
+      finalistRetestIndex: index,
+    }
+  }
+  const utterances = sample.utterances.map(retime)
+  const bridgeAfterIndex = Math.max(0, utterances.findIndex((u) => /والتعليم الذي يخيف/.test(u.text)))
+  const makeBridge = (dir, tag) => {
+    const track = selectLicensedMusic('تأملي') || (existsSync(resolve(ROOT, 'music/still-light.mp3'))
+      ? { file: resolve(ROOT, 'music/still-light.mp3') } : null)
+    if (!track) return null
+    const out = resolve(dir, `${tag}.bridge.wav`)
+    ff(['-i', track.file, '-t', '2.10', '-af',
+      'afade=t=in:d=0.35,afade=t=out:st=1.55:d=0.55,volume=0.12',
+      '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', out])
+    return out
+  }
+  const analyzeSilence = (mp3) => {
+    const det = spawnSync(FFMPEG, ['-hide_banner', '-i', mp3, '-af', 'silencedetect=noise=-35dB:d=0.12', '-f', 'null', '-'], { encoding: 'utf8' }).stderr || ''
+    const durs = [...det.matchAll(/silence_duration:\s*([0-9.]+)/g)].map((m) => Number(m[1]))
+    const total = durs.reduce((s, d) => s + d, 0)
+    return { count: durs.length, total, avg: durs.length ? total / durs.length : 0, max: durs.length ? Math.max(...durs) : 0, over1000: durs.filter((d) => d > 1).length }
+  }
+  const words = utterances.reduce((n, u) => n + String(u.text).trim().split(/\s+/).filter(Boolean).length, 0)
+  const results = []
+  for (let vi = 0; vi < finalists.length; vi++) {
+    const female = finalists[vi]
+    const label = labels[vi] || `Sample ${String.fromCharCode(68 + vi)} new`
+    const key = label.toLowerCase().replace(/\s+/g, '-')
+    const tmp = resolve(TMP, `finalist-${vi}`); rmSync(tmp, { recursive: true, force: true }); mkdirSync(tmp, { recursive: true })
+    const bridge = makeBridge(tmp, key)
+    const segments = []; let regenerated = 0
+    process.stdout.write(`\n♪ ${label} (${female}) `)
+    for (let i = 0; i < utterances.length; i++) {
+      const u = utterances[i]
+      const voice = u.speaker === 'A' ? male : female
+      const ssml = buildSSML(u, u.pronunciationText || u.text, [], voice, 'ar')
+      const wav = resolve(tmp, `u${String(i).padStart(2, '0')}.wav`)
+      let ok = await synthSSML(ssml, wav)
+      if (!ok) { regenerated++; ok = await synthSSML(ssml, wav) }
+      if (!ok) { console.error(`\n✘ فشل تركيب المداخلة ${i + 1} لصوت ${female}`); process.exit(5) }
+      trimSilence(wav)
+      segments.push({ file: wav, pauseAfterMs: Number(u.pauseAfterMs || 330), overlapMs: 0, hasHighRisk: false })
+      if (bridge && i === bridgeAfterIndex) {
+        segments[segments.length - 1].pauseAfterMs = 680
+        segments.push({ file: bridge, pauseAfterMs: 520, overlapMs: 0, hasHighRisk: false, isMusicBridge: true })
+      }
+      process.stdout.write('.')
+    }
+    const mp3 = resolve(outDir, `${key}.mp3`)
+    const { total } = assemble(segments, mp3, null, { raw: false })
+    const sil = analyzeSilence(mp3)
+    const activeSec = Math.max(1, total - sil.total)
+    const report = {
+      label, voiceNameInternal: female, male, file: `${key}.mp3`,
+      durationSec: +total.toFixed(1),
+      wordsPerMinute: Math.round(words * 60 / activeSec),
+      utterances: utterances.length,
+      musicBridge: bridge ? { count: 1, durationSec: 2.1, after: utterances[bridgeAfterIndex].text } : { count: 0 },
+      avgUtteranceWords: +(words / utterances.length).toFixed(1),
+      pauses: sil.count, avgPauseMs: Math.round(sil.avg * 1000), longestPauseMs: Math.round(sil.max * 1000),
+      pausesOver1000ms: sil.over1000,
+      totalSilenceSec: +sil.total.toFixed(1),
+      silenceRatioPct: +(sil.total / total * 100).toFixed(1),
+      regeneratedSegments: regenerated,
+      target: '135–145 WPM overall, reflective 125–136, short replies 145–152',
+    }
+    results.push(report)
+  }
+  const publicManifest = { generatedAt: new Date().toISOString(), title: sample.title,
+    note: 'اختبار اعتماد نهائي لصوتين فقط: النص نفسه، سرعة أهدأ، وقفات وظيفية، جسر موسيقي واحد.',
+    samples: results.map(({ label, file, durationSec, wordsPerMinute }) => ({ label, file, durationSec, wordsPerMinute })) }
+  writeFileSync(resolve(outDir, 'manifest.json'), JSON.stringify(publicManifest, null, 2))
+  writeFileSync(resolve(AUDITS, 'voice-finalist-retest.private.json'), JSON.stringify({
+    generatedAt: publicManifest.generatedAt, male, mapping: results,
+  }, null, 2))
+  console.log('\n\n═══ إعادة اختبار D/B بالسرعة الجديدة ═══')
+  for (const r of results) console.log(`\n▶ ${r.label} · ${r.wordsPerMinute} كلمة/دقيقة · ${r.durationSec}ث · أطول وقفة ${r.longestPauseMs}ms · جسر موسيقي ${r.musicBridge.count}`)
+  console.log('\n✅ العينتان في public/audio/audition-finalists/')
   process.exit(0)
 }
 

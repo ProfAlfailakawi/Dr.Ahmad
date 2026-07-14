@@ -2282,6 +2282,7 @@ if (flag('voice-audition')) {
   const publicManifest = { generatedAt: new Date().toISOString(), male, note: 'اختبار أعمى — لا أسماء ظاهرة', samples: blind.map((b) => ({ label: b.label, file: `sample-${b.label.split(' ')[1].toLowerCase()}.mp3` })) }
   writeFileSync(resolve(outDir, 'manifest.json'), JSON.stringify(publicManifest, null, 2))
   const privateReport = { generatedAt: new Date().toISOString(), male, sampleWords: words, mapping: blind.map((b) => ({ label: b.label, ...b.report })) }
+  mkdirSync(AUDITS, { recursive: true })
   writeFileSync(resolve(AUDITS, 'voice-audition.private.json'), JSON.stringify(privateReport, null, 2))
   console.log('\n\n═══ اختبار الأصوات (أعمى) ═══')
   for (const b of blind) {

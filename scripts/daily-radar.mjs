@@ -61,8 +61,8 @@ async function fetchFeed(source) {
 
 /* ---------- Gemini: يختار رقماً ويصوغ — لا يكتب الروابط أبداً ---------- */
 async function pickAndSummarize(pool) {
-  const key = env.GEMINI_API_KEY
-  if (!key) throw new Error('GEMINI_API_KEY مفقود')
+  const key = env.GEMINI_API_KEY || env.GOOGLE_API_KEY
+  if (!key) throw new Error('GEMINI_API_KEY أو GOOGLE_API_KEY مفقود')
   const models = env.GEMINI_MODEL
     ? [env.GEMINI_MODEL]
     : ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-pro-latest']

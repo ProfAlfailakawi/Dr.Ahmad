@@ -59,7 +59,7 @@ if (existsSync(resolve(ROOT, '.env')))
     const m = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$/)
     if (m && !env[m[1]]) env[m[1]] = m[2].replace(/^(["'])(.*)\1$/, '$2')
   }
-const GEMINI_KEY = env.GEMINI_API_KEY
+const GEMINI_KEY = env.GEMINI_API_KEY || env.GOOGLE_API_KEY
 const AZURE_KEY = env.AZURE_SPEECH_KEY
 const AZURE_REGION = (env.AZURE_SPEECH_REGION && /^[a-z0-9-]+$/i.test(env.AZURE_SPEECH_REGION) && env.AZURE_SPEECH_REGION.length < 30) ? env.AZURE_SPEECH_REGION : 'uaenorth'
 

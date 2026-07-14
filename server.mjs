@@ -415,7 +415,7 @@ export async function generateContentSuggestion(input, fetchImpl = fetch) {
     if (embedded) return embedded
   }
 
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
   if (!apiKey) throw new HttpError(503, 'AI service is not configured')
   const model = process.env.GEMINI_MODEL || 'gemini-3.5-flash'
   if (!/^[A-Za-z0-9._-]+$/.test(model)) throw new HttpError(503, 'AI model is not configured correctly')
@@ -634,7 +634,7 @@ function socialIdeasInput(value) {
 }
 
 async function callGeminiStructured({ instruction, prompt, properties, required, maxOutputTokens = 4_096, temperature = .55 }, fetchImpl = fetch) {
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
   if (!apiKey) throw new HttpError(503, 'AI service is not configured')
   const model = process.env.EDITORIAL_GEMINI_MODEL || process.env.GEMINI_MODEL || 'gemini-3.5-flash'
   if (!/^[A-Za-z0-9._-]+$/.test(model)) throw new HttpError(503, 'AI model is not configured correctly')
@@ -893,7 +893,7 @@ export async function generatePerfectSocialPack(input, fetchImpl = fetch) {
 
 - الحدث الراهن اختياري، ولا يُستخدم إلا إذا كان الارتباط حقيقياً. اذكر المصدر بوضوح ولا تختلق أي معلومة.
 
-- أعط 4 اتجاهات بصرية متنوعة من هذه العائلة: editorial, quote, split, dark, event.
+- أعط 4 اتجاهات بصرية متنوعة من هذه العائلة: editorial, quote, split, dark, event, timeline, question, signature.
 
 - أعد JSON فقط.`,
     prompt: JSON.stringify({ contentKind, content: { title: input.title, excerpt: input.excerpt, body: input.body, purpose: input.purpose }, audience: input.audience, styleProfile: input.styleProfile, currentEvents: events }),

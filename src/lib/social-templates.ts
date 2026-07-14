@@ -2,7 +2,7 @@ export type SocialVisualTemplate = {
   id: string
   platform: 'instagram' | 'story' | 'linkedin' | 'x'
   format: string
-  layout: 'editorial' | 'quote' | 'split' | 'dark' | 'event'
+  layout: 'editorial' | 'quote' | 'split' | 'dark' | 'event' | 'timeline' | 'question' | 'signature'
   width: number
   height: number
   kicker: string
@@ -19,7 +19,7 @@ export type SocialPackVisualInput = {
   event?: { source?: string; title?: string } | null
 }
 
-const layouts: SocialVisualTemplate['layout'][] = ['editorial', 'quote', 'split', 'dark', 'event']
+const layouts: SocialVisualTemplate['layout'][] = ['editorial', 'quote', 'split', 'dark', 'event', 'timeline', 'question', 'signature']
 const safeLayout = (value = '', index = 0): SocialVisualTemplate['layout'] => layouts.includes(value as SocialVisualTemplate['layout']) ? value as SocialVisualTemplate['layout'] : layouts[index % layouts.length]
 
 export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title: string; excerpt: string }) {
@@ -119,6 +119,12 @@ export async function renderSocialPng(template: SocialVisualTemplate) {
     ? { background: '#15161a', ink: '#ffffff', soft: '#c5cbd1', accent: '#8aa8c2', line: 'rgba(255,255,255,.18)', card: '#20242a' }
     : template.layout === 'event'
       ? { background: '#eef2f5', ink: '#15161a', soft: '#6e7580', accent: '#3e5c78', line: '#ccd4dc', card: '#ffffff' }
+      : template.layout === 'question'
+        ? { background: '#fbfaf7', ink: '#111318', soft: '#717884', accent: '#2f536f', line: '#d7ddd8', card: '#ffffff' }
+        : template.layout === 'timeline'
+          ? { background: '#f4f3ef', ink: '#15161a', soft: '#777e87', accent: '#3e5c78', line: '#cfd5db', card: '#ffffff' }
+          : template.layout === 'signature'
+            ? { background: '#f8f7f3', ink: '#15161a', soft: '#7b8088', accent: '#8a6f3d', line: '#ded8c9', card: '#ffffff' }
       : { background: '#f7f6f3', ink: '#15161a', soft: '#7c818a', accent: '#3e5c78', line: '#d9d9d6', card: '#ffffff' }
 
   ctx.fillStyle = palette.background
@@ -133,6 +139,39 @@ export async function renderSocialPng(template: SocialVisualTemplate) {
   if (template.layout === 'split') {
     ctx.fillStyle = palette.accent
     ctx.fillRect(0, 0, Math.round(template.width * .28), template.height)
+  }
+  if (template.layout === 'timeline') {
+    ctx.globalAlpha = .12
+    ctx.strokeStyle = palette.accent
+    ctx.lineWidth = Math.max(2, template.width / 420)
+    const x = Math.round(template.width * .18)
+    ctx.beginPath()
+    ctx.moveTo(x, pad + Math.round(template.height * .08))
+    ctx.lineTo(x, template.height - pad - Math.round(template.height * .08))
+    ctx.stroke()
+    for (let i = 0; i < 4; i += 1) {
+      ctx.beginPath()
+      ctx.arc(x, pad + Math.round(template.height * (.18 + i * .18)), Math.round(template.width * .014), 0, Math.PI * 2)
+      ctx.fillStyle = palette.accent
+      ctx.fill()
+    }
+    ctx.globalAlpha = 1
+  }
+  if (template.layout === 'question') {
+    ctx.globalAlpha = .09
+    ctx.fillStyle = palette.accent
+    ctx.font = `700 ${Math.round(template.width * .34)}px "El Messiri", serif`
+    ctx.fillText('؟', template.width - pad, Math.round(template.height * .42))
+    ctx.globalAlpha = 1
+  }
+  if (template.layout === 'signature') {
+    ctx.globalAlpha = .1
+    ctx.strokeStyle = palette.accent
+    ctx.lineWidth = Math.max(2, template.width / 500)
+    ctx.beginPath()
+    ctx.ellipse(Math.round(template.width * .42), Math.round(template.height * .34), Math.round(template.width * .28), Math.round(template.height * .18), -.2, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.globalAlpha = 1
   }
   if (template.layout === 'quote') {
     ctx.globalAlpha = .08

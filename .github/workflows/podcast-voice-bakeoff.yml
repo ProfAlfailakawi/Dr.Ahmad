@@ -1,0 +1,84 @@
+name: اختبار عينة الحوار والأصوات
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: podcast-voice-bakeoff
+  cancel-in-progress: false
+
+jobs:
+  bakeoff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Force public npm registry
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          node scripts/normalize-npm-registry.mjs
+
+      - name: Install dependencies
+        run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+
+      - name: Install media tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Verify required secrets
+        run: |
+          if [ -z "$AZURE_SPEECH_KEY" ]; then
+            echo "::error::Missing AZURE_SPEECH_KEY"
+            exit 1
+          fi
+          if [ -z "$AZURE_SPEECH_REGION" ]; then
+            echo "::error::Missing AZURE_SPEECH_REGION"
+            exit 1
+          fi
+          if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then
+            echo "::error::Missing GEMINI_API_KEY or GOOGLE_API_KEY"
+            exit 1
+          fi
+        env:
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+
+      - name: Generate blind Arabic dialogue samples
+        continue-on-error: true
+        run: npm run podcast:ar:bakeoff
+        env:
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+
+      - name: Upload blind public samples
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: podcast-voice-bakeoff-public
+          path: public/audio/bakeoff
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload private technical report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: podcast-voice-bakeoff-private-report
+          path: podcast-audits/voice-bakeoff.private.json
+          if-no-files-found: warn
+          retention-days: 7

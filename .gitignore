@@ -45,6 +45,9 @@ PrivateBooks/
 .firebase/hosting.ZGlzdA.cache
 
 # الصوت الجديد لا يضاف إلى Git بعد الانتقال إلى R2
-audio/*.mp3
-audio/*.dialogue.json
+audio/**/*.mp3
+audio/**/*.json
+!audio/.gitkeep
+public/audio/**/*.mp3
+public/audio/**/*.json
 .audio-r2-plan.json

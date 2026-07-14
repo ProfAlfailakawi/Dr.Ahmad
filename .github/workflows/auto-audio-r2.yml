@@ -121,6 +121,7 @@ jobs:
       - name: Commit generated manifests only
         run: |
           rm -f sa.json
+          npm run audio:guard
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/data/audio.json src/data/audio-meta.json src/data/site-articles-feed.json src/data/podcast-admin.json package.json scripts/auto-audio.mjs scripts/publish-audio-r2.mjs scripts/build-static.mjs src/components/admin/IntelligenceLab.tsx .github/workflows/auto-audio-r2.yml

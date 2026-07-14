@@ -108,10 +108,12 @@ const PLAN = flag('plan')
 const REUSE_DIALOGUE = flag('reuse-dialogue')
 const CANARY = flag('canary')
 const BAKEOFF = flag('voice-bakeoff')
+const VOICE_AUDITION = flag('voice-audition')
 // أُلغي المسار الخفيف نهائيًا: شروط القبول الحالية تمنع أي نشر يتجاوز STT والحكم الصوتي.
 const LIGHT = false
 let ARABIC_PRODUCTION_GATE_READY = false
-if (!SELF_TEST && (!GEMINI_KEY || !AZURE_KEY)) { console.error('✘ GEMINI_API_KEY أو AZURE_SPEECH_KEY مفقود'); process.exit(1) }
+if (!SELF_TEST && !AZURE_KEY) { console.error('✘ AZURE_SPEECH_KEY مفقود'); process.exit(1) }
+if (!SELF_TEST && !VOICE_AUDITION && !PREFLIGHT && !GEMINI_KEY) { console.error('✘ GEMINI_API_KEY أو GOOGLE_API_KEY مفقود'); process.exit(1) }
 if (!SELF_TEST) {
   const acquire = () => writeFileSync(LOCK_FILE, JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }), { flag: 'wx' })
   try { acquire() }

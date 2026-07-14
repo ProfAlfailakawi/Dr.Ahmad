@@ -108,10 +108,12 @@ const PLAN = flag('plan')
 const REUSE_DIALOGUE = flag('reuse-dialogue')
 const CANARY = flag('canary')
 const BAKEOFF = flag('voice-bakeoff')
+const VOICE_AUDITION = flag('voice-audition')
 // أُلغي المسار الخفيف نهائيًا: شروط القبول الحالية تمنع أي نشر يتجاوز STT والحكم الصوتي.
 const LIGHT = false
 let ARABIC_PRODUCTION_GATE_READY = false
-if (!SELF_TEST && (!GEMINI_KEY || !AZURE_KEY)) { console.error('✘ GEMINI_API_KEY أو AZURE_SPEECH_KEY مفقود'); process.exit(1) }
+if (!SELF_TEST && !AZURE_KEY) { console.error('✘ AZURE_SPEECH_KEY مفقود'); process.exit(1) }
+if (!SELF_TEST && !VOICE_AUDITION && !PREFLIGHT && !GEMINI_KEY) { console.error('✘ GEMINI_API_KEY أو GOOGLE_API_KEY مفقود'); process.exit(1) }
 if (!SELF_TEST) {
   const acquire = () => writeFileSync(LOCK_FILE, JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }), { flag: 'wx' })
   try { acquire() }
@@ -342,6 +344,33 @@ const DIACRITICS_RE = /[ً-ْٰ]/
 function normalizeMechanics(sc) {
   if (!sc || !Array.isArray(sc.utterances)) return sc
   const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, Number.isFinite(+v) ? +v : lo))
+  const wordCount = (text) => String(text || '').split(/\s+/).filter(Boolean).length
+  const splitLongText = (text, target = 22, hard = 30) => {
+    const clean = String(text || '').replace(/\s+/g, ' ').trim()
+    if (wordCount(clean) <= hard) return [clean]
+    const rawParts = clean
+      .split(/(?<=[،؛.!؟])\s+|(?=\s(?:بل|لكن|ولكن|فإذا|فهذا|وهنا|وعندها|لا\s))/u)
+      .map((part) => part.trim()).filter(Boolean)
+    const parts = rawParts.length > 1 ? rawParts : clean.split(/\s+/).reduce((rows, word) => {
+      const current = rows.at(-1) || ''
+      if (!current) rows.push(word)
+      else if (wordCount(current) >= target) rows.push(word)
+      else rows[rows.length - 1] = `${current} ${word}`
+      return rows
+    }, [])
+    const chunks = []
+    for (const part of parts) {
+      if (wordCount(part) > hard) {
+        const words = part.split(/\s+/)
+        for (let i = 0; i < words.length; i += target) chunks.push(words.slice(i, i + target).join(' '))
+        continue
+      }
+      const last = chunks.at(-1) || ''
+      if (last && wordCount(`${last} ${part}`) <= target) chunks[chunks.length - 1] = `${last} ${part}`
+      else chunks.push(part)
+    }
+    return chunks.map((part) => part.trim()).filter(Boolean)
+  }
   const rr = { reflective: [3, 6], hook: [10, 14], question: [6, 9], objection: [10, 14], clarification: [7, 10], conclusion: [3, 6], quick: [10, 14], normal: [7, 10] }
   const pr = { reflective: [500, 700], question: [350, 550], quick: [100, 220], objection: [100, 220], hook: [100, 220], clarification: [180, 350], conclusion: [350, 550], normal: [180, 350] }
   for (const u of sc.utterances) {
@@ -358,9 +387,27 @@ function normalizeMechanics(sc) {
   for (const u of sc.utterances) {
     u.text = String(u.text || '').replace(/أكيد/g, () => (akeedSeen++ === 0 ? 'أكيد' : akeedAlts[(akeedSeen - 2) % akeedAlts.length]))
   }
+  // قاعدة إخراج صوتي لا نعتمد فيها على التزام النموذج: المداخلة المقالية الطويلة هي أكثر سبب
+  // لفشل Azure/STT/Judge. لذلك نكسرها قبل مرحلة النطق إلى نبضات مسموعة قصيرة، مع الحفاظ
+  // على النص والمعنى والمتحدث نفسه. النتيجة الطبيعية: كلام أسرع، وقفات أقل، وفشل أقل.
+  const compactUtterances = []
+  for (const u of sc.utterances) {
+    const pieces = splitLongText(u.text, 22, 30)
+    if (pieces.length <= 1) { compactUtterances.push(u); continue }
+    pieces.forEach((piece, index) => {
+      const next = { ...u, text: piece, allowOverlap: false, overlapMs: 0 }
+      if (index < pieces.length - 1) {
+        next.pauseAfterMs = Math.min(Number(u.pauseAfterMs) || 220, 180)
+        next.ending = 'neutral'
+      }
+      if (piece.includes('؟')) { next.delivery = 'question'; next.ending = 'open' }
+      compactUtterances.push(next)
+    })
+  }
+  sc.utterances = compactUtterances
   // التداخلات قيدٌ ميكانيكيٌّ بحت (عددٌ ضمن [N/8..N/5]، وكل مداخلةٍ متداخلةٍ قصيرة ≤8 كلمات وovertlapMs
   // 60–180): نضبطها حتمياً بلا مساس بالمحتوى؛ يبقى مزيج القِصَر والاعتراض والتوازن قيوداً محتوائيةً للنموذج.
-  const wc = (t) => String(t || '').split(/\s+/).filter(Boolean).length
+  const wc = wordCount
   const N = sc.utterances.length
   const minOv = Math.max(1, Math.floor(N / 8))
   const maxOv = Math.max(1, Math.ceil(N / 5))
@@ -449,6 +496,7 @@ function lintScript(sc, lang) {
   const lens = utts.map((u) => u.text.split(/\s+/).length)
   const sameLen = lens.every((l) => Math.abs(l - lens[0]) <= 2)
   if (sameLen && utts.length > 6) issues.push('كل المداخلات بالطول نفسه — يبدو آلياً')
+  if (lang === 'ar' && lens.some((l) => l > 30)) issues.push('مداخلة عربية أطول من 30 كلمة — يجب تقسيمها قبل النطق')
   if (lens.some((l) => l > 55)) issues.push('مداخلة أطول من 55 كلمة')
   const sortedLens = [...lens].sort((a, b) => a - b)
   if (sortedLens[Math.max(0, Math.ceil(sortedLens.length * 0.9) - 1)] > 35) issues.push('P90 لطول المداخلات يتجاوز 35 كلمة')
@@ -1250,6 +1298,7 @@ async function safeRephrase(dialogueText, sourceText, reason, stubbornWords = []
   const avoid = [...new Set(stubbornWords.filter(Boolean))]
   const response = await gemini(JUDGE_SYSTEM, [
     'أعد صياغة المداخلة فقط بفصحى حوارية عربية معاصرة أبسط نطقاً، مع ثبات المعنى حرفياً.',
+    'اجعلها قصيرة جداً: 8 إلى 24 كلمة فقط. إذا كان المعنى طويلاً، اختر جملة واحدة مسموعة تحمل جوهره ولا تستخدم تركيباً طويلاً.',
     'لا تضف معلومة، ولا تحذف معلومة، ولا تستخدم أي عامية أو تشكيل كامل.',
     avoid.length ? `الكلمات التالية يعجز محرك النطق عنها؛ أعد ترتيب الجملة لتقليل الاعتماد عليها — اذكر الاسم مرة واحدة إن لزم، أو استبدله بوصفٍ دقيق دون حذف الحقيقة العلمية: ${avoid.join('، ')}` : '',
     'إن كان اسم علمٍ أجنبيٍّ يتكرر، يكفي ذكره مرة؛ والإشارة اللاحقة إليه تكون بضميرٍ أو وصف («وأعماله اللاحقة»، «الباحث نفسه») دون تكرار الاسم المتعثر.',
@@ -2233,6 +2282,7 @@ if (flag('voice-audition')) {
   const publicManifest = { generatedAt: new Date().toISOString(), male, note: 'اختبار أعمى — لا أسماء ظاهرة', samples: blind.map((b) => ({ label: b.label, file: `sample-${b.label.split(' ')[1].toLowerCase()}.mp3` })) }
   writeFileSync(resolve(outDir, 'manifest.json'), JSON.stringify(publicManifest, null, 2))
   const privateReport = { generatedAt: new Date().toISOString(), male, sampleWords: words, mapping: blind.map((b) => ({ label: b.label, ...b.report })) }
+  mkdirSync(AUDITS, { recursive: true })
   writeFileSync(resolve(AUDITS, 'voice-audition.private.json'), JSON.stringify(privateReport, null, 2))
   console.log('\n\n═══ اختبار الأصوات (أعمى) ═══')
   for (const b of blind) {
@@ -2474,6 +2524,11 @@ if (BAKEOFF && !flag('legacy-fixed-bakeoff')) {
       nameB: option.result.female.localName, country: `${option.result.male.locale} + ${option.result.female.locale}`,
       hardGate: { pass: option.result.pass }, audioHash: option.audioHash })) }
 
+  // حتى عند فشل البوابة الصارمة (مثلاً: لا صوت نسائي جاهز بلغ 85/100)، يجب أن
+  // يبقى لدينا manifest عام يشرح الحالة بدل أن تفشل خطوة الرفع بـ "no files found".
+  // بعض مراحل التقييم تنظف TMP عند فشل داخلي؛ لذلك نعيد ضمان المجلد هنا قبل الكتابة.
+  mkdirSync(stagedPublic, { recursive: true })
+  mkdirSync(dirname(BAKEOFF_PUBLIC), { recursive: true })
   writeFileSync(resolve(stagedPublic, 'manifest.json'), JSON.stringify(publicManifest, null, 2))
   const stagedPrivate = resolve(TMP, 'voice-bakeoff.private.json')
   writeFileSync(stagedPrivate, JSON.stringify(privateAudit, null, 2))

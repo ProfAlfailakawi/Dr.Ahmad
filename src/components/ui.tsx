@@ -409,7 +409,7 @@ function Overlay({ close }: { close: () => void }) {
         <div className="flex min-h-full items-start px-6 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-[calc(6rem+env(safe-area-inset-top))] md:items-center md:px-11 md:py-28">
         <div className="mx-auto grid w-full max-w-shell gap-5 md:grid-cols-3 md:gap-x-12 md:gap-y-10">
           {GROUPS.map((g, gi) => (
-            <div key={g.label} className="rounded-3xl border border-hair bg-wash/40 p-5 md:rounded-none md:border-0 md:bg-transparent md:p-0">
+            <div key={g.label} className="border-b border-hair pb-5 md:border-0 md:pb-0">
               <motion.span
                 className="block text-[.68rem] font-semibold uppercase text-accent md:text-[.72rem]"
                 initial={reduce ? false : { opacity: 0, y: 12 }}
@@ -432,15 +432,13 @@ function Overlay({ close }: { close: () => void }) {
                       transition={{ duration: 0.7, delay: 0.45 + gi * 0.08 + ii * 0.06, ease: EASE }}
                     >
                       {it.sub ? (
-                        <div className={`group rounded-2xl border border-transparent py-1 transition-colors duration-300 ${
-                          expanded ? 'border-hair bg-wash/45 px-3' : ''
-                        }`}>
+                        <div className="group py-1">
                           <button
                             type="button"
                             onClick={() => setOpenSub(expanded ? null : it.to)}
                             aria-expanded={expanded}
                             aria-controls={subId}
-                            className={`flex w-full items-center justify-between gap-3 text-right font-display text-[1.15rem] font-medium leading-[1.5] transition-colors duration-300 hover:text-accent md:text-[1.35rem] ${
+                            className={`site-menu-control flex w-full items-center justify-between gap-3 text-right font-display text-[1.15rem] font-medium leading-[1.5] transition-colors duration-300 hover:text-accent md:text-[1.35rem] ${
                               active || expanded ? 'text-accent' : 'text-ink'
                             }`}
                           >
@@ -466,7 +464,7 @@ function Overlay({ close }: { close: () => void }) {
                           <Link
                             to={it.to}
                             onClick={close}
-                            className="mt-1 inline-flex rounded-full border border-hair px-3 py-1 text-[.72rem] font-semibold text-soft transition-colors duration-300 hover:border-accent hover:text-accent"
+                            className="site-menu-control mt-1 inline-flex rounded-full border border-hair px-3 py-1 text-[.72rem] font-semibold text-soft transition-colors duration-300 hover:border-accent hover:text-accent"
                           >
                             {it.allLabel || `فتح ${it.label}`}
                           </Link>
@@ -475,7 +473,7 @@ function Overlay({ close }: { close: () => void }) {
                         <Link
                           to={it.to}
                           onClick={close}
-                          className={`flex items-center gap-2.5 py-1 font-display text-[1.15rem] font-medium leading-[1.5] transition-colors duration-300 hover:text-accent md:py-1.5 md:text-[1.35rem] ${
+                          className={`site-menu-control flex items-center gap-2.5 py-1 font-display text-[1.15rem] font-medium leading-[1.5] transition-colors duration-300 hover:text-accent md:py-1.5 md:text-[1.35rem] ${
                             loc.pathname === it.to ? 'text-accent' : it.highlight ? 'text-accent' : 'text-ink'
                           }`}
                         >
@@ -499,7 +497,7 @@ function Overlay({ close }: { close: () => void }) {
                                   <Link
                                     to={s.to}
                                     onClick={close}
-                                    className={`block py-1.5 text-[.9rem] font-light transition-colors duration-300 hover:text-accent ${
+                                    className={`site-menu-control block py-1.5 text-[.9rem] font-light transition-colors duration-300 hover:text-accent ${
                                       loc.pathname === s.to ? 'text-accent' : 'text-soft'
                                     }`}
                                   >

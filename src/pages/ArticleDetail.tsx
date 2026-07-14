@@ -283,20 +283,17 @@ function IdeaThread({ article }: { article: ArticleRecord }) {
   if (!path.length) return null
   return (
     <FadeUp>
-      <section className="idea-thread mt-16 border-y border-hair py-9" aria-label="خيط الفكرة">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-[.74rem] font-semibold text-accent">خيط الفكرة</p>
-            <h2 className="mt-1 font-display text-[1.35rem] font-semibold text-ink">الفكرة لا تعيش في صفحة واحدة.</h2>
-          </div>
-          <p className="max-w-[280px] text-[.76rem] font-light leading-relaxed text-soft">مسار دقيق يصل المقال بكتاب وبحث ولقاء وسؤال من أرشيفك.</p>
+      <section className="idea-thread mt-14 rounded-[1.75rem] border border-hair bg-wash/45 px-5 py-6 md:px-7 md:py-7" aria-label="خيط الفكرة">
+        <div>
+          <p className="text-[.68rem] font-semibold text-accent">خيط الفكرة</p>
+          <h2 className="mt-1 font-display text-[1.12rem] font-semibold leading-[1.55] text-ink md:text-[1.2rem]">الفكرة لا تعيش في صفحة واحدة.</h2>
         </div>
-        <ol className="relative mt-8 grid gap-6 md:grid-cols-4 md:gap-5">
-          <span aria-hidden className="absolute bottom-0 right-[.32rem] top-0 w-px bg-hair md:bottom-auto md:left-0 md:right-0 md:top-[.34rem] md:h-px md:w-auto" />
+        <ol className="relative mt-6 grid gap-5 md:grid-cols-4 md:gap-4">
+          <span aria-hidden className="absolute bottom-0 right-[.28rem] top-0 w-px bg-hair md:bottom-auto md:left-0 md:right-0 md:top-[.29rem] md:h-px md:w-auto" />
           {path.map((node, index) => {
-            const content = <><span className="relative z-10 block h-3 w-3 rounded-full border-2 border-canvas bg-accent shadow-[0_0_0_1px_var(--hair)]" /><span className="mt-3 block text-[.68rem] font-semibold text-accent">{String(index + 1).padStart(2, '0')} · {node.kind}</span><span className="mt-1.5 block font-display text-[.96rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">{node.title}</span></>
+            const content = <><span className="relative z-10 block h-2.5 w-2.5 rounded-full border-2 border-canvas bg-accent" /><span className="mt-2.5 block text-[.62rem] font-semibold text-accent">{String(index + 1).padStart(2, '0')} · {node.kind}</span><span className="mt-1 block font-display text-[.82rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent md:text-[.86rem]">{node.title}</span></>
             return (
-              <li key={`${node.kind}-${node.title}`} className="relative pe-7 md:pe-0">
+              <li key={`${node.kind}-${node.title}`} className="relative pe-6 md:pe-0">
                 {node.to ? <Link to={node.to} className="group block">{content}</Link> : <a href={node.href} target="_blank" rel="noreferrer" className="group block">{content}</a>}
               </li>
             )

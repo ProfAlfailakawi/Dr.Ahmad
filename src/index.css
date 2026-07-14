@@ -57,7 +57,24 @@ body {
   transition: background-color 0.5s var(--E), color 0.5s var(--E);
 }
 
-body.loading { overflow: hidden; height: 100vh; }
+
+/* القائمة الرئيسية: لا إطار داكن ولا حلقة متصفح حول العنصر المفتوح. */
+.site-menu-control {
+  border-color: transparent;
+  outline: none;
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.site-menu-control:focus,
+.site-menu-control:active,
+.site-menu-control:focus-visible {
+  outline: none;
+  box-shadow: none;
+  color: rgb(var(--c-accent));
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: .32em;
+}
 body.cursor-none-desktop * { cursor: none !important; }
 /* استثناء حقول الإدخال — المستخدم يحتاج مؤشّر الكتابة */
 body.cursor-none-desktop input,

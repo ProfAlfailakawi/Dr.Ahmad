@@ -93,8 +93,8 @@ function WesternDigitsGuard() {
 function AnimatedRoutes() {
   const loc = useLocation()
   return (
-    <AnimatePresence mode="wait">
-      <Suspense fallback={<div className="min-h-screen" aria-hidden />}>
+    <AnimatePresence mode="sync">
+      <Suspense fallback={null}>
       <Routes location={loc} key={loc.pathname}>
         <Route path="/" element={<Home />} />
         <Route path="/publications" element={<Publications />} />

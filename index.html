@@ -66,11 +66,7 @@
           window.addEventListener('load', function () {
             navigator.serviceWorker.register('/sw.js').catch(function () {});
           });
-          // سوّاس جديد سيطر؟ أعد التحميل مرة واحدة كي لا يعلق زائر على نسخة قديمة
-          var swReloaded = false;
-          navigator.serviceWorker.addEventListener('controllerchange', function () {
-            if (swReloaded) return; swReloaded = true; location.reload();
-          });
+          // لا إعادة تحميل إجبارية عند تحديث الخدمة؛ النسخة الجديدة تعمل في الزيارة التالية بلا شاشة فاصلة.
         }
       }
     </script>

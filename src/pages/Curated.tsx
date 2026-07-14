@@ -1,9 +1,9 @@
 /**
  * «من اختياراتي» — الهيكل الإيقاعي:
  *   يومي   ← «جديد اليوم» (يتبدل كل منتصف ليل تلقائياً)
- *   أسبوعي ← «سؤال يُقلق التعليم» (بطاقة عبور إلى /questions)
+ *   كل يومين ← «سؤال يُقلق التعليم» (بطاقة عبور إلى /questions)
  *   شهري  ← «كتاب الشهر» (يتبدل أول كل شهر)
- *   رادار الشبكة ← يُلتقط آلياً كل يوم من مصادر موثوقة
+ *   رادار الشبكة ← أربع محاولات يومية من مصادر موثوقة، بلا تكرار
  *   الأرشيف ← كل المخزون بفلاتر الأركان المُحياة من الموقع القديم
  *
  * كل عنصر: عربي + إنجليزي + مصدر موثوق مُسمّى.
@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, FadeUp, Page, PageHead } from '../components/ui'
-import { curatedBank, curioKinds, thisMonthsBook, todaysPick, type Curio } from '../data-curated'
+import { curatedBank, curioKinds, thisMonthsBook, type Curio } from '../data-curated'
 import { useExtras } from '../lib/content'
 
 /* غلاف: البطاقة كلها رابط للمصدر إن وُجد */
@@ -43,6 +43,84 @@ const fmtAdded = (iso: string) => {
   try { return new Date(iso + 'T12:00:00').toLocaleDateString('ar-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }) } catch { return iso }
 }
 
+const timestampIso = (value: unknown) => {
+  if (!value) return ''
+  if (typeof value === 'string') return value.slice(0, 10)
+  if (typeof value === 'number') return new Date(value).toISOString().slice(0, 10)
+  if (typeof value !== 'object') return ''
+  const candidate = value as { seconds?: unknown; toDate?: () => Date; toMillis?: () => number }
+  try {
+    if (typeof candidate.toDate === 'function') return candidate.toDate().toISOString().slice(0, 10)
+    if (typeof candidate.toMillis === 'function') return new Date(candidate.toMillis()).toISOString().slice(0, 10)
+    if (typeof candidate.seconds === 'number') return new Date(candidate.seconds * 1000).toISOString().slice(0, 10)
+  } catch { /* ignore malformed timestamps */ }
+  return ''
+}
+
+const todayIso = () => new Date().toISOString().slice(0, 10)
+
+/* إضافات افتتاحية حقيقية من أرشيف الدكتور؛ تبقى ظاهرة حتى قبل أول تشغيل ناجح للأتمتة. */
+const freshCurated: Curio[] = [
+  {
+    kind: 'رؤية عميقة',
+    ar: 'الذكاء الاصطناعي يُدرّس… والعقل البشري يُقصى',
+    arNote: 'مقال من الأرشيف يضع معيار الفهم الإنساني قبل سرعة الإجابة.',
+    en: 'AI teaches… while the human mind is pushed aside',
+    enNote: 'An archive essay that puts human understanding before answer speed.',
+    source: 'مقالات د. أحمد حسين الفيلكاوي',
+    url: '/articles/artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2',
+    added: '2026-07-14',
+  },
+  {
+    kind: 'الرف المنسي',
+    ar: 'حوكمة الذكاء الاصطناعي والبيانات الضخمة',
+    arNote: 'عودة إلى كتاب يربط التقنية بالقرار والمسؤولية المؤسسية.',
+    en: 'Governing artificial intelligence and big data',
+    enNote: 'A return to a book connecting technology with institutional judgment and responsibility.',
+    source: 'مؤلفات د. أحمد حسين الفيلكاوي',
+    url: '/publications/mega-data',
+    added: '2026-07-13',
+  },
+  {
+    kind: 'رؤية عميقة',
+    ar: 'مشروع التعليم عن بُعد… من الفكرة إلى التجربة العامة',
+    arNote: 'لقاء تلفزيوني يعيد فتح سؤال البنية التحتية ودور المعلم في التعليم الرقمي.',
+    en: 'Distance education: from an idea to a public learning experience',
+    enNote: 'A television conversation revisiting infrastructure and the teacher’s role in digital learning.',
+    source: 'تلفزيون دولة الكويت · برنامج معاكم',
+    url: 'https://www.youtube.com/watch?v=ydhZ9IcGaVc',
+    added: '2026-07-12',
+  },
+  {
+    kind: 'اقتباس وتأمل',
+    ar: 'المعلم… وما أدراك ما المعلم',
+    arNote: 'وقفة من الأرشيف مع الدور الذي لا تختصره منصة ولا أداة.',
+    en: 'The teacher — a role no platform can reduce',
+    enNote: 'An archive reflection on the part of teaching that no platform or tool can replace.',
+    source: 'مقالات د. أحمد حسين الفيلكاوي',
+    url: '/articles/the-teacher-what-do-you-know-about-the-teacher',
+    added: '2026-07-11',
+  },
+]
+
+const radarKind = (item: RadarItem): Curio['kind'] => {
+  const text = `${item.ar} ${item.arNote || ''} ${item.en}`
+  if (/أداة|منصة|تطبيق|tool|platform/i.test(text)) return 'أداة تستحق'
+  if (/مفهوم|مصطلح|framework|literacy/i.test(text)) return 'مفهوم ناشئ'
+  return 'رؤية عميقة'
+}
+
+const radarAsCurio = (item: RadarItem): Curio => ({
+  kind: radarKind(item),
+  ar: item.ar,
+  arNote: item.arNote,
+  en: item.en || item.ar,
+  enNote: item.enNote,
+  source: item.source,
+  url: item.url,
+  added: timestampIso(item.createdAt) || item.day || todayIso(),
+})
+
 function SourceLine({ c }: { c: Curio }) {
   return (
     <div className="mt-4 border-t border-hair pt-3 text-[.78rem] text-soft">
@@ -57,11 +135,11 @@ function SourceLine({ c }: { c: Curio }) {
 
 /* رادار الشبكة — يعرض ما يلتقطه scripts/daily-radar.mjs يومياً.
    يختفي كلياً ما دام الالتقاط غير مفعَّل. */
-type RadarItem = { ar: string; arNote?: string; en: string; enNote?: string; source: string; url: string; day: string; status?: string }
+type RadarItem = { id?: string; ar: string; arNote?: string; en: string; enNote?: string; source: string; url: string; day: string; status?: string; createdAt?: unknown }
 
 function RadarSection() {
   // المنشور فقط — مسودات وضع المراجعة (pending_review) لا تظهر للزوار
-  const items = useExtras<RadarItem>('site_radar').filter((r) => !r.status || r.status === 'published')
+  const items = useExtras<RadarItem>('site_radar', { realtime: true }).filter((r) => !r.status || r.status === 'published')
   if (!items.length) return null
   return (
     <section className="border-b border-hair px-6 py-14 md:px-11 md:py-16">
@@ -94,7 +172,7 @@ function RadarSection() {
 }
 
 export default function Curated() {
-  useSeo({ title: 'من اختياراتي', path: '/curated', description: 'كل يوم اختيار جديد، كل جمعة سؤال، كل شهر كتاب — بالعربية والإنجليزية، من مصادر موثوقة فقط.' })
+  useSeo({ title: 'من اختياراتي', path: '/curated', description: 'اختيار متجدد يوميًا، سؤال جديد كل يومين، وكتاب شهري — بالعربية والإنجليزية ومن مصادر موثوقة.' })
   const reduce = useReducedMotion()
   const [kind, setKind] = useState<'الكل' | string>('الكل')
   const [today, setToday] = useState('')
@@ -103,14 +181,26 @@ export default function Curated() {
     try { setToday(new Date().toLocaleDateString('ar-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' })) } catch { /* noop */ }
   }, [])
 
-  // مختارات لوحة التحكم تنضم للمخزون
-  const extra = useExtras<Curio & { createdAt?: string }>('site_picks')
-  const daily = todaysPick(extra)
+  // المختارات الحية + صيدات الرادار تنضم إلى الدورة فوراً.
+  const extra = useExtras<Curio & { id?: string; createdAt?: unknown }>('site_picks', { realtime: true })
+  const radarItems = useExtras<RadarItem>('site_radar', { realtime: true })
+    .filter((item) => !item.status || item.status === 'published')
+  const livePicks: Curio[] = extra.map((item) => ({
+    ...item,
+    added: item.added || timestampIso(item.createdAt) || todayIso(),
+  }))
+  const radarPicks = radarItems.map(radarAsCurio)
+  const dynamic = [...livePicks, ...radarPicks]
+    .filter((item) => item.ar && item.en && item.source)
+    .filter((item, index, allItems) => allItems.findIndex((candidate) => (candidate.url || candidate.ar) === (item.url || item.ar)) === index)
+    .sort((left, right) => (right.added || '').localeCompare(left.added || ''))
+  const rotationPool = [...freshCurated, ...curatedBank]
+  const fallbackIndex = rotationPool.length ? Math.floor(Date.now() / 86_400_000) % rotationPool.length : 0
+  const fallbackDaily = { ...rotationPool[fallbackIndex], added: todayIso() }
+  const daily = dynamic[0] || fallbackDaily
   const book = thisMonthsBook()
-  const all = [
-    ...extra.map((p) => ({ ...p, added: p.added ?? (typeof p.createdAt === 'string' ? p.createdAt.slice(0, 10) : undefined) })),
-    ...curatedBank.map((c) => ({ ...c, added: c.added ?? '2026-07-09' })),
-  ]
+  const all = [...dynamic, ...freshCurated, ...curatedBank]
+    .filter((item, index, allItems) => allItems.findIndex((candidate) => (candidate.url || candidate.ar) === (item.url || item.ar)) === index)
   const shown = kind === 'الكل' ? all : all.filter((c) => c.kind === kind)
 
   return (
@@ -118,7 +208,7 @@ export default function Curated() {
       <PageHead
         label="من اختياراتي"
         title="المختارات."
-        sub="كل يوم اختيار، كل جمعة سؤال، كل شهر كتاب."
+        sub="تتجدد تلقائيًا من المختارات الحية وصيدات الرادار، مع سؤال دوري وكتاب شهري."
       />
 
       {/* ─── جديد اليوم ─── */}
@@ -130,7 +220,7 @@ export default function Curated() {
                 <span className="pulse relative h-2 w-2 rounded-full bg-accent" />
                 جديد اليوم
               </span>
-              <span className="text-[.85rem] text-soft">· {today} · يتبدّل تلقائياً كل منتصف ليل</span>
+              <span className="text-[.85rem] text-soft">· {today} · يتحدّث فور وصول مختارة أو صيدة رادار جديدة</span>
             </div>
           </FadeUp>
           <FadeUp delay={0.08}>
@@ -152,9 +242,9 @@ export default function Curated() {
             </FadeUp>
             <FadeUp delay={0.2}>
               <Link to="/questions" data-hover className="group flex h-full flex-col rounded-2xl border border-hair p-7 transition-colors hover:border-accent">
-                <span className="text-[.74rem] font-semibold text-accent">سؤال الأسبوع ✦</span>
+                <span className="text-[.74rem] font-semibold text-accent">سؤال متجدد ✦</span>
                 <h3 className="mt-3 font-display text-[1.2rem] font-semibold leading-[1.7] text-ink">سؤال يُقلق التعليم</h3>
-                <p className="mt-2 text-[.9rem] font-light text-soft">كل جمعة، سؤال واحد لا يبحث عن إجابة سريعة — بل عن أرقٍ نافع.</p>
+                <p className="mt-2 text-[.9rem] font-light text-soft">سؤال جديد كل يومين؛ قصير في صياغته، واسع في أثره.</p>
                 <span className="mt-auto pt-5 text-[.85rem] text-soft transition-colors group-hover:text-accent">إلى الزاوية ←</span>
               </Link>
             </FadeUp>

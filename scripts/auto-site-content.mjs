@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /**
- * نشر ذاتي موثوق لقسمي «رسائل على الهامش» و«أسئلة تصلني».
+ * نشر ذاتي موثوق لأقسام «رسائل على الهامش» و«أسئلة تصلني» و«المختارات».
  *
  * - يعمل عدة مرات يومياً من GitHub Actions، لكنه ينشر وفق موعده فقط.
- * - يزرع تلقائياً حدّاً أولياً: رسالتان + ثلاثة أسئلة إذا كان الأرشيف أقل من ذلك.
- * - الرسائل: كل 3–5 أيام، من مقالات الدكتور وكتبه ولقاءاته، وبنبرات متنوّعة.
- * - الأسئلة: كل 2–3 أيام، عامة وقصيرة جداً، من تخصصاته واهتماماته.
+ * - يزرع تلقائياً حدّاً أولياً: أربع رسائل + عشرة أسئلة + أربع مختارات إذا كان الأرشيف أقل من ذلك.
+ * - الرسائل: رسالة جديدة كل 3 أيام، من مقالات الدكتور وكتبه ولقاءاته، وبنبرات متنوّعة.
+ * - الأسئلة: سؤال جديد كل يومين، عام وقصير جداً، من تخصصاته واهتماماته.
+ * - المختارات: مختارة جديدة كل يومين من مقال أو كتاب أو لقاء، ثنائية اللغة ومتصلة بالمصدر.
  * - يمنع تكرار المصدر والموضوع والنبرة، ويتعافى من تعطل تشغيل سابق.
  * - لا يقرأ البريد الشخصي ولا ينشر بيانات أشخاص؛ النصوص تُولد من أرشيف الدكتور نفسه.
  *
@@ -30,7 +31,7 @@ const env = { ...process.env }
 const PROJECT_ID = env.FIREBASE_PROJECT_ID || 'drahmad-8e9e2'
 const STATE_COLLECTION = 'automation_state'
 const STATE_DOC = 'site-content-cycle'
-const GENERATION_VERSION = '2026-07-14-v2'
+const GENERATION_VERSION = '2026-07-14-v4'
 const now = new Date()
 
 const integerEnv = (name, fallback) => {
@@ -38,9 +39,10 @@ const integerEnv = (name, fallback) => {
   return Number.isFinite(value) && value >= 0 ? value : fallback
 }
 
-const MIN_LETTERS = integerEnv('AUTO_CONTENT_MIN_LETTERS', 2)
-const MIN_FAQS = integerEnv('AUTO_CONTENT_MIN_FAQS', 3)
-const MAX_GENERATED_PER_KIND = integerEnv('AUTO_CONTENT_MAX_PER_KIND', 5)
+const MIN_LETTERS = integerEnv('AUTO_CONTENT_MIN_LETTERS', 4)
+const MIN_FAQS = integerEnv('AUTO_CONTENT_MIN_FAQS', 10)
+const MIN_PICKS = integerEnv('AUTO_CONTENT_MIN_PICKS', 4)
+const MAX_GENERATED_PER_KIND = integerEnv('AUTO_CONTENT_MAX_PER_KIND', 10)
 
 const styles = [
   'تأمل هادئ',
@@ -80,7 +82,6 @@ const isoDay = (date = new Date()) => date.toISOString().slice(0, 10)
 const addDays = (date, days) => new Date(date.getTime() + days * 86_400_000)
 const sleep = (ms) => new Promise((resolveSleep) => setTimeout(resolveSleep, ms))
 const dayNumber = Math.floor(Date.now() / 86_400_000)
-const deterministicSpan = (min, max, salt = 0) => min + ((dayNumber + salt) % (max - min + 1))
 
 function grabArray(source, name) {
   return (source.match(new RegExp(`export const ${name} = \\[([\\s\\S]*?)\\n\\]`)) || [])[1] || ''
@@ -226,6 +227,29 @@ function validateFaq(output) {
   return { q, a }
 }
 
+const pickKinds = new Set(['اقتباس وتأمل', 'الرف المنسي', 'أداة تستحق', 'مفهوم ناشئ', 'رؤية عميقة'])
+
+function validatePick(output, source) {
+  const ar = clean(output?.ar)
+  const arNote = clean(output?.arNote)
+  const en = clean(output?.en)
+  const enNote = clean(output?.enNote)
+  const kind = pickKinds.has(clean(output?.kind)) ? clean(output.kind) : 'رؤية عميقة'
+  if (ar.length < 12 || ar.length > 170) throw new Error(`عنوان المختارة غير صالح: ${ar.length}`)
+  if (arNote.length < 25 || arNote.length > 240) throw new Error(`ملاحظة المختارة غير صالحة: ${arNote.length}`)
+  if (en.length < 10 || en.length > 190) throw new Error(`عنوان المختارة الإنجليزي غير صالح: ${en.length}`)
+  if (enNote.length < 20 || enNote.length > 260) throw new Error(`ملاحظة المختارة الإنجليزية غير صالحة: ${enNote.length}`)
+  return {
+    kind,
+    ar,
+    arNote,
+    en,
+    enNote,
+    source: `د. أحمد حسين الفيلكاوي · ${source.type}`,
+    url: source.url,
+  }
+}
+
 async function generateLetter(source, style) {
   const prompt = `أنت محرر عربي يكتب لموقع د. أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي.
 اكتب رسالة قصيرة تبدو كتعليق قارئ ذكي على مادة للدكتور، بنبرة: «${style}».
@@ -271,6 +295,26 @@ async function generateFaq(source, topic) {
   return validateFaq(await geminiJson(prompt))
 }
 
+async function generatePick(source) {
+  const prompt = `أنت محرر ثنائي اللغة لقسم «المختارات» في موقع د. أحمد حسين الفيلكاوي.
+حوّل المادة التالية إلى مختارة قصيرة تقود القارئ إلى المصدر الأصلي:
+النوع: ${source.type}
+العنوان: ${source.title}
+المجال: ${source.category}
+النص: ${source.text}
+
+أعد JSON فقط:
+{"kind":"رؤية عميقة أو مفهوم ناشئ أو الرف المنسي أو اقتباس وتأمل","ar":"...","arNote":"...","en":"...","enNote":"..."}
+
+قواعد ملزمة:
+- لا تخترع معلومة أو رقماً أو اقتباساً غير موجود.
+- العنوان العربي واضح وجذاب، والملاحظة تشرح لماذا تستحق المادة وقت القارئ.
+- الإنجليزية صياغة طبيعية وليست ترجمة حرفية ركيكة.
+- لا تستخدم Markdown، ولا تذكر أن النص مولد آلياً.
+- إذا كانت المادة لقاءً فصنّفها «رؤية عميقة»، وإذا كانت كتاباً يجوز «الرف المنسي»، وإذا كانت مقالاً اختر الأنسب.`
+  return validatePick(await geminiJson(prompt), source)
+}
+
 async function firebaseContext() {
   const saPath = resolve(ROOT, env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')
   if (!existsSync(saPath)) throw new Error(`ملف حساب الخدمة مفقود: ${saPath}`)
@@ -308,7 +352,7 @@ async function run() {
       articles,
       books,
       media,
-      bootstrap: { letters: MIN_LETTERS, faqs: MIN_FAQS },
+      bootstrap: { letters: MIN_LETTERS, faqs: MIN_FAQS, picks: MIN_PICKS },
       samples: selected.map((item) => ({ type: item.type, title: item.title })),
     }, null, 2))
     return
@@ -320,23 +364,29 @@ async function run() {
   const state = stateSnap.exists ? stateSnap.data() : {}
 
   try {
-    const [recentLetters, recentFaqs] = await Promise.all([
+    const [recentLetters, recentFaqs, recentPicks] = await Promise.all([
       recentDocs(db, 'site_inbox'),
       recentDocs(db, 'site_faqs'),
+      recentDocs(db, 'site_picks'),
     ])
 
     const publishedLetters = recentLetters.filter(isPublished)
     const publishedFaqs = recentFaqs.filter(isPublished)
+    const publishedPicks = recentPicks.filter(isPublished)
     const letterDeficit = Math.max(0, MIN_LETTERS - publishedLetters.length)
     const faqDeficit = Math.max(0, MIN_FAQS - publishedFaqs.length)
+    const pickDeficit = Math.max(0, MIN_PICKS - publishedPicks.length)
     const letterDue = due(state?.nextLetterAt) && !createdToday(publishedLetters)
     const faqDue = due(state?.nextFaqAt) && !createdToday(publishedFaqs)
+    const pickDue = due(state?.nextPickAt) && !createdToday(publishedPicks)
     const letterTarget = Math.min(MAX_GENERATED_PER_KIND, Math.max(letterDeficit, letterDue ? 1 : 0))
     const faqTarget = Math.min(MAX_GENERATED_PER_KIND, Math.max(faqDeficit, faqDue ? 1 : 0))
+    const pickTarget = Math.min(MAX_GENERATED_PER_KIND, Math.max(pickDeficit, pickDue ? 1 : 0))
 
     const usedSourceKeys = new Set([
       ...recentLetters.map((item) => item.sourceKey).filter(Boolean),
       ...recentFaqs.map((item) => item.sourceKey).filter(Boolean),
+      ...recentPicks.map((item) => item.sourceKey).filter(Boolean),
     ])
     const usedStyles = new Set(recentLetters.slice(0, styles.length).map((item) => item.tone).filter(Boolean))
     const usedTopics = new Set(recentFaqs.slice(0, topicFamilies.length).map((item) => item.topicFamily).filter(Boolean))
@@ -344,6 +394,7 @@ async function run() {
     let published = 0
     let lettersPublished = 0
     let faqsPublished = 0
+    let picksPublished = 0
 
     for (let index = 0; index < letterTarget; index += 1) {
       const source = chooseDiverseSource(sources, usedSourceKeys, 11 + index)
@@ -397,6 +448,30 @@ async function run() {
       console.log(`✔ سؤال جديد: ${faq.q} · ${topic}`)
     }
 
+    for (let index = 0; index < pickTarget; index += 1) {
+      const source = chooseDiverseSource(sources, usedSourceKeys, 47 + index)
+      const pick = await generatePick(source)
+      const id = `auto-pick-${isoDay(now)}-${hash(source.key)}`
+      await db.collection('site_picks').doc(id).set({
+        ...pick,
+        sourceKey: source.key,
+        sourceType: source.type,
+        sourceTitle: source.title,
+        sourcePath: source.url,
+        autoGenerated: true,
+        generationVersion: GENERATION_VERSION,
+        added: isoDay(now),
+        status: 'published',
+        published: true,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: false })
+      published += 1
+      picksPublished += 1
+      usedSourceKeys.add(source.key)
+      console.log(`✔ مختارة جديدة: ${source.type} · ${source.title}`)
+    }
+
     const statePatch = {
       generationVersion: GENERATION_VERSION,
       updatedAt: FieldValue.serverTimestamp(),
@@ -406,17 +481,23 @@ async function run() {
       lastPublishedCount: published,
       lastLettersPublished: lettersPublished,
       lastFaqsPublished: faqsPublished,
+      lastPicksPublished: picksPublished,
       minimumLetters: MIN_LETTERS,
       minimumFaqs: MIN_FAQS,
+      minimumPicks: MIN_PICKS,
     }
 
     if (lettersPublished > 0) {
       statePatch.lastLetterAt = FieldValue.serverTimestamp()
-      statePatch.nextLetterAt = Timestamp.fromDate(addDays(now, deterministicSpan(3, 5, 13)))
+      statePatch.nextLetterAt = Timestamp.fromDate(addDays(now, 3))
     }
     if (faqsPublished > 0) {
       statePatch.lastFaqAt = FieldValue.serverTimestamp()
-      statePatch.nextFaqAt = Timestamp.fromDate(addDays(now, deterministicSpan(2, 3, 31)))
+      statePatch.nextFaqAt = Timestamp.fromDate(addDays(now, 2))
+    }
+    if (picksPublished > 0) {
+      statePatch.lastPickAt = FieldValue.serverTimestamp()
+      statePatch.nextPickAt = Timestamp.fromDate(addDays(now, 2))
     }
 
     await stateRef.set(statePatch, { merge: true })

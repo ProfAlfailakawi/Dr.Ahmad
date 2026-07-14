@@ -503,7 +503,6 @@ html.dark .human-core__portrait-base { filter: grayscale(1) contrast(.96) bright
 .human-core__orbit span:nth-child(2) { right: 4%; top: 54%; width: 4px; height: 4px; }
 .human-core__orbit span:nth-child(3) { bottom: 6%; left: 22%; width: 4px; height: 4px; }
 @keyframes human-core-orbit { to { transform: rotate(360deg); } }
-.human-core__caption { box-shadow: 0 10px 26px rgb(var(--c-ink) / .08); }
 
 .human-core__cv {
   position: relative;
@@ -561,7 +560,6 @@ html.dark .human-core__scan { mix-blend-mode: screen; }
   .human-core__words span { font-size: .54rem; }
   .human-core__portrait-shell { margin-top: -.2rem; }
   .human-core__portrait { margin-inline: auto; }
-  .human-core__caption { font-size: .55rem; }
   .human-core__signal { margin-block: 1.15rem; }
 }
 
@@ -584,4 +582,12 @@ html.dark .human-core__scan { mix-blend-mode: screen; }
     opacity: 1;
   }
   .human-core__scan { display: none; }
+}
+
+
+/* حقول التحكم تعتمد حدودها الداخلية فقط؛ يمنع الإطار المزدوج الداكن عند التركيز. */
+.admin-shell :is(input, textarea, select):focus-visible {
+  outline: none;
+  outline-offset: 0;
+  box-shadow: none;
 }

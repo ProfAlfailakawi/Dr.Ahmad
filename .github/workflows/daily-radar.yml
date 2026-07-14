@@ -2,9 +2,9 @@ name: رادار الدكتور اليومي
 
 on:
   schedule:
-    # ثلاث محاولات يومية بتوقيت الكويت: 08:20، 14:20، 20:20.
+    # أربع محاولات يومية بتوقيت الكويت: 07:20، 12:20، 17:20، 22:20.
     # السكربت يمنع التكرار تلقائياً إذا نُشرت صيدة اليوم.
-    - cron: '20 5,11,17 * * *'
+    - cron: '20 4,9,14,19 * * *'
   workflow_dispatch:
 
 permissions:
@@ -17,6 +17,7 @@ concurrency:
 jobs:
   radar:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,30 +37,36 @@ jobs:
         run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 
       - name: Validate radar secrets
+        shell: bash
         run: |
+          missing=0
           if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then
-            echo "::warning::GEMINI_API_KEY or GOOGLE_API_KEY is missing; skipping radar quietly."
-            exit 0
+            echo "::error::GEMINI_API_KEY or GOOGLE_API_KEY is missing. Radar cannot select and summarize today's item."
+            missing=1
           fi
           if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
-            echo "::warning::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing; skipping radar quietly."
-            exit 0
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing. Radar cannot publish to Firestore."
+            missing=1
           fi
+          if [ "$missing" -ne 0 ]; then exit 1; fi
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
 
+      - name: Write Firebase service account
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
       - name: Run radar and publish to Firestore
-        run: |
-          if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then exit 0; fi
-          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then exit 0; fi
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
-          npm run radar
-          rm -f sa.json
+        run: npm run radar
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           FIREBASE_PROJECT_ID: drahmad-8e9e2
           FIREBASE_SERVICE_ACCOUNT: sa.json
-          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
+      - name: Remove temporary credentials
+        if: always()
+        run: rm -f sa.json

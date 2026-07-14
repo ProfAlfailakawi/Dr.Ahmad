@@ -322,10 +322,10 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { to: '/research', label: 'الأبحاث المحكمة' },
       { to: '/publications', label: 'الكتب المنشورة' },
+      { to: '/inbox', label: 'من بريدي' },
       { to: '/curated', label: 'المختارات', allLabel: 'عرض كل المختارات', sub: [
         { to: '/questions', label: 'سؤال يُقلق التعليم' },
         { to: '/radar', label: 'أرشيف الرادار' },
-        { to: '/inbox', label: 'رسائل على الهامش' },
       ] },
     ],
   },
@@ -515,17 +515,6 @@ function Overlay({ close }: { close: () => void }) {
                   </li>
                 )})}
               </ul>
-              {gi === 0 && (
-                <div className="mt-7 flex items-center justify-between gap-3 rounded-2xl border border-accent/25 bg-accent/[.055] px-4 py-3 md:hidden" aria-label="إرشاد السحب">
-                  <span className="text-[.74rem] font-semibold leading-relaxed text-accent">بقية الأقسام موجودة يساراً</span>
-                  <motion.span
-                    aria-hidden="true"
-                    className="text-xl text-accent"
-                    animate={reduce ? undefined : { x: [0, -7, 0] }}
-                    transition={{ duration: 1.25, repeat: Infinity, ease: 'easeInOut' }}
-                  >←</motion.span>
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -717,6 +706,35 @@ function SearchPalette({ close }: { close: () => void }) {
           />
           {query && <button type="button" onClick={() => setQuery('')} className="text-[.76rem] text-soft transition-colors hover:text-accent">مسح</button>}
           <button type="button" onClick={close} className="rounded-full border border-hair px-3 py-1.5 text-[.75rem] text-soft transition-colors hover:border-accent hover:text-accent">إغلاق</button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 border-b border-hair px-3 py-3 sm:px-4">
+          <Link
+            to={deepTo}
+            onClick={close}
+            className="group flex min-w-0 items-center gap-3 rounded-2xl border border-hair bg-wash/55 px-3 py-3 text-right transition-[border-color,background-color,transform] duration-300 hover:-translate-y-0.5 hover:border-accent hover:bg-accent/[.055] sm:px-4"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent transition-transform duration-300 group-hover:scale-105">
+              <SocialIcon name="Search" size={18} />
+            </span>
+            <span className="min-w-0">
+              <strong className="block truncate font-display text-[.88rem] font-semibold text-ink transition-colors group-hover:text-accent sm:text-[.94rem]">البحث العميق</strong>
+              <span className="mt-0.5 hidden text-[.67rem] text-soft sm:block">يفتش في كامل الأرشيف</span>
+            </span>
+          </Link>
+          <Link
+            to={askTo}
+            onClick={close}
+            className="group flex min-w-0 items-center gap-3 rounded-2xl border border-accent/25 bg-accent/[.055] px-3 py-3 text-right transition-[border-color,background-color,transform] duration-300 hover:-translate-y-0.5 hover:border-accent hover:bg-accent/[.09] sm:px-4"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white shadow-[0_8px_20px_-12px_rgb(var(--c-accent))] transition-transform duration-300 group-hover:scale-105">
+              <SocialIcon name="Spark" size={18} />
+            </span>
+            <span className="min-w-0">
+              <strong className="block truncate font-display text-[.88rem] font-semibold text-ink transition-colors group-hover:text-accent sm:text-[.94rem]">اسأل العقل الحي</strong>
+              <span className="mt-0.5 hidden text-[.67rem] text-soft sm:block">إجابة من مكتبة الدكتور</span>
+            </span>
+          </Link>
         </div>
 
         {suggested && (

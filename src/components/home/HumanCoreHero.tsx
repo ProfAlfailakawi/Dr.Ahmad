@@ -306,7 +306,6 @@ export default function HumanCoreHero() {
                 </div>
                 <div className="human-core__scan absolute inset-0" aria-hidden="true" />
               </div>
-              <span className="human-core__caption absolute -bottom-4 -left-3 rounded-full border border-hair bg-canvas/90 px-3 py-1.5 text-[.62rem] font-semibold text-accent backdrop-blur-sm md:-left-7">HUMAN PRESENCE</span>
             </motion.div>
           </motion.div>
         </div>

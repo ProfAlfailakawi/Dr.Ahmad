@@ -4,7 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { Cursor, Footer, Nav } from './components/ui'
 import { FloatingActions } from './components/extras'
 import { CmsProvider } from './lib/content'
-import { useTrackView } from './lib/views'
+import { useTrackJourney, useTrackView } from './lib/views'
 import { PersistentAudioDock, PersistentAudioProvider } from './lib/persistent-audio'
 import Home from './pages/Home'
 
@@ -163,6 +163,13 @@ function ConditionalFooter() {
   return location.pathname === '/' || location.pathname === '/admin' ? null : <Footer />
 }
 
+
+function RouteJourneyTracker() {
+  const location = useLocation()
+  useTrackJourney(location.pathname, location.pathname !== '/admin')
+  return null
+}
+
 function RouteViewTracker() {
   const location = useLocation()
   const [page, setPage] = useState({ path: '', title: '' })
@@ -184,6 +191,7 @@ export default function App() {
       <BrowserRouter>
         <PersistentAudioProvider>
           <WesternDigitsGuard />
+          <RouteJourneyTracker />
           <RouteViewTracker />
           <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>
           <Cursor />

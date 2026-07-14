@@ -903,7 +903,7 @@ export async function generatePerfectSocialPack(input, fetchImpl = fetch) {
 
 - الحدث الراهن اختياري، ولا يُستخدم إلا إذا كان الارتباط حقيقياً. اذكر المصدر بوضوح ولا تختلق أي معلومة.
 
-- أعط 4 اتجاهات بصرية متنوعة من هذه العائلة: editorial, quote, split, dark, event, timeline, question, signature.
+- أعط 6 اتجاهات بصرية متباعدة فعلاً، ولا تكرر القالب. اختر من: editorial, orbit, quote, signal, split, window, dark, timeline, question, manifesto, event, signature.
 
 - أعد JSON فقط.`,
     prompt: JSON.stringify({ contentKind, content: { title: input.title, excerpt: input.excerpt, body: input.body, purpose: input.purpose }, audience: input.audience, styleProfile: input.styleProfile, currentEvents: events }),

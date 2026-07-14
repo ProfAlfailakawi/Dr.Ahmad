@@ -3,6 +3,7 @@ import { getDb } from './firebase'
 
 const memorySeen = new Set<string>()
 const pendingWrites = new Map<string, Promise<boolean>>()
+const pendingJourneys = new Map<string, Promise<boolean>>()
 
 const normalizePath = (value: string) => {
   const trimmed = value.trim()
@@ -135,39 +136,67 @@ function journeyId(from: string, to: string) {
   return `${encodeViewPath(from)}>${encodeViewPath(to)}`.slice(0, 900)
 }
 
-async function trackJourney(from: string, to: string) {
-  if (!from || from === to || from === '/admin' || to === '/admin') return
+async function trackJourney(from: string, to: string): Promise<boolean> {
+  if (!from || from === to || from === '/admin' || to === '/admin') return false
   const sessionKey = `journey:${journeyId(from, to)}`
-  if (wasSeen(sessionKey)) return
+  if (wasSeen(sessionKey)) return true
+  const pending = pendingJourneys.get(sessionKey)
+  if (pending) return pending
 
-  // المسار الأساسي يمر عبر الخادم. هذا يتجاوز مشكلة أن قواعد Firestore قد لا
-  // تكون نُشرت بعد، ويستمر حتى لو أغلق الزائر الصفحة سريعاً بفضل keepalive.
-  try {
-    const response = await fetch('/api/journey', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ from, to }),
-      keepalive: true,
-      cache: 'no-store',
-    })
-    if (response.ok) {
+  const write = (async () => {
+    // المسار الأساسي يمر عبر الخادم. هذا يتجاوز مشكلة أن قواعد Firestore قد لا
+    // تكون نُشرت بعد، ويستمر حتى لو أغلق الزائر الصفحة سريعاً بفضل keepalive.
+    try {
+      const response = await fetch('/api/journey', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ from, to }),
+        keepalive: true,
+        cache: 'no-store',
+      })
+      if (response.ok) {
+        markSeen(sessionKey)
+        return true
+      }
+    } catch { /* نجرّب Firestore مباشرة كمسار احتياطي */ }
+
+    try {
+      const db = await getDb()
+      if (!db) return false
+      const { doc, increment, serverTimestamp, setDoc } = await import('firebase/firestore')
+      await setDoc(doc(db, 'journeys', journeyId(from, to)), {
+        from,
+        to,
+        count: increment(1),
+        updatedAt: serverTimestamp(),
+      }, { merge: true })
       markSeen(sessionKey)
-      return
-    }
-  } catch { /* نجرّب Firestore مباشرة كمسار احتياطي */ }
+      return true
+    } catch { return false }
+    finally { pendingJourneys.delete(sessionKey) }
+  })()
 
-  try {
-    const db = await getDb()
-    if (!db) return
-    const { doc, increment, serverTimestamp, setDoc } = await import('firebase/firestore')
-    await setDoc(doc(db, 'journeys', journeyId(from, to)), {
-      from,
-      to,
-      count: increment(1),
-      updatedAt: serverTimestamp(),
-    }, { merge: true })
-    markSeen(sessionKey)
-  } catch { /* لا تؤثر على تجربة الزائر */ }
+  pendingJourneys.set(sessionKey, write)
+  return write
+}
+
+
+/**
+ * يسجل انتقال الزائر بين جميع صفحات الموقع، لا الصفحات التي تملك عدّاد مشاهدة فقط.
+ * التخزين مؤقت داخل الجلسة ولا يحتوي أي معرّف شخصي.
+ */
+export function useTrackJourney(path: string, enabled = true) {
+  useEffect(() => {
+    if (!enabled || typeof window === 'undefined') return
+    const normalizedPath = normalizePath(path)
+    if (!normalizedPath || normalizedPath === '/admin') return
+    try {
+      const rawPrevious = window.sessionStorage.getItem('journey:last-path') || ''
+      const previous = rawPrevious ? normalizePath(rawPrevious) : ''
+      if (previous && previous !== normalizedPath) void trackJourney(previous, normalizedPath)
+      window.sessionStorage.setItem('journey:last-path', normalizedPath)
+    } catch { /* لا تؤثر على تجربة الزائر */ }
+  }, [enabled, path])
 }
 
 /**
@@ -182,15 +211,6 @@ export function useTrackView(path: string, title: string, enabled = true) {
     const safeTitle = title.trim().slice(0, 200) || normalizedPath
     const ids = viewDocumentIds(normalizedPath)
     const pathSessionKey = `view:path:${encodeViewPath(normalizedPath)}`
-
-    // رحلة الزائر تُسجَّل فور تغيّر المسار؛ لا ننتظر requestIdleCallback لأن
-    // الزائر قد ينتقل سريعاً قبل تنفيذ المهمة المؤجلة. عدّاد الصفحة وحده يبقى
-    // مؤجلاً حتى لا يؤثر على الطلاء الأول أو سرعة التنقّل.
-    try {
-      const previous = normalizePath(window.sessionStorage.getItem('view:last-path') || '')
-      if (previous && previous !== normalizedPath) void trackJourney(previous, normalizedPath)
-      window.sessionStorage.setItem('view:last-path', normalizedPath)
-    } catch { /* لا تؤثر على عدّاد الصفحة */ }
 
     return afterFirstPaint(() => {
       if (wasSeen(pathSessionKey)) return

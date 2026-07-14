@@ -10,8 +10,9 @@ on:
       - 'src/data.ts'
       - 'src/data/bodies.json'
   schedule:
-    # فحص يومي 09:35 صباحاً بتوقيت الكويت؛ السكربت نفسه يحدد إن كان موعد النشر قد حان.
-    - cron: '35 6 * * *'
+    # أربع محاولات يومية بتوقيت الكويت: 07:35، 12:35، 17:35، 22:35.
+    # السكربت نفسه يمنع التكرار ولا ينشر إلا عند حلول الموعد.
+    - cron: '35 4,9,14,19 * * *'
   workflow_dispatch:
     inputs:
       force:
@@ -30,6 +31,7 @@ concurrency:
 jobs:
   generate:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,32 +50,38 @@ jobs:
       - name: Install dependencies
         run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 
-      - name: Validate secrets
+      - name: Validate archive sources
+        run: npm run content:auto:self-test
+        env:
+          AUTO_CONTENT_MIN_LETTERS: '2'
+          AUTO_CONTENT_MIN_FAQS: '3'
+
+      - name: Validate required secrets
+        shell: bash
         run: |
+          missing=0
           if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then
-            echo "::warning::GEMINI_API_KEY or GOOGLE_API_KEY is missing; skipping automatic content quietly."
-            exit 0
+            echo "::error::GEMINI_API_KEY or GOOGLE_API_KEY is missing. Automatic messages and questions cannot run."
+            missing=1
           fi
           if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
-            echo "::warning::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing; skipping automatic content quietly."
-            exit 0
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing. Firestore publishing cannot run."
+            missing=1
           fi
+          if [ "$missing" -ne 0 ]; then exit 1; fi
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
 
       - name: Write Firebase service account
-        run: |
-          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then exit 0; fi
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
 
       - name: Generate and publish due content
+        shell: bash
         run: |
-          if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then exit 0; fi
-          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then exit 0; fi
           EXTRA_ARGS=""
           if [ "${{ inputs.force }}" = "true" ]; then EXTRA_ARGS="--force"; fi
           npm run content:auto -- $EXTRA_ARGS
@@ -82,6 +90,9 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           FIREBASE_PROJECT_ID: drahmad-8e9e2
           FIREBASE_SERVICE_ACCOUNT: sa.json
+          AUTO_CONTENT_MIN_LETTERS: '2'
+          AUTO_CONTENT_MIN_FAQS: '3'
+          AUTO_CONTENT_MAX_PER_KIND: '5'
 
       - name: Remove temporary credentials
         if: always()

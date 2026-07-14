@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { articleCats, books, papers } from '../../data'
 import privateBookLinks from '../../data/private-book-links.json'
 import type { ArticleRecord } from '../../lib/cms'
@@ -231,6 +231,44 @@ function makeSlug(title: string) {
   return `${base}-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}`
 }
 
+
+function distinctEditorialTitle(candidate: string, requestedIdea: string, previousTitle: string, articles: ArticleRecord[], variation: number) {
+  const cleanCandidate = candidate.trim().replace(/\s+/g, ' ')
+  const forbidden = new Set([previousTitle, ...articles.map((article) => article.title)].map(normalize).filter(Boolean))
+  if (cleanCandidate.length >= 12 && !forbidden.has(normalize(cleanCandidate))) return cleanCandidate
+
+  const core = requestedIdea
+    .replace(/[.!؟?،,:؛]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .slice(0, 9)
+    .join(' ')
+    .slice(0, 92) || 'الفكرة الجديدة'
+  const alternatives = [
+    `حين تصبح «${core}» سؤالًا تربويًا`,
+    `ما الذي لا تقوله لنا «${core}»؟`,
+    `بين بريق «${core}» وأثره في الإنسان`,
+    `قبل أن نحتفل بـ«${core}»`,
+    `«${core}»… من يدفع ثمن الاختصار؟`,
+    `كيف نعيد الإنسان إلى قلب «${core}»؟`,
+  ]
+  for (let offset = 0; offset < alternatives.length; offset += 1) {
+    const title = alternatives[(variation + offset) % alternatives.length]
+    if (!forbidden.has(normalize(title))) return title
+  }
+  return `${alternatives[variation % alternatives.length]} — قراءة ${variation + 1}`
+}
+
+function uniqueArticleSlug(title: string, articles: ArticleRecord[]) {
+  const base = makeSlug(title)
+  const used = new Set(articles.map((article) => article.slug))
+  if (!used.has(base)) return base
+  let suffix = 2
+  while (used.has(`${base}-${suffix}`)) suffix += 1
+  return `${base}-${suffix}`
+}
+
 function chooseCat(idea: string) {
   const text = normalize(idea)
   if (/ذكاء|تقني|تكنولوجيا|رقمي|شاشه|شاشة/.test(text)) return 'تقنية'
@@ -357,9 +395,12 @@ ${goal}.`,
     event: event || null,
     eventHook: event ? `الربط بالحدث ليس للركوب على الترند؛ بل لأنه يكشف زاوية تربوية وإنسانية تستحق النقاش.` : '',
     visualDirections: [
-      { layout: 'editorial', tone: 'هادئ وأكاديمي', headline: thought, subline: goal },
-      { layout: 'dark', tone: 'حاسم وتأملي', headline: 'الأثر قبل الانبهار', subline: thought },
-      { layout: 'split', tone: 'مقارنة ذكية', headline: 'السرعة أم المعنى؟', subline: goal },
+      { layout: 'orbit', tone: 'فكرة تدور حول الإنسان', headline: thought, subline: goal },
+      { layout: 'manifesto', tone: 'بيان بصري مختصر', headline: 'الأثر قبل الانبهار', subline: thought },
+      { layout: 'window', tone: 'نافذة هادئة', headline: 'ما الذي نراه فعلًا؟', subline: goal },
+      { layout: 'signal', tone: 'نبضة فكرية', headline: 'الفكرة التي تستحق الإصغاء', subline: thought },
+      { layout: 'question', tone: 'سؤال واسع', headline: 'السرعة أم المعنى؟', subline: goal },
+      { layout: 'signature', tone: 'توقيع إنساني', headline: thought, subline: 'جملة واحدة تترك أثرًا أطول.' },
     ],
     generatedAt: new Date().toISOString(),
   }
@@ -859,15 +900,29 @@ function CurrentEventsCard({
   )
 }
 
+function TemplateArtwork({ layout }: { layout: SocialVisualTemplate['layout'] }) {
+  if (layout === 'orbit') return <div aria-hidden className="absolute -left-10 top-16 h-40 w-40 rounded-full border border-accent/20 before:absolute before:inset-7 before:rounded-full before:border before:border-accent/25 after:absolute after:inset-14 after:rounded-full after:border after:border-accent/30"><span className="absolute right-4 top-8 h-2.5 w-2.5 rounded-full bg-accent/55" /></div>
+  if (layout === 'signal') return <div aria-hidden className="absolute bottom-16 left-6 flex h-36 items-center gap-1.5 opacity-25">{[28,52,84,44,108,68,34].map((height, index) => <span key={index} className="w-1.5 rounded-full bg-accent" style={{ height }} />)}</div>
+  if (layout === 'window') return <div aria-hidden className="absolute -left-4 top-20 h-48 w-40 rounded-[2rem] border-2 border-accent/15 before:absolute before:inset-y-0 before:left-1/2 before:w-px before:bg-accent/15" />
+  if (layout === 'manifesto') return <span aria-hidden className="absolute -left-2 top-16 font-display text-[8rem] font-bold leading-none text-accent/[.07]">01</span>
+  if (layout === 'timeline') return <div aria-hidden className="absolute bottom-16 left-8 top-20 w-px bg-accent/20 before:absolute before:-left-1.5 before:top-1/4 before:h-3 before:w-3 before:rounded-full before:bg-accent/35 after:absolute after:-left-1.5 after:top-2/3 after:h-3 after:w-3 after:rounded-full after:bg-accent/35" />
+  if (layout === 'question') return <span aria-hidden className="absolute left-4 top-10 font-display text-[8rem] font-bold text-accent/[.07]">؟</span>
+  if (layout === 'quote') return <span aria-hidden className="absolute left-4 top-8 font-display text-[9rem] font-bold text-accent/[.06]">”</span>
+  if (layout === 'split') return <span aria-hidden className="absolute inset-y-0 left-0 w-[28%] bg-accent/10" />
+  if (layout === 'signature') return <span aria-hidden className="absolute -left-8 top-20 h-36 w-64 -rotate-6 rounded-[50%] border border-accent/15" />
+  return null
+}
+
 function VisualTemplateCard({ template }: { template: SocialVisualTemplate }) {
   const dark = template.layout === 'dark'
   return (
     <div className="overflow-hidden rounded-2xl border border-hair bg-canvas">
       <div className={`relative aspect-[4/5] overflow-hidden p-5 ${dark ? 'bg-ink text-white' : template.layout === 'event' ? 'bg-[#eef2f5] text-ink' : 'bg-[#f7f6f3] text-ink'}`}>
         <span className="absolute inset-x-5 top-5 h-px bg-accent/40" />
-        <p className="mt-5 text-[.68rem] font-semibold text-accent">{template.kicker}</p>
-        <h3 className={`mt-4 font-display text-[1.35rem] font-bold leading-[1.5] ${dark ? 'text-white' : 'text-ink'}`}>{template.title}</h3>
-        {template.body && <p className={`mt-4 line-clamp-5 text-[.78rem] leading-[1.8] ${dark ? 'text-white/65' : 'text-soft'}`}>{template.body}</p>}
+        <TemplateArtwork layout={template.layout} />
+        <p className="relative mt-5 text-[.68rem] font-semibold text-accent">{template.kicker}</p>
+        <h3 className={`relative mt-4 font-display text-[1.35rem] font-bold leading-[1.5] ${dark ? 'text-white' : 'text-ink'}`}>{template.title}</h3>
+        {template.body && <p className={`relative mt-4 line-clamp-5 text-[.78rem] leading-[1.8] ${dark ? 'text-white/65' : 'text-soft'}`}>{template.body}</p>}
         <span className={`absolute bottom-5 right-5 text-[.66rem] ${dark ? 'text-white/50' : 'text-soft'}`}>{template.footer}</span>
       </div>
       <div className="flex items-center justify-between gap-3 p-3">
@@ -963,6 +1018,8 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const [generating, setGenerating] = useState(false)
   const [socialGenerating, setSocialGenerating] = useState(false)
   const [targetWords, setTargetWords] = useState(MIN_ARTICLE_WORDS)
+  const [targetWordsInput, setTargetWordsInput] = useState(String(MIN_ARTICLE_WORDS))
+  const generationRun = useRef(0)
   const [skipOriginality, setSkipOriginality] = useState(false)
   const [currentEvents, setCurrentEvents] = useState<CurrentEvent[]>([])
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([])
@@ -1051,6 +1108,11 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
     setNotice('')
     setGenerating(true)
     try {
+      const parsedTarget = Number(fromArabicDigits(targetWordsInput).replace(/[^0-9]/g, ''))
+      const requestedTarget = Math.max(MIN_ARTICLE_WORDS, Math.min(MAX_GENERATION_WORDS, Number.isFinite(parsedTarget) && parsedTarget > 0 ? parsedTarget : targetWords))
+      setTargetWords(requestedTarget)
+      setTargetWordsInput(String(requestedTarget))
+      generationRun.current += 1
       const ok = isAdmin || await refresh()
       if (!ok || !user) throw new Error('جلسة المشرف تحتاج تحديثًا. سجّل خروجك وادخل من جديد.')
       const token = await user.getIdToken()
@@ -1069,7 +1131,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
           idea: requestedIdea,
           audience,
           angle: requestedAngle,
-          targetWords,
+          targetWords: requestedTarget,
           skipOriginality,
           styleProfile: style,
           styleSamples,
@@ -1085,7 +1147,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
         const message = reason instanceof Error ? reason.message : ''
         if (/جلسة|صلاحية|Unauthenticated|Admin access/i.test(message)) throw reason
         const initialTitle = suggestStrongTitle(requestedIdea)
-        const localBody = buildExactLocalArticle(requestedIdea, audience, requestedAngle, nearest, targetWords)
+        const localBody = buildExactLocalArticle(requestedIdea, audience, requestedAngle, nearest, requestedTarget)
         const localReport = articleSimilarityReport(initialTitle, localBody, richArticles)
         const title = !skipOriginality && localReport.repeated ? `${initialTitle}… وما الذي تغيّر الآن؟` : initialTitle
         const finalReport = articleSimilarityReport(title, localBody, richArticles)
@@ -1098,17 +1160,21 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
           event: selectedEventIds.length ? currentEvents.find((item) => item.id === selectedEventIds[0]) || null : null,
           eventConnection: selectedEventIds.length ? 'استُخدم الحدث كمدخل راهن من دون أن يطغى على الفكرة الأصلية.' : '',
           originalityNote: 'بُني محليًا من بصمة الأرشيف بعد فحص أقرب الزوايا السابقة.',
-          exactWords: targetWords,
+          exactWords: requestedTarget,
           originality: finalReport.originality,
           similarity: finalReport.matches.slice(0, 5),
           modelValidated: false,
         }
       }
       const generatedWords = wordCount(generated.body)
-      if (generatedWords < targetWords) {
-        generated = { ...generated, body: fitExactWords(generated.body, targetWords), exactWords: targetWords }
+      if (generatedWords < requestedTarget) {
+        generated = { ...generated, body: fitExactWords(generated.body, requestedTarget), exactWords: requestedTarget }
       } else {
         generated = { ...generated, body: humanParagraphs(generated.body, generatedWords), exactWords: generatedWords }
+      }
+      generated = {
+        ...generated,
+        title: distinctEditorialTitle(generated.title, requestedIdea, bundle.title, richArticles, generationRun.current),
       }
       const related = relatedForIdea(`${generated.title} ${generated.excerpt}`, richArticles, (article) => `${article.excerpt || ''} ${article.body || ''}`, 5)
       const relatedBooks = relatedForIdea(`${generated.title} ${generated.excerpt}`, books, (book) => book.desc || '', 3)
@@ -1116,7 +1182,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
       const partial = { title: generated.title, excerpt: generated.excerpt, body: generated.body }
       const nextBundle: Bundle = {
         ...partial,
-        slug: makeSlug(generated.title),
+        slug: uniqueArticleSlug(generated.title, richArticles),
         cat: generated.cat,
         social: buildSocial(partial, audience),
         related: related.map(({ slug, title, iso }) => ({ slug, title, iso })),
@@ -1130,7 +1196,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
           skipOriginality ? 'استُثني فحص الأصالة بإقرار الكاتب لأن النص أو فكرته أصلية له.' : (generated.originalityNote || 'اجتاز فحص عدم تكرار الزاوية والحجة.'),
           'قوالب السوشيال تُبنى منفصلة لكل منصة لمنع النسخ المتكرر.',
         ],
-        exactTarget: targetWords,
+        exactTarget: requestedTarget,
         originality: generated.originality,
         originalityBypassed: skipOriginality,
         similarity: generated.similarity,
@@ -1416,14 +1482,14 @@ ${pulsePurpose.trim()}`,
               <Field label="الفكرة الخام"><input className={input} value={idea} onChange={(event) => setIdea(event.target.value)} placeholder="مثال: الخوف من الامتحان" /></Field>
               <Field label="الجمهور"><select className={input} value={audience} onChange={(event) => setAudience(event.target.value)}><option>المعلمين والقيادات التعليمية</option><option>أولياء الأمور</option><option>الطلاب والباحثين</option><option>الإعلاميين</option><option>الجمهور العام</option></select></Field>
               <Field label="الزاوية"><select className={input} value={angle} onChange={(event) => setAngle(event.target.value)}><option>الأثر الإنساني قبل بريق الأداة</option><option>زاوية تربوية عملية</option><option>سؤال أخلاقي وفكري</option><option>مدخل إعلامي سريع</option><option>امتداد أكاديمي من الأرشيف</option></select></Field>
-              <Field label="طول التوليد المبدئي (350–4000 كلمة)"><input className={input} inputMode="numeric" min={MIN_ARTICLE_WORDS} max={MAX_GENERATION_WORDS} value={String(targetWords)} onChange={(event) => { const value = Number(fromArabicDigits(event.target.value).replace(/[^0-9]/g, '')); if (Number.isFinite(value) && value > 0) setTargetWords(Math.max(MIN_ARTICLE_WORDS, Math.min(MAX_GENERATION_WORDS, value))) }} /></Field>
+              <Field label="طول التوليد المبدئي (350–4000 كلمة)"><input className={input} inputMode="numeric" aria-label="طول التوليد المبدئي" value={targetWordsInput} onChange={(event) => { const raw = fromArabicDigits(event.target.value).replace(/[^0-9]/g, ''); setTargetWordsInput(raw); const value = Number(raw); if (raw && Number.isFinite(value)) setTargetWords(Math.max(MIN_ARTICLE_WORDS, Math.min(MAX_GENERATION_WORDS, value))) }} onBlur={() => { const value = Number(targetWordsInput); const normalizedValue = Math.max(MIN_ARTICLE_WORDS, Math.min(MAX_GENERATION_WORDS, Number.isFinite(value) && value > 0 ? value : targetWords)); setTargetWords(normalizedValue); setTargetWordsInput(String(normalizedValue)) }} /></Field>
               <div className="flex items-end"><button type="button" disabled={generating} className={`${primary} w-full`} onClick={() => void rebuild()}>{generating ? 'أكتب وأراجع…' : 'ابنِ المقال الكامل'}</button></div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
               <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.articleCount}</strong><span className="text-[.76rem] text-soft">مقالًا يحلل أسلوبها</span></div>
               <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.avgSentenceWords || '—'}</strong><span className="text-[.76rem] text-soft">متوسط الجملة</span></div>
               <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.avgParagraphs || '—'}</strong><span className="text-[.76rem] text-soft">متوسط الفقرات</span></div>
-              <div className="rounded-xl border border-accent/40 bg-accent/[.05] p-4"><strong className="block font-display text-2xl text-accent">{targetWords}</strong><span className="text-[.76rem] text-soft">للتوليد الأول فقط — ليس سقفًا للتحرير</span></div>
+              <div className="rounded-xl border border-accent/40 bg-accent/[.05] p-4"><strong className="block font-display text-2xl text-accent">{targetWordsInput || '—'}</strong><span className="text-[.76rem] text-soft">للتوليد الأول فقط — ليس سقفًا للتحرير</span></div>
             </div>
             {notice && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.84rem] text-accent">{notice}</p>}
             {error && <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.84rem] text-soft">{error}</p>}

@@ -2,7 +2,7 @@ export type SocialVisualTemplate = {
   id: string
   platform: 'instagram' | 'story' | 'linkedin' | 'x'
   format: string
-  layout: 'editorial' | 'quote' | 'split' | 'dark' | 'event' | 'timeline' | 'question' | 'signature'
+  layout: 'editorial' | 'quote' | 'split' | 'dark' | 'event' | 'timeline' | 'question' | 'signature' | 'orbit' | 'signal' | 'window' | 'manifesto'
   width: number
   height: number
   kicker: string
@@ -19,11 +19,20 @@ export type SocialPackVisualInput = {
   event?: { source?: string; title?: string } | null
 }
 
-const layouts: SocialVisualTemplate['layout'][] = ['editorial', 'quote', 'split', 'dark', 'event', 'timeline', 'question', 'signature']
+const layouts: SocialVisualTemplate['layout'][] = ['editorial', 'orbit', 'quote', 'signal', 'split', 'window', 'dark', 'timeline', 'question', 'manifesto', 'event', 'signature']
 const safeLayout = (value = '', index = 0): SocialVisualTemplate['layout'] => layouts.includes(value as SocialVisualTemplate['layout']) ? value as SocialVisualTemplate['layout'] : layouts[index % layouts.length]
+
+const hashText = (value: string) => [...value].reduce((hash, char) => ((hash * 31) + char.charCodeAt(0)) >>> 0, 2166136261)
+const diverseLayouts = (seed: string, count: number, directions: SocialPackVisualInput['visualDirections']) => {
+  const start = hashText(seed) % layouts.length
+  const requested = (directions || []).map((item) => safeLayout(item.layout)).filter((layout, index, all) => all.indexOf(layout) === index)
+  const rotated = [...layouts.slice(start), ...layouts.slice(0, start)]
+  return [...requested, ...rotated.filter((layout) => !requested.includes(layout))].slice(0, count)
+}
 
 export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title: string; excerpt: string }) {
   const directions = pack.visualDirections || []
+  const selectedLayouts = diverseLayouts(`${article.title}:${pack.event?.title || ''}`, 12, directions)
   const slides = pack.carouselSlides?.length ? pack.carouselSlides : [
     { kicker: 'فكرة جديدة', title: article.title, body: article.excerpt },
   ]
@@ -31,7 +40,7 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
     id: `instagram-${index + 1}`,
     platform: 'instagram',
     format: index === 0 ? 'غلاف كاروسيل' : `شريحة ${index + 1}`,
-    layout: safeLayout(directions[index]?.layout, index),
+    layout: selectedLayouts[index % selectedLayouts.length],
     width: 1080,
     height: 1350,
     kicker: slide.kicker || (index === 0 ? 'من المقال' : `الفكرة ${index}`),
@@ -44,7 +53,7 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
     id: `story-${index + 1}`,
     platform: 'story',
     format: `Story ${index + 1}`,
-    layout: safeLayout(directions[index + 1]?.layout, index + 1),
+    layout: selectedLayouts[(slides.length + index) % selectedLayouts.length],
     width: 1080,
     height: 1920,
     kicker: index === 0 ? 'سؤال يستحق التوقف' : 'من الفكرة',
@@ -57,7 +66,7 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
     id: 'linkedin-cover',
     platform: 'linkedin',
     format: 'LinkedIn 1200×627',
-    layout: safeLayout(directions[0]?.layout, 0),
+    layout: selectedLayouts[(slides.length + Math.min(4, pack.stories?.length || 0)) % selectedLayouts.length],
     width: 1200,
     height: 627,
     kicker: directions[0]?.tone || 'رؤية تربوية',
@@ -125,6 +134,14 @@ export async function renderSocialPng(template: SocialVisualTemplate) {
           ? { background: '#f4f3ef', ink: '#15161a', soft: '#777e87', accent: '#3e5c78', line: '#cfd5db', card: '#ffffff' }
           : template.layout === 'signature'
             ? { background: '#f8f7f3', ink: '#15161a', soft: '#7b8088', accent: '#8a6f3d', line: '#ded8c9', card: '#ffffff' }
+            : template.layout === 'orbit'
+              ? { background: '#f4f7f8', ink: '#15161a', soft: '#747d86', accent: '#365d76', line: '#cedae0', card: '#ffffff' }
+              : template.layout === 'signal'
+                ? { background: '#f6f4ef', ink: '#15161a', soft: '#777e87', accent: '#4a6680', line: '#d8d4ca', card: '#ffffff' }
+                : template.layout === 'window'
+                  ? { background: '#edf2f4', ink: '#15161a', soft: '#737c84', accent: '#375b74', line: '#cbd6dc', card: '#ffffff' }
+                  : template.layout === 'manifesto'
+                    ? { background: '#f9f6f0', ink: '#15161a', soft: '#77756f', accent: '#2f536f', line: '#ded8cc', card: '#ffffff' }
       : { background: '#f7f6f3', ink: '#15161a', soft: '#7c818a', accent: '#3e5c78', line: '#d9d9d6', card: '#ffffff' }
 
   ctx.fillStyle = palette.background
@@ -178,6 +195,50 @@ export async function renderSocialPng(template: SocialVisualTemplate) {
     ctx.fillStyle = palette.accent
     ctx.font = `700 ${Math.round(template.width * .42)}px "El Messiri", serif`
     ctx.fillText('”', template.width - pad, Math.round(template.height * .34))
+    ctx.globalAlpha = 1
+  }
+
+  if (template.layout === 'orbit') {
+    ctx.globalAlpha = .14
+    ctx.strokeStyle = palette.accent
+    ctx.lineWidth = Math.max(2, template.width / 500)
+    const cx = Math.round(template.width * .25)
+    const cy = Math.round(template.height * .28)
+    for (const radius of [.08, .14, .21]) {
+      ctx.beginPath(); ctx.arc(cx, cy, Math.round(template.width * radius), 0, Math.PI * 2); ctx.stroke()
+    }
+    ctx.fillStyle = palette.accent
+    ctx.beginPath(); ctx.arc(cx + Math.round(template.width * .14), cy - Math.round(template.width * .03), Math.round(template.width * .012), 0, Math.PI * 2); ctx.fill()
+    ctx.globalAlpha = 1
+  }
+  if (template.layout === 'signal') {
+    ctx.globalAlpha = .14
+    ctx.fillStyle = palette.accent
+    const baseX = Math.round(template.width * .12)
+    const centerY = Math.round(template.height * .48)
+    ;[.07,.15,.24,.12,.31,.18,.09].forEach((height, index) => {
+      const barHeight = Math.round(template.height * height)
+      roundedRect(ctx, baseX + index * Math.round(template.width * .025), centerY - barHeight / 2, Math.round(template.width * .009), barHeight, Math.round(template.width * .006))
+      ctx.fill()
+    })
+    ctx.globalAlpha = 1
+  }
+  if (template.layout === 'window') {
+    ctx.globalAlpha = .12
+    ctx.strokeStyle = palette.accent
+    ctx.lineWidth = Math.max(3, template.width / 360)
+    roundedRect(ctx, Math.round(template.width * .08), Math.round(template.height * .16), Math.round(template.width * .38), Math.round(template.height * .48), Math.round(template.width * .035))
+    ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(Math.round(template.width * .27), Math.round(template.height * .16)); ctx.lineTo(Math.round(template.width * .27), Math.round(template.height * .64)); ctx.stroke()
+    ctx.globalAlpha = 1
+  }
+  if (template.layout === 'manifesto') {
+    ctx.globalAlpha = .07
+    ctx.fillStyle = palette.accent
+    ctx.font = `700 ${Math.round(template.width * .38)}px "El Messiri", serif`
+    ctx.textAlign = 'left'
+    ctx.fillText('01', pad, Math.round(template.height * .46))
+    ctx.textAlign = 'right'
     ctx.globalAlpha = 1
   }
 

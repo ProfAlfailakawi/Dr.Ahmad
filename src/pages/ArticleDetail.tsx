@@ -3,7 +3,7 @@ import { motion, useScroll, useSpring } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { getArticleNeighbors, relatedArticles, type ArticleRecord } from '../lib/cms'
-import { books, papers, SITE_URL } from '../data'
+import { books, media, papers, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
 import { SelectionTools } from '../components/IdeaFeatures'
@@ -13,6 +13,8 @@ import { useAdminAuth } from '../lib/admin-auth'
 import { articleSystem, ideaTokens } from '../lib/intelligence'
 import { getArticleBody } from '../lib/article-bodies'
 import { usePersistentAudio } from '../lib/persistent-audio'
+import { staticQuestions } from '../questions-data'
+import { rememberIdeaVisit } from '../lib/idea-memory'
 
 /** تقدير زمن القراءة — ٢٠٠ كلمة/دقيقة للعربية */
 const readTime = (t?: string) => {
@@ -254,6 +256,58 @@ function deepDive(a: { title: string; excerpt?: string }) {
 }
 
 
+function IdeaThread({ article }: { article: ArticleRecord }) {
+  const path = useMemo(() => {
+    const mine = tokensOf(`${article.title} ${article.excerpt || ''} ${article.cat}`)
+    const score = (value: string) => {
+      let total = 0
+      for (const token of tokensOf(value)) if (mine.has(token)) total += 1
+      return total
+    }
+    const best = <T,>(items: T[], text: (item: T) => string) => [...items]
+      .map((item, index) => ({ item, index, score: score(text(item)) }))
+      .sort((a, b) => b.score - a.score || a.index - b.index)[0]?.item
+
+    const book = best(books as { slug: string; title: string; desc?: string }[], (item) => `${item.title} ${item.desc || ''}`)
+    const paper = best(papers as { slug: string; title: string; meta?: string }[], (item) => `${item.title} ${item.meta || ''}`)
+    const appearance = best(media, (item) => `${item.title} ${item.outlet}`)
+    const question = best(staticQuestions, (item) => `${item.ar} ${item.take}`)
+    return [
+      book && { kind: 'كتاب', title: book.title, to: `/publications/${book.slug}` },
+      paper && { kind: 'بحث', title: paper.title, to: `/research/${paper.slug}` },
+      appearance && { kind: 'لقاء', title: appearance.title, href: appearance.url },
+      question && { kind: 'سؤال', title: question.ar, to: '/questions' },
+    ].filter(Boolean) as { kind: string; title: string; to?: string; href?: string }[]
+  }, [article.cat, article.excerpt, article.title])
+
+  if (!path.length) return null
+  return (
+    <FadeUp>
+      <section className="idea-thread mt-16 border-y border-hair py-9" aria-label="خيط الفكرة">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-[.74rem] font-semibold text-accent">خيط الفكرة</p>
+            <h2 className="mt-1 font-display text-[1.35rem] font-semibold text-ink">الفكرة لا تعيش في صفحة واحدة.</h2>
+          </div>
+          <p className="max-w-[280px] text-[.76rem] font-light leading-relaxed text-soft">مسار دقيق يصل المقال بكتاب وبحث ولقاء وسؤال من أرشيفك.</p>
+        </div>
+        <ol className="relative mt-8 grid gap-6 md:grid-cols-4 md:gap-5">
+          <span aria-hidden className="absolute bottom-0 right-[.32rem] top-0 w-px bg-hair md:bottom-auto md:left-0 md:right-0 md:top-[.34rem] md:h-px md:w-auto" />
+          {path.map((node, index) => {
+            const content = <><span className="relative z-10 block h-3 w-3 rounded-full border-2 border-canvas bg-accent shadow-[0_0_0_1px_var(--hair)]" /><span className="mt-3 block text-[.68rem] font-semibold text-accent">{String(index + 1).padStart(2, '0')} · {node.kind}</span><span className="mt-1.5 block font-display text-[.96rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">{node.title}</span></>
+            return (
+              <li key={`${node.kind}-${node.title}`} className="relative pe-7 md:pe-0">
+                {node.to ? <Link to={node.to} className="group block">{content}</Link> : <a href={node.href} target="_blank" rel="noreferrer" className="group block">{content}</a>}
+              </li>
+            )
+          })}
+        </ol>
+      </section>
+    </FadeUp>
+  )
+}
+
+
 /* شارة المالك: تظهر للمشرف وحده بجانب العنوان — مشاهدات ومشاركات المقال */
 function OwnerBadge({ path }: { path: string }) {
   const { isAdmin } = useAdminAuth()
@@ -388,11 +442,12 @@ export default function ArticleDetail() {
     return () => { active = false }
   }, [a?.slug, a?.body])
 
-  // يتذكّر جهازُك آخر مقالٍ فتحتَه — بلا حساب ولا تتبّع خارجي، ليُقدَّم لك عند العودة
+  // يتذكّر جهازُك المقال والفكرة محليًا — بلا حساب ولا ملف شخصي ولا إرسال للخادم.
   useEffect(() => {
     if (!a) return
     try { localStorage.setItem('read:last', JSON.stringify({ slug: a.slug, title: a.title, at: Date.now() })) } catch { /* noop */ }
-  }, [a])
+    rememberIdeaVisit({ slug: a.slug, title: a.title, cat: a.cat, excerpt: a.excerpt, body: a.body || staticBody })
+  }, [a, staticBody])
 
   if (!a && loading)
     return (
@@ -525,6 +580,8 @@ export default function ArticleDetail() {
           )}
 
           <TimeDialogue a={a} articles={articles} />
+
+          <IdeaThread article={article} />
 
           <Share title={a.title} path={`/articles/${a.slug}`} />
 

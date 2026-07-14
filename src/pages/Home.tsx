@@ -10,6 +10,7 @@ import { Newsletter } from '../components/extras'
 import { type Curio } from '../data-curated'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../lib/cms'
 import HumanCoreHero from '../components/home/HumanCoreHero'
+import { ideaContinuation } from '../lib/idea-memory'
 
 const arNum = (n: number) => String(n).padStart(2, '0')
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
@@ -236,6 +237,7 @@ function SinceLastVisit() {
   const lastIso = last ? new Date(last).toISOString().slice(0, 10) : ''
   const newArticles = showSince ? articles.filter((a) => a.iso > lastIso).length : 0
   const daysGone = showSince ? Math.floor(away / 864e5) : 0
+  const continuation = ideaContinuation(articles)
 
   const bits: { to: string; t: string }[] = []
   if (newArticles > 0) bits.push({ to: '/articles', t: newArticles === 1 ? 'مقال جديد' : `${newArticles} مقالات جديدة` })
@@ -243,11 +245,18 @@ function SinceLastVisit() {
 
   // «أكمل قراءتك» يظهر متى وُجد مقالٌ سابق (حتى دون غياب طويل)
   const resume = lastRead && Date.now() - lastRead.at < 45 * 864e5 ? lastRead : null
-  if (!bits.length && !resume) return null
+  if (!bits.length && !resume && !continuation) return null
 
   return (
     <div className="border-t border-hair bg-wash px-6 py-3.5 md:px-11">
       <div className="rail mx-auto flex max-w-shell items-center gap-5 overflow-x-auto whitespace-nowrap">
+        {continuation && (
+          <Link to={`/articles/${continuation.article.slug}`} className="group flex shrink-0 items-center gap-2.5 text-[.82rem] text-soft">
+            <span className="font-semibold text-accent">✦ كنت تتتبع أثر {continuation.label}</span>
+            <span className="text-ink transition-colors group-hover:text-accent">أكمل من هنا: «{continuation.article.title}»</span>
+            <span className="text-accent opacity-0 transition-opacity duration-300 group-hover:opacity-100">←</span>
+          </Link>
+        )}
         {resume && (
           <Link to={`/articles/${resume.slug}`} className="group flex shrink-0 items-center gap-2.5 text-[.82rem] text-soft">
             <span className="font-semibold text-accent">↩ أكمل قراءتك</span>

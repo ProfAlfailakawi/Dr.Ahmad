@@ -1,6 +1,6 @@
 /* أداة تحديدٍ واحدة أنيقة (أحادية اللون، بلا تلوث بصري): تظهر عند تظليل أي جملةٍ في المقال،
    وتقدّم فعلين متباعدين في شريطٍ واحد لا يتداخلان:
-   ١) 🧬 خيط الفكرة: كل المقالات التي لامست الفكرة نفسها عبر السنوات.
+   ١) تتبّع الجملة: كل المقالات التي لامست الفكرة نفسها عبر السنوات.
    ٢) 🖼 بطاقة اقتباس: صورة أنيقة بجملةٍ منتقاة + توقيع الدكتور، للمشاركة الراقية. */
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -102,7 +102,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
     }
   }, [view])
 
-  // مطابقة خيط الفكرة: تبحث في العنوان والمقتطف والنص الكامل، ثم تضمن
+  // مطابقة الفكرة المحددة: تبحث في العنوان والمقتطف والنص الكامل، ثم تضمن
   // بديلاً زمنياً من التصنيف نفسه كي لا تتحول الأداة الجميلة إلى لوحة فارغة.
   const seed = new Set(tokens(sel))
   const currentYear = current.iso.slice(0, 4)
@@ -158,7 +158,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         )}
       </AnimatePresence>
 
-      {/* لوحة خيط الفكرة */}
+      {/* لوحة تتبّع الجملة */}
       <AnimatePresence>
         {view === 'thread' && (
           <motion.div
@@ -172,7 +172,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[.74rem] font-semibold uppercase tracking-wide text-accent">🧬 خيط الفكرة</p>
+                  <p className="text-[.74rem] font-semibold uppercase tracking-wide text-accent">تتبّع الجملة</p>
                   <p className="mt-2 border-r-2 border-accent pe-0 ps-4 text-[.95rem] font-light leading-[1.9] text-ink/80">«{sel.length > 140 ? sel.slice(0, 140) + '…' : sel}»</p>
                 </div>
                 <button type="button" onClick={close} aria-label="إغلاق" className="shrink-0 text-soft transition-colors hover:text-accent">✕</button>

@@ -19,15 +19,17 @@ export type AdminTab =
   | 'voice'
   | 'cv'
 
-export type AdminArea = 'today' | 'publishing' | 'library' | 'audience' | 'system'
+export type AdminArea = 'system' | 'publishing' | 'library' | 'audience'
 
 type NavItem = { tab: AdminTab; label: string; note: string }
 type NavGroup = { area: AdminArea; label: string; icon: string; items: NavItem[] }
 
 export const ADMIN_GROUPS: NavGroup[] = [
   {
-    area: 'today', label: 'اليوم', icon: '◉', items: [
+    area: 'system', label: 'النظام', icon: '◉', items: [
       { tab: 'dashboard', label: 'غرفة القيادة', note: 'ما يحتاج قرارك الآن' },
+      { tab: 'lab', label: 'المختبر المتقدم', note: 'الفحص والذاكرة والأتمتة' },
+      { tab: 'voice', label: 'الصوت والبودكاست', note: 'اختبار الأصوات والجودة' },
     ],
   },
   {
@@ -43,6 +45,7 @@ export const ADMIN_GROUPS: NavGroup[] = [
       { tab: 'papers', label: 'الأبحاث', note: 'المساهمات العلمية' },
       { tab: 'media', label: 'الإعلام', note: 'الظهور واللقاءات' },
       { tab: 'event', label: 'اللقاءات', note: 'إضافة موعد قادم' },
+      { tab: 'cv', label: 'السيرة والهوية', note: 'ملفات السيرة العامة' },
     ],
   },
   {
@@ -51,17 +54,10 @@ export const ADMIN_GROUPS: NavGroup[] = [
       { tab: 'analytics', label: 'التحليلات', note: 'المشاهدات ورحلة الزائر' },
     ],
   },
-  {
-    area: 'system', label: 'النظام', icon: '⚙', items: [
-      { tab: 'lab', label: 'المختبر المتقدم', note: 'الفحص والذاكرة والأتمتة' },
-      { tab: 'voice', label: 'الصوت والبودكاست', note: 'اختبار الأصوات والجودة' },
-      { tab: 'cv', label: 'السيرة والهوية', note: 'ملفات السيرة العامة' },
-    ],
-  },
 ]
 
 export const areaOfTab = (tab: AdminTab): AdminArea =>
-  ADMIN_GROUPS.find((group) => group.items.some((item) => item.tab === tab))?.area || 'today'
+  ADMIN_GROUPS.find((group) => group.items.some((item) => item.tab === tab))?.area || 'system'
 
 export const defaultTabForArea = (area: AdminArea): AdminTab =>
   ADMIN_GROUPS.find((group) => group.area === area)?.items[0].tab || 'dashboard'
@@ -342,7 +338,7 @@ export function AdminCommandPalette({ open, close, onSelect }: { open: boolean; 
   }, [open, close])
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return q ? COMMANDS.filter((command) => command.keys.toLowerCase().includes(q)).slice(0, 9) : COMMANDS.slice(0, 9)
+    return q ? COMMANDS.filter((command) => command.keys.toLowerCase().includes(q)).slice(0, 12) : []
   }, [query])
   if (!open) return null
   const choose = (tab: AdminTab) => { onSelect(tab); close() }
@@ -350,7 +346,7 @@ export function AdminCommandPalette({ open, close, onSelect }: { open: boolean; 
     <motion.div role="dialog" aria-modal="true" aria-label="لوحة أوامر الإدارة" className="fixed inset-0 z-[310] bg-ink/30 px-4 pt-[calc(5.5rem+env(safe-area-inset-top))] backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && close()}>
       <motion.div className="mx-auto max-w-2xl overflow-hidden rounded-3xl border border-hair bg-canvas shadow-2xl" initial={reduce ? false : { y: -12, scale: .98 }} animate={{ y: 0, scale: 1 }} exit={reduce ? undefined : { y: -8, scale: .98 }} transition={{ duration: .25, ease: EASE }}>
         <div className="flex items-center gap-3 border-b border-hair px-5 py-4"><span className="text-accent">⌘</span><input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && results[0] && choose(results[0].tab)} placeholder="اكتب: مقال جديد، الرسائل، اختبار الصوت…" className="min-w-0 flex-1 bg-transparent text-[.95rem] text-ink outline-none placeholder:text-soft/70" /><button onClick={close} className="rounded-full border border-hair px-3 py-1 text-[.72rem] text-soft">Esc</button></div>
-        <div className="max-h-[65vh] overflow-y-auto p-2">{results.length ? results.map((command) => <button key={command.tab} onClick={() => choose(command.tab)} className="group block w-full rounded-2xl px-4 py-3 text-right transition-colors hover:bg-wash"><span className="block font-display text-[1rem] font-semibold text-ink group-hover:text-accent">{command.label}</span><span className="mt-1 block text-[.72rem] text-soft">{command.hint}</span></button>) : <p className="px-5 py-10 text-center text-soft">لا يوجد أمر مطابق.</p>}</div>
+        <div className="max-h-[65vh] overflow-y-auto p-2">{results.length ? results.map((command) => <button key={command.tab} onClick={() => choose(command.tab)} className="group block w-full rounded-2xl px-4 py-3 text-right transition-colors hover:bg-wash"><span className="block font-display text-[1rem] font-semibold text-ink group-hover:text-accent">{command.label}</span><span className="mt-1 block text-[.72rem] text-soft">{command.hint}</span></button>) : query.trim() ? <p className="px-5 py-10 text-center text-soft">لا يوجد أمر مطابق.</p> : <div className="px-6 py-12 text-center"><p className="font-display text-[1.05rem] font-semibold text-ink">اكتب ما تريد الوصول إليه</p><p className="mx-auto mt-2 max-w-sm text-[.78rem] leading-relaxed text-soft">تظهر النتائج فورًا من دون أزرار سريعة أو ازدحام.</p></div>}</div>
       </motion.div>
     </motion.div>
   )

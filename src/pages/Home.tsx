@@ -987,7 +987,7 @@ export default function Home() {
             <Link to="/cv" className="group mx-auto flex w-full max-w-[620px] items-center justify-between gap-4 rounded-2xl border border-hair bg-wash/70 px-5 py-4 text-right transition-colors hover:border-accent md:px-6">
               <span className="min-w-0">
                 <span className="block text-[.7rem] font-semibold text-accent">المسار الأكاديمي والمهني</span>
-                <span className="mt-1 block font-display text-[1rem] font-semibold leading-[1.5] text-ink transition-colors group-hover:text-accent md:text-[1.15rem]">السيرة الكاملة… بلا اختصار.</span>
+                <span className="mt-1 block font-display text-[1rem] font-semibold leading-[1.5] text-ink transition-colors group-hover:text-accent md:text-[1.15rem]">المسيرة التي صنعت الأسئلة.</span>
               </span>
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-transform duration-300 group-hover:-translate-y-0.5"><SocialIcon name="CV" size={17} /></span>
             </Link>

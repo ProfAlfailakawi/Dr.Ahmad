@@ -179,8 +179,10 @@ function TimeDialogue({ a, articles }: { a: { slug: string; title: string; iso: 
   const pair = useMemo(() => {
     const mine = tokensOf(a.title + ' ' + (a.excerpt || ''))
     const myYear = +a.iso.slice(0, 4)
-    let older: { art: typeof a; score: number } | null = null
-    let newer: { art: typeof a; score: number } | null = null
+    let older: { art: typeof a; score: number; fallback?: boolean } | null = null
+    let newer: { art: typeof a; score: number; fallback?: boolean } | null = null
+    let olderFallback: { art: typeof a; score: number; fallback: true } | null = null
+    let newerFallback: { art: typeof a; score: number; fallback: true } | null = null
     for (const o of articles) {
       if (o.slug === a.slug) continue
       const gap = +o.iso.slice(0, 4) - myYear
@@ -188,11 +190,14 @@ function TimeDialogue({ a, articles }: { a: { slug: string; title: string; iso: 
       let score = 0
       for (const w of tokensOf(o.title + ' ' + (o.excerpt || ''))) if (mine.has(w)) score++
       if (o.cat === a.cat) score += 1
-      if (score < 3) continue
+      const fallbackScore = (o.cat === a.cat ? 2 : 0) + Math.min(Math.abs(gap), 12) / 12
+      if (gap < 0 && (!olderFallback || fallbackScore > olderFallback.score)) olderFallback = { art: o, score: fallbackScore, fallback: true }
+      if (gap > 0 && (!newerFallback || fallbackScore > newerFallback.score)) newerFallback = { art: o, score: fallbackScore, fallback: true }
+      if (score < 2) continue
       if (gap < 0 && (!older || score > older.score)) older = { art: o, score }
       if (gap > 0 && (!newer || score > newer.score)) newer = { art: o, score }
     }
-    return { older: older?.art ?? null, newer: newer?.art ?? null }
+    return { older: older?.art ?? olderFallback?.art ?? null, newer: newer?.art ?? newerFallback?.art ?? null }
   }, [a, articles])
 
   if (!pair.older && !pair.newer) return null

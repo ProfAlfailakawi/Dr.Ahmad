@@ -30,16 +30,20 @@ const endpoint = env.CLOUDFLARE_R2_ENDPOINT || ''
 const key = env.CLOUDFLARE_R2_ACCESS_KEY_ID || env.AWS_ACCESS_KEY_ID || ''
 const secret = env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || env.AWS_SECRET_ACCESS_KEY || ''
 
-if (!base || !bucket || !endpoint || !key || !secret) {
-  console.error('✘ إعدادات R2 غير مكتملة: AUDIO_PUBLIC_BASE_URL + CLOUDFLARE_R2_BUCKET/ENDPOINT/ACCESS_KEY_ID/SECRET_ACCESS_KEY')
-  process.exit(1)
-}
 if (!existsSync(AUDIO)) {
   console.log('لا يوجد مجلد audio؛ لا شيء للنشر.')
   process.exit(0)
 }
 
 const files = readdirSync(AUDIO).filter((name) => /\.(mp3|json)$/i.test(name)).sort()
+if (!files.length) {
+  console.log('لا توجد ملفات صوت/Transcript محلية جديدة للنشر إلى R2.')
+  process.exit(0)
+}
+if (!base || !bucket || !endpoint || !key || !secret) {
+  console.error('✘ إعدادات R2 غير مكتملة: AUDIO_PUBLIC_BASE_URL + CLOUDFLARE_R2_BUCKET/ENDPOINT/ACCESS_KEY_ID/SECRET_ACCESS_KEY')
+  process.exit(1)
+}
 const meta = existsSync(META) ? JSON.parse(readFileSync(META, 'utf8')) : {}
 
 function durationSeconds(file) {

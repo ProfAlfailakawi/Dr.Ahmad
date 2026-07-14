@@ -269,10 +269,25 @@ async function run() {
   const stateSnap = await stateRef.get()
   const state = stateSnap.exists ? stateSnap.data() : {}
 
-  const [recentLetters, recentFaqs] = await Promise.all([
+  const [recentLetters, recentFaqs, recentRadar] = await Promise.all([
     recentDocs(db, 'site_inbox'),
     recentDocs(db, 'site_faqs'),
+    recentDocs(db, 'site_radar', 20).catch(() => []),
   ])
+  const radarSources = recentRadar.map((item) => {
+    const title = clean(item.ar || item.title || item.en || '')
+    const note = clean(item.arNote || item.summary || item.note || '')
+    if (!title && !note) return null
+    return {
+      key: `radar:${item.id || hash(`${title}:${note}`)}`,
+      type: 'رادار',
+      title: title || 'لقطة من رادار الدكتور',
+      category: clean(item.source || 'حدث تربوي/تقني راهن'),
+      url: clean(item.url || '/radar'),
+      text: clean(`${title}. ${note}`).slice(0, 2800),
+    }
+  }).filter(Boolean)
+  const contentSources = [...radarSources, ...sources]
 
   const usedSourceKeys = new Set([
     ...recentLetters.map((item) => item.sourceKey).filter(Boolean),
@@ -285,7 +300,7 @@ async function run() {
   const statePatch = { updatedAt: FieldValue.serverTimestamp() }
 
   if (due(state?.nextLetterAt)) {
-    const source = chooseUnused(sources, usedSourceKeys, 11)
+    const source = chooseUnused(contentSources, usedSourceKeys, 11)
     const style = chooseUnusedText(styles, usedStyles, 7)
     const letter = await generateLetter(source, style)
     const id = `auto-${isoDay(now)}-${hash(`${source.key}:${letter.message}`)}`
@@ -312,7 +327,7 @@ async function run() {
   }
 
   if (due(state?.nextFaqAt)) {
-    const source = chooseUnused(sources, usedSourceKeys, 29)
+    const source = chooseUnused(contentSources, usedSourceKeys, 29)
     const topic = chooseUnusedText(topicFamilies, usedTopics, 17)
     const faq = await generateFaq(source, topic)
     const id = `auto-${isoDay(now)}-${hash(`${source.key}:${faq.q}`)}`

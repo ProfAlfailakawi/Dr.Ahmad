@@ -636,33 +636,43 @@ function socialIdeasInput(value) {
 async function callGeminiStructured({ instruction, prompt, properties, required, maxOutputTokens = 4_096, temperature = .55 }, fetchImpl = fetch) {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
   if (!apiKey) throw new HttpError(503, 'AI service is not configured')
-  const model = process.env.EDITORIAL_GEMINI_MODEL || process.env.GEMINI_MODEL || 'gemini-3.5-flash'
-  if (!/^[A-Za-z0-9._-]+$/.test(model)) throw new HttpError(503, 'AI model is not configured correctly')
+  const configuredModel = process.env.EDITORIAL_GEMINI_MODEL || process.env.GEMINI_MODEL || ''
+  const models = configuredModel
+    ? [configuredModel]
+    : ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest', 'gemini-pro-latest']
   let response
-  try {
-    response = await fetchWithTimeout(fetchImpl,
-      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-        method: 'POST',
-        headers: { accept: 'application/json', 'content-type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: instruction }] },
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature,
-            maxOutputTokens,
-            responseMimeType: 'application/json',
-            responseSchema: { type: 'OBJECT', properties, required },
-          },
-        }),
-      }, envNumber('EDITORIAL_AI_TIMEOUT_MS', 45_000, 10_000, 90_000))
-  } catch (error) {
-    if (error?.name === 'AbortError') throw new HttpError(504, 'AI service timed out')
-    if (error instanceof HttpError) throw error
-    throw new HttpError(502, 'AI service unavailable')
+  let lastStatus = 0
+  for (const model of models) {
+    if (!/^[A-Za-z0-9._-]+$/.test(model)) throw new HttpError(503, 'AI model is not configured correctly')
+    try {
+      response = await fetchWithTimeout(fetchImpl,
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+          method: 'POST',
+          headers: { accept: 'application/json', 'content-type': 'application/json', 'x-goog-api-key': apiKey },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: instruction }] },
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature,
+              maxOutputTokens,
+              responseMimeType: 'application/json',
+              responseSchema: { type: 'OBJECT', properties, required },
+            },
+          }),
+        }, envNumber('EDITORIAL_AI_TIMEOUT_MS', 45_000, 10_000, 90_000))
+    } catch (error) {
+      if (error?.name === 'AbortError') throw new HttpError(504, 'AI service timed out')
+      if (error instanceof HttpError) throw error
+      lastStatus = 502
+      continue
+    }
+    if (response.ok) break
+    lastStatus = response.status
+    if (![404, 429, 503].includes(response.status) || configuredModel) break
   }
-  if (!response.ok) {
-    if (response.status === 429) throw new HttpError(503, 'AI service is busy', { 'retry-after': '30' })
-    throw new HttpError(502, `AI service unavailable (${response.status})`)
+  if (!response?.ok) {
+    if (lastStatus === 429) throw new HttpError(503, 'AI service is busy', { 'retry-after': '30' })
+    throw new HttpError(502, `AI service unavailable (${lastStatus || 502})`)
   }
   let payload
   try { payload = await response.json() } catch { throw new HttpError(502, 'AI returned an invalid response') }

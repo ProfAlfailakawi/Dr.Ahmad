@@ -565,7 +565,6 @@ const escXml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/
 
 const clampNum = (value, lo, hi, fallback = lo) => Math.min(hi, Math.max(lo, Number.isFinite(+value) ? +value : fallback))
 const signedPct = (value) => `${value >= 0 ? '+' : ''}${Math.round(value)}%`
-const signedDb = (value) => `${value >= 0 ? '+' : ''}${Number(value).toFixed(1).replace(/\\.0$/, '')}dB`
 
 function performanceDirector(u, baseRate, lang) {
   const delivery = u.delivery || 'normal'
@@ -610,19 +609,12 @@ function splitPerformanceSegments(pronText) {
   return pieces.length ? pieces : [String(pronText || '').trim()]
 }
 
-function applySubsAndFocus(segment, subs, focusWords = []) {
+function applySubsAndFocus(segment, subs) {
   let text = escXml(segment)
   for (const { word, alias } of subs) {
     if (!word || !alias || word === alias) continue
     const ew = escXml(word)
     if (text.includes(ew)) text = text.split(ew).join(`<sub alias="${escXml(alias)}">${ew}</sub>`)
-  }
-  for (const word of focusWords.slice(0, 2)) {
-    const clean = String(word || '').trim()
-    if (!clean || clean.length < 3) continue
-    const ew = escXml(clean)
-    if (text.includes(ew) && !text.includes(`>${ew}</sub>`))
-      text = text.split(ew).join(`<prosody volume="+1.5dB" pitch="+1%">${ew}</prosody>`)
   }
   return text
 }
@@ -642,13 +634,11 @@ function buildSSML(u, pronText, subs, voice, lang) {
     subs = []
   }
   const segments = splitPerformanceSegments(pronText)
-  const focusWords = Array.isArray(u.emphasisWords) ? u.emphasisWords : []
   const rendered = segments.map((segment, index) => {
     const pos = segments.length === 1 ? 1 : index === 0 ? 0 : index === segments.length - 1 ? 2 : 1
     const pitch = director.pitch + (director.contour[pos] || 0)
     const rate = director.rate + (pos === 0 && director.delivery === 'hook' ? 2 : 0) + (pos === 2 && u.ending === 'final' ? -2 : 0)
-    const volume = director.volume + (pos === 1 ? 0.4 : 0)
-    return `<prosody rate="${signedPct(rate)}" pitch="${signedPct(pitch)}" volume="${signedDb(volume)}">${applySubsAndFocus(segment, subs, focusWords)}</prosody>`
+    return `<prosody rate="${signedPct(rate)}" pitch="${signedPct(pitch)}">${applySubsAndFocus(segment, subs)}</prosody>`
   }).join(`<break time="${director.innerBreakMs}ms"/>`)
   /* لا نستخدم <emphasis>: الأصوات العربية العشرة المختبرة لا تعلن دعمه، وقد
      يتجاهله Azure بصمت. التشديد يُصنع من الجملة والسرعة والوقفة لا من وسم وهمي. */

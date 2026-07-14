@@ -1718,7 +1718,9 @@ function auditSegment(file, dialogueText, deliveryPlan = {}) {
   if (trailingSilenceMs > 320) issues.push(`صمت نهائي ${trailingSilenceMs}ms`)
   if (internalLongSilences) issues.push(`صمت داخلي أطول من 800ms (${internalLongSilences})`)
 
-  const activeSec = Math.max(0.25, dur - (leadingSilenceMs + trailingSilenceMs) / 1000)
+  // سرعة الكلام تُقاس على زمن النطق الفعلي، لا على الوقفات الداخلية المقصودة.
+  // الوقفات تُفحص أعلاه كعنصر مستقل؛ إدخالها في WPM يظلم الحوار التأملي ويُشبه طلب السرعة بلا نفس.
+  const activeSec = Math.max(0.25, dur - (leadingSilenceMs + trailingSilenceMs + functionalSilenceMs) / 1000)
   const wpm = words * 60 / activeSec
   const targetWpm = Number(deliveryPlan.targetWordsPerMinute || 0)
   if (words >= 6 && targetWpm && Math.abs(wpm - targetWpm) > 12)

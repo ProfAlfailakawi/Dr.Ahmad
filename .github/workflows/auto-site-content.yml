@@ -51,12 +51,12 @@ jobs:
       - name: Validate secrets
         run: |
           if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then
-            echo "::error::GEMINI_API_KEY or GOOGLE_API_KEY is missing."
-            exit 1
+            echo "::warning::GEMINI_API_KEY or GOOGLE_API_KEY is missing; skipping automatic content quietly."
+            exit 0
           fi
           if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
-            echo "::error::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing."
-            exit 1
+            echo "::warning::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing; skipping automatic content quietly."
+            exit 0
           fi
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -64,12 +64,16 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
 
       - name: Write Firebase service account
-        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then exit 0; fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
 
       - name: Generate and publish due content
         run: |
+          if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then exit 0; fi
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then exit 0; fi
           EXTRA_ARGS=""
           if [ "${{ inputs.force }}" = "true" ]; then EXTRA_ARGS="--force"; fi
           npm run content:auto -- $EXTRA_ARGS

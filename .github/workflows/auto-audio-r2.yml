@@ -45,13 +45,21 @@ jobs:
 
       - name: Write Firebase service account
         run: |
-          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON" || (echo "Missing FIREBASE service account secret" && exit 1)
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::warning::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing; audio generation from Firestore will be skipped."
+            touch sa.missing
+            exit 0
+          fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
 
       - name: Generate article readings and publish to R2
         run: |
+          if [ -f sa.missing ]; then
+            echo "Firebase service account is missing; skipping automatic audio generation."
+            exit 0
+          fi
           if [ -z "$AZURE_SPEECH_KEY" ]; then
             echo "AZURE_SPEECH_KEY is missing; skipping automatic audio generation."
             exit 0
@@ -73,6 +81,10 @@ jobs:
       - name: Generate approved dialogue podcast if gate is ready
         continue-on-error: true
         run: |
+          if [ -f sa.missing ]; then
+            echo "Firebase service account is missing; skipping dialogue podcast generation."
+            exit 0
+          fi
           if [ -z "$AZURE_SPEECH_KEY" ] || { [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; }; then
             echo "Azure/Gemini secrets are missing; skipping dialogue podcast generation."
             exit 0

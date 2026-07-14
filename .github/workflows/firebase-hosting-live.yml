@@ -51,16 +51,13 @@ jobs:
       - name: Verify official-domain build
         run: npm run verify:domain -- --dist
 
-      - name: Verify data-project service account secret
-        run: |
-          if [ -z '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}' ]; then
-            echo '::error::Missing GitHub secret: FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2'
-            echo 'It is required to deploy Firestore rules for the live Inbox and Questions collections.'
-            exit 1
-          fi
-
       - name: Deploy Firestore rules to the data project only
         run: |
+          if [ -z "$FIREBASE_DATA_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::warning::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing; skipping Firestore rules deploy for the data project."
+            echo "::warning::Hosting deploy will continue. Add the secret later to update Inbox/Questions/CMS rules automatically."
+            exit 0
+          fi
           printf '%s' "$FIREBASE_DATA_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-data-service-account.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-data-service-account.json"
           npx --yes firebase-tools@latest deploy \

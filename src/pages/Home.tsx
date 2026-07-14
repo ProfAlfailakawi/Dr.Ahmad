@@ -1,6 +1,6 @@
 import { useSeo } from '../components/seo'
 import { useEffect, useState } from 'react'
-import { AnimatePresence, motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, FadeUp, Label, Magnetic, Page, Reveal, SectionHead, SocialIcon } from '../components/ui'
 import { books as staticBooks, papers as staticPapers, profile, roundDown10, socials, stats, upcoming, type Event as SiteEvent } from '../data'
@@ -9,6 +9,7 @@ import { firebaseEnabled, getDb } from '../lib/firebase'
 import { Newsletter } from '../components/extras'
 import { type Curio } from '../data-curated'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../lib/cms'
+import HumanCoreHero from '../components/home/HumanCoreHero'
 
 const arNum = (n: number) => String(n).padStart(2, '0')
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
@@ -905,105 +906,13 @@ export default function Home() {
     .filter((event, index, list) => list.findIndex((candidate) => candidate.iso === event.iso && candidate.title === event.title) === index)
     .filter((event) => event.iso >= new Date().toISOString().slice(0, 10))
     .sort((left, right) => left.iso.localeCompare(right.iso))
-  const reduce = useReducedMotion()
-  const { scrollY } = useScroll()
-  const parY = useTransform(scrollY, [0, 800], [0, 40])
-  const tx = useMotionValue(0)
-  const ty = useMotionValue(0)
-  const stx = useSpring(tx, { stiffness: 120, damping: 20 })
-  const sty = useSpring(ty, { stiffness: 120, damping: 20 })
 
-  useEffect(() => {
-    if (reduce) return
-    const m = (e: MouseEvent) => {
-      tx.set((e.clientX / window.innerWidth - 0.5) * 14)
-      ty.set((e.clientY / window.innerHeight - 0.5) * 14)
-    }
-    window.addEventListener('mousemove', m)
-    return () => window.removeEventListener('mousemove', m)
-  }, [reduce, tx, ty])
 
   return (
     <Page>
       <LaunchSpotlight articles={articles} books={books} papers={papers} media={media} />
 
-      {/* hero — البيان الفكري أولاً (100svh للجوال) */}
-      <header className="relative flex min-h-[100svh] items-center px-6 pb-28 pt-24 md:px-11 md:pb-28 md:pt-28">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_50%_at_78%_40%,rgba(62,92,120,.06),transparent_62%)]" />
-        <div className="relative z-10 mx-auto grid w-full max-w-shell items-center gap-8 md:grid-cols-[1.15fr_.85fr] md:gap-16">
-          {/* البيان أولاً — على الجوال والكمبيوتر */}
-          <div className="order-1">
-            {/* الجملة التي تراها أول ثانية — بيان الدكتور الفكري، لا نبذة */}
-            <h1 className="font-display text-[clamp(2.1rem,5.4vw,4rem)] font-bold leading-[1.28] text-ink">
-              {['أُبقي الإنسانَ', 'في قلبِ الآلة.'].map((line, i) => (
-                // حشوة تحمي الهمزة والضمة فوق الألف من القصّ، وهامش سالب يحيّد أثرها
-                <span key={line} className="-my-[0.3em] block overflow-hidden py-[0.3em]">
-                  <motion.span
-                    className="block"
-                    initial={reduce ? false : { y: '150%' }}
-                    animate={{ y: 0 }}
-                    transition={{ duration: 1, delay: 0.25 + i * 0.14, ease: EASE }}
-                  >
-                    {line}
-                  </motion.span>
-                </span>
-              ))}
-            </h1>
-
-            <motion.div className="my-7 h-[2px] bg-accent" initial={{ width: 0 }} animate={{ width: 74 }} transition={{ duration: 0.9, delay: 0.7, ease: EASE }} />
-
-            {/* الاسم والصفة — أصغر، ثانويّان */}
-            <motion.div
-              initial={reduce ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.85, ease: EASE }}
-            >
-              <p className="font-display text-[clamp(1.15rem,2.4vw,1.6rem)] font-semibold text-ink">{profile.name}</p>
-              <p className="mt-1.5 text-[.95rem] font-light text-soft">أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · باحث · مستشار</p>
-            </motion.div>
-          </div>
-
-          <div className="order-2 flex justify-center">
-            <motion.div style={{ y: parY }} className="w-full max-w-[260px] md:max-w-[400px]">
-              <motion.div style={{ x: stx, y: sty }} className="portrait-wrap" data-hover>
-                <motion.div
-                  className="portrait relative overflow-hidden rounded-2xl shadow-[0_36px_64px_-36px_rgba(21,22,26,.42)]"
-                  initial={reduce ? false : { opacity: 0, y: 26, scale: 1.03 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 1.1, delay: 0.75, ease: EASE }}
-                >
-                  <img src="/portrait.jpg" alt={profile.fullName} width={900} height={1350} decoding="async" className="block h-auto w-full" />
-                </motion.div>
-              </motion.div>
-            </motion.div>
-          </div>
-
-          <motion.div
-            className="order-3 md:col-span-2"
-            initial={reduce ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: .75, delay: 1.05, ease: EASE }}
-          >
-            <Link to="/cv" className="group mx-auto flex w-full max-w-[620px] items-center justify-between gap-4 rounded-2xl border border-hair bg-wash/70 px-5 py-4 text-right transition-colors hover:border-accent md:px-6">
-              <span className="min-w-0">
-                <span className="block text-[.7rem] font-semibold text-accent">المسار الأكاديمي والمهني</span>
-                <span className="mt-1 block font-display text-[1rem] font-semibold leading-[1.5] text-ink transition-colors group-hover:text-accent md:text-[1.15rem]">المسيرة التي صنعت الأسئلة.</span>
-              </span>
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-transform duration-300 group-hover:-translate-y-0.5"><SocialIcon name="CV" size={17} /></span>
-            </Link>
-          </motion.div>
-        </div>
-
-        <motion.div
-          className="cue absolute bottom-3 left-1/2 -translate-x-1/2 text-[.74rem] text-soft md:bottom-7"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 2 }}
-        >
-          اكتشف
-          <span className="relative mx-auto mt-2.5 block h-[30px] w-px overflow-hidden bg-hair" />
-        </motion.div>
-      </header>
+      <HumanCoreHero />
 
       <SinceLastVisit />
 

@@ -622,6 +622,49 @@ function normalizeMechanics(sc) {
     const u = sc.utterances[i]
     if (!u.allowOverlap && wc(u.text) >= 2 && wc(u.text) <= 6) { u.allowOverlap = true; u.overlapMs = stableBetween(u.text, i + 151, 70, 130) }
   }
+
+  // حارس أخير بعد التقسيم والتداخل: لا نعيد Gemini لأجل رقم أو علامة ترقيم قابلة للتطبيع.
+  // السؤال الذي صنّفه النموذج سؤالاً يجب أن يُسمع ويُقرأ كسؤال، وكل سرعة/وقفة تُرد إلى مدى نوعها.
+  for (let i = 0; i < sc.utterances.length; i++) {
+    const u = sc.utterances[i]
+    if (u.delivery === 'question' && !String(u.text || '').includes('؟')) {
+      u.text = String(u.text || '').replace(/[.،؛!]*\s*$/, '؟')
+      u.ending = 'open'
+    }
+    const profile = pacingOf(u.delivery || 'normal')
+    u.ratePct = clamp(u.ratePct, profile.ratePct)
+    u.targetWordsPerMinute = clamp(u.targetWordsPerMinute, profile.targetWpm)
+    u.pauseAfterMs = clamp(u.pauseAfterMs, profile.pauseMs)
+  }
+
+  if (!sc.sample) {
+    const shortReplies = sc.utterances.filter((u) => wc(u.text) <= 8).length
+    const shortSeeds = [
+      { text: 'صحيح.', delivery: 'briefReaction', ending: 'neutral' },
+      { text: 'هنا الفارق.', delivery: 'briefReaction', ending: 'open' },
+    ]
+    for (let s = shortReplies; s < 2; s++) {
+      const anchor = Math.min(sc.utterances.length - 1, 3 + s * 6)
+      const previous = sc.utterances[anchor] || sc.utterances.at(-1) || { speaker: 'A' }
+      const seed = shortSeeds[s % shortSeeds.length]
+      const profile = pacingOf(seed.delivery)
+      sc.utterances.splice(anchor + 1, 0, {
+        speaker: previous.speaker === 'A' ? 'B' : 'A',
+        text: seed.text,
+        delivery: seed.delivery,
+        ratePct: stableBetween(seed.text, s + 211, profile.ratePct[0], profile.ratePct[1]),
+        targetWordsPerMinute: stableBetween(seed.text, s + 223, profile.targetWpm[0], profile.targetWpm[1]),
+        pauseAfterMs: stableBetween(seed.text, s + 227, profile.pauseMs[0], profile.pauseMs[1]),
+        ending: seed.ending,
+        internalBreakMs: 0,
+        allowOverlap: false,
+        overlapMs: 0,
+        musicBridgeAfter: false,
+        emphasisWords: [],
+        pronunciationNotes: '',
+      })
+    }
+  }
   return sc
 }
 

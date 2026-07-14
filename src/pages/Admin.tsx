@@ -14,11 +14,13 @@ import { firebaseEnabled, getDb, getFirebaseApp } from '../lib/firebase'
 import { articleCats } from '../data'
 import { getBaseRecord, type ArticleRecord } from '../lib/cms'
 import { useCmsContent } from '../lib/content'
+import { beginAdminTask } from '../lib/admin-task-state'
 import { ContentManager, type ManagedKind, type ManagedRecord } from '../components/admin/ContentManager'
 import { Indicators } from '../components/admin/Indicators'
 import { IntelligenceLab } from '../components/admin/IntelligenceLab'
 import { PublishingStudio } from '../components/admin/PublishingStudio'
 import { VoiceBakeoffCard } from '../components/admin/VoiceBakeoff'
+import { AdminTaskFavicon } from '../components/admin/AdminTaskFavicon'
 import { UploadField } from '../components/admin/ContentManager'
 import { useSeo } from '../components/seo'
 import type { User } from 'firebase/auth'
@@ -203,15 +205,20 @@ function CvPdfCard() {
     })()
   }, [])
   const save = async (patch: { url?: string; urlEn?: string }) => {
+    const task = beginAdminTask('تحديث ملف السيرة')
     try {
       const db = await getDb()
-      if (!db) return
+      if (!db) throw new Error('Firebase غير متاح')
       const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
       await setDoc(doc(db, 'site_settings', 'cv'), { ...patch, updatedAt: serverTimestamp() }, { merge: true })
       setLinks((prev) => ({ ...prev, ...patch }))
       setSaved('حُدّث رابط السيرة في الموقع فوراً ✓')
       setTimeout(() => setSaved(''), 3000)
-    } catch { setSaved('تعذّر الحفظ') }
+      task.complete('تم تحديث ملف السيرة')
+    } catch (reason) {
+      setSaved('تعذّر الحفظ')
+      task.fail(reason, 'تعذّر تحديث ملف السيرة')
+    }
   }
   return (
     <div className={card}>
@@ -273,6 +280,7 @@ function Panel({ email }: { email: string }) {
 
   return (
     <Page>
+      <AdminTaskFavicon />
       <div className="admin-shell mx-auto box-border w-full max-w-[1440px] overflow-x-hidden px-4 pb-32 pt-28 sm:px-6 md:px-10 md:pb-24 md:pt-32">
         <div className="mb-7 flex flex-wrap items-center justify-between gap-4 md:mb-9">
           <div>

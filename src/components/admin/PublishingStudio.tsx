@@ -5,6 +5,7 @@ import type { ArticleRecord } from '../../lib/cms'
 import { loadArticleBodies } from '../../lib/article-bodies'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { fetchPublishedExtras, getDb } from '../../lib/firebase'
+import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
 import { buildSocialVisuals, detectVisualTopic, downloadSocialPng, visualTopicLabel, type SocialVisualTemplate, type VisualTopic } from '../../lib/social-templates'
 
@@ -1237,7 +1238,8 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
     return () => { active = false; window.clearTimeout(timer) }
   }, [idea, user])
 
-  const requestSocialPack = async (articleBundle: Bundle) => {
+  const requestSocialPack = async (articleBundle: Bundle, announce = true) => {
+    const task = announce ? beginAdminTask('بناء منظومة التوزيع') : null
     setSocialGenerating(true)
     setError('')
     socialVariation.current += 1
@@ -1279,7 +1281,11 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
         setNotice('بُنيت منظومة توزيع جديدة، وتعرّفت القوالب على موضوع المقال ✓')
       }
       setBundle((previous) => previous.slug === articleBundle.slug ? { ...previous, socialPack } : previous)
+      task?.needsInput('منظومة التوزيع جاهزة للمراجعة')
       return socialPack
+    } catch (reason) {
+      task?.fail(reason, 'تعذّر بناء منظومة التوزيع')
+      throw reason
     } finally {
       setSocialGenerating(false)
     }
@@ -1292,6 +1298,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   }, [audience, bundle, view])
 
   const rebuild = async (override?: { title?: string; angle?: string }) => {
+    const task = beginAdminTask('توليد المقال')
     setError('')
     setNotice('')
     setGenerating(true)
@@ -1398,9 +1405,11 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
       if (override?.angle) setAngle(override.angle)
       setNotice(`بُني المقال بطول مبدئي ${generated.exactWords} كلمة. الحد الأدنى 350، ويمكنك الكتابة حتى 4000 كلمة وأكثر يدويًا${skipOriginality ? '، مع تسجيل استثناء الأصالة بإقرارك' : ''} ✓`)
       setView('write')
-      void requestSocialPack(nextBundle).catch(() => undefined)
+      task.needsInput('المقال جاهز للمراجعة')
+      void requestSocialPack(nextBundle, false).catch(() => undefined)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر بناء المقال الكامل.')
+      task.fail(reason, 'تعذّر بناء المقال الكامل')
     } finally {
       setGenerating(false)
     }
@@ -1426,6 +1435,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   }
 
   const transferToArticles = async () => {
+    const task = beginAdminTask('نقل المقال إلى المكتبة')
     setError('')
     setNotice('')
     setBusy(true)
@@ -1486,14 +1496,17 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
       })
       setNotice('نُقل المقال كاملًا إلى «المقالات» كمسودة. من هناك تستطيع مراجعته أو جدولته أو نشره ✓')
       await onTransferToArticles?.(bundle.slug)
+      task.complete('تم نقل المقال')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر نقل المقال إلى المقالات.')
+      task.fail(reason, 'تعذّر نقل المقال')
     } finally {
       setBusy(false)
     }
   }
 
   const saveWeeklyQueue = async () => {
+    const task = beginAdminTask('حفظ حزمة النشر')
     setError('')
     setNotice('')
     setQueueBusy(true)
@@ -1539,8 +1552,10 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
         updatedAt: serverTimestamp(),
       })
       setNotice('حُفظت الحزمة النصية والبصرية ومصدر الحدث في طابور الموافقة ✓')
+      task.complete('حُفظت حزمة النشر')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر حفظ حزمة الأسبوع.')
+      task.fail(reason, 'تعذّر حفظ حزمة النشر')
     } finally {
       setQueueBusy(false)
     }
@@ -1576,7 +1591,8 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const generatePulse = async () => {
     setError('')
     setNotice('')
-    if (pulseIdea.trim().length < 3) { setError('اكتب الفكرة التي تريد نشرها أولًا.'); return }
+    if (pulseIdea.trim().length < 3) { setError('اكتب الفكرة التي تريد نشرها أولًا.'); setAdminTaskState('needs-input', 'اكتب فكرة المنشور أولًا'); return }
+    const task = beginAdminTask('بناء المنشور المستقل')
     setPulseBusy(true)
     pulseVariation.current += 1
     const variation = pulseVariation.current
@@ -1619,8 +1635,10 @@ ${pulsePurpose.trim()}`,
       } else pack = local
       setPulsePack(pack)
       setNotice(`بُنيت حزمة مستقلة متنوّعة لموضوع «${visualTopicLabel(detectVisualTopic(`${pulseIdea} ${pulsePurpose}`))}» ✓`)
+      task.needsInput('المنشور جاهز للمراجعة')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر بناء المنشور المستقل.')
+      task.fail(reason, 'تعذّر بناء المنشور المستقل')
     } finally {
       setPulseBusy(false)
     }
@@ -1628,6 +1646,7 @@ ${pulsePurpose.trim()}`,
 
   const savePulseQueue = async () => {
     if (!pulsePack) return
+    const task = beginAdminTask('حفظ المنشور المستقل')
     setPulseQueueBusy(true)
     setError('')
     try {
@@ -1649,8 +1668,10 @@ ${pulsePurpose.trim()}`,
         updatedAt: serverTimestamp(),
       })
       setNotice('حُفظ المنشور المستقل وقوالبه في طابور الموافقة ✓')
+      task.complete('حُفظ المنشور المستقل')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر حفظ المنشور المستقل.')
+      task.fail(reason, 'تعذّر حفظ المنشور المستقل')
     } finally {
       setPulseQueueBusy(false)
     }

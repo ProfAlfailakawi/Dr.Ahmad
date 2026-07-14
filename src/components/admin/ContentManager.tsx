@@ -3,6 +3,7 @@ import { getDb, getFirebaseApp } from '../../lib/firebase'
 import { books, papers } from '../../data'
 import { publicationGate, topicMemory } from '../../lib/intelligence'
 import { getArticleBody } from '../../lib/article-bodies'
+import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
 
@@ -248,8 +249,10 @@ export function UploadField({
     setError('')
     if (file.size > maxMb * 1024 * 1024) {
       setError(`الحد الأقصى ${maxMb}MB.`)
+      setAdminTaskState('needs-input', `الملف أكبر من ${maxMb}MB`)
       return
     }
+    const task = beginAdminTask('رفع الملف')
     setBusy(true)
     try {
       const app = await getFirebaseApp()
@@ -261,8 +264,10 @@ export function UploadField({
       const target = ref(storage, `site-content/${folder}/${safe}-${Date.now()}.${extension}`)
       await uploadBytes(target, file, { contentType: file.type })
       onChange(await getDownloadURL(target))
+      task.complete('تم رفع الملف')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر رفع الملف')
+      task.fail(reason, 'تعذّر رفع الملف')
     } finally {
       setBusy(false)
     }
@@ -636,6 +641,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
   }
 
   const save = async () => {
+    const task = beginAdminTask(`حفظ ${labels[kind].singular}`)
     setBusy(true)
     setError('')
     try {
@@ -688,9 +694,11 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
       }
       setCurrent(undefined)
       await done(kind === 'article' && data.status === 'scheduled' ? '✓ حُفظ المقال مجدولاً ولن يظهر للزوار قبل موعده.' : kind === 'article' && data.status === 'draft' ? '✓ حُفظ المقال كمسودة ولم يظهر للزوار.' : '✓ حُفظ التعديل ويظهر للزوار فوراً.')
+      task.complete(`تم حفظ ${labels[kind].singular}`)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر الحفظ')
       setForm((previous) => ({ ...previous, _aiBusy: '', _aiError: previous._aiError || '' }))
+      task.fail(reason, `تعذّر حفظ ${labels[kind].singular}`)
     } finally {
       setBusy(false)
     }
@@ -700,6 +708,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
     if (item._cms.origin === 'added') {
       if (!window.confirm(`حذف «${item.title}» نهائياً؟`)) return
     }
+    const task = beginAdminTask(item._cms.origin === 'added' ? 'حذف عنصر' : item._cms.hidden ? 'إظهار عنصر' : 'إخفاء عنصر')
     setBusy(true)
     try {
       const db = await getDb()
@@ -715,8 +724,10 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
         }, { merge: true })
         await done(item._cms.hidden ? '✓ أُعيد إظهار العنصر.' : '✓ أُخفي العنصر مع بقاء الأصل محفوظاً.')
       }
+      task.complete('اكتملت العملية')
     } catch (reason) {
       setNotice(reason instanceof Error ? reason.message : 'تعذّر تنفيذ العملية')
+      task.fail(reason, 'تعذّر تنفيذ العملية')
     } finally {
       setBusy(false)
     }
@@ -724,6 +735,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
 
   const resetOriginal = async (item: ManagedRecord) => {
     if (!window.confirm('إلغاء كل تعديلات هذا العنصر واستعادة الأصل؟')) return
+    const task = beginAdminTask('استعادة النسخة الأصلية')
     setBusy(true)
     try {
       const db = await getDb()
@@ -731,8 +743,10 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
       const { deleteDoc, doc } = await import('firebase/firestore')
       await deleteDoc(doc(db, 'content_overrides', `${kind}:${item._cms.baseSlug || item.slug}`))
       await done('✓ استُعيدت نسخة الأصل.')
+      task.complete('استُعيدت النسخة الأصلية')
     } catch (reason) {
       setNotice(reason instanceof Error ? reason.message : 'تعذّرت استعادة الأصل')
+      task.fail(reason, 'تعذّرت استعادة الأصل')
     } finally {
       setBusy(false)
     }

@@ -5,6 +5,7 @@ import {
   type CvSectionKey,
   type SaveCvSection,
 } from '../../lib/cv'
+import { beginAdminTask } from '../../lib/admin-task-state'
 
 type FieldKey = 'text' | 'degree' | 'org' | 'note' | 'role' | 'items' | 'title' | 'place'
 type Field = { key: FieldKey; label: string; required?: boolean; multiline?: boolean; hint?: string }
@@ -125,13 +126,16 @@ export function CvSectionEditor({ section, items, isAdmin, onSave, children }: P
 
   const save = async () => {
     if (invalid || busy) return
+    const task = beginAdminTask(`حفظ ${label}`)
     setBusy(true)
     setError('')
     try {
       await onSave(section, draft)
       setEditing(false)
-    } catch {
+      task.complete(`تم حفظ ${label}`)
+    } catch (reason) {
       setError('تعذّر الحفظ. تحقق من الاتصال ثم حاول مرة أخرى.')
+      task.fail(reason, `تعذّر حفظ ${label}`)
     } finally {
       setBusy(false)
     }

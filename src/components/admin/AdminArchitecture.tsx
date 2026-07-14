@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { getDb } from '../../lib/firebase'
+import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../../lib/cms'
 import { EASE } from '../motion'
 
@@ -163,9 +164,44 @@ const button = 'rounded-full border border-hair px-4 py-2 text-[.82rem] font-sem
 
 const kuwaitDate = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuwait', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
 
+type JourneyPulseRow = { id: string; from: string; to: string; count: number }
+
+const decodePath = (value: string) => {
+  try { return decodeURIComponent(value) } catch { return value }
+}
+
+const topicLabel = (title: string) => {
+  const value = title.trim()
+  if (!value || value === 'لا بيانات بعد') return 'حركة الموقع'
+  if (/ذكاء اصطناعي|الآلة|ChatGPT|تقني|رقمي/i.test(value)) return 'الذكاء الاصطناعي والتعليم'
+  if (/معلم|تدريس|صف|مدرسة/i.test(value)) return 'المعلم والتعلّم'
+  if (/طفل|أبناء|أسرة|والد/i.test(value)) return 'الطفل والأسرة'
+  if (/تقييم|امتحان|درجات|اختبار/i.test(value)) return 'التقييم الإنساني'
+  if (/بحث|معرفة|جامعة/i.test(value)) return 'البحث والمعرفة'
+  return value
+}
+
+const pathLabel = (path: string, articles: ArticleRecord[]) => {
+  const clean = decodePath(path || '/')
+  if (clean === '/') return 'الصفحة الرئيسية'
+  if (clean === '/articles') return 'المقالات'
+  if (clean === '/publications') return 'الكتب'
+  if (clean === '/research') return 'الأبحاث'
+  if (clean === '/media') return 'الإعلام'
+  if (clean === '/cv') return 'السيرة'
+  if (clean === '/contact') return 'التواصل'
+  if (clean.startsWith('/articles/')) {
+    const slug = clean.split('/').filter(Boolean).pop()
+    return articles.find((item) => item.slug === slug)?.title || 'مقال'
+  }
+  if (clean.startsWith('/publications/')) return 'كتاب'
+  if (clean.startsWith('/research/')) return 'بحث'
+  return clean.replace(/^\//, '').replace(/[-_/]+/g, ' ') || 'صفحة'
+}
+
 export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]; onOpen: (tab: AdminTab) => void }) {
   const [loading, setLoading] = useState(true)
-  const [data, setData] = useState({ todayViews: 0, topTitle: 'لا بيانات بعد', topCount: 0, recentMessages: 0, healthStatus: 'غير مفحوص', issues: 0, launchActive: false })
+  const [data, setData] = useState({ todayViews: 0, topTitle: 'لا بيانات بعد', topCount: 0, recentMessages: 0, healthStatus: 'غير مفحوص', issues: 0, launchActive: false, journeys: [] as JourneyPulseRow[] })
 
   const load = async (showLoading = true) => {
     if (showLoading) setLoading(true)
@@ -173,24 +209,38 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
       const db = await getDb()
       if (!db) return
       const { collection, doc, getDoc, getDocs } = await import('firebase/firestore')
-      const [views, messages, health, launch] = await Promise.all([
+      const [views, messages, health, launch, journeys] = await Promise.all([
         getDocs(collection(db, 'views')).catch(() => null),
         getDocs(collection(db, 'messages')).catch(() => null),
         getDocs(collection(db, 'site_health')).catch(() => null),
         getDoc(doc(db, 'site_settings', 'launch')).catch(() => null),
+        getDocs(collection(db, 'journeys')).catch(() => null),
       ])
       const today = kuwaitDate()
       let todayViews = 0
       let topPath = ''
       let topCount = 0
+      let fallbackPath = ''
+      let fallbackCount = 0
       for (const item of views?.docs || []) {
         const count = Number((item.data() as { count?: number }).count || 0)
-        if (item.id.startsWith(`day:${today}:`)) todayViews += count
-        if (item.id.startsWith('total:/articles/') && count > topCount) {
-          topCount = count
-          try { topPath = decodeURIComponent(item.id.slice('total:'.length)) } catch { topPath = item.id.slice('total:'.length) }
+        if (item.id.startsWith(`day:${today}:`)) {
+          todayViews += count
+          const path = decodePath(item.id.slice(`day:${today}:`.length))
+          if (path.startsWith('/articles/') && count > topCount) {
+            topCount = count
+            topPath = path
+          }
+        }
+        if (item.id.startsWith('total:') && count > fallbackCount) {
+          const path = decodePath(item.id.slice('total:'.length))
+          if (path.startsWith('/articles/')) {
+            fallbackCount = count
+            fallbackPath = path
+          }
         }
       }
+      if (!topPath) { topPath = fallbackPath; topCount = fallbackCount }
       const topSlug = topPath.split('/').filter(Boolean).pop()
       const topTitle = articles.find((item) => item.slug === topSlug)?.title || (topCount ? topPath : 'لا بيانات بعد')
       const weekAgo = Date.now() - 7 * 86_400_000
@@ -198,7 +248,11 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
       const latestHealth = (health?.docs || []).map((item) => item.data() as { date?: string; status?: string; issueCount?: number }).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))[0]
       const launchData = launch?.exists() ? launch.data() as { active?: boolean; endsAt?: { seconds?: number } } : null
       const launchActive = Boolean(launchData?.active && (!launchData.endsAt?.seconds || launchData.endsAt.seconds * 1000 > Date.now()))
-      setData({ todayViews, topTitle, topCount, recentMessages, healthStatus: latestHealth?.status || 'غير مفحوص', issues: Number(latestHealth?.issueCount || 0), launchActive })
+      const journeyRows = (journeys?.docs || []).map((item) => {
+        const value = item.data() as { from?: string; to?: string; count?: number }
+        return { id: item.id, from: value.from || '/', to: value.to || '/', count: Number(value.count || 0) }
+      })
+      setData({ todayViews, topTitle, topCount, recentMessages, healthStatus: latestHealth?.status || 'غير مفحوص', issues: Number(latestHealth?.issueCount || 0), launchActive, journeys: journeyRows })
     } finally {
       if (showLoading) setLoading(false)
     }
@@ -223,6 +277,43 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
     data.issues ? { label: `${data.issues} ملاحظة في حارس الجودة`, tab: 'lab' as AdminTab } : null,
   ].filter(Boolean) as { label: string; tab: AdminTab }[]
 
+  const pulse = useMemo(() => {
+    const outgoingFromArticles = data.journeys.filter((row) => row.from.startsWith('/articles/')).reduce((sum, row) => sum + row.count, 0)
+    const articleToBook = data.journeys.filter((row) => row.from.startsWith('/articles/') && row.to.startsWith('/publications/')).reduce((sum, row) => sum + row.count, 0)
+    const bookPercent = outgoingFromArticles ? Math.round((articleToBook / outgoingFromArticles) * 100) : 0
+
+    const incoming = new Map<string, number>()
+    const outgoing = new Map<string, number>()
+    for (const row of data.journeys) {
+      incoming.set(row.to, (incoming.get(row.to) || 0) + row.count)
+      outgoing.set(row.from, (outgoing.get(row.from) || 0) + row.count)
+    }
+    const stopPath = [...incoming.entries()]
+      .map(([path, count]) => ({ path, score: count - (outgoing.get(path) || 0), count }))
+      .filter((item) => item.path !== '/' && item.score > 0)
+      .sort((a, b) => b.score - a.score || b.count - a.count)[0]?.path || ''
+
+    const update = data.issues
+      ? { text: `${data.issues} ملاحظة في حارس الجودة`, tab: 'lab' as AdminTab }
+      : drafts
+        ? { text: `${drafts} مسودة تنتظر قرارك`, tab: 'articles' as AdminTab }
+        : scheduled
+          ? { text: `${scheduled} مقال مجدول للمراجعة`, tab: 'articles' as AdminTab }
+          : { text: 'لا شيء عاجل اليوم', tab: 'analytics' as AdminTab }
+
+    const focus = topicLabel(data.topTitle)
+    const sentence = data.topCount
+      ? `اليوم: أكثر ما جذب الزوار «${focus}»${bookPercent ? `، ومن انتقالات المقالات وصل ${bookPercent}٪ إلى كتاب.` : '، ورحلة القراءة تتكوّن بهدوء.'}`
+      : 'اليوم: لا توجد حركة كافية بعد لبناء قراءة موثوقة.'
+
+    return {
+      sentence,
+      reading: data.topTitle,
+      stop: stopPath ? pathLabel(stopPath, articles) : 'لا توجد بيانات كافية بعد',
+      update,
+    }
+  }, [articles, data, drafts, scheduled])
+
   return (
     <div className="grid gap-5">
       <section className="relative overflow-hidden rounded-3xl border border-hair bg-ink p-7 text-white md:p-10">
@@ -238,11 +329,23 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
         {tasks.length ? <ol className="relative mt-8 grid gap-2.5 md:grid-cols-2">{tasks.map((task, index) => <li key={task.label}><button onClick={() => onOpen(task.tab)} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[.05] px-4 py-3 text-right transition-colors hover:bg-white/[.1]"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-[.75rem]">{index + 1}</span><span className="text-[.86rem] font-medium">{task.label}</span><span className="ms-auto">←</span></button></li>)}</ol> : <p className="relative mt-7 text-[.88rem] text-white/70">يمكنك الآن الكتابة أو المغادرة… النظام هادئ وسليم.</p>}
       </section>
 
-      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <button onClick={() => onOpen('analytics')} className={`${card} p-3.5 text-right transition-colors hover:border-accent sm:p-5 md:p-6`}><span className="text-[.72rem] font-semibold text-accent">مشاهدات اليوم</span><strong className="mt-2 block font-display text-2xl text-ink sm:text-3xl">{data.todayViews}</strong><span className="mt-2 block text-[.72rem] text-soft">افتح التحليلات ←</span></button>
-        <button onClick={() => onOpen('analytics')} className={`${card} p-3.5 text-right transition-colors hover:border-accent sm:p-5 md:p-6`}><span className="text-[.72rem] font-semibold text-accent">الأكثر قراءة</span><strong className="mt-2 line-clamp-2 block font-display text-[.9rem] leading-[1.55] text-ink sm:text-[1.05rem]">{data.topTitle}</strong><span className="mt-2 block text-[.72rem] text-soft">{data.topCount} مشاهدة</span></button>
-        <button onClick={() => onOpen('inbox')} className={`${card} p-3.5 text-right transition-colors hover:border-accent sm:p-5 md:p-6`}><span className="text-[.72rem] font-semibold text-accent">رسائل حديثة</span><strong className="mt-2 block font-display text-2xl text-ink sm:text-3xl">{data.recentMessages}</strong><span className="mt-2 block text-[.72rem] text-soft">آخر 7 أيام ←</span></button>
-        <button onClick={() => onOpen(data.issues ? 'lab' : 'launch')} className={`${card} p-3.5 text-right transition-colors hover:border-accent sm:p-5 md:p-6`}><span className="text-[.72rem] font-semibold text-accent">حالة النظام</span><strong className="mt-2 block font-display text-[1rem] text-ink sm:text-[1.25rem]">{data.issues ? 'يحتاج انتباه' : data.healthStatus}</strong><span className="mt-2 block text-[.72rem] text-soft">{data.launchActive ? 'وضع الإطلاق نشط' : 'لا إطلاق نشط'}</span></button>
+      <section className="overflow-hidden rounded-3xl border border-hair bg-wash px-5 py-6 sm:px-7 md:px-8" aria-label="نبض الموقع">
+        <p className="text-[.72rem] font-semibold text-accent">نبض الموقع</p>
+        <h3 className="mt-2 max-w-5xl font-display text-[clamp(1.05rem,2.25vw,1.45rem)] font-semibold leading-[1.75] text-ink">{pulse.sentence}</h3>
+        <div className="mt-6 grid border-t border-hair pt-1 md:grid-cols-3 md:divide-x md:divide-x-reverse md:divide-hair">
+          <button type="button" onClick={() => onOpen('analytics')} className="group py-4 text-right md:px-5 md:first:pe-0">
+            <span className="block text-[.7rem] font-semibold text-accent">ما الذي يُقرأ؟</span>
+            <strong className="mt-1.5 line-clamp-2 block text-[.86rem] font-medium leading-relaxed text-ink transition-colors group-hover:text-accent">{pulse.reading}</strong>
+          </button>
+          <button type="button" onClick={() => onOpen('analytics')} className="group border-t border-hair py-4 text-right md:border-t-0 md:px-5">
+            <span className="block text-[.7rem] font-semibold text-accent">أين يتوقف الزائر؟</span>
+            <strong className="mt-1.5 line-clamp-2 block text-[.86rem] font-medium leading-relaxed text-ink transition-colors group-hover:text-accent">{pulse.stop}</strong>
+          </button>
+          <button type="button" onClick={() => onOpen(pulse.update.tab)} className="group border-t border-hair py-4 text-right md:border-t-0 md:px-5 md:last:ps-0">
+            <span className="block text-[.7rem] font-semibold text-accent">ما الذي يحتاج تحديثًا؟</span>
+            <strong className="mt-1.5 line-clamp-2 block text-[.86rem] font-medium leading-relaxed text-ink transition-colors group-hover:text-accent">{pulse.update.text}</strong>
+          </button>
+        </div>
       </section>
     </div>
   )
@@ -277,7 +380,8 @@ export function LaunchModeCard({ articles, books, papers, media }: { articles: A
   }, [form.kind, options.length])
 
   const save = async (active: boolean) => {
-    if (active && !form.slug) { setMessage('اختر عملاً أولاً.'); return }
+    if (active && !form.slug) { setMessage('اختر عملاً أولاً.'); setAdminTaskState('needs-input', 'اختر عملاً لوضع الإطلاق'); return }
+    const task = beginAdminTask(active ? 'تفعيل وضع الإطلاق' : 'إيقاف وضع الإطلاق')
     setBusy(true); setMessage('')
     try {
       const db = await getDb(); if (!db) throw new Error('Firebase غير متاح')
@@ -293,8 +397,10 @@ export function LaunchModeCard({ articles, books, papers, media }: { articles: A
       await setDoc(doc(db, 'site_settings', 'launch'), { active, kind: form.kind, slug: form.slug, eyebrow: form.eyebrow.trim(), note: form.note.trim(), endsAt, updatedAt: serverTimestamp() }, { merge: true })
       setForm((current) => ({ ...current, active }))
       setMessage(active ? 'وضع الإطلاق يعمل الآن على الرئيسية ✓' : 'أُعيدت الرئيسية إلى وضعها الهادئ ✓')
+      task.complete(active ? 'تم تفعيل وضع الإطلاق' : 'تم إيقاف وضع الإطلاق')
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : 'تعذّر الحفظ.')
+      task.fail(reason, 'تعذّر تحديث وضع الإطلاق')
     } finally { setBusy(false) }
   }
 

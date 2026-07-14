@@ -5,6 +5,7 @@ import podcastAdmin from '../../data/podcast-admin.json'
 import type { ArticleRecord } from '../../lib/cms'
 import { loadArticleBodies } from '../../lib/article-bodies'
 import { fetchExtras, fetchPublishedExtras, getDb } from '../../lib/firebase'
+import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { useAdminAuth } from '../../lib/admin-auth'
 import {
   articleSystem,
@@ -101,6 +102,7 @@ function ReadinessCard({ articles }: { articles: ArticleRecord[] }) {
   const [checks, setChecks] = useState<{ label: string; ok: boolean; note: string }[]>([])
 
   const run = async () => {
+    const task = beginAdminTask('فحص جاهزية الموقع')
     setBusy(true)
     const test = async (url: string, contains?: string) => {
       try {
@@ -117,14 +119,17 @@ function ReadinessCard({ articles }: { articles: ArticleRecord[] }) {
     ])
     const withAudio = articles.filter((article) => article.hasAudio).length
     const missingImages = books.filter((book) => !book.cover).length
-    setChecks([
+    const nextChecks = [
       { label: 'Sitemap', ok: sitemap, note: sitemap ? 'يفتح ويحتوي XML.' : 'يحتاج نشر/توليد.' },
       { label: 'RSS', ok: rss, note: rss ? 'الخلاصة متاحة.' : 'الخلاصة غير متاحة.' },
       { label: 'Podcast', ok: podcast, note: podcast ? 'خلاصة البودكاست متاحة.' : 'خلاصة البودكاست غير متاحة.' },
       { label: 'Robots', ok: robots, note: robots ? 'يوجه لمحركات البحث.' : 'يحتاج مراجعة.' },
       { label: 'الصوت', ok: withAudio === articles.length, note: `${withAudio} من ${articles.length} مقالاً لديها صوت.` },
       { label: 'الصور', ok: missingImages === 0, note: missingImages ? `${missingImages} غلاف يحتاج مراجعة.` : 'أغلفة الكتب متاحة.' },
-    ])
+    ]
+    setChecks(nextChecks)
+    if (nextChecks.every((check) => check.ok)) task.complete('الموقع جاهز')
+    else task.needsInput('نتائج الفحص تحتاج مراجعة')
     setBusy(false)
   }
 
@@ -399,8 +404,10 @@ function NowCard() {
     setSaved('')
     if (!form.question.trim()) {
       setError('اكتب السؤال أو الفكرة أولاً.')
+      setAdminTaskState('needs-input', 'اكتب السؤال أو الفكرة أولاً')
       return
     }
+    const task = beginAdminTask('حفظ الفكرة الحالية')
     setBusy(true)
     try {
       const ok = isAdmin || await refresh()
@@ -418,17 +425,20 @@ function NowCard() {
       setSaved('حُفظت الفكرة في صفحة ماذا أفكر الآن ✓')
       await load()
       window.setTimeout(() => setSaved(''), 2500)
+      task.complete('حُفظت الفكرة')
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : 'فشل الحفظ.'
       setError(message.includes('permission') || message.includes('Missing or insufficient permissions')
         ? 'تعذّر الحفظ بسبب صلاحيات قاعدة البيانات. تأكد من نشر الخادم الجديد ثم أعد تسجيل الدخول.'
         : message)
+      task.fail(reason, 'تعذّر حفظ الفكرة')
     } finally {
       setBusy(false)
     }
   }
 
   const hide = async (id: string) => {
+    const task = beginAdminTask('إخفاء الفكرة')
     try {
       const result = await serverRequest('PATCH', { id, status: 'hidden' })
       if (!result) {
@@ -438,12 +448,15 @@ function NowCard() {
         await updateDoc(doc(db, 'site_now', id), { status: 'hidden' })
       }
       await load()
+      task.complete('أُخفيت الفكرة')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر إخفاء الفكرة.')
+      task.fail(reason, 'تعذّر إخفاء الفكرة')
     }
   }
 
   const remove = async (id: string) => {
+    const task = beginAdminTask('حذف الفكرة')
     try {
       const result = await serverRequest('DELETE', undefined, id)
       if (!result) {
@@ -453,8 +466,10 @@ function NowCard() {
         await deleteDoc(doc(db, 'site_now', id))
       }
       await load()
+      task.complete('حُذفت الفكرة')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر حذف الفكرة.')
+      task.fail(reason, 'تعذّر حذف الفكرة')
     }
   }
   return (

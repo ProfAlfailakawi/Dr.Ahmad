@@ -359,6 +359,10 @@ body.audio-dock-open .floating-actions {
 @keyframes human-core-float { to { transform: translateY(-12px); opacity: .55; } }
 
 .human-core__micro { direction: ltr; width: max-content; opacity: .7; }
+.human-core__tagline {
+  color: rgb(var(--c-soft));
+  color: color-mix(in srgb, rgb(var(--c-soft)) 90%, rgb(var(--c-ink)) 10%);
+}
 .human-core__title-line { position: relative; width: max-content; max-width: 100%; }
 .human-core__title-line::before,
 .human-core__title-line::after {

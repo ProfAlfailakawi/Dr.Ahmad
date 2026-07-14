@@ -3,6 +3,7 @@
    الخاص ويمنع الإنتاج إن لم يكن الخيار مجتازاً. */
 import { useEffect, useRef, useState } from 'react'
 import { getDb } from '../../lib/firebase'
+import { beginAdminTask } from '../../lib/admin-task-state'
 import audioMeta from '../../data/audio-meta.json'
 
 type Option = { key: string; label?: string; durationSec: number; audio: string; audioHash: string; eligible: boolean }
@@ -86,6 +87,7 @@ export function VoiceBakeoffCard() {
   }
 
   const approve = async (opt: Option) => {
+    const task = beginAdminTask('اعتماد الصوت')
     try {
       if (!manifest?.sampleGate.pass || !opt.eligible) throw new Error('sample gate failed')
       await persist({ optionKey: opt.key, sampleHash: manifest.sampleHash,
@@ -94,16 +96,19 @@ export function VoiceBakeoffCard() {
         approvalHash: manifest.approvalHash, status: 'approved' })
       setSaved(`سُجّل اعتماد النسخة ${ar(manifest.options.indexOf(opt) + 1)}؛ وسيثبتها الخادم بعد مطابقة التدقيق الخاص ✓`)
       setTimeout(() => setSaved(''), 4000)
-    } catch { setSaved('تعذّر الحفظ') }
+      task.complete('تم اعتماد الصوت')
+    } catch (reason) { setSaved('تعذّر الحفظ'); task.fail(reason, 'تعذّر اعتماد الصوت') }
   }
 
   const rejectAll = async () => {
+    const task = beginAdminTask('تسجيل قرار الأصوات')
     try {
       await persist({ status: 'none_acceptable' })
       setApproved({ status: 'none_acceptable' })
       setSaved('سُجّل: لا زوج جاهز يحقق الجودة — يُجهَّز النظام لاحقاً لـ Azure Custom Voice.')
       setTimeout(() => setSaved(''), 6000)
-    } catch { setSaved('تعذّر الحفظ') }
+      task.complete('تم تسجيل القرار')
+    } catch (reason) { setSaved('تعذّر الحفظ'); task.fail(reason, 'تعذّر تسجيل القرار') }
   }
 
   if (!manifest && fallbackPair) {

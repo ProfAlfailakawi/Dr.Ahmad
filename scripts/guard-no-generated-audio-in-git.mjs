@@ -21,7 +21,8 @@ const forbidden = tracked.stdout
   .filter(Boolean)
   .filter((file) => {
     if (/^music\/.+\.mp3$/i.test(file)) return false
-    return /^audio\/.+\.(mp3|dialogue\.json|json)$/i.test(file)
+    return /\.mp3$/i.test(file)
+      || /^audio\/.+\.(dialogue\.json|json)$/i.test(file)
       || /^public\/audio\/.+\.(mp3|json)$/i.test(file)
       || /^dist\/audio\/.+\.(mp3|json)$/i.test(file)
   })

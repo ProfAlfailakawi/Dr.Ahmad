@@ -50,4 +50,7 @@ audio/**/*.json
 !audio/.gitkeep
 public/audio/**/*.mp3
 public/audio/**/*.json
+podcast-finalist-retest-samples/
+podcast-dialogue-samples/
+podcast-voice-bakeoff-samples/
 .audio-r2-plan.json

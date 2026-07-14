@@ -34,11 +34,12 @@ export default function Articles() {
         <div className="mx-auto grid max-w-shell gap-8 md:grid-cols-3">
           {essays.map((e, i) => (
             <FadeUp key={e.title} delay={i * 0.08}>
-              <article className="border-t-2 border-accent pt-5">
+              <Link to={`/articles/${e.slug}`} className="group block border-t-2 border-accent pt-5 transition-transform duration-300 hover:-translate-y-1">
                 <span className="text-[.76rem] font-semibold uppercase text-accent">{e.tag}</span>
-                <h2 className="my-3 font-display text-[1.34rem] font-medium text-ink">{e.title}</h2>
+                <h2 className="my-3 font-display text-[1.34rem] font-medium text-ink transition-colors group-hover:text-accent">{e.title}</h2>
                 <blockquote className="font-display text-[1.02rem] leading-[1.75] text-soft">{e.quote}</blockquote>
-              </article>
+                <span className="mt-4 inline-flex text-[.78rem] font-semibold text-accent opacity-0 transition-opacity duration-300 group-hover:opacity-100">اقرأ المقال ←</span>
+              </Link>
             </FadeUp>
           ))}
         </div>

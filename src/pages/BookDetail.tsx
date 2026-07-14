@@ -93,7 +93,6 @@ export default function BookDetail() {
                     <span>عرض عيّنة الكتاب</span>
                     <span className="text-[.85rem] opacity-80">PDF</span>
                   </a>
-                  <p className="text-[.8rem] text-soft">ملف هادئ للمقدمة والفهرس، وليس الكتاب الكامل.</p>
                 </div>
               )}
             </FadeUp>

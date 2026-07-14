@@ -93,11 +93,15 @@ const visibleDialogueAsset = (slug, audioFile, transcriptFile = '') =>
   acceptedArabicDialogue(slug, audioFile, transcriptFile)
 const audioPublicUrl = (rel) => AUDIO_PUBLIC_BASE_URL ? `${AUDIO_PUBLIC_BASE_URL}/${rel}` : `${SITE}/audio/${rel}`
 const src = readFileSync(resolve(ROOT, 'src/data.ts'), 'utf8')
+const srcEn = readFileSync(resolve(ROOT, 'src/data-en.ts'), 'utf8')
 const esc = (s = '') => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 const attr = (s = '') => esc(s).replace(/'/g, '&#39;')
 
 /* ---------- قراءة البيانات من data.ts ---------- */
 const grab = (name) => (src.match(new RegExp(`export const ${name} = \\[([\\s\\S]*?)\\n\\]`)) || [])[1] || ''
+const grabObject = (source, name) => (source.match(new RegExp(`export const ${name}[^{]*= \\{([\\s\\S]*?)\\n\\}`)) || [])[1] || ''
+const paperTitlesEn = Object.fromEntries([...grabObject(srcEn, 'paperTitlesEn').matchAll(/'([^']+)':\s*\n?\s*'([^']+)'/g)]
+  .map((m) => [m[1], m[2].replace(/\\'/g, "'")]))
 
 const articles = [...grab('articles').matchAll(
   /\{ slug: '([^']+)', title: '([^']+)', date: '([^']*)', iso: '([^']*)', cat: '([^']*)',\s*excerpt: '([^']*)'/g
@@ -106,8 +110,8 @@ const articles = [...grab('articles').matchAll(
 const books = [...grab('books').matchAll(/\{ slug: '([^']+)'[\s\S]*?title: '([^']+)'[\s\S]*?isbn: '([^']*)'[\s\S]*?cover: '([^']*)'[\s\S]*?pdf: '([^']*)'[\s\S]*?desc: '([^']*)'/g)]
   .map((m) => ({ slug: m[1], title: m[2], isbn: m[3], cover: m[4], pdf: m[5], desc: m[6] }))
 
-const papers = [...grab('papers').matchAll(/slug: '([^']+)',[^\n]*?title: '([^']+)',[^\n]*?meta: '([^']*)'/g)]
-  .map((m) => ({ slug: m[1], title: m[2], desc: m[3] }))
+const papers = [...grab('papers').matchAll(/slug: '([^']+)',[^\n]*?title: '([^']+)',[^\n]*?meta: '([^']*)',[^\n]*?abstractAr: '([^']*)'/g)]
+  .map((m) => ({ slug: m[1], title: paperTitlesEn[m[1]] || m[2], desc: m[3], abstractAr: m[4].replace(/^ملخص عربي:\s*/, '') }))
 
 const media = [...grab('media').matchAll(/\{ title: '([^']+)', outlet: '([^']*)', url: '([^']*)'/g)]
   .map((m, index) => {
@@ -159,7 +163,7 @@ const STATIC = [
 const routes = [
   ...STATIC,
   ...books.map((b) => ({ path: `/publications/${b.slug}`, title: b.title, desc: b.desc, image: b.cover, isbn: b.isbn })),
-  ...papers.map((p) => ({ path: `/research/${p.slug}`, title: p.title, desc: `بحث محكّم — ${p.desc}`, type: 'article' })),
+  ...papers.map((p) => ({ path: `/research/${p.slug}`, title: p.title, desc: p.abstractAr || `بحث محكّم — ${p.desc}`, type: 'article' })),
   ...articles.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt, type: 'article', iso: a.iso, cat: a.cat, image: `/og/articles/${a.slug}.svg` })),
   ...siteArticlesFeed.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt || a.title, type: 'article', iso: a.iso, cat: a.cat || 'مقال', image: `/og/articles/${a.slug}.svg` })),
 ]
@@ -551,7 +555,7 @@ function generateBodyHtml(path, lang = 'ar') {
     } else {
       const papersHtml = papers.map(p => `
         <div style="margin-bottom: 2rem; border-bottom: 1px solid rgba(62, 92, 120, 0.1); padding-bottom: 1.5rem; text-align: right;">
-          <h2 style="font-size: 1.5rem; font-family: 'El Messiri', serif; margin-bottom: 0.5rem; color: #15161A;">
+          <h2 dir="auto" style="font-size: 1.5rem; font-family: 'El Messiri', serif; margin-bottom: 0.5rem; color: #15161A;">
             <a href="/research/${p.slug}" style="color: #15161A; text-decoration: none;">${esc(p.title)}</a>
           </h2>
           <p style="color: #626A76; font-size: 0.95rem; font-family: 'Tajawal', sans-serif; margin-bottom: 0.5rem;">${esc(p.desc)}</p>
@@ -582,11 +586,12 @@ function generateBodyHtml(path, lang = 'ar') {
           </div>
           <article style="text-align: right;">
             <header style="margin-bottom: 2rem;">
-              <h1 style="font-size: 2.25rem; font-family: 'El Messiri', serif; font-weight: bold; color: #15161A; margin-bottom: 1rem; line-height: 1.3;">بحث محكّم: ${esc(p.title)}</h1>
+              <h1 dir="auto" style="font-size: 2.25rem; font-family: 'El Messiri', serif; font-weight: bold; color: #15161A; margin-bottom: 1rem; line-height: 1.3;">بحث محكّم: ${esc(p.title)}</h1>
               <p style="color: #626A76; font-size: 1.05rem; font-family: 'Tajawal', sans-serif;">الباحث الرئيسي: د. أحمد حسين الفيلكاوي &middot; الباحث المشارك: د. عبدالعزيز دخيل العنزي</p>
             </header>
             <section style="background: rgba(62, 92, 120, 0.03); padding: 2.5rem; border-radius: 8px; border-right: 4px solid #3E5C78; margin-bottom: 2rem;">
-              <p style="line-height: 1.8; font-size: 1.15rem; color: #15161A; font-family: 'Tajawal', sans-serif; margin: 0;">${esc(p.desc)}</p>
+              <p style="color: #3E5C78; font-size: .85rem; font-weight: 700; font-family: 'Tajawal', sans-serif; margin: 0 0 .75rem;">الملخص العربي</p>
+              <p style="line-height: 1.8; font-size: 1.15rem; color: #15161A; font-family: 'Tajawal', sans-serif; margin: 0;">${esc(p.abstractAr || p.desc)}</p>
             </section>
           </article>
         </main>

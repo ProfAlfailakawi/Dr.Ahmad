@@ -1693,7 +1693,7 @@ ${pulsePurpose.trim()}`,
           {([
             ['idea', 'الفكرة'],
             ['write', 'الكتابة'],
-            ['review', 'المراجعة والنشر'],
+            ['review', 'بوابة الجودة'],
             ['distribution', 'التوزيع'],
             ['pulse', 'منشور مستقل'],
           ] as const).map(([key, label]) => (
@@ -1753,7 +1753,7 @@ ${pulsePurpose.trim()}`,
             {bundle.event && <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">صلة راهنة موثقة</p><a href={bundle.event.url} target="_blank" rel="noreferrer" className="mt-3 block font-display text-[1rem] font-semibold leading-relaxed text-ink hover:text-accent">{bundle.event.title}</a><p className="mt-2 text-[.78rem] text-soft">{bundle.event.source}</p>{bundle.eventConnection && <p className="mt-3 text-[.8rem] leading-relaxed text-soft">{bundle.eventConnection}</p>}</section>}
             <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">ذاكرة الفكرة</p><p className="mt-2 text-[.86rem] leading-relaxed text-soft">{lab.angle}</p><div className="mt-4 grid gap-3">{bundle.related.map((item) => <a key={item.slug} href={`/articles/${item.slug}`} target="_blank" rel="noreferrer" className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-ink transition-colors hover:border-accent hover:text-accent">{item.title}{item.iso && <span className="ms-2 text-soft">{item.iso.slice(0, 4)}</span>}</a>)}</div></section>
             <PrivateBookMemoryCard matches={privateMemoryMatches} />
-            <button type="button" onClick={() => setView('review')} className={primary}>انتقل إلى المراجعة</button>
+            <button type="button" onClick={() => setView('review')} className={primary}>انتقل إلى بوابة الجودة</button>
           </aside>
         </div>
       )}

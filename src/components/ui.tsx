@@ -302,7 +302,7 @@ export function Accordion({
 }
 
 /* ---------- Nav: closed menu, opens full-screen ---------- */
-type NavItem = { to: string; label: string; allLabel?: string; highlight?: boolean; sub?: { to: string; label: string }[] }
+type NavItem = { to: string; label: string; allLabel?: string; showAllLink?: boolean; highlight?: boolean; sub?: { to: string; label: string }[] }
 const GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: 'ابدأ من هنا',
@@ -311,7 +311,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
         { to: '/atlas', label: 'سماء المقالات' },
         { to: '/thought-paths', label: 'مسارات الفكرة' },
       ] },
-      { to: '/search', label: 'مركز البحث', highlight: true, allLabel: 'افتح البحث الموحد', sub: [
+      { to: '/search', label: 'مركز البحث', highlight: true, showAllLink: false, sub: [
         { to: '/search', label: 'البحث العميق' },
         { to: '/ask', label: 'اسأل العقل الحي' },
       ] },
@@ -461,13 +461,15 @@ function Overlay({ close }: { close: () => void }) {
                               </motion.svg>
                             </span>
                           </button>
-                          <Link
-                            to={it.to}
-                            onClick={close}
-                            className="site-menu-control mt-1 inline-flex rounded-full border border-hair px-3 py-1 text-[.72rem] font-semibold text-soft transition-colors duration-300 hover:border-accent hover:text-accent"
-                          >
-                            {it.allLabel || `فتح ${it.label}`}
-                          </Link>
+                          {it.showAllLink !== false && (
+                            <Link
+                              to={it.to}
+                              onClick={close}
+                              className="site-menu-control mt-1 inline-flex rounded-full border border-hair px-3 py-1 text-[.72rem] font-semibold text-soft transition-colors duration-300 hover:border-accent hover:text-accent"
+                            >
+                              {it.allLabel || `فتح ${it.label}`}
+                            </Link>
+                          )}
                         </div>
                       ) : (
                         <Link

@@ -58,6 +58,7 @@ export type PaperRecord = {
   slug: string
   title: string
   meta: string
+  abstractAr?: string
   journal?: string
   source?: string
   url?: string
@@ -105,7 +106,7 @@ const audioMap = audioManifest as Record<string, AudioEntry>
 const fieldsByKind: Record<ContentKind, readonly string[]> = {
   article: ['title', 'date', 'iso', 'cat', 'excerpt', 'body', 'source', 'url', 'status', 'scheduledAt', 'audio'],
   book: ['title', 'isbn', 'desc', 'cover', 'pdf'],
-  paper: ['title', 'meta', 'journal', 'source', 'url', 'pdf', 'iso', 'date'],
+  paper: ['title', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'iso', 'date'],
   media: ['title', 'outlet', 'platform', 'url', 'iso', 'date'],
 }
 
@@ -181,6 +182,7 @@ function buildPaper(value: Record<string, unknown>, cms: CmsMeta): PaperRecord {
     slug: stringValue(value.slug, cms.baseSlug),
     title: stringValue(value.title),
     meta: stringValue(value.meta),
+    abstractAr: stringValue(value.abstractAr) || undefined,
     journal: stringValue(value.journal) || undefined,
     source: stringValue(value.source) || undefined,
     url: stringValue(value.url) || undefined,

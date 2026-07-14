@@ -10,7 +10,7 @@ export default function PaperDetail() {
   const { papers, loading } = useCmsContent()
   const i = papers.findIndex((paper) => paper.slug === slug)
   const p = papers[i]
-  useSeo({ title: p?.title ?? 'بحث', description: p?.meta, path: `/research/${slug}`, type: 'article' })
+  useSeo({ title: p?.title ?? 'بحث', description: p?.abstractAr || p?.meta, path: `/research/${slug}`, type: 'article' })
 
   if (!p && loading)
     return (
@@ -42,7 +42,7 @@ export default function PaperDetail() {
 
           <FadeUp delay={0.05}>
             <span className="mt-8 block text-[.76rem] font-semibold uppercase text-accent">بحث محكّم</span>
-            <h1 className="mt-4 font-display text-[clamp(1.7rem,4vw,2.7rem)] font-bold leading-[1.45] text-ink">
+            <h1 dir="auto" className="mt-4 font-display text-[clamp(1.7rem,4vw,2.7rem)] font-bold leading-[1.45] text-ink">
               <Reveal>{p.title}</Reveal>
             </h1>
             <OwnerEdit tab="papers" slug={p.slug} className="mt-3" />
@@ -74,6 +74,15 @@ export default function PaperDetail() {
               )}
             </dl>
           </FadeUp>
+
+          {p.abstractAr && (
+            <FadeUp delay={0.12}>
+              <section className="mt-8 rounded-2xl border border-hair bg-wash px-6 py-5">
+                <p className="text-[.76rem] font-semibold text-accent">الملخص العربي</p>
+                <p className="mt-3 text-[.95rem] font-light leading-[1.95] text-ink/80 dark:text-soft">{p.abstractAr.replace(/^ملخص عربي:\s*/, '')}</p>
+              </section>
+            </FadeUp>
+          )}
 
           <FadeUp delay={0.14}>
             {paperLink ? (

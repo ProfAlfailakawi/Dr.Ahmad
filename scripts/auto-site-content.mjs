@@ -41,7 +41,7 @@ const integerEnv = (name, fallback) => {
 
 const MIN_LETTERS = integerEnv('AUTO_CONTENT_MIN_LETTERS', 4)
 const MIN_FAQS = integerEnv('AUTO_CONTENT_MIN_FAQS', 10)
-const MIN_PICKS = 0 // المختارات من الإنترنت فقط؛ لا تُولد من أرشيف الدكتور
+const MIN_PICKS = 0 // المختارات تُحدّث من الرادار الموثوق؛ لا تُولد من أرشيف الدكتور
 const MAX_GENERATED_PER_KIND = integerEnv('AUTO_CONTENT_MAX_PER_KIND', 10)
 
 const styles = [

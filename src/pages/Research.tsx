@@ -40,7 +40,7 @@ export default function Research() {
                   <Link to={`/research/${p.slug}`} className="group flex gap-6 py-6 transition-[padding] duration-400 hover:pe-3">
                     <span className="min-w-[40px] pt-1 font-display font-semibold text-accent">{ar(i + 1)}</span>
                     <span>
-                      <span className="block text-[1.14rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">{p.title}</span>
+                      <span dir="auto" className="block text-[1.14rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">{p.title}</span>
                       {p.meta && <span className="mt-1.5 block text-[.8rem] text-soft">{p.meta}</span>}
                       {p.journal && <span className="mt-1 block text-[.78rem] text-accent">{p.journal}</span>}
                     </span>

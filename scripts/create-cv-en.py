@@ -115,7 +115,6 @@ committees = [
 ]
 
 projects = [
-    ('E-Attendance', 'Creator of an early Arabic student-attendance application using QR-code technology, published for mobile platforms.'),
     ('Academic Scheduling System', 'Co-created a Kuwait-based system that supports colleges and academic departments in building course schedules.'),
     ('Educational Software and Digital Learning', 'Designed and managed educational software, digital learning environments, training programs, and technology-supported curricula.'),
 ]

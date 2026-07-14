@@ -64,13 +64,17 @@ async function run() {
   const db = await firebaseContext()
   const snap = await db.collection('messages')
     .where('approvedForTestimonial', '==', true)
-    .orderBy('createdAt', 'desc')
     .limit(MAX)
     .get()
 
   let synced = 0
   let skipped = 0
-  for (const doc of snap.docs) {
+  const docs = [...snap.docs].sort((left, right) => {
+    const l = Number(left.data()?.createdAt?.seconds || 0)
+    const r = Number(right.data()?.createdAt?.seconds || 0)
+    return r - l
+  })
+  for (const doc of docs) {
     const data = doc.data() || {}
     const quote = sourceQuote(data)
     if (!validPublishedQuote(quote)) { skipped += 1; continue }

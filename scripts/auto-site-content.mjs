@@ -31,7 +31,7 @@ const env = { ...process.env }
 const PROJECT_ID = env.FIREBASE_PROJECT_ID || 'drahmad-8e9e2'
 const STATE_COLLECTION = 'automation_state'
 const STATE_DOC = 'site-content-cycle'
-const GENERATION_VERSION = '2026-07-14-v5-no-local-picks'
+const GENERATION_VERSION = '2026-07-14-v6-resilient-auto-letters'
 const now = new Date()
 
 const integerEnv = (name, fallback) => {
@@ -227,6 +227,37 @@ function validateFaq(output) {
   return { q, a }
 }
 
+
+function compactSourceExcerpt(source, limit = 235) {
+  const text = clean(source?.text).replace(/<[^>]+>/g, ' ')
+  if (!text) return 'أن قيمة الفكرة لا تظهر في جمالها النظري فقط، بل في القرار أو الممارسة التي تغيّرها.'
+  const firstSentence = text.split(/(?<=[.!؟])\s+/)[0] || text
+  const excerpt = firstSentence.slice(0, limit).trim()
+  return excerpt.length < firstSentence.length ? `${excerpt.replace(/[،؛:.!?؟\s]+$/g, '')}…` : excerpt
+}
+
+function fallbackLetter(source, style) {
+  const excerpt = compactSourceExcerpt(source)
+  const variants = {
+    'تأمل هادئ': `توقفت عند ${source.type === 'كتاب' ? 'كتابك' : source.type === 'لقاء' ? 'لقائك' : 'مقالك'} «${source.title}»، لأن الفكرة لا تكتفي بوصف ${source.category || 'الموضوع'}، بل تعيد السؤال إلى أثره في الإنسان والتعلّم. أكثر ما بقي معي هو: ${excerpt} ربما قيمة هذا الطرح أنه يدفع القارئ إلى مراجعة قراره قبل أن ينجذب إلى الأداة أو المصطلح. فالمعرفة لا تصبح نافعة لمجرد أنها جديدة؛ تصبح نافعة حين تغيّر طريقة الفهم أو الممارسة بهدوء ووضوح.`,
+    'اعتراض مهذب': `قرأت «${source.title}» ووجدتني متفقًا مع الاتجاه العام، لكن بقي عندي اعتراض صغير: هل يكفي أن نفهم المشكلة جيدًا، أم أننا نحتاج أيضًا إلى معيار واضح نعرف به أن الممارسة تغيّرت فعلًا؟ لفتني في المادة قولها أو معناها: ${excerpt} وربما التحدي الحقيقي هو ألا تتحول الفكرة الصحيحة إلى شعار جميل يصعب تطبيقه. ما أبحث عنه دائمًا هو الخطوة الصغيرة التي يستطيع المعلم أو ولي الأمر اختبارها ثم مراجعة أثرها.`,
+    'سؤال يفتح زاوية جديدة': `أثناء قراءة «${source.title}» بقي معي سؤال أكثر من أي إجابة: ماذا يحدث عندما تصبح الأداة أسرع من قدرتنا على تحديد الغاية؟ المادة تذكّر بأن ${excerpt} وهذا يفتح زاوية مهمة؛ فالمشكلة قد لا تكون في نقص المعرفة، بل في غياب القرار الذي يسبق استخدامها. كيف نحافظ على دور الإنسان في الاختيار والمراجعة، خصوصًا حين تبدو الحلول التقنية مقنعة وسهلة؟ هذا السؤال وحده جعلني أعود إلى الفكرة مرة ثانية.`,
+    'امتنان لفكرة': `أشكرك على «${source.title}». أكثر ما أعجبني أن المادة لا تتعامل مع ${source.category || 'الموضوع'} بوصفه عنوانًا كبيرًا، بل تربطه بما يحدث فعلًا في الصف أو البيت أو المؤسسة. توقفت خصوصًا عند هذه الفكرة: ${excerpt} هذا النوع من الكتابة لا يمنح القارئ معلومة فقط؛ يمنحه طريقة أهدأ للنظر إلى القرار. وفي زمن تتسارع فيه الأدوات، تصبح إعادة الإنسان إلى مركز السؤال خدمة فكرية حقيقية.`,
+    'مفارقة ذكية': `المفارقة في «${source.title}» أن ما يبدو حلًا سريعًا قد يصنع سؤالًا أعمق. فالمادة تشير إلى أن ${excerpt} نحن نملك اليوم أدوات أكثر، لكن ذلك لا يعني بالضرورة أن قراراتنا أصبحت أفضل. وربما لهذا تبدو الفكرة مهمة: التقدم لا يُقاس بعدد الخيارات المتاحة، بل بقدرتنا على اختيار ما يحفظ المعنى ويخدم التعلّم. خرجت من القراءة وأنا أقل انبهارًا بالأداة، وأكثر انتباهًا إلى المسؤولية.`,
+    'موقف تربوي مختصر': `يمكن تلخيص ما أخذته من «${source.title}» في موقف تربوي بسيط: قبل أن نضيف أداة أو إجراءً جديدًا، نسأل ماذا سيتغير في فهم المتعلم أو سلوكه. المادة توضح أن ${excerpt} هذا السؤال يمنعنا من تحويل التجديد إلى زينة، ويجعلنا نبحث عن أثر يمكن ملاحظته ومراجعته. أعجبني أن الفكرة قابلة للنقل من المقال إلى موقف يومي، من دون تعقيد أو شعارات كبيرة.`,
+    'وقفة إنسانية': `في «${source.title}» توجد وقفة إنسانية تستحق الانتباه: التقنية أو المنهج أو القرار لا يعمل في فراغ؛ هناك دائمًا إنسان يتلقى أثره. المادة تذكّر بأن ${excerpt} لذلك لا يكفي أن نسأل هل الحل ممكن أو سريع، بل هل يحفظ الكرامة والفهم ومساحة الاختيار. هذا المعنى بدا لي أهم من التفاصيل نفسها، لأنه يعيد ترتيب الأولويات قبل أن نبدأ التنفيذ.`,
+  }
+  const message = variants[style] || variants['تأمل هادئ']
+  const reply = 'هذا هو المقصود: أن تتحول الفكرة من إعجاب عابر إلى سؤال يراجع القرار والممارسة، مع بقاء الإنسان في مركزها.'
+  return validateLetter({ message, reply })
+}
+
+function fallbackFaq(source, topic) {
+  const q = `كيف نعرف أن تطبيق «${topic}» يحقق أثرًا حقيقيًا؟`
+  const a = `يظهر الأثر عندما يتغير قرار أو ممارسة بوضوح، ويمكن ملاحظته ومراجعته؛ لا عندما تزداد الأدوات أو المصطلحات من دون تحسن في الفهم أو التعلّم.`
+  return validateFaq({ q, a })
+}
+
 const pickKinds = new Set(['اقتباس وتأمل', 'الرف المنسي', 'أداة تستحق', 'مفهوم ناشئ', 'رؤية عميقة'])
 
 function validatePick(output, source) {
@@ -272,7 +303,12 @@ async function generateLetter(source, style) {
 - اربط الرسالة بفكرة حقيقية من المادة، ولا تنسخ منها فقرة طويلة.
 - الرد 15–35 كلمة، بصوت د. أحمد، واضح وغير متكلّف.
 - لا تستخدم وسوماً أو Markdown.`
-  return validateLetter(await geminiJson(prompt))
+  try {
+    return { ...validateLetter(await geminiJson(prompt)), generationMode: 'ai' }
+  } catch (error) {
+    console.warn(`⚠ تعذر تحسين الرسالة بالذكاء الاصطناعي؛ استُخدمت الصياغة التحريرية الاحتياطية: ${error instanceof Error ? error.message : String(error)}`)
+    return { ...fallbackLetter(source, style), generationMode: 'editorial-fallback' }
+  }
 }
 
 async function generateFaq(source, topic) {
@@ -292,7 +328,12 @@ async function generateFaq(source, topic) {
 - لا تكرر عنوان المادة حرفياً.
 - لا تستخدم ادعاءات طبية أو قانونية أو أرقاماً غير موجودة في النص.
 - لا تستخدم Markdown.`
-  return validateFaq(await geminiJson(prompt))
+  try {
+    return { ...validateFaq(await geminiJson(prompt)), generationMode: 'ai' }
+  } catch (error) {
+    console.warn(`⚠ تعذر تحسين السؤال بالذكاء الاصطناعي؛ استُخدمت الصياغة التحريرية الاحتياطية: ${error instanceof Error ? error.message : String(error)}`)
+    return { ...fallbackFaq(source, topic), generationMode: 'editorial-fallback' }
+  }
 }
 
 async function generatePick(source) {
@@ -353,6 +394,10 @@ async function run() {
       books,
       media,
       bootstrap: { letters: MIN_LETTERS, faqs: MIN_FAQS },
+      fallback: {
+        letter: fallbackLetter(selected[0], styles[0]),
+        faq: fallbackFaq(selected[1], topicFamilies[0]),
+      },
       samples: selected.map((item) => ({ type: item.type, title: item.title })),
     }, null, 2))
     return

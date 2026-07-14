@@ -2280,7 +2280,7 @@ if (flag('voice-finalist-retest')) {
   mkdirSync(AUDITS, { recursive: true })
   rmSync(outDir, { recursive: true, force: true }); mkdirSync(outDir, { recursive: true })
 
-  const retime = (u, index) => {
+  const retime = (u, index, voiceRateOffset = -2) => {
     const delivery = u.delivery || 'normal'
     const rateByType = {
       hook: 7, statement: 5, question: 5, briefReaction: 9, gentleObjection: 7,
@@ -2297,7 +2297,7 @@ if (flag('voice-finalist-retest')) {
     const influential = /التعليم الذي يخيف|الإنسان، فيبقى|كيف نقيس|ارتجف قلبه/.test(u.text)
     return {
       ...u,
-      ratePct: influential ? Math.min(rateByType[delivery] ?? 5, 2) : (rateByType[delivery] ?? 5),
+      ratePct: Math.max(0, (influential ? Math.min(rateByType[delivery] ?? 5, 2) : (rateByType[delivery] ?? 5)) + voiceRateOffset),
       pauseAfterMs: influential ? Math.max(pauseByType[delivery] ?? 330, 720) : (pauseByType[delivery] ?? 330),
       internalBreakMs: internalByType[delivery] ?? 125,
       allowOverlap: false,
@@ -2308,8 +2308,7 @@ if (flag('voice-finalist-retest')) {
       finalistRetestIndex: index,
     }
   }
-  const utterances = sample.utterances.map(retime)
-  const bridgeAfterIndex = Math.max(0, utterances.findIndex((u) => /والتعليم الذي يخيف/.test(u.text)))
+  const bridgeAfterIndex = Math.max(0, sample.utterances.findIndex((u) => /والتعليم الذي يخيف/.test(u.text)))
   const makeBridge = (dir, tag) => {
     const track = selectLicensedMusic('تأملي') || (existsSync(resolve(ROOT, 'music/still-light.mp3'))
       ? { file: resolve(ROOT, 'music/still-light.mp3') } : null)
@@ -2326,12 +2325,14 @@ if (flag('voice-finalist-retest')) {
     const total = durs.reduce((s, d) => s + d, 0)
     return { count: durs.length, total, avg: durs.length ? total / durs.length : 0, max: durs.length ? Math.max(...durs) : 0, over1000: durs.filter((d) => d > 1).length }
   }
-  const words = utterances.reduce((n, u) => n + String(u.text).trim().split(/\s+/).filter(Boolean).length, 0)
+  const sampleWords = sample.utterances.reduce((n, u) => n + String(u.text).trim().split(/\s+/).filter(Boolean).length, 0)
   const results = []
   for (let vi = 0; vi < finalists.length; vi++) {
     const female = finalists[vi]
     const label = labels[vi] || `Sample ${String.fromCharCode(68 + vi)} new`
     const key = label.toLowerCase().replace(/\s+/g, '-')
+    const voiceRateOffset = /Noura/i.test(female) ? -5 : -3
+    const utterances = sample.utterances.map((u, index) => retime(u, index, voiceRateOffset))
     const tmp = resolve(TMP, `finalist-${vi}`); rmSync(tmp, { recursive: true, force: true }); mkdirSync(tmp, { recursive: true })
     const bridge = makeBridge(tmp, key)
     const segments = []; let regenerated = 0
@@ -2359,10 +2360,10 @@ if (flag('voice-finalist-retest')) {
     const report = {
       label, voiceNameInternal: female, male, file: `${key}.mp3`,
       durationSec: +total.toFixed(1),
-      wordsPerMinute: Math.round(words * 60 / activeSec),
+      wordsPerMinute: Math.round(sampleWords * 60 / activeSec),
       utterances: utterances.length,
       musicBridge: bridge ? { count: 1, durationSec: 2.1, after: utterances[bridgeAfterIndex].text } : { count: 0 },
-      avgUtteranceWords: +(words / utterances.length).toFixed(1),
+      avgUtteranceWords: +(sampleWords / utterances.length).toFixed(1),
       pauses: sil.count, avgPauseMs: Math.round(sil.avg * 1000), longestPauseMs: Math.round(sil.max * 1000),
       pausesOver1000ms: sil.over1000,
       totalSilenceSec: +sil.total.toFixed(1),

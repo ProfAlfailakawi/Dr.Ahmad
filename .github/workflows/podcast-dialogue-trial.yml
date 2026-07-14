@@ -18,6 +18,7 @@ concurrency:
 jobs:
   trial:
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -62,6 +63,7 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
       - name: Generate trial dialogue episode
+        timeout-minutes: 30
         run: |
           if [ -n "$SLUG" ]; then
             node scripts/podcast-dialogue.mjs --lang=ar --trial --force --slug="$SLUG"

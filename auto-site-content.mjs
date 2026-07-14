@@ -421,12 +421,13 @@ async function run() {
     const letterDeficit = Math.max(0, MIN_LETTERS - publishedLetters.length)
     const faqDeficit = Math.max(0, MIN_FAQS - publishedFaqs.length)
     const pickDeficit = Math.max(0, MIN_PICKS - publishedPicks.length)
-    const letterDue = due(state?.nextLetterAt) && !createdToday(publishedLetters)
-    const faqDue = due(state?.nextFaqAt) && !createdToday(publishedFaqs)
+    const letterDue = FORCE || (due(state?.nextLetterAt) && !createdToday(publishedLetters))
+    const faqDue = FORCE || (due(state?.nextFaqAt) && !createdToday(publishedFaqs))
     const pickDue = due(state?.nextPickAt) && !createdToday(publishedPicks)
     const letterTarget = Math.min(MAX_GENERATED_PER_KIND, Math.max(letterDeficit, letterDue ? 1 : 0))
     const faqTarget = Math.min(MAX_GENERATED_PER_KIND, Math.max(faqDeficit, faqDue ? 1 : 0))
     const pickTarget = 0 // متعمد: site_picks المحلي متوقف نهائياً
+    const forcedRunStamp = FORCE ? `${now.toISOString().replace(/\D/g, '').slice(0, 14)}-` : ''
 
     const usedSourceKeys = new Set([
       ...recentLetters.map((item) => item.sourceKey).filter(Boolean),
@@ -445,7 +446,7 @@ async function run() {
       const source = chooseDiverseSource(sources, usedSourceKeys, 11 + index)
       const style = chooseUnusedText(styles, usedStyles, 7 + index)
       const letter = await generateLetter(source, style)
-      const id = `auto-letter-${isoDay(now)}-${hash(`${source.key}:${style}`)}`
+      const id = `auto-letter-${isoDay(now)}-${forcedRunStamp}${hash(`${source.key}:${style}`)}`
       await db.collection('site_inbox').doc(id).set({
         ...letter,
         tone: style,
@@ -471,7 +472,7 @@ async function run() {
       const source = chooseDiverseSource(sources, usedSourceKeys, 29 + index)
       const topic = chooseUnusedText(topicFamilies, usedTopics, 17 + index)
       const faq = await generateFaq(source, topic)
-      const id = `auto-faq-${isoDay(now)}-${hash(`${source.key}:${topic}`)}`
+      const id = `auto-faq-${isoDay(now)}-${forcedRunStamp}${hash(`${source.key}:${topic}`)}`
       await db.collection('site_faqs').doc(id).set({
         ...faq,
         topicFamily: topic,

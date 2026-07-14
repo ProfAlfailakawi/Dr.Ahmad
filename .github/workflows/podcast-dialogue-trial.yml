@@ -2,11 +2,6 @@ name: تجربة سماع الحلقة الحوارية
 
 on:
   workflow_dispatch:
-    inputs:
-      slug:
-        description: "Slug لمقال محدد. اتركه فارغًا لتجربة أحدث مقال."
-        required: false
-        type: string
 
 permissions:
   contents: read
@@ -52,41 +47,25 @@ jobs:
             echo "::error::Missing AZURE_SPEECH_REGION"
             exit 1
           fi
-          if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then
-            echo "::error::Missing GEMINI_API_KEY or GOOGLE_API_KEY"
-            exit 1
-          fi
         env:
           AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
           AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
-      - name: Generate trial dialogue episode
-        timeout-minutes: 30
-        run: |
-          if [ -n "$SLUG" ]; then
-            node scripts/podcast-dialogue.mjs --lang=ar --trial --force --slug="$SLUG"
-          else
-            node scripts/podcast-dialogue.mjs --lang=ar --trial --force --latest=1
-          fi
+      - name: Generate blind listening samples
+        timeout-minutes: 12
+        run: node scripts/podcast-dialogue.mjs --voice-audition
         env:
-          SLUG: ${{ inputs.slug }}
-          PODCAST_TRIAL: "1"
           AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
           AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
-      - name: Upload trial audio and transcript
+      - name: Upload blind samples and technical report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: podcast-dialogue-trial-output
           path: |
-            audio/*.dialogue.mp3
-            audio/*.dialogue.json
-            podcast-audits/*.ar.json
+            public/audio/audition
+            podcast-audits/voice-audition.private.json
             .podcast-state.json
           if-no-files-found: warn
           retention-days: 7

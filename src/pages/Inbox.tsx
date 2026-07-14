@@ -30,6 +30,14 @@ type LiveFaq = {
   createdAt?: { seconds?: number }
 }
 
+type LiveTestimonial = {
+  id: string
+  quote?: string
+  status?: string
+  published?: boolean
+  createdAt?: { seconds?: number }
+}
+
 type WeeklyQuestion = {
   id: string
   ar?: string
@@ -51,6 +59,8 @@ function smartPulse() {
 
 const pulse = smartPulse()
 const rotate = <T,>(arr: T[]): T[] => arr.length ? [...arr.slice(pulse % arr.length), ...arr.slice(0, pulse % arr.length)] : arr
+const testimonialPulse = Math.floor(Date.now() / (3 * 86_400_000))
+const rotateTestimonials = <T,>(arr: T[]): T[] => arr.length ? [...arr.slice(testimonialPulse % arr.length), ...arr.slice(0, testimonialPulse % arr.length)] : arr
 const isPublished = (item: { status?: string; published?: boolean }) => item.published !== false && item.status !== 'draft' && item.status !== 'hidden'
 const clean = (value = '') => value.replace(/\s+/g, ' ').trim()
 
@@ -104,6 +114,7 @@ export default function Inbox() {
   const liveInbox = useExtras<LiveInboxItem>('site_inbox', { realtime: true })
   const liveFaqs = useExtras<LiveFaq>('site_faqs', { realtime: true })
   const liveQuestions = useExtras<WeeklyQuestion>('site_questions', { realtime: true })
+  const liveTestimonials = useExtras<LiveTestimonial>('site_testimonials', { realtime: true })
 
   const letters = [
     ...liveInbox
@@ -143,6 +154,15 @@ export default function Inbox() {
     ...seedFaqs,
     ...rotate(faqs),
   ].filter((item, index, all) => all.findIndex((candidate) => clean(candidate.q) === clean(item.q)) === index)
+
+  const publicTestimonials = [
+    ...liveTestimonials
+      .filter(isPublished)
+      .map((item) => ({ quote: clean(item.quote) }))
+      .filter((item) => item.quote.length >= 35),
+    ...testimonials,
+  ].filter((item, index, all) => all.findIndex((candidate) => clean(candidate.quote) === clean(item.quote)) === index)
+  const visibleTestimonials = rotateTestimonials(publicTestimonials).slice(0, 2)
 
   return (
     <Page>
@@ -202,7 +222,7 @@ export default function Inbox() {
             <span className="text-[.76rem] font-semibold uppercase text-accent">ماذا قالوا</span>
           </FadeUp>
           <div className="mt-8 grid gap-6 md:grid-cols-2">
-            {rotate(testimonials).map((t, i) => (
+            {visibleTestimonials.map((t, i) => (
               <motion.blockquote
                 key={i}
                 initial={reduce ? false : { opacity: 0, y: 24 }}

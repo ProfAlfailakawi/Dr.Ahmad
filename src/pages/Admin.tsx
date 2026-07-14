@@ -334,7 +334,32 @@ function Panel({ email }: { email: string }) {
 }
 
 /* ── صندوق الرسائل الواردة — استشاراتك وطلبات التعاون ── */
-type Message = { id: string; name?: string; email?: string; topic?: string; intent?: string; quality?: string; message?: string; createdAt?: { seconds: number } }
+type Message = {
+  id: string
+  name?: string
+  email?: string
+  topic?: string
+  intent?: string
+  quality?: string
+  message?: string
+  approvedForTestimonial?: boolean
+  testimonialHidden?: boolean
+  testimonialQuote?: string
+  createdAt?: { seconds: number }
+}
+
+const hidePrivateDetails = (value = '') => value
+  .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, '')
+  .replace(/(?:\+?\d[\d\s().-]{6,}\d)/g, '')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+async function testimonialDocId(messageId: string) {
+  const data = new TextEncoder().encode(messageId)
+  const digest = await crypto.subtle.digest('SHA-1', data)
+  const hex = Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('')
+  return `msg-${hex.slice(0, 14)}`
+}
 
 function InboxPanel() {
   const [items, setItems] = useState<Message[]>([])
@@ -365,6 +390,47 @@ function InboxPanel() {
     if (!db) return
     const { doc, deleteDoc } = await import('firebase/firestore')
     await deleteDoc(doc(db, 'messages', id))
+  }
+
+  const setTestimonial = async (m: Message, approved: boolean) => {
+    const db = await getDb()
+    if (!db) return
+    const { doc, setDoc, updateDoc, serverTimestamp } = await import('firebase/firestore')
+    const quote = hidePrivateDetails(m.testimonialQuote || m.message || '')
+    const id = await testimonialDocId(m.id)
+    if (approved) {
+      if (quote.length < 35) {
+        window.alert('النص قصير جدًا ليظهر كشهادة عامة.')
+        return
+      }
+      await updateDoc(doc(db, 'messages', m.id), {
+        approvedForTestimonial: true,
+        testimonialHidden: false,
+        testimonialQuote: quote.slice(0, 420),
+        updatedAt: serverTimestamp(),
+      })
+      await setDoc(doc(db, 'site_testimonials', id), {
+        quote: quote.slice(0, 420),
+        source: 'approved_message',
+        sourceMessageId: m.id,
+        status: 'published',
+        published: true,
+        anonymous: true,
+        createdAt: m.createdAt || serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }, { merge: true })
+    } else {
+      await updateDoc(doc(db, 'messages', m.id), {
+        approvedForTestimonial: false,
+        testimonialHidden: true,
+        updatedAt: serverTimestamp(),
+      })
+      await setDoc(doc(db, 'site_testimonials', id), {
+        status: 'hidden',
+        published: false,
+        updatedAt: serverTimestamp(),
+      }, { merge: true })
+    }
   }
 
   const when = (m: Message) => {
@@ -401,6 +467,11 @@ function InboxPanel() {
           <p className="mt-4 whitespace-pre-wrap leading-relaxed text-ink">{m.message}</p>
           <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-hair pt-3 text-[.82rem]">
             <a href={`mailto:${m.email}?subject=${encodeURIComponent('رد على رسالتك — د. أحمد حسين الفيلكاوي')}`} className="font-semibold text-accent transition-colors hover:text-accent-deep">الردّ بالبريد ←</a>
+            {m.approvedForTestimonial && !m.testimonialHidden ? (
+              <button onClick={() => void setTestimonial(m, false)} className="text-soft transition-colors hover:text-accent">إخفاء من «ماذا قالوا»</button>
+            ) : (
+              <button onClick={() => void setTestimonial(m, true)} className="text-soft transition-colors hover:text-accent">اعتماد كشهادة مجهولة</button>
+            )}
             <button onClick={() => { if (confirm('حذف الرسالة نهائياً؟')) void remove(m.id) }} className="text-soft transition-colors hover:text-red-500">حذف</button>
           </div>
         </div>

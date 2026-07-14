@@ -52,7 +52,8 @@ const PERSON = {
   alternateName: 'Dr. Ahmad H. Alfailakawi',
   url: SITE,
   image: `${SITE}/og.png`,
-  jobTitle: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي',
+  description: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، كاتب وباحث ومستشار تربوي كويتي.',
+  jobTitle: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، كاتب وباحث ومستشار تربوي كويتي',
   affiliation: [
     { '@type': 'CollegeOrUniversity', name: 'كلية التربية الأساسية — الهيئة العامة للتعليم التطبيقي والتدريب (PAAET)' },
     { '@type': 'CollegeOrUniversity', name: 'جامعة الكويت' },
@@ -63,7 +64,7 @@ const PERSON = {
     'https://www.researchgate.net/profile/Ahmad-Alfailakawi',
   ],
 }
-const PUBLISHER = { '@type': 'Person', '@id': `${SITE}/#person`, name: AUTHOR }
+const PUBLISHER = { '@type': 'Person', '@id': `${SITE}/#person`, name: AUTHOR, description: PERSON.description }
 const podcastStatePath = resolve(ROOT, '.podcast-state.json')
 const hasPodcastState = existsSync(podcastStatePath)
 const podcastState = hasPodcastState ? JSON.parse(readFileSync(podcastStatePath, 'utf8')) : { done: {} }
@@ -127,10 +128,10 @@ const nBooks = books.length
 const nPapers = papers.length
 
 const STATIC = [
-  { path: '/', title: 'د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم والذكاء الاصطناعي', desc: `الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي. ${nBooks} كتب، ${nPapers} بحثاً محكّماً، وأكثر من ${nArticles} مقالاً فكرياً منذ ${firstYear}.` },
-  { path: '/publications', title: 'الكتب المنشورة', desc: `${nBooks} كتب في التعليم والتكنولوجيا والتغيير المجتمعي.` },
-  { path: '/research', title: 'المساهمات العلمية', desc: `${nPapers} بحثاً محكّماً في تكنولوجيا التعليم.` },
-  { path: '/articles', title: 'مقالاتي الفكرية', desc: `أكثر من ${nArticles} مقالاً فكرياً في التعليم والتقنية والمجتمع، منذ ${firstYear}.` },
+  { path: '/', title: 'د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم والذكاء الاصطناعي', desc: `الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، والكاتب والباحث والمستشار التربوي الكويتي. ${nBooks} كتب، ${nPapers} بحثاً محكّماً، وأكثر من ${nArticles} مقالاً فكرياً منذ ${firstYear}.` },
+  { path: '/publications', title: 'الكتب المنشورة', desc: `كتب د. أحمد حسين الفيلكاوي في التعليم وتكنولوجيا التعليم والذكاء الاصطناعي والتحول المجتمعي.` },
+  { path: '/research', title: 'المساهمات العلمية', desc: `أبحاث د. أحمد حسين الفيلكاوي المحكمة في تكنولوجيا التعليم والتعلم الإلكتروني والذكاء الاصطناعي.` },
+  { path: '/articles', title: 'مقالاتي الفكرية', desc: `مقالات د. أحمد حسين الفيلكاوي الفكرية في التعليم والتقنية والمجتمع، منذ ${firstYear}.` },
   { path: '/atlas', title: 'سماء المقالات', desc: `خريطة بصرية لأكثر من ${nArticles} مقالاً عبر السنوات.` },
   { path: '/media', title: 'الظهور الإعلامي', desc: 'لقاءات تلفزيونية وإذاعية.' },
   { path: '/questions', title: 'سؤال يُقلق التعليم', desc: 'زاوية متجددة: سؤال جديد كل يومين يوقظ التفكير في التعليم — بالعربية والإنجليزية.' },

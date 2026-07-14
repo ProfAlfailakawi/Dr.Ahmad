@@ -15,6 +15,7 @@ import { getArticleBody } from '../lib/article-bodies'
 import { usePersistentAudio } from '../lib/persistent-audio'
 import { staticQuestions } from '../questions-data'
 import { rememberIdeaVisit } from '../lib/idea-memory'
+import bookTocLinks from '../data/book-toc-links.json'
 
 /** تقدير زمن القراءة — ٢٠٠ كلمة/دقيقة للعربية */
 const readTime = (t?: string) => {
@@ -255,6 +256,26 @@ function deepDive(a: { title: string; excerpt?: string }) {
   }
 }
 
+type BookTocSection = { label: string; pages: string; keywords?: string[] }
+type BookTocLink = { title: string; sections?: BookTocSection[] }
+
+function bestBookTocMatch(article: ArticleRecord) {
+  const articleText = `${article.title} ${article.excerpt || ''} ${article.cat} ${article.body || ''}`
+  const mine = tokensOf(articleText)
+  let best: { bookTitle: string; section: BookTocSection; score: number } | null = null
+  for (const book of (bookTocLinks as { books?: BookTocLink[] }).books || []) {
+    for (const section of book.sections || []) {
+      let score = 0
+      for (const token of tokensOf(`${book.title} ${section.label}`)) if (mine.has(token)) score += 1
+      for (const keyword of section.keywords || []) {
+        if ([...tokensOf(keyword)].some((token) => mine.has(token))) score += 2
+      }
+      if (score > (best?.score || 0)) best = { bookTitle: book.title, section, score }
+    }
+  }
+  return best && best.score >= 3 ? best : null
+}
+
 
 function IdeaThread({ article }: { article: ArticleRecord }) {
   const path = useMemo(() => {
@@ -344,6 +365,7 @@ function ArchiveContext({ a }: { a: ArticleRecord }) {
 
 function StudentArchive({ a, articles }: { a: ArticleRecord; articles: ArticleRecord[] }) {
   const pack = useMemo(() => articleSystem(a, articles, books, papers), [a, articles])
+  const bookPageLink = useMemo(() => bestBookTocMatch(a), [a])
   const terms = Array.from(new Set(ideaTokens(`${a.title} ${a.excerpt || ''} ${a.body || ''}`))).slice(0, 5)
   const relatedArticle = pack.relatedArticles[0]
   const relatedPaper = pack.relatedPapers[0]
@@ -388,6 +410,12 @@ function StudentArchive({ a, articles }: { a: ArticleRecord; articles: ArticleRe
               </Link>
             ) : (
               <p className="mt-2 text-[.9rem] leading-relaxed text-soft">استخدم زر «انسخ الاستشهاد» أسفل المقال، ثم اربطه بأقرب مصدر من «أكمل هذا المسار».</p>
+            )}
+            {bookPageLink && (
+              <p className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-soft">
+                قريب من «{bookPageLink.bookTitle}»<br />
+                {bookPageLink.section.label} · الصفحات {bookPageLink.section.pages}
+              </p>
             )}
           </div>
         </div>

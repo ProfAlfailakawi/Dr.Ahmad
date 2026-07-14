@@ -42,6 +42,8 @@
     "verify:legacy-retired": "node scripts/verify-legacy-retirement.mjs",
     "content:auto": "node scripts/auto-site-content.mjs",
     "content:auto:self-test": "node scripts/auto-site-content.mjs --self-test",
+    "testimonials:auto": "node scripts/auto-testimonials.mjs",
+    "testimonials:auto:self-test": "node scripts/auto-testimonials.mjs --self-test",
     "podcast:release:self-test": "node scripts/podcast-release-gate.mjs --self-test",
     "podcast:release:local": "node scripts/podcast-release-gate.mjs --local",
     "podcast:release:dist": "node scripts/podcast-release-gate.mjs --dist",

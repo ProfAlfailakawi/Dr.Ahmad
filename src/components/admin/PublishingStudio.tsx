@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { articleCats, books, papers } from '../../data'
 import privateBookLinks from '../../data/private-book-links.json'
+import bookTocLinks from '../../data/book-toc-links.json'
 import type { ArticleRecord } from '../../lib/cms'
 import { loadArticleBodies } from '../../lib/article-bodies'
 import { useAdminAuth } from '../../lib/admin-auth'
@@ -88,7 +89,7 @@ type PrivateBookLink = {
   title: string
   pages?: number
   topTerms?: string[]
-  sections?: { label?: string; page?: number; keywords?: string[]; note?: string }[]
+  sections?: { label?: string; page?: number; pages?: string; keywords?: string[]; note?: string }[]
   linkedPublicBook?: { slug: string; title: string; confidence?: number } | null
   relatedPublicArticles?: { slug: string; title: string; confidence?: number }[]
 }
@@ -663,20 +664,24 @@ function buildSevenDayCampaign(bundle: Bundle, pack: WeeklyPack): SevenDayCampai
 
 function privateBookMatches(bundle: Bundle, privateLinks: PrivateBookLink[]) {
   const text = normalize(`${bundle.title} ${bundle.excerpt} ${bundle.body} ${bundle.cat}`)
+  const tocBooks = (bookTocLinks as { books?: PrivateBookLink[] }).books || []
   const publicSlugs = new Set([
     ...bundle.related.map((item) => item.slug),
     ...bundle.books.map((item) => item.slug),
   ])
   return privateLinks
     .map((book) => {
+      const tocBook = tocBooks.find((candidate) => normalize(candidate.title) === normalize(book.title))
+      const sections = [...(book.sections || []), ...(tocBook?.sections || [])]
       const termScore = (book.topTerms || []).reduce((sum, term) => sum + (text.includes(normalize(term)) ? 1 : 0), 0)
       const articleScore = (book.relatedPublicArticles || []).reduce((sum, article) => sum + (publicSlugs.has(article.slug) ? 2 : 0), 0)
       const linkedBookScore = book.linkedPublicBook && publicSlugs.has(book.linkedPublicBook.slug) ? 3 : 0
       const score = termScore + articleScore + linkedBookScore
-      const section = (book.sections || [])
+      const section = sections
         .map((candidate) => ({
           ...candidate,
-          score: (candidate.keywords || []).reduce((sum, keyword) => sum + (text.includes(normalize(keyword)) ? 1 : 0), 0),
+          score: (candidate.keywords || []).reduce((sum, keyword) => sum + (text.includes(normalize(keyword)) ? 1 : 0), 0)
+            + (text.includes(normalize(candidate.label || '')) ? 1 : 0),
         }))
         .sort((a, b) => b.score - a.score)[0] || null
       return { ...book, score, section }
@@ -910,7 +915,7 @@ function PrivateBookMemoryCard({ matches }: { matches: ReturnType<typeof private
               <p className="font-semibold leading-relaxed text-ink">قريب من «{book.title}»</p>
               <p className="mt-1 text-[.76rem] leading-relaxed text-soft">
                 {book.section
-                  ? `${book.section.label || 'محور خاص'}${book.section.page ? ` · ص ${book.section.page}` : ''}`
+                  ? `${book.section.label || 'محور خاص'}${book.section.pages ? ` · الصفحات ${book.section.pages}` : book.section.page ? ` · ص ${book.section.page}` : ''}`
                   : 'محور عام من الكتاب'}
                 {book.section?.keywords?.length ? ` · ${book.section.keywords.slice(0, 4).join('، ')}` : ''}
               </p>
@@ -1474,6 +1479,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
             section: book.section ? {
               label: book.section.label || 'محور خاص',
               page: book.section.page || null,
+              pages: book.section.pages || null,
               keywords: (book.section.keywords || []).slice(0, 6),
             } : null,
             linkedPublicBook: book.linkedPublicBook || null,

@@ -602,15 +602,17 @@ function LaunchSpotlight({ articles, books, papers, media }: { articles: Article
     return () => { active = false }
   }, [])
 
-  if (!settings?.active || !settings.kind || !settings.slug) return null
-  const ends = launchEndsAt(settings.endsAt)
-  if (ends && ends < Date.now()) return null
-
-  const article = settings.kind === 'article' ? articles.find((item) => item.slug === settings.slug) : undefined
-  const book = settings.kind === 'book' ? books.find((item) => item.slug === settings.slug) : undefined
-  const paper = settings.kind === 'paper' ? papers.find((item) => item.slug === settings.slug) : undefined
-  const mediaItem = settings.kind === 'media' ? media.find((item) => item.slug === settings.slug) : undefined
+  const ends = launchEndsAt(settings?.endsAt)
+  const activeLaunch = Boolean(settings?.active && settings.kind && settings.slug && (!ends || ends >= Date.now()))
+  const article = activeLaunch && settings?.kind === 'article' ? articles.find((item) => item.slug === settings.slug) : undefined
+  const book = activeLaunch && settings?.kind === 'book' ? books.find((item) => item.slug === settings.slug) : undefined
+  const paper = activeLaunch && settings?.kind === 'paper' ? papers.find((item) => item.slug === settings.slug) : undefined
+  const mediaItem = activeLaunch && settings?.kind === 'media' ? media.find((item) => item.slug === settings.slug) : undefined
   const item = article || book || paper || mediaItem
+  useEffect(() => {
+    document.body.classList.toggle('launch-spotlight-active', Boolean(item))
+    return () => document.body.classList.remove('launch-spotlight-active')
+  }, [item])
   if (!item) return null
 
   const title = item.title

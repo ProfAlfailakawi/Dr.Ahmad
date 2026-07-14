@@ -612,3 +612,26 @@ html.dark .human-core__scan { mix-blend-mode: screen; }
   outline-offset: 0;
   box-shadow: none;
 }
+
+/* مشهد الإطلاق الداكن: الهيدر يبقى واضحًا فوق الطبقة الفنية، من دون لمس الوضع العادي. */
+body.launch-spotlight-active .site-nav:not(.is-solid) {
+  color: rgba(255,255,255,.92);
+  border-color: rgba(255,255,255,.14);
+  background: linear-gradient(180deg, rgba(10,14,19,.34), transparent);
+}
+body.launch-spotlight-active .site-nav:not(.is-solid) :is(a, button, span) {
+  color: rgba(255,255,255,.9);
+  border-color: rgba(255,255,255,.28);
+}
+body.launch-spotlight-active .site-nav:not(.is-solid) :is(a:hover, button:hover) {
+  color: #fff;
+  border-color: rgba(255,255,255,.62);
+}
+body.launch-spotlight-active .site-nav:not(.is-solid) img {
+  filter: brightness(0) invert(1);
+  opacity: .96;
+}
+body.launch-spotlight-active .site-nav:not(.is-solid) button span span,
+body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
+  background: rgba(255,255,255,.9);
+}

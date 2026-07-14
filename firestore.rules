@@ -56,6 +56,12 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
+    // شهادات حقيقية ومجهولة الهوية: لا تُنشأ إلا بعد اعتماد المشرف،
+    // ولا تعرض أي اسم أو بريد للزوار.
+    match /site_testimonials/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
     // حالة الجدولة الداخلية للنشر الذاتي — لا تظهر للزوار ولا يكتبها المتصفح.
     match /automation_state/{id} {
       allow read, write: if false;

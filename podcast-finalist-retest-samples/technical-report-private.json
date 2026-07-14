@@ -1,0 +1,52 @@
+{
+  "generatedAt": "2026-07-14T14:40:38.699Z",
+  "male": "ar-KW-FahedNeural",
+  "mapping": [
+    {
+      "label": "Sample D new",
+      "voiceNameInternal": "ar-KW-NouraNeural",
+      "male": "ar-KW-FahedNeural",
+      "file": "sample-d-new.mp3",
+      "durationSec": 89.6,
+      "wordsPerMinute": 136,
+      "utterances": 22,
+      "musicBridge": {
+        "count": 1,
+        "durationSec": 2.1,
+        "after": "والتعليم الذي يخيف، لا يعلّم."
+      },
+      "avgUtteranceWords": 7.6,
+      "pauses": 40,
+      "avgPauseMs": 399,
+      "longestPauseMs": 1710,
+      "pausesOver1000ms": 1,
+      "totalSilenceSec": 16,
+      "silenceRatioPct": 17.8,
+      "regeneratedSegments": 0,
+      "target": "135–145 WPM overall, reflective 125–136, short replies 145–152"
+    },
+    {
+      "label": "Sample B new",
+      "voiceNameInternal": "ar-AE-FatimaNeural",
+      "male": "ar-KW-FahedNeural",
+      "file": "sample-b-new.mp3",
+      "durationSec": 90.1,
+      "wordsPerMinute": 135,
+      "utterances": 22,
+      "musicBridge": {
+        "count": 1,
+        "durationSec": 2.1,
+        "after": "والتعليم الذي يخيف، لا يعلّم."
+      },
+      "avgUtteranceWords": 7.6,
+      "pauses": 39,
+      "avgPauseMs": 408,
+      "longestPauseMs": 1747,
+      "pausesOver1000ms": 1,
+      "totalSilenceSec": 15.9,
+      "silenceRatioPct": 17.7,
+      "regeneratedSegments": 0,
+      "target": "135–145 WPM overall, reflective 125–136, short replies 145–152"
+    }
+  ]
+}

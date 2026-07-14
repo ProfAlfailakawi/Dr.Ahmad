@@ -1516,6 +1516,30 @@ function auditAudio(mp3, { minSec = 1, maxSec = 300, maxLongSilences = 0 } = {})
     meanDb: Number.isFinite(mean) ? mean : null, issues }
 }
 
+function episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript = [] }) {
+  const durationOk = Number(technicalAudit?.dur || 0) >= 120 && Number(technicalAudit?.dur || 0) <= 360
+  const sizeOk = Number(technicalAudit?.size || 0) >= 200_000
+  const longSilenceOk = Array.isArray(technicalAudit?.longSilences) ? technicalAudit.longSilences.length === 0 : false
+  const peakOk = !Number.isFinite(Number(technicalAudit?.peakDb)) || Number(technicalAudit.peakDb) <= -1
+  const sttOk = Number(fullComparison?.importantRatio || 0) >= 0.95 && Number(fullComparison?.ratio || 0) >= 0.90
+  const judgeOk = finalJudge?.pass === true && (!Array.isArray(finalJudge?.problems) || finalJudge.problems.length === 0)
+  const transcriptOk = Array.isArray(transcript) && transcript.length >= 8
+  const score = Math.round(
+    (judgeOk ? 30 : 0)
+    + (sttOk ? 24 : 0)
+    + (durationOk ? 12 : 0)
+    + (longSilenceOk ? 12 : 0)
+    + (transcriptOk ? 10 : 0)
+    + (sizeOk ? 6 : 0)
+    + (peakOk ? 6 : 0)
+  )
+  return {
+    score,
+    pass: score >= 92,
+    checks: { judgeOk, sttOk, durationOk, longSilenceOk, transcriptOk, sizeOk, peakOk },
+  }
+}
+
 async function validateDialogueFidelity(article, script) {
   const dialogue = (script.utterances || []).map((utterance) => `${utterance.speaker}: ${utterance.text}`).join('\n')
   const hostA = VOICES[LANG === 'en' ? 'en' : 'ar'].A.name
@@ -2074,9 +2098,12 @@ async function produce(article, lang) {
       state.totalCount = previousTotalCount + 1
       if (isStory) state.storyCount = previousStoryCount + 1
       saveState()
+      const qualityScore = episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript })
+      if (!qualityScore.pass) throw new Error(`بوابة score النهائية أقل من الحد: ${qualityScore.score}/100`)
       auditRecord.status = 'accepted_automated'
       auditRecord.finishedAt = new Date().toISOString()
-      auditRecord.finalGate = { pass: true, reasonCodes: LIGHT ? ['light_free_mode'] : [], technicalAudit, fullStt,
+      auditRecord.finalGate = { pass: true, score: qualityScore.score, scoreChecks: qualityScore.checks,
+        reasonCodes: LIGHT ? ['light_free_mode'] : [], technicalAudit, fullStt,
         fullComparison: fullComparison ? { ratio: fullComparison.ratio, importantRatio: fullComparison.importantRatio,
           missing: fullComparison.missing, missingImportant: fullComparison.missingImportant } : null, finalJudge }
       writeAudit(article, lang, auditRecord)

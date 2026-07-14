@@ -171,6 +171,22 @@ function snippets(pages, importantTerms) {
   return out.slice(0, 12)
 }
 
+function sectionHints(bookSnippets, importantTerms) {
+  const fallbackTerms = importantTerms.slice(0, 8).map((item) => item.term)
+  return bookSnippets.slice(0, 6).map((snippet, index) => {
+    const textTerms = tokenize(snippet.text)
+      .filter((term, position, arr) => arr.indexOf(term) === position)
+      .filter((term) => fallbackTerms.includes(term))
+      .slice(0, 5)
+    return {
+      label: `محور خاص ${index + 1}`,
+      page: snippet.page,
+      keywords: textTerms.length ? textTerms : fallbackTerms.slice(index, index + 4),
+      note: 'إشارة مشتقة آمنة من الكتاب الخاص؛ لا تحتوي نصًا من PDF ولا تظهر للزوار.',
+    }
+  })
+}
+
 const files = readdirSync(PRIVATE_BOOKS_DIR)
   .filter((name) => /\.pdf$/i.test(name))
   .map((name) => resolve(PRIVATE_BOOKS_DIR, name))
@@ -199,6 +215,7 @@ for (const file of files) {
   const siteBook = bestSiteBook(title, terms.map((item) => item.term))
   const bytes = readFileSync(file)
   const articleLinks = bestArticles(terms.map((item) => item.term))
+  const bookSnippets = snippets(pages, terms)
   books.push({
     fileName: basename(file),
     localPath: file,
@@ -214,7 +231,8 @@ for (const file of files) {
     textLength: text.length,
     linkedPublicBook: siteBook?.score > 0 ? { slug: siteBook.slug, title: siteBook.title, confidence: siteBook.score } : null,
     topTerms: terms,
-    snippets: snippets(pages, terms),
+    snippets: bookSnippets,
+    sectionHints: sectionHints(bookSnippets, terms),
     relatedPublicArticles: articleLinks,
     privateUses: [
       'اقتراح روابط داخلية دقيقة من المقالات إلى هذا الكتاب من دون كشف PDF.',
@@ -243,6 +261,7 @@ const safeLinks = {
       ? { slug: book.linkedPublicBook.slug, title: book.linkedPublicBook.title, confidence: book.linkedPublicBook.confidence }
       : null,
     topTerms: book.topTerms.slice(0, 10).map((item) => item.term),
+    sections: (book.sectionHints || []).slice(0, 6),
     relatedPublicArticles: book.relatedPublicArticles.slice(0, 8).map((article) => ({
       slug: article.slug,
       title: article.title,

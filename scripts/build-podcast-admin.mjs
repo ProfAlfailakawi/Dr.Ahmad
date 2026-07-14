@@ -12,6 +12,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const AUDIO = resolve(ROOT, 'audio')
 const DATA = readFileSync(resolve(ROOT, 'src/data.ts'), 'utf8')
 const OUT = resolve(ROOT, 'src/data/podcast-admin.json')
+const AUDITS = resolve(ROOT, 'podcast-audits')
 const EXTERNAL_AUDIO_BASE_URL = (process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const podcastStatePath = resolve(ROOT, '.podcast-state.json')
 const podcastState = existsSync(podcastStatePath) ? JSON.parse(readFileSync(podcastStatePath, 'utf8')) : { done: {} }
@@ -33,6 +34,73 @@ const externalDialogue = Object.keys(audioMeta).filter((name) => name.endsWith('
 const dialogue = [...new Set([...files.filter((name) => name.endsWith('.dialogue.mp3')), ...externalDialogue])].sort()
 const generatedAt = dialogue.length ? new Date().toISOString() : null
 
+function readAudit(slug) {
+  const file = resolve(AUDITS, `${slug}.ar.json`)
+  if (!existsSync(file)) return null
+  try { return JSON.parse(readFileSync(file, 'utf8')) }
+  catch { return null }
+}
+
+function roundedScore(value) {
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? Math.max(0, Math.min(100, Math.round(numeric))) : 0
+}
+
+function scoreAudioGate({ approved, hasTranscript, byteSize, meta, audit }) {
+  const finalGate = audit?.finalGate || {}
+  const technical = finalGate.technicalAudit || {}
+  const comparison = finalGate.fullComparison || {}
+  const judge = finalGate.finalJudge || {}
+  const issues = []
+  const metrics = {
+    durationSeconds: Math.round(Number(meta?.durationSeconds || technical?.dur || 0)),
+    bytes: byteSize,
+    sttRatio: Number.isFinite(Number(comparison?.ratio)) ? Math.round(Number(comparison.ratio) * 100) : null,
+    importantRatio: Number.isFinite(Number(comparison?.importantRatio)) ? Math.round(Number(comparison.importantRatio) * 100) : null,
+    longSilences: Array.isArray(technical?.longSilences) ? technical.longSilences.length : null,
+    peakDb: Number.isFinite(Number(technical?.peakDb)) ? Number(technical.peakDb) : null,
+    judgePass: judge?.pass === true,
+  }
+
+  const durationOk = metrics.durationSeconds >= 120 && metrics.durationSeconds <= 360
+  const bytesOk = byteSize >= 200_000
+  const transcriptOk = Boolean(hasTranscript)
+  const auditOk = finalGate.pass === true
+  const sttOk = metrics.importantRatio === null ? auditOk : metrics.importantRatio >= 95
+  const silenceOk = metrics.longSilences === null ? auditOk : metrics.longSilences === 0
+  const permanentUrlOk = Boolean(meta?.url || meta?.r2Key || EXTERNAL_AUDIO_BASE_URL)
+
+  if (!approved) issues.push('الحلقة ليست معتمدة آليًا في حالة البودكاست.')
+  if (!transcriptOk) issues.push('لا يوجد Transcript منشور لهذه الحلقة.')
+  if (!auditOk) issues.push('لا يوجد تقرير جودة نهائي مجتاز للحلقة.')
+  if (!sttOk) issues.push('تطابق STT مع النص المقصود أقل من الحد الصارم.')
+  if (!durationOk) issues.push('مدة الحلقة خارج المجال الطبيعي المطلوب.')
+  if (!silenceOk) issues.push('توجد وقفات طويلة تتجاوز الحد المقبول.')
+  if (!bytesOk) issues.push('حجم الملف مريب أو غير صالح للبودكاست.')
+  if (!permanentUrlOk) issues.push('رابط الصوت الدائم غير مثبت.')
+
+  const score = roundedScore(
+    (approved ? 18 : 0)
+    + (transcriptOk ? 14 : 0)
+    + (auditOk ? 24 : 0)
+    + (sttOk ? 14 : 0)
+    + (durationOk ? 10 : 0)
+    + (silenceOk ? 10 : 0)
+    + (bytesOk ? 5 : 0)
+    + (permanentUrlOk ? 5 : 0)
+  )
+
+  return {
+    score,
+    pass: score >= 92 && issues.length === 0,
+    metrics,
+    pronunciation: auditOk && sttOk ? 'مقبول' : 'ينتظر فحص النطق والمعنى',
+    pace: durationOk ? 'مقبول' : 'يحتاج ضبط السرعة/المدة',
+    pauses: silenceOk ? 'مقبول' : 'يحتاج تقليل الوقفات',
+    issues,
+  }
+}
+
 const episodes = dialogue.map((name) => {
   const slug = name.slice(0, -'.dialogue.mp3'.length)
   const article = articleBySlug.get(slug)
@@ -45,6 +113,7 @@ const episodes = dialogue.map((name) => {
   const approved = accepted?.status === 'accepted_automated' && (!localAudio || accepted.audioHash === hash)
   const meta = audioMeta?.[name] || {}
   const byteSize = localAudio ? statSync(file).size : Number(meta.bytes || 0)
+  const audit = readAudit(slug)
   let utterances = 0
   if (hasTranscript) {
     try {
@@ -52,26 +121,27 @@ const episodes = dialogue.map((name) => {
       utterances = Array.isArray(json.utterances) ? json.utterances.length : 0
     } catch { /* noop */ }
   }
+  const gate = scoreAudioGate({ approved, hasTranscript, byteSize, meta, audit })
   return {
     slug,
     title: article?.title || slug,
     category: article?.cat || 'بودكاست',
     date: article?.date || '',
     iso: article?.iso || '',
-    status: approved ? 'published' : 'under_review',
+    status: gate.pass ? 'published' : 'under_review',
     audio: `/audio/${name}`,
     bytes: byteSize,
     audioHash: hash ? hash.slice(0, 16) : '',
     hasTranscript,
     utterances,
     quality: {
-      pronunciation: approved ? 'مقبول' : hasTranscript ? 'ينتظر اعتماد البوابة' : 'يحتاج Transcript',
-      pace: approved ? 'مقبول' : 'ينتظر تقرير الجودة',
-      pauses: approved ? 'مقبول' : 'ينتظر تقرير الجودة',
-      issues: [
-        ...(!hasTranscript ? ['لا يوجد Transcript منشور لهذه الحلقة بعد.'] : []),
-        ...(!approved ? ['لن تُنشر الحلقة الحوارية في RSS قبل اعتماد بوابة الجودة.'] : []),
-      ],
+      score: gate.score,
+      pass: gate.pass,
+      metrics: gate.metrics,
+      pronunciation: gate.pronunciation,
+      pace: gate.pace,
+      pauses: gate.pauses,
+      issues: gate.issues,
     },
   }
 })

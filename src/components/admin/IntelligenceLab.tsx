@@ -229,7 +229,7 @@ function AudioControlCard({ articles }: { articles: ArticleRecord[] }) {
   const noAudio = articles.filter((article) => !article.hasAudio)
   const withAudio = articles.filter((article) => article.hasAudio)
   const podcast = podcastAdmin as {
-    episodes: { slug: string; title: string; status: string; audio: string; hasTranscript: boolean; utterances: number; quality?: { issues?: string[] } }[]
+    episodes: { slug: string; title: string; status: string; audio: string; hasTranscript: boolean; utterances: number; quality?: { score?: number; pass?: boolean; pronunciation?: string; pace?: string; pauses?: string; issues?: string[]; metrics?: { durationSeconds?: number; importantRatio?: number | null; longSilences?: number | null } } }[]
     playlists: { title: string; episodes: { slug: string; title: string }[] }[]
   }
   return (
@@ -249,7 +249,15 @@ function AudioControlCard({ articles }: { articles: ArticleRecord[] }) {
                 <p className="mt-1 text-[.78rem] text-soft">
                   الحالة: {episode.status === 'published' ? 'منشورة' : episode.status}
                   {' · '}Transcript: {episode.hasTranscript ? `${episode.utterances} مداخلة` : 'غير موجود'}
+                  {' · '}Score: {episode.quality?.score ?? 0}/100
                 </p>
+                {episode.quality?.metrics && (
+                  <p className="mt-1 text-[.74rem] text-soft">
+                    مدة: {episode.quality.metrics.durationSeconds || '—'}ث
+                    {' · '}تطابق مهم: {episode.quality.metrics.importantRatio ?? '—'}٪
+                    {' · '}وقفات طويلة: {episode.quality.metrics.longSilences ?? '—'}
+                  </p>
+                )}
                 {episode.quality?.issues?.length ? <p className="mt-1 text-[.78rem] text-soft">{episode.quality.issues[0]}</p> : null}
               </div>
               <a href={adminAudioUrl(episode.audio)} target="_blank" rel="noreferrer" className={softBtn}>استماع</a>
@@ -533,26 +541,45 @@ function DoctorRadarCard({ articles }: { articles: ArticleRecord[] }) {
 }
 
 function AudioQualityGateCard() {
-  const episodes = (podcastAdmin as { episodes?: { slug: string; title: string; status: string; hasTranscript?: boolean; bytes?: number; quality?: { issues?: string[] } }[] }).episodes || []
+  const episodes = (podcastAdmin as { episodes?: { slug: string; title: string; status: string; hasTranscript?: boolean; bytes?: number; quality?: { score?: number; pass?: boolean; pronunciation?: string; pace?: string; pauses?: string; issues?: string[]; metrics?: { durationSeconds?: number; sttRatio?: number | null; importantRatio?: number | null; longSilences?: number | null; peakDb?: number | null } } }[] }).episodes || []
   const blocked = episodes.filter((episode) => episode.status !== 'published')
+  const averageScore = episodes.length ? Math.round(episodes.reduce((sum, episode) => sum + Number(episode.quality?.score || 0), 0) / episodes.length) : 0
   return (
     <section className={card}>
-      <p className="text-[.76rem] font-semibold uppercase text-accent">نظام جودة صوتي</p>
-      <h2 className="mt-1 font-display text-xl font-semibold text-ink">لا تُنشر الحلقة الحوارية قبل اجتياز البوابة.</h2>
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+      <p className="text-[.76rem] font-semibold uppercase text-accent">بوابة صوت</p>
+      <h2 className="mt-1 font-display text-xl font-semibold text-ink">لا تعتمد أي حلقة إلا بعد Score واضح.</h2>
+      <div className="mt-4 grid gap-3 sm:grid-cols-4">
         <div className="rounded-xl border border-hair bg-canvas p-4"><span className="block font-display text-2xl text-accent">{episodes.length}</span><span className="text-[.78rem] text-soft">حلقات حوارية</span></div>
         <div className="rounded-xl border border-hair bg-canvas p-4"><span className="block font-display text-2xl text-accent">{episodes.length - blocked.length}</span><span className="text-[.78rem] text-soft">منشورة</span></div>
         <div className="rounded-xl border border-hair bg-canvas p-4"><span className="block font-display text-2xl text-accent">{blocked.length}</span><span className="text-[.78rem] text-soft">تحت المراجعة</span></div>
+        <div className="rounded-xl border border-hair bg-canvas p-4"><span className="block font-display text-2xl text-accent">{averageScore}</span><span className="text-[.78rem] text-soft">متوسط الجودة</span></div>
       </div>
       <p className="mt-4 text-[.86rem] leading-relaxed text-soft">
-        البوابة تفحص: Transcript، حجم الملف، الرابط الدائم، مدة الحلقة، واعتماد الجودة. أي حلقة غير معتمدة تُحجب عن RSS والإنتاج حتى تنجح.
+        البوابة تفحص النطق والمعنى، سرعة الحلقة، الوقفات، Transcript، حجم الملف، والرابط الدائم. أي حلقة أقل من 92/100 أو بلا تقرير جودة تبقى تحت المراجعة ولا تدخل RSS.
       </p>
       {blocked.length ? (
         <ol className="mt-4 grid gap-2">
           {blocked.slice(0, 5).map((episode) => (
             <li key={episode.slug} className="rounded-xl border border-hair bg-canvas p-4">
-              <p className="font-semibold text-ink">{episode.title}</p>
-              <p className="mt-1 text-[.78rem] text-soft">{episode.quality?.issues?.join(' · ') || 'تحتاج اعتماد الجودة قبل النشر.'}</p>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-ink">{episode.title}</p>
+                  <p className="mt-1 text-[.76rem] text-soft">
+                    النطق: {episode.quality?.pronunciation || '—'}
+                    {' · '}السرعة: {episode.quality?.pace || '—'}
+                    {' · '}الوقفات: {episode.quality?.pauses || '—'}
+                  </p>
+                  {episode.quality?.metrics && (
+                    <p className="mt-1 text-[.74rem] text-soft">
+                      مدة: {episode.quality.metrics.durationSeconds || '—'}ث
+                      {' · '}STT مهم: {episode.quality.metrics.importantRatio ?? '—'}٪
+                      {' · '}وقفات طويلة: {episode.quality.metrics.longSilences ?? '—'}
+                    </p>
+                  )}
+                  <p className="mt-1 text-[.78rem] text-soft">{episode.quality?.issues?.join(' · ') || 'تحتاج اعتماد الجودة قبل النشر.'}</p>
+                </div>
+                <span className="rounded-full border border-hair px-3 py-1.5 font-display text-lg text-accent">{episode.quality?.score ?? 0}</span>
+              </div>
             </li>
           ))}
         </ol>

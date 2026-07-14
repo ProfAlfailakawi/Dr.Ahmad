@@ -87,6 +87,7 @@ type PrivateBookLink = {
   title: string
   pages?: number
   topTerms?: string[]
+  sections?: { label?: string; page?: number; keywords?: string[]; note?: string }[]
   linkedPublicBook?: { slug: string; title: string; confidence?: number } | null
   relatedPublicArticles?: { slug: string; title: string; confidence?: number }[]
 }
@@ -482,6 +483,31 @@ function buildSevenDayCampaign(bundle: Bundle, pack: WeeklyPack): SevenDayCampai
   ]
 }
 
+function privateBookMatches(bundle: Bundle, privateLinks: PrivateBookLink[]) {
+  const text = normalize(`${bundle.title} ${bundle.excerpt} ${bundle.body} ${bundle.cat}`)
+  const publicSlugs = new Set([
+    ...bundle.related.map((item) => item.slug),
+    ...bundle.books.map((item) => item.slug),
+  ])
+  return privateLinks
+    .map((book) => {
+      const termScore = (book.topTerms || []).reduce((sum, term) => sum + (text.includes(normalize(term)) ? 1 : 0), 0)
+      const articleScore = (book.relatedPublicArticles || []).reduce((sum, article) => sum + (publicSlugs.has(article.slug) ? 2 : 0), 0)
+      const linkedBookScore = book.linkedPublicBook && publicSlugs.has(book.linkedPublicBook.slug) ? 3 : 0
+      const score = termScore + articleScore + linkedBookScore
+      const section = (book.sections || [])
+        .map((candidate) => ({
+          ...candidate,
+          score: (candidate.keywords || []).reduce((sum, keyword) => sum + (text.includes(normalize(keyword)) ? 1 : 0), 0),
+        }))
+        .sort((a, b) => b.score - a.score)[0] || null
+      return { ...book, score, section }
+    })
+    .filter((book) => book.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4)
+}
+
 function buildWeeklyPack(bundle: Bundle, articles: ArticleRecord[], radar: RadarItem[]): WeeklyPack {
   const related = bundle.related
     .map((item) => articles.find((article) => article.slug === item.slug))
@@ -682,6 +708,45 @@ function StyleEditorCard({ review }: { review: ReturnType<typeof styleReview> })
           </div>
         ))}
       </div>
+    </section>
+  )
+}
+
+function PrivateBookMemoryCard({ matches }: { matches: ReturnType<typeof privateBookMatches> }) {
+  return (
+    <section className={card}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[.76rem] font-semibold uppercase text-accent">ذاكرة الكتب الخاصة</p>
+          <h2 className="mt-1 font-display text-xl font-semibold text-ink">ربط داخلي لا يظهر للناس.</h2>
+        </div>
+        <span className="rounded-full border border-hair px-3 py-1.5 text-[.72rem] text-soft">خاص باللوحة فقط</span>
+      </div>
+      <p className="mt-3 text-[.82rem] leading-relaxed text-soft">
+        لا يعرض PDF ولا نصوص الكتب. يظهر لك فقط أن المسودة قريبة من كتاب أو محور خاص حتى تستثمر أرشيفك بأمان.
+      </p>
+      {matches.length ? (
+        <div className="mt-4 grid gap-2">
+          {matches.map((book) => (
+            <div key={book.title} className="rounded-xl border border-hair bg-canvas px-4 py-3">
+              <p className="font-semibold leading-relaxed text-ink">قريب من «{book.title}»</p>
+              <p className="mt-1 text-[.76rem] leading-relaxed text-soft">
+                {book.section
+                  ? `${book.section.label || 'محور خاص'}${book.section.page ? ` · ص ${book.section.page}` : ''}`
+                  : 'محور عام من الكتاب'}
+                {book.section?.keywords?.length ? ` · ${book.section.keywords.slice(0, 4).join('، ')}` : ''}
+              </p>
+              {book.linkedPublicBook && (
+                <p className="mt-1 text-[.74rem] text-soft">يرتبط أيضًا بالكتاب المنشور: {book.linkedPublicBook.title}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.82rem] leading-relaxed text-soft">
+          لم أجد رابطًا واثقًا مع الكتب الخاصة لهذه المسودة بعد. زِد وضوح الفكرة أو شغّل ذاكرة الكتب بعد إضافة PDFs جديدة.
+        </p>
+      )}
     </section>
   )
 }
@@ -932,6 +997,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const weeklyPack = useMemo(() => buildWeeklyPack(bundle, richArticles, radar), [bundle, radar, richArticles])
   const styleInsight = useMemo(() => styleReview(bundle, style), [bundle, style])
   const sevenDayCampaign = useMemo(() => buildSevenDayCampaign(bundle, weeklyPack), [bundle, weeklyPack])
+  const privateMemoryMatches = useMemo(() => privateBookMatches(bundle, privateLinks), [bundle, privateLinks])
   const articleSuggestions = useMemo(() => suggestArticleIdeas(richArticles, radar, privateLinks), [privateLinks, radar, richArticles])
 
   useEffect(() => {
@@ -1137,6 +1203,17 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
           relatedArticles: bundle.related,
           relatedBooks: bundle.books,
           relatedPapers: bundle.papers,
+          privateBookMemory: privateMemoryMatches.map((book) => ({
+            title: book.title,
+            pages: book.pages || null,
+            score: book.score,
+            section: book.section ? {
+              label: book.section.label || 'محور خاص',
+              page: book.section.page || null,
+              keywords: (book.section.keywords || []).slice(0, 6),
+            } : null,
+            linkedPublicBook: book.linkedPublicBook || null,
+          })),
           quality: bundle.quality,
           requestedGenerationWords: targetWords,
           actualWords: wordCount(bundle.body),
@@ -1382,6 +1459,7 @@ ${pulsePurpose.trim()}`,
             </section>
             {bundle.event && <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">صلة راهنة موثقة</p><a href={bundle.event.url} target="_blank" rel="noreferrer" className="mt-3 block font-display text-[1rem] font-semibold leading-relaxed text-ink hover:text-accent">{bundle.event.title}</a><p className="mt-2 text-[.78rem] text-soft">{bundle.event.source}</p>{bundle.eventConnection && <p className="mt-3 text-[.8rem] leading-relaxed text-soft">{bundle.eventConnection}</p>}</section>}
             <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">ذاكرة الفكرة</p><p className="mt-2 text-[.86rem] leading-relaxed text-soft">{lab.angle}</p><div className="mt-4 grid gap-3">{bundle.related.map((item) => <a key={item.slug} href={`/articles/${item.slug}`} target="_blank" rel="noreferrer" className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-ink transition-colors hover:border-accent hover:text-accent">{item.title}{item.iso && <span className="ms-2 text-soft">{item.iso.slice(0, 4)}</span>}</a>)}</div></section>
+            <PrivateBookMemoryCard matches={privateMemoryMatches} />
             <button type="button" onClick={() => setView('review')} className={primary}>انتقل إلى المراجعة</button>
           </aside>
         </div>
@@ -1392,6 +1470,7 @@ ${pulsePurpose.trim()}`,
           <QualityGateCard gate={gate} />
           <div className="grid content-start gap-5">
             <StyleEditorCard review={styleInsight} />
+            <PrivateBookMemoryCard matches={privateMemoryMatches} />
             <section className={card}>
               <p className="text-[.76rem] font-semibold uppercase text-accent">إلى مكتبة المقالات</p>
               <h2 className="mt-1 font-display text-2xl font-semibold text-ink">القرار النهائي يتم من صفحة المقالات.</h2>

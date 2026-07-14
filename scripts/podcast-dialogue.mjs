@@ -2333,7 +2333,7 @@ if (flag('voice-finalist-retest')) {
     const female = finalists[vi]
     const label = labels[vi] || `Sample ${String.fromCharCode(68 + vi)} new`
     const key = label.toLowerCase().replace(/\s+/g, '-')
-    const voiceRateOffset = /Noura/i.test(female) ? -3 : 1
+    const voiceRateOffset = /Noura/i.test(female) ? -3 : 2
     const utterances = sample.utterances.map((u, index) => retime(u, index, voiceRateOffset))
     const tmp = resolve(TMP, `finalist-${vi}`); rmSync(tmp, { recursive: true, force: true }); mkdirSync(tmp, { recursive: true })
     const bridge = makeBridge(tmp, key)

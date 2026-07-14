@@ -2,6 +2,19 @@
   "version": 1,
   "allowedSources": [
     {
+      "id": "times-kuwait-education",
+      "name": "Times Kuwait",
+      "aliases": [
+        "Times Kuwait — Education",
+        "رادار الكويت — التعليم"
+      ],
+      "hostnames": [
+        "timeskuwait.com",
+        "www.timeskuwait.com"
+      ],
+      "feedUrl": "https://timeskuwait.com/category/news/education/feed/"
+    },
+    {
       "id": "mit-technology-review",
       "name": "MIT Technology Review",
       "hostnames": [

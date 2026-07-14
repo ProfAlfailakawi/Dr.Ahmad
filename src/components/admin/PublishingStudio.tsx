@@ -100,6 +100,13 @@ type WeeklyPack = {
   radarComment: string
 }
 
+type SevenDayCampaign = {
+  day: string
+  platform: string
+  goal: string
+  copy: string
+}
+
 const normalize = (value = '') => value
   .toLowerCase()
   .replace(/[ًٌٍَُِّْـ]/g, '')
@@ -383,6 +390,98 @@ function qualityGate(bundle: Bundle, articles: ArticleRecord[], targetWords: num
   }
 }
 
+function sentenceStats(text = '') {
+  const sentences = text.replace(/\s+/g, ' ').split(/(?<=[.!؟])\s+/).map((sentence) => sentence.trim()).filter((sentence) => sentence.length > 12)
+  const counts = sentences.map((sentence) => wordCount(sentence))
+  const average = counts.length ? Math.round(counts.reduce((sum, count) => sum + count, 0) / counts.length) : 0
+  return { sentences, average }
+}
+
+function styleReview(bundle: Bundle, style: ReturnType<typeof editorialStyleProfile>) {
+  const body = bundle.body || ''
+  const words = wordCount(body)
+  const paragraphs = body.split(/\n\s*\n/).map((paragraph) => paragraph.trim()).filter(Boolean)
+  const stats = sentenceStats(body)
+  const avgSentence = Number(style.avgSentenceWords || 0)
+  const sentenceGap = avgSentence ? Math.abs(stats.average - avgSentence) : 0
+  const paragraphGap = style.avgParagraphs ? Math.abs(paragraphs.length - Number(style.avgParagraphs)) : 0
+  const anchors = ['الإنسان', 'الطالب', 'المعلم', 'المعنى', 'الوعي', 'القيمة', 'الخوف', 'التعليم'].filter((word) => body.includes(word))
+  const connectors = (style.connectors || []).map((item) => item.term).filter((term) => body.includes(term)).slice(0, 5)
+  const weakPhrases = [
+    'في عالمنا اليوم',
+    'لا شك أن',
+    'مما لا شك فيه',
+    'في الختام',
+    'من الجدير بالذكر',
+    'يلعب دورًا حيويًا',
+    'ثورة غير مسبوقة',
+  ].filter((phrase) => body.includes(phrase))
+  const hasHumanOpening = /^(قد يبدو|حين|عندما|ليست|ليس|في|أمام|داخل|هل|كيف|لماذا|ماذا)/.test(body.trim())
+  const checks = [
+    { label: 'افتتاحية من عالم الإنسان لا من تعريف مدرسي', ok: hasHumanOpening, note: hasHumanOpening ? 'البداية قريبة من روح المقالات.' : 'جرّب أن تبدأ بمشهد أو مفارقة.' },
+    { label: `متوسط الجملة قريب من بصمتك (${style.avgSentenceWords || '—'} كلمة)`, ok: !avgSentence || sentenceGap <= 7, note: stats.average ? `المقال الحالي: ${stats.average} كلمة للجملة.` : 'لا توجد جمل كافية للحكم.' },
+    { label: `تقسيم الفقرات قريب من عادتك (${style.avgParagraphs || '—'} فقرات)`, ok: !style.avgParagraphs || paragraphGap <= 4, note: `${paragraphs.length || 0} فقرات في النص الحالي.` },
+    { label: 'حضور مفرداتك الإنسانية', ok: anchors.length >= 3, note: anchors.length ? anchors.join('، ') : 'أضف أثر الفكرة في الإنسان/الطالب/المعلم.' },
+    { label: 'روابط انتقال طبيعية في التحليل', ok: connectors.length >= 2, note: connectors.length ? connectors.join('، ') : 'النص يحتاج مفاصل انتقال أكثر.' },
+    { label: 'خلو من عبارات AI العامة', ok: weakPhrases.length === 0, note: weakPhrases.length ? weakPhrases.join('، ') : 'لا توجد عبارات آلية ظاهرة.' },
+    { label: 'طول مريح للمقال الفكري', ok: words >= MIN_ARTICLE_WORDS, note: `${words} كلمة.` },
+  ]
+  const score = Math.round((checks.filter((check) => check.ok).length / checks.length) * 100)
+  return {
+    score,
+    label: score >= 86 ? 'قريب جدًا من بصمتك' : score >= 70 ? 'قريب… يحتاج تهذيبًا بسيطًا' : 'بعيد عن روحك ويحتاج مراجعة',
+    checks,
+  }
+}
+
+function buildSevenDayCampaign(bundle: Bundle, pack: WeeklyPack): SevenDayCampaign[] {
+  const quote = pack.quote || 'الفكرة القوية تبدأ حين نرى الإنسان قبل الأداة.'
+  return [
+    {
+      day: 'اليوم ١',
+      platform: 'LinkedIn',
+      goal: 'إطلاق الفكرة بهدوء',
+      copy: pack.linkedin[0],
+    },
+    {
+      day: 'اليوم ٢',
+      platform: 'X',
+      goal: 'سؤال قصير يفتح النقاش',
+      copy: `سؤال اليوم:\n${pack.question}`,
+    },
+    {
+      day: 'اليوم ٣',
+      platform: 'Instagram Carousel',
+      goal: 'تبسيط الفكرة بصريًا',
+      copy: `${bundle.title}\n\n١. الفكرة ليست في الأداة.\n٢. الأثر الحقيقي في الإنسان.\n٣. التعليم علاقة قبل أن يكون إجراء.\n٤. السؤال: ماذا يبقى في الطالب بعد التجربة؟`,
+    },
+    {
+      day: 'اليوم ٤',
+      platform: 'LinkedIn',
+      goal: 'ربط المقال بالأرشيف والخبرة',
+      copy: pack.linkedin[1],
+    },
+    {
+      day: 'اليوم ٥',
+      platform: 'X',
+      goal: 'اقتباس قابل للمشاركة',
+      copy: quote,
+    },
+    {
+      day: 'اليوم ٦',
+      platform: 'Instagram Story',
+      goal: 'تصويت أو تفاعل سريع',
+      copy: `هل ترى أن «${bundle.title}» قضية تقنية أم إنسانية أولًا؟\n\n[تقنية]\n[إنسانية]\n[الاثنان معًا]`,
+    },
+    {
+      day: 'اليوم ٧',
+      platform: 'Newsletter / WhatsApp',
+      goal: 'إغلاق الحملة ودعوة للقراءة',
+      copy: `لمن فاته النقاش هذا الأسبوع:\n${bundle.title}\n\n${bundle.excerpt}\n\nاقرأ المقال كاملًا، ثم اسأل: ما القرار الصغير الذي يمكن أن يتغير غدًا؟`,
+    },
+  ]
+}
+
 function buildWeeklyPack(bundle: Bundle, articles: ArticleRecord[], radar: RadarItem[]): WeeklyPack {
   const related = bundle.related
     .map((item) => articles.find((article) => article.slug === item.slug))
@@ -562,12 +661,39 @@ function QualityGateCard({ gate }: { gate: ReturnType<typeof qualityGate> }) {
   )
 }
 
+function StyleEditorCard({ review }: { review: ReturnType<typeof styleReview> }) {
+  return (
+    <section className={card}>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[.76rem] font-semibold uppercase text-accent">المحرر الذي يعرفك</p>
+          <h2 className="mt-1 font-display text-xl font-semibold text-ink">{review.label}</h2>
+        </div>
+        <span className="rounded-full border border-accent/30 bg-accent/[.06] px-4 py-2 font-display text-xl text-accent">{review.score}٪</span>
+      </div>
+      <div className="mt-4 grid gap-2">
+        {review.checks.map((check) => (
+          <div key={check.label} className="rounded-xl border border-hair bg-canvas px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[.84rem] font-semibold text-ink">{check.label}</span>
+              <span className={`text-[.78rem] font-semibold ${check.ok ? 'text-accent' : 'text-soft'}`}>{check.ok ? '✓' : 'راجع'}</span>
+            </div>
+            <p className="mt-1 text-[.76rem] leading-relaxed text-soft">{check.note}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function WeeklyPackCard({
   pack,
+  campaign,
   onSave,
   busy,
 }: {
   pack: WeeklyPack
+  campaign: SevenDayCampaign[]
   onSave: () => void
   busy: boolean
 }) {
@@ -579,6 +705,7 @@ function WeeklyPackCard({
     `سؤال تفاعلي:\n${pack.question}`,
     `اقتباس:\n${pack.quote}`,
     `تعليق على حدث راهن:\n${pack.radarComment}`,
+    ...campaign.map((item) => `${item.day} · ${item.platform}\n${item.goal}\n${item.copy}`),
   ].join('\n\n---\n\n')
   return (
     <section className={card}>
@@ -586,6 +713,7 @@ function WeeklyPackCard({
         <div>
           <p className="text-[.76rem] font-semibold uppercase text-accent">حزمة الأسبوع</p>
           <h2 className="mt-1 font-display text-2xl font-semibold text-ink">محتوى أسبوع كامل ينتظر موافقتك.</h2>
+          <p className="mt-2 max-w-2xl text-[.82rem] leading-relaxed text-soft">غرفة حملات هادئة: لا تنشر شيئًا وحدها، لكنها ترتّب المقال على سبعة أيام حتى توافق.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <CopyButton value={all} label="نسخ الكل" />
@@ -601,6 +729,21 @@ function WeeklyPackCard({
         <SocialCard title="اقتباس من الأرشيف" text={pack.quote} />
         <SocialCard title="تعليق على حدث راهن" text={pack.radarComment} />
       </div>
+      <details className="mt-5 rounded-2xl border border-hair bg-canvas p-4">
+        <summary className="cursor-pointer list-none font-semibold text-ink">غرفة حملة ٧ أيام</summary>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {campaign.map((item) => (
+            <div key={`${item.day}-${item.platform}`} className="rounded-xl border border-hair bg-wash p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-semibold text-accent">{item.day} · {item.platform}</p>
+                <CopyButton value={item.copy} />
+              </div>
+              <p className="mt-2 text-[.76rem] text-soft">{item.goal}</p>
+              <p className="mt-3 whitespace-pre-wrap text-[.82rem] leading-relaxed text-ink">{item.copy}</p>
+            </div>
+          ))}
+        </div>
+      </details>
     </section>
   )
 }
@@ -617,23 +760,27 @@ function CurrentEventsCard({
   loading: boolean
   onToggle: (id: string) => void
 }) {
+  const kuwait = items.filter((item) => /kuwait|kuna|times kuwait|الكويت/i.test(`${item.source} ${item.title}`))
+  const rest = items.filter((item) => !kuwait.some((local) => local.id === item.id))
+  const shown = [...kuwait, ...rest].slice(0, 8)
   return (
     <section className={card}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-[.76rem] font-semibold uppercase text-accent">أحداث الساعة</p>
           <h2 className="mt-1 font-display text-xl font-semibold text-ink">يربط الحدث فقط عندما يخدم الفكرة.</h2>
-          <p className="mt-2 text-[.8rem] leading-relaxed text-soft">اتركها بلا اختيار ليقرر الاستوديو تلقائيًا، أو ثبّت حدثًا موثوقًا بنفسك.</p>
+          <p className="mt-2 text-[.8rem] leading-relaxed text-soft">رادار الكويت يظهر أولًا عند وجود مادة محلية موثوقة، ثم تأتي المصادر العالمية.</p>
         </div>
         <span className="rounded-full border border-hair px-3 py-1.5 text-[.72rem] text-soft">{loading ? 'أحدّث المصادر…' : selected.length ? `${selected.length} محدد` : 'اختيار ذكي'}</span>
       </div>
       {items.length ? (
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          {items.slice(0, 8).map((item) => {
+          {shown.map((item) => {
             const active = selected.includes(item.id)
+            const local = kuwait.some((candidate) => candidate.id === item.id)
             return (
               <button key={item.id} type="button" onClick={() => onToggle(item.id)} className={`rounded-2xl border p-4 text-right transition-colors ${active ? 'border-accent bg-accent/[.06]' : 'border-hair bg-canvas hover:border-accent'}`}>
-                <span className="flex items-center justify-between gap-2 text-[.7rem] font-semibold text-accent"><span>{item.source}</span><span>{item.ageHours != null ? `قبل ${item.ageHours} س` : 'حديث'}</span></span>
+                <span className="flex items-center justify-between gap-2 text-[.7rem] font-semibold text-accent"><span>{local ? `رادار الكويت · ${item.source}` : item.source}</span><span>{item.ageHours != null ? `قبل ${item.ageHours} س` : 'حديث'}</span></span>
                 <span className="mt-2 line-clamp-2 block font-display text-[.96rem] font-semibold leading-[1.55] text-ink">{item.title}</span>
                 <span className="mt-3 block text-[.72rem] text-soft">{active ? 'مثبّت للربط ✓' : 'اضغط لتثبيته'}</span>
               </button>
@@ -783,6 +930,8 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const gate = useMemo(() => qualityGate(bundle, richArticles, targetWords, skipOriginality), [bundle, richArticles, skipOriginality, targetWords])
   const similarity = useMemo(() => articleSimilarityReport(bundle.title, bundle.body, richArticles), [bundle.title, bundle.body, richArticles])
   const weeklyPack = useMemo(() => buildWeeklyPack(bundle, richArticles, radar), [bundle, radar, richArticles])
+  const styleInsight = useMemo(() => styleReview(bundle, style), [bundle, style])
+  const sevenDayCampaign = useMemo(() => buildSevenDayCampaign(bundle, weeklyPack), [bundle, weeklyPack])
   const articleSuggestions = useMemo(() => suggestArticleIdeas(richArticles, radar, privateLinks), [privateLinks, radar, richArticles])
 
   useEffect(() => {
@@ -1241,15 +1390,18 @@ ${pulsePurpose.trim()}`,
       {view === 'review' && (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,.72fr)]">
           <QualityGateCard gate={gate} />
-          <section className={card}>
-            <p className="text-[.76rem] font-semibold uppercase text-accent">إلى مكتبة المقالات</p>
-            <h2 className="mt-1 font-display text-2xl font-semibold text-ink">القرار النهائي يتم من صفحة المقالات.</h2>
-            <p className="mt-3 text-[.86rem] leading-relaxed text-soft">هذا الاستوديو يبني النص ويفحصه فقط. الزر التالي ينقل العنوان والمقتطف والنص والتصنيف والروابط والحزمة كاملة إلى «المقالات» كمسودة؛ وهناك تختار الجدولة أو النشر.</p>
-            <button type="button" disabled={busy || !gate.ready} className={`${primary} mt-6 w-full`} onClick={() => void transferToArticles()}>{busy ? 'أنقل المقال…' : 'نقل المقال كاملًا إلى المقالات'}</button>
-            {!gate.ready && <p className="mt-3 text-[.78rem] leading-relaxed text-soft">أكمل البنود غير المجتازة في بوابة الجودة أولًا.</p>}
-            {notice && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-accent">{notice}</p>}
-            {error && <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-soft">{error}</p>}
-          </section>
+          <div className="grid content-start gap-5">
+            <StyleEditorCard review={styleInsight} />
+            <section className={card}>
+              <p className="text-[.76rem] font-semibold uppercase text-accent">إلى مكتبة المقالات</p>
+              <h2 className="mt-1 font-display text-2xl font-semibold text-ink">القرار النهائي يتم من صفحة المقالات.</h2>
+              <p className="mt-3 text-[.86rem] leading-relaxed text-soft">هذا الاستوديو يبني النص ويفحصه فقط. الزر التالي ينقل العنوان والمقتطف والنص والتصنيف والروابط والحزمة كاملة إلى «المقالات» كمسودة؛ وهناك تختار الجدولة أو النشر.</p>
+              <button type="button" disabled={busy || !gate.ready} className={`${primary} mt-6 w-full`} onClick={() => void transferToArticles()}>{busy ? 'أنقل المقال…' : 'نقل المقال كاملًا إلى المقالات'}</button>
+              {!gate.ready && <p className="mt-3 text-[.78rem] leading-relaxed text-soft">أكمل البنود غير المجتازة في بوابة الجودة أولًا.</p>}
+              {notice && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-accent">{notice}</p>}
+              {error && <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-soft">{error}</p>}
+            </section>
+          </div>
         </div>
       )}
 
@@ -1305,7 +1457,7 @@ ${pulsePurpose.trim()}`,
             <summary className="cursor-pointer list-none text-[.82rem] font-semibold text-soft transition-colors hover:text-accent">الحزمة الكلاسيكية الاحتياطية</summary>
             <div className="mt-5">
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"><SocialCard title="X" text={bundle.social.x} /><SocialCard title="LinkedIn" text={bundle.social.linkedin} /><SocialCard title="Instagram" text={bundle.social.instagram} /><SocialCard title="Threads" text={bundle.social.threads} /><SocialCard title="WhatsApp / Broadcast" text={bundle.social.whatsapp} /><SocialCard title="النشرة البريدية" text={bundle.social.newsletter} /></div>
-              <div className="mt-5"><WeeklyPackCard pack={weeklyPack} onSave={saveWeeklyQueue} busy={queueBusy} /></div>
+              <div className="mt-5"><WeeklyPackCard pack={weeklyPack} campaign={sevenDayCampaign} onSave={saveWeeklyQueue} busy={queueBusy} /></div>
             </div>
           </details>
 

@@ -53,6 +53,10 @@ jobs:
 
       - name: Deploy Firestore rules to the data project only
         run: |
+          cleanup() {
+            rm -f "$RUNNER_TEMP/firebase-data-service-account.json"
+          }
+          trap cleanup EXIT
           if [ -z "$FIREBASE_DATA_SERVICE_ACCOUNT_JSON" ]; then
             echo "::warning::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing; skipping Firestore rules deploy for the data project."
             echo "::warning::Hosting deploy will continue. Add the secret later to update Inbox/Questions/CMS rules automatically."
@@ -60,12 +64,14 @@ jobs:
           fi
           printf '%s' "$FIREBASE_DATA_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-data-service-account.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-data-service-account.json"
-          npx --yes firebase-tools@latest deploy \
+          if ! npx --yes firebase-tools@latest deploy \
             --config firebase.data.json \
             --only firestore:rules \
             --project drahmad-8e9e2 \
-            --non-interactive
-          rm -f "$RUNNER_TEMP/firebase-data-service-account.json"
+            --non-interactive; then
+            echo "::warning::Firestore rules deploy failed. Hosting deploy will continue so the public site is not blocked."
+            echo "::warning::To deploy rules automatically, grant the service account Firebase Rules Admin + Service Usage Viewer on drahmad-8e9e2."
+          fi
         env:
           FIREBASE_DATA_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
 

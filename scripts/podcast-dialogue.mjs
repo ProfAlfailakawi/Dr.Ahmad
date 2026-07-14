@@ -263,7 +263,7 @@ const DIALOGUE_MODEL = env.PODCAST_DIALOGUE_MODEL || env.GEMINI_MODEL || 'gemini
 const ANALYSIS_MODEL = env.PODCAST_ANALYSIS_MODEL || DIALOGUE_MODEL
 const JUDGE_MODEL = env.PODCAST_JUDGE_MODEL || DIALOGUE_MODEL
 const PIPELINE_HASH = createHash('sha256').update(JSON.stringify({
-  version: 'arabic-podcast-v5-natural-delivery',
+  version: 'arabic-podcast-v6-performance-director',
   dialoguePrompt: AR_SYSTEM,
   pronunciationPrompt: PRONOUNCE_SYSTEM,
   judgePrompt: JUDGE_SYSTEM,
@@ -561,7 +561,71 @@ function compareTexts(intended, recognized) {
 /* ═══════════ Azure TTS + STT ═══════════ */
 const escXml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
-/** يبني SSML من النص النطقي: إيقاع حواري أسرع من النسخة المرفوضة، بلا سرعة موحّدة. */
+const clampNum = (value, lo, hi, fallback = lo) => Math.min(hi, Math.max(lo, Number.isFinite(+value) ? +value : fallback))
+const signedPct = (value) => `${value >= 0 ? '+' : ''}${Math.round(value)}%`
+const signedDb = (value) => `${value >= 0 ? '+' : ''}${Number(value).toFixed(1).replace(/\\.0$/, '')}dB`
+
+function performanceDirector(u, baseRate, lang) {
+  const delivery = u.delivery || 'normal'
+  const speakerBias = u.speaker === 'B' ? { rate: 1, pitch: 1, volume: 0.2 } : { rate: -1, pitch: -1, volume: 0 }
+  const presets = {
+    statement: { rate: 0, pitch: 0, volume: 0, pre: 0, inner: 95, contour: [0, 1, -1] },
+    question: { rate: 0, pitch: 2, volume: 0.6, pre: 45, inner: 115, contour: [0, 2, 5] },
+    briefReaction: { rate: 3, pitch: 2, volume: 1.2, pre: 0, inner: 70, contour: [2, 2, 1] },
+    gentleObjection: { rate: 2, pitch: 1, volume: 1, pre: 35, inner: 85, contour: [2, 1, 0] },
+    clarification: { rate: 0, pitch: 0, volume: 0.2, pre: 0, inner: 105, contour: [0, 1, -1] },
+    reflection: { rate: -4, pitch: -2, volume: -0.7, pre: 70, inner: 145, contour: [-1, -2, -3] },
+    conclusion: { rate: -2, pitch: -1, volume: 0.4, pre: 45, inner: 130, contour: [0, -1, -3] },
+    reflective: { rate: -4, pitch: -2, volume: -0.7, pre: 70, inner: 145, contour: [-1, -2, -3] },
+    hook: { rate: 3, pitch: 2, volume: 1, pre: 20, inner: 85, contour: [2, 3, 1] },
+    objection: { rate: 2, pitch: 1, volume: 1, pre: 35, inner: 85, contour: [2, 1, 0] },
+    quick: { rate: 3, pitch: 2, volume: 1.1, pre: 0, inner: 70, contour: [2, 2, 1] },
+    normal: { rate: 0, pitch: 0, volume: 0, pre: 0, inner: 100, contour: [0, 0, -1] },
+  }
+  const p = presets[delivery] || presets.normal
+  const words = String(u.text || '').split(/\s+/).filter(Boolean).length
+  const urgency = words <= 5 ? 2 : words <= 10 ? 1 : words > 24 ? -1 : 0
+  const rate = clampNum(baseRate + p.rate + speakerBias.rate + urgency, 3, 30, baseRate)
+  const pitch = clampNum(p.pitch + speakerBias.pitch, -6, 7, 0)
+  const volume = clampNum(p.volume + speakerBias.volume, -3, 3, 0)
+  const innerBreakMs = clampNum(u.internalBreakMs || p.inner, 70, 180, p.inner)
+  const preBreathMs = lang === 'ar' ? clampNum(p.pre, 0, 90, 0) : 0
+  return { delivery, rate, pitch, volume, innerBreakMs, preBreathMs,
+    contour: p.contour, energy: Math.round((rate / 30) * 100), warmth: delivery === 'reflection' || delivery === 'conclusion' ? 88 : 76 }
+}
+
+function splitPerformanceSegments(pronText) {
+  const pieces = String(pronText || '').split(/\s*\|\s*/).flatMap((part) => {
+    const chunks = []
+    let current = ''
+    for (const token of part.split(/(\s+)/)) {
+      current += token
+      if (/[،؛.!؟]$/.test(token.trim())) { chunks.push(current.trim()); current = '' }
+    }
+    if (current.trim()) chunks.push(current.trim())
+    return chunks
+  }).map((item) => item.trim()).filter(Boolean)
+  return pieces.length ? pieces : [String(pronText || '').trim()]
+}
+
+function applySubsAndFocus(segment, subs, focusWords = []) {
+  let text = escXml(segment)
+  for (const { word, alias } of subs) {
+    if (!word || !alias || word === alias) continue
+    const ew = escXml(word)
+    if (text.includes(ew)) text = text.split(ew).join(`<sub alias="${escXml(alias)}">${ew}</sub>`)
+  }
+  for (const word of focusWords.slice(0, 2)) {
+    const clean = String(word || '').trim()
+    if (!clean || clean.length < 3) continue
+    const ew = escXml(clean)
+    if (text.includes(ew) && !text.includes(`>${ew}</sub>`))
+      text = text.split(ew).join(`<prosody volume="+1.5dB" pitch="+1%">${ew}</prosody>`)
+  }
+  return text
+}
+
+/** يبني SSML من النص النطقي: إخراج أدائي داخل الجملة، لا prosody واحد مسطّح. */
 function buildSSML(u, pronText, subs, voice, lang) {
   const ratePlan = {
     statement: 12, question: 12, briefReaction: 18, gentleObjection: 17,
@@ -569,30 +633,28 @@ function buildSSML(u, pronText, subs, voice, lang) {
     reflective: 8, hook: 16, objection: 17, quick: 18, normal: 12,
   }
   const requestedRate = Number.isFinite(Number(u.ratePct)) ? Number(u.ratePct) : (ratePlan[u.delivery] ?? ratePlan.normal)
-  const ratePct = Math.min(30, Math.max(3, requestedRate))
-  const pitch = u.delivery === 'question' ? '+2%'
-    : u.delivery === 'objection' || u.ending === 'open' ? '+1%'
-      : ['reflective', 'reflection'].includes(u.delivery) || u.ending === 'final' ? '-1%' : '+0%'
+  const director = performanceDirector(u, requestedRate, lang)
   const profile = capabilityProfiles.get(voice)
   if (lang === 'ar' && profile && !profile.subSupported) {
     for (const { word, alias } of subs) pronText = pronText.split(word).join(alias)
     subs = []
   }
-  let text = escXml(pronText)
-  for (const { word, alias } of subs) {
-    if (!word || !alias || word === alias) continue
-    const ew = escXml(word)
-    if (text.includes(ew)) text = text.split(ew).join(`<sub alias="${escXml(alias)}">${ew}</sub>`)
-  }
-  const internalBreakMs = Math.min(180, Math.max(80, Number(u.internalBreakMs
-    || (['reflective', 'reflection'].includes(u.delivery) ? 160 : u.delivery === 'question' ? 130 : 100))))
-  text = text.replace(/\s*\|\s*/g, `<break time="${internalBreakMs}ms"/>`)
+  const segments = splitPerformanceSegments(pronText)
+  const focusWords = Array.isArray(u.emphasisWords) ? u.emphasisWords : []
+  const rendered = segments.map((segment, index) => {
+    const pos = segments.length === 1 ? 1 : index === 0 ? 0 : index === segments.length - 1 ? 2 : 1
+    const pitch = director.pitch + (director.contour[pos] || 0)
+    const rate = director.rate + (pos === 0 && director.delivery === 'hook' ? 2 : 0) + (pos === 2 && u.ending === 'final' ? -2 : 0)
+    const volume = director.volume + (pos === 1 ? 0.4 : 0)
+    return `<prosody rate="${signedPct(rate)}" pitch="${signedPct(pitch)}" volume="${signedDb(volume)}">${applySubsAndFocus(segment, subs, focusWords)}</prosody>`
+  }).join(`<break time="${director.innerBreakMs}ms"/>`)
   /* لا نستخدم <emphasis>: الأصوات العربية العشرة المختبرة لا تعلن دعمه، وقد
      يتجاهله Azure بصمت. التشديد يُصنع من الجملة والسرعة والوقفة لا من وسم وهمي. */
   // locale يتبع الصوت المستخدم (يعمّم لأي صوت عربي، لا ثابت ar-KW)
   const xmlLang = lang === 'ar' ? localeOf(voice) : 'en-US'
+  const pre = director.preBreathMs ? `<break time="${director.preBreathMs}ms"/>` : ''
   return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${xmlLang}">
-  <voice name="${voice}"><prosody rate="+${ratePct}%" pitch="${pitch}">${text}</prosody></voice>
+  <voice name="${voice}">${pre}${rendered}</voice>
 </speak>`
 }
 

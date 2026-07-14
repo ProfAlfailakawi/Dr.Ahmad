@@ -633,7 +633,8 @@ function performanceDirector(u, baseRate, lang) {
   const p = presets[delivery] || presets.normal
   const words = String(u.text || '').split(/\s+/).filter(Boolean).length
   const urgency = words <= 5 ? 2 : words <= 10 ? 1 : words > 24 ? -1 : 0
-  const rate = clampNum(baseRate + p.rate + speakerBias.rate + urgency, 3, 30, baseRate)
+  const minRate = u.allowSlowProsody ? -10 : 3
+  const rate = clampNum(baseRate + p.rate + speakerBias.rate + urgency, minRate, 30, baseRate)
   const pitch = clampNum(p.pitch + speakerBias.pitch, -6, 7, 0)
   const volume = clampNum(p.volume + speakerBias.volume, -3, 3, 0)
   const innerBreakMs = clampNum(u.internalBreakMs || p.inner, 70, 180, p.inner)
@@ -2283,8 +2284,8 @@ if (flag('voice-finalist-retest')) {
   const retime = (u, index, voiceRateOffset = -2) => {
     const delivery = u.delivery || 'normal'
     const rateByType = {
-      hook: 7, statement: 5, question: 5, briefReaction: 9, gentleObjection: 7,
-      clarification: 5, reflection: 0, conclusion: 1, normal: 5,
+      hook: 1, statement: -2, question: -1, briefReaction: 3, gentleObjection: 1,
+      clarification: -2, reflection: -7, conclusion: -6, normal: -2,
     }
     const pauseByType = {
       hook: 360, statement: 330, question: 640, briefReaction: 230, gentleObjection: 350,
@@ -2297,10 +2298,11 @@ if (flag('voice-finalist-retest')) {
     const influential = /التعليم الذي يخيف|الإنسان، فيبقى|كيف نقيس|ارتجف قلبه/.test(u.text)
     return {
       ...u,
-      ratePct: Math.max(0, (influential ? Math.min(rateByType[delivery] ?? 5, 2) : (rateByType[delivery] ?? 5)) + voiceRateOffset),
+      ratePct: (influential ? Math.min(rateByType[delivery] ?? -2, -5) : (rateByType[delivery] ?? -2)) + voiceRateOffset,
       pauseAfterMs: influential ? Math.max(pauseByType[delivery] ?? 330, 720) : (pauseByType[delivery] ?? 330),
       internalBreakMs: internalByType[delivery] ?? 125,
       allowOverlap: false,
+      allowSlowProsody: true,
       overlapMs: 0,
       targetWordsPerMinute: delivery === 'briefReaction' ? 148
         : delivery === 'reflection' || delivery === 'conclusion' || influential ? 130
@@ -2331,7 +2333,7 @@ if (flag('voice-finalist-retest')) {
     const female = finalists[vi]
     const label = labels[vi] || `Sample ${String.fromCharCode(68 + vi)} new`
     const key = label.toLowerCase().replace(/\s+/g, '-')
-    const voiceRateOffset = /Noura/i.test(female) ? -5 : -3
+    const voiceRateOffset = /Noura/i.test(female) ? -3 : -2
     const utterances = sample.utterances.map((u, index) => retime(u, index, voiceRateOffset))
     const tmp = resolve(TMP, `finalist-${vi}`); rmSync(tmp, { recursive: true, force: true }); mkdirSync(tmp, { recursive: true })
     const bridge = makeBridge(tmp, key)

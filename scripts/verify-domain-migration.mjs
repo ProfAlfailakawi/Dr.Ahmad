@@ -104,7 +104,7 @@ function checkRepository() {
   expect(rc.projects?.data === DATA_PROJECT, 'اسم مشروع البيانات في .firebaserc غير صحيح')
 
   const hostingWorkflow = read('.github/workflows/firebase-hosting-live.yml')
-  expect(hostingWorkflow.includes(`projectId: ${HOSTING_PROJECT}`), 'Workflow الاستضافة لا ينشر إلى المشروع الصحيح')
+  expect(hostingWorkflow.includes(`projectId: ${HOSTING_PROJECT}`) || hostingWorkflow.includes(`--project ${HOSTING_PROJECT}`), 'Workflow الاستضافة لا ينشر إلى المشروع الصحيح')
   expect(!/deploy\s+--only\s+firestore|Deploy Firestore rules/i.test(hostingWorkflow), 'Workflow الاستضافة ما زال يحاول نشر قواعد Firestore')
   expect(hostingWorkflow.includes(`VITE_SITE_URL: ${OFFICIAL}`), 'Workflow الاستضافة لا يبني بالدومين الرسمي')
 

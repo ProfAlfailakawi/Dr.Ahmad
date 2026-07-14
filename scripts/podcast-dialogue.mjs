@@ -633,7 +633,7 @@ function performanceDirector(u, baseRate, lang) {
   const p = presets[delivery] || presets.normal
   const words = String(u.text || '').split(/\s+/).filter(Boolean).length
   const urgency = words <= 5 ? 2 : words <= 10 ? 1 : words > 24 ? -1 : 0
-  const minRate = u.allowSlowProsody ? -10 : 3
+  const minRate = u.allowSlowProsody ? -18 : 3
   const rate = clampNum(baseRate + p.rate + speakerBias.rate + urgency, minRate, 30, baseRate)
   const pitch = clampNum(p.pitch + speakerBias.pitch, -6, 7, 0)
   const volume = clampNum(p.volume + speakerBias.volume, -3, 3, 0)
@@ -1528,7 +1528,8 @@ function planTimeline(segments, music) {
     let start = firstStart
     let overlapMs = 0
     if (previous) {
-      const requestedOverlap = Math.min(150, Math.max(50, Number(segment.overlapMs || 0)))
+      const maxOverlapMs = segment.isMusicBridge ? 500 : previous.isMusicBridge ? 900 : 150
+      const requestedOverlap = Math.min(maxOverlapMs, Math.max(50, Number(segment.overlapMs || 0)))
       const canOverlap = Number(segment.overlapMs) > 0 && !segment.hasHighRisk && !previous.hasHighRisk
       overlapMs = canOverlap ? requestedOverlap : 0
       start = canOverlap
@@ -2275,7 +2276,7 @@ if (flag('voice-finalist-retest')) {
   const male = opt('male') || 'ar-KW-FahedNeural'
   const finalists = (opt('females') || 'ar-KW-NouraNeural,ar-AE-FatimaNeural')
     .split(',').map((voice) => voice.trim()).filter(Boolean)
-  const labels = (opt('labels') || 'Sample D new,Sample B new')
+  const labels = (opt('labels') || 'Sample D v2,Sample B v2')
     .split(',').map((label) => label.trim()).filter(Boolean)
   const outDir = resolve(ROOT, 'public/audio/audition-finalists')
   mkdirSync(AUDITS, { recursive: true })
@@ -2284,26 +2285,32 @@ if (flag('voice-finalist-retest')) {
   const retime = (u, index, voiceRateOffset = -2) => {
     const delivery = u.delivery || 'normal'
     const rateByType = {
-      hook: 1, statement: -2, question: -1, briefReaction: 3, gentleObjection: 1,
-      clarification: -2, reflection: -7, conclusion: -6, normal: -2,
+      hook: -4, statement: -6, question: -5, briefReaction: -1, gentleObjection: -3,
+      clarification: -6, reflection: -12, conclusion: -10, normal: -6,
     }
     const pauseByType = {
-      hook: 360, statement: 330, question: 640, briefReaction: 230, gentleObjection: 350,
-      clarification: 330, reflection: 820, conclusion: 760, normal: 330,
+      hook: 460, statement: 340, question: 690, briefReaction: 210, gentleObjection: 380,
+      clarification: 320, reflection: 940, conclusion: 860, normal: 340,
     }
     const internalByType = {
       hook: 130, statement: 125, question: 150, briefReaction: 95, gentleObjection: 130,
       clarification: 125, reflection: 175, conclusion: 165, normal: 125,
     }
-    const influential = /التعليم الذي يخيف|الإنسان، فيبقى|كيف نقيس|ارتجف قلبه/.test(u.text)
+    const influential = /التعليم الذي يخيف|الإنسان، فيبقى|كيف نقيس|ارتجف قلبه|دون أن يدفع كرامته/.test(u.text)
+    const expressivePause = [
+      500, 720, 280, 170, 320, 390, 440, 230, 170, 760, 900,
+      180, 170, 190, 820, 420, 210, 980, 330, 440, 820, 620,
+    ][index]
+    const quickCatch = new Set([3, 8, 11, 16])
     return {
       ...u,
       ratePct: (influential ? Math.min(rateByType[delivery] ?? -2, -5) : (rateByType[delivery] ?? -2)) + voiceRateOffset,
-      pauseAfterMs: influential ? Math.max(pauseByType[delivery] ?? 330, 720) : (pauseByType[delivery] ?? 330),
+      pauseAfterMs: influential ? Math.max(expressivePause ?? pauseByType[delivery] ?? 340, 780)
+        : (expressivePause ?? pauseByType[delivery] ?? 340),
       internalBreakMs: internalByType[delivery] ?? 125,
-      allowOverlap: false,
+      allowOverlap: quickCatch.has(index),
       allowSlowProsody: true,
-      overlapMs: 0,
+      overlapMs: quickCatch.has(index) ? 90 : 0,
       targetWordsPerMinute: delivery === 'briefReaction' ? 148
         : delivery === 'reflection' || delivery === 'conclusion' || influential ? 130
           : delivery === 'question' ? 140 : 142,
@@ -2316,8 +2323,8 @@ if (flag('voice-finalist-retest')) {
       ? { file: resolve(ROOT, 'music/still-light.mp3') } : null)
     if (!track) return null
     const out = resolve(dir, `${tag}.bridge.wav`)
-    ff(['-i', track.file, '-t', '2.10', '-af',
-      'afade=t=in:d=0.35,afade=t=out:st=1.55:d=0.55,volume=0.12',
+    ff(['-i', track.file, '-t', '2.35', '-af',
+      'afade=t=in:d=0.45,afade=t=out:st=1.55:d=0.80,volume=0.11',
       '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', out])
     return out
   }
@@ -2331,9 +2338,9 @@ if (flag('voice-finalist-retest')) {
   const results = []
   for (let vi = 0; vi < finalists.length; vi++) {
     const female = finalists[vi]
-    const label = labels[vi] || `Sample ${String.fromCharCode(68 + vi)} new`
+    const label = labels[vi] || `Sample ${String.fromCharCode(68 + vi)} v2`
     const key = label.toLowerCase().replace(/\s+/g, '-')
-    const voiceRateOffset = /Noura/i.test(female) ? -3 : 2
+    const voiceRateOffset = /Noura/i.test(female) ? -3 : -1
     const utterances = sample.utterances.map((u, index) => retime(u, index, voiceRateOffset))
     const tmp = resolve(TMP, `finalist-${vi}`); rmSync(tmp, { recursive: true, force: true }); mkdirSync(tmp, { recursive: true })
     const bridge = makeBridge(tmp, key)
@@ -2348,10 +2355,11 @@ if (flag('voice-finalist-retest')) {
       if (!ok) { regenerated++; ok = await synthSSML(ssml, wav) }
       if (!ok) { console.error(`\n✘ فشل تركيب المداخلة ${i + 1} لصوت ${female}`); process.exit(5) }
       trimSilence(wav)
-      segments.push({ file: wav, pauseAfterMs: Number(u.pauseAfterMs || 330), overlapMs: 0, hasHighRisk: false })
+      segments.push({ file: wav, pauseAfterMs: Number(u.pauseAfterMs || 330),
+        overlapMs: Number(u.overlapMs || 0), hasHighRisk: false })
       if (bridge && i === bridgeAfterIndex) {
-        segments[segments.length - 1].pauseAfterMs = 680
-        segments.push({ file: bridge, pauseAfterMs: 520, overlapMs: 0, hasHighRisk: false, isMusicBridge: true })
+        segments[segments.length - 1].pauseAfterMs = 940
+        segments.push({ file: bridge, pauseAfterMs: 120, overlapMs: 430, hasHighRisk: false, isMusicBridge: true })
       }
       process.stdout.write('.')
     }
@@ -2364,7 +2372,8 @@ if (flag('voice-finalist-retest')) {
       durationSec: +total.toFixed(1),
       wordsPerMinute: Math.round(sampleWords * 60 / activeSec),
       utterances: utterances.length,
-      musicBridge: bridge ? { count: 1, durationSec: 2.1, after: utterances[bridgeAfterIndex].text } : { count: 0 },
+      musicBridge: bridge ? { count: 1, durationSec: 2.35, after: utterances[bridgeAfterIndex].text,
+        integration: 'يبدأ تحت آخر 430ms من الجملة المؤثرة ويتلاشى تحت بداية المتحدث التالي' } : { count: 0 },
       avgUtteranceWords: +(sampleWords / utterances.length).toFixed(1),
       pauses: sil.count, avgPauseMs: Math.round(sil.avg * 1000), longestPauseMs: Math.round(sil.max * 1000),
       pausesOver1000ms: sil.over1000,

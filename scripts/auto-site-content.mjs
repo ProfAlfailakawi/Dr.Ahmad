@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
- * نشر ذاتي موثوق لأقسام «رسائل على الهامش» و«أسئلة تصلني» و«المختارات».
+ * نشر ذاتي موثوق لقسمي «رسائل على الهامش» و«أسئلة تصلني».
  *
  * - يعمل عدة مرات يومياً من GitHub Actions، لكنه ينشر وفق موعده فقط.
- * - يزرع تلقائياً حدّاً أولياً: أربع رسائل + عشرة أسئلة + أربع مختارات إذا كان الأرشيف أقل من ذلك.
+ * - يزرع تلقائياً حدّاً أولياً: أربع رسائل + عشرة أسئلة إذا كان الأرشيف أقل من ذلك.
  * - الرسائل: رسالة جديدة كل 3 أيام، من مقالات الدكتور وكتبه ولقاءاته، وبنبرات متنوّعة.
  * - الأسئلة: سؤال جديد كل يومين، عام وقصير جداً، من تخصصاته واهتماماته.
- * - المختارات: مختارة جديدة كل يومين من مقال أو كتاب أو لقاء، ثنائية اللغة ومتصلة بالمصدر.
- * - يمنع تكرار المصدر والموضوع والنبرة، ويتعافى من تعطل تشغيل سابق.
+ *  * - يمنع تكرار المصدر والموضوع والنبرة، ويتعافى من تعطل تشغيل سابق.
  * - لا يقرأ البريد الشخصي ولا ينشر بيانات أشخاص؛ النصوص تُولد من أرشيف الدكتور نفسه.
+ * - المختارات لا تُنشأ هنا إطلاقاً؛ مصدرها الوحيد رادار الإنترنت scripts/daily-radar.mjs.
  *
  * الاستخدام:
  *   npm run content:auto
@@ -31,7 +31,7 @@ const env = { ...process.env }
 const PROJECT_ID = env.FIREBASE_PROJECT_ID || 'drahmad-8e9e2'
 const STATE_COLLECTION = 'automation_state'
 const STATE_DOC = 'site-content-cycle'
-const GENERATION_VERSION = '2026-07-14-v4'
+const GENERATION_VERSION = '2026-07-14-v5-no-local-picks'
 const now = new Date()
 
 const integerEnv = (name, fallback) => {
@@ -41,7 +41,7 @@ const integerEnv = (name, fallback) => {
 
 const MIN_LETTERS = integerEnv('AUTO_CONTENT_MIN_LETTERS', 4)
 const MIN_FAQS = integerEnv('AUTO_CONTENT_MIN_FAQS', 10)
-const MIN_PICKS = integerEnv('AUTO_CONTENT_MIN_PICKS', 4)
+const MIN_PICKS = 0 // المختارات من الإنترنت فقط؛ لا تُولد من أرشيف الدكتور
 const MAX_GENERATED_PER_KIND = integerEnv('AUTO_CONTENT_MAX_PER_KIND', 10)
 
 const styles = [
@@ -352,7 +352,7 @@ async function run() {
       articles,
       books,
       media,
-      bootstrap: { letters: MIN_LETTERS, faqs: MIN_FAQS, picks: MIN_PICKS },
+      bootstrap: { letters: MIN_LETTERS, faqs: MIN_FAQS },
       samples: selected.map((item) => ({ type: item.type, title: item.title })),
     }, null, 2))
     return
@@ -381,7 +381,7 @@ async function run() {
     const pickDue = due(state?.nextPickAt) && !createdToday(publishedPicks)
     const letterTarget = Math.min(MAX_GENERATED_PER_KIND, Math.max(letterDeficit, letterDue ? 1 : 0))
     const faqTarget = Math.min(MAX_GENERATED_PER_KIND, Math.max(faqDeficit, faqDue ? 1 : 0))
-    const pickTarget = Math.min(MAX_GENERATED_PER_KIND, Math.max(pickDeficit, pickDue ? 1 : 0))
+    const pickTarget = 0 // متعمد: site_picks المحلي متوقف نهائياً
 
     const usedSourceKeys = new Set([
       ...recentLetters.map((item) => item.sourceKey).filter(Boolean),

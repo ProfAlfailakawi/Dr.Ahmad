@@ -39,7 +39,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: npm
 
       - name: Force public npm registry
@@ -55,14 +55,13 @@ jobs:
         env:
           AUTO_CONTENT_MIN_LETTERS: '4'
           AUTO_CONTENT_MIN_FAQS: '10'
-          AUTO_CONTENT_MIN_PICKS: '4'
 
       - name: Validate required secrets
         shell: bash
         run: |
           missing=0
           if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then
-            echo "::error::GEMINI_API_KEY or GOOGLE_API_KEY is missing. Automatic messages, questions, and curated picks cannot run."
+            echo "::error::GEMINI_API_KEY or GOOGLE_API_KEY is missing. Automatic messages and questions cannot run."
             missing=1
           fi
           if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
@@ -93,7 +92,6 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: sa.json
           AUTO_CONTENT_MIN_LETTERS: '4'
           AUTO_CONTENT_MIN_FAQS: '10'
-          AUTO_CONTENT_MIN_PICKS: '4'
           AUTO_CONTENT_MAX_PER_KIND: '10'
 
       - name: Remove temporary credentials

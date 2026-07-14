@@ -1,23 +1,18 @@
 /**
- * «من اختياراتي» — الهيكل الإيقاعي:
- *   يومي   ← «جديد اليوم» (يتبدل كل منتصف ليل تلقائياً)
- *   كل يومين ← «سؤال يُقلق التعليم» (بطاقة عبور إلى /questions)
- *   شهري  ← «كتاب الشهر» (يتبدل أول كل شهر)
- *   رادار الشبكة ← أربع محاولات يومية من مصادر موثوقة، بلا تكرار
- *   الأرشيف ← كل المخزون بفلاتر الأركان المُحياة من الموقع القديم
+ * «المختارات» — نافذة مستقلة على الإنترنت.
  *
- * كل عنصر: عربي + إنجليزي + مصدر موثوق مُسمّى.
- * وبطلب الدكتور: البطاقة كلها قابلة للضغط وتقود للمصدر مباشرة.
+ * المصدر الحي الوحيد هو site_radar، الذي يلتقط مواد حديثة من قائمة مغلقة
+ * من المؤسسات والمجلات الموثوقة. لا تُسحب أي مادة من مقالات الدكتور أو كتبه
+ * أو لقاءاته إلى هذه الصفحة.
  */
 import { useSeo } from '../components/seo'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, FadeUp, Page, PageHead } from '../components/ui'
 import { curatedBank, curioKinds, thisMonthsBook, type Curio } from '../data-curated'
 import { useExtras } from '../lib/content'
 
-/* غلاف: البطاقة كلها رابط للمصدر إن وُجد */
 function CardWrap({ c, className, children }: { c: Curio; className: string; children: React.ReactNode }) {
   if (c.url)
     return (
@@ -40,7 +35,7 @@ function CurioBody({ c }: { c: Curio }) {
 }
 
 const fmtAdded = (iso: string) => {
-  try { return new Date(iso + 'T12:00:00').toLocaleDateString('ar-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }) } catch { return iso }
+  try { return new Date(`${iso}T12:00:00`).toLocaleDateString('ar-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }) } catch { return iso }
 }
 
 const timestampIso = (value: unknown) => {
@@ -59,49 +54,45 @@ const timestampIso = (value: unknown) => {
 
 const todayIso = () => new Date().toISOString().slice(0, 10)
 
-/* إضافات افتتاحية حقيقية من أرشيف الدكتور؛ تبقى ظاهرة حتى قبل أول تشغيل ناجح للأتمتة. */
-const freshCurated: Curio[] = [
+/*
+ * تعبئة موثوقة خارجية فقط، حتى لا تبدو الصفحة متوقفة قبل أول تشغيل ناجح
+ * للرادار بعد الرفع. الروابط تقود إلى المادة الأصلية، ولا علاقة لها بأرشيف الدكتور.
+ */
+const trustedRecent: Curio[] = [
   {
     kind: 'رؤية عميقة',
-    ar: 'الذكاء الاصطناعي يُدرّس… والعقل البشري يُقصى',
-    arNote: 'مقال من الأرشيف يضع معيار الفهم الإنساني قبل سرعة الإجابة.',
-    en: 'AI teaches… while the human mind is pushed aside',
-    enNote: 'An archive essay that puts human understanding before answer speed.',
-    source: 'مقالات د. أحمد حسين الفيلكاوي',
-    url: '/articles/artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2',
+    ar: 'اليونسكو تدعو إلى توسيع مبادلة الديون بالتعليم',
+    arNote: 'مقترح تمويلي يعيد توجيه وفورات خدمة الدين إلى المدارس وتدريب المعلمين ودعم الطلبة.',
+    en: 'UNESCO urges wider use of debt-for-education swaps',
+    enNote: 'A financing approach designed to redirect debt-service savings toward education systems.',
+    source: 'Reuters · 10 يوليو 2026',
+    url: 'https://www.reuters.com/world/africa/unesco-urges-wider-use-debt-for-education-swaps-2026-07-10/',
     added: '2026-07-14',
   },
   {
-    kind: 'الرف المنسي',
-    ar: 'حوكمة الذكاء الاصطناعي والبيانات الضخمة',
-    arNote: 'عودة إلى كتاب يربط التقنية بالقرار والمسؤولية المؤسسية.',
-    en: 'Governing artificial intelligence and big data',
-    enNote: 'A return to a book connecting technology with institutional judgment and responsibility.',
-    source: 'مؤلفات د. أحمد حسين الفيلكاوي',
-    url: '/publications/mega-data',
+    kind: 'رؤية عميقة',
+    ar: 'كلية قانون تعيد الأجهزة خارج الصف لحماية التفكير المستقل',
+    arNote: 'جامعة شيكاغو تمنع الهواتف والحواسيب في مقررات السنة الأولى، مع إبقاء تعليم الذكاء الاصطناعي في مراحل لاحقة.',
+    en: 'Chicago Law bans devices from first-year classes as part of its AI strategy',
+    enNote: 'The policy prioritizes foundational reasoning before students move to AI-assisted legal work.',
+    source: 'Reuters · 9 يوليو 2026',
+    url: 'https://www.reuters.com/legal/legalindustry/chicago-law-bans-phones-laptops-first-year-classes-combat-ai-2026-07-09/',
     added: '2026-07-13',
   },
-  {
-    kind: 'رؤية عميقة',
-    ar: 'مشروع التعليم عن بُعد… من الفكرة إلى التجربة العامة',
-    arNote: 'لقاء تلفزيوني يعيد فتح سؤال البنية التحتية ودور المعلم في التعليم الرقمي.',
-    en: 'Distance education: from an idea to a public learning experience',
-    enNote: 'A television conversation revisiting infrastructure and the teacher’s role in digital learning.',
-    source: 'تلفزيون دولة الكويت · برنامج معاكم',
-    url: 'https://www.youtube.com/watch?v=ydhZ9IcGaVc',
-    added: '2026-07-12',
-  },
-  {
-    kind: 'اقتباس وتأمل',
-    ar: 'المعلم… وما أدراك ما المعلم',
-    arNote: 'وقفة من الأرشيف مع الدور الذي لا تختصره منصة ولا أداة.',
-    en: 'The teacher — a role no platform can reduce',
-    enNote: 'An archive reflection on the part of teaching that no platform or tool can replace.',
-    source: 'مقالات د. أحمد حسين الفيلكاوي',
-    url: '/articles/the-teacher-what-do-you-know-about-the-teacher',
-    added: '2026-07-11',
-  },
 ]
+
+type RadarItem = {
+  id?: string
+  ar: string
+  arNote?: string
+  en: string
+  enNote?: string
+  source: string
+  url: string
+  day: string
+  status?: string
+  createdAt?: unknown
+}
 
 const radarKind = (item: RadarItem): Curio['kind'] => {
   const text = `${item.ar} ${item.arNote || ''} ${item.en}`
@@ -121,6 +112,10 @@ const radarAsCurio = (item: RadarItem): Curio => ({
   added: timestampIso(item.createdAt) || item.day || todayIso(),
 })
 
+const dedupe = (items: Curio[]) => items.filter((item, index, allItems) => (
+  allItems.findIndex((candidate) => (candidate.url || candidate.ar) === (item.url || item.ar)) === index
+))
+
 function SourceLine({ c }: { c: Curio }) {
   return (
     <div className="mt-4 border-t border-hair pt-3 text-[.78rem] text-soft">
@@ -133,13 +128,7 @@ function SourceLine({ c }: { c: Curio }) {
   )
 }
 
-/* رادار الشبكة — يعرض ما يلتقطه scripts/daily-radar.mjs يومياً.
-   يختفي كلياً ما دام الالتقاط غير مفعَّل. */
-type RadarItem = { id?: string; ar: string; arNote?: string; en: string; enNote?: string; source: string; url: string; day: string; status?: string; createdAt?: unknown }
-
-function RadarSection() {
-  // المنشور فقط — مسودات وضع المراجعة (pending_review) لا تظهر للزوار
-  const items = useExtras<RadarItem>('site_radar', { realtime: true }).filter((r) => !r.status || r.status === 'published')
+function RadarSection({ items }: { items: Curio[] }) {
   if (!items.length) return null
   return (
     <section className="border-b border-hair px-6 py-14 md:px-11 md:py-16">
@@ -148,21 +137,19 @@ function RadarSection() {
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <div className="flex flex-wrap items-baseline gap-3">
               <h2 className="font-display text-xl font-bold text-ink">رادار الشبكة</h2>
-              <span className="text-[.8rem] text-soft">التقاط يومي من مصادر موثوقة</span>
+              <span className="text-[.8rem] text-soft">التقاط حديث من مصادر موثوقة خارج الموقع</span>
             </div>
             <Link to="/radar" data-hover className="text-[.85rem] text-accent transition-colors hover:text-accent-deep">الأرشيف الكامل ←</Link>
           </div>
         </FadeUp>
         <div className="mt-8 grid gap-6 md:grid-cols-2">
-          {items.slice(0, 4).map((r, i) => (
-            <FadeUp key={r.day + r.ar} delay={Math.min(i * 0.06, 0.2)}>
-              <a href={r.url} target="_blank" rel="noreferrer" data-hover className="group flex h-full flex-col rounded-2xl border border-hair p-6 transition-colors hover:border-accent">
-                <span className="text-[.72rem] text-soft">{r.day} · {r.source}</span>
-                <h3 className="mt-2.5 font-display text-[1.1rem] font-semibold leading-[1.7] text-ink">{r.ar}</h3>
-                {r.arNote && <p className="mt-1.5 text-[.88rem] font-light text-soft">{r.arNote}</p>}
-                <p className="mt-2.5 text-[.85rem] text-soft" dir="ltr" style={{ textAlign: 'left' }}>{r.en}</p>
+          {items.slice(0, 4).map((item, index) => (
+            <FadeUp key={`${item.url || item.ar}-${index}`} delay={Math.min(index * 0.06, 0.2)}>
+              <CardWrap c={item} className="flex h-full flex-col rounded-2xl border border-hair p-6">
+                <span className="text-[.72rem] text-soft">{item.added ? fmtAdded(item.added) : 'حديث'} · {item.source}</span>
+                <div className="mt-2.5 flex-1"><CurioBody c={item} /></div>
                 <span className="mt-auto pt-4 text-[.82rem] text-soft transition-colors group-hover:text-accent">اقرأ المادة في مصدرها ←</span>
-              </a>
+              </CardWrap>
             </FadeUp>
           ))}
         </div>
@@ -172,7 +159,7 @@ function RadarSection() {
 }
 
 export default function Curated() {
-  useSeo({ title: 'من اختياراتي', path: '/curated', description: 'اختيار متجدد يوميًا، سؤال جديد كل يومين، وكتاب شهري — بالعربية والإنجليزية ومن مصادر موثوقة.' })
+  useSeo({ title: 'المختارات', path: '/curated', description: 'مواد حديثة وأدوات وأبحاث من الإنترنت، منتقاة آليًا من مصادر موثوقة وروابط أصلية.' })
   const reduce = useReducedMotion()
   const [kind, setKind] = useState<'الكل' | string>('الكل')
   const [today, setToday] = useState('')
@@ -181,46 +168,39 @@ export default function Curated() {
     try { setToday(new Date().toLocaleDateString('ar-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' })) } catch { /* noop */ }
   }, [])
 
-  // المختارات الحية + صيدات الرادار تنضم إلى الدورة فوراً.
-  const extra = useExtras<Curio & { id?: string; createdAt?: unknown }>('site_picks', { realtime: true })
+  /* المصدر الحي الوحيد: رادار الإنترنت. site_picks المحلي متروك عمدًا ولا يُقرأ هنا. */
   const radarItems = useExtras<RadarItem>('site_radar', { realtime: true })
     .filter((item) => !item.status || item.status === 'published')
-  const livePicks: Curio[] = extra.map((item) => ({
-    ...item,
-    added: item.added || timestampIso(item.createdAt) || todayIso(),
-  }))
-  const radarPicks = radarItems.map(radarAsCurio)
-  const dynamic = [...livePicks, ...radarPicks]
-    .filter((item) => item.ar && item.en && item.source)
-    .filter((item, index, allItems) => allItems.findIndex((candidate) => (candidate.url || candidate.ar) === (item.url || item.ar)) === index)
-    .sort((left, right) => (right.added || '').localeCompare(left.added || ''))
-  const rotationPool = [...freshCurated, ...curatedBank]
-  const fallbackIndex = rotationPool.length ? Math.floor(Date.now() / 86_400_000) % rotationPool.length : 0
-  const fallbackDaily = { ...rotationPool[fallbackIndex], added: todayIso() }
-  const daily = dynamic[0] || fallbackDaily
+
+  const dynamic = useMemo(() => dedupe([
+    ...radarItems.map(radarAsCurio),
+    ...trustedRecent,
+  ])
+    .filter((item) => item.ar && item.en && item.source && item.url?.startsWith('https://'))
+    .sort((left, right) => (right.added || '').localeCompare(left.added || '')), [radarItems])
+
+  const daily = dynamic[0] || curatedBank[0]
   const book = thisMonthsBook()
-  const all = [...dynamic, ...freshCurated, ...curatedBank]
-    .filter((item, index, allItems) => allItems.findIndex((candidate) => (candidate.url || candidate.ar) === (item.url || item.ar)) === index)
-  const shown = kind === 'الكل' ? all : all.filter((c) => c.kind === kind)
+  const all = dedupe([...dynamic, ...curatedBank])
+  const shown = kind === 'الكل' ? all : all.filter((item) => item.kind === kind)
 
   return (
     <Page>
       <PageHead
         label="من اختياراتي"
         title="المختارات."
-        sub="تتجدد تلقائيًا من المختارات الحية وصيدات الرادار، مع سؤال دوري وكتاب شهري."
+        sub="من الإنترنت فقط: أحداث وأبحاث وأدوات حديثة، بروابط أصلية ومصادر موثوقة."
       />
 
-      {/* ─── جديد اليوم ─── */}
       <section className="border-b border-hair px-6 py-14 md:px-11 md:py-20">
         <div className="mx-auto max-w-shell">
           <FadeUp>
             <div className="flex flex-wrap items-center gap-3">
               <span className="inline-flex items-center gap-2.5 text-[.82rem] font-semibold text-accent">
                 <span className="pulse relative h-2 w-2 rounded-full bg-accent" />
-                جديد اليوم
+                الأحدث من الإنترنت
               </span>
-              <span className="text-[.85rem] text-soft">· {today} · يتحدّث فور وصول مختارة أو صيدة رادار جديدة</span>
+              <span className="text-[.85rem] text-soft">· {today} · يتحدّث تلقائيًا عند وصول صيدة موثوقة جديدة</span>
             </div>
           </FadeUp>
           <FadeUp delay={0.08}>
@@ -231,7 +211,6 @@ export default function Curated() {
             </CardWrap>
           </FadeUp>
 
-          {/* الإيقاعان الآخران */}
           <div className="mt-8 grid gap-6 md:grid-cols-2">
             <FadeUp delay={0.14}>
               <CardWrap c={book} className="flex h-full flex-col rounded-2xl border border-hair p-7">
@@ -242,7 +221,7 @@ export default function Curated() {
             </FadeUp>
             <FadeUp delay={0.2}>
               <Link to="/questions" data-hover className="group flex h-full flex-col rounded-2xl border border-hair p-7 transition-colors hover:border-accent">
-                <span className="text-[.74rem] font-semibold text-accent">سؤال متجدد ✦</span>
+                <span className="text-[.74rem] font-semibold text-accent">سؤال متجدد</span>
                 <h3 className="mt-3 font-display text-[1.2rem] font-semibold leading-[1.7] text-ink">سؤال يُقلق التعليم</h3>
                 <p className="mt-2 text-[.9rem] font-light text-soft">سؤال جديد كل يومين؛ قصير في صياغته، واسع في أثره.</p>
                 <span className="mt-auto pt-5 text-[.85rem] text-soft transition-colors group-hover:text-accent">إلى الزاوية ←</span>
@@ -252,41 +231,39 @@ export default function Curated() {
         </div>
       </section>
 
-      {/* ─── رادار الشبكة ─── */}
-      <RadarSection />
+      <RadarSection items={dynamic} />
 
-      {/* ─── الأرشيف الكامل بأركانه ─── */}
       <section className="px-6 py-14 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">
           <FadeUp>
             <div className="flex flex-wrap gap-2">
-              {['الكل', ...curioKinds].map((k) => (
+              {['الكل', ...curioKinds].map((itemKind) => (
                 <button
-                  key={k}
-                  onClick={() => setKind(k)}
-                  className={`rounded-full border px-4 py-1.5 text-[.85rem] font-medium transition-colors duration-300 ${kind === k ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
+                  key={itemKind}
+                  onClick={() => setKind(itemKind)}
+                  className={`rounded-full border px-4 py-1.5 text-[.85rem] font-medium transition-colors duration-300 ${kind === itemKind ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
                 >
-                  {k}
+                  {itemKind}
                 </button>
               ))}
             </div>
           </FadeUp>
 
           <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {shown.map((c, i) => (
+            {shown.map((item, index) => (
               <motion.div
-                key={c.ar}
+                key={item.url || item.ar}
                 initial={reduce ? false : { opacity: 0, y: 26 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.7, delay: Math.min((i % 6) * 0.06, 0.3), ease: EASE }}
+                transition={{ duration: 0.7, delay: Math.min((index % 6) * 0.06, 0.3), ease: EASE }}
                 whileHover={reduce ? {} : { y: -6 }}
                 className="h-full"
               >
-                <CardWrap c={c} className="flex h-full flex-col rounded-2xl border border-hair bg-canvas p-7">
-                  <span className="text-[.74rem] font-semibold text-accent">{c.kind}</span>
-                  <div className="mt-3 flex-1"><CurioBody c={c} /></div>
-                  <SourceLine c={c} />
+                <CardWrap c={item} className="flex h-full flex-col rounded-2xl border border-hair bg-canvas p-7">
+                  <span className="text-[.74rem] font-semibold text-accent">{item.kind}</span>
+                  <div className="mt-3 flex-1"><CurioBody c={item} /></div>
+                  <SourceLine c={item} />
                 </CardWrap>
               </motion.div>
             ))}
@@ -294,7 +271,7 @@ export default function Curated() {
 
           <FadeUp delay={0.1}>
             <p className="mt-14 border-t border-hair pt-8 text-[.85rem] leading-relaxed text-soft">
-              ✦ كل عنصر هنا يُذكر مصدره، وبطاقته تقود إليه مباشرة — ولا مكان لاقتباسٍ منحول أو مصدرٍ مجهول.
+              كل مادة حديثة هنا تأتي من خارج الموقع، ويقود الكرت إلى رابطها الأصلي مباشرة. لا تُستخدم مقالات الدكتور أو كتبه كمصدر للمختارات.
             </p>
           </FadeUp>
         </div>

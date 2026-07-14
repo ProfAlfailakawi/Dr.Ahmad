@@ -1,9 +1,9 @@
-name: رادار الدكتور اليومي
+name: رادار المختارات من الإنترنت
 
 on:
   schedule:
     # أربع محاولات يومية بتوقيت الكويت: 07:20، 12:20، 17:20، 22:20.
-    # السكربت يمنع التكرار تلقائياً إذا نُشرت صيدة اليوم.
+    # السكربت ينشر عنصرًا واحدًا فقط في اليوم ويمنع التكرار تلقائيًا.
     - cron: '20 4,9,14,19 * * *'
   workflow_dispatch:
 
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: daily-radar
+  group: daily-curated-radar
   cancel-in-progress: false
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: npm
 
       - name: Force public npm registry
@@ -36,19 +36,19 @@ jobs:
       - name: Install dependencies
         run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 
-      - name: Validate radar secrets
+      - name: Test RSS parser and trusted-source selection
+        run: node scripts/daily-radar.mjs --self-test
+
+      - name: Validate publishing credentials
         shell: bash
         run: |
-          missing=0
-          if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then
-            echo "::error::GEMINI_API_KEY or GOOGLE_API_KEY is missing. Radar cannot select and summarize today's item."
-            missing=1
-          fi
           if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
             echo "::error::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing. Radar cannot publish to Firestore."
-            missing=1
+            exit 1
           fi
-          if [ "$missing" -ne 0 ]; then exit 1; fi
+          if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then
+            echo "::warning::Gemini key is missing. Radar will still publish a safe source-grounded fallback; Arabic wording will be generic."
+          fi
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
@@ -59,7 +59,7 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
 
-      - name: Run radar and publish to Firestore
+      - name: Fetch trusted internet sources and publish today's pick
         run: npm run radar
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

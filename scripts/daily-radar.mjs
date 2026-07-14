@@ -1,26 +1,12 @@
 #!/usr/bin/env node
 /**
- * «الرادار» — التقاط يومي آلي من الإنترنت، بلا أي تدخل بشري.
+ * «رادار المختارات» — التقاط يومي آلي من الإنترنت، بلا تدخل بشري.
  *
- *   npm run radar          (يشغَّل يومياً عبر المجدول)
- *
- * جداران للحماية قبل أي نشر:
- *   الجدار ١ (ميكانيكي): editorial-policy.mjs — قائمة مصادر مغلقة
- *      (المصدر والرابط النهائي كلاهما يجب أن يطابقا القائمة)،
- *      و٢٥٠+ عبارة محظورة بالعربية والإنجليزية
- *      (ديني · عنصري · جنسي · عنف · بذاءة · لاأخلاقي) مع تطبيع نصي
- *      يمنع التحايل، وموضوع تعليمي إلزامي.
- *   الجدار ٢ (تحريري): Gemini يختار الأنفع من الناجين فقط، بتعليمات
- *      منع صريحة، وله حق الانسحاب (pick: 0) فلا يُنشر شيء ذلك اليوم.
- *
- * ضمانة المصدر: النموذج يعيد «رقم» المادة فقط — العنوان الإنجليزي
- * والرابط والمصدر تُنسخ حرفياً من الخلاصة، فيستحيل تلفيق رابط.
- *
- * الناتج: وثيقة واحدة يومياً في site_radar بمعرّف التاريخ
- * (تشغيل اليوم مرتين لا يكرر ولا يبدّل الصيدة) بحالة status: published.
- *
- * الإعداد (.env): GEMINI_API_KEY · FIREBASE_PROJECT_ID · FIREBASE_SERVICE_ACCOUNT
- * وضع المراجعة اليدوية بديل محفوظ في: daily-radar-review-queue.mjs
+ * - المصدر مغلق على قائمة المؤسسات والمجلات الموجودة في editorial-policy.json.
+ * - التصفية الميكانيكية تمنع الموضوعات غير المناسبة والمصادر غير المعتمدة.
+ * - الاختيار لا يعتمد على Gemini؛ لذلك لا تتوقف المختارات عند غياب المفتاح أو ازدحام النموذج.
+ * - Gemini يحسّن الصياغة العربية فقط عند توفره، مع بديل آمن لا يختلق أي معلومة.
+ * - وثيقة واحدة كحد أقصى يوميًا في site_radar، والرابط الأصلي لا يكتبه النموذج.
  */
 import { readFileSync, existsSync } from 'node:fs'
 import { createSign } from 'node:crypto'
@@ -29,180 +15,292 @@ import { fileURLToPath } from 'node:url'
 import { POLICY, evaluateCandidate } from './editorial-policy.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const SELF_TEST = process.argv.includes('--self-test')
 
-/* ---------- قراءة .env ---------- */
 const env = { ...process.env }
 const envFile = resolve(ROOT, '.env')
 if (existsSync(envFile)) {
   for (const line of readFileSync(envFile, 'utf8').split('\n')) {
-    const m = line.match(/^\s*([A-Z_]+)\s*=\s*(.*)\s*$/)
-    if (m && !env[m[1]]) env[m[1]] = m[2].replace(/^["']|["']$/g, '')
+    const match = line.match(/^\s*([A-Z_]+)\s*=\s*(.*)\s*$/)
+    if (match && !env[match[1]]) env[match[1]] = match[2].replace(/^["']|["']$/g, '')
   }
 }
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-/* ---------- جلب وتفكيك RSS/Atom (بلا اعتماديات) ---------- */
-const strip = (s = '') => s.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+const sleep = (ms) => new Promise((resolveSleep) => setTimeout(resolveSleep, ms))
+const decodeEntities = (value = '') => String(value)
+  .replace(/<!\[CDATA\[|\]\]>/g, '')
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+  .replace(/&#x([\da-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+  .replace(/&amp;/gi, '&')
+  .replace(/&quot;/gi, '"')
+  .replace(/&apos;/gi, "'")
+  .replace(/&lt;/gi, '<')
+  .replace(/&gt;/gi, '>')
+  .replace(/&nbsp;/gi, ' ')
+
+const strip = (value = '') => decodeEntities(value)
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const parseDate = (raw = '') => {
+  const text = strip(raw)
+  if (!text) return null
+  const date = new Date(text)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function firstMatch(block, expressions) {
+  for (const expression of expressions) {
+    const match = block.match(expression)
+    if (match?.[1]) return match[1]
+  }
+  return ''
+}
+
+export function parseFeed(xml, source) {
+  const blocks = [...String(xml).matchAll(/<(item|entry)\b[\s\S]*?<\/\1>/gi)]
+    .slice(0, 14)
+    .map((match) => match[0])
+
+  return blocks.map((block) => {
+    const rawLink = firstMatch(block, [
+      /<link\b[^>]*\bhref=["']([^"']+)["'][^>]*>/i,
+      /<link\b[^>]*>([\s\S]*?)<\/link>/i,
+      /<guid\b[^>]*isPermaLink=["']true["'][^>]*>([\s\S]*?)<\/guid>/i,
+    ])
+    let link = strip(rawLink)
+    try { link = new URL(link, source.feedUrl).href } catch { link = '' }
+
+    const description = firstMatch(block, [
+      /<description\b[^>]*>([\s\S]*?)<\/description>/i,
+      /<summary\b[^>]*>([\s\S]*?)<\/summary>/i,
+      /<content(?::encoded)?\b[^>]*>([\s\S]*?)<\/content(?::encoded)?>/i,
+    ])
+    const rawDate = firstMatch(block, [
+      /<pubDate\b[^>]*>([\s\S]*?)<\/pubDate>/i,
+      /<published\b[^>]*>([\s\S]*?)<\/published>/i,
+      /<updated\b[^>]*>([\s\S]*?)<\/updated>/i,
+      /<dc:date\b[^>]*>([\s\S]*?)<\/dc:date>/i,
+    ])
+    const publishedAt = parseDate(rawDate)
+
+    return {
+      source: source.name,
+      title: strip(firstMatch(block, [/<title\b[^>]*>([\s\S]*?)<\/title>/i])),
+      link,
+      desc: strip(description).slice(0, 700),
+      publishedAt,
+    }
+  }).filter((item) => item.title && item.link)
+}
 
 async function fetchFeed(source) {
   try {
-    const res = await fetch(source.feedUrl, { headers: { 'User-Agent': 'Mozilla/5.0 (alfailakawi-radar)' }, redirect: 'follow' })
-    if (!res.ok) return []
-    const xml = await res.text()
-    const items = [...xml.matchAll(/<(item|entry)[\s\S]*?<\/\1>/g)].slice(0, 8)
-    return items.map(([block]) => ({
-      source: source.name,
-      title: strip((block.match(/<title[^>]*>([\s\S]*?)<\/title>/) || [])[1]),
-      link: strip((block.match(/<link[^>]*href="([^"]+)"/) || block.match(/<link[^>]*>([\s\S]*?)<\/link>/) || [])[1]),
-      desc: strip((block.match(/<(description|summary|content)[^>]*>([\s\S]*?)<\/\2>/) || [])[2]).slice(0, 400),
-    })).filter((x) => x.title && x.link)
-  } catch { return [] }
+    const response = await fetch(source.feedUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (alfailakawi-curated-radar/2.0)' },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(20_000),
+    })
+    if (!response.ok) {
+      console.warn(`  ⚠ ${source.name}: HTTP ${response.status}`)
+      return []
+    }
+    const items = parseFeed(await response.text(), source)
+    console.log(`  • ${source.name}: ${items.length} مادة`)
+    return items
+  } catch (error) {
+    console.warn(`  ⚠ ${source.name}: ${error instanceof Error ? error.message : String(error)}`)
+    return []
+  }
 }
 
-/* ---------- Gemini: يختار رقماً ويصوغ — لا يكتب الروابط أبداً ---------- */
-async function pickAndSummarize(pool) {
+const topicSignals = [
+  'education', 'learning', 'school', 'teacher', 'student', 'university', 'classroom',
+  'artificial intelligence', 'generative ai', 'ai ', 'edtech', 'literacy', 'curriculum',
+  'تعليم', 'تعلم', 'مدرس', 'معلم', 'طالب', 'جامعة', 'ذكاء اصطناعي', 'تقنية', 'منهج',
+]
+
+function candidateScore(item) {
+  const text = `${item.title} ${item.desc}`.toLocaleLowerCase('en')
+  const signalScore = topicSignals.reduce((score, signal) => score + (text.includes(signal) ? 7 : 0), 0)
+  const ageHours = item.publishedAt ? Math.max(0, (Date.now() - item.publishedAt.getTime()) / 3_600_000) : 240
+  const freshnessScore = Math.max(0, 36 - Math.min(36, ageHours / 12))
+  const detailScore = Math.min(12, item.desc.length / 55)
+  return signalScore + freshnessScore + detailScore
+}
+
+function pickCandidate(items) {
+  return [...items].sort((left, right) => candidateScore(right) - candidateScore(left))[0] || null
+}
+
+function safeSummary(item) {
+  return {
+    ar: `مادة حديثة موثوقة في التعليم والتقنية من ${item.source}`,
+    arNote: 'اختارها الرادار لارتباطها المباشر بالتعليم أو التعلم أو الذكاء الاصطناعي. العنوان الأصلي والرابط يظهران كما نشرهما المصدر.',
+    en: item.title,
+    enNote: item.desc ? item.desc.slice(0, 220) : 'A recent item selected from a trusted education or technology source.',
+    source: item.source,
+    url: item.link,
+    publishedAt: item.publishedAt?.toISOString() || '',
+  }
+}
+
+async function geminiSummary(item) {
   const key = env.GEMINI_API_KEY || env.GOOGLE_API_KEY
-  if (!key) throw new Error('GEMINI_API_KEY أو GOOGLE_API_KEY مفقود')
+  if (!key) return safeSummary(item)
   const models = env.GEMINI_MODEL
     ? [env.GEMINI_MODEL]
     : ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-pro-latest']
 
-  const prompt = `أنت محرر أكاديمي لموقع أستاذ تكنولوجيا التعليم د. أحمد حسين الفيلكاوي (الكويت).
-أمامك مواد اليوم من مصادر موثوقة، مرقّمة. اختر «الأنفع» واحدة فقط لقارئ عربي مهتم بالتعليم والتقنية والذكاء الاصطناعي.
-أعد JSON فقط بلا أي نص آخر، بهذه الحقول حصراً:
-{"pick": رقم_المادة_المختارة, "ar":"عنوان عربي دقيق يلخص المادة", "arNote":"سطر عربي واحد: لماذا تهم القارئ التربوي", "enNote":"one short English line on why it matters"}
+  const prompt = `أنت محرر أكاديمي لموقع أستاذ تكنولوجيا التعليم د. أحمد حسين الفيلكاوي.
+لخّص المادة التالية من مصدر موثوق، من دون اختراع أي معلومة ومن دون تغيير الرابط أو اسم المصدر.
+أعد JSON فقط:
+{"ar":"عنوان عربي دقيق","arNote":"سطر عربي واحد يشرح لماذا تهم القارئ التربوي","enNote":"one short English line on why it matters"}
 
-قواعد صارمة لا استثناء فيها:
-١. لخّص من النص المعطى فقط — يُمنع تأليف أي معلومة ليست فيه.
-٢. يُمنع منعاً باتاً اختيار أي مادة: سياسية أو جدلية، عنصرية أو تمييزية،
-   دينية أو طائفية، جنسية أو خادشة، فيها عنف أو إساءة لفئة أو شخص,
-   أو أي محتوى لا يليق ببيئة أكاديمية محافظة.
-٣. المسموح حصراً: التعليم، التربية، التقنية، الذكاء الاصطناعي، البحث العلمي، مهارات التعلم.
-٤. إن لم تجد مادة واحدة تحقق كل الشروط أعلاه، أعد: {"pick": 0} — الانسحاب أفضل من نشر مشبوه.
+المصدر: ${item.source}
+العنوان الأصلي: ${item.title}
+الوصف: ${item.desc || 'لا يوجد وصف إضافي؛ التزم بالعنوان فقط.'}`
 
-المواد:
-${pool.map((x, i) => `${i + 1}. [${x.source}] ${x.title} — ${x.desc}`).join('\n')}`
-
-  // المصادقة بالهيدر + دورتان على سلسلة الموديلات عند الزحام المؤقت
-  let data, lastErr
-  outer:
-  for (let round = 1; round <= 2 && !data; round++) {
+  let lastError = ''
+  for (let round = 0; round < 2; round += 1) {
     for (const model of models) {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json' } }),
-      })
-      if (res.ok) { data = await res.json(); console.log(`  النموذج: ${model}`); break outer }
-      lastErr = `Gemini ${model} → ${res.status}: ${(await res.text()).slice(0, 120)}`
-      if (![503, 429, 404].includes(res.status)) throw new Error(lastErr)
-      console.log(`  ⏳ ${model} غير متاح — أجرب البديل`)
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseMimeType: 'application/json', temperature: 0.25 },
+          }),
+          signal: AbortSignal.timeout(35_000),
+        })
+        if (!response.ok) {
+          lastError = `${model} → ${response.status}`
+          continue
+        }
+        const payload = await response.json()
+        const output = JSON.parse(payload?.candidates?.[0]?.content?.parts?.[0]?.text || '{}')
+        const ar = String(output.ar || '').trim()
+        const arNote = String(output.arNote || '').trim()
+        const enNote = String(output.enNote || '').trim()
+        if (ar.length < 12 || arNote.length < 20) throw new Error('صياغة قصيرة أو فارغة')
+        return {
+          ar: ar.slice(0, 210),
+          arNote: arNote.slice(0, 320),
+          en: item.title,
+          enNote: (enNote || safeSummary(item).enNote).slice(0, 300),
+          source: item.source,
+          url: item.link,
+          publishedAt: item.publishedAt?.toISOString() || '',
+        }
+      } catch (error) {
+        lastError = error instanceof Error ? error.message : String(error)
+      }
     }
-    if (!data && round === 1) {
-      console.log('  ⏳ كل الموديلات مزدحمة — انتظار ٩٠ ثانية ودورة أخيرة')
-      await sleep(90000)
-    }
+    if (round === 0) await sleep(8_000)
   }
-  if (!data) throw new Error(lastErr)
-  const out = JSON.parse(data.candidates[0].content.parts[0].text)
-
-  // «الانسحاب بأدب»: لا مادة نظيفة اليوم ← لا ننشر شيئاً
-  if (Number(out.pick) === 0) {
-    console.log('⊘ لم يجد المحرر مادة تليق بالشروط اليوم — لا نشر. (سلوك صحيح لا خطأ)')
-    process.exit(0)
-  }
-  const item = pool[Number(out.pick) - 1]
-  if (!item) throw new Error(`رقم اختيار غير صالح: ${out.pick}`)
-
-  return {
-    ar: String(out.ar || item.title).slice(0, 200),
-    arNote: String(out.arNote || '').slice(0, 300),
-    en: item.title,          // العنوان الأصلي حرفياً — بلا أي تدخل
-    enNote: String(out.enNote || '').slice(0, 300),
-    source: item.source,     // المصدر حرفياً
-    url: item.link,          // الرابط حرفياً — الزائر يصل للمصدر نفسه
-  }
+  console.warn(`  ⚠ تعذّر تحسين الصياغة بالذكاء الاصطناعي (${lastError}) — استخدمت البديل الآمن.`)
+  return safeSummary(item)
 }
 
-/* ---------- Firestore REST عبر حساب الخدمة (بلا اعتماديات) ---------- */
 async function firestoreToken() {
   const saPath = resolve(ROOT, env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')
   if (!existsSync(saPath)) throw new Error(`ملف حساب الخدمة مفقود: ${saPath}`)
-  const sa = JSON.parse(readFileSync(saPath, 'utf8'))
-  const now = Math.floor(Date.now() / 1000)
-  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
-  const unsigned = `${b64({ alg: 'RS256', typ: 'JWT' })}.${b64({
-    iss: sa.client_email, scope: 'https://www.googleapis.com/auth/datastore',
-    aud: 'https://oauth2.googleapis.com/token', iat: now, exp: now + 3600,
+  const serviceAccount = JSON.parse(readFileSync(saPath, 'utf8'))
+  const issuedAt = Math.floor(Date.now() / 1000)
+  const encode = (value) => Buffer.from(JSON.stringify(value)).toString('base64url')
+  const unsigned = `${encode({ alg: 'RS256', typ: 'JWT' })}.${encode({
+    iss: serviceAccount.client_email,
+    scope: 'https://www.googleapis.com/auth/datastore',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: issuedAt,
+    exp: issuedAt + 3600,
   })}`
-  const sig = createSign('RSA-SHA256').update(unsigned).sign(sa.private_key).toString('base64url')
-  const res = await fetch('https://oauth2.googleapis.com/token', {
+  const signature = createSign('RSA-SHA256').update(unsigned).sign(serviceAccount.private_key).toString('base64url')
+  const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${unsigned}.${sig}`,
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${unsigned}.${signature}`,
   })
-  if (!res.ok) throw new Error(`OAuth ${res.status}`)
-  return (await res.json()).access_token
+  if (!response.ok) throw new Error(`OAuth ${response.status}: ${(await response.text()).slice(0, 160)}`)
+  return (await response.json()).access_token
 }
 
-const FS_BASE = () => `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents`
+const firestoreBase = () => `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents`
 
 async function todayAlreadyPublished(token, day) {
-  const res = await fetch(`${FS_BASE()}/site_radar/${day}`, { headers: { Authorization: `Bearer ${token}` } })
-  return res.ok
+  const response = await fetch(`${firestoreBase()}/site_radar/${day}`, { headers: { Authorization: `Bearer ${token}` } })
+  return response.ok
 }
 
 async function recentRadarUrls(token) {
   try {
-    const res = await fetch(`${FS_BASE()}/site_radar?pageSize=30`, { headers: { Authorization: `Bearer ${token}` } })
-    if (!res.ok) return new Set()
-    const data = await res.json()
-    return new Set((data.documents || []).map((d) => d.fields?.url?.stringValue).filter(Boolean))
+    const response = await fetch(`${firestoreBase()}/site_radar?pageSize=60`, { headers: { Authorization: `Bearer ${token}` } })
+    if (!response.ok) return new Set()
+    const payload = await response.json()
+    return new Set((payload.documents || []).map((document) => document.fields?.url?.stringValue).filter(Boolean))
   } catch { return new Set() }
 }
 
 async function publish(item, token, day) {
   if (!env.FIREBASE_PROJECT_ID) throw new Error('FIREBASE_PROJECT_ID مفقود')
-  const fields = Object.fromEntries(
-    Object.entries({ ...item, status: 'published', day, createdAt: new Date().toISOString() })
-      .map(([k, v]) => [k, { stringValue: String(v) }])
-  )
-  const res = await fetch(`${FS_BASE()}/site_radar/${day}`, {
+  const values = { ...item, status: 'published', day, createdAt: new Date().toISOString() }
+  const fields = Object.fromEntries(Object.entries(values).map(([key, value]) => [key, { stringValue: String(value || '') }]))
+  const response = await fetch(`${firestoreBase()}/site_radar/${day}`, {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ fields }),
   })
-  if (!res.ok) throw new Error(`Firestore ${res.status}: ${(await res.text()).slice(0, 200)}`)
+  if (!response.ok) throw new Error(`Firestore ${response.status}: ${(await response.text()).slice(0, 220)}`)
 }
 
-/* ---------- التشغيل ---------- */
+function selfTest() {
+  const fixture = `<?xml version="1.0"?><rss><channel><item><title>AI literacy for teachers</title><link>https://example.org/story</link><description>New education research for classroom learning.</description><pubDate>Tue, 14 Jul 2026 08:00:00 GMT</pubDate></item></channel></rss>`
+  const items = parseFeed(fixture, { name: 'Fixture', feedUrl: 'https://example.org/feed' })
+  if (items.length !== 1 || !items[0].desc || !items[0].publishedAt) throw new Error('فشل اختبار قارئ RSS')
+  const selected = pickCandidate(items)
+  if (!selected || selected.link !== 'https://example.org/story') throw new Error('فشل اختبار الاختيار')
+  console.log(JSON.stringify({ ok: true, sources: POLICY.allowedSources.length, parsed: items.length, selected: selected.title }, null, 2))
+}
+
+if (SELF_TEST) {
+  selfTest()
+  process.exit(0)
+}
+
 const day = new Date().toISOString().slice(0, 10)
-console.log(`الرادار · ${day} · ${POLICY.allowedSources.length} مصادر موثوقة (قائمة مغلقة)\n`)
+console.log(`رادار المختارات · ${day} · ${POLICY.allowedSources.length} مصادر موثوقة\n`)
 
 const token = await firestoreToken()
-
-// تشغيل متكرر في نفس اليوم؟ لا نكرر ولا نبدّل
 if (await todayAlreadyPublished(token, day)) {
-  console.log(`✔ صيدة اليوم (${day}) منشورة أصلاً — لا حاجة لغيرها.`)
+  console.log(`✔ مختارة اليوم (${day}) منشورة أصلًا.`)
   process.exit(0)
 }
 
 const raw = (await Promise.all(POLICY.allowedSources.map(fetchFeed))).flat()
-console.log(`التقط ${raw.length} مادة خام`)
+console.log(`\nالتقط ${raw.length} مادة خام`)
 
-// الجدار الأول: السياسة التحريرية الميكانيكية (مصدر + رابط + موضوع + محظورات)
-const recent = await recentRadarUrls(token)
-const pool = raw.filter((x) => {
-  if (recent.has(x.link)) return false
-  const verdict = evaluateCandidate({ source: x.source, url: x.link, title: x.title, summary: x.desc })
-  return verdict.allowed
+const recentUrls = await recentRadarUrls(token)
+const pool = raw.filter((item) => {
+  if (recentUrls.has(item.link)) return false
+  if (item.publishedAt && Date.now() - item.publishedAt.getTime() > 21 * 86_400_000) return false
+  return evaluateCandidate({
+    source: item.source,
+    url: item.link,
+    title: item.title,
+    summary: item.desc,
+  }).allowed
 })
-console.log(`نجا من الجدار الأول: ${pool.length} مادة (استُبعد ${raw.length - pool.length})`)
-if (pool.length === 0) { console.log('⊘ لا مواد نظيفة اليوم — لا نشر.'); process.exit(0) }
 
-// الجدار الثاني: المحرر الآلي يختار أو ينسحب
-const chosen = await pickAndSummarize(pool)
-console.log(`اختار: ${chosen.ar}\n        ${chosen.en}\n المصدر: ${chosen.source}\n الرابط: ${chosen.url}`)
+console.log(`نجا من التحقق: ${pool.length} مادة`)
+if (!pool.length) {
+  console.log('⊘ لا توجد مادة حديثة وآمنة من القائمة الموثوقة الآن؛ سيعيد المجدول المحاولة لاحقًا اليوم.')
+  process.exit(0)
+}
 
-await publish(chosen, token, day)
-console.log('\n✔ نُشر في site_radar — يظهر في «المختارات» فوراً، ورابطه يقود للمصدر الأصلي')
+const chosen = pickCandidate(pool)
+const summary = await geminiSummary(chosen)
+console.log(`اختار: ${chosen.title}\nالمصدر: ${chosen.source}\nالرابط: ${chosen.link}`)
+await publish(summary, token, day)
+console.log('\n✔ نُشرت مختارة الإنترنت في site_radar وتظهر فورًا في /curated')

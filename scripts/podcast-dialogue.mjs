@@ -2474,6 +2474,11 @@ if (BAKEOFF && !flag('legacy-fixed-bakeoff')) {
       nameB: option.result.female.localName, country: `${option.result.male.locale} + ${option.result.female.locale}`,
       hardGate: { pass: option.result.pass }, audioHash: option.audioHash })) }
 
+  // حتى عند فشل البوابة الصارمة (مثلاً: لا صوت نسائي جاهز بلغ 85/100)، يجب أن
+  // يبقى لدينا manifest عام يشرح الحالة بدل أن تفشل خطوة الرفع بـ "no files found".
+  // بعض مراحل التقييم تنظف TMP عند فشل داخلي؛ لذلك نعيد ضمان المجلد هنا قبل الكتابة.
+  mkdirSync(stagedPublic, { recursive: true })
+  mkdirSync(dirname(BAKEOFF_PUBLIC), { recursive: true })
   writeFileSync(resolve(stagedPublic, 'manifest.json'), JSON.stringify(publicManifest, null, 2))
   const stagedPrivate = resolve(TMP, 'voice-bakeoff.private.json')
   writeFileSync(stagedPrivate, JSON.stringify(privateAudit, null, 2))

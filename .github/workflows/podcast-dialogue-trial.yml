@@ -1,17 +1,22 @@
-name: اختبار عينة الحوار والأصوات
+name: تجربة سماع الحلقة الحوارية
 
 on:
   workflow_dispatch:
+    inputs:
+      slug:
+        description: "Slug لمقال محدد. اتركه فارغًا لتجربة أحدث مقال."
+        required: false
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: podcast-voice-bakeoff
+  group: podcast-dialogue-trial
   cancel-in-progress: false
 
 jobs:
-  bakeoff:
+  trial:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -56,29 +61,31 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
-      - name: Generate blind Arabic dialogue samples
-        continue-on-error: true
-        run: npm run podcast:ar:bakeoff
+      - name: Generate trial dialogue episode
+        run: |
+          if [ -n "$SLUG" ]; then
+            node scripts/podcast-dialogue.mjs --lang=ar --trial --force --slug="$SLUG"
+          else
+            node scripts/podcast-dialogue.mjs --lang=ar --trial --force --latest=1
+          fi
         env:
+          SLUG: ${{ inputs.slug }}
+          PODCAST_TRIAL: "1"
           AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
           AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
-      - name: Upload blind public samples
+      - name: Upload trial audio and transcript
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: podcast-voice-bakeoff-public
-          path: public/audio/bakeoff
+          name: podcast-dialogue-trial-output
+          path: |
+            audio/*.dialogue.mp3
+            audio/*.dialogue.json
+            podcast-audits/*.ar.json
+            .podcast-state.json
           if-no-files-found: warn
           retention-days: 7
-
-      - name: Upload private technical report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: podcast-voice-bakeoff-private-report
-          path: podcast-audits/voice-bakeoff.private.json
-          if-no-files-found: warn
-          retention-days: 7
+          include-hidden-files: true

@@ -1,0 +1,94 @@
+name: حلقة حوارية كاملة للاعتماد
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: "Slug المقال المطلوب تحويله إلى حلقة كاملة"
+        required: true
+        default: "how-do-we-assess-without-breaking-the-human-beingarabic"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: podcast-dialogue-final-review-${{ github.event.inputs.slug }}
+  cancel-in-progress: false
+
+jobs:
+  final-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Force public npm registry
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          node scripts/normalize-npm-registry.mjs
+
+      - name: Install dependencies
+        run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+
+      - name: Install media tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Verify required secrets
+        run: |
+          if [ -z "$AZURE_SPEECH_KEY" ]; then
+            echo "::error::Missing GitHub secret: AZURE_SPEECH_KEY"
+            exit 1
+          fi
+          if [ -z "$AZURE_SPEECH_REGION" ]; then
+            echo "::error::Missing GitHub secret: AZURE_SPEECH_REGION"
+            exit 1
+          fi
+          if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then
+            echo "::error::Missing GitHub secret: GEMINI_API_KEY or GOOGLE_API_KEY"
+            exit 1
+          fi
+        env:
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+
+      - name: Generate one full review episode only
+        timeout-minutes: 45
+        run: node scripts/podcast-dialogue.mjs --lang=ar --slug="${{ github.event.inputs.slug }}" --force --trial
+        env:
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          PODCAST_TRIAL: "1"
+          PODCAST_AR_APPROVED_SAMPLE: "sample-d"
+          PODCAST_AR_MALE: "ar-AE-HamdanNeural"
+          PODCAST_AR_FEMALE: "ar-KW-NouraNeural"
+          PODCAST_AR_MALE_NAME: "فهد"
+          PODCAST_AR_FEMALE_NAME: "نورة"
+          PODCAST_AUTO_PROMOTE_PILOT: "false"
+
+      - name: Upload review episode
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: podcast-dialogue-final-review-${{ github.event.inputs.slug }}
+          path: |
+            audio/${{ github.event.inputs.slug }}.dialogue.mp3
+            audio/${{ github.event.inputs.slug }}.dialogue.json
+            podcast-audits/${{ github.event.inputs.slug }}.ar.json
+            .podcast-releases
+            .podcast-last-known-good
+          if-no-files-found: warn
+          retention-days: 7
+          include-hidden-files: true

@@ -88,11 +88,11 @@ const AR_VOICE_PAIRS = [
   { id: 'om', country: 'عُمان', nameA: 'عبدالله', nameB: 'عائشة', A: 'ar-OM-AbdullahNeural', B: 'ar-OM-AyshaNeural' },
 ]
 
-/* الزوج الافتراضي الثابت — Sample D اعتُمد صوتاً نسائياً نهائياً للحوار.
-   تبقى البيئة/لوحة التحكم قادرة على تجاوزه عند الحاجة، لكن السقوط الافتراضي الآن هو D. */
+/* الزوج الافتراضي الثابت — Sample B اعتُمد صوتاً رجالياً نهائياً مع Sample D النسائي.
+   تبقى البيئة/لوحة التحكم قادرة على التجاوز عند الحاجة، لكن السقوط الافتراضي الآن هو الزوج المعتمد. */
 const VOICES = {
   ar: {
-    A: { name: env.PODCAST_AR_MALE_NAME || 'فهد', azure: env.PODCAST_AR_MALE || 'ar-KW-FahedNeural' },
+    A: { name: env.PODCAST_AR_MALE_NAME || 'فهد', azure: env.PODCAST_AR_MALE || 'ar-AE-HamdanNeural' },
     B: { name: env.PODCAST_AR_FEMALE_NAME || 'نورة', azure: env.PODCAST_AR_FEMALE || 'ar-KW-NouraNeural' },
   },
   en: {
@@ -466,18 +466,18 @@ const EN_BANNED = ['Dear listeners','Welcome to another episode','Today we are g
 const DIACRITICS_RE = /[ً-ْٰ]/
 
 const AR_PACING = Object.freeze({
-  statement:       { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [180, 280] },
+  statement:       { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [200, 320] },
   question:        { ratePct: [-7, 5],  targetWpm: [134, 143], pauseMs: [500, 750] },
-  briefReaction:   { ratePct: [0, 12],  targetWpm: [145, 152], pauseMs: [120, 220] },
-  gentleObjection: { ratePct: [-1, 10], targetWpm: [142, 150], pauseMs: [180, 280] },
-  clarification:   { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [180, 280] },
+  briefReaction:   { ratePct: [2, 12],  targetWpm: [145, 152], pauseMs: [150, 240] },
+  gentleObjection: { ratePct: [1, 10], targetWpm: [142, 150], pauseMs: [180, 280] },
+  clarification:   { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [200, 320] },
   reflection:      { ratePct: [-14, 0], targetWpm: [125, 136], pauseMs: [650, 900] },
   conclusion:      { ratePct: [-14, -1], targetWpm: [122, 134], pauseMs: [560, 850] },
-  hook:            { ratePct: [-2, 8],  targetWpm: [138, 147], pauseMs: [180, 280] },
-  objection:       { ratePct: [-1, 10], targetWpm: [142, 150], pauseMs: [180, 280] },
-  quick:           { ratePct: [0, 12],  targetWpm: [145, 152], pauseMs: [120, 220] },
+  hook:            { ratePct: [-2, 8],  targetWpm: [138, 147], pauseMs: [200, 320] },
+  objection:       { ratePct: [1, 10], targetWpm: [142, 150], pauseMs: [180, 280] },
+  quick:           { ratePct: [2, 12],  targetWpm: [145, 152], pauseMs: [150, 240] },
   reflective:      { ratePct: [-14, 0], targetWpm: [125, 136], pauseMs: [650, 900] },
-  normal:          { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [180, 280] },
+  normal:          { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [200, 320] },
 })
 
 const AR_VOICE_RATE_OFFSETS = Object.freeze({
@@ -485,6 +485,8 @@ const AR_VOICE_RATE_OFFSETS = Object.freeze({
   'ar-KW-NouraNeural': -3,
   // فاطمة مريحة للقراءة، ولا تحتاج الإبطاء نفسه.
   'ar-AE-FatimaNeural': -1,
+  // Sample B الرجالي صار الصوت الافتراضي للحوار: لا نبطئه ككل، فقط نوع المداخلة يحدد الإيقاع.
+  'ar-AE-HamdanNeural': 0,
   'ar-KW-FahedNeural': -1,
 })
 
@@ -577,7 +579,7 @@ function normalizeMechanics(sc) {
       const next = { ...u, text: piece, allowOverlap: false, overlapMs: 0,
         musicBridgeAfter: index === pieces.length - 1 ? Boolean(u.musicBridgeAfter) : false }
       if (index < pieces.length - 1) {
-        next.pauseAfterMs = Math.min(Number(u.pauseAfterMs) || 220, 180)
+        next.pauseAfterMs = Math.min(Number(u.pauseAfterMs) || 220, 200)
         next.ending = 'neutral'
       }
       if (piece.includes('؟')) { next.delivery = 'question'; next.ending = 'open' }
@@ -599,7 +601,7 @@ function normalizeMechanics(sc) {
       continue
     }
     u.delivery = 'clarification'
-    u.pauseAfterMs = stableBetween(u.text, i + 131, 190, 280)
+    u.pauseAfterMs = stableBetween(u.text, i + 131, 200, 320)
     if (u.ending === 'final') u.ending = 'neutral'
   }
 
@@ -3655,7 +3657,7 @@ async function loadApprovedVoices() {
   try {
     const adoptedSample = String(env.PODCAST_AR_APPROVED_SAMPLE || 'sample-d').trim().toLowerCase()
     if (adoptedSample === 'sample-d') {
-      VOICES.ar.A.azure = env.PODCAST_AR_MALE || 'ar-KW-FahedNeural'
+      VOICES.ar.A.azure = env.PODCAST_AR_MALE || 'ar-AE-HamdanNeural'
       VOICES.ar.B.azure = env.PODCAST_AR_FEMALE || 'ar-KW-NouraNeural'
       VOICES.ar.A.name = env.PODCAST_AR_MALE_NAME || 'فهد'
       VOICES.ar.B.name = env.PODCAST_AR_FEMALE_NAME || 'نورة'

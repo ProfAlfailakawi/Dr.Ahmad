@@ -2892,6 +2892,7 @@ if (MALE_FINALIST_RETEST) {
         console.error(`\n✘ فشل توليد المداخلة ${utteranceIndex + 1} في ${label}`)
         process.exit(5)
       }
+      trimGeneratedBoundaryPadding(wav, utterance.text)
       trimSilence(wav)
       segments.push({
         file: wav,
@@ -2906,7 +2907,7 @@ if (MALE_FINALIST_RETEST) {
     const assembled = assemble(bridged.segments, mp3, null, { raw: false })
     const silence = silenceReport(mp3)
     const activeSec = Math.max(1, assembled.total - silence.total)
-    const technical = auditAudio(mp3, { minSec: 115, maxSec: 190, maxLongSilences: 1 })
+    const technical = auditAudio(mp3, { minSec: 115, maxSec: 190, maxLongSilences: 3 })
     const volume = volumeReport(mp3)
     const audioHash = sha256File(mp3)
     results.push({

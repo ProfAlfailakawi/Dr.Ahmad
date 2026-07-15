@@ -1479,6 +1479,7 @@ async function evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnal
     attemptInsert.run(runId, utteranceId, variant.id, voice, variant.text, ssml, '', 0, 0, 0, new Date().toISOString())
     return { pass: false, score: -1, reason: 'فشل Azure TTS', variant, ssml, path }
   }
+  if (!preGenerated) compactInternalSilence(path)
   const intended = spokenText(variant.text, variant.subs)
   const technical = auditSegment(path, intended, u)
   if (runId.startsWith('bakeoff:')) {
@@ -1732,6 +1733,21 @@ const trimSilence = (file) => {
       tmp])
     if (existsSync(tmp) && statSync(tmp).size > 4000) writeFileSync(file, readFileSync(tmp))
   } catch { /* إن تعذّر التشذيب نُبقي الأصل ويكتشف الفائضَ فحصُ المقطع */ }
+  finally { rmSync(tmp, { force: true }) }
+}
+
+// أحياناً يزرع Azure صمتاً داخلياً طويلاً داخل المداخلة نفسها، خصوصاً بعد
+// سؤال أو فاصلة ثقيلة. هذا ليس «وقفة حوارية» لأن التايملاين هو من يدير
+// الوقفات بين المتحدثين. نعالج الصمت الداخلي آلياً قبل بوابة الجودة حتى
+// لا تفشل كل مقالة جديدة بسبب عثرة نطق عابرة.
+const compactInternalSilence = (file) => {
+  const tmp = `${file}.compact.wav`
+  try {
+    ff(['-i', file, '-af',
+      'silenceremove=stop_periods=-1:stop_threshold=-44dB:stop_duration=0.32:stop_silence=0.24:detection=peak',
+      tmp])
+    if (existsSync(tmp) && statSync(tmp).size > 4000) writeFileSync(file, readFileSync(tmp))
+  } catch { /* إن لم يدعم ffmpeg الصيغة في بيئة ما، تبقى بوابة الجودة مسؤولة */ }
   finally { rmSync(tmp, { force: true }) }
 }
 

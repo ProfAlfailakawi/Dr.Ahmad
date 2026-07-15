@@ -171,8 +171,8 @@ function assemble(voiceFiles, outMp3) {
       }
     }
   }
-  const outro = musicClip('outro', 3.8, 0.075)
-  if (outro) timeline.push({ file: outro, start: cursor + 0.1, kind: 'music' })
+  const outro = musicClip('outro', 7.2, 0.07)
+  if (outro) timeline.push({ file: outro, start: cursor + 0.18, kind: 'music' })
   const total = Math.max(...timeline.map((t) => t.start + probeDur(t.file))) + 0.35
   const inputs = []
   const filters = []

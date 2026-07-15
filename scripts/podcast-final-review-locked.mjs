@@ -129,7 +129,7 @@ async function synth(item, outPath) {
       if (buf.length > 4000) {
         writeFileSync(outPath, buf)
         const trimmed = `${outPath}.trim.wav`
-        ff(['-i', outPath, '-af', 'silenceremove=start_periods=1:start_duration=0.02:start_threshold=-42dB:stop_periods=1:stop_duration=0.05:stop_threshold=-42dB', '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', trimmed])
+        ff(['-i', outPath, '-af', 'silenceremove=start_periods=1:start_duration=0.02:start_threshold=-42dB,areverse,silenceremove=start_periods=1:start_duration=0.06:start_threshold=-42dB,areverse', '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', trimmed])
         rmSync(outPath, { force: true })
         writeFileSync(outPath, readFileSync(trimmed))
         rmSync(trimmed, { force: true })

@@ -115,6 +115,7 @@ const CANARY = flag('canary')
 const BAKEOFF = flag('voice-bakeoff')
 const VOICE_AUDITION = flag('voice-audition')
 const VOICE_FINALIST_RETEST = flag('voice-finalist-retest')
+const MALE_FINALIST_RETEST = flag('male-finalist-retest')
 let PILOT_MODE = flag('pilot') || Number(opt('pilot') || 0) > 0
 let PILOT_COUNT = Math.min(3, Math.max(1, Number(opt('pilot') || env.PODCAST_PILOT_COUNT || 3)))
 const ROLLBACK_SLUG = opt('rollback')
@@ -124,7 +125,7 @@ const REQUIRE_PILOT_GATE = String(env.PODCAST_REQUIRE_PILOT_GATE || 'true').toLo
 const LIGHT = false
 let ARABIC_PRODUCTION_GATE_READY = false
 if (!SELF_TEST && !ROLLBACK_SLUG && !AZURE_KEY) { console.error('✘ AZURE_SPEECH_KEY مفقود'); process.exit(1) }
-if (!SELF_TEST && !ROLLBACK_SLUG && !VOICE_AUDITION && !VOICE_FINALIST_RETEST && !PREFLIGHT && !GEMINI_KEY) { console.error('✘ GEMINI_API_KEY أو GOOGLE_API_KEY مفقود'); process.exit(1) }
+if (!SELF_TEST && !ROLLBACK_SLUG && !VOICE_AUDITION && !VOICE_FINALIST_RETEST && !MALE_FINALIST_RETEST && !PREFLIGHT && !GEMINI_KEY) { console.error('✘ GEMINI_API_KEY أو GOOGLE_API_KEY مفقود'); process.exit(1) }
 if (!SELF_TEST) {
   const acquire = () => writeFileSync(LOCK_FILE, JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }), { flag: 'wx' })
   try { acquire() }
@@ -2822,6 +2823,140 @@ if (SELF_TEST) {
   'نورة تحتاج إبطاءً أدائياً أكبر من فاطمة وفق الاختبار السمعي')
   assert(selectMusicBridgeIndexes(normalizedSample.utterances).length <= 1, 'العينة القصيرة لا تحتمل أكثر من جسر موسيقي واحد')
   console.log('✓ اختبارات بوابة البودكاست العربي: 20/20')
+  process.exit(0)
+}
+
+/* ═══════════ اختبار الصوت الرجالي مع Sample D الثابتة ═══════════
+   لا يفعّل النشر الشامل، ولا يغيّر صوت المرأة أو سرعة الحلقة النهائية. الهدف:
+   ثلاث عينات عمياء، المتغيّر الوحيد فيها هو الصوت الرجالي، حتى يختار الدكتور
+   المحاور الأكثر دفئًا وطبيعية وانسجامًا مع Sample D. */
+if (MALE_FINALIST_RETEST) {
+  const sample = JSON.parse(readFileSync(resolve(ROOT, 'scripts/male-audition-sample.json'), 'utf8'))
+  const female = opt('female') || env.PODCAST_AR_FEMALE || 'ar-KW-NouraNeural'
+  const maleCandidates = (opt('males') || `${env.PODCAST_AR_MALE || 'ar-KW-FahedNeural'},ar-SA-HamedNeural,ar-AE-HamdanNeural`)
+    .split(',').map((voice) => voice.trim()).filter(Boolean).slice(0, 3)
+  if (maleCandidates.length !== 3) {
+    console.error('✘ اختبار الرجال يحتاج ثلاثة أصوات مفصولة بفواصل عبر --males=')
+    process.exit(2)
+  }
+  await verifyAzureVoices([...maleCandidates, female])
+  const outDir = resolve(ROOT, 'public/audio/male-finalists')
+  mkdirSync(AUDITS, { recursive: true })
+  rmSync(outDir, { recursive: true, force: true }); mkdirSync(outDir, { recursive: true })
+
+  const music = selectLicensedMusic('تأملي')
+  const labels = ['Sample A', 'Sample B', 'Sample C']
+  const shuffled = secureShuffle(maleCandidates.map((voiceName, originalIndex) => ({ voiceName, originalIndex })))
+  const sampleWords = sample.utterances.reduce((count, utterance) =>
+    count + String(utterance.text).trim().split(/\s+/).filter(Boolean).length, 0)
+  const silenceReport = (mp3) => {
+    const detected = spawnSync(FFMPEG, ['-hide_banner', '-i', mp3, '-af',
+      'silencedetect=noise=-35dB:d=0.12', '-f', 'null', '-'], { encoding: 'utf8' }).stderr || ''
+    const durations = [...detected.matchAll(/silence_duration:\s*([0-9.]+)/g)].map((match) => Number(match[1]))
+    const total = durations.reduce((sum, value) => sum + value, 0)
+    return {
+      count: durations.length,
+      total,
+      avg: durations.length ? total / durations.length : 0,
+      max: durations.length ? Math.max(...durations) : 0,
+      over1000: durations.filter((duration) => duration > 1).length,
+    }
+  }
+  const volumeReport = (mp3) => {
+    const volume = spawnSync(FFMPEG, ['-hide_banner', '-i', mp3, '-af', 'volumedetect',
+      '-f', 'null', '-'], { encoding: 'utf8' }).stderr || ''
+    return {
+      peakDb: Number((volume.match(/max_volume:\s*(-?[0-9.]+) dB/) || [])[1]),
+      meanDb: Number((volume.match(/mean_volume:\s*(-?[0-9.]+) dB/) || [])[1]),
+    }
+  }
+  const results = []
+  for (let index = 0; index < shuffled.length; index++) {
+    const label = labels[index]
+    const key = `sample-${String.fromCharCode(97 + index)}`
+    const male = shuffled[index].voiceName
+    const tmp = resolve(TMP, `male-finalist-${key}`)
+    rmSync(tmp, { recursive: true, force: true }); mkdirSync(tmp, { recursive: true })
+    const utterances = sample.utterances.map((utterance) => ({ ...utterance }))
+    const segments = []
+    let regenerated = 0
+    process.stdout.write(`\n♪ ${label} `)
+    for (let utteranceIndex = 0; utteranceIndex < utterances.length; utteranceIndex++) {
+      const utterance = utterances[utteranceIndex]
+      const voice = utterance.speaker === 'A' ? male : female
+      const wav = resolve(tmp, `u${String(utteranceIndex + 1).padStart(2, '0')}.wav`)
+      const ssml = buildSSML(utterance, utterance.pronunciationText || utterance.text, [], voice, 'ar')
+      let ok = await synthSSML(ssml, wav)
+      if (!ok) { regenerated++; ok = await synthSSML(ssml, wav) }
+      if (!ok) {
+        console.error(`\n✘ فشل توليد المداخلة ${utteranceIndex + 1} في ${label}`)
+        process.exit(5)
+      }
+      trimSilence(wav)
+      segments.push({
+        file: wav,
+        pauseAfterMs: Number(utterance.pauseAfterMs || 300),
+        overlapMs: Number(utterance.overlapMs || 0),
+        hasHighRisk: portableSampleRisks(utterance).some((risk) => risk.riskLevel === 'high'),
+      })
+      process.stdout.write('.')
+    }
+    const bridged = insertSemanticMusicBridges(segments, utterances, music, tmp)
+    const mp3 = resolve(outDir, `${key}.mp3`)
+    const assembled = assemble(bridged.segments, mp3, null, { raw: false })
+    const silence = silenceReport(mp3)
+    const activeSec = Math.max(1, assembled.total - silence.total)
+    const technical = auditAudio(mp3, { minSec: 115, maxSec: 190, maxLongSilences: 1 })
+    const volume = volumeReport(mp3)
+    const audioHash = sha256File(mp3)
+    results.push({
+      label,
+      file: `${key}.mp3`,
+      durationSec: +assembled.total.toFixed(1),
+      wordsPerMinute: Math.round(sampleWords * 60 / activeSec),
+      utteranceCount: utterances.length,
+      averageUtteranceWords: +(sampleWords / utterances.length).toFixed(1),
+      pauseCount: silence.count,
+      averagePauseMs: Math.round(silence.avg * 1000),
+      longestPauseMs: Math.round(silence.max * 1000),
+      pausesOver1000ms: silence.over1000,
+      totalSilenceSec: +silence.total.toFixed(1),
+      silenceRatioPct: +(silence.total / assembled.total * 100).toFixed(1),
+      musicBridges: bridged.bridges,
+      regeneratedSegments: regenerated,
+      technicalIssues: technical.issues,
+      peakDb: Number.isFinite(volume.peakDb) ? volume.peakDb : null,
+      meanDb: Number.isFinite(volume.meanDb) ? volume.meanDb : null,
+      audioHash,
+      internal: {
+        maleVoiceName: male,
+        femaleVoiceName: female,
+        originalCandidateIndex: shuffled[index].originalIndex,
+      },
+    })
+  }
+  const publicManifest = {
+    generatedAt: new Date().toISOString(),
+    title: sample.title,
+    note: 'اختبار أعمى للصوت الرجالي: Sample D ثابتة، والنص والوقفات والموسيقى ثابتة، والمتغير الوحيد هو الرجل.',
+    samples: results.map(({ label, file, durationSec, wordsPerMinute, audioHash }) => ({
+      label,
+      file,
+      durationSec,
+      wordsPerMinute,
+      url: `/audio/male-finalists/${file}?v=${audioHash.slice(0, 16)}`,
+    })),
+  }
+  writeFileSync(resolve(outDir, 'manifest.json'), JSON.stringify(publicManifest, null, 2))
+  writeFileSync(resolve(AUDITS, 'male-finalist-retest.private.json'), JSON.stringify({
+    generatedAt: publicManifest.generatedAt,
+    gate: { autoPublishEnabled: false, reason: 'النشر الشامل لا يفتح قبل اعتماد الزوج الفائز وحلقة كاملة واحدة.' },
+    mapping: results,
+  }, null, 2))
+  console.log('\n\n═══ اختبار الرجال مع Sample D ═══')
+  for (const result of results)
+    console.log(`\n▶ ${result.label} · ${result.wordsPerMinute} كلمة/دقيقة · ${result.durationSec}ث · أطول وقفة ${result.longestPauseMs}ms · جسور ${result.musicBridges.length}`)
+  console.log('\n✅ العينات العمياء في public/audio/male-finalists/')
   process.exit(0)
 }
 

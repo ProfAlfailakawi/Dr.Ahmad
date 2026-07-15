@@ -3,6 +3,9 @@
  * حلقة مراجعة مقفلة: تستخدم الزوج المعتمد فقط (Sample B الرجل + Sample D المرأة)
  * لإنتاج ملف استماع كامل عند تعطل Gemini أو نفاد رصيده. لا تنشر، لا ترفع إلى R2،
  * ولا تكتب داخل Firebase. هدفها: سماع الإيقاع والنبرة قبل فتح النشر الشامل.
+ *
+ * مبدأ قبول ثابت: الزمن مؤشر تقني فقط، وليس هدفًا إنتاجيًا. لا نضغط الحلقة ولا نمددها
+ * لإرضاء رقم معيّن؛ الحاكم الحقيقي هو بشرية الحوار، صحة الفصحى، النفس، والوقفات.
  */
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, statSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
@@ -215,7 +218,7 @@ writeFileSync(outJson, JSON.stringify(transcript, null, 2))
 writeFileSync(outAudit, JSON.stringify({
   generatedAt: transcript.generatedAt,
   status: 'review_only_not_published',
-  reason: 'Gemini strict generation can be bypassed only for human listening review; automatic publishing remains disabled.',
+  reason: 'Quality-first human listening review; duration is diagnostic only and automatic publishing remains disabled.',
   words,
   durationSec: +assembled.total.toFixed(1),
   averageWordsPerMinute: Math.round(words * 60 / Math.max(1, assembled.total - 9)),

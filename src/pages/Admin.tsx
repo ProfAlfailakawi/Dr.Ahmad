@@ -21,6 +21,7 @@ import { IntelligenceLab } from '../components/admin/IntelligenceLab'
 import { PublishingStudio } from '../components/admin/PublishingStudio'
 import { VoiceBakeoffCard } from '../components/admin/VoiceBakeoff'
 import { ManualDialogueEditor } from '../components/admin/ManualDialogueEditor'
+import { ProductionHealthCenter } from '../components/admin/ProductionHealthCenter'
 import { AdminTaskFavicon, AdminTaskIndicator } from '../components/admin/AdminTaskFavicon'
 import { UploadField } from '../components/admin/ContentManager'
 import { useSeo } from '../components/seo'
@@ -237,7 +238,7 @@ function CvPdfCard() {
 function Panel({ email }: { email: string }) {
   const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const requestedTab = params.get('tab') as AdminTab | null
-  const allowedTabs: AdminTab[] = ['dashboard','analytics','studio','launch','event','articles','books','papers','media','inbox','lab','voice','manual-dialogue','cv']
+  const allowedTabs: AdminTab[] = ['dashboard','production','analytics','studio','launch','event','articles','books','papers','media','inbox','lab','voice','manual-dialogue','cv']
   const initialTab = requestedTab && allowedTabs.includes(requestedTab) ? requestedTab : 'dashboard'
   const editSlug = params.get('edit') || undefined
   const [tab, setTab] = useState<AdminTab>(initialTab)
@@ -315,6 +316,7 @@ function Panel({ email }: { email: string }) {
           <AdminAreaTabs tab={tab} onSelect={chooseTab} />
           <AdminSectionTabs tab={tab} onSelect={chooseTab} />
             {tab === 'dashboard' && <TodayDashboard articles={cms.articles} onOpen={chooseTab} />}
+            {tab === 'production' && <ProductionHealthCenter articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />}
             {tab === 'analytics' && <Indicators articles={cms.articles} />}
             {tab === 'studio' && <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} />}
             {tab === 'launch' && <LaunchModeCard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} />}

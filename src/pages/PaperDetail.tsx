@@ -28,7 +28,6 @@ export default function PaperDetail() {
 
   const prev = papers[i - 1]
   const next = papers[i + 1]
-  const paperLink = p.source || p.pdf
 
   return (
     <Page>
@@ -85,43 +84,44 @@ export default function PaperDetail() {
           )}
 
           <FadeUp delay={0.14}>
-            {paperLink ? (
-              <a
-                href={paperLink}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-10 inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep"
-              >
-                اقرأ البحث في مصدره المنشور ←
-              </a>
-            ) : (
-              <div className="mt-10 rounded-2xl border border-hair bg-wash p-8 text-center">
-                <p className="text-[1rem] font-light leading-[1.9] text-ink/80 dark:text-soft">
-                  ملخّص هذا البحث لم يُضَف بعد.
-                </p>
-                <p className="mt-2 text-[.85rem] text-soft">للحصول على نسخة، تواصل معي مباشرة.</p>
-                <Link to="/contact" className="mt-6 inline-block rounded-full border-[1.5px] border-accent px-7 py-3 font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas">
+            <div className="mt-10 flex flex-wrap gap-3">
+              {p.source && (
+                <a href={p.source} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-full bg-accent px-7 py-3.5 font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep">
+                  صفحة البحث لدى الناشر ←
+                </a>
+              )}
+              {p.pdf && (
+                <a href={p.pdf} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-full border-[1.5px] border-accent px-7 py-3.5 font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas">
+                  تحميل نسخة PDF
+                </a>
+              )}
+              {!p.source && !p.pdf && (
+                <Link to="/contact" className="inline-flex items-center rounded-full border-[1.5px] border-accent px-7 py-3.5 font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas">
                   اطلب نسخة
                 </Link>
-              </div>
+              )}
+            </div>
+            {(p as { verification?: string }).verification === 'needs-manual-review' && (
+              <p className="mt-4 rounded-xl border border-amber-300/50 bg-amber-50/70 px-4 py-3 text-[.82rem] leading-[1.8] text-amber-900 dark:bg-amber-950/20 dark:text-amber-100">
+                بيانات هذا البحث مأخوذة من قائمة الإنتاج العلمي، ويحتاج رابط الناشر والملخص الأصلي إلى مراجعة يدوية نهائية.
+              </p>
             )}
-            {/* الفهرسة الأكاديمية — أيقونتان أنيقتان: رابط البحث نفسه إن وُجد، وإلا ملفّا الدكتور */}
             {(() => {
               const links = p as { scholar?: string; researchgate?: string }
-              const scholar = links.scholar || profile.scholar
-              const researchgate = links.researchgate || profile.researchgate
+              const scholar = links.scholar
+              const researchgate = links.researchgate
               if (!scholar && !researchgate) return null
               const btn = 'inline-flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent'
               return (
                 <div className="mt-7 flex items-center gap-3">
-                  <span className="text-[.82rem] text-soft">اطّلع أيضاً في</span>
+                  <span className="text-[.82rem] text-soft">فهرسة البحث نفسه</span>
                   {scholar && (
-                    <a href={scholar} target="_blank" rel="noreferrer" aria-label="Google Scholar" title="Google Scholar" className={btn}>
+                    <a href={scholar} target="_blank" rel="noreferrer" aria-label="البحث نفسه في Google Scholar" title="Google Scholar" className={btn}>
                       <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="currentColor" aria-hidden="true"><path d="M5.242 13.769 0 9.5 12 0l12 9.5-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5s-5.548 1.749-6.758 4.269zM12 10a7 7 0 1 0 0 14 7 7 0 0 0 0-14z" /></svg>
                     </a>
                   )}
                   {researchgate && (
-                    <a href={researchgate} target="_blank" rel="noreferrer" aria-label="ResearchGate" title="ResearchGate" className={btn}>
+                    <a href={researchgate} target="_blank" rel="noreferrer" aria-label="صفحة البحث نفسه في ResearchGate" title="ResearchGate" className={btn}>
                       <span className="text-[.72rem] font-bold leading-none tracking-tight">R<span className="text-accent">G</span></span>
                     </a>
                   )}

@@ -7,6 +7,7 @@ import { EASE } from '../motion'
 
 export type AdminTab =
   | 'dashboard'
+  | 'production'
   | 'analytics'
   | 'studio'
   | 'launch'
@@ -30,6 +31,7 @@ export const ADMIN_GROUPS: NavGroup[] = [
   {
     area: 'system', label: 'النظام', icon: '◉', items: [
       { tab: 'dashboard', label: 'غرفة القيادة', note: 'ما يحتاج قرارك الآن' },
+      { tab: 'production', label: 'غرفة الإنتاج', note: 'البودكاست وصحة المحتوى والمسارات' },
       { tab: 'lab', label: 'المختبر المتقدم', note: 'الفحص والذاكرة والأتمتة' },
       { tab: 'voice', label: 'الصوت والبودكاست', note: 'اختبار الأصوات والجودة' },
       { tab: 'manual-dialogue', label: 'الحوار اليدوي للحلقة', note: 'كتابة فهد ونورة مداخلةً مداخلة' },

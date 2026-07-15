@@ -1,5 +1,6 @@
 import { Navigate, useLocation, useParams } from 'react-router-dom'
 import NotFound from './NotFound'
+import { papers } from '../data'
 
 /**
  * جسر روابط الموقع السابق → المسارات الجديدة.
@@ -69,10 +70,32 @@ export function LegacyArticle() {
   return <Navigate to={`/articles/${slug}`} replace />
 }
 
-/** /scholarly_contributi/:slug — الأبحاث (الـslug نفسه) */
+const PAPER_STOP_WORDS = new Set(['في', 'من', 'على', 'إلى', 'الى', 'عن', 'the', 'of', 'in', 'at', 'and', 'for', 'to', 'a', 'an', '2'])
+const normalizePaperText = (value: string) => decodeURIComponent(value || '')
+  .toLowerCase()
+  .replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+  .replace(/[ًٌٍَُِّْ]/g, '')
+  .replace(/[^a-z0-9؀-ۿ]+/g, ' ')
+  .trim()
+const paperTokens = (value: string) => normalizePaperText(value).split(/\s+/).filter((token) => token.length > 1 && !PAPER_STOP_WORDS.has(token))
+const resolveLegacyPaper = (legacySlug: string) => {
+  const legacy = paperTokens(legacySlug)
+  if (!legacy.length) return undefined
+  let best: { slug: string; score: number; matches: number } | undefined
+  for (const paper of papers) {
+    const tokens = new Set([...paperTokens(paper.title), ...paperTokens(paper.slug)])
+    const matches = legacy.filter((token) => tokens.has(token)).length
+    const score = matches / Math.max(legacy.length, 1)
+    if (!best || score > best.score || (score === best.score && matches > best.matches)) best = { slug: paper.slug, score, matches }
+  }
+  return best && (best.matches >= 3 || best.score >= 0.42) ? best.slug : undefined
+}
+
+/** روابط أبحاث ووردبريس القديمة كانت عربية ومختصرة؛ نطابقها بالعنوان بدل افتراض تطابق الـslug. */
 export function LegacyPaper() {
   const { slug = '' } = useParams()
-  return <Navigate to={`/research/${decodeURIComponent(slug)}`} replace />
+  const resolved = resolveLegacyPaper(slug)
+  return <Navigate to={resolved ? `/research/${resolved}` : '/research'} replace />
 }
 
 /** /books/:slug — الكتب (أسماء مختلفة) */

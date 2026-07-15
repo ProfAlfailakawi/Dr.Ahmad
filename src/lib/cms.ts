@@ -68,6 +68,8 @@ export type PaperRecord = {
   coAuthors?: string
   scholar?: string
   researchgate?: string
+  doi?: string
+  verification?: 'verified' | 'needs-manual-review'
   _cms: CmsMeta
 }
 
@@ -106,7 +108,7 @@ const audioMap = audioManifest as Record<string, AudioEntry>
 const fieldsByKind: Record<ContentKind, readonly string[]> = {
   article: ['title', 'date', 'iso', 'cat', 'excerpt', 'body', 'source', 'url', 'status', 'scheduledAt', 'audio'],
   book: ['title', 'isbn', 'desc', 'cover', 'pdf'],
-  paper: ['title', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'iso', 'date', 'coAuthors', 'scholar', 'researchgate'],
+  paper: ['title', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'iso', 'date', 'coAuthors', 'scholar', 'researchgate', 'doi', 'verification'],
   media: ['title', 'outlet', 'platform', 'url', 'iso', 'date'],
 }
 
@@ -192,6 +194,8 @@ function buildPaper(value: Record<string, unknown>, cms: CmsMeta): PaperRecord {
     coAuthors: stringValue(value.coAuthors) || undefined,
     scholar: stringValue(value.scholar) || undefined,
     researchgate: stringValue(value.researchgate) || undefined,
+    doi: stringValue(value.doi) || undefined,
+    verification: stringValue(value.verification) === 'needs-manual-review' ? 'needs-manual-review' : 'verified',
     _cms: cms,
   }
 }

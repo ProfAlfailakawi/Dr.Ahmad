@@ -85,6 +85,10 @@ service cloud.firestore {
     match /podcast_dialogues/{slug} {
       allow read, create, update, delete: if isAdmin();
     }
+    // قرارات غرفة إنتاج البودكاست (اعتماد/إعادة للمراجعة) — خاصة بالمشرف.
+    match /podcast_production/{slug} {
+      allow read, create, update, delete: if isAdmin();
+    }
     // رادار الشبكة: يكتبه سكربت الالتقاط اليومي بحساب الخدمة
     // (حساب الخدمة يتجاوز القواعد) — للزوار قراءة فقط.
     match /site_radar/{id} {

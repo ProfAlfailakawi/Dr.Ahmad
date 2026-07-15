@@ -35,13 +35,14 @@ for (const required of [
   '/wp-content/uploads/2025/08/Resume-Prof.-Ahmad-Arabic-1.pdf -> /files/cv.pdf',
   '/wp-content/uploads/2025/07/01-Digital-education-Inside.pdf -> /files/digital-education.pdf',
   '/signature_articles/:slug -> /articles/:slug',
-  '/scholarly_contributi/:slug -> /research/:slug',
   '/books/:slug -> /publications/:slug',
   '/wp-sitemap.xml -> /sitemap.xml',
   '/sitemap_index.xml -> /sitemap.xml',
 ]) expect(pairs.includes(required), `تحويل 301 مفقود: ${required}`)
 
 const regexPairs = redirects.map((x) => `${x.regex || ''} -> ${x.destination}`)
+const rewrites = hosting.hosting?.rewrites || []
+expect(rewrites.some((x) => x.source === '/scholarly_contributi/**' && x.destination === '/index.html'), 'جسر روابط الأبحاث القديمة إلى محلل المسارات مفقود')
 expect(regexPairs.some((x) => x.includes('curated-insights/') && x.endsWith(' -> /inbox')), 'تحويل From My Inbox المتداخل مفقود')
 expect(regexPairs.some((x) => x.includes('reading-room|watch-listen') && x.endsWith(' -> /curated')), 'تحويل أقسام WordPress المتداخلة إلى المختارات مفقود')
 
@@ -81,4 +82,4 @@ if (errors.length) {
 }
 console.log('✔ لا يوجد اتصال حي أو اعتماد مخفي على الموقع السابق')
 console.log('✔ المحتوى المهم والملفات المعروفة مرتبطة بالموقع الجديد')
-console.log('✔ مسارات المحتوى القديمة مغطاة بتحويلات 301 خادمية')
+console.log('✔ مسارات المحتوى القديمة مغطاة بتحويلات 301 وجسر حلّ ذكي للأبحاث القديمة')

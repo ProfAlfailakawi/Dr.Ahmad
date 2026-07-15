@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, SocialIcon } from '../ui'
@@ -22,14 +22,38 @@ export default function HumanCoreHero() {
   const target = useRef<Point>({ x: 0.64, y: 0.42 })
   const current = useRef<Point>({ x: 0.64, y: 0.42 })
   const lastInteraction = useRef(0)
+  const [mobileVisual, setMobileVisual] = useState(false)
   const { scrollY } = useScroll()
   const portraitY = useTransform(scrollY, [0, 800], [0, 34])
+
+  useEffect(() => {
+    const query = window.matchMedia('(hover: none), (pointer: coarse), (max-width: 767px)')
+    const update = () => setMobileVisual(query.matches)
+    update()
+    query.addEventListener?.('change', update)
+    return () => query.removeEventListener?.('change', update)
+  }, [])
 
   useEffect(() => {
     const hero = heroRef.current
     const canvas = canvasRef.current
     const portrait = portraitRef.current
     if (!hero || !canvas || !portrait || reduce) return
+
+    if (mobileVisual) {
+      canvas.width = 1
+      canvas.height = 1
+      canvas.style.display = 'none'
+      portrait.style.setProperty('--human-x', '50%')
+      portrait.style.setProperty('--human-y', '50%')
+      portrait.style.setProperty('--human-r', '100%')
+      portrait.style.setProperty('--human-presence', '1')
+      portrait.style.setProperty('--human-opacity', '1')
+      portrait.style.setProperty('--human-scan', '0')
+      portrait.style.setProperty('--human-glow', '0')
+      return
+    }
+    canvas.style.display = ''
 
     const ctx = canvas.getContext('2d', { alpha: true })
     if (!ctx) return
@@ -228,7 +252,7 @@ export default function HumanCoreHero() {
       hero.removeEventListener('pointerdown', pointerDown)
       window.removeEventListener('resize', resize)
     }
-  }, [reduce])
+  }, [mobileVisual, reduce])
 
   return (
     <header ref={heroRef} className="human-core relative flex min-h-[100svh] items-center overflow-hidden px-6 pb-28 pt-24 md:px-11 md:pb-28 md:pt-28">
@@ -288,14 +312,14 @@ export default function HumanCoreHero() {
         </div>
 
         <div className="order-2 flex justify-center">
-          <motion.div style={{ y: portraitY }} className="human-core__portrait-shell w-full max-w-[260px] md:max-w-[400px]">
+          <motion.div style={mobileVisual ? undefined : { y: portraitY }} className="human-core__portrait-shell w-full max-w-[260px] md:max-w-[400px]">
             <motion.div
               ref={portraitRef}
               className="human-core__portrait relative"
               initial={reduce ? false : { opacity: 0, y: 26, scale: 1.03 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 1.1, delay: 0.75, ease: EASE }}
-              data-hover
+              data-hover={mobileVisual ? undefined : true}
             >
               <div className="human-core__orbit" aria-hidden="true"><span /><span /><span /></div>
               <div className="human-core__portrait-media relative overflow-hidden rounded-2xl shadow-[0_36px_64px_-36px_rgba(21,22,26,.42)]">

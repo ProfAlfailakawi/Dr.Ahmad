@@ -33,7 +33,7 @@ export default function Articles() {
 
       {/* featured trio */}
       <section className="border-b border-hair px-4 py-12 sm:px-6 md:px-11 md:py-20">
-        <div className="mx-auto grid max-w-shell grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 md:gap-8">
+        <div className="mobile-paired-grid mx-auto grid max-w-shell grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 md:gap-8">
           {essays.map((e, i) => (
             <FadeUp key={e.title} delay={i * 0.08} className="h-full min-w-0">
               <Link

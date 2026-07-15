@@ -701,7 +701,7 @@ export default function ArticleDetail() {
               <section className="mt-16 border-t border-hair pt-9">
                 <span className="text-[.76rem] font-semibold uppercase text-accent">أكمل هذا المسار</span>
                 <p className="mt-2 text-[.9rem] font-light text-soft">مقالاتٌ على الخيط الفكري نفسه.</p>
-                <ul className="related-path-grid mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-6">
+                <ul className="related-path-grid mobile-paired-grid mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-6">
                   {related.slice(0, dive.paper || dive.book ? 2 : 3).map((r) => (
                     <li key={r.slug} className="min-w-0">
                       <Link to={`/articles/${r.slug}`} className="group block h-full min-w-0 rounded-2xl border border-hair bg-canvas p-4 text-start transition-colors hover:border-accent/40 sm:border-0 sm:bg-transparent sm:p-0">

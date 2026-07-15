@@ -13,6 +13,33 @@ export type AudioSource = {
   key: string
   label: string
   src: string
+  avatar?: 'boy' | 'woman' | 'dialogue'
+}
+
+function VoiceAvatar({ kind, size = 28 }: { kind: AudioSource['avatar']; size?: number }) {
+  if (kind === 'dialogue') return (
+    <svg aria-hidden width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <path d="M5.5 7.5h13a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3h-6l-4.8 3.4.9-3.4H8.5a3 3 0 0 1-3-3v-5a3 3 0 0 1 3-3Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/>
+      <path d="M18.5 12.5h5a3 3 0 0 1 3 3v4a3 3 0 0 1-3 3h-.2l.7 2.7-4-2.7h-3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+  if (kind === 'woman') return (
+    <svg aria-hidden width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="14" fill="currentColor" opacity=".08"/>
+      <path d="M10 15.2c0-5 2.5-8 6-8s6 3 6 8v6.2c-1.5-1-3.4-1.5-6-1.5s-4.5.5-6 1.5v-6.2Z" fill="currentColor" opacity=".22"/>
+      <circle cx="16" cy="14.4" r="4.8" fill="currentColor" opacity=".66"/>
+      <path d="M7.7 26c1.6-4 4.5-6 8.3-6s6.7 2 8.3 6" fill="currentColor" opacity=".66"/>
+      <path d="M11.2 13c.7-3.2 2.4-4.8 5.2-4.8 2.4 0 4.2 1.4 4.9 4.3-1.8-.2-3.4-1-4.8-2.2-1.3 1.4-3.1 2.3-5.3 2.7Z" fill="currentColor"/>
+    </svg>
+  )
+  return (
+    <svg aria-hidden width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="14" fill="currentColor" opacity=".08"/>
+      <circle cx="16" cy="13.8" r="4.7" fill="currentColor" opacity=".68"/>
+      <path d="M7.8 26c1.5-4.2 4.3-6.3 8.2-6.3s6.7 2.1 8.2 6.3" fill="currentColor" opacity=".68"/>
+      <path d="M11 12.6c.4-3.5 2.2-5.3 5.4-5.3 2.8 0 4.5 1.7 4.8 5.1-1.2-1-2.5-1.6-4-1.8-1.7-.2-3.8.5-6.2 2Z" fill="currentColor"/>
+    </svg>
+  )
 }
 
 export function AudioPlayer({ sources, title }: { sources: AudioSource[]; title: string }) {
@@ -81,18 +108,21 @@ export function AudioPlayer({ sources, title }: { sources: AudioSource[]; title:
 
       {sources.length > 1 && (
         <div className="mt-4 flex flex-wrap items-center gap-2" role="group" aria-label="اختر تجربة الاستماع">
-          <span className="me-1 text-[.8rem] text-soft">التجربة</span>
+          <span className="sr-only">اختر تجربة الاستماع</span>
           {sources.map((item) => (
             <button
               key={item.key}
               type="button"
               onClick={() => choose(item.key)}
               aria-pressed={source.key === item.key}
-              className={`rounded-full border px-3.5 py-1 text-[.8rem] transition-colors ${
-                source.key === item.key ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
+              aria-label={item.label}
+              title={item.label}
+              className={`flex h-12 w-12 items-center justify-center rounded-full border transition-all ${
+                source.key === item.key ? 'border-accent bg-accent text-canvas shadow-sm' : 'border-hair bg-canvas text-soft hover:-translate-y-0.5 hover:border-accent hover:text-accent'
               }`}
             >
-              {item.key === 'dialogue' ? 'الحوار' : item.label}
+              <VoiceAvatar kind={item.avatar || (item.key === 'dialogue' ? 'dialogue' : 'boy')} size={30} />
+              <span className="sr-only">{item.label}</span>
             </button>
           ))}
         </div>
@@ -114,7 +144,7 @@ export function AudioPlayer({ sources, title }: { sources: AudioSource[]; title:
         <div className="mt-3 flex flex-wrap items-center gap-2 text-[.76rem] text-soft">
           <span>{clock(current)} / {clock(duration)}</span>
           <span className="h-1 w-1 rounded-full bg-hair" />
-          <span>{source.label}</span>
+          <span className="inline-flex items-center" aria-label={source.label} title={source.label}><VoiceAvatar kind={source.avatar || (source.key === 'dialogue' ? 'dialogue' : 'boy')} size={22} /><span className="sr-only">{source.label}</span></span>
           {active && player.error && <span className="text-soft">· {player.error}</span>}
           <span className="ms-auto flex items-center gap-1.5">
             <button onClick={() => player.jump(-15)} disabled={!active} className="rounded-full border border-hair px-2.5 py-1 disabled:opacity-40">15-</button>

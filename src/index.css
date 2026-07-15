@@ -608,14 +608,8 @@ html.dark .content-media .page-head {
   color: rgb(var(--c-accent));
 }
 
-/* ---------- محاذاة كاملة للنصوص القرائية فقط ----------
-   تُطبّق على الفقرات، لا على عناصر القوائم والكروت؛ حتى لا تتسع الكلمات
-   داخل العناوين القصيرة على الهاتف. */
-main p:not(.text-center):not([class*="text-center"]):not([style*="center"]) {
-  text-align: justify;
-  text-justify: inter-word;
-  hyphens: none;
-}
+/* المحاذاة الكاملة محصورة في متن المقال نفسه. تعميمها على كل فقرة كان
+   يمدّد الكلمات داخل الكروت على الهاتف ويصنع فراغات غير طبيعية. */
 
 @media (max-width: 640px) {
   .article-body p {
@@ -1211,4 +1205,32 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
 .related-path-grid a {
   overflow-wrap: anywhere;
   word-break: normal;
+}
+
+
+/* شبكات الهاتف: صفّان متوازنان، والعنصر الفردي الأخير يمتد بعرض الصف
+   بدل أن يترك نصف الشاشة فارغاً. */
+@media (max-width: 639px) {
+  .mobile-paired-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+  .mobile-paired-grid > * {
+    min-width: 0;
+    height: 100%;
+  }
+  .mobile-paired-grid > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+  .mobile-paired-grid :is(p, h2, h3, blockquote, span, time) {
+    text-align: start;
+    text-align-last: auto;
+    word-spacing: normal;
+    overflow-wrap: anywhere;
+  }
+  .article-closing-note :is(p, a) {
+    text-align: center;
+    text-align-last: auto;
+    word-spacing: normal;
+  }
 }

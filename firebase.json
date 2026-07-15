@@ -10,6 +10,21 @@
     ],
     "redirects": [
       {
+        "source": "/scholarly_contributi/فاعلية-البحار-في-الواقع-اللكترونية-عل-2",
+        "destination": "/research/web-navigation-learning-skills",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/فاعلية-استخدام-أعضاء-هيئة-التدريس-للو-2",
+        "destination": "/research/multimedia-higher-education",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/اتجاهات-الهيئة-التدريسية-نحو-استخدام",
+        "destination": "/research/faculty-attitudes-edtech",
+        "type": 301
+      },
+      {
         "source": "/wp-content/uploads/2025/08/Resume-Prof.-Ahmad-Eng-1.pdf",
         "destination": "/files/cv-en.pdf",
         "type": 301
@@ -185,21 +200,6 @@
         "type": 301
       },
       {
-        "source": "/en/scholarly_contributi/:slug",
-        "destination": "/research/:slug",
-        "type": 301
-      },
-      {
-        "source": "/ar/scholarly_contributi/:slug",
-        "destination": "/research/:slug",
-        "type": 301
-      },
-      {
-        "source": "/scholarly_contributi/:slug",
-        "destination": "/research/:slug",
-        "type": 301
-      },
-      {
         "source": "/books/enyclopedia-cover",
         "destination": "/publications/encyclopedia",
         "type": 301
@@ -256,6 +256,18 @@
       }
     ],
     "rewrites": [
+      {
+        "source": "/scholarly_contributi/**",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/ar/scholarly_contributi/**",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/en/scholarly_contributi/**",
+        "destination": "/index.html"
+      },
       {
         "source": "/api/**",
         "run": {
@@ -348,7 +360,7 @@
         "headers": [
           {
             "key": "Cache-Control",
-            "value": "public, max-age=86400"
+            "value": "public, max-age=31536000, immutable"
           }
         ]
       }

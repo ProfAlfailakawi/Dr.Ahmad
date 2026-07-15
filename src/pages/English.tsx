@@ -60,7 +60,7 @@ function Impact() {
 
 /* ---------- /en — الصفحة الرئيسية ---------- */
 export function EnglishHome() {
-  useEnglish('Professor of Educational Technology & AI', '/en', 'Official website of Dr. Ahmad H. Alfailakawi — Professor of Educational Technology and Artificial Intelligence in Kuwait. Nine books, eighteen peer-reviewed papers, and over 160 essays since 2016.')
+  useEnglish('Professor of Educational Technology & AI', '/en', 'Official website of Dr. Ahmad H. Alfailakawi — Professor of Educational Technology and Artificial Intelligence in Kuwait. Nine books, nineteen peer-reviewed papers, and over 160 essays since 2016.')
   useTrackView('/en', 'English — Home')
 
   return (

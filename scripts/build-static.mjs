@@ -12,6 +12,7 @@ import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import ts from 'typescript'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = resolve(ROOT, 'dist')
@@ -51,7 +52,7 @@ const PERSON = {
   name: AUTHOR,
   alternateName: 'Dr. Ahmad H. Alfailakawi',
   url: SITE,
-  image: `${SITE}/og.png`,
+  image: `${SITE}/og/home-20260715.jpg`,
   description: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، كاتب وباحث ومستشار تربوي كويتي.',
   jobTitle: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، كاتب وباحث ومستشار تربوي كويتي',
   affiliation: [
@@ -94,6 +95,11 @@ const visibleDialogueAsset = (slug, audioFile, transcriptFile = '') =>
 const audioPublicUrl = (rel) => AUDIO_PUBLIC_BASE_URL ? `${AUDIO_PUBLIC_BASE_URL}/${rel}` : `${SITE}/audio/${rel}`
 const src = readFileSync(resolve(ROOT, 'src/data.ts'), 'utf8')
 const srcEn = readFileSync(resolve(ROOT, 'src/data-en.ts'), 'utf8')
+const researchSource = readFileSync(resolve(ROOT, 'src/data/research-papers.ts'), 'utf8')
+const researchRuntime = ts.transpileModule(researchSource, {
+  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+}).outputText.replace(/\bexport\s+/g, '')
+const papers = new Function(`${researchRuntime}; return researchPapers`)()
 const esc = (s = '') => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 const attr = (s = '') => esc(s).replace(/'/g, '&#39;')
 
@@ -109,9 +115,6 @@ const articles = [...grab('articles').matchAll(
 
 const books = [...grab('books').matchAll(/\{ slug: '([^']+)'[\s\S]*?title: '([^']+)'[\s\S]*?isbn: '([^']*)'[\s\S]*?cover: '([^']*)'[\s\S]*?pdf: '([^']*)'[\s\S]*?desc: '([^']*)'/g)]
   .map((m) => ({ slug: m[1], title: m[2], isbn: m[3], cover: m[4], pdf: m[5], desc: m[6] }))
-
-const papers = [...grab('papers').matchAll(/slug: '([^']+)',[^\n]*?title: '([^']+)',[^\n]*?meta: '([^']*)',[^\n]*?abstractAr: '([^']*)'/g)]
-  .map((m) => ({ slug: m[1], title: paperTitlesEn[m[1]] || m[2], desc: m[3], abstractAr: m[4].replace(/^ملخص عربي:\s*/, '') }))
 
 const media = [...grab('media').matchAll(/\{ title: '([^']+)', outlet: '([^']*)', url: '([^']*)'/g)]
   .map((m, index) => {
@@ -155,7 +158,7 @@ const STATIC = [
   { path: '/search', title: 'البحث العميق', desc: 'بحث متقدم في عناوين المقالات ونصوصها وتصنيفاتها وسنواتها.' },
   { path: '/admin', title: 'لوحة التحكم', desc: 'لوحة إدارة خاصة.', robots: 'noindex, nofollow' },
   /* المرآة الإنجليزية */
-  { path: '/en', title: 'Dr. Ahmad H. Alfailakawi — Professor of Educational Technology & AI', desc: 'Official website of Dr. Ahmad H. Alfailakawi, Professor of Educational Technology and Artificial Intelligence in Kuwait. Nine books, eighteen peer-reviewed papers, and over 160 essays since 2016.', lang: 'en' },
+  { path: '/en', title: 'Dr. Ahmad H. Alfailakawi — Professor of Educational Technology & AI', desc: 'Official website of Dr. Ahmad H. Alfailakawi, Professor of Educational Technology and Artificial Intelligence in Kuwait. Nine books, nineteen peer-reviewed papers, and over 160 essays since 2016.', lang: 'en' },
   { path: '/en/cv', title: 'Curriculum Vitae', desc: 'Education, academic appointments, advisory roles and international memberships of Dr. Ahmad H. Alfailakawi.', lang: 'en' },
   { path: '/en/research', title: 'Research', desc: 'Eighteen peer-reviewed papers on educational technology, e-learning systems and emerging technologies in higher education.', lang: 'en' },
 ]
@@ -163,7 +166,7 @@ const STATIC = [
 const routes = [
   ...STATIC,
   ...books.map((b) => ({ path: `/publications/${b.slug}`, title: b.title, desc: b.desc, image: b.cover, isbn: b.isbn })),
-  ...papers.map((p) => ({ path: `/research/${p.slug}`, title: p.title, desc: p.abstractAr || `بحث محكّم — ${p.desc}`, type: 'article' })),
+  ...papers.map((p) => ({ path: `/research/${p.slug}`, title: p.title, desc: p.abstractAr || `بحث محكّم — ${p.meta}`, type: 'article' })),
   ...articles.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt, type: 'article', iso: a.iso, cat: a.cat, image: `/og/articles/${a.slug}.svg` })),
   ...siteArticlesFeed.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt || a.title, type: 'article', iso: a.iso, cat: a.cat || 'مقال', image: `/og/articles/${a.slug}.svg` })),
 ]
@@ -554,8 +557,8 @@ function generateBodyHtml(path, lang = 'ar') {
           <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; color: #15161A;">
             <a href="/research/${p.slug}" style="color: #15161A; text-decoration: none;">${esc(p.title)}</a>
           </h2>
-          <p style="color: #626A76; font-size: 0.95rem; margin-bottom: 0.5rem;">${esc(p.desc)}</p>
-          <p style="color: #3E5C78; font-size: 0.85rem; font-weight: 500; margin: 0;">Co-author: د. عبدالعزيز دخيل العنزي</p>
+          <p style="color: #626A76; font-size: 0.95rem; margin-bottom: 0.5rem;">${esc(p.meta)}</p>
+          <p style="color: #3E5C78; font-size: 0.85rem; font-weight: 500; margin: 0;">${p.coAuthors ? `Main author: Dr. Ahmad Hussein Alfailakawi · Co-author: ${esc(p.coAuthors)}` : 'Author: Dr. Ahmad Hussein Alfailakawi'}</p>
         </div>
       `).join('')
 
@@ -576,8 +579,8 @@ function generateBodyHtml(path, lang = 'ar') {
           <h2 dir="auto" style="font-size: 1.5rem; font-family: 'El Messiri', serif; margin-bottom: 0.5rem; color: #15161A;">
             <a href="/research/${p.slug}" style="color: #15161A; text-decoration: none;">${esc(p.title)}</a>
           </h2>
-          <p style="color: #626A76; font-size: 0.95rem; font-family: 'Tajawal', sans-serif; margin-bottom: 0.5rem;">${esc(p.desc)}</p>
-          <p style="color: #3E5C78; font-size: 0.85rem; font-family: 'Tajawal', sans-serif; font-weight: 500; margin: 0;">الباحث المشارك: د. عبدالعزيز دخيل العنزي</p>
+          <p style="color: #626A76; font-size: 0.95rem; font-family: 'Tajawal', sans-serif; margin-bottom: 0.5rem;">${esc(p.meta)}</p>
+          <p style="color: #3E5C78; font-size: 0.85rem; font-family: 'Tajawal', sans-serif; font-weight: 500; margin: 0;">${p.coAuthors ? `الباحث الرئيسي: د. أحمد حسين الفيلكاوي · الباحث المشارك: ${esc(p.coAuthors)}` : 'الباحث: د. أحمد حسين الفيلكاوي'}</p>
         </div>
       `).join('')
 
@@ -605,12 +608,13 @@ function generateBodyHtml(path, lang = 'ar') {
           <article style="text-align: right;">
             <header style="margin-bottom: 2rem;">
               <h1 dir="auto" style="font-size: 2.25rem; font-family: 'El Messiri', serif; font-weight: bold; color: #15161A; margin-bottom: 1rem; line-height: 1.3;">بحث محكّم: ${esc(p.title)}</h1>
-              <p style="color: #626A76; font-size: 1.05rem; font-family: 'Tajawal', sans-serif;">الباحث الرئيسي: د. أحمد حسين الفيلكاوي &middot; الباحث المشارك: د. عبدالعزيز دخيل العنزي</p>
+              <p style="color: #626A76; font-size: 1.05rem; font-family: 'Tajawal', sans-serif;">${p.coAuthors ? `الباحث الرئيسي: د. أحمد حسين الفيلكاوي &middot; الباحث المشارك: ${esc(p.coAuthors)}` : 'الباحث: د. أحمد حسين الفيلكاوي'}</p>
             </header>
             <section style="background: rgba(62, 92, 120, 0.03); padding: 2.5rem; border-radius: 8px; border-right: 4px solid #3E5C78; margin-bottom: 2rem;">
               <p style="color: #3E5C78; font-size: .85rem; font-weight: 700; font-family: 'Tajawal', sans-serif; margin: 0 0 .75rem;">الملخص</p>
-              <p style="line-height: 1.8; font-size: 1.15rem; color: #15161A; font-family: 'Tajawal', sans-serif; margin: 0;">${esc(p.abstractAr || p.desc)}</p>
+              <p style="line-height: 1.8; font-size: 1.15rem; color: #15161A; font-family: 'Tajawal', sans-serif; margin: 0;">${esc(p.abstractAr || p.meta)}</p>
             </section>
+            ${(p.source || p.pdf || p.researchgate || p.scholar) ? `<nav aria-label="روابط البحث" style="display:flex;flex-wrap:wrap;gap:.75rem;font-family:'Tajawal',sans-serif;">${p.source ? `<a href="${attr(p.source)}" rel="noopener noreferrer" style="border:1px solid rgba(62,92,120,.25);border-radius:999px;padding:.65rem 1rem;color:#3E5C78;text-decoration:none">صفحة الناشر</a>` : ''}${p.pdf ? `<a href="${attr(p.pdf)}" rel="noopener noreferrer" style="border:1px solid rgba(62,92,120,.25);border-radius:999px;padding:.65rem 1rem;color:#3E5C78;text-decoration:none">تنزيل PDF</a>` : ''}${p.researchgate ? `<a href="${attr(p.researchgate)}" rel="noopener noreferrer" style="border:1px solid rgba(62,92,120,.25);border-radius:999px;padding:.65rem 1rem;color:#3E5C78;text-decoration:none">ResearchGate</a>` : ''}${p.scholar ? `<a href="${attr(p.scholar)}" rel="noopener noreferrer" style="border:1px solid rgba(62,92,120,.25);border-radius:999px;padding:.65rem 1rem;color:#3E5C78;text-decoration:none">Google Scholar</a>` : ''}</nav>` : ''}
           </article>
         </main>
       `
@@ -776,7 +780,7 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
   const hasName = title.includes('Alfailakawi') || title.includes('د. أحمد حسين الفيلكاوي')
   const full = isAdmin ? title : path === '/' || hasName ? title : en ? `${title} — Dr. Ahmad H. Alfailakawi` : `${title} — د. أحمد حسين الفيلكاوي`
   const url = SITE + path
-  const img = `${SITE}${image || '/og.png'}`
+  const img = `${SITE}${image || '/og/home-20260715.jpg'}`
 
   // مسار التفصيل يحدّد نوع Schema والفتات (Breadcrumb)
   const isArticlePage = /^\/(?:en\/)?articles\//.test(path)
@@ -846,6 +850,11 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
     <meta property="og:description" content="${esc(desc)}" />
     <meta property="og:url" content="${url}" />
     <meta property="og:image" content="${img}" />
+    <meta property="og:image:secure_url" content="${img}" />
+    <meta property="og:image:type" content="${img.endsWith('.svg') ? 'image/svg+xml' : img.endsWith('.png') ? 'image/png' : 'image/jpeg'}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="${esc(full)}" />
     <meta property="og:locale" content="${en ? 'en_US' : 'ar_KW'}" />
     <meta property="og:site_name" content="${en ? 'Dr. Ahmad H. Alfailakawi' : 'د. أحمد حسين الفيلكاوي'}" />
     ${type === 'article' ? `<meta property="article:author" content="${AUTHOR}" />

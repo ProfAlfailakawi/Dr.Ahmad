@@ -116,7 +116,7 @@ function parseDialogue() {
   })
 }
 
-const hardDialect = ['مو', 'ليش', 'شلون', 'خلّنا', 'خلنا', 'هني', 'جذي', 'وايد', 'صج', 'شنو', 'أبي', 'تدري', 'عاد', 'يا معود']
+const hardDialect = ['مو', 'ليش', 'شلون', 'خلّنا', 'خلنا', 'هني', 'جذي', 'وايد', 'صج', 'شنو', 'أبي', 'تدري', 'يا معود']
 function qualityWarnings(items) {
   const warnings = []
   items.forEach((item, index) => {
@@ -124,6 +124,8 @@ function qualityWarnings(items) {
       const rx = new RegExp(`(^|[\\s،.؟!؛:])${word}([\\s،.؟!؛:]|$)`, 'u')
       if (rx.test(item.text)) warnings.push(`مداخلة ${index + 1}: كلمة عامية ممنوعة: ${word}`)
     }
+    const colloquialAad = /(^|[\s،.؟!؛:])عاد(?!\s+إلى)([\s،.؟!؛:]|$)/u
+    if (colloquialAad.test(item.text)) warnings.push(`مداخلة ${index + 1}: كلمة عامية ممنوعة: عاد`)
     if (item.text.length > 180) warnings.push(`مداخلة ${index + 1}: طويلة وقد تبدو مكتوبة أكثر من منطوقة.`)
     if (item.deliveryType === 'question' && !/[؟?]$/.test(item.text)) warnings.push(`مداخلة ${index + 1}: deliveryType question لكن لا تنتهي بعلامة سؤال.`)
   })

@@ -18,6 +18,7 @@ export type AdminTab =
   | 'inbox'
   | 'lab'
   | 'voice'
+  | 'manual-dialogue'
   | 'cv'
 
 export type AdminArea = 'system' | 'publishing' | 'library' | 'audience'
@@ -31,6 +32,7 @@ export const ADMIN_GROUPS: NavGroup[] = [
       { tab: 'dashboard', label: 'غرفة القيادة', note: 'ما يحتاج قرارك الآن' },
       { tab: 'lab', label: 'المختبر المتقدم', note: 'الفحص والذاكرة والأتمتة' },
       { tab: 'voice', label: 'الصوت والبودكاست', note: 'اختبار الأصوات والجودة' },
+      { tab: 'manual-dialogue', label: 'الحوار اليدوي للحلقة', note: 'كتابة فهد ونورة مداخلةً مداخلة' },
     ],
   },
   {

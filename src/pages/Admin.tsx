@@ -20,6 +20,7 @@ import { Indicators } from '../components/admin/Indicators'
 import { IntelligenceLab } from '../components/admin/IntelligenceLab'
 import { PublishingStudio } from '../components/admin/PublishingStudio'
 import { VoiceBakeoffCard } from '../components/admin/VoiceBakeoff'
+import { ManualDialogueEditor } from '../components/admin/ManualDialogueEditor'
 import { AdminTaskFavicon, AdminTaskIndicator } from '../components/admin/AdminTaskFavicon'
 import { UploadField } from '../components/admin/ContentManager'
 import { useSeo } from '../components/seo'
@@ -236,7 +237,7 @@ function CvPdfCard() {
 function Panel({ email }: { email: string }) {
   const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const requestedTab = params.get('tab') as AdminTab | null
-  const allowedTabs: AdminTab[] = ['dashboard','analytics','studio','launch','event','articles','books','papers','media','inbox','lab','voice','cv']
+  const allowedTabs: AdminTab[] = ['dashboard','analytics','studio','launch','event','articles','books','papers','media','inbox','lab','voice','manual-dialogue','cv']
   const initialTab = requestedTab && allowedTabs.includes(requestedTab) ? requestedTab : 'dashboard'
   const editSlug = params.get('edit') || undefined
   const [tab, setTab] = useState<AdminTab>(initialTab)
@@ -319,6 +320,7 @@ function Panel({ email }: { email: string }) {
             {tab === 'launch' && <LaunchModeCard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} />}
             {tab === 'lab' && <IntelligenceLab articles={cms.articles} />}
             {tab === 'voice' && <VoiceBakeoffCard />}
+            {tab === 'manual-dialogue' && <ManualDialogueEditor articles={cms.articles} />}
             {tab === 'cv' && <CvPdfCard />}
             {tab === 'articles' && <ContentManager openSlug={editSlug} kind="article" items={cms.articles as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
             {tab === 'books' && <ContentManager openSlug={editSlug} kind="book" items={cms.books as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}

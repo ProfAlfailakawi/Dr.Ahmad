@@ -30,15 +30,18 @@ export default function Articles() {
       />
 
       {/* featured trio */}
-      <section className="border-b border-hair px-6 py-16 md:px-11 md:py-20">
-        <div className="mx-auto grid max-w-shell gap-8 md:grid-cols-3">
+      <section className="border-b border-hair px-4 py-12 sm:px-6 md:px-11 md:py-20">
+        <div className="mx-auto grid max-w-shell grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 md:gap-8">
           {essays.map((e, i) => (
-            <FadeUp key={e.title} delay={i * 0.08}>
-              <Link to={`/articles/${e.slug}`} className="group block border-t-2 border-accent pt-5 transition-transform duration-300 hover:-translate-y-1">
-                <span className="text-[.76rem] font-semibold uppercase text-accent">{e.tag}</span>
-                <h2 className="my-3 font-display text-[1.34rem] font-medium text-ink transition-colors group-hover:text-accent">{e.title}</h2>
-                <blockquote className="font-display text-[1.02rem] leading-[1.75] text-soft">{e.quote}</blockquote>
-                <span className="mt-4 inline-flex text-[.78rem] font-semibold text-accent opacity-0 transition-opacity duration-300 group-hover:opacity-100">اقرأ المقال ←</span>
+            <FadeUp key={e.title} delay={i * 0.08} className="h-full min-w-0">
+              <Link
+                to={`/articles/${e.slug}`}
+                className="group flex h-full min-w-0 flex-col rounded-2xl border border-hair border-t-2 border-t-accent bg-canvas p-4 text-start shadow-[0_18px_42px_-38px_rgba(21,22,26,.35)] transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 sm:p-5 md:rounded-none md:border-x-0 md:border-b-0 md:bg-transparent md:px-0 md:shadow-none"
+              >
+                <span className="text-[.68rem] font-semibold uppercase text-accent sm:text-[.76rem]">{e.tag}</span>
+                <h2 className="my-2 break-words font-display text-[1rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent sm:my-3 sm:text-[1.2rem] md:text-[1.34rem]">{e.title}</h2>
+                <blockquote className="line-clamp-4 break-words font-display text-[.82rem] leading-[1.75] text-soft sm:text-[.95rem] md:text-[1.02rem]">{e.quote}</blockquote>
+                <span className="mt-auto inline-flex pt-4 text-[.7rem] font-semibold text-accent opacity-100 transition-opacity duration-300 md:text-[.78rem] md:opacity-0 md:group-hover:opacity-100">اقرأ المقال ←</span>
               </Link>
             </FadeUp>
           ))}

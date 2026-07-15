@@ -1017,17 +1017,16 @@ export function ScheduleProjectLink({ label = 'الجدول الدراسي' }: {
       href="https://schedule.dr-alfailakawi.com"
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="برنامج الجدول الدراسي"
-      title="برنامج الجدول الدراسي"
-      className="schedule-link group inline-flex items-center gap-1.5 border-s border-hair ps-3 text-soft transition-colors duration-300 hover:text-accent"
+      aria-label={label}
+      title={label}
+      className="schedule-link group inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-all duration-300 hover:-translate-y-0.5 hover:border-accent hover:text-accent"
     >
-      <span aria-hidden className="inline-flex h-4 w-4 items-center justify-center rounded-[.35rem] border border-current/40 text-[.62rem] leading-none opacity-70 transition-opacity duration-300 group-hover:opacity-100">
-        <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="1.4">
-          <path d="M4.5 2.2v2.1M11.5 2.2v2.1M3.2 5.6h9.6M3.3 3.8h9.4c.7 0 1.2.5 1.2 1.2v7.2c0 .7-.5 1.2-1.2 1.2H3.3c-.7 0-1.2-.5-1.2-1.2V5c0-.7.5-1.2 1.2-1.2Z" />
-        </svg>
-      </span>
-      <span className="schedule-link-label text-[.74rem] font-medium">{label}</span>
-      <span aria-hidden className="text-[.62rem] transition-transform duration-300 group-hover:-translate-x-0.5">↗</span>
+      <svg aria-hidden viewBox="0 0 20 20" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 3.2v2.4M14 3.2v2.4M4.1 7h11.8" />
+        <rect x="3.2" y="4.5" width="13.6" height="12.1" rx="2.1" />
+        <path d="M6.4 10.1h2.2M11.4 10.1h2.2M6.4 13.2h2.2M11.4 13.2h2.2" />
+      </svg>
+      <span className="sr-only">{label}</span>
     </a>
   )
 }

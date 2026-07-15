@@ -248,31 +248,31 @@ function SinceLastVisit() {
   if (!bits.length && !resume && !continuation) return null
 
   return (
-    <div className="border-t border-hair bg-wash px-6 py-3.5 md:px-11">
-      <div className="rail mx-auto flex max-w-shell items-center gap-5 overflow-x-auto whitespace-nowrap">
+    <div className="border-t border-hair bg-wash px-4 py-3.5 sm:px-6 md:px-11">
+      <div className="mx-auto grid max-w-shell gap-2.5 md:rail md:flex md:items-center md:gap-5 md:overflow-x-auto md:whitespace-nowrap">
         {continuation && (
-          <Link to={`/articles/${continuation.article.slug}`} className="group flex shrink-0 items-center gap-2.5 text-[.82rem] text-soft">
+          <Link to={`/articles/${continuation.article.slug}`} className="group relative grid min-w-0 gap-1 rounded-xl border border-hair bg-canvas px-3.5 py-3 text-[.8rem] text-soft transition-colors hover:border-accent md:flex md:shrink-0 md:items-center md:gap-2.5 md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
             <span className="font-semibold text-accent">✦ كنت تتتبع أثر {continuation.label}</span>
-            <span className="text-ink transition-colors group-hover:text-accent">أكمل من هنا: «{continuation.article.title}»</span>
-            <span className="text-accent opacity-0 transition-opacity duration-300 group-hover:opacity-100">←</span>
+            <span className="min-w-0 pe-7 leading-relaxed text-ink transition-colors group-hover:text-accent md:pe-0">أكمل من هنا: «{continuation.article.title}»</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent md:static md:translate-y-0 md:opacity-0 md:transition-opacity md:duration-300 md:group-hover:opacity-100">←</span>
           </Link>
         )}
         {resume && (
-          <Link to={`/articles/${resume.slug}`} className="group flex shrink-0 items-center gap-2.5 text-[.82rem] text-soft">
+          <Link to={`/articles/${resume.slug}`} className="group relative grid min-w-0 gap-1 rounded-xl border border-hair bg-canvas px-3.5 py-3 text-[.8rem] text-soft transition-colors hover:border-accent md:flex md:shrink-0 md:items-center md:gap-2.5 md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
             <span className="font-semibold text-accent">↩ أكمل قراءتك</span>
-            <span className="text-ink transition-colors group-hover:text-accent">«{resume.title}»</span>
-            <span className="text-accent opacity-0 transition-opacity duration-300 group-hover:opacity-100">←</span>
+            <span className="min-w-0 pe-7 leading-relaxed text-ink transition-colors group-hover:text-accent md:pe-0">«{resume.title}»</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent md:static md:translate-y-0 md:opacity-0 md:transition-opacity md:duration-300 md:group-hover:opacity-100">←</span>
           </Link>
         )}
         {bits.length > 0 && (
-          <p className="flex shrink-0 items-center gap-x-4 text-[.82rem] text-soft">
-            <span className="font-semibold text-accent">✦ منذ زيارتك الأخيرة</span>
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-hair bg-canvas px-3.5 py-3 text-[.8rem] text-soft md:shrink-0 md:flex-nowrap md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
+            <span className="w-full font-semibold text-accent md:w-auto">✦ منذ زيارتك الأخيرة</span>
             {bits.map((b, i) => (
               <Link key={b.to} to={b.to} className="transition-colors hover:text-accent">
                 {b.t}{i < bits.length - 1 ? ' ·' : ''}
               </Link>
             ))}
-          </p>
+          </div>
         )}
       </div>
     </div>
@@ -613,7 +613,7 @@ function LaunchSpotlight({ articles, books, papers, media }: { articles: Article
     document.body.classList.toggle('launch-spotlight-active', Boolean(item))
     return () => document.body.classList.remove('launch-spotlight-active')
   }, [item])
-  if (!item) return null
+  if (!item || !settings) return null
 
   const title = item.title
   const description = settings.note || (article?.excerpt ?? book?.desc ?? paper?.meta ?? mediaItem?.outlet ?? '')
@@ -688,26 +688,26 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
     <section className="border-t border-hair bg-wash px-6 py-[60px] md:px-11 md:py-[100px]">
       <div className="mx-auto max-w-shell">
         <SectionHead label="أعمال مختارة" title="أربع نوافذ تكفي." to="/articles" cta="استكشف المكتبة" />
-        <div className="rail -mx-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-5 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
           {items.map((item, index) => {
             const isBook = item.type === 'كتاب مختار'
             const inner = (
-              <div className="group flex h-full min-h-[220px] flex-col overflow-hidden rounded-2xl border border-hair bg-canvas transition-all duration-300 hover:-translate-y-1 hover:border-accent md:min-h-[250px]">
+              <div className="group flex h-full min-h-[205px] flex-col overflow-hidden rounded-2xl border border-hair bg-canvas transition-all duration-300 hover:-translate-y-1 hover:border-accent md:min-h-[250px]">
                 {item.image && (
                   <div className={`flex w-full items-center justify-center ${isBook ? 'h-28 bg-wash p-3' : 'h-24 overflow-hidden md:h-32'}`}>
                     <img src={item.image} alt="" loading="lazy" className={`${isBook ? 'h-full w-full object-contain' : 'h-full w-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-[1.03]'}`} />
                   </div>
                 )}
-                <div className="flex flex-1 flex-col p-5 md:p-7">
+                <div className="flex flex-1 flex-col p-4 md:p-7">
                   <span className="text-[.72rem] font-semibold text-accent">{item.type}</span>
-                  <h3 className="mt-3 font-display text-[1.12rem] font-semibold leading-[1.5] text-ink transition-colors group-hover:text-accent md:text-[1.3rem]">{item.title}</h3>
-                  {item.note && <p className="mt-2.5 line-clamp-3 text-[.82rem] font-light leading-[1.8] text-soft md:text-[.88rem]">{item.note}</p>}
+                  <h3 className="mt-2.5 break-words font-display text-[.98rem] font-semibold leading-[1.55] text-ink transition-colors group-hover:text-accent sm:text-[1.05rem] md:mt-3 md:text-[1.3rem]">{item.title}</h3>
+                  {item.note && <p className="mt-2 line-clamp-2 text-start text-[.76rem] font-light leading-[1.7] text-soft sm:text-[.8rem] md:mt-2.5 md:line-clamp-3 md:text-[.88rem]">{item.note}</p>}
                   <span className="mt-auto pt-5 text-[.78rem] font-semibold text-accent md:pt-6 md:text-[.82rem]">افتح العمل</span>
                 </div>
               </div>
             )
             return (
-              <FadeUp key={`${item.type}-${item.to}`} delay={index * 0.06} className="w-[62vw] max-w-[292px] shrink-0 snap-start md:w-auto md:max-w-none md:shrink">
+              <FadeUp key={`${item.type}-${item.to}`} delay={index * 0.06} className="min-w-0">
                 {item.external ? <a href={item.to} target="_blank" rel="noreferrer" className="block h-full">{inner}</a> : <Link to={item.to} className="block h-full">{inner}</Link>}
               </FadeUp>
             )

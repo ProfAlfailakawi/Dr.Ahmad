@@ -200,7 +200,7 @@ export default function Curated() {
                 <span className="pulse relative h-2 w-2 rounded-full bg-accent" />
                 الأحدث من الإنترنت
               </span>
-              <span className="text-[.85rem] text-soft">· {today} · يتحدّث تلقائيًا عند وصول صيدة موثوقة جديدة</span>
+              <span className="text-[.85rem] text-soft">· {today} · يتحدّث تلقائيًا عند وصول مادة موثوقة جديدة</span>
             </div>
           </FadeUp>
           <FadeUp delay={0.08}>

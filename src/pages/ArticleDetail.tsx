@@ -701,12 +701,12 @@ export default function ArticleDetail() {
               <section className="mt-16 border-t border-hair pt-9">
                 <span className="text-[.76rem] font-semibold uppercase text-accent">أكمل هذا المسار</span>
                 <p className="mt-2 text-[.9rem] font-light text-soft">مقالاتٌ على الخيط الفكري نفسه.</p>
-                <ul className="mt-6 grid gap-6 sm:grid-cols-3">
+                <ul className="related-path-grid mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-6">
                   {related.slice(0, dive.paper || dive.book ? 2 : 3).map((r) => (
-                    <li key={r.slug}>
-                      <Link to={`/articles/${r.slug}`} className="group block">
+                    <li key={r.slug} className="min-w-0">
+                      <Link to={`/articles/${r.slug}`} className="group block h-full min-w-0 rounded-2xl border border-hair bg-canvas p-4 text-start transition-colors hover:border-accent/40 sm:border-0 sm:bg-transparent sm:p-0">
                         <span className="text-[.72rem] font-semibold text-accent">مقال</span>
-                        <span className="mt-1.5 block font-display text-[1.05rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">
+                        <span className="mt-1.5 block break-words font-display text-[.96rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent sm:text-[1.05rem]">
                           {r.title}
                         </span>
                         <time className="mt-1 block text-[.76rem] text-soft">{r.date}</time>
@@ -714,10 +714,10 @@ export default function ArticleDetail() {
                     </li>
                   ))}
                   {dive.paper && (
-                    <li key={dive.paper.slug}>
-                      <Link to={`/research/${dive.paper.slug}`} className="group block">
+                    <li key={dive.paper.slug} className="min-w-0">
+                      <Link to={`/research/${dive.paper.slug}`} className="group block h-full min-w-0 rounded-2xl border border-hair bg-canvas p-4 text-start transition-colors hover:border-accent/40 sm:border-0 sm:bg-transparent sm:p-0">
                         <span className="text-[.72rem] font-semibold text-accent">بحث محكّم</span>
-                        <span className="mt-1.5 block font-display text-[1.05rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">
+                        <span className="mt-1.5 block break-words font-display text-[.96rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent sm:text-[1.05rem]">
                           {dive.paper.title}
                         </span>
                         <span className="mt-1 block text-[.76rem] text-soft">للتعمّق الأكاديمي</span>
@@ -725,10 +725,10 @@ export default function ArticleDetail() {
                     </li>
                   )}
                   {dive.book && !dive.paper && (
-                    <li key={dive.book.slug}>
-                      <Link to={`/publications/${dive.book.slug}`} className="group block">
+                    <li key={dive.book.slug} className="min-w-0">
+                      <Link to={`/publications/${dive.book.slug}`} className="group block h-full min-w-0 rounded-2xl border border-hair bg-canvas p-4 text-start transition-colors hover:border-accent/40 sm:border-0 sm:bg-transparent sm:p-0">
                         <span className="text-[.72rem] font-semibold text-accent">كتاب</span>
-                        <span className="mt-1.5 block font-display text-[1.05rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">
+                        <span className="mt-1.5 block break-words font-display text-[.96rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent sm:text-[1.05rem]">
                           {dive.book.title}
                         </span>
                         <span className="mt-1 block text-[.76rem] text-soft">للإحاطة الكاملة</span>

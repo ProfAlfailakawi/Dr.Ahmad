@@ -34,7 +34,8 @@ export function AdminTaskFavicon() {
       originalHref.current = link.getAttribute('href') || '/favicon.png'
     }
 
-    if (task.status === 'idle') {
+    const status = task.status
+    if (status === 'idle') {
       link.href = originalHref.current || '/favicon.png'
       return () => undefined
     }
@@ -56,13 +57,13 @@ export function AdminTaskFavicon() {
       ctx.clearRect(0, 0, 64, 64)
       ctx.drawImage(image, 4, 4, 56, 56)
 
-      const color = STATUS_COLOR[task.status]
+      const color = STATUS_COLOR[status]
       ctx.save()
-      const pulse = task.status === 'working' ? (Math.sin(phase.current) + 1) / 2 : 0
+      const pulse = status === 'working' ? (Math.sin(phase.current) + 1) / 2 : 0
       const x = 48
       const y = 16
-      const radius = task.status === 'working' ? 9.5 + pulse * 1.8 : 10
-      if (task.status === 'working') {
+      const radius = status === 'working' ? 9.5 + pulse * 1.8 : 10
+      if (status === 'working') {
         ctx.beginPath()
         ctx.arc(x, y, radius + 6 + pulse * 2, 0, Math.PI * 2)
         ctx.fillStyle = `rgba(47, 109, 163, ${0.16 + pulse * 0.12})`
@@ -86,7 +87,7 @@ export function AdminTaskFavicon() {
 
     const start = () => {
       draw()
-      if (task.status !== 'working') return
+      if (status !== 'working') return
       timer = window.setInterval(() => {
         phase.current = (phase.current + 0.55) % (Math.PI * 2)
         draw()
@@ -118,7 +119,7 @@ export function AdminTaskIndicator() {
   const color =
     task.status === 'completed'
       ? 'bg-emerald-500'
-      : task.status === 'working'
+      : status === 'working'
         ? 'bg-accent'
         : 'bg-amber-500'
 
@@ -129,7 +130,7 @@ export function AdminTaskIndicator() {
       aria-live="polite"
       title={task.label || label}
     >
-      <span className={`h-2 w-2 rounded-full ${color} ${task.status === 'working' ? 'animate-pulse' : ''}`} aria-hidden />
+      <span className={`h-2 w-2 rounded-full ${color} ${status === 'working' ? 'animate-pulse' : ''}`} aria-hidden />
       <span>{label}</span>
     </div>
   )

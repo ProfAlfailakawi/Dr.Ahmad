@@ -2,7 +2,7 @@
   "name": "د. أحمد حسين الفيلكاوي",
   "short_name": "الفيلكاوي",
   "description": "أستاذ تكنولوجيا التعليم والذكاء الاصطناعي — مقالات وكتب وأبحاث.",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "lang": "ar",
@@ -28,5 +28,11 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "id": "/",
+  "display_override": [
+    "standalone"
+  ],
+  "orientation": "any",
+  "prefer_related_applications": false
 }

@@ -38,13 +38,32 @@ html.dark {
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
   overflow-x: clip;
   max-width: 100%;
   transition: background-color 0.5s var(--E);
 }
 
-html, body, #root {
+html, body, #root, main {
+  box-sizing: border-box;
+  width: 100%;
   max-width: 100%;
+  min-width: 0;
+  overscroll-behavior-x: none;
+}
+
+#root, main {
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+@supports (-webkit-touch-callout: none) {
+  html, body, #root, main { overflow-x: hidden; }
+}
+
+@media (display-mode: standalone) {
+  html, body, #root, main { overscroll-behavior-inline: none; }
+  body { position: relative; }
 }
 
 body {
@@ -53,6 +72,7 @@ body {
   font-family: "Tajawal", system-ui, sans-serif;
   line-height: 1.85;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
   overflow-x: clip;
   transition: background-color 0.5s var(--E), color 0.5s var(--E);
 }
@@ -588,10 +608,10 @@ html.dark .content-media .page-head {
   color: rgb(var(--c-accent));
 }
 
-/* ---------- محاذاة كاملة (justify) لكل النصوص القرائية في الموقع ----------
-   الفقرات وعناصر القوائم النصية تُضبط من الحافتين. المتمركزة عمداً مستثناة،
-   وjustify على السطر الواحد بلا أثر — فالعناوين والوسوم القصيرة تبقى كما هي. */
-main :is(p, li):not(.text-center):not([class*="text-center"]):not([style*="center"]) {
+/* ---------- محاذاة كاملة للنصوص القرائية فقط ----------
+   تُطبّق على الفقرات، لا على عناصر القوائم والكروت؛ حتى لا تتسع الكلمات
+   داخل العناوين القصيرة على الهاتف. */
+main p:not(.text-center):not([class*="text-center"]):not([style*="center"]) {
   text-align: justify;
   text-justify: inter-word;
   hyphens: none;
@@ -1025,6 +1045,21 @@ html.dark .human-core__scan { mix-blend-mode: screen; }
   .human-core__signal { margin-block: 1.15rem; }
 }
 
+@media (max-width: 767px) {
+  .human-core__canvas { display: none; }
+  .human-core__portrait-shell {
+    transform: none !important;
+    will-change: auto !important;
+  }
+  .human-core__portrait-color {
+    -webkit-mask-image: none;
+    mask-image: none;
+    opacity: 1;
+  }
+  .human-core__scan { display: none; }
+  .human-core__orbit { animation: none; }
+}
+
 @media (max-height: 760px) and (min-width: 768px) {
   .human-core { padding-top: 6rem; padding-bottom: 5.5rem; }
   .human-core__portrait-shell { max-width: 310px; }
@@ -1093,8 +1128,7 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
   border-color: rgb(var(--c-accent) / .34);
 }
 @media (min-width: 768px) {
-  .tebyan-link,
-  .schedule-link {
+  .tebyan-link {
     max-width: 2.75rem;
     overflow: hidden;
     white-space: nowrap;
@@ -1107,13 +1141,11 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
   .tebyan-link:focus-visible {
     max-width: 9rem;
   }
-  .schedule-link {
-    max-width: 2.35rem;
-  }
-  .schedule-link:hover,
-  .schedule-link:focus-visible {
-    max-width: 7.6rem;
-  }
+}
+
+.schedule-link {
+  max-width: 2.5rem;
+  overflow: hidden;
 }
 
 /* خيط الفكرة: منع أعمدة الكلمات والفراغات الحادة، خصوصًا عند العناوين الإنجليزية الطويلة. */
@@ -1166,4 +1198,17 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
     margin-inline: .25rem;
     padding-inline: 1rem;
   }
+}
+
+
+/* مسار المقال: كروت هاتفية متوازنة بلا تمدد للكلمات أو انزلاق أفقي. */
+.related-path-grid,
+.related-path-grid :is(li, a, span, time) {
+  min-width: 0;
+  text-align: start;
+  text-align-last: auto;
+}
+.related-path-grid a {
+  overflow-wrap: anywhere;
+  word-break: normal;
 }

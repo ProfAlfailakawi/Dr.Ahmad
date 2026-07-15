@@ -65,6 +65,7 @@ const adminJourneysPath = '/api/admin/journeys'
 const maxArticleRequestBytes = 128 * 1024
 const firebaseJwksUrl = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
 const articleCategories = Object.freeze(['التعليم', 'التربية', 'مجتمع', 'تقنية', 'هوية', 'إعلام', 'بحث'])
+const articleCategoryPattern = /^[\p{L}][\p{L}\p{M}\s-]{1,38}$/u
 const contentKinds = Object.freeze(['article', 'book', 'paper', 'media'])
 
 class HttpError extends Error {
@@ -330,11 +331,16 @@ function normalizedText(value, maximum) {
   return Array.from(result).slice(0, maximum).join('')
 }
 
+function normalizedArticleCategory(value) {
+  const category = normalizedText(value, 40)
+  if (!articleCategoryPattern.test(category)) throw new HttpError(502, 'AI returned an invalid category')
+  return category
+}
+
 export function normalizeContentSuggestion(kind, value) {
   const parsed = parseSuggestion(value)
   if (kind === 'article') {
-    if (!articleCategories.includes(parsed.cat)) throw new HttpError(502, 'AI returned an invalid response')
-    return { cat: parsed.cat, excerpt: normalizedText(parsed.excerpt, 200) }
+    return { cat: normalizedArticleCategory(parsed.cat), excerpt: normalizedText(parsed.excerpt, 200) }
   }
   if (kind === 'book') return { desc: normalizedText(parsed.desc, 500) }
   if (kind === 'paper') return { meta: normalizedText(parsed.meta, 300) }
@@ -353,9 +359,9 @@ export function normalizeArticleSuggestion(value) {
 
 function suggestionSpec(kind) {
   if (kind === 'article') return {
-    instruction: `صنّف المقال في ركن واحد فقط من: ${articleCategories.join('، ')}. اكتب مقتطفاً عربياً واضحاً لا يتجاوز 200 حرف. لا تضف معلومات غير موجودة في المادة. أعد JSON فقط.`,
+    instruction: `اختر التصنيف الأدق للمقال. استخدم أحد التصنيفات القائمة (${articleCategories.join('، ')}) إن كان مناسباً، وإلا أنشئ تصنيفاً عربياً جديداً موجزاً مثل السياسة أو الاقتصاد. اكتب مقتطفاً عربياً واضحاً لا يتجاوز 200 حرف. لا تضف معلومات غير موجودة في المادة. أعد JSON فقط.`,
     properties: {
-      cat: { type: 'STRING', enum: articleCategories },
+      cat: { type: 'STRING' },
       excerpt: { type: 'STRING' },
     },
     required: ['cat', 'excerpt'],
@@ -757,7 +763,7 @@ export async function currentContextForIdea(idea, selectedIds = [], fetchImpl = 
 function perfectArticleSchema() {
   return {
     title: { type: 'STRING' },
-    cat: { type: 'STRING', enum: articleCategories },
+    cat: { type: 'STRING' },
     excerpt: { type: 'STRING' },
     body: { type: 'STRING' },
     angle: { type: 'STRING' },
@@ -828,7 +834,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
       const event = currentEvents.find((item) => item.id === article.eventId) || null
       return {
         title: boundedString(article.title, 300),
-        cat: articleCategories.includes(article.cat) ? article.cat : 'التعليم',
+        cat: (() => { try { return normalizedArticleCategory(article.cat) } catch { return 'التعليم' } })(),
         excerpt: boundedString(article.excerpt, 200),
         body: String(article.body).trim(), angle: boundedString(article.angle, 500),
         event: event ? { id: event.id, title: event.title, source: event.source, url: event.url, publishedAt: event.publishedAt } : null,

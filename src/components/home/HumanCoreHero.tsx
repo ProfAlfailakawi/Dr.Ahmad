@@ -236,7 +236,6 @@ export default function HumanCoreHero() {
       <div className="human-core__wash pointer-events-none absolute inset-0" aria-hidden="true" />
       <div className="human-core__words pointer-events-none absolute inset-0" aria-hidden="true">
         <span style={{ insetInlineStart: '8%', top: '24%' }}>وعي</span>
-        <span style={{ insetInlineEnd: '9%', top: '19%' }}>تعليم</span>
         <span style={{ insetInlineStart: '15%', bottom: '24%' }}>معنى</span>
         <span style={{ insetInlineEnd: '12%', bottom: '28%' }}>مستقبل</span>
       </div>

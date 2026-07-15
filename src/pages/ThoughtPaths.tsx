@@ -5,6 +5,7 @@ import { FadeUp, Page, PageHead } from '../components/ui'
 import { useCmsContent, useExtras } from '../lib/content'
 import { normalizeArabic } from '../lib/cms'
 import { staticQuestions } from './Questions'
+import { dynamicArticleCategories } from '../lib/content-taxonomy'
 
 type ThoughtPath = {
   id: string
@@ -96,12 +97,25 @@ const shorten = (value = '', limit = 155) => value.length > limit ? `${value.sli
 export default function ThoughtPaths() {
   const { articles, books, papers, media, loading } = useCmsContent()
   const extraQuestions = useExtras<ThoughtQuestion>('site_questions')
+  const availablePaths = useMemo(() => {
+    const covered = new Set(['التعليم', 'التربية', 'مجتمع', 'تقنية', 'هوية', 'إعلام', 'بحث'])
+    const automatic = dynamicArticleCategories(articles, false)
+      .filter((category) => !covered.has(category))
+      .map((category) => ({
+        id: `category-${encodeURIComponent(category)}`,
+        title: category,
+        intro: `مسار يتكوّن تلقائياً من كل مادة جديدة تُنشر تحت تصنيف «${category}».`,
+        anchors: [category],
+        signals: [category],
+      }))
+    return [...paths, ...automatic]
+  }, [articles])
   const [activeId, setActiveId] = useState(() => {
     if (typeof window === 'undefined') return paths[0].id
     const hash = window.location.hash.replace(/^#/, '')
     return paths.some((path) => path.id === hash) ? hash : paths[0].id
   })
-  const active = paths.find((path) => path.id === activeId) || paths[0]
+  const active = availablePaths.find((path) => path.id === activeId) || availablePaths[0] || paths[0]
 
   useSeo({
     title: 'مسار الفكرة',
@@ -112,11 +126,11 @@ export default function ThoughtPaths() {
   useEffect(() => {
     const sync = () => {
       const hash = window.location.hash.replace(/^#/, '')
-      if (paths.some((path) => path.id === hash)) setActiveId(hash)
+      if (availablePaths.some((path) => path.id === hash)) setActiveId(hash)
     }
     window.addEventListener('hashchange', sync)
     return () => window.removeEventListener('hashchange', sync)
-  }, [])
+  }, [availablePaths])
 
   const journey = useMemo(() => {
     const rankedArticles = articles
@@ -204,7 +218,7 @@ export default function ThoughtPaths() {
       <section className="border-b border-hair px-6 py-10 md:px-11 md:py-12">
         <div className="mx-auto max-w-shell">
           <div role="tablist" aria-label="اختر مساراً فكرياً" className="flex flex-wrap gap-x-6 gap-y-2">
-            {paths.map((path) => (
+            {availablePaths.map((path) => (
               <button
                 key={path.id}
                 id={`tab-${path.id}`}

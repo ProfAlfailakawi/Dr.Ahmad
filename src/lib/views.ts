@@ -144,6 +144,19 @@ async function trackJourney(from: string, to: string): Promise<boolean> {
   if (pending) return pending
 
   const write = (async () => {
+    // نسجل الرحلة أيضاً داخل مجموعة views التي ثبت أنها تعمل في الاستضافة الساكنة.
+    // بهذا لا تعتمد رحلة الزائر على نشر endpoint أو قواعد مجموعة إضافية.
+    const bridgePath = `/_journey/${encodeURIComponent(normalizePath(from))}>${encodeURIComponent(normalizePath(to))}`
+    const bridgeIds = viewDocumentIds(bridgePath)
+    const [bridgeTotal, bridgeDay] = await Promise.all([
+      incrementViewDocument(bridgeIds.total, `رحلة: ${from} ← ${to}`),
+      incrementViewDocument(bridgeIds.day, `رحلة: ${from} ← ${to}`),
+    ])
+    if (bridgeTotal && bridgeDay) {
+      markSeen(sessionKey)
+      return true
+    }
+
     // المسار الأساسي يمر عبر الخادم. هذا يتجاوز مشكلة أن قواعد Firestore قد لا
     // تكون نُشرت بعد، ويستمر حتى لو أغلق الزائر الصفحة سريعاً بفضل keepalive.
     try {

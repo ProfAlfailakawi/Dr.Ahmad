@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useSeo } from '../components/seo'
 import { Page, PageHead, FadeUp, Reveal } from '../components/ui'
 import { Share } from '../components/extras'
@@ -57,6 +58,7 @@ type LiveQuestion = Question & {
 type ArchiveQuestion = Question & { label: string; key: string }
 
 export default function Questions() {
+  const [visibleCount, setVisibleCount] = useState(12)
   useSeo({
     title: 'سؤال يُقلق التعليم',
     path: '/questions',
@@ -91,7 +93,7 @@ export default function Questions() {
   }))
 
   const staticArchive: ArchiveQuestion[] = staticQuestions.length > 1
-    ? Array.from({ length: Math.min(12, staticQuestions.length - 1) }, (_, index) => {
+    ? Array.from({ length: staticQuestions.length - 1 }, (_, index) => {
         const offset = index + 1
         const itemIndex = (currentStaticIndex - offset + staticQuestions.length) % staticQuestions.length
         const item = staticQuestions[itemIndex]
@@ -102,7 +104,6 @@ export default function Questions() {
   const previousQuestions = [...liveArchive, ...staticArchive]
     .filter((item) => item.ar !== currentQuestion.ar)
     .filter((item, index, all) => all.findIndex((candidate) => candidate.ar === item.ar) === index)
-    .slice(0, 18)
 
   return (
     <Page className="content-questions page-journey">
@@ -155,7 +156,7 @@ export default function Questions() {
             <h3 className="mb-10 font-display text-2xl font-bold text-ink">أسئلة سابقة</h3>
           </FadeUp>
           <div className="grid gap-5">
-            {previousQuestions.map((question, index) => (
+            {previousQuestions.slice(0, visibleCount).map((question, index) => (
               <FadeUp key={question.key} delay={Math.min(index * 0.04, 0.3)}>
                 <article className="rounded-2xl border border-hair p-6">
                   <p className="mb-1 text-[.75rem] text-soft">{question.label}</p>
@@ -170,6 +171,7 @@ export default function Questions() {
               </FadeUp>
             ))}
           </div>
+          {visibleCount < previousQuestions.length && <div className="mt-8 text-center"><button type="button" onClick={() => setVisibleCount((count) => count + 12)} className="rounded-full border border-hair px-6 py-3 text-[.84rem] font-semibold text-accent transition-colors hover:border-accent">عرض ١٢ سؤالاً إضافياً</button></div>}
         </div>
       </section>
     </Page>

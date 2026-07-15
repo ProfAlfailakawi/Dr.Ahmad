@@ -241,7 +241,7 @@ export function Cursor() {
 }
 
 /* ---------- Section head: label + title + "الكل" ---------- */
-export function SectionHead({ label, title, to, cta = 'الكل' }: { label: string; title: string; to: string; cta?: string }) {
+export function SectionHead({ label, title, to, cta = 'الكل' }: { label: string; title: string; to?: string; cta?: string }) {
   return (
     <div className="mb-10 flex items-end justify-between gap-6">
       <FadeUp>
@@ -250,10 +250,12 @@ export function SectionHead({ label, title, to, cta = 'الكل' }: { label: str
           <Reveal>{title}</Reveal>
         </h2>
       </FadeUp>
-      <Link to={to} className="group shrink-0 pb-2 text-[.92rem] font-semibold text-accent">
-        {cta}
-        <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1.5"> ←</span>
-      </Link>
+      {to && (
+        <Link to={to} className="group shrink-0 pb-2 text-[.92rem] font-semibold text-accent">
+          {cta}
+          <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1.5"> ←</span>
+        </Link>
+      )}
     </div>
   )
 }

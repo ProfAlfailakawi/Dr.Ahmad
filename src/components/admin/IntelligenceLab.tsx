@@ -4,9 +4,8 @@ import { books, papers } from '../../data'
 import podcastAdmin from '../../data/podcast-admin.json'
 import type { ArticleRecord } from '../../lib/cms'
 import { loadArticleBodies } from '../../lib/article-bodies'
-import { fetchExtras, fetchPublishedExtras, getDb } from '../../lib/firebase'
-import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
-import { useAdminAuth } from '../../lib/admin-auth'
+import { fetchPublishedExtras } from '../../lib/firebase'
+import { beginAdminTask } from '../../lib/admin-task-state'
 import {
   articleSystem,
   automaticSeries,
@@ -20,6 +19,8 @@ const softBtn = 'rounded-full border border-hair px-4 py-2 text-[.82rem] text-so
 const primaryBtn = 'rounded-full bg-accent px-5 py-2 text-[.84rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
 const adminAudioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const adminAudioUrl = (path: string) => adminAudioBase ? `${adminAudioBase}/${path.replace(/^\/?audio\//, '')}` : path
+
+type RadarItem = { id: string; ar?: string; arNote?: string; en?: string; source?: string; url?: string }
 
 function CopyButton({ value, label = 'نسخ' }: { value: string; label?: string }) {
   const [done, setDone] = useState(false)
@@ -334,190 +335,6 @@ function SeriesDetails({ articles }: { articles: ArticleRecord[] }) {
   )
 }
 
-type NowAdminItem = {
-  id: string
-  question?: string
-  note?: string
-  link?: string
-  status?: string
-  duration?: string
-  createdAt?: { seconds?: number }
-  expiresAt?: { seconds?: number } | null
-}
-
-const expiresLabel = (item: NowAdminItem) => {
-  if (!item.expiresAt?.seconds) return 'دائمة'
-  const date = new Date(item.expiresAt.seconds * 1000)
-  return date.getTime() < Date.now() ? 'انتهت' : `حتى ${date.toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'short' })}`
-}
-
-function NowCard() {
-  const { isAdmin, refresh, user } = useAdminAuth()
-  const [form, setForm] = useState({ question: '', note: '', link: '', duration: '14' })
-  const [items, setItems] = useState<NowAdminItem[]>([])
-  const [saved, setSaved] = useState('')
-  const [error, setError] = useState('')
-  const [busy, setBusy] = useState(false)
-
-  const serverRequest = async (method: 'GET' | 'POST' | 'PATCH' | 'DELETE', body?: Record<string, unknown>, id?: string) => {
-    if (!user) return null
-    const token = await user.getIdToken()
-    const query = id ? `?id=${encodeURIComponent(id)}` : ''
-    const response = await fetch(`/api/admin/site-now${query}`, {
-      method,
-      headers: {
-        authorization: `Bearer ${token}`,
-        ...(body ? { 'content-type': 'application/json' } : {}),
-      },
-      ...(body ? { body: JSON.stringify(body) } : {}),
-      cache: 'no-store',
-    })
-    if (response.status === 404) return null
-    if (!response.ok) {
-      const payload = await response.json().catch(() => null)
-      throw new Error(payload?.error || 'تعذّر تنفيذ العملية عبر الخادم.')
-    }
-    if (response.status === 204) return { ok: true }
-    return response.json().catch(() => ({ ok: true }))
-  }
-
-  const load = async () => {
-    try {
-      if (user) {
-        const payload = await serverRequest('GET') as { items?: NowAdminItem[] } | null
-        if (payload?.items) {
-          setItems(payload.items.slice(0, 8))
-          setError('')
-          return
-        }
-      }
-      const value = await fetchExtras<NowAdminItem>('site_now')
-      setItems(value.slice(0, 8))
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'تعذّر جلب الأفكار المحفوظة.')
-    }
-  }
-  useEffect(() => { void load() }, [user])
-
-  const save = async () => {
-    setError('')
-    setSaved('')
-    if (!form.question.trim()) {
-      setError('اكتب السؤال أو الفكرة أولاً.')
-      setAdminTaskState('needs-input', 'اكتب السؤال أو الفكرة أولاً')
-      return
-    }
-    const task = beginAdminTask('حفظ الفكرة الحالية')
-    setBusy(true)
-    try {
-      const ok = isAdmin || await refresh()
-      if (!ok) throw new Error('صلاحية المشرف غير مفعّلة في جلسة المتصفح. سجّل خروجك وادخل من جديد أو شغّل set-admin.')
-      const serverResult = await serverRequest('POST', { ...form, status: 'published' })
-      if (!serverResult) {
-        const db = await getDb()
-        if (!db) throw new Error('Firebase غير متاح الآن.')
-        const { Timestamp, collection, addDoc, serverTimestamp } = await import('firebase/firestore')
-        const days = form.duration === 'forever' ? 0 : Number(form.duration || 14)
-        const expiresAt = days ? Timestamp.fromDate(new Date(Date.now() + days * 86_400_000)) : null
-        await addDoc(collection(db, 'site_now'), { ...form, status: 'published', expiresAt, createdAt: serverTimestamp() })
-      }
-      setForm({ question: '', note: '', link: '', duration: '14' })
-      setSaved('حُفظت الفكرة في صفحة ماذا أفكر الآن ✓')
-      await load()
-      window.setTimeout(() => setSaved(''), 2500)
-      task.complete('حُفظت الفكرة')
-    } catch (reason) {
-      const message = reason instanceof Error ? reason.message : 'فشل الحفظ.'
-      setError(message.includes('permission') || message.includes('Missing or insufficient permissions')
-        ? 'تعذّر الحفظ بسبب صلاحيات قاعدة البيانات. تأكد من نشر الخادم الجديد ثم أعد تسجيل الدخول.'
-        : message)
-      task.fail(reason, 'تعذّر حفظ الفكرة')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const hide = async (id: string) => {
-    const task = beginAdminTask('إخفاء الفكرة')
-    try {
-      const result = await serverRequest('PATCH', { id, status: 'hidden' })
-      if (!result) {
-        const db = await getDb()
-        if (!db) return
-        const { doc, updateDoc } = await import('firebase/firestore')
-        await updateDoc(doc(db, 'site_now', id), { status: 'hidden' })
-      }
-      await load()
-      task.complete('أُخفيت الفكرة')
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'تعذّر إخفاء الفكرة.')
-      task.fail(reason, 'تعذّر إخفاء الفكرة')
-    }
-  }
-
-  const remove = async (id: string) => {
-    const task = beginAdminTask('حذف الفكرة')
-    try {
-      const result = await serverRequest('DELETE', undefined, id)
-      if (!result) {
-        const db = await getDb()
-        if (!db) return
-        const { deleteDoc, doc } = await import('firebase/firestore')
-        await deleteDoc(doc(db, 'site_now', id))
-      }
-      await load()
-      task.complete('حُذفت الفكرة')
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'تعذّر حذف الفكرة.')
-      task.fail(reason, 'تعذّر حذف الفكرة')
-    }
-  }
-  return (
-    <section className={card}>
-      <p className="text-[.76rem] font-semibold uppercase text-accent">ماذا أفكر الآن؟</p>
-      <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-        <input className={input} value={form.question} onChange={(e) => setForm((p) => ({ ...p, question: e.target.value }))} placeholder="سؤال يشغلني" />
-        <input className={input} value={form.note} onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))} placeholder="ملاحظة قصيرة" />
-        <input className={input} dir="ltr" value={form.link} onChange={(e) => setForm((p) => ({ ...p, link: e.target.value }))} placeholder="/articles/..." />
-        <select className={`${input} min-w-[8.5rem]`} value={form.duration} onChange={(e) => setForm((p) => ({ ...p, duration: e.target.value }))} aria-label="مدة ظهور الفكرة">
-          <option value="7">٧ أيام</option>
-          <option value="14">١٤ يومًا</option>
-          <option value="forever">دائم</option>
-        </select>
-      </div>
-      <div className="mt-4 flex items-center gap-3">
-        <button type="button" onClick={save} disabled={busy} className={primaryBtn}>{busy ? 'أحفظ…' : 'حفظ فكرة'}</button>
-        {saved && <span className="text-[.82rem] text-accent">{saved}</span>}
-      </div>
-      {error && <p className="mt-3 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.82rem] leading-relaxed text-soft">{error}</p>}
-      <div className="mt-6 border-t border-hair pt-4">
-        <p className="text-[.78rem] font-semibold text-soft">آخر الأفكار المحفوظة</p>
-        {items.length ? (
-          <ol className="mt-3 grid gap-2">
-            {items.map((item) => (
-              <li key={item.id} className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-hair bg-canvas px-4 py-3">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[.9rem] font-semibold text-ink">{item.question || 'فكرة بلا عنوان'}</p>
-                  <p className="mt-0.5 text-[.74rem] text-soft">
-                    {item.status === 'published' ? 'ظاهرة' : 'مخفية'} · {expiresLabel(item)}
-                  </p>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  {item.status === 'published' && <button type="button" onClick={() => hide(item.id)} className={softBtn}>إخفاء</button>}
-                  <button type="button" onClick={() => remove(item.id)} className="rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-red-400 hover:text-red-500">حذف</button>
-                </div>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.82rem] text-soft">لا توجد أفكار محفوظة بعد.</p>
-        )}
-      </div>
-    </section>
-  )
-}
-
-type RadarItem = { id: string; ar?: string; arNote?: string; source?: string; url?: string }
 function DoctorRadarCard({ articles }: { articles: ArticleRecord[] }) {
   const [items, setItems] = useState<RadarItem[]>([])
   useEffect(() => {
@@ -633,7 +450,7 @@ export function IntelligenceLab({ articles }: { articles: ArticleRecord[] }) {
 
       {view === 'before' && <LabLayer title="قبل النشر" note="فحص الجاهزية وخطة نشر تتغير تلقائيًا كل شهر."><ReadinessCard articles={richArticles} /><MonthlyPlanDetails articles={richArticles} /></LabLayer>}
 
-      {view === 'develop' && <LabLayer title="تطوير الفكرة" note="مساحة هادئة لتطوير سؤال أو خبر أو ملاحظة، وربطه بتاريخك الفكري."><IdeaLabCard articles={richArticles} /><DoctorRadarCard articles={richArticles} /><SeriesDetails articles={richArticles} /><ToolDetails title="ماذا أفكر الآن؟" note="هذه الأداة الوحيدة هنا التي تحفظ شيئًا يمكن أن يظهر للعامة إذا ضغطت حفظ."><NowCard /></ToolDetails></LabLayer>}
+      {view === 'develop' && <LabLayer title="تطوير الفكرة" note="مساحة هادئة لتطوير سؤال أو خبر أو ملاحظة، وربطه بتاريخك الفكري."><IdeaLabCard articles={richArticles} /><DoctorRadarCard articles={richArticles} /><SeriesDetails articles={richArticles} /></LabLayer>}
 
       {view === 'system' && <LabLayer title="تحويل المقال إلى منظومة" note="تحويل المقال الواحد إلى محاضرة، منشورات، سؤال طلاب، وبودكاست — من دون نشر تلقائي."><ArticleSystemCard articles={richArticles} /><AudioQualityGateCard /><AudioControlCard articles={richArticles} /></LabLayer>}
     </div>

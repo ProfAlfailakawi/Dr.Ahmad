@@ -19,6 +19,12 @@ export type SocialVisualLayout =
   | 'research'
   | 'horizon'
   | 'dialogue'
+  | 'arch'
+  | 'matrix'
+  | 'layers'
+  | 'focus'
+  | 'wave'
+  | 'balance'
 
 export type SocialVisualTemplate = {
   id: string
@@ -44,7 +50,7 @@ export type SocialPackVisualInput = {
 
 const layouts: SocialVisualLayout[] = [
   'editorial', 'orbit', 'quote', 'signal', 'split', 'window', 'dark', 'timeline', 'question',
-  'manifesto', 'event', 'signature', 'circuit', 'notebook', 'human', 'research', 'horizon', 'dialogue',
+  'manifesto', 'event', 'signature', 'circuit', 'notebook', 'human', 'research', 'horizon', 'dialogue', 'arch', 'matrix', 'layers', 'focus', 'wave', 'balance',
 ]
 
 const topicProfiles: Record<VisualTopic, { label: string; kicker: string; closer: string; layouts: SocialVisualLayout[] }> = {
@@ -52,49 +58,49 @@ const topicProfiles: Record<VisualTopic, { label: string; kicker: string; closer
     label: 'ذكاء اصطناعي وتقنية',
     kicker: 'الإنسان داخل التقنية',
     closer: 'الأداة تتغير؛ المعيار الإنساني يبقى.',
-    layouts: ['circuit', 'signal', 'orbit', 'dark', 'split', 'manifesto', 'question'],
+    layouts: ['circuit', 'signal', 'orbit', 'matrix', 'dark', 'split', 'manifesto', 'question'],
   },
   education: {
     label: 'تعليم وتعلّم',
     kicker: 'من قلب التعلّم',
     closer: 'ما الذي سيتغير داخل الصف؟',
-    layouts: ['notebook', 'editorial', 'window', 'question', 'timeline', 'human', 'split'],
+    layouts: ['notebook', 'editorial', 'window', 'arch', 'question', 'timeline', 'human', 'split'],
   },
   family: {
     label: 'أسرة وطفل',
     kicker: 'قربٌ يحمي المعنى',
     closer: 'التربية علاقة قبل أن تكون تعليمات.',
-    layouts: ['human', 'window', 'quote', 'signature', 'dialogue', 'editorial', 'question'],
+    layouts: ['human', 'window', 'quote', 'signature', 'dialogue', 'layers', 'editorial', 'question'],
   },
   research: {
     label: 'بحث ومعرفة',
     kicker: 'الدليل قبل الانطباع',
     closer: 'السؤال الجيد يسبق النتيجة الجيدة.',
-    layouts: ['research', 'timeline', 'split', 'manifesto', 'dark', 'notebook', 'editorial'],
+    layouts: ['research', 'timeline', 'matrix', 'split', 'manifesto', 'dark', 'notebook', 'editorial'],
   },
   media: {
     label: 'إعلام ومجتمع رقمي',
     kicker: 'خلف المشهد',
     closer: 'لا يكفي أن يصل الصوت؛ المهم ماذا يصنع.',
-    layouts: ['dialogue', 'signal', 'event', 'split', 'quote', 'dark', 'window'],
+    layouts: ['dialogue', 'signal', 'wave', 'event', 'split', 'quote', 'dark', 'window'],
   },
   future: {
     label: 'مستقبل وقيادة',
     kicker: 'أفق القرار',
     closer: 'المستقبل قرار يُصمَّم، لا خبر ننتظره.',
-    layouts: ['horizon', 'orbit', 'manifesto', 'dark', 'circuit', 'timeline', 'signature'],
+    layouts: ['horizon', 'orbit', 'arch', 'balance', 'manifesto', 'dark', 'circuit', 'timeline', 'signature'],
   },
   human: {
     label: 'الإنسان والمعنى',
     kicker: 'الإنسان أولًا',
     closer: 'كل فكرة تُقاس بما تتركه في الإنسان.',
-    layouts: ['human', 'signature', 'quote', 'window', 'editorial', 'dialogue', 'horizon'],
+    layouts: ['human', 'signature', 'focus', 'quote', 'window', 'editorial', 'dialogue', 'horizon'],
   },
   general: {
     label: 'فكرة عامة',
     kicker: 'فكرة تستحق التوقف',
     closer: 'الأثر قبل الانبهار.',
-    layouts: ['editorial', 'orbit', 'quote', 'split', 'question', 'manifesto', 'signature'],
+    layouts: ['editorial', 'orbit', 'focus', 'layers', 'quote', 'split', 'question', 'manifesto', 'signature'],
   },
 }
 
@@ -166,18 +172,28 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
   ]).slice(0, 8)
 
   const selectedLayouts = diverseLayouts(`${article.title}:${pack.event?.title || ''}`, 18, directions, topic)
-  const instagram: SocialVisualTemplate[] = slides.map((slide, index) => ({
+  const variantLabels = ['معالجة بديلة', 'زاوية إنسانية', 'نسخة مختصرة', 'تكوين بصري آخر', 'وقفة تأمل', 'امتداد الفكرة']
+  const visualCount = Math.min(12, Math.max(8, slides.length * 2))
+  const visualSlides = Array.from({ length: visualCount }, (_, index) => {
+    const slide = slides[index % slides.length]
+    if (index < slides.length) return slide
+    return {
+      ...slide,
+      kicker: `${slide.kicker || profile.kicker} · ${variantLabels[(index - slides.length) % variantLabels.length]}`,
+    }
+  })
+  const instagram: SocialVisualTemplate[] = visualSlides.map((slide, index) => ({
     id: `instagram-${topic}-${index + 1}`,
     platform: 'instagram',
-    format: index === 0 ? 'غلاف كاروسيل' : `شريحة ${index + 1}`,
+    format: index === 0 ? 'غلاف كاروسيل' : index < slides.length ? 'بطاقة كاروسيل' : 'تنويع بصري بديل',
     layout: selectedLayouts[index % selectedLayouts.length],
     topic,
     width: 1080,
     height: 1350,
-    kicker: slide.kicker || (index === 0 ? profile.kicker : `الفكرة ${index}`),
+    kicker: slide.kicker || (index === 0 ? profile.kicker : 'امتداد الفكرة'),
     title: slide.title || article.title,
     body: slide.body || '',
-    footer: index === slides.length - 1 ? 'اقرأ الفكرة كاملة في الموقع' : `${index + 1} / ${slides.length}`,
+    footer: index === visualSlides.length - 1 ? 'اقرأ الفكرة كاملة في الموقع' : 'dr-alfailakawi.com',
     source: pack.event?.source || '',
   }))
 
@@ -188,7 +204,7 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
   const stories: SocialVisualTemplate[] = storyTexts.map((text, index) => ({
     id: `story-${topic}-${index + 1}`,
     platform: 'story',
-    format: `Story ${index + 1}`,
+    format: 'قصة عمودية',
     layout: selectedLayouts[(slides.length + index) % selectedLayouts.length],
     topic,
     width: 1080,
@@ -196,7 +212,7 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
     kicker: index === 0 ? profile.kicker : 'من الفكرة',
     title: text,
     body: index === 0 ? article.title : '',
-    footer: `${index + 1} / ${storyTexts.length}`,
+    footer: 'dr-alfailakawi.com',
     source: pack.event?.source || '',
   }))
 
@@ -263,6 +279,16 @@ function drawWrapped(ctx: CanvasRenderingContext2D, text: string, x: number, y: 
   return y + lines.length * lineHeight
 }
 
+function fittedTitleSize(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maximumLines: number, preferred: number, minimum: number) {
+  let size = preferred
+  while (size > minimum) {
+    ctx.font = `700 ${Math.round(size)}px "El Messiri", serif`
+    if (wrapLines(ctx, text, maxWidth).length <= maximumLines) return Math.round(size)
+    size -= 2
+  }
+  return Math.round(minimum)
+}
+
 async function loadLogo() {
   const image = new Image()
   image.decoding = 'async'
@@ -290,6 +316,12 @@ function paletteFor(template: SocialVisualTemplate): Palette {
   if (template.layout === 'window') return { background: '#edf2f4', ink: '#15161a', soft: '#737c84', accent: '#375b74', line: '#cbd6dc', card: '#ffffff' }
   if (template.layout === 'manifesto') return { background: '#f9f6f0', ink: '#15161a', soft: '#77756f', accent: '#2f536f', line: '#ded8cc', card: '#ffffff' }
   if (template.layout === 'notebook') return { background: '#fbfaf6', ink: '#15161a', soft: '#747b84', accent: '#3e5c78', line: '#d8dcd8', card: '#ffffff' }
+  if (template.layout === 'arch') return { background: '#f5f4f0', ink: '#15161a', soft: '#777b80', accent: '#47657a', line: '#d5d9d8', card: '#ffffff' }
+  if (template.layout === 'matrix') return { background: '#eef3f5', ink: '#15161a', soft: '#727b84', accent: '#365d76', line: '#ccd7dc', card: '#ffffff' }
+  if (template.layout === 'layers') return { background: '#faf7f1', ink: '#15161a', soft: '#7a7771', accent: '#756047', line: '#ddd6ca', card: '#ffffff' }
+  if (template.layout === 'focus') return { background: '#f7f8f6', ink: '#15161a', soft: '#747b7b', accent: '#3d6471', line: '#d3dcda', card: '#ffffff' }
+  if (template.layout === 'wave') return { background: '#f2f5f6', ink: '#15161a', soft: '#707981', accent: '#3c6079', line: '#ced9de', card: '#ffffff' }
+  if (template.layout === 'balance') return { background: '#f8f5ef', ink: '#15161a', soft: '#79766f', accent: '#6f5d48', line: '#ded6ca', card: '#ffffff' }
   return { background: '#f7f6f3', ink: '#15161a', soft: '#7c818a', accent: '#3e5c78', line: '#d9d9d6', card: '#ffffff' }
 }
 
@@ -393,6 +425,38 @@ function drawArtwork(ctx: CanvasRenderingContext2D, template: SocialVisualTempla
     ctx.beginPath(); ctx.moveTo(width*.12,height*.34); ctx.lineTo(width*.09,height*.39); ctx.lineTo(width*.17,height*.34); ctx.stroke()
   }
 
+  if (template.layout === 'arch') {
+    ctx.globalAlpha = .13
+    ctx.beginPath(); ctx.arc(width*.24,height*.48,width*.18,Math.PI,0); ctx.stroke()
+    ctx.beginPath(); ctx.arc(width*.24,height*.48,width*.09,Math.PI,0); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(width*.06,height*.48); ctx.lineTo(width*.42,height*.48); ctx.stroke()
+  }
+  if (template.layout === 'matrix') {
+    ctx.globalAlpha = .11
+    for (let x = .08; x <= .42; x += .085) for (let y = .18; y <= .62; y += .09) { ctx.beginPath(); ctx.arc(width*x,height*y,width*.007,0,Math.PI*2); ctx.fill() }
+  }
+  if (template.layout === 'layers') {
+    ctx.globalAlpha = .11
+    for (let i=0;i<4;i+=1) { roundedRect(ctx,width*(.08+i*.035),height*(.18+i*.045),width*.34,height*.28,width*.025); ctx.stroke() }
+  }
+  if (template.layout === 'focus') {
+    ctx.globalAlpha = .13
+    const cx=width*.23, cy=height*.37
+    for (const radius of [.05,.1,.16]) { ctx.beginPath(); ctx.arc(cx,cy,width*radius,0,Math.PI*2); ctx.stroke() }
+    ctx.beginPath(); ctx.arc(cx,cy,width*.018,0,Math.PI*2); ctx.fill()
+  }
+  if (template.layout === 'wave') {
+    ctx.globalAlpha = .12
+    for (let row=0;row<3;row+=1) { ctx.beginPath(); for (let x=0;x<=80;x+=1) { const px=width*(.06+x/190); const py=height*(.28+row*.1)+Math.sin(x/8+row)*height*.025; x?ctx.lineTo(px,py):ctx.moveTo(px,py) } ctx.stroke() }
+  }
+  if (template.layout === 'balance') {
+    ctx.globalAlpha = .13
+    ctx.beginPath(); ctx.moveTo(width*.1,height*.46); ctx.lineTo(width*.4,height*.46); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(width*.25,height*.28); ctx.lineTo(width*.25,height*.58); ctx.stroke()
+    ctx.beginPath(); ctx.arc(width*.14,height*.48,width*.05,0,Math.PI*2); ctx.stroke()
+    ctx.beginPath(); ctx.arc(width*.36,height*.48,width*.05,0,Math.PI*2); ctx.stroke()
+  }
+
   ctx.restore()
 }
 
@@ -423,13 +487,13 @@ export async function renderSocialPng(template: SocialVisualTemplate) {
   ctx.font = `700 ${Math.round(template.width * .034)}px Tajawal, sans-serif`
   ctx.fillText(template.kicker, template.width - pad, pad + Math.round(template.height * .065))
 
-  const titleLengthFactor = template.title.length > 100 ? .84 : template.title.length > 65 ? .92 : 1
+  const maximumTitleLines = template.platform === 'story' ? 7 : 6
   const baseTitleSize = template.platform === 'story' ? template.width * .078 : template.width * .064
-  const titleSize = Math.round(baseTitleSize * titleLengthFactor)
+  const titleSize = fittedTitleSize(ctx, template.title, contentWidth, maximumTitleLines, baseTitleSize, template.width * .043)
   ctx.fillStyle = palette.ink
   ctx.font = `700 ${titleSize}px "El Messiri", serif`
   const titleY = pad + Math.round(template.height * .16)
-  const afterTitle = drawWrapped(ctx, template.title, template.width - pad, titleY, contentWidth, Math.round(titleSize * 1.45), template.platform === 'story' ? 7 : 6)
+  const afterTitle = drawWrapped(ctx, template.title, template.width - pad, titleY, contentWidth, Math.round(titleSize * 1.42), maximumTitleLines)
 
   if (template.body) {
     ctx.fillStyle = palette.soft

@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ArticleRecord } from '../../lib/cms'
+import { loadArticleBodies } from '../../lib/article-bodies'
+import { useAdminAuth } from '../../lib/admin-auth'
+import { getDb } from '../../lib/firebase'
+import podcastAdmin from '../../data/podcast-admin.json'
 import assessmentDialogue from '../../../manual-dialogues/how-do-we-assess-without-breaking-the-human-beingarabic.json'
 
 type Speaker = 'male' | 'female'
@@ -38,6 +42,8 @@ const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-3.5 py-2.5 text-[.86rem] text-ink outline-none transition-colors focus:border-accent'
 const ghost = 'rounded-full border border-hair bg-canvas px-4 py-2 text-[.78rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40'
 const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-45'
+const dialogueAudioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
+const dialogueAudioUrl = (path: string) => dialogueAudioBase ? `${dialogueAudioBase}/${path.replace(/^\/?audio\//, '')}` : path
 
 const blankTurn = (speaker: Speaker): DialogueTurn => ({
   speaker,
@@ -70,6 +76,79 @@ function normalizeTurns(value: unknown): DialogueTurn[] | null {
   return turns
 }
 
+function sentenceChunks(value = '') {
+  return value
+    .replace(/\r/g, '')
+    .split(/(?:\n{2,}|(?<=[.!؟])\s+)/u)
+    .map((item) => item.replace(/\s+/g, ' ').trim())
+    .filter((item) => item.length >= 18)
+}
+
+function dialogueFromText(title: string, value: string): DialogueTurn[] {
+  const chunks = sentenceChunks(value).slice(0, 22)
+  if (!chunks.length) return [blankTurn('male'), blankTurn('female')]
+  const reactions = ['وهنا تبدأ المسألة الحقيقية.', 'صحيح… لكن دعنا نتوقف عند أثرها في الإنسان.', 'هذه نقطة مهمة؛ ماذا تعني عملياً؟', 'وهذا يغيّر طريقة فهمنا للسؤال كله.']
+  const turns: DialogueTurn[] = [{ ...blankTurn('male'), deliveryType: 'setup', text: `حلقتنا اليوم عن «${title}»… لكننا لن نقرأ مقالاً بصوتين؛ سنفكك الفكرة كما تجري في حديث حقيقي.` }]
+  chunks.forEach((chunk, index) => {
+    const speaker: Speaker = turns[turns.length - 1]?.speaker === 'male' ? 'female' : 'male'
+    turns.push({ ...blankTurn(speaker), text: chunk, deliveryType: index % 4 === 1 ? 'reflection' : index % 4 === 2 ? 'question' : 'statement', pauseAfterMs: index % 5 === 4 ? 520 : 300 })
+    if (index > 0 && index % 5 === 0 && turns.length < 24) {
+      turns.push({ ...blankTurn(speaker === 'male' ? 'female' : 'male'), text: reactions[index % reactions.length], deliveryType: 'briefReaction', pauseAfterMs: 180, overlapMs: 40 })
+    }
+  })
+  turns.push({ ...blankTurn(turns[turns.length - 1]?.speaker === 'male' ? 'female' : 'male'), deliveryType: 'closing', text: 'الخلاصة ليست أن نرفض الأداة أو ننبهر بها؛ بل أن نسأل دائماً: ماذا صنعت في الإنسان؟', pauseAfterMs: 700, musicBridgeAfter: true })
+  return turns.slice(0, 26)
+}
+
+async function unzipDocxEntry(buffer: ArrayBuffer, wanted = 'word/document.xml') {
+  const bytes = new Uint8Array(buffer)
+  const view = new DataView(buffer)
+  let eocd = -1
+  for (let offset = bytes.length - 22; offset >= Math.max(0, bytes.length - 65_557); offset -= 1) {
+    if (view.getUint32(offset, true) === 0x06054b50) { eocd = offset; break }
+  }
+  if (eocd < 0) throw new Error('docx-zip')
+  const entries = view.getUint16(eocd + 10, true)
+  let cursor = view.getUint32(eocd + 16, true)
+  const decoder = new TextDecoder()
+  for (let index = 0; index < entries; index += 1) {
+    if (view.getUint32(cursor, true) !== 0x02014b50) throw new Error('docx-directory')
+    const compression = view.getUint16(cursor + 10, true)
+    const compressedSize = view.getUint32(cursor + 20, true)
+    const fileNameLength = view.getUint16(cursor + 28, true)
+    const extraLength = view.getUint16(cursor + 30, true)
+    const commentLength = view.getUint16(cursor + 32, true)
+    const localOffset = view.getUint32(cursor + 42, true)
+    const name = decoder.decode(bytes.slice(cursor + 46, cursor + 46 + fileNameLength))
+    if (name === wanted) {
+      if (view.getUint32(localOffset, true) !== 0x04034b50) throw new Error('docx-entry')
+      const localNameLength = view.getUint16(localOffset + 26, true)
+      const localExtraLength = view.getUint16(localOffset + 28, true)
+      const start = localOffset + 30 + localNameLength + localExtraLength
+      const payload = bytes.slice(start, start + compressedSize)
+      if (compression === 0) return decoder.decode(payload)
+      if (compression !== 8 || typeof DecompressionStream === 'undefined') throw new Error('docx-compression')
+      const stream = new Blob([payload]).stream().pipeThrough(new DecompressionStream('deflate-raw'))
+      return decoder.decode(await new Response(stream).arrayBuffer())
+    }
+    cursor += 46 + fileNameLength + extraLength + commentLength
+  }
+  throw new Error('docx-document-missing')
+}
+
+async function documentText(file: File) {
+  const name = file.name.toLowerCase()
+  if (name.endsWith('.docx')) {
+    const xml = await unzipDocxEntry(await file.arrayBuffer())
+    const documentXml = new DOMParser().parseFromString(xml, 'application/xml')
+    const paragraphs = Array.from(documentXml.getElementsByTagNameNS('*', 'p')).map((paragraph) =>
+      Array.from(paragraph.getElementsByTagNameNS('*', 't')).map((node) => node.textContent || '').join(''),
+    ).map((value) => value.trim()).filter(Boolean)
+    return paragraphs.join('\n\n')
+  }
+  return await file.text()
+}
+
 function storedDialogue(slug: string) {
   try {
     return normalizeTurns(JSON.parse(localStorage.getItem(`podcast:manual-dialogue:${slug}`) || 'null'))
@@ -79,6 +158,7 @@ function storedDialogue(slug: string) {
 }
 
 export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }) {
+  const { isAdmin } = useAdminAuth()
   const sortedArticles = useMemo(() => [...articles].sort((a, b) => b.iso.localeCompare(a.iso)), [articles])
   const initialSlug = sortedArticles.some((item) => item.slug === CURRENT_DIALOGUE_SLUG)
     ? CURRENT_DIALOGUE_SLUG
@@ -87,9 +167,16 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
   const [turns, setTurns] = useState<DialogueTurn[]>(() => storedDialogue(initialSlug) || bundledDialogues[initialSlug]?.map((item) => ({ ...item })) || [blankTurn('male'), blankTurn('female')])
   const [notice, setNotice] = useState('')
   const [dirty, setDirty] = useState(false)
+  const [articleBody, setArticleBody] = useState('')
+  const [documentBusy, setDocumentBusy] = useState(false)
+  const [cloudBusy, setCloudBusy] = useState(false)
+  const [audioAvailable, setAudioAvailable] = useState(false)
+  const [audioChecking, setAudioChecking] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const article = sortedArticles.find((item) => item.slug === slug)
+  const episode = (podcastAdmin as { episodes?: { slug: string; audio?: string; status?: string; quality?: { score?: number; pass?: boolean } }[] }).episodes?.find((item) => item.slug === slug)
+  const audioSource = dialogueAudioUrl(episode?.audio || `/audio/${slug}.dialogue.mp3`)
   const json = useMemo(() => JSON.stringify(turns, null, 2), [turns])
   const wordCount = useMemo(() => turns.reduce((sum, item) => sum + item.text.split(/\s+/).filter(Boolean).length, 0), [turns])
   const warnings = useMemo(() => {
@@ -106,11 +193,50 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
   }, [turns])
 
   useEffect(() => {
-    const next = storedDialogue(slug) || bundledDialogues[slug]?.map((item) => ({ ...item })) || [blankTurn('male'), blankTurn('female')]
-    setTurns(next)
+    let active = true
+    const local = storedDialogue(slug)
+    const bundled = bundledDialogues[slug]?.map((item) => ({ ...item }))
+    setTurns(local || bundled || [blankTurn('male'), blankTurn('female')])
     setDirty(false)
-    setNotice(bundledDialogues[slug] ? 'فُتح الحوار اليدوي الموجود لهذه الحلقة.' : 'مسودة جديدة جاهزة للكتابة.')
-  }, [slug])
+    setNotice(bundled ? 'فُتح الحوار اليدوي الموجود لهذه الحلقة.' : local ? 'فُتحت المسودة المحفوظة على هذا الجهاز.' : 'مسودة جديدة جاهزة للكتابة.')
+    setArticleBody('')
+    loadArticleBodies().then((bodies) => { if (active) setArticleBody(article?.body || bodies[slug] || article?.excerpt || '') }).catch(() => { if (active) setArticleBody(article?.body || article?.excerpt || '') })
+    if (isAdmin) {
+      void getDb().then(async (db) => {
+        if (!db || !active) return
+        const { doc, getDoc } = await import('firebase/firestore')
+        const snapshot = await getDoc(doc(db, 'podcast_dialogues', slug))
+        if (!active || !snapshot.exists()) return
+        const cloud = normalizeTurns(snapshot.data().turns)
+        if (cloud) {
+          setTurns(cloud)
+          localStorage.setItem(`podcast:manual-dialogue:${slug}`, JSON.stringify(cloud))
+          setNotice('فُتحت آخر مسودة سحابية محفوظة لهذه الحلقة ✓')
+        }
+      }).catch(() => undefined)
+    }
+    return () => { active = false }
+  }, [article?.body, article?.excerpt, isAdmin, slug])
+
+  useEffect(() => {
+    let active = true
+    let timer = 0
+    const check = async () => {
+      setAudioChecking(true)
+      try {
+        let response = await fetch(audioSource, { method: 'HEAD', cache: 'no-store' })
+        if (response.status === 405) response = await fetch(audioSource, { headers: { Range: 'bytes=0-0' }, cache: 'no-store' })
+        if (active) setAudioAvailable(response.ok)
+      } catch {
+        if (active) setAudioAvailable(Boolean(episode?.audio))
+      } finally {
+        if (active) setAudioChecking(false)
+      }
+    }
+    void check()
+    timer = window.setInterval(() => void check(), 30_000)
+    return () => { active = false; window.clearInterval(timer) }
+  }, [audioSource, episode?.audio])
 
   const update = (index: number, patch: Partial<DialogueTurn>) => {
     setTurns((current) => current.map((turn, turnIndex) => turnIndex === index ? { ...turn, ...patch } : turn))
@@ -118,24 +244,37 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
     setNotice('')
   }
 
-  const save = () => {
+  const save = async (automatic = false) => {
     try {
       localStorage.setItem(`podcast:manual-dialogue:${slug}`, json)
+      if (isAdmin) {
+        setCloudBusy(true)
+        const db = await getDb()
+        if (db) {
+          const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
+          await setDoc(doc(db, 'podcast_dialogues', slug), {
+            slug,
+            title: article?.title || slug,
+            turns,
+            status: 'draft',
+            updatedAt: serverTimestamp(),
+          }, { merge: true })
+        }
+      }
       setDirty(false)
-      setNotice('حُفظت المسودة على هذا الجهاز ✓')
+      setNotice(isAdmin ? `${automatic ? 'حفظ تلقائي' : 'حُفظت المسودة'} على السحابة وهذا الجهاز ✓` : 'حُفظت المسودة على هذا الجهاز ✓')
     } catch {
-      setNotice('تعذّر الحفظ المحلي على هذا الجهاز.')
+      setNotice('حُفظت محلياً، لكن تعذّر الحفظ السحابي. راجع صلاحيات Firebase ثم أعد المحاولة.')
+    } finally {
+      setCloudBusy(false)
     }
   }
 
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(json)
-      setNotice('نُسخ JSON كاملًا ✓')
-    } catch {
-      setNotice('تعذّر النسخ التلقائي؛ استخدم زر التنزيل.')
-    }
-  }
+  useEffect(() => {
+    if (!dirty) return
+    const timer = window.setTimeout(() => void save(true), 1400)
+    return () => window.clearTimeout(timer)
+  }, [dirty, json, slug, isAdmin])
 
   const download = () => {
     const blob = new Blob([`${json}\n`], { type: 'application/json;charset=utf-8' })
@@ -150,18 +289,40 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
 
   const importFile = async (file?: File) => {
     if (!file) return
+    setDocumentBusy(true)
     try {
-      const parsed = normalizeTurns(JSON.parse(await file.text()))
-      if (!parsed) throw new Error('invalid')
-      setTurns(parsed)
+      const name = file.name.toLowerCase()
+      if (name.endsWith('.json')) {
+        const parsed = normalizeTurns(JSON.parse(await file.text()))
+        if (!parsed) throw new Error('invalid-json')
+        setTurns(parsed)
+        setNotice(`استُوردت نسخة احتياطية تحتوي ${parsed.length} مداخلة؛ راجعها ثم احفظ.`)
+      } else {
+        const text = await documentText(file)
+        const generated = dialogueFromText(article?.title || file.name.replace(/\.[^.]+$/, ''), text)
+        setTurns(generated)
+        setNotice(`تحوّل المستند تلقائياً إلى ${generated.length} مداخلة. راجع الإيقاع ثم اعتمد المسودة.`)
+      }
       setDirty(true)
-      setNotice(`استُورد ${parsed.length} مداخلة بنجاح؛ راجعها ثم احفظ.`)
     } catch {
-      setNotice('الملف غير صالح. المطلوب مصفوفة JSON فيها speaker وtext لكل مداخلة.')
+      setNotice('تعذّر قراءة المستند. استخدم DOCX أو TXT أو MD، أو نسخة JSON احتياطية صحيحة.')
     } finally {
+      setDocumentBusy(false)
       if (fileRef.current) fileRef.current.value = ''
     }
   }
+
+  const buildFromArticle = () => {
+    if (!articleBody.trim()) {
+      setNotice('النص الكامل للمقال غير متاح بعد؛ ارفع مستند الحلقة مباشرة.')
+      return
+    }
+    const generated = dialogueFromText(article?.title || 'الحلقة', articleBody)
+    setTurns(generated)
+    setDirty(true)
+    setNotice(`بُنيت مسودة تلقائية من نص المقال: ${generated.length} مداخلة، من دون رفع JSON.`)
+  }
+
 
   const move = (index: number, direction: -1 | 1) => {
     const target = index + direction
@@ -193,13 +354,13 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
           <div className="max-w-3xl">
             <p className="text-[.76rem] font-semibold uppercase text-accent">الحوار اليدوي للحلقة</p>
             <h2 className="mt-1 font-display text-2xl font-semibold text-ink">اكتب فهد ونورة مداخلةً مداخلة.</h2>
-            <p className="mt-2 text-[.84rem] leading-relaxed text-soft">اختر المقال، اكتب الحوار الطبيعي، واضبط الوقفات البسيطة. الحفظ يبقي المسودة على جهازك، والتنزيل يخرج ملف JSON الجاهز لمسار إنتاج الحلقة.</p>
+            <p className="mt-2 text-[.84rem] leading-relaxed text-soft">اختر المقال أو ارفع مستند DOCX/TXT؛ يتحول النص فوراً إلى مسودة حوار قابلة للتحرير. لا تحتاج إلى JSON، وتظهر الحلقة الصوتية هنا تلقائياً متى كانت موجودة في مسار الإنتاج.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={(event) => void importFile(event.target.files?.[0])} />
-            <button type="button" className={ghost} onClick={() => fileRef.current?.click()}>استيراد JSON</button>
-            <button type="button" className={ghost} onClick={() => void copy()}>نسخ JSON</button>
-            <button type="button" className={primary} onClick={download} disabled={warnings.some((item) => item.includes('بلا نص'))}>تنزيل الحوار</button>
+            <input ref={fileRef} type="file" accept=".docx,.txt,.md,.json,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/json" className="hidden" onChange={(event) => void importFile(event.target.files?.[0])} />
+            <button type="button" className={ghost} disabled={documentBusy} onClick={() => fileRef.current?.click()}>{documentBusy ? 'أقرأ المستند…' : 'رفع مستند'}</button>
+            <button type="button" className={ghost} onClick={buildFromArticle}>بناء من نص المقال</button>
+            <button type="button" className={primary} onClick={download} disabled={warnings.some((item) => item.includes('بلا نص'))}>تنزيل نسخة احتياطية</button>
           </div>
         </div>
 
@@ -210,7 +371,7 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
               {sortedArticles.map((item) => <option key={item.slug} value={item.slug}>{item.title}</option>)}
             </select>
           </label>
-          <button type="button" onClick={save} className={dirty ? primary : ghost}>{dirty ? 'حفظ المسودة' : 'المسودة محفوظة'}</button>
+          <button type="button" onClick={() => void save(false)} disabled={cloudBusy} className={dirty ? primary : ghost}>{cloudBusy ? 'أحفظ…' : dirty ? 'حفظ المسودة' : isAdmin ? 'محفوظة سحابياً' : 'المسودة محفوظة'}</button>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.76rem] text-soft">
@@ -218,7 +379,23 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
           <span><strong className="text-ink">{wordCount}</strong> كلمة</span>
           <span><strong className="text-ink">{turns.filter((item) => item.speaker === 'male').length}</strong> لفهد</span>
           <span><strong className="text-ink">{turns.filter((item) => item.speaker === 'female').length}</strong> لنورة</span>
-          {article && <span className="min-w-0 truncate">الملف: <span dir="ltr">{article.slug}.json</span></span>}
+          {article && <span className="min-w-0 truncate">الحلقة: <span dir="ltr">{article.slug}</span></span>}
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-accent/25 bg-canvas p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-[.76rem] font-semibold text-accent">الصوت المرتبط بهذه الحلقة</p>
+              <p className="mt-1 text-[.74rem] text-soft">رفع المستند يبني الحوار ويحفظه تلقائياً. يظهر المشغّل هنا وحده فور وجود ملف الصوت المنشور في مسار الإنتاج.</p>
+            </div>
+            <span className={`rounded-full px-3 py-1 text-[.7rem] font-semibold ${audioAvailable && episode?.quality?.pass ? 'bg-emerald-50 text-emerald-700' : 'bg-wash text-soft'}`}>{audioChecking ? 'أتحقق…' : audioAvailable ? episode?.quality?.pass ? 'مجتاز' : 'الصوت متاح' : 'بانتظار التوليد'}</span>
+          </div>
+          {audioAvailable ? (
+            <>
+              <audio className="mt-3 w-full" controls preload="metadata" src={audioSource} />
+              <p className="mt-2 text-[.7rem] text-soft">الحالة: {episode?.status || 'منشور'}{typeof episode?.quality?.score === 'number' ? ` · درجة الجودة ${episode.quality.score}` : ''}</p>
+            </>
+          ) : <p className="mt-3 rounded-xl border border-hair bg-wash px-4 py-3 text-[.76rem] leading-relaxed text-soft">المسودة جاهزة، لكن الصوت لا يُنشأ داخل المتصفح؛ يظهر تلقائياً بعد مرورها بمسار Azure والمراجعة الصوتية.</p>}
         </div>
 
         {notice && <p className="mt-4 rounded-xl border border-accent/25 bg-canvas px-4 py-3 text-[.8rem] text-accent">{notice}</p>}

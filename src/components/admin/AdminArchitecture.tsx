@@ -250,11 +250,26 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
       const latestHealth = (health?.docs || []).map((item) => item.data() as { date?: string; status?: string; issueCount?: number }).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))[0]
       const launchData = launch?.exists() ? launch.data() as { active?: boolean; endsAt?: { seconds?: number } } : null
       const launchActive = Boolean(launchData?.active && (!launchData.endsAt?.seconds || launchData.endsAt.seconds * 1000 > Date.now()))
-      const journeyRows = (journeys?.docs || []).map((item) => {
+      const journeyMap = new Map<string, JourneyPulseRow>()
+      for (const item of journeys?.docs || []) {
         const value = item.data() as { from?: string; to?: string; count?: number }
-        return { id: item.id, from: value.from || '/', to: value.to || '/', count: Number(value.count || 0) }
-      })
-      setData({ todayViews, topTitle, topCount, recentMessages, healthStatus: latestHealth?.status || 'غير مفحوص', issues: Number(latestHealth?.issueCount || 0), launchActive, journeys: journeyRows })
+        const from = value.from || '/'; const to = value.to || '/'
+        journeyMap.set(`${from}>${to}`, { id: item.id, from, to, count: Number(value.count || 0) })
+      }
+      for (const item of views?.docs || []) {
+        if (!item.id.startsWith('total:')) continue
+        const path = decodePath(item.id.slice('total:'.length))
+        if (!path.startsWith('/_journey/')) continue
+        const payload = path.slice('/_journey/'.length); const split = payload.indexOf('>')
+        if (split < 1) continue
+        try {
+          const from = decodeURIComponent(payload.slice(0, split)); const to = decodeURIComponent(payload.slice(split + 1))
+          const count = Number((item.data() as { count?: number }).count || 0); const key = `${from}>${to}`
+          const current = journeyMap.get(key)
+          if (!current || count > current.count) journeyMap.set(key, { id: `views:${payload}`, from, to, count })
+        } catch { /* مسار قديم غير صالح؛ نتجاهله */ }
+      }
+      setData({ todayViews, topTitle, topCount, recentMessages, healthStatus: latestHealth?.status || 'غير مفحوص', issues: Number(latestHealth?.issueCount || 0), launchActive, journeys: Array.from(journeyMap.values()).sort((a, b) => b.count - a.count) })
     } finally {
       if (showLoading) setLoading(false)
     }

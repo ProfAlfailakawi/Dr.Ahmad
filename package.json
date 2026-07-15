@@ -52,7 +52,8 @@
     "podcast:release:verify": "node scripts/verify-podcast-release.mjs --dist",
     "audio:r2:rollback": "node scripts/publish-audio-r2.mjs --rollback-last",
     "audio:r2:commit": "node scripts/publish-audio-r2.mjs --commit-last",
-    "audio:r2:self-test": "node scripts/publish-audio-r2.mjs --self-test"
+    "audio:r2:self-test": "node scripts/publish-audio-r2.mjs --self-test",
+    "audit:articles": "node scripts/audit-articles.mjs"
   },
   "dependencies": {
     "firebase": "^12.15.0",

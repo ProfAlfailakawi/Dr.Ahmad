@@ -555,9 +555,10 @@ function ArticleForm() {
     <div className={card}>
       <div className="grid gap-4">
         <input className={input} placeholder="عنوان المقال" value={f.title} onChange={(e) => set('title', e.target.value)} />
-        <select className={input} value={f.cat} onChange={(e) => set('cat', e.target.value)}>
-          {articleCats.filter((c) => c !== 'الكل').map((c) => <option key={c}>{c}</option>)}
-        </select>
+        <div>
+          <input className={input} list="admin-article-categories" placeholder="التصنيف — ويمكن كتابة تصنيف جديد" value={f.cat} onChange={(e) => set('cat', e.target.value)} />
+          <datalist id="admin-article-categories">{articleCats.filter((c) => c !== 'الكل').map((c) => <option key={c} value={c} />)}</datalist>
+        </div>
         <input className={input} placeholder="مقتطف قصير (اختياري — يُؤخذ من أول النص تلقائياً)" value={f.excerpt} onChange={(e) => set('excerpt', e.target.value)} />
         <textarea className={`${input} min-h-[300px] leading-loose`} placeholder={'نص المقال…\n\nافصل بين الفقرات بسطر فارغ.'} value={f.body} onChange={(e) => set('body', e.target.value)} />
         <div className="flex items-center gap-4">

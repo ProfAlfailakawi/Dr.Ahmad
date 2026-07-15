@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { useSeo } from '../components/seo'
-import { articleCats } from '../data'
 import { searchArticles, topKeywordsFor } from '../lib/cms'
 import { useCmsContent } from '../lib/content'
+import { dynamicArticleCategories } from '../lib/content-taxonomy'
 
 const ar = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 
@@ -31,6 +31,7 @@ export default function Search() {
   const [year, setYear] = useState('الكل')
   const [visibleCount, setVisibleCount] = useState(24)
 
+  const categories = useMemo(() => dynamicArticleCategories(articles), [articles])
   const years = useMemo(() => Array.from(new Set(articles.map((article) => article.iso.slice(0, 4))))
     .sort((a, b) => b.localeCompare(a)), [articles])
   const normalizedQuery = query.trim()
@@ -93,7 +94,7 @@ export default function Search() {
 
               {searchStarted && <div className="mt-7 border-t border-hair pt-5">
                 <div className="flex flex-wrap gap-2">
-                  {articleCats.map((item) => (
+                  {categories.map((item) => (
                     <button
                       key={item}
                       onClick={() => { setCat(item); setVisibleCount(24) }}

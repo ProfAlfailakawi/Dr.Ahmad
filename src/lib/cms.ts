@@ -408,11 +408,6 @@ export const cmsIssues: CmsIssue[] = [
         id: article.slug || article.title,
         message: 'الحقل ' + field + ' ناقص',
       })),
-      ...(articleCats.includes(article.cat) ? [] : [{
-        kind: 'article' as const,
-        id: article.slug,
-        message: 'تصنيف غير معروف: ' + article.cat,
-      }]),
       ...(article.missing ? [{
         kind: 'article' as const,
         id: article.slug,
@@ -436,14 +431,13 @@ export const cmsStats = {
   audioReady: allArticles.filter((article) => article.hasAudio).length,
   words: allArticles.reduce((sum, article) => sum + article.words, 0),
   years: articleYears.length,
-  categories: articleCats
-    .filter((cat) => cat !== 'الكل')
+  categories: Array.from(new Set(allArticles.map((article) => article.cat).filter(Boolean)))
     .map((cat) => ({
       cat,
       count: allArticles.filter((article) => article.cat === cat).length,
       words: allArticles.filter((article) => article.cat === cat).reduce((sum, article) => sum + article.words, 0),
     }))
-    .sort((a, b) => b.count - a.count),
+    .sort((a, b) => b.count - a.count || a.cat.localeCompare(b.cat, 'ar')),
   duplicateSlugs: Array.from(
     allArticles.reduce((map, article) => map.set(article.slug, (map.get(article.slug) || 0) + 1), new Map<string, number>()),
   ).filter(([, count]) => count > 1),

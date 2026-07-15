@@ -754,7 +754,7 @@ function buildBundle(idea: string, audience: string, angle: string, articles: Ar
   const cat = chooseCat(`${idea} ${angle}`)
   const related = relatedForIdea(`${idea} ${angle}`, articles, (article) => `${article.excerpt || ''} ${article.body || ''}`, 5)
   const relatedBooks = relatedForIdea(`${idea} ${angle}`, books, (book) => book.desc || '', 3)
-  const relatedPapers = relatedForIdea(`${idea} ${angle}`, papers, (paper) => paper.meta || '', 3)
+  const relatedPapers = relatedForIdea(`${idea} ${angle}`, papers, (paper) => `${paper.meta || ''} ${paper.abstractAr || ''} ${paper.journal || ''}`, 3)
   const body = buildArticleDraft(idea, audience, angle, related)
   const excerpt = clampExcerpt(body.split('\n\n')[0])
   const partial = { title, excerpt, body }
@@ -1079,11 +1079,14 @@ function CurrentEventsCard({
             const active = selected.includes(item.id)
             const local = kuwait.some((candidate) => candidate.id === item.id)
             return (
-              <button key={item.id} type="button" onClick={() => onToggle(item.id)} className={`rounded-2xl border p-4 text-right transition-colors ${active ? 'border-accent bg-accent/[.06]' : 'border-hair bg-canvas hover:border-accent'}`}>
-                <span className="flex items-center justify-between gap-2 text-[.7rem] font-semibold text-accent"><span>{local ? `رادار الكويت · ${item.source}` : item.source}</span><span>{item.ageHours != null ? `قبل ${item.ageHours} س` : 'حديث'}</span></span>
-                <span className="mt-2 line-clamp-2 block font-display text-[.96rem] font-semibold leading-[1.55] text-ink">{item.title}</span>
-                <span className="mt-3 block text-[.72rem] text-soft">{active ? 'مثبّت للربط ✓' : 'اضغط لتثبيته'}</span>
-              </button>
+              <article key={item.id} className={`rounded-2xl border p-4 text-right transition-colors ${active ? 'border-accent bg-accent/[.06]' : 'border-hair bg-canvas hover:border-accent'}`}>
+                <button type="button" onClick={() => onToggle(item.id)} className="block w-full text-right">
+                  <span className="flex items-center justify-between gap-2 text-[.7rem] font-semibold text-accent"><span>{local ? `رادار الكويت · ${item.source}` : item.source}</span><span>{item.ageHours != null ? `قبل ${item.ageHours} س` : 'حديث'}</span></span>
+                  <span className="mt-2 line-clamp-2 block font-display text-[.96rem] font-semibold leading-[1.55] text-ink">{item.title}</span>
+                  <span className="mt-3 block text-[.72rem] text-soft">{active ? 'مثبّت للربط ✓' : 'اضغط لتثبيته'}</span>
+                </button>
+                <a href={item.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-[.7rem] font-semibold text-accent hover:underline">فتح المصدر ↗</a>
+              </article>
             )
           })}
         </div>
@@ -1110,6 +1113,12 @@ function TemplateArtwork({ layout }: { layout: SocialVisualTemplate['layout'] })
   if (layout === 'research') return <div aria-hidden className="absolute bottom-14 left-6 flex h-36 items-end gap-2 opacity-20">{[40,72,102,58,120].map((height, index) => <span key={index} className="w-5 border border-accent/70 bg-accent/20" style={{ height }} />)}</div>
   if (layout === 'horizon') return <div aria-hidden className="absolute left-4 right-4 top-[48%] h-px bg-accent/20 before:absolute before:-top-16 before:left-[18%] before:h-32 before:w-32 before:rounded-t-full before:border before:border-b-0 before:border-accent/20" />
   if (layout === 'dialogue') return <div aria-hidden className="absolute left-5 top-20 opacity-20"><span className="block h-20 w-32 rounded-[1.6rem] border border-accent" /><span className="ms-12 mt-3 block h-20 w-32 rounded-[1.6rem] border border-accent" /></div>
+  if (layout === 'arch') return <div aria-hidden className="absolute -left-4 top-24 h-32 w-48 rounded-t-full border border-b-0 border-accent/20 before:absolute before:bottom-0 before:left-1/4 before:h-20 before:w-24 before:rounded-t-full before:border before:border-b-0 before:border-accent/20" />
+  if (layout === 'matrix') return <div aria-hidden className="absolute left-6 top-20 grid grid-cols-5 gap-3 opacity-20">{Array.from({ length: 20 }, (_, index) => <span key={index} className="h-1.5 w-1.5 rounded-full bg-accent" />)}</div>
+  if (layout === 'layers') return <div aria-hidden className="absolute left-4 top-20 h-28 w-44 opacity-20">{[0,1,2,3].map((index) => <span key={index} className="absolute h-20 w-36 rounded-2xl border border-accent" style={{ left: index * 10, top: index * 10 }} />)}</div>
+  if (layout === 'focus') return <div aria-hidden className="absolute -left-2 top-24 h-36 w-36 rounded-full border border-accent/20 before:absolute before:inset-5 before:rounded-full before:border before:border-accent/20 after:absolute after:inset-12 after:rounded-full after:bg-accent/20" />
+  if (layout === 'wave') return <div aria-hidden className="absolute left-3 top-24 w-48 opacity-20">{[0,1,2].map((index) => <span key={index} className="mt-3 block h-5 rounded-[50%] border-t border-accent" />)}</div>
+  if (layout === 'balance') return <div aria-hidden className="absolute left-4 top-24 h-32 w-48 opacity-20 before:absolute before:left-1/2 before:top-0 before:h-28 before:w-px before:bg-accent after:absolute after:left-4 after:right-4 after:top-12 after:h-px after:bg-accent"><span className="absolute left-4 top-10 h-12 w-12 rounded-full border border-accent" /><span className="absolute right-4 top-10 h-12 w-12 rounded-full border border-accent" /></div>
   return null
 }
 
@@ -1118,7 +1127,9 @@ const visualSurface = (layout: SocialVisualTemplate['layout']) => {
   if (layout === 'event' || layout === 'research') return 'bg-[#eef2f5] text-ink'
   if (layout === 'human') return 'bg-[#f8f4ef] text-ink'
   if (layout === 'horizon') return 'bg-[#f4f6f5] text-ink'
-  if (layout === 'dialogue' || layout === 'notebook') return 'bg-[#fbfaf6] text-ink'
+  if (layout === 'dialogue' || layout === 'notebook' || layout === 'layers' || layout === 'balance') return 'bg-[#fbfaf6] text-ink'
+  if (layout === 'matrix' || layout === 'wave') return 'bg-[#eef3f5] text-ink'
+  if (layout === 'arch' || layout === 'focus') return 'bg-[#f5f6f3] text-ink'
   return 'bg-[#f7f6f3] text-ink'
 }
 
@@ -1130,7 +1141,7 @@ function VisualTemplateCard({ template }: { template: SocialVisualTemplate }) {
         <span className="absolute inset-x-5 top-5 h-px bg-accent/40" />
         <TemplateArtwork layout={template.layout} />
         <p className="relative mt-5 text-[.68rem] font-semibold text-accent">{template.kicker}</p>
-        <h3 className={`relative mt-4 font-display text-[1.35rem] font-bold leading-[1.5] ${dark ? 'text-white' : 'text-ink'}`}>{template.title}</h3>
+        <h3 className={`relative mt-4 line-clamp-6 font-display font-bold leading-[1.45] ${dark ? 'text-white' : 'text-ink'}`} style={{ fontSize: template.title.length > 110 ? '1rem' : template.title.length > 72 ? '1.12rem' : template.title.length > 42 ? '1.24rem' : '1.4rem' }}>{template.title}</h3>
         {template.body && <p className={`relative mt-4 line-clamp-5 text-[.78rem] leading-[1.8] ${dark ? 'text-white/65' : 'text-soft'}`}>{template.body}</p>}
         <span className={`absolute bottom-5 right-5 text-[.66rem] ${dark ? 'text-white/50' : 'text-soft'}`}>{template.footer}</span>
       </div>
@@ -1430,7 +1441,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
       }
       const related = relatedForIdea(`${generated.title} ${generated.excerpt}`, richArticles, (article) => `${article.excerpt || ''} ${article.body || ''}`, 5)
       const relatedBooks = relatedForIdea(`${generated.title} ${generated.excerpt}`, books, (book) => book.desc || '', 3)
-      const relatedPapers = relatedForIdea(`${generated.title} ${generated.excerpt}`, papers, (paper) => paper.meta || '', 3)
+      const relatedPapers = relatedForIdea(`${generated.title} ${generated.excerpt}`, papers, (paper) => `${paper.meta || ''} ${paper.abstractAr || ''} ${paper.journal || ''}`, 3)
       const partial = { title: generated.title, excerpt: generated.excerpt, body: generated.body }
       const nextBundle: Bundle = {
         ...partial,
@@ -1632,14 +1643,26 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
       setPulseSelectedEventIds((previous) => previous.filter((id) => items.some((item) => item.id === id)))
       return items
     } catch {
-      const fallback = radar.slice(0, 5).map((item, index) => ({
-        id: item.id || `radar-${index}`,
-        title: item.ar || item.en || 'حدث راهن',
-        summary: item.arNote || '',
-        source: item.source || 'الرادار',
-        url: item.url || '#',
-      }))
+      const ideaTokens = new Set(normalize(pulseIdea).split(/\s+/).filter((token) => token.length > 2))
+      const fallback = radar
+        .filter((item) => /^https:\/\//i.test(item.url || ''))
+        .map((item, index) => {
+          const textTokens = normalize(`${item.ar || ''} ${item.en || ''} ${item.arNote || ''}`).split(/\s+/)
+          const relevance = textTokens.reduce((score, token) => score + (ideaTokens.has(token) ? 1 : 0), 0)
+          return {
+            id: item.id || `radar-${index}`,
+            title: item.ar || item.en || 'حدث راهن',
+            summary: item.arNote || '',
+            source: item.source || 'الرادار',
+            url: item.url || '',
+            relevance,
+          }
+        })
+        .sort((left, right) => right.relevance - left.relevance)
+        .slice(0, 8)
       setPulseEvents(fallback)
+      if (fallback.length) setNotice('تعذّر تحديث المصادر الحية؛ عُرضت بدائل موثوقة من رادار الموقع مع ترتيبها بحسب صلتها بالفكرة.')
+      else setError('تعذّر الوصول إلى المصادر الحية، ولا يوجد رابط موثوق بديل في الرادار الآن.')
       return fallback
     } finally {
       setPulseEventsLoading(false)
@@ -1786,7 +1809,7 @@ ${pulsePurpose.trim()}`,
               <Field label="العنوان"><input className={input} value={bundle.title} onChange={(event) => updateBundle({ title: event.target.value })} /></Field>
               <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_14rem]">
                 <Field label="الرابط المختصر"><input className={input} dir="ltr" value={bundle.slug} onChange={(event) => updateBundle({ slug: event.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, '') })} /></Field>
-                <Field label="التصنيف"><select className={input} value={bundle.cat} onChange={(event) => updateBundle({ cat: event.target.value })}>{articleCats.filter((cat) => cat !== 'الكل').map((cat) => <option key={cat}>{cat}</option>)}</select></Field>
+                <Field label="التصنيف"><input className={input} list="publishing-article-categories" value={bundle.cat} onChange={(event) => updateBundle({ cat: event.target.value })} placeholder="اكتب تصنيفاً قائماً أو جديداً" /><datalist id="publishing-article-categories">{articleCats.filter((cat) => cat !== 'الكل').map((cat) => <option key={cat} value={cat} />)}</datalist></Field>
               </div>
               <Field label="المقتطف"><textarea className={`${input} min-h-24 leading-loose`} value={bundle.excerpt} onChange={(event) => updateBundle({ excerpt: event.target.value })} /></Field>
               <Field label={`المقال — ${wordCount(bundle.body)} كلمة ${wordCount(bundle.body) >= MIN_ARTICLE_WORDS ? '✓' : `— بقي ${MIN_ARTICLE_WORDS - wordCount(bundle.body)}`}`}><textarea className={`${input} min-h-[500px] leading-loose`} value={bundle.body} onChange={(event) => updateBundle({ body: event.target.value })} /></Field>

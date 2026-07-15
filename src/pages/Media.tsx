@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useSeo } from '../components/seo'
 import { motion, useReducedMotion } from 'framer-motion'
 import { EASE, FadeUp, Page, PageHead } from '../components/ui'
@@ -13,6 +14,7 @@ const mediaCount = (count: number) => {
 
 export default function Media() {
   const { media } = useCmsContent()
+  const [visibleCount, setVisibleCount] = useState(10)
   const count = mediaCount(media.length)
   useSeo({ title: 'الظهور الإعلامي', path: '/media', description: `${count} تلفزيونياً وإذاعياً.` })
   const reduce = useReducedMotion()
@@ -26,7 +28,7 @@ export default function Media() {
 
       <section className="px-6 py-20 md:px-11 md:py-24">
         <div className="mx-auto grid max-w-shell gap-6 md:grid-cols-2 md:gap-7">
-          {media.map((m, i) => {
+          {media.slice(0, visibleCount).map((m, i) => {
             const videoUrl = m.url || ''
             const videoId = id(videoUrl)
             return (
@@ -77,6 +79,7 @@ export default function Media() {
             )
           })}
         </div>
+        {visibleCount < media.length && <div className="mt-9 text-center"><button type="button" onClick={() => setVisibleCount((count) => count + 10)} className="rounded-full border border-hair px-6 py-3 text-[.84rem] font-semibold text-accent transition-colors hover:border-accent">عرض ١٠ لقاءات إضافية</button></div>}
 
         <div className="mx-auto mt-20 max-w-shell border-t border-hair pt-14">
           <FadeUp>

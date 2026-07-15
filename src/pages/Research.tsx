@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useSeo } from '../components/seo'
 import { Link } from 'react-router-dom'
 import { FadeUp, Page, PageHead } from '../components/ui'
@@ -13,6 +14,7 @@ const paperCount = (count: number) => {
 
 export default function Research() {
   const { papers } = useCmsContent()
+  const [visibleCount, setVisibleCount] = useState(12)
   const count = paperCount(papers.length)
   useSeo({ title: 'المساهمات العلمية', path: '/research', description: `${count} محكّماً في تكنولوجيا التعليم.` })
   return (
@@ -34,7 +36,7 @@ export default function Research() {
             </p>
           </FadeUp>
           <ul>
-            {papers.map((p, i) => (
+            {papers.slice(0, visibleCount).map((p, i) => (
               <FadeUp key={p.slug} delay={Math.min(i * 0.03, 0.3)}>
                 <li className={i === 0 ? '' : 'border-t border-hair'}>
                   <Link to={`/research/${p.slug}`} className="group flex gap-6 py-6 transition-[padding] duration-400 hover:pe-3">
@@ -49,6 +51,7 @@ export default function Research() {
               </FadeUp>
             ))}
           </ul>
+          {visibleCount < papers.length && <div className="mt-8 text-center"><button type="button" onClick={() => setVisibleCount((count) => count + 12)} className="rounded-full border border-hair px-6 py-3 text-[.84rem] font-semibold text-accent transition-colors hover:border-accent">عرض ١٢ بحثاً إضافياً</button></div>}
 
           <FadeUp delay={0.15}>
             <div className="mt-16 rounded-2xl border border-hair bg-wash p-8 md:p-10">

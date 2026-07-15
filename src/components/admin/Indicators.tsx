@@ -31,6 +31,19 @@ type JourneyRow = {
   count: number
 }
 
+function journeyFromViewPath(path: string, count: number): JourneyRow | null {
+  if (!path.startsWith('/_journey/')) return null
+  const payload = path.slice('/_journey/'.length)
+  const split = payload.indexOf('>')
+  if (split < 1) return null
+  try {
+    const from = decodeURIComponent(payload.slice(0, split))
+    const to = decodeURIComponent(payload.slice(split + 1))
+    if (!from || !to) return null
+    return { id: `views:${payload}`, from, to, count }
+  } catch { return null }
+}
+
 type MonthlyReport = {
   period: string
   notification?: string
@@ -174,6 +187,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         const path = decodePath(row.id.slice('total:'.length))
         return { ...row, path, kind: kindOf(path), label: labels.get(path) || row.title || path }
       })
+      .filter((row) => !row.path.startsWith('/_journey/'))
       .sort((a, b) => b.count - a.count)
     const topArticles = totals.filter((row) => row.kind === 'مقالات').slice(0, 10)
     const days = Array.from({ length: 7 }, (_, index) => kuwaitDate(index - 6))
@@ -183,6 +197,22 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         .filter((row) => row.id.startsWith(`day:${date}:`))
         .reduce((sum, row) => sum + row.count, 0),
     }))
+    // دمج رحلات الخادم مع المسار الاحتياطي داخل views من دون مضاعفة العد.
+    const journeyMap = new Map<string, JourneyRow>()
+    for (const row of journeys) {
+      if (!row.from || !row.to) continue
+      journeyMap.set(`${row.from}>${row.to}`, row)
+    }
+    for (const row of rows) {
+      if (!row.id.startsWith('total:')) continue
+      const parsed = journeyFromViewPath(decodePath(row.id.slice('total:'.length)), row.count)
+      if (!parsed?.from || !parsed.to) continue
+      const key = `${parsed.from}>${parsed.to}`
+      const current = journeyMap.get(key)
+      if (!current || parsed.count > current.count) journeyMap.set(key, parsed)
+    }
+    const resolvedJourneys = Array.from(journeyMap.values()).sort((a, b) => b.count - a.count)
+
     // إجمالي كل نوع — نظرة سريعة قبل الجدول المفصّل
     const byKind = { مقالات: 0, كتب: 0, أبحاث: 0, صفحات: 0, مشاركات: 0 } as Record<Exclude<Kind, 'الكل'>, number>
     for (const row of totals) byKind[row.kind] += row.count
@@ -193,7 +223,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       trend,
       totals,
       byKind,
-      journeys: journeys.sort((a, b) => b.count - a.count),
+      journeys: resolvedJourneys,
     }
   }, [articles, journeys, rows])
 

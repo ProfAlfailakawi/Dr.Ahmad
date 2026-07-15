@@ -1,7 +1,7 @@
 import type { ArticleRecord, BookRecord, PaperRecord } from './cms'
 
 type SimpleBook = Pick<BookRecord, 'slug' | 'title' | 'desc'>
-type SimplePaper = Pick<PaperRecord, 'slug' | 'title' | 'meta'>
+type SimplePaper = Pick<PaperRecord, 'slug' | 'title' | 'meta' | 'abstractAr' | 'journal'>
 type ArticleLike = Pick<ArticleRecord, 'slug' | 'title' | 'excerpt' | 'body' | 'cat' | 'iso' | 'hasAudio'>
 
 const STOP = new Set([
@@ -22,16 +22,49 @@ export function normalizeIdea(value = '') {
     .trim()
 }
 
+const IDEA_SYNONYMS: Record<string, string[]> = {
+  ذكاء: ['اصطناعي', 'خوارزميات', 'بيانات', 'رقمي', 'تقنيه'],
+  اصطناعي: ['ذكاء', 'خوارزميات', 'بيانات', 'رقمي'],
+  تعليم: ['تعلم', 'تدريس', 'طالب', 'معلم', 'اكاديمي', 'جامعي'],
+  تعلم: ['تعليم', 'تدريس', 'مهارات', 'طالب'],
+  تقنيه: ['تكنولوجيا', 'رقمي', 'الكتروني', 'اجهزه'],
+  تكنولوجيا: ['تقنيه', 'رقمي', 'الكتروني', 'اجهزه'],
+  رقمي: ['الكتروني', 'تقنيه', 'تكنولوجيا', 'منصات'],
+  طفل: ['طفوله', 'اطفال', 'ابناء'],
+  اعاقه: ['احتياجات', 'خاصه', 'مساعده', 'اتاحه'],
+  بحث: ['دراسه', 'علمي', 'اكاديمي'],
+  جامعه: ['جامعي', 'كليه', 'هيئه', 'طلبه'],
+  معلم: ['تدريس', 'هيئه', 'استاذ', 'تعليم'],
+  اداره: ['حوكمه', 'قياده', 'نظم', 'مؤسسه'],
+}
+
+function tokenVariants(token: string) {
+  const clean = token.replace(/^ال(?=.{3,})/, '')
+  const variants = new Set([token, clean])
+  if (clean.length > 4) {
+    variants.add(clean.replace(/ات$/, ''))
+    variants.add(clean.replace(/ون$|ين$/, ''))
+    variants.add(clean.replace(/يه$/, ''))
+  }
+  for (const synonym of IDEA_SYNONYMS[clean] || []) variants.add(synonym)
+  return Array.from(variants).filter((item) => item.length > 2 && !STOP.has(item))
+}
+
 export function ideaTokens(value = '') {
-  return normalizeIdea(value)
+  const tokens = normalizeIdea(value)
     .split(/\s+/)
     .filter((token) => token.length > 2 && !STOP.has(token) && !/^ال..$/.test(token))
+  return Array.from(new Set(tokens.flatMap(tokenVariants)))
 }
 
 function scoreText(needle: string[], haystack = '') {
+  const normalizedHaystack = normalizeIdea(haystack)
   const mine = new Set(needle)
   let score = 0
-  for (const token of ideaTokens(haystack)) if (mine.has(token)) score += 1
+  for (const token of ideaTokens(haystack)) if (mine.has(token)) score += 2
+  for (const token of needle) {
+    if (token.length >= 4 && normalizedHaystack.includes(token)) score += 1
+  }
   return score
 }
 
@@ -63,7 +96,7 @@ export function suggestStrongTitle(idea: string) {
 export function ideaLab(idea: string, articles: ArticleLike[], books: SimpleBook[], papers: SimplePaper[]) {
   const relatedArticles = relatedForIdea(idea, articles, (a) => `${a.excerpt || ''} ${a.body || ''}`, 4)
   const relatedBooks = relatedForIdea(idea, books, (b) => b.desc || '', 2)
-  const relatedPapers = relatedForIdea(idea, papers, (p) => p.meta || '', 2)
+  const relatedPapers = relatedForIdea(idea, papers, (p) => `${p.meta || ''} ${p.abstractAr || ''} ${p.journal || ''}`, 2)
   const title = suggestStrongTitle(idea)
   const seed = relatedArticles[0]
   const quote = strongestQuote(seed?.body || seed?.excerpt || idea)
@@ -150,7 +183,7 @@ export function articleSystem(article: ArticleLike, articles: ArticleLike[], boo
   const quote = strongestQuote(body)
   const relatedArticles = relatedForIdea(`${article.title} ${article.excerpt}`, articles.filter((a) => a.slug !== article.slug), (a) => `${a.excerpt || ''} ${a.body || ''}`, 4)
   const relatedBooks = relatedForIdea(`${article.title} ${article.excerpt}`, books, (b) => b.desc || '', 2)
-  const relatedPapers = relatedForIdea(`${article.title} ${article.excerpt}`, papers, (p) => p.meta || '', 2)
+  const relatedPapers = relatedForIdea(`${article.title} ${article.excerpt}`, papers, (p) => `${p.meta || ''} ${p.abstractAr || ''} ${p.journal || ''}`, 2)
   return {
     summary: `${article.title}: ${article.excerpt || first}`,
     academic: `تتناول هذه المقالة قضية ${article.cat} من زاوية إنسانية، وتبرز أثرها في فهم المتعلم والمعلم وسياق التعليم. يمكن استخدامها مدخلاً للنقاش حول العلاقة بين الأداة والمعنى.`,
@@ -174,7 +207,7 @@ export function topicMemory(title: string, body: string, articles: ArticleLike[]
   return {
     relatedArticles,
     relatedBooks: relatedForIdea(idea, books, (b) => b.desc || '', 2),
-    relatedPapers: relatedForIdea(idea, papers, (p) => p.meta || '', 2),
+    relatedPapers: relatedForIdea(idea, papers, (p) => `${p.meta || ''} ${p.abstractAr || ''} ${p.journal || ''}`, 2),
     note: relatedArticles.length
       ? `كتبت حول هذه الفكرة في ${Array.from(new Set(years)).join('، ')}. الزاوية الجديدة يمكن أن تكون: ماذا تغيّر اليوم؟`
       : 'هذه تبدو زاوية جديدة في الأرشيف؛ اربطها بسؤال إنساني واضح قبل النشر.',
@@ -240,7 +273,7 @@ export function monthlyPlan(articles: ArticleLike[], books: SimpleBook[], papers
     period,
     article,
     action: actions[(index + seed) % actions.length],
-    companion: relatedForIdea(article.title, papers, (paper) => paper.meta || '', 1)[0]?.title
+    companion: relatedForIdea(article.title, papers, (paper) => `${paper.meta || ''} ${paper.abstractAr || ''} ${paper.journal || ''}`, 1)[0]?.title
       || relatedForIdea(article.title, books, (book) => book.desc || '', 1)[0]?.title
       || 'منشور مستقل يمهّد للفكرة',
   }))

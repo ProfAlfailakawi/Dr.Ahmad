@@ -1,5 +1,5 @@
 import { useSeo } from '../components/seo'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, FadeUp, Label, Magnetic, Page, Reveal, ScheduleProjectLink, SectionHead, SocialIcon, TebyanProjectLink } from '../components/ui'
@@ -11,6 +11,7 @@ import { type Curio } from '../data-curated'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../lib/cms'
 import HumanCoreHero from '../components/home/HumanCoreHero'
 import { ideaContinuation } from '../lib/idea-memory'
+import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
 
 const arNum = (n: number) => String(n).padStart(2, '0')
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
@@ -407,14 +408,11 @@ function axisDeepDive(axis: string) {
 
 function ThoughtCompass() {
   const { articles } = useCmsContent()
-  const axes = [
-    { key: 'التعليم', label: 'التعليم' },
-    { key: 'التربية', label: 'التربية' },
-    { key: 'مجتمع', label: 'المجتمع' },
-    { key: 'تقنية', label: 'التقنية' },
-    { key: 'هوية', label: 'الهوية' },
-  ]
-  const [active, setActive] = useState(axes[0].key)
+  const axes = useMemo(() => dynamicArticleCategories(articles, false).map((key) => ({ key, label: categoryLabel(key) })), [articles])
+  const [active, setActive] = useState('التعليم')
+  useEffect(() => {
+    if (axes.length && !axes.some((axis) => axis.key === active)) setActive(axes[0].key)
+  }, [active, axes])
   const related = articles.filter((a) => a.cat === active).slice(0, 3)
   const dive = axisDeepDive(active)
   const axisLabel = axes.find((a) => a.key === active)?.label || active
@@ -526,7 +524,7 @@ function ImpactTimeline() {
         <FadeUp delay={0.2}>
           <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-6 md:mt-10 md:pt-8">
             <p className="font-display text-[clamp(1.2rem,2.6vw,1.7rem)] font-semibold leading-relaxed text-ink">هذا ليس أرشيفاً… هذه رحلة فكر.</p>
-            <Link to="/decade" className="text-[.88rem] font-semibold text-accent">اقرأ «وثيقة العقد» ←</Link>
+
           </div>
         </FadeUp>
       </div>
@@ -660,7 +658,7 @@ function NowHub() {
   return (
     <section className="border-t border-hair py-[52px] md:py-[78px]">
       <div className="mx-auto max-w-shell px-6 md:px-11">
-        <SectionHead label="الآن" title="ما يستحق انتباهك." to="/now" cta="المشهد الكامل" />
+        <SectionHead label="الآن" title="ما يستحق انتباهك." />
       </div>
       <div className="rail home-motion-rail mt-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-5 md:gap-5 md:px-[max(2.75rem,calc((100vw-1180px)/2))]">
         <FadeUp className="w-[74vw] max-w-[520px] shrink-0 snap-start md:w-[48vw]"><LatestCard compact /></FadeUp>
@@ -702,7 +700,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
                   <span className="text-[.72rem] font-semibold text-accent">{item.type}</span>
                   <h3 className="mt-2.5 break-words font-display text-[.98rem] font-semibold leading-[1.55] text-ink transition-colors group-hover:text-accent sm:text-[1.05rem] md:mt-3 md:text-[1.3rem]">{item.title}</h3>
                   {item.note && <p className="mt-2 line-clamp-2 text-start text-[.76rem] font-light leading-[1.7] text-soft sm:text-[.8rem] md:mt-2.5 md:line-clamp-3 md:text-[.88rem]">{item.note}</p>}
-                  <span className="mt-auto pt-5 text-[.78rem] font-semibold text-accent md:pt-6 md:text-[.82rem]">افتح العمل</span>
+                  <span className="mt-auto pt-5 text-[.78rem] font-semibold text-accent md:pt-6 md:text-[.82rem]">استكشف المحتوى</span>
                 </div>
               </div>
             )

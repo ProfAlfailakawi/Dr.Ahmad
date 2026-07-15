@@ -81,6 +81,10 @@ service cloud.firestore {
     match /social_queue/{id} {
       allow read, create, update, delete: if isAdmin();
     }
+    // مسودات الحوار اليدوي للبودكاست: خاصة بالمشرف، وتُحفظ سحابياً بين الأجهزة.
+    match /podcast_dialogues/{slug} {
+      allow read, create, update, delete: if isAdmin();
+    }
     // رادار الشبكة: يكتبه سكربت الالتقاط اليومي بحساب الخدمة
     // (حساب الخدمة يتجاوز القواعد) — للزوار قراءة فقط.
     match /site_radar/{id} {

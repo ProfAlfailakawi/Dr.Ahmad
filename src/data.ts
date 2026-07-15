@@ -100,9 +100,6 @@ export const links = {
 
 // المقالات الفكرية الكاملة — مسحوبة من الموقع والأرشيف الصحفي (٢٠١٦ فصاعداً) بتواريخها الحقيقية
 export const articles = [
-  { slug: 'how-do-we-assess-without-breaking-the-human-beingarabic', title: 'كيف نقيس دون أن نكسر الإنسان', date: '24 أبريل 2026', iso: '2026-04-24', cat: 'التعليم',
-    excerpt: 'القياس ضروري، نعم. لكن المشكلة تبدأ حين ننسى أن ما نقيسه هو تعلّمٌ عند إنسان، لا رقمٌ في جدول.',
-    url: '/articles/how-do-we-assess-without-breaking-the-human-beingarabic', source: '' },
   { slug: 'success-that-does-not-bring-joy-to-its-ownerarabic', title: 'النجاح الذي لا يفرح صاحبه', date: '17 أبريل 2026', iso: '2026-04-17', cat: 'التعليم',
     excerpt: 'تظهر النتيجة، ترتفع الزغاريد أو تنهال التهاني، ويبتسم الطالب كما ينبغي أن يبتسم… لكن شيئاً في داخله لا يتحرّك.',
     url: '/articles/success-that-does-not-bring-joy-to-its-ownerarabic', source: 'https://www.aljarida.com/article/129142' },
@@ -196,9 +193,6 @@ export const articles = [
   { slug: 'the-republic-of-degrees-and-the-fall-of-thought-2', title: 'جمهورية الشهادات… وسقوط الفكر!', date: '5 سبتمبر 2025', iso: '2025-09-05', cat: 'التعليم',
     excerpt: 'في نظامنا التعليمي، المهم أن تُنجز الورقة، لا أن تفهمها. أن تُكتب الرسالة، لا أن تُغيّر صاحبها.',
     url: '/articles/the-republic-of-degrees-and-the-fall-of-thought-2', source: 'https://www.aljarida.com/article/108037' },
-  { slug: 'jarida-202509-001', title: 'الطالب المثالي… مشروع مواطن مطيع؟', date: '1 سبتمبر 2025', iso: '2025-09-01', cat: 'التعليم',
-    excerpt: 'الطالب المثالي… مشروع مواطن مطيع؟ في كل مدرسة، هناك "طالب مثالي". هادئ، مرتب، لا يُقاطع، لا يُجادل، لا يسأل كثيرًا.',
-    url: '', source: 'https://www.aljarida.com/author/1178/%D8%AF-%D8%A3%D8%AD%D9%85%D8%AF-%D8%AD%D8%B3%D9%8A%D9%86-%D8%A7%D9%84%D9%81%D9%8A%D9%84%D9%83%D8%A7%D9%88%D9%8A' },
   { slug: 'freedom-without-thinking-and-openness-without-awareness-2', title: 'حُرية بلا تفكير… وانفتاح بلا وعي!', date: '29 أغسطس 2025', iso: '2025-08-29', cat: 'مجتمع',
     excerpt: 'لم نعد نناقش المفاهيم، بل نُصفق للشعارات؛ الحُرية أصبحت كلمة يُستدعى بها كل انفلات.',
     url: '/articles/freedom-without-thinking-and-openness-without-awareness-2', source: 'https://www.aljarida.com/article/107391' },
@@ -253,12 +247,6 @@ export const articles = [
   { slug: 'a-generation-that-knows-everything-and-understands-nothing', title: 'جيل يعرف كل شيء… ولا يفهم شيئاً', date: '9 مايو 2025', iso: '2025-05-09', cat: 'مجتمع',
     excerpt: 'في زمنٍ تسكن فيه المعلومة طرف الإبهام، وتُستدعى باللمس لا بالكدّ، نشأ جيل يعرف كل شيء… ولا يفهم شيئاً.',
     url: '/articles/a-generation-that-knows-everything-and-understands-nothing', source: 'https://www.aljarida.com/article/97388' },
-  { slug: 'art-202112-001', title: 'الرياضات الإلكترونية', date: '18 ديسمبر 2021', iso: '2021-12-18', cat: 'تقنية',
-    excerpt: 'استطاعت الرياضة الإلكترونية أن تصبح صناعة مستقلة جذبت إليها العديد من الاستثمارات بالمنطقة خلال العقد الأخير ولكن.. وبالرغم من التحديات التي تواجه تلك الصناعة..',
-    url: '', source: 'https://www.aljarida.com/author/1178/%D8%AF-%D8%A3%D8%AD%D9%85%D8%AF-%D8%AD%D8%B3%D9%8A%D9%86-%D8%A7%D9%84%D9%81%D9%8A%D9%84%D9%83%D8%A7%D9%88%D9%8A' },
-  { slug: 'art-202112-002', title: 'إنه زمن التعليم الذي يحتاج إلى تعليم… إلى أين؟', date: '18 ديسمبر 2021', iso: '2021-12-18', cat: 'التعليم',
-    excerpt: 'تصاعد غير مسبوق في صرخات أبناءنا وأولياء أمورهم الناقدة الغاضبة لرداءة التعليم وسوء الحال التعليمي.. ما الحاصل؟ ولما حصل؟!..',
-    url: '', source: 'https://www.aljarida.com/author/1178/%D8%AF-%D8%A3%D8%AD%D9%85%D8%AF-%D8%AD%D8%B3%D9%8A%D9%86-%D8%A7%D9%84%D9%81%D9%8A%D9%84%D9%83%D8%A7%D9%88%D9%8A' },
   { slug: 'graduates-in-the-time-of-corona', title: 'خريجو زمن الكورونا.. ولكن!', date: '17 يوليو 2021', iso: '2021-07-17', cat: 'التعليم',
     excerpt: 'أجلس كثيراً مع نفسي.. وبعض الوقت مع الأصدقاء والزملاء — فقد أصبح اللقاء عن بعد في الغالب — نتحدث عن أبنائنا.',
     url: '/articles/graduates-in-the-time-of-corona', source: 'https://www.alqabas.com/article/5856923' },
@@ -285,7 +273,7 @@ export const articles = [
     url: '/articles/private-lesson-in-the-age-of-digital-educational-intelligence', source: 'https://www.alqabas.com/article/5825899' },
   { slug: 'e-learning-culture-2', title: 'ثقافة التعليم الإلكتروني', date: '8 ديسمبر 2020', iso: '2020-12-08', cat: 'التعليم',
     excerpt: 'أينما جلست ضمن قواعد السلامة المعتادة أجد من يتحدث عن مواقف التربية والتعليم عن التعليم الإلكتروني.',
-    url: '/articles/e-learning-culture-2', source: 'https://www.alqabas.com/article/5823187' },
+    url: '/articles/e-learning-culture-2', source: 'https://www.alqabas.com/article/5823187-ثقافة-التعليم-الإلكتروني/' },
   { slug: 'qabas-202012-001', title: 'الدروس الخصوصية … الأسوار والعبودية… في زمن الذكاء التعليمي الرقمي', date: '8 ديسمبر 2020', iso: '2020-12-08', cat: 'التعليم',
     excerpt: 'ذهبنا هنا وهناك.. وكنا نذهب إلى المدارس والجامعات.. ونرى أبناءنا على نفس الطريق.. والطريق مازال رمز الاستمرارية مع بعض التغييرات.. ولكن المسار اختلف..',
     url: '', source: 'https://www.alqabas.com/author/332/' },
@@ -300,7 +288,7 @@ export const articles = [
     url: '', source: 'https://www.alqabas.com/author/332/' },
   { slug: 'alternative-plans-for-distance-education', title: 'الخطط البديلة للتعليم عن بعد', date: '24 مارس 2020', iso: '2020-03-24', cat: 'التعليم',
     excerpt: 'قلت التجمعات التي كنا نحظى بها من قبل.. والجميع أصبحوا يخشون الخروج من منازلهم بعد العمل.',
-    url: '/articles/alternative-plans-for-distance-education', source: 'https://www.alqabas.com/article/5763008' },
+    url: '/articles/alternative-plans-for-distance-education', source: 'https://www.alqabas.com/article/5763008-الخطط-البديلة-للتعليم-عن-بعد/' },
   { slug: 'eliminating-the-education-epidemic', title: 'القضاء على وباء التعليم.. بالحزم والعزم', date: '3 مارس 2020', iso: '2020-03-03', cat: 'التعليم',
     excerpt: 'يعيش العالم كابوس فيروس كورونا.. وليس للناس حديث إلا عن هذا الوباء القاتل.',
     url: '/articles/eliminating-the-education-epidemic', source: 'https://www.alqabas.com/article/5757000' },
@@ -921,5 +909,5 @@ export const site = {
   // الأرقام تُحسب من المحتوى نفسه — تتجدّد تلقائياً مع أي إضافة
   description:
     `الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي. ${stats.books} كتب، ${stats.papers} بحثاً محكّماً، وأكثر من ${roundDown10(stats.articles)} مقالاً فكرياً في التعليم والتقنية والمجتمع، منذ ${stats.firstYear}.`,
-  ogImage: '/og.png',
+  ogImage: '/og/home-20260716.jpg',
 }

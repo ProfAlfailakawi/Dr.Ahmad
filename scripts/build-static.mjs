@@ -44,7 +44,10 @@ if (SITE !== OFFICIAL_SITE) {
 }
 const AUDIO_PUBLIC_BASE_URL = (process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const SITE_HOST = new URL(SITE).hostname
+const HOME_OG = '/og/home-20260716.jpg'
 const AUTHOR = 'د. أحمد حسين الفيلكاوي'
+const logoDataUri = `data:image/png;base64,${readFileSync(resolve(ROOT, 'public/logo.png')).toString('base64')}`
+const portraitDataUri = `data:image/jpeg;base64,${readFileSync(resolve(ROOT, 'public/portrait.jpg')).toString('base64')}`
 // كيان الهوية المركزي (Person) — يُربط عبر @id في كل Schema، فيبني غوغل كِيان المؤلف الواحد
 const PERSON = {
   '@type': 'Person',
@@ -52,7 +55,7 @@ const PERSON = {
   name: AUTHOR,
   alternateName: 'Dr. Ahmad H. Alfailakawi',
   url: SITE,
-  image: `${SITE}/og/home-20260715.jpg`,
+  image: `${SITE}${HOME_OG}`,
   description: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، كاتب وباحث ومستشار تربوي كويتي.',
   jobTitle: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، كاتب وباحث ومستشار تربوي كويتي',
   affiliation: [
@@ -780,7 +783,7 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
   const hasName = title.includes('Alfailakawi') || title.includes('د. أحمد حسين الفيلكاوي')
   const full = isAdmin ? title : path === '/' || hasName ? title : en ? `${title} — Dr. Ahmad H. Alfailakawi` : `${title} — د. أحمد حسين الفيلكاوي`
   const url = SITE + path
-  const img = `${SITE}${image || '/og/home-20260715.jpg'}`
+  const img = `${SITE}${image || HOME_OG}`
 
   // مسار التفصيل يحدّد نوع Schema والفتات (Breadcrumb)
   const isArticlePage = /^\/(?:en\/)?articles\//.test(path)
@@ -917,28 +920,77 @@ function wrapSvgText(text, max = 28) {
   return lines.slice(0, 4)
 }
 
+const articleThemes = {
+  'التعليم': { accent: '#3E5C78', accentSoft: '#E7EEF6', chip: 'فكرة تربوية' },
+  'التربية': { accent: '#5A7A62', accentSoft: '#EAF4EC', chip: 'تربية وحياة' },
+  'تقنية': { accent: '#5B5FD6', accentSoft: '#ECECFE', chip: 'تقنية وإنسان' },
+  'مجتمع': { accent: '#8A5A44', accentSoft: '#F8EEE8', chip: 'مجتمع ومعنى' },
+  'إعلام': { accent: '#9A4D7A', accentSoft: '#F7EAF2', chip: 'إعلام وصورة' },
+  'هوية': { accent: '#2D6F73', accentSoft: '#E5F5F4', chip: 'هوية ووعي' },
+}
+
+function firstSentence(text = '', max = 150) {
+  const clean = String(text || '').replace(/\s+/g, ' ').trim()
+  if (!clean) return ''
+  const sentence = clean.split(/(?<=[.!؟…])\s+/)[0] || clean
+  return sentence.length > max ? `${sentence.slice(0, max - 1).trim()}…` : sentence
+}
+
+function wordCount(text = '') {
+  return String(text || '').trim().split(/\s+/).filter(Boolean).length
+}
+
+function readTimeText(text = '') {
+  const minutes = Math.max(2, Math.round(wordCount(text) / 190))
+  return `قراءة ${minutes} د`
+}
+
+function listenTimeText(slug, fallbackMinutes = 0) {
+  const key = `${slug}.dialogue.mp3`
+  const meta = audioMeta[key]
+  const seconds = Number(meta?.durationSeconds || 0)
+  if (seconds > 0) return `استماع ${Math.max(2, Math.round(seconds / 60))} د`
+  if (fallbackMinutes > 0) return `استماع ${Math.max(2, fallbackMinutes)} د`
+  return ''
+}
+
 function generateArticleOg() {
   const out = resolve(DIST, 'og/articles')
   mkdirSync(out, { recursive: true })
   for (const article of articles) {
-    const titleLines = wrapSvgText(article.title, 29)
-    const excerptLines = wrapSvgText(article.excerpt, 58).slice(0, 2)
+    const theme = articleThemes[article.cat] || { accent: '#3E5C78', accentSoft: '#E7EEF6', chip: 'مقالة' }
+    const body = bodies[article.slug] || article.excerpt || ''
+    const titleLines = wrapSvgText(article.title, 26).slice(0, 3)
+    const quoteLines = wrapSvgText(firstSentence(body || article.excerpt, 132), 40).slice(0, 3)
+    const read = readTimeText(body || article.excerpt)
+    const listen = listenTimeText(article.slug, Math.round(wordCount(body || article.excerpt) / 165))
+    const duration = listen ? `${read} · ${listen}` : read
+    const titleFont = titleLines.length > 2 ? 50 : 56
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" dir="rtl">
   <defs>
     <style>
-      .bg{fill:#FCFCFA}.ink{fill:#15161A}.soft{fill:#626A76}.accent{fill:#3E5C78}.hair{stroke:#3E5C78;stroke-opacity:.18}
+      .bg{fill:#FCFCFA}.ink{fill:#15161A}.soft{fill:#626A76}.hair{stroke:${theme.accent};stroke-opacity:.18}
+      .accent{fill:${theme.accent}}.accent-soft{fill:${theme.accentSoft}}
       text{font-family:"Tajawal","Arial",sans-serif}.display{font-family:"El Messiri","Tajawal",serif}
     </style>
+    <clipPath id="portraitClip"><rect x="112" y="132" width="224" height="316" rx="38"/></clipPath>
   </defs>
   <rect class="bg" width="1200" height="630"/>
-  <circle cx="210" cy="118" r="280" fill="#3E5C78" opacity=".07"/>
-  <rect x="64" y="64" width="1072" height="502" rx="0" fill="none" class="hair" stroke-width="2"/>
-  <text x="1080" y="134" text-anchor="end" class="accent" font-size="30" font-weight="700">${attr(article.cat)} · ${attr(article.date)}</text>
-  ${titleLines.map((line, i) => `<text x="1080" y="${226 + i * 74}" text-anchor="end" class="display ink" font-size="58" font-weight="700">${attr(line)}</text>`).join('\n  ')}
-  ${excerptLines.map((line, i) => `<text x="1080" y="${466 + i * 42}" text-anchor="end" class="soft" font-size="29" font-weight="400">${attr(line)}</text>`).join('\n  ')}
-  <rect x="898" y="526" width="182" height="4" class="accent"/>
-  <text x="1080" y="564" text-anchor="end" class="ink" font-size="26" font-weight="700">د. أحمد حسين الفيلكاوي</text>
-  <text x="1080" y="596" text-anchor="end" class="soft" font-size="21">${attr(SITE_HOST)}</text>
+  <circle cx="200" cy="112" r="250" fill="${theme.accent}" opacity=".08"/>
+  <circle cx="1090" cy="560" r="180" fill="${theme.accent}" opacity=".05"/>
+  <rect x="54" y="54" width="1092" height="522" rx="34" fill="#FFFFFF" stroke="${theme.accent}" stroke-opacity=".12" stroke-width="2"/>
+  <rect x="82" y="82" width="286" height="466" rx="28" class="accent-soft"/>
+  <image href="${portraitDataUri}" x="112" y="132" width="224" height="316" preserveAspectRatio="xMidYMid slice" clip-path="url(#portraitClip)"/>
+  <image href="${logoDataUri}" x="110" y="462" width="138" height="76" preserveAspectRatio="xMidYMid meet"/>
+  <text x="330" y="510" text-anchor="end" class="ink" font-size="24" font-weight="700">د. أحمد حسين الفيلكاوي</text>
+  <text x="330" y="540" text-anchor="end" class="soft" font-size="20">${attr(theme.chip)} · ${attr(SITE_HOST)}</text>
+  <rect x="404" y="96" width="160" height="40" rx="20" class="accent-soft"/>
+  <text x="484" y="122" text-anchor="middle" class="accent" font-size="21" font-weight="700">${attr(article.cat)}</text>
+  <text x="1080" y="124" text-anchor="end" class="soft" font-size="22" font-weight="700">${attr(article.date)} · ${attr(duration)}</text>
+  ${titleLines.map((line, i) => `<text x="1080" y="${210 + i * 64}" text-anchor="end" class="display ink" font-size="${titleFont}" font-weight="700">${attr(line)}</text>`).join('\n  ')}
+  <rect x="730" y="338" width="350" height="2" class="accent" opacity=".55"/>
+  ${quoteLines.map((line, i) => `<text x="1080" y="${396 + i * 40}" text-anchor="end" class="soft" font-size="28" font-weight="400">${attr(line)}</text>`).join('\n  ')}
+  <text x="1080" y="548" text-anchor="end" class="accent" font-size="24" font-weight="700">اقرأ أو استمع للمقال عبر الموقع</text>
 </svg>`
     writeFileSync(resolve(out, `${article.slug}.svg`), svg, 'utf8')
   }

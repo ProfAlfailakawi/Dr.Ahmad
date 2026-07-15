@@ -101,7 +101,7 @@
       "pronunciationText": "إذًا، كيف نَقيس دون أن نحطم هذه الصورة؟",
       "ratePct": -1,
       "targetWordsPerMinute": 138,
-      "pauseAfterMs": 690,
+      "pauseAfterMs": 620,
       "internalBreakMs": 150,
       "ending": "open"
     },
@@ -167,7 +167,7 @@
       "pronunciationText": "هناك فرق كبير بين أن أقول للطالب: أخطأت هنا، وبين أن أوحي له بأنه فشل كامل.",
       "ratePct": -4,
       "targetWordsPerMinute": 132,
-      "pauseAfterMs": 820,
+      "pauseAfterMs": 720,
       "internalBreakMs": 165,
       "musicBridgeAfter": true,
       "ending": "final"
@@ -179,7 +179,7 @@
       "pronunciationText": "وهل يدرك المعلم دائمًا أن كلمته قد تكون أثقل من الدرجة نفسها؟",
       "ratePct": -1,
       "targetWordsPerMinute": 138,
-      "pauseAfterMs": 650,
+      "pauseAfterMs": 520,
       "internalBreakMs": 145,
       "ending": "open"
     },
@@ -247,7 +247,7 @@
       "pronunciationText": "والتعليم الذي يحاصر الطالب بالخوف، يفقد أجمل ما فيه.",
       "ratePct": -5,
       "targetWordsPerMinute": 130,
-      "pauseAfterMs": 850,
+      "pauseAfterMs": 690,
       "internalBreakMs": 170,
       "ending": "final"
     },
@@ -324,9 +324,8 @@
       "pronunciationText": "هذا هو الميزان: أن نَقيس التعلم، من غير أن نكسر المتعلم.",
       "ratePct": -5,
       "targetWordsPerMinute": 130,
-      "pauseAfterMs": 760,
+      "pauseAfterMs": 540,
       "internalBreakMs": 160,
-      "musicBridgeAfter": true,
       "ending": "final"
     },
     {

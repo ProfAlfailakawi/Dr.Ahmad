@@ -150,7 +150,7 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
           </button>
         </div>
       )}
-      <div className={`article-body mt-11 ${activeAudio ? 'article-body-synced' : ''}`}>
+      <div id="article-body" className={`article-body mt-11 ${activeAudio ? 'article-body-synced' : ''}`}>
         {paragraphs.map((paragraph, index) => (
           <p
             key={index}
@@ -178,14 +178,15 @@ const normAr = (s: string) => s
   .replace(/[^\w\u0600-\u06FF ]/g, ' ')
 const tokensOf = (s: string) => new Set(normAr(s).split(/\s+/).filter((w) => w.length > 2 && !AR_STOP.has(w) && !/^ال..$/.test(w)))
 
-function TimeDialogue({ a, articles }: { a: { slug: string; title: string; iso: string; cat: string; excerpt?: string }; articles: { slug: string; title: string; iso: string; cat: string; excerpt?: string }[] }) {
-  const pair = useMemo(() => {
+type ArticleTimeSeed = { slug: string; title: string; iso: string; cat: string; excerpt?: string }
+
+function ideaTimePair(a: ArticleTimeSeed, articles: ArticleTimeSeed[]) {
     const mine = tokensOf(a.title + ' ' + (a.excerpt || ''))
     const myYear = +a.iso.slice(0, 4)
-    let older: { art: typeof a; score: number; fallback?: boolean } | null = null
-    let newer: { art: typeof a; score: number; fallback?: boolean } | null = null
-    let olderFallback: { art: typeof a; score: number; fallback: true } | null = null
-    let newerFallback: { art: typeof a; score: number; fallback: true } | null = null
+    let older: { art: ArticleTimeSeed; score: number; fallback?: boolean } | null = null
+    let newer: { art: ArticleTimeSeed; score: number; fallback?: boolean } | null = null
+    let olderFallback: { art: ArticleTimeSeed; score: number; fallback: true } | null = null
+    let newerFallback: { art: ArticleTimeSeed; score: number; fallback: true } | null = null
     for (const o of articles) {
       if (o.slug === a.slug) continue
       const gap = +o.iso.slice(0, 4) - myYear
@@ -201,7 +202,38 @@ function TimeDialogue({ a, articles }: { a: { slug: string; title: string; iso: 
       if (gap > 0 && (!newer || score > newer.score)) newer = { art: o, score }
     }
     return { older: older?.art ?? olderFallback?.art ?? null, newer: newer?.art ?? newerFallback?.art ?? null }
-  }, [a, articles])
+}
+
+function IdeaEvolutionCard({ a, articles }: { a: ArticleTimeSeed; articles: ArticleTimeSeed[] }) {
+  const pair = useMemo(() => ideaTimePair(a, articles), [a, articles])
+  const years = [pair.older?.iso.slice(0, 4), a.iso.slice(0, 4), pair.newer?.iso.slice(0, 4)].filter(Boolean)
+  if (!pair.older && !pair.newer) return null
+  return (
+    <FadeUp>
+      <aside className="idea-evolution mt-8 rounded-2xl border border-hair bg-wash/65 px-5 py-4">
+        <p className="text-[.72rem] font-semibold text-accent">خريطة تطور الفكرة</p>
+        <p className="mt-2 text-[.86rem] leading-[1.9] text-soft">
+          هذه الفكرة لا تقف وحدها؛ تظهر ضمن مسار يمتد {years.length > 1 ? `بين ${years[0]} و${years[years.length - 1]}` : `من عام ${a.iso.slice(0, 4)}`}. اقرأها كحلقة في تفكير يتطور، لا كصفحة منفصلة.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {pair.older && (
+            <Link to={`/articles/${pair.older.slug}`} className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.76rem] text-soft transition-colors hover:border-accent hover:text-accent">
+              الجذر: {pair.older.iso.slice(0, 4)}
+            </Link>
+          )}
+          {pair.newer && (
+            <Link to={`/articles/${pair.newer.slug}`} className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.76rem] text-soft transition-colors hover:border-accent hover:text-accent">
+              التطور: {pair.newer.iso.slice(0, 4)}
+            </Link>
+          )}
+        </div>
+      </aside>
+    </FadeUp>
+  )
+}
+
+function TimeDialogue({ a, articles }: { a: ArticleTimeSeed; articles: ArticleTimeSeed[] }) {
+  const pair = useMemo(() => ideaTimePair(a, articles), [a, articles])
 
   if (!pair.older && !pair.newer) return null
   const yr = (iso: string) => iso.slice(0, 4)
@@ -210,7 +242,7 @@ function TimeDialogue({ a, articles }: { a: { slug: string; title: string; iso: 
 
   return (
     <FadeUp>
-      <aside className="mt-14 border-t border-hair pt-8">
+      <aside id="time-dialogue" className="mt-14 border-t border-hair pt-8">
         <p className="text-[.76rem] font-semibold text-accent">✦ حوار عبر الزمن</p>
         <div className="mt-4 space-y-4">
           {pair.older && (
@@ -304,7 +336,7 @@ function IdeaThread({ article }: { article: ArticleRecord }) {
   if (!path.length) return null
   return (
     <FadeUp>
-      <section className="idea-thread mt-14 overflow-hidden rounded-[2rem] border border-hair bg-wash/45 px-5 py-6 shadow-[0_18px_50px_rgba(20,24,32,.04)] md:px-8 md:py-8" aria-label="خيط الفكرة">
+      <section id="idea-thread" className="idea-thread mt-14 overflow-hidden rounded-[2rem] border border-hair bg-wash/45 px-5 py-6 shadow-[0_18px_50px_rgba(20,24,32,.04)] md:px-8 md:py-8" aria-label="خيط الفكرة">
         <div className="max-w-[42rem]">
           <p className="text-[.68rem] font-semibold text-accent">خيط الفكرة</p>
           <h2 className="mt-1 font-display text-[1.18rem] font-semibold leading-[1.55] text-ink md:text-[1.35rem]">الفكرة لا تعيش في صفحة واحدة.</h2>
@@ -385,7 +417,7 @@ function StudentArchive({ a, articles }: { a: ArticleRecord; articles: ArticleRe
         : null
   return (
     <FadeUp>
-      <details className="mt-14 rounded-2xl border border-hair bg-wash px-6 py-5">
+      <details id="student-archive" className="mt-14 rounded-2xl border border-hair bg-wash px-6 py-5">
         <summary className="cursor-pointer list-none font-display text-[1.15rem] font-semibold text-ink marker:hidden">
           للطلاب والباحثين <span className="text-accent">＋</span>
         </summary>
@@ -424,6 +456,53 @@ function StudentArchive({ a, articles }: { a: ArticleRecord; articles: ArticleRe
   )
 }
 
+function ReadingLayers({ hasAudio, hasEvolution }: { hasAudio: boolean; hasEvolution: boolean }) {
+  const links = [
+    { href: '#article-body', label: 'قراءة سريعة', note: 'النص' },
+    hasEvolution ? { href: '#time-dialogue', label: 'قراءة عميقة', note: 'تطور الفكرة' } : null,
+    { href: '#student-archive', label: 'للطلاب والباحثين', note: 'سؤال ومراجع' },
+    hasAudio ? { href: '#article-audio', label: 'استماع', note: 'الصوت' } : null,
+  ].filter(Boolean) as { href: string; label: string; note: string }[]
+
+  return (
+    <FadeUp>
+      <nav className="reader-layers mt-7 rounded-2xl border border-hair bg-wash/55 px-4 py-3" aria-label="طبقات قراءة المقال">
+        <p className="text-[.72rem] font-semibold text-accent">طبقات القراءة</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {links.map((link) => (
+            <a key={link.href} href={link.href} className="rounded-full border border-hair bg-canvas px-3.5 py-2 text-[.76rem] leading-none text-soft transition-colors hover:border-accent hover:text-accent">
+              <span className="font-semibold text-ink">{link.label}</span>
+              <span className="ms-2 text-soft/80">{link.note}</span>
+            </a>
+          ))}
+        </div>
+      </nav>
+    </FadeUp>
+  )
+}
+
+function ArticleClosingNote({ next, related }: { next?: ArticleRecord; related: ArticleRecord[] }) {
+  const target = next || related[0]
+  return (
+    <FadeUp>
+      <aside className="article-closing-note mt-16 rounded-[2rem] border border-hair bg-wash/45 px-6 py-6 text-center md:px-8">
+        <p className="font-display text-[1.2rem] font-semibold leading-[1.7] text-ink">إن بقي السؤال مفتوحًا، فهذا جزء من قيمة الفكرة.</p>
+        <p className="mx-auto mt-2 max-w-[520px] text-[.86rem] leading-[1.9] text-soft">
+          تستطيع أن تتابع خيطها عبر الزمن، أو تنتقل إلى نص قريب يكمل المعنى من زاوية أخرى.
+        </p>
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          <a href="#time-dialogue" className="rounded-full border border-hair px-4 py-2 text-[.78rem] text-soft transition-colors hover:border-accent hover:text-accent">حوار عبر الزمن</a>
+          {target && (
+            <Link to={`/articles/${target.slug}`} className="rounded-full border border-accent/30 px-4 py-2 text-[.78rem] text-accent transition-colors hover:bg-accent hover:text-white">
+              {target === next ? 'المقال التالي' : 'مقال قريب'} ←
+            </Link>
+          )}
+        </div>
+      </aside>
+    </FadeUp>
+  )
+}
+
 export default function ArticleDetail() {
   const { slug } = useParams()
   const { articles, loading } = useCmsContent()
@@ -436,6 +515,7 @@ export default function ArticleDetail() {
   const neighbors = useMemo(() => a ? getArticleNeighbors(a.slug, articles) : { prev: undefined, next: undefined }, [a, articles])
   const related = useMemo(() => a ? relatedArticles(a, 3, articles) : [], [a, articles])
   const dive = useMemo(() => (a ? deepDive(a) : { paper: null, book: null }), [a])
+  const evolution = useMemo(() => (a ? ideaTimePair(a, articles) : { older: null, newer: null }), [a, articles])
 
   useSeo({
     title: a?.title ?? 'مقال',
@@ -493,7 +573,7 @@ export default function ArticleDetail() {
   const rt = readTime(article.body)
 
   return (
-    <Page>
+    <Page className="content-articles article-journey">
       {/* شريط تقدّم القراءة */}
       <motion.div className="fixed right-0 top-0 z-[245] h-[3px] w-full origin-right bg-accent" style={{ scaleX: bar }} />
 
@@ -535,9 +615,11 @@ export default function ArticleDetail() {
             <OwnerBadge path={`/articles/${a.slug}`} />
             <OwnerEdit tab="articles" slug={a.slug} className="ms-2" />
             <div className="mt-7 h-[2px] w-16 bg-accent" />
-            {article.body && <Listen slug={article.slug} title={article.title} text={article.body} audio={(article as { audio?: { fahed?: boolean | string; noura?: boolean | string } }).audio} />}
+            {article.body && <div id="article-audio"><Listen slug={article.slug} title={article.title} text={article.body} audio={(article as { audio?: { fahed?: boolean | string; noura?: boolean | string } }).audio} /></div>}
             {article.body && <ReaderPanel slug={article.slug} />}
             <ArchiveContext a={article} />
+            {article.body && <ReadingLayers hasAudio={Boolean(article.body)} hasEvolution={Boolean(evolution.older || evolution.newer)} />}
+            <IdeaEvolutionCard a={a} articles={articles} />
           </FadeUp>
 
           <FadeUp delay={0.12}>
@@ -611,6 +693,8 @@ export default function ArticleDetail() {
           <Share title={a.title} path={`/articles/${a.slug}`} />
 
           <CiteButton title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} />
+
+          <ArticleClosingNote next={prev} related={related} />
 
           {related.length > 0 && (
             <FadeUp>

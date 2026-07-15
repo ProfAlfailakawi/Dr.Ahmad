@@ -1117,6 +1117,39 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
 }
 
 /* خيط الفكرة: منع أعمدة الكلمات والفراغات الحادة، خصوصًا عند العناوين الإنجليزية الطويلة. */
+.reader-layers,
+.idea-evolution,
+.article-closing-note {
+  position: relative;
+  overflow: hidden;
+}
+.reader-layers::before,
+.idea-evolution::before,
+.article-closing-note::before {
+  content: "";
+  position: absolute;
+  inset-block-start: -1px;
+  inset-inline-end: 1.25rem;
+  width: min(8rem, 34vw);
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgb(var(--c-accent) / .45));
+  pointer-events: none;
+}
+.reader-layers a,
+.article-closing-note a {
+  text-align: start;
+  text-align-last: auto;
+}
+.idea-evolution {
+  box-shadow: 0 18px 46px -38px rgb(var(--c-ink) / .35);
+}
+.article-closing-note {
+  background:
+    radial-gradient(28rem 14rem at 50% -18%, rgb(var(--c-accent) / .05), transparent 70%),
+    rgb(var(--c-wash) / .45);
+}
+
 .idea-thread {
   text-align: start;
 }

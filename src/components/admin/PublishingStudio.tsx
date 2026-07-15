@@ -853,6 +853,58 @@ function IdeaSuggestionsCard({
   )
 }
 
+function ArchiveWakeCard({
+  articles,
+  onPick,
+}: {
+  articles: ArticleRecord[]
+  onPick: (title: string, idea: string) => void
+}) {
+  const now = new Date()
+  const month = now.getMonth() + 1
+  const seasonal =
+    month >= 5 && month <= 7 ? 'الاختبارات والتخرج وتسجيل الجامعة وبداية القرار الأكاديمي'
+      : month >= 8 && month <= 10 ? 'العودة للدراسة والمعلم والطالب والبيت'
+        : month >= 11 || month <= 2 ? 'التقنية والهوية والأسرة في نهاية وبداية العام'
+          : 'التعليم والتقنية والإنسان في منتصف العام'
+  const candidates = relatedForIdea(seasonal, articles, (article) => `${article.excerpt || ''} ${article.body || ''}`, 12)
+    .filter((article) => Number(article.iso?.slice(0, 4) || 3000) <= now.getFullYear() - 2)
+    .slice(0, 4)
+
+  if (!candidates.length) return null
+  return (
+    <details className={`${card} group`}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
+        <span>
+          <span className="block text-[.76rem] font-semibold uppercase text-accent">أرشيف يستيقظ</span>
+          <span className="mt-1 block font-display text-xl font-semibold text-ink">مقال قديم مناسب للحظة الحالية.</span>
+          <span className="mt-1 block text-[.82rem] leading-relaxed text-soft">اقتراح موسمي هادئ لإعادة نشر فكرة من أرشيفك، لا إضافة محتوى جديد.</span>
+        </span>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span>
+      </summary>
+      <div className="mt-5 grid gap-3 border-t border-hair pt-5 md:grid-cols-2">
+        {candidates.map((article) => {
+          const year = article.iso?.slice(0, 4)
+          const quote = strongestQuote(`${article.excerpt || ''} ${article.body || ''}`)
+          const idea = `إعادة قراءة مقال «${article.title}» في ضوء ${seasonal}. ${quote}`
+          return (
+            <button
+              key={article.slug}
+              type="button"
+              onClick={() => onPick(`إعادة قراءة: ${article.title}`, idea)}
+              className="rounded-2xl border border-hair bg-canvas p-4 text-right transition-colors hover:border-accent"
+            >
+              <span className="block text-[.72rem] font-semibold text-accent">{year ? `من أرشيف ${year}` : 'من الأرشيف'}</span>
+              <span className="mt-1 block font-display text-[1.05rem] font-semibold leading-relaxed text-ink">{article.title}</span>
+              <span className="mt-2 block text-[.82rem] leading-relaxed text-soft">{article.excerpt || quote}</span>
+            </button>
+          )
+        })}
+      </div>
+    </details>
+  )
+}
+
 function QualityGateCard({ gate }: { gate: ReturnType<typeof qualityGate> }) {
   return (
     <section className={card}>
@@ -1723,6 +1775,7 @@ ${pulsePurpose.trim()}`,
           </section>
           <CurrentEventsCard items={currentEvents} selected={selectedEventIds} loading={eventsLoading} onToggle={(id) => setSelectedEventIds((previous) => previous.includes(id) ? previous.filter((item) => item !== id) : [...previous, id].slice(0, 3))} />
           <IdeaSuggestionsCard suggestions={articleSuggestions} onPick={pickSuggestion} />
+          <ArchiveWakeCard articles={richArticles} onPick={pickSuggestion} />
         </>
       )}
 

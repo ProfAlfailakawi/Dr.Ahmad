@@ -2894,6 +2894,7 @@ if (MALE_FINALIST_RETEST) {
       }
       trimGeneratedBoundaryPadding(wav, utterance.text)
       trimSilence(wav)
+      compactInternalSilence(wav)
       segments.push({
         file: wav,
         pauseAfterMs: Number(utterance.pauseAfterMs || 300),

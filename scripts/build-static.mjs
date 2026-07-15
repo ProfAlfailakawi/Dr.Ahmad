@@ -354,6 +354,10 @@ function generateBodyHtml(path, lang = 'ar') {
           <a href="https://tebyan.dr-alfailakawi.com" target="_blank" rel="noopener noreferrer" title="تبيان — منصة عامة مستقلة" style="display: inline-flex; align-items: center; gap: .45rem; color: #8AADCC; font-size: .82rem; text-decoration: none;">
             <img src="/tebyan-icon.png" alt="" style="width: 20px; height: 20px; border-radius: 999px;" /> Tebyan ↗
           </a>
+          <span style="display:inline-block; width: .75rem;"></span>
+          <a href="https://schedule.dr-alfailakawi.com" target="_blank" rel="noopener noreferrer" title="برنامج الجدول الدراسي" style="display: inline-flex; align-items: center; gap: .35rem; color: #8AADCC; font-size: .76rem; text-decoration: none; opacity: .84;">
+            <span style="display:inline-flex; width: 16px; height: 16px; align-items:center; justify-content:center; border: 1px solid currentColor; border-radius: 5px; font-size: 10px;">▦</span> Schedule ↗
+          </a>
         </p>
         <p style="font-size: 0.8rem; color: #626A76; margin-top: 1.5rem;">&copy; ${new Date().getFullYear()} All Rights Reserved.</p>
       </div>
@@ -366,6 +370,10 @@ function generateBodyHtml(path, lang = 'ar') {
         <p style="margin-top: 1.25rem;">
           <a href="https://tebyan.dr-alfailakawi.com" target="_blank" rel="noopener noreferrer" title="تبيان — منصة عامة مستقلة" style="display: inline-flex; align-items: center; gap: .45rem; color: #8AADCC; font-size: .82rem; text-decoration: none;">
             <img src="/tebyan-icon.png" alt="" style="width: 20px; height: 20px; border-radius: 999px;" /> تبيان ↗
+          </a>
+          <span style="display:inline-block; width: .75rem;"></span>
+          <a href="https://schedule.dr-alfailakawi.com" target="_blank" rel="noopener noreferrer" title="برنامج الجدول الدراسي" style="display: inline-flex; align-items: center; gap: .35rem; color: #8AADCC; font-size: .76rem; text-decoration: none; opacity: .84;">
+            <span style="display:inline-flex; width: 16px; height: 16px; align-items:center; justify-content:center; border: 1px solid currentColor; border-radius: 5px; font-size: 10px;">▦</span> الجدول الدراسي ↗
           </a>
         </p>
         <p style="font-size: 0.8rem; color: #626A76; margin-top: 1.5rem;">&copy; ${new Date().getFullYear()} جميع الحقوق محفوظة.</p>

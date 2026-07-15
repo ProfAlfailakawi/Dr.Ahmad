@@ -948,7 +948,10 @@ export function Footer() {
                   </a>
                 ))}
               </span>
-              <TebyanProjectLink label="Tebyan" />
+              <span className="inline-flex items-center gap-2">
+                <TebyanProjectLink label="Tebyan" />
+                <ScheduleProjectLink label="Schedule" />
+              </span>
             </div>
           </div>
           <div className="mt-8 border-t border-hair pt-5 text-[.78rem] text-soft">
@@ -977,7 +980,10 @@ export function Footer() {
                 </a>
               ))}
             </span>
-            <TebyanProjectLink />
+            <span className="inline-flex items-center gap-2">
+              <TebyanProjectLink />
+              <ScheduleProjectLink />
+            </span>
           </div>
         </div>
         <div className="mt-8 border-t border-hair pt-5 text-[.78rem] text-soft">
@@ -1001,6 +1007,27 @@ export function TebyanProjectLink({ label = 'تبيان' }: { label?: string }) 
       <img src="/tebyan-icon.png" alt="" className="h-5 w-5 rounded-full object-cover opacity-80 transition-opacity duration-300 group-hover:opacity-100" loading="lazy" />
       <span className="tebyan-link-label text-[.82rem] font-medium">{label}</span>
       <span aria-hidden className="text-[.72rem] transition-transform duration-300 group-hover:-translate-x-0.5">↗</span>
+    </a>
+  )
+}
+
+export function ScheduleProjectLink({ label = 'الجدول الدراسي' }: { label?: string }) {
+  return (
+    <a
+      href="https://schedule.dr-alfailakawi.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="برنامج الجدول الدراسي"
+      title="برنامج الجدول الدراسي"
+      className="schedule-link group inline-flex items-center gap-1.5 border-s border-hair ps-3 text-soft transition-colors duration-300 hover:text-accent"
+    >
+      <span aria-hidden className="inline-flex h-4 w-4 items-center justify-center rounded-[.35rem] border border-current/40 text-[.62rem] leading-none opacity-70 transition-opacity duration-300 group-hover:opacity-100">
+        <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="1.4">
+          <path d="M4.5 2.2v2.1M11.5 2.2v2.1M3.2 5.6h9.6M3.3 3.8h9.4c.7 0 1.2.5 1.2 1.2v7.2c0 .7-.5 1.2-1.2 1.2H3.3c-.7 0-1.2-.5-1.2-1.2V5c0-.7.5-1.2 1.2-1.2Z" />
+        </svg>
+      </span>
+      <span className="schedule-link-label text-[.74rem] font-medium">{label}</span>
+      <span aria-hidden className="text-[.62rem] transition-transform duration-300 group-hover:-translate-x-0.5">↗</span>
     </a>
   )
 }

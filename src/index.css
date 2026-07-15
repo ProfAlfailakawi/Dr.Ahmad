@@ -720,8 +720,16 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
 .tebyan-link:hover {
   border-color: rgb(31 127 114 / .42);
 }
+.schedule-link {
+  min-height: 2.25rem;
+  border-color: rgb(var(--c-hair) / .62);
+}
+.schedule-link:hover {
+  border-color: rgb(var(--c-accent) / .34);
+}
 @media (min-width: 768px) {
-  .tebyan-link {
+  .tebyan-link,
+  .schedule-link {
     max-width: 2.75rem;
     overflow: hidden;
     white-space: nowrap;
@@ -733,6 +741,13 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
   .tebyan-link:hover,
   .tebyan-link:focus-visible {
     max-width: 9rem;
+  }
+  .schedule-link {
+    max-width: 2.35rem;
+  }
+  .schedule-link:hover,
+  .schedule-link:focus-visible {
+    max-width: 7.6rem;
   }
 }
 

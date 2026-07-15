@@ -8,13 +8,18 @@ on:
         required: true
         default: "how-do-we-assess-without-breaking-the-human-beingarabic"
       engine:
-        description: "طريقة إنتاج حلقة الاعتماد: locked أسرع للاستماع، strict للفحص الكامل"
+        description: "طريقة إنتاج حلقة الاعتماد: manual من ملف جاهز، locked أسرع للاستماع، strict للفحص الكامل"
         required: true
         default: "locked"
         type: choice
         options:
+          - manual
           - locked
           - strict
+      dialogue_path:
+        description: "ملف الحوار اليدوي داخل الريبو عند اختيار manual"
+        required: false
+        default: "manual-dialogues/how-do-we-assess-without-breaking-the-human-beingarabic.json"
 
 permissions:
   contents: read
@@ -89,6 +94,18 @@ jobs:
           PODCAST_AR_FEMALE_NAME: "نورة"
           PODCAST_AUTO_PROMOTE_PILOT: "false"
 
+      - name: Generate manual ChatGPT-written dialogue review episode
+        if: github.event.inputs.engine == 'manual'
+        timeout-minutes: 35
+        run: node scripts/podcast-manual-dialogue.mjs --slug="${{ github.event.inputs.slug }}" --input="${{ github.event.inputs.dialogue_path }}"
+        env:
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+          PODCAST_AR_MALE: "ar-AE-HamdanNeural"
+          PODCAST_AR_FEMALE: "ar-KW-NouraNeural"
+          PODCAST_AR_MALE_NAME: "فهد"
+          PODCAST_AR_FEMALE_NAME: "نورة"
+
       - name: Generate locked Azure-only review episode if strict pass failed
         if: github.event.inputs.engine == 'locked' || steps.strict_dialogue.outcome == 'failure'
         timeout-minutes: 25
@@ -115,6 +132,9 @@ jobs:
             review-output/${{ github.event.inputs.slug }}.sample-b-sample-d.dialogue.mp3
             review-output/${{ github.event.inputs.slug }}.sample-b-sample-d.dialogue.json
             review-output/${{ github.event.inputs.slug }}.sample-b-sample-d.audit.json
+            review-output/${{ github.event.inputs.slug }}.manual-dialogue.mp3
+            review-output/${{ github.event.inputs.slug }}.manual-dialogue.json
+            review-output/${{ github.event.inputs.slug }}.manual-dialogue.audit.json
           if-no-files-found: warn
           retention-days: 7
           include-hidden-files: true

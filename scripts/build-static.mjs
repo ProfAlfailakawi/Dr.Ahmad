@@ -1230,6 +1230,16 @@ const copiedAssets = Object.fromEntries(
     .map(([name, extension]) => [name, syncDirectory(name, extension)]),
 )
 
+// ملفات الأبحاث تحفظ داخل مجلد فرعي واضح؛ النسخ التقليدي أعلاه يتعامل مع ملفات الجذر فقط.
+const researchFilesSrc = resolve(ROOT, 'files/research')
+if (existsSync(researchFilesSrc)) {
+  const researchFilesDst = resolve(DIST, 'files/research')
+  mkdirSync(researchFilesDst, { recursive: true })
+  for (const entry of readdirSync(researchFilesSrc, { withFileTypes: true })) {
+    if (entry.isFile() && entry.name.endsWith('.pdf')) copyFileSync(resolve(researchFilesSrc, entry.name), resolve(researchFilesDst, entry.name))
+  }
+}
+
 /* مجلد اختبار الأصوات الأعمى — يعيش في public/audio/bakeoff؛ يُنسخ بعد إعادة بناء dist/audio
    (syncDirectory يمسح dist/audio) كي يصل الموقع الحي على /audio/bakeoff */
 const bakeoffSrc = resolve(ROOT, 'public/audio/bakeoff')

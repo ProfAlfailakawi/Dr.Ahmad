@@ -910,8 +910,12 @@ html.dark .book-detail-cover {
   transform-style: preserve-3d;
 }
 .human-core__portrait-media {
+  aspect-ratio: 4 / 3;
   background: rgb(var(--c-wash));
   transform: translateZ(0);
+}
+.human-core__portrait-media img {
+  object-position: 62% 46%;
 }
 .human-core__portrait-base {
   filter: grayscale(1) contrast(1.03);
@@ -1056,7 +1060,7 @@ html.dark .human-core__scan { mix-blend-mode: screen; }
 
 @media (max-height: 760px) and (min-width: 768px) {
   .human-core { padding-top: 6rem; padding-bottom: 5.5rem; }
-  .human-core__portrait-shell { max-width: 310px; }
+  .human-core__portrait-shell { max-width: 440px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

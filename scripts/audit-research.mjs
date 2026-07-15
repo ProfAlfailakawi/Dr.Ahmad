@@ -45,7 +45,6 @@ const manual = papers.filter((p) => p.verification === 'needs-manual-review')
 const cvOnly = 'The Impact of the Use of the Internet on the Social Relations of Students at the Faculty of the Public Authority for Applied Education and Training in Kuwait'
 const missingFromCv = [
   "University Students' Perceptions at the College of Basic Education Regarding the Use of Interactive Blackboard Technology in Education in Kuwait for the Academic Year 2020/2021",
-  "Ms Teams’ Development Application Trends as a Quality Education in Light of The Epidemiological Challenges (Covid-19) In Kuwait",
 ]
 
 const rows = papers.map((p, index) => {

@@ -740,9 +740,18 @@ function SearchPalette({ close }: { close: () => void }) {
         </div>
 
         {suggested && (
-          <Link to={suggested.to} onClick={close} className="group mx-3 mt-3 flex items-center justify-between gap-3 rounded-2xl border border-accent/30 bg-accent/[.055] px-4 py-3 sm:mx-4">
-            <span className="min-w-0"><span className="block text-[.68rem] font-semibold text-accent">أفضل تطابق</span><span className="mt-0.5 block truncate font-display text-[.94rem] font-semibold text-ink group-hover:text-accent">{suggested.title}</span></span>
-            <span className="text-accent">↗</span>
+          <Link
+            to={suggested.to}
+            onClick={close}
+            className="group mx-3 mt-3 flex items-start gap-3 rounded-2xl border border-accent/30 bg-accent/[.055] px-4 py-3.5 transition-colors hover:border-accent hover:bg-accent/[.085] sm:mx-4"
+          >
+            <span className="min-w-0 flex-1">
+              <span className="block text-[.68rem] font-semibold text-accent">أفضل تطابق</span>
+              <span dir="auto" className="mt-1 block break-words text-start font-display text-[.92rem] font-semibold leading-[1.75] text-ink [overflow-wrap:anywhere] group-hover:text-accent sm:text-[.98rem]">
+                {suggested.title}
+              </span>
+            </span>
+            <span aria-hidden className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-accent/25 text-[.8rem] text-accent transition-transform group-hover:-translate-y-0.5">↗</span>
           </Link>
         )}
 

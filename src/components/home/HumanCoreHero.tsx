@@ -264,8 +264,8 @@ export default function HumanCoreHero() {
         <span style={{ insetInlineEnd: '12%', bottom: '28%' }}>مستقبل</span>
       </div>
 
-      <div className="relative z-10 mx-auto grid w-full max-w-shell items-center gap-8 md:grid-cols-[.85fr_1.15fr] md:gap-16">
-        <div className="order-1 relative md:order-2">
+      <div className="relative z-10 mx-auto grid w-full max-w-shell items-center gap-8 md:grid-cols-[1.08fr_.92fr] md:gap-12 lg:gap-16">
+        <div className="order-1 relative md:order-2 md:-translate-x-6 lg:-translate-x-10">
           <div className="human-core__micro mb-4 flex items-center gap-3 text-[.66rem] font-semibold tracking-[.18em] text-accent" aria-hidden="true">
             <span className="h-px w-8 bg-accent/50" />
             HUMAN / MACHINE / MEANING
@@ -312,7 +312,7 @@ export default function HumanCoreHero() {
         </div>
 
         <div className="order-2 flex justify-center md:order-1">
-          <motion.div style={mobileVisual ? undefined : { y: portraitY }} className="human-core__portrait-shell w-full max-w-[260px] md:max-w-[400px]">
+          <motion.div style={mobileVisual ? undefined : { y: portraitY }} className="human-core__portrait-shell w-full max-w-[310px] md:max-w-[520px]">
             <motion.div
               ref={portraitRef}
               className="human-core__portrait relative"
@@ -323,9 +323,9 @@ export default function HumanCoreHero() {
             >
               <div className="human-core__orbit" aria-hidden="true"><span /><span /><span /></div>
               <div className="human-core__portrait-media relative overflow-hidden rounded-2xl shadow-[0_36px_64px_-36px_rgba(21,22,26,.42)]">
-                <img src="/portrait.jpg" alt={profile.fullName} width={900} height={1350} decoding="async" className="human-core__portrait-base block h-auto w-full" />
+                <img src="/portrait.jpg" alt={profile.fullName} width={2048} height={1365} decoding="async" className="human-core__portrait-base block h-full w-full object-cover" />
                 <div className="human-core__portrait-color absolute inset-0" aria-hidden="true">
-                  <img src="/portrait.jpg" alt="" width={900} height={1350} decoding="async" className="block h-auto w-full" />
+                  <img src="/portrait.jpg" alt="" width={2048} height={1365} decoding="async" className="block h-full w-full object-cover" />
                 </div>
                 <div className="human-core__scan absolute inset-0" aria-hidden="true" />
               </div>

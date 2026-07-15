@@ -152,7 +152,7 @@ function storedDialogue(slug: string) {
 }
 
 export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }) {
-  const { isAdmin } = useAdminAuth()
+  const { isAdmin, refresh } = useAdminAuth()
   const sortedArticles = useMemo(() => [...articles].sort((a, b) => b.iso.localeCompare(a.iso)), [articles])
   const initialSlug = sortedArticles[0]?.slug || ''
   const [slug, setSlug] = useState(initialSlug)
@@ -196,13 +196,25 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
       void getDb().then(async (db) => {
         if (!db || !active) return
         const { doc, getDoc } = await import('firebase/firestore')
-        const snapshot = await getDoc(doc(db, 'podcast_dialogues', slug))
-        if (!active || !snapshot.exists()) return
-        const cloud = normalizeTurns(snapshot.data().turns)
-        if (cloud) {
-          setTurns(cloud)
-          localStorage.setItem(`podcast:manual-dialogue:${slug}`, JSON.stringify(cloud))
-          setNotice('فُتحت آخر مسودة سحابية محفوظة لهذه الحلقة ✓')
+        const candidates = [
+          doc(db, 'podcast_dialogues', slug),
+          doc(db, 'social_queue', `podcast-dialogue-${slug}`),
+        ]
+        for (const reference of candidates) {
+          try {
+            const snapshot = await getDoc(reference)
+            if (!active) return
+            if (!snapshot.exists()) continue
+            const cloud = normalizeTurns(snapshot.data().turns)
+            if (!cloud) continue
+            setTurns(cloud)
+            localStorage.setItem(`podcast:manual-dialogue:${slug}`, JSON.stringify(cloud))
+            localStorage.removeItem(`podcast:pending-cloud:${slug}`)
+            setNotice('فُتحت آخر مسودة سحابية محفوظة لهذه الحلقة ✓')
+            return
+          } catch {
+            // جرّب المسار الاحتياطي؛ بعض المشاريع لم تُنشر فيها قاعدة المجموعة الجديدة بعد.
+          }
         }
       }).catch(() => undefined)
     }
@@ -236,26 +248,56 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
   }
 
   const save = async (automatic = false) => {
-    try {
-      localStorage.setItem(`podcast:manual-dialogue:${slug}`, json)
-      if (isAdmin) {
-        setCloudBusy(true)
-        const db = await getDb()
-        if (db) {
-          const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
-          await setDoc(doc(db, 'podcast_dialogues', slug), {
-            slug,
-            title: article?.title || slug,
-            turns,
-            status: 'draft',
-            updatedAt: serverTimestamp(),
-          }, { merge: true })
-        }
-      }
+    const localKey = `podcast:manual-dialogue:${slug}`
+    const pendingKey = `podcast:pending-cloud:${slug}`
+    localStorage.setItem(localKey, json)
+
+    if (!isAdmin) {
       setDirty(false)
-      setNotice(isAdmin ? `${automatic ? 'حفظ تلقائي' : 'حُفظت المسودة'} على السحابة وهذا الجهاز ✓` : 'حُفظت المسودة على هذا الجهاز ✓')
+      setNotice('حُفظت المسودة على هذا الجهاز ✓')
+      return
+    }
+
+    setCloudBusy(true)
+    try {
+      const db = await getDb()
+      if (!db) throw new Error('firebase-unavailable')
+      const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
+      const payload = {
+        slug,
+        title: article?.title || slug,
+        turns,
+        status: 'draft',
+        updatedAt: serverTimestamp(),
+      }
+      const candidates = [
+        doc(db, 'podcast_dialogues', slug),
+        doc(db, 'social_queue', `podcast-dialogue-${slug}`),
+      ]
+      let lastError: unknown = null
+      const writeCandidates = async () => {
+        for (const reference of candidates) {
+          try {
+            await setDoc(reference, payload, { merge: true })
+            return true
+          } catch (error) {
+            lastError = error
+          }
+        }
+        return false
+      }
+
+      let cloudSaved = await writeCandidates()
+      if (!cloudSaved && await refresh()) cloudSaved = await writeCandidates()
+      if (!cloudSaved) throw lastError || new Error('cloud-save-failed')
+
+      localStorage.removeItem(pendingKey)
+      setDirty(false)
+      setNotice(`${automatic ? 'حفظ تلقائي' : 'حُفظت المسودة'} على السحابة وهذا الجهاز ✓`)
     } catch {
-      setNotice('حُفظت محلياً، لكن تعذّر الحفظ السحابي. راجع صلاحيات Firebase ثم أعد المحاولة.')
+      localStorage.setItem(pendingKey, json)
+      setDirty(false)
+      setNotice('حُفظت المسودة على هذا الجهاز، وستُرفع إلى السحابة تلقائياً عند عودة الاتصال أو تجدد صلاحية المشرف.')
     } finally {
       setCloudBusy(false)
     }
@@ -266,6 +308,21 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
     const timer = window.setTimeout(() => void save(true), 1400)
     return () => window.clearTimeout(timer)
   }, [dirty, json, slug, isAdmin])
+
+
+  useEffect(() => {
+    if (!isAdmin) return
+    const retryPending = () => {
+      if (!localStorage.getItem(`podcast:pending-cloud:${slug}`)) return
+      void save(true)
+    }
+    window.addEventListener('online', retryPending)
+    const timer = window.setTimeout(retryPending, 900)
+    return () => {
+      window.removeEventListener('online', retryPending)
+      window.clearTimeout(timer)
+    }
+  }, [isAdmin, slug])
 
   const download = () => {
     const blob = new Blob([`${json}\n`], { type: 'application/json;charset=utf-8' })

@@ -111,48 +111,9 @@ export function VoiceBakeoffCard() {
     } catch (reason) { setSaved('تعذّر الحفظ'); task.fail(reason, 'تعذّر تسجيل القرار') }
   }
 
-  if (!manifest && fallbackPair) {
-    const options = [
-      { key: 'othman', label: 'عثمان', audio: audioUrl(fallbackPair.male), duration: Number(audioLibrary[fallbackPair.male]?.durationSeconds || 0) },
-      { key: 'daughters', label: 'أزيان + درة + بسمة', audio: audioUrl(fallbackPair.female), duration: Number(audioLibrary[fallbackPair.female]?.durationSeconds || 0) },
-    ]
-    return (
-      <div className={card}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-[.76rem] font-semibold uppercase text-accent">المكتبة الصوتية الحالية</p>
-            <h2 className="mt-1 font-display text-xl font-semibold text-ink">الصوت موجود ومقروء من ملفات المشروع.</h2>
-          </div>
-          <span className="rounded-full border border-hair px-3 py-1.5 text-[.74rem] text-soft">{ar(Object.keys(audioLibrary).length)} ملفًا · {ar(libraryPairs.length)} زوجًا</span>
-        </div>
-        <p className="mt-3 text-[.84rem] leading-relaxed text-soft">لم يظهر Manifest الاختبار الأعمى، لذلك يعرض النظام عينة فعلية من المكتبة الموجودة بدل الادعاء أن الملفات غير موجودة. تشغيل أي عينة يؤكد الرابط والصوت مباشرة.</p>
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
-          {options.map((option) => (
-            <div key={option.key} className="rounded-xl border border-hair bg-canvas p-4">
-              <div className="flex items-center gap-4">
-                <button type="button" onClick={() => toggle(option.key)} aria-label={playing === option.key ? 'إيقاف' : 'تشغيل'} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-canvas">
-                  <span className="text-[.9rem]">{playing === option.key ? '❚❚' : '▶'}</span>
-                </button>
-                <div className="min-w-0 flex-1"><p className="font-semibold text-ink">{option.label}</p><p className="mt-1 text-[.76rem] text-soft">{clock(option.duration)}</p></div>
-              </div>
-              <audio ref={(el) => { if (el) audios.current[option.key] = el }} src={option.audio} preload="metadata" onEnded={() => setPlaying(null)} onError={() => setSaved('ملفات الصوت معروفة في الفهرس، لكن رابط التخزين العام يحتاج VITE_AUDIO_BASE_URL أو رفع مجلد audio.')} />
-            </div>
-          ))}
-        </div>
-        {saved && <p className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{saved}</p>}
-      </div>
-    )
-  }
-
-  if (missing) return (
-    <div className={card}>
-      <p className="text-[.76rem] font-semibold uppercase text-accent">اختبار الأصوات الأعمى</p>
-      <p className="mt-2 text-[.85rem] font-light leading-relaxed text-soft">
-        لم تُولَّد عينات القبول الجديدة بعد. شغّل <code className="rounded bg-canvas px-1.5 py-0.5 text-[.8rem] text-ink">npm run podcast:ar:sample</code> فتظهر هنا أفضل ثلاث عينات بلا أسماء.
-      </p>
-    </div>
-  )
-  if (!manifest) return <div className={card}><p className="text-[.85rem] text-soft">جارٍ تحميل نسخ الاختبار…</p></div>
+  // لا نعرض بطاقة تشخيص تقنية للمستخدم عندما لا يكون اختبار القبول جاهزاً.
+  // يبقى فحص المكتبة في الخلفية، وتظهر الواجهة فقط عند وجود اختبار صوت فعلي قابل للقرار.
+  if (!manifest) return null
 
   return (
     <div className={card}>

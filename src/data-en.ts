@@ -62,8 +62,6 @@ export const doctorateEn = {
 
 /* العناوين الإنجليزية الأصلية للأبحاث الثمانية عشر — بمفاتيح الـ slug نفسها */
 export const paperTitlesEn: Record<string, string> = {
-  'ms-teams-development-application-trends-as-a-quality-education-in-light-of-the-epidemiological-challenges-covid-19-in-kuwait-2':
-    'MS Teams Development Application Trends as a Quality Education in Light of the Epidemiological Challenges (COVID-19) in Kuwait',
   'the-reality-of-using-smart-device-applications-in-learning-applications-by-university-students-at-the-college-of-basic-education-in-kuwait-2':
     'The Reality of Using Smart Device Applications in Learning by University Students at the College of Basic Education in Kuwait',
   'trends-of-college-of-basic-education-students-towards-the-use-of-photography-to-develop-learning-skills-in-kuwait-2':

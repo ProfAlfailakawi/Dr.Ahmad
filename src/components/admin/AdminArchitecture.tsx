@@ -30,17 +30,18 @@ type NavGroup = { area: AdminArea; label: string; icon: string; items: NavItem[]
 export const ADMIN_GROUPS: NavGroup[] = [
   {
     area: 'system', label: 'النظام', icon: '◉', items: [
-      { tab: 'dashboard', label: 'غرفة القيادة', note: 'ما يحتاج قرارك الآن' },
-      { tab: 'production', label: 'غرفة الإنتاج', note: 'البودكاست وصحة المحتوى والمسارات' },
+      { tab: 'dashboard', label: 'غرفة القيادة', note: 'القرارات والتنبيهات الأهم' },
       { tab: 'lab', label: 'المختبر المتقدم', note: 'الفحص والذاكرة والأتمتة' },
-      { tab: 'voice', label: 'الصوت والبودكاست', note: 'اختبار الأصوات والجودة' },
-      { tab: 'manual-dialogue', label: 'الحوار اليدوي للحلقة', note: 'كتابة فهد ونورة مداخلةً مداخلة' },
     ],
   },
   {
-    area: 'publishing', label: 'النشر', icon: '↗', items: [
+    area: 'publishing', label: 'الإنتاج والنشر', icon: '↗', items: [
+      { tab: 'production', label: 'غرفة الإنتاج', note: 'طابور البودكاست وصحة المحتوى' },
       { tab: 'studio', label: 'استوديو النشر', note: 'من الفكرة إلى الحزمة' },
-      { tab: 'launch', label: 'وضع الإطلاق', note: 'ضع عملاً في الواجهة' },
+      { tab: 'manual-dialogue', label: 'الحوار اليدوي', note: 'تحرير الحلقة مداخلةً مداخلة' },
+      { tab: 'voice', label: 'الصوت والبودكاست', note: 'اختيار الأصوات وضبط الجودة' },
+      { tab: 'launch', label: 'وضع الإطلاق', note: 'إبراز عمل في الواجهة' },
+      { tab: 'event', label: 'اللقاءات القادمة', note: 'إضافة المواعيد وإدارتها' },
     ],
   },
   {
@@ -48,9 +49,8 @@ export const ADMIN_GROUPS: NavGroup[] = [
       { tab: 'articles', label: 'المقالات', note: 'إنشاء وتحرير وجدولة' },
       { tab: 'books', label: 'الكتب', note: 'المؤلفات والملفات' },
       { tab: 'papers', label: 'الأبحاث', note: 'المساهمات العلمية' },
-      { tab: 'media', label: 'الإعلام', note: 'الظهور واللقاءات' },
-      { tab: 'event', label: 'اللقاءات', note: 'إضافة موعد قادم' },
-      { tab: 'cv', label: 'السيرة والهوية', note: 'ملفات السيرة العامة' },
+      { tab: 'media', label: 'الإعلام', note: 'الظهور واللقاءات المنشورة' },
+      { tab: 'cv', label: 'السيرة والهوية', note: 'ملفات السيرة والبيانات العامة' },
     ],
   },
   {

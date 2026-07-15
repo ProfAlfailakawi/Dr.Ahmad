@@ -130,6 +130,15 @@ service cloud.firestore {
       allow update: if isValidJourneyUpdate();
     }
 
+    // «الاقتباسات الشائعة» على طريقة القارئات الإلكترونية:
+    // قراءة عامة، والعميل لا يستطيع إلا إنشاء عداد من 1 أو زيادته بمقدار واحد.
+    match /article_highlights/{id} {
+      allow read: if true;
+      allow delete: if isAdmin();
+      allow create: if isAdmin() || isValidHighlightCreate();
+      allow update: if isAdmin() || isValidHighlightUpdate();
+    }
+
     // كل ما عدا ذلك: مغلق.
     match /{document=**} {
       allow read, write: if false;
@@ -166,6 +175,28 @@ service cloud.firestore {
   function isValidViewUpdate(id) {
     return isValidViewId(id)
       && hasValidViewFields(request.resource.data)
+      && request.resource.data.count == resource.data.count + 1
+      && request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['count', 'updatedAt']);
+  }
+
+  function hasValidHighlightFields(d) {
+    return d.keys().hasOnly(['slug', 'paragraph', 'count', 'updatedAt'])
+      && d.slug is string && d.slug.size() > 0 && d.slug.size() <= 220
+      && d.paragraph is int && d.paragraph >= 0 && d.paragraph <= 250
+      && d.count is int && d.count > 0
+      && d.updatedAt == request.time;
+  }
+
+  function isValidHighlightCreate() {
+    return hasValidHighlightFields(request.resource.data)
+      && request.resource.data.count == 1;
+  }
+
+  function isValidHighlightUpdate() {
+    return hasValidHighlightFields(request.resource.data)
+      && request.resource.data.slug == resource.data.slug
+      && request.resource.data.paragraph == resource.data.paragraph
       && request.resource.data.count == resource.data.count + 1
       && request.resource.data.diff(resource.data).affectedKeys()
         .hasOnly(['count', 'updatedAt']);

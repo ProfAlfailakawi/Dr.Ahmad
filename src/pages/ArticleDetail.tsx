@@ -12,6 +12,7 @@ import { fetchOwnerCounts, useTrackView } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
 import { articleSystem, ideaTokens } from '../lib/intelligence'
 import { getArticleBody } from '../lib/article-bodies'
+import { getDb } from '../lib/firebase'
 import { usePersistentAudio } from '../lib/persistent-audio'
 import { staticQuestions } from '../questions-data'
 import { rememberIdeaVisit } from '../lib/idea-memory'
@@ -105,6 +106,8 @@ function ReaderPanel({ slug }: { slug: string }) {
 function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
   const audio = usePersistentAudio()
   const [follow, setFollow] = useState(false)
+  const [highlights, setHighlights] = useState<Record<number, number>>({})
+  const [highlightBusy, setHighlightBusy] = useState<number | null>(null)
   const refs = useRef<(HTMLParagraphElement | null)[]>([])
   const paragraphs = useMemo(() => body.split('\n\n').map((text) => ({ text, words: Math.max(1, text.trim().split(/\s+/).length) })), [body])
   const totalWords = paragraphs.reduce((sum, item) => sum + item.words, 0)
@@ -137,6 +140,60 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
     if (!audio.playing) void audio.toggle()
   }
 
+  useEffect(() => {
+    let active = true
+    void getDb().then(async (db) => {
+      if (!db) return
+      const { collection, getDocs, query, where } = await import('firebase/firestore')
+      const snapshot = await getDocs(query(collection(db, 'article_highlights'), where('slug', '==', slug)))
+      if (!active) return
+      const next: Record<number, number> = {}
+      snapshot.docs.forEach((item) => {
+        const value = item.data() as { paragraph?: number; count?: number }
+        const paragraph = Number(value.paragraph)
+        const count = Number(value.count)
+        if (Number.isInteger(paragraph) && count > 0) next[paragraph] = count
+      })
+      setHighlights(next)
+    }).catch(() => undefined)
+    return () => { active = false }
+  }, [slug])
+
+  const markHighlight = async (index: number) => {
+    const localKey = `article-highlight:${slug}:${index}`
+    try {
+      if (localStorage.getItem(localKey)) return
+    } catch { /* noop */ }
+    if (highlightBusy === index) return
+    setHighlightBusy(index)
+    try {
+      const db = await getDb()
+      if (!db) return
+      const { doc, runTransaction, serverTimestamp } = await import('firebase/firestore')
+      const reference = doc(db, 'article_highlights', `${slug}__${index}`)
+      const count = await runTransaction(db, async (transaction) => {
+        const snapshot = await transaction.get(reference)
+        const previous = snapshot.exists() ? Number(snapshot.data().count || 0) : 0
+        const next = previous + 1
+        transaction.set(reference, { slug, paragraph: index, count: next, updatedAt: serverTimestamp() })
+        return next
+      })
+      setHighlights((current) => ({ ...current, [index]: count }))
+      try { localStorage.setItem(localKey, '1') } catch { /* noop */ }
+    } catch {
+      // تبقى القراءة نظيفة حتى لو تعذّر عدّ الاقتباس؛ لا نظهر خطأ يقطع تجربة المقال.
+    } finally {
+      setHighlightBusy(null)
+    }
+  }
+
+  const captureSelection = (index: number) => {
+    window.setTimeout(() => {
+      const selection = window.getSelection()?.toString().trim() || ''
+      if (selection.length >= 12) void markHighlight(index)
+    }, 0)
+  }
+
   return (
     <>
       {activeAudio && (
@@ -151,17 +208,33 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
         </div>
       )}
       <div id="article-body" className={`article-body mt-11 ${activeAudio ? 'article-body-synced' : ''}`}>
-        {paragraphs.map((paragraph, index) => (
-          <p
-            key={index}
-            ref={(element) => { refs.current[index] = element }}
-            onClick={() => seekParagraph(index)}
-            aria-current={activeIndex === index ? 'true' : undefined}
-            className={`${index === 0 && canUseDropCap(paragraph.text) ? 'dropcap ' : ''}${activeAudio ? 'synced-paragraph ' : ''}${activeIndex === index ? 'is-audio-active' : ''}`.trim() || undefined}
-          >
-            {paragraph.text}
-          </p>
-        ))}
+        {paragraphs.map((paragraph, index) => {
+          const count = highlights[index] || 0
+          return (
+            <div key={index} className="popular-highlight-paragraph group relative">
+              <button
+                type="button"
+                onClick={(event) => { event.stopPropagation(); void markHighlight(index) }}
+                title={count > 0 ? `اقتبس هذه الفقرة ${count.toLocaleString('en-US')} قارئاً` : 'ظلّل جملة لتصبح من الاقتباسات الشائعة'}
+                aria-label={count > 0 ? `اقتباس شائع لدى ${count.toLocaleString('en-US')} قارئاً` : 'إضافة هذه الفقرة إلى الاقتباسات الشائعة'}
+                className={`popular-highlight-marker absolute -right-5 top-[1.05rem] z-10 flex items-center gap-1.5 text-accent transition-opacity md:-right-10 ${count > 0 ? 'opacity-65 hover:opacity-100' : 'opacity-0 group-hover:opacity-30'} ${highlightBusy === index ? 'pointer-events-none opacity-30' : ''}`}
+              >
+                <span className="block h-px w-4 bg-accent/45 md:w-5" />
+                {count > 0 && <span className="text-[.58rem] font-medium tabular-nums">{count.toLocaleString('en-US')}</span>}
+              </button>
+              <p
+                ref={(element) => { refs.current[index] = element }}
+                onClick={() => seekParagraph(index)}
+                onMouseUp={() => captureSelection(index)}
+                onTouchEnd={() => captureSelection(index)}
+                aria-current={activeIndex === index ? 'true' : undefined}
+                className={`${index === 0 && canUseDropCap(paragraph.text) ? 'dropcap ' : ''}${activeAudio ? 'synced-paragraph ' : ''}${activeIndex === index ? 'is-audio-active' : ''}`.trim() || undefined}
+              >
+                {paragraph.text}
+              </p>
+            </div>
+          )
+        })}
       </div>
     </>
   )

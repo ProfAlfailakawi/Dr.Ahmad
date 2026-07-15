@@ -1,0 +1,58 @@
+name: اختبار الرجال مع Sample D
+
+on:
+  workflow_dispatch:
+    inputs:
+      males:
+        description: "ثلاثة أصوات رجالية Azure مفصولة بفواصل"
+        required: false
+        default: "ar-KW-FahedNeural,ar-SA-HamedNeural,ar-AE-HamdanNeural"
+
+permissions:
+  contents: read
+
+jobs:
+  male-finalist-retest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Verify Azure secrets
+        run: |
+          if [ -z "${{ secrets.AZURE_SPEECH_KEY }}" ]; then
+            echo "::error::Missing GitHub secret: AZURE_SPEECH_KEY"
+            exit 1
+          fi
+          if [ -z "${{ secrets.AZURE_SPEECH_REGION }}" ]; then
+            echo "::error::Missing GitHub secret: AZURE_SPEECH_REGION"
+            exit 1
+          fi
+
+      - name: Generate blind male voice samples
+        env:
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+        run: node scripts/podcast-dialogue.mjs --male-finalist-retest --males="${{ github.event.inputs.males }}"
+
+      - name: Upload blind samples
+        uses: actions/upload-artifact@v4
+        with:
+          name: podcast-male-finalist-retest-output
+          path: |
+            public/audio/male-finalists
+            podcast-audits/male-finalist-retest.private.json
+          if-no-files-found: error

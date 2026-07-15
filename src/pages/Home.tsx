@@ -2,7 +2,7 @@ import { useSeo } from '../components/seo'
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { EASE, FadeUp, Label, Magnetic, Page, Reveal, SectionHead, SocialIcon } from '../components/ui'
+import { EASE, FadeUp, Label, Magnetic, Page, Reveal, SectionHead, SocialIcon, TebyanProjectLink } from '../components/ui'
 import { books as staticBooks, papers as staticPapers, profile, roundDown10, socials, stats, upcoming, type Event as SiteEvent } from '../data'
 import { useCmsContent, useExtras } from '../lib/content'
 import { firebaseEnabled, getDb } from '../lib/firebase'
@@ -878,6 +878,7 @@ function HomeSocialFooter() {
           <button type="button" onClick={() => setNewsletterOpen((value) => !value)} aria-expanded={newsletterOpen} aria-label="النشرة البريدية" title="النشرة البريدية" className={`flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${newsletterOpen ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
             <SocialIcon name="Mail" size={16} />
           </button>
+          <TebyanProjectLink />
         </div>
         <AnimatePresence initial={false}>
           {newsletterOpen && (

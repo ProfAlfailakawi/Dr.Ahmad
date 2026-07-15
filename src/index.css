@@ -711,3 +711,46 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button span span,
 body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
   background: rgba(255,255,255,.9);
 }
+
+/* رابط تبيان: اكتشاف هادئ لمشروع مستقل، لا إعلان ولا زر بارز. */
+.tebyan-link {
+  min-height: 2.5rem;
+  border-color: rgb(var(--c-hair) / .86);
+}
+.tebyan-link:hover {
+  border-color: rgb(31 127 114 / .42);
+}
+@media (min-width: 768px) {
+  .tebyan-link {
+    max-width: 2.75rem;
+    overflow: hidden;
+    white-space: nowrap;
+    transition:
+      max-width .34s cubic-bezier(.22,1,.36,1),
+      color .28s ease,
+      border-color .28s ease;
+  }
+  .tebyan-link:hover,
+  .tebyan-link:focus-visible {
+    max-width: 9rem;
+  }
+}
+
+/* خيط الفكرة: منع أعمدة الكلمات والفراغات الحادة، خصوصًا عند العناوين الإنجليزية الطويلة. */
+.idea-thread {
+  text-align: start;
+}
+.idea-thread :is(a, span, p, h2) {
+  text-align: start;
+  text-align-last: auto;
+}
+.idea-thread a {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+@media (max-width: 767px) {
+  .idea-thread {
+    margin-inline: .25rem;
+    padding-inline: 1rem;
+  }
+}

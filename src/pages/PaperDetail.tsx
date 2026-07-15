@@ -78,7 +78,7 @@ export default function PaperDetail() {
           {p.abstractAr && (
             <FadeUp delay={0.12}>
               <section className="mt-8 rounded-2xl border border-hair bg-wash px-6 py-5">
-                <p className="text-[.76rem] font-semibold text-accent">الملخص العربي</p>
+                <p className="text-[.76rem] font-semibold text-accent">الملخص</p>
                 <p className="mt-3 text-[.95rem] font-light leading-[1.95] text-ink/80 dark:text-soft">{p.abstractAr.replace(/^ملخص عربي:\s*/, '')}</p>
               </section>
             </FadeUp>

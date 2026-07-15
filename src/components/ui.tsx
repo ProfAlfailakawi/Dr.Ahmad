@@ -948,6 +948,7 @@ export function Footer() {
                   </a>
                 ))}
               </span>
+              <TebyanProjectLink label="Tebyan" />
             </div>
           </div>
           <div className="mt-8 border-t border-hair pt-5 text-[.78rem] text-soft">
@@ -976,6 +977,7 @@ export function Footer() {
                 </a>
               ))}
             </span>
+            <TebyanProjectLink />
           </div>
         </div>
         <div className="mt-8 border-t border-hair pt-5 text-[.78rem] text-soft">
@@ -983,6 +985,23 @@ export function Footer() {
         </div>
       </div>
     </footer>
+  )
+}
+
+export function TebyanProjectLink({ label = 'تبيان' }: { label?: string }) {
+  return (
+    <a
+      href="https://tebyan.dr-alfailakawi.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="تبيان — منصة عامة مستقلة"
+      title="تبيان — منصة عامة مستقلة"
+      className="tebyan-link group inline-flex items-center gap-2 border-s border-hair ps-4 text-soft transition-colors duration-300 hover:text-[#1f7f72]"
+    >
+      <img src="/tebyan-icon.png" alt="" className="h-5 w-5 rounded-full object-cover opacity-80 transition-opacity duration-300 group-hover:opacity-100" loading="lazy" />
+      <span className="tebyan-link-label text-[.82rem] font-medium">{label}</span>
+      <span aria-hidden className="text-[.72rem] transition-transform duration-300 group-hover:-translate-x-0.5">↗</span>
+    </a>
   )
 }
 

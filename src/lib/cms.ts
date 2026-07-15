@@ -106,7 +106,7 @@ const audioMap = audioManifest as Record<string, AudioEntry>
 const fieldsByKind: Record<ContentKind, readonly string[]> = {
   article: ['title', 'date', 'iso', 'cat', 'excerpt', 'body', 'source', 'url', 'status', 'scheduledAt', 'audio'],
   book: ['title', 'isbn', 'desc', 'cover', 'pdf'],
-  paper: ['title', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'iso', 'date'],
+  paper: ['title', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'iso', 'date', 'coAuthors', 'scholar', 'researchgate'],
   media: ['title', 'outlet', 'platform', 'url', 'iso', 'date'],
 }
 

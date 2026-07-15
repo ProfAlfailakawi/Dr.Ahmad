@@ -33,6 +33,7 @@ export type ManagedRecord = {
   cover?: string
   pdf?: string
   meta?: string
+  abstractAr?: string
   journal?: string
   outlet?: string
   platform?: string
@@ -68,7 +69,7 @@ const labels: Record<ManagedKind, { singular: string; plural: string }> = {
 const editableFields: Record<ManagedKind, string[]> = {
   article: ['slug', 'title', 'iso', 'date', 'cat', 'excerpt', 'body', 'source', 'url', 'status', 'scheduledAt'],
   book: ['slug', 'title', 'isbn', 'desc', 'cover', 'pdf', 'coAuthors'],
-  paper: ['slug', 'title', 'meta', 'journal', 'source', 'url', 'scholar', 'researchgate', 'coAuthors'],
+  paper: ['slug', 'title', 'meta', 'abstractAr', 'journal', 'source', 'url', 'scholar', 'researchgate', 'coAuthors'],
   media: ['slug', 'title', 'outlet', 'url', 'iso', 'date'],
 }
 
@@ -182,7 +183,7 @@ function blank(kind: ManagedKind): Form {
   const iso = todayIso()
   if (kind === 'article') return { slug: '', title: '', iso, date: dateArabic(iso), cat: '', excerpt: '', body: '', source: '', url: '', status: 'published', scheduledAt: '', _aiReady: '' }
   if (kind === 'book') return { slug: '', title: '', isbn: '', desc: '', cover: '', pdf: '', coAuthors: '' }
-  if (kind === 'paper') return { slug: '', title: '', meta: '', journal: '', source: '', url: '', scholar: '', researchgate: '', coAuthors: '' }
+  if (kind === 'paper') return { slug: '', title: '', meta: '', abstractAr: '', journal: '', source: '', url: '', scholar: '', researchgate: '', coAuthors: '' }
   return { slug: '', title: '', outlet: '', url: '', iso, date: dateArabic(iso) }
 }
 
@@ -197,7 +198,7 @@ function cleanData(kind: ManagedKind, form: Form) {
   const data: Record<string, string> = {}
   for (const field of editableFields[kind]) {
     const value = String(form[field] ?? '').trim()
-    if (value || ['slug', 'title', 'date', 'iso', 'cat', 'excerpt', 'body', 'desc', 'meta', 'outlet'].includes(field)) data[field] = value
+    if (value || ['slug', 'title', 'date', 'iso', 'cat', 'excerpt', 'body', 'desc', 'meta', 'abstractAr', 'outlet'].includes(field)) data[field] = value
   }
   if ((kind === 'article' || kind === 'media') && data.iso) data.date = dateArabic(data.iso)
   if (kind === 'article') {
@@ -522,6 +523,9 @@ function Editor({
           {kind === 'paper' && (
             <>
               <Field label="الوصف / الميتا"><textarea className={`${input} min-h-24`} value={form.meta || ''} onChange={(event) => set('meta', event.target.value)} /></Field>
+              <Field label="الملخص" hint="اكتب الملخص كما تريد ظهوره في صفحة البحث. إذا كان البحث إنجليزيًا يمكن وضع ترجمة أكاديمية عربية هنا.">
+                <textarea className={`${input} min-h-32 leading-loose`} value={form.abstractAr || ''} onChange={(event) => set('abstractAr', event.target.value)} />
+              </Field>
               <div className="flex flex-wrap items-center gap-3">
                 <button type="button" onClick={() => void suggest()} disabled={form._aiBusy === '1' || (!form.title?.trim() && !form.url?.trim() && !form.source?.trim())} className={secondary}>{form._aiBusy === '1' ? 'أفكّر…' : '✦ اقترح وصف الميتا'}</button>
                 <span className="text-[.75rem] text-soft">الاقتراح قابل للتعديل والمراجعة قبل الحفظ.</span>

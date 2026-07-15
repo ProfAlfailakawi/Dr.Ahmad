@@ -350,6 +350,11 @@ function generateBodyHtml(path, lang = 'ar') {
       <div style="max-width: 1200px; margin: 0 auto;">
         <p style="margin-bottom: 1rem; font-weight: bold;">د. أحمد حسين الفيلكاوي</p>
         <p style="color: #8AADCC; font-size: 0.9rem;">Professor of Educational Technology and Artificial Intelligence</p>
+        <p style="margin-top: 1.25rem;">
+          <a href="https://tebyan.dr-alfailakawi.com" target="_blank" rel="noopener noreferrer" title="تبيان — منصة عامة مستقلة" style="display: inline-flex; align-items: center; gap: .45rem; color: #8AADCC; font-size: .82rem; text-decoration: none;">
+            <img src="/tebyan-icon.png" alt="" style="width: 20px; height: 20px; border-radius: 999px;" /> Tebyan ↗
+          </a>
+        </p>
         <p style="font-size: 0.8rem; color: #626A76; margin-top: 1.5rem;">&copy; ${new Date().getFullYear()} All Rights Reserved.</p>
       </div>
     </footer>
@@ -358,6 +363,11 @@ function generateBodyHtml(path, lang = 'ar') {
       <div style="max-width: 1200px; margin: 0 auto;">
         <p style="margin-bottom: 1rem; font-weight: bold; font-family: 'El Messiri', serif; font-size: 1.25rem;">د. أحمد حسين الفيلكاوي</p>
         <p style="color: #8AADCC; font-size: 0.9rem;">أستاذ تكنولوجيا التعليم والذكاء الاصطناعي</p>
+        <p style="margin-top: 1.25rem;">
+          <a href="https://tebyan.dr-alfailakawi.com" target="_blank" rel="noopener noreferrer" title="تبيان — منصة عامة مستقلة" style="display: inline-flex; align-items: center; gap: .45rem; color: #8AADCC; font-size: .82rem; text-decoration: none;">
+            <img src="/tebyan-icon.png" alt="" style="width: 20px; height: 20px; border-radius: 999px;" /> تبيان ↗
+          </a>
+        </p>
         <p style="font-size: 0.8rem; color: #626A76; margin-top: 1.5rem;">&copy; ${new Date().getFullYear()} جميع الحقوق محفوظة.</p>
       </div>
     </footer>
@@ -590,7 +600,7 @@ function generateBodyHtml(path, lang = 'ar') {
               <p style="color: #626A76; font-size: 1.05rem; font-family: 'Tajawal', sans-serif;">الباحث الرئيسي: د. أحمد حسين الفيلكاوي &middot; الباحث المشارك: د. عبدالعزيز دخيل العنزي</p>
             </header>
             <section style="background: rgba(62, 92, 120, 0.03); padding: 2.5rem; border-radius: 8px; border-right: 4px solid #3E5C78; margin-bottom: 2rem;">
-              <p style="color: #3E5C78; font-size: .85rem; font-weight: 700; font-family: 'Tajawal', sans-serif; margin: 0 0 .75rem;">الملخص العربي</p>
+              <p style="color: #3E5C78; font-size: .85rem; font-weight: 700; font-family: 'Tajawal', sans-serif; margin: 0 0 .75rem;">الملخص</p>
               <p style="line-height: 1.8; font-size: 1.15rem; color: #15161A; font-family: 'Tajawal', sans-serif; margin: 0;">${esc(p.abstractAr || p.desc)}</p>
             </section>
           </article>

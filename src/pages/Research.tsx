@@ -16,7 +16,7 @@ export default function Research() {
   const count = paperCount(papers.length)
   useSeo({ title: 'المساهمات العلمية', path: '/research', description: `${count} محكّماً في تكنولوجيا التعليم.` })
   return (
-    <Page>
+    <Page className="content-research page-journey">
       <PageHead label="المساهمات العلمية" title={`${count}.`} sub="أبحاث محكّمة تُسهم في تطوير ممارسات التعليم وتوظيف التكنولوجيا." />
 
       <section className="px-6 py-20 md:px-11 md:py-24">

@@ -105,7 +105,7 @@ export default function Questions() {
     .slice(0, 18)
 
   return (
-    <Page>
+    <Page className="content-questions page-journey">
       <PageHead
         label="الزاوية المتجددة"
         title="سؤال يُقلق التعليم."

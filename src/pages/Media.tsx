@@ -17,7 +17,7 @@ export default function Media() {
   useSeo({ title: 'الظهور الإعلامي', path: '/media', description: `${count} تلفزيونياً وإذاعياً.` })
   const reduce = useReducedMotion()
   return (
-    <Page>
+    <Page className="content-media page-journey">
       <PageHead
         label="الظهور الإعلامي"
         title={`${count}.`}

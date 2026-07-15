@@ -185,7 +185,7 @@ export default function Curated() {
   const shown = kind === 'الكل' ? all : all.filter((item) => item.kind === kind)
 
   return (
-    <Page>
+    <Page className="content-curated page-journey">
       <PageHead
         label="من اختياراتي"
         title="المختارات."

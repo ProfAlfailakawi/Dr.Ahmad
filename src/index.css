@@ -23,12 +23,12 @@
 
 /* الوضع الليلي — حبر دافئ لا أسود قاسٍ */
 html.dark {
-  --c-canvas: 17 18 21;         /* #111215 */
-  --c-ink: 234 234 231;         /* #EAEAE7 */
-  --c-soft: 170 175 184;        /* أوضح قليلاً للنصوص الثانوية الصغيرة */
-  --c-accent: 138 173 204;      /* #8AADCC — أفتح ليقرأ على الداكن */
-  --c-accent-deep: 163 193 219;
-  --c-wash: 25 27 31;           /* #191B1F */
+  --c-canvas: 15 17 21;         /* مساء أعمق وأدفأ من الأسود الصريح */
+  --c-ink: 236 234 228;         /* عاجي خافت بدل الأبيض الحاد */
+  --c-soft: 181 184 190;        /* أوضح قليلاً للنصوص الثانوية الصغيرة */
+  --c-accent: 132 169 202;      /* أزرق مسائي */
+  --c-accent-deep: 164 194 220;
+  --c-wash: 23 26 31;           /* سطح داكن بطبقة مختلفة */
   --c-hair: rgba(234, 234, 231, 0.11);
 
   --shadow-soft: 0 22px 44px -26px rgba(0, 0, 0, 0.75);
@@ -55,6 +55,30 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: clip;
   transition: background-color 0.5s var(--E), color 0.5s var(--E);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 42% at 78% 0%, rgb(var(--c-accent) / .045), transparent 68%),
+    radial-gradient(46% 32% at 8% 88%, rgb(var(--c-accent) / .032), transparent 72%);
+  opacity: .72;
+}
+
+html.dark body::before {
+  background:
+    radial-gradient(62% 42% at 76% 0%, rgb(var(--c-accent) / .105), transparent 70%),
+    radial-gradient(48% 34% at 12% 90%, rgb(var(--c-accent) / .07), transparent 72%);
+  opacity: .9;
+}
+
+::selection {
+  background: rgb(var(--c-accent) / .18);
+  color: rgb(var(--c-ink));
 }
 
 .route-loading-line {
@@ -187,6 +211,347 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
   background: rgb(var(--c-accent)); transition: width 0.3s;
 }
 .navlink:hover::after { width: 100%; }
+
+/* ============================================================
+   توقيع بصري هادئ — الخط الأزرق كلغة لا كزخرفة
+   ============================================================ */
+.signature-page {
+  position: relative;
+  isolation: isolate;
+}
+
+.signature-page :is(h1, h2, h3, .font-display) {
+  text-wrap: balance;
+}
+
+.signature-page :is(p, li) {
+  text-wrap: pretty;
+}
+
+.signature-page :is(section, header):not(.human-core):not(.page-head) {
+  position: relative;
+}
+
+.signature-page :is(section, header):not(.human-core):not(.page-head)::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: max(1.5rem, calc((100vw - 1280px) / 2 + 1.5rem));
+  width: clamp(2rem, 7vw, 5.25rem);
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgb(var(--c-accent) / .72), rgb(var(--c-accent) / 0));
+  opacity: .16;
+  pointer-events: none;
+}
+
+.signature-label > span:first-child {
+  position: relative;
+  overflow: hidden;
+  border-radius: 999px;
+  transform-origin: right center;
+}
+
+.signature-label > span:first-child::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgb(var(--c-canvas) / .92), transparent);
+  transform: translateX(140%);
+  animation: signature-line-pass 5.8s var(--E) infinite;
+}
+
+@keyframes signature-line-pass {
+  0%, 72%, 100% { transform: translateX(140%); opacity: 0; }
+  78% { opacity: .75; }
+  88% { transform: translateX(-140%); opacity: 0; }
+}
+
+.page-head {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(42% 62% at 82% 18%, rgb(var(--c-accent) / .055), transparent 70%);
+}
+
+.page-head::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: max(1.5rem, calc((100vw - 1280px) / 2 + 1.5rem));
+  inset-block-end: -1px;
+  width: min(34vw, 17rem);
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgb(var(--c-accent) / .72));
+  opacity: .42;
+}
+
+.site-footer {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, transparent, rgb(var(--c-wash) / .38));
+}
+
+.site-footer::before {
+  content: "";
+  position: absolute;
+  inset-block-start: -1px;
+  inset-inline-end: max(1.5rem, calc((100vw - 1280px) / 2 + 1.5rem));
+  width: min(24rem, 44vw);
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgb(var(--c-accent) / .66), rgb(var(--c-accent) / .18));
+}
+
+.site-footer::after {
+  content: "";
+  position: absolute;
+  inset-block-start: -5px;
+  inset-inline-end: calc(max(1.5rem, (100vw - 1280px) / 2 + 1.5rem) + min(24rem, 44vw));
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  border: 1.5px solid rgb(var(--c-accent) / .72);
+  background: rgb(var(--c-canvas));
+}
+
+.signature-page :is(img):not([src*="logo"]):not([src*="favicon"]):not([src*="icon-"]) {
+  transition: filter .55s var(--E), transform .55s var(--E), box-shadow .55s var(--E);
+}
+
+html.dark .signature-page :is(img):not([src*="logo"]):not([src*="favicon"]):not([src*="icon-"]) {
+  filter: saturate(.88) contrast(.96) brightness(.93);
+}
+
+.signature-page a:hover :is(img):not([src*="logo"]):not([src*="favicon"]):not([src*="icon-"]) {
+  filter: saturate(1.02) contrast(1.01);
+}
+
+html.dark .signature-page :is(.bg-canvas, .bg-wash) {
+  box-shadow: inset 0 1px 0 rgb(var(--c-ink) / .025);
+}
+
+/* ============================================================
+   إخراج تحريري حسب نوع المحتوى — بلا عناصر جديدة ولا تلوث بصري
+   ============================================================ */
+.content-articles,
+.content-books,
+.content-research,
+.content-media,
+.content-thought-paths,
+.content-questions,
+.content-curated,
+.content-cv,
+.content-decade,
+.content-search {
+  --page-atmosphere: .045;
+  --page-line: .22;
+  --page-surface: rgb(var(--c-wash) / .34);
+}
+
+.content-articles .page-head {
+  background:
+    radial-gradient(46% 72% at 86% 18%, rgb(var(--c-accent) / .06), transparent 72%),
+    linear-gradient(180deg, rgb(var(--c-canvas)), rgb(var(--c-canvas) / .96));
+}
+
+.content-articles :is(ul, .article-body) {
+  position: relative;
+}
+
+.content-articles .article-body {
+  max-width: 72ch;
+}
+
+.content-articles .article-body::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: -1.15rem;
+  inset-block: .45rem 1rem;
+  width: 1px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgb(var(--c-accent) / .34), rgb(var(--c-accent) / 0));
+  opacity: .52;
+}
+
+.content-books .page-head {
+  background:
+    radial-gradient(52% 70% at 76% 16%, rgb(var(--c-accent) / .07), transparent 76%),
+    linear-gradient(180deg, rgb(var(--c-canvas)), rgb(var(--c-wash) / .22));
+}
+
+.content-books a > div[style*="aspect-ratio"] {
+  position: relative;
+  box-shadow:
+    0 28px 70px -44px rgb(var(--c-ink) / .55),
+    0 0 0 1px rgb(var(--c-ink) / .035);
+}
+
+.content-books a > div[style*="aspect-ratio"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / .20), transparent 34%),
+    linear-gradient(0deg, rgb(var(--c-accent) / .045), transparent 48%);
+  opacity: .55;
+  transition: opacity .45s var(--E);
+}
+
+.content-books a:hover > div[style*="aspect-ratio"]::after {
+  opacity: .78;
+}
+
+.content-research {
+  --page-surface: rgb(var(--c-wash) / .26);
+}
+
+.content-research .page-head {
+  background:
+    linear-gradient(90deg, rgb(var(--c-accent) / .035) 1px, transparent 1px) 0 0 / 4.5rem 4.5rem,
+    radial-gradient(44% 58% at 82% 14%, rgb(var(--c-accent) / .055), transparent 72%),
+    rgb(var(--c-canvas));
+}
+
+.content-research ul {
+  position: relative;
+}
+
+.content-research ul::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block: 0;
+  width: 1px;
+  background: linear-gradient(180deg, rgb(var(--c-accent) / .22), rgb(var(--c-accent) / 0));
+  opacity: .5;
+}
+
+.content-research li,
+.content-research ul > div {
+  position: relative;
+}
+
+.content-research li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: -1px;
+  inset-block-start: 1.75rem;
+  width: .42rem;
+  height: .42rem;
+  border-radius: 999px;
+  background: rgb(var(--c-canvas));
+  border: 1px solid rgb(var(--c-accent) / .5);
+}
+
+.content-media .page-head {
+  background:
+    radial-gradient(58% 64% at 80% 8%, rgb(var(--c-accent) / .08), transparent 72%),
+    linear-gradient(180deg, rgb(var(--c-wash) / .32), rgb(var(--c-canvas)));
+}
+
+.content-media a[href*="youtube"],
+.content-media a[href*="youtu.be"] {
+  box-shadow: 0 26px 58px -44px rgb(var(--c-ink) / .44);
+}
+
+.content-thought-paths .page-head,
+.content-decade .page-head {
+  background:
+    radial-gradient(48% 66% at 78% 20%, rgb(var(--c-accent) / .062), transparent 72%),
+    linear-gradient(180deg, rgb(var(--c-canvas)), rgb(var(--c-wash) / .18));
+}
+
+.content-thought-paths ol,
+.content-decade ol {
+  position: relative;
+}
+
+.content-cv .page-head {
+  background:
+    linear-gradient(180deg, rgb(var(--c-canvas)), rgb(var(--c-wash) / .20)),
+    radial-gradient(38% 52% at 84% 10%, rgb(var(--c-accent) / .055), transparent 70%);
+}
+
+/* الصفحات الطويلة كرحلة: تنفّس بصري لا يضيف محتوى */
+.page-journey > section {
+  position: relative;
+}
+
+.page-journey > section:nth-of-type(even) {
+  background:
+    radial-gradient(38rem 20rem at 86% 10%, rgb(var(--c-accent) / var(--page-atmosphere)), transparent 72%),
+    linear-gradient(180deg, transparent, var(--page-surface), transparent);
+}
+
+.page-journey > section + section::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: max(1.5rem, calc((100vw - 1280px) / 2 + 1.5rem));
+  width: min(11rem, 26vw);
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgb(var(--c-accent) / var(--page-line)));
+  pointer-events: none;
+}
+
+.page-journey :is(article, li, a).group {
+  scroll-margin-block: 6rem;
+}
+
+.content-curated {
+  --page-atmosphere: .038;
+}
+
+.content-questions {
+  --page-atmosphere: .032;
+  --page-line: .18;
+}
+
+html.dark .content-books a > div[style*="aspect-ratio"] {
+  background: rgb(var(--c-wash));
+  box-shadow:
+    0 34px 74px -44px rgba(0,0,0,.82),
+    0 0 0 1px rgb(var(--c-ink) / .10);
+}
+
+html.dark .content-media .page-head {
+  background:
+    radial-gradient(54% 62% at 82% 10%, rgb(var(--c-accent) / .13), transparent 74%),
+    linear-gradient(180deg, rgb(var(--c-wash) / .58), rgb(var(--c-canvas)));
+}
+
+@media (max-width: 640px) {
+  .content-articles .article-body::before {
+    display: none;
+  }
+
+  .page-journey > section:nth-of-type(even) {
+    background:
+      radial-gradient(20rem 12rem at 82% 2%, rgb(var(--c-accent) / calc(var(--page-atmosphere) + .01)), transparent 75%),
+      linear-gradient(180deg, transparent, var(--page-surface), transparent);
+  }
+
+  .page-journey > section + section::after {
+    width: 5.5rem;
+    opacity: .72;
+  }
+
+  .content-research ul::before,
+  .content-research li::before {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .signature-page :is(section, header):not(.human-core):not(.page-head)::before {
+    width: 2.8rem;
+    opacity: .12;
+  }
+}
 
 @media (hover: none), (pointer: coarse) {
   .cursor-ring, .cursor-dot { display: none !important; }

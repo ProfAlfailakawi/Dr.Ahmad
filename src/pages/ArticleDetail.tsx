@@ -476,7 +476,7 @@ export default function ArticleDetail() {
 
   if (!a && loading)
     return (
-      <Page>
+      <Page className="content-articles article-journey">
         <div className="px-6 pt-44 text-center text-soft">لحظة…</div>
       </Page>
     )

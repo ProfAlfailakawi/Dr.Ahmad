@@ -253,7 +253,7 @@ export default function AskLibrary() {
   }
 
   return (
-    <Page>
+    <Page className="content-thought-paths page-journey">
       <PageHead
         label="العقل الحي"
         title="اسأل الأرشيف سؤالاً حقيقياً."

@@ -27,7 +27,7 @@ export default function BookDetail() {
   const { books, loading } = useCmsContent()
   const book = books.find((b) => b.slug === slug)
   useSeo({ title: book?.title ?? 'كتاب', description: book?.desc, path: `/publications/${slug}` })
-  if (!book && loading) return <Page><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
+  if (!book && loading) return <Page className="content-books"><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
   if (!book) return <Page><div className="px-6 pt-44 text-center text-soft">لم يُعثر على الكتاب.</div></Page>
 
   return (

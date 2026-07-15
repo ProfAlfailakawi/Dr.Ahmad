@@ -40,7 +40,7 @@ export default function CV() {
   const { cv, error: cvError, saveSection } = useCv()
 
   return (
-    <Page>
+    <Page className="content-cv page-journey">
       <header className="relative overflow-hidden border-b border-hair px-6 pb-14 pt-32 md:px-11 md:pb-16 md:pt-40">
         <div className="pointer-events-none absolute inset-y-0 left-[8%] hidden w-px bg-gradient-to-b from-transparent via-accent/20 to-transparent md:block" aria-hidden="true" />
         <div className="mx-auto max-w-shell">

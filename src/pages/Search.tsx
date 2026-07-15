@@ -50,7 +50,7 @@ export default function Search() {
   }
 
   return (
-    <Page>
+    <Page className="content-search page-journey">
       <PageHead
         label="بحث"
         title="البحث العميق."

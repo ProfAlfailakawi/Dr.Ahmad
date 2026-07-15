@@ -14,7 +14,7 @@ export default function PaperDetail() {
 
   if (!p && loading)
     return (
-      <Page>
+      <Page className="content-research article-journey">
         <div className="px-6 pt-44 text-center text-soft">لحظة…</div>
       </Page>
     )

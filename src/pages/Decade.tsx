@@ -123,7 +123,7 @@ export default function Decade() {
   }, [articles])
 
   return (
-    <Page>
+    <Page className="content-decade page-journey">
       <PageHead
         label="السيرة الفكرية الحيّة"
         title="وثيقة العقد."

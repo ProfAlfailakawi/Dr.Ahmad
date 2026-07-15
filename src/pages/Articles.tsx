@@ -22,7 +22,7 @@ export default function Articles() {
   const shown = showAll ? filtered : filtered.slice(0, 12)
 
   return (
-    <Page>
+    <Page className="content-articles page-journey">
       <PageHead
         label="المقالات الفكرية"
         title="بصوتي الخاص."

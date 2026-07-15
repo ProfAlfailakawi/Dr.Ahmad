@@ -194,7 +194,7 @@ export default function ThoughtPaths() {
   }
 
   return (
-    <Page>
+    <Page className="content-thought-paths page-journey">
       <PageHead
         label="قراءة عابرة للأنواع"
         title="مسار الفكرة."

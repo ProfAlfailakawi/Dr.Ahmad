@@ -84,7 +84,7 @@ export function FadeUp({ children, delay = 0, className = '' }: { children: Reac
 
 /* ---------- Label ---------- */
 export const Label = ({ children, center = false }: { children: React.ReactNode; center?: boolean }) => (
-  <div className={`mb-5 flex items-center gap-3 ${center ? 'justify-center' : ''}`}>
+  <div className={`signature-label mb-5 flex items-center gap-3 ${center ? 'justify-center' : ''}`}>
     <span className="h-[1.5px] w-7 bg-accent" />
     <span className="text-[.8rem] font-semibold uppercase text-accent">{children}</span>
   </div>
@@ -93,7 +93,7 @@ export const Label = ({ children, center = false }: { children: React.ReactNode;
 /* ---------- Page heading (used by inner pages) ---------- */
 export function PageHead({ label, title, sub }: { label: string; title: string; sub?: string }) {
   return (
-    <header className="border-b border-hair px-6 pb-12 pt-32 md:px-11 md:pb-14 md:pt-40">
+    <header className="page-head border-b border-hair px-6 pb-12 pt-32 md:px-11 md:pb-14 md:pt-40">
       <div className="mx-auto max-w-shell">
         <FadeUp>
           <Label>{label}</Label>
@@ -930,7 +930,7 @@ export function Footer() {
 
   if (english) {
     return (
-      <footer dir="ltr" className="border-t border-hair px-6 py-12 md:px-11">
+      <footer dir="ltr" className="site-footer border-t border-hair px-6 py-12 md:px-11">
         <div className="mx-auto max-w-shell">
           <div className="flex flex-wrap items-center justify-between gap-5">
             <Link to="/en">
@@ -963,7 +963,7 @@ export function Footer() {
   }
 
   return (
-    <footer className="border-t border-hair px-6 py-12 md:px-11">
+    <footer className="site-footer border-t border-hair px-6 py-12 md:px-11">
       <div className="mx-auto max-w-shell">
         <div className="flex flex-wrap items-center justify-between gap-5">
           <Link to="/">
@@ -1033,12 +1033,12 @@ export function ScheduleProjectLink({ label = 'الجدول الدراسي' }: {
 }
 
 /* ---------- Page transition wrapper ---------- */
-export function Page({ children }: { children: React.ReactNode }) {
+export function Page({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   const reduce = useReducedMotion()
   useEffect(() => { window.scrollTo(0, 0) }, [])
   return (
     <motion.div
-      className="w-full max-w-full overflow-x-hidden"
+      className={`signature-page w-full max-w-full overflow-x-hidden ${className}`}
       initial={reduce ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={reduce ? undefined : { opacity: 0, y: -8 }}

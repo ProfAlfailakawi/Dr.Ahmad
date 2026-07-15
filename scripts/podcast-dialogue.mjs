@@ -506,6 +506,15 @@ function normalizeMechanics(sc) {
   if (!sc || !Array.isArray(sc.utterances)) return sc
   const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, Number.isFinite(+v) ? +v : lo))
   const wordCount = (text) => String(text || '').split(/\s+/).filter(Boolean).length
+  const polishForSpokenArabic = (text) => String(text || '')
+    .replace(/بالظبط/g, 'بالضبط')
+    .replace(/\bبالضبط!\s*/g, 'بالضبط. ')
+    .replace(/إن\s+علمناه\s+أن\s+هذا\s+الرقم\s+هو\s+الحقيقة\s+الكاملة،?\s*سيقرأ\s+الورقة\s+كحكم\s+نهائي\s+على\s+قيمته\.?/g,
+      'إذا تعلّم الطالب أن الرقم هو الحقيقة الكاملة، فقد يقرأ الورقة كأنها حكم نهائي على قيمته.')
+    .replace(/إن\s+علمناه\s+أن\s+الرقم\s+هو\s+الحقيقة\s+الكاملة،?\s*سيقرأ\s+الورقة\s+كحكم\s+نهائي\s+على\s+قيمته\.?/g,
+      'إذا تعلّم الطالب أن الرقم هو الحقيقة الكاملة، فقد يقرأ الورقة كأنها حكم نهائي على قيمته.')
+    .replace(/\s+/g, ' ')
+    .trim()
   const splitLongText = (text, target = 22, hard = 30) => {
     const clean = String(text || '').replace(/\s+/g, ' ').trim()
     if (wordCount(clean) <= hard) return [clean]
@@ -533,6 +542,7 @@ function normalizeMechanics(sc) {
     return chunks.map((part) => part.trim()).filter(Boolean)
   }
   for (const [index, u] of sc.utterances.entries()) {
+    u.text = polishForSpokenArabic(u.text)
     if (String(u.text || '').includes('؟') && u.delivery !== 'question') u.delivery = 'question'
     const kind = u.delivery || 'normal'
     const profile = pacingOf(kind)
@@ -553,7 +563,7 @@ function normalizeMechanics(sc) {
   const akeedAlts = ['بالطبع', 'تماماً', 'فعلاً', 'صحيح', 'نعم']
   let akeedSeen = 0
   for (const u of sc.utterances) {
-    u.text = String(u.text || '').replace(/أكيد/g, () => (akeedSeen++ === 0 ? 'أكيد' : akeedAlts[(akeedSeen - 2) % akeedAlts.length]))
+    u.text = polishForSpokenArabic(String(u.text || '').replace(/أكيد/g, () => (akeedSeen++ === 0 ? 'أكيد' : akeedAlts[(akeedSeen - 2) % akeedAlts.length])))
   }
   // قاعدة إخراج صوتي لا نعتمد فيها على التزام النموذج: المداخلة المقالية الطويلة هي أكثر سبب
   // لفشل Azure/STT/Judge. لذلك نكسرها قبل مرحلة النطق إلى نبضات مسموعة قصيرة، مع الحفاظ
@@ -2796,6 +2806,11 @@ if (SELF_TEST) {
   assert(existsSync(FFMPEG) && existsSync(FFPROBE), 'ffmpeg/ffprobe يجب أن يكونا قابلين للتنفيذ خارج PATH')
   assert.equal(blindRankingRound.toString().includes('pronunciationMeaning: 95'), false, 'ممنوع ترتيب وهمي ثابت للأصوات')
   const normalizedSample = normalizeMechanics(structuredClone(sampleFixture))
+  const speechPolish = normalizeMechanics({ utterances: [{ speaker: 'A', delivery: 'reflection',
+    text: 'إن علمناه أن هذا الرقم هو الحقيقة الكاملة، سيقرأ الورقة كحكم نهائي على قيمته.' },
+  { speaker: 'B', delivery: 'briefReaction', text: 'بالظبط! هذه هي المشكلة.' }] })
+  assert(speechPolish.utterances[0].text.includes('إذا تعلّم الطالب'), 'التراكيب الصعبة صوتياً يجب أن تُعاد لصياغة منطوقة')
+  assert(!speechPolish.utterances[1].text.includes('بالظبط'), 'تصحيح «بالظبط» إلى «بالضبط» قبل النطق')
   assert(normalizedSample.utterances.every((utterance) => {
     const profile = pacingOf(utterance.delivery)
     return utterance.targetWordsPerMinute >= profile.targetWpm[0]
@@ -2806,7 +2821,7 @@ if (SELF_TEST) {
       delivery: 'question' }, 0, 'ar', 'ar-AE-FatimaNeural').rate,
   'نورة تحتاج إبطاءً أدائياً أكبر من فاطمة وفق الاختبار السمعي')
   assert(selectMusicBridgeIndexes(normalizedSample.utterances).length <= 1, 'العينة القصيرة لا تحتمل أكثر من جسر موسيقي واحد')
-  console.log('✓ اختبارات بوابة البودكاست العربي: 18/18')
+  console.log('✓ اختبارات بوابة البودكاست العربي: 20/20')
   process.exit(0)
 }
 

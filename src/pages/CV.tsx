@@ -79,7 +79,7 @@ export default function CV() {
           {/* أثرٌ موثّق — أختام هادئة لا أرقام صاخبة */}
           <FadeUp>
             <p className="mb-8 text-center text-[.76rem] font-semibold uppercase text-accent">أثرٌ موثّق</p>
-            <div className="mb-14 grid grid-cols-2 gap-6 border-b border-hair pb-14 md:grid-cols-4">
+            <div className="mobile-card-rail mb-14 grid grid-cols-2 gap-6 border-b border-hair pb-14 md:grid-cols-4">
               {[
                 { n: ar(books.length), l: 'كتاباً منشوراً' },
                 { n: ar(papers.length), l: 'بحثاً محكّماً' },
@@ -130,7 +130,7 @@ export default function CV() {
             <div className="mt-6">
               <CvSectionEditor section="work" items={cv.work} isAdmin={isAdmin} onSave={saveSection}>
                 <Accordion title="الخبرات الوظيفية والاستشارية" count={cv.work.length}>
-                  <ul className="grid gap-7 md:grid-cols-2">
+                  <ul className="mobile-card-rail grid gap-7 md:grid-cols-2">
                     {cv.work.map((item) => (
                       <li key={item.id}>
                         <span className="block text-[1.02rem] font-medium text-ink">{item.org}</span>
@@ -188,7 +188,7 @@ export default function CV() {
 
               <CvSectionEditor section="conferences" items={cv.conferences} isAdmin={isAdmin} onSave={saveSection}>
                 <Accordion title="المؤتمرات والزيارات العلمية" count={cv.conferences.length}>
-                  <ul className="grid gap-4 md:grid-cols-2 md:gap-x-10">
+                  <ul className="mobile-card-rail grid gap-4 md:grid-cols-2 md:gap-x-10">
                     {cv.conferences.map((item) => (
                       <li key={item.id}>
                         <span className="block text-[.96rem] font-medium leading-[1.55] text-ink">{item.title}</span>

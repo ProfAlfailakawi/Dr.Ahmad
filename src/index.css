@@ -1208,21 +1208,49 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
 }
 
 
-/* شبكات الهاتف: صفّان متوازنان، والعنصر الفردي الأخير يمتد بعرض الصف
-   بدل أن يترك نصف الشاشة فارغاً. */
-@media (max-width: 639px) {
+/* قاعدة الهاتف العامة: مجموعات البطاقات تُلفّ أفقياً من اليمين إلى اليسار.
+   لا تكديس عمودي طويل، ولا نصف شاشة فارغ، مع بطاقة تالية ظاهرة جزئياً لتوضيح السحب. */
+@media (max-width: 767px) {
+  .mobile-card-rail,
   .mobile-paired-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: stretch;
+    display: flex !important;
+    direction: rtl;
+    width: auto;
+    max-width: none;
+    margin-inline: -1.5rem;
+    padding-inline: 1.5rem;
+    padding-bottom: .75rem;
+    gap: 1rem !important;
+    overflow-x: auto !important;
+    overflow-y: visible;
+    grid-template-columns: none !important;
+    scroll-snap-type: inline mandatory;
+    scroll-padding-inline: 1.5rem;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    touch-action: pan-x pan-y;
   }
+  .mobile-card-rail::-webkit-scrollbar,
+  .mobile-paired-grid::-webkit-scrollbar { display: none; }
+  .mobile-card-rail > *,
   .mobile-paired-grid > * {
+    flex: 0 0 min(82vw, 360px);
+    width: min(82vw, 360px);
     min-width: 0;
-    height: 100%;
+    max-width: min(82vw, 360px);
+    height: auto;
+    scroll-snap-align: start;
+    scroll-snap-stop: normal;
   }
-  .mobile-paired-grid > :last-child:nth-child(odd) {
-    grid-column: 1 / -1;
+  .mobile-card-rail > :only-child,
+  .mobile-paired-grid > :only-child {
+    flex-basis: min(92vw, 560px);
+    width: min(92vw, 560px);
+    max-width: min(92vw, 560px);
   }
-  .mobile-paired-grid :is(p, h2, h3, blockquote, span, time) {
+  .mobile-card-rail :is(p, h2, h3, h4, blockquote, span, time),
+  .mobile-paired-grid :is(p, h2, h3, h4, blockquote, span, time) {
     text-align: start;
     text-align-last: auto;
     word-spacing: normal;
@@ -1234,3 +1262,4 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
     word-spacing: normal;
   }
 }
+

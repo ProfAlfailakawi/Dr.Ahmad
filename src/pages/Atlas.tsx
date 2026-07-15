@@ -213,7 +213,7 @@ export default function Atlas() {
           </div>
 
           <FadeUp delay={0.14}>
-            <div className="mt-12 grid gap-6 border-t border-hair pt-9 text-[.88rem] font-light text-soft sm:grid-cols-3">
+            <div className="mobile-card-rail mt-12 grid gap-6 border-t border-hair pt-9 text-[.88rem] font-light text-soft sm:grid-cols-3">
               <p><span className="font-medium text-ink">الحجم</span> — كلّما كبرت النجمة، طال المقال.</p>
               <p><span className="font-medium text-ink">الصف</span> — موضوع المقال، ويُضاف أي تصنيف جديد تلقائياً.</p>
               <p><span className="font-medium text-ink">الموضع</span> — من الأقدم يميناً إلى الأحدث يساراً.</p>

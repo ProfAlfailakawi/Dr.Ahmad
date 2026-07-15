@@ -341,7 +341,7 @@ function IdeaThread({ article }: { article: ArticleRecord }) {
           <p className="text-[.68rem] font-semibold text-accent">خيط الفكرة</p>
           <h2 className="mt-1 font-display text-[1.18rem] font-semibold leading-[1.55] text-ink md:text-[1.35rem]">الفكرة لا تعيش في صفحة واحدة.</h2>
         </div>
-        <ol className="relative mt-7 grid gap-4 md:grid-cols-4 md:gap-5">
+        <ol className="mobile-card-rail relative mt-7 grid gap-4 md:grid-cols-4 md:gap-5">
           <span aria-hidden className="absolute bottom-6 right-[.7rem] top-6 w-px bg-hair md:bottom-auto md:left-4 md:right-4 md:top-[1.05rem] md:h-px md:w-auto" />
           {path.map((node, index) => {
             const content = <><span className="relative z-10 flex h-5 w-5 items-center justify-center rounded-full border border-accent/30 bg-canvas shadow-sm"><span className="h-2 w-2 rounded-full bg-accent" /></span><span className="mt-3 block text-[.62rem] font-semibold text-accent">{String(index + 1).padStart(2, '0')} · {node.kind}</span><span dir="auto" className="mt-1.5 block break-words text-start font-display text-[.88rem] font-medium leading-[1.65] text-ink transition-colors [overflow-wrap:anywhere] [text-wrap:balance] group-hover:text-accent md:text-[.94rem]">{node.title}</span></>
@@ -421,7 +421,7 @@ function StudentArchive({ a, articles }: { a: ArticleRecord; articles: ArticleRe
         <summary className="cursor-pointer list-none font-display text-[1.15rem] font-semibold text-ink marker:hidden">
           للطلاب والباحثين <span className="text-accent">＋</span>
         </summary>
-        <div className="mt-5 grid gap-5 border-t border-hair pt-5 md:grid-cols-2">
+        <div className="mobile-card-rail mt-5 grid gap-5 border-t border-hair pt-5 md:grid-cols-2">
           <div>
             <p className="text-[.76rem] font-semibold text-accent">سؤال نقاش</p>
             <p className="mt-2 text-[.9rem] leading-relaxed text-soft">{pack.studentQuestion}</p>
@@ -522,7 +522,7 @@ export default function ArticleDetail() {
     description: a?.excerpt,
     path: `/articles/${slug}`,
     type: 'article',
-    image: slug ? `/og/articles/${slug}.svg` : undefined,
+    image: slug ? `/og/articles/${slug}.png` : undefined,
   })
   useTrackView(`/articles/${slug || ''}`, a?.title || 'مقال', Boolean(a))
 

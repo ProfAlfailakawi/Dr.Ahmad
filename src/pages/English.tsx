@@ -136,7 +136,7 @@ export function EnglishHome() {
                 All {papers.length} papers →
               </Link>
             </div>
-            <ul className="mt-10 grid gap-8 md:grid-cols-3">
+            <ul className="mobile-card-rail mt-10 grid gap-8 md:grid-cols-3">
               {papers.slice(0, 3).map((p) => (
                 <li key={p.slug} className="border-l-2 border-hair pl-5 transition-colors hover:border-accent">
                   <p className="text-[1rem] font-medium leading-[1.6] text-ink">{paperTitlesEn[p.slug] || p.slug}</p>
@@ -236,7 +236,7 @@ export function EnglishCV() {
           </Section>
 
           <Section title="Advisory & consulting">
-            <ul className="grid gap-6 md:grid-cols-2">
+            <ul className="mobile-card-rail grid gap-6 md:grid-cols-2">
               {advisoryEn.map((a) => (
                 <li key={a.org}>
                   <span className="block text-[1rem] font-medium text-ink">{a.org}</span>

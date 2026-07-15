@@ -89,14 +89,14 @@ function CopySnippet({ label, value }: { label: string; value: string }) {
   }
 
   return (
-    <div className="rounded-2xl border border-hair bg-white/80 p-4 dark:bg-white/[0.02]">
+    <div className="min-w-0 rounded-2xl border border-hair bg-white/80 p-4 dark:bg-white/[0.02]">
       <div className="flex items-center justify-between gap-3">
         <p className="text-[.8rem] font-semibold text-soft">{label}</p>
         <button onClick={copy} className="rounded-full border border-hair px-3 py-1 text-[.75rem] text-soft transition-colors hover:border-accent hover:text-accent">
           {copied ? 'نُسخ ✓' : 'نسخ'}
         </button>
       </div>
-      <p className="mt-3 text-[.86rem] leading-[1.95] text-ink/85 dark:text-soft">{value}</p>
+      <p dir="auto" className="mt-3 min-w-0 break-words text-[.86rem] leading-[1.95] text-ink/85 [overflow-wrap:anywhere] dark:text-soft">{value}</p>
     </div>
   )
 }
@@ -120,7 +120,6 @@ export default function PaperDetail() {
     const researchers = [profile.fullName, p.coAuthors].filter(Boolean).join('، ')
     const sourceUrl = p.source || p.pdf || `${SITE_URL}/research/${p.slug}`
     const apa = `الفيلكاوي، أحمد حسين${p.coAuthors ? `، و${p.coAuthors}` : ''}. (${year}). ${p.title}. ${journal}. ${sourceUrl}`
-    const chicago = `الفيلكاوي، أحمد حسين${p.coAuthors ? `، و${p.coAuthors}` : ''}. "${p.title}." ${journal}، ${year}. ${sourceUrl}`
 
     const problem = (() => {
       const title = p.title
@@ -141,7 +140,6 @@ export default function PaperDetail() {
       teacherMeaning: teacherMeaning(p.meta || '', p.title),
       gapQuestion: unresolvedQuestion(p.meta || '', p.title),
       apa,
-      chicago,
       researchers,
       journal,
       year,
@@ -291,7 +289,7 @@ export default function PaperDetail() {
                   </div>
                 </div>
 
-                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <div className="mobile-card-rail mt-6 grid gap-4 md:grid-cols-2">
                   <div className="rounded-2xl border border-hair bg-white/80 p-5 dark:bg-white/[0.02]">
                     <p className="text-[.75rem] font-semibold text-accent">البحث في جملة واحدة</p>
                     <p className="mt-3 text-[.92rem] leading-[1.95] text-ink/85 dark:text-soft">{guide.summary}</p>
@@ -319,9 +317,8 @@ export default function PaperDetail() {
                   </div>
                 </div>
 
-                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <div className="mt-6">
                   <CopySnippet label="APA" value={guide.apa} />
-                  <CopySnippet label="Chicago" value={guide.chicago} />
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-3 text-[.82rem] text-soft">

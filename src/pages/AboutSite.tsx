@@ -44,7 +44,7 @@ export default function AboutSite() {
             <FadeUp>
               <span className="text-[.76rem] font-semibold uppercase text-accent">✦ لمن هذا الموقع؟</span>
             </FadeUp>
-            <div className="mt-8 grid gap-5 sm:grid-cols-2">
+            <div className="mobile-card-rail mt-8 grid gap-5 sm:grid-cols-2">
               {aboutSite.audience.map((t, i) => (
                 <FadeUp key={t} delay={i * 0.06}>
                   <div className="h-full rounded-2xl border border-hair border-r-2 border-r-accent bg-wash p-7 font-display text-[clamp(1.1rem,2.2vw,1.4rem)] font-medium leading-[1.7] text-ink">

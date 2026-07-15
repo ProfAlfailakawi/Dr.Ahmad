@@ -202,7 +202,7 @@ export default function Inbox() {
           )}
 
           {letterArchive.length > 0 && (
-            <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            <div className="mobile-card-rail mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {letterArchive.map((letter, index) => (
                 <FadeUp key={letter.id} delay={Math.min(index * 0.05, 0.25)}>
                   <article className="h-full rounded-2xl border border-hair bg-canvas p-6">
@@ -221,7 +221,7 @@ export default function Inbox() {
           <FadeUp>
             <span className="text-[.76rem] font-semibold uppercase text-accent">ماذا قالوا</span>
           </FadeUp>
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
+          <div className="mobile-card-rail mt-8 grid gap-6 md:grid-cols-2">
             {visibleTestimonials.map((t, i) => (
               <motion.blockquote
                 key={i}
@@ -282,7 +282,7 @@ export default function Inbox() {
           <FadeUp>
             <span className="text-[.76rem] font-semibold uppercase text-accent">أسئلة تصلني</span>
           </FadeUp>
-          <div className="mt-9 grid gap-10 md:grid-cols-3">
+          <div className="mobile-card-rail mt-9 grid gap-10 md:grid-cols-3">
             {questions.slice(0, 12).map((f, i) => (
               <FadeUp key={f.q} delay={i * 0.07}>
                 <div className="border-t-2 border-accent pt-5">

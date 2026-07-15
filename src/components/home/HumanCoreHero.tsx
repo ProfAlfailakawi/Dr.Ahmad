@@ -264,8 +264,8 @@ export default function HumanCoreHero() {
         <span style={{ insetInlineEnd: '12%', bottom: '28%' }}>مستقبل</span>
       </div>
 
-      <div className="relative z-10 mx-auto grid w-full max-w-shell items-center gap-8 md:grid-cols-[1.15fr_.85fr] md:gap-16">
-        <div className="order-1 relative">
+      <div className="relative z-10 mx-auto grid w-full max-w-shell items-center gap-8 md:grid-cols-[.85fr_1.15fr] md:gap-16">
+        <div className="order-1 relative md:order-2">
           <div className="human-core__micro mb-4 flex items-center gap-3 text-[.66rem] font-semibold tracking-[.18em] text-accent" aria-hidden="true">
             <span className="h-px w-8 bg-accent/50" />
             HUMAN / MACHINE / MEANING
@@ -311,7 +311,7 @@ export default function HumanCoreHero() {
           </motion.div>
         </div>
 
-        <div className="order-2 flex justify-center">
+        <div className="order-2 flex justify-center md:order-1">
           <motion.div style={mobileVisual ? undefined : { y: portraitY }} className="human-core__portrait-shell w-full max-w-[260px] md:max-w-[400px]">
             <motion.div
               ref={portraitRef}

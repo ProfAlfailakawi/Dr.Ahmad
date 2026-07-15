@@ -142,7 +142,7 @@ function RadarSection({ items }: { items: Curio[] }) {
             <Link to="/radar" data-hover className="text-[.85rem] text-accent transition-colors hover:text-accent-deep">الأرشيف الكامل ←</Link>
           </div>
         </FadeUp>
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
+        <div className="mobile-card-rail mt-8 grid gap-6 md:grid-cols-2">
           {items.slice(0, 4).map((item, index) => (
             <FadeUp key={`${item.url || item.ar}-${index}`} delay={Math.min(index * 0.06, 0.2)}>
               <CardWrap c={item} className="flex h-full flex-col rounded-2xl border border-hair p-6">
@@ -200,7 +200,7 @@ export default function Curated() {
                 <span className="pulse relative h-2 w-2 rounded-full bg-accent" />
                 الأحدث من الإنترنت
               </span>
-              <span className="text-[.85rem] text-soft">· {today} · يتحدّث تلقائيًا عند وصول مادة موثوقة جديدة</span>
+              <span className="text-[.85rem] text-soft">· {today} · يتحدّث تلقائيًا عند وصول صيدة موثوقة جديدة</span>
             </div>
           </FadeUp>
           <FadeUp delay={0.08}>
@@ -211,7 +211,7 @@ export default function Curated() {
             </CardWrap>
           </FadeUp>
 
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
+          <div className="mobile-card-rail mt-8 grid gap-6 md:grid-cols-2">
             <FadeUp delay={0.14}>
               <CardWrap c={book} className="flex h-full flex-col rounded-2xl border border-hair p-7">
                 <span className="text-[.74rem] font-semibold text-accent">كتاب الشهر</span>
@@ -249,7 +249,7 @@ export default function Curated() {
             </div>
           </FadeUp>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mobile-card-rail mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {shown.map((item, index) => (
               <motion.div
                 key={item.url || item.ar}

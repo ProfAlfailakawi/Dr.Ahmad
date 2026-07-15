@@ -155,7 +155,7 @@ export default function Decade() {
                 <span className="text-[.78rem] font-semibold text-accent">ثلاثة فصول</span>
                 <h2 className="mt-3 font-display text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-ink">كيف تحرّكت الكتابة؟</h2>
               </FadeUp>
-              <div className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-hair bg-hair lg:grid-cols-3">
+              <div className="mobile-card-rail mt-10 grid gap-px overflow-hidden rounded-2xl border border-hair bg-hair lg:grid-cols-3">
                 {document.stages.map((stage, index) => (
                   <FadeUp key={stage.range} delay={index * 0.06} className="bg-canvas p-7 md:p-8">
                     <div className="flex items-center justify-between gap-4 text-[.76rem]">

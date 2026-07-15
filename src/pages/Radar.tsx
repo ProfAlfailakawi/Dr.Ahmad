@@ -83,7 +83,7 @@ export default function Radar() {
                       <span className="text-[.85rem] text-soft">{w.label} · {arNum(w.items.length)} {w.items.length === 1 ? 'التقاطة' : 'التقاطات'}</span>
                     </h3>
                   </FadeUp>
-                  <div className="grid gap-5 md:grid-cols-2">
+                  <div className="mobile-card-rail grid gap-5 md:grid-cols-2">
                     {w.items.map((r, i) => (
                       <FadeUp key={r.day} delay={Math.min(i * 0.05, 0.2)}>
                         <a href={r.url} target="_blank" rel="noreferrer" data-hover className="group flex h-full flex-col rounded-2xl border border-hair p-6 transition-colors hover:border-accent">

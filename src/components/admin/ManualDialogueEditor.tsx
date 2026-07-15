@@ -4,7 +4,6 @@ import { loadArticleBodies } from '../../lib/article-bodies'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { getDb } from '../../lib/firebase'
 import podcastAdmin from '../../data/podcast-admin.json'
-import assessmentDialogue from '../../../manual-dialogues/how-do-we-assess-without-breaking-the-human-beingarabic.json'
 
 type Speaker = 'male' | 'female'
 type DialogueTurn = {
@@ -14,11 +13,6 @@ type DialogueTurn = {
   pauseAfterMs: number
   overlapMs: number
   musicBridgeAfter: boolean
-}
-
-const CURRENT_DIALOGUE_SLUG = 'how-do-we-assess-without-breaking-the-human-beingarabic'
-const bundledDialogues: Record<string, DialogueTurn[]> = {
-  [CURRENT_DIALOGUE_SLUG]: assessmentDialogue as DialogueTurn[],
 }
 
 const deliveryTypes = [
@@ -55,7 +49,7 @@ const blankTurn = (speaker: Speaker): DialogueTurn => ({
 })
 
 function normalizeTurns(value: unknown): DialogueTurn[] | null {
-  if (!Array.isArray(value) || value.length < 2) return null
+  if (!Array.isArray(value) || value.length < 1) return null
   const turns: DialogueTurn[] = []
   for (const item of value) {
     if (!item || typeof item !== 'object') return null
@@ -160,11 +154,9 @@ function storedDialogue(slug: string) {
 export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }) {
   const { isAdmin } = useAdminAuth()
   const sortedArticles = useMemo(() => [...articles].sort((a, b) => b.iso.localeCompare(a.iso)), [articles])
-  const initialSlug = sortedArticles.some((item) => item.slug === CURRENT_DIALOGUE_SLUG)
-    ? CURRENT_DIALOGUE_SLUG
-    : sortedArticles[0]?.slug || CURRENT_DIALOGUE_SLUG
+  const initialSlug = sortedArticles[0]?.slug || ''
   const [slug, setSlug] = useState(initialSlug)
-  const [turns, setTurns] = useState<DialogueTurn[]>(() => storedDialogue(initialSlug) || bundledDialogues[initialSlug]?.map((item) => ({ ...item })) || [blankTurn('male'), blankTurn('female')])
+  const [turns, setTurns] = useState<DialogueTurn[]>(() => storedDialogue(initialSlug) || [blankTurn('male')])
   const [notice, setNotice] = useState('')
   const [dirty, setDirty] = useState(false)
   const [articleBody, setArticleBody] = useState('')
@@ -195,10 +187,9 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
   useEffect(() => {
     let active = true
     const local = storedDialogue(slug)
-    const bundled = bundledDialogues[slug]?.map((item) => ({ ...item }))
-    setTurns(local || bundled || [blankTurn('male'), blankTurn('female')])
+    setTurns(local || [blankTurn('male')])
     setDirty(false)
-    setNotice(bundled ? 'فُتح الحوار اليدوي الموجود لهذه الحلقة.' : local ? 'فُتحت المسودة المحفوظة على هذا الجهاز.' : 'مسودة جديدة جاهزة للكتابة.')
+    setNotice(local ? 'فُتحت المسودة المحفوظة على هذا الجهاز.' : 'مداخلة واحدة جاهزة؛ أضف غيرها فقط عند الحاجة.')
     setArticleBody('')
     loadArticleBodies().then((bodies) => { if (active) setArticleBody(article?.body || bodies[slug] || article?.excerpt || '') }).catch(() => { if (active) setArticleBody(article?.body || article?.excerpt || '') })
     if (isAdmin) {
@@ -336,7 +327,7 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
   }
 
   const remove = (index: number) => {
-    if (turns.length <= 2) return
+    if (turns.length <= 1) return
     setTurns((current) => current.filter((_, turnIndex) => turnIndex !== index))
     setDirty(true)
   }
@@ -426,7 +417,7 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
               <div className="flex items-center gap-1.5">
                 <button type="button" className="h-8 w-8 rounded-full border border-hair text-soft disabled:opacity-30" aria-label="تحريك لأعلى" disabled={index === 0} onClick={() => move(index, -1)}>↑</button>
                 <button type="button" className="h-8 w-8 rounded-full border border-hair text-soft disabled:opacity-30" aria-label="تحريك لأسفل" disabled={index === turns.length - 1} onClick={() => move(index, 1)}>↓</button>
-                <button type="button" className="h-8 rounded-full border border-hair px-3 text-[.72rem] text-soft disabled:opacity-30" disabled={turns.length <= 2} onClick={() => remove(index)}>حذف</button>
+                <button type="button" className="h-8 rounded-full border border-hair px-3 text-[.72rem] text-soft disabled:opacity-30" disabled={turns.length <= 1} onClick={() => remove(index)}>حذف</button>
               </div>
             </div>
 

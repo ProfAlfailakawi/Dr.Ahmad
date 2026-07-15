@@ -155,7 +155,7 @@ export default function Questions() {
           <FadeUp>
             <h3 className="mb-10 font-display text-2xl font-bold text-ink">أسئلة سابقة</h3>
           </FadeUp>
-          <div className="grid gap-5">
+          <div className="mobile-card-rail grid gap-5">
             {previousQuestions.slice(0, visibleCount).map((question, index) => (
               <FadeUp key={question.key} delay={Math.min(index * 0.04, 0.3)}>
                 <article className="rounded-2xl border border-hair p-6">

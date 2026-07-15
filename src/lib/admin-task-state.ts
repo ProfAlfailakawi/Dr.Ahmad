@@ -24,7 +24,7 @@ export function setAdminTaskState(status: AdminTaskStatus, label = '') {
   clearReset()
   window.dispatchEvent(new CustomEvent<AdminTaskDetail>(EVENT_NAME, { detail: current }))
 
-  const delay = status === 'completed' ? 3600 : status === 'error' ? 6500 : 0
+  const delay = status === 'completed' ? 6000 : status === 'error' ? 6500 : 0
   if (delay) {
     resetTimer = window.setTimeout(() => setAdminTaskState('idle'), delay)
   }

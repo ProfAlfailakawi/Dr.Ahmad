@@ -20,7 +20,7 @@ import { Indicators } from '../components/admin/Indicators'
 import { IntelligenceLab } from '../components/admin/IntelligenceLab'
 import { PublishingStudio } from '../components/admin/PublishingStudio'
 import { VoiceBakeoffCard } from '../components/admin/VoiceBakeoff'
-import { AdminTaskFavicon } from '../components/admin/AdminTaskFavicon'
+import { AdminTaskFavicon, AdminTaskIndicator } from '../components/admin/AdminTaskFavicon'
 import { UploadField } from '../components/admin/ContentManager'
 import { useSeo } from '../components/seo'
 import type { User } from 'firebase/auth'
@@ -289,6 +289,7 @@ function Panel({ email }: { email: string }) {
             <p className="mt-1 text-[.78rem] text-soft">كل الأدوات موجودة، لكن لا يظهر أمامك إلا ما تحتاجه الآن.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <AdminTaskIndicator />
             <button
               type="button"
               onClick={() => setCommandsOpen(true)}

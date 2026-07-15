@@ -63,6 +63,8 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
       - name: Generate one full review episode only
+        id: strict_dialogue
+        continue-on-error: true
         timeout-minutes: 45
         run: node scripts/podcast-dialogue.mjs --lang=ar --slug="${{ github.event.inputs.slug }}" --force --trial
         env:
@@ -78,6 +80,18 @@ jobs:
           PODCAST_AR_FEMALE_NAME: "نورة"
           PODCAST_AUTO_PROMOTE_PILOT: "false"
 
+      - name: Generate locked Azure-only review episode if strict pass failed
+        if: steps.strict_dialogue.outcome == 'failure'
+        timeout-minutes: 25
+        run: node scripts/podcast-final-review-locked.mjs --slug="${{ github.event.inputs.slug }}"
+        env:
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+          PODCAST_AR_MALE: "ar-AE-HamdanNeural"
+          PODCAST_AR_FEMALE: "ar-KW-NouraNeural"
+          PODCAST_AR_MALE_NAME: "فهد"
+          PODCAST_AR_FEMALE_NAME: "نورة"
+
       - name: Upload review episode
         if: always()
         uses: actions/upload-artifact@v4
@@ -89,6 +103,9 @@ jobs:
             podcast-audits/${{ github.event.inputs.slug }}.ar.json
             .podcast-releases
             .podcast-last-known-good
+            review-output/${{ github.event.inputs.slug }}.sample-b-sample-d.dialogue.mp3
+            review-output/${{ github.event.inputs.slug }}.sample-b-sample-d.dialogue.json
+            review-output/${{ github.event.inputs.slug }}.sample-b-sample-d.audit.json
           if-no-files-found: warn
           retention-days: 7
           include-hidden-files: true

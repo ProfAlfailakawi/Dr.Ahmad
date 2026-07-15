@@ -7,6 +7,14 @@ on:
         description: "Slug المقال المطلوب تحويله إلى حلقة كاملة"
         required: true
         default: "how-do-we-assess-without-breaking-the-human-beingarabic"
+      engine:
+        description: "طريقة إنتاج حلقة الاعتماد: locked أسرع للاستماع، strict للفحص الكامل"
+        required: true
+        default: "locked"
+        type: choice
+        options:
+          - locked
+          - strict
 
 permissions:
   contents: read
@@ -52,7 +60,7 @@ jobs:
             echo "::error::Missing GitHub secret: AZURE_SPEECH_REGION"
             exit 1
           fi
-          if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then
+          if [ "${{ github.event.inputs.engine }}" = "strict" ] && [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then
             echo "::error::Missing GitHub secret: GEMINI_API_KEY or GOOGLE_API_KEY"
             exit 1
           fi
@@ -63,9 +71,10 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
       - name: Generate one full review episode only
+        if: github.event.inputs.engine == 'strict'
         id: strict_dialogue
         continue-on-error: true
-        timeout-minutes: 45
+        timeout-minutes: 18
         run: node scripts/podcast-dialogue.mjs --lang=ar --slug="${{ github.event.inputs.slug }}" --force --trial
         env:
           AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
@@ -81,7 +90,7 @@ jobs:
           PODCAST_AUTO_PROMOTE_PILOT: "false"
 
       - name: Generate locked Azure-only review episode if strict pass failed
-        if: steps.strict_dialogue.outcome == 'failure'
+        if: github.event.inputs.engine == 'locked' || steps.strict_dialogue.outcome == 'failure'
         timeout-minutes: 25
         run: node scripts/podcast-final-review-locked.mjs --slug="${{ github.event.inputs.slug }}"
         env:

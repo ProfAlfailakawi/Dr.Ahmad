@@ -724,26 +724,13 @@ body.audio-dock-open .reader-resume-prompt {
   bottom: calc(6.5rem + env(safe-area-inset-bottom));
 }
 
-@media (hover: none), (pointer: coarse) {
-  .reader-selection-toolbar {
-    inset-inline: max(.75rem, env(safe-area-inset-left)) max(.75rem, env(safe-area-inset-right)) !important;
-    top: auto !important;
-    bottom: calc(1rem + env(safe-area-inset-bottom));
-    left: auto !important;
-    width: auto;
-    transform: none !important;
-    justify-content: stretch;
-    border-radius: 1rem;
-    padding: .3rem;
-  }
-  .reader-selection-toolbar button {
-    min-height: 2.75rem;
-    flex: 1 1 0;
-    padding-inline: .75rem;
-  }
-  body.audio-dock-open .reader-selection-toolbar {
-    bottom: calc(6.6rem + env(safe-area-inset-bottom));
-  }
+.reader-selection-toolbar {
+  max-width: calc(100vw - 20px);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.reader-selection-toolbar button {
+  white-space: nowrap;
 }
 
 @media (max-width: 640px) {
@@ -1408,20 +1395,6 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
   }
 }
 
-
-/* أدوات الاقتباس: الميزتان الأصليتان تبقيان ظاهرتين، من دون ازدحام الهاتف. */
-@media (max-width: 640px) {
-  .reader-selection-toolbar {
-    width: min(318px, calc(100vw - 20px));
-    flex-direction: column;
-    border-radius: 18px !important;
-    padding: 4px !important;
-  }
-  .reader-selection-primary, .reader-selection-signature { width: 100%; justify-content: center; }
-  .reader-selection-primary > button { flex: 1 1 0; }
-  .reader-selection-signature > button { flex: 1 1 50%; }
-  .reader-selection-divider { width: calc(100% - 18px) !important; height: 1px !important; }
-}
 
 /* «أثر موثّق» على الهاتف: شبكة ثابتة 2×2 بلا قص أو تمرير جانبي. */
 .cv-impact-grid { min-width: 0; overflow: visible; }

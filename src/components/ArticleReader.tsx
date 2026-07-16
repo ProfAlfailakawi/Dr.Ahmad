@@ -817,9 +817,11 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
         const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0)
         const rect = rects[0] || range.getBoundingClientRect()
         if (!rect || (!rect.width && !rect.height)) return
-        const x = Math.min(window.innerWidth - 145, Math.max(145, rect.left + rect.width / 2))
-        const above = rect.top > 86
-        setSelection({ text, paragraph: paragraphIndex, x, y: above ? rect.top - 10 : rect.bottom + 10, placement: above ? 'above' : 'below' })
+        // Restore the original signature tool exactly where readers expect it:
+        // centred above the selected sentence, with safe horizontal clamping.
+        const x = Math.min(window.innerWidth - 132, Math.max(132, rect.left + rect.width / 2))
+        const y = Math.max(74, rect.top - 10)
+        setSelection({ text, paragraph: paragraphIndex, x, y, placement: 'above' })
       }, 110)
     }
     const onOutside = (event: PointerEvent) => {
@@ -841,43 +843,6 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
   }, [sheet])
 
   const currentSelection = selectionRef.current
-  const saveSelection = async () => {
-    if (!currentSelection) return
-    const normalized = currentSelection.text.replace(/\s+/g, ' ').trim()
-    const quoteHash = await stableHash(`${current.slug}\u0000${normalized}`)
-    const quote: SavedQuote = {
-      id: quoteHash,
-      quote: normalized,
-      slug: current.slug,
-      title: current.title,
-      paragraph: currentSelection.paragraph,
-      savedAt: Date.now(),
-      url: `${window.location.origin}/articles/${current.slug}`,
-    }
-    const existing = readSavedQuotes()
-    const next = [quote, ...existing.filter((item) => item.id !== quote.id)]
-    saveQuotes(next)
-    setFeedback('saved')
-    window.setTimeout(() => { setFeedback(''); setSelection(null) }, 900)
-    void syncPopularQuote(current, normalized, currentSelection.paragraph).catch(() => undefined)
-  }
-
-  const copySelection = async () => {
-    if (!currentSelection) return
-    const ok = await copyText(currentSelection.text)
-    if (ok) {
-      setFeedback('copied')
-      window.setTimeout(() => { setFeedback(''); setSelection(null) }, 850)
-    }
-  }
-
-  const openShare = () => {
-    if (!currentSelection) return
-    // Keep the frozen selection while the share sheet is open. On iOS the
-    // native range can collapse as soon as the sheet receives focus.
-    setSheet('share')
-  }
-
   const openThread = () => {
     if (!currentSelection) return
     setSheet('thread')
@@ -975,22 +940,31 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
         {selection && !sheet && (
           <motion.div
             ref={toolbarRef}
-            initial={{ opacity: 0, y: 5, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 4, scale: .98 }}
-            transition={{ duration: .16 }}
-            style={{ left: selection.x, top: selection.y, transform: selection.placement === 'above' ? 'translate(-50%,-100%)' : 'translate(-50%,0)' }}
-            className="reader-selection-toolbar fixed z-[270] flex items-center overflow-hidden rounded-full border border-hair bg-canvas/97 p-1 shadow-[0_18px_46px_-24px_rgba(21,22,26,.65)] backdrop-blur"
+            initial={{ opacity: 0, y: 6, scale: .94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: .94 }}
+            transition={{ duration: .18 }}
+            style={{ left: selection.x, top: selection.y, transform: 'translate(-50%,-100%)' }}
+            className="reader-selection-toolbar fixed z-[270] flex items-stretch overflow-hidden rounded-full border border-hair bg-canvas shadow-[0_16px_38px_-16px_rgba(0,0,0,.5)]"
             dir="rtl"
           >
-            <div className="reader-selection-primary flex items-center">
-              <button type="button" onPointerDown={(event) => event.preventDefault()} onClick={() => void saveSelection()} className="rounded-full px-3.5 py-2 text-[.74rem] font-semibold text-ink transition-colors hover:bg-wash hover:text-accent">{feedback === 'saved' ? 'حُفظ' : 'حفظ'}</button>
-              <button type="button" onPointerDown={(event) => event.preventDefault()} onClick={() => void copySelection()} className="rounded-full px-3.5 py-2 text-[.74rem] font-semibold text-ink transition-colors hover:bg-wash hover:text-accent">{feedback === 'copied' ? 'نُسخ' : 'نسخ'}</button>
-              <button type="button" onPointerDown={(event) => event.preventDefault()} onClick={openShare} className="rounded-full px-3.5 py-2 text-[.74rem] font-semibold text-ink transition-colors hover:bg-wash hover:text-accent">مشاركة</button>
-            </div>
-            <span className="reader-selection-divider h-6 w-px bg-hair" aria-hidden="true" />
-            <div className="reader-selection-signature flex items-center">
-              <button type="button" onPointerDown={(event) => event.preventDefault()} onClick={openThread} className="rounded-full px-3.5 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-wash">عبر السنوات</button>
-              <button type="button" onPointerDown={(event) => event.preventDefault()} onClick={openCard} className="rounded-full px-3.5 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-wash">بطاقة اقتباس</button>
-            </div>
+            <button
+              type="button"
+              onPointerDown={(event) => event.preventDefault()}
+              onClick={openThread}
+              className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas"
+            >
+              🧬 عبر السنوات
+            </button>
+            <span className="my-1.5 w-px bg-hair" aria-hidden="true" />
+            <button
+              type="button"
+              onPointerDown={(event) => event.preventDefault()}
+              onClick={openCard}
+              className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas"
+            >
+              🖼 بطاقة اقتباس
+            </button>
           </motion.div>
         )}
       </AnimatePresence>

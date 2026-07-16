@@ -520,6 +520,9 @@ const PIPELINE_HASH = createHash('sha256').update(JSON.stringify({
   engineSourceHash: ENGINE_SOURCE_HASH,
 })).digest('hex').slice(0, 16)
 let ACTIVE_PIPELINE_HASH = PIPELINE_HASH
+/* وضع النص اليدوي: حوار الدكتور المكتوب بيده مقدّس — Gemini يفحص النطق ويحكم على الصوت
+   فقط، وممنوع برمجياً أن يعيد صياغة كلمة واحدة (لا safeRephrase ولا حقن ولا استبدال). */
+let MANUAL_TEXT_MODE = false
 const providerFingerprint = (voice) => `${AZURE_REGION}:${voice}:azure-ssml-v3`
 const pendingMemory = []
 const capabilityProfiles = new Map()
@@ -622,7 +625,7 @@ const voiceRateOffset = (voice, speaker) => {
 // تطبيع حتمي للحقول الميكانيكية فقط (لا مساس بالمحتوى ولا بالذوق): جملة فيها «؟» إلقاؤها
 // سؤال بالضرورة، وقلبها يغيّر مدى السرعة/الوقفة فنُثبّتهما داخل مدى النوع الناتج، ونضمن نبرة نهاية
 // صالحة. تبقى بوابات المحتوى (الفصحى، الأمانة، الطول، مزيج القِصَر، «أكيد»، التنوع، الاعتراضات) للنموذج.
-function normalizeMechanics(sc) {
+function normalizeMechanics(sc, options = {}) {
   if (!sc || !Array.isArray(sc.utterances)) return sc
   const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, Number.isFinite(+v) ? +v : lo))
   const wordCount = (text) => String(text || '').split(/\s+/).filter(Boolean).length
@@ -691,10 +694,13 @@ function normalizeMechanics(sc) {
   }
   // «أكيد» حشوٌ يُفرط النموذج فيه ويُرفض تكراره؛ نُبقي أوّل ورودٍ ونُنوّع الباقي بمرادفاتٍ فصيحة
   // لا تحوي السلسلة نفسها (تجنّب «بالتأكيد» لأنها تتضمّن «أكيد») — تحسينٌ أسلوبيٌّ محايد لا مساس بالمعنى.
-  const akeedAlts = ['بالطبع', 'تماماً', 'فعلاً', 'صحيح', 'نعم']
+  const manualText = Boolean(options.manualText || MANUAL_TEXT_MODE)
+  const akeedAlts = manualText ? [] : ['بالطبع', 'تماماً', 'فعلاً', 'صحيح', 'نعم']
   let akeedSeen = 0
   for (const u of sc.utterances) {
-    u.text = polishForSpokenArabic(String(u.text || '').replace(/أكيد/g, () => (akeedSeen++ === 0 ? 'أكيد' : akeedAlts[(akeedSeen - 2) % akeedAlts.length])))
+    u.text = manualText
+      ? polishForSpokenArabic(String(u.text || ''))
+      : polishForSpokenArabic(String(u.text || '').replace(/أكيد/g, () => (akeedSeen++ === 0 ? 'أكيد' : akeedAlts[(akeedSeen - 2) % akeedAlts.length])))
   }
   // قاعدة إخراج صوتي لا نعتمد فيها على التزام النموذج: المداخلة المقالية الطويلة هي أكثر سبب
   // لفشل Azure/STT/Judge. لذلك نكسرها قبل مرحلة النطق إلى نبضات مسموعة قصيرة، مع الحفاظ
@@ -819,7 +825,7 @@ function normalizeMechanics(sc) {
     u.pauseAfterMs = u._splitMiddle ? Math.min(200, Number(u.pauseAfterMs) || 160) : clamp(u.pauseAfterMs, profile.pauseMs)
   }
 
-  if (!sc.sample) {
+  if (!sc.sample && !manualText) {
     const shortReplies = sc.utterances.filter((u) => wc(u.text) <= 8).length
     const shortSeeds = [
       { text: 'صحيح.', delivery: 'briefReaction', ending: 'neutral' },
@@ -1938,7 +1944,7 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
       currentAnalysis = { ...currentAnalysis, risks: [...(currentAnalysis.risks || []), ...fixes] }
       continue
     }
-    const rephrased = await safeRephrase(dialogueText, sourceText, reason, stubbornWords)
+    const rephrased = MANUAL_TEXT_MODE ? null : await safeRephrase(dialogueText, sourceText, reason, stubbornWords)
     if (!rephrased) return { ok: false, verified: false, reason, dialogueText, candidates: allAudits,
       needsSplit: /أطول من 13ث/.test(reason) }
     dialogueText = rephrased
@@ -2733,7 +2739,34 @@ async function produce(article, lang) {
       `storyTemplateAllowed: ${storyBudget}` +
       (lang === 'en' ? '\nFirst create the English editorial adaptation internally, then the dialogue.' : '')
     let script = null, lintIssues = [], fidelity = { pass: true, problems: [] }
-    if (REUSE_DIALOGUE && existsSync(auditPath(article, lang))) {
+    // حوار الدكتور اليدوي: وجود الملف = هو المصدر الوحيد للنص. Gemini لا يكتب حرفاً.
+    const manualDialoguePath = resolve(ROOT, 'manual-dialogues', `${article.slug}.json`)
+    if (lang === 'ar' && existsSync(manualDialoguePath)) {
+      MANUAL_TEXT_MODE = true
+      const manual = JSON.parse(readFileSync(manualDialoguePath, 'utf8'))
+      script = { mood: 'تأملي', storyIntro: false,
+        utterances: manual.map((item, index) => ({
+          speaker: ['female', 'b'].includes(String(item.speaker || '').trim().toLowerCase()) ? 'B' : 'A',
+          text: String(item.text || '').trim(),
+          delivery: String(item.deliveryType || 'statement').trim(),
+          pauseAfterMs: item.pauseAfterMs, overlapMs: Number(item.overlapMs || 0),
+          allowOverlap: Number(item.overlapMs || 0) > 0,
+          musicBridgeAfter: Boolean(item.musicBridgeAfter),
+          emphasisWords: [], pronunciationNotes: '', _index: index })) }
+      normalizeMechanics(script, { manualText: true })
+      const manualLint = lintScript(script, lang)
+      const blocking = manualLint.filter((issue) => /عامية/.test(issue))
+      if (blocking.length) {
+        MANUAL_TEXT_MODE = false
+        return quarantine(`الحوار اليدوي يحتاج تنقيح الدكتور (لن يُعاد كتابته آلياً): ${blocking.join(' · ')}`)
+      }
+      if (manualLint.length) console.log(`  ⚠ ملاحظات شكلية على الحوار اليدوي (لا تحجب): ${manualLint.slice(0, 3).join(' · ')}`)
+      auditRecord.dialogueSource = 'manual'
+      lintIssues = []
+      fidelity = { pass: true, problems: [] }
+      console.log(`  ✍ حوار الدكتور اليدوي: ${script.utterances.length} مداخلة — النص مقدس، Gemini فاحص لا كاتب`)
+    }
+    if (REUSE_DIALOGUE && !script && existsSync(auditPath(article, lang))) {
       const previous = JSON.parse(readFileSync(auditPath(article, lang), 'utf8'))
       if (previous.pipelineHash === ACTIVE_PIPELINE_HASH && previous.source?.sha256 === sourceHash && previous.dialogue?.utterances?.length) {
         script = { mood: previous.dialogue.mood || 'تأملي', storyIntro: Boolean(previous.dialogue.storyIntro),

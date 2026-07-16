@@ -1,0 +1,298 @@
+[
+  {
+    "speaker": "male",
+    "text": "تظهر النتيجة، فترتفع الزغاريد وتنهال التهاني، ويبتسم الطالب كما ينبغي أن يبتسم.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 300,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لكن شيئاً في داخله لا يتحرك.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 210,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لا فرح حقيقي، ولا اتساع في الروح؛ فقط راحة مؤقتة تشبه راحة من نجا من باب ضيق.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 340,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لماذا لا يفرح هذا الطالب وقد نجح فعلاً؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 430,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لأن نجاحه لم يُبنَ على معنى واضح، بل على مجرد نجاة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 320,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "حين يتحول الامتحان إلى معركة بقاء، يصبح النجاح نهاية توتر أكثر من كونه بداية وعي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 330,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فيخرج الطالب من القاعة كمن أنهى معركة، لا كمن أنهى رحلة فهم.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 310,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وليس هذا انطباعاً عابراً.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 230,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ميتا-تحليل حديث نُشر عام 2023 في مجلة علمية محكمة في علم النفس وجد ارتباطاً سلبياً بين القلق والتحصيل.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 320,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "أي أن القلق لا يكتفي بإزعاج الطالب نفسياً، بل يهبط معه إلى قلب الأداء نفسه.",
+    "deliveryType": "clarification",
+    "pauseAfterMs": 300,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ودراسة أخرى نُشرت في المجلة نفسها عام 2023 ربطت الضغط الأكاديمي بقلق الاختبار.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 290,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وحضرت فيها توقعات الوالدين والعوامل الانفعالية بوضوح.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 310,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لكن دعني أعترض قليلاً: القلق نفسه ليس أخطر ما في الحكاية.",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 270,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وما الأخطر منه إذاً في هذه الحكاية؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 410,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "المعنى الذي نعلقه نحن على النتيجة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 290,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "حين يشعر الطالب أن قيمته كلها معلقة بدرجته، يصبح نجاحه نفسه هشاً.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 300,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لأنه لا يطمئن النفس، بل يؤجل خوفها إلى الاختبار التالي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 330,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "راحة ناجٍ إذاً، لا فرح فاهم.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وقد درست أعمال بحثية حديثة بين 2021 و2022 ربط احترام الذات بالأداء الدراسي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 300,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فوجدت أنه يرتبط بضعف تقدير الذات لاحقاً، وارتفاع الضغط وقلق الاختبار والدافعية المضغوطة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 340,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهكذا نرى طالباً ينجح، لكنه لا يفرح.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 540,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "يحصل على الدرجة التي أرادها، ولا يشعر أنه صار أعمق أو أهدأ.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 300,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لأن النجاح في وعيه لم يكن ثمرة فهم، بل وثيقة قبول مؤقت من العالم.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 360,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "male",
+    "text": "على أن المشكلة ليست في أن نفرح بالنتائج.",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 260,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "صحيح؛ المشكلة أن نختزل الرحلة كلها في لحظة إعلانها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 310,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وأن نربي أبناءنا على أن الفرح لا يقاس بلحظة الإعلان وحدها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 310,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فبماذا يقاس فرح أبنائنا بعد كل نجاح، إن لم يقس بما كتبته الورقة وحدها؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 440,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بما تركته التجربة فيهم: هل صاروا أصلب وأصدق وأهدأ؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 390,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأن يتعلموا كيف يفهمون، لا كيف يتذكرون فقط.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 290,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وهل يخرجون من التجربة أقرب إلى أنفسهم، أم أكثر خوفاً من الجولة القادمة؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 450,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وربما يبدأ الإصلاح كله من سؤال صغير نسأله بعد كل نجاح.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 300,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ليس «كم حصلت؟» فقط، بل «ماذا تعلمت عن نفسك؟».",
+    "deliveryType": "statement",
+    "pauseAfterMs": 320,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وليس «هل سبقت غيرك؟» بل «هل نضجت قليلاً عما كنت؟».",
+    "deliveryType": "statement",
+    "pauseAfterMs": 340,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فهل نصنع في بيوتنا طلاباً يحبون التعلم، أم طلاباً يطاردون لحظة النجاة؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 460,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهل نجاحهم يبهجهم حقاً، أم يريحهم من الخوف قليلاً؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 450,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بعض النجاحات جميلة في الصورة، لكنها فارغة من الداخل.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 500,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "والتربية الحقيقية أن نعيد إلى النجاح روحه، لا شكله فقط.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 430,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

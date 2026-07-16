@@ -1,113 +1,29 @@
 import { Link, useParams } from 'react-router-dom'
-import { motion, useScroll, useSpring } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { getArticleNeighbors, relatedArticles, type ArticleRecord } from '../lib/cms'
 import { books, media, papers, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
-import { SelectionTools } from '../components/IdeaFeatures'
+import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, SelectionTools, usePopularQuotes } from '../components/ArticleReader'
 import { JsonLd, useSeo } from '../components/seo'
 import { fetchOwnerCounts, useTrackView } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
 import { articleSystem, ideaTokens } from '../lib/intelligence'
 import { getArticleBody } from '../lib/article-bodies'
-import { getDb } from '../lib/firebase'
 import { usePersistentAudio } from '../lib/persistent-audio'
 import { staticQuestions } from '../questions-data'
 import { rememberIdeaVisit } from '../lib/idea-memory'
 import bookTocLinks from '../data/book-toc-links.json'
 
-/** تقدير زمن القراءة — ٢٠٠ كلمة/دقيقة للعربية */
-const readTime = (t?: string) => {
-  if (!t) return null
-  const words = t.trim().split(/\s+/).length
-  const m = Math.max(1, Math.round(words / 200))
-  return `${m.toLocaleString('en-US')} دقائق قراءة`.replace('1 دقائق', 'دقيقة واحدة')
-}
-
 const canUseDropCap = (paragraph: string) =>
   /^[\s\u061C\u200E\u200F]*[\u0621-\u064A]/.test(paragraph)
-
-function ReaderPanel({ slug }: { slug: string }) {
-  const [focus, setFocus] = useState(false)
-  const [scale, setScale] = useState(1)
-  const [saved, setSaved] = useState(0)
-
-  useEffect(() => {
-    try {
-      setSaved(Number(localStorage.getItem(`reader:${slug}:progress`) || 0))
-      setScale(Number(localStorage.getItem('reader:scale') || 1))
-    } catch { /* noop */ }
-  }, [slug])
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('reader-focus', focus)
-    return () => document.documentElement.classList.remove('reader-focus')
-  }, [focus])
-
-  useEffect(() => {
-    document.documentElement.style.setProperty('--article-scale', String(scale))
-    try { localStorage.setItem('reader:scale', String(scale)) } catch { /* noop */ }
-  }, [scale])
-
-  useEffect(() => {
-    const save = () => {
-      const doc = document.documentElement
-      const max = doc.scrollHeight - window.innerHeight
-      if (max <= 0) return
-      const pct = Math.min(Math.max(window.scrollY / max, 0), 1)
-      try { localStorage.setItem(`reader:${slug}:progress`, String(pct)) } catch { /* noop */ }
-    }
-    window.addEventListener('scroll', save, { passive: true })
-    return () => window.removeEventListener('scroll', save)
-  }, [slug])
-
-  const restore = () => {
-    const doc = document.documentElement
-    window.scrollTo({ top: saved * (doc.scrollHeight - window.innerHeight), behavior: 'smooth' })
-  }
-
-  return (
-    <div className="mt-7 flex flex-wrap items-center gap-2 border-y border-hair py-3">
-      {saved > 0.08 && saved < 0.92 && (
-        <button onClick={restore} className="rounded-full border border-hair px-4 py-1.5 text-[.8rem] text-soft transition-colors hover:border-accent hover:text-accent">
-          متابعة من {Math.round(saved * 100).toLocaleString('en-US')}٪
-        </button>
-      )}
-      <button
-        onClick={() => setFocus(!focus)}
-        className={`rounded-full border px-4 py-1.5 text-[.8rem] transition-colors ${
-          focus ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
-        }`}
-      >
-        وضع التركيز
-      </button>
-      <div className="ms-auto flex items-center gap-2 text-[.8rem] text-soft">
-        <span>حجم النص</span>
-        {[0.94, 1, 1.08].map((value) => (
-          <button
-            key={value}
-            onClick={() => setScale(value)}
-            aria-pressed={scale === value}
-            className={`h-8 w-8 rounded-full border text-[.78rem] transition-colors ${
-              scale === value ? 'border-accent bg-accent text-canvas' : 'border-hair hover:border-accent hover:text-accent'
-            }`}
-          >
-            {value === 0.94 ? 'أ' : value === 1 ? 'أ+' : 'أ++'}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 
 function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
   const audio = usePersistentAudio()
   const [follow, setFollow] = useState(false)
-  const [highlights, setHighlights] = useState<Record<number, number>>({})
-  const [highlightBusy, setHighlightBusy] = useState<number | null>(null)
+  const popularQuotes = usePopularQuotes(slug)
   const refs = useRef<(HTMLParagraphElement | null)[]>([])
   const paragraphs = useMemo(() => body.split('\n\n').map((text) => ({ text, words: Math.max(1, text.trim().split(/\s+/).length) })), [body])
   const totalWords = paragraphs.reduce((sum, item) => sum + item.words, 0)
@@ -140,60 +56,6 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
     if (!audio.playing) void audio.toggle()
   }
 
-  useEffect(() => {
-    let active = true
-    void getDb().then(async (db) => {
-      if (!db) return
-      const { collection, getDocs, query, where } = await import('firebase/firestore')
-      const snapshot = await getDocs(query(collection(db, 'article_highlights'), where('slug', '==', slug)))
-      if (!active) return
-      const next: Record<number, number> = {}
-      snapshot.docs.forEach((item) => {
-        const value = item.data() as { paragraph?: number; count?: number }
-        const paragraph = Number(value.paragraph)
-        const count = Number(value.count)
-        if (Number.isInteger(paragraph) && count > 0) next[paragraph] = count
-      })
-      setHighlights(next)
-    }).catch(() => undefined)
-    return () => { active = false }
-  }, [slug])
-
-  const markHighlight = async (index: number) => {
-    const localKey = `article-highlight:${slug}:${index}`
-    try {
-      if (localStorage.getItem(localKey)) return
-    } catch { /* noop */ }
-    if (highlightBusy === index) return
-    setHighlightBusy(index)
-    try {
-      const db = await getDb()
-      if (!db) return
-      const { doc, runTransaction, serverTimestamp } = await import('firebase/firestore')
-      const reference = doc(db, 'article_highlights', `${slug}__${index}`)
-      const count = await runTransaction(db, async (transaction) => {
-        const snapshot = await transaction.get(reference)
-        const previous = snapshot.exists() ? Number(snapshot.data().count || 0) : 0
-        const next = previous + 1
-        transaction.set(reference, { slug, paragraph: index, count: next, updatedAt: serverTimestamp() })
-        return next
-      })
-      setHighlights((current) => ({ ...current, [index]: count }))
-      try { localStorage.setItem(localKey, '1') } catch { /* noop */ }
-    } catch {
-      // تبقى القراءة نظيفة حتى لو تعذّر عدّ الاقتباس؛ لا نظهر خطأ يقطع تجربة المقال.
-    } finally {
-      setHighlightBusy(null)
-    }
-  }
-
-  const captureSelection = (index: number) => {
-    window.setTimeout(() => {
-      const selection = window.getSelection()?.toString().trim() || ''
-      if (selection.length >= 12) void markHighlight(index)
-    }, 0)
-  }
-
   return (
     <>
       {activeAudio && (
@@ -209,29 +71,24 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
       )}
       <div id="article-body" className={`article-body mt-11 ${activeAudio ? 'article-body-synced' : ''}`}>
         {paragraphs.map((paragraph, index) => {
-          const count = highlights[index] || 0
+          const paragraphQuotes = popularQuotes.filter((quote) => quote.paragraph === index)
+          const strongest = paragraphQuotes.slice().sort((left, right) => right.count - left.count)[0]
           return (
             <div key={index} className="popular-highlight-paragraph group relative">
-              <button
-                type="button"
-                onClick={(event) => { event.stopPropagation(); void markHighlight(index) }}
-                title={count > 0 ? `اقتبس هذه الفقرة ${count.toLocaleString('en-US')} قارئاً` : 'ظلّل جملة لتصبح من الاقتباسات الشائعة'}
-                aria-label={count > 0 ? `اقتباس شائع لدى ${count.toLocaleString('en-US')} قارئاً` : 'إضافة هذه الفقرة إلى الاقتباسات الشائعة'}
-                className={`popular-highlight-marker absolute -right-5 top-[1.05rem] z-10 flex items-center gap-1.5 text-accent transition-opacity md:-right-10 ${count > 0 ? 'opacity-65 hover:opacity-100' : 'opacity-0 group-hover:opacity-30'} ${highlightBusy === index ? 'pointer-events-none opacity-30' : ''}`}
-              >
-                <span className="block h-px w-4 bg-accent/45 md:w-5" />
-                {count > 0 && <span className="text-[.58rem] font-medium tabular-nums">{count.toLocaleString('en-US')}</span>}
-              </button>
               <p
                 ref={(element) => { refs.current[index] = element }}
+                data-reader-paragraph={index}
                 onClick={() => seekParagraph(index)}
-                onMouseUp={() => captureSelection(index)}
-                onTouchEnd={() => captureSelection(index)}
                 aria-current={activeIndex === index ? 'true' : undefined}
                 className={`${index === 0 && canUseDropCap(paragraph.text) ? 'dropcap ' : ''}${activeAudio ? 'synced-paragraph ' : ''}${activeIndex === index ? 'is-audio-active' : ''}`.trim() || undefined}
               >
-                {paragraph.text}
+                <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} />
               </p>
+              {strongest && (
+                <p className="reader-popular-note" aria-label={`احتفظ بهذه العبارة ${strongest.count.toLocaleString('ar-KW')} قارئًا`}>
+                  {strongest.count >= 25 ? 'من أكثر عبارات المقال حفظًا' : `احتفظ بهذه العبارة ${strongest.count.toLocaleString('ar-KW')} قارئًا`}
+                </p>
+              )}
             </div>
           )
         })}
@@ -583,8 +440,6 @@ export default function ArticleDetail() {
   const [staticBody, setStaticBody] = useState<string | undefined>()
   const [bodyLoading, setBodyLoading] = useState(false)
 
-  const { scrollYProgress } = useScroll()
-  const bar = useSpring(scrollYProgress, { stiffness: 200, damping: 40 })
   const neighbors = useMemo(() => a ? getArticleNeighbors(a.slug, articles) : { prev: undefined, next: undefined }, [a, articles])
   const related = useMemo(() => a ? relatedArticles(a, 3, articles) : [], [a, articles])
   const dive = useMemo(() => (a ? deepDive(a) : { paper: null, book: null }), [a])
@@ -643,12 +498,10 @@ export default function ArticleDetail() {
 
   const { prev, next } = neighbors
   const article: ArticleRecord = { ...a, body: a.body || staticBody }
-  const rt = readTime(article.body)
 
   return (
     <Page className="content-articles article-journey">
-      {/* شريط تقدّم القراءة */}
-      <motion.div className="fixed right-0 top-0 z-[245] h-[3px] w-full origin-right bg-accent" style={{ scaleX: bar }} />
+      <ArticleProgressBar slug={article.slug} />
 
       <JsonLd
         data={{
@@ -674,10 +527,10 @@ export default function ArticleDetail() {
               <span className="font-semibold text-accent">{a.cat}</span>
               <span className="h-1 w-1 rounded-full bg-hair" />
               <time className="text-soft">{a.date}</time>
-              {rt && (
+              {article.body && (
                 <>
                   <span className="h-1 w-1 rounded-full bg-hair" />
-                  <span className="text-soft">{rt}</span>
+                  <ReadingTimeLabel slug={article.slug} text={article.body} />
                 </>
               )}
             </div>
@@ -689,7 +542,7 @@ export default function ArticleDetail() {
             <OwnerEdit tab="articles" slug={a.slug} className="ms-2" />
             <div className="mt-7 h-[2px] w-16 bg-accent" />
             {article.body && <div id="article-audio"><Listen slug={article.slug} title={article.title} text={article.body} audio={(article as { audio?: { fahed?: boolean | string; noura?: boolean | string } }).audio} /></div>}
-            {article.body && <ReaderPanel slug={article.slug} />}
+            {article.body && <ReaderControls article={article} />}
             <ArchiveContext a={article} />
             {article.body && <ReadingLayers hasAudio={Boolean(article.body)} hasEvolution={Boolean(evolution.older || evolution.newer)} />}
             <IdeaEvolutionCard a={a} articles={articles} />
@@ -704,7 +557,7 @@ export default function ArticleDetail() {
               <>
                 <SyncedArticleBody slug={article.slug} body={article.body} />
                 {/* أداة تحديد واحدة: خيط الفكرة + بطاقة اقتباس (بلا تداخل) */}
-                <SelectionTools current={article} articles={articles} body={article.body} excerpt={article.excerpt} />
+                <SelectionTools current={article} articles={articles} />
                 <StudentArchive a={article} articles={articles} />
               </>
             ) : (

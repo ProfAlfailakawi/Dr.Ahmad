@@ -147,9 +147,9 @@ export default function Atlas() {
           <FadeUp>{categoryButtons}</FadeUp>
 
           <FadeUp delay={0.08}>
-            <div className="relative overflow-hidden rounded-2xl border border-hair bg-wash md:overflow-x-auto" onPointerLeave={() => setHover(null)}>
+            <div className="relative overflow-hidden rounded-2xl border border-hair bg-wash lg:overflow-x-auto" onPointerLeave={() => setHover(null)}>
               {/* نسخة الهاتف: تتكيّف مع العرض، بلا تمرير جانبي ولا نافذة عائمة مقصوصة. */}
-              <svg viewBox={`0 0 ${MOBILE_W} ${mobileH}`} className="block h-auto w-full md:hidden" role="img" aria-label="خريطة المقالات">
+              <svg viewBox={`0 0 ${MOBILE_W} ${mobileH}`} className="atlas-map-mobile block h-auto w-full lg:hidden" role="img" aria-label="خريطة المقالات">
                 {cats.map((category, row) => {
                   const y = MOBILE_TOP + row * MOBILE_ROW + MOBILE_ROW / 2
                   const on = !activeCat || activeCat === category
@@ -199,7 +199,7 @@ export default function Atlas() {
               </svg>
 
               {/* نسخة الكمبيوتر الأصلية الواسعة. */}
-              <svg viewBox={`0 0 ${W} ${H}`} className="hidden h-auto w-full min-w-[760px] md:block" role="img" aria-label="خريطة المقالات">
+              <svg viewBox={`0 0 ${W} ${H}`} className="atlas-map-desktop hidden h-auto w-full min-w-[760px] lg:block" role="img" aria-label="خريطة المقالات">
                 {cats.map((category, row) => {
                   const y = TOP + row * ROW + ROW / 2
                   const on = !activeCat || activeCat === category
@@ -252,7 +252,7 @@ export default function Atlas() {
                 {active && (
                   <g className="pointer-events-none">
                     <circle cx={active.x} cy={active.y} r={active.r + 10} className="fill-none stroke-accent" strokeOpacity={0.42} strokeWidth={1.4} />
-                    <foreignObject x={tooltipX} y={tooltipY} width={tooltipWidth} height={tooltipHeight}>
+                    <foreignObject className="atlas-tooltip-foreign" x={tooltipX} y={tooltipY} width={tooltipWidth} height={tooltipHeight}>
                       <div className="atlas-tooltip h-full rounded-xl border border-accent/35 bg-canvas/95 px-4 py-3 text-right shadow-xl backdrop-blur" dir="rtl">
                         <p className="truncate text-[11px] font-semibold text-accent">{categoryLabel(active.cat)} · {active.date}</p>
                         <p className="mt-1 line-clamp-2 font-display text-[14px] font-semibold leading-[1.55] text-ink">{active.title}</p>

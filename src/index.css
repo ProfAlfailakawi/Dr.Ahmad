@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 /* ============================================================
    الهوية — متغيّرات لونية (تسمح بالوضع الليلي بلا لمس المكوّنات)
    ============================================================ */
@@ -381,7 +386,8 @@ html.dark .signature-page :is(.bg-canvas, .bg-wash) {
 }
 
 .content-articles .article-body {
-  max-width: 72ch;
+  max-width: min(var(--article-width, 72ch), 100%);
+  transition: max-width .28s var(--E);
 }
 
 .content-articles .article-body::before {
@@ -588,7 +594,7 @@ html.dark .content-media .page-head {
 .article-body p {
   font-size: calc(1.14rem * var(--article-scale, 1));
   font-weight: 300;
-  line-height: 2.15;
+  line-height: var(--article-line, 2.15);
   color: rgb(var(--c-ink) / .88);
   margin-bottom: 1.6em;
   text-align: justify;
@@ -614,10 +620,12 @@ html.dark .content-media .page-head {
 @media (max-width: 640px) {
   .article-body p {
     font-size: calc(1.06rem * var(--article-scale, 1));
-    line-height: 2.05;
-    text-align: right;
-    text-align-last: auto;
+    line-height: var(--article-line, 2.08);
+    text-align: justify;
+    text-justify: inter-word;
+    text-align-last: start;
     word-spacing: normal;
+    overflow-wrap: break-word;
   }
   .article-body p.dropcap::first-letter {
     margin: .14em 0 0 .22em;
@@ -636,8 +644,116 @@ html.reader-focus body {
 }
 
 html.reader-focus .article-body {
-  max-width: 68ch;
+  max-width: min(var(--article-width, 68ch), 100%);
   margin-inline: auto;
+}
+
+/* قارئ المقالات: الخلفية الورقية تغيّر جو القراءة فقط، من دون المساس بهوية بقية الصفحات. */
+html.reader-paper .article-journey {
+  --reader-paper: 248 245 236;
+  background: rgb(var(--reader-paper));
+}
+html.reader-paper .article-journey :is(.bg-canvas, .reader-settings-sheet) {
+  background-color: rgb(250 248 241 / .98);
+}
+html.reader-paper .article-journey .bg-wash {
+  background-color: rgb(242 238 227 / .72);
+}
+
+.reader-progress-track {
+  background: rgb(var(--c-accent) / .055);
+  pointer-events: none;
+}
+.reader-progress-track > span {
+  transition: transform .08s linear;
+}
+
+.reader-popular-mark {
+  color: inherit;
+  background: linear-gradient(180deg, transparent 70%, rgb(var(--c-accent) / .13) 70%);
+  border-radius: .12em;
+  padding-inline: .02em;
+}
+.reader-popular-note {
+  margin: -1.1rem 0 1.65rem !important;
+  font-size: .68rem !important;
+  line-height: 1.65 !important;
+  font-weight: 500 !important;
+  color: rgb(var(--c-accent) / .78) !important;
+  text-align: start !important;
+  text-align-last: auto !important;
+}
+html[data-reader-popular="off"] .reader-popular-mark {
+  background: none;
+}
+html[data-reader-popular="off"] .reader-popular-note {
+  display: none;
+}
+
+.reader-xray-term {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+  text-decoration-color: rgb(var(--c-accent) / .45);
+  text-underline-offset: .22em;
+  cursor: help;
+}
+.reader-xray-term:hover,
+.reader-xray-term:focus-visible {
+  color: rgb(var(--c-accent));
+}
+
+.reader-quote-return {
+  animation: reader-quote-return 2.2s var(--E) both;
+}
+@keyframes reader-quote-return {
+  0%, 100% { background: transparent; box-shadow: inset 0 0 0 rgb(var(--c-accent) / 0); }
+  18%, 70% { background: rgb(var(--c-accent) / .065); box-shadow: inset -2px 0 0 rgb(var(--c-accent) / .7); }
+}
+
+.reader-aa-button {
+  box-shadow: 0 14px 34px -26px rgb(var(--c-ink) / .55);
+  -webkit-tap-highlight-color: transparent;
+}
+.reader-settings-sheet {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+body.audio-dock-open .reader-resume-prompt {
+  bottom: calc(6.5rem + env(safe-area-inset-bottom));
+}
+
+@media (hover: none), (pointer: coarse) {
+  .reader-selection-toolbar {
+    inset-inline: max(.75rem, env(safe-area-inset-left)) max(.75rem, env(safe-area-inset-right)) !important;
+    top: auto !important;
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+    left: auto !important;
+    width: auto;
+    transform: none !important;
+    justify-content: stretch;
+    border-radius: 1rem;
+    padding: .3rem;
+  }
+  .reader-selection-toolbar button {
+    min-height: 2.75rem;
+    flex: 1 1 0;
+    padding-inline: .75rem;
+  }
+  body.audio-dock-open .reader-selection-toolbar {
+    bottom: calc(6.6rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 640px) {
+  .reader-settings-sheet {
+    max-height: min(90dvh, 760px);
+  }
+  .reader-popular-note {
+    margin-top: -1rem !important;
+    font-size: .65rem !important;
+  }
 }
 
 
@@ -1055,7 +1171,8 @@ html.dark .human-core__scan { mix-blend-mode: screen; }
     opacity: 1;
   }
   .human-core__scan { display: none; }
-  .human-core__orbit { animation: none; }
+  /* تبقى النقاط المدارية حيّة على الهاتف، لكن بسرعة أهدأ لتفادي استهلاك البطارية. */
+  .human-core__orbit { animation-duration: 24s; will-change: transform; }
 }
 
 @media (max-height: 760px) and (min-width: 768px) {
@@ -1267,3 +1384,26 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
   }
 }
 
+
+/* خريطة المقالات على الأجهزة اللمسية: تُستخدم النسخة المتكيفة دائمًا،
+   ويظهر الكرت الكامل أسفل الخريطة بدل بطاقة SVG قد تُقص في الوضع الأفقي. */
+@media (hover: none), (pointer: coarse) {
+  .atlas-map-desktop { display: none !important; }
+  .atlas-map-mobile { display: block !important; }
+  .atlas-tooltip-foreign { display: none !important; }
+}
+
+/* رسائل لوحة التحكم تبقى داخل تدفق الصفحة، صغيرة وقابلة للقراءة على الهاتف. */
+.admin-inline-notice {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+@media (max-width: 640px) {
+  .admin-inline-notice {
+    padding: .7rem .85rem !important;
+    font-size: .72rem !important;
+    line-height: 1.75 !important;
+    border-radius: .8rem !important;
+  }
+}

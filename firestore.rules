@@ -139,6 +139,21 @@ service cloud.firestore {
       allow update: if isAdmin() || isValidHighlightUpdate();
     }
 
+    // دفتر الاقتباسات العام: لا يُرسل اسم أو بريد أو موقع. كل جهاز يملك
+    // معرّفًا عشوائيًا مُجزّأً، ويُنشئ صوتًا واحدًا فقط لكل عبارة.
+    match /article_quote_votes/{id} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if isAdmin() || isValidQuoteVoteCreate(id);
+      allow update, delete: if isAdmin();
+    }
+    match /article_quote_counts/{id} {
+      allow read: if true;
+      allow delete: if isAdmin();
+      allow create: if isAdmin() || isValidQuoteCountCreate(id);
+      allow update: if isAdmin() || isValidQuoteCountUpdate(id);
+    }
+
     // كل ما عدا ذلك: مغلق.
     match /{document=**} {
       allow read, write: if false;
@@ -200,6 +215,56 @@ service cloud.firestore {
       && request.resource.data.count == resource.data.count + 1
       && request.resource.data.diff(resource.data).affectedKeys()
         .hasOnly(['count', 'updatedAt']);
+  }
+
+  function hasValidQuoteVoteFields(d) {
+    return d.keys().hasOnly(['slug', 'quoteHash', 'deviceHash', 'createdAt'])
+      && d.slug is string && d.slug.size() > 0 && d.slug.size() <= 220
+      && d.quoteHash is string && d.quoteHash.size() >= 8 && d.quoteHash.size() <= 80
+      && d.deviceHash is string && d.deviceHash.size() >= 8 && d.deviceHash.size() <= 80
+      && d.createdAt == request.time;
+  }
+
+  function isValidQuoteVoteCreate(id) {
+    return id.size() >= 8 && id.size() <= 80
+      && hasValidQuoteVoteFields(request.resource.data);
+  }
+
+  function hasValidQuoteCountFields(id, d) {
+    return d.keys().hasOnly(['slug', 'quoteHash', 'quote', 'paragraph', 'count', 'lastVote', 'updatedAt'])
+      && d.slug is string && d.slug.size() > 0 && d.slug.size() <= 220
+      && d.quoteHash == id
+      && d.quoteHash is string && d.quoteHash.size() >= 8 && d.quoteHash.size() <= 80
+      && d.quote is string && d.quote.size() >= 8 && d.quote.size() <= 600
+      && d.paragraph is int && d.paragraph >= 0 && d.paragraph <= 250
+      && d.count is int && d.count > 0
+      && d.lastVote is string && d.lastVote.size() >= 8 && d.lastVote.size() <= 80
+      && d.updatedAt == request.time;
+  }
+
+  function quoteVoteSupports(d) {
+    return existsAfter(/databases/$(database)/documents/article_quote_votes/$(d.lastVote))
+      && getAfter(/databases/$(database)/documents/article_quote_votes/$(d.lastVote)).data.slug == d.slug
+      && getAfter(/databases/$(database)/documents/article_quote_votes/$(d.lastVote)).data.quoteHash == d.quoteHash;
+  }
+
+  function isValidQuoteCountCreate(id) {
+    return hasValidQuoteCountFields(id, request.resource.data)
+      && request.resource.data.count == 1
+      && quoteVoteSupports(request.resource.data);
+  }
+
+  function isValidQuoteCountUpdate(id) {
+    return hasValidQuoteCountFields(id, request.resource.data)
+      && request.resource.data.slug == resource.data.slug
+      && request.resource.data.quoteHash == resource.data.quoteHash
+      && request.resource.data.quote == resource.data.quote
+      && request.resource.data.paragraph == resource.data.paragraph
+      && request.resource.data.count == resource.data.count + 1
+      && request.resource.data.lastVote != resource.data.lastVote
+      && request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['count', 'lastVote', 'updatedAt'])
+      && quoteVoteSupports(request.resource.data);
   }
 
   function isValidMessage() {

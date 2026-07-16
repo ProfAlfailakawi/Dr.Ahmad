@@ -214,13 +214,22 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
     const on = saved === 'dark'
     setDark(on)
     document.documentElement.classList.toggle('dark', on)
+    const syncFromReader = (event: Event) => setDark(Boolean((event as CustomEvent<{ dark?: boolean }>).detail?.dark))
+    window.addEventListener('reader:theme-changed', syncFromReader)
+    return () => window.removeEventListener('reader:theme-changed', syncFromReader)
   }, [])
 
   const toggle = () => {
     const on = !dark
     setDark(on)
     document.documentElement.classList.toggle('dark', on)
+    document.documentElement.classList.remove('reader-paper')
     try { localStorage.setItem('theme', on ? 'dark' : 'light') } catch { /* noop */ }
+    try {
+      const raw = localStorage.getItem('reader:preferences:v2')
+      if (raw) localStorage.setItem('reader:preferences:v2', JSON.stringify({ ...JSON.parse(raw), theme: on ? 'dark' : 'light' }))
+    } catch { /* noop */ }
+    window.dispatchEvent(new CustomEvent('reader:preferences-changed'))
   }
 
   return (

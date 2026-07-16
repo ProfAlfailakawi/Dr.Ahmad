@@ -485,7 +485,7 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
           ) : <p className="mt-3 rounded-xl border border-hair bg-wash px-4 py-3 text-[.76rem] leading-relaxed text-soft">المسودة جاهزة، لكن الصوت لا يُنشأ داخل المتصفح؛ يظهر تلقائياً بعد مرورها بمسار Azure والمراجعة الصوتية.</p>}
         </div>
 
-        {notice && <p className="mt-4 rounded-xl border border-accent/25 bg-canvas px-4 py-3 text-[.8rem] text-accent">{notice}</p>}
+        {notice && <p role="status" className="admin-inline-notice mt-4 rounded-xl border border-accent/25 bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-accent">{notice}</p>}
         {warnings.length > 0 && (
           <details className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3">
             <summary className="cursor-pointer text-[.8rem] font-semibold text-soft">ملاحظات الجودة ({warnings.length})</summary>

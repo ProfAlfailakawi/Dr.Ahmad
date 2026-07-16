@@ -54,6 +54,7 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           PODCAST_RELEASE_MIN_SCORE: '94'
           HUMAN_AUDIO_MIN_SCORE: '95'
+          HUMAN_AUDIO_KEEP_WORK: '1'
 
       - name: Package review files only
         if: always()
@@ -61,6 +62,7 @@ jobs:
           mkdir -p pilot-review
           find audio -maxdepth 1 -type f \( -name '*.mp3' -o -name '*.json' \) -exec cp {} pilot-review/ \; 2>/dev/null || true
           find audio-audits podcast-audits -type f -name '*.json' -exec cp {} pilot-review/ \; 2>/dev/null || true
+          find .audio-human-work -type f \( -name '*.wav' -o -name '*.json' \) -exec cp {} pilot-review/ \; 2>/dev/null || true
 
       - name: Upload private Pilot artifact
         if: always()

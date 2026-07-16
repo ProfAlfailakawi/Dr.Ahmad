@@ -442,7 +442,7 @@ export async function renderHumanReading({
     atomicWriteJson(auditFile, audit)
     return audit
   } finally {
-    rmSync(workDir, { recursive: true, force: true })
+    if (process.env.HUMAN_AUDIO_KEEP_WORK !== '1') rmSync(workDir, { recursive: true, force: true })
   }
 }
 

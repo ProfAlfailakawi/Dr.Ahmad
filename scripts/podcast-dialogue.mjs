@@ -591,7 +591,11 @@ function normalizeMechanics(sc) {
   // على النص والمعنى والمتحدث نفسه. النتيجة الطبيعية: كلام أسرع، وقفات أقل، وفشل أقل.
   const compactUtterances = []
   for (const u of sc.utterances) {
-    const pieces = splitLongText(u.text, 22, 30)
+    // Azure قد يطيل الجملة التأملية حتى لو كانت 23–29 كلمة؛ إبقاء الحد
+    // الصوتي عند 22 كلمة تقريبًا يمنع مداخلة تتجاوز 13 ثانية في أي مقال جديد.
+    // التقسيم لا يحذف نصًا: يحافظ على الكلمات والترتيب، ويستخدم الوقفة القصيرة
+    // بين الوحدات بدل ترك البوابة ترفض الحلقة بعد توليدها.
+    const pieces = splitLongText(u.text, 20, 22)
     if (pieces.length <= 1) { compactUtterances.push(u); continue }
     pieces.forEach((piece, index) => {
       const next = { ...u, text: piece, allowOverlap: false, overlapMs: 0,

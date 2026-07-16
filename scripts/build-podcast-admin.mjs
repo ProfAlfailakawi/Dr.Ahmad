@@ -161,6 +161,56 @@ const episodes = dialogue.map((name) => {
   }
 })
 
+/* الحالات الحقيقية لغرفة الإنتاج: الحلقة الفاشلة أو الجارية تظهر بحالتها وسببها،
+   لا تبقى «مسودة» وهمية بعد تشغيلٍ فشل. المنشور يبقى مشروطاً باعتماد الحالة + الرابط الدائم. */
+const knownSlugs = new Set(episodes.map((episode) => episode.slug))
+const auditFiles = existsSync(AUDITS) ? readdirSync(AUDITS).filter((name) => name.endsWith('.ar.json')) : []
+for (const name of auditFiles) {
+  const slug = name.slice(0, -'.ar.json'.length)
+  if (knownSlugs.has(slug)) continue
+  const article = articleBySlug.get(slug)
+  if (!article) continue
+  const audit = readAudit(slug)
+  if (!audit) continue
+  let status = 'under_review'
+  let statusLabel = 'يحتاج مراجعة'
+  let failure = null
+  let progress = null
+  if (audit.status === 'quarantined') {
+    status = 'failed'
+    const failed = audit?.finalGate?.failedUtterance || audit?.failure || null
+    const reason = String(failed?.reason || audit?.finalGate?.reasonCodes?.[0] || 'سبب غير مسجل').slice(0, 220)
+    failure = { utteranceId: failed?.utteranceId || failed?.id || '', reason }
+    statusLabel = failure.utteranceId ? `فشل في المداخلة ${failure.utteranceId}` : 'فشل التوليد'
+  } else if (audit.status === 'qa_in_progress') {
+    status = 'generating'
+    progress = audit.progress && Number(audit.progress.total)
+      ? { done: Number(audit.progress.done || 0), total: Number(audit.progress.total) } : null
+    statusLabel = progress ? `جارٍ توليد المداخلة ${progress.done}/${progress.total}` : 'جارٍ بناء الحوار'
+  } else if (audit.status === 'accepted_automated') {
+    status = 'passed'
+    statusLabel = 'مجتاز — بانتظار النشر'
+  }
+  episodes.push({
+    slug,
+    title: article.title,
+    category: article.cat || 'بودكاست',
+    date: article.date || '',
+    iso: article.iso || '',
+    status,
+    statusLabel,
+    failure,
+    progress,
+    audio: '',
+    bytes: 0,
+    audioHash: '',
+    hasTranscript: false,
+    utterances: Array.isArray(audit?.dialogue?.utterances) ? audit.dialogue.utterances.length : 0,
+    quality: { score: 0, pass: false, metrics: {}, pronunciation: failure ? failure.reason : (statusLabel || ''),
+      pace: '', pauses: '', issues: failure ? [failure.reason] : [] },
+  })
+}
+
 const themes = [
   { title: 'الإنسان في قلب الآلة', terms: ['الذكاء', 'الآلة', 'الإنسان', 'التقنية'] },
   { title: 'مستقبل المعلم', terms: ['المعلم', 'التعليم', 'التدريس'] },

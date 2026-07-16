@@ -77,7 +77,7 @@ jobs:
           for slug in "${ITEMS[@]}"; do
             slug="$(echo "$slug" | xargs)"
             echo "Generating $slug"
-            node scripts/podcast-dialogue.mjs --slug="$slug" --lang=ar --force
+            node scripts/podcast-dialogue.mjs --slug="$slug" --lang=ar --force --reuse-dialogue
           done
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
@@ -87,6 +87,12 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           PODCAST_RELEASE_MIN_SCORE: '94'
+          # كاش الاستئناف عبر R2 staging: الحوار المجتاز والمقاطع المجتازة تنجو من موت الرانر،
+          # فلا يُعاد إلا المقطع الفاشل — صفر هدر Gemini/Azure على ما نجح سابقاً.
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
 
       - name: Validate requested local episodes
         run: node scripts/podcast-release-gate.mjs --local --slugs="${{ inputs.slugs }}"

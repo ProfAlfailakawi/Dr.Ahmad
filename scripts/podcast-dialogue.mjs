@@ -74,6 +74,117 @@ const GEMINI_KEY = env.GEMINI_API_KEY || env.GOOGLE_API_KEY
 const AZURE_KEY = env.AZURE_SPEECH_KEY
 const AZURE_REGION = (env.AZURE_SPEECH_REGION && /^[a-z0-9-]+$/i.test(env.AZURE_SPEECH_REGION) && env.AZURE_SPEECH_REGION.length < 30) ? env.AZURE_SPEECH_REGION : 'uaenorth'
 
+/* كل طلب خارجي له مهلة صريحة؛ حتى لا يبقى تشغيل GitHub معلقًا إذا علقت
+   شبكة Azure/Gemini. تُعاد المحاولة في الطبقة الخاصة بكل مزود. */
+const networkTimeoutSignal = (ms) => {
+  if (typeof AbortSignal?.timeout === 'function') return AbortSignal.timeout(ms)
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), ms)
+  timer.unref?.()
+  return controller.signal
+}
+const fetchWithTimeout = (url, init = {}, ms = 45_000) =>
+  fetch(url, { ...init, signal: init.signal || networkTimeoutSignal(ms) })
+
+/* ═══ تقسيم دلالي مشترك (مستوى الوحدة) — يستخدمه التطبيع قبل TTS ومسار إنقاذ المقطع المتجاوز ═══ */
+const wordsOf = (text) => String(text || '').split(/\s+/).filter(Boolean)
+function splitTextSemantically(text, target = 16, hard = 20) {
+  const clean = String(text || '').replace(/\s+/g, ' ').trim()
+  if (wordsOf(clean).length <= hard) return [clean]
+  const rawParts = clean
+    .split(/(?<=[،؛.!؟])\s+|(?=\s(?:بل|لكن|ولكن|فإذا|فهذا|وهنا|وعندها|لا\s))/u)
+    .map((part) => part.trim()).filter(Boolean)
+  const parts = rawParts.length > 1 ? rawParts : [clean]
+  const chunks = []
+  for (const part of parts) {
+    if (wordsOf(part).length > hard) {
+      const words = part.split(/\s+/)
+      const numeric = (w) => /[0-9\u0660-\u0669٪%]/.test(w)
+      let row = []
+      for (const word of words) {
+        row.push(word)
+        if (row.length >= target && !numeric(word)) { chunks.push(row.join(' ')); row = [] }
+      }
+      if (row.length) chunks.push(row.join(' '))
+      continue
+    }
+    const last = chunks.at(-1) || ''
+    if (last && wordsOf(`${last} ${part}`).length <= target) chunks[chunks.length - 1] = `${last} ${part}`
+    else chunks.push(part)
+  }
+  return chunks.map((part) => part.trim()).filter(Boolean)
+}
+
+/* اشتقاق تحليل نطق لقطعةٍ من تحليل الوحدة الكاملة — بلا أي نداء Gemini:
+   ننقل التشكيل الانتقائي كلمةً بكلمة إن تطابق العدّ، ونرشّح الكلمات الخطرة بالانتماء. */
+function derivePieceAnalysis(analysis, pieceText, pieceStartWord, pieceWordCount) {
+  const plain = String(pieceText || '').replace(/\s+/g, ' ').trim()
+  const fullPron = String(analysis?.pronunciationText || '').replace(/\s*\|\s*/g, ' ').replace(/\s+/g, ' ').trim()
+  const pronTokens = fullPron.split(' ').filter(Boolean)
+  const fullTokens = wordsOf(String(analysis?.sourceTextForCount || ''))
+  let pronunciationText = plain
+  if (pronTokens.length && fullTokens.length === pronTokens.length
+    && pieceStartWord >= 0 && pieceStartWord + pieceWordCount <= pronTokens.length) {
+    pronunciationText = pronTokens.slice(pieceStartWord, pieceStartWord + pieceWordCount).join(' ')
+  }
+  const normalizeBasic = (w) => String(w || '').replace(/[\u064B-\u0652\u0670\u0640]/g, '')
+  const pieceNorm = normalizeBasic(plain)
+  const risks = (analysis?.risks || []).filter((risk) => pieceNorm.includes(normalizeBasic(risk.word)))
+  return { pronunciationText, risks }
+}
+
+/* ═══ كاش مقاطع الاستئناف — محليًا وعبر R2 staging (لا WAV داخل GitHub) ═══ */
+const RESUME = !process.argv.includes('--no-resume')
+const SEGMENT_CACHE_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', '.podcast-segment-cache')
+const R2_CONF = {
+  bucket: env.CLOUDFLARE_R2_BUCKET || env.R2_BUCKET || '',
+  endpoint: env.CLOUDFLARE_R2_ENDPOINT || '',
+  key: env.CLOUDFLARE_R2_ACCESS_KEY_ID || '',
+  secret: env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || '',
+}
+const r2StagingReady = () => Boolean(RESUME && R2_CONF.bucket && R2_CONF.endpoint && R2_CONF.key && R2_CONF.secret)
+const r2Aws = (args, input) => spawnSync('aws', ['--endpoint-url', R2_CONF.endpoint, 's3api', ...args], {
+  encoding: 'utf8', input,
+  env: { ...process.env, AWS_ACCESS_KEY_ID: R2_CONF.key, AWS_SECRET_ACCESS_KEY: R2_CONF.secret, AWS_EC2_METADATA_DISABLED: 'true' },
+})
+const segmentKeyOf = ({ pipelineHash, voice, text, pronunciationText }) => createHash('sha256')
+  .update([pipelineHash, voice, String(text || '').replace(/\s+/g, ' ').trim(), String(pronunciationText || '').trim()].join('|'))
+  .digest('hex').slice(0, 24)
+function segmentCacheGet(slug, key, dest) {
+  const local = resolve(SEGMENT_CACHE_DIR, slug, `${key}.wav`)
+  if (existsSync(local) && statSync(local).size > 4000) { copyFileSync(local, dest); return 'local' }
+  if (!r2StagingReady()) return null
+  const out = r2Aws(['get-object', '--bucket', R2_CONF.bucket, '--key', `staging/segments/${slug}/${key}.wav`, dest])
+  if (out.status === 0 && existsSync(dest) && statSync(dest).size > 4000) {
+    mkdirSync(resolve(SEGMENT_CACHE_DIR, slug), { recursive: true })
+    copyFileSync(dest, local)
+    return 'r2'
+  }
+  rmSync(dest, { force: true })
+  return null
+}
+function segmentCachePut(slug, key, src) {
+  try {
+    mkdirSync(resolve(SEGMENT_CACHE_DIR, slug), { recursive: true })
+    copyFileSync(src, resolve(SEGMENT_CACHE_DIR, slug, `${key}.wav`))
+    if (r2StagingReady())
+      r2Aws(['put-object', '--bucket', R2_CONF.bucket, '--key', `staging/segments/${slug}/${key}.wav`, '--body', src, '--content-type', 'audio/wav'])
+  } catch { /* الكاش تحسين لا شرط */ }
+}
+function stagedAuditPush(slug, lang, file) {
+  if (!r2StagingReady() || !existsSync(file)) return
+  try { r2Aws(['put-object', '--bucket', R2_CONF.bucket, '--key', `staging/audits/${slug}.${lang}.json`, '--body', file, '--content-type', 'application/json']) } catch { /* تحسين */ }
+}
+function stagedAuditPull(slug, lang, dest) {
+  if (!r2StagingReady() || existsSync(dest)) return existsSync(dest)
+  try {
+    const out = r2Aws(['get-object', '--bucket', R2_CONF.bucket, '--key', `staging/audits/${slug}.${lang}.json`, dest])
+    if (out.status !== 0 || !existsSync(dest)) return false
+    JSON.parse(readFileSync(dest, 'utf8'))
+    return true
+  } catch { rmSync(dest, { force: true }); return false }
+}
+
 const executable = (name, configured) => {
   const candidates = [configured, `/opt/homebrew/bin/${name}`, `/usr/local/bin/${name}`, `/usr/bin/${name}`].filter(Boolean)
   return candidates.find((candidate) => existsSync(candidate)) || name
@@ -418,7 +529,7 @@ async function gemini(systemPrompt, userText, temperature = 0.85, model = DIALOG
   for (let attempt = 1; attempt <= 5; attempt++) {
     let res
     try {
-      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
         body: JSON.stringify({
@@ -426,7 +537,7 @@ async function gemini(systemPrompt, userText, temperature = 0.85, model = DIALOG
           contents: [{ role: 'user', parts: [{ text: userText }, ...extraParts] }],
           generationConfig: { temperature, maxOutputTokens: 16384, responseMimeType: 'application/json' },
         }),
-      })
+      }, 120_000)
     } catch (error) { lastStatus = `شبكة: ${error.message}`; await new Promise((r) => setTimeout(r, 3000 * attempt)); continue }
     if (res.ok) {
       const j = await res.json()
@@ -449,12 +560,12 @@ async function gemini(systemPrompt, userText, temperature = 0.85, model = DIALOG
 }
 
 async function assertGeminiBillingReady() {
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${JUDGE_MODEL}:generateContent`, {
+  const response = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${JUDGE_MODEL}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
     body: JSON.stringify({ contents: [{ parts: [{ text: 'أعد JSON فقط: {"ready":true}' }] }],
       generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 30, temperature: 0 } }),
-  })
+  }, 120_000)
   if (response.ok) return true
   const errorBody = await response.json().catch(() => ({}))
   const message = String(errorBody?.error?.message || `HTTP ${response.status}`).replace(/\s+/g, ' ').slice(0, 400)
@@ -541,7 +652,16 @@ function normalizeMechanics(sc) {
     for (const part of parts) {
       if (wordCount(part) > hard) {
         const words = part.split(/\s+/)
-        for (let i = 0; i < words.length; i += target) chunks.push(words.slice(i, i + target).join(' '))
+        const numeric = (w) => /[0-9\u0660-\u0669٪%]/.test(w)
+        const rows = []
+        let row = []
+        for (const word of words) {
+          row.push(word)
+          // لا نقطع بعد كلمة رقمية (يبقى الرقم مع وحدته/تاليه)
+          if (row.length >= target && !numeric(word)) { rows.push(row.join(' ')); row = [] }
+        }
+        if (row.length) rows.push(row.join(' '))
+        chunks.push(...rows)
         continue
       }
       const last = chunks.at(-1) || ''
@@ -577,9 +697,26 @@ function normalizeMechanics(sc) {
   // قاعدة إخراج صوتي لا نعتمد فيها على التزام النموذج: المداخلة المقالية الطويلة هي أكثر سبب
   // لفشل Azure/STT/Judge. لذلك نكسرها قبل مرحلة النطق إلى نبضات مسموعة قصيرة، مع الحفاظ
   // على النص والمعنى والمتحدث نفسه. النتيجة الطبيعية: كلام أسرع، وقفات أقل، وفشل أقل.
+  // المدة المتوقعة للوحدة قبل Azure: كلمات/سرعة مستهدفة + وقفات داخلية + هامش حدود المقطع.
+  // نعتمد معامل أمان 0.88 لأن Azure ينطق أبطأ من الخطة غالباً (المعايرة أثبتت ذلك عملياً).
+  const SEGMENT_BUDGET_SEC = 11.5
+  const expectedSpokenSec = (u, text) => {
+    const words = wordCount(text)
+    const wpm = Math.max(100, Math.min(190, Number(u.targetWordsPerMinute) || 140)) * 0.88
+    const internalBreaks = ((String(text).match(/[،؛:|]/g) || []).length) * ((Number(u.internalBreakMs) || 110) / 1000)
+    return words * 60 / wpm + internalBreaks + 0.5
+  }
+  const durationAwarePieces = (u) => {
+    const text = String(u.text || '')
+    if (expectedSpokenSec(u, text) <= SEGMENT_BUDGET_SEC) return [text.replace(/\s+/g, ' ').trim()]
+    const wpmSafe = Math.max(100, Math.min(190, Number(u.targetWordsPerMinute) || 140)) * 0.88
+    const hardWords = Math.min(24, Math.max(12, Math.floor((SEGMENT_BUDGET_SEC - 0.5) * wpmSafe / 60)))
+    const targetWords = Math.max(10, hardWords - 3)
+    return splitLongText(text, targetWords, hardWords)
+  }
   const compactUtterances = []
   for (const u of sc.utterances) {
-    const pieces = splitLongText(u.text, 22, 30)
+    const pieces = durationAwarePieces(u)
     if (pieces.length <= 1) { compactUtterances.push(u); continue }
     pieces.forEach((piece, index) => {
       const next = { ...u, text: piece, allowOverlap: false, overlapMs: 0,
@@ -587,6 +724,9 @@ function normalizeMechanics(sc) {
       if (index < pieces.length - 1) {
         next.pauseAfterMs = Math.min(Number(u.pauseAfterMs) || 220, 200)
         next.ending = 'neutral'
+        // قطعة وسطى من وحدة مقسمة: وقفتها داخلية قصيرة دوماً — لا يجوز لممر
+        // «الوقفات التأملية» أن يعيد إطالتها فيقطع الجملة الواحدة قطعاً مسموعاً.
+        next._splitMiddle = true
       }
       if (piece.includes('؟')) { next.delivery = 'question'; next.ending = 'open' }
       compactUtterances.push(next)
@@ -601,6 +741,7 @@ function normalizeMechanics(sc) {
   for (let i = 0; i < sc.utterances.length; i++) {
     const u = sc.utterances[i]
     if (!longPauseKinds.has(u.delivery)) continue
+    if (u._splitMiddle) { u.pauseAfterMs = Math.min(200, Number(u.pauseAfterMs) || 160); continue }
     longPauseCount += 1
     if (longPauseCount <= longPauseLimit) {
       u.pauseAfterMs = clamp(u.pauseAfterMs, AR_PACING.reflection.pauseMs)
@@ -653,7 +794,8 @@ function normalizeMechanics(sc) {
     const profile = pacingOf(u.delivery || 'normal')
     u.ratePct = clamp(u.ratePct, profile.ratePct)
     u.targetWordsPerMinute = clamp(u.targetWordsPerMinute, profile.targetWpm)
-    u.pauseAfterMs = clamp(u.pauseAfterMs, profile.pauseMs)
+    // القطعة الوسطى من وحدة مقسمة تحتفظ بوقفتها الداخلية القصيرة مهما كان نوع الإلقاء
+    u.pauseAfterMs = u._splitMiddle ? Math.min(200, Number(u.pauseAfterMs) || 160) : clamp(u.pauseAfterMs, profile.pauseMs)
   }
 
   if (!sc.sample) {
@@ -961,7 +1103,7 @@ function buildSSML(u, pronText, subs, voice, lang) {
 async function synthSSML(ssml, outPath) {
   for (let attempt = 1; attempt <= 4; attempt++) {
     try {
-      const res = await fetch(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`, {
+      const res = await fetchWithTimeout(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`, {
         method: 'POST',
         headers: {
           'Ocp-Apim-Subscription-Key': AZURE_KEY,
@@ -986,7 +1128,7 @@ async function synthSSML(ssml, outPath) {
 async function sttRequest(wav16Path, locale) {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const res = await fetch(`https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${locale}&format=detailed&profanity=raw`, {
+      const res = await fetchWithTimeout(`https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${locale}&format=detailed&profanity=raw`, {
         method: 'POST',
         headers: { 'Ocp-Apim-Subscription-Key': AZURE_KEY, 'Content-Type': 'audio/wav; codecs=audio/pcm; samplerate=16000' },
         body: readFileSync(wav16Path),
@@ -1120,7 +1262,7 @@ async function probeSsmlCapabilities(force = false, voicesToProbe = [VOICES.ar.A
 }
 
 async function verifyAzureVoices(voices) {
-  const response = await fetch(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/voices/list`, {
+  const response = await fetchWithTimeout(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/voices/list`, {
     headers: { 'Ocp-Apim-Subscription-Key': AZURE_KEY },
   })
   if (!response.ok) throw new Error(`تعذر Voice List API: HTTP ${response.status}`)
@@ -1134,7 +1276,7 @@ async function verifyAzureVoices(voices) {
 }
 
 async function discoverArabicVoices() {
-  const response = await fetch(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/voices/list`, {
+  const response = await fetchWithTimeout(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/voices/list`, {
     headers: { 'Ocp-Apim-Subscription-Key': AZURE_KEY },
   })
   if (!response.ok) throw new Error(`تعذر اكتشاف أصوات Azure: HTTP ${response.status}`)
@@ -1625,7 +1767,7 @@ async function calibrateProductionPlan({ utterance, voice, text, subs, lang, tem
   const correction = Math.min(10, Math.max(-10, (target / measured - 1) * 100))
   const calibratedRatePct = Math.round(Math.min(18, Math.max(-18, Number(plan.ratePct || 0) + correction)))
   return { plan: { ...plan, ratePct: calibratedRatePct },
-    calibration: { pass: true, measuredWpm: measured, targetWpm: target,
+    calibration: { pass: true, measuredWpm: measured, targetWpm: target, measuredDurSec: Number(audit.dur || 0),
       originalRatePct: Number(plan.ratePct || 0), calibratedRatePct } }
 }
 
@@ -1683,6 +1825,16 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
     paceCalibration = calibrated.calibration
     if (paceCalibration?.pass === false)
       return { ok: false, verified: false, reason: paceCalibration.reason, dialogueText, candidates: allAudits }
+    // إن كانت عينة المعايرة نفسها أطول من حد المقطع (بعد أثر تصحيح السرعة المتوقع)،
+    // لا نحرق المرشحات ولا نعزل: نعيد إشارة تقسيم فيتكفل المسار الأعلى بإنقاذ الوحدة وحدها.
+    if (round === 0 && Number(paceCalibration?.measuredDurSec || 0) > 0) {
+      const measuredDur = Number(paceCalibration.measuredDurSec)
+      const ratio = Math.max(0.9, Math.min(1.15, Number(paceCalibration.measuredWpm || 1) / Math.max(1, Number(paceCalibration.targetWpm || 1))))
+      const projected = measuredDur * ratio
+      if (projected > 12.4 && wordsOf(dialogueText).length >= 12)
+        return { ok: false, verified: false, needsSplit: true, measuredSec: measuredDur,
+          reason: `مداخلة أطول من حد المقطع (${measuredDur.toFixed(1)}ث بعد المعايرة)`, dialogueText, candidates: allAudits }
+    }
     const variants = candidateVariants(dialogueText, applied.text, applied.subs, currentAnalysis.risks)
     const audits = []
     for (let index = 0; index < variants.length; index++) {
@@ -1726,12 +1878,84 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
       ...audits.flatMap((audit) => (audit.highMissing || []).map((risk) => risk.word)),
     ].filter(Boolean))]
     const rephrased = await safeRephrase(dialogueText, sourceText, reason, stubbornWords)
-    if (!rephrased) return { ok: false, verified: false, reason, dialogueText, candidates: allAudits }
+    if (!rephrased) return { ok: false, verified: false, reason, dialogueText, candidates: allAudits,
+      needsSplit: /أطول من 13ث/.test(reason) }
     dialogueText = rephrased
     const [reanalyzed] = await riskAnalyze([{ ...u, text: dialogueText, allowOverlap: false }], { tolerant: true })
     currentAnalysis = reanalyzed
   }
-  return { ok: false, verified: false, reason: 'استنفدت المرشحات وإعادة الصياغة', dialogueText, candidates: allAudits }
+  return { ok: false, verified: false, reason: 'استنفدت المرشحات وإعادة الصياغة', dialogueText, candidates: allAudits, needsSplit: true }
+}
+
+/* ═══ الإنتاج المرن: كاش الاستئناف + إنقاذ الوحدة المتجاوزة بتقسيمها وحدها ═══
+   فشل مقطع واحد لا يعزل الحلقة ولا يعيد بناء الحوار: نقسم الوحدة دلالياً (بلا حذف
+   أو إعادة ترتيب)، نعيد توليد أجزائها فقط عبر STT والحكم نفسيهما، والمقاطع المجتازة
+   سابقاً تُستأنف من الكاش (محلي أو R2 staging) بلا أي نداء Gemini/Azure جديد. */
+async function produceUtteranceResilient({ utterance, analysis, voice, lang, wavBase, context, cache }) {
+  const planFields = (plan) => {
+    const { text, delivery, ratePct, targetWordsPerMinute, pauseAfterMs, ending, internalBreakMs,
+      allowOverlap, overlapMs, musicBridgeAfter, speaker } = plan || {}
+    return { text, delivery, ratePct, targetWordsPerMinute, pauseAfterMs, ending, internalBreakMs,
+      allowOverlap: Boolean(allowOverlap), overlapMs: Number(overlapMs || 0),
+      musicBridgeAfter: Boolean(musicBridgeAfter), speaker }
+  }
+  const produceOne = async (u, a, wavPath, id) => {
+    const lookupKey = segmentKeyOf({ pipelineHash: cache.pipelineHash, voice, text: u.text })
+    const previous = RESUME ? cache.previous?.[lookupKey] : null
+    if (previous?.result?.ok && segmentCacheGet(cache.slug, lookupKey, wavPath)) {
+      cache.ledger[lookupKey] = { ...previous, reusedAt: new Date().toISOString() }
+      console.log(`    ↷ ${id}: أُعيد استخدام المقطع المجتاز من الكاش (صفر Gemini/Azure)`)
+      return { ok: true, fromCache: true, result: { ...previous.result, ok: true, verified: true },
+        plan: previous.plan || planFields(u), wav: wavPath }
+    }
+    const result = await produceUtterance(u, a, voice, lang, wavPath, { ...context, utteranceId: id })
+    if (!result.ok || (lang === 'ar' && !result.verified)) return { ok: false, result }
+    const saveKey = segmentKeyOf({ pipelineHash: cache.pipelineHash, voice, text: result.dialogueText || u.text })
+    segmentCachePut(cache.slug, saveKey, wavPath)
+    cache.ledger[saveKey] = { key: saveKey, savedAt: new Date().toISOString(), voice,
+      plan: planFields(result.deliveryPlan || u),
+      result: { ok: true, verified: true, dialogueText: result.dialogueText,
+        pronunciationText: result.pronunciationText, intendedText: result.intendedText,
+        risks: result.risks || [], heard: result.heard || null,
+        paceCalibration: result.paceCalibration || null, selectedCandidate: result.selectedCandidate || '' } }
+    return { ok: true, fromCache: false, result, plan: result.deliveryPlan || u, wav: wavPath }
+  }
+  const first = await produceOne(utterance, analysis, `${wavBase}.wav`, context.utteranceId)
+  if (first.ok) return { ok: true, parts: [first] }
+  const failure = first.result || {}
+  const text = String(utterance.text || '').replace(/\s+/g, ' ').trim()
+  const totalWords = wordsOf(text).length
+  const shouldSplit = failure.needsSplit || /أطول من 13ث|استنفدت المرشحات/.test(String(failure.reason || ''))
+  if (!shouldSplit || totalWords < 12)
+    return { ok: false, reason: failure.reason || 'غير موثقة', failure }
+  const measured = Number(failure.measuredSec) || 13
+  const piecesCount = Math.max(2, Math.ceil(measured / 10))
+  const targetWords = Math.max(8, Math.ceil(totalWords / piecesCount))
+  const pieces = splitTextSemantically(text, targetWords, Math.min(20, targetWords + 4))
+  if (pieces.length < 2) return { ok: false, reason: failure.reason || 'غير موثقة', failure }
+  console.log(`    ✂ ${context.utteranceId}: تقسيم دلالي إلى ${pieces.length} قطع وإعادة توليد الأجزاء فقط — ${String(failure.reason || '').slice(0, 80)}`)
+  analysis.sourceTextForCount = text
+  const parts = []
+  let offset = 0
+  for (let k = 0; k < pieces.length; k++) {
+    const piece = pieces[k]
+    const pieceWords = wordsOf(piece).length
+    const isLast = k === pieces.length - 1
+    const pieceUtterance = { ...utterance, text: piece,
+      allowOverlap: k === 0 ? Boolean(utterance.allowOverlap) : false,
+      overlapMs: k === 0 ? Number(utterance.overlapMs || 0) : 0,
+      musicBridgeAfter: isLast ? Boolean(utterance.musicBridgeAfter) : false,
+      pauseAfterMs: isLast ? utterance.pauseAfterMs : Math.min(180, Math.max(120, Number(utterance.pauseAfterMs) || 160)),
+      ending: isLast ? utterance.ending : 'neutral',
+      delivery: piece.includes('؟') ? 'question' : utterance.delivery }
+    const derived = derivePieceAnalysis(analysis, piece, offset, pieceWords)
+    const pieceAnalysis = { idx: analysis.idx, pronunciationText: derived.pronunciationText, risks: derived.risks }
+    const part = await produceOne(pieceUtterance, pieceAnalysis, `${wavBase}-p${k + 1}.wav`, `${context.utteranceId}.${k + 1}`)
+    if (!part.ok) return { ok: false, reason: `القطعة ${k + 1}/${pieces.length} بعد التقسيم: ${part.result?.reason || 'فشل'}`, failure: part.result }
+    parts.push(part)
+    offset += pieceWords
+  }
+  return { ok: true, parts, split: pieces.length }
 }
 
 /* ═══════════ تركيب Timeline بـ ffmpeg ═══════════ */
@@ -2351,6 +2575,7 @@ function auditPath(article, lang) {
 
 function writeAudit(article, lang, payload) {
   atomicWriteText(auditPath(article, lang), JSON.stringify(payload, null, 2))
+  stagedAuditPush(article.slug, lang, auditPath(article, lang))
 }
 
 const runInsert = memoryDb.prepare(`INSERT OR REPLACE INTO episode_runs
@@ -2398,7 +2623,21 @@ async function produce(article, lang) {
     models: { dialogue: DIALOGUE_MODEL, analysis: ANALYSIS_MODEL, judge: JUDGE_MODEL },
     voices,
     startedAt,
+    segments: {},
+    analyses: {},
   }
+  // استئناف حقيقي: نسحب آخر Audit من R2 staging (ينجو من موت الرانر)، فنستأنف
+  // الحوار المجتاز والمقاطع المجتازة، ولا نعيد إلا المقطع الفاشل.
+  if (RESUME && lang === 'ar') stagedAuditPull(article.slug, lang, auditPath(article, lang))
+  let previousAuditForResume = null
+  try { previousAuditForResume = existsSync(auditPath(article, lang)) ? JSON.parse(readFileSync(auditPath(article, lang), 'utf8')) : null }
+  catch { previousAuditForResume = null }
+  const resumeCompatible = RESUME && previousAuditForResume?.pipelineHash === ACTIVE_PIPELINE_HASH
+    && previousAuditForResume?.source?.sha256 === sourceHash
+  const previousSegmentsLedger = resumeCompatible && previousAuditForResume.segments ? previousAuditForResume.segments : {}
+  const previousAnalysesLedger = resumeCompatible && previousAuditForResume.analyses ? previousAuditForResume.analyses : {}
+  if (resumeCompatible && Object.keys(previousSegmentsLedger).length)
+    console.log(`  ↷ استئناف: ${Object.keys(previousSegmentsLedger).length} مقطعاً مجتازاً متاحاً من التشغيل السابق`)
   runInsert.run(runId, article.slug, sourceHash, ACTIVE_PIPELINE_HASH, 'qa_in_progress', '', startedAt, '')
   pendingMemory.length = 0
   const quarantine = (reason, extra = {}) => {
@@ -2458,7 +2697,7 @@ async function produce(article, lang) {
     const isStory = Boolean(script.storyIntro)
     auditRecord.dialogue = { mood: script.mood, storyIntro: isStory,
       utterances: utts.map((utterance, index) => {
-        const { text, _index, ...metadata } = utterance
+        const { text, _index, _splitMiddle, ...metadata } = utterance
         return { id: `u${String(index + 1).padStart(3, '0')}`, ...metadata,
           musicBridgeAfter: Boolean(utterance.musicBridgeAfter), dialogueText: text }
       }) }
@@ -2476,7 +2715,20 @@ async function produce(article, lang) {
     if (lang === 'ar' && LIGHT) {
       console.log('  ⚙ وضع مجاني: تخطّي تحليل النطق المدفوع — Azure TTS مباشرةً بقاموس الأسماء المحلي')
     } else if (lang === 'ar') {
-      analyses = await riskAnalyze(utts)
+      const analysisTextHash = (t) => createHash('sha256').update(String(t || '').replace(/\s+/g, ' ').trim()).digest('hex').slice(0, 16)
+      const missing = []
+      utts.forEach((u, i) => {
+        const hit = previousAnalysesLedger[analysisTextHash(u.text)]
+        if (hit?.pronunciationText) analyses[i] = { idx: i, pronunciationText: hit.pronunciationText, risks: hit.risks || [] }
+        else missing.push(i)
+      })
+      if (missing.length) {
+        const fresh = await riskAnalyze(missing.map((i) => utts[i]))
+        fresh.forEach((a, j) => { analyses[missing[j]] = { ...a, idx: missing[j] } })
+      }
+      if (missing.length < utts.length)
+        console.log(`  ↷ أُعيد استخدام تحليل النطق لـ${utts.length - missing.length}/${utts.length} مداخلة (بلا Gemini)`)
+      utts.forEach((u, i) => { auditRecord.analyses[analysisTextHash(u.text)] = { pronunciationText: analyses[i].pronunciationText, risks: analyses[i].risks || [] } })
       const totalRisks = analyses.reduce((count, analysis) => count + analysis.risks.length, 0)
       const high = analyses.reduce((count, analysis) => count + analysis.risks.filter((risk) => risk.riskLevel === 'high').length, 0)
       console.log(`  ✓ pronunciationText: ${totalRisks} كلمة مرصودة (${high} عالية الخطورة)`)
@@ -2514,32 +2766,57 @@ async function produce(article, lang) {
       const utterance = utts[index]
       const voiceInfo = utterance.speaker === 'A' ? voices.A : voices.B
       const utteranceId = `u${String(index + 1).padStart(3, '0')}`
-      const wav = resolve(TMP, `${utteranceId}.wav`)
-      const result = await produceUtterance(utterance, analyses[index], voiceInfo.azure, lang, wav,
-        { runId, utteranceId, sourceText: article.body })
-      if (!result.ok || (lang === 'ar' && !result.verified)) return quarantine(`المداخلة ${utteranceId}: ${result.reason || 'غير موثقة'}`)
-      const risks = result.risks || []
-      const deliveryPlan = result.deliveryPlan || utterance
+      const produced = await produceUtteranceResilient({
+        utterance, analysis: analyses[index], voice: voiceInfo.azure, lang,
+        wavBase: resolve(TMP, utteranceId),
+        context: { runId, utteranceId, sourceText: article.body },
+        cache: { slug: article.slug, pipelineHash: ACTIVE_PIPELINE_HASH,
+          previous: previousSegmentsLedger, ledger: auditRecord.segments },
+      })
+      if (!produced.ok) {
+        auditRecord.failure = { utteranceId, reason: String(produced.reason || '').slice(0, 400), at: new Date().toISOString() }
+        return quarantine(`المداخلة ${utteranceId}: ${produced.reason || 'غير موثقة'}`,
+          { failedUtterance: auditRecord.failure })
+      }
+      const parts = produced.parts
+      const primaryPlan = parts[0].plan || utterance
+      const lastPlan = parts.at(-1).plan || utterance
+      const joinedText = parts.map((part) => part.result.dialogueText || '').join(' ').replace(/\s+/g, ' ').trim()
+      const risks = parts.flatMap((part) => part.result.risks || [])
       const hasHighRisk = risks.some((risk) => risk.riskLevel === 'high')
       allRisks.push(...risks.map((risk) => ({ ...risk, utteranceId, voice: voiceInfo.azure })))
-      transcript.push({ speaker: voiceInfo.name, speakerKey: utterance.speaker, text: result.dialogueText || utterance.text,
-        delivery: deliveryPlan.delivery, ratePct: deliveryPlan.ratePct,
-        targetWordsPerMinute: deliveryPlan.targetWordsPerMinute,
-        pauseAfterMs: deliveryPlan.pauseAfterMs, ending: deliveryPlan.ending,
-        internalBreakMs: deliveryPlan.internalBreakMs,
-        allowOverlap: Boolean(deliveryPlan.allowOverlap), overlapMs: Number(deliveryPlan.overlapMs || 0),
-        musicBridgeAfter: Boolean(deliveryPlan.musicBridgeAfter),
-        paceCalibration: result.paceCalibration || null })
-      pronunciation.push({ id: utteranceId, speaker: utterance.speaker, voice: voiceInfo.azure,
-        pronunciationText: result.pronunciationText || utterance.text, intendedText: result.intendedText || result.pronunciationText || utterance.text, risks,
-        selectedCandidateId: result.selectedCandidate, candidates: result.candidates, stt: result.heard })
-      const pauseProfile = pacingOf(deliveryPlan.delivery)
-      const pauseAfterMs = Math.min(pauseProfile.pauseMs[1], Math.max(pauseProfile.pauseMs[0],
-        Number(deliveryPlan.pauseAfterMs || stableBetween(deliveryPlan.text, index + 71, ...pauseProfile.pauseMs))))
-      const overlapMs = !hasHighRisk && !previousHasHighRisk && deliveryPlan.allowOverlap
-        ? Math.min(150, Math.max(50, Number(deliveryPlan.overlapMs || 90))) : 0
-      segments.push({ file: wav, pauseAfterMs, overlapMs, hasHighRisk })
+      transcript.push({ speaker: voiceInfo.name, speakerKey: utterance.speaker, text: joinedText || utterance.text,
+        delivery: primaryPlan.delivery, ratePct: primaryPlan.ratePct,
+        targetWordsPerMinute: primaryPlan.targetWordsPerMinute,
+        pauseAfterMs: lastPlan.pauseAfterMs, ending: lastPlan.ending,
+        internalBreakMs: primaryPlan.internalBreakMs,
+        allowOverlap: Boolean(primaryPlan.allowOverlap), overlapMs: Number(primaryPlan.overlapMs || 0),
+        musicBridgeAfter: Boolean(lastPlan.musicBridgeAfter),
+        splitParts: parts.length > 1 ? parts.length : undefined,
+        paceCalibration: parts.at(-1).result.paceCalibration || null })
+      parts.forEach((part, k) => {
+        pronunciation.push({ id: utteranceId, part: parts.length > 1 ? k + 1 : undefined,
+          speaker: utterance.speaker, voice: voiceInfo.azure,
+          pronunciationText: part.result.pronunciationText || part.plan?.text || utterance.text,
+          intendedText: part.result.intendedText || part.result.pronunciationText || utterance.text,
+          risks: part.result.risks || [], fromCache: Boolean(part.fromCache),
+          selectedCandidateId: part.result.selectedCandidate, candidates: part.result.candidates, stt: part.result.heard })
+      })
+      parts.forEach((part, k) => {
+        const isLast = k === parts.length - 1
+        const plan = part.plan || utterance
+        const pauseProfile = pacingOf(plan.delivery)
+        const pauseAfterMs = isLast
+          ? Math.min(pauseProfile.pauseMs[1], Math.max(pauseProfile.pauseMs[0],
+            Number(plan.pauseAfterMs || stableBetween(plan.text || joinedText, index + 71, ...pauseProfile.pauseMs))))
+          : Math.min(200, Math.max(120, Number(plan.pauseAfterMs) || 160))
+        const overlapMs = k === 0 && !hasHighRisk && !previousHasHighRisk && plan.allowOverlap
+          ? Math.min(150, Math.max(50, Number(plan.overlapMs || 90))) : 0
+        segments.push({ file: part.wav, pauseAfterMs, overlapMs, hasHighRisk })
+      })
       previousHasHighRisk = hasHighRisk
+      auditRecord.progress = { done: index + 1, total: utts.length, at: new Date().toISOString() }
+      if (RESUME && lang === 'ar') writeAudit(article, lang, auditRecord)
       process.stdout.write(`  🎙 ${index + 1}/${utts.length} (TTS→STT→Judge)\r`)
     }
     console.log('')
@@ -2924,7 +3201,55 @@ if (SELF_TEST) {
       delivery: 'question' }, 0, 'ar', 'ar-AE-FatimaNeural').rate,
   'نورة تحتاج إبطاءً أدائياً أكبر من فاطمة وفق الاختبار السمعي')
   assert(selectMusicBridgeIndexes(normalizedSample.utterances).length <= 1, 'العينة القصيرة لا تحتمل أكثر من جسر موسيقي واحد')
-  console.log('✓ اختبارات بوابة البودكاست العربي: 20/20')
+
+  /* ═══ اختبارات الإصلاح الجذري: التقسيم المدّي-الدلالي + الاستئناف (fixture u001 الفاشلة فعلياً) ═══ */
+  const U001 = 'تخيل تلك اللحظة التي ترتفع فيها الزغاريد وتنهال التهاني، ويبتسم الطالب كما يتوقع منه الجميع؛ لكن شيئا في داخله لا يتحرك، ولا يشعر بأي فرح حقيقي.'
+  const normalizeSpaces = (t) => String(t).replace(/\s+/g, ' ').trim()
+  // ١) التطبيع يقسم u001 قبل TTS (كانت 25 كلمة تأملية → 13.1ث → عزل الحلقة)
+  const u001Split = normalizeMechanics({ utterances: [{ speaker: 'A', delivery: 'reflection', text: U001,
+    targetWordsPerMinute: 132, pauseAfterMs: 620, ending: 'final', musicBridgeAfter: true, internalBreakMs: 150 }] })
+  assert(u001Split.utterances.length >= 2, 'u001 يجب أن تُقسَّم قبل Azure (مدة متوقعة > 11.5ث)')
+  // نعزل قطع النص الأصلي عن الردود القصيرة التي يحقنها المحرك لإيقاع الحوار (سلوك مقصود آخر):
+  // القطع هي أطول بادئة تُعيد تركيب U001 حرفياً.
+  const originalNormalized = normalizeSpaces(U001)
+  const u001Pieces = []
+  for (const u of u001Split.utterances) {
+    const candidate = normalizeSpaces([...u001Pieces.map((x) => x.text), u.text].join(' '))
+    if (originalNormalized.startsWith(candidate)) u001Pieces.push(u)
+    else break
+  }
+  // ٢) لا كلمة تضيع والترتيب محفوظ: إعادة الدمج تعطي النص الأصلي بعد تطبيع المسافات فقط
+  assert.equal(normalizeSpaces(u001Pieces.map((u) => u.text).join(' ')), originalNormalized,
+    'إعادة دمج القطع يجب أن تعيد النص الأصلي حرفياً')
+  // ٣) كل وحدة تحت الحد المتوقع، والمتحدث لا يتغير
+  assert(u001Pieces.length >= 2, 'قطع النص الأصلي نفسها ≥ 2')
+  assert(u001Pieces.every((u) => u.text.split(/\s+/).length <= 24), 'كل قطعة ≤ حد الكلمات الديناميكي')
+  assert(u001Pieces.every((u) => u.speaker === 'A'), 'المتحدث لا يتغير بين القطع')
+  // ٤) الوقفة الأصلية على القطعة الأخيرة فقط، والوسطى وقفة داخلية قصيرة، والموسيقى على الأخيرة فقط
+  const middlePieces = u001Pieces.slice(0, -1)
+  const lastPiece = u001Pieces.at(-1)
+  assert(middlePieces.every((u) => Number(u.pauseAfterMs) <= 200), 'القطع الوسطى وقفتها قصيرة (≤200ms)')
+  assert(middlePieces.every((u) => !u.musicBridgeAfter), 'لا تنتقل الموسيقى إلى القطعة الخطأ')
+  assert(Boolean(lastPiece.musicBridgeAfter), 'الجسر الموسيقي يبقى على القطعة الأخيرة')
+  // ٥) التقسيم الدلالي المشترك: حارس الرقم — لا قطع بعد كلمة رقمية
+  const numericPieces = splitTextSemantically('حصل الطالب على 95 في المئة من مجموع الدرجات النهائية في العام الماضي وتفوق على أقرانه في كل المواد الدراسية بلا استثناء يذكر أبداً', 8, 10)
+  assert(numericPieces.every((piece) => !/[0-9]$/.test(piece.trim().split(/\s+/).at(-1) || '')), 'لا تقطع بين الرقم ووحدته')
+  assert.equal(normalizeSpaces(numericPieces.join(' ')).length > 0, true, 'التقسيم الرقمي لا يفقد نصاً')
+  // ٦) مفتاح كاش الاستئناف مستقر وحساس للنص والصوت
+  const k1 = segmentKeyOf({ pipelineHash: 'ph', voice: 'v1', text: 'نص ثابت' })
+  assert.equal(k1, segmentKeyOf({ pipelineHash: 'ph', voice: 'v1', text: ' نص  ثابت ' }), 'المفتاح يطبع المسافات')
+  assert.notEqual(k1, segmentKeyOf({ pipelineHash: 'ph', voice: 'v2', text: 'نص ثابت' }), 'تغيير الصوت يغير المفتاح')
+  assert.notEqual(k1, segmentKeyOf({ pipelineHash: 'ph2', voice: 'v1', text: 'نص ثابت' }), 'تغيير المحرك يغير المفتاح')
+  // ٧) اشتقاق تحليل القطعة ينقل التشكيل كلمةً بكلمة ويرشح الكلمات الخطرة بلا Gemini
+  const derivedPiece = derivePieceAnalysis({
+    pronunciationText: 'تَخَيَّلْ تِلْكَ اللَّحْظَة الَّتِي تَرْتَفِعُ فِيهَا الزَّغَارِيد',
+    sourceTextForCount: 'تخيل تلك اللحظة التي ترتفع فيها الزغاريد',
+    risks: [{ word: 'الزغاريد', riskLevel: 'high' }, { word: 'التهاني', riskLevel: 'high' }],
+  }, 'ترتفع فيها الزغاريد', 4, 3)
+  assert(derivedPiece.pronunciationText.includes('تَرْتَفِعُ'), 'تشكيل القطعة منقول من تحليل الوحدة الكاملة')
+  assert.equal(derivedPiece.risks.length, 1, 'ترشيح الكلمات الخطرة بالانتماء للقطعة فقط')
+  assert.equal(derivedPiece.risks[0].word, 'الزغاريد', 'الكلمة الخطرة الصحيحة بقيت مع قطعتها')
+  console.log('✓ اختبارات بوابة البودكاست العربي: 27/27')
   process.exit(0)
 }
 

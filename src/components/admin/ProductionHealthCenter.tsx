@@ -13,6 +13,9 @@ type Episode = {
   slug: string
   title: string
   status?: string
+  statusLabel?: string
+  failure?: { utteranceId?: string; reason?: string } | null
+  progress?: { done: number; total: number } | null
   hasTranscript?: boolean
   audio?: string
   quality?: { score?: number; pass?: boolean; pronunciation?: string; issues?: string[] }
@@ -31,6 +34,9 @@ const generatedEpisodes = (podcastAdmin as { episodes?: Episode[] }).episodes ||
 const stageFromEpisode = (episode?: Episode): Stage => {
   if (!episode) return 'draft'
   if (episode.status === 'published') return 'published'
+  if (episode.status === 'passed') return 'passed'
+  if (episode.status === 'failed') return 'needs_review'
+  if (episode.status === 'generating') return 'generating'
   if (episode.quality?.pass) return 'passed'
   if (episode.status === 'under_review' || episode.quality?.issues?.length) return 'needs_review'
   if (episode.audio && !episode.hasTranscript) return 'pronunciation'
@@ -161,7 +167,9 @@ export function ProductionHealthCenter({
                 <div className="min-w-0 flex-1">
                   <p className="text-[.7rem] font-semibold text-accent">{stages.find((stage) => stage.key === status)?.label}</p>
                   <h3 className="mt-1 break-words font-display text-[1rem] font-semibold leading-[1.55] text-ink">{article.title}</h3>
-                  <p className="mt-1 text-[.74rem] text-soft">{episode?.quality?.pronunciation || (draftSlugs.has(article.slug) ? 'توجد مسودة حوار محفوظة' : 'لم يبدأ إنتاج الحلقة بعد')}</p>
+                  <p className="mt-1 text-[.74rem] text-soft">{episode?.failure?.reason
+                    ? `${episode.statusLabel || 'فشل'}: ${episode.failure.reason}`
+                    : episode?.statusLabel || episode?.quality?.pronunciation || (draftSlugs.has(article.slug) ? 'توجد مسودة حوار محفوظة' : 'لم يبدأ إنتاج الحلقة بعد')}</p>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
                   <button disabled={busy === article.slug} onClick={() => void setStatus(article.slug, 'published')} className="rounded-full bg-accent px-4 py-2 text-[.74rem] font-semibold text-white disabled:opacity-50">اعتماد الحلقة</button>

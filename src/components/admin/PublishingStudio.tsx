@@ -8,7 +8,7 @@ import { useAdminAuth } from '../../lib/admin-auth'
 import { fetchPublishedExtras, getDb } from '../../lib/firebase'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
-import { buildSocialVisuals, detectVisualTopic, downloadSocialPng, renderSocialPng, visualTopicLabel, type SocialVisualTemplate, type VisualTopic } from '../../lib/social-templates'
+import { buildSocialVisuals, compositionNameOf, detectVisualTopic, downloadSocialPng, renderSocialPng, visualTopicLabel, type SocialVisualTemplate, type VisualTopic } from '../../lib/social-templates'
 
 const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
@@ -1122,7 +1122,7 @@ function VisualTemplateCard({ template }: { template: SocialVisualTemplate }) {
           : <div className="flex h-full w-full items-center justify-center text-[.74rem] text-soft">أرسم القالب…</div>}
       </div>
       <div className="flex items-center justify-between gap-3 p-3">
-        <span className="text-[.72rem] text-soft">{template.format}</span>
+        <span className="text-[.72rem] text-soft"><span className="font-semibold text-accent">{compositionNameOf(template.layout)}</span> · {template.format}</span>
         <button type="button" onClick={() => void downloadSocialPng(template)} className="rounded-full border border-hair px-3 py-1.5 text-[.72rem] font-semibold text-accent transition-colors hover:border-accent">تنزيل PNG</button>
       </div>
     </div>

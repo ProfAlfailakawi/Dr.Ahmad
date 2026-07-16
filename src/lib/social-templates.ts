@@ -293,7 +293,11 @@ async function loadLogo() {
   const image = new Image()
   image.decoding = 'async'
   image.src = '/logo.png'
-  await image.decode()
+  // مهلة صارمة: الشعار زينة لا يملك سلطة تعليق رسم القالب كله إن تلكأ فك ترميزه
+  await Promise.race([
+    image.decode(),
+    new Promise((_, reject) => window.setTimeout(() => reject(new Error('logo-timeout')), 2500)),
+  ])
   return image
 }
 
@@ -333,6 +337,136 @@ const setLetterSpacing = (ctx: CanvasRenderingContext2D, px: number) => {
   try { (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${px}px` } catch { /* متصفح أقدم */ }
 }
 
+/* أدوات الزخرفة الإجرائية — كلها حتمية (بذرة نصية) فتبدو كل بطاقة مصنوعة يدوياً */
+
+const paperGrain = (ctx: CanvasRenderingContext2D, W: number, H: number, seed: number, color: string) => {
+  ctx.save(); ctx.fillStyle = color
+  for (let index = 0; index < 420; index += 1) {
+    const gx = ((seed * (index + 17)) % 1009) / 1009 * W
+    const gy = ((seed * (index + 53)) % 907) / 907 * H
+    ctx.globalAlpha = 0.02 + ((seed * (index + 5)) % 17) / 400
+    ctx.fillRect(gx, gy, 1.4, 1.4)
+  }
+  ctx.restore()
+}
+
+const girihStar = (ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number, color: string, widthPx: number, alpha: number) => {
+  ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = widthPx; ctx.globalAlpha = alpha
+  for (const rot of [0, Math.PI / 4]) {
+    ctx.beginPath()
+    for (let corner = 0; corner < 4; corner += 1) {
+      const angle = rot + corner * Math.PI / 2
+      const px = cx + Math.cos(angle) * radius
+      const py = cy + Math.sin(angle) * radius
+      corner ? ctx.lineTo(px, py) : ctx.moveTo(px, py)
+    }
+    ctx.closePath(); ctx.stroke()
+  }
+  ctx.restore()
+}
+
+const latticeDots = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, step: number, color: string, alpha: number) => {
+  ctx.save(); ctx.fillStyle = color; ctx.globalAlpha = alpha
+  for (let row = 0; row * step < h; row += 1)
+    for (let col = 0; col * step < w; col += 1) {
+      const offset = row % 2 ? step / 2 : 0
+      const dx = x + col * step + offset
+      if (dx > x + w) continue
+      ctx.beginPath(); ctx.arc(dx, y + row * step, step * 0.14, 0, Math.PI * 2); ctx.fill()
+    }
+  ctx.restore()
+}
+
+const astrolabeRing = (ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number, color: string, S: number) => {
+  ctx.save(); ctx.strokeStyle = color
+  ctx.globalAlpha = 0.6; ctx.lineWidth = 1.6 * S
+  ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke()
+  ctx.globalAlpha = 0.25; ctx.lineWidth = 1 * S
+  ctx.beginPath(); ctx.arc(cx, cy, radius * 0.88, 0, Math.PI * 2); ctx.stroke()
+  ctx.globalAlpha = 0.5
+  for (let tick = 0; tick < 72; tick += 1) {
+    const angle = tick * Math.PI / 36
+    const long = tick % 6 === 0
+    const r1 = radius - (long ? 14 : 7) * S
+    ctx.lineWidth = (long ? 1.6 : 0.9) * S
+    ctx.beginPath()
+    ctx.moveTo(cx + Math.cos(angle) * r1, cy + Math.sin(angle) * r1)
+    ctx.lineTo(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius)
+    ctx.stroke()
+  }
+  ctx.restore()
+}
+
+const glowingLamp = (ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, gold: string) => {
+  ctx.save()
+  const halo = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 3.2)
+  halo.addColorStop(0, 'rgba(201,169,108,.30)'); halo.addColorStop(1, 'rgba(201,169,108,0)')
+  ctx.fillStyle = halo
+  ctx.beginPath(); ctx.arc(cx, cy, size * 3.2, 0, Math.PI * 2); ctx.fill()
+  ctx.fillStyle = gold
+  ctx.beginPath(); ctx.moveTo(cx, cy - size * 1.5); ctx.lineTo(cx + size * 0.8, cy - size * 0.3)
+  ctx.quadraticCurveTo(cx + size, cy + size * 0.9, cx, cy + size * 1.4)
+  ctx.quadraticCurveTo(cx - size, cy + size * 0.9, cx - size * 0.8, cy - size * 0.3)
+  ctx.closePath(); ctx.fill()
+  ctx.beginPath(); ctx.arc(cx, cy + size * 1.75, size * 0.22, 0, Math.PI * 2); ctx.fill()
+  ctx.restore()
+}
+
+const sealStamp = (ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number, color: string, S: number, monogram = 'أ') => {
+  ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color
+  ctx.globalAlpha = 0.9; ctx.lineWidth = 1.6 * S
+  ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke()
+  ctx.globalAlpha = 0.55; ctx.lineWidth = 0.9 * S
+  ctx.beginPath(); ctx.arc(cx, cy, radius * 0.78, 0, Math.PI * 2); ctx.stroke()
+  for (let point = 0; point < 8; point += 1) {
+    const angle = point * Math.PI / 4
+    const px = cx + Math.cos(angle) * radius * 0.89
+    const py = cy + Math.sin(angle) * radius * 0.89
+    ctx.save(); ctx.translate(px, py); ctx.rotate(angle)
+    ctx.globalAlpha = 0.8
+    ctx.fillRect(-radius * 0.045, -radius * 0.045, radius * 0.09, radius * 0.09)
+    ctx.restore()
+  }
+  ctx.globalAlpha = 0.95
+  ctx.font = `700 ${Math.round(radius * 0.95)}px "El Messiri", serif`
+  ctx.textAlign = 'center'
+  ctx.fillText(monogram, cx, cy + radius * 0.34)
+  ctx.restore()
+}
+
+const penFlourish = (ctx: CanvasRenderingContext2D, xRight: number, y: number, width: number, seed: number, color: string, S: number) => {
+  const sway = (index: number) => (((seed * (index + 3)) % 41) - 20) / 20
+  ctx.save(); ctx.strokeStyle = color; ctx.lineCap = 'round'
+  for (const [lw, alpha, dy] of [[3.6, 0.95, 0], [6.2, 0.16, 1.5], [9.5, 0.07, 3]] as const) {
+    ctx.lineWidth = lw * S; ctx.globalAlpha = alpha
+    ctx.beginPath()
+    ctx.moveTo(xRight, y + dy * S)
+    ctx.bezierCurveTo(
+      xRight - width * 0.3, y + (26 + sway(1) * 12) * S + dy * S,
+      xRight - width * 0.48, y - (22 + sway(2) * 10) * S + dy * S,
+      xRight - width * 0.68, y + (14 + sway(3) * 8) * S + dy * S)
+    ctx.bezierCurveTo(
+      xRight - width * 0.82, y + (30 + sway(4) * 8) * S + dy * S,
+      xRight - width * 0.9, y - (6 + sway(5) * 6) * S + dy * S,
+      xRight - width, y + 10 * S + dy * S)
+    ctx.stroke()
+  }
+  ctx.globalAlpha = 1; ctx.fillStyle = color
+  ctx.beginPath(); ctx.arc(xRight - width - 8 * S, y + 10 * S, 4.5 * S, 0, Math.PI * 2); ctx.fill()
+  ctx.restore()
+}
+
+export const compositionLabel: Record<Composition, string> = {
+  midad: 'المداد · مخطوطة مذهّبة',
+  layl: 'الليل · أسطرلاب',
+  jarida: 'الجريدة · صفحة رأي',
+  sharit: 'الشريط · سينمائي',
+  mishkat: 'المشكاة · قوس ومصباح',
+  tawqee: 'التوقيع · أتيلييه',
+}
+
+export const compositionNameOf = (layout: SocialVisualLayout) => compositionLabel[compositionOf(layout)]
+
 export async function renderSocialPng(template: SocialVisualTemplate) {
   await document.fonts?.ready
   const canvas = document.createElement('canvas')
@@ -347,6 +481,7 @@ export async function renderSocialPng(template: SocialVisualTemplate) {
   const isStory = template.platform === 'story'
   const comp = compositionOf(template.layout)
   const ink = INKS[comp]
+  const seed = hashSeed(template.id + template.title)
   const pad = Math.round(W * 0.09)
   const display = (weight: number, size: number) => `${weight} ${Math.round(size)}px "El Messiri", serif`
   const sans = (weight: number, size: number) => `${weight} ${Math.round(size)}px Tajawal, sans-serif`
@@ -395,123 +530,173 @@ export async function renderSocialPng(template: SocialVisualTemplate) {
   ctx.direction = 'rtl'
   ctx.textBaseline = 'alphabetic'
 
-  /* ═══ «المداد» — مخطوطة بإطار مذهّب وحرف استهلالي ظلي ═══ */
+  /* ═══ «المداد» — مخطوطة منوّرة: إطاران، نجوم غرزية، حرف استهلالي مزدوج الظل، ختم ═══ */
   if (comp === 'midad') {
-    ctx.save(); ctx.globalAlpha = 0.16; ctx.strokeStyle = ink.line; ctx.lineWidth = 1
-    for (let y = pad * 1.4; y < H - pad * 1.4; y += 30 * S) { ctx.beginPath(); ctx.moveTo(pad * 1.1, y); ctx.lineTo(W - pad * 1.1, y); ctx.stroke() }
+    paperGrain(ctx, W, H, seed, ink.ink)
+    ctx.save(); ctx.globalAlpha = 0.13; ctx.strokeStyle = ink.line; ctx.lineWidth = 1
+    for (let y = pad * 1.5; y < H - pad * 1.5; y += 30 * S) { ctx.beginPath(); ctx.moveTo(pad * 1.15, y); ctx.lineTo(W - pad * 1.15, y); ctx.stroke() }
     ctx.restore()
-    ctx.strokeStyle = ink.ink; ctx.globalAlpha = 0.75; ctx.lineWidth = 2.4 * S
-    ctx.strokeRect(pad * 0.52, pad * 0.52, W - pad * 1.04, H - pad * 1.04)
+    ctx.strokeStyle = ink.ink; ctx.globalAlpha = 0.8; ctx.lineWidth = 2.6 * S
+    ctx.strokeRect(pad * 0.5, pad * 0.5, W - pad, H - pad)
     ctx.globalAlpha = 1; ctx.strokeStyle = ink.gold; ctx.lineWidth = 1.1 * S
     ctx.strokeRect(pad * 0.72, pad * 0.72, W - pad * 1.44, H - pad * 1.44)
-    for (const [cx, cy] of [[pad * 0.72, pad * 0.72], [W - pad * 0.72, pad * 0.72], [pad * 0.72, H - pad * 0.72], [W - pad * 0.72, H - pad * 0.72]] as const)
-      diamond(cx, cy, 9 * S, ink.gold)
-    kickerLine(`✦  ${template.kicker}  ✦`, W / 2, pad * 1.62, ink.gold, W * 0.026, 5 * S, 'center')
+    for (const [cx, cy] of [[pad * 0.72, pad * 0.72], [W - pad * 0.72, pad * 0.72], [pad * 0.72, H - pad * 0.72], [W - pad * 0.72, H - pad * 0.72]] as const) {
+      girihStar(ctx, cx, cy, 13 * S, ink.gold, 1.1 * S, 0.9)
+      diamond(cx, cy, 4 * S, ink.gold)
+    }
+    girihStar(ctx, W / 2, pad * 1.28, 15 * S, ink.gold, 1.2 * S, 0.95)
+    diamond(W / 2, pad * 1.28, 5 * S, ink.gold)
+    kickerLine(`✦  ${template.kicker}  ✦`, W / 2, pad * 1.98, ink.gold, W * 0.025, 5 * S, 'center')
     const initial = (template.title.trim().match(/[ء-ي]/) || ['و'])[0]
-    ctx.save(); ctx.globalAlpha = 0.06; ctx.fillStyle = ink.accent; ctx.font = display(700, W * 0.56); ctx.textAlign = 'center'
-    ctx.fillText(initial, W / 2, H * (isStory ? 0.5 : 0.58)); ctx.restore()
+    ctx.save(); ctx.textAlign = 'center'; ctx.font = display(700, W * 0.6)
+    ctx.globalAlpha = 0.045; ctx.fillStyle = ink.gold
+    ctx.fillText(initial, W / 2 + 8 * S, H * (isStory ? 0.52 : 0.6) + 8 * S)
+    ctx.globalAlpha = 0.065; ctx.fillStyle = ink.accent
+    ctx.fillText(initial, W / 2, H * (isStory ? 0.52 : 0.6))
+    ctx.restore()
     const titleMaxW = W - pad * 2.7
     const titleSize = fittedTitleSize(ctx, template.title, titleMaxW, isStory ? 7 : 5, W * (isStory ? 0.082 : 0.07), W * 0.044)
     ctx.fillStyle = ink.ink; ctx.font = display(700, titleSize); ctx.textAlign = 'center'
-    const afterTitle = drawWrapped(ctx, template.title, W / 2, H * (isStory ? 0.3 : 0.31), titleMaxW, Math.round(titleSize * 1.48), isStory ? 7 : 5)
-    hairline(W / 2 - 80 * S, afterTitle + 8 * S, W / 2 - 14 * S, afterTitle + 8 * S, ink.gold, 1.4 * S)
-    hairline(W / 2 + 14 * S, afterTitle + 8 * S, W / 2 + 80 * S, afterTitle + 8 * S, ink.gold, 1.4 * S)
-    diamond(W / 2, afterTitle + 8 * S, 6 * S, ink.gold)
+    const afterTitle = drawWrapped(ctx, template.title, W / 2, H * (isStory ? 0.3 : 0.32), titleMaxW, Math.round(titleSize * 1.48), isStory ? 7 : 5)
+    hairline(W / 2 - 110 * S, afterTitle + 10 * S, W / 2 - 20 * S, afterTitle + 10 * S, ink.gold, 1.3 * S)
+    hairline(W / 2 + 20 * S, afterTitle + 10 * S, W / 2 + 110 * S, afterTitle + 10 * S, ink.gold, 1.3 * S)
+    girihStar(ctx, W / 2, afterTitle + 10 * S, 9 * S, ink.gold, 1 * S, 0.95)
     if (template.body) {
-      ctx.fillStyle = ink.soft; ctx.font = sans(400, W * 0.03); ctx.textAlign = 'center'
-      drawWrapped(ctx, template.body, W / 2, afterTitle + 78 * S, W - pad * 3, Math.round(W * 0.03 * 1.8), isStory ? 8 : 5)
+      ctx.fillStyle = ink.soft; ctx.font = sans(400, W * 0.029); ctx.textAlign = 'center'
+      drawWrapped(ctx, template.body, W / 2, afterTitle + 84 * S, W - pad * 3.1, Math.round(W * 0.029 * 1.85), isStory ? 8 : 5)
     }
-    sourceBadge(true, H - pad * 2.15)
-    await drawLogo(-1, H - pad * 1.28, false)
-    ctx.fillStyle = ink.accent; ctx.font = sans(600, W * 0.022); ctx.textAlign = 'center'
-    ctx.fillText(template.footer || 'dr-alfailakawi.com', W / 2, H - pad * 0.95)
+    sourceBadge(true, H - pad * 2.3)
+    sealStamp(ctx, W / 2, H - pad * 1.62, 34 * S, ink.gold, S)
+    await drawLogo(pad * 1.05, H - pad * 0.92, false)
+    ctx.fillStyle = ink.accent; ctx.font = sans(600, W * 0.021); ctx.textAlign = 'center'
+    ctx.fillText(template.footer || 'dr-alfailakawi.com', W / 2, H - pad * 0.98)
   }
 
-  /* ═══ «الليل» — سماء داكنة بهالة ذهبية ونجوم حتمية ═══ */
+  /* ═══ «الليل» — أسطرلاب: حلقة مدرّجة، نجوم متوهجة، هلال ذهبي ═══ */
   if (comp === 'layl') {
-    const glow = ctx.createRadialGradient(W / 2, H * 0.44, 0, W / 2, H * 0.44, W * 0.78)
-    glow.addColorStop(0, '#171C23'); glow.addColorStop(1, '#0C0F13')
+    const glow = ctx.createRadialGradient(W / 2, H * 0.42, 0, W / 2, H * 0.42, W * 0.85)
+    glow.addColorStop(0, '#182029'); glow.addColorStop(1, '#0A0D11')
     ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H)
-    const seed = hashSeed(template.id + template.title)
     ctx.save()
-    for (let index = 0; index < 90; index += 1) {
+    for (let index = 0; index < 110; index += 1) {
       const sx = ((seed * (index + 13)) % 997) / 997 * W
       const sy = ((seed * (index + 71)) % 883) / 883 * H
-      ctx.globalAlpha = 0.05 + ((seed * (index + 7)) % 23) / 100
+      ctx.globalAlpha = 0.05 + ((seed * (index + 7)) % 23) / 110
       ctx.fillStyle = index % 5 === 0 ? ink.gold : '#DCE2E8'
-      ctx.beginPath(); ctx.arc(sx, sy, (index % 3 === 0 ? 2 : 1.2) * S, 0, Math.PI * 2); ctx.fill()
+      ctx.beginPath(); ctx.arc(sx, sy, (index % 7 === 0 ? 2.1 : 1.2) * S, 0, Math.PI * 2); ctx.fill()
+    }
+    for (let bright = 0; bright < 4; bright += 1) {
+      const bx = ((seed * (bright + 29)) % 887) / 887 * W
+      const by = ((seed * (bright + 101)) % 641) / 641 * H * 0.55
+      const starGlow = ctx.createRadialGradient(bx, by, 0, bx, by, 26 * S)
+      starGlow.addColorStop(0, 'rgba(220,226,232,.5)'); starGlow.addColorStop(1, 'rgba(220,226,232,0)')
+      ctx.globalAlpha = 0.8; ctx.fillStyle = starGlow
+      ctx.beginPath(); ctx.arc(bx, by, 26 * S, 0, Math.PI * 2); ctx.fill()
     }
     ctx.restore()
-    ctx.save(); ctx.strokeStyle = ink.gold; ctx.globalAlpha = 0.55; ctx.lineWidth = 1.6 * S
-    ctx.beginPath(); ctx.arc(W / 2, H * 0.44, W * 0.335, 0, Math.PI * 2); ctx.stroke()
-    ctx.globalAlpha = 0.16
-    ctx.beginPath(); ctx.arc(W / 2, H * 0.44, W * 0.405, 0, Math.PI * 2); ctx.stroke()
+    const ringY = H * 0.43
+    astrolabeRing(ctx, W / 2, ringY, W * 0.36, ink.gold, S)
+    ctx.save(); ctx.fillStyle = ink.gold
+    ctx.globalAlpha = 0.95
+    ctx.beginPath(); ctx.arc(W / 2 + W * 0.255, ringY - W * 0.255, 17 * S, 0, Math.PI * 2); ctx.fill()
+    ctx.globalCompositeOperation = 'destination-out'
+    ctx.beginPath(); ctx.arc(W / 2 + W * 0.255 + 7 * S, ringY - W * 0.255 - 5 * S, 15 * S, 0, Math.PI * 2); ctx.fill()
     ctx.restore()
-    diamond(W / 2, H * 0.44 - W * 0.335, 7 * S, ink.gold)
-    kickerLine(template.kicker, W / 2, H * (isStory ? 0.14 : 0.155), ink.gold, W * 0.025, 6 * S, 'center')
-    const titleMaxW = W * 0.62
-    const titleSize = fittedTitleSize(ctx, template.title, titleMaxW, isStory ? 7 : 6, W * (isStory ? 0.075 : 0.064), W * 0.04)
+    diamond(W / 2, ringY - W * 0.36, 7 * S, ink.gold)
+    kickerLine(template.kicker, W / 2, ringY - W * 0.36 - 34 * S, ink.gold, W * 0.025, 6 * S, 'center')
+    const titleMaxW = W * 0.58
+    const titleSize = fittedTitleSize(ctx, template.title, titleMaxW, isStory ? 7 : 6, W * (isStory ? 0.073 : 0.062), W * 0.038)
     ctx.font = display(700, titleSize)
     const titleLines = wrapLines(ctx, template.title, titleMaxW).slice(0, isStory ? 7 : 6).length
     const lineHeight = Math.round(titleSize * 1.5)
     ctx.fillStyle = ink.ink; ctx.textAlign = 'center'
-    const titleStart = H * 0.44 - ((titleLines - 1) * lineHeight) / 2 + titleSize * 0.35
-    const afterTitle = drawWrapped(ctx, template.title, W / 2, titleStart, titleMaxW, lineHeight, isStory ? 7 : 6)
+    const titleStart = ringY - ((titleLines - 1) * lineHeight) / 2 + titleSize * 0.35
+    drawWrapped(ctx, template.title, W / 2, titleStart, titleMaxW, lineHeight, isStory ? 7 : 6)
     if (template.body) {
-      ctx.fillStyle = ink.soft; ctx.font = sans(300, W * 0.028); ctx.textAlign = 'center'
-      drawWrapped(ctx, template.body, W / 2, Math.max(afterTitle + 60 * S, H * 0.44 + W * 0.405 + 54 * S), W - pad * 3, Math.round(W * 0.028 * 1.85), isStory ? 7 : 4)
+      ctx.fillStyle = ink.soft; ctx.font = sans(300, W * 0.027); ctx.textAlign = 'center'
+      drawWrapped(ctx, template.body, W / 2, ringY + W * 0.36 + 64 * S, W - pad * 3, Math.round(W * 0.027 * 1.9), isStory ? 7 : 3)
     }
-    sourceBadge(true, H - pad * 2.05)
-    hairline(W / 2 - 60 * S, H - pad * 1.62, W / 2 + 60 * S, H - pad * 1.62, ink.gold, 1.2 * S, 0.8)
-    await drawLogo(-1, H - pad * 1.62 - 14 * S, true)
+    sourceBadge(true, H - pad * 2.1)
+    hairline(W / 2 - 70 * S, H - pad * 1.66, W / 2 + 70 * S, H - pad * 1.66, ink.gold, 1.1 * S, 0.7)
+    await drawLogo(-1, H - pad * 1.66 - 12 * S, true)
     ctx.fillStyle = ink.soft; ctx.font = sans(500, W * 0.022); ctx.textAlign = 'center'
     ctx.fillText(template.footer || 'dr-alfailakawi.com', W / 2, H - pad * 0.95)
   }
 
-  /* ═══ «الجريدة» — صفحة رأي بترويسة صحفية وعمود جانبي ═══ */
+  /* ═══ «الجريدة» — صفحة رأي: ترويسة كاملة، حرف بارز، عمود جانبي ═══ */
   if (comp === 'jarida') {
+    paperGrain(ctx, W, H, seed, ink.ink)
     ctx.fillStyle = ink.ink
-    ctx.fillRect(pad, pad, W - pad * 2, 6 * S)
-    kickerLine(template.kicker, W / 2, pad + 52 * S, ink.ink, W * 0.026, 6 * S, 'center')
-    hairline(pad, pad + 74 * S, W - pad, pad + 74 * S, ink.ink, 1.6 * S)
+    ctx.fillRect(pad, pad * 0.82, W - pad * 2, 7 * S)
+    hairline(pad, pad * 0.82 + 13 * S, W - pad, pad * 0.82 + 13 * S, ink.ink, 1.6 * S)
+    ctx.font = display(700, W * 0.038); ctx.textAlign = 'center'; ctx.fillStyle = ink.ink
+    ctx.fillText(template.kicker, W / 2, pad * 0.82 + 72 * S)
+    diamond(W / 2 - Math.min(W * 0.34, ctx.measureText(template.kicker).width / 2 + 46 * S), pad * 0.82 + 58 * S, 5 * S, ink.gold)
+    diamond(W / 2 + Math.min(W * 0.34, ctx.measureText(template.kicker).width / 2 + 46 * S), pad * 0.82 + 58 * S, 5 * S, ink.gold)
+    hairline(pad, pad * 0.82 + 96 * S, W - pad, pad * 0.82 + 96 * S, ink.ink, 1.6 * S)
     ctx.fillStyle = ink.soft; ctx.font = sans(400, W * 0.019); ctx.textAlign = 'right'
-    ctx.fillText('رأي · تربية وتقنية', W - pad, pad + 108 * S)
+    ctx.fillText('رأي · تربية وتقنية', W - pad, pad * 0.82 + 128 * S)
     ctx.textAlign = 'left'
-    ctx.fillText(template.footer || 'dr-alfailakawi.com', pad, pad + 108 * S)
+    ctx.fillText(template.footer || 'dr-alfailakawi.com', pad, pad * 0.82 + 128 * S)
+    hairline(pad, pad * 0.82 + 146 * S, W - pad, pad * 0.82 + 146 * S, ink.line, 1.1 * S)
     ctx.textAlign = 'right'
-    const columnX = pad + W * 0.14
-    const bodyMaxW = W - pad * 2 - W * 0.18
     const titleSize = fittedTitleSize(ctx, template.title, W - pad * 2, isStory ? 7 : 5, W * (isStory ? 0.088 : 0.08), W * 0.048)
     ctx.fillStyle = ink.ink; ctx.font = display(700, titleSize)
-    const afterTitle = drawWrapped(ctx, template.title, W - pad, pad + H * (isStory ? 0.135 : 0.17) + titleSize * 0.4, W - pad * 2, Math.round(titleSize * 1.44), isStory ? 7 : 5)
+    const afterTitle = drawWrapped(ctx, template.title, W - pad, pad * 0.82 + 190 * S + titleSize, W - pad * 2, Math.round(titleSize * 1.44), isStory ? 7 : 5)
     ctx.fillStyle = ink.accent
-    ctx.fillRect(W - pad - 150 * S, afterTitle + 6 * S, 150 * S, 9 * S)
+    ctx.fillRect(W - pad - 150 * S, afterTitle + 8 * S, 150 * S, 9 * S)
+    ctx.fillStyle = ink.gold
+    ctx.fillRect(W - pad - 176 * S, afterTitle + 8 * S, 16 * S, 9 * S)
     if (template.body) {
-      ctx.fillStyle = ink.gold; ctx.font = display(700, W * 0.05)
-      ctx.fillText('«', W - pad, afterTitle + 92 * S)
-      ctx.fillStyle = ink.soft; ctx.font = sans(400, W * 0.03)
-      drawWrapped(ctx, template.body, W - pad - 52 * S, afterTitle + 92 * S, bodyMaxW - 52 * S, Math.round(W * 0.03 * 1.85), isStory ? 9 : 6)
+      const bodyWords = template.body.trim().split(/\s+/)
+      const firstWord = bodyWords.shift() || ''
+      const bodyRest = bodyWords.join(' ')
+      const bodySize = W * 0.03
+      const dropSize = bodySize * 2.7
+      ctx.fillStyle = ink.accent; ctx.font = display(700, dropSize); ctx.textAlign = 'right'
+      const bodyTop = afterTitle + 96 * S
+      ctx.fillText(firstWord, W - pad, bodyTop + dropSize * 0.28)
+      const firstWidth = ctx.measureText(firstWord).width + 22 * S
+      ctx.fillStyle = ink.soft; ctx.font = sans(400, bodySize)
+      const columnReserve = W * 0.17
+      const lineH = Math.round(bodySize * 1.85)
+      const firstLines = wrapLines(ctx, bodyRest, W - pad * 2 - columnReserve - firstWidth).slice(0, 2)
+      firstLines.forEach((line, index) => ctx.fillText(line, W - pad - firstWidth, bodyTop + index * lineH))
+      const remaining = wrapLines(ctx, bodyRest, W - pad * 2 - columnReserve - firstWidth).slice(2).join(' ')
+      if (remaining) drawWrapped(ctx, remaining, W - pad, bodyTop + 2 * lineH, W - pad * 2 - columnReserve, lineH, isStory ? 7 : 4)
     }
-    hairline(columnX, afterTitle + 60 * S, columnX, H - pad * 1.7, ink.line, 1.4 * S)
-    sourceBadge(false, H - pad * 2)
-    hairline(pad, H - pad * 1.45, W - pad, H - pad * 1.45, ink.ink, 1.6 * S)
+    const columnX = pad + W * 0.12
+    hairline(columnX, afterTitle + 70 * S, columnX, H - pad * 1.75, ink.line, 1.3 * S)
+    sourceBadge(false, H - pad * 2.05)
+    hairline(pad, H - pad * 1.48, W - pad, H - pad * 1.48, ink.ink, 1.8 * S)
+    hairline(pad, H - pad * 1.48 + 7 * S, W - pad, H - pad * 1.48 + 7 * S, ink.ink, 0.8 * S)
     await drawLogo(pad, H - pad * 0.62, false)
-    ctx.fillStyle = ink.ink; ctx.font = display(600, W * 0.026); ctx.textAlign = 'right'
+    ctx.fillStyle = ink.ink; ctx.font = display(600, W * 0.027); ctx.textAlign = 'right'
     ctx.fillText('د. أحمد حسين الفيلكاوي', W - pad, H - pad * 0.95)
   }
 
-  /* ═══ «الشريط» — عارضة سينمائية بلون الموقع ═══ */
+  /* ═══ «الشريط» — سينمائي: شريط متدرج بخيوط ذهبية وثقوب فيلمية ═══ */
   if (comp === 'sharit') {
+    ctx.save(); ctx.globalAlpha = 0.05; ctx.strokeStyle = ink.accent; ctx.lineWidth = 1
+    for (let d = -H; d < W; d += 46 * S) { ctx.beginPath(); ctx.moveTo(d, 0); ctx.lineTo(d + H * 0.4, H * 0.4); ctx.stroke() }
+    ctx.restore()
     const bandHeight = H * (isStory ? 0.3 : 0.42)
     const bandY = (H - bandHeight) / 2
+    ctx.save(); ctx.fillStyle = ink.gold; ctx.textAlign = 'right'
+    diamond(W - pad + 14 * S, bandY - 52 * S, 6 * S, ink.gold)
+    ctx.restore()
     kickerLine(template.kicker, W - pad, bandY - 44 * S, ink.accent, W * 0.026, 4 * S, 'right')
-    hairline(pad, bandY - 30 * S, W - pad - ctx.measureText(template.kicker).width - 260 * S, bandY - 30 * S, ink.line, 1.4 * S)
-    ctx.fillStyle = ink.accent
+    hairline(pad, bandY - 52 * S, W - pad - 380 * S, bandY - 52 * S, ink.line, 1.3 * S)
+    const bandGradient = ctx.createLinearGradient(0, bandY, 0, bandY + bandHeight)
+    bandGradient.addColorStop(0, '#41617F'); bandGradient.addColorStop(1, '#2C4763')
+    ctx.fillStyle = bandGradient
     ctx.fillRect(0, bandY, W, bandHeight)
-    ctx.save(); ctx.fillStyle = '#FFFFFF'; ctx.globalAlpha = 0.3
-    for (let x = 22 * S; x < W; x += 42 * S) {
-      ctx.beginPath(); ctx.arc(x, bandY + 20 * S, 4.5 * S, 0, Math.PI * 2); ctx.fill()
-      ctx.beginPath(); ctx.arc(x, bandY + bandHeight - 20 * S, 4.5 * S, 0, Math.PI * 2); ctx.fill()
+    hairline(0, bandY + 8 * S, W, bandY + 8 * S, ink.gold, 1.4 * S, 0.65)
+    hairline(0, bandY + bandHeight - 8 * S, W, bandY + bandHeight - 8 * S, ink.gold, 1.4 * S, 0.65)
+    ctx.save(); ctx.fillStyle = '#FFFFFF'; ctx.globalAlpha = 0.26
+    for (let x = 26 * S; x < W; x += 46 * S) {
+      roundedRect(ctx, x - 5 * S, bandY + 18 * S, 10 * S, 13 * S, 3 * S); ctx.fill()
+      roundedRect(ctx, x - 5 * S, bandY + bandHeight - 31 * S, 10 * S, 13 * S, 3 * S); ctx.fill()
     }
     ctx.restore()
     const titleMaxW = W - pad * 2
@@ -519,26 +704,29 @@ export async function renderSocialPng(template: SocialVisualTemplate) {
     ctx.font = display(700, titleSize)
     const titleLines = wrapLines(ctx, template.title, titleMaxW).slice(0, isStory ? 5 : 4).length
     const lineHeight = Math.round(titleSize * 1.46)
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 14 * S; ctx.shadowOffsetY = 3 * S
     ctx.fillStyle = '#FFFFFF'; ctx.textAlign = 'right'
     const titleStart = bandY + bandHeight / 2 - ((titleLines - 1) * lineHeight) / 2 + titleSize * 0.34
     drawWrapped(ctx, template.title, W - pad, titleStart, titleMaxW, lineHeight, isStory ? 5 : 4)
+    ctx.restore()
     ctx.fillStyle = ink.gold
-    ctx.fillRect(W - pad - 110 * S, bandY + 44 * S, 110 * S, 5 * S)
+    ctx.fillRect(W - pad - 110 * S, bandY + 46 * S, 110 * S, 4.5 * S)
     if (template.body) {
       ctx.fillStyle = ink.soft; ctx.font = sans(400, W * 0.029); ctx.textAlign = 'right'
-      drawWrapped(ctx, template.body, W - pad, bandY + bandHeight + 76 * S, W - pad * 2.4, Math.round(W * 0.029 * 1.8), isStory ? 6 : 4)
+      drawWrapped(ctx, template.body, W - pad, bandY + bandHeight + 78 * S, W - pad * 2.4, Math.round(W * 0.029 * 1.8), isStory ? 6 : 4)
     }
-    sourceBadge(false, H - pad * 1.75)
+    sourceBadge(false, H - pad * 1.78)
     await drawLogo(pad, H - pad * 0.72, false)
     ctx.fillStyle = ink.accent; ctx.font = sans(600, W * 0.022); ctx.textAlign = 'right'
     ctx.fillText(template.footer || 'dr-alfailakawi.com', W - pad, H - pad * 0.95)
   }
 
-  /* ═══ «المشكاة» — قوس معماري إسلامي يحتضن الفكرة ═══ */
+  /* ═══ «المشكاة» — محراب بمصباح متوهج ومشربيات ═══ */
   if (comp === 'mishkat') {
-    const baseY = H * (isStory ? 0.6 : 0.66)
-    const apexY = H * (isStory ? 0.17 : 0.15)
-    const halfW = W * 0.3
+    paperGrain(ctx, W, H, seed, ink.ink)
+    const baseY = H * (isStory ? 0.62 : 0.68)
+    const apexY = H * (isStory ? 0.16 : 0.14)
+    const halfW = W * 0.31
     const shoulderY = apexY + (baseY - apexY) * 0.44
     const arch = (half: number, color: string, widthPx: number, alpha: number) => {
       ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = widthPx; ctx.globalAlpha = alpha
@@ -550,58 +738,54 @@ export async function renderSocialPng(template: SocialVisualTemplate) {
       ctx.lineTo(W / 2 + half, baseY)
       ctx.stroke(); ctx.restore()
     }
-    arch(halfW, ink.accent, 3 * S, 0.9)
-    arch(halfW * 0.9, ink.gold, 1.2 * S, 0.85)
-    hairline(W * 0.1, baseY, W * 0.9, baseY, ink.accent, 2.2 * S, 0.9)
-    hairline(W * 0.13, baseY + 14 * S, W * 0.87, baseY + 14 * S, ink.gold, 1 * S, 0.7)
-    diamond(W / 2, apexY - 18 * S, 8 * S, ink.gold)
-    hairline(W / 2, apexY - 10 * S, W / 2, apexY + 26 * S, ink.gold, 1.2 * S, 0.8)
-    ctx.save(); ctx.fillStyle = ink.gold; ctx.globalAlpha = 0.9
-    ctx.beginPath(); ctx.arc(W / 2, apexY + 40 * S, 7 * S, 0, Math.PI * 2); ctx.fill(); ctx.restore()
-    kickerLine(template.kicker, W / 2, pad * 0.92, ink.gold, W * 0.024, 5 * S, 'center')
-    const titleMaxW = halfW * 1.62
-    const titleSize = fittedTitleSize(ctx, template.title, titleMaxW, isStory ? 7 : 6, W * 0.058, W * 0.038)
+    arch(halfW, ink.accent, 3.2 * S, 0.92)
+    arch(halfW * 0.91, ink.gold, 1.2 * S, 0.85)
+    latticeDots(ctx, W * 0.06, apexY + 20 * S, W * 0.14, (shoulderY - apexY) * 0.9, 17 * S, ink.accent, 0.16)
+    latticeDots(ctx, W * 0.8, apexY + 20 * S, W * 0.14, (shoulderY - apexY) * 0.9, 17 * S, ink.accent, 0.16)
+    hairline(W * 0.09, baseY, W * 0.91, baseY, ink.accent, 2.4 * S, 0.92)
+    hairline(W * 0.12, baseY + 15 * S, W * 0.88, baseY + 15 * S, ink.gold, 1 * S, 0.75)
+    diamond(W / 2, baseY + 15 * S, 6 * S, ink.gold)
+    hairline(W / 2, apexY, W / 2, apexY + 52 * S, ink.gold, 1.3 * S, 0.85)
+    glowingLamp(ctx, W / 2, apexY + 74 * S, 15 * S, ink.gold)
+    kickerLine(template.kicker, W / 2, pad * 0.88, ink.gold, W * 0.024, 5 * S, 'center')
+    const titleMaxW = halfW * 1.58
+    const titleSize = fittedTitleSize(ctx, template.title, titleMaxW, isStory ? 7 : 6, W * 0.057, W * 0.037)
     ctx.fillStyle = ink.ink; ctx.font = display(700, titleSize); ctx.textAlign = 'center'
-    drawWrapped(ctx, template.title, W / 2, apexY + (baseY - apexY) * 0.34, titleMaxW, Math.round(titleSize * 1.5), isStory ? 7 : 6)
+    drawWrapped(ctx, template.title, W / 2, apexY + (baseY - apexY) * 0.4, titleMaxW, Math.round(titleSize * 1.5), isStory ? 7 : 6)
     if (template.body) {
       ctx.fillStyle = ink.soft; ctx.font = sans(400, W * 0.028); ctx.textAlign = 'center'
-      drawWrapped(ctx, template.body, W / 2, baseY + 78 * S, W - pad * 2.8, Math.round(W * 0.028 * 1.85), isStory ? 7 : 4)
+      drawWrapped(ctx, template.body, W / 2, baseY + 82 * S, W - pad * 2.9, Math.round(W * 0.028 * 1.85), isStory ? 7 : 4)
     }
-    sourceBadge(true, H - pad * 1.95)
-    await drawLogo(-1, H - pad * 1.22, false)
-    ctx.fillStyle = ink.accent; ctx.font = sans(600, W * 0.022); ctx.textAlign = 'center'
+    sourceBadge(true, H - pad * 2)
+    await drawLogo(-1, H - pad * 1.25, false)
+    ctx.fillStyle = ink.accent; ctx.font = sans(600, W * 0.021); ctx.textAlign = 'center'
     ctx.fillText(template.footer || 'dr-alfailakawi.com', W / 2, H - pad * 0.9)
   }
 
-  /* ═══ «التوقيع» — صفحة بيضاء بخط توقيع حي ═══ */
+  /* ═══ «التوقيع» — أتيلييه: ريشة بضغط حبر، ختم مذهّب ═══ */
   if (comp === 'tawqee') {
-    ctx.save(); ctx.globalAlpha = 0.07; ctx.fillStyle = ink.accent
-    ctx.font = display(700, W * 0.6); ctx.textAlign = 'left'
-    ctx.fillText('”', pad * 0.4, H * 0.42); ctx.restore()
-    kickerLine(template.kicker, W - pad, pad * 1.35, ink.accent, W * 0.026, 4 * S, 'right')
-    hairline(W - pad, pad * 1.6, W - pad - 120 * S, pad * 1.6, ink.gold, 2 * S)
+    ctx.save(); ctx.globalAlpha = 0.06; ctx.fillStyle = ink.accent
+    ctx.font = display(700, W * 0.62); ctx.textAlign = 'left'
+    ctx.fillText('”', pad * 0.35, H * 0.4); ctx.restore()
+    kickerLine(template.kicker, W - pad, pad * 1.32, ink.accent, W * 0.026, 4 * S, 'right')
+    hairline(W - pad, pad * 1.58, W - pad - 130 * S, pad * 1.58, ink.gold, 2.2 * S)
     const titleSize = fittedTitleSize(ctx, template.title, W - pad * 2.2, isStory ? 7 : 5, W * (isStory ? 0.082 : 0.072), W * 0.046)
     ctx.fillStyle = ink.ink; ctx.font = display(700, titleSize); ctx.textAlign = 'right'
     const afterTitle = drawWrapped(ctx, template.title, W - pad, pad + H * (isStory ? 0.12 : 0.16) + titleSize * 0.4, W - pad * 2.2, Math.round(titleSize * 1.46), isStory ? 7 : 5)
-    ctx.save(); ctx.strokeStyle = ink.accent; ctx.lineWidth = 3 * S; ctx.lineCap = 'round'
-    ctx.beginPath()
-    ctx.moveTo(W - pad - 10 * S, afterTitle + 34 * S)
-    ctx.bezierCurveTo(W - pad - 150 * S, afterTitle + 74 * S, W - pad - 240 * S, afterTitle - 6 * S, W - pad - 330 * S, afterTitle + 40 * S)
-    ctx.bezierCurveTo(W - pad - 390 * S, afterTitle + 70 * S, W - pad - 430 * S, afterTitle + 24 * S, W - pad - 470 * S, afterTitle + 38 * S)
-    ctx.stroke()
-    ctx.fillStyle = ink.gold
-    ctx.beginPath(); ctx.arc(W - pad - 484 * S, afterTitle + 38 * S, 5 * S, 0, Math.PI * 2); ctx.fill()
-    ctx.restore()
+    penFlourish(ctx, W - pad - 6 * S, afterTitle + 40 * S, W * 0.46, seed, ink.accent, S)
     if (template.body) {
-      ctx.fillStyle = ink.soft; ctx.font = sans(400, W * 0.03); ctx.textAlign = 'right'
-      drawWrapped(ctx, template.body, W - pad, afterTitle + 118 * S, W - pad * 2.6, Math.round(W * 0.03 * 1.85), isStory ? 8 : 5)
+      ctx.fillStyle = ink.gold; ctx.font = display(700, W * 0.048); ctx.textAlign = 'right'
+      ctx.fillText('«', W - pad, afterTitle + 132 * S)
+      ctx.fillStyle = ink.soft; ctx.font = sans(400, W * 0.03)
+      drawWrapped(ctx, template.body, W - pad - 50 * S, afterTitle + 132 * S, W - pad * 2.6 - 50 * S, Math.round(W * 0.03 * 1.85), isStory ? 8 : 5)
     }
-    sourceBadge(false, H - pad * 2.2)
-    ctx.fillStyle = ink.ink; ctx.font = display(600, W * 0.03); ctx.textAlign = 'right'
+    sourceBadge(false, H - pad * 2.25)
+    sealStamp(ctx, pad * 1.55, H - pad * 1.35, 32 * S, ink.gold, S)
+    ctx.fillStyle = ink.ink; ctx.font = display(600, W * 0.031); ctx.textAlign = 'right'
     ctx.fillText('د. أحمد حسين الفيلكاوي', W - pad, H - pad * 1.32)
     ctx.fillStyle = ink.soft; ctx.font = sans(500, W * 0.021)
     ctx.fillText(template.footer || 'dr-alfailakawi.com', W - pad, H - pad * 0.95)
-    await drawLogo(pad, H - pad * 0.85, false)
+    await drawLogo(pad * 2.35, H - pad * 0.85, false)
   }
 
   return await new Promise<Blob>((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('تعذّر تصدير الصورة.')), 'image/png', 1))

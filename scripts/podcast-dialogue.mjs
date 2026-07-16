@@ -35,6 +35,12 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import { createHash, randomBytes, randomInt } from 'node:crypto'
 import { DatabaseSync } from 'node:sqlite'
 import assert from 'node:assert/strict'
+import {
+  analyzeLoudness,
+  analyzeSilence,
+  humanLikenessGate,
+  probeAudio,
+} from './lib/arabic-audio-engine.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const ENGINE_SOURCE_HASH = createHash('sha256').update(readFileSync(fileURLToPath(import.meta.url))).digest('hex')
@@ -88,11 +94,10 @@ const AR_VOICE_PAIRS = [
   { id: 'om', country: 'عُمان', nameA: 'عبدالله', nameB: 'عائشة', A: 'ar-OM-AbdullahNeural', B: 'ar-OM-AyshaNeural' },
 ]
 
-/* الزوج الافتراضي الثابت — Sample B اعتُمد صوتاً رجالياً نهائياً مع Sample D النسائي.
-   تبقى البيئة/لوحة التحكم قادرة على التجاوز عند الحاجة، لكن السقوط الافتراضي الآن هو الزوج المعتمد. */
+/* الزوج التقني المعتمد للموقع. أسماء الواجهة تبقى فهد ونورة والتجاوز البيئي متاح للاختبار فقط. */
 const VOICES = {
   ar: {
-    A: { name: env.PODCAST_AR_MALE_NAME || 'فهد', azure: env.PODCAST_AR_MALE || 'ar-AE-HamdanNeural' },
+    A: { name: env.PODCAST_AR_MALE_NAME || 'فهد', azure: env.PODCAST_AR_MALE || 'ar-KW-FahedNeural' },
     B: { name: env.PODCAST_AR_FEMALE_NAME || 'نورة', azure: env.PODCAST_AR_FEMALE || 'ar-KW-NouraNeural' },
   },
   en: {
@@ -106,6 +111,7 @@ const flag = (n) => args.includes(`--${n}`)
 const opt = (n) => (args.find((a) => a.startsWith(`--${n}=`)) || '').split('=')[1] || ''
 const LANG = (opt('lang') || 'ar')
 const DRY = flag('dry-run')
+const OFFLINE_DRY = DRY && (!AZURE_KEY || !GEMINI_KEY)
 const FORCE = flag('force')
 const SELF_TEST = flag('self-test')
 const PREFLIGHT = flag('preflight')
@@ -124,8 +130,8 @@ const REQUIRE_PILOT_GATE = String(env.PODCAST_REQUIRE_PILOT_GATE || 'true').toLo
 // أُلغي المسار الخفيف نهائيًا: شروط القبول الحالية تمنع أي نشر يتجاوز STT والحكم الصوتي.
 const LIGHT = false
 let ARABIC_PRODUCTION_GATE_READY = false
-if (!SELF_TEST && !ROLLBACK_SLUG && !AZURE_KEY) { console.error('✘ AZURE_SPEECH_KEY مفقود'); process.exit(1) }
-if (!SELF_TEST && !ROLLBACK_SLUG && !VOICE_AUDITION && !VOICE_FINALIST_RETEST && !MALE_FINALIST_RETEST && !PREFLIGHT && !GEMINI_KEY) { console.error('✘ GEMINI_API_KEY أو GOOGLE_API_KEY مفقود'); process.exit(1) }
+if (!SELF_TEST && !ROLLBACK_SLUG && !OFFLINE_DRY && !AZURE_KEY) { console.error('✘ AZURE_SPEECH_KEY مفقود'); process.exit(1) }
+if (!SELF_TEST && !ROLLBACK_SLUG && !OFFLINE_DRY && !VOICE_AUDITION && !VOICE_FINALIST_RETEST && !MALE_FINALIST_RETEST && !PREFLIGHT && !GEMINI_KEY) { console.error('✘ GEMINI_API_KEY أو GOOGLE_API_KEY مفقود'); process.exit(1) }
 if (!SELF_TEST) {
   const acquire = () => writeFileSync(LOCK_FILE, JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }), { flag: 'wx' })
   try { acquire() }
@@ -1880,9 +1886,11 @@ function insertSemanticMusicBridges(segments, utterances, music, workDir) {
   return { segments: expanded, bridges }
 }
 
-function planTimeline(segments, music) {
+function planTimeline(segments) {
   const timeline = []
-  const firstStart = music ? Math.min(6, Math.max(4, Number(music.introSec || 5))) : 0.25
+  // الجسور الموسيقية وحدات داخل الـTimeline نفسه. لا نحجب بداية الحلقة بمقدمة
+  // طويلة، ولا نضيف سريرًا موسيقيًا مستمرًا تحت الكلام.
+  const firstStart = 0.25
   for (const segment of segments) {
     const dur = probeDur(segment.file)
     const previous = timeline.at(-1)
@@ -1900,7 +1908,7 @@ function planTimeline(segments, music) {
     timeline.push({ ...segment, start: Math.max(0, start), dur, overlapMs })
   }
   const lastEnd = timeline.length ? timeline.at(-1).start + timeline.at(-1).dur : firstStart
-  const total = lastEnd + (music ? Math.min(6, Math.max(3, Number(music.outroSec || 4))) : 0.45)
+  const total = lastEnd + 0.45
   return { timeline, total }
 }
 
@@ -1930,7 +1938,7 @@ function buildSilenceReport(timeline, utteranceAudits, totalSec, utterances) {
 }
 
 function assemble(segments, outMp3, music, { raw = false } = {}) {
-  const { timeline, total } = planTimeline(segments, music)
+  const { timeline, total } = planTimeline(segments)
 
   const inputs = []
   const filters = []
@@ -1938,23 +1946,11 @@ function assemble(segments, outMp3, music, { raw = false } = {}) {
     inputs.push('-i', s.file)
     filters.push(`[${i}:a]adelay=${Math.round(s.start * 1000)}|${Math.round(s.start * 1000)}[u${i}]`)
   })
-  let mixInputs = timeline.map((_, i) => `[u${i}]`).join('')
-  let n = timeline.length
-  if (music) {
-    inputs.push('-stream_loop', '-1', '-i', music.file)
-    const introSec = Math.min(6, Math.max(4, Number(music.introSec || 5)))
-    const outroSec = Math.min(6, Math.max(3, Number(music.outroSec || 4)))
-    const bedEnd = Math.max(introSec, total - outroSec)
-    const introVol = Number(music.introVol || 0.10)
-    const bedVol = Math.min(0.008, Number(music.bedVol || 0.005))
-    const outroVol = Number(music.outroVol || 0.08)
-    filters.push(`[${n}:a]atrim=0:${total.toFixed(2)},asplit=3[mi][mb][mo]`)
-    filters.push(`[mi]atrim=0:${introSec.toFixed(2)},afade=t=in:d=0.8,afade=t=out:st=${Math.max(0, introSec - 1.2).toFixed(2)}:d=1.2,volume=${introVol}[mintro]`)
-    filters.push(`[mb]atrim=${introSec.toFixed(2)}:${bedEnd.toFixed(2)},asetpts=PTS-STARTPTS,volume=${bedVol},adelay=${Math.round(introSec * 1000)}|${Math.round(introSec * 1000)}[mbed]`)
-    filters.push(`[mo]atrim=${bedEnd.toFixed(2)}:${total.toFixed(2)},asetpts=PTS-STARTPTS,afade=t=in:d=0.8,afade=t=out:st=${Math.max(0, outroSec - 1).toFixed(2)}:d=1,volume=${outroVol},adelay=${Math.round(bedEnd * 1000)}|${Math.round(bedEnd * 1000)}[moutro]`)
-    filters.push('[mintro][mbed][moutro]amix=inputs=3:normalize=0[mus]')
-    mixInputs += '[mus]'; n++
-  }
+  // `insertSemanticMusicBridges` أضاف الموسيقى المرخصة في المواضع الدلالية
+  // فقط، مع دخولها قبل نهاية الجملة وخروجها تحت بداية المتحدث التالي.
+  // لا نضيف موسيقى مستمرة لإخفاء خامة الصوت أو بطء الحوار.
+  const mixInputs = timeline.map((_, i) => `[u${i}]`).join('')
+  const n = timeline.length
   filters.push(`${mixInputs}amix=inputs=${n}:normalize=0[mix]`)
   filters.push(raw ? '[mix]anull[out]' : '[mix]loudnorm=I=-16:TP=-1.5:LRA=11[out]')
   ff([...inputs, '-filter_complex', filters.join(';'), '-map', '[out]', '-t', total.toFixed(2), '-codec:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100', outMp3])
@@ -1972,19 +1968,25 @@ function auditAudio(mp3, { minSec = 1, maxSec = 300, maxLongSilences = 0 } = {})
   const det = spawnSync(FFMPEG, ['-hide_banner', '-i', mp3, '-af', 'silencedetect=noise=-40dB:d=0.8', '-f', 'null', '-'], { encoding: 'utf8' })
   const longSilences = [...(det.stderr || '').matchAll(/silence_duration:\s*([0-9.]+)/g)]
     .map((match) => Number(match[1])).filter((seconds) => seconds > 0.8)
-  if (longSilences.length > maxLongSilences) issues.push(`${longSilences.length} فترات صمت أطول من 800ms`)
+  const unexpectedLongSilences = longSilences.slice(Math.max(0, maxLongSilences))
+  if (unexpectedLongSilences.length)
+    issues.push(`${unexpectedLongSilences.length} فترات صمت طويلة غير مقصودة`)
   const volume = spawnSync(FFMPEG, ['-hide_banner', '-i', mp3, '-af', 'volumedetect', '-f', 'null', '-'], { encoding: 'utf8' }).stderr || ''
   const peak = Number((volume.match(/max_volume:\s*(-?[0-9.]+) dB/) || [])[1])
   const mean = Number((volume.match(/mean_volume:\s*(-?[0-9.]+) dB/) || [])[1])
   if (Number.isFinite(peak) && peak > -1) issues.push(`ذروة ${peak}dB أعلى من هامش الأمان -1dB`)
-  return { dur, size, longSilences, peakDb: Number.isFinite(peak) ? peak : null,
+  return { dur, size, longSilences, allowedLongSilences: maxLongSilences,
+    unexpectedLongSilences, peakDb: Number.isFinite(peak) ? peak : null,
     meanDb: Number.isFinite(mean) ? mean : null, issues }
 }
 
 function episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript = [] }) {
+  const minimumScore = Math.max(94, Number(env.PODCAST_RELEASE_MIN_SCORE || 94))
   const durationOk = Number(technicalAudit?.dur || 0) >= 120 && Number(technicalAudit?.dur || 0) <= 360
   const sizeOk = Number(technicalAudit?.size || 0) >= 200_000
-  const longSilenceOk = Array.isArray(technicalAudit?.longSilences) ? technicalAudit.longSilences.length === 0 : false
+  const longSilenceOk = Array.isArray(technicalAudit?.unexpectedLongSilences)
+    ? technicalAudit.unexpectedLongSilences.length === 0
+    : Array.isArray(technicalAudit?.longSilences) ? technicalAudit.longSilences.length === 0 : false
   const peakOk = !Number.isFinite(Number(technicalAudit?.peakDb)) || Number(technicalAudit.peakDb) <= -1
   const sttOk = Number(fullComparison?.importantRatio || 0) >= 0.95 && Number(fullComparison?.ratio || 0) >= 0.90
   const judgeOk = finalJudge?.pass === true && (!Array.isArray(finalJudge?.problems) || finalJudge.problems.length === 0)
@@ -2000,9 +2002,42 @@ function episodeQualityScore({ technicalAudit, fullComparison, finalJudge, trans
   )
   return {
     score,
-    pass: score >= 92,
+    minimumScore,
+    pass: score >= minimumScore,
     checks: { judgeOk, sttOk, durationOk, longSilenceOk, transcriptOk, sizeOk, peakOk },
   }
+}
+
+function dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudge }) {
+  const plan = {
+    utterances: transcript.map((item) => ({
+      speaker: item.speakerKey,
+      text: item.text,
+      sourceText: item.text,
+      type: item.delivery,
+      delivery: item.delivery,
+      ratePct: item.ratePct,
+      pauseAfterMs: item.pauseAfterMs,
+      ending: item.ending,
+      allowOverlap: item.allowOverlap,
+      overlapMs: item.overlapMs,
+    })),
+  }
+  const technical = {
+    probe: probeAudio(candidateMp3),
+    silence: analyzeSilence(candidateMp3),
+    loudness: analyzeLoudness(candidateMp3),
+  }
+  const proxy = humanLikenessGate({ plan, technical,
+    sttComparisons: fullComparison ? [fullComparison] : [], dialogue: true, minimumScore: 95 })
+  const dimensions = ['humanLikeness', 'warmth', 'semanticDelivery', 'questionNaturalness',
+    'pauseNaturalness', 'pronunciation', 'rhythmVariety', 'endingVariety', 'nonBroadcastTone',
+    'speakerIndependence']
+  const judgeScores = Object.fromEntries(dimensions.map((key) => [key, Number(finalJudge?.[key] || 0)]))
+  const minimumJudgeDimension = Math.min(...Object.values(judgeScores))
+  const judgePass = finalJudge?.pass === true && minimumJudgeDimension >= 95
+  return { pass: proxy.pass && judgePass, minimumScore: 95, proxy, judgeScores,
+    minimumJudgeDimension, note: 'بوابة تقنية + حكم سمعي مستقل؛ لا تُعد إثباتاً أن الصوت إنسان حقيقي.' }
 }
 
 async function validateDialogueFidelity(article, script) {
@@ -2052,12 +2087,19 @@ async function judgeFullEpisode(mp3, intended, stt, transcript, risks) {
     'هذه بوابة الحلقة الكاملة بعد الدمج. استمع إلى الملف كله، لا إلى STT وحده.',
     `النص النطقي المقصود كاملاً: ${intended}`,
     `STT للحلقة المدمجة: ${stt.text}`,
-    `Transcript الظاهر: ${transcript.map((item) => `${item.speaker}: ${item.text}`).join('\n')}`,
+    `Transcript الظاهر مع معرّفات الوحدات: ${transcript.map((item, index) => `u${String(index + 1).padStart(3, '0')} ${item.speaker}: ${item.text}`).join('\n')}`,
     `الكلمات الخطرة: ${JSON.stringify(risks)}`,
-    'افحص ثبات الفصحى، صحة الفتحة والكسرة والوقف، عدم إظهار الإعراب المدرسي عند نهايات الجمل، اتساق الأسماء، البتر عند الحدود، السرعة، الوقفات، الجسور الموسيقية، وأي تداخل يبتلع حرفاً. ارفض الحلقة إذا بدت مستعجلة أو كقارئين يتناوبان. أعد JSON فقط.',
+    'افحص ثبات الفصحى، صحة الفتحة والكسرة والوقف، عدم إظهار الإعراب المدرسي عند نهايات الجمل، اتساق الأسماء، البتر عند الحدود، السرعة، الوقفات، الجسور الموسيقية، وأي تداخل يبتلع حرفاً. ارفض الحلقة إذا بدت مستعجلة أو كقارئين يتناوبان. ضع unitId الصحيح لكل مشكلة. أعد JSON فقط بالمخطط والدرجات السبع.',
   ].join('\n'), 0.1, JUDGE_MODEL, [{ inlineData: { mimeType: 'audio/mpeg', data: bytes.toString('base64') } }])
-  if (typeof verdict?.pass !== 'boolean' || !Array.isArray(verdict?.problems)) throw new Error('حكم الحلقة الكاملة غير صالح')
-  return { ...verdict, pass: verdict.pass === true && verdict.problems.length === 0 }
+  const dimensions = ['humanLikeness', 'warmth', 'semanticDelivery', 'questionNaturalness',
+    'pauseNaturalness', 'pronunciation', 'rhythmVariety']
+  if (typeof verdict?.pass !== 'boolean' || !Array.isArray(verdict?.problems)
+    || !dimensions.every((key) => Number.isFinite(Number(verdict[key])))) {
+    throw new Error('حكم الحلقة الكاملة غير صالح أو بلا درجات البشرية السبع')
+  }
+  const minimumDimension = Math.min(...dimensions.map((key) => Number(verdict[key])))
+  return { ...verdict, minimumDimension,
+    pass: verdict.pass === true && verdict.problems.length === 0 && minimumDimension >= 95 }
 }
 
 const VOICE_SCORE_WEIGHTS = {
@@ -2525,22 +2567,21 @@ async function produce(article, lang) {
     }
     if (inconsistent.length) return quarantine(`اختلاف نطق الكلمة نفسها: ${[...new Set(inconsistent)].join('، ')}`)
 
-    /* ٤) الموسيقى مقدمة وخاتمة؛ تحت الكلام تكاد تختفي ولا تُستخدم لإخفاء النطق. */
+    /* ٤) مسار مرخّص للجسور الدلالية فقط؛ لا توجد موسيقى مستمرة تحت الحلقة. */
     let music = null
     if (existsSync(MUSIC_LIB)) {
       const library = JSON.parse(readFileSync(MUSIC_LIB, 'utf8'))
       const track = (library.tracks || []).find((item) => item.licensed && (item.moods || []).includes(script.mood))
       if (track && existsSync(resolve(ROOT, track.path)))
-        music = { file: resolve(ROOT, track.path), bedVol: Math.min(0.004, track.bedVolume ?? 0.003),
-          introVol: 0.10, outroVol: 0.08, introSec: 5, outroSec: 4 }
+        music = { file: resolve(ROOT, track.path) }
     }
     if (!music) console.log('  ♪ إخراج بلا موسيقى — لا يوجد مسار مرخّص مطابق')
 
     /* ٥) جسور موسيقية دلالية ثم تركيب مؤقت؛ لا صمت ميت ولا موسيقى بعد كل جملة. */
-    const bridged = insertSemanticMusicBridges(segments, transcript, music, TMP)
+    let bridged = insertSemanticMusicBridges(segments.map((segment) => ({ ...segment })), transcript, music, TMP)
     auditRecord.musicBridges = bridged.bridges
     const candidateMp3 = resolve(TMP, `${article.slug}.accepted-candidate.mp3`)
-    const assembled = assemble(bridged.segments, candidateMp3, music)
+    let assembled = assemble(bridged.segments, candidateMp3, music)
     const dialogueWords = transcript.reduce((total, item) => total + String(item.text).split(/\s+/).filter(Boolean).length, 0)
     const weightedTargetWpm = transcript.reduce((total, item) => total
       + Number(item.targetWordsPerMinute || 140) * String(item.text).split(/\s+/).filter(Boolean).length, 0)
@@ -2549,14 +2590,14 @@ async function produce(article, lang) {
       + Math.max(0, Number(item.pauseAfterMs || 0)) / 1000, 0)
     const bridgeSec = bridged.bridges.reduce((total, item) => total + item.durationSec, 0)
     const expectedDurationSec = dialogueWords / Math.max(122, weightedTargetWpm) * 60
-      + plannedPauseSec + bridgeSec + (music ? Number(music.introSec || 5) + Number(music.outroSec || 4) : 1)
+      + plannedPauseSec + bridgeSec + 0.7
     const durationRange = { minSec: Math.max(165, expectedDurationSec * 0.84),
       maxSec: Math.min(310, expectedDurationSec * 1.18), maxLongSilences: 2 }
     // الوضع المجاني: الوقفات التأملية المقصودة (حتى 700ms) مع حدود المقاطع قد تتجاوز 800ms طبيعياً؛
     // عتبة «صفر» موجّهة لكشف عطل التركيب لا للوقفات المقصودة. وحدود المدة الضيقة (225–285ث) مضبوطة
     // للمسار المدفوع؛ في المجاني نقبل المدى الطبيعي (بضع ثوانٍ فرق لا يُعزل حلقةً سليمة).
     if (LIGHT) { durationRange.maxLongSilences = utts.length; durationRange.minSec = 120; durationRange.maxSec = 360 }
-    const technicalAudit = auditAudio(candidateMp3, durationRange)
+    let technicalAudit = auditAudio(candidateMp3, durationRange)
     if (technicalAudit.issues.length) return quarantine(`الفحص التقني: ${technicalAudit.issues.join(' · ')}`)
     let fullStt = null, fullComparison = null, finalJudge = null
     if (LIGHT) {
@@ -2573,12 +2614,70 @@ async function produce(article, lang) {
       if (missingNegations.length || highRiskMissing.length || fullComparison.importantRatio < 0.95 || fullComparison.ratio < 0.90)
         return quarantine(`STT الحلقة الكاملة لم يطابق النص المقصود (المهم ${Math.round(fullComparison.importantRatio * 100)}٪)`, { fullStt, fullComparison })
       finalJudge = await judgeFullEpisode(candidateMp3, intendedFull, fullStt, transcript, allRisks)
-      if (!finalJudge.pass) return quarantine(`Arabic Audio Judge للحلقة: ${(finalJudge.problems || []).map((problem) => problem.issue).join(' · ')}`, { fullStt, finalJudge })
+      if (!finalJudge.pass) {
+        const targetedIndexes = [...new Set((finalJudge.problems || []).map((problem) => {
+          const match = String(problem.unitId || '').match(/^u(\d{3})$/)
+          return match ? Number(match[1]) - 1 : -1
+        }).filter((index) => index >= 0 && index < utts.length))]
+        if (!targetedIndexes.length) {
+          return quarantine(`Arabic Audio Judge للحلقة: ${(finalJudge.problems || []).map((problem) => problem.issue).join(' · ')}`, { fullStt, finalJudge })
+        }
+        console.log(`  ⟳ إصلاح موجّه للحلقة: ${targetedIndexes.map((index) => `u${String(index + 1).padStart(3, '0')}`).join('، ')}`)
+        for (const index of targetedIndexes) {
+          const utteranceId = `u${String(index + 1).padStart(3, '0')}`
+          const issue = finalJudge.problems.find((problem) => problem.unitId === utteranceId) || {}
+          const utterance = { ...utts[index] }
+          utterance.ratePct = Math.max(-18, Number(utterance.ratePct || 0) - 1)
+          utterance.internalBreakMs = Math.min(180, Number(utterance.internalBreakMs || 105) + 18)
+          if (utterance.text.includes('؟')) { utterance.delivery = 'question'; utterance.ending = 'open' }
+          if (issue.method === 'rephrase' && issue.suggestion) {
+            const replacement = await safeRephrase(utterance.text, article.body, issue.issue || 'طبيعية الإلقاء', [])
+            if (replacement) utterance.text = replacement
+          }
+          const nextAnalysis = lang === 'ar' ? (await riskAnalyze([utterance]))[0] : analyses[index]
+          const voiceInfo = utterance.speaker === 'A' ? voices.A : voices.B
+          const wav = resolve(TMP, `${utteranceId}.wav`)
+          const result = await produceUtterance(utterance, nextAnalysis, voiceInfo.azure, lang, wav,
+            { runId, utteranceId, sourceText: article.body })
+          if (!result.ok || (lang === 'ar' && !result.verified)) {
+            return quarantine(`فشل الإصلاح الموجّه للمداخلة ${utteranceId}: ${result.reason || 'غير موثقة'}`, { finalJudge })
+          }
+          utts[index] = utterance
+          analyses[index] = nextAnalysis
+          const deliveryPlan = result.deliveryPlan || utterance
+          transcript[index] = { ...transcript[index], text: result.dialogueText || utterance.text,
+            delivery: deliveryPlan.delivery, ratePct: deliveryPlan.ratePct,
+            targetWordsPerMinute: deliveryPlan.targetWordsPerMinute,
+            pauseAfterMs: deliveryPlan.pauseAfterMs, ending: deliveryPlan.ending,
+            internalBreakMs: deliveryPlan.internalBreakMs }
+          pronunciation[index] = { ...pronunciation[index], pronunciationText: result.pronunciationText || utterance.text,
+            intendedText: result.intendedText || result.pronunciationText || utterance.text,
+            risks: result.risks || [], selectedCandidateId: result.selectedCandidate,
+            candidates: result.candidates, stt: result.heard }
+          segments[index] = { ...segments[index], file: wav,
+            pauseAfterMs: deliveryPlan.pauseAfterMs, hasHighRisk: (result.risks || []).some((risk) => risk.riskLevel === 'high') }
+        }
+        bridged = insertSemanticMusicBridges(segments.map((segment) => ({ ...segment })), transcript, music, TMP)
+        auditRecord.musicBridges = bridged.bridges
+        assembled = assemble(bridged.segments, candidateMp3, music)
+        technicalAudit = auditAudio(candidateMp3, durationRange)
+        if (technicalAudit.issues.length) return quarantine(`الفحص التقني بعد الإصلاح الموجّه: ${technicalAudit.issues.join(' · ')}`)
+        fullStt = await transcribeAssembledEpisode(candidateMp3, assembled.timeline, lang === 'ar' ? localeOf(voices.A.azure) : 'en-US')
+        const repairedIntended = pronunciation.map((item) => item.intendedText.replace(/\|/g, ' ')).join(' ')
+        fullComparison = compareTexts(repairedIntended, fullStt.text)
+        if (fullComparison.importantRatio < 0.95 || fullComparison.ratio < 0.90) {
+          return quarantine('STT الحلقة فشل بعد الإصلاح الموجّه', { fullStt, fullComparison })
+        }
+        finalJudge = await judgeFullEpisode(candidateMp3, repairedIntended, fullStt, transcript, allRisks)
+        if (!finalJudge.pass) return quarantine(`الحكم الصوتي رفض الحلقة بعد الإصلاح الموجّه: ${(finalJudge.problems || []).map((problem) => problem.issue).join(' · ')}`, { fullStt, finalJudge })
+      }
     }
 
     /* ٦) بوابة score قبل لمس أي ملف منشور، ثم نشر ذري مع Last-Known-Good وRollback دائم. */
     const qualityScore = episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript })
     if (!qualityScore.pass) return quarantine(`بوابة score النهائية أقل من الحد: ${qualityScore.score}/100`)
+    const humanGate = dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudge })
+    if (!humanGate.pass) return quarantine(`بوابة البشرية أقل من الحد: proxy=${humanGate.proxy.score}/100، judge=${humanGate.minimumJudgeDimension}/100`, { humanGate })
     const publicTranscript = { title: article.title, generatedAt: new Date().toISOString().slice(0, 10),
       language: 'ar', utterances: transcript.map(({ speaker, text }) => ({ speaker, text })) }
     const tempTranscript = resolve(TMP, `${article.slug}.dialogue.json`)
@@ -2612,7 +2711,8 @@ async function produce(article, lang) {
         releaseDir: snapshot.releaseDir, pilot: PILOT_MODE })
       auditRecord.status = acceptedStatus
       auditRecord.finishedAt = new Date().toISOString()
-      auditRecord.finalGate = { pass: true, score: qualityScore.score, scoreChecks: qualityScore.checks,
+      auditRecord.finalGate = { pass: true, score: qualityScore.score, minimumScore: qualityScore.minimumScore,
+        scoreChecks: qualityScore.checks, humanGate,
         reasonCodes: PILOT_MODE ? ['three_episode_pilot'] : [], technicalAudit, localValidation, postPublish, fullStt,
         fullComparison: fullComparison ? { ratio: fullComparison.ratio, importantRatio: fullComparison.importantRatio,
           missing: fullComparison.missing, missingImportant: fullComparison.missingImportant } : null, finalJudge }
@@ -3180,7 +3280,7 @@ if (flag('voice-audition')) {
   process.exit(0)
 }
 
-const requiresGeminiNow = !PREFLIGHT && (BAKEOFF || CANARY || DRY || PLAN || Boolean(opt('slug'))
+const requiresGeminiNow = !OFFLINE_DRY && !PREFLIGHT && (BAKEOFF || CANARY || DRY || PLAN || Boolean(opt('slug'))
   || Boolean(opt('latest')) || flag('nightly'))
 if (requiresGeminiNow) {
   try { await assertGeminiBillingReady() }
@@ -3189,7 +3289,7 @@ if (requiresGeminiNow) {
 const voicesForPreflight = BAKEOFF
   ? [] // الاكتشاف الديناميكي يجري داخل الاختبار قبل اختيار أي صوت
   : [VOICES.ar.A.azure, VOICES.ar.B.azure]
-const ssmlProfiles = voicesForPreflight.length
+const ssmlProfiles = !OFFLINE_DRY && voicesForPreflight.length
   ? await probeSsmlCapabilities(PREFLIGHT && FORCE, voicesForPreflight) : {}
 if (PREFLIGHT) {
   console.log(JSON.stringify(ssmlProfiles, null, 2))
@@ -3650,6 +3750,16 @@ else if (nightly) {
 }
 else { console.log('حدد --slug= أو --latest=N أو --nightly أو --pilot=3'); process.exit(1) }
 if (!queue.length) { console.log(targetSlug ? `لا يوجد مقال مطابق: ${targetSlug}` : 'لا حلقات ناقصة ضمن حد الليلة'); process.exit(targetSlug ? 1 : 0) }
+if (OFFLINE_DRY) {
+  console.log(`\n✓ Dry-run محلي بلا شبكة: ${queue.length} مقال/مقالات في الطابور`)
+  for (const article of queue) {
+    const key = `${article.slug}:ar`
+    const saved = state.done[key]
+    console.log(`  • ${article.slug} · ${saved?.status || 'لا توجد حلقة معتمدة'} · ${article.body.split(/\s+/).filter(Boolean).length} كلمة`)
+  }
+  console.log('لم يُستدعَ Azure أو Gemini، ولم يتغير Manifest أو R2 أو podcast.xml.')
+  process.exit(0)
+}
 
 /* لا fallback صامتاً: الحلقة العربية الكاملة تحتاج عينة محلية ناجحة + اعتماد Firestore
    يحمل optionKey وsampleHash نفسيهما. --force لا يتجاوز هذه البوابة. */
@@ -3657,7 +3767,7 @@ async function loadApprovedVoices() {
   try {
     const adoptedSample = String(env.PODCAST_AR_APPROVED_SAMPLE || 'sample-d').trim().toLowerCase()
     if (adoptedSample === 'sample-d') {
-      VOICES.ar.A.azure = env.PODCAST_AR_MALE || 'ar-AE-HamdanNeural'
+      VOICES.ar.A.azure = env.PODCAST_AR_MALE || 'ar-KW-FahedNeural'
       VOICES.ar.B.azure = env.PODCAST_AR_FEMALE || 'ar-KW-NouraNeural'
       VOICES.ar.A.name = env.PODCAST_AR_MALE_NAME || 'فهد'
       VOICES.ar.B.name = env.PODCAST_AR_FEMALE_NAME || 'نورة'

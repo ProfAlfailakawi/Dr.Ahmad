@@ -29,6 +29,14 @@ import { createSign } from 'node:crypto'
 import { resolve, dirname } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import {
+  READING_VOICES,
+} from './lib/arabic-audio-engine.mjs'
+import {
+  HUMAN_READING_PIPELINE_HASH,
+  readingNeedsGeneration,
+  renderHumanReading,
+} from './lib/human-reading-pipeline.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const AUDIO_DIR = resolve(ROOT, 'audio')
@@ -36,14 +44,23 @@ const PUBLIC_AUDIO_DIR = resolve(ROOT, 'public/audio')
 const MANIFEST = resolve(ROOT, 'src/data/audio.json')
 const AUDIO_META = resolve(ROOT, 'src/data/audio-meta.json')
 const SITE_FEED = resolve(ROOT, 'src/data/site-articles-feed.json')
+const AUDIO_AUDITS = resolve(ROOT, 'audio-audits')
+const AUDIO_WORK = resolve(ROOT, '.audio-human-work')
+const AUDIO_LAST_GOOD = resolve(ROOT, '.audio-last-known-good')
+const AUDIO_QUARANTINE = resolve(AUDIO_AUDITS, 'quarantine')
+const PENDING_SITE_PATCHES = resolve(ROOT, '.audio-site-patches.json')
 const DRY_RUN = process.argv.includes('--dry-run')
 const BASE_ONLY = DRY_RUN || process.argv.includes('--base-only') || process.argv.includes('--local-only')
+const UPGRADE_EXISTING = process.argv.includes('--upgrade-existing')
+const TECHNICAL_ONLY = process.argv.includes('--technical-only')
+const slugArg = process.argv.find((arg) => arg.startsWith('--slug='))
+const ONLY_SLUG = slugArg ? safeSlug(slugArg.slice('--slug='.length)) : ''
 const limitArg = process.argv.find((arg) => arg.startsWith('--limit='))
 const JOB_LIMIT = limitArg ? Number(limitArg.slice('--limit='.length)) : Number.POSITIVE_INFINITY
 const MIN_MP3_BYTES = 5_000
 const VOICES = [
-  { key: 'fahed', azure: 'ar-KW-FahedNeural', suffix: '', label: 'فهد' },
-  { key: 'noura', azure: 'ar-KW-NouraNeural', suffix: '.noura', label: 'نورة' },
+  { key: 'fahed', azure: READING_VOICES.fahed.azure, suffix: '', label: 'فهد' },
+  { key: 'noura', azure: READING_VOICES.noura.azure, suffix: '.noura', label: 'نورة' },
 ]
 
 if (!(JOB_LIMIT > 0)) throw new Error('--limit يجب أن يكون رقماً موجباً')
@@ -62,14 +79,8 @@ function loadEnvironment() {
 
 const env = loadEnvironment()
 const AUDIO_PUBLIC_BASE_URL = (env.AUDIO_PUBLIC_BASE_URL || env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
-const R2_BUCKET = env.CLOUDFLARE_R2_BUCKET || env.R2_BUCKET || ''
-const R2_ENDPOINT = env.CLOUDFLARE_R2_ENDPOINT || ''
-const R2_ACCESS_KEY_ID = env.CLOUDFLARE_R2_ACCESS_KEY_ID || env.AWS_ACCESS_KEY_ID || ''
-const R2_SECRET_ACCESS_KEY = env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || env.AWS_SECRET_ACCESS_KEY || ''
 const USE_R2 = Boolean(AUDIO_PUBLIC_BASE_URL)
 const sleep = (milliseconds) => new Promise((resolveSleep) => setTimeout(resolveSleep, milliseconds))
-const xml = (value) => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;')
 
 function safeSlug(value) {
   const slug = String(value || '').trim()
@@ -77,36 +88,6 @@ function safeSlug(value) {
     throw new Error(`slug غير آمن للصوت: ${slug || '(فارغ)'}`)
   }
   return slug
-}
-
-function splitText(value, maximum = 7_000) {
-  const text = String(value || '').replace(/\r/g, '').trim()
-  if (!text) return []
-  const chunks = []
-  let current = ''
-  const segments = text.split(/(?<=[.!؟؛\n])\s+/u)
-  for (const segment of segments) {
-    let remaining = segment.trim()
-    while (remaining.length > maximum) {
-      if (current) {
-        chunks.push(current)
-        current = ''
-      }
-      let cut = remaining.lastIndexOf(' ', maximum)
-      if (cut < Math.floor(maximum * 0.6)) cut = maximum
-      chunks.push(remaining.slice(0, cut).trim())
-      remaining = remaining.slice(cut).trim()
-    }
-    if (!remaining) continue
-    if (current && current.length + remaining.length + 1 > maximum) {
-      chunks.push(current)
-      current = remaining
-    } else {
-      current = current ? `${current} ${remaining}` : remaining
-    }
-  }
-  if (current) chunks.push(current)
-  return chunks
 }
 
 function hasMp3Signature(buffer) {
@@ -214,33 +195,6 @@ async function externalObjectExists(fileName, meta = audioMeta()) {
   }
 }
 
-function uploadToR2(fileName, file) {
-  if (!USE_R2) return
-  if (!R2_BUCKET || !R2_ENDPOINT || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
-    throw new Error('إعدادات Cloudflare R2 غير مكتملة: CLOUDFLARE_R2_BUCKET / ENDPOINT / ACCESS_KEY_ID / SECRET_ACCESS_KEY')
-  }
-  const result = spawnSync('aws', [
-    's3', 'cp', file, `s3://${R2_BUCKET}/${fileName}`,
-    '--endpoint-url', R2_ENDPOINT,
-    '--cache-control', 'public, max-age=31536000, immutable',
-    '--content-type', 'audio/mpeg',
-    '--no-progress',
-  ], {
-    cwd: ROOT,
-    encoding: 'utf8',
-    env: {
-      ...process.env,
-      AWS_ACCESS_KEY_ID: R2_ACCESS_KEY_ID,
-      AWS_SECRET_ACCESS_KEY: R2_SECRET_ACCESS_KEY,
-      AWS_EC2_METADATA_DISABLED: 'true',
-    },
-    timeout: 120_000,
-  })
-  if (result.status !== 0) {
-    throw new Error(`تعذر رفع ${fileName} إلى R2: ${(result.stderr || result.stdout || '').trim()}`)
-  }
-}
-
 function durationSeconds(file) {
   const probe = spawnSync('ffprobe', [
     '-v', 'error', '-show_entries', 'format=duration',
@@ -251,71 +205,35 @@ function durationSeconds(file) {
   return Number.isFinite(seconds) && seconds > 0 ? seconds : null
 }
 
-function rememberAudio(fileName, file) {
-  const next = audioMeta()
-  next[fileName] = {
-    bytes: statSync(file).size,
-    durationSeconds: durationSeconds(file) || next[fileName]?.durationSeconds || null,
-  }
-  writeAudioMeta(next)
+function auditPath(article, voice) {
+  return resolve(AUDIO_AUDITS, `${article.slug}.${voice.key}.json`)
 }
 
-async function azureChunk(text, title, voice) {
-  const key = env.AZURE_SPEECH_KEY
-  const region = env.AZURE_SPEECH_REGION || 'uaenorth'
-  if (!key) throw new Error('AZURE_SPEECH_KEY مفقود')
-  if (!/^[a-z0-9-]+$/i.test(region)) throw new Error('AZURE_SPEECH_REGION غير صالح')
-  const prefix = title ? `${xml(title)}<break time="900ms"/>` : ''
-  const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="ar-KW"><voice name="${voice}"><prosody rate="-4%" pitch="0%">${prefix}${xml(text).replace(/\n+/g, '<break time="650ms"/>')}</prosody></voice></speak>`
-
-  let lastStatus = 0
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 60_000)
-    let response
-    try {
-      response = await fetch(`https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`, {
-        method: 'POST',
-        signal: controller.signal,
-        headers: {
-          'Ocp-Apim-Subscription-Key': key,
-          'Content-Type': 'application/ssml+xml',
-          'X-Microsoft-OutputFormat': 'audio-24khz-48kbitrate-mono-mp3',
-          'User-Agent': 'alfailakawi-auto-audio',
-        },
-        body: ssml,
-      })
-    } catch (error) {
-      if (attempt === 3) throw new Error(error?.name === 'AbortError' ? 'انتهت مهلة Azure' : 'تعذر الاتصال بـ Azure')
-      await sleep(1_000 * attempt)
-      continue
-    } finally {
-      clearTimeout(timer)
-    }
-    if (response.ok) {
-      const buffer = Buffer.from(await response.arrayBuffer())
-      if (!hasMp3Signature(buffer)) throw new Error('Azure أعاد ملفاً لا يبدو MP3 صالحاً')
-      return buffer
-    }
-    lastStatus = response.status
-    if (response.status !== 429 && response.status < 500) break
-    const retryAfter = Math.min(Number(response.headers.get('retry-after')) || attempt, 10)
-    await sleep(retryAfter * 1_000)
+function generationDecision(article, voice, target, externalExists = false) {
+  const auditFile = auditPath(article, voice)
+  const decision = readingNeedsGeneration({ article, voiceKey: voice.key, output: target, auditFile, externalExists })
+  if (UPGRADE_EXISTING && decision.reason === 'legacy_last_known_good') {
+    return { needed: true, reason: 'explicit_legacy_upgrade', auditFile }
   }
-  throw new Error(`Azure رفض الطلب (${lastStatus || 'network'})`)
+  return { ...decision, auditFile }
 }
 
-async function synthesize(article, voice) {
-  const chunks = splitText(article.body)
-  if (!chunks.length) throw new Error(`نص المقال فارغ: ${article.slug}`)
-  const audio = []
-  for (const [index, chunk] of chunks.entries()) {
-    audio.push(await azureChunk(chunk, index === 0 ? article.title : '', voice.azure))
-    if (index + 1 < chunks.length) await sleep(300)
-  }
-  const result = Buffer.concat(audio)
-  if (!hasMp3Signature(result)) throw new Error('ملف MP3 النهائي غير صالح')
-  return result
+async function synthesizeHumanReading(article, voice, target) {
+  const auditFile = auditPath(article, voice)
+  return renderHumanReading({
+    article,
+    voiceKey: voice.key,
+    output: target,
+    auditFile,
+    workRoot: AUDIO_WORK,
+    lastKnownGoodDirectory: resolve(AUDIO_LAST_GOOD, article.slug, voice.key),
+    quarantineDirectory: AUDIO_QUARANTINE,
+    azureKey: env.AZURE_SPEECH_KEY,
+    azureRegion: env.AZURE_SPEECH_REGION || 'uaenorth',
+    geminiKey: env.GEMINI_API_KEY || env.GOOGLE_API_KEY || '',
+    requireAudioJudge: !TECHNICAL_ONLY,
+    minimumHumanScore: 95,
+  })
 }
 
 function firestoreValue(value) {
@@ -546,11 +464,11 @@ async function processOriginals(articles, allOriginals, budget) {
       const fileName = `${article.slug}${voice.suffix}.mp3`
       const target = resolve(AUDIO_DIR, fileName)
       const publicTarget = resolve(PUBLIC_AUDIO_DIR, fileName)
-      if ((USE_R2 && await externalObjectExists(fileName)) || validLocalMp3(target)) {
-        if (!DRY_RUN && USE_R2 && validLocalMp3(target)) {
-          uploadToR2(fileName, target)
-          rememberAudio(fileName, target)
-        } else if (!DRY_RUN && !USE_R2 && !validLocalMp3(publicTarget)) {
+      const externalExists = USE_R2 && await externalObjectExists(fileName)
+      const decision = generationDecision(article, voice, target, externalExists)
+      const existingAccepted = externalExists || validLocalMp3(target)
+      if (existingAccepted && !decision.needed) {
+        if (!DRY_RUN && !USE_R2 && !validLocalMp3(publicTarget)) {
           atomicCopy(target, publicTarget)
         }
         continue
@@ -559,12 +477,8 @@ async function processOriginals(articles, allOriginals, budget) {
       missingArticles.add(article.slug)
       console.log(`  ${DRY_RUN ? '○' : '◈'} أصل · ${voice.label} · ${article.title.slice(0, 55)}`)
       if (DRY_RUN || budget.used >= JOB_LIMIT) continue
-      const buffer = await synthesize(article, voice)
-      atomicWrite(target, buffer)
-      if (USE_R2) {
-        uploadToR2(fileName, target)
-        rememberAudio(fileName, target)
-      } else {
+      const audit = await synthesizeHumanReading(article, voice, target)
+      if (!USE_R2) {
         atomicCopy(target, publicTarget)
       }
       atomicJson(MANIFEST, rebuildOriginalManifest(allOriginals))
@@ -580,25 +494,26 @@ async function processSiteArticles(articles, budget) {
   let generated = 0
   let missing = 0
   const missingArticles = new Set()
+  const pending = loadJson(PENDING_SITE_PATCHES, { schemaVersion: 1, items: [] })
+  const pendingByDocument = new Map((pending.items || []).map((item) => [item.documentName, item]))
   for (const article of articles) {
     const audio = {}
     for (const voice of VOICES) {
       const fileName = `${article.slug}${voice.suffix}.mp3`
       const objectName = `site-content/audio/${fileName}`
       let exists = USE_R2 ? await externalObjectExists(fileName) : await storageObjectExists(objectName)
-      if (!exists) {
+      const target = resolve(AUDIO_DIR, fileName)
+      const decision = generationDecision(article, voice, target, exists)
+      if (!exists || decision.needed) {
         missing += 1
         missingArticles.add(article.slug)
         console.log(`  ${DRY_RUN ? '○' : '◈'} مُضاف · ${voice.label} · ${article.title.slice(0, 55)}`)
         if (!DRY_RUN && budget.used < JOB_LIMIT) {
-          const buffer = await synthesize(article, voice)
-          const target = resolve(AUDIO_DIR, fileName)
-          atomicWrite(target, buffer)
+          const audit = await synthesizeHumanReading(article, voice, target)
           if (USE_R2) {
-            uploadToR2(fileName, target)
-            rememberAudio(fileName, target)
+            // الرفع مسؤولية الناشر الذري وحده. يبقى الملف مرحلياً محلياً حتى تنجح كل البوابات.
           } else {
-            await uploadStorageObject(objectName, buffer)
+            await uploadStorageObject(objectName, readFileSync(target))
           }
           exists = true
           budget.used += 1
@@ -610,10 +525,21 @@ async function processSiteArticles(articles, budget) {
     }
     if (!DRY_RUN && Object.keys(audio).length
       && (audio.fahed !== article.currentAudio.fahed || audio.noura !== article.currentAudio.noura)) {
-      await patchSiteArticle(article.documentName, audio)
+      if (USE_R2) pendingByDocument.set(article.documentName, {
+        documentName: article.documentName,
+        slug: article.slug,
+        audio,
+        queuedAt: new Date().toISOString(),
+      })
+      else await patchSiteArticle(article.documentName, audio)
       article.currentAudio = audio
     }
   }
+  if (!DRY_RUN && USE_R2) atomicJson(PENDING_SITE_PATCHES, {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    items: [...pendingByDocument.values()],
+  })
   if (!DRY_RUN) writeSiteArticlesFeed(articles)
   return { generated, missing, missingArticles: missingArticles.size }
 }
@@ -626,6 +552,11 @@ const allOriginals = originalArticles()
 let activeOriginals = allOriginals
 let siteArticles = []
 if (!BASE_ONLY) ({ originals: activeOriginals, siteArticles } = await loadRemoteContent(allOriginals))
+if (ONLY_SLUG) {
+  activeOriginals = activeOriginals.filter((article) => article.slug === ONLY_SLUG)
+  siteArticles = siteArticles.filter((article) => article.slug === ONLY_SLUG)
+  if (!activeOriginals.length && !siteArticles.length) throw new Error(`لم يُعثر على المقال: ${ONLY_SLUG}`)
+}
 
 const seen = new Set(activeOriginals.map((article) => article.slug))
 for (const article of siteArticles) {
@@ -633,7 +564,7 @@ for (const article of siteArticles) {
   seen.add(article.slug)
 }
 
-console.log(`الصوت التلقائي${DRY_RUN ? ' (فحص فقط)' : ''} · أصل ${activeOriginals.length} · مضاف ${siteArticles.length}`)
+console.log(`الصوت الإنساني الدلالي ${HUMAN_READING_PIPELINE_HASH.slice(0, 10)}${DRY_RUN ? ' (فحص فقط)' : ''} · أصل ${activeOriginals.length} · مضاف ${siteArticles.length}`)
 const budget = { used: 0 }
 const originalResult = await processOriginals(activeOriginals, allOriginals, budget)
 const siteResult = BASE_ONLY

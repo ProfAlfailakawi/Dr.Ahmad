@@ -51,6 +51,7 @@ function scoreAudioGate({ approved, hasTranscript, byteSize, meta, audit }) {
   const technical = finalGate.technicalAudit || {}
   const comparison = finalGate.fullComparison || {}
   const judge = finalGate.finalJudge || {}
+  const humanGate = finalGate.humanGate || {}
   const issues = []
   const metrics = {
     durationSeconds: Math.round(Number(meta?.durationSeconds || technical?.dur || 0)),
@@ -58,8 +59,13 @@ function scoreAudioGate({ approved, hasTranscript, byteSize, meta, audit }) {
     sttRatio: Number.isFinite(Number(comparison?.ratio)) ? Math.round(Number(comparison.ratio) * 100) : null,
     importantRatio: Number.isFinite(Number(comparison?.importantRatio)) ? Math.round(Number(comparison.importantRatio) * 100) : null,
     longSilences: Array.isArray(technical?.longSilences) ? technical.longSilences.length : null,
+    unexpectedLongSilences: Array.isArray(technical?.unexpectedLongSilences)
+      ? technical.unexpectedLongSilences.length : null,
     peakDb: Number.isFinite(Number(technical?.peakDb)) ? Number(technical.peakDb) : null,
     judgePass: judge?.pass === true,
+    humanLikeness: Number.isFinite(Number(humanGate?.minimumJudgeDimension))
+      ? Math.round(Number(humanGate.minimumJudgeDimension)) : null,
+    humanProxy: Number.isFinite(Number(humanGate?.proxy?.score)) ? Math.round(Number(humanGate.proxy.score)) : null,
   }
 
   const durationOk = metrics.durationSeconds >= 120 && metrics.durationSeconds <= 360
@@ -67,8 +73,12 @@ function scoreAudioGate({ approved, hasTranscript, byteSize, meta, audit }) {
   const transcriptOk = Boolean(hasTranscript)
   const auditOk = finalGate.pass === true
   const sttOk = metrics.importantRatio === null ? auditOk : metrics.importantRatio >= 95
-  const silenceOk = metrics.longSilences === null ? auditOk : metrics.longSilences === 0
+  const silenceOk = metrics.unexpectedLongSilences !== null
+    ? metrics.unexpectedLongSilences === 0
+    : metrics.longSilences === null ? auditOk : metrics.longSilences === 0
   const permanentUrlOk = Boolean(meta?.url || meta?.r2Key || EXTERNAL_AUDIO_BASE_URL)
+  const humanOk = metrics.humanLikeness === null ? auditOk
+    : metrics.humanLikeness >= 95 && Number(metrics.humanProxy || 0) >= 95
 
   if (!approved) issues.push('الحلقة ليست معتمدة آليًا في حالة البودكاست.')
   if (!transcriptOk) issues.push('لا يوجد Transcript منشور لهذه الحلقة.')
@@ -78,6 +88,7 @@ function scoreAudioGate({ approved, hasTranscript, byteSize, meta, audit }) {
   if (!silenceOk) issues.push('توجد وقفات طويلة تتجاوز الحد المقبول.')
   if (!bytesOk) issues.push('حجم الملف مريب أو غير صالح للبودكاست.')
   if (!permanentUrlOk) issues.push('رابط الصوت الدائم غير مثبت.')
+  if (!humanOk) issues.push('بوابة البشرية أقل من 95/100.')
 
   const score = roundedScore(
     (approved ? 18 : 0)
@@ -87,12 +98,13 @@ function scoreAudioGate({ approved, hasTranscript, byteSize, meta, audit }) {
     + (durationOk ? 10 : 0)
     + (silenceOk ? 10 : 0)
     + (bytesOk ? 5 : 0)
-    + (permanentUrlOk ? 5 : 0)
+    + (permanentUrlOk ? 3 : 0)
+    + (humanOk ? 2 : 0)
   )
 
   return {
     score,
-    pass: score >= 92 && issues.length === 0,
+    pass: score >= 94 && issues.length === 0,
     metrics,
     pronunciation: auditOk && sttOk ? 'مقبول' : 'ينتظر فحص النطق والمعنى',
     pace: durationOk ? 'مقبول' : 'يحتاج ضبط السرعة/المدة',

@@ -26,6 +26,7 @@ const META = resolve(ROOT, 'src/data/audio-meta.json')
 const STATE = resolve(ROOT, '.podcast-state.json')
 const TX_FILE = resolve(ROOT, '.audio-r2-transaction.json')
 const TX_AUDITS = resolve(ROOT, 'podcast-audits/r2-transactions')
+const READING_AUDITS = resolve(ROOT, 'audio-audits')
 const args = process.argv.slice(2)
 const ROLLBACK = args.includes('--rollback-last')
 const COMMIT = args.includes('--commit-last')
@@ -127,6 +128,17 @@ function durationSeconds(file) {
   if (probe.status !== 0) return null
   const seconds = Math.round(Number(probe.stdout.trim()))
   return Number.isFinite(seconds) && seconds > 0 ? seconds : null
+}
+function acceptedReadingAudit(name) {
+  if (/\.dialogue(?:-en)?\.mp3$/i.test(name) || !name.endsWith('.mp3')) return null
+  const voice = name.endsWith('.noura.mp3') ? 'noura' : 'fahed'
+  const slug = name.replace(/\.noura\.mp3$/, '').replace(/\.mp3$/, '')
+  const file = resolve(READING_AUDITS, `${slug}.${voice}.json`)
+  if (!existsSync(file)) return null
+  try {
+    const audit = JSON.parse(readFileSync(file, 'utf8'))
+    return audit.status === 'accepted' && audit.pass === true ? audit : null
+  } catch { return null }
 }
 const sleep = (ms) => new Promise((resolvePromise) => setTimeout(resolvePromise, ms))
 async function verifyPublicObject(entry, txId) {
@@ -245,6 +257,7 @@ try {
   for (const entry of tx.files) {
     const file = resolve(AUDIO, entry.name)
     const isMp3 = entry.name.endsWith('.mp3')
+    const readingAudit = acceptedReadingAudit(entry.name)
     meta[entry.name] = {
       ...(meta[entry.name] || {}),
       bytes: entry.bytes,
@@ -252,6 +265,13 @@ try {
       contentType: isMp3 ? 'audio/mpeg' : 'application/json; charset=utf-8',
       publishedAt: new Date().toISOString(),
       ...(isMp3 ? { durationSeconds: durationSeconds(file) || meta[entry.name]?.durationSeconds || null } : {}),
+      ...(readingAudit ? {
+        sourceHash: readingAudit.sourceHash,
+        pipelineHash: readingAudit.pipelineHash,
+        humanLikenessScore: readingAudit.humanLikenessProxy?.score ?? null,
+        audioJudgeMinimum: readingAudit.audioJudge?.minimumDimension ?? null,
+        acceptedAt: readingAudit.finishedAt,
+      } : {}),
     }
   }
   const rendered = `${JSON.stringify(Object.fromEntries(Object.entries(meta).sort(([a], [b]) => a.localeCompare(b))), null, 2)}\n`

@@ -12,6 +12,7 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
+import { buildDialogueSsml } from './lib/arabic-audio-engine.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = resolve(ROOT, 'review-output')
@@ -35,14 +36,12 @@ const FFMPEG = ['/opt/homebrew/bin/ffmpeg', '/usr/local/bin/ffmpeg', '/usr/bin/f
 const FFPROBE = ['/opt/homebrew/bin/ffprobe', '/usr/local/bin/ffprobe', '/usr/bin/ffprobe', 'ffprobe'].find((p) => existsSync(p)) || 'ffprobe'
 const opt = (name) => (process.argv.find((arg) => arg.startsWith(`--${name}=`)) || '').split('=')[1] || ''
 const SLUG = opt('slug') || 'how-do-we-assess-without-breaking-the-human-beingarabic'
-const MALE = env.PODCAST_AR_MALE || 'ar-AE-HamdanNeural'
+const MALE = env.PODCAST_AR_MALE || 'ar-KW-FahedNeural'
 const FEMALE = env.PODCAST_AR_FEMALE || 'ar-KW-NouraNeural'
 const MALE_NAME = env.PODCAST_AR_MALE_NAME || 'فهد'
 const FEMALE_NAME = env.PODCAST_AR_FEMALE_NAME || 'نورة'
 const MUSIC = resolve(ROOT, 'music/still-light.mp3')
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-const signed = (n) => `${n >= 0 ? '+' : ''}${Math.round(n)}%`
 const ff = (args) => {
   const r = spawnSync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', ...args], { encoding: 'utf8' })
   if (r.status !== 0) throw new Error(r.stderr || `ffmpeg failed: ${args.join(' ')}`)
@@ -108,11 +107,9 @@ const episode = [
 }))
 
 function ssmlFor(item) {
-  const p = delivery[item.type] || delivery.statement
   const isMale = item.speaker === 'A'
-  const pitch = p.pitch + (isMale ? -0.4 : 0.4) + (item.ending === 'open' ? 0.6 : 0)
-  const rate = p.rate + (item.text.split(/\s+/).length <= 4 ? 2 : 0)
-  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${isMale ? 'ar-AE' : 'ar-KW'}"><voice name="${isMale ? MALE : FEMALE}"><prosody rate="${signed(rate)}" pitch="${signed(pitch)}">${esc(item.text)}</prosody></voice></speak>`
+  return buildDialogueSsml({ ...item, delivery: item.type }, isMale ? MALE : FEMALE,
+    { voiceKey: isMale ? 'fahed' : 'noura' })
 }
 
 async function synth(item, outPath) {

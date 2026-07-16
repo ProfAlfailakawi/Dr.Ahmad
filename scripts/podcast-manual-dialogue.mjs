@@ -11,6 +11,7 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
+import { buildDialogueSsml } from './lib/arabic-audio-engine.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = resolve(ROOT, 'review-output')
@@ -33,7 +34,7 @@ const SLUG = arg('slug', 'manual-dialogue-review')
 const INPUT = resolve(ROOT, arg('input', `manual-dialogues/${SLUG}.json`))
 const AZURE_KEY = env.AZURE_SPEECH_KEY
 const AZURE_REGION = env.AZURE_SPEECH_REGION || 'uaenorth'
-const MALE = env.PODCAST_AR_MALE || 'ar-AE-HamdanNeural'
+const MALE = env.PODCAST_AR_MALE || 'ar-KW-FahedNeural'
 const FEMALE = env.PODCAST_AR_FEMALE || 'ar-KW-NouraNeural'
 const MALE_NAME = env.PODCAST_AR_MALE_NAME || 'فهد'
 const FEMALE_NAME = env.PODCAST_AR_FEMALE_NAME || 'نورة'
@@ -50,8 +51,6 @@ if (!existsSync(INPUT)) {
 
 const FFMPEG = ['/opt/homebrew/bin/ffmpeg', '/usr/local/bin/ffmpeg', '/usr/bin/ffmpeg', 'ffmpeg'].find((p) => existsSync(p)) || 'ffmpeg'
 const FFPROBE = ['/opt/homebrew/bin/ffprobe', '/usr/local/bin/ffprobe', '/usr/bin/ffprobe', 'ffprobe'].find((p) => existsSync(p)) || 'ffprobe'
-const esc = (text) => String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-const signed = (n) => `${n >= 0 ? '+' : ''}${Math.round(n)}%`
 const hashFile = (file) => createHash('sha256').update(readFileSync(file)).digest('hex')
 
 const run = (bin, args) => {
@@ -134,12 +133,9 @@ function qualityWarnings(items) {
 
 function ssmlFor(item) {
   const isMale = item.speaker === 'male'
-  const config = delivery[item.deliveryType] || delivery.statement
-  const wordCount = item.text.split(/\s+/).filter(Boolean).length
-  const briefBoost = wordCount <= 4 ? 3 : 0
-  const pitch = config.pitch + (isMale ? -0.4 : 0.35)
-  const rate = config.rate + briefBoost
-  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${isMale ? 'ar-AE' : 'ar-KW'}"><voice name="${isMale ? MALE : FEMALE}"><prosody rate="${signed(rate)}" pitch="${signed(pitch)}">${esc(item.text)}</prosody></voice></speak>`
+  return buildDialogueSsml({ ...item, delivery: item.deliveryType,
+    ending: item.deliveryType === 'question' ? 'open' : item.deliveryType === 'closing' ? 'final' : 'neutral' },
+  isMale ? MALE : FEMALE, { voiceKey: isMale ? 'fahed' : 'noura' })
 }
 
 async function synth(item, outPath) {

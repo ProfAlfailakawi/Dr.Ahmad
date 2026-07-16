@@ -34,10 +34,21 @@
 ## الإخراج — JSON فقط
 {
   "pass": false,
+  "humanLikeness": 0,
+  "warmth": 0,
+  "semanticDelivery": 0,
+  "questionNaturalness": 0,
+  "pauseNaturalness": 0,
+  "pronunciation": 0,
+  "rhythmVariety": 0,
+  "endingVariety": 0,
+  "nonBroadcastTone": 0,
+  "speakerIndependence": 0,
   "problems": [
-    { "word": "الكلمة المشكلة", "issue": "وصف الخلل المؤثر بدقة", "method": "diacritics | sub | split | rephrase", "suggestion": "الضبط أو الصيغة المنطوقة أو إعادة الصياغة المقترحة" }
+    { "unitId": "u001", "word": "الكلمة المشكلة", "issue": "وصف الخلل المؤثر بدقة", "method": "diacritics | sub | split | rephrase", "suggestion": "الضبط أو الصيغة المنطوقة أو إعادة الصياغة المقترحة" }
   ],
   "revisedPronunciationText": "النص النطقي الكامل بعد تطبيق العلاج — أو نص فارغ إذا كان method=rephrase",
   "rephrasedDialogueText": "إعادة صياغة فصيحة محافظة على المعنى عند طلبها فقط — وإلا نص فارغ"
 }
+الدرجات العشر من 0 إلى 100 ويجب أن تكون مستقلة لا رقمًا تجميليًا. قيّم endingVariety بحسب اختلاف النهايات المفتوحة والمحايدة والنهائية، وnonBroadcastTone بحسب غياب نبرة الأخبار والإعلان والوعظ، وspeakerIndependence بحسب اختلاف الشخصيتين وعدم تكرار إحداهما للأخرى. في فحص مقطع واحد املأها للمقطع؛ وفي فحص الحلقة املأها للحلقة كاملة. لا تمنح pass للحلقة إلا إذا كانت كل درجة 95 فأعلى ولم توجد مشكلة مؤثرة.
 عند rephrase: اكتب في suggestion جملة فصيحة أبسط تؤدي المعنى نفسه بدقة، دون إضافة أو حذف معلومة، ودون إضعاف الأسلوب.

@@ -39,6 +39,11 @@ public/files
 podcast-audits/voice-bakeoff.private.json
 podcast-rejected/
 .podcast-tmp/
+.audio-human-work/
+.audio-last-known-good/
+.audio-site-patches.json
+audio-audits/quarantine/
+audio-audits/**/*.mp3
 ArabicPronunciationMemory.sqlite*
 .private-memory/
 PrivateBooks/
@@ -54,7 +59,3 @@ podcast-finalist-retest-samples/
 podcast-dialogue-samples/
 podcast-voice-bakeoff-samples/
 .audio-r2-plan.json
-
-# ذاكرة النطق وسجلات Firebase محلية فقط
-ArabicPronunciationMemory.sqlite*
-firebase-debug.log*

@@ -229,7 +229,15 @@ function cropRecognitionPadding(file, heard) {
 }
 
 function actualWpm(text, file, heard) {
-  const duration = Math.max(0.35, recognizedBounds(heard)?.spokenDurationSec || probeAudio(file).durationSec)
+  const containerDuration = Math.max(0.35, probeAudio(file).durationSec)
+  const recognizedDuration = recognizedBounds(heard)?.spokenDurationSec
+  // Azure occasionally returns word timestamps outside the actual short clip
+  // (most visible on titles and one-line questions). Never let an impossible
+  // STT timestamp drive rate correction; the trimmed audio is the safe source.
+  const timestampIsPlausible = Number.isFinite(recognizedDuration)
+    && recognizedDuration >= Math.max(0.35, containerDuration * 0.55)
+    && recognizedDuration <= containerDuration * 1.35
+  const duration = timestampIsPlausible ? recognizedDuration : containerDuration
   return Math.round(countArabicWords(text) * 60 / duration)
 }
 
@@ -261,7 +269,12 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
     })
     const missingRisks = highRiskMissing(comparison, working.risks)
     const negationMissing = (comparison.missing || []).filter((word) => ['لا', 'لم', 'لن', 'ليس', 'ليست', 'غير', 'دون'].includes(word))
-    const pacePass = Math.abs(paceDelta) <= 8
+    // A one-line title can only contain a handful of words, so a few hundred
+    // milliseconds of Azure prosody variance moves its calculated WPM sharply.
+    // Keep the normal tight gate for real reading units, but avoid rejecting a
+    // natural short unit because of noisy WPM arithmetic.
+    const paceTolerance = countArabicWords(working.pronunciationText) <= 7 ? 20 : 8
+    const pacePass = Math.abs(paceDelta) <= paceTolerance
     const sttPass = comparison.ratio >= 0.9 && comparison.importantRatio >= 0.95
       && heard?.consensusPass === true
       && missingRisks.length === 0 && negationMissing.length === 0

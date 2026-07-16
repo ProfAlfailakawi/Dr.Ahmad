@@ -308,18 +308,7 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
   height: 2px;
   border-radius: 999px;
   background: linear-gradient(90deg, transparent, rgb(var(--c-accent) / .72));
-  /* الخط ثابت بينما المحتوى ينزلق صاعداً عند الدخول — إن ظهر مبكراً بدا شارطاً النص.
-     يُكشف بعد استقرار الحركة فلا يتقاطع مع أي سطر إطلاقاً. */
-  opacity: 0;
-  animation: page-head-line .7s var(--E, ease-out) 1.25s forwards;
-}
-
-@keyframes page-head-line {
-  to { opacity: .42; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .page-head::after { animation: none; opacity: .42; }
+  opacity: .42;
 }
 
 .site-footer {

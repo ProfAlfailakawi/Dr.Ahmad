@@ -73,188 +73,38 @@ const tokens = (s: string) => norm(s).replace(/[^ء-ي\s]/g, ' ').split(/\s+/)
 
 const ar = (n: number) => String(n)
 
-/* ═══════════ استوديو بطاقات الاقتباس — ٦ قوالب × ٣ مقاسات ═══════════
-   كل قالب شخصية بصرية كاملة ضمن هوية الموقع (أحادية + اللون المعتمد):
-   المداد · الليل · الجريدة · الشريط · اللوح · التوقيع */
-export type CardFormatKey = 'square' | 'portrait' | 'story'
-export const CARD_FORMATS: { key: CardFormatKey; label: string; w: number; h: number; hint: string }[] = [
-  { key: 'square', label: 'مربع', w: 1080, h: 1080, hint: 'X · إنستغرام' },
-  { key: 'portrait', label: 'طولي', w: 1080, h: 1350, hint: 'منشور إنستغرام' },
-  { key: 'story', label: 'ستوري', w: 1080, h: 1920, hint: 'ستوري · واتساب' },
-]
-
-const PALETTE = {
-  paper: '#FBFAF7', cream: '#F7F4EC', ink: '#15161A', night: '#0E1013',
-  accent: '#3E5C78', accentSoft: '#8AADCC', soft: '#7C818B', line: '#D9D6CE',
-}
-const SIGNATURE = 'د. أحمد حسين الفيلكاوي'
-const DOMAIN = 'dr-alfailakawi.com'
-
-type Ctx = CanvasRenderingContext2D
-const wrapLines = (g: Ctx, text: string, maxW: number, maxLines = 9) => {
-  const words = text.split(/\s+/)
-  const lines: string[] = []
-  let line = ''
+/* ── بطاقة الاقتباس: رسمٌ أحادي اللون واعٍ بالوضع الداكن ── */
+const W = 1080
+function drawQuote(quote: string, dark: boolean): string {
+  const c = document.createElement('canvas')
+  c.width = W; c.height = W
+  const g = c.getContext('2d')!
+  const bg = dark ? '#111215' : '#FCFCFA'
+  const ink = dark ? '#EAEAE7' : '#15161A'
+  const accent = dark ? '#8AADCC' : '#3E5C78'
+  const soft = dark ? '#8A8F98' : '#7C818B'
+  g.fillStyle = bg; g.fillRect(0, 0, W, W)
+  const grad = g.createRadialGradient(W * 0.82, W * 0.2, 40, W * 0.82, W * 0.2, 620)
+  grad.addColorStop(0, accent + '22'); grad.addColorStop(1, accent + '00')
+  g.fillStyle = grad; g.fillRect(0, 0, W, W)
+  g.strokeStyle = accent + '30'; g.lineWidth = 2; g.strokeRect(56, 56, W - 112, W - 112)
+  g.fillStyle = accent + '2e'; g.font = '700 220px "El Messiri", serif'; g.textAlign = 'right'
+  g.fillText('”', W - 104, 250)
+  const size = quote.length > 260 ? 40 : quote.length > 170 ? 48 : quote.length > 90 ? 56 : 64
+  g.font = `300 ${size}px "El Messiri", serif`; g.fillStyle = ink; g.textAlign = 'right'; g.direction = 'rtl'
+  const maxW = W - 220; const words = quote.split(/\s+/); const lines: string[] = []; let line = ''
   for (const w of words) {
-    const test = line ? `${line} ${w}` : w
+    const test = line ? line + ' ' + w : w
     if (g.measureText(test).width > maxW && line) { lines.push(line); line = w } else line = test
   }
   if (line) lines.push(line)
-  if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines - 1] += '…' }
-  return lines
-}
-const fitQuote = (g: Ctx, quote: string, maxW: number, maxH: number, base: number) => {
-  for (let size = base; size >= 30; size -= 2) {
-    g.font = `300 ${size}px "El Messiri", serif`
-    const lines = wrapLines(g, quote, maxW, 12)
-    const lh = size * 1.74
-    if (lines.length * lh <= maxH) return { size, lines, lh }
-  }
-  g.font = '300 30px "El Messiri", serif'
-  return { size: 30, lines: wrapLines(g, quote, maxW, 12), lh: 52 }
-}
-const rtl = (g: Ctx) => { g.textAlign = 'right'; g.direction = 'rtl' }
-const drawSignature = (g: Ctx, x: number, y: number, ink: string, soft: string, accent: string, center = false) => {
-  g.textAlign = center ? 'center' : 'right'
-  g.strokeStyle = accent; g.lineWidth = 3; g.beginPath()
-  if (center) { g.moveTo(x - 50, y - 58); g.lineTo(x + 50, y - 58) } else { g.moveTo(x, y - 58); g.lineTo(x - 100, y - 58) }
-  g.stroke()
-  g.font = '700 34px "Tajawal", sans-serif'; g.fillStyle = ink; g.fillText(SIGNATURE, x, y)
-  g.font = '400 25px "Tajawal", sans-serif'; g.fillStyle = soft; g.fillText(DOMAIN, x, y + 44)
-}
-const dotsTexture = (g: Ctx, W: number, H: number, color: string, alpha: number) => {
-  g.save(); g.globalAlpha = alpha; g.fillStyle = color
-  for (let y = 90; y < H - 60; y += 66) for (let x = 80 + ((y / 66) % 2) * 33; x < W - 60; x += 66) {
-    g.beginPath(); g.arc(x, y, 1.5, 0, 7); g.fill()
-  }
-  g.restore()
-}
-
-export type CardTemplateKey = 'midad' | 'layl' | 'jarida' | 'sharit' | 'lawh' | 'tawqee'
-export const CARD_TEMPLATES: { key: CardTemplateKey; label: string; hint: string }[] = [
-  { key: 'midad', label: 'المداد', hint: 'الكلاسيكية الأنيقة' },
-  { key: 'layl', label: 'الليل', hint: 'فخامة داكنة' },
-  { key: 'jarida', label: 'الجريدة', hint: 'روح الصحافة' },
-  { key: 'sharit', label: 'الشريط', hint: 'جرأة هادئة' },
-  { key: 'lawh', label: 'اللوح', hint: 'بيان قوي' },
-  { key: 'tawqee', label: 'التوقيع', hint: 'أقصى البساطة' },
-]
-
-export function drawQuoteCard(template: CardTemplateKey, format: CardFormatKey, quote: string, articleTitle = ''): string {
-  const fmt = CARD_FORMATS.find((f) => f.key === format) || CARD_FORMATS[0]
-  const { w: W, h: H } = fmt
-  const c = document.createElement('canvas'); c.width = W; c.height = H
-  const g = c.getContext('2d')!
-  const P = PALETTE
-  const story = format === 'story'
-  const pad = story ? 130 : 110
-
-  if (template === 'midad') {
-    g.fillStyle = P.paper; g.fillRect(0, 0, W, H)
-    const grad = g.createRadialGradient(W * 0.82, H * 0.16, 40, W * 0.82, H * 0.16, W * 0.62)
-    grad.addColorStop(0, P.accent + '20'); grad.addColorStop(1, P.accent + '00')
-    g.fillStyle = grad; g.fillRect(0, 0, W, H)
-    g.strokeStyle = P.accent + '2E'; g.lineWidth = 2; g.strokeRect(56, 56, W - 112, H - 112)
-    g.fillStyle = P.accent + '2A'; g.font = '700 210px "El Messiri", serif'; rtl(g)
-    g.fillText('\u201D', W - 96, 262)
-    const area = fitQuote(g, quote, W - 2 * pad, H * (story ? 0.5 : 0.52), story ? 64 : 62)
-    g.font = `300 ${area.size}px "El Messiri", serif`; g.fillStyle = P.ink; rtl(g)
-    let y = H / 2 - ((area.lines.length - 1) * area.lh) / 2 - (story ? 60 : 20)
-    for (const l of area.lines) { g.fillText(l, W - pad, y); y += area.lh }
-    drawSignature(g, W - pad, H - (story ? 220 : 150), P.ink, P.soft, P.accent)
-  }
-
-  if (template === 'layl') {
-    g.fillStyle = P.night; g.fillRect(0, 0, W, H)
-    const grad = g.createRadialGradient(W * 0.2, H * 0.12, 30, W * 0.2, H * 0.12, W * 0.75)
-    grad.addColorStop(0, P.accentSoft + '26'); grad.addColorStop(1, P.accentSoft + '00')
-    g.fillStyle = grad; g.fillRect(0, 0, W, H)
-    dotsTexture(g, W, H, P.accentSoft, 0.10)
-    g.strokeStyle = P.accentSoft + '30'; g.lineWidth = 1.5; g.strokeRect(48, 48, W - 96, H - 96)
-    g.fillStyle = P.accentSoft + '3D'; g.font = '700 230px "El Messiri", serif'; rtl(g)
-    g.fillText('\u201D', W - 92, 276)
-    const area = fitQuote(g, quote, W - 2 * pad, H * (story ? 0.5 : 0.5), story ? 66 : 60)
-    g.font = `300 ${area.size}px "El Messiri", serif`; g.fillStyle = '#EDEDEA'; rtl(g)
-    g.shadowColor = P.accentSoft + '55'; g.shadowBlur = 26
-    let y = H / 2 - ((area.lines.length - 1) * area.lh) / 2 - (story ? 60 : 16)
-    for (const l of area.lines) { g.fillText(l, W - pad, y); y += area.lh }
-    g.shadowBlur = 0
-    drawSignature(g, W - pad, H - (story ? 220 : 150), '#EDEDEA', '#9BA1AB', P.accentSoft)
-  }
-
-  if (template === 'jarida') {
-    g.fillStyle = P.cream; g.fillRect(0, 0, W, H)
-    g.strokeStyle = P.ink; g.lineWidth = 5; g.beginPath(); g.moveTo(pad, 118); g.lineTo(W - pad, 118); g.stroke()
-    g.lineWidth = 1.4; g.beginPath(); g.moveTo(pad, 132); g.lineTo(W - pad, 132); g.stroke()
-    rtl(g); g.font = '700 30px "Tajawal", sans-serif'; g.fillStyle = P.accent
-    g.fillText('من مقالات الدكتور أحمد الفيلكاوي', W - pad, 96)
-    g.textAlign = 'left'; g.font = '400 26px "Tajawal", sans-serif'; g.fillStyle = P.soft
-    g.fillText(new Date().toLocaleDateString('ar-KW', { year: 'numeric', month: 'long', day: 'numeric' }), pad, 96)
-    const area = fitQuote(g, quote, W - 2 * pad - 40, H * (story ? 0.48 : 0.5), story ? 60 : 56)
-    g.font = `400 ${area.size}px "El Messiri", serif`; g.fillStyle = P.ink; rtl(g)
-    let y = H / 2 - ((area.lines.length - 1) * area.lh) / 2 - (story ? 40 : 0)
-    g.fillStyle = P.accent; g.fillRect(W - pad + 26, y - area.size + 12, 4, area.lines.length * area.lh - area.lh + area.size)
-    g.fillStyle = P.ink
-    for (const l of area.lines) { g.fillText(l, W - pad - 14, y); y += area.lh }
-    if (articleTitle) {
-      g.font = '500 27px "Tajawal", sans-serif'; g.fillStyle = P.soft
-      g.fillText(`— من مقال «${articleTitle.slice(0, 42)}${articleTitle.length > 42 ? '…' : ''}»`, W - pad - 14, y + 16)
-    }
-    g.strokeStyle = P.ink; g.lineWidth = 1.4; g.beginPath(); g.moveTo(pad, H - 168); g.lineTo(W - pad, H - 168); g.stroke()
-    drawSignature(g, W - pad, H - (story ? 190 : 104), P.ink, P.soft, P.accent)
-  }
-
-  if (template === 'sharit') {
-    g.fillStyle = P.paper; g.fillRect(0, 0, W, H)
-    const band = story ? 120 : 104
-    const bg = g.createLinearGradient(W - band, 0, W, 0)
-    bg.addColorStop(0, P.accent); bg.addColorStop(1, '#31485E')
-    g.fillStyle = bg; g.fillRect(W - band, 0, band, H)
-    g.save(); g.translate(W - band / 2 + 12, story ? 210 : 180); g.rotate(Math.PI / 2)
-    g.font = '600 30px "Tajawal", sans-serif'; g.fillStyle = '#FFFFFFCC'; g.textAlign = 'left'; g.direction = 'ltr'
-    g.fillText(DOMAIN, 0, 0); g.restore()
-    g.fillStyle = P.accent + '22'; g.font = '700 300px "El Messiri", serif'; g.textAlign = 'left'
-    g.fillText('\u201C', 60, H - 90)
-    const qPad = band + 90
-    const area = fitQuote(g, quote, W - qPad - pad, H * (story ? 0.52 : 0.55), story ? 64 : 60)
-    g.font = `300 ${area.size}px "El Messiri", serif`; g.fillStyle = P.ink; rtl(g)
-    let y = H / 2 - ((area.lines.length - 1) * area.lh) / 2 - (story ? 50 : 10)
-    for (const l of area.lines) { g.fillText(l, W - qPad, y); y += area.lh }
-    drawSignature(g, W - qPad, H - (story ? 210 : 140), P.ink, P.soft, P.accent)
-  }
-
-  if (template === 'lawh') {
-    const bg = g.createLinearGradient(0, 0, W, H)
-    bg.addColorStop(0, '#3E5C78'); bg.addColorStop(1, '#2C4257')
-    g.fillStyle = bg; g.fillRect(0, 0, W, H)
-    dotsTexture(g, W, H, '#FFFFFF', 0.07)
-    g.strokeStyle = '#FFFFFF3A'; g.lineWidth = 2; g.strokeRect(52, 52, W - 104, H - 104)
-    g.fillStyle = '#FFFFFF30'; g.font = '700 240px "El Messiri", serif'; rtl(g)
-    g.fillText('\u201D', W - 92, 284)
-    const area = fitQuote(g, quote, W - 2 * pad, H * (story ? 0.5 : 0.52), story ? 68 : 62)
-    g.font = `400 ${area.size}px "El Messiri", serif`; g.fillStyle = '#FDFDFB'; rtl(g)
-    let y = H / 2 - ((area.lines.length - 1) * area.lh) / 2 - (story ? 56 : 14)
-    for (const l of area.lines) { g.fillText(l, W - pad, y); y += area.lh }
-    g.strokeStyle = '#FFFFFF'; g.lineWidth = 3; g.beginPath()
-    g.moveTo(W - pad, H - (story ? 278 : 208)); g.lineTo(W - pad - 100, H - (story ? 278 : 208)); g.stroke()
-    g.font = '700 34px "Tajawal", sans-serif'; g.fillStyle = '#FFFFFF'; g.fillText(SIGNATURE, W - pad, H - (story ? 220 : 150))
-    g.font = '400 25px "Tajawal", sans-serif'; g.fillStyle = '#D7DEE6'; g.fillText(DOMAIN, W - pad, H - (story ? 176 : 106))
-  }
-
-  if (template === 'tawqee') {
-    g.fillStyle = P.paper; g.fillRect(0, 0, W, H)
-    g.fillStyle = P.accent; g.beginPath(); g.arc(W / 2, story ? 300 : 230, 7, 0, 7); g.fill()
-    const area = fitQuote(g, quote, W - 2 * (pad + 40), H * 0.42, story ? 58 : 52)
-    g.font = `300 ${area.size}px "El Messiri", serif`; g.fillStyle = P.ink
-    g.textAlign = 'center'; g.direction = 'rtl'
-    let y = H / 2 - ((area.lines.length - 1) * area.lh) / 2 - (story ? 40 : 0)
-    for (const l of area.lines) { g.fillText(l, W / 2, y); y += area.lh }
-    drawSignature(g, W / 2, H - (story ? 260 : 180), P.ink, P.soft, P.accent, true)
-  }
-
+  const lh = size * 1.72; let y = W / 2 - ((lines.length - 1) * lh) / 2 - 20
+  for (const l of lines.slice(0, 8)) { g.fillText(l, W - 110, y); y += lh }
+  g.strokeStyle = accent; g.lineWidth = 3; g.beginPath(); g.moveTo(W - 110, W - 214); g.lineTo(W - 210, W - 214); g.stroke()
+  g.font = '600 34px "Tajawal", sans-serif'; g.fillStyle = ink; g.fillText('د. أحمد حسين الفيلكاوي', W - 110, W - 152)
+  g.font = '400 26px "Tajawal", sans-serif'; g.fillStyle = soft; g.fillText('dr-alfailakawi.com', W - 110, W - 106)
   return c.toDataURL('image/png')
 }
-
 function firstStrongSentence(body?: string, excerpt?: string) {
   const src = (body || excerpt || '').replace(/\s+/g, ' ').trim()
   const parts = src.split(/(?<=[.!؟])\s/).filter((s) => s.split(/\s+/).length >= 6)
@@ -269,9 +119,6 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const [view, setView] = useState<null | 'thread' | 'card'>(null)
   const [img, setImg] = useState<string | null>(null)
-  const [cardQuote, setCardQuote] = useState('')
-  const [template, setTemplate] = useState<CardTemplateKey>('midad')
-  const [format, setFormat] = useState<CardFormatKey>('square')
   const [quoteSaved, setQuoteSaved] = useState(false)
 
   useEffect(() => {
@@ -351,25 +198,12 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   const matches = (semantic.length ? semantic : fallback)
     .sort((x, y) => x.a.iso.localeCompare(y.a.iso))
 
-  const renderCard = async (quote: string, tpl: CardTemplateKey, fmt: CardFormatKey) => {
-    try {
-      const fonts = (document as unknown as { fonts?: { load?: (f: string) => Promise<unknown>; ready?: Promise<unknown> } }).fonts
-      await Promise.all([
-        fonts?.load?.('300 60px "El Messiri"'), fonts?.load?.('700 60px "El Messiri"'),
-        fonts?.load?.('400 30px "Tajawal"'), fonts?.load?.('700 30px "Tajawal"'),
-        fonts?.ready,
-      ])
-    } catch { /* الخطوط الاحتياطية تفي */ }
-    setImg(drawQuoteCard(tpl, fmt, quote, current.title))
-  }
   const openCard = async () => {
     const quote = (sel.split(/\s+/).length >= 5 ? sel : firstStrongSentence(body, excerpt)).replace(/\s+/g, ' ').trim()
-    setCardQuote(quote)
     setView('card'); setPos(null)
-    await renderCard(quote, template, format)
+    try { await (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready } catch { /* noop */ }
+    setImg(drawQuote(quote, document.documentElement.classList.contains('dark')))
   }
-  const chooseTemplate = (tpl: CardTemplateKey) => { setTemplate(tpl); void renderCard(cardQuote, tpl, format) }
-  const chooseFormat = (fmt: CardFormatKey) => { setFormat(fmt); void renderCard(cardQuote, template, fmt) }
   const close = () => { setView(null); setImg(null); setSel(''); setQuoteSaved(false); setOffsets({ startOffset: 0, endOffset: 0 }) }
 
   const saveQuote = () => {
@@ -469,29 +303,14 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
               initial={{ scale: 0.94, y: 14 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, opacity: 0 }}
               transition={{ duration: 0.32 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-[440px]"
             >
-              <div className="mb-4 flex flex-wrap items-center justify-center gap-1.5">
-                {CARD_TEMPLATES.map((t) => (
-                  <button key={t.key} type="button" onClick={() => chooseTemplate(t.key)} title={t.hint}
-                    className={`rounded-full px-3.5 py-1.5 text-[.74rem] font-semibold transition-colors ${template === t.key ? 'bg-canvas text-ink' : 'border border-canvas/35 text-canvas/85 hover:border-canvas'}`}>
-                    {t.label}
-                  </button>
-                ))}
-                <span className="mx-1 h-4 w-px bg-canvas/30" />
-                {CARD_FORMATS.map((f) => (
-                  <button key={f.key} type="button" onClick={() => chooseFormat(f.key)} title={f.hint}
-                    className={`rounded-full px-3 py-1.5 text-[.72rem] font-semibold transition-colors ${format === f.key ? 'bg-canvas text-ink' : 'border border-canvas/35 text-canvas/85 hover:border-canvas'}`}>
-                    {f.label}
-                  </button>
-                ))}
-              </div>
               {img ? (
-                <img src={img} alt="بطاقة اقتباس" className={`mx-auto rounded-2xl shadow-[0_40px_80px_-30px_rgba(0,0,0,.7)] ${format === 'story' ? 'max-h-[56vh] w-auto' : 'w-full'}`} />
+                <img src={img} alt="بطاقة اقتباس" className="w-full rounded-2xl shadow-[0_40px_80px_-30px_rgba(0,0,0,.7)]" />
               ) : (
                 <div className="flex aspect-square items-center justify-center rounded-2xl border border-hair bg-canvas text-soft">…</div>
               )}
               <div className="mt-5 flex justify-center gap-3">
                 {img && (
-                  <a href={img} download={`اقتباس-${CARD_TEMPLATES.find((t) => t.key === template)?.label}-${CARD_FORMATS.find((f) => f.key === format)?.label}.png`} className="rounded-full bg-accent px-7 py-3 font-semibold text-canvas transition-colors hover:bg-accent-deep">تحميل الصورة</a>
+                  <a href={img} download="اقتباس.png" className="rounded-full bg-accent px-7 py-3 font-semibold text-canvas transition-colors hover:bg-accent-deep">تحميل الصورة</a>
                 )}
                 {img && (
                   <button
@@ -505,9 +324,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                 )}
                 <button type="button" onClick={close} className="rounded-full border-[1.5px] border-canvas/40 px-7 py-3 font-semibold text-canvas transition-colors hover:border-canvas">إغلاق</button>
               </div>
-              <p className="mt-4 text-center text-[.82rem] text-canvas/70">
-                {(() => { const f = CARD_FORMATS.find((x) => x.key === format)!; return `${f.w}×${f.h} — ${f.hint}` })()}
-              </p>
+              <p className="mt-4 text-center text-[.82rem] text-canvas/70">1080×1080 — جاهزة لإنستغرام و X</p>
             </motion.div>
           </motion.div>
         )}

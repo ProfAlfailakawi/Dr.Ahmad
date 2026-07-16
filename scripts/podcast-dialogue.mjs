@@ -635,8 +635,6 @@ function normalizeMechanics(sc) {
       'إذا تعلّم الطالب أن الرقم هو الحقيقة الكاملة، فقد يقرأ الورقة كأنها حكم نهائي على قيمته.')
     .replace(/\s+/g, ' ')
     .trim()
-    // مداخلة تنتهي بفاصلة معلقة تُنطق نهايةً مبتورة يرفضها الحكم بحق — نُتمّها نقطة.
-    .replace(/[،؛]\s*$/, '.')
   const splitLongText = (text, target = 22, hard = 30) => {
     const clean = String(text || '').replace(/\s+/g, ' ').trim()
     if (wordCount(clean) <= hard) return [clean]
@@ -716,25 +714,6 @@ function normalizeMechanics(sc) {
     const targetWords = Math.max(10, hardWords - 3)
     return splitLongText(text, targetWords, hardWords)
   }
-  // شظايا الامتداد: Gemini قد يكتب جملة المتحدث الواحد على مداخلتين («لماذا يتحول…؟»
-  // ثم «بدلاً من أن يكون…؟») — الشظية الثانية وحدها بترٌ يرفضه الحكم بحق. ندمجها في
-  // سابقتها (نفس الكلمات والترتيب)، والتقسيم المدّي أدناه يعيد توزيعها بوعي الاتصال.
-  const CONTINUATION_START = /^(بدلاً من|بدلا من|بل\s|أو\s|وليس\s|بدل أن\s|لا أن\s|وكأن\s)/
-  const mergedUtterances = []
-  for (const u of sc.utterances) {
-    const prev = mergedUtterances.at(-1)
-    if (prev && prev.speaker === u.speaker && CONTINUATION_START.test(String(u.text || '').trim())
-      && wordCount(`${prev.text} ${u.text}`) <= 34) {
-      prev.text = `${prev.text} ${u.text}`.replace(/\s+/g, ' ').trim()
-      if (u.delivery === 'question' || prev.delivery === 'question') { prev.delivery = 'question'; prev.ending = 'open' }
-      prev.pauseAfterMs = u.pauseAfterMs ?? prev.pauseAfterMs
-      prev.musicBridgeAfter = Boolean(u.musicBridgeAfter)
-      continue
-    }
-    mergedUtterances.push(u)
-  }
-  sc.utterances = mergedUtterances
-
   const compactUtterances = []
   for (const u of sc.utterances) {
     const pieces = durationAwarePieces(u)
@@ -1225,11 +1204,8 @@ async function audioJudge(wavPath, intended, heard, risks, context, delivery = {
     `سياق المعنى: ${context}`,
     `خطة الأداء: ${JSON.stringify({ type: delivery.delivery || 'normal', ratePct: delivery.ratePct,
       targetWordsPerMinute: delivery.targetWordsPerMinute, actualWordsPerMinute: delivery.actualWordsPerMinute,
-      ending: delivery.ending, isQuestion: String(context).includes('؟'),
-      continuation: Boolean(delivery._splitMiddle) })}`,
-    delivery._splitMiddle
-      ? 'تنبيه مهم: هذه وحدة متصلة تُكمل جملتَها الوحدةُ التالية مباشرة (قُسمت تقنياً لطولها). النهاية المفتوحة أو الفاصلة في آخرها مقصودة تماماً — لا تعاقب على «نهاية مبتورة» أو «نبرة غير محسومة» هنا؛ احكم على النطق والحركات والوضوح فقط.'
-      : 'ارفض السؤال إذا سُمِع كنص تقريري. ارفض السرعة المستعجلة، والبطء المتمطّط، والإيقاع المدرسي، والحركة الإعرابية الخاطئة أو الثقيلة عند الوقف، والنهاية المبتورة، وأي عامية.',
+      ending: delivery.ending, isQuestion: String(context).includes('؟') })}`,
+    'ارفض السؤال إذا سُمِع كنص تقريري. ارفض السرعة المستعجلة، والبطء المتمطّط، والإيقاع المدرسي، والحركة الإعرابية الخاطئة أو الثقيلة عند الوقف، والنهاية المبتورة، وأي عامية.',
     'استمع إلى ملف WAV المرفق بنفسك. لا تعتمد على STT وحده. أعد حكم JSON وفق المخطط فقط.',
   ].join('\n')
   const verdict = await gemini(JUDGE_SYSTEM, prompt, 0.1, JUDGE_MODEL, [{
@@ -1845,10 +1821,8 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
   const allAudits = []
   let deliveryPlan = { ...u }
   let paceCalibration = null
-  let prescriptionsUsed = 0
 
-  // 5 جولات: وصفة الحكم مرة، وعلاج التأنيث مرة، وتبقى فرصة حقيقية لإعادة الصياغة.
-  for (let round = 0; round < 5; round++) {
+  for (let round = 0; round < 3; round++) {
     const applied = applyLexicon(currentAnalysis.pronunciationText || dialogueText, currentAnalysis.risks, voice, dialogueText)
     const calibrated = await calibrateProductionPlan({ utterance: deliveryPlan, voice, text: applied.text,
       subs: applied.subs, lang, tempBase: wavPath.replace(/\.wav$/, `.r${round + 1}`) })
@@ -1917,25 +1891,9 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
       .map((audit) => String(audit.verdict?.revisedPronunciationText || '').trim())
       .find((t) => t && stripForCompare(t) === stripForCompare(dialogueText)
         && t !== String(currentAnalysis.pronunciationText || '').trim())
-    if (judgeRevision && prescriptionsUsed < 1) {
-      prescriptionsUsed += 1
+    if (judgeRevision) {
       console.log(`    ⚕ ${utteranceId}: تطبيق وصفة الحكم النطقية وإعادة المحاولة (بلا إعادة صياغة)`)
       currentAnalysis = { ...currentAnalysis, pronunciationText: judgeRevision }
-      continue
-    }
-    // علاج التأنيث المبتلع نظامياً: Azure يُذكِّر بعض النعوت المؤنثة (شرسة→شرس، موثقة→موثق)
-    // ويتجاهل تشكيل التاء المربوطة. البديل المثبت: هاء مفتوحة قبل الوقف (شَرِسَه) — صوت الوقف
-    // العربي الصحيح نفسه، وSTT يطبّع ة/ه فلا يتأثر التطابق. يُحفظ النجاح في ذاكرة النطق للأبد.
-    const feminineStubborn = [...new Set(audits.flatMap((audit) => (audit.verdict?.problems || [])
-      .filter((problem) => /تأنيث|مؤنث/.test(String(problem.issue || '')) && /ة$/.test(String(problem.word || '').trim()))
-      .map((problem) => String(problem.word).trim())))]
-    if (feminineStubborn.length && !(currentAnalysis.risks || []).some((risk) => risk.__femFix)) {
-      const fixes = feminineStubborn.map((word) => ({ word, riskLevel: 'high',
-        meaningInContext: 'تثبيت تاء التأنيث المسموعة', grammaticalType: 'نعت مؤنث',
-        method: 'sub', selectedPronunciation: word, __femFix: true,
-        subAlias: word.slice(0, -1) + 'َه' }))
-      console.log(`    ♀ ${utteranceId}: تثبيت التأنيث المبتلع ببديل نطقي (${feminineStubborn.join('، ')})`)
-      currentAnalysis = { ...currentAnalysis, risks: [...(currentAnalysis.risks || []), ...fixes] }
       continue
     }
     const rephrased = await safeRephrase(dialogueText, sourceText, reason, stubbornWords)
@@ -2008,7 +1966,6 @@ async function produceUtteranceResilient({ utterance, analysis, voice, lang, wav
       musicBridgeAfter: isLast ? Boolean(utterance.musicBridgeAfter) : false,
       pauseAfterMs: isLast ? utterance.pauseAfterMs : Math.min(180, Math.max(120, Number(utterance.pauseAfterMs) || 160)),
       ending: isLast ? utterance.ending : 'neutral',
-      _splitMiddle: !isLast,
       delivery: piece.includes('؟') ? 'question' : utterance.delivery }
     const derived = derivePieceAnalysis(analysis, piece, offset, pieceWords)
     const pieceAnalysis = { idx: analysis.idx, pronunciationText: derived.pronunciationText, risks: derived.risks }

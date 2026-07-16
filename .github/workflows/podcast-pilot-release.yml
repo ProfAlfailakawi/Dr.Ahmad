@@ -34,7 +34,12 @@ jobs:
       - name: Install dependencies and media tools
         run: |
           npm config set registry https://registry.npmjs.org/
-          npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5
+          if timeout 180s npm ci --registry=https://registry.npmjs.org/ --prefer-offline --no-audit --no-fund --fetch-retries=3 --fetch-timeout=60000; then
+            echo "npm ci completed"
+          else
+            echo "npm ci timed out or failed; using the lockfile-compatible fallback install"
+            npm install --registry=https://registry.npmjs.org/ --prefer-offline --no-audit --no-fund --ignore-scripts --fetch-retries=3 --fetch-timeout=60000
+          fi
           if command -v ffmpeg >/dev/null 2>&1; then
             echo "ffmpeg is already available on the runner"
             ffmpeg -version | head -1

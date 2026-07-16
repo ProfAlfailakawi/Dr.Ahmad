@@ -1784,6 +1784,8 @@ async function safeRephrase(dialogueText, sourceText, reason, stubbornWords = []
     'لا تضف معلومة، ولا تحذف معلومة، ولا تستخدم أي عامية أو تشكيل كامل.',
     avoid.length ? `الكلمات التالية يعجز محرك النطق عنها؛ أعد ترتيب الجملة لتقليل الاعتماد عليها — اذكر الاسم مرة واحدة إن لزم، أو استبدله بوصفٍ دقيق دون حذف الحقيقة العلمية: ${avoid.join('، ')}` : '',
     'إن كان اسم علمٍ أجنبيٍّ يتكرر، يكفي ذكره مرة؛ والإشارة اللاحقة إليه تكون بضميرٍ أو وصف («وأعماله اللاحقة»، «الباحث نفسه») دون تكرار الاسم المتعثر.',
+    'إن كان المتعثر اسم مجلةٍ أو مصدرٍ أجنبيٍّ منقحر (مثل «فرونتيرز إن سايكولوجي»)، فاستبدله بوصفٍ عربيٍّ دقيقٍ للمصدر («مجلة علمية محكمة في علم النفس») — هذا توصيفٌ أمين لا حذف معلومة.',
+    'اكتب أي سنةٍ أو رقمٍ بصيغته الرقمية (2023) لا كلمات، فمحرك النطق يتولى تحويله بقواعده.',
     `المداخلة الأصلية: ${dialogueText}`,
     `سبب التعثر: ${reason}`,
     `المقال المرجعي الذي لا يجوز تجاوزه: ${sourceText}`,
@@ -1942,7 +1944,7 @@ async function produceUtteranceResilient({ utterance, analysis, voice, lang, wav
   const failure = first.result || {}
   const text = String(utterance.text || '').replace(/\s+/g, ' ').trim()
   const totalWords = wordsOf(text).length
-  const shouldSplit = failure.needsSplit || /أطول من 13ث|استنفدت المرشحات/.test(String(failure.reason || ''))
+  const shouldSplit = failure.needsSplit || /أطول من 13ث|استنفدت المرشحات|كلمات خطرة لم يثبت نطقها/.test(String(failure.reason || ''))
   if (!shouldSplit || totalWords < 12)
     return { ok: false, reason: failure.reason || 'غير موثقة', failure }
   const measured = Number(failure.measuredSec) || 13

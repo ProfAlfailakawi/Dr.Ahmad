@@ -1768,7 +1768,7 @@ async function calibrateAndEvaluateAudition({ runId, utteranceId, utterance, voi
   const target = Number(plan.targetWordsPerMinute || 140)
   const measured = Math.max(1, Number(trialAudit.wpm || 1))
   const rawCorrection = (target / measured - 1) * 100
-  const correction = Math.min(10, Math.max(-10, rawCorrection))
+  const correction = Math.min(16, Math.max(-16, rawCorrection))
   const calibratedRate = Math.round(Math.min(18, Math.max(-18, Number(plan.ratePct || 0) + correction)))
   plan = { ...plan, ratePct: calibratedRate }
   if (Math.abs(calibratedRate - Number(utterance.ratePct || 0)) <= 1) renameSync(trialPath, path)
@@ -1797,10 +1797,18 @@ async function calibrateProductionPlan({ utterance, voice, text, subs, lang, tem
   rmSync(trial, { force: true })
   const target = Number(plan.targetWordsPerMinute)
   const measured = Math.max(1, Number(audit.wpm || target))
-  const correction = Math.min(10, Math.max(-10, (target / measured - 1) * 100))
-  const calibratedRatePct = Math.round(Math.min(18, Math.max(-18, Number(plan.ratePct || 0) + correction)))
-  return { plan: { ...plan, ratePct: calibratedRatePct },
-    calibration: { pass: true, measuredWpm: measured, targetWpm: target, measuredDurSec: Number(audit.dur || 0),
+  const correction = Math.min(16, Math.max(-16, (target / measured - 1) * 100))
+  const calibratedRatePct = Math.round(Math.min(20, Math.max(-20, Number(plan.ratePct || 0) + correction)))
+  // في وضع النص اليدوي: الهدف الرقمي تركيبي من المحرك لا من الدكتور — إن بقي بعيداً عن
+  // المدى القابل للتحقيق لصوت هذه الجملة بعد أقصى تصحيح، نكيّف الهدف مع الإيقاع الطبيعي
+  // (ضمن الحدود الإنسانية 118-175) بدل إعدام جملته على هدفٍ لم يكتبه.
+  let adjustedTarget = target
+  if (MANUAL_TEXT_MODE) {
+    const projected = measured * (1 + correction / 100)
+    if (Math.abs(projected - target) > 10) adjustedTarget = Math.round(Math.min(175, Math.max(118, projected)))
+  }
+  return { plan: { ...plan, ratePct: calibratedRatePct, targetWordsPerMinute: adjustedTarget },
+    calibration: { pass: true, measuredWpm: measured, targetWpm: adjustedTarget, measuredDurSec: Number(audit.dur || 0),
       originalRatePct: Number(plan.ratePct || 0), calibratedRatePct } }
 }
 

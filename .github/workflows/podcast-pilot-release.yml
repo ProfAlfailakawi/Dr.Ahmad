@@ -7,6 +7,9 @@ on:
         description: 'Slug واحد أو أكثر مفصولة بفواصل'
         required: false
         default: 'how-do-we-assess-without-breaking-the-human-beingarabic'
+  # التوليد الليلي: يقرأ ما أرسله الدكتور من غرفة الإنتاج (زر «أرسل للتوليد الليلي»)
+  schedule:
+    - cron: '30 2 * * *'
 
 permissions:
   contents: write
@@ -72,7 +75,16 @@ jobs:
       - name: Generate requested full Arabic episodes
         shell: bash
         run: |
-          IFS=',' read -ra ITEMS <<< "${{ inputs.slugs }}"
+          REQUESTED="${{ inputs.slugs }}"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            REQUESTED="$(node scripts/podcast-queue-next.mjs || true)"
+            if [ -z "$REQUESTED" ]; then
+              echo "قائمة التوليد الليلي فارغة — لا شيء الليلة."
+              exit 0
+            fi
+            echo "قائمة الليلة: $REQUESTED"
+          fi
+          IFS=',' read -ra ITEMS <<< "$REQUESTED"
           if [ "${#ITEMS[@]}" -lt 1 ] || [ "${#ITEMS[@]}" -gt 3 ]; then
             echo "::error::Provide between one and three slugs"
             exit 1
@@ -82,6 +94,7 @@ jobs:
             echo "Generating $slug"
             node scripts/podcast-dialogue.mjs --slug="$slug" --lang=ar --force --reuse-dialogue
           done
+          echo "RELEASED_SLUGS=$REQUESTED" >> "$GITHUB_ENV"
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
           FIREBASE_PROJECT_ID: drahmad-8e9e2
@@ -98,7 +111,7 @@ jobs:
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
 
       - name: Validate requested local episodes
-        run: node scripts/podcast-release-gate.mjs --local --slugs="${{ inputs.slugs }}"
+        run: node scripts/podcast-release-gate.mjs --local --slugs="${RELEASED_SLUGS:-${{ inputs.slugs }}}"
         env:
           PODCAST_RELEASE_MIN_SCORE: '94'
 

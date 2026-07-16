@@ -2664,7 +2664,17 @@ async function produce(article, lang) {
     auditRecord.finishedAt = new Date().toISOString()
     auditRecord.finalGate = { ...auditRecord.finalGate, pass: false, reasonCodes: [reason], ...extra }
     const quarantinedAudio = preserveRejectedCandidate(article, lang, reason)
-    if (quarantinedAudio) auditRecord.finalGate.quarantinedAudio = quarantinedAudio.replace(ROOT, '')
+    if (quarantinedAudio) {
+      auditRecord.finalGate.quarantinedAudio = quarantinedAudio.replace(ROOT, '')
+      // «أسمع قبل القرار»: نسخة مراجعة على R2 staging تظهر في غرفة الإنتاج مع سبب الرفض —
+      // ليست منشورة في RSS ولا في الموقع؛ رابط مراجعة داخلي فقط.
+      if (r2StagingReady()) {
+        const reviewKey = `staging/review/${safeSlug(article.slug)}.${lang}.mp3`
+        const put = r2Aws(['put-object', '--bucket', R2_CONF.bucket, '--key', reviewKey,
+          '--body', quarantinedAudio, '--content-type', 'audio/mpeg'])
+        if (put.status === 0) auditRecord.finalGate.reviewAudioKey = reviewKey
+      }
+    }
     writeAudit(article, lang, auditRecord)
     runInsert.run(runId, article.slug, sourceHash, ACTIVE_PIPELINE_HASH, 'quarantined', reason, startedAt, auditRecord.finishedAt)
     pendingMemory.length = 0

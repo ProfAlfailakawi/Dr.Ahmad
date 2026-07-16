@@ -137,6 +137,9 @@ const episodes = dialogue.map((name) => {
     } catch { /* noop */ }
   }
   const gate = scoreAudioGate({ approved, hasTranscript, byteSize, meta, audit })
+  const listen = EXTERNAL_AUDIO_BASE_URL
+    ? `${EXTERNAL_AUDIO_BASE_URL}/${name}`
+    : `/audio/${name}`
   return {
     slug,
     title: article?.title || slug,
@@ -144,6 +147,7 @@ const episodes = dialogue.map((name) => {
     date: article?.date || '',
     iso: article?.iso || '',
     status: gate.pass ? 'published' : 'under_review',
+    listen,
     audio: `/audio/${name}`,
     bytes: byteSize,
     audioHash: hash ? hash.slice(0, 16) : '',
@@ -191,6 +195,7 @@ for (const name of auditFiles) {
     status = 'passed'
     statusLabel = 'مجتاز — بانتظار النشر'
   }
+  const reviewKey = audit?.finalGate?.reviewAudioKey
   episodes.push({
     slug,
     title: article.title,
@@ -201,6 +206,7 @@ for (const name of auditFiles) {
     statusLabel,
     failure,
     progress,
+    listen: reviewKey && EXTERNAL_AUDIO_BASE_URL ? `${EXTERNAL_AUDIO_BASE_URL}/${reviewKey}` : '',
     audio: '',
     bytes: 0,
     audioHash: '',

@@ -7,7 +7,7 @@ import type { AdminTab } from './AdminArchitecture'
 const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
 const pill = 'rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.74rem] font-semibold text-soft'
 
-type Stage = 'draft' | 'generating' | 'pronunciation' | 'needs_review' | 'passed' | 'published'
+type Stage = 'draft' | 'queued' | 'generating' | 'pronunciation' | 'needs_review' | 'passed' | 'published'
 type ProductionState = { status?: Stage; updatedAt?: unknown; note?: string }
 type Episode = {
   slug: string
@@ -18,11 +18,13 @@ type Episode = {
   progress?: { done: number; total: number } | null
   hasTranscript?: boolean
   audio?: string
+  listen?: string
   quality?: { score?: number; pass?: boolean; pronunciation?: string; issues?: string[] }
 }
 
 const stages: { key: Stage; label: string }[] = [
   { key: 'draft', label: 'مسودة' },
+  { key: 'queued', label: 'في قائمة الانتظار' },
   { key: 'generating', label: 'جارٍ التوليد' },
   { key: 'pronunciation', label: 'فحص النطق' },
   { key: 'needs_review', label: 'يحتاج مراجعة' },
@@ -104,7 +106,13 @@ export function ProductionHealthCenter({
     const base = candidates.length ? candidates : articles.slice(0, 4)
     return base.slice(0, 8).map((article) => {
       const episode = bySlug.get(article.slug)
-      const status = remote[article.slug]?.status || stageFromEpisode(episode)
+      const machine = stageFromEpisode(episode)
+      const remoteStatus = remote[article.slug]?.status
+      // الحالة الآلية أصدق من الأزرار: «منشور» لا يظهر إلا إذا أثبتته المنظومة (R2 + RSS)،
+      // وأزرار البشر تقود المراحل البشرية فقط (الانتظار/المراجعة).
+      let status: Stage = machine
+      if (remoteStatus === 'queued' && machine === 'draft') status = 'queued'
+      else if (remoteStatus === 'needs_review' && machine !== 'generating' && machine !== 'published') status = 'needs_review'
       return { article, episode, status }
     })
   }, [articles, draftSlugs, remote])
@@ -117,7 +125,9 @@ export function ProductionHealthCenter({
       const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
       await setDoc(doc(db, 'podcast_production', slug), { status, updatedAt: serverTimestamp() }, { merge: true })
       setRemote((current) => ({ ...current, [slug]: { ...current[slug], status } }))
-      setMessage(status === 'published' ? 'اعتمدت الحلقة وأصبحت جاهزة للنشر.' : 'أُعيدت الحلقة إلى المراجعة.')
+      setMessage(status === 'published' ? 'اعتمدت الحلقة وأصبحت جاهزة للنشر.'
+        : status === 'queued' ? 'أُدرجت في قائمة التوليد الليلي — ستُنتج تلقائياً في الليلة القادمة.'
+        : 'أُعيدت الحلقة إلى المراجعة.')
     } catch {
       setMessage('تعذّر حفظ القرار سحابياً. انشر قواعد Firestore الجديدة ثم أعد المحاولة.')
     } finally {
@@ -172,10 +182,20 @@ export function ProductionHealthCenter({
                     : episode?.statusLabel || episode?.quality?.pronunciation || (draftSlugs.has(article.slug) ? 'توجد مسودة حوار محفوظة' : 'لم يبدأ إنتاج الحلقة بعد')}</p>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
-                  <button disabled={busy === article.slug} onClick={() => void setStatus(article.slug, 'published')} className="rounded-full bg-accent px-4 py-2 text-[.74rem] font-semibold text-white disabled:opacity-50">اعتماد الحلقة</button>
+                  {status === 'draft' || status === 'queued' ? (
+                    <button disabled={busy === article.slug || status === 'queued'} onClick={() => void setStatus(article.slug, 'queued')} className="rounded-full bg-accent px-4 py-2 text-[.74rem] font-semibold text-white disabled:opacity-50">{status === 'queued' ? 'في قائمة الليلة' : '🎬 أرسل للتوليد الليلي'}</button>
+                  ) : (
+                    <button disabled={busy === article.slug} onClick={() => void setStatus(article.slug, 'published')} className="rounded-full bg-accent px-4 py-2 text-[.74rem] font-semibold text-white disabled:opacity-50">اعتماد الحلقة</button>
+                  )}
                   <button disabled={busy === article.slug} onClick={() => void setStatus(article.slug, 'needs_review')} className="rounded-full border border-hair px-4 py-2 text-[.74rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50">إعادتها للمراجعة</button>
                 </div>
               </div>
+              {episode?.listen && (
+                <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-hair bg-wash px-3 py-2">
+                  <span className="text-[.72rem] font-semibold text-accent">🎧 اسمع قبل القرار{episode.failure ? ' (نسخة المراجعة المرفوضة)' : ''}</span>
+                  <audio controls preload="none" src={episode.listen} className="h-8 min-w-0 flex-1" />
+                </div>
+              )}
               <StageRail active={status} />
             </article>
           ))}

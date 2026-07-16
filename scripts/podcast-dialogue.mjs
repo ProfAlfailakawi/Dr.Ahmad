@@ -1880,6 +1880,20 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
       ...audits.flatMap((audit) => (audit.verdict?.problems || []).map((problem) => problem.word)),
       ...audits.flatMap((audit) => (audit.highMissing || []).map((risk) => risk.word)),
     ].filter(Boolean))]
+    // الشفاء الذاتي بوصفة الحكم: الحكم يعيد revisedPronunciationText (تشكيل علاجي دقيق —
+    // مثل إثبات تاء التأنيث المبتلعة). نجربه في الجولة التالية قبل اللجوء إلى إعادة الصياغة،
+    // بشرط صارم: الكلمات نفسها بالترتيب نفسه (لا إضافة ولا حذف) — التشكيل وحده يتغير.
+    const stripForCompare = (t) => String(t || '').replace(/[\u064B-\u0652\u0670\u0640]/g, '')
+      .replace(/\s*\|\s*/g, ' ').replace(/\s+/g, ' ').trim()
+    const judgeRevision = audits
+      .map((audit) => String(audit.verdict?.revisedPronunciationText || '').trim())
+      .find((t) => t && stripForCompare(t) === stripForCompare(dialogueText)
+        && t !== String(currentAnalysis.pronunciationText || '').trim())
+    if (judgeRevision) {
+      console.log(`    ⚕ ${utteranceId}: تطبيق وصفة الحكم النطقية وإعادة المحاولة (بلا إعادة صياغة)`)
+      currentAnalysis = { ...currentAnalysis, pronunciationText: judgeRevision }
+      continue
+    }
     const rephrased = await safeRephrase(dialogueText, sourceText, reason, stubbornWords)
     if (!rephrased) return { ok: false, verified: false, reason, dialogueText, candidates: allAudits,
       needsSplit: /أطول من 13ث/.test(reason) }

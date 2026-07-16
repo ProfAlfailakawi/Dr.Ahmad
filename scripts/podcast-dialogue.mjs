@@ -635,6 +635,8 @@ function normalizeMechanics(sc) {
       'إذا تعلّم الطالب أن الرقم هو الحقيقة الكاملة، فقد يقرأ الورقة كأنها حكم نهائي على قيمته.')
     .replace(/\s+/g, ' ')
     .trim()
+    // مداخلة تنتهي بفاصلة معلقة تُنطق نهايةً مبتورة يرفضها الحكم بحق — نُتمّها نقطة.
+    .replace(/[،؛]\s*$/, '.')
   const splitLongText = (text, target = 22, hard = 30) => {
     const clean = String(text || '').replace(/\s+/g, ' ').trim()
     if (wordCount(clean) <= hard) return [clean]
@@ -1821,8 +1823,11 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
   const allAudits = []
   let deliveryPlan = { ...u }
   let paceCalibration = null
+  let prescriptionsUsed = 0
 
-  for (let round = 0; round < 3; round++) {
+  // 4 جولات: وصفة الحكم تُصرف مرة واحدة فقط حتى لا تستهلك ميزانية إعادة الصياغة
+  // (كانت الوصفات تلتهم الجولات الثلاث فلا تُختبر الصياغة الجديدة أبداً).
+  for (let round = 0; round < 4; round++) {
     const applied = applyLexicon(currentAnalysis.pronunciationText || dialogueText, currentAnalysis.risks, voice, dialogueText)
     const calibrated = await calibrateProductionPlan({ utterance: deliveryPlan, voice, text: applied.text,
       subs: applied.subs, lang, tempBase: wavPath.replace(/\.wav$/, `.r${round + 1}`) })
@@ -1891,7 +1896,8 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
       .map((audit) => String(audit.verdict?.revisedPronunciationText || '').trim())
       .find((t) => t && stripForCompare(t) === stripForCompare(dialogueText)
         && t !== String(currentAnalysis.pronunciationText || '').trim())
-    if (judgeRevision) {
+    if (judgeRevision && prescriptionsUsed < 1) {
+      prescriptionsUsed += 1
       console.log(`    ⚕ ${utteranceId}: تطبيق وصفة الحكم النطقية وإعادة المحاولة (بلا إعادة صياغة)`)
       currentAnalysis = { ...currentAnalysis, pronunciationText: judgeRevision }
       continue

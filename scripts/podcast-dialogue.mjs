@@ -874,7 +874,10 @@ function lintScript(sc, lang) {
         issues.push(`المداخلة ${index + 1}: targetWordsPerMinute ${utterance.targetWordsPerMinute ?? 'مفقود'} خارج ${wpmMin}–${wpmMax}`)
       const pause = Number(utterance.pauseAfterMs)
       const [pauseMin, pauseMax] = pauseRanges[kind] || pauseRanges.normal
-      if (!Number.isFinite(pause) || pause < pauseMin || pause > pauseMax) issues.push(`المداخلة ${index + 1}: وقفة ${utterance.pauseAfterMs ?? 'مفقودة'}ms خارج ${pauseMin}–${pauseMax}`)
+      // القطعة الوسطى من وحدة مقسمة مدّياً تحمل وقفة داخلية قصيرة عمداً (جملة واحدة مسموعة)؛
+      // فحص مدى الوقفة حسب نوع الإلقاء يخص نهايات المداخلات الحقيقية فقط.
+      if (!utterance._splitMiddle
+        && (!Number.isFinite(pause) || pause < pauseMin || pause > pauseMax)) issues.push(`المداخلة ${index + 1}: وقفة ${utterance.pauseAfterMs ?? 'مفقودة'}ms خارج ${pauseMin}–${pauseMax}`)
       if (!['open', 'final', 'neutral'].includes(utterance.ending)) issues.push(`المداخلة ${index + 1}: نهاية نبرية مفقودة`)
       const sentenceCount = (text.match(/[.!؟]+/g) || []).length
       if (sentenceCount > 3) issues.push(`المداخلة ${index + 1}: أكثر من ثلاث جمل`)

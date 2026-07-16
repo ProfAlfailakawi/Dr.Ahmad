@@ -716,6 +716,25 @@ function normalizeMechanics(sc) {
     const targetWords = Math.max(10, hardWords - 3)
     return splitLongText(text, targetWords, hardWords)
   }
+  // شظايا الامتداد: Gemini قد يكتب جملة المتحدث الواحد على مداخلتين («لماذا يتحول…؟»
+  // ثم «بدلاً من أن يكون…؟») — الشظية الثانية وحدها بترٌ يرفضه الحكم بحق. ندمجها في
+  // سابقتها (نفس الكلمات والترتيب)، والتقسيم المدّي أدناه يعيد توزيعها بوعي الاتصال.
+  const CONTINUATION_START = /^(بدلاً من|بدلا من|بل\s|أو\s|وليس\s|بدل أن\s|لا أن\s|وكأن\s)/
+  const mergedUtterances = []
+  for (const u of sc.utterances) {
+    const prev = mergedUtterances.at(-1)
+    if (prev && prev.speaker === u.speaker && CONTINUATION_START.test(String(u.text || '').trim())
+      && wordCount(`${prev.text} ${u.text}`) <= 34) {
+      prev.text = `${prev.text} ${u.text}`.replace(/\s+/g, ' ').trim()
+      if (u.delivery === 'question' || prev.delivery === 'question') { prev.delivery = 'question'; prev.ending = 'open' }
+      prev.pauseAfterMs = u.pauseAfterMs ?? prev.pauseAfterMs
+      prev.musicBridgeAfter = Boolean(u.musicBridgeAfter)
+      continue
+    }
+    mergedUtterances.push(u)
+  }
+  sc.utterances = mergedUtterances
+
   const compactUtterances = []
   for (const u of sc.utterances) {
     const pieces = durationAwarePieces(u)

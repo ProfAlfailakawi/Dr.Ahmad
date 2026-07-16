@@ -33,6 +33,13 @@ jobs:
       - name: Install dependencies
         run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 
+      # بناء الموقع يشغّل self-tests الصوت (audio:quality:self-test) وهي تتحقق من وجود
+      # ffmpeg/ffprobe — أزالته دفعة سابقة عن هذا الـworkflow فتعطل النشر كله.
+      - name: Install media tools required by build self-tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
       - name: Build static site
         run: npm run build
         env:

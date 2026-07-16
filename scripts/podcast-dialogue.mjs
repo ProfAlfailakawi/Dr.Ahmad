@@ -1498,6 +1498,11 @@ function candidateVariants(dialogueText, pronunciationText, subs, risks) {
     }
     variants.push({ id: 'sub-alias', method: 'sub', text: aliasText, subs: aliasSubs })
   }
+  /* بعض الكلمات تفشل بسبب البديل الصوتي نفسه لا بسبب النص. احتفظ بمرشح
+     ثالث محافظ يعود إلى النص النطقي الأصلي بلا substitutions، ويمر عبر
+     الفحص المغلق نفسه؛ لا يُختار إلا إذا أثبت Azure/STT والحَكم صلاحيته. */
+  if (high.length || subs.length)
+    variants.push({ id: 'plain-source', method: 'plain_source', text: dialogueText, subs: [] })
   /* ممنوع علاج التاء المربوطة بكسرة آلية عامة. إن ثبت فشل كلمة بعينها تُعالَج
      سياقياً في قاموس/ذاكرة النطق أو بإعادة صياغة، لا بقاعدة صرفية عمياء. */
   return variants

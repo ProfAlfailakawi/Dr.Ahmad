@@ -297,167 +297,40 @@ async function loadLogo() {
   return image
 }
 
-type Palette = { background: string; ink: string; soft: string; accent: string; line: string; card: string }
+/* ═══════════ الطبعة الفاخرة: ست تكوينات فنية موقّعة ═══════════
+   بدل هيكلٍ واحد يتكرر بخربشة شفافة، كل تكوين هنا بنية بصرية مستقلة بهوية
+   الموقع (أحادية اللون + #3E5C78) وذهبٍ مخطوطي هادئ:
+   «المداد» مخطوطة بحرف استهلالي ظلي وإطار مذهّب · «الليل» سماء داكنة بهالة
+   ذهبية · «الجريدة» صفحة رأي بترويسة صحفية · «الشريط» عارضة سينمائية بلون
+   الموقع · «المشكاة» قوس معماري إسلامي · «التوقيع» صفحة بيضاء بخط توقيع حي.
+   التخطيطات القديمة كلها تُسنَد إلى أحد التكوينات فلا يتغير أي استدعاء خارجي. */
 
-function paletteFor(template: SocialVisualTemplate): Palette {
-  if (template.layout === 'dark' || template.layout === 'circuit') {
-    return { background: '#15161a', ink: '#ffffff', soft: '#c5cbd1', accent: '#8aa8c2', line: 'rgba(255,255,255,.18)', card: '#20242a' }
-  }
-  if (template.layout === 'human') return { background: '#f8f4ef', ink: '#171719', soft: '#77736f', accent: '#795f48', line: '#ded5cb', card: '#fffdf9' }
-  if (template.layout === 'research') return { background: '#f2f5f7', ink: '#15161a', soft: '#6f7881', accent: '#355f78', line: '#cbd7de', card: '#ffffff' }
-  if (template.layout === 'horizon') return { background: '#f4f6f5', ink: '#15161a', soft: '#747b7d', accent: '#486b75', line: '#d2dcda', card: '#ffffff' }
-  if (template.layout === 'dialogue') return { background: '#f8f6f2', ink: '#15161a', soft: '#79766f', accent: '#4b647b', line: '#ddd8cf', card: '#ffffff' }
-  if (template.layout === 'event') return { background: '#eef2f5', ink: '#15161a', soft: '#6e7580', accent: '#3e5c78', line: '#ccd4dc', card: '#ffffff' }
-  if (template.layout === 'question') return { background: '#fbfaf7', ink: '#111318', soft: '#717884', accent: '#2f536f', line: '#d7ddd8', card: '#ffffff' }
-  if (template.layout === 'timeline') return { background: '#f4f3ef', ink: '#15161a', soft: '#777e87', accent: '#3e5c78', line: '#cfd5db', card: '#ffffff' }
-  if (template.layout === 'signature') return { background: '#f8f7f3', ink: '#15161a', soft: '#7b8088', accent: '#8a6f3d', line: '#ded8c9', card: '#ffffff' }
-  if (template.layout === 'orbit') return { background: '#f4f7f8', ink: '#15161a', soft: '#747d86', accent: '#365d76', line: '#cedae0', card: '#ffffff' }
-  if (template.layout === 'signal') return { background: '#f6f4ef', ink: '#15161a', soft: '#777e87', accent: '#4a6680', line: '#d8d4ca', card: '#ffffff' }
-  if (template.layout === 'window') return { background: '#edf2f4', ink: '#15161a', soft: '#737c84', accent: '#375b74', line: '#cbd6dc', card: '#ffffff' }
-  if (template.layout === 'manifesto') return { background: '#f9f6f0', ink: '#15161a', soft: '#77756f', accent: '#2f536f', line: '#ded8cc', card: '#ffffff' }
-  if (template.layout === 'notebook') return { background: '#fbfaf6', ink: '#15161a', soft: '#747b84', accent: '#3e5c78', line: '#d8dcd8', card: '#ffffff' }
-  if (template.layout === 'arch') return { background: '#f5f4f0', ink: '#15161a', soft: '#777b80', accent: '#47657a', line: '#d5d9d8', card: '#ffffff' }
-  if (template.layout === 'matrix') return { background: '#eef3f5', ink: '#15161a', soft: '#727b84', accent: '#365d76', line: '#ccd7dc', card: '#ffffff' }
-  if (template.layout === 'layers') return { background: '#faf7f1', ink: '#15161a', soft: '#7a7771', accent: '#756047', line: '#ddd6ca', card: '#ffffff' }
-  if (template.layout === 'focus') return { background: '#f7f8f6', ink: '#15161a', soft: '#747b7b', accent: '#3d6471', line: '#d3dcda', card: '#ffffff' }
-  if (template.layout === 'wave') return { background: '#f2f5f6', ink: '#15161a', soft: '#707981', accent: '#3c6079', line: '#ced9de', card: '#ffffff' }
-  if (template.layout === 'balance') return { background: '#f8f5ef', ink: '#15161a', soft: '#79766f', accent: '#6f5d48', line: '#ded6ca', card: '#ffffff' }
-  return { background: '#f7f6f3', ink: '#15161a', soft: '#7c818a', accent: '#3e5c78', line: '#d9d9d6', card: '#ffffff' }
+type Composition = 'midad' | 'layl' | 'jarida' | 'sharit' | 'mishkat' | 'tawqee'
+
+const compositionOf = (layout: SocialVisualLayout): Composition => {
+  if (layout === 'dark' || layout === 'circuit' || layout === 'matrix') return 'layl'
+  if (layout === 'manifesto' || layout === 'notebook' || layout === 'research' || layout === 'timeline' || layout === 'editorial') return 'jarida'
+  if (layout === 'split' || layout === 'event' || layout === 'signal' || layout === 'wave') return 'sharit'
+  if (layout === 'arch' || layout === 'window' || layout === 'horizon' || layout === 'layers') return 'mishkat'
+  if (layout === 'signature' || layout === 'human' || layout === 'balance' || layout === 'quote') return 'tawqee'
+  return 'midad'
 }
 
-function drawArtwork(ctx: CanvasRenderingContext2D, template: SocialVisualTemplate, palette: Palette, pad: number) {
-  const width = template.width
-  const height = template.height
-  ctx.save()
-  ctx.strokeStyle = palette.accent
-  ctx.fillStyle = palette.accent
-  ctx.lineWidth = Math.max(2, width / 500)
+type Ink = { bg: string; ink: string; soft: string; accent: string; gold: string; line: string; card: string }
 
-  if (template.layout === 'split') ctx.fillRect(0, 0, Math.round(width * .28), height)
+const INKS: Record<Composition, Ink> = {
+  midad: { bg: '#F6F1E6', ink: '#191713', soft: '#6E675C', accent: '#3E5C78', gold: '#A98A52', line: '#D9D0BE', card: '#FFFDF7' },
+  layl: { bg: '#0F1216', ink: '#F5F2EA', soft: '#AEB4BD', accent: '#8FB0CC', gold: '#C9A96C', line: 'rgba(255,255,255,.16)', card: '#191E25' },
+  jarida: { bg: '#FBFAF6', ink: '#111319', soft: '#666C76', accent: '#3E5C78', gold: '#A98A52', line: '#D8D6CE', card: '#FFFFFF' },
+  sharit: { bg: '#F0F2F4', ink: '#14161B', soft: '#6A727C', accent: '#3E5C78', gold: '#C9A96C', line: '#CDD4DA', card: '#FFFFFF' },
+  mishkat: { bg: '#F5F2EA', ink: '#181613', soft: '#6F695E', accent: '#3E5C78', gold: '#A98A52', line: '#DBD3C2', card: '#FFFDF7' },
+  tawqee: { bg: '#FFFFFF', ink: '#14161B', soft: '#6E747E', accent: '#3E5C78', gold: '#A98A52', line: '#E2E2DE', card: '#FBFAF7' },
+}
 
-  if (template.layout === 'timeline') {
-    ctx.globalAlpha = .12
-    const x = Math.round(width * .18)
-    ctx.beginPath(); ctx.moveTo(x, pad + height * .08); ctx.lineTo(x, height - pad - height * .08); ctx.stroke()
-    for (let i = 0; i < 4; i += 1) { ctx.beginPath(); ctx.arc(x, pad + height * (.18 + i * .18), width * .014, 0, Math.PI * 2); ctx.fill() }
-  }
+const hashSeed = (value: string) => { let hash = 0; for (const ch of value) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0; return hash }
 
-  if (template.layout === 'question' || template.layout === 'quote' || template.layout === 'manifesto') {
-    ctx.globalAlpha = template.layout === 'manifesto' ? .07 : .08
-    ctx.font = `700 ${Math.round(width * (template.layout === 'manifesto' ? .38 : .4))}px "El Messiri", serif`
-    ctx.textAlign = template.layout === 'manifesto' ? 'left' : 'right'
-    ctx.fillText(template.layout === 'question' ? '؟' : template.layout === 'quote' ? '”' : '01', template.layout === 'manifesto' ? pad : width - pad, Math.round(height * .4))
-    ctx.textAlign = 'right'
-  }
-
-  if (template.layout === 'signature') {
-    ctx.globalAlpha = .1
-    ctx.beginPath(); ctx.ellipse(width * .42, height * .34, width * .28, height * .18, -.2, 0, Math.PI * 2); ctx.stroke()
-  }
-
-  if (template.layout === 'orbit') {
-    ctx.globalAlpha = .14
-    const cx = width * .25; const cy = height * .28
-    for (const radius of [.08, .14, .21]) { ctx.beginPath(); ctx.arc(cx, cy, width * radius, 0, Math.PI * 2); ctx.stroke() }
-    ctx.beginPath(); ctx.arc(cx + width * .14, cy - width * .03, width * .012, 0, Math.PI * 2); ctx.fill()
-  }
-
-  if (template.layout === 'signal') {
-    ctx.globalAlpha = .14
-    const baseX = width * .12; const centerY = height * .48
-    ;[.07, .15, .24, .12, .31, .18, .09].forEach((bar, index) => {
-      const barHeight = height * bar
-      roundedRect(ctx, baseX + index * width * .025, centerY - barHeight / 2, width * .009, barHeight, width * .006); ctx.fill()
-    })
-  }
-
-  if (template.layout === 'window') {
-    ctx.globalAlpha = .12
-    ctx.lineWidth = Math.max(3, width / 360)
-    roundedRect(ctx, width * .08, height * .16, width * .38, height * .48, width * .035); ctx.stroke()
-    ctx.beginPath(); ctx.moveTo(width * .27, height * .16); ctx.lineTo(width * .27, height * .64); ctx.stroke()
-  }
-
-  if (template.layout === 'circuit') {
-    ctx.globalAlpha = .18
-    const points = [[.12,.22],[.27,.16],[.38,.31],[.19,.46],[.35,.58],[.12,.7]]
-    ctx.beginPath()
-    points.forEach(([x,y], index) => index ? ctx.lineTo(width*x,height*y) : ctx.moveTo(width*x,height*y))
-    ctx.stroke()
-    points.forEach(([x,y]) => { ctx.beginPath(); ctx.arc(width*x,height*y,width*.011,0,Math.PI*2); ctx.fill() })
-  }
-
-  if (template.layout === 'notebook') {
-    ctx.globalAlpha = .13
-    for (let y = height * .2; y < height * .82; y += height * .075) { ctx.beginPath(); ctx.moveTo(width * .08, y); ctx.lineTo(width * .45, y); ctx.stroke() }
-    ctx.beginPath(); ctx.moveTo(width * .41, height * .16); ctx.lineTo(width * .41, height * .84); ctx.stroke()
-  }
-
-  if (template.layout === 'human') {
-    ctx.globalAlpha = .12
-    const cx = width * .21; const cy = height * .37
-    for (let radius = width * .07; radius <= width * .24; radius += width * .035) {
-      ctx.beginPath(); ctx.arc(cx, cy, radius, Math.PI * .2, Math.PI * 1.75); ctx.stroke()
-    }
-  }
-
-  if (template.layout === 'research') {
-    ctx.globalAlpha = .12
-    for (let i = 0; i < 5; i += 1) {
-      const x = width * (.08 + i * .065); const barHeight = height * (.08 + i * .045)
-      ctx.fillRect(x, height * .58 - barHeight, width * .025, barHeight)
-    }
-    ctx.beginPath(); ctx.moveTo(width*.07,height*.58); ctx.lineTo(width*.41,height*.58); ctx.stroke()
-    for (let x = width*.08; x <= width*.42; x += width*.07) { ctx.beginPath(); ctx.moveTo(x,height*.2); ctx.lineTo(x,height*.65); ctx.stroke() }
-  }
-
-  if (template.layout === 'horizon') {
-    ctx.globalAlpha = .13
-    ctx.beginPath(); ctx.moveTo(width*.06,height*.55); ctx.lineTo(width*.48,height*.55); ctx.stroke()
-    ctx.beginPath(); ctx.arc(width*.27,height*.55,width*.13,Math.PI,0); ctx.stroke()
-    ctx.beginPath(); ctx.arc(width*.27,height*.55,width*.025,0,Math.PI*2); ctx.fill()
-  }
-
-  if (template.layout === 'dialogue') {
-    ctx.globalAlpha = .12
-    roundedRect(ctx, width*.07,height*.18,width*.31,height*.16,width*.035); ctx.stroke()
-    roundedRect(ctx, width*.14,height*.39,width*.31,height*.16,width*.035); ctx.stroke()
-    ctx.beginPath(); ctx.moveTo(width*.12,height*.34); ctx.lineTo(width*.09,height*.39); ctx.lineTo(width*.17,height*.34); ctx.stroke()
-  }
-
-  if (template.layout === 'arch') {
-    ctx.globalAlpha = .13
-    ctx.beginPath(); ctx.arc(width*.24,height*.48,width*.18,Math.PI,0); ctx.stroke()
-    ctx.beginPath(); ctx.arc(width*.24,height*.48,width*.09,Math.PI,0); ctx.stroke()
-    ctx.beginPath(); ctx.moveTo(width*.06,height*.48); ctx.lineTo(width*.42,height*.48); ctx.stroke()
-  }
-  if (template.layout === 'matrix') {
-    ctx.globalAlpha = .11
-    for (let x = .08; x <= .42; x += .085) for (let y = .18; y <= .62; y += .09) { ctx.beginPath(); ctx.arc(width*x,height*y,width*.007,0,Math.PI*2); ctx.fill() }
-  }
-  if (template.layout === 'layers') {
-    ctx.globalAlpha = .11
-    for (let i=0;i<4;i+=1) { roundedRect(ctx,width*(.08+i*.035),height*(.18+i*.045),width*.34,height*.28,width*.025); ctx.stroke() }
-  }
-  if (template.layout === 'focus') {
-    ctx.globalAlpha = .13
-    const cx=width*.23, cy=height*.37
-    for (const radius of [.05,.1,.16]) { ctx.beginPath(); ctx.arc(cx,cy,width*radius,0,Math.PI*2); ctx.stroke() }
-    ctx.beginPath(); ctx.arc(cx,cy,width*.018,0,Math.PI*2); ctx.fill()
-  }
-  if (template.layout === 'wave') {
-    ctx.globalAlpha = .12
-    for (let row=0;row<3;row+=1) { ctx.beginPath(); for (let x=0;x<=80;x+=1) { const px=width*(.06+x/190); const py=height*(.28+row*.1)+Math.sin(x/8+row)*height*.025; x?ctx.lineTo(px,py):ctx.moveTo(px,py) } ctx.stroke() }
-  }
-  if (template.layout === 'balance') {
-    ctx.globalAlpha = .13
-    ctx.beginPath(); ctx.moveTo(width*.1,height*.46); ctx.lineTo(width*.4,height*.46); ctx.stroke()
-    ctx.beginPath(); ctx.moveTo(width*.25,height*.28); ctx.lineTo(width*.25,height*.58); ctx.stroke()
-    ctx.beginPath(); ctx.arc(width*.14,height*.48,width*.05,0,Math.PI*2); ctx.stroke()
-    ctx.beginPath(); ctx.arc(width*.36,height*.48,width*.05,0,Math.PI*2); ctx.stroke()
-  }
-
-  ctx.restore()
+const setLetterSpacing = (ctx: CanvasRenderingContext2D, px: number) => {
+  try { (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${px}px` } catch { /* متصفح أقدم */ }
 }
 
 export async function renderSocialPng(template: SocialVisualTemplate) {
@@ -468,65 +341,268 @@ export async function renderSocialPng(template: SocialVisualTemplate) {
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('تعذّر إنشاء قالب الصورة.')
 
-  const palette = paletteFor(template)
-  ctx.fillStyle = palette.background
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  const W = template.width
+  const H = template.height
+  const S = W / 1080
+  const isStory = template.platform === 'story'
+  const comp = compositionOf(template.layout)
+  const ink = INKS[comp]
+  const pad = Math.round(W * 0.09)
+  const display = (weight: number, size: number) => `${weight} ${Math.round(size)}px "El Messiri", serif`
+  const sans = (weight: number, size: number) => `${weight} ${Math.round(size)}px Tajawal, sans-serif`
+  const hairline = (x1: number, y1: number, x2: number, y2: number, color: string, widthPx: number, alpha = 1) => {
+    ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = widthPx; ctx.globalAlpha = alpha
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.restore()
+  }
+  const diamond = (x: number, y: number, radius: number, color: string, alpha = 1) => {
+    ctx.save(); ctx.fillStyle = color; ctx.globalAlpha = alpha
+    ctx.beginPath(); ctx.moveTo(x, y - radius); ctx.lineTo(x + radius, y); ctx.lineTo(x, y + radius); ctx.lineTo(x - radius, y)
+    ctx.closePath(); ctx.fill(); ctx.restore()
+  }
+  const kickerLine = (text: string, x: number, y: number, color: string, size: number, spacing: number, align: CanvasTextAlign) => {
+    ctx.save(); ctx.fillStyle = color; ctx.font = sans(600, size); ctx.textAlign = align
+    setLetterSpacing(ctx, spacing); ctx.fillText(text, x, y); setLetterSpacing(ctx, 0); ctx.restore()
+  }
+  const sourceBadge = (centerMode: boolean, y: number) => {
+    if (!template.source) return
+    const badgeText = `مرتبط بحدث من ${template.source}`
+    ctx.font = sans(500, W * 0.022)
+    const badgeWidth = Math.min(W - pad * 2, ctx.measureText(badgeText).width + 56 * S)
+    const badgeHeight = Math.round(H * 0.045)
+    const badgeX = centerMode ? (W - badgeWidth) / 2 : W - pad - badgeWidth
+    roundedRect(ctx, badgeX, y - badgeHeight * 0.72, badgeWidth, badgeHeight, badgeHeight / 2)
+    ctx.fillStyle = comp === 'layl' ? 'rgba(255,255,255,.08)' : ink.card
+    ctx.fill()
+    ctx.strokeStyle = ink.line; ctx.lineWidth = 1; ctx.stroke()
+    ctx.fillStyle = ink.gold
+    ctx.textAlign = 'center'
+    ctx.fillText(badgeText, badgeX + badgeWidth / 2, y)
+  }
+  const drawLogo = async (x: number, y: number, invert: boolean) => {
+    try {
+      const logo = await loadLogo()
+      const logoWidth = Math.round(W * 0.1)
+      const logoHeight = Math.round(logoWidth * 0.62)
+      if (invert) ctx.filter = 'invert(1)'
+      ctx.drawImage(logo, x === -1 ? Math.round((W - logoWidth) / 2) : x, y - logoHeight, logoWidth, logoHeight)
+      ctx.filter = 'none'
+      return logoHeight
+    } catch { return 0 }
+  }
+
+  ctx.fillStyle = ink.bg
+  ctx.fillRect(0, 0, W, H)
   ctx.direction = 'rtl'
-  ctx.textAlign = 'right'
   ctx.textBaseline = 'alphabetic'
 
-  const pad = Math.round(template.width * .085)
-  const contentWidth = template.width - pad * 2
-  drawArtwork(ctx, template, palette, pad)
-
-  ctx.strokeStyle = palette.line
-  ctx.lineWidth = Math.max(2, template.width / 540)
-  ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(template.width - pad, pad); ctx.stroke()
-
-  ctx.fillStyle = palette.accent
-  ctx.font = `700 ${Math.round(template.width * .034)}px Tajawal, sans-serif`
-  ctx.fillText(template.kicker, template.width - pad, pad + Math.round(template.height * .065))
-
-  const maximumTitleLines = template.platform === 'story' ? 7 : 6
-  const baseTitleSize = template.platform === 'story' ? template.width * .078 : template.width * .064
-  const titleSize = fittedTitleSize(ctx, template.title, contentWidth, maximumTitleLines, baseTitleSize, template.width * .043)
-  ctx.fillStyle = palette.ink
-  ctx.font = `700 ${titleSize}px "El Messiri", serif`
-  const titleY = pad + Math.round(template.height * .16)
-  const afterTitle = drawWrapped(ctx, template.title, template.width - pad, titleY, contentWidth, Math.round(titleSize * 1.42), maximumTitleLines)
-
-  if (template.body) {
-    ctx.fillStyle = palette.soft
-    const bodySize = Math.round(template.width * .032)
-    ctx.font = `400 ${bodySize}px Tajawal, sans-serif`
-    drawWrapped(ctx, template.body, template.width - pad, afterTitle + Math.round(template.height * .045), contentWidth, Math.round(bodySize * 1.75), template.platform === 'story' ? 9 : 7)
+  /* ═══ «المداد» — مخطوطة بإطار مذهّب وحرف استهلالي ظلي ═══ */
+  if (comp === 'midad') {
+    ctx.save(); ctx.globalAlpha = 0.16; ctx.strokeStyle = ink.line; ctx.lineWidth = 1
+    for (let y = pad * 1.4; y < H - pad * 1.4; y += 30 * S) { ctx.beginPath(); ctx.moveTo(pad * 1.1, y); ctx.lineTo(W - pad * 1.1, y); ctx.stroke() }
+    ctx.restore()
+    ctx.strokeStyle = ink.ink; ctx.globalAlpha = 0.75; ctx.lineWidth = 2.4 * S
+    ctx.strokeRect(pad * 0.52, pad * 0.52, W - pad * 1.04, H - pad * 1.04)
+    ctx.globalAlpha = 1; ctx.strokeStyle = ink.gold; ctx.lineWidth = 1.1 * S
+    ctx.strokeRect(pad * 0.72, pad * 0.72, W - pad * 1.44, H - pad * 1.44)
+    for (const [cx, cy] of [[pad * 0.72, pad * 0.72], [W - pad * 0.72, pad * 0.72], [pad * 0.72, H - pad * 0.72], [W - pad * 0.72, H - pad * 0.72]] as const)
+      diamond(cx, cy, 9 * S, ink.gold)
+    kickerLine(`✦  ${template.kicker}  ✦`, W / 2, pad * 1.62, ink.gold, W * 0.026, 5 * S, 'center')
+    const initial = (template.title.trim().match(/[ء-ي]/) || ['و'])[0]
+    ctx.save(); ctx.globalAlpha = 0.06; ctx.fillStyle = ink.accent; ctx.font = display(700, W * 0.56); ctx.textAlign = 'center'
+    ctx.fillText(initial, W / 2, H * (isStory ? 0.5 : 0.58)); ctx.restore()
+    const titleMaxW = W - pad * 2.7
+    const titleSize = fittedTitleSize(ctx, template.title, titleMaxW, isStory ? 7 : 5, W * (isStory ? 0.082 : 0.07), W * 0.044)
+    ctx.fillStyle = ink.ink; ctx.font = display(700, titleSize); ctx.textAlign = 'center'
+    const afterTitle = drawWrapped(ctx, template.title, W / 2, H * (isStory ? 0.3 : 0.31), titleMaxW, Math.round(titleSize * 1.48), isStory ? 7 : 5)
+    hairline(W / 2 - 80 * S, afterTitle + 8 * S, W / 2 - 14 * S, afterTitle + 8 * S, ink.gold, 1.4 * S)
+    hairline(W / 2 + 14 * S, afterTitle + 8 * S, W / 2 + 80 * S, afterTitle + 8 * S, ink.gold, 1.4 * S)
+    diamond(W / 2, afterTitle + 8 * S, 6 * S, ink.gold)
+    if (template.body) {
+      ctx.fillStyle = ink.soft; ctx.font = sans(400, W * 0.03); ctx.textAlign = 'center'
+      drawWrapped(ctx, template.body, W / 2, afterTitle + 78 * S, W - pad * 3, Math.round(W * 0.03 * 1.8), isStory ? 8 : 5)
+    }
+    sourceBadge(true, H - pad * 2.15)
+    await drawLogo(-1, H - pad * 1.28, false)
+    ctx.fillStyle = ink.accent; ctx.font = sans(600, W * 0.022); ctx.textAlign = 'center'
+    ctx.fillText(template.footer || 'dr-alfailakawi.com', W / 2, H - pad * 0.95)
   }
 
-  if (template.source) {
-    const badgeText = `مرتبط بحدث من ${template.source}`
-    ctx.font = `500 ${Math.round(template.width * .023)}px Tajawal, sans-serif`
-    const badgeWidth = Math.min(contentWidth, ctx.measureText(badgeText).width + 52)
-    const badgeHeight = Math.round(template.height * .052)
-    roundedRect(ctx, template.width - pad - badgeWidth, template.height - pad - badgeHeight - 74, badgeWidth, badgeHeight, badgeHeight / 2)
-    ctx.fillStyle = template.layout === 'dark' || template.layout === 'circuit' ? 'rgba(255,255,255,.08)' : palette.card
-    ctx.fill()
-    ctx.fillStyle = palette.accent
-    ctx.fillText(badgeText, template.width - pad - 24, template.height - pad - badgeHeight - 74 + badgeHeight * .68)
+  /* ═══ «الليل» — سماء داكنة بهالة ذهبية ونجوم حتمية ═══ */
+  if (comp === 'layl') {
+    const glow = ctx.createRadialGradient(W / 2, H * 0.44, 0, W / 2, H * 0.44, W * 0.78)
+    glow.addColorStop(0, '#171C23'); glow.addColorStop(1, '#0C0F13')
+    ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H)
+    const seed = hashSeed(template.id + template.title)
+    ctx.save()
+    for (let index = 0; index < 90; index += 1) {
+      const sx = ((seed * (index + 13)) % 997) / 997 * W
+      const sy = ((seed * (index + 71)) % 883) / 883 * H
+      ctx.globalAlpha = 0.05 + ((seed * (index + 7)) % 23) / 100
+      ctx.fillStyle = index % 5 === 0 ? ink.gold : '#DCE2E8'
+      ctx.beginPath(); ctx.arc(sx, sy, (index % 3 === 0 ? 2 : 1.2) * S, 0, Math.PI * 2); ctx.fill()
+    }
+    ctx.restore()
+    ctx.save(); ctx.strokeStyle = ink.gold; ctx.globalAlpha = 0.55; ctx.lineWidth = 1.6 * S
+    ctx.beginPath(); ctx.arc(W / 2, H * 0.44, W * 0.335, 0, Math.PI * 2); ctx.stroke()
+    ctx.globalAlpha = 0.16
+    ctx.beginPath(); ctx.arc(W / 2, H * 0.44, W * 0.405, 0, Math.PI * 2); ctx.stroke()
+    ctx.restore()
+    diamond(W / 2, H * 0.44 - W * 0.335, 7 * S, ink.gold)
+    kickerLine(template.kicker, W / 2, H * (isStory ? 0.14 : 0.155), ink.gold, W * 0.025, 6 * S, 'center')
+    const titleMaxW = W * 0.62
+    const titleSize = fittedTitleSize(ctx, template.title, titleMaxW, isStory ? 7 : 6, W * (isStory ? 0.075 : 0.064), W * 0.04)
+    ctx.font = display(700, titleSize)
+    const titleLines = wrapLines(ctx, template.title, titleMaxW).slice(0, isStory ? 7 : 6).length
+    const lineHeight = Math.round(titleSize * 1.5)
+    ctx.fillStyle = ink.ink; ctx.textAlign = 'center'
+    const titleStart = H * 0.44 - ((titleLines - 1) * lineHeight) / 2 + titleSize * 0.35
+    const afterTitle = drawWrapped(ctx, template.title, W / 2, titleStart, titleMaxW, lineHeight, isStory ? 7 : 6)
+    if (template.body) {
+      ctx.fillStyle = ink.soft; ctx.font = sans(300, W * 0.028); ctx.textAlign = 'center'
+      drawWrapped(ctx, template.body, W / 2, Math.max(afterTitle + 60 * S, H * 0.44 + W * 0.405 + 54 * S), W - pad * 3, Math.round(W * 0.028 * 1.85), isStory ? 7 : 4)
+    }
+    sourceBadge(true, H - pad * 2.05)
+    hairline(W / 2 - 60 * S, H - pad * 1.62, W / 2 + 60 * S, H - pad * 1.62, ink.gold, 1.2 * S, 0.8)
+    await drawLogo(-1, H - pad * 1.62 - 14 * S, true)
+    ctx.fillStyle = ink.soft; ctx.font = sans(500, W * 0.022); ctx.textAlign = 'center'
+    ctx.fillText(template.footer || 'dr-alfailakawi.com', W / 2, H - pad * 0.95)
   }
 
-  try {
-    const logo = await loadLogo()
-    const logoWidth = Math.round(template.width * .11)
-    const logoHeight = Math.round(logoWidth * .62)
-    if (template.layout === 'dark' || template.layout === 'circuit') ctx.filter = 'invert(1)'
-    ctx.drawImage(logo, pad, template.height - pad - logoHeight, logoWidth, logoHeight)
-    ctx.filter = 'none'
-  } catch { /* يبقى القالب صالحاً حتى لو تعذر تحميل الشعار */ }
+  /* ═══ «الجريدة» — صفحة رأي بترويسة صحفية وعمود جانبي ═══ */
+  if (comp === 'jarida') {
+    ctx.fillStyle = ink.ink
+    ctx.fillRect(pad, pad, W - pad * 2, 6 * S)
+    kickerLine(template.kicker, W / 2, pad + 52 * S, ink.ink, W * 0.026, 6 * S, 'center')
+    hairline(pad, pad + 74 * S, W - pad, pad + 74 * S, ink.ink, 1.6 * S)
+    ctx.fillStyle = ink.soft; ctx.font = sans(400, W * 0.019); ctx.textAlign = 'right'
+    ctx.fillText('رأي · تربية وتقنية', W - pad, pad + 108 * S)
+    ctx.textAlign = 'left'
+    ctx.fillText(template.footer || 'dr-alfailakawi.com', pad, pad + 108 * S)
+    ctx.textAlign = 'right'
+    const columnX = pad + W * 0.14
+    const bodyMaxW = W - pad * 2 - W * 0.18
+    const titleSize = fittedTitleSize(ctx, template.title, W - pad * 2, isStory ? 7 : 5, W * (isStory ? 0.088 : 0.08), W * 0.048)
+    ctx.fillStyle = ink.ink; ctx.font = display(700, titleSize)
+    const afterTitle = drawWrapped(ctx, template.title, W - pad, pad + H * (isStory ? 0.135 : 0.17) + titleSize * 0.4, W - pad * 2, Math.round(titleSize * 1.44), isStory ? 7 : 5)
+    ctx.fillStyle = ink.accent
+    ctx.fillRect(W - pad - 150 * S, afterTitle + 6 * S, 150 * S, 9 * S)
+    if (template.body) {
+      ctx.fillStyle = ink.gold; ctx.font = display(700, W * 0.05)
+      ctx.fillText('«', W - pad, afterTitle + 92 * S)
+      ctx.fillStyle = ink.soft; ctx.font = sans(400, W * 0.03)
+      drawWrapped(ctx, template.body, W - pad - 52 * S, afterTitle + 92 * S, bodyMaxW - 52 * S, Math.round(W * 0.03 * 1.85), isStory ? 9 : 6)
+    }
+    hairline(columnX, afterTitle + 60 * S, columnX, H - pad * 1.7, ink.line, 1.4 * S)
+    sourceBadge(false, H - pad * 2)
+    hairline(pad, H - pad * 1.45, W - pad, H - pad * 1.45, ink.ink, 1.6 * S)
+    await drawLogo(pad, H - pad * 0.62, false)
+    ctx.fillStyle = ink.ink; ctx.font = display(600, W * 0.026); ctx.textAlign = 'right'
+    ctx.fillText('د. أحمد حسين الفيلكاوي', W - pad, H - pad * 0.95)
+  }
 
-  ctx.fillStyle = palette.soft
-  ctx.font = `500 ${Math.round(template.width * .024)}px Tajawal, sans-serif`
-  ctx.textAlign = 'right'
-  ctx.fillText(template.footer || 'dr-alfailakawi.com', template.width - pad, template.height - pad)
+  /* ═══ «الشريط» — عارضة سينمائية بلون الموقع ═══ */
+  if (comp === 'sharit') {
+    const bandHeight = H * (isStory ? 0.3 : 0.42)
+    const bandY = (H - bandHeight) / 2
+    kickerLine(template.kicker, W - pad, bandY - 44 * S, ink.accent, W * 0.026, 4 * S, 'right')
+    hairline(pad, bandY - 30 * S, W - pad - ctx.measureText(template.kicker).width - 260 * S, bandY - 30 * S, ink.line, 1.4 * S)
+    ctx.fillStyle = ink.accent
+    ctx.fillRect(0, bandY, W, bandHeight)
+    ctx.save(); ctx.fillStyle = '#FFFFFF'; ctx.globalAlpha = 0.3
+    for (let x = 22 * S; x < W; x += 42 * S) {
+      ctx.beginPath(); ctx.arc(x, bandY + 20 * S, 4.5 * S, 0, Math.PI * 2); ctx.fill()
+      ctx.beginPath(); ctx.arc(x, bandY + bandHeight - 20 * S, 4.5 * S, 0, Math.PI * 2); ctx.fill()
+    }
+    ctx.restore()
+    const titleMaxW = W - pad * 2
+    const titleSize = fittedTitleSize(ctx, template.title, titleMaxW, isStory ? 5 : 4, W * (isStory ? 0.075 : 0.068), W * 0.042)
+    ctx.font = display(700, titleSize)
+    const titleLines = wrapLines(ctx, template.title, titleMaxW).slice(0, isStory ? 5 : 4).length
+    const lineHeight = Math.round(titleSize * 1.46)
+    ctx.fillStyle = '#FFFFFF'; ctx.textAlign = 'right'
+    const titleStart = bandY + bandHeight / 2 - ((titleLines - 1) * lineHeight) / 2 + titleSize * 0.34
+    drawWrapped(ctx, template.title, W - pad, titleStart, titleMaxW, lineHeight, isStory ? 5 : 4)
+    ctx.fillStyle = ink.gold
+    ctx.fillRect(W - pad - 110 * S, bandY + 44 * S, 110 * S, 5 * S)
+    if (template.body) {
+      ctx.fillStyle = ink.soft; ctx.font = sans(400, W * 0.029); ctx.textAlign = 'right'
+      drawWrapped(ctx, template.body, W - pad, bandY + bandHeight + 76 * S, W - pad * 2.4, Math.round(W * 0.029 * 1.8), isStory ? 6 : 4)
+    }
+    sourceBadge(false, H - pad * 1.75)
+    await drawLogo(pad, H - pad * 0.72, false)
+    ctx.fillStyle = ink.accent; ctx.font = sans(600, W * 0.022); ctx.textAlign = 'right'
+    ctx.fillText(template.footer || 'dr-alfailakawi.com', W - pad, H - pad * 0.95)
+  }
+
+  /* ═══ «المشكاة» — قوس معماري إسلامي يحتضن الفكرة ═══ */
+  if (comp === 'mishkat') {
+    const baseY = H * (isStory ? 0.6 : 0.66)
+    const apexY = H * (isStory ? 0.17 : 0.15)
+    const halfW = W * 0.3
+    const shoulderY = apexY + (baseY - apexY) * 0.44
+    const arch = (half: number, color: string, widthPx: number, alpha: number) => {
+      ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = widthPx; ctx.globalAlpha = alpha
+      ctx.beginPath()
+      ctx.moveTo(W / 2 - half, baseY)
+      ctx.lineTo(W / 2 - half, shoulderY)
+      ctx.bezierCurveTo(W / 2 - half, apexY + (shoulderY - apexY) * 0.25, W / 2 - half * 0.42, apexY, W / 2, apexY)
+      ctx.bezierCurveTo(W / 2 + half * 0.42, apexY, W / 2 + half, apexY + (shoulderY - apexY) * 0.25, W / 2 + half, shoulderY)
+      ctx.lineTo(W / 2 + half, baseY)
+      ctx.stroke(); ctx.restore()
+    }
+    arch(halfW, ink.accent, 3 * S, 0.9)
+    arch(halfW * 0.9, ink.gold, 1.2 * S, 0.85)
+    hairline(W * 0.1, baseY, W * 0.9, baseY, ink.accent, 2.2 * S, 0.9)
+    hairline(W * 0.13, baseY + 14 * S, W * 0.87, baseY + 14 * S, ink.gold, 1 * S, 0.7)
+    diamond(W / 2, apexY - 18 * S, 8 * S, ink.gold)
+    hairline(W / 2, apexY - 10 * S, W / 2, apexY + 26 * S, ink.gold, 1.2 * S, 0.8)
+    ctx.save(); ctx.fillStyle = ink.gold; ctx.globalAlpha = 0.9
+    ctx.beginPath(); ctx.arc(W / 2, apexY + 40 * S, 7 * S, 0, Math.PI * 2); ctx.fill(); ctx.restore()
+    kickerLine(template.kicker, W / 2, pad * 0.92, ink.gold, W * 0.024, 5 * S, 'center')
+    const titleMaxW = halfW * 1.62
+    const titleSize = fittedTitleSize(ctx, template.title, titleMaxW, isStory ? 7 : 6, W * 0.058, W * 0.038)
+    ctx.fillStyle = ink.ink; ctx.font = display(700, titleSize); ctx.textAlign = 'center'
+    drawWrapped(ctx, template.title, W / 2, apexY + (baseY - apexY) * 0.34, titleMaxW, Math.round(titleSize * 1.5), isStory ? 7 : 6)
+    if (template.body) {
+      ctx.fillStyle = ink.soft; ctx.font = sans(400, W * 0.028); ctx.textAlign = 'center'
+      drawWrapped(ctx, template.body, W / 2, baseY + 78 * S, W - pad * 2.8, Math.round(W * 0.028 * 1.85), isStory ? 7 : 4)
+    }
+    sourceBadge(true, H - pad * 1.95)
+    await drawLogo(-1, H - pad * 1.22, false)
+    ctx.fillStyle = ink.accent; ctx.font = sans(600, W * 0.022); ctx.textAlign = 'center'
+    ctx.fillText(template.footer || 'dr-alfailakawi.com', W / 2, H - pad * 0.9)
+  }
+
+  /* ═══ «التوقيع» — صفحة بيضاء بخط توقيع حي ═══ */
+  if (comp === 'tawqee') {
+    ctx.save(); ctx.globalAlpha = 0.07; ctx.fillStyle = ink.accent
+    ctx.font = display(700, W * 0.6); ctx.textAlign = 'left'
+    ctx.fillText('”', pad * 0.4, H * 0.42); ctx.restore()
+    kickerLine(template.kicker, W - pad, pad * 1.35, ink.accent, W * 0.026, 4 * S, 'right')
+    hairline(W - pad, pad * 1.6, W - pad - 120 * S, pad * 1.6, ink.gold, 2 * S)
+    const titleSize = fittedTitleSize(ctx, template.title, W - pad * 2.2, isStory ? 7 : 5, W * (isStory ? 0.082 : 0.072), W * 0.046)
+    ctx.fillStyle = ink.ink; ctx.font = display(700, titleSize); ctx.textAlign = 'right'
+    const afterTitle = drawWrapped(ctx, template.title, W - pad, pad + H * (isStory ? 0.12 : 0.16) + titleSize * 0.4, W - pad * 2.2, Math.round(titleSize * 1.46), isStory ? 7 : 5)
+    ctx.save(); ctx.strokeStyle = ink.accent; ctx.lineWidth = 3 * S; ctx.lineCap = 'round'
+    ctx.beginPath()
+    ctx.moveTo(W - pad - 10 * S, afterTitle + 34 * S)
+    ctx.bezierCurveTo(W - pad - 150 * S, afterTitle + 74 * S, W - pad - 240 * S, afterTitle - 6 * S, W - pad - 330 * S, afterTitle + 40 * S)
+    ctx.bezierCurveTo(W - pad - 390 * S, afterTitle + 70 * S, W - pad - 430 * S, afterTitle + 24 * S, W - pad - 470 * S, afterTitle + 38 * S)
+    ctx.stroke()
+    ctx.fillStyle = ink.gold
+    ctx.beginPath(); ctx.arc(W - pad - 484 * S, afterTitle + 38 * S, 5 * S, 0, Math.PI * 2); ctx.fill()
+    ctx.restore()
+    if (template.body) {
+      ctx.fillStyle = ink.soft; ctx.font = sans(400, W * 0.03); ctx.textAlign = 'right'
+      drawWrapped(ctx, template.body, W - pad, afterTitle + 118 * S, W - pad * 2.6, Math.round(W * 0.03 * 1.85), isStory ? 8 : 5)
+    }
+    sourceBadge(false, H - pad * 2.2)
+    ctx.fillStyle = ink.ink; ctx.font = display(600, W * 0.03); ctx.textAlign = 'right'
+    ctx.fillText('د. أحمد حسين الفيلكاوي', W - pad, H - pad * 1.32)
+    ctx.fillStyle = ink.soft; ctx.font = sans(500, W * 0.021)
+    ctx.fillText(template.footer || 'dr-alfailakawi.com', W - pad, H - pad * 0.95)
+    await drawLogo(pad, H - pad * 0.85, false)
+  }
 
   return await new Promise<Blob>((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('تعذّر تصدير الصورة.')), 'image/png', 1))
 }

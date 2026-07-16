@@ -101,6 +101,64 @@ function dialogueFromText(title: string, value: string): DialogueTurn[] {
   return turns.slice(0, 26)
 }
 
+/* ═══ تحويل مستند الصديق الكامل إلى حوار ═══
+   الصيغة الطبيعية: سطر لكل مداخلة يبدأ باسم المتحدث ثم نقطتان —
+   «الرجل: …» / «المرأة: …» — والسطور بلا اسم تُلحق بالمداخلة السابقة.
+   وسوم اختيارية داخل النص: [موسيقى] · [وقفة 800] · [تداخل 90] · [سؤال] [تأمل]
+   [اعتراض هادئ] [رد قصير] [خلاصة]… وما لم يوسم يُستنتج: «؟» سؤال، والقصير رد،
+   والأخيرة خلاصة. النص نفسه لا يُمس — الاستنتاج للأداء فقط. */
+const SPEAKER_ALIASES: Record<string, Speaker> = {
+  'الرجل': 'male', 'رجل': 'male', 'م': 'male', 'male': 'male', 'a': 'male', 'فهد': 'male', 'عثمان': 'male', 'المذيع': 'male', 'هو': 'male',
+  'المرأة': 'female', 'امرأة': 'female', 'المرأه': 'female', 'أ': 'female', 'female': 'female', 'b': 'female', 'نورة': 'female', 'نوره': 'female', 'أزيان': 'female', 'المذيعة': 'female', 'هي': 'female',
+}
+const TYPE_TAGS: Record<string, string> = {
+  'خبر': 'statement', 'سؤال': 'question', 'رد': 'response', 'تأمل': 'reflection', 'اعتراض': 'objection',
+  'اعتراض هادئ': 'gentleObjection', 'شرح': 'explanation', 'توضيح': 'clarification', 'تمهيد': 'setup',
+  'مثال': 'example', 'تأكيد': 'emphasis', 'رد قصير': 'briefReaction', 'خلاصة': 'conclusion', 'إغلاق': 'closing',
+}
+const TYPE_PAUSES: Record<string, number> = {
+  statement: 560, question: 680, response: 520, reflection: 760, objection: 640, gentleObjection: 620,
+  explanation: 600, clarification: 600, setup: 640, example: 580, emphasis: 620, briefReaction: 240,
+  conclusion: 900, closing: 900,
+}
+
+function turnsFromScript(value: string): DialogueTurn[] | null {
+  const lines = String(value || '').replace(/\r/g, '').split('\n').map((line) => line.trim()).filter(Boolean)
+  const turns: DialogueTurn[] = []
+  const locked: { type?: boolean; pause?: boolean }[] = []
+  for (const line of lines) {
+    const match = line.match(/^([^:：]{1,16})\s*[:：]\s*(.+)$/u)
+    const speaker = match ? SPEAKER_ALIASES[match[1].trim().toLowerCase()] : undefined
+    if (match && speaker) {
+      turns.push({ ...blankTurn(speaker), text: match[2].trim() })
+      locked.push({})
+    } else if (turns.length) {
+      turns[turns.length - 1].text = `${turns[turns.length - 1].text} ${line}`.trim()
+    }
+  }
+  if (turns.length < 2 || new Set(turns.map((turn) => turn.speaker)).size < 2) return null
+  turns.forEach((turn, index) => {
+    const lock = locked[index]
+    turn.text = turn.text.replace(/\[([^\]]{1,24})\]/g, (_, rawTag: string) => {
+      const tag = rawTag.trim()
+      const pauseMatch = tag.match(/^وقفة\s*(\d{2,4})$/)
+      const overlapMatch = tag.match(/^تداخل\s*(\d{1,3})$/)
+      if (tag === 'موسيقى') turn.musicBridgeAfter = true
+      else if (pauseMatch) { turn.pauseAfterMs = Math.min(2000, Number(pauseMatch[1])); lock.pause = true }
+      else if (overlapMatch) turn.overlapMs = Math.min(150, Number(overlapMatch[1]))
+      else if (TYPE_TAGS[tag]) { turn.deliveryType = TYPE_TAGS[tag]; lock.type = true }
+      return ' '
+    }).replace(/\s+/g, ' ').trim()
+    if (!lock.type) {
+      if (/[؟?]\s*$/.test(turn.text)) turn.deliveryType = 'question'
+      else if (turn.text.split(/\s+/).length <= 8) turn.deliveryType = 'briefReaction'
+      else if (index === turns.length - 1) turn.deliveryType = 'conclusion'
+    }
+    if (!lock.pause) turn.pauseAfterMs = TYPE_PAUSES[turn.deliveryType] ?? 560
+  })
+  return turns.every((turn) => turn.text) ? turns : null
+}
+
 async function unzipDocxEntry(buffer: ArrayBuffer, wanted = 'word/document.xml') {
   const bytes = new Uint8Array(buffer)
   const view = new DataView(buffer)
@@ -367,9 +425,16 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
         setNotice(`استُوردت نسخة احتياطية تحتوي ${parsed.length} مداخلة؛ راجعها ثم احفظ.`)
       } else {
         const text = await documentText(file)
-        const firstTurn = firstTurnFromSource(article?.title || file.name.replace(/\.[^.]+$/, ''), text)
-        setTurns([firstTurn])
-        setNotice('أُدرجت المداخلة الأولى فقط من المستند. أضف بقية المداخلات يدوياً عند الضغط على «إضافة مداخلة».')
+        const script = turnsFromScript(text)
+        if (script) {
+          setTurns(script)
+          const maleCount = script.filter((turn) => turn.speaker === 'male').length
+          setNotice(`استُورد الحوار كاملاً من المستند: ${script.length} مداخلة (الرجل ${maleCount} · المرأة ${script.length - maleCount}). راجع المداخلات ثم احفظ — الحفظ يوصلها لغرفة الإنتاج.`)
+        } else {
+          const firstTurn = firstTurnFromSource(article?.title || file.name.replace(/\.[^.]+$/, ''), text)
+          setTurns([firstTurn])
+          setNotice('لم أجد سطوراً بصيغة «الرجل: …» / «المرأة: …» فأدرجت مداخلة افتتاحية واحدة. اكتب المستند سطراً لكل مداخلة يبدأ باسم المتحدث ونقطتين ليُستورد الحوار كاملاً.')
+        }
       }
       setDirty(true)
     } catch {
@@ -422,7 +487,7 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
           <div className="max-w-3xl">
             <p className="text-[.76rem] font-semibold uppercase text-accent">الحوار اليدوي للحلقة</p>
             <h2 className="mt-1 font-display text-2xl font-semibold text-ink">اكتب فهد ونورة مداخلةً مداخلة.</h2>
-            <p className="mt-2 text-[.84rem] leading-relaxed text-soft">اختر المقال أو ارفع مستند DOCX/TXT؛ في الوضع اليدوي تبقى البداية بمداخلة واحدة فقط، ثم تضيف بقية المداخلات بنفسك عند الحاجة. لا تحتاج إلى JSON، وتظهر الحلقة الصوتية هنا تلقائياً متى كانت موجودة في مسار الإنتاج.</p>
+            <p className="mt-2 text-[.84rem] leading-relaxed text-soft">اختر المقال ثم ارفع ملف Word (أو TXT) بالحوار كاملاً: سطر لكل مداخلة يبدأ بـ«الرجل:» أو «المرأة:»، ووسوم اختيارية داخل النص مثل [موسيقى] و[وقفة 800] و[تداخل 90] — يُحوَّل تلقائياً إلى مداخلات جاهزة تراجعها هنا ثم تحفظها، ويسحبها التوليد الليلي بنفسه. يقبل أيضاً JSON جاهزاً.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <input ref={fileRef} type="file" accept=".docx,.txt,.md,.json,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/json" className="hidden" onChange={(event) => void importFile(event.target.files?.[0])} />

@@ -194,6 +194,9 @@ export default function PaperDetail() {
             <h1 dir="auto" className="mt-4 font-display text-[clamp(1.7rem,4vw,2.7rem)] font-bold leading-[1.45] text-ink">
               <Reveal>{p.title}</Reveal>
             </h1>
+            {p.titleAr && (
+              <p dir="rtl" className="mt-3 text-[1.02rem] font-extralight leading-[1.9] text-soft">{p.titleAr}</p>
+            )}
             <OwnerEdit tab="papers" slug={p.slug} className="mt-3" />
             <div className="mt-7 h-[2px] w-16 bg-accent" />
           </FadeUp>

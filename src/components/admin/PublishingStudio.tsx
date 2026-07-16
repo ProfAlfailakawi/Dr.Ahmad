@@ -8,7 +8,7 @@ import { useAdminAuth } from '../../lib/admin-auth'
 import { fetchPublishedExtras, getDb } from '../../lib/firebase'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
-import { buildSocialVisuals, detectVisualTopic, downloadSocialPng, visualTopicLabel, type SocialVisualTemplate, type VisualTopic } from '../../lib/social-templates'
+import { buildSocialVisuals, detectVisualTopic, downloadSocialPng, renderSocialPng, visualTopicLabel, type SocialVisualTemplate, type VisualTopic } from '../../lib/social-templates'
 
 const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
@@ -1097,53 +1097,29 @@ function CurrentEventsCard({
   )
 }
 
-function TemplateArtwork({ layout }: { layout: SocialVisualTemplate['layout'] }) {
-  if (layout === 'orbit') return <div aria-hidden className="absolute -left-10 top-16 h-40 w-40 rounded-full border border-accent/20 before:absolute before:inset-7 before:rounded-full before:border before:border-accent/25 after:absolute after:inset-14 after:rounded-full after:border after:border-accent/30"><span className="absolute right-4 top-8 h-2.5 w-2.5 rounded-full bg-accent/55" /></div>
-  if (layout === 'signal') return <div aria-hidden className="absolute bottom-16 left-6 flex h-36 items-center gap-1.5 opacity-25">{[28,52,84,44,108,68,34].map((height, index) => <span key={index} className="w-1.5 rounded-full bg-accent" style={{ height }} />)}</div>
-  if (layout === 'window') return <div aria-hidden className="absolute -left-4 top-20 h-48 w-40 rounded-[2rem] border-2 border-accent/15 before:absolute before:inset-y-0 before:left-1/2 before:w-px before:bg-accent/15" />
-  if (layout === 'manifesto') return <span aria-hidden className="absolute -left-2 top-16 font-display text-[8rem] font-bold leading-none text-accent/[.07]">01</span>
-  if (layout === 'timeline') return <div aria-hidden className="absolute bottom-16 left-8 top-20 w-px bg-accent/20 before:absolute before:-left-1.5 before:top-1/4 before:h-3 before:w-3 before:rounded-full before:bg-accent/35 after:absolute after:-left-1.5 after:top-2/3 after:h-3 after:w-3 after:rounded-full after:bg-accent/35" />
-  if (layout === 'question') return <span aria-hidden className="absolute left-4 top-10 font-display text-[8rem] font-bold text-accent/[.07]">؟</span>
-  if (layout === 'quote') return <span aria-hidden className="absolute left-4 top-8 font-display text-[9rem] font-bold text-accent/[.06]">”</span>
-  if (layout === 'split') return <span aria-hidden className="absolute inset-y-0 left-0 w-[28%] bg-accent/10" />
-  if (layout === 'signature') return <span aria-hidden className="absolute -left-8 top-20 h-36 w-64 -rotate-6 rounded-[50%] border border-accent/15" />
-  if (layout === 'circuit') return <div aria-hidden className="absolute inset-x-5 bottom-12 top-16 opacity-20"><span className="absolute left-0 top-[18%] h-px w-[45%] bg-accent" /><span className="absolute left-[34%] top-[18%] h-[36%] w-px bg-accent" /><span className="absolute left-[34%] top-[54%] h-px w-[50%] bg-accent" /><span className="absolute left-[80%] top-[50%] h-2.5 w-2.5 rounded-full bg-accent" /><span className="absolute left-[31%] top-[15%] h-2.5 w-2.5 rounded-full bg-accent" /></div>
-  if (layout === 'notebook') return <div aria-hidden className="absolute inset-x-5 bottom-12 top-20 opacity-20 before:absolute before:bottom-0 before:left-[30%] before:top-0 before:w-px before:bg-accent">{[18,34,50,66,82].map((top) => <span key={top} className="absolute left-0 right-0 h-px bg-accent" style={{ top: `${top}%` }} />)}</div>
-  if (layout === 'human') return <div aria-hidden className="absolute -left-14 top-16 h-56 w-56 rounded-full border border-accent/15 before:absolute before:inset-5 before:rounded-full before:border before:border-accent/15 after:absolute after:inset-10 after:rounded-full after:border after:border-accent/15" />
-  if (layout === 'research') return <div aria-hidden className="absolute bottom-14 left-6 flex h-36 items-end gap-2 opacity-20">{[40,72,102,58,120].map((height, index) => <span key={index} className="w-5 border border-accent/70 bg-accent/20" style={{ height }} />)}</div>
-  if (layout === 'horizon') return <div aria-hidden className="absolute left-4 right-4 top-[48%] h-px bg-accent/20 before:absolute before:-top-16 before:left-[18%] before:h-32 before:w-32 before:rounded-t-full before:border before:border-b-0 before:border-accent/20" />
-  if (layout === 'dialogue') return <div aria-hidden className="absolute left-5 top-20 opacity-20"><span className="block h-20 w-32 rounded-[1.6rem] border border-accent" /><span className="ms-12 mt-3 block h-20 w-32 rounded-[1.6rem] border border-accent" /></div>
-  if (layout === 'arch') return <div aria-hidden className="absolute -left-4 top-24 h-32 w-48 rounded-t-full border border-b-0 border-accent/20 before:absolute before:bottom-0 before:left-1/4 before:h-20 before:w-24 before:rounded-t-full before:border before:border-b-0 before:border-accent/20" />
-  if (layout === 'matrix') return <div aria-hidden className="absolute left-6 top-20 grid grid-cols-5 gap-3 opacity-20">{Array.from({ length: 20 }, (_, index) => <span key={index} className="h-1.5 w-1.5 rounded-full bg-accent" />)}</div>
-  if (layout === 'layers') return <div aria-hidden className="absolute left-4 top-20 h-28 w-44 opacity-20">{[0,1,2,3].map((index) => <span key={index} className="absolute h-20 w-36 rounded-2xl border border-accent" style={{ left: index * 10, top: index * 10 }} />)}</div>
-  if (layout === 'focus') return <div aria-hidden className="absolute -left-2 top-24 h-36 w-36 rounded-full border border-accent/20 before:absolute before:inset-5 before:rounded-full before:border before:border-accent/20 after:absolute after:inset-12 after:rounded-full after:bg-accent/20" />
-  if (layout === 'wave') return <div aria-hidden className="absolute left-3 top-24 w-48 opacity-20">{[0,1,2].map((index) => <span key={index} className="mt-3 block h-5 rounded-[50%] border-t border-accent" />)}</div>
-  if (layout === 'balance') return <div aria-hidden className="absolute left-4 top-24 h-32 w-48 opacity-20 before:absolute before:left-1/2 before:top-0 before:h-28 before:w-px before:bg-accent after:absolute after:left-4 after:right-4 after:top-12 after:h-px after:bg-accent"><span className="absolute left-4 top-10 h-12 w-12 rounded-full border border-accent" /><span className="absolute right-4 top-10 h-12 w-12 rounded-full border border-accent" /></div>
-  return null
-}
-
-const visualSurface = (layout: SocialVisualTemplate['layout']) => {
-  if (layout === 'dark' || layout === 'circuit') return 'bg-ink text-white'
-  if (layout === 'event' || layout === 'research') return 'bg-[#eef2f5] text-ink'
-  if (layout === 'human') return 'bg-[#f8f4ef] text-ink'
-  if (layout === 'horizon') return 'bg-[#f4f6f5] text-ink'
-  if (layout === 'dialogue' || layout === 'notebook' || layout === 'layers' || layout === 'balance') return 'bg-[#fbfaf6] text-ink'
-  if (layout === 'matrix' || layout === 'wave') return 'bg-[#eef3f5] text-ink'
-  if (layout === 'arch' || layout === 'focus') return 'bg-[#f5f6f3] text-ink'
-  return 'bg-[#f7f6f3] text-ink'
-}
-
 function VisualTemplateCard({ template }: { template: SocialVisualTemplate }) {
-  const dark = template.layout === 'dark' || template.layout === 'circuit'
+  /* المعاينة هي الصورة الحقيقية المرسومة بمحرك «الطبعة الفاخرة» نفسه —
+     ما تراه هنا هو ملف PNG الذي سيُنزَّل حرفياً، لا تقليد CSS تقريبي. */
+  const [previewUrl, setPreviewUrl] = useState('')
+  useEffect(() => {
+    let active = true
+    let objectUrl = ''
+    setPreviewUrl('')
+    void renderSocialPng(template)
+      .then((blob) => {
+        if (!active) return
+        objectUrl = URL.createObjectURL(blob)
+        setPreviewUrl(objectUrl)
+      })
+      .catch(() => { /* تبقى البطاقة بحالة الرسم */ })
+    return () => { active = false; if (objectUrl) URL.revokeObjectURL(objectUrl) }
+  }, [template])
   return (
     <div className="overflow-hidden rounded-2xl border border-hair bg-canvas">
-      <div className={`relative aspect-[4/5] overflow-hidden p-5 ${visualSurface(template.layout)}`}>
-        <span className="absolute inset-x-5 top-5 h-px bg-accent/40" />
-        <TemplateArtwork layout={template.layout} />
-        <p className="relative mt-5 text-[.68rem] font-semibold text-accent">{template.kicker}</p>
-        <h3 className={`relative mt-4 line-clamp-6 font-display font-bold leading-[1.45] ${dark ? 'text-white' : 'text-ink'}`} style={{ fontSize: template.title.length > 110 ? '1rem' : template.title.length > 72 ? '1.12rem' : template.title.length > 42 ? '1.24rem' : '1.4rem' }}>{template.title}</h3>
-        {template.body && <p className={`relative mt-4 line-clamp-5 text-[.78rem] leading-[1.8] ${dark ? 'text-white/65' : 'text-soft'}`}>{template.body}</p>}
-        <span className={`absolute bottom-5 right-5 text-[.66rem] ${dark ? 'text-white/50' : 'text-soft'}`}>{template.footer}</span>
+      <div className="relative overflow-hidden bg-wash" style={{ aspectRatio: `${template.width} / ${template.height}` }}>
+        {previewUrl
+          ? <img src={previewUrl} alt={template.title} className="h-full w-full object-cover" />
+          : <div className="flex h-full w-full items-center justify-center text-[.74rem] text-soft">أرسم القالب…</div>}
       </div>
       <div className="flex items-center justify-between gap-3 p-3">
         <span className="text-[.72rem] text-soft">{template.format}</span>

@@ -57,6 +57,7 @@ export type BookRecord = {
 export type PaperRecord = {
   slug: string
   title: string
+  titleAr?: string
   meta: string
   abstractAr?: string
   journal?: string
@@ -183,6 +184,7 @@ function buildPaper(value: Record<string, unknown>, cms: CmsMeta): PaperRecord {
   return {
     slug: stringValue(value.slug, cms.baseSlug),
     title: stringValue(value.title),
+    titleAr: stringValue(value.titleAr) || undefined,
     meta: stringValue(value.meta),
     abstractAr: stringValue(value.abstractAr) || undefined,
     journal: stringValue(value.journal) || undefined,

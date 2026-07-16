@@ -89,6 +89,9 @@ jobs:
             echo "::error::Provide between one and three slugs"
             exit 1
           fi
+          # جسر اللوحة: حوار الدكتور المرفوع من غرفة الإنتاج (Word → Firestore) يُسحب
+          # ملفات manual-dialogues/ قبل التوليد — وملفات المستودع الموجودة تبقى المعتمدة.
+          node scripts/fetch-manual-dialogues.mjs --slugs="$REQUESTED" || true
           for slug in "${ITEMS[@]}"; do
             slug="$(echo "$slug" | xargs)"
             echo "Generating $slug"

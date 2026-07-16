@@ -329,6 +329,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
         { to: '/questions', label: 'سؤال يُقلق التعليم' },
         { to: '/radar', label: 'أرشيف الرادار' },
       ] },
+      { to: '/upcoming', label: 'اللقاءات القادمة' },
     ],
   },
   {
@@ -336,7 +337,6 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { to: '/cv', label: 'السيرة الأكاديمية' },
       { to: '/media', label: 'الظهور الإعلامي' },
-      { to: '/upcoming', label: 'اللقاءات القادمة' },
       { to: '/decade', label: 'وثيقة العقد' },
     ],
   },

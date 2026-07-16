@@ -69,7 +69,7 @@ const labels: Record<ManagedKind, { singular: string; plural: string }> = {
 const editableFields: Record<ManagedKind, string[]> = {
   article: ['slug', 'title', 'iso', 'date', 'cat', 'excerpt', 'body', 'source', 'url', 'status', 'scheduledAt'],
   book: ['slug', 'title', 'isbn', 'desc', 'cover', 'pdf', 'coAuthors'],
-  paper: ['slug', 'title', 'meta', 'abstractAr', 'journal', 'source', 'url', 'scholar', 'researchgate', 'coAuthors'],
+  paper: ['slug', 'title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'scholar', 'researchgate', 'coAuthors'],
   media: ['slug', 'title', 'outlet', 'url', 'iso', 'date'],
 }
 
@@ -183,7 +183,7 @@ function blank(kind: ManagedKind): Form {
   const iso = todayIso()
   if (kind === 'article') return { slug: '', title: '', iso, date: dateArabic(iso), cat: '', excerpt: '', body: '', source: '', url: '', status: 'published', scheduledAt: '', _aiReady: '' }
   if (kind === 'book') return { slug: '', title: '', isbn: '', desc: '', cover: '', pdf: '', coAuthors: '' }
-  if (kind === 'paper') return { slug: '', title: '', meta: '', abstractAr: '', journal: '', source: '', url: '', scholar: '', researchgate: '', coAuthors: '' }
+  if (kind === 'paper') return { slug: '', title: '', titleAr: '', meta: '', abstractAr: '', journal: '', source: '', url: '', scholar: '', researchgate: '', coAuthors: '' }
   return { slug: '', title: '', outlet: '', url: '', iso, date: dateArabic(iso) }
 }
 
@@ -522,6 +522,9 @@ function Editor({
 
           {kind === 'paper' && (
             <>
+              <Field label="الترجمة العربية للعنوان (للأبحاث الإنجليزية)" hint="تظهر بخط رفيع تحت العنوان الإنجليزي في قائمة الأبحاث وصفحة البحث. اتركها فارغة للأبحاث العربية.">
+                <input dir="rtl" className={input} value={form.titleAr || ''} onChange={(event) => set('titleAr', event.target.value)} />
+              </Field>
               <Field label="الوصف / الميتا"><textarea className={`${input} min-h-24`} value={form.meta || ''} onChange={(event) => set('meta', event.target.value)} /></Field>
               <Field label="الملخص" hint="اكتب الملخص كما تريد ظهوره في صفحة البحث. إذا كان البحث إنجليزيًا يمكن وضع ترجمة أكاديمية عربية هنا.">
                 <textarea className={`${input} min-h-32 leading-loose`} value={form.abstractAr || ''} onChange={(event) => set('abstractAr', event.target.value)} />

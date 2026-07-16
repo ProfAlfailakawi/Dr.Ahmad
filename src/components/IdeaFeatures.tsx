@@ -2,10 +2,9 @@
    وتقدّم فعلين متباعدين في شريطٍ واحد لا يتداخلان:
    ١) تتبّع الجملة: كل المقالات التي لامست الفكرة نفسها عبر السنوات.
    ٢) 🖼 بطاقة اقتباس: صورة أنيقة بجملةٍ منتقاة + توقيع الدكتور، للمشاركة الراقية. */
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { createPortal } from 'react-dom'
 
 type Art = { slug: string; title: string; iso: string; cat: string; excerpt?: string; body?: string }
 
@@ -61,133 +60,47 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const [view, setView] = useState<null | 'thread' | 'card'>(null)
   const [img, setImg] = useState<string | null>(null)
-  const toolbarRef = useRef<HTMLDivElement | null>(null)
-  const rangeRef = useRef<Range | null>(null)
-
-  /*
-   * الحل الجذري: الأداة تُرسم مباشرة داخل document.body عبر Portal.
-   * كانت سابقاً ابنةً لـ FadeUp (عنصر متحرك يحمل transform)، ووفق CSS يتحول
-   * position:fixed داخل أي أبٍ محوّل إلى تموضع بالنسبة لذلك الأب، لا للشاشة.
-   * لذلك كانت إحداثيات التحديد صحيحة لكن الشريط يظهر في مكان آخر أو يختفي على الهاتف.
-   */
-  const positionRange = useCallback((range: Range) => {
-    const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0)
-    const bounds = range.getBoundingClientRect()
-    if ((!bounds.width && !bounds.height) || !rects.length) {
-      setPos(null)
-      return
-    }
-
-    const first = rects[0]
-    const last = rects[rects.length - 1]
-    const viewport = window.visualViewport
-    const viewportLeft = viewport?.offsetLeft || 0
-    const viewportTop = viewport?.offsetTop || 0
-    const viewportWidth = viewport?.width || window.innerWidth
-    const viewportHeight = viewport?.height || window.innerHeight
-    const margin = 10
-    const toolbarWidth = toolbarRef.current?.offsetWidth || Math.min(330, viewportWidth - margin * 2)
-    const toolbarHeight = toolbarRef.current?.offsetHeight || 46
-    const coarsePointer = window.matchMedia('(pointer: coarse)').matches || viewportWidth < 768
-
-    // في الهاتف نضعها تحت آخر سطر محدد، كما كانت في التجربة الأصلية،
-    // حتى لا تتصارع مع قائمة Safari الأصلية التي تظهر فوق التحديد.
-    const belowTop = last.bottom - viewportTop + 12
-    const aboveTop = first.top - viewportTop - toolbarHeight - 10
-    let y = coarsePointer ? belowTop : aboveTop
-
-    if (coarsePointer) {
-      if (y + toolbarHeight > viewportHeight - margin) {
-        y = Math.max(margin, Math.min(aboveTop, viewportHeight - toolbarHeight - margin))
-      }
-    } else if (y < margin) {
-      y = Math.min(viewportHeight - toolbarHeight - margin, belowTop)
-    }
-
-    const rawX = bounds.left - viewportLeft + bounds.width / 2
-    const half = toolbarWidth / 2
-    const minX = margin + half
-    const maxX = Math.max(minX, viewportWidth - margin - half)
-    const x = Math.min(maxX, Math.max(minX, rawX))
-    const next = { x, y: Math.max(margin, Math.min(y, viewportHeight - toolbarHeight - margin)) }
-
-    setPos((currentPos) => {
-      if (currentPos && Math.abs(currentPos.x - next.x) < 0.5 && Math.abs(currentPos.y - next.y) < 0.5) return currentPos
-      return next
-    })
-  }, [])
 
   useEffect(() => {
     let timer = 0
-    let frame = 0
-
     const inspectSelection = () => {
-      if (view) return
-      const selection = window.getSelection()
-      const text = selection?.toString().replace(/\s+/g, ' ').trim() || ''
-      if (!selection || !selection.rangeCount || text.length < 12 || text.length > 800) {
-        setPos(null)
-        return
-      }
-
-      const range = selection.getRangeAt(0)
-      const ancestor = range.commonAncestorContainer
-      const element = ancestor.nodeType === Node.ELEMENT_NODE ? ancestor as Element : ancestor.parentElement
-      if (!element?.closest('.article-body')) {
-        setPos(null)
-        return
-      }
-
-      const savedRange = range.cloneRange()
-      rangeRef.current = savedRange
-      setSel(text)
-      positionRange(savedRange)
-    }
-
-    // Safari يثبت مقابض التحديد على مرحلتين. فحصٌ بعد إطارين ثم بعد مهلة قصيرة
-    // يمنع القراءة المبكرة لإحداثيات صفرية من دون تكرار مستمعات أو ترقيع CSS.
-    const scheduleInspection = () => {
       window.clearTimeout(timer)
-      window.cancelAnimationFrame(frame)
-      frame = window.requestAnimationFrame(() => {
-        frame = window.requestAnimationFrame(inspectSelection)
-      })
-      timer = window.setTimeout(inspectSelection, 110)
+      timer = window.setTimeout(() => {
+        if (view) return
+        const selection = window.getSelection()
+        const text = selection?.toString().replace(/\s+/g, ' ').trim() || ''
+        if (!selection || !selection.rangeCount || text.length < 12 || text.length > 800) {
+          setPos(null)
+          return
+        }
+        const range = selection.getRangeAt(0)
+        const ancestor = range.commonAncestorContainer
+        const element = ancestor.nodeType === Node.ELEMENT_NODE
+          ? ancestor as Element
+          : ancestor.parentElement
+        if (!element?.closest('.article-body')) {
+          setPos(null)
+          return
+        }
+        const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0)
+        const rect = rects[0] || range.getBoundingClientRect()
+        if (!rect || (!rect.width && !rect.height)) return
+        const x = Math.min(window.innerWidth - 132, Math.max(132, rect.left + rect.width / 2))
+        const y = Math.max(74, rect.top - 10)
+        setSel(text)
+        setPos({ x, y })
+      }, 90)
     }
-
-    document.addEventListener('selectionchange', scheduleInspection)
-    document.addEventListener('pointerup', scheduleInspection)
-    document.addEventListener('touchend', scheduleInspection, { passive: true })
-    document.addEventListener('contextmenu', scheduleInspection)
-
-    const reposition = () => {
-      if (!view && rangeRef.current && sel) positionRange(rangeRef.current)
-    }
-    window.addEventListener('resize', reposition, { passive: true })
-    window.addEventListener('scroll', reposition, { passive: true })
-    window.visualViewport?.addEventListener('resize', reposition)
-    window.visualViewport?.addEventListener('scroll', reposition)
-
+    document.addEventListener('selectionchange', inspectSelection)
+    document.addEventListener('pointerup', inspectSelection)
+    document.addEventListener('touchend', inspectSelection, { passive: true })
     return () => {
       window.clearTimeout(timer)
-      window.cancelAnimationFrame(frame)
-      document.removeEventListener('selectionchange', scheduleInspection)
-      document.removeEventListener('pointerup', scheduleInspection)
-      document.removeEventListener('touchend', scheduleInspection)
-      document.removeEventListener('contextmenu', scheduleInspection)
-      window.removeEventListener('resize', reposition)
-      window.removeEventListener('scroll', reposition)
-      window.visualViewport?.removeEventListener('resize', reposition)
-      window.visualViewport?.removeEventListener('scroll', reposition)
+      document.removeEventListener('selectionchange', inspectSelection)
+      document.removeEventListener('pointerup', inspectSelection)
+      document.removeEventListener('touchend', inspectSelection)
     }
-  }, [positionRange, sel, view])
-
-  // بعد ظهور الشريط نقيس عرضه الحقيقي مرة واحدة ونصحح الحواف بدقة،
-  // بدل افتراض عرض ثابت قد يخرج من شاشة هاتف صغيرة.
-  useLayoutEffect(() => {
-    if (!pos || view || !rangeRef.current) return
-    positionRange(rangeRef.current)
-  }, [sel, view, positionRange])
+  }, [view])
 
   // مطابقة الفكرة المحددة: تبحث في العنوان والمقتطف والنص الكامل، ثم تضمن
   // بديلاً زمنياً من التصنيف نفسه كي لا تتحول الأداة الجميلة إلى لوحة فارغة.
@@ -219,64 +132,29 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
     try { await (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready } catch { /* noop */ }
     setImg(drawQuote(quote, document.documentElement.classList.contains('dark')))
   }
-  const openThread = () => { setView('thread'); setPos(null) }
-  const close = () => {
-    setView(null); setImg(null); setSel(''); setPos(null); rangeRef.current = null
-    window.getSelection()?.removeAllRanges()
-  }
+  const close = () => { setView(null); setImg(null); setSel('') }
 
-  const keepSelection = (event: { preventDefault: () => void; stopPropagation: () => void }) => {
-    // يمنع Safari من إسقاط التحديد لحظة لمس الزر، فتعمل اللمسة الأولى دائماً.
-    event.preventDefault()
-    event.stopPropagation()
-  }
-
-  if (typeof document === 'undefined') return null
-
-  return createPortal(
+  return (
     <>
-      {/* الشكل الأصلي نفسه تماماً؛ تغيّر فقط مكان الرسم إلى body وطريقة حساب الموضع. */}
+      {/* شريط واحد فوق التحديد — فعلان متباعدان بينهما فاصل، لا تداخل */}
       <AnimatePresence>
         {pos && !view && sel && (
-          <div
-            ref={toolbarRef}
-            style={{ left: pos.x, top: pos.y, transform: 'translateX(-50%)' }}
-            className="fixed z-[260] max-w-[calc(100vw-20px)]"
+          <motion.div
+            initial={{ opacity: 0, y: 6, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.94 }}
+            transition={{ duration: 0.18 }}
+            style={{ left: pos.x, top: pos.y, transform: 'translate(-50%,-100%)' }}
+            className="fixed z-[260] flex items-stretch overflow-hidden rounded-full border border-hair bg-canvas shadow-[0_16px_38px_-16px_rgba(0,0,0,.5)]"
           >
-            <motion.div
-              initial={{ opacity: 0, y: 6, scale: 0.94 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.94 }}
-              transition={{ duration: 0.18 }}
-              className="flex items-stretch overflow-hidden rounded-full border border-hair bg-canvas shadow-[0_16px_38px_-16px_rgba(0,0,0,.5)]"
-            >
-              <button
-                type="button"
-                onPointerDown={(event) => {
-                  if (event.button !== 0) return
-                  keepSelection(event)
-                  openThread()
-                }}
-                onClick={(event) => { if (event.detail === 0) openThread() }}
-                className="flex touch-manipulation select-none items-center gap-1.5 whitespace-nowrap px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas"
-              >
-                🧬 عبر السنوات
-              </button>
-              <span className="my-1.5 w-px bg-hair" />
-              <button
-                type="button"
-                onPointerDown={(event) => {
-                  if (event.button !== 0) return
-                  keepSelection(event)
-                  void openCard()
-                }}
-                onClick={(event) => { if (event.detail === 0) void openCard() }}
-                className="flex touch-manipulation select-none items-center gap-1.5 whitespace-nowrap px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas"
-              >
-                🖼 بطاقة اقتباس
-              </button>
-            </motion.div>
-          </div>
+            <button type="button" onClick={() => setView('thread')} className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas">
+              🧬 عبر السنوات
+            </button>
+            <span className="my-1.5 w-px bg-hair" />
+            <button type="button" onClick={openCard} className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas">
+              🖼 بطاقة اقتباس
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -350,7 +228,6 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
           </motion.div>
         )}
       </AnimatePresence>
-    </>,
-    document.body,
+    </>
   )
 }

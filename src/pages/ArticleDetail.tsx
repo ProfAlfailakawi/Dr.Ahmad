@@ -5,7 +5,8 @@ import { getArticleNeighbors, relatedArticles, type ArticleRecord } from '../lib
 import { books, media, papers, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
-import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, SelectionTools, usePopularQuotes } from '../components/ArticleReader'
+import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, usePopularQuotes } from '../components/ArticleReader'
+import { SelectionTools } from '../components/IdeaFeatures'
 import { JsonLd, useSeo } from '../components/seo'
 import { fetchOwnerCounts, useTrackView } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
@@ -557,7 +558,7 @@ export default function ArticleDetail() {
               <>
                 <SyncedArticleBody slug={article.slug} body={article.body} />
                 {/* أداة تحديد واحدة: خيط الفكرة + بطاقة اقتباس (بلا تداخل) */}
-                <SelectionTools current={article} articles={articles} />
+                <SelectionTools current={article} articles={articles} body={article.body} excerpt={article.excerpt} />
                 <StudentArchive a={article} articles={articles} />
               </>
             ) : (

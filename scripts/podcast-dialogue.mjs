@@ -520,9 +520,6 @@ const PIPELINE_HASH = createHash('sha256').update(JSON.stringify({
   engineSourceHash: ENGINE_SOURCE_HASH,
 })).digest('hex').slice(0, 16)
 let ACTIVE_PIPELINE_HASH = PIPELINE_HASH
-/* وضع النص اليدوي: حوار الدكتور المكتوب بيده مقدّس — Gemini يفحص النطق ويحكم على الصوت
-   فقط، وممنوع برمجياً أن يعيد صياغة كلمة واحدة (لا safeRephrase ولا حقن ولا استبدال). */
-let MANUAL_TEXT_MODE = false
 const providerFingerprint = (voice) => `${AZURE_REGION}:${voice}:azure-ssml-v3`
 const pendingMemory = []
 const capabilityProfiles = new Map()
@@ -625,7 +622,7 @@ const voiceRateOffset = (voice, speaker) => {
 // تطبيع حتمي للحقول الميكانيكية فقط (لا مساس بالمحتوى ولا بالذوق): جملة فيها «؟» إلقاؤها
 // سؤال بالضرورة، وقلبها يغيّر مدى السرعة/الوقفة فنُثبّتهما داخل مدى النوع الناتج، ونضمن نبرة نهاية
 // صالحة. تبقى بوابات المحتوى (الفصحى، الأمانة، الطول، مزيج القِصَر، «أكيد»، التنوع، الاعتراضات) للنموذج.
-function normalizeMechanics(sc, options = {}) {
+function normalizeMechanics(sc) {
   if (!sc || !Array.isArray(sc.utterances)) return sc
   const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, Number.isFinite(+v) ? +v : lo))
   const wordCount = (text) => String(text || '').split(/\s+/).filter(Boolean).length
@@ -638,8 +635,6 @@ function normalizeMechanics(sc, options = {}) {
       'إذا تعلّم الطالب أن الرقم هو الحقيقة الكاملة، فقد يقرأ الورقة كأنها حكم نهائي على قيمته.')
     .replace(/\s+/g, ' ')
     .trim()
-    // مداخلة تنتهي بفاصلة معلقة تُنطق نهايةً مبتورة يرفضها الحكم بحق — نُتمّها نقطة.
-    .replace(/[،؛]\s*$/, '.')
   const splitLongText = (text, target = 22, hard = 30) => {
     const clean = String(text || '').replace(/\s+/g, ' ').trim()
     if (wordCount(clean) <= hard) return [clean]
@@ -694,13 +689,10 @@ function normalizeMechanics(sc, options = {}) {
   }
   // «أكيد» حشوٌ يُفرط النموذج فيه ويُرفض تكراره؛ نُبقي أوّل ورودٍ ونُنوّع الباقي بمرادفاتٍ فصيحة
   // لا تحوي السلسلة نفسها (تجنّب «بالتأكيد» لأنها تتضمّن «أكيد») — تحسينٌ أسلوبيٌّ محايد لا مساس بالمعنى.
-  const manualText = Boolean(options.manualText || MANUAL_TEXT_MODE)
-  const akeedAlts = manualText ? [] : ['بالطبع', 'تماماً', 'فعلاً', 'صحيح', 'نعم']
+  const akeedAlts = ['بالطبع', 'تماماً', 'فعلاً', 'صحيح', 'نعم']
   let akeedSeen = 0
   for (const u of sc.utterances) {
-    u.text = manualText
-      ? polishForSpokenArabic(String(u.text || ''))
-      : polishForSpokenArabic(String(u.text || '').replace(/أكيد/g, () => (akeedSeen++ === 0 ? 'أكيد' : akeedAlts[(akeedSeen - 2) % akeedAlts.length])))
+    u.text = polishForSpokenArabic(String(u.text || '').replace(/أكيد/g, () => (akeedSeen++ === 0 ? 'أكيد' : akeedAlts[(akeedSeen - 2) % akeedAlts.length])))
   }
   // قاعدة إخراج صوتي لا نعتمد فيها على التزام النموذج: المداخلة المقالية الطويلة هي أكثر سبب
   // لفشل Azure/STT/Judge. لذلك نكسرها قبل مرحلة النطق إلى نبضات مسموعة قصيرة، مع الحفاظ
@@ -722,25 +714,6 @@ function normalizeMechanics(sc, options = {}) {
     const targetWords = Math.max(10, hardWords - 3)
     return splitLongText(text, targetWords, hardWords)
   }
-  // شظايا الامتداد: Gemini قد يكتب جملة المتحدث الواحد على مداخلتين («لماذا يتحول…؟»
-  // ثم «بدلاً من أن يكون…؟») — الشظية الثانية وحدها بترٌ يرفضه الحكم بحق. ندمجها في
-  // سابقتها (نفس الكلمات والترتيب)، والتقسيم المدّي أدناه يعيد توزيعها بوعي الاتصال.
-  const CONTINUATION_START = /^(بدلاً من|بدلا من|بل\s|أو\s|وليس\s|بدل أن\s|لا أن\s|وكأن\s)/
-  const mergedUtterances = []
-  for (const u of sc.utterances) {
-    const prev = mergedUtterances.at(-1)
-    if (prev && prev.speaker === u.speaker && CONTINUATION_START.test(String(u.text || '').trim())
-      && wordCount(`${prev.text} ${u.text}`) <= 34) {
-      prev.text = `${prev.text} ${u.text}`.replace(/\s+/g, ' ').trim()
-      if (u.delivery === 'question' || prev.delivery === 'question') { prev.delivery = 'question'; prev.ending = 'open' }
-      prev.pauseAfterMs = u.pauseAfterMs ?? prev.pauseAfterMs
-      prev.musicBridgeAfter = Boolean(u.musicBridgeAfter)
-      continue
-    }
-    mergedUtterances.push(u)
-  }
-  sc.utterances = mergedUtterances
-
   const compactUtterances = []
   for (const u of sc.utterances) {
     const pieces = durationAwarePieces(u)
@@ -825,7 +798,7 @@ function normalizeMechanics(sc, options = {}) {
     u.pauseAfterMs = u._splitMiddle ? Math.min(200, Number(u.pauseAfterMs) || 160) : clamp(u.pauseAfterMs, profile.pauseMs)
   }
 
-  if (!sc.sample && !manualText) {
+  if (!sc.sample) {
     const shortReplies = sc.utterances.filter((u) => wc(u.text) <= 8).length
     const shortSeeds = [
       { text: 'صحيح.', delivery: 'briefReaction', ending: 'neutral' },
@@ -1231,11 +1204,8 @@ async function audioJudge(wavPath, intended, heard, risks, context, delivery = {
     `سياق المعنى: ${context}`,
     `خطة الأداء: ${JSON.stringify({ type: delivery.delivery || 'normal', ratePct: delivery.ratePct,
       targetWordsPerMinute: delivery.targetWordsPerMinute, actualWordsPerMinute: delivery.actualWordsPerMinute,
-      ending: delivery.ending, isQuestion: String(context).includes('؟'),
-      continuation: Boolean(delivery._splitMiddle) })}`,
-    delivery._splitMiddle
-      ? 'تنبيه مهم: هذه وحدة متصلة تُكمل جملتَها الوحدةُ التالية مباشرة (قُسمت تقنياً لطولها). النهاية المفتوحة أو الفاصلة في آخرها مقصودة تماماً — لا تعاقب على «نهاية مبتورة» أو «نبرة غير محسومة» هنا؛ احكم على النطق والحركات والوضوح فقط.'
-      : 'ارفض السؤال إذا سُمِع كنص تقريري. ارفض السرعة المستعجلة، والبطء المتمطّط، والإيقاع المدرسي، والحركة الإعرابية الخاطئة أو الثقيلة عند الوقف، والنهاية المبتورة، وأي عامية.',
+      ending: delivery.ending, isQuestion: String(context).includes('؟') })}`,
+    'ارفض السؤال إذا سُمِع كنص تقريري. ارفض السرعة المستعجلة، والبطء المتمطّط، والإيقاع المدرسي، والحركة الإعرابية الخاطئة أو الثقيلة عند الوقف، والنهاية المبتورة، وأي عامية.',
     'استمع إلى ملف WAV المرفق بنفسك. لا تعتمد على STT وحده. أعد حكم JSON وفق المخطط فقط.',
   ].join('\n')
   const verdict = await gemini(JUDGE_SYSTEM, prompt, 0.1, JUDGE_MODEL, [{
@@ -1851,10 +1821,8 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
   const allAudits = []
   let deliveryPlan = { ...u }
   let paceCalibration = null
-  let prescriptionsUsed = 0
 
-  // 5 جولات: وصفة الحكم مرة، وعلاج التأنيث مرة، وتبقى فرصة حقيقية لإعادة الصياغة.
-  for (let round = 0; round < 5; round++) {
+  for (let round = 0; round < 3; round++) {
     const applied = applyLexicon(currentAnalysis.pronunciationText || dialogueText, currentAnalysis.risks, voice, dialogueText)
     const calibrated = await calibrateProductionPlan({ utterance: deliveryPlan, voice, text: applied.text,
       subs: applied.subs, lang, tempBase: wavPath.replace(/\.wav$/, `.r${round + 1}`) })
@@ -1923,28 +1891,12 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
       .map((audit) => String(audit.verdict?.revisedPronunciationText || '').trim())
       .find((t) => t && stripForCompare(t) === stripForCompare(dialogueText)
         && t !== String(currentAnalysis.pronunciationText || '').trim())
-    if (judgeRevision && prescriptionsUsed < 1) {
-      prescriptionsUsed += 1
+    if (judgeRevision) {
       console.log(`    ⚕ ${utteranceId}: تطبيق وصفة الحكم النطقية وإعادة المحاولة (بلا إعادة صياغة)`)
       currentAnalysis = { ...currentAnalysis, pronunciationText: judgeRevision }
       continue
     }
-    // علاج التأنيث المبتلع نظامياً: Azure يُذكِّر بعض النعوت المؤنثة (شرسة→شرس، موثقة→موثق)
-    // ويتجاهل تشكيل التاء المربوطة. البديل المثبت: هاء مفتوحة قبل الوقف (شَرِسَه) — صوت الوقف
-    // العربي الصحيح نفسه، وSTT يطبّع ة/ه فلا يتأثر التطابق. يُحفظ النجاح في ذاكرة النطق للأبد.
-    const feminineStubborn = [...new Set(audits.flatMap((audit) => (audit.verdict?.problems || [])
-      .filter((problem) => /تأنيث|مؤنث/.test(String(problem.issue || '')) && /ة$/.test(String(problem.word || '').trim()))
-      .map((problem) => String(problem.word).trim())))]
-    if (feminineStubborn.length && !(currentAnalysis.risks || []).some((risk) => risk.__femFix)) {
-      const fixes = feminineStubborn.map((word) => ({ word, riskLevel: 'high',
-        meaningInContext: 'تثبيت تاء التأنيث المسموعة', grammaticalType: 'نعت مؤنث',
-        method: 'sub', selectedPronunciation: word, __femFix: true,
-        subAlias: word.slice(0, -1) + 'َه' }))
-      console.log(`    ♀ ${utteranceId}: تثبيت التأنيث المبتلع ببديل نطقي (${feminineStubborn.join('، ')})`)
-      currentAnalysis = { ...currentAnalysis, risks: [...(currentAnalysis.risks || []), ...fixes] }
-      continue
-    }
-    const rephrased = MANUAL_TEXT_MODE ? null : await safeRephrase(dialogueText, sourceText, reason, stubbornWords)
+    const rephrased = await safeRephrase(dialogueText, sourceText, reason, stubbornWords)
     if (!rephrased) return { ok: false, verified: false, reason, dialogueText, candidates: allAudits,
       needsSplit: /أطول من 13ث/.test(reason) }
     dialogueText = rephrased
@@ -2014,7 +1966,6 @@ async function produceUtteranceResilient({ utterance, analysis, voice, lang, wav
       musicBridgeAfter: isLast ? Boolean(utterance.musicBridgeAfter) : false,
       pauseAfterMs: isLast ? utterance.pauseAfterMs : Math.min(180, Math.max(120, Number(utterance.pauseAfterMs) || 160)),
       ending: isLast ? utterance.ending : 'neutral',
-      _splitMiddle: !isLast,
       delivery: piece.includes('؟') ? 'question' : utterance.delivery }
     const derived = derivePieceAnalysis(analysis, piece, offset, pieceWords)
     const pieceAnalysis = { idx: analysis.idx, pronunciationText: derived.pronunciationText, risks: derived.risks }
@@ -2739,34 +2690,7 @@ async function produce(article, lang) {
       `storyTemplateAllowed: ${storyBudget}` +
       (lang === 'en' ? '\nFirst create the English editorial adaptation internally, then the dialogue.' : '')
     let script = null, lintIssues = [], fidelity = { pass: true, problems: [] }
-    // حوار الدكتور اليدوي: وجود الملف = هو المصدر الوحيد للنص. Gemini لا يكتب حرفاً.
-    const manualDialoguePath = resolve(ROOT, 'manual-dialogues', `${article.slug}.json`)
-    if (lang === 'ar' && existsSync(manualDialoguePath)) {
-      MANUAL_TEXT_MODE = true
-      const manual = JSON.parse(readFileSync(manualDialoguePath, 'utf8'))
-      script = { mood: 'تأملي', storyIntro: false,
-        utterances: manual.map((item, index) => ({
-          speaker: ['female', 'b'].includes(String(item.speaker || '').trim().toLowerCase()) ? 'B' : 'A',
-          text: String(item.text || '').trim(),
-          delivery: String(item.deliveryType || 'statement').trim(),
-          pauseAfterMs: item.pauseAfterMs, overlapMs: Number(item.overlapMs || 0),
-          allowOverlap: Number(item.overlapMs || 0) > 0,
-          musicBridgeAfter: Boolean(item.musicBridgeAfter),
-          emphasisWords: [], pronunciationNotes: '', _index: index })) }
-      normalizeMechanics(script, { manualText: true })
-      const manualLint = lintScript(script, lang)
-      const blocking = manualLint.filter((issue) => /عامية/.test(issue))
-      if (blocking.length) {
-        MANUAL_TEXT_MODE = false
-        return quarantine(`الحوار اليدوي يحتاج تنقيح الدكتور (لن يُعاد كتابته آلياً): ${blocking.join(' · ')}`)
-      }
-      if (manualLint.length) console.log(`  ⚠ ملاحظات شكلية على الحوار اليدوي (لا تحجب): ${manualLint.slice(0, 3).join(' · ')}`)
-      auditRecord.dialogueSource = 'manual'
-      lintIssues = []
-      fidelity = { pass: true, problems: [] }
-      console.log(`  ✍ حوار الدكتور اليدوي: ${script.utterances.length} مداخلة — النص مقدس، Gemini فاحص لا كاتب`)
-    }
-    if (REUSE_DIALOGUE && !script && existsSync(auditPath(article, lang))) {
+    if (REUSE_DIALOGUE && existsSync(auditPath(article, lang))) {
       const previous = JSON.parse(readFileSync(auditPath(article, lang), 'utf8'))
       if (previous.pipelineHash === ACTIVE_PIPELINE_HASH && previous.source?.sha256 === sourceHash && previous.dialogue?.utterances?.length) {
         script = { mood: previous.dialogue.mood || 'تأملي', storyIntro: Boolean(previous.dialogue.storyIntro),

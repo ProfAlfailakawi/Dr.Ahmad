@@ -158,7 +158,7 @@ function applyPreferences(preferences: ReaderPreferences) {
   root.style.setProperty('--article-width', `${preferences.width}ch`)
   root.classList.toggle('reader-paper', preferences.theme === 'paper')
   root.classList.toggle('reader-focus', preferences.focus)
-  root.dataset.readerPopular = 'on'
+  root.dataset.readerPopular = preferences.showPopular ? 'on' : 'off'
 
   const dark = preferences.theme === 'dark'
   root.classList.toggle('dark', dark)
@@ -569,7 +569,10 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
                       <span><span className="block text-[.8rem] font-semibold text-ink">وضع التركيز</span><span className="mt-0.5 block text-[.7rem] text-soft">يخفي التنقل والعناصر الثانوية أثناء القراءة.</span></span>
                       <input type="checkbox" checked={preferences.focus} onChange={(event) => setPreferences({ focus: event.target.checked })} className="h-4 w-4 accent-[rgb(var(--c-accent))]" />
                     </label>
-
+                    <label className="flex cursor-pointer items-center justify-between gap-4 rounded-2xl border border-hair bg-wash/45 px-4 py-3">
+                      <span><span className="block text-[.8rem] font-semibold text-ink">إظهار عبارات القراء</span><span className="mt-0.5 block text-[.7rem] text-soft">إشارات مجهولة لا تظهر إلا بعد ٥ حفظات، ولا تمس اقتباساتك الشخصية.</span></span>
+                      <input type="checkbox" checked={preferences.showPopular} onChange={(event) => setPreferences({ showPopular: event.target.checked })} className="h-4 w-4 accent-[rgb(var(--c-accent))]" />
+                    </label>
                   </section>
                   <p className="text-[.7rem] leading-[1.8] text-soft">تُحفظ هذه الاختيارات على هذا الجهاز فقط، وتُطبّق تلقائيًا على بقية المقالات.</p>
                 </div>
@@ -715,7 +718,7 @@ export function usePopularQuotes(slug: string, body = '') {
     return () => window.removeEventListener('reader:popular-quote-updated', onUpdate)
   }, [slug, version])
 
-  return quotes
+  return preferences.showPopular ? quotes : []
 }
 
 function dispatchXray(term: XrayTerm) {

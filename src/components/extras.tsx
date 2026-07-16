@@ -302,8 +302,8 @@ export function Listen({ slug, title, text, audio }: { slug: string; title: stri
   }, [dialogueListed, slug])
 
   const sources = [
-    ...(voices.fahed ? [{ key: 'fahed', label: 'قراءة المقال', avatar: 'man' as const, src: typeof voices.fahed === 'string' ? voices.fahed : audioUrl(`/audio/${slug}.mp3`) }] : []),
-    ...(voices.noura ? [{ key: 'noura', label: 'قراءة المقال', avatar: 'woman' as const, src: typeof voices.noura === 'string' ? voices.noura : audioUrl(`/audio/${slug}.noura.mp3`) }] : []),
+    ...(voices.fahed ? [{ key: 'fahed', label: 'قراءة عثمان', avatar: 'boy' as const, src: typeof voices.fahed === 'string' ? voices.fahed : audioUrl(`/audio/${slug}.mp3`) }] : []),
+    ...(voices.noura ? [{ key: 'noura', label: 'قراءة أزيان', avatar: 'woman' as const, src: typeof voices.noura === 'string' ? voices.noura : audioUrl(`/audio/${slug}.noura.mp3`) }] : []),
     ...(dialogueOk ? [{ key: 'dialogue', label: 'الحلقة الحوارية', avatar: 'dialogue' as const, src: typeof voices.dialogue === 'string' ? voices.dialogue : audioUrl(`/audio/${slug}.dialogue.mp3`) }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)

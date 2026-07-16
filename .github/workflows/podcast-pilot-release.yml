@@ -21,12 +21,12 @@ jobs:
     timeout-minutes: 90
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
@@ -35,10 +35,20 @@ jobs:
         run: |
           npm config set registry https://registry.npmjs.org/
           npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
-          python -m pip install --user awscli
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          if command -v ffmpeg >/dev/null 2>&1; then
+            echo "ffmpeg is already available on the runner"
+            ffmpeg -version | head -1
+          else
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          if command -v aws >/dev/null 2>&1; then
+            echo "AWS CLI is already available on the runner"
+            aws --version
+          else
+            python -m pip install --user --disable-pip-version-check awscli
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
 
       - name: Write Firebase service account
         run: |

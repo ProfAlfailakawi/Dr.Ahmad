@@ -1939,6 +1939,26 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
     }
     const reason = audits.map((audit) => audit.reason).filter(Boolean).join(' · ') || 'لم يجتز أي مرشح'
     if (env.PODCAST_DEBUG === '1') audits.forEach((a) => console.log(`      · [${utteranceId} ${a.variant?.id}] ratio=${a.comparison?.ratio?.toFixed?.(2) ?? '?'} imp=${a.comparison?.importantRatio?.toFixed?.(2) ?? '?'} highMiss=${(a.highMissing||[]).map(r=>r.word).join(',')||'-'} judge=${a.verdict?.pass} | سُمع: "${(a.heard?.text||'—').slice(0,70)}" | ${a.reason || '—'}`))
+    /* تصويب الهدف الإيقاعي بالقياس (وضع النص اليدوي): الهدف الرقمي تركيبي من المحرك،
+       والدكتور لم يكتب سرعةً لجملته. قياس WPM على المداخلات القصيرة مشوب بضجيج كشف
+       الصمت (u002: ست كلمات في ثوانٍ قليلة)، فإن كانت شكوى المرشح الوحيدة بُعد السرعة
+       عن الهدف والإيقاعُ المقاس نفسه ضمن الحدود الإنسانية (118-175)، يُصوَّب الهدف إلى
+       المقاس وتُعاد الجولة — بوابات STT والحكم وحد 13ث لا تُمس بشيء. */
+    if (MANUAL_TEXT_MODE && (deliveryPlan.__paceAdaptations || 0) < 2) {
+      const currentTarget = Number(deliveryPlan.targetWordsPerMinute || 0)
+      const paceOnly = audits
+        .filter((audit) => audit.technical?.issues?.length === 1
+          && /^سرعة فعلية \d+ بعيدة عن الهدف \d+$/.test(String(audit.technical.issues[0]))
+          && Number(audit.technical.wpm) >= 118 && Number(audit.technical.wpm) <= 175)
+        .sort((left, right) => Math.abs(Number(left.technical.wpm) - currentTarget)
+          - Math.abs(Number(right.technical.wpm) - currentTarget))[0]
+      if (paceOnly) {
+        console.log(`    ⏲ ${utteranceId}: تصويب الهدف الإيقاعي إلى الإيقاع المقاس (${paceOnly.technical.wpm} بدل ${currentTarget}) — النص يدوي والهدف تركيبي`)
+        deliveryPlan = { ...deliveryPlan, targetWordsPerMinute: Number(paceOnly.technical.wpm),
+          __paceAdaptations: (deliveryPlan.__paceAdaptations || 0) + 1 }
+        continue
+      }
+    }
     // الكلمات المستعصية: ما رصده الحكم مشكلةً + كل كلمة عالية الخطورة لم تُسمع في أي مرشح
     const stubbornWords = [...new Set([
       ...audits.flatMap((audit) => (audit.verdict?.problems || []).map((problem) => problem.word)),

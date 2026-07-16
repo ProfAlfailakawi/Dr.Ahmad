@@ -74,6 +74,18 @@ const GEMINI_KEY = env.GEMINI_API_KEY || env.GOOGLE_API_KEY
 const AZURE_KEY = env.AZURE_SPEECH_KEY
 const AZURE_REGION = (env.AZURE_SPEECH_REGION && /^[a-z0-9-]+$/i.test(env.AZURE_SPEECH_REGION) && env.AZURE_SPEECH_REGION.length < 30) ? env.AZURE_SPEECH_REGION : 'uaenorth'
 
+/* كل طلب خارجي له مهلة صريحة؛ حتى لا يبقى تشغيل GitHub معلّقًا إذا علقت
+   شبكة Azure/Gemini. تُعاد المحاولة في الطبقة الخاصة بكل مزود. */
+const networkTimeoutSignal = (ms) => {
+  if (typeof AbortSignal?.timeout === 'function') return AbortSignal.timeout(ms)
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), ms)
+  timer.unref?.()
+  return controller.signal
+}
+const fetchWithTimeout = (url, init = {}, ms = 45_000) =>
+  fetch(url, { ...init, signal: init.signal || networkTimeoutSignal(ms) })
+
 const executable = (name, configured) => {
   const candidates = [configured, `/opt/homebrew/bin/${name}`, `/usr/local/bin/${name}`, `/usr/bin/${name}`].filter(Boolean)
   return candidates.find((candidate) => existsSync(candidate)) || name
@@ -418,7 +430,7 @@ async function gemini(systemPrompt, userText, temperature = 0.85, model = DIALOG
   for (let attempt = 1; attempt <= 5; attempt++) {
     let res
     try {
-      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
         body: JSON.stringify({
@@ -426,7 +438,7 @@ async function gemini(systemPrompt, userText, temperature = 0.85, model = DIALOG
           contents: [{ role: 'user', parts: [{ text: userText }, ...extraParts] }],
           generationConfig: { temperature, maxOutputTokens: 16384, responseMimeType: 'application/json' },
         }),
-      })
+      }, 120_000)
     } catch (error) { lastStatus = `شبكة: ${error.message}`; await new Promise((r) => setTimeout(r, 3000 * attempt)); continue }
     if (res.ok) {
       const j = await res.json()
@@ -449,12 +461,12 @@ async function gemini(systemPrompt, userText, temperature = 0.85, model = DIALOG
 }
 
 async function assertGeminiBillingReady() {
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${JUDGE_MODEL}:generateContent`, {
+  const response = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${JUDGE_MODEL}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
     body: JSON.stringify({ contents: [{ parts: [{ text: 'أعد JSON فقط: {"ready":true}' }] }],
       generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 30, temperature: 0 } }),
-  })
+  }, 120_000)
   if (response.ok) return true
   const errorBody = await response.json().catch(() => ({}))
   const message = String(errorBody?.error?.message || `HTTP ${response.status}`).replace(/\s+/g, ' ').slice(0, 400)
@@ -961,7 +973,7 @@ function buildSSML(u, pronText, subs, voice, lang) {
 async function synthSSML(ssml, outPath) {
   for (let attempt = 1; attempt <= 4; attempt++) {
     try {
-      const res = await fetch(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`, {
+      const res = await fetchWithTimeout(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`, {
         method: 'POST',
         headers: {
           'Ocp-Apim-Subscription-Key': AZURE_KEY,
@@ -970,7 +982,7 @@ async function synthSSML(ssml, outPath) {
           'User-Agent': 'alfailakawi-podcast',
         },
         body: ssml,
-      })
+      }, 45_000)
       if (res.ok) {
         const buf = Buffer.from(await res.arrayBuffer())
         if (buf.length > 4000) { writeFileSync(outPath, buf); trimSilence(outPath); return true }
@@ -986,11 +998,11 @@ async function synthSSML(ssml, outPath) {
 async function sttRequest(wav16Path, locale) {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const res = await fetch(`https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${locale}&format=detailed&profanity=raw`, {
+      const res = await fetchWithTimeout(`https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${locale}&format=detailed&profanity=raw`, {
         method: 'POST',
         headers: { 'Ocp-Apim-Subscription-Key': AZURE_KEY, 'Content-Type': 'audio/wav; codecs=audio/pcm; samplerate=16000' },
         body: readFileSync(wav16Path),
-      })
+      }, 45_000)
       if (res.ok) {
         const json = await res.json()
         const best = json.NBest?.[0] || {}
@@ -1120,9 +1132,9 @@ async function probeSsmlCapabilities(force = false, voicesToProbe = [VOICES.ar.A
 }
 
 async function verifyAzureVoices(voices) {
-  const response = await fetch(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/voices/list`, {
+  const response = await fetchWithTimeout(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/voices/list`, {
     headers: { 'Ocp-Apim-Subscription-Key': AZURE_KEY },
-  })
+  }, 30_000)
   if (!response.ok) throw new Error(`تعذر Voice List API: HTTP ${response.status}`)
   const available = await response.json()
   const names = new Set(available.map((item) => item.ShortName))
@@ -1134,9 +1146,9 @@ async function verifyAzureVoices(voices) {
 }
 
 async function discoverArabicVoices() {
-  const response = await fetch(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/voices/list`, {
+  const response = await fetchWithTimeout(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/voices/list`, {
     headers: { 'Ocp-Apim-Subscription-Key': AZURE_KEY },
-  })
+  }, 30_000)
   if (!response.ok) throw new Error(`تعذر اكتشاف أصوات Azure: HTTP ${response.status}`)
   const list = (await response.json()).filter((voice) => String(voice.Locale || '').startsWith('ar-'))
   const describe = (voice) => ({

@@ -2,6 +2,7 @@ import { useSeo } from '../components/seo'
 import { Accordion, FadeUp, Label, Page, Reveal } from '../components/ui'
 import { CvSectionEditor } from '../components/admin/CvSectionEditor'
 import CitationImpact from '../components/CitationImpact'
+import KnowledgeFingerprint from '../components/KnowledgeFingerprint'
 import { bio, books, doctorate, links, papers, stats } from '../data'
 import { useAdminAuth } from '../lib/admin-auth'
 import { useCv, type CvTextItem } from '../lib/cv'
@@ -48,7 +49,7 @@ export default function CV() {
           <FadeUp>
             <Label>د. أحمد حسين الفيلكاوي</Label>
             <h1 className="max-w-[900px] font-display text-[clamp(2.55rem,7vw,5.2rem)] font-bold leading-[1.08] tracking-[-0.025em] text-ink">
-              <Reveal>كلُّ ما تعلّمتُه…</Reveal>
+              <Reveal>كلُّ ما تعلّمتُه…</Reveal>
               <span className="mt-2 block text-accent">
                 <Reveal delay={0.12}>حاولتُ أن أحوّله إلى أثر.</Reveal>
               </span>
@@ -100,6 +101,11 @@ export default function CV() {
 
           <FadeUp delay={0.06}>
             <CitationImpact />
+          </FadeUp>
+
+          {/* البصمة المعرفية — توقيع بصري مبني من بيانات المسيرة نفسها */}
+          <FadeUp delay={0.08}>
+            <KnowledgeFingerprint />
           </FadeUp>
 
           {/* ── الجوهر: مفتوح دائماً ── */}

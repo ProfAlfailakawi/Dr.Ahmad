@@ -94,12 +94,25 @@ export default function BookDetail() {
 
           <div className="mt-10 grid gap-12 md:grid-cols-[1fr_1.1fr] md:gap-16">
             <FadeUp>
-              <div className="book-detail-cover overflow-hidden rounded-xl bg-white shadow-[0_30px_60px_-30px_rgba(21,22,26,.45)]">
-                {book.cover ? (
-                  <img src={book.cover} alt={book.title} className="w-full" />
-                ) : (
-                  <div className="flex min-h-72 items-center justify-center bg-wash px-10 text-center font-display text-2xl font-semibold text-soft">{book.title}</div>
-                )}
+              {/* الكتاب الحي: الغلاف بمفصل يمينيّ يفتح عند الاقتراب كاشفاً بطاقة الدخول — CSS خالص، ويعمل باللمس بفتحة خفيفة دائمة */}
+              <div className="book-3d-shell" data-hover>
+                <div className="book-3d">
+                  <div className="book-3d-pages" aria-hidden="true" />
+                  <div className="book-3d-inside" aria-hidden="true">
+                    <span className="book-3d-inside-label">من داخل الكتاب</span>
+                    <p className="book-3d-inside-title font-display">{book.title}</p>
+                    <p className="book-3d-inside-text">{guide?.entry || 'ابدأ بالفكرة العامة، ثم انتقل إلى الفهرس واختر الفصل الأقرب لسؤالك.'}</p>
+                    <span className="book-3d-inside-cue">المقدّمة · الفهرس · عيّنة القراءة</span>
+                  </div>
+                  <div className="book-detail-cover book-3d-cover overflow-hidden rounded-xl bg-white shadow-[0_30px_60px_-30px_rgba(21,22,26,.45)]">
+                    {book.cover ? (
+                      <img src={book.cover} alt={book.title} className="w-full" />
+                    ) : (
+                      <div className="flex min-h-72 items-center justify-center bg-wash px-10 text-center font-display text-2xl font-semibold text-soft">{book.title}</div>
+                    )}
+                    <span className="book-3d-spine" aria-hidden="true" />
+                  </div>
+                </div>
               </div>
             </FadeUp>
 

@@ -130,13 +130,20 @@ service cloud.firestore {
       allow update: if isValidJourneyUpdate();
     }
 
-    // «الاقتباسات الشائعة» على طريقة القارئات الإلكترونية:
-    // قراءة عامة، والعميل لا يستطيع إلا إنشاء عداد من 1 أو زيادته بمقدار واحد.
+    // «الاقتباسات الشائعة» — إشارة مجهولة لا تحتوي اقتباسًا شخصيًا أو ملاحظة.
+    // لا يكتب العميل العداد إلا ضمن Transaction تنشئ عضوية Anonymous واحدة
+    // مرتبطة بالعبارة نفسها. قراءة العضويات ممنوعة حتى على القارئ المجهول.
     match /article_highlights/{id} {
       allow read: if true;
       allow delete: if isAdmin();
-      allow create: if isAdmin() || isValidHighlightCreate();
-      allow update: if isAdmin() || isValidHighlightUpdate();
+      allow create: if isAdmin() || (isAnonymous() && isValidPopularHighlightCreate(id));
+      allow update: if isAdmin() || (isAnonymous() && isValidPopularHighlightUpdate(id));
+    }
+    match /article_highlight_members/{highlightKey}/readers/{readerId} {
+      allow read: if false;
+      allow create: if isAnonymous() && isValidPopularMembershipCreate(highlightKey, readerId);
+      allow delete: if isValidPopularMembershipDelete(highlightKey, readerId);
+      allow update: if false;
     }
 
     // دفتر الاقتباسات العام: لا يُرسل اسم أو بريد أو موقع. كل جهاز يملك
@@ -166,6 +173,10 @@ service cloud.firestore {
 
   function isAdmin() {
     return request.auth != null && request.auth.token.admin == true;
+  }
+
+  function isAnonymous() {
+    return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
   }
 
   function isValidViewId(id) {
@@ -201,6 +212,82 @@ service cloud.firestore {
       && d.paragraph is int && d.paragraph >= 0 && d.paragraph <= 250
       && d.count is int && d.count > 0
       && d.updatedAt == request.time;
+  }
+
+  function hasValidPopularHighlightFields(id, d) {
+    return d.keys().hasOnly(['slug', 'articleVersion', 'paragraph', 'paragraphId', 'startOffset', 'endOffset', 'quoteHash', 'count', 'updatedAt'])
+      && id.size() >= 8 && id.size() <= 80
+      && d.slug is string && d.slug.size() > 0 && d.slug.size() <= 220
+      && d.articleVersion is string && d.articleVersion.size() >= 4 && d.articleVersion.size() <= 80
+      && d.paragraph is int && d.paragraph >= 0 && d.paragraph <= 250
+      && d.paragraphId is string && d.paragraphId.matches('^[0-9]{1,3}$')
+      && d.startOffset is int && d.startOffset >= 0 && d.startOffset <= 200000
+      && d.endOffset is int && d.endOffset > d.startOffset && d.endOffset <= 200000
+      && d.quoteHash is string && d.quoteHash.size() >= 8 && d.quoteHash.size() <= 80
+      && d.count is int && d.count >= 0 && d.count <= 1000000
+      && d.updatedAt == request.time;
+  }
+
+  function hasValidPopularMembershipFields(d) {
+    return d.keys().hasOnly(['uid', 'highlightKey', 'createdAt'])
+      && d.uid == request.auth.uid
+      && d.uid is string && d.uid.size() >= 8 && d.uid.size() <= 128
+      && d.highlightKey is string && d.highlightKey.size() >= 8 && d.highlightKey.size() <= 80
+      && d.createdAt == request.time;
+  }
+
+  function isValidPopularMembershipCreate(highlightKey, readerId) {
+    return readerId == request.auth.uid
+      && request.resource.data.highlightKey == highlightKey
+      && hasValidPopularMembershipFields(request.resource.data)
+      && !exists(/databases/$(database)/documents/article_highlight_members/$(highlightKey)/readers/$(readerId));
+  }
+
+  function popularMembershipSupports(id) {
+    return existsAfter(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid))
+      && getAfter(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid)).data.highlightKey == id
+      && getAfter(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid)).data.uid == request.auth.uid;
+  }
+
+  function popularMembershipRemoved(id) {
+    return exists(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid))
+      && !existsAfter(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid))
+      && get(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid)).data.uid == request.auth.uid;
+  }
+
+  function isValidPopularMembershipDelete(highlightKey, readerId) {
+    return isAnonymous()
+      && readerId == request.auth.uid
+      && resource.data.uid == request.auth.uid
+      && existsAfter(/databases/$(database)/documents/article_highlights/$(highlightKey))
+      && getAfter(/databases/$(database)/documents/article_highlights/$(highlightKey)).data.count
+        == get(/databases/$(database)/documents/article_highlights/$(highlightKey)).data.count - 1
+      && popularMembershipRemoved(highlightKey);
+  }
+
+  function isValidPopularHighlightCreate(id) {
+    return hasValidPopularHighlightFields(id, request.resource.data)
+      && request.resource.data.count == 1
+      && popularMembershipSupports(id);
+  }
+
+  function isValidPopularHighlightUpdate(id) {
+    return hasValidPopularHighlightFields(id, request.resource.data)
+      && request.resource.data.slug == resource.data.slug
+      && request.resource.data.articleVersion == resource.data.articleVersion
+      && request.resource.data.paragraphId == resource.data.paragraphId
+      && request.resource.data.startOffset == resource.data.startOffset
+      && request.resource.data.endOffset == resource.data.endOffset
+      && request.resource.data.quoteHash == resource.data.quoteHash
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count', 'updatedAt'])
+      && (
+        (request.resource.data.count == resource.data.count + 1
+          && popularMembershipSupports(id))
+        ||
+        (resource.data.count > 0
+          && request.resource.data.count == resource.data.count - 1
+          && popularMembershipRemoved(id))
+      );
   }
 
   function isValidHighlightCreate() {

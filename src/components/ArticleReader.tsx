@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { getDb } from '../lib/firebase'
+import { getDb, getFirebaseAuth } from '../lib/firebase'
 
 export type ReaderArticle = {
   slug: string
@@ -14,9 +14,14 @@ export type ReaderArticle = {
 
 export type PopularQuote = {
   slug: string
+  articleVersion: string
+  highlightKey: string
   quoteHash: string
-  quote: string
+  quote?: string
   paragraph: number
+  paragraphId: string
+  startOffset: number
+  endOffset: number
   count: number
 }
 
@@ -28,6 +33,11 @@ type SavedQuote = {
   paragraph: number
   savedAt: number
   url: string
+  note?: string
+  articleVersion?: string
+  startOffset?: number
+  endOffset?: number
+  highlightKey?: string
 }
 
 type ReaderTheme = 'light' | 'dark' | 'paper'
@@ -57,10 +67,11 @@ type SelectionSnapshot = {
 
 const PREFS_KEY = 'reader:preferences:v2'
 const QUOTES_KEY = 'reader:quotes:v2'
-const DEVICE_KEY = 'reader:anonymous-device:v1'
 const PROGRESS_PREFIX = 'reader:progress:v2:'
 const PENDING_QUOTE_KEY = 'reader:pending-quote:v1'
-const POPULAR_THRESHOLD = 10
+export const POPULAR_THRESHOLD = 5
+
+const popularHighlightCache = new Map<string, PopularQuote[]>()
 
 const DEFAULT_PREFS: ReaderPreferences = {
   scale: 1,
@@ -73,6 +84,21 @@ const DEFAULT_PREFS: ReaderPreferences = {
 
 const AR_STOP = new Set(['من', 'في', 'على', 'إلى', 'عن', 'أن', 'إن', 'ما', 'لا', 'هذا', 'هذه', 'التي', 'الذي', 'مع', 'أو', 'ثم', 'قد', 'كل', 'بين', 'هو', 'هي', 'كان', 'كانت', 'لكن', 'حتى', 'إذا', 'عند', 'بعد', 'قبل', 'كما', 'لأن', 'حين', 'كيف', 'لماذا', 'أم', 'بل', 'نحن', 'هم', 'أنت', 'أنا', 'به', 'له', 'لها', 'فيه', 'فيها', 'ذلك', 'تلك', 'أي', 'كذلك', 'أيضا', 'دون', 'غير', 'عبر', 'خلال', 'حول', 'نحو'])
 const normalizeArabic = (value: string) => value.replace(/[ًٌٍَُِّْـ]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي')
+const normalizeHighlightText = (value: string) => normalizeArabic(value)
+  .replace(/[“”«»"']/g, ' ')
+  .replace(/[،؛:!?؟.,()[\]{}]/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+/** Stable content version: changing the article body creates a new highlight namespace. */
+export function articleContentVersion(body = '') {
+  let hash = 2166136261
+  for (let index = 0; index < body.length; index++) {
+    hash ^= body.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return `v1-${(hash >>> 0).toString(16).padStart(8, '0')}`
+}
 const ideaTokens = (value: string) => normalizeArabic(value).replace(/[^ء-ي\s]/g, ' ').split(/\s+/)
   .map((word) => word.replace(/^(وال|فال|بال|كال|ال|و|ف|ب|ل|ك)/, ''))
   .filter((word) => word.length >= 4 && !AR_STOP.has(word))
@@ -236,20 +262,6 @@ async function stableHash(value: string) {
   return `f${(hash >>> 0).toString(16).padStart(8, '0')}`
 }
 
-function getAnonymousDeviceId() {
-  try {
-    const existing = window.localStorage.getItem(DEVICE_KEY)
-    if (existing) return existing
-    const next = typeof crypto?.randomUUID === 'function'
-      ? crypto.randomUUID()
-      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`
-    window.localStorage.setItem(DEVICE_KEY, next)
-    return next
-  } catch {
-    return `session-${Math.random().toString(36).slice(2)}`
-  }
-}
-
 function readSavedQuotes() {
   if (typeof window === 'undefined') return [] as SavedQuote[]
   return readJson<SavedQuote[]>(QUOTES_KEY, []).filter((quote) => quote?.id && quote?.quote && quote?.slug)
@@ -258,6 +270,25 @@ function readSavedQuotes() {
 function saveQuotes(quotes: SavedQuote[]) {
   writeJson(QUOTES_KEY, quotes.slice(0, 300))
   window.dispatchEvent(new CustomEvent('reader:quotes-changed'))
+}
+
+function saveLocalQuote(article: ReaderArticle, selection: Pick<SelectionSnapshot, 'text' | 'paragraph'>, note = '') {
+  const existing = readSavedQuotes()
+  const normalized = selection.text.replace(/\s+/g, ' ').trim()
+  const id = `${article.slug}:${selection.paragraph}:${normalized.slice(0, 80)}`
+  const nextItem: SavedQuote = {
+    id,
+    quote: normalized,
+    slug: article.slug,
+    title: article.title,
+    paragraph: selection.paragraph,
+    savedAt: Date.now(),
+    url: `${window.location.origin}/articles/${article.slug}`,
+    ...(note.trim() ? { note: note.trim() } : {}),
+  }
+  const withoutDuplicate = existing.filter((item) => item.id !== id)
+  saveQuotes([nextItem, ...withoutDuplicate])
+  return nextItem
 }
 
 export function ArticleProgressBar({ slug }: { slug: string }) {
@@ -362,11 +393,22 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
   useEffect(() => {
     const refreshQuotes = () => setQuotesState(readSavedQuotes())
     const onXray = (event: Event) => setXray((event as CustomEvent<XrayTerm>).detail || null)
+    const onPopularLinked = (event: Event) => {
+      const detail = (event as CustomEvent<{ localQuoteId?: string; articleVersion?: string; highlightKey?: string; startOffset?: number; endOffset?: number }>).detail
+      if (!detail?.localQuoteId || !detail.highlightKey) return
+      const current = readSavedQuotes()
+      const next = current.map((quote) => quote.id === detail.localQuoteId
+        ? { ...quote, articleVersion: detail.articleVersion, highlightKey: detail.highlightKey, startOffset: detail.startOffset, endOffset: detail.endOffset }
+        : quote)
+      if (JSON.stringify(next) !== JSON.stringify(current)) saveQuotes(next)
+    }
     window.addEventListener('reader:quotes-changed', refreshQuotes)
     window.addEventListener('reader:xray', onXray)
+    window.addEventListener('reader:popular-quote-linked', onPopularLinked)
     return () => {
       window.removeEventListener('reader:quotes-changed', refreshQuotes)
       window.removeEventListener('reader:xray', onXray)
+      window.removeEventListener('reader:popular-quote-linked', onPopularLinked)
     }
   }, [])
 
@@ -393,6 +435,21 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
   }
 
   const removeQuote = (id: string) => {
+    const removed = quotes.find((quote) => quote.id === id)
+    if (removed) {
+      window.dispatchEvent(new CustomEvent('reader:quote-removed', {
+        detail: {
+          slug: removed.slug,
+          body: removed.slug === article.slug ? (article.body || '') : '',
+          quote: removed.quote,
+          paragraph: removed.paragraph,
+          startOffset: removed.startOffset,
+          endOffset: removed.endOffset,
+          articleVersion: removed.articleVersion,
+          highlightKey: removed.highlightKey,
+        },
+      }))
+    }
     const next = quotes.filter((quote) => quote.id !== id)
     setQuotesState(next)
     saveQuotes(next)
@@ -512,6 +569,10 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
                       <span><span className="block text-[.8rem] font-semibold text-ink">وضع التركيز</span><span className="mt-0.5 block text-[.7rem] text-soft">يخفي التنقل والعناصر الثانوية أثناء القراءة.</span></span>
                       <input type="checkbox" checked={preferences.focus} onChange={(event) => setPreferences({ focus: event.target.checked })} className="h-4 w-4 accent-[rgb(var(--c-accent))]" />
                     </label>
+                    <label className="flex cursor-pointer items-center justify-between gap-4 rounded-2xl border border-hair bg-wash/45 px-4 py-3">
+                      <span><span className="block text-[.8rem] font-semibold text-ink">إظهار عبارات القراء</span><span className="mt-0.5 block text-[.7rem] text-soft">إشارات مجهولة لا تظهر إلا بعد ٥ حفظات، ولا تمس اقتباساتك الشخصية.</span></span>
+                      <input type="checkbox" checked={preferences.showPopular} onChange={(event) => setPreferences({ showPopular: event.target.checked })} className="h-4 w-4 accent-[rgb(var(--c-accent))]" />
+                    </label>
                   </section>
                   <p className="text-[.7rem] leading-[1.8] text-soft">تُحفظ هذه الاختيارات على هذا الجهاز فقط، وتُطبّق تلقائيًا على بقية المقالات.</p>
                 </div>
@@ -523,7 +584,8 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
                       {quotes.map((quote) => (
                         <article key={quote.id} className="rounded-2xl border border-hair bg-canvas p-4">
                           <blockquote className="font-display text-[.94rem] font-light leading-[1.9] text-ink">«{quote.quote}»</blockquote>
-                          <p className="mt-2 text-[.7rem] leading-relaxed text-soft">{quote.title} · {new Date(quote.savedAt).toLocaleDateString('ar-KW')}</p>
+                      <p className="mt-2 text-[.7rem] leading-relaxed text-soft">{quote.title} · {new Date(quote.savedAt).toLocaleDateString('ar-KW')}</p>
+                      {quote.note && <p className="mt-2 rounded-xl bg-wash/55 px-3 py-2 text-[.72rem] leading-relaxed text-soft">ملاحظتك: {quote.note}</p>}
                           <div className="mt-3 flex flex-wrap gap-2">
                             <button type="button" onClick={() => goToQuote(quote)} className="rounded-full border border-hair px-3 py-1.5 text-[.7rem] text-soft hover:border-accent hover:text-accent">الرجوع إلى موضعه</button>
                             <button type="button" onClick={async () => { await copyText(quote.quote); setCopiedId(quote.id); window.setTimeout(() => setCopiedId(''), 1200) }} className="rounded-full border border-hair px-3 py-1.5 text-[.7rem] text-soft hover:border-accent hover:text-accent">{copiedId === quote.id ? 'نُسخ' : 'نسخ'}</button>
@@ -536,7 +598,7 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
                   ) : (
                     <div className="py-12 text-center">
                       <p className="font-display text-[1.05rem] font-semibold text-ink">دفترك هادئ حتى الآن.</p>
-                      <p className="mt-2 text-[.78rem] leading-relaxed text-soft">حدّد جملة داخل أي مقال، ثم اختر «حفظ».</p>
+                      <p className="mt-2 text-[.78rem] leading-relaxed text-soft">حدّد جملة داخل أي مقال، ثم افتح «بطاقة الاقتباس» واختر «احتفظ بالجملة في دفتر القراءة».</p>
                     </div>
                   )}
                 </div>
@@ -564,38 +626,97 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
   )
 }
 
-export function usePopularQuotes(slug: string) {
+export function usePopularQuotes(slug: string, body = '') {
   const [quotes, setQuotes] = useState<PopularQuote[]>([])
   const { preferences } = useReaderPreferences()
+  const version = articleContentVersion(body)
 
   useEffect(() => {
     let active = true
+    const cacheKey = `${slug}:${version}`
+    const cachedQuotes = popularHighlightCache.get(cacheKey)
+    if (cachedQuotes) setQuotes(cachedQuotes)
     void getDb().then(async (db) => {
       if (!db) return
       const { collection, getDocs, query, where } = await import('firebase/firestore')
-      const snapshot = await getDocs(query(collection(db, 'article_quote_counts'), where('slug', '==', slug)))
+      // One query per article. Version filtering is local so no composite index
+      // is required and old article namespaces cannot leak into new text.
+      const snapshot = await getDocs(query(collection(db, 'article_highlights'), where('slug', '==', slug)))
       if (!active) return
       const next = snapshot.docs
         .map((item) => item.data() as Partial<PopularQuote>)
-        .filter((item): item is PopularQuote => item.slug === slug && typeof item.quote === 'string' && Number(item.count) >= POPULAR_THRESHOLD && Number.isInteger(Number(item.paragraph)))
-        .map((item) => ({ ...item, paragraph: Number(item.paragraph), count: Number(item.count) }))
+        .filter((item): item is PopularQuote => item.slug === slug && item.articleVersion === version && Number(item.count) >= POPULAR_THRESHOLD && Number.isInteger(Number(item.paragraph)) && Number.isInteger(Number(item.startOffset)) && Number.isInteger(Number(item.endOffset)))
+        .map((item) => ({
+          ...item,
+          paragraph: Number(item.paragraph),
+          paragraphId: String(item.paragraphId ?? item.paragraph),
+          startOffset: Number(item.startOffset),
+          endOffset: Number(item.endOffset),
+          count: Number(item.count),
+        }))
+      popularHighlightCache.set(cacheKey, next)
       setQuotes(next)
     }).catch(() => undefined)
-    return () => { active = false }
-  }, [slug])
+
+    const onSaved = (event: Event) => {
+      const detail = (event as CustomEvent<{ slug?: string; body?: string; quote?: string; paragraph?: number; startOffset?: number; endOffset?: number; articleVersion?: string; highlightKey?: string; localQuoteId?: string }>).detail
+      if (!detail || detail.slug !== slug || typeof detail.quote !== 'string' || !Number.isInteger(detail.paragraph)) return
+      const paragraph = detail.paragraph as number
+      void syncPopularQuote({
+        slug,
+        body: detail.body || body,
+        quote: detail.quote,
+        paragraph,
+        startOffset: detail.startOffset,
+        endOffset: detail.endOffset,
+        articleVersion: detail.articleVersion,
+        highlightKey: detail.highlightKey,
+        localQuoteId: detail.localQuoteId,
+      })
+    }
+    const onRemoved = (event: Event) => {
+      const detail = (event as CustomEvent<{ slug?: string; body?: string; quote?: string; paragraph?: number; startOffset?: number; endOffset?: number; articleVersion?: string; highlightKey?: string }>).detail
+      if (!detail || detail.slug !== slug || typeof detail.quote !== 'string' || !Number.isInteger(detail.paragraph)) return
+      const paragraph = detail.paragraph as number
+      void removePopularQuote({
+        slug,
+        body: detail.body || body,
+        quote: detail.quote,
+        paragraph,
+        startOffset: detail.startOffset,
+        endOffset: detail.endOffset,
+        articleVersion: detail.articleVersion,
+        highlightKey: detail.highlightKey,
+      })
+    }
+    window.addEventListener('reader:quote-saved', onSaved)
+    window.addEventListener('reader:quote-removed', onRemoved)
+    return () => {
+      active = false
+      window.removeEventListener('reader:quote-saved', onSaved)
+      window.removeEventListener('reader:quote-removed', onRemoved)
+    }
+  }, [slug, version, body])
 
   useEffect(() => {
     const onUpdate = (event: Event) => {
       const detail = (event as CustomEvent<PopularQuote>).detail
-      if (!detail || detail.slug !== slug || detail.count < POPULAR_THRESHOLD) return
+      if (!detail || detail.slug !== slug || detail.articleVersion !== version) return
       setQuotes((current) => {
-        const found = current.some((quote) => quote.quoteHash === detail.quoteHash)
-        return found ? current.map((quote) => quote.quoteHash === detail.quoteHash ? detail : quote) : [...current, detail]
+        if (detail.count < POPULAR_THRESHOLD) {
+          const next = current.filter((quote) => quote.highlightKey !== detail.highlightKey)
+          popularHighlightCache.set(`${slug}:${version}`, next)
+          return next
+        }
+        const found = current.some((quote) => quote.highlightKey === detail.highlightKey)
+        const next = found ? current.map((quote) => quote.highlightKey === detail.highlightKey ? detail : quote) : [...current, detail]
+        popularHighlightCache.set(`${slug}:${version}`, next)
+        return next
       })
     }
     window.addEventListener('reader:popular-quote-updated', onUpdate)
     return () => window.removeEventListener('reader:popular-quote-updated', onUpdate)
-  }, [slug])
+  }, [slug, version])
 
   return preferences.showPopular ? quotes : []
 }
@@ -608,8 +729,12 @@ export function ReaderParagraphText({ text, popularQuotes = [] }: { text: string
   const matches: { start: number; end: number; kind: 'popular' | 'term'; popular?: PopularQuote; term?: XrayTerm }[] = []
 
   for (const popular of popularQuotes.slice().sort((a, b) => b.count - a.count).slice(0, 3)) {
-    const index = text.indexOf(popular.quote)
-    if (index >= 0 && popular.quote.length >= 12) matches.push({ start: index, end: index + popular.quote.length, kind: 'popular', popular })
+    const fallbackIndex = popular.quote ? text.indexOf(popular.quote) : -1
+    const start = popular.startOffset >= 0 && popular.endOffset > popular.startOffset && popular.endOffset <= text.length
+      ? popular.startOffset
+      : fallbackIndex
+    const end = start >= 0 ? (popular.endOffset > start ? popular.endOffset : start + (popular.quote?.length || 0)) : -1
+    if (start >= 0 && end - start >= 12) matches.push({ start, end, kind: 'popular', popular })
   }
 
   for (const term of GLOSSARY) {
@@ -636,7 +761,7 @@ export function ReaderParagraphText({ text, popularQuotes = [] }: { text: string
     if (match.start > index) nodes.push(text.slice(index, match.start))
     const content = text.slice(match.start, match.end)
     if (match.kind === 'popular' && match.popular) {
-      nodes.push(<mark key={`popular-${matchIndex}`} className="reader-popular-mark" title={`احتفظ بهذه العبارة ${match.popular.count.toLocaleString('ar-KW')} قارئًا`}>{content}</mark>)
+      nodes.push(<PopularHighlightMark key={`popular-${matchIndex}`} count={match.popular.count}>{content}</PopularHighlightMark>)
     } else if (match.term) {
       const term = match.term
       nodes.push(
@@ -658,43 +783,166 @@ export function ReaderParagraphText({ text, popularQuotes = [] }: { text: string
   return <>{nodes}</>
 }
 
-async function syncPopularQuote(article: ReaderArticle, quote: string, paragraph: number) {
-  const normalized = quote.replace(/\s+/g, ' ').trim().slice(0, 600)
-  const quoteHash = await stableHash(`${article.slug}\u0000${normalized}`)
-  const localVoteKey = `reader:quote-vote:${quoteHash}`
-  try {
-    if (window.localStorage.getItem(localVoteKey)) return { quoteHash, count: 0 }
-  } catch { /* noop */ }
+function PopularHighlightMark({ children, count }: { children: ReactNode; count: number }) {
+  const [open, setOpen] = useState(false)
+  const label = `حُفظت ${count.toLocaleString('ar-KW')} مرة`
+  const toggle = () => setOpen((current) => !current)
+  return (
+    <span className="relative inline">
+      <mark
+        className="reader-popular-mark cursor-help"
+        title={label}
+        role="button"
+        tabIndex={0}
+        aria-expanded={open}
+        aria-label={`${label}. من أكثر العبارات التي احتفظ بها القراء`}
+        onClick={(event) => { event.stopPropagation(); toggle() }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggle() }
+          if (event.key === 'Escape') setOpen(false)
+        }}
+      >{children}</mark>
+      {open && (
+        <span role="tooltip" className="absolute start-1/2 top-full z-20 mt-2 w-max max-w-[min(18rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-hair bg-canvas px-3 py-2 text-[.68rem] font-normal leading-[1.7] text-soft shadow-[0_12px_30px_-18px_rgba(0,0,0,.45)]">
+          {label} · من أكثر العبارات التي احتفظ بها القراء
+        </span>
+      )}
+    </span>
+  )
+}
+
+type PopularQuoteInput = {
+  slug: string
+  body: string
+  quote: string
+  paragraph: number
+  startOffset?: number
+  endOffset?: number
+  articleVersion?: string
+  highlightKey?: string
+  localQuoteId?: string
+}
+
+function intervalOverlap(aStart: number, aEnd: number, bStart: number, bEnd: number) {
+  const overlap = Math.max(0, Math.min(aEnd, bEnd) - Math.max(aStart, bStart))
+  const shortest = Math.max(1, Math.min(aEnd - aStart, bEnd - bStart))
+  return overlap / shortest
+}
+
+function wordOverlap(left: string, right: string) {
+  const a = new Set(normalizeHighlightText(left).split(' ').filter(Boolean))
+  const b = new Set(normalizeHighlightText(right).split(' ').filter(Boolean))
+  if (!a.size || !b.size) return 0
+  let common = 0
+  for (const item of a) if (b.has(item)) common++
+  return common / Math.max(1, Math.min(a.size, b.size))
+}
+
+async function findCanonicalHighlight(input: PopularQuoteInput, version: string, startOffset: number, endOffset: number) {
   const db = await getDb()
-  if (!db) return { quoteHash, count: 0 }
-  const deviceHash = await stableHash(getAnonymousDeviceId())
-  const voteId = await stableHash(`${quoteHash}\u0000${deviceHash}`)
-  const { doc, runTransaction, serverTimestamp } = await import('firebase/firestore')
-  const countRef = doc(db, 'article_quote_counts', quoteHash)
-  const voteRef = doc(db, 'article_quote_votes', voteId)
-  const count = await runTransaction(db, async (transaction) => {
-    const voteSnapshot = await transaction.get(voteRef)
-    const countSnapshot = await transaction.get(countRef)
-    const previous = countSnapshot.exists() ? Number(countSnapshot.data().count || 0) : 0
-    if (voteSnapshot.exists()) return previous
-    transaction.set(voteRef, { slug: article.slug, quoteHash, deviceHash, createdAt: serverTimestamp() })
-    transaction.set(countRef, {
-      slug: article.slug,
-      quoteHash,
-      quote: normalized,
-      paragraph,
-      count: previous + 1,
-      lastVote: voteId,
-      updatedAt: serverTimestamp(),
+  if (!db) return null
+  try {
+    const { collection, getDocs, query, where } = await import('firebase/firestore')
+    const snapshot = await getDocs(query(collection(db, 'article_highlights'), where('slug', '==', input.slug)))
+    const paragraphText = input.body.split('\n\n')[input.paragraph] || ''
+    const candidates = snapshot.docs
+      .map((item) => ({ key: item.id, data: item.data() as Partial<PopularQuote> }))
+      .filter(({ data }) => data.articleVersion === version && String(data.paragraphId ?? data.paragraph) === String(input.paragraph) && Number.isInteger(Number(data.startOffset)) && Number.isInteger(Number(data.endOffset)))
+      .map(({ key, data }) => ({ key, start: Number(data.startOffset), end: Number(data.endOffset), quoteHash: String(data.quoteHash || '') }))
+    const candidate = candidates.find((item) => {
+      if (intervalOverlap(startOffset, endOffset, item.start, item.end) < .8) return false
+      const existingText = paragraphText.slice(item.start, item.end)
+      return wordOverlap(input.quote, existingText) >= .8
     })
+    return candidate || null
+  } catch {
+    return null
+  }
+}
+
+/** Aggregate highlight write. Personal quote text never leaves localStorage. */
+export async function syncPopularQuote(input: PopularQuoteInput) {
+  const normalized = normalizeHighlightText(input.quote).slice(0, 600)
+  if (normalized.length < 12) return { highlightKey: '', count: 0 }
+  const paragraphText = input.body.split('\n\n')[input.paragraph] || ''
+  const inferredStart = Math.max(0, paragraphText.indexOf(input.quote))
+  const startOffset = Number.isInteger(input.startOffset) && (input.startOffset as number) >= 0 ? Number(input.startOffset) : inferredStart
+  const endOffset = Number.isInteger(input.endOffset) && (input.endOffset as number) > startOffset ? Number(input.endOffset) : Math.min(paragraphText.length, startOffset + input.quote.length)
+  const version = input.articleVersion || articleContentVersion(input.body)
+  const quoteHash = await stableHash(normalized)
+  const canonical = await findCanonicalHighlight(input, version, startOffset, endOffset)
+  const highlightKey = canonical?.key || await stableHash(`${input.slug}\u0000${version}\u0000${input.paragraph}\u0000${startOffset}\u0000${endOffset}\u0000${quoteHash}`)
+  const canonicalStart = canonical?.start ?? startOffset
+  const canonicalEnd = canonical?.end ?? endOffset
+  const canonicalQuoteHash = canonical?.quoteHash || quoteHash
+  const auth = await getFirebaseAuth()
+  if (!auth) return { highlightKey, count: 0 }
+  const authModule = await import('firebase/auth')
+  const user = auth.currentUser || (await authModule.signInAnonymously(auth)).user
+  const db = await getDb()
+  if (!db || !user) return { highlightKey, count: 0 }
+  const { doc, runTransaction, serverTimestamp } = await import('firebase/firestore')
+  const countRef = doc(db, 'article_highlights', highlightKey)
+  const membershipRef = doc(db, 'article_highlight_members', highlightKey, 'readers', user.uid)
+  const count = await runTransaction(db, async (transaction) => {
+    const [membershipSnapshot, countSnapshot] = await Promise.all([transaction.get(membershipRef), transaction.get(countRef)])
+    const previous = countSnapshot.exists() ? Number(countSnapshot.data().count || 0) : 0
+    if (membershipSnapshot.exists()) return previous
+    const now = serverTimestamp()
+    transaction.set(membershipRef, { uid: user.uid, highlightKey, createdAt: now })
+    transaction.set(countRef, {
+      slug: input.slug,
+      articleVersion: version,
+      paragraph: input.paragraph,
+      paragraphId: String(input.paragraph),
+      startOffset: canonicalStart,
+      endOffset: canonicalEnd,
+      quoteHash: canonicalQuoteHash,
+      count: previous + 1,
+      updatedAt: now,
+    }, { merge: true })
     return previous + 1
   })
-  try { window.localStorage.setItem(localVoteKey, '1') } catch { /* noop */ }
-  if (count >= POPULAR_THRESHOLD) {
-    const detail: PopularQuote = { slug: article.slug, quoteHash, quote: normalized, paragraph, count }
-    window.dispatchEvent(new CustomEvent('reader:popular-quote-updated', { detail }))
+  const detail: PopularQuote = { slug: input.slug, articleVersion: version, highlightKey, quoteHash: canonicalQuoteHash, paragraph: input.paragraph, paragraphId: String(input.paragraph), startOffset: canonicalStart, endOffset: canonicalEnd, count }
+  if (input.localQuoteId) {
+    window.dispatchEvent(new CustomEvent('reader:popular-quote-linked', {
+      detail: { localQuoteId: input.localQuoteId, articleVersion: version, highlightKey, startOffset: canonicalStart, endOffset: canonicalEnd },
+    }))
   }
-  return { quoteHash, count }
+  if (count >= POPULAR_THRESHOLD) {
+    window.dispatchEvent(new CustomEvent('reader:popular-quote-updated', { detail }))
+    popularHighlightCache.delete(`${input.slug}:${version}`)
+  }
+  return { highlightKey, count }
+}
+
+/** Remove the same anonymous membership once and decrement atomically. */
+export async function removePopularQuote(input: PopularQuoteInput) {
+  const version = input.articleVersion || articleContentVersion(input.body)
+  const normalized = normalizeHighlightText(input.quote)
+  const quoteHash = await stableHash(normalized)
+  const startOffset = Number(input.startOffset || 0)
+  const endOffset = Number(input.endOffset || (startOffset + input.quote.length))
+  const canonical = input.highlightKey ? null : (input.body ? await findCanonicalHighlight(input, version, startOffset, endOffset) : null)
+  const highlightKey = input.highlightKey || canonical?.key || await stableHash(`${input.slug}\u0000${version}\u0000${input.paragraph}\u0000${startOffset}\u0000${endOffset}\u0000${quoteHash}`)
+  const auth = await getFirebaseAuth()
+  const db = await getDb()
+  const authModule = await import('firebase/auth')
+  const user = auth?.currentUser || (auth ? (await authModule.signInAnonymously(auth)).user : null)
+  if (!db || !user) return { highlightKey, count: 0 }
+  const { doc, runTransaction, serverTimestamp } = await import('firebase/firestore')
+  const countRef = doc(db, 'article_highlights', highlightKey)
+  const membershipRef = doc(db, 'article_highlight_members', highlightKey, 'readers', user.uid)
+  const count = await runTransaction(db, async (transaction) => {
+    const [membershipSnapshot, countSnapshot] = await Promise.all([transaction.get(membershipRef), transaction.get(countRef)])
+    if (!membershipSnapshot.exists() || !countSnapshot.exists()) return Number(countSnapshot.data()?.count || 0)
+    const previous = Number(countSnapshot.data().count || 0)
+    transaction.delete(membershipRef)
+    transaction.update(countRef, { count: Math.max(0, previous - 1), updatedAt: serverTimestamp() })
+    return Math.max(0, previous - 1)
+  })
+  window.dispatchEvent(new CustomEvent('reader:popular-quote-updated', { detail: { slug: input.slug, articleVersion: version, highlightKey, quoteHash, paragraph: input.paragraph, paragraphId: String(input.paragraph), startOffset, endOffset, count } }))
+  return { highlightKey, count }
 }
 
 function wrapCanvasLines(context: CanvasRenderingContext2D, text: string, maxWidth: number) {
@@ -786,6 +1034,7 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
   const [cardUrl, setCardUrl] = useState('')
   const [cardBlob, setCardBlob] = useState<Blob | null>(null)
   const [cardBusy, setCardBusy] = useState(false)
+  const [quoteSaved, setQuoteSaved] = useState(false)
   const toolbarRef = useRef<HTMLDivElement | null>(null)
   const selectionRef = useRef<SelectionSnapshot | null>(null)
 
@@ -850,6 +1099,7 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
 
   const openCard = () => {
     if (!currentSelection) return
+    setQuoteSaved(false)
     setSheet('card')
     window.setTimeout(() => { void createCard() }, 30)
   }
@@ -932,6 +1182,13 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
     if (cardUrl) URL.revokeObjectURL(cardUrl)
     setCardUrl('')
     setFeedback('')
+    setQuoteSaved(false)
+  }
+
+  const keepQuote = () => {
+    if (!currentSelection) return
+    saveLocalQuote(current, currentSelection)
+    setQuoteSaved(true)
   }
 
   return (
@@ -988,6 +1245,11 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
                       <div className="mt-4 flex flex-wrap justify-center gap-2">
                         <button type="button" onClick={() => void shareCard()} className="rounded-full bg-accent px-5 py-2.5 text-[.76rem] font-semibold text-white">مشاركة البطاقة</button>
                         <button type="button" onClick={downloadCard} className="rounded-full border border-hair px-5 py-2.5 text-[.76rem] font-semibold text-soft hover:border-accent hover:text-accent">حفظ الصورة</button>
+                      </div>
+                      <div className="mt-3 flex justify-center">
+                        <button type="button" onClick={keepQuote} aria-pressed={quoteSaved} className="rounded-full border border-accent/35 px-4 py-2 text-[.72rem] font-semibold text-accent transition-colors hover:bg-accent/8">
+                          {quoteSaved ? 'حُفظت في دفتر القراءة' : 'احتفظ بالجملة في دفتر القراءة'}
+                        </button>
                       </div>
                       <p className="mt-2 text-center text-[.68rem] text-soft">1080×1350 — مناسبة لواتساب وX وإنستغرام.</p>
                     </>

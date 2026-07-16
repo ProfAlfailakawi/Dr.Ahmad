@@ -4,6 +4,7 @@
  * إن لم تُضبط متغيّرات البيئة، يعمل الموقع بالكامل بلا Firestore.
  */
 import type { Firestore } from 'firebase/firestore'
+import type { Auth } from 'firebase/auth'
 
 type FirebaseConfig = {
   apiKey: string
@@ -53,6 +54,7 @@ async function getFirebaseConfig(): Promise<FirebaseConfig | null> {
 export const firebaseEnabled = true
 
 let cached: Firestore | null = null
+let authCached: Auth | null = null
 let appCheckReady = false
 let appPromise: ReturnType<typeof createFirebaseApp> | null = null
 
@@ -94,6 +96,19 @@ export async function getDb(): Promise<Firestore | null> {
   if (!app) return null
   cached = getFirestore(app!)
   return cached
+}
+
+/**
+ * Anonymous auth is used only for aggregate, non-personal reading signals.
+ * It is deliberately lazy so ordinary visitors who never save a highlight do
+ * not pay the Firebase auth bundle or open an auth session.
+ */
+export async function getFirebaseAuth(): Promise<Auth | null> {
+  if (authCached) return authCached
+  const [app, authModule] = await Promise.all([getFirebaseApp(), import('firebase/auth')])
+  if (!app) return null
+  authCached = authModule.getAuth(app)
+  return authCached
 }
 
 /** يجلب مجموعة محتوى منشورة من لوحة التحكم (الأحدث أولاً).

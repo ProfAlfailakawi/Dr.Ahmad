@@ -1,0 +1,118 @@
+import { EventEmitter } from 'node:events'
+import { redactError } from './config.mjs'
+
+const encode = (value) => JSON.stringify(value, (_key, item) => Buffer.isBuffer(item) ? { __buffer: item.toString('base64') } : item)
+const decode = (value) => JSON.parse(value, (_key, item) => item && item.__buffer ? Buffer.from(item.__buffer, 'base64') : item)
+
+export class MockTransport extends EventEmitter {
+  constructor() { super(); this.status = 'disconnected'; this.sent = []; this.qr = null }
+  async connect() { this.status = 'connected'; this.emit('status', this.status); return { status: this.status } }
+  async disconnect() { this.status = 'disconnected'; this.emit('status', this.status) }
+  getConnectionStatus() { return this.status }
+  async sendText(jid, text) { if (this.status !== 'connected') throw new Error('mock transport is disconnected'); this.sent.push({ jid, text }); return { id: `mock-${this.sent.length}` } }
+  async sendMedia(jid, media) { this.sent.push({ jid, media }); return { id: `mock-media-${this.sent.length}` } }
+  async sendSelf(text) { return this.sendText('self@s.whatsapp.net', text) }
+  async syncContacts() { return { count: 0 } }
+  async discoverBroadcastLists() { return { supported: false, reason: 'mock transport' } }
+  async getBroadcastRecipients() { return [] }
+  markManualTakeover() {}
+  pauseChat() {}
+  resumeChat() {}
+  async logout() { await this.disconnect() }
+}
+
+export async function createWhatsAppTransport({ db, onMessage, onQr, onPairingCode, maxReconnects = 4 } = {}) {
+  let baileys
+  try { baileys = await import('@whiskeysockets/baileys') } catch (error) {
+    throw new Error(`Baileys غير مثبت. نفّذ npm install داخل whatsapp-agent. (${redactError(error)})`)
+  }
+  const makeWASocket = baileys.default || baileys.makeWASocket
+  if (typeof makeWASocket !== 'function') throw new Error('إصدار Baileys لا يصدّر makeWASocket المتوقع.')
+  const events = new EventEmitter()
+  let socket = null
+  let status = 'disconnected'
+  let reconnects = 0
+  let stopping = false
+  let qrcodeTerminal = null
+  try { qrcodeTerminal = (await import('qrcode-terminal')).default || (await import('qrcode-terminal')) } catch { /* optional terminal renderer */ }
+
+  const authState = {
+    creds: db.loadAuth('creds', 'main') ? decode(db.loadAuth('creds', 'main')) : baileys.initAuthCreds(),
+    keys: {
+      get: async (type, ids) => {
+        const result = {}
+        for (const id of ids) {
+          const value = db.loadAuth(`keys:${type}`, id)
+          result[id] = value ? decode(value) : undefined
+        }
+        return result
+      },
+      set: async (data) => {
+        for (const [type, values] of Object.entries(data)) for (const [id, value] of Object.entries(values)) {
+          if (value == null) db.run('DELETE FROM whatsapp_auth WHERE kind=? AND name=?', `keys:${type}`, id)
+          else db.saveAuth(`keys:${type}`, id, encode(value))
+        }
+      },
+    },
+  }
+
+  const setStatus = (next, extra = {}) => { status = next; db.setState({ status: next, ...extra }); events.emit('status', { status: next, ...extra }) }
+  const connect = async ({ phoneNumber } = {}) => {
+    stopping = false
+    setStatus(reconnects ? 'reconnecting' : 'pairing', { qr: null, pairing_code: null })
+    socket = makeWASocket({
+      auth: authState,
+      printQRInTerminal: false,
+      browser: ['Dr Ahmad WhatsApp Agent', 'Chrome', '1.0.0'],
+      syncFullHistory: false,
+      markOnlineOnConnect: false,
+      generateHighQualityLinkPreview: false,
+    })
+    socket.ev.on('creds.update', () => db.saveAuth('creds', 'main', encode(authState.creds)))
+    socket.ev.on('messages.upsert', ({ messages }) => {
+      for (const message of messages || []) {
+        const jid = message?.key?.remoteJid
+        const text = message?.message?.conversation || message?.message?.extendedTextMessage?.text || message?.message?.imageMessage?.caption || ''
+        if (jid && text && onMessage) onMessage({ jid, text, message })
+        events.emit('message', { jid, text, message })
+      }
+    })
+    socket.ev.on('connection.update', async (update) => {
+      if (update.qr) {
+        db.setState({ status: 'pairing', qr: null, pairing_code: null })
+        if (qrcodeTerminal?.generate) qrcodeTerminal.generate(update.qr, { small: true })
+        else console.log('ظهر QR للاقتران. استخدم --phone=965XXXXXXXX للحصول على رمز اقتران بدلًا من QR.')
+        onQr?.(update.qr); events.emit('qr', update.qr)
+      }
+      if (update.connection === 'open') { reconnects = 0; setStatus('connected', { qr: null, pairing_code: null, device_name: 'WhatsApp Agent – MacBook M2' }); return }
+      if (update.connection === 'close') {
+        const code = update.lastDisconnect?.error?.output?.statusCode
+        if (stopping || code === baileys.DisconnectReason?.loggedOut) { setStatus('disconnected'); return }
+        reconnects += 1
+        if (reconnects > maxReconnects) { setStatus('error', { last_error: 'توقف الاتصال بعد عدد محدود من محاولات الإعادة.' }); return }
+        setStatus('reconnecting', { last_error: redactError(update.lastDisconnect?.error) })
+        setTimeout(() => { void connect({ phoneNumber }) }, Math.min(30000, 1200 * 2 ** reconnects))
+      }
+    })
+    if (phoneNumber && typeof socket.requestPairingCode === 'function' && !authState.creds.registered) {
+      try { const code = await socket.requestPairingCode(String(phoneNumber).replace(/\D/g, '')); db.setState({ status: 'pairing', qr: null, pairing_code: null }); console.log(`رمز اقتران واتساب: ${code}`); onPairingCode?.(code); events.emit('pairing-code', code) } catch (error) { setStatus('error', { last_error: redactError(error) }) }
+    }
+    return socket
+  }
+  const transport = {
+    events,
+    connect,
+    async disconnect() { stopping = true; if (socket) socket.end?.(new Error('manual disconnect')); setStatus('disconnected') },
+    getConnectionStatus: () => status,
+    async sendText(jid, text) { if (!socket || status !== 'connected') throw new Error('واتساب غير متصل'); return socket.sendMessage(jid, { text }) },
+    async sendMedia(jid, media) { if (!socket || status !== 'connected') throw new Error('واتساب غير متصل'); return socket.sendMessage(jid, media) },
+    async syncContacts() { return { count: 0, supported: false, reason: 'لا تُحفظ جهات الاتصال إلا عند طلب المزامنة.' } },
+    async discoverBroadcastLists() { return { supported: false, reason: 'لا يقدّم Baileys واجهة مستقرة لقراءة أعضاء Broadcast دون History Sync؛ لم يتم تعديل أي قائمة.' } },
+    async getBroadcastRecipients() { return [] },
+    markManualTakeover(jid) { events.emit('manual-takeover', jid) },
+    pauseChat(jid) { events.emit('pause-chat', jid) },
+    resumeChat(jid) { events.emit('resume-chat', jid) },
+    async logout() { stopping = true; await socket?.logout?.(); db.deleteAuth(); setStatus('disconnected') },
+  }
+  return transport
+}

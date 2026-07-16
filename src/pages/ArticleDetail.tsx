@@ -24,7 +24,7 @@ const canUseDropCap = (paragraph: string) =>
 function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
   const audio = usePersistentAudio()
   const [follow, setFollow] = useState(false)
-  const popularQuotes = usePopularQuotes(slug)
+  const popularQuotes = usePopularQuotes(slug, body)
   const refs = useRef<(HTMLParagraphElement | null)[]>([])
   const paragraphs = useMemo(() => body.split('\n\n').map((text) => ({ text, words: Math.max(1, text.trim().split(/\s+/).length) })), [body])
   const totalWords = paragraphs.reduce((sum, item) => sum + item.words, 0)
@@ -86,8 +86,8 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
                 <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} />
               </p>
               {strongest && (
-                <p className="reader-popular-note" aria-label={`احتفظ بهذه العبارة ${strongest.count.toLocaleString('ar-KW')} قارئًا`}>
-                  {strongest.count >= 25 ? 'من أكثر عبارات المقال حفظًا' : `احتفظ بهذه العبارة ${strongest.count.toLocaleString('ar-KW')} قارئًا`}
+                <p className="reader-popular-note" aria-label={`حُفظت ${strongest.count.toLocaleString('ar-KW')} مرة`}>
+                  {`حُفظت ${strongest.count.toLocaleString('ar-KW')} مرة`}
                 </p>
               )}
             </div>

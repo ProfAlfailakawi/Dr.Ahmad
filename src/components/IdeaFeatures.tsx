@@ -8,6 +8,63 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 type Art = { slug: string; title: string; iso: string; cat: string; excerpt?: string; body?: string }
 
+type SavedReaderQuote = {
+  id: string
+  quote: string
+  slug: string
+  title: string
+  paragraph: number
+  savedAt: number
+  url: string
+  articleVersion?: string
+  startOffset?: number
+  endOffset?: number
+  highlightKey?: string
+}
+
+type SelectionOffsets = { startOffset: number; endOffset: number }
+
+const READER_QUOTES_KEY = 'reader:quotes:v2'
+
+function articleContentVersion(body = '') {
+  let hash = 2166136261
+  for (let index = 0; index < body.length; index++) {
+    hash ^= body.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return `v1-${(hash >>> 0).toString(16).padStart(8, '0')}`
+}
+
+function saveReaderQuote(article: Art, quote: string, paragraph: number, offsets: SelectionOffsets, body: string) {
+  const normalized = quote.replace(/\s+/g, ' ').trim()
+  if (!normalized) return null
+  let existing: SavedReaderQuote[] = []
+  try {
+    const raw = window.localStorage.getItem(READER_QUOTES_KEY)
+    existing = raw ? JSON.parse(raw) as SavedReaderQuote[] : []
+  } catch { /* local storage may be unavailable */ }
+  const id = `${article.slug}:${paragraph}:${normalized.slice(0, 80)}`
+  const item: SavedReaderQuote = {
+    id,
+    quote: normalized,
+    slug: article.slug,
+    title: article.title,
+    paragraph,
+    savedAt: Date.now(),
+    url: `${window.location.origin}/articles/${article.slug}`,
+    articleVersion: articleContentVersion(body),
+    startOffset: offsets.startOffset,
+    endOffset: offsets.endOffset,
+  }
+  try {
+    window.localStorage.setItem(READER_QUOTES_KEY, JSON.stringify([item, ...existing.filter((entry) => entry?.id !== id)].slice(0, 300)))
+    window.dispatchEvent(new CustomEvent('reader:quotes-changed'))
+    return item
+  } catch {
+    return null
+  }
+}
+
 /* ── تطبيع عربي بسيط + كلمات دالة تُستبعد ── */
 const AR_STOP = new Set(['من', 'في', 'على', 'إلى', 'عن', 'أن', 'إن', 'ما', 'لا', 'هذا', 'هذه', 'التي', 'الذي', 'مع', 'أو', 'ثم', 'قد', 'كل', 'بين', 'هو', 'هي', 'كان', 'كانت', 'لكن', 'حتى', 'إذا', 'عند', 'بعد', 'قبل', 'كما', 'لأن', 'حين', 'كيف', 'لماذا', 'أم', 'بل', 'نحن', 'هم', 'أنت', 'أنا', 'به', 'له', 'لها', 'فيه', 'فيها', 'ذلك', 'تلك', 'أي', 'كذلك', 'أيضا', 'دون', 'غير', 'عبر', 'خلال', 'حول', 'نحو'])
 const norm = (s: string) => s.replace(/[ًٌٍَُِّْـ]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي')
@@ -57,9 +114,12 @@ function firstStrongSentence(body?: string, excerpt?: string) {
 /* ═══════════ أداة التحديد الموحّدة ═══════════ */
 export function SelectionTools({ current, articles, body, excerpt }: { current: Art; articles: Art[]; body?: string; excerpt?: string }) {
   const [sel, setSel] = useState('')
+  const [paragraph, setParagraph] = useState(0)
+  const [offsets, setOffsets] = useState<SelectionOffsets>({ startOffset: 0, endOffset: 0 })
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const [view, setView] = useState<null | 'thread' | 'card'>(null)
   const [img, setImg] = useState<string | null>(null)
+  const [quoteSaved, setQuoteSaved] = useState(false)
 
   useEffect(() => {
     let timer = 0
@@ -82,12 +142,24 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
           setPos(null)
           return
         }
+        const paragraphElement = element.closest<HTMLElement>('[data-reader-paragraph]')
+        const paragraphIndex = Number(paragraphElement?.dataset.readerParagraph || 0)
+        const paragraphText = paragraphElement?.textContent || ''
+        const exactStart = range.startContainer.parentElement?.closest('[data-reader-paragraph]') === paragraphElement && range.startContainer.nodeType === Node.TEXT_NODE
+          ? range.startOffset
+          : paragraphText.indexOf(text)
+        const startOffset = exactStart >= 0 ? exactStart : Math.max(0, paragraphText.indexOf(text))
+        const endOffset = range.endContainer.parentElement?.closest('[data-reader-paragraph]') === paragraphElement && range.endContainer.nodeType === Node.TEXT_NODE
+          ? Math.max(startOffset, range.endOffset)
+          : Math.min(paragraphText.length, startOffset + text.length)
         const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0)
         const rect = rects[0] || range.getBoundingClientRect()
         if (!rect || (!rect.width && !rect.height)) return
         const x = Math.min(window.innerWidth - 132, Math.max(132, rect.left + rect.width / 2))
         const y = Math.max(74, rect.top - 10)
         setSel(text)
+        setParagraph(Number.isInteger(paragraphIndex) ? paragraphIndex : 0)
+        setOffsets({ startOffset, endOffset })
         setPos({ x, y })
       }, 90)
     }
@@ -132,7 +204,26 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
     try { await (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready } catch { /* noop */ }
     setImg(drawQuote(quote, document.documentElement.classList.contains('dark')))
   }
-  const close = () => { setView(null); setImg(null); setSel('') }
+  const close = () => { setView(null); setImg(null); setSel(''); setQuoteSaved(false); setOffsets({ startOffset: 0, endOffset: 0 }) }
+
+  const saveQuote = () => {
+    const saved = saveReaderQuote(current, sel, paragraph, offsets, body || current.body || '')
+    setQuoteSaved(Boolean(saved))
+    if (saved) {
+      window.dispatchEvent(new CustomEvent('reader:quote-saved', {
+        detail: {
+          slug: current.slug,
+          body: body || current.body || '',
+          quote: sel,
+          paragraph,
+          startOffset: offsets.startOffset,
+          endOffset: offsets.endOffset,
+          localQuoteId: saved.id,
+          articleVersion: saved.articleVersion,
+        },
+      }))
+    }
+  }
 
   return (
     <>
@@ -220,6 +311,16 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
               <div className="mt-5 flex justify-center gap-3">
                 {img && (
                   <a href={img} download="اقتباس.png" className="rounded-full bg-accent px-7 py-3 font-semibold text-canvas transition-colors hover:bg-accent-deep">تحميل الصورة</a>
+                )}
+                {img && (
+                  <button
+                    type="button"
+                    onClick={saveQuote}
+                    aria-pressed={quoteSaved}
+                    className="rounded-full border border-accent/45 px-5 py-3 font-semibold text-accent transition-colors hover:bg-accent/8"
+                  >
+                    {quoteSaved ? 'حُفظت في دفتر القراءة' : 'احتفظ بالجملة في دفتر القراءة'}
+                  </button>
                 )}
                 <button type="button" onClick={close} className="rounded-full border-[1.5px] border-canvas/40 px-7 py-3 font-semibold text-canvas transition-colors hover:border-canvas">إغلاق</button>
               </div>

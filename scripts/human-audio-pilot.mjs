@@ -9,10 +9,6 @@ import { atomicWriteJson, countArabicWords, planReadingPerformance } from './lib
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const EXECUTE = process.argv.includes('--execute')
 const WITH_DIALOGUE = process.argv.includes('--with-dialogue')
-const pilotLimitArg = process.argv.find((argument) => argument.startsWith('--pilot-limit='))
-const PILOT_LIMIT = Math.max(1, Number(pilotLimitArg?.split('=')[1] || 7))
-const pilotSlugArg = process.argv.find((argument) => argument.startsWith('--pilot-slug='))
-const PILOT_SLUG = pilotSlugArg?.slice('--pilot-slug='.length).trim() || ''
 const bodies = JSON.parse(readFileSync(resolve(ROOT, 'src/data/bodies.json'), 'utf8'))
 const data = readFileSync(resolve(ROOT, 'src/data.ts'), 'utf8')
 const articleBlock = (data.match(/export const articles = \[([\s\S]*?)\n\]/) || ['', ''])[1]
@@ -34,11 +30,7 @@ const rows = Object.entries(bodies).map(([slug, body]) => {
 
 const picked = new Set()
 const choose = (label, predicate, sort) => {
-  const candidates = rows.filter((row) => !picked.has(row.slug) && predicate(row))
-  // الاختبار السمعي يجب أن يمثل المقالات الفعلية المعتادة (350–450 كلمة تقريبًا)،
-  // لا أن يستهلك الرصيد على مادة أرشيفية شديدة الطول.
-  const normalLength = candidates.filter((row) => row.words >= 330 && row.words <= 470)
-  const candidate = (normalLength.length ? normalLength : candidates).sort(sort)[0]
+  const candidate = rows.filter((row) => !picked.has(row.slug) && predicate(row)).sort(sort)[0]
   if (!candidate) return null
   picked.add(candidate.slug)
   return { label, ...candidate }
@@ -53,11 +45,6 @@ const selection = [
   choose('جمل قصيرة', () => true, (left, right) => left.averageSentenceWords - right.averageSentenceWords),
   choose('جمل طويلة', () => true, (left, right) => right.averageSentenceWords - left.averageSentenceWords),
 ].filter(Boolean)
-const requestedPilot = PILOT_SLUG ? rows.find((row) => row.slug === PILOT_SLUG) : null
-if (PILOT_SLUG && !requestedPilot) throw new Error(`مقال Pilot غير موجود: ${PILOT_SLUG}`)
-const executionSelection = requestedPilot
-  ? [{ label: 'اختبار مخصص', ...requestedPilot }]
-  : selection
 
 const report = {
   generatedAt: new Date().toISOString(),
@@ -88,7 +75,7 @@ if (EXECUTE) {
   if (!process.env.AZURE_SPEECH_KEY || (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_API_KEY)) {
     throw new Error('يتطلب تنفيذ Pilot مفاتيح Azure وGemini؛ إنشاء الخطة وحده لا يحتاج شبكة')
   }
-  for (const article of executionSelection.slice(0, PILOT_LIMIT)) {
+  for (const article of selection) {
     const reading = spawnSync(process.execPath, [resolve(ROOT, 'scripts/auto-audio.mjs'),
       `--slug=${article.slug}`, '--base-only', '--upgrade-existing', '--limit=2'],
     { cwd: ROOT, stdio: 'inherit', env: process.env })

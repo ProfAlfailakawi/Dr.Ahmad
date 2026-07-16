@@ -22,6 +22,15 @@ public/files
 
 # نظام
 .DS_Store
+whatsapp-agent/node_modules/
+whatsapp-agent/package-lock.json
+whatsapp-agent/*.sqlite
+whatsapp-agent/*.sqlite-*
+whatsapp-agent/session/
+whatsapp-agent/auth/
+whatsapp-agent/logs/
+Library/Application Support/DrAhmadWhatsAppAgent/
+.whatsapp-agent/
 *.log
 
 # مخرجات بناء لا تُلتزم في الجذر (الناتج الرسمي dist/ فقط)

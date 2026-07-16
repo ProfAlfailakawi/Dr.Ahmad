@@ -49,6 +49,7 @@
     "content:auto:self-test": "node scripts/auto-site-content.mjs --self-test",
     "testimonials:auto": "node scripts/auto-testimonials.mjs",
     "testimonials:auto:self-test": "node scripts/auto-testimonials.mjs --self-test",
+    "test:popular-highlights": "node scripts/test-popular-highlights.mjs",
     "podcast:release:self-test": "node scripts/podcast-release-gate.mjs --self-test",
     "podcast:release:local": "node scripts/podcast-release-gate.mjs --local",
     "podcast:release:dist": "node scripts/podcast-release-gate.mjs --dist",
@@ -63,7 +64,17 @@
     "citations:sync": "node scripts/sync-scholar-citations.mjs",
     "images:optimize": "node scripts/optimize-images.mjs",
     "test:smoke": "node scripts/smoke-static.mjs",
-    "test:performance": "node scripts/performance-budget.mjs"
+    "test:performance": "node scripts/performance-budget.mjs",
+    "agent:self-test": "node scripts/whatsapp-agent.mjs self-test",
+    "agent:status": "node scripts/whatsapp-agent.mjs status",
+    "agent:index": "node scripts/whatsapp-agent.mjs index",
+    "agent:cost-audit": "node scripts/whatsapp-agent.mjs cost-audit",
+    "agent:start": "node scripts/whatsapp-agent.mjs start",
+    "agent:stop": "node scripts/whatsapp-agent.mjs stop",
+    "agent:install": "node scripts/whatsapp-agent.mjs install",
+    "agent:uninstall": "node scripts/whatsapp-agent.mjs uninstall",
+    "agent:send-campaign": "node scripts/whatsapp-agent.mjs send-campaign",
+    "agent:stop-campaign": "node scripts/whatsapp-agent.mjs stop-campaign"
   },
   "dependencies": {
     "firebase": "^12.15.0",

@@ -24,6 +24,7 @@ import { ManualDialogueEditor } from '../components/admin/ManualDialogueEditor'
 import { ProductionHealthCenter } from '../components/admin/ProductionHealthCenter'
 import { AdminTaskFavicon, AdminTaskIndicator } from '../components/admin/AdminTaskFavicon'
 import { UploadField } from '../components/admin/ContentManager'
+import { WhatsAppAgentPanel } from '../components/admin/WhatsAppAgentPanel'
 import { useSeo } from '../components/seo'
 import type { User } from 'firebase/auth'
 import {
@@ -238,7 +239,7 @@ function CvPdfCard() {
 function Panel({ email }: { email: string }) {
   const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const requestedTab = params.get('tab') as AdminTab | null
-  const allowedTabs: AdminTab[] = ['dashboard','production','analytics','studio','launch','event','articles','books','papers','media','inbox','lab','voice','manual-dialogue','cv']
+  const allowedTabs: AdminTab[] = ['dashboard','production','analytics','studio','launch','event','articles','books','papers','media','inbox','lab','whatsapp','voice','manual-dialogue','cv']
   const initialTab = requestedTab && allowedTabs.includes(requestedTab) ? requestedTab : 'dashboard'
   const editSlug = params.get('edit') || undefined
   const [tab, setTab] = useState<AdminTab>(initialTab)
@@ -321,6 +322,7 @@ function Panel({ email }: { email: string }) {
             {tab === 'studio' && <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} />}
             {tab === 'launch' && <LaunchModeCard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} />}
             {tab === 'lab' && <IntelligenceLab articles={cms.articles} />}
+            {tab === 'whatsapp' && <WhatsAppAgentPanel />}
             {tab === 'voice' && <VoiceBakeoffCard />}
             {tab === 'manual-dialogue' && <ManualDialogueEditor articles={cms.articles} />}
             {tab === 'cv' && <CvPdfCard />}

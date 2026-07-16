@@ -1973,9 +1973,14 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
       .map((audit) => String(audit.verdict?.revisedPronunciationText || '').trim())
       .find((t) => t && stripForCompare(t) === stripForCompare(dialogueText)
         && t !== String(currentAnalysis.pronunciationText || '').trim())
-    if (judgeRevision && prescriptionsUsed < 1) {
+    /* سقف الوصفات: في المسار الآلي وصفة واحدة كي لا تزاحم إعادة الصياغة على الجولات؛
+       أما وضع النص اليدوي فلا إعادة صياغة فيه أصلاً (النص مقدس) — الوصفة التشكيلية هي
+       العلاج الوحيد المتاح، فنمنحها ثلاث فرص متجددة (كل وصفة ترى فشل سابقتها وتحسّنها:
+       التشغيل 14 سقط على «فرح/ضَيِّق» بوصفة واحدة لم تكفِ الكلمتين معاً). */
+    const prescriptionCap = MANUAL_TEXT_MODE ? 3 : 1
+    if (judgeRevision && prescriptionsUsed < prescriptionCap) {
       prescriptionsUsed += 1
-      console.log(`    ⚕ ${utteranceId}: تطبيق وصفة الحكم النطقية وإعادة المحاولة (بلا إعادة صياغة)`)
+      console.log(`    ⚕ ${utteranceId}: تطبيق وصفة الحكم النطقية وإعادة المحاولة (${prescriptionsUsed}/${prescriptionCap} — بلا إعادة صياغة)`)
       currentAnalysis = { ...currentAnalysis, pronunciationText: judgeRevision }
       continue
     }

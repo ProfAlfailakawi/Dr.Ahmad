@@ -1113,13 +1113,28 @@ function buildSSML(u, pronText, subs, voice, lang) {
     subs = []
   }
   const segments = splitPerformanceSegments(pronText)
-  const rendered = segments.map((segment, index) => {
-    const pos = segments.length === 1 ? 1 : index === 0 ? 0 : index === segments.length - 1 ? 2 : 1
-    const openLift = pos === 2 && u.ending === 'open' ? 1.2 : 0
-    const pitch = director.pitch + (director.contour[pos] || 0) + openLift
-    const rate = director.rate + (pos === 0 && director.delivery === 'hook' ? 2 : 0) + (pos === 2 && u.ending === 'final' ? -2 : 0)
-    return `<prosody rate="${signedPct(rate)}" pitch="${signedPct(pitch)}">${applySubsAndFocus(segment, subs)}</prosody>`
-  }).join(`<break time="${director.innerBreakMs}ms"/>`)
+  /* التشغيل 15 (u004): السؤال المفرد الجملة كان يُلقى «بنبرة تقريرية مسطحة» — مقطع
+     واحد يأخذ pos وسطياً فلا يبلغ نغمة النهاية الصاعدة ولا openLift أبداً. العلاج
+     الأدائي: المقطع الوحيد هو نهاية الجملة بحكم التعريف (pos=2)، والسؤال يُفصل
+     ذيله الأخير في نغمة صاعدة مستقلة بلا وقفة — هكذا يسأل البشر فعلاً. */
+  const questionTail = (() => {
+    if (director.delivery !== 'question' || segments.length !== 1) return null
+    if (subs.some((item) => String(item.word || '').includes(' '))) return null
+    const words = segments[0].split(/\s+/)
+    if (words.length < 5) return null
+    const tailCount = words.length >= 8 ? 3 : 2
+    return { head: words.slice(0, -tailCount).join(' '), tail: words.slice(-tailCount).join(' ') }
+  })()
+  const rendered = questionTail
+    ? `<prosody rate="${signedPct(director.rate)}" pitch="${signedPct(director.pitch + (director.contour[0] || 0))}">${applySubsAndFocus(questionTail.head, subs)}</prosody>`
+      + `<prosody rate="${signedPct(director.rate - 3)}" pitch="${signedPct(director.pitch + (director.contour[2] || 0) + 2.4)}">${applySubsAndFocus(` ${questionTail.tail}`, subs)}</prosody>`
+    : segments.map((segment, index) => {
+      const pos = segments.length === 1 ? 2 : index === 0 ? 0 : index === segments.length - 1 ? 2 : 1
+      const openLift = pos === 2 && u.ending === 'open' ? 1.2 : 0
+      const pitch = director.pitch + (director.contour[pos] || 0) + openLift
+      const rate = director.rate + (pos === 0 && director.delivery === 'hook' ? 2 : 0) + (pos === 2 && u.ending === 'final' ? -2 : 0)
+      return `<prosody rate="${signedPct(rate)}" pitch="${signedPct(pitch)}">${applySubsAndFocus(segment, subs)}</prosody>`
+    }).join(`<break time="${director.innerBreakMs}ms"/>`)
   /* لا نستخدم <emphasis>: الأصوات العربية العشرة المختبرة لا تعلن دعمه، وقد
      يتجاهله Azure بصمت. التشديد يُصنع من الجملة والسرعة والوقفة لا من وسم وهمي. */
   // locale يتبع الصوت المستخدم (يعمّم لأي صوت عربي، لا ثابت ar-KW)
@@ -3420,7 +3435,16 @@ if (SELF_TEST) {
   const healedRatio = overDone.healedText.split(/\s+/).filter((w) => DIACRITICS_RE.test(w)).length
     / overDone.healedText.split(/\s+/).length
   assert(healedRatio <= 0.32, 'نسبة التشكيل بعد الشفاء تعود تحت بوابة 32٪ فلا تسقط الدفعة')
-  console.log('✓ اختبارات بوابة البودكاست العربي: 30/30')
+  // ٩) السؤال المفرد الجملة يُلقى بنغمة صاعدة (فئة فشل التشغيل 15: «نبرة تقريرية مسطحة»)
+  const questionSSML = buildSSML({ speaker: 'A', delivery: 'question', ending: 'open', ratePct: 0,
+    text: 'لماذا لا يفرح هذا الطالب وقد نجح فعلاً؟' }, 'لماذا لا يفرح هذا الطالب وقد نجح فعلاً؟', [], 'ar-KW-FahedNeural', 'ar')
+  const questionPitches = [...questionSSML.matchAll(/pitch="([+-]?\d+)%"/g)].map((m) => Number(m[1]))
+  assert(questionPitches.length >= 2, 'السؤال المفرد يُقسم صدراً وذيلاً أدائيين')
+  assert(questionPitches.at(-1) > questionPitches[0], 'ذيل السؤال أعلى نغمة من صدره — لا استفهام مسطحاً')
+  const statementSSML = buildSSML({ speaker: 'A', delivery: 'statement', ending: 'final', ratePct: 0,
+    text: 'هذه جملة خبرية واحدة' }, 'هذه جملة خبرية واحدة', [], 'ar-KW-FahedNeural', 'ar')
+  assert(/pitch="[+-]?\d+%"/.test(statementSSML), 'الخبر المفرد يبقى سليم البناء بعد إصلاح موضع النهاية')
+  console.log('✓ اختبارات بوابة البودكاست العربي: 33/33')
   process.exit(0)
 }
 

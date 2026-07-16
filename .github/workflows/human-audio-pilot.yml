@@ -1,0 +1,111 @@
+name: Pilot صوت بشري معزول
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 'Slug المقال التجريبي (350–450 كلمة مفضّل)'
+        required: false
+        default: 'success-that-does-not-bring-joy-to-its-ownerarabic'
+      dialogue:
+        description: 'توليد الحوار أيضًا'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: human-audio-pilot
+  cancel-in-progress: false
+
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies and media tools
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Write Firebase service account for isolated article lookup
+        run: |
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON" || { echo '::error::Firebase service account missing'; exit 1; }
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
+      - name: Verify generation secrets
+        run: |
+          test -n "$AZURE_SPEECH_KEY" || { echo '::error::AZURE_SPEECH_KEY missing'; exit 1; }
+          test -n "$AZURE_SPEECH_REGION" || { echo '::error::AZURE_SPEECH_REGION missing'; exit 1; }
+          if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then
+            echo '::error::GEMINI_API_KEY or GOOGLE_API_KEY missing'
+            exit 1
+          fi
+        env:
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+
+      - name: Run local quality self-tests
+        run: npm run audio:quality:self-test
+
+      - name: Generate isolated F/S reading Pilot
+        run: node scripts/human-audio-pilot.mjs --execute --pilot-slug="${{ inputs.slug }}" --pilot-limit=1
+        env:
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          PODCAST_RELEASE_MIN_SCORE: '94'
+
+      - name: Generate isolated dialogue Pilot
+        if: ${{ inputs.dialogue == true }}
+        run: node scripts/podcast-dialogue.mjs --slug="${{ inputs.slug }}" --lang=ar --pilot=1 --force
+        env:
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          PODCAST_RELEASE_MIN_SCORE: '94'
+          PODCAST_AUTO_PROMOTE_PILOT: 'false'
+
+      - name: Remove credentials
+        if: always()
+        run: rm -f sa.json
+
+      - name: Upload isolated Pilot audio and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: human-audio-pilot-${{ github.run_id }}
+          path: |
+            audio
+            .audio-human-work
+            .audio-last-known-good
+            .podcast-pilot-audio
+            audio-audits
+            podcast-audits
+            .podcast-state.json
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 14

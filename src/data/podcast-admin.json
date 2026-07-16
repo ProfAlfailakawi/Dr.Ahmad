@@ -1,5 +1,42 @@
 {
-  "generatedAt": null,
-  "episodes": [],
+  "generatedAt": "2026-07-16T03:34:16.695Z",
+  "episodes": [
+    {
+      "slug": "how-do-we-assess-without-breaking-the-human-beingarabic",
+      "title": "how-do-we-assess-without-breaking-the-human-beingarabic",
+      "category": "بودكاست",
+      "date": "",
+      "iso": "",
+      "status": "under_review",
+      "audio": "/audio/how-do-we-assess-without-breaking-the-human-beingarabic.dialogue.mp3",
+      "bytes": 5043139,
+      "audioHash": "",
+      "hasTranscript": false,
+      "utterances": 0,
+      "quality": {
+        "score": 20,
+        "pass": false,
+        "metrics": {
+          "durationSeconds": 315,
+          "bytes": 5043139,
+          "sttRatio": null,
+          "importantRatio": null,
+          "longSilences": null,
+          "peakDb": null,
+          "judgePass": false
+        },
+        "pronunciation": "ينتظر فحص النطق والمعنى",
+        "pace": "مقبول",
+        "pauses": "يحتاج تقليل الوقفات",
+        "issues": [
+          "الحلقة ليست معتمدة آليًا في حالة البودكاست.",
+          "لا يوجد Transcript منشور لهذه الحلقة.",
+          "لا يوجد تقرير جودة نهائي مجتاز للحلقة.",
+          "تطابق STT مع النص المقصود أقل من الحد الصارم.",
+          "توجد وقفات طويلة تتجاوز الحد المقبول."
+        ]
+      }
+    }
+  ],
   "playlists": []
 }

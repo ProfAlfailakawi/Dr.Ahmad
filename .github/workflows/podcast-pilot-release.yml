@@ -34,7 +34,10 @@ jobs:
       - name: Install dependencies and media tools
         run: |
           npm config set registry https://registry.npmjs.org/
-          npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5
+          # اللوكفايل قد يعود ملوثاً بروابط مستودع داخلي من بيئة أدوات الذكاء —
+          # التطبيع يجعل npm ci يسحب من السجل العام دائماً (كما في workflow النشر).
+          node scripts/normalize-npm-registry.mjs
+          npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000 --fetch-timeout=120000
           sudo apt-get update
           sudo apt-get install -y ffmpeg
           python -m pip install --user awscli

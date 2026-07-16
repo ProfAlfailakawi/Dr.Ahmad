@@ -1226,7 +1226,7 @@ function syncDirectory(name, extension) {
 }
 
 const copiedAssets = Object.fromEntries(
-  [['audio', ['.mp3', '.dialogue.json']], ['covers', '.png'], ['files', '.pdf']]
+  [['audio', ['.mp3', '.dialogue.json']], ['covers', ['.webp', '.png']], ['files', '.pdf']]
     .map(([name, extension]) => [name, syncDirectory(name, extension)]),
 )
 

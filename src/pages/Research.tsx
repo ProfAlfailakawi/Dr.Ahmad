@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { useSeo } from '../components/seo'
+import { JsonLd, useSeo } from '../components/seo'
 import { Link } from 'react-router-dom'
 import { FadeUp, Page, PageHead } from '../components/ui'
-import { doctorate } from '../data'
+import { doctorate, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 
 const ar = (n: number) => String(n).padStart(2, '0').replace(/[0-9]/g, (d) => '0123456789'[+d])
@@ -19,6 +19,19 @@ export default function Research() {
   useSeo({ title: 'المساهمات العلمية', path: '/research', description: `${count} محكّماً في تكنولوجيا التعليم.` })
   return (
     <Page className="content-research page-journey">
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        '@id': `${SITE_URL}/research#collection`,
+        name: 'المساهمات العلمية',
+        url: `${SITE_URL}/research`,
+        inLanguage: 'ar',
+        mainEntity: {
+          '@type': 'ItemList',
+          numberOfItems: papers.length,
+          itemListElement: papers.map((paper, index) => ({ '@type': 'ListItem', position: index + 1, url: `${SITE_URL}/research/${paper.slug}`, name: paper.title })),
+        },
+      }} />
       <PageHead label="المساهمات العلمية" title={`${count}.`} sub="أبحاث محكّمة تُسهم في تطوير ممارسات التعليم وتوظيف التكنولوجيا." />
 
       <section className="px-6 py-20 md:px-11 md:py-24">

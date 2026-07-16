@@ -1,6 +1,7 @@
 import { useSeo } from '../components/seo'
 import { Accordion, FadeUp, Label, Page, Reveal } from '../components/ui'
 import { CvSectionEditor } from '../components/admin/CvSectionEditor'
+import CitationImpact from '../components/CitationImpact'
 import { bio, books, doctorate, links, papers, stats } from '../data'
 import { useAdminAuth } from '../lib/admin-auth'
 import { useCv, type CvTextItem } from '../lib/cv'
@@ -79,7 +80,7 @@ export default function CV() {
           {/* أثرٌ موثّق — أختام هادئة لا أرقام صاخبة */}
           <FadeUp>
             <p className="mb-8 text-center text-[.76rem] font-semibold uppercase text-accent">أثرٌ موثّق</p>
-            <div className="mobile-card-rail mb-14 grid grid-cols-2 gap-6 border-b border-hair pb-14 md:grid-cols-4">
+            <div className="cv-impact-grid mb-14 grid grid-cols-2 gap-6 border-b border-hair pb-14 md:grid-cols-4">
               {[
                 { n: ar(books.length), l: 'كتاباً منشوراً' },
                 { n: ar(papers.length), l: 'بحثاً محكّماً' },
@@ -87,14 +88,18 @@ export default function CV() {
                 { n: ar(Math.round(stats.words / 1000)) + 'K', l: 'كلمة منشورة' },
               ].map((s) => (
                 <div key={s.l} className="flex flex-col items-center text-center">
-                  <span className="relative flex h-24 w-24 items-center justify-center rounded-full border border-accent/30 md:h-28 md:w-28">
+                  <span className="cv-impact-seal relative flex h-24 w-24 items-center justify-center rounded-full border border-accent/30 md:h-28 md:w-28">
                     <span className="pointer-events-none absolute inset-1.5 rounded-full border border-hair" />
                     <span dir="ltr" className="font-display text-[clamp(1.7rem,3vw,2.3rem)] font-bold leading-none text-accent">{s.n}</span>
                   </span>
-                  <span className="mt-4 text-[.85rem] font-light text-soft">{s.l}</span>
+                  <span className="cv-impact-label mt-4 text-[.85rem] font-light text-soft">{s.l}</span>
                 </div>
               ))}
             </div>
+          </FadeUp>
+
+          <FadeUp delay={0.06}>
+            <CitationImpact />
           </FadeUp>
 
           {/* ── الجوهر: مفتوح دائماً ── */}

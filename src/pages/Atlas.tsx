@@ -23,6 +23,20 @@ const MOBILE_TOP = 38
 const arDigits = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
+const ATLAS_STOP = new Set(['هذا','هذه','ذلك','الذي','التي','على','الى','من','في','عن','مع','بين','بعد','قبل','كان','كانت','يكون','تكون','كيف','لكن','لان','وقد','وهو','وهي','كل','غير','عند','حتى','حول','ماذا','لماذا'])
+const ideaTokens = (text = '') => new Set(text
+  .replace(/[ً-ْٰ]/g, '')
+  .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي')
+  .replace(/[^\p{L}\p{N} ]/gu, ' ')
+  .toLowerCase().split(/\s+/).filter((word) => word.length > 3 && !ATLAS_STOP.has(word)))
+const ideaOverlap = (left: Set<string>, right: Set<string>) => {
+  if (!left.size || !right.size) return 0
+  let shared = 0
+  for (const token of left) if (right.has(token)) shared += 1
+  return shared / Math.sqrt(left.size * right.size)
+}
+type AtlasLink = { from: number; to: number; kind: 'evolution' | 'affinity'; score: number }
+
 export default function Atlas() {
   const { articles } = useCmsContent()
   const cats = useMemo(() => dynamicArticleCategories(articles, false), [articles])
@@ -38,6 +52,7 @@ export default function Atlas() {
   const [hover, setHover] = useState<number | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
   const [activeCat, setActiveCat] = useState<string | null>(null)
+  const [view, setView] = useState<'timeline' | 'graph'>('timeline')
 
   const stars = useMemo(() => {
     const activeYears = Array.from(new Set(articles.map((a) => a.iso.slice(0, 4)).filter(Boolean)))
@@ -73,6 +88,40 @@ export default function Atlas() {
     r: Math.max(4.2, Math.min(11, star.r * 0.92)),
   })), [stars])
 
+  const links = useMemo<AtlasLink[]>(() => {
+    const output: AtlasLink[] = []
+    const seen = new Set<string>()
+    const add = (from: number, to: number, kind: AtlasLink['kind'], score: number) => {
+      if (from === to) return
+      const pair = from < to ? `${from}:${to}` : `${to}:${from}`
+      const key = `${kind}:${pair}`
+      if (seen.has(key)) return
+      seen.add(key)
+      output.push({ from, to, kind, score })
+    }
+
+    for (const category of cats) {
+      const thread = stars.filter((star) => star.cat === category).sort((left, right) => left.iso.localeCompare(right.iso))
+      for (let index = 1; index < thread.length; index += 1) add(thread[index - 1].i, thread[index].i, 'evolution', 1)
+    }
+
+    const tokens = stars.map((star) => ideaTokens(`${star.title} ${star.excerpt || ''} ${String(star.body || '').slice(0, 900)}`))
+    stars.forEach((star, index) => {
+      let bestIndex = -1
+      let bestScore = 0
+      stars.forEach((candidate, candidateIndex) => {
+        if (candidateIndex === index || candidate.cat === star.cat) return
+        const score = ideaOverlap(tokens[index], tokens[candidateIndex])
+        if (score >= 0.13 && score > bestScore) {
+          bestIndex = candidateIndex
+          bestScore = score
+        }
+      })
+      if (bestIndex >= 0) add(star.i, stars[bestIndex].i, 'affinity', bestScore)
+    })
+    return output
+  }, [stars, cats])
+
   const years = useMemo(() => {
     const map = new Map<string, { desktop: number[]; mobile: number[] }>()
     stars.forEach((star, index) => {
@@ -91,6 +140,12 @@ export default function Atlas() {
   const dim = (star: (typeof stars)[number]) => (activeCat && star.cat !== activeCat ? 0.12 : 1)
   const activeIndex = hover ?? selected
   const active = activeIndex !== null ? stars.find((star) => star.i === activeIndex) : null
+  const activeLinks = useMemo(() => activeIndex === null ? [] : links.filter((link) => link.from === activeIndex || link.to === activeIndex), [links, activeIndex])
+  const related = useMemo(() => activeLinks.map((link) => {
+    const index = link.from === activeIndex ? link.to : link.from
+    return { ...link, star: stars.find((item) => item.i === index) }
+  }).filter((item): item is AtlasLink & { star: (typeof stars)[number] } => Boolean(item.star))
+    .sort((left, right) => left.star.iso.localeCompare(right.star.iso)).slice(0, 6), [activeLinks, activeIndex, stars])
   const tooltipWidth = 310
   const tooltipHeight = 92
   const tooltipX = active ? clamp(active.x - tooltipWidth / 2, PAD_L, W - PAD_R - tooltipWidth) : 0
@@ -139,12 +194,22 @@ export default function Atlas() {
       <PageHead
         label="خريطة"
         title="سماء المقالات."
-        sub="كل نجمة مقال. المسها أو مرّر فوقها ليظهر اسمها، ثم اضغط لفتح المقال."
+        sub="كل نجمة مقال، وكل خط مسارٌ موثّق: تطور داخل الموضوع أو صلة فكرية بين مقالات متباعدة."
       />
 
       <section className="px-4 py-14 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">
           <FadeUp>{categoryButtons}</FadeUp>
+
+          <FadeUp delay={0.04}>
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <p className="hidden text-[.78rem] font-light text-soft sm:block">اختر القراءة الزمنية أو اكشف الروابط الهادئة بين الموضوعات والحجج.</p>
+              <div className="ms-auto inline-flex rounded-full border border-hair bg-canvas p-1" role="group" aria-label="طريقة عرض خريطة الأفكار">
+                <button type="button" onClick={() => setView('timeline')} aria-pressed={view === 'timeline'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'timeline' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>المسار الزمني</button>
+                <button type="button" onClick={() => setView('graph')} aria-pressed={view === 'graph'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'graph' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>شبكة الأفكار</button>
+              </div>
+            </div>
+          </FadeUp>
 
           <FadeUp delay={0.08}>
             <div className="relative overflow-hidden rounded-2xl border border-hair bg-wash lg:overflow-x-auto" onPointerLeave={() => setHover(null)}>
@@ -168,6 +233,16 @@ export default function Atlas() {
                     {arDigits(item.year)}
                   </text>
                 ))}
+
+                {links.map((link) => {
+                  const from = mobileStars.find((star) => star.i === link.from)
+                  const to = mobileStars.find((star) => star.i === link.to)
+                  if (!from || !to) return null
+                  const connected = activeIndex !== null && (link.from === activeIndex || link.to === activeIndex)
+                  if (view === 'timeline' && !connected) return null
+                  const hiddenByCategory = activeCat && from.cat !== activeCat && to.cat !== activeCat
+                  return <line key={`mobile-link-${link.kind}-${link.from}-${link.to}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y} className={link.kind === 'evolution' ? 'stroke-accent' : 'stroke-soft'} strokeWidth={connected ? 2.2 : 1.15} strokeOpacity={hiddenByCategory ? 0.03 : connected ? 0.48 : link.kind === 'evolution' ? 0.14 : 0.1} strokeDasharray={link.kind === 'affinity' ? '4 5' : undefined} />
+                })}
 
                 {mobileStars.map((star) => {
                   const isActive = activeIndex === star.i
@@ -218,6 +293,16 @@ export default function Atlas() {
                     {arDigits(item.year)}
                   </text>
                 ))}
+
+                {links.map((link) => {
+                  const from = stars.find((star) => star.i === link.from)
+                  const to = stars.find((star) => star.i === link.to)
+                  if (!from || !to) return null
+                  const connected = activeIndex !== null && (link.from === activeIndex || link.to === activeIndex)
+                  if (view === 'timeline' && !connected) return null
+                  const hiddenByCategory = activeCat && from.cat !== activeCat && to.cat !== activeCat
+                  return <line key={`desktop-link-${link.kind}-${link.from}-${link.to}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y} className={link.kind === 'evolution' ? 'stroke-accent' : 'stroke-soft'} strokeWidth={connected ? 1.8 : .85} strokeOpacity={hiddenByCategory ? 0.025 : connected ? 0.42 : link.kind === 'evolution' ? 0.11 : 0.075} strokeDasharray={link.kind === 'affinity' ? '3 5' : undefined} />
+                })}
 
                 {stars.map((star) => {
                   const isActive = activeIndex === star.i
@@ -275,6 +360,18 @@ export default function Atlas() {
                   {active.title}
                   <span className="mt-3 block text-[.78rem] font-sans font-semibold text-accent md:hidden">المس المقال مرة ثانية أو افتحه من هنا ←</span>
                 </Link>
+                {related.length > 0 && (
+                  <div className="mt-4 border-t border-hair pt-4">
+                    <p className="text-[.7rem] font-semibold text-accent">مسار الفكرة</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {related.map((item) => (
+                        <Link key={`${item.kind}-${item.star.slug}`} to={`/articles/${item.star.slug}`} className="rounded-full border border-hair px-3 py-1.5 text-[.7rem] text-soft transition-colors hover:border-accent hover:text-accent">
+                          {item.kind === 'evolution' ? 'تطور' : 'صلة'} · {arDigits(item.star.iso.slice(0, 4))} · {item.star.title}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </motion.div>
             ) : (
               <p className="pt-4 text-center text-[.84rem] font-light leading-relaxed text-soft">
@@ -287,7 +384,7 @@ export default function Atlas() {
             <div className="mobile-card-rail mt-12 grid gap-6 border-t border-hair pt-9 text-[.88rem] font-light text-soft sm:grid-cols-3">
               <p><span className="font-medium text-ink">الحجم</span> — كلّما كبرت النجمة، طال المقال.</p>
               <p><span className="font-medium text-ink">الصف</span> — موضوع المقال، ويُضاف أي تصنيف جديد تلقائياً.</p>
-              <p><span className="font-medium text-ink">الموضع</span> — من الأقدم يميناً إلى الأحدث يساراً.</p>
+              <p><span className="font-medium text-ink">الخط</span> — متصل لتطور الفكرة، ومتقطع لصلةٍ بين موضوعين.</p>
             </div>
           </FadeUp>
         </div>

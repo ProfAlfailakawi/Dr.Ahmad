@@ -54,3 +54,7 @@ podcast-finalist-retest-samples/
 podcast-dialogue-samples/
 podcast-voice-bakeoff-samples/
 .audio-r2-plan.json
+
+# ذاكرة النطق وسجلات Firebase محلية فقط
+ArabicPronunciationMemory.sqlite*
+firebase-debug.log*

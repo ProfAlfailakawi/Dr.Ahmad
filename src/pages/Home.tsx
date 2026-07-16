@@ -1,4 +1,4 @@
-import { useSeo } from '../components/seo'
+import { JsonLd, useSeo } from '../components/seo'
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
@@ -11,6 +11,7 @@ import { type Curio } from '../data-curated'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../lib/cms'
 import HumanCoreHero from '../components/home/HumanCoreHero'
 import { ideaContinuation } from '../lib/idea-memory'
+import { sortUpcomingEvents } from '../lib/events'
 import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
 
 const arNum = (n: number) => String(n).padStart(2, '0')
@@ -915,14 +916,19 @@ export default function Home() {
   useSeo({ title: 'د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم والذكاء الاصطناعي', path: '/' })
   const { articles, books, papers, media } = useCmsContent()
   const addedEvents = useExtras<SiteEvent & { id: string }>('site_upcoming')
-  const upcomingItems = [...addedEvents, ...upcoming]
-    .filter((event, index, list) => list.findIndex((candidate) => candidate.iso === event.iso && candidate.title === event.title) === index)
-    .filter((event) => event.iso >= new Date().toISOString().slice(0, 10))
-    .sort((left, right) => left.iso.localeCompare(right.iso))
+  const upcomingItems = sortUpcomingEvents([...addedEvents, ...upcoming])
 
 
   return (
     <Page>
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@graph': [
+          { '@type': 'WebSite', '@id': 'https://dr-alfailakawi.com/#website', url: 'https://dr-alfailakawi.com/', name: 'د. أحمد حسين الفيلكاوي', inLanguage: 'ar', publisher: { '@id': 'https://dr-alfailakawi.com/#person' } },
+          { '@type': 'ProfilePage', '@id': 'https://dr-alfailakawi.com/#profile', url: 'https://dr-alfailakawi.com/', mainEntity: { '@id': 'https://dr-alfailakawi.com/#person' } },
+          { '@type': 'Person', '@id': 'https://dr-alfailakawi.com/#person', name: 'د. أحمد حسين الفيلكاوي', alternateName: 'Dr. Ahmad H. Alfailakawi', url: 'https://dr-alfailakawi.com/', jobTitle: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي', sameAs: ['https://scholar.google.com/citations?user=WVAtInIAAAAJ&hl=en', 'https://www.researchgate.net/profile/Ahmad-Alfailakawi'] },
+        ],
+      }} />
       <LaunchSpotlight articles={articles} books={books} papers={papers} media={media} />
 
       <HumanCoreHero />

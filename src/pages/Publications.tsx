@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { useSeo } from '../components/seo'
+import { JsonLd, useSeo } from '../components/seo'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, Page, PageHead } from '../components/ui'
 import { useCmsContent } from '../lib/content'
+import { SITE_URL } from '../data'
 
 const bookCount = (count: number) => {
   if (count === 1) return 'كتاب واحد'
@@ -19,6 +20,19 @@ export default function Publications() {
   const reduce = useReducedMotion()
   return (
     <Page className="content-books">
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        '@id': `${SITE_URL}/publications#collection`,
+        name: 'الكتب المنشورة',
+        url: `${SITE_URL}/publications`,
+        inLanguage: 'ar',
+        mainEntity: {
+          '@type': 'ItemList',
+          numberOfItems: books.length,
+          itemListElement: books.map((book, index) => ({ '@type': 'ListItem', position: index + 1, url: `${SITE_URL}/publications/${book.slug}`, name: book.title })),
+        },
+      }} />
       <PageHead label="المؤلفات" title={`${count}.`} sub="مؤلفاتي العلمية والفكرية في التعليم والتكنولوجيا والتغيير المجتمعي." />
       <section className="overflow-hidden px-6 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-20 md:px-11 md:py-24">
         <div className="mobile-card-rail mx-auto grid w-full max-w-shell min-w-0 grid-cols-2 gap-x-4 gap-y-8 sm:gap-8 lg:grid-cols-3 lg:gap-10">

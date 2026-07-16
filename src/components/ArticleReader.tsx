@@ -509,10 +509,6 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
                   </section>
                   <section className="grid gap-3 border-t border-hair pt-5">
                     <label className="flex cursor-pointer items-center justify-between gap-4 rounded-2xl border border-hair bg-wash/45 px-4 py-3">
-                      <span><span className="block text-[.8rem] font-semibold text-ink">العبارات الأكثر حفظًا</span><span className="mt-0.5 block text-[.7rem] text-soft">لا تظهر إلا بعد حفظ حقيقي من عشرة قرّاء مختلفين على الأقل.</span></span>
-                      <input type="checkbox" checked={preferences.showPopular} onChange={(event) => setPreferences({ showPopular: event.target.checked })} className="h-4 w-4 accent-[rgb(var(--c-accent))]" />
-                    </label>
-                    <label className="flex cursor-pointer items-center justify-between gap-4 rounded-2xl border border-hair bg-wash/45 px-4 py-3">
                       <span><span className="block text-[.8rem] font-semibold text-ink">وضع التركيز</span><span className="mt-0.5 block text-[.7rem] text-soft">يخفي التنقل والعناصر الثانوية أثناء القراءة.</span></span>
                       <input type="checkbox" checked={preferences.focus} onChange={(event) => setPreferences({ focus: event.target.checked })} className="h-4 w-4 accent-[rgb(var(--c-accent))]" />
                     </label>
@@ -786,7 +782,7 @@ async function quoteCardBlob(quote: string, article: ReaderArticle) {
 export function SelectionTools({ current, articles }: { current: ReaderArticle; articles: ReaderArticle[] }) {
   const [selection, setSelection] = useState<SelectionSnapshot | null>(null)
   const [feedback, setFeedback] = useState<'saved' | 'copied' | ''>('')
-  const [sheet, setSheet] = useState<'share' | 'thread' | null>(null)
+  const [sheet, setSheet] = useState<'share' | 'thread' | 'card' | null>(null)
   const [cardUrl, setCardUrl] = useState('')
   const [cardBlob, setCardBlob] = useState<Blob | null>(null)
   const [cardBusy, setCardBusy] = useState(false)
@@ -882,6 +878,17 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
     setSheet('share')
   }
 
+  const openThread = () => {
+    if (!currentSelection) return
+    setSheet('thread')
+  }
+
+  const openCard = () => {
+    if (!currentSelection) return
+    setSheet('card')
+    window.setTimeout(() => { void createCard() }, 30)
+  }
+
   const directShare = async () => {
     if (!currentSelection) return
     const text = `«${currentSelection.text}»\n— د. أحمد حسين الفيلكاوي`
@@ -974,9 +981,16 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
             className="reader-selection-toolbar fixed z-[270] flex items-center overflow-hidden rounded-full border border-hair bg-canvas/97 p-1 shadow-[0_18px_46px_-24px_rgba(21,22,26,.65)] backdrop-blur"
             dir="rtl"
           >
-            <button type="button" onPointerDown={(event) => event.preventDefault()} onClick={() => void saveSelection()} className="rounded-full px-4 py-2 text-[.76rem] font-semibold text-ink transition-colors hover:bg-wash hover:text-accent">{feedback === 'saved' ? 'حُفظ' : 'حفظ'}</button>
-            <button type="button" onPointerDown={(event) => event.preventDefault()} onClick={() => void copySelection()} className="rounded-full px-4 py-2 text-[.76rem] font-semibold text-ink transition-colors hover:bg-wash hover:text-accent">{feedback === 'copied' ? 'نُسخ' : 'نسخ'}</button>
-            <button type="button" onPointerDown={(event) => event.preventDefault()} onClick={openShare} className="rounded-full px-4 py-2 text-[.76rem] font-semibold text-ink transition-colors hover:bg-wash hover:text-accent">مشاركة</button>
+            <div className="reader-selection-primary flex items-center">
+              <button type="button" onPointerDown={(event) => event.preventDefault()} onClick={() => void saveSelection()} className="rounded-full px-3.5 py-2 text-[.74rem] font-semibold text-ink transition-colors hover:bg-wash hover:text-accent">{feedback === 'saved' ? 'حُفظ' : 'حفظ'}</button>
+              <button type="button" onPointerDown={(event) => event.preventDefault()} onClick={() => void copySelection()} className="rounded-full px-3.5 py-2 text-[.74rem] font-semibold text-ink transition-colors hover:bg-wash hover:text-accent">{feedback === 'copied' ? 'نُسخ' : 'نسخ'}</button>
+              <button type="button" onPointerDown={(event) => event.preventDefault()} onClick={openShare} className="rounded-full px-3.5 py-2 text-[.74rem] font-semibold text-ink transition-colors hover:bg-wash hover:text-accent">مشاركة</button>
+            </div>
+            <span className="reader-selection-divider h-6 w-px bg-hair" aria-hidden="true" />
+            <div className="reader-selection-signature flex items-center">
+              <button type="button" onPointerDown={(event) => event.preventDefault()} onClick={openThread} className="rounded-full px-3.5 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-wash">عبر السنوات</button>
+              <button type="button" onPointerDown={(event) => event.preventDefault()} onClick={openCard} className="rounded-full px-3.5 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-wash">بطاقة اقتباس</button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -986,12 +1000,31 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[320] flex items-end justify-center bg-ink/38 backdrop-blur-[2px] sm:items-center sm:p-5" onClick={closeSheet}>
             <motion.section initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 18, opacity: 0 }} onClick={(event) => event.stopPropagation()} className="max-h-[90dvh] w-full max-w-[560px] overflow-y-auto rounded-t-[1.75rem] border border-hair bg-canvas px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-5 shadow-[0_38px_90px_-42px_rgba(21,22,26,.8)] sm:rounded-[1.75rem] sm:p-7" dir="rtl">
               <header className="flex items-start justify-between gap-4">
-                <div><p className="text-[.7rem] font-semibold text-accent">{sheet === 'share' ? 'مشاركة الاقتباس' : 'الفكرة عبر السنوات'}</p><h2 className="mt-1 font-display text-[1.16rem] font-semibold text-ink">{current.title}</h2></div>
+                <div><p className="text-[.7rem] font-semibold text-accent">{sheet === 'thread' ? 'الفكرة عبر السنوات' : sheet === 'card' ? 'بطاقة الاقتباس' : 'مشاركة الاقتباس'}</p><h2 className="mt-1 font-display text-[1.16rem] font-semibold text-ink">{current.title}</h2></div>
                 <button type="button" onClick={closeSheet} aria-label="إغلاق" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-soft">×</button>
               </header>
               <blockquote className="mt-5 rounded-2xl border border-hair bg-wash/45 px-4 py-4 font-display text-[.9rem] font-light leading-[1.9] text-ink">«{currentSelection.text}»</blockquote>
 
-              {sheet === 'share' ? (
+              {sheet === 'card' ? (
+                <div className="mt-5">
+                  {!cardUrl && <div className="flex aspect-[4/5] items-center justify-center rounded-2xl border border-hair bg-wash text-[.78rem] text-soft">{cardBusy ? 'أصنع البطاقة…' : 'لحظة…'}</div>}
+                  {cardUrl && (
+                    <>
+                      <img src={cardUrl} alt="بطاقة اقتباس" className="mx-auto w-full max-w-[360px] rounded-2xl border border-hair shadow-[0_26px_60px_-36px_rgba(21,22,26,.7)]" />
+                      <div className="mt-4 flex flex-wrap justify-center gap-2">
+                        <button type="button" onClick={() => void shareCard()} className="rounded-full bg-accent px-5 py-2.5 text-[.76rem] font-semibold text-white">مشاركة البطاقة</button>
+                        <button type="button" onClick={downloadCard} className="rounded-full border border-hair px-5 py-2.5 text-[.76rem] font-semibold text-soft hover:border-accent hover:text-accent">حفظ الصورة</button>
+                      </div>
+                      <p className="mt-2 text-center text-[.68rem] text-soft">1080×1350 — مناسبة لواتساب وX وإنستغرام.</p>
+                    </>
+                  )}
+                  <div className="mt-4 flex justify-center gap-3">
+                    <button type="button" onClick={() => setSheet('thread')} className="text-[.74rem] font-semibold text-accent">عبر السنوات</button>
+                    <span className="text-hair">·</span>
+                    <button type="button" onClick={() => setSheet('share')} className="text-[.74rem] font-semibold text-soft hover:text-accent">خيارات المشاركة</button>
+                  </div>
+                </div>
+              ) : sheet === 'share' ? (
                 <div className="mt-5">
                   <div className="grid gap-2 sm:grid-cols-2">
                     <button type="button" onClick={() => void directShare()} className="rounded-full bg-accent px-5 py-3 text-[.8rem] font-semibold text-white">مشاركة النص والرابط</button>

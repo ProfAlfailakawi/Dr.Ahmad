@@ -1407,3 +1407,26 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
     border-radius: .8rem !important;
   }
 }
+
+
+/* أدوات الاقتباس: الميزتان الأصليتان تبقيان ظاهرتين، من دون ازدحام الهاتف. */
+@media (max-width: 640px) {
+  .reader-selection-toolbar {
+    width: min(318px, calc(100vw - 20px));
+    flex-direction: column;
+    border-radius: 18px !important;
+    padding: 4px !important;
+  }
+  .reader-selection-primary, .reader-selection-signature { width: 100%; justify-content: center; }
+  .reader-selection-primary > button { flex: 1 1 0; }
+  .reader-selection-signature > button { flex: 1 1 50%; }
+  .reader-selection-divider { width: calc(100% - 18px) !important; height: 1px !important; }
+}
+
+/* «أثر موثّق» على الهاتف: شبكة ثابتة 2×2 بلا قص أو تمرير جانبي. */
+.cv-impact-grid { min-width: 0; overflow: visible; }
+@media (max-width: 639px) {
+  .cv-impact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.75rem .75rem; }
+  .cv-impact-grid .cv-impact-seal { width: 5.25rem; height: 5.25rem; }
+  .cv-impact-grid .cv-impact-label { max-width: 8.5rem; line-height: 1.55; }
+}

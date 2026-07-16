@@ -1,8 +1,9 @@
 import { Link, useParams } from 'react-router-dom'
 import { FadeUp, Page, Reveal } from '../components/ui'
-import { useSeo } from '../components/seo'
+import { JsonLd, useSeo } from '../components/seo'
 import { OwnerEdit } from '../components/extras'
 import { useCmsContent } from '../lib/content'
+import { SITE_URL } from '../data'
 
 type BookGuide = { idea: string; audience: string; entry: string }
 
@@ -73,6 +74,18 @@ export default function BookDetail() {
 
   return (
     <Page>
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'Book',
+        '@id': `${SITE_URL}/publications/${book.slug}#book`,
+        name: book.title,
+        description: book.desc,
+        isbn: book.isbn || undefined,
+        url: `${SITE_URL}/publications/${book.slug}`,
+        image: book.cover ? `${SITE_URL}${book.cover}` : undefined,
+        inLanguage: 'ar',
+        author: { '@type': 'Person', '@id': `${SITE_URL}/#person`, name: 'د. أحمد حسين الفيلكاوي' },
+      }} />
       <section className="px-6 pb-24 pt-36 md:px-11 md:pt-44">
         <div className="mx-auto max-w-shell">
           <FadeUp>

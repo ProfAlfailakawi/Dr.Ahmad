@@ -3,16 +3,13 @@ import { Newsletter } from '../components/extras'
 import { useSeo } from '../components/seo'
 import { upcoming, type Event as SiteEvent } from '../data'
 import { useExtras } from '../lib/content'
+import { sortUpcomingEvents } from '../lib/events'
 
 export default function Upcoming() {
   useSeo({ title: 'اللقاءات القادمة', path: '/upcoming', description: 'محاضرات وورش عمل ومؤتمرات قادمة للدكتور أحمد حسين الفيلكاوي.' })
   const addedEvents = useExtras<SiteEvent & { id: string }>('site_upcoming')
 
-  const today = new Date().toISOString().slice(0, 10)
-  const future = [...addedEvents, ...upcoming]
-    .filter((event, index, list) => list.findIndex((candidate) => candidate.iso === event.iso && candidate.title === event.title) === index)
-    .filter((event) => event.iso >= today)
-    .sort((left, right) => left.iso.localeCompare(right.iso))
+  const future = sortUpcomingEvents([...addedEvents, ...upcoming])
 
   return (
     <Page>

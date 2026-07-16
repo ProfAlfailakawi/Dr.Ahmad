@@ -47,7 +47,7 @@ export function useSeo({
     const full = title === site.title || title.includes('د. أحمد حسين الفيلكاوي') ? title : `${title} — د. أحمد حسين الفيلكاوي`
     const desc = description || site.description
     const url = site.url + path
-    const img = site.url + site.ogImage
+    const img = image ? (image.startsWith('http') ? image : site.url + image) : site.url + site.ogImage
 
     document.title = full
     ;[

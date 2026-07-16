@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { FadeUp, Page, Reveal } from '../components/ui'
-import { useSeo } from '../components/seo'
+import { JsonLd, useSeo } from '../components/seo'
 import { CiteButton, OwnerEdit } from '../components/extras'
 import { profile, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
@@ -165,6 +165,22 @@ export default function PaperDetail() {
 
   return (
     <Page>
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'ScholarlyArticle',
+        '@id': `${SITE_URL}/research/${p.slug}#article`,
+        headline: p.title,
+        description: cleanText(p.abstractAr || p.meta || ''),
+        datePublished: `${paperYear(p)}-01-01`,
+        inLanguage: 'ar',
+        url: `${SITE_URL}/research/${p.slug}`,
+        author: [
+          { '@type': 'Person', '@id': `${SITE_URL}/#person`, name: profile.fullName },
+          ...(p.coAuthors ? [{ '@type': 'Person', name: p.coAuthors }] : []),
+        ],
+        isPartOf: p.journal ? { '@type': 'Periodical', name: p.journal } : undefined,
+        sameAs: p.source || p.pdf || undefined,
+      }} />
       <article className="px-6 pb-24 pt-32 md:px-11 md:pt-40">
         <div className="mx-auto max-w-[760px]">
           <FadeUp>

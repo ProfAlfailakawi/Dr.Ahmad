@@ -33,6 +33,9 @@ type Answer = {
   tension?: string
 }
 
+type TwinCitation = { index: number; slug: string; title: string; quote?: string; url?: string }
+type TwinAnswer = { answer: string; citations: TwinCitation[]; grounded: boolean; source: 'ai' | 'local' }
+
 function matchRefs(qTokens: string[]): Ref[] {
   const refs: (Ref & { score: number })[] = []
   for (const b of books) {
@@ -140,6 +143,34 @@ function answer(question: string, bodies: Record<string, string>): Answer {
   return { hits, near, refs, timeline, latest, earliest, tension }
 }
 
+function localGroundedAnswer(result: Answer): TwinAnswer {
+  const citations = result.hits.slice(0, 3).map((hit, index) => ({
+    index: index + 1,
+    slug: hit.slug,
+    title: hit.title,
+    quote: hit.para,
+    url: `/articles/${hit.slug}`,
+  }))
+  if (!citations.length) {
+    return {
+      answer: 'لم أجد في أرشيفي المنشور ما يكفي للإجابة عن هذا السؤال.',
+      citations: [],
+      grounded: false,
+      source: 'local',
+    }
+  }
+  const years = result.hits.slice(0, 3).map((hit) => hit.iso.slice(0, 4))
+  const span = years.length > 1 && new Set(years).size > 1
+    ? ` ويتكرر الخيط في نصوص منشورة بين ${years[years.length - 1]} و${years[0]}.`
+    : ''
+  return {
+    answer: `أقرب جواب منشور في أرشيفي يظهر في النص${citations.length > 1 ? 'وص' : ''} الموثّق${citations.length > 1 ? 'ة' : ''} أدناه.${span} لا أضيف هنا رأياً جديداً؛ الاقتباسات الحرفية هي حدود الإجابة المتاحة الآن ${citations.map((item) => `[${item.index}]`).join(' ')}.`,
+    citations,
+    grounded: true,
+    source: 'local',
+  }
+}
+
 const SUGGESTIONS = [
   'هل الذكاء الاصطناعي يهدد المعلم؟',
   'ما أثر الهاتف على الطفل؟',
@@ -226,6 +257,8 @@ export default function AskLibrary() {
   const resRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const result = useMemo(() => (asked && bodies ? answer(asked, bodies) : null), [asked, bodies])
+  const [twin, setTwin] = useState<TwinAnswer | null>(null)
+  const [twinLoading, setTwinLoading] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -237,9 +270,55 @@ export default function AskLibrary() {
     return () => { active = false }
   }, [asked, bodies])
 
+  useEffect(() => {
+    const controller = new AbortController()
+    if (!asked || !result?.hits.length) {
+      setTwin(null)
+      setTwinLoading(false)
+      return () => controller.abort()
+    }
+
+    const fallback = localGroundedAnswer(result)
+    setTwin(null)
+    setTwinLoading(true)
+    void fetch('/api/ai/archive-answer', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        question: asked,
+        evidence: result.hits.slice(0, 8).map((hit) => ({
+          slug: hit.slug,
+          title: hit.title,
+          year: hit.iso.slice(0, 4),
+          quote: hit.para,
+          url: `/articles/${hit.slug}`,
+        })),
+      }),
+    }).then(async (response) => {
+      if (!response.ok) throw new Error(`archive-answer:${response.status}`)
+      const payload = await response.json() as Partial<TwinAnswer>
+      const citations = Array.isArray(payload.citations)
+        ? payload.citations.filter((item): item is TwinCitation => Boolean(item && Number.isInteger(Number(item.index)) && typeof item.slug === 'string' && typeof item.title === 'string'))
+        : []
+      if (typeof payload.answer !== 'string' || !payload.answer.trim() || payload.grounded !== true || !citations.length) {
+        setTwin(fallback)
+        return
+      }
+      setTwin({ answer: payload.answer.trim(), citations, grounded: true, source: 'ai' })
+    }).catch((error) => {
+      if ((error as Error)?.name !== 'AbortError') setTwin(fallback)
+    }).finally(() => {
+      if (!controller.signal.aborted) setTwinLoading(false)
+    })
+
+    return () => controller.abort()
+  }, [asked, result])
+
   const again = () => {
     setAsked('')
     setQ('')
+    setTwin(null)
     setTimeout(() => inputRef.current?.focus(), 60)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -257,7 +336,7 @@ export default function AskLibrary() {
       <PageHead
         label="العقل الحي"
         title="اسأل الأرشيف سؤالاً حقيقياً."
-        sub="لا يتقمص الموقع رأيي ولا يخترع جواباً باسمي. يعيد بناء المسار من مقالاتي وأبحاثي وكتبي فقط: ماذا كتبت، متى بدأ الخيط، وأين يقف أحدث نص منشور."
+        sub="محادثة موثّقة مع الأرشيف: يركّب الجواب من مقالاتي وأبحاثي وكتبي فقط، ويعيدك إلى النص الحرفي الذي استند إليه. إن لم يجد دليلاً يقول ذلك بوضوح."
       />
 
       <section className="px-6 py-14 md:px-11 md:py-16">
@@ -307,7 +386,35 @@ export default function AskLibrary() {
               <div className="mt-12">
                 {result.hits.length > 0 ? (
                   <>
-                    <p className="text-[.8rem] font-semibold text-accent">إجابة موثقة — بكلماتي حرفياً</p>
+                    <FadeUp>
+                      <section className="mb-9 rounded-2xl border border-accent/20 bg-wash p-6 md:p-8" aria-live="polite">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p className="text-[.75rem] font-semibold text-accent">جواب من الأرشيف</p>
+                            <h2 className="mt-1 font-display text-[1.16rem] font-semibold leading-relaxed text-ink">خلاصة مرتبطة بمصادرها، لا رأي مولّد من خارجها.</h2>
+                          </div>
+                          <span className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.68rem] text-soft">دون معرفة خارجية</span>
+                        </div>
+                        {twinLoading && !twin ? (
+                          <p className="mt-5 animate-pulse text-[.88rem] leading-[1.95] text-soft">أرتّب الشواهد الأقرب إلى سؤالك…</p>
+                        ) : twin ? (
+                          <>
+                            <p className="mt-5 whitespace-pre-line text-[.95rem] font-light leading-[2.05] text-ink/90">{twin.answer}</p>
+                            {twin.citations.length > 0 && (
+                              <div className="mt-5 flex flex-wrap gap-2 border-t border-hair pt-4">
+                                {twin.citations.map((citation) => (
+                                  <Link key={`${citation.index}-${citation.slug}`} to={`/articles/${citation.slug}`} className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.72rem] text-soft transition-colors hover:border-accent hover:text-accent">
+                                    [{citation.index}] {citation.title}
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                            <p className="mt-4 text-[.68rem] leading-relaxed text-soft">{twin.source === 'ai' ? 'صيغت الخلاصة آلياً داخل حدود الشواهد الظاهرة فقط.' : 'تعذّر التوليد الآلي؛ عُرض بديل محلي محافظ لا يتجاوز الشواهد.'}</p>
+                          </>
+                        ) : null}
+                      </section>
+                    </FadeUp>
+                    <p className="text-[.8rem] font-semibold text-accent">الشواهد الحرفية</p>
                     <div className="mt-5 space-y-8">
                       {result.hits.map((h) => (
                         <FadeUp key={h.slug}>

@@ -78,6 +78,13 @@ function sentenceChunks(value = '') {
     .filter((item) => item.length >= 18)
 }
 
+function firstTurnFromSource(title: string, value: string): DialogueTurn {
+  const chunks = sentenceChunks(value)
+  const first = chunks[0] || `حلقتنا اليوم عن «${title}»… سنبدأ من الفكرة الأساسية ثم تضيف ما بعدها يدوياً.`
+  const normalized = first.length > 220 ? `${first.slice(0, 217).trim()}…` : first
+  return { ...blankTurn('male'), deliveryType: 'setup', text: normalized }
+}
+
 function dialogueFromText(title: string, value: string): DialogueTurn[] {
   const chunks = sentenceChunks(value).slice(0, 22)
   if (!chunks.length) return [blankTurn('male'), blankTurn('female')]
@@ -156,7 +163,8 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
   const sortedArticles = useMemo(() => [...articles].sort((a, b) => b.iso.localeCompare(a.iso)), [articles])
   const initialSlug = sortedArticles[0]?.slug || ''
   const [slug, setSlug] = useState(initialSlug)
-  const [turns, setTurns] = useState<DialogueTurn[]>(() => storedDialogue(initialSlug) || [blankTurn('male')])
+  const [turns, setTurns] = useState<DialogueTurn[]>(() => [blankTurn('male')])
+  const [availableDraft, setAvailableDraft] = useState<DialogueTurn[] | null>(() => storedDialogue(initialSlug))
   const [notice, setNotice] = useState('')
   const [dirty, setDirty] = useState(false)
   const [articleBody, setArticleBody] = useState('')
@@ -187,9 +195,12 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
   useEffect(() => {
     let active = true
     const local = storedDialogue(slug)
-    setTurns(local || [blankTurn('male')])
+    setTurns([blankTurn('male')])
+    setAvailableDraft(local)
     setDirty(false)
-    setNotice(local ? 'فُتحت المسودة المحفوظة على هذا الجهاز.' : 'مداخلة واحدة جاهزة؛ أضف غيرها فقط عند الحاجة.')
+    setNotice(local
+      ? `بدأ الوضع اليدوي بمداخلة واحدة. توجد مسودة محفوظة (${local.length} مداخلة) ويمكن استعادتها عند الحاجة.`
+      : 'مداخلة واحدة جاهزة؛ أضف غيرها فقط عند الحاجة.')
     setArticleBody('')
     loadArticleBodies().then((bodies) => { if (active) setArticleBody(article?.body || bodies[slug] || article?.excerpt || '') }).catch(() => { if (active) setArticleBody(article?.body || article?.excerpt || '') })
     if (isAdmin) {
@@ -207,10 +218,10 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
             if (!snapshot.exists()) continue
             const cloud = normalizeTurns(snapshot.data().turns)
             if (!cloud) continue
-            setTurns(cloud)
+            setAvailableDraft(cloud)
             localStorage.setItem(`podcast:manual-dialogue:${slug}`, JSON.stringify(cloud))
             localStorage.removeItem(`podcast:pending-cloud:${slug}`)
-            setNotice('فُتحت آخر مسودة سحابية محفوظة لهذه الحلقة ✓')
+            setNotice(`بدأ الوضع اليدوي بمداخلة واحدة. توجد مسودة سحابية محفوظة (${cloud.length} مداخلة) ويمكن استعادتها عند الحاجة.`)
             return
           } catch {
             // جرّب المسار الاحتياطي؛ بعض المشاريع لم تُنشر فيها قاعدة المجموعة الجديدة بعد.
@@ -292,6 +303,7 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
       if (!cloudSaved) throw lastError || new Error('cloud-save-failed')
 
       localStorage.removeItem(pendingKey)
+      setAvailableDraft(null)
       setDirty(false)
       setNotice(`${automatic ? 'حفظ تلقائي' : 'حُفظت المسودة'} على السحابة وهذا الجهاز ✓`)
     } catch {
@@ -324,6 +336,14 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
     }
   }, [isAdmin, slug])
 
+  const restoreSavedDraft = () => {
+    if (!availableDraft) return
+    setTurns(availableDraft)
+    setAvailableDraft(null)
+    setDirty(false)
+    setNotice(`استُعيدت المسودة المحفوظة (${availableDraft.length} مداخلة) ✓`)
+  }
+
   const download = () => {
     const blob = new Blob([`${json}\n`], { type: 'application/json;charset=utf-8' })
     const url = URL.createObjectURL(blob)
@@ -347,9 +367,9 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
         setNotice(`استُوردت نسخة احتياطية تحتوي ${parsed.length} مداخلة؛ راجعها ثم احفظ.`)
       } else {
         const text = await documentText(file)
-        const generated = dialogueFromText(article?.title || file.name.replace(/\.[^.]+$/, ''), text)
-        setTurns(generated)
-        setNotice(`تحوّل المستند تلقائياً إلى ${generated.length} مداخلة. راجع الإيقاع ثم اعتمد المسودة.`)
+        const firstTurn = firstTurnFromSource(article?.title || file.name.replace(/\.[^.]+$/, ''), text)
+        setTurns([firstTurn])
+        setNotice('أُدرجت المداخلة الأولى فقط من المستند. أضف بقية المداخلات يدوياً عند الضغط على «إضافة مداخلة».')
       }
       setDirty(true)
     } catch {
@@ -365,10 +385,10 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
       setNotice('النص الكامل للمقال غير متاح بعد؛ ارفع مستند الحلقة مباشرة.')
       return
     }
-    const generated = dialogueFromText(article?.title || 'الحلقة', articleBody)
-    setTurns(generated)
+    const firstTurn = firstTurnFromSource(article?.title || 'الحلقة', articleBody)
+    setTurns([firstTurn])
     setDirty(true)
-    setNotice(`بُنيت مسودة تلقائية من نص المقال: ${generated.length} مداخلة، من دون رفع JSON.`)
+    setNotice('وُضعت مداخلة افتتاحية واحدة فقط من نص المقال. أضف ما بعدها يدوياً حتى يبقى الوضع اليدوي نظيفاً.')
   }
 
 
@@ -402,15 +422,34 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
           <div className="max-w-3xl">
             <p className="text-[.76rem] font-semibold uppercase text-accent">الحوار اليدوي للحلقة</p>
             <h2 className="mt-1 font-display text-2xl font-semibold text-ink">اكتب فهد ونورة مداخلةً مداخلة.</h2>
-            <p className="mt-2 text-[.84rem] leading-relaxed text-soft">اختر المقال أو ارفع مستند DOCX/TXT؛ يتحول النص فوراً إلى مسودة حوار قابلة للتحرير. لا تحتاج إلى JSON، وتظهر الحلقة الصوتية هنا تلقائياً متى كانت موجودة في مسار الإنتاج.</p>
+            <p className="mt-2 text-[.84rem] leading-relaxed text-soft">اختر المقال أو ارفع مستند DOCX/TXT؛ في الوضع اليدوي تبقى البداية بمداخلة واحدة فقط، ثم تضيف بقية المداخلات بنفسك عند الحاجة. لا تحتاج إلى JSON، وتظهر الحلقة الصوتية هنا تلقائياً متى كانت موجودة في مسار الإنتاج.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <input ref={fileRef} type="file" accept=".docx,.txt,.md,.json,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/json" className="hidden" onChange={(event) => void importFile(event.target.files?.[0])} />
             <button type="button" className={ghost} disabled={documentBusy} onClick={() => fileRef.current?.click()}>{documentBusy ? 'أقرأ المستند…' : 'رفع مستند'}</button>
-            <button type="button" className={ghost} onClick={buildFromArticle}>بناء من نص المقال</button>
+            <button type="button" className={ghost} onClick={buildFromArticle}>ملء المداخلة الأولى من المقال</button>
             <button type="button" className={primary} onClick={download} disabled={warnings.some((item) => item.includes('بلا نص'))}>تنزيل نسخة احتياطية</button>
           </div>
         </div>
+
+        <div className="mt-4 rounded-2xl border border-accent/20 bg-canvas px-4 py-4 text-[.8rem] leading-relaxed text-soft">
+          <p className="font-semibold text-accent">في الوضع اليدوي</p>
+          <ul className="mt-2 grid gap-1.5 pr-4">
+            <li>تظهر مداخلة واحدة فقط افتراضياً.</li>
+            <li>لا ينشئ النظام مداخلات كثيرة تلقائياً.</li>
+            <li>أنت تضيف مداخلة جديدة فقط عند الضغط على «إضافة مداخلة».</li>
+            <li>تبقى خيارات الصوت ونوع المداخلة والوقفة والتداخل والجسر الموسيقي داخل البطاقة نفسها.</li>
+          </ul>
+        </div>
+        {availableDraft && (
+          <button
+            type="button"
+            onClick={restoreSavedDraft}
+            className="mt-3 inline-flex w-fit items-center rounded-full border border-accent/35 bg-canvas px-4 py-2 text-[.76rem] font-semibold text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
+          >
+            استعادة المسودة المحفوظة ({availableDraft.length} مداخلة)
+          </button>
+        )}
 
         <div className="mt-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
           <label className="block min-w-0">

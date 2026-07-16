@@ -323,9 +323,9 @@ export default function HumanCoreHero() {
             >
               <div className="human-core__orbit" aria-hidden="true"><span /><span /><span /></div>
               <div className="human-core__portrait-media relative overflow-hidden rounded-2xl shadow-[0_36px_64px_-36px_rgba(21,22,26,.42)]">
-                <img src="/portrait.jpg" alt={profile.fullName} width={2048} height={1365} decoding="async" className="human-core__portrait-base block h-full w-full object-cover" />
+                <img src="/portrait.jpg" alt={profile.fullName} width={1345} height={2048} decoding="async" className="human-core__portrait-base block h-full w-full object-cover" />
                 <div className="human-core__portrait-color absolute inset-0" aria-hidden="true">
-                  <img src="/portrait.jpg" alt="" width={2048} height={1365} decoding="async" className="block h-full w-full object-cover" />
+                  <img src="/portrait.jpg" alt="" width={1345} height={2048} decoding="async" className="block h-full w-full object-cover" />
                 </div>
                 <div className="human-core__scan absolute inset-0" aria-hidden="true" />
               </div>

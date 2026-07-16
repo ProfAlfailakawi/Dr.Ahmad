@@ -910,12 +910,12 @@ html.dark .book-detail-cover {
   transform-style: preserve-3d;
 }
 .human-core__portrait-media {
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1345 / 2048;
   background: rgb(var(--c-wash));
   transform: translateZ(0);
 }
 .human-core__portrait-media img {
-  object-position: 62% 46%;
+  object-position: 50% 24%;
 }
 .human-core__portrait-base {
   filter: grayscale(1) contrast(1.03);
@@ -1223,13 +1223,13 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
     max-width: none;
     margin-inline: -1.5rem;
     padding-inline: 1.5rem;
+    scroll-padding-inline: 1.5rem;
     padding-bottom: .75rem;
     gap: 1rem !important;
     overflow-x: auto !important;
     overflow-y: visible;
     grid-template-columns: none !important;
     scroll-snap-type: inline mandatory;
-    scroll-padding-inline: 1.5rem;
     overscroll-behavior-inline: contain;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -1239,19 +1239,19 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
   .mobile-paired-grid::-webkit-scrollbar { display: none; }
   .mobile-card-rail > *,
   .mobile-paired-grid > * {
-    flex: 0 0 min(82vw, 360px);
-    width: min(82vw, 360px);
+    flex: 0 0 min(74vw, 340px);
+    width: min(74vw, 340px);
     min-width: 0;
-    max-width: min(82vw, 360px);
+    max-width: min(74vw, 340px);
     height: auto;
     scroll-snap-align: start;
     scroll-snap-stop: normal;
   }
   .mobile-card-rail > :only-child,
   .mobile-paired-grid > :only-child {
-    flex-basis: min(92vw, 560px);
-    width: min(92vw, 560px);
-    max-width: min(92vw, 560px);
+    flex-basis: min(86vw, 520px);
+    width: min(86vw, 520px);
+    max-width: min(86vw, 520px);
   }
   .mobile-card-rail :is(p, h2, h3, h4, blockquote, span, time),
   .mobile-paired-grid :is(p, h2, h3, h4, blockquote, span, time) {

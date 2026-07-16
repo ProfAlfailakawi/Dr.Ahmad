@@ -13,6 +13,13 @@ const STAR_R_MAX = 12
 const ROW = 74
 const TOP = 54
 
+const MOBILE_W = 680
+const MOBILE_PAD_R = 118
+const MOBILE_PAD_L = 22
+const MOBILE_STAR_R_MAX = 12
+const MOBILE_ROW = 64
+const MOBILE_TOP = 38
+
 const arDigits = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
@@ -20,6 +27,7 @@ export default function Atlas() {
   const { articles } = useCmsContent()
   const cats = useMemo(() => dynamicArticleCategories(articles, false), [articles])
   const H = TOP + Math.max(cats.length, 1) * ROW + 46
+  const mobileH = MOBILE_TOP + Math.max(cats.length, 1) * MOBILE_ROW + 48
   useSeo({
     title: 'سماء المقالات',
     path: '/atlas',
@@ -54,19 +62,31 @@ export default function Atlas() {
       const y = TOP + row * ROW + ROW / 2 + jitter * 0.55
       const w = words[i]
       const r = 3.4 + ((w - wMin) / (wMax - wMin || 1)) * 8.6
-      return { ...a, x, y, r, words: w, i }
+      return { ...a, x, y, r, words: w, i, t, row, jitter }
     })
   }, [articles, cats])
 
+  const mobileStars = useMemo(() => stars.map((star) => ({
+    ...star,
+    x: MOBILE_W - MOBILE_PAD_R - MOBILE_STAR_R_MAX - star.t * (MOBILE_W - MOBILE_PAD_R - MOBILE_STAR_R_MAX - MOBILE_PAD_L),
+    y: MOBILE_TOP + star.row * MOBILE_ROW + MOBILE_ROW / 2 + star.jitter * 0.4,
+    r: Math.max(4.2, Math.min(11, star.r * 0.92)),
+  })), [stars])
+
   const years = useMemo(() => {
-    const map = new Map<string, number[]>()
-    stars.forEach((star) => {
+    const map = new Map<string, { desktop: number[]; mobile: number[] }>()
+    stars.forEach((star, index) => {
       const year = star.iso.slice(0, 4)
-      if (!map.has(year)) map.set(year, [])
-      map.get(year)!.push(star.x)
+      if (!map.has(year)) map.set(year, { desktop: [], mobile: [] })
+      map.get(year)!.desktop.push(star.x)
+      map.get(year)!.mobile.push(mobileStars[index]?.x ?? 0)
     })
-    return [...map.entries()].map(([year, xs]) => ({ year, x: xs.reduce((a, b) => a + b, 0) / xs.length }))
-  }, [stars])
+    return [...map.entries()].map(([year, points]) => ({
+      year,
+      x: points.desktop.reduce((a, b) => a + b, 0) / points.desktop.length,
+      mobileX: points.mobile.reduce((a, b) => a + b, 0) / points.mobile.length,
+    }))
+  }, [stars, mobileStars])
 
   const dim = (star: (typeof stars)[number]) => (activeCat && star.cat !== activeCat ? 0.12 : 1)
   const activeIndex = hover ?? selected
@@ -81,12 +101,38 @@ export default function Atlas() {
       nav(`/articles/${slug}`)
       return
     }
-    if (selected === index) nav(`/articles/${slug}`)
-    else {
-      setSelected(index)
-      setHover(null)
+    if (selected === index) {
+      nav(`/articles/${slug}`)
+      return
     }
+    setSelected(index)
+    setHover(null)
+    window.setTimeout(() => document.getElementById('atlas-selection')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80)
   }
+
+  const categoryButtons = (
+    <div className="rail -mx-4 mb-8 flex gap-2 overflow-x-auto px-4 pb-2 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0">
+      <button
+        onClick={() => { setActiveCat(null); setSelected(null) }}
+        className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-[.83rem] font-medium transition-colors duration-300 ${
+          !activeCat ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
+        }`}
+      >
+        الكل
+      </button>
+      {cats.map((category) => (
+        <button
+          key={category}
+          onClick={() => { setActiveCat(activeCat === category ? null : category); setSelected(null) }}
+          className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-[.83rem] font-medium transition-colors duration-300 ${
+            activeCat === category ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
+          }`}
+        >
+          {categoryLabel(category)}
+        </button>
+      ))}
+    </div>
+  )
 
   return (
     <Page>
@@ -98,33 +144,62 @@ export default function Atlas() {
 
       <section className="px-4 py-14 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">
-          <FadeUp>
-            <div className="mb-8 flex flex-wrap gap-2">
-              <button
-                onClick={() => setActiveCat(null)}
-                className={`rounded-full border px-4 py-1.5 text-[.83rem] font-medium transition-colors duration-300 ${
-                  !activeCat ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
-                }`}
-              >
-                الكل
-              </button>
-              {cats.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setActiveCat(activeCat === category ? null : category)}
-                  className={`rounded-full border px-4 py-1.5 text-[.83rem] font-medium transition-colors duration-300 ${
-                    activeCat === category ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
-                  }`}
-                >
-                  {categoryLabel(category)}
-                </button>
-              ))}
-            </div>
-          </FadeUp>
+          <FadeUp>{categoryButtons}</FadeUp>
 
           <FadeUp delay={0.08}>
-            <div className="relative overflow-x-auto rounded-2xl border border-hair bg-wash" onPointerLeave={() => setHover(null)}>
-              <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full min-w-[760px]" role="img" aria-label="خريطة المقالات">
+            <div className="relative overflow-hidden rounded-2xl border border-hair bg-wash md:overflow-x-auto" onPointerLeave={() => setHover(null)}>
+              {/* نسخة الهاتف: تتكيّف مع العرض، بلا تمرير جانبي ولا نافذة عائمة مقصوصة. */}
+              <svg viewBox={`0 0 ${MOBILE_W} ${mobileH}`} className="block h-auto w-full md:hidden" role="img" aria-label="خريطة المقالات">
+                {cats.map((category, row) => {
+                  const y = MOBILE_TOP + row * MOBILE_ROW + MOBILE_ROW / 2
+                  const on = !activeCat || activeCat === category
+                  return (
+                    <g key={category} opacity={on ? 1 : 0.25}>
+                      <line x1={MOBILE_PAD_L} y1={y} x2={MOBILE_W - MOBILE_PAD_R + 8} y2={y} stroke="currentColor" className="text-ink" strokeOpacity={0.055} />
+                      <text x={MOBILE_W - MOBILE_PAD_R + 18} y={y + 7} textAnchor="start" className="fill-soft font-sans" style={{ fontSize: 21, fontWeight: 600 }}>
+                        {categoryLabel(category)}
+                      </text>
+                    </g>
+                  )
+                })}
+
+                {years.map((item) => (
+                  <text key={item.year} x={item.mobileX} y={mobileH - 15} textAnchor="middle" className="fill-soft font-sans" style={{ fontSize: 17 }}>
+                    {arDigits(item.year)}
+                  </text>
+                ))}
+
+                {mobileStars.map((star) => {
+                  const isActive = activeIndex === star.i
+                  return (
+                    <g key={star.slug} role="link" aria-label={`${star.title}، ${star.date}`}>
+                      {isActive && <circle cx={star.x} cy={star.y} r={star.r + 12} className="fill-none stroke-accent" strokeOpacity={0.55} strokeWidth={2} />}
+                      <circle
+                        cx={star.x}
+                        cy={star.y}
+                        r={star.r + 18}
+                        className="cursor-pointer fill-transparent"
+                        tabIndex={0}
+                        onPointerDown={(event) => { event.preventDefault(); pick(star.i, star.slug, event.pointerType) }}
+                        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') nav(`/articles/${star.slug}`) }}
+                      />
+                      <motion.circle
+                        cx={star.x}
+                        cy={star.y}
+                        r={star.r}
+                        className="pointer-events-none fill-accent"
+                        initial={reduce ? false : { opacity: 0, scale: 0 }}
+                        animate={{ opacity: dim(star) * (isActive ? 1 : 0.68), scale: isActive ? 1.5 : 1 }}
+                        transition={{ duration: 0.35, delay: reduce ? 0 : Math.min(star.i * 0.004, 0.3), ease: EASE }}
+                        style={{ transformOrigin: `${star.x}px ${star.y}px` }}
+                      />
+                    </g>
+                  )
+                })}
+              </svg>
+
+              {/* نسخة الكمبيوتر الأصلية الواسعة. */}
+              <svg viewBox={`0 0 ${W} ${H}`} className="hidden h-auto w-full min-w-[760px] md:block" role="img" aria-label="خريطة المقالات">
                 {cats.map((category, row) => {
                   const y = TOP + row * ROW + ROW / 2
                   const on = !activeCat || activeCat === category
@@ -157,13 +232,8 @@ export default function Atlas() {
                         onPointerEnter={(event) => { if (event.pointerType === 'mouse') setHover(star.i) }}
                         onFocus={() => setHover(star.i)}
                         onBlur={() => setHover(null)}
-                        onPointerDown={(event) => {
-                          event.preventDefault()
-                          pick(star.i, star.slug, event.pointerType)
-                        }}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ' ') nav(`/articles/${star.slug}`)
-                        }}
+                        onPointerDown={(event) => { event.preventDefault(); pick(star.i, star.slug, event.pointerType) }}
+                        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') nav(`/articles/${star.slug}`) }}
                       />
                       <motion.circle
                         cx={star.x}
@@ -194,20 +264,21 @@ export default function Atlas() {
             </div>
           </FadeUp>
 
-          <div className="mt-5 min-h-[86px]">
+          <div id="atlas-selection" className="mt-4 min-h-[94px] scroll-mt-24">
             {active ? (
-              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-hair bg-canvas p-5">
+              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-accent/25 bg-canvas p-5 shadow-[0_18px_45px_-34px_rgba(21,22,26,.45)]">
                 <div className="flex flex-wrap items-center gap-2 text-[.74rem] text-soft">
                   <span className="font-semibold text-accent">{categoryLabel(active.cat)}</span>
                   <span>·</span><time>{active.date}</time><span>·</span><span>{arDigits(active.words)} كلمة</span>
                 </div>
-                <Link to={`/articles/${active.slug}`} className="mt-2 block font-display text-[1.15rem] font-semibold leading-[1.6] text-ink transition-colors hover:text-accent md:text-[1.35rem]">
-                  {active.title} ←
+                <Link to={`/articles/${active.slug}`} className="mt-2 block break-words font-display text-[1.08rem] font-semibold leading-[1.75] text-ink transition-colors hover:text-accent md:text-[1.35rem]">
+                  {active.title}
+                  <span className="mt-3 block text-[.78rem] font-sans font-semibold text-accent md:hidden">المس المقال مرة ثانية أو افتحه من هنا ←</span>
                 </Link>
               </motion.div>
             ) : (
-              <p className="pt-5 text-center text-[.88rem] font-light leading-relaxed text-soft">
-                على الهاتف: لمسة أولى تُظهر اسم المقال، ولمسة ثانية تفتحه. على الكمبيوتر: مرّر المؤشر لتقرأ الاسم.
+              <p className="pt-4 text-center text-[.84rem] font-light leading-relaxed text-soft">
+                على الهاتف: المس أي نجمة ليظهر اسم المقال كاملاً هنا، ثم المسها مرة ثانية لفتحه.
               </p>
             )}
           </div>

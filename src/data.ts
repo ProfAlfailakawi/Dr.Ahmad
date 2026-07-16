@@ -909,5 +909,5 @@ export const site = {
   // الأرقام تُحسب من المحتوى نفسه — تتجدّد تلقائياً مع أي إضافة
   description:
     `الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي. ${stats.books} كتب، ${stats.papers} بحثاً محكّماً، وأكثر من ${roundDown10(stats.articles)} مقالاً فكرياً في التعليم والتقنية والمجتمع، منذ ${stats.firstYear}.`,
-  ogImage: '/og/home-20260716.jpg',
+  ogImage: '/og/canonical.jpg',
 }

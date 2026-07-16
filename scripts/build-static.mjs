@@ -45,7 +45,7 @@ if (SITE !== OFFICIAL_SITE) {
 }
 const AUDIO_PUBLIC_BASE_URL = (process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const SITE_HOST = new URL(SITE).hostname
-const HOME_OG = '/og/home-20260716.jpg'
+const HOME_OG = '/og/canonical.jpg'
 const AUTHOR = 'د. أحمد حسين الفيلكاوي'
 const logoDataUri = `data:image/png;base64,${readFileSync(resolve(ROOT, 'public/logo.png')).toString('base64')}`
 const portraitDataUri = `data:image/jpeg;base64,${readFileSync(resolve(ROOT, 'public/portrait.jpg')).toString('base64')}`
@@ -169,10 +169,10 @@ const STATIC = [
 
 const routes = [
   ...STATIC,
-  ...books.map((b) => ({ path: `/publications/${b.slug}`, title: b.title, desc: b.desc, image: b.cover, isbn: b.isbn })),
+  ...books.map((b) => ({ path: `/publications/${b.slug}`, title: b.title, desc: b.desc, isbn: b.isbn })),
   ...papers.map((p) => ({ path: `/research/${p.slug}`, title: p.title, desc: p.abstractAr || `بحث محكّم — ${p.meta}`, type: 'article' })),
-  ...articles.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt, type: 'article', iso: a.iso, cat: a.cat, image: `/og/articles/${a.slug}.png` })),
-  ...siteArticlesFeed.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt || a.title, type: 'article', iso: a.iso, cat: a.cat || 'مقال', image: `/og/articles/${a.slug}.png` })),
+  ...articles.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt, type: 'article', iso: a.iso, cat: a.cat })),
+  ...siteArticlesFeed.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt || a.title, type: 'article', iso: a.iso, cat: a.cat || 'مقال' })),
 ]
 
 const LEGACY_REDIRECTS = [
@@ -784,7 +784,7 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
   const hasName = title.includes('Alfailakawi') || title.includes('د. أحمد حسين الفيلكاوي')
   const full = isAdmin ? title : path === '/' || hasName ? title : en ? `${title} — Dr. Ahmad H. Alfailakawi` : `${title} — د. أحمد حسين الفيلكاوي`
   const url = SITE + path
-  const img = `${SITE}${image || HOME_OG}`
+  const img = `${SITE}${HOME_OG}`
 
   // مسار التفصيل يحدّد نوع Schema والفتات (Breadcrumb)
   const isArticlePage = /^\/(?:en\/)?articles\//.test(path)
@@ -1007,7 +1007,7 @@ for (const r of publicRoutes) {
 writeFileSync(resolve(DIST, '404.html'), render({ path: '/404', title: 'الصفحة غير موجودة', desc: 'الصفحة المطلوبة غير موجودة.' }), 'utf8')
 writeFileSync(resolve(DIST, 'admin.html'), render({ path: '/admin', title: 'لوحة التحكم', desc: 'لوحة إدارة خاصة.', robots: 'noindex, nofollow' }), 'utf8')
 writeFileSync(resolve(DIST, 'offline.html'), render({ path: '/offline', title: 'أنت غير متصل', desc: 'هذه الصفحة متاحة عند انقطاع الاتصال.' }), 'utf8')
-await generateArticleOg()
+// بطاقات المشاركة موحّدة عمداً على التصميم المعتمد؛ لا تُولّد تصاميم مقالات منفصلة.
 
 /* ---------- sitemap ---------- */
 const sm = `<?xml version="1.0" encoding="UTF-8"?>

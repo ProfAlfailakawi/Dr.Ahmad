@@ -130,7 +130,7 @@ function WhoAreYou() {
           /* ── تصفّح حرّ: البوابات الثلاث كروابط ── */
           <div className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 md:pb-0">
             {PERSONAS.map((g, i) => (
-              <FadeUp key={g.key} delay={i * 0.08} className="w-[78vw] shrink-0 snap-start md:w-auto">
+              <FadeUp key={g.key} delay={i * 0.08} className="w-[72vw] max-w-[320px] shrink-0 snap-start md:w-auto md:max-w-none">
                 <Link to={g.to} data-hover className="group flex h-full flex-col rounded-2xl border border-hair bg-canvas p-7 transition-colors duration-300 hover:border-accent">
                   <h3 className="font-display text-[1.15rem] font-semibold text-ink">{g.gate}</h3>
                   <p className="mt-2.5 text-[.92rem] font-light leading-relaxed text-soft">{g.d}</p>
@@ -148,7 +148,7 @@ function WhoAreYou() {
             </FadeUp>
             <div className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 md:pb-0">
               {PERSONAS.map((g, i) => (
-                <FadeUp key={g.key} delay={0.1 + i * 0.08} className="w-[78vw] shrink-0 snap-start md:w-auto">
+                <FadeUp key={g.key} delay={0.1 + i * 0.08} className="w-[72vw] max-w-[320px] shrink-0 snap-start md:w-auto md:max-w-none">
                   <button onClick={() => choose(g.key)} data-hover className="group flex h-full w-full flex-col rounded-2xl border border-hair bg-canvas p-7 text-right transition-colors duration-300 hover:border-accent">
                     <h3 className="font-display text-[1.15rem] font-semibold text-ink">{g.gate}</h3>
                     <p className="mt-2.5 text-[.92rem] font-light leading-relaxed text-soft">{g.d}</p>
@@ -454,7 +454,7 @@ function ThoughtCompass() {
 
         <div className="rail -mx-6 mt-7 flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-4 md:mx-0 md:mt-10 md:gap-5 md:px-0">
           {related.map((a, i) => (
-            <FadeUp key={a.slug} delay={Math.min(i * 0.06, 0.2)} className="w-[60vw] max-w-[260px] shrink-0 snap-start md:w-[31%] md:max-w-none">
+            <FadeUp key={a.slug} delay={Math.min(i * 0.06, 0.2)} className="w-[56vw] max-w-[248px] shrink-0 snap-start md:w-[31%] md:max-w-none">
               <Link to={`/articles/${a.slug}`} data-hover className="group flex h-full min-h-[170px] flex-col rounded-2xl border border-hair bg-canvas p-5 transition-colors duration-300 hover:border-accent md:p-6">
                 <time className="text-[.72rem] text-soft">{a.date}</time>
                 <h3 className="mt-2.5 font-display text-[1rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent md:text-[1.12rem]">{a.title}</h3>
@@ -466,7 +466,7 @@ function ThoughtCompass() {
         <FadeUp delay={0.15}>
           <div className="rail -mx-6 mt-7 flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-2 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
             {quickLinks.map((item) => (
-              <Link key={`${item.tag}-${item.to}`} to={item.to} className="group flex min-h-[108px] w-[66vw] max-w-[270px] shrink-0 snap-start flex-col justify-between rounded-2xl border border-hair bg-wash px-4 py-3.5 text-right transition-colors hover:border-accent md:w-auto md:max-w-none">
+              <Link key={`${item.tag}-${item.to}`} to={item.to} className="group flex min-h-[108px] w-[62vw] max-w-[252px] shrink-0 snap-start flex-col justify-between rounded-2xl border border-hair bg-wash px-4 py-3.5 text-right transition-colors hover:border-accent md:w-auto md:max-w-none">
                 <span className="inline-flex w-fit rounded-full border border-hair px-2 py-0.5 text-[.66rem] text-soft">{item.tag}</span>
                 <span className="line-clamp-2 text-[.86rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">{item.label}</span>
                 <span className="text-[.72rem] font-semibold text-accent">افتح المسار</span>
@@ -661,9 +661,9 @@ function NowHub() {
         <SectionHead label="الآن" title="ما يستحق انتباهك." />
       </div>
       <div className="rail home-motion-rail mt-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-5 md:gap-5 md:px-[max(2.75rem,calc((100vw-1180px)/2))]">
-        <FadeUp className="w-[74vw] max-w-[520px] shrink-0 snap-start md:w-[48vw]"><LatestCard compact /></FadeUp>
-        <FadeUp delay={0.08} className="w-[62vw] max-w-[290px] shrink-0 snap-start md:w-[34vw]"><DailySpark compact /></FadeUp>
-        <FadeUp delay={0.14} className="w-[62vw] max-w-[290px] shrink-0 snap-start md:w-[31vw]"><OnThisWeek compact /></FadeUp>
+        <FadeUp className="w-[70vw] max-w-[500px] shrink-0 snap-start md:w-[48vw]"><LatestCard compact /></FadeUp>
+        <FadeUp delay={0.08} className="w-[58vw] max-w-[270px] shrink-0 snap-start md:w-[34vw]"><DailySpark compact /></FadeUp>
+        <FadeUp delay={0.14} className="w-[58vw] max-w-[270px] shrink-0 snap-start md:w-[31vw]"><OnThisWeek compact /></FadeUp>
         <span aria-hidden className="w-px shrink-0" />
       </div>
     </section>
@@ -685,7 +685,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
   return (
     <section className="border-t border-hair bg-wash px-6 py-[60px] md:px-11 md:py-[100px]">
       <div className="mx-auto max-w-shell">
-        <SectionHead label="أعمال مختارة" title="أربع نوافذ تكفي." to="/articles" cta="استكشف المكتبة" />
+        <SectionHead label="أعمال مختارة" title="مدخل يختصر الرحلة." to="/articles" cta="استكشف المكتبة" />
         <div className="mobile-card-rail grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
           {items.map((item, index) => {
             const isBook = item.type === 'كتاب مختار'
@@ -746,7 +746,7 @@ function ProfileAndBooksLayer({ books }: { books: BookRecord[] }) {
         </div>
         <div className="rail flex snap-x snap-mandatory gap-6 overflow-x-auto px-6 pb-10 ps-[max(1.5rem,env(safe-area-inset-right))] pe-[max(1.5rem,env(safe-area-inset-left))] md:px-11 md:pb-5">
           {books.map((book, i) => (
-            <Card key={book.slug} delay={Math.min(i * 0.05, 0.3)} className="w-[min(76vw,260px)] shrink-0 snap-start md:w-[300px]">
+            <Card key={book.slug} delay={Math.min(i * 0.05, 0.3)} className="w-[min(70vw,250px)] shrink-0 snap-start md:w-[300px]">
               <Link to={`/publications/${book.slug}`} data-hover className="group block">
                 <div className="overflow-hidden rounded-xl bg-white shadow-[0_22px_44px_-26px_rgba(21,22,26,.4)] transition-transform duration-500 group-hover:-translate-y-1.5" style={{ aspectRatio: '1024 / 700' }}>
                   <img src={book.cover} alt={book.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />

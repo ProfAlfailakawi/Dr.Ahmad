@@ -1473,89 +1473,111 @@ function validatedRisk(raw, text) {
   }
 }
 
+/* شفاء التشكيل غير المرصود — إسناد واعٍ بالسوابق: «وتَقْييم» تُنسب إلى «التقييم» المعلنة
+   (واو العطف/ال التعريف…)، وأي كلمة مشكولة بلا رصيد من المخاطر المعلنة أو أصل الحوار
+   تُشفى بنزع حركاتها — فلا يمر تشكيل غير مسبب، ولا تسقط الدفعة. دالة نقية كي تُختبر بلا Gemini. */
+function healUnbackedDiacritics(dialogue, pron, risks) {
+  const allowedDiacritics = new Set(risks.flatMap((risk) =>
+    normalizeAr(risk.word).split(' ').concat(normalizeAr(risk.selectedPronunciation).split(' '))))
+  for (const originalWord of String(dialogue).split(/\s+/).filter((item) => DIACRITICS_RE.test(item))) {
+    const normalizedOriginal = normalizeAr(originalWord)
+    if (normalizedOriginal) allowedDiacritics.add(normalizedOriginal)
+  }
+  const PREFIX_RE = /^(وال|فال|بال|كال|لل|ال|و|ف|ب|ل|ك)/
+  const bareForms = new Set()
+  for (const allowed of allowedDiacritics) if (allowed) { bareForms.add(allowed); bareForms.add(allowed.replace(PREFIX_RE, '')) }
+  let healedText = String(pron)
+  const healedWords = []
+  for (const word of String(pron).split(/\s+/).filter((item) => DIACRITICS_RE.test(item))) {
+    const normalizedWord = normalizeAr(word)
+    if (!normalizedWord) continue
+    if (bareForms.has(normalizedWord) || bareForms.has(normalizedWord.replace(PREFIX_RE, ''))) continue
+    healedText = healedText.split(word).join(stripDiacritics(word))
+    healedWords.push(word)
+  }
+  return { healedText, healedWords }
+}
+
 async function riskAnalyze(utts, { tolerant = false } = {}) {
   /* على دفعات (8 مداخلات) كي لا يُبتر JSON الإخراج في الحلقات الطويلة،
      مع خريطة ضبط مشتركة تضمن اتساق الكلمة نفسها عبر كل الدفعات.
-     tolerant=true (إعادة تحليل مداخلة مُعاد صياغتها): الدفعة الفاشلة تسقط لملاذ
-     حتمي بالقاموس بدل رمي خطأ يُهدر الحلقة كلها — الصرامة تبقى في التوليد الأولي. */
+     سلّم نجاة ثابت لا يعزل الحلقة لعثرة المحلل: الدفعة تتعثر كل جولاتها → إعادة
+     تحليل كل مداخلة فرادى (حمولة أصغر تنضبط أفضل) → ما بقي يسقط لملاذ حتمي
+     بالقاموس والأنماط. نص الحوار لا يُمس في كل الأحوال، وبوابات الصوت الفعلية
+     (STT + الحكم + حد 13ث) تبقى كاملة بلا أي تخفيف.
+     tolerant=true (إعادة تحليل مداخلة مُعاد صياغتها): جولات أقل قبل الملاذ نفسه. */
   const CHUNK = 8
   const lexCtx = `القاموس والذاكرة المعتمدان (التزم بهما حرفياً):\n${JSON.stringify(lexiconContext(), null, 1)}`
   const results = new Array(utts.length)
   const pronMap = new Map()
   for (let start = 0; start < utts.length; start += CHUNK) {
     const slice = utts.slice(start, start + CHUNK)
-    const payload = `${lexCtx}\n\nقرارات ضبط سابقة في هذه الحلقة (التزم بها للاتساق):\n${JSON.stringify([...pronMap.entries()].map(([w, p]) => ({ word: w, pron: p })))}\n\nالمداخلات:\n` +
-      JSON.stringify(slice.map((u, i) => ({ idx: start + i, speaker: u.speaker, text: u.text })), null, 1)
-    let list = null
     const roundFailures = []
-    for (let round = 1; round <= 3 && !list; round++) {
-      try {
-        const out = await gemini(PRONOUNCE_SYSTEM, payload + (round > 1 ? '\n\nREWRITE: النتيجة السابقة لم تجتز البوابة. التشكيل انتقائي فقط، وكل حقل في تحليل المخاطر إلزامي.' : ''), 0.25, ANALYSIS_MODEL)
-        const cand = out.utterances || []
-        if (cand.length !== slice.length) { roundFailures.push(`محاولة ${round}: عدد المداخلات ${cand.length}/${slice.length}`); continue }
-        let valid = true
-        const validationIssues = []
-        const healedDiacritics = []
-        const totalWords = cand.reduce((n, x) => n + String(x.pronunciationText || '').split(/\s+/).length, 0)
-        const diacWords = cand.reduce((n, x) => n + String(x.pronunciationText || '').split(/\s+/).filter((w) => DIACRITICS_RE.test(w)).length, 0)
-        if (totalWords && diacWords / totalWords > 0.32) { valid = false; validationIssues.push(`تشكيل ${Math.round(diacWords / totalWords * 100)}٪`) }
-        for (let i = 0; i < cand.length; i++) {
-          const dialogue = slice[i].text
-          const pron = String(cand[i].pronunciationText || '')
-          if (!pron) { valid = false; validationIssues.push(`u${start + i + 1}: pronunciationText فارغ`) }
-          if (AR_COLLOQUIAL_WORDS.some((word) => arWord(word).test(pron))) { valid = false; validationIssues.push(`u${start + i + 1}: عامية`) }
-          const risks = (cand[i].risks || []).map((risk) => validatedRisk(risk, dialogue)).filter(Boolean)
-          const deterministic = deterministicRisks(dialogue)
-          const merged = new Map(risks.map((risk) => [normalizeAr(risk.word), risk]))
-          for (const risk of deterministic) {
-            const key = normalizeAr(risk.word)
-            const modelRisk = merged.get(key)
-            merged.set(key, modelRisk ? { ...modelRisk, ...risk, selectedPronunciation: modelRisk.selectedPronunciation || risk.selectedPronunciation,
-              subAlias: modelRisk.subAlias || risk.subAlias, riskLevel: 'high', deterministic: true } : risk)
+    const analyzeChunk = async (chunkSlice, chunkStart, rounds) => {
+      const payload = `${lexCtx}\n\nقرارات ضبط سابقة في هذه الحلقة (التزم بها للاتساق):\n${JSON.stringify([...pronMap.entries()].map(([w, p]) => ({ word: w, pron: p })))}\n\nالمداخلات:\n` +
+        JSON.stringify(chunkSlice.map((u, i) => ({ idx: chunkStart + i, speaker: u.speaker, text: u.text })), null, 1)
+      for (let round = 1; round <= rounds; round++) {
+        try {
+          const out = await gemini(PRONOUNCE_SYSTEM, payload + (round > 1 ? '\n\nREWRITE: النتيجة السابقة لم تجتز البوابة. شكّل كلمات المخاطر المعلنة وحدها واترك سائر الكلمات بلا حركات إطلاقاً، وكل حقل في تحليل المخاطر إلزامي.' : ''), 0.25, ANALYSIS_MODEL)
+          const cand = out.utterances || []
+          if (cand.length !== chunkSlice.length) { roundFailures.push(`محاولة ${round}: عدد المداخلات ${cand.length}/${chunkSlice.length}`); continue }
+          let valid = true
+          const validationIssues = []
+          const healedDiacritics = []
+          for (let i = 0; i < cand.length; i++) {
+            const dialogue = chunkSlice[i].text
+            const pron = String(cand[i].pronunciationText || '')
+            if (!pron) { valid = false; validationIssues.push(`u${chunkStart + i + 1}: pronunciationText فارغ`) }
+            if (AR_COLLOQUIAL_WORDS.some((word) => arWord(word).test(pron))) { valid = false; validationIssues.push(`u${chunkStart + i + 1}: عامية`) }
+            const risks = (cand[i].risks || []).map((risk) => validatedRisk(risk, dialogue)).filter(Boolean)
+            const deterministic = deterministicRisks(dialogue)
+            const merged = new Map(risks.map((risk) => [normalizeAr(risk.word), risk]))
+            for (const risk of deterministic) {
+              const key = normalizeAr(risk.word)
+              const modelRisk = merged.get(key)
+              merged.set(key, modelRisk ? { ...modelRisk, ...risk, selectedPronunciation: modelRisk.selectedPronunciation || risk.selectedPronunciation,
+                subAlias: modelRisk.subAlias || risk.subAlias, riskLevel: 'high', deterministic: true } : risk)
+            }
+            for (const risk of merged.values()) {
+              if (risk.riskLevel === 'high' && (!risk.selectedPronunciation || risk.selectedPronunciation === risk.word)
+                && !risk.subAlias && /[A-Za-z0-9]/.test(risk.word)) { valid = false; validationIssues.push(`u${chunkStart + i + 1}: بلا نطق ${risk.word}`) }
+            }
+            const { healedText, healedWords } = healUnbackedDiacritics(dialogue, pron, [...merged.values()])
+            for (const word of healedWords) healedDiacritics.push(`u${chunkStart + i + 1}: ${word}`)
+            cand[i] = { ...cand[i], pronunciationText: healedText, risks: [...merged.values()] }
           }
-          for (const risk of merged.values()) {
-            if (risk.riskLevel === 'high' && (!risk.selectedPronunciation || risk.selectedPronunciation === risk.word)
-              && !risk.subAlias && /[A-Za-z0-9]/.test(risk.word)) { valid = false; validationIssues.push(`u${start + i + 1}: بلا نطق ${risk.word}`) }
+          /* فحص نسبة التشكيل بعد الشفاء لا قبله: الحكم على ما سيصل TTS فعلاً، لا على
+             مسودة النموذج الخام. المسودة المفرطة يجردها الشفاء إلى الانتقائي المسبَّب
+             فتمر؛ ولا تبقى النسبة عالية بعده إلا إذا كانت المخاطر المعلنة نفسها بهذا
+             الحجم — وذاك وحده الفشل الحقيقي. */
+          const totalWords = cand.reduce((n, x) => n + String(x.pronunciationText || '').split(/\s+/).length, 0)
+          const diacWords = cand.reduce((n, x) => n + String(x.pronunciationText || '').split(/\s+/).filter((w) => DIACRITICS_RE.test(w)).length, 0)
+          if (totalWords && diacWords / totalWords > 0.32) { valid = false; validationIssues.push(`تشكيل ${Math.round(diacWords / totalWords * 100)}٪ بعد الشفاء`) }
+          if (valid) {
+            if (healedDiacritics.length) console.log(`  ♻ نُزع تشكيل غير مرصود (${healedDiacritics.length}): ${[...new Set(healedDiacritics)].slice(0, 4).join('، ')}${healedDiacritics.length > 4 ? '…' : ''}`)
+            return cand
           }
-          const allowedDiacritics = new Set([...merged.values()].flatMap((risk) =>
-            normalizeAr(risk.word).split(' ').concat(normalizeAr(risk.selectedPronunciation).split(' '))))
-          for (const originalWord of dialogue.split(/\s+/).filter((item) => DIACRITICS_RE.test(item))) {
-            const normalizedOriginal = normalizeAr(originalWord)
-            if (normalizedOriginal) allowedDiacritics.add(normalizedOriginal)
-          }
-          /* إسناد واعٍ بالسوابق: «وتَقْييم» تُنسب إلى «التقييم» المعلنة (واو العطف/ال التعريف…)،
-             وأي تشكيل يبقى بلا رصيد يُشفى ذاتياً بنزع حركاته — فلا يمر تشكيل غير مسبب، ولا تسقط الدفعة */
-          const PREFIX_RE = /^(وال|فال|بال|كال|لل|ال|و|ف|ب|ل|ك)/
-          const bareForms = new Set()
-          for (const allowed of allowedDiacritics) if (allowed) { bareForms.add(allowed); bareForms.add(allowed.replace(PREFIX_RE, '')) }
-          let healedText = pron
-          for (const word of pron.split(/\s+/).filter((item) => DIACRITICS_RE.test(item))) {
-            const normalizedWord = normalizeAr(word)
-            if (!normalizedWord) continue
-            const bare = normalizedWord.replace(PREFIX_RE, '')
-            if (bareForms.has(normalizedWord) || bareForms.has(bare)) continue
-            healedText = healedText.split(word).join(stripDiacritics(word))
-            healedDiacritics.push(`u${start + i + 1}: ${word}`)
-          }
-          cand[i] = { ...cand[i], pronunciationText: healedText, risks: [...merged.values()] }
-        }
-        if (valid) {
-          if (healedDiacritics.length) console.log(`  ♻ نُزع تشكيل غير مرصود (${healedDiacritics.length}): ${[...new Set(healedDiacritics)].slice(0, 4).join('، ')}${healedDiacritics.length > 4 ? '…' : ''}`)
-          list = cand
-        }
-        else roundFailures.push(`محاولة ${round}: ${[...new Set(validationIssues)].slice(0, 8).join('، ')}`)
-      } catch (error) { roundFailures.push(`محاولة ${round}: ${error.message}`) }
+          roundFailures.push(`محاولة ${round}: ${[...new Set(validationIssues)].slice(0, 8).join('، ')}`)
+        } catch (error) { roundFailures.push(`محاولة ${round}: ${error.message}`) }
+      }
+      return null
     }
-    if (!list) {
-      if (!tolerant) throw new Error(`Arabic Pronunciation Risk Detector فشل مغلقاً في المداخلات ${start + 1}-${start + slice.length}: ${roundFailures.join(' | ')}`)
-      // ملاذ آمن: كشف حتمي بالقاموس والأنماط — لا يفقد الأسماء المعروفة، ولا يُسقط الحلقة
-      console.log(`  ⓘ ملاذ نطقي حتمي للمداخلات ${start + 1}-${start + slice.length} (تعذّر التحليل الكامل)`)
-      list = slice.map((u) => {
-        const merged = new Map()
-        for (const risk of deterministicRisks(u.text)) merged.set(normalizeAr(risk.word), risk)
-        return { pronunciationText: u.text, risks: [...merged.values()] }
-      })
+    let list = await analyzeChunk(slice, start, tolerant ? 2 : 3)
+    if (!list && slice.length > 1) {
+      console.log(`  ↻ دفعة المداخلات ${start + 1}-${start + slice.length} تعثرت — إعادة التحليل فرادى`)
+      list = []
+      for (let i = 0; i < slice.length; i++) list.push((await analyzeChunk([slice[i]], start + i, 2))?.[0] || null)
     }
+    // ملاذ آمن لما بقي: كشف حتمي بالقاموس والأنماط — لا يفقد الأسماء المعروفة، ولا يُسقط الحلقة
+    const fallbackIds = []
+    list = (list || new Array(slice.length).fill(null)).map((item, i) => {
+      if (item) return item
+      fallbackIds.push(`u${start + i + 1}`)
+      const merged = new Map()
+      for (const risk of deterministicRisks(slice[i].text)) merged.set(normalizeAr(risk.word), risk)
+      return { pronunciationText: slice[i].text, risks: [...merged.values()] }
+    })
+    if (fallbackIds.length) console.log(`  ⓘ ملاذ نطقي حتمي (${fallbackIds.join('، ')}): ${[...new Set(roundFailures)].slice(-3).join(' | ')}`)
     slice.forEach((u, i) => {
       const x = list?.[i]
       results[start + i] = { idx: start + i, pronunciationText: x.pronunciationText, risks: x.risks }
@@ -3362,7 +3384,18 @@ if (SELF_TEST) {
   assert(derivedPiece.pronunciationText.includes('تَرْتَفِعُ'), 'تشكيل القطعة منقول من تحليل الوحدة الكاملة')
   assert.equal(derivedPiece.risks.length, 1, 'ترشيح الكلمات الخطرة بالانتماء للقطعة فقط')
   assert.equal(derivedPiece.risks[0].word, 'الزغاريد', 'الكلمة الخطرة الصحيحة بقيت مع قطعتها')
-  console.log('✓ اختبارات بوابة البودكاست العربي: 27/27')
+  // ٨) شفاء التشكيل المفرط (فئة فشل التشغيل 12: «تشكيل 52٪» على دفعة كاملة رغم أن
+  //    الشفاء كان سيعالجها): مسودة مشكولة بالكامل تُجرَّد إلى الانتقائي المسبَّب وتمر
+  const overDone = healUnbackedDiacritics(
+    'تظهر النتيجة فترتفع الزغاريد وتنهال التهاني',
+    'تَظْهَرُ النَّتِيجَةُ فَتَرْتَفِعُ الزَّغَارِيدُ وَتَنْهَالُ التَّهَانِي',
+    [{ word: 'الزغاريد', selectedPronunciation: 'الزَّغَارِيد', riskLevel: 'high' }])
+  assert.equal(overDone.healedWords.length, 5, 'كل الكلمات المشكولة بلا سند تُشفى بنزع حركاتها')
+  assert(overDone.healedText.includes('الزَّغَارِيدُ'), 'كلمة الخطر المعلنة تحتفظ بتشكيلها')
+  const healedRatio = overDone.healedText.split(/\s+/).filter((w) => DIACRITICS_RE.test(w)).length
+    / overDone.healedText.split(/\s+/).length
+  assert(healedRatio <= 0.32, 'نسبة التشكيل بعد الشفاء تعود تحت بوابة 32٪ فلا تسقط الدفعة')
+  console.log('✓ اختبارات بوابة البودكاست العربي: 30/30')
   process.exit(0)
 }
 

@@ -1828,9 +1828,8 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
   let paceCalibration = null
   let prescriptionsUsed = 0
 
-  // 4 جولات: وصفة الحكم تُصرف مرة واحدة فقط حتى لا تستهلك ميزانية إعادة الصياغة
-  // (كانت الوصفات تلتهم الجولات الثلاث فلا تُختبر الصياغة الجديدة أبداً).
-  for (let round = 0; round < 4; round++) {
+  // 5 جولات: وصفة الحكم مرة، وعلاج التأنيث مرة، وتبقى فرصة حقيقية لإعادة الصياغة.
+  for (let round = 0; round < 5; round++) {
     const applied = applyLexicon(currentAnalysis.pronunciationText || dialogueText, currentAnalysis.risks, voice, dialogueText)
     const calibrated = await calibrateProductionPlan({ utterance: deliveryPlan, voice, text: applied.text,
       subs: applied.subs, lang, tempBase: wavPath.replace(/\.wav$/, `.r${round + 1}`) })
@@ -1903,6 +1902,21 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
       prescriptionsUsed += 1
       console.log(`    ⚕ ${utteranceId}: تطبيق وصفة الحكم النطقية وإعادة المحاولة (بلا إعادة صياغة)`)
       currentAnalysis = { ...currentAnalysis, pronunciationText: judgeRevision }
+      continue
+    }
+    // علاج التأنيث المبتلع نظامياً: Azure يُذكِّر بعض النعوت المؤنثة (شرسة→شرس، موثقة→موثق)
+    // ويتجاهل تشكيل التاء المربوطة. البديل المثبت: هاء مفتوحة قبل الوقف (شَرِسَه) — صوت الوقف
+    // العربي الصحيح نفسه، وSTT يطبّع ة/ه فلا يتأثر التطابق. يُحفظ النجاح في ذاكرة النطق للأبد.
+    const feminineStubborn = [...new Set(audits.flatMap((audit) => (audit.verdict?.problems || [])
+      .filter((problem) => /تأنيث|مؤنث/.test(String(problem.issue || '')) && /ة$/.test(String(problem.word || '').trim()))
+      .map((problem) => String(problem.word).trim())))]
+    if (feminineStubborn.length && !(currentAnalysis.risks || []).some((risk) => risk.__femFix)) {
+      const fixes = feminineStubborn.map((word) => ({ word, riskLevel: 'high',
+        meaningInContext: 'تثبيت تاء التأنيث المسموعة', grammaticalType: 'نعت مؤنث',
+        method: 'sub', selectedPronunciation: word, __femFix: true,
+        subAlias: word.slice(0, -1) + 'َه' }))
+      console.log(`    ♀ ${utteranceId}: تثبيت التأنيث المبتلع ببديل نطقي (${feminineStubborn.join('، ')})`)
+      currentAnalysis = { ...currentAnalysis, risks: [...(currentAnalysis.risks || []), ...fixes] }
       continue
     }
     const rephrased = await safeRephrase(dialogueText, sourceText, reason, stubbornWords)

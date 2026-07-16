@@ -92,7 +92,7 @@ jobs:
           for slug in "${ITEMS[@]}"; do
             slug="$(echo "$slug" | xargs)"
             echo "Generating $slug"
-            node scripts/podcast-dialogue.mjs --slug="$slug" --lang=ar --force
+            timeout 60m node scripts/podcast-dialogue.mjs --slug="$slug" --lang=ar --force
           done
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json

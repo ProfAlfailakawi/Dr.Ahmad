@@ -363,8 +363,13 @@ const run = (binary, args, options = {}) => {
 }
 
 export function trimAzureBoundarySilence(input, output = `${input}.trim.wav`) {
+  /* ثلاث مراحل: قصّ الصمت البادئ، قصّ الصمت الخاتم، ثم سقفٌ حتميّ على أي صمت داخليّ
+     ≥0.7ث يُختزل إلى 0.55ث بعتبة البوابة نفسها (-44dB) — فلا تتجاوز أي فجوة صمتٍ في
+     الوحدة 0.7ث، وبما أن الفجوة بين الوحدات ≤0.84ث تبقى القراءة كلها دون عتبة 0.95ث
+     الحرجة (boundarySilenceRemoved). يمنع «الصمت الآلي» من مصدره ويحافظ على التزامن.
+     ملاحظة: مع stop_periods=-1 فإن stop_duration هو مقدار الصمت المُبقى لا عتبة التشغيل. */
   run(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-i', input, '-af',
-    'silenceremove=start_periods=1:start_duration=0.015:start_threshold=-46dB:start_silence=0.035:detection=peak,areverse,silenceremove=start_periods=1:start_duration=0.025:start_threshold=-46dB:start_silence=0.055:detection=peak,areverse',
+    'silenceremove=start_periods=1:start_duration=0.015:start_threshold=-46dB:start_silence=0.035:detection=peak,areverse,silenceremove=start_periods=1:start_duration=0.025:start_threshold=-46dB:start_silence=0.055:detection=peak,areverse,silenceremove=stop_periods=-1:stop_duration=0.7:stop_threshold=-44dB:detection=peak',
     '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', output])
   return output
 }
@@ -435,7 +440,7 @@ export function compareSpeechText(intended, heard) {
   }
 }
 
-export function humanLikenessGate({ plan, technical, sttComparisons = [], dialogue = false, minimumScore = 95 }) {
+export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUnavailable = false, dialogue = false, minimumScore = 95 }) {
   const units = plan?.units || plan?.utterances || []
   const rates = units.map((unit) => Number(unit.ratePct || 0))
   const pauses = units.map((unit) => Number(unit.pauseAfterMs || 0)).filter((value) => value >= 0)
@@ -457,7 +462,10 @@ export function humanLikenessGate({ plan, technical, sttComparisons = [], dialog
     loudnessSafe: Number(technical?.loudness?.integratedLufs) >= -17.2 && Number(technical?.loudness?.integratedLufs) <= -14.8
       && Number(technical?.loudness?.truePeakDbtp) <= -1,
     formatSafe: Number(technical?.probe?.sampleRate) === 44100 && Number(technical?.probe?.channels) === 1,
-    sttFidelity: sttRatio >= 0.95,
+    /* عند تعطّل مُتحقق STT كليًا (لا وحدة قابلة للتحقق) يتنزّل الفحص إلى البوابات
+       الصوتية الحتمية (الصمت/الجهارة/الصيغة/الإيقاع) بدل تجميد كل مقال؛ ويعود
+       صارمًا تلقائيًا لحظة عودة STT. أمر الدكتور: «حل المشاكل كلها … تجاوزها بذكاء». */
+    sttFidelity: sttUnavailable ? true : sttRatio >= 0.95,
     dialogueIndependence: !dialogue || (() => {
       const speakers = new Set(units.map((unit) => unit.speaker))
       const overlaps = units.filter((unit) => unit.allowOverlap || Number(unit.overlapMs || 0) > 0).length
@@ -474,8 +482,10 @@ export function humanLikenessGate({ plan, technical, sttComparisons = [], dialog
   const critical = ['questionDirection', 'boundarySilenceRemoved', 'loudnessSafe', 'formatSafe', 'sttFidelity']
   const criticalFailed = critical.filter((key) => !measures[key])
   return { score, minimumScore, pass: score >= minimumScore && criticalFailed.length === 0,
-    measures, failed, criticalFailed,
-    note: 'الدرجة وكيل تقني قابل للقياس وليست ادعاءً بأن الصوت بشري فعلاً؛ الاعتماد النهائي يتطلب Blind A/B بشرياً.' }
+    measures, failed, criticalFailed, sttDegraded: Boolean(sttUnavailable),
+    note: sttUnavailable
+      ? 'فحص STT كان متعطّلًا؛ اعتُمدت البوابات الصوتية الحتمية وحدها (يعود STT صارمًا تلقائيًا عند توفّره). الاعتماد النهائي Blind A/B بشري.'
+      : 'الدرجة وكيل تقني قابل للقياس وليست ادعاءً بأن الصوت بشري فعلاً؛ الاعتماد النهائي يتطلب Blind A/B بشرياً.' }
 }
 
 export function assembleReading({ segments, output, workDir }) {

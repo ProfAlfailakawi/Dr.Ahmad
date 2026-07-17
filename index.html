@@ -101,15 +101,27 @@
             });
           }
         } else if (location.protocol === 'https:') {
+          var isAdmin = location.pathname === '/admin' || location.pathname.startsWith('/admin/');
+          // لوحة التحكم: إن تولّى عامل خدمة جديد التحكّم (بعد نشر جديد) نُعيد التحميل مرة
+          // واحدة فوراً لتُخدَم أحدث نسخة — فلا يعلق الدكتور على لوحة قديمة معطوبة.
+          // (الحارس controller يمنع إعادة التحميل عند أول تثبيت، والعلم يمنع أي حلقة.)
+          if (isAdmin && navigator.serviceWorker.controller) {
+            var swReloaded = false;
+            navigator.serviceWorker.addEventListener('controllerchange', function () {
+              if (swReloaded) return;
+              swReloaded = true;
+              location.reload();
+            });
+          }
           window.addEventListener('load', function () {
             navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(function (registration) {
               // لوحة التحكم تطلب أحدث عامل خدمة فوراً حتى لا تبقى نسخة قديمة تستدعي مسار رفع 413 الملغى.
-              if (location.pathname === '/admin' || location.pathname.startsWith('/admin/')) {
+              if (isAdmin) {
                 registration.update().catch(function () {});
               }
             }).catch(function () {});
           });
-          // التحديث الجديد يُستخدم في الزيارة التالية بلا إعادة تحميل مفاجئة.
+          // الصفحات العامة: التحديث الجديد يُستخدم في الزيارة التالية بلا إعادة تحميل مفاجئة.
         }
       }
     </script>

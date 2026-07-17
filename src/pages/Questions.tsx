@@ -110,7 +110,7 @@ export default function Questions() {
       <PageHead
         label="الزاوية المتجددة"
         title="سؤال يُقلق التعليم."
-        sub="سؤال جديد كل يومين من مجال التعليم والتقنية والإنسان، مع أرشيف زمني واضح بلا أرقام سالبة أو تواريخ مستقبلية."
+        sub="أسئلةٌ تتجدّد عند تقاطع التعليم والتقنية والإنسان — كلٌّ منها يستحقّ أن تتوقّف عنده."
       />
       <section className="border-b border-hair px-6 py-16 md:px-11 md:py-24">
         <div className="mx-auto max-w-shell">

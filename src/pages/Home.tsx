@@ -688,7 +688,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
   return (
     <section className="border-t border-hair bg-wash px-6 py-[60px] md:px-11 md:py-[100px]">
       <div className="mx-auto max-w-shell">
-        <SectionHead label="أعمال مختارة" title="مدخل يختصر الرحلة." to="/articles" cta="استكشف المكتبة" />
+        <SectionHead label="أعمال مختارة" title="مدخل يختصر الرحلة." />
         <div className="mobile-card-rail grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
           {items.map((item, index) => {
             const isBook = item.type === 'كتاب مختار'

@@ -166,7 +166,7 @@ export default function Inbox() {
 
   return (
     <Page>
-      <PageHead label="رسائل على الهامش" title="رسالةٌ تفتح نافذة." sub="رسالة جديدة كل 3 أيام، وسؤال مختصر كل يومين — تلقائيًا ومن دون تدخل." />
+      <PageHead label="رسائل على الهامش" title="رسالةٌ تفتح نافذة." sub="رسائل قصيرة على هامش المقالات — تأمّلٌ يمرّ، وسؤالٌ يبقى." />
 
       {/* الرسالة الأحدث */}
       <section className="border-b border-hair px-6 py-16 md:px-11 md:py-24">

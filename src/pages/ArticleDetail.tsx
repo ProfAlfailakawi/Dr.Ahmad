@@ -24,32 +24,11 @@ const canUseDropCap = (paragraph: string) =>
 
 function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
   const audio = usePersistentAudio()
-  const [follow, setFollow] = useState(false)
   const popularQuotes = usePopularQuotes(slug, body)
   const refs = useRef<(HTMLParagraphElement | null)[]>([])
   const paragraphs = useMemo(() => body.split('\n\n').map((text) => ({ text, words: Math.max(1, text.trim().split(/\s+/).length) })), [body])
   const totalWords = paragraphs.reduce((sum, item) => sum + item.words, 0)
   const activeAudio = Boolean(audio.track?.path === `/articles/${slug}` && !audio.track?.label.includes('الحوار') && audio.duration > 0)
-  const activeIndex = useMemo(() => {
-    if (!activeAudio || !audio.duration || !totalWords) return -1
-    const target = Math.min(Math.max(audio.current / audio.duration, 0), 0.999999) * totalWords
-    let cursor = 0
-    for (let index = 0; index < paragraphs.length; index++) {
-      cursor += paragraphs[index].words
-      if (target < cursor) return index
-    }
-    return paragraphs.length - 1
-  }, [activeAudio, audio.current, audio.duration, paragraphs, totalWords])
-
-  useEffect(() => {
-    if (!follow || activeIndex < 0 || !audio.playing) return
-    const element = refs.current[activeIndex]
-    if (!element) return
-    const rect = element.getBoundingClientRect()
-    const safeTop = window.innerHeight * 0.2
-    const safeBottom = window.innerHeight * 0.72
-    if (rect.top < safeTop || rect.bottom > safeBottom) element.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }, [activeIndex, follow, audio.playing])
 
   const seekParagraph = (index: number) => {
     if (!activeAudio || !audio.duration) return
@@ -66,9 +45,6 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
             <p className="text-[.78rem] font-semibold text-accent">القراءة المتزامنة</p>
             <p className="mt-0.5 text-[.72rem] text-soft">اضغط أي فقرة لينتقل الصوت إليها.</p>
           </div>
-          <button type="button" onClick={() => setFollow(!follow)} aria-pressed={follow} className={`rounded-full border px-4 py-2 text-[.76rem] font-semibold transition-colors ${follow ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
-            {follow ? 'متابعة النص مفعّلة' : 'تابع النص مع الصوت'}
-          </button>
         </div>
       )}
       <div id="article-body" className={`article-body mt-11 ${activeAudio ? 'article-body-synced' : ''}`}>
@@ -77,12 +53,14 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
           const strongest = paragraphQuotes.slice().sort((left, right) => right.count - left.count)[0]
           return (
             <div key={index} className="popular-highlight-paragraph group relative">
+              {/* لا تظليل تلقائي متتبِّع: التقدير الخطّي (الزمن/المدة) ينحرف عن الإيقاع
+                 المتغيّر والوقفات فيتابع الكلمةَ الخطأ. أبقينا التزامن الموثوق وحده:
+                 اضغط أي فقرة لينتقل الصوت إليها. (التتبّع الدقيق يحتاج طوابع زمنية تُشحن.) */}
               <p
                 ref={(element) => { refs.current[index] = element }}
                 data-reader-paragraph={index}
                 onClick={() => seekParagraph(index)}
-                aria-current={activeIndex === index ? 'true' : undefined}
-                className={`${index === 0 && canUseDropCap(paragraph.text) ? 'dropcap ' : ''}${activeAudio ? 'synced-paragraph ' : ''}${activeIndex === index ? 'is-audio-active' : ''}`.trim() || undefined}
+                className={`${index === 0 && canUseDropCap(paragraph.text) ? 'dropcap ' : ''}${activeAudio ? 'synced-paragraph' : ''}`.trim() || undefined}
               >
                 <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} />
               </p>

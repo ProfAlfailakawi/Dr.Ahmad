@@ -51,7 +51,7 @@ export default function Radar() {
       <PageHead
         label="رادار الشبكة"
         title="أرشيف الرادار."
-        sub="حصادٌ أسبوعي من مصادر موثوقة — بالعربية والإنجليزية."
+        sub="مختاراتٌ أسبوعية موثوقة تستحقّ الانتباه — بالعربية والإنجليزية."
       />
 
       <section className="px-6 py-14 md:px-11 md:py-16">

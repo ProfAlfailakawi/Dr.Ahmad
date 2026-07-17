@@ -306,11 +306,6 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   const toolbarRef = useRef<HTMLDivElement>(null)
   const [toolbarX, setToolbarX] = useState<number | null>(null)
   const [view, setView] = useState<null | 'thread' | 'card'>(null)
-  // أي نافذة مفتوحة تُخفي زر العودة للأعلى كي لا يغطي المحتوى
-  useEffect(() => {
-    document.body.classList.toggle('modal-sheet-open', view !== null)
-    return () => document.body.classList.remove('modal-sheet-open')
-  }, [view])
   const [img, setImg] = useState<string | null>(null)
   const [cardQuote, setCardQuote] = useState('')
   const [template, setTemplate] = useState<CardTemplateKey>('midad')
@@ -657,7 +652,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
           >
             <motion.div
               initial={{ scale: 0.94, y: 14 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, opacity: 0 }}
-              transition={{ duration: 0.32 }} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()} className="quote-card-dialog w-full max-w-[440px] pb-2"
+              transition={{ duration: 0.32 }} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()} className="quote-card-dialog w-full max-w-[440px] pb-2 sm:max-w-[520px]"
             >
               <div className="quote-card-controls sticky top-0 z-10 mb-3 flex flex-wrap items-center justify-center gap-1.5 rounded-2xl bg-ink/90 p-2 shadow-lg backdrop-blur">
                 {CARD_TEMPLATES.map((t) => (
@@ -675,7 +670,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                 ))}
               </div>
               {img ? (
-                <img src={img} alt="بطاقة اقتباس" className={`mx-auto max-w-full rounded-2xl object-contain shadow-[0_40px_80px_-30px_rgba(0,0,0,.7)] ${format === 'story' ? 'max-h-[46dvh] w-auto' : 'max-h-[50dvh] w-auto'}`} />
+                <img src={img} alt="بطاقة اقتباس" className={`mx-auto max-w-full rounded-2xl object-contain shadow-[0_40px_80px_-30px_rgba(0,0,0,.7)] ${format === 'story' ? 'max-h-[46dvh] w-auto sm:max-h-[62vh]' : 'max-h-[50dvh] w-auto sm:max-h-[66vh]'}`} />
               ) : (
                 <div className="flex aspect-square items-center justify-center rounded-2xl border border-hair bg-canvas text-soft">…</div>
               )}

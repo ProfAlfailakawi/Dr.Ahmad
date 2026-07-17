@@ -71,6 +71,9 @@ const PERFORMANCE = Object.freeze({
 const normalizeSpace = (value) => String(value || '').replace(/\r/g, '').replace(/\s+/g, ' ').trim()
 const normalizedLetters = (value) => normalizeSpace(value).replace(DIACRITICS, '')
   .replace(/[إأآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/ـ/g, '')
+  /* توحيد حوامل الهمزة: STT يكتب «ذكاءنا/ذكائنا» و«مسؤول/مسئول» بحوامل متبادلة والصوت
+     واحد — كانت تُحسب كلمات مفقودة فتُسقط وحدات سليمة (r002 في «ذكاء بلا ضمير») */
+  .replace(/[ؤئ]/g, 'ء')
   .replace(/[^\u0621-\u064A0-9A-Za-z ]/g, '')
 
 export const countArabicWords = (value) => normalizeSpace(value).split(/\s+/).filter(Boolean).length

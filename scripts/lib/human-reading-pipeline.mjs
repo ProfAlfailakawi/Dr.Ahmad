@@ -178,7 +178,11 @@ async function azureSttEnsemble({ wav, key, region, locale, intended }) {
 
 function actualWpm(text, file) {
   const duration = Math.max(0.35, probeAudio(file).durationSec)
-  return Math.round(countArabicWords(text) * 60 / duration)
+  /* السرعة تُقاس على زمن النطق الفعلي لا على الوقفات الدلالية: وحدة خطّاف قصيرة
+     فيها «...» كانت تُحسب بطيئة مهما دفع المصحح (r002 في «ذكاء بلا ضمير») */
+  const silence = analyzeSilence(file)
+  const active = Math.max(0.35, duration - Number(silence?.totalSec || 0))
+  return Math.round(countArabicWords(text) * 60 / active)
 }
 
 function highRiskMissing(comparison, risks) {
@@ -220,7 +224,14 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
     }
     if (attempt < maxAttempts) {
       rmSync(trimmed, { force: true })
-      const ratioCorrection = target > 0 && measuredWpm > 0 ? ((target / measuredWpm) - 1) * 100 : 0
+      /* الهدف الرقمي تركيبي من المخطط لا من الكاتب؛ إن كان النص سليماً سمعياً والإيقاع
+         المقاس ضمن النطاق البشري لكن بعيداً عن الهدف، يُصوَّب الهدف إلى المقاس —
+         نفس مبدأ محرك الحوار المثبت (تصويب u002) بدل دفع المصحح إلى سقفه عبثاً */
+      if (sttPass && !pacePass && measuredWpm >= 118 && measuredWpm <= 175) {
+        working.targetWordsPerMinute = measuredWpm
+      }
+      const retryTarget = Number(working.targetWordsPerMinute)
+      const ratioCorrection = retryTarget > 0 && measuredWpm > 0 ? ((retryTarget / measuredWpm) - 1) * 100 : 0
       const articulationCorrection = sttPass ? 0 : -2
       working.ratePct = clamp(Math.round(working.ratePct + ratioCorrection + articulationCorrection), -16, 10)
       if (!sttPass && working.internalBreaks?.length) {

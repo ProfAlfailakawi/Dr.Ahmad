@@ -477,7 +477,16 @@ async function processOriginals(articles, allOriginals, budget) {
       missingArticles.add(article.slug)
       console.log(`  ${DRY_RUN ? '○' : '◈'} أصل · ${voice.label} · ${article.title.slice(0, 55)}`)
       if (DRY_RUN || budget.used >= JOB_LIMIT) continue
-      const audit = await synthesizeHumanReading(article, voice, target)
+      /* مقالة تفشل لا توقف القافلة: تُسجل بفشلها وتُتجاوز حتى لا يظل صف التوليد
+         معلقاً ساعات على وحدة واحدة عصية (كان r002 يقتل كل التشغيلات المتتالية) */
+      let audit
+      try {
+        audit = await synthesizeHumanReading(article, voice, target)
+      } catch (error) {
+        budget.used += 1
+        console.error(`  ✘ ${article.slug} (${voice.label}): ${String(error.message).slice(0, 160)} — تُتجاوز وتستمر القافلة`)
+        continue
+      }
       if (!USE_R2) {
         atomicCopy(target, publicTarget)
       }

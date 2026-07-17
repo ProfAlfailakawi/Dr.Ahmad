@@ -468,7 +468,8 @@ export const compositionLabel: Record<Composition, string> = {
 export const compositionNameOf = (layout: SocialVisualLayout) => compositionLabel[compositionOf(layout)]
 
 export async function renderSocialPng(template: SocialVisualTemplate) {
-  await document.fonts?.ready
+  /* انتظار الخطوط بمهلة: متصفح يعلّق fonts.ready لا يحق له تعليق الرسم كله */
+  await Promise.race([document.fonts?.ready, new Promise((resolve) => window.setTimeout(resolve, 3000))])
   const canvas = document.createElement('canvas')
   canvas.width = template.width
   canvas.height = template.height
@@ -518,7 +519,9 @@ export async function renderSocialPng(template: SocialVisualTemplate) {
       const logo = await loadLogo()
       const logoWidth = Math.round(W * 0.1)
       const logoHeight = Math.round(logoWidth * 0.62)
-      if (invert) ctx.filter = 'invert(1)'
+      const filterSupported = typeof ctx.filter === 'string'
+      if (invert && filterSupported) ctx.filter = 'invert(1)'
+      if (invert && !filterSupported) return 0 // سفاري: شعار داكن على ليل داكن أسوأ من غيابه
       ctx.drawImage(logo, x === -1 ? Math.round((W - logoWidth) / 2) : x, y - logoHeight, logoWidth, logoHeight)
       ctx.filter = 'none'
       return logoHeight

@@ -28,11 +28,51 @@ const Dots = ({ items }: { items: CvTextItem[] }) => (
     {items.map((item) => (
       <li key={item.id} className="relative ps-5 text-[.95rem] font-light leading-[1.8] text-ink">
         <span className="absolute right-0 top-[.75em] h-1.5 w-1.5 rounded-full bg-accent" />
-        {item.text}
+        <span dir="auto">{item.text}</span>
       </li>
     ))}
   </ul>
 )
+
+const containsArabic = (value: string) => /[\u0600-\u06ff]/.test(value)
+
+function CourseArchive({ items }: { items: CvTextItem[] }) {
+  const professional = items.filter((item) => containsArabic(item.text))
+  const technical = items.filter((item) => !containsArabic(item.text))
+  const groups = [
+    { title: 'الشهادات والدورات المهنية', items: professional, open: true },
+    { title: 'مسارات Microsoft والتقنية التعليمية بمسمياتها الأصلية', items: technical, open: false },
+  ].filter((group) => group.items.length > 0)
+
+  return (
+    <div className="grid gap-4">
+      {groups.map((group) => (
+        <details key={group.title} open={group.open} className="group overflow-hidden rounded-2xl border border-hair bg-wash/45">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 marker:hidden">
+            <span className="font-display text-[1rem] font-semibold text-ink">{group.title}</span>
+            <span className="flex items-center gap-3 text-[.78rem] text-soft">
+              <span>{group.items.length}</span>
+              <span className="relative flex h-6 w-6 items-center justify-center" aria-hidden="true">
+                <span className="absolute h-px w-3 bg-accent" />
+                <span className="absolute h-3 w-px bg-accent transition-transform group-open:rotate-90" />
+              </span>
+            </span>
+          </summary>
+          <div className="border-t border-hair px-4 py-4 sm:px-5">
+            <ul className="grid gap-2.5 md:grid-cols-2">
+              {group.items.map((item, index) => (
+                <li key={item.id} className="rounded-xl border border-hair/80 bg-canvas px-4 py-3 text-[.84rem] font-light leading-[1.65] text-ink">
+                  <span className="me-2 text-[.7rem] font-semibold text-accent/70">{index + 1}</span>
+                  <span dir="auto">{item.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </details>
+      ))}
+    </div>
+  )
+}
 
 export default function CV() {
   const cvLinks = useCvLinks()
@@ -163,25 +203,58 @@ export default function CV() {
               </CvSectionEditor>
 
               <Accordion title="الأبحاث والكتب" count={`${books.length} + ${papers.length}`}>
-                <div className="grid gap-10 md:grid-cols-2">
-                  <div>
-                    <h3 className="font-display text-[1.05rem] font-semibold text-ink">المؤلفات</h3>
-                    <ul className="mt-3.5 space-y-2">
-                      {books.map((book) => (
-                        <li key={book.isbn} className="relative ps-5 text-[.93rem] font-light leading-[1.7] text-ink">
-                          <span className="absolute right-0 top-[.7em] h-1.5 w-1.5 rounded-full bg-accent" />
-                          {book.title}
+                <div className="grid gap-10">
+                  <div className="grid gap-10 md:grid-cols-2">
+                    <section>
+                      <div className="flex items-baseline justify-between gap-4">
+                        <h3 className="font-display text-[1.05rem] font-semibold text-ink">المؤلفات</h3>
+                        <span className="text-[.78rem] text-soft">{books.length}</span>
+                      </div>
+                      <ul className="mt-3.5 space-y-2">
+                        {books.map((book) => (
+                          <li key={book.isbn} className="relative ps-5 text-[.93rem] font-light leading-[1.7] text-ink">
+                            <span className="absolute right-0 top-[.7em] h-1.5 w-1.5 rounded-full bg-accent" />
+                            {book.title}
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                    <section>
+                      <h3 className="font-display text-[1.05rem] font-semibold text-ink">أطروحة الدكتوراه</h3>
+                      <div className="mt-3.5 rounded-2xl border border-hair bg-wash p-5">
+                        <p dir="auto" className="text-[.92rem] font-medium leading-[1.75] text-ink">{doctorate.title}</p>
+                        <p className="mt-2.5 text-[.85rem] text-soft">{doctorate.university}</p>
+                      </div>
+                    </section>
+                  </div>
+
+                  <section className="border-t border-hair pt-8">
+                    <div className="flex items-baseline justify-between gap-4">
+                      <div>
+                        <h3 className="font-display text-[1.1rem] font-semibold text-ink">الأبحاث المنشورة</h3>
+                        <p className="mt-1 text-[.82rem] font-light text-soft">القائمة الكاملة من السيرة الأصلية، من دون اختصار أو حذف.</p>
+                      </div>
+                      <span className="text-[.78rem] text-soft">{papers.length}</span>
+                    </div>
+                    <ol className="mt-5 grid gap-3 md:grid-cols-2">
+                      {papers.map((paper, index) => (
+                        <li key={paper.slug} className="group rounded-2xl border border-hair bg-canvas p-4 transition-colors hover:border-accent/55 hover:bg-wash">
+                          <a href={paper.url} className="block" aria-label={`فتح البحث: ${paper.title}`}>
+                            <div className="flex items-start gap-3">
+                              <span className="mt-0.5 flex h-7 min-w-7 items-center justify-center rounded-full border border-accent/30 text-[.7rem] font-semibold text-accent">{index + 1}</span>
+                              <div className="min-w-0">
+                                <h4 dir="auto" className="text-[.9rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">{paper.title}</h4>
+                                {paper.titleAr && paper.titleAr !== paper.title && (
+                                  <p className="mt-1 text-[.78rem] font-light leading-[1.6] text-soft">{paper.titleAr}</p>
+                                )}
+                                <p dir="auto" className="mt-2 text-[.74rem] leading-[1.55] text-soft/85">{paper.journal}</p>
+                              </div>
+                            </div>
+                          </a>
                         </li>
                       ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="font-display text-[1.05rem] font-semibold text-ink">أطروحة الدكتوراه</h3>
-                    <div className="mt-3.5 rounded-xl border border-hair bg-wash p-5">
-                      <p className="text-[.92rem] font-medium leading-[1.75] text-ink">{doctorate.title}</p>
-                      <p className="mt-2.5 text-[.85rem] text-soft">{doctorate.university}</p>
-                    </div>
-                  </div>
+                    </ol>
+                  </section>
                 </div>
               </Accordion>
 
@@ -217,9 +290,8 @@ export default function CV() {
               </CvSectionEditor>
 
               <CvSectionEditor section="certifications" items={cv.certifications} isAdmin={isAdmin} onSave={saveSection}>
-                <Accordion title="الشهادات والدورات" count="+100">
-                  <Dots items={cv.certifications} />
-                  <p className="mt-6 text-[.85rem] text-soft">وأكثر من مئة شهادة تدريبية أخرى في التعليم والتقنية والقيادة.</p>
+                <Accordion title="الشهادات والدورات" count={cv.certifications.length}>
+                  <CourseArchive items={cv.certifications} />
                 </Accordion>
               </CvSectionEditor>
 

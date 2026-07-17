@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { bio, conferences, memberships } from '../data'
+import { legacyMicrosoftLearningPaths, legacyProfessionalCertificates, legacyWorkshopDetails } from '../data/cv-archive'
 import { getDb } from './firebase'
 
 export type CvEducationItem = {
@@ -62,6 +63,23 @@ const baseId = (section: CvSectionKey, index: number) => `base:${section}:${inde
 const textItems = (section: CvSectionKey, items: readonly string[]): CvTextItem[] =>
   items.map((text, index) => ({ id: baseId(section, index), text }))
 
+const uniqueText = (items: readonly string[]) => {
+  const seen = new Set<string>()
+  return items.filter((item) => {
+    const normalized = item.trim().replace(/\s+/g, ' ')
+    if (!normalized || seen.has(normalized)) return false
+    seen.add(normalized)
+    return true
+  })
+}
+
+const completeWorkshops = uniqueText([...bio.workshops, ...legacyWorkshopDetails])
+const completeCertifications = uniqueText([
+  ...bio.certifications,
+  ...legacyProfessionalCertificates,
+  ...legacyMicrosoftLearningPaths,
+])
+
 export const baseCv: CvSectionMap = {
   education: bio.education.map((item, index) => ({
     id: baseId('education', index),
@@ -87,8 +105,8 @@ export const baseCv: CvSectionMap = {
     title: item.title,
     place: item.place,
   })),
-  workshops: textItems('workshops', bio.workshops),
-  certifications: textItems('certifications', bio.certifications),
+  workshops: textItems('workshops', completeWorkshops),
+  certifications: textItems('certifications', completeCertifications),
   skills: textItems('skills', bio.skills),
 }
 
@@ -150,6 +168,17 @@ function normalizeItems(section: CvSectionKey, rawItems: readonly unknown[]): Cv
 
 type CvOverrides = Partial<Record<CvSectionKey, CvItem[]>>
 export type SaveCvSection = (section: CvSectionKey, items: readonly CvItem[]) => Promise<void>
+
+const mergeProtectedTextSection = (base: CvTextItem[], saved?: CvItem[]) => {
+  if (!saved) return base
+  const savedText = saved.filter((item): item is CvTextItem => 'text' in item)
+  const byId = new Map(savedText.map((item) => [item.id, item]))
+  const baseIds = new Set(base.map((item) => item.id))
+  return [
+    ...base.map((item) => byId.get(item.id) ?? item),
+    ...savedText.filter((item) => !baseIds.has(item.id)),
+  ]
+}
 
 const errorMessage = (error: unknown) => error instanceof Error && error.message
   ? error.message
@@ -215,8 +244,8 @@ export function useCv() {
     committees: (overrides.committees ?? baseCv.committees) as CvTextItem[],
     memberships: (overrides.memberships ?? baseCv.memberships) as CvTextItem[],
     conferences: (overrides.conferences ?? baseCv.conferences) as CvConferenceItem[],
-    workshops: (overrides.workshops ?? baseCv.workshops) as CvTextItem[],
-    certifications: (overrides.certifications ?? baseCv.certifications) as CvTextItem[],
+    workshops: mergeProtectedTextSection(baseCv.workshops, overrides.workshops),
+    certifications: mergeProtectedTextSection(baseCv.certifications, overrides.certifications),
     skills: (overrides.skills ?? baseCv.skills) as CvTextItem[],
   }), [overrides])
 

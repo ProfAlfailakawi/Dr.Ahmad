@@ -548,7 +548,9 @@ export default function ArticleDetail() {
             {article.body && <ReaderControls article={article} />}
             <ArchiveContext a={article} />
             {article.body && <ReadingLayers hasAudio={Boolean(article.body)} hasEvolution={Boolean(evolution.older || evolution.newer)} />}
-            <IdeaEvolutionCard a={a} articles={articles} />
+            {/* الطيّ الأنيق: أُحيلت «تطوّر الفكرة» للتقاعد — يغطّي مساحتَها «خيط الفكرة»
+                و«الجسر كاتب↔باحث» أدناه دون تكرار بصري. تُستعاد بإزالة التعليق إن أُريدت. */}
+            {/* <IdeaEvolutionCard a={a} articles={articles} /> */}
             {article.body && <ArticlePulse slug={article.slug} />}
           </FadeUp>
 
@@ -566,7 +568,8 @@ export default function ArticleDetail() {
                 <SelectionTools current={article} articles={articles} body={article.body} excerpt={article.excerpt} />
                 {/* الجسر: كاتب ↔ باحث حول الفكرة نفسها */}
                 <WriterResearcherBridge articleTitle={a.title} paper={dive.paper ? { slug: dive.paper.slug, title: dive.paper.title } : null} />
-                <StudentArchive a={article} articles={articles} books={books} papers={papers} />
+                {/* الطيّ الأنيق: أُحيل «أرشيف الطالب» للتقاعد — يغطّي مساحته «الجسر» و«خيط الفكرة». */}
+                {/* <StudentArchive a={article} articles={articles} books={books} papers={papers} /> */}
               </>
             ) : (
               <>

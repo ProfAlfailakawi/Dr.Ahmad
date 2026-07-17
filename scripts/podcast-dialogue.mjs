@@ -981,6 +981,30 @@ const normalizeAr = (s) => stripDiacritics(s)
   .replace(/[^ء-ي0-9a-zA-Z\s]/g, ' ')
   .replace(/\s+/g, ' ').trim()
 
+/* تهجئة الأرقام للنطق: «2023» → «ألفين وثلاثة وعشرين»، و«٪» → «بالمئة» —
+   الصيغة المنطوقة الفصيحة نفسها التي كان محلل Gemini يخرجها، تُبنى الآن حتمياً. */
+function numberToArabicSpoken(value) {
+  const n = Number(value)
+  if (!Number.isFinite(n) || n < 0 || n >= 3000 || n !== Math.floor(n)) return String(value)
+  const units = ['', 'واحد', 'اثنين', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة']
+  const teens = ['عشرة', 'أحد عشر', 'اثني عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر']
+  const tens = ['', 'عشرة', 'عشرين', 'ثلاثين', 'أربعين', 'خمسين', 'ستين', 'سبعين', 'ثمانين', 'تسعين']
+  const hundreds = ['', 'مئة', 'مئتين', 'ثلاثمئة', 'أربعمئة', 'خمسمئة', 'ستمئة', 'سبعمئة', 'ثمانمئة', 'تسعمئة']
+  const below100 = (x) => x === 0 ? '' : x < 10 ? units[x] : x < 20 ? teens[x - 10]
+    : (x % 10 ? `${units[x % 10]} و${tens[Math.floor(x / 10)]}` : tens[Math.floor(x / 10)])
+  const below1000 = (x) => [hundreds[Math.floor(x / 100)], below100(x % 100)].filter(Boolean).join(' و')
+  if (n === 0) return 'صفر'
+  if (n < 1000) return below1000(n)
+  const thousandWord = Math.floor(n / 1000) === 1 ? 'ألف' : 'ألفين'
+  return [thousandWord, below1000(n % 1000)].filter(Boolean).join(' و')
+}
+function spellDigitsForSpeech(text) {
+  return String(text || '')
+    .replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+    .replace(/(\d+)\s*[٪%]/g, (_, num) => `${numberToArabicSpoken(num)} بالمئة`)
+    .replace(/\d+/g, (num) => numberToArabicSpoken(num))
+}
+
 /* معرّب الأعداد العكسي: STT يكتب السنة أحياناً كلماتٍ («ألفين وثلاثة وعشرين») لا
    أرقاماً — نُقيّم كل نافذة كلمات عددية متتالية في المسموع ونجمع قيمتها، فيثبت
    نطق «2023» متى ساوت نافذةٌ قيمتَه (u011: كلمة خطرة لم يثبت نطقها: 2023). */
@@ -1566,12 +1590,19 @@ async function riskAnalyze(utts, { tolerant = false } = {}) {
      (STT + الحكم + حد 13ث) تبقى كاملة بلا أي تخفيف.
      tolerant=true (إعادة تحليل مداخلة مُعاد صياغتها): جولات أقل قبل الملاذ نفسه. */
   if (NO_GEMINI) {
-    // بلا محلل ذكي: القاموس والأنماط الحتمية يتوليان الكشف، والنص يذهب كما كتبه الدكتور
-    console.log(`  ⓘ وضع بلا Gemini: كشف نطقي حتمي بالقاموس والأنماط (${utts.length} مداخلة)`)
+    /* بلا محلل ذكي: القاموس والأنماط يتوليان الكشف. والأرقام تُهجّأ كلماتٍ حتمياً في
+       النص النطقي — محلل Gemini كان يفعلها فتمر السنون؛ تمريرها خاماً لأول مرة جعل
+       Azure يقرؤها قراءةً لا يثبتها STT (u011: كلمات خطرة لم يثبت نطقها: 2023). */
+    console.log(`  ⓘ وضع بلا Gemini: كشف نطقي حتمي بالقاموس والأنماط + تهجئة الأرقام (${utts.length} مداخلة)`)
     return utts.map((u, idx) => {
       const merged = new Map()
       for (const risk of deterministicRisks(u.text)) merged.set(normalizeAr(risk.word), risk)
-      return { idx, pronunciationText: u.text, risks: [...merged.values()] }
+      const pronunciationText = spellDigitsForSpeech(u.text)
+      for (const risk of merged.values()) {
+        if (/\d/.test(String(risk.word || '')) && !risk.selectedPronunciation)
+          risk.selectedPronunciation = spellDigitsForSpeech(String(risk.word))
+      }
+      return { idx, pronunciationText, risks: [...merged.values()] }
     })
   }
   const CHUNK = 8
@@ -3552,9 +3583,13 @@ if (SELF_TEST) {
     'السنة المسموعة كلماتٍ تثبت نطق رقمها')
   assert(!heardContainsRisk('نشرت الدراسة عام ألفين وواحد وعشرين في مجلة محكمة', { word: '2023', riskLevel: 'high' }),
     'سنة مختلفة لا تُحتسب إثباتاً زائفاً')
+  // ١٣) التهجئة الحتمية للأرقام في وضع بلا Gemini — كما كان محلل Gemini يخرجها
+  assert.equal(numberToArabicSpoken(2023), 'ألفين وثلاثة وعشرين', 'السنة تُهجأ فصيحةً')
+  assert.equal(spellDigitsForSpeech('نُشرت عام 2023 وبلغت النسبة 11٪'),
+    'نُشرت عام ألفين وثلاثة وعشرين وبلغت النسبة أحد عشر بالمئة', 'الجملة تُهجأ أرقامها ونسبها كاملة')
   const guarded = compareTexts('نقيس الفهم قبل الدرجة', 'نقيس فهما اخر تماما')
   assert(guarded.importantRatio < 1, 'الاحتواء الجزئي لا يمنح تطابقاً مجانياً لكلمات مختلفة فعلاً')
-  console.log('✓ اختبارات بوابة البودكاست العربي: 40/40')
+  console.log('✓ اختبارات بوابة البودكاست العربي: 43/43')
   process.exit(0)
 }
 

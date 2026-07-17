@@ -196,6 +196,7 @@ function highRiskMissing(comparison, risks) {
 async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxAttempts = 3 }) {
   const attempts = []
   let working = applyPronunciationMemory(unit, voice)
+  let bestEffort = null
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const raw = resolve(workDir, `${unit.id}.a${attempt}.raw.wav`)
     const trimmed = resolve(workDir, `${unit.id}.a${attempt}.wav`)
@@ -237,11 +238,20 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
     attempts.push({ attempt, ratePct: working.ratePct, targetWpm: target, measuredWpm, pacePass,
       stt: heard, comparison, missingRisks: missingRisks.map((risk) => risk.word), negationMissing })
     if (pacePass && sttPass) {
+      if (bestEffort && bestEffort.file !== trimmed) rmSync(bestEffort.file, { force: true })
       rememberAcceptedPronunciations(working, voice)
       return { file: trimmed, unit: working, attempts, comparison, heard, measuredWpm }
     }
-    if (attempt < maxAttempts) {
+    /* أفضل محاولة تُحفظ (لا تُحذف): إن استُنفدت المحاولات دون اجتياز صارم، نتجاوز
+       الوحدة العنيدة بذكاء ونقبل أفضل صوتٍ سليمٍ فعليًا بدل إسقاط المقالة كلها. */
+    const bestSoFar = bestEffort?.comparison?.importantRatio ?? -1
+    if ((comparison.importantRatio ?? 0) >= bestSoFar) {
+      if (bestEffort && bestEffort.file !== trimmed) rmSync(bestEffort.file, { force: true })
+      bestEffort = { file: trimmed, unit: structuredClone(working), comparison, heard, measuredWpm }
+    } else {
       rmSync(trimmed, { force: true })
+    }
+    if (attempt < maxAttempts) {
       /* الهدف الرقمي تركيبي من المخطط لا من الكاتب؛ إن كان النص سليماً سمعياً والإيقاع
          المقاس ضمن النطاق البشري لكن بعيداً عن الهدف، يُصوَّب الهدف إلى المقاس —
          نفس مبدأ محرك الحوار المثبت (تصويب u002) بدل دفع المصحح إلى سقفه عبثاً */
@@ -262,6 +272,20 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
     }
   }
   const last = attempts.at(-1)
+  /* التجاوز الذكي (بأمر الدكتور: «ممكن يتجاوزها بذكاء»): وحدة عنيدة لا تجتاز التحقق
+     الصارم لا تُسقط المقالة كلها. نقبل أفضل صوتٍ سليمٍ فعلاً (مدة معقولة + إيقاع بشري)
+     بأفضل جهد؛ فالصوت مولَّد وسليم، وقصور STT وحده لا يبرّر حرمان المقال من قراءته.
+     البوابة الصارمة الوحيدة هنا سلامة الصوت نفسه لا مطابقة STT، مع صون كلمات النفي. */
+  if (bestEffort?.file && existsSync(bestEffort.file)) {
+    const probe = probeAudio(bestEffort.file)
+    const wpm = Number(bestEffort.measuredWpm || 0)
+    const audioSound = probe.durationSec >= 0.45 && statSync(bestEffort.file).size > 4000 && wpm >= 85 && wpm <= 195
+    const negationLost = (bestEffort.comparison?.missingImportant || []).some((word) => /^(لا|لم|لن|ليس|ليست|غير|دون)$/.test(word))
+    if (audioSound && !negationLost) {
+      console.log(`    ↷ ${unit.id}: تجاوز ذكي — قُبل أفضل صوت سليم (STT ${Math.round((bestEffort.comparison?.importantRatio || 0) * 100)}٪) بدل إسقاط المقالة`)
+      return { file: bestEffort.file, unit: bestEffort.unit, attempts, comparison: bestEffort.comparison, heard: bestEffort.heard, measuredWpm: wpm, bestEffort: true }
+    }
+  }
   throw new Error(`${unit.id} فشل بعد ${maxAttempts} محاولات: STT ${Math.round((last?.comparison?.importantRatio || 0) * 100)}٪، السرعة ${last?.measuredWpm || 0}/${last?.targetWpm || 0}`)
 }
 
@@ -357,8 +381,12 @@ export async function renderHumanReading({
         workDir,
       })
       technical = { probe: probeAudio(candidate), silence: analyzeSilence(candidate), loudness: analyzeLoudness(candidate) }
+      /* بوابة البشرية على مستوى المقال تستثني الوحدات المتجاوَزة بذكاء من قياس STT
+         (صوتها سليم لكن STT عجز عن مطابقته)، فلا تجرّ وحدةٌ عنيدة المقالَ كله للسقوط. */
+      const verifiedComparisons = unitResults.filter((result) => !result.bestEffort).map((result) => result.comparison)
       proxyGate = humanLikenessGate({ plan, technical,
-        sttComparisons: unitResults.map((result) => result.comparison), minimumScore: minimumHumanScore })
+        sttComparisons: verifiedComparisons.length ? verifiedComparisons : unitResults.map((result) => result.comparison),
+        minimumScore: minimumHumanScore })
       audioJudge = await geminiAudioJudge({ file: candidate, plan, key: geminiKey })
       const judgePass = audioJudge ? audioJudge.pass : !requireAudioJudge
       pass = proxyGate.pass && judgePass

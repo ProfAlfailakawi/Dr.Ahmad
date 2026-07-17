@@ -199,9 +199,28 @@ export function numberToArabicWords(value) {
   return parts.join(' و')
 }
 
+/* نقحرة المصادر الأجنبية المعروفة إلى العربية: الحروف اللاتينية الخام تُقرأ إنجليزيةً
+   فيسوء الصوت ويعجز STT العربي عن مطابقتها. النطق العربي يجعل Azure ينطقها فصيحةً،
+   واستثناؤها من عقوبة STT (في human-reading-pipeline) يكمل الحلّ. الأطول أولاً. */
+const FOREIGN_SOURCE_MAP = [
+  ['Harvard Business Review', 'هارفارد بزنس ريفيو'],
+  ['Frontiers in Psychology', 'فرونتيرز إن سايكولوجي'],
+  ['Journal of Educational Psychology', 'جورنال أوف إديوكيشنال سايكولوجي'],
+  ['Moral Education', 'مورال إديوكيشن'],
+  ['Microsoft', 'مايكروسوفت'], ['Google', 'جوجل'], ['Gallup', 'غالوب'],
+  ['UNESCO', 'يونسكو'], ['OECD', 'أو إي سي دي'], ['UCLA', 'يو سي إل إيه'],
+  ['MIT', 'إم آي تي'], ['PISA', 'بيزا'],
+]
+
 export function buildPronunciationText(sourceText) {
   let pronunciationText = String(sourceText || '')
   const risks = []
+  for (const [latin, arabic] of FOREIGN_SOURCE_MAP) {
+    if (!pronunciationText.includes(latin)) continue
+    pronunciationText = pronunciationText.split(latin).join(arabic)
+    risks.push({ word: latin, type: 'مصدر أجنبي منقحر', riskLevel: 'high', selectedPronunciation: arabic,
+      method: 'sub', reason: 'نقحرة عربية معتمدة لمصدر أجنبي كي ينطقه Azure ويُستثنى من تحقق STT' })
+  }
   for (const [written, rule] of lexiconEntries()) {
     if (!pronunciationText.includes(written)) continue
     const spoken = rule.sub || rule.diacritics || written

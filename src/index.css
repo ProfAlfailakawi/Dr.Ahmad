@@ -851,6 +851,19 @@ iframe { color-scheme: light; }
   }
 }
 
+/* نوافذ القارئ تستحوذ على اللمس بالكامل؛ زر العودة للأعلى يختفي مؤقتاً كي لا يغطي البطاقة أو أزرارها. */
+body:has(.reader-modal-overlay) .floating-actions {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@media (pointer: coarse) {
+  .reader-selection-toolbar button {
+    min-height: 44px;
+  }
+}
+
 /* المشغّل العائم: يرفع زر العودة للأعلى عندما يكون الصوت مفتوحاً، فلا يتداخلان. */
 body.audio-dock-open .floating-actions {
   bottom: calc(6.25rem + env(safe-area-inset-bottom));

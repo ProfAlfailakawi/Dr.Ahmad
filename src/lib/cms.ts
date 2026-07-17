@@ -17,6 +17,7 @@ export type CmsMeta = {
   origin: ContentOrigin
   modified: boolean
   hidden: boolean
+  deleted: boolean
   docId: string
   baseSlug: string
   createdAt?: unknown
@@ -126,6 +127,7 @@ function metadata(kind: ContentKind, slug: string, value: Partial<CmsMeta> = {})
     origin: value.origin ?? 'base',
     modified: Boolean(value.modified),
     hidden: Boolean(value.hidden),
+    deleted: Boolean(value.deleted),
     docId: value.docId || slug,
     baseSlug: value.baseSlug || slug,
     createdAt: value.createdAt,
@@ -300,6 +302,8 @@ function applyOriginals<T extends AnyRecord>(
     const override = overrides.get(kind + ':' + original.slug)
     const patch = cleanPatch(kind, override?.patch)
     const hidden = override?.hidden === true
+    const deleted = override?.deleted === true
+    if (deleted) return []
     if (hidden && !includeHidden) return []
     const base = getBaseRecord(kind, original.slug) || {}
     const merged = { ...base, ...patch, slug: original.slug }
@@ -307,6 +311,7 @@ function applyOriginals<T extends AnyRecord>(
     return [buildRecord(kind, merged, metadata(kind, original.slug, {
       modified: Object.keys(patch).length > 0,
       hidden,
+      deleted,
       updatedAt: override?.updatedAt,
     })) as T]
   })
@@ -322,12 +327,15 @@ function additions<T extends AnyRecord>(
     const slug = stringValue(document.slug, document.id)
     if (!slug || occupied.has(slug)) return []
     const hidden = document.hidden === true
+    const deleted = document.deleted === true
+    if (deleted) return []
     if (hidden && !includeHidden) return []
     if (kind === 'article' && !includeHidden && !isPubliclyPublished(document)) return []
     const record = buildRecord(kind, { ...document, slug }, metadata(kind, slug, {
       origin: 'added',
       modified: false,
       hidden,
+      deleted,
       docId: document.id,
       baseSlug: slug,
       createdAt: document.createdAt,

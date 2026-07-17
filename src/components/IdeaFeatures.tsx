@@ -2,7 +2,7 @@
    وتقدّم فعلين متباعدين في شريطٍ واحد لا يتداخلان:
    ١) تتبّع الجملة: كل المقالات التي لامست الفكرة نفسها عبر السنوات.
    ٢) 🖼 بطاقة اقتباس: صورة أنيقة بجملةٍ منتقاة + توقيع الدكتور، للمشاركة الراقية. */
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -402,13 +402,23 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
             exit={{ opacity: 0, scale: 0.94 }}
             transition={{ duration: 0.18 }}
             style={{ left: pos.x, top: pos.y, transform: 'translate(-50%,-100%)' }}
-            className="fixed z-[260] flex items-stretch overflow-hidden rounded-full border border-hair bg-canvas shadow-[0_16px_38px_-16px_rgba(0,0,0,.5)]"
+            className="reader-selection-toolbar fixed z-[260] flex items-stretch overflow-hidden rounded-full border border-hair bg-canvas shadow-[0_16px_38px_-16px_rgba(0,0,0,.5)]"
           >
-            <button type="button" onClick={() => setView('thread')} className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas">
+            <button
+              type="button"
+              onPointerDown={(event) => { event.preventDefault(); setView('thread') }}
+              onClick={(event) => { if (event.detail === 0) setView('thread') }}
+              className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas"
+            >
               🧬 عبر السنوات
             </button>
             <span className="my-1.5 w-px bg-hair" />
-            <button type="button" onClick={openCard} className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas">
+            <button
+              type="button"
+              onPointerDown={(event) => { event.preventDefault(); void openCard() }}
+              onClick={(event) => { if (event.detail === 0) void openCard() }}
+              className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas"
+            >
               🖼 بطاقة اقتباس
             </button>
           </motion.div>
@@ -420,17 +430,17 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         {view === 'thread' && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[300] flex items-end justify-center bg-ink/40 backdrop-blur-sm sm:items-center" onClick={close}
+            className="reader-modal-overlay fixed inset-0 z-[300] flex items-end justify-center overflow-y-auto bg-ink/40 px-0 pt-[max(4rem,env(safe-area-inset-top))] backdrop-blur-sm sm:items-center sm:p-5" onClick={close}
           >
             <motion.div
               initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }}
               transition={{ duration: 0.28 }} onClick={(e) => e.stopPropagation()}
-              className="max-h-[82vh] w-full max-w-xl overflow-y-auto rounded-t-3xl border border-hair bg-canvas p-6 sm:rounded-3xl md:p-8"
+              className="my-auto max-h-[calc(100dvh-5rem)] w-full max-w-xl overflow-y-auto overscroll-contain rounded-t-3xl border border-hair bg-canvas p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:rounded-3xl md:p-8"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[.74rem] font-semibold uppercase tracking-wide text-accent">تتبّع الجملة</p>
-                  <p className="mt-2 border-r-2 border-accent pe-0 ps-4 text-[.95rem] font-light leading-[1.9] text-ink/80">«{sel.length > 140 ? sel.slice(0, 140) + '…' : sel}»</p>
+                  <p className="mt-2 break-words border-r-2 border-accent pe-0 ps-4 text-[.95rem] font-light leading-[1.9] text-ink/80">«{sel}»</p>
                 </div>
                 <button type="button" onClick={close} aria-label="إغلاق" className="shrink-0 text-soft transition-colors hover:text-accent">✕</button>
               </div>
@@ -463,11 +473,11 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         {view === 'card' && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[300] flex items-center justify-center bg-ink/60 p-5 backdrop-blur-sm" onClick={close}
+            className="reader-modal-overlay fixed inset-0 z-[300] flex items-start justify-center overflow-y-auto overscroll-contain bg-ink/60 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm sm:items-center sm:p-5" onClick={close}
           >
             <motion.div
               initial={{ scale: 0.94, y: 14 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, opacity: 0 }}
-              transition={{ duration: 0.32 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-[440px]"
+              transition={{ duration: 0.32 }} onClick={(e) => e.stopPropagation()} className="my-auto w-full max-w-[440px] py-1"
             >
               <div className="mb-4 flex flex-wrap items-center justify-center gap-1.5">
                 {CARD_TEMPLATES.map((t) => (
@@ -485,11 +495,11 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                 ))}
               </div>
               {img ? (
-                <img src={img} alt="بطاقة اقتباس" className={`mx-auto rounded-2xl shadow-[0_40px_80px_-30px_rgba(0,0,0,.7)] ${format === 'story' ? 'max-h-[56vh] w-auto' : 'w-full'}`} />
+                <img src={img} alt="بطاقة اقتباس" className={`mx-auto max-w-full rounded-2xl object-contain shadow-[0_40px_80px_-30px_rgba(0,0,0,.7)] ${format === 'story' ? 'max-h-[50dvh] w-auto' : 'max-h-[54dvh] w-auto'}`} />
               ) : (
                 <div className="flex aspect-square items-center justify-center rounded-2xl border border-hair bg-canvas text-soft">…</div>
               )}
-              <div className="mt-5 flex justify-center gap-3">
+              <div className="mt-4 flex flex-wrap justify-center gap-2.5">
                 {img && (
                   <a href={img} download={`اقتباس-${CARD_TEMPLATES.find((t) => t.key === template)?.label}-${CARD_FORMATS.find((f) => f.key === format)?.label}.png`} className="rounded-full bg-accent px-7 py-3 font-semibold text-canvas transition-colors hover:bg-accent-deep">تحميل الصورة</a>
                 )}
@@ -498,7 +508,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                     type="button"
                     onClick={saveQuote}
                     aria-pressed={quoteSaved}
-                    className="rounded-full border border-accent/45 px-5 py-3 font-semibold text-accent transition-colors hover:bg-accent/8"
+                    className="rounded-full border border-canvas/60 bg-canvas/10 px-5 py-3 font-semibold text-canvas transition-colors hover:bg-canvas hover:text-ink"
                   >
                     {quoteSaved ? 'حُفظت في دفتر القراءة' : 'احتفظ بالجملة في دفتر القراءة'}
                   </button>

@@ -1097,6 +1097,21 @@ function CurrentEventsCard({
   )
 }
 
+function standaloneVisualTemplates(idea: string, purpose: string): SocialVisualTemplate[] {
+  const title = idea.trim() || 'الفكرة لا تحتاج مقالاً كي تستحق النشر.'
+  const body = purpose.trim() || 'اكتب الجملة، واختر القالب، ثم نزّل الصورة الجاهزة للنشر.'
+  const topic = detectVisualTopic(`${title} ${body}`)
+  const shared = { platform: 'instagram' as const, width: 1080, height: 1350, topic, title, body, footer: 'د. أحمد حسين الفيلكاوي · dr-alfailakawi.com' }
+  return [
+    { ...shared, id: `standalone-midad-${title}`, format: 'منشور مستقل 1080×1350', layout: 'orbit', kicker: 'المداد' },
+    { ...shared, id: `standalone-layl-${title}`, format: 'منشور مستقل 1080×1350', layout: 'dark', kicker: 'الليل' },
+    { ...shared, id: `standalone-jarida-${title}`, format: 'منشور مستقل 1080×1350', layout: 'editorial', kicker: 'الجريدة' },
+    { ...shared, id: `standalone-sharit-${title}`, format: 'منشور مستقل 1080×1350', layout: 'split', kicker: 'الشريط' },
+    { ...shared, id: `standalone-mishkat-${title}`, format: 'منشور مستقل 1080×1350', layout: 'arch', kicker: 'المشكاة' },
+    { ...shared, id: `standalone-tawqee-${title}`, format: 'منشور مستقل 1080×1350', layout: 'signature', kicker: 'التوقيع' },
+  ]
+}
+
 function VisualTemplateCard({ template }: { template: SocialVisualTemplate }) {
   /* المعاينة هي الصورة الحقيقية المرسومة بمحرك «الطبعة الفاخرة» نفسه —
      ما تراه هنا هو ملف PNG الذي سيُنزَّل حرفياً، لا تقليد CSS تقريبي. */
@@ -1226,6 +1241,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const [view, setView] = useState<'idea' | 'write' | 'review' | 'distribution' | 'pulse'>('idea')
   const [pulseIdea, setPulseIdea] = useState('')
   const [pulsePurpose, setPulsePurpose] = useState('فكرة قصيرة تستحق أن تُقال الآن')
+  const [pulsePreviewCopy, setPulsePreviewCopy] = useState({ idea: '', purpose: 'فكرة قصيرة تستحق أن تُقال الآن' })
   const [pulseAudience, setPulseAudience] = useState('الجمهور العام')
   const [pulsePack, setPulsePack] = useState<PerfectSocialPack | null>(null)
   const [pulseBusy, setPulseBusy] = useState(false)
@@ -1255,6 +1271,12 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const sevenDayCampaign = useMemo(() => buildSevenDayCampaign(bundle, weeklyPack), [bundle, weeklyPack])
   const privateMemoryMatches = useMemo(() => privateBookMatches(bundle, privateLinks), [bundle, privateLinks])
   const articleSuggestions = useMemo(() => suggestArticleIdeas(richArticles, radar, privateLinks), [privateLinks, radar, richArticles])
+  const pulseTemplateShowcase = useMemo(() => standaloneVisualTemplates(pulsePreviewCopy.idea, pulsePreviewCopy.purpose), [pulsePreviewCopy])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setPulsePreviewCopy({ idea: pulseIdea, purpose: pulsePurpose }), 450)
+    return () => window.clearTimeout(timer)
+  }, [pulseIdea, pulsePurpose])
 
   useEffect(() => {
     let active = true
@@ -1847,6 +1869,21 @@ ${pulsePurpose.trim()}`,
               <span className="text-[.76rem] text-soft">الربط اختياري؛ لا يُستخدم إلا إذا كان طبيعيًا ومفيدًا.</span>
             </div>
           </section>
+
+          <section className={card} aria-labelledby="standalone-templates-title">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-[.76rem] font-semibold uppercase text-accent">الطبعة الفاخرة</p>
+                <h2 id="standalone-templates-title" className="mt-1 font-display text-2xl font-semibold text-ink">القوالب الستة ظاهرة وجاهزة دائماً.</h2>
+                <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">اكتب فكرتك في الأعلى فتتحدث المعاينات تلقائياً بعد توقفك لحظة. لا تحتاج إلى الضغط على «ابنِ المنشور» حتى ترى المداد والليل والجريدة والشريط والمشكاة والتوقيع.</p>
+              </div>
+              <span className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.72rem] text-soft">{visualTopicLabel(detectVisualTopic(`${pulseIdea} ${pulsePurpose}`))}</span>
+            </div>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+              {pulseTemplateShowcase.map((template) => <VisualTemplateCard key={template.id} template={template} />)}
+            </div>
+          </section>
+
           {pulseEvents.length > 0 && <CurrentEventsCard items={pulseEvents} selected={pulseSelectedEventIds} loading={pulseEventsLoading} onToggle={(id) => setPulseSelectedEventIds((previous) => previous.includes(id) ? previous.filter((item) => item !== id) : [id])} />}
           {pulsePack && <PerfectSocialPackCard pack={pulsePack} article={{ title: pulseIdea.trim(), excerpt: pulsePurpose.trim() }} busy={pulseBusy} onRegenerate={() => void generatePulse()} onSave={() => void savePulseQueue()} saveBusy={pulseQueueBusy} />}
           {notice && <p className="rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.84rem] text-accent">{notice}</p>}

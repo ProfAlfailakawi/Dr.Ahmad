@@ -512,7 +512,7 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
 
       <AnimatePresence>
         {open && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[310] flex items-end justify-center bg-ink/30 backdrop-blur-[2px] sm:items-center sm:p-5" onClick={() => setOpen(false)}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="reader-modal-overlay fixed inset-0 z-[310] flex items-end justify-center overflow-y-auto overscroll-contain bg-ink/30 backdrop-blur-[2px] sm:items-center sm:p-5" onClick={() => setOpen(false)}>
             <motion.section
               initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 18, opacity: 0 }}
               onClick={(event) => event.stopPropagation()}
@@ -607,8 +607,8 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
 
       <AnimatePresence>
         {xray && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[315] flex items-end justify-center bg-ink/24 backdrop-blur-[1.5px] sm:items-center sm:p-5" onClick={() => setXray(null)}>
-            <motion.aside initial={{ y: 18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 14, opacity: 0 }} onClick={(event) => event.stopPropagation()} className="w-full max-w-md rounded-t-[1.6rem] border border-hair bg-canvas px-5 pb-[calc(1.2rem+env(safe-area-inset-bottom))] pt-5 shadow-[0_28px_80px_-40px_rgba(21,22,26,.75)] sm:rounded-[1.6rem] sm:p-6">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="reader-modal-overlay fixed inset-0 z-[315] flex items-end justify-center overflow-y-auto overscroll-contain bg-ink/24 backdrop-blur-[1.5px] sm:items-center sm:p-5" onClick={() => setXray(null)}>
+            <motion.aside initial={{ y: 18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 14, opacity: 0 }} onClick={(event) => event.stopPropagation()} className="max-h-[86dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[1.6rem] border border-hair bg-canvas px-5 pb-[calc(1.2rem+env(safe-area-inset-bottom))] pt-5 shadow-[0_28px_80px_-40px_rgba(21,22,26,.75)] sm:rounded-[1.6rem] sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div><p className="text-[.7rem] font-semibold text-accent">توضيح داخل المقال</p><h2 className="mt-1 font-display text-[1.14rem] font-semibold text-ink">{xray.title}</h2></div>
                 <button type="button" onClick={() => setXray(null)} aria-label="إغلاق" className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-soft">×</button>
@@ -1225,7 +1225,7 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
 
       <AnimatePresence>
         {sheet && currentSelection && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[320] flex items-end justify-center bg-ink/38 backdrop-blur-[2px] sm:items-center sm:p-5" onClick={closeSheet}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="reader-modal-overlay fixed inset-0 z-[320] flex items-end justify-center overflow-y-auto overscroll-contain bg-ink/38 backdrop-blur-[2px] sm:items-center sm:p-5" onClick={closeSheet}>
             <motion.section initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 18, opacity: 0 }} onClick={(event) => event.stopPropagation()} className="max-h-[90dvh] w-full max-w-[560px] overflow-y-auto rounded-t-[1.75rem] border border-hair bg-canvas px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-5 shadow-[0_38px_90px_-42px_rgba(21,22,26,.8)] sm:rounded-[1.75rem] sm:p-7" dir="rtl">
               <header className="flex items-start justify-between gap-4">
                 <div><p className="text-[.7rem] font-semibold text-accent">{sheet === 'thread' ? 'الفكرة عبر السنوات' : sheet === 'card' ? 'بطاقة الاقتباس' : 'مشاركة الاقتباس'}</p><h2 className="mt-1 font-display text-[1.16rem] font-semibold text-ink">{current.title}</h2></div>

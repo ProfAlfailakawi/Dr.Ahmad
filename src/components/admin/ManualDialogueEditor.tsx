@@ -415,6 +415,11 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
 
   const importFile = async (file?: File) => {
     if (!file) return
+    if (file.size > 25 * 1024 * 1024) {
+      setNotice('المستند أكبر من 25MB. احفظه DOCX نصياً من دون صور ثقيلة ثم أعد رفعه؛ الحوار نفسه لا يحتاج صوراً.')
+      if (fileRef.current) fileRef.current.value = ''
+      return
+    }
     setDocumentBusy(true)
     try {
       const name = file.name.toLowerCase()
@@ -488,6 +493,7 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
             <p className="text-[.76rem] font-semibold uppercase text-accent">الحوار اليدوي للحلقة</p>
             <h2 className="mt-1 font-display text-2xl font-semibold text-ink">اكتب فهد ونورة مداخلةً مداخلة.</h2>
             <p className="mt-2 text-[.84rem] leading-relaxed text-soft">اختر المقال ثم ارفع ملف Word (أو TXT) بالحوار كاملاً: سطر لكل مداخلة يبدأ بـ«الرجل:» أو «المرأة:»، ووسوم اختيارية داخل النص مثل [موسيقى] و[وقفة 800] و[تداخل 90] — يُحوَّل تلقائياً إلى مداخلات جاهزة تراجعها هنا ثم تحفظها، ويسحبها التوليد الليلي بنفسه. يقبل أيضاً JSON جاهزاً.</p>
+            <p className="mt-2 rounded-xl border border-accent/25 bg-canvas px-4 py-3 text-[.78rem] font-semibold leading-relaxed text-accent">حل جذري لمشكلة 413: ملف Word يُقرأ داخل متصفحك ولا يُرسل كملف إلى أي Cloud Function. بعد القراءة يُحفظ النص المنظّم فقط في Firestore، لذلك لا يوجد طلب رفع ضخم يمكن أن يرفضه الخادم.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <input ref={fileRef} type="file" accept=".docx,.txt,.md,.json,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/json" className="hidden" onChange={(event) => void importFile(event.target.files?.[0])} />
@@ -504,6 +510,7 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
             <li>لا ينشئ النظام مداخلات كثيرة تلقائياً.</li>
             <li>أنت تضيف مداخلة جديدة فقط عند الضغط على «إضافة مداخلة».</li>
             <li>تبقى خيارات الصوت ونوع المداخلة والوقفة والتداخل والجسر الموسيقي داخل البطاقة نفسها.</li>
+            <li>حوارك اليدوي المحفوظ هو المصدر الأعلى أولوية؛ التوليد الليلي يسحبه ولا تستبدله المسودات الآلية.</li>
           </ul>
         </div>
         {availableDraft && (

@@ -712,10 +712,36 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
   }
 
   const toggleVisibility = async (item: ManagedRecord) => {
-    if (item._cms.origin === 'added') {
-      if (!window.confirm(`حذف «${item.title}» نهائياً؟`)) return
+    const task = beginAdminTask(item._cms.hidden ? 'إظهار عنصر' : 'إخفاء عنصر')
+    setBusy(true)
+    try {
+      const db = await getDb()
+      if (!db) throw new Error('Firebase غير متاح')
+      const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
+      if (item._cms.origin === 'added') {
+        await setDoc(doc(db, collections[kind], item._cms.docId || item.slug), {
+          hidden: !item._cms.hidden,
+          updatedAt: serverTimestamp(),
+        }, { merge: true })
+      } else {
+        await setDoc(doc(db, 'content_overrides', `${kind}:${item._cms.baseSlug || item.slug}`), {
+          hidden: !item._cms.hidden,
+          updatedAt: serverTimestamp(),
+        }, { merge: true })
+      }
+      await done(item._cms.hidden ? '✓ أُعيد إظهار العنصر.' : '✓ أُخفي العنصر من الموقع مع بقائه محفوظاً في اللوحة.')
+      task.complete('اكتملت العملية')
+    } catch (reason) {
+      setNotice(reason instanceof Error ? reason.message : 'تعذّر تنفيذ العملية')
+      task.fail(reason, 'تعذّر تنفيذ العملية')
+    } finally {
+      setBusy(false)
     }
-    const task = beginAdminTask(item._cms.origin === 'added' ? 'حذف عنصر' : item._cms.hidden ? 'إظهار عنصر' : 'إخفاء عنصر')
+  }
+
+  const deleteItem = async (item: ManagedRecord) => {
+    if (!window.confirm(`حذف «${item.title}» نهائياً من الموقع؟ لا يمكن التراجع عن حذف العناصر المضافة.`)) return
+    const task = beginAdminTask('حذف عنصر')
     setBusy(true)
     try {
       const db = await getDb()
@@ -723,18 +749,19 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
       const { deleteDoc, doc, serverTimestamp, setDoc } = await import('firebase/firestore')
       if (item._cms.origin === 'added') {
         await deleteDoc(doc(db, collections[kind], item._cms.docId || item.slug))
-        await done('✓ حُذف العنصر المضاف.')
       } else {
+        // عناصر الأصل موجودة في الشفرة؛ نحذفها من الموقع بطابع حذف دائم بدلاً من العبث بملف المصدر.
         await setDoc(doc(db, 'content_overrides', `${kind}:${item._cms.baseSlug || item.slug}`), {
-          hidden: !item._cms.hidden,
+          deleted: true,
+          hidden: true,
           updatedAt: serverTimestamp(),
         }, { merge: true })
-        await done(item._cms.hidden ? '✓ أُعيد إظهار العنصر.' : '✓ أُخفي العنصر مع بقاء الأصل محفوظاً.')
       }
-      task.complete('اكتملت العملية')
+      await done(item._cms.origin === 'added' ? '✓ حُذف العنصر نهائياً.' : '✓ حُذف العنصر من الموقع مع حماية ملفات الأصل من التعديل.')
+      task.complete('حُذف العنصر')
     } catch (reason) {
-      setNotice(reason instanceof Error ? reason.message : 'تعذّر تنفيذ العملية')
-      task.fail(reason, 'تعذّر تنفيذ العملية')
+      setNotice(reason instanceof Error ? reason.message : 'تعذّر حذف العنصر')
+      task.fail(reason, 'تعذّر حذف العنصر')
     } finally {
       setBusy(false)
     }
@@ -825,8 +852,9 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
                   <div className="flex flex-wrap items-center gap-3 text-[.78rem]">
                     <button type="button" onClick={() => openEdit(item)} className="font-semibold text-accent hover:text-accent-deep">تعديل</button>
                     <button type="button" disabled={busy} onClick={() => void toggleVisibility(item)} className="text-soft hover:text-accent">
-                      {item._cms.origin === 'added' ? 'حذف' : item._cms.hidden ? 'إظهار' : 'إخفاء'}
+                      {item._cms.hidden ? 'إظهار' : 'إخفاء'}
                     </button>
+                    <button type="button" disabled={busy} onClick={() => void deleteItem(item)} className="font-semibold text-red-700/75 transition-colors hover:text-red-700 dark:text-red-300/80 dark:hover:text-red-300">حذف</button>
                     {item._cms.origin === 'base' && (item._cms.modified || item._cms.hidden) && (
                       <button type="button" disabled={busy} onClick={() => void resetOriginal(item)} className="text-soft hover:text-accent">استعادة الأصل</button>
                     )}

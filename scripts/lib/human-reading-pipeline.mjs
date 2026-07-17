@@ -212,17 +212,6 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
     })
     const missingRisks = highRiskMissing(comparison, working.risks)
     const negationMissing = (comparison.missing || []).filter((word) => ['لا', 'لم', 'لن', 'ليس', 'ليست', 'غير', 'دون'].includes(word))
-    /* المصادر الأجنبية المنقحرة يعجز STT العربي عن مطابقتها باتساق: Azure ينطق
-       «بزنس ريفيو» وSTT يكتبها «بيزنسريفيو»، و«مورال إديوكيشن» تصير «مورا الايديوكيشن».
-       Azure ينطقها فعلاً (فالقراءة سليمة) لكن التحقق منها بـSTT مستحيل — فتُستثنى من
-       عقوبة الكلمات المفقودة (لا من النطق). سائر الجملة يبقى محروساً بالكامل. */
-    const foreignTokens = new Set((working.risks || [])
-      .filter((risk) => risk.type === 'مصدر أجنبي منقحر' || risk.type === 'مصطلح لاتيني')
-      .flatMap((risk) => normalizeArabic(String(risk.selectedPronunciation || '')).split(/\s+/))
-      .filter(Boolean))
-    const exemptImportant = (words = []) => foreignTokens.size
-      ? words.filter((word) => !foreignTokens.has(normalizeArabic(word)))
-      : words
     /* الهدف تركيبي من المخطط لا من الدكتور، وSTT هو الفيصل الحقيقي على سلامة القراءة؛
        فتُوسَّع نافذة السرعة للأنواع البطيئة طبيعياً (تأمل/خلاصة/إنساني/تحذير) وتبقى
        أضيق للأنواع السريعة. r013 قُرئ بـSTT 100٪ وسقط عند 114/134 على نافذة ±8 صلبة. */
@@ -233,26 +222,16 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
        وحدة من 25 تملكه رياضياً (r002: كلمة واحدة أسقطتها ست ساعات متتالية).
        تُقبل زلة واحدة في الوحدات ذات ≤13 كلمة مهمة بشروط صارمة: ليست كلمة خطر
        ولا نفياً، النسبة الكلية ≥0.85، ونصف اللهجات على الأقل لا يفقد أكثر من زلة. */
-    // نسبة مُصحَّحة تستثني الكلمات الأجنبية غير القابلة للتحقق: نطرحها من المفقود ومن الإجمالي
-    const rawImportantTotal = Number(comparison.importantTotal || 99)
-    const exemptedCount = (comparison.missingImportant || []).length - exemptImportant(comparison.missingImportant || []).length
-    const missedImportantAdj = exemptImportant(comparison.missingImportant || [])
-    const importantTotalAdj = Math.max(1, rawImportantTotal - exemptedCount)
-    const importantRatioAdj = rawImportantTotal > 0
-      ? (importantTotalAdj - missedImportantAdj.length) / importantTotalAdj
-      : comparison.importantRatio
-    // الوحدات التي تحمل مصادر أجنبية: STT أضجّ حولها فيُخفَّض الحد قليلاً بعد الاستثناء
-    const hasForeign = foreignTokens.size > 0
+    const importantTotal = Number(comparison.importantTotal || 99)
     const ensembleRecognitions = heard?.ensemble || []
     const oneSlipConsensus = ensembleRecognitions.length
-      ? ensembleRecognitions.filter((item) => exemptImportant(item.comparison?.missingImportant || []).length <= 1).length
+      ? ensembleRecognitions.filter((item) => (item.comparison?.missingImportant || []).length <= 1).length
         >= Math.ceil(ensembleRecognitions.length / 2)
       : false
-    const oneSlipPass = missedImportantAdj.length === 1 && importantTotalAdj < 20
-      && comparison.ratio >= 0.82 && oneSlipConsensus
-    const sttStrict = comparison.ratio >= (hasForeign ? 0.82 : 0.9)
-      && importantRatioAdj >= (hasForeign ? 0.9 : 0.95)
-      && (hasForeign || heard?.consensusPass === true)
+    const oneSlipPass = comparison.missingImportant.length === 1 && importantTotal < 20
+      && comparison.ratio >= 0.85 && oneSlipConsensus
+    const sttStrict = comparison.ratio >= 0.9 && comparison.importantRatio >= 0.95
+      && heard?.consensusPass === true
     const sttPass = (sttStrict || oneSlipPass)
       && missingRisks.length === 0 && negationMissing.length === 0
     attempts.push({ attempt, ratePct: working.ratePct, targetWpm: target, measuredWpm, pacePass,

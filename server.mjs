@@ -63,6 +63,7 @@ const archiveAnswerPath = '/api/ai/archive-answer'
 const journeyPath = '/api/journey'
 const adminNowPath = '/api/admin/site-now'
 const adminJourneysPath = '/api/admin/journeys'
+const podcastDispatchPath = '/api/admin/podcast/dispatch'
 const maxArticleRequestBytes = 128 * 1024
 const firebaseJwksUrl = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
 const articleCategories = Object.freeze(['التعليم', 'التربية', 'مجتمع', 'تقنية', 'هوية', 'إعلام', 'بحث'])
@@ -1431,6 +1432,150 @@ export function createRequestHandler({
         updatedAt: FieldValue.serverTimestamp(),
       })
       sendJson(res, 200, { ok: true, id: ref.id }, { 'cache-control': 'no-store' })
+      return
+    }
+
+    if (url.pathname === podcastDispatchPath) {
+      if (method !== 'POST') {
+        sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' })
+        return
+      }
+      const contentType = String(req.headers['content-type'] || '').toLowerCase()
+      if (contentType.split(';', 1)[0].trim() !== 'application/json') {
+        req.resume()
+        throw new HttpError(415, 'Content-Type must be application/json')
+      }
+      const token = bearerToken(req.headers.authorization)
+      const claims = await verifyToken(token)
+      if (claims?.admin !== true || typeof claims.sub !== 'string' || !claims.sub) {
+        req.resume()
+        throw new HttpError(403, 'Admin access required')
+      }
+      const body = await readJsonBody(req, 8_192)
+      const slug = boundedString(body?.slug, 180)
+      const contentSha256 = boundedString(body?.expectedDialogueContentSha256, 64).toLowerCase()
+      const revisionSha256 = boundedString(body?.expectedDialogueRevisionSha256, 64).toLowerCase()
+      const revisionId = boundedString(body?.expectedDialogueRevisionId, 128)
+      const turnCount = Number(body?.expectedTurnCount)
+      if (!/^[a-z0-9-]+$/.test(slug)) throw new HttpError(400, 'slug غير صالح')
+      if (!/^[a-f0-9]{64}$/.test(contentSha256) || !/^[a-f0-9]{64}$/.test(revisionSha256)) {
+        throw new HttpError(400, 'بصمة الحوار غير صالحة')
+      }
+      if (!revisionId || !Number.isInteger(turnCount) || turnCount < 2 || turnCount > 500) {
+        throw new HttpError(400, 'بيانات قفل الحوار غير مكتملة')
+      }
+
+      const { db, FieldValue } = await getAdminFirestore()
+      const [dialogueSnapshot, productionSnapshot] = await Promise.all([
+        db.collection('podcast_dialogues').doc(slug).get(),
+        db.collection('podcast_production').doc(slug).get(),
+      ])
+      if (!dialogueSnapshot.exists) throw new HttpError(409, 'الحوار المرفوع غير موجود')
+      if (!productionSnapshot.exists) throw new HttpError(409, 'قرار الإرسال للتوليد غير موجود')
+      const dialogue = dialogueSnapshot.data() || {}
+      const production = productionSnapshot.data() || {}
+      const exactLock = dialogue.source === 'admin-upload'
+        && Number(dialogue.schemaVersion) === 2
+        && dialogue.contentSha256 === contentSha256
+        && dialogue.revisionSha256 === revisionSha256
+        && dialogue.revisionId === revisionId
+        && Number(dialogue.turnCount) === turnCount
+        && production.status === 'queued'
+        && production.sourceCollection === 'podcast_dialogues'
+        && production.expectedDialogueContentSha256 === contentSha256
+        && production.expectedDialogueRevisionSha256 === revisionSha256
+        && production.expectedDialogueRevisionId === revisionId
+        && Number(production.expectedTurnCount) === turnCount
+      if (!exactLock) throw new HttpError(409, 'الحوار أو قائمة الإنتاج لا تطابق النسخة المقفولة؛ أعد الضغط على حفظ وإرسال')
+
+      const priorRevision = boundedString(production.dispatchedDialogueRevisionId, 128)
+      const priorState = boundedString(production.dispatchState, 40)
+      if (priorRevision === revisionId && ['requested', 'accepted'].includes(priorState)) {
+        sendJson(res, 200, {
+          ok: true,
+          duplicate: true,
+          workflowRunId: production.githubWorkflowRunId || '',
+          workflowRunUrl: production.githubWorkflowRunUrl || '',
+          message: 'التوليد لهذه النسخة بدأ بالفعل.',
+        })
+        return
+      }
+
+      const githubToken = String(process.env.GITHUB_WORKFLOW_TOKEN || process.env.GITHUB_ACTIONS_TOKEN || '').trim()
+      const githubRepository = String(process.env.PODCAST_GITHUB_REPOSITORY || 'ProfAlfailakawi/Dr.Ahmad').trim()
+      const githubWorkflow = String(process.env.PODCAST_GITHUB_WORKFLOW || 'podcast-pilot-release.yml').trim()
+      const githubRef = String(process.env.PODCAST_GITHUB_REF || 'main').trim()
+      if (!githubToken) throw new HttpError(503, 'الربط الآلي مع GitHub غير مفعّل على الخادم: أضف GITHUB_WORKFLOW_TOKEN مرة واحدة إلى خدمة dr-api')
+      if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(githubRepository)
+        || !/^[A-Za-z0-9_.-]+\.ya?ml$/i.test(githubWorkflow)
+        || !/^[A-Za-z0-9._/-]+$/.test(githubRef)) {
+        throw new HttpError(503, 'إعدادات مستودع GitHub على الخادم غير صالحة')
+      }
+
+      const productionRef = db.collection('podcast_production').doc(slug)
+      await productionRef.set({
+        dispatchState: 'requested',
+        dispatchedDialogueRevisionId: revisionId,
+        dispatchRequestedAt: FieldValue.serverTimestamp(),
+        dispatchRequestedBy: claims.sub,
+        dispatchError: '',
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true })
+
+      let githubResponse
+      try {
+        githubResponse = await fetchWithTimeout(fetch,
+          `https://api.github.com/repos/${githubRepository}/actions/workflows/${encodeURIComponent(githubWorkflow)}/dispatches`, {
+            method: 'POST',
+            headers: {
+              accept: 'application/vnd.github+json',
+              authorization: `Bearer ${githubToken}`,
+              'content-type': 'application/json',
+              'user-agent': 'dr-alfailakawi-podcast-admin/1.0',
+              'x-github-api-version': '2026-03-10',
+            },
+            body: JSON.stringify({ ref: githubRef, inputs: { slugs: slug } }),
+          }, 15_000)
+      } catch (error) {
+        await productionRef.set({
+          dispatchState: 'failed',
+          dispatchError: boundedString(error instanceof Error ? error.message : 'GitHub request failed', 700),
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true })
+        throw new HttpError(502, 'تعذّر الاتصال بـ GitHub لبدء التوليد؛ بقي الحوار في قائمة الانتظار')
+      }
+
+      let githubPayload = {}
+      try { githubPayload = await githubResponse.json() } catch { /* بعض إصدارات GitHub تعيد جسماً فارغاً */ }
+      if (![200, 201, 202, 204].includes(githubResponse.status)) {
+        const githubMessage = boundedString(githubPayload?.message, 500) || `GitHub HTTP ${githubResponse.status}`
+        await productionRef.set({
+          dispatchState: 'failed',
+          dispatchError: githubMessage,
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true })
+        throw new HttpError(githubResponse.status === 401 || githubResponse.status === 403 ? 503 : 502,
+          `رفض GitHub بدء التوليد: ${githubMessage}`)
+      }
+
+      const workflowRunId = githubPayload?.workflow_run_id || ''
+      const workflowRunUrl = boundedString(githubPayload?.html_url, 2_000)
+      await productionRef.set({
+        dispatchState: 'accepted',
+        dispatchedAt: FieldValue.serverTimestamp(),
+        githubWorkflowRunId: workflowRunId,
+        githubWorkflowRunUrl: workflowRunUrl,
+        dispatchError: '',
+        note: 'بدأ GitHub Actions تلقائياً من لوحة التحكم للحوار المرفوع والمقفول نفسه.',
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true })
+      sendJson(res, 200, {
+        ok: true,
+        duplicate: false,
+        workflowRunId,
+        workflowRunUrl,
+        message: 'بدأ التوليد تلقائياً من لوحة التحكم.',
+      })
       return
     }
 

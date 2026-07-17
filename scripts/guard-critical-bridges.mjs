@@ -8,6 +8,7 @@ const requiredFiles = [
   'scripts/lib/manual-dialogue-source.mjs',
   'scripts/verify-manual-dialogue-lock.mjs',
   'src/lib/podcast-dialogue-lock.ts',
+  'src/lib/podcast-generation.ts',
   'src/lib/social-templates.ts',
   'manual-dialogues/success-that-does-not-bring-joy-to-its-ownerarabic.json',
   'storage.rules',
@@ -43,6 +44,8 @@ const ideaFeatures = await readFile(resolve(root, 'src/components/IdeaFeatures.t
 const contentManager = await readFile(resolve(root, 'src/components/admin/ContentManager.tsx'), 'utf8')
 const cvFile = await readFile(resolve(root, 'src/pages/CvFile.tsx'), 'utf8')
 const firestoreRules = await readFile(resolve(root, 'firestore.rules'), 'utf8')
+const serverSource = await readFile(resolve(root, 'server.mjs'), 'utf8')
+const podcastDispatch = await readFile(resolve(root, 'src/lib/podcast-generation.ts'), 'utf8')
 const liveSource = (await Promise.all((await textFiles(resolve(root, 'src'))).map((file) => readFile(file, 'utf8')))).join('\n')
 
 const assertions = [
@@ -53,6 +56,8 @@ const assertions = [
   [fetchBridge.includes('manual-upload-locked') && fetchBridge.includes('revisionSha256'), 'manual dialogue bridge must fail closed with a cloud source lock'],
   [podcastWorkflow.includes('--manual-exact') && podcastWorkflow.includes('--no-gemini') && !podcastWorkflow.includes('fetch-manual-dialogues.mjs --slugs="$REQUESTED" || true'), 'podcast release must use locked manual dialogue only and never swallow fetch failures'],
   [manualEditor.includes('expectedDialogueContentSha256') && manualEditor.includes('queue-readback-mismatch'), 'manual editor must queue the exact verified dialogue revision'],
+  [manualEditor.includes('dispatchPodcastGeneration') && podcastDispatch.includes('/api/admin/podcast/dispatch'), 'manual dialogue submit must start generation from the admin panel'],
+  [serverSource.includes('GITHUB_WORKFLOW_TOKEN') && serverSource.includes('podcastDispatchPath') && serverSource.includes('actions/workflows'), 'server must dispatch the locked podcast workflow without exposing the GitHub token'],
   [podcastEngine.includes('manualRevisionSha256') && podcastEngine.includes('const saveKey = MANUAL_EXACT') && podcastEngine.includes('? lookupKey'), 'manual exact cache must be bound to the complete uploaded revision'],
   [podcastEngine.includes("if (!MANUAL_TEXT_MODE && issue.method === 'rephrase'") && podcastEngine.includes('ملاحظات تحريرية على الحوار المرفوع (لا تحجب ولا تغيّر النص)'), 'manual dialogue must never be rephrased or blocked by editorial style gates'],
   [socialTemplates.includes("type Composition = 'midad' | 'layl' | 'jarida' | 'sharit' | 'mishkat' | 'tawqee'"), 'six signed social compositions must remain present'],

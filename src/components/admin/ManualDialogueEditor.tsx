@@ -5,6 +5,7 @@ import { useAdminAuth } from '../../lib/admin-auth'
 import { getDb } from '../../lib/firebase'
 import podcastAdmin from '../../data/podcast-admin.json'
 import { fingerprintDialogue } from '../../lib/podcast-dialogue-lock'
+import { dispatchPodcastGeneration } from '../../lib/podcast-generation'
 
 type Speaker = 'male' | 'female'
 type DialogueTurn = {
@@ -218,7 +219,7 @@ function storedDialogue(slug: string) {
 }
 
 export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }) {
-  const { isAdmin, refresh } = useAdminAuth()
+  const { user, isAdmin, refresh } = useAdminAuth()
   const sortedArticles = useMemo(() => [...articles].sort((a, b) => b.iso.localeCompare(a.iso)), [articles])
   const initialSlug = sortedArticles[0]?.slug || ''
   const [slug, setSlug] = useState(initialSlug)
@@ -430,7 +431,10 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
         || Number(data.expectedTurnCount) !== proof.turnCount) {
         throw new Error('queue-readback-mismatch')
       }
-      setNotice(`أُرسل الحوار نفسه للتوليد وقُفل نهائياً ✓ ${proof.turnCount} مداخلة · بصمة ${proof.contentSha256.slice(0, 12)}. إذا عدّلت كلمة واحدة بعد الآن، سيمنع GitHub التوليد حتى تعيد الإرسال.`)
+      const dispatch = await dispatchPodcastGeneration({ user, slug, proof })
+      setNotice(dispatch.duplicate
+        ? `الحوار نفسه مقفول والتوليد يعمل بالفعل ✓ ${proof.turnCount} مداخلة · بصمة ${proof.contentSha256.slice(0, 12)}`
+        : `بدأ التوليد تلقائياً من لوحة التحكم ✓ ${proof.turnCount} مداخلة · بصمة ${proof.contentSha256.slice(0, 12)}${dispatch.workflowRunId ? ` · تشغيل ${dispatch.workflowRunId}` : ''}. لا تحتاج إلى دخول GitHub.`)
     } catch (error) {
       setNotice(`مُنع الإرسال لأن القفل السحابي لم يثبت: ${error instanceof Error ? error.message : 'unknown-error'}`)
     } finally {
@@ -575,7 +579,7 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
             <li>لا ينشئ النظام مداخلات كثيرة تلقائياً.</li>
             <li>أنت تضيف مداخلة جديدة فقط عند الضغط على «إضافة مداخلة».</li>
             <li>تبقى خيارات الصوت ونوع المداخلة والوقفة والتداخل والجسر الموسيقي داخل البطاقة نفسها.</li>
-            <li>حوارك المرفوع هو المصدر الوحيد: يُقفل ببصمتين، وأي اختلاف حرف واحد يوقف GitHub قبل Azure.</li>
+            <li>حوارك المرفوع هو المصدر الوحيد: يُقفل ببصمتين، ثم يبدأ التوليد تلقائياً من هذه اللوحة بلا دخول إلى GitHub.</li>
           </ul>
         </div>
         {availableDraft && (
@@ -597,7 +601,7 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
           </label>
           <div className="flex flex-wrap justify-end gap-2">
             <button type="button" onClick={() => void save(false)} disabled={cloudBusy || queueBusy} className={dirty ? primary : ghost}>{cloudBusy ? 'أثبت الحفظ…' : dirty ? 'حفظ وتثبيت البصمة' : isAdmin ? 'الحوار محفوظ ومثبت' : 'المسودة محفوظة'}</button>
-            <button type="button" onClick={() => void queueForGeneration()} disabled={cloudBusy || queueBusy || turns.length < 2} className={primary}>{queueBusy ? 'أقفل المصدر…' : 'حفظ وإرسال الحوار نفسه للتوليد'}</button>
+            <button type="button" onClick={() => void queueForGeneration()} disabled={cloudBusy || queueBusy || turns.length < 2} className={primary}>{queueBusy ? 'أحفظ وأبدأ التوليد…' : 'حفظ وإرسال الحوار نفسه للتوليد'}</button>
           </div>
         </div>
 

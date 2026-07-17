@@ -4,6 +4,8 @@ import { getDb } from '../../lib/firebase'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../../lib/cms'
 import type { AdminTab } from './AdminArchitecture'
 import { fingerprintDialogue } from '../../lib/podcast-dialogue-lock'
+import { dispatchPodcastGeneration } from '../../lib/podcast-generation'
+import { useAdminAuth } from '../../lib/admin-auth'
 
 const card = 'min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const pill = 'min-w-0 rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.74rem] font-semibold leading-tight text-soft'
@@ -74,6 +76,7 @@ export function ProductionHealthCenter({
   papers: PaperRecord[]
   onOpen: (tab: AdminTab) => void
 }) {
+  const { user } = useAdminAuth()
   const [remote, setRemote] = useState<Record<string, ProductionState>>({})
   const [draftSlugs, setDraftSlugs] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState('')
@@ -164,9 +167,23 @@ export function ProductionHealthCenter({
       )) throw new Error('لم تتطابق بصمات الحوار في القراءة الراجعة لقائمة الإنتاج')
       setRemote((current) => ({ ...current, [slug]: { ...current[slug], status,
         expectedDialogueContentSha256: String(readBackData.expectedDialogueContentSha256 || '') } }))
-      setMessage(status === 'published' ? 'اعتمدت الحلقة وأصبحت جاهزة للنشر.'
-        : status === 'queued' ? `قُفل الحوار المرفوع وأُرسل للتوليد ✓ بصمة ${String(readBackData.expectedDialogueContentSha256 || '').slice(0, 12)}`
-        : 'أُعيدت الحلقة إلى المراجعة.')
+      if (status === 'queued') {
+        const dispatch = await dispatchPodcastGeneration({
+          user,
+          slug,
+          proof: {
+            contentSha256: String(readBackData.expectedDialogueContentSha256 || ''),
+            revisionSha256: String(readBackData.expectedDialogueRevisionSha256 || ''),
+            revisionId: String(readBackData.expectedDialogueRevisionId || ''),
+            turnCount: Number(readBackData.expectedTurnCount || 0),
+          },
+        })
+        setMessage(dispatch.duplicate
+          ? `التوليد يعمل بالفعل لهذه النسخة ✓ بصمة ${String(readBackData.expectedDialogueContentSha256 || '').slice(0, 12)}`
+          : `بدأ التوليد تلقائياً من اللوحة ✓ بصمة ${String(readBackData.expectedDialogueContentSha256 || '').slice(0, 12)}${dispatch.workflowRunId ? ` · تشغيل ${dispatch.workflowRunId}` : ''}`)
+      } else {
+        setMessage(status === 'published' ? 'اعتمدت الحلقة وأصبحت جاهزة للنشر.' : 'أُعيدت الحلقة إلى المراجعة.')
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'تعذّر حفظ القرار سحابياً.')
     } finally {
@@ -222,7 +239,7 @@ export function ProductionHealthCenter({
                 </div>
                 <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:flex-wrap">
                   {status === 'draft' || status === 'queued' ? (
-                    <button disabled={busy === article.slug || status === 'queued'} onClick={() => void setStatus(article.slug, 'queued')} className="min-w-0 rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold leading-tight text-white disabled:opacity-50 sm:px-4 sm:text-[.74rem]">{status === 'queued' ? 'في قائمة الليلة' : '🎬 أرسل للتوليد الليلي'}</button>
+                    <button disabled={busy === article.slug || status === 'queued'} onClick={() => void setStatus(article.slug, 'queued')} className="min-w-0 rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold leading-tight text-white disabled:opacity-50 sm:px-4 sm:text-[.74rem]">{status === 'queued' ? 'جارٍ بدء التوليد' : '🎬 ابدأ التوليد الآن'}</button>
                   ) : (
                     <button disabled={busy === article.slug} onClick={() => void setStatus(article.slug, 'published')} className="min-w-0 rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold leading-tight text-white disabled:opacity-50 sm:px-4 sm:text-[.74rem]">اعتماد الحلقة</button>
                   )}

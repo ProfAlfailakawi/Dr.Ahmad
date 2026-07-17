@@ -16,6 +16,19 @@ export default function Articles() {
   const [cat, setCat] = useState('الكل')
   const [visibleCount, setVisibleCount] = useState(18)
   const categories = useMemo(() => dynamicArticleCategories(articles), [articles])
+  const featured = useMemo(() => {
+    const selected = essays.flatMap((entry) => {
+      const live = articles.find((article) => article.slug === entry.slug)
+      return live ? [{ ...entry, title: live.title, tag: live.cat || entry.tag }] : []
+    })
+    if (selected.length) return selected
+    return articles.slice(0, 3).map((article) => ({
+      slug: article.slug,
+      tag: article.cat || 'مقال',
+      title: article.title,
+      quote: `«${(article.excerpt || '').slice(0, 150)}${(article.excerpt || '').length > 150 ? '…' : ''}»`,
+    }))
+  }, [articles])
 
   const term = q.trim()
   const filtered = articles
@@ -34,7 +47,7 @@ export default function Articles() {
       {/* featured trio */}
       <section className="border-b border-hair px-4 py-12 sm:px-6 md:px-11 md:py-20">
         <div className="mobile-paired-grid mx-auto grid max-w-shell grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 md:gap-8">
-          {essays.map((e, i) => (
+          {featured.map((e, i) => (
             <FadeUp key={e.title} delay={i * 0.08} className="h-full min-w-0">
               <Link
                 to={`/articles/${e.slug}`}

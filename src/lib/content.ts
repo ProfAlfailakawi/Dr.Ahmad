@@ -194,13 +194,9 @@ export function CmsProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    if (isAdminRoute()) {
-      cancelStart = afterFirstPaint(() => { void startRealtime() }, 500)
-    } else {
-      setLoading(false)
-      // الزائر العام لا يحتاج خمس مراقبات لحظية. جلب واحد مؤجل يكفي لتعديلات المحتوى الحي.
-      cancelStart = afterFirstPaint(() => { void reload() }, 6000)
-    }
+    // المحتوى والعدادات في كل صفحات الموقع مصدرها واحد حيّ. بذلك ينعكس الحذف والإخفاء
+    // فوراً في الرئيسية والسيرة والبحث والقوائم، ولا تبقى أرقام قديمة حتى إعادة البناء.
+    cancelStart = afterFirstPaint(() => { void startRealtime() }, isAdminRoute() ? 450 : 900)
 
     return () => {
       active = false

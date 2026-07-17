@@ -391,6 +391,11 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
   }, [article.slug])
 
   useEffect(() => {
+    document.body.classList.toggle('reader-resume-open', showResume)
+    return () => document.body.classList.remove('reader-resume-open')
+  }, [showResume])
+
+  useEffect(() => {
     const refreshQuotes = () => setQuotesState(readSavedQuotes())
     const onXray = (event: Event) => setXray((event as CustomEvent<XrayTerm>).detail || null)
     const onPopularLinked = (event: Event) => {

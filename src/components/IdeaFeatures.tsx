@@ -91,27 +91,32 @@ const SIGNATURE = 'د. أحمد حسين الفيلكاوي'
 const DOMAIN = 'dr-alfailakawi.com'
 
 type Ctx = CanvasRenderingContext2D
-const wrapLines = (g: Ctx, text: string, maxW: number, maxLines = 9) => {
-  const words = text.split(/\s+/)
+const wrapLines = (g: Ctx, text: string, maxW: number) => {
+  const words = text.trim().split(/\s+/).filter(Boolean)
   const lines: string[] = []
   let line = ''
-  for (const w of words) {
-    const test = line ? `${line} ${w}` : w
-    if (g.measureText(test).width > maxW && line) { lines.push(line); line = w } else line = test
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word
+    if (line && g.measureText(candidate).width > maxW) {
+      lines.push(line)
+      line = word
+    } else {
+      line = candidate
+    }
   }
   if (line) lines.push(line)
-  if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines - 1] += '…' }
   return lines
 }
 const fitQuote = (g: Ctx, quote: string, maxW: number, maxH: number, base: number) => {
-  for (let size = base; size >= 30; size -= 2) {
+  // لا نقصّ آخر الجملة أبداً؛ نصغّر الخط تدريجياً حتى تظهر كاملة داخل البطاقة.
+  for (let size = base; size >= 18; size -= 2) {
     g.font = `300 ${size}px "El Messiri", serif`
-    const lines = wrapLines(g, quote, maxW, 12)
-    const lh = size * 1.74
+    const lines = wrapLines(g, quote, maxW)
+    const lh = size * 1.62
     if (lines.length * lh <= maxH) return { size, lines, lh }
   }
-  g.font = '300 30px "El Messiri", serif'
-  return { size: 30, lines: wrapLines(g, quote, maxW, 12), lh: 52 }
+  g.font = '300 18px "El Messiri", serif'
+  return { size: 18, lines: wrapLines(g, quote, maxW), lh: 29 }
 }
 const rtl = (g: Ctx) => { g.textAlign = 'right'; g.direction = 'rtl' }
 const drawSignature = (g: Ctx, x: number, y: number, ink: string, soft: string, accent: string, center = false) => {
@@ -477,9 +482,9 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
           >
             <motion.div
               initial={{ scale: 0.94, y: 14 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, opacity: 0 }}
-              transition={{ duration: 0.32 }} onClick={(e) => e.stopPropagation()} className="my-auto w-full max-w-[440px] py-1"
+              transition={{ duration: 0.32 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-[440px] pb-2"
             >
-              <div className="mb-4 flex flex-wrap items-center justify-center gap-1.5">
+              <div className="sticky top-0 z-10 mb-3 flex flex-wrap items-center justify-center gap-1.5 rounded-2xl bg-ink/90 p-2 shadow-lg backdrop-blur">
                 {CARD_TEMPLATES.map((t) => (
                   <button key={t.key} type="button" onClick={() => chooseTemplate(t.key)} title={t.hint}
                     className={`rounded-full px-3.5 py-1.5 text-[.74rem] font-semibold transition-colors ${template === t.key ? 'bg-canvas text-ink' : 'border border-canvas/35 text-canvas/85 hover:border-canvas'}`}>
@@ -495,26 +500,39 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                 ))}
               </div>
               {img ? (
-                <img src={img} alt="بطاقة اقتباس" className={`mx-auto max-w-full rounded-2xl object-contain shadow-[0_40px_80px_-30px_rgba(0,0,0,.7)] ${format === 'story' ? 'max-h-[50dvh] w-auto' : 'max-h-[54dvh] w-auto'}`} />
+                <img src={img} alt="بطاقة اقتباس" className={`mx-auto max-w-full rounded-2xl object-contain shadow-[0_40px_80px_-30px_rgba(0,0,0,.7)] ${format === 'story' ? 'max-h-[46dvh] w-auto' : 'max-h-[50dvh] w-auto'}`} />
               ) : (
                 <div className="flex aspect-square items-center justify-center rounded-2xl border border-hair bg-canvas text-soft">…</div>
               )}
-              <div className="mt-4 flex flex-wrap justify-center gap-2.5">
+              <div className="mt-4 flex items-center justify-center gap-3">
                 {img && (
-                  <a href={img} download={`اقتباس-${CARD_TEMPLATES.find((t) => t.key === template)?.label}-${CARD_FORMATS.find((f) => f.key === format)?.label}.png`} className="rounded-full bg-accent px-7 py-3 font-semibold text-canvas transition-colors hover:bg-accent-deep">تحميل الصورة</a>
+                  <a
+                    href={img}
+                    download={`اقتباس-${CARD_TEMPLATES.find((t) => t.key === template)?.label}-${CARD_FORMATS.find((f) => f.key === format)?.label}.png`}
+                    aria-label="تحميل الصورة"
+                    title="تحميل الصورة"
+                    className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-accent text-canvas transition-all hover:-translate-y-0.5 hover:bg-accent-deep"
+                  >
+                    <svg aria-hidden width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                  </a>
                 )}
                 {img && (
                   <button
                     type="button"
                     onClick={saveQuote}
+                    aria-label={quoteSaved ? 'محفوظة في دفتر القراءة' : 'حفظ في دفتر القراءة'}
+                    title={quoteSaved ? 'محفوظة في دفتر القراءة' : 'حفظ في دفتر القراءة'}
                     aria-pressed={quoteSaved}
-                    className="rounded-full border border-canvas/60 bg-canvas/10 px-5 py-3 font-semibold text-canvas transition-colors hover:bg-canvas hover:text-ink"
+                    className={`flex h-[52px] w-[52px] items-center justify-center rounded-full border transition-all hover:-translate-y-0.5 ${quoteSaved ? 'border-canvas bg-canvas text-ink' : 'border-canvas/60 bg-canvas/10 text-canvas hover:bg-canvas hover:text-ink'}`}
                   >
-                    {quoteSaved ? 'حُفظت في دفتر القراءة' : 'احتفظ بالجملة في دفتر القراءة'}
+                    <svg aria-hidden width="22" height="22" viewBox="0 0 24 24" fill={quoteSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4.8A1.8 1.8 0 0 1 7.8 3h8.4A1.8 1.8 0 0 1 18 4.8V21l-6-3.6L6 21Z"/></svg>
                   </button>
                 )}
-                <button type="button" onClick={close} className="rounded-full border-[1.5px] border-canvas/40 px-7 py-3 font-semibold text-canvas transition-colors hover:border-canvas">إغلاق</button>
+                <button type="button" onClick={close} aria-label="إغلاق" title="إغلاق" className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-[1.5px] border-canvas/50 text-canvas transition-all hover:-translate-y-0.5 hover:border-canvas">
+                  <svg aria-hidden width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="m6 6 12 12"/><path d="M18 6 6 18"/></svg>
+                </button>
               </div>
+              {quoteSaved && <p className="mt-2 text-center text-[.72rem] font-semibold text-canvas/80">حُفظت في دفتر القراءة</p>}
               <p className="mt-4 text-center text-[.82rem] text-canvas/70">
                 {(() => { const f = CARD_FORMATS.find((x) => x.key === format)!; return `${f.w}×${f.h} — ${f.hint}` })()}
               </p>

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, FadeUp, Label, Magnetic, Page, Reveal, ScheduleProjectLink, SectionHead, SocialIcon, TebyanProjectLink } from '../components/ui'
-import { books as staticBooks, papers as staticPapers, profile, roundDown10, socials, stats, upcoming, type Event as SiteEvent } from '../data'
+import { profile, roundDown10, socials, upcoming, type Event as SiteEvent } from '../data'
 import { useCmsContent, useExtras } from '../lib/content'
 import { firebaseEnabled, getDb } from '../lib/firebase'
 import { Newsletter } from '../components/extras'
@@ -65,16 +65,16 @@ function DailySpark({ compact = false }: { compact?: boolean }) {
 /* ---------- الشخصنة: «الموقع يعرف من دخل» (فكرة نووية ١) ----------
    سؤال هادئ مرّة واحدة، يُحفظ محلياً، فتتكيّف الرئيسية — بلا نافذة حاجزة ولا ألوان جديدة. */
 type Persona = 'reader' | 'scholar' | 'org'
-const PERSONAS: {
+const personasFor = (articleCount: number, paperCount: number): {
   key: Persona; label: string; gate: string; d: string; greet: string
   to: string; links: { to: string; t: string }[]
-}[] = [
+}[] => [
   { key: 'reader', label: 'قارئ متأمّل', gate: 'للقارئ المتأمل',
-    d: `أكثر من ${roundDown10(stats.articles)} مقالاً فكرياً — اقرأها، وبعضها بصوتي.`,
+    d: `أكثر من ${roundDown10(articleCount)} مقالاً فكرياً — اقرأها، وبعضها بصوتي.`,
     greet: 'بدأتُ لك من الكلمة.', to: '/articles',
     links: [{ to: '/articles', t: 'أحدث ما كتبت' }, { to: '/articles', t: 'كل المقالات' }] },
   { key: 'scholar', label: 'معلّم وباحث', gate: 'للمعلم والباحث',
-    d: `${stats.papers} بحثاً محكّماً، وأدوات ومفاهيم منتقاة.`,
+    d: `${paperCount} بحثاً محكّماً، وأدوات ومفاهيم منتقاة.`,
     greet: 'من المعرفة المحكّمة.', to: '/research',
     links: [{ to: '/research', t: 'المساهمات العلمية' }, { to: '/publications', t: 'الكتب المنشورة' }] },
   { key: 'org', label: 'جهة أو صانع قرار', gate: 'للجهات وصنّاع القرار',
@@ -84,6 +84,8 @@ const PERSONAS: {
 ]
 
 function WhoAreYou() {
+  const { articles, papers } = useCmsContent()
+  const personas = useMemo(() => personasFor(articles.length, papers.length), [articles.length, papers.length])
   // القراءة في المُهيّئ (createRoot) تمنع أي وميض للزائر العائد
   const [persona, setPersona] = useState<Persona | null>(() => {
     try { return (localStorage.getItem('visitor:persona') as Persona) || null } catch { return null }
@@ -105,7 +107,7 @@ function WhoAreYou() {
     try { localStorage.removeItem('visitor:persona'); localStorage.removeItem('visitor:skip') } catch { /* noop */ }
   }
 
-  const active = persona ? PERSONAS.find((x) => x.key === persona) ?? null : null
+  const active = persona ? personas.find((x) => x.key === persona) ?? null : null
 
   return (
     <section className="border-t border-hair bg-wash px-6 py-11 md:px-11 md:py-[72px]">
@@ -130,7 +132,7 @@ function WhoAreYou() {
         ) : skipped ? (
           /* ── تصفّح حرّ: البوابات الثلاث كروابط ── */
           <div className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 md:pb-0">
-            {PERSONAS.map((g, i) => (
+            {personas.map((g, i) => (
               <FadeUp key={g.key} delay={i * 0.08} className="w-[72vw] max-w-[320px] shrink-0 snap-start md:w-auto md:max-w-none">
                 <Link to={g.to} data-hover className="group flex h-full flex-col rounded-2xl border border-hair bg-canvas p-7 transition-colors duration-300 hover:border-accent">
                   <h3 className="font-display text-[1.15rem] font-semibold text-ink">{g.gate}</h3>
@@ -148,7 +150,7 @@ function WhoAreYou() {
               <h2 className="mb-8 font-display text-[clamp(1.6rem,4vw,2.6rem)] font-semibold leading-[1.3] text-ink">ما الذي جاء بك؟</h2>
             </FadeUp>
             <div className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 md:pb-0">
-              {PERSONAS.map((g, i) => (
+              {personas.map((g, i) => (
                 <FadeUp key={g.key} delay={0.1 + i * 0.08} className="w-[72vw] max-w-[320px] shrink-0 snap-start md:w-auto md:max-w-none">
                   <button onClick={() => choose(g.key)} data-hover className="group flex h-full w-full flex-col rounded-2xl border border-hair bg-canvas p-7 text-right transition-colors duration-300 hover:border-accent">
                     <h3 className="font-display text-[1.15rem] font-semibold text-ink">{g.gate}</h3>
@@ -390,7 +392,7 @@ const AXIS_KEYS: Record<string, string[]> = {
   'تقنية': ['تكنولوجيا', 'ذكاء', 'رقمي', 'بيانات', 'تطبيقات', 'أجهزة', 'افتراضي'],
   'هوية': ['هوية', 'تراث', 'لغة', 'قيم', 'احتياجات'],
 }
-function axisDeepDive(axis: string) {
+function axisDeepDive(axis: string, papers: PaperRecord[], books: BookRecord[]) {
   const keys = AXIS_KEYS[axis] || []
   const hit = <T extends { title: string }>(items: T[], extra: (x: T) => string) => {
     let top: T | null = null, best = 0
@@ -402,20 +404,20 @@ function axisDeepDive(axis: string) {
     return top
   }
   return {
-    paper: hit(staticPapers as { slug: string; title: string; meta?: string }[], (p) => p.meta || ''),
-    book: hit(staticBooks as { slug: string; title: string; desc?: string }[], (b) => b.desc || ''),
+    paper: hit(papers, (paper) => paper.meta || ''),
+    book: hit(books, (book) => book.desc || ''),
   }
 }
 
 function ThoughtCompass() {
-  const { articles } = useCmsContent()
+  const { articles, books, papers } = useCmsContent()
   const axes = useMemo(() => dynamicArticleCategories(articles, false).map((key) => ({ key, label: categoryLabel(key) })), [articles])
   const [active, setActive] = useState('التعليم')
   useEffect(() => {
     if (axes.length && !axes.some((axis) => axis.key === active)) setActive(axes[0].key)
   }, [active, axes])
   const related = articles.filter((a) => a.cat === active).slice(0, 3)
-  const dive = axisDeepDive(active)
+  const dive = axisDeepDive(active, papers, books)
   const axisLabel = axes.find((a) => a.key === active)?.label || active
 
   const quickLinks = [

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getDb, getFirebaseApp } from '../../lib/firebase'
-import { books, papers } from '../../data'
+import { useCmsContent } from '../../lib/content'
 import { publicationGate, topicMemory } from '../../lib/intelligence'
 import { getArticleBody } from '../../lib/article-bodies'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
@@ -243,11 +243,31 @@ export function UploadField({
   onChange: (value: string) => void
 }) {
   const [busy, setBusy] = useState(false)
+  const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
+
+  const readableUploadError = (reason: unknown) => {
+    const value = reason as { code?: string; message?: string; customData?: { serverResponse?: string } }
+    const code = String(value?.code || '')
+    if (code === 'storage/unauthorized') return 'الحساب مسجّل، لكن صلاحية الرفع غير منشورة في Storage. انشر storage.rules ثم أعد المحاولة.'
+    if (code === 'storage/bucket-not-found') return 'حاوية Firebase Storage غير مفعّلة لهذا المشروع أو اسمها غير صحيح.'
+    if (code === 'storage/quota-exceeded') return 'توقّف Firebase Storage بسبب الخطة أو الحصة. افتح Storage في مشروع drahmad-8e9e2 وتحقق من تفعيل الحاوية.'
+    if (code === 'storage/retry-limit-exceeded') return 'انقطع الاتصال أثناء الرفع. أعد المحاولة بعد ثوانٍ؛ لن يُحفظ رابط ناقص.'
+    if (code === 'storage/invalid-checksum') return 'وصل الملف ناقصاً إلى الخادم؛ أعد اختياره وسيُرفع من البداية.'
+    if (code === 'storage/canceled') return 'أُلغي الرفع قبل اكتماله.'
+    if (code === 'storage/unknown') {
+      const response = String(value?.customData?.serverResponse || '')
+      return response.includes('billing') || response.includes('Blaze')
+        ? 'Firebase Storage رفض الرفع لأن الحاوية أو خطة المشروع غير مفعّلة. افتح Storage في drahmad-8e9e2 مرة واحدة ثم أعد المحاولة.'
+        : 'Firebase Storage رفض الطلب من الخادم. تم تثبيت اسم الحاوية ونوع PDF؛ بقي نشر storage.rules والتأكد أن Storage مفعّل في drahmad-8e9e2.'
+    }
+    return value?.message || 'تعذّر رفع الملف.'
+  }
 
   const upload = async (file?: File) => {
     if (!file) return
     setError('')
+    setProgress(0)
     if (file.size > maxMb * 1024 * 1024) {
       setError(`الحد الأقصى ${maxMb}MB.`)
       setAdminTaskState('needs-input', `الملف أكبر من ${maxMb}MB`)
@@ -258,31 +278,65 @@ export function UploadField({
     try {
       const app = await getFirebaseApp()
       if (!app) throw new Error('Firebase غير متاح')
-      const { getStorage, getDownloadURL, ref, uploadBytes } = await import('firebase/storage')
+      const [{ getAuth }, storageModule] = await Promise.all([
+        import('firebase/auth'),
+        import('firebase/storage'),
+      ])
+      const user = getAuth(app).currentUser
+      if (!user) throw new Error('انتهت جلسة المشرف. سجّل الدخول من جديد ثم ارفع الملف.')
+      // يجدد الـ custom claim قبل طلب Storage؛ يمنع فشل الرفع بعد منح admin للحساب.
+      await user.getIdToken(true)
+
       const safe = slugify(slug || file.name.replace(/\.[^.]+$/, ''))
       const extension = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || (folder === 'covers' ? 'webp' : 'pdf')
-      const storage = getStorage(app)
-      const target = ref(storage, `site-content/${folder}/${safe}-${Date.now()}.${extension}`)
-      await uploadBytes(target, file, { contentType: file.type })
-      onChange(await getDownloadURL(target))
+      const isPdf = extension === 'pdf' || accept.includes('application/pdf')
+      if (isPdf && extension !== 'pdf') throw new Error('اختر ملف PDF صحيحاً.')
+      const contentType = isPdf
+        ? 'application/pdf'
+        : file.type || (extension === 'webp' ? 'image/webp' : extension === 'png' ? 'image/png' : 'image/jpeg')
+
+      const bucket = app.options.storageBucket
+      if (!bucket) throw new Error('اسم Firebase Storage غير موجود في إعدادات الموقع.')
+      // التهيئة الصريحة تمنع اختيار Bucket تابع لمشروع الاستضافة بدلاً من مشروع البيانات.
+      const storage = storageModule.getStorage(app, `gs://${bucket}`)
+      storage.maxUploadRetryTime = 120_000
+      const stableCvFile = folder === 'files' && (safe === 'cv' || safe === 'cv-en')
+      const fileName = stableCvFile ? `${safe}.${extension}` : `${safe}-${Date.now()}.${extension}`
+      const target = storageModule.ref(storage, `site-content/${folder}/${fileName}`)
+      const uploadTask = storageModule.uploadBytesResumable(target, file, {
+        contentType,
+        cacheControl: stableCvFile ? 'public,max-age=300,must-revalidate' : 'public,max-age=31536000,immutable',
+        customMetadata: { uploadedBy: user.uid, source: 'admin-panel' },
+      })
+
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on('state_changed', (snapshot) => {
+          setProgress(Math.max(1, Math.round((snapshot.bytesTransferred / Math.max(1, snapshot.totalBytes)) * 100)))
+        }, reject, resolve)
+      })
+      const url = await storageModule.getDownloadURL(target)
+      onChange(url)
+      setProgress(100)
       task.complete('تم رفع الملف')
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'تعذّر رفع الملف')
-      task.fail(reason, 'تعذّر رفع الملف')
+      const message = readableUploadError(reason)
+      setError(message)
+      task.fail(reason, message)
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <Field label={label} hint={error || (value ? 'تم حفظ رابط الملف؛ يمكنك رفع بديل.' : undefined)}>
-      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+    <Field label={label} hint={error || (busy ? `اكتمل ${progress}%` : value ? 'تم حفظ رابط الملف؛ يمكنك رفع بديل.' : undefined)}>
+      <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
         <input className={input} dir="ltr" value={value} onChange={(event) => onChange(event.target.value)} placeholder="https://… أو ارفع ملفاً" />
-        <label className={`${secondary} cursor-pointer text-center`}>
-          {busy ? 'جارٍ الرفع…' : 'رفع ملف'}
-          <input className="sr-only" type="file" accept={accept} disabled={busy} onChange={(event) => void upload(event.target.files?.[0])} />
+        <label className={`${secondary} min-w-0 cursor-pointer text-center`}>
+          {busy ? `جارٍ الرفع ${progress}%` : 'رفع ملف'}
+          <input className="sr-only" type="file" accept={accept} disabled={busy} onChange={(event) => { void upload(event.target.files?.[0]); event.currentTarget.value = '' }} />
         </label>
       </div>
+      {busy && <span className="h-1.5 overflow-hidden rounded-full bg-hair" aria-label={`تقدم الرفع ${progress}%`}><span className="block h-full bg-accent transition-[width] duration-200" style={{ width: `${progress}%` }} /></span>}
     </Field>
   )
 }
@@ -308,6 +362,7 @@ function Editor({
   onSave: () => void
   allItems: ManagedRecord[]
 }) {
+  const { books, papers } = useCmsContent()
   // أي رقم هندي يكتبه الدكتور يتحوّل غربياً فوراً — قاعدة الموقع في كل الخانات
   const west = (s: string) => s.replace(/[٠-٩]/g, (d) => '0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)])
   const set = (field: string, value: string) => setForm((previous) => {
@@ -787,14 +842,14 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
   }
 
   return (
-    <section className="grid gap-5">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
+    <section className="grid min-w-0 max-w-full gap-5">
+      <div className="grid min-w-0 gap-4 sm:flex sm:flex-wrap sm:items-end sm:justify-between">
+        <div className="min-w-0">
           <p className="text-[.76rem] font-semibold uppercase text-accent">إدارة المحتوى</p>
           <h2 className="mt-1 font-display text-2xl font-bold text-ink">{labels[kind].plural}</h2>
           <p className="mt-1 text-[.82rem] text-soft">{items.length} عنصراً — الأصل والإضافات في قائمة واحدة.</p>
         </div>
-        <button type="button" onClick={openNew} className={primary}>+ إضافة {labels[kind].singular}</button>
+        <button type="button" onClick={openNew} className={`${primary} w-full sm:w-auto`}>+ إضافة {labels[kind].singular}</button>
       </div>
 
       <div className="grid gap-3 rounded-2xl border border-hair bg-wash p-4 sm:grid-cols-[minmax(0,1fr)_auto]">
@@ -804,7 +859,35 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
 
       {notice && <p className="rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.84rem] text-accent">{notice}</p>}
 
-      <div className="overflow-x-auto rounded-2xl border border-hair bg-canvas">
+      <div className="grid min-w-0 gap-3 sm:hidden">
+        {filtered.map((item) => (
+          <article key={`${item._cms.origin}:${item.slug}`} className={`min-w-0 overflow-hidden rounded-2xl border border-hair bg-canvas p-4 ${item._cms.hidden ? 'opacity-60' : ''}`}>
+            <button type="button" onClick={() => openEdit(item)} className="block min-w-0 w-full text-right">
+              <span className="block break-words font-medium leading-[1.7] text-ink">{item.title}</span>
+              <span className="mt-1 block max-w-full truncate text-[.68rem] text-soft" dir="ltr">{item.slug}</span>
+            </button>
+            <p className="mt-2 break-words text-[.76rem] text-soft">{item.date || item.cat || item.outlet || item.isbn || '—'}</p>
+            <div className="mt-3 flex min-w-0 flex-wrap gap-1.5">
+              <span className="rounded-full border border-hair px-2.5 py-1 text-[.68rem] text-soft">{item._cms.origin === 'base' ? 'أصل' : 'مُضاف'}</span>
+              {item._cms.modified && <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[.68rem] text-accent">مُعدّل</span>}
+              {item._cms.hidden && <span className="rounded-full border border-accent/30 px-2.5 py-1 text-[.68rem] text-accent">مخفي</span>}
+              {kind === 'article' && item.status === 'scheduled' && <span className="rounded-full border border-accent/30 px-2.5 py-1 text-[.68rem] text-accent">مجدول</span>}
+              {kind === 'article' && item.status === 'draft' && <span className="rounded-full border border-hair px-2.5 py-1 text-[.68rem] text-soft">مسودة</span>}
+            </div>
+            <div className="mt-4 grid min-w-0 grid-cols-3 gap-2 text-[.72rem]">
+              <button type="button" onClick={() => openEdit(item)} className="min-w-0 rounded-full border border-accent/30 px-2 py-2 font-semibold text-accent">تعديل</button>
+              <button type="button" disabled={busy} onClick={() => void toggleVisibility(item)} className="min-w-0 rounded-full border border-hair px-2 py-2 text-soft disabled:opacity-50">{item._cms.hidden ? 'إظهار' : 'إخفاء'}</button>
+              <button type="button" disabled={busy} onClick={() => void deleteItem(item)} className="min-w-0 rounded-full border border-red-700/20 px-2 py-2 font-semibold text-red-700/80 disabled:opacity-50 dark:text-red-300/80">حذف</button>
+            </div>
+            {item._cms.origin === 'base' && (item._cms.modified || item._cms.hidden) && (
+              <button type="button" disabled={busy} onClick={() => void resetOriginal(item)} className="mt-2 w-full rounded-full border border-hair px-3 py-2 text-[.72rem] text-soft disabled:opacity-50">استعادة الأصل</button>
+            )}
+          </article>
+        ))}
+        {!filtered.length && <p className="rounded-2xl border border-hair bg-canvas px-5 py-12 text-center text-[.86rem] text-soft">لا نتائج مطابقة.</p>}
+      </div>
+
+      <div className="admin-table-scroll hidden max-w-full overflow-x-auto rounded-2xl border border-hair bg-canvas sm:block">
         <table className="w-full min-w-[760px] border-collapse text-right">
           <thead className="bg-wash text-[.75rem] text-soft">
             <tr>
@@ -851,9 +934,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
                 <td className="px-5 py-4">
                   <div className="flex flex-wrap items-center gap-3 text-[.78rem]">
                     <button type="button" onClick={() => openEdit(item)} className="font-semibold text-accent hover:text-accent-deep">تعديل</button>
-                    <button type="button" disabled={busy} onClick={() => void toggleVisibility(item)} className="text-soft hover:text-accent">
-                      {item._cms.hidden ? 'إظهار' : 'إخفاء'}
-                    </button>
+                    <button type="button" disabled={busy} onClick={() => void toggleVisibility(item)} className="text-soft hover:text-accent">{item._cms.hidden ? 'إظهار' : 'إخفاء'}</button>
                     <button type="button" disabled={busy} onClick={() => void deleteItem(item)} className="font-semibold text-red-700/75 transition-colors hover:text-red-700 dark:text-red-300/80 dark:hover:text-red-300">حذف</button>
                     {item._cms.origin === 'base' && (item._cms.modified || item._cms.hidden) && (
                       <button type="button" disabled={busy} onClick={() => void resetOriginal(item)} className="text-soft hover:text-accent">استعادة الأصل</button>

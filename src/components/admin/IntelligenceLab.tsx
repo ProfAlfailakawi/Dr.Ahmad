@@ -13,7 +13,7 @@ import {
   monthlyPlan,
 } from '../../lib/intelligence'
 
-const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
+const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
 const softBtn = 'rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent'
 const primaryBtn = 'rounded-full bg-accent px-5 py-2 text-[.84rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
@@ -240,7 +240,7 @@ function AudioControlCard({ articles }: { articles: ArticleRecord[] }) {
   }
   return (
     <ToolDetails title="غرفة التحكم الصوتية" note="خاصة لك فقط: تلخص حالة الصوت، ولا تنشر حلقة جديدة من المتصفح." defaultOpen>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <span className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{withAudio.length}</strong><small className="text-soft">مقالات بصوت</small></span>
         <span className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-ink">{noAudio.length}</strong><small className="text-soft">تحتاج صوت</small></span>
       </div>
@@ -443,7 +443,7 @@ export function IntelligenceLab({ articles }: { articles: ArticleRecord[] }) {
       <section className={card}>
         <p className="text-[.76rem] font-semibold uppercase text-accent">المختبر المتقدم</p>
         <p className="mt-2 text-[.88rem] leading-relaxed text-soft">الأدوات نفسها باقية، لكنها موزعة على ثلاث غرف حتى لا تظهر كلها في شاشة واحدة.</p>
-        <div className="rail mt-5 flex gap-2 overflow-x-auto pb-1">
+        <div className="mt-5 flex min-w-0 flex-wrap gap-2 pb-1 md:flex-nowrap md:overflow-x-auto">
           {([['before','قبل النشر'],['develop','تطوير الفكرة'],['system','تحويل المقال والصوت']] as const).map(([key,label]) => <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold ${view === key ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>{label}</button>)}
         </div>
       </section>

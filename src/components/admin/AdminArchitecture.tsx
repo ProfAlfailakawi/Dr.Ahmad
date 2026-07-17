@@ -95,9 +95,9 @@ export function AdminSectionTabs({ tab, onSelect }: { tab: AdminTab; onSelect: (
   const group = ADMIN_GROUPS.find((item) => item.area === area)
   if (!group) return null
   return (
-    <div className="rail mb-6 flex gap-2 overflow-x-auto pb-1">
+    <div className="mb-6 flex min-w-0 flex-wrap gap-2 pb-1 md:flex-nowrap md:overflow-x-auto">
       {group.items.map((item) => (
-        <button key={item.tab} type="button" onClick={() => onSelect(item.tab)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold transition-colors ${tab === item.tab ? 'bg-ink text-white' : 'border border-hair bg-wash text-soft hover:border-accent hover:text-accent'}`}>
+        <button key={item.tab} type="button" onClick={() => onSelect(item.tab)} className={`min-w-0 rounded-full px-3 py-2 text-[.76rem] font-semibold leading-tight transition-colors sm:shrink-0 sm:px-4 sm:text-[.8rem] ${tab === item.tab ? 'bg-ink text-white' : 'border border-hair bg-wash text-soft hover:border-accent hover:text-accent'}`}>
           {item.label}
         </button>
       ))}
@@ -141,9 +141,9 @@ export function AdminMobileSubnav({ tab, onSelect }: { tab: AdminTab; onSelect: 
   const group = ADMIN_GROUPS.find((item) => item.area === area)
   if (!group || group.items.length < 2) return null
   return (
-    <div className="rail -mx-1 mb-5 flex gap-2 overflow-x-auto px-1 pb-1 md:hidden">
+    <div className="mb-5 grid min-w-0 grid-cols-2 gap-2 md:hidden">
       {group.items.map((item) => (
-        <button key={item.tab} type="button" onClick={() => onSelect(item.tab)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold ${tab === item.tab ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>
+        <button key={item.tab} type="button" onClick={() => onSelect(item.tab)} className={`min-w-0 rounded-full px-3 py-2 text-[.76rem] font-semibold leading-tight ${tab === item.tab ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>
           {item.label}
         </button>
       ))}
@@ -155,17 +155,17 @@ export function AdminMobileNav({ tab, onSelect }: { tab: AdminTab; onSelect: (ta
   const area = areaOfTab(tab)
   return (
     <nav aria-label="تنقل لوحة التحكم" className="fixed inset-x-3 bottom-[calc(.75rem+env(safe-area-inset-bottom))] z-[280] rounded-2xl border border-hair bg-canvas/95 p-2 shadow-[0_24px_70px_-34px_rgba(21,22,26,.65)] backdrop-blur md:hidden">
-      <div className="rail flex gap-2 overflow-x-auto pb-0.5">
+      <div className="grid min-w-0 grid-cols-4 gap-1.5">
         {ADMIN_GROUPS.map((group) => {
           const active = area === group.area
-          return <button key={group.area} type="button" onClick={() => onSelect(defaultTabForArea(group.area))} className={`shrink-0 rounded-full px-4 py-2 text-[.74rem] font-semibold transition-colors ${active ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>{group.label}</button>
+          return <button key={group.area} type="button" onClick={() => onSelect(defaultTabForArea(group.area))} className={`min-w-0 rounded-xl px-1.5 py-2 text-[.66rem] font-semibold leading-[1.25] transition-colors sm:text-[.72rem] ${active ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>{group.label}</button>
         })}
       </div>
     </nav>
   )
 }
 
-const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
+const card = 'min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const button = 'rounded-full border border-hair px-4 py-2 text-[.82rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent'
 
 const kuwaitDate = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuwait', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())

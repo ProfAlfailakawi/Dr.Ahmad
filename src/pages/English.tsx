@@ -8,7 +8,8 @@ import { Link } from 'react-router-dom'
 import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { SocialIcon } from '../components/icons'
-import { books, links, papers, socials, stats } from '../data'
+import { links, socials } from '../data'
+import { useCmsContent } from '../lib/content'
 import {
   advisoryEn, appointmentsEn, doctorateEn, educationEn,
   journalEn, membershipsEn, paperTitlesEn, profileEn,
@@ -37,11 +38,13 @@ const Label = ({ children }: { children: React.ReactNode }) => (
 
 /* أختام الأثر — نفس دوائر السيرة العربية */
 function Impact() {
+  const { articles, books, papers } = useCmsContent()
+  const words = articles.reduce((sum, article) => sum + article.words, 0)
   const items = [
     { n: String(books.length), l: 'Published books' },
     { n: String(papers.length), l: 'Peer-reviewed papers' },
-    { n: String(stats.articles), l: 'Essays & articles' },
-    { n: `${Math.round(stats.words / 1000)}K`, l: 'Words published' },
+    { n: String(articles.length), l: 'Essays & articles' },
+    { n: `${Math.round(words / 1000)}K`, l: 'Words published' },
   ]
   return (
     <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
@@ -60,7 +63,9 @@ function Impact() {
 
 /* ---------- /en — الصفحة الرئيسية ---------- */
 export function EnglishHome() {
-  useEnglish('Professor of Educational Technology & AI', '/en', 'Official website of Dr. Ahmad H. Alfailakawi — Professor of Educational Technology and Artificial Intelligence in Kuwait. Nine books, nineteen peer-reviewed papers, and over 160 essays since 2016.')
+  const { articles, books, papers } = useCmsContent()
+  const firstYear = articles.length ? Math.min(...articles.map((article) => Number(article.year) || new Date().getFullYear())) : 2016
+  useEnglish('Professor of Educational Technology & AI', '/en', `Official website of Dr. Ahmad H. Alfailakawi — ${books.length} books, ${papers.length} peer-reviewed papers, and ${articles.length} essays since ${firstYear}.`)
   useTrackView('/en', 'English — Home')
 
   return (
@@ -105,9 +110,12 @@ export function EnglishHome() {
             <Label>About</Label>
             <p className="mt-6 max-w-[760px] text-[1.12rem] font-light leading-[2] text-ink">{profileEn.about}</p>
             <div className="mt-8 flex flex-wrap gap-2.5">
-              {profileEn.facts.map((f) => (
-                <span key={f} className="rounded-full border border-hair px-4 py-1.5 text-[.85rem] text-soft">{f}</span>
-              ))}
+              {profileEn.facts.map((fact, index) => {
+                const f = index === 2 ? `${books.length} published books` : index === 3 ? `${papers.length} peer-reviewed papers` : fact
+                return (
+                <span key={`${index}:${f}`} className="rounded-full border border-hair px-4 py-1.5 text-[.85rem] text-soft">{f}</span>
+                )
+              })}
             </div>
           </FadeUp>
         </div>
@@ -156,7 +164,7 @@ export function EnglishHome() {
               <div>
                 <Label>Books</Label>
                 <h2 className="mt-3 font-display text-[clamp(1.6rem,3.5vw,2.3rem)] font-bold leading-[1.3] text-ink">
-                  Nine books on education, technology and social change
+                  {books.length} books on education, technology and social change
                 </h2>
                 <p className="mt-4 max-w-[460px] text-[.95rem] font-light leading-[1.9] text-soft">
                   Written in Arabic — spanning a decade of thinking about how technology should serve learning, not replace it.
@@ -280,12 +288,13 @@ export function EnglishCV() {
 
 /* ---------- /en/research — الأبحاث ---------- */
 export function EnglishResearch() {
-  useEnglish('Research', '/en/research', 'Eighteen peer-reviewed papers on educational technology, e-learning systems and emerging technologies in higher education.')
+  const { papers } = useCmsContent()
+  useEnglish('Research', '/en/research', `${papers.length} peer-reviewed papers on educational technology, e-learning systems and emerging technologies in higher education.`)
   useTrackView('/en/research', 'English — Research')
 
   return (
     <Page>
-      <PageHead label="Research" title="Peer-reviewed contributions" sub="Eighteen published papers on educational technology, e-learning systems and emerging technologies in higher education." />
+      <PageHead label="Research" title="Peer-reviewed contributions" sub={`${papers.length} published papers on educational technology, e-learning systems and emerging technologies in higher education.`} />
       <div className="px-6 py-14 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">
           {/* الملفان العلميان الرسميان — سطر هادئ يطابق الصفحة العربية */}

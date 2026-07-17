@@ -1,8 +1,8 @@
 import { Link, useParams } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { FadeUp, Page, Reveal } from '../components/ui'
-import { getArticleNeighbors, relatedArticles, type ArticleRecord } from '../lib/cms'
-import { books, media, papers, SITE_URL } from '../data'
+import { getArticleNeighbors, relatedArticles, type ArticleRecord, type BookRecord, type MediaRecord, type PaperRecord } from '../lib/cms'
+import { SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
 import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, usePopularQuotes } from '../components/ArticleReader'
@@ -202,7 +202,7 @@ function TimeDialogue({ a, articles }: { a: ArticleTimeSeed; articles: ArticleTi
 
 
 /* «مسار قراءة» لا مجرد مقالات مرتبطة: أفضل بحثٍ وكتابٍ يلامسان فكرة المقال */
-function deepDive(a: { title: string; excerpt?: string }) {
+function deepDive(a: { title: string; excerpt?: string }, papers: PaperRecord[], books: BookRecord[]) {
   const mine = tokensOf(a.title + ' ' + (a.excerpt || ''))
   const best = <T extends { title: string }>(items: T[], extra: (x: T) => string) => {
     let top: T | null = null, topScore = 1
@@ -214,8 +214,8 @@ function deepDive(a: { title: string; excerpt?: string }) {
     return top
   }
   return {
-    paper: best(papers as { slug: string; title: string; meta?: string }[], (p) => p.meta || ''),
-    book: best(books as { slug: string; title: string; desc?: string }[], (b) => b.desc || ''),
+    paper: best(papers, (paper) => paper.meta || ''),
+    book: best(books, (book) => book.desc || ''),
   }
 }
 
@@ -240,7 +240,7 @@ function bestBookTocMatch(article: ArticleRecord) {
 }
 
 
-function IdeaThread({ article }: { article: ArticleRecord }) {
+function IdeaThread({ article, books, papers, media }: { article: ArticleRecord; books: BookRecord[]; papers: PaperRecord[]; media: MediaRecord[] }) {
   const path = useMemo(() => {
     const mine = tokensOf(`${article.title} ${article.excerpt || ''} ${article.cat}`)
     const score = (value: string) => {
@@ -252,8 +252,8 @@ function IdeaThread({ article }: { article: ArticleRecord }) {
       .map((item, index) => ({ item, index, score: score(text(item)) }))
       .sort((a, b) => b.score - a.score || a.index - b.index)[0]?.item
 
-    const book = best(books as { slug: string; title: string; desc?: string }[], (item) => `${item.title} ${item.desc || ''}`)
-    const paper = best(papers as { slug: string; title: string; meta?: string }[], (item) => `${item.title} ${item.meta || ''}`)
+    const book = best(books, (item) => `${item.title} ${item.desc || ''}`)
+    const paper = best(papers, (item) => `${item.title} ${item.meta || ''}`)
     const appearance = best(media, (item) => `${item.title} ${item.outlet}`)
     const question = best(staticQuestions, (item) => `${item.ar} ${item.take}`)
     return [
@@ -262,7 +262,7 @@ function IdeaThread({ article }: { article: ArticleRecord }) {
       appearance && { kind: 'لقاء', title: appearance.title, href: appearance.url },
       question && { kind: 'سؤال', title: question.ar, to: '/questions' },
     ].filter(Boolean) as { kind: string; title: string; to?: string; href?: string }[]
-  }, [article.cat, article.excerpt, article.title])
+  }, [article.cat, article.excerpt, article.title, books, media, papers])
 
   if (!path.length) return null
   return (
@@ -326,8 +326,8 @@ function ArchiveContext({ a }: { a: ArticleRecord }) {
   )
 }
 
-function StudentArchive({ a, articles }: { a: ArticleRecord; articles: ArticleRecord[] }) {
-  const pack = useMemo(() => articleSystem(a, articles, books, papers), [a, articles])
+function StudentArchive({ a, articles, books, papers }: { a: ArticleRecord; articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[] }) {
+  const pack = useMemo(() => articleSystem(a, articles, books, papers), [a, articles, books, papers])
   const bookPageLink = useMemo(() => bestBookTocMatch(a), [a])
   const terms = Array.from(new Set(ideaTokens(`${a.title} ${a.excerpt || ''} ${a.body || ''}`))).slice(0, 5)
   const relatedArticle = pack.relatedArticles[0]
@@ -436,14 +436,14 @@ function ArticleClosingNote({ next, related }: { next?: ArticleRecord; related: 
 
 export default function ArticleDetail() {
   const { slug } = useParams()
-  const { articles, loading } = useCmsContent()
+  const { articles, books, papers, media, loading } = useCmsContent()
   const a = articles.find((article) => article.slug === slug)
   const [staticBody, setStaticBody] = useState<string | undefined>()
   const [bodyLoading, setBodyLoading] = useState(false)
 
   const neighbors = useMemo(() => a ? getArticleNeighbors(a.slug, articles) : { prev: undefined, next: undefined }, [a, articles])
   const related = useMemo(() => a ? relatedArticles(a, 3, articles) : [], [a, articles])
-  const dive = useMemo(() => (a ? deepDive(a) : { paper: null, book: null }), [a])
+  const dive = useMemo(() => (a ? deepDive(a, papers, books) : { paper: null, book: null }), [a, books, papers])
   const evolution = useMemo(() => (a ? ideaTimePair(a, articles) : { older: null, newer: null }), [a, articles])
 
   useSeo({
@@ -559,7 +559,7 @@ export default function ArticleDetail() {
                 <SyncedArticleBody slug={article.slug} body={article.body} />
                 {/* أداة تحديد واحدة: خيط الفكرة + بطاقة اقتباس (بلا تداخل) */}
                 <SelectionTools current={article} articles={articles} body={article.body} excerpt={article.excerpt} />
-                <StudentArchive a={article} articles={articles} />
+                <StudentArchive a={article} articles={articles} books={books} papers={papers} />
               </>
             ) : (
               <>
@@ -615,7 +615,7 @@ export default function ArticleDetail() {
 
           <TimeDialogue a={a} articles={articles} />
 
-          <IdeaThread article={article} />
+          <IdeaThread article={article} books={books} papers={papers} media={media} />
 
           <Share title={a.title} path={`/articles/${a.slug}`} />
 

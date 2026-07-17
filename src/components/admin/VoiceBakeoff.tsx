@@ -44,7 +44,7 @@ const libraryPairs = Object.keys(audioLibrary)
   .sort((left, right) => left.duration - right.duration)
 const fallbackPair = libraryPairs[0] || null
 
-const card = 'rounded-2xl border border-hair bg-wash p-6 md:p-7'
+const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-7'
 const ar = (n: number) => String(n)
 const clock = (s: number) => `${ar(Math.floor(s / 60))}:${ar(Math.floor(s % 60)).padStart(2, '٠')}`
 

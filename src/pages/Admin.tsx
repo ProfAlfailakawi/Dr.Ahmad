@@ -39,7 +39,7 @@ import {
 
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.95rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
 const btn = 'rounded-full bg-accent px-7 py-2.5 font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
-const card = 'rounded-2xl border border-hair bg-wash p-6 md:p-7'
+const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-7'
 
 /* التاريخ العربي من اليوم — مثل بقية الموقع */
 const today = () => {
@@ -285,13 +285,13 @@ function Panel({ email }: { email: string }) {
     <Page>
       <AdminTaskFavicon />
       <div className="admin-shell mx-auto box-border w-full max-w-[1440px] overflow-x-hidden px-4 pb-32 pt-28 sm:px-6 md:px-10 md:pb-24 md:pt-32">
-        <div className="mb-7 flex flex-wrap items-center justify-between gap-4 md:mb-9">
-          <div>
+        <div className="mb-7 grid min-w-0 gap-4 sm:flex sm:flex-wrap sm:items-center sm:justify-between md:mb-9">
+          <div className="min-w-0">
             <p className="mb-1 text-[.78rem] font-semibold uppercase text-accent">لوحة التحكم</p>
             <h1 className="font-display text-3xl font-bold text-ink">أهلاً دكتور.</h1>
             <p className="mt-1 text-[.78rem] text-soft">كل الأدوات موجودة، لكن لا يظهر أمامك إلا ما تحتاجه الآن.</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <AdminTaskIndicator />
             <button
               type="button"
@@ -304,7 +304,7 @@ function Panel({ email }: { email: string }) {
                 <path d="M9 6V4a2 2 0 1 0-2 2h10a2 2 0 1 0-2-2v16a2 2 0 1 0 2-2H7a2 2 0 1 0 2 2V4"/>
               </svg>
             </button>
-            <button onClick={signOut} className="rounded-full border border-hair px-4 py-2 text-[.76rem] text-soft transition-colors hover:border-accent hover:text-accent">
+            <button onClick={signOut} className="min-w-0 max-w-full truncate rounded-full border border-hair px-3 py-2 text-[.72rem] text-soft transition-colors hover:border-accent hover:text-accent sm:px-4 sm:text-[.76rem]">
               خروج ({email})
             </button>
           </div>
@@ -635,7 +635,7 @@ function PickForm() {
         <input className={input} placeholder="سطر توضيحي بالعربية (اختياري)" value={f.arNote} onChange={(e) => set('arNote', e.target.value)} />
         <input className={input} dir="ltr" placeholder="Title or text in English" value={f.en} onChange={(e) => set('en', e.target.value)} />
         <input className={input} dir="ltr" placeholder="One-liner in English (optional)" value={f.enNote} onChange={(e) => set('enNote', e.target.value)} />
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <input className={input} placeholder="المصدر (إلزامي — مثل: اليونسكو)" value={f.source} onChange={(e) => set('source', e.target.value)} />
           <input className={input} dir="ltr" placeholder="رابط المصدر (اختياري)" value={f.url} onChange={(e) => set('url', e.target.value)} />
         </div>
@@ -669,11 +669,11 @@ function EventForm() {
       <div className="grid gap-4">
         <input className={input} placeholder="عنوان اللقاء (مثال: ورشة الذكاء الاصطناعي في التقييم)" value={f.title} onChange={(e) => set('title', e.target.value)} />
         <input className={input} placeholder="الجهة المنظمة" value={f.org} onChange={(e) => set('org', e.target.value)} />
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <input className={input} placeholder="المكان" value={f.place} onChange={(e) => set('place', e.target.value)} />
           <input className={input} placeholder="الوقت (مثال: 6:00 م)" value={f.time} onChange={(e) => set('time', e.target.value)} />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <input className={input} dir="ltr" type="date" value={f.iso} onChange={(e) => set('iso', e.target.value)} />
           <select className={input} value={f.kind} onChange={(e) => set('kind', e.target.value)}>
             {['محاضرة', 'ورشة', 'مؤتمر', 'لقاء'].map((k) => <option key={k}>{k}</option>)}

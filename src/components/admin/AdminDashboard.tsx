@@ -3,7 +3,7 @@ import { getDb } from '../../lib/firebase'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../../lib/cms'
 import type { LaunchKind, LaunchMode } from '../../lib/settings'
 
-const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
+const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const softButton = 'rounded-full border border-hair px-4 py-2 text-[.82rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent'
 const primaryButton = 'rounded-full bg-accent px-5 py-2.5 text-[.84rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.9rem] text-ink outline-none transition-colors focus:border-accent'

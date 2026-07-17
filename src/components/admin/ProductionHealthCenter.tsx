@@ -4,8 +4,8 @@ import { getDb } from '../../lib/firebase'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../../lib/cms'
 import type { AdminTab } from './AdminArchitecture'
 
-const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
-const pill = 'rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.74rem] font-semibold text-soft'
+const card = 'min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
+const pill = 'min-w-0 rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.74rem] font-semibold leading-tight text-soft'
 
 type Stage = 'draft' | 'queued' | 'generating' | 'pronunciation' | 'needs_review' | 'passed' | 'published'
 type ProductionState = { status?: Stage; updatedAt?: unknown; note?: string }
@@ -49,7 +49,7 @@ const stageFromEpisode = (episode?: Episode): Stage => {
 function StageRail({ active }: { active: Stage }) {
   const activeIndex = Math.max(0, stages.findIndex((stage) => stage.key === active))
   return (
-    <div className="rail mt-4 flex gap-2 overflow-x-auto pb-1" aria-label="مراحل إنتاج الحلقة">
+    <div className="mt-4 flex max-w-full gap-2 overflow-x-auto pb-2" aria-label="مراحل إنتاج الحلقة">
       {stages.map((stage, index) => (
         <span
           key={stage.key}
@@ -159,21 +159,21 @@ export function ProductionHealthCenter({
   }, [articles])
 
   return (
-    <div className="grid gap-5">
+    <div className="grid min-w-0 max-w-full gap-5">
       <section className={card}>
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
+        <div className="grid min-w-0 gap-4 sm:flex sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <p className="text-[.76rem] font-semibold uppercase text-accent">غرفة إنتاج البودكاست</p>
             <h2 className="mt-2 font-display text-[1.35rem] font-semibold text-ink">الحلقة من المسودة إلى النشر، في مسار واحد.</h2>
             <p className="mt-2 max-w-3xl text-[.84rem] leading-relaxed text-soft">لا توجد لوحة ثانية مكررة: الكتابة في «الحوار اليدوي»، والفحص والقرار النهائي هنا.</p>
           </div>
-          <button type="button" onClick={() => onOpen('manual-dialogue')} className="rounded-full border border-accent/30 px-4 py-2 text-[.78rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">افتح محرر الحوار</button>
+          <button type="button" onClick={() => onOpen('manual-dialogue')} className="w-full min-w-0 rounded-full border border-accent/30 px-4 py-2 text-[.78rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white sm:w-auto">افتح محرر الحوار</button>
         </div>
 
         <div className="mt-5 grid gap-3">
           {episodeRows.map(({ article, episode, status }) => (
-            <article key={article.slug} className="rounded-2xl border border-hair bg-canvas p-4 md:p-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
+            <article key={article.slug} className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair bg-canvas p-4 md:p-5">
+              <div className="grid min-w-0 gap-3 sm:flex sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
                   <p className="text-[.7rem] font-semibold text-accent">{stages.find((stage) => stage.key === status)?.label}</p>
                   <h3 className="mt-1 break-words font-display text-[1rem] font-semibold leading-[1.55] text-ink">{article.title}</h3>
@@ -181,19 +181,19 @@ export function ProductionHealthCenter({
                     ? `${episode.statusLabel || 'فشل'}: ${episode.failure.reason}`
                     : episode?.statusLabel || episode?.quality?.pronunciation || (draftSlugs.has(article.slug) ? 'توجد مسودة حوار محفوظة' : 'لم يبدأ إنتاج الحلقة بعد')}</p>
                 </div>
-                <div className="flex shrink-0 flex-wrap gap-2">
+                <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:flex-wrap">
                   {status === 'draft' || status === 'queued' ? (
-                    <button disabled={busy === article.slug || status === 'queued'} onClick={() => void setStatus(article.slug, 'queued')} className="rounded-full bg-accent px-4 py-2 text-[.74rem] font-semibold text-white disabled:opacity-50">{status === 'queued' ? 'في قائمة الليلة' : '🎬 أرسل للتوليد الليلي'}</button>
+                    <button disabled={busy === article.slug || status === 'queued'} onClick={() => void setStatus(article.slug, 'queued')} className="min-w-0 rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold leading-tight text-white disabled:opacity-50 sm:px-4 sm:text-[.74rem]">{status === 'queued' ? 'في قائمة الليلة' : '🎬 أرسل للتوليد الليلي'}</button>
                   ) : (
-                    <button disabled={busy === article.slug} onClick={() => void setStatus(article.slug, 'published')} className="rounded-full bg-accent px-4 py-2 text-[.74rem] font-semibold text-white disabled:opacity-50">اعتماد الحلقة</button>
+                    <button disabled={busy === article.slug} onClick={() => void setStatus(article.slug, 'published')} className="min-w-0 rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold leading-tight text-white disabled:opacity-50 sm:px-4 sm:text-[.74rem]">اعتماد الحلقة</button>
                   )}
-                  <button disabled={busy === article.slug} onClick={() => void setStatus(article.slug, 'needs_review')} className="rounded-full border border-hair px-4 py-2 text-[.74rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50">إعادتها للمراجعة</button>
+                  <button disabled={busy === article.slug} onClick={() => void setStatus(article.slug, 'needs_review')} className="min-w-0 rounded-full border border-hair px-3 py-2 text-[.72rem] font-semibold leading-tight text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50 sm:px-4 sm:text-[.74rem]">إعادتها للمراجعة</button>
                 </div>
               </div>
               {episode?.listen && (
-                <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-hair bg-wash px-3 py-2">
+                <div className="mt-3 grid min-w-0 gap-2 rounded-xl border border-hair bg-wash px-3 py-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
                   <span className="text-[.72rem] font-semibold text-accent">🎧 اسمع قبل القرار{episode.failure ? ' (نسخة المراجعة المرفوضة)' : ''}</span>
-                  <audio controls preload="none" src={episode.listen} className="h-8 min-w-0 flex-1" />
+                  <audio controls preload="none" src={episode.listen} className="h-10 w-full min-w-0 max-w-full flex-1" />
                 </div>
               )}
               <StageRail active={status} />
@@ -204,14 +204,14 @@ export function ProductionHealthCenter({
       </section>
 
       <section className={card}>
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
+        <div className="grid min-w-0 gap-3 sm:flex sm:items-end sm:justify-between">
+          <div className="min-w-0">
             <p className="text-[.76rem] font-semibold uppercase text-accent">صحة المحتوى</p>
             <h2 className="mt-2 font-display text-[1.3rem] font-semibold text-ink">ما ينقص الموقع فعلاً، بلا ضجيج.</h2>
           </div>
           <button type="button" onClick={() => onOpen('lab')} className={pill}>الفحص التفصيلي</button>
         </div>
-        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
+        <div className="mt-5 grid min-w-0 grid-cols-2 gap-3 md:grid-cols-5">
           {[
             ['نصوص ناقصة', health.missingBody.length],
             ['مصادر ناقصة', health.missingSource.length],
@@ -219,7 +219,7 @@ export function ProductionHealthCenter({
             ['أبحاث للمراجعة', health.paperIssues.length],
             ['كتب للمراجعة', health.bookIssues.length],
           ].map(([label, value]) => (
-            <div key={String(label)} className="rounded-2xl border border-hair bg-canvas p-4">
+            <div key={String(label)} className="min-w-0 rounded-2xl border border-hair bg-canvas p-3 sm:p-4">
               <strong className="block font-display text-2xl text-ink">{value}</strong>
               <span className="mt-1 block text-[.72rem] text-soft">{label}</span>
             </div>
@@ -234,17 +234,17 @@ export function ProductionHealthCenter({
       </section>
 
       <section className={card}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
+        <div className="grid min-w-0 gap-3 sm:flex sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <p className="text-[.76rem] font-semibold uppercase text-accent">مسارات القراءة الشخصية</p>
             <h2 className="mt-2 font-display text-[1.3rem] font-semibold text-ink">اقتراح هادئ يتكوّن من رحلة كل زائر.</h2>
             <p className="mt-2 max-w-3xl text-[.84rem] leading-relaxed text-soft">المحرك يستخدم آخر قراءة ومحور الاهتمام على جهاز الزائر، ويعرض اقتراحاً واحداً فقط؛ لا ملف شخصي، ولا ازدحام في الواجهة.</p>
           </div>
           <span className="rounded-full border border-accent/25 bg-accent/[.06] px-3 py-1.5 text-[.72rem] font-semibold text-accent">فعّال</span>
         </div>
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
+        <div className="mt-5 grid min-w-0 gap-3 md:grid-cols-3">
           {pathIdeas.map((path) => (
-            <div key={path.category} className="rounded-2xl border border-hair bg-canvas p-4">
+            <div key={path.category} className="min-w-0 rounded-2xl border border-hair bg-canvas p-3 sm:p-4">
               <p className="text-[.72rem] font-semibold text-accent">{path.category} · {path.count} مادة</p>
               <p className="mt-2 font-display text-[.92rem] font-semibold leading-[1.55] text-ink">{path.first?.title}</p>
               {path.next && <p className="mt-2 text-[.74rem] leading-relaxed text-soft">ثم: {path.next.title}</p>}

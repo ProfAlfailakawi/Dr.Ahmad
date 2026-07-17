@@ -14,8 +14,8 @@ export const profileEn = {
   facts: [
     'Ph.D. — University of Northern Colorado',
     'PAAET · Kuwait University',
-    '9 published books',
-    '19 peer-reviewed papers',
+    'Published books in educational technology',
+    'Peer-reviewed research contributions',
     'Columnist — Al-Jarida daily',
     'Advisor — Ministry of Information',
     'Associate Professor since 2020',

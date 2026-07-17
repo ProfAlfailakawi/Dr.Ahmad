@@ -3,7 +3,8 @@ import { Accordion, FadeUp, Label, Page, Reveal } from '../components/ui'
 import { CvSectionEditor } from '../components/admin/CvSectionEditor'
 import CitationImpact from '../components/CitationImpact'
 import KnowledgeFingerprint from '../components/KnowledgeFingerprint'
-import { bio, books, doctorate, links, papers, stats } from '../data'
+import { bio, doctorate, links } from '../data'
+import { useCmsContent } from '../lib/content'
 import { useAdminAuth } from '../lib/admin-auth'
 import { useCv, type CvTextItem } from '../lib/cv'
 import { useTrackView } from '../lib/views'
@@ -80,6 +81,8 @@ export default function CV() {
   useTrackView('/cv', 'السيرة الأكاديمية')
   const { isAdmin } = useAdminAuth()
   const { cv, error: cvError, saveSection } = useCv()
+  const { articles, books, papers } = useCmsContent()
+  const publishedWords = articles.reduce((sum, article) => sum + article.words, 0)
 
   return (
     <Page className="content-cv page-journey">
@@ -125,8 +128,8 @@ export default function CV() {
               {[
                 { n: ar(books.length), l: 'كتاباً منشوراً' },
                 { n: ar(papers.length), l: 'بحثاً محكّماً' },
-                { n: ar(stats.articles), l: 'مقالاً فكرياً' },
-                { n: ar(Math.round(stats.words / 1000)) + 'K', l: 'كلمة منشورة' },
+                { n: ar(articles.length), l: 'مقالاً فكرياً' },
+                { n: ar(Math.round(publishedWords / 1000)) + 'K', l: 'كلمة منشورة' },
               ].map((s) => (
                 <div key={s.l} className="flex flex-col items-center text-center">
                   <span className="cv-impact-seal relative flex h-24 w-24 items-center justify-center rounded-full border border-accent/30 md:h-28 md:w-28">

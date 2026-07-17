@@ -32,7 +32,7 @@ const deliveryTypes = [
   ['closing', 'إغلاق'],
 ] as const
 
-const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
+const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-3.5 py-2.5 text-[.86rem] text-ink outline-none transition-colors focus:border-accent'
 const ghost = 'rounded-full border border-hair bg-canvas px-4 py-2 text-[.78rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40'
 const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-45'
@@ -597,7 +597,7 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
               onChange={(event) => update(index, { text: event.target.value })}
             />
 
-            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-[10rem_10rem_minmax(0,1fr)] sm:items-end">
+            <div className="mt-3 grid gap-3 sm:grid-cols-[10rem_10rem_minmax(0,1fr)] sm:items-end">
               <label className="block">
                 <span className="mb-1 block text-[.7rem] text-soft">الوقفة بعدها (ms)</span>
                 <input className={input} type="number" min="0" max="3000" step="10" value={turn.pauseAfterMs} onChange={(event) => update(index, { pauseAfterMs: Math.max(0, Math.min(3000, Number(event.target.value) || 0)) })} />

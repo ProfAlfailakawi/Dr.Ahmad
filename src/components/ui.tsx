@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useInView, useMotionValue, useReducedMotion, useScroll, useSpring, AnimatePresence } from 'framer-motion'
 import { Link, useLocation } from 'react-router-dom'
-import { LINK_OUT, SHOW_EN_TOGGLE, articles, books, papers, profile, socials, links } from '../data'
+import { LINK_OUT, SHOW_EN_TOGGLE, profile, socials, links } from '../data'
+import { useCmsContent } from '../lib/content'
 import { ThemeToggle } from './extras'
 import { useCvLinks } from '../lib/settings'
 import { SocialIcon } from './icons'
@@ -599,6 +600,7 @@ const expandSearchTerms = (value: string) => {
 type QuickResult = { to: string; title: string; meta: string; text: string; kind: 'article' | 'book' | 'paper' | 'page' }
 
 function SearchPalette({ close }: { close: () => void }) {
+  const { articles, books, papers } = useCmsContent()
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const reduce = useReducedMotion()
@@ -644,7 +646,7 @@ function SearchPalette({ close }: { close: () => void }) {
     { to: '/contact#booking-form', title: 'الحجز والتواصل', meta: 'صفحة', kind: 'page' as const, text: 'حجز موعد محاضرة ورشة لقاء تواصل استشارة' },
     { to: '/atlas', title: 'سماء المقالات', meta: 'خريطة', kind: 'page' as const, text: 'سماء المقالات خريطة الارشيف الزمن' },
     { to: '/thought-paths', title: 'مسارات الفكرة', meta: 'مسار', kind: 'page' as const, text: 'مسارات الفكر الفكرة موضوع تعليم تربية تقنية هوية مجتمع' },
-  ], [])
+  ], [articles, books, papers])
 
   const results = useMemo(() => {
     const { normalized, terms } = expandSearchTerms(query)

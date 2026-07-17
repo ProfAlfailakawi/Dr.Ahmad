@@ -11,7 +11,7 @@ type AgentStatus = {
 }
 type Campaign = { id: string; name: string; state: string; created_at: string; approved_at?: string | null }
 
-const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
+const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none placeholder:text-soft/60 focus:border-accent'
 const secondary = 'rounded-full border border-hair px-4 py-2 text-[.8rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent'
 

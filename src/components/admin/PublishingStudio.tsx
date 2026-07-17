@@ -10,7 +10,7 @@ import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
 import { buildSocialVisuals, compositionNameOf, detectVisualTopic, downloadSocialPng, renderSocialPng, visualTopicLabel, type SocialVisualTemplate, type VisualTopic } from '../../lib/social-templates'
 
-const card = 'rounded-2xl border border-hair bg-wash p-5 md:p-6'
+const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
 const primary = 'rounded-full bg-accent px-6 py-2.5 text-[.84rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
 const ghost = 'rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50'
@@ -1185,14 +1185,14 @@ function PerfectSocialPackCard({
 
       <section className={card}>
         <p className="text-[.76rem] font-semibold uppercase text-accent">قوالب Instagram الجاهزة</p>
-        <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           {visuals.instagram.map((template) => <VisualTemplateCard key={template.id} template={template} />)}
         </div>
       </section>
 
       <section className={card}>
         <p className="text-[.76rem] font-semibold uppercase text-accent">Story وLinkedIn وX</p>
-        <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
           <VisualTemplateCard template={visuals.linkedin} />
           <VisualTemplateCard template={visuals.x} />
           {visuals.stories.map((template) => <VisualTemplateCard key={template.id} template={template} />)}
@@ -1762,7 +1762,7 @@ ${pulsePurpose.trim()}`,
         <p className="text-[.76rem] font-semibold uppercase text-accent">استوديو النشر الذكي</p>
         <h1 className="mt-1 font-display text-2xl font-bold text-ink md:text-3xl">من فكرة واحدة إلى مقال ومنظومة نشر.</h1>
         <p className="mt-3 max-w-4xl text-[.88rem] leading-loose text-soft">المقال له مساره الكامل، والمنشور المستقل له مساره الخاص؛ بلا خلط أو زحمة.</p>
-        <div className="rail mt-5 flex gap-2 overflow-x-auto pb-1">
+        <div className="mt-5 flex min-w-0 flex-wrap gap-2 pb-1 md:flex-nowrap md:overflow-x-auto">
           {([
             ['idea', 'الفكرة'],
             ['write', 'الكتابة'],
@@ -1785,7 +1785,7 @@ ${pulsePurpose.trim()}`,
               <Field label="طول التوليد المبدئي (350–4000 كلمة)"><input className={input} inputMode="numeric" aria-label="طول التوليد المبدئي" value={targetWordsInput} onChange={(event) => { const raw = fromArabicDigits(event.target.value).replace(/[^0-9]/g, ''); setTargetWordsInput(raw); const value = Number(raw); if (raw && Number.isFinite(value)) setTargetWords(Math.max(MIN_ARTICLE_WORDS, Math.min(MAX_GENERATION_WORDS, value))) }} onBlur={() => { const value = Number(targetWordsInput); const normalizedValue = Math.max(MIN_ARTICLE_WORDS, Math.min(MAX_GENERATION_WORDS, Number.isFinite(value) && value > 0 ? value : targetWords)); setTargetWords(normalizedValue); setTargetWordsInput(String(normalizedValue)) }} /></Field>
               <div className="flex items-end"><button type="button" disabled={generating} className={`${primary} w-full`} onClick={() => void rebuild()}>{generating ? 'أكتب وأراجع…' : 'ابنِ المقال الكامل'}</button></div>
             </div>
-            <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.articleCount}</strong><span className="text-[.76rem] text-soft">مقالًا يحلل أسلوبها</span></div>
               <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.avgSentenceWords || '—'}</strong><span className="text-[.76rem] text-soft">متوسط الجملة</span></div>
               <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.avgParagraphs || '—'}</strong><span className="text-[.76rem] text-soft">متوسط الفقرات</span></div>
@@ -1816,7 +1816,7 @@ ${pulsePurpose.trim()}`,
           <aside className="grid content-start gap-5">
             <section className={card}>
               <p className="text-[.76rem] font-semibold uppercase text-accent">الحد الأدنى والأصالة</p>
-              <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div className={`rounded-xl border p-4 ${wordCount(bundle.body) >= MIN_ARTICLE_WORDS ? 'border-accent/40 bg-accent/[.05]' : 'border-hair bg-canvas'}`}><strong className="block font-display text-2xl text-accent">{wordCount(bundle.body)}</strong><span className="text-[.72rem] text-soft">الحد الأدنى {MIN_ARTICLE_WORDS} — بلا سقف مقفول</span></div>
                 <div className={`rounded-xl border p-4 ${skipOriginality || !similarity.repeated ? 'border-accent/40 bg-accent/[.05]' : 'border-hair bg-canvas'}`}><strong className="block font-display text-2xl text-accent">{similarity.originality}٪</strong><span className="text-[.72rem] text-soft">{skipOriginality ? 'مستثناة بإقرار الكاتب' : 'أصالة مقابل الأرشيف'}</span></div>
               </div>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getDb, getFirebaseApp } from '../../lib/firebase'
 import type { ArticleRecord } from '../../lib/cms'
-import { books, papers } from '../../data'
+import { useCmsContent } from '../../lib/content'
 
 /* أسماء الصفحات الثابتة — ليقرأ الدكتور أسماء مفهومة لا مسارات */
 const PAGE_NAMES: Record<string, string> = {
@@ -79,6 +79,7 @@ function decodePath(value: string) {
 }
 
 export function Indicators({ articles }: { articles: ArticleRecord[] }) {
+  const { books, papers } = useCmsContent()
   const [rows, setRows] = useState<ViewRow[]>([])
   const [journeys, setJourneys] = useState<JourneyRow[]>([])
   const [subscribers, setSubscribers] = useState(0)

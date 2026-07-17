@@ -6,7 +6,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { FadeUp, Page, PageHead } from '../components/ui'
-import { articles, books, papers } from '../data'
+import { useCmsContent } from '../lib/content'
+import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { useSeo } from '../components/seo'
 import { loadArticleBodies } from '../lib/article-bodies'
 
@@ -22,7 +23,7 @@ const tokenize = (s: string) => norm(s).split(/\s+/).filter((w) => w.length > 2 
 type Hit = { slug: string; title: string; iso: string; cat?: string; excerpt?: string; para: string; score: number }
 type TimelineItem = { slug: string; title: string; iso: string; cat?: string; excerpt?: string; score: number }
 type Ref = { kind: 'كتاب' | 'بحث محكّم'; slug: string; title: string; href: string }
-type AskArticle = (typeof articles)[number] & { body?: string }
+type AskArticle = ArticleRecord & { body?: string }
 type Answer = {
   hits: Hit[]
   near: TimelineItem[]
@@ -36,7 +37,7 @@ type Answer = {
 type TwinCitation = { index: number; slug: string; title: string; quote?: string; url?: string }
 type TwinAnswer = { answer: string; citations: TwinCitation[]; grounded: boolean; source: 'ai' | 'local' }
 
-function matchRefs(qTokens: string[]): Ref[] {
+function matchRefs(qTokens: string[], books: BookRecord[], papers: PaperRecord[]): Ref[] {
   const refs: (Ref & { score: number })[] = []
   for (const b of books) {
     const nb = norm(b.title + ' ' + (b.desc || ''))
@@ -72,7 +73,7 @@ function toTimelineItem(entry: { a: AskArticle; score: number }): TimelineItem {
   }
 }
 
-function answer(question: string, bodies: Record<string, string>): Answer {
+function answer(question: string, bodies: Record<string, string>, articles: ArticleRecord[], books: BookRecord[], papers: PaperRecord[]): Answer {
   const q = tokenize(question)
   if (!q.length) return { hits: [], near: [], refs: [], timeline: [] }
 
@@ -110,7 +111,7 @@ function answer(question: string, bodies: Record<string, string>): Answer {
   const tension = cats.length > 1
     ? `هذا السؤال لا يظهر في باب واحد فقط؛ يمرّ بين ${cats.slice(0, 3).map((cat) => `«${cat}»`).join(' و')}، وكأن الفكرة عند الدكتور ليست تقنية أو تربوية وحدها، بل سؤال إنساني يتغير سياقه.`
     : undefined
-  const refs = matchRefs(q)
+  const refs = matchRefs(q, books, papers)
   const top = scored.filter((item) => item.score >= 6).slice(0, 2)
 
   const hits: Hit[] = []
@@ -243,6 +244,7 @@ function PersonalBook({ asked, result }: { asked: string; result: Answer }) {
 }
 
 export default function AskLibrary() {
+  const { articles, books, papers } = useCmsContent()
   const [searchParams] = useSearchParams()
   const initialQuestion = (searchParams.get('q') || '').trim()
   useSeo({
@@ -256,7 +258,7 @@ export default function AskLibrary() {
   const [bodiesLoading, setBodiesLoading] = useState(false)
   const resRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const result = useMemo(() => (asked && bodies ? answer(asked, bodies) : null), [asked, bodies])
+  const result = useMemo(() => (asked && bodies ? answer(asked, bodies, articles, books, papers) : null), [asked, articles, bodies, books, papers])
   const [twin, setTwin] = useState<TwinAnswer | null>(null)
   const [twinLoading, setTwinLoading] = useState(false)
 

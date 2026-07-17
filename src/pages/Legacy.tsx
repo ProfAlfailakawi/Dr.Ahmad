@@ -1,6 +1,7 @@
 import { Navigate, useLocation, useParams } from 'react-router-dom'
 import NotFound from './NotFound'
-import { papers } from '../data'
+import { useCmsContent } from '../lib/content'
+import type { PaperRecord } from '../lib/cms'
 
 /**
  * جسر روابط الموقع السابق → المسارات الجديدة.
@@ -78,7 +79,7 @@ const normalizePaperText = (value: string) => decodeURIComponent(value || '')
   .replace(/[^a-z0-9؀-ۿ]+/g, ' ')
   .trim()
 const paperTokens = (value: string) => normalizePaperText(value).split(/\s+/).filter((token) => token.length > 1 && !PAPER_STOP_WORDS.has(token))
-const resolveLegacyPaper = (legacySlug: string) => {
+const resolveLegacyPaper = (legacySlug: string, papers: PaperRecord[]) => {
   const legacy = paperTokens(legacySlug)
   if (!legacy.length) return undefined
   let best: { slug: string; score: number; matches: number } | undefined
@@ -94,7 +95,8 @@ const resolveLegacyPaper = (legacySlug: string) => {
 /** روابط أبحاث ووردبريس القديمة كانت عربية ومختصرة؛ نطابقها بالعنوان بدل افتراض تطابق الـslug. */
 export function LegacyPaper() {
   const { slug = '' } = useParams()
-  const resolved = resolveLegacyPaper(slug)
+  const { papers } = useCmsContent()
+  const resolved = resolveLegacyPaper(slug, papers)
   return <Navigate to={resolved ? `/research/${resolved}` : '/research'} replace />
 }
 

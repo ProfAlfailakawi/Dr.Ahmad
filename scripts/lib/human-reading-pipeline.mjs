@@ -212,12 +212,7 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
     })
     const missingRisks = highRiskMissing(comparison, working.risks)
     const negationMissing = (comparison.missing || []).filter((word) => ['لا', 'لم', 'لن', 'ليس', 'ليست', 'غير', 'دون'].includes(word))
-    /* الهدف تركيبي من المخطط لا من الدكتور، وSTT هو الفيصل الحقيقي على سلامة القراءة؛
-       فتُوسَّع نافذة السرعة للأنواع البطيئة طبيعياً (تأمل/خلاصة/إنساني/تحذير) وتبقى
-       أضيق للأنواع السريعة. r013 قُرئ بـSTT 100٪ وسقط عند 114/134 على نافذة ±8 صلبة. */
-    const slowType = ['human', 'reflection', 'conclusion', 'closing', 'warning', 'question'].includes(String(working.type || ''))
-    const paceWindow = slowType ? 16 : 11
-    const pacePass = Math.abs(paceDelta) <= paceWindow
+    const pacePass = Math.abs(paceDelta) <= 8
     /* عدالة الزلة الواحدة: وحدة من 8 كلمات مهمة لا تملك رصيد خطأ STT واحد بينما
        وحدة من 25 تملكه رياضياً (r002: كلمة واحدة أسقطتها ست ساعات متتالية).
        تُقبل زلة واحدة في الوحدات ذات ≤13 كلمة مهمة بشروط صارمة: ليست كلمة خطر
@@ -245,10 +240,7 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
       /* الهدف الرقمي تركيبي من المخطط لا من الكاتب؛ إن كان النص سليماً سمعياً والإيقاع
          المقاس ضمن النطاق البشري لكن بعيداً عن الهدف، يُصوَّب الهدف إلى المقاس —
          نفس مبدأ محرك الحوار المثبت (تصويب u002) بدل دفع المصحح إلى سقفه عبثاً */
-      const unitAvgWordLen = String(working.pronunciationText || '').replace(/\s+/g, '').length
-        / Math.max(1, String(working.pronunciationText || '').trim().split(/\s+/).length)
-      const retargetFloor = (slowType || unitAvgWordLen >= 6) ? 92 : 104
-      if (sttPass && !pacePass && measuredWpm >= retargetFloor && measuredWpm <= 175) {
+      if (sttPass && !pacePass && measuredWpm >= 118 && measuredWpm <= 175) {
         working.targetWordsPerMinute = measuredWpm
       }
       const retryTarget = Number(working.targetWordsPerMinute)
@@ -262,10 +254,7 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
     }
   }
   const last = attempts.at(-1)
-  // أذن تشخيصية: ما سمعه STT فعلاً + الكلمات المفقودة — تشخيص بيقين لا بتخمين
-  const heardText = String(last?.stt?.text || '').slice(0, 120)
-  const missed = (last?.comparison?.missingImportant || []).slice(0, 6).join('، ')
-  throw new Error(`${unit.id} فشل بعد ${maxAttempts} محاولات: STT ${Math.round((last?.comparison?.importantRatio || 0) * 100)}٪، السرعة ${last?.measuredWpm || 0}/${last?.targetWpm || 0}${heardText ? ` · سُمع: «${heardText}»` : ''}${missed ? ` · مفقود: ${missed}` : ''}`)
+  throw new Error(`${unit.id} فشل بعد ${maxAttempts} محاولات: STT ${Math.round((last?.comparison?.importantRatio || 0) * 100)}٪، السرعة ${last?.measuredWpm || 0}/${last?.targetWpm || 0}`)
 }
 
 async function geminiAudioJudge({ file, plan, key, model = 'gemini-2.5-flash' }) {

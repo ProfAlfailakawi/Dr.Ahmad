@@ -88,50 +88,6 @@ export default function Atlas() {
     r: Math.max(4.2, Math.min(11, star.r * 0.92)),
   })), [stars])
 
-  /* شبكة الأفكار: تخطيط شعاعي حقيقي — كل تصنيف عنقود في قطاع زاوي، والسنة تحدد البعد
-     عن المركز (الأقدم داخلاً، الأحدث خارجاً)، فتتحول الخريطة من مسار زمني إلى كوكبة
-     مترابطة تُبرز صلات الأفكار بين المواضيع لا تسلسلها الزمني فقط. */
-  const graphStars = useMemo(() => {
-    const cx = (W + 40) / 2, cy = H / 2 + 6
-    const maxR = Math.min(cx - PAD_L - 20, cy - TOP)
-    const perCat = new Map<string, number>()
-    const catCount = new Map<string, number>()
-    for (const star of stars) catCount.set(star.cat, (catCount.get(star.cat) || 0) + 1)
-    return stars.map((star) => {
-      const row = Math.max(0, cats.indexOf(star.cat))
-      const sector = (2 * Math.PI) / Math.max(cats.length, 1)
-      const within = perCat.get(star.cat) || 0
-      perCat.set(star.cat, within + 1)
-      const total = Math.max(catCount.get(star.cat) || 1, 1)
-      const spread = total > 1 ? (within / (total - 1) - 0.5) : 0
-      const angle = row * sector + sector * 0.5 + spread * sector * 0.62 - Math.PI / 2
-      const radius = maxR * (0.36 + star.t * 0.58) + ((star.i * 29) % 17) - 8
-      return { ...star, x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius }
-    })
-  }, [stars, cats, H])
-
-  const graphMobileStars = useMemo(() => {
-    const cx = MOBILE_W / 2, cy = mobileH / 2 + 4
-    const maxR = Math.min(cx - MOBILE_PAD_L - 14, cy - MOBILE_TOP)
-    const perCat = new Map<string, number>()
-    const catCount = new Map<string, number>()
-    for (const star of stars) catCount.set(star.cat, (catCount.get(star.cat) || 0) + 1)
-    return stars.map((star) => {
-      const row = Math.max(0, cats.indexOf(star.cat))
-      const sector = (2 * Math.PI) / Math.max(cats.length, 1)
-      const within = perCat.get(star.cat) || 0
-      perCat.set(star.cat, within + 1)
-      const total = Math.max(catCount.get(star.cat) || 1, 1)
-      const spread = total > 1 ? (within / (total - 1) - 0.5) : 0
-      const angle = row * sector + sector * 0.5 + spread * sector * 0.62 - Math.PI / 2
-      const radius = maxR * (0.36 + star.t * 0.58) + ((star.i * 23) % 13) - 6
-      return { ...star, x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius, r: Math.max(4.2, Math.min(11, star.r * 0.92)) }
-    })
-  }, [stars, cats, mobileH])
-
-  const layout = view === 'graph' ? graphStars : stars
-  const mobileLayout = view === 'graph' ? graphMobileStars : mobileStars
-
   const links = useMemo<AtlasLink[]>(() => {
     const output: AtlasLink[] = []
     const seen = new Set<string>()
@@ -183,7 +139,7 @@ export default function Atlas() {
 
   const dim = (star: (typeof stars)[number]) => (activeCat && star.cat !== activeCat ? 0.12 : 1)
   const activeIndex = hover ?? selected
-  const active = activeIndex !== null ? layout.find((star) => star.i === activeIndex) : null
+  const active = activeIndex !== null ? stars.find((star) => star.i === activeIndex) : null
   const activeLinks = useMemo(() => activeIndex === null ? [] : links.filter((link) => link.from === activeIndex || link.to === activeIndex), [links, activeIndex])
   const related = useMemo(() => activeLinks.map((link) => {
     const index = link.from === activeIndex ? link.to : link.from
@@ -195,9 +151,11 @@ export default function Atlas() {
   const tooltipX = active ? clamp(active.x - tooltipWidth / 2, PAD_L, W - PAD_R - tooltipWidth) : 0
   const tooltipY = active ? (active.y > 125 ? active.y - tooltipHeight - 18 : active.y + 18) : 0
 
-  const pick = (index: number, slug: string, _pointerType: string) => {
-    /* الكمبيوتر كالهاتف الآن: الضغطة الأولى تُظهر بطاقة المقال وتُثبتها (ومنها رابط
-       القراءة ومسار الفكرة)، والضغطة الثانية على النجمة نفسها تفتح المقال. */
+  const pick = (index: number, slug: string, pointerType: string) => {
+    if (pointerType === 'mouse') {
+      nav(`/articles/${slug}`)
+      return
+    }
     if (selected === index) {
       nav(`/articles/${slug}`)
       return
@@ -257,7 +215,7 @@ export default function Atlas() {
             <div className="relative overflow-hidden rounded-2xl border border-hair bg-wash lg:overflow-x-auto" onPointerLeave={() => setHover(null)}>
               {/* نسخة الهاتف: تتكيّف مع العرض، بلا تمرير جانبي ولا نافذة عائمة مقصوصة. */}
               <svg viewBox={`0 0 ${MOBILE_W} ${mobileH}`} className="atlas-map-mobile block h-auto w-full lg:hidden" role="img" aria-label="خريطة المقالات">
-                {view === 'timeline' && cats.map((category, row) => {
+                {cats.map((category, row) => {
                   const y = MOBILE_TOP + row * MOBILE_ROW + MOBILE_ROW / 2
                   const on = !activeCat || activeCat === category
                   return (
@@ -270,24 +228,23 @@ export default function Atlas() {
                   )
                 })}
 
-                {view === 'timeline' && years.map((item) => (
+                {years.map((item) => (
                   <text key={item.year} x={item.mobileX} y={mobileH - 15} textAnchor="middle" className="fill-soft font-sans" style={{ fontSize: 17 }}>
                     {arDigits(item.year)}
                   </text>
                 ))}
 
                 {links.map((link) => {
-                  const from = mobileLayout.find((star) => star.i === link.from)
-                  const to = mobileLayout.find((star) => star.i === link.to)
+                  const from = mobileStars.find((star) => star.i === link.from)
+                  const to = mobileStars.find((star) => star.i === link.to)
                   if (!from || !to) return null
                   const connected = activeIndex !== null && (link.from === activeIndex || link.to === activeIndex)
                   if (view === 'timeline' && !connected) return null
                   const hiddenByCategory = activeCat && from.cat !== activeCat && to.cat !== activeCat
-                  const graphVisible = view === 'graph' && !connected
-                  return <line key={`mobile-link-${link.kind}-${link.from}-${link.to}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y} className={link.kind === 'evolution' ? 'stroke-accent' : 'stroke-soft'} strokeWidth={connected ? 2.2 : 1.15} strokeOpacity={hiddenByCategory ? 0.03 : connected ? 0.48 : graphVisible ? (link.kind === 'evolution' ? 0.3 : 0.22) : link.kind === 'evolution' ? 0.14 : 0.1} strokeDasharray={link.kind === 'affinity' ? '4 5' : undefined} />
+                  return <line key={`mobile-link-${link.kind}-${link.from}-${link.to}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y} className={link.kind === 'evolution' ? 'stroke-accent' : 'stroke-soft'} strokeWidth={connected ? 2.2 : 1.15} strokeOpacity={hiddenByCategory ? 0.03 : connected ? 0.48 : link.kind === 'evolution' ? 0.14 : 0.1} strokeDasharray={link.kind === 'affinity' ? '4 5' : undefined} />
                 })}
 
-                {mobileLayout.map((star) => {
+                {mobileStars.map((star) => {
                   const isActive = activeIndex === star.i
                   return (
                     <g key={star.slug} role="link" aria-label={`${star.title}، ${star.date}`}>
@@ -318,7 +275,7 @@ export default function Atlas() {
 
               {/* نسخة الكمبيوتر الأصلية الواسعة. */}
               <svg viewBox={`0 0 ${W} ${H}`} className="atlas-map-desktop hidden h-auto w-full min-w-[760px] lg:block" role="img" aria-label="خريطة المقالات">
-                {view === 'timeline' && cats.map((category, row) => {
+                {cats.map((category, row) => {
                   const y = TOP + row * ROW + ROW / 2
                   const on = !activeCat || activeCat === category
                   return (
@@ -331,35 +288,23 @@ export default function Atlas() {
                   )
                 })}
 
-                {view === 'timeline' && years.map((item) => (
+                {years.map((item) => (
                   <text key={item.year} x={item.x} y={H - 16} textAnchor="middle" className="fill-soft font-sans" style={{ fontSize: 12 }}>
                     {arDigits(item.year)}
                   </text>
                 ))}
 
-                {view === 'graph' && cats.map((category, row) => {
-                  const example = graphStars.find((star) => star.cat === category)
-                  if (!example) return null
-                  const on = !activeCat || activeCat === category
-                  return (
-                    <text key={`glabel-${category}`} x={example.x} y={example.y - 22} textAnchor="middle" opacity={on ? 0.9 : 0.25} className="fill-soft font-sans" style={{ fontSize: 13, fontWeight: 600 }}>
-                      {categoryLabel(category)}
-                    </text>
-                  )
-                })}
-
                 {links.map((link) => {
-                  const from = layout.find((star) => star.i === link.from)
-                  const to = layout.find((star) => star.i === link.to)
+                  const from = stars.find((star) => star.i === link.from)
+                  const to = stars.find((star) => star.i === link.to)
                   if (!from || !to) return null
                   const connected = activeIndex !== null && (link.from === activeIndex || link.to === activeIndex)
                   if (view === 'timeline' && !connected) return null
                   const hiddenByCategory = activeCat && from.cat !== activeCat && to.cat !== activeCat
-                  const graphVisible = view === 'graph' && !connected
-                  return <line key={`desktop-link-${link.kind}-${link.from}-${link.to}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y} className={link.kind === 'evolution' ? 'stroke-accent' : 'stroke-soft'} strokeWidth={connected ? 1.8 : .85} strokeOpacity={hiddenByCategory ? 0.025 : connected ? 0.42 : graphVisible ? (link.kind === 'evolution' ? 0.24 : 0.16) : link.kind === 'evolution' ? 0.11 : 0.075} strokeDasharray={link.kind === 'affinity' ? '3 5' : undefined} />
+                  return <line key={`desktop-link-${link.kind}-${link.from}-${link.to}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y} className={link.kind === 'evolution' ? 'stroke-accent' : 'stroke-soft'} strokeWidth={connected ? 1.8 : .85} strokeOpacity={hiddenByCategory ? 0.025 : connected ? 0.42 : link.kind === 'evolution' ? 0.11 : 0.075} strokeDasharray={link.kind === 'affinity' ? '3 5' : undefined} />
                 })}
 
-                {layout.map((star) => {
+                {stars.map((star) => {
                   const isActive = activeIndex === star.i
                   return (
                     <g key={star.slug} role="link" aria-label={`${star.title}، ${star.date}`}>
@@ -413,7 +358,7 @@ export default function Atlas() {
                 </div>
                 <Link to={`/articles/${active.slug}`} className="mt-2 block break-words font-display text-[1.08rem] font-semibold leading-[1.75] text-ink transition-colors hover:text-accent md:text-[1.35rem]">
                   {active.title}
-                  <span className="mt-3 block text-[.78rem] font-sans font-semibold text-accent">اضغط النجمة مرة ثانية أو افتح المقال من هنا ←</span>
+                  <span className="mt-3 block text-[.78rem] font-sans font-semibold text-accent md:hidden">المس المقال مرة ثانية أو افتحه من هنا ←</span>
                 </Link>
                 {related.length > 0 && (
                   <div className="mt-4 border-t border-hair pt-4">
@@ -430,7 +375,7 @@ export default function Atlas() {
               </motion.div>
             ) : (
               <p className="pt-4 text-center text-[.84rem] font-light leading-relaxed text-soft">
-                اضغط أي نجمة ليظهر اسم المقال كاملاً ومساره الفكري هنا، ثم اضغطها مرة ثانية لفتحه.
+                على الهاتف: المس أي نجمة ليظهر اسم المقال كاملاً هنا، ثم المسها مرة ثانية لفتحه.
               </p>
             )}
           </div>

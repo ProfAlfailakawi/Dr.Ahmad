@@ -1063,8 +1063,13 @@ function compareTexts(intended, recognized) {
   /* مطابقة بالاحتواء الجزئي للكلمات ≥4 أحرف — كما يفعل محرك القراءة المثبت منذ شهور:
      STT يكتب المنصوب المنوّن بلا ألفه («انطباعاً»→«انطباع») وصيغاً مطولة/مقصورة
      صوتها واحد؛ المطالبة بالتطابق الحرفي كانت تُسقط مداخلات سليمة (u008). */
+  /* تكافؤات دقيقة: الاسم المنقوص المنوّن يسترد ياءه في السمع (ناجٍ→ناجي، قاضٍ→قاضي)،
+     و«إذاً» تُكتب «إذن» — كلاهما ثلاثي فيفلت من مطابقة الاحتواء (u018). */
+  const NUNATION_EQUIV = new Set(['اذا|اذن', 'اذن|اذا'])
   const wordsEqual = (a, b) => a === b
     || (a.length > 3 && b.length > 3 && (a.includes(b) || b.includes(a)))
+    || (a.length >= 3 && `${a}ي` === b) || (b.length >= 3 && `${b}ي` === a)
+    || NUNATION_EQUIV.has(`${a}|${b}`)
   const rows = expected.length + 1
   const cols = heard.length + 1
   const dp = Array.from({ length: rows }, () => new Uint16Array(cols))
@@ -3074,7 +3079,10 @@ async function produce(article, lang) {
           previous: previousSegmentsLedger, ledger: auditRecord.segments },
       })
       if (!produced.ok) {
-        auditRecord.failure = { utteranceId, reason: String(produced.reason || '').slice(0, 400), at: new Date().toISOString() }
+        auditRecord.failure = { utteranceId, reason: String(produced.reason || '').slice(0, 400), at: new Date().toISOString(),
+          // أذن تشخيصية: ماذا سمع STT في آخر المرشحات — فلا نعود نحزر سبب أي فشل
+          heardSamples: (produced.candidates || []).slice(-4).map((candidate) => ({
+            id: candidate.id, stt: String(candidate.stt || '').slice(0, 140), reason: String(candidate.reason || '').slice(0, 120) })) }
         return quarantine(`المداخلة ${utteranceId}: ${produced.reason || 'غير موثقة'}`,
           { failedUtterance: auditRecord.failure })
       }
@@ -3593,9 +3601,13 @@ if (SELF_TEST) {
   assert.equal(numberToArabicSpoken(2023), 'ألفين وثلاثة وعشرين', 'السنة تُهجأ فصيحةً')
   assert.equal(spellDigitsForSpeech('نُشرت عام 2023 وبلغت النسبة 11٪'),
     'نُشرت عام ألفين وثلاثة وعشرين وبلغت النسبة أحد عشر بالمئة', 'الجملة تُهجأ أرقامها ونسبها كاملة')
+  // ١٤) الاسم المنقوص و«إذاً/إذن»: راحة ناجٍ إذاً لا تسقط على هجاء STT
+  const poetic = compareTexts('راحة ناجٍ إذاً لا فرح فاهم', 'راحه ناجي اذن لا فرح فاهم')
+  assert.equal(poetic.importantRatio, 1, 'ناجٍ↔ناجي وإذاً↔إذن تكافؤ مسموع صحيح')
+  assert(poetic.missing.length === 0, 'لا كلمة مفقودة في السطر الشعري')
   const guarded = compareTexts('نقيس الفهم قبل الدرجة', 'نقيس فهما اخر تماما')
   assert(guarded.importantRatio < 1, 'الاحتواء الجزئي لا يمنح تطابقاً مجانياً لكلمات مختلفة فعلاً')
-  console.log('✓ اختبارات بوابة البودكاست العربي: 43/43')
+  console.log('✓ اختبارات بوابة البودكاست العربي: 45/45')
   process.exit(0)
 }
 

@@ -1938,7 +1938,9 @@ async function calibrateProductionPlan({ utterance, voice, text, subs, lang, tem
   let adjustedTarget = target
   if (MANUAL_TEXT_MODE) {
     const projected = measured * (1 + correction / 100)
-    if (Math.abs(projected - target) > 10) adjustedTarget = Math.round(Math.min(175, Math.max(118, projected)))
+    const avgWordLen = String(text || '').replace(/\s+/g, '').length / Math.max(1, String(text || '').trim().split(/\s+/).length)
+    const calibrationFloor = avgWordLen >= 6 ? 96 : 118
+    if (Math.abs(projected - target) > 10) adjustedTarget = Math.round(Math.min(175, Math.max(calibrationFloor, projected)))
   }
   return { plan: { ...plan, ratePct: calibratedRatePct, targetWordsPerMinute: adjustedTarget },
     calibration: { pass: true, measuredWpm: measured, targetWpm: adjustedTarget, measuredDurSec: Number(audit.dur || 0),
@@ -2058,10 +2060,14 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
        المقاس وتُعاد الجولة — بوابات STT والحكم وحد 13ث لا تُمس بشيء. */
     if (MANUAL_TEXT_MODE && (deliveryPlan.__paceAdaptations || 0) < 2) {
       const currentTarget = Number(deliveryPlan.targetWordsPerMinute || 0)
+      /* أرضية واعية بكثافة الكلمات: جملة ثقيلة المقاطع («توقعات الوالدين والعوامل
+         الانفعالية») سرعتها الكلمية أدنى طبيعياً وإن كان نطقها سليماً — u012 عند 102 */
+      const avgWordLen = dialogueText.replace(/\s+/g, '').length / Math.max(1, wordsOf(dialogueText).length)
+      const humanFloor = avgWordLen >= 6 ? 96 : 118
       const paceOnly = audits
         .filter((audit) => audit.technical?.issues?.length === 1
           && /^سرعة فعلية \d+ بعيدة عن الهدف \d+$/.test(String(audit.technical.issues[0]))
-          && Number(audit.technical.wpm) >= 118 && Number(audit.technical.wpm) <= 175)
+          && Number(audit.technical.wpm) >= humanFloor && Number(audit.technical.wpm) <= 175)
         .sort((left, right) => Math.abs(Number(left.technical.wpm) - currentTarget)
           - Math.abs(Number(right.technical.wpm) - currentTarget))[0]
       if (paceOnly) {

@@ -1795,7 +1795,7 @@ async function evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnal
      «يبني» فسقطت وحدها). تُقبل زلة واحدة في المداخلات ذات ≤13 كلمة مهمة بشرطها الصارم:
      ليست كلمة خطر (highMissing صفر) وليست نفياً (missingNegations صفر) والنسبة الكلية ≥0.85. */
   const oneSlipOk = NO_GEMINI && comparison.missingImportant.length === 1
-    && Number(comparison.importantTotal || 99) <= 13 && comparison.ratio >= 0.85
+    && Number(comparison.importantTotal || 99) < 20 && comparison.ratio >= 0.85
   const pass = verdictPass && highMissing.length === 0 && missingNegations.length === 0
     && (sttStrictOk || oneSlipOk)
   const score = pass

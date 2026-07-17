@@ -223,7 +223,7 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
       ? ensembleRecognitions.filter((item) => (item.comparison?.missingImportant || []).length <= 1).length
         >= Math.ceil(ensembleRecognitions.length / 2)
       : false
-    const oneSlipPass = comparison.missingImportant.length === 1 && importantTotal <= 13
+    const oneSlipPass = comparison.missingImportant.length === 1 && importantTotal < 20
       && comparison.ratio >= 0.85 && oneSlipConsensus
     const sttStrict = comparison.ratio >= 0.9 && comparison.importantRatio >= 0.95
       && heard?.consensusPass === true

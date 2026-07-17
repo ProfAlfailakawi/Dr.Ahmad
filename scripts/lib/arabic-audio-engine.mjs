@@ -199,28 +199,30 @@ export function numberToArabicWords(value) {
   return parts.join(' و')
 }
 
-/* نقحرة المصادر الأجنبية المعروفة إلى العربية: الحروف اللاتينية الخام تُقرأ إنجليزيةً
-   فيسوء الصوت ويعجز STT العربي عن مطابقتها. النطق العربي يجعل Azure ينطقها فصيحةً،
-   واستثناؤها من عقوبة STT (في human-reading-pipeline) يكمل الحلّ. الأطول أولاً. */
-const FOREIGN_SOURCE_MAP = [
-  ['Harvard Business Review', 'هارفارد بزنس ريفيو'],
-  ['Frontiers in Psychology', 'فرونتيرز إن سايكولوجي'],
-  ['Journal of Educational Psychology', 'جورنال أوف إديوكيشنال سايكولوجي'],
-  ['Moral Education', 'مورال إديوكيشن'],
-  ['Microsoft', 'مايكروسوفت'], ['Google', 'جوجل'], ['Gallup', 'غالوب'],
-  ['UNESCO', 'يونسكو'], ['OECD', 'أو إي سي دي'], ['UCLA', 'يو سي إل إيه'],
-  ['MIT', 'إم آي تي'], ['PISA', 'بيزا'],
-]
+/* حذف المراجع الأجنبية من النص المنطوق (بأمر الدكتور: «لا داعي أن يقول للناس المراجع»):
+   أسماء المجلات والجامعات الأجنبية لا تُقرأ في الصوت — تُحذف مع أداة الجر واسم المصدر
+   السابق (في/من + مجلة/جامعة…)، فيبقى المعنى العلمي كاملاً بلا تعثّر لغوي أو صوتي.
+   يمسّ النصّ المنطوق فقط؛ المقال المعروض يحتفظ بمراجعه كما كتبها الدكتور. */
+const AR_LATIN = '[A-Za-z][A-Za-z0-9.&+-]*(?:\\s+[A-Za-z][A-Za-z0-9.&+-]*)*'
+const AR_PREP = '(?:في|من|بـ|ب|لدى|عبر|حسب|وفق|بحسب|نشرت?ها?)'
+const AR_SRC_NOUN = '(?:جامعة|مجلة|دورية|مجلّة|معهد|مؤسسة|شركة|منظمة|صحيفة|موقع|فريق في|مركز)'
+function stripSpokenReferences(text) {
+  let result = String(text || '')
+  // «من جامعة UCLA» / «في مجلة Nature» → أداة جر + اسم مصدر + اسم لاتيني
+  result = result.replace(new RegExp(`${AR_PREP}\\s+${AR_SRC_NOUN}\\s+${AR_LATIN}`, 'g'), '')
+  // «في Harvard Business Review» → أداة جر + اسم لاتيني مباشر
+  result = result.replace(new RegExp(`${AR_PREP}\\s+${AR_LATIN}`, 'g'), '')
+  // أي بقية لاتينية شاردة
+  result = result.replace(new RegExp(AR_LATIN, 'g'), '')
+  return result
+    .replace(/«\s*»/g, '').replace(/\(\s*\)/g, '')
+    .replace(/\s{2,}/g, ' ').replace(/\s+([،.؛:!؟])/g, '$1').replace(/،\s*،/g, '،')
+    .replace(/\s+/g, ' ').trim()
+}
 
 export function buildPronunciationText(sourceText) {
-  let pronunciationText = String(sourceText || '')
+  let pronunciationText = stripSpokenReferences(String(sourceText || ''))
   const risks = []
-  for (const [latin, arabic] of FOREIGN_SOURCE_MAP) {
-    if (!pronunciationText.includes(latin)) continue
-    pronunciationText = pronunciationText.split(latin).join(arabic)
-    risks.push({ word: latin, type: 'مصدر أجنبي منقحر', riskLevel: 'high', selectedPronunciation: arabic,
-      method: 'sub', reason: 'نقحرة عربية معتمدة لمصدر أجنبي كي ينطقه Azure ويُستثنى من تحقق STT' })
-  }
   for (const [written, rule] of lexiconEntries()) {
     if (!pronunciationText.includes(written)) continue
     const spoken = rule.sub || rule.diacritics || written
@@ -237,10 +239,7 @@ export function buildPronunciationText(sourceText) {
     risks.push({ word: number, type: 'رقم', riskLevel: 'high', selectedPronunciation: spoken, method: 'words', reason: 'منع القراءة الرقمية الآلية' })
     return spoken
   })
-  for (const match of String(sourceText || '').matchAll(/[A-Za-z][A-Za-z0-9.+-]*(?:\s+[A-Za-z][A-Za-z0-9.+-]*)*/g)) {
-    if (!risks.some((risk) => risk.word.includes(match[0]))) risks.push({ word: match[0], type: 'مصطلح لاتيني', riskLevel: 'high',
-      selectedPronunciation: '', method: 'review', reason: 'يحتاج نقحرة أو قاعدة قاموس معتمدة قبل النشر' })
-  }
+  // لم تعد هناك حروف لاتينية في النص المنطوق (حُذفت المراجع أعلاه)، فلا حاجة لمخاطر لاتينية.
   return { pronunciationText, risks }
 }
 

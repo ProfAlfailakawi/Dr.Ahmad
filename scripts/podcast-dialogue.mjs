@@ -1063,15 +1063,8 @@ function compareTexts(intended, recognized) {
   /* مطابقة بالاحتواء الجزئي للكلمات ≥4 أحرف — كما يفعل محرك القراءة المثبت منذ شهور:
      STT يكتب المنصوب المنوّن بلا ألفه («انطباعاً»→«انطباع») وصيغاً مطولة/مقصورة
      صوتها واحد؛ المطالبة بالتطابق الحرفي كانت تُسقط مداخلات سليمة (u008). */
-  /* تكافؤات دقيقة: الاسم المنقوص المنوّن يسترد ياءه في السمع (ناجٍ→ناجي، قاضٍ→قاضي)،
-     و«إذاً» تُكتب «إذن» — كلاهما ثلاثي فيفلت من مطابقة الاحتواء (u018). */
-  const NUNATION_EQUIV = new Set(['اذا|اذن', 'اذن|اذا',
-    // جنس النفي: «ليس/ليست» لمّة واحدة والمعنى النافي محفوظ بكليهما (u032: سمعها Azure ليست)
-    'ليس|ليست', 'ليست|ليس'])
   const wordsEqual = (a, b) => a === b
     || (a.length > 3 && b.length > 3 && (a.includes(b) || b.includes(a)))
-    || (a.length >= 3 && `${a}ي` === b) || (b.length >= 3 && `${b}ي` === a)
-    || NUNATION_EQUIV.has(`${a}|${b}`)
   const rows = expected.length + 1
   const cols = heard.length + 1
   const dp = Array.from({ length: rows }, () => new Uint16Array(cols))
@@ -1945,9 +1938,7 @@ async function calibrateProductionPlan({ utterance, voice, text, subs, lang, tem
   let adjustedTarget = target
   if (MANUAL_TEXT_MODE) {
     const projected = measured * (1 + correction / 100)
-    const avgWordLen = String(text || '').replace(/\s+/g, '').length / Math.max(1, String(text || '').trim().split(/\s+/).length)
-    const calibrationFloor = avgWordLen >= 6 ? 96 : 118
-    if (Math.abs(projected - target) > 10) adjustedTarget = Math.round(Math.min(175, Math.max(calibrationFloor, projected)))
+    if (Math.abs(projected - target) > 10) adjustedTarget = Math.round(Math.min(175, Math.max(118, projected)))
   }
   return { plan: { ...plan, ratePct: calibratedRatePct, targetWordsPerMinute: adjustedTarget },
     calibration: { pass: true, measuredWpm: measured, targetWpm: adjustedTarget, measuredDurSec: Number(audit.dur || 0),
@@ -2067,14 +2058,10 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
        المقاس وتُعاد الجولة — بوابات STT والحكم وحد 13ث لا تُمس بشيء. */
     if (MANUAL_TEXT_MODE && (deliveryPlan.__paceAdaptations || 0) < 2) {
       const currentTarget = Number(deliveryPlan.targetWordsPerMinute || 0)
-      /* أرضية واعية بكثافة الكلمات: جملة ثقيلة المقاطع («توقعات الوالدين والعوامل
-         الانفعالية») سرعتها الكلمية أدنى طبيعياً وإن كان نطقها سليماً — u012 عند 102 */
-      const avgWordLen = dialogueText.replace(/\s+/g, '').length / Math.max(1, wordsOf(dialogueText).length)
-      const humanFloor = avgWordLen >= 6 ? 96 : 118
       const paceOnly = audits
         .filter((audit) => audit.technical?.issues?.length === 1
           && /^سرعة فعلية \d+ بعيدة عن الهدف \d+$/.test(String(audit.technical.issues[0]))
-          && Number(audit.technical.wpm) >= humanFloor && Number(audit.technical.wpm) <= 175)
+          && Number(audit.technical.wpm) >= 118 && Number(audit.technical.wpm) <= 175)
         .sort((left, right) => Math.abs(Number(left.technical.wpm) - currentTarget)
           - Math.abs(Number(right.technical.wpm) - currentTarget))[0]
       if (paceOnly) {
@@ -3081,12 +3068,7 @@ async function produce(article, lang) {
           previous: previousSegmentsLedger, ledger: auditRecord.segments },
       })
       if (!produced.ok) {
-        auditRecord.failure = { utteranceId, reason: String(produced.reason || '').slice(0, 400), at: new Date().toISOString(),
-          // أذن تشخيصية: ماذا سمع STT في آخر المرشحات — فلا نعود نحزر سبب أي فشل
-          heardSamples: ((produced.failure?.candidates) || produced.candidates || []).slice(-4).map((candidate) => ({
-            id: candidate.id || candidate.variant?.id || '',
-            stt: String(candidate.stt ?? candidate.heard?.text ?? '').slice(0, 140),
-            reason: String(candidate.reason || '').slice(0, 120) })) }
+        auditRecord.failure = { utteranceId, reason: String(produced.reason || '').slice(0, 400), at: new Date().toISOString() }
         return quarantine(`المداخلة ${utteranceId}: ${produced.reason || 'غير موثقة'}`,
           { failedUtterance: auditRecord.failure })
       }
@@ -3605,17 +3587,9 @@ if (SELF_TEST) {
   assert.equal(numberToArabicSpoken(2023), 'ألفين وثلاثة وعشرين', 'السنة تُهجأ فصيحةً')
   assert.equal(spellDigitsForSpeech('نُشرت عام 2023 وبلغت النسبة 11٪'),
     'نُشرت عام ألفين وثلاثة وعشرين وبلغت النسبة أحد عشر بالمئة', 'الجملة تُهجأ أرقامها ونسبها كاملة')
-  // ١٤) الاسم المنقوص و«إذاً/إذن»: راحة ناجٍ إذاً لا تسقط على هجاء STT
-  const poetic = compareTexts('راحة ناجٍ إذاً لا فرح فاهم', 'راحه ناجي اذن لا فرح فاهم')
-  assert.equal(poetic.importantRatio, 1, 'ناجٍ↔ناجي وإذاً↔إذن تكافؤ مسموع صحيح')
-  assert(poetic.missing.length === 0, 'لا كلمة مفقودة في السطر الشعري')
-  // ١٥) جنس النفي: «ليس» المسموعة «ليست» ليست نفياً مفقوداً
-  const negation = compareTexts('ليس «كم حصلت؟» فقط، بل «ماذا تعلمت عن نفسك؟».', 'ليست كم حصلت فقط بل ماذا تعلمت عن نفسك')
-  assert(!negation.missing.includes('ليس'), 'ليس↔ليست تكافؤ نفي مسموع')
-  assert.equal(negation.importantRatio, 1, 'الجملة المقتبسة الأسئلة تتطابق كاملة')
   const guarded = compareTexts('نقيس الفهم قبل الدرجة', 'نقيس فهما اخر تماما')
   assert(guarded.importantRatio < 1, 'الاحتواء الجزئي لا يمنح تطابقاً مجانياً لكلمات مختلفة فعلاً')
-  console.log('✓ اختبارات بوابة البودكاست العربي: 47/47')
+  console.log('✓ اختبارات بوابة البودكاست العربي: 43/43')
   process.exit(0)
 }
 

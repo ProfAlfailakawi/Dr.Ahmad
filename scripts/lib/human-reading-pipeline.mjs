@@ -240,10 +240,7 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
       /* الهدف الرقمي تركيبي من المخطط لا من الكاتب؛ إن كان النص سليماً سمعياً والإيقاع
          المقاس ضمن النطاق البشري لكن بعيداً عن الهدف، يُصوَّب الهدف إلى المقاس —
          نفس مبدأ محرك الحوار المثبت (تصويب u002) بدل دفع المصحح إلى سقفه عبثاً */
-      const unitAvgWordLen = String(working.pronunciationText || '').replace(/\s+/g, '').length
-        / Math.max(1, String(working.pronunciationText || '').trim().split(/\s+/).length)
-      const unitFloor = unitAvgWordLen >= 6 ? 96 : 118
-      if (sttPass && !pacePass && measuredWpm >= unitFloor && measuredWpm <= 175) {
+      if (sttPass && !pacePass && measuredWpm >= 118 && measuredWpm <= 175) {
         working.targetWordsPerMinute = measuredWpm
       }
       const retryTarget = Number(working.targetWordsPerMinute)

@@ -12,6 +12,10 @@ import { Link } from 'react-router-dom'
 import { EASE, FadeUp, Page, PageHead } from '../components/ui'
 import { curatedBank, curioKinds, thisMonthsBook, type Curio } from '../data-curated'
 import { useExtras } from '../lib/content'
+/* روابط خارجية ثبت موتها (404/410) عبر الفاحص الأسبوعي — تُصفّى فلا يظهر كرتٌ ميّت.
+   وحدات site_radar الميتة تُحذف من Firestore مباشرةً، فلا تصل الصفحة أصلاً. */
+import deadLinks from '../data/curated-dead-links.json'
+const DEAD_LINKS = new Set(Object.keys(deadLinks as Record<string, string>))
 
 function CardWrap({ c, className, children }: { c: Curio; className: string; children: React.ReactNode }) {
   if (c.url)
@@ -113,6 +117,7 @@ const radarAsCurio = (item: RadarItem): Curio => ({
 })
 
 const dedupe = (items: Curio[]) => items.filter((item, index, allItems) => (
+  !(item.url && DEAD_LINKS.has(item.url)) &&
   allItems.findIndex((candidate) => (candidate.url || candidate.ar) === (item.url || item.ar)) === index
 ))
 

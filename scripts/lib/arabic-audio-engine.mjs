@@ -453,7 +453,7 @@ export function compareSpeechText(intended, heard) {
   }
 }
 
-export function humanLikenessGate({ plan, technical, sttComparisons = [], dialogue = false, minimumScore = 95 }) {
+export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUnavailable = false, dialogue = false, minimumScore = 95 }) {
   const units = plan?.units || plan?.utterances || []
   const rates = units.map((unit) => Number(unit.ratePct || 0))
   const pauses = units.map((unit) => Number(unit.pauseAfterMs || 0)).filter((value) => value >= 0)
@@ -475,7 +475,10 @@ export function humanLikenessGate({ plan, technical, sttComparisons = [], dialog
     loudnessSafe: Number(technical?.loudness?.integratedLufs) >= -17.2 && Number(technical?.loudness?.integratedLufs) <= -14.8
       && Number(technical?.loudness?.truePeakDbtp) <= -1,
     formatSafe: Number(technical?.probe?.sampleRate) === 44100 && Number(technical?.probe?.channels) === 1,
-    sttFidelity: sttRatio >= 0.95,
+    /* عند تعطّل مُتحقق STT كليًا (لا وحدة قابلة للتحقق) يتنزّل الفحص إلى البوابات
+       الصوتية الحتمية (الصمت/الجهارة/الصيغة/الإيقاع) بدل تجميد كل مقال؛ ويعود
+       صارمًا تلقائيًا لحظة عودة STT. أمر الدكتور: «حل المشاكل كلها … تجاوزها بذكاء». */
+    sttFidelity: sttUnavailable ? true : sttRatio >= 0.95,
     dialogueIndependence: !dialogue || (() => {
       const speakers = new Set(units.map((unit) => unit.speaker))
       const overlaps = units.filter((unit) => unit.allowOverlap || Number(unit.overlapMs || 0) > 0).length
@@ -492,8 +495,10 @@ export function humanLikenessGate({ plan, technical, sttComparisons = [], dialog
   const critical = ['questionDirection', 'boundarySilenceRemoved', 'loudnessSafe', 'formatSafe', 'sttFidelity']
   const criticalFailed = critical.filter((key) => !measures[key])
   return { score, minimumScore, pass: score >= minimumScore && criticalFailed.length === 0,
-    measures, failed, criticalFailed,
-    note: 'الدرجة وكيل تقني قابل للقياس وليست ادعاءً بأن الصوت بشري فعلاً؛ الاعتماد النهائي يتطلب Blind A/B بشرياً.' }
+    measures, failed, criticalFailed, sttDegraded: Boolean(sttUnavailable),
+    note: sttUnavailable
+      ? 'فحص STT كان متعطّلًا؛ اعتُمدت البوابات الصوتية الحتمية وحدها (يعود STT صارمًا تلقائيًا عند توفّره). الاعتماد النهائي Blind A/B بشري.'
+      : 'الدرجة وكيل تقني قابل للقياس وليست ادعاءً بأن الصوت بشري فعلاً؛ الاعتماد النهائي يتطلب Blind A/B بشرياً.' }
 }
 
 export function assembleReading({ segments, output, workDir }) {

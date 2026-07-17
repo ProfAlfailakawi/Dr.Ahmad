@@ -75,4 +75,16 @@ assert.equal(badGate.pass, false, 'الصوت المسطح أو ذو الصمت 
 assert(badGate.criticalFailed.includes('sttFidelity') && badGate.criticalFailed.includes('boundarySilenceRemoved'),
   'فشل البوابة يذكر السبب القابل للإصلاح')
 
-console.log('✔ Human Audio Engine self-tests: source integrity, semantic plan, independent voices, SSML, pronunciation, human gate')
+/* تعطّل مُتحقق STT كليًا يجب ألا يجمّد مقالًا صوته سليم: يتنزّل الفحص إلى البوابات
+   الحتمية (أمر الدكتور «تجاوزها بذكاء») ويُعلَن التنزّل بصدق في التدقيق. */
+const sttDownGate = humanLikenessGate({ plan: { utterances: humanUnits }, technical: goodTechnical,
+  sttComparisons: [], sttUnavailable: true, dialogue: true })
+assert.equal(sttDownGate.pass, true, 'تعطّل STT كليًا لا يجمّد صوتًا سليمًا')
+assert.equal(sttDownGate.sttDegraded, true, 'التنزّل يُسجَّل في التدقيق بصدق')
+assert(!sttDownGate.criticalFailed.includes('sttFidelity'), 'sttFidelity لا يبقى عائقًا حرجًا عند تعطّل المتحقق')
+/* لكن غياب أي تحقق دون إعلان التعطّل يبقى فشلاً حرجًا — لا تنزّل صامت. */
+const silentGap = humanLikenessGate({ plan: { utterances: humanUnits }, technical: goodTechnical,
+  sttComparisons: [], sttUnavailable: false, dialogue: true })
+assert(silentGap.criticalFailed.includes('sttFidelity'), 'غياب التحقق بلا إعلان تعطّل يظل فشلاً حرجًا')
+
+console.log('✔ Human Audio Engine self-tests: source integrity, semantic plan, independent voices, SSML, pronunciation, human gate, STT degradation')

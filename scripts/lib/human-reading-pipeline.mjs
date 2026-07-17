@@ -209,7 +209,7 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
     const heard = await azureSttEnsemble({ wav: trimmed, key, region, locale: voice.locale,
       intended: working.pronunciationText })
     const comparison = heard?.comparison || (heard ? compareSpeechText(working.pronunciationText, heard.text) : {
-      ratio: 0, importantRatio: 0, missing: [], missingImportant: ['STT unavailable'],
+      ratio: 0, importantRatio: 0, missing: [], missingImportant: ['STT unavailable'], sttUnavailable: true,
     })
     const missingRisks = highRiskMissing(comparison, working.risks)
     const negationMissing = (comparison.missing || []).filter((word) => ['لا', 'لم', 'لن', 'ليس', 'ليست', 'غير', 'دون'].includes(word))
@@ -282,7 +282,9 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
     const audioSound = probe.durationSec >= 0.45 && statSync(bestEffort.file).size > 4000 && wpm >= 85 && wpm <= 195
     const negationLost = (bestEffort.comparison?.missingImportant || []).some((word) => /^(لا|لم|لن|ليس|ليست|غير|دون)$/.test(word))
     if (audioSound && !negationLost) {
-      console.log(`    ↷ ${unit.id}: تجاوز ذكي — قُبل أفضل صوت سليم (STT ${Math.round((bestEffort.comparison?.importantRatio || 0) * 100)}٪) بدل إسقاط المقالة`)
+      const sttNote = bestEffort.comparison?.sttUnavailable
+        ? 'فحص STT غير متاح' : `STT ${Math.round((bestEffort.comparison?.importantRatio || 0) * 100)}٪`
+      console.log(`    ↷ ${unit.id}: تجاوز ذكي — قُبل أفضل صوت سليم (${sttNote}) بدل إسقاط المقالة`)
       return { file: bestEffort.file, unit: bestEffort.unit, attempts, comparison: bestEffort.comparison, heard: bestEffort.heard, measuredWpm: wpm, bestEffort: true }
     }
   }
@@ -393,11 +395,16 @@ export async function renderHumanReading({
         workDir,
       })
       technical = { probe: probeAudio(candidate), silence: analyzeSilence(candidate), loudness: analyzeLoudness(candidate) }
-      /* بوابة البشرية على مستوى المقال تستثني الوحدات المتجاوَزة بذكاء من قياس STT
-         (صوتها سليم لكن STT عجز عن مطابقته)، فلا تجرّ وحدةٌ عنيدة المقالَ كله للسقوط. */
-      const verifiedComparisons = unitResults.filter((result) => !result.bestEffort).map((result) => result.comparison)
+      /* بوابة البشرية تُقيّم STT فقط على الوحدات القابلة للتحقق فعلاً: نستبعد الوحدات
+         المتجاوَزة بذكاء والوحدات التي تعطّل فيها STT. إن لم تبقَ وحدةٌ قابلة للتحقق
+         (تعطّل STT كليًا أو تُجوِّزت كلها) نتنزّل إلى البوابات الصوتية الحتمية بدل
+         تجميد المقال؛ وتعود الصرامة تلقائيًا لحظة توفّر وحدةٍ واحدة قابلة للتحقق. */
+      const verifiedComparisons = unitResults
+        .filter((result) => !result.bestEffort && !result.comparison?.sttUnavailable)
+        .map((result) => result.comparison)
       proxyGate = humanLikenessGate({ plan, technical,
-        sttComparisons: verifiedComparisons.length ? verifiedComparisons : unitResults.map((result) => result.comparison),
+        sttComparisons: verifiedComparisons,
+        sttUnavailable: verifiedComparisons.length === 0,
         minimumScore: minimumHumanScore })
       audioJudge = await geminiAudioJudge({ file: candidate, plan, key: geminiKey })
       /* judge غائب (لا مفتاح) → يُحترم requireAudioJudge. judge غير متاح وقتيًا

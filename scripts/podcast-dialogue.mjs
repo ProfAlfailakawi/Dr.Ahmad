@@ -3081,8 +3081,10 @@ async function produce(article, lang) {
       if (!produced.ok) {
         auditRecord.failure = { utteranceId, reason: String(produced.reason || '').slice(0, 400), at: new Date().toISOString(),
           // أذن تشخيصية: ماذا سمع STT في آخر المرشحات — فلا نعود نحزر سبب أي فشل
-          heardSamples: (produced.candidates || []).slice(-4).map((candidate) => ({
-            id: candidate.id, stt: String(candidate.stt || '').slice(0, 140), reason: String(candidate.reason || '').slice(0, 120) })) }
+          heardSamples: ((produced.failure?.candidates) || produced.candidates || []).slice(-4).map((candidate) => ({
+            id: candidate.id || candidate.variant?.id || '',
+            stt: String(candidate.stt ?? candidate.heard?.text ?? '').slice(0, 140),
+            reason: String(candidate.reason || '').slice(0, 120) })) }
         return quarantine(`المداخلة ${utteranceId}: ${produced.reason || 'غير موثقة'}`,
           { failedUtterance: auditRecord.failure })
       }

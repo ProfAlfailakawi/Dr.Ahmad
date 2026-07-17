@@ -484,7 +484,7 @@ async function processOriginals(articles, allOriginals, budget) {
         audit = await synthesizeHumanReading(article, voice, target)
       } catch (error) {
         budget.used += 1
-        console.error(`  ✘ ${article.slug} (${voice.label}): ${String(error.message).slice(0, 160)} — تُتجاوز وتستمر القافلة`)
+        console.error(`  ✘ ${article.slug} (${voice.label}): ${String(error.message).slice(0, 320)} — تُتجاوز وتستمر القافلة`)
         continue
       }
       if (!USE_R2) {

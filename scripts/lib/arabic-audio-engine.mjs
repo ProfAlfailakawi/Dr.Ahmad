@@ -363,8 +363,13 @@ const run = (binary, args, options = {}) => {
 }
 
 export function trimAzureBoundarySilence(input, output = `${input}.trim.wav`) {
+  /* ثلاث مراحل: قصّ الصمت البادئ، قصّ الصمت الخاتم، ثم سقفٌ حتميّ على أي صمت داخليّ
+     ≥0.7ث يُختزل إلى 0.55ث بعتبة البوابة نفسها (-44dB) — فلا تتجاوز أي فجوة صمتٍ في
+     الوحدة 0.7ث، وبما أن الفجوة بين الوحدات ≤0.84ث تبقى القراءة كلها دون عتبة 0.95ث
+     الحرجة (boundarySilenceRemoved). يمنع «الصمت الآلي» من مصدره ويحافظ على التزامن.
+     ملاحظة: مع stop_periods=-1 فإن stop_duration هو مقدار الصمت المُبقى لا عتبة التشغيل. */
   run(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-i', input, '-af',
-    'silenceremove=start_periods=1:start_duration=0.015:start_threshold=-46dB:start_silence=0.035:detection=peak,areverse,silenceremove=start_periods=1:start_duration=0.025:start_threshold=-46dB:start_silence=0.055:detection=peak,areverse',
+    'silenceremove=start_periods=1:start_duration=0.015:start_threshold=-46dB:start_silence=0.035:detection=peak,areverse,silenceremove=start_periods=1:start_duration=0.025:start_threshold=-46dB:start_silence=0.055:detection=peak,areverse,silenceremove=stop_periods=-1:stop_duration=0.7:stop_threshold=-44dB:detection=peak',
     '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', output])
   return output
 }

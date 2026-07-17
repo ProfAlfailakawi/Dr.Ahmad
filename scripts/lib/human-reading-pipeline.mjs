@@ -262,7 +262,10 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
     }
   }
   const last = attempts.at(-1)
-  throw new Error(`${unit.id} فشل بعد ${maxAttempts} محاولات: STT ${Math.round((last?.comparison?.importantRatio || 0) * 100)}٪، السرعة ${last?.measuredWpm || 0}/${last?.targetWpm || 0}`)
+  // أذن تشخيصية: ما سمعه STT فعلاً + الكلمات المفقودة — تشخيص بيقين لا بتخمين
+  const heardText = String(last?.stt?.text || '').slice(0, 120)
+  const missed = (last?.comparison?.missingImportant || []).slice(0, 6).join('، ')
+  throw new Error(`${unit.id} فشل بعد ${maxAttempts} محاولات: STT ${Math.round((last?.comparison?.importantRatio || 0) * 100)}٪، السرعة ${last?.measuredWpm || 0}/${last?.targetWpm || 0}${heardText ? ` · سُمع: «${heardText}»` : ''}${missed ? ` · مفقود: ${missed}` : ''}`)
 }
 
 async function geminiAudioJudge({ file, plan, key, model = 'gemini-2.5-flash' }) {

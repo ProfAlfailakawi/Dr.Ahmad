@@ -34,8 +34,7 @@ async function accessToken(account) {
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    // URN الصحيح هو oauth لا oauth2 — الحرف الزائد كان يعيد 400 unsupported_grant_type دائماً
-    body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: `${unsigned}.${signature}` }),
+    body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth2:grant-type:jwt-bearer', assertion: `${unsigned}.${signature}` }),
   })
   if (!response.ok) throw new Error(`تعذر توثيق حساب Firebase (${response.status})`)
   return (await response.json()).access_token

@@ -632,12 +632,7 @@ const voiceRateOffset = (voice, speaker) => {
 function normalizeMechanics(sc, options = {}) {
   if (!sc || !Array.isArray(sc.utterances)) return sc
   const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, Number.isFinite(+v) ? +v : lo))
-  // الكلمات المنطوقة: الرمز الرقمي (2023) يُحسب بعدد أرقامه تقريباً — يُنطق كلمات عدة
-  const wordCount = (text) => String(text || '').split(/\s+/).filter(Boolean)
-    .reduce((total, token) => {
-      const digits = (token.match(/\d/g) || []).length
-      return total + (digits >= 2 ? Math.min(6, digits) : 1)
-    }, 0)
+  const wordCount = (text) => String(text || '').split(/\s+/).filter(Boolean).length
   const polishForSpokenArabic = (text) => String(text || '')
     .replace(/بالظبط/g, 'بالضبط')
     .replace(/\bبالضبط!\s*/g, 'بالضبط. ')
@@ -981,34 +976,6 @@ const normalizeAr = (s) => stripDiacritics(s)
   .replace(/[^ء-ي0-9a-zA-Z\s]/g, ' ')
   .replace(/\s+/g, ' ').trim()
 
-/* معرّب الأعداد العكسي: STT يكتب السنة أحياناً كلماتٍ («ألفين وثلاثة وعشرين») لا
-   أرقاماً — نُقيّم كل نافذة كلمات عددية متتالية في المسموع ونجمع قيمتها، فيثبت
-   نطق «2023» متى ساوت نافذةٌ قيمتَه (u011: كلمة خطرة لم يثبت نطقها: 2023). */
-const AR_NUM_VALUES = new Map(Object.entries({
-  صفر: 0, واحد: 1, واحده: 1, اثنان: 2, اثنين: 2, ثلاثه: 3, اربعه: 4, خمسه: 5, سته: 6,
-  سبعه: 7, ثمانيه: 8, تسعه: 9, عشره: 10, عشر: 10, احد: 1, اثنا: 2, اثني: 2,
-  عشرين: 20, ثلاثين: 30, اربعين: 40, خمسين: 50, ستين: 60, سبعين: 70, ثمانين: 80, تسعين: 90,
-  مئه: 100, مائه: 100, مئتين: 200, مائتين: 200, ثلاثمئه: 300, اربعمئه: 400, خمسمئه: 500,
-  ستمئه: 600, سبعمئه: 700, ثمانمئه: 800, تسعمئه: 900,
-  الف: 1000, الفين: 2000, الاف: 1000, مليون: 1000000,
-}))
-function heardNumberValues(heardNormalized) {
-  const tokens = heardNormalized.split(' ').map((token) => token.replace(/^و/, ''))
-  const values = new Set()
-  for (let start = 0; start < tokens.length; start++) {
-    if (!AR_NUM_VALUES.has(tokens[start])) continue
-    let sum = 0
-    for (let end = start; end < tokens.length && AR_NUM_VALUES.has(tokens[end]); end++) {
-      const value = AR_NUM_VALUES.get(tokens[end])
-      // «ثلاثة آلاف»: مضروب لا مجموع
-      if ((value === 1000 || value === 1000000) && sum > 0 && sum < 1000) sum *= value
-      else sum += value
-      values.add(sum)
-    }
-  }
-  return values
-}
-
 function heardContainsRisk(heardText, risk, preferredAlias = '') {
   const heard = normalizeAr(heardText)
   const glued = heard.replace(/\s+/g, '')
@@ -1018,7 +985,6 @@ function heardContainsRisk(heardText, risk, preferredAlias = '') {
   if (/\d/.test(original)) {
     const digits = normalizeAr(original).replace(/\D/g, '')
     if (digits && heard.replace(/\D/g, '').includes(digits)) return true
-    if (digits && heardNumberValues(heard).has(Number(digits))) return true
   }
   return candidates.some((candidate) => heard.includes(candidate) || glued.includes(candidate.replace(/\s+/g, '')))
 }
@@ -1036,21 +1002,16 @@ function compareTexts(intended, recognized) {
     }
     heard.push(token)
   }
-  /* مطابقة بالاحتواء الجزئي للكلمات ≥4 أحرف — كما يفعل محرك القراءة المثبت منذ شهور:
-     STT يكتب المنصوب المنوّن بلا ألفه («انطباعاً»→«انطباع») وصيغاً مطولة/مقصورة
-     صوتها واحد؛ المطالبة بالتطابق الحرفي كانت تُسقط مداخلات سليمة (u008). */
-  const wordsEqual = (a, b) => a === b
-    || (a.length > 3 && b.length > 3 && (a.includes(b) || b.includes(a)))
   const rows = expected.length + 1
   const cols = heard.length + 1
   const dp = Array.from({ length: rows }, () => new Uint16Array(cols))
   for (let i = expected.length - 1; i >= 0; i--)
     for (let j = heard.length - 1; j >= 0; j--)
-      dp[i][j] = wordsEqual(expected[i], heard[j]) ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1])
+      dp[i][j] = expected[i] === heard[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1])
   const matched = new Set()
   let i = 0, j = 0
   while (i < expected.length && j < heard.length) {
-    if (wordsEqual(expected[i], heard[j])) { matched.add(i); i++; j++; continue }
+    if (expected[i] === heard[j]) { matched.add(i); i++; j++; continue }
     if (dp[i + 1][j] >= dp[i][j + 1]) i++
     else j++
   }
@@ -1829,7 +1790,7 @@ async function evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnal
      «يبني» فسقطت وحدها). تُقبل زلة واحدة في المداخلات ذات ≤13 كلمة مهمة بشرطها الصارم:
      ليست كلمة خطر (highMissing صفر) وليست نفياً (missingNegations صفر) والنسبة الكلية ≥0.85. */
   const oneSlipOk = NO_GEMINI && comparison.missingImportant.length === 1
-    && Number(comparison.importantTotal || 99) < 20 && comparison.ratio >= 0.85
+    && Number(comparison.importantTotal || 99) <= 13 && comparison.ratio >= 0.85
   const pass = verdictPass && highMissing.length === 0 && missingNegations.length === 0
     && (sttStrictOk || oneSlipOk)
   const score = pass
@@ -2200,14 +2161,7 @@ const compactInternalSilence = (file) => {
 
 function auditSegment(file, dialogueText, deliveryPlan = {}) {
   const dur = probeDur(file)
-  /* عدّ الكلمات المنطوقة لا المكتوبة: «2023» رمز واحد كتابةً لكنه «ألفين وثلاثة
-     وعشرين» نطقاً — احتسابه كلمةً واحدة كان يخفض WPM زوراً فتسقط كل جملة فيها
-     سنة على بوابة السرعة (u011). كل رمز رقمي يُحسب بعدد أرقامه تقريباً لكلماته. */
-  const words = String(dialogueText || '').trim().split(/\s+/).filter(Boolean)
-    .reduce((total, token) => {
-      const digits = (token.match(/\d/g) || []).length
-      return total + (digits >= 2 ? Math.min(6, digits) : 1)
-    }, 0)
+  const words = String(dialogueText || '').trim().split(/\s+/).filter(Boolean).length
   const issues = []
   if (!existsSync(file) || statSync(file).size < 4000) issues.push('ملف فارغ أو صغير بصورة مريبة')
   if (dur < 0.35) issues.push(`مدة مبتورة (${dur.toFixed(2)}ث)`)
@@ -3544,17 +3498,7 @@ if (SELF_TEST) {
   const judgedPath = episodeQualityScore({ ...noGeminiBase,
     fullComparison: { importantRatio: 0.95, ratio: 0.90 }, finalJudge: { pass: true, problems: [] } })
   assert(judgedPath.checks.judgeOk, 'مسار الحكم العادي لم يمسه وضع بلا Gemini')
-  // ١١) المنصوب المنوّن: STT يكتب «انطباعاً عابراً» بلا ألف — لا تسقط مداخلة سليمة لذلك
-  const tanween = compareTexts('وليس هذا انطباعاً عابراً', 'وليس هذا انطباع عابر')
-  assert.equal(tanween.importantRatio, 1, 'ألف التنوين المحذوفة في STT لا تُحسب كلمة مفقودة')
-  // ١٢) السنة المنطوقة كلماتٍ تثبت رقمها: «ألفين وثلاثة وعشرين» = 2023
-  assert(heardContainsRisk('نشرت الدراسة عام ألفين وثلاثة وعشرين في مجلة محكمة', { word: '2023', riskLevel: 'high' }),
-    'السنة المسموعة كلماتٍ تثبت نطق رقمها')
-  assert(!heardContainsRisk('نشرت الدراسة عام ألفين وواحد وعشرين في مجلة محكمة', { word: '2023', riskLevel: 'high' }),
-    'سنة مختلفة لا تُحتسب إثباتاً زائفاً')
-  const guarded = compareTexts('نقيس الفهم قبل الدرجة', 'نقيس فهما اخر تماما')
-  assert(guarded.importantRatio < 1, 'الاحتواء الجزئي لا يمنح تطابقاً مجانياً لكلمات مختلفة فعلاً')
-  console.log('✓ اختبارات بوابة البودكاست العربي: 40/40')
+  console.log('✓ اختبارات بوابة البودكاست العربي: 36/36')
   process.exit(0)
 }
 

@@ -46,7 +46,11 @@ const assertions = [
   [!liveSource.toLowerCase().includes('submitmanualdialogue'), 'legacy submitmanualdialogue endpoint must stay retired from all live src files'],
   [fetchBridge.includes('manual-dialogues') && fetchBridge.includes('podcast_dialogues'), 'nightly Firestore-to-repository bridge must remain active'],
   [socialTemplates.includes("type Composition = 'midad' | 'layl' | 'jarida' | 'sharit' | 'mishkat' | 'tawqee'"), 'six signed social compositions must remain present'],
-  [hostingWorkflow.includes('--only firestore:rules,storage'), 'hosting deploy must publish Storage rules with Firestore rules'],
+  /* الصيغة المدموجة firestore:rules,storage كانت العطل نفسه: فشل تفعيل Storage يُسقط
+     قواعد Firestore معه بصمت فيتعطل رفع السيرة. الفصل: قواعد Firestore وحدها بصوت
+     عالٍ (فشلها يفشل النشر)، وStorage محاولة اختيارية بعدها. */
+  [hostingWorkflow.includes('--only firestore:rules') && hostingWorkflow.includes('--only storage'),
+    'hosting deploy must publish Firestore rules standalone (loud) and still attempt Storage rules'],
   [ideaFeatures.includes('window.visualViewport') && ideaFeatures.includes('firstPress'), 'PWA selection toolbar and first-tap quote controls must remain protected'],
   [contentManager.includes('uploadCvPdfToFirestore') && contentManager.includes("'site_cv_files'"), 'CV upload must keep its Storage-independent Firestore bridge'],
   [cvFile.includes("'site_cv_files'") && cvFile.includes('cv-files-v1'), 'public CV reconstruction and local cache must remain active'],

@@ -369,6 +369,10 @@ async function uploadStorageObject(objectName, buffer) {
 
 function originalArticles() {
   const bodies = JSON.parse(readFileSync(resolve(ROOT, 'src/data/bodies.json'), 'utf8'))
+  /* النص المُشكَّل المخفيّ: ملفٌّ اختياري { slug: "النص المقال نفسه مُشكَّلاً بالكامل" }.
+     يُقرأ للنطق وحده ولا يظهر للقارئ أبداً؛ وإن لم يوجد يعمل المقال بالتخمين كالمعتاد. */
+  const vocalizedPath = resolve(ROOT, 'src/data/bodies-vocalized.json')
+  const vocalized = existsSync(vocalizedPath) ? JSON.parse(readFileSync(vocalizedPath, 'utf8')) : {}
   const source = readFileSync(resolve(ROOT, 'src/data.ts'), 'utf8')
   const articleBlock = (source.match(/export const articles = \[([\s\S]*?)\n\]/) || ['', ''])[1]
   const titles = Object.fromEntries(
@@ -377,6 +381,7 @@ function originalArticles() {
   )
   return Object.entries(bodies).map(([slug, body]) => ({
     kind: 'original', slug: safeSlug(slug), title: titles[slug] || slug, body: String(body),
+    bodyVocalized: typeof vocalized[slug] === 'string' ? vocalized[slug] : '',
   }))
 }
 
@@ -399,6 +404,9 @@ async function loadRemoteContent(originals) {
       ...article,
       title: typeof patch.title === 'string' && patch.title.trim() ? patch.title.trim() : article.title,
       body: typeof patch.body === 'string' && patch.body.trim() ? patch.body.trim() : article.body,
+      /* النص المُشكَّل المخفيّ يُقبل أيضاً من اللوحة (content_overrides.patch.bodyVocalized). */
+      bodyVocalized: typeof patch.bodyVocalized === 'string' && patch.bodyVocalized.trim()
+        ? patch.bodyVocalized.trim() : article.bodyVocalized,
     }]
   })
   const siteArticles = siteDocuments.flatMap((document) => {

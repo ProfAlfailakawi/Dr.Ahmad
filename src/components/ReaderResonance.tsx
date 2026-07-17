@@ -75,22 +75,23 @@ export function ArticlePulse({ slug }: { slug: string }) {
     return () => { alive = false }
   }, [slug])
 
-  if (count < 3) return null // نُظهر النبض فقط حين يوجد رنين جمعي حقيقي
-  const ar = (n: number) => n.toLocaleString('ar-KW')
+  // الأثر الصامت (أمر الدكتور): لا أرقام ولا عدّادات — حضورٌ لا مقياس. النبضة وحدها
+  // تقول إن جملةً هنا لامست كثيرين، والقارئ يكتشفها بنفسه. الرنين يظهر فقط حين يكون حقيقياً.
+  void readers
+  if (count < 3) return null
   return (
     <a
       href="#article-body"
-      className="group mt-10 flex items-center gap-4 rounded-2xl border border-hair bg-wash/50 px-5 py-4 transition-colors hover:border-accent/50"
-      aria-label="نبض المقال — الجملة الأكثر حفظاً"
+      className="group mt-10 flex items-center gap-4 rounded-2xl border border-hair bg-wash/40 px-5 py-4 transition-colors hover:border-accent/40"
+      aria-label="نبض المقال — جملةٌ لامست كثيرين"
     >
-      <span className="relative flex h-3 w-3 shrink-0" aria-hidden>
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent/40" />
-        <span className="relative inline-flex h-3 w-3 rounded-full bg-accent" />
+      <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden>
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent/30" />
+        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-accent/80" />
       </span>
-      <span className="text-[.86rem] leading-relaxed text-soft">
-        <span className="font-semibold text-accent">نبض المقال:</span>{' '}
-        توقّف <span className="font-semibold text-ink">{ar(count)}</span> قارئاً عند جملةٍ واحدة هنا
-        {readers > count ? <> — و{ar(readers)} حفظٌ عبر المقال</> : null}. اقرأها.
+      <span className="text-[.85rem] font-light leading-relaxed text-soft">
+        <span className="font-semibold text-accent">نبض المقال —</span>{' '}
+        جملةٌ في هذا النص توقّف عندها كثيرون. اقرأه على مهل، وستعرفها حين تمرّ بها.
       </span>
     </a>
   )
@@ -226,6 +227,10 @@ export function ReaderFingerprint() {
             {data.theme ? <> — أكثر ما يشغلك <span className="text-accent">{data.theme}</span></> : null}.
           </p>
           {data.since ? <p className="mt-2 text-[.82rem] font-light text-soft">منذ {data.since} · تبقى هذه البصمة على جهازك وحده.</p> : null}
+          {/* المرآة: كما تنمو بصمته المعرفية (في السيرة) من كل بحثٍ وكتاب، تنمو بصمتُك من كل جملةٍ لامستك. */}
+          <p className="mt-3 text-[.78rem] font-light italic leading-relaxed text-soft/90">
+            كما لبصمته المعرفية شكلٌ ينمو من كل ما يكتب، لرحلتك بصمةٌ تنمو من كل ما يمسّك.
+          </p>
           {data.lastQuote ? (
             <p className="mt-4 border-r-2 border-accent/35 pe-1 ps-4 text-right text-[.9rem] font-light italic leading-[1.9] text-ink/80">
               «{data.lastQuote.length > 150 ? `${data.lastQuote.slice(0, 147)}…` : data.lastQuote}»

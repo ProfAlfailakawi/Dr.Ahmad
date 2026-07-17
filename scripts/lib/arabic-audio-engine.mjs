@@ -27,6 +27,10 @@ const ROOT = resolve(MODULE_DIR, '../..')
 const LEXICON_FILE = resolve(ROOT, 'scripts/pronunciation-lexicon.json')
 const DIACRITICS = /[\u064B-\u0652\u0670]/g
 const ARABIC_WORD = /[\u0621-\u064A\u0660-\u0669]+/g
+/* \u062A\u062C\u0631\u064A\u062F \u0627\u0644\u062A\u0634\u0643\u064A\u0644 \u0627\u0644\u0643\u0627\u0645\u0644 (\u062D\u0631\u0643\u0627\u062A + \u0634\u062F\u0651\u0629 + \u0633\u0643\u0648\u0646 + \u062A\u0646\u0648\u064A\u0646 + \u0623\u0644\u0641 \u062E\u0646\u062C\u0631\u064A\u0629 + \u062A\u0637\u0648\u064A\u0644) \u2014 \u064A\u064F\u0639\u064A\u062F
+   \u0627\u0644\u0646\u0635 \u0627\u0644\u0645\u064F\u0634\u0643\u064E\u0651\u0644 \u0625\u0644\u0649 \u062D\u0631\u0648\u0641\u0647 \u0627\u0644\u0639\u0627\u0631\u064A\u0629 \u0643\u064A \u0646\u062A\u062D\u0642\u0642 \u0623\u0646\u0647 \u0627\u0644\u0645\u0642\u0627\u0644 \u0646\u0641\u0633\u0647\u060C \u0648\u0646\u0639\u0631\u0636 \u0627\u0644\u0639\u0627\u0631\u064A \u0644\u0644\u0642\u0627\u0631\u0626
+   \u0648\u0646\u064F\u0628\u0642\u064A \u0627\u0644\u0645\u064F\u0634\u0643\u064E\u0651\u0644 \u0644\u0644\u0646\u0637\u0642 \u0648\u062D\u062F\u0647. */
+const stripTashkeel = (value) => String(value || '').replace(/[\u064B-\u0652\u0670\u0640]/g, '')
 
 const executable = (name, configured = '') => {
   const candidates = [configured, `/opt/homebrew/bin/${name}`, `/usr/local/bin/${name}`, `/usr/bin/${name}`, name]
@@ -230,32 +234,42 @@ function clauseSegments(pronunciationText) {
   return tokens.length ? tokens : [String(pronunciationText || '').trim()]
 }
 
-export function planReadingPerformance({ title = '', sourceText, voiceKey = 'fahed' }) {
+export function planReadingPerformance({ title = '', sourceText, vocalizedText = '', voiceKey = 'fahed' }) {
   const voice = READING_VOICES[voiceKey]
   if (!voice) throw new Error(`صوت قراءة غير معروف: ${voiceKey}`)
-  const bodyUnits = segmentArticleForPerformance(sourceText)
+  /* النص المُشكَّل المخفيّ (أمر الدكتور): إن وُجد نصٌّ مُشكَّل هو المقالُ نفسه بحروفه
+     (يطابقه بعد تجريد التشكيل) نقسّمه، ونعرض للقارئ نسخته العارية، ونُغذّي المحرك
+     بالنسخة المُشكَّلة فينطق يقيناً لا تخميناً. أي عدم تطابق ⇐ نتجاهله بأمان ونعود
+     للسلوك المعتاد، فلا يفسد نصٌّ مُشكَّل خاطئ قراءةَ المقال. */
+  const useVocalized = Boolean(vocalizedText)
+    && stripTashkeel(normalizeSpace(vocalizedText)) === stripTashkeel(normalizeSpace(sourceText))
+  const bodyUnits = segmentArticleForPerformance(useVocalized ? vocalizedText : sourceText)
   const rawUnits = title ? [{ sourceText: normalizeSpace(title), isTitle: true }, ...bodyUnits] : bodyUnits
   const units = rawUnits.map((unit, index) => {
-    const kind = unit.isTitle ? 'opening' : sentenceKind(unit.sourceText, index - (title ? 1 : 0), bodyUnits.length)
+    /* raw = النص كما قُسِّم (مُشكَّل للوحدات النصية حين useVocalized؛ العنوان يبقى عارياً).
+       clean = العاري للعرض والتصنيف والإبراز والتحقق؛ raw للنطق وحده. */
+    const raw = unit.sourceText
+    const clean = (useVocalized && !unit.isTitle) ? stripTashkeel(raw) : raw
+    const kind = unit.isTitle ? 'opening' : sentenceKind(clean, index - (title ? 1 : 0), bodyUnits.length)
     const preset = PERFORMANCE[kind] || PERFORMANCE.statement
-    const { pronunciationText, risks } = buildPronunciationText(unit.sourceText)
-    const targetWordsPerMinute = stableBetween(unit.sourceText, `${voiceKey}-wpm`, preset.wpm)
-    const ratePct = stableBetween(unit.sourceText, `${voiceKey}-rate`, preset.rate) + voice.rateBiasPct
-    const pauseAfterMs = stableBetween(unit.sourceText, `${voiceKey}-pause`, preset.after)
+    const { pronunciationText, risks } = buildPronunciationText(raw)
+    const targetWordsPerMinute = stableBetween(clean, `${voiceKey}-wpm`, preset.wpm)
+    const ratePct = stableBetween(clean, `${voiceKey}-rate`, preset.rate) + voice.rateBiasPct
+    const pauseAfterMs = stableBetween(clean, `${voiceKey}-pause`, preset.after)
     const clauses = clauseSegments(pronunciationText)
     const internalBreaks = clauses.slice(0, -1).map((clause, clauseIndex) => ({
       afterClause: clauseIndex,
       durationMs: /[؛:]$/.test(clause) ? stableBetween(clause, 'semi', [180, 300])
         : stableBetween(clause, 'comma', [85, 180]),
     }))
-    const emphasisWords = (unit.sourceText.match(ARABIC_WORD) || [])
+    const emphasisWords = (clean.match(ARABIC_WORD) || [])
       .filter((word) => word.length >= 5 && !/^(الذي|التي|هناك|عندما|ولكن|لذلك)$/.test(word))
-      .sort((left, right) => stableNumber(right, unit.sourceText) - stableNumber(left, unit.sourceText))
+      .sort((left, right) => stableNumber(right, clean) - stableNumber(left, clean))
       .slice(0, kind === 'hook' || kind === 'conclusion' ? 2 : 1)
     return {
       id: `r${String(index + 1).padStart(3, '0')}`,
       isTitle: Boolean(unit.isTitle),
-      sourceText: unit.sourceText,
+      sourceText: clean,
       pronunciationText,
       type: kind,
       emotionalIntent: ['human', 'reflection', 'conclusion'].includes(kind) ? 'إنساني دافئ' : kind === 'warning' ? 'تحذير هادئ' : 'فهم واضح',
@@ -269,13 +283,18 @@ export function planReadingPerformance({ title = '', sourceText, voiceKey = 'fah
       pauseAfterMs,
       internalBreaks,
       emphasisWords,
-      ending: endingDirection(unit.sourceText, kind),
+      ending: endingDirection(clean, kind),
       risks,
       reason: `تصنيف ${kind}؛ عُيّرت السرعة والوقفة لصوت ${voice.label} وفق معنى الوحدة، لا وفق طول الفقرة فقط`,
     }
   })
   const bodyReconstructed = normalizeSpace(units.filter((unit) => !unit.isTitle).map((unit) => unit.sourceText).join(' '))
-  if (bodyReconstructed && bodyReconstructed !== normalizeSpace(sourceText)) throw new Error('خطة القراءة لم تحفظ نص المقال حرفياً')
+  /* التحقق الحرفي: في الوضع المُشكَّل نقارن الحروف العارية (فالعرض عارٍ والأصل قد يحمل
+     تشكيلاً عارضاً)؛ وفي الوضع المعتاد نبقي المقارنة الحرفية الصارمة كما هي. */
+  const integrityOk = useVocalized
+    ? stripTashkeel(bodyReconstructed) === stripTashkeel(normalizeSpace(sourceText))
+    : bodyReconstructed === normalizeSpace(sourceText)
+  if (bodyReconstructed && !integrityOk) throw new Error('خطة القراءة لم تحفظ نص المقال حرفياً')
   return {
     schemaVersion: 1,
     engineVersion: HUMAN_AUDIO_ENGINE_VERSION,

@@ -404,8 +404,8 @@ export async function renderHumanReading({
   mkdirSync(dirname(auditFile), { recursive: true })
   mkdirSync(quarantineDirectory, { recursive: true })
   const startedAt = new Date().toISOString()
-  const plan = planReadingPerformance({ title: article.title, sourceText: article.body, voiceKey })
-  const articleSourceHash = sourceHash({ title: article.title, text: article.body, voice: voice.azure })
+  const plan = planReadingPerformance({ title: article.title, sourceText: article.body, vocalizedText: article.bodyVocalized || '', voiceKey })
+  const articleSourceHash = sourceHash({ title: article.title, text: `${article.body} ${article.bodyVocalized || ''}`, voice: voice.azure })
   let unitResults = []
   try {
     for (const unit of plan.units) {
@@ -513,7 +513,7 @@ export function readingNeedsGeneration({ article, voiceKey, output, auditFile, e
   if (!existsSync(auditFile)) return { needed: false, reason: 'legacy_last_known_good' }
   try {
     const audit = JSON.parse(readFileSync(auditFile, 'utf8'))
-    const expectedSourceHash = sourceHash({ title: article.title, text: article.body, voice: READING_VOICES[voiceKey].azure })
+    const expectedSourceHash = sourceHash({ title: article.title, text: `${article.body} ${article.bodyVocalized || ''}`, voice: READING_VOICES[voiceKey].azure })
     if (audit.status !== 'accepted') return { needed: true, reason: 'previous_not_accepted' }
     if (audit.sourceHash !== expectedSourceHash) return { needed: true, reason: 'source_changed' }
     if (audit.pipelineHash !== HUMAN_READING_PIPELINE_HASH) return { needed: true, reason: 'pipeline_changed' }

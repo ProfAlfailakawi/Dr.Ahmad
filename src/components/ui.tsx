@@ -310,7 +310,6 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: 'ابدأ من هنا',
     items: [
-      { to: '/weekly', label: 'رسالة الأسبوع', highlight: true },
       { to: '/articles', label: 'المقالات الفكرية', allLabel: 'عرض كل المقالات', sub: [
         { to: '/atlas', label: 'سماء المقالات' },
         { to: '/thought-paths', label: 'مسارات الفكرة' },

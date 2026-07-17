@@ -199,29 +199,8 @@ export function numberToArabicWords(value) {
   return parts.join(' و')
 }
 
-/* حذف المراجع الأجنبية من النص المنطوق (بأمر الدكتور: «لا داعي أن يقول للناس المراجع»):
-   أسماء المجلات والجامعات الأجنبية لا تُقرأ في الصوت — تُحذف مع أداة الجر واسم المصدر
-   السابق (في/من + مجلة/جامعة…)، فيبقى المعنى العلمي كاملاً بلا تعثّر لغوي أو صوتي.
-   يمسّ النصّ المنطوق فقط؛ المقال المعروض يحتفظ بمراجعه كما كتبها الدكتور. */
-const AR_LATIN = '[A-Za-z][A-Za-z0-9.&+-]*(?:\\s+[A-Za-z][A-Za-z0-9.&+-]*)*'
-const AR_PREP = '(?:في|من|بـ|ب|لدى|عبر|حسب|وفق|بحسب|نشرت?ها?)'
-const AR_SRC_NOUN = '(?:جامعة|مجلة|دورية|مجلّة|معهد|مؤسسة|شركة|منظمة|صحيفة|موقع|فريق في|مركز)'
-function stripSpokenReferences(text) {
-  let result = String(text || '')
-  // «من جامعة UCLA» / «في مجلة Nature» → أداة جر + اسم مصدر + اسم لاتيني
-  result = result.replace(new RegExp(`${AR_PREP}\\s+${AR_SRC_NOUN}\\s+${AR_LATIN}`, 'g'), '')
-  // «في Harvard Business Review» → أداة جر + اسم لاتيني مباشر
-  result = result.replace(new RegExp(`${AR_PREP}\\s+${AR_LATIN}`, 'g'), '')
-  // أي بقية لاتينية شاردة
-  result = result.replace(new RegExp(AR_LATIN, 'g'), '')
-  return result
-    .replace(/«\s*»/g, '').replace(/\(\s*\)/g, '')
-    .replace(/\s{2,}/g, ' ').replace(/\s+([،.؛:!؟])/g, '$1').replace(/،\s*،/g, '،')
-    .replace(/\s+/g, ' ').trim()
-}
-
 export function buildPronunciationText(sourceText) {
-  let pronunciationText = stripSpokenReferences(String(sourceText || ''))
+  let pronunciationText = String(sourceText || '')
   const risks = []
   for (const [written, rule] of lexiconEntries()) {
     if (!pronunciationText.includes(written)) continue
@@ -239,7 +218,10 @@ export function buildPronunciationText(sourceText) {
     risks.push({ word: number, type: 'رقم', riskLevel: 'high', selectedPronunciation: spoken, method: 'words', reason: 'منع القراءة الرقمية الآلية' })
     return spoken
   })
-  // لم تعد هناك حروف لاتينية في النص المنطوق (حُذفت المراجع أعلاه)، فلا حاجة لمخاطر لاتينية.
+  for (const match of String(sourceText || '').matchAll(/[A-Za-z][A-Za-z0-9.+-]*(?:\s+[A-Za-z][A-Za-z0-9.+-]*)*/g)) {
+    if (!risks.some((risk) => risk.word.includes(match[0]))) risks.push({ word: match[0], type: 'مصطلح لاتيني', riskLevel: 'high',
+      selectedPronunciation: '', method: 'review', reason: 'يحتاج نقحرة أو قاعدة قاموس معتمدة قبل النشر' })
+  }
   return { pronunciationText, risks }
 }
 
@@ -453,7 +435,7 @@ export function compareSpeechText(intended, heard) {
   }
 }
 
-export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUnavailable = false, dialogue = false, minimumScore = 95 }) {
+export function humanLikenessGate({ plan, technical, sttComparisons = [], dialogue = false, minimumScore = 95 }) {
   const units = plan?.units || plan?.utterances || []
   const rates = units.map((unit) => Number(unit.ratePct || 0))
   const pauses = units.map((unit) => Number(unit.pauseAfterMs || 0)).filter((value) => value >= 0)
@@ -475,10 +457,7 @@ export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUna
     loudnessSafe: Number(technical?.loudness?.integratedLufs) >= -17.2 && Number(technical?.loudness?.integratedLufs) <= -14.8
       && Number(technical?.loudness?.truePeakDbtp) <= -1,
     formatSafe: Number(technical?.probe?.sampleRate) === 44100 && Number(technical?.probe?.channels) === 1,
-    /* عند تعطّل مُتحقق STT كليًا (لا وحدة قابلة للتحقق) يتنزّل الفحص إلى البوابات
-       الصوتية الحتمية (الصمت/الجهارة/الصيغة/الإيقاع) بدل تجميد كل مقال؛ ويعود
-       صارمًا تلقائيًا لحظة عودة STT. أمر الدكتور: «حل المشاكل كلها … تجاوزها بذكاء». */
-    sttFidelity: sttUnavailable ? true : sttRatio >= 0.95,
+    sttFidelity: sttRatio >= 0.95,
     dialogueIndependence: !dialogue || (() => {
       const speakers = new Set(units.map((unit) => unit.speaker))
       const overlaps = units.filter((unit) => unit.allowOverlap || Number(unit.overlapMs || 0) > 0).length
@@ -495,10 +474,8 @@ export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUna
   const critical = ['questionDirection', 'boundarySilenceRemoved', 'loudnessSafe', 'formatSafe', 'sttFidelity']
   const criticalFailed = critical.filter((key) => !measures[key])
   return { score, minimumScore, pass: score >= minimumScore && criticalFailed.length === 0,
-    measures, failed, criticalFailed, sttDegraded: Boolean(sttUnavailable),
-    note: sttUnavailable
-      ? 'فحص STT كان متعطّلًا؛ اعتُمدت البوابات الصوتية الحتمية وحدها (يعود STT صارمًا تلقائيًا عند توفّره). الاعتماد النهائي Blind A/B بشري.'
-      : 'الدرجة وكيل تقني قابل للقياس وليست ادعاءً بأن الصوت بشري فعلاً؛ الاعتماد النهائي يتطلب Blind A/B بشرياً.' }
+    measures, failed, criticalFailed,
+    note: 'الدرجة وكيل تقني قابل للقياس وليست ادعاءً بأن الصوت بشري فعلاً؛ الاعتماد النهائي يتطلب Blind A/B بشرياً.' }
 }
 
 export function assembleReading({ segments, output, workDir }) {

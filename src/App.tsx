@@ -11,7 +11,6 @@ import Home from './pages/Home'
 /* تقسيم الكود: الرئيسية فورية، وبقية الصفحات تُحمَّل عند زيارتها فقط —
    فأول تحميل للموقع أخف بكثير (نصوص المقالات الـ٢٧٦ك لا تنزل إلا لقارئها) */
 const Publications = lazy(() => import('./pages/Publications'))
-const WeeklyLetter = lazy(() => import('./pages/WeeklyLetter'))
 const Research = lazy(() => import('./pages/Research'))
 const Articles = lazy(() => import('./pages/Articles'))
 const Search = lazy(() => import('./pages/Search'))
@@ -114,8 +113,6 @@ function AnimatedRoutes() {
         <Route path="/thought-paths" element={<ThoughtPaths />} />
         <Route path="/articles/:slug" element={<ArticleDetail />} />
         <Route path="/atlas" element={<Atlas />} />
-        <Route path="/weekly" element={<WeeklyLetter />} />
-        <Route path="/الأسبوع" element={<WeeklyLetter />} />
         <Route path="/media" element={<Media />} />
         <Route path="/questions" element={<Questions />} />
         <Route path="/radar" element={<Radar />} />

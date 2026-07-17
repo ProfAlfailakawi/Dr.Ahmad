@@ -981,6 +981,34 @@ const normalizeAr = (s) => stripDiacritics(s)
   .replace(/[^ء-ي0-9a-zA-Z\s]/g, ' ')
   .replace(/\s+/g, ' ').trim()
 
+/* معرّب الأعداد العكسي: STT يكتب السنة أحياناً كلماتٍ («ألفين وثلاثة وعشرين») لا
+   أرقاماً — نُقيّم كل نافذة كلمات عددية متتالية في المسموع ونجمع قيمتها، فيثبت
+   نطق «2023» متى ساوت نافذةٌ قيمتَه (u011: كلمة خطرة لم يثبت نطقها: 2023). */
+const AR_NUM_VALUES = new Map(Object.entries({
+  صفر: 0, واحد: 1, واحده: 1, اثنان: 2, اثنين: 2, ثلاثه: 3, اربعه: 4, خمسه: 5, سته: 6,
+  سبعه: 7, ثمانيه: 8, تسعه: 9, عشره: 10, عشر: 10, احد: 1, اثنا: 2, اثني: 2,
+  عشرين: 20, ثلاثين: 30, اربعين: 40, خمسين: 50, ستين: 60, سبعين: 70, ثمانين: 80, تسعين: 90,
+  مئه: 100, مائه: 100, مئتين: 200, مائتين: 200, ثلاثمئه: 300, اربعمئه: 400, خمسمئه: 500,
+  ستمئه: 600, سبعمئه: 700, ثمانمئه: 800, تسعمئه: 900,
+  الف: 1000, الفين: 2000, الاف: 1000, مليون: 1000000,
+}))
+function heardNumberValues(heardNormalized) {
+  const tokens = heardNormalized.split(' ').map((token) => token.replace(/^و/, ''))
+  const values = new Set()
+  for (let start = 0; start < tokens.length; start++) {
+    if (!AR_NUM_VALUES.has(tokens[start])) continue
+    let sum = 0
+    for (let end = start; end < tokens.length && AR_NUM_VALUES.has(tokens[end]); end++) {
+      const value = AR_NUM_VALUES.get(tokens[end])
+      // «ثلاثة آلاف»: مضروب لا مجموع
+      if ((value === 1000 || value === 1000000) && sum > 0 && sum < 1000) sum *= value
+      else sum += value
+      values.add(sum)
+    }
+  }
+  return values
+}
+
 function heardContainsRisk(heardText, risk, preferredAlias = '') {
   const heard = normalizeAr(heardText)
   const glued = heard.replace(/\s+/g, '')
@@ -990,6 +1018,7 @@ function heardContainsRisk(heardText, risk, preferredAlias = '') {
   if (/\d/.test(original)) {
     const digits = normalizeAr(original).replace(/\D/g, '')
     if (digits && heard.replace(/\D/g, '').includes(digits)) return true
+    if (digits && heardNumberValues(heard).has(Number(digits))) return true
   }
   return candidates.some((candidate) => heard.includes(candidate) || glued.includes(candidate.replace(/\s+/g, '')))
 }
@@ -3518,9 +3547,14 @@ if (SELF_TEST) {
   // ١١) المنصوب المنوّن: STT يكتب «انطباعاً عابراً» بلا ألف — لا تسقط مداخلة سليمة لذلك
   const tanween = compareTexts('وليس هذا انطباعاً عابراً', 'وليس هذا انطباع عابر')
   assert.equal(tanween.importantRatio, 1, 'ألف التنوين المحذوفة في STT لا تُحسب كلمة مفقودة')
+  // ١٢) السنة المنطوقة كلماتٍ تثبت رقمها: «ألفين وثلاثة وعشرين» = 2023
+  assert(heardContainsRisk('نشرت الدراسة عام ألفين وثلاثة وعشرين في مجلة محكمة', { word: '2023', riskLevel: 'high' }),
+    'السنة المسموعة كلماتٍ تثبت نطق رقمها')
+  assert(!heardContainsRisk('نشرت الدراسة عام ألفين وواحد وعشرين في مجلة محكمة', { word: '2023', riskLevel: 'high' }),
+    'سنة مختلفة لا تُحتسب إثباتاً زائفاً')
   const guarded = compareTexts('نقيس الفهم قبل الدرجة', 'نقيس فهما اخر تماما')
   assert(guarded.importantRatio < 1, 'الاحتواء الجزئي لا يمنح تطابقاً مجانياً لكلمات مختلفة فعلاً')
-  console.log('✓ اختبارات بوابة البودكاست العربي: 38/38')
+  console.log('✓ اختبارات بوابة البودكاست العربي: 40/40')
   process.exit(0)
 }
 

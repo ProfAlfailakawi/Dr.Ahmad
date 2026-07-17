@@ -306,11 +306,6 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   const toolbarRef = useRef<HTMLDivElement>(null)
   const [toolbarX, setToolbarX] = useState<number | null>(null)
   const [view, setView] = useState<null | 'thread' | 'card'>(null)
-  // أي نافذة مفتوحة تُخفي زر العودة للأعلى كي لا يغطي المحتوى
-  useEffect(() => {
-    document.body.classList.toggle('modal-sheet-open', view !== null)
-    return () => document.body.classList.remove('modal-sheet-open')
-  }, [view])
   const [img, setImg] = useState<string | null>(null)
   const [cardQuote, setCardQuote] = useState('')
   const [template, setTemplate] = useState<CardTemplateKey>('midad')

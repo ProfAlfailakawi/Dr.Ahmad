@@ -1,6 +1,7 @@
 import { useSeo } from '../components/seo'
 import { Accordion, FadeUp, Label, Page, Reveal } from '../components/ui'
 import { CvSectionEditor } from '../components/admin/CvSectionEditor'
+import CitationImpact from '../components/CitationImpact'
 import KnowledgeFingerprint from '../components/KnowledgeFingerprint'
 import { bio, doctorate, links } from '../data'
 import { useCmsContent } from '../lib/content'
@@ -141,8 +142,9 @@ export default function CV() {
             </div>
           </FadeUp>
 
-          {/* بطاقة استشهادات Google Scholar محجوبة مؤقتاً بأمر الدكتور (17 يوليو 2026) —
-              تعود لاحقاً بعد اكتمال بيانات الملف العام. المكوّن CitationImpact جاهز كما هو. */}
+          <FadeUp delay={0.06}>
+            <CitationImpact />
+          </FadeUp>
 
           {/* البصمة المعرفية — توقيع بصري مبني من بيانات المسيرة نفسها */}
           <FadeUp delay={0.08}>

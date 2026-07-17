@@ -322,20 +322,6 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
   .page-head::after { animation: none; opacity: .42; }
 }
 
-/* على الشاشات الضيقة يلتف العنوان الفرعي حتى حافة الرأس فيقطعه الخط الزخرفي مهما
-   تأخر — الزينة تُحذف حيث تزاحم الكلام (ملاحظة الدكتور: «الخط داخل مع الكلام»). */
-@media (max-width: 900px) {
-  .page-head::after { display: none; }
-}
-
-/* أي بطاقة/نافذة مفتوحة تُخفي زر العودة للأعلى كلياً — لا يغطي كلام البطاقات أبداً
-   (ملاحظة الدكتور: «السهم مغطي»). */
-body.modal-sheet-open .floating-actions {
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .2s ease;
-}
-
 .site-footer {
   position: relative;
   overflow: hidden;

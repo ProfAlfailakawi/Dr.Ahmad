@@ -71,24 +71,13 @@ jobs:
           fi
           printf '%s' "$FIREBASE_DATA_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-data-service-account.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-data-service-account.json"
-          # قواعد Firestore أولاً ومنفصلة: كانت مدموجة مع Storage في أمر واحد، وفشل تفعيل
-          # Storage (خدمة غير مفعلة في المشروع) كان يُسقط نشر قواعد Firestore معه —
-          # فبقيت قواعد site_cv_files غائبة عن الإنتاج ورفض رفع السيرة بـpermission-denied.
           if ! npx --yes firebase-tools@latest deploy \
             --config firebase.data.json \
-            --only firestore:rules \
+            --only firestore:rules,storage \
             --project drahmad-8e9e2 \
             --non-interactive; then
-            echo "::error::Firestore rules deploy failed — CV uploads and CMS writes will stay broken until this succeeds."
-            exit 1
-          fi
-          # قواعد Storage اختيارية (نظام السيرة يتعمد عدم الاعتماد على Storage أصلاً)
-          if ! npx --yes firebase-tools@latest deploy \
-            --config firebase.data.json \
-            --only storage \
-            --project drahmad-8e9e2 \
-            --non-interactive; then
-            echo "::warning::Storage rules deploy failed (Storage API likely not enabled). CV uploads do not need it; enable the API later if Storage becomes required."
+            echo "::warning::Firestore/Storage rules deploy failed. Hosting deploy will continue so the public site is not blocked."
+            echo "::warning::Grant the data service account Firebase Rules Admin + Service Usage Viewer on drahmad-8e9e2 so Storage uploads work automatically."
           fi
         env:
           FIREBASE_DATA_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}

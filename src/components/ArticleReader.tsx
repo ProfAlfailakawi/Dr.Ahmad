@@ -378,12 +378,6 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
   const [quotes, setQuotesState] = useState<SavedQuote[]>(() => readSavedQuotes())
   const [copiedId, setCopiedId] = useState('')
   const [xray, setXray] = useState<XrayTerm | null>(null)
-
-  // بطاقة مفتوحة = زر «العودة للأعلى» يختفي فلا يغطي كلامها (ملاحظة الدكتور: السهم مغطي)
-  useEffect(() => {
-    document.body.classList.toggle('modal-sheet-open', Boolean(xray))
-    return () => document.body.classList.remove('modal-sheet-open')
-  }, [xray])
   const initialProgress = useMemo(() => readJson<{ progress?: number; updatedAt?: number }>(`${PROGRESS_PREFIX}${article.slug}`, {}), [article.slug])
   const [showResume, setShowResume] = useState(false)
 

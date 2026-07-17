@@ -1116,39 +1116,25 @@ function VisualTemplateCard({ template }: { template: SocialVisualTemplate }) {
   /* المعاينة هي الصورة الحقيقية المرسومة بمحرك «الطبعة الفاخرة» نفسه —
      ما تراه هنا هو ملف PNG الذي سيُنزَّل حرفياً، لا تقليد CSS تقريبي. */
   const [previewUrl, setPreviewUrl] = useState('')
-  const [renderError, setRenderError] = useState('')
-  const [renderNonce, setRenderNonce] = useState(0)
   useEffect(() => {
     let active = true
     let objectUrl = ''
     setPreviewUrl('')
-    setRenderError('')
     void renderSocialPng(template)
       .then((blob) => {
         if (!active) return
         objectUrl = URL.createObjectURL(blob)
         setPreviewUrl(objectUrl)
       })
-      .catch((reason) => {
-        /* الفشل الصامت («أرسم القالب…» للأبد) حرمنا من معرفة السبب عند الدكتور —
-           الآن البطاقة تنطق بالخطأ وتعرض إعادة المحاولة */
-        if (active) setRenderError(reason instanceof Error ? reason.message : 'تعذّر رسم القالب في هذا المتصفح')
-      })
+      .catch(() => { /* تبقى البطاقة بحالة الرسم */ })
     return () => { active = false; if (objectUrl) URL.revokeObjectURL(objectUrl) }
-  }, [template, renderNonce])
+  }, [template])
   return (
     <div className="overflow-hidden rounded-2xl border border-hair bg-canvas">
       <div className="relative overflow-hidden bg-wash" style={{ aspectRatio: `${template.width} / ${template.height}` }}>
         {previewUrl
           ? <img src={previewUrl} alt={template.title} className="h-full w-full object-cover" />
-          : renderError
-            ? (
-              <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-4 text-center">
-                <p className="text-[.72rem] leading-relaxed text-soft">{renderError}</p>
-                <button type="button" onClick={() => setRenderNonce((n) => n + 1)} className="rounded-full border border-hair px-3 py-1.5 text-[.72rem] font-semibold text-accent transition-colors hover:border-accent">إعادة الرسم</button>
-              </div>
-            )
-            : <div className="flex h-full w-full items-center justify-center text-[.74rem] text-soft">أرسم القالب…</div>}
+          : <div className="flex h-full w-full items-center justify-center text-[.74rem] text-soft">أرسم القالب…</div>}
       </div>
       <div className="flex items-center justify-between gap-3 p-3">
         <span className="text-[.72rem] text-soft"><span className="font-semibold text-accent">{compositionNameOf(template.layout)}</span> · {template.format}</span>

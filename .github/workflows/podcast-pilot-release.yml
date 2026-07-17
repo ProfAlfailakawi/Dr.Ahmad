@@ -7,10 +7,6 @@ on:
         description: 'Slug واحد أو أكثر مفصولة بفواصل'
         required: false
         default: 'how-do-we-assess-without-breaking-the-human-beingarabic'
-      no_gemini:
-        description: 'توليد بلا Gemini إطلاقاً (يتطلب حواراً يدوياً؛ STT مشدد بدل الحكم)'
-        type: boolean
-        default: false
   # التوليد الليلي: يقرأ ما أرسله الدكتور من غرفة الإنتاج (زر «أرسل للتوليد الليلي»)
   schedule:
     - cron: '30 2 * * *'
@@ -96,15 +92,10 @@ jobs:
           # جسر اللوحة: حوار الدكتور المرفوع من غرفة الإنتاج (Word → Firestore) يُسحب
           # ملفات manual-dialogues/ قبل التوليد — وملفات المستودع الموجودة تبقى المعتمدة.
           node scripts/fetch-manual-dialogues.mjs --slugs="$REQUESTED" || true
-          EXTRA_FLAGS=""
-          if [ "${{ inputs.no_gemini }}" = "true" ]; then
-            EXTRA_FLAGS="--no-gemini"
-            echo "⚙ وضع بلا Gemini مفعّل — حوار يدوي + STT مشدد"
-          fi
           for slug in "${ITEMS[@]}"; do
             slug="$(echo "$slug" | xargs)"
             echo "Generating $slug"
-            node scripts/podcast-dialogue.mjs --slug="$slug" --lang=ar --force --reuse-dialogue $EXTRA_FLAGS
+            node scripts/podcast-dialogue.mjs --slug="$slug" --lang=ar --force --reuse-dialogue
           done
           echo "RELEASED_SLUGS=$REQUESTED" >> "$GITHUB_ENV"
         env:

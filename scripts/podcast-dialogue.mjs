@@ -228,10 +228,6 @@ const SELF_TEST = flag('self-test')
 const PREFLIGHT = flag('preflight')
 const PLAN = flag('plan')
 const REUSE_DIALOGUE = flag('reuse-dialogue')
-/* وضع «بلا Gemini» — بأمر الدكتور للحلقات اليدوية: هو كاتب الحوار فلا حاجة لكاتب،
-   والفحص يقوم على أذن Azure STT بعتبات مشدَّدة + كل البوابات التقنية (13ث، الوقفات،
-   الذروة، السرعة) + بوابة البشرية التقنية ≥95 — بلا أي استدعاء Gemini يستهلك رصيداً. */
-const NO_GEMINI = flag('no-gemini') || env.PODCAST_NO_GEMINI === '1'
 const CANARY = flag('canary')
 const BAKEOFF = flag('voice-bakeoff')
 const VOICE_AUDITION = flag('voice-audition')
@@ -246,7 +242,7 @@ const REQUIRE_PILOT_GATE = String(env.PODCAST_REQUIRE_PILOT_GATE || 'true').toLo
 const LIGHT = false
 let ARABIC_PRODUCTION_GATE_READY = false
 if (!SELF_TEST && !ROLLBACK_SLUG && !OFFLINE_DRY && !AZURE_KEY) { console.error('✘ AZURE_SPEECH_KEY مفقود'); process.exit(1) }
-if (!SELF_TEST && !ROLLBACK_SLUG && !OFFLINE_DRY && !VOICE_AUDITION && !VOICE_FINALIST_RETEST && !MALE_FINALIST_RETEST && !PREFLIGHT && !NO_GEMINI && !GEMINI_KEY) { console.error('✘ GEMINI_API_KEY أو GOOGLE_API_KEY مفقود'); process.exit(1) }
+if (!SELF_TEST && !ROLLBACK_SLUG && !OFFLINE_DRY && !VOICE_AUDITION && !VOICE_FINALIST_RETEST && !MALE_FINALIST_RETEST && !PREFLIGHT && !GEMINI_KEY) { console.error('✘ GEMINI_API_KEY أو GOOGLE_API_KEY مفقود'); process.exit(1) }
 if (!SELF_TEST) {
   const acquire = () => writeFileSync(LOCK_FILE, JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }), { flag: 'wx' })
   try { acquire() }
@@ -1525,15 +1521,6 @@ async function riskAnalyze(utts, { tolerant = false } = {}) {
      بالقاموس والأنماط. نص الحوار لا يُمس في كل الأحوال، وبوابات الصوت الفعلية
      (STT + الحكم + حد 13ث) تبقى كاملة بلا أي تخفيف.
      tolerant=true (إعادة تحليل مداخلة مُعاد صياغتها): جولات أقل قبل الملاذ نفسه. */
-  if (NO_GEMINI) {
-    // بلا محلل ذكي: القاموس والأنماط الحتمية يتوليان الكشف، والنص يذهب كما كتبه الدكتور
-    console.log(`  ⓘ وضع بلا Gemini: كشف نطقي حتمي بالقاموس والأنماط (${utts.length} مداخلة)`)
-    return utts.map((u, idx) => {
-      const merged = new Map()
-      for (const risk of deterministicRisks(u.text)) merged.set(normalizeAr(risk.word), risk)
-      return { idx, pronunciationText: u.text, risks: [...merged.values()] }
-    })
-  }
   const CHUNK = 8
   const lexCtx = `القاموس والذاكرة المعتمدان (التزم بهما حرفياً):\n${JSON.stringify(lexiconContext(), null, 1)}`
   const results = new Array(utts.length)
@@ -1767,11 +1754,7 @@ async function evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnal
   const missingNegations = comparison.missing.filter((word) => ['لا', 'لم', 'لن', 'ليس', 'ليست', 'ما', 'غير', 'دون'].includes(word))
 
   let verdict
-  if (NO_GEMINI) {
-    /* وضع بلا Gemini بأمر الدكتور (الحوار يدوي): لا حكم صوتي — التعويض بعتبات STT
-       مشدَّدة أدناه، والبوابات التقنية (13ث، السرعة، الوقفات، الذروة) كاملة كما هي. */
-    verdict = { pass: true, problems: [], noGemini: true }
-  } else try {
+  try {
     verdict = await audioJudge(path, intended, heard, riskAnalysis.risks, dialogueText, { ...u, actualWordsPerMinute: technical.wpm })
   } catch (error) {
     /* Fail closed: لا يستطيع STT وحده إثبات الفتحة والكسرة أو النبرة. */
@@ -1779,10 +1762,9 @@ async function evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnal
   }
   const verdictPass = verdict.pass === true && verdict.problems.length === 0
   // عتبتا التطابق النصي مع STT: القراءة الطبيعية الفصيحة نادراً ما تبلغ 0.95 لقصور STT نفسه،
-  // والحَكَم الصوتي (الذي يستمع فعلاً) هو الفيصل. عتبتان واقعيتان قابلتان للضبط بالبيئة —
-  // وفي وضع بلا Gemini تُرفعان قسرياً لأن STT صار خط الدفاع الوحيد عن النص.
-  const IMPORTANT_MIN = Math.max(Number(env.PODCAST_STT_IMPORTANT_MIN || 0.85), NO_GEMINI ? 0.92 : 0)
-  const RATIO_MIN = Math.max(Number(env.PODCAST_STT_RATIO_MIN || 0.80), NO_GEMINI ? 0.88 : 0)
+  // والحَكَم الصوتي (الذي يستمع فعلاً) هو الفيصل. عتبتان واقعيتان قابلتان للضبط بالبيئة.
+  const IMPORTANT_MIN = Number(env.PODCAST_STT_IMPORTANT_MIN || 0.85)
+  const RATIO_MIN = Number(env.PODCAST_STT_RATIO_MIN || 0.80)
   const pass = verdictPass && highMissing.length === 0 && missingNegations.length === 0
     && comparison.importantRatio >= IMPORTANT_MIN && comparison.ratio >= RATIO_MIN
   const score = pass
@@ -1868,7 +1850,6 @@ async function calibrateProductionPlan({ utterance, voice, text, subs, lang, tem
 }
 
 async function safeRephrase(dialogueText, sourceText, reason, stubbornWords = []) {
-  if (NO_GEMINI) return null
   // البند العاشر: إعادة الصياغة الموجّهة — إن عجز Azure عن اسمٍ أجنبيٍّ قصير بعد كل المرشحين،
   // نتجنّبه (نذكره مرة، أو نستبدله بوصفٍ دقيق) دون حذف أي معلومة أو إضعاف الأسلوب.
   const avoid = [...new Set(stubbornWords.filter(Boolean))]
@@ -2370,11 +2351,7 @@ function episodeQualityScore({ technicalAudit, fullComparison, finalJudge, trans
     : Array.isArray(technicalAudit?.longSilences) ? technicalAudit.longSilences.length === 0 : false
   const peakOk = !Number.isFinite(Number(technicalAudit?.peakDb)) || Number(technicalAudit.peakDb) <= -1
   const sttOk = Number(fullComparison?.importantRatio || 0) >= 0.95 && Number(fullComparison?.ratio || 0) >= 0.90
-  /* في وضع بلا Gemini تُستبدل نقاط الحكم الثلاثون بعتبة STT مشددة على الحلقة كاملة
-     (0.97/0.93) — فلا تُمنح نقاط الحكم مجاناً، بل تُشترى بدقة نصية أعلى. */
-  const judgeOk = finalJudge?.noGemini === true
-    ? Number(fullComparison?.importantRatio || 0) >= 0.97 && Number(fullComparison?.ratio || 0) >= 0.93
-    : finalJudge?.pass === true && (!Array.isArray(finalJudge?.problems) || finalJudge.problems.length === 0)
+  const judgeOk = finalJudge?.pass === true && (!Array.isArray(finalJudge?.problems) || finalJudge.problems.length === 0)
   const transcriptOk = Array.isArray(transcript) && transcript.length >= 8
   const score = Math.round(
     (judgeOk ? 30 : 0)
@@ -2418,15 +2395,11 @@ function dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudg
   const dimensions = ['humanLikeness', 'warmth', 'semanticDelivery', 'questionNaturalness',
     'pauseNaturalness', 'pronunciation', 'rhythmVariety', 'endingVariety', 'nonBroadcastTone',
     'speakerIndependence']
-  const noGemini = finalJudge?.noGemini === true
   const judgeScores = Object.fromEntries(dimensions.map((key) => [key, Number(finalJudge?.[key] || 0)]))
-  const minimumJudgeDimension = noGemini ? null : Math.min(...Object.values(judgeScores))
-  const judgePass = noGemini ? true : (finalJudge?.pass === true && minimumJudgeDimension >= 95)
+  const minimumJudgeDimension = Math.min(...Object.values(judgeScores))
+  const judgePass = finalJudge?.pass === true && minimumJudgeDimension >= 95
   return { pass: proxy.pass && judgePass, minimumScore: 95, proxy, judgeScores,
-    minimumJudgeDimension, mode: noGemini ? 'proxy-only' : 'proxy+judge',
-    note: noGemini
-      ? 'وضع بلا Gemini: البوابة التقنية للبشرية (≥95) هي الفيصل مع STT المشدد — بأمر الدكتور للحوار اليدوي.'
-      : 'بوابة تقنية + حكم سمعي مستقل؛ لا تُعد إثباتاً أن الصوت إنسان حقيقي.' }
+    minimumJudgeDimension, note: 'بوابة تقنية + حكم سمعي مستقل؛ لا تُعد إثباتاً أن الصوت إنسان حقيقي.' }
 }
 
 async function validateDialogueFidelity(article, script) {
@@ -2470,11 +2443,6 @@ async function transcribeAssembledEpisode(mp3, timeline, locale = 'ar-KW') {
 }
 
 async function judgeFullEpisode(mp3, intended, stt, transcript, risks) {
-  if (NO_GEMINI) {
-    /* بوابة الحلقة الكاملة في وضع بلا Gemini: عتبات STT المشددة (0.97/0.93) داخل
-       episodeQualityScore تحل محل نقاط الحكم الثلاثين، وبوابة البشرية التقنية تبقى. */
-    return { pass: true, problems: [], minimumDimension: null, noGemini: true }
-  }
   const bytes = readFileSync(mp3)
   if (bytes.length > 18 * 1024 * 1024) throw new Error('الحلقة أكبر من حد الحكم الصوتي المباشر')
   const verdict = await gemini(JUDGE_SYSTEM, [
@@ -2843,8 +2811,6 @@ async function produce(article, lang) {
     let script = null, lintIssues = [], fidelity = { pass: true, problems: [] }
     // حوار الدكتور اليدوي: وجود الملف = هو المصدر الوحيد للنص. Gemini لا يكتب حرفاً.
     const manualDialoguePath = resolve(ROOT, 'manual-dialogues', `${article.slug}.json`)
-    if (NO_GEMINI && !(lang === 'ar' && existsSync(manualDialoguePath)))
-      return quarantine('وضع بلا Gemini يتطلب حواراً يدوياً في manual-dialogues/ — لا كاتب آلي في هذا الوضع')
     if (lang === 'ar' && existsSync(manualDialoguePath)) {
       MANUAL_TEXT_MODE = true
       const manual = JSON.parse(readFileSync(manualDialoguePath, 'utf8'))
@@ -2884,7 +2850,7 @@ async function produce(article, lang) {
             emphasisWords: utterance.emphasisWords || [], pronunciationNotes: '', _index: index })) }
         normalizeMechanics(script)
         lintIssues = lintScript(script, lang)
-        if (!lintIssues.length && lang === 'ar' && !NO_GEMINI) fidelity = await validateDialogueFidelity(article, script)
+        if (!lintIssues.length && lang === 'ar') fidelity = await validateDialogueFidelity(article, script)
         if (!fidelity.pass) lintIssues.push(...fidelity.problems.map((problem) => `إسناد: ${problem.issue || problem}`))
         if (!lintIssues.length) console.log('  ↷ أُعيد استخدام dialogueText المجتاز من الخطة السابقة')
         else script = null
@@ -3478,19 +3444,7 @@ if (SELF_TEST) {
   const statementSSML = buildSSML({ speaker: 'A', delivery: 'statement', ending: 'final', ratePct: 0,
     text: 'هذه جملة خبرية واحدة' }, 'هذه جملة خبرية واحدة', [], 'ar-KW-FahedNeural', 'ar')
   assert(/pitch="[+-]?\d+%"/.test(statementSSML), 'الخبر المفرد يبقى سليم البناء بعد إصلاح موضع النهاية')
-  // ١٠) وضع بلا Gemini: نقاط الحكم لا تُمنح مجاناً بل تُشترى بعتبة STT مشددة (0.97/0.93)
-  const noGeminiBase = { technicalAudit: { dur: 200, size: 4_000_000, unexpectedLongSilences: [], peakDb: -2 },
-    transcript: Array.from({ length: 12 }, () => ({})) }
-  const strictPass = episodeQualityScore({ ...noGeminiBase,
-    fullComparison: { importantRatio: 0.98, ratio: 0.94 }, finalJudge: { noGemini: true, pass: true, problems: [] } })
-  assert(strictPass.pass && strictPass.checks.judgeOk, 'بلا Gemini: STT فائق الدقة يشتري نقاط الحكم وتجتاز الحلقة')
-  const strictFail = episodeQualityScore({ ...noGeminiBase,
-    fullComparison: { importantRatio: 0.95, ratio: 0.90 }, finalJudge: { noGemini: true, pass: true, problems: [] } })
-  assert(!strictFail.checks.judgeOk && !strictFail.pass, 'بلا Gemini: STT عند الحد العادي فقط لا يكفي — لا نقاط حكم مجانية')
-  const judgedPath = episodeQualityScore({ ...noGeminiBase,
-    fullComparison: { importantRatio: 0.95, ratio: 0.90 }, finalJudge: { pass: true, problems: [] } })
-  assert(judgedPath.checks.judgeOk, 'مسار الحكم العادي لم يمسه وضع بلا Gemini')
-  console.log('✓ اختبارات بوابة البودكاست العربي: 36/36')
+  console.log('✓ اختبارات بوابة البودكاست العربي: 33/33')
   process.exit(0)
 }
 
@@ -3846,13 +3800,12 @@ if (flag('voice-audition')) {
   process.exit(0)
 }
 
-const requiresGeminiNow = !NO_GEMINI && !OFFLINE_DRY && !PREFLIGHT && (BAKEOFF || CANARY || DRY || PLAN || Boolean(opt('slug'))
+const requiresGeminiNow = !OFFLINE_DRY && !PREFLIGHT && (BAKEOFF || CANARY || DRY || PLAN || Boolean(opt('slug'))
   || Boolean(opt('latest')) || flag('nightly'))
 if (requiresGeminiNow) {
   try { await assertGeminiBillingReady() }
   catch (error) { console.error(`⛔ ${error.message}`); process.exit(4) }
 }
-if (NO_GEMINI) console.log('⚙ وضع بلا Gemini: STT مشدد (0.92/0.88 للمقطع، 0.97/0.93 للحلقة) + البوابات التقنية كاملة — بلا أي استهلاك رصيد')
 const voicesForPreflight = BAKEOFF
   ? [] // الاكتشاف الديناميكي يجري داخل الاختبار قبل اختيار أي صوت
   : [VOICES.ar.A.azure, VOICES.ar.B.azure]

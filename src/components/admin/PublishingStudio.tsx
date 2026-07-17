@@ -1102,14 +1102,36 @@ function standaloneVisualTemplates(idea: string, purpose: string): SocialVisualT
   const body = purpose.trim() || 'اكتب الجملة، واختر القالب، ثم نزّل الصورة الجاهزة للنشر.'
   const topic = detectVisualTopic(`${title} ${body}`)
   const shared = { platform: 'instagram' as const, width: 1080, height: 1350, topic, title, body, footer: 'د. أحمد حسين الفيلكاوي · dr-alfailakawi.com' }
-  return [
-    { ...shared, id: `standalone-midad-${title}`, format: 'منشور مستقل 1080×1350', layout: 'orbit', kicker: 'المداد' },
-    { ...shared, id: `standalone-layl-${title}`, format: 'منشور مستقل 1080×1350', layout: 'dark', kicker: 'الليل' },
-    { ...shared, id: `standalone-jarida-${title}`, format: 'منشور مستقل 1080×1350', layout: 'editorial', kicker: 'الجريدة' },
-    { ...shared, id: `standalone-sharit-${title}`, format: 'منشور مستقل 1080×1350', layout: 'split', kicker: 'الشريط' },
-    { ...shared, id: `standalone-mishkat-${title}`, format: 'منشور مستقل 1080×1350', layout: 'arch', kicker: 'المشكاة' },
-    { ...shared, id: `standalone-tawqee-${title}`, format: 'منشور مستقل 1080×1350', layout: 'signature', kicker: 'التوقيع' },
+  const all: { key: string; layout: SocialVisualTemplate['layout']; kicker: string }[] = [
+    { key: 'midad', layout: 'question', kicker: 'المداد' },
+    { key: 'layl', layout: 'dark', kicker: 'الليل' },
+    { key: 'jarida', layout: 'editorial', kicker: 'الجريدة' },
+    { key: 'sharit', layout: 'split', kicker: 'الشريط' },
+    { key: 'mishkat', layout: 'arch', kicker: 'المشكاة' },
+    { key: 'tawqee', layout: 'signature', kicker: 'التوقيع' },
+    { key: 'mursim', layout: 'circuit', kicker: 'المرسم' },
+    { key: 'hibr', layout: 'focus', kicker: 'الحبر' },
+    { key: 'fajr', layout: 'horizon', kicker: 'الفجر' },
+    { key: 'sajjada', layout: 'layers', kicker: 'السجادة' },
+    { key: 'ruqaa', layout: 'signal', kicker: 'الرقعة' },
+    { key: 'sada', layout: 'balance', kicker: 'الصدى' },
   ]
+  /* القوالب تفهم الفكرة: الموضوع المكتشف من نص الدكتور يقدّم اللوحات الأنسب له أولاً —
+     التقنية تفتتح بالمرسم والليل، والتربية بالمداد والمشكاة، والمستقبل بالفجر... */
+  const affinity: Record<string, string[]> = {
+    ai: ['mursim', 'layl', 'sada', 'ruqaa', 'sharit', 'jarida'],
+    education: ['midad', 'mishkat', 'jarida', 'sajjada', 'hibr', 'tawqee'],
+    family: ['mishkat', 'midad', 'hibr', 'sajjada', 'tawqee', 'fajr'],
+    research: ['jarida', 'mursim', 'ruqaa', 'midad', 'sada', 'layl'],
+    media: ['sharit', 'sada', 'ruqaa', 'jarida', 'hibr', 'layl'],
+    future: ['fajr', 'mursim', 'layl', 'ruqaa', 'sada', 'sharit'],
+    human: ['hibr', 'tawqee', 'mishkat', 'midad', 'fajr', 'sajjada'],
+    general: ['midad', 'tawqee', 'jarida', 'hibr', 'fajr', 'sada'],
+  }
+  const preferred = affinity[topic] || affinity.general
+  const rank = (key: string) => { const index = preferred.indexOf(key); return index === -1 ? 99 : index }
+  return [...all].sort((left, right) => rank(left.key) - rank(right.key))
+    .map((item) => ({ ...shared, id: `standalone-${item.key}-${title}`, format: 'منشور مستقل 1080×1350', layout: item.layout, kicker: item.kicker }))
 }
 
 function VisualTemplateCard({ template }: { template: SocialVisualTemplate }) {
@@ -1889,7 +1911,7 @@ ${pulsePurpose.trim()}`,
               <div>
                 <p className="text-[.76rem] font-semibold uppercase text-accent">الطبعة الفاخرة</p>
                 <h2 id="standalone-templates-title" className="mt-1 font-display text-2xl font-semibold text-ink">القوالب الستة ظاهرة وجاهزة دائماً.</h2>
-                <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">اكتب فكرتك في الأعلى فتتحدث المعاينات تلقائياً بعد توقفك لحظة. لا تحتاج إلى الضغط على «ابنِ المنشور» حتى ترى المداد والليل والجريدة والشريط والمشكاة والتوقيع.</p>
+                <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">اكتب فكرتك في الأعلى فتتحدث المعاينات تلقائياً بعد توقفك لحظة. لا تحتاج إلى الضغط على «ابنِ المنشور» — اثنتا عشرة لوحة موقّعة تترتب تلقائياً بحسب موضوع فكرتك: التقنية يفتتحها المرسم والليل، والتربية المداد والمشكاة، والمستقبل الفجر…</p>
               </div>
               <span className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.72rem] text-soft">{visualTopicLabel(detectVisualTopic(`${pulseIdea} ${pulsePurpose}`))}</span>
             </div>

@@ -4,6 +4,7 @@ import { loadArticleBodies } from '../../lib/article-bodies'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { getDb } from '../../lib/firebase'
 import podcastAdmin from '../../data/podcast-admin.json'
+import { fingerprintDialogue } from '../../lib/podcast-dialogue-lock'
 
 type Speaker = 'male' | 'female'
 type DialogueTurn = {
@@ -228,6 +229,7 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
   const [articleBody, setArticleBody] = useState('')
   const [documentBusy, setDocumentBusy] = useState(false)
   const [cloudBusy, setCloudBusy] = useState(false)
+  const [queueBusy, setQueueBusy] = useState(false)
   const [audioAvailable, setAudioAvailable] = useState(false)
   const [audioChecking, setAudioChecking] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -316,60 +318,123 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
     setNotice('')
   }
 
-  const save = async (automatic = false) => {
+  const save = async (automatic = false, strict = false) => {
     const localKey = `podcast:manual-dialogue:${slug}`
     const pendingKey = `podcast:pending-cloud:${slug}`
-    localStorage.setItem(localKey, json)
+    let proof: Awaited<ReturnType<typeof fingerprintDialogue>>
+    try {
+      proof = await fingerprintDialogue(turns)
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'الحوار غير صالح للحفظ.')
+      return null
+    }
+    const canonicalJson = JSON.stringify(proof.turns, null, 2)
+    localStorage.setItem(localKey, canonicalJson)
 
     if (!isAdmin) {
       setDirty(false)
-      setNotice('حُفظت المسودة على هذا الجهاز ✓')
-      return
+      setNotice('حُفظت المسودة على هذا الجهاز فقط؛ يلزم دخول المشرف لإرسالها للتوليد.')
+      return null
     }
 
     setCloudBusy(true)
     try {
       const db = await getDb()
       if (!db) throw new Error('firebase-unavailable')
-      const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
+      const { doc, getDoc, serverTimestamp, setDoc } = await import('firebase/firestore')
+      const primary = doc(db, 'podcast_dialogues', slug)
       const payload = {
         slug,
         title: article?.title || slug,
-        turns,
+        turns: proof.turns,
+        source: 'admin-upload',
+        schemaVersion: 2,
+        contentSha256: proof.contentSha256,
+        revisionSha256: proof.revisionSha256,
+        revisionId: proof.revisionId,
+        turnCount: proof.turnCount,
         status: 'draft',
+        savedAtClient: new Date().toISOString(),
         updatedAt: serverTimestamp(),
       }
-      const candidates = [
-        doc(db, 'podcast_dialogues', slug),
-        doc(db, 'social_queue', `podcast-dialogue-${slug}`),
-      ]
-      let lastError: unknown = null
-      const writeCandidates = async () => {
-        for (const reference of candidates) {
-          try {
-            await setDoc(reference, payload, { merge: true })
-            return true
-          } catch (error) {
-            lastError = error
-          }
-        }
-        return false
+      await setDoc(primary, payload, { merge: true })
+
+      // قراءة راجعة إلزامية: لا نعلن نجاح الحفظ حتى نثبت أن Firestore يحمل النص نفسه حرفياً.
+      const readBack = await getDoc(primary)
+      if (!readBack.exists()) throw new Error('cloud-readback-missing')
+      const cloud = readBack.data()
+      const cloudProof = await fingerprintDialogue(normalizeTurns(cloud.turns) || [])
+      if (cloudProof.contentSha256 !== proof.contentSha256
+        || cloudProof.revisionSha256 !== proof.revisionSha256
+        || cloud.contentSha256 !== proof.contentSha256
+        || cloud.revisionSha256 !== proof.revisionSha256
+        || cloud.revisionId !== proof.revisionId
+        || Number(cloud.turnCount) !== proof.turnCount) {
+        throw new Error('cloud-fingerprint-mismatch')
       }
 
-      let cloudSaved = await writeCandidates()
-      if (!cloudSaved && await refresh()) cloudSaved = await writeCandidates()
-      if (!cloudSaved) throw lastError || new Error('cloud-save-failed')
+      // مرآة قديمة احتياطية فقط؛ مسار التوليد لا يقرأها بعد الآن.
+      try {
+        await setDoc(doc(db, 'social_queue', `podcast-dialogue-${slug}`), payload, { merge: true })
+      } catch { /* لا يؤثر في المصدر المقفول */ }
 
       localStorage.removeItem(pendingKey)
+      setTurns(proof.turns)
       setAvailableDraft(null)
       setDirty(false)
-      setNotice(`${automatic ? 'حفظ تلقائي' : 'حُفظت المسودة'} على السحابة وهذا الجهاز ✓`)
-    } catch {
-      localStorage.setItem(pendingKey, json)
+      setNotice(`${automatic ? 'حفظ تلقائي' : 'حُفظ الحوار'} وتطابقت القراءة الراجعة ✓ بصمة ${proof.contentSha256.slice(0, 12)}`)
+      return proof
+    } catch (error) {
+      localStorage.setItem(pendingKey, canonicalJson)
       setDirty(false)
-      setNotice('حُفظت المسودة على هذا الجهاز، وستُرفع إلى السحابة تلقائياً عند عودة الاتصال أو تجدد صلاحية المشرف.')
+      const reason = error instanceof Error ? error.message : 'cloud-save-failed'
+      setNotice(`لم يُثبت الحفظ السحابي، لذلك مُنع الإرسال للتوليد. بقيت نسخة على هذا الجهاز. (${reason})`)
+      if (strict) return null
+      return null
     } finally {
       setCloudBusy(false)
+    }
+  }
+
+  const queueForGeneration = async () => {
+    if (warnings.some((item) => item.includes('بلا نص')) || turns.length < 2) {
+      setNotice('أكمل الحوار أولاً؛ لن يُرسل أي نص ناقص إلى Azure.')
+      return
+    }
+    setQueueBusy(true)
+    try {
+      const proof = await save(false, true)
+      if (!proof) return
+      const db = await getDb()
+      if (!db) throw new Error('firebase-unavailable')
+      const { doc, getDoc, serverTimestamp, setDoc } = await import('firebase/firestore')
+      const productionRef = doc(db, 'podcast_production', slug)
+      await setDoc(productionRef, {
+        status: 'queued',
+        sourceCollection: 'podcast_dialogues',
+        expectedDialogueContentSha256: proof.contentSha256,
+        expectedDialogueRevisionSha256: proof.revisionSha256,
+        expectedDialogueRevisionId: proof.revisionId,
+        expectedTurnCount: proof.turnCount,
+        queuedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        note: 'الحوار اليدوي مقفول بالبصمة؛ ممنوع استخدام المقال أو نسخة أخرى.',
+      }, { merge: true })
+      const queued = await getDoc(productionRef)
+      const data = queued.data() || {}
+      if (!queued.exists()
+        || data.status !== 'queued'
+        || data.expectedDialogueContentSha256 !== proof.contentSha256
+        || data.expectedDialogueRevisionSha256 !== proof.revisionSha256
+        || data.expectedDialogueRevisionId !== proof.revisionId
+        || Number(data.expectedTurnCount) !== proof.turnCount) {
+        throw new Error('queue-readback-mismatch')
+      }
+      setNotice(`أُرسل الحوار نفسه للتوليد وقُفل نهائياً ✓ ${proof.turnCount} مداخلة · بصمة ${proof.contentSha256.slice(0, 12)}. إذا عدّلت كلمة واحدة بعد الآن، سيمنع GitHub التوليد حتى تعيد الإرسال.`)
+    } catch (error) {
+      setNotice(`مُنع الإرسال لأن القفل السحابي لم يثبت: ${error instanceof Error ? error.message : 'unknown-error'}`)
+    } finally {
+      setQueueBusy(false)
     }
   }
 
@@ -492,7 +557,7 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
           <div className="max-w-3xl">
             <p className="text-[.76rem] font-semibold uppercase text-accent">الحوار اليدوي للحلقة</p>
             <h2 className="mt-1 font-display text-2xl font-semibold text-ink">اكتب فهد ونورة مداخلةً مداخلة.</h2>
-            <p className="mt-2 text-[.84rem] leading-relaxed text-soft">اختر المقال ثم ارفع ملف Word (أو TXT) بالحوار كاملاً: سطر لكل مداخلة يبدأ بـ«الرجل:» أو «المرأة:»، ووسوم اختيارية داخل النص مثل [موسيقى] و[وقفة 800] و[تداخل 90] — يُحوَّل تلقائياً إلى مداخلات جاهزة تراجعها هنا ثم تحفظها، ويسحبها التوليد الليلي بنفسه. يقبل أيضاً JSON جاهزاً.</p>
+            <p className="mt-2 text-[.84rem] leading-relaxed text-soft">اختر المقال ثم ارفع ملف Word (أو TXT) بالحوار كاملاً: سطر لكل مداخلة يبدأ بـ«الرجل:» أو «المرأة:»، ووسوم اختيارية داخل النص مثل [موسيقى] و[وقفة 800] و[تداخل 90] — يُحوَّل تلقائياً إلى مداخلات جاهزة تراجعها هنا ثم تحفظها، وثم تضغط «حفظ وإرسال الحوار نفسه للتوليد». يقبل أيضاً JSON جاهزاً.</p>
             <p className="mt-2 rounded-xl border border-accent/25 bg-canvas px-4 py-3 text-[.78rem] font-semibold leading-relaxed text-accent">حل جذري لمشكلة 413: ملف Word يُقرأ داخل متصفحك ولا يُرسل كملف إلى أي Cloud Function. بعد القراءة يُحفظ النص المنظّم فقط في Firestore، لذلك لا يوجد طلب رفع ضخم يمكن أن يرفضه الخادم.</p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -510,7 +575,7 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
             <li>لا ينشئ النظام مداخلات كثيرة تلقائياً.</li>
             <li>أنت تضيف مداخلة جديدة فقط عند الضغط على «إضافة مداخلة».</li>
             <li>تبقى خيارات الصوت ونوع المداخلة والوقفة والتداخل والجسر الموسيقي داخل البطاقة نفسها.</li>
-            <li>حوارك اليدوي المحفوظ هو المصدر الأعلى أولوية؛ التوليد الليلي يسحبه ولا تستبدله المسودات الآلية.</li>
+            <li>حوارك المرفوع هو المصدر الوحيد: يُقفل ببصمتين، وأي اختلاف حرف واحد يوقف GitHub قبل Azure.</li>
           </ul>
         </div>
         {availableDraft && (
@@ -530,7 +595,10 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
               {sortedArticles.map((item) => <option key={item.slug} value={item.slug}>{item.title}</option>)}
             </select>
           </label>
-          <button type="button" onClick={() => void save(false)} disabled={cloudBusy} className={dirty ? primary : ghost}>{cloudBusy ? 'أحفظ…' : dirty ? 'حفظ المسودة' : isAdmin ? 'محفوظة سحابياً' : 'المسودة محفوظة'}</button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <button type="button" onClick={() => void save(false)} disabled={cloudBusy || queueBusy} className={dirty ? primary : ghost}>{cloudBusy ? 'أثبت الحفظ…' : dirty ? 'حفظ وتثبيت البصمة' : isAdmin ? 'الحوار محفوظ ومثبت' : 'المسودة محفوظة'}</button>
+            <button type="button" onClick={() => void queueForGeneration()} disabled={cloudBusy || queueBusy || turns.length < 2} className={primary}>{queueBusy ? 'أقفل المصدر…' : 'حفظ وإرسال الحوار نفسه للتوليد'}</button>
+          </div>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.76rem] text-soft">

@@ -41,6 +41,7 @@ import {
   humanLikenessGate,
   probeAudio,
 } from './lib/arabic-audio-engine.mjs'
+import { dialogueHashes, loadSourceLock } from './lib/manual-dialogue-source.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const ENGINE_SOURCE_HASH = createHash('sha256').update(readFileSync(fileURLToPath(import.meta.url))).digest('hex')
@@ -232,6 +233,7 @@ const REUSE_DIALOGUE = flag('reuse-dialogue')
    والفحص يقوم على أذن Azure STT بعتبات مشدَّدة + كل البوابات التقنية (13ث، الوقفات،
    الذروة، السرعة) + بوابة البشرية التقنية ≥95 — بلا أي استدعاء Gemini يستهلك رصيداً. */
 const NO_GEMINI = flag('no-gemini') || env.PODCAST_NO_GEMINI === '1'
+const MANUAL_EXACT = flag('manual-exact') || env.PODCAST_MANUAL_EXACT === '1'
 const CANARY = flag('canary')
 const BAKEOFF = flag('voice-bakeoff')
 const VOICE_AUDITION = flag('voice-audition')
@@ -862,6 +864,37 @@ function normalizeMechanics(sc, options = {}) {
       })
     }
   }
+  return sc
+}
+
+
+// وضع المصدر المقفول: لا تغيير كلمة أو علامة ترقيم أو ترتيب أو متحدث.
+// نضبط حقول الأداء فقط؛ وإذا كانت المداخلة طويلة يقسمها مسار الصوت داخلياً ثم يعيدها
+// في Transcript كنص المداخلة الأصلية نفسه حرفياً.
+function normalizeManualMechanicsExact(sc) {
+  if (!sc || !Array.isArray(sc.utterances)) return sc
+  const clamp = (value, [lo, hi]) => Math.min(hi, Math.max(lo, Number.isFinite(+value) ? +value : lo))
+  sc.utterances = sc.utterances.map((utterance, index) => {
+    const text = String(utterance.text ?? '').replace(/\r\n?/g, '\n').trim()
+    const delivery = text.includes('؟') ? 'question' : (utterance.delivery || 'normal')
+    const profile = pacingOf(delivery)
+    const pauseAfterMs = clamp(utterance.pauseAfterMs, profile.pauseMs)
+    return {
+      ...utterance,
+      text,
+      _sourceText: text,
+      _sourceIndex: index,
+      delivery,
+      ratePct: clamp(utterance.ratePct, profile.ratePct),
+      targetWordsPerMinute: clamp(utterance.targetWordsPerMinute, profile.targetWpm),
+      pauseAfterMs,
+      ending: text.includes('؟') ? 'open' : (['open', 'final', 'neutral'].includes(utterance.ending) ? utterance.ending : 'neutral'),
+      internalBreakMs: clamp(utterance.internalBreakMs, delivery === 'reflection' ? [130, 180] : [85, 150]),
+      allowOverlap: Number(utterance.overlapMs || 0) > 0,
+      overlapMs: Math.max(0, Math.min(150, Number(utterance.overlapMs || 0))),
+      musicBridgeAfter: Boolean(utterance.musicBridgeAfter),
+    }
+  })
   return sc
 }
 
@@ -2134,7 +2167,14 @@ async function produceUtteranceResilient({ utterance, analysis, voice, lang, wav
       musicBridgeAfter: Boolean(musicBridgeAfter), speaker }
   }
   const produceOne = async (u, a, wavPath, id) => {
-    const lookupKey = segmentKeyOf({ pipelineHash: cache.pipelineHash, voice, text: u.text })
+    // في وضع الحوار المقفول لا يجوز أن يعيد الكاش مقطعاً من نسخة أقدم تشترك في الكلمات
+    // لكن تختلف في المتحدث/الإلقاء/الوقفة. نربط مفتاح المقطع ببصمة النسخة الكاملة وخطة الأداء.
+    const exactCacheText = MANUAL_EXACT ? JSON.stringify({
+      revisionSha256: cache.manualRevisionSha256 || '',
+      sourceIndex: Number.isInteger(u._sourceIndex) ? u._sourceIndex : null,
+      ...planFields(u),
+    }) : u.text
+    const lookupKey = segmentKeyOf({ pipelineHash: cache.pipelineHash, voice, text: exactCacheText })
     const previous = RESUME ? cache.previous?.[lookupKey] : null
     if (previous?.result?.ok && segmentCacheGet(cache.slug, lookupKey, wavPath)) {
       cache.ledger[lookupKey] = { ...previous, reusedAt: new Date().toISOString() }
@@ -2144,7 +2184,9 @@ async function produceUtteranceResilient({ utterance, analysis, voice, lang, wav
     }
     const result = await produceUtterance(u, a, voice, lang, wavPath, { ...context, utteranceId: id })
     if (!result.ok || (lang === 'ar' && !result.verified)) return { ok: false, result }
-    const saveKey = segmentKeyOf({ pipelineHash: cache.pipelineHash, voice, text: result.dialogueText || u.text })
+    const saveKey = MANUAL_EXACT
+      ? lookupKey
+      : segmentKeyOf({ pipelineHash: cache.pipelineHash, voice, text: result.dialogueText || u.text })
     segmentCachePut(cache.slug, saveKey, wavPath)
     cache.ledger[saveKey] = { key: saveKey, savedAt: new Date().toISOString(), voice,
       plan: planFields(result.deliveryPlan || u),
@@ -2846,7 +2888,10 @@ async function produce(article, lang) {
   mkdirSync(outputRoot, { recursive: true })
   const outMp3 = resolve(outputRoot, article.slug + suffix)
   const transcriptPath = resolve(outputRoot, `${article.slug}.dialogue.json`)
-  const sourceHash = createHash('sha256').update(article.body).digest('hex')
+  let lockedManualSource = null
+  if (lang === 'ar' && MANUAL_EXACT) lockedManualSource = loadSourceLock(ROOT, article.slug).lock
+  const articleSourceHash = createHash('sha256').update(article.body).digest('hex')
+  const sourceHash = lockedManualSource?.contentSha256 || articleSourceHash
   const contentHash = createHash('sha256').update(`${sourceHash}|${lang}|${ACTIVE_PIPELINE_HASH}`).digest('hex').slice(0, 16)
   const key = `${PILOT_MODE ? 'pilot:' : ''}${article.slug}:${lang}`
   const completed = state.done[key]
@@ -2871,7 +2916,8 @@ async function produce(article, lang) {
     episodeId: runId,
     pipelineHash: ACTIVE_PIPELINE_HASH,
     status: 'qa_in_progress',
-    source: { slug: article.slug, title: article.title, sourceText: article.body, sha256: sourceHash, origin: article.origin || 'base' },
+    source: { slug: article.slug, title: article.title, sourceText: article.body, sha256: sourceHash,
+      articleSha256: articleSourceHash, origin: article.origin || 'base' },
     dialogue: { utterances: [] },
     pronunciation: { utterances: [] },
     finalGate: { pass: false, reasonCodes: [] },
@@ -2932,28 +2978,42 @@ async function produce(article, lang) {
       return quarantine('وضع بلا Gemini يتطلب حواراً يدوياً في manual-dialogues/ — لا كاتب آلي في هذا الوضع')
     if (lang === 'ar' && existsSync(manualDialoguePath)) {
       MANUAL_TEXT_MODE = true
-      const manual = JSON.parse(readFileSync(manualDialoguePath, 'utf8'))
+      const manualSource = dialogueHashes(JSON.parse(readFileSync(manualDialoguePath, 'utf8')))
+      if (MANUAL_EXACT) {
+        if (!lockedManualSource) return quarantine('قفل مصدر الحوار مفقود — ممنوع التوليد')
+        if (manualSource.contentSha256 !== lockedManualSource.contentSha256
+          || manualSource.revisionSha256 !== lockedManualSource.revisionSha256
+          || manualSource.revisionId !== lockedManualSource.revisionId
+          || manualSource.turnCount !== Number(lockedManualSource.turnCount)) {
+          return quarantine('فشل قفل المصدر: ملف الحوار لا يطابق النسخة المرفوعة في Firestore')
+        }
+      }
       script = { mood: 'تأملي', storyIntro: false,
-        utterances: manual.map((item, index) => ({
-          speaker: ['female', 'b'].includes(String(item.speaker || '').trim().toLowerCase()) ? 'B' : 'A',
-          text: String(item.text || '').trim(),
-          delivery: String(item.deliveryType || 'statement').trim(),
+        utterances: manualSource.turns.map((item, index) => ({
+          speaker: item.speaker === 'female' ? 'B' : 'A',
+          text: item.text,
+          delivery: item.deliveryType,
           pauseAfterMs: item.pauseAfterMs, overlapMs: Number(item.overlapMs || 0),
           allowOverlap: Number(item.overlapMs || 0) > 0,
           musicBridgeAfter: Boolean(item.musicBridgeAfter),
-          emphasisWords: [], pronunciationNotes: '', _index: index })) }
-      normalizeMechanics(script, { manualText: true })
+          emphasisWords: [], pronunciationNotes: '', _index: index, _sourceText: item.text })) }
+      if (MANUAL_EXACT) normalizeManualMechanicsExact(script)
+      else normalizeMechanics(script, { manualText: true })
       const manualLint = lintScript(script, lang)
-      const blocking = manualLint.filter((issue) => /عامية/.test(issue))
-      if (blocking.length) {
-        MANUAL_TEXT_MODE = false
-        return quarantine(`الحوار اليدوي يحتاج تنقيح الدكتور (لن يُعاد كتابته آلياً): ${blocking.join(' · ')}`)
+      // الحوار المرفوع قرار تحريري نهائي من الدكتور: لا تمنعه بوابة أسلوبية ولا تعيد كتابته.
+      // نعرض الملاحظات فقط، أما الحجب فيقتصر على سلامة البنية وقفل البصمة وجودة الصوت.
+      if (manualLint.length) console.log(`  ⚠ ملاحظات تحريرية على الحوار المرفوع (لا تحجب ولا تغيّر النص): ${manualLint.slice(0, 3).join(' · ')}`)
+      auditRecord.dialogueSource = MANUAL_EXACT ? 'manual-upload-locked' : 'manual'
+      auditRecord.manualSource = {
+        mode: MANUAL_EXACT ? 'manual-upload-locked' : 'manual',
+        contentSha256: manualSource.contentSha256,
+        revisionSha256: manualSource.revisionSha256,
+        revisionId: manualSource.revisionId,
+        turnCount: manualSource.turnCount,
       }
-      if (manualLint.length) console.log(`  ⚠ ملاحظات شكلية على الحوار اليدوي (لا تحجب): ${manualLint.slice(0, 3).join(' · ')}`)
-      auditRecord.dialogueSource = 'manual'
       lintIssues = []
       fidelity = { pass: true, problems: [] }
-      console.log(`  ✍ حوار الدكتور اليدوي: ${script.utterances.length} مداخلة — النص مقدس، Gemini فاحص لا كاتب`)
+      console.log(`  ✍ الحوار اليدوي المقفول: ${script.utterances.length} مداخلة — لا كتابة ولا استبدال ولا إعادة صياغة`)
     }
     if (REUSE_DIALOGUE && !script && existsSync(auditPath(article, lang))) {
       const previous = JSON.parse(readFileSync(auditPath(article, lang), 'utf8'))
@@ -3065,6 +3125,7 @@ async function produce(article, lang) {
         wavBase: resolve(TMP, utteranceId),
         context: { runId, utteranceId, sourceText: article.body },
         cache: { slug: article.slug, pipelineHash: ACTIVE_PIPELINE_HASH,
+          manualRevisionSha256: lockedManualSource?.revisionSha256 || '',
           previous: previousSegmentsLedger, ledger: auditRecord.segments },
       })
       if (!produced.ok) {
@@ -3076,10 +3137,11 @@ async function produce(article, lang) {
       const primaryPlan = parts[0].plan || utterance
       const lastPlan = parts.at(-1).plan || utterance
       const joinedText = parts.map((part) => part.result.dialogueText || '').join(' ').replace(/\s+/g, ' ').trim()
+      const exactDialogueText = MANUAL_EXACT ? String(utterance._sourceText ?? utterance.text) : (joinedText || utterance.text)
       const risks = parts.flatMap((part) => part.result.risks || [])
       const hasHighRisk = risks.some((risk) => risk.riskLevel === 'high')
       allRisks.push(...risks.map((risk) => ({ ...risk, utteranceId, voice: voiceInfo.azure })))
-      transcript.push({ speaker: voiceInfo.name, speakerKey: utterance.speaker, text: joinedText || utterance.text,
+      transcript.push({ speaker: voiceInfo.name, speakerKey: utterance.speaker, text: exactDialogueText,
         delivery: primaryPlan.delivery, ratePct: primaryPlan.ratePct,
         targetWordsPerMinute: primaryPlan.targetWordsPerMinute,
         pauseAfterMs: lastPlan.pauseAfterMs, ending: lastPlan.ending,
@@ -3122,11 +3184,14 @@ async function produce(article, lang) {
       musicBridgeAfter: item.musicBridgeAfter, paceCalibration: item.paceCalibration }))
     auditRecord.pronunciation.utterances = pronunciation
 
-    const finalLanguageIssues = lintScript({ utterances: transcript.map((item) => ({ speaker: item.speakerKey,
+    const finalLanguageIssuesRaw = lintScript({ utterances: transcript.map((item) => ({ speaker: item.speakerKey,
       text: item.text, delivery: item.delivery, ratePct: item.ratePct,
       targetWordsPerMinute: item.targetWordsPerMinute, pauseAfterMs: item.pauseAfterMs,
       ending: item.ending, internalBreakMs: item.internalBreakMs,
       allowOverlap: item.allowOverlap, overlapMs: item.overlapMs })) }, lang)
+    const finalLanguageIssues = MANUAL_EXACT
+      ? finalLanguageIssuesRaw.filter((issue) => /عامية/.test(issue))
+      : finalLanguageIssuesRaw
     if (finalLanguageIssues.length) return quarantine(`بوابة اللغة بعد الإصلاح: ${finalLanguageIssues.join(' · ')}`)
     const pronunciationConsistency = new Map()
     const inconsistent = []
@@ -3201,7 +3266,7 @@ async function produce(article, lang) {
           utterance.ratePct = Math.max(-18, Number(utterance.ratePct || 0) - 1)
           utterance.internalBreakMs = Math.min(180, Number(utterance.internalBreakMs || 105) + 18)
           if (utterance.text.includes('؟')) { utterance.delivery = 'question'; utterance.ending = 'open' }
-          if (issue.method === 'rephrase' && issue.suggestion) {
+          if (!MANUAL_TEXT_MODE && issue.method === 'rephrase' && issue.suggestion) {
             const replacement = await safeRephrase(utterance.text, article.body, issue.issue || 'طبيعية الإلقاء', [])
             if (replacement) utterance.text = replacement
           }
@@ -3250,7 +3315,15 @@ async function produce(article, lang) {
     const humanGate = dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudge })
     if (!humanGate.pass) return quarantine(`بوابة البشرية أقل من الحد: proxy=${humanGate.proxy.score}/100، judge=${humanGate.minimumJudgeDimension}/100`, { humanGate })
     const publicTranscript = { title: article.title, generatedAt: new Date().toISOString().slice(0, 10),
-      language: 'ar', utterances: transcript.map(({ speaker, text }) => ({ speaker, text })) }
+      language: 'ar',
+      sourceLock: MANUAL_EXACT ? {
+        mode: 'manual-upload-locked',
+        contentSha256: auditRecord.manualSource?.contentSha256,
+        revisionSha256: auditRecord.manualSource?.revisionSha256,
+        revisionId: auditRecord.manualSource?.revisionId,
+        turnCount: auditRecord.manualSource?.turnCount,
+      } : undefined,
+      utterances: transcript.map(({ speaker, text }) => ({ speaker, text })) }
     const tempTranscript = resolve(TMP, `${article.slug}.dialogue.json`)
     if (lang === 'ar') writeFileSync(tempTranscript, JSON.stringify(publicTranscript, null, 2))
     const snapshot = createReleaseSnapshot({ article, lang, outMp3, transcriptPath, stateKey: key,
@@ -3269,6 +3342,7 @@ async function produce(article, lang) {
       const audioHash = sha256File(outMp3)
       const transcriptHash = lang === 'ar' ? sha256File(transcriptPath) : ''
       state.done[key] = { contentHash, pipelineHash: ACTIVE_PIPELINE_HASH, sourceHash, audioHash, transcriptHash,
+        manualSource: MANUAL_EXACT ? auditRecord.manualSource : undefined,
         status: acceptedStatus, acceptedAt: new Date().toISOString(), pilot: PILOT_MODE }
       if (!PILOT_MODE) {
         state.totalCount = previousTotalCount + 1
@@ -3479,6 +3553,18 @@ if (SELF_TEST) {
   assert(sampleFixture.utterances.every((utterance) => { const [lo, hi] = pacingOf(utterance.delivery).ratePct; return utterance.ratePct >= lo && utterance.ratePct <= hi }), 'كل سرعة في العينة ضمن المجال التربوي المتوازن')
   assert(existsSync(FFMPEG) && existsSync(FFPROBE), 'ffmpeg/ffprobe يجب أن يكونا قابلين للتنفيذ خارج PATH')
   assert.equal(blindRankingRound.toString().includes('pronunciationMeaning: 95'), false, 'ممنوع ترتيب وهمي ثابت للأصوات')
+  const exactManualFixture = { utterances: [
+    { speaker: 'A', text: 'إن علمناه أن هذا الرقم هو الحقيقة الكاملة، سيقرأ الورقة كحكم نهائي على قيمته.', delivery: 'statement', pauseAfterMs: 560, overlapMs: 0 },
+    { speaker: 'B', text: 'بالظبط! هذه هي المشكلة.', delivery: 'briefReaction', pauseAfterMs: 240, overlapMs: 60 },
+  ] }
+  const exactManualTexts = exactManualFixture.utterances.map((utterance) => utterance.text)
+  const exactNormalized = normalizeManualMechanicsExact(structuredClone(exactManualFixture))
+  assert.deepEqual(exactNormalized.utterances.map((utterance) => utterance.text), exactManualTexts,
+    'الوضع اليدوي المقفول ممنوع أن يغيّر كلمة أو علامة ترقيم')
+  assert.equal(exactNormalized.utterances.length, exactManualFixture.utterances.length,
+    'الوضع اليدوي المقفول ممنوع أن يدمج أو يضيف أو يحذف مداخلة')
+  assert.deepEqual(exactNormalized.utterances.map((utterance) => utterance.speaker), ['A', 'B'],
+    'الوضع اليدوي المقفول يحافظ على المتحدثين والترتيب')
   const normalizedSample = normalizeMechanics(structuredClone(sampleFixture))
   const speechPolish = normalizeMechanics({ utterances: [{ speaker: 'A', delivery: 'reflection',
     text: 'إن علمناه أن هذا الرقم هو الحقيقة الكاملة، سيقرأ الورقة كحكم نهائي على قيمته.' },
@@ -3952,6 +4038,7 @@ if (requiresGeminiNow) {
   catch (error) { console.error(`⛔ ${error.message}`); process.exit(4) }
 }
 if (NO_GEMINI) console.log('⚙ وضع بلا Gemini: STT مشدد (0.92/0.88 للمقطع، 0.97/0.93 للحلقة) + البوابات التقنية كاملة — بلا أي استهلاك رصيد')
+if (MANUAL_EXACT) console.log('🔒 وضع الحوار المقفول: Firestore هو المصدر الوحيد، والكلمات والمتحدثون لا يتغيرون')
 const voicesForPreflight = BAKEOFF
   ? [] // الاكتشاف الديناميكي يجري داخل الاختبار قبل اختيار أي صوت
   : [VOICES.ar.A.azure, VOICES.ar.B.azure]

@@ -26,7 +26,7 @@
     "report:monthly:dry-run": "node scripts/monthly-report.mjs --dry-run",
     "set-admin": "node scripts/set-admin.mjs",
     "health": "node scripts/health-check.mjs",
-    "podcast:ar:self-test": "node scripts/podcast-dialogue.mjs --self-test",
+    "podcast:ar:self-test": "node scripts/test-manual-dialogue-lock.mjs && node scripts/podcast-dialogue.mjs --self-test",
     "podcast:ar:preflight": "node scripts/podcast-dialogue.mjs --preflight --lang=ar",
     "podcast:ar:canary": "node scripts/podcast-dialogue.mjs --canary --lang=ar",
     "podcast:ar:sample": "node scripts/podcast-dialogue.mjs --voice-bakeoff",
@@ -76,7 +76,8 @@
     "agent:install": "node scripts/whatsapp-agent.mjs install",
     "agent:uninstall": "node scripts/whatsapp-agent.mjs uninstall",
     "agent:send-campaign": "node scripts/whatsapp-agent.mjs send-campaign",
-    "agent:stop-campaign": "node scripts/whatsapp-agent.mjs stop-campaign"
+    "agent:stop-campaign": "node scripts/whatsapp-agent.mjs stop-campaign",
+    "podcast:manual-lock:self-test": "node scripts/test-manual-dialogue-lock.mjs"
   },
   "dependencies": {
     "firebase": "^12.15.0",

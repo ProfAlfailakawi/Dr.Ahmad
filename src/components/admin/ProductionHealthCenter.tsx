@@ -3,12 +3,13 @@ import podcastAdmin from '../../data/podcast-admin.json'
 import { getDb } from '../../lib/firebase'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../../lib/cms'
 import type { AdminTab } from './AdminArchitecture'
+import { fingerprintDialogue } from '../../lib/podcast-dialogue-lock'
 
 const card = 'min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const pill = 'min-w-0 rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.74rem] font-semibold leading-tight text-soft'
 
 type Stage = 'draft' | 'queued' | 'generating' | 'pronunciation' | 'needs_review' | 'passed' | 'published'
-type ProductionState = { status?: Stage; updatedAt?: unknown; note?: string }
+type ProductionState = { status?: Stage; updatedAt?: unknown; note?: string; expectedDialogueContentSha256?: string }
 type Episode = {
   slug: string
   title: string
@@ -122,14 +123,52 @@ export function ProductionHealthCenter({
     try {
       const db = await getDb()
       if (!db) throw new Error('قاعدة البيانات غير متاحة')
-      const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
-      await setDoc(doc(db, 'podcast_production', slug), { status, updatedAt: serverTimestamp() }, { merge: true })
-      setRemote((current) => ({ ...current, [slug]: { ...current[slug], status } }))
+      const { doc, getDoc, serverTimestamp, setDoc } = await import('firebase/firestore')
+      const productionRef = doc(db, 'podcast_production', slug)
+      let payload: Record<string, unknown> = { status, updatedAt: serverTimestamp() }
+      if (status === 'queued') {
+        const dialogueRef = doc(db, 'podcast_dialogues', slug)
+        const dialogueSnapshot = await getDoc(dialogueRef)
+        if (!dialogueSnapshot.exists()) throw new Error('ارفع الحوار واحفظه من محرر الحوار أولاً')
+        const dialogue = dialogueSnapshot.data()
+        const proof = await fingerprintDialogue(dialogue.turns || [])
+        if (dialogue.source !== 'admin-upload'
+          || Number(dialogue.schemaVersion) !== 2
+          || dialogue.contentSha256 !== proof.contentSha256
+          || dialogue.revisionSha256 !== proof.revisionSha256
+          || dialogue.revisionId !== proof.revisionId
+          || Number(dialogue.turnCount) !== proof.turnCount) {
+          throw new Error('نسخة الحوار غير مقفولة بالبصمة الجديدة؛ افتح محرر الحوار واضغط حفظ وإرسال')
+        }
+        payload = {
+          ...payload,
+          sourceCollection: 'podcast_dialogues',
+          expectedDialogueContentSha256: proof.contentSha256,
+          expectedDialogueRevisionSha256: proof.revisionSha256,
+          expectedDialogueRevisionId: proof.revisionId,
+          expectedTurnCount: proof.turnCount,
+          queuedAt: serverTimestamp(),
+          note: 'الحوار اليدوي مقفول بالبصمة؛ ممنوع استخدام المقال أو نسخة أخرى.',
+        }
+      }
+      await setDoc(productionRef, payload, { merge: true })
+      const readBack = await getDoc(productionRef)
+      const readBackData = readBack.data() || {}
+      if (!readBack.exists() || readBackData.status !== status) throw new Error('لم تثبت القراءة الراجعة لقرار الإنتاج')
+      if (status === 'queued' && (
+        readBackData.sourceCollection !== 'podcast_dialogues'
+        || readBackData.expectedDialogueContentSha256 !== payload.expectedDialogueContentSha256
+        || readBackData.expectedDialogueRevisionSha256 !== payload.expectedDialogueRevisionSha256
+        || readBackData.expectedDialogueRevisionId !== payload.expectedDialogueRevisionId
+        || Number(readBackData.expectedTurnCount) !== Number(payload.expectedTurnCount)
+      )) throw new Error('لم تتطابق بصمات الحوار في القراءة الراجعة لقائمة الإنتاج')
+      setRemote((current) => ({ ...current, [slug]: { ...current[slug], status,
+        expectedDialogueContentSha256: String(readBackData.expectedDialogueContentSha256 || '') } }))
       setMessage(status === 'published' ? 'اعتمدت الحلقة وأصبحت جاهزة للنشر.'
-        : status === 'queued' ? 'أُدرجت في قائمة التوليد الليلي — ستُنتج تلقائياً في الليلة القادمة.'
+        : status === 'queued' ? `قُفل الحوار المرفوع وأُرسل للتوليد ✓ بصمة ${String(readBackData.expectedDialogueContentSha256 || '').slice(0, 12)}`
         : 'أُعيدت الحلقة إلى المراجعة.')
-    } catch {
-      setMessage('تعذّر حفظ القرار سحابياً. انشر قواعد Firestore الجديدة ثم أعد المحاولة.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'تعذّر حفظ القرار سحابياً.')
     } finally {
       setBusy('')
     }

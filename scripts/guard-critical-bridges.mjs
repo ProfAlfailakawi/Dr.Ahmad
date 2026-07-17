@@ -5,6 +5,9 @@ const root = process.cwd()
 const requiredFiles = [
   'src/components/admin/ManualDialogueEditor.tsx',
   'scripts/fetch-manual-dialogues.mjs',
+  'scripts/lib/manual-dialogue-source.mjs',
+  'scripts/verify-manual-dialogue-lock.mjs',
+  'src/lib/podcast-dialogue-lock.ts',
   'src/lib/social-templates.ts',
   'manual-dialogues/success-that-does-not-bring-joy-to-its-ownerarabic.json',
   'storage.rules',
@@ -34,6 +37,8 @@ const manualEditor = await readFile(resolve(root, 'src/components/admin/ManualDi
 const fetchBridge = await readFile(resolve(root, 'scripts/fetch-manual-dialogues.mjs'), 'utf8')
 const socialTemplates = await readFile(resolve(root, 'src/lib/social-templates.ts'), 'utf8')
 const hostingWorkflow = await readFile(resolve(root, '.github/workflows/firebase-hosting-live.yml'), 'utf8')
+const podcastWorkflow = await readFile(resolve(root, '.github/workflows/podcast-pilot-release.yml'), 'utf8')
+const podcastEngine = await readFile(resolve(root, 'scripts/podcast-dialogue.mjs'), 'utf8')
 const ideaFeatures = await readFile(resolve(root, 'src/components/IdeaFeatures.tsx'), 'utf8')
 const contentManager = await readFile(resolve(root, 'src/components/admin/ContentManager.tsx'), 'utf8')
 const cvFile = await readFile(resolve(root, 'src/pages/CvFile.tsx'), 'utf8')
@@ -45,6 +50,11 @@ const assertions = [
   [manualEditor.includes("doc(db, 'podcast_dialogues', slug)"), 'manual dialogue must save to podcast_dialogues'],
   [!liveSource.toLowerCase().includes('submitmanualdialogue'), 'legacy submitmanualdialogue endpoint must stay retired from all live src files'],
   [fetchBridge.includes('manual-dialogues') && fetchBridge.includes('podcast_dialogues'), 'nightly Firestore-to-repository bridge must remain active'],
+  [fetchBridge.includes('manual-upload-locked') && fetchBridge.includes('revisionSha256'), 'manual dialogue bridge must fail closed with a cloud source lock'],
+  [podcastWorkflow.includes('--manual-exact') && podcastWorkflow.includes('--no-gemini') && !podcastWorkflow.includes('fetch-manual-dialogues.mjs --slugs="$REQUESTED" || true'), 'podcast release must use locked manual dialogue only and never swallow fetch failures'],
+  [manualEditor.includes('expectedDialogueContentSha256') && manualEditor.includes('queue-readback-mismatch'), 'manual editor must queue the exact verified dialogue revision'],
+  [podcastEngine.includes('manualRevisionSha256') && podcastEngine.includes('const saveKey = MANUAL_EXACT') && podcastEngine.includes('? lookupKey'), 'manual exact cache must be bound to the complete uploaded revision'],
+  [podcastEngine.includes("if (!MANUAL_TEXT_MODE && issue.method === 'rephrase'") && podcastEngine.includes('ملاحظات تحريرية على الحوار المرفوع (لا تحجب ولا تغيّر النص)'), 'manual dialogue must never be rephrased or blocked by editorial style gates'],
   [socialTemplates.includes("type Composition = 'midad' | 'layl' | 'jarida' | 'sharit' | 'mishkat' | 'tawqee'"), 'six signed social compositions must remain present'],
   /* الصيغة المدموجة firestore:rules,storage كانت العطل نفسه: فشل تفعيل Storage يُسقط
      قواعد Firestore معه بصمت فيتعطل رفع السيرة. الفصل: قواعد Firestore وحدها بصوت

@@ -632,7 +632,12 @@ const voiceRateOffset = (voice, speaker) => {
 function normalizeMechanics(sc, options = {}) {
   if (!sc || !Array.isArray(sc.utterances)) return sc
   const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, Number.isFinite(+v) ? +v : lo))
-  const wordCount = (text) => String(text || '').split(/\s+/).filter(Boolean).length
+  // الكلمات المنطوقة: الرمز الرقمي (2023) يُحسب بعدد أرقامه تقريباً — يُنطق كلمات عدة
+  const wordCount = (text) => String(text || '').split(/\s+/).filter(Boolean)
+    .reduce((total, token) => {
+      const digits = (token.match(/\d/g) || []).length
+      return total + (digits >= 2 ? Math.min(6, digits) : 1)
+    }, 0)
   const polishForSpokenArabic = (text) => String(text || '')
     .replace(/بالظبط/g, 'بالضبط')
     .replace(/\bبالضبط!\s*/g, 'بالضبط. ')
@@ -2166,7 +2171,14 @@ const compactInternalSilence = (file) => {
 
 function auditSegment(file, dialogueText, deliveryPlan = {}) {
   const dur = probeDur(file)
-  const words = String(dialogueText || '').trim().split(/\s+/).filter(Boolean).length
+  /* عدّ الكلمات المنطوقة لا المكتوبة: «2023» رمز واحد كتابةً لكنه «ألفين وثلاثة
+     وعشرين» نطقاً — احتسابه كلمةً واحدة كان يخفض WPM زوراً فتسقط كل جملة فيها
+     سنة على بوابة السرعة (u011). كل رمز رقمي يُحسب بعدد أرقامه تقريباً لكلماته. */
+  const words = String(dialogueText || '').trim().split(/\s+/).filter(Boolean)
+    .reduce((total, token) => {
+      const digits = (token.match(/\d/g) || []).length
+      return total + (digits >= 2 ? Math.min(6, digits) : 1)
+    }, 0)
   const issues = []
   if (!existsSync(file) || statSync(file).size < 4000) issues.push('ملف فارغ أو صغير بصورة مريبة')
   if (dur < 0.35) issues.push(`مدة مبتورة (${dur.toFixed(2)}ث)`)

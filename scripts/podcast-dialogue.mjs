@@ -1002,16 +1002,21 @@ function compareTexts(intended, recognized) {
     }
     heard.push(token)
   }
+  /* مطابقة بالاحتواء الجزئي للكلمات ≥4 أحرف — كما يفعل محرك القراءة المثبت منذ شهور:
+     STT يكتب المنصوب المنوّن بلا ألفه («انطباعاً»→«انطباع») وصيغاً مطولة/مقصورة
+     صوتها واحد؛ المطالبة بالتطابق الحرفي كانت تُسقط مداخلات سليمة (u008). */
+  const wordsEqual = (a, b) => a === b
+    || (a.length > 3 && b.length > 3 && (a.includes(b) || b.includes(a)))
   const rows = expected.length + 1
   const cols = heard.length + 1
   const dp = Array.from({ length: rows }, () => new Uint16Array(cols))
   for (let i = expected.length - 1; i >= 0; i--)
     for (let j = heard.length - 1; j >= 0; j--)
-      dp[i][j] = expected[i] === heard[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1])
+      dp[i][j] = wordsEqual(expected[i], heard[j]) ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1])
   const matched = new Set()
   let i = 0, j = 0
   while (i < expected.length && j < heard.length) {
-    if (expected[i] === heard[j]) { matched.add(i); i++; j++; continue }
+    if (wordsEqual(expected[i], heard[j])) { matched.add(i); i++; j++; continue }
     if (dp[i + 1][j] >= dp[i][j + 1]) i++
     else j++
   }
@@ -3498,7 +3503,12 @@ if (SELF_TEST) {
   const judgedPath = episodeQualityScore({ ...noGeminiBase,
     fullComparison: { importantRatio: 0.95, ratio: 0.90 }, finalJudge: { pass: true, problems: [] } })
   assert(judgedPath.checks.judgeOk, 'مسار الحكم العادي لم يمسه وضع بلا Gemini')
-  console.log('✓ اختبارات بوابة البودكاست العربي: 36/36')
+  // ١١) المنصوب المنوّن: STT يكتب «انطباعاً عابراً» بلا ألف — لا تسقط مداخلة سليمة لذلك
+  const tanween = compareTexts('وليس هذا انطباعاً عابراً', 'وليس هذا انطباع عابر')
+  assert.equal(tanween.importantRatio, 1, 'ألف التنوين المحذوفة في STT لا تُحسب كلمة مفقودة')
+  const guarded = compareTexts('نقيس الفهم قبل الدرجة', 'نقيس فهما اخر تماما')
+  assert(guarded.importantRatio < 1, 'الاحتواء الجزئي لا يمنح تطابقاً مجانياً لكلمات مختلفة فعلاً')
+  console.log('✓ اختبارات بوابة البودكاست العربي: 38/38')
   process.exit(0)
 }
 

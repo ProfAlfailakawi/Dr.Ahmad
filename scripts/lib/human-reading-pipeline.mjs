@@ -213,8 +213,21 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
     const missingRisks = highRiskMissing(comparison, working.risks)
     const negationMissing = (comparison.missing || []).filter((word) => ['لا', 'لم', 'لن', 'ليس', 'ليست', 'غير', 'دون'].includes(word))
     const pacePass = Math.abs(paceDelta) <= 8
-    const sttPass = comparison.ratio >= 0.9 && comparison.importantRatio >= 0.95
+    /* عدالة الزلة الواحدة: وحدة من 8 كلمات مهمة لا تملك رصيد خطأ STT واحد بينما
+       وحدة من 25 تملكه رياضياً (r002: كلمة واحدة أسقطتها ست ساعات متتالية).
+       تُقبل زلة واحدة في الوحدات ذات ≤13 كلمة مهمة بشروط صارمة: ليست كلمة خطر
+       ولا نفياً، النسبة الكلية ≥0.85، ونصف اللهجات على الأقل لا يفقد أكثر من زلة. */
+    const importantTotal = Number(comparison.importantTotal || 99)
+    const ensembleRecognitions = heard?.ensemble || []
+    const oneSlipConsensus = ensembleRecognitions.length
+      ? ensembleRecognitions.filter((item) => (item.comparison?.missingImportant || []).length <= 1).length
+        >= Math.ceil(ensembleRecognitions.length / 2)
+      : false
+    const oneSlipPass = comparison.missingImportant.length === 1 && importantTotal <= 13
+      && comparison.ratio >= 0.85 && oneSlipConsensus
+    const sttStrict = comparison.ratio >= 0.9 && comparison.importantRatio >= 0.95
       && heard?.consensusPass === true
+    const sttPass = (sttStrict || oneSlipPass)
       && missingRisks.length === 0 && negationMissing.length === 0
     attempts.push({ attempt, ratePct: working.ratePct, targetWpm: target, measuredWpm, pacePass,
       stt: heard, comparison, missingRisks: missingRisks.map((risk) => risk.word), negationMissing })

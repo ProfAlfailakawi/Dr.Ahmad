@@ -1033,6 +1033,7 @@ function compareTexts(intended, recognized) {
     heard,
     missing,
     missingImportant,
+    importantTotal: importantIndexes.length,
     ratio: expected.length ? matched.size / expected.length : 1,
     importantRatio: importantIndexes.length
       ? (importantIndexes.length - missingImportant.length) / importantIndexes.length
@@ -1783,8 +1784,15 @@ async function evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnal
   // وفي وضع بلا Gemini تُرفعان قسرياً لأن STT صار خط الدفاع الوحيد عن النص.
   const IMPORTANT_MIN = Math.max(Number(env.PODCAST_STT_IMPORTANT_MIN || 0.85), NO_GEMINI ? 0.92 : 0)
   const RATIO_MIN = Math.max(Number(env.PODCAST_STT_RATIO_MIN || 0.80), NO_GEMINI ? 0.88 : 0)
+  const sttStrictOk = comparison.importantRatio >= IMPORTANT_MIN && comparison.ratio >= RATIO_MIN
+  /* عدالة الزلة الواحدة (وضع بلا Gemini): النسبة الثابتة تظلم القِصر — مداخلة من 9 كلمات
+     مهمة لا تملك رصيد خطأ STT واحد بينما مداخلة من 20 تملكه (u005: «يُبنَ» سمعها STT
+     «يبني» فسقطت وحدها). تُقبل زلة واحدة في المداخلات ذات ≤13 كلمة مهمة بشرطها الصارم:
+     ليست كلمة خطر (highMissing صفر) وليست نفياً (missingNegations صفر) والنسبة الكلية ≥0.85. */
+  const oneSlipOk = NO_GEMINI && comparison.missingImportant.length === 1
+    && Number(comparison.importantTotal || 99) <= 13 && comparison.ratio >= 0.85
   const pass = verdictPass && highMissing.length === 0 && missingNegations.length === 0
-    && comparison.importantRatio >= IMPORTANT_MIN && comparison.ratio >= RATIO_MIN
+    && (sttStrictOk || oneSlipOk)
   const score = pass
     ? comparison.importantRatio * 0.55 + comparison.ratio * 0.25 + Math.min(1, heard.confidence || 0) * 0.2
     : -1

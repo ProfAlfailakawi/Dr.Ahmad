@@ -429,6 +429,7 @@ export function compareSpeechText(intended, heard) {
   return {
     ratio: expected.length ? matched.size / expected.length : 1,
     importantRatio: important.length ? (important.length - missingImportant.length) / important.length : 1,
+    importantTotal: important.length,
     missing,
     missingImportant,
   }

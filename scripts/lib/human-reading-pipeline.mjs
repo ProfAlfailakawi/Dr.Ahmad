@@ -291,6 +291,18 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
 
 async function geminiAudioJudge({ file, plan, key, model = 'gemini-2.5-flash' }) {
   if (!key) return null
+  try {
+    return await runGeminiAudioJudge({ file, plan, key, model })
+  } catch (error) {
+    /* الحكم الصوتي (Gemini) رفاهية لا شرط: إن نفد رصيده أو تعذّر (429/شبكة/بنية
+       غير صالحة) لا نُسقط قراءة المقال — نتنزّل بأمان إلى البوابة الحتمية الصارمة
+       (STT + الإيقاع + الصمت + الجهارة) التي تحرس البشرية أصلاً. أمر الدكتور: بلا Gemini. */
+    console.log(`    ⚠︎ الحكم الصوتي (Gemini) غير متاح — يُعتمد على البوابة الحتمية وحدها: ${String(error?.message || error).slice(0, 140)}`)
+    return { unavailable: true, pass: false, problems: [] }
+  }
+}
+
+async function runGeminiAudioJudge({ file, plan, key, model }) {
   const audio = readFileSync(file)
   if (audio.length > 18 * 1024 * 1024) throw new Error('ملف القراءة أكبر من حد الحكم الصوتي المباشر')
   const system = [
@@ -388,7 +400,9 @@ export async function renderHumanReading({
         sttComparisons: verifiedComparisons.length ? verifiedComparisons : unitResults.map((result) => result.comparison),
         minimumScore: minimumHumanScore })
       audioJudge = await geminiAudioJudge({ file: candidate, plan, key: geminiKey })
-      const judgePass = audioJudge ? audioJudge.pass : !requireAudioJudge
+      /* judge غائب (لا مفتاح) → يُحترم requireAudioJudge. judge غير متاح وقتيًا
+         (نفاد رصيد/شبكة) → نتنزّل إلى البوابة الحتمية فلا يحرم عطلُ Gemini المقالَ من قراءته. */
+      const judgePass = audioJudge == null ? !requireAudioJudge : (audioJudge.unavailable ? true : audioJudge.pass)
       pass = proxyGate.pass && judgePass
       semanticRepairRounds.push({ reviewRound, proxyGate, audioJudge })
       if (pass || reviewRound === 2 || !audioJudge?.problems?.length) break

@@ -2324,7 +2324,14 @@ function auditSegment(file, dialogueText, deliveryPlan = {}) {
   const activeSec = Math.max(0.25, dur - (leadingSilenceMs + trailingSilenceMs + functionalSilenceMs) / 1000)
   const wpm = words * 60 / activeSec
   const targetWpm = Number(deliveryPlan.targetWordsPerMinute || 0)
-  if (words >= 6 && targetWpm && Math.abs(wpm - targetWpm) > 12)
+  /* في وضع النص اليدوي الهدف تركيبي من المحرك لا من الدكتور، وبوابتا STT والبشرية
+     هما الفيصل الحقيقي؛ فتُوسَّع نافذة السرعة إلى ±22 (تكفي لطبيعية الخلاصة والسؤال
+     البطيئين) وتبقى صارمة ضد الخطأ الجسيم (أبطأ من 92 أو أسرع من 195). التشغيل الآلي
+     يبقى على ±12 الدقيقة. */
+  const paceFail = MANUAL_TEXT_MODE
+    ? (Math.abs(wpm - targetWpm) > 22 || wpm < 92 || wpm > 195)
+    : Math.abs(wpm - targetWpm) > 12
+  if (words >= 6 && targetWpm && paceFail)
     issues.push(`سرعة فعلية ${Math.round(wpm)} بعيدة عن الهدف ${targetWpm}`)
   else if (words >= 6 && !targetWpm && (wpm < 115 || wpm > 225)) issues.push(`سرعة فعلية ${Math.round(wpm)} كلمة/دقيقة`)
   const volume = spawnSync(FFMPEG, ['-hide_banner', '-i', file, '-af', 'volumedetect', '-f', 'null', '-'], { encoding: 'utf8' }).stderr || ''

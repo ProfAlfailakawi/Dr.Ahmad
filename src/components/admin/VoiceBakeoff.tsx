@@ -111,9 +111,29 @@ export function VoiceBakeoffCard() {
     } catch (reason) { setSaved('تعذّر الحفظ'); task.fail(reason, 'تعذّر تسجيل القرار') }
   }
 
-  // لا نعرض بطاقة تشخيص تقنية للمستخدم عندما لا يكون اختبار القبول جاهزاً.
-  // يبقى فحص المكتبة في الخلفية، وتظهر الواجهة فقط عند وجود اختبار صوت فعلي قابل للقرار.
-  if (!manifest) return null
+  // لا اختبار أصوات جارٍ الآن (لا manifest) — وهذا وضعٌ سليم لا عطل. بدل ترك اللوحة
+  // فارغةً (تبدو معطوبة للدكتور)، نعرض حالةً هادئة: الأصوات المعتمدة تعمل، والقرار
+  // المسجّل إن وُجد، وأن العينات الجديدة ستظهر تلقائياً حين يجهّزها النظام.
+  if (!manifest) {
+    return (
+      <div className={card}>
+        <p className="text-[.76rem] font-semibold uppercase text-accent">الصوت والبودكاست</p>
+        <h2 className="mt-1 font-display text-xl font-semibold text-ink">الأصوات المعتمدة تعمل.</h2>
+        <p className="mt-2 max-w-2xl text-[.85rem] font-light leading-relaxed text-soft">
+          لا يوجد اختبار أصوات أعمى جارٍ الآن — وهذا وضعٌ سليم لا خلل. تُولَّد الحلقات
+          بالصوتين المعتمدين <span className="text-ink">فهد</span> و<span className="text-ink">نورة</span>.
+          حين يجهّز النظام عينات مرشّحة جديدة، تظهر هنا تلقائياً لتستمع وتعتمد الأنسب.
+        </p>
+        <div className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.82rem] leading-relaxed text-soft">
+          {approved?.status === 'approved'
+            ? <>الاختيار المسجّل حالياً: <span className="text-accent">{approved.optionKey}</span>.</>
+            : approved?.status === 'none_acceptable'
+              ? <>الحالة المسجّلة: لا زوج جاهز مقبول — يبقى فهد ونورة افتراضاً حتى يتوفّر صوتٌ مخصّص بالجودة المطلوبة.</>
+              : <>الوضع الافتراضي: فهد ونورة. لم يُسجَّل أي قرار أصوات بعد.</>}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={card}>

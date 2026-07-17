@@ -4,6 +4,15 @@ on:
   schedule:
     - cron: '12 * * * *'
   workflow_dispatch:
+    inputs:
+      slug:
+        description: 'توليد مقال واحد فقط (slug) — اتركه فارغًا للقافلة المعتادة'
+        required: false
+        default: ''
+      limit:
+        description: 'حد عدد الملفات في التشغيل الواحد'
+        required: false
+        default: '8'
 
 permissions:
   contents: write
@@ -78,7 +87,12 @@ jobs:
             exit 0
           fi
           npm run audio:human:self-test
-          npm run audio -- --limit=8
+          LIMIT="${{ github.event.inputs.limit }}"
+          SLUG="${{ github.event.inputs.slug }}"
+          ARGS="--limit=${LIMIT:-8}"
+          if [ -n "$SLUG" ]; then ARGS="$ARGS --slug=$SLUG"; fi
+          echo "audio args: $ARGS"
+          npm run audio -- $ARGS
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
           FIREBASE_PROJECT_ID: drahmad-8e9e2

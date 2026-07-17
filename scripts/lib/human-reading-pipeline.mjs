@@ -138,7 +138,7 @@ function wav16(input, output) {
 
 async function azureSttLocale({ wav, key, region, language }) {
   for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const response = await fetch(`https://${region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${language}&format=detailed&profanity=raw`, {
+    const response = await fetch(`https://${region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${language}&format=detailed&profanity=raw&wordLevelTimestamps=true`, {
       method: 'POST',
       headers: {
         'Ocp-Apim-Subscription-Key': key,
@@ -150,7 +150,8 @@ async function azureSttLocale({ wav, key, region, language }) {
       const result = await response.json()
       const best = result.NBest?.[0] || {}
       const text = best.Display || best.Lexical || result.DisplayText || ''
-      if (text) return { locale: language, text, confidence: Number(best.Confidence || 0), words: best.Words || [] }
+      if (text) return { locale: language, text, confidence: Number(best.Confidence || 0), words: best.Words || [],
+        offset: best.Offset ?? result.Offset, duration: best.Duration ?? result.Duration }
     }
     if (response && response.status !== 429 && response.status < 500) break
     await sleep(900 * attempt)
@@ -176,13 +177,68 @@ async function azureSttEnsemble({ wav, key, region, locale, intended }) {
   }
 }
 
-function actualWpm(text, file) {
-  const duration = Math.max(0.35, probeAudio(file).durationSec)
-  /* السرعة تُقاس على زمن النطق الفعلي لا على الوقفات الدلالية: وحدة خطّاف قصيرة
-     فيها «...» كانت تُحسب بطيئة مهما دفع المصحح (r002 في «ذكاء بلا ضمير») */
-  const silence = analyzeSilence(file)
-  const active = Math.max(0.35, duration - Number(silence?.totalSec || 0))
-  return Math.round(countArabicWords(text) * 60 / active)
+function azureTimeSeconds(value) {
+  if (Number.isFinite(Number(value))) {
+    const numeric = Number(value)
+    return numeric > 10_000 ? numeric / 10_000_000 : numeric
+  }
+  const match = String(value || '').match(/^PT([0-9.]+)S$/i)
+  return match ? Number(match[1]) : null
+}
+
+function recognizedBounds(heard) {
+  const words = Array.isArray(heard?.words) ? heard.words : []
+  const spans = words.map((word) => {
+    const offset = azureTimeSeconds(word.Offset ?? word.offset)
+    const duration = azureTimeSeconds(word.Duration ?? word.duration)
+    return Number.isFinite(offset) && Number.isFinite(duration) ? { start: offset, end: offset + duration } : null
+  }).filter(Boolean)
+  if (spans.length) {
+    const startSec = Math.min(...spans.map((span) => span.start))
+    const endSec = Math.max(...spans.map((span) => span.end))
+    return { startSec, endSec, spokenDurationSec: Math.max(0.35, endSec - startSec), source: 'word_timestamps' }
+  }
+  const startSec = azureTimeSeconds(heard?.offset)
+  const durationSec = azureTimeSeconds(heard?.duration)
+  if (Number.isFinite(startSec) && Number.isFinite(durationSec) && durationSec > 0) {
+    return { startSec, endSec: startSec + durationSec, spokenDurationSec: Math.max(0.35, durationSec),
+      source: 'recognition_duration' }
+  }
+  return null
+}
+
+function cropRecognitionPadding(file, heard) {
+  const bounds = recognizedBounds(heard)
+  const containerDurationSec = probeAudio(file).durationSec
+  if (!bounds) return { file, containerDurationSec, spokenDurationSec: containerDurationSec, cropped: false, source: 'container' }
+  const startSec = Math.max(0, bounds.startSec - 0.07)
+  const endSec = Math.min(containerDurationSec, bounds.endSec + 0.12)
+  const leadingPaddingSec = startSec
+  const trailingPaddingSec = Math.max(0, containerDurationSec - endSec)
+  if (leadingPaddingSec > 0.18 || trailingPaddingSec > 0.32) {
+    const cropped = `${file}.recognized.wav`
+    const result = spawnSync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-ss', startSec.toFixed(3),
+      '-i', file, '-t', Math.max(0.35, endSec - startSec).toFixed(3), '-ar', '24000', '-ac', '1',
+      '-c:a', 'pcm_s16le', cropped], { encoding: 'utf8' })
+    if (result.status !== 0) throw new Error(result.stderr || 'تعذر قص حشو Azure وفق توقيت الكلمات')
+    renameSync(cropped, file)
+  }
+  return { file, containerDurationSec, spokenDurationSec: bounds.spokenDurationSec,
+    leadingPaddingSec, trailingPaddingSec, cropped: leadingPaddingSec > 0.18 || trailingPaddingSec > 0.32,
+    source: bounds.source }
+}
+
+function actualWpm(text, file, heard) {
+  const containerDuration = Math.max(0.35, probeAudio(file).durationSec)
+  const recognizedDuration = recognizedBounds(heard)?.spokenDurationSec
+  // Azure occasionally returns word timestamps outside the actual short clip
+  // (most visible on titles and one-line questions). Never let an impossible
+  // STT timestamp drive rate correction; the trimmed audio is the safe source.
+  const timestampIsPlausible = Number.isFinite(recognizedDuration)
+    && recognizedDuration >= Math.max(0.35, containerDuration * 0.55)
+    && recognizedDuration <= containerDuration * 1.35
+  const duration = timestampIsPlausible ? recognizedDuration : containerDuration
+  return Math.round(countArabicWords(text) * 60 / duration)
 }
 
 function highRiskMissing(comparison, risks) {
@@ -203,39 +259,27 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
     await azureTts({ ssml: buildReadingSsml(working, voice), output: raw, key, region })
     trimAzureBoundarySilence(raw, trimmed)
     rmSync(raw, { force: true })
-    const measuredWpm = actualWpm(working.pronunciationText, trimmed)
-    const target = Number(working.targetWordsPerMinute)
-    const paceDelta = measuredWpm - target
     const heard = await azureSttEnsemble({ wav: trimmed, key, region, locale: voice.locale,
       intended: working.pronunciationText })
+    const padding = cropRecognitionPadding(trimmed, heard)
+    const measuredWpm = actualWpm(working.pronunciationText, trimmed, heard)
+    const target = Number(working.targetWordsPerMinute)
+    const paceDelta = measuredWpm - target
     const comparison = heard?.comparison || (heard ? compareSpeechText(working.pronunciationText, heard.text) : {
       ratio: 0, importantRatio: 0, missing: [], missingImportant: ['STT unavailable'], sttUnavailable: true,
     })
     const missingRisks = highRiskMissing(comparison, working.risks)
     const negationMissing = (comparison.missing || []).filter((word) => ['لا', 'لم', 'لن', 'ليس', 'ليست', 'غير', 'دون'].includes(word))
-    /* الهدف تركيبي من المخطط لا من الدكتور، وSTT هو الفيصل الحقيقي على سلامة القراءة؛
-       فتُوسَّع نافذة السرعة للأنواع البطيئة طبيعياً (تأمل/خلاصة/إنساني/تحذير) وتبقى
-       أضيق للأنواع السريعة. r013 قُرئ بـSTT 100٪ وسقط عند 114/134 على نافذة ±8 صلبة. */
-    const slowType = ['human', 'reflection', 'conclusion', 'closing', 'warning', 'question'].includes(String(working.type || ''))
-    const paceWindow = slowType ? 16 : 11
-    const pacePass = Math.abs(paceDelta) <= paceWindow
-    /* عدالة الزلة الواحدة: وحدة من 8 كلمات مهمة لا تملك رصيد خطأ STT واحد بينما
-       وحدة من 25 تملكه رياضياً (r002: كلمة واحدة أسقطتها ست ساعات متتالية).
-       تُقبل زلة واحدة في الوحدات ذات ≤13 كلمة مهمة بشروط صارمة: ليست كلمة خطر
-       ولا نفياً، النسبة الكلية ≥0.85، ونصف اللهجات على الأقل لا يفقد أكثر من زلة. */
-    const importantTotal = Number(comparison.importantTotal || 99)
-    const ensembleRecognitions = heard?.ensemble || []
-    const oneSlipConsensus = ensembleRecognitions.length
-      ? ensembleRecognitions.filter((item) => (item.comparison?.missingImportant || []).length <= 1).length
-        >= Math.ceil(ensembleRecognitions.length / 2)
-      : false
-    const oneSlipPass = comparison.missingImportant.length === 1 && importantTotal < 20
-      && comparison.ratio >= 0.85 && oneSlipConsensus
-    const sttStrict = comparison.ratio >= 0.9 && comparison.importantRatio >= 0.95
+    // A one-line title can only contain a handful of words, so a few hundred
+    // milliseconds of Azure prosody variance moves its calculated WPM sharply.
+    // Keep the normal tight gate for real reading units, but avoid rejecting a
+    // natural short unit because of noisy WPM arithmetic.
+    const paceTolerance = countArabicWords(working.pronunciationText) <= 7 ? 20 : 8
+    const pacePass = Math.abs(paceDelta) <= paceTolerance
+    const sttPass = comparison.ratio >= 0.9 && comparison.importantRatio >= 0.95
       && heard?.consensusPass === true
-    const sttPass = (sttStrict || oneSlipPass)
       && missingRisks.length === 0 && negationMissing.length === 0
-    attempts.push({ attempt, ratePct: working.ratePct, targetWpm: target, measuredWpm, pacePass,
+    attempts.push({ attempt, ratePct: working.ratePct, targetWpm: target, measuredWpm, pacePass, padding,
       stt: heard, comparison, missingRisks: missingRisks.map((risk) => risk.word), negationMissing })
     if (pacePass && sttPass) {
       if (bestEffort && bestEffort.file !== trimmed) rmSync(bestEffort.file, { force: true })
@@ -252,17 +296,7 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
       rmSync(trimmed, { force: true })
     }
     if (attempt < maxAttempts) {
-      /* الهدف الرقمي تركيبي من المخطط لا من الكاتب؛ إن كان النص سليماً سمعياً والإيقاع
-         المقاس ضمن النطاق البشري لكن بعيداً عن الهدف، يُصوَّب الهدف إلى المقاس —
-         نفس مبدأ محرك الحوار المثبت (تصويب u002) بدل دفع المصحح إلى سقفه عبثاً */
-      const unitAvgWordLen = String(working.pronunciationText || '').replace(/\s+/g, '').length
-        / Math.max(1, String(working.pronunciationText || '').trim().split(/\s+/).length)
-      const retargetFloor = (slowType || unitAvgWordLen >= 6) ? 92 : 104
-      if (sttPass && !pacePass && measuredWpm >= retargetFloor && measuredWpm <= 175) {
-        working.targetWordsPerMinute = measuredWpm
-      }
-      const retryTarget = Number(working.targetWordsPerMinute)
-      const ratioCorrection = retryTarget > 0 && measuredWpm > 0 ? ((retryTarget / measuredWpm) - 1) * 100 : 0
+      const ratioCorrection = target > 0 && measuredWpm > 0 ? ((target / measuredWpm) - 1) * 100 : 0
       const articulationCorrection = sttPass ? 0 : -2
       working.ratePct = clamp(Math.round(working.ratePct + ratioCorrection + articulationCorrection), -16, 10)
       if (!sttPass && working.internalBreaks?.length) {
@@ -462,13 +496,7 @@ export async function renderHumanReading({
       copyFileSync(candidate, quarantinedAudio)
       audit.quarantinedAudio = quarantinedAudio.replace(`${resolve(quarantineDirectory, '..')}/`, '')
       atomicWriteJson(auditFile, audit)
-      const longest = Number(technical?.silence?.longestSec || 0)
-      const longestAt = (technical?.silence?.events || []).slice().sort((a, b) => b.durationSec - a.durationSec)[0]
-      throw new Error(`بوابة الصوت رفضت القراءة: proxy=${proxyGate.score}/100`
-        + ` [حرج: ${proxyGate.criticalFailed.join('،') || 'لا'} · كل الإخفاقات: ${proxyGate.failed.join('،') || 'لا'}]`
-        + ` صمت=${longest.toFixed(2)}ث${longestAt ? `@${Number(longestAt.endSec || 0).toFixed(1)}ث` : ''}`
-        + ` LUFS=${Number(technical?.loudness?.integratedLufs || 0).toFixed(1)}`
-        + `${audioJudge ? `، judge=${audioJudge.minimumDimension}/100` : '، الحكم السمعي غير متاح'}`)
+      throw new Error(`بوابة الصوت رفضت القراءة: proxy=${proxyGate.score}/100${audioJudge ? `، judge=${audioJudge.minimumDimension}/100` : '، الحكم السمعي غير متاح'}`)
     }
     snapshotLastKnownGood({ currentFile: output, auditFile, directory: lastKnownGoodDirectory })
     stageAcceptedFile({ candidate, output })
@@ -476,7 +504,7 @@ export async function renderHumanReading({
     atomicWriteJson(auditFile, audit)
     return audit
   } finally {
-    rmSync(workDir, { recursive: true, force: true })
+    if (process.env.HUMAN_AUDIO_KEEP_WORK !== '1') rmSync(workDir, { recursive: true, force: true })
   }
 }
 

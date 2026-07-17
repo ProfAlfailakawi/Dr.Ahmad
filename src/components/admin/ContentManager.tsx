@@ -215,6 +215,16 @@ function same(a: unknown, b: unknown) {
   return String(a ?? '').trim() === String(b ?? '').trim()
 }
 
+async function hasPdfSignature(file: File) {
+  const head = new Uint8Array(await file.slice(0, 5).arrayBuffer())
+  return head.length === 5
+    && head[0] === 0x25
+    && head[1] === 0x50
+    && head[2] === 0x44
+    && head[3] === 0x46
+    && head[4] === 0x2d
+}
+
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="grid gap-1.5">
@@ -232,6 +242,7 @@ export function UploadField({
   folder,
   slug,
   maxMb,
+  helper,
   onChange,
 }: {
   label: string
@@ -240,6 +251,7 @@ export function UploadField({
   folder: 'covers' | 'files'
   slug: string
   maxMb: number
+  helper?: string
   onChange: (value: string) => void
 }) {
   const [busy, setBusy] = useState(false)
@@ -249,7 +261,7 @@ export function UploadField({
   const readableUploadError = (reason: unknown) => {
     const value = reason as { code?: string; message?: string; customData?: { serverResponse?: string } }
     const code = String(value?.code || '')
-    if (code === 'storage/unauthorized') return 'الحساب مسجّل، لكن صلاحية الرفع غير منشورة في Storage. انشر storage.rules ثم أعد المحاولة.'
+    if (code === 'storage/unauthorized') return 'الحساب مسجّل، لكن قواعد Storage لم تُطبّق بعد. الحزمة تنشرها تلقائياً مع GitHub؛ راجع نجاح خطوة «Deploy Firestore and Storage rules».'
     if (code === 'storage/bucket-not-found') return 'حاوية Firebase Storage غير مفعّلة لهذا المشروع أو اسمها غير صحيح.'
     if (code === 'storage/quota-exceeded') return 'توقّف Firebase Storage بسبب الخطة أو الحصة. افتح Storage في مشروع drahmad-8e9e2 وتحقق من تفعيل الحاوية.'
     if (code === 'storage/retry-limit-exceeded') return 'انقطع الاتصال أثناء الرفع. أعد المحاولة بعد ثوانٍ؛ لن يُحفظ رابط ناقص.'
@@ -259,7 +271,7 @@ export function UploadField({
       const response = String(value?.customData?.serverResponse || '')
       return response.includes('billing') || response.includes('Blaze')
         ? 'Firebase Storage رفض الرفع لأن الحاوية أو خطة المشروع غير مفعّلة. افتح Storage في drahmad-8e9e2 مرة واحدة ثم أعد المحاولة.'
-        : 'Firebase Storage رفض الطلب من الخادم. تم تثبيت اسم الحاوية ونوع PDF؛ بقي نشر storage.rules والتأكد أن Storage مفعّل في drahmad-8e9e2.'
+        : 'Firebase Storage رفض الطلب من الخادم. اسم الملف لا علاقة له بالمشكلة؛ تحقق من نجاح نشر قواعد Storage ومن تفعيل الحاوية في مشروع drahmad-8e9e2.'
     }
     return value?.message || 'تعذّر رفع الملف.'
   }
@@ -278,30 +290,35 @@ export function UploadField({
     try {
       const app = await getFirebaseApp()
       if (!app) throw new Error('Firebase غير متاح')
-      const [{ getAuth }, storageModule] = await Promise.all([
+      const [{ getAuth, getIdTokenResult }, storageModule] = await Promise.all([
         import('firebase/auth'),
         import('firebase/storage'),
       ])
       const user = getAuth(app).currentUser
       if (!user) throw new Error('انتهت جلسة المشرف. سجّل الدخول من جديد ثم ارفع الملف.')
-      // يجدد الـ custom claim قبل طلب Storage؛ يمنع فشل الرفع بعد منح admin للحساب.
-      await user.getIdToken(true)
+      // يجدد claim المشرف ويتحقق منه صراحةً قبل بدء أي بايت من الرفع.
+      const token = await getIdTokenResult(user, true)
+      if (token.claims.admin !== true) throw new Error('الحساب الحالي لا يحمل صلاحية admin. سجّل الخروج ثم ادخل من جديد.')
 
       const safe = slugify(slug || file.name.replace(/\.[^.]+$/, ''))
-      const extension = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || (folder === 'covers' ? 'webp' : 'pdf')
-      const isPdf = extension === 'pdf' || accept.includes('application/pdf')
-      if (isPdf && extension !== 'pdf') throw new Error('اختر ملف PDF صحيحاً.')
-      const contentType = isPdf
+      const expectsPdf = accept.split(',').some((type) => type.trim().toLowerCase() === 'application/pdf')
+      if (expectsPdf && !(await hasPdfSignature(file))) {
+        throw new Error('الملف المختار ليس PDF حقيقياً. اسم الملف لا يهم، لكن محتواه يجب أن يبدأ بتوقيع PDF الصحيح.')
+      }
+      // اسم المستخدم لا يدخل في مسار السيرة إطلاقاً: أي اسم عربي/إنجليزي يتحول إلى cv.pdf أو cv-en.pdf.
+      const sourceExtension = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '')
+      const extension = expectsPdf ? 'pdf' : sourceExtension || (folder === 'covers' ? 'webp' : 'bin')
+      const contentType = expectsPdf
         ? 'application/pdf'
         : file.type || (extension === 'webp' ? 'image/webp' : extension === 'png' ? 'image/png' : 'image/jpeg')
 
-      const bucket = app.options.storageBucket
+      const bucket = String(app.options.storageBucket || '').replace(/^gs:\/\//, '').replace(/\/$/, '')
       if (!bucket) throw new Error('اسم Firebase Storage غير موجود في إعدادات الموقع.')
-      // التهيئة الصريحة تمنع اختيار Bucket تابع لمشروع الاستضافة بدلاً من مشروع البيانات.
-      const storage = storageModule.getStorage(app, `gs://${bucket}`)
+      // هذه هي الحاوية الافتراضية لتطبيق البيانات؛ لا نمرر عنواناً ثانياً قد يكوّن instance مختلفاً في PWA.
+      const storage = storageModule.getStorage(app)
       storage.maxUploadRetryTime = 120_000
       const stableCvFile = folder === 'files' && (safe === 'cv' || safe === 'cv-en')
-      const fileName = stableCvFile ? `${safe}.${extension}` : `${safe}-${Date.now()}.${extension}`
+      const fileName = stableCvFile ? `${safe}.pdf` : `${safe}-${Date.now()}.${extension}`
       const target = storageModule.ref(storage, `site-content/${folder}/${fileName}`)
       const uploadTask = storageModule.uploadBytesResumable(target, file, {
         contentType,
@@ -328,7 +345,7 @@ export function UploadField({
   }
 
   return (
-    <Field label={label} hint={error || (busy ? `اكتمل ${progress}%` : value ? 'تم حفظ رابط الملف؛ يمكنك رفع بديل.' : undefined)}>
+    <Field label={label} hint={error || (busy ? `اكتمل ${progress}%` : value ? 'تم حفظ رابط الملف؛ يمكنك رفع بديل.' : helper)}>
       <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
         <input className={input} dir="ltr" value={value} onChange={(event) => onChange(event.target.value)} placeholder="https://… أو ارفع ملفاً" />
         <label className={`${secondary} min-w-0 cursor-pointer text-center`}>

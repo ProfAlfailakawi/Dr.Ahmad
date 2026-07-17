@@ -43,7 +43,6 @@ export const ADMIN_GROUPS: NavGroup[] = [
       { tab: 'manual-dialogue', label: 'الحوار اليدوي', note: 'تحرير الحلقة مداخلةً مداخلة' },
       { tab: 'voice', label: 'الصوت والبودكاست', note: 'اختيار الأصوات وضبط الجودة' },
       { tab: 'launch', label: 'وضع الإطلاق', note: 'إبراز عمل في الواجهة' },
-      { tab: 'event', label: 'اللقاءات القادمة', note: 'إضافة المواعيد وإدارتها' },
     ],
   },
   {
@@ -52,6 +51,7 @@ export const ADMIN_GROUPS: NavGroup[] = [
       { tab: 'books', label: 'الكتب', note: 'المؤلفات والملفات' },
       { tab: 'papers', label: 'الأبحاث', note: 'المساهمات العلمية' },
       { tab: 'media', label: 'الإعلام', note: 'الظهور واللقاءات المنشورة' },
+      { tab: 'event', label: 'اللقاءات القادمة', note: 'إضافة المواعيد وإدارتها' },
       { tab: 'cv', label: 'السيرة والهوية', note: 'ملفات السيرة والبيانات العامة' },
     ],
   },

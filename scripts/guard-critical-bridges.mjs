@@ -7,6 +7,8 @@ const requiredFiles = [
   'scripts/fetch-manual-dialogues.mjs',
   'src/lib/social-templates.ts',
   'manual-dialogues/success-that-does-not-bring-joy-to-its-ownerarabic.json',
+  'storage.rules',
+  '.github/workflows/firebase-hosting-live.yml',
 ]
 
 for (const file of requiredFiles) {
@@ -29,6 +31,8 @@ async function textFiles(directory) {
 const manualEditor = await readFile(resolve(root, 'src/components/admin/ManualDialogueEditor.tsx'), 'utf8')
 const fetchBridge = await readFile(resolve(root, 'scripts/fetch-manual-dialogues.mjs'), 'utf8')
 const socialTemplates = await readFile(resolve(root, 'src/lib/social-templates.ts'), 'utf8')
+const hostingWorkflow = await readFile(resolve(root, '.github/workflows/firebase-hosting-live.yml'), 'utf8')
+const ideaFeatures = await readFile(resolve(root, 'src/components/IdeaFeatures.tsx'), 'utf8')
 const liveSource = (await Promise.all((await textFiles(resolve(root, 'src'))).map((file) => readFile(file, 'utf8')))).join('\n')
 
 const assertions = [
@@ -37,10 +41,12 @@ const assertions = [
   [!liveSource.toLowerCase().includes('submitmanualdialogue'), 'legacy submitmanualdialogue endpoint must stay retired from all live src files'],
   [fetchBridge.includes('manual-dialogues') && fetchBridge.includes('podcast_dialogues'), 'nightly Firestore-to-repository bridge must remain active'],
   [socialTemplates.includes("type Composition = 'midad' | 'layl' | 'jarida' | 'sharit' | 'mishkat' | 'tawqee'"), 'six signed social compositions must remain present'],
+  [hostingWorkflow.includes('--only firestore:rules,storage'), 'hosting deploy must publish Storage rules with Firestore rules'],
+  [ideaFeatures.includes('window.visualViewport') && ideaFeatures.includes('firstPress'), 'PWA selection toolbar and first-tap quote controls must remain protected'],
 ]
 
 for (const [pass, message] of assertions) {
   if (!pass) throw new Error(`[guard-critical] ${message}`)
 }
 
-console.log('[guard-critical] manual dialogue bridge and six social templates are protected')
+console.log('[guard-critical] dialogue, social templates, Storage rules, and PWA quote controls are protected')

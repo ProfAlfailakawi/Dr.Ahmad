@@ -2,7 +2,7 @@
    وتقدّم فعلين متباعدين في شريطٍ واحد لا يتداخلان:
    ١) تتبّع الجملة: كل المقالات التي لامست الفكرة نفسها عبر السنوات.
    ٢) 🖼 بطاقة اقتباس: صورة أنيقة بجملةٍ منتقاة + توقيع الدكتور، للمشاركة الراقية. */
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -272,6 +272,8 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   const [paragraph, setParagraph] = useState(0)
   const [offsets, setOffsets] = useState<SelectionOffsets>({ startOffset: 0, endOffset: 0 })
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
+  const toolbarRef = useRef<HTMLDivElement>(null)
+  const [toolbarX, setToolbarX] = useState<number | null>(null)
   const [view, setView] = useState<null | 'thread' | 'card'>(null)
   const [img, setImg] = useState<string | null>(null)
   const [cardQuote, setCardQuote] = useState('')
@@ -313,8 +315,9 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0)
         const rect = rects[0] || range.getBoundingClientRect()
         if (!rect || (!rect.width && !rect.height)) return
-        const x = Math.min(window.innerWidth - 132, Math.max(132, rect.left + rect.width / 2))
-        const y = Math.max(74, rect.top - 10)
+        const x = rect.left + rect.width / 2
+        const viewportTop = window.visualViewport?.offsetTop || 0
+        const y = Math.max(viewportTop + 74, rect.top - 10)
         setSel(text)
         setParagraph(Number.isInteger(paragraphIndex) ? paragraphIndex : 0)
         setOffsets({ startOffset, endOffset })
@@ -331,6 +334,40 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
       document.removeEventListener('touchend', inspectSelection)
     }
   }, [view])
+
+  // في Safari وPWA قد يكون موضع التحديد عند حافة الشاشة، لذلك نقيس الشريط الحقيقي
+  // بعد رسمه ونحصر مركزه داخل الـ visual viewport، بدلاً من تخمين نصف عرضه.
+  useLayoutEffect(() => {
+    if (!pos || !toolbarRef.current || view) {
+      setToolbarX(null)
+      return
+    }
+    const fitInsideViewport = () => {
+      const toolbar = toolbarRef.current
+      if (!toolbar) return
+      const viewport = window.visualViewport
+      const viewportLeft = viewport?.offsetLeft || 0
+      const viewportWidth = viewport?.width || window.innerWidth
+      const measuredWidth = Math.min(toolbar.getBoundingClientRect().width, Math.max(0, viewportWidth - 16))
+      const half = measuredWidth / 2
+      const minimum = viewportLeft + 8 + half
+      const maximum = viewportLeft + viewportWidth - 8 - half
+      setToolbarX(maximum >= minimum
+        ? Math.min(maximum, Math.max(minimum, pos.x))
+        : viewportLeft + viewportWidth / 2)
+    }
+    fitInsideViewport()
+    const frame = window.requestAnimationFrame(fitInsideViewport)
+    window.addEventListener('resize', fitInsideViewport)
+    window.visualViewport?.addEventListener('resize', fitInsideViewport)
+    window.visualViewport?.addEventListener('scroll', fitInsideViewport)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener('resize', fitInsideViewport)
+      window.visualViewport?.removeEventListener('resize', fitInsideViewport)
+      window.visualViewport?.removeEventListener('scroll', fitInsideViewport)
+    }
+  }, [pos, sel, view])
 
   // مطابقة الفكرة المحددة: تبحث في العنوان والمقتطف والنص الكامل، ثم تضمن
   // بديلاً زمنياً من التصنيف نفسه كي لا تتحول الأداة الجميلة إلى لوحة فارغة.
@@ -396,22 +433,42 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
     }
   }
 
+  // تنفيذ اللمسة عند pointerdown يمنع iOS/PWA من استهلاك أول ضغطة لإزالة تحديد النص.
+  // onClick يبقى لتفعيل لوحة المفاتيح وقارئات الشاشة فقط، فلا يتكرر الفعل مرتين.
+  const firstPress = (event: ReactPointerEvent<HTMLElement>, action: () => void) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+    event.preventDefault()
+    event.stopPropagation()
+    action()
+  }
+  const downloadCard = () => {
+    if (!img) return
+    const link = document.createElement('a')
+    link.href = img
+    link.download = `اقتباس-${CARD_TEMPLATES.find((item) => item.key === template)?.label}-${CARD_FORMATS.find((item) => item.key === format)?.label}.png`
+    link.rel = 'noopener'
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  }
+
   return (
     <>
       {/* شريط واحد فوق التحديد — فعلان متباعدان بينهما فاصل، لا تداخل */}
       <AnimatePresence>
         {pos && !view && sel && (
           <motion.div
+            ref={toolbarRef}
             initial={{ opacity: 0, y: 6, scale: 0.94 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.94 }}
             transition={{ duration: 0.18 }}
-            style={{ left: pos.x, top: pos.y, transform: 'translate(-50%,-100%)' }}
+            style={{ left: toolbarX ?? pos.x, top: pos.y, transform: 'translate(-50%,-100%)' }}
             className="reader-selection-toolbar fixed z-[260] flex items-stretch overflow-hidden rounded-full border border-hair bg-canvas shadow-[0_16px_38px_-16px_rgba(0,0,0,.5)]"
           >
             <button
               type="button"
-              onPointerDown={(event) => { event.preventDefault(); setView('thread') }}
+              onPointerDown={(event) => firstPress(event, () => setView('thread'))}
               onClick={(event) => { if (event.detail === 0) setView('thread') }}
               className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas"
             >
@@ -420,7 +477,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
             <span className="my-1.5 w-px bg-hair" />
             <button
               type="button"
-              onPointerDown={(event) => { event.preventDefault(); void openCard() }}
+              onPointerDown={(event) => firstPress(event, () => { void openCard() })}
               onClick={(event) => { if (event.detail === 0) void openCard() }}
               className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas"
             >
@@ -478,22 +535,22 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         {view === 'card' && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="reader-modal-overlay fixed inset-0 z-[300] flex items-start justify-center overflow-y-auto overscroll-contain bg-ink/60 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm sm:items-center sm:p-5" onClick={close}
+            className="reader-modal-overlay quote-card-overlay fixed inset-0 z-[300] flex items-start justify-center overflow-y-auto overscroll-contain bg-ink/60 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:items-center sm:p-5" onClick={close}
           >
             <motion.div
               initial={{ scale: 0.94, y: 14 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, opacity: 0 }}
-              transition={{ duration: 0.32 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-[440px] pb-2"
+              transition={{ duration: 0.32 }} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()} className="quote-card-dialog w-full max-w-[440px] pb-2"
             >
-              <div className="sticky top-0 z-10 mb-3 flex flex-wrap items-center justify-center gap-1.5 rounded-2xl bg-ink/90 p-2 shadow-lg backdrop-blur">
+              <div className="quote-card-controls sticky top-0 z-10 mb-3 flex flex-wrap items-center justify-center gap-1.5 rounded-2xl bg-ink/90 p-2 shadow-lg backdrop-blur">
                 {CARD_TEMPLATES.map((t) => (
-                  <button key={t.key} type="button" onClick={() => chooseTemplate(t.key)} title={t.hint}
+                  <button key={t.key} type="button" onPointerDown={(event) => firstPress(event, () => chooseTemplate(t.key))} onClick={(event) => { if (event.detail === 0) chooseTemplate(t.key) }} title={t.hint}
                     className={`rounded-full px-3.5 py-1.5 text-[.74rem] font-semibold transition-colors ${template === t.key ? 'bg-canvas text-ink' : 'border border-canvas/35 text-canvas/85 hover:border-canvas'}`}>
                     {t.label}
                   </button>
                 ))}
                 <span className="mx-1 h-4 w-px bg-canvas/30" />
                 {CARD_FORMATS.map((f) => (
-                  <button key={f.key} type="button" onClick={() => chooseFormat(f.key)} title={f.hint}
+                  <button key={f.key} type="button" onPointerDown={(event) => firstPress(event, () => chooseFormat(f.key))} onClick={(event) => { if (event.detail === 0) chooseFormat(f.key) }} title={f.hint}
                     className={`rounded-full px-3 py-1.5 text-[.72rem] font-semibold transition-colors ${format === f.key ? 'bg-canvas text-ink' : 'border border-canvas/35 text-canvas/85 hover:border-canvas'}`}>
                     {f.label}
                   </button>
@@ -506,20 +563,22 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
               )}
               <div className="mt-4 flex items-center justify-center gap-3">
                 {img && (
-                  <a
-                    href={img}
-                    download={`اقتباس-${CARD_TEMPLATES.find((t) => t.key === template)?.label}-${CARD_FORMATS.find((f) => f.key === format)?.label}.png`}
+                  <button
+                    type="button"
+                    onPointerDown={(event) => firstPress(event, downloadCard)}
+                    onClick={(event) => { if (event.detail === 0) downloadCard() }}
                     aria-label="تحميل الصورة"
                     title="تحميل الصورة"
                     className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-accent text-canvas transition-all hover:-translate-y-0.5 hover:bg-accent-deep"
                   >
                     <svg aria-hidden width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-                  </a>
+                  </button>
                 )}
                 {img && (
                   <button
                     type="button"
-                    onClick={saveQuote}
+                    onPointerDown={(event) => firstPress(event, saveQuote)}
+                    onClick={(event) => { if (event.detail === 0) saveQuote() }}
                     aria-label={quoteSaved ? 'محفوظة في دفتر القراءة' : 'حفظ في دفتر القراءة'}
                     title={quoteSaved ? 'محفوظة في دفتر القراءة' : 'حفظ في دفتر القراءة'}
                     aria-pressed={quoteSaved}
@@ -528,7 +587,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                     <svg aria-hidden width="22" height="22" viewBox="0 0 24 24" fill={quoteSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4.8A1.8 1.8 0 0 1 7.8 3h8.4A1.8 1.8 0 0 1 18 4.8V21l-6-3.6L6 21Z"/></svg>
                   </button>
                 )}
-                <button type="button" onClick={close} aria-label="إغلاق" title="إغلاق" className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-[1.5px] border-canvas/50 text-canvas transition-all hover:-translate-y-0.5 hover:border-canvas">
+                <button type="button" onPointerDown={(event) => firstPress(event, close)} onClick={(event) => { if (event.detail === 0) close() }} aria-label="إغلاق" title="إغلاق" className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-[1.5px] border-canvas/50 text-canvas transition-all hover:-translate-y-0.5 hover:border-canvas">
                   <svg aria-hidden width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="m6 6 12 12"/><path d="M18 6 6 18"/></svg>
                 </button>
               </div>

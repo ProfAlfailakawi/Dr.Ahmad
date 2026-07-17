@@ -58,14 +58,14 @@ jobs:
       - name: Verify official-domain build
         run: npm run verify:domain -- --dist
 
-      - name: Deploy Firestore rules to the data project only
+      - name: Deploy Firestore and Storage rules to the data project
         run: |
           cleanup() {
             rm -f "$RUNNER_TEMP/firebase-data-service-account.json"
           }
           trap cleanup EXIT
           if [ -z "$FIREBASE_DATA_SERVICE_ACCOUNT_JSON" ]; then
-            echo "::warning::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing; skipping Firestore rules deploy for the data project."
+            echo "::warning::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing; skipping Firestore and Storage rules deploy for the data project."
             echo "::warning::Hosting deploy will continue. Add the secret later to update Inbox/Questions/CMS rules automatically."
             exit 0
           fi
@@ -73,11 +73,11 @@ jobs:
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-data-service-account.json"
           if ! npx --yes firebase-tools@latest deploy \
             --config firebase.data.json \
-            --only firestore:rules \
+            --only firestore:rules,storage \
             --project drahmad-8e9e2 \
             --non-interactive; then
-            echo "::warning::Firestore rules deploy failed. Hosting deploy will continue so the public site is not blocked."
-            echo "::warning::To deploy rules automatically, grant the service account Firebase Rules Admin + Service Usage Viewer on drahmad-8e9e2."
+            echo "::warning::Firestore/Storage rules deploy failed. Hosting deploy will continue so the public site is not blocked."
+            echo "::warning::Grant the data service account Firebase Rules Admin + Service Usage Viewer on drahmad-8e9e2 so Storage uploads work automatically."
           fi
         env:
           FIREBASE_DATA_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}

@@ -1781,3 +1781,54 @@ body.reader-resume-open .floating-actions {
     width: 100%;
   }
 }
+
+/* ============================================================
+   إصلاحات PWA/الهاتف: شريط التحديد وبطاقة الاقتباس
+   ============================================================ */
+.reader-selection-toolbar {
+  inline-size: max-content;
+  max-inline-size: calc(100vw - 16px);
+  max-inline-size: calc(100dvw - 16px);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.reader-selection-toolbar button,
+.quote-card-overlay button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* نبدأ البطاقة أسفل شريط Safari/PWA والمنطقة الآمنة، فلا تُقص القوالب العلوية. */
+.quote-card-overlay {
+  padding-top: max(5.5rem, calc(env(safe-area-inset-top) + 3.75rem));
+  scroll-padding-top: max(5.5rem, calc(env(safe-area-inset-top) + 3.75rem));
+}
+.quote-card-dialog {
+  margin-inline: auto;
+  min-inline-size: 0;
+}
+.quote-card-controls {
+  max-inline-size: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 420px) {
+  .reader-selection-toolbar button {
+    padding-inline: .78rem;
+    font-size: .72rem;
+  }
+  .quote-card-controls {
+    gap: .3rem;
+    padding: .45rem;
+  }
+  .quote-card-controls button {
+    padding-inline: .72rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .quote-card-overlay {
+    padding-top: 1.25rem;
+    scroll-padding-top: 1.25rem;
+  }
+}

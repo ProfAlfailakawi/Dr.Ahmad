@@ -228,8 +228,8 @@ function CvPdfCard() {
       <p className="text-[.76rem] font-semibold uppercase text-accent">سيرتي الذاتية PDF</p>
       <p className="mt-1 text-[.85rem] font-light text-soft">ارفع الملف الجديد وسيتبدل زر التحميل في الموقع فوراً — عربي وإنجليزي.</p>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
-        <UploadField label="السيرة (عربي)" value={links.url || ''} accept="application/pdf" folder="files" slug="cv" maxMb={30} onChange={(url) => void save({ url })} />
-        <UploadField label="English CV" value={links.urlEn || ''} accept="application/pdf" folder="files" slug="cv-en" maxMb={30} onChange={(urlEn) => void save({ urlEn })} />
+        <UploadField label="السيرة (عربي)" value={links.url || ''} accept="application/pdf" folder="files" slug="cv" maxMb={30} helper="اسم الملف لا يهم؛ أي PDF صحيح يُحفظ تلقائياً باسم cv.pdf ويستبدل النسخة السابقة." onChange={(url) => void save({ url })} />
+        <UploadField label="English CV" value={links.urlEn || ''} accept="application/pdf" folder="files" slug="cv-en" maxMb={30} helper="The original filename does not matter; it is stored safely as cv-en.pdf." onChange={(urlEn) => void save({ urlEn })} />
       </div>
       {saved && <p className="mt-3 text-[.8rem] font-medium text-accent">{saved}</p>}
     </div>

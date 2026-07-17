@@ -8,6 +8,8 @@ const requiredFiles = [
   'src/lib/social-templates.ts',
   'manual-dialogues/success-that-does-not-bring-joy-to-its-ownerarabic.json',
   'storage.rules',
+  'firestore.rules',
+  'src/pages/CvFile.tsx',
   '.github/workflows/firebase-hosting-live.yml',
 ]
 
@@ -33,6 +35,9 @@ const fetchBridge = await readFile(resolve(root, 'scripts/fetch-manual-dialogues
 const socialTemplates = await readFile(resolve(root, 'src/lib/social-templates.ts'), 'utf8')
 const hostingWorkflow = await readFile(resolve(root, '.github/workflows/firebase-hosting-live.yml'), 'utf8')
 const ideaFeatures = await readFile(resolve(root, 'src/components/IdeaFeatures.tsx'), 'utf8')
+const contentManager = await readFile(resolve(root, 'src/components/admin/ContentManager.tsx'), 'utf8')
+const cvFile = await readFile(resolve(root, 'src/pages/CvFile.tsx'), 'utf8')
+const firestoreRules = await readFile(resolve(root, 'firestore.rules'), 'utf8')
 const liveSource = (await Promise.all((await textFiles(resolve(root, 'src'))).map((file) => readFile(file, 'utf8')))).join('\n')
 
 const assertions = [
@@ -43,10 +48,13 @@ const assertions = [
   [socialTemplates.includes("type Composition = 'midad' | 'layl' | 'jarida' | 'sharit' | 'mishkat' | 'tawqee'"), 'six signed social compositions must remain present'],
   [hostingWorkflow.includes('--only firestore:rules,storage'), 'hosting deploy must publish Storage rules with Firestore rules'],
   [ideaFeatures.includes('window.visualViewport') && ideaFeatures.includes('firstPress'), 'PWA selection toolbar and first-tap quote controls must remain protected'],
+  [contentManager.includes('uploadCvPdfToFirestore') && contentManager.includes("'site_cv_files'"), 'CV upload must keep its Storage-independent Firestore bridge'],
+  [cvFile.includes("'site_cv_files'") && cvFile.includes('cv-files-v1'), 'public CV reconstruction and local cache must remain active'],
+  [firestoreRules.includes('match /site_cv_files/{kind}') && firestoreRules.includes('match /chunks/{chunkId}'), 'Firestore CV file rules must remain deployed'],
 ]
 
 for (const [pass, message] of assertions) {
   if (!pass) throw new Error(`[guard-critical] ${message}`)
 }
 
-console.log('[guard-critical] dialogue, social templates, Storage rules, and PWA quote controls are protected')
+console.log('[guard-critical] dialogue, social templates, CV files, rules, and PWA quote controls are protected')

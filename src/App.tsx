@@ -19,6 +19,7 @@ const Decade = lazy(() => import('./pages/Decade'))
 const ThoughtPaths = lazy(() => import('./pages/ThoughtPaths'))
 const Media = lazy(() => import('./pages/Media'))
 const CV = lazy(() => import('./pages/CV'))
+const CvFile = lazy(() => import('./pages/CvFile'))
 const Contact = lazy(() => import('./pages/Contact'))
 const BookDetail = lazy(() => import('./pages/BookDetail'))
 const ArticleDetail = lazy(() => import('./pages/ArticleDetail'))
@@ -122,6 +123,7 @@ function AnimatedRoutes() {
         <Route path="/inbox" element={<Inbox />} />
         <Route path="/about" element={<AboutSite />} />
         <Route path="/cv" element={<CV />} />
+        <Route path="/cv-file/:kind" element={<CvFile />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfUse />} />
@@ -148,12 +150,12 @@ function AnimatedRoutes() {
 /** ينتظر تحديث وسوم SEO للصفحة، ثم يسجل مشاهدة واحدة للمسار في الجلسة. */
 function ConditionalNav() {
   const location = useLocation()
-  return location.pathname === '/admin' ? null : <Nav />
+  return location.pathname === '/admin' || location.pathname.startsWith('/cv-file/') ? null : <Nav />
 }
 
 function ConditionalActions() {
   const location = useLocation()
-  if (location.pathname === '/admin') return null
+  if (location.pathname === '/admin' || location.pathname.startsWith('/cv-file/')) return null
   return (
     <>
       <FloatingActions />
@@ -164,7 +166,7 @@ function ConditionalActions() {
 
 function ConditionalFooter() {
   const location = useLocation()
-  return location.pathname === '/' || location.pathname === '/admin' ? null : <Footer />
+  return location.pathname === '/' || location.pathname === '/admin' || location.pathname.startsWith('/cv-file/') ? null : <Footer />
 }
 
 

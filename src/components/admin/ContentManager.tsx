@@ -225,6 +225,81 @@ async function hasPdfSignature(file: File) {
     && head[4] === 0x2d
 }
 
+async function uploadCvPdfToFirestore(file: File, kind: 'ar' | 'en', onProgress: (value: number) => void) {
+  const db = await getDb()
+  if (!db) throw new Error('Firestore غير متاح لحفظ السيرة.')
+  const firestore = await import('firebase/firestore')
+  const chunkSize = 650 * 1024
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  const chunkCount = Math.ceil(bytes.length / chunkSize)
+  if (!chunkCount || chunkCount > 100) throw new Error('حجم ملف السيرة أكبر من الحد الآمن.')
+  const digest = await crypto.subtle.digest('SHA-256', bytes)
+  const sha256 = Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, '0')).join('')
+  const version = `${Date.now().toString(36)}-${sha256.slice(0, 12)}`
+  const fileRef = firestore.doc(db, 'site_cv_files', kind)
+  const previousSnapshot = await firestore.getDoc(fileRef)
+  const previous = previousSnapshot.exists() ? previousSnapshot.data() as { version?: string; chunkCount?: number } : {}
+  const chunks = firestore.collection(fileRef, 'chunks')
+  const writtenIds: string[] = []
+  try {
+    // Firestore يضع حداً لحجم طلب commit؛ لذلك نكتب أجزاء PDF في دفعات صغيرة
+    // ثم ننشر metadata أخيراً. لا يرى الزائر نسخة ناقصة في أي لحظة.
+    for (let offset = 0; offset < chunkCount; offset += 8) {
+      const batch = firestore.writeBatch(db)
+      const end = Math.min(chunkCount, offset + 8)
+      for (let index = offset; index < end; index++) {
+        const start = index * chunkSize
+        const chunk = bytes.slice(start, Math.min(bytes.length, start + chunkSize))
+        const chunkDocumentId = `${version}-${String(index).padStart(4, '0')}`
+        writtenIds.push(chunkDocumentId)
+        batch.set(firestore.doc(chunks, chunkDocumentId), {
+          version,
+          index,
+          size: chunk.length,
+          data: firestore.Bytes.fromUint8Array(chunk),
+        })
+      }
+      await batch.commit()
+      onProgress(Math.max(1, Math.min(92, Math.round((end / chunkCount) * 90))))
+    }
+
+    await firestore.setDoc(fileRef, {
+      kind,
+      version,
+      size: bytes.length,
+      chunkSize,
+      chunkCount,
+      sha256,
+      contentType: 'application/pdf',
+      fileName: kind === 'ar' ? 'cv.pdf' : 'cv-en.pdf',
+      originalName: file.name.slice(0, 180),
+      updatedAt: firestore.serverTimestamp(),
+    }, { merge: true })
+  } catch (reason) {
+    for (let offset = 0; offset < writtenIds.length; offset += 100) {
+      const cleanup = firestore.writeBatch(db)
+      for (const id of writtenIds.slice(offset, offset + 100)) cleanup.delete(firestore.doc(chunks, id))
+      await cleanup.commit().catch(() => undefined)
+    }
+    throw reason
+  }
+  onProgress(96)
+
+  const oldVersion = typeof previous.version === 'string' ? previous.version : ''
+  const oldChunkCount = Number(previous.chunkCount || 0)
+  if (oldVersion && oldVersion !== version && Number.isInteger(oldChunkCount) && oldChunkCount > 0 && oldChunkCount <= 100) {
+    for (let offset = 0; offset < oldChunkCount; offset += 100) {
+      const cleanup = firestore.writeBatch(db)
+      for (let index = offset; index < Math.min(oldChunkCount, offset + 100); index++) {
+        cleanup.delete(firestore.doc(chunks, `${oldVersion}-${String(index).padStart(4, '0')}`))
+      }
+      await cleanup.commit().catch(() => undefined)
+    }
+  }
+  onProgress(100)
+  return `/cv-file/${kind}?v=${encodeURIComponent(version)}`
+}
+
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="grid gap-1.5">
@@ -261,6 +336,8 @@ export function UploadField({
   const readableUploadError = (reason: unknown) => {
     const value = reason as { code?: string; message?: string; customData?: { serverResponse?: string } }
     const code = String(value?.code || '')
+    if (code === 'permission-denied' || code === 'firestore/permission-denied') return 'قواعد Firestore الجديدة لملفات السيرة لم تُنشر بعد. شغّل نشر الموقع مرة واحدة ثم أعد الرفع؛ اسم الملف لا علاقة له بالمشكلة.'
+    if (code === 'resource-exhausted' || code === 'firestore/resource-exhausted') return 'توقّف الرفع بسبب حصة Firestore الحالية. انتظر قليلاً ثم أعد المحاولة.'
     if (code === 'storage/unauthorized') return 'الحساب مسجّل، لكن قواعد Storage لم تُطبّق بعد. الحزمة تنشرها تلقائياً مع GitHub؛ راجع نجاح خطوة «Deploy Firestore and Storage rules».'
     if (code === 'storage/bucket-not-found') return 'حاوية Firebase Storage غير مفعّلة لهذا المشروع أو اسمها غير صحيح.'
     if (code === 'storage/quota-exceeded') return 'توقّف Firebase Storage بسبب الخطة أو الحصة. افتح Storage في مشروع drahmad-8e9e2 وتحقق من تفعيل الحاوية.'
@@ -290,10 +367,7 @@ export function UploadField({
     try {
       const app = await getFirebaseApp()
       if (!app) throw new Error('Firebase غير متاح')
-      const [{ getAuth, getIdTokenResult }, storageModule] = await Promise.all([
-        import('firebase/auth'),
-        import('firebase/storage'),
-      ])
+      const { getAuth, getIdTokenResult } = await import('firebase/auth')
       const user = getAuth(app).currentUser
       if (!user) throw new Error('انتهت جلسة المشرف. سجّل الدخول من جديد ثم ارفع الملف.')
       // يجدد claim المشرف ويتحقق منه صراحةً قبل بدء أي بايت من الرفع.
@@ -311,18 +385,29 @@ export function UploadField({
       const contentType = expectsPdf
         ? 'application/pdf'
         : file.type || (extension === 'webp' ? 'image/webp' : extension === 'png' ? 'image/png' : 'image/jpeg')
+      const stableCvFile = folder === 'files' && (safe === 'cv' || safe === 'cv-en')
 
+      // السيرة لها مسار مستقل لا يعتمد على Firebase Storage إطلاقاً؛ تُجزّأ داخل
+      // Firestore وتُعرض من رابط ثابت. بذلك لا تعود الحاوية أو خططتها سبباً لفشل الرفع.
+      if (stableCvFile) {
+        const url = await uploadCvPdfToFirestore(file, safe === 'cv' ? 'ar' : 'en', setProgress)
+        onChange(url)
+        setProgress(100)
+        task.complete('تم رفع السيرة وتحديث رابطها')
+        return
+      }
+
+      const storageModule = await import('firebase/storage')
       const bucket = String(app.options.storageBucket || '').replace(/^gs:\/\//, '').replace(/\/$/, '')
       if (!bucket) throw new Error('اسم Firebase Storage غير موجود في إعدادات الموقع.')
       // هذه هي الحاوية الافتراضية لتطبيق البيانات؛ لا نمرر عنواناً ثانياً قد يكوّن instance مختلفاً في PWA.
       const storage = storageModule.getStorage(app)
       storage.maxUploadRetryTime = 120_000
-      const stableCvFile = folder === 'files' && (safe === 'cv' || safe === 'cv-en')
-      const fileName = stableCvFile ? `${safe}.pdf` : `${safe}-${Date.now()}.${extension}`
+      const fileName = `${safe}-${Date.now()}.${extension}`
       const target = storageModule.ref(storage, `site-content/${folder}/${fileName}`)
       const uploadTask = storageModule.uploadBytesResumable(target, file, {
         contentType,
-        cacheControl: stableCvFile ? 'public,max-age=300,must-revalidate' : 'public,max-age=31536000,immutable',
+        cacheControl: 'public,max-age=31536000,immutable',
         customMetadata: { uploadedBy: user.uid, source: 'admin-panel' },
       })
 

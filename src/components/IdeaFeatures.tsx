@@ -26,6 +26,34 @@ type SelectionOffsets = { startOffset: number; endOffset: number }
 
 const READER_QUOTES_KEY = 'reader:quotes:v2'
 
+function normalizeReaderQuote(quote: string) {
+  return quote.replace(/\s+/g, ' ').trim()
+}
+
+function readerQuoteId(article: Art, quote: string, paragraph: number) {
+  return `${article.slug}:${paragraph}:${normalizeReaderQuote(quote).slice(0, 80)}`
+}
+
+function readReaderQuotes(): SavedReaderQuote[] {
+  try {
+    const raw = window.localStorage.getItem(READER_QUOTES_KEY)
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed.filter((entry): entry is SavedReaderQuote => Boolean(entry?.id && entry?.quote)) : []
+  } catch {
+    return []
+  }
+}
+
+function writeReaderQuotes(quotes: SavedReaderQuote[]) {
+  try {
+    window.localStorage.setItem(READER_QUOTES_KEY, JSON.stringify(quotes.slice(0, 300)))
+    window.dispatchEvent(new CustomEvent('reader:quotes-changed'))
+    return true
+  } catch {
+    return false
+  }
+}
+
 function articleContentVersion(body = '') {
   let hash = 2166136261
   for (let index = 0; index < body.length; index++) {
@@ -36,14 +64,10 @@ function articleContentVersion(body = '') {
 }
 
 function saveReaderQuote(article: Art, quote: string, paragraph: number, offsets: SelectionOffsets, body: string) {
-  const normalized = quote.replace(/\s+/g, ' ').trim()
+  const normalized = normalizeReaderQuote(quote)
   if (!normalized) return null
-  let existing: SavedReaderQuote[] = []
-  try {
-    const raw = window.localStorage.getItem(READER_QUOTES_KEY)
-    existing = raw ? JSON.parse(raw) as SavedReaderQuote[] : []
-  } catch { /* local storage may be unavailable */ }
-  const id = `${article.slug}:${paragraph}:${normalized.slice(0, 80)}`
+  const existing = readReaderQuotes()
+  const id = readerQuoteId(article, normalized, paragraph)
   const item: SavedReaderQuote = {
     id,
     quote: normalized,
@@ -56,13 +80,20 @@ function saveReaderQuote(article: Art, quote: string, paragraph: number, offsets
     startOffset: offsets.startOffset,
     endOffset: offsets.endOffset,
   }
-  try {
-    window.localStorage.setItem(READER_QUOTES_KEY, JSON.stringify([item, ...existing.filter((entry) => entry?.id !== id)].slice(0, 300)))
-    window.dispatchEvent(new CustomEvent('reader:quotes-changed'))
-    return item
-  } catch {
-    return null
-  }
+  return writeReaderQuotes([item, ...existing.filter((entry) => entry?.id !== id)]) ? item : null
+}
+
+function removeReaderQuote(article: Art, quote: string, paragraph: number) {
+  const id = readerQuoteId(article, quote, paragraph)
+  const existing = readReaderQuotes()
+  const removed = existing.find((entry) => entry.id === id) || null
+  if (!removed) return null
+  return writeReaderQuotes(existing.filter((entry) => entry.id !== id)) ? removed : null
+}
+
+function isReaderQuoteSaved(article: Art, quote: string, paragraph: number) {
+  const id = readerQuoteId(article, quote, paragraph)
+  return readReaderQuotes().some((entry) => entry.id === id)
 }
 
 /* ── تطبيع عربي بسيط + كلمات دالة تُستبعد ── */
@@ -280,6 +311,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   const [template, setTemplate] = useState<CardTemplateKey>('midad')
   const [format, setFormat] = useState<CardFormatKey>('square')
   const [quoteSaved, setQuoteSaved] = useState(false)
+  const [downloadFeedback, setDownloadFeedback] = useState('')
 
   useEffect(() => {
     let timer = 0
@@ -315,7 +347,11 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0)
         const rect = rects[0] || range.getBoundingClientRect()
         if (!rect || (!rect.width && !rect.height)) return
-        const x = rect.left + rect.width / 2
+        const viewport = window.visualViewport
+        const viewportLeft = viewport?.offsetLeft || 0
+        const viewportWidth = viewport?.width || window.innerWidth
+        const rawX = rect.left + rect.width / 2
+        const x = Math.min(viewportLeft + viewportWidth - 12, Math.max(viewportLeft + 12, rawX))
         const viewportTop = window.visualViewport?.offsetTop || 0
         const y = Math.max(viewportTop + 74, rect.top - 10)
         setSel(text)
@@ -327,11 +363,19 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
     document.addEventListener('selectionchange', inspectSelection)
     document.addEventListener('pointerup', inspectSelection)
     document.addEventListener('touchend', inspectSelection, { passive: true })
+    window.addEventListener('scroll', inspectSelection, { passive: true })
+    window.addEventListener('resize', inspectSelection)
+    window.visualViewport?.addEventListener('scroll', inspectSelection)
+    window.visualViewport?.addEventListener('resize', inspectSelection)
     return () => {
       window.clearTimeout(timer)
       document.removeEventListener('selectionchange', inspectSelection)
       document.removeEventListener('pointerup', inspectSelection)
       document.removeEventListener('touchend', inspectSelection)
+      window.removeEventListener('scroll', inspectSelection)
+      window.removeEventListener('resize', inspectSelection)
+      window.visualViewport?.removeEventListener('scroll', inspectSelection)
+      window.visualViewport?.removeEventListener('resize', inspectSelection)
     }
   }, [view])
 
@@ -407,22 +451,45 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   const openCard = async () => {
     const quote = (sel.split(/\s+/).length >= 5 ? sel : firstStrongSentence(body, excerpt)).replace(/\s+/g, ' ').trim()
     setCardQuote(quote)
+    setQuoteSaved(isReaderQuoteSaved(current, quote, paragraph))
+    setDownloadFeedback('')
     setView('card'); setPos(null)
     await renderCard(quote, template, format)
   }
   const chooseTemplate = (tpl: CardTemplateKey) => { setTemplate(tpl); void renderCard(cardQuote, tpl, format) }
   const chooseFormat = (fmt: CardFormatKey) => { setFormat(fmt); void renderCard(cardQuote, template, fmt) }
-  const close = () => { setView(null); setImg(null); setSel(''); setQuoteSaved(false); setOffsets({ startOffset: 0, endOffset: 0 }) }
+  const close = () => { setView(null); setImg(null); setSel(''); setQuoteSaved(false); setDownloadFeedback(''); setOffsets({ startOffset: 0, endOffset: 0 }) }
 
   const saveQuote = () => {
-    const saved = saveReaderQuote(current, sel, paragraph, offsets, body || current.body || '')
+    const quote = normalizeReaderQuote(cardQuote || sel)
+    if (!quote) return
+    if (isReaderQuoteSaved(current, quote, paragraph)) {
+      const removed = removeReaderQuote(current, quote, paragraph)
+      if (!removed) return
+      setQuoteSaved(false)
+      window.dispatchEvent(new CustomEvent('reader:quote-removed', {
+        detail: {
+          slug: current.slug,
+          body: body || current.body || '',
+          quote,
+          paragraph,
+          startOffset: removed.startOffset ?? offsets.startOffset,
+          endOffset: removed.endOffset ?? offsets.endOffset,
+          articleVersion: removed.articleVersion,
+          highlightKey: removed.highlightKey,
+        },
+      }))
+      return
+    }
+
+    const saved = saveReaderQuote(current, quote, paragraph, offsets, body || current.body || '')
     setQuoteSaved(Boolean(saved))
     if (saved) {
       window.dispatchEvent(new CustomEvent('reader:quote-saved', {
         detail: {
           slug: current.slug,
           body: body || current.body || '',
-          quote: sel,
+          quote,
           paragraph,
           startOffset: offsets.startOffset,
           endOffset: offsets.endOffset,
@@ -433,6 +500,11 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
     }
   }
 
+  const openReadingNotebook = () => {
+    close()
+    window.setTimeout(() => window.dispatchEvent(new CustomEvent('reader:open-notebook')), 30)
+  }
+
   // تنفيذ اللمسة عند pointerdown يمنع iOS/PWA من استهلاك أول ضغطة لإزالة تحديد النص.
   // onClick يبقى لتفعيل لوحة المفاتيح وقارئات الشاشة فقط، فلا يتكرر الفعل مرتين.
   const firstPress = (event: ReactPointerEvent<HTMLElement>, action: () => void) => {
@@ -441,15 +513,52 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
     event.stopPropagation()
     action()
   }
-  const downloadCard = () => {
+  const dataUrlToBlob = (value: string) => {
+    const [header, encoded = ''] = value.split(',', 2)
+    const mime = /^data:([^;]+)/.exec(header)?.[1] || 'image/png'
+    const binary = atob(encoded)
+    const bytes = new Uint8Array(binary.length)
+    for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index)
+    return new Blob([bytes], { type: mime })
+  }
+
+  const downloadCard = async () => {
     if (!img) return
-    const link = document.createElement('a')
-    link.href = img
-    link.download = `اقتباس-${CARD_TEMPLATES.find((item) => item.key === template)?.label}-${CARD_FORMATS.find((item) => item.key === format)?.label}.png`
-    link.rel = 'noopener'
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
+    const fileName = `اقتباس-${CARD_TEMPLATES.find((item) => item.key === template)?.label}-${CARD_FORMATS.find((item) => item.key === format)?.label}.png`
+    const blob = dataUrlToBlob(img)
+    const file = new File([blob], fileName, { type: 'image/png' })
+    const shareNavigator = navigator as Navigator & { canShare?: (data: ShareData) => boolean }
+    const isIos = /iP(?:hone|ad|od)/.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    const isStandalone = window.matchMedia?.('(display-mode: standalone)').matches
+      || Boolean((navigator as Navigator & { standalone?: boolean }).standalone)
+
+    try {
+      if ((isIos || isStandalone) && navigator.share && shareNavigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'بطاقة اقتباس' })
+        setDownloadFeedback('اختر «حفظ الصورة» من نافذة المشاركة.')
+        return
+      }
+
+      const objectUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = objectUrl
+      link.download = fileName
+      link.rel = 'noopener'
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000)
+      setDownloadFeedback('بدأ تنزيل الصورة.')
+    } catch (reason) {
+      if ((reason as DOMException)?.name === 'AbortError') return
+      const objectUrl = URL.createObjectURL(blob)
+      const opened = window.open(objectUrl, '_blank', 'noopener,noreferrer')
+      if (!opened) URL.revokeObjectURL(objectUrl)
+      else window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000)
+      setDownloadFeedback(opened ? 'فُتحت الصورة؛ احفظها من قائمة المتصفح.' : 'تعذّر فتح الصورة. اسمح بالنوافذ المنبثقة ثم أعد المحاولة.')
+    }
   }
 
   return (
@@ -457,33 +566,37 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
       {/* شريط واحد فوق التحديد — فعلان متباعدان بينهما فاصل، لا تداخل */}
       <AnimatePresence>
         {pos && !view && sel && (
-          <motion.div
+          <div
             ref={toolbarRef}
-            initial={{ opacity: 0, y: 6, scale: 0.94 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.94 }}
-            transition={{ duration: 0.18 }}
-            style={{ left: toolbarX ?? pos.x, top: pos.y, transform: 'translate(-50%,-100%)' }}
-            className="reader-selection-toolbar fixed z-[260] flex items-stretch overflow-hidden rounded-full border border-hair bg-canvas shadow-[0_16px_38px_-16px_rgba(0,0,0,.5)]"
+            style={{ left: toolbarX ?? pos.x, top: pos.y, transform: 'translate3d(-50%,-100%,0)' }}
+            className="reader-selection-toolbar fixed z-[260]"
           >
-            <button
-              type="button"
-              onPointerDown={(event) => firstPress(event, () => setView('thread'))}
-              onClick={(event) => { if (event.detail === 0) setView('thread') }}
-              className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas"
+            <motion.div
+              initial={{ opacity: 0, y: 6, scale: 0.94 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 4, scale: 0.94 }}
+              transition={{ duration: 0.18 }}
+              className="flex items-stretch overflow-hidden rounded-full border border-hair bg-canvas shadow-[0_16px_38px_-16px_rgba(0,0,0,.5)]"
             >
-              🧬 عبر السنوات
-            </button>
-            <span className="my-1.5 w-px bg-hair" />
-            <button
-              type="button"
-              onPointerDown={(event) => firstPress(event, () => { void openCard() })}
-              onClick={(event) => { if (event.detail === 0) void openCard() }}
-              className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas"
-            >
-              🖼 بطاقة اقتباس
-            </button>
-          </motion.div>
+              <button
+                type="button"
+                onPointerDown={(event) => firstPress(event, () => setView('thread'))}
+                onClick={(event) => { if (event.detail === 0) setView('thread') }}
+                className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas"
+              >
+                🧬 عبر السنوات
+              </button>
+              <span className="my-1.5 w-px bg-hair" />
+              <button
+                type="button"
+                onPointerDown={(event) => firstPress(event, () => { void openCard() })}
+                onClick={(event) => { if (event.detail === 0) void openCard() }}
+                className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas"
+              >
+                🖼 بطاقة اقتباس
+              </button>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
@@ -565,8 +678,8 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                 {img && (
                   <button
                     type="button"
-                    onPointerDown={(event) => firstPress(event, downloadCard)}
-                    onClick={(event) => { if (event.detail === 0) downloadCard() }}
+                    onPointerDown={(event) => firstPress(event, () => { void downloadCard() })}
+                    onClick={(event) => { if (event.detail === 0) void downloadCard() }}
                     aria-label="تحميل الصورة"
                     title="تحميل الصورة"
                     className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-accent text-canvas transition-all hover:-translate-y-0.5 hover:bg-accent-deep"
@@ -579,8 +692,8 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                     type="button"
                     onPointerDown={(event) => firstPress(event, saveQuote)}
                     onClick={(event) => { if (event.detail === 0) saveQuote() }}
-                    aria-label={quoteSaved ? 'محفوظة في دفتر القراءة' : 'حفظ في دفتر القراءة'}
-                    title={quoteSaved ? 'محفوظة في دفتر القراءة' : 'حفظ في دفتر القراءة'}
+                    aria-label={quoteSaved ? 'إزالة من دفتر القراءة' : 'حفظ في دفتر القراءة'}
+                    title={quoteSaved ? 'إزالة من دفتر القراءة' : 'حفظ في دفتر القراءة'}
                     aria-pressed={quoteSaved}
                     className={`flex h-[52px] w-[52px] items-center justify-center rounded-full border transition-all hover:-translate-y-0.5 ${quoteSaved ? 'border-canvas bg-canvas text-ink' : 'border-canvas/60 bg-canvas/10 text-canvas hover:bg-canvas hover:text-ink'}`}
                   >
@@ -591,7 +704,13 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                   <svg aria-hidden width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="m6 6 12 12"/><path d="M18 6 6 18"/></svg>
                 </button>
               </div>
-              {quoteSaved && <p className="mt-2 text-center text-[.72rem] font-semibold text-canvas/80">حُفظت في دفتر القراءة</p>}
+              {quoteSaved && (
+                <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[.72rem] font-semibold text-canvas/80">
+                  <span>حُفظت — اضغط علامة الحفظ مرة أخرى للتراجع.</span>
+                  <button type="button" onPointerDown={(event) => firstPress(event, openReadingNotebook)} onClick={(event) => { if (event.detail === 0) openReadingNotebook() }} className="border-b border-canvas/45 pb-px text-canvas transition-colors hover:border-canvas">فتح دفتر القراءة</button>
+                </div>
+              )}
+              {downloadFeedback && <p className="mt-2 text-center text-[.7rem] font-medium text-canvas/80">{downloadFeedback}</p>}
               <p className="mt-4 text-center text-[.82rem] text-canvas/70">
                 {(() => { const f = CARD_FORMATS.find((x) => x.key === format)!; return `${f.w}×${f.h} — ${f.hint}` })()}
               </p>

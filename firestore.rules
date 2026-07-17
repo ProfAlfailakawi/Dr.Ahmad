@@ -109,6 +109,17 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ملفات السيرة البديلة: تُجزّأ داخل Firestore حتى لا يعتمد رفع السيرة
+    // على تفعيل Firebase Storage. القراءة عامة للملف المنشور، والكتابة للمشرف فقط.
+    match /site_cv_files/{kind} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+      match /chunks/{chunkId} {
+        allow read: if true;
+        allow create, update, delete: if isAdmin();
+      }
+    }
+
     // تقرير حارس الجودة الأسبوعي — يكتبه السكربت المجدول بحساب الخدمة، للمشرف قراءةً.
     match /site_health/{date} {
       allow read: if isAdmin();

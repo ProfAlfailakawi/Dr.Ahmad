@@ -42,7 +42,7 @@ function CourseArchive({ items }: { items: CvTextItem[] }) {
   const technical = items.filter((item) => !containsArabic(item.text))
   const groups = [
     { title: 'الشهادات والدورات المهنية', items: professional, open: true },
-    { title: 'مسارات Microsoft والتقنية التعليمية بمسمياتها الأصلية', items: technical, open: false },
+    { title: 'الخبرات القيادية في التحول الرقمي وتقنيات التعليم', items: technical, open: false },
   ].filter((group) => group.items.length > 0)
 
   return (

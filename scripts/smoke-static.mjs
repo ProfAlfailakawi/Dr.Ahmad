@@ -19,7 +19,7 @@ const runtime = ts.transpileModule(researchSource, { compilerOptions: { module: 
 const papers = new Function(`${runtime}; return researchPapers`)().map((paper) => paper.slug)
 
 const expected = [
-  '/', '/articles', '/publications', '/research', '/ask', '/atlas', '/cv', '/upcoming',
+  '/', '/articles', '/publications', '/research', '/ask', '/atlas', '/cv', '/cv-file/ar', '/cv-file/en', '/upcoming',
   ...articles.map((slug) => `/articles/${slug}`),
   ...books.map((slug) => `/publications/${slug}`),
   ...papers.map((slug) => `/research/${slug}`),

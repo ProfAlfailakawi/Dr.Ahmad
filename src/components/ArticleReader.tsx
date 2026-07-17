@@ -397,6 +397,11 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
 
   useEffect(() => {
     const refreshQuotes = () => setQuotesState(readSavedQuotes())
+    const openNotebook = () => {
+      setQuotesState(readSavedQuotes())
+      setTab('quotes')
+      setOpen(true)
+    }
     const onXray = (event: Event) => setXray((event as CustomEvent<XrayTerm>).detail || null)
     const onPopularLinked = (event: Event) => {
       const detail = (event as CustomEvent<{ localQuoteId?: string; articleVersion?: string; highlightKey?: string; startOffset?: number; endOffset?: number }>).detail
@@ -408,10 +413,12 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
       if (JSON.stringify(next) !== JSON.stringify(current)) saveQuotes(next)
     }
     window.addEventListener('reader:quotes-changed', refreshQuotes)
+    window.addEventListener('reader:open-notebook', openNotebook)
     window.addEventListener('reader:xray', onXray)
     window.addEventListener('reader:popular-quote-linked', onPopularLinked)
     return () => {
       window.removeEventListener('reader:quotes-changed', refreshQuotes)
+      window.removeEventListener('reader:open-notebook', openNotebook)
       window.removeEventListener('reader:xray', onXray)
       window.removeEventListener('reader:popular-quote-linked', onPopularLinked)
     }
@@ -487,7 +494,18 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
 
   return (
     <>
-      <div className="reader-control-anchor mt-5 flex justify-end">
+      <div className="reader-control-anchor mt-5 flex flex-wrap justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => { setQuotesState(readSavedQuotes()); setTab('quotes'); setOpen(true) }}
+          aria-label="فتح دفتر القراءة"
+          title="دفتر القراءة"
+          className="flex min-h-10 items-center gap-2 rounded-full border border-hair bg-canvas px-4 py-2 text-[.76rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+        >
+          <svg aria-hidden width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4.8A1.8 1.8 0 0 1 7.8 3h8.4A1.8 1.8 0 0 1 18 4.8V21l-6-3.6L6 21Z"/></svg>
+          <span>دفتر القراءة</span>
+          {quotes.length > 0 && <span className="rounded-full bg-accent/10 px-1.5 py-0.5 text-[.66rem] text-accent">{quotes.length.toLocaleString('ar-KW')}</span>}
+        </button>
         <button
           type="button"
           onClick={() => { setTab('settings'); setOpen(true) }}

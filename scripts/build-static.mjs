@@ -151,6 +151,8 @@ const STATIC = [
   { path: '/curated', title: 'من اختياراتي', desc: 'كتاب، ومقالة، وأداة، واقتباس — مساحة تتجدّد.' },
   { path: '/inbox', title: 'رسائل على الهامش', desc: 'رسائل قصيرة تفتح زاوية جديدة، ومختارات وأسئلة من التعليم والتربية والتقنية.' },
   { path: '/cv', title: 'السيرة الأكاديمية', desc: 'التعليم والخبرات والعضويات والمؤتمرات.' },
+  { path: '/cv-file/ar', title: 'السيرة الذاتية PDF', desc: 'تجهيز النسخة العربية من السيرة الذاتية.', robots: 'noindex, nofollow' },
+  { path: '/cv-file/en', title: 'Curriculum Vitae PDF', desc: 'Preparing the English curriculum vitae PDF.', robots: 'noindex, nofollow', lang: 'en' },
   { path: '/about', title: 'حول الموقع', desc: 'فضاءٌ مُنتقى بعناية… حيث لكل قسم غاية، ولكل اختيار فلسفة.' },
   { path: '/contact', title: 'للاستشارة أو التعاون', desc: 'استشارات ومحاضرات ومشاريع تحوّل رقمي.' },
   { path: '/privacy', title: 'سياسة الخصوصية', desc: 'سياسة الخصوصية للموقع الرسمي وأداة Dr Alfailakawi Publishing وربط Meta وLinkedIn.', robots: 'noindex, nofollow' },

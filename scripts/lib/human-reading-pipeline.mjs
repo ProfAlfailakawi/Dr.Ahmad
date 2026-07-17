@@ -413,13 +413,7 @@ export async function renderHumanReading({
       copyFileSync(candidate, quarantinedAudio)
       audit.quarantinedAudio = quarantinedAudio.replace(`${resolve(quarantineDirectory, '..')}/`, '')
       atomicWriteJson(auditFile, audit)
-      const longest = Number(technical?.silence?.longestSec || 0)
-      const longestAt = (technical?.silence?.events || []).slice().sort((a, b) => b.durationSec - a.durationSec)[0]
-      throw new Error(`بوابة الصوت رفضت القراءة: proxy=${proxyGate.score}/100`
-        + ` [حرج: ${proxyGate.criticalFailed.join('،') || 'لا'} · كل الإخفاقات: ${proxyGate.failed.join('،') || 'لا'}]`
-        + ` صمت=${longest.toFixed(2)}ث${longestAt ? `@${Number(longestAt.endSec || 0).toFixed(1)}ث` : ''}`
-        + ` LUFS=${Number(technical?.loudness?.integratedLufs || 0).toFixed(1)}`
-        + `${audioJudge ? `، judge=${audioJudge.minimumDimension}/100` : '، الحكم السمعي غير متاح'}`)
+      throw new Error(`بوابة الصوت رفضت القراءة: proxy=${proxyGate.score}/100${audioJudge ? `، judge=${audioJudge.minimumDimension}/100` : '، الحكم السمعي غير متاح'}`)
     }
     snapshotLastKnownGood({ currentFile: output, auditFile, directory: lastKnownGoodDirectory })
     stageAcceptedFile({ candidate, output })

@@ -1065,7 +1065,9 @@ function compareTexts(intended, recognized) {
      صوتها واحد؛ المطالبة بالتطابق الحرفي كانت تُسقط مداخلات سليمة (u008). */
   /* تكافؤات دقيقة: الاسم المنقوص المنوّن يسترد ياءه في السمع (ناجٍ→ناجي، قاضٍ→قاضي)،
      و«إذاً» تُكتب «إذن» — كلاهما ثلاثي فيفلت من مطابقة الاحتواء (u018). */
-  const NUNATION_EQUIV = new Set(['اذا|اذن', 'اذن|اذا'])
+  const NUNATION_EQUIV = new Set(['اذا|اذن', 'اذن|اذا',
+    // جنس النفي: «ليس/ليست» لمّة واحدة والمعنى النافي محفوظ بكليهما (u032: سمعها Azure ليست)
+    'ليس|ليست', 'ليست|ليس'])
   const wordsEqual = (a, b) => a === b
     || (a.length > 3 && b.length > 3 && (a.includes(b) || b.includes(a)))
     || (a.length >= 3 && `${a}ي` === b) || (b.length >= 3 && `${b}ي` === a)
@@ -3607,9 +3609,13 @@ if (SELF_TEST) {
   const poetic = compareTexts('راحة ناجٍ إذاً لا فرح فاهم', 'راحه ناجي اذن لا فرح فاهم')
   assert.equal(poetic.importantRatio, 1, 'ناجٍ↔ناجي وإذاً↔إذن تكافؤ مسموع صحيح')
   assert(poetic.missing.length === 0, 'لا كلمة مفقودة في السطر الشعري')
+  // ١٥) جنس النفي: «ليس» المسموعة «ليست» ليست نفياً مفقوداً
+  const negation = compareTexts('ليس «كم حصلت؟» فقط، بل «ماذا تعلمت عن نفسك؟».', 'ليست كم حصلت فقط بل ماذا تعلمت عن نفسك')
+  assert(!negation.missing.includes('ليس'), 'ليس↔ليست تكافؤ نفي مسموع')
+  assert.equal(negation.importantRatio, 1, 'الجملة المقتبسة الأسئلة تتطابق كاملة')
   const guarded = compareTexts('نقيس الفهم قبل الدرجة', 'نقيس فهما اخر تماما')
   assert(guarded.importantRatio < 1, 'الاحتواء الجزئي لا يمنح تطابقاً مجانياً لكلمات مختلفة فعلاً')
-  console.log('✓ اختبارات بوابة البودكاست العربي: 45/45')
+  console.log('✓ اختبارات بوابة البودكاست العربي: 47/47')
   process.exit(0)
 }
 

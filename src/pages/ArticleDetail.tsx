@@ -7,6 +7,7 @@ import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
 import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, usePopularQuotes } from '../components/ArticleReader'
 import { SelectionTools } from '../components/IdeaFeatures'
+import { WriterResearcherBridge, ArticlePulse, CinematicQuote, markArticleRead } from '../components/ReaderResonance'
 import { JsonLd, useSeo } from '../components/seo'
 import { fetchOwnerCounts, useTrackView } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
@@ -480,6 +481,7 @@ export default function ArticleDetail() {
   useEffect(() => {
     if (!a) return
     try { localStorage.setItem('read:last', JSON.stringify({ slug: a.slug, title: a.title, at: Date.now() })) } catch { /* noop */ }
+    markArticleRead(a.slug)
     rememberIdeaVisit({ slug: a.slug, title: a.title, cat: a.cat, excerpt: a.excerpt, body: a.body || staticBody })
   }, [a, staticBody])
 
@@ -547,6 +549,7 @@ export default function ArticleDetail() {
             <ArchiveContext a={article} />
             {article.body && <ReadingLayers hasAudio={Boolean(article.body)} hasEvolution={Boolean(evolution.older || evolution.newer)} />}
             <IdeaEvolutionCard a={a} articles={articles} />
+            {article.body && <ArticlePulse slug={article.slug} />}
           </FadeUp>
 
           <FadeUp delay={0.12}>
@@ -557,8 +560,12 @@ export default function ArticleDetail() {
             ) : article.body ? (
               <>
                 <SyncedArticleBody slug={article.slug} body={article.body} />
+                {/* الاقتباس السينمائي: كشفٌ متحرك لجملة المقال المختارة */}
+                {a.excerpt && <CinematicQuote quote={a.excerpt} />}
                 {/* أداة تحديد واحدة: خيط الفكرة + بطاقة اقتباس (بلا تداخل) */}
                 <SelectionTools current={article} articles={articles} body={article.body} excerpt={article.excerpt} />
+                {/* الجسر: كاتب ↔ باحث حول الفكرة نفسها */}
+                <WriterResearcherBridge articleTitle={a.title} paper={dive.paper ? { slug: dive.paper.slug, title: dive.paper.title } : null} />
                 <StudentArchive a={article} articles={articles} books={books} papers={papers} />
               </>
             ) : (

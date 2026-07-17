@@ -5,6 +5,7 @@ import { essays } from '../data'
 import { useCmsContent } from '../lib/content'
 import { useSeo } from '../components/seo'
 import { dynamicArticleCategories } from '../lib/content-taxonomy'
+import { ReaderFingerprint } from '../components/ReaderResonance'
 
 export default function Articles() {
   const { articles } = useCmsContent()
@@ -140,6 +141,13 @@ export default function Articles() {
               <p className="mt-3 text-[.76rem] text-soft">يظهر المحتوى تدريجياً للحفاظ على هدوء الصفحة وسرعتها.</p>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* بصمة القارئ — أثرٌ شخصيّ محليّ يُهدى لمن رافق المقالات */}
+      <section className="px-6 pb-24 md:px-11">
+        <div className="mx-auto max-w-shell">
+          <FadeUp><ReaderFingerprint /></FadeUp>
         </div>
       </section>
     </Page>

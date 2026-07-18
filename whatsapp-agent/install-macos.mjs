@@ -10,11 +10,28 @@ const launchDir = path.join(home, 'Library', 'LaunchAgents')
 const plistPath = path.join(launchDir, `${LAUNCH_AGENT_LABEL}.plist`)
 const entry = fileURLToPath(new URL('./cli.mjs', import.meta.url))
 
+function xml(value) {
+  return String(value).replace(/[<>&'"]/g, (char) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[char]))
+}
+
+function launchEnvironment() {
+  const values = {
+    WHATSAPP_AGENT_BRIDGE: process.env.WHATSAPP_AGENT_BRIDGE || 'true',
+    WHATSAPP_SEND_ENABLED: process.env.WHATSAPP_SEND_ENABLED || 'false',
+    WHATSAPP_AUTO_REPLY_ENABLED: process.env.WHATSAPP_AUTO_REPLY_ENABLED || 'false',
+    WHATSAPP_PRIVATE_AUTO_REPLY_ENABLED: process.env.WHATSAPP_PRIVATE_AUTO_REPLY_ENABLED || 'false',
+    WHATSAPP_REMINDERS_ENABLED: process.env.WHATSAPP_REMINDERS_ENABLED || 'false',
+    WHATSAPP_AGENT_BRIDGE_PORT: process.env.WHATSAPP_AGENT_BRIDGE_PORT || '34321',
+    SITE_URL: process.env.SITE_URL || 'https://dr-alfailakawi.com',
+  }
+  return Object.entries(values).map(([key, value]) => `<key>${xml(key)}</key><string>${xml(value)}</string>`).join('')
+}
+
 export function install() {
   if (process.platform !== 'darwin') throw new Error('التثبيت التلقائي متاح على macOS فقط.')
   fs.mkdirSync(launchDir, { recursive: true, mode: 0o700 })
   fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 })
-  const plist = `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0"><dict><key>Label</key><string>${LAUNCH_AGENT_LABEL}</string><key>ProgramArguments</key><array><string>/usr/bin/caffeinate</string><string>-dimsu</string><string>${process.execPath}</string><string>${entry}</string><string>start</string></array><key>RunAtLoad</key><true/><key>KeepAlive</key><true/><key>ThrottleInterval</key><integer>10</integer><key>WorkingDirectory</key><string>${path.dirname(path.dirname(entry))}</string><key>StandardOutPath</key><string>${path.join(DATA_DIR, 'agent.out.log')}</string><key>StandardErrorPath</key><string>${path.join(DATA_DIR, 'agent.err.log')}</string></dict></plist>`
+  const plist = `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0"><dict><key>Label</key><string>${LAUNCH_AGENT_LABEL}</string><key>EnvironmentVariables</key><dict>${launchEnvironment()}</dict><key>ProgramArguments</key><array><string>/usr/bin/caffeinate</string><string>-dimsu</string><string>${process.execPath}</string><string>${entry}</string><string>start</string></array><key>RunAtLoad</key><true/><key>KeepAlive</key><true/><key>ThrottleInterval</key><integer>10</integer><key>WorkingDirectory</key><string>${path.dirname(path.dirname(entry))}</string><key>StandardOutPath</key><string>${path.join(DATA_DIR, 'agent.out.log')}</string><key>StandardErrorPath</key><string>${path.join(DATA_DIR, 'agent.err.log')}</string></dict></plist>`
   fs.writeFileSync(plistPath, plist, { mode: 0o600 })
   try { execFileSync('launchctl', ['load', plistPath], { stdio: 'ignore' }) } catch { /* loaded on next login */ }
   return plistPath

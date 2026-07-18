@@ -1773,43 +1773,39 @@ body.reader-resume-open .floating-actions {
   touch-action: manipulation;
 }
 
-/* هندسة بطاقة الاقتباس موحّدة هنا حصراً (كانت ثلاث طبقات متصارعة فتُقص البطاقة):
-   الغلاف هو المتمرِّر الوحيد؛ البطاقة تتوسط عند القِصر وتنساب من أول الشاشة عند
-   الطول؛ شريط القوالب يلتصق بأعلى الشاشة داخل المنطقة الآمنة أثناء التمرير. */
+/* نبدأ البطاقة أسفل شريط Safari/PWA والمنطقة الآمنة، فلا تُقص القوالب العلوية. */
 .quote-card-overlay {
-  display: flex !important;
-  flex-direction: column !important;
   align-items: center !important;
-  justify-content: flex-start !important;
-  overflow-y: auto !important;
-  overscroll-behavior: contain;
-  padding: max(1rem, calc(env(safe-area-inset-top) + .75rem)) .75rem max(1.25rem, calc(env(safe-area-inset-bottom) + .75rem)) !important;
+  padding-top: max(1rem, calc(env(safe-area-inset-top) + 1rem));
+  padding-bottom: max(1rem, calc(env(safe-area-inset-bottom) + 1rem));
+  scroll-padding-top: max(1rem, calc(env(safe-area-inset-top) + 1rem));
 }
 .quote-card-dialog {
-  margin-block: auto;                 /* توسّطٌ عند القِصر، وانزلاقٌ طبيعي عند الطول */
-  width: 100%;
-  max-width: 440px;
+  margin-inline: auto;
   min-inline-size: 0;
-  max-block-size: none !important;    /* لا تمرير داخلياً — الغلاف هو المتمرِّر الوحيد */
-  overflow: visible !important;
+  max-block-size: calc(100dvh - 2rem);
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
 }
 .quote-card-dialog img {
-  max-block-size: min(62dvh, 640px) !important;
+  max-block-size: min(58dvh, calc(100dvh - 14rem), 620px) !important;
   object-fit: contain;
 }
 .quote-card-controls {
-  position: sticky;
-  top: max(.25rem, env(safe-area-inset-top));
-  z-index: 10;
   max-inline-size: 100%;
   -webkit-tap-highlight-color: transparent;
   flex-wrap: wrap;
 }
 
 @media (max-width: 420px) {
+  .quote-card-overlay {
+    align-items: flex-start !important;
+  }
   .reader-selection-toolbar button {
     padding-inline: .78rem;
     font-size: .72rem;
+  }
+  .quote-card-dialog img {
+    max-block-size: min(52dvh, calc(100dvh - 13rem)) !important;
   }
   .quote-card-controls {
     gap: .3rem;
@@ -1821,7 +1817,10 @@ body.reader-resume-open .floating-actions {
 }
 
 @media (min-width: 640px) {
-  .quote-card-dialog { max-width: 520px; }
+  .quote-card-overlay {
+    padding-top: 1.25rem;
+    scroll-padding-top: 1.25rem;
+  }
 }
 
 /* ============================================================

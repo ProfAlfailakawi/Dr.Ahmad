@@ -224,16 +224,6 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
   const focusedSlug = typeof window !== 'undefined' ? localStorage.getItem('podcast:focus-slug') || '' : ''
   const initialSlug = sortedArticles.some((item) => item.slug === focusedSlug) ? focusedSlug : sortedArticles[0]?.slug || ''
   const [slug, setSlug] = useState(initialSlug)
-
-  /* «فتح المسودة» كان يفتح على مقالٍ آخر: المقالات تصل بعد أول رسم، فيُحسب المقال
-     المطلوب على قائمة فارغة ويسقط الاختيار إلى الأول. نلتقط الطلب حين تصل القائمة. */
-  useEffect(() => {
-    if (!sortedArticles.length) return
-    let requested = ''
-    try { requested = localStorage.getItem('podcast:focus-slug') || '' } catch { /* noop */ }
-    if (requested && requested !== slug && sortedArticles.some((item) => item.slug === requested)) setSlug(requested)
-    else if (!slug) setSlug(sortedArticles[0].slug)
-  }, [sortedArticles, slug])
   const [turns, setTurns] = useState<DialogueTurn[]>(() => [blankTurn('male')])
   const [availableDraft, setAvailableDraft] = useState<DialogueTurn[] | null>(() => storedDialogue(initialSlug))
   const [notice, setNotice] = useState('')
@@ -245,8 +235,6 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
   const [audioAvailable, setAudioAvailable] = useState(false)
   const [audioChecking, setAudioChecking] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
-  /* مرجع حيّ لحالة التعديل: التأثير السحابي يقرأه بلا أن يُعيد الاشتراك عند كل ضغطة */
-  const dirtyRef = useRef(false)
 
   const article = sortedArticles.find((item) => item.slug === slug)
   const episode = (podcastAdmin as { episodes?: { slug: string; audio?: string; status?: string; quality?: { score?: number; pass?: boolean } }[] }).episodes?.find((item) => item.slug === slug)
@@ -272,13 +260,11 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
     } catch { /* noop */ }
     let active = true
     const local = storedDialogue(slug)
-    /* «فتح المسودة» يفتحها فعلاً: كان يبدأ بمداخلة فارغة ويكتفي بعرض زر استعادة،
-       فيظنّ الدكتور أن ما كتبه ضاع. المسودة المحفوظة تُحمَّل مباشرة عند وجودها. */
-    setTurns(local && local.length ? local : [blankTurn('male')])
+    setTurns([blankTurn('male')])
     setAvailableDraft(local)
     setDirty(false)
     setNotice(local
-      ? `فُتحت المسودة المحفوظة (${local.length} مداخلة).`
+      ? `بدأ الوضع اليدوي بمداخلة واحدة. توجد مسودة محفوظة (${local.length} مداخلة) ويمكن استعادتها عند الحاجة.`
       : 'مداخلة واحدة جاهزة؛ أضف غيرها فقط عند الحاجة.')
     setArticleBody('')
     loadArticleBodies().then((bodies) => { if (active) setArticleBody(article?.body || bodies[slug] || article?.excerpt || '') }).catch(() => { if (active) setArticleBody(article?.body || article?.excerpt || '') })
@@ -300,13 +286,7 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
             setAvailableDraft(cloud)
             localStorage.setItem(`podcast:manual-dialogue:${slug}`, JSON.stringify(cloud))
             localStorage.removeItem(`podcast:pending-cloud:${slug}`)
-            /* السحابية أحدث من المحلية وتُفتح مباشرة — إلا إذا بدأ الدكتور الكتابة
-               فعلاً في هذه الجلسة، فلا يُدهس عمله الجاري بأي حال. */
-            setTurns((current) => {
-              const untouched = current.length <= 1 && !current[0]?.text.trim()
-              return untouched || !dirtyRef.current ? cloud : current
-            })
-            setNotice(`فُتحت المسودة السحابية المحفوظة (${cloud.length} مداخلة).`)
+            setNotice(`بدأ الوضع اليدوي بمداخلة واحدة. توجد مسودة سحابية محفوظة (${cloud.length} مداخلة) ويمكن استعادتها عند الحاجة.`)
             return
           } catch {
             // جرّب المسار الاحتياطي؛ بعض المشاريع لم تُنشر فيها قاعدة المجموعة الجديدة بعد.
@@ -336,8 +316,6 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
     timer = window.setInterval(() => void check(), 30_000)
     return () => { active = false; window.clearInterval(timer) }
   }, [audioSource, episode?.audio])
-
-  useEffect(() => { dirtyRef.current = dirty }, [dirty])
 
   const update = (index: number, patch: Partial<DialogueTurn>) => {
     setTurns((current) => current.map((turn, turnIndex) => turnIndex === index ? { ...turn, ...patch } : turn))

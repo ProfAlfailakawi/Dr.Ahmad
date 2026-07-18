@@ -20,6 +20,7 @@ export type AdminTab =
   | 'lab'
   | 'voice'
   | 'manual-dialogue'
+  | 'audio-library'
   | 'cv'
   | 'whatsapp'
 
@@ -41,7 +42,8 @@ export const ADMIN_GROUPS: NavGroup[] = [
       { tab: 'production', label: 'غرفة الإنتاج', note: 'طابور البودكاست وصحة المحتوى' },
       { tab: 'studio', label: 'استوديو النشر', note: 'من الفكرة إلى الحزمة' },
       { tab: 'manual-dialogue', label: 'الحوار اليدوي', note: 'تحرير الحلقة مداخلةً مداخلة' },
-      { tab: 'voice', label: 'الصوت والبودكاست', note: 'اختيار الأصوات وضبط الجودة' },
+      { tab: 'audio-library', label: 'مكتبة الصوت', note: 'سماع وإعادة توليد وحذف' },
+      { tab: 'voice', label: 'اختيار الأصوات', note: 'تجارب الأصوات وضبط الجودة' },
       { tab: 'launch', label: 'وضع الإطلاق', note: 'إبراز عمل في الواجهة' },
     ],
   },

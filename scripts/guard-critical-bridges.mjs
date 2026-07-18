@@ -10,6 +10,7 @@ const requiredFiles = [
   'src/lib/podcast-dialogue-lock.ts',
   'src/lib/podcast-generation.ts',
   'src/lib/audio-management.ts',
+  'src/components/admin/AudioLibrary.tsx',
   'scripts/audio-control-status.mjs',
   'scripts/clear-audio-assets.mjs',
   '.github/workflows/admin-audio-clear.yml',
@@ -46,6 +47,9 @@ const podcastWorkflow = await readFile(resolve(root, '.github/workflows/podcast-
 const podcastEngine = await readFile(resolve(root, 'scripts/podcast-dialogue.mjs'), 'utf8')
 const ideaFeatures = await readFile(resolve(root, 'src/components/IdeaFeatures.tsx'), 'utf8')
 const contentManager = await readFile(resolve(root, 'src/components/admin/ContentManager.tsx'), 'utf8')
+const audioLibrary = await readFile(resolve(root, 'src/components/admin/AudioLibrary.tsx'), 'utf8')
+const adminPage = await readFile(resolve(root, 'src/pages/Admin.tsx'), 'utf8')
+const adminArchitecture = await readFile(resolve(root, 'src/components/admin/AdminArchitecture.tsx'), 'utf8')
 const cvFile = await readFile(resolve(root, 'src/pages/CvFile.tsx'), 'utf8')
 const firestoreRules = await readFile(resolve(root, 'firestore.rules'), 'utf8')
 const serverSource = await readFile(resolve(root, 'server.mjs'), 'utf8')
@@ -82,8 +86,10 @@ const assertions = [
   [ideaFeatures.includes('window.visualViewport') && ideaFeatures.includes('firstPress'), 'PWA selection toolbar and first-tap quote controls must remain protected'],
   [contentManager.includes('uploadCvPdfToFirestore') && contentManager.includes("'site_cv_files'"), 'CV upload must keep its Storage-independent Firestore bridge'],
   [contentManager.includes('النص المُشكَّل لتوليد الصوت') && contentManager.includes("'bodyVocalized'") && autoAudio.includes('fields.bodyVocalized'), 'vocalized article text must remain visible in admin and connected to audio generation'],
-  [contentManager.includes('إدارة الصوت') && contentManager.includes('إعادة التوليد') && contentManager.includes('إلغاء الصوت') && audioManagement.includes('/api/admin/audio/manage'), 'article admin must keep manual reading/dialogue cancellation and regeneration controls'],
-  [contentManager.includes('<audio') && contentManager.includes('فتح المقال والاستماع') && contentManager.includes('تُحدَّث الحالة تلقائياً'), 'article admin must show where completed audio can be heard and refresh generation status'],
+  [audioLibrary.includes('مكتبة الصوت') && audioLibrary.includes('إعادة توليد') && audioLibrary.includes("'clear'") && audioManagement.includes('/api/admin/audio/manage'), 'central audio library must keep manual reading/dialogue deletion and regeneration controls'],
+  [audioLibrary.includes('<audio') && audioLibrary.includes('سماع') && audioLibrary.includes('جميع المقالات هنا') && audioLibrary.includes('12_000'), 'central audio library must preview completed audio and refresh generation status'],
+  [adminPage.includes("tab === 'audio-library'") && adminArchitecture.includes("tab: 'audio-library'") && adminArchitecture.includes('سماع وإعادة توليد وحذف'), 'audio lifecycle must remain a dedicated visible admin tab'],
+  [!contentManager.includes('<ArticleAudioManager') && !contentManager.includes('إدارة صوت المقال'), 'audio controls must stay out of the article editor and inside the dedicated library'],
   [serverSource.includes('audioManagePath') && serverSource.includes('admin-audio-clear.yml') && serverSource.includes("force: 'true'") && autoAudio.includes('explicit_manual_regeneration'), 'server must dispatch protected clear/regenerate workflows and force a selected reading only'],
   [audioClearWorkflow.includes('Delete published objects from R2') && audioClearWorkflow.includes('clear-audio-assets.mjs') && autoAudioWorkflow.includes("github.event.inputs.force == 'true'"), 'audio cancellation must delete published assets while manual reading regeneration remains explicit'],
   [cvFile.includes("'site_cv_files'") && cvFile.includes('cv-files-v1'), 'public CV reconstruction and local cache must remain active'],

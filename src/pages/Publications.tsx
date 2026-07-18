@@ -49,7 +49,7 @@ export default function Publications() {
               <Link to={`/publications/${b.slug}`} data-hover className="block">
                 <div className="group overflow-hidden rounded-xl bg-white shadow-[0_22px_44px_-26px_rgba(21,22,26,.4)]" style={{ aspectRatio: '1024 / 700' }}>
                   {b.cover ? (
-                    <img src={b.cover} alt={b.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <img src={b.cover} alt={b.title} loading="lazy" className="h-full w-full object-cover" />
                   ) : (
                     <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>
                   )}

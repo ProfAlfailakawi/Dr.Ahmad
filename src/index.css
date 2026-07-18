@@ -151,15 +151,20 @@ html.dark body::before {
   box-shadow: none;
   -webkit-tap-highlight-color: transparent;
 }
+/* التركيز بلوحة المفاتيح يأخذ حلقة التركيز العامة نفسها (مراجعة جمالية #23: لا نُلغيها
+   عن زر القائمة)؛ ويبقى تلوّن النص والتسطير للنقر بالفأرة فقط. */
 .site-menu-control:focus,
-.site-menu-control:active,
-.site-menu-control:focus-visible {
-  outline: none;
+.site-menu-control:active {
   box-shadow: none;
   color: rgb(var(--c-accent));
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: .32em;
+}
+.site-menu-control:focus-visible {
+  outline: 2px solid rgb(var(--c-accent));
+  outline-offset: 3px;
+  border-radius: 3px;
 }
 body.cursor-none-desktop * { cursor: none !important; }
 /* استثناء حقول الإدخال — المستخدم يحتاج مؤشّر الكتابة */
@@ -320,20 +325,6 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
 
 @media (prefers-reduced-motion: reduce) {
   .page-head::after { animation: none; opacity: .42; }
-}
-
-/* على الشاشات الضيقة يلتف العنوان الفرعي حتى حافة الرأس فيقطعه الخط الزخرفي مهما
-   تأخر — الزينة تُحذف حيث تزاحم الكلام (ملاحظة الدكتور: «الخط داخل مع الكلام»). */
-@media (max-width: 900px) {
-  .page-head::after { display: none; }
-}
-
-/* أي بطاقة/نافذة مفتوحة تُخفي زر العودة للأعلى كلياً — لا يغطي كلام البطاقات أبداً
-   (ملاحظة الدكتور: «السهم مغطي»). */
-body.modal-sheet-open .floating-actions {
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .2s ease;
 }
 
 .site-footer {
@@ -1007,7 +998,7 @@ html.dark .book-detail-cover {
   0%, 100% { transform: scaleX(.2); opacity: .35; }
   50% { transform: scaleX(1); opacity: .75; }
 }
-.human-core__machine { letter-spacing: -.018em; }
+.human-core__machine { letter-spacing: 0; }
 
 .human-core__signal {
   position: relative;
@@ -1258,7 +1249,7 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
   border-color: rgb(var(--c-hair) / .86);
 }
 .tebyan-link:hover {
-  border-color: rgb(31 127 114 / .42);
+  border-color: rgb(var(--c-accent) / .42);
 }
 .schedule-link {
   min-height: 2.25rem;

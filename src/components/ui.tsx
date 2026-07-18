@@ -172,7 +172,10 @@ export function Cursor() {
   useEffect(() => {
     const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (!fine || reduce || isAdmin) {
+    /* المؤشر المخصص مُوقَف (مراجعة جمالية: مكتبة مفكّر لا موقع دعاية) — يُسترجَع مؤشر
+       النظام؛ حالات التحويم القائمة تُغني عنه. علمٌ زمنيّ يتجنّب الكود غير القابل للوصول. */
+    const customCursorDisabled = String(1) === '1'
+    if (customCursorDisabled || !fine || reduce || isAdmin) {
       setEnabled(false)
       setVisible(false)
       document.body.classList.remove('cursor-none-desktop')
@@ -1015,7 +1018,7 @@ export function TebyanProjectLink({ label = 'تبيان' }: { label?: string }) 
       rel="noopener noreferrer"
       aria-label="تبيان — منصة عامة مستقلة"
       title="تبيان — منصة عامة مستقلة"
-      className="tebyan-link group inline-flex items-center gap-2 border-s border-hair ps-4 text-soft transition-colors duration-300 hover:text-[#1f7f72]"
+      className="tebyan-link group inline-flex items-center gap-2 border-s border-hair ps-4 text-soft transition-colors duration-300 hover:text-accent"
     >
       <img src="/tebyan-icon.png" alt="" className="h-5 w-5 rounded-full object-cover opacity-80 transition-opacity duration-300 group-hover:opacity-100" loading="lazy" />
       <span className="tebyan-link-label text-[.82rem] font-medium">{label}</span>

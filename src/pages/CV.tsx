@@ -1,6 +1,7 @@
 import { useSeo } from '../components/seo'
 import { Accordion, FadeUp, Label, Page, Reveal } from '../components/ui'
 import { CvSectionEditor } from '../components/admin/CvSectionEditor'
+import CitationImpact from '../components/CitationImpact'
 import KnowledgeFingerprint from '../components/KnowledgeFingerprint'
 import { bio, doctorate, links } from '../data'
 import { useCmsContent } from '../lib/content'
@@ -90,7 +91,7 @@ export default function CV() {
         <div className="mx-auto max-w-shell">
           <FadeUp>
             <Label>د. أحمد حسين الفيلكاوي</Label>
-            <h1 className="max-w-[900px] font-display text-[clamp(2.55rem,7vw,5.2rem)] font-bold leading-[1.08] tracking-[-0.025em] text-ink">
+            <h1 className="max-w-[900px] font-display text-[clamp(2.55rem,7vw,5.2rem)] font-bold leading-[1.08] text-ink">
               <Reveal>كلُّ ما تعلّمتُه…</Reveal>
               <span className="mt-2 block text-accent">
                 <Reveal delay={0.12}>حاولتُ أن أحوّله إلى أثر.</Reveal>
@@ -141,8 +142,9 @@ export default function CV() {
             </div>
           </FadeUp>
 
-          {/* بطاقة استشهادات Google Scholar محجوبة مؤقتاً بأمر الدكتور (17 يوليو 2026) —
-              تعود لاحقاً بعد اكتمال بيانات الملف العام. المكوّن CitationImpact جاهز كما هو. */}
+          <FadeUp delay={0.06}>
+            <CitationImpact />
+          </FadeUp>
 
           {/* البصمة المعرفية — توقيع بصري مبني من بيانات المسيرة نفسها */}
           <FadeUp delay={0.08}>

@@ -1084,8 +1084,16 @@ function compareTexts(intended, recognized) {
   const expected = normalizeAr(intended).split(' ').filter(Boolean)
   const rawHeard = normalizeAr(recognized).split(' ').filter(Boolean)
   const heard = []
+  /* إدغامُ النطق ليس خطأ نطق: «أن نحارب» تُلفظ بنونٍ مشددة فيكتبها STT «النحارب»،
+     و«من دون» تُكتب «مندون». الأولى تفلت من فكّ اللصق الحرفي (ان+نحارب=اننحارب)
+     فتُحسب كلمةً مفقودة وتسقط مداخلةٌ سليمة النطق. نقبل الزوج متى كان المسموع
+     هو الكلمة الثانية مسبوقةً بحرفين على الأكثر، والأولى أداةً قصيرة. */
+  const assimilated = (token, first, second) =>
+    first.length <= 3 && token.length > second.length && token.endsWith(second)
+    && token.length - second.length <= 2
   for (const token of rawHeard) {
-    const splitAt = expected.findIndex((word, index) => index < expected.length - 1 && word + expected[index + 1] === token)
+    const splitAt = expected.findIndex((word, index) => index < expected.length - 1
+      && (word + expected[index + 1] === token || assimilated(token, word, expected[index + 1])))
     if (splitAt >= 0) { heard.push(expected[splitAt], expected[splitAt + 1]); continue }
     if (token === 'ا' && heard.length && expected.includes(heard.at(-1) + token)) {
       heard[heard.length - 1] += token

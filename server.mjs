@@ -65,6 +65,7 @@ const adminNowPath = '/api/admin/site-now'
 const adminJourneysPath = '/api/admin/journeys'
 const podcastDispatchPath = '/api/admin/podcast/dispatch'
 const audioManagePath = '/api/admin/audio/manage'
+const sourcesCheckPath = '/api/admin/sources/check'
 const maxArticleRequestBytes = 128 * 1024
 const firebaseJwksUrl = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
 const articleCategories = Object.freeze(['التعليم', 'التربية', 'مجتمع', 'تقنية', 'هوية', 'إعلام', 'بحث'])
@@ -1521,6 +1522,24 @@ export function createRequestHandler({
       return
     }
 
+
+    /* فحص المصادر عند الطلب: الجدولة أسبوعية، وأحياناً يريد الدكتور التأكد الآن. */
+    if (url.pathname === sourcesCheckPath) {
+      if (method !== 'POST') {
+        sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' })
+        return
+      }
+      const token = bearerToken(req.headers.authorization)
+      const claims = await verifyToken(token)
+      req.resume()
+      if (claims?.admin !== true || typeof claims.sub !== 'string' || !claims.sub) {
+        throw new HttpError(403, 'Admin access required')
+      }
+      const workflow = String(process.env.SOURCES_CHECK_GITHUB_WORKFLOW || 'check-curated-links.yml').trim()
+      await dispatchAdminWorkflow({ workflow, inputs: {} })
+      sendJson(res, 200, { ok: true, workflow, message: 'بدأ فحص المصادر الآن؛ النتيجة تظهر خلال دقيقتين.' })
+      return
+    }
 
     if (url.pathname === audioManagePath) {
       if (method !== 'POST') {

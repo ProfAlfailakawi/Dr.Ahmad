@@ -161,7 +161,31 @@ export function WhatsAppAgentPanel() {
     }
   }
 
-  useEffect(() => { void refresh() }, [])
+  /* الجسر قد يكون حيّاً والسر ناقصاً فحسب — نميّز الحالتين بنبضة عامة، فلا تقول
+     اللوحة «غير مرتبط» بينما الوكيل يعمل على الماك فعلاً. */
+  const [bridgeAlive, setBridgeAlive] = useState<boolean | null>(null)
+  const pingBridge = async () => {
+    if (!bridge) { setBridgeAlive(false); return false }
+    try {
+      const response = await fetch(`${bridge}/ping`, { cache: 'no-store' })
+      const alive = response.ok
+      setBridgeAlive(alive)
+      return alive
+    } catch {
+      setBridgeAlive(false)
+      return false
+    }
+  }
+
+  useEffect(() => {
+    void (async () => {
+      const alive = await pingBridge()
+      if (alive && secret.trim()) void refresh()
+      else if (alive) setNotice('الجسر يعمل على الماك ✓ — ألصق سر الجسر أدناه مرة واحدة لتتصل اللوحة به.')
+      else setNotice('لا أصل إلى الجسر المحلي. تأكد أن الماك شغّال وأن وكيل واتساب يعمل عليه.')
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const saveSecret = () => {
     localStorage.setItem('whatsapp-agent-bridge-secret', secret.trim())
@@ -316,7 +340,9 @@ export function WhatsAppAgentPanel() {
           <button type="button" onClick={() => void refresh()} disabled={busy} className={secondary}>{busy ? '…' : 'تحديث الحالة'}</button>
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">الحالة</p><p className="mt-1 font-semibold text-ink">{stateLabel[status.status || 'unconfigured'] || status.status}</p></div>
+          <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">الحالة</p><p className="mt-1 font-semibold text-ink">{status.status && status.status !== 'unconfigured'
+            ? (stateLabel[status.status] || status.status)
+            : bridgeAlive === null ? 'يفحص…' : bridgeAlive ? 'الجسر يعمل — ينتظر السر' : 'غير مرتبط'}</p></div>
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">الجسر</p><p className="mt-1 font-semibold text-ink">{status.bridgeOnline ? 'متصل' : 'غير متصل'}</p><p className="text-[.72rem] text-soft">آخر نبضة: {ageLabel(status.heartbeatAgeMs)}</p></div>
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">فهرس الموقع</p><p className="mt-1 font-display text-2xl text-accent">{status.indexed ?? '—'}</p></div>
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">المنطقة</p><p className="mt-1 font-semibold text-ink">{status.timeZone || 'Asia/Kuwait'}</p></div>

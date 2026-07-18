@@ -1,8 +1,26 @@
 import { EventEmitter } from 'node:events'
 import { redactError } from './config.mjs'
 
-const encode = (value) => JSON.stringify(value, (_key, item) => Buffer.isBuffer(item) ? { __buffer: item.toString('base64') } : item)
-const decode = (value) => JSON.parse(value, (_key, item) => item && item.__buffer ? Buffer.from(item.__buffer, 'base64') : item)
+/* مفاتيح الجلسة ثنائية (Buffer/Uint8Array)، و`JSON.stringify` ينادي `toJSON` قبل
+   المُبدِّل — فيصل الشكل {type:'Buffer',data} ولا يلتقطه `Buffer.isBuffer` أبداً.
+   فكانت المفاتيح تُحفظ وتُقرأ كائناتٍ عادية، فينهار baileys على `routingInfo`
+   (byteLength=undefined → NaN) عند أول إقلاع بعد أن يمنحه الخادم التوجيه.
+   نلتقط الشكلين هنا، ونُحيي الجلسات القديمة كما هي بلا إعادة اقتران. */
+const toBinary = (item) => {
+  if (Buffer.isBuffer(item)) return item
+  if (item instanceof Uint8Array) return Buffer.from(item)
+  if (item && item.type === 'Buffer' && Array.isArray(item.data)) return Buffer.from(item.data)
+  return null
+}
+const encode = (value) => JSON.stringify(value, (_key, item) => {
+  const binary = toBinary(item)
+  return binary ? { __buffer: binary.toString('base64') } : item
+})
+const decode = (value) => JSON.parse(value, (_key, item) => {
+  if (item && typeof item === 'object' && typeof item.__buffer === 'string') return Buffer.from(item.__buffer, 'base64')
+  const legacy = item && typeof item === 'object' && item.type === 'Buffer' && Array.isArray(item.data) ? Buffer.from(item.data) : null
+  return legacy || item
+})
 
 export class MockTransport extends EventEmitter {
   constructor() { super(); this.status = 'disconnected'; this.sent = []; this.qr = null }

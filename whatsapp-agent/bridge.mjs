@@ -51,6 +51,14 @@ export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-WhatsApp-Agent-Secret')
       res.writeHead(204); res.end(); return
     }
+    /* نبضة عامة بلا سر: تُثبت للوحة أن الجسر حيّ فتقول «ألصق السر» بدل «غير مرتبط»
+       المضلِّلة. لا تكشف شيئاً: لا حالة ولا رقم ولا رسالة — كلمة واحدة فقط. */
+    const pingUrl = new URL(req.url || '/', `http://127.0.0.1:${port}`)
+    if (req.method === 'GET' && pingUrl.pathname === '/ping') {
+      writeJson(res, 200, { bridge: 'alive', requiresSecret: true })
+      return
+    }
+
     if (requestSecret(req) !== secret) { writeJson(res, 401, { error: 'unauthorized' }); return }
 
     const url = new URL(req.url || '/', `http://127.0.0.1:${port}`)

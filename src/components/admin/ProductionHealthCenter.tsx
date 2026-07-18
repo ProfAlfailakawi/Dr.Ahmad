@@ -127,6 +127,25 @@ export function ProductionHealthCenter({
     })
   }, [articles, draftSlugs, remote])
 
+  /* فحص المصادر عند الطلب: نفس فاحص الأحد الأسبوعي، يبدأ الآن بضغطة. */
+  const [sourcesBusy, setSourcesBusy] = useState(false)
+  const [sourcesNotice, setSourcesNotice] = useState('')
+  const checkSourcesNow = async () => {
+    setSourcesBusy(true); setSourcesNotice('')
+    try {
+      if (!user) throw new Error('انتهت جلسة المشرف؛ سجّل الدخول من جديد.')
+      const token = await user.getIdToken(true)
+      const response = await fetch('/api/admin/sources/check', { method: 'POST', headers: { authorization: `Bearer ${token}` } })
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(String(payload.detail || payload.error || 'تعذّر بدء الفحص'))
+      setSourcesNotice(String(payload.message || 'بدأ فحص المصادر الآن.'))
+    } catch (error) {
+      setSourcesNotice(error instanceof Error ? error.message : 'تعذّر بدء الفحص.')
+    } finally {
+      setSourcesBusy(false)
+    }
+  }
+
   const setStatus = async (slug: string, status: Stage) => {
     setBusy(slug); setMessage('')
     try {
@@ -297,8 +316,14 @@ export function ProductionHealthCenter({
             <p className="text-[.76rem] font-semibold uppercase text-accent">صحة المحتوى</p>
             <h2 className="mt-2 font-display text-[1.3rem] font-semibold text-ink">ما ينقص الموقع فعلاً، بلا ضجيج.</h2>
           </div>
-          <button type="button" onClick={() => onOpen('lab')} className={pill}>الفحص التفصيلي</button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" onClick={() => void checkSourcesNow()} disabled={sourcesBusy} className={`${pill} disabled:opacity-50`}>
+              {sourcesBusy ? 'يبدأ الفحص…' : '↻ افحص المصادر الآن'}
+            </button>
+            <button type="button" onClick={() => onOpen('lab')} className={pill}>الفحص التفصيلي</button>
+          </div>
         </div>
+        {sourcesNotice && <p className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{sourcesNotice}</p>}
         <div className="mt-5 grid min-w-0 grid-cols-2 gap-3 md:grid-cols-5">
           {[
             ['نصوص ناقصة', health.missingBody.length],

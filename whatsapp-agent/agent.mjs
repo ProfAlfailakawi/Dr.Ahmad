@@ -14,6 +14,10 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export function createAgent({ db = openDatabase(), transport, root = projectRoot, mock = false } = {}) {
   const state = { db, transport: transport || null, root, timers: new Set(), started: false, bridge: null, activeCampaigns: new Set() }
+  /* واجهة الوكيل العامة تُعلن هنا وتُملأ عند الإرجاع: الجسر كان يستقبل `state`
+     الخام فينهار على `agent.bridgeSecret is not a function` قبل أن يفتح المنفذ،
+     فتظهر اللوحة «غير مرتبط» بينما واتساب متصل فعلاً. */
+  const api = {}
   const index = () => syncContentIndex(db, root, SITE_URL)
   const decryptJidSafe = (value) => {
     try { return value ? db.decryptJid(value) : '' } catch { return String(value || '') }
@@ -65,7 +69,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     transportEvents?.on?.('manual-takeover', (jid) => markManualTakeover(db, jid))
     await state.transport.connect({ phoneNumber })
     state.started = true
-    if (process.env.WHATSAPP_AGENT_BRIDGE === 'true' && !state.bridge) state.bridge = startLocalBridge(state)
+    if (process.env.WHATSAPP_AGENT_BRIDGE === 'true' && !state.bridge) state.bridge = startLocalBridge(api)
     heartbeat()
     state.timers.add(setInterval(heartbeat, HEARTBEAT_INTERVAL_MS))
     if (flags.reminders) state.timers.add(setInterval(() => void dispatchDueReminders(state), 30000))
@@ -346,7 +350,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     return { ...db.state(), flags, indexed: Number(db.get('SELECT COUNT(*) AS count FROM content_items')?.count || 0), bridge: Boolean(state.bridge), bridgeOnline, lastHeartbeatAt, heartbeatAgeMs, restartRequestedAt: db.getSetting('bridge.restartRequestedAt', null), port: BRIDGE_PORT, timeZone: TIME_ZONE }
   }
   const setBridge = (server) => { state.bridge = server; return status() }
-  return { db, state, index, start, stop, status, sendSelf, queueCampaign, approveCampaign, sendCampaign, sendQuietCampaign, stopCampaign, listCampaigns, listBroadcastGroups, discoverGroups, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, requestRestart }
+  return Object.assign(api, { db, state, index, start, stop, status, sendSelf, queueCampaign, approveCampaign, sendCampaign, sendQuietCampaign, stopCampaign, listCampaigns, listBroadcastGroups, discoverGroups, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, requestRestart })
 }
 
 async function dispatchDueReminders(state) {
@@ -362,7 +366,17 @@ async function dispatchDueReminders(state) {
 }
 
 export function ensureLock(lockPath) {
-  try { fs.writeFileSync(lockPath, `${process.pid}\n`, { flag: 'wx', mode: 0o600 }); return true } catch { return false }
+  try { fs.writeFileSync(lockPath, `${process.pid}\n`, { flag: 'wx', mode: 0o600 }); return true } catch { /* القفل موجود — قد يكون يتيماً */ }
+  /* قفلٌ يتيم بعد سقوط مفاجئ كان يمنع الوكيل من الإقلاع للأبد، فتبقى لوحة واتساب
+     «غير مرتبطة» بلا سبب ظاهر. نتبنّاه إن لم تعد عمليته حيّة. */
+  try {
+    const owner = Number(String(fs.readFileSync(lockPath, 'utf8')).trim())
+    if (Number.isInteger(owner) && owner > 0) {
+      try { process.kill(owner, 0); return false } catch { /* لا عملية بهذا المعرّف */ }
+    }
+    fs.writeFileSync(lockPath, `${process.pid}\n`, { mode: 0o600 })
+    return true
+  } catch { return false }
 }
 
 export function removeLock(lockPath) { try { fs.unlinkSync(lockPath) } catch { /* noop */ } }

@@ -5,6 +5,7 @@ import { JsonLd, useSeo } from '../components/seo'
 import { CiteButton, OwnerEdit } from '../components/extras'
 import { profile, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
+import { liveLink } from '../lib/dead-links'
 
 const cleanText = (value = '') => value.replace(/^ملخص عربي:\s*/, '').replace(/\s+/g, ' ').trim()
 
@@ -238,17 +239,17 @@ export default function PaperDetail() {
 
           <FadeUp delay={0.14}>
             <div className="mt-10 flex flex-wrap gap-3">
-              {p.source && (
-                <a href={p.source} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-full bg-accent px-7 py-3.5 font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep">
+              {liveLink(p.source) && (
+                <a href={liveLink(p.source)} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-full bg-accent px-7 py-3.5 font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep">
                   صفحة البحث لدى الناشر ←
                 </a>
               )}
-              {p.pdf && (
-                <a href={p.pdf} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-full border-[1.5px] border-accent px-7 py-3.5 font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas">
+              {liveLink(p.pdf) && (
+                <a href={liveLink(p.pdf)} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-full border-[1.5px] border-accent px-7 py-3.5 font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas">
                   تحميل نسخة PDF
                 </a>
               )}
-              {!p.source && !p.pdf && (
+              {!liveLink(p.source) && !liveLink(p.pdf) && (
                 <Link to="/contact" className="inline-flex items-center rounded-full border-[1.5px] border-accent px-7 py-3.5 font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas">
                   اطلب نسخة
                 </Link>
@@ -344,8 +345,8 @@ export default function PaperDetail() {
                   <span className="rounded-full border border-hair px-4 py-2">الناشر/المجلة: {guide.journal}</span>
                   <span className="rounded-full border border-hair px-4 py-2">سنة النشر: {guide.year}</span>
                   <span className="rounded-full border border-hair px-4 py-2">الباحثون: {guide.researchers}</span>
-                  {p.pdf && <a href={p.pdf} target="_blank" rel="noreferrer" className="rounded-full border border-hair px-4 py-2 transition-colors hover:border-accent hover:text-accent">رابط PDF</a>}
-                  {p.source && <a href={p.source} target="_blank" rel="noreferrer" className="rounded-full border border-hair px-4 py-2 transition-colors hover:border-accent hover:text-accent">رابط الناشر</a>}
+                  {p.pdf && <a href={liveLink(p.pdf)} target="_blank" rel="noreferrer" className="rounded-full border border-hair px-4 py-2 transition-colors hover:border-accent hover:text-accent">رابط PDF</a>}
+                  {liveLink(p.source) && <a href={liveLink(p.source)} target="_blank" rel="noreferrer" className="rounded-full border border-hair px-4 py-2 transition-colors hover:border-accent hover:text-accent">رابط الناشر</a>}
                 </div>
               </section>
             </FadeUp>

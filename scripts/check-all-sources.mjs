@@ -260,6 +260,7 @@ for (const item of checked) {
   }
 }
 
+let summaryExtra = { hidden: 0, replaced: 0, revived: 0 }
 const problems = checked.filter((item) => NEEDS_ATTENTION.has(item.state))
 const warnings = checked.filter((item) => !NEEDS_ATTENTION.has(item.state) && item.state !== 'ok')
 const mine = problems.filter(isOwned)
@@ -275,6 +276,7 @@ const summary = {
   /* عدّادان منفصلان: ما ينتظر قرار الدكتور، وما نظّفه النظام عنه */
   mine: mine.length,
   cleaned: foreign.length,
+
   items: [...mine, ...foreign, ...warnings].slice(0, 200).map((item) => ({
     url: item.url,
     state: item.state,
@@ -342,13 +344,73 @@ if (foreign.length && !process.argv.includes('--report-only')) {
   }
 }
 
+/* ═══ سجلّ الروابط الميتة: تُخفى أيقونتها فوراً، ويُبحث لها عن بديلٍ مؤكد ═══
+   بأمر الدكتور: أي رابط بحثٍ أو مقالةٍ أو لقاءٍ يموت تختفي أيقونته مباشرةً —
+   لا يبقى للزائر رابطٌ مكسور. والمادة نفسها لا تُمسّ.
+   ثم نبحث عن بديل: لا يُقبل إلا إن كان يقيناً لا اجتهاداً — أن يستجيب فعلاً،
+   وأن يكون المعرّف نفسه (DOI/الملف) على نطاقٍ رسميٍّ بديل. وما دون ذلك تنبيه. */
+async function findCertainReplacement(url) {
+  /* DOI ميت عند doi.org: نجرّب المُحوّل الرسمي البديل بالمعرّف نفسه حرفياً */
+  const doiMatch = url.match(/doi\.org\/(10\.[^\s?#]+)/i)
+  if (doiMatch) {
+    for (const base of ['https://dx.doi.org/', 'https://doi.org/api/handles/']) {
+      const candidate = base === 'https://doi.org/api/handles/' ? `${base}${doiMatch[1]}` : `${base}${doiMatch[1]}`
+      const verdict = await probe(candidate)
+      /* البديل لا يُقبل إلا إن ردّ ٢٠٠ فعلاً وبنفس المعرّف — لا تخمين */
+      if (verdict.state === 'ok' && base !== 'https://doi.org/api/handles/') return candidate
+    }
+    return ''
+  }
+  /* http→https على النطاق نفسه: تحسينٌ يقيني لا تخمين فيه */
+  if (url.startsWith('http://')) {
+    const secure = url.replace(/^http:\/\//, 'https://')
+    const verdict = await probe(secure)
+    if (verdict.state === 'ok') return secure
+  }
+  return ''
+}
+
+{
+  const deadPath = resolve(ROOT, 'src/data/dead-links.json')
+  let registry = { note: '', updatedAt: '', items: [] }
+  try { registry = JSON.parse(readFileSync(deadPath, 'utf8')) } catch { /* أول مرة */ }
+  const previous = new Map((registry.items || []).map((item) => [item.url, item]))
+  const nextItems = []
+  let hidden = 0, replaced = 0, revived = 0
+
+  for (const item of checked) {
+    const wasDead = previous.get(item.url)
+    if (item.state === 'dead' || item.state === 'unreachable') {
+      const existing = wasDead || { url: item.url, state: item.state, since: new Date().toISOString() }
+      if (!existing.replacement) {
+        const replacement = await findCertainReplacement(item.url)
+        if (replacement) { existing.replacement = replacement; replaced += 1 }
+        else hidden += 1
+      }
+      existing.state = item.state
+      nextItems.push(existing)
+    } else if (wasDead) {
+      revived += 1  /* عاد للحياة → يُرفع من السجل فتعود أيقونته */
+    }
+  }
+
+  registry.updatedAt = new Date().toISOString()
+  registry.items = nextItems
+  const { writeFileSync } = await import('node:fs')
+  writeFileSync(deadPath, `${JSON.stringify(registry, null, 2)}\n`, 'utf8')
+  if (hidden || replaced || revived) {
+    console.log(`\n🔗 سجلّ الروابط: أُخفيت ${hidden} · استُبدلت بيقين ${replaced} · عادت للحياة ${revived}`)
+  }
+  summaryExtra = { hidden, replaced, revived }
+}
+
 /* التقرير إلى Firestore كي تقرأه اللوحة وتعرضه مفصّلاً */
 const saPath = resolve(ROOT, env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')
 if (existsSync(saPath)) {
   const { initializeApp, cert, getApps } = await import('firebase-admin/app')
   const { getFirestore } = await import('firebase-admin/firestore')
   const app = getApps()[0] || initializeApp({ credential: cert(JSON.parse(readFileSync(saPath, 'utf8'))) })
-  await getFirestore(app).collection('site_health').doc('sources').set(summary)
+  await getFirestore(app).collection('site_health').doc('sources').set({ ...summary, links: summaryExtra })
   console.log('\n✓ كُتب التقرير التفصيلي في site_health/sources — تقرؤه اللوحة.')
 }
 

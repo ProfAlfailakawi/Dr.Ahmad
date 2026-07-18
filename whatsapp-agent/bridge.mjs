@@ -59,6 +59,19 @@ export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
       return
     }
 
+    /* اقتران بضغطة: يسلّم السر للوحة الدكتور وحدها.
+       حدّ الثقة لا يتغيّر بذرّة — الجسر يستمع على 127.0.0.1 فقط (لا يصله إلا
+       ما يعمل على ماكه)، والأصل مقيّد بقائمة نطاقاته المصرّح بها أعلاه، وهي
+       القائمة نفسها التي تحكم كل عملية أخرى (إرسال الحملات وغيرها). فتسليم
+       السر لهذا الأصل بعينه لا يفتح باباً جديداً، ويعفي الدكتور من نسخ أربعٍ
+       وستين خانة يدوياً في كل متصفح. وكل تسليم يُسجَّل في سجل التدقيق. */
+    if (req.method === 'POST' && pingUrl.pathname === '/pair') {
+      if (!origin) { writeJson(res, 403, { error: 'origin-required' }); return }
+      agent.db?.addAudit?.('bridge-secret-paired', 'local', `origin=${origin}`)
+      writeJson(res, 200, { secret })
+      return
+    }
+
     if (requestSecret(req) !== secret) { writeJson(res, 401, { error: 'unauthorized' }); return }
 
     const url = new URL(req.url || '/', `http://127.0.0.1:${port}`)

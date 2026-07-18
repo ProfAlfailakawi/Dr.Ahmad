@@ -187,6 +187,29 @@ export function WhatsAppAgentPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  /* اقتران بضغطة: يجلب السر من الجسر المحلي ويحفظه في هذا المتصفح وحده،
+     فلا ينسخ الدكتور أربعاً وستين خانة يدوياً في كل جهاز. */
+  const [pairing, setPairing] = useState(false)
+  const pairNow = async () => {
+    if (!bridge) { setNotice('لم أجد الجسر المحلي.'); return }
+    setPairing(true)
+    try {
+      const response = await fetch(`${bridge}/pair`, { method: 'POST' })
+      if (!response.ok) throw new Error('rejected')
+      const payload = await response.json()
+      const fetched = String(payload.secret || '').trim()
+      if (!fetched) throw new Error('empty')
+      setSecret(fetched)
+      localStorage.setItem('whatsapp-agent-bridge-secret', fetched)
+      setNotice('اقترنت اللوحة بالجسر ✓')
+      await refresh()
+    } catch {
+      setNotice('تعذّر الاقتران التلقائي — الصق السر يدوياً من: node whatsapp-agent/cli.mjs bridge-secret')
+    } finally {
+      setPairing(false)
+    }
+  }
+
   const saveSecret = () => {
     localStorage.setItem('whatsapp-agent-bridge-secret', secret.trim())
     setNotice('حُفظ سر الجسر في هذا المتصفح فقط.')
@@ -343,13 +366,14 @@ export function WhatsAppAgentPanel() {
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">الحالة</p><p className="mt-1 font-semibold text-ink">{status.status && status.status !== 'unconfigured'
             ? (stateLabel[status.status] || status.status)
             : bridgeAlive === null ? 'يفحص…' : bridgeAlive ? 'الجسر يعمل — ينتظر السر' : 'غير مرتبط'}</p></div>
-          <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">الجسر</p><p className="mt-1 font-semibold text-ink">{status.bridgeOnline ? 'متصل' : 'غير متصل'}</p><p className="text-[.72rem] text-soft">آخر نبضة: {ageLabel(status.heartbeatAgeMs)}</p></div>
+          <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">الجسر</p><p className="mt-1 font-semibold text-ink">{status.bridgeOnline ? 'متصل' : bridgeAlive ? 'يعمل — بانتظار السر' : 'غير متصل'}</p><p className="text-[.72rem] text-soft">آخر نبضة: {status.bridgeOnline ? ageLabel(status.heartbeatAgeMs) : bridgeAlive ? 'يستجيب الآن' : '–'}</p></div>
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">فهرس الموقع</p><p className="mt-1 font-display text-2xl text-accent">{status.indexed ?? '—'}</p></div>
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">المنطقة</p><p className="mt-1 font-semibold text-ink">{status.timeZone || 'Asia/Kuwait'}</p></div>
         </div>
         <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_auto]">
           <input dir="ltr" className={input} placeholder="Bridge secret — من npm run agent:bridge-secret" value={secret} onChange={(event) => setSecret(event.target.value)} />
           <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => void pairNow()} disabled={pairing || !bridgeAlive} className={`${secondary} disabled:opacity-40`}>{pairing ? 'يقترن…' : '⚡ اقتران تلقائي'}</button>
             <button type="button" onClick={saveSecret} className={secondary}>حفظ السر محليًا</button>
             <button type="button" onClick={() => void restartBridge()} disabled={restarting || !status.bridgeOnline} className={secondary}>{restarting ? 'جارٍ إعادة التشغيل' : 'إعادة تشغيل واتساب'}</button>
           </div>

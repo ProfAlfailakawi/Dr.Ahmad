@@ -14,6 +14,7 @@ import { fetchOwnerCounts, useTrackView } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
 import { articleSystem, ideaTokens } from '../lib/intelligence'
 import { getArticleBody } from '../lib/article-bodies'
+import { liveLink } from '../lib/dead-links'
 import { usePersistentAudio } from '../lib/persistent-audio'
 import { staticQuestions } from '../questions-data'
 import { rememberIdeaVisit } from '../lib/idea-memory'
@@ -656,9 +657,9 @@ export default function ArticleDetail() {
                   <p className="mx-auto mt-3 max-w-[420px] text-[.95rem] font-light leading-[1.9] text-soft">
                     أبقيت بيانات المقال ومصدره حتى لا ينقطع أثره، وسيُضاف النص الكامل ضمن دورة تنقية الأرشيف.
                   </p>
-                  {a.source && (
+                  {liveLink(a.source) && (
                     <a
-                      href={a.source}
+                      href={liveLink(a.source)}
                       target="_blank"
                       rel="noreferrer"
                       className="mt-6 inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep"
@@ -675,7 +676,7 @@ export default function ArticleDetail() {
             <section className="mt-14 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-5" aria-label="مشاركة المقال والاستشهاد به">
               <Share compact title={a.title} path={`/articles/${a.slug}`} />
               <div className="flex flex-wrap items-center gap-5">
-                {article.source && <a href={article.source} target="_blank" rel="noreferrer" className="text-[.78rem] text-soft transition-colors hover:text-accent">المصدر الأصلي</a>}
+                {liveLink(article.source) && <a href={liveLink(article.source)} target="_blank" rel="noreferrer" className="text-[.78rem] text-soft transition-colors hover:text-accent">المصدر الأصلي</a>}
                 <CiteButton compact title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} />
               </div>
             </section>

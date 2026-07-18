@@ -762,8 +762,24 @@ export function ReaderParagraphText({ text, popularQuotes = [] }: { text: string
     const start = popular.startOffset >= 0 && popular.endOffset > popular.startOffset && popular.endOffset <= text.length
       ? popular.startOffset
       : fallbackIndex
-    const end = start >= 0 ? (popular.endOffset > start ? popular.endOffset : start + (popular.quote?.length || 0)) : -1
-    if (start >= 0 && end - start >= 12) matches.push({ start, end, kind: 'popular', popular })
+    const rawEnd = start >= 0 ? (popular.endOffset > start ? popular.endOffset : start + (popular.quote?.length || 0)) : -1
+    /* ═══ محاذاة حدود التظليل لحدود الكلمات ═══
+       الإزاحات تأتي من تحديد القارئ وقد تقع داخل كلمة، فينشطر النص: «الروح»
+       تصير «ال» + «روح» ويُحشر رقم العدّاد بينهما فيقصّ الكلمة — وهذا تشويهٌ
+       لنصّ الدكتور لا يجوز. نمدّ الحدّ إلى أقرب فراغٍ فلا تُقصّ كلمة أبداً. */
+    const snapStart = (position: number) => {
+      let at = Math.max(0, Math.min(position, text.length))
+      while (at > 0 && !/\s/.test(text[at - 1])) at -= 1
+      return at
+    }
+    const snapEnd = (position: number) => {
+      let at = Math.max(0, Math.min(position, text.length))
+      while (at < text.length && !/\s/.test(text[at])) at += 1
+      return at
+    }
+    const alignedStart = start >= 0 ? snapStart(start) : -1
+    const end = rawEnd > 0 ? snapEnd(rawEnd) : -1
+    if (alignedStart >= 0 && end - alignedStart >= 12) matches.push({ start: alignedStart, end, kind: 'popular', popular })
   }
 
   for (const term of GLOSSARY) {
@@ -831,7 +847,9 @@ function PopularHighlightMark({ children, count }: { children: ReactNode; count:
           if (event.key === 'Escape') setOpen(false)
         }}
       >{children}</mark>
-      <span className="reader-popular-note" aria-hidden="true">{count.toLocaleString('en-US')}</span>
+      {/* مسافة غير قاصمة قبل الرقم: تمنع المتصفح من كسر السطر بينه وبين آخر
+          كلمةٍ في الخط المظلَّل، فلا يبقى الرقم يتيماً ولا يُقصّ ما قبله. */}
+      {'\u2060'}<span className="reader-popular-note" aria-hidden="true">{count.toLocaleString('en-US')}</span>
       {open && (
         /* تُثبَّت في وسط الشاشة أفقياً لا فوق الكلمة: التموضع النسبي كان يُخرجها عن
            الإطار متى وقعت الجملة عند الحافة (وهو الأغلب في الجوال). */

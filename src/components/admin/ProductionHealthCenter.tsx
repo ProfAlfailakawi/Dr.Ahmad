@@ -12,6 +12,15 @@ const card = 'min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair 
 const pill = 'min-w-0 rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.74rem] font-semibold leading-tight text-soft'
 
 type Stage = 'draft' | 'queued' | 'generating' | 'pronunciation' | 'needs_review' | 'passed' | 'published'
+
+/* تقرير الفاحص الشامل: كل رابط في الموقع، بحالته وسببه ومكانه واقتراح علاجه */
+type SourcePlace = { kind?: string; title?: string; slug?: string; where?: string }
+type SourceIssue = { url: string; state: string; status?: number; note?: string; advice?: string; places?: SourcePlace[] }
+type SourceReport = { checkedAt?: string; total?: number; places?: number; ok?: number; problems?: number; warnings?: number; items?: SourceIssue[] }
+const sourceStateLabel: Record<string, string> = {
+  dead: 'ميت', unreachable: 'النطاق لا يستجيب', suspect: 'استجابة غريبة',
+  blocked: 'يحجب الفحص', throttled: 'حدّ الطلبات', server: 'عطل مؤقت', timeout: 'بطيء جداً',
+}
 type ProductionState = { status?: Stage; updatedAt?: unknown; note?: string; expectedDialogueContentSha256?: string }
 type Episode = {
   slug: string
@@ -130,6 +139,21 @@ export function ProductionHealthCenter({
   /* فحص المصادر عند الطلب: نفس فاحص الأحد الأسبوعي، يبدأ الآن بضغطة. */
   const [sourcesBusy, setSourcesBusy] = useState(false)
   const [sourcesNotice, setSourcesNotice] = useState('')
+  const [sourceReport, setSourceReport] = useState<SourceReport | null>(null)
+  const [sourcesOpen, setSourcesOpen] = useState(false)
+  useEffect(() => {
+    let active = true
+    void (async () => {
+      const db = await getDb()
+      if (!db || !active) return
+      const { doc, onSnapshot } = await import('firebase/firestore')
+      const stop = onSnapshot(doc(db, 'site_health', 'sources'), (snapshot) => {
+        if (active && snapshot.exists()) setSourceReport(snapshot.data() as SourceReport)
+      }, () => undefined)
+      if (!active) stop()
+    })()
+    return () => { active = false }
+  }, [])
   const checkSourcesNow = async () => {
     setSourcesBusy(true); setSourcesNotice('')
     try {
@@ -324,6 +348,66 @@ export function ProductionHealthCenter({
           </div>
         </div>
         {sourcesNotice && <p className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{sourcesNotice}</p>}
+
+        {/* تقرير المصادر التفصيلي: لم يعد رقماً صامتاً — اضغطه فيقول لك أي رابط
+            سقط، ولماذا، وفي أي مادة، وما العلاج، مع فتحه بضغطة. */}
+        {sourceReport && (
+          <div className="mt-4 rounded-2xl border border-hair bg-canvas">
+            <button
+              type="button"
+              onClick={() => setSourcesOpen((current) => !current)}
+              aria-expanded={sourcesOpen}
+              className="flex w-full flex-wrap items-center justify-between gap-3 px-4 py-3 text-start"
+            >
+              <span className="min-w-0">
+                <span className="block text-[.82rem] font-semibold text-ink">
+                  فحص المصادر · {sourceReport.ok ?? 0} سليمة من {sourceReport.total ?? 0}
+                </span>
+                <span className="mt-0.5 block text-[.72rem] text-soft">
+                  {sourceReport.problems ? `${sourceReport.problems} مصدراً يحتاج قرارك` : 'لا مصدر تالفاً'}
+                  {sourceReport.warnings ? ` · ${sourceReport.warnings} تنبيهاً عابراً` : ''}
+                  {sourceReport.checkedAt ? ` · ${new Date(sourceReport.checkedAt).toLocaleString('ar-KW', { dateStyle: 'medium', timeStyle: 'short', numberingSystem: 'latn' })}` : ''}
+                </span>
+              </span>
+              <span className={`shrink-0 rounded-full px-3 py-1 text-[.72rem] font-semibold ${sourceReport.problems ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>
+                {sourcesOpen ? 'إخفاء التفاصيل' : 'التفاصيل'}
+              </span>
+            </button>
+            {sourcesOpen && (
+              <div className="grid gap-2 border-t border-hair p-3">
+                {(sourceReport.items || []).length === 0 && (
+                  <p className="px-2 py-3 text-[.8rem] text-soft">كل المصادر سليمة — لا شيء يحتاج قرارك.</p>
+                )}
+                {(sourceReport.items || []).map((item) => {
+                  const place = item.places?.[0]
+                  const critical = ['dead', 'unreachable', 'suspect'].includes(item.state)
+                  return (
+                    <div key={item.url} className={`min-w-0 rounded-xl border px-3 py-3 ${critical ? 'border-accent/40 bg-accent/[.04]' : 'border-hair bg-wash'}`}>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`rounded-full px-2.5 py-1 text-[.68rem] font-semibold ${critical ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>
+                          {sourceStateLabel[item.state] || item.state}{item.status ? ` · ${item.status}` : ''}
+                        </span>
+                        {place?.kind && <span className="text-[.7rem] text-soft">{place.kind}</span>}
+                      </div>
+                      {(place?.title || place?.slug) && (
+                        <p className="mt-1.5 break-words text-[.84rem] font-semibold leading-[1.6] text-ink">{place.title || place.slug}</p>
+                      )}
+                      <p className="mt-1 text-[.74rem] leading-relaxed text-soft">{item.note}{item.advice ? ` — ${item.advice}` : ''}</p>
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-2 inline-block break-all text-[.72rem] text-accent underline underline-offset-4"
+                      >
+                        {item.url} ↗
+                      </a>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
         <div className="mt-5 grid min-w-0 grid-cols-2 gap-3 md:grid-cols-5">
           {[
             ['نصوص ناقصة', health.missingBody.length],

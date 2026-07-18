@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import podcastAdmin from '../../data/podcast-admin.json'
 import { getDb } from '../../lib/firebase'
+import { loadArticleBodies } from '../../lib/article-bodies'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../../lib/cms'
 import type { AdminTab } from './AdminArchitecture'
 import { fingerprintDialogue } from '../../lib/podcast-dialogue-lock'
@@ -196,14 +197,24 @@ export function ProductionHealthCenter({
     }
   }
 
+  // نصوص الأرشيف تعيش في bodies.json وتُحمَّل كسولاً — فحص حقل body وحده كان
+  // يعلن 161 نصاً «ناقصاً» زوراً. نحمّل الخريطة الحقيقية ونفحص عليها.
+  const [staticBodies, setStaticBodies] = useState<Record<string, string> | null>(null)
+  useEffect(() => {
+    let active = true
+    loadArticleBodies().then((bodies) => { if (active) setStaticBodies(bodies) }).catch(() => { if (active) setStaticBodies({}) })
+    return () => { active = false }
+  }, [])
+
   const health = useMemo(() => {
-    const missingBody = articles.filter((article) => !article.body || article.body.trim().length < 80)
+    const bodyOf = (article: ArticleRecord) => article.body || staticBodies?.[article.slug] || ''
+    const missingBody = staticBodies === null ? [] : articles.filter((article) => bodyOf(article).trim().length < 80)
     const missingSource = articles.filter((article) => !article.source)
     const missingAudio = articles.filter((article) => !article.hasAudio)
     const paperIssues = papers.filter((paper) => !paper.abstractAr || !paper.source || paper.verification === 'needs-manual-review')
     const bookIssues = books.filter((book) => !book.desc || !book.cover || !book.pdf)
     return { missingBody, missingSource, missingAudio, paperIssues, bookIssues }
-  }, [articles, books, papers])
+  }, [articles, books, papers, staticBodies])
 
   const pathIdeas = useMemo(() => {
     const groups = new Map<string, ArticleRecord[]>()

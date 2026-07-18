@@ -1293,9 +1293,13 @@ async function sttRequest(wav16Path, locale) {
       if (res.ok) {
         const json = await res.json()
         const best = json.NBest?.[0] || {}
-        return { locale, text: best.Display || best.Lexical || json.DisplayText || '', lexical: best.Lexical || '',
+        const text = best.Display || best.Lexical || json.DisplayText || ''
+        if (!text) console.log(`  · STT ${locale}: استجابة سليمة بلا نص (RecognitionStatus=${json.RecognitionStatus || '؟'})`)
+        return { locale, text, lexical: best.Lexical || '',
           confidence: Number(best.Confidence || 0), words: Array.isArray(best.Words) ? best.Words : [] }
       }
+      /* الحالة غير السليمة كانت تُبتلع صمتاً فيستحيل تمييز نفاد الحصة عن لهجة موقوفة — نسجلها دوماً */
+      console.log(`  · STT ${locale}: HTTP ${res.status} ${String(await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 140)}`)
       if (res.status === 400 || res.status === 404) return null
       if (res.status === 429 || res.status >= 500) await new Promise((resolveWait) => setTimeout(resolveWait, 2500 * attempt))
       else return null

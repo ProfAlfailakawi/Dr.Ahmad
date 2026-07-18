@@ -8,7 +8,7 @@ import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
 import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, usePopularQuotes } from '../components/ArticleReader'
 import { SelectionTools } from '../components/IdeaFeatures'
 import { openAudioPlayer } from '../components/AudioPlayer'
-import { WriterResearcherBridge, ArticlePulse, markArticleRead } from '../components/ReaderResonance'
+import { WriterResearcherBridge, markArticleRead } from '../components/ReaderResonance'
 import { JsonLd, useSeo } from '../components/seo'
 import { fetchOwnerCounts, useTrackView } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
@@ -27,39 +27,92 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
   const audio = usePersistentAudio()
   const popularQuotes = usePopularQuotes(slug, body)
   const refs = useRef<(HTMLParagraphElement | null)[]>([])
+  const [followEnabled, setFollowEnabled] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return localStorage.getItem('article-audio-follow') !== 'off'
+  })
   const paragraphs = useMemo(() => body.split('\n\n').map((text) => ({ text, words: Math.max(1, text.trim().split(/\s+/).length) })), [body])
   const totalWords = paragraphs.reduce((sum, item) => sum + item.words, 0)
+  const paragraphStarts = useMemo(() => {
+    let words = 0
+    return paragraphs.map((paragraph) => {
+      const start = words
+      words += paragraph.words
+      return start
+    })
+  }, [paragraphs])
   const activeAudio = Boolean(audio.track?.path === `/articles/${slug}` && !audio.track?.label.includes('الحوار') && audio.duration > 0)
+  const activeParagraph = useMemo(() => {
+    if (!activeAudio || !followEnabled || !audio.duration || !totalWords) return -1
+    const currentWords = Math.min(totalWords - 1, Math.max(0, (audio.current / audio.duration) * totalWords))
+    let index = 0
+    for (let i = 0; i < paragraphStarts.length; i += 1) {
+      if (currentWords >= paragraphStarts[i]) index = i
+      else break
+    }
+    return index
+  }, [activeAudio, audio.current, audio.duration, followEnabled, paragraphStarts, totalWords])
+
+  useEffect(() => {
+    try { localStorage.setItem('article-audio-follow', followEnabled ? 'on' : 'off') } catch { /* noop */ }
+  }, [followEnabled])
+
+  useEffect(() => {
+    if (!activeAudio || !followEnabled || activeParagraph < 0) return
+    const element = refs.current[activeParagraph]
+    if (!element) return
+    const rect = element.getBoundingClientRect()
+    const topLimit = 116
+    const bottomLimit = window.innerHeight * 0.72
+    if (rect.top < topLimit || rect.bottom > bottomLimit) {
+      element.scrollIntoView({ behavior: audio.playing ? 'smooth' : 'auto', block: 'center' })
+    }
+  }, [activeAudio, activeParagraph, audio.playing, followEnabled])
 
   const seekParagraph = (index: number) => {
     if (!activeAudio || !audio.duration) return
-    const previousWords = paragraphs.slice(0, index).reduce((sum, item) => sum + item.words, 0)
+    const previousWords = paragraphStarts[index] || 0
     audio.seekTo((previousWords / totalWords) * audio.duration)
     if (!audio.playing) void audio.toggle()
   }
 
   return (
     <>
+      {activeAudio && (
+        <div className="synced-reading-toolbar mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-hair bg-wash/60 px-4 py-3">
+          <p className="text-[.74rem] leading-relaxed text-soft">اضغط أي فقرة للانتقال إليها أثناء الاستماع.</p>
+          <button
+            type="button"
+            onClick={() => setFollowEnabled((value) => !value)}
+            aria-pressed={followEnabled}
+            className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[.74rem] font-semibold transition-colors ${
+              followEnabled
+                ? 'border-accent bg-accent text-white'
+                : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'
+            }`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${followEnabled ? 'bg-white' : 'bg-accent'}`} />
+            تتبع المقالة
+          </button>
+        </div>
+      )}
       <div id="article-body" className={`article-body mt-7 ${activeAudio ? 'article-body-synced' : ''}`}>
         {paragraphs.map((paragraph, index) => {
           const paragraphQuotes = popularQuotes.filter((quote) => quote.paragraph === index)
           const strongest = paragraphQuotes.slice().sort((left, right) => right.count - left.count)[0]
           return (
             <div key={index} className="popular-highlight-paragraph group relative">
-              {/* لا تظليل تلقائي متتبِّع: التقدير الخطّي (الزمن/المدة) ينحرف عن الإيقاع
-                 المتغيّر والوقفات فيتابع الكلمةَ الخطأ. أبقينا التزامن الموثوق وحده:
-                 اضغط أي فقرة لينتقل الصوت إليها. (التتبّع الدقيق يحتاج طوابع زمنية تُشحن.) */}
               <p
                 ref={(element) => { refs.current[index] = element }}
                 data-reader-paragraph={index}
                 onClick={() => seekParagraph(index)}
-                className={`${index === 0 && canUseDropCap(paragraph.text) ? 'dropcap ' : ''}${activeAudio ? 'synced-paragraph' : ''}`.trim() || undefined}
+                className={`${index === 0 && canUseDropCap(paragraph.text) ? 'dropcap ' : ''}${activeAudio ? 'synced-paragraph' : ''}${index === activeParagraph ? ' is-audio-active' : ''}`.trim() || undefined}
               >
                 <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} />
               </p>
               {strongest && (
-                <p className="reader-popular-note" aria-label={`حُفظت ${strongest.count.toLocaleString('ar-KW')} مرة`}>
-                  {`حُفظت ${strongest.count.toLocaleString('ar-KW')} مرة`}
+                <p className="reader-popular-note" aria-label={`حُفظت ${strongest.count.toLocaleString('en-US')} مرة`}>
+                  {strongest.count.toLocaleString('en-US')}
                 </p>
               )}
             </div>
@@ -438,7 +491,6 @@ function ArticleExtensions({
         <ArchiveContext a={article} />
         <ReadingLayers hasAudio={Boolean(article.body)} hasEvolution={hasEvolution} slug={article.slug} />
         <StudentArchive a={article} articles={articles} books={books} papers={papers} />
-        <ArticlePulse slug={article.slug} />
         <WriterResearcherBridge articleTitle={article.title} paper={paper ? { slug: paper.slug, title: paper.title } : null} />
         <TimeDialogue a={article} articles={articles} />
         <IdeaThread article={article} books={books} papers={papers} media={media} />

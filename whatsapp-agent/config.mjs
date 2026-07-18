@@ -14,6 +14,7 @@ export const flags = Object.freeze({
   agent: bool(process.env.WHATSAPP_AGENT_ENABLED, true),
   send: bool(process.env.WHATSAPP_SEND_ENABLED, false),
   autoReply: bool(process.env.WHATSAPP_AUTO_REPLY_ENABLED, false),
+  privateAutoReply: bool(process.env.WHATSAPP_PRIVATE_AUTO_REPLY_ENABLED, false),
   voice: bool(process.env.WHATSAPP_VOICE_ENABLED, false),
   reminders: bool(process.env.WHATSAPP_REMINDERS_ENABLED, false),
   quoteCard: bool(process.env.WHATSAPP_QUOTE_CARD_ENABLED, true),
@@ -32,6 +33,14 @@ export const MAX_CAMPAIGN_TARGETS = Math.min(Math.max(Number(process.env.WHATSAP
 export const RETENTION_DAYS = Math.max(7, Number(process.env.WHATSAPP_RETENTION_DAYS || 30))
 export const AZURE_STT_HARD_STOP_SECONDS = Math.max(60, Number(process.env.WHATSAPP_AZURE_STT_HARD_STOP_SECONDS || 4 * 60 * 60))
 export const AZURE_TTS_HARD_STOP_CHARS = Math.max(1000, Number(process.env.WHATSAPP_AZURE_TTS_HARD_STOP_CHARS || 400000))
+export const AUTO_REPLY_TRIGGERS = String(process.env.WHATSAPP_AUTO_REPLY_TRIGGERS || 'سؤال:,اسأل د. أحمد,اسأل الدكتور,د. أحمد,@دكتور')
+  .split(',')
+  .map((item) => item.trim())
+  .filter(Boolean)
+export const AUTO_REPLY_ALLOWLIST = String(process.env.WHATSAPP_AUTO_REPLY_ALLOWLIST || '')
+  .split(',')
+  .map((item) => item.replace(/\s+/g, '').trim().toLowerCase())
+  .filter(Boolean)
 
 export function ensureSafeDataDir(fs) {
   fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 })

@@ -16,6 +16,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
   const index = () => syncContentIndex(db, root, SITE_URL)
   const onMessage = ({ jid, text, message }) => {
     const response = handleIncoming({ db, jid, text: safeText(text), isReplyToAgent: Boolean(message?.message?.extendedTextMessage?.contextInfo?.quotedMessage) })
+    if (!response.shouldRespond) db.addAudit('auto-reply-skipped', redactJid(jid), response.reason || 'blocked')
     if (!response.shouldRespond || !flags.autoReply || !flags.send) return response
     if (response.text && state.transport?.sendText) {
       void state.transport.sendText(jid, response.text).catch((error) => db.addAudit('auto-reply-failed', redactJid(jid), redactError(error)))

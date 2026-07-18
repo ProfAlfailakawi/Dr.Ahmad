@@ -56,12 +56,12 @@ export function WhatsAppAgentPanel() {
     try { const response = await fetch(`${bridge}/campaigns/${encodeURIComponent(id)}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ confirm: true }) }); if (!response.ok) throw new Error('approve'); setNotice('اعتمدت المسودة؛ الإرسال ما زال مغلقًا حتى أمر يدوي ثانٍ.'); await refresh() } catch { setNotice('تعذّر اعتماد المسودة.') }
   }
 
-  const flags = useMemo(() => status.flags || { agent: true, send: false, autoReply: false, voice: false, reminders: false, quoteCard: true }, [status.flags])
+  const flags = useMemo(() => status.flags || { agent: true, send: false, autoReply: false, privateAutoReply: false, voice: false, reminders: false, quoteCard: true }, [status.flags])
   const phases = [
     ['1', 'الوكيل والربط', flags.agent],
     ['2', 'المعاينة والإرسال إلى الذات', flags.send],
-    ['3', 'الردود النصية والبحث', flags.autoReply],
-    ['4', 'فاجئني وشنو فاتني', flags.autoReply],
+    ['3', 'الردود النصية الموجّهة فقط', flags.autoReply],
+    ['4', 'فاجئني وشنو فاتني داخل جلسة', flags.autoReply],
     ['5', 'التذكيرات وبطاقات الاقتباس', flags.reminders || flags.quoteCard],
   ] as const
 
@@ -69,13 +69,16 @@ export function WhatsAppAgentPanel() {
     <div className="admin-dashboard grid min-w-0 gap-4">
       <section className={card}>
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div><p className="text-[.75rem] font-semibold uppercase text-accent">مساعد د. أحمد داخل واتساب</p><h2 className="mt-1 font-display text-2xl font-semibold text-ink">وكيل محلي بموافقة الدكتور.</h2><p className="mt-2 max-w-2xl text-[.86rem] leading-relaxed text-soft">يبحث في أرشيف الموقع فقط، ولا يرد على المحادثات الشخصية افتراضيًا. الجلسة والأرقام تبقى على الماك.</p></div>
+          <div><p className="text-[.75rem] font-semibold uppercase text-accent">مساعد د. أحمد داخل واتساب</p><h2 className="mt-1 font-display text-2xl font-semibold text-ink">وكيل محلي بموافقة الدكتور.</h2><p className="mt-2 max-w-2xl text-[.86rem] leading-relaxed text-soft">يبحث في أرشيف الموقع فقط، وينشر بموافقتك، ولا يرد على محادثات رقمك الخاص إلا إذا وُجّه له الطلب صراحة. الجلسة والأرقام تبقى على الماك.</p></div>
           <button type="button" onClick={() => void refresh()} disabled={busy} className={secondary}>{busy ? '…' : 'تحديث الحالة'}</button>
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">الحالة</p><p className="mt-1 font-semibold text-ink">{stateLabel[status.status || 'unconfigured'] || status.status}</p></div>
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">فهرس الموقع</p><p className="mt-1 font-display text-2xl text-accent">{status.indexed ?? '—'}</p><p className="text-[.72rem] text-soft">مادة مشتقة</p></div>
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">المنطقة</p><p className="mt-1 font-semibold text-ink">{status.timeZone || 'Asia/Kuwait'}</p></div>
+        </div>
+        <div className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-soft">
+          الوضع الآمن مفعل: لا رد تلقائي على الأهل والربع. الرد يكون فقط داخل جلسة محتوى، أو عند كتابة صيغة صريحة مثل «سؤال: …» أو «اسأل الدكتور: …».
         </div>
         {status.last_error && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.8rem] text-soft">{status.last_error}</p>}
         {notice && <p role="status" className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{notice}</p>}

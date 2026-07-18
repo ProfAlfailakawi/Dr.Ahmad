@@ -155,7 +155,7 @@ export function QuoteCard() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[260] flex items-center justify-center bg-ink/70 p-5 backdrop-blur-sm"
+            className="reader-modal-overlay quote-card-overlay fixed inset-0 z-[260] flex items-start justify-center overflow-y-auto bg-ink/70 p-5 backdrop-blur-sm"
             onClick={() => setImg(null)}
           >
             <motion.div
@@ -164,10 +164,10 @@ export function QuoteCard() {
               exit={{ scale: 0.96 }}
               transition={{ duration: 0.35, ease: EASE }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-[440px]"
+              className="quote-card-dialog w-full max-w-[440px]"
             >
               <img src={img} alt="بطاقة اقتباس" className="w-full rounded-2xl shadow-[0_40px_80px_-30px_rgba(0,0,0,.7)]" />
-              <div className="mt-5 flex justify-center gap-3">
+              <div className="quote-card-controls mt-5 flex justify-center gap-3">
                 <button onClick={download} className="rounded-full bg-accent px-7 py-3 font-semibold text-canvas transition-colors hover:bg-accent-deep">
                   تحميل الصورة
                 </button>

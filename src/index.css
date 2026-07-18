@@ -64,6 +64,15 @@ html, body, #root, main {
 
 @supports (-webkit-touch-callout: none) {
   html, body, #root, main { overflow-x: hidden; }
+
+  /* iOS يفرض عرضاً جوهرياً على حقل التاريخ فيُخرجه من إطار نماذج اللوحة — نلغيه هنا وحده،
+     والحقل يرث حجمه وحدوده من صنف الحقول الموحّد فلا يتغيّر شكله */
+  input[type='date'] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-width: 0;
+    max-width: 100%;
+  }
 }
 
 @media (display-mode: standalone) {
@@ -647,11 +656,12 @@ html.reader-paper .article-journey .bg-wash {
   padding-inline: .02em;
 }
 .reader-popular-note {
-  margin: -1.1rem 0 1.65rem !important;
-  font-size: .68rem !important;
-  line-height: 1.65 !important;
-  font-weight: 500 !important;
-  color: rgb(var(--c-accent) / .78) !important;
+  margin: -1rem 0 1.55rem !important;
+  font-size: .64rem !important;
+  line-height: 1.2 !important;
+  font-weight: 300 !important;
+  letter-spacing: .015em !important;
+  color: rgb(var(--c-accent) / .68) !important;
   text-align: start !important;
   text-align-last: auto !important;
 }
@@ -1762,10 +1772,16 @@ body.reader-resume-open .floating-actions {
 .quote-card-dialog {
   margin-inline: auto;
   min-inline-size: 0;
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+}
+.quote-card-dialog img {
+  max-block-size: min(66dvh, 640px);
+  object-fit: contain;
 }
 .quote-card-controls {
   max-inline-size: 100%;
   -webkit-tap-highlight-color: transparent;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 420px) {

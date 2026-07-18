@@ -233,7 +233,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: 'ابدأ من هنا',
     items: [
-      { to: '/articles', label: 'المقالات الفكرية', description: 'الأرشيف الكامل', allLabel: 'جميع المقالات', sub: [
+      { to: '/articles', label: 'المقالات الفكرية', allLabel: 'جميع المقالات', sub: [
         { to: '/atlas', label: 'سماء المقالات', description: 'خريطة الأرشيف' },
         { to: '/thought-paths', label: 'مسارات الفكرة', description: 'تطوّر الموضوعات' },
       ] },
@@ -246,7 +246,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
       { to: '/research', label: 'الأبحاث المحكمة' },
       { to: '/publications', label: 'الكتب المنشورة' },
       { to: '/inbox', label: 'من بريدي', description: 'رسائل مختارة' },
-      { to: '/curated', label: 'المختارات', description: 'مختارات منتقاة', allLabel: 'جميع المختارات', sub: [
+      { to: '/curated', label: 'المختارات', allLabel: 'جميع المختارات', sub: [
         { to: '/questions', label: 'سؤال يُقلق التعليم', description: 'أسئلة تربوية' },
         { to: '/radar', label: 'أرشيف الرادار', description: 'مختارات أسبوعية' },
       ] },

@@ -1,5 +1,5 @@
 import { contentSummary, findContent, latestContent, normalizeArabic, searchContent } from './content-index.mjs'
-import { MAX_MESSAGE_CHARS, TIME_ZONE } from './config.mjs'
+import { AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MAX_MESSAGE_CHARS, TIME_ZONE, flags } from './config.mjs'
 import { hashOpaque } from './crypto.mjs'
 import { createReminder, parseReminderTime } from './reminders.mjs'
 
@@ -31,6 +31,25 @@ const patterns = [
 ]
 
 const clean = (text) => normalizeArabic(String(text || '').slice(0, MAX_MESSAGE_CHARS))
+const compactPhone = (value = '') => String(value).replace(/[^\d]/g, '')
+const jidAccount = (jid = '') => String(jid).split('@')[0].toLowerCase()
+
+function isAllowlisted(jid = '') {
+  if (!AUTO_REPLY_ALLOWLIST.length) return false
+  const account = jidAccount(jid)
+  const digits = compactPhone(account)
+  return AUTO_REPLY_ALLOWLIST.some((item) => item === account || compactPhone(item) === digits)
+}
+
+function hasAssistantTrigger(text = '') {
+  const raw = String(text || '').trim()
+  const normalized = clean(raw)
+  return AUTO_REPLY_TRIGGERS.some((trigger) => {
+    const value = clean(trigger)
+    if (!value) return false
+    return normalized.startsWith(value) || normalized.includes(` ${value}`)
+  })
+}
 
 export function classifyIntent(text) {
   const value = clean(text)
@@ -159,9 +178,13 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
   if (!jid || isSuppressed(db, jid)) return { allowed: false, reason: 'suppressed' }
   const session = pendingSession(db, jid)
   if (session?.manual_until && new Date(session.manual_until) > new Date()) return { allowed: false, reason: 'manual-takeover' }
-  if (isReplyToAgent || explicitContentSession || session?.mode === 'auto') return { allowed: true, reason: 'content-session' }
+  if (isReplyToAgent || explicitContentSession || session?.mode === 'content-session' || session?.mode === 'auto') return { allowed: true, reason: 'content-session' }
   const { intent, confidence } = classifyIntent(text)
-  if (intent === INTENTS.STOP_MESSAGES || intent === INTENTS.RESUME_MESSAGES || confidence >= 0.9) return { allowed: true, reason: 'explicit-intent' }
+  if (intent === INTENTS.STOP_MESSAGES || intent === INTENTS.RESUME_MESSAGES || intent === INTENTS.DELETE_PREFERENCES) return { allowed: true, reason: 'privacy-command' }
+  if (!flags.privateAutoReply && !isAllowlisted(jid) && !hasAssistantTrigger(text)) return { allowed: false, reason: 'private-safe-mode' }
+  if (isAllowlisted(jid)) return { allowed: true, reason: 'allowlisted-contact' }
+  if (hasAssistantTrigger(text) && confidence >= 0.7) return { allowed: true, reason: 'assistant-trigger' }
+  if (flags.privateAutoReply && confidence >= 0.9) return { allowed: true, reason: 'explicit-intent' }
   return { allowed: false, reason: 'personal-chat-default' }
 }
 

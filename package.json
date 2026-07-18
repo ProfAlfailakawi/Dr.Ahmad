@@ -77,7 +77,9 @@
     "agent:uninstall": "node scripts/whatsapp-agent.mjs uninstall",
     "agent:send-campaign": "node scripts/whatsapp-agent.mjs send-campaign",
     "agent:stop-campaign": "node scripts/whatsapp-agent.mjs stop-campaign",
-    "podcast:manual-lock:self-test": "node scripts/test-manual-dialogue-lock.mjs"
+    "podcast:manual-lock:self-test": "node scripts/test-manual-dialogue-lock.mjs",
+    "typography:audit": "node scripts/normalize-arabic-typography.mjs",
+    "typography:fix": "node scripts/normalize-arabic-typography.mjs --write"
   },
   "dependencies": {
     "firebase": "^12.15.0",

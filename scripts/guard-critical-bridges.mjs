@@ -46,6 +46,7 @@ const cvFile = await readFile(resolve(root, 'src/pages/CvFile.tsx'), 'utf8')
 const firestoreRules = await readFile(resolve(root, 'firestore.rules'), 'utf8')
 const serverSource = await readFile(resolve(root, 'server.mjs'), 'utf8')
 const podcastDispatch = await readFile(resolve(root, 'src/lib/podcast-generation.ts'), 'utf8')
+const autoAudio = await readFile(resolve(root, 'scripts/auto-audio.mjs'), 'utf8')
 const liveSource = (await Promise.all((await textFiles(resolve(root, 'src'))).map((file) => readFile(file, 'utf8')))).join('\n')
 
 const assertions = [
@@ -68,6 +69,7 @@ const assertions = [
     'hosting deploy must publish Firestore rules standalone (loud) and still attempt Storage rules'],
   [ideaFeatures.includes('window.visualViewport') && ideaFeatures.includes('firstPress'), 'PWA selection toolbar and first-tap quote controls must remain protected'],
   [contentManager.includes('uploadCvPdfToFirestore') && contentManager.includes("'site_cv_files'"), 'CV upload must keep its Storage-independent Firestore bridge'],
+  [contentManager.includes('النص المُشكَّل لتوليد الصوت') && contentManager.includes("'bodyVocalized'") && autoAudio.includes('fields.bodyVocalized'), 'vocalized article text must remain visible in admin and connected to audio generation'],
   [cvFile.includes("'site_cv_files'") && cvFile.includes('cv-files-v1'), 'public CV reconstruction and local cache must remain active'],
   [firestoreRules.includes('match /site_cv_files/{kind}') && firestoreRules.includes('match /chunks/{chunkId}'), 'Firestore CV file rules must remain deployed'],
 ]

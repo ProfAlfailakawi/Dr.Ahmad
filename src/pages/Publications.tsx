@@ -19,7 +19,7 @@ export default function Publications() {
   useSeo({ title: 'الكتب المنشورة', path: '/publications', description: `${count} في التعليم والتكنولوجيا والتغيير المجتمعي.` })
   const reduce = useReducedMotion()
   return (
-    <Page className="content-books">
+    <Page className="content-books page-journey">
       <JsonLd data={{
         '@context': 'https://schema.org',
         '@type': 'CollectionPage',
@@ -39,24 +39,22 @@ export default function Publications() {
           {books.slice(0, visibleCount).map((b, i) => (
             <motion.div
               key={b.slug}
-              initial={reduce ? false : { opacity: 0, y: 26 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={reduce ? false : { opacity: 0 }}
+              whileInView={{ opacity: 1 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.7, delay: Math.min(i * 0.06, 0.35), ease: EASE }}
-              whileHover={reduce ? {} : { y: -8 }}
               className="group min-w-0"
             >
-              <Link to={`/publications/${b.slug}`} data-hover className="block">
-                <div className="group overflow-hidden rounded-xl bg-white shadow-[0_22px_44px_-26px_rgba(21,22,26,.4)]" style={{ aspectRatio: '1024 / 700' }}>
+              <Link to={`/publications/${b.slug}`} viewTransition className="block">
+                <div className="group overflow-hidden rounded-xl border border-hair bg-white" style={{ aspectRatio: '1024 / 700' }}>
                   {b.cover ? (
-                    <img src={b.cover} alt={b.title} loading="lazy" className="h-full w-full object-cover" />
+                    <img src={b.cover} alt={b.title} loading="lazy" width="1024" height="700" className="h-full w-full object-cover" />
                   ) : (
                     <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>
                   )}
                 </div>
                 <h2 className="mt-3 break-words font-display text-[1rem] font-medium leading-[1.45] text-ink sm:mt-5 sm:text-[1.2rem] md:text-[1.3rem]">{b.title}</h2>
                 {b.isbn && <span className="mt-1 block text-[.78rem] text-soft">ردمك {b.isbn}</span>}
-                <span className="mt-2 block text-[.72rem] text-accent opacity-100 transition-opacity duration-300 sm:text-[.84rem] md:opacity-0 md:group-hover:opacity-100">المقدّمة والفهرس ←</span>
               </Link>
             </motion.div>
           ))}

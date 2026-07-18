@@ -15,6 +15,7 @@ import { articleCats } from '../data'
 import { getBaseRecord, type ArticleRecord } from '../lib/cms'
 import { useCmsContent } from '../lib/content'
 import { beginAdminTask } from '../lib/admin-task-state'
+import { normalizeArabicTypography } from '../lib/arabic-typography'
 import { ContentManager, type ManagedKind, type ManagedRecord } from '../components/admin/ContentManager'
 import { Indicators } from '../components/admin/Indicators'
 import { IntelligenceLab } from '../components/admin/IntelligenceLab'
@@ -550,7 +551,7 @@ function ArticleForm() {
     setBusy(true)
     const t = today()
     const slug = `d-${t.iso.replace(/-/g, '')}-${Math.random().toString(36).slice(2, 6)}`
-    await save({ slug, title: f.title.trim(), cat: f.cat, date: t.ar, iso: t.iso, excerpt: f.excerpt.trim() || f.body.trim().slice(0, 140), body: f.body.trim() })
+    await save({ slug, title: normalizeArabicTypography(f.title), cat: f.cat, date: t.ar, iso: t.iso, excerpt: normalizeArabicTypography(f.excerpt.trim() || f.body.trim().slice(0, 140)), body: normalizeArabicTypography(f.body) })
     setF({ title: '', cat: 'التعليم', excerpt: '', body: '' })
     setBusy(false)
   }

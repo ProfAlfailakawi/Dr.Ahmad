@@ -682,7 +682,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                     onClick={(event) => { if (event.detail === 0) void downloadCard() }}
                     aria-label="تحميل الصورة"
                     title="تحميل الصورة"
-                    className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-accent text-canvas transition-all hover:-translate-y-0.5 hover:bg-accent-deep"
+                    className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-accent text-canvas transition-colors hover:bg-accent-deep"
                   >
                     <svg aria-hidden width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
                   </button>
@@ -695,18 +695,18 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                     aria-label={quoteSaved ? 'إزالة من دفتر القراءة' : 'حفظ في دفتر القراءة'}
                     title={quoteSaved ? 'إزالة من دفتر القراءة' : 'حفظ في دفتر القراءة'}
                     aria-pressed={quoteSaved}
-                    className={`flex h-[52px] w-[52px] items-center justify-center rounded-full border transition-all hover:-translate-y-0.5 ${quoteSaved ? 'border-canvas bg-canvas text-ink' : 'border-canvas/60 bg-canvas/10 text-canvas hover:bg-canvas hover:text-ink'}`}
+                    className={`flex h-[52px] w-[52px] items-center justify-center rounded-full border transition-colors ${quoteSaved ? 'border-canvas bg-canvas text-ink' : 'border-canvas/60 bg-canvas/10 text-canvas hover:bg-canvas hover:text-ink'}`}
                   >
                     <svg aria-hidden width="22" height="22" viewBox="0 0 24 24" fill={quoteSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4.8A1.8 1.8 0 0 1 7.8 3h8.4A1.8 1.8 0 0 1 18 4.8V21l-6-3.6L6 21Z"/></svg>
                   </button>
                 )}
-                <button type="button" onPointerDown={(event) => firstPress(event, close)} onClick={(event) => { if (event.detail === 0) close() }} aria-label="إغلاق" title="إغلاق" className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-[1.5px] border-canvas/50 text-canvas transition-all hover:-translate-y-0.5 hover:border-canvas">
+                <button type="button" onPointerDown={(event) => firstPress(event, close)} onClick={(event) => { if (event.detail === 0) close() }} aria-label="إغلاق" title="إغلاق" className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-[1.5px] border-canvas/50 text-canvas transition-colors hover:border-canvas">
                   <svg aria-hidden width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="m6 6 12 12"/><path d="M18 6 6 18"/></svg>
                 </button>
               </div>
               {quoteSaved && (
                 <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[.72rem] font-semibold text-canvas/80">
-                  <span>حُفظت — اضغط علامة الحفظ مرة أخرى للتراجع.</span>
+                  <span>حُفظت.</span>
                   <button type="button" onPointerDown={(event) => firstPress(event, openReadingNotebook)} onClick={(event) => { if (event.detail === 0) openReadingNotebook() }} className="border-b border-canvas/45 pb-px text-canvas transition-colors hover:border-canvas">فتح دفتر القراءة</button>
                 </div>
               )}

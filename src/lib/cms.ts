@@ -32,6 +32,8 @@ export type ArticleRecord = {
   cat: string
   excerpt: string
   body?: string
+  /** نسخة المقال نفسها بالتشكيل؛ محفوظة للإنتاج الصوتي ولا تُعرض للزوار. */
+  bodyVocalized?: string
   source?: string
   url?: string
   status?: string
@@ -108,7 +110,7 @@ type AnyRecord = ArticleRecord | BookRecord | PaperRecord | MediaRecord
 const audioMap = audioManifest as Record<string, AudioEntry>
 
 const fieldsByKind: Record<ContentKind, readonly string[]> = {
-  article: ['title', 'date', 'iso', 'cat', 'excerpt', 'body', 'source', 'url', 'status', 'scheduledAt', 'audio'],
+  article: ['title', 'date', 'iso', 'cat', 'excerpt', 'body', 'bodyVocalized', 'source', 'url', 'status', 'scheduledAt', 'audio'],
   book: ['title', 'isbn', 'desc', 'cover', 'pdf'],
   paper: ['title', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'iso', 'date', 'coAuthors', 'scholar', 'researchgate', 'doi', 'verification'],
   media: ['title', 'outlet', 'platform', 'url', 'iso', 'date'],
@@ -147,6 +149,7 @@ function audioVoices(value: unknown): ArticleAudio | undefined {
 function buildArticle(value: Record<string, unknown>, cms: CmsMeta): ArticleRecord {
   const slug = stringValue(value.slug, cms.baseSlug)
   const body = stringValue(value.body) || undefined
+  const bodyVocalized = stringValue(value.bodyVocalized) || undefined
   const audio = audioVoices(value.audio)
   return {
     slug,
@@ -156,6 +159,7 @@ function buildArticle(value: Record<string, unknown>, cms: CmsMeta): ArticleReco
     cat: stringValue(value.cat, 'التعليم'),
     excerpt: stringValue(value.excerpt),
     body,
+    bodyVocalized,
     source: stringValue(value.source) || undefined,
     url: stringValue(value.url) || undefined,
     status: stringValue(value.status) || undefined,

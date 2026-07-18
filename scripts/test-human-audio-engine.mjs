@@ -25,6 +25,13 @@ assert(segments.every((unit) => unit.sourceText.split(/\s+/).length <= 28), 'ل�
 
 const fahed = planReadingPerformance({ title: 'كيف نقيس؟', sourceText: source, voiceKey: 'fahed' })
 const noura = planReadingPerformance({ title: 'كيف نقيس؟', sourceText: source, voiceKey: 'noura' })
+const vocalizedSource = 'ذَهَبَ الطَّالِبُ إِلَى المَدْرَسَةِ.'
+const plainSource = 'ذهب الطالب إلى المدرسة.'
+const vocalizedPlan = planReadingPerformance({ sourceText: plainSource, vocalizedText: vocalizedSource, voiceKey: 'fahed' })
+assert.equal(vocalizedPlan.displayText, plainSource, 'النص المشكّل يبقى مخفياً عن العرض')
+assert(/[َُِّْ]/u.test(vocalizedPlan.units[0].pronunciationText), 'النص المشكّل يصل فعلياً إلى طبقة النطق')
+const mismatchedPlan = planReadingPerformance({ sourceText: plainSource, vocalizedText: 'ذَهَبَ المُعَلِّمُ.', voiceKey: 'fahed' })
+assert(!/[َُِّْ]/u.test(mismatchedPlan.units[0].pronunciationText), 'النص المشكّل غير المطابق يُرفض بأمان')
 assert.equal(fahed.displayText, source, 'displayText يبقى النص الأصلي حرفياً')
 assert.equal(noura.displayText, source, 'نورة لا تغير النص الأصلي')
 assert(fahed.units.some((unit) => unit.type === 'question' && unit.ending === 'open'), 'السؤال له نهاية مفتوحة')

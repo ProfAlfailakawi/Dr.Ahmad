@@ -425,6 +425,8 @@ async function loadRemoteContent(originals) {
       iso: typeof fields.iso === 'string' ? fields.iso : typeof fields.date === 'string' ? fields.date.slice(0, 10) : '',
       cat: typeof fields.cat === 'string' ? fields.cat : typeof fields.category === 'string' ? fields.category : '',
       body: body.trim(),
+      /* النسخة المُشكَّلة القادمة من لوحة التحكم لا تُنشر كنص؛ تذهب للنطق فقط. */
+      bodyVocalized: typeof fields.bodyVocalized === 'string' ? fields.bodyVocalized.trim() : '',
       currentAudio: fields.audio && typeof fields.audio === 'object' ? fields.audio : {},
     }]
   })

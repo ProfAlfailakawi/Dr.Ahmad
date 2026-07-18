@@ -4,6 +4,7 @@ import { useCmsContent } from '../../lib/content'
 import { publicationGate, topicMemory } from '../../lib/intelligence'
 import { getArticleBody } from '../../lib/article-bodies'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
+import { normalizeArabicTypography } from '../../lib/arabic-typography'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
 
@@ -24,6 +25,7 @@ export type ManagedRecord = {
   cat?: string
   excerpt?: string
   body?: string
+  bodyVocalized?: string
   source?: string
   url?: string
   status?: string
@@ -67,7 +69,7 @@ const labels: Record<ManagedKind, { singular: string; plural: string }> = {
 }
 
 const editableFields: Record<ManagedKind, string[]> = {
-  article: ['slug', 'title', 'iso', 'date', 'cat', 'excerpt', 'body', 'source', 'url', 'status', 'scheduledAt'],
+  article: ['slug', 'title', 'iso', 'date', 'cat', 'excerpt', 'body', 'bodyVocalized', 'source', 'url', 'status', 'scheduledAt'],
   book: ['slug', 'title', 'isbn', 'desc', 'cover', 'pdf', 'coAuthors'],
   paper: ['slug', 'title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'scholar', 'researchgate', 'coAuthors'],
   media: ['slug', 'title', 'outlet', 'url', 'iso', 'date'],
@@ -181,7 +183,7 @@ function slugify(value: string) {
 
 function blank(kind: ManagedKind): Form {
   const iso = todayIso()
-  if (kind === 'article') return { slug: '', title: '', iso, date: dateArabic(iso), cat: '', excerpt: '', body: '', source: '', url: '', status: 'published', scheduledAt: '', _aiReady: '' }
+  if (kind === 'article') return { slug: '', title: '', iso, date: dateArabic(iso), cat: '', excerpt: '', body: '', bodyVocalized: '', source: '', url: '', status: 'published', scheduledAt: '', _aiReady: '' }
   if (kind === 'book') return { slug: '', title: '', isbn: '', desc: '', cover: '', pdf: '', coAuthors: '' }
   if (kind === 'paper') return { slug: '', title: '', titleAr: '', meta: '', abstractAr: '', journal: '', source: '', url: '', scholar: '', researchgate: '', coAuthors: '' }
   return { slug: '', title: '', outlet: '', url: '', iso, date: dateArabic(iso) }
@@ -198,7 +200,7 @@ function cleanData(kind: ManagedKind, form: Form) {
   const data: Record<string, string> = {}
   for (const field of editableFields[kind]) {
     const value = String(form[field] ?? '').trim()
-    if (value || ['slug', 'title', 'date', 'iso', 'cat', 'excerpt', 'body', 'desc', 'meta', 'abstractAr', 'outlet'].includes(field)) data[field] = value
+    if (value || ['slug', 'title', 'date', 'iso', 'cat', 'excerpt', 'body', 'bodyVocalized', 'desc', 'meta', 'abstractAr', 'outlet'].includes(field)) data[field] = value
   }
   if ((kind === 'article' || kind === 'media') && data.iso) data.date = dateArabic(data.iso)
   if (kind === 'article') {
@@ -443,6 +445,16 @@ export function UploadField({
   )
 }
 
+const stripArabicDiacritics = (value = '') => value
+  .normalize('NFC')
+  .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, '')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const vocalizedBodyMatches = (body = '', vocalized = '') =>
+  Boolean(body.trim() && vocalized.trim())
+  && stripArabicDiacritics(body) === stripArabicDiacritics(vocalized)
+
 function Editor({
   kind,
   current,
@@ -629,6 +641,29 @@ function Editor({
               <Field label="نص المقال" hint="افصل بين الفقرات بسطر فارغ. يظهر النص بمحاذاة كاملة أثناء الكتابة واللصق.">
                 <textarea dir="rtl" style={{ textAlign: 'justify' }} className={`${input} min-h-[320px] text-justify leading-loose`} value={form.body || ''} onChange={(event) => set('body', event.target.value)} />
               </Field>
+              <div className="border-t border-hair pt-5">
+                <Field
+                  label="النص المُشكَّل لتوليد الصوت (اختياري)"
+                  hint="ألصق هنا المقال نفسه كاملاً بعد التشكيل. لا يظهر هذا النص للزوار؛ يستخدمه محرك فهد ونورة للنطق فقط. يجب أن يطابق نص المقال حرفياً بعد إزالة الحركات، وإلا يتجاهله المحرك بأمان."
+                >
+                  <textarea
+                    dir="rtl"
+                    spellCheck={false}
+                    style={{ textAlign: 'justify' }}
+                    className={`${input} min-h-[240px] text-justify leading-loose`}
+                    value={form.bodyVocalized || ''}
+                    onChange={(event) => set('bodyVocalized', event.target.value)}
+                    placeholder="ألصق النسخة المُشكَّلة الكاملة هنا…"
+                  />
+                </Field>
+                {form.bodyVocalized?.trim() && (
+                  <p className={`mt-2 text-[.76rem] leading-relaxed ${vocalizedBodyMatches(form.body || '', form.bodyVocalized) ? 'text-accent' : 'text-soft'}`}>
+                    {vocalizedBodyMatches(form.body || '', form.bodyVocalized)
+                      ? '✓ النص المُشكَّل مطابق وجاهز لمسار توليد الصوت.'
+                      : 'تنبيه: النسخة المُشكَّلة لا تطابق نص المقال بعد تجريد الحركات؛ سيحفظها الموقع، لكن محرك الصوت سيتجاهلها حتى تُصحَّح.'}
+                  </p>
+                )}
+              </div>
               {articleMemory && (form.title?.trim() || form.body?.trim()) && (
                 <div className="rounded-2xl border border-hair bg-wash p-4">
                   <p className="text-[.82rem] font-semibold text-ink">ذاكرة المقال قبل النشر</p>
@@ -811,6 +846,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
     try {
       let preparedForm = { ...form }
       if (kind === 'article') {
+        preparedForm = { ...preparedForm, title: normalizeArabicTypography(preparedForm.title || ''), excerpt: normalizeArabicTypography(preparedForm.excerpt || ''), body: normalizeArabicTypography(preparedForm.body || '') }
         if ((preparedForm.body || '').trim().length < 40) throw new Error('نص المقال يجب أن يكون 40 حرفاً على الأقل.')
         if (preparedForm.status === 'scheduled') {
           const scheduled = Date.parse(preparedForm.scheduledAt || '')

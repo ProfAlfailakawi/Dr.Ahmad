@@ -75,8 +75,8 @@ const popularHighlightCache = new Map<string, PopularQuote[]>()
 
 const DEFAULT_PREFS: ReaderPreferences = {
   scale: 1,
-  lineHeight: 2.15,
-  width: 72,
+  lineHeight: 2,
+  width: 66,
   theme: 'light',
   showPopular: true,
   focus: false,
@@ -294,6 +294,7 @@ function saveLocalQuote(article: ReaderArticle, selection: Pick<SelectionSnapsho
 export function ArticleProgressBar({ slug }: { slug: string }) {
   const [progress, setProgress] = useState(0)
   const lastSaved = useRef(0)
+  const deepened = useRef(false)
 
   useEffect(() => {
     let frame = 0
@@ -302,6 +303,10 @@ export function ArticleProgressBar({ slug }: { slug: string }) {
       const next = articleProgress()
       setProgress(next)
       window.dispatchEvent(new CustomEvent('reader:progress', { detail: { slug, progress: next } }))
+      if (!deepened.current && next >= .18) {
+        deepened.current = true
+        window.dispatchEvent(new CustomEvent('reader:deepened', { detail: { slug } }))
+      }
       const now = Date.now()
       if (now - lastSaved.current > 750 && next > .015) {
         lastSaved.current = now
@@ -321,11 +326,7 @@ export function ArticleProgressBar({ slug }: { slug: string }) {
     }
   }, [slug])
 
-  return (
-    <div className="reader-progress-track fixed inset-x-0 top-0 z-[245] h-[2px]" aria-hidden>
-      <span className="block h-full origin-right bg-accent" style={{ transform: `scaleX(${progress})` }} />
-    </div>
-  )
+  return null
 }
 
 export function ReadingTimeLabel({ slug, text }: { slug: string; text?: string }) {
@@ -500,24 +501,13 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
 
   return (
     <>
-      <div className="reader-control-anchor mt-5 flex flex-wrap justify-end gap-2">
-        <button
-          type="button"
-          onClick={() => { setQuotesState(readSavedQuotes()); setTab('quotes'); setOpen(true) }}
-          aria-label="فتح دفتر القراءة"
-          title="دفتر القراءة"
-          className="flex min-h-10 items-center gap-2 rounded-full border border-hair bg-canvas px-4 py-2 text-[.76rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
-        >
-          <svg aria-hidden width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4.8A1.8 1.8 0 0 1 7.8 3h8.4A1.8 1.8 0 0 1 18 4.8V21l-6-3.6L6 21Z"/></svg>
-          <span>دفتر القراءة</span>
-          {quotes.length > 0 && <span className="rounded-full bg-accent/10 px-1.5 py-0.5 text-[.66rem] text-accent">{quotes.length.toLocaleString('ar-KW')}</span>}
-        </button>
+      <div className="reader-control-anchor flex items-center">
         <button
           type="button"
           onClick={() => { setTab('settings'); setOpen(true) }}
           aria-label="إعدادات القراءة والاقتباسات"
           title="إعدادات القراءة"
-          className="reader-aa-button flex h-10 w-10 items-center justify-center rounded-full border border-hair bg-canvas text-[.82rem] font-semibold tracking-[-.05em] text-ink transition-colors hover:border-accent hover:text-accent"
+          className="reader-aa-button flex h-11 min-w-11 items-center justify-center px-2 text-[.82rem] font-semibold text-ink transition-colors hover:text-accent"
         >
           Aa
         </button>

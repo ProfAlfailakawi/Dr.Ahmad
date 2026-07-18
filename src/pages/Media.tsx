@@ -38,11 +38,10 @@ export default function Media() {
                 target={videoUrl ? '_blank' : undefined}
                 rel={videoUrl ? 'noreferrer' : undefined}
                 data-hover
-                initial={reduce ? false : { opacity: 0, y: 26 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={reduce ? false : { opacity: 0 }}
+                whileInView={{ opacity: 1 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.7, delay: Math.min(i * 0.06, 0.3), ease: EASE }}
-                whileHover={reduce ? {} : { y: -6 }}
                 className="group block overflow-hidden rounded-2xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent"
               >
                 <div className="relative overflow-hidden bg-wash" style={{ aspectRatio: '16 / 9' }}>
@@ -60,11 +59,11 @@ export default function Media() {
                         if (!img.dataset.fallback) { img.dataset.fallback = '1'; img.src = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` }
                         else { img.style.display = 'none' }
                       }}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="h-full w-full object-cover"
                     />
                   )}
-                  <span className="absolute inset-0 bg-ink/0 transition-colors duration-400 group-hover:bg-ink/20" />
-                  <span className="absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[1.5px] border-white/80 bg-ink/40 text-[1rem] text-white backdrop-blur-sm transition-all duration-400 group-hover:scale-110 group-hover:border-accent group-hover:bg-accent">
+                  <span className="absolute inset-0 bg-ink/10" />
+                  <span className="absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-ink/40 text-[1rem] text-white">
                     ▶
                   </span>
                 </div>

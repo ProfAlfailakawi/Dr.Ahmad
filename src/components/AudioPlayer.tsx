@@ -50,7 +50,7 @@ function AudioWave({ dialogue = false, size = 22 }: { dialogue?: boolean; size?:
   )
 }
 
-export function AudioPlayer({ sources, title }: { sources: AudioSource[]; title: string }) {
+export function AudioPlayer({ sources, title, compact = false }: { sources: AudioSource[]; title: string; compact?: boolean }) {
   const player = usePersistentAudio()
   const [selectedKey, setSelectedKey] = useState(sources[0]?.key ?? '')
   const [expanded, setExpanded] = useState(false)
@@ -96,23 +96,25 @@ export function AudioPlayer({ sources, title }: { sources: AudioSource[]; title:
   }
 
   return (
-    <div className="mt-7">
+    <div className={compact ? 'min-w-0' : 'mt-7'}>
       <button
         type="button"
         onClick={() => setExpanded((value) => !value)}
         aria-expanded={expanded}
-        className="group flex w-full items-center gap-3 rounded-2xl border border-hair bg-canvas px-4 py-3 text-start transition-colors hover:border-accent/45"
+        className={compact
+          ? 'group flex min-h-11 w-full items-center gap-2 px-1 text-start transition-colors hover:text-accent'
+          : 'group flex w-full items-center gap-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-start transition-colors hover:border-accent/45'}
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/8 text-accent"><AudioWave dialogue={isDialogue} /></span>
+        <span className={`flex shrink-0 items-center justify-center text-accent ${compact ? 'h-9 w-9' : 'h-9 w-9 rounded-full bg-accent/8'}`}><AudioWave dialogue={isDialogue} /></span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[.82rem] font-semibold text-ink">استمع إلى المقال</span>
-          <span className="mt-0.5 block truncate text-[.7rem] text-soft">{anyActive ? player.track?.label : sources.length > 1 ? `${sources.length.toLocaleString('ar-KW')} تجارب صوتية` : source.label}</span>
+          <span className="block text-[.82rem] font-semibold text-ink">استمع</span>
+          {!compact && <span className="mt-0.5 block truncate text-[.7rem] text-soft">{anyActive ? player.track?.label : sources.length > 1 ? `${sources.length.toLocaleString('ar-KW')} تجارب صوتية` : source.label}</span>}
         </span>
         <span className={`text-[.82rem] text-soft transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}>⌄</span>
       </button>
 
       {expanded && (
-        <section className="mt-3 rounded-2xl border border-hair bg-wash/55 p-4 md:p-5" aria-label="مشغل المقال الصوتي">
+        <section className="mt-3 rounded-xl border border-hair bg-wash/55 p-4 md:p-5" aria-label="مشغل المقال الصوتي">
           <div className="flex items-center gap-3">
             <button
               type="button"

@@ -20,6 +20,7 @@ export default {
         sans: ['"Tajawal"', 'system-ui', 'sans-serif'],
       },
       maxWidth: { shell: '1140px' },
+      borderRadius: { xl: '12px', '2xl': '12px', '3xl': '12px' },
     },
   },
   plugins: [],

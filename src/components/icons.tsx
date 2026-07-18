@@ -17,7 +17,7 @@ export function SocialIcon({ name, size = 20 }: { name: string; size?: number })
   }
   const d = p[name] || p.LinkedIn
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="transition-transform duration-300 hover:scale-110">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d={d} />
     </svg>
   )

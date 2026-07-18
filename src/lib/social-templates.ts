@@ -1,5 +1,23 @@
 export type VisualTopic = 'ai' | 'education' | 'family' | 'research' | 'media' | 'future' | 'human' | 'general'
 
+/* التكوينات الستة الموقّعة هي العمود المحمي للحزمة الاجتماعية.
+   تبقى مُعلنة ومستخدمة حتى مع توسّع مكتبة التخطيطات، كي لا يحوّل أي تحديث
+   عابر الاستوديو إلى قوالب عامة بلا هويته الأصلية. */
+export type Composition = 'midad' | 'layl' | 'jarida' | 'sharit' | 'mishkat' | 'tawqee'
+
+export const SIGNED_COMPOSITIONS: readonly Composition[] = [
+  'midad', 'layl', 'jarida', 'sharit', 'mishkat', 'tawqee',
+] as const
+
+export const SIGNED_COMPOSITION_LAYOUTS: Record<Composition, SocialVisualLayout> = {
+  midad: 'question',
+  layl: 'dark',
+  jarida: 'editorial',
+  sharit: 'split',
+  mishkat: 'arch',
+  tawqee: 'signature',
+}
+
 export type SocialVisualLayout =
   | 'editorial'
   | 'quote'

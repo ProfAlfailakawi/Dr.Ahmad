@@ -96,7 +96,7 @@ export default function BookDetail() {
             <FadeUp>
               {/* لا تُعرض محتويات الكتب إطلاقاً (أمر الدكتور) — غلافٌ ثابت أنيق فقط،
                   بلا مفصلٍ يفتح على «داخل الكتاب» المضلِّل. صورة الغلاف تكفي. */}
-              <div className="book-detail-cover mx-auto max-w-sm overflow-hidden rounded-xl bg-white shadow-[0_30px_60px_-30px_rgba(21,22,26,.45)]">
+              <div className="book-detail-cover mx-auto max-w-sm overflow-hidden rounded-xl border border-hair bg-white">
                 {book.cover ? (
                   <img src={book.cover} alt={book.title} className="w-full" />
                 ) : (

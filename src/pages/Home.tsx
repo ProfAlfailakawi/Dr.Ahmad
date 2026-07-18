@@ -203,7 +203,7 @@ function MiniAtlas() {
                 style={{ right: `${s.x}%`, top: `${s.y}%` }}
               >
                 <motion.span
-                  className="block rounded-full bg-accent/70 transition-all duration-300 group-hover:scale-[2.2] group-hover:bg-accent"
+                  className="block rounded-full bg-accent/70 transition-colors duration-300 group-hover:bg-accent"
                   style={{ width: s.r * 2, height: s.r * 2 }}
                   initial={reduce ? false : { opacity: 0, scale: 0 }}
                   whileInView={{ opacity: 1, scale: 1 }}
@@ -212,7 +212,6 @@ function MiniAtlas() {
                 />
               </Link>
             ))}
-            <span className="pointer-events-none absolute bottom-3 right-4 text-[.72rem] text-soft">مرّر على نجمة — واضغطها لتقرأ</span>
           </div>
         </FadeUp>
       </div>
@@ -543,7 +542,6 @@ function LatestCard({ compact = false }: { compact?: boolean }) {
   if (!latest) return null
   const content = (
     <motion.div
-      whileHover={reduce ? {} : { y: -4 }}
       transition={{ duration: 0.4, ease: EASE }}
       className={`group relative h-full overflow-hidden rounded-2xl border border-hair bg-wash ${compact ? 'p-7 md:p-9' : 'p-8 md:p-12'}`}
     >
@@ -635,14 +633,14 @@ function LaunchSpotlight({ articles, books, papers, media }: { articles: Article
           </p>
           <h2 className="mt-6 max-w-3xl font-display text-[clamp(2.35rem,6vw,4.7rem)] font-bold leading-[1.24] text-white">{title}</h2>
           {description && <p className="mt-6 max-w-2xl text-[1.05rem] font-light leading-[2] text-white/70">{description}</p>}
-          <LinkTag {...(linkProps as any)} className="mt-9 inline-flex rounded-full bg-white px-8 py-3.5 font-semibold text-ink transition-transform duration-300 hover:-translate-y-1">
-            اكتشف الآن ←
+          <LinkTag {...(linkProps as any)} className="mt-9 inline-flex rounded-full bg-white px-8 py-3.5 font-semibold text-ink transition-colors duration-300 hover:bg-white/90">
+            اقرأ الآن ←
           </LinkTag>
         </FadeUp>
         <FadeUp delay={0.12}>
           <div className="relative mx-auto max-w-[420px]">
             {cover ? (
-              <div className="overflow-hidden rounded-3xl border border-white/15 bg-white/5 shadow-[0_40px_90px_-34px_rgba(0,0,0,.9)]">
+              <div className="overflow-hidden rounded-xl border border-white/15 bg-white/5 shadow-[0_16px_30px_-24px_rgba(0,0,0,.55)]">
                 <img src={cover} alt={title} className="aspect-[4/3] h-full w-full object-cover" />
               </div>
             ) : (
@@ -674,10 +672,16 @@ function NowHub() {
 }
 
 function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[]; media: MediaRecord[] }) {
-  const article = articles[1] || articles[0]
-  const book = books[0]
-  const paper = papers[0]
-  const mediaItem = media[0]
+  const [visitSeed] = useState(() =>
+    typeof crypto !== 'undefined' && 'getRandomValues' in crypto
+      ? crypto.getRandomValues(new Uint32Array(1))[0]
+      : Date.now(),
+  )
+  const pick = <T,>(items: T[], salt: number) => items.length ? items[(visitSeed + salt) % items.length] : undefined
+  const article = pick(articles, 3)
+  const book = pick(books, 11)
+  const paper = pick(papers, 19)
+  const mediaItem = pick(media, 29)
   const items = [
     article && { type: 'مقال مختار', title: article.title, note: article.excerpt, to: `/articles/${article.slug}`, image: '' },
     book && { type: 'كتاب مختار', title: book.title, note: book.desc, to: `/publications/${book.slug}`, image: book.cover },
@@ -686,38 +690,32 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
   ].filter(Boolean) as { type: string; title: string; note?: string; to: string; image?: string; external?: boolean }[]
 
   return (
-    <section className="border-t border-hair bg-wash px-6 py-[60px] md:px-11 md:py-[100px]">
+    <section className="border-t border-hair bg-wash px-6 py-[60px] md:px-11 md:py-[96px]">
       <div className="mx-auto max-w-shell">
         <SectionHead label="أعمال مختارة" title="مدخل يختصر الرحلة." />
         <div className="mobile-card-rail grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
           {items.map((item, index) => {
             const isBook = item.type === 'كتاب مختار'
             const inner = (
-              <div className="group flex h-full min-h-[205px] flex-col overflow-hidden rounded-2xl border border-hair bg-canvas transition-all duration-300 hover:-translate-y-1 hover:border-accent md:min-h-[250px]">
+              <div className="group flex h-full min-h-[220px] flex-col overflow-hidden rounded-xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent/45 md:min-h-[270px]">
                 {item.image && (
                   <div className={`flex w-full items-center justify-center ${isBook ? 'h-28 bg-wash p-3' : 'h-24 overflow-hidden md:h-32'}`}>
-                    <img src={item.image} alt="" loading="lazy" className={`${isBook ? 'h-full w-full object-contain' : 'h-full w-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-[1.03]'}`} />
+                    <img src={item.image} alt="" loading="lazy" className={`${isBook ? 'h-full w-full object-contain' : 'h-full w-full object-cover opacity-90'}`} />
                   </div>
                 )}
                 <div className="flex flex-1 flex-col p-4 md:p-7">
                   <span className="text-[.72rem] font-semibold text-accent">{item.type}</span>
-                  <h3 className="mt-2.5 break-words font-display text-[.98rem] font-semibold leading-[1.55] text-ink transition-colors group-hover:text-accent sm:text-[1.05rem] md:mt-3 md:text-[1.3rem]">{item.title}</h3>
+                  <h3 className="mt-2.5 line-clamp-3 break-words font-display text-[.98rem] font-semibold leading-[1.55] text-ink transition-colors group-hover:text-accent sm:text-[1.05rem] md:mt-3 md:text-[1.3rem]">{item.title}</h3>
                   {item.note && <p className="mt-2 line-clamp-2 text-start text-[.76rem] font-light leading-[1.7] text-soft sm:text-[.8rem] md:mt-2.5 md:line-clamp-3 md:text-[.88rem]">{item.note}</p>}
-                  <span className="mt-auto pt-5 text-[.78rem] font-semibold text-accent md:pt-6 md:text-[.82rem]">استكشف المحتوى</span>
                 </div>
               </div>
             )
             return (
               <FadeUp key={`${item.type}-${item.to}`} delay={index * 0.06} className="min-w-0">
-                {item.external ? <a href={item.to} target="_blank" rel="noreferrer" className="block h-full">{inner}</a> : <Link to={item.to} className="block h-full">{inner}</Link>}
+                {item.external ? <a href={item.to} target="_blank" rel="noreferrer" className="block h-full">{inner}</a> : <Link to={item.to} viewTransition className="block h-full">{inner}</Link>}
               </FadeUp>
             )
           })}
-        </div>
-        <div className="rail mt-5 flex gap-2 overflow-x-auto pb-1">
-          {[['/publications','كل الكتب'],['/research','كل الأبحاث'],['/articles','كل المقالات'],['/media','كل الظهور الإعلامي']].map(([to, label]) => (
-            <Link key={to} to={to} className="shrink-0 rounded-full border border-hair bg-canvas px-4 py-2 text-[.78rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent md:px-5 md:text-[.82rem]">{label}</Link>
-          ))}
         </div>
       </div>
     </section>
@@ -747,21 +745,17 @@ function ProfileAndBooksLayer({ books }: { books: BookRecord[] }) {
         <div className="mx-auto max-w-shell px-6 md:px-11">
           <SectionHead label="المؤلفات" title={`${books.length} كتب.`} to="/publications" />
         </div>
-        <div className="rail flex snap-x snap-mandatory gap-6 overflow-x-auto px-6 pb-10 ps-[max(1.5rem,env(safe-area-inset-right))] pe-[max(1.5rem,env(safe-area-inset-left))] md:px-11 md:pb-5">
+        <div className="mx-auto grid max-w-shell grid-cols-2 gap-x-4 gap-y-8 px-6 md:grid-cols-3 md:gap-x-8 md:gap-y-12 md:px-11 lg:grid-cols-4">
           {books.map((book, i) => (
-            <Card key={book.slug} delay={Math.min(i * 0.05, 0.3)} className="w-[min(70vw,250px)] shrink-0 snap-start md:w-[300px]">
-              <Link to={`/publications/${book.slug}`} data-hover className="group block">
-                <div className="overflow-hidden rounded-xl bg-white shadow-[0_22px_44px_-26px_rgba(21,22,26,.4)] transition-transform duration-500 group-hover:-translate-y-1.5" style={{ aspectRatio: '1024 / 700' }}>
-                  <img src={book.cover} alt={book.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+            <Card key={book.slug} delay={Math.min(i * 0.035, 0.18)}>
+              <Link to={`/publications/${book.slug}`} viewTransition className="group block">
+                <div className="overflow-hidden rounded-xl border border-hair bg-white" style={{ aspectRatio: '1024 / 700' }}>
+                  <img src={book.cover} alt={book.title} loading="lazy" width="1024" height="700" className="h-full w-full object-cover" />
                 </div>
-                <div aria-hidden className="mt-0.5 h-10 overflow-hidden rounded-b-xl opacity-25 [mask-image:linear-gradient(to_bottom,rgba(0,0,0,.5),transparent)]" style={{ transform: 'scaleY(-1)' }}>
-                  <img src={book.cover} alt="" loading="lazy" className="h-full w-full object-cover object-top" />
-                </div>
-                <h3 className="mt-2 font-display text-[1.15rem] font-medium leading-[1.45] text-ink transition-colors group-hover:text-accent">{book.title}</h3>
+                <h3 className="mt-3 text-wrap-balance font-display text-[1rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent md:text-[1.08rem]">{book.title}</h3>
               </Link>
             </Card>
           ))}
-          <span aria-hidden className="w-px shrink-0" />
         </div>
       </section>
     </>
@@ -783,7 +777,6 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
                 <div className="flex items-center gap-2.5 text-[.78rem]"><span className="font-semibold text-accent">{topArticles[0].cat}</span><span className="h-1 w-1 rounded-full bg-hair" /><time className="text-soft">{topArticles[0].date}</time></div>
                 <h3 className="mt-4 font-display text-[clamp(1.6rem,3.4vw,2.4rem)] font-semibold leading-[1.4] text-ink transition-colors group-hover:text-accent">{topArticles[0].title}</h3>
                 {topArticles[0].excerpt && <p className="mt-4 max-w-xl text-[1.02rem] font-light leading-[1.9] text-ink/80">{topArticles[0].excerpt}</p>}
-                <span className="mt-6 inline-block text-[.9rem] font-semibold text-accent">اقرأ المقال ←</span>
               </Link>}
             </FadeUp>
             <FadeUp delay={0.12} className="hidden md:block">
@@ -807,7 +800,7 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
           <SectionHead label="الظهور الإعلامي" title="على الشاشة." to="/media" cta="عرض الكل" />
           <div className="grid gap-8 md:grid-cols-[1.55fr_.45fr] md:gap-12">
             <FadeUp>
-              {topMedia[0] && <a href={topMedia[0].url} target="_blank" rel="noreferrer" className="group block overflow-hidden rounded-2xl"><div className="relative overflow-hidden bg-wash" style={{ aspectRatio: '16 / 9' }}>{ytId(topMedia[0].url) && <img src={`https://i.ytimg.com/vi/${ytId(topMedia[0].url)}/hqdefault.jpg`} alt={topMedia[0].title} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />}<span className="absolute inset-0 bg-ink/10 group-hover:bg-ink/25" /><span className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-ink/40 text-white">▶</span></div><div className="mt-4"><span className="text-[.74rem] font-semibold text-accent">{topMedia[0].outlet}</span><h3 className="mt-1.5 font-display text-[1.2rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{topMedia[0].title}</h3></div></a>}
+              {topMedia[0] && <a href={topMedia[0].url} target="_blank" rel="noreferrer" className="group block overflow-hidden rounded-2xl"><div className="relative overflow-hidden bg-wash" style={{ aspectRatio: '16 / 9' }}>{ytId(topMedia[0].url) && <img src={`https://i.ytimg.com/vi/${ytId(topMedia[0].url)}/hqdefault.jpg`} alt={topMedia[0].title} loading="lazy" className="h-full w-full object-cover" />}<span className="absolute inset-0 bg-ink/10" /><span className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-ink/40 text-white">▶</span></div><div className="mt-4"><span className="text-[.74rem] font-semibold text-accent">{topMedia[0].outlet}</span><h3 className="mt-1.5 font-display text-[1.2rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{topMedia[0].title}</h3></div></a>}
             </FadeUp>
             <FadeUp delay={0.12} className="hidden md:block"><div className="flex flex-col divide-y divide-hair border-r border-hair pr-8">{topMedia.slice(1, 3).map((item) => <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="group flex items-start gap-3 py-5 first:pt-0"><span className="mt-1 text-[.7rem] text-accent">▶</span><span><span className="block text-[.72rem] font-semibold text-accent">{item.outlet}</span><span className="mt-1 block text-[.98rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{item.title}</span></span></a>)}</div></FadeUp>
           </div>
@@ -840,7 +833,7 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
                 <span className="mt-1.5 block font-display text-[1.12rem] font-semibold leading-[1.5] text-ink md:text-[1.35rem]">سماء المقالات، رحلة الأثر، وتوقيعات الموقع.</span>
                 <span className="mt-2 block text-[.78rem] text-soft">عرض بصري واحد بلا تكرار.</span>
               </span>
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform duration-300 group-hover:-translate-y-0.5">↗</span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors group-hover:border-accent">↗</span>
             </button>
           </FadeUp>
         </div>
@@ -906,7 +899,6 @@ function Card({ children, delay = 0, className = '' }: { children: React.ReactNo
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.7, delay, ease: EASE }}
-      whileHover={reduce ? {} : { y: -6 }}
       className={className}
     >
       {children}

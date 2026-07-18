@@ -52,12 +52,12 @@ export default function Articles() {
             <FadeUp key={e.title} delay={i * 0.08} className="h-full min-w-0">
               <Link
                 to={`/articles/${e.slug}`}
-                className="group flex h-full min-w-0 flex-col rounded-2xl border border-hair border-t-2 border-t-accent bg-canvas p-4 text-start shadow-[0_18px_42px_-38px_rgba(21,22,26,.35)] transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 sm:p-5 md:rounded-none md:border-x-0 md:border-b-0 md:bg-transparent md:px-0 md:shadow-none"
+                viewTransition
+                className="group flex h-full min-w-0 flex-col rounded-xl border border-hair border-t-2 border-t-accent bg-canvas p-4 text-start transition-colors duration-300 hover:border-accent/40 sm:p-5 md:rounded-none md:border-x-0 md:border-b-0 md:bg-transparent md:px-0"
               >
                 <span className="text-[.68rem] font-semibold uppercase text-accent sm:text-[.76rem]">{e.tag}</span>
-                <h2 className="my-2 break-words font-display text-[1rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent sm:my-3 sm:text-[1.2rem] md:text-[1.34rem]">{e.title}</h2>
+                <h2 style={{ viewTransitionName: `article-${e.slug}` }} className="my-2 break-words font-display text-[1rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent sm:my-3 sm:text-[1.2rem] md:text-[1.34rem]">{e.title}</h2>
                 <blockquote className="line-clamp-4 break-words font-display text-[.82rem] leading-[1.75] text-soft sm:text-[.95rem] md:text-[1.02rem]">{e.quote}</blockquote>
-                <span className="mt-auto inline-flex pt-4 text-[.7rem] font-semibold text-accent opacity-100 transition-opacity duration-300 md:text-[.78rem] md:opacity-0 md:group-hover:opacity-100">اقرأ المقال ←</span>
               </Link>
             </FadeUp>
           ))}
@@ -110,11 +110,12 @@ export default function Articles() {
               <li key={a.slug} className={i === 0 ? '' : 'border-t border-hair'}>
                 <Link
                   to={`/articles/${a.slug}`}
+                  viewTransition
                   className="group flex flex-col gap-1 py-5 sm:flex-row sm:items-baseline sm:gap-6"
                 >
                   <time className="w-32 shrink-0 text-[.8rem] text-soft">{a.date}</time>
                   <span className="flex-1">
-                    <span className="block text-[1.08rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">
+                    <span style={{ viewTransitionName: `article-${a.slug}` }} className="block text-[1.08rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">
                       {a.title}
                     </span>
                     {a.excerpt && (

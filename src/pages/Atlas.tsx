@@ -245,7 +245,7 @@ export default function Atlas() {
 
           <FadeUp delay={0.04}>
             <div className="mb-5 flex items-center justify-between gap-4">
-              <p className="hidden text-[.78rem] font-light text-soft sm:block">اختر القراءة الزمنية أو اكشف الروابط الهادئة بين الموضوعات والحجج.</p>
+              <p className="hidden text-[.78rem] font-light text-soft sm:block">قراءة زمنية وروابط هادئة بين الموضوعات والحجج.</p>
               <div className="ms-auto inline-flex rounded-full border border-hair bg-canvas p-1" role="group" aria-label="طريقة عرض خريطة الأفكار">
                 <button type="button" onClick={() => setView('timeline')} aria-pressed={view === 'timeline'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'timeline' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>المسار الزمني</button>
                 <button type="button" onClick={() => setView('graph')} aria-pressed={view === 'graph'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'graph' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>شبكة الأفكار</button>
@@ -406,14 +406,14 @@ export default function Atlas() {
 
           <div id="atlas-selection" className="mt-4 min-h-[94px] scroll-mt-24">
             {active ? (
-              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-accent/25 bg-canvas p-5 shadow-[0_18px_45px_-34px_rgba(21,22,26,.45)]">
+              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-hair bg-canvas p-5">
                 <div className="flex flex-wrap items-center gap-2 text-[.74rem] text-soft">
                   <span className="font-semibold text-accent">{categoryLabel(active.cat)}</span>
                   <span>·</span><time>{active.date}</time><span>·</span><span>{arDigits(active.words)} كلمة</span>
                 </div>
                 <Link to={`/articles/${active.slug}`} className="mt-2 block break-words font-display text-[1.08rem] font-semibold leading-[1.75] text-ink transition-colors hover:text-accent md:text-[1.35rem]">
                   {active.title}
-                  <span className="mt-3 block text-[.78rem] font-sans font-semibold text-accent">اضغط النجمة مرة ثانية أو افتح المقال من هنا ←</span>
+                  <span className="mt-3 block text-[.78rem] font-sans font-semibold text-accent">فتح المقال ←</span>
                 </Link>
                 {related.length > 0 && (
                   <div className="mt-4 border-t border-hair pt-4">
@@ -430,7 +430,7 @@ export default function Atlas() {
               </motion.div>
             ) : (
               <p className="pt-4 text-center text-[.84rem] font-light leading-relaxed text-soft">
-                اضغط أي نجمة ليظهر اسم المقال كاملاً ومساره الفكري هنا، ثم اضغطها مرة ثانية لفتحه.
+                المقال المحدد ومساره الفكري.
               </p>
             )}
           </div>

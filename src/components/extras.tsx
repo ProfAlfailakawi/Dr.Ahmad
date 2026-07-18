@@ -122,7 +122,7 @@ export function FloatingActions() {
 }
 
 /* ---------- مشاركة المقال ---------- */
-export function Share({ title, path }: { title: string; path: string }) {
+export function Share({ title, path, compact = false }: { title: string; path: string; compact?: boolean }) {
   const [copied, setCopied] = useState(false)
   const url = `${site.url}${path}`
   const t = encodeURIComponent(title)
@@ -140,9 +140,9 @@ export function Share({ title, path }: { title: string; path: string }) {
   }
 
   // أيقونات فقط — صغيرة نحيفة بلا كلام
-  const btn = 'flex h-8 w-8 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent'
+  const btn = `flex items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent ${compact ? 'h-11 w-11' : 'h-8 w-8'}`
   return (
-    <div className="mt-12 flex flex-wrap items-center gap-2.5 border-t border-hair pt-6">
+    <div className={compact ? 'flex flex-wrap items-center gap-2.5' : 'mt-12 flex flex-wrap items-center gap-2.5 border-t border-hair pt-6'}>
       <span className="me-1 text-[.8rem] text-soft">شارك المقال</span>
       {items.map((i) => (
         <a key={i.label} href={i.href} target="_blank" rel="noreferrer" aria-label={i.label} title={i.label} className={btn} onClick={() => trackShare(path, title)}>
@@ -174,7 +174,7 @@ export function OwnerEdit({ tab, slug, className = '' }: { tab: 'articles' | 'bo
 }
 
 /* ---------- «انسخ الاستشهاد» — APA وMLA بنقرة، باسم الدكتور ---------- */
-export function CiteButton({ title, year, container, url }: { title: string; year: string; container: string; url: string }) {
+export function CiteButton({ title, year, container, url, compact = false }: { title: string; year: string; container: string; url: string; compact?: boolean }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   // صيغة واحدة أنيقة معتمدة (على نمط MLA بعلامتَي التنصيص «»)
@@ -182,6 +182,19 @@ export function CiteButton({ title, year, container, url }: { title: string; yea
   const copy = async () => {
     try { await navigator.clipboard.writeText(citation); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { /* noop */ }
   }
+  if (compact) return (
+    <div className="relative">
+      <button onClick={() => setOpen(!open)} aria-expanded={open} className="min-h-11 border-b border-hair px-1 text-[.8rem] font-medium text-soft transition-colors hover:border-accent hover:text-accent">
+        الاستشهاد المرجعي
+      </button>
+      {open && (
+        <div className="absolute bottom-[calc(100%+.6rem)] left-0 z-20 w-[min(88vw,430px)] rounded-xl border border-hair bg-canvas p-4 shadow-[0_18px_50px_-34px_rgba(21,22,26,.55)]">
+          <p className="text-[.8rem] font-light leading-[1.9] text-soft">{citation}</p>
+          <button onClick={copy} className="mt-3 min-h-11 border-b border-hair px-1 text-[.74rem] font-semibold text-accent">{copied ? '✓ نُسخ' : 'نسخ الاستشهاد'}</button>
+        </div>
+      )}
+    </div>
+  )
   return (
     <div className="mt-8 rounded-xl border border-hair">
       <button onClick={() => setOpen(!open)} aria-expanded={open}
@@ -280,7 +293,7 @@ async function hasDialogueAudio(slug: string) {
   }
 }
 
-export function Listen({ slug, title, text, audio }: { slug: string; title: string; text: string; audio?: ArticleAudio }) {
+export function Listen({ slug, title, text, audio, compact = false }: { slug: string; title: string; text: string; audio?: ArticleAudio; compact?: boolean }) {
   // الفهرس: { slug: { fahed: true, noura: true } } — أو true بالصيغة القديمة (= فهد فقط)
   // مقالات لوحة التحكم تمرر audio من وثيقتها (يولّده سكربت الصوت الليلي)
   const entry = (audioManifest as Record<string, boolean | ArticleAudio>)[slug]
@@ -309,10 +322,10 @@ export function Listen({ slug, title, text, audio }: { slug: string; title: stri
   const [ttsOn, setTtsOn] = useState(false)
 
   if (sources.length) return (
-    <>
-      <AudioPlayer sources={sources} title={title} />
+    <div className={compact ? 'min-w-0 flex-1' : ''}>
+      <AudioPlayer sources={sources} title={title} compact={compact} />
       {dialogueOk && (
-        <details className="mt-3 rounded-2xl border border-hair bg-canvas px-5 py-4">
+        <details className="mt-3 rounded-xl border border-hair bg-canvas px-5 py-4">
           <summary className="cursor-pointer text-[.86rem] font-semibold text-accent">نص الحلقة الحوارية</summary>
           {transcript ? (
             <div className="mt-5 space-y-4 border-t border-hair pt-5">
@@ -330,7 +343,7 @@ export function Listen({ slug, title, text, audio }: { slug: string; title: stri
           )}
         </details>
       )}
-    </>
+    </div>
   )
   if (!ALLOW_BROWSER_TTS) return null
   return <BrowserTts text={text} active={ttsOn} setActive={setTtsOn} />

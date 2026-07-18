@@ -73,33 +73,33 @@ export default function Search() {
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[1.4rem] text-accent">⌕</span>
               </div>
 
-              <div className="mt-7">
+              {!searchStarted && <div className="mt-7">
                 <p className="mb-3 text-[.82rem] font-medium text-soft">أو ابدأ بمحور</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-x-5 gap-y-2">
                   {suggestedTopics.map((topic) => (
                     <button
                       key={topic}
                       onClick={() => chooseTopic(topic)}
-                      className={`rounded-full border px-4 py-2 text-[.84rem] font-medium transition-colors ${
+                      className={`min-h-11 border-b px-1 py-2 text-[.84rem] font-medium transition-colors ${
                         normalizedQuery === topic
-                          ? 'border-accent bg-accent text-white'
-                          : 'border-hair text-soft hover:border-accent hover:text-accent'
+                          ? 'border-accent text-accent'
+                          : 'border-transparent text-soft hover:border-accent hover:text-accent'
                       }`}
                     >
                       {topic}
                     </button>
                   ))}
                 </div>
-              </div>
+              </div>}
 
               {searchStarted && <div className="mt-7 border-t border-hair pt-5">
-                <div className="flex flex-wrap gap-2">
+                <div className="rail flex gap-5 overflow-x-auto pb-1">
                   {categories.map((item) => (
                     <button
                       key={item}
                       onClick={() => { setCat(item); setVisibleCount(24) }}
-                      className={`rounded-full border px-4 py-1.5 text-[.84rem] font-medium transition-colors ${
-                        cat === item ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
+                      className={`min-h-11 shrink-0 border-b px-1 py-2 text-[.84rem] font-medium transition-colors ${
+                        cat === item ? 'border-accent text-accent' : 'border-transparent text-soft hover:border-accent hover:text-accent'
                       }`}
                     >
                       {item}
@@ -107,13 +107,13 @@ export default function Search() {
                   ))}
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="rail mt-2 flex gap-5 overflow-x-auto pb-1">
                   {['الكل', ...years].map((item) => (
                     <button
                       key={item}
                       onClick={() => { setYear(item); setVisibleCount(24) }}
-                      className={`rounded-full border px-4 py-1.5 text-[.8rem] transition-colors ${
-                        year === item ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
+                      className={`min-h-11 shrink-0 border-b px-1 py-2 text-[.8rem] transition-colors ${
+                        year === item ? 'border-accent text-accent' : 'border-transparent text-soft hover:border-accent hover:text-accent'
                       }`}
                     >
                       {item === 'الكل' ? 'كل السنوات' : ar(item)}
@@ -183,8 +183,7 @@ export default function Search() {
           {!searchStarted && (
             <FadeUp delay={0.05}>
               <div className="py-16 text-center md:py-20">
-                <span aria-hidden className="text-[1.7rem] text-accent">⌕</span>
-                <h2 className="mt-3 font-display text-[clamp(1.35rem,3vw,1.8rem)] font-semibold text-ink">عمّ تبحث اليوم؟</h2>
+                <h2 className="font-display text-[clamp(1.35rem,3vw,1.8rem)] font-semibold text-ink">عمّ تبحث اليوم؟</h2>
                 <p className="mx-auto mt-2 max-w-md text-[.9rem] leading-[1.8] text-soft">
                   اكتب حرفين على الأقل، أو اختر أحد المحاور المقترحة أعلاه.
                 </p>

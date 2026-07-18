@@ -217,7 +217,7 @@ export default function ThoughtPaths() {
 
       <section className="border-b border-hair px-6 py-10 md:px-11 md:py-12">
         <div className="mx-auto max-w-shell">
-          <div role="tablist" aria-label="اختر مساراً فكرياً" className="flex flex-wrap gap-x-6 gap-y-2">
+          <div role="tablist" aria-label="اختر مساراً فكرياً" className="flex snap-x snap-mandatory gap-6 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {availablePaths.map((path) => (
               <button
                 key={path.id}
@@ -227,8 +227,8 @@ export default function ThoughtPaths() {
                 aria-selected={active.id === path.id}
                 aria-controls="thought-path-panel"
                 onClick={() => selectPath(path.id)}
-                className={`border-b py-2 text-[.84rem] transition-colors ${
-                  active.id === path.id ? 'border-accent font-semibold text-accent' : 'border-transparent text-soft hover:text-ink'
+                className={`shrink-0 snap-start border-b py-2 text-[.84rem] transition-colors ${
+                  active.id === path.id ? 'border-ink font-semibold text-ink' : 'border-transparent text-soft hover:text-ink'
                 }`}
               >
                 {path.title}
@@ -246,7 +246,7 @@ export default function ThoughtPaths() {
           className="mx-auto max-w-3xl"
         >
           <FadeUp key={`${active.id}-head`}>
-            <span className="text-[.78rem] font-semibold text-accent">كيف بدأت الفكرة عندي… وكيف تطورت؟</span>
+            <span className="text-[.78rem] font-medium text-soft">كيف بدأت الفكرة عندي… وكيف تطورت؟</span>
             <h2 className="mt-3 font-display text-[clamp(2rem,5vw,3.25rem)] font-bold leading-[1.35] text-ink">{active.title}</h2>
             <p className="mt-4 max-w-2xl text-[1rem] font-light leading-[1.95] text-soft">{active.intro}</p>
           </FadeUp>
@@ -259,19 +259,19 @@ export default function ThoughtPaths() {
               <p className="mt-2 text-[.84rem] font-light leading-[1.8] text-soft">سيظهر المسار تلقائياً حين تُضاف مادة تحمل خيطه الموضوعي.</p>
             </div>
           ) : (
+            <FadeUp key={`${active.id}-journey`}>
             <ol className="mt-14 border-r border-hair pe-7 md:pe-10">
               {journey.nodes.map((node, index) => {
                 const content = (
                   <>
-                    <span className="text-[.73rem] font-semibold text-accent">{String(index + 1).padStart(2, '0')} · {node.label}</span>
+                    <span className="text-[.73rem] font-medium text-soft">{String(index + 1).padStart(2, '0')} · {node.label}</span>
                     <h3 className="mt-2 font-display text-[1.2rem] font-semibold leading-[1.65] text-ink transition-colors group-hover:text-accent">{node.title}</h3>
                     {node.description && <p className="mt-2 text-[.86rem] font-light leading-[1.85] text-soft">{node.description}</p>}
-                    {(node.to || node.href) && <span className="mt-3 inline-block text-[.76rem] font-semibold text-accent">افتح المادة ←</span>}
+                    {(node.to || node.href) && <span className="mt-3 inline-block text-[.76rem] font-medium text-soft transition-colors group-hover:text-accent">المادة ←</span>}
                   </>
                 )
                 return (
-                  <FadeUp key={`${active.id}-${node.key}`} delay={Math.min(index * 0.055, 0.25)}>
-                    <li className="relative pb-11 last:pb-0">
+                    <li key={`${active.id}-${node.key}`} className="relative pb-11 last:pb-0">
                       <span className="absolute -right-[5px] top-2 h-2.5 w-2.5 rounded-full border-2 border-canvas bg-accent" />
                       {node.to ? (
                         <Link to={node.to} className="group block">{content}</Link>
@@ -281,10 +281,10 @@ export default function ThoughtPaths() {
                         <div className="group">{content}</div>
                       )}
                     </li>
-                  </FadeUp>
                 )
               })}
             </ol>
+            </FadeUp>
           )}
 
           {journey.missing.length > 0 && journey.nodes.length > 0 && (

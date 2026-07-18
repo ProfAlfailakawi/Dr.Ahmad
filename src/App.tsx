@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import { Cursor, Footer, Nav } from './components/ui'
+import { Footer, Nav } from './components/ui'
 import { FloatingActions } from './components/extras'
 import { CmsProvider } from './lib/content'
 import { useTrackJourney, useTrackView } from './lib/views'
@@ -91,6 +91,25 @@ function WesternDigitsGuard() {
     })
     observer.observe(document.body, { childList: true, subtree: true, characterData: true })
     return () => observer.disconnect()
+  }, [])
+  return null
+}
+
+/* الصمت التكيفي: بعد تعمّق الزائر في أول مقال تهدأ الحركات المحيطية لبقية
+   الجلسة. لا حساب ولا تتبّع؛ علم محلي في sessionStorage فقط. */
+function AdaptiveSilence() {
+  useEffect(() => {
+    const root = document.documentElement
+    const apply = () => root.classList.add('site-silent')
+    try {
+      if (sessionStorage.getItem('site:adaptive-silence') === '1') apply()
+    } catch { /* noop */ }
+    const deepen = () => {
+      try { sessionStorage.setItem('site:adaptive-silence', '1') } catch { /* noop */ }
+      apply()
+    }
+    window.addEventListener('reader:deepened', deepen)
+    return () => window.removeEventListener('reader:deepened', deepen)
   }, [])
   return null
 }
@@ -197,10 +216,10 @@ export default function App() {
       <BrowserRouter>
         <PersistentAudioProvider>
           <WesternDigitsGuard />
+          <AdaptiveSilence />
           <RouteJourneyTracker />
           <RouteViewTracker />
           <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>
-          <Cursor />
           <ConditionalNav />
           <main id="main">
             <AnimatedRoutes />

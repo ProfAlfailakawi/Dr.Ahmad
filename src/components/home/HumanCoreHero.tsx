@@ -266,11 +266,6 @@ export default function HumanCoreHero() {
 
       <div className="relative z-10 mx-auto grid w-full max-w-shell items-center gap-8 md:grid-cols-[1.08fr_.92fr] md:gap-12 lg:gap-16">
         <div className="order-1 relative md:order-2 md:-translate-x-6 lg:-translate-x-10">
-          <div className="human-core__micro mb-4 flex items-center gap-3 text-[.66rem] font-semibold tracking-[.18em] text-accent" aria-hidden="true">
-            <span className="h-px w-8 bg-accent/50" />
-            HUMAN / MACHINE / MEANING
-          </div>
-
           <h1 className="human-core__title font-display text-[clamp(2.1rem,5.4vw,4rem)] font-bold leading-[1.28] text-ink">
             <span className="-my-[0.3em] block overflow-hidden py-[0.3em]">
               <motion.span
@@ -322,7 +317,7 @@ export default function HumanCoreHero() {
               data-hover={mobileVisual ? undefined : true}
             >
               <div className="human-core__orbit" aria-hidden="true"><span /><span /><span /></div>
-              <div className="human-core__portrait-media relative overflow-hidden rounded-2xl shadow-[0_36px_64px_-36px_rgba(21,22,26,.42)]">
+              <div className="human-core__portrait-media relative overflow-hidden rounded-xl border border-hair">
                 <img src="/portrait.webp" alt={profile.fullName} width={1345} height={2048} decoding="async" className="human-core__portrait-base block h-full w-full object-cover" />
                 <div className="human-core__portrait-color absolute inset-0" aria-hidden="true">
                   <img src="/portrait.webp" alt="" width={1345} height={2048} decoding="async" className="block h-full w-full object-cover" />
@@ -344,7 +339,7 @@ export default function HumanCoreHero() {
               <span className="block text-[.7rem] font-semibold text-accent">المسار الأكاديمي والمهني</span>
               <span className="mt-1 block font-display text-[1rem] font-semibold leading-[1.5] text-ink transition-colors group-hover:text-accent md:text-[1.15rem]">المسيرة التي صنعت الأسئلة.</span>
             </span>
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-transform duration-300 group-hover:-translate-y-0.5"><SocialIcon name="CV" size={17} /></span>
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="CV" size={17} /></span>
           </Link>
         </motion.div>
       </div>
@@ -354,15 +349,7 @@ export default function HumanCoreHero() {
         <path className="human-core__bridge-pulse" d="M 565 415 C 730 335, 775 530, 955 410" />
       </svg>
 
-      <motion.div
-        className="cue absolute bottom-3 left-1/2 z-20 -translate-x-1/2 text-[.74rem] text-soft md:bottom-7"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 2 }}
-      >
-        اكتشف
-        <span className="relative mx-auto mt-2.5 block h-[30px] w-px overflow-hidden bg-hair" />
-      </motion.div>
+
     </header>
   )
 }

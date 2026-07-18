@@ -196,50 +196,44 @@ function PersonalBook({ asked, result }: { asked: string; result: Answer }) {
 
   if (!chapters.length) return null
   return (
-    <FadeUp>
-      <section className="mt-10 rounded-2xl border border-hair bg-wash p-6 md:p-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-[.76rem] font-semibold text-accent">الكتاب الذي يكتب نفسه</p>
-            <h2 className="mt-1 font-display text-[1.35rem] font-semibold leading-relaxed text-ink">كتاب شخصي من الأرشيف، لا من الخيال.</h2>
-          </div>
+    <section className="mt-10 border-t border-hair pt-8">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-[.76rem] font-medium text-soft">كتاب شخصي من الأرشيف</p>
+          <h3 className="mt-1 font-display text-[1.2rem] font-semibold leading-relaxed text-ink">مسار قراءة يتشكل من المواد المنشورة فقط.</h3>
+        </div>
+        <button type="button" onClick={() => window.print()} className="min-h-11 border-b border-hair px-1 text-[.78rem] text-soft transition-colors hover:border-accent hover:text-accent">
+          تجهيز نسخة مطبوعة
+        </button>
+      </div>
+      <div className="mt-5 flex gap-5 overflow-x-auto border-b border-hair [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="طريقة ترتيب المسار">
+        {PERSONAS.map((item) => (
           <button
+            key={item.id}
             type="button"
-            onClick={() => window.print()}
-            className="rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent"
+            role="tab"
+            aria-selected={persona === item.id}
+            onClick={() => setPersona(item.id)}
+            className={`shrink-0 border-b py-2 text-[.82rem] transition-colors ${persona === item.id ? 'border-ink font-medium text-ink' : 'border-transparent text-soft hover:text-ink'}`}
           >
-            تجهيز PDF
+            {item.label}
           </button>
-        </div>
-        <div className="mt-5 flex flex-wrap gap-2">
-          {PERSONAS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setPersona(item.id)}
-              className={`rounded-full px-4 py-1.5 text-[.82rem] transition-colors ${persona === item.id ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-        <div className="mt-6 rounded-xl border border-hair bg-canvas p-5">
-          <p className="text-[.86rem] leading-relaxed text-soft">{active.intro}</p>
-          <p className="mt-4 font-display text-[1.1rem] font-semibold leading-relaxed text-ink">«{asked}»</p>
-          <ol className="mt-5 grid gap-3">
-            {chapters.map(({ label, item, note }) => (
-              <li key={`${label}-${item.slug}`} className="border-t border-hair pt-3 first:border-t-0 first:pt-0">
-                <span className="text-[.72rem] font-semibold text-accent">{label} · {item.iso.slice(0, 4)}</span>
-                <Link to={`/articles/${item.slug}`} className="mt-1 block font-display text-[1rem] font-medium leading-relaxed text-ink transition-colors hover:text-accent">
-                  {item.title}
-                </Link>
-                <p className="mt-1 text-[.8rem] leading-relaxed text-soft">{note}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-    </FadeUp>
+        ))}
+      </div>
+      <p className="mt-5 text-[.86rem] leading-[1.9] text-soft">{active.intro}</p>
+      <p className="mt-4 font-display text-[1.05rem] font-semibold leading-relaxed text-ink">«{asked}»</p>
+      <ol className="mt-5 grid gap-4">
+        {chapters.map(({ label, item, note }) => (
+          <li key={`${label}-${item.slug}`} className="border-t border-hair pt-4 first:border-t-0 first:pt-0">
+            <span className="text-[.72rem] font-medium text-soft">{label} · {item.iso.slice(0, 4)}</span>
+            <Link to={`/articles/${item.slug}`} className="mt-1 block font-display text-[1rem] font-medium leading-relaxed text-ink transition-colors hover:text-accent">
+              {item.title}
+            </Link>
+            <p className="mt-1 text-[.8rem] leading-relaxed text-soft">{note}</p>
+          </li>
+        ))}
+      </ol>
+    </section>
   )
 }
 
@@ -352,11 +346,11 @@ export default function AskLibrary() {
                 onKeyDown={(e) => e.key === 'Enter' && ask(q)}
                 placeholder="هل سيستبدل الذكاء الاصطناعي المعلم؟"
                 aria-label="سؤالك"
-                className="flex-1 rounded-full border border-hair bg-canvas px-6 py-3.5 text-[1rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
+                className="min-h-12 flex-1 rounded-xl border border-hair bg-canvas px-5 py-3 text-[1rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
               />
               <button
                 onClick={() => ask(q)}
-                className="rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep"
+                className="min-h-12 rounded-xl bg-accent px-8 py-3 font-semibold text-white transition-colors hover:bg-accent-deep"
               >
                 اسأل
               </button>
@@ -365,10 +359,9 @@ export default function AskLibrary() {
 
           {!asked && (
             <FadeUp delay={0.08}>
-              <div className="mt-6 flex flex-wrap items-center gap-2">
-                <span className="text-[.8rem] text-soft">جرّب:</span>
+              <div className="mt-6 flex gap-5 overflow-x-auto border-b border-hair pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {SUGGESTIONS.map((s) => (
-                  <button key={s} onClick={() => ask(s)} className="rounded-full border border-hair px-4 py-1.5 text-[.83rem] text-soft transition-colors hover:border-accent hover:text-accent">
+                  <button key={s} onClick={() => ask(s)} className="shrink-0 border-b border-transparent py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-ink">
                     {s}
                   </button>
                 ))}
@@ -379,9 +372,9 @@ export default function AskLibrary() {
           <div ref={resRef} className="scroll-mt-28">
             {asked && bodiesLoading && (
               <FadeUp>
-                <div className="mt-12 rounded-2xl border border-hair bg-wash p-8 text-center text-soft">
-                  أفتح الأرشيف الكامل… لحظة واحدة.
-                </div>
+                <p className="mt-12 border-t border-hair pt-6 text-center text-soft" aria-live="polite">
+                  أرتّب مواد الأرشيف الأقرب إلى السؤال…
+                </p>
               </FadeUp>
             )}
             {result && (
@@ -389,109 +382,104 @@ export default function AskLibrary() {
                 {result.hits.length > 0 ? (
                   <>
                     <FadeUp>
-                      <section className="mb-9 rounded-2xl border border-accent/20 bg-wash p-6 md:p-8" aria-live="polite">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div>
-                            <p className="text-[.75rem] font-semibold text-accent">جواب من الأرشيف</p>
-                            <h2 className="mt-1 font-display text-[1.16rem] font-semibold leading-relaxed text-ink">خلاصة مرتبطة بمصادرها، لا رأي مولّد من خارجها.</h2>
-                          </div>
-                          <span className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.68rem] text-soft">دون معرفة خارجية</span>
-                        </div>
+                      <section className="border-y border-hair py-7 md:py-9" aria-live="polite">
+                        <p className="text-[.75rem] font-medium text-soft">الجواب</p>
+                        <h2 className="mt-2 font-display text-[1.16rem] font-semibold leading-relaxed text-ink">خلاصة مرتبطة بمصادرها، لا رأي من خارج الأرشيف.</h2>
                         {twinLoading && !twin ? (
                           <p className="mt-5 animate-pulse text-[.88rem] leading-[1.95] text-soft">أرتّب الشواهد الأقرب إلى سؤالك…</p>
                         ) : twin ? (
                           <>
-                            <p className="mt-5 whitespace-pre-line text-[.95rem] font-light leading-[2.05] text-ink/90">{twin.answer}</p>
-                            {twin.citations.length > 0 && (
-                              <div className="mt-5 flex flex-wrap gap-2 border-t border-hair pt-4">
-                                {twin.citations.map((citation) => (
-                                  <Link key={`${citation.index}-${citation.slug}`} to={`/articles/${citation.slug}`} className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.72rem] text-soft transition-colors hover:border-accent hover:text-accent">
-                                    [{citation.index}] {citation.title}
-                                  </Link>
-                                ))}
-                              </div>
-                            )}
-                            <p className="mt-4 text-[.68rem] leading-relaxed text-soft">{twin.source === 'ai' ? 'صيغت الخلاصة آلياً داخل حدود الشواهد الظاهرة فقط.' : 'تعذّر التوليد الآلي؛ عُرض بديل محلي محافظ لا يتجاوز الشواهد.'}</p>
+                            <p className="mt-5 whitespace-pre-line text-[.96rem] font-light leading-[2.05] text-ink/90">{twin.answer}</p>
+                            <p className="mt-4 text-[.68rem] leading-relaxed text-soft">{twin.source === 'ai' ? 'الخلاصة محصورة في الشواهد الظاهرة أدناه.' : 'عُرض بديل محلي محافظ لا يتجاوز الشواهد.'}</p>
                           </>
                         ) : null}
                       </section>
                     </FadeUp>
-                    <p className="text-[.8rem] font-semibold text-accent">الشواهد الحرفية</p>
-                    <div className="mt-5 space-y-8">
-                      {result.hits.map((h) => (
-                        <FadeUp key={h.slug}>
-                          <figure className="border-r-2 border-accent pr-5">
-                            <blockquote className="font-display text-[1.08rem] font-light leading-[2] text-ink">«{h.para}»</blockquote>
-                            <figcaption className="mt-3">
-                              <Link to={`/articles/${h.slug}`} className="group inline-flex items-baseline gap-2 text-[.88rem] text-soft transition-colors hover:text-accent">
-                                <span>من مقال: <span className="font-medium">{h.title}</span> — {h.iso.slice(0, 4)}</span>
-                                <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1">←</span>
-                              </Link>
-                            </figcaption>
-                          </figure>
-                        </FadeUp>
-                      ))}
-                    </div>
 
-                    {result.timeline.length > 1 && (
-                      <FadeUp>
-                        <section className="mt-10 border-t border-hair pt-7">
-                          <p className="text-[.8rem] font-semibold text-accent">كيف تحرك السؤال عبر الأرشيف؟</p>
-                          <ol className="mt-5 grid gap-4">
-                            {result.timeline.map((item) => (
-                              <li key={item.slug} className="relative border-r border-hair pr-5">
-                                <span className="absolute right-[-5px] top-2 h-2.5 w-2.5 rounded-full bg-accent" />
-                                <span className="text-[.74rem] font-semibold text-accent">{item.iso.slice(0, 4)} · {item.cat}</span>
-                                <Link to={`/articles/${item.slug}`} className="mt-1 block font-display text-[1.02rem] font-medium leading-relaxed text-ink transition-colors hover:text-accent">
-                                  {item.title}
-                                </Link>
-                                {item.excerpt && <p className="mt-1 text-[.84rem] leading-relaxed text-soft">{item.excerpt}</p>}
-                              </li>
-                            ))}
-                          </ol>
-                        </section>
-                      </FadeUp>
-                    )}
-
-                    {(result.latest || result.tension) && (
-                      <FadeUp>
-                        <section className="mt-9 rounded-2xl border border-hair bg-wash p-6">
-                          <p className="text-[.76rem] font-semibold text-accent">أحدث إجابة منشورة الآن</p>
-                          {result.latest && (
-                            <Link to={`/articles/${result.latest.slug}`} className="mt-2 block font-display text-[1.15rem] font-semibold leading-relaxed text-ink transition-colors hover:text-accent">
-                              {result.latest.title} <span className="text-[.85rem] text-soft">({result.latest.iso.slice(0, 4)})</span>
-                            </Link>
-                          )}
-                          {result.tension && <p className="mt-3 text-[.88rem] font-light leading-relaxed text-soft">{result.tension}</p>}
-                        </section>
-                      </FadeUp>
-                    )}
-
-                    {result.refs.length > 0 && (
-                      <div className="mt-8 border-t border-hair pt-5">
-                        <p className="text-[.8rem] text-soft">ومن أعمالي الموثّقة في هذا:</p>
-                        <ul className="mt-2.5 space-y-1.5">
-                          {result.refs.map((r) => (
-                            <li key={r.slug}>
-                              <Link to={r.href} className="group text-[.92rem] text-ink transition-colors hover:text-accent">
-                                <span className="me-2 rounded-full border border-hair px-2 py-0.5 text-[.7rem] text-soft">{r.kind}</span>
-                                {r.title}
-                                <span className="inline-block text-accent transition-transform duration-300 group-hover:-translate-x-1"> ←</span>
+                    <section className="mt-9" aria-labelledby="archive-sources-title">
+                      <p id="archive-sources-title" className="text-[.8rem] font-medium text-soft">المصادر والشواهد</p>
+                      {twin?.citations.length ? (
+                        <ol className="mt-4 grid gap-3 border-b border-hair pb-6">
+                          {twin.citations.map((citation) => (
+                            <li key={`${citation.index}-${citation.slug}`}>
+                              <Link to={`/articles/${citation.slug}`} className="group flex gap-3 text-[.82rem] text-soft transition-colors hover:text-accent">
+                                <span className="shrink-0">[{citation.index}]</span>
+                                <span className="font-medium text-ink transition-colors group-hover:text-accent">{citation.title}</span>
                               </Link>
                             </li>
                           ))}
-                        </ul>
+                        </ol>
+                      ) : null}
+                      <div className="mt-7 space-y-8">
+                        {result.hits.map((h) => (
+                          <FadeUp key={h.slug}>
+                            <figure className="border-r border-hair pr-5">
+                              <blockquote className="font-display text-[1.06rem] font-light leading-[2] text-ink">«{h.para}»</blockquote>
+                              <figcaption className="mt-3 text-[.82rem] text-soft">
+                                <Link to={`/articles/${h.slug}`} className="transition-colors hover:text-accent">{h.title} — {h.iso.slice(0, 4)}</Link>
+                              </figcaption>
+                            </figure>
+                          </FadeUp>
+                        ))}
                       </div>
-                    )}
 
-                    <p className="mt-10 border-t border-hair pt-5 text-[.8rem] font-light leading-[1.9] text-soft">
-                      كل فقرة مرتبطة بمصدر حقيقي. التحليل هنا ترتيبٌ للأرشيف لا اختراعٌ لرأي جديد.
-                    </p>
-                    <PersonalBook asked={asked} result={result} />
-                  </>
-                ) : (
+                      {result.refs.length > 0 && (
+                        <div className="mt-9 border-t border-hair pt-6">
+                          <p className="text-[.8rem] text-soft">كتب وأبحاث مرتبطة</p>
+                          <ul className="mt-3 space-y-3">
+                            {result.refs.map((r) => (
+                              <li key={r.slug} className="flex gap-3">
+                                <span className="w-20 shrink-0 text-[.72rem] text-soft">{r.kind}</span>
+                                <Link to={r.href} className="text-[.92rem] text-ink transition-colors hover:text-accent">{r.title}</Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </section>
+
+                    <FadeUp>
+                      <details className="group mt-10 border-t border-hair pt-6">
+                        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 text-[.86rem] font-medium text-ink marker:hidden">
+                          <span>امتدادات الإجابة</span>
+                          <span aria-hidden className="text-soft transition-transform group-open:rotate-45">＋</span>
+                        </summary>
+                        <div className="pb-2 pt-4">
+                          {result.timeline.length > 1 && (
+                            <section>
+                              <p className="text-[.78rem] font-medium text-soft">تطور السؤال عبر الأرشيف</p>
+                              <ol className="mt-5 grid gap-5 border-r border-hair pr-5">
+                                {result.timeline.map((item) => (
+                                  <li key={item.slug} className="relative">
+                                    <span className="absolute right-[-25px] top-2 h-2 w-2 rounded-full bg-accent" />
+                                    <span className="text-[.74rem] text-soft">{item.iso.slice(0, 4)} · {item.cat}</span>
+                                    <Link to={`/articles/${item.slug}`} className="mt-1 block font-display text-[1rem] font-medium leading-relaxed text-ink transition-colors hover:text-accent">{item.title}</Link>
+                                    {item.excerpt && <p className="mt-1 text-[.84rem] leading-relaxed text-soft">{item.excerpt}</p>}
+                                  </li>
+                                ))}
+                              </ol>
+                            </section>
+                          )}
+
+                          {(result.latest || result.tension) && (
+                            <section className="mt-10 border-t border-hair pt-7">
+                              <p className="text-[.76rem] font-medium text-soft">أحدث إجابة منشورة</p>
+                              {result.latest && (
+                                <Link to={`/articles/${result.latest.slug}`} className="mt-2 block font-display text-[1.1rem] font-semibold leading-relaxed text-ink transition-colors hover:text-accent">
+                                  {result.latest.title} <span className="text-[.82rem] font-normal text-soft">({result.latest.iso.slice(0, 4)})</span>
+                                </Link>
+                              )}
+                              {result.tension && <p className="mt-3 text-[.88rem] font-light leading-[1.9] text-soft">{result.tension}</p>}
+                            </section>
+                          )}
+
+                          <PersonalBook asked={asked} result={result} />
+                        </div>
+                      </details>
+                    </FadeUp>
+                  </>                ) : (
                   <FadeUp>
-                    <div className="rounded-2xl border border-hair bg-wash p-8 md:p-10">
+                    <div className="border-y border-hair py-8 md:py-10">
                       <p className="font-display text-[clamp(1.2rem,2.6vw,1.6rem)] font-semibold leading-[1.7] text-ink">
                         لم أكتب في هذا بعد — ربما يكون سؤالَ مقالٍ قادم.
                       </p>
@@ -517,7 +505,7 @@ export default function AskLibrary() {
             )}
             {result && (
               <div className="mt-10 text-center">
-                <button onClick={again} className="rounded-full border border-hair px-6 py-2.5 text-[.9rem] font-medium text-soft transition-colors hover:border-accent hover:text-accent">
+                <button onClick={again} className="min-h-11 border-b border-hair px-1 text-[.86rem] font-medium text-soft transition-colors hover:border-accent hover:text-accent">
                   اسأل سؤالاً آخر ↺
                 </button>
               </div>

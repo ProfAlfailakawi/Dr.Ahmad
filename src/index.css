@@ -151,29 +151,13 @@ html.dark body::before {
   box-shadow: none;
   -webkit-tap-highlight-color: transparent;
 }
-/* التركيز بلوحة المفاتيح يأخذ حلقة التركيز العامة نفسها (مراجعة جمالية #23: لا نُلغيها
-   عن زر القائمة)؛ ويبقى تلوّن النص والتسطير للنقر بالفأرة فقط. */
-.site-menu-control:focus,
-.site-menu-control:active {
-  box-shadow: none;
-  color: rgb(var(--c-accent));
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: .32em;
-}
+/* لغة تفاعل واحدة: لون عند المرور، وحلقة عامة موحّدة بلوحة المفاتيح. */
+.site-menu-control:hover { color: rgb(var(--c-accent)); }
 .site-menu-control:focus-visible {
   outline: 2px solid rgb(var(--c-accent));
   outline-offset: 3px;
   border-radius: 3px;
 }
-body.cursor-none-desktop * { cursor: none !important; }
-/* استثناء حقول الإدخال — المستخدم يحتاج مؤشّر الكتابة */
-body.cursor-none-desktop input,
-body.cursor-none-desktop textarea,
-body.cursor-none-desktop select,
-body.cursor-none-desktop [contenteditable] { cursor: text !important; }
-/* والنصّ القابل للتحديد داخل المقال */
-body.cursor-none-desktop .article-body { cursor: text !important; }
 
 /* لوحة التحكم: حماية من أي تمدد أفقي في الجداول أو المسارات الطويلة */
 .admin-shell {
@@ -210,14 +194,8 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
 }
 
 /* hero portrait: monochrome -> color on hover (signature moment) */
-.portrait img { filter: grayscale(1) contrast(1.02); transition: filter 0.8s var(--E); }
-.portrait::after {
-  content: ""; position: absolute; inset: 0;
-  background: rgb(var(--c-accent)); mix-blend-mode: color; opacity: 0.3;
-  transition: opacity 0.8s var(--E); pointer-events: none;
-}
-.portrait-wrap:hover .portrait img { filter: none; }
-.portrait-wrap:hover .portrait::after { opacity: 0; }
+.portrait img { filter: grayscale(1) contrast(1.02); }
+.portrait::after { display: none; }
 
 /* scroll cue */
 @keyframes drop { 0% { top: -30px } 55% { top: 30px } 100% { top: 30px } }
@@ -402,7 +380,7 @@ html.dark .signature-page :is(.bg-canvas, .bg-wash) {
 }
 
 .content-articles .article-body {
-  max-width: min(var(--article-width, 72ch), 100%);
+  max-width: min(var(--article-width, 66ch), 100%);
   transition: max-width .28s var(--E);
 }
 
@@ -595,9 +573,6 @@ html.dark .content-media .page-head {
   }
 }
 
-@media (hover: none), (pointer: coarse) {
-  .cursor-ring, .cursor-dot { display: none !important; }
-}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -610,7 +585,7 @@ html.dark .content-media .page-head {
 .article-body p {
   font-size: calc(1.14rem * var(--article-scale, 1));
   font-weight: 300;
-  line-height: var(--article-line, 2.15);
+  line-height: var(--article-line, 2);
   color: rgb(var(--c-ink) / .88);
   margin-bottom: 1.6em;
   text-align: justify;
@@ -636,7 +611,7 @@ html.dark .content-media .page-head {
 @media (max-width: 640px) {
   .article-body p {
     font-size: calc(1.06rem * var(--article-scale, 1));
-    line-height: var(--article-line, 2.08);
+    line-height: var(--article-line, 2);
     text-align: justify;
     text-justify: inter-word;
     text-align-last: start;
@@ -908,11 +883,6 @@ html.dark .book-detail-cover {
   body.audio-dock-open .floating-actions { bottom: 6.5rem; }
 }
 
-/* المؤشر المخصص يبقى مرئياً فوق أي نافذة أو طبقة متداخلة. */
-.cursor-ring, .cursor-dot {
-  isolation: isolate;
-  will-change: transform, opacity;
-}
 
 /* ============================================================
    HERO — «نواة الإنسان»
@@ -1836,4 +1806,245 @@ body.reader-resume-open .floating-actions {
     padding-top: 1.25rem;
     scroll-padding-top: 1.25rem;
   }
+}
+
+/* ============================================================
+   نظام التحرير البصري النهائي — ورق، حبر، ولكنة واحدة
+   ============================================================ */
+:root {
+  --type-xs: .75rem;
+  --type-sm: .875rem;
+  --type-base: 1rem;
+  --type-lg: 1.125rem;
+  --type-xl: 1.375rem;
+  --type-2xl: clamp(2rem, 5vw, 3.25rem);
+  --type-3xl: clamp(2.5rem, 7vw, 4.75rem);
+  --section-space-mobile: 56px;
+  --section-space-desktop: 96px;
+  --shadow-soft: 0 12px 28px -22px rgba(21, 22, 26, .24);
+  --shadow-deep: 0 18px 36px -28px rgba(21, 22, 26, .30);
+}
+
+html.dark {
+  --shadow-soft: 0 10px 24px -20px rgba(0, 0, 0, .42);
+  --shadow-deep: 0 16px 32px -26px rgba(0, 0, 0, .48);
+}
+
+/* لا تقنين للحروف العربية المتصلة. */
+:dir(rtl) { letter-spacing: 0; }
+:dir(rtl) .tracking-tight,
+:dir(rtl) .tracking-tighter,
+:dir(rtl) .tracking-wide,
+:dir(rtl) .tracking-wider,
+:dir(rtl) .tracking-widest { letter-spacing: 0 !important; }
+
+/* Tajawal المتاح محلياً ينتهي عند 500؛ امنع التغليظ الاصطناعي. */
+html { font-synthesis: none; }
+.font-semibold:not(.font-display),
+.font-bold:not(.font-display) { font-weight: 500; }
+
+.text-wrap-balance { text-wrap: balance; }
+.signature-page h1,
+.signature-page h2,
+.signature-page h3 { text-wrap: balance; orphans: 2; widows: 2; }
+.article-body p { orphans: 3; widows: 3; }
+
+/* رؤوس الصفحات: العنوان ووصفه قريبان، ثم فراغ واضح قبل المحتوى. */
+.page-head p { margin-top: 16px !important; }
+.page-head { background: rgb(var(--c-canvas)) !important; }
+.content-research .page-head { background: rgb(var(--c-canvas)) !important; }
+
+/* الفراغ يفصل الأقسام؛ لا خلفيات زخرفية متعاقبة. */
+.page-journey > section:nth-of-type(even) { background: transparent; }
+.page-journey > section + section::after { display: none; }
+
+/* أغلفة وصور المحتوى وثائق ثابتة، لا منتجات. */
+.signature-page img:not([src*="logo"]):not([src*="favicon"]):not([src*="icon-"]) {
+  transition: none;
+}
+.signature-page a:hover img:not([src*="logo"]):not([src*="favicon"]):not([src*="icon-"]) {
+  transform: none !important;
+  filter: inherit;
+}
+.content-books a > div[style*="aspect-ratio"],
+html.dark .content-books a > div[style*="aspect-ratio"] {
+  box-shadow: none;
+}
+.content-books a > div[style*="aspect-ratio"]::after { display: none; }
+.content-media a[href*="youtube"],
+.content-media a[href*="youtu.be"] { box-shadow: none; }
+
+/* الحواف والحدود: 1px و12px للبطاقات؛ الدائرة للأزرار الصغيرة فقط. */
+.signature-page :is(article, section, div)[class*="rounded-2xl"],
+.signature-page :is(article, section, div)[class*="rounded-3xl"] { border-radius: 12px; }
+
+/* الصمت التكيفي: بعد التعمق في القراءة تتقاعد الحركات المحيطية للجلسة. */
+html.site-silent .cue,
+html.site-silent .human-core__canvas,
+html.site-silent .human-core__scan,
+html.site-silent .human-core__orbit,
+html.site-silent .human-core__bridge-pulse,
+html.site-silent .human-core__signal,
+html.site-silent .human-core__words { display: none !important; }
+html.site-silent .pulse::after,
+html.site-silent .human-core__human::after,
+html.site-silent .human-core__title-line::before,
+html.site-silent .human-core__title-line::after { animation: none !important; opacity: 0 !important; }
+
+/* أهداف لمس مريحة ومتساوية. */
+@media (pointer: coarse) {
+  .site-nav button,
+  .site-nav a[aria-label],
+  .article-reading-actions button,
+  .article-reading-actions a,
+  [aria-label="مشاركة المقال والاستشهاد به"] button,
+  [aria-label="مشاركة المقال والاستشهاد به"] a { min-width: 44px; min-height: 44px; }
+}
+
+/* انتقالات الورقة الواحدة: قصيرة وهادئة. */
+@view-transition { navigation: auto; }
+::view-transition-old(root),
+::view-transition-new(root) { animation-duration: 220ms; animation-timing-function: var(--E); }
+
+/* إخراج أكاديمي نظيف عند الطباعة/PDF. */
+@page { size: A4; margin: 22mm 19mm 24mm; }
+@media print {
+  html, body { background: #fff !important; color: #111 !important; }
+  body::before,
+  nav,
+  footer,
+  .route-loading-line,
+  .article-reading-actions,
+  .reader-hide-focus,
+  [aria-label="مشاركة المقال والاستشهاد به"],
+  .related-path-grid,
+  details,
+  .floating-actions { display: none !important; }
+  .article-journey { padding: 0 !important; }
+  .article-journey article { max-width: none !important; margin: 0 !important; }
+  .article-journey article::before {
+    content: "د. أحمد حسين الفيلكاوي  ·  dr-alfailakawi.com\A" attr(data-print-citation);
+    display: block;
+    white-space: pre-line;
+    border-bottom: 1px solid #bbb;
+    padding-bottom: 8pt;
+    margin-bottom: 18pt;
+    font: 10pt "Tajawal", sans-serif;
+    color: #555;
+  }
+  .article-body { max-width: 100% !important; }
+  .article-body p { font-size: 12.5pt !important; line-height: 1.9 !important; color: #111 !important; }
+  h1 { font-size: 24pt !important; line-height: 1.35 !important; }
+  h1, h2, h3, blockquote, figure { break-after: avoid; break-inside: avoid; }
+  a { color: #111 !important; text-decoration: none !important; }
+  a[href^="http"]::after { content: ""; }
+}
+
+@media screen {
+/* سلّم طباعي واحد: كل المقاسات الحرة تُردّ بصرياً إلى سبع درجات فقط. */
+#root :where([class~="text-[.58rem]"]),
+#root :where([class~="text-[.62rem]"]),
+#root :where([class~="text-[.65rem]"]),
+#root :where([class~="text-[.66rem]"]),
+#root :where([class~="text-[.68rem]"]),
+#root :where([class~="text-[.72rem]"]),
+#root :where([class~="text-[.73rem]"]),
+#root :where([class~="text-[.74rem]"]),
+#root :where([class~="text-[.75rem]"]),
+#root :where([class~="text-[.76rem]"]),
+#root :where([class~="text-[.78rem]"]),
+#root :where([class~="text-[.7rem]"]),
+#root :where([class~="text-[.8rem]"]),
+#root :where([class~="text-[11px]"]) { font-size: var(--type-xs) !important; }
+#root :where([class~="text-[.82rem]"]),
+#root :where([class~="text-[.83rem]"]),
+#root :where([class~="text-[.84rem]"]),
+#root :where([class~="text-[.85rem]"]),
+#root :where([class~="text-[.86rem]"]),
+#root :where([class~="text-[.87rem]"]),
+#root :where([class~="text-[.88rem]"]),
+#root :where([class~="text-[.92rem]"]),
+#root :where([class~="text-[.93rem]"]),
+#root :where([class~="text-[.94rem]"]),
+#root :where([class~="text-[.9rem]"]),
+#root :where([class~="text-[14px]"]) { font-size: var(--type-sm) !important; }
+#root :where([class~="text-[.95rem]"]),
+#root :where([class~="text-[.96rem]"]),
+#root :where([class~="text-[.98rem]"]),
+#root :where([class~="text-[1.02rem]"]),
+#root :where([class~="text-[1.04rem]"]),
+#root :where([class~="text-[1.05rem]"]),
+#root :where([class~="text-[1.06rem]"]),
+#root :where([class~="text-[1rem]"]) { font-size: var(--type-base) !important; }
+#root :where([class~="text-[1.08rem]"]),
+#root :where([class~="text-[1.12rem]"]),
+#root :where([class~="text-[1.14rem]"]),
+#root :where([class~="text-[1.15rem]"]),
+#root :where([class~="text-[1.16rem]"]),
+#root :where([class~="text-[1.18rem]"]),
+#root :where([class~="text-[1.1rem]"]),
+#root :where([class~="text-[1.2rem]"]) { font-size: var(--type-lg) !important; }
+#root :where([class~="text-[1.22rem]"]),
+#root :where([class~="text-[1.25rem]"]),
+#root :where([class~="text-[1.28rem]"]),
+#root :where([class~="text-[1.34rem]"]),
+#root :where([class~="text-[1.35rem]"]),
+#root :where([class~="text-[1.3rem]"]),
+#root :where([class~="text-[1.45rem]"]),
+#root :where([class~="text-[1.4rem]"]),
+#root :where([class~="text-[1.55rem]"]),
+#root :where([class~="text-[1.5rem]"]),
+#root :where([class~="text-[1.6rem]"]),
+#root :where([class~="text-[clamp(1.05rem,2.25vw,1.45rem)]"]),
+#root :where([class~="text-[clamp(1.15rem,2.4vw,1.6rem)]"]),
+#root :where([class~="text-[clamp(1.15rem,5.5vw,1.5rem)]"]),
+#root :where([class~="text-[clamp(1.1rem,2.2vw,1.4rem)]"]),
+#root :where([class~="text-[clamp(1.2rem,2.2vw,1.72rem)]"]),
+#root :where([class~="text-[clamp(1.2rem,2.6vw,1.6rem)]"]),
+#root :where([class~="text-[clamp(1.2rem,2.6vw,1.7rem)]"]),
+#root :where([class~="text-[clamp(1.35rem,3vw,1.8rem)]"]),
+#root :where([class~="text-[clamp(1.35rem,3vw,2.1rem)]"]),
+#root :where([class~="text-[clamp(1.35rem,3vw,2rem)]"]),
+#root :where([class~="text-[clamp(1.3rem,3vw,1.75rem)]"]),
+#root :where([class~="text-[clamp(1.45rem,3vw,2.2rem)]"]),
+#root :where([class~="text-[clamp(1.45rem,4vw,2.5rem)]"]),
+#root :where([class~="text-[clamp(1.4rem,3.2vw,2.1rem)]"]),
+#root :where([class~="text-[clamp(1rem,2vw,1.15rem)]"]) { font-size: var(--type-xl) !important; }
+#root :where([class~="text-[3.5rem]"]),
+#root :where([class~="text-[clamp(1.55rem,3vw,2.25rem)]"]),
+#root :where([class~="text-[clamp(1.5rem,3.4vw,2.2rem)]"]),
+#root :where([class~="text-[clamp(1.5rem,3.4vw,2.4rem)]"]),
+#root :where([class~="text-[clamp(1.5rem,3.6vw,2.4rem)]"]),
+#root :where([class~="text-[clamp(1.5rem,3.8vw,2.4rem)]"]),
+#root :where([class~="text-[clamp(1.5rem,7vw,2.25rem)]"]),
+#root :where([class~="text-[clamp(1.6rem,3.4vw,2.4rem)]"]),
+#root :where([class~="text-[clamp(1.6rem,3.5vw,2.3rem)]"]),
+#root :where([class~="text-[clamp(1.6rem,3.6vw,2.5rem)]"]),
+#root :where([class~="text-[clamp(1.6rem,4vw,2.6rem)]"]),
+#root :where([class~="text-[clamp(1.7rem,3.5vw,2.5rem)]"]),
+#root :where([class~="text-[clamp(1.7rem,3vw,2.3rem)]"]),
+#root :where([class~="text-[clamp(1.7rem,4.2vw,2.6rem)]"]),
+#root :where([class~="text-[clamp(1.7rem,4.6vw,3.2rem)]"]),
+#root :where([class~="text-[clamp(1.7rem,4vw,2.7rem)]"]),
+#root :where([class~="text-[clamp(1.8rem,4.2vw,2.8rem)]"]),
+#root :where([class~="text-[clamp(1.8rem,4vw,2.7rem)]"]),
+#root :where([class~="text-[clamp(1.8rem,4vw,2.8rem)]"]),
+#root :where([class~="text-[clamp(1.8rem,4vw,3rem)]"]),
+#root :where([class~="text-[clamp(1.9rem,4.4vw,3.1rem)]"]),
+#root :where([class~="text-[clamp(2.1rem,5.4vw,4rem)]"]),
+#root :where([class~="text-[clamp(2.1rem,5vw,3.6rem)]"]),
+#root :where([class~="text-[clamp(2rem,4.6vw,3.1rem)]"]),
+#root :where([class~="text-[clamp(2rem,4.6vw,3.2rem)]"]),
+#root :where([class~="text-[clamp(2rem,5vw,3.25rem)]"]),
+#root :where([class~="text-[clamp(2rem,5vw,3.2rem)]"]),
+#root :where([class~="text-[clamp(2rem,5vw,3.3rem)]"]) { font-size: var(--type-2xl) !important; }
+#root :where([class~="text-[5.5rem]"]),
+#root :where([class~="text-[5rem]"]),
+#root :where([class~="text-[9rem]"]),
+#root :where([class~="text-[clamp(2.35rem,6vw,4.7rem)]"]),
+#root :where([class~="text-[clamp(2.4rem,6vw,4rem)]"]),
+#root :where([class~="text-[clamp(2.55rem,7vw,5.2rem)]"]),
+#root :where([class~="text-[clamp(2.6rem,7vw,5rem)]"]),
+#root :where([class~="text-[clamp(2.6rem,8vw,5.2rem)]"]),
+#root :where([class~="text-[clamp(5rem,15vw,9rem)]"]) { font-size: var(--type-3xl) !important; }
 }

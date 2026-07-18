@@ -258,11 +258,10 @@ export default function Curated() {
             {shown.map((item, index) => (
               <motion.div
                 key={item.url || item.ar}
-                initial={reduce ? false : { opacity: 0, y: 26 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={reduce ? false : { opacity: 0 }}
+                whileInView={{ opacity: 1 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.7, delay: Math.min((index % 6) * 0.06, 0.3), ease: EASE }}
-                whileHover={reduce ? {} : { y: -6 }}
                 className="h-full"
               >
                 <CardWrap c={item} className="flex h-full flex-col rounded-2xl border border-hair bg-canvas p-7">

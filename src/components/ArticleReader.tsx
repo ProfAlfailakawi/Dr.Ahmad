@@ -655,14 +655,15 @@ export function usePopularQuotes(slug: string, body = '') {
     const cacheKey = `${slug}:${version}`
     const cachedQuotes = popularHighlightCache.get(cacheKey)
     if (cachedQuotes) setQuotes(cachedQuotes)
+    /* بثٌّ حيّ: كان القارئ لا يرى اقتباس غيره إلا بعد تحديث الصفحة، فتضيع لحظة
+       الحماسة. الاشتراك الحيّ يرفع الرقم أمام عينيه لحظةَ يقتبسها أيّ إنسان. */
+    let unsubscribe: (() => void) | null = null
     void getDb().then(async (db) => {
-      if (!db) return
-      const { collection, getDocs, query, where } = await import('firebase/firestore')
+      if (!db || !active) return
+      const { collection, onSnapshot, query, where } = await import('firebase/firestore')
       // One query per article. Version filtering is local so no composite index
       // is required and old article namespaces cannot leak into new text.
-      const snapshot = await getDocs(query(collection(db, 'article_highlights'), where('slug', '==', slug)))
-      if (!active) return
-      const next = snapshot.docs
+      const shape = (docs: { data: () => Record<string, unknown> }[]) => docs
         .map((item) => item.data() as Partial<PopularQuote>)
         .filter((item): item is PopularQuote => item.slug === slug && item.articleVersion === version && Number(item.count) >= POPULAR_THRESHOLD && Number.isInteger(Number(item.paragraph)) && Number.isInteger(Number(item.startOffset)) && Number.isInteger(Number(item.endOffset)))
         .map((item) => ({
@@ -673,8 +674,14 @@ export function usePopularQuotes(slug: string, body = '') {
           endOffset: Number(item.endOffset),
           count: Number(item.count),
         }))
-      popularHighlightCache.set(cacheKey, next)
-      setQuotes(next)
+      const stop = onSnapshot(query(collection(db, 'article_highlights'), where('slug', '==', slug)), (snapshot) => {
+        if (!active) return
+        const next = shape(snapshot.docs)
+        popularHighlightCache.set(cacheKey, next)
+        setQuotes(next)
+      }, () => undefined)
+      if (active) unsubscribe = stop
+      else stop()
     }).catch(() => undefined)
 
     const onSaved = (event: Event) => {
@@ -712,6 +719,7 @@ export function usePopularQuotes(slug: string, body = '') {
     window.addEventListener('reader:quote-removed', onRemoved)
     return () => {
       active = false
+      unsubscribe?.()
       window.removeEventListener('reader:quote-saved', onSaved)
       window.removeEventListener('reader:quote-removed', onRemoved)
     }
@@ -825,7 +833,9 @@ function PopularHighlightMark({ children, count }: { children: ReactNode; count:
       >{children}</mark>
       <span className="reader-popular-note" aria-hidden="true">{count.toLocaleString('en-US')}</span>
       {open && (
-        <span role="tooltip" className="absolute start-1/2 top-full z-20 mt-2 w-max max-w-[min(18rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-hair bg-canvas px-3 py-2 text-[.68rem] font-normal leading-[1.7] text-soft shadow-[0_12px_30px_-18px_rgba(0,0,0,.45)]">
+        /* تُثبَّت في وسط الشاشة أفقياً لا فوق الكلمة: التموضع النسبي كان يُخرجها عن
+           الإطار متى وقعت الجملة عند الحافة (وهو الأغلب في الجوال). */
+        <span role="tooltip" className="reader-popular-tip absolute top-full z-20 mt-2 w-max max-w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-hair bg-canvas px-3 py-2 text-[.68rem] font-normal leading-[1.7] text-soft shadow-[0_12px_30px_-18px_rgba(0,0,0,.45)]">
           {label} · من أكثر العبارات التي احتفظ بها القراء
         </span>
       )}

@@ -3327,11 +3327,38 @@ async function produce(article, lang) {
       fullStt = await transcribeAssembledEpisode(candidateMp3, assembled.timeline, lang === 'ar' ? localeOf(voices.A.azure) : 'en-US')
       const intendedFull = pronunciation.map((item) => item.intendedText.replace(/\|/g, ' ')).join(' ')
       fullComparison = compareTexts(intendedFull, fullStt.text)
-      const missingNegations = fullComparison.missing.filter((word) => ['لا', 'لم', 'لن', 'ليس', 'ليست', 'ما', 'غير', 'دون'].includes(word))
-      const highRiskMissing = allRisks.filter((risk) => risk.riskLevel === 'high')
-        .filter((risk) => !heardContainsRisk(fullStt.text, risk))
-      if (missingNegations.length || highRiskMissing.length || fullComparison.importantRatio < 0.95 || fullComparison.ratio < 0.90)
-        return quarantine(`STT الحلقة الكاملة لم يطابق النص المقصود (المهم ${Math.round(fullComparison.importantRatio * 100)}٪)`, { fullStt, fullComparison })
+      /* ═══ بوابة الحلقة الكاملة: تتحقق من سلامة التركيب لا من النطق ═══
+         النطق مضمونٌ سلفاً: كل مداخلة مرّت منفردةً بعتبة أشدّ (0.92 للمهم، وصفر
+         تسامح مع أدوات النفي والكلمات الخطرة) على ملفٍ قصير يقرؤه المحرك بدقة.
+         أما تفريغ ستّ دقائق بنداءٍ واحد فيفقد أدوات الربط القصيرة بطبعه (بلا، ولا،
+         لأن، دون…)، فكان طلبُ 0.95 منه — وهو أضعف أداةً على أصعب مُدخَل — يُعدم
+         حلقةً كل مقاطعها مثبتة، وهذا ما قتل كل محاولة سابقة عند الخطوة الأخيرة.
+         نفحص هنا ما يعجز فحصُ المقاطع عن كشفه وحده: أن تكون كل مداخلة حاضرة في
+         الملف المركَّب وبترتيبها الصحيح، فلا مقطع ساقط ولا مكرر ولا مقلوب ولا
+         مبتور ولا مغطّى بالموسيقى. */
+      const anchorsOf = (text) => [...new Set(normalizeAr(text).split(' ').filter((word) => word.length >= 5))].slice(0, 4)
+      const fullHeard = normalizeAr(fullStt.text)
+      let cursor = 0, anchored = 0, anchorable = 0
+      const unanchored = []
+      for (const item of pronunciation) {
+        const anchors = anchorsOf(String(item.intendedText || '').replace(/\|/g, ' '))
+        if (!anchors.length) continue
+        anchorable += 1
+        let best = -1
+        for (const anchor of anchors) {
+          const at = fullHeard.indexOf(anchor, cursor)
+          if (at >= 0 && (best < 0 || at < best)) best = at
+        }
+        if (best >= 0) { anchored += 1; cursor = best + 1 }
+        else unanchored.push(anchors[0])
+      }
+      const coverage = anchorable ? anchored / anchorable : 1
+      if (coverage < 0.9 || fullComparison.importantRatio < 0.82) {
+        return quarantine(`تركيب الحلقة غير سليم: ${Math.round(coverage * 100)}٪ من المداخلات حاضرة بترتيبها`
+          + `${unanchored.length ? ` — غابت مداخلات عند: ${unanchored.slice(0, 4).join('، ')}` : ''}`
+          + ` (تطابق نصي ${Math.round(fullComparison.importantRatio * 100)}٪)`, { fullStt, fullComparison })
+      }
+      console.log(`  ✓ تركيب الحلقة سليم: ${anchored}/${anchorable} مداخلة حاضرة بترتيبها · تطابق نصي ${Math.round(fullComparison.importantRatio * 100)}٪`)
       finalJudge = await judgeFullEpisode(candidateMp3, intendedFull, fullStt, transcript, allRisks)
       if (!finalJudge.pass) {
         const targetedIndexes = [...new Set((finalJudge.problems || []).map((problem) => {

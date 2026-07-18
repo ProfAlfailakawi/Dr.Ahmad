@@ -60,19 +60,25 @@
       })();
     </script>
     <!--
-      نسخة الـSEO الثابتة تُحفظ خارج جذر React كي تفهمها محركات البحث،
-      لكنها لا تُعرض للزائر أثناء إقلاع التطبيق. إذا تعذر JavaScript فعلاً،
-      تُكشف النسخة الثابتة تلقائياً بعد مهلة أمان بدل ترك صفحة فارغة.
+      نسخة الـSEO الثابتة تُحفظ خارج جذر React كي تفهمها محركات البحث، ولا تُعرض
+      لزائرٍ يعمل عنده JavaScript أبداً — كانت مهلة الأمان تكشفها بعد ثماني ثوانٍ
+      إن تأخر الإقلاع (شبكة بطيئة، ذاكرة باردة) فتومض «الصفحة القديمة» أمام الدكتور
+      بين حينٍ وآخر. الآن لا تُكشف إلا إذا فشل التطبيق فعلاً: جذر React ما زال فارغاً
+      بعد مهلة أطول — فالصفحة الثابتة خيرٌ من فراغٍ دائم، لا من موقعٍ يتحمّل قليلاً.
+      ومن يعطّل JavaScript يراها فوراً عبر <noscript> أدناه.
     -->
     <script id="app-boot-state">
       (function () {
         var html = document.documentElement;
         html.classList.add('js');
         window.__appBootFallbackTimer = window.setTimeout(function () {
-          if (!html.hasAttribute('data-app-ready')) html.classList.remove('js');
-        }, 8000);
+          var root = document.getElementById('root');
+          var appRendered = html.hasAttribute('data-app-ready') || (root && root.childElementCount > 0);
+          if (!appRendered) html.classList.remove('js');
+        }, 20000);
       })();
     </script>
+    <noscript><style>#seo-fallback { display: block !important; }</style></noscript>
     <style id="app-boot-style">
       html, body { background: #FCFCFA; }
       html.dark, html.dark body { background: #111215; }

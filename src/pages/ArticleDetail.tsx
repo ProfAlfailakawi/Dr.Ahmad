@@ -403,6 +403,22 @@ function StudentArchive({ a, articles, books, papers }: { a: ArticleRecord; arti
   )
 }
 
+/* روابط الامتدادات كانت تقفز فقط: الهيدر الثابت يبتلع أعلى القسم، والبطاقة
+   المطوية (details) تبقى مغلقة فيظن الزائر أن شيئاً لم يحدث. نفتح الهدف ونضعه
+   تحت الهيدر بهدوء — والحارس العام يغلق ما سواه. */
+function goToLayer(href: string) {
+  const target = document.querySelector<HTMLElement>(href)
+  if (!target) return
+  const details = target instanceof HTMLDetailsElement ? target : target.querySelector('details')
+  if (details instanceof HTMLDetailsElement && !details.open) {
+    details.open = true
+    details.dispatchEvent(new Event('toggle', { bubbles: false }))
+  }
+  window.requestAnimationFrame(() => {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+}
+
 function ReadingLayers({ hasAudio, hasEvolution, slug }: { hasAudio: boolean; hasEvolution: boolean; slug: string }) {
   const links = [
     { href: '#article-body', label: 'قراءة سريعة', note: 'النص' },
@@ -423,7 +439,7 @@ function ReadingLayers({ hasAudio, hasEvolution, slug }: { hasAudio: boolean; ha
                 <span className="ms-2 text-soft/80">{link.note}</span>
               </button>
             ) : (
-              <a key={link.href} href={link.href} className="rounded-full border border-hair bg-canvas px-3.5 py-2 text-[.76rem] leading-none text-soft transition-colors hover:border-accent hover:text-accent">
+              <a key={link.href} href={link.href} onClick={(event) => { event.preventDefault(); goToLayer(link.href as string) }} className="rounded-full border border-hair bg-canvas px-3.5 py-2 text-[.76rem] leading-none text-soft transition-colors hover:border-accent hover:text-accent">
                 <span className="font-semibold text-ink">{link.label}</span>
                 <span className="ms-2 text-soft/80">{link.note}</span>
               </a>
@@ -445,7 +461,7 @@ function ArticleClosingNote({ next, related }: { next?: ArticleRecord; related: 
           تستطيع أن تتابع خيطها عبر الزمن، أو تنتقل إلى نص قريب يكمل المعنى من زاوية أخرى.
         </p>
         <div className="mt-4 flex flex-wrap justify-center gap-2">
-          <a href="#time-dialogue" className="rounded-full border border-hair px-4 py-2 text-[.78rem] text-soft transition-colors hover:border-accent hover:text-accent">حوار عبر الزمن</a>
+          <a href="#time-dialogue" onClick={(event) => { event.preventDefault(); goToLayer('#time-dialogue') }} className="rounded-full border border-hair px-4 py-2 text-[.78rem] text-soft transition-colors hover:border-accent hover:text-accent">حوار عبر الزمن</a>
           {target && (
             <Link to={`/articles/${target.slug}`} className="rounded-full border border-accent/30 px-4 py-2 text-[.78rem] text-accent transition-colors hover:bg-accent hover:text-white">
               {target === next ? 'المقال التالي' : 'مقال قريب'} ←

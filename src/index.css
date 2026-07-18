@@ -655,6 +655,28 @@ html.reader-paper .article-journey .bg-wash {
   border-radius: .12em;
   padding-inline: .02em;
 }
+/* بطاقة «حُفظت N مرة» تبقى داخل إطار الشاشة أينما وقعت الجملة — كانت تُقص من
+   الحافة متى ظُلّلت عبارةٌ في أقصى يسار السطر (وهو الأغلب في الجوال). */
+.reader-popular-tip {
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+}
+@media (max-width: 640px) {
+  .reader-popular-wrap { position: static; }
+  .reader-popular-tip {
+    position: fixed;
+    inset-inline: .75rem;
+    inset-block-start: auto;
+    inset-block-end: max(1rem, env(safe-area-inset-bottom));
+    top: auto;
+    margin-top: 0;
+    inline-size: auto;
+    max-inline-size: none;
+    transform: none;
+    text-align: center;
+  }
+}
+
 .reader-popular-wrap {
   white-space: normal;
 }
@@ -2063,4 +2085,9 @@ html.site-silent .human-core__title-line::after { animation: none !important; op
 #root :where([class~="text-[clamp(2.6rem,7vw,5rem)]"]),
 #root :where([class~="text-[clamp(2.6rem,8vw,5.2rem)]"]),
 #root :where([class~="text-[clamp(5rem,15vw,9rem)]"]) { font-size: var(--type-3xl) !important; }
+}
+
+/* الهيدر الثابت كان يبتلع أعلى القسم المقصود عند القفز إليه من «امتدادات المقال» */
+#article-body, #time-dialogue, #student-archive, #idea-thread, #article-audio {
+  scroll-margin-block-start: 6.5rem;
 }

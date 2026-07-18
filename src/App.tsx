@@ -116,16 +116,19 @@ function AdaptiveSilence() {
 
 function ExclusiveDetailsGuard() {
   useEffect(() => {
+    /* شرط الدكتور في كل البرنامج: ما إن يُفتح كرت حتى ينغلق كل ما سواه فوراً.
+       الحصر في الإخوة المباشرين كان يترك «للطلاب والباحثين» مفتوحاً حين تُفتح
+       «استماع» لأنهما ليسا في الحاوية نفسها. نغلق كل مفتوحٍ في الصفحة، إلا ما
+       كان جدّاً للمفتوح (فإغلاقه يُخفي ما فتحه الزائر للتوّ). */
     const closeSiblingDetails = (event: Event) => {
       const current = event.target
       if (!(current instanceof HTMLDetailsElement) || !current.open) return
       if (current.hasAttribute('data-allow-multiple')) return
-      const parent = current.parentElement
-      if (!parent) return
-      for (const item of Array.from(parent.children)) {
+      for (const item of Array.from(document.querySelectorAll('details[open]'))) {
         if (item === current || !(item instanceof HTMLDetailsElement)) continue
         if (item.hasAttribute('data-allow-multiple')) continue
-        if (item.open) item.open = false
+        if (item.contains(current)) continue
+        item.open = false
       }
     }
     document.addEventListener('toggle', closeSiblingDetails, true)

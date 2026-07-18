@@ -14,7 +14,8 @@ type AgentStatus = {
   restartRequestedAt?: string | null
   port?: number
 }
-type Campaign = { id: string; name: string; state: string; created_at: string; approved_at?: string | null }
+type Campaign = { id: string; name: string; state: string; created_at: string; approved_at?: string | null; target_count?: number }
+type BroadcastGroup = { id: string; jid: string; name: string; memberCount: number; discoveredAt?: string }
 type ReplyRule = {
   id: string
   name: string
@@ -72,6 +73,29 @@ function parseKeywords(value: string) {
   return value.split(/[,،\n]/).map((item) => item.trim()).filter(Boolean)
 }
 
+function normalizeTargetLine(value: string) {
+  const raw = value.trim()
+  if (!raw) return null
+  if (raw === 'self') return { id: 'self', kind: 'self' as const }
+  if (raw.endsWith('@g.us')) return { jid: raw, kind: 'group' as const, displayName: 'قروب واتساب' }
+  if (raw.endsWith('@s.whatsapp.net')) return { jid: raw, kind: 'contact' as const }
+  const digits = raw.replace(/\D/g, '')
+  if (digits.length === 8) return { jid: `965${digits}@s.whatsapp.net`, kind: 'contact' as const }
+  if (digits.length >= 10 && digits.length <= 15) return { jid: `${digits}@s.whatsapp.net`, kind: 'contact' as const }
+  return null
+}
+
+function parseTargets(value: string) {
+  const parsed = value.split(/\n|,/).map(normalizeTargetLine).filter(Boolean)
+  const seen = new Set<string>()
+  return parsed.filter((target) => {
+    const key = target?.jid || target?.id || ''
+    if (!key || seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
 export function WhatsAppAgentPanel() {
   const [status, setStatus] = useState<AgentStatus>({ status: 'unconfigured' })
   const [busy, setBusy] = useState(false)
@@ -79,6 +103,11 @@ export function WhatsAppAgentPanel() {
   const [notice, setNotice] = useState('')
   const [campaignName, setCampaignName] = useState('')
   const [campaignText, setCampaignText] = useState('')
+  const [campaignTargetsText, setCampaignTargetsText] = useState('')
+  const [groups, setGroups] = useState<BroadcastGroup[]>([])
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
+  const [intervalSeconds, setIntervalSeconds] = useState(45)
+  const [sendingCampaignId, setSendingCampaignId] = useState('')
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [secret, setSecret] = useState(() => localStorage.getItem('whatsapp-agent-bridge-secret') || '')
   const [manualJid, setManualJid] = useState('')
@@ -87,7 +116,8 @@ export function WhatsAppAgentPanel() {
   const [ruleVersions, setRuleVersions] = useState<Record<string, RuleVersion[]>>({})
   const [simulateText, setSimulateText] = useState('')
   const [simulation, setSimulation] = useState<Simulation | null>(null)
-  const bridgeCandidate = String(import.meta.env.VITE_WHATSAPP_AGENT_BRIDGE_URL || '').replace(/\/+$/, '')
+  const localBridgeDefault = ['http:', '', '127.0.0.1:34321'].join('/')
+  const bridgeCandidate = String(import.meta.env.VITE_WHATSAPP_AGENT_BRIDGE_URL || localBridgeDefault).replace(/\/+$/, '')
   const bridge = /^(https?:\/\/)(127\.0\.0\.1|localhost)(:\d+)?$/i.test(bridgeCandidate) ? bridgeCandidate : ''
 
   const authHeaders = useMemo(() => ({
@@ -112,14 +142,16 @@ export function WhatsAppAgentPanel() {
     if (!secret.trim()) { setNotice('أدخل سر الجسر المحلي أولًا. السر لا يُرفع للموقع؛ يُحفظ في هذا المتصفح فقط.'); return }
     setBusy(true)
     try {
-      const [nextStatus, nextCampaigns, nextRules] = await Promise.all([
+      const [nextStatus, nextCampaigns, nextRules, cachedGroups] = await Promise.all([
         request<AgentStatus>('/status'),
         request<Campaign[]>('/campaigns'),
         request<ReplyRule[]>('/admin/rules'),
+        request<{ groups: BroadcastGroup[] }>('/admin/groups/cached').catch(() => ({ groups: [] })),
       ])
       setStatus(nextStatus)
       setCampaigns(nextCampaigns)
       setRules(nextRules)
+      setGroups(cachedGroups.groups || [])
       setNotice('تحدّثت حالة واتساب.')
     } catch (error) {
       setNotice(error instanceof Error && error.message === 'secret-missing' ? 'أدخل سر الجسر المحلي أولًا.' : 'تعذّر الوصول إلى جسر واتساب المحلي. تأكد أن الماك شغال والجسر متصل والسر صحيح.')
@@ -137,21 +169,70 @@ export function WhatsAppAgentPanel() {
     void refresh()
   }
 
+  const selectedGroupTargets = () => groups
+    .filter((group) => selectedGroupIds.includes(group.id))
+    .map((group) => ({ jid: group.jid, kind: 'group', displayName: group.name }))
+
+  const draftTargets = () => [...selectedGroupTargets(), ...parseTargets(campaignTargetsText)]
+
+  const loadGroups = async () => {
+    setBusy(true)
+    try {
+      const result = await request<{ groups: BroadcastGroup[]; refreshed?: boolean }>('/admin/groups')
+      setGroups(result.groups || [])
+      setNotice(result.refreshed ? 'سحبت القروبات من جلسة واتساب الحالية بدون عرض أرقام الأعضاء.' : 'عرضت القروبات المحفوظة محليًا.')
+    } catch (error) {
+      setNotice(error instanceof Error ? `تعذّر سحب القروبات: ${error.message}` : 'تعذّر سحب القروبات من واتساب.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const previewSelf = async () => {
+    if (!campaignText.trim()) return setNotice('اكتب نص الرسالة أولًا.')
+    try {
+      await request('/admin/send-self-preview', { method: 'POST', body: JSON.stringify({ message: campaignText }) })
+      setNotice('أُرسلت معاينة إلى نفسك. إذا لم تصل، تأكد أن الإرسال المحلي مفعّل وأن واتساب متصل.')
+    } catch (error) {
+      setNotice(error instanceof Error ? `تعذّر إرسال المعاينة: ${error.message}` : 'تعذّر إرسال المعاينة.')
+    }
+  }
+
   const saveDraft = async () => {
     if (!campaignName.trim() || !campaignText.trim()) return setNotice('اكتب اسم المسودة ونصها أولًا.')
+    const targets = draftTargets()
     if (bridge && secret.trim()) {
-      try { await request('/campaigns/draft', { method: 'POST', body: JSON.stringify({ name: campaignName, message: campaignText }) }) } catch { return setNotice('تعذّر حفظ المسودة عبر الوكيل المحلي.') }
+      try { await request('/campaigns/draft', { method: 'POST', body: JSON.stringify({ name: campaignName, message: campaignText, targets, intervalSeconds }) }) } catch (error) { return setNotice(error instanceof Error ? `تعذّر حفظ المسودة: ${error.message}` : 'تعذّر حفظ المسودة عبر الوكيل المحلي.') }
     } else {
-      try { localStorage.setItem('whatsapp-agent-draft', JSON.stringify({ name: campaignName, message: campaignText, savedAt: new Date().toISOString() })) } catch { /* noop */ }
+      try { localStorage.setItem('whatsapp-agent-draft', JSON.stringify({ name: campaignName, message: campaignText, targets: targets.length, savedAt: new Date().toISOString() })) } catch { /* noop */ }
     }
-    setNotice('حُفظت كمسودة فقط؛ لا يوجد إرسال.')
+    setNotice(targets.length ? `حُفظت كمسودة مع ${targets.length} جهة/قروب. لا يوجد إرسال قبل الاعتماد.` : 'حُفظت كمسودة فقط؛ لا يوجد إرسال.')
     setCampaignName('')
     setCampaignText('')
+    setCampaignTargetsText('')
+    setSelectedGroupIds([])
     await refresh()
   }
 
   const approve = async (id: string) => {
     try { await request(`/campaigns/${encodeURIComponent(id)}/approve`, { method: 'POST', body: JSON.stringify({ confirm: true }) }); setNotice('اعتمدت المسودة؛ الإرسال الفعلي يحتاج أمر إرسال منفصل ومقفول افتراضيًا.'); await refresh() } catch { setNotice('تعذّر اعتماد المسودة.') }
+  }
+
+  const sendQuiet = async (campaign: Campaign) => {
+    setSendingCampaignId(campaign.id)
+    try {
+      await request(`/campaigns/${encodeURIComponent(campaign.id)}/send-quiet`, { method: 'POST', body: JSON.stringify({ confirm: true, confirmAgain: true, intervalSeconds }) })
+      setNotice(`بدأ الإرسال الهادئ لمسودة «${campaign.name}». الفاصل ${intervalSeconds} ثانية تقريبًا بين كل جهة.`)
+      setTimeout(() => void refresh(), 1200)
+    } catch (error) {
+      setNotice(error instanceof Error ? `لم يبدأ الإرسال: ${error.message}` : 'لم يبدأ الإرسال الهادئ.')
+    } finally {
+      setSendingCampaignId('')
+    }
+  }
+
+  const stopQuiet = async (id: string) => {
+    try { await request(`/campaigns/${encodeURIComponent(id)}/stop`, { method: 'POST' }); setNotice('أوقفت الحملة الهادئة.'); await refresh() } catch { setNotice('تعذّر إيقاف الحملة.') }
   }
 
   const restartBridge = async () => {
@@ -266,9 +347,60 @@ export function WhatsAppAgentPanel() {
         <div className="mt-4 grid gap-2 sm:grid-cols-5">{phases.map(([number, label, active]) => <div key={number} className={`rounded-xl border p-3 ${active ? 'border-accent/40 bg-canvas' : 'border-hair bg-canvas/60'}`}><p className="text-[.72rem] font-semibold text-accent">{number}</p><p className="mt-1 text-[.78rem] leading-relaxed text-ink">{label}</p><p className="mt-2 text-[.68rem] text-soft">{active ? 'متاح' : 'مغلق'}</p></div>)}</div>
       </section>
 
-      <details className={`${card} group`}>
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block font-display text-xl font-semibold text-ink">مسودة رسالة</span><span className="mt-1 block text-[.8rem] text-soft">أنشئها وراجعها هنا؛ لا تُرسل من هذه الشاشة.</span></span><span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span></summary>
-        <div className="mt-5 grid gap-3 border-t border-hair pt-5"><input className={input} placeholder="اسم المسودة" value={campaignName} onChange={(event) => setCampaignName(event.target.value)} /><textarea className={`${input} min-h-32 resize-y`} placeholder="نص الرسالة أو الحملة" value={campaignText} onChange={(event) => setCampaignText(event.target.value)} /><div className="flex flex-wrap items-center justify-between gap-3"><p className="text-[.76rem] text-soft">الحفظ مسودة فقط؛ لا إرسال حملات ولا Spam.</p><button type="button" onClick={() => void saveDraft()} className={secondary}>حفظ مسودة</button></div></div>
+      <details className={`${card} group`} open>
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block font-display text-xl font-semibold text-ink">غرفة البرودكاست الهادئ</span><span className="mt-1 block text-[.8rem] text-soft">اكتب، عاين، اختر القروب، ثم احفظ مسودة. الإرسال الحقيقي يحتاج اعتمادًا وفاصلًا زمنيًا.</span></span><span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span></summary>
+        <div className="mt-5 grid gap-4 border-t border-hair pt-5">
+          <div className="grid gap-3 lg:grid-cols-[1fr_12rem]">
+            <input className={input} placeholder="اسم البرودكاست الهادئ" value={campaignName} onChange={(event) => setCampaignName(event.target.value)} />
+            <label className="grid gap-1 text-[.72rem] text-soft">
+              الفاصل بين الرسائل
+              <select className={input} value={intervalSeconds} onChange={(event) => setIntervalSeconds(Number(event.target.value))}>
+                <option value={20}>20 ثانية</option>
+                <option value={45}>45 ثانية</option>
+                <option value={90}>90 ثانية</option>
+                <option value={180}>3 دقائق</option>
+              </select>
+            </label>
+          </div>
+          <textarea className={`${input} min-h-32 resize-y`} placeholder="نص الرسالة — راجعه كأنه سينشر باسمك" value={campaignText} onChange={(event) => setCampaignText(event.target.value)} />
+          <div className="grid gap-3 lg:grid-cols-[1fr_1fr]">
+            <div className="rounded-xl border border-hair bg-canvas p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div><p className="font-semibold text-ink">القروبات من واتساب</p><p className="mt-1 text-[.73rem] text-soft">لا أعرض أرقام الأعضاء ولا أخزنها؛ فقط اسم القروب وعدده.</p></div>
+                <button type="button" onClick={() => void loadGroups()} disabled={busy || !status.bridgeOnline} className={secondary}>سحب القروبات</button>
+              </div>
+              <div className="mt-3 grid gap-2">
+                {groups.length ? groups.map((group) => {
+                  const active = selectedGroupIds.includes(group.id)
+                  return (
+                    <button
+                      key={group.id}
+                      type="button"
+                      onClick={() => setSelectedGroupIds((current) => active ? current.filter((id) => id !== group.id) : [...current, group.id])}
+                      className={`rounded-xl border px-4 py-3 text-right text-[.82rem] transition-colors ${active ? 'border-accent bg-accent text-white' : 'border-hair bg-wash text-ink hover:border-accent'}`}
+                    >
+                      <span className="block font-semibold">{group.name}</span>
+                      <span className={`mt-1 block text-[.7rem] ${active ? 'text-white/75' : 'text-soft'}`}>{group.memberCount ? `${group.memberCount} عضو تقريبًا` : 'عدد الأعضاء غير متاح'}</span>
+                    </button>
+                  )
+                }) : <p className="rounded-xl border border-hair bg-wash px-4 py-3 text-[.8rem] text-soft">لم تُسحب القروبات بعد. شغّل الجسر واتصل بواتساب ثم اضغط «سحب القروبات».</p>}
+              </div>
+            </div>
+            <div className="rounded-xl border border-hair bg-canvas p-4">
+              <p className="font-semibold text-ink">أرقام أو جهات اختيارية</p>
+              <p className="mt-1 text-[.73rem] text-soft">كل سطر رقم كويتي 8 خانات أو JID. لا تُحفظ الأرقام الخام داخل Git.</p>
+              <textarea dir="ltr" className={`${input} mt-3 min-h-32 resize-y`} placeholder={'97424400\n965XXXXXXXX@s.whatsapp.net'} value={campaignTargetsText} onChange={(event) => setCampaignTargetsText(event.target.value)} />
+              <p className="mt-2 text-[.72rem] text-soft">الجهات الجاهزة الآن: {draftTargets().length}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="max-w-xl text-[.76rem] leading-relaxed text-soft">هذه ليست أداة إزعاج: أرسل فقط لمن وافق أو لمن بينك وبينه سياق واضح. الردود الآلية على رقمك الخاص تبقى مقفلة إلا عند سؤال صريح أو جلسة محتوى.</p>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => void previewSelf()} disabled={!status.bridgeOnline || !flags.send} className={secondary}>معاينة على نفسي</button>
+              <button type="button" onClick={() => void saveDraft()} className={primary}>حفظ مسودة هادئة</button>
+            </div>
+          </div>
+        </div>
       </details>
 
       <section className={card}>
@@ -306,9 +438,9 @@ export function WhatsAppAgentPanel() {
         </div>
       </section>
 
-      {bridge && <section className={card}><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.75rem] font-semibold uppercase text-accent">الحملات المحلية</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">مسوداتك، ثم موافقتك.</h3></div><p className="text-[.78rem] text-soft">لا يظهر هنا أي رقم أو جلسة.</p></div><div className="mt-4 grid gap-2">{campaigns.length ? campaigns.map((campaign) => <div key={campaign.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hair bg-canvas px-4 py-3"><div><p className="font-semibold text-ink">{campaign.name}</p><p className="mt-1 text-[.72rem] text-soft">{campaign.state === 'draft' ? 'مسودة' : campaign.state === 'approved' ? 'معتمدة — غير مرسلة' : campaign.state}</p></div>{campaign.state === 'draft' && <button type="button" onClick={() => void approve(campaign.id)} className={secondary}>اعتماد للمراجعة</button>}</div>) : <p className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">لا توجد مسودات محلية بعد.</p>}</div></section>}
+      {bridge && <section className={card}><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.75rem] font-semibold uppercase text-accent">الحملات المحلية</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">مسوداتك، اعتمادك، ثم إرسال هادئ.</h3></div><p className="text-[.78rem] text-soft">لا يظهر هنا أي رقم أو جلسة.</p></div><div className="mt-4 grid gap-2">{campaigns.length ? campaigns.map((campaign) => <div key={campaign.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hair bg-canvas px-4 py-3"><div><p className="font-semibold text-ink">{campaign.name}</p><p className="mt-1 text-[.72rem] text-soft">{campaign.state === 'draft' ? 'مسودة' : campaign.state === 'approved' ? 'معتمدة — غير مرسلة' : campaign.state === 'sending' || campaign.state === 'queued' ? 'قيد الإرسال الهادئ' : campaign.state} · {campaign.target_count || 0} جهة/قروب</p></div><div className="flex flex-wrap gap-2">{campaign.state === 'draft' && <button type="button" onClick={() => void approve(campaign.id)} className={secondary}>اعتماد للمراجعة</button>}{campaign.state === 'approved' && <button type="button" onClick={() => void sendQuiet(campaign)} disabled={sendingCampaignId === campaign.id || !flags.send || !status.bridgeOnline} className={primary}>{sendingCampaignId === campaign.id ? 'يبدأ…' : 'إرسال هادئ'}</button>}{['queued', 'sending'].includes(campaign.state) && <button type="button" onClick={() => void stopQuiet(campaign.id)} className={secondary}>إيقاف</button>}</div></div>) : <p className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">لا توجد مسودات محلية بعد.</p>}</div></section>}
 
-      <section className="rounded-2xl border border-hair bg-canvas p-5 md:p-6"><p className="text-[.75rem] font-semibold uppercase text-accent">التشغيل المحلي</p><p className="mt-2 text-[.84rem] leading-relaxed text-soft">شغّل <code dir="ltr" className="rounded bg-wash px-1.5 py-0.5 text-[.75rem] text-ink">npm run agent:self-test</code> ثم <code dir="ltr" className="rounded bg-wash px-1.5 py-0.5 text-[.75rem] text-ink">npm run agent:start</code>. لمعرفة السر المحلي استخدم <code dir="ltr" className="rounded bg-wash px-1.5 py-0.5 text-[.75rem] text-ink">npm run agent:bridge-secret</code>. لا تضع السر أو جلسة واتساب في GitHub.</p></section>
+      <section className="rounded-2xl border border-hair bg-canvas p-5 md:p-6"><p className="text-[.75rem] font-semibold uppercase text-accent">التشغيل المحلي</p><p className="mt-2 text-[.84rem] leading-relaxed text-soft">شغّل <code dir="ltr" className="rounded bg-wash px-1.5 py-0.5 text-[.75rem] text-ink">npm run agent:self-test</code> ثم أول مرة <code dir="ltr" className="rounded bg-wash px-1.5 py-0.5 text-[.75rem] text-ink">WHATSAPP_AGENT_BRIDGE=true npm run agent:start -- --phone=96597424400</code>. لمعرفة السر المحلي استخدم <code dir="ltr" className="rounded bg-wash px-1.5 py-0.5 text-[.75rem] text-ink">npm run agent:bridge-secret</code>. لا تضع السر أو جلسة واتساب في GitHub.</p></section>
     </div>
   )
 }

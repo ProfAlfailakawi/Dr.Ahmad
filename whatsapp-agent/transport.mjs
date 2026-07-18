@@ -13,6 +13,7 @@ export class MockTransport extends EventEmitter {
   async sendMedia(jid, media) { this.sent.push({ jid, media }); return { id: `mock-media-${this.sent.length}` } }
   async sendSelf(text) { return this.sendText('self@s.whatsapp.net', text) }
   async syncContacts() { return { count: 0 } }
+  async discoverGroups() { return [{ jid: '120363000000000000@g.us', name: 'مجموعة اختبار محلية', memberCount: 3, membersReadable: false }] }
   async discoverBroadcastLists() { return { supported: false, reason: 'mock transport' } }
   async getBroadcastRecipients() { return [] }
   markManualTakeover() {}
@@ -124,6 +125,17 @@ export async function createWhatsAppTransport({ db, onMessage, onQr, onPairingCo
     },
     async sendMedia(jid, media) { if (!socket || status !== 'connected') throw new Error('واتساب غير متصل'); return socket.sendMessage(jid, media) },
     async syncContacts() { return { count: 0, supported: false, reason: 'لا تُحفظ جهات الاتصال إلا عند طلب المزامنة.' } },
+    async discoverGroups() {
+      if (!socket || status !== 'connected') throw new Error('واتساب غير متصل')
+      if (typeof socket.groupFetchAllParticipating !== 'function') return []
+      const groups = await socket.groupFetchAllParticipating()
+      return Object.entries(groups || {}).map(([jid, info]) => ({
+        jid,
+        name: String(info?.subject || 'مجموعة واتساب').trim(),
+        memberCount: Array.isArray(info?.participants) ? info.participants.length : Number(info?.size || 0),
+        membersReadable: false,
+      })).filter((group) => group.jid.endsWith('@g.us'))
+    },
     async discoverBroadcastLists() { return { supported: false, reason: 'لا يقدّم Baileys واجهة مستقرة لقراءة أعضاء Broadcast دون History Sync؛ لم يتم تعديل أي قائمة.' } },
     async getBroadcastRecipients() { return [] },
     markManualTakeover(jid) { events.emit('manual-takeover', jid) },

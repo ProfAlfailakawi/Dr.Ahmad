@@ -36,14 +36,16 @@ function route(method, pathname, pattern) {
 }
 
 export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
-  const allowedOrigin = process.env.WHATSAPP_AGENT_ALLOWED_ORIGIN || ''
+  const configuredOrigins = String(process.env.WHATSAPP_AGENT_ALLOWED_ORIGIN || '').split(',').map((item) => item.trim()).filter(Boolean)
+  const allowedOrigins = new Set(configuredOrigins.length ? configuredOrigins : ['http://127.0.0.1:5173', 'http://localhost:5173', 'https://dr-alfailakawi.com', 'https://www.dr-alfailakawi.com'])
   const secret = agent.bridgeSecret()
   const handler = async (req, res) => {
     const origin = req.headers.origin || ''
-    if (allowedOrigin && origin !== allowedOrigin) { res.writeHead(403); res.end('forbidden'); return }
-    if (origin && allowedOrigin) res.setHeader('Access-Control-Allow-Origin', allowedOrigin)
+    if (origin && !allowedOrigins.has(origin)) { res.writeHead(403); res.end('forbidden'); return }
+    if (origin && allowedOrigins.has(origin)) res.setHeader('Access-Control-Allow-Origin', origin)
     res.setHeader('Cache-Control', 'no-store')
     res.setHeader('Vary', 'Origin')
+    res.setHeader('Access-Control-Allow-Private-Network', 'true')
     if (req.method === 'OPTIONS') {
       res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-WhatsApp-Agent-Secret')
@@ -56,6 +58,13 @@ export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
       if (req.method === 'GET' && url.pathname === '/health') { writeJson(res, 200, { ok: true, status: agent.status() }); return }
       if (req.method === 'GET' && url.pathname === '/status') { writeJson(res, 200, agent.status()); return }
       if (req.method === 'GET' && url.pathname === '/campaigns') { writeJson(res, 200, agent.listCampaigns()); return }
+      if (req.method === 'GET' && url.pathname === '/admin/groups') { writeJson(res, 200, await agent.discoverGroups()); return }
+      if (req.method === 'GET' && url.pathname === '/admin/groups/cached') { writeJson(res, 200, { groups: agent.listBroadcastGroups(), refreshed: false }); return }
+      if (req.method === 'POST' && url.pathname === '/admin/send-self-preview') {
+        const body = await readJson(req)
+        writeJson(res, 200, await agent.sendSelf(body.message || body.text || ''))
+        return
+      }
       if (req.method === 'POST' && url.pathname === '/campaigns/draft') {
         const id = agent.queueCampaign(await readJson(req))
         writeJson(res, 200, { id, state: 'draft' })
@@ -66,6 +75,17 @@ export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
         const body = await readJson(req)
         const id = agent.approveCampaign(decodeURIComponent(approval.id), { confirm: body.confirm === true })
         writeJson(res, 200, { id, state: 'approved' })
+        return
+      }
+      const quietSend = route(req.method, url.pathname, { method: 'POST', regex: /^\/campaigns\/(?<id>[^/]+)\/send-quiet$/ })
+      if (quietSend) {
+        const body = await readJson(req)
+        writeJson(res, 202, agent.sendQuietCampaign(decodeURIComponent(quietSend.id), { confirm: body.confirm === true, confirmAgain: body.confirmAgain === true, intervalSeconds: body.intervalSeconds }))
+        return
+      }
+      const stopCampaign = route(req.method, url.pathname, { method: 'POST', regex: /^\/campaigns\/(?<id>[^/]+)\/stop$/ })
+      if (stopCampaign) {
+        writeJson(res, 200, { id: agent.stopCampaign(decodeURIComponent(stopCampaign.id)), state: 'stopped' })
         return
       }
       if (req.method === 'POST' && url.pathname === '/admin/restart') {

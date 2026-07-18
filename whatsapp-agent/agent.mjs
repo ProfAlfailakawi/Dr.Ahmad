@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { BRIDGE_PORT, BRIDGE_SECRET_MIN_LENGTH, HEARTBEAT_INTERVAL_MS, HEARTBEAT_STALE_MS, MANUAL_TAKEOVER_MINUTES, MAX_CAMPAIGN_TARGETS, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, projectRoot, redactError, redactJid } from './config.mjs'
+import { BRIDGE_PORT, BRIDGE_SECRET_MIN_LENGTH, BROADCAST_DEFAULT_INTERVAL_SECONDS, BROADCAST_MIN_INTERVAL_SECONDS, HEARTBEAT_INTERVAL_MS, HEARTBEAT_STALE_MS, MANUAL_TAKEOVER_MINUTES, MAX_CAMPAIGN_TARGETS, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, projectRoot, redactError, redactJid } from './config.mjs'
 import { openDatabase } from './db.mjs'
 import { syncContentIndex } from './content-index.mjs'
 import { handleIncoming, handleIntent, markManualTakeover, setSuppression } from './intent-engine.mjs'
@@ -10,10 +10,21 @@ import { createReminder } from './reminders.mjs'
 import { startLocalBridge } from './bridge.mjs'
 
 function safeText(text) { return String(text || '').slice(0, MAX_MESSAGE_CHARS).trim() }
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export function createAgent({ db = openDatabase(), transport, root = projectRoot, mock = false } = {}) {
-  const state = { db, transport: transport || null, root, timers: new Set(), started: false, bridge: null }
+  const state = { db, transport: transport || null, root, timers: new Set(), started: false, bridge: null, activeCampaigns: new Set() }
   const index = () => syncContentIndex(db, root, SITE_URL)
+  const decryptJidSafe = (value) => {
+    try { return value ? db.decryptJid(value) : '' } catch { return String(value || '') }
+  }
+  const campaignInterval = (seconds) => Math.max(BROADCAST_MIN_INTERVAL_SECONDS, Number(seconds || BROADCAST_DEFAULT_INTERVAL_SECONDS))
+  const resolveCampaignTarget = (target) => {
+    if (target.kind === 'self' || target.target_id === 'self') return 'self@s.whatsapp.net'
+    if (target.encrypted_jid) return decryptJidSafe(target.encrypted_jid)
+    return ''
+  }
+  const campaignTargets = (id) => db.all('SELECT ct.*, c.jid AS encrypted_jid, c.suppressed AS contact_suppressed FROM campaign_targets ct LEFT JOIN contacts c ON c.id=ct.target_id WHERE ct.campaign_id=? ORDER BY ct.target_id', id)
   const heartbeat = () => db.setSetting('bridge.heartbeat', { at: new Date().toISOString(), pid: process.pid })
   const bridgeSecret = () => {
     const configured = String(process.env.WHATSAPP_AGENT_BRIDGE_SECRET || '').trim()
@@ -81,11 +92,12 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     for (const target of targets) {
       const jid = target?.jid || (typeof target === 'string' && target.includes('@') ? target : null)
       const targetId = String(target?.id || (jid ? db.jidKey(jid) : target))
+      const targetKind = ['self', 'contact', 'group'].includes(target?.kind) ? target.kind : (jid?.endsWith('@g.us') ? 'group' : (jid ? 'contact' : 'self'))
       if (jid) {
         const created = now
         db.run('INSERT INTO contacts(id,jid,display_name,phone,suppressed,created_at,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET updated_at=excluded.updated_at', targetId, db.encryptJid(jid), target?.displayName ? db.encryptText(target.displayName) : null, target?.phone ? db.encryptText(target.phone) : null, target?.suppressed ? 1 : 0, created, created)
       }
-      db.run('INSERT OR IGNORE INTO campaign_targets(campaign_id,target_id,kind,suppressed) VALUES(?,?,?,?)', id, targetId, target.kind || (jid ? 'contact' : 'self'), target.suppressed ? 1 : 0)
+      db.run('INSERT OR IGNORE INTO campaign_targets(campaign_id,target_id,kind,suppressed) VALUES(?,?,?,?)', id, targetId, targetKind, target.suppressed ? 1 : 0)
     }
     db.addAudit('campaign-draft', id, `targets=${targets.length}`)
     return id
@@ -101,7 +113,41 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     db.addAudit('campaign-stopped', id)
     return id
   }
-  const listCampaigns = () => db.all('SELECT id,name,state,created_at,approved_at,scheduled_at,updated_at FROM campaigns ORDER BY created_at DESC LIMIT 50')
+  const listCampaigns = () => db.all(`SELECT c.id,c.name,c.state,c.created_at,c.approved_at,c.scheduled_at,c.updated_at,
+    (SELECT COUNT(*) FROM campaign_targets ct WHERE ct.campaign_id=c.id) AS target_count
+    FROM campaigns c ORDER BY c.created_at DESC LIMIT 50`)
+  const listBroadcastGroups = () => db.all('SELECT id,name,jid,member_count,members_readable,discovered_at FROM broadcast_lists ORDER BY name COLLATE NOCASE').map((row) => ({
+    id: row.id,
+    name: row.name || 'مجموعة واتساب',
+    jid: decryptJidSafe(row.jid),
+    memberCount: Number(row.member_count || 0),
+    membersReadable: Boolean(row.members_readable),
+    discoveredAt: row.discovered_at,
+  }))
+  const discoverGroups = async () => {
+    if (!state.transport) throw new Error('الوكيل غير مشغّل')
+    if (state.transport.getConnectionStatus?.() !== 'connected') throw new Error('اربط واتساب أولًا حتى أستطيع قراءة القروبات من الجلسة المحلية.')
+    if (typeof state.transport.discoverGroups !== 'function') return { groups: listBroadcastGroups(), refreshed: false, reason: 'transport-does-not-support-groups' }
+    const groups = await state.transport.discoverGroups()
+    const now = new Date().toISOString()
+    for (const group of groups || []) {
+      if (!group?.jid || !String(group.jid).endsWith('@g.us')) continue
+      const id = db.jidKey(group.jid)
+      db.run(
+        `INSERT INTO broadcast_lists(id,name,jid,member_count,members_readable,discovered_at)
+         VALUES(?,?,?,?,?,?)
+         ON CONFLICT(id) DO UPDATE SET name=excluded.name,jid=excluded.jid,member_count=excluded.member_count,members_readable=excluded.members_readable,discovered_at=excluded.discovered_at`,
+        id,
+        String(group.name || 'مجموعة واتساب').slice(0, 120),
+        db.encryptJid(group.jid),
+        Number(group.memberCount || 0),
+        group.membersReadable ? 1 : 0,
+        now,
+      )
+    }
+    db.addAudit('groups-discovered', 'local', `count=${groups?.length || 0}`)
+    return { groups: listBroadcastGroups(), refreshed: true }
+  }
   const manualTakeover = (jid, minutes = MANUAL_TAKEOVER_MINUTES) => {
     markManualTakeover(db, jid, minutes)
     db.addAudit('manual-takeover', db.jidKey(jid), `minutes=${minutes}`)
@@ -210,16 +256,14 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     if (!state.transport || state.transport.getConnectionStatus?.() !== 'connected') throw new Error('اربط واتساب أولًا وتأكد أن الحالة متصل.')
     const campaign = db.get('SELECT * FROM campaigns WHERE id=?', id); if (!campaign) throw new Error('الحملة غير موجودة')
     if (campaign.state !== 'approved' && campaign.state !== 'queued') throw new Error('الحملة يجب أن تكون معتمدة قبل الإرسال.')
-    const targets = db.all('SELECT ct.*, c.jid AS encrypted_jid, c.suppressed AS contact_suppressed FROM campaign_targets ct LEFT JOIN contacts c ON c.id=ct.target_id WHERE ct.campaign_id=? ORDER BY ct.target_id', id)
+    const targets = campaignTargets(id)
     if (!targets.length) throw new Error('لا توجد جهات معروفة في الحملة.')
     const now = new Date().toISOString(); let sent = 0; let skipped = 0; let failed = 0
     db.run("UPDATE campaigns SET state='sending',updated_at=? WHERE id=?", now, id)
     for (const target of targets) {
       if (target.suppressed || target.contact_suppressed) { skipped++; continue }
-      let jid = null
-      if (target.kind === 'self' || target.target_id === 'self') jid = 'self@s.whatsapp.net'
-      else if (target.encrypted_jid) jid = db.decryptJid(target.encrypted_jid)
-      else { skipped++; db.addAudit('campaign-target-skipped', id, 'unknown-target'); continue }
+      const jid = resolveCampaignTarget(target)
+      if (!jid) { skipped++; db.addAudit('campaign-target-skipped', id, 'unknown-target'); continue }
       const jobId = randomToken(10); const created = new Date().toISOString()
       db.run('INSERT INTO message_jobs(id,campaign_id,jid,body,state,attempts,available_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)', jobId, id, db.encryptJid(jid), campaign.message, 'sending', 1, created, created, created)
       try {
@@ -237,6 +281,62 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     db.addAudit('campaign-sent', id, `sent=${sent};skipped=${skipped};failed=${failed}`)
     return { id, state: stateName, sent, skipped, failed }
   }
+  const runQuietCampaign = async (id, { intervalSeconds }) => {
+    const intervalMs = campaignInterval(intervalSeconds) * 1000
+    const campaign = db.get('SELECT * FROM campaigns WHERE id=?', id)
+    if (!campaign) throw new Error('الحملة غير موجودة')
+    const targets = campaignTargets(id)
+    let sent = 0; let skipped = 0; let failed = 0
+    db.run("UPDATE campaigns SET state='sending',updated_at=? WHERE id=?", new Date().toISOString(), id)
+    try {
+      for (const [index, target] of targets.entries()) {
+        const current = db.get('SELECT state FROM campaigns WHERE id=?', id)
+        if (current?.state === 'stopped') { db.addAudit('quiet-broadcast-stopped', id, `sent=${sent}`); break }
+        if (target.suppressed || target.contact_suppressed) { skipped++; continue }
+        const jid = resolveCampaignTarget(target)
+        if (!jid) { skipped++; db.addAudit('quiet-broadcast-target-skipped', id, 'unknown-target'); continue }
+        const jobId = randomToken(10)
+        const created = new Date().toISOString()
+        db.run('INSERT INTO message_jobs(id,campaign_id,jid,body,state,attempts,available_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)', jobId, id, db.encryptJid(jid), campaign.message, 'sending', 1, created, created, created)
+        try {
+          await state.transport.sendText(jid, campaign.message)
+          db.run('UPDATE message_jobs SET state=?,updated_at=? WHERE id=?', 'sent', new Date().toISOString(), jobId)
+          db.run('INSERT INTO message_attempts(job_id,state,error,attempted_at) VALUES(?,?,?,?)', jobId, 'sent', null, new Date().toISOString())
+          sent++
+        } catch (error) {
+          db.run('UPDATE message_jobs SET state=?,updated_at=? WHERE id=?', 'failed', new Date().toISOString(), jobId)
+          db.run('INSERT INTO message_attempts(job_id,state,error,attempted_at) VALUES(?,?,?,?)', jobId, 'failed', redactError(error), new Date().toISOString())
+          failed++
+          db.addAudit('quiet-broadcast-send-failed', id, redactError(error))
+        }
+        if (index < targets.length - 1) await sleep(intervalMs)
+      }
+      const current = db.get('SELECT state FROM campaigns WHERE id=?', id)
+      const stateName = current?.state === 'stopped' ? 'stopped' : (failed || skipped ? (sent ? 'partial' : 'stopped') : 'completed')
+      db.run('UPDATE campaigns SET state=?,updated_at=? WHERE id=?', stateName, new Date().toISOString(), id)
+      db.addAudit('quiet-broadcast-finished', id, `sent=${sent};skipped=${skipped};failed=${failed};interval=${intervalMs}`)
+    } finally {
+      state.activeCampaigns.delete(id)
+    }
+  }
+  const sendQuietCampaign = (id, { confirm = false, confirmAgain = false, intervalSeconds = BROADCAST_DEFAULT_INTERVAL_SECONDS } = {}) => {
+    if (!confirm || !confirmAgain) throw new Error('الإرسال الهادئ يحتاج تأكيدين صريحين.')
+    if (!flags.send) throw new Error('الإرسال معطّل افتراضيًا. فعّل WHATSAPP_SEND_ENABLED محليًا بعد الاختبار.')
+    if (!state.transport || state.transport.getConnectionStatus?.() !== 'connected') throw new Error('اربط واتساب أولًا وتأكد أن الحالة متصل.')
+    const campaign = db.get('SELECT * FROM campaigns WHERE id=?', id); if (!campaign) throw new Error('الحملة غير موجودة')
+    if (!['approved', 'queued'].includes(campaign.state)) throw new Error('الحملة يجب أن تكون معتمدة قبل الإرسال.')
+    const targets = campaignTargets(id)
+    if (!targets.length) throw new Error('لا توجد جهات أو قروبات في الحملة.')
+    if (state.activeCampaigns.has(id)) return { id, state: 'sending', alreadyRunning: true }
+    state.activeCampaigns.add(id)
+    db.run("UPDATE campaigns SET state='queued',updated_at=? WHERE id=?", new Date().toISOString(), id)
+    void runQuietCampaign(id, { intervalSeconds }).catch((error) => {
+      state.activeCampaigns.delete(id)
+      db.run("UPDATE campaigns SET state='stopped',updated_at=? WHERE id=?", new Date().toISOString(), id)
+      db.addAudit('quiet-broadcast-crashed', id, redactError(error))
+    })
+    return { id, state: 'queued', intervalSeconds: campaignInterval(intervalSeconds), targets: targets.length }
+  }
   const createLocalReminder = ({ jid, contentId = null, originalText, dueAt }) => createReminder(db, { jid, contentId, originalText, dueAt })
   const status = () => {
     const heartbeatState = db.getSetting('bridge.heartbeat', null)
@@ -246,7 +346,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     return { ...db.state(), flags, indexed: Number(db.get('SELECT COUNT(*) AS count FROM content_items')?.count || 0), bridge: Boolean(state.bridge), bridgeOnline, lastHeartbeatAt, heartbeatAgeMs, restartRequestedAt: db.getSetting('bridge.restartRequestedAt', null), port: BRIDGE_PORT, timeZone: TIME_ZONE }
   }
   const setBridge = (server) => { state.bridge = server; return status() }
-  return { db, state, index, start, stop, status, sendSelf, queueCampaign, approveCampaign, sendCampaign, stopCampaign, listCampaigns, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, requestRestart }
+  return { db, state, index, start, stop, status, sendSelf, queueCampaign, approveCampaign, sendCampaign, sendQuietCampaign, stopCampaign, listCampaigns, listBroadcastGroups, discoverGroups, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, requestRestart }
 }
 
 async function dispatchDueReminders(state) {

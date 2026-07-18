@@ -58,8 +58,8 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
                 <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} />
               </p>
               {strongest && (
-                <p className="reader-popular-note" aria-label={`حُفظت ${strongest.count.toLocaleString('en-US')} مرة`}>
-                  {`حُفظت ${strongest.count.toLocaleString('en-US')} مرة`}
+                <p className="reader-popular-note" aria-label={`حُفظت ${strongest.count.toLocaleString('ar-KW')} مرة`}>
+                  {`حُفظت ${strongest.count.toLocaleString('ar-KW')} مرة`}
                 </p>
               )}
             </div>

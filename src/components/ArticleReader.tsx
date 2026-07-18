@@ -217,8 +217,8 @@ function targetScrollForProgress(progress: number) {
 function arabicReadTime(minutes: number) {
   if (minutes <= 1) return 'دقيقة واحدة للقراءة'
   if (minutes === 2) return 'دقيقتان للقراءة'
-  if (minutes <= 10) return `${minutes.toLocaleString('en-US')} دقائق للقراءة`
-  return `${minutes.toLocaleString('en-US')} دقيقة للقراءة`
+  if (minutes <= 10) return `${minutes.toLocaleString('ar-KW')} دقائق للقراءة`
+  return `${minutes.toLocaleString('ar-KW')} دقيقة للقراءة`
 }
 
 function copyText(text: string) {
@@ -345,7 +345,7 @@ export function ReadingTimeLabel({ slug, text }: { slug: string; text?: string }
   if (!text) return null
   if (progress < .055) return <span className="text-soft">{arabicReadTime(totalMinutes)}</span>
   const remaining = Math.max(0, Math.ceil(totalMinutes * (1 - progress)))
-  return <span className="text-soft">{remaining <= 1 ? 'بقي أقل من دقيقة' : `بقي ${remaining.toLocaleString('en-US')} دقائق`}</span>
+  return <span className="text-soft">{remaining <= 1 ? 'بقي أقل من دقيقة' : `بقي ${remaining.toLocaleString('ar-KW')} دقائق`}</span>
 }
 
 function SettingChoice<T extends string | number>({ value, current, label, onClick }: { value: T; current: T; label: string; onClick: () => void }) {
@@ -548,7 +548,7 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
 
               <div className="mt-4 flex gap-2" role="tablist" aria-label="أقسام القارئ">
                 <button type="button" role="tab" aria-selected={tab === 'settings'} onClick={() => setTab('settings')} className={`rounded-full px-4 py-2 text-[.76rem] font-semibold ${tab === 'settings' ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>القراءة</button>
-                <button type="button" role="tab" aria-selected={tab === 'quotes'} onClick={() => setTab('quotes')} className={`rounded-full px-4 py-2 text-[.76rem] font-semibold ${tab === 'quotes' ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>اقتباساتي{quotes.length ? ` · ${quotes.length.toLocaleString('en-US')}` : ''}</button>
+                <button type="button" role="tab" aria-selected={tab === 'quotes'} onClick={() => setTab('quotes')} className={`rounded-full px-4 py-2 text-[.76rem] font-semibold ${tab === 'quotes' ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>اقتباساتي{quotes.length ? ` · ${quotes.length.toLocaleString('ar-KW')}` : ''}</button>
               </div>
 
               {tab === 'settings' ? (
@@ -801,7 +801,7 @@ export function ReaderParagraphText({ text, popularQuotes = [] }: { text: string
 
 function PopularHighlightMark({ children, count }: { children: ReactNode; count: number }) {
   const [open, setOpen] = useState(false)
-  const label = `حُفظت ${count.toLocaleString('en-US')} مرة`
+  const label = `حُفظت ${count.toLocaleString('ar-KW')} مرة`
   const toggle = () => setOpen((current) => !current)
   return (
     <span className="relative inline">
@@ -1304,7 +1304,7 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
                           <span className="absolute right-0 top-[.42em] h-3 w-3 rounded-full border-2 border-accent bg-canvas" />
                           <span className="text-[.7rem] font-semibold text-accent">{article.iso.slice(0, 4)}</span>
                           <Link to={`/articles/${article.slug}`} onClick={closeSheet} className="mt-1 block font-display text-[.98rem] font-medium leading-[1.65] text-ink transition-colors hover:text-accent">{article.title}</Link>
-                          <span className="mt-1 block text-[.7rem] text-soft">{article.cat}{overlap ? ` · ${overlap.toLocaleString('en-US')} صلة مشتركة` : ''}</span>
+                          <span className="mt-1 block text-[.7rem] text-soft">{article.cat}{overlap ? ` · ${overlap.toLocaleString('ar-KW')} صلة مشتركة` : ''}</span>
                         </li>
                       ))}
                     </ol>

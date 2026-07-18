@@ -214,7 +214,7 @@ export function ReaderFingerprint() {
     )
   }
 
-  const ar = (n: number) => n.toLocaleString('en-US')
+  const ar = (n: number) => n.toLocaleString('ar-KW')
   return (
     <section aria-label="بصمة القارئ" className="overflow-hidden rounded-[2rem] border border-hair bg-wash/50 px-6 py-9 md:px-10">
       <div className="flex flex-col items-center gap-7 md:flex-row md:items-center md:gap-10">

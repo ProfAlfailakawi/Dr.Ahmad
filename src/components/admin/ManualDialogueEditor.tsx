@@ -224,6 +224,16 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
   const focusedSlug = typeof window !== 'undefined' ? localStorage.getItem('podcast:focus-slug') || '' : ''
   const initialSlug = sortedArticles.some((item) => item.slug === focusedSlug) ? focusedSlug : sortedArticles[0]?.slug || ''
   const [slug, setSlug] = useState(initialSlug)
+
+  /* «فتح المسودة» كان يفتح على مقالٍ آخر: المقالات تصل بعد أول رسم، فيُحسب المقال
+     المطلوب على قائمة فارغة ويسقط الاختيار إلى الأول. نلتقط الطلب حين تصل القائمة. */
+  useEffect(() => {
+    if (!sortedArticles.length) return
+    let requested = ''
+    try { requested = localStorage.getItem('podcast:focus-slug') || '' } catch { /* noop */ }
+    if (requested && requested !== slug && sortedArticles.some((item) => item.slug === requested)) setSlug(requested)
+    else if (!slug) setSlug(sortedArticles[0].slug)
+  }, [sortedArticles, slug])
   const [turns, setTurns] = useState<DialogueTurn[]>(() => [blankTurn('male')])
   const [availableDraft, setAvailableDraft] = useState<DialogueTurn[] | null>(() => storedDialogue(initialSlug))
   const [notice, setNotice] = useState('')
@@ -260,11 +270,13 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
     } catch { /* noop */ }
     let active = true
     const local = storedDialogue(slug)
-    setTurns([blankTurn('male')])
+    /* «فتح المسودة» يفتحها فعلاً: كان يبدأ بمداخلة فارغة ويكتفي بزر استعادة،
+       فيظن الدكتور أن ما كتبه ضاع. المحفوظة تُحمَّل مباشرة عند وجودها. */
+    setTurns(local && local.length ? local : [blankTurn('male')])
     setAvailableDraft(local)
     setDirty(false)
     setNotice(local
-      ? `بدأ الوضع اليدوي بمداخلة واحدة. توجد مسودة محفوظة (${local.length} مداخلة) ويمكن استعادتها عند الحاجة.`
+      ? `فُتحت المسودة المحفوظة (${local.length} مداخلة).`
       : 'مداخلة واحدة جاهزة؛ أضف غيرها فقط عند الحاجة.')
     setArticleBody('')
     loadArticleBodies().then((bodies) => { if (active) setArticleBody(article?.body || bodies[slug] || article?.excerpt || '') }).catch(() => { if (active) setArticleBody(article?.body || article?.excerpt || '') })

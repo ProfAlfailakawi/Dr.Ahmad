@@ -2,6 +2,14 @@
 const BUILD_ID = '__BUILD_ID__'
 const CACHE = `alfailakawi-${BUILD_ID}`
 const CORE = ['/', '/index.html', '/favicon.png', '/manifest.webmanifest', '/offline.html']
+const RETIRED_NAVIGATION_PATHS = new Set(['/mylib'])
+
+function retiredPageResponse() {
+  return new Response(
+    '<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1"><title>صفحة غير متاحة</title><main style="min-height:100vh;display:grid;place-items:center;padding:24px;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;color:#16202a;background:#faf9f6"><section style="max-width:520px;text-align:center"><h1 style="font-size:28px;margin:0 0 12px">هذه الصفحة لم تعد متاحة.</h1><p style="margin:0;color:#667085;line-height:1.8">تم إيقاف هذا المسار من الموقع الحالي. يمكنك العودة إلى الصفحة الرئيسية.</p><p style="margin-top:20px"><a href="/" style="color:#365a7a;text-decoration:none">العودة للرئيسية</a></p></section></main></html>',
+    { status: 410, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } },
+  )
+}
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
@@ -29,6 +37,19 @@ self.addEventListener('fetch', (e) => {
   const isAudio = new URL(request.url).pathname.startsWith('/audio/')
 
   const pathname = new URL(request.url).pathname
+  const normalizedPathname = pathname.replace(/\/+$/, '') || '/'
+
+  // مسارات داخلية قديمة أُزيلت نهائياً. نردّ عليها من الـService Worker نفسه
+  // حتى لا يعيد أي كاش قديم صفحةً لم تعد جزءاً من الموقع.
+  if (request.mode === 'navigate' && RETIRED_NAVIGATION_PATHS.has(normalizedPathname)) {
+    e.respondWith(
+      caches.open(CACHE)
+        .then((cache) => cache.delete(request))
+        .then(() => retiredPageResponse())
+        .catch(() => retiredPageResponse()),
+    )
+    return
+  }
 
   // لوحة التحكم لا تمر عبر كاش الصفحات إطلاقاً. هذا يمنع ظهور نسخة قديمة من
   // الرئيسية أو بيانات الملف الشخصي عند فتح /admin بعد تحديثات النشر.

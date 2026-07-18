@@ -167,6 +167,8 @@ function AnimatedRoutes() {
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfUse />} />
         <Route path="/data-deletion" element={<DataDeletion />} />
+        <Route path="/mylib" element={<NotFound />} />
+        <Route path="/mylib/*" element={<NotFound />} />
         {/* المرآة الإنجليزية — الرئيسية والسيرة والأبحاث */}
         <Route path="/en" element={<EnglishHome />} />
         <Route path="/en/cv" element={<EnglishCV />} />

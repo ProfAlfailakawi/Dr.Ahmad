@@ -20,6 +20,7 @@ type SourceReport = { checkedAt?: string; total?: number; places?: number; ok?: 
 const sourceStateLabel: Record<string, string> = {
   dead: 'ميت', unreachable: 'النطاق لا يستجيب', suspect: 'استجابة غريبة',
   blocked: 'يحجب الفحص', throttled: 'حدّ الطلبات', server: 'عطل مؤقت', timeout: 'بطيء جداً',
+  'host-blocked': 'النطاق محجوب عنّا',
 }
 type ProductionState = { status?: Stage; updatedAt?: unknown; note?: string; expectedDialogueContentSha256?: string }
 type Episode = {

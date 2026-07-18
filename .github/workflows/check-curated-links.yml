@@ -1,10 +1,11 @@
-name: فحص روابط المختارات أسبوعياً
+name: فحص المصادر يومياً
 
 on:
   schedule:
-    # مرة أسبوعياً: الأحد 05:00 بتوقيت الكويت (02:00 UTC). الروابط الخارجية لا تموت
+    # يومياً 05:00 بتوقيت الكويت (02:00 UTC) بأمر الدكتور: المادة الخارجية تُنظَّف
+    # أولاً بأول فلا يبقى رابط ميت في الموقع. الروابط الخارجية لا تموت
     # فجأة، والفحص الأسبوعي يلتقط الميّت خلال أيام دون إرهاق ولا حذفٍ متسرّع.
-    - cron: '0 2 * * 0'
+    - cron: '0 2 * * *'
   workflow_dispatch:
 
 permissions:
@@ -68,7 +69,7 @@ jobs:
 
       # الفاحص الشامل: كل رابط في الموقع (٢١٦ موضعاً) لا المختارات وحدها،
       # ويكتب تقريراً تفصيلياً تقرؤه اللوحة بدل الحذف الصامت.
-      - name: Check every source across the site
+      - name: Check every source and clean foreign dead links
         run: node scripts/check-all-sources.mjs
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json

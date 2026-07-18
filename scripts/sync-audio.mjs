@@ -37,7 +37,14 @@ const CHECK_ONLY = process.argv.includes('--check')
 const MIN_BYTES = 5_000
 const EXTERNAL_AUDIO_BASE_URL = (process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 
-if (process.env.CI === 'true' && !EXTERNAL_AUDIO_BASE_URL) {
+function hasLocalAudioFiles() {
+  if (!existsSync(AUDIO_DIR)) return false
+  return readdirSync(AUDIO_DIR).some((name) => name.endsWith('.mp3'))
+}
+
+const USE_AUDIO_META = Boolean(EXTERNAL_AUDIO_BASE_URL) || (!process.env.CI && existsSync(META) && !hasLocalAudioFiles())
+
+if (process.env.CI === 'true' && !EXTERNAL_AUDIO_BASE_URL && !USE_AUDIO_META) {
   console.log('⚠️ تشغيل في بيئة بناء متواصل (CI) دون صوت خارجي. سيتم تخطي تحديث أو التحقق من ملفات الصوت للحفاظ على البيانات الملتزم بها.')
   process.exit(0)
 }
@@ -137,7 +144,7 @@ function validateMp3(file) {
 
 const knownSlugs = new Set(Object.keys(JSON.parse(readFileSync(BODIES, 'utf8'))))
 
-if (EXTERNAL_AUDIO_BASE_URL) {
+if (USE_AUDIO_META) {
   if (!existsSync(META)) {
     console.error('✘ الصوت الخارجي مفعّل لكن src/data/audio-meta.json غير موجود.')
     process.exit(1)
@@ -194,7 +201,7 @@ if (EXTERNAL_AUDIO_BASE_URL) {
 
   if (CHECK_ONLY) {
     if (current !== rendered) {
-      console.error(`✘ audio.json غير متزامن مع audio-meta.json (${summary}). شغّل: AUDIO_PUBLIC_BASE_URL=${EXTERNAL_AUDIO_BASE_URL} node scripts/sync-audio.mjs`)
+      console.error(`✘ audio.json غير متزامن مع audio-meta.json (${summary}). شغّل: AUDIO_PUBLIC_BASE_URL=${EXTERNAL_AUDIO_BASE_URL || 'https://...' } node scripts/sync-audio.mjs`)
       if (process.env.CI === 'true') {
         console.warn('⚠️ تم تجاوز الخطأ لأننا في بيئة بناء متواصل (CI). سنكمل البناء.')
         process.exit(0)

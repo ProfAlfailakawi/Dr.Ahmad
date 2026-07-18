@@ -72,8 +72,19 @@ export async function createWhatsAppTransport({ db, onMessage, onQr, onPairingCo
     socket.ev.on('messages.upsert', ({ messages }) => {
       for (const message of messages || []) {
         const jid = message?.key?.remoteJid
+        const messageId = message?.key?.id
+        const fromMe = Boolean(message?.key?.fromMe)
         const text = message?.message?.conversation || message?.message?.extendedTextMessage?.text || message?.message?.imageMessage?.caption || ''
-        if (jid && text && onMessage) onMessage({ jid, text, message })
+        const hasMedia = Boolean(message?.message?.imageMessage || message?.message?.audioMessage || message?.message?.videoMessage || message?.message?.documentMessage || message?.message?.stickerMessage)
+        if (!jid || !messageId) continue
+        if (fromMe) {
+          const isBotEcho = db.get('SELECT message_id FROM outbox_messages WHERE message_id=?', messageId)
+          if (!isBotEcho) events.emit('manual-takeover', jid)
+          continue
+        }
+        if (db.get('SELECT message_id FROM processed_messages WHERE message_id=?', messageId)) continue
+        db.run('INSERT OR IGNORE INTO processed_messages(message_id,jid,created_at) VALUES(?,?,?)', messageId, db.jidKey(jid), new Date().toISOString())
+        if (jid && (text || hasMedia) && onMessage) onMessage({ jid, text: text || '[وسائط]', message, media: hasMedia })
         events.emit('message', { jid, text, message })
       }
     })
@@ -104,7 +115,13 @@ export async function createWhatsAppTransport({ db, onMessage, onQr, onPairingCo
     connect,
     async disconnect() { stopping = true; if (socket) socket.end?.(new Error('manual disconnect')); setStatus('disconnected') },
     getConnectionStatus: () => status,
-    async sendText(jid, text) { if (!socket || status !== 'connected') throw new Error('واتساب غير متصل'); return socket.sendMessage(jid, { text }) },
+    async sendText(jid, text) {
+      if (!socket || status !== 'connected') throw new Error('واتساب غير متصل')
+      const result = await socket.sendMessage(jid, { text })
+      const messageId = result?.key?.id || result?.id
+      if (messageId) db.run('INSERT OR IGNORE INTO outbox_messages(message_id,jid,source,created_at) VALUES(?,?,?,?)', messageId, db.jidKey(jid), 'bot', new Date().toISOString())
+      return result
+    },
     async sendMedia(jid, media) { if (!socket || status !== 'connected') throw new Error('واتساب غير متصل'); return socket.sendMessage(jid, media) },
     async syncContacts() { return { count: 0, supported: false, reason: 'لا تُحفظ جهات الاتصال إلا عند طلب المزامنة.' } },
     async discoverBroadcastLists() { return { supported: false, reason: 'لا يقدّم Baileys واجهة مستقرة لقراءة أعضاء Broadcast دون History Sync؛ لم يتم تعديل أي قائمة.' } },

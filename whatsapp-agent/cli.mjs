@@ -14,14 +14,32 @@ const command = process.argv[2] || 'status'
 const db = openDatabase()
 const agent = createAgent({ db, root: projectRoot })
 
+function rotateLocalLogs({ maxBytes = 2 * 1024 * 1024, keep = 5 } = {}) {
+  for (const name of ['agent.out.log', 'agent.err.log']) {
+    const file = path.join(DATA_DIR, name)
+    try {
+      if (!fs.existsSync(file) || fs.statSync(file).size <= maxBytes) continue
+      for (let index = keep - 1; index >= 1; index -= 1) {
+        const from = `${file}.${index}`
+        const to = `${file}.${index + 1}`
+        if (fs.existsSync(from)) fs.renameSync(from, to)
+      }
+      fs.renameSync(file, `${file}.1`)
+      fs.writeFileSync(file, '', { mode: 0o600 })
+    } catch { /* log rotation must never block the agent */ }
+  }
+}
+
 async function main() {
   if (command === 'self-test') { console.log(JSON.stringify(await runSelfTest(projectRoot), null, 2)); return }
   if (command === 'cost-audit') { console.log(JSON.stringify(runCostAudit(projectRoot), null, 2)); return }
   if (command === 'index') { console.log(JSON.stringify(agent.index(), null, 2)); return }
   if (command === 'status') { console.log(JSON.stringify(agent.status(), null, 2)); return }
+  if (command === 'bridge-secret') { console.log(agent.bridgeSecret()); return }
   if (command === 'install') { console.log(`تم تثبيت LaunchAgent: ${install()}`); return }
   if (command === 'uninstall') { await agent.stop(); console.log(`تمت الإزالة: ${uninstall()}`); return }
   if (command === 'start') {
+    rotateLocalLogs()
     if (!ensureLock(lockPath)) throw new Error('الوكيل يعمل مسبقًا أو يوجد ملف قفل قديم.')
     const phoneNumber = process.argv.find((arg) => arg.startsWith('--phone='))?.slice('--phone='.length)
     process.on('SIGINT', async () => { await agent.stop(); removeLock(lockPath); process.exit(0) })
@@ -55,4 +73,8 @@ async function main() {
   throw new Error(`أمر غير معروف: ${command}`)
 }
 
-main().catch((error) => { console.error(`خطأ: ${redactError(error)}`); process.exitCode = 1 }).finally(() => { if (command !== 'start') db.close() })
+main().catch((error) => {
+  if (command === 'start') removeLock(lockPath)
+  console.error(`خطأ: ${redactError(error)}`)
+  process.exitCode = 1
+}).finally(() => { if (command !== 'start') db.close() })

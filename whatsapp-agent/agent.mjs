@@ -1,9 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { BRIDGE_PORT, DB_PATH, MAX_CAMPAIGN_TARGETS, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, projectRoot, redactError, redactJid } from './config.mjs'
+import { BRIDGE_PORT, BRIDGE_SECRET_MIN_LENGTH, HEARTBEAT_INTERVAL_MS, HEARTBEAT_STALE_MS, MANUAL_TAKEOVER_MINUTES, MAX_CAMPAIGN_TARGETS, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, projectRoot, redactError, redactJid } from './config.mjs'
 import { openDatabase } from './db.mjs'
 import { syncContentIndex } from './content-index.mjs'
-import { handleIncoming, markManualTakeover, setSuppression } from './intent-engine.mjs'
+import { handleIncoming, handleIntent, markManualTakeover, setSuppression } from './intent-engine.mjs'
 import { MockTransport, createWhatsAppTransport } from './transport.mjs'
 import { randomToken } from './crypto.mjs'
 import { createReminder } from './reminders.mjs'
@@ -14,7 +14,24 @@ function safeText(text) { return String(text || '').slice(0, MAX_MESSAGE_CHARS).
 export function createAgent({ db = openDatabase(), transport, root = projectRoot, mock = false } = {}) {
   const state = { db, transport: transport || null, root, timers: new Set(), started: false, bridge: null }
   const index = () => syncContentIndex(db, root, SITE_URL)
+  const heartbeat = () => db.setSetting('bridge.heartbeat', { at: new Date().toISOString(), pid: process.pid })
+  const bridgeSecret = () => {
+    const configured = String(process.env.WHATSAPP_AGENT_BRIDGE_SECRET || '').trim()
+    if (configured && configured.length < BRIDGE_SECRET_MIN_LENGTH) throw new Error(`WHATSAPP_AGENT_BRIDGE_SECRET يجب ألا يقل عن ${BRIDGE_SECRET_MIN_LENGTH} خانة.`)
+    if (configured) return configured
+    const existing = db.getSetting('bridge.secret', '')
+    if (typeof existing === 'string' && existing.length >= BRIDGE_SECRET_MIN_LENGTH) return existing
+    const generated = randomToken(48)
+    db.setSetting('bridge.secret', generated)
+    db.addAudit('bridge-secret-created', 'local', `length=${generated.length}`)
+    return generated
+  }
   const onMessage = ({ jid, text, message }) => {
+    if (message?.media || /https?:\/\/|www\./i.test(String(text || ''))) {
+      markManualTakeover(db, jid)
+      db.addAudit('needs-human-media-or-link', redactJid(jid), message?.media ? 'media' : 'link')
+      return { shouldRespond: false, reason: 'media-or-link-human' }
+    }
     const response = handleIncoming({ db, jid, text: safeText(text), isReplyToAgent: Boolean(message?.message?.extendedTextMessage?.contextInfo?.quotedMessage) })
     if (!response.shouldRespond) db.addAudit('auto-reply-skipped', redactJid(jid), response.reason || 'blocked')
     if (!response.shouldRespond || !flags.autoReply || !flags.send) return response
@@ -38,6 +55,8 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     await state.transport.connect({ phoneNumber })
     state.started = true
     if (process.env.WHATSAPP_AGENT_BRIDGE === 'true' && !state.bridge) state.bridge = startLocalBridge(state)
+    heartbeat()
+    state.timers.add(setInterval(heartbeat, HEARTBEAT_INTERVAL_MS))
     if (flags.reminders) state.timers.add(setInterval(() => void dispatchDueReminders(state), 30000))
     return db.state()
   }
@@ -83,6 +102,108 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     return id
   }
   const listCampaigns = () => db.all('SELECT id,name,state,created_at,approved_at,scheduled_at,updated_at FROM campaigns ORDER BY created_at DESC LIMIT 50')
+  const manualTakeover = (jid, minutes = MANUAL_TAKEOVER_MINUTES) => {
+    markManualTakeover(db, jid, minutes)
+    db.addAudit('manual-takeover', db.jidKey(jid), `minutes=${minutes}`)
+    return { jid: db.jidKey(jid), manualUntil: db.get('SELECT manual_until FROM chat_sessions WHERE jid=?', db.jidKey(jid))?.manual_until || null }
+  }
+  const returnToBot = (jid) => {
+    const now = new Date().toISOString()
+    db.run("UPDATE chat_sessions SET mode='content-session', manual_until=NULL, updated_at=? WHERE jid=?", now, db.jidKey(jid))
+    db.addAudit('bot-return', db.jidKey(jid))
+    return { jid: db.jidKey(jid), returned: true }
+  }
+  const listReplyRules = () => db.all('SELECT * FROM reply_rules ORDER BY enabled DESC, priority DESC, updated_at DESC').map((row) => ({
+    id: row.id,
+    name: row.name,
+    keywords: JSON.parse(row.keywords_json || '[]'),
+    priority: Number(row.priority || 0),
+    matchType: row.match_type,
+    actionType: row.action_type,
+    responseText: row.response_text || '',
+    contentQuery: row.content_query || '',
+    enabled: Boolean(row.enabled),
+    updatedAt: row.updated_at,
+  }))
+  const saveReplyRule = (payload = {}) => {
+    const now = new Date().toISOString()
+    const id = String(payload.id || randomToken(8))
+    const previous = db.get('SELECT * FROM reply_rules WHERE id=?', id)
+    if (previous) db.run('INSERT INTO reply_rule_versions(rule_id,payload_json,created_at) VALUES(?,?,?)', id, JSON.stringify(previous), now)
+    const keywords = Array.isArray(payload.keywords)
+      ? payload.keywords.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 25)
+      : String(payload.keywords || '').split(/[,،\n]/).map((item) => item.trim()).filter(Boolean).slice(0, 25)
+    if (!String(payload.name || '').trim()) throw new Error('اسم القاعدة مطلوب.')
+    if (!keywords.length) throw new Error('أضف كلمة مفتاحية واحدة على الأقل.')
+    const matchType = ['any', 'all', 'exact'].includes(payload.matchType) ? payload.matchType : 'any'
+    const actionType = ['text', 'site-content', 'transfer'].includes(payload.actionType) ? payload.actionType : 'text'
+    db.run(
+      `INSERT INTO reply_rules(id,name,keywords_json,priority,match_type,action_type,response_text,content_query,enabled,created_at,updated_at)
+       VALUES(?,?,?,?,?,?,?,?,?,?,?)
+       ON CONFLICT(id) DO UPDATE SET name=excluded.name,keywords_json=excluded.keywords_json,priority=excluded.priority,match_type=excluded.match_type,action_type=excluded.action_type,response_text=excluded.response_text,content_query=excluded.content_query,enabled=excluded.enabled,updated_at=excluded.updated_at`,
+      id,
+      String(payload.name).trim(),
+      JSON.stringify(keywords),
+      Number(payload.priority || 0),
+      matchType,
+      actionType,
+      safeText(payload.responseText || ''),
+      safeText(payload.contentQuery || ''),
+      payload.enabled === false ? 0 : 1,
+      previous?.created_at || now,
+      now,
+    )
+    db.addAudit(previous ? 'reply-rule-updated' : 'reply-rule-created', id)
+    return listReplyRules().find((rule) => rule.id === id)
+  }
+  const deleteReplyRule = (id) => {
+    const row = db.get('SELECT * FROM reply_rules WHERE id=?', id)
+    if (!row) throw new Error('القاعدة غير موجودة.')
+    db.run('INSERT INTO reply_rule_versions(rule_id,payload_json,created_at) VALUES(?,?,?)', id, JSON.stringify(row), new Date().toISOString())
+    db.run('DELETE FROM reply_rules WHERE id=?', id)
+    db.addAudit('reply-rule-deleted', id)
+    return { id, deleted: true }
+  }
+  const replyRuleVersions = (id) => db.all('SELECT id,rule_id,payload_json,created_at FROM reply_rule_versions WHERE rule_id=? ORDER BY id DESC LIMIT 20', id).map((row) => ({
+    id: row.id,
+    ruleId: row.rule_id,
+    payload: JSON.parse(row.payload_json),
+    createdAt: row.created_at,
+  }))
+  const rollbackReplyRule = (id, versionId) => {
+    const version = db.get('SELECT * FROM reply_rule_versions WHERE rule_id=? AND id=?', id, Number(versionId))
+    if (!version) throw new Error('النسخة غير موجودة.')
+    const payload = JSON.parse(version.payload_json)
+    return saveReplyRule({
+      id,
+      name: payload.name,
+      keywords: JSON.parse(payload.keywords_json || '[]'),
+      priority: payload.priority,
+      matchType: payload.match_type,
+      actionType: payload.action_type,
+      responseText: payload.response_text,
+      contentQuery: payload.content_query,
+      enabled: Boolean(payload.enabled),
+    })
+  }
+  const simulateReply = ({ text, jid = 'simulator@s.whatsapp.net' } = {}) => {
+    const response = handleIntent({ db, jid, input: safeText(text), session: null })
+    return {
+      intent: response.intent,
+      confidence: response.confidence,
+      needsHuman: Boolean(response.needsHuman),
+      ruleId: response.ruleId || null,
+      ruleName: response.ruleName || null,
+      preview: response.text || '',
+    }
+  }
+  const requestRestart = () => {
+    const requestedAt = new Date().toISOString()
+    db.setSetting('bridge.restartRequestedAt', requestedAt)
+    db.setState({ status: 'restarting', last_error: null })
+    db.addAudit('bridge-restart-requested', 'local')
+    return { restartRequestedAt: requestedAt }
+  }
   const sendCampaign = async (id, { confirm = false, confirmAgain = false } = {}) => {
     if (!confirm || !confirmAgain) throw new Error('إرسال الحملة يحتاج تأكيدين صريحين.')
     if (!flags.send) throw new Error('الإرسال معطّل افتراضيًا. فعّل WHATSAPP_SEND_ENABLED محليًا بعد الاختبار.')
@@ -117,9 +238,15 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     return { id, state: stateName, sent, skipped, failed }
   }
   const createLocalReminder = ({ jid, contentId = null, originalText, dueAt }) => createReminder(db, { jid, contentId, originalText, dueAt })
-  const status = () => ({ ...db.state(), flags, indexed: Number(db.get('SELECT COUNT(*) AS count FROM content_items')?.count || 0), bridge: Boolean(state.bridge), port: BRIDGE_PORT, timeZone: TIME_ZONE })
+  const status = () => {
+    const heartbeatState = db.getSetting('bridge.heartbeat', null)
+    const lastHeartbeatAt = heartbeatState?.at || null
+    const heartbeatAgeMs = lastHeartbeatAt ? Date.now() - new Date(lastHeartbeatAt).getTime() : null
+    const bridgeOnline = Boolean(state.started && lastHeartbeatAt && heartbeatAgeMs != null && heartbeatAgeMs <= HEARTBEAT_STALE_MS)
+    return { ...db.state(), flags, indexed: Number(db.get('SELECT COUNT(*) AS count FROM content_items')?.count || 0), bridge: Boolean(state.bridge), bridgeOnline, lastHeartbeatAt, heartbeatAgeMs, restartRequestedAt: db.getSetting('bridge.restartRequestedAt', null), port: BRIDGE_PORT, timeZone: TIME_ZONE }
+  }
   const setBridge = (server) => { state.bridge = server; return status() }
-  return { db, state, index, start, stop, status, sendSelf, queueCampaign, approveCampaign, sendCampaign, stopCampaign, listCampaigns, createLocalReminder, onMessage, setBridge }
+  return { db, state, index, start, stop, status, sendSelf, queueCampaign, approveCampaign, sendCampaign, stopCampaign, listCampaigns, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, requestRestart }
 }
 
 async function dispatchDueReminders(state) {

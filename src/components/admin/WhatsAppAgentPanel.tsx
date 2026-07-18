@@ -8,52 +8,210 @@ type AgentStatus = {
   updated_at?: string
   flags?: Record<string, boolean>
   timeZone?: string
+  bridgeOnline?: boolean
+  lastHeartbeatAt?: string | null
+  heartbeatAgeMs?: number | null
+  restartRequestedAt?: string | null
+  port?: number
 }
 type Campaign = { id: string; name: string; state: string; created_at: string; approved_at?: string | null }
+type ReplyRule = {
+  id: string
+  name: string
+  keywords: string[]
+  priority: number
+  matchType: 'any' | 'all' | 'exact'
+  actionType: 'text' | 'site-content' | 'transfer'
+  responseText: string
+  contentQuery: string
+  enabled: boolean
+  updatedAt?: string
+}
+type RuleVersion = { id: number; createdAt: string }
+type Simulation = { intent?: string; confidence?: number; needsHuman?: boolean; ruleId?: string | null; ruleName?: string | null; preview?: string }
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none placeholder:text-soft/60 focus:border-accent'
-const secondary = 'rounded-full border border-hair px-4 py-2 text-[.8rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent'
+const secondary = 'rounded-full border border-hair px-4 py-2 text-[.8rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-45'
+const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45'
 
 const stateLabel: Record<string, string> = {
-  unconfigured: 'غير مرتبط', pairing: 'بانتظار QR أو رمز الاقتران', connected: 'متصل', disconnected: 'غير متصل', reconnecting: 'يعيد الاتصال', paused: 'متوقف مؤقتًا', sending: 'يرسل بعد الاعتماد', 'azure-disabled': 'الصوت معطّل', error: 'يحتاج مراجعة',
+  unconfigured: 'غير مرتبط',
+  pairing: 'بانتظار الاقتران',
+  connected: 'متصل',
+  disconnected: 'غير متصل',
+  reconnecting: 'يعيد الاتصال',
+  restarting: 'جارٍ إعادة التشغيل',
+  paused: 'متوقف مؤقتًا',
+  sending: 'يرسل بعد الاعتماد',
+  error: 'يحتاج مراجعة',
+}
+
+const emptyRule: Omit<ReplyRule, 'id'> & { id?: string } = {
+  name: '',
+  keywords: [],
+  priority: 0,
+  matchType: 'any',
+  actionType: 'text',
+  responseText: '',
+  contentQuery: '',
+  enabled: true,
+}
+
+function ageLabel(ms?: number | null) {
+  if (ms == null || !Number.isFinite(ms)) return '—'
+  if (ms < 60_000) return `${Math.max(1, Math.round(ms / 1000))} ثانية`
+  return `${Math.round(ms / 60_000)} دقيقة`
+}
+
+function keywordsText(rule: Partial<ReplyRule>) {
+  return Array.isArray(rule.keywords) ? rule.keywords.join('، ') : ''
+}
+
+function parseKeywords(value: string) {
+  return value.split(/[,،\n]/).map((item) => item.trim()).filter(Boolean)
 }
 
 export function WhatsAppAgentPanel() {
   const [status, setStatus] = useState<AgentStatus>({ status: 'unconfigured' })
   const [busy, setBusy] = useState(false)
+  const [restarting, setRestarting] = useState(false)
   const [notice, setNotice] = useState('')
   const [campaignName, setCampaignName] = useState('')
   const [campaignText, setCampaignText] = useState('')
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [secret, setSecret] = useState(() => localStorage.getItem('whatsapp-agent-bridge-secret') || '')
+  const [manualJid, setManualJid] = useState('')
+  const [rules, setRules] = useState<ReplyRule[]>([])
+  const [ruleForm, setRuleForm] = useState<typeof emptyRule>({ ...emptyRule })
+  const [ruleVersions, setRuleVersions] = useState<Record<string, RuleVersion[]>>({})
+  const [simulateText, setSimulateText] = useState('')
+  const [simulation, setSimulation] = useState<Simulation | null>(null)
   const bridgeCandidate = String(import.meta.env.VITE_WHATSAPP_AGENT_BRIDGE_URL || '').replace(/\/+$/, '')
   const bridge = /^(https?:\/\/)(127\.0\.0\.1|localhost)(:\d+)?$/i.test(bridgeCandidate) ? bridgeCandidate : ''
 
+  const authHeaders = useMemo(() => ({
+    Accept: 'application/json',
+    'X-WhatsApp-Agent-Secret': secret,
+  }), [secret])
+
+  const request = async <T,>(path: string, init: RequestInit = {}): Promise<T> => {
+    if (!bridge) throw new Error('bridge-not-configured')
+    if (!secret.trim()) throw new Error('secret-missing')
+    const headers = { ...authHeaders, ...(init.body ? { 'Content-Type': 'application/json' } : {}), ...(init.headers || {}) }
+    const response = await fetch(`${bridge}${path}`, { ...init, headers })
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      throw new Error(body?.error || 'request-failed')
+    }
+    return response.json()
+  }
+
   const refresh = async () => {
-    if (!bridge) { setNotice('الوكيل محلي على الماك؛ لم يُضبط جسر متصفح عام، وهذا مقصود لحماية الجلسة.'); return }
+    if (!bridge) { setNotice('لم أجد رابط الجسر المحلي. عرّف VITE_WHATSAPP_AGENT_BRIDGE_URL إلى 127.0.0.1 فقط.'); return }
+    if (!secret.trim()) { setNotice('أدخل سر الجسر المحلي أولًا. السر لا يُرفع للموقع؛ يُحفظ في هذا المتصفح فقط.'); return }
     setBusy(true)
     try {
-      const response = await fetch(`${bridge}/status`, { headers: { Accept: 'application/json' } }); if (!response.ok) throw new Error('status'); setStatus(await response.json())
-      const campaignsResponse = await fetch(`${bridge}/campaigns`, { headers: { Accept: 'application/json' } }); if (campaignsResponse.ok) setCampaigns(await campaignsResponse.json())
-      setNotice('تحدّثت الحالة.')
-    } catch { setNotice('تعذّر الوصول إلى الوكيل المحلي. تأكد أنه يعمل على الماك.') } finally { setBusy(false) }
+      const [nextStatus, nextCampaigns, nextRules] = await Promise.all([
+        request<AgentStatus>('/status'),
+        request<Campaign[]>('/campaigns'),
+        request<ReplyRule[]>('/admin/rules'),
+      ])
+      setStatus(nextStatus)
+      setCampaigns(nextCampaigns)
+      setRules(nextRules)
+      setNotice('تحدّثت حالة واتساب.')
+    } catch (error) {
+      setNotice(error instanceof Error && error.message === 'secret-missing' ? 'أدخل سر الجسر المحلي أولًا.' : 'تعذّر الوصول إلى جسر واتساب المحلي. تأكد أن الماك شغال والجسر متصل والسر صحيح.')
+    } finally {
+      setBusy(false)
+      setRestarting(false)
+    }
   }
 
   useEffect(() => { void refresh() }, [])
 
+  const saveSecret = () => {
+    localStorage.setItem('whatsapp-agent-bridge-secret', secret.trim())
+    setNotice('حُفظ سر الجسر في هذا المتصفح فقط.')
+    void refresh()
+  }
+
   const saveDraft = async () => {
     if (!campaignName.trim() || !campaignText.trim()) return setNotice('اكتب اسم المسودة ونصها أولًا.')
-    if (bridge) {
-      try { const response = await fetch(`${bridge}/campaigns/draft`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: campaignName, message: campaignText }) }); if (!response.ok) throw new Error('draft') } catch { return setNotice('تعذّر حفظ المسودة عبر الوكيل المحلي.') }
+    if (bridge && secret.trim()) {
+      try { await request('/campaigns/draft', { method: 'POST', body: JSON.stringify({ name: campaignName, message: campaignText }) }) } catch { return setNotice('تعذّر حفظ المسودة عبر الوكيل المحلي.') }
     } else {
       try { localStorage.setItem('whatsapp-agent-draft', JSON.stringify({ name: campaignName, message: campaignText, savedAt: new Date().toISOString() })) } catch { /* noop */ }
     }
     setNotice('حُفظت كمسودة فقط؛ لا يوجد إرسال.')
+    setCampaignName('')
+    setCampaignText('')
+    await refresh()
   }
 
   const approve = async (id: string) => {
-    if (!bridge) return setNotice('اعتماد الحملة يتم من الوكيل المحلي بعد تشغيل الجسر.')
-    try { const response = await fetch(`${bridge}/campaigns/${encodeURIComponent(id)}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ confirm: true }) }); if (!response.ok) throw new Error('approve'); setNotice('اعتمدت المسودة؛ الإرسال ما زال مغلقًا حتى أمر يدوي ثانٍ.'); await refresh() } catch { setNotice('تعذّر اعتماد المسودة.') }
+    try { await request(`/campaigns/${encodeURIComponent(id)}/approve`, { method: 'POST', body: JSON.stringify({ confirm: true }) }); setNotice('اعتمدت المسودة؛ الإرسال الفعلي يحتاج أمر إرسال منفصل ومقفول افتراضيًا.'); await refresh() } catch { setNotice('تعذّر اعتماد المسودة.') }
+  }
+
+  const restartBridge = async () => {
+    if (!status.bridgeOnline) return setNotice('زر إعادة التشغيل لا يصل للجسر إذا كان الماك مطفأ أو الإنترنت/الجسر متوقفًا.')
+    setRestarting(true)
+    try {
+      await request('/admin/restart', { method: 'POST', body: JSON.stringify({ confirm: true }) })
+      setNotice('أرسلت طلب إعادة التشغيل. launchd سيعيد الوكيل تلقائيًا بلا QR إذا الجلسة محفوظة.')
+      setTimeout(() => void refresh(), 4500)
+    } catch {
+      setRestarting(false)
+      setNotice('تعذّر إرسال طلب إعادة التشغيل للجسر.')
+    }
+  }
+
+  const manualTakeover = async () => {
+    if (!manualJid.trim()) return setNotice('اكتب JID المحادثة من واتساب، مثال: 965XXXXXXXX@s.whatsapp.net')
+    try { await request('/admin/manual-takeover', { method: 'POST', body: JSON.stringify({ jid: manualJid, minutes: 30 }) }); setNotice('تم استلام المحادثة يدويًا؛ البوت سيصمت 30 دقيقة.'); await refresh() } catch { setNotice('تعذّر تفعيل الاستلام اليدوي.') }
+  }
+
+  const returnBot = async () => {
+    if (!manualJid.trim()) return setNotice('اكتب JID المحادثة أولًا.')
+    try { await request('/admin/bot-return', { method: 'POST', body: JSON.stringify({ jid: manualJid }) }); setNotice('عاد البوت لهذه المحادثة عند رسالة العميل التالية.'); await refresh() } catch { setNotice('تعذّر إرجاع المحادثة للبوت.') }
+  }
+
+  const editRule = (rule: ReplyRule) => setRuleForm({ ...rule })
+
+  const resetRule = () => setRuleForm({ ...emptyRule })
+
+  const saveRule = async () => {
+    try {
+      const saved = await request<ReplyRule>('/admin/rules', { method: ruleForm.id ? 'PATCH' : 'POST', body: JSON.stringify(ruleForm) })
+      setNotice(`حُفظت قاعدة: ${saved.name}`)
+      resetRule()
+      await refresh()
+    } catch (error) {
+      setNotice(error instanceof Error ? `تعذّر حفظ القاعدة: ${error.message}` : 'تعذّر حفظ القاعدة.')
+    }
+  }
+
+  const deleteRule = async (id: string) => {
+    try { await request(`/admin/rules/${encodeURIComponent(id)}`, { method: 'DELETE' }); setNotice('حُذفت القاعدة وحُفظت نسخة رجوع.'); await refresh() } catch { setNotice('تعذّر حذف القاعدة.') }
+  }
+
+  const loadVersions = async (id: string) => {
+    try {
+      const versions = await request<RuleVersion[]>(`/admin/rules/${encodeURIComponent(id)}/versions`)
+      setRuleVersions((current) => ({ ...current, [id]: versions }))
+    } catch {
+      setNotice('تعذّر قراءة سجل النسخ لهذه القاعدة.')
+    }
+  }
+
+  const rollbackRule = async (id: string, versionId: number) => {
+    try { await request(`/admin/rules/${encodeURIComponent(id)}/rollback/${versionId}`, { method: 'POST' }); setNotice('رجعت القاعدة إلى نسخة سابقة.'); await refresh(); await loadVersions(id) } catch { setNotice('تعذّر الرجوع للنسخة السابقة.') }
+  }
+
+  const runSimulator = async () => {
+    if (!simulateText.trim()) return setNotice('اكتب رسالة افتراضية للمحاكي.')
+    try { setSimulation(await request<Simulation>('/admin/simulate', { method: 'POST', body: JSON.stringify({ text: simulateText, jid: manualJid || 'simulator@s.whatsapp.net' }) })) } catch { setNotice('تعذّر تشغيل المحاكي.') }
   }
 
   const flags = useMemo(() => status.flags || { agent: true, send: false, autoReply: false, privateAutoReply: false, voice: false, reminders: false, quoteCard: true }, [status.flags])
@@ -69,19 +227,38 @@ export function WhatsAppAgentPanel() {
     <div className="admin-dashboard grid min-w-0 gap-4">
       <section className={card}>
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div><p className="text-[.75rem] font-semibold uppercase text-accent">مساعد د. أحمد داخل واتساب</p><h2 className="mt-1 font-display text-2xl font-semibold text-ink">وكيل محلي بموافقة الدكتور.</h2><p className="mt-2 max-w-2xl text-[.86rem] leading-relaxed text-soft">يبحث في أرشيف الموقع فقط، وينشر بموافقتك، ولا يرد على محادثات رقمك الخاص إلا إذا وُجّه له الطلب صراحة. الجلسة والأرقام تبقى على الماك.</p></div>
+          <div>
+            <p className="text-[.75rem] font-semibold uppercase text-accent">مساعد د. أحمد داخل واتساب</p>
+            <h2 className="mt-1 font-display text-2xl font-semibold text-ink">وكيل محلي بموافقة الدكتور.</h2>
+            <p className="mt-2 max-w-2xl text-[.86rem] leading-relaxed text-soft">الجسر مستقل على الماك، والجلسة لا تدخل GitHub ولا Firebase. إذا تدخلت من الهاتف يصمت البوت تلقائيًا، وإذا توقف الماك يتوقف واتساب فقط.</p>
+          </div>
           <button type="button" onClick={() => void refresh()} disabled={busy} className={secondary}>{busy ? '…' : 'تحديث الحالة'}</button>
         </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <div className="mt-5 grid gap-3 sm:grid-cols-4">
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">الحالة</p><p className="mt-1 font-semibold text-ink">{stateLabel[status.status || 'unconfigured'] || status.status}</p></div>
-          <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">فهرس الموقع</p><p className="mt-1 font-display text-2xl text-accent">{status.indexed ?? '—'}</p><p className="text-[.72rem] text-soft">مادة مشتقة</p></div>
+          <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">الجسر</p><p className="mt-1 font-semibold text-ink">{status.bridgeOnline ? 'متصل' : 'غير متصل'}</p><p className="text-[.72rem] text-soft">آخر نبضة: {ageLabel(status.heartbeatAgeMs)}</p></div>
+          <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">فهرس الموقع</p><p className="mt-1 font-display text-2xl text-accent">{status.indexed ?? '—'}</p></div>
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">المنطقة</p><p className="mt-1 font-semibold text-ink">{status.timeZone || 'Asia/Kuwait'}</p></div>
         </div>
-        <div className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-soft">
-          الوضع الآمن مفعل: لا رد تلقائي على الأهل والربع. الرد يكون فقط داخل جلسة محتوى، أو عند كتابة صيغة صريحة مثل «سؤال: …» أو «اسأل الدكتور: …».
+        <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_auto]">
+          <input dir="ltr" className={input} placeholder="Bridge secret — من npm run agent:bridge-secret" value={secret} onChange={(event) => setSecret(event.target.value)} />
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={saveSecret} className={secondary}>حفظ السر محليًا</button>
+            <button type="button" onClick={() => void restartBridge()} disabled={restarting || !status.bridgeOnline} className={secondary}>{restarting ? 'جارٍ إعادة التشغيل' : 'إعادة تشغيل واتساب'}</button>
+          </div>
         </div>
+        <div className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-soft">الوضع الآمن مفعل: لا رد تلقائي على الأهل والربع. الرد يكون فقط داخل جلسة محتوى، أو عند صيغة صريحة مثل «سؤال: …» أو «اسأل الدكتور: …».</div>
         {status.last_error && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.8rem] text-soft">{status.last_error}</p>}
         {notice && <p role="status" className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{notice}</p>}
+      </section>
+
+      <section className={card}>
+        <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.75rem] font-semibold uppercase text-accent">الوضع اليدوي</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">استلام محادثة أو إرجاعها للبوت.</h3></div><p className="text-[.78rem] text-soft">ردك من الهاتف يفعّل هذا تلقائيًا.</p></div>
+        <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto_auto]">
+          <input dir="ltr" className={input} placeholder="965XXXXXXXX@s.whatsapp.net" value={manualJid} onChange={(event) => setManualJid(event.target.value)} />
+          <button type="button" onClick={() => void manualTakeover()} className={secondary}>استلام يدوي</button>
+          <button type="button" onClick={() => void returnBot()} className={primary}>إرجاع للبوت</button>
+        </div>
       </section>
 
       <section className={card}>
@@ -91,12 +268,47 @@ export function WhatsAppAgentPanel() {
 
       <details className={`${card} group`}>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block font-display text-xl font-semibold text-ink">مسودة رسالة</span><span className="mt-1 block text-[.8rem] text-soft">أنشئها وراجعها هنا؛ لا تُرسل من هذه الشاشة.</span></span><span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span></summary>
-        <div className="mt-5 grid gap-3 border-t border-hair pt-5"><input className={input} placeholder="اسم المسودة" value={campaignName} onChange={(event) => setCampaignName(event.target.value)} /><textarea className={`${input} min-h-32 resize-y`} placeholder="نص الرسالة أو الحملة" value={campaignText} onChange={(event) => setCampaignText(event.target.value)} /><div className="flex flex-wrap items-center justify-between gap-3"><p className="text-[.76rem] text-soft">الخطوة التالية (اختيار القوائم والإرسال إلى الذات) تتم من الوكيل المحلي بعد الربط.</p><button type="button" onClick={() => void saveDraft()} className={secondary}>حفظ مسودة</button></div></div>
+        <div className="mt-5 grid gap-3 border-t border-hair pt-5"><input className={input} placeholder="اسم المسودة" value={campaignName} onChange={(event) => setCampaignName(event.target.value)} /><textarea className={`${input} min-h-32 resize-y`} placeholder="نص الرسالة أو الحملة" value={campaignText} onChange={(event) => setCampaignText(event.target.value)} /><div className="flex flex-wrap items-center justify-between gap-3"><p className="text-[.76rem] text-soft">الحفظ مسودة فقط؛ لا إرسال حملات ولا Spam.</p><button type="button" onClick={() => void saveDraft()} className={secondary}>حفظ مسودة</button></div></div>
       </details>
+
+      <section className={card}>
+        <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.75rem] font-semibold uppercase text-accent">مركز إدارة الردود</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">قواعد قابلة للتعديل بلا كود.</h3></div><button type="button" onClick={resetRule} className={secondary}>قاعدة جديدة</button></div>
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          <div className="grid gap-3 rounded-xl border border-hair bg-canvas p-4">
+            <input className={input} placeholder="اسم القاعدة" value={ruleForm.name} onChange={(event) => setRuleForm((current) => ({ ...current, name: event.target.value }))} />
+            <textarea className={`${input} min-h-20 resize-y`} placeholder="الكلمات المفتاحية — افصل بفواصل أو أسطر" value={keywordsText(ruleForm)} onChange={(event) => setRuleForm((current) => ({ ...current, keywords: parseKeywords(event.target.value) }))} />
+            <div className="grid gap-3 sm:grid-cols-3">
+              <input className={input} type="number" placeholder="الأولوية" value={ruleForm.priority} onChange={(event) => setRuleForm((current) => ({ ...current, priority: Number(event.target.value || 0) }))} />
+              <select className={input} value={ruleForm.matchType} onChange={(event) => setRuleForm((current) => ({ ...current, matchType: event.target.value as ReplyRule['matchType'] }))}><option value="any">أي كلمة</option><option value="all">كل الكلمات</option><option value="exact">مطابقة كاملة</option></select>
+              <select className={input} value={ruleForm.actionType} onChange={(event) => setRuleForm((current) => ({ ...current, actionType: event.target.value as ReplyRule['actionType'] }))}><option value="text">رد نصي</option><option value="site-content">من محتوى الموقع</option><option value="transfer">تحويل لموظف</option></select>
+            </div>
+            <textarea className={`${input} min-h-24 resize-y`} placeholder="نص الرد أو تمهيد الرد" value={ruleForm.responseText} onChange={(event) => setRuleForm((current) => ({ ...current, responseText: event.target.value }))} />
+            <input className={input} placeholder="استعلام محتوى الموقع — اختياري" value={ruleForm.contentQuery} onChange={(event) => setRuleForm((current) => ({ ...current, contentQuery: event.target.value }))} />
+            <label className="flex items-center gap-2 text-[.8rem] text-soft"><input type="checkbox" checked={ruleForm.enabled} onChange={(event) => setRuleForm((current) => ({ ...current, enabled: event.target.checked }))} /> مفعّلة</label>
+            <button type="button" onClick={() => void saveRule()} className={primary}>{ruleForm.id ? 'حفظ التعديل' : 'إضافة القاعدة'}</button>
+          </div>
+          <div className="grid content-start gap-2">
+            {rules.length ? rules.map((rule) => (
+              <div key={rule.id} className="rounded-xl border border-hair bg-canvas p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div><p className="font-semibold text-ink">{rule.name}</p><p className="mt-1 text-[.72rem] text-soft">{rule.enabled ? 'مفعّلة' : 'معطّلة'} · {rule.actionType} · أولوية {rule.priority}</p><p className="mt-2 text-[.76rem] text-soft">{rule.keywords.join('، ')}</p></div>
+                  <div className="flex flex-wrap gap-2"><button type="button" className={secondary} onClick={() => editRule(rule)}>تعديل</button><button type="button" className={secondary} onClick={() => void loadVersions(rule.id)}>النسخ</button><button type="button" className={secondary} onClick={() => void deleteRule(rule.id)}>حذف</button></div>
+                </div>
+                {ruleVersions[rule.id]?.length ? <div className="mt-3 flex flex-wrap gap-2 border-t border-hair pt-3">{ruleVersions[rule.id].map((version) => <button type="button" key={version.id} className={secondary} onClick={() => void rollbackRule(rule.id, version.id)}>رجوع #{version.id}</button>)}</div> : null}
+              </div>
+            )) : <p className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">لا توجد قواعد رد مخصصة بعد.</p>}
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 rounded-xl border border-hair bg-canvas p-4 lg:grid-cols-[1fr_auto]">
+          <input className={input} placeholder="محاكي: اكتب رسالة افتراضية" value={simulateText} onChange={(event) => setSimulateText(event.target.value)} />
+          <button type="button" className={secondary} onClick={() => void runSimulator()}>اختبار الرد</button>
+          {simulation && <p className="lg:col-span-2 rounded-xl border border-hair bg-wash px-4 py-3 text-[.8rem] leading-relaxed text-soft">القاعدة: {simulation.ruleName || simulation.intent || '—'} · الثقة: {simulation.confidence ?? '—'}{simulation.needsHuman ? ' · يحتاج موظف' : ''}<br />{simulation.preview || 'لا يوجد رد.'}</p>}
+        </div>
+      </section>
 
       {bridge && <section className={card}><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.75rem] font-semibold uppercase text-accent">الحملات المحلية</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">مسوداتك، ثم موافقتك.</h3></div><p className="text-[.78rem] text-soft">لا يظهر هنا أي رقم أو جلسة.</p></div><div className="mt-4 grid gap-2">{campaigns.length ? campaigns.map((campaign) => <div key={campaign.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hair bg-canvas px-4 py-3"><div><p className="font-semibold text-ink">{campaign.name}</p><p className="mt-1 text-[.72rem] text-soft">{campaign.state === 'draft' ? 'مسودة' : campaign.state === 'approved' ? 'معتمدة — غير مرسلة' : campaign.state}</p></div>{campaign.state === 'draft' && <button type="button" onClick={() => void approve(campaign.id)} className={secondary}>اعتماد للمراجعة</button>}</div>) : <p className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">لا توجد مسودات محلية بعد.</p>}</div></section>}
 
-      <section className="rounded-2xl border border-hair bg-canvas p-5 md:p-6"><p className="text-[.75rem] font-semibold uppercase text-accent">التشغيل المحلي</p><p className="mt-2 text-[.84rem] leading-relaxed text-soft">من داخل مجلد <code dir="ltr" className="rounded bg-wash px-1.5 py-0.5 text-[.75rem] text-ink">whatsapp-agent</code> شغّل <code dir="ltr" className="rounded bg-wash px-1.5 py-0.5 text-[.75rem] text-ink">npm run self-test</code> ثم <code dir="ltr" className="rounded bg-wash px-1.5 py-0.5 text-[.75rem] text-ink">npm run start</code>. لن تظهر QR أو حالة الهاتف في الموقع العام، ولن تُحفظ الجلسة داخل Firebase.</p></section>
+      <section className="rounded-2xl border border-hair bg-canvas p-5 md:p-6"><p className="text-[.75rem] font-semibold uppercase text-accent">التشغيل المحلي</p><p className="mt-2 text-[.84rem] leading-relaxed text-soft">شغّل <code dir="ltr" className="rounded bg-wash px-1.5 py-0.5 text-[.75rem] text-ink">npm run agent:self-test</code> ثم <code dir="ltr" className="rounded bg-wash px-1.5 py-0.5 text-[.75rem] text-ink">npm run agent:start</code>. لمعرفة السر المحلي استخدم <code dir="ltr" className="rounded bg-wash px-1.5 py-0.5 text-[.75rem] text-ink">npm run agent:bridge-secret</code>. لا تضع السر أو جلسة واتساب في GitHub.</p></section>
     </div>
   )
 }

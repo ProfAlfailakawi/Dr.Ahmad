@@ -63,22 +63,6 @@
     "bytes": 1410480,
     "durationSeconds": 235
   },
-  "art-202112-001.mp3": {
-    "bytes": 1463760,
-    "durationSeconds": 244
-  },
-  "art-202112-001.noura.mp3": {
-    "bytes": 1478592,
-    "durationSeconds": 246
-  },
-  "art-202112-002.mp3": {
-    "bytes": 1504224,
-    "durationSeconds": 251
-  },
-  "art-202112-002.noura.mp3": {
-    "bytes": 1523952,
-    "durationSeconds": 254
-  },
   "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2.mp3": {
     "bytes": 1722240,
     "durationSeconds": 287
@@ -199,22 +183,6 @@
     "bytes": 1510848,
     "durationSeconds": 252
   },
-  "how-do-we-assess-without-breaking-the-human-beingarabic.dialogue-en.mp3": {
-    "bytes": 3592403,
-    "durationSeconds": 224
-  },
-  "how-do-we-assess-without-breaking-the-human-beingarabic.dialogue.mp3": {
-    "bytes": 5043139,
-    "durationSeconds": 315
-  },
-  "how-do-we-assess-without-breaking-the-human-beingarabic.mp3": {
-    "bytes": 1293696,
-    "durationSeconds": 216
-  },
-  "how-do-we-assess-without-breaking-the-human-beingarabic.noura.mp3": {
-    "bytes": 1320912,
-    "durationSeconds": 220
-  },
   "i-earned-more-than-harvard-but-it-doesnt-teach-brains.mp3": {
     "bytes": 1550016,
     "durationSeconds": 258
@@ -247,6 +215,30 @@
     "bytes": 1805760,
     "durationSeconds": 301
   },
+  "intelligence-without-a-consciencearabic.mp3": {
+    "bytes": 3211642,
+    "sha256": "b0fd3368d70222b5befff6afbfb34176e4b5dd8a9f6454453d5a06dde1224c9f",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-18T15:21:05.478Z",
+    "durationSeconds": 201,
+    "sourceHash": "d6e0054b0c95ce6823d0a1f6a28af90b398297d0159c94fe2d25b420dc60d079",
+    "pipelineHash": "051d801820f13395eddc862895f1c56e03272ca5e03c6f217726d0c383fe7392",
+    "humanLikenessScore": 100,
+    "audioJudgeMinimum": null,
+    "acceptedAt": "2026-07-18T15:16:36.397Z"
+  },
+  "intelligence-without-a-consciencearabic.noura.mp3": {
+    "bytes": 3245497,
+    "sha256": "5be561a5a4f126885ae06cb552a0b93c57414742a4ba7ed889098708ae93cab5",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-18T15:21:05.526Z",
+    "durationSeconds": 203,
+    "sourceHash": "9389a3c727f1d1317ca12a2f67d2be5001e22c56a204eb84ab1dd3d3f2516d86",
+    "pipelineHash": "051d801820f13395eddc862895f1c56e03272ca5e03c6f217726d0c383fe7392",
+    "humanLikenessScore": 100,
+    "audioJudgeMinimum": null,
+    "acceptedAt": "2026-07-18T15:20:51.157Z"
+  },
   "jarida-202508-001.mp3": {
     "bytes": 1278144,
     "durationSeconds": 213
@@ -254,14 +246,6 @@
   "jarida-202508-001.noura.mp3": {
     "bytes": 1289520,
     "durationSeconds": 215
-  },
-  "jarida-202509-001.mp3": {
-    "bytes": 1564128,
-    "durationSeconds": 261
-  },
-  "jarida-202509-001.noura.mp3": {
-    "bytes": 1563840,
-    "durationSeconds": 261
   },
   "lets-achieve-a-higher-level-of-quality-education.mp3": {
     "bytes": 1584000,

@@ -11,6 +11,7 @@
     "self-test": "node cli.mjs self-test",
     "cost-audit": "node cli.mjs cost-audit",
     "index": "node cli.mjs index",
+    "bridge-secret": "node cli.mjs bridge-secret",
     "install": "node cli.mjs install",
     "uninstall": "node cli.mjs uninstall",
     "stop": "node cli.mjs stop",

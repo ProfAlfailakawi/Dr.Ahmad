@@ -1,5 +1,5 @@
 import { contentSummary, findContent, latestContent, normalizeArabic, searchContent } from './content-index.mjs'
-import { AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MAX_MESSAGE_CHARS, TIME_ZONE, flags } from './config.mjs'
+import { AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUAL_TAKEOVER_MINUTES, MAX_MESSAGE_CHARS, TIME_ZONE, flags } from './config.mjs'
 import { hashOpaque } from './crypto.mjs'
 import { createReminder, parseReminderTime } from './reminders.mjs'
 
@@ -60,6 +60,67 @@ export function classifyIntent(text) {
   return { intent: INTENTS.UNKNOWN, confidence: 0.2, normalized: value }
 }
 
+function safeJsonParse(value, fallback) {
+  try { return JSON.parse(value) } catch { return fallback }
+}
+
+function normalizeKeyword(value) {
+  return clean(value).replace(/\s+/g, ' ').trim()
+}
+
+function rowToRule(row) {
+  if (!row) return null
+  return {
+    id: row.id,
+    name: row.name,
+    keywords: safeJsonParse(row.keywords_json, []),
+    priority: Number(row.priority || 0),
+    matchType: row.match_type || 'any',
+    actionType: row.action_type || 'text',
+    responseText: row.response_text || '',
+    contentQuery: row.content_query || '',
+    enabled: Boolean(row.enabled),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
+
+export function listReplyRules(db, { includeDisabled = true } = {}) {
+  const where = includeDisabled ? '' : 'WHERE enabled=1'
+  return db.all(`SELECT * FROM reply_rules ${where} ORDER BY enabled DESC, priority DESC, updated_at DESC`).map(rowToRule)
+}
+
+export function matchReplyRule(db, text) {
+  const value = normalizeKeyword(text)
+  if (!value) return null
+  const rules = listReplyRules(db, { includeDisabled: false })
+  for (const rule of rules) {
+    const keywords = rule.keywords.map(normalizeKeyword).filter(Boolean)
+    if (!keywords.length) continue
+    const matched = rule.matchType === 'exact'
+      ? keywords.some((keyword) => value === keyword)
+      : rule.matchType === 'all'
+        ? keywords.every((keyword) => value.includes(keyword))
+        : keywords.some((keyword) => value.includes(keyword))
+    if (matched) return { ...rule, matchedKeywords: keywords.filter((keyword) => value.includes(keyword) || value === keyword) }
+  }
+  return null
+}
+
+function customRuleReply(db, rule, input) {
+  if (!rule) return null
+  if (rule.actionType === 'transfer') {
+    return { intent: 'CUSTOM_RULE', confidence: 0.99, needsHuman: true, ruleId: rule.id, ruleName: rule.name, text: rule.responseText || 'وصلت رسالتك. سأتركها للدكتور/الموظف حتى لا أعطيك جوابًا غير دقيق.' }
+  }
+  if (rule.actionType === 'site-content') {
+    const query = rule.contentQuery || input
+    const results = searchContent(db, query, { limit: 2 })
+    if (!results.length) return { intent: 'CUSTOM_RULE', confidence: 0.72, needsHuman: true, ruleId: rule.id, ruleName: rule.name, text: 'لم أجد في محتوى الموقع ما يجيب بدقة. سأحوّلها لمراجعة بشرية.' }
+    return { intent: 'CUSTOM_RULE', confidence: 0.94, ruleId: rule.id, ruleName: rule.name, text: `${rule.responseText ? `${rule.responseText}\n\n` : ''}${results.map((item, index) => `${index + 1}. ${item.title}\n${contentSummary(item, 1)}\n${item.url}`).join('\n\n')}`, contentId: results[0].id }
+  }
+  return { intent: 'CUSTOM_RULE', confidence: 0.99, ruleId: rule.id, ruleName: rule.name, text: rule.responseText || 'تم.' }
+}
+
 const itemLink = (item) => item ? `\n${item.title}\n${item.url}` : ''
 const audioLinks = (item) => {
   if (!item?.audio) return []
@@ -96,7 +157,7 @@ export function setSuppression(db, jid, suppressed) {
   db.addAudit(suppressed ? 'opt-out' : 'opt-in', id)
 }
 
-export function markManualTakeover(db, jid, minutes = 30) {
+export function markManualTakeover(db, jid, minutes = MANUAL_TAKEOVER_MINUTES) {
   if (!jid) return
   const until = new Date(Date.now() + minutes * 60 * 1000).toISOString(); const now = new Date().toISOString()
   const jidKey = db.jidKey(jid)
@@ -110,6 +171,8 @@ export function clearPreferences(db, jid) {
 }
 
 export function handleIntent({ db, jid = '', input, session = pendingSession(db, jid) }) {
+  const customRule = matchReplyRule(db, input)
+  if (customRule) return customRuleReply(db, customRule, input)
   const classification = classifyIntent(input)
   const { intent, confidence } = classification
   const logId = jid ? hashOpaque(jid) : null

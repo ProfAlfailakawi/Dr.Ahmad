@@ -454,6 +454,21 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
     setQuoteSaved(isReaderQuoteSaved(current, quote, paragraph))
     setDownloadFeedback('')
     setView('card'); setPos(null)
+    /* اقتباس القارئ يُحتسب بمجرّد صنع البطاقة، لا بحفظها في الدفتر وحده: من ظلّل
+       جملةً وصنع منها بطاقة فقد اقتبسها فعلاً. المعاملة نفسها تمنع العدّ المكرر
+       (عضوية واحدة لكل قارئ)، فحفظه لاحقاً في الدفتر لا يزيد الرقم مرة ثانية. */
+    if (sel.split(/\s+/).filter(Boolean).length >= 4) {
+      window.dispatchEvent(new CustomEvent('reader:quote-saved', {
+        detail: {
+          slug: current.slug,
+          body: body || current.body || '',
+          quote,
+          paragraph,
+          startOffset: offsets.startOffset,
+          endOffset: offsets.endOffset,
+        },
+      }))
+    }
     await renderCard(quote, template, format)
   }
   const chooseTemplate = (tpl: CardTemplateKey) => { setTemplate(tpl); void renderCard(cardQuote, tpl, format) }
@@ -648,12 +663,12 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         {view === 'card' && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="reader-modal-overlay quote-card-overlay fixed inset-0 z-[300] flex items-center justify-center bg-ink/60 px-3 pt-[max(2.5rem,calc(env(safe-area-inset-top)+0.75rem))] pb-[max(1.25rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:px-5" onClick={close}
+            className="reader-modal-overlay quote-card-overlay fixed inset-0 z-[300] bg-ink/60 backdrop-blur-sm" onClick={close}
           >
-            {/* تمريرٌ واحد داخل البطاقة فقط: تمرير الغلاف كان يدفع الشريط اللاصق خارج أعلى الشاشة */}
+            {/* الهندسة كلها في index.css (.quote-card-overlay/.quote-card-dialog) — لا صنوف هندسية هنا */}
             <motion.div
               initial={{ scale: 0.94, y: 14 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, opacity: 0 }}
-              transition={{ duration: 0.32 }} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()} className="quote-card-dialog max-h-full w-full max-w-[440px] overflow-y-auto overscroll-contain pb-2 sm:max-w-[520px]"
+              transition={{ duration: 0.32 }} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()} className="quote-card-dialog pb-2"
             >
               <div className="quote-card-controls sticky top-0 z-10 mb-3 flex flex-wrap items-center justify-center gap-1.5 rounded-2xl bg-ink/90 p-2 shadow-lg backdrop-blur">
                 {CARD_TEMPLATES.map((t) => (

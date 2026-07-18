@@ -1251,7 +1251,7 @@ function buildSSML(u, pronText, subs, voice, lang) {
 </speak>`
 }
 
-async function synthSSML(ssml, outPath) {
+async function synthSSML(ssml, outPath, diag = null) {
   for (let attempt = 1; attempt <= 4; attempt++) {
     try {
       const res = await fetchWithTimeout(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`, {
@@ -1264,12 +1264,18 @@ async function synthSSML(ssml, outPath) {
         },
         body: ssml,
       })
+      if (diag) diag.lastStatus = res.status
       if (res.ok) {
         const buf = Buffer.from(await res.arrayBuffer())
+        if (diag) diag.lastBytes = buf.length
         if (buf.length > 4000) { writeFileSync(outPath, buf); trimSilence(outPath); return true }
-      } else if (res.status === 429) await new Promise((r) => setTimeout(r, 4000 * attempt))
-      else await new Promise((r) => setTimeout(r, 1200 * attempt))
-    } catch { /* أخطاء الشبكة العابرة (ECONNRESET/fetch failed): أعد المحاولة بمهلة متصاعدة */
+      } else {
+        if (diag) diag.lastBody = String(await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 200)
+        if (res.status === 429) await new Promise((r) => setTimeout(r, 4000 * attempt))
+        else await new Promise((r) => setTimeout(r, 1200 * attempt))
+      }
+    } catch (error) { /* أخطاء الشبكة العابرة (ECONNRESET/fetch failed): أعد المحاولة بمهلة متصاعدة */
+      if (diag) diag.lastError = String(error?.message || error).slice(0, 140)
       await new Promise((r) => setTimeout(r, 1500 * attempt))
     }
   }
@@ -1287,9 +1293,13 @@ async function sttRequest(wav16Path, locale) {
       if (res.ok) {
         const json = await res.json()
         const best = json.NBest?.[0] || {}
-        return { locale, text: best.Display || best.Lexical || json.DisplayText || '', lexical: best.Lexical || '',
+        const text = best.Display || best.Lexical || json.DisplayText || ''
+        if (!text) console.log(`  · STT ${locale}: استجابة سليمة بلا نص (RecognitionStatus=${json.RecognitionStatus || '؟'})`)
+        return { locale, text, lexical: best.Lexical || '',
           confidence: Number(best.Confidence || 0), words: Array.isArray(best.Words) ? best.Words : [] }
       }
+      /* الحالة غير السليمة كانت تُبتلع صمتاً فيستحيل تمييز نفاد الحصة عن لهجة موقوفة — نسجلها دوماً */
+      console.log(`  · STT ${locale}: HTTP ${res.status} ${String(await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 140)}`)
       if (res.status === 400 || res.status === 404) return null
       if (res.status === 429 || res.status >= 500) await new Promise((resolveWait) => setTimeout(resolveWait, 2500 * attempt))
       else return null
@@ -1386,14 +1396,28 @@ async function probeSsmlCapabilities(force = false, voicesToProbe = [VOICES.ar.A
         notes: cached.notes, testedAt: cached.tested_at })
       continue
     }
+    /* عطب عابر في Azure (TTS أو STT يعيد فراغاً) كان يُسقط القافلة كلها بفشل المجسّ —
+       ثلاث محاولات بمهلة متدرجة قبل الحكم؛ شرط النجاح نفسه لا يلين. (أُعيد تطبيقه
+       ٢٠٢٦-٠٧-١٨ بعدما دهسته دفعة موازية.) */
     const run = async (name, inner, expected = '') => {
       const file = resolve(dir, `${voice}.${name}.wav`)
       const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${localeOf(voice)}"><voice name="${voice}">${inner}</voice></speak>`
-      if (!await synthSSML(ssml, file)) return false
-      const heard = await sttRecognize(file, localeOf(voice))
+      const diag = {}
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        if (attempt > 1) await new Promise((ok) => setTimeout(ok, attempt * 1500))
+        if (!await synthSSML(ssml, file, diag)) {
+          console.log(`  · مجس ${voice}/${name} م${attempt}: فشل TTS (حالة=${diag.lastStatus ?? '؟'} بايت=${diag.lastBytes ?? '؟'} خطأ=${diag.lastError || diag.lastBody || '—'})`)
+          continue
+        }
+        const heard = await sttRecognize(file, localeOf(voice))
+        rmSync(file, { force: true })
+        if (!heard?.text) { console.log(`  · مجس ${voice}/${name} م${attempt}: TTS سليم لكن STT صامت`); continue }
+        const ok = !expected || normalizeAr(heard.text).replace(/\s+/g, '').includes(normalizeAr(expected).replace(/\s+/g, ''))
+        if (!ok) console.log(`  · مجس ${voice}/${name}: سُمع «${heard.text.slice(0, 60)}» ولم يطابق «${expected}»`)
+        return ok
+      }
       rmSync(file, { force: true })
-      if (!heard?.text) return false
-      return !expected || normalizeAr(heard.text).replace(/\s+/g, '').includes(normalizeAr(expected).replace(/\s+/g, ''))
+      return false
     }
     const breakSupported = await run('break', 'هذه وقفة <break time="180ms"/> طبيعية')
     const prosodySupported = await run('prosody', '<prosody rate="+8%">نتحدث بإيقاع طبيعي وواضح</prosody>')

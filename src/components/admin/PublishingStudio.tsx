@@ -1630,8 +1630,8 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
         }
       }
       if (!socialPack) {
+        // الاحتياط المحلي يعمل بصمت — بطاقة التنبيه أُخفيت بطلب الدكتور (ضجيج بلا قرار)
         socialPack = buildArticleSocialPack(articleBundle, audience, selectedEvent, variation)
-        setNotice('بُنيت منظومة التوزيع محليًا وبكامل القوالب؛ لا تتوقف إذا تعذر اتصال الذكاء الاصطناعي ✓')
       } else {
         const local = buildArticleSocialPack(articleBundle, audience, selectedEvent, variation)
         socialPack = {

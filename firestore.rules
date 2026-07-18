@@ -151,12 +151,8 @@ service cloud.firestore {
       allow update: if isAdmin() || (isAnonymous() && isValidPopularHighlightUpdate(id));
     }
     match /article_highlight_members/{highlightKey}/readers/{readerId} {
-      // معاملة الزيادة تقرأ عضوية القارئ نفسه أولاً — منع القراءة كلياً كان يُسقطها
-      // للجميع. كل قارئ يرى وثيقته وحدها، والسرد ممنوع.
-      allow get: if request.auth != null && readerId == request.auth.uid;
-      allow list: if false;
-      // المشرف قارئ أيضاً: حصرها بالمجهول كان يمنع اقتباس الدكتور نفسه من رفع العدّاد
-      allow create: if (isAnonymous() || isAdmin()) && isValidPopularMembershipCreate(highlightKey, readerId);
+      allow read: if false;
+      allow create: if isAnonymous() && isValidPopularMembershipCreate(highlightKey, readerId);
       allow delete: if isValidPopularMembershipDelete(highlightKey, readerId);
       allow update: if false;
     }
@@ -180,228 +176,227 @@ service cloud.firestore {
     match /{document=**} {
       allow read, write: if false;
     }
+  }
 
+  function isValidEmail(e) {
+    return e is string && e.size() <= 200 && e.matches('^[^@]+@[^@]+\\.[^@]+$');
+  }
 
-    function isValidEmail(e) {
-      return e is string && e.size() <= 200 && e.matches('^[^@]+@[^@]+\\.[^@]+$');
-    }
+  function isAdmin() {
+    return request.auth != null && request.auth.token.admin == true;
+  }
 
-    function isAdmin() {
-      return request.auth != null && request.auth.token.admin == true;
-    }
+  function isAnonymous() {
+    return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
+  }
 
-    function isAnonymous() {
-      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
-    }
+  function isValidViewId(id) {
+    return id.size() <= 512
+      && (id.matches('^total:.+$')
+        || id.matches('^day:[0-9]{4}-[0-9]{2}-[0-9]{2}:.+$'));
+  }
 
-    function isValidViewId(id) {
-      return id.size() <= 512
-        && (id.matches('^total:.+$')
-          || id.matches('^day:[0-9]{4}-[0-9]{2}-[0-9]{2}:.+$'));
-    }
+  function hasValidViewFields(d) {
+    return d.keys().hasOnly(['count', 'title', 'updatedAt'])
+      && d.count is int
+      && d.title is string && d.title.size() > 0 && d.title.size() <= 300
+      && d.updatedAt == request.time;
+  }
 
-    function hasValidViewFields(d) {
-      return d.keys().hasOnly(['count', 'title', 'updatedAt'])
-        && d.count is int
-        && d.title is string && d.title.size() > 0 && d.title.size() <= 300
-        && d.updatedAt == request.time;
-    }
+  function isValidViewCreate(id) {
+    return isValidViewId(id)
+      && hasValidViewFields(request.resource.data)
+      && request.resource.data.count == 1;
+  }
 
-    function isValidViewCreate(id) {
-      return isValidViewId(id)
-        && hasValidViewFields(request.resource.data)
-        && request.resource.data.count == 1;
-    }
+  function isValidViewUpdate(id) {
+    return isValidViewId(id)
+      && hasValidViewFields(request.resource.data)
+      && request.resource.data.count == resource.data.count + 1
+      && request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['count', 'updatedAt']);
+  }
 
-    function isValidViewUpdate(id) {
-      return isValidViewId(id)
-        && hasValidViewFields(request.resource.data)
-        && request.resource.data.count == resource.data.count + 1
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['count', 'updatedAt']);
-    }
+  function hasValidHighlightFields(d) {
+    return d.keys().hasOnly(['slug', 'paragraph', 'count', 'updatedAt'])
+      && d.slug is string && d.slug.size() > 0 && d.slug.size() <= 220
+      && d.paragraph is int && d.paragraph >= 0 && d.paragraph <= 250
+      && d.count is int && d.count > 0
+      && d.updatedAt == request.time;
+  }
 
-    function hasValidHighlightFields(d) {
-      return d.keys().hasOnly(['slug', 'paragraph', 'count', 'updatedAt'])
-        && d.slug is string && d.slug.size() > 0 && d.slug.size() <= 220
-        && d.paragraph is int && d.paragraph >= 0 && d.paragraph <= 250
-        && d.count is int && d.count > 0
-        && d.updatedAt == request.time;
-    }
+  function hasValidPopularHighlightFields(id, d) {
+    return d.keys().hasOnly(['slug', 'articleVersion', 'paragraph', 'paragraphId', 'startOffset', 'endOffset', 'quoteHash', 'count', 'updatedAt'])
+      && id.size() >= 8 && id.size() <= 80
+      && d.slug is string && d.slug.size() > 0 && d.slug.size() <= 220
+      && d.articleVersion is string && d.articleVersion.size() >= 4 && d.articleVersion.size() <= 80
+      && d.paragraph is int && d.paragraph >= 0 && d.paragraph <= 250
+      && d.paragraphId is string && d.paragraphId.matches('^[0-9]{1,3}$')
+      && d.startOffset is int && d.startOffset >= 0 && d.startOffset <= 200000
+      && d.endOffset is int && d.endOffset > d.startOffset && d.endOffset <= 200000
+      && d.quoteHash is string && d.quoteHash.size() >= 8 && d.quoteHash.size() <= 80
+      && d.count is int && d.count >= 0 && d.count <= 1000000
+      && d.updatedAt == request.time;
+  }
 
-    function hasValidPopularHighlightFields(id, d) {
-      return d.keys().hasOnly(['slug', 'articleVersion', 'paragraph', 'paragraphId', 'startOffset', 'endOffset', 'quoteHash', 'count', 'updatedAt'])
-        && id.size() >= 8 && id.size() <= 80
-        && d.slug is string && d.slug.size() > 0 && d.slug.size() <= 220
-        && d.articleVersion is string && d.articleVersion.size() >= 4 && d.articleVersion.size() <= 80
-        && d.paragraph is int && d.paragraph >= 0 && d.paragraph <= 250
-        && d.paragraphId is string && d.paragraphId.matches('^[0-9]{1,3}$')
-        && d.startOffset is int && d.startOffset >= 0 && d.startOffset <= 200000
-        && d.endOffset is int && d.endOffset > d.startOffset && d.endOffset <= 200000
-        && d.quoteHash is string && d.quoteHash.size() >= 8 && d.quoteHash.size() <= 80
-        && d.count is int && d.count >= 0 && d.count <= 1000000
-        && d.updatedAt is timestamp; // كانت == request.time فترفض طوابع الخادم من عملاء gRPC
-    }
+  function hasValidPopularMembershipFields(d) {
+    return d.keys().hasOnly(['uid', 'highlightKey', 'createdAt'])
+      && d.uid == request.auth.uid
+      && d.uid is string && d.uid.size() >= 8 && d.uid.size() <= 128
+      && d.highlightKey is string && d.highlightKey.size() >= 8 && d.highlightKey.size() <= 80
+      && d.createdAt == request.time;
+  }
 
-    function hasValidPopularMembershipFields(d) {
-      return d.keys().hasOnly(['uid', 'highlightKey', 'createdAt'])
-        && d.uid == request.auth.uid
-        && d.uid is string && d.uid.size() >= 8 && d.uid.size() <= 128
-        && d.highlightKey is string && d.highlightKey.size() >= 8 && d.highlightKey.size() <= 80
-        && d.createdAt is timestamp; // كانت == request.time فترفض طوابع الخادم من عملاء gRPC
-    }
+  function isValidPopularMembershipCreate(highlightKey, readerId) {
+    return readerId == request.auth.uid
+      && request.resource.data.highlightKey == highlightKey
+      && hasValidPopularMembershipFields(request.resource.data)
+      && !exists(/databases/$(database)/documents/article_highlight_members/$(highlightKey)/readers/$(readerId));
+  }
 
-    function isValidPopularMembershipCreate(highlightKey, readerId) {
-      return readerId == request.auth.uid
-        && request.resource.data.highlightKey == highlightKey
-        && hasValidPopularMembershipFields(request.resource.data)
-        && !exists(/databases/$(database)/documents/article_highlight_members/$(highlightKey)/readers/$(readerId));
-    }
+  function popularMembershipSupports(id) {
+    return existsAfter(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid))
+      && getAfter(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid)).data.highlightKey == id
+      && getAfter(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid)).data.uid == request.auth.uid;
+  }
 
-    function popularMembershipSupports(id) {
-      return existsAfter(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid))
-        && getAfter(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid)).data.highlightKey == id
-        && getAfter(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid)).data.uid == request.auth.uid;
-    }
+  function popularMembershipRemoved(id) {
+    return exists(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid))
+      && !existsAfter(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid))
+      && get(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid)).data.uid == request.auth.uid;
+  }
 
-    function popularMembershipRemoved(id) {
-      return exists(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid))
-        && !existsAfter(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid))
-        && get(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid)).data.uid == request.auth.uid;
-    }
+  function isValidPopularMembershipDelete(highlightKey, readerId) {
+    return isAnonymous()
+      && readerId == request.auth.uid
+      && resource.data.uid == request.auth.uid
+      && existsAfter(/databases/$(database)/documents/article_highlights/$(highlightKey))
+      && getAfter(/databases/$(database)/documents/article_highlights/$(highlightKey)).data.count
+        == get(/databases/$(database)/documents/article_highlights/$(highlightKey)).data.count - 1
+      && popularMembershipRemoved(highlightKey);
+  }
 
-    function isValidPopularMembershipDelete(highlightKey, readerId) {
-      return isAnonymous()
-        && readerId == request.auth.uid
-        && resource.data.uid == request.auth.uid
-        && existsAfter(/databases/$(database)/documents/article_highlights/$(highlightKey))
-        && getAfter(/databases/$(database)/documents/article_highlights/$(highlightKey)).data.count
-          == get(/databases/$(database)/documents/article_highlights/$(highlightKey)).data.count - 1
-        && popularMembershipRemoved(highlightKey);
-    }
+  function isValidPopularHighlightCreate(id) {
+    return hasValidPopularHighlightFields(id, request.resource.data)
+      && request.resource.data.count == 1
+      && popularMembershipSupports(id);
+  }
 
-    function isValidPopularHighlightCreate(id) {
-      return hasValidPopularHighlightFields(id, request.resource.data)
-        && request.resource.data.count == 1
-        && popularMembershipSupports(id);
-    }
+  function isValidPopularHighlightUpdate(id) {
+    return hasValidPopularHighlightFields(id, request.resource.data)
+      && request.resource.data.slug == resource.data.slug
+      && request.resource.data.articleVersion == resource.data.articleVersion
+      && request.resource.data.paragraphId == resource.data.paragraphId
+      && request.resource.data.startOffset == resource.data.startOffset
+      && request.resource.data.endOffset == resource.data.endOffset
+      && request.resource.data.quoteHash == resource.data.quoteHash
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count', 'updatedAt'])
+      && (
+        (request.resource.data.count == resource.data.count + 1
+          && popularMembershipSupports(id))
+        ||
+        (resource.data.count > 0
+          && request.resource.data.count == resource.data.count - 1
+          && popularMembershipRemoved(id))
+      );
+  }
 
-    function isValidPopularHighlightUpdate(id) {
-      return hasValidPopularHighlightFields(id, request.resource.data)
-        && request.resource.data.slug == resource.data.slug
-        && request.resource.data.articleVersion == resource.data.articleVersion
-        && request.resource.data.paragraphId == resource.data.paragraphId
-        && request.resource.data.startOffset == resource.data.startOffset
-        && request.resource.data.endOffset == resource.data.endOffset
-        && request.resource.data.quoteHash == resource.data.quoteHash
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count', 'updatedAt'])
-        && (
-          (request.resource.data.count == resource.data.count + 1
-            && popularMembershipSupports(id))
-          ||
-          (resource.data.count > 0
-            && request.resource.data.count == resource.data.count - 1
-            && popularMembershipRemoved(id))
-        );
-    }
+  function isValidHighlightCreate() {
+    return hasValidHighlightFields(request.resource.data)
+      && request.resource.data.count == 1;
+  }
 
-    function isValidHighlightCreate() {
-      return hasValidHighlightFields(request.resource.data)
-        && request.resource.data.count == 1;
-    }
+  function isValidHighlightUpdate() {
+    return hasValidHighlightFields(request.resource.data)
+      && request.resource.data.slug == resource.data.slug
+      && request.resource.data.paragraph == resource.data.paragraph
+      && request.resource.data.count == resource.data.count + 1
+      && request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['count', 'updatedAt']);
+  }
 
-    function isValidHighlightUpdate() {
-      return hasValidHighlightFields(request.resource.data)
-        && request.resource.data.slug == resource.data.slug
-        && request.resource.data.paragraph == resource.data.paragraph
-        && request.resource.data.count == resource.data.count + 1
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['count', 'updatedAt']);
-    }
+  function hasValidQuoteVoteFields(d) {
+    return d.keys().hasOnly(['slug', 'quoteHash', 'deviceHash', 'createdAt'])
+      && d.slug is string && d.slug.size() > 0 && d.slug.size() <= 220
+      && d.quoteHash is string && d.quoteHash.size() >= 8 && d.quoteHash.size() <= 80
+      && d.deviceHash is string && d.deviceHash.size() >= 8 && d.deviceHash.size() <= 80
+      && d.createdAt == request.time;
+  }
 
-    function hasValidQuoteVoteFields(d) {
-      return d.keys().hasOnly(['slug', 'quoteHash', 'deviceHash', 'createdAt'])
-        && d.slug is string && d.slug.size() > 0 && d.slug.size() <= 220
-        && d.quoteHash is string && d.quoteHash.size() >= 8 && d.quoteHash.size() <= 80
-        && d.deviceHash is string && d.deviceHash.size() >= 8 && d.deviceHash.size() <= 80
-        && d.createdAt == request.time;
-    }
+  function isValidQuoteVoteCreate(id) {
+    return id.size() >= 8 && id.size() <= 80
+      && hasValidQuoteVoteFields(request.resource.data);
+  }
 
-    function isValidQuoteVoteCreate(id) {
-      return id.size() >= 8 && id.size() <= 80
-        && hasValidQuoteVoteFields(request.resource.data);
-    }
+  function hasValidQuoteCountFields(id, d) {
+    return d.keys().hasOnly(['slug', 'quoteHash', 'quote', 'paragraph', 'count', 'lastVote', 'updatedAt'])
+      && d.slug is string && d.slug.size() > 0 && d.slug.size() <= 220
+      && d.quoteHash == id
+      && d.quoteHash is string && d.quoteHash.size() >= 8 && d.quoteHash.size() <= 80
+      && d.quote is string && d.quote.size() >= 8 && d.quote.size() <= 600
+      && d.paragraph is int && d.paragraph >= 0 && d.paragraph <= 250
+      && d.count is int && d.count > 0
+      && d.lastVote is string && d.lastVote.size() >= 8 && d.lastVote.size() <= 80
+      && d.updatedAt == request.time;
+  }
 
-    function hasValidQuoteCountFields(id, d) {
-      return d.keys().hasOnly(['slug', 'quoteHash', 'quote', 'paragraph', 'count', 'lastVote', 'updatedAt'])
-        && d.slug is string && d.slug.size() > 0 && d.slug.size() <= 220
-        && d.quoteHash == id
-        && d.quoteHash is string && d.quoteHash.size() >= 8 && d.quoteHash.size() <= 80
-        && d.quote is string && d.quote.size() >= 8 && d.quote.size() <= 600
-        && d.paragraph is int && d.paragraph >= 0 && d.paragraph <= 250
-        && d.count is int && d.count > 0
-        && d.lastVote is string && d.lastVote.size() >= 8 && d.lastVote.size() <= 80
-        && d.updatedAt == request.time;
-    }
+  function quoteVoteSupports(d) {
+    return existsAfter(/databases/$(database)/documents/article_quote_votes/$(d.lastVote))
+      && getAfter(/databases/$(database)/documents/article_quote_votes/$(d.lastVote)).data.slug == d.slug
+      && getAfter(/databases/$(database)/documents/article_quote_votes/$(d.lastVote)).data.quoteHash == d.quoteHash;
+  }
 
-    function quoteVoteSupports(d) {
-      return existsAfter(/databases/$(database)/documents/article_quote_votes/$(d.lastVote))
-        && getAfter(/databases/$(database)/documents/article_quote_votes/$(d.lastVote)).data.slug == d.slug
-        && getAfter(/databases/$(database)/documents/article_quote_votes/$(d.lastVote)).data.quoteHash == d.quoteHash;
-    }
+  function isValidQuoteCountCreate(id) {
+    return hasValidQuoteCountFields(id, request.resource.data)
+      && request.resource.data.count == 1
+      && quoteVoteSupports(request.resource.data);
+  }
 
-    function isValidQuoteCountCreate(id) {
-      return hasValidQuoteCountFields(id, request.resource.data)
-        && request.resource.data.count == 1
-        && quoteVoteSupports(request.resource.data);
-    }
+  function isValidQuoteCountUpdate(id) {
+    return hasValidQuoteCountFields(id, request.resource.data)
+      && request.resource.data.slug == resource.data.slug
+      && request.resource.data.quoteHash == resource.data.quoteHash
+      && request.resource.data.quote == resource.data.quote
+      && request.resource.data.paragraph == resource.data.paragraph
+      && request.resource.data.count == resource.data.count + 1
+      && request.resource.data.lastVote != resource.data.lastVote
+      && request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['count', 'lastVote', 'updatedAt'])
+      && quoteVoteSupports(request.resource.data);
+  }
 
-    function isValidQuoteCountUpdate(id) {
-      return hasValidQuoteCountFields(id, request.resource.data)
-        && request.resource.data.slug == resource.data.slug
-        && request.resource.data.quoteHash == resource.data.quoteHash
-        && request.resource.data.quote == resource.data.quote
-        && request.resource.data.paragraph == resource.data.paragraph
-        && request.resource.data.count == resource.data.count + 1
-        && request.resource.data.lastVote != resource.data.lastVote
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['count', 'lastVote', 'updatedAt'])
-        && quoteVoteSupports(request.resource.data);
-    }
+  function isValidMessage() {
+    let d = request.resource.data;
+    return d.keys().hasOnly(['name', 'email', 'topic', 'message', 'intent', 'quality', 'createdAt'])
+      && d.name is string && d.name.size() > 1 && d.name.size() <= 80
+      && isValidEmail(d.email)
+      && d.topic in ['استشارة', 'محاضرة أو ورشة', 'لقاء إعلامي', 'أخرى']
+      && (!('intent' in d) || (d.intent is string && d.intent.size() <= 80))
+      && (!('quality' in d) || (d.quality is string && d.quality.size() <= 80))
+      && d.message is string && d.message.size() > 10 && d.message.size() <= 3000
+      && d.createdAt == request.time;
+  }
 
-    function isValidMessage() {
-      let d = request.resource.data;
-      return d.keys().hasOnly(['name', 'email', 'topic', 'message', 'intent', 'quality', 'createdAt'])
-        && d.name is string && d.name.size() > 1 && d.name.size() <= 80
-        && isValidEmail(d.email)
-        && d.topic in ['استشارة', 'محاضرة أو ورشة', 'لقاء إعلامي', 'أخرى']
-        && (!('intent' in d) || (d.intent is string && d.intent.size() <= 80))
-        && (!('quality' in d) || (d.quality is string && d.quality.size() <= 80))
-        && d.message is string && d.message.size() > 10 && d.message.size() <= 3000
-        && d.createdAt == request.time;
-    }
+  function hasValidJourneyFields(d) {
+    return d.keys().hasOnly(['from', 'to', 'count', 'updatedAt'])
+      && d.from is string && d.from.size() > 0 && d.from.size() <= 300
+      && d.to is string && d.to.size() > 0 && d.to.size() <= 300
+      && d.from != d.to
+      && d.count is int
+      && d.updatedAt == request.time;
+  }
 
-    function hasValidJourneyFields(d) {
-      return d.keys().hasOnly(['from', 'to', 'count', 'updatedAt'])
-        && d.from is string && d.from.size() > 0 && d.from.size() <= 300
-        && d.to is string && d.to.size() > 0 && d.to.size() <= 300
-        && d.from != d.to
-        && d.count is int
-        && d.updatedAt == request.time;
-    }
+  function isValidJourneyCreate() {
+    return hasValidJourneyFields(request.resource.data)
+      && request.resource.data.count == 1;
+  }
 
-    function isValidJourneyCreate() {
-      return hasValidJourneyFields(request.resource.data)
-        && request.resource.data.count == 1;
-    }
-
-    function isValidJourneyUpdate() {
-      return hasValidJourneyFields(request.resource.data)
-        && request.resource.data.from == resource.data.from
-        && request.resource.data.to == resource.data.to
-        && request.resource.data.count == resource.data.count + 1
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['count', 'updatedAt']);
-    }
+  function isValidJourneyUpdate() {
+    return hasValidJourneyFields(request.resource.data)
+      && request.resource.data.from == resource.data.from
+      && request.resource.data.to == resource.data.to
+      && request.resource.data.count == resource.data.count + 1
+      && request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['count', 'updatedAt']);
   }
 }

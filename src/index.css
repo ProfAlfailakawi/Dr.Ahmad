@@ -669,9 +669,6 @@ html.reader-paper .article-journey .bg-wash {
   letter-spacing: .015em !important;
   color: rgb(var(--c-accent) / .68) !important;
   font-variant-numeric: tabular-nums;
-  /* شارة عدّ لا نصّ مقال: تحديد القارئ كان يلتقط رقمها فيتسرب إلى بطاقة الاقتباس */
-  user-select: none;
-  -webkit-user-select: none;
 }
 html[data-reader-popular="off"] .reader-popular-mark {
   background: none;
@@ -1582,14 +1579,12 @@ html.dark .content-books a > div[style*="aspect-ratio"]::before {
    ============================================================ */
 
 /* ---------- 1) توقيع الصفحات: يُرسم بعد اكتمال ظهور العنوان ---------- */
-/* الخط توقيعٌ داخل مساحة محجوزة من العنوان نفسه — تعليقه بهامش سالب كان
-   يُسقطه فوق أول سطرٍ من وصف الصفحة على الجوال (وأحياناً الحاسوب) */
-.page-head h1 { position: relative; padding-bottom: 20px; }
+.page-head h1 { position: relative; }
 .page-head h1::after {
   content: "";
   position: absolute;
   inset-inline-start: 2px;
-  bottom: 6px;
+  bottom: -13px;
   width: min(10rem, 42vw);
   height: 2px;
   border-radius: 999px;
@@ -1601,7 +1596,7 @@ html.dark .content-books a > div[style*="aspect-ratio"]::before {
 .page-head h1::before {
   content: "";
   position: absolute;
-  bottom: 3px;
+  bottom: -16px;
   width: 8px;
   height: 8px;
   border-radius: 999px;

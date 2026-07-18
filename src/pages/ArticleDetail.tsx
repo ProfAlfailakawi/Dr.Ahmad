@@ -91,8 +91,24 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
 
   return (
     <>
-      {/* أُزيل شريط «تتبع المقالة» هنا بطلب الدكتور — مكرر: زر «تتبع النص» في مشغل
-          الصوت يدير الحالة نفسها (article-audio-follow) والنقر على الفقرات باقٍ. */}
+      {activeAudio && (
+        <div className="synced-reading-toolbar mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-hair bg-wash/60 px-4 py-3">
+          <p className="text-[.74rem] leading-relaxed text-soft">اضغط أي فقرة للانتقال إليها أثناء الاستماع.</p>
+          <button
+            type="button"
+            onClick={() => commitFollow(!followEnabled)}
+            aria-pressed={followEnabled}
+            className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[.74rem] font-semibold transition-colors ${
+              followEnabled
+                ? 'border-accent bg-accent text-white'
+                : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'
+            }`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${followEnabled ? 'bg-white' : 'bg-accent'}`} />
+            تتبع المقالة
+          </button>
+        </div>
+      )}
       <div id="article-body" className={`article-body mt-7 ${activeAudio ? 'article-body-synced' : ''}`}>
         {paragraphs.map((paragraph, index) => {
           const paragraphQuotes = popularQuotes.filter((quote) => quote.paragraph === index)

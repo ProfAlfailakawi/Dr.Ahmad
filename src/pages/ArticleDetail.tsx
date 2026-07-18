@@ -53,9 +53,22 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
     return index
   }, [activeAudio, audio.current, audio.duration, followEnabled, paragraphStarts, totalWords])
 
+  const commitFollow = (value: boolean) => {
+    setFollowEnabled(value)
+    try { localStorage.setItem('article-audio-follow', value ? 'on' : 'off') } catch { /* noop */ }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('article-audio-follow-change', { detail: { enabled: value } }))
+    }
+  }
+
   useEffect(() => {
-    try { localStorage.setItem('article-audio-follow', followEnabled ? 'on' : 'off') } catch { /* noop */ }
-  }, [followEnabled])
+    const syncFollow = (event: Event) => {
+      const next = (event as CustomEvent<{ enabled?: boolean }>).detail?.enabled
+      if (typeof next === 'boolean') setFollowEnabled(next)
+    }
+    window.addEventListener('article-audio-follow-change', syncFollow)
+    return () => window.removeEventListener('article-audio-follow-change', syncFollow)
+  }, [])
 
   useEffect(() => {
     if (!activeAudio || !followEnabled || activeParagraph < 0) return
@@ -83,7 +96,7 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
           <p className="text-[.74rem] leading-relaxed text-soft">اضغط أي فقرة للانتقال إليها أثناء الاستماع.</p>
           <button
             type="button"
-            onClick={() => setFollowEnabled((value) => !value)}
+            onClick={() => commitFollow(!followEnabled)}
             aria-pressed={followEnabled}
             className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[.74rem] font-semibold transition-colors ${
               followEnabled
@@ -99,7 +112,6 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
       <div id="article-body" className={`article-body mt-7 ${activeAudio ? 'article-body-synced' : ''}`}>
         {paragraphs.map((paragraph, index) => {
           const paragraphQuotes = popularQuotes.filter((quote) => quote.paragraph === index)
-          const strongest = paragraphQuotes.slice().sort((left, right) => right.count - left.count)[0]
           return (
             <div key={index} className="popular-highlight-paragraph group relative">
               <p
@@ -110,11 +122,6 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
               >
                 <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} />
               </p>
-              {strongest && (
-                <p className="reader-popular-note" aria-label={`حُفظت ${strongest.count.toLocaleString('en-US')} مرة`}>
-                  {strongest.count.toLocaleString('en-US')}
-                </p>
-              )}
             </div>
           )
         })}
@@ -326,10 +333,10 @@ function OwnerBadge({ path }: { path: string }) {
   }, [isAdmin, path])
   if (!isAdmin || !c) return null
   return (
-    <span className="ms-3 inline-flex items-center gap-2 rounded-full border border-hair px-3 py-1 align-middle text-[.72rem] font-medium text-soft" title="يظهر لك وحدك">
-      <span>{c.views} مشاهدة</span>
+    <span className="inline-flex items-center gap-2 rounded-full border border-hair bg-canvas/80 px-3 py-1 align-middle text-[.72rem] font-medium text-soft" title="يظهر لك وحدك — أرقام داخلية موثقة من الموقع">
+      <span>{c.views.toLocaleString('en-US')} مشاهدة</span>
       <span className="text-hair">·</span>
-      <span>{c.shares} مشاركة</span>
+      <span>{c.shares.toLocaleString('en-US')} مشاركة</span>
     </span>
   )
 }
@@ -496,7 +503,6 @@ function ArticleExtensions({
         <IdeaThread article={article} books={books} papers={papers} media={media} />
         {isAdmin && (
           <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-hair pt-5" aria-label="أدوات المشرف">
-            <OwnerBadge path={`/articles/${article.slug}`} />
             <OwnerEdit tab="articles" slug={article.slug} />
           </div>
         )}
@@ -603,6 +609,9 @@ export default function ArticleDetail() {
                   <ReadingTimeLabel slug={article.slug} text={article.body} />
                 </>
               )}
+            </div>
+            <div className="mt-4 flex justify-start">
+              <OwnerBadge path={`/articles/${article.slug}`} />
             </div>
 
             <h1 style={{ viewTransitionName: `article-${a.slug}` }} className="mt-5 text-wrap-balance font-display text-[clamp(2rem,4.6vw,3.1rem)] font-bold leading-[1.3] text-ink">

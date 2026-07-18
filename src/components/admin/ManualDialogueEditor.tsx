@@ -221,7 +221,8 @@ function storedDialogue(slug: string) {
 export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }) {
   const { user, isAdmin, refresh } = useAdminAuth()
   const sortedArticles = useMemo(() => [...articles].sort((a, b) => b.iso.localeCompare(a.iso)), [articles])
-  const initialSlug = sortedArticles[0]?.slug || ''
+  const focusedSlug = typeof window !== 'undefined' ? localStorage.getItem('podcast:focus-slug') || '' : ''
+  const initialSlug = sortedArticles.some((item) => item.slug === focusedSlug) ? focusedSlug : sortedArticles[0]?.slug || ''
   const [slug, setSlug] = useState(initialSlug)
   const [turns, setTurns] = useState<DialogueTurn[]>(() => [blankTurn('male')])
   const [availableDraft, setAvailableDraft] = useState<DialogueTurn[] | null>(() => storedDialogue(initialSlug))
@@ -254,6 +255,9 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
   }, [turns])
 
   useEffect(() => {
+    try {
+      if (localStorage.getItem('podcast:focus-slug') === slug) localStorage.removeItem('podcast:focus-slug')
+    } catch { /* noop */ }
     let active = true
     const local = storedDialogue(slug)
     setTurns([blankTurn('male')])

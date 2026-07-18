@@ -614,6 +614,166 @@ function styleReview(bundle: Bundle, style: ReturnType<typeof editorialStyleProf
   }
 }
 
+type EditorialStatus = 'pass' | 'watch' | 'hold'
+type EditorialSignal = {
+  label: string
+  status: EditorialStatus
+  detail: string
+}
+
+const statusTone: Record<EditorialStatus, string> = {
+  pass: 'border-accent/35 bg-accent/[.055] text-accent',
+  watch: 'border-hair bg-canvas text-soft',
+  hold: 'border-red-300/40 bg-canvas text-soft',
+}
+
+const signalLabel: Record<EditorialStatus, string> = {
+  pass: 'يمر',
+  watch: 'انتبه',
+  hold: 'أوقف',
+}
+
+function hasAny(text: string, words: string[]) {
+  return words.some((word) => text.includes(normalize(word)))
+}
+
+function buildEditorialDecisionSuite({
+  bundle,
+  gate,
+  styleInsight,
+  weeklyPack,
+  privateMatches,
+  similarity,
+}: {
+  bundle: Bundle
+  gate: ReturnType<typeof qualityGate>
+  styleInsight: ReturnType<typeof styleReview>
+  weeklyPack: WeeklyPack
+  privateMatches: ReturnType<typeof privateBookMatches>
+  similarity: ReturnType<typeof articleSimilarityReport>
+}) {
+  const fullText = normalize(`${bundle.title} ${bundle.excerpt} ${bundle.body}`)
+  const rawText = `${bundle.title}\n${bundle.excerpt}\n${bundle.body}`
+  const words = wordCount(bundle.body)
+  const hasEvidence = /\d|دراسة|بحث|جامعة|تقرير|مصدر|وفق|يشير|تبيّن|تبين|بيانات|إحصاء|احصاء/.test(rawText)
+  const hasHumanAnchor = hasAny(fullText, ['الإنسان', 'انسان', 'طالب', 'معلم', 'أسرة', 'طفل', 'معنى', 'كرامة', 'وعي'])
+  const hasAction = hasAny(fullText, ['ماذا نفعل', 'خطوة', 'عملي', 'قرار', 'تطبيق', 'ممارسة', 'نبدأ', 'نغيّر', 'نغير'])
+  const repeatedRisk = !bundle.originalityBypassed && (similarity.repeated || similarity.originality < 68)
+  const decisionSignals: EditorialSignal[] = [
+    {
+      label: 'بوابة النشر الأساسية',
+      status: gate.ready ? 'pass' : 'hold',
+      detail: gate.ready ? 'العنوان والمقتطف والرابط والأصالة والحد الأدنى اجتازت الفحص.' : `تحتاج معالجة: ${gate.blocking.slice(0, 2).join('، ') || 'بنود جودة ناقصة'}.`,
+    },
+    {
+      label: 'قربه من بصمة الدكتور',
+      status: styleInsight.score >= 84 ? 'pass' : styleInsight.score >= 70 ? 'watch' : 'hold',
+      detail: `${styleInsight.label} — ${styleInsight.score}٪.`,
+    },
+    {
+      label: 'خطر التكرار',
+      status: repeatedRisk ? 'hold' : similarity.originality < 78 ? 'watch' : 'pass',
+      detail: repeatedRisk ? `قريب جدًا من «${similarity.matches[0]?.title || 'مقال سابق'}».` : `الأصالة التحريرية ${similarity.originality}٪.`,
+    },
+    {
+      label: 'جاهزية التحويل',
+      status: bundle.socialPack || weeklyPack.linkedin.length ? 'pass' : 'watch',
+      detail: bundle.socialPack ? 'الحزمة الاجتماعية الفاخرة جاهزة للمراجعة.' : 'الحزمة الاحتياطية جاهزة؛ الأفضل بناء النسخة الفاخرة قبل الاعتماد.',
+    },
+  ]
+
+  const decisionHolds = decisionSignals.filter((signal) => signal.status === 'hold').length
+  const decisionWatches = decisionSignals.filter((signal) => signal.status === 'watch').length
+  const decisionScore = Math.max(0, Math.round(100 - decisionHolds * 24 - decisionWatches * 9))
+  const decision = decisionHolds
+    ? 'لا تنشر الآن.'
+    : decisionWatches
+      ? 'جاهز بشرط مراجعة هادئة.'
+      : 'جاهز للنشر بثقة.'
+
+  const silenceDimensions = [
+    { label: 'صوت الطالب', words: ['طالب', 'متعلم', 'طفل'], prompt: 'هل يظهر أثر الفكرة على الطالب لا على النظام فقط؟' },
+    { label: 'صوت المعلم', words: ['معلم', 'مدرس', 'تدريس'], prompt: 'هل توضّح العبء أو القرار الذي سيواجهه المعلم؟' },
+    { label: 'الأسرة والمجتمع', words: ['أسرة', 'اسره', 'ولي', 'بيت', 'مجتمع'], prompt: 'هل توجد زاوية اجتماعية حين يحتاج الموضوع ذلك؟' },
+    { label: 'الدليل أو المثال', words: ['دراسة', 'بحث', 'مثال', 'حالة', 'تجربة', 'رقم', 'نسبة'], prompt: 'هل يوجد مثال أو دليل يمنع النص من أن يبقى تأملًا عامًا؟' },
+    { label: 'الحد الأخلاقي', words: ['أخلاق', 'قيمة', 'كرامة', 'خصوصية', 'تحيز', 'مسؤولية'], prompt: 'هل يضع المقال حدًا واضحًا لما لا ينبغي تجاوزه؟' },
+    { label: 'الخطوة العملية', words: ['خطوة', 'قرار', 'تطبيق', 'ممارسة', 'كيف', 'نبدأ'], prompt: 'هل يعرف القارئ ماذا يفعل بالفكرة بعد قراءتها؟' },
+  ].map((dimension) => ({
+    ...dimension,
+    present: hasAny(fullText, dimension.words),
+  }))
+  const silent = silenceDimensions.filter((dimension) => !dimension.present)
+  const silenceScore = Math.round(((silenceDimensions.length - silent.length) / silenceDimensions.length) * 100)
+
+  const digitalSignals: EditorialSignal[] = [
+    {
+      label: 'تنوع المنصات',
+      status: weeklyPack.linkedin.length >= 3 && weeklyPack.x.length >= 3 && Boolean(weeklyPack.instagram) ? 'pass' : 'watch',
+      detail: 'LinkedIn وX وInstagram وسؤال تفاعلي جاهزة من المقال.',
+    },
+    {
+      label: 'لغة غير متضخمة',
+      status: /ثوري|غير مسبوق|يقلب العالم|الأفضل على الإطلاق/.test(rawText) ? 'watch' : 'pass',
+      detail: 'يعتمد الحضور الرقمي على فكرة هادئة لا ادعاء تسويقي.',
+    },
+    {
+      label: 'الحدث الراهن',
+      status: bundle.event ? 'pass' : 'watch',
+      detail: bundle.event ? `مرتبط بمصدر: ${bundle.event.source}.` : 'لا يوجد حدث مثبت؛ لا مشكلة إذا كان المقال فكريًا لا خبريًا.',
+    },
+    {
+      label: 'قابلية الصورة والاقتباس',
+      status: strongestQuote(bundle.body).length >= 40 ? 'pass' : 'watch',
+      detail: 'توجد جملة قابلة للتحويل إلى بطاقة اقتباس أو كاروسيل.',
+    },
+  ]
+  const digitalScore = Math.max(0, Math.round(100 - digitalSignals.filter((signal) => signal.status === 'watch').length * 10 - digitalSignals.filter((signal) => signal.status === 'hold').length * 24))
+
+  const ethicalSignals: EditorialSignal[] = [
+    {
+      label: 'لا يخترع يقينًا باسم الدكتور',
+      status: /أثبتت كل الدراسات|بلا شك|حتميًا|حتما|مستحيل/.test(rawText) && !hasEvidence ? 'watch' : 'pass',
+      detail: hasEvidence ? 'الادعاءات الحساسة لها إشارة بحثية أو رقمية.' : 'لا توجد ادعاءات علمية حاسمة بلا سند واضح.',
+    },
+    {
+      label: 'كرامة الإنسان قبل الأداة',
+      status: hasHumanAnchor ? 'pass' : 'watch',
+      detail: hasHumanAnchor ? 'الأثر الإنساني حاضر في النص.' : 'أضف أثرًا مباشرًا على الإنسان/الطالب/المعلم.',
+    },
+    {
+      label: 'لا يكشف خصوصيات',
+      status: /رقم هاتف|بريد خاص|اسم طالب|بيانات شخصية/.test(rawText) ? 'hold' : 'pass',
+      detail: 'لا توجد بيانات شخصية ظاهرة داخل المسودة.',
+    },
+    {
+      label: 'قابل للمراجعة لا للتفويض الأعمى',
+      status: hasAction || hasEvidence ? 'pass' : 'watch',
+      detail: 'يفضّل أن يترك النص معيارًا أو خطوة قابلة للمراجعة.',
+    },
+  ]
+  const ethicalHolds = ethicalSignals.filter((signal) => signal.status === 'hold').length
+  const ethicalScore = Math.max(0, Math.round(100 - ethicalHolds * 35 - ethicalSignals.filter((signal) => signal.status === 'watch').length * 10))
+
+  return {
+    decision,
+    decisionScore,
+    decisionSignals,
+    silenceScore,
+    silent,
+    silenceSummary: silent.length
+      ? `الصمت الأبرز: ${silent.slice(0, 2).map((item) => item.label).join('، ')}.`
+      : 'لا توجد فجوة صامتة واضحة؛ الفكرة متوازنة.',
+    digitalScore,
+    digitalSignals,
+    digitalDecision: digitalScore >= 86 ? 'اعتمد الحضور الرقمي.' : digitalScore >= 70 ? 'اعتمد بعد تهذيب بسيط.' : 'أعد ضبط الحملة قبل النشر.',
+    ethicalScore,
+    ethicalSignals,
+    ethicalDecision: ethicalHolds ? 'أوقف حتى تُزال المخالفة.' : ethicalScore >= 86 ? 'منسجم أخلاقيًا.' : 'يحتاج تدقيقًا أخلاقيًا خفيفًا.',
+    privateMemory: privateMatches[0]?.title ? `قريب داخليًا من «${privateMatches[0].title}».` : 'لا يوجد ربط خاص واثق حتى الآن.',
+    words,
+  }
+}
+
 function buildSevenDayCampaign(bundle: Bundle, pack: WeeklyPack): SevenDayCampaign[] {
   const quote = pack.quote || 'الفكرة القوية تبدأ حين نرى الإنسان قبل الأداة.'
   return [
@@ -942,6 +1102,86 @@ function StyleEditorCard({ review }: { review: ReturnType<typeof styleReview> })
             <p className="mt-1 text-[.76rem] leading-relaxed text-soft">{check.note}</p>
           </div>
         ))}
+      </div>
+    </section>
+  )
+}
+
+function SignalRow({ signal }: { signal: EditorialSignal }) {
+  return (
+    <div className="rounded-xl border border-hair bg-canvas px-4 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-[.82rem] font-semibold leading-relaxed text-ink">{signal.label}</p>
+        <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[.66rem] font-semibold ${statusTone[signal.status]}`}>{signalLabel[signal.status]}</span>
+      </div>
+      <p className="mt-1 text-[.74rem] leading-relaxed text-soft">{signal.detail}</p>
+    </div>
+  )
+}
+
+function EditorialDecisionRoom({ suite }: { suite: ReturnType<typeof buildEditorialDecisionSuite> }) {
+  const metrics = [
+    { label: 'قرار النشر', value: suite.decisionScore, note: suite.decision },
+    { label: 'مؤشر الصمت', value: suite.silenceScore, note: suite.silenceSummary },
+    { label: 'الحضور الرقمي', value: suite.digitalScore, note: suite.digitalDecision },
+    { label: 'الذاكرة الأخلاقية', value: suite.ethicalScore, note: suite.ethicalDecision },
+  ]
+  return (
+    <section className={card}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[.76rem] font-semibold uppercase text-accent">غرفة القرار قبل النشر</p>
+          <h2 className="mt-1 font-display text-2xl font-semibold text-ink">قرار واحد… وأربع عدسات هادئة.</h2>
+          <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">هذه الغرفة لا تنشر ولا تغيّر النص وحدها؛ فقط تكشف ما يحتاج قرارك قبل نقل المقال إلى المكتبة.</p>
+        </div>
+        <span className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.72rem] text-soft">{suite.words} كلمة</span>
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {metrics.map((metric) => (
+          <div key={metric.label} className="rounded-2xl border border-hair bg-canvas p-4">
+            <span className="text-[.72rem] font-semibold text-soft">{metric.label}</span>
+            <strong className="mt-2 block font-display text-3xl font-semibold text-accent">{metric.value}٪</strong>
+            <p className="mt-2 text-[.74rem] leading-relaxed text-soft">{metric.note}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 grid gap-4 xl:grid-cols-2">
+        <details className="rounded-2xl border border-hair bg-wash p-4" open>
+          <summary className="cursor-pointer list-none font-semibold text-ink">محرّك القرار قبل النشر</summary>
+          <div className="mt-4 grid gap-2">
+            {suite.decisionSignals.map((signal) => <SignalRow key={signal.label} signal={signal} />)}
+          </div>
+        </details>
+        <details className="rounded-2xl border border-hair bg-wash p-4">
+          <summary className="cursor-pointer list-none font-semibold text-ink">مؤشر الصمت</summary>
+          {suite.silent.length ? (
+            <div className="mt-4 grid gap-2">
+              {suite.silent.slice(0, 4).map((item) => (
+                <div key={item.label} className="rounded-xl border border-hair bg-canvas px-4 py-3">
+                  <p className="text-[.82rem] font-semibold text-ink">{item.label}</p>
+                  <p className="mt-1 text-[.74rem] leading-relaxed text-soft">{item.prompt}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-soft">لا توجد فجوة صامتة واضحة في المسودة الحالية.</p>
+          )}
+        </details>
+        <details className="rounded-2xl border border-hair bg-wash p-4">
+          <summary className="cursor-pointer list-none font-semibold text-ink">غرفة اعتماد الحضور الرقمي</summary>
+          <div className="mt-4 grid gap-2">
+            {suite.digitalSignals.map((signal) => <SignalRow key={signal.label} signal={signal} />)}
+          </div>
+        </details>
+        <details className="rounded-2xl border border-hair bg-wash p-4">
+          <summary className="cursor-pointer list-none font-semibold text-ink">الذاكرة الأخلاقية للموقع</summary>
+          <div className="mt-4 grid gap-2">
+            {suite.ethicalSignals.map((signal) => <SignalRow key={signal.label} signal={signal} />)}
+            <p className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.74rem] leading-relaxed text-soft">ذاكرة الكتب الخاصة: {suite.privateMemory}</p>
+          </div>
+        </details>
       </div>
     </section>
   )
@@ -1321,6 +1561,14 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const styleInsight = useMemo(() => styleReview(bundle, style), [bundle, style])
   const sevenDayCampaign = useMemo(() => buildSevenDayCampaign(bundle, weeklyPack), [bundle, weeklyPack])
   const privateMemoryMatches = useMemo(() => privateBookMatches(bundle, privateLinks), [bundle, privateLinks])
+  const editorialDecisionSuite = useMemo(() => buildEditorialDecisionSuite({
+    bundle,
+    gate,
+    styleInsight,
+    weeklyPack,
+    privateMatches: privateMemoryMatches,
+    similarity,
+  }), [bundle, gate, privateMemoryMatches, similarity, styleInsight, weeklyPack])
   const articleSuggestions = useMemo(() => suggestArticleIdeas(richArticles, radar, privateLinks), [privateLinks, radar, richArticles])
   const pulseTemplateShowcase = useMemo(() => standaloneVisualTemplates(pulsePreviewCopy.idea, pulsePreviewCopy.purpose), [pulsePreviewCopy])
 
@@ -1884,22 +2132,25 @@ ${pulsePurpose.trim()}`,
       )}
 
       {view === 'review' && (
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,.72fr)]">
-          <QualityGateCard gate={gate} />
-          <div className="grid content-start gap-5">
-            <StyleEditorCard review={styleInsight} />
-            <PrivateBookMemoryCard matches={privateMemoryMatches} />
-            <section className={card}>
-              <p className="text-[.76rem] font-semibold uppercase text-accent">إلى مكتبة المقالات</p>
-              <h2 className="mt-1 font-display text-2xl font-semibold text-ink">القرار النهائي يتم من صفحة المقالات.</h2>
-              <p className="mt-3 text-[.86rem] leading-relaxed text-soft">هذا الاستوديو يبني النص ويفحصه فقط. الزر التالي ينقل العنوان والمقتطف والنص والتصنيف والروابط والحزمة كاملة إلى «المقالات» كمسودة؛ وهناك تختار الجدولة أو النشر.</p>
-              <button type="button" disabled={busy || !gate.ready} className={`${primary} mt-6 w-full`} onClick={() => void transferToArticles()}>{busy ? 'أنقل المقال…' : 'نقل المقال كاملًا إلى المقالات'}</button>
-              {!gate.ready && <p className="mt-3 text-[.78rem] leading-relaxed text-soft">أكمل البنود غير المجتازة في بوابة الجودة أولًا.</p>}
-              {notice && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-accent">{notice}</p>}
-              {error && <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-soft">{error}</p>}
-            </section>
+        <>
+          <EditorialDecisionRoom suite={editorialDecisionSuite} />
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,.72fr)]">
+            <QualityGateCard gate={gate} />
+            <div className="grid content-start gap-5">
+              <StyleEditorCard review={styleInsight} />
+              <PrivateBookMemoryCard matches={privateMemoryMatches} />
+              <section className={card}>
+                <p className="text-[.76rem] font-semibold uppercase text-accent">إلى مكتبة المقالات</p>
+                <h2 className="mt-1 font-display text-2xl font-semibold text-ink">القرار النهائي يتم من صفحة المقالات.</h2>
+                <p className="mt-3 text-[.86rem] leading-relaxed text-soft">هذا الاستوديو يبني النص ويفحصه فقط. الزر التالي ينقل العنوان والمقتطف والنص والتصنيف والروابط والحزمة كاملة إلى «المقالات» كمسودة؛ وهناك تختار الجدولة أو النشر.</p>
+                <button type="button" disabled={busy || !gate.ready} className={`${primary} mt-6 w-full`} onClick={() => void transferToArticles()}>{busy ? 'أنقل المقال…' : 'نقل المقال كاملًا إلى المقالات'}</button>
+                {!gate.ready && <p className="mt-3 text-[.78rem] leading-relaxed text-soft">أكمل البنود غير المجتازة في بوابة الجودة أولًا.</p>}
+                {notice && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-accent">{notice}</p>}
+                {error && <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-soft">{error}</p>}
+              </section>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {view === 'pulse' && (

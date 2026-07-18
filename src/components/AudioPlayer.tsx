@@ -60,6 +60,10 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
   const rootRef = useRef<HTMLDivElement>(null)
   const [selectedKey, setSelectedKey] = useState(sources[0]?.key ?? '')
   const [expanded, setExpanded] = useState(false)
+  const [articleFollow, setArticleFollow] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return localStorage.getItem('article-audio-follow') !== 'off'
+  })
   const source = useMemo(() => sources.find((item) => item.key === selectedKey) ?? sources[0], [selectedKey, sources])
   const anyActive = sources.some((item) => player.isActive(item.src))
 
@@ -72,6 +76,21 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
   }, [anyActive])
 
   useEffect(() => {
+    if (!expanded) return
+    window.dispatchEvent(new CustomEvent('audio-player:expanded', { detail: { controlId } }))
+  }, [controlId, expanded])
+
+  useEffect(() => {
+    const collapseOthers = (event: Event) => {
+      const requested = (event as CustomEvent<{ controlId?: string }>).detail?.controlId
+      if (!requested || requested === controlId) return
+      setExpanded(false)
+    }
+    window.addEventListener('audio-player:expanded', collapseOthers)
+    return () => window.removeEventListener('audio-player:expanded', collapseOthers)
+  }, [controlId])
+
+  useEffect(() => {
     const openRequested = (event: Event) => {
       const requested = (event as CustomEvent<{ controlId?: string }>).detail?.controlId
       if (controlId && requested && requested !== controlId) return
@@ -82,6 +101,15 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
     return () => window.removeEventListener('audio-player:open', openRequested)
   }, [controlId])
 
+  useEffect(() => {
+    const syncFollow = (event: Event) => {
+      const next = (event as CustomEvent<{ enabled?: boolean }>).detail?.enabled
+      if (typeof next === 'boolean') setArticleFollow(next)
+    }
+    window.addEventListener('article-audio-follow-change', syncFollow)
+    return () => window.removeEventListener('article-audio-follow-change', syncFollow)
+  }, [])
+
   if (!source) return null
 
   const active = player.isActive(source.src)
@@ -89,6 +117,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
   const duration = active ? player.duration : 0
   const percent = duration ? Math.min((current / duration) * 100, 100) : 0
   const isDialogue = source.key === 'dialogue'
+  const canFollowArticle = typeof window !== 'undefined' && window.location.pathname.startsWith('/articles/') && !isDialogue
 
   const play = () => player.playTrack({
     id: source.src,
@@ -112,6 +141,15 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
     }
   }
 
+  const toggleArticleFollow = () => {
+    const next = !articleFollow
+    setArticleFollow(next)
+    try { localStorage.setItem('article-audio-follow', next ? 'on' : 'off') } catch { /* noop */ }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('article-audio-follow-change', { detail: { enabled: next } }))
+    }
+  }
+
   return (
     <div ref={rootRef} id={controlId} className={compact ? 'min-w-0 scroll-mt-28' : 'mt-7 scroll-mt-28'}>
       <button
@@ -125,7 +163,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
         <span className={`flex shrink-0 items-center justify-center text-accent ${compact ? 'h-9 w-9' : 'h-9 w-9 rounded-full bg-accent/8'}`}><AudioWave dialogue={isDialogue} /></span>
         <span className="min-w-0 flex-1">
           <span className="block text-[.82rem] font-semibold text-ink">استمع</span>
-          {!compact && <span className="mt-0.5 block truncate text-[.7rem] text-soft">{anyActive ? player.track?.label : sources.length > 1 ? `${sources.length.toLocaleString('ar-KW')} تجارب صوتية` : source.label}</span>}
+          {!compact && <span className="mt-0.5 block truncate text-[.7rem] text-soft">{anyActive ? player.track?.label : sources.length > 1 ? `${sources.length.toLocaleString('en-US')} تجارب صوتية` : source.label}</span>}
         </span>
         <span className={`text-[.82rem] text-soft transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}>⌄</span>
       </button>
@@ -150,7 +188,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
                 {source.key !== 'dialogue' && <VoiceFigure kind={(source as { avatar?: 'man' | 'woman' }).avatar === 'woman' ? 'woman' : 'man'} size={15} />}
                 {source.label}
               </p>
-              <p className="mt-0.5 text-[.68rem] text-soft">{active ? `${clock(current)} / ${clock(duration)}` : 'يحفظ موضع الاستماع على هذا الجهاز'}</p>
+              <p className="mt-0.5 text-[.68rem] text-soft">{active ? `${clock(current)} / ${clock(duration)}` : 'جاهز للاستماع'}</p>
             </div>
             <button type="button" onClick={player.cycleSpeed} disabled={!active} className="rounded-full border border-hair px-3 py-1.5 text-[.7rem] text-soft disabled:opacity-40">{AUDIO_SPEEDS.includes(player.speed) ? player.speed : 1}x</button>
           </div>
@@ -169,6 +207,17 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
           </button>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
+            {canFollowArticle && (
+              <button
+                type="button"
+                onClick={toggleArticleFollow}
+                aria-pressed={articleFollow}
+                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[.72rem] font-semibold transition-colors ${articleFollow ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+              >
+                <span className={`h-1.5 w-1.5 rounded-full ${articleFollow ? 'bg-white' : 'bg-accent'}`} />
+                تتبع النص
+              </button>
+            )}
             {sources.map((item) => (
               <button
                 key={item.key}

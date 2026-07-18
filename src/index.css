@@ -655,15 +655,20 @@ html.reader-paper .article-journey .bg-wash {
   border-radius: .12em;
   padding-inline: .02em;
 }
+.reader-popular-wrap {
+  white-space: normal;
+}
 .reader-popular-note {
-  margin: -1rem 0 1.55rem !important;
-  font-size: .64rem !important;
+  display: inline-flex !important;
+  margin: 0 .28em 0 0 !important;
+  transform: translateY(-.35em);
+  vertical-align: text-top;
+  font-size: .58rem !important;
   line-height: 1.2 !important;
   font-weight: 300 !important;
   letter-spacing: .015em !important;
   color: rgb(var(--c-accent) / .68) !important;
-  text-align: start !important;
-  text-align-last: auto !important;
+  font-variant-numeric: tabular-nums;
 }
 html[data-reader-popular="off"] .reader-popular-mark {
   background: none;
@@ -720,8 +725,7 @@ body.audio-dock-open .reader-resume-prompt {
     max-height: min(90dvh, 760px);
   }
   .reader-popular-note {
-    margin-top: -1rem !important;
-    font-size: .65rem !important;
+    font-size: .6rem !important;
   }
 }
 
@@ -1766,16 +1770,19 @@ body.reader-resume-open .floating-actions {
 
 /* نبدأ البطاقة أسفل شريط Safari/PWA والمنطقة الآمنة، فلا تُقص القوالب العلوية. */
 .quote-card-overlay {
-  padding-top: max(5.5rem, calc(env(safe-area-inset-top) + 3.75rem));
-  scroll-padding-top: max(5.5rem, calc(env(safe-area-inset-top) + 3.75rem));
+  align-items: center !important;
+  padding-top: max(1rem, calc(env(safe-area-inset-top) + 1rem));
+  padding-bottom: max(1rem, calc(env(safe-area-inset-bottom) + 1rem));
+  scroll-padding-top: max(1rem, calc(env(safe-area-inset-top) + 1rem));
 }
 .quote-card-dialog {
   margin-inline: auto;
   min-inline-size: 0;
+  max-block-size: calc(100dvh - 2rem);
   padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
 }
 .quote-card-dialog img {
-  max-block-size: min(66dvh, 640px);
+  max-block-size: min(58dvh, calc(100dvh - 14rem), 620px) !important;
   object-fit: contain;
 }
 .quote-card-controls {
@@ -1785,9 +1792,15 @@ body.reader-resume-open .floating-actions {
 }
 
 @media (max-width: 420px) {
+  .quote-card-overlay {
+    align-items: flex-start !important;
+  }
   .reader-selection-toolbar button {
     padding-inline: .78rem;
     font-size: .72rem;
+  }
+  .quote-card-dialog img {
+    max-block-size: min(52dvh, calc(100dvh - 13rem)) !important;
   }
   .quote-card-controls {
     gap: .3rem;

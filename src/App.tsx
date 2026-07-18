@@ -114,6 +114,26 @@ function AdaptiveSilence() {
   return null
 }
 
+function ExclusiveDetailsGuard() {
+  useEffect(() => {
+    const closeSiblingDetails = (event: Event) => {
+      const current = event.target
+      if (!(current instanceof HTMLDetailsElement) || !current.open) return
+      if (current.hasAttribute('data-allow-multiple')) return
+      const parent = current.parentElement
+      if (!parent) return
+      for (const item of Array.from(parent.children)) {
+        if (item === current || !(item instanceof HTMLDetailsElement)) continue
+        if (item.hasAttribute('data-allow-multiple')) continue
+        if (item.open) item.open = false
+      }
+    }
+    document.addEventListener('toggle', closeSiblingDetails, true)
+    return () => document.removeEventListener('toggle', closeSiblingDetails, true)
+  }, [])
+  return null
+}
+
 function AnimatedRoutes() {
   const loc = useLocation()
   return (
@@ -217,6 +237,7 @@ export default function App() {
         <PersistentAudioProvider>
           <WesternDigitsGuard />
           <AdaptiveSilence />
+          <ExclusiveDetailsGuard />
           <RouteJourneyTracker />
           <RouteViewTracker />
           <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>

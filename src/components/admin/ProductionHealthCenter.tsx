@@ -65,6 +65,11 @@ function StageRail({ active }: { active: Stage }) {
   )
 }
 
+const focusManualDialogue = (slug: string, onOpen: (tab: AdminTab) => void) => {
+  try { localStorage.setItem('podcast:focus-slug', slug) } catch { /* noop */ }
+  onOpen('manual-dialogue')
+}
+
 export function ProductionHealthCenter({
   articles,
   books,
@@ -227,7 +232,9 @@ export function ProductionHealthCenter({
         </div>
 
         <div className="mt-5 grid gap-3">
-          {episodeRows.map(({ article, episode, status }) => (
+          {episodeRows.map(({ article, episode, status }) => {
+            const hasDraft = draftSlugs.has(article.slug)
+            return (
             <article key={article.slug} className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair bg-canvas p-4 md:p-5">
               <div className="grid min-w-0 gap-3 sm:flex sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
@@ -235,9 +242,23 @@ export function ProductionHealthCenter({
                   <h3 className="mt-1 break-words font-display text-[1rem] font-semibold leading-[1.55] text-ink">{article.title}</h3>
                   <p className="mt-1 text-[.74rem] text-soft">{episode?.failure?.reason
                     ? `${episode.statusLabel || 'فشل'}: ${episode.failure.reason}`
-                    : episode?.statusLabel || episode?.quality?.pronunciation || (draftSlugs.has(article.slug) ? 'توجد مسودة حوار محفوظة' : 'لم يبدأ إنتاج الحلقة بعد')}</p>
+                    : episode?.statusLabel || episode?.quality?.pronunciation || (hasDraft ? 'توجد مسودة حوار محفوظة' : 'لم يبدأ إنتاج الحلقة بعد')}</p>
+                  {hasDraft && (
+                    <p className="mt-1 text-[.68rem] leading-relaxed text-soft/80">
+                      مكانها: لوحة التحكم ← الصوت والبودكاست ← الحوار اليدوي ← هذا المقال.
+                    </p>
+                  )}
                 </div>
                 <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:flex-wrap">
+                  {hasDraft && (
+                    <button
+                      type="button"
+                      onClick={() => focusManualDialogue(article.slug, onOpen)}
+                      className="min-w-0 rounded-full border border-accent/30 px-3 py-2 text-[.72rem] font-semibold leading-tight text-accent transition-colors hover:bg-accent hover:text-white sm:px-4 sm:text-[.74rem]"
+                    >
+                      فتح المسودة
+                    </button>
+                  )}
                   {status === 'draft' || status === 'queued' ? (
                     <button disabled={busy === article.slug || status === 'queued'} onClick={() => void setStatus(article.slug, 'queued')} className="min-w-0 rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold leading-tight text-white disabled:opacity-50 sm:px-4 sm:text-[.74rem]">{status === 'queued' ? 'جارٍ بدء التوليد' : '🎬 ابدأ التوليد الآن'}</button>
                   ) : (
@@ -254,7 +275,7 @@ export function ProductionHealthCenter({
               )}
               <StageRail active={status} />
             </article>
-          ))}
+          )})}
         </div>
         {message && <p className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{message}</p>}
       </section>

@@ -1084,8 +1084,16 @@ function compareTexts(intended, recognized) {
   const expected = normalizeAr(intended).split(' ').filter(Boolean)
   const rawHeard = normalizeAr(recognized).split(' ').filter(Boolean)
   const heard = []
+  /* إدغامُ النطق ليس خطأ نطق: «أن نحارب» تُلفظ بنونٍ مشددة فيكتبها STT «النحارب»،
+     و«من دون» تُكتب «مندون». الأولى تفلت من فكّ اللصق الحرفي (ان+نحارب=اننحارب)
+     فتُحسب كلمةً مفقودة وتسقط مداخلةٌ سليمة النطق. نقبل الزوج متى كان المسموع
+     هو الكلمة الثانية مسبوقةً بحرفين على الأكثر، والأولى أداةً قصيرة. */
+  const assimilated = (token, first, second) =>
+    first.length <= 3 && token.length > second.length && token.endsWith(second)
+    && token.length - second.length <= 2
   for (const token of rawHeard) {
-    const splitAt = expected.findIndex((word, index) => index < expected.length - 1 && word + expected[index + 1] === token)
+    const splitAt = expected.findIndex((word, index) => index < expected.length - 1
+      && (word + expected[index + 1] === token || assimilated(token, word, expected[index + 1])))
     if (splitAt >= 0) { heard.push(expected[splitAt], expected[splitAt + 1]); continue }
     if (token === 'ا' && heard.length && expected.includes(heard.at(-1) + token)) {
       heard[heard.length - 1] += token
@@ -1099,10 +1107,28 @@ function compareTexts(intended, recognized) {
   /* تكافؤات مسموعة دقيقة: الاسم المنقوص المنوّن يسترد ياءه في السمع (ناجٍ→ناجي)،
      و«إذاً»↔«إذن»، و«ليس»↔«ليست» (جنس النفي محفوظ) — كلها تفلت من مطابقة الاحتواء. */
   const HEARD_EQUIV = new Set(['اذا|اذن', 'اذن|اذا', 'ليس|ليست', 'ليست|ليس'])
+  /* إملاء STT للكلمات الطويلة والمنقحرة متذبذب بحرف: «الفاشينستات» تُكتب
+     «الفاشينتات»، و«فرونتيرز» تُكتب «فرونتيرس». النطق سليم والمستمع يسمعه صحيحاً،
+     لكن المطابقة الحرفية كانت تقتل حلقةً كاملة من ٣٥ مداخلة بسبب حرف واحد.
+     نتسامح مع فارق حرف واحد في الكلمات الطويلة وحدها (٧ أحرف فأكثر)، فتبقى
+     الكلمات القصيرة صارمة: «الوهم» لا تساوي «الوهن»، و«الحلم» لا تساوي «الحكم». */
+  const editDistanceAtMostOne = (a, b) => {
+    if (Math.abs(a.length - b.length) > 1) return false
+    const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a]
+    let i = 0, j = 0, slips = 0
+    while (i < shorter.length && j < longer.length) {
+      if (shorter[i] === longer[j]) { i++; j++; continue }
+      if (++slips > 1) return false
+      if (shorter.length === longer.length) { i++; j++ } else j++
+    }
+    return slips + (longer.length - j) + (shorter.length - i) <= 1
+  }
+  const fuzzyLongWord = (a, b) => Math.max(a.length, b.length) >= 7 && editDistanceAtMostOne(a, b)
   const wordsEqual = (a, b) => a === b
     || (a.length > 3 && b.length > 3 && (a.includes(b) || b.includes(a)))
     || (a.length >= 3 && `${a}ي` === b) || (b.length >= 3 && `${b}ي` === a)
     || HEARD_EQUIV.has(`${a}|${b}`)
+    || fuzzyLongWord(a, b)
   const rows = expected.length + 1
   const cols = heard.length + 1
   const dp = Array.from({ length: rows }, () => new Uint16Array(cols))
@@ -1934,7 +1960,10 @@ async function evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnal
     pass,
     score,
     reason: pass ? '' : (verdict.problems || []).map((problem) => `${problem.word}: ${problem.issue}`).join(' · ')
-      || (highMissing.length ? `كلمات خطرة لم يثبت نطقها: ${highMissing.map((risk) => risk.word).join('، ')}` : 'فشل التطابق الصوتي'),
+      || (highMissing.length ? `كلمات خطرة لم يثبت نطقها: ${highMissing.map((risk) => risk.word).join('، ')}`
+        /* اذكر الكلمات المفقودة بالاسم: «فشل التطابق الصوتي» وحدها كانت تترك الدكتور
+           يخمّن أي كلمة من ٣٥ مداخلة هي المتعثرة. */
+        : `فشل التطابق الصوتي${(comparison.missing || []).length ? ` — لم تُسمع: ${(comparison.missing || []).slice(0, 4).join('، ')}` : ''}`),
     variant,
     ssml,
     path,
@@ -2240,7 +2269,10 @@ async function produceUtteranceResilient({ utterance, analysis, voice, lang, wav
   const failure = first.result || {}
   const text = String(utterance.text || '').replace(/\s+/g, ' ').trim()
   const totalWords = wordsOf(text).length
-  const shouldSplit = failure.needsSplit || /أطول من 13ث|استنفدت المرشحات|كلمات خطرة لم يثبت نطقها/.test(String(failure.reason || ''))
+  /* مداخلةٌ واحدة عصية كانت تُعدم حلقةً من ٣٥ مداخلة. التقسيم الدلالي آليةٌ مجرّبة
+     (بلا حذف ولا إعادة ترتيب) والقطعة الأقصر يسهل على المحرك نطقها وعلى الأذن
+     التقاطها — فنستدعيه أيضاً عند فشل التطابق، لا عند الطول وحده. */
+  const shouldSplit = failure.needsSplit || /أطول من 13ث|استنفدت المرشحات|كلمات خطرة لم يثبت نطقها|فشل التطابق الصوتي/.test(String(failure.reason || ''))
   if (!shouldSplit || totalWords < 12)
     return { ok: false, reason: failure.reason || 'غير موثقة', failure }
   const measured = Number(failure.measuredSec) || 13

@@ -1783,7 +1783,7 @@ body.reader-resume-open .floating-actions {
   justify-content: flex-start !important;
   overflow-y: auto !important;
   overscroll-behavior: contain;
-  padding: max(1rem, calc(env(safe-area-inset-top) + .75rem)) .75rem max(1.25rem, calc(env(safe-area-inset-bottom) + .75rem)) !important;
+  padding: max(4.5rem, calc(env(safe-area-inset-top) + 3.5rem)) .75rem max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem)) !important;
 }
 .quote-card-dialog {
   margin-block: auto;
@@ -1799,7 +1799,7 @@ body.reader-resume-open .floating-actions {
 }
 .quote-card-controls {
   position: sticky;
-  top: max(.25rem, env(safe-area-inset-top));
+  top: max(.5rem, env(safe-area-inset-top));
   z-index: 10;
   max-inline-size: 100%;
   -webkit-tap-highlight-color: transparent;

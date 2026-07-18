@@ -69,7 +69,10 @@ const PREFS_KEY = 'reader:preferences:v2'
 const QUOTES_KEY = 'reader:quotes:v2'
 const PROGRESS_PREFIX = 'reader:progress:v2:'
 const PENDING_QUOTE_KEY = 'reader:pending-quote:v1'
-export const POPULAR_THRESHOLD = 5
+/* الرقم يظهر من أول اقتباس: عتبة الخمسة كانت تُخفي أثر القارئ تماماً، فيقتبس
+   ولا يرى شيئاً يتغيّر — وتموت الفكرة الحماسية للموقع. الآن كل جملة اقتُبست
+   تحمل أثرها ظاهراً، ويتصاعد الرقم أمام الجميع مع كل قارئ جديد. */
+export const POPULAR_THRESHOLD = 1
 
 const popularHighlightCache = new Map<string, PopularQuote[]>()
 
@@ -717,7 +720,9 @@ export function usePopularQuotes(slug: string, body = '') {
   useEffect(() => {
     const onUpdate = (event: Event) => {
       const detail = (event as CustomEvent<PopularQuote>).detail
-      if (!detail || detail.slug !== slug || detail.articleVersion !== version) return
+      /* لا نشترط تطابق نسخة النص هنا: التحديث قادم من اقتباس هذا القارئ نفسه على
+         هذه الصفحة، وحجبه كان يمنع ظهور الرقم فور الاقتباس. */
+      if (!detail || detail.slug !== slug) return
       setQuotes((current) => {
         if (detail.count < POPULAR_THRESHOLD) {
           const next = current.filter((quote) => quote.highlightKey !== detail.highlightKey)
@@ -866,12 +871,22 @@ async function findCanonicalHighlight(input: PopularQuoteInput, version: string,
       .map((item) => ({ key: item.id, data: item.data() as Partial<PopularQuote> }))
       .filter(({ data }) => data.articleVersion === version && String(data.paragraphId ?? data.paragraph) === String(input.paragraph) && Number.isInteger(Number(data.startOffset)) && Number.isInteger(Number(data.endOffset)))
       .map(({ key, data }) => ({ key, start: Number(data.startOffset), end: Number(data.endOffset), quoteHash: String(data.quoteHash || '') }))
-    const candidate = candidates.find((item) => {
-      if (intervalOverlap(startOffset, endOffset, item.start, item.end) < .8) return false
-      const existingText = paragraphText.slice(item.start, item.end)
-      return wordOverlap(input.quote, existingText) >= .8
-    })
-    return candidate || null
+    /* الرقم على الجملة رقمٌ واحد للعالم كله: أي قارئ يظلّلها — كلَّها أو جزءاً منها
+       أو يزيد عليها قليلاً — يرفع العدّاد نفسه، ولا يُنشئ عدّاداً موازياً.
+       شرط ٨٠٪ الصارم كان يفتح عدّاداً جديداً عند أدنى اختلاف في حدود التحديد،
+       فيبقى الرقم الظاهر جامداً بينما تتناثر عدّادات يتيمة بقيمة ١.
+       نقبل الاندماج متى تقاطع التحديدان فعلياً وتشاركا نصف الكلمات على الأقل،
+       ونختار الأقوى تقاطعاً عند تعدد المرشحين. */
+    const scored = candidates
+      .map((item) => {
+        const spans = intervalOverlap(startOffset, endOffset, item.start, item.end)
+        const existingText = paragraphText.slice(item.start, item.end)
+        const words = wordOverlap(input.quote, existingText)
+        return { item, spans, words }
+      })
+      .filter(({ spans, words }) => spans >= .35 && words >= .5)
+      .sort((left, right) => (right.spans + right.words) - (left.spans + left.words))
+    return scored[0]?.item || null
   } catch {
     return null
   }

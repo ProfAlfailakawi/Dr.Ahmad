@@ -58,13 +58,17 @@ const slugArg = process.argv.find((arg) => arg.startsWith('--slug='))
 const ONLY_SLUG = slugArg ? safeSlug(slugArg.slice('--slug='.length)) : ''
 const limitArg = process.argv.find((arg) => arg.startsWith('--limit='))
 const JOB_LIMIT = limitArg ? Number(limitArg.slice('--limit='.length)) : Number.POSITIVE_INFINITY
+const voiceArg = process.argv.find((arg) => arg.startsWith('--voice='))
+const ONLY_VOICE = voiceArg ? voiceArg.slice('--voice='.length).trim() : ''
 const MIN_MP3_BYTES = 5_000
-const VOICES = [
+const ALL_VOICES = [
   { key: 'fahed', azure: READING_VOICES.fahed.azure, suffix: '', label: 'فهد' },
   { key: 'noura', azure: READING_VOICES.noura.azure, suffix: '.noura', label: 'نورة' },
 ]
+const VOICES = ONLY_VOICE ? ALL_VOICES.filter((voice) => voice.key === ONLY_VOICE) : ALL_VOICES
 
 if (!(JOB_LIMIT > 0)) throw new Error('--limit يجب أن يكون رقماً موجباً')
+if (ONLY_VOICE && !['fahed', 'noura'].includes(ONLY_VOICE)) throw new Error('--voice يجب أن يكون fahed أو noura')
 if (FORCE_REGENERATE && !ONLY_SLUG) throw new Error('--force يتطلب --slug حتى لا يعيد توليد الأرشيف كله')
 
 function loadEnvironment() {
@@ -441,7 +445,7 @@ function rebuildOriginalManifest(allOriginals) {
   const meta = audioMeta()
   for (const article of allOriginals) {
     const voices = {}
-    for (const voice of VOICES) {
+    for (const voice of ALL_VOICES) {
       const fileName = `${article.slug}${voice.suffix}.mp3`
       const file = resolve(AUDIO_DIR, fileName)
       if ((USE_R2 && meta[fileName]?.bytes) || validLocalMp3(file)) voices[voice.key] = true
@@ -519,7 +523,7 @@ async function processSiteArticles(articles, budget) {
   const pending = loadJson(PENDING_SITE_PATCHES, { schemaVersion: 1, items: [] })
   const pendingByDocument = new Map((pending.items || []).map((item) => [item.documentName, item]))
   for (const article of articles) {
-    const audio = {}
+    const audio = { ...(article.currentAudio || {}) }
     for (const voice of VOICES) {
       const fileName = `${article.slug}${voice.suffix}.mp3`
       const objectName = `site-content/audio/${fileName}`

@@ -30,7 +30,7 @@ export interface ExtraArticle {
   source?: string
   url?: string
   audio?: { fahed?: boolean | string; noura?: boolean | string; dialogue?: boolean | string }
-  audioControl?: { readingDisabled?: boolean; dialogueDisabled?: boolean; readingStatus?: string; dialogueStatus?: string }
+  audioControl?: { readingDisabled?: boolean; fahedDisabled?: boolean; nouraDisabled?: boolean; dialogueDisabled?: boolean; readingStatus?: string; fahedStatus?: string; nouraStatus?: string; dialogueStatus?: string }
 }
 
 export function useExtras<T>(collectionName: string, options: { realtime?: boolean } = {}): T[] {

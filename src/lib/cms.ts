@@ -12,13 +12,22 @@ export type ContentOrigin = 'base' | 'added'
 export type AudioValue = boolean | string
 export type ArticleAudio = { fahed?: AudioValue; noura?: AudioValue; dialogue?: AudioValue }
 export type ArticleAudioControl = {
+  /** حقول القراءة القديمة تبقى للتوافق مع البيانات السابقة فقط. */
   readingDisabled?: boolean
-  dialogueDisabled?: boolean
   readingStatus?: string
-  dialogueStatus?: string
   readingUpdatedAt?: string
-  dialogueUpdatedAt?: string
   readingMessage?: string
+  fahedDisabled?: boolean
+  nouraDisabled?: boolean
+  dialogueDisabled?: boolean
+  fahedStatus?: string
+  nouraStatus?: string
+  dialogueStatus?: string
+  fahedUpdatedAt?: string
+  nouraUpdatedAt?: string
+  dialogueUpdatedAt?: string
+  fahedMessage?: string
+  nouraMessage?: string
   dialogueMessage?: string
 }
 
@@ -160,14 +169,23 @@ function audioVoices(value: unknown): ArticleAudio | undefined {
 function audioControlValue(value: unknown): ArticleAudioControl | undefined {
   if (!isObject(value)) return undefined
   const text = (entry: unknown) => typeof entry === 'string' ? entry.trim() : undefined
+  const bool = (entry: unknown) => typeof entry === 'boolean' ? entry : undefined
   const result: ArticleAudioControl = {
-    readingDisabled: value.readingDisabled === true,
-    dialogueDisabled: value.dialogueDisabled === true,
+    readingDisabled: bool(value.readingDisabled),
     readingStatus: text(value.readingStatus),
-    dialogueStatus: text(value.dialogueStatus),
     readingUpdatedAt: text(value.readingUpdatedAt),
-    dialogueUpdatedAt: text(value.dialogueUpdatedAt),
     readingMessage: text(value.readingMessage),
+    fahedDisabled: bool(value.fahedDisabled),
+    nouraDisabled: bool(value.nouraDisabled),
+    dialogueDisabled: bool(value.dialogueDisabled),
+    fahedStatus: text(value.fahedStatus),
+    nouraStatus: text(value.nouraStatus),
+    dialogueStatus: text(value.dialogueStatus),
+    fahedUpdatedAt: text(value.fahedUpdatedAt),
+    nouraUpdatedAt: text(value.nouraUpdatedAt),
+    dialogueUpdatedAt: text(value.dialogueUpdatedAt),
+    fahedMessage: text(value.fahedMessage),
+    nouraMessage: text(value.nouraMessage),
     dialogueMessage: text(value.dialogueMessage),
   }
   return Object.values(result).some((entry) => entry !== undefined && entry !== false) ? result : undefined
@@ -196,7 +214,11 @@ function buildArticle(value: Record<string, unknown>, cms: CmsMeta): ArticleReco
     audioControl,
     words: wordCount(body || stringValue(value.excerpt)),
     year: stringValue(value.iso).slice(0, 4),
-    hasAudio: Boolean((!audioControl?.readingDisabled && (audio?.fahed || audio?.noura)) || (!audioControl?.dialogueDisabled && audio?.dialogue)),
+    hasAudio: Boolean(
+      (!(audioControl?.fahedDisabled ?? audioControl?.readingDisabled ?? false) && audio?.fahed)
+      || (!(audioControl?.nouraDisabled ?? audioControl?.readingDisabled ?? false) && audio?.noura)
+      || (!audioControl?.dialogueDisabled && audio?.dialogue)
+    ),
     missing: !body,
     _cms: cms,
   }

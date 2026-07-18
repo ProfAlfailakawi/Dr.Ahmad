@@ -274,7 +274,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
    ٢) وإلا → لا شيء. صوت المتصفّح الآلي رديء للعربية، ولا نعرضه إلا بطلب صريح
       عبر ALLOW_BROWSER_TTS في data.ts. */
 type ArticleAudio = { fahed?: boolean | string; noura?: boolean | string; dialogue?: boolean | string }
-type ArticleAudioControl = { readingDisabled?: boolean; dialogueDisabled?: boolean }
+type ArticleAudioControl = { readingDisabled?: boolean; fahedDisabled?: boolean; nouraDisabled?: boolean; dialogueDisabled?: boolean }
 type DialogueTranscript = { title: string; utterances: { speaker: string; text: string }[] }
 const audioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const audioUrl = (path: string) => audioBase ? `${audioBase}/${path.replace(/^\/?audio\//, '')}` : path
@@ -309,7 +309,8 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
   // مقالات لوحة التحكم تمرر audio من وثيقتها (يولّده سكربت الصوت الليلي)
   const entry = (audioManifest as Record<string, boolean | ArticleAudio>)[slug]
   const resolvedVoices: ArticleAudio = { ...(audio ?? (entry === true ? { fahed: true } : entry || {})) }
-  if (audioControl?.readingDisabled) { delete resolvedVoices.fahed; delete resolvedVoices.noura }
+  if (audioControl?.fahedDisabled ?? audioControl?.readingDisabled ?? false) delete resolvedVoices.fahed
+  if (audioControl?.nouraDisabled ?? audioControl?.readingDisabled ?? false) delete resolvedVoices.noura
   if (audioControl?.dialogueDisabled) delete resolvedVoices.dialogue
   const voices = resolvedVoices
   // الحلقة الحوارية (فهد ونورة يتحاوران) تنضم كخيار ثالث فور توفر ملفها —

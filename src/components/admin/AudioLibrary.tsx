@@ -3,17 +3,29 @@ import type { ArticleAudioControl, ArticleRecord } from '../../lib/cms'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { manageArticleAudio, type ArticleAudioAction, type ArticleAudioMode } from '../../lib/audio-management'
 
-type AudioVoice = 'fahed' | 'noura' | 'dialogue'
 type Filter = 'all' | 'ready' | 'working' | 'missing'
-type PlayerState = { slug: string; mode: ArticleAudioMode; voice: AudioVoice } | null
+type PlayerState = { slug: string; voice: ArticleAudioMode } | null
 
 type Props = {
   articles: ArticleRecord[]
   onChanged: () => Promise<unknown> | unknown
 }
 
+type VoiceDefinition = {
+  key: ArticleAudioMode
+  title: string
+  shortTitle: string
+  description: string
+}
+
+const voices: VoiceDefinition[] = [
+  { key: 'fahed', title: 'صوت فهد', shortTitle: 'فهد', description: 'القراءة الرجالية للمقال' },
+  { key: 'noura', title: 'صوت نورة', shortTitle: 'نورة', description: 'القراءة النسائية للمقال' },
+  { key: 'dialogue', title: 'الحوار', shortTitle: 'الحوار', description: 'الحلقة الحوارية الكاملة' },
+]
+
 const audioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
-const audioUrl = (article: ArticleRecord, voice: AudioVoice) => {
+const audioUrl = (article: ArticleRecord, voice: ArticleAudioMode) => {
   const stored = article.audio?.[voice]
   if (typeof stored === 'string' && stored.trim()) return stored.trim()
   const suffix = voice === 'fahed' ? '.mp3' : voice === 'noura' ? '.noura.mp3' : '.dialogue.mp3'
@@ -55,13 +67,36 @@ const normalized = (value = '') => value
   .toLowerCase()
   .trim()
 
+const disabledFor = (control: ArticleAudioControl, voice: ArticleAudioMode) => {
+  if (voice === 'dialogue') return Boolean(control.dialogueDisabled)
+  const specific = voice === 'fahed' ? control.fahedDisabled : control.nouraDisabled
+  return typeof specific === 'boolean' ? specific : Boolean(control.readingDisabled)
+}
+
+const statusFor = (control: ArticleAudioControl, voice: ArticleAudioMode) => {
+  if (voice === 'dialogue') return control.dialogueStatus || ''
+  const specific = voice === 'fahed' ? control.fahedStatus : control.nouraStatus
+  return specific || control.readingStatus || ''
+}
+
+const updatedFor = (control: ArticleAudioControl, voice: ArticleAudioMode) => {
+  if (voice === 'dialogue') return control.dialogueUpdatedAt
+  const specific = voice === 'fahed' ? control.fahedUpdatedAt : control.nouraUpdatedAt
+  return specific || control.readingUpdatedAt
+}
+
+const messageFor = (control: ArticleAudioControl, voice: ArticleAudioMode) => {
+  if (voice === 'dialogue') return control.dialogueMessage || ''
+  const specific = voice === 'fahed' ? control.fahedMessage : control.nouraMessage
+  return specific || control.readingMessage || ''
+}
+
 export function AudioLibrary({ articles, onChanged }: Props) {
   const { user } = useAdminAuth()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
   const [player, setPlayer] = useState<PlayerState>(null)
   const [busyKey, setBusyKey] = useState('')
-  const [listeningKey, setListeningKey] = useState('')
   const [notice, setNotice] = useState('')
   const [localControls, setLocalControls] = useState<Record<string, ArticleAudioControl>>({})
 
@@ -74,48 +109,62 @@ export function AudioLibrary({ articles, onChanged }: Props) {
     ...(localControls[article.slug] || {}),
   })
 
-  const stateFor = (article: ArticleRecord) => {
+  const voiceState = (article: ArticleRecord, voice: ArticleAudioMode) => {
     const control = controlFor(article)
-    const readingDisabled = Boolean(control.readingDisabled)
-    const dialogueDisabled = Boolean(control.dialogueDisabled)
-    const readingAvailable = !readingDisabled && (
-      exists(article.audio?.fahed)
-      || exists(article.audio?.noura)
-      || control.readingStatus === 'published'
-      || Boolean(article.hasAudio)
-    )
-    const dialogueAvailable = !dialogueDisabled && (
-      exists(article.audio?.dialogue)
-      || control.dialogueStatus === 'published'
-    )
-    const working = inProgress(control.readingStatus) || inProgress(control.dialogueStatus)
-    return { control, readingDisabled, dialogueDisabled, readingAvailable, dialogueAvailable, working }
+    const disabled = disabledFor(control, voice)
+    const status = statusFor(control, voice)
+    const available = !disabled && (exists(article.audio?.[voice]) || status === 'published')
+    return {
+      available,
+      disabled,
+      status,
+      working: inProgress(status),
+      updatedAt: updatedFor(control, voice),
+      message: messageFor(control, voice),
+    }
+  }
+
+  const articleState = (article: ArticleRecord) => {
+    const states = voices.map(({ key }) => voiceState(article, key))
+    return {
+      ready: states.some((state) => state.available),
+      working: states.some((state) => state.working),
+      missing: states.every((state) => !state.available && !state.working),
+    }
   }
 
   const filtered = useMemo(() => {
     const q = normalized(query)
     return allArticles.filter((article) => {
-      const state = stateFor(article)
+      const state = articleState(article)
       const matchesQuery = !q || normalized(`${article.title} ${article.cat || ''} ${article.slug}`).includes(q)
       if (!matchesQuery) return false
-      if (filter === 'ready') return state.readingAvailable || state.dialogueAvailable
+      if (filter === 'ready') return state.ready
       if (filter === 'working') return state.working
-      if (filter === 'missing') return !state.readingAvailable && !state.dialogueAvailable && !state.working
+      if (filter === 'missing') return state.missing
       return true
     })
   // localControls intentionally changes the derived state of every row.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allArticles, filter, query, localControls])
 
-  const totals = useMemo(() => allArticles.reduce((sum, article) => {
-    const state = stateFor(article)
-    if (state.readingAvailable || state.dialogueAvailable) sum.ready += 1
-    if (state.working) sum.working += 1
-    if (!state.readingAvailable && !state.dialogueAvailable && !state.working) sum.missing += 1
-    return sum
-  }, { ready: 0, working: 0, missing: 0 }),
+  const totals = useMemo(() => {
+    const result = {
+      ready: 0,
+      working: 0,
+      missing: 0,
+      voices: { fahed: 0, noura: 0, dialogue: 0 } as Record<ArticleAudioMode, number>,
+    }
+    for (const article of allArticles) {
+      const state = articleState(article)
+      if (state.ready) result.ready += 1
+      if (state.working) result.working += 1
+      if (state.missing) result.missing += 1
+      for (const { key } of voices) if (voiceState(article, key).available) result.voices[key] += 1
+    }
+    return result
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  [allArticles, localControls])
+  }, [allArticles, localControls])
 
   useEffect(() => {
     if (!totals.working) return
@@ -123,57 +172,34 @@ export function AudioLibrary({ articles, onChanged }: Props) {
     return () => window.clearInterval(timer)
   }, [onChanged, totals.working])
 
-  const chooseReadingVoice = async (article: ArticleRecord): Promise<AudioVoice | null> => {
-    if (exists(article.audio?.fahed)) return 'fahed'
-    if (exists(article.audio?.noura)) return 'noura'
-    const candidates: AudioVoice[] = ['fahed', 'noura']
-    for (const voice of candidates) {
-      try {
-        let response = await fetch(audioUrl(article, voice), { method: 'HEAD', cache: 'no-store' })
-        if (response.status === 405) response = await fetch(audioUrl(article, voice), { headers: { Range: 'bytes=0-0' }, cache: 'no-store' })
-        const type = (response.headers.get('content-type') || '').toLowerCase()
-        if (response.ok && !type.includes('text/html')) return voice
-      } catch { /* جرّب الصوت التالي */ }
-    }
-    return null
-  }
-
-  const listen = async (article: ArticleRecord, mode: ArticleAudioMode) => {
-    const key = `${article.slug}:${mode}`
-    if (player?.slug === article.slug && player.mode === mode) {
+  const listen = (article: ArticleRecord, voice: ArticleAudioMode) => {
+    if (player?.slug === article.slug && player.voice === voice) {
       setPlayer(null)
       return
     }
-    setListeningKey(key)
     setNotice('')
-    try {
-      const voice: AudioVoice | null = mode === 'dialogue' ? 'dialogue' : await chooseReadingVoice(article)
-      if (!voice) {
-        setNotice(`لم أجد ملف قراءة جاهزاً لمقال «${article.title}». حدّث الحالة أو أعد التوليد.`)
-        return
-      }
-      setPlayer({ slug: article.slug, mode, voice })
-    } finally {
-      setListeningKey('')
-    }
+    setPlayer({ slug: article.slug, voice })
   }
 
-  const run = async (article: ArticleRecord, mode: ArticleAudioMode, action: ArticleAudioAction) => {
-    const label = mode === 'reading' ? 'القراءة العادية' : 'الحوار'
+  const run = async (article: ArticleRecord, voice: ArticleAudioMode, action: ArticleAudioAction) => {
+    const definition = voices.find((item) => item.key === voice)!
+    const detail = voice === 'dialogue'
+      ? 'ستبقى مسودة الحوار محفوظة لإعادة التوليد لاحقاً.'
+      : `لن يتأثر ${voice === 'fahed' ? 'صوت نورة ولا الحوار' : 'صوت فهد ولا الحوار'}.`
     const confirmation = action === 'clear'
-      ? `سيُحذف ${label} المنشور لمقال «${article.title}». ${mode === 'dialogue' ? 'ستبقى مسودة الحوار محفوظة.' : 'سيُحذف صوتا فهد ونورة.'} هل تتابع؟`
-      : `استمعت إلى النسخة الحالية إن احتجت. الآن ستُحذف ${label} القديمة ويبدأ توليد نسخة جديدة لمقال «${article.title}». هل تتابع؟`
+      ? `سيُحذف ${definition.title} فقط من مقال «${article.title}». ${detail}\n\nهل تتابع؟`
+      : `سيُلغى ${definition.title} الحالي فقط، ثم يبدأ توليد نسخة جديدة للمقال «${article.title}». ${detail}\n\nهل تتابع؟`
     if (!window.confirm(confirmation)) return
 
-    const key = `${article.slug}:${mode}:${action}`
+    const key = `${article.slug}:${voice}:${action}`
     setBusyKey(key)
     setNotice('')
-    setPlayer((current) => current?.slug === article.slug && current.mode === mode ? null : current)
+    setPlayer((current) => current?.slug === article.slug && current.voice === voice ? null : current)
     try {
-      const result = await manageArticleAudio({ user, slug: article.slug, mode, action })
-      const statusKey = `${mode}Status` as 'readingStatus' | 'dialogueStatus'
-      const disabledKey = `${mode}Disabled` as 'readingDisabled' | 'dialogueDisabled'
-      const updatedKey = `${mode}UpdatedAt` as 'readingUpdatedAt' | 'dialogueUpdatedAt'
+      const result = await manageArticleAudio({ user, slug: article.slug, mode: voice, action })
+      const disabledKey = `${voice}Disabled` as 'fahedDisabled' | 'nouraDisabled' | 'dialogueDisabled'
+      const statusKey = `${voice}Status` as 'fahedStatus' | 'nouraStatus' | 'dialogueStatus'
+      const updatedKey = `${voice}UpdatedAt` as 'fahedUpdatedAt' | 'nouraUpdatedAt' | 'dialogueUpdatedAt'
       setLocalControls((current) => ({
         ...current,
         [article.slug]: {
@@ -184,8 +210,8 @@ export function AudioLibrary({ articles, onChanged }: Props) {
         },
       }))
       setNotice(result.message || (action === 'clear'
-        ? `بدأ حذف ${label} لمقال «${article.title}».`
-        : `أُرسل «${article.title}» إلى قائمة إعادة توليد ${label}.`))
+        ? `بدأ حذف ${definition.title} فقط لمقال «${article.title}».`
+        : `أُرسل ${definition.title} فقط إلى قائمة إعادة التوليد لمقال «${article.title}».`))
       await onChanged()
       window.setTimeout(() => {
         setLocalControls((current) => {
@@ -202,66 +228,65 @@ export function AudioLibrary({ articles, onChanged }: Props) {
     }
   }
 
-  const actionButtons = (article: ArticleRecord, mode: ArticleAudioMode) => {
-    const state = stateFor(article)
-    const control = state.control
-    const available = mode === 'reading' ? state.readingAvailable : state.dialogueAvailable
-    const disabled = mode === 'reading' ? state.readingDisabled : state.dialogueDisabled
-    const status = mode === 'reading' ? control.readingStatus : control.dialogueStatus
-    const working = inProgress(status)
-    const rowBusy = busyKey.startsWith(`${article.slug}:${mode}:`)
-    const listenBusy = listeningKey === `${article.slug}:${mode}`
-    const canDelete = available || (!disabled && Boolean(status) && status !== 'cleared')
+  const voiceCell = (article: ArticleRecord, definition: VoiceDefinition) => {
+    const state = voiceState(article, definition.key)
+    const date = dateLabel(state.updatedAt)
+    const busyPrefix = `${article.slug}:${definition.key}:`
+    const rowBusy = busyKey.startsWith(busyPrefix)
+    const canDelete = state.available || (!state.disabled && Boolean(state.status) && state.status !== 'cleared')
+    const isListening = player?.slug === article.slug && player.voice === definition.key
 
     return (
-      <div className="mt-2 flex min-h-11 flex-wrap items-center gap-x-4 gap-y-2 text-[.76rem]">
-        <button
-          type="button"
-          disabled={!available || working || rowBusy || listenBusy}
-          onClick={() => void listen(article, mode)}
-          className="inline-flex min-h-11 items-center gap-2 font-semibold text-accent transition-colors hover:text-accent-deep disabled:cursor-not-allowed disabled:opacity-35"
-        >
-          <span aria-hidden className="text-[.68rem]">▶</span>
-          {listenBusy ? 'أتحقق…' : player?.slug === article.slug && player.mode === mode ? 'إغلاق السماع' : 'سماع'}
-        </button>
-        <button
-          type="button"
-          disabled={working || Boolean(busyKey)}
-          onClick={() => void run(article, mode, 'regenerate')}
-          className="min-h-11 font-semibold text-ink transition-colors hover:text-accent disabled:cursor-not-allowed disabled:opacity-35"
-        >
-          {busyKey === `${article.slug}:${mode}:regenerate` ? 'جارٍ الإرسال…' : 'إعادة توليد'}
-        </button>
-        <button
-          type="button"
-          disabled={!canDelete || working || Boolean(busyKey)}
-          onClick={() => void run(article, mode, 'clear')}
-          className="min-h-11 font-medium text-red-700/75 transition-colors hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-30 dark:text-red-300/80"
-        >
-          {busyKey === `${article.slug}:${mode}:clear` ? 'جارٍ الحذف…' : 'حذف'}
-        </button>
+      <div className="min-w-0 border-t border-hair pt-4 lg:border-0 lg:pt-0">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <p className="text-[.78rem] font-semibold text-ink">{definition.title}</p>
+            <p className="mt-0.5 text-[.66rem] text-soft">{definition.description}</p>
+          </div>
+          <span className={`text-[.68rem] ${statusClass(state.status, state.disabled, state.available)}`}>
+            {statusLabel(state.status, state.disabled, state.available)}
+          </span>
+        </div>
+        {date && <p className="mt-2 text-[.65rem] text-soft">آخر تحديث: {date}</p>}
+        {state.message && <p className="mt-2 line-clamp-2 text-[.66rem] leading-relaxed text-soft">{state.message}</p>}
+        <div className="mt-3 flex min-h-11 flex-wrap items-center gap-x-4 gap-y-1 text-[.75rem]">
+          <button
+            type="button"
+            disabled={!state.available || state.working || rowBusy}
+            onClick={() => listen(article, definition.key)}
+            className="inline-flex min-h-11 items-center gap-2 font-semibold text-accent transition-colors hover:text-accent-deep disabled:cursor-not-allowed disabled:opacity-35"
+          >
+            <span aria-hidden className="text-[.66rem]">▶</span>
+            {isListening ? 'إغلاق السماع' : 'سماع'}
+          </button>
+          <button
+            type="button"
+            disabled={state.working || Boolean(busyKey)}
+            onClick={() => void run(article, definition.key, 'regenerate')}
+            className="min-h-11 font-semibold text-ink transition-colors hover:text-accent disabled:cursor-not-allowed disabled:opacity-35"
+          >
+            {busyKey === `${busyPrefix}regenerate` ? 'جارٍ الإرسال…' : 'إعادة توليد'}
+          </button>
+          <button
+            type="button"
+            disabled={!canDelete || state.working || Boolean(busyKey)}
+            onClick={() => void run(article, definition.key, 'clear')}
+            className="min-h-11 font-medium text-red-700/75 transition-colors hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-30 dark:text-red-300/80"
+          >
+            {busyKey === `${busyPrefix}clear` ? 'جارٍ الحذف…' : 'حذف'}
+          </button>
+        </div>
       </div>
     )
   }
 
   const playerFor = (article: ArticleRecord) => {
     if (!player || player.slug !== article.slug) return null
-    const state = stateFor(article)
-    const canFahed = !state.readingDisabled && (exists(article.audio?.fahed) || state.control.readingStatus === 'published' || article.hasAudio)
-    const canNoura = !state.readingDisabled && (exists(article.audio?.noura) || state.control.readingStatus === 'published' || article.hasAudio)
-    const label = player.voice === 'dialogue' ? 'الحلقة الحوارية' : player.voice === 'noura' ? 'قراءة نورة' : 'قراءة فهد'
+    const definition = voices.find((item) => item.key === player.voice)!
     return (
       <div className="col-span-full border-t border-hair pt-4" aria-live="polite">
         <div className="grid min-w-0 gap-3 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[.72rem] font-semibold text-soft">{label}</span>
-            {player.mode === 'reading' && canFahed && canNoura && (
-              <div className="flex items-center gap-1 border-r border-hair pr-2">
-                <button type="button" onClick={() => setPlayer({ ...player, voice: 'fahed' })} className={`min-h-10 px-2 text-[.72rem] font-semibold ${player.voice === 'fahed' ? 'text-accent' : 'text-soft hover:text-accent'}`}>فهد</button>
-                <button type="button" onClick={() => setPlayer({ ...player, voice: 'noura' })} className={`min-h-10 px-2 text-[.72rem] font-semibold ${player.voice === 'noura' ? 'text-accent' : 'text-soft hover:text-accent'}`}>نورة</button>
-              </div>
-            )}
-          </div>
+          <span className="text-[.72rem] font-semibold text-soft">تستمع الآن: {definition.title}</span>
           <audio
             key={`${article.slug}:${player.voice}`}
             className="h-10 w-full min-w-0"
@@ -269,7 +294,7 @@ export function AudioLibrary({ articles, onChanged }: Props) {
             autoPlay
             preload="metadata"
             src={audioUrl(article, player.voice)}
-            onError={() => setNotice(`تعذّر فتح ${label} لمقال «${article.title}». قد يكون الملف قيد النشر؛ حدّث الحالة بعد قليل.`)}
+            onError={() => setNotice(`تعذّر فتح ${definition.title} لمقال «${article.title}». قد يكون الملف قيد النشر؛ حدّث الحالات بعد قليل.`)}
           >
             متصفحك لا يدعم تشغيل الصوت.
           </audio>
@@ -285,8 +310,13 @@ export function AudioLibrary({ articles, onChanged }: Props) {
           <p className="text-[.76rem] font-semibold text-accent">الصوت والبودكاست</p>
           <h2 id="audio-library-title" className="mt-1 font-display text-3xl font-bold text-ink">مكتبة الصوت</h2>
           <p className="mt-3 max-w-3xl text-[.84rem] leading-loose text-soft">
-            اسمع النسخة الموجودة أولاً، ثم قرّر إعادة توليدها أو حذفها. جميع المقالات هنا؛ لا حاجة إلى فتح صفحة المقال أو محرّره.
+            فهد ونورة والحوار ثلاثة ملفات مستقلة تماماً. اسمع أي نسخة أولاً، ثم احذفها أو أعد توليدها من دون أن يتأثر الملفان الآخران.
           </p>
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[.7rem] text-soft">
+            <span>فهد جاهز: {totals.voices.fahed}</span>
+            <span>نورة جاهزة: {totals.voices.noura}</span>
+            <span>حوار جاهز: {totals.voices.dialogue}</span>
+          </div>
         </div>
         <button type="button" onClick={() => void onChanged()} className="min-h-11 justify-self-start text-[.76rem] font-semibold text-soft transition-colors hover:text-accent md:justify-self-end">تحديث الحالات</button>
       </div>
@@ -304,9 +334,9 @@ export function AudioLibrary({ articles, onChanged }: Props) {
         <div className="rail flex min-w-0 gap-1 overflow-x-auto pb-1">
           {([
             ['all', `الكل ${allArticles.length}`],
-            ['ready', `جاهز ${totals.ready}`],
+            ['ready', `لديه صوت ${totals.ready}`],
             ['working', `قيد التنفيذ ${totals.working}`],
-            ['missing', `بلا صوت ${totals.missing}`],
+            ['missing', `بلا أي صوت ${totals.missing}`],
           ] as [Filter, string][]).map(([key, label]) => (
             <button key={key} type="button" onClick={() => setFilter(key)} className={`min-h-11 shrink-0 px-3 text-[.74rem] font-semibold transition-colors ${filter === key ? 'border-b-2 border-accent text-ink' : 'text-soft hover:text-accent'}`}>{label}</button>
           ))}
@@ -320,51 +350,27 @@ export function AudioLibrary({ articles, onChanged }: Props) {
         </div>
       )}
 
-      <div className="hidden border-b border-hair px-3 pb-2 text-[.7rem] font-semibold text-soft lg:grid lg:grid-cols-[minmax(260px,1.45fr)_minmax(280px,1fr)_minmax(260px,1fr)] lg:gap-6">
-        <span>المقال</span><span>القراءة العادية</span><span>الحوار</span>
+      <div className="hidden border-b border-hair px-3 pb-2 text-[.7rem] font-semibold text-soft lg:grid lg:grid-cols-[minmax(230px,1.25fr)_repeat(3,minmax(215px,1fr))] lg:gap-5">
+        <span>المقال</span><span>صوت فهد</span><span>صوت نورة</span><span>الحوار</span>
       </div>
 
       <div className="divide-y divide-hair border-b border-hair">
-        {filtered.map((article) => {
-          const state = stateFor(article)
-          const readingStatus = state.control.readingStatus || ''
-          const dialogueStatus = state.control.dialogueStatus || ''
-          const readingDate = dateLabel(state.control.readingUpdatedAt)
-          const dialogueDate = dateLabel(state.control.dialogueUpdatedAt)
-          return (
-            <article key={article.slug} className="grid min-w-0 gap-5 px-1 py-5 sm:px-3 lg:grid-cols-[minmax(260px,1.45fr)_minmax(280px,1fr)_minmax(260px,1fr)] lg:gap-6">
-              <div className="min-w-0">
-                <p className="line-clamp-2 text-[.9rem] font-semibold leading-relaxed text-ink">{article.title}</p>
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[.7rem] text-soft">
-                  {article.cat && <span>{article.cat}</span>}
-                  {article.iso && <span dir="ltr">{article.iso}</span>}
-                  {article._cms.hidden && <span>مخفي</span>}
-                </div>
-                <a href={`/articles/${article.slug}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex min-h-9 items-center text-[.72rem] text-soft transition-colors hover:text-accent">فتح المقال ↗</a>
+        {filtered.map((article) => (
+          <article key={article.slug} className="grid min-w-0 gap-5 px-1 py-5 sm:px-3 lg:grid-cols-[minmax(230px,1.25fr)_repeat(3,minmax(215px,1fr))] lg:gap-5">
+            <div className="min-w-0">
+              <p className="line-clamp-2 text-[.9rem] font-semibold leading-relaxed text-ink">{article.title}</p>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[.7rem] text-soft">
+                {article.cat && <span>{article.cat}</span>}
+                {article.iso && <span dir="ltr">{article.iso}</span>}
+                {article._cms.hidden && <span>مخفي</span>}
               </div>
+              <a href={`/articles/${article.slug}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex min-h-9 items-center text-[.72rem] text-soft transition-colors hover:text-accent">فتح المقال ↗</a>
+            </div>
 
-              <div className="min-w-0 border-t border-hair pt-4 lg:border-0 lg:pt-0">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="text-[.78rem] font-semibold text-ink">القراءة</p>
-                  <span className={`text-[.7rem] ${statusClass(readingStatus, state.readingDisabled, state.readingAvailable)}`}>{statusLabel(readingStatus, state.readingDisabled, state.readingAvailable)}</span>
-                </div>
-                {readingDate && <p className="mt-1 text-[.66rem] text-soft">آخر تحديث: {readingDate}</p>}
-                {actionButtons(article, 'reading')}
-              </div>
-
-              <div className="min-w-0 border-t border-hair pt-4 lg:border-0 lg:pt-0">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="text-[.78rem] font-semibold text-ink">الحوار</p>
-                  <span className={`text-[.7rem] ${statusClass(dialogueStatus, state.dialogueDisabled, state.dialogueAvailable)}`}>{statusLabel(dialogueStatus, state.dialogueDisabled, state.dialogueAvailable)}</span>
-                </div>
-                {dialogueDate && <p className="mt-1 text-[.66rem] text-soft">آخر تحديث: {dialogueDate}</p>}
-                {actionButtons(article, 'dialogue')}
-              </div>
-
-              {playerFor(article)}
-            </article>
-          )
-        })}
+            {voices.map((definition) => <div key={definition.key}>{voiceCell(article, definition)}</div>)}
+            {playerFor(article)}
+          </article>
+        ))}
         {!filtered.length && <p className="py-16 text-center text-[.84rem] text-soft">لا توجد مقالات تطابق هذا البحث.</p>}
       </div>
     </section>

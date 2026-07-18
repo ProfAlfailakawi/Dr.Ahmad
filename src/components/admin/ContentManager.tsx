@@ -31,7 +31,7 @@ export type ManagedRecord = {
   status?: string
   scheduledAt?: string
   audio?: { fahed?: boolean | string; noura?: boolean | string; dialogue?: boolean | string }
-  audioControl?: { readingDisabled?: boolean; dialogueDisabled?: boolean; readingStatus?: string; dialogueStatus?: string; readingMessage?: string; dialogueMessage?: string }
+  audioControl?: { readingDisabled?: boolean; fahedDisabled?: boolean; nouraDisabled?: boolean; dialogueDisabled?: boolean; readingStatus?: string; fahedStatus?: string; nouraStatus?: string; dialogueStatus?: string; readingMessage?: string; fahedMessage?: string; nouraMessage?: string; dialogueMessage?: string }
   hasAudio?: boolean
   isbn?: string
   desc?: string

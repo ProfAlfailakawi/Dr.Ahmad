@@ -1,6 +1,6 @@
 type TokenUser = { getIdToken: (forceRefresh?: boolean) => Promise<string> }
 
-export type ArticleAudioMode = 'reading' | 'dialogue'
+export type ArticleAudioMode = 'fahed' | 'noura' | 'dialogue'
 export type ArticleAudioAction = 'clear' | 'regenerate'
 
 export type ArticleAudioManageResult = {

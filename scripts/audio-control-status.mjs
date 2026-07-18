@@ -13,7 +13,7 @@ const message = arg('message').trim().slice(0, 700)
 const clearAudio = process.argv.includes('--clear-audio')
 
 if (!/^[a-z0-9-]+$/.test(slug)) throw new Error('slug غير صالح')
-if (!['reading', 'dialogue'].includes(mode)) throw new Error('mode يجب أن يكون reading أو dialogue')
+if (!['fahed', 'noura', 'dialogue', 'reading'].includes(mode)) throw new Error('mode يجب أن يكون fahed أو noura أو dialogue')
 if (!/^[a-z_]{2,30}$/.test(status)) throw new Error('status غير صالح')
 
 const serviceAccountPath = resolve(process.cwd(), process.env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')
@@ -32,6 +32,12 @@ const updatedKey = `${mode}UpdatedAt`
 const messageKey = `${mode}Message`
 const now = new Date().toISOString()
 
+const clearVoiceFromAudio = (audio) => {
+  if (mode === 'fahed' || mode === 'reading') delete audio.fahed
+  if (mode === 'noura' || mode === 'reading') delete audio.noura
+  if (mode === 'dialogue') delete audio.dialogue
+}
+
 const siteRef = db.collection('site_articles').doc(slug)
 const site = await siteRef.get()
 if (site.exists) {
@@ -40,8 +46,7 @@ if (site.exists) {
   const patch = { audioControl: next, updatedAt: FieldValue.serverTimestamp() }
   if (clearAudio) {
     const audio = { ...objectMap(site.data()?.audio) }
-    if (mode === 'reading') { delete audio.fahed; delete audio.noura }
-    else delete audio.dialogue
+    clearVoiceFromAudio(audio)
     patch.audio = Object.keys(audio).length ? audio : FieldValue.delete()
   }
   await siteRef.set(patch, { merge: true })

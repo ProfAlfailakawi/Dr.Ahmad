@@ -7,11 +7,12 @@ on:
         description: 'الرابط المختصر للمقال'
         required: true
       mode:
-        description: 'reading أو dialogue'
+        description: 'fahed أو noura أو dialogue'
         required: true
         type: choice
         options:
-          - reading
+          - fahed
+          - noura
           - dialogue
 
 permissions:
@@ -35,7 +36,7 @@ jobs:
         shell: bash
         run: |
           [[ "${{ inputs.slug }}" =~ ^[a-z0-9-]+$ ]] || { echo "::error::slug غير صالح"; exit 1; }
-          [[ "${{ inputs.mode }}" == "reading" || "${{ inputs.mode }}" == "dialogue" ]] || { echo "::error::mode غير صالح"; exit 1; }
+          [[ "${{ inputs.mode }}" == "fahed" || "${{ inputs.mode }}" == "noura" || "${{ inputs.mode }}" == "dialogue" ]] || { echo "::error::mode غير صالح"; exit 1; }
 
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -71,11 +72,11 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$R2_BUCKET" && test -n "$R2_ENDPOINT"
-          if [ "${{ inputs.mode }}" = "reading" ]; then
-            FILES=("${{ inputs.slug }}.mp3" "${{ inputs.slug }}.noura.mp3")
-          else
-            FILES=("${{ inputs.slug }}.dialogue.mp3" "${{ inputs.slug }}.dialogue.json")
-          fi
+          case "${{ inputs.mode }}" in
+            fahed) FILES=("${{ inputs.slug }}.mp3") ;;
+            noura) FILES=("${{ inputs.slug }}.noura.mp3") ;;
+            dialogue) FILES=("${{ inputs.slug }}.dialogue.mp3" "${{ inputs.slug }}.dialogue.json") ;;
+          esac
           for file in "${FILES[@]}"; do
             aws s3 rm "s3://$R2_BUCKET/$file" --endpoint-url "$R2_ENDPOINT" --no-progress || true
           done

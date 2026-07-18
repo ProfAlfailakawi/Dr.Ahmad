@@ -17,6 +17,15 @@ on:
         description: 'إعادة توليد المقال المحدد حتى لو كان صوته موجوداً'
         required: false
         default: 'false'
+      voice:
+        description: 'الصوت المطلوب: فهد أو نورة؛ all للتشغيل المعتاد'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - fahed
+          - noura
 
 permissions:
   contents: write
@@ -108,6 +117,8 @@ jobs:
           ARGS="--limit=${LIMIT:-8}"
           if [ -n "$SLUG" ]; then ARGS="$ARGS --slug=$SLUG"; fi
           if [ "${{ github.event.inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
+          VOICE="${{ github.event.inputs.voice }}"
+          if [ -n "$VOICE" ] && [ "$VOICE" != "all" ]; then ARGS="$ARGS --voice=$VOICE"; fi
           echo "audio args: $ARGS"
           npm run audio -- $ARGS
         env:
@@ -212,17 +223,25 @@ jobs:
             git commit -m "chore: auto-publish new audio to R2"
             git push origin HEAD:main
           fi
-      - name: Re-enable manually regenerated reading
+      - name: Re-enable the manually regenerated voice
         if: success() && github.event_name == 'workflow_dispatch' && github.event.inputs.force == 'true' && github.event.inputs.slug != ''
-        run: node scripts/audio-control-status.mjs --slug="${{ github.event.inputs.slug }}" --mode=reading --status=published --disabled=false --message="اكتملت إعادة توليد القراءة واجتازت بوابات الجودة."
+        shell: bash
+        run: |
+          MODE="${{ github.event.inputs.voice }}"
+          if [ "$MODE" != "fahed" ] && [ "$MODE" != "noura" ]; then MODE="reading"; fi
+          node scripts/audio-control-status.mjs --slug="${{ github.event.inputs.slug }}" --mode="$MODE" --status=published --disabled=false --message="اكتملت إعادة توليد الصوت المحدد واجتاز بوابات الجودة."
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
           FIREBASE_PROJECT_ID: drahmad-8e9e2
 
-      - name: Keep failed manual reading hidden with a clear status
+      - name: Keep the failed manually regenerated voice hidden
         continue-on-error: true
         if: failure() && github.event_name == 'workflow_dispatch' && github.event.inputs.force == 'true' && github.event.inputs.slug != ''
-        run: node scripts/audio-control-status.mjs --slug="${{ github.event.inputs.slug }}" --mode=reading --status=failed --disabled=true --message="تعذّرت إعادة التوليد؛ بقي الصوت القديم ملغى ولم يعد للظهور."
+        shell: bash
+        run: |
+          MODE="${{ github.event.inputs.voice }}"
+          if [ "$MODE" != "fahed" ] && [ "$MODE" != "noura" ]; then MODE="reading"; fi
+          node scripts/audio-control-status.mjs --slug="${{ github.event.inputs.slug }}" --mode="$MODE" --status=failed --disabled=true --message="تعذّرت إعادة التوليد؛ بقي الصوت المحدد ملغى ولم يعد للظهور."
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
           FIREBASE_PROJECT_ID: drahmad-8e9e2

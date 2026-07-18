@@ -64,6 +64,15 @@ html, body, #root, main {
 
 @supports (-webkit-touch-callout: none) {
   html, body, #root, main { overflow-x: hidden; }
+
+  /* iOS يفرض عرضاً جوهرياً على حقل التاريخ فيُخرجه من إطار نماذج اللوحة — نلغيه هنا وحده،
+     والحقل يرث حجمه وحدوده من صنف الحقول الموحّد فلا يتغيّر شكله */
+  input[type='date'] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-width: 0;
+    max-width: 100%;
+  }
 }
 
 @media (display-mode: standalone) {

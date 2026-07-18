@@ -1386,14 +1386,22 @@ async function probeSsmlCapabilities(force = false, voicesToProbe = [VOICES.ar.A
         notes: cached.notes, testedAt: cached.tested_at })
       continue
     }
+    /* عطب عابر في Azure (TTS أو STT يعيد فراغاً) كان يُسقط القافلة كلها بفشل المجسّ —
+       تشغيلة ٢٠٢٦-٠٧-١٨ الفجرية ماتت هنا على FahedNeural. ثلاث محاولات بمهلة متدرجة
+       قبل الحكم؛ شرط النجاح نفسه لا يلين — العابر وحده يُغربل. */
     const run = async (name, inner, expected = '') => {
       const file = resolve(dir, `${voice}.${name}.wav`)
       const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${localeOf(voice)}"><voice name="${voice}">${inner}</voice></speak>`
-      if (!await synthSSML(ssml, file)) return false
-      const heard = await sttRecognize(file, localeOf(voice))
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        if (attempt > 1) await new Promise((ok) => setTimeout(ok, attempt * 1500))
+        if (!await synthSSML(ssml, file)) continue
+        const heard = await sttRecognize(file, localeOf(voice))
+        rmSync(file, { force: true })
+        if (!heard?.text) continue
+        return !expected || normalizeAr(heard.text).replace(/\s+/g, '').includes(normalizeAr(expected).replace(/\s+/g, ''))
+      }
       rmSync(file, { force: true })
-      if (!heard?.text) return false
-      return !expected || normalizeAr(heard.text).replace(/\s+/g, '').includes(normalizeAr(expected).replace(/\s+/g, ''))
+      return false
     }
     const breakSupported = await run('break', 'هذه وقفة <break time="180ms"/> طبيعية')
     const prosodySupported = await run('prosody', '<prosody rate="+8%">نتحدث بإيقاع طبيعي وواضح</prosody>')

@@ -7,6 +7,23 @@
 node_modules/
 dist/
 
-# Large local files
+# Secrets — لا تصعد لسياق البناء أبداً
+sa.json
+.env
+.env.*
+*service-account*.json
+*firebase-adminsdk*.json
+.cron-secret.local
+
+# Large local files (الحاوية تحتاج server.mjs وسكربتَي الرادار فقط)
 audio/
 audio
+covers/
+files/
+public/
+articles/
+src/assets/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.zip

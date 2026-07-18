@@ -131,8 +131,22 @@ function ExclusiveDetailsGuard() {
         item.open = false
       }
     }
+    /* شرط الدكتور لا يقتصر على <details>: «استماع» زرٌّ يفتح مشغّل الصوت، وفتحُه
+       لم يكن يغلق «للطلاب والباحثين» لأنه لا يُطلق حدث toggle أصلاً. نصغي هنا
+       لكل ما يُعلن فتحه في البرنامج فنغلق ما سواه فوراً. */
+    const closeAllOpenPanels = () => {
+      for (const item of Array.from(document.querySelectorAll('details[open]'))) {
+        if (item instanceof HTMLDetailsElement && !item.hasAttribute('data-allow-multiple')) item.open = false
+      }
+    }
     document.addEventListener('toggle', closeSiblingDetails, true)
-    return () => document.removeEventListener('toggle', closeSiblingDetails, true)
+    window.addEventListener('audio-player:open', closeAllOpenPanels)
+    window.addEventListener('reader:panel-open', closeAllOpenPanels)
+    return () => {
+      document.removeEventListener('toggle', closeSiblingDetails, true)
+      window.removeEventListener('audio-player:open', closeAllOpenPanels)
+      window.removeEventListener('reader:panel-open', closeAllOpenPanels)
+    }
   }, [])
   return null
 }

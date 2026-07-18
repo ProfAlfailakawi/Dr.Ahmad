@@ -13,6 +13,10 @@ on:
         description: 'حد عدد الملفات في التشغيل الواحد'
         required: false
         default: '8'
+      force:
+        description: 'إعادة توليد المقال المحدد حتى لو كان صوته موجوداً'
+        required: false
+        default: 'false'
 
 permissions:
   contents: write
@@ -68,6 +72,10 @@ jobs:
       - name: Write Firebase service account
         run: |
           if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            if [ "${{ github.event.inputs.force }}" = "true" ]; then
+              echo "::error::Firebase service account is required for manual regeneration."
+              exit 1
+            fi
             echo "::warning::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing; audio generation from Firestore will be skipped."
             touch sa.missing
             exit 0
@@ -79,10 +87,18 @@ jobs:
       - name: Generate article readings and publish to R2
         run: |
           if [ -f sa.missing ]; then
+            if [ "${{ github.event.inputs.force }}" = "true" ]; then
+              echo "::error::Firebase service account is missing; manual regeneration cannot continue."
+              exit 1
+            fi
             echo "Firebase service account is missing; skipping automatic audio generation."
             exit 0
           fi
           if [ -z "$AZURE_SPEECH_KEY" ] || { [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; }; then
+            if [ "${{ github.event.inputs.force }}" = "true" ]; then
+              echo "::error::Azure/Gemini secrets are required for manual regeneration."
+              exit 1
+            fi
             echo "Azure/Gemini secrets are missing; skipping human-gated article readings."
             exit 0
           fi
@@ -91,6 +107,7 @@ jobs:
           SLUG="${{ github.event.inputs.slug }}"
           ARGS="--limit=${LIMIT:-8}"
           if [ -n "$SLUG" ]; then ARGS="$ARGS --slug=$SLUG"; fi
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
           echo "audio args: $ARGS"
           npm run audio -- $ARGS
         env:
@@ -184,7 +201,6 @@ jobs:
 
       - name: Commit generated manifests only after R2 is durable
         run: |
-          rm -f sa.json
           npm run audio:guard
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -196,6 +212,25 @@ jobs:
             git commit -m "chore: auto-publish new audio to R2"
             git push origin HEAD:main
           fi
+      - name: Re-enable manually regenerated reading
+        if: success() && github.event_name == 'workflow_dispatch' && github.event.inputs.force == 'true' && github.event.inputs.slug != ''
+        run: node scripts/audio-control-status.mjs --slug="${{ github.event.inputs.slug }}" --mode=reading --status=published --disabled=false --message="اكتملت إعادة توليد القراءة واجتازت بوابات الجودة."
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+
+      - name: Keep failed manual reading hidden with a clear status
+        continue-on-error: true
+        if: failure() && github.event_name == 'workflow_dispatch' && github.event.inputs.force == 'true' && github.event.inputs.slug != ''
+        run: node scripts/audio-control-status.mjs --slug="${{ github.event.inputs.slug }}" --mode=reading --status=failed --disabled=true --message="تعذّرت إعادة التوليد؛ بقي الصوت القديم ملغى ولم يعد للظهور."
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+
+      - name: Cleanup credentials
+        if: always()
+        run: rm -f sa.json
+
       - name: Roll back R2 transaction on any failure
         if: failure()
         run: npm run audio:r2:rollback

@@ -1,0 +1,121 @@
+name: إلغاء صوت مقال من لوحة التحكم
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 'الرابط المختصر للمقال'
+        required: true
+      mode:
+        description: 'reading أو dialogue'
+        required: true
+        type: choice
+        options:
+          - reading
+          - dialogue
+
+permissions:
+  contents: write
+
+concurrency:
+  group: admin-audio-clear-${{ inputs.slug }}-${{ inputs.mode }}
+  cancel-in-progress: false
+
+jobs:
+  clear:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate request
+        shell: bash
+        run: |
+          [[ "${{ inputs.slug }}" =~ ^[a-z0-9-]+$ ]] || { echo "::error::slug غير صالح"; exit 1; }
+          [[ "${{ inputs.mode }}" == "reading" || "${{ inputs.mode }}" == "dialogue" ]] || { echo "::error::mode غير صالح"; exit 1; }
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies and tools
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          node scripts/normalize-npm-registry.mjs
+          npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --user awscli
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Write Firebase service account
+        run: |
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON" || { echo "::error::Firebase service account missing"; exit 1; }
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
+      - name: Delete published objects from R2
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_EC2_METADATA_DISABLED: 'true'
+          R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+        run: |
+          set -euo pipefail
+          test -n "$R2_BUCKET" && test -n "$R2_ENDPOINT"
+          if [ "${{ inputs.mode }}" = "reading" ]; then
+            FILES=("${{ inputs.slug }}.mp3" "${{ inputs.slug }}.noura.mp3")
+          else
+            FILES=("${{ inputs.slug }}.dialogue.mp3" "${{ inputs.slug }}.dialogue.json")
+          fi
+          for file in "${FILES[@]}"; do
+            aws s3 rm "s3://$R2_BUCKET/$file" --endpoint-url "$R2_ENDPOINT" --no-progress || true
+          done
+
+      - name: Remove local manifests and keep the audio disabled
+        run: |
+          node scripts/clear-audio-assets.mjs --slug="${{ inputs.slug }}" --mode="${{ inputs.mode }}"
+          node scripts/audio-control-status.mjs --slug="${{ inputs.slug }}" --mode="${{ inputs.mode }}" --status=cleared --disabled=true --clear-audio --message="أُلغي الصوت يدوياً وحُذف ملفه المنشور."
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+
+      - name: Build and verify the site without the cleared audio
+        run: npm run build
+        env:
+          VITE_SITE_URL: https://dr-alfailakawi.com
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+
+      - name: Commit cleared manifests
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/data/audio.json src/data/audio-meta.json src/data/podcast-admin.json
+          git add .podcast-state.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No manifest changes to commit."
+          else
+            git commit -m "chore: clear ${{ inputs.mode }} audio for ${{ inputs.slug }}"
+            git push origin HEAD:main
+          fi
+
+      - name: Record failure without restoring the old audio
+        if: failure()
+        continue-on-error: true
+        run: node scripts/audio-control-status.mjs --slug="${{ inputs.slug }}" --mode="${{ inputs.mode }}" --status=failed --disabled=true --message="تعذّر إكمال حذف الملف المنشور؛ بقي الصوت ملغى وغير ظاهر ويمكن إعادة المحاولة."
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+
+      - name: Cleanup credentials
+        if: always()
+        run: rm -f sa.json

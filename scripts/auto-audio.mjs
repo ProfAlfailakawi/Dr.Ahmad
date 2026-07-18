@@ -52,6 +52,7 @@ const PENDING_SITE_PATCHES = resolve(ROOT, '.audio-site-patches.json')
 const DRY_RUN = process.argv.includes('--dry-run')
 const BASE_ONLY = DRY_RUN || process.argv.includes('--base-only') || process.argv.includes('--local-only')
 const UPGRADE_EXISTING = process.argv.includes('--upgrade-existing')
+const FORCE_REGENERATE = process.argv.includes('--force')
 const TECHNICAL_ONLY = process.argv.includes('--technical-only')
 const slugArg = process.argv.find((arg) => arg.startsWith('--slug='))
 const ONLY_SLUG = slugArg ? safeSlug(slugArg.slice('--slug='.length)) : ''
@@ -64,6 +65,7 @@ const VOICES = [
 ]
 
 if (!(JOB_LIMIT > 0)) throw new Error('--limit يجب أن يكون رقماً موجباً')
+if (FORCE_REGENERATE && !ONLY_SLUG) throw new Error('--force يتطلب --slug حتى لا يعيد توليد الأرشيف كله')
 
 function loadEnvironment() {
   const values = { ...process.env }
@@ -211,6 +213,7 @@ function auditPath(article, voice) {
 
 function generationDecision(article, voice, target, externalExists = false) {
   const auditFile = auditPath(article, voice)
+  if (FORCE_REGENERATE) return { needed: true, reason: 'explicit_manual_regeneration', auditFile }
   const decision = readingNeedsGeneration({ article, voiceKey: voice.key, output: target, auditFile, externalExists })
   if (UPGRADE_EXISTING && decision.reason === 'legacy_last_known_good') {
     return { needed: true, reason: 'explicit_legacy_upgrade', auditFile }

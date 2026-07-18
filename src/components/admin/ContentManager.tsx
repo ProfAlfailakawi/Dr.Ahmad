@@ -5,6 +5,8 @@ import { publicationGate, topicMemory } from '../../lib/intelligence'
 import { getArticleBody } from '../../lib/article-bodies'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { normalizeArabicTypography } from '../../lib/arabic-typography'
+import { useAdminAuth } from '../../lib/admin-auth'
+import { manageArticleAudio, type ArticleAudioAction, type ArticleAudioMode } from '../../lib/audio-management'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
 
@@ -30,6 +32,9 @@ export type ManagedRecord = {
   url?: string
   status?: string
   scheduledAt?: string
+  audio?: { fahed?: boolean | string; noura?: boolean | string; dialogue?: boolean | string }
+  audioControl?: { readingDisabled?: boolean; dialogueDisabled?: boolean; readingStatus?: string; dialogueStatus?: string; readingMessage?: string; dialogueMessage?: string }
+  hasAudio?: boolean
   isbn?: string
   desc?: string
   cover?: string
@@ -455,6 +460,138 @@ const vocalizedBodyMatches = (body = '', vocalized = '') =>
   Boolean(body.trim() && vocalized.trim())
   && stripArabicDiacritics(body) === stripArabicDiacritics(vocalized)
 
+const adminAudioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
+const adminAudioUrl = (slug: string, suffix: string) => adminAudioBase
+  ? `${adminAudioBase}/${slug}${suffix}`
+  : `/audio/${slug}${suffix}`
+
+async function publicAudioExists(url: string) {
+  try {
+    const response = await fetch(url, { method: 'HEAD', cache: 'no-store' })
+    const type = (response.headers.get('content-type') || '').toLowerCase()
+    if (response.ok && !type.includes('text/html')) return true
+    if (response.status !== 405) return false
+  } catch { /* جرّب Range */ }
+  try {
+    const response = await fetch(url, { headers: { Range: 'bytes=0-0' }, cache: 'no-store' })
+    const type = (response.headers.get('content-type') || '').toLowerCase()
+    return response.ok && !type.includes('text/html')
+  } catch {
+    return false
+  }
+}
+
+const audioStatusLabel = (status = '', disabled = false, available = false) => {
+  if (status === 'requested' || status === 'queued') return 'في قائمة التوليد'
+  if (status === 'generating') return 'جارٍ التوليد'
+  if (status === 'failed') return 'تعذّر آخر تشغيل'
+  if (status === 'clearing') return 'جارٍ الإلغاء'
+  if (status === 'cleared' || disabled) return 'ملغى وغير ظاهر'
+  if (status === 'published') return 'متاح حالياً'
+  return available ? 'متاح حالياً' : 'غير مولّد'
+}
+
+function ArticleAudioManager({ article, onChanged }: { article: ManagedRecord; onChanged: () => Promise<unknown> | unknown }) {
+  const { user } = useAdminAuth()
+  const [control, setControl] = useState(() => ({ ...(article.audioControl || {}) }))
+  const [availability, setAvailability] = useState({ reading: Boolean(article.audio?.fahed || article.audio?.noura), dialogue: Boolean(article.audio?.dialogue) })
+  const [checking, setChecking] = useState(true)
+  const [busyKey, setBusyKey] = useState('')
+  const [notice, setNotice] = useState('')
+
+  useEffect(() => { setControl({ ...(article.audioControl || {}) }) }, [article.audioControl])
+  useEffect(() => {
+    let active = true
+    setChecking(true)
+    Promise.all([
+      Promise.all([
+        publicAudioExists(adminAudioUrl(article.slug, '.mp3')),
+        publicAudioExists(adminAudioUrl(article.slug, '.noura.mp3')),
+      ]).then((values) => values.some(Boolean)),
+      publicAudioExists(adminAudioUrl(article.slug, '.dialogue.mp3')),
+    ]).then(([reading, dialogue]) => {
+      if (active) setAvailability({ reading, dialogue })
+    }).finally(() => { if (active) setChecking(false) })
+    return () => { active = false }
+  }, [article.slug])
+
+  const run = async (mode: ArticleAudioMode, action: ArticleAudioAction) => {
+    const isDialogue = mode === 'dialogue'
+    const title = isDialogue ? 'الحوار' : 'القراءة العادية'
+    const confirmation = action === 'clear'
+      ? `سيُلغى ${title} الحالي ويختفي من المقال، ثم يُحذف ملفه المنشور. هل تتابع؟`
+      : `سيُلغى ${title} الحالي فوراً ويبدأ توليد نسخة جديدة يدوياً. لن تعود النسخة القديمة للظهور. هل تتابع؟`
+    if (!window.confirm(confirmation)) return
+    const key = `${mode}:${action}`
+    setBusyKey(key)
+    setNotice('')
+    try {
+      const result = await manageArticleAudio({ user, slug: article.slug, mode, action })
+      const statusKey = `${mode}Status` as 'readingStatus' | 'dialogueStatus'
+      const disabledKey = `${mode}Disabled` as 'readingDisabled' | 'dialogueDisabled'
+      setControl((previous) => ({
+        ...previous,
+        [disabledKey]: true,
+        [statusKey]: action === 'clear' ? 'clearing' : 'requested',
+      }))
+      setAvailability((previous) => ({ ...previous, [mode]: false }))
+      setNotice(result.message || (action === 'clear' ? `بدأ إلغاء ${title}.` : `بدأت إعادة توليد ${title}.`))
+      await onChanged()
+    } catch (reason) {
+      setNotice(reason instanceof Error ? reason.message : 'تعذّر تنفيذ أمر الصوت.')
+    } finally {
+      setBusyKey('')
+    }
+  }
+
+  const row = (mode: ArticleAudioMode, label: string, description: string) => {
+    const disabled = mode === 'reading' ? Boolean(control.readingDisabled) : Boolean(control.dialogueDisabled)
+    const status = mode === 'reading' ? control.readingStatus : control.dialogueStatus
+    const available = availability[mode]
+    return (
+      <div className="grid gap-3 border-t border-hair py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p className="text-[.88rem] font-semibold text-ink">{label}</p>
+            <span className="text-[.72rem] text-soft">{checking ? 'جارٍ التحقق…' : audioStatusLabel(status, disabled, available)}</span>
+          </div>
+          <p className="mt-1 text-[.76rem] leading-relaxed text-soft">{description}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 text-[.78rem]">
+          <button
+            type="button"
+            disabled={Boolean(busyKey)}
+            onClick={() => void run(mode, 'regenerate')}
+            className="font-semibold text-accent transition-colors hover:text-accent-deep disabled:opacity-40"
+          >
+            {busyKey === `${mode}:regenerate` ? 'جارٍ الإرسال…' : 'إعادة التوليد'}
+          </button>
+          <button
+            type="button"
+            disabled={Boolean(busyKey) || (!available && disabled)}
+            onClick={() => void run(mode, 'clear')}
+            className="font-medium text-red-700/75 transition-colors hover:text-red-700 disabled:opacity-35 dark:text-red-300/80"
+          >
+            {busyKey === `${mode}:clear` ? 'جارٍ الإلغاء…' : 'إلغاء الصوت'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <section className="border-y border-hair" aria-label="إدارة صوت المقال">
+      <div className="py-4">
+        <p className="text-[.82rem] font-semibold text-ink">إدارة الصوت</p>
+        <p className="mt-1 text-[.76rem] leading-relaxed text-soft">الإلغاء يخفي الصوت فوراً. إعادة التوليد تلغي النسخة الحالية وتبدأ نسخة جديدة من النص المحفوظ.</p>
+      </div>
+      {row('reading', 'القراءة العادية', 'فهد ونورة يقرآن نص المقال؛ وتُستخدم النسخة المُشكَّلة أعلاه عند تطابقها.')}
+      {row('dialogue', 'الحلقة الحوارية', 'تعاد من الحوار اليدوي المحفوظ والمقفول في استوديو الحوار، لا من نص آخر.')}
+      {notice && <p className="border-t border-hair py-4 text-[.78rem] leading-relaxed text-accent">{notice}</p>}
+    </section>
+  )
+}
+
 function Editor({
   kind,
   current,
@@ -464,6 +601,7 @@ function Editor({
   setForm,
   onClose,
   onSave,
+  onAudioChanged,
   allItems,
 }: {
   kind: ManagedKind
@@ -474,6 +612,7 @@ function Editor({
   setForm: React.Dispatch<React.SetStateAction<Form>>
   onClose: () => void
   onSave: () => void
+  onAudioChanged: () => Promise<unknown> | unknown
   allItems: ManagedRecord[]
 }) {
   const { books, papers } = useCmsContent()
@@ -664,6 +803,7 @@ function Editor({
                   </p>
                 )}
               </div>
+              {current && <ArticleAudioManager article={current} onChanged={onAudioChanged} />}
               {articleMemory && (form.title?.trim() || form.body?.trim()) && (
                 <div className="rounded-2xl border border-hair bg-wash p-4">
                   <p className="text-[.82rem] font-semibold text-ink">ذاكرة المقال قبل النشر</p>
@@ -885,9 +1025,11 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
       } else {
         const base = getBaseRecord(kind, current._cms.baseSlug || current.slug)
         if (!base) throw new Error('تعذّر العثور على نسخة الأصل لهذا العنصر')
-        const patch = Object.fromEntries(editableFields[kind]
+        const patch: Record<string, unknown> = Object.fromEntries(editableFields[kind]
           .filter((field) => field !== 'slug' && !same(data[field], base[field]))
           .map((field) => [field, data[field] ?? '']))
+        // حالة الصوت ليست حقلاً تحريرياً نصياً، لكنها يجب أن تبقى عند تعديل المقال لاحقاً.
+        if (kind === 'article' && current.audioControl) patch.audioControl = current.audioControl
         const overrideRef = doc(db, 'content_overrides', `${kind}:${current._cms.baseSlug || current.slug}`)
         if (!Object.keys(patch).length && !current._cms.hidden) await deleteDoc(overrideRef)
         else await setDoc(overrideRef, { patch, hidden: Boolean(current._cms.hidden), updatedAt: serverTimestamp() })
@@ -1096,6 +1238,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
           setForm={setForm}
           onClose={() => setCurrent(undefined)}
           onSave={() => void save()}
+          onAudioChanged={onChanged}
           allItems={items}
         />
       )}

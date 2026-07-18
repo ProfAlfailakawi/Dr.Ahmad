@@ -4,6 +4,7 @@ import { EASE } from './motion'
 import { SocialIcon } from './icons'
 import { ALLOW_BROWSER_TTS, NEWSLETTER_ENDPOINT, site } from '../data'
 import audioManifest from '../data/audio.json'
+import audioMeta from '../data/audio-meta.json'
 import { AudioPlayer } from './AudioPlayer'
 import { firebaseEnabled, getDb } from '../lib/firebase'
 import { trackShare } from '../lib/views'
@@ -273,12 +274,22 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
    ٢) وإلا → لا شيء. صوت المتصفّح الآلي رديء للعربية، ولا نعرضه إلا بطلب صريح
       عبر ALLOW_BROWSER_TTS في data.ts. */
 type ArticleAudio = { fahed?: boolean | string; noura?: boolean | string; dialogue?: boolean | string }
+type ArticleAudioControl = { readingDisabled?: boolean; dialogueDisabled?: boolean }
 type DialogueTranscript = { title: string; utterances: { speaker: string; text: string }[] }
 const audioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const audioUrl = (path: string) => audioBase ? `${audioBase}/${path.replace(/^\/?audio\//, '')}` : path
+const audioMetaMap = audioMeta as Record<string, { sha256?: string }>
+const versionedAudioUrl = (path: string) => {
+  const raw = /^https?:\/\//i.test(path) ? path : audioUrl(path)
+  const name = decodeURIComponent((raw.split('?', 1)[0].split('/').pop() || '').trim())
+  const version = audioMetaMap[name]?.sha256?.slice(0, 16)
+  if (!version || new URLSearchParams(raw.split('?', 2)[1] || '').has('v')) return raw
+  return `${raw}${raw.includes('?') ? '&' : '?'}v=${version}`
+}
 
-async function hasDialogueAudio(slug: string) {
-  const path = audioUrl(`/audio/${slug}.dialogue.mp3`)
+async function hasDialogueAudio(slug: string, disabled = false) {
+  if (disabled) return false
+  const path = versionedAudioUrl(`/audio/${slug}.dialogue.mp3`)
   try {
     const response = await fetch(path, { method: 'HEAD', cache: 'no-store' })
     const type = (response.headers.get('content-type') || '').toLowerCase()
@@ -293,31 +304,35 @@ async function hasDialogueAudio(slug: string) {
   }
 }
 
-export function Listen({ slug, title, text, audio, compact = false }: { slug: string; title: string; text: string; audio?: ArticleAudio; compact?: boolean }) {
+export function Listen({ slug, title, text, audio, audioControl, compact = false }: { slug: string; title: string; text: string; audio?: ArticleAudio; audioControl?: ArticleAudioControl; compact?: boolean }) {
   // الفهرس: { slug: { fahed: true, noura: true } } — أو true بالصيغة القديمة (= فهد فقط)
   // مقالات لوحة التحكم تمرر audio من وثيقتها (يولّده سكربت الصوت الليلي)
   const entry = (audioManifest as Record<string, boolean | ArticleAudio>)[slug]
-  const voices = audio ?? (entry === true ? { fahed: true } : entry || {})
+  const resolvedVoices: ArticleAudio = { ...(audio ?? (entry === true ? { fahed: true } : entry || {})) }
+  if (audioControl?.readingDisabled) { delete resolvedVoices.fahed; delete resolvedVoices.noura }
+  if (audioControl?.dialogueDisabled) delete resolvedVoices.dialogue
+  const voices = resolvedVoices
   // الحلقة الحوارية (فهد ونورة يتحاوران) تنضم كخيار ثالث فور توفر ملفها —
   // القراءة الأمينة تبقى الأصل، والحوار إضاءة تفسيرية بجانبها لا بديلاً عنها.
-  const dialogueListed = Boolean(voices.dialogue)
+  const dialogueListed = !audioControl?.dialogueDisabled && Boolean(voices.dialogue)
   const [dialogueOk, setDialogueOk] = useState(dialogueListed)
   const [transcript, setTranscript] = useState<DialogueTranscript | null>(null)
   useEffect(() => {
     let on = true
     setDialogueOk(dialogueListed)
-    if (!dialogueListed) hasDialogueAudio(slug).then((ok) => { if (on) setDialogueOk(ok) })
-    fetch(audioUrl(`/audio/${slug}.dialogue.json`))
+    if (!dialogueListed && !audioControl?.dialogueDisabled) hasDialogueAudio(slug).then((ok) => { if (on) setDialogueOk(ok) })
+    if (audioControl?.dialogueDisabled) { setTranscript(null); return () => { on = false } }
+    fetch(versionedAudioUrl(`/audio/${slug}.dialogue.json`))
       .then((response) => response.ok ? response.json() : null)
       .then((value) => { if (on && value?.utterances?.length) setTranscript(value) })
       .catch(() => { /* لا Transcript للحلقات القديمة */ })
     return () => { on = false }
-  }, [dialogueListed, slug])
+  }, [audioControl?.dialogueDisabled, dialogueListed, slug])
 
   const sources = [
-    ...(voices.fahed ? [{ key: 'fahed', label: 'قراءة المقال', avatar: 'man' as const, src: typeof voices.fahed === 'string' ? voices.fahed : audioUrl(`/audio/${slug}.mp3`) }] : []),
-    ...(voices.noura ? [{ key: 'noura', label: 'قراءة المقال', avatar: 'woman' as const, src: typeof voices.noura === 'string' ? voices.noura : audioUrl(`/audio/${slug}.noura.mp3`) }] : []),
-    ...(dialogueOk ? [{ key: 'dialogue', label: 'الحلقة الحوارية', avatar: 'dialogue' as const, src: typeof voices.dialogue === 'string' ? voices.dialogue : audioUrl(`/audio/${slug}.dialogue.mp3`) }] : []),
+    ...(voices.fahed ? [{ key: 'fahed', label: 'قراءة المقال', avatar: 'man' as const, src: versionedAudioUrl(typeof voices.fahed === 'string' ? voices.fahed : `/audio/${slug}.mp3`) }] : []),
+    ...(voices.noura ? [{ key: 'noura', label: 'قراءة المقال', avatar: 'woman' as const, src: versionedAudioUrl(typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3`) }] : []),
+    ...(dialogueOk ? [{ key: 'dialogue', label: 'الحلقة الحوارية', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`) }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)
 

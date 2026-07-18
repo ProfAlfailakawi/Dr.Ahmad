@@ -10,7 +10,17 @@ import {
 export type ContentKind = 'article' | 'book' | 'paper' | 'media'
 export type ContentOrigin = 'base' | 'added'
 export type AudioValue = boolean | string
-export type ArticleAudio = { fahed?: AudioValue; noura?: AudioValue }
+export type ArticleAudio = { fahed?: AudioValue; noura?: AudioValue; dialogue?: AudioValue }
+export type ArticleAudioControl = {
+  readingDisabled?: boolean
+  dialogueDisabled?: boolean
+  readingStatus?: string
+  dialogueStatus?: string
+  readingUpdatedAt?: string
+  dialogueUpdatedAt?: string
+  readingMessage?: string
+  dialogueMessage?: string
+}
 
 export type CmsMeta = {
   kind: ContentKind
@@ -39,6 +49,7 @@ export type ArticleRecord = {
   status?: string
   scheduledAt?: string
   audio?: ArticleAudio
+  audioControl?: ArticleAudioControl
   words: number
   year: string
   hasAudio: boolean
@@ -110,7 +121,7 @@ type AnyRecord = ArticleRecord | BookRecord | PaperRecord | MediaRecord
 const audioMap = audioManifest as Record<string, AudioEntry>
 
 const fieldsByKind: Record<ContentKind, readonly string[]> = {
-  article: ['title', 'date', 'iso', 'cat', 'excerpt', 'body', 'bodyVocalized', 'source', 'url', 'status', 'scheduledAt', 'audio'],
+  article: ['title', 'date', 'iso', 'cat', 'excerpt', 'body', 'bodyVocalized', 'source', 'url', 'status', 'scheduledAt', 'audio', 'audioControl'],
   book: ['title', 'isbn', 'desc', 'cover', 'pdf'],
   paper: ['title', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'iso', 'date', 'coAuthors', 'scholar', 'researchgate', 'doi', 'verification'],
   media: ['title', 'outlet', 'platform', 'url', 'iso', 'date'],
@@ -142,8 +153,24 @@ function audioVoices(value: unknown): ArticleAudio | undefined {
   if (!isObject(value)) return undefined
   const valid = (entry: unknown): AudioValue | undefined =>
     typeof entry === 'boolean' || typeof entry === 'string' ? entry : undefined
-  const result = { fahed: valid(value.fahed), noura: valid(value.noura) }
-  return result.fahed || result.noura ? result : undefined
+  const result = { fahed: valid(value.fahed), noura: valid(value.noura), dialogue: valid(value.dialogue) }
+  return result.fahed || result.noura || result.dialogue ? result : undefined
+}
+
+function audioControlValue(value: unknown): ArticleAudioControl | undefined {
+  if (!isObject(value)) return undefined
+  const text = (entry: unknown) => typeof entry === 'string' ? entry.trim() : undefined
+  const result: ArticleAudioControl = {
+    readingDisabled: value.readingDisabled === true,
+    dialogueDisabled: value.dialogueDisabled === true,
+    readingStatus: text(value.readingStatus),
+    dialogueStatus: text(value.dialogueStatus),
+    readingUpdatedAt: text(value.readingUpdatedAt),
+    dialogueUpdatedAt: text(value.dialogueUpdatedAt),
+    readingMessage: text(value.readingMessage),
+    dialogueMessage: text(value.dialogueMessage),
+  }
+  return Object.values(result).some((entry) => entry !== undefined && entry !== false) ? result : undefined
 }
 
 function buildArticle(value: Record<string, unknown>, cms: CmsMeta): ArticleRecord {
@@ -151,6 +178,7 @@ function buildArticle(value: Record<string, unknown>, cms: CmsMeta): ArticleReco
   const body = stringValue(value.body) || undefined
   const bodyVocalized = stringValue(value.bodyVocalized) || undefined
   const audio = audioVoices(value.audio)
+  const audioControl = audioControlValue(value.audioControl)
   return {
     slug,
     title: stringValue(value.title),
@@ -165,9 +193,10 @@ function buildArticle(value: Record<string, unknown>, cms: CmsMeta): ArticleReco
     status: stringValue(value.status) || undefined,
     scheduledAt: stringValue(value.scheduledAt) || undefined,
     audio,
+    audioControl,
     words: wordCount(body || stringValue(value.excerpt)),
     year: stringValue(value.iso).slice(0, 4),
-    hasAudio: Boolean(audio?.fahed || audio?.noura),
+    hasAudio: Boolean((!audioControl?.readingDisabled && (audio?.fahed || audio?.noura)) || (!audioControl?.dialogueDisabled && audio?.dialogue)),
     missing: !body,
     _cms: cms,
   }

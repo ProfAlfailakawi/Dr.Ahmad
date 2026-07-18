@@ -64,6 +64,7 @@ const journeyPath = '/api/journey'
 const adminNowPath = '/api/admin/site-now'
 const adminJourneysPath = '/api/admin/journeys'
 const podcastDispatchPath = '/api/admin/podcast/dispatch'
+const audioManagePath = '/api/admin/audio/manage'
 const maxArticleRequestBytes = 128 * 1024
 const firebaseJwksUrl = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
 const articleCategories = Object.freeze(['التعليم', 'التربية', 'مجتمع', 'تقنية', 'هوية', 'إعلام', 'بحث'])
@@ -1163,6 +1164,91 @@ async function getAdminFirestore() {
   return adminFirestorePromise
 }
 
+
+function objectMap(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+}
+
+async function setArticleAudioControl({ db, FieldValue, slug, mode, status, disabled, message = '', requestId = '' }) {
+  const disabledKey = `${mode}Disabled`
+  const statusKey = `${mode}Status`
+  const updatedKey = `${mode}UpdatedAt`
+  const messageKey = `${mode}Message`
+  const requestKey = `${mode}RequestId`
+  const articleRef = db.collection('site_articles').doc(slug)
+  const articleSnapshot = await articleRef.get()
+  const now = new Date().toISOString()
+  if (articleSnapshot.exists) {
+    const current = objectMap(articleSnapshot.data()?.audioControl)
+    const next = {
+      ...current,
+      [disabledKey]: disabled,
+      [statusKey]: status,
+      [updatedKey]: now,
+      [messageKey]: boundedString(message, 700),
+      [requestKey]: requestId,
+    }
+    await articleRef.set({ audioControl: next, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
+    return { origin: 'added', control: next }
+  }
+
+  const overrideRef = db.collection('content_overrides').doc(`article:${slug}`)
+  const overrideSnapshot = await overrideRef.get()
+  const existing = overrideSnapshot.exists ? overrideSnapshot.data() || {} : {}
+  const patch = objectMap(existing.patch)
+  const current = objectMap(patch.audioControl)
+  const next = {
+    ...current,
+    [disabledKey]: disabled,
+    [statusKey]: status,
+    [updatedKey]: now,
+    [messageKey]: boundedString(message, 700),
+    [requestKey]: requestId,
+  }
+  await overrideRef.set({
+    ...existing,
+    patch: { ...patch, audioControl: next },
+    updatedAt: FieldValue.serverTimestamp(),
+  })
+  return { origin: 'base', control: next }
+}
+
+async function dispatchAdminWorkflow({ workflow, inputs }) {
+  const githubToken = String(process.env.GITHUB_WORKFLOW_TOKEN || process.env.GITHUB_ACTIONS_TOKEN || '').trim()
+  const githubRepository = String(process.env.PODCAST_GITHUB_REPOSITORY || 'ProfAlfailakawi/Dr.Ahmad').trim()
+  const githubRef = String(process.env.PODCAST_GITHUB_REF || 'main').trim()
+  if (!githubToken) throw new HttpError(503, 'الربط الآلي مع GitHub غير مفعّل على الخادم: أضف GITHUB_WORKFLOW_TOKEN مرة واحدة إلى خدمة dr-api')
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(githubRepository)
+    || !/^[A-Za-z0-9_.-]+\.ya?ml$/i.test(workflow)
+    || !/^[A-Za-z0-9._/-]+$/.test(githubRef)) {
+    throw new HttpError(503, 'إعدادات مستودع GitHub على الخادم غير صالحة')
+  }
+  let response
+  try {
+    response = await fetchWithTimeout(fetch,
+      `https://api.github.com/repos/${githubRepository}/actions/workflows/${encodeURIComponent(workflow)}/dispatches`, {
+        method: 'POST',
+        headers: {
+          accept: 'application/vnd.github+json',
+          authorization: `Bearer ${githubToken}`,
+          'content-type': 'application/json',
+          'user-agent': 'dr-alfailakawi-audio-admin/1.0',
+          'x-github-api-version': '2026-03-10',
+        },
+        body: JSON.stringify({ ref: githubRef, inputs }),
+      }, 15_000)
+  } catch {
+    throw new HttpError(502, 'تعذّر الاتصال بـ GitHub لبدء أمر الصوت')
+  }
+  let payload = {}
+  try { payload = await response.json() } catch { /* workflow_dispatch يعيد عادة جسماً فارغاً */ }
+  if (![200, 201, 202, 204].includes(response.status)) {
+    const detail = boundedString(payload?.message, 500) || `GitHub HTTP ${response.status}`
+    throw new HttpError(response.status === 401 || response.status === 403 ? 503 : 502, `رفض GitHub أمر الصوت: ${detail}`)
+  }
+  return { workflow }
+}
+
 function safePublicPath(value) {
   const text = typeof value === 'string' ? value.trim() : ''
   if (!text || text.length > 300 || !text.startsWith('/') || text.includes('\0')) throw new HttpError(400, 'Invalid path')
@@ -1432,6 +1518,102 @@ export function createRequestHandler({
         updatedAt: FieldValue.serverTimestamp(),
       })
       sendJson(res, 200, { ok: true, id: ref.id }, { 'cache-control': 'no-store' })
+      return
+    }
+
+
+    if (url.pathname === audioManagePath) {
+      if (method !== 'POST') {
+        sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' })
+        return
+      }
+      const contentType = String(req.headers['content-type'] || '').toLowerCase()
+      if (contentType.split(';', 1)[0].trim() !== 'application/json') {
+        req.resume()
+        throw new HttpError(415, 'Content-Type must be application/json')
+      }
+      const token = bearerToken(req.headers.authorization)
+      const claims = await verifyToken(token)
+      if (claims?.admin !== true || typeof claims.sub !== 'string' || !claims.sub) {
+        req.resume()
+        throw new HttpError(403, 'Admin access required')
+      }
+      const body = await readJsonBody(req, 8_192)
+      const slug = boundedString(body?.slug, 180)
+      const mode = boundedString(body?.mode, 20)
+      const action = boundedString(body?.action, 20)
+      if (!/^[a-z0-9-]+$/.test(slug)) throw new HttpError(400, 'slug غير صالح')
+      if (!['reading', 'dialogue'].includes(mode)) throw new HttpError(400, 'نوع الصوت غير صالح')
+      if (!['clear', 'regenerate'].includes(action)) throw new HttpError(400, 'أمر الصوت غير صالح')
+
+      const { db, FieldValue } = await getAdminFirestore()
+      const requestId = `audio-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`
+      const title = mode === 'dialogue' ? 'الحوار' : 'القراءة العادية'
+      await setArticleAudioControl({
+        db, FieldValue, slug, mode,
+        status: action === 'clear' ? 'clearing' : 'requested',
+        disabled: true,
+        message: action === 'clear' ? `بدأ إلغاء ${title} من لوحة التحكم.` : `بدأت إعادة توليد ${title} يدوياً من لوحة التحكم.`,
+        requestId,
+      })
+
+      let workflow = ''
+      try {
+        if (action === 'clear') {
+          workflow = String(process.env.AUDIO_CLEAR_GITHUB_WORKFLOW || 'admin-audio-clear.yml').trim()
+          await dispatchAdminWorkflow({ workflow, inputs: { slug, mode } })
+        } else if (mode === 'reading') {
+          workflow = String(process.env.AUDIO_READING_GITHUB_WORKFLOW || 'auto-audio-r2.yml').trim()
+          await dispatchAdminWorkflow({ workflow, inputs: { slug, limit: '2', force: 'true' } })
+        } else {
+          const dialogueSnapshot = await db.collection('podcast_dialogues').doc(slug).get()
+          if (!dialogueSnapshot.exists) throw new HttpError(409, 'لا يوجد حوار يدوي محفوظ لهذه المقالة. افتح استوديو الحوار واحفظه أولاً.')
+          const dialogue = dialogueSnapshot.data() || {}
+          const contentSha256 = boundedString(dialogue.contentSha256, 64).toLowerCase()
+          const revisionSha256 = boundedString(dialogue.revisionSha256, 64).toLowerCase()
+          const revisionId = boundedString(dialogue.revisionId, 128)
+          const turnCount = Number(dialogue.turnCount)
+          const valid = dialogue.source === 'admin-upload'
+            && Number(dialogue.schemaVersion) === 2
+            && /^[a-f0-9]{64}$/.test(contentSha256)
+            && /^[a-f0-9]{64}$/.test(revisionSha256)
+            && revisionId
+            && Number.isInteger(turnCount) && turnCount >= 2 && turnCount <= 500
+          if (!valid) throw new HttpError(409, 'الحوار المحفوظ غير مقفول بالبصمة الجديدة؛ افتحه ثم اضغط حفظ وإرسال مرة واحدة.')
+          await db.collection('podcast_production').doc(slug).set({
+            status: 'queued',
+            sourceCollection: 'podcast_dialogues',
+            expectedDialogueContentSha256: contentSha256,
+            expectedDialogueRevisionSha256: revisionSha256,
+            expectedDialogueRevisionId: revisionId,
+            expectedTurnCount: turnCount,
+            dispatchState: 'requested',
+            forceRegenerationRequestId: requestId,
+            queuedAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+            note: 'إعادة توليد يدوية من لوحة المقال؛ المصدر هو الحوار المرفوع والمقفول نفسه.',
+          }, { merge: true })
+          workflow = String(process.env.PODCAST_GITHUB_WORKFLOW || 'podcast-pilot-release.yml').trim()
+          await dispatchAdminWorkflow({ workflow, inputs: { slugs: slug, regenerate: 'true' } })
+        }
+      } catch (error) {
+        await setArticleAudioControl({
+          db, FieldValue, slug, mode, status: 'failed', disabled: true,
+          message: error instanceof Error ? error.message : 'تعذّر بدء أمر الصوت.', requestId,
+        }).catch(() => undefined)
+        throw error
+      }
+
+      sendJson(res, 200, {
+        ok: true,
+        mode,
+        action,
+        workflow,
+        requestId,
+        message: action === 'clear'
+          ? `بدأ إلغاء ${title}. اختفى من المقال فوراً، وسيُحذف ملفه المنشور آلياً.`
+          : `أُلغيت النسخة الحالية وبدأت إعادة توليد ${title} يدوياً. ستظهر النسخة الجديدة بعد اجتياز اختبارات الجودة.`,
+      })
       return
     }
 

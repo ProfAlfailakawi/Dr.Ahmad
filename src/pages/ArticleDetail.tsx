@@ -553,7 +553,7 @@ export default function ArticleDetail() {
             <div className="mt-6 h-[2px] w-16 bg-accent" />
             {article.body && (
               <div className="article-reading-actions mt-4 flex items-start gap-4 border-b border-hair pb-3">
-                <div id="article-audio" className="min-w-0 flex-1"><Listen compact slug={article.slug} title={article.title} text={article.body} audio={(article as { audio?: { fahed?: boolean | string; noura?: boolean | string } }).audio} /></div>
+                <div id="article-audio" className="min-w-0 flex-1"><Listen compact slug={article.slug} title={article.title} text={article.body} audio={article.audio} audioControl={article.audioControl} /></div>
                 <ReaderControls article={article} />
               </div>
             )}

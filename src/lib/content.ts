@@ -29,7 +29,8 @@ export interface ExtraArticle {
   createdAt?: unknown
   source?: string
   url?: string
-  audio?: { fahed?: boolean | string; noura?: boolean | string }
+  audio?: { fahed?: boolean | string; noura?: boolean | string; dialogue?: boolean | string }
+  audioControl?: { readingDisabled?: boolean; dialogueDisabled?: boolean; readingStatus?: string; dialogueStatus?: string }
 }
 
 export function useExtras<T>(collectionName: string, options: { realtime?: boolean } = {}): T[] {

@@ -7,6 +7,10 @@ on:
         description: 'اتركه فارغاً لاستخدام قائمة اللوحة، أو أدخل slug مقفولاً واحداً/أكثر'
         required: false
         default: ''
+      regenerate:
+        description: 'إعادة توليد يدوية تلغي النسخة الحالية حتى لو لم يتغير الحوار'
+        required: false
+        default: 'false'
   schedule:
     - cron: '30 2 * * *'
 
@@ -208,6 +212,29 @@ jobs:
         run: node scripts/podcast-production-status.mjs --status=needs_review --slugs="$RELEASED_SLUGS"
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
+
+      - name: Re-enable manually regenerated dialogue
+        if: success() && github.event_name == 'workflow_dispatch' && github.event.inputs.regenerate == 'true' && steps.prepare.outputs.has_work == 'true'
+        run: |
+          IFS=',' read -ra ITEMS <<< "$RELEASED_SLUGS"
+          for slug in "${ITEMS[@]}"; do
+            node scripts/audio-control-status.mjs --slug="$slug" --mode=dialogue --status=published --disabled=false --message="اكتملت إعادة توليد الحوار واجتاز بوابات الجودة والتطابق."
+          done
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+
+      - name: Keep failed manual dialogue hidden with a clear status
+        if: failure() && github.event_name == 'workflow_dispatch' && github.event.inputs.regenerate == 'true' && env.HAS_RELEASE_WORK == 'true'
+        continue-on-error: true
+        run: |
+          IFS=',' read -ra ITEMS <<< "$RELEASED_SLUGS"
+          for slug in "${ITEMS[@]}"; do
+            node scripts/audio-control-status.mjs --slug="$slug" --mode=dialogue --status=failed --disabled=true --message="تعذّرت إعادة توليد الحوار؛ بقيت النسخة السابقة ملغاة وغير ظاهرة."
+          done
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
 
       - name: Cleanup credentials
         if: always()

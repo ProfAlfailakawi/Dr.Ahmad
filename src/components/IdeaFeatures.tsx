@@ -648,11 +648,11 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         {view === 'card' && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="reader-modal-overlay quote-card-overlay fixed inset-0 z-[300] flex items-start justify-center overflow-y-auto overscroll-contain bg-ink/60 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:items-center sm:p-5" onClick={close}
+            className="reader-modal-overlay quote-card-overlay fixed inset-0 z-[300] flex items-start justify-center overflow-y-auto overscroll-contain bg-ink/60 px-3 py-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:px-5" onClick={close}
           >
             <motion.div
               initial={{ scale: 0.94, y: 14 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, opacity: 0 }}
-              transition={{ duration: 0.32 }} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()} className="quote-card-dialog w-full max-w-[440px] pb-2 sm:max-w-[520px]"
+              transition={{ duration: 0.32 }} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()} className="quote-card-dialog my-auto max-h-[calc(100dvh-2rem)] w-full max-w-[440px] overflow-y-auto overscroll-contain pb-2 sm:max-w-[520px]"
             >
               <div className="quote-card-controls sticky top-0 z-10 mb-3 flex flex-wrap items-center justify-center gap-1.5 rounded-2xl bg-ink/90 p-2 shadow-lg backdrop-blur">
                 {CARD_TEMPLATES.map((t) => (

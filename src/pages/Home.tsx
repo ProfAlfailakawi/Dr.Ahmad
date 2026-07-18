@@ -672,22 +672,46 @@ function NowHub() {
 }
 
 function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[]; media: MediaRecord[] }) {
-  const [visitSeed] = useState(() =>
-    typeof crypto !== 'undefined' && 'getRandomValues' in crypto
-      ? crypto.getRandomValues(new Uint32Array(1))[0]
-      : Date.now(),
-  )
-  const pick = <T,>(items: T[], salt: number) => items.length ? items[(visitSeed + salt) % items.length] : undefined
-  const article = pick(articles, 3)
-  const book = pick(books, 11)
-  const paper = pick(papers, 19)
-  const mediaItem = pick(media, 29)
-  const items = [
-    article && { type: 'مقال مختار', title: article.title, note: article.excerpt, to: `/articles/${article.slug}`, image: '' },
-    book && { type: 'كتاب مختار', title: book.title, note: book.desc, to: `/publications/${book.slug}`, image: book.cover },
-    paper && { type: 'بحث محكّم', title: paper.title, note: paper.meta, to: `/research/${paper.slug}`, image: '' },
-    mediaItem && { type: 'ظهور إعلامي', title: mediaItem.title, note: mediaItem.outlet, to: mediaItem.url, image: ytId(mediaItem.url) ? `https://i.ytimg.com/vi/${ytId(mediaItem.url)}/hqdefault.jpg` : '', external: true },
-  ].filter(Boolean) as { type: string; title: string; note?: string; to: string; image?: string; external?: boolean }[]
+  const items = useMemo(() => {
+    const random = (max: number) => {
+      if (max <= 1) return 0
+      if (typeof crypto !== 'undefined' && 'getRandomValues' in crypto) return crypto.getRandomValues(new Uint32Array(1))[0] % max
+      return Math.floor(Math.random() * max)
+    }
+    const historyKey = 'home:selected-works:v2'
+    let previous: Record<string, string> = {}
+    try {
+      if (typeof window !== 'undefined') previous = JSON.parse(window.localStorage.getItem(historyKey) || '{}') as Record<string, string>
+    } catch { /* زيارة خاصة أو تخزين غير متاح */ }
+    const choose = <T extends { slug?: string; url?: string }>(pool: T[], key: string) => {
+      if (!pool.length) return undefined
+      const alternatives = pool.filter((item) => (item.slug || item.url || '') !== previous[key])
+      const source = alternatives.length ? alternatives : pool
+      return source[random(source.length)]
+    }
+    const article = choose(articles, 'article')
+    const book = choose(books, 'book')
+    const paper = choose(papers, 'paper')
+    const mediaItem = choose(media, 'media')
+    const nextHistory = {
+      article: article?.slug || '',
+      book: book?.slug || '',
+      paper: paper?.slug || '',
+      media: mediaItem?.slug || mediaItem?.url || '',
+    }
+    try { if (typeof window !== 'undefined') window.localStorage.setItem(historyKey, JSON.stringify(nextHistory)) } catch { /* لا يؤثر في التنويع الحالي */ }
+    const selected = [
+      article && { type: 'مقال مختار', title: article.title, note: article.excerpt, to: `/articles/${article.slug}`, image: '' },
+      book && { type: 'كتاب مختار', title: book.title, note: book.desc, to: `/publications/${book.slug}`, image: book.cover },
+      paper && { type: 'بحث محكّم', title: paper.title, note: paper.meta, to: `/research/${paper.slug}`, image: '' },
+      mediaItem && { type: 'ظهور إعلامي', title: mediaItem.title, note: mediaItem.outlet, to: mediaItem.url, image: ytId(mediaItem.url) ? `https://i.ytimg.com/vi/${ytId(mediaItem.url)}/hqdefault.jpg` : '', external: true },
+    ].filter(Boolean) as { type: string; title: string; note?: string; to: string; image?: string; external?: boolean }[]
+    // لا يثبت ترتيب الأنواع أيضاً؛ كل زيارة مدخل جديد فعلياً إلى الأرشيف.
+    return selected
+      .map((item) => ({ item, order: random(1_000_000) }))
+      .sort((left, right) => left.order - right.order)
+      .map(({ item }) => item)
+  }, [articles, books, papers, media])
 
   return (
     <section className="border-t border-hair bg-wash px-6 py-[60px] md:px-11 md:py-[96px]">
@@ -831,7 +855,6 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
               <span className="min-w-0">
                 <span className="block text-[.74rem] font-semibold text-accent">خرائط الفكر</span>
                 <span className="mt-1.5 block font-display text-[1.12rem] font-semibold leading-[1.5] text-ink md:text-[1.35rem]">سماء المقالات، رحلة الأثر، وتوقيعات الموقع.</span>
-                <span className="mt-2 block text-[.78rem] text-soft">عرض بصري واحد بلا تكرار.</span>
               </span>
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors group-hover:border-accent">↗</span>
             </button>
@@ -937,25 +960,23 @@ export default function Home() {
 
       <HomeDepth articles={articles} books={books} papers={papers} media={media} />
 
-      {/* اللقاء القادم — شريط صغير؛ النشرة أصبحت أيقونة بجانب التواصل */}
-      <section className="border-t border-hair py-5 md:py-6">
-        <div className="mx-auto max-w-shell px-6 md:px-11">
-          <FadeUp>
-            <div className="flex min-h-[72px] items-center gap-4 rounded-2xl border border-hair bg-wash px-4 py-3 md:px-5">
-              <span className="shrink-0 text-[.72rem] font-semibold text-accent">اللقاء القادم</span>
-              {upcomingItems[0] ? (
+      {/* لا يظهر شريط اللقاء إلا عند وجود موعد معلن فعلياً. */}
+      {upcomingItems[0] && (
+        <section className="border-t border-hair py-5 md:py-6">
+          <div className="mx-auto max-w-shell px-6 md:px-11">
+            <FadeUp>
+              <div className="flex min-h-[72px] items-center gap-4 rounded-xl border border-hair bg-wash px-4 py-3 md:px-5">
+                <span className="shrink-0 text-[.72rem] font-semibold text-accent">اللقاء القادم</span>
                 <Link to="/upcoming" className="group min-w-0 flex-1">
                   <span className="block truncate font-display text-[.95rem] font-semibold text-ink transition-colors group-hover:text-accent">{upcomingItems[0].title}</span>
                   <span className="mt-0.5 block truncate text-[.7rem] text-soft">{upcomingItems[0].date} · {upcomingItems[0].place}</span>
                 </Link>
-              ) : (
-                <Link to="/contact#booking-form" className="min-w-0 flex-1 text-[.8rem] text-soft transition-colors hover:text-accent">لا مواعيد معلنة حالياً.</Link>
-              )}
-              <Link to="/upcoming" aria-label="كل اللقاءات" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent">↗</Link>
-            </div>
-          </FadeUp>
-        </div>
-      </section>
+                <Link to="/upcoming" aria-label="كل اللقاءات" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent">↗</Link>
+              </div>
+            </FadeUp>
+          </div>
+        </section>
+      )}
 
       <HomeSocialFooter />
     </Page>

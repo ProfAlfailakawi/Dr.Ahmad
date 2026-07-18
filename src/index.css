@@ -282,28 +282,9 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
     radial-gradient(42% 62% at 82% 18%, rgb(var(--c-accent) / .055), transparent 70%);
 }
 
-.page-head::after {
-  content: "";
-  position: absolute;
-  inset-inline-end: max(1.5rem, calc((100vw - 1280px) / 2 + 1.5rem));
-  inset-block-end: -1px;
-  width: min(34vw, 17rem);
-  height: 2px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, rgb(var(--c-accent) / .72));
-  /* الخط ثابت بينما المحتوى ينزلق صاعداً عند الدخول — إن ظهر مبكراً بدا شارطاً النص.
-     يُكشف بعد استقرار الحركة فلا يتقاطع مع أي سطر إطلاقاً. */
-  opacity: 0;
-  animation: page-head-line .7s var(--E, ease-out) 1.25s forwards;
-}
-
-@keyframes page-head-line {
-  to { opacity: .42; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .page-head::after { animation: none; opacity: .42; }
-}
+/* أُلغي خط أسفل رأس الصفحة لأنه كان يبدو أحياناً تابعاً للعدد أو الوصف.
+   توقيع الصفحة الوحيد الآن هو الخط القصير المرسوم تحت h1 مباشرة. */
+.page-head::after { display: none; }
 
 .site-footer {
   position: relative;

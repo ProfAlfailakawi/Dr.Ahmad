@@ -7,6 +7,7 @@ import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
 import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, usePopularQuotes } from '../components/ArticleReader'
 import { SelectionTools } from '../components/IdeaFeatures'
+import { openAudioPlayer } from '../components/AudioPlayer'
 import { WriterResearcherBridge, ArticlePulse, markArticleRead } from '../components/ReaderResonance'
 import { JsonLd, useSeo } from '../components/seo'
 import { fetchOwnerCounts, useTrackView } from '../lib/views'
@@ -358,13 +359,13 @@ function StudentArchive({ a, articles, books, papers }: { a: ArticleRecord; arti
   )
 }
 
-function ReadingLayers({ hasAudio, hasEvolution }: { hasAudio: boolean; hasEvolution: boolean }) {
+function ReadingLayers({ hasAudio, hasEvolution, slug }: { hasAudio: boolean; hasEvolution: boolean; slug: string }) {
   const links = [
     { href: '#article-body', label: 'قراءة سريعة', note: 'النص' },
     hasEvolution ? { href: '#time-dialogue', label: 'قراءة عميقة', note: 'تطور الفكرة' } : null,
     { href: '#student-archive', label: 'للطلاب والباحثين', note: 'سؤال ومراجع' },
-    hasAudio ? { href: '#article-audio', label: 'استماع', note: 'الصوت' } : null,
-  ].filter(Boolean) as { href: string; label: string; note: string }[]
+    hasAudio ? { action: 'audio' as const, label: 'استماع', note: 'الصوت' } : null,
+  ].filter(Boolean) as ({ href: string; action?: never; label: string; note: string } | { action: 'audio'; href?: never; label: string; note: string })[]
 
   return (
     <FadeUp>
@@ -372,10 +373,17 @@ function ReadingLayers({ hasAudio, hasEvolution }: { hasAudio: boolean; hasEvolu
         <p className="text-[.72rem] font-semibold text-accent">طبقات القراءة</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {links.map((link) => (
-            <a key={link.href} href={link.href} className="rounded-full border border-hair bg-canvas px-3.5 py-2 text-[.76rem] leading-none text-soft transition-colors hover:border-accent hover:text-accent">
-              <span className="font-semibold text-ink">{link.label}</span>
-              <span className="ms-2 text-soft/80">{link.note}</span>
-            </a>
+            link.action === 'audio' ? (
+              <button key="audio" type="button" onClick={() => openAudioPlayer(`article-audio-${slug}`)} className="rounded-full border border-hair bg-canvas px-3.5 py-2 text-[.76rem] leading-none text-soft transition-colors hover:border-accent hover:text-accent">
+                <span className="font-semibold text-ink">{link.label}</span>
+                <span className="ms-2 text-soft/80">{link.note}</span>
+              </button>
+            ) : (
+              <a key={link.href} href={link.href} className="rounded-full border border-hair bg-canvas px-3.5 py-2 text-[.76rem] leading-none text-soft transition-colors hover:border-accent hover:text-accent">
+                <span className="font-semibold text-ink">{link.label}</span>
+                <span className="ms-2 text-soft/80">{link.note}</span>
+              </a>
+            )
           ))}
         </div>
       </nav>
@@ -422,20 +430,26 @@ function ArticleExtensions({
   hasEvolution: boolean
   paper: PaperRecord | null
 }) {
+  const { isAdmin } = useAdminAuth()
   return (
-    <details className="article-extensions mt-9 border-t border-hair pt-5">
-      <summary className="min-h-11 cursor-pointer list-none py-2 text-[.8rem] font-semibold text-soft transition-colors hover:text-accent [&::-webkit-details-marker]:hidden">
-        امتدادات المقال
-      </summary>
+    <div className="article-extensions mt-9 border-t border-hair pt-7">
+      <p className="text-[.76rem] font-semibold text-accent">امتدادات المقال</p>
       <div className="pb-2">
         <ArchiveContext a={article} />
-        <ReadingLayers hasAudio={Boolean(article.body)} hasEvolution={hasEvolution} />
+        <ReadingLayers hasAudio={Boolean(article.body)} hasEvolution={hasEvolution} slug={article.slug} />
+        <StudentArchive a={article} articles={articles} books={books} papers={papers} />
         <ArticlePulse slug={article.slug} />
         <WriterResearcherBridge articleTitle={article.title} paper={paper ? { slug: paper.slug, title: paper.title } : null} />
         <TimeDialogue a={article} articles={articles} />
         <IdeaThread article={article} books={books} papers={papers} media={media} />
+        {isAdmin && (
+          <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-hair pt-5" aria-label="أدوات المشرف">
+            <OwnerBadge path={`/articles/${article.slug}`} />
+            <OwnerEdit tab="articles" slug={article.slug} />
+          </div>
+        )}
       </div>
-    </details>
+    </div>
   )
 }
 
@@ -526,14 +540,8 @@ export default function ArticleDetail() {
         data-print-citation={`للاستشهاد: ${a.title}، ${a.date}، الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، ${SITE_URL}/articles/${a.slug}`}
       >
         <div className="mx-auto max-w-[720px]">
-          <FadeUp>
-            <Link to="/articles" className="text-[.85rem] text-soft transition-colors hover:text-accent">
-              ← كل المقالات
-            </Link>
-          </FadeUp>
-
           <FadeUp delay={0.05}>
-            <div className="mt-8 flex flex-wrap items-center gap-3 text-[.8rem]">
+            <div className="flex flex-wrap items-center gap-3 text-[.8rem]">
               <span className="font-semibold text-accent">{a.cat}</span>
               <span className="h-1 w-1 rounded-full bg-hair" />
               <time className="text-soft">{a.date}</time>
@@ -548,14 +556,17 @@ export default function ArticleDetail() {
             <h1 style={{ viewTransitionName: `article-${a.slug}` }} className="mt-5 text-wrap-balance font-display text-[clamp(2rem,4.6vw,3.1rem)] font-bold leading-[1.3] text-ink">
               <Reveal>{a.title}</Reveal>
             </h1>
-            <OwnerBadge path={`/articles/${a.slug}`} />
-            <OwnerEdit tab="articles" slug={a.slug} className="ms-2" />
             <div className="mt-6 h-[2px] w-16 bg-accent" />
             {article.body && (
-              <div className="article-reading-actions mt-4 flex items-start gap-4 border-b border-hair pb-3">
+              <div className="article-reading-actions mt-4 flex items-start gap-4 pb-1">
                 <div id="article-audio" className="min-w-0 flex-1"><Listen compact slug={article.slug} title={article.title} text={article.body} audio={article.audio} audioControl={article.audioControl} /></div>
                 <ReaderControls article={article} />
               </div>
+            )}
+            {article.body && (
+              <p className="mt-1.5 text-[.68rem] leading-relaxed text-soft/75">
+                حدّد أي جملة داخل المقال؛ تظهر عندها أداتا «عبر السنوات» و«بطاقة اقتباس».
+              </p>
             )}
           </FadeUp>
 
@@ -609,56 +620,53 @@ export default function ArticleDetail() {
             </section>
           </FadeUp>
 
-          {related.length > 0 && (
+          {(related.length > 0 || article.body) && (
             <FadeUp>
               <section className="mt-12 border-t border-hair pt-8">
-                <span className="text-[.76rem] font-semibold uppercase text-accent">أكمل هذا المسار</span>
-                <p className="mt-2 text-[.9rem] font-light text-soft">مقالاتٌ على الخيط الفكري نفسه.</p>
-                <ul className="related-path-grid mobile-paired-grid mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-6">
-                  {related.slice(0, dive.paper || dive.book ? 2 : 3).map((r) => (
-                    <li key={r.slug} className="min-w-0">
-                      <Link to={`/articles/${r.slug}`} viewTransition className="group block h-full min-w-0 rounded-xl border border-hair bg-canvas p-4 text-start transition-colors hover:border-accent/40 sm:border-0 sm:bg-transparent sm:p-0">
-                        <span className="text-[.72rem] font-semibold text-accent">مقال</span>
-                        <span className="mt-1.5 block break-words font-display text-[.96rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent sm:text-[1.05rem]">
-                          {r.title}
-                        </span>
-                        <time className="mt-1 block text-[.76rem] text-soft">{r.date}</time>
-                      </Link>
-                    </li>
-                  ))}
-                  {dive.paper && (
-                    <li key={dive.paper.slug} className="min-w-0">
-                      <Link to={`/research/${dive.paper.slug}`} className="group block h-full min-w-0 rounded-xl border border-hair bg-canvas p-4 text-start transition-colors hover:border-accent/40 sm:border-0 sm:bg-transparent sm:p-0">
-                        <span className="text-[.72rem] font-semibold text-accent">بحث محكّم</span>
-                        <span className="mt-1.5 block break-words font-display text-[.96rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent sm:text-[1.05rem]">
-                          {dive.paper.title}
-                        </span>
-                        <span className="mt-1 block text-[.76rem] text-soft">للتعمّق الأكاديمي</span>
-                      </Link>
-                    </li>
-                  )}
-                  {dive.book && !dive.paper && (
-                    <li key={dive.book.slug} className="min-w-0">
-                      <Link to={`/publications/${dive.book.slug}`} className="group block h-full min-w-0 rounded-xl border border-hair bg-canvas p-4 text-start transition-colors hover:border-accent/40 sm:border-0 sm:bg-transparent sm:p-0">
-                        <span className="text-[.72rem] font-semibold text-accent">كتاب</span>
-                        <span className="mt-1.5 block break-words font-display text-[.96rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent sm:text-[1.05rem]">
-                          {dive.book.title}
-                        </span>
-                        <span className="mt-1 block text-[.76rem] text-soft">للإحاطة الكاملة</span>
-                      </Link>
-                    </li>
-                  )}
-                </ul>
+                {related.length > 0 && (
+                  <>
+                    <span className="text-[.76rem] font-semibold uppercase text-accent">أكمل هذا المسار</span>
+                    <p className="mt-2 text-[.9rem] font-light text-soft">مقالاتٌ على الخيط الفكري نفسه.</p>
+                    <ul className="related-path-grid mobile-paired-grid mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-6">
+                      {related.slice(0, dive.paper || dive.book ? 2 : 3).map((r) => (
+                        <li key={r.slug} className="min-w-0">
+                          <Link to={`/articles/${r.slug}`} viewTransition className="group block h-full min-w-0 rounded-xl border border-hair bg-canvas p-4 text-start transition-colors hover:border-accent/40 sm:border-0 sm:bg-transparent sm:p-0">
+                            <span className="text-[.72rem] font-semibold text-accent">مقال</span>
+                            <span className="mt-1.5 block break-words font-display text-[.96rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent sm:text-[1.05rem]">{r.title}</span>
+                            <time className="mt-1 block text-[.76rem] text-soft">{r.date}</time>
+                          </Link>
+                        </li>
+                      ))}
+                      {dive.paper && (
+                        <li key={dive.paper.slug} className="min-w-0">
+                          <Link to={`/research/${dive.paper.slug}`} className="group block h-full min-w-0 rounded-xl border border-hair bg-canvas p-4 text-start transition-colors hover:border-accent/40 sm:border-0 sm:bg-transparent sm:p-0">
+                            <span className="text-[.72rem] font-semibold text-accent">بحث محكّم</span>
+                            <span className="mt-1.5 block break-words font-display text-[.96rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent sm:text-[1.05rem]">{dive.paper.title}</span>
+                            <span className="mt-1 block text-[.76rem] text-soft">للتعمّق الأكاديمي</span>
+                          </Link>
+                        </li>
+                      )}
+                      {dive.book && !dive.paper && (
+                        <li key={dive.book.slug} className="min-w-0">
+                          <Link to={`/publications/${dive.book.slug}`} className="group block h-full min-w-0 rounded-xl border border-hair bg-canvas p-4 text-start transition-colors hover:border-accent/40 sm:border-0 sm:bg-transparent sm:p-0">
+                            <span className="text-[.72rem] font-semibold text-accent">كتاب</span>
+                            <span className="mt-1.5 block break-words font-display text-[.96rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent sm:text-[1.05rem]">{dive.book.title}</span>
+                            <span className="mt-1 block text-[.76rem] text-soft">للإحاطة الكاملة</span>
+                          </Link>
+                        </li>
+                      )}
+                    </ul>
+                  </>
+                )}
+                {article.body && (
+                  <ArticleExtensions article={article} articles={articles} books={books} papers={papers} media={media} hasEvolution={Boolean(evolution.older || evolution.newer)} paper={dive.paper} />
+                )}
               </section>
             </FadeUp>
           )}
 
-          {article.body && (
-            <ArticleExtensions article={article} articles={articles} books={books} papers={papers} media={media} hasEvolution={Boolean(evolution.older || evolution.newer)} paper={dive.paper} />
-          )}
-
           <FadeUp>
-            <nav className="mt-16 grid gap-6 border-t border-hair pt-8 sm:grid-cols-2">
+            <nav className="mt-16 grid items-start gap-6 border-t border-hair pt-8 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
               {next ? (
                 <Link to={`/articles/${next.slug}`} className="group">
                   <span className="text-[.78rem] text-soft">السابق</span>
@@ -669,6 +677,9 @@ export default function ArticleDetail() {
               ) : (
                 <span />
               )}
+              <Link to="/articles" className="min-h-11 self-center border-b border-hair px-1 py-2 text-center text-[.76rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">
+                جميع المقالات
+              </Link>
               {prev && (
                 <Link to={`/articles/${prev.slug}`} className="group sm:text-left">
                   <span className="text-[.78rem] text-soft">التالي</span>

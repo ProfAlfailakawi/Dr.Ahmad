@@ -1102,6 +1102,7 @@ function standaloneVisualTemplates(idea: string, purpose: string): SocialVisualT
   const body = purpose.trim() || 'اكتب الجملة، واختر القالب، ثم نزّل الصورة الجاهزة للنشر.'
   const topic = detectVisualTopic(`${title} ${body}`)
   const shared = { platform: 'instagram' as const, width: 1080, height: 1350, topic, title, body, footer: 'د. أحمد حسين الفيلكاوي · dr-alfailakawi.com' }
+  // المكتبة الكاملة: التكوينات الستة الموقّعة أولاً، ثم كل تخطيطات المحرك بلا إسقاط.
   const all: { key: string; layout: SocialVisualTemplate['layout']; kicker: string }[] = [
     { key: 'midad', layout: 'question', kicker: 'المداد' },
     { key: 'layl', layout: 'dark', kicker: 'الليل' },
@@ -1109,28 +1110,42 @@ function standaloneVisualTemplates(idea: string, purpose: string): SocialVisualT
     { key: 'sharit', layout: 'split', kicker: 'الشريط' },
     { key: 'mishkat', layout: 'arch', kicker: 'المشكاة' },
     { key: 'tawqee', layout: 'signature', kicker: 'التوقيع' },
-    { key: 'mursim', layout: 'circuit', kicker: 'المرسم' },
-    { key: 'hibr', layout: 'focus', kicker: 'الحبر' },
-    { key: 'fajr', layout: 'horizon', kicker: 'الفجر' },
-    { key: 'sajjada', layout: 'layers', kicker: 'السجادة' },
-    { key: 'ruqaa', layout: 'signal', kicker: 'الرقعة' },
-    { key: 'sada', layout: 'balance', kicker: 'الصدى' },
+    { key: 'madar', layout: 'orbit', kicker: 'المدار' },
+    { key: 'ishara', layout: 'signal', kicker: 'الإشارة' },
+    { key: 'nafidha', layout: 'window', kicker: 'النافذة' },
+    { key: 'bayan', layout: 'manifesto', kicker: 'البيان' },
+    { key: 'hadath', layout: 'event', kicker: 'الحدث' },
+    { key: 'zaman', layout: 'timeline', kicker: 'الزمن' },
+    { key: 'iqtibas', layout: 'quote', kicker: 'الاقتباس' },
+    { key: 'daira', layout: 'circuit', kicker: 'الدارة' },
+    { key: 'daftar', layout: 'notebook', kicker: 'الدفتر' },
+    { key: 'insan', layout: 'human', kicker: 'الإنسان' },
+    { key: 'burhan', layout: 'research', kicker: 'البرهان' },
+    { key: 'ufuq', layout: 'horizon', kicker: 'الأفق' },
+    { key: 'hiwar', layout: 'dialogue', kicker: 'الحوار' },
+    { key: 'masfufa', layout: 'matrix', kicker: 'المصفوفة' },
+    { key: 'tabaqat', layout: 'layers', kicker: 'الطبقات' },
+    { key: 'buraa', layout: 'focus', kicker: 'البؤرة' },
+    { key: 'mawja', layout: 'wave', kicker: 'الموجة' },
+    { key: 'mizan', layout: 'balance', kicker: 'الميزان' },
   ]
-  /* القوالب تفهم الفكرة: الموضوع المكتشف من نص الدكتور يقدّم اللوحات الأنسب له أولاً —
-     التقنية تفتتح بالمرسم والليل، والتربية بالمداد والمشكاة، والمستقبل بالفجر... */
-  const affinity: Record<string, string[]> = {
-    ai: ['mursim', 'layl', 'sada', 'ruqaa', 'sharit', 'jarida'],
-    education: ['midad', 'mishkat', 'jarida', 'sajjada', 'hibr', 'tawqee'],
-    family: ['mishkat', 'midad', 'hibr', 'sajjada', 'tawqee', 'fajr'],
-    research: ['jarida', 'mursim', 'ruqaa', 'midad', 'sada', 'layl'],
-    media: ['sharit', 'sada', 'ruqaa', 'jarida', 'hibr', 'layl'],
-    future: ['fajr', 'mursim', 'layl', 'ruqaa', 'sada', 'sharit'],
-    human: ['hibr', 'tawqee', 'mishkat', 'midad', 'fajr', 'sajjada'],
-    general: ['midad', 'tawqee', 'jarida', 'hibr', 'fajr', 'sada'],
+  const affinity: Record<string, SocialVisualTemplate['layout'][]> = {
+    ai: ['circuit', 'dark', 'signal', 'matrix', 'orbit', 'split'],
+    education: ['question', 'arch', 'notebook', 'editorial', 'layers', 'focus'],
+    family: ['human', 'arch', 'question', 'window', 'signature', 'layers'],
+    research: ['research', 'editorial', 'timeline', 'matrix', 'notebook', 'split'],
+    media: ['dialogue', 'wave', 'signal', 'event', 'split', 'quote'],
+    future: ['horizon', 'orbit', 'manifesto', 'balance', 'circuit', 'timeline'],
+    human: ['human', 'signature', 'focus', 'quote', 'window', 'dialogue'],
+    general: ['editorial', 'question', 'signature', 'focus', 'horizon', 'balance'],
   }
   const preferred = affinity[topic] || affinity.general
-  const rank = (key: string) => { const index = preferred.indexOf(key); return index === -1 ? 99 : index }
-  return [...all].sort((left, right) => rank(left.key) - rank(right.key))
+  const rank = (layout: SocialVisualTemplate['layout']) => {
+    const index = preferred.indexOf(layout)
+    return index === -1 ? 99 : index
+  }
+  return [...all]
+    .sort((left, right) => rank(left.layout) - rank(right.layout))
     .map((item) => ({ ...shared, id: `standalone-${item.key}-${title}`, format: 'منشور مستقل 1080×1350', layout: item.layout, kicker: item.kicker }))
 }
 
@@ -1910,12 +1925,12 @@ ${pulsePurpose.trim()}`,
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-[.76rem] font-semibold uppercase text-accent">الطبعة الفاخرة</p>
-                <h2 id="standalone-templates-title" className="mt-1 font-display text-2xl font-semibold text-ink">القوالب الستة ظاهرة وجاهزة دائماً.</h2>
-                <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">اكتب فكرتك في الأعلى فتتحدث المعاينات تلقائياً بعد توقفك لحظة. لا تحتاج إلى الضغط على «ابنِ المنشور» — اثنتا عشرة لوحة موقّعة تترتب تلقائياً بحسب موضوع فكرتك: التقنية يفتتحها المرسم والليل، والتربية المداد والمشكاة، والمستقبل الفجر…</p>
+                <h2 id="standalone-templates-title" className="mt-1 font-display text-2xl font-semibold text-ink">مكتبة القوالب كاملة — 24 تكويناً.</h2>
+                <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">اكتب فكرتك في الأعلى فتتحدث المعاينات تلقائياً بعد توقفك لحظة. التكوينات الستة الموقّعة محفوظة، ومعها جميع تخطيطات المحرك الثمانية عشر الأخرى؛ لا قالب مخفي ولا قالب محذوف، والترتيب يتغير ذكياً بحسب موضوع الفكرة.</p>
               </div>
               <span className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.72rem] text-soft">{visualTopicLabel(detectVisualTopic(`${pulseIdea} ${pulsePurpose}`))}</span>
             </div>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {pulseTemplateShowcase.map((template) => <VisualTemplateCard key={template.id} template={template} />)}
             </div>
           </section>

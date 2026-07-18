@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AUDIO_SPEEDS, usePersistentAudio } from '../lib/persistent-audio'
 
 const ar = (n: number) => String(n).replace(/[0-9]/g, (digit) => '0123456789'[+digit])
@@ -50,8 +50,14 @@ function AudioWave({ dialogue = false, size = 22 }: { dialogue?: boolean; size?:
   )
 }
 
-export function AudioPlayer({ sources, title, compact = false }: { sources: AudioSource[]; title: string; compact?: boolean }) {
+export const openAudioPlayer = (controlId: string) => {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent('audio-player:open', { detail: { controlId } }))
+}
+
+export function AudioPlayer({ sources, title, compact = false, controlId }: { sources: AudioSource[]; title: string; compact?: boolean; controlId?: string }) {
   const player = usePersistentAudio()
+  const rootRef = useRef<HTMLDivElement>(null)
   const [selectedKey, setSelectedKey] = useState(sources[0]?.key ?? '')
   const [expanded, setExpanded] = useState(false)
   const source = useMemo(() => sources.find((item) => item.key === selectedKey) ?? sources[0], [selectedKey, sources])
@@ -64,6 +70,17 @@ export function AudioPlayer({ sources, title, compact = false }: { sources: Audi
   useEffect(() => {
     if (anyActive) setExpanded(true)
   }, [anyActive])
+
+  useEffect(() => {
+    const openRequested = (event: Event) => {
+      const requested = (event as CustomEvent<{ controlId?: string }>).detail?.controlId
+      if (controlId && requested && requested !== controlId) return
+      setExpanded(true)
+      window.requestAnimationFrame(() => window.requestAnimationFrame(() => rootRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })))
+    }
+    window.addEventListener('audio-player:open', openRequested)
+    return () => window.removeEventListener('audio-player:open', openRequested)
+  }, [controlId])
 
   if (!source) return null
 
@@ -96,7 +113,7 @@ export function AudioPlayer({ sources, title, compact = false }: { sources: Audi
   }
 
   return (
-    <div className={compact ? 'min-w-0' : 'mt-7'}>
+    <div ref={rootRef} id={controlId} className={compact ? 'min-w-0 scroll-mt-28' : 'mt-7 scroll-mt-28'}>
       <button
         type="button"
         onClick={() => setExpanded((value) => !value)}

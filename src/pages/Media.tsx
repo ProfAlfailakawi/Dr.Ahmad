@@ -22,7 +22,7 @@ export default function Media() {
     <Page className="content-media page-journey">
       <PageHead
         label="الظهور الإعلامي"
-        title={`${count}.`}
+        title="لقاءات تتجاوز الشاشة."
         sub="مقتطفات من لقاءاتي الإذاعية والتلفزيونية، حيث يتحوّل الحوار إلى منصة للفكر."
       />
 

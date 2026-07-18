@@ -54,6 +54,11 @@ const autoAudio = await readFile(resolve(root, 'scripts/auto-audio.mjs'), 'utf8'
 const audioManagement = await readFile(resolve(root, 'src/lib/audio-management.ts'), 'utf8')
 const audioClearWorkflow = await readFile(resolve(root, '.github/workflows/admin-audio-clear.yml'), 'utf8')
 const autoAudioWorkflow = await readFile(resolve(root, '.github/workflows/auto-audio-r2.yml'), 'utf8')
+const publishingStudio = await readFile(resolve(root, 'src/components/admin/PublishingStudio.tsx'), 'utf8')
+const articleDetail = await readFile(resolve(root, 'src/pages/ArticleDetail.tsx'), 'utf8')
+const homePage = await readFile(resolve(root, 'src/pages/Home.tsx'), 'utf8')
+const uiSource = await readFile(resolve(root, 'src/components/ui.tsx'), 'utf8')
+const cvSource = await readFile(resolve(root, 'src/pages/CV.tsx'), 'utf8')
 const liveSource = (await Promise.all((await textFiles(resolve(root, 'src'))).map((file) => readFile(file, 'utf8')))).join('\n')
 
 const assertions = [
@@ -78,10 +83,16 @@ const assertions = [
   [contentManager.includes('uploadCvPdfToFirestore') && contentManager.includes("'site_cv_files'"), 'CV upload must keep its Storage-independent Firestore bridge'],
   [contentManager.includes('النص المُشكَّل لتوليد الصوت') && contentManager.includes("'bodyVocalized'") && autoAudio.includes('fields.bodyVocalized'), 'vocalized article text must remain visible in admin and connected to audio generation'],
   [contentManager.includes('إدارة الصوت') && contentManager.includes('إعادة التوليد') && contentManager.includes('إلغاء الصوت') && audioManagement.includes('/api/admin/audio/manage'), 'article admin must keep manual reading/dialogue cancellation and regeneration controls'],
+  [contentManager.includes('<audio') && contentManager.includes('فتح المقال والاستماع') && contentManager.includes('تُحدَّث الحالة تلقائياً'), 'article admin must show where completed audio can be heard and refresh generation status'],
   [serverSource.includes('audioManagePath') && serverSource.includes('admin-audio-clear.yml') && serverSource.includes("force: 'true'") && autoAudio.includes('explicit_manual_regeneration'), 'server must dispatch protected clear/regenerate workflows and force a selected reading only'],
   [audioClearWorkflow.includes('Delete published objects from R2') && audioClearWorkflow.includes('clear-audio-assets.mjs') && autoAudioWorkflow.includes("github.event.inputs.force == 'true'"), 'audio cancellation must delete published assets while manual reading regeneration remains explicit'],
   [cvFile.includes("'site_cv_files'") && cvFile.includes('cv-files-v1'), 'public CV reconstruction and local cache must remain active'],
   [firestoreRules.includes('match /site_cv_files/{kind}') && firestoreRules.includes('match /chunks/{chunkId}'), 'Firestore CV file rules must remain deployed'],
+  [publishingStudio.includes('مكتبة القوالب كاملة — 24 تكويناً') && publishingStudio.includes("key: 'iqtibas'") && publishingStudio.includes("key: 'masfufa'") && publishingStudio.includes("key: 'mizan'"), 'all 24 standalone social layouts must remain visible in the publishing studio'],
+  [articleDetail.includes('<StudentArchive') && articleDetail.includes('openAudioPlayer(`article-audio-${slug}`)') && (articleDetail.match(/<ArticleExtensions/g) || []).length === 1, 'article features must remain preserved inside the single related-content ending layer'],
+  [homePage.includes('home:selected-works:v2') && !homePage.includes('لا مواعيد معلنة حالياً') && !homePage.includes('عرض بصري واحد بلا تكرار'), 'home selections must vary and empty/upholstery copy must remain hidden'],
+  [uiSource.includes('جميع المقالات') && uiSource.includes("expanded ? 'إغلاق' : 'فروع'") && uiSource.includes('EnglishOverlay'), 'menus must keep clear all-content links and discoverable branches in both languages'],
+  [cvSource.includes('SHOW_CITATION_IMPACT = false') && cvSource.includes('<CitationImpact'), 'Scholar impact module must stay preserved but hidden for future activation'],
 ]
 
 for (const [pass, message] of assertions) {

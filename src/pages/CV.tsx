@@ -11,6 +11,8 @@ import { useTrackView } from '../lib/views'
 import { useCvLinks } from '../lib/settings'
 
 const ar = (n: number) => String(n)
+// محفوظ للمستقبل من دون عرضه حالياً؛ إعادة تفعيله لا تحتاج استرجاع أي كود.
+const SHOW_CITATION_IMPACT = false
 
 /* الأقسام المفتوحة دائماً — الجوهر */
 function Open({ title, children }: { title: string; children: React.ReactNode }) {
@@ -142,9 +144,11 @@ export default function CV() {
             </div>
           </FadeUp>
 
-          <FadeUp delay={0.06}>
-            <CitationImpact />
-          </FadeUp>
+          {SHOW_CITATION_IMPACT && (
+            <FadeUp delay={0.06}>
+              <CitationImpact />
+            </FadeUp>
+          )}
 
           {/* البصمة المعرفية — توقيع بصري مبني من بيانات المسيرة نفسها */}
           <FadeUp delay={0.08}>

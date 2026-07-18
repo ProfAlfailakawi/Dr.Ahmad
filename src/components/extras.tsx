@@ -338,7 +338,7 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
 
   if (sources.length) return (
     <div className={compact ? 'min-w-0 flex-1' : ''}>
-      <AudioPlayer sources={sources} title={title} compact={compact} />
+      <AudioPlayer sources={sources} title={title} compact={compact} controlId={`article-audio-${slug}`} />
       {dialogueOk && (
         <details className="mt-3 rounded-xl border border-hair bg-canvas px-5 py-4">
           <summary className="cursor-pointer text-[.86rem] font-semibold text-accent">نص الحلقة الحوارية</summary>

@@ -233,7 +233,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: 'ابدأ من هنا',
     items: [
-      { to: '/articles', label: 'المقالات الفكرية', description: 'الأرشيف الكامل', allLabel: 'عرض كل المقالات', sub: [
+      { to: '/articles', label: 'المقالات الفكرية', description: 'الأرشيف الكامل', allLabel: 'جميع المقالات', sub: [
         { to: '/atlas', label: 'سماء المقالات', description: 'خريطة الأرشيف' },
         { to: '/thought-paths', label: 'مسارات الفكرة', description: 'تطوّر الموضوعات' },
       ] },
@@ -246,7 +246,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
       { to: '/research', label: 'الأبحاث المحكمة' },
       { to: '/publications', label: 'الكتب المنشورة' },
       { to: '/inbox', label: 'من بريدي', description: 'رسائل مختارة' },
-      { to: '/curated', label: 'المختارات', allLabel: 'عرض كل المختارات', sub: [
+      { to: '/curated', label: 'المختارات', description: 'مختارات منتقاة', allLabel: 'جميع المختارات', sub: [
         { to: '/questions', label: 'سؤال يُقلق التعليم', description: 'أسئلة تربوية' },
         { to: '/radar', label: 'أرشيف الرادار', description: 'مختارات أسبوعية' },
       ] },
@@ -267,7 +267,7 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
   const reduce = useReducedMotion()
   const loc = useLocation()
   const dialogRef = useRef<HTMLDivElement>(null)
-  // الفروع مطويّة عند فتح القائمة؛ العنوان يفتح الصفحة والسهم وحده يفتح الفروع.
+  // العنوان والسهم يفتحان الفروع معاً؛ ورابط «جميع…» يبقى واضحاً ومستقلاً.
   const [openSub, setOpenSub] = useState<string | null>(null)
 
   useEffect(() => {
@@ -355,38 +355,44 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
                       transition={{ duration: 0.7, delay: 0.45 + gi * 0.08 + ii * 0.06, ease: EASE }}
                     >
                       {it.sub ? (
-                        <div className="group flex items-start gap-2 py-1">
-                          <Link
-                            to={it.to}
-                            onClick={close}
-                            className={`site-menu-control min-w-0 flex-1 text-right font-display text-[1.15rem] font-medium leading-[1.5] transition-colors duration-300 hover:text-accent md:text-[1.35rem] ${active ? 'text-accent' : 'text-ink'}`}
-                          >
-                            <span className="block">{it.label}</span>
-                            {it.description && <span className="mt-0.5 block font-sans text-[.7rem] font-normal text-soft">{it.description}</span>}
-                          </Link>
+                        <div className="py-1">
                           <button
                             type="button"
                             onClick={() => setOpenSub(expanded ? null : it.to)}
                             aria-label={expanded ? `طي فروع ${it.label}` : `عرض فروع ${it.label}`}
                             aria-expanded={expanded}
                             aria-controls={subId}
-                            className="site-menu-control mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center text-soft transition-colors hover:text-accent"
+                            className={`site-menu-control group flex min-h-11 w-full items-start justify-between gap-4 text-right transition-colors duration-300 hover:text-accent ${active ? 'text-accent' : 'text-ink'}`}
                           >
-                            <motion.svg
-                              aria-hidden
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2.2"
-                              strokeLinecap="round"
-                              animate={{ rotate: expanded ? 180 : 0 }}
-                              transition={{ duration: 0.3, ease: EASE }}
-                            >
-                              <path d="M6 9l6 6 6-6" />
-                            </motion.svg>
+                            <span className="min-w-0 flex-1 font-display text-[1.15rem] font-medium leading-[1.5] md:text-[1.35rem]">
+                              <span className="block">{it.label}</span>
+                              {it.description && <span className="mt-0.5 block font-sans text-[.7rem] font-normal text-soft">{it.description}</span>}
+                            </span>
+                            <span className="flex w-11 shrink-0 flex-col items-center pt-1 text-soft transition-colors group-hover:text-accent">
+                              <motion.svg
+                                aria-hidden
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.2"
+                                strokeLinecap="round"
+                                animate={{ rotate: expanded ? 180 : 0 }}
+                                transition={{ duration: 0.3, ease: EASE }}
+                              >
+                                <path d="M6 9l6 6 6-6" />
+                              </motion.svg>
+                              <span className="mt-1 text-[.58rem] font-normal leading-none">{expanded ? 'إغلاق' : 'فروع'}</span>
+                            </span>
                           </button>
+                          <Link
+                            to={it.to}
+                            onClick={close}
+                            className="site-menu-control mt-0.5 inline-flex min-h-11 items-center py-2 text-[.72rem] font-medium text-soft transition-colors hover:text-accent"
+                          >
+                            {it.allLabel} <span aria-hidden className="ms-1">←</span>
+                          </Link>
                         </div>
                       ) : it.action === 'search' ? (
                         <button
@@ -482,6 +488,56 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
           </div>
         </div>
       </motion.div>
+    </motion.div>
+  )
+}
+
+function EnglishOverlay({ close, openSearch }: { close: () => void; openSearch: () => void }) {
+  const reduce = useReducedMotion()
+  const loc = useLocation()
+  const items = [
+    { to: '/en', label: 'Home', description: 'Overview' },
+    { to: '/en/cv', label: 'Academic CV', description: 'Experience and education' },
+    { to: '/en/research', label: 'Research', description: 'Peer-reviewed work' },
+  ]
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') close() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [close])
+  return (
+    <motion.div
+      id="site-menu-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Main menu"
+      dir="ltr"
+      className="site-menu-overlay fixed inset-0 z-[220] isolate flex flex-col bg-canvas"
+      initial={reduce ? { opacity: 0 } : { y: '-100%' }}
+      animate={reduce ? { opacity: 1 } : { y: 0 }}
+      exit={reduce ? { opacity: 0 } : { y: '-100%' }}
+      transition={{ duration: .7, ease: EASE }}
+    >
+      <div className="flex flex-1 items-center overflow-y-auto px-6 py-28 md:px-11">
+        <div className="mx-auto w-full max-w-shell">
+          <p className="text-[.72rem] font-semibold uppercase text-accent">Navigate</p>
+          <nav className="mt-6 grid gap-1 md:max-w-2xl" aria-label="English pages">
+            {items.map((item) => (
+              <Link key={item.to} to={item.to} onClick={close} className={`site-menu-control border-b border-hair py-4 transition-colors hover:text-accent ${loc.pathname === item.to ? 'text-accent' : 'text-ink'}`}>
+                <span className="block font-display text-[1.4rem] font-medium md:text-[1.8rem]">{item.label}</span>
+                <span className="mt-1 block text-[.76rem] font-light text-soft">{item.description}</span>
+              </Link>
+            ))}
+          </nav>
+          <button type="button" onClick={openSearch} className="site-menu-control mt-7 min-h-11 border-b border-hair py-2 text-[.86rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">Search the archive</button>
+        </div>
+      </div>
+      <div className="border-t border-hair px-6 py-4 md:px-11 md:py-6">
+        <div className="mx-auto flex max-w-shell items-center justify-between gap-4">
+          <div className="flex items-center gap-2"><ThemeToggle className="h-11 w-11" /><Link to={AR_OF[loc.pathname] || '/'} onClick={close} className="flex h-11 min-w-11 items-center justify-center rounded-full border border-hair px-3 text-[.76rem] font-semibold text-soft">العربية</Link></div>
+          <Link to="/contact#booking-form" onClick={close} className="rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-white">Book a meeting</Link>
+        </div>
+      </div>
     </motion.div>
   )
 }
@@ -700,16 +756,12 @@ export function Nav() {
   const english = loc.pathname === '/en' || loc.pathname.startsWith('/en/')
   const solid = (scrolled || (loc.pathname !== '/' && loc.pathname !== '/en')) && !open
 
-  /* ---- الهيدر الإنجليزي: ثلاثة روابط هادئة بلا قائمة ---- */
+  /* ---- الهيدر الإنجليزي: الشعار والبحث والقائمة فقط؛ الروابط داخل القائمة. ---- */
   if (english) {
-    const items = [
-      { to: '/en', label: 'Home' },
-      { to: '/en/cv', label: 'CV' },
-      { to: '/en/research', label: 'Research' },
-    ]
     return (
       <>
         <motion.div className="fixed left-0 z-[240] h-[2px] w-full origin-left bg-accent" style={{ scaleX: progress }} animate={{ top: solid ? 63 : 75 }} transition={{ duration: .25, ease: EASE }} />
+        <AnimatePresence>{open && <EnglishOverlay key="en-ov" close={closeMenu} openSearch={() => { closeMenu(); setSearchOpen(true) }} />}</AnimatePresence>
         <AnimatePresence>{searchOpen && <SearchPalette key="search" close={closeSearch} />}</AnimatePresence>
         <nav aria-label="Main navigation" dir="ltr" className={`site-nav ${solid ? 'is-solid' : ''} fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.9] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
           <div className={`mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
@@ -717,31 +769,16 @@ export function Nav() {
               <img src="/logo.png" alt="" className="h-[36px] w-[60px] object-contain opacity-90 dark:invert" style={{ objectPosition: 'left' }} />
             </Link>
             <div className="flex items-center gap-3">
-              <span className="flex items-center gap-5 pe-2 text-[.88rem]">
-                {items.map((it) => (
-                  <Link key={it.to} to={it.to} className={`transition-colors hover:text-accent ${loc.pathname === it.to ? 'font-semibold text-accent' : 'font-medium text-ink'}`}>
-                    {it.label}
-                  </Link>
-                ))}
-              </span>
-              <button
-                type="button"
-                onClick={() => setSearchOpen(true)}
-                aria-label="Quick search"
-                title="Quick search (⌘K)"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"
-              >
+              <button type="button" onClick={() => setSearchOpen(true)} aria-label="Quick search" title="Quick search (⌘K)" className={`flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent ${open ? 'invisible pointer-events-none' : ''}`}>
                 <SocialIcon name="Search" size={16} />
               </button>
-              <ThemeToggle />
-              <Link
-                to={AR_OF[loc.pathname] || '/'}
-                aria-label="النسخة العربية"
-                title="النسخة العربية"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-hair text-[.82rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent"
-              >
-                ع
-              </Link>
+              <button type="button" onClick={() => setOpen(!open)} aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} aria-controls="site-menu-dialog" className="group flex min-h-11 items-center gap-3.5">
+                <span className="hidden text-[.9rem] font-medium text-ink transition-colors group-hover:text-accent sm:block">{open ? 'Close' : 'Menu'}</span>
+                <span className="relative flex h-11 w-11 flex-col items-center justify-center gap-[6px] rounded-full border border-hair transition-colors duration-300 group-hover:border-accent">
+                  <motion.span className="block h-[1.5px] w-4 bg-ink" animate={open ? { rotate: 45, y: 3.75 } : { rotate: 0, y: 0 }} transition={{ duration: .35, ease: EASE }} />
+                  <motion.span className="block h-[1.5px] w-4 bg-ink" animate={open ? { rotate: -45, y: -3.75 } : { rotate: 0, y: 0 }} transition={{ duration: .35, ease: EASE }} />
+                </span>
+              </button>
             </div>
           </div>
         </nav>

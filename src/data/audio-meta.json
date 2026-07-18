@@ -247,30 +247,6 @@
     "bytes": 1805760,
     "durationSeconds": 301
   },
-  "intelligence-without-a-consciencearabic.mp3": {
-    "bytes": 3211642,
-    "sha256": "a3ee243a22bd5f64a719f08f925942a967969cc72d3f48a683d0a67de2df2072",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-18T03:35:55.712Z",
-    "durationSeconds": 201,
-    "sourceHash": "d6e0054b0c95ce6823d0a1f6a28af90b398297d0159c94fe2d25b420dc60d079",
-    "pipelineHash": "051d801820f13395eddc862895f1c56e03272ca5e03c6f217726d0c383fe7392",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-18T03:31:35.283Z"
-  },
-  "intelligence-without-a-consciencearabic.noura.mp3": {
-    "bytes": 3245497,
-    "sha256": "c489dff193aa38ad75134487729041d7cbf6348a107b65fc85d57a7b5d738d75",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-18T03:35:55.768Z",
-    "durationSeconds": 203,
-    "sourceHash": "9389a3c727f1d1317ca12a2f67d2be5001e22c56a204eb84ab1dd3d3f2516d86",
-    "pipelineHash": "051d801820f13395eddc862895f1c56e03272ca5e03c6f217726d0c383fe7392",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-18T03:35:43.686Z"
-  },
   "jarida-202508-001.mp3": {
     "bytes": 1278144,
     "durationSeconds": 213

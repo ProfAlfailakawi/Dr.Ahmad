@@ -1,6 +1,6 @@
 import citations from '../data/citations.json'
 
-const ar = (value: number) => value.toLocaleString('ar-KW')
+const ar = (value: number) => value.toLocaleString('en-US')
 
 type Snapshot = { date: string; total: number }
 type YearPoint = { year: number; count: number }

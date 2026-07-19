@@ -810,6 +810,31 @@ function normalizeMechanics(sc, options = {}) {
     if (u.ending === 'final' && finalCount % 3 === 0 && i < sc.utterances.length - 2) u.ending = 'open'
   }
 
+  /* تنوّعُ النهايات يجب أن يُضمَن بنيوياً لا أن يُترك للحظّ.
+     بوابةُ البشرية تطلب ثلاثة أنواع، والحوار الذي يكتبه الدكتور قد لا يحمل
+     «خلاصة» أصلاً — وهذا اختيارٌ تحريريّ مشروع، لا عيب. فكانت الحلقة تُعزل
+     بعد توليد مداخلاتها كلها لسببٍ لا يدَ لصاحبها فيه.
+     قاعدتان طبيعيتان: الحلقةُ تُغلق بآخر مداخلة (فهي نهايتها فعلاً)، وإن بقي
+     النقص فُتحت مداخلاتٌ متباعدة في الوسط — وهو ما تقوله الشيفرة أعلاه: نهايةٌ
+     مفتوحة تدعو الطرف الآخر للدخول. لا يُمَسّ نصٌّ ولا نوعُ إلقاء. */
+  const list = sc.utterances
+  if (list.length) {
+    const last = list[list.length - 1]
+    if (last.ending !== 'final' && !String(last.text || '').includes('؟')) last.ending = 'final'
+    const kinds = () => new Set(list.map((item) => item.ending))
+    if (kinds().size < 3 && list.length >= 4) {
+      const step = Math.max(2, Math.floor(list.length / 4))
+      for (let i = step; i < list.length - 1 && kinds().size < 3; i += step) {
+        if (list[i].ending === 'neutral' && !String(list[i].text || '').includes('؟')) list[i].ending = 'open'
+      }
+      /* وإن بقي النقص (حوارٌ كله أسئلة مثلاً): مداخلةٌ واحدة محايدة تكفي. */
+      if (kinds().size < 3) {
+        const mid = list[Math.floor(list.length / 2)]
+        if (mid && mid.ending !== 'neutral' && !String(mid.text || '').includes('؟')) mid.ending = 'neutral'
+      }
+    }
+  }
+
   // التداخلات قيدٌ ميكانيكيٌّ بحت: في الحلقة الكاملة تداخلان فقط، وفي العينة تداخل واحد.
   // كل تداخل قصير جداً ولا يتجاوز 150ms، فلا يحجب كلمة مهمة.
   const wc = wordCount
@@ -2656,7 +2681,7 @@ function dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudg
   const integrityProven = episodeIntegrity?.pass === true && Number(episodeIntegrity.coverage || 0) >= 0.9
   const proxy = humanLikenessGate({ plan, technical,
     sttComparisons: fullComparison ? [fullComparison] : [], dialogue: true, minimumScore: 95,
-    sttFidelityMin: integrityProven ? 0.88 : 0.95 })
+    sttFidelityMin: integrityProven ? 0.88 : 0.95, manualText: MANUAL_TEXT_MODE })
   const dimensions = ['humanLikeness', 'warmth', 'semanticDelivery', 'questionNaturalness',
     'pauseNaturalness', 'pronunciation', 'rhythmVariety', 'endingVariety', 'nonBroadcastTone',
     'speakerIndependence']
@@ -3859,6 +3884,30 @@ if (SELF_TEST) {
     fullComparison: { importantRatio: 0.80, ratio: 0.85 }, finalJudge: { noGemini: true, pass: true, problems: [] },
     episodeIntegrity: { pass: true, coverage: 1, anchored: 36, anchorable: 36 } })
   assert(!poorSpeech.pass, 'تركيبٌ سليم لا يشفع لنطقٍ رديء')
+  /* حوارُ الدكتور مهما كتبه: البوابةُ تحرس الجودة ولا تظلم اختياره التحريري */
+  const mkPlan = (kinds, count = 20) => ({ utterances: Array.from({ length: count }, (_, i) => ({
+    speaker: i % 2 ? 'A' : 'B', text: `مداخلة ${i} فيها كلامٌ عربيٌّ كافٍ للقياس.`,
+    type: kinds[i % kinds.length], delivery: kinds[i % kinds.length],
+    ratePct: 0, pauseAfterMs: (pacingOf(kinds[i % kinds.length]).pauseMs[0]) + (i % 4) * 30,
+    ending: ['neutral', 'open', 'final'][i % 3], overlapMs: 0 })) })
+  const okTech = { probe: { sampleRate: 44100, channels: 1 }, silence: { longestSec: 0.8 },
+    loudness: { integratedLufs: -16, truePeakDbtp: -2 } }
+  const gateFor = (kinds, manual) => humanLikenessGate({ plan: mkPlan(kinds), technical: okTech,
+    sttComparisons: [{ importantRatio: 0.93 }], dialogue: true, minimumScore: 95,
+    sttFidelityMin: 0.88, manualText: manual })
+  const fourKinds = ['statement', 'briefReaction', 'question', 'conclusion']
+  assert(gateFor(fourKinds, true).measures.semanticPerformance,
+    'نصٌّ يدويّ بأربعة أنواع إلقاء لا يُعزل — تنوّع الإلقاء اختيار الدكتور')
+  assert(!gateFor(['statement'], true).measures.semanticPerformance,
+    'الرتابة التامة (نوعٌ واحد) تبقى مرفوضة حتى في النص اليدوي')
+  assert(gateFor(['statement', 'clarification'], true).measures.pauseVariation,
+    'حوارٌ ضيّقُ نطاق الوقفات لا يُعزل بمطلبٍ يستحيل بلوغه')
+  const singleSpeaker = humanLikenessGate({
+    plan: { utterances: mkPlan(fourKinds).utterances.map((u) => ({ ...u, speaker: 'A' })) },
+    technical: okTech, sttComparisons: [{ importantRatio: 0.93 }], dialogue: true,
+    minimumScore: 95, sttFidelityMin: 0.88, manualText: true })
+  assert(!singleSpeaker.measures.dialogueIndependence, 'حوارٌ بمتحدثٍ واحد ليس حواراً — يُرفض')
+
   const judgedPath = episodeQualityScore({ ...noGeminiBase,
     fullComparison: { importantRatio: 0.95, ratio: 0.90 }, finalJudge: { pass: true, problems: [] } })
   assert(judgedPath.checks.judgeOk, 'مسار الحكم العادي لم يمسه وضع بلا Gemini')

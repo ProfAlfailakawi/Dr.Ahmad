@@ -152,6 +152,10 @@ jobs:
             echo "Azure secret is missing; skipping dialogue podcast generation."
             exit 0
           fi
+          # الحلقة المفقودة: الدكتور يكتب الحوار في اللوحة فيُحفظ في Firestore،
+          # ولم يكن أحد يجلبه — فيبقى في السحابة ولا يبلغ المحرك أبداً. يُكتشف
+          # الآن كل حوارٍ أُرسل للتوليد ويُسحب تلقائياً قبل أن يبدأ.
+          node scripts/fetch-queued-dialogues.mjs || echo "::warning::تعذّر سحب الحوارات المنتظرة؛ نمضي بما هو موجود."
           npm run podcast:ar:nightly
         env:
           PODCAST_NO_GEMINI: '1'

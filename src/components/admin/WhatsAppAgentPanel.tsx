@@ -287,6 +287,28 @@ export function WhatsAppAgentPanel() {
     try { await request(`/campaigns/${encodeURIComponent(id)}/stop`, { method: 'POST' }); setNotice('أوقفت الحملة الهادئة.'); await refresh() } catch { setNotice('تعذّر إيقاف الحملة.') }
   }
 
+  /* صمتُ البوت: كم محادثةً يصمت فيها الآن، وزرٌّ يُعيده في كلّها بضغطة.
+     كان الدكتور يظنّ البوت معطوباً وهو صامتٌ عمداً، بلا سبيلٍ لمعرفة ذلك ولا
+     لإعادته إلا بالانتظار ثلاثين دقيقة. */
+  const [silence, setSilence] = useState<{ silenced: number; until: string | null }>({ silenced: 0, until: null })
+  const [returning, setReturning] = useState(false)
+
+  const loadSilence = async () => {
+    try { setSilence(await request<{ silenced: number; until: string | null }>('/admin/silence')) } catch { /* الجسر مغلق */ }
+  }
+  useEffect(() => { void loadSilence() }, [status.bridgeOnline])
+
+  const returnBotNow = async () => {
+    setReturning(true)
+    try {
+      const out = await request<{ returned: number }>('/admin/bot-return-all', { method: 'POST' })
+      setNotice(out.returned ? `✓ عاد البوت في ${out.returned} محادثة — جرّبه الآن.` : 'البوت يعمل أصلاً، لا محادثة صامتة.')
+      await loadSilence()
+    } catch {
+      setNotice('تعذّر إرجاع البوت — تأكّد أن الجسر يعمل على الماك.')
+    } finally { setReturning(false) }
+  }
+
   const restartBridge = async () => {
     if (!status.bridgeOnline) return setNotice('زر إعادة التشغيل لا يصل للجسر إذا كان الماك مطفأ أو الإنترنت/الجسر متوقفًا.')
     setRestarting(true)
@@ -420,7 +442,25 @@ export function WhatsAppAgentPanel() {
             <button type="button" onClick={() => void pairNow()} disabled={pairing || !bridgeAlive} className={`${secondary} disabled:opacity-40`}>{pairing ? 'يقترن…' : '⚡ اقتران تلقائي'}</button>
             <button type="button" onClick={saveSecret} className={secondary}>حفظ السر محليًا</button>
             <button type="button" onClick={() => void restartBridge()} disabled={restarting || !status.bridgeOnline} className={secondary}>{restarting ? 'جارٍ إعادة التشغيل' : 'إعادة تشغيل واتساب'}</button>
+            {/* يظهر دائماً لا عند الصمت وحده: حين يبدو البوت معطوباً يريد الدكتور
+                زراً حاضراً يضغطه، لا زراً يبحث عن شرطٍ لظهوره. */}
+            <button
+              type="button"
+              onClick={() => void returnBotNow()}
+              disabled={returning || !status.bridgeOnline}
+              className={silence.silenced > 0 ? primary : secondary}
+              title="يُنهي صمت البوت في كل المحادثات فوراً"
+            >
+              {returning ? 'يُعيد البوت…' : silence.silenced > 0 ? `🔇 أعد البوت الآن (${silence.silenced})` : 'أعد البوت الآن'}
+            </button>
           </div>
+          {silence.silenced > 0 && (
+            <p className="mt-2 text-[.76rem] leading-relaxed text-accent">
+              البوت صامتٌ الآن في {silence.silenced === 1 ? 'محادثة واحدة' : `${silence.silenced} محادثات`}
+              {silence.until ? ` حتى ${new Date(silence.until).toLocaleTimeString('ar-KW', { hour: '2-digit', minute: '2-digit' })}` : ''} —
+              لأنك رددتَ فيها بيدك. اضغط الزر ليعود حالاً.
+            </p>
+          )}
         </div>
         <div className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-soft">
           الوضع الآمن مفعل: لا ردّ على الأهل والربع. لا يفتح البابَ إلا أمرٌ لا يُقال مصادفة —

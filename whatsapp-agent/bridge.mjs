@@ -122,6 +122,16 @@ export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
         writeJson(res, 200, agent.manualTakeover(body.jid, body.minutes))
         return
       }
+      /* إعادةٌ شاملة بضغطة: الدكتور لا يعرف أرقام JID ولا ينبغي أن يبحث عنها
+         حين يصمت البوت. زرٌّ واحد يُعيده في كل المحادثات. */
+      if (req.method === 'POST' && url.pathname === '/admin/bot-return-all') {
+        writeJson(res, 200, agent.returnAllToBot())
+        return
+      }
+      if (req.method === 'GET' && url.pathname === '/admin/silence') {
+        writeJson(res, 200, agent.silenceState())
+        return
+      }
       if (req.method === 'POST' && url.pathname === '/admin/bot-return') {
         const body = await readJson(req)
         writeJson(res, 200, agent.returnToBot(body.jid))

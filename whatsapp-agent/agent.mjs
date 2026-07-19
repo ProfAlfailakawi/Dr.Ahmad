@@ -187,6 +187,31 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     db.addAudit('manual-takeover', db.jidKey(jid), `minutes=${minutes}`)
     return { jid: db.jidKey(jid), manualUntil: db.get('SELECT manual_until FROM chat_sessions WHERE jid=?', db.jidKey(jid))?.manual_until || null }
   }
+  /**
+   * كم محادثةً يصمت فيها البوت الآن، ومتى ينتهي أطولها؟
+   * الدكتور لا يعرف أرقام JID ولا يريدها — يريد أن يعرف: أصامتٌ هو أم لا.
+   */
+  const silenceState = () => {
+    const now = new Date().toISOString()
+    const rows = db.all('SELECT manual_until FROM chat_sessions WHERE manual_until > ?', now)
+    const until = rows.map((r) => r.manual_until).sort().pop() || null
+    return { silenced: rows.length, until }
+  }
+
+  /**
+   * إعادةٌ شاملة: يُنهي صمت كل المحادثات دفعةً واحدة.
+   *
+   * كان الإرجاع يحتاج jid بعينه، والدكتور لا يعرفه ولا ينبغي أن يعرفه. وحين
+   * يصمت البوت بلا سببٍ ظاهر — كما وقع اليوم بسبب صدى ردّه — يحتاج زراً واحداً
+   * يُعيده حالاً، لا بحثاً عن رقمٍ في قاعدة بيانات.
+   */
+  const returnAllToBot = () => {
+    const before = silenceState()
+    db.run("UPDATE chat_sessions SET mode='content-session', manual_until=NULL, updated_at=? WHERE manual_until IS NOT NULL", new Date().toISOString())
+    db.addAudit('bot-return-all', '', `أُعيد البوت في ${before.silenced} محادثة`)
+    return { returned: before.silenced }
+  }
+
   const returnToBot = (jid) => {
     const now = new Date().toISOString()
     db.run("UPDATE chat_sessions SET mode='content-session', manual_until=NULL, updated_at=? WHERE jid=?", now, db.jidKey(jid))
@@ -418,7 +443,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     return { ...db.state(), qrImage, flags, indexed: Number(db.get('SELECT COUNT(*) AS count FROM content_items')?.count || 0), bridge: Boolean(state.bridge), bridgeOnline, lastHeartbeatAt, heartbeatAgeMs, restartRequestedAt: db.getSetting('bridge.restartRequestedAt', null), port: BRIDGE_PORT, timeZone: TIME_ZONE }
   }
   const setBridge = (server) => { state.bridge = server; return status() }
-  return Object.assign(api, { db, state, index, start, stop, status, sendSelf, audience, onContacts, queueCampaign, approveCampaign, sendCampaign, sendQuietCampaign, stopCampaign, listCampaigns, listBroadcastGroups, discoverGroups, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, requestRestart })
+  return Object.assign(api, { db, state, index, start, stop, status, sendSelf, audience, onContacts, silenceState, returnAllToBot, queueCampaign, approveCampaign, sendCampaign, sendQuietCampaign, stopCampaign, listCampaigns, listBroadcastGroups, discoverGroups, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, requestRestart })
 }
 
 async function dispatchDueReminders(state) {

@@ -235,7 +235,13 @@ jobs:
           # العمل نفسه — فتصطدم بكل عملٍ بشريّ جارٍ، وتُرجِع تعديلاتٍ حيّة إلى
           # حالةٍ قديمة بلا أن يشعر أحد. الآن لا تُسجَّل إلا البيانات المولَّدة.
           git add src/data/audio.json src/data/audio-meta.json src/data/site-articles-feed.json src/data/podcast-admin.json
-          git add .podcast-state.json 2>/dev/null || true
+          # -f إلزاميّ: الملف متجاهَلٌ في .gitignore، فكان git add يفشل بصمت
+          # (الشرطة `|| true` تبتلع الخطأ) ولا يُرفع السجل أبداً. وأثرُ ذلك أن
+          # رانر النشر لا يجد دليل الاعتماد، فيسقط إلى «ما كان ظاهراً يبقى» —
+          # وحلقةٌ جديدة لم تكن ظاهرة قط. حلقةٌ مفرغة: لا تظهر لأنها ليست ظاهرة.
+          # وبرفع السجل يصير المانيفست قابلاً لإعادة البناء من الحقيقة دائماً،
+          # فإن دهسته رفعةٌ محلية قديمة أعادته التشغيلة التالية وحدها.
+          git add -f .podcast-state.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No audio changes to commit."
           else

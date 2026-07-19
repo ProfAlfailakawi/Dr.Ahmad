@@ -8,6 +8,7 @@ import { MockTransport, createWhatsAppTransport } from './transport.mjs'
 import { randomToken } from './crypto.mjs'
 import { createReminder } from './reminders.mjs'
 import { startLocalBridge } from './bridge.mjs'
+import { addContactByPhone, addMembers, absorbContacts, createList, deleteList, ensureAudienceSchema, jidOf, listContacts, listLists, listMembers, personalize, previewFor, removeMember, renameList, resolveAudience, setNickname, vocativeOf } from './audience.mjs'
 
 function safeText(text) { return String(text || '').slice(0, MAX_MESSAGE_CHARS).trim() }
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -18,7 +19,44 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
      الخام فينهار على `agent.bridgeSecret is not a function` قبل أن يفتح المنفذ،
      فتظهر اللوحة «غير مرتبط» بينما واتساب متصل فعلاً. */
   const api = {}
+  ensureAudienceSchema(db)
   const index = () => syncContentIndex(db, root, SITE_URL)
+
+  /* ═══ الجمهور: دفتر الأسماء وقوائم الدكتور ═══
+     واتساب لا يصدّر قوائم البث لجهازٍ مرتبط (لا دالة لها في baileys)، لكنه
+     يزامن جهات الاتصال بأسمائها — فمنها يبني الدكتور قوائمه، ونرسل رسائل
+     فردية مخصّصة بدل بثٍّ أعمى: تصل لمن لم يحفظ رقمه، وتناديه باسمه. */
+  const onContacts = (contacts) => absorbContacts(db, contacts)
+  const audience = {
+    contacts: (options) => listContacts(db, options),
+    addContact: (phone, nickname) => addContactByPhone(db, phone, nickname),
+    setNickname: (contactId, nickname) => setNickname(db, contactId, nickname),
+    lists: () => listLists(db),
+    createList: (name, note) => createList(db, name, note),
+    renameList: (id, name, note) => renameList(db, id, name, note),
+    deleteList: (id) => deleteList(db, id),
+    members: (listId) => listMembers(db, listId),
+    addMembers: (listId, ids) => addMembers(db, listId, ids),
+    removeMember: (listId, id) => removeMember(db, listId, id),
+    preview: (listId, text) => previewFor(db, listId, text),
+    /* من قائمةٍ إلى مسوّدة حملة: يحوّل الأعضاء إلى جهات، ويترك الاعتماد
+       والإرسال بيد الدكتور كما هما — لا تخرج رسالة بغير أمره. */
+    draftFromList(listId, name, message) {
+      const list = db.get('SELECT * FROM broadcast_lists WHERE id=?', listId)
+      if (!list) throw new Error('القائمة غير موجودة')
+      const { send } = resolveAudience(db, listId)
+      if (!send.length) throw new Error('لا أحد في هذه القائمة (أو كلهم طلبوا الإيقاف).')
+      const targets = send.map((member) => {
+        const row = db.get('SELECT * FROM contacts WHERE id=?', member.id)
+        return { id: member.id, jid: jidOf(db, row), kind: 'contact' }
+      }).filter((target) => target.jid)
+      const id = queueCampaign({ name: name || `${list.name} — ${new Date().toLocaleDateString('en-GB')}`, message, targets })
+      db.addAudit('campaign-from-list', listId, `targets=${targets.length}`)
+      return { id, targets: targets.length }
+    },
+    resolve: (listId) => resolveAudience(db, listId),
+    personalize,
+  }
   const decryptJidSafe = (value) => {
     try { return value ? db.decryptJid(value) : '' } catch { return String(value || '') }
   }
@@ -60,7 +98,16 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     if (state.started) return db.state()
     index()
     db.purgeExpired()
-    if (!state.transport) state.transport = mock ? new MockTransport() : await createWhatsAppTransport({ db, onMessage })
+    if (!state.transport) state.transport = mock ? new MockTransport() : await createWhatsAppTransport({ db, onMessage, onContacts })
+    /* حين يكتب الدكتور بيده، يصمت البوت فوراً في تلك المحادثة ويعود بعد
+       المدة المحددة. كان الحدث يُطلَق من واتساب ولا أحد يستمع له — فيتكلم
+       البوت فوق كلام الدكتور. هذا هو المستمع الغائب. */
+    if (!state.takeoverBound && state.transport?.events?.on) {
+      state.transport.events.on('manual-takeover', (jid) => {
+        try { manualTakeover(jid) } catch (error) { db.addAudit('manual-takeover-failed', '', redactError(error)) }
+      })
+      state.takeoverBound = true
+    }
     const transportEvents = state.transport.events || state.transport
     transportEvents?.on?.('status', (payload) => db.setState(typeof payload === 'string' ? { status: payload } : payload))
     // QR/pairing secrets are emitted only in-process; never persist them in SQLite or expose them through the web bridge.
@@ -301,9 +348,13 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
         if (!jid) { skipped++; db.addAudit('quiet-broadcast-target-skipped', id, 'unknown-target'); continue }
         const jobId = randomToken(10)
         const created = new Date().toISOString()
-        db.run('INSERT INTO message_jobs(id,campaign_id,jid,body,state,attempts,available_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)', jobId, id, db.encryptJid(jid), campaign.message, 'sending', 1, created, created, created)
+        /* لكلٍّ نصّه: {الاسم} يصير لقبه الذي كتبتَه، و{تحية} تتبع ساعة الإرسال.
+           فلا تخرج رسالةٌ واحدة جامدة، بل رسالةٌ لكل إنسانٍ باسمه. */
+        const contact = db.get('SELECT * FROM contacts WHERE id=?', target.target_id)
+        const body = personalize(campaign.message, { vocative: contact ? vocativeOf(contact) : '' })
+        db.run('INSERT INTO message_jobs(id,campaign_id,jid,body,state,attempts,available_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)', jobId, id, db.encryptJid(jid), db.encryptText(body), 'sending', 1, created, created, created)
         try {
-          await state.transport.sendText(jid, campaign.message)
+          await state.transport.sendText(jid, body)
           db.run('UPDATE message_jobs SET state=?,updated_at=? WHERE id=?', 'sent', new Date().toISOString(), jobId)
           db.run('INSERT INTO message_attempts(job_id,state,error,attempted_at) VALUES(?,?,?,?)', jobId, 'sent', null, new Date().toISOString())
           sent++
@@ -350,7 +401,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     return { ...db.state(), flags, indexed: Number(db.get('SELECT COUNT(*) AS count FROM content_items')?.count || 0), bridge: Boolean(state.bridge), bridgeOnline, lastHeartbeatAt, heartbeatAgeMs, restartRequestedAt: db.getSetting('bridge.restartRequestedAt', null), port: BRIDGE_PORT, timeZone: TIME_ZONE }
   }
   const setBridge = (server) => { state.bridge = server; return status() }
-  return Object.assign(api, { db, state, index, start, stop, status, sendSelf, queueCampaign, approveCampaign, sendCampaign, sendQuietCampaign, stopCampaign, listCampaigns, listBroadcastGroups, discoverGroups, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, requestRestart })
+  return Object.assign(api, { db, state, index, start, stop, status, sendSelf, audience, onContacts, queueCampaign, approveCampaign, sendCampaign, sendQuietCampaign, stopCampaign, listCampaigns, listBroadcastGroups, discoverGroups, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, requestRestart })
 }
 
 async function dispatchDueReminders(state) {

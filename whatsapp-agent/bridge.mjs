@@ -127,6 +127,48 @@ export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
         writeJson(res, 200, agent.returnToBot(body.jid))
         return
       }
+      /* ═══ الجمهور: دفتر الأسماء وقوائم البث التي يبنيها الدكتور ═══ */
+      if (req.method === 'GET' && url.pathname === '/admin/audience/contacts') {
+        writeJson(res, 200, { contacts: agent.audience.contacts({ search: url.searchParams.get('q') || '' }) }); return
+      }
+      if (req.method === 'POST' && url.pathname === '/admin/audience/contacts') {
+        const body = await readJson(req)
+        writeJson(res, 200, agent.audience.addContact(body.phone, body.nickname)); return
+      }
+      if (req.method === 'POST' && url.pathname === '/admin/audience/nickname') {
+        const body = await readJson(req)
+        writeJson(res, 200, agent.audience.setNickname(body.contactId, body.nickname)); return
+      }
+      if (req.method === 'GET' && url.pathname === '/admin/audience/lists') {
+        writeJson(res, 200, { lists: agent.audience.lists() }); return
+      }
+      if (req.method === 'POST' && url.pathname === '/admin/audience/lists') {
+        const body = await readJson(req)
+        if (body.action === 'rename') { writeJson(res, 200, agent.audience.renameList(body.id, body.name, body.note)); return }
+        if (body.action === 'delete') { writeJson(res, 200, agent.audience.deleteList(body.id)); return }
+        writeJson(res, 200, agent.audience.createList(body.name, body.note)); return
+      }
+      if (req.method === 'GET' && url.pathname === '/admin/audience/members') {
+        writeJson(res, 200, { members: agent.audience.members(url.searchParams.get('list') || '') }); return
+      }
+      if (req.method === 'POST' && url.pathname === '/admin/audience/members') {
+        const body = await readJson(req)
+        if (body.action === 'remove') { writeJson(res, 200, agent.audience.removeMember(body.listId, body.contactId)); return }
+        writeJson(res, 200, agent.audience.addMembers(body.listId, body.contactIds || [])); return
+      }
+      if (req.method === 'POST' && url.pathname === '/admin/audience/preview') {
+        const body = await readJson(req)
+        const resolved = agent.audience.resolve(body.listId)
+        writeJson(res, 200, {
+          samples: agent.audience.preview(body.listId, body.text || ''),
+          willSend: resolved.send.length,
+          suppressed: resolved.suppressed.length,
+        }); return
+      }
+      if (req.method === 'POST' && url.pathname === '/admin/audience/draft') {
+        const body = await readJson(req)
+        writeJson(res, 200, agent.audience.draftFromList(body.listId, body.name, body.message || '')); return
+      }
       if (req.method === 'GET' && url.pathname === '/admin/rules') { writeJson(res, 200, agent.listReplyRules()); return }
       if (['POST', 'PUT', 'PATCH'].includes(req.method || '') && url.pathname === '/admin/rules') {
         writeJson(res, 200, agent.saveReplyRule(await readJson(req)))

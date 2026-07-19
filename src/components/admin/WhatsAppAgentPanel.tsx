@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import AudienceStudio from './AudienceStudio'
 
 type AgentStatus = {
   status?: string
@@ -383,14 +384,20 @@ export function WhatsAppAgentPanel() {
         {notice && <p role="status" className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{notice}</p>}
       </section>
 
-      <section className={card}>
-        <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.75rem] font-semibold uppercase text-accent">الوضع اليدوي</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">استلام محادثة أو إرجاعها للبوت.</h3></div><p className="text-[.78rem] text-soft">ردك من الهاتف يفعّل هذا تلقائيًا.</p></div>
-        <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto_auto]">
+      {/* «الوضع اليدوي» كان يطلب كتابة JID بيدك — وهو ما لا يفعله أحد. صار
+          تلقائياً: أول ما تردّ من هاتفك يصمت البوت في تلك المحادثة ويعود بعد
+          نصف ساعة. فطُوي القسم إلى سطرٍ واحد، وبقيت أدواته للحالات النادرة. */}
+      <details className="rounded-2xl border border-hair bg-wash px-4 py-3">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[.82rem] text-soft">
+          <span>حين تردّ بيدك يصمت البوت تلقائياً ويعود بعد ٣٠ دقيقة.</span>
+          <span className="text-[.75rem] text-accent">تحكّم يدوي</span>
+        </summary>
+        <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_auto_auto]">
           <input dir="ltr" className={input} placeholder="965XXXXXXXX@s.whatsapp.net" value={manualJid} onChange={(event) => setManualJid(event.target.value)} />
           <button type="button" onClick={() => void manualTakeover()} className={secondary}>استلام يدوي</button>
           <button type="button" onClick={() => void returnBot()} className={primary}>إرجاع للبوت</button>
         </div>
-      </section>
+      </details>
 
       <section className={card}>
         <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.75rem] font-semibold uppercase text-accent">بوابة الإطلاق</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">المراحل لا تُفتح دفعة واحدة.</h3></div><p className="text-[.78rem] text-soft">الإرسال والرد الآلي مغلقان حتى اعتمادك.</p></div>
@@ -413,29 +420,10 @@ export function WhatsAppAgentPanel() {
             </label>
           </div>
           <textarea className={`${input} min-h-32 resize-y`} placeholder="نص الرسالة — راجعه كأنه سينشر باسمك" value={campaignText} onChange={(event) => setCampaignText(event.target.value)} />
-          <div className="grid gap-3 lg:grid-cols-[1fr_1fr]">
-            <div className="rounded-xl border border-hair bg-canvas p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div><p className="font-semibold text-ink">القروبات من واتساب</p><p className="mt-1 text-[.73rem] text-soft">لا أعرض أرقام الأعضاء ولا أخزنها؛ فقط اسم القروب وعدده.</p></div>
-                <button type="button" onClick={() => void loadGroups()} disabled={busy || !status.bridgeOnline} className={secondary}>سحب القروبات</button>
-              </div>
-              <div className="mt-3 grid gap-2">
-                {groups.length ? groups.map((group) => {
-                  const active = selectedGroupIds.includes(group.id)
-                  return (
-                    <button
-                      key={group.id}
-                      type="button"
-                      onClick={() => setSelectedGroupIds((current) => active ? current.filter((id) => id !== group.id) : [...current, group.id])}
-                      className={`rounded-xl border px-4 py-3 text-right text-[.82rem] transition-colors ${active ? 'border-accent bg-accent text-white' : 'border-hair bg-wash text-ink hover:border-accent'}`}
-                    >
-                      <span className="block font-semibold">{group.name}</span>
-                      <span className={`mt-1 block text-[.7rem] ${active ? 'text-white/75' : 'text-soft'}`}>{group.memberCount ? `${group.memberCount} عضو تقريبًا` : 'عدد الأعضاء غير متاح'}</span>
-                    </button>
-                  )
-                }) : <p className="rounded-xl border border-hair bg-wash px-4 py-3 text-[.8rem] text-soft">لم تُسحب القروبات بعد. شغّل الجسر واتصل بواتساب ثم اضغط «سحب القروبات».</p>}
-              </div>
-            </div>
+          {/* حُذف قسم «القروبات من واتساب» بأمر الدكتور: القروب يكشف أرقام
+              الناس بعضهم لبعض، ورداً واحداً يزعج مئتين. بديله «قوائمك ودفتر
+              أسمائك» فوق: رسالة مستقلة لكل شخص باسمه، ولا يرى أحدٌ أحداً. */}
+          <div className="grid gap-3">
             <div className="rounded-xl border border-hair bg-canvas p-4">
               <p className="font-semibold text-ink">أرقام أو جهات اختيارية</p>
               <p className="mt-1 text-[.73rem] text-soft">كل سطر رقم كويتي 8 خانات أو JID. لا تُحفظ الأرقام الخام داخل Git.</p>
@@ -487,6 +475,8 @@ export function WhatsAppAgentPanel() {
           {simulation && <p className="lg:col-span-2 rounded-xl border border-hair bg-wash px-4 py-3 text-[.8rem] leading-relaxed text-soft">القاعدة: {simulation.ruleName || simulation.intent || '—'} · الثقة: {simulation.confidence ?? '—'}{simulation.needsHuman ? ' · يحتاج موظف' : ''}<br />{simulation.preview || 'لا يوجد رد.'}</p>}
         </div>
       </section>
+
+      {bridge && <AudienceStudio request={request} onNotice={setNotice} />}
 
       {bridge && <section className={card}><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.75rem] font-semibold uppercase text-accent">الحملات المحلية</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">مسوداتك، اعتمادك، ثم إرسال هادئ.</h3></div><p className="text-[.78rem] text-soft">لا يظهر هنا أي رقم أو جلسة.</p></div><div className="mt-4 grid gap-2">{campaigns.length ? campaigns.map((campaign) => <div key={campaign.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hair bg-canvas px-4 py-3"><div><p className="font-semibold text-ink">{campaign.name}</p><p className="mt-1 text-[.72rem] text-soft">{campaign.state === 'draft' ? 'مسودة' : campaign.state === 'approved' ? 'معتمدة — غير مرسلة' : campaign.state === 'sending' || campaign.state === 'queued' ? 'قيد الإرسال الهادئ' : campaign.state} · {campaign.target_count || 0} جهة/قروب</p></div><div className="flex flex-wrap gap-2">{campaign.state === 'draft' && <button type="button" onClick={() => void approve(campaign.id)} className={secondary}>اعتماد للمراجعة</button>}{campaign.state === 'approved' && <button type="button" onClick={() => void sendQuiet(campaign)} disabled={sendingCampaignId === campaign.id || !flags.send || !status.bridgeOnline} className={primary}>{sendingCampaignId === campaign.id ? 'يبدأ…' : 'إرسال هادئ'}</button>}{['queued', 'sending'].includes(campaign.state) && <button type="button" onClick={() => void stopQuiet(campaign.id)} className={secondary}>إيقاف</button>}</div></div>) : <p className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">لا توجد مسودات محلية بعد.</p>}</div></section>}
 

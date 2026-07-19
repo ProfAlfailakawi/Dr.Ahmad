@@ -40,7 +40,7 @@ export class MockTransport extends EventEmitter {
   async logout() { await this.disconnect() }
 }
 
-export async function createWhatsAppTransport({ db, onMessage, onQr, onPairingCode, maxReconnects = 4 } = {}) {
+export async function createWhatsAppTransport({ db, onMessage, onContacts, onQr, onPairingCode, maxReconnects = 4 } = {}) {
   let baileys
   try { baileys = await import('@whiskeysockets/baileys') } catch (error) {
     throw new Error(`Baileys غير مثبت. نفّذ npm install داخل whatsapp-agent. (${redactError(error)})`)
@@ -88,6 +88,15 @@ export async function createWhatsAppTransport({ db, onMessage, onQr, onPairingCo
       generateHighQualityLinkPreview: false,
     })
     socket.ev.on('creds.update', () => db.saveAuth('creds', 'main', encode(authState.creds)))
+    /* دفتر الأسماء: واتساب لا يسلّم قوائم البث لجهازٍ مرتبط، لكنه يزامن
+       جهات الاتصال بأسمائها — ومنها يبني الدكتور قوائمه في اللوحة. */
+    const harvest = (contacts, origin) => {
+      if (!Array.isArray(contacts) || !contacts.length) return
+      try { onContacts?.(contacts, origin) } catch (error) { console.error('تعذّر استيعاب جهات الاتصال:', error?.message || error) }
+    }
+    socket.ev.on('contacts.upsert', (contacts) => harvest(contacts, 'upsert'))
+    socket.ev.on('contacts.update', (contacts) => harvest(contacts, 'update'))
+    socket.ev.on('messaging-history.set', ({ contacts }) => harvest(contacts, 'history'))
     socket.ev.on('messages.upsert', ({ messages }) => {
       for (const message of messages || []) {
         const jid = message?.key?.remoteJid

@@ -6,28 +6,34 @@ import { createReminder, parseReminderTime } from './reminders.mjs'
 export const INTENTS = Object.freeze({
   LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_BOOK: 'LATEST_BOOK', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', UNKNOWN: 'UNKNOWN' })
 
+/* ملاحظة واجبة: النص يمرّ على normalizeArabic قبل المطابقة، وهو يحوّل
+   ة→ه و أ/إ/آ→ا و ى→ي ويحذف الترقيم. فكل نمطٍ هنا يُكتب بالصورة المطبَّعة،
+   وإلا لم يطابق شيئاً أبداً — وهذا ما كان يعطّل «بطاقة اقتباس» و«النشرة
+   الأسبوعية» و«أوقف الرسائل» بصمت. */
 const patterns = [
-  [INTENTS.STOP_MESSAGES, [/^(وقف|إيقاف|لا ترسل|وقف الرسائل|ما أبي تنبيهات|شيلني من القائمة)/, 0.99]],
-  [INTENTS.RESUME_MESSAGES, [/^(رجع الرسائل|فعل الجديد|اشترك مرة ثانية)/, 0.99]],
+  [INTENTS.STOP_MESSAGES, [/^(اوقف|وقف|ايقاف|لا ترسل|ما ابي تنبيهات|شيلني من القائمه|الغاء الاشتراك)/, 0.99]],
+  [INTENTS.RESUME_MESSAGES, [/^(رجع الرسائل|فعل الجديد|اشترك مره ثانيه|ابي ارجع)/, 0.99]],
   [INTENTS.DELETE_PREFERENCES, [/(انس تفضيلاتي|امسح اللي تعرفه عني|احذف تفضيلاتي)/, 0.98]],
   [INTENTS.LATEST_ARTICLE, [/(اخر|احدث).*(مقال|مقاله)|مقاله جديده|شنو كتبت/, 0.95]],
-  [INTENTS.LATEST_BOOK, [/(اخر|احدث).*(كتاب|الكتب)|الكتب/, 0.94]],
-  [INTENTS.LATEST_SELECTION, [/(اخر|احدث).*(مختارات)|مختارات جديده|المختارات/, 0.94]],
+  [INTENTS.LATEST_BOOK, [/(اخر|احدث|جديد)\s*\S*\s*(كتاب|الكتب)/, 0.94]],
+  [INTENTS.LATEST_SELECTION, [/(اخر|احدث|جديد)\s*\S*\s*(مختارات)/, 0.94]],
   [INTENTS.LATEST_PODCAST, [/(اخر|احدث).*(بودكاست|حلقه)|اخر بودكاست/, 0.96]],
   [INTENTS.MISSED_CONTENT, [/(شنو|ماذا).*(فاتني|فات)/, 0.96], [/(من زمان ما تابعت|ما تابعت من زمان)/, 0.94]],
   [INTENTS.SURPRISE_ME, [/(فاجيني|اختر لي|اختار لي|على ذوقك|شيء من عندك)/, 0.94]],
   [INTENTS.ONE_MINUTE, [/(عندي دقيقه|ما عندي وقت|الزبده|ملخص سريع|اختصرها|الفكره بس)/, 0.96]],
-  [INTENTS.SUMMARY, [/(لخص|ملخص|نبذة|الخلاصة)/, 0.84]],
-  [INTENTS.LISTEN_DIALOGUE, [/(الحوار|حوار)/, 0.92]],
-  [INTENTS.LISTEN_FAHED, [/(فهد|قراءة فهد|صوت الرجل)/, 0.95]],
-  [INTENTS.LISTEN_NOURA, [/(نورة|نورا|قراءة نورة|صوت المرأة)/, 0.95]],
-  [INTENTS.QUOTE_CARD, [/(بطاقة|صورة اقتباس|بطاقة اقتباس)/, 0.92]],
-  [INTENTS.QUOTE, [/(اقتباس|جملة جميلة|عطني اقتباس)/, 0.90]],
-  [INTENTS.CONTINUE_LISTENING, [/(كمل|أكمل|من وين وقفت|تابع الاستماع)/, 0.90]],
-  [INTENTS.HELP, [/(شنو تقدر|الخيارات|مساعدة|شلون أستخدم|الأوامر|القائمة)/, 0.98]],
-  [INTENTS.REMIND_ME, [/(ذكرني|ذكّرني|تذكير)/, 0.90]],
-  [INTENTS.WEEKLY_DIGEST, [/(ملخص أسبوعي|النشرة الأسبوعية)/, 0.94]],
-  [INTENTS.HUMAN_RESPONSE_REQUIRED, [/(رأيك|شنو رايك|ماذا ترى|هل تعتقد|أبي رأيك)/, 0.82]],
+  [INTENTS.SUMMARY, [/(لخص|ملخص|نبذه|الخلاصه)/, 0.84]],
+  /* «فهد» و«نورة» و«حوار» و«كمّل» كلامٌ كويتيٌّ يوميّ وأسماءُ ناس — لا تكفي
+     وحدها أبداً، وإلا ردّ البوت على صديقٍ يسأل عن فهد. تطلب الآن طلباً صريحاً. */
+  [INTENTS.LISTEN_DIALOGUE, [/(استمع|شغل|سمعني|بصوت)\s*\S*\s*(الحوار|حوار)|^الحوار$/, 0.92]],
+  [INTENTS.LISTEN_FAHED, [/(بصوت فهد|قراءه فهد|صوت الرجل)/, 0.95]],
+  [INTENTS.LISTEN_NOURA, [/(بصوت نوره|بصوت نورا|قراءه نوره|صوت المراه)/, 0.95]],
+  [INTENTS.QUOTE_CARD, [/(بطاقه اقتباس|صوره اقتباس)/, 0.92]],
+  [INTENTS.QUOTE, [/(اقتباس|جمله جميله|عطني اقتباس)/, 0.90]],
+  [INTENTS.CONTINUE_LISTENING, [/(من وين وقفت|تابع الاستماع|كمل الاستماع|كمل القراءه)/, 0.90]],
+  [INTENTS.HELP, [/(شنو تقدر|الخيارات|مساعده|شلون استخدم|الاوامر|القائمه)/, 0.98]],
+  [INTENTS.REMIND_ME, [/(ذكرني|تذكير)/, 0.90]],
+  [INTENTS.WEEKLY_DIGEST, [/(ملخص اسبوعي|النشره الاسبوعيه|نشره اسبوعيه)/, 0.94]],
+  [INTENTS.HUMAN_RESPONSE_REQUIRED, [/(رايك|ماذا تري|هل تعتقد|ابي رايك)/, 0.82]],
 ]
 
 const clean = (text) => normalizeArabic(String(text || '').slice(0, MAX_MESSAGE_CHARS))
@@ -237,17 +243,50 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
   }
 }
 
+/**
+ * الأوامر التي لا تُقال مصادفة — وحدها تفتح الباب من أول رسالة.
+ *
+ * الفكرة: لا صديقٌ يكتب «آخر مقال» في محادثةٍ عادية. فالأمر نفسه كلمةُ سرّ،
+ * ولا نحتاج بادئةً مصطنعة مثل «اسأل الدكتور». أما ما يحتمل الكلام اليومي
+ * («لخّص»، «ذكّرني»، «اقتباس»، «شنو فاتني») فلا يعمل إلا بعد أن يُفتح الباب،
+ * فيجري الحوار بعدها طبيعياً وحرّاً داخل الجلسة.
+ */
+const OPENS_DOOR = new Set([
+  INTENTS.LATEST_ARTICLE, INTENTS.LATEST_BOOK, INTENTS.LATEST_PODCAST, INTENTS.LATEST_SELECTION,
+  INTENTS.QUOTE_CARD, INTENTS.WEEKLY_DIGEST, INTENTS.ONE_MINUTE, INTENTS.SURPRISE_ME, INTENTS.HELP,
+])
+
+/** عمر الجلسة: بعد سكوتٍ طويل يُغلق الباب من نفسه فلا يبقى البوت مفتوحاً للأبد */
+const SESSION_HOURS = 6
+
+function sessionAlive(session) {
+  if (!session) return false
+  if (!['content-session', 'auto'].includes(session.mode)) return false
+  const last = session.last_user_at || session.opened_at || session.updated_at
+  if (!last) return false
+  return Date.now() - new Date(last).getTime() < SESSION_HOURS * 3600 * 1000
+}
+
 export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, explicitContentSession = false }) {
   if (!jid || isSuppressed(db, jid)) return { allowed: false, reason: 'suppressed' }
   const session = pendingSession(db, jid)
+  /* كتب الدكتور بيده: صمتٌ فوريّ حتى تنقضي المدة */
   if (session?.manual_until && new Date(session.manual_until) > new Date()) return { allowed: false, reason: 'manual-takeover' }
-  if (isReplyToAgent || explicitContentSession || session?.mode === 'content-session' || session?.mode === 'auto') return { allowed: true, reason: 'content-session' }
+
   const { intent, confidence } = classifyIntent(text)
+  /* أوامر الخصوصية تُطاع دائماً وفي كل حال */
   if (intent === INTENTS.STOP_MESSAGES || intent === INTENTS.RESUME_MESSAGES || intent === INTENTS.DELETE_PREFERENCES) return { allowed: true, reason: 'privacy-command' }
-  if (!flags.privateAutoReply && !isAllowlisted(jid) && !hasAssistantTrigger(text)) return { allowed: false, reason: 'private-safe-mode' }
+
+  /* الباب مفتوح: حوارٌ طبيعيّ بلا أوامر */
+  if (isReplyToAgent || explicitContentSession || sessionAlive(session)) return { allowed: true, reason: 'content-session' }
   if (isAllowlisted(jid)) return { allowed: true, reason: 'allowlisted-contact' }
-  if (hasAssistantTrigger(text) && confidence >= 0.7) return { allowed: true, reason: 'assistant-trigger' }
+
+  /* الباب مغلق: لا يفتحه إلا أمرٌ صريح لا يُقال مصادفة */
+  if (OPENS_DOOR.has(intent) && confidence >= 0.9) return { allowed: true, reason: 'command-opens-door', opensSession: true }
+  if (hasAssistantTrigger(text) && confidence >= 0.7) return { allowed: true, reason: 'assistant-trigger', opensSession: true }
   if (flags.privateAutoReply && confidence >= 0.9) return { allowed: true, reason: 'explicit-intent' }
+
+  /* وما عدا ذلك صمتٌ تام — «السلام عليكم» لا تُوقظ شيئاً */
   return { allowed: false, reason: 'personal-chat-default' }
 }
 

@@ -142,6 +142,11 @@ export function absorbContacts(db, contacts = []) {
     const jid = contact?.id || contact?.jid
     if (!jid || typeof jid !== 'string') continue
     if (!jid.endsWith('@s.whatsapp.net')) continue          // أفراد فقط: لا مجموعات ولا حالات
+    /* الجلسة الجديدة (LID) ترسل معرّفاتٍ مشفّرة «v1:…» بلا رقمٍ حقيقيّ خلفها،
+       فكانت تُخزَّن ٣٠٨٢ «جهة» أرقامها طلاسم — وهي التي رآها الدكتور غريبة.
+       نرفض كل ما لا يبدأ برقمٍ دوليّ حقيقيّ، فلا يعود الطلسم يدخل الدفتر. */
+    const localPart = jid.split('@')[0]
+    if (!/^\d{7,15}(:\d+)?$/.test(localPart)) continue
     const waName = String(contact.name || contact.notify || contact.verifiedName || '').trim()
     const id = db.jidKey(jid)
     const existing = db.get('SELECT id, wa_name FROM contacts WHERE id=?', id)

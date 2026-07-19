@@ -183,6 +183,10 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
             placeholder="اكتب رسالتك — أو اضغط حلقةً أعلاه فيُركَّب نصّها"
             className={`mt-2 ${field} resize-y`}
           />
+          <p className="mt-2 text-[.72rem] leading-relaxed text-soft">
+            اكتب <b className="text-ink">{'{الاسم}'}</b> فيصير اسم كل شخص، و<b className="text-ink">{'{تحية}'}</b> فتصير «صباح الخير» أو «مساء الخير» بحسب وقت الإرسال.
+            ومن لا نعرف اسمه تصله الجملة سليمةً بلا فراغ.
+          </p>
           <p className="mt-1 text-left text-[.72rem] text-soft">{text.trim().length} حرفاً</p>
         </div>
 

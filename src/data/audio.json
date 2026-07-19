@@ -1,6 +1,14 @@
 {
+  "expectations-that-shape-a-studentarabic": {
+    "fahed": true,
+    "noura": true
+  },
   "qabas-201909-001": {
     "dialogue": true,
+    "fahed": true,
+    "noura": true
+  },
+  "when-the-exam-becomes-the-goalarabic": {
     "fahed": true,
     "noura": true
   }

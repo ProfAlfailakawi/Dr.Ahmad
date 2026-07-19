@@ -55,6 +55,30 @@
     "bytes": 1359648,
     "durationSeconds": 227
   },
+  "alternative-plans-for-distance-education.mp3": {
+    "bytes": 2973405,
+    "sha256": "ab157bdf7a6ba03b3a56d262bf6c8e80faf2cfcfac1d651ecbd899bdc5f35b10",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-19T03:00:19.564Z",
+    "durationSeconds": 186,
+    "sourceHash": "f787cb69db4e5d8432b48ef74c4b945649103ef30282936382aac4f722af3949",
+    "pipelineHash": "051d801820f13395eddc862895f1c56e03272ca5e03c6f217726d0c383fe7392",
+    "humanLikenessScore": 100,
+    "audioJudgeMinimum": null,
+    "acceptedAt": "2026-07-19T02:56:01.473Z"
+  },
+  "alternative-plans-for-distance-education.noura.mp3": {
+    "bytes": 2993885,
+    "sha256": "c457ef7b0ae0463c0a10bb9cfe05716a0ec17d3079e9249581bfe586332769db",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-19T03:00:19.622Z",
+    "durationSeconds": 187,
+    "sourceHash": "bbc8754442c8108c1134846f8a6964f5573ef891bdf8aa6f9bc60ce2b4b0f15a",
+    "pipelineHash": "051d801820f13395eddc862895f1c56e03272ca5e03c6f217726d0c383fe7392",
+    "humanLikenessScore": 100,
+    "audioJudgeMinimum": null,
+    "acceptedAt": "2026-07-19T03:00:10.359Z"
+  },
   "are-our-phones-listening.mp3": {
     "bytes": 1384992,
     "durationSeconds": 231

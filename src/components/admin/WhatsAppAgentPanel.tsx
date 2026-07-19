@@ -432,14 +432,18 @@ export function WhatsAppAgentPanel() {
       {/* اختبار الرد: يجرّب البوت بلا أن يرسل شيئاً لأحد. كان يعرض ما سيقوله
           ويتجاهل هل سيتكلم أصلاً — فأوهم أن «دكتور» تجلب مقالات، بينما البوابة
           تُسكته عليها. الآن يقول الحكم أولاً بلا رطانة. */}
+      {/* شرط الدكتور في لوحته أيضاً لا في صفحات الموقع وحدها: كل قسمٍ كرتٌ
+          مطويّ، وما إن يُفتح واحد حتى ينغلق ما سواه. كانت أقسام اللوحة
+          <section> مفتوحةً دائماً فلا شيء فيها يُطوى — وهذا ما فاتني. */}
       {bridge && (
-        <section className={card}>
-          <div className="flex flex-wrap items-end justify-between gap-3">
+        <details className={card}>
+          <summary className="flex cursor-pointer list-none flex-wrap items-end justify-between gap-3">
             <div>
               <h3 className="font-display text-xl font-semibold text-ink">جرّب البوت قبل أن يتكلم.</h3>
               <p className="mt-1 max-w-xl text-[.78rem] leading-relaxed text-soft">اكتب رسالةً كما يكتبها الناس، فأخبرك: هل يردّ أم يصمت، ولماذا. لا شيء يُرسل لأحد.</p>
             </div>
-          </div>
+            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">＋</span>
+          </summary>
           <div className="mt-4 flex flex-wrap gap-2">
             <input className={`${input} flex-1`} value={simulateText} placeholder="مثلاً: السلام عليكم · آخر مقال · أبحاث الدكتور" onChange={(event) => setSimulateText(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void runSimulator() }} />
             <button type="button" onClick={() => void runSimulator()} className={secondary}>جرّب</button>
@@ -456,7 +460,7 @@ export function WhatsAppAgentPanel() {
               {simulation.preview && <p className="whitespace-pre-wrap text-[.82rem] leading-relaxed text-ink">{simulation.preview}</p>}
             </div>
           )}
-        </section>
+        </details>
       )}
 
       {bridge && <AudienceStudio request={request} onNotice={setNotice} campaigns={<section className={card}><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.75rem] font-semibold uppercase text-accent">الحملات المحلية</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">مسوداتك، اعتمادك، ثم إرسال هادئ.</h3></div><p className="text-[.78rem] text-soft">لا يظهر هنا أي رقم أو جلسة.</p></div><div className="mt-4 grid gap-2">{campaigns.length ? campaigns.map((campaign) => <div key={campaign.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hair bg-canvas px-4 py-3"><div><p className="font-semibold text-ink">{campaign.name}</p><p className="mt-1 text-[.72rem] text-soft">{campaign.state === 'draft' ? 'مسودة' : campaign.state === 'approved' ? 'معتمدة — غير مرسلة' : campaign.state === 'sending' || campaign.state === 'queued' ? 'قيد الإرسال الهادئ' : campaign.state} · {campaign.target_count || 0} جهة/قروب</p></div><div className="flex flex-wrap gap-2">{campaign.state === 'draft' && <button type="button" onClick={() => void approve(campaign.id)} className={secondary}>اعتماد للمراجعة</button>}{campaign.state === 'approved' && <button type="button" onClick={() => void sendQuiet(campaign)} disabled={sendingCampaignId === campaign.id || !flags.send || !status.bridgeOnline} className={primary}>{sendingCampaignId === campaign.id ? 'يبدأ…' : 'إرسال هادئ'}</button>}{['queued', 'sending'].includes(campaign.state) && <button type="button" onClick={() => void stopQuiet(campaign.id)} className={secondary}>إيقاف</button>}</div></div>) : <p className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">لا توجد مسودات محلية بعد.</p>}</div></section>} />}

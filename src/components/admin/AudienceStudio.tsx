@@ -154,8 +154,10 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
   })
 
   return (
-    <section className={card}>
-      <header className="flex flex-wrap items-end justify-between gap-3">
+    /* كرتٌ مطويّ يخضع لشرط الدكتور: ما إن يُفتح حتى ينغلق كل ما سواه في
+       اللوحة. كان <section> مفتوحاً دائماً فلا شيء فيه يُطوى. */
+    <details className={card}>
+      <summary className="flex cursor-pointer list-none flex-wrap items-end justify-between gap-3">
         <div>
           <h3 className="font-display text-xl font-semibold text-ink">قوائمك ودفتر أسمائك</h3>
           <p className="mt-1 max-w-2xl text-[.78rem] leading-relaxed text-soft">
@@ -163,8 +165,11 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
             فتبني قوائمك هنا وترسل رسائل فرديةً مخصّصة: تصل لمن لم يحفظ رقمك، وتناديه باسمه، ولا يرى أحدٌ رقم أحد.
           </p>
         </div>
+        <span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">＋</span>
+      </summary>
+      <div className="mt-1 flex justify-end">
         <button type="button" className={secondary} disabled={busy} onClick={() => { void loadLists(); void loadContacts(search) }}>↻ حدّث</button>
-      </header>
+      </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[16rem_1fr]">
         {/* ═══ القوائم ═══ */}
@@ -385,6 +390,6 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
       {/* الحملات كانت صندوقاً منفصلاً فبدت بلا معنى: تبني القائمة هنا وترسل
           هناك. أُدخلت ذيلاً للاستوديو فصارت الرحلة واحدة — اكتب، عاين، أرسل. */}
       {campaigns && <div className="mt-5 border-t border-hair pt-5">{campaigns}</div>}
-    </section>
+    </details>
   )
 }

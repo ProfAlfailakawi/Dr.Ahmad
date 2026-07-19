@@ -58,6 +58,10 @@ export function PronunciationLexicon() {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
   const [search, setSearch] = useState('')
+  /* الطابور: ما حُوّل من التنبيهات لينتظر ضبط الدكتور. صفٌّ لكل لفظ، بحقوله،
+     أمامه دفعةً واحدة — فإضافة عشرة ألفاظ لا تحتمل عشر دورات ملء وحفظ. */
+  const [queue, setQueue] = useState<{ word: string; diacritics: string; sub: string }[]>([])
+  const [pending, setPending] = useState<{ slug: string; words: { word: string; kind: string }[] }[]>([])
 
   /* الألفاظ التي دخلت مقالاته ولم تدخل قاموسه بعد */
   const candidates = useMemo(() => {
@@ -74,8 +78,57 @@ export function PronunciationLexicon() {
     const { getFirestore, collection, getDocs } = await import('firebase/firestore')
     const snapshot = await getDocs(collection(getFirestore(app), 'pronunciation_lexicon'))
     setEntries(snapshot.docs.map((document) => ({ word: document.id, ...(document.data() as Omit<Entry, 'word'>) })))
+    const waiting = await getDocs(collection(getFirestore(app), 'pronunciation_pending'))
+    setPending(waiting.docs.map((document) => document.data() as { slug: string; words: { word: string; kind: string }[] }))
   }
   useEffect(() => { void load() }, [])
+
+  /* التحويل: نجمع ألفاظ كل التنبيهات، نُسقط المكرّر وما دخل القاموس أصلاً */
+  const transferAll = () => {
+    const already = new Set(entries.map((entry) => strip(entry.word)))
+    const seen = new Set<string>()
+    const rows: { word: string; diacritics: string; sub: string }[] = []
+    for (const item of pending) {
+      for (const row of item.words || []) {
+        const key = strip(row.word)
+        if (seen.has(key) || already.has(key)) continue
+        seen.add(key)
+        rows.push({ word: row.word, diacritics: '', sub: '' })
+      }
+    }
+    setQueue(rows)
+    setNotice(rows.length ? `${rows.length} لفظاً بانتظار ضبطك أدناه.` : 'كلها مضبوطةٌ في القاموس بالفعل.')
+  }
+
+  const editRow = (index: number, patch: Partial<{ diacritics: string; sub: string }>) =>
+    setQueue((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)))
+
+  /* الحفظ الجماعي: يحفظ المكتمل ويُبقي الناقص في الطابور، ولا يُسقط عمل الدكتور
+     لأن صفّاً واحداً بقي فارغاً. */
+  const saveQueue = async () => {
+    const ready = queue.filter((row) => !checkEntry(row.word, row.sub, row.diacritics))
+    if (!ready.length) { setNotice('املأ حركات أو نطقاً بديلاً لواحدٍ على الأقل.'); return }
+    setBusy(true)
+    try {
+      const app = await getFirebaseApp()
+      const { getFirestore, doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+      for (const row of ready) {
+        await setDoc(doc(getFirestore(app!), 'pronunciation_lexicon', row.word.trim()), {
+          word: row.word.trim(),
+          ...(row.diacritics.trim() ? { diacritics: row.diacritics.trim() } : {}),
+          ...(row.sub.trim() ? { sub: row.sub.trim() } : {}),
+          type: 'من اللوحة',
+          updatedAt: serverTimestamp(),
+        }, { merge: true })
+      }
+      const savedKeys = new Set(ready.map((row) => row.word))
+      setQueue((rows) => rows.filter((row) => !savedKeys.has(row.word)))
+      setNotice(`✓ حُفظ ${ready.length} لفظاً. ستُنطق هكذا في كل حلقةٍ بعد الآن.`)
+      await load()
+    } catch (error) {
+      setNotice(`تعذّر الحفظ: ${error instanceof Error ? error.message : 'خطأ'}`)
+    } finally { setBusy(false) }
+  }
 
   const problem = checkEntry(word, sub, diacritics)
 
@@ -128,6 +181,71 @@ export function PronunciationLexicon() {
         كل كلمةٍ تضيفها هنا تُنطق كما تريد في <strong>كل حلقةٍ قادمة</strong>، ولا تحتاج إعادة كتابة الحوار.
         والنصّ الذي يقرؤه زوّارك لا يتغيّر — الحركات تعمل في طبقة الصوت وحدها.
       </p>
+
+      {/* تنبيهات التوليد: ما نطقه المحرك باجتهاده في حلقاتٍ وُلِّدت فعلاً */}
+      {pending.length > 0 && (
+        <div className="mt-4 rounded-xl border border-accent/40 bg-canvas p-3">
+          <p className="text-[.78rem] font-semibold text-accent">
+            المحرك نطق ألفاظاً باجتهاده في {pending.length === 1 ? 'حلقة' : `${pending.length} حلقات`}
+          </p>
+          <ul className="mt-2 grid gap-1.5">
+            {pending.map((item) => (
+              <li key={item.slug} className="text-[.76rem] leading-relaxed text-soft">
+                <span className="text-ink">{item.slug}</span> — {(item.words || []).map((row) => `«${row.word}»`).join('، ')}
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            onClick={transferAll}
+            className="mt-3 rounded-full bg-accent px-4 py-2 text-[.78rem] font-semibold text-white transition-opacity hover:opacity-90"
+          >
+            حوّلها كلها إلى القاموس
+          </button>
+        </div>
+      )}
+
+      {/* الطابور: كل لفظٍ بحقوله أمام الدكتور، ثم حفظٌ واحد للجميع */}
+      {queue.length > 0 && (
+        <div className="mt-4 rounded-xl border border-accent/40 bg-canvas p-4">
+          <p className="text-[.8rem] font-semibold text-ink">{queue.length} لفظاً بانتظار ضبطك</p>
+          <p className="mt-1 text-[.72rem] text-soft">لكلٍّ إمّا حركات (الكلمة نفسها مشكولة) وإمّا نطقٌ بديل. اترك ما لا تعرفه واحفظ الباقي.</p>
+          <ul className="mt-3 grid gap-2">
+            {queue.map((row, index) => {
+              const rowProblem = (row.diacritics || row.sub) ? checkEntry(row.word, row.sub, row.diacritics) : ''
+              return (
+                <li key={row.word} className="grid gap-2 rounded-xl border border-hair bg-wash p-2.5 md:grid-cols-[9rem_1fr_1fr]">
+                  <span className="self-center text-[.82rem] font-semibold text-ink">{row.word}</span>
+                  <input
+                    value={row.diacritics}
+                    onChange={(event) => editRow(index, { diacritics: event.target.value })}
+                    placeholder="الحركات"
+                    className="rounded-lg border border-hair bg-canvas px-2.5 py-1.5 text-[.8rem] text-ink outline-none focus:border-accent"
+                  />
+                  <input
+                    value={row.sub}
+                    onChange={(event) => editRow(index, { sub: event.target.value })}
+                    placeholder="أو نطقٌ بديل"
+                    className="rounded-lg border border-hair bg-canvas px-2.5 py-1.5 text-[.8rem] text-ink outline-none focus:border-accent"
+                  />
+                  {rowProblem && <p className="text-[.72rem] text-accent md:col-span-3">{rowProblem}</p>}
+                </li>
+              )
+            })}
+          </ul>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => void saveQueue()}
+              disabled={busy}
+              className="rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {busy ? 'أحفظ…' : 'احفظ المكتمل'}
+            </button>
+            <button type="button" onClick={() => setQueue([])} className="text-[.78rem] text-soft hover:text-accent">أفرغ الطابور</button>
+          </div>
+        </div>
+      )}
 
       {candidates.length > 0 && (
         <div className="mt-4 rounded-xl border border-accent/30 bg-canvas p-3">

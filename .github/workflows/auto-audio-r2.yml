@@ -164,6 +164,10 @@ jobs:
           # مولَّد» إلى الأبد، لأن أحداً لا يُبلّغ Firestore بما جرى: fetch-manual-
           # dialogues يكتب «generating» ولا كاتبَ للنجاح. فيظنّ الدكتور أن التوليد
           # فشل ويعيد الإرسال بلا داعٍ. نُبلّغ اللوحة بما يقوله سجلّ المحرك نفسه.
+          # فكرة الدكتور: بعد التوليد، قل له أيّ لفظٍ نطقتَه تخميناً — فيضبطه
+          # من اللوحة قبل الحلقة التالية بدل أن يكتشفه بأذنه بعد النشر.
+          SLUGS=$(node -e "const s=require('./.podcast-state.json');console.log(Object.keys(s.done||{}).map(k=>k.split(':')[0]).filter((v,i,a)=>a.indexOf(v)===i).join(','))" 2>/dev/null || echo "")
+          [ -n "$SLUGS" ] && (node scripts/report-unknown-words.mjs --slugs="$SLUGS" || echo "::warning::تعذّر الإبلاغ عن الألفاظ المجهولة.")
           node scripts/report-dialogue-status.mjs || echo "::warning::تعذّر تحديث حالة الإنتاج في اللوحة."
         env:
           PODCAST_NO_GEMINI: '1'

@@ -55,9 +55,26 @@ export function decideReports({ production = [], state = {} } = {}) {
  *
  * فمن أعاد إرسال حواره للتوليد فقد نقض مسحه بنفسه. لذلك: ما اجتاز البوابات
  * ونُشر تُنزَّل رايته هنا. وما عُزل تبقى رايته كما هي — لا نكشف حلقةً ساقطة.
+ *
+ * ونقرأ السجلّ مباشرةً لا التقارير: التقارير لا تشمل ما سبق تسجيله «منشوراً»،
+ * فلو علّقنا الإحياء عليها لبقيت حلقةٌ وُلِّدت في تشغيلةٍ سابقة مقفلةً إلى الأبد
+ * — لا تشغيلة تُبلّغ عنها ثانيةً، ولا رايةَ تنزل. قفلٌ أبديّ من جنس الذي نعالجه.
+ *
+ * و«cleared» وحدها تُستثنى: مسحٌ قائمٌ لم ينقضه صاحبه، فلا نُحيي ما دفنه.
  */
-export function revivals(reports = []) {
-  return reports.filter((report) => report?.status === 'published').map((report) => report.slug)
+export const REVIVABLE = Object.freeze(['queued', 'generating', 'published', 'needs_review'])
+
+export function revivals({ production = [], state = {} } = {}) {
+  const done = state.done || {}
+  const slugs = []
+  for (const item of production) {
+    const slug = String(item?.slug || '')
+    if (!/^[a-z0-9-]+$/.test(slug)) continue
+    if (!REVIVABLE.includes(String(item?.status || ''))) continue
+    if (!ACCEPTED.includes(String(done[`${slug}:ar`]?.status || ''))) continue
+    slugs.push(slug)
+  }
+  return slugs
 }
 
 if (SELF_TEST) {
@@ -85,12 +102,27 @@ if (SELF_TEST) {
   assert(out.find((item) => item.slug === 'two').note.includes('بوابة البشرية'),
     'سبب العزل يصل الدكتور كما هو — لا رسالة عامة')
 
-  const revived = revivals(out)
-  assert(revived.includes('one') && revived.includes('four'), 'المنشور تُنزَّل رايته فيظهر')
-  assert(!revived.includes('two'), 'المعزول تبقى رايته — لا نكشف حلقةً ساقطة')
-  assert(!revived.includes('three') && !revived.includes('five'), 'ما لم يُبلَّغ عنه لا يُمَسّ')
-  assert(revivals([]).length === 0, 'لا تقارير ← لا إحياء')
-  console.log('✓ اختبارات مُبلّغ حالة الحوار: 11/11')
+  /* الإحياء يُقاس من السجل مباشرةً — لا من التقارير */
+  const revState = { done: {
+    'fresh:ar': { status: 'accepted_automated' },   // وُلِّدت الآن
+    'older:ar': { status: 'accepted_pilot' },       // وُلِّدت في تشغيلةٍ سابقة
+    'failed:ar': { status: 'quarantined', reason: 'عُزلت' },
+    'buried:ar': { status: 'accepted_automated' },  // مقبولة لكن صاحبها مسحها
+  } }
+  const revived = revivals({ state: revState, production: [
+    { slug: 'fresh', status: 'queued' },
+    { slug: 'older', status: 'published' },
+    { slug: 'failed', status: 'generating' },
+    { slug: 'buried', status: 'cleared' },
+    { slug: 'unknown', status: 'queued' },
+  ] })
+  assert(revived.includes('fresh'), 'المولَّد الآن تُنزَّل رايته')
+  assert(revived.includes('older'), 'المولَّد سابقاً يُحيا أيضاً — وإلا بقي مقفولاً أبداً')
+  assert(!revived.includes('failed'), 'المعزول تبقى رايته — لا نكشف حلقةً ساقطة')
+  assert(!revived.includes('buried'), 'المسح القائم يُحترم — لا نُحيي ما دفنه صاحبه')
+  assert(!revived.includes('unknown'), 'ما لا خبر عنه في السجل لا يُمَسّ')
+  assert(revivals({}).length === 0, 'لا مُدخلات ← لا إحياء')
+  console.log('✓ اختبارات مُبلّغ حالة الحوار: 13/13')
   process.exit(0)
 }
 
@@ -115,7 +147,9 @@ try {
 }
 
 const reports = decideReports({ production, state })
-if (!reports.length) { console.log('ⓘ لا حالة تحتاج تحديثاً.'); process.exit(0) }
+/* لا نخرج هنا وإن خلت التقارير: الإحياء أدناه شأنٌ مستقل، وحالته الأصعب هي
+   حلقةٌ سُجّلت «منشورة» سابقاً فلا تقريرَ لها اليوم — وهي أحوج ما يكون للإنزال. */
+if (!reports.length) console.log('ⓘ لا حالة تحتاج تحديثاً.')
 
 for (const report of reports) {
   await db.doc(`podcast_production/${report.slug}`).set({
@@ -133,7 +167,7 @@ console.log(`✓ أُبلغت اللوحة عن ${reports.length} حالة.`)
    لبقيت رايةٌ مرفوعة في ظلٍّ لا يراه أحد. */
 const objectMap = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : {}
 
-for (const slug of revivals(reports)) {
+for (const slug of revivals({ production, state })) {
   const fields = {
     dialogueDisabled: false,
     dialogueStatus: 'published',

@@ -35,15 +35,38 @@ if (!entries.length) {
   process.exit(1)
 }
 
-const concurrency = Number(process.env.AUDIO_VERIFY_CONCURRENCY || 12)
+/* تمهّلٌ في التزامن أيضاً: اثنا عشر طلباً متوازياً هو ما استفزّ الحدّ */
+const concurrency = Number(process.env.AUDIO_VERIFY_CONCURRENCY || 6)
 const failures = []
 let checked = 0
+
+/* R2 يحدّ الطلبات حين يُفحص ٣٢٨ ملفاً دفعةً واحدة، فيردّ 429 على ملفاتٍ
+   موجودةٍ سليمة — فتسقط تشغيلةٌ نجح فيها كل شيء. والحدُّ عارضٌ لا عطب:
+   نتمهّل ونعيد. وكذلك أعطال الخادم العابرة (5xx) ومهلة الشبكة. أما 404
+   فعطبٌ حقيقيّ يُبلَّغ فوراً بلا إعادة. */
+const TRANSIENT = new Set([408, 425, 429, 500, 502, 503, 504])
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const fetchResilient = async (url, init, attempts = 4) => {
+  let last = null
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const response = await fetch(url, init)
+      if (!TRANSIENT.has(response.status)) return response
+      last = response
+    } catch (error) {
+      last = error
+    }
+    if (attempt < attempts) await sleep(400 * attempt * attempt + Math.floor(Math.random() * 250))
+  }
+  if (last instanceof Error) throw last
+  return last
+}
 
 const checkOne = async ([name, info]) => {
   const url = `${base}/${encodeURIComponent(name).replace(/%2F/g, '/')}`
   try {
-    const head = await fetch(url, { method: 'HEAD', redirect: 'follow' })
-    const range = await fetch(url, {
+    const head = await fetchResilient(url, { method: 'HEAD', redirect: 'follow' })
+    const range = await fetchResilient(url, {
       method: 'GET',
       headers: { Range: 'bytes=0-0' },
       redirect: 'follow',

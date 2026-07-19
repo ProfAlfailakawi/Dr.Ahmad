@@ -227,8 +227,31 @@ export function addContactByPhone(db, phone, nickname = '') {
  *   99001122
  * ويتجاهل السطور الفارغة والمكررة، ولا يستبدل لقباً كتبتَه من قبل.
  */
+/**
+ * بطاقات vCard — ما يخرج من «جهات الاتصال» في الماك والآيفون.
+ *
+ * يكفي أن يحدّد الدكتور جهاته كلها ويسحبها إلى الخانة أو يلصق محتوى الملف،
+ * فنقرأ الاسم (FN) والأرقام (TEL) من كل بطاقة. وهذا أسرع طريقٍ لنقل دفترٍ
+ * كامل، وأضمن من انتظار مزامنةٍ قد لا تحمل الدفتر أصلاً.
+ */
+function parseVCards(text) {
+  const cards = String(text).split(/BEGIN:VCARD/i).slice(1)
+  const lines = []
+  for (const card of cards) {
+    const name = (card.match(/^FN[^:]*:(.+)$/im) || [])[1]
+      || (card.match(/^N[^:]*:(.+)$/im) || [])[1]?.split(';').filter(Boolean).reverse().join(' ')
+      || ''
+    const tel = (card.match(/^TEL[^:]*:(.+)$/im) || [])[1] || ''
+    if (tel.trim()) lines.push(`${name.trim().replace(/;/g, ' ')} ${tel.trim()}`)
+  }
+  return lines
+}
+
 export function importContacts(db, text, { listId = '' } = {}) {
-  const lines = String(text || '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+  const raw = String(text || '')
+  /* البطاقات تُترجَم إلى سطور «اسم رقم» فيمرّ الجميع بالمسار نفسه */
+  const source = /BEGIN:VCARD/i.test(raw) ? parseVCards(raw).join('\n') : raw
+  const lines = source.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
   const added = []
   const skipped = []
   for (const line of lines) {

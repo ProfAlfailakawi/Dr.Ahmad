@@ -294,20 +294,48 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                 مرتبط، فبدل الانتظار يلصق الدكتور أسماءه وأرقامه دفعةً واحدة. */}
             <details className="rounded-xl border border-hair bg-wash px-4 py-3">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[.8rem] text-soft">
-                <span>ألصق دفعةً كاملة — اسمٌ ورقمٌ في كل سطر</span>
+                <span>انقل دفتر أسمائك دفعةً واحدة</span>
                 <span className="text-[.75rem] text-accent">لصق جماعي</span>
               </summary>
               <div className="mt-3 grid gap-2">
+                {/* الطريق الأسهل: ملف vCard من «جهات الاتصال» في الماك يُسحب
+                    هنا مباشرةً — فلا يحتاج الدكتور فتحه ولا نسخ محتواه. */}
+                <div
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    const file = e.dataTransfer.files?.[0]
+                    if (file) void file.text().then((text) => setBulk(text))
+                  }}
+                  className="rounded-xl border border-dashed border-hair bg-canvas px-4 py-3 text-center text-[.78rem] text-soft"
+                >
+                  اسحب ملف جهات الاتصال (.vcf) إلى هنا — أو
+                  <label className="mr-1 cursor-pointer font-semibold text-accent hover:underline">
+                    اخترْه من الماك
+                    <input
+                      type="file"
+                      accept=".vcf,.txt,.csv,text/vcard,text/plain"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) void file.text().then((text) => setBulk(text))
+                      }}
+                    />
+                  </label>
+                </div>
                 <textarea
                   className={`${input} min-h-[7rem] leading-relaxed`}
                   dir="auto"
                   value={bulk}
-                  placeholder={'أبو خالد, 99001122\nد. عبد الرزاق العلي - 99334455\nالأستاذة نورة  +965 9955 6677'}
+                  placeholder={'أو ألصق هنا:\nأبو خالد, 99001122\nد. عبد الرزاق العلي - 99334455\nالأستاذة نورة  +965 9955 6677'}
                   onChange={(e) => setBulk(e.target.value)}
                 />
                 <p className="text-[.72rem] leading-relaxed text-soft">
-                  يقبل كل الصيغ: فاصلة أو شرطة أو مسافة، بمفتاح الدولة أو بدونه، وبالأرقام العربية أو الغربية.
-                  والسطر بلا رقم يُتخطّى ويُعلَم لك. ولن يُستبدل لقبٌ كتبتَه من قبل.
+                  <b className="text-ink">من الماك:</b> افتح تطبيق «جهات الاتصال» ← اضغط ⌘A لتحديد الجميع ←
+                  من قائمة «ملف» اختر «تصدير» ثم «تصدير vCard…» ← احفظ الملف ← ثم اسحبه إلى الأعلى.
+                  <br />
+                  ويقبل اللصق بكل الصيغ أيضاً: فاصلة أو شرطة أو مسافة، بمفتاح الدولة أو بدونه،
+                  وبالأرقام العربية أو الغربية. والسطر بلا رقم يُتخطّى ويُعلَم لك، ولن يُستبدل لقبٌ كتبتَه من قبل.
                 </p>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-[.72rem] text-soft">{bulk.split('\n').filter((line) => line.trim()).length} سطراً</span>

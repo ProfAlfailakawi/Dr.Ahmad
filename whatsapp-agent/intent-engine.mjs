@@ -345,13 +345,17 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
  * («لخّص»، «ذكّرني»، «اقتباس»، «شنو فاتني») فلا يعمل إلا بعد أن يُفتح الباب،
  * فيجري الحوار بعدها طبيعياً وحرّاً داخل الجلسة.
  */
-const OPENS_DOOR = new Set([
-  INTENTS.WELCOME,                                   // كلمة الدخول المنشورة
-  INTENTS.LATEST_ARTICLE, INTENTS.LATEST_BOOK, INTENTS.LATEST_PODCAST, INTENTS.LATEST_SELECTION,
-  INTENTS.LATEST_PAPER,                              // «أبحاث الدكتور»
-  INTENTS.QUOTE_CARD, INTENTS.WEEKLY_DIGEST, INTENTS.ONE_MINUTE, INTENTS.SURPRISE_ME, INTENTS.HELP,
-  INTENTS.UPCOMING_EVENTS, INTENTS.ABOUT_DOCTOR, INTENTS.CURATED_PICKS,
-])
+/**
+ * بابٌ واحد لا غير: «موقع د. أحمد» وما جرى مجراها.
+ *
+ * كانت أوامرٌ كثيرة تفتحه («آخر مقال» · «أبحاث الدكتور» · «بطاقة اقتباس»…)،
+ * وأمر الدكتور أن تُغلق كلها: الجملة المنشورة وحدها توقظه. وما عداها لا
+ * يعمل إلا بعد الإيقاظ، داخل الجلسة.
+ *
+ * وحكمةُ ذلك أن الجملة المنشورة يعرفها من قرأ خانة «المعلومات» قاصداً، أما
+ * «آخر مقال» فقد يكتبها صديقٌ يسأله عن مقالته الأخيرة سؤالاً شخصياً.
+ */
+const OPENS_DOOR = new Set([INTENTS.WELCOME])
 
 /** عمر الجلسة: بعد سكوتٍ طويل يُغلق الباب من نفسه فلا يبقى البوت مفتوحاً للأبد */
 const SESSION_HOURS = 6
@@ -385,8 +389,12 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
 
   /* الباب مغلق: لا يفتحه إلا أمرٌ صريح لا يُقال مصادفة */
   if (OPENS_DOOR.has(intent) && confidence >= 0.9) return { allowed: true, reason: 'command-opens-door', opensSession: true }
-  if (hasAssistantTrigger(text) && confidence >= 0.7) return { allowed: true, reason: 'assistant-trigger', opensSession: true }
-  if (flags.privateAutoReply && confidence >= 0.9) return { allowed: true, reason: 'explicit-intent' }
+  /* ونداءات «اسأل الدكتور» أُغلقت هي الأخرى: الجملة المنشورة وحدها توقظه.
+     (تبقى AUTO_REPLY_TRIGGERS معرَّفةً لمن أراد تخصيصها بمتغيّر بيئة.) */
+  /* حُذف منفذٌ قديم كان يسمح بالردّ على أي نيّةٍ واثقة متى فُعّل privateAutoReply
+     — ولو فُعّل يوماً لردّ على «الكتب وصلت للمكتبة؟» وأشباهها، وهذا نقضٌ
+     لقاعدة الدكتور: صمتٌ كامل ما لم يوقظه أمرٌ صريح. لا استثناء إلا أوامر
+     الخصوصية أعلاه، فمن طلب إيقاف الرسائل يُطاع فوراً ولو لم يوقظ شيئاً. */
 
   /* وما عدا ذلك صمتٌ تام — «السلام عليكم» لا تُوقظ شيئاً */
   return { allowed: false, reason: 'personal-chat-default' }

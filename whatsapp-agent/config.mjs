@@ -44,7 +44,10 @@ export const AZURE_TTS_HARD_STOP_CHARS = Math.max(1000, Number(process.env.WHATS
 /* نداءات المساعد الصريحة. حُذفت «د. أحمد» و«@دكتور» لأن المُطبِّع يجرّدهما
    من النقطة والرمز فتصيران «د احمد» و«دكتور» — و«دكتور» وحدها أكثر ما
    يخاطب به الناسُ الدكتورَ، فكانت توقظ البوت على كل مُحيٍّ ومُسلِّم. */
-export const AUTO_REPLY_TRIGGERS = String(process.env.WHATSAPP_AUTO_REPLY_TRIGGERS || 'سؤال:,اسأل د. أحمد,اسأل الدكتور,اسال الدكتور')
+/* وحُذفت «سؤال:» أيضاً: التطبيع يمحو النقطتين فتصير «سؤال» مجرّدة، فتوقظ
+   البوت على «ممكن سؤال» و«عندي سؤال» وهما من أكثر ما يُكتب. ولم يبقَ إلا
+   نداءٌ لا يُقال مصادفة — ومعه أوامر الإيقاظ نفسها، وهي تكفي. */
+export const AUTO_REPLY_TRIGGERS = String(process.env.WHATSAPP_AUTO_REPLY_TRIGGERS || 'اسأل د. أحمد,اسأل الدكتور,اسال الدكتور,اسال د. احمد')
   .split(',')
   .map((item) => item.trim())
   .filter(Boolean)

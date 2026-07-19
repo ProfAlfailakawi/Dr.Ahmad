@@ -129,7 +129,11 @@ export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
       }
       /* ═══ الجمهور: دفتر الأسماء وقوائم البث التي يبنيها الدكتور ═══ */
       if (req.method === 'GET' && url.pathname === '/admin/audience/contacts') {
-        writeJson(res, 200, { contacts: agent.audience.contacts({ search: url.searchParams.get('q') || '' }) }); return
+        writeJson(res, 200, agent.audience.contactsPage({
+          search: url.searchParams.get('q') || '',
+          offset: Number(url.searchParams.get('offset') || 0),
+          limit: Number(url.searchParams.get('limit') || 500),
+        })); return
       }
       if (req.method === 'POST' && url.pathname === '/admin/audience/contacts') {
         const body = await readJson(req)

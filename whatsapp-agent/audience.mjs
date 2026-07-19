@@ -165,6 +165,18 @@ export function absorbContacts(db, contacts = []) {
 
 /* ═══ دفتر الأسماء ═══ */
 
+/**
+ * دفتر الدكتور فيه آلاف الأسماء، وعرضُ خمسمئةٍ فقط بلا طريقٍ إلى الباقي
+ * يجعل بناء القوائم مستحيلاً إلا بالبحث عن كل اسمٍ على حدة. نُعيد الآن
+ * صفحةً ومعها العدد الكلي، فتتصفّح الواجهة الدفتر كلَّه دفعةً بعد دفعة.
+ */
+export function listContactsPage(db, { search = '', limit = 500, offset = 0 } = {}) {
+  const all = listContacts(db, { search, limit: Number.POSITIVE_INFINITY })
+  const start = Math.max(0, Number(offset) || 0)
+  const size = Math.max(1, Math.min(1000, Number(limit) || 500))
+  return { contacts: all.slice(start, start + size), total: all.length, offset: start, limit: size }
+}
+
 export function listContacts(db, { search = '', limit = 500 } = {}) {
   const rows = db.all('SELECT * FROM contacts ORDER BY COALESCE(nickname, wa_name, display_name, phone) COLLATE NOCASE')
   const term = String(search || '').trim().toLowerCase()

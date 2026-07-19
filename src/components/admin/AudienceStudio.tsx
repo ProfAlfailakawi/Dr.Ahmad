@@ -42,6 +42,9 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
   const [activeId, setActiveId] = useState('')
   const [members, setMembers] = useState<Member[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
+  /* الدفتر فيه آلاف الأسماء: نتصفّحه دفعةً بعد دفعة بدل حصره في أول خمسمئة */
+  const [total, setTotal] = useState(0)
+  const [shown, setShown] = useState(500)
   const [search, setSearch] = useState('')
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [newList, setNewList] = useState('')
@@ -74,17 +77,20 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
     } catch { setMembers([]) }
   }
 
-  const loadContacts = async (term: string) => {
+  const loadContacts = async (term: string, size = shown) => {
     try {
-      const data = await request<{ contacts: Contact[] }>(`/admin/audience/contacts?q=${encodeURIComponent(term)}`)
+      const data = await request<{ contacts: Contact[]; total: number }>(
+        `/admin/audience/contacts?q=${encodeURIComponent(term)}&limit=${size}&offset=0`,
+      )
       setContacts(data.contacts || [])
-    } catch { setContacts([]) }
+      setTotal(Number(data.total || 0))
+    } catch { setContacts([]); setTotal(0) }
   }
 
   useEffect(() => { void loadLists(); void loadContacts('') }, [])
   useEffect(() => { void loadMembers(activeId) }, [activeId])
   useEffect(() => {
-    const timer = setTimeout(() => { void loadContacts(search) }, 220)
+    const timer = setTimeout(() => { setShown(500); void loadContacts(search, 500) }, 220)
     return () => clearTimeout(timer)
   }, [search])
 
@@ -291,9 +297,24 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
           {/* ═══ دفتر الأسماء ═══ */}
           <div className="grid gap-3 rounded-xl border border-hair bg-canvas p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <label className="block font-semibold text-ink">
-                دفتر الأسماء{contacts.length >= 500 ? ' — يعرض ٥٠٠ · ابحث للوصول لغيرهم' : ` — ${contacts.length}`}
-              </label>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="block font-semibold text-ink">
+                  دفتر الأسماء — {total}{contacts.length < total ? ` · ظاهرٌ منهم ${contacts.length}` : ''}
+                </label>
+                {contacts.length > 0 && (
+                  <button type="button" className="text-[.75rem] text-soft underline-offset-4 hover:text-accent hover:underline"
+                    onClick={() => setPicked((prev) => {
+                      const next = new Set(prev)
+                      const addable = contacts.filter((item) => !inList.has(item.id))
+                      const allPicked = addable.every((item) => next.has(item.id))
+                      for (const item of addable) { if (allPicked) next.delete(item.id); else next.add(item.id) }
+                      return next
+                    })}>
+                    {contacts.filter((item) => !inList.has(item.id)).every((item) => picked.has(item.id)) && picked.size
+                      ? 'ألغِ تحديد الظاهرين' : 'حدّد الظاهرين كلهم'}
+                  </button>
+                )}
+              </div>
               {picked.size > 0 && <button type="button" className={primary} disabled={busy} onClick={addPicked}>أضف {picked.size} إلى «{active?.name || '…'}»</button>}
             </div>
             <input className={input} value={search} placeholder="ابحث باسمٍ أو بآخر أربعة أرقام…" onChange={(e) => setSearch(e.target.value)} />
@@ -345,6 +366,12 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                   </span>
                 )
               })}
+              {contacts.length < total && (
+                <button type="button" className={secondary} disabled={busy}
+                  onClick={() => { const next = shown + 500; setShown(next); void loadContacts(search, next) }}>
+                  أظهر {Math.min(500, total - contacts.length)} أخرى ({contacts.length} من {total})
+                </button>
+              )}
               {contacts.length === 0 && (
                 <p className="text-[.78rem] leading-relaxed text-soft">
                   الدفتر فارغ. يمتلئ وحده حين يتصل واتساب ويزامن أسماء جهات اتصالك — أو أضف رقماً يدوياً بالأسفل.

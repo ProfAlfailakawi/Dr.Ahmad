@@ -9,7 +9,7 @@ import { randomToken } from './crypto.mjs'
 import { createReminder } from './reminders.mjs'
 import { startLocalBridge } from './bridge.mjs'
 import { isQuietHour } from './bot-rules.mjs'
-import { addContactByPhone, addMembers, absorbContacts, importContacts, createList, deleteList, ensureAudienceSchema, jidOf, listContacts, listLists, listMembers, personalize, previewFor, removeMember, renameList, resolveAudience, setNickname, vocativeOf } from './audience.mjs'
+import { addContactByPhone, addMembers, absorbContacts, importContacts, listContactsPage, createList, deleteList, ensureAudienceSchema, jidOf, listContacts, listLists, listMembers, personalize, previewFor, removeMember, renameList, resolveAudience, setNickname, vocativeOf } from './audience.mjs'
 
 function safeText(text) { return String(text || '').slice(0, MAX_MESSAGE_CHARS).trim() }
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -30,6 +30,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
   const onContacts = (contacts) => absorbContacts(db, contacts)
   const audience = {
     contacts: (options) => listContacts(db, options),
+    contactsPage: (options) => listContactsPage(db, options),
     addContact: (phone, nickname) => addContactByPhone(db, phone, nickname),
     import: (text, options) => importContacts(db, text, options),
     setNickname: (contactId, nickname) => setNickname(db, contactId, nickname),

@@ -1,40 +1,19 @@
 {
- "done": {
-  "pilot:success-that-does-not-bring-joy-to-its-ownerarabic:ar": {
-   "contentHash": "4ce30733b56aeecb",
-   "pipelineHash": "e544dfec6116d64f",
-   "sourceHash": "b2aa7902ae2fda313bea7606e28f99e7117ca16a7d6700788ccf09833e785208",
-   "audioHash": "95a5c108d75e3c6320f060ac35ed8fcb92c01ebbd75ceebd6d7a4cd2a721c7d5",
-   "transcriptHash": "06a18f8a13102e841b43209a98643ef5cb7d1f3475b319154e446ecf9fd36183",
-   "status": "accepted_pilot",
-   "acceptedAt": "2026-07-19T15:38:17.280Z",
-   "pilot": true
-  },
-  "success-that-does-not-bring-joy-to-its-ownerarabic:ar": {
-   "contentHash": "4ce30733b56aeecb",
-   "pipelineHash": "e544dfec6116d64f",
-   "sourceHash": "b2aa7902ae2fda313bea7606e28f99e7117ca16a7d6700788ccf09833e785208",
-   "audioHash": "c79a02c1267c84c0f71c1cfa579b0991097547fb22536483d7416fe0c9837ee4",
-   "transcriptHash": "06a18f8a13102e841b43209a98643ef5cb7d1f3475b319154e446ecf9fd36183",
-   "status": "accepted_automated",
-   "acceptedAt": "2026-07-19T16:31:56.546Z",
-   "pilot": false
+  "done": {},
+  "storyCount": 0,
+  "totalCount": 2,
+  "pilotGate": {
+    "pass": true,
+    "pipelineHash": "e544dfec6116d64f",
+    "promoted": true,
+    "acceptedAt": "2026-07-19T15:38:17.421Z",
+    "articles": [
+      {
+        "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
+        "category": "human",
+        "score": 100,
+        "audioHash": "95a5c108d75e3c6320f060ac35ed8fcb92c01ebbd75ceebd6d7a4cd2a721c7d5"
+      }
+    ]
   }
- },
- "storyCount": 0,
- "totalCount": 2,
- "pilotGate": {
-  "pass": true,
-  "pipelineHash": "e544dfec6116d64f",
-  "promoted": true,
-  "acceptedAt": "2026-07-19T15:38:17.421Z",
-  "articles": [
-   {
-    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
-    "category": "human",
-    "score": 100,
-    "audioHash": "95a5c108d75e3c6320f060ac35ed8fcb92c01ebbd75ceebd6d7a4cd2a721c7d5"
-   }
-  ]
- }
 }

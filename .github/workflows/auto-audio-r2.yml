@@ -143,22 +143,12 @@ jobs:
             echo "Firebase service account is missing; skipping dialogue podcast generation."
             exit 0
           fi
-          # الحوار يكتبه الدكتور بنفسه، فلا حاجة لكاتبٍ آليّ — ولا لرصيد Gemini.
-          # كانت بوابة الفوترة تُستدعى بلا شرط فتقتل التوليد قبل أن يبدأ
-          # («credits are depleted»)، رغم أن وضع بلا-Gemini مبنيٌّ في المحرك
-          # وأشدّ من غيره: عتبات STT ترتفع إلى 0.92/0.88 للمقطع و0.97/0.93
-          # للحلقة، وكل البوابات التقنية باقية. الآن يُفعَّل صراحةً.
-          if [ -z "$AZURE_SPEECH_KEY" ]; then
-            echo "Azure secret is missing; skipping dialogue podcast generation."
+          if [ -z "$AZURE_SPEECH_KEY" ] || { [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; }; then
+            echo "Azure/Gemini secrets are missing; skipping dialogue podcast generation."
             exit 0
           fi
-          # الحلقة المفقودة: الدكتور يكتب الحوار في اللوحة فيُحفظ في Firestore،
-          # ولم يكن أحد يجلبه — فيبقى في السحابة ولا يبلغ المحرك أبداً. يُكتشف
-          # الآن كل حوارٍ أُرسل للتوليد ويُسحب تلقائياً قبل أن يبدأ.
-          node scripts/fetch-queued-dialogues.mjs || echo "::warning::تعذّر سحب الحوارات المنتظرة؛ نمضي بما هو موجود."
           npm run podcast:ar:nightly
         env:
-          PODCAST_NO_GEMINI: '1'
           FIREBASE_SERVICE_ACCOUNT: sa.json
           FIREBASE_PROJECT_ID: drahmad-8e9e2
           AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
@@ -225,11 +215,7 @@ jobs:
           npm run audio:guard
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # وظيفةٌ آلية تعمل كل ساعة يجب ألا تكتب على شيفرة المصدر أبداً.
-          # كانت تُسجّل ٢٢ مساراً منها scripts/*.mjs و IntelligenceLab.tsx وملفُ
-          # العمل نفسه — فتصطدم بكل عملٍ بشريّ جارٍ، وتُرجِع تعديلاتٍ حيّة إلى
-          # حالةٍ قديمة بلا أن يشعر أحد. الآن لا تُسجَّل إلا البيانات المولَّدة.
-          git add src/data/audio.json src/data/audio-meta.json src/data/site-articles-feed.json src/data/podcast-admin.json
+          git add src/data/audio.json src/data/audio-meta.json src/data/site-articles-feed.json src/data/podcast-admin.json package.json scripts/auto-audio.mjs scripts/lib/arabic-audio-engine.mjs scripts/lib/human-reading-pipeline.mjs scripts/test-human-audio-engine.mjs scripts/human-audio-pilot.mjs scripts/finalize-site-audio.mjs scripts/publish-audio-r2.mjs scripts/podcast-dialogue.mjs scripts/podcast-manual-dialogue.mjs scripts/podcast-final-review-locked.mjs scripts/prompts/judge-ar.txt scripts/podcast-release-gate.mjs scripts/build-static.mjs scripts/sync-audio.mjs scripts/build-podcast-admin.mjs src/components/admin/IntelligenceLab.tsx .github/workflows/auto-audio-r2.yml .gitignore
           git add .podcast-state.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No audio changes to commit."

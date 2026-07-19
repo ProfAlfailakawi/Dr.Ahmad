@@ -142,16 +142,7 @@ async function validateRemoteAudio(url, expectedBytes) {
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 600 * attempt))
   }
   if (!response) return
-  /* حدُّ الطلبات وأعطالُ الخادم العابرة ليست روابط مكسورة: R2 يردّ 429 حين
-     يُفحص مئاتُ الملفات في ثوانٍ، فتسقط تشغيلةٌ نجح فيها كل شيء. نُنبّه ولا
-     نُسقط. أما 404 و410 فعطبٌ حقيقيّ يُسقط بلا تردّد. */
-  if (![200, 206].includes(response.status)) {
-    if ([408, 425, 429, 500, 502, 503, 504].includes(response.status)) {
-      warn(`حدُّ طلباتٍ أو عطلٌ عابر (HTTP ${response.status}) عند ${url} — لا يُعدّ رابطاً مكسوراً`)
-    } else {
-      fail(`رابط الصوت أعاد HTTP ${response.status}: ${url}`)
-    }
-  }
+  if (![200, 206].includes(response.status)) fail(`رابط الصوت أعاد HTTP ${response.status}: ${url}`)
   const type = (response.headers.get('content-type') || '').toLowerCase()
   if (type && !type.includes('audio')) fail(`Content-Type ليس صوتياً: ${type} — ${url}`)
   if (response.status === 206 && !response.headers.get('content-range')) fail(`الخادم لا يعيد Content-Range: ${url}`)

@@ -180,17 +180,7 @@ jobs:
             echo "No manifest changes to commit."
           else
             git commit -m "chore: publish locked manual podcast dialogue"
-            pushed=""
-            for attempt in 1 2 3 4 5; do
-              if git push origin HEAD:main; then pushed="نعم"; break; fi
-              echo "رُفض الدفع (محاولة ${attempt}/5) — أعيد الأساس فوق آخر main ثم أحاول."
-              git pull --rebase --autostash origin main || { echo "تعذّر إعادة الأساس."; exit 1; }
-              sleep $((attempt * 5))
-            done
-            if [ -z "$pushed" ]; then
-              echo "::error::رُفض الدفع خمس مرات رغم إعادة الأساس."
-              exit 1
-            fi
+            git push origin HEAD:main
           fi
 
       - name: Finalize R2 transaction

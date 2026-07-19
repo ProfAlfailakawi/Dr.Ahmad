@@ -694,18 +694,7 @@ function normalizeMechanics(sc, options = {}) {
     u.ratePct = clamp(u.ratePct, profile.ratePct)
     u.targetWordsPerMinute = clamp(u.targetWordsPerMinute, profile.targetWpm)
     u.pauseAfterMs = clamp(u.pauseAfterMs, profile.pauseMs)
-    /* حوار الدكتور يحمل النص ونوع الإلقاء، ولا يحمل «ending» — وهو حقلٌ تقنيّ
-       لا ينبغي أن يُكلَّف بكتابته. وكان كل ما لا نهايةَ له يصير 'neutral'، فلا
-       يبقى في الحلقة إلا نوعان (neutral وopen للأسئلة) بينما بوابةُ البشرية
-       تطلب ثلاثة — فتُعزل كل حلقةٍ يدوية عند آخر بوابة. تُشتقّ الآن من نوع
-       الإلقاء نفسه اشتقاقاً طبيعياً: الخلاصةُ تُغلق، والسؤالُ والتأمل يفتحان،
-       وما سواهما محايد. */
-    if (!['open', 'final', 'neutral'].includes(u.ending)) {
-      const kind = String(u.delivery || '')
-      u.ending = ['conclusion'].includes(kind) ? 'final'
-        : ['question', 'reflection', 'reflective', 'gentleObjection', 'objection'].includes(kind) ? 'open'
-          : 'neutral'
-    }
+    if (!['open', 'final', 'neutral'].includes(u.ending)) u.ending = 'neutral'
     const [pauseLo, pauseHi] = profile.pauseMs
     const naturalPause = stableBetween(u.text, index + 41, pauseLo, pauseHi)
     if (!Number.isFinite(Number(u.pauseAfterMs))
@@ -808,31 +797,6 @@ function normalizeMechanics(sc, options = {}) {
     if (String(u.text || '').includes('؟')) { u.ending = 'open'; continue }
     if (u.ending === 'final') finalCount += 1
     if (u.ending === 'final' && finalCount % 3 === 0 && i < sc.utterances.length - 2) u.ending = 'open'
-  }
-
-  /* تنوّعُ النهايات يجب أن يُضمَن بنيوياً لا أن يُترك للحظّ.
-     بوابةُ البشرية تطلب ثلاثة أنواع، والحوار الذي يكتبه الدكتور قد لا يحمل
-     «خلاصة» أصلاً — وهذا اختيارٌ تحريريّ مشروع، لا عيب. فكانت الحلقة تُعزل
-     بعد توليد مداخلاتها كلها لسببٍ لا يدَ لصاحبها فيه.
-     قاعدتان طبيعيتان: الحلقةُ تُغلق بآخر مداخلة (فهي نهايتها فعلاً)، وإن بقي
-     النقص فُتحت مداخلاتٌ متباعدة في الوسط — وهو ما تقوله الشيفرة أعلاه: نهايةٌ
-     مفتوحة تدعو الطرف الآخر للدخول. لا يُمَسّ نصٌّ ولا نوعُ إلقاء. */
-  const list = sc.utterances
-  if (list.length) {
-    const last = list[list.length - 1]
-    if (last.ending !== 'final' && !String(last.text || '').includes('؟')) last.ending = 'final'
-    const kinds = () => new Set(list.map((item) => item.ending))
-    if (kinds().size < 3 && list.length >= 4) {
-      const step = Math.max(2, Math.floor(list.length / 4))
-      for (let i = step; i < list.length - 1 && kinds().size < 3; i += step) {
-        if (list[i].ending === 'neutral' && !String(list[i].text || '').includes('؟')) list[i].ending = 'open'
-      }
-      /* وإن بقي النقص (حوارٌ كله أسئلة مثلاً): مداخلةٌ واحدة محايدة تكفي. */
-      if (kinds().size < 3) {
-        const mid = list[Math.floor(list.length / 2)]
-        if (mid && mid.ending !== 'neutral' && !String(mid.text || '').includes('؟')) mid.ending = 'neutral'
-      }
-    }
   }
 
   // التداخلات قيدٌ ميكانيكيٌّ بحت: في الحلقة الكاملة تداخلان فقط، وفي العينة تداخل واحد.
@@ -2602,19 +2566,7 @@ function auditAudio(mp3, { minSec = 1, maxSec = 300, maxLongSilences = 0 } = {})
     meanDb: Number.isFinite(mean) ? mean : null, issues }
 }
 
-/**
- * قانونٌ واحد لا قانونان.
- *
- * بوابةُ التركيب أُعيد تصميمها لأن تفريغ ست دقائق بنداءٍ واحد أداةٌ خشنة تفقد
- * أدوات الربط بطبعها، فطلبُ ٠.٩٥ منها كان يُعدم حلقةً كلُّ مقاطعها مثبتة.
- * فصارت تسأل السؤال الصحيح: أكلُّ مداخلةٍ حاضرةٌ بترتيبها؟ (تغطية ≥٠.٩).
- *
- * لكن حاسبة النقاط بقيت على العتبات القديمة (٠.٩٥ و٠.٩٧)، فكانت الحلقة تجتاز
- * التركيب ثم تسقط عند النقاط بالمقياس الذي أُبطل — ٤٦/١٠٠ لحلقةٍ سليمة تماماً.
- * الآن يحكم القانونُ نفسه في الموضعين، وتبقى نقاط المدة والصمت والذروة والحجم
- * كما هي بلا أي تخفيف.
- */
-function episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript = [], episodeIntegrity = null }) {
+function episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript = [] }) {
   const minimumScore = Math.max(94, Number(env.PODCAST_RELEASE_MIN_SCORE || 94))
   const durationOk = Number(technicalAudit?.dur || 0) >= 120 && Number(technicalAudit?.dur || 0) <= 360
   const sizeOk = Number(technicalAudit?.size || 0) >= 200_000
@@ -2622,21 +2574,11 @@ function episodeQualityScore({ technicalAudit, fullComparison, finalJudge, trans
     ? technicalAudit.unexpectedLongSilences.length === 0
     : Array.isArray(technicalAudit?.longSilences) ? technicalAudit.longSilences.length === 0 : false
   const peakOk = !Number.isFinite(Number(technicalAudit?.peakDb)) || Number(technicalAudit.peakDb) <= -1
-  /* حين تجتاز بوابةُ التركيب، هي المرجع: كل مداخلة حاضرة بترتيبها، وكلُّ مقطعٍ
-     مثبَّتٌ سلفاً بعتبةٍ أشدّ على ملفٍ قصير (٠.٩٢/٠.٨٨ بلا Gemini). */
-  const integrityOk = episodeIntegrity?.pass === true && Number(episodeIntegrity.coverage || 0) >= 0.9
-  const sttOk = integrityOk
-    ? Number(fullComparison?.importantRatio || 0) >= 0.82
-    : Number(fullComparison?.importantRatio || 0) >= 0.95 && Number(fullComparison?.ratio || 0) >= 0.90
-  /* بلا Gemini تُشترى نقاط الحكم الثلاثون بطريقين، ولا تُمنح مجاناً بواحد:
-       أ) دقةٌ نصية فائقة على الحلقة كاملة (٠.٩٧/٠.٩٣) — الطريق الأصلي، وهو
-          يكفي وحده لأن مثل هذه الدقة لا تجتمع مع خللٍ في التركيب.
-       ب) سلامةُ التركيب المبرهنة (كل مداخلة حاضرة بترتيبها) + دقةٌ نصية أعلى
-          من عتبة العزل — للحلقات التي يفقد تفريغُها الطويل أدواتِ الربط رغم
-          أن كل مقطعٍ فيها مثبَّتٌ سلفاً بعتبةٍ أشدّ على ملفٍ قصير. */
-  const strictSttOk = Number(fullComparison?.importantRatio || 0) >= 0.97 && Number(fullComparison?.ratio || 0) >= 0.93
+  const sttOk = Number(fullComparison?.importantRatio || 0) >= 0.95 && Number(fullComparison?.ratio || 0) >= 0.90
+  /* في وضع بلا Gemini تُستبدل نقاط الحكم الثلاثون بعتبة STT مشددة على الحلقة كاملة
+     (0.97/0.93) — فلا تُمنح نقاط الحكم مجاناً، بل تُشترى بدقة نصية أعلى. */
   const judgeOk = finalJudge?.noGemini === true
-    ? strictSttOk || (integrityOk && Number(fullComparison?.importantRatio || 0) >= 0.88)
+    ? Number(fullComparison?.importantRatio || 0) >= 0.97 && Number(fullComparison?.ratio || 0) >= 0.93
     : finalJudge?.pass === true && (!Array.isArray(finalJudge?.problems) || finalJudge.problems.length === 0)
   const transcriptOk = Array.isArray(transcript) && transcript.length >= 8
   const score = Math.round(
@@ -2656,7 +2598,7 @@ function episodeQualityScore({ technicalAudit, fullComparison, finalJudge, trans
   }
 }
 
-function dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudge, episodeIntegrity = null }) {
+function dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudge }) {
   const plan = {
     utterances: transcript.map((item) => ({
       speaker: item.speakerKey,
@@ -2676,12 +2618,8 @@ function dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudg
     silence: analyzeSilence(candidateMp3),
     loudness: analyzeLoudness(candidateMp3),
   }
-  /* حين يُبرهَن التركيب (كل مداخلة حاضرة بترتيبها) تُطبَّق عتبةُ الحلقة الكاملة
-     نفسها التي قبلتها بوابةُ التركيب — لا ٠.٩٥ التي أُبطلت لهذا المُدخَل. */
-  const integrityProven = episodeIntegrity?.pass === true && Number(episodeIntegrity.coverage || 0) >= 0.9
   const proxy = humanLikenessGate({ plan, technical,
-    sttComparisons: fullComparison ? [fullComparison] : [], dialogue: true, minimumScore: 95,
-    sttFidelityMin: integrityProven ? 0.88 : 0.95, manualText: MANUAL_TEXT_MODE })
+    sttComparisons: fullComparison ? [fullComparison] : [], dialogue: true, minimumScore: 95 })
   const dimensions = ['humanLikeness', 'warmth', 'semanticDelivery', 'questionNaturalness',
     'pauseNaturalness', 'pronunciation', 'rhythmVariety', 'endingVariety', 'nonBroadcastTone',
     'speakerIndependence']
@@ -3334,23 +3272,9 @@ async function produce(article, lang) {
       targetWordsPerMinute: item.targetWordsPerMinute, pauseAfterMs: item.pauseAfterMs,
       ending: item.ending, internalBreakMs: item.internalBreakMs,
       allowOverlap: item.allowOverlap, overlapMs: item.overlapMs })) }, lang)
-    /* نصفا المحرك كانا يتناقضان، فتُعزل كل حلقةٍ حوارية بعد توليد مداخلاتها كلها:
-       المعايرة تكيّف السرعة والهدف الإيقاعي على الإلقاء المقاس — وهي تُعلنها صراحةً
-       للنص اليدوي («تصويب الهدف الإيقاعي إلى الإيقاع المقاس — النص يدوي والهدف
-       تركيبي») — ثم تحاكمها بوابةُ اللغة بنطاقاتٍ وُضعت لنصٍّ يكتبه الآلة.
-       فحين يكتب الدكتور الحوار: كلماته وإيقاعه له، والمقاس هو الحقيقة. تسقط
-       مآخذُ الإيقاع وحدها، ويبقى كل ما يخصّ اللغة (العامية، المحظورات، علامات
-       الاستفهام) وكلُّ البوابات التقنية الصوتية بلا أي تخفيف. */
-    const PACING_LINT = /سرعة|targetWordsPerMinute|وقفة|pauseAfterMs|internalBreak/
     const finalLanguageIssues = MANUAL_EXACT
       ? finalLanguageIssuesRaw.filter((issue) => /عامية/.test(issue))
-      : MANUAL_TEXT_MODE
-        ? finalLanguageIssuesRaw.filter((issue) => !PACING_LINT.test(issue))
-        : finalLanguageIssuesRaw
-    if (MANUAL_TEXT_MODE && !MANUAL_EXACT) {
-      const relaxed = finalLanguageIssuesRaw.filter((issue) => PACING_LINT.test(issue))
-      if (relaxed.length) console.log(`    ⏲ ${relaxed.length} مأخذ إيقاع تُركت للنص اليدوي (الإلقاء المقاس هو المرجع)`)
-    }
+      : finalLanguageIssuesRaw
     if (finalLanguageIssues.length) return quarantine(`بوابة اللغة بعد الإصلاح: ${finalLanguageIssues.join(' · ')}`)
     const pronunciationConsistency = new Map()
     const inconsistent = []
@@ -3394,7 +3318,7 @@ async function produce(article, lang) {
     if (LIGHT) { durationRange.maxLongSilences = utts.length; durationRange.minSec = 120; durationRange.maxSec = 360 }
     let technicalAudit = auditAudio(candidateMp3, durationRange)
     if (technicalAudit.issues.length) return quarantine(`الفحص التقني: ${technicalAudit.issues.join(' · ')}`)
-    let fullStt = null, fullComparison = null, finalJudge = null, episodeIntegrity = null
+    let fullStt = null, fullComparison = null, finalJudge = null
     if (LIGHT) {
       // الوضع المجاني: نُبقي الفحص التقني المحلي فقط (سلامة الملف والمدة)، ونتخطّى STT الكامل
       // وحَكَم الحلقة المدفوع (multimodal). النشر مباشر بجودة القراءة المقبولة.
@@ -3412,7 +3336,6 @@ async function produce(article, lang) {
          نفحص هنا ما يعجز فحصُ المقاطع عن كشفه وحده: أن تكون كل مداخلة حاضرة في
          الملف المركَّب وبترتيبها الصحيح، فلا مقطع ساقط ولا مكرر ولا مقلوب ولا
          مبتور ولا مغطّى بالموسيقى. */
-      /* تُرفع نتيجة التركيب خارج الكتلة كي تحكم حاسبة النقاط بالقانون نفسه */
       const anchorsOf = (text) => [...new Set(normalizeAr(text).split(' ').filter((word) => word.length >= 5))].slice(0, 4)
       const fullHeard = normalizeAr(fullStt.text)
       let cursor = 0, anchored = 0, anchorable = 0
@@ -3435,7 +3358,6 @@ async function produce(article, lang) {
           + `${unanchored.length ? ` — غابت مداخلات عند: ${unanchored.slice(0, 4).join('، ')}` : ''}`
           + ` (تطابق نصي ${Math.round(fullComparison.importantRatio * 100)}٪)`, { fullStt, fullComparison })
       }
-      episodeIntegrity = { pass: true, coverage, anchored, anchorable }
       console.log(`  ✓ تركيب الحلقة سليم: ${anchored}/${anchorable} مداخلة حاضرة بترتيبها · تطابق نصي ${Math.round(fullComparison.importantRatio * 100)}٪`)
       finalJudge = await judgeFullEpisode(candidateMp3, intendedFull, fullStt, transcript, allRisks)
       if (!finalJudge.pass) {
@@ -3498,19 +3420,10 @@ async function produce(article, lang) {
     }
 
     /* ٦) بوابة score قبل لمس أي ملف منشور، ثم نشر ذري مع Last-Known-Good وRollback دائم. */
-    const qualityScore = episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript, episodeIntegrity })
+    const qualityScore = episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript })
     if (!qualityScore.pass) return quarantine(`بوابة score النهائية أقل من الحد: ${qualityScore.score}/100`)
-    const humanGate = dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudge, episodeIntegrity })
-    if (!humanGate.pass) {
-      /* «٧٨/١٠٠» رقمٌ لا يقول شيئاً: أيُّ مقياسٍ سقط؟ وبأي قيمة؟ بلا هذا يُصلح
-         المرء بالظنّ. البوابة تُفصح الآن عن كل مقياسٍ ساقطٍ ووزنه. */
-      const WEIGHTS = { semanticPerformance: 13, realRateVariation: 12, pauseVariation: 12, endingVariation: 9,
-        questionDirection: 9, boundarySilenceRemoved: 9, loudnessSafe: 10, formatSafe: 8, sttFidelity: 13, dialogueIndependence: 5 }
-      const detail = (humanGate.proxy.failed || []).map((key) => `${key}(-${WEIGHTS[key] ?? '?'})`).join(' · ')
-      const criticalNote = humanGate.proxy.criticalFailed?.length ? ` · حرجة: ${humanGate.proxy.criticalFailed.join('، ')}` : ''
-      return quarantine(`بوابة البشرية أقل من الحد: proxy=${humanGate.proxy.score}/100، judge=${humanGate.minimumJudgeDimension}/100`
-        + `${detail ? ` — سقط: ${detail}` : ''}${criticalNote}`, { humanGate })
-    }
+    const humanGate = dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudge })
+    if (!humanGate.pass) return quarantine(`بوابة البشرية أقل من الحد: proxy=${humanGate.proxy.score}/100، judge=${humanGate.minimumJudgeDimension}/100`, { humanGate })
     const publicTranscript = { title: article.title, generatedAt: new Date().toISOString().slice(0, 10),
       language: 'ar',
       sourceLock: MANUAL_EXACT ? {
@@ -3598,21 +3511,7 @@ function selectDiversePilotArticles(articles, count = 3) {
     if (selected.length < Math.min(count, explicit.length)) throw new Error('بعض PODCAST_PILOT_SLUGS غير موجودة')
     return selected.slice(0, count).map((article, index) => ({ ...article, pilotCategory: ['human', 'analytical', 'reflective'][index] || 'mixed' }))
   }
-  /* في وضع بلا Gemini لا كاتبَ آلياً: كل مقالٍ بلا حوارٍ كتبه الدكتور يُعزَل.
-     وكان المنتقي يختار ثلاثة مقالات «متنوعة» بلا نظرٍ إلى ذلك، فتُعزل ثلاثتها
-     وتسقط التجربة ٠/٣ في كل ليلة — فلا تُفتح البوابة ولا تُنشر حلقةٌ أبداً.
-     حلقةٌ مفرغة أبقت الحوار صفراً رغم نجاح كل شيءٍ آخر. الآن ننتقي من
-     الحوارات المكتوبة وحدها. */
-    const hasManualDialogue = (article) => existsSync(resolve(ROOT, 'manual-dialogues', `${article.slug}.json`))
-  const eligible = NO_GEMINI ? articles.filter(hasManualDialogue) : articles
-  if (NO_GEMINI) {
-    if (!eligible.length) {
-      console.log('ⓘ وضع بلا Gemini: لا حوار مكتوب في manual-dialogues/ — لا شيء يُولَّد. اكتب حواراً من اللوحة.')
-      return []
-    }
-    console.log(`ⓘ وضع بلا Gemini: ${eligible.length} حوار مكتوب متاح — التجربة تجري عليها وحدها.`)
-  }
-  const pool = eligible.slice(0, Math.min(50, eligible.length)).map((article) => ({ article, scores: articlePilotScores(article) }))
+  const pool = articles.slice(0, Math.min(50, articles.length)).map((article) => ({ article, scores: articlePilotScores(article) }))
   const selected = []
   for (const category of ['human', 'analytical', 'reflective']) {
     const best = pool.filter((item) => !selected.some((picked) => picked.article.slug === item.article.slug))
@@ -3869,45 +3768,6 @@ if (SELF_TEST) {
   const strictFail = episodeQualityScore({ ...noGeminiBase,
     fullComparison: { importantRatio: 0.95, ratio: 0.90 }, finalJudge: { noGemini: true, pass: true, problems: [] } })
   assert(!strictFail.checks.judgeOk && !strictFail.pass, 'بلا Gemini: STT عند الحد العادي فقط لا يكفي — لا نقاط حكم مجانية')
-  /* حلقةُ الدكتور الحقيقية: تركيبها مبرهَن (٣٦/٣٦ بترتيبها) وتفريغها الطويل
-     ٩٢٪ — كانت تُعزل بـ٤٦/١٠٠ لأن الحاسبة تطلب ٠.٩٧ من أداةٍ خشنة، بينما
-     بوابةُ التركيب التي قبلتها تطلب ٠.٨٢. قانونٌ واحد الآن. */
-  const integrityPath = episodeQualityScore({ ...noGeminiBase,
-    fullComparison: { importantRatio: 0.92, ratio: 0.90 }, finalJudge: { noGemini: true, pass: true, problems: [] },
-    episodeIntegrity: { pass: true, coverage: 1, anchored: 36, anchorable: 36 } })
-  assert(integrityPath.pass && integrityPath.checks.judgeOk, 'بلا Gemini: تركيبٌ مبرهَن + تطابق ٩٢٪ يجتاز — لا يُعزل بمقياسٍ أُبطل')
-  const brokenIntegrity = episodeQualityScore({ ...noGeminiBase,
-    fullComparison: { importantRatio: 0.92, ratio: 0.90 }, finalJudge: { noGemini: true, pass: true, problems: [] },
-    episodeIntegrity: { pass: true, coverage: 0.7, anchored: 25, anchorable: 36 } })
-  assert(!brokenIntegrity.pass, 'مداخلات ساقطة من التركيب تُعزل الحلقة ولو كان التطابق النصي جيداً')
-  const poorSpeech = episodeQualityScore({ ...noGeminiBase,
-    fullComparison: { importantRatio: 0.80, ratio: 0.85 }, finalJudge: { noGemini: true, pass: true, problems: [] },
-    episodeIntegrity: { pass: true, coverage: 1, anchored: 36, anchorable: 36 } })
-  assert(!poorSpeech.pass, 'تركيبٌ سليم لا يشفع لنطقٍ رديء')
-  /* حوارُ الدكتور مهما كتبه: البوابةُ تحرس الجودة ولا تظلم اختياره التحريري */
-  const mkPlan = (kinds, count = 20) => ({ utterances: Array.from({ length: count }, (_, i) => ({
-    speaker: i % 2 ? 'A' : 'B', text: `مداخلة ${i} فيها كلامٌ عربيٌّ كافٍ للقياس.`,
-    type: kinds[i % kinds.length], delivery: kinds[i % kinds.length],
-    ratePct: 0, pauseAfterMs: (pacingOf(kinds[i % kinds.length]).pauseMs[0]) + (i % 4) * 30,
-    ending: ['neutral', 'open', 'final'][i % 3], overlapMs: 0 })) })
-  const okTech = { probe: { sampleRate: 44100, channels: 1 }, silence: { longestSec: 0.8 },
-    loudness: { integratedLufs: -16, truePeakDbtp: -2 } }
-  const gateFor = (kinds, manual) => humanLikenessGate({ plan: mkPlan(kinds), technical: okTech,
-    sttComparisons: [{ importantRatio: 0.93 }], dialogue: true, minimumScore: 95,
-    sttFidelityMin: 0.88, manualText: manual })
-  const fourKinds = ['statement', 'briefReaction', 'question', 'conclusion']
-  assert(gateFor(fourKinds, true).measures.semanticPerformance,
-    'نصٌّ يدويّ بأربعة أنواع إلقاء لا يُعزل — تنوّع الإلقاء اختيار الدكتور')
-  assert(!gateFor(['statement'], true).measures.semanticPerformance,
-    'الرتابة التامة (نوعٌ واحد) تبقى مرفوضة حتى في النص اليدوي')
-  assert(gateFor(['statement', 'clarification'], true).measures.pauseVariation,
-    'حوارٌ ضيّقُ نطاق الوقفات لا يُعزل بمطلبٍ يستحيل بلوغه')
-  const singleSpeaker = humanLikenessGate({
-    plan: { utterances: mkPlan(fourKinds).utterances.map((u) => ({ ...u, speaker: 'A' })) },
-    technical: okTech, sttComparisons: [{ importantRatio: 0.93 }], dialogue: true,
-    minimumScore: 95, sttFidelityMin: 0.88, manualText: true })
-  assert(!singleSpeaker.measures.dialogueIndependence, 'حوارٌ بمتحدثٍ واحد ليس حواراً — يُرفض')
-
   const judgedPath = episodeQualityScore({ ...noGeminiBase,
     fullComparison: { importantRatio: 0.95, ratio: 0.90 }, finalJudge: { pass: true, problems: [] } })
   assert(judgedPath.checks.judgeOk, 'مسار الحكم العادي لم يمسه وضع بلا Gemini')
@@ -4744,11 +4604,7 @@ else if (targetSlug) queue = ARTICLES.filter((a) => a.slug === targetSlug)
 else if (latest) queue = ARTICLES.slice(0, latest)
 else if (nightly) {
   const limit = Math.min(5, Math.max(1, Number(env.PODCAST_NIGHTLY_LIMIT || 1)))
-  /* الشرط نفسه في المسار الليلي: بلا Gemini لا يدخل الطابور إلا ما كُتب له حوار */
-  const nightlyPool = NO_GEMINI
-    ? ARTICLES.filter((article) => existsSync(resolve(ROOT, 'manual-dialogues', `${article.slug}.json`)))
-    : ARTICLES
-  queue = nightlyPool.filter((article) => {
+  queue = ARTICLES.filter((article) => {
     const sourceHash = createHash('sha256').update(article.body).digest('hex')
     const expected = createHash('sha256').update(`${sourceHash}|ar|${ACTIVE_PIPELINE_HASH}`).digest('hex').slice(0, 16)
     const saved = state.done[`${article.slug}:ar`]

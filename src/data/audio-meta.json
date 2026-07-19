@@ -55,30 +55,6 @@
     "bytes": 1359648,
     "durationSeconds": 227
   },
-  "alternative-plans-for-distance-education.mp3": {
-    "bytes": 2973405,
-    "sha256": "ab157bdf7a6ba03b3a56d262bf6c8e80faf2cfcfac1d651ecbd899bdc5f35b10",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-19T03:00:19.564Z",
-    "durationSeconds": 186,
-    "sourceHash": "f787cb69db4e5d8432b48ef74c4b945649103ef30282936382aac4f722af3949",
-    "pipelineHash": "051d801820f13395eddc862895f1c56e03272ca5e03c6f217726d0c383fe7392",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-19T02:56:01.473Z"
-  },
-  "alternative-plans-for-distance-education.noura.mp3": {
-    "bytes": 2993885,
-    "sha256": "c457ef7b0ae0463c0a10bb9cfe05716a0ec17d3079e9249581bfe586332769db",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-19T03:00:19.622Z",
-    "durationSeconds": 187,
-    "sourceHash": "bbc8754442c8108c1134846f8a6964f5573ef891bdf8aa6f9bc60ce2b4b0f15a",
-    "pipelineHash": "051d801820f13395eddc862895f1c56e03272ca5e03c6f217726d0c383fe7392",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-19T03:00:10.359Z"
-  },
   "are-our-phones-listening.mp3": {
     "bytes": 1384992,
     "durationSeconds": 231
@@ -135,54 +111,6 @@
     "bytes": 1897632,
     "durationSeconds": 316
   },
-  "dr-jasem-malik-the-lesson-that-never-ends-2.mp3": {
-    "bytes": 3023142,
-    "sha256": "76dc7f461f81246f71a500356d522082e24810c938e9a9f4dd5c3bb2af14fdef",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-19T02:42:41.187Z",
-    "durationSeconds": 189,
-    "sourceHash": "0f1cc563e4160e838f7b6d0ea7d444ff97a9b69b90c1f321768c78467ed09f94",
-    "pipelineHash": "051d801820f13395eddc862895f1c56e03272ca5e03c6f217726d0c383fe7392",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-19T02:26:22.725Z"
-  },
-  "dr-jasem-malik-the-lesson-that-never-ends-2.noura.mp3": {
-    "bytes": 3026904,
-    "sha256": "74f862b56848cb74407854d3421ecff95ac6e6c294b78d59d01cbf9b23864d99",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-19T02:42:41.249Z",
-    "durationSeconds": 189,
-    "sourceHash": "bc230e7d69a6727667618db00a96b013a34ea64d6c98e204b05f44ee8d89f6d9",
-    "pipelineHash": "051d801820f13395eddc862895f1c56e03272ca5e03c6f217726d0c383fe7392",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-19T02:29:48.602Z"
-  },
-  "e-learning-culture-2.mp3": {
-    "bytes": 2802460,
-    "sha256": "1bedc52101f053f5bcd89a52c6e7a5a76a10501dfdd3b96331a05bffcab0c265",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-19T02:42:41.312Z",
-    "durationSeconds": 175,
-    "sourceHash": "4b64db53b5507bfbac802a36d2f08b3a37fca12275a829a00351da5a0fb605a1",
-    "pipelineHash": "051d801820f13395eddc862895f1c56e03272ca5e03c6f217726d0c383fe7392",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-19T02:39:07.461Z"
-  },
-  "e-learning-culture-2.noura.mp3": {
-    "bytes": 2791175,
-    "sha256": "9da4b7f072058754bf81ca9d408196ec42d5cad3b4c0391563bbafc13eb7660f",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-19T02:42:41.372Z",
-    "durationSeconds": 174,
-    "sourceHash": "422235d6b419024bacf2b7a0f4356d431e3f70588d23eb702e0b026361128f03",
-    "pipelineHash": "051d801820f13395eddc862895f1c56e03272ca5e03c6f217726d0c383fe7392",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-19T02:42:00.147Z"
-  },
   "e-learning-initiatives-and-solutions-2.mp3": {
     "bytes": 1738224,
     "durationSeconds": 290
@@ -230,30 +158,6 @@
   "freedom-without-thinking-and-openness-without-awareness-2.noura.mp3": {
     "bytes": 1709568,
     "durationSeconds": 285
-  },
-  "from-the-schoolyard-to-the-food-court-2.mp3": {
-    "bytes": 2681252,
-    "sha256": "d1f59a2f40ca55e425b1a5c1d5246f9bffaa985f674bd4ba3a3869922d4788cc",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-19T02:42:41.434Z",
-    "durationSeconds": 168,
-    "sourceHash": "cd0e3e9100278ba90525ce1c79b273cceb6717f456b677c92eb563aecfeab916",
-    "pipelineHash": "051d801820f13395eddc862895f1c56e03272ca5e03c6f217726d0c383fe7392",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-19T02:33:10.325Z"
-  },
-  "from-the-schoolyard-to-the-food-court-2.noura.mp3": {
-    "bytes": 2690865,
-    "sha256": "a596f171d430f2df9d58e04c990a20217af74366d3cd8597a48067e7908aec8e",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-19T02:42:41.494Z",
-    "durationSeconds": 168,
-    "sourceHash": "f7111bea0e29e57087b8bbfa27e2f64b33425bfed171282b17bd13d8f501a0ef",
-    "pipelineHash": "051d801820f13395eddc862895f1c56e03272ca5e03c6f217726d0c383fe7392",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-19T02:36:27.677Z"
   },
   "graduates-in-the-time-of-corona.mp3": {
     "bytes": 1303056,
@@ -342,18 +246,6 @@
   "jarida-202508-001.noura.mp3": {
     "bytes": 1289520,
     "durationSeconds": 215
-  },
-  "laughing-while-burning-2.mp3": {
-    "bytes": 3335776,
-    "sha256": "751c7d7fcd23e124442e0d2e06c24d435e8951d91bbd4a35d55e2d2c20a824ed",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-19T02:42:41.556Z",
-    "durationSeconds": 208,
-    "sourceHash": "b6268845b89d4d08716c16d62b1c15c13fa2dedf9a6219e0c5b4ab898e17a164",
-    "pipelineHash": "051d801820f13395eddc862895f1c56e03272ca5e03c6f217726d0c383fe7392",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-19T02:21:49.004Z"
   },
   "lets-achieve-a-higher-level-of-quality-education.mp3": {
     "bytes": 1584000,
@@ -1162,19 +1054,6 @@
   "students-minds-are-on-vacation-while-chatgpt-works-full-time-2.noura.mp3": {
     "bytes": 1928160,
     "durationSeconds": 321
-  },
-  "success-that-does-not-bring-joy-to-its-ownerarabic.dialogue.json": {
-    "bytes": 6088,
-    "sha256": "06a18f8a13102e841b43209a98643ef5cb7d1f3475b319154e446ecf9fd36183",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-07-19T06:49:47.737Z"
-  },
-  "success-that-does-not-bring-joy-to-its-ownerarabic.dialogue.mp3": {
-    "bytes": 3309444,
-    "sha256": "db9fcc4e698e1127bbbe7e9f26d2a62a39f725389b6852fe06326e7a7b222414",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-19T06:49:47.737Z",
-    "durationSeconds": 207
   },
   "success-that-does-not-bring-joy-to-its-ownerarabic.mp3": {
     "bytes": 1272096,

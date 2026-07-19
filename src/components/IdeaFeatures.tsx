@@ -303,13 +303,14 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   const [sel, setSel] = useState('')
   const [paragraph, setParagraph] = useState(0)
   const [offsets, setOffsets] = useState<SelectionOffsets>({ startOffset: 0, endOffset: 0 })
-  const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
+  const [pos, setPos] = useState<{ x: number; y: number; bottom: number } | null>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
   const [toolbarX, setToolbarX] = useState<number | null>(null)
   /* في اللمس تفتح المنظومة قائمتها (نسخ · ترجمة) فوق النص المحدَّد، وهو المكان
      نفسه الذي كان شريطنا يقف فيه — فيُحجب. لا تملك CSS إخفاء تلك القائمة ما دام
      النص قابلاً للتحديد، فالحلّ أن ننزل نحن إلى أسفل الشاشة حيث لا تصلنا. */
   const [toolbarY, setToolbarY] = useState<number | null>(null)
+  const [below, setBelow] = useState(false)
   const [coarse, setCoarse] = useState(false)
   useEffect(() => {
     const query = window.matchMedia('(pointer: coarse)')
@@ -370,7 +371,8 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         setSel(text)
         setParagraph(Number.isInteger(paragraphIndex) ? paragraphIndex : 0)
         setOffsets({ startOffset, endOffset })
-        setPos({ x, y })
+        /* أسفل التحديد كلّه (لا أول سطر منه) — عليه نُلصق الشريط في الجوال */
+        setPos({ x, y, bottom: range.getBoundingClientRect().bottom })
       }, 90)
     }
     document.addEventListener('selectionchange', inspectSelection)
@@ -413,11 +415,17 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
       setToolbarX(maximum >= minimum
         ? Math.min(maximum, Math.max(minimum, pos.x))
         : viewportLeft + viewportWidth / 2)
-      if (!coarse) { setToolbarY(null); return }
-      /* أسفل الشاشة الحقيقية (لا شاشة الجهاز): تتبع لوحة المفاتيح والتكبير معاً */
+      if (!coarse) { setToolbarY(null); setBelow(false); return }
+      /* ملاصقاً للفقرة من تحتها: قريبٌ فيُرى، وقائمة النظام فوق النص فلا تزاحمه.
+         وإن كان التحديد في آخر الشاشة فلا مكان تحته — عندها يعود فوقه كما في
+         الكمبيوتر. ولا يرسو في أسفل الشاشة: هناك يغطّي الجملة التي حدّدها بنفسه. */
       const viewportTop = viewport?.offsetTop || 0
       const viewportHeight = viewport?.height || window.innerHeight
-      setToolbarY(viewportTop + viewportHeight - 18)
+      const height = toolbar.getBoundingClientRect().height
+      const under = pos.bottom + 12
+      const fits = under + height <= viewportTop + viewportHeight - 12
+      setBelow(fits)
+      setToolbarY(fits ? under : null)
     }
     fitInsideViewport()
     const frame = window.requestAnimationFrame(fitInsideViewport)
@@ -606,7 +614,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         {pos && !view && sel && (
           <div
             ref={toolbarRef}
-            style={{ left: toolbarX ?? pos.x, top: toolbarY ?? pos.y, transform: 'translate3d(-50%,-100%,0)' }}
+            style={{ left: toolbarX ?? pos.x, top: toolbarY ?? pos.y, transform: below ? 'translate3d(-50%,0,0)' : 'translate3d(-50%,-100%,0)' }}
             className="reader-selection-toolbar fixed z-[260]"
           >
             <motion.div

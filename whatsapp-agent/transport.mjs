@@ -126,19 +126,15 @@ export async function createWhatsAppTransport({ db, onMessage, onContacts, onQr,
       if (update.connection === 'open') {
         reconnects = 0
         setStatus('connected', { qr: null, pairing_code: null, device_name: 'WhatsApp Agent – MacBook M2' })
-        /* دفتر الأسماء: واتساب يرسله مرةً واحدة عند الاقتران الأول وحده. وجلسة
-           الدكتور مرتبطةٌ من قبل، فلم يصل شيء وبقي الدفتر فارغاً. نطلبه هنا
-           صراحةً عند كل اتصال — والمجموعة critical_unblock_low هي التي تحمل
-           جهات الاتصال في مزامنة حالة التطبيق. */
-        void (async () => {
-          try {
-            if (typeof socket.resyncAppState !== 'function') return
-            await socket.resyncAppState(['critical_unblock_low'], true)
-            console.log('طُلب دفتر جهات الاتصال من واتساب.')
-          } catch (error) {
-            console.error('تعذّر طلب دفتر جهات الاتصال:', error?.message || error)
-          }
-        })()
+        /* أُزيل استدعاء resyncAppState(['critical_unblock_low'], true).
+           أضفتُه لسحب دفتر الجهات، والقيمة true تعني «أجبر المزامنة من الصفر»
+           فكانت تُعيد بناء حالة التطبيق كاملةً عند كل إقلاع. وواتساب يردّ
+           بلقطةٍ لا تفكّها المكتبة (invalid wire type 6)، فتتوالى عشرات أخطاء
+           «size out of range: NaN» ويعلق الاتصال عن الإرسال ساعاتٍ بعدها.
+
+           والدفتر لا يحتاجه أصلاً: مستمعا contacts.upsert وmessaging-history.set
+           يملآنه من التدفق الطبيعي، وقد امتلأ بألفين وخمسمئة جهةٍ بالفعل.
+           فكان هذا السطر كلفةً بلا عائد — بل بضررٍ صرف. */
         return
       }
       if (update.connection === 'close') {

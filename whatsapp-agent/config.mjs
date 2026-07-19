@@ -5,6 +5,12 @@ import { fileURLToPath } from 'node:url'
 const here = path.dirname(fileURLToPath(import.meta.url))
 export const projectRoot = path.resolve(here, '..')
 
+/* المفاتيح تُقرأ من whatsapp-agent/.env — ولم يكن ثمّة محمّلٌ له البتة، فكل
+   مفتاحٍ يكتبه الدكتور هناك يذهب هباءً ويبقى العميل على الافتراضات: لا إرسال
+   ولا ردّ. وهذا سببُ ألّا تصله رسالةٌ واحدة رغم أن العميل متصلٌ بواتساب.
+   ولا نُسقط التشغيل إن غاب الملف: غيابه يعني «الافتراضات» وهي الصمت الآمن. */
+try { process.loadEnvFile(path.join(here, '.env')) } catch { /* لا ملف: تُستعمل الافتراضات */ }
+
 const bool = (value, fallback) => {
   if (value == null || value === '') return fallback
   return /^(1|true|yes|on)$/i.test(String(value))

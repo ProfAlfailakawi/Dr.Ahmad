@@ -399,12 +399,23 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     return { id, state: 'queued', intervalSeconds: campaignInterval(intervalSeconds), targets: targets.length }
   }
   const createLocalReminder = ({ jid, contentId = null, originalText, dueAt }) => createReminder(db, { jid, contentId, originalText, dueAt })
-  const status = () => {
+  const status = async () => {
     const heartbeatState = db.getSetting('bridge.heartbeat', null)
     const lastHeartbeatAt = heartbeatState?.at || null
     const heartbeatAgeMs = lastHeartbeatAt ? Date.now() - new Date(lastHeartbeatAt).getTime() : null
     const bridgeOnline = Boolean(state.started && lastHeartbeatAt && heartbeatAgeMs != null && heartbeatAgeMs <= HEARTBEAT_STALE_MS)
-    return { ...db.state(), flags, indexed: Number(db.get('SELECT COUNT(*) AS count FROM content_items')?.count || 0), bridge: Boolean(state.bridge), bridgeOnline, lastHeartbeatAt, heartbeatAgeMs, restartRequestedAt: db.getSetting('bridge.restartRequestedAt', null), port: BRIDGE_PORT, timeZone: TIME_ZONE }
+    /* نرسم رمز الاقتران صورةً هنا على ماك الدكتور. ولا نُرسل نصّه إلى أي خدمة
+       خارجية لرسمه: النصّ اعتمادُ اقترانٍ حيّ، ومن ملكه ربط جهازه بحساب الدكتور
+       وقرأ رسائله. فالرسم محليٌّ أو لا يكون. */
+    const snapshot = db.state()
+    let qrImage = null
+    if (snapshot?.qr && snapshot.status !== 'connected') {
+      try {
+        const qrcode = (await import('qrcode')).default || (await import('qrcode'))
+        qrImage = await qrcode.toDataURL(String(snapshot.qr), { margin: 1, width: 320, errorCorrectionLevel: 'M' })
+      } catch { qrImage = null }
+    }
+    return { ...db.state(), qrImage, flags, indexed: Number(db.get('SELECT COUNT(*) AS count FROM content_items')?.count || 0), bridge: Boolean(state.bridge), bridgeOnline, lastHeartbeatAt, heartbeatAgeMs, restartRequestedAt: db.getSetting('bridge.restartRequestedAt', null), port: BRIDGE_PORT, timeZone: TIME_ZONE }
   }
   const setBridge = (server) => { state.bridge = server; return status() }
   return Object.assign(api, { db, state, index, start, stop, status, sendSelf, audience, onContacts, queueCampaign, approveCampaign, sendCampaign, sendQuietCampaign, stopCampaign, listCampaigns, listBroadcastGroups, discoverGroups, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, requestRestart })

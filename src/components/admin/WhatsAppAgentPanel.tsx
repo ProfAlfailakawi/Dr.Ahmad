@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import AudienceStudio from './AudienceStudio'
+import { BroadcastStudio } from './BroadcastStudio'
 
 type AgentStatus = {
   status?: string
@@ -14,6 +15,9 @@ type AgentStatus = {
   heartbeatAgeMs?: number | null
   restartRequestedAt?: string | null
   port?: number
+  qr?: string | null
+  qrImage?: string | null
+  pairing_code?: string | null
 }
 type Campaign = { id: string; name: string; state: string; created_at: string; approved_at?: string | null; target_count?: number }
 type BroadcastGroup = { id: string; jid: string; name: string; memberCount: number; discoveredAt?: string }
@@ -367,6 +371,35 @@ export function WhatsAppAgentPanel() {
               </span>
             </h2>
             <p className="mt-2 max-w-2xl text-[.86rem] leading-relaxed text-soft">الجسر مستقل على الماك، والجلسة لا تدخل GitHub ولا Firebase. إذا تدخلت من الهاتف يصمت البوت تلقائيًا، وإذا توقف الماك يتوقف واتساب فقط.</p>
+
+            {/* رمز الاقتران: كان يُطبع في سجلّ الطرفية وحده، فلا يراه الدكتور
+                إلا بفتح السجل أو بالرجوع إليّ. يظهر هنا الآن ويتجدّد وحده. */}
+            {status.qrImage && status.status !== 'connected' && (
+              <div className="mt-4 rounded-2xl border border-accent/40 bg-canvas p-4">
+                <p className="text-[.8rem] font-semibold text-ink">اربط جهازك — امسح هذا الرمز</p>
+                <p className="mt-1 text-[.75rem] leading-relaxed text-soft">
+                  واتساب في جوالك ← الإعدادات ← الأجهزة المرتبطة ← ربط جهاز. الرمز يتجدّد وحده كل عشرين ثانية.
+                </p>
+                <div className="mt-3 flex justify-center rounded-xl bg-white p-4">
+                  {/* الصورة تُرسم على ماك الدكتور ثم تصل كـ data URI. ولا تُرسل
+                      إلى خدمةٍ خارجية أبداً: نصّ الرمز اعتمادُ اقترانٍ حيّ، ومن
+                      ملكه ربط جهازه بحساب الدكتور. */}
+                  <img
+                    src={status.qrImage}
+                    alt="رمز اقتران واتساب"
+                    width={260}
+                    height={260}
+                    className="h-[260px] w-[260px]"
+                  />
+                </div>
+              </div>
+            )}
+            {status.pairing_code && status.status !== 'connected' && (
+              <div className="mt-4 rounded-2xl border border-accent/40 bg-canvas p-4">
+                <p className="text-[.8rem] font-semibold text-ink">رمز الاقتران بالرقم</p>
+                <p className="mt-2 font-mono text-2xl tracking-[.3em] text-accent">{status.pairing_code}</p>
+              </div>
+            )}
           </div>
           <span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent">＋</span>
         </summary>
@@ -400,42 +433,11 @@ export function WhatsAppAgentPanel() {
 
       {/* حُذف «بوابة الإطلاق» بأمر الدكتور — إزعاجٌ بصريّ بلا فائدة. */}
 
-      <details className={`${card} group`} open>
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block font-display text-xl font-semibold text-ink">غرفة البرودكاست الهادئ</span><span className="mt-1 block text-[.8rem] text-soft">اكتب، عاين، اختر القروب، ثم احفظ مسودة. الإرسال الحقيقي يحتاج اعتمادًا وفاصلًا زمنيًا.</span></span><span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span></summary>
-        <div className="mt-5 grid gap-4 border-t border-hair pt-5">
-          <div className="grid gap-3 lg:grid-cols-[1fr_12rem]">
-            <input className={input} placeholder="اسم البرودكاست الهادئ" value={campaignName} onChange={(event) => setCampaignName(event.target.value)} />
-            <label className="grid gap-1 text-[.72rem] text-soft">
-              الفاصل بين الرسائل
-              <select className={input} value={intervalSeconds} onChange={(event) => setIntervalSeconds(Number(event.target.value))}>
-                <option value={20}>20 ثانية</option>
-                <option value={45}>45 ثانية</option>
-                <option value={90}>90 ثانية</option>
-                <option value={180}>3 دقائق</option>
-              </select>
-            </label>
-          </div>
-          <textarea className={`${input} min-h-32 resize-y`} placeholder="نص الرسالة — راجعه كأنه سينشر باسمك" value={campaignText} onChange={(event) => setCampaignText(event.target.value)} />
-          {/* حُذف قسم «القروبات من واتساب» بأمر الدكتور: القروب يكشف أرقام
-              الناس بعضهم لبعض، ورداً واحداً يزعج مئتين. بديله «قوائمك ودفتر
-              أسمائك» فوق: رسالة مستقلة لكل شخص باسمه، ولا يرى أحدٌ أحداً. */}
-          <div className="grid gap-3">
-            <div className="rounded-xl border border-hair bg-canvas p-4">
-              <p className="font-semibold text-ink">أرقام أو جهات اختيارية</p>
-              <p className="mt-1 text-[.73rem] text-soft">كل سطر رقم كويتي 8 خانات أو JID. لا تُحفظ الأرقام الخام داخل Git.</p>
-              <textarea dir="ltr" className={`${input} mt-3 min-h-32 resize-y`} placeholder={'97424400\n965XXXXXXXX@s.whatsapp.net'} value={campaignTargetsText} onChange={(event) => setCampaignTargetsText(event.target.value)} />
-              <p className="mt-2 text-[.72rem] text-soft">الجهات الجاهزة الآن: {draftTargets().length}</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="max-w-xl text-[.76rem] leading-relaxed text-soft">هذه ليست أداة إزعاج: أرسل فقط لمن وافق أو لمن بينك وبينه سياق واضح. الردود الآلية على رقمك الخاص تبقى مقفلة إلا عند سؤال صريح أو جلسة محتوى.</p>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={() => void previewSelf()} disabled={!status.bridgeOnline || !flags.send} className={secondary}>معاينة على نفسي</button>
-              <button type="button" onClick={() => void saveDraft()} className={primary}>حفظ مسودة هادئة</button>
-            </div>
-          </div>
-        </div>
-      </details>
+      {/* حُذفت «غرفة البرودكاست الهادئ» القديمة: كانت تطلب أرقاماً تُكتب سطراً
+          سطراً ولا تعرف قوائم الدكتور، فتقول «الجهات الجاهزة: 0» وهو يملك ألفين.
+          خلفتها BroadcastStudio: قائمةٌ تُختار، ومعاينةٌ تقول كم سيصل، وتجربةٌ على
+          النفس قبل الناس. ولا مكانان لوظيفةٍ واحدة. */}
+      <BroadcastStudio request={request} onNotice={setNotice} />
 
       {/* حُذف «مركز إدارة الردود» بأمر الدكتور — إزعاجٌ بصريّ بلا فائدة. */}
 
@@ -473,7 +475,10 @@ export function WhatsAppAgentPanel() {
         </details>
       )}
 
-      {bridge && <AudienceStudio request={request} onNotice={setNotice} campaigns={<section className={card}><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.75rem] font-semibold uppercase text-accent">الحملات المحلية</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">مسوداتك، اعتمادك، ثم إرسال هادئ.</h3></div><p className="text-[.78rem] text-soft">لا يظهر هنا أي رقم أو جلسة.</p></div><div className="mt-4 grid gap-2">{campaigns.length ? campaigns.map((campaign) => <div key={campaign.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hair bg-canvas px-4 py-3"><div><p className="font-semibold text-ink">{campaign.name}</p><p className="mt-1 text-[.72rem] text-soft">{campaign.state === 'draft' ? 'مسودة' : campaign.state === 'approved' ? 'معتمدة — غير مرسلة' : campaign.state === 'sending' || campaign.state === 'queued' ? 'قيد الإرسال الهادئ' : campaign.state} · {campaign.target_count || 0} جهة/قروب</p></div><div className="flex flex-wrap gap-2">{campaign.state === 'draft' && <button type="button" onClick={() => void approve(campaign.id)} className={secondary}>اعتماد للمراجعة</button>}{campaign.state === 'approved' && <button type="button" onClick={() => void sendQuiet(campaign)} disabled={sendingCampaignId === campaign.id || !flags.send || !status.bridgeOnline} className={primary}>{sendingCampaignId === campaign.id ? 'يبدأ…' : 'إرسال هادئ'}</button>}{['queued', 'sending'].includes(campaign.state) && <button type="button" onClick={() => void stopQuiet(campaign.id)} className={secondary}>إيقاف</button>}</div></div>) : <p className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">لا توجد مسودات محلية بعد.</p>}</div></section>} />}
+      {/* حُذفت بطاقة «الحملات المحلية»: كانت تُخفي مسودتك حتى تضغط «اعتماد»، فتظهر
+          خطوةٌ ناقصة بلا سياق وتغيب البقية. وغرفة البثّ أعلاه تُري المسار كاملاً
+          من أوله — والاعتماد صار داخلها خطوةً لا باباً. */}
+      {bridge && <AudienceStudio request={request} onNotice={setNotice} />}
 
 
       {/* حُذف «التشغيل المحلي» بأمر الدكتور — إزعاجٌ بصريّ بلا فائدة. */}

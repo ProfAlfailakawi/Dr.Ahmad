@@ -76,8 +76,8 @@ export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
 
     const url = new URL(req.url || '/', `http://127.0.0.1:${port}`)
     try {
-      if (req.method === 'GET' && url.pathname === '/health') { writeJson(res, 200, { ok: true, status: agent.status() }); return }
-      if (req.method === 'GET' && url.pathname === '/status') { writeJson(res, 200, agent.status()); return }
+      if (req.method === 'GET' && url.pathname === '/health') { writeJson(res, 200, { ok: true, status: await agent.status() }); return }
+      if (req.method === 'GET' && url.pathname === '/status') { writeJson(res, 200, await agent.status()); return }
       if (req.method === 'GET' && url.pathname === '/campaigns') { writeJson(res, 200, agent.listCampaigns()); return }
       if (req.method === 'GET' && url.pathname === '/admin/groups') { writeJson(res, 200, await agent.discoverGroups()); return }
       if (req.method === 'GET' && url.pathname === '/admin/groups/cached') { writeJson(res, 200, { groups: agent.listBroadcastGroups(), refreshed: false }); return }

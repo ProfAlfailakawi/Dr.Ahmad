@@ -28,7 +28,7 @@ export async function runSelfTest(root) {
   assert.equal(searchContent(db, 'الذكاء الاصطناعي', { limit: 3 }).length >= 0, true)
   const started = await agent.start()
   assert.equal(started.status, 'connected')
-  assert.equal(agent.status().bridgeOnline, true)
+  assert.equal((await agent.status()).bridgeOnline, true)
   const groups = await agent.discoverGroups()
   assert.equal(groups.groups.length, 1)
   assert.equal(groups.groups[0].name, 'مجموعة اختبار محلية')

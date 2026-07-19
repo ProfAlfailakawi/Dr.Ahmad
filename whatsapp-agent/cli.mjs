@@ -34,7 +34,7 @@ async function main() {
   if (command === 'self-test') { console.log(JSON.stringify(await runSelfTest(projectRoot), null, 2)); return }
   if (command === 'cost-audit') { console.log(JSON.stringify(runCostAudit(projectRoot), null, 2)); return }
   if (command === 'index') { console.log(JSON.stringify(agent.index(), null, 2)); return }
-  if (command === 'status') { console.log(JSON.stringify(agent.status(), null, 2)); return }
+  if (command === 'status') { console.log(JSON.stringify(await agent.status(), null, 2)); return }
   if (command === 'bridge-secret') { console.log(agent.bridgeSecret()); return }
   if (command === 'install') { console.log(`تم تثبيت LaunchAgent: ${install()}`); return }
   if (command === 'uninstall') { await agent.stop(); console.log(`تمت الإزالة: ${uninstall()}`); return }

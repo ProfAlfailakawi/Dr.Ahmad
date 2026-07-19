@@ -78,7 +78,10 @@ export async function createWhatsAppTransport({ db, onMessage, onContacts, onQr,
   const setStatus = (next, extra = {}) => { status = next; db.setState({ status: next, ...extra }); events.emit('status', { status: next, ...extra }) }
   const connect = async ({ phoneNumber } = {}) => {
     stopping = false
-    setStatus(reconnects ? 'reconnecting' : 'pairing', { qr: null, pairing_code: null })
+    /* لا نمسح qr هنا: باييليز يُطلق connection.update مرّاتٍ متتابعة أثناء
+       الاقتران، فكان كل تحديثٍ يمحو الرمز الذي حفظه سابقه — فيبقى الحقل فارغاً
+       دائماً ولا تعرضه اللوحة أبداً. الرمز يُمحى عند الاتصال الناجح وحده. */
+    setStatus(reconnects ? 'reconnecting' : 'pairing', { pairing_code: null })
     socket = makeWASocket({
       auth: authState,
       printQRInTerminal: false,
@@ -118,7 +121,11 @@ export async function createWhatsAppTransport({ db, onMessage, onContacts, onQr,
     })
     socket.ev.on('connection.update', async (update) => {
       if (update.qr) {
-        db.setState({ status: 'pairing', qr: null, pairing_code: null })
+        /* كان يُكتب qr: null هنا فيُمحى الرمز قبل أن يُحفظ — يُطبع في سجلّ
+           الطرفية وحده، ولا تراه اللوحة أبداً. فيضطر الدكتور إلى فتح السجل
+           أو الرجوع إليّ لكل ربط. نحفظه الآن فتعرضه اللوحة، وهو يتجدّد كل
+           عشرين ثانية فيُستبدل بأحدثه تلقائياً. */
+        db.setState({ status: 'pairing', qr: update.qr, pairing_code: null })
         if (qrcodeTerminal?.generate) qrcodeTerminal.generate(update.qr, { small: true })
         else console.log('ظهر QR للاقتران. استخدم --phone=965XXXXXXXX للحصول على رمز اقتران بدلًا من QR.')
         onQr?.(update.qr); events.emit('qr', update.qr)

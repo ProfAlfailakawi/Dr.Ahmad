@@ -243,7 +243,15 @@ export function addContactByPhone(db, phone, nickname = '') {
  * كامل، وأضمن من انتظار مزامنةٍ قد لا تحمل الدفتر أصلاً.
  */
 function parseVCards(text) {
-  const cards = String(text).split(/BEGIN:VCARD/i).slice(1)
+  /* بطاقات الماك تحمل صورة كل جهة بترميز base64 داخل حقل PHOTO، وتمتدّ
+     عشرات الأسطر لكل بطاقة — فصار ملفٌ من ٢٨٠٠ جهة مئةً وعشرين ألف سطر،
+     وثقُلت المعالجة بلا فائدة. نطرح الصور وما شابهها قبل القراءة: نحن
+     نريد الاسم والرقم لا الصورة. */
+  const clean = String(text)
+    .replace(/\r\n[ \t]/g, '')                       // فكّ الأسطر المطويّة (تكملةُ سطرٍ تبدأ بمسافة)
+    .replace(/\n[ \t]/g, '')
+    .replace(/^(PHOTO|LOGO|SOUND|KEY)[^:]*:[\s\S]*?(?=\n[A-Z]|\nEND:VCARD)/gim, '')
+  const cards = clean.split(/BEGIN:VCARD/i).slice(1)
   const lines = []
   for (const card of cards) {
     const name = (card.match(/^FN[^:]*:(.+)$/im) || [])[1]

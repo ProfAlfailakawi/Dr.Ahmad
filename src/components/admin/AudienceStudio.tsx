@@ -22,6 +22,21 @@ type Sample = { name: string; body: string }
 
 type Request = <T,>(path: string, init?: RequestInit) => Promise<T>
 
+/**
+ * بطاقات الماك تحمل صورة كل جهة بترميز base64 — فملفٌ من ٢٨٠٠ جهة يصير
+ * تسعة ميغابايت ومئةً وثلاثين ألف سطر، ولا تمرّ دفعةٌ منه عبر الجسر مهما
+ * صغّرناها. نطرح الصور هنا قبل أن يغادر شيءٌ المتصفح: نريد الاسم والرقم
+ * لا الصورة. (٨.٩ ميغابايت → نحو ربع ميغابايت.)
+ */
+function stripHeavyFields(text: string) {
+  return text
+    .replace(/\r\n[ \t]/g, '')
+    .replace(/\n[ \t]/g, '')
+    .replace(/^(PHOTO|LOGO|SOUND|KEY)[^:]*:.*$/gim, '')
+    .replace(/\n{2,}/g, '\n')
+}
+
+
 export default function AudienceStudio({ request, onNotice, campaigns }: { request: Request; onNotice: (text: string) => void; campaigns?: React.ReactNode }) {
   const [lists, setLists] = useState<BroadcastList[]>([])
   const [activeId, setActiveId] = useState('')
@@ -346,7 +361,7 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                   onDrop={(e) => {
                     e.preventDefault()
                     const file = e.dataTransfer.files?.[0]
-                    if (file) void file.text().then((text) => setBulk(text))
+                    if (file) void file.text().then((text) => setBulk(stripHeavyFields(text)))
                   }}
                   className="rounded-xl border border-dashed border-hair bg-canvas px-4 py-3 text-center text-[.78rem] text-soft"
                 >
@@ -359,7 +374,7 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                       className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0]
-                        if (file) void file.text().then((text) => setBulk(text))
+                        if (file) void file.text().then((text) => setBulk(stripHeavyFields(text)))
                       }}
                     />
                   </label>
@@ -379,7 +394,11 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                   وبالأرقام العربية أو الغربية. والسطر بلا رقم يُتخطّى ويُعلَم لك، ولن يُستبدل لقبٌ كتبتَه من قبل.
                 </p>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-[.72rem] text-soft">{bulk.split('\n').filter((line) => line.trim()).length} سطراً</span>
+                  <span className="text-[.72rem] text-soft">
+                    {/BEGIN:VCARD/i.test(bulk)
+                      ? `${(bulk.match(/BEGIN:VCARD/gi) || []).length} بطاقة`
+                      : `${bulk.split('\n').filter((line) => line.trim()).length} سطراً`}
+                  </span>
                   <button type="button" className={primary} disabled={busy || !bulk.trim()}
                     onClick={() => void act('انتهى الاستيراد.', async () => {
                       /* دفتر الدكتور فوق ٢٨٠٠ رقم ≈ نصف ميغابايت، والجسر يرفض

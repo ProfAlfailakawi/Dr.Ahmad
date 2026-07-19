@@ -145,9 +145,22 @@ export async function createWhatsAppTransport({ db, onMessage, onContacts, onQr,
         const code = update.lastDisconnect?.error?.output?.statusCode
         if (stopping || code === baileys.DisconnectReason?.loggedOut) { setStatus('disconnected'); return }
         reconnects += 1
-        if (reconnects > maxReconnects) { setStatus('error', { last_error: 'توقف الاتصال بعد عدد محدود من محاولات الإعادة.' }); return }
-        setStatus('reconnecting', { last_error: redactError(update.lastDisconnect?.error) })
-        setTimeout(() => { void connect({ phoneNumber }) }, Math.min(30000, 1200 * 2 ** reconnects))
+        /* أربع محاولاتٍ ثم استسلامٌ نهائي: أيُّ انقطاعٍ عابر في الإنترنت — أو
+           نومُ الشبكة دقيقةً — كان يُسكت البوت حتى يُعيد الدكتور تشغيله بيده،
+           فيمرّ يومٌ وهو يظنّه يعمل. الانقطاع العابر ليس تسجيل خروج: نُبطئ
+           بعد المحاولات الأولى إلى دقيقتين ونظلّ نحاول ما دام واتساب لم
+           يطردنا (وحالةُ loggedOut تُعالَج أعلاه وتوقف كل شيء كما ينبغي). */
+        const patient = reconnects > maxReconnects
+        if (patient && reconnects === maxReconnects + 1) {
+          console.log('⚠ تعذّر الاتصال بعد محاولاتٍ سريعة — نتمهّل ونواصل المحاولة بلا استسلام.')
+        }
+        setStatus(patient ? 'reconnecting' : 'reconnecting', {
+          last_error: patient
+            ? 'الاتصال متعذّر مؤقتاً؛ نواصل المحاولة كل دقيقتين.'
+            : redactError(update.lastDisconnect?.error),
+        })
+        const delay = patient ? 120_000 : Math.min(30000, 1200 * 2 ** reconnects)
+        setTimeout(() => { void connect({ phoneNumber }) }, delay)
       }
     })
     if (phoneNumber && typeof socket.requestPairingCode === 'function' && !authState.creds.registered) {

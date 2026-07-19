@@ -48,14 +48,38 @@
     "bytes": 6088,
     "sha256": "06a18f8a13102e841b43209a98643ef5cb7d1f3475b319154e446ecf9fd36183",
     "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-07-19T15:38:50.148Z"
+    "publishedAt": "2026-07-19T16:32:14.532Z"
   },
   "success-that-does-not-bring-joy-to-its-ownerarabic.dialogue.mp3": {
     "bytes": 3309444,
-    "sha256": "95a5c108d75e3c6320f060ac35ed8fcb92c01ebbd75ceebd6d7a4cd2a721c7d5",
+    "sha256": "c79a02c1267c84c0f71c1cfa579b0991097547fb22536483d7416fe0c9837ee4",
     "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-19T15:38:50.148Z",
+    "publishedAt": "2026-07-19T16:32:14.532Z",
     "durationSeconds": 207
+  },
+  "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic.mp3": {
+    "bytes": 2964628,
+    "sha256": "256d57737e16d059314b62c904e737b07d2209f43a4e91a6a171153c6a2c42d7",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-19T16:32:14.589Z",
+    "durationSeconds": 185,
+    "sourceHash": "1c55e4447d842bf34a34e197e13ef6f7fe5dc319bdf09cd7a7e137db7d33a470",
+    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
+    "humanLikenessScore": 100,
+    "audioJudgeMinimum": null,
+    "acceptedAt": "2026-07-19T16:18:41.129Z"
+  },
+  "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic.noura.mp3": {
+    "bytes": 3006842,
+    "sha256": "21b9cff61bd30a061aaafa08419d9711645fcdc2bbd0739f6b4c1eb026e120b0",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-19T16:32:14.647Z",
+    "durationSeconds": 188,
+    "sourceHash": "811bb131a3c8850bfb0257a19e95deda3816425533dadebbd72d4b988d137ed1",
+    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
+    "humanLikenessScore": 100,
+    "audioJudgeMinimum": null,
+    "acceptedAt": "2026-07-19T16:22:19.557Z"
   },
   "when-the-exam-becomes-the-goalarabic.mp3": {
     "bytes": 2890649,

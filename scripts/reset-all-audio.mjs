@@ -22,7 +22,12 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SELF_TEST = process.argv.includes('--self-test')
 
-const CONFIRM_PHRASE = 'امسح-كل-الصوت'
+/* كلمتان مقبولتان لا واحدة. فحارسُ التشغيلة يشترط الصيغة المشدّدة حين تكون
+   قائمة الاستبقاء فارغة، وكان السكربت يشترط الأساسية حرفاً بحرف — فصار المسحُ
+   الكامل مستحيلاً: كلُّ عبارةٍ يقبلها أحدُ الحارسين يرفضها الآخر. وحارسان
+   يتناقضان أسوأ من حارسٍ واحد، لأن العجز يبدو عطباً في المشروع لا في الحراسة. */
+const CONFIRM_PHRASES = Object.freeze(['امسح-كل-الصوت', 'امسح-كل-الصوت-بلا-استثناء'])
+const CONFIRM_PHRASE = CONFIRM_PHRASES[0]
 
 const arg = (name) => process.argv.find((item) => item.startsWith(`--${name}=`))?.slice(name.length + 3) || ''
 
@@ -74,11 +79,16 @@ if (SELF_TEST) {
   assert(!('beta' in after) && !('gamma' in after), 'ويُسقط ما عداه')
 
   /* الاسم المتشابه بادئةً لا يُخدع: «alpha-two» ليس «alpha» */
+  /* ★ الحارسان لا يتناقضان: ما تشترطه التشغيلة يقبله السكربت */
+  assert(CONFIRM_PHRASES.includes('امسح-كل-الصوت'), 'العبارة الأساسية مقبولة')
+  assert(CONFIRM_PHRASES.includes('امسح-كل-الصوت-بلا-استثناء'), '★ عبارة المسح الكامل مقبولة — وإلا استحال المسح الكامل')
+  assert(!CONFIRM_PHRASES.includes('امسح'), 'العبارة الناقصة مرفوضة')
+
   const tricky = planReset({ 'alpha.mp3': {}, 'alpha-two.mp3': {} }, ['alpha'])
   assert(tricky.remove.includes('alpha-two.mp3'), '★ التشابه في البادئة لا يمنح نجاةً')
   assert(tricky.survive.includes('alpha.mp3'), 'والمستبقى ينجو')
 
-  console.log('✓ اختبارات التصفير الشامل: 8/8')
+  console.log('✓ اختبارات التصفير الشامل: 11/11')
   process.exit(0)
 }
 
@@ -105,8 +115,8 @@ if (!execute) {
   console.log('\nⓘ تشغيلةٌ جافّة: لم يُمسّ شيء. أضف --execute لتنفيذها.')
   process.exit(0)
 }
-if (confirm !== CONFIRM_PHRASE) {
-  console.error(`\n✘ التنفيذ يحتاج --confirm=${CONFIRM_PHRASE}`)
+if (!CONFIRM_PHRASES.includes(confirm)) {
+  console.error(`\n✘ التنفيذ يحتاج --confirm=${CONFIRM_PHRASE} (أو ${CONFIRM_PHRASES[1]} للمسح بلا استثناء)`)
   process.exit(1)
 }
 

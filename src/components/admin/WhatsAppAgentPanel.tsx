@@ -30,7 +30,7 @@ type ReplyRule = {
   updatedAt?: string
 }
 type RuleVersion = { id: number; createdAt: string }
-type Simulation = { intent?: string; confidence?: number; needsHuman?: boolean; ruleId?: string | null; ruleName?: string | null; preview?: string }
+type Simulation = { willReply?: boolean; why?: string; quietNow?: boolean; intent?: string; confidence?: number; needsHuman?: boolean; ruleId?: string | null; ruleName?: string | null; preview?: string }
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none placeholder:text-soft/60 focus:border-accent'
@@ -379,30 +379,16 @@ export function WhatsAppAgentPanel() {
             <button type="button" onClick={() => void restartBridge()} disabled={restarting || !status.bridgeOnline} className={secondary}>{restarting ? 'جارٍ إعادة التشغيل' : 'إعادة تشغيل واتساب'}</button>
           </div>
         </div>
-        <div className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-soft">الوضع الآمن مفعل: لا رد تلقائي على الأهل والربع. الرد يكون فقط داخل جلسة محتوى، أو عند صيغة صريحة مثل «سؤال: …» أو «اسأل الدكتور: …».</div>
+        <div className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-soft">
+          الوضع الآمن مفعل: لا ردّ على الأهل والربع. لا يفتح البابَ إلا أمرٌ لا يُقال مصادفة —
+          «آخر مقال» · «أبحاث الدكتور» · «آخر بودكاست» · «بطاقة اقتباس» — ثم يجري الحوار طبيعياً
+          داخل الجلسة. ويصمت أمام الوسائط، وطلبِ الموعد والاستشارة والإشراف، وبين منتصف الليل والسابعة.
+        </div>
         {status.last_error && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.8rem] text-soft">{status.last_error}</p>}
         {notice && <p role="status" className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{notice}</p>}
       </section>
 
-      {/* «الوضع اليدوي» كان يطلب كتابة JID بيدك — وهو ما لا يفعله أحد. صار
-          تلقائياً: أول ما تردّ من هاتفك يصمت البوت في تلك المحادثة ويعود بعد
-          نصف ساعة. فطُوي القسم إلى سطرٍ واحد، وبقيت أدواته للحالات النادرة. */}
-      <details className="rounded-2xl border border-hair bg-wash px-4 py-3">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[.82rem] text-soft">
-          <span>حين تردّ بيدك يصمت البوت تلقائياً ويعود بعد ٣٠ دقيقة.</span>
-          <span className="text-[.75rem] text-accent">تحكّم يدوي</span>
-        </summary>
-        <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_auto_auto]">
-          <input dir="ltr" className={input} placeholder="965XXXXXXXX@s.whatsapp.net" value={manualJid} onChange={(event) => setManualJid(event.target.value)} />
-          <button type="button" onClick={() => void manualTakeover()} className={secondary}>استلام يدوي</button>
-          <button type="button" onClick={() => void returnBot()} className={primary}>إرجاع للبوت</button>
-        </div>
-      </details>
-
-      <section className={card}>
-        <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.75rem] font-semibold uppercase text-accent">بوابة الإطلاق</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">المراحل لا تُفتح دفعة واحدة.</h3></div><p className="text-[.78rem] text-soft">الإرسال والرد الآلي مغلقان حتى اعتمادك.</p></div>
-        <div className="mt-4 grid gap-2 sm:grid-cols-5">{phases.map(([number, label, active]) => <div key={number} className={`rounded-xl border p-3 ${active ? 'border-accent/40 bg-canvas' : 'border-hair bg-canvas/60'}`}><p className="text-[.72rem] font-semibold text-accent">{number}</p><p className="mt-1 text-[.78rem] leading-relaxed text-ink">{label}</p><p className="mt-2 text-[.68rem] text-soft">{active ? 'متاح' : 'مغلق'}</p></div>)}</div>
-      </section>
+      {/* حُذف «بوابة الإطلاق» بأمر الدكتور — إزعاجٌ بصريّ بلا فائدة. */}
 
       <details className={`${card} group`} open>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block font-display text-xl font-semibold text-ink">غرفة البرودكاست الهادئ</span><span className="mt-1 block text-[.8rem] text-soft">اكتب، عاين، اختر القروب، ثم احفظ مسودة. الإرسال الحقيقي يحتاج اعتمادًا وفاصلًا زمنيًا.</span></span><span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span></summary>
@@ -441,46 +427,42 @@ export function WhatsAppAgentPanel() {
         </div>
       </details>
 
-      <section className={card}>
-        <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.75rem] font-semibold uppercase text-accent">مركز إدارة الردود</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">قواعد قابلة للتعديل بلا كود.</h3></div><button type="button" onClick={resetRule} className={secondary}>قاعدة جديدة</button></div>
-        <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          <div className="grid gap-3 rounded-xl border border-hair bg-canvas p-4">
-            <input className={input} placeholder="اسم القاعدة" value={ruleForm.name} onChange={(event) => setRuleForm((current) => ({ ...current, name: event.target.value }))} />
-            <textarea className={`${input} min-h-20 resize-y`} placeholder="الكلمات المفتاحية — افصل بفواصل أو أسطر" value={keywordsText(ruleForm)} onChange={(event) => setRuleForm((current) => ({ ...current, keywords: parseKeywords(event.target.value) }))} />
-            <div className="grid gap-3 sm:grid-cols-3">
-              <input className={input} type="number" placeholder="الأولوية" value={ruleForm.priority} onChange={(event) => setRuleForm((current) => ({ ...current, priority: Number(event.target.value || 0) }))} />
-              <select className={input} value={ruleForm.matchType} onChange={(event) => setRuleForm((current) => ({ ...current, matchType: event.target.value as ReplyRule['matchType'] }))}><option value="any">أي كلمة</option><option value="all">كل الكلمات</option><option value="exact">مطابقة كاملة</option></select>
-              <select className={input} value={ruleForm.actionType} onChange={(event) => setRuleForm((current) => ({ ...current, actionType: event.target.value as ReplyRule['actionType'] }))}><option value="text">رد نصي</option><option value="site-content">من محتوى الموقع</option><option value="transfer">تحويل لموظف</option></select>
+      {/* حُذف «مركز إدارة الردود» بأمر الدكتور — إزعاجٌ بصريّ بلا فائدة. */}
+
+      {/* اختبار الرد: يجرّب البوت بلا أن يرسل شيئاً لأحد. كان يعرض ما سيقوله
+          ويتجاهل هل سيتكلم أصلاً — فأوهم أن «دكتور» تجلب مقالات، بينما البوابة
+          تُسكته عليها. الآن يقول الحكم أولاً بلا رطانة. */}
+      {bridge && (
+        <section className={card}>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h3 className="font-display text-xl font-semibold text-ink">جرّب البوت قبل أن يتكلم.</h3>
+              <p className="mt-1 max-w-xl text-[.78rem] leading-relaxed text-soft">اكتب رسالةً كما يكتبها الناس، فأخبرك: هل يردّ أم يصمت، ولماذا. لا شيء يُرسل لأحد.</p>
             </div>
-            <textarea className={`${input} min-h-24 resize-y`} placeholder="نص الرد أو تمهيد الرد" value={ruleForm.responseText} onChange={(event) => setRuleForm((current) => ({ ...current, responseText: event.target.value }))} />
-            <input className={input} placeholder="استعلام محتوى الموقع — اختياري" value={ruleForm.contentQuery} onChange={(event) => setRuleForm((current) => ({ ...current, contentQuery: event.target.value }))} />
-            <label className="flex items-center gap-2 text-[.8rem] text-soft"><input type="checkbox" checked={ruleForm.enabled} onChange={(event) => setRuleForm((current) => ({ ...current, enabled: event.target.checked }))} /> مفعّلة</label>
-            <button type="button" onClick={() => void saveRule()} className={primary}>{ruleForm.id ? 'حفظ التعديل' : 'إضافة القاعدة'}</button>
           </div>
-          <div className="grid content-start gap-2">
-            {rules.length ? rules.map((rule) => (
-              <div key={rule.id} className="rounded-xl border border-hair bg-canvas p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div><p className="font-semibold text-ink">{rule.name}</p><p className="mt-1 text-[.72rem] text-soft">{rule.enabled ? 'مفعّلة' : 'معطّلة'} · {rule.actionType} · أولوية {rule.priority}</p><p className="mt-2 text-[.76rem] text-soft">{rule.keywords.join('، ')}</p></div>
-                  <div className="flex flex-wrap gap-2"><button type="button" className={secondary} onClick={() => editRule(rule)}>تعديل</button><button type="button" className={secondary} onClick={() => void loadVersions(rule.id)}>النسخ</button><button type="button" className={secondary} onClick={() => void deleteRule(rule.id)}>حذف</button></div>
-                </div>
-                {ruleVersions[rule.id]?.length ? <div className="mt-3 flex flex-wrap gap-2 border-t border-hair pt-3">{ruleVersions[rule.id].map((version) => <button type="button" key={version.id} className={secondary} onClick={() => void rollbackRule(rule.id, version.id)}>رجوع #{version.id}</button>)}</div> : null}
-              </div>
-            )) : <p className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">لا توجد قواعد رد مخصصة بعد.</p>}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <input className={`${input} flex-1`} value={simulateText} placeholder="مثلاً: السلام عليكم · آخر مقال · أبحاث الدكتور" onChange={(event) => setSimulateText(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void runSimulator() }} />
+            <button type="button" onClick={() => void runSimulator()} className={secondary}>جرّب</button>
           </div>
-        </div>
-        <div className="mt-4 grid gap-3 rounded-xl border border-hair bg-canvas p-4 lg:grid-cols-[1fr_auto]">
-          <input className={input} placeholder="محاكي: اكتب رسالة افتراضية" value={simulateText} onChange={(event) => setSimulateText(event.target.value)} />
-          <button type="button" className={secondary} onClick={() => void runSimulator()}>اختبار الرد</button>
-          {simulation && <p className="lg:col-span-2 rounded-xl border border-hair bg-wash px-4 py-3 text-[.8rem] leading-relaxed text-soft">القاعدة: {simulation.ruleName || simulation.intent || '—'} · الثقة: {simulation.confidence ?? '—'}{simulation.needsHuman ? ' · يحتاج موظف' : ''}<br />{simulation.preview || 'لا يوجد رد.'}</p>}
-        </div>
-      </section>
+          {simulation && (
+            <div className="mt-3 grid gap-2 rounded-xl border border-hair bg-canvas px-4 py-3">
+              <p className="text-[.9rem] font-semibold text-ink">
+                {simulation.willReply ? '🗣 يردّ' : '🤐 يصمت'}
+                <span className="mr-2 text-[.78rem] font-normal text-soft">· {simulation.why}</span>
+              </p>
+              {simulation.willReply && simulation.quietNow && (
+                <p className="text-[.75rem] text-soft">لكنه الآن في ساعات الصمت (منتصف الليل — السابعة)، فلن يردّ حتى الصباح.</p>
+              )}
+              {simulation.preview && <p className="whitespace-pre-wrap text-[.82rem] leading-relaxed text-ink">{simulation.preview}</p>}
+            </div>
+          )}
+        </section>
+      )}
 
-      {bridge && <AudienceStudio request={request} onNotice={setNotice} />}
+      {bridge && <AudienceStudio request={request} onNotice={setNotice} campaigns={<section className={card}><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.75rem] font-semibold uppercase text-accent">الحملات المحلية</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">مسوداتك، اعتمادك، ثم إرسال هادئ.</h3></div><p className="text-[.78rem] text-soft">لا يظهر هنا أي رقم أو جلسة.</p></div><div className="mt-4 grid gap-2">{campaigns.length ? campaigns.map((campaign) => <div key={campaign.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hair bg-canvas px-4 py-3"><div><p className="font-semibold text-ink">{campaign.name}</p><p className="mt-1 text-[.72rem] text-soft">{campaign.state === 'draft' ? 'مسودة' : campaign.state === 'approved' ? 'معتمدة — غير مرسلة' : campaign.state === 'sending' || campaign.state === 'queued' ? 'قيد الإرسال الهادئ' : campaign.state} · {campaign.target_count || 0} جهة/قروب</p></div><div className="flex flex-wrap gap-2">{campaign.state === 'draft' && <button type="button" onClick={() => void approve(campaign.id)} className={secondary}>اعتماد للمراجعة</button>}{campaign.state === 'approved' && <button type="button" onClick={() => void sendQuiet(campaign)} disabled={sendingCampaignId === campaign.id || !flags.send || !status.bridgeOnline} className={primary}>{sendingCampaignId === campaign.id ? 'يبدأ…' : 'إرسال هادئ'}</button>}{['queued', 'sending'].includes(campaign.state) && <button type="button" onClick={() => void stopQuiet(campaign.id)} className={secondary}>إيقاف</button>}</div></div>) : <p className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">لا توجد مسودات محلية بعد.</p>}</div></section>} />}
 
-      {bridge && <section className={card}><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.75rem] font-semibold uppercase text-accent">الحملات المحلية</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">مسوداتك، اعتمادك، ثم إرسال هادئ.</h3></div><p className="text-[.78rem] text-soft">لا يظهر هنا أي رقم أو جلسة.</p></div><div className="mt-4 grid gap-2">{campaigns.length ? campaigns.map((campaign) => <div key={campaign.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hair bg-canvas px-4 py-3"><div><p className="font-semibold text-ink">{campaign.name}</p><p className="mt-1 text-[.72rem] text-soft">{campaign.state === 'draft' ? 'مسودة' : campaign.state === 'approved' ? 'معتمدة — غير مرسلة' : campaign.state === 'sending' || campaign.state === 'queued' ? 'قيد الإرسال الهادئ' : campaign.state} · {campaign.target_count || 0} جهة/قروب</p></div><div className="flex flex-wrap gap-2">{campaign.state === 'draft' && <button type="button" onClick={() => void approve(campaign.id)} className={secondary}>اعتماد للمراجعة</button>}{campaign.state === 'approved' && <button type="button" onClick={() => void sendQuiet(campaign)} disabled={sendingCampaignId === campaign.id || !flags.send || !status.bridgeOnline} className={primary}>{sendingCampaignId === campaign.id ? 'يبدأ…' : 'إرسال هادئ'}</button>}{['queued', 'sending'].includes(campaign.state) && <button type="button" onClick={() => void stopQuiet(campaign.id)} className={secondary}>إيقاف</button>}</div></div>) : <p className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">لا توجد مسودات محلية بعد.</p>}</div></section>}
 
-      <section className="rounded-2xl border border-hair bg-canvas p-5 md:p-6"><p className="text-[.75rem] font-semibold uppercase text-accent">التشغيل المحلي</p><p className="mt-2 text-[.84rem] leading-relaxed text-soft">شغّل <code dir="ltr" className="rounded bg-wash px-1.5 py-0.5 text-[.75rem] text-ink">npm run agent:self-test</code> ثم أول مرة <code dir="ltr" className="rounded bg-wash px-1.5 py-0.5 text-[.75rem] text-ink">WHATSAPP_AGENT_BRIDGE=true npm run agent:start -- --phone=96597424400</code>. لمعرفة السر المحلي استخدم <code dir="ltr" className="rounded bg-wash px-1.5 py-0.5 text-[.75rem] text-ink">npm run agent:bridge-secret</code>. لا تضع السر أو جلسة واتساب في GitHub.</p></section>
+      {/* حُذف «التشغيل المحلي» بأمر الدكتور — إزعاجٌ بصريّ بلا فائدة. */}
     </div>
   )
 }

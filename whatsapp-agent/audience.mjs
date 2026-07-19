@@ -38,7 +38,28 @@ export function ensureAudienceSchema(db) {
     if (!has) db.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`)
   }
   db.run('CREATE INDEX IF NOT EXISTS idx_broadcast_members_list ON broadcast_members(list_id)')
+  purgeDiscoveredGroups(db)
   scrubPlainNumbers(db)
+}
+
+/**
+ * القروبات المسحوبة سابقاً تُمحى، ولا يُسحب بعدها شيء.
+ *
+ * كانت تظهر في «قوائمك» بأسمائها الغريبة وبـ«٠ شخصاً» — وهي ليست قوائم
+ * الدكتور بل مجموعاتٌ التقطها النظام من تلقاء نفسه.
+ *
+ * والعلامة الفارقة هي عمود jid لا عمود kind: القروب المسحوب يحمل jid
+ * مشفَّراً لمجموعة واتساب، بينما القائمة التي ينشئها الدكتور تتركه فارغاً.
+ * (ولا يصلح kind هنا لأن ALTER TABLE يملأ الصفوف القديمة بالقيمة الافتراضية،
+ * فتتنكّر القروبات في هيئة قوائم يدوية.)
+ */
+function purgeDiscoveredGroups(db) {
+  const strays = db.all('SELECT id FROM broadcast_lists WHERE jid IS NOT NULL')
+  for (const row of strays) {
+    db.run('DELETE FROM broadcast_members WHERE list_id=?', row.id)
+    db.run('DELETE FROM broadcast_lists WHERE id=?', row.id)
+  }
+  if (strays.length) db.addAudit('groups.purged', '', `مُحيت ${strays.length} مجموعة مسحوبة`)
 }
 
 /**

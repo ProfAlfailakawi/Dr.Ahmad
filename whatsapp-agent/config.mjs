@@ -41,7 +41,10 @@ export const BROADCAST_MIN_INTERVAL_SECONDS = Math.min(Math.max(Number(process.e
 export const RETENTION_DAYS = Math.max(7, Number(process.env.WHATSAPP_RETENTION_DAYS || 30))
 export const AZURE_STT_HARD_STOP_SECONDS = Math.max(60, Number(process.env.WHATSAPP_AZURE_STT_HARD_STOP_SECONDS || 4 * 60 * 60))
 export const AZURE_TTS_HARD_STOP_CHARS = Math.max(1000, Number(process.env.WHATSAPP_AZURE_TTS_HARD_STOP_CHARS || 400000))
-export const AUTO_REPLY_TRIGGERS = String(process.env.WHATSAPP_AUTO_REPLY_TRIGGERS || 'سؤال:,اسأل د. أحمد,اسأل الدكتور,د. أحمد,@دكتور')
+/* نداءات المساعد الصريحة. حُذفت «د. أحمد» و«@دكتور» لأن المُطبِّع يجرّدهما
+   من النقطة والرمز فتصيران «د احمد» و«دكتور» — و«دكتور» وحدها أكثر ما
+   يخاطب به الناسُ الدكتورَ، فكانت توقظ البوت على كل مُحيٍّ ومُسلِّم. */
+export const AUTO_REPLY_TRIGGERS = String(process.env.WHATSAPP_AUTO_REPLY_TRIGGERS || 'سؤال:,اسأل د. أحمد,اسأل الدكتور,اسال الدكتور')
   .split(',')
   .map((item) => item.trim())
   .filter(Boolean)

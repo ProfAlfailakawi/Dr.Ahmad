@@ -2,9 +2,10 @@ import { contentSummary, findContent, latestContent, normalizeArabic, searchCont
 import { AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUAL_TAKEOVER_MINUTES, MAX_MESSAGE_CHARS, TIME_ZONE, flags } from './config.mjs'
 import { hashOpaque } from './crypto.mjs'
 import { createReminder, parseReminderTime } from './reminders.mjs'
+import { applyBotRules, ensureBotRulesSchema, rememberSent, sign } from './bot-rules.mjs'
 
 export const INTENTS = Object.freeze({
-  LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_BOOK: 'LATEST_BOOK', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', UNKNOWN: 'UNKNOWN' })
+  LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_BOOK: 'LATEST_BOOK', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', LATEST_PAPER: 'LATEST_PAPER', WELCOME: 'WELCOME', MORE_LIKE_THIS: 'MORE_LIKE_THIS', COMPARE: 'COMPARE', ABOUT_TOPIC: 'ABOUT_TOPIC', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', UNKNOWN: 'UNKNOWN' })
 
 /* ملاحظة واجبة: النص يمرّ على normalizeArabic قبل المطابقة، وهو يحوّل
    ة→ه و أ/إ/آ→ا و ى→ي ويحذف الترقيم. فكل نمطٍ هنا يُكتب بالصورة المطبَّعة،
@@ -14,7 +15,13 @@ const patterns = [
   [INTENTS.STOP_MESSAGES, [/^(اوقف|وقف|ايقاف|لا ترسل|ما ابي تنبيهات|شيلني من القائمه|الغاء الاشتراك)/, 0.99]],
   [INTENTS.RESUME_MESSAGES, [/^(رجع الرسائل|فعل الجديد|اشترك مره ثانيه|ابي ارجع)/, 0.99]],
   [INTENTS.DELETE_PREFERENCES, [/(انس تفضيلاتي|امسح اللي تعرفه عني|احذف تفضيلاتي)/, 0.98]],
+  /* كلمة الدخول المنشورة في خانة «المعلومات» بواتساب — فكرة صديق الدكتور.
+     تُقرأ في اللحظة الصحيحة: وهم يفتحون محادثته. ولا يقولها صديقٌ مصادفةً،
+     ومن قالها فهو يسأل عن الموقع بالضبط — فالردّ صحيحٌ في الحالين. */
+  [INTENTS.WELCOME, [/(موقع|مكتبه|اصدارات|منصه)\s*(د|دكتور)?\s*احمد|(مقالات|ابحاث|كتب|اعمال)\s*(د|دكتور)\s*احمد|بوت\s*(د|دكتور)?\s*احمد/, 0.97]],
   [INTENTS.LATEST_ARTICLE, [/(اخر|احدث).*(مقال|مقاله)|مقاله جديده|شنو كتبت/, 0.95]],
+  /* «أبحاث الدكتور» — طلبها الدكتور صراحةً، ولا تُقال مصادفة في محادثة */
+  [INTENTS.LATEST_PAPER, [/(ابحاث|بحوث)\s*(الدكتور|د\s*احمد|احمد)?|(اخر|احدث)\s*\S*\s*(بحث|ابحاث)|الابحاث/, 0.94]],
   [INTENTS.LATEST_BOOK, [/(اخر|احدث|جديد)\s*\S*\s*(كتاب|الكتب)/, 0.94]],
   [INTENTS.LATEST_SELECTION, [/(اخر|احدث|جديد)\s*\S*\s*(مختارات)/, 0.94]],
   [INTENTS.LATEST_PODCAST, [/(اخر|احدث).*(بودكاست|حلقه)|اخر بودكاست/, 0.96]],
@@ -34,6 +41,10 @@ const patterns = [
   [INTENTS.REMIND_ME, [/(ذكرني|تذكير)/, 0.90]],
   [INTENTS.WEEKLY_DIGEST, [/(ملخص اسبوعي|النشره الاسبوعيه|نشره اسبوعيه)/, 0.94]],
   [INTENTS.HUMAN_RESPONSE_REQUIRED, [/(رايك|ماذا تري|هل تعتقد|ابي رايك)/, 0.82]],
+  /* داخل الجلسة يريد الناس المزيد والمقارنة والتنقّل — لا أوامر جافّة فقط */
+  [INTENTS.MORE_LIKE_THIS, [/^(غيره|غيرها|زدني|كمان|بعد|المزيد|عطني اكثر|شي ثاني|واحد ثاني)/, 0.93]],
+  [INTENTS.COMPARE, [/(قارن|الفرق بين|ايهما|وش الفرق|مقارنه بين)/, 0.92]],
+  [INTENTS.ABOUT_TOPIC, [/(عندك|عندكم|في|لديك)\s*(شي|شيء|مقال|بحث|كتاب|ماده)?\s*(عن|حول|بخصوص)/, 0.90]],
 ]
 
 const clean = (text) => normalizeArabic(String(text || '').slice(0, MAX_MESSAGE_CHARS))
@@ -194,6 +205,7 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
     case INTENTS.DELETE_PREFERENCES: clearPreferences(db, jid); return { ...classification, shouldRespond: true, text: 'حذفت تفضيلاتك المحلية. أبقيت فقط ما يلزم لاحترام إيقاف الرسائل إن طلبته.' }
     case INTENTS.LATEST_ARTICLE: return { ...classification, ...latestOf(db, 'article', 'أحدث مقالة') }
     case INTENTS.LATEST_BOOK: return { ...classification, ...latestOf(db, 'book', 'أحدث كتاب') }
+    case INTENTS.LATEST_PAPER: return { ...classification, ...latestOf(db, 'paper', 'أحدث بحث') }
     case INTENTS.LATEST_SELECTION: return { ...classification, ...latestOf(db, 'curated', 'أحدث مختارة') }
     case INTENTS.LATEST_PODCAST: return { ...classification, ...latestOf(db, 'podcast', 'أحدث حلقة') }
     case INTENTS.MISSED_CONTENT: {
@@ -211,11 +223,74 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
       const item = session?.content_id ? findContent(db, session.content_id) : latestContent(db, 'article', 1)[0]
       return item ? { ...classification, ...contentReply('الزبدة', item, `\n${contentSummary(item, 3)}`) } : { ...classification, text: 'أرسل عنوان المقالة أو اكتب: آخر مقالة، وأعطيك الزبدة في دقيقة.' }
     }
+    /* الترحيب: أول لقاءٍ بين الناس والخدمة. يعرض المدى كلَّه — لا المقالات
+       وحدها — لأن من يكتب كلمة الدخول قد يريد بحثاً أو كتاباً أو مقارنة. */
+    case INTENTS.WELCOME: {
+      const counts = ['article', 'paper', 'book', 'podcast'].map((kind) => ({
+        kind, n: Number(db.get('SELECT COUNT(*) c FROM content_items WHERE kind=?', kind)?.c || 0),
+      }))
+      const label = { article: 'مقالة', paper: 'بحثاً', book: 'كتاباً', podcast: 'حلقة' }
+      const have = counts.filter((c) => c.n).map((c) => `${c.n} ${label[c.kind]}`).join(' · ')
+      return {
+        ...classification,
+        text: `أهلاً بك. هذه مكتبة د. أحمد الفيلكاوي${have ? `\n${have}` : ''}\n\n`
+          + 'اكتب ما تريد بلغتك:\n'
+          + '• آخر مقال · آخر بحث · آخر كتاب · آخر بودكاست\n'
+          + '• عندك شي عن التقييم؟ (أو أي موضوع)\n'
+          + '• قارن بين … و…\n'
+          + '• لخّص لي · عندي دقيقة · فاجئني\n'
+          + '• اقرأ لي · استمع بصوت فهد أو نورة\n'
+          + '• بطاقة اقتباس · النشرة الأسبوعية\n\n'
+          + 'ولإيقاف الرسائل في أي وقت اكتب: أوقف الرسائل',
+      }
+    }
+
+    /* «غيره» و«زدني»: يفهمها البشر بلا شرح، ويجب أن يفهمها البوت داخل الجلسة */
+    case INTENTS.MORE_LIKE_THIS: {
+      const seed = session?.content_id ? findContent(db, session.content_id) : null
+      const query = seed ? `${seed.title} ${seed.keywords || ''}` : classification.normalized
+      const results = searchContent(db, query, { limit: 4 })
+        .filter((item) => !seed || item.id !== seed.id)
+        .slice(0, 3)
+      if (!results.length) return { ...classification, text: 'ما عندي شيءٌ قريبٌ منه الآن. اذكر موضوعاً وأبحث لك فيه.' }
+      return { ...classification, text: `وهذه قريبةٌ منه:\n${results.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}`, contentId: results[0].id }
+    }
+
+    /* المقارنة: يفصل الطرفين ثم يعرض ما عنده في كلٍّ منهما */
+    case INTENTS.COMPARE: {
+      const sides = classification.normalized
+        .replace(/^(قارن|مقارنه)\s*(بين)?\s*/, '')
+        .replace(/^(الفرق بين|وش الفرق بين|ايهما)\s*/, '')
+        .split(/\s+و\s*|\s+وبين\s+/)
+        .map((part) => part.trim()).filter((part) => part.length >= 2)
+      if (sides.length < 2) return { ...classification, text: 'قارن بين ماذا وماذا؟ اكتب مثلاً: قارن بين التقويم والامتحان.' }
+      const blocks = sides.slice(0, 2).map((side) => {
+        const found = searchContent(db, side, { limit: 2 })
+        return found.length
+          ? `في «${side}»:\n${found.map((item) => `• ${item.title}\n  ${item.url}`).join('\n')}`
+          : `في «${side}»: ما لقيت مادةً مخصّصة.`
+      })
+      return {
+        ...classification,
+        text: `${blocks.join('\n\n')}\n\nوالمقارنة نفسها رأيٌ يخصّ الدكتور — وهو يقرأ رسالتك.`,
+        contentId: searchContent(db, sides[0], { limit: 1 })[0]?.id,
+      }
+    }
+
+    case INTENTS.ABOUT_TOPIC:
     case INTENTS.SEARCH_TOPIC:
     case INTENTS.SIMILAR_CONTENT: {
-      const results = searchContent(db, classification.normalized, { limit: 3 })
+      /* «عندك شي عن التقييم؟» — نحذف حشو السؤال ونبحث في الموضوع نفسه */
+      const query = classification.normalized
+        .replace(/^(عندك|عندكم|لديك|في)\s*(شي|شيء|مقال|بحث|كتاب|ماده)?\s*(عن|حول|بخصوص)\s*/, '')
+        .replace(/[؟?]/g, '').trim() || classification.normalized
+      const results = searchContent(db, query, { limit: 3 })
       if (!results.length) return { ...classification, needsHuman: true, text: 'ما لقيت تطابقًا دقيقًا في أرشيف الموقع. اذكر كلمة أخرى أو اختر نوع المادة.' }
-      return { ...classification, text: `أقرب المواد لسؤالك:\n${results.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}`, contentId: results[0].id }
+      return {
+        ...classification,
+        text: `أقرب المواد لسؤالك:\n${results.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}\n\nاكتب «غيره» لمزيد، أو «لخّص» للأول.`,
+        contentId: results[0].id,
+      }
     }
     case INTENTS.LISTEN_FAHED:
     case INTENTS.LISTEN_NOURA:
@@ -252,7 +327,9 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
  * فيجري الحوار بعدها طبيعياً وحرّاً داخل الجلسة.
  */
 const OPENS_DOOR = new Set([
+  INTENTS.WELCOME,                                   // كلمة الدخول المنشورة
   INTENTS.LATEST_ARTICLE, INTENTS.LATEST_BOOK, INTENTS.LATEST_PODCAST, INTENTS.LATEST_SELECTION,
+  INTENTS.LATEST_PAPER,                              // «أبحاث الدكتور»
   INTENTS.QUOTE_CARD, INTENTS.WEEKLY_DIGEST, INTENTS.ONE_MINUTE, INTENTS.SURPRISE_ME, INTENTS.HELP,
 ])
 
@@ -267,7 +344,7 @@ function sessionAlive(session) {
   return Date.now() - new Date(last).getTime() < SESSION_HOURS * 3600 * 1000
 }
 
-export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, explicitContentSession = false }) {
+export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, explicitContentSession = false, hasMedia = false, at = new Date() }) {
   if (!jid || isSuppressed(db, jid)) return { allowed: false, reason: 'suppressed' }
   const session = pendingSession(db, jid)
   /* كتب الدكتور بيده: صمتٌ فوريّ حتى تنقضي المدة */
@@ -276,6 +353,11 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
   const { intent, confidence } = classifyIntent(text)
   /* أوامر الخصوصية تُطاع دائماً وفي كل حال */
   if (intent === INTENTS.STOP_MESSAGES || intent === INTENTS.RESUME_MESSAGES || intent === INTENTS.DELETE_PREFERENCES) return { allowed: true, reason: 'privacy-command' }
+
+  /* قواعد الأدب: تسكته أحياناً رغم أن الباب مفتوح — الطلب الإنسانيّ،
+     وساعات الليل، والوسائط، والإكثار. ولا تنبيه في شيءٍ منها بأمر الدكتور. */
+  const manners = applyBotRules({ db, jid, normalizedText: classifyIntent(text).normalized, hasMedia, at })
+  if (!manners.allowed) return { allowed: false, reason: manners.reason }
 
   /* الباب مفتوح: حوارٌ طبيعيّ بلا أوامر */
   if (isReplyToAgent || explicitContentSession || sessionAlive(session)) return { allowed: true, reason: 'content-session' }
@@ -290,17 +372,30 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
   return { allowed: false, reason: 'personal-chat-default' }
 }
 
-export function handleIncoming({ db, jid, text, isReplyToAgent = false, explicitContentSession = false }) {
-  const gate = shouldRespondToMessage({ db, jid, text, isReplyToAgent, explicitContentSession })
+export function handleIncoming({ db, jid, text, isReplyToAgent = false, explicitContentSession = false, hasMedia = false, at = new Date() }) {
+  ensureBotRulesSchema(db)
+  const gate = shouldRespondToMessage({ db, jid, text, isReplyToAgent, explicitContentSession, hasMedia, at })
+  const session = db.get('SELECT * FROM chat_sessions WHERE jid=?', db.jidKey(jid))
   if (!gate.allowed) return { ...gate, shouldRespond: false }
-  const response = handleIntent({ db, jid, input: text })
+  const response = handleIntent({ db, jid, input: text, session })
+  /* الباب انفتح بأمرٍ صريح: تُفتح الجلسة ولو لم يكن في الردّ مادة — وإلا
+     رحّبنا بالقادم ثم صمتنا عن سؤاله التالي، وهو أسوأ من ألا نرحّب. */
+  if (gate.opensSession && !response.contentId) {
+    const stamp = new Date().toISOString()
+    db.run('INSERT INTO chat_sessions(jid,mode,opened_at,last_user_at,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(jid) DO UPDATE SET mode=excluded.mode,last_user_at=excluded.last_user_at,updated_at=excluded.updated_at', db.jidKey(jid), 'content-session', stamp, stamp, stamp)
+  }
   if (response.contentId) {
     const now = new Date().toISOString()
     db.run('INSERT INTO chat_sessions(jid,mode,content_id,opened_at,last_user_at,updated_at) VALUES(?,?,?,?,?,?) ON CONFLICT(jid) DO UPDATE SET mode=excluded.mode,content_id=excluded.content_id,last_user_at=excluded.last_user_at,updated_at=excluded.updated_at', db.jidKey(jid), 'content-session', response.contentId, now, now, now)
     const item = findContent(db, response.contentId)
     if (item?.date) savePreference(db, jid, { lastContentCursor: item.date })
+    rememberSent(db, jid, response.contentId)   // فلا يُعاد عليه ما أُرسل
   }
-  return { ...gate, ...response, shouldRespond: true }
+  /* التوقيع: من يراسل الدكتور يظنّ أنه يكلّمه هو. أما ردود الخصوصية
+     («تم، لن تصلك رسائل») فإقرارٌ إجرائيّ لا يُنسب لأحد، فلا يُوقَّع. */
+  const isPrivacyReply = gate.reason === 'privacy-command'
+  const signed = sign(response.text || '', { skip: isPrivacyReply })
+  return { ...gate, ...response, text: signed, shouldRespond: true }
 }
 
 export function describeTimeZone() { return TIME_ZONE }

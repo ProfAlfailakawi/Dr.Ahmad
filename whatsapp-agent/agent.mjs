@@ -3,11 +3,12 @@ import path from 'node:path'
 import { BRIDGE_PORT, BRIDGE_SECRET_MIN_LENGTH, BROADCAST_DEFAULT_INTERVAL_SECONDS, BROADCAST_MIN_INTERVAL_SECONDS, HEARTBEAT_INTERVAL_MS, HEARTBEAT_STALE_MS, MANUAL_TAKEOVER_MINUTES, MAX_CAMPAIGN_TARGETS, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, projectRoot, redactError, redactJid } from './config.mjs'
 import { openDatabase } from './db.mjs'
 import { syncContentIndex } from './content-index.mjs'
-import { handleIncoming, handleIntent, markManualTakeover, setSuppression } from './intent-engine.mjs'
+import { handleIncoming, handleIntent, markManualTakeover, setSuppression, shouldRespondToMessage } from './intent-engine.mjs'
 import { MockTransport, createWhatsAppTransport } from './transport.mjs'
 import { randomToken } from './crypto.mjs'
 import { createReminder } from './reminders.mjs'
 import { startLocalBridge } from './bridge.mjs'
+import { isQuietHour } from './bot-rules.mjs'
 import { addContactByPhone, addMembers, absorbContacts, createList, deleteList, ensureAudienceSchema, jidOf, listContacts, listLists, listMembers, personalize, previewFor, removeMember, renameList, resolveAudience, setNickname, vocativeOf } from './audience.mjs'
 
 function safeText(text) { return String(text || '').slice(0, MAX_MESSAGE_CHARS).trim() }
@@ -175,30 +176,10 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     membersReadable: Boolean(row.members_readable),
     discoveredAt: row.discovered_at,
   }))
-  const discoverGroups = async () => {
-    if (!state.transport) throw new Error('الوكيل غير مشغّل')
-    if (state.transport.getConnectionStatus?.() !== 'connected') throw new Error('اربط واتساب أولًا حتى أستطيع قراءة القروبات من الجلسة المحلية.')
-    if (typeof state.transport.discoverGroups !== 'function') return { groups: listBroadcastGroups(), refreshed: false, reason: 'transport-does-not-support-groups' }
-    const groups = await state.transport.discoverGroups()
-    const now = new Date().toISOString()
-    for (const group of groups || []) {
-      if (!group?.jid || !String(group.jid).endsWith('@g.us')) continue
-      const id = db.jidKey(group.jid)
-      db.run(
-        `INSERT INTO broadcast_lists(id,name,jid,member_count,members_readable,discovered_at)
-         VALUES(?,?,?,?,?,?)
-         ON CONFLICT(id) DO UPDATE SET name=excluded.name,jid=excluded.jid,member_count=excluded.member_count,members_readable=excluded.members_readable,discovered_at=excluded.discovered_at`,
-        id,
-        String(group.name || 'مجموعة واتساب').slice(0, 120),
-        db.encryptJid(group.jid),
-        Number(group.memberCount || 0),
-        group.membersReadable ? 1 : 0,
-        now,
-      )
-    }
-    db.addAudit('groups-discovered', 'local', `count=${groups?.length || 0}`)
-    return { groups: listBroadcastGroups(), refreshed: true }
-  }
+  /* سحب القروبات ملغى بأمر الدكتور: القروب يكشف أرقام الناس بعضهم لبعض،
+     وردٌّ واحد فيه يزعج مئتين. والقوائم يبنيها هو بنفسه من دفتر الأسماء.
+     أُبقيت الدالة لئلا ينكسر نداءٌ قديم، وصارت لا تفعل شيئاً. */
+  const discoverGroups = async () => ({ groups: [], refreshed: false, reason: 'group-discovery-disabled' })
   const manualTakeover = (jid, minutes = MANUAL_TAKEOVER_MINUTES) => {
     markManualTakeover(db, jid, minutes)
     db.addAudit('manual-takeover', db.jidKey(jid), `minutes=${minutes}`)
@@ -283,15 +264,38 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
       enabled: Boolean(payload.enabled),
     })
   }
-  const simulateReply = ({ text, jid = 'simulator@s.whatsapp.net' } = {}) => {
-    const response = handleIntent({ db, jid, input: safeText(text), session: null })
+  /* المحاكاة كانت تعرض ما سيقوله البوت وتتجاهل السؤال الأهم: هل يتكلم أصلاً؟
+     فأوهمت أن «دكتور» تجلب ثلاث مقالات، بينما البوابة تُسكته عليها. الآن
+     تُستشار البوابة أولاً، ولا يُعرض نصُّ ردٍّ لن يخرج أبداً. */
+  const REASONS = {
+    'personal-chat-default': 'كلامٌ عابر — لا يفتح الباب',
+    'private-safe-mode': 'كلامٌ عابر — لا يفتح الباب',
+    'command-opens-door': 'أمرٌ معروف يفتح الباب',
+    'content-session': 'داخل جلسةٍ مفتوحة',
+    'privacy-command': 'أمر خصوصية — يُطاع دائماً',
+    'allowlisted-contact': 'رقمٌ في قائمتك البيضاء',
+    'assistant-trigger': 'نداءٌ صريح للمساعد',
+    'suppressed': 'طلب إيقاف الرسائل',
+    'manual-takeover': 'أنت تتحدث معه الآن',
+  }
+  const simulateReply = ({ text, jid = 'simulator@s.whatsapp.net', inSession = false, hasMedia = false } = {}) => {
+    const clean = safeText(text)
+    /* المحاكاة تُقيَّم على وقتٍ نهاريّ ثابت، وإلا ظهر كل شيء «صامتاً» لو
+       جرّبها الدكتور بعد منتصف الليل فظنّ البوت معطوباً. وساعةُ الصمت
+       الحقيقية تُبلَّغ على حدة بدل أن تحجب الحكم. */
+    const daytime = new Date(); daytime.setHours(12, 0, 0, 0)
+    const gate = shouldRespondToMessage({ db, jid, text: clean, explicitContentSession: Boolean(inSession), hasMedia, at: daytime })
+    const response = handleIntent({ db, jid, input: clean, session: null })
     return {
+      willReply: Boolean(gate.allowed),
+      why: REASONS[gate.reason] || gate.reason,
+      quietNow: isQuietHour(),   // «سيردّ — لكن الآن ساعات صمت»
       intent: response.intent,
       confidence: response.confidence,
       needsHuman: Boolean(response.needsHuman),
       ruleId: response.ruleId || null,
       ruleName: response.ruleName || null,
-      preview: response.text || '',
+      preview: gate.allowed ? (response.text || '') : '',
     }
   }
   const requestRestart = () => {

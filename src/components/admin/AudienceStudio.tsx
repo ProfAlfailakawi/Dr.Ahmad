@@ -22,7 +22,7 @@ type Sample = { name: string; body: string }
 
 type Request = <T,>(path: string, init?: RequestInit) => Promise<T>
 
-export default function AudienceStudio({ request, onNotice }: { request: Request; onNotice: (text: string) => void }) {
+export default function AudienceStudio({ request, onNotice, campaigns }: { request: Request; onNotice: (text: string) => void; campaigns?: React.ReactNode }) {
   const [lists, setLists] = useState<BroadcastList[]>([])
   const [activeId, setActiveId] = useState('')
   const [members, setMembers] = useState<Member[]>([])
@@ -195,8 +195,11 @@ export default function AudienceStudio({ request, onNotice }: { request: Request
           {active ? (
             <>
               <div className="grid gap-3 rounded-xl border border-hair bg-canvas p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <span className="font-semibold text-ink">في «{active.name}» — {members.length} شخصاً</span>
+                {/* الاسم يُعزل في عنصره: اسمٌ لاتينيّ داخل جملة عربية يقلب
+                    ترتيبها فتقرأ «في «.. خاص 0 — «..private .. شخصاً». */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold text-ink" dir="auto">{active.name}</span>
+                  <span className="text-[.78rem] text-soft">— {members.length} شخصاً</span>
                 </div>
                 {members.length === 0 && <p className="text-[.78rem] text-soft">القائمة فارغة. اختر من دفترك بالأسفل.</p>}
                 <div className="flex flex-wrap gap-2">
@@ -288,6 +291,10 @@ export default function AudienceStudio({ request, onNotice }: { request: Request
           </div>
         </div>
       </div>
+
+      {/* الحملات كانت صندوقاً منفصلاً فبدت بلا معنى: تبني القائمة هنا وترسل
+          هناك. أُدخلت ذيلاً للاستوديو فصارت الرحلة واحدة — اكتب، عاين، أرسل. */}
+      {campaigns && <div className="mt-5 border-t border-hair pt-5">{campaigns}</div>}
     </section>
   )
 }

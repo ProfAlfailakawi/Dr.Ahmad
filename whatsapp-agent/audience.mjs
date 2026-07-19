@@ -74,15 +74,38 @@ export function displayNameOf(row) {
   return row.nickname || row.wa_name || row.display_name || `••${String(row.phone || '').slice(-4)}`
 }
 
+/* الألقاب التي يكتبها الدكتور قبل الاسم — تُصان ولا تُقتطع */
+/* المنقوط يقبل الالتصاق («د.عبد الله»)، والكلمة تلزمها مسافة كيلا نبتر
+   «الشيخة» إلى «الشيخ» + «ة». */
+const HONORIFIC = /^(?:(?:[أا]\s*\.?\s*د\s*\.|د\s*\.|[أا]\s*\.|م\s*\.)\s*|(?:دكتورة?|الدكتورة?|[أا]ستاذة?|ال[أا]ستاذة?|مهندسة?|المهندسة?|الشيخة?|الحاجة?|المعلمة?|ال[أا]خ|ال[أا]خت)\s+)/
+
+/* رؤوس الأسماء المركّبة: «عبد» و«أبو» و«أم» لا تقوم وحدها أبداً */
+const COMPOUND_HEAD = /^(?:عبد|عبدال|أبو|ابو|أبا|ابا|أم|ام|ابن|بن|ذو|أبي|ابي)$/
+
 /**
- * كنية النداء في الرسالة. تُفضّل اللقب لأنه ما يعرفه الدكتور عن الشخص،
- * وتسقط إلى الاسم الأول من واتساب — ولا نستعمل الرقم أبداً في نداءٍ بشري.
+ * كنية النداء في الرسالة — الاسم الأول وحده، لكن بأدبٍ عربيّ:
+ *
+ *   «د. عبد الرزاق العلي»      → «د. عبد الرزاق»   (لا «د. عبد»!)
+ *   «الدكتور عبد اللطيف الشمري» → «الدكتور عبد اللطيف»
+ *   «خالد العنزي»              → «خالد»
+ *   «أبو خالد»                 → «أبو خالد»
+ *
+ * قاعدتان: اللقب الذي كتبه الدكتور يبقى، و«عبد» لا تُفصل عمّا بعدها —
+ * فمناداة رجلٍ بـ«عبد» وحدها إساءةٌ لا اختصار.
  */
 export function vocativeOf(row) {
-  const name = row.nickname || row.wa_name || row.display_name || ''
-  const clean = String(name).replace(/[‎‏]/g, '').trim()
-  if (!clean || /^\+?\d[\d\s-]*$/.test(clean)) return ''
-  return clean.split(/\s+/).slice(0, 2).join(' ')
+  const raw = String(row.nickname || row.wa_name || row.display_name || '').replace(/[‎‏]/g, '').replace(/\s+/g, ' ').trim()
+  if (!raw || /^\+?\d[\d\s-]*$/.test(raw)) return ''      // رقمٌ لا اسم: لا نُنادي به إنساناً
+
+  let title = ''
+  let rest = raw
+  const matched = rest.match(HONORIFIC)
+  if (matched) { title = matched[0].trim(); rest = rest.slice(matched[0].length).trim() }
+
+  const words = rest.split(' ').filter(Boolean)
+  if (!words.length) return title
+  const first = COMPOUND_HEAD.test(words[0]) && words[1] ? `${words[0]} ${words[1]}` : words[0]
+  return title ? `${title} ${first}` : first
 }
 
 /* ═══ التقاط جهات الاتصال من واتساب ═══ */

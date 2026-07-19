@@ -3,6 +3,7 @@ import { AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUAL_TAKEOVER_MINUTES, MAX
 import { hashOpaque } from './crypto.mjs'
 import { createReminder, parseReminderTime } from './reminders.mjs'
 import { applyBotRules, ensureBotRulesSchema, rememberSent, sign } from './bot-rules.mjs'
+import { answer as scholarAnswer } from './scholar.mjs'
 
 export const INTENTS = Object.freeze({
   LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_BOOK: 'LATEST_BOOK', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', LATEST_PAPER: 'LATEST_PAPER', WELCOME: 'WELCOME', MORE_LIKE_THIS: 'MORE_LIKE_THIS', COMPARE: 'COMPARE', ABOUT_TOPIC: 'ABOUT_TOPIC', UPCOMING_EVENTS: 'UPCOMING_EVENTS', ABOUT_DOCTOR: 'ABOUT_DOCTOR', CURATED_PICKS: 'CURATED_PICKS', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', UNKNOWN: 'UNKNOWN' })
@@ -192,6 +193,19 @@ export function clearPreferences(db, jid) {
   db.addAudit('delete-preferences', hashOpaque(jid))
 }
 
+/* متون المقالات لمحرك الاستشهاد. تُقرأ من قاعدة البوت نفسها (لا شبكة، لا نموذج)
+   وتُحفظ دقيقتين: الفهرس لا يتغيّر بين رسالتين، وقراءة ١٦٤ متناً مع كل حرفٍ
+   يكتبه سائلٌ بذخٌ بلا طائل. */
+let corpusCache = { at: 0, items: [] }
+const CORPUS_TTL_MS = 120_000
+
+export function articleCorpus(db, now = Date.now()) {
+  if (now - corpusCache.at < CORPUS_TTL_MS && corpusCache.items.length) return corpusCache.items
+  const rows = db.all("SELECT slug, title, url, date, body FROM content_items WHERE kind='article' AND body IS NOT NULL AND length(body) > 200")
+  corpusCache = { at: now, items: rows.map((row) => ({ ...row, kind: 'article' })) }
+  return corpusCache.items
+}
+
 export function handleIntent({ db, jid = '', input, session = pendingSession(db, jid) }) {
   const customRule = matchReplyRule(db, input)
   if (customRule) return customRuleReply(db, customRule, input)
@@ -303,6 +317,14 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
       const query = classification.normalized
         .replace(/^(عندك|عندكم|لديك|في)\s*(شي|شيء|مقال|بحث|كتاب|ماده)?\s*(عن|حول|بخصوص)\s*/, '')
         .replace(/[؟?]/g, '').trim() || classification.normalized
+      /* المكتبة التي تمشي: نُجيب بكلام الدكتور نفسه لا برابطٍ يُحال إليه.
+         وإن لم يجد المحرك شاهداً — أو أسقطته البوابة — رجعنا إلى قائمة الروابط.
+         فالتنازل يكون عن الطموح دائماً، لا عن الأمانة. */
+      const scholar = scholarAnswer(articleCorpus(db), query)
+      if (scholar.verified && scholar.citations.length) {
+        return { ...classification, text: scholar.text, contentId: `article:${scholar.citations[0].slug}` }
+      }
+
       const results = searchContent(db, query, { limit: 3 })
       if (!results.length) return { ...classification, needsHuman: true, text: 'ما لقيت تطابقًا دقيقًا في أرشيف الموقع. اذكر كلمة أخرى أو اختر نوع المادة.' }
       return {

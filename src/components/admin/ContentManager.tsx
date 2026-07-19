@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getDb, getFirebaseApp } from '../../lib/firebase'
 import { useCmsContent } from '../../lib/content'
 import { publicationGate, topicMemory } from '../../lib/intelligence'
+import { describe as describeEcho, findEchoes, indexPast } from '../../lib/echoes'
 import { getArticleBody } from '../../lib/article-bodies'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { normalizeArabicTypography } from '../../lib/arabic-typography'
@@ -550,6 +551,20 @@ function Editor({
     }
   }
 
+  /* فهرس جُمل الأرشيف يُبنى مرّة لكل تبدّلٍ في المكتبة، لا مع كل حرفٍ يكتبه
+     الدكتور — ألفٌ وخمسمئة جملةٍ تُقطَّع مع كل ضغطة مفتاح تُجمّد اللوحة. */
+  const echoIndex = useMemo(
+    () => indexPast(allItems
+      .filter((item) => item.slug !== current?.slug && item.body)
+      .map((item) => ({ slug: item.slug, title: item.title, iso: item.iso, body: item.body }))),
+    [allItems, current?.slug],
+  )
+
+  const echoes = useMemo(
+    () => (kind === 'article' && (form.body || '').trim().length > 120 ? findEchoes(form.body || '', echoIndex) : []),
+    [echoIndex, form.body, kind],
+  )
+
   const articleMemory = useMemo(() => {
     if (kind !== 'article') return null
     const comparable = allItems.filter((item) => item.slug !== current?.slug)
@@ -686,6 +701,29 @@ function Editor({
                       </ul>
                     </div>
                   </div>
+
+                  {/* أصداء الأرشيف: العناوين المشابهة أعلاه لا تُقلق كاتباً كتب
+                      مئةً وستين مقالاً — الجملة المكرّرة هي التي تُقلق. هنا نضع
+                      نصّه القديم بحرفه إلى جانب الجديد، ولا نحكم عليه بشيء. */}
+                  {echoes.length > 0 && (
+                    <div className="mt-3 rounded-xl border border-accent/30 bg-canvas p-3">
+                      <p className="text-[.75rem] font-semibold text-accent">
+                        ماذا لو نشرتَه اليوم؟ — {echoes.length === 1 ? 'جملةٌ لها صدى' : `${echoes.length} جُمَل لها صدى`} في أرشيفك
+                      </p>
+                      <ul className="mt-2 grid gap-3">
+                        {echoes.map((echo) => (
+                          <li key={`${echo.slug}:${echo.past.slice(0, 24)}`} className="border-r-2 border-accent/40 pr-3">
+                            <p className="text-[.7rem] text-soft">
+                              {describeEcho(echo.overlap)} · {echo.year} · «{echo.title}»
+                            </p>
+                            <p className="mt-1 text-[.78rem] leading-relaxed text-ink">اليوم: {echo.draft}</p>
+                            <p className="mt-1 text-[.78rem] leading-relaxed text-soft">سابقاً: {echo.past}</p>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="mt-3 text-[.7rem] text-soft">الحكم لك: قد يكون التكرار قصداً — وقد يكون سهواً.</p>
+                    </div>
+                  )}
                 </div>
               )}
               <div className="flex flex-wrap items-center gap-3">

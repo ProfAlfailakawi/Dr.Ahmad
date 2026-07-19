@@ -15,7 +15,7 @@ const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.9
 const secondary = 'rounded-full border border-hair px-4 py-2 text-[.8rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-45'
 const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45'
 
-type Contact = { id: string; name: string; nickname: string; waName: string; tail: string; suppressed: boolean }
+type Contact = { id: string; name: string; nickname: string; waName: string; tail: string; suppressed: boolean; lists: number }
 type BroadcastList = { id: string; name: string; note: string; kind: string; count: number }
 type Member = { id: string; name: string; vocative: string; nickname: string; tail: string; suppressed: boolean }
 type Sample = { name: string; body: string }
@@ -33,6 +33,7 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
   const [manualPhone, setManualPhone] = useState('')
   const [manualName, setManualName] = useState('')
   const [bulk, setBulk] = useState('')
+  const [newcomers, setNewcomers] = useState<{ id: string; name: string; tail: string }[]>([])
   const [draft, setDraft] = useState('{تحية} {الاسم}،\n\nنشرتُ اليوم مقالاً جديداً، أرجو أن ينفعك:\n')
   const [samples, setSamples] = useState<Sample[]>([])
   const [reach, setReach] = useState<{ willSend: number; suppressed: number } | null>(null)
@@ -264,6 +265,24 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
               {picked.size > 0 && <button type="button" className={primary} disabled={busy} onClick={addPicked}>أضف {picked.size} إلى «{active?.name || '…'}»</button>}
             </div>
             <input className={input} value={search} placeholder="ابحث باسمٍ أو بآخر أربعة أرقام…" onChange={(e) => setSearch(e.target.value)} />
+            {/* الجدد بعد آخر استيراد — يظلّون بارزين حتى تُدخلهم قائمة، فلا
+                يضيع أحدٌ في دفترٍ من مئات الأسماء. */}
+            {newcomers.length > 0 && (
+              <div className="grid gap-2 rounded-xl border border-accent/40 bg-canvas px-4 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[.82rem] font-semibold text-ink">جديدٌ في هذا الاستيراد — {newcomers.length}</span>
+                  <button type="button" className="text-[.75rem] text-soft hover:text-accent" onClick={() => setNewcomers([])}>أخفِ</button>
+                </div>
+                <p className="text-[.72rem] text-soft">هؤلاء لم يدخلوا أي قائمة بعد. اخترهم من الأسفل وأضفهم.</p>
+                <div className="flex flex-wrap gap-2">
+                  {newcomers.map((person) => (
+                    <span key={person.id} className="rounded-full border border-accent/40 bg-wash px-3 py-1.5 text-[.78rem] text-ink">
+                      {person.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="flex flex-wrap gap-2">
               {contacts.map((contact) => {
                 const already = inList.has(contact.id)
@@ -273,6 +292,10 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                     className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-[.78rem] transition-colors ${already ? 'border-hair bg-wash text-soft' : isPicked ? 'border-accent bg-accent text-white' : 'border-hair bg-wash text-ink'}`}>
                     <button type="button" disabled={already} onClick={() => toggle(contact.id)} title={already ? 'في القائمة أصلاً' : 'اختره'}>
                       {contact.name}{already && ' ✓'}
+                      {/* في كم قائمةٍ هو؟ الصفر يعني أنه في دفترك ولم يُضَف بعد. */}
+                      <span className={`mr-1.5 text-[.7rem] ${contact.lists ? (isPicked ? 'text-white/80' : 'text-accent') : 'text-soft/70'}`}>
+                        {contact.lists || '٠'}
+                      </span>
                     </button>
                     <button type="button" className={isPicked ? 'text-white/70' : 'text-soft hover:text-accent'} title="اكتب لقباً" onClick={() => rename(contact.id, contact.nickname)}>✎</button>
                   </span>
@@ -341,12 +364,14 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                   <span className="text-[.72rem] text-soft">{bulk.split('\n').filter((line) => line.trim()).length} سطراً</span>
                   <button type="button" className={primary} disabled={busy || !bulk.trim()}
                     onClick={() => void act('أُضيفوا إلى دفترك.', async () => {
-                      const result = await request<{ added: number; skipped: { line: string; why: string }[] }>('/admin/audience/import', {
+                      const result = await request<{ added: number; known: number; newcomers: { id: string; name: string; tail: string }[]; skipped: { line: string; why: string }[] }>('/admin/audience/import', {
                         method: 'POST', body: JSON.stringify({ text: bulk }),
                       })
                       setBulk('')
+                      setNewcomers(result.newcomers || [])
                       await loadContacts(search)
-                      if (result.skipped?.length) onNotice(`أُضيف ${result.added} · تُخطّي ${result.skipped.length} سطراً بلا رقم.`)
+                      onNotice(`جديد ${result.added} · معروفٌ من قبل ${result.known}`
+                        + (result.skipped?.length ? ` · تُخطّي ${result.skipped.length} بلا رقم` : ''))
                     })}>
                     أضفهم كلهم
                   </button>

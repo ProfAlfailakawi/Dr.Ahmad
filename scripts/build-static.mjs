@@ -119,11 +119,32 @@ try {
     const { getFirestore } = await import('firebase-admin/firestore')
     const app = getApps()[0] || initializeApp({ credential: cert(JSON.parse(readFileSync(saPath, 'utf8'))) })
     const snapshot = await getFirestore(app).collection('content_overrides').get()
+    /* قاعدة الإسقاط هنا يجب أن تطابق قاعدة اللوحة حرفاً بحرف (src/lib/cms.ts)،
+       وإلا اختلف عدّان لمكتبةٍ واحدة — وهذا ما حدث: اللوحة تعدّ ١٤٣ والموقع
+       يعلن ١٦٤، لأن البناء كان يعرف «محذوف» وحده ويجهل «مخفيّ» و«مسودة»
+       و«مجدولٌ لم يحن وقته». */
+    const scheduledMs = (value) => {
+      if (!value) return 0
+      const ms = Date.parse(typeof value === 'string' ? value : value?.toDate?.() || value)
+      return Number.isNaN(ms) ? 0 : ms
+    }
+    const isPublic = (data) => {
+      const status = String(data?.status || 'published')
+      if (status === 'draft') return false
+      const at = scheduledMs(data?.scheduledAt)
+      if (status === 'scheduled') return at > 0 && at <= Date.now()
+      if (at > Date.now()) return false
+      return status === 'published' || !status
+    }
+    const reasons = { deleted: 0, hidden: 0, unpublished: 0 }
     snapshot.forEach((document) => {
       const data = document.data()
-      if (data?.deleted === true) deletedKeys.add(document.id)
+      if (data?.deleted === true) { deletedKeys.add(document.id); reasons.deleted += 1; return }
+      if (data?.hidden === true) { deletedKeys.add(document.id); reasons.hidden += 1; return }
+      if (document.id.startsWith('article:') && !isPublic(data)) { deletedKeys.add(document.id); reasons.unpublished += 1 }
     })
-    console.log(`قرارات الحذف من اللوحة: ${deletedKeys.size} عنصراً لن يُبنى ولا يُحصى.`)
+    console.log(`قرارات اللوحة: ${deletedKeys.size} عنصراً لن يُبنى ولا يُحصى `
+      + `(محذوف ${reasons.deleted} · مخفيّ ${reasons.hidden} · مسودة أو مجدول ${reasons.unpublished}).`)
   } else {
     console.log('⚠ بناء بلا مفاتيح Firestore: لن تُطبَّق قرارات الحذف من اللوحة.')
   }

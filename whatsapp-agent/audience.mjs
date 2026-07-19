@@ -176,6 +176,8 @@ export function listContacts(db, { search = '', limit = 500 } = {}) {
       waName: row.wa_name || row.display_name || '',
       tail: String(row.phone || '').slice(-4),
       suppressed: Boolean(row.suppressed),
+      /* في كم قائمةٍ هو؟ صفرٌ يعني أنه في دفترك ولم يدخل قائمةً بعد. */
+      lists: Number(db.get('SELECT COUNT(*) c FROM broadcast_members WHERE jid=?', row.id)?.c || 0),
     }))
     .filter((row) => !term || row.name.toLowerCase().includes(term) || row.tail.includes(term))
     .slice(0, limit)
@@ -194,9 +196,15 @@ export function setNickname(db, contactId, nickname) {
  * نقبل الرقم الكويتي بلا مفتاح دولة ونكمّله.
  */
 export function addContactByPhone(db, phone, nickname = '') {
-  let digits = String(phone || '').replace(/\D/g, '')
+  /* الرقم الواحد يُكتب بصيغٍ شتّى — «٩٩٠٠١١٢٢» و«+965 9900 1122» و«00965…»
+     و«(965) 9900-1122». تُوحَّد كلها إلى صورةٍ واحدة، وإلا صار الشخص الواحد
+     شخصين في الدفتر وتلقّى الرسالة مرتين. */
+  let digits = String(phone || '')
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))   // أرقام عربية → غربية
+    .replace(/\D/g, '')
   if (!digits) return { ok: false, error: 'الرقم فارغ' }
-  if (digits.length === 8) digits = `965${digits}`            // كويتي بلا مفتاح
+  digits = digits.replace(/^00+/, '')                             // بادئة الاتصال الدولي
+  if (digits.length === 8) digits = `965${digits}`                // كويتي بلا مفتاح
   if (digits.length < 10) return { ok: false, error: 'الرقم غير مكتمل' }
   const jid = `${digits}@s.whatsapp.net`
   const id = db.jidKey(jid)
@@ -253,6 +261,7 @@ export function importContacts(db, text, { listId = '' } = {}) {
   const source = /BEGIN:VCARD/i.test(raw) ? parseVCards(raw).join('\n') : raw
   const lines = source.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
   const added = []
+  const known = []
   const skipped = []
   for (const line of lines) {
     /* الرقم أطول تتابع أرقام في السطر (مع تجاهل الفواصل داخله) */
@@ -269,11 +278,24 @@ export function importContacts(db, text, { listId = '' } = {}) {
       .replace(/\s+/g, ' ').trim()
     const result = addContactByPhone(db, digits, name)
     if (!result.ok) { skipped.push({ line, why: result.error }); continue }
-    added.push(result.id)
+    /* الاستيراد الثاني لا يكرّر أحداً: من كان في الدفتر يُعدّ «معروفاً»
+       ويُترك كما هو (بلقبه الذي كتبتَه)، والجديد وحده يُجمع لتراه. */
+    if (result.existed) known.push(result.id); else added.push(result.id)
   }
   if (listId && added.length) addMembers(db, listId, added)
-  db.addAudit('contacts.import', listId || '', `أُضيف ${added.length} · تُخطّي ${skipped.length}`)
-  return { ok: true, added: added.length, skipped }
+  db.addAudit('contacts.import', listId || '', `جديد ${added.length} · معروف ${known.length} · تُخطّي ${skipped.length}`)
+  return {
+    ok: true,
+    added: added.length,
+    known: known.length,
+    skipped,
+    /* الجدد بأسمائهم — يعرضهم الاستوديو على حدة كي يعرف الدكتور من لم
+       يُضَف إلى قائمةٍ بعد. */
+    newcomers: added.map((id) => {
+      const row = db.get('SELECT * FROM contacts WHERE id=?', id)
+      return { id, name: displayNameOf(row), tail: String(row?.phone || '').slice(-4) }
+    }),
+  }
 }
 
 /* ═══ القوائم ═══ */

@@ -143,12 +143,18 @@ jobs:
             echo "Firebase service account is missing; skipping dialogue podcast generation."
             exit 0
           fi
-          if [ -z "$AZURE_SPEECH_KEY" ] || { [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; }; then
-            echo "Azure/Gemini secrets are missing; skipping dialogue podcast generation."
+          # الحوار يكتبه الدكتور بنفسه، فلا حاجة لكاتبٍ آليّ — ولا لرصيد Gemini.
+          # كانت بوابة الفوترة تُستدعى بلا شرط فتقتل التوليد قبل أن يبدأ
+          # («credits are depleted»)، رغم أن وضع بلا-Gemini مبنيٌّ في المحرك
+          # وأشدّ من غيره: عتبات STT ترتفع إلى 0.92/0.88 للمقطع و0.97/0.93
+          # للحلقة، وكل البوابات التقنية باقية. الآن يُفعَّل صراحةً.
+          if [ -z "$AZURE_SPEECH_KEY" ]; then
+            echo "Azure secret is missing; skipping dialogue podcast generation."
             exit 0
           fi
           npm run podcast:ar:nightly
         env:
+          PODCAST_NO_GEMINI: '1'
           FIREBASE_SERVICE_ACCOUNT: sa.json
           FIREBASE_PROJECT_ID: drahmad-8e9e2
           AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}

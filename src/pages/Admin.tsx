@@ -243,7 +243,7 @@ function CvPdfCard() {
 function Panel({ email }: { email: string }) {
   const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const requestedTab = params.get('tab') as AdminTab | null
-  const allowedTabs: AdminTab[] = ['dashboard','production','analytics','studio','launch','event','articles','books','papers','media','inbox','lab','whatsapp','voice','manual-dialogue','audio-library','cv']
+  const allowedTabs: AdminTab[] = ['dashboard','production','analytics','studio','launch','event','articles','books','papers','media','inbox','lab','whatsapp','voice','manual-dialogue','audio-library','pronunciation','cv']
   const initialTab = requestedTab && allowedTabs.includes(requestedTab) ? requestedTab : 'dashboard'
   const editSlug = params.get('edit') || undefined
   const [tab, setTab] = useState<AdminTab>(initialTab)
@@ -329,7 +329,8 @@ function Panel({ email }: { email: string }) {
             {tab === 'whatsapp' && <WhatsAppAgentPanel />}
             {tab === 'voice' && <VoiceBakeoffCard />}
             {tab === 'manual-dialogue' && <ManualDialogueEditor articles={cms.articles} onQueued={() => chooseTab('production')} />}
-            {tab === 'audio-library' && <div className="grid gap-4"><AudioLibrary articles={cms.articles} onChanged={cms.reload} /><PronunciationLexicon /></div>}
+            {tab === 'audio-library' && <AudioLibrary articles={cms.articles} onChanged={cms.reload} />}
+            {tab === 'pronunciation' && <PronunciationLexicon />}
             {tab === 'cv' && <CvPdfCard />}
             {tab === 'articles' && <ContentManager openSlug={editSlug} kind="article" items={cms.articles as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
             {tab === 'books' && <ContentManager openSlug={editSlug} kind="book" items={cms.books as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}

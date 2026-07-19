@@ -10,6 +10,41 @@ type Entry = { word: string; sub?: string; diacritics?: string; note?: string; t
 const strip = (value: string) => value.replace(/[ً-ْٰ]/g, '')
 
 /** المرآة الدقيقة لحارس السكربت — ولو اختلفا لقَبِلت اللوحة ما يرفضه المحرك */
+/* القاموس الأساسي مقروءاً: الدكتور ظنّه فارغاً لأن اللوحة لا تعرض إلا ما يكتبه
+   بيده، والـ322 مدخلاً تعمل بصمتٍ خلفه. فنُظهر الحجم والأصناف، ونُتيح تفتيشه
+   كلّه — فيعرف قبل أن يُضيف أنّ الكلمة مضبوطةٌ سلفاً. */
+type BaseEntry = { type?: string; sub?: string; diacritics?: string; note?: string }
+const BASE = (lexiconFile as { entries: Record<string, BaseEntry> }).entries || {}
+
+export function baseSummary(entries: Record<string, BaseEntry>): { total: number; types: [string, number][] } {
+  const counts = new Map<string, number>()
+  for (const value of Object.values(entries)) {
+    const type = String(value?.type || 'أخرى').replace(' · متوقَّع', '')
+    counts.set(type, (counts.get(type) || 0) + 1)
+  }
+  return {
+    total: Object.keys(entries).length,
+    types: [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5),
+  }
+}
+
+/** تفتيش القاموس الأساسي — يُطمئن الدكتور أن اللفظ مضبوطٌ قبل أن يُضيفه */
+export function lookupBase(term: string, entries: Record<string, BaseEntry>): { word: string; how: string; type: string }[] {
+  const needle = strip(String(term || '').trim())
+  if (needle.length < 2) return []
+  const out: { word: string; how: string; type: string }[] = []
+  for (const [word, value] of Object.entries(entries)) {
+    if (!strip(word).includes(needle)) continue
+    out.push({
+      word,
+      how: value?.diacritics || value?.sub || value?.note || '—',
+      type: String(value?.type || ''),
+    })
+    if (out.length >= 12) break
+  }
+  return out
+}
+
 export function checkEntry(word: string, sub: string, diacritics: string): string {
   const key = word.trim()
   if (!key) return 'اكتب الكلمة كما تظهر في مقالك.'
@@ -58,6 +93,11 @@ export function PronunciationLexicon() {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
   const [search, setSearch] = useState('')
+  /* تفتيش القاموس الأساسي: الدكتور يريد أن يعرف قبل أن يُضيف — أمضبوطةٌ الكلمة
+     سلفاً أم لا. ولا نعرض الـ322 دفعةً واحدة كي لا تصير زحمةً بصرية. */
+  const [probe, setProbe] = useState('')
+  const summary = useMemo(() => baseSummary(BASE), [])
+  const probeHits = useMemo(() => lookupBase(probe, BASE), [probe])
   /* الطابور: ما حُوّل من التنبيهات لينتظر ضبط الدكتور. صفٌّ لكل لفظ، بحقوله،
      أمامه دفعةً واحدة — فإضافة عشرة ألفاظ لا تحتمل عشر دورات ملء وحفظ. */
   const [queue, setQueue] = useState<{ word: string; diacritics: string; sub: string }[]>([])
@@ -172,15 +212,52 @@ export function PronunciationLexicon() {
   const field = 'w-full rounded-xl border border-hair bg-canvas px-3 py-2 text-[.85rem] text-ink outline-none focus:border-accent'
 
   return (
-    <details className="rounded-2xl border border-hair bg-wash p-5">
+    <details className="rounded-2xl border border-hair bg-wash p-5" open>
       <summary className="cursor-pointer text-[.95rem] font-semibold text-ink">
-        قاموس النطق — أضف كلمةً تُنطق خطأً
+        قاموس النطق — {summary.total} كلمة مضبوطة
       </summary>
 
       <p className="mt-3 text-[.8rem] leading-relaxed text-soft">
         كل كلمةٍ تضيفها هنا تُنطق كما تريد في <strong>كل حلقةٍ قادمة</strong>، ولا تحتاج إعادة كتابة الحوار.
         والنصّ الذي يقرؤه زوّارك لا يتغيّر — الحركات تعمل في طبقة الصوت وحدها.
       </p>
+
+      {/* الحجم والأصناف: يعرف الدكتور ما يملكه بلا أن يُغرَق بثلاثمئة سطر */}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="rounded-full bg-accent px-4 py-1.5 text-[.78rem] font-semibold text-white">
+          {summary.total} كلمة مضبوطة سلفاً
+        </span>
+        {summary.types.map(([type, count]) => (
+          <span key={type} className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.74rem] text-soft">
+            {type} · {count}
+          </span>
+        ))}
+      </div>
+
+      {/* تفتيش: أمضبوطةٌ هذه الكلمة؟ */}
+      <div className="mt-3 rounded-xl border border-hair bg-canvas p-3">
+        <label className="text-[.75rem] font-semibold text-accent">أمضبوطةٌ كلمةٌ ما؟ فتّش قبل أن تُضيف</label>
+        <input
+          value={probe}
+          onChange={(event) => setProbe(event.target.value)}
+          placeholder="اكتب كلمة — الفاشينستات، 2026، et al…"
+          className="mt-2 w-full rounded-xl border border-hair bg-wash px-3 py-2 text-[.85rem] text-ink outline-none focus:border-accent"
+        />
+        {probe.trim().length >= 2 && (
+          probeHits.length ? (
+            <ul className="mt-2 grid gap-1.5">
+              {probeHits.map((hit) => (
+                <li key={hit.word} className="text-[.8rem] text-ink">
+                  ✓ <strong>{hit.word}</strong> <span className="text-soft">← {hit.how}</span>
+                  {hit.type && <span className="text-[.7rem] text-soft/70"> · {hit.type}</span>}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-[.8rem] text-soft">لم أجدها في القاموس — أضِفها أدناه لتُنطق كما تريد.</p>
+          )
+        )}
+      </div>
 
       {/* تنبيهات التوليد: ما نطقه المحرك باجتهاده في حلقاتٍ وُلِّدت فعلاً */}
       {pending.length > 0 && (

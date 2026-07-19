@@ -634,6 +634,7 @@
   },
   "when-truth-died-and-the-narrative-survivedarabic": {
     "fahed": true,
-    "noura": true
+    "noura": true,
+    "dialogue": true
   }
 }

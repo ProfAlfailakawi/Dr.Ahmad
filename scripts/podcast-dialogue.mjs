@@ -3272,9 +3272,23 @@ async function produce(article, lang) {
       targetWordsPerMinute: item.targetWordsPerMinute, pauseAfterMs: item.pauseAfterMs,
       ending: item.ending, internalBreakMs: item.internalBreakMs,
       allowOverlap: item.allowOverlap, overlapMs: item.overlapMs })) }, lang)
+    /* نصفا المحرك كانا يتناقضان، فتُعزل كل حلقةٍ حوارية بعد توليد مداخلاتها كلها:
+       المعايرة تكيّف السرعة والهدف الإيقاعي على الإلقاء المقاس — وهي تُعلنها صراحةً
+       للنص اليدوي («تصويب الهدف الإيقاعي إلى الإيقاع المقاس — النص يدوي والهدف
+       تركيبي») — ثم تحاكمها بوابةُ اللغة بنطاقاتٍ وُضعت لنصٍّ يكتبه الآلة.
+       فحين يكتب الدكتور الحوار: كلماته وإيقاعه له، والمقاس هو الحقيقة. تسقط
+       مآخذُ الإيقاع وحدها، ويبقى كل ما يخصّ اللغة (العامية، المحظورات، علامات
+       الاستفهام) وكلُّ البوابات التقنية الصوتية بلا أي تخفيف. */
+    const PACING_LINT = /سرعة|targetWordsPerMinute|وقفة|pauseAfterMs|internalBreak/
     const finalLanguageIssues = MANUAL_EXACT
       ? finalLanguageIssuesRaw.filter((issue) => /عامية/.test(issue))
-      : finalLanguageIssuesRaw
+      : MANUAL_TEXT_MODE
+        ? finalLanguageIssuesRaw.filter((issue) => !PACING_LINT.test(issue))
+        : finalLanguageIssuesRaw
+    if (MANUAL_TEXT_MODE && !MANUAL_EXACT) {
+      const relaxed = finalLanguageIssuesRaw.filter((issue) => PACING_LINT.test(issue))
+      if (relaxed.length) console.log(`    ⏲ ${relaxed.length} مأخذ إيقاع تُركت للنص اليدوي (الإلقاء المقاس هو المرجع)`)
+    }
     if (finalLanguageIssues.length) return quarantine(`بوابة اللغة بعد الإصلاح: ${finalLanguageIssues.join(' · ')}`)
     const pronunciationConsistency = new Map()
     const inconsistent = []

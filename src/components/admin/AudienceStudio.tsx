@@ -146,7 +146,13 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
   })
 
   const rename = (id: string, current: string) => {
-    const next = window.prompt('بمَ تناديه؟ (اللقب يظهر في الرسالة بدل اسم واتساب)', current)
+    /* نُظهر الاسم الكامل في السؤال ليعرف الدكتور من يلقّب — عنده «أبو خالد»
+       أكثر من واحد، والنافذة وحدها لا تكفي للتمييز. */
+    const person = [...contacts, ...members].find((item) => item.id === id)
+    const next = window.prompt(
+      `بمَ تناديه في الرسالة؟\n${person ? `${person.name} · ••${person.tail}` : ''}`,
+      current || '',
+    )
     if (next === null) return
     void act('حُفظ اللقب.', async () => {
       await request('/admin/audience/nickname', { method: 'POST', body: JSON.stringify({ contactId: id, nickname: next }) })
@@ -230,7 +236,9 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                   {members.map((member) => (
                     <span key={member.id} className="flex items-center gap-2 rounded-full border border-hair bg-wash px-3 py-1.5 text-[.78rem] text-ink">
                       {member.suppressed && <span title="طلب إيقاف الرسائل — لن يصله شيء">🔕</span>}
-                      <button type="button" className="hover:text-accent" title="اكتب لقباً" onClick={() => rename(member.id, member.nickname)}>{member.name}</button>
+                      <button type="button" className="hover:text-accent" title="اكتب لقباً" onClick={() => rename(member.id, member.nickname)}>
+                        {member.name}<span className="mr-1.5 text-[.68rem] text-soft/70">••{member.tail}</span>
+                      </button>
                       <button type="button" className="text-soft hover:text-accent" title="أخرجه" onClick={() => dropMember(member)}>×</button>
                     </span>
                   ))}
@@ -325,6 +333,9 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                     className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-[.78rem] transition-colors ${already ? 'border-hair bg-wash text-soft' : isPicked ? 'border-accent bg-accent text-white' : 'border-hair bg-wash text-ink'}`}>
                     <button type="button" disabled={already} onClick={() => toggle(contact.id)} title={already ? 'في القائمة أصلاً' : 'اختره'}>
                       {contact.name}{already && ' ✓'}
+                      {/* آخر أربعة أرقام بجانب الاسم: الدكتور عنده «أبو خالد»
+                          أكثر من واحد، والاسم وحده لا يميّزهم. */}
+                      <span className={`mr-1.5 text-[.68rem] ${isPicked ? 'text-white/60' : 'text-soft/70'}`}>••{contact.tail}</span>
                       {/* في كم قائمةٍ هو؟ الصفر يعني أنه في دفترك ولم يُضَف بعد. */}
                       <span className={`mr-1.5 text-[.7rem] ${contact.lists ? (isPicked ? 'text-white/80' : 'text-accent') : 'text-soft/70'}`}>
                         {contact.lists || '٠'}

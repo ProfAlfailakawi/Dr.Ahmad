@@ -254,11 +254,23 @@ function parseVCards(text) {
   const cards = clean.split(/BEGIN:VCARD/i).slice(1)
   const lines = []
   for (const card of cards) {
-    const name = (card.match(/^FN[^:]*:(.+)$/im) || [])[1]
-      || (card.match(/^N[^:]*:(.+)$/im) || [])[1]?.split(';').filter(Boolean).reverse().join(' ')
+    /* آبل تكتب الخصائص المجمّعة ببادئة «item1.» و«item2.» — فـ«item1.TEL»
+       لم تكن تطابق ^TEL فتسقط البطاقة كلها بصمت، ويضيع صاحبها من الدفتر.
+       نقبل البادئة هنا صراحةً. */
+    const prop = (name) => new RegExp(`^(?:item\\d+\\.)?${name}[^:]*:(.+)$`, 'im')
+    const displayName = (card.match(prop('FN')) || [])[1]
+      || (card.match(prop('N')) || [])[1]?.split(';').filter(Boolean).reverse().join(' ')
       || ''
-    const tel = (card.match(/^TEL[^:]*:(.+)$/im) || [])[1] || ''
-    if (tel.trim()) lines.push(`${name.trim().replace(/;/g, ' ')} ${tel.trim()}`)
+    /* بطاقةٌ واحدة قد تحمل أرقاماً عدة (جوال · منزل · عمل). نأخذ المفضّل
+       إن وُسم، وإلا فالجوال، وإلا فالأول — رقمٌ واحد لكل إنسان. */
+    const tels = [...card.matchAll(/^(?:item\d+\.)?TEL([^:]*):(.+)$/gim)]
+      .map((match) => ({ params: match[1] || '', value: match[2].trim() }))
+      .filter((item) => item.value)
+    if (!tels.length) continue
+    const pick = tels.find((t) => /pref/i.test(t.params))
+      || tels.find((t) => /cell|mobile/i.test(t.params))
+      || tels[0]
+    lines.push(`${displayName.trim().replace(/;/g, ' ')} ${pick.value}`)
   }
   return lines
 }
@@ -287,9 +299,14 @@ function importContactsInner(db, text, { listId = '' } = {}) {
     /* الأرقام العربية تُحوّل غربيةً — قاعدةُ الدكتور الثابتة */
     const digits = rawNumber.replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660)).replace(/\D/g, '')
     /* «+» مفتاح الدولة يبقى خارج المطابقة (النمط يبدأ برقم) فيتسرّب للاسم — يُنظَّف */
-    const name = line.replace(rawNumber, ' ')
+    let name = line.replace(rawNumber, ' ')
       .replace(/[,،\-–—:|+()]/g, ' ')
       .replace(/\s+/g, ' ').trim()
+    /* حارسٌ أخير: لا يصير اسمُ خاصيةٍ في البطاقة اسماً لإنسان. ظهر للدكتور
+       «item1.TEL;type=pref» في دفتره بدل أسماء الناس — وهو اسم حقلٍ تقنيّ
+       لا اسم أحد. إن بقي شيءٌ من هذا نتركه بلا اسم، فيُعرف بآخر أربعة
+       أرقامه ويصلحه الدكتور بلقب، وهو خيرٌ من اسمٍ كاذب. */
+    if (/^(?:item\d+\.)?(TEL|EMAIL|ADR|URL|PHOTO|NOTE|ORG|TITLE|BDAY|IMPP|X-[A-Z-]+|VERSION|PRODID|UID|REV|CATEGORIES)\b/i.test(name)) name = ''
     const result = addContactByPhone(db, digits, name)
     if (!result.ok) { skipped.push({ line, why: result.error }); continue }
     /* الاستيراد الثاني لا يكرّر أحداً: من كان في الدفتر يُعدّ «معروفاً»

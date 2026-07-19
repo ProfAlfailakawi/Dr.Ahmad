@@ -218,7 +218,7 @@ function storedDialogue(slug: string) {
   }
 }
 
-export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }) {
+export function ManualDialogueEditor({ articles, onQueued }: { articles: ArticleRecord[]; onQueued?: () => void }) {
   const { user, isAdmin, refresh } = useAdminAuth()
   const sortedArticles = useMemo(() => [...articles].sort((a, b) => b.iso.localeCompare(a.iso)), [articles])
   const focusedSlug = typeof window !== 'undefined' ? localStorage.getItem('podcast:focus-slug') || '' : ''
@@ -456,6 +456,9 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
       setNotice(dispatch.duplicate
         ? `الحوار نفسه مقفول والتوليد يعمل بالفعل ✓ ${proof.turnCount} مداخلة · بصمة ${proof.contentSha256.slice(0, 12)}`
         : `بدأ التوليد تلقائياً من لوحة التحكم ✓ ${proof.turnCount} مداخلة · بصمة ${proof.contentSha256.slice(0, 12)}${dispatch.workflowRunId ? ` · تشغيل ${dispatch.workflowRunId}` : ''}. لا تحتاج إلى دخول GitHub.`)
+      /* التحويل المباشر إلى صفحة التوليد: الدكتور يرى حالة حلقته فوراً، ولا تبقى
+         بين يديه شاشةٌ فيها زرّ إرسالٍ قد يُضغط مرّةً ثانية فيُنتج تكراراً. */
+      onQueued?.()
     } catch (error) {
       setNotice(`مُنع الإرسال لأن القفل السحابي لم يثبت: ${error instanceof Error ? error.message : 'unknown-error'}`)
     } finally {

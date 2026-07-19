@@ -3,6 +3,7 @@
    ١) تتبّع الجملة: كل المقالات التي لامست الفكرة نفسها عبر السنوات.
    ٢) 🖼 بطاقة اقتباس: صورة أنيقة بجملةٍ منتقاة + توقيع الدكتور، للمشاركة الراقية. */
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -305,6 +306,18 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
   const [toolbarX, setToolbarX] = useState<number | null>(null)
+  /* في اللمس تفتح المنظومة قائمتها (نسخ · ترجمة) فوق النص المحدَّد، وهو المكان
+     نفسه الذي كان شريطنا يقف فيه — فيُحجب. لا تملك CSS إخفاء تلك القائمة ما دام
+     النص قابلاً للتحديد، فالحلّ أن ننزل نحن إلى أسفل الشاشة حيث لا تصلنا. */
+  const [toolbarY, setToolbarY] = useState<number | null>(null)
+  const [coarse, setCoarse] = useState(false)
+  useEffect(() => {
+    const query = window.matchMedia('(pointer: coarse)')
+    const sync = () => setCoarse(query.matches)
+    sync()
+    query.addEventListener('change', sync)
+    return () => query.removeEventListener('change', sync)
+  }, [])
   const [view, setView] = useState<null | 'thread' | 'card'>(null)
   const [img, setImg] = useState<string | null>(null)
   const [cardQuote, setCardQuote] = useState('')
@@ -384,6 +397,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   useLayoutEffect(() => {
     if (!pos || !toolbarRef.current || view) {
       setToolbarX(null)
+      setToolbarY(null)
       return
     }
     const fitInsideViewport = () => {
@@ -399,6 +413,11 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
       setToolbarX(maximum >= minimum
         ? Math.min(maximum, Math.max(minimum, pos.x))
         : viewportLeft + viewportWidth / 2)
+      if (!coarse) { setToolbarY(null); return }
+      /* أسفل الشاشة الحقيقية (لا شاشة الجهاز): تتبع لوحة المفاتيح والتكبير معاً */
+      const viewportTop = viewport?.offsetTop || 0
+      const viewportHeight = viewport?.height || window.innerHeight
+      setToolbarY(viewportTop + viewportHeight - 18)
     }
     fitInsideViewport()
     const frame = window.requestAnimationFrame(fitInsideViewport)
@@ -411,7 +430,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
       window.visualViewport?.removeEventListener('resize', fitInsideViewport)
       window.visualViewport?.removeEventListener('scroll', fitInsideViewport)
     }
-  }, [pos, sel, view])
+  }, [pos, sel, view, coarse])
 
   // مطابقة الفكرة المحددة: تبحث في العنوان والمقتطف والنص الكامل، ثم تضمن
   // بديلاً زمنياً من التصنيف نفسه كي لا تتحول الأداة الجميلة إلى لوحة فارغة.
@@ -579,11 +598,15 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   return (
     <>
       {/* شريط واحد فوق التحديد — فعلان متباعدان بينهما فاصل، لا تداخل */}
+      {/* بوابة إلى <body>: لأحد آباء المقال تحويلٌ (transform)، وأيّ أبٍ محوَّل يجعل
+          position:fixed يُقاس منه لا من الشاشة — فينزاح الشريط مئتي بكسل عن مكانه.
+          الخروج إلى الجسد يُعيد القياس إلى الشاشة الحقيقية في الجوال والكمبيوتر معاً. */}
+      {typeof document !== 'undefined' && createPortal(
       <AnimatePresence>
         {pos && !view && sel && (
           <div
             ref={toolbarRef}
-            style={{ left: toolbarX ?? pos.x, top: pos.y, transform: 'translate3d(-50%,-100%,0)' }}
+            style={{ left: toolbarX ?? pos.x, top: toolbarY ?? pos.y, transform: 'translate3d(-50%,-100%,0)' }}
             className="reader-selection-toolbar fixed z-[260]"
           >
             <motion.div
@@ -613,7 +636,8 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body)}
 
       {/* لوحة تتبّع الجملة */}
       <AnimatePresence>

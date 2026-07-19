@@ -326,7 +326,7 @@ function Panel({ email }: { email: string }) {
             {tab === 'lab' && <IntelligenceLab articles={cms.articles} />}
             {tab === 'whatsapp' && <WhatsAppAgentPanel />}
             {tab === 'voice' && <VoiceBakeoffCard />}
-            {tab === 'manual-dialogue' && <ManualDialogueEditor articles={cms.articles} />}
+            {tab === 'manual-dialogue' && <ManualDialogueEditor articles={cms.articles} onQueued={() => chooseTab('production')} />}
             {tab === 'audio-library' && <AudioLibrary articles={cms.articles} onChanged={cms.reload} />}
             {tab === 'cv' && <CvPdfCard />}
             {tab === 'articles' && <ContentManager openSlug={editSlug} kind="article" items={cms.articles as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}

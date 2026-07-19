@@ -1,4 +1,28 @@
 {
+  "expectations-that-shape-a-studentarabic.mp3": {
+    "bytes": 3060341,
+    "sha256": "eaa7cda1d9d69fcbface81d09b381cd8bc0012358226449edf52e79e50c27304",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-19T15:38:50.037Z",
+    "durationSeconds": 191,
+    "sourceHash": "49da9b84494a68bbc1144a34cfec2429592284a557f3ebda3af6dcd8bdc52233",
+    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
+    "humanLikenessScore": 100,
+    "audioJudgeMinimum": null,
+    "acceptedAt": "2026-07-19T15:25:13.774Z"
+  },
+  "expectations-that-shape-a-studentarabic.noura.mp3": {
+    "bytes": 3087926,
+    "sha256": "708a04cd58f696c2e070fb7933e7dc9f1db2f37c75e7eeeec46bee81f1902043",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-19T15:38:50.098Z",
+    "durationSeconds": 193,
+    "sourceHash": "11c4c424d1157c4612cd5b202663502e56730837c5495d2f7ba3e500ed3b5830",
+    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
+    "humanLikenessScore": 100,
+    "audioJudgeMinimum": null,
+    "acceptedAt": "2026-07-19T15:29:13.691Z"
+  },
   "qabas-201909-001.dialogue.json": {
     "bytes": 6384,
     "sha256": "44945712897c01d83547e1e450e608c3b36054c3aaa141443f0341812ee25477",
@@ -19,5 +43,42 @@
   "qabas-201909-001.noura.mp3": {
     "bytes": 1423008,
     "durationSeconds": 237
+  },
+  "success-that-does-not-bring-joy-to-its-ownerarabic.dialogue.json": {
+    "bytes": 6088,
+    "sha256": "06a18f8a13102e841b43209a98643ef5cb7d1f3475b319154e446ecf9fd36183",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-07-19T15:38:50.148Z"
+  },
+  "success-that-does-not-bring-joy-to-its-ownerarabic.dialogue.mp3": {
+    "bytes": 3309444,
+    "sha256": "95a5c108d75e3c6320f060ac35ed8fcb92c01ebbd75ceebd6d7a4cd2a721c7d5",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-19T15:38:50.148Z",
+    "durationSeconds": 207
+  },
+  "when-the-exam-becomes-the-goalarabic.mp3": {
+    "bytes": 2890649,
+    "sha256": "bec9aafad28a98061045d18461ad567f46ce9ed60a45188e5569054b6766afc1",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-19T15:38:50.205Z",
+    "durationSeconds": 181,
+    "sourceHash": "5eb3ecbec1bdf3e7382a1e65c7e7c0c2dac9a75af6a45ce135a29cdf07eb421b",
+    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
+    "humanLikenessScore": 100,
+    "audioJudgeMinimum": null,
+    "acceptedAt": "2026-07-19T15:17:31.228Z"
+  },
+  "when-the-exam-becomes-the-goalarabic.noura.mp3": {
+    "bytes": 2879364,
+    "sha256": "57ea8abe40a77258ad96f3c02e08cea63fb7684e74819b9d8572add1db325928",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-19T15:38:50.264Z",
+    "durationSeconds": 180,
+    "sourceHash": "e28e2a8fcf4e78b734568485ea20617b25ae69080cf9e8283f0b91adc2c1edb5",
+    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
+    "humanLikenessScore": 100,
+    "audioJudgeMinimum": null,
+    "acceptedAt": "2026-07-19T15:21:25.529Z"
   }
 }

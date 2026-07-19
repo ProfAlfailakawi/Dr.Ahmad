@@ -5,6 +5,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { toRoot } from '../lib/dialect-lexicon'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { useCmsContent } from '../lib/content'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
@@ -18,7 +19,10 @@ const norm = (s: string) => s
   .toLowerCase()
 
 const STOP = new Set(['على','الى','من','في','عن','مع','هذا','هذه','ذلك','التي','الذي','بين','بعد','قبل','عند','حتي','كان','كانت','هل','ما','لا','لم','لن','قد','ثم','او','ام','بل','كل','بعض','غير','نحو','لدي','منذ','حين','حول','ان','لان','كيف','اين','ليس','وهو','وهي','راي','رايك','الدكتور','دكتور','احمد','الفيلكاوي','برايك','شنو','ماذا','لماذا'])
-const tokenize = (s: string) => norm(s).split(/\s+/).filter((w) => w.length > 2 && !STOP.has(w))
+const bareTokens = (s: string) => norm(s).split(/\s+/).filter((w) => w.length > 2 && !STOP.has(w))
+/* التوسيع بالقاموس الجبّار: يسأل الزائر «شنو رايه بالعيال؟» فيلتقي بمقال الأستاذ
+   عن «الأطفال». والموقع والبوت يفهمان اللهجات نفسها لأنهما يشربان من معجمٍ واحد. */
+const tokenize = (s: string) => bareTokens(s).map(toRoot)
 
 type Hit = { slug: string; title: string; iso: string; cat?: string; excerpt?: string; para: string; score: number }
 type TimelineItem = { slug: string; title: string; iso: string; cat?: string; excerpt?: string; score: number }
@@ -79,22 +83,18 @@ function answer(question: string, bodies: Record<string, string>, articles: Arti
 
   const scored = articles.map((article) => {
     const a: AskArticle = { ...article, body: bodies[article.slug] || undefined }
-    const title = norm(a.title)
-    const excerpt = norm(a.excerpt || '')
-    const body = a.body ? norm(a.body) : ''
+    /* الطرفان يُردّان إلى الجذور: كلماتُ السؤال مُوسَّعة أصلاً في q، وكلماتُ
+       المقال نُوسّعها هنا كمجموعةٍ من الجذور. فيلتقي «العيال» بـ«الأطفال». */
+    const titleRoots = new Set(tokenize(a.title))
+    const excerptRoots = new Set(tokenize(a.excerpt || ''))
+    const bodyRoots = a.body ? tokenize(a.body) : []
+    const bodyCount = new Map<string, number>()
+    for (const root of bodyRoots) bodyCount.set(root, (bodyCount.get(root) || 0) + 1)
     let score = 0
     for (const w of q) {
-      if (title.includes(w)) score += 4
-      if (excerpt.includes(w)) score += 2
-      if (body) {
-        let index = 0
-        let count = 0
-        while (count < 6 && (index = body.indexOf(w, index)) !== -1) {
-          count++
-          index += w.length
-        }
-        score += count
-      }
+      if (titleRoots.has(w)) score += 4
+      if (excerptRoots.has(w)) score += 2
+      score += Math.min(6, bodyCount.get(w) || 0)
     }
     return { a, score }
   }).sort((left, right) => right.score - left.score || right.a.iso.localeCompare(left.a.iso))

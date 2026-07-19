@@ -37,9 +37,30 @@ jobs:
 
       - run: npm ci
 
+      # ffmpeg ليس ترفاً هنا: خطوة البناء تُشغّل اختبارات محرك الصوت وهي تشترط
+      # وجوده، فبدونه يسقط البناء بعد أن يكون الحذف قد تمّ — فتبقى المانيفستات
+      # زاعمةً وجود ملفاتٍ مُزالة. وهذا ما وقع فعلاً في التشغيلة الأولى.
+      - name: تثبيت ffmpeg وawscli
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --user awscli
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
       # الخطة تُطبع قبل أي إتلاف، فيبقى في السجل دليلٌ على ما جرى ولماذا
       - name: عرض الخطة قبل التنفيذ
         run: node scripts/reset-all-audio.mjs --keep="${{ inputs.keep }}"
+
+      # خانةُ استبقاءٍ فارغة تعني «امسح كل شيء» — وهي نيّةٌ مشروعة، لكنها أيضاً
+      # صورةُ الخطأ الأشيع: يُملأ التأكيد ويُنسى الاستبقاء، فيضيع ما أراد صاحبه
+      # إبقاءه. فمن أرادها فارغةً حقاً فليقلها صراحةً.
+      - name: التثبت من نيّة المسح الكامل
+        if: inputs.keep == ''
+        run: |
+          if [ "${{ inputs.confirm }}" != "امسح-كل-الصوت-بلا-استثناء" ]; then
+            echo '::error::خانة «الاستبقاء» فارغة. إن أردت مسح كل شيء بلا استثناء فاكتب في التأكيد: امسح-كل-الصوت-بلا-استثناء'
+            exit 1
+          fi
 
       - name: تصفير المانيفستات وتجهيز قائمة R2
         run: |
@@ -58,13 +79,27 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$R2_BUCKET" && test -n "$R2_ENDPOINT"
-          count=0
+
+          # الأداة أولاً: بلا هذا الفحص يغيب أمر aws فيبتلع `|| true` كل نداء،
+          # فتُعلن التشغيلة «حُذف 320 ملفاً» ولم يُحذف واحد. ونجاحٌ كاذب أخطر من
+          # فشلٍ صريح: يمضي الدكتور على أن الأمر تمّ، والحقيقة خلافه.
+          command -v aws >/dev/null || { echo '::error::awscli غير مثبَّت — أُوقف قبل أن أدّعي حذفاً لم يقع.'; exit 1; }
+
+          ok=0; failed=0
           while IFS= read -r file; do
             [ -z "$file" ] && continue
-            aws s3 rm "s3://$R2_BUCKET/$file" --endpoint-url "$R2_ENDPOINT" --no-progress || true
-            count=$((count + 1))
+            if aws s3 rm "s3://$R2_BUCKET/$file" --endpoint-url "$R2_ENDPOINT" --no-progress; then
+              ok=$((ok + 1))
+            else
+              failed=$((failed + 1))
+              echo "::warning::تعذّر حذف $file"
+            fi
           done < audio-reset-targets.txt
-          echo "حُذف من R2: $count ملفاً"
+
+          echo "حُذف فعلاً: $ok · تعذّر: $failed"
+          # لا نمضي على حذفٍ منقوص: المانيفست سيُصفَّر، فلو بقيت ملفاتٌ في R2
+          # بلا سجلٍّ صارت يتيمةً لا يعرفها أحد ولا تُنظَّف أبداً.
+          [ "$failed" -eq 0 ] || { echo "::error::فشل حذف $failed ملفاً."; exit 1; }
 
       # سجلّ الاعتماد يُصفَّر هو الآخر، وإلا بقيت فيه بصماتُ حلقاتٍ لم تعد
       # موجودة فيمنع إعادة توليدها بحجّة أنها «معتمدة سلفاً».
@@ -90,7 +125,11 @@ jobs:
         env:
           VITE_SITE_URL: https://dr-alfailakawi.com
 
+      # الرفع يجري ولو تعثّر البناء. فالحذف من R2 قد تمّ قبله ولا يُردّ، فإن
+      # حجبنا المانيفست الجديد بقي القديم يزعم وجود ملفاتٍ مُزالة — ويرى الزائر
+      # مشغّلاً لصوتٍ لا وجود له. والاتّساق مع الواقع أوجب من انتظار بناءٍ نظيف.
       - name: رفع النتيجة
+        if: always()
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'

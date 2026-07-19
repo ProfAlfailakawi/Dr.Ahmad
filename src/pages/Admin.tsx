@@ -23,6 +23,7 @@ import { PublishingStudio } from '../components/admin/PublishingStudio'
 import { VoiceBakeoffCard } from '../components/admin/VoiceBakeoff'
 import { ManualDialogueEditor } from '../components/admin/ManualDialogueEditor'
 import { AudioLibrary } from '../components/admin/AudioLibrary'
+import { PronunciationLexicon } from '../components/admin/PronunciationLexicon'
 import { ProductionHealthCenter } from '../components/admin/ProductionHealthCenter'
 import { AdminTaskFavicon, AdminTaskIndicator } from '../components/admin/AdminTaskFavicon'
 import { UploadField } from '../components/admin/ContentManager'
@@ -327,7 +328,7 @@ function Panel({ email }: { email: string }) {
             {tab === 'whatsapp' && <WhatsAppAgentPanel />}
             {tab === 'voice' && <VoiceBakeoffCard />}
             {tab === 'manual-dialogue' && <ManualDialogueEditor articles={cms.articles} onQueued={() => chooseTab('production')} />}
-            {tab === 'audio-library' && <AudioLibrary articles={cms.articles} onChanged={cms.reload} />}
+            {tab === 'audio-library' && <div className="grid gap-4"><AudioLibrary articles={cms.articles} onChanged={cms.reload} /><PronunciationLexicon /></div>}
             {tab === 'cv' && <CvPdfCard />}
             {tab === 'articles' && <ContentManager openSlug={editSlug} kind="article" items={cms.articles as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
             {tab === 'books' && <ContentManager openSlug={editSlug} kind="book" items={cms.books as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}

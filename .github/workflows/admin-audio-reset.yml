@@ -88,43 +88,13 @@ jobs:
           ok=0; failed=0
           while IFS= read -r file; do
             [ -z "$file" ] && continue
-            # بلا --no-progress: نسخته عن تشغيلةٍ أخرى فرفضه aws s3 rm («Unknown
-            # options») — فالخيار خاصٌّ بـ cp و sync لا بـ rm. وكانت النتيجة أن
-            # كل نداءٍ يُرفض قبل أن يبدأ، ولا يُحذف ملفٌ واحد.
-            if aws s3 rm "s3://$R2_BUCKET/$file" --endpoint-url "$R2_ENDPOINT"; then
+            if aws s3 rm "s3://$R2_BUCKET/$file" --endpoint-url "$R2_ENDPOINT" --no-progress; then
               ok=$((ok + 1))
             else
               failed=$((failed + 1))
               echo "::warning::تعذّر حذف $file"
             fi
           done < audio-reset-targets.txt
-
-          # كنسُ اليتامى: التصفير يمسح المانيفست أولاً، فإن تعثّر الحذف بعده
-          # (كما وقع) صارت الملفات الباقية في R2 لا يعرفها سجلٌّ ولا مانيفست —
-          # لا تظهر للزائر ولا تُحذف أبداً، وتبقى تُكلّف وتتراكم. فنمسح المخزن
-          # نفسه: كل صوتٍ لا ينتمي إلى مقالٍ مستبقى.
-          echo '── كنس الملفات اليتيمة من المخزن ──'
-          KEEP='${{ inputs.keep }}'
-          aws s3 ls "s3://$R2_BUCKET/" --endpoint-url "$R2_ENDPOINT" \
-            | awk '{print $4}' | grep -E '\.(mp3|dialogue\.json)$' > all-objects.txt || true
-          while IFS= read -r object; do
-            [ -z "$object" ] && continue
-            slug="${object%.dialogue.mp3}"; slug="${slug%.dialogue.json}"
-            slug="${slug%.noura.mp3}"; slug="${slug%.mp3}"
-            keepit=0
-            IFS=',' read -ra KEPT <<< "$KEEP"
-            for k in "${KEPT[@]}"; do
-              [ "$(echo "$k" | xargs)" = "$slug" ] && keepit=1
-            done
-            [ "$keepit" -eq 1 ] && continue
-            if aws s3 rm "s3://$R2_BUCKET/$object" --endpoint-url "$R2_ENDPOINT"; then
-              ok=$((ok + 1))
-            else
-              failed=$((failed + 1))
-              echo "::warning::تعذّر حذف اليتيم $object"
-            fi
-          done < all-objects.txt
-          rm -f all-objects.txt
 
           echo "حُذف فعلاً: $ok · تعذّر: $failed"
           # لا نمضي على حذفٍ منقوص: المانيفست سيُصفَّر، فلو بقيت ملفاتٌ في R2

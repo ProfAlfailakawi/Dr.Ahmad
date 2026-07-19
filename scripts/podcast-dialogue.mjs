@@ -3511,7 +3511,21 @@ function selectDiversePilotArticles(articles, count = 3) {
     if (selected.length < Math.min(count, explicit.length)) throw new Error('بعض PODCAST_PILOT_SLUGS غير موجودة')
     return selected.slice(0, count).map((article, index) => ({ ...article, pilotCategory: ['human', 'analytical', 'reflective'][index] || 'mixed' }))
   }
-  const pool = articles.slice(0, Math.min(50, articles.length)).map((article) => ({ article, scores: articlePilotScores(article) }))
+  /* في وضع بلا Gemini لا كاتبَ آلياً: كل مقالٍ بلا حوارٍ كتبه الدكتور يُعزَل.
+     وكان المنتقي يختار ثلاثة مقالات «متنوعة» بلا نظرٍ إلى ذلك، فتُعزل ثلاثتها
+     وتسقط التجربة ٠/٣ في كل ليلة — فلا تُفتح البوابة ولا تُنشر حلقةٌ أبداً.
+     حلقةٌ مفرغة أبقت الحوار صفراً رغم نجاح كل شيءٍ آخر. الآن ننتقي من
+     الحوارات المكتوبة وحدها. */
+    const hasManualDialogue = (article) => existsSync(resolve(ROOT, 'manual-dialogues', `${article.slug}.json`))
+  const eligible = NO_GEMINI ? articles.filter(hasManualDialogue) : articles
+  if (NO_GEMINI) {
+    if (!eligible.length) {
+      console.log('ⓘ وضع بلا Gemini: لا حوار مكتوب في manual-dialogues/ — لا شيء يُولَّد. اكتب حواراً من اللوحة.')
+      return []
+    }
+    console.log(`ⓘ وضع بلا Gemini: ${eligible.length} حوار مكتوب متاح — التجربة تجري عليها وحدها.`)
+  }
+  const pool = eligible.slice(0, Math.min(50, eligible.length)).map((article) => ({ article, scores: articlePilotScores(article) }))
   const selected = []
   for (const category of ['human', 'analytical', 'reflective']) {
     const best = pool.filter((item) => !selected.some((picked) => picked.article.slug === item.article.slug))
@@ -4604,7 +4618,11 @@ else if (targetSlug) queue = ARTICLES.filter((a) => a.slug === targetSlug)
 else if (latest) queue = ARTICLES.slice(0, latest)
 else if (nightly) {
   const limit = Math.min(5, Math.max(1, Number(env.PODCAST_NIGHTLY_LIMIT || 1)))
-  queue = ARTICLES.filter((article) => {
+  /* الشرط نفسه في المسار الليلي: بلا Gemini لا يدخل الطابور إلا ما كُتب له حوار */
+  const nightlyPool = NO_GEMINI
+    ? ARTICLES.filter((article) => existsSync(resolve(ROOT, 'manual-dialogues', `${article.slug}.json`)))
+    : ARTICLES
+  queue = nightlyPool.filter((article) => {
     const sourceHash = createHash('sha256').update(article.body).digest('hex')
     const expected = createHash('sha256').update(`${sourceHash}|ar|${ACTIVE_PIPELINE_HASH}`).digest('hex').slice(0, 16)
     const saved = state.done[`${article.slug}:ar`]

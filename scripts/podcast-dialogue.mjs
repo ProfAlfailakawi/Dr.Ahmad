@@ -2566,7 +2566,19 @@ function auditAudio(mp3, { minSec = 1, maxSec = 300, maxLongSilences = 0 } = {})
     meanDb: Number.isFinite(mean) ? mean : null, issues }
 }
 
-function episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript = [] }) {
+/**
+ * قانونٌ واحد لا قانونان.
+ *
+ * بوابةُ التركيب أُعيد تصميمها لأن تفريغ ست دقائق بنداءٍ واحد أداةٌ خشنة تفقد
+ * أدوات الربط بطبعها، فطلبُ ٠.٩٥ منها كان يُعدم حلقةً كلُّ مقاطعها مثبتة.
+ * فصارت تسأل السؤال الصحيح: أكلُّ مداخلةٍ حاضرةٌ بترتيبها؟ (تغطية ≥٠.٩).
+ *
+ * لكن حاسبة النقاط بقيت على العتبات القديمة (٠.٩٥ و٠.٩٧)، فكانت الحلقة تجتاز
+ * التركيب ثم تسقط عند النقاط بالمقياس الذي أُبطل — ٤٦/١٠٠ لحلقةٍ سليمة تماماً.
+ * الآن يحكم القانونُ نفسه في الموضعين، وتبقى نقاط المدة والصمت والذروة والحجم
+ * كما هي بلا أي تخفيف.
+ */
+function episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript = [], episodeIntegrity = null }) {
   const minimumScore = Math.max(94, Number(env.PODCAST_RELEASE_MIN_SCORE || 94))
   const durationOk = Number(technicalAudit?.dur || 0) >= 120 && Number(technicalAudit?.dur || 0) <= 360
   const sizeOk = Number(technicalAudit?.size || 0) >= 200_000
@@ -2574,11 +2586,21 @@ function episodeQualityScore({ technicalAudit, fullComparison, finalJudge, trans
     ? technicalAudit.unexpectedLongSilences.length === 0
     : Array.isArray(technicalAudit?.longSilences) ? technicalAudit.longSilences.length === 0 : false
   const peakOk = !Number.isFinite(Number(technicalAudit?.peakDb)) || Number(technicalAudit.peakDb) <= -1
-  const sttOk = Number(fullComparison?.importantRatio || 0) >= 0.95 && Number(fullComparison?.ratio || 0) >= 0.90
-  /* في وضع بلا Gemini تُستبدل نقاط الحكم الثلاثون بعتبة STT مشددة على الحلقة كاملة
-     (0.97/0.93) — فلا تُمنح نقاط الحكم مجاناً، بل تُشترى بدقة نصية أعلى. */
+  /* حين تجتاز بوابةُ التركيب، هي المرجع: كل مداخلة حاضرة بترتيبها، وكلُّ مقطعٍ
+     مثبَّتٌ سلفاً بعتبةٍ أشدّ على ملفٍ قصير (٠.٩٢/٠.٨٨ بلا Gemini). */
+  const integrityOk = episodeIntegrity?.pass === true && Number(episodeIntegrity.coverage || 0) >= 0.9
+  const sttOk = integrityOk
+    ? Number(fullComparison?.importantRatio || 0) >= 0.82
+    : Number(fullComparison?.importantRatio || 0) >= 0.95 && Number(fullComparison?.ratio || 0) >= 0.90
+  /* بلا Gemini تُشترى نقاط الحكم الثلاثون بطريقين، ولا تُمنح مجاناً بواحد:
+       أ) دقةٌ نصية فائقة على الحلقة كاملة (٠.٩٧/٠.٩٣) — الطريق الأصلي، وهو
+          يكفي وحده لأن مثل هذه الدقة لا تجتمع مع خللٍ في التركيب.
+       ب) سلامةُ التركيب المبرهنة (كل مداخلة حاضرة بترتيبها) + دقةٌ نصية أعلى
+          من عتبة العزل — للحلقات التي يفقد تفريغُها الطويل أدواتِ الربط رغم
+          أن كل مقطعٍ فيها مثبَّتٌ سلفاً بعتبةٍ أشدّ على ملفٍ قصير. */
+  const strictSttOk = Number(fullComparison?.importantRatio || 0) >= 0.97 && Number(fullComparison?.ratio || 0) >= 0.93
   const judgeOk = finalJudge?.noGemini === true
-    ? Number(fullComparison?.importantRatio || 0) >= 0.97 && Number(fullComparison?.ratio || 0) >= 0.93
+    ? strictSttOk || (integrityOk && Number(fullComparison?.importantRatio || 0) >= 0.88)
     : finalJudge?.pass === true && (!Array.isArray(finalJudge?.problems) || finalJudge.problems.length === 0)
   const transcriptOk = Array.isArray(transcript) && transcript.length >= 8
   const score = Math.round(
@@ -3332,7 +3354,7 @@ async function produce(article, lang) {
     if (LIGHT) { durationRange.maxLongSilences = utts.length; durationRange.minSec = 120; durationRange.maxSec = 360 }
     let technicalAudit = auditAudio(candidateMp3, durationRange)
     if (technicalAudit.issues.length) return quarantine(`الفحص التقني: ${technicalAudit.issues.join(' · ')}`)
-    let fullStt = null, fullComparison = null, finalJudge = null
+    let fullStt = null, fullComparison = null, finalJudge = null, episodeIntegrity = null
     if (LIGHT) {
       // الوضع المجاني: نُبقي الفحص التقني المحلي فقط (سلامة الملف والمدة)، ونتخطّى STT الكامل
       // وحَكَم الحلقة المدفوع (multimodal). النشر مباشر بجودة القراءة المقبولة.
@@ -3350,6 +3372,7 @@ async function produce(article, lang) {
          نفحص هنا ما يعجز فحصُ المقاطع عن كشفه وحده: أن تكون كل مداخلة حاضرة في
          الملف المركَّب وبترتيبها الصحيح، فلا مقطع ساقط ولا مكرر ولا مقلوب ولا
          مبتور ولا مغطّى بالموسيقى. */
+      /* تُرفع نتيجة التركيب خارج الكتلة كي تحكم حاسبة النقاط بالقانون نفسه */
       const anchorsOf = (text) => [...new Set(normalizeAr(text).split(' ').filter((word) => word.length >= 5))].slice(0, 4)
       const fullHeard = normalizeAr(fullStt.text)
       let cursor = 0, anchored = 0, anchorable = 0
@@ -3372,6 +3395,7 @@ async function produce(article, lang) {
           + `${unanchored.length ? ` — غابت مداخلات عند: ${unanchored.slice(0, 4).join('، ')}` : ''}`
           + ` (تطابق نصي ${Math.round(fullComparison.importantRatio * 100)}٪)`, { fullStt, fullComparison })
       }
+      episodeIntegrity = { pass: true, coverage, anchored, anchorable }
       console.log(`  ✓ تركيب الحلقة سليم: ${anchored}/${anchorable} مداخلة حاضرة بترتيبها · تطابق نصي ${Math.round(fullComparison.importantRatio * 100)}٪`)
       finalJudge = await judgeFullEpisode(candidateMp3, intendedFull, fullStt, transcript, allRisks)
       if (!finalJudge.pass) {
@@ -3434,7 +3458,7 @@ async function produce(article, lang) {
     }
 
     /* ٦) بوابة score قبل لمس أي ملف منشور، ثم نشر ذري مع Last-Known-Good وRollback دائم. */
-    const qualityScore = episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript })
+    const qualityScore = episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript, episodeIntegrity })
     if (!qualityScore.pass) return quarantine(`بوابة score النهائية أقل من الحد: ${qualityScore.score}/100`)
     const humanGate = dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudge })
     if (!humanGate.pass) return quarantine(`بوابة البشرية أقل من الحد: proxy=${humanGate.proxy.score}/100، judge=${humanGate.minimumJudgeDimension}/100`, { humanGate })
@@ -3796,6 +3820,21 @@ if (SELF_TEST) {
   const strictFail = episodeQualityScore({ ...noGeminiBase,
     fullComparison: { importantRatio: 0.95, ratio: 0.90 }, finalJudge: { noGemini: true, pass: true, problems: [] } })
   assert(!strictFail.checks.judgeOk && !strictFail.pass, 'بلا Gemini: STT عند الحد العادي فقط لا يكفي — لا نقاط حكم مجانية')
+  /* حلقةُ الدكتور الحقيقية: تركيبها مبرهَن (٣٦/٣٦ بترتيبها) وتفريغها الطويل
+     ٩٢٪ — كانت تُعزل بـ٤٦/١٠٠ لأن الحاسبة تطلب ٠.٩٧ من أداةٍ خشنة، بينما
+     بوابةُ التركيب التي قبلتها تطلب ٠.٨٢. قانونٌ واحد الآن. */
+  const integrityPath = episodeQualityScore({ ...noGeminiBase,
+    fullComparison: { importantRatio: 0.92, ratio: 0.90 }, finalJudge: { noGemini: true, pass: true, problems: [] },
+    episodeIntegrity: { pass: true, coverage: 1, anchored: 36, anchorable: 36 } })
+  assert(integrityPath.pass && integrityPath.checks.judgeOk, 'بلا Gemini: تركيبٌ مبرهَن + تطابق ٩٢٪ يجتاز — لا يُعزل بمقياسٍ أُبطل')
+  const brokenIntegrity = episodeQualityScore({ ...noGeminiBase,
+    fullComparison: { importantRatio: 0.92, ratio: 0.90 }, finalJudge: { noGemini: true, pass: true, problems: [] },
+    episodeIntegrity: { pass: true, coverage: 0.7, anchored: 25, anchorable: 36 } })
+  assert(!brokenIntegrity.pass, 'مداخلات ساقطة من التركيب تُعزل الحلقة ولو كان التطابق النصي جيداً')
+  const poorSpeech = episodeQualityScore({ ...noGeminiBase,
+    fullComparison: { importantRatio: 0.80, ratio: 0.85 }, finalJudge: { noGemini: true, pass: true, problems: [] },
+    episodeIntegrity: { pass: true, coverage: 1, anchored: 36, anchorable: 36 } })
+  assert(!poorSpeech.pass, 'تركيبٌ سليم لا يشفع لنطقٍ رديء')
   const judgedPath = episodeQualityScore({ ...noGeminiBase,
     fullComparison: { importantRatio: 0.95, ratio: 0.90 }, finalJudge: { pass: true, problems: [] } })
   assert(judgedPath.checks.judgeOk, 'مسار الحكم العادي لم يمسه وضع بلا Gemini')

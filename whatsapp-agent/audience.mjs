@@ -173,13 +173,26 @@ export function absorbContacts(db, contacts = []) {
 export function listContactsPage(db, { search = '', limit = 500, offset = 0 } = {}) {
   const all = listContacts(db, { search, limit: Number.POSITIVE_INFINITY })
   const start = Math.max(0, Number(offset) || 0)
-  const size = Math.max(1, Math.min(1000, Number(limit) || 500))
+  /* السقف ٥٠٠٠ لا ١٠٠٠: دفتر الدكتور ٢٥٩٣، وسقفُ الألف كان يحبسه دونها */
+  const size = Math.max(1, Math.min(5000, Number(limit) || 500))
   return { contacts: all.slice(start, start + size), total: all.length, offset: start, limit: size }
 }
 
 export function listContacts(db, { search = '', limit = 500 } = {}) {
   const rows = db.all('SELECT * FROM contacts ORDER BY COALESCE(nickname, wa_name, display_name, phone) COLLATE NOCASE')
-  const term = String(search || '').trim().toLowerCase()
+  /* «أبو» و«ابو» اسمٌ واحد في الأذن، واثنان في الحاسوب. وبحثٌ لا يعرف ذلك
+     يعطي أربعةً من أربعين. نطبّع الهمزات والتاء المربوطة والألف المقصورة
+     في الطرفين — فيجد الدكتور من يبحث عنه كيفما كُتب اسمه. */
+  const normalizeAr = (value) => String(value || '')
+    .replace(/[\u064B-\u0652\u0670]/g, '')
+    .replace(/[إأآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/[ؤئ]/g, 'ء')
+    .replace(/ـ/g, '')
+    .toLowerCase()
+    .trim()
+  const term = normalizeAr(search)
   return rows
     .map((row) => ({
       id: row.id,
@@ -191,7 +204,7 @@ export function listContacts(db, { search = '', limit = 500 } = {}) {
       /* في كم قائمةٍ هو؟ صفرٌ يعني أنه في دفترك ولم يدخل قائمةً بعد. */
       lists: Number(db.get('SELECT COUNT(*) c FROM broadcast_members WHERE jid=?', row.id)?.c || 0),
     }))
-    .filter((row) => !term || row.name.toLowerCase().includes(term) || row.tail.includes(term))
+    .filter((row) => !term || normalizeAr(row.name).includes(term) || row.tail.includes(term))
     .slice(0, limit)
 }
 

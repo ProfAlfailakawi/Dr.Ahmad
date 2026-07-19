@@ -44,7 +44,11 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
   const [contacts, setContacts] = useState<Contact[]>([])
   /* الدفتر فيه آلاف الأسماء: نتصفّحه دفعةً بعد دفعة بدل حصره في أول خمسمئة */
   const [total, setTotal] = useState(0)
-  const [shown, setShown] = useState(500)
+  /* صفحاتٌ تُقلَّب بالأرقام: الدكتور لا يريد بحثاً ولا «أظهر المزيد» —
+     يريد أن يتنقّل بين صفحات دفتره كما يقلّب دفتراً ورقياً. */
+  const PAGE_SIZE = 200
+  const [page, setPage] = useState(0)
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const [search, setSearch] = useState('')
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [newList, setNewList] = useState('')
@@ -77,10 +81,10 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
     } catch { setMembers([]) }
   }
 
-  const loadContacts = async (term: string, size = shown) => {
+  const loadContacts = async (term: string, which = page) => {
     try {
       const data = await request<{ contacts: Contact[]; total: number }>(
-        `/admin/audience/contacts?q=${encodeURIComponent(term)}&limit=${size}&offset=0`,
+        `/admin/audience/contacts?q=${encodeURIComponent(term)}&limit=${PAGE_SIZE}&offset=${which * PAGE_SIZE}`,
       )
       setContacts(data.contacts || [])
       setTotal(Number(data.total || 0))
@@ -89,8 +93,9 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
 
   useEffect(() => { void loadLists(); void loadContacts('') }, [])
   useEffect(() => { void loadMembers(activeId) }, [activeId])
+  useEffect(() => { void loadContacts(search, page) }, [page])
   useEffect(() => {
-    const timer = setTimeout(() => { setShown(500); void loadContacts(search, 500) }, 220)
+    const timer = setTimeout(() => { setPage(0); void loadContacts(search, 0) }, 220)
     return () => clearTimeout(timer)
   }, [search])
 
@@ -299,7 +304,8 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-3">
                 <label className="block font-semibold text-ink">
-                  دفتر الأسماء — {total}{contacts.length < total ? ` · ظاهرٌ منهم ${contacts.length}` : ''}
+                  دفتر الأسماء — {total}
+                  {pageCount > 1 && <span className="mr-2 text-[.78rem] font-normal text-soft">صفحة {page + 1} من {pageCount}</span>}
                 </label>
                 {contacts.length > 0 && (
                   <button type="button" className="text-[.75rem] text-soft underline-offset-4 hover:text-accent hover:underline"
@@ -311,11 +317,18 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                       return next
                     })}>
                     {contacts.filter((item) => !inList.has(item.id)).every((item) => picked.has(item.id)) && picked.size
-                      ? 'ألغِ تحديد الظاهرين' : 'حدّد الظاهرين كلهم'}
+                      ? 'ألغِ تحديد هذه الصفحة' : 'حدّد هذه الصفحة كلها'}
                   </button>
                 )}
               </div>
-              {picked.size > 0 && <button type="button" className={primary} disabled={busy} onClick={addPicked}>أضف {picked.size} إلى «{active?.name || '…'}»</button>}
+              {picked.size > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* الاختيار يبقى وأنت تقلّب الصفحات — فتجمع من عدة صفحات ثم تضيف مرة */}
+                  <span className="text-[.75rem] text-soft">محدَّد: {picked.size}</span>
+                  <button type="button" className={secondary} disabled={busy} onClick={() => setPicked(new Set())}>ألغِ الكل</button>
+                  <button type="button" className={primary} disabled={busy} onClick={addPicked}>أضف {picked.size} إلى «{active?.name || '…'}»</button>
+                </div>
+              )}
             </div>
             <input className={input} value={search} placeholder="ابحث باسمٍ أو بآخر أربعة أرقام…" onChange={(e) => setSearch(e.target.value)} />
             {/* الجدد بعد آخر استيراد — يظلّون بارزين حتى تُدخلهم قائمة، فلا
@@ -366,11 +379,34 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                   </span>
                 )
               })}
-              {contacts.length < total && (
-                <button type="button" className={secondary} disabled={busy}
-                  onClick={() => { const next = shown + 500; setShown(next); void loadContacts(search, next) }}>
-                  أظهر {Math.min(500, total - contacts.length)} أخرى ({contacts.length} من {total})
-                </button>
+              {pageCount > 1 && (
+                <div className="flex w-full flex-wrap items-center justify-center gap-1.5 pt-1">
+                  <button type="button" className={secondary} disabled={busy || page === 0}
+                    onClick={() => setPage(page - 1)}>السابق</button>
+                  {/* أرقام الصفحات: نعرض نافذةً حول الصفحة الحالية مع الأولى
+                      والأخيرة دائماً — فثلاث عشرة صفحة لا تحتاج ثلاثة عشر زراً. */}
+                  {Array.from({ length: pageCount }, (_, index) => index)
+                    .filter((index) => index === 0 || index === pageCount - 1 || Math.abs(index - page) <= 2)
+                    .reduce<(number | 'gap')[]>((list, index) => {
+                      const last = list[list.length - 1]
+                      if (typeof last === 'number' && index - last > 1) list.push('gap')
+                      list.push(index)
+                      return list
+                    }, [])
+                    .map((item, index) => item === 'gap'
+                      ? <span key={`gap-${index}`} className="px-1 text-soft">…</span>
+                      : (
+                        <button key={item} type="button" disabled={busy}
+                          onClick={() => setPage(item)}
+                          className={`min-w-9 rounded-full border px-3 py-1.5 text-[.8rem] font-semibold transition-colors ${
+                            item === page ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'
+                          }`}>
+                          {item + 1}
+                        </button>
+                      ))}
+                  <button type="button" className={secondary} disabled={busy || page >= pageCount - 1}
+                    onClick={() => setPage(page + 1)}>التالي</button>
+                </div>
               )}
               {contacts.length === 0 && (
                 <p className="text-[.78rem] leading-relaxed text-soft">

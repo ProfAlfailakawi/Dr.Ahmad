@@ -694,7 +694,18 @@ function normalizeMechanics(sc, options = {}) {
     u.ratePct = clamp(u.ratePct, profile.ratePct)
     u.targetWordsPerMinute = clamp(u.targetWordsPerMinute, profile.targetWpm)
     u.pauseAfterMs = clamp(u.pauseAfterMs, profile.pauseMs)
-    if (!['open', 'final', 'neutral'].includes(u.ending)) u.ending = 'neutral'
+    /* حوار الدكتور يحمل النص ونوع الإلقاء، ولا يحمل «ending» — وهو حقلٌ تقنيّ
+       لا ينبغي أن يُكلَّف بكتابته. وكان كل ما لا نهايةَ له يصير 'neutral'، فلا
+       يبقى في الحلقة إلا نوعان (neutral وopen للأسئلة) بينما بوابةُ البشرية
+       تطلب ثلاثة — فتُعزل كل حلقةٍ يدوية عند آخر بوابة. تُشتقّ الآن من نوع
+       الإلقاء نفسه اشتقاقاً طبيعياً: الخلاصةُ تُغلق، والسؤالُ والتأمل يفتحان،
+       وما سواهما محايد. */
+    if (!['open', 'final', 'neutral'].includes(u.ending)) {
+      const kind = String(u.delivery || '')
+      u.ending = ['conclusion'].includes(kind) ? 'final'
+        : ['question', 'reflection', 'reflective', 'gentleObjection', 'objection'].includes(kind) ? 'open'
+          : 'neutral'
+    }
     const [pauseLo, pauseHi] = profile.pauseMs
     const naturalPause = stableBetween(u.text, index + 41, pauseLo, pauseHi)
     if (!Number.isFinite(Number(u.pauseAfterMs))

@@ -242,6 +242,10 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
   const [documentBusy, setDocumentBusy] = useState(false)
   const [cloudBusy, setCloudBusy] = useState(false)
   const [queueBusy, setQueueBusy] = useState(false)
+  /* بعد الضغط لم يكن الدكتور يعرف أنجح الإرسال أم لا: الزرّ يعود كما كان،
+     ولا شيء يتغيّر إلا سطرُ إشعارٍ خافت أسفل الصفحة قد لا يراه. فيضغط ثانيةً
+     وثالثة وهو لا يدري. الآن يُقفل الزرّ ويُعلن النجاح في مكانه. */
+  const [queuedProof, setQueuedProof] = useState<{ turnCount: number; sha: string; runId?: string } | null>(null)
   const [audioAvailable, setAudioAvailable] = useState(false)
   const [audioChecking, setAudioChecking] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -448,6 +452,7 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
         throw new Error('queue-readback-mismatch')
       }
       const dispatch = await dispatchPodcastGeneration({ user, slug, proof })
+      setQueuedProof({ turnCount: proof.turnCount, sha: proof.contentSha256.slice(0, 12), runId: dispatch.workflowRunId ? String(dispatch.workflowRunId) : undefined })
       setNotice(dispatch.duplicate
         ? `الحوار نفسه مقفول والتوليد يعمل بالفعل ✓ ${proof.turnCount} مداخلة · بصمة ${proof.contentSha256.slice(0, 12)}`
         : `بدأ التوليد تلقائياً من لوحة التحكم ✓ ${proof.turnCount} مداخلة · بصمة ${proof.contentSha256.slice(0, 12)}${dispatch.workflowRunId ? ` · تشغيل ${dispatch.workflowRunId}` : ''}. لا تحتاج إلى دخول GitHub.`)
@@ -457,6 +462,10 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
       setQueueBusy(false)
     }
   }
+
+  /* عاد يحرّر أو بدّل المقال؟ الإرسال السابق لم يعد يخصّ ما بين يديه */
+  useEffect(() => { setQueuedProof(null) }, [slug])
+  useEffect(() => { if (dirty) setQueuedProof(null) }, [dirty])
 
   useEffect(() => {
     if (!dirty) return
@@ -617,7 +626,14 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
           </label>
           <div className="flex flex-wrap justify-end gap-2">
             <button type="button" onClick={() => void save(false)} disabled={cloudBusy || queueBusy} className={dirty ? primary : ghost}>{cloudBusy ? 'أثبت الحفظ…' : dirty ? 'حفظ وتثبيت البصمة' : isAdmin ? 'الحوار محفوظ ومثبت' : 'المسودة محفوظة'}</button>
-            <button type="button" onClick={() => void queueForGeneration()} disabled={cloudBusy || queueBusy || turns.length < 2} className={primary}>{queueBusy ? 'أحفظ وأبدأ التوليد…' : 'حفظ وإرسال الحوار نفسه للتوليد'}</button>
+            <button
+              type="button"
+              onClick={() => void queueForGeneration()}
+              disabled={cloudBusy || queueBusy || turns.length < 2 || Boolean(queuedProof)}
+              className={queuedProof ? `${primary} cursor-default opacity-60` : primary}
+            >
+              {queueBusy ? 'أحفظ وأبدأ التوليد…' : queuedProof ? '✓ أُرسل للتوليد' : 'حفظ وإرسال الحوار نفسه للتوليد'}
+            </button>
           </div>
         </div>
 
@@ -645,7 +661,23 @@ export function ManualDialogueEditor({ articles }: { articles: ArticleRecord[] }
           ) : <p className="mt-3 rounded-xl border border-hair bg-wash px-4 py-3 text-[.76rem] leading-relaxed text-soft">المسودة جاهزة، لكن الصوت لا يُنشأ داخل المتصفح؛ يظهر تلقائياً بعد مرورها بمسار Azure والمراجعة الصوتية.</p>}
         </div>
 
-        {notice && <p role="status" className="admin-inline-notice mt-4 rounded-xl border border-accent/25 bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-accent">{notice}</p>}
+        {queuedProof && (
+          <div role="status" className="mt-4 grid gap-2 rounded-2xl border border-accent/45 bg-canvas px-5 py-4">
+            <p className="font-display text-[1.05rem] font-semibold text-ink">✓ وصل الحوار وبدأ التوليد</p>
+            <p className="text-[.82rem] leading-relaxed text-soft">
+              {queuedProof.turnCount} مداخلة · بصمة {queuedProof.sha}
+              {queuedProof.runId ? ` · تشغيل ${queuedProof.runId}` : ''}
+              <br />
+              التوليد يستغرق نحو عشر دقائق. لا تحتاج إلى الضغط ثانيةً، ولا إلى دخول GitHub —
+              الحلقة تظهر في صفحة المقال وحدها متى اجتازت البوابات.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <a href="/admin?tab=production" className="rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-white transition-opacity hover:opacity-90">تابع التوليد</a>
+              <button type="button" className={ghost} onClick={() => setQueuedProof(null)}>أرسل حواراً آخر</button>
+            </div>
+          </div>
+        )}
+        {notice && !queuedProof && <p role="status" className="admin-inline-notice mt-4 rounded-xl border border-accent/25 bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-accent">{notice}</p>}
         {warnings.length > 0 && (
           <details className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3">
             <summary className="cursor-pointer text-[.8rem] font-semibold text-soft">ملاحظات الجودة ({warnings.length})</summary>

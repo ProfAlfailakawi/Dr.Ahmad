@@ -38,10 +38,15 @@ function harvestFromFile(file, kind) {
   for (const match of text.matchAll(linkPattern)) {
     const field = match[1]
     const url = match[2]
-    /* عنوان المادة الحاضنة: نبحث لأعلى عن أقرب title/ar لنسمّي العطب باسمه */
-    /* نافذة أوسع: ملخّص البحث يتجاوز ٩٠٠ حرف فيبتلع العنوان ويترك العطب بلا اسم */
-    const before = text.slice(Math.max(0, match.index - 4000), match.index)
-    const title = [...before.matchAll(/(?:title|ar):\s*'((?:[^'\\]|\\.)*)'/g)].at(-1)?.[1] || ''
+    /* عنوان المادة الحاضنة — ويجب أن يكون من العنصر نفسه لا مما قبله.
+       كانت النافذة تمتد أربعة آلاف حرف إلى الوراء بلا حدّ، فينسب رابطَ
+       لينكدإن في socials إلى «جيلٌ بلا جذور» لأنها آخر عنوانٍ سبقه في
+       الملف — فيظهر للدكتور عطبٌ في مقالٍ مصدرُه سليم. نحصر البحث في
+       العنصر الحاضن: من آخر «{» لم يُغلق قبل الرابط. */
+    const window = text.slice(Math.max(0, match.index - 4000), match.index)
+    const opened = window.lastIndexOf('{')
+    const before = opened >= 0 ? window.slice(opened) : window
+    const title = [...before.matchAll(/(?:title|ar|label|name):\s*'((?:[^'\\]|\\.)*)'/g)].at(-1)?.[1] || ''
     const slug = [...before.matchAll(/slug:\s*'([^']+)'/g)].at(-1)?.[1] || ''
     if (EMBED_FIELDS.has(field)) continue
     found.push({ url, kind, field, title: title.slice(0, 90), slug, where: file })

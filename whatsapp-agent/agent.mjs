@@ -113,17 +113,73 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     }
     const transportEvents = state.transport.events || state.transport
     transportEvents?.on?.('status', (payload) => db.setState(typeof payload === 'string' ? { status: payload } : payload))
-    // QR/pairing secrets are emitted only in-process; never persist them in SQLite or expose them through the web bridge.
-    transportEvents?.on?.('qr', () => db.setState({ status: 'pairing', qr: null, pairing_code: null }))
-    transportEvents?.on?.('pairing-code', () => db.setState({ status: 'pairing', qr: null, pairing_code: null }))
+    /* رمز الاقتران يُحفظ ليراه الدكتور في لوحته. كان هذان المستمعان يمحوانه
+       (qr: null) بعد أن يحفظه transport مباشرةً، فلا يظهر في اللوحة أبداً —
+       ويبقى مطبوعاً في سجلّ الطرفية وحده حيث لا يفتحه أحد.
+
+       والحدّ الأمنيّ لم يُخترق: الرمز يعيش في قاعدةٍ محليّة على ماك الدكتور،
+       ويصل لوحته عبر جسرٍ يستمع على 127.0.0.1 وحده بسرٍّ من أربعٍ وستين خانة.
+       ولا يُرسَل إلى أيّ خدمةٍ خارجية — يُرسَم صورةً محليّاً. ويُمحى فور نجاح
+       الاتصال (setStatus('connected', { qr: null })). */
+    transportEvents?.on?.('qr', (code) => db.setState({ status: 'pairing', qr: code || null, pairing_code: null }))
+    transportEvents?.on?.('pairing-code', (code) => db.setState({ status: 'pairing', qr: null, pairing_code: code || null }))
     transportEvents?.on?.('manual-takeover', (jid) => markManualTakeover(db, jid))
     await state.transport.connect({ phoneNumber })
     state.started = true
     if (process.env.WHATSAPP_AGENT_BRIDGE === 'true' && !state.bridge) state.bridge = startLocalBridge(api)
     heartbeat()
     state.timers.add(setInterval(heartbeat, HEARTBEAT_INTERVAL_MS))
+    /* الإنعاش الذاتي: يُقلع البوت نفسه إن تعثّر، فلا ينتظر الدكتور مستيقظاً.
+       ولا يُقلع إن كان يطلب QR — إعادةٌ بلا فائدة، والحلّ إنسانٌ يمسح الرمز. */
+    state.watchdogSince = Date.now()
+    state.timers.add(setInterval(() => selfHeal(), 60_000))
     if (flags.reminders) state.timers.add(setInterval(() => void dispatchDueReminders(state), 30000))
     return db.state()
+  }
+
+  /* عتبات الإنعاش — بأرقام الدكتور */
+  const READY_GRACE_MS = 5 * 60 * 1000    // خمس دقائق لتكتمل الجاهزية
+  const POLL_FAIL_LIMIT = 20              // عشرون إخفاقاً متتالياً في الطابور
+
+  /**
+   * حارسٌ يمرّ كل دقيقة. لا يُصلح منطقاً — يُعيد التشغيل حين يثبت العطب، ويصمت
+   * حين لا يُجدي. وكل قرارٍ يُسجَّل في سجلّ التدقيق كي يُراجَع لا كي يُخمَّن.
+   */
+  function selfHeal() {
+    try {
+      const health = healthState()
+
+      if (health.needsAuthScan) {
+        /* لا تُعد التشغيل: الجلسة انتهت، وإقلاعٌ جديد يُنتج رمزاً جديداً وحسب.
+           نُنادي إنساناً — والإشعار محكومٌ بمرّةٍ كل ساعة كي لا يصير إزعاجاً. */
+        const lastCall = Number(db.getSetting('bridge.qrAlertAt', 0) || 0)
+        if (Date.now() - lastCall > 60 * 60 * 1000) {
+          db.setSetting('bridge.qrAlertAt', Date.now())
+          db.addAudit('health-needs-qr', '', 'البوت يطلب ربطاً بـ QR — إعادة التشغيل لا تنفع')
+          console.error('⚠ البوت يحتاج مسح رمز QR من اللوحة. لن يردّ حتى تُعيد ربطه.')
+        }
+        return
+      }
+
+      if (!health.ready && Date.now() - (state.watchdogSince || 0) > READY_GRACE_MS) {
+        db.addAudit('health-restart', '', 'لم تكتمل الجاهزية خلال خمس دقائق')
+        console.error('⚠ لم تكتمل الجاهزية خلال خمس دقائق — أُعيد التشغيل.')
+        void stop().finally(() => process.exit(0))   // launchd يُقلعه من جديد
+        return
+      }
+
+      if (health.pollFailures >= POLL_FAIL_LIMIT) {
+        db.setSetting('bridge.pollFailures', 0)
+        db.addAudit('health-restart', '', `الطابور متعثّر: ${health.pollFailures} إخفاقاً متتالياً`)
+        console.error('⚠ الطابور متعثّر — أُعيد التشغيل.')
+        void stop().finally(() => process.exit(0))
+        return
+      }
+
+      if (health.ready) state.watchdogSince = Date.now()   // صحيحٌ الآن: تُصفَّر المهلة
+    } catch (error) {
+      db.addAudit('health-check-failed', '', redactError(error))
+    }
   }
   const stop = async () => {
     for (const timer of state.timers) clearInterval(timer)
@@ -205,6 +261,22 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
    * يصمت البوت بلا سببٍ ظاهر — كما وقع اليوم بسبب صدى ردّه — يحتاج زراً واحداً
    * يُعيده حالاً، لا بحثاً عن رقمٍ في قاعدة بيانات.
    */
+  /**
+   * إعادة ربطٍ من اللوحة: تمسح الجلسة وتُقلع فيظهر QR جديد.
+   *
+   * كان هذا يحتاج طرفيّةً وأوامر SQL — والدكتور لا يفتحهما. وحين تنتهي الجلسة
+   * (كما وقع) يبقى البوت صامتاً حتى يتدخّل غيره. زرٌّ واحد يكفي.
+   * ولا تُمسّ الجهات ولا القوائم: جداولها منفصلة عن whatsapp_auth.
+   */
+  const repair = async () => {
+    const before = db.get('SELECT COUNT(*) AS c FROM whatsapp_auth')?.c || 0
+    db.deleteAuth()
+    db.setState({ status: 'pairing', qr: null, pairing_code: null })
+    db.addAudit('bridge-repair', '', `مُسحت الجلسة (${before} مفتاحاً) — يُنتظر مسح QR`)
+    setTimeout(async () => { try { await stop() } finally { process.exit(0) } }, 350)
+    return { cleared: before, message: 'مُسحت الجلسة. سيظهر رمز QR خلال نصف دقيقة — امسحه بجوالك.' }
+  }
+
   const returnAllToBot = () => {
     const before = silenceState()
     db.run("UPDATE chat_sessions SET mode='content-session', manual_until=NULL, updated_at=? WHERE manual_until IS NOT NULL", new Date().toISOString())
@@ -440,10 +512,74 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
         qrImage = await qrcode.toDataURL(String(snapshot.qr), { margin: 1, width: 320, errorCorrectionLevel: 'M' })
       } catch { qrImage = null }
     }
-    return { ...db.state(), qrImage, flags, indexed: Number(db.get('SELECT COUNT(*) AS count FROM content_items')?.count || 0), bridge: Boolean(state.bridge), bridgeOnline, lastHeartbeatAt, heartbeatAgeMs, restartRequestedAt: db.getSetting('bridge.restartRequestedAt', null), port: BRIDGE_PORT, timeZone: TIME_ZONE }
+    return { ...db.state(), qrImage, flags, indexed: Number(db.get('SELECT COUNT(*) AS count FROM content_items')?.count || 0), bridge: Boolean(state.bridge), bridgeOnline, lastHeartbeatAt, heartbeatAgeMs, restartRequestedAt: db.getSetting('bridge.restartRequestedAt', null), port: BRIDGE_PORT, timeZone: TIME_ZONE, health: healthState() }
+  }
+
+  /**
+   * الصحّة الصادقة — لا «متصل ✅» وحدها.
+   *
+   * العلّة الجذرية التي وصفها الدكتور: اللوحة تفحص «هل العملية حيّة» فتقول
+   * «متصل»، والبوت لا يُرسل شيئاً. فيظلّ يجرّب ويحتار ولا يعرف السبب — وقد وقع
+   * ذلك فعلاً: كان ممنوعاً بساعات الصمت واللوحة تقول «متصل».
+   *
+   * فنُبلّغ هنا بالحقيقة كاملةً: أجاهزٌ هو؟ أيطلب QR؟ أمحظورٌ بقاعدة؟ وكم مرّة
+   * تعثّر؟ ثم نُصنّف الحالة تصنيفاً يفهمه الدكتور ويُريه العلاج، لا رمزاً أخضر
+   * يكذب عليه.
+   */
+  function healthState() {
+    const snapshot = db.state()
+    const needsAuthScan = Boolean(snapshot?.qr) && snapshot?.status !== 'connected'
+    const connected = snapshot?.status === 'connected'
+    const ready = Boolean(state.started && connected)
+    const pollFailures = Number(db.getSetting('bridge.pollFailures', 0) || 0)
+    const quietNow = isQuietHour()
+    const now = new Date().toISOString()
+    const silenced = db.all('SELECT manual_until FROM chat_sessions WHERE manual_until > ?', now).length
+
+    /* الترتيب مقصود: نُظهر أقربَ سببٍ يمنع الردّ فعلاً، لا أعمَّها */
+    let code = 'working'
+    let label = 'يعمل ويردّ'
+    let why = ''
+    let fix = ''
+
+    if (needsAuthScan) {
+      code = 'needs-qr'; label = 'يحتاج ربطاً بـ QR'
+      why = 'انتهت جلسة واتساب. إعادة التشغيل لا تنفع هنا.'
+      fix = 'امسح رمز QR من اللوحة بجوالك.'
+    } else if (!connected) {
+      code = 'disconnected'; label = 'مفصول عن واتساب'
+      why = 'لم يكتمل الاتصال بعد، أو انقطع.'
+      fix = 'اضغط «إعادة تشغيل واتساب» وانتظر دقيقة.'
+    } else if (!flags.agent) {
+      code = 'agent-off'; label = 'الوكيل موقوف'
+      why = 'WHATSAPP_AGENT_ENABLED مغلق.'
+      fix = 'فعّله في إعدادات الخدمة على الماك.'
+    } else if (!flags.send) {
+      code = 'send-off'; label = 'الإرسال مغلق'
+      why = 'مفتاح الإرسال غير مفعّل، فيجهّز الردّ ولا يُخرجه.'
+      fix = 'فعّل WHATSAPP_SEND_ENABLED ثم أعد التشغيل.'
+    } else if (!flags.autoReply) {
+      code = 'autoreply-off'; label = 'الردّ الآليّ مغلق'
+      why = 'يستقبل ويفهم، لكنه لا يردّ على أحد.'
+      fix = 'فعّل WHATSAPP_AUTO_REPLY_ENABLED ثم أعد التشغيل.'
+    } else if (quietNow) {
+      code = 'quiet-hours'; label = 'صامتٌ — ساعات الليل'
+      why = 'قاعدة ساعات الصمت تمنع الردّ في هذه الساعة.'
+      fix = 'اضبط النافذة أو ألغِها من الإعدادات.'
+    } else if (pollFailures >= 20) {
+      code = 'queue-stuck'; label = 'الطابور متعثّر'
+      why = `فشلت قراءة الطابور ${pollFailures} مرة متتالية.`
+      fix = 'اضغط «إعادة تشغيل واتساب».'
+    } else if (silenced > 0) {
+      code = 'manual-takeover'; label = 'صامتٌ — تدخّلٌ يدويّ'
+      why = `رددتَ بيدك في ${silenced === 1 ? 'محادثة' : `${silenced} محادثات`}، فصمت البوت فيها.`
+      fix = 'اضغط «أعد البوت الآن».'
+    }
+
+    return { code, label, why, fix, ready, needsAuthScan, pollFailures, quietNow, silenced, connected }
   }
   const setBridge = (server) => { state.bridge = server; return status() }
-  return Object.assign(api, { db, state, index, start, stop, status, sendSelf, audience, onContacts, silenceState, returnAllToBot, queueCampaign, approveCampaign, sendCampaign, sendQuietCampaign, stopCampaign, listCampaigns, listBroadcastGroups, discoverGroups, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, requestRestart })
+  return Object.assign(api, { db, state, index, start, stop, status, sendSelf, audience, onContacts, silenceState, returnAllToBot, repair, queueCampaign, approveCampaign, sendCampaign, sendQuietCampaign, stopCampaign, listCampaigns, listBroadcastGroups, discoverGroups, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, requestRestart })
 }
 
 async function dispatchDueReminders(state) {

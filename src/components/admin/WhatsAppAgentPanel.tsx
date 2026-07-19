@@ -17,6 +17,11 @@ type AgentStatus = {
   port?: number
   qr?: string | null
   qrImage?: string | null
+  health?: {
+    code: string; label: string; why: string; fix: string
+    ready: boolean; needsAuthScan: boolean; pollFailures: number
+    quietNow: boolean; silenced: number; connected: boolean
+  }
   pairing_code?: string | null
 }
 type Campaign = { id: string; name: string; state: string; created_at: string; approved_at?: string | null; target_count?: number }
@@ -192,6 +197,23 @@ export function WhatsAppAgentPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  /* تحديثٌ لحظيّ: نبضة البوت كل ثلاثين ثانية، فنفحص كل خمس عشرة كي لا يعلق
+     المؤشر على «متوقف» بعد تعافيه حتى يُعيد الدكتور تحميل الصفحة. ونفحص فوراً
+     عند العودة إلى التبويب — فأوّل ما يفعله الدكتور أن ينظر. */
+  useEffect(() => {
+    if (!secret.trim()) return
+    const timer = window.setInterval(() => { void refresh() }, 15_000)
+    const onVisible = () => { if (document.visibilityState === 'visible') void refresh() }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [secret])
+
   /* اقتران بضغطة: يجلب السر من الجسر المحلي ويحفظه في هذا المتصفح وحده،
      فلا ينسخ الدكتور أربعاً وستين خانة يدوياً في كل جهاز. */
   const [pairing, setPairing] = useState(false)
@@ -309,6 +331,21 @@ export function WhatsAppAgentPanel() {
     } finally { setReturning(false) }
   }
 
+  /* إعادة ربط: تمسح الجلسة فيظهر QR جديد. تأكيدٌ صريح لأنها تقطع الاتصال
+     حتى يمسح الدكتور الرمز بجواله — ولا تُنفَّذ بضغطةٍ ساهية. */
+  const [repairing, setRepairing] = useState(false)
+  const repairSession = async () => {
+    if (!window.confirm('سيُمسح ارتباط واتساب، ويظهر رمز QR جديد تمسحه بجوالك.\nجهاتك وقوائمك تبقى سليمة.\n\nهل تتابع؟')) return
+    setRepairing(true)
+    try {
+      const out = await request<{ message?: string }>('/admin/repair', { method: 'POST', body: JSON.stringify({ confirm: true }) })
+      setNotice(out.message || 'مُسحت الجلسة — انتظر ظهور رمز QR أدناه.')
+      setTimeout(() => void refresh(), 20_000)
+    } catch {
+      setNotice('تعذّر إرسال طلب إعادة الربط للجسر.')
+    } finally { setRepairing(false) }
+  }
+
   const restartBridge = async () => {
     if (!status.bridgeOnline) return setNotice('زر إعادة التشغيل لا يصل للجسر إذا كان الماك مطفأ أو الإنترنت/الجسر متوقفًا.')
     setRestarting(true)
@@ -389,10 +426,26 @@ export function WhatsAppAgentPanel() {
             <h2 className="mt-1 flex flex-wrap items-center gap-3 font-display text-2xl font-semibold text-ink">
               وكيل محلي بموافقة الدكتور.
               <span className={`rounded-full px-3 py-1 text-[.72rem] font-semibold ${status.status === 'connected' ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>
-                {stateLabel[String(status.status)] || 'غير مرتبط'}
+                {status.health?.label || stateLabel[String(status.status)] || 'غير مرتبط'}
               </span>
             </h2>
             <p className="mt-2 max-w-2xl text-[.86rem] leading-relaxed text-soft">الجسر مستقل على الماك، والجلسة لا تدخل GitHub ولا Firebase. إذا تدخلت من الهاتف يصمت البوت تلقائيًا، وإذا توقف الماك يتوقف واتساب فقط.</p>
+
+            {/* بطاقة التشخيص: الحالة الحقيقية وسببها وعلاجها. كانت اللوحة تقول
+                «متصل ✅» والبوت لا يردّ — لأنها تفحص «هل العملية حيّة» لا «هل
+                يعمل فعلاً». هنا يرى الدكتور السبب والحلّ بلا أن يسأل أحداً. */}
+            {status.health && status.health.code !== 'working' && (
+              <div className="mt-4 rounded-2xl border border-accent/40 bg-canvas p-4">
+                <p className="text-[.82rem] font-semibold text-accent">{status.health.label}</p>
+                {status.health.why && <p className="mt-1 text-[.8rem] leading-relaxed text-ink">{status.health.why}</p>}
+                {status.health.fix && <p className="mt-1 text-[.8rem] leading-relaxed text-soft">الحل: {status.health.fix}</p>}
+              </div>
+            )}
+            {status.health?.code === 'working' && (
+              <p className="mt-3 text-[.78rem] text-soft">
+                ✓ جاهز ويردّ · الطابور سليم{status.health.silenced ? ` · صامتٌ في ${status.health.silenced} محادثة` : ''}
+              </p>
+            )}
 
             {/* رمز الاقتران: كان يُطبع في سجلّ الطرفية وحده، فلا يراه الدكتور
                 إلا بفتح السجل أو بالرجوع إليّ. يظهر هنا الآن ويتجدّد وحده. */}
@@ -444,6 +497,15 @@ export function WhatsAppAgentPanel() {
             <button type="button" onClick={() => void restartBridge()} disabled={restarting || !status.bridgeOnline} className={secondary}>{restarting ? 'جارٍ إعادة التشغيل' : 'إعادة تشغيل واتساب'}</button>
             {/* يظهر دائماً لا عند الصمت وحده: حين يبدو البوت معطوباً يريد الدكتور
                 زراً حاضراً يضغطه، لا زراً يبحث عن شرطٍ لظهوره. */}
+            <button
+              type="button"
+              onClick={() => void repairSession()}
+              disabled={repairing || !bridgeAlive}
+              className={`${secondary} disabled:opacity-40`}
+              title="يمسح الجلسة ويطلب رمز QR جديداً"
+            >
+              {repairing ? 'يُعيد الربط…' : '🔗 إعادة ربط (QR جديد)'}
+            </button>
             <button
               type="button"
               onClick={() => void returnBotNow()}

@@ -128,6 +128,13 @@ export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
         writeJson(res, 200, agent.returnAllToBot())
         return
       }
+      /* إعادة ربطٍ بضغطة — تُمسح الجلسة ويُقلع العميل فيظهر QR في اللوحة */
+      if (req.method === 'POST' && url.pathname === '/admin/repair') {
+        const body = await readJson(req)
+        if (body.confirm !== true) { writeJson(res, 400, { error: 'confirm-required' }); return }
+        writeJson(res, 202, await agent.repair())
+        return
+      }
       if (req.method === 'GET' && url.pathname === '/admin/silence') {
         writeJson(res, 200, agent.silenceState())
         return

@@ -34,6 +34,8 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
   const [manualName, setManualName] = useState('')
   const [bulk, setBulk] = useState('')
   const [newcomers, setNewcomers] = useState<{ id: string; name: string; tail: string }[]>([])
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
+  const [imported, setImported] = useState<{ added: number; known: number; skipped: number } | null>(null)
   const [draft, setDraft] = useState('{تحية} {الاسم}،\n\nنشرتُ اليوم مقالاً جديداً، أرجو أن ينفعك:\n')
   const [samples, setSamples] = useState<Sample[]>([])
   const [reach, setReach] = useState<{ willSend: number; suppressed: number } | null>(null)
@@ -266,7 +268,9 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
           {/* ═══ دفتر الأسماء ═══ */}
           <div className="grid gap-3 rounded-xl border border-hair bg-canvas p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <label className="block font-semibold text-ink">دفتر الأسماء — {contacts.length}</label>
+              <label className="block font-semibold text-ink">
+                دفتر الأسماء{contacts.length >= 500 ? ' — يعرض ٥٠٠ · ابحث للوصول لغيرهم' : ` — ${contacts.length}`}
+              </label>
               {picked.size > 0 && <button type="button" className={primary} disabled={busy} onClick={addPicked}>أضف {picked.size} إلى «{active?.name || '…'}»</button>}
             </div>
             <input className={input} value={search} placeholder="ابحث باسمٍ أو بآخر أربعة أرقام…" onChange={(e) => setSearch(e.target.value)} />
@@ -275,7 +279,10 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
             {newcomers.length > 0 && (
               <div className="grid gap-2 rounded-xl border border-accent/40 bg-canvas px-4 py-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-[.82rem] font-semibold text-ink">جديدٌ في هذا الاستيراد — {newcomers.length}</span>
+                  <span className="text-[.82rem] font-semibold text-ink">
+                    جديدٌ في هذا الاستيراد — {imported?.added ?? newcomers.length}
+                    {imported && imported.known > 0 && <span className="mr-2 font-normal text-soft">· معروفٌ من قبل {imported.known}</span>}
+                  </span>
                   <button type="button" className="text-[.75rem] text-soft hover:text-accent" onClick={() => setNewcomers([])}>أخفِ</button>
                 </div>
                 <p className="text-[.72rem] text-soft">هؤلاء لم يدخلوا أي قائمة بعد. اخترهم من الأسفل وأضفهم.</p>
@@ -285,6 +292,12 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                       {person.name}
                     </span>
                   ))}
+                  {/* لا نرسم آلاف البطاقات فيتجمّد المتصفح — عيّنةٌ ثم إحالة للبحث */}
+                  {(imported?.added ?? 0) > newcomers.length && (
+                    <span className="rounded-full border border-hair bg-wash px-3 py-1.5 text-[.78rem] text-soft">
+                      و{(imported!.added - newcomers.length)} غيرهم — ابحث عنهم بالأسفل
+                    </span>
+                  )}
                 </div>
               </div>
             )}
@@ -368,17 +381,36 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-[.72rem] text-soft">{bulk.split('\n').filter((line) => line.trim()).length} سطراً</span>
                   <button type="button" className={primary} disabled={busy || !bulk.trim()}
-                    onClick={() => void act('أُضيفوا إلى دفترك.', async () => {
-                      const result = await request<{ added: number; known: number; newcomers: { id: string; name: string; tail: string }[]; skipped: { line: string; why: string }[] }>('/admin/audience/import', {
-                        method: 'POST', body: JSON.stringify({ text: bulk }),
-                      })
+                    onClick={() => void act('انتهى الاستيراد.', async () => {
+                      /* دفتر الدكتور فوق ٢٨٠٠ رقم ≈ نصف ميغابايت، والجسر يرفض
+                         فوق ١٢٨ كيلوبايت صوناً لنفسه — فكان يسقط الطلب صامتاً
+                         ولا يُضاف أحد. نرسلهم على دفعات بدل رفع الحدّ الأمني. */
+                      const isCards = /BEGIN:VCARD/i.test(bulk)
+                      const units = isCards
+                        ? bulk.split(/(?=BEGIN:VCARD)/i).filter((part) => part.trim())
+                        : bulk.split('\n').filter((line) => line.trim())
+                      const CHUNK = isCards ? 200 : 600
+                      let added = 0; let known = 0; let skipped = 0
+                      const firstNames: { id: string; name: string; tail: string }[] = []
+                      for (let index = 0; index < units.length; index += CHUNK) {
+                        setProgress({ done: index, total: units.length })
+                        const slice = units.slice(index, index + CHUNK).join(isCards ? '' : '\n')
+                        const result = await request<{ added: number; known: number; newcomers: { id: string; name: string; tail: string }[]; skipped: unknown[] }>(
+                          '/admin/audience/import', { method: 'POST', body: JSON.stringify({ text: slice }) },
+                        )
+                        added += result.added || 0
+                        known += result.known || 0
+                        skipped += result.skipped?.length || 0
+                        for (const person of result.newcomers || []) if (firstNames.length < 60) firstNames.push(person)
+                      }
+                      setProgress(null)
                       setBulk('')
-                      setNewcomers(result.newcomers || [])
+                      setNewcomers(firstNames)
+                      setImported({ added, known, skipped })
                       await loadContacts(search)
-                      onNotice(`جديد ${result.added} · معروفٌ من قبل ${result.known}`
-                        + (result.skipped?.length ? ` · تُخطّي ${result.skipped.length} بلا رقم` : ''))
+                      onNotice(`جديد ${added} · معروفٌ من قبل ${known}` + (skipped ? ` · تُخطّي ${skipped} بلا رقم` : ''))
                     })}>
-                    أضفهم كلهم
+                    {progress ? `يستورد… ${progress.done} من ${progress.total}` : 'أضفهم كلهم'}
                   </button>
                 </div>
               </div>

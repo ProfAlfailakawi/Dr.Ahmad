@@ -354,13 +354,23 @@ export function WhatsAppAgentPanel() {
 
   return (
     <div className="admin-dashboard grid min-w-0 gap-4">
-      <section className={card}>
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      {/* حتى قسم الحالة يُطوى بأمر الدكتور. لكن الحالة نفسها (متصل/غير متصل)
+          تبقى في العنوان — فما فائدة كرتٍ يخفي الخبر الوحيد الذي تريده بنظرة؟ */}
+      <details className={card}>
+        <summary className="flex cursor-pointer list-none flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-[.75rem] font-semibold uppercase text-accent">مساعد د. أحمد داخل واتساب</p>
-            <h2 className="mt-1 font-display text-2xl font-semibold text-ink">وكيل محلي بموافقة الدكتور.</h2>
+            <h2 className="mt-1 flex flex-wrap items-center gap-3 font-display text-2xl font-semibold text-ink">
+              وكيل محلي بموافقة الدكتور.
+              <span className={`rounded-full px-3 py-1 text-[.72rem] font-semibold ${status.status === 'connected' ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>
+                {stateLabel[String(status.status)] || 'غير مرتبط'}
+              </span>
+            </h2>
             <p className="mt-2 max-w-2xl text-[.86rem] leading-relaxed text-soft">الجسر مستقل على الماك، والجلسة لا تدخل GitHub ولا Firebase. إذا تدخلت من الهاتف يصمت البوت تلقائيًا، وإذا توقف الماك يتوقف واتساب فقط.</p>
           </div>
+          <span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent">＋</span>
+        </summary>
+        <div className="mt-3 flex justify-end">
           <button type="button" onClick={() => void refresh()} disabled={busy} className={secondary}>{busy ? '…' : 'تحديث الحالة'}</button>
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-4">
@@ -386,7 +396,7 @@ export function WhatsAppAgentPanel() {
         </div>
         {status.last_error && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.8rem] text-soft">{status.last_error}</p>}
         {notice && <p role="status" className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{notice}</p>}
-      </section>
+      </details>
 
       {/* حُذف «بوابة الإطلاق» بأمر الدكتور — إزعاجٌ بصريّ بلا فائدة. */}
 

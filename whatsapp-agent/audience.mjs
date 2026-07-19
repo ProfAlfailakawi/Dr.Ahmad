@@ -256,6 +256,12 @@ function parseVCards(text) {
 }
 
 export function importContacts(db, text, { listId = '' } = {}) {
+  /* دفتر الدكتور فيه أكثر من ٢٨٠٠ رقم. إدخالها واحداً واحداً يعني ٢٨٠٠
+     معاملة قرص منفصلة فيتجمّد كل شيء؛ معاملةٌ واحدة تجعلها لحظية. */
+  return db.transaction(() => importContactsInner(db, text, { listId }))
+}
+
+function importContactsInner(db, text, { listId = '' } = {}) {
   const raw = String(text || '')
   /* البطاقات تُترجَم إلى سطور «اسم رقم» فيمرّ الجميع بالمسار نفسه */
   const source = /BEGIN:VCARD/i.test(raw) ? parseVCards(raw).join('\n') : raw

@@ -214,6 +214,45 @@ export function addContactByPhone(db, phone, nickname = '') {
   return { ok: true, id, existed: false }
 }
 
+/**
+ * لصق دفعة أرقام بأسمائها — الطريق المضمون.
+ *
+ * واتساب لا يسلّم دفتر هاتفك لجهازٍ مرتبط إلا عبر مزامنة حالة التطبيق، وقد
+ * تتأخّر أو لا تصل. فبدل انتظارها، يلصق الدكتور أسماءه وأرقامه دفعةً واحدة.
+ *
+ * يقبل كل الصيغ الشائعة، سطراً لكل شخص:
+ *   أبو خالد, 99001122
+ *   99001122 - أبو خالد
+ *   أبو خالد  +965 9900 1122
+ *   99001122
+ * ويتجاهل السطور الفارغة والمكررة، ولا يستبدل لقباً كتبتَه من قبل.
+ */
+export function importContacts(db, text, { listId = '' } = {}) {
+  const lines = String(text || '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+  const added = []
+  const skipped = []
+  for (const line of lines) {
+    /* الرقم أطول تتابع أرقام في السطر (مع تجاهل الفواصل داخله) */
+    const candidates = [...line.matchAll(/[\d٠-٩][\d٠-٩\s+()-]{6,}/g)]
+      .map((match) => match[0])
+      .sort((a, b) => b.replace(/\D/g, '').length - a.replace(/\D/g, '').length)
+    const rawNumber = candidates[0]
+    if (!rawNumber) { skipped.push({ line, why: 'لا رقم فيه' }); continue }
+    /* الأرقام العربية تُحوّل غربيةً — قاعدةُ الدكتور الثابتة */
+    const digits = rawNumber.replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660)).replace(/\D/g, '')
+    /* «+» مفتاح الدولة يبقى خارج المطابقة (النمط يبدأ برقم) فيتسرّب للاسم — يُنظَّف */
+    const name = line.replace(rawNumber, ' ')
+      .replace(/[,،\-–—:|+()]/g, ' ')
+      .replace(/\s+/g, ' ').trim()
+    const result = addContactByPhone(db, digits, name)
+    if (!result.ok) { skipped.push({ line, why: result.error }); continue }
+    added.push(result.id)
+  }
+  if (listId && added.length) addMembers(db, listId, added)
+  db.addAudit('contacts.import', listId || '', `أُضيف ${added.length} · تُخطّي ${skipped.length}`)
+  return { ok: true, added: added.length, skipped }
+}
+
 /* ═══ القوائم ═══ */
 
 export function listLists(db) {

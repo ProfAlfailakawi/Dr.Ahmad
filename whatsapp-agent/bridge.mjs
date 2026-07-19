@@ -135,6 +135,10 @@ export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
         const body = await readJson(req)
         writeJson(res, 200, agent.audience.addContact(body.phone, body.nickname)); return
       }
+      if (req.method === 'POST' && url.pathname === '/admin/audience/import') {
+        const body = await readJson(req)
+        writeJson(res, 200, agent.audience.import(body.text || '', { listId: body.listId || '' })); return
+      }
       if (req.method === 'POST' && url.pathname === '/admin/audience/nickname') {
         const body = await readJson(req)
         writeJson(res, 200, agent.audience.setNickname(body.contactId, body.nickname)); return

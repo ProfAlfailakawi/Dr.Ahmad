@@ -5,7 +5,7 @@ import { createReminder, parseReminderTime } from './reminders.mjs'
 import { applyBotRules, ensureBotRulesSchema, rememberSent, sign } from './bot-rules.mjs'
 
 export const INTENTS = Object.freeze({
-  LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_BOOK: 'LATEST_BOOK', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', LATEST_PAPER: 'LATEST_PAPER', WELCOME: 'WELCOME', MORE_LIKE_THIS: 'MORE_LIKE_THIS', COMPARE: 'COMPARE', ABOUT_TOPIC: 'ABOUT_TOPIC', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', UNKNOWN: 'UNKNOWN' })
+  LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_BOOK: 'LATEST_BOOK', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', LATEST_PAPER: 'LATEST_PAPER', WELCOME: 'WELCOME', MORE_LIKE_THIS: 'MORE_LIKE_THIS', COMPARE: 'COMPARE', ABOUT_TOPIC: 'ABOUT_TOPIC', UPCOMING_EVENTS: 'UPCOMING_EVENTS', ABOUT_DOCTOR: 'ABOUT_DOCTOR', CURATED_PICKS: 'CURATED_PICKS', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', UNKNOWN: 'UNKNOWN' })
 
 /* ملاحظة واجبة: النص يمرّ على normalizeArabic قبل المطابقة، وهو يحوّل
    ة→ه و أ/إ/آ→ا و ى→ي ويحذف الترقيم. فكل نمطٍ هنا يُكتب بالصورة المطبَّعة،
@@ -18,7 +18,7 @@ const patterns = [
   /* كلمة الدخول المنشورة في خانة «المعلومات» بواتساب — فكرة صديق الدكتور.
      تُقرأ في اللحظة الصحيحة: وهم يفتحون محادثته. ولا يقولها صديقٌ مصادفةً،
      ومن قالها فهو يسأل عن الموقع بالضبط — فالردّ صحيحٌ في الحالين. */
-  [INTENTS.WELCOME, [/(موقع|مكتبه|اصدارات|منصه)\s*(د|دكتور)?\s*احمد|(مقالات|ابحاث|كتب|اعمال)\s*(د|دكتور)\s*احمد|بوت\s*(د|دكتور)?\s*احمد/, 0.97]],
+  [INTENTS.WELCOME, [/(موقع|مكتبه|اصدارات|منصه|بوت|حساب)\s*(ال)?(د|دكتور|استاذ)?\s*(احمد|الفيلكاوي)|(مقالات|ابحاث|كتب|اعمال)\s*(ال)?(د|دكتور)\s*احمد/, 0.97]],
   [INTENTS.LATEST_ARTICLE, [/(اخر|احدث).*(مقال|مقاله)|مقاله جديده|شنو كتبت/, 0.95]],
   /* «أبحاث الدكتور» — طلبها الدكتور صراحةً، ولا تُقال مصادفة في محادثة */
   [INTENTS.LATEST_PAPER, [/(ابحاث|بحوث)\s*(الدكتور|د\s*احمد|احمد)?|(اخر|احدث)\s*\S*\s*(بحث|ابحاث)|الابحاث/, 0.94]],
@@ -41,6 +41,11 @@ const patterns = [
   [INTENTS.REMIND_ME, [/(ذكرني|تذكير)/, 0.90]],
   [INTENTS.WEEKLY_DIGEST, [/(ملخص اسبوعي|النشره الاسبوعيه|نشره اسبوعيه)/, 0.94]],
   [INTENTS.HUMAN_RESPONSE_REQUIRED, [/(رايك|ماذا تري|هل تعتقد|ابي رايك)/, 0.82]],
+  /* اللقاءات والسيرة والمختارات: يسأل عنها الناس كما يسألون عن المقالات،
+     وكان البوت لا يعرفها إطلاقاً فيردّ ببحثٍ عشوائي أو يصمت. */
+  [INTENTS.UPCOMING_EVENTS, [/(لقاءات|محاضرات|فعاليات|مشاركات|ندوات|مؤتمرات)\s*(ال)?(قادمه|القادمه|الجايه)?|(وين|متي)\s*(بتكون|راح تكون)?\s*(محاضرتك|لقاءك|ندوتك)/, 0.93]],
+  [INTENTS.ABOUT_DOCTOR, [/(السيره|سيره ذاتيه|سيرتك|من هو|تعريف|نبذه عن|هويه|cv)\s*(ال)?(د|دكتور)?\s*(احمد)?/, 0.92]],
+  [INTENTS.CURATED_PICKS, [/(مختارات|المختارات|اختياراتك|ترشيحات|ماذا تقرا|شنو تقرا)/, 0.92]],
   /* داخل الجلسة يريد الناس المزيد والمقارنة والتنقّل — لا أوامر جافّة فقط */
   [INTENTS.MORE_LIKE_THIS, [/^(غيره|غيرها|زدني|كمان|بعد|المزيد|عطني اكثر|شي ثاني|واحد ثاني)/, 0.93]],
   [INTENTS.COMPARE, [/(قارن|الفرق بين|ايهما|وش الفرق|مقارنه بين)/, 0.92]],
@@ -277,6 +282,20 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
       }
     }
 
+    /* اللقاءات: تُقرأ من الموقع لا من رأسي — وإن لم يكن ثمّة معلن، نقولها
+       بصراحة ونحيل إلى الصفحة بدل أن نخترع موعداً. */
+    case INTENTS.UPCOMING_EVENTS:
+      return { ...classification, text: 'اللقاءات والمشاركات القادمة تُعلن هنا أولاً بأول:\nhttps://dr-alfailakawi.com/#events\n\nوإن لم تجد شيئاً معلناً الآن، فلا لقاء مجدولاً بعد.' }
+
+    case INTENTS.ABOUT_DOCTOR:
+      return { ...classification, text: 'د. أحمد حسين الفيلكاوي — أستاذ تربية.\nالسيرة الذاتية كاملةً:\nhttps://dr-alfailakawi.com/cv\n\nوالأبحاث المحكّمة:\nhttps://dr-alfailakawi.com/research' }
+
+    case INTENTS.CURATED_PICKS: {
+      const picks = latestContent(db, 'curated', 3)
+      if (!picks.length) return { ...classification, text: 'المختارات هنا:\nhttps://dr-alfailakawi.com/curated' }
+      return { ...classification, text: `من مختارات الدكتور:\n${picks.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}\n\nوالبقية: https://dr-alfailakawi.com/curated`, contentId: picks[0].id }
+    }
+
     case INTENTS.ABOUT_TOPIC:
     case INTENTS.SEARCH_TOPIC:
     case INTENTS.SIMILAR_CONTENT: {
@@ -331,6 +350,7 @@ const OPENS_DOOR = new Set([
   INTENTS.LATEST_ARTICLE, INTENTS.LATEST_BOOK, INTENTS.LATEST_PODCAST, INTENTS.LATEST_SELECTION,
   INTENTS.LATEST_PAPER,                              // «أبحاث الدكتور»
   INTENTS.QUOTE_CARD, INTENTS.WEEKLY_DIGEST, INTENTS.ONE_MINUTE, INTENTS.SURPRISE_ME, INTENTS.HELP,
+  INTENTS.UPCOMING_EVENTS, INTENTS.ABOUT_DOCTOR, INTENTS.CURATED_PICKS,
 ])
 
 /** عمر الجلسة: بعد سكوتٍ طويل يُغلق الباب من نفسه فلا يبقى البوت مفتوحاً للأبد */

@@ -123,7 +123,24 @@ export async function createWhatsAppTransport({ db, onMessage, onContacts, onQr,
         else console.log('ظهر QR للاقتران. استخدم --phone=965XXXXXXXX للحصول على رمز اقتران بدلًا من QR.')
         onQr?.(update.qr); events.emit('qr', update.qr)
       }
-      if (update.connection === 'open') { reconnects = 0; setStatus('connected', { qr: null, pairing_code: null, device_name: 'WhatsApp Agent – MacBook M2' }); return }
+      if (update.connection === 'open') {
+        reconnects = 0
+        setStatus('connected', { qr: null, pairing_code: null, device_name: 'WhatsApp Agent – MacBook M2' })
+        /* دفتر الأسماء: واتساب يرسله مرةً واحدة عند الاقتران الأول وحده. وجلسة
+           الدكتور مرتبطةٌ من قبل، فلم يصل شيء وبقي الدفتر فارغاً. نطلبه هنا
+           صراحةً عند كل اتصال — والمجموعة critical_unblock_low هي التي تحمل
+           جهات الاتصال في مزامنة حالة التطبيق. */
+        void (async () => {
+          try {
+            if (typeof socket.resyncAppState !== 'function') return
+            await socket.resyncAppState(['critical_unblock_low'], true)
+            console.log('طُلب دفتر جهات الاتصال من واتساب.')
+          } catch (error) {
+            console.error('تعذّر طلب دفتر جهات الاتصال:', error?.message || error)
+          }
+        })()
+        return
+      }
       if (update.connection === 'close') {
         const code = update.lastDisconnect?.error?.output?.statusCode
         if (stopping || code === baileys.DisconnectReason?.loggedOut) { setStatus('disconnected'); return }

@@ -32,6 +32,7 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
   const [newList, setNewList] = useState('')
   const [manualPhone, setManualPhone] = useState('')
   const [manualName, setManualName] = useState('')
+  const [bulk, setBulk] = useState('')
   const [draft, setDraft] = useState('{تحية} {الاسم}،\n\nنشرتُ اليوم مقالاً جديداً، أرجو أن ينفعك:\n')
   const [samples, setSamples] = useState<Sample[]>([])
   const [reach, setReach] = useState<{ willSend: number; suppressed: number } | null>(null)
@@ -288,6 +289,42 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
               <input className={input} value={manualName} placeholder="بمَ تناديه؟ «أبا خالد»" onChange={(e) => setManualName(e.target.value)} />
               <button type="button" className={secondary} disabled={busy} onClick={addManual}>أضف للدفتر</button>
             </div>
+
+            {/* الطريق المضمون: واتساب قد يتأخّر في تسليم دفتر الهاتف لجهازٍ
+                مرتبط، فبدل الانتظار يلصق الدكتور أسماءه وأرقامه دفعةً واحدة. */}
+            <details className="rounded-xl border border-hair bg-wash px-4 py-3">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[.8rem] text-soft">
+                <span>ألصق دفعةً كاملة — اسمٌ ورقمٌ في كل سطر</span>
+                <span className="text-[.75rem] text-accent">لصق جماعي</span>
+              </summary>
+              <div className="mt-3 grid gap-2">
+                <textarea
+                  className={`${input} min-h-[7rem] leading-relaxed`}
+                  dir="auto"
+                  value={bulk}
+                  placeholder={'أبو خالد, 99001122\nد. عبد الرزاق العلي - 99334455\nالأستاذة نورة  +965 9955 6677'}
+                  onChange={(e) => setBulk(e.target.value)}
+                />
+                <p className="text-[.72rem] leading-relaxed text-soft">
+                  يقبل كل الصيغ: فاصلة أو شرطة أو مسافة، بمفتاح الدولة أو بدونه، وبالأرقام العربية أو الغربية.
+                  والسطر بلا رقم يُتخطّى ويُعلَم لك. ولن يُستبدل لقبٌ كتبتَه من قبل.
+                </p>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[.72rem] text-soft">{bulk.split('\n').filter((line) => line.trim()).length} سطراً</span>
+                  <button type="button" className={primary} disabled={busy || !bulk.trim()}
+                    onClick={() => void act('أُضيفوا إلى دفترك.', async () => {
+                      const result = await request<{ added: number; skipped: { line: string; why: string }[] }>('/admin/audience/import', {
+                        method: 'POST', body: JSON.stringify({ text: bulk }),
+                      })
+                      setBulk('')
+                      await loadContacts(search)
+                      if (result.skipped?.length) onNotice(`أُضيف ${result.added} · تُخطّي ${result.skipped.length} سطراً بلا رقم.`)
+                    })}>
+                    أضفهم كلهم
+                  </button>
+                </div>
+              </div>
+            </details>
           </div>
         </div>
       </div>

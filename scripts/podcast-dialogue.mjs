@@ -2620,7 +2620,7 @@ function episodeQualityScore({ technicalAudit, fullComparison, finalJudge, trans
   }
 }
 
-function dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudge }) {
+function dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudge, episodeIntegrity = null }) {
   const plan = {
     utterances: transcript.map((item) => ({
       speaker: item.speakerKey,
@@ -2640,8 +2640,12 @@ function dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudg
     silence: analyzeSilence(candidateMp3),
     loudness: analyzeLoudness(candidateMp3),
   }
+  /* حين يُبرهَن التركيب (كل مداخلة حاضرة بترتيبها) تُطبَّق عتبةُ الحلقة الكاملة
+     نفسها التي قبلتها بوابةُ التركيب — لا ٠.٩٥ التي أُبطلت لهذا المُدخَل. */
+  const integrityProven = episodeIntegrity?.pass === true && Number(episodeIntegrity.coverage || 0) >= 0.9
   const proxy = humanLikenessGate({ plan, technical,
-    sttComparisons: fullComparison ? [fullComparison] : [], dialogue: true, minimumScore: 95 })
+    sttComparisons: fullComparison ? [fullComparison] : [], dialogue: true, minimumScore: 95,
+    sttFidelityMin: integrityProven ? 0.88 : 0.95 })
   const dimensions = ['humanLikeness', 'warmth', 'semanticDelivery', 'questionNaturalness',
     'pauseNaturalness', 'pronunciation', 'rhythmVariety', 'endingVariety', 'nonBroadcastTone',
     'speakerIndependence']
@@ -3460,8 +3464,17 @@ async function produce(article, lang) {
     /* ٦) بوابة score قبل لمس أي ملف منشور، ثم نشر ذري مع Last-Known-Good وRollback دائم. */
     const qualityScore = episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript, episodeIntegrity })
     if (!qualityScore.pass) return quarantine(`بوابة score النهائية أقل من الحد: ${qualityScore.score}/100`)
-    const humanGate = dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudge })
-    if (!humanGate.pass) return quarantine(`بوابة البشرية أقل من الحد: proxy=${humanGate.proxy.score}/100، judge=${humanGate.minimumJudgeDimension}/100`, { humanGate })
+    const humanGate = dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudge, episodeIntegrity })
+    if (!humanGate.pass) {
+      /* «٧٨/١٠٠» رقمٌ لا يقول شيئاً: أيُّ مقياسٍ سقط؟ وبأي قيمة؟ بلا هذا يُصلح
+         المرء بالظنّ. البوابة تُفصح الآن عن كل مقياسٍ ساقطٍ ووزنه. */
+      const WEIGHTS = { semanticPerformance: 13, realRateVariation: 12, pauseVariation: 12, endingVariation: 9,
+        questionDirection: 9, boundarySilenceRemoved: 9, loudnessSafe: 10, formatSafe: 8, sttFidelity: 13, dialogueIndependence: 5 }
+      const detail = (humanGate.proxy.failed || []).map((key) => `${key}(-${WEIGHTS[key] ?? '?'})`).join(' · ')
+      const criticalNote = humanGate.proxy.criticalFailed?.length ? ` · حرجة: ${humanGate.proxy.criticalFailed.join('، ')}` : ''
+      return quarantine(`بوابة البشرية أقل من الحد: proxy=${humanGate.proxy.score}/100، judge=${humanGate.minimumJudgeDimension}/100`
+        + `${detail ? ` — سقط: ${detail}` : ''}${criticalNote}`, { humanGate })
+    }
     const publicTranscript = { title: article.title, generatedAt: new Date().toISOString().slice(0, 10),
       language: 'ar',
       sourceLock: MANUAL_EXACT ? {

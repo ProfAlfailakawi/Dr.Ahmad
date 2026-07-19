@@ -459,7 +459,7 @@ export function compareSpeechText(intended, heard) {
   }
 }
 
-export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUnavailable = false, dialogue = false, minimumScore = 95 }) {
+export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUnavailable = false, dialogue = false, minimumScore = 95, sttFidelityMin = 0.95 }) {
   const units = plan?.units || plan?.utterances || []
   const rates = units.map((unit) => Number(unit.ratePct || 0))
   const pauses = units.map((unit) => Number(unit.pauseAfterMs || 0)).filter((value) => value >= 0)
@@ -475,8 +475,15 @@ export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUna
     realRateVariation: distinctRates >= Math.min(5, Math.max(3, Math.floor(units.length / 5))),
     pauseVariation: distinctPauses >= Math.min(6, Math.max(3, Math.floor(units.length / 5))) && Math.sqrt(pauseVariance) >= 55,
     endingVariation: endings.size >= (dialogue ? 3 : 2),
-    questionDirection: units.filter((unit) => String(unit.sourceText || unit.text || '').includes('؟'))
-      .every((unit) => (unit.type || unit.delivery || unit.deliveryType) === 'question' && unit.ending === 'open'),
+    /* السؤال المقتبس ليس سؤالاً يُطرح: «ليس ﴿كم حصلت؟﴾ فقط، بل ﴿ماذا تعلمت
+       عن نفسك؟﴾» جملةٌ خبرية تنقل سؤالاً، ونبرتُها خبرية لا استفهامية. كانت
+       البوابة تُلزمها بنبرة السؤال فتُعزل الحلقة كلها — وتصنيفُ الكاتب أصحّ
+       من قاعدةٍ تنظر إلى العلامة وحدها. نحذف المقتبس ثم نسأل. */
+    questionDirection: units.filter((unit) => {
+      const raw = String(unit.sourceText || unit.text || '')
+      const withoutQuoted = raw.replace(/[«"„''][^»"'']*[»"'']/g, ' ')
+      return withoutQuoted.includes('؟')
+    }).every((unit) => (unit.type || unit.delivery || unit.deliveryType) === 'question' && unit.ending === 'open'),
     boundarySilenceRemoved: Number(technical?.silence?.longestSec || 0) <= (dialogue ? 1.05 : 0.95),
     loudnessSafe: Number(technical?.loudness?.integratedLufs) >= -17.2 && Number(technical?.loudness?.integratedLufs) <= -14.8
       && Number(technical?.loudness?.truePeakDbtp) <= -1,
@@ -484,7 +491,11 @@ export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUna
     /* عند تعطّل مُتحقق STT كليًا (لا وحدة قابلة للتحقق) يتنزّل الفحص إلى البوابات
        الصوتية الحتمية (الصمت/الجهارة/الصيغة/الإيقاع) بدل تجميد كل مقال؛ ويعود
        صارمًا تلقائيًا لحظة عودة STT. أمر الدكتور: «حل المشاكل كلها … تجاوزها بذكاء». */
-    sttFidelity: sttUnavailable ? true : sttRatio >= 0.95,
+    /* العتبة تُمرَّر من الخارج كي تحكم الحلقةَ الكاملة بالقانون نفسه الذي
+       تحكم به بوابةُ التركيب: تفريغ ست دقائق بنداءٍ واحد أداةٌ خشنة تفقد أدوات
+       الربط بطبعها، ومقاطعُها مثبَّتةٌ سلفاً بعتبةٍ أشدّ على ملفاتٍ قصيرة.
+       الافتراضي ٠.٩٥ كما كان، فلا يتغيّر شيءٌ لمن لا يمرّرها. */
+    sttFidelity: sttUnavailable ? true : sttRatio >= sttFidelityMin,
     dialogueIndependence: !dialogue || (() => {
       const speakers = new Set(units.map((unit) => unit.speaker))
       const overlaps = units.filter((unit) => unit.allowOverlap || Number(unit.overlapMs || 0) > 0).length

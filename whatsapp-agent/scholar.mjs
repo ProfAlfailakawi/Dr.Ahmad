@@ -15,6 +15,7 @@
  * ولا نموذج لغويّ في هذا الطريق البتة: لا Gemini ولا سواه. الاسترجاع حسابيّ
  * بحت، فلا مجال لهلوسةٍ ولا لتكلفةٍ ولا لانقطاع خدمة.
  */
+import { toRoot } from './dialect-lexicon.mjs'
 
 /* ═══ ١ · التطبيع والتقطيع ═══ */
 
@@ -79,6 +80,12 @@ export const tokens = (value) => normalize(value)
   .map(stem)
   .filter((word) => word.length >= 3 && !STOP.has(word))
 
+/* توكناتٌ موسَّعة بالقاموس الجبّار: كل كلمةٍ تُردّ إلى جذرها الدلاليّ، فيلتقي
+   سؤال البدويّ «شنو رايه بالعيال؟» بمقال الأستاذ عن «الأطفال». والتوسيع في
+   الاسترجاع وحده — البوابة تبقى تطابق نصّ الدكتور حرفاً بحرف، فلا يتسلّل معنى
+   مقارب إلى ما يُنسب إليه، إنما إلى ما يُوصله إليه. */
+export const conceptTokens = (value) => tokens(value).map(toRoot)
+
 /**
  * تقطيع المتن إلى جُمَل مع حفظ الفهرس الأصلي لكل جملة.
  * نحفظ الفهرس لأن الاقتباس يجب أن يعود إلى موضعه بالضبط عند التحقق — لا نعيد
@@ -90,13 +97,17 @@ export function sentences(body) {
   let start = 0
   for (let i = 0; i < raw.length; i += 1) {
     const ch = raw[i]
-    const isBreak = ch === '.' || ch === '؟' || ch === '!' || ch === '\n' || ch === '؛'
+    /* «…» فاصلٌ للجُمَل كذلك — وهو أخطر ما فات: مقالاتٌ كاملة (كـ«الثراء الكاذب»)
+       تستعمل علامة الحذف ٥١ مرة وصفر نقطة، فكان المتن كلّه جملةً واحدة تتجاوز
+       الحدّ الأعلى فتُرفض — صفر اقتباس، والبوت لا ينطق من ذاك المقال أبداً.
+       نكسر عند «…» و«..» كما نكسر عند النقطة، ونقشرها من العرض لا من الأصل. */
+    const isBreak = ch === '.' || ch === '؟' || ch === '!' || ch === '\n' || ch === '؛' || ch === '…'
     if (!isBreak && i !== raw.length - 1) continue
     const end = i === raw.length - 1 && !isBreak ? raw.length : i + 1
-    /* الفاصلة المنقوطة تفصل شطري فكرةٍ واحدة؛ والوقوف عندها يُنهي الاقتباس
-       معلّقاً («فليست تفصيلاً تراثياً؛»). نقشرها للعرض — والباقي يبقى مقطعاً
-       متّصلاً من المتن حرفاً بحرف، فلا تتأثر البوابة. */
-    const text = raw.slice(start, end).trim().replace(/[؛,،]$/, '').trim()
+    /* الفاصلة المنقوطة والحذف يفصلان شطري فكرةٍ واحدة، والوقوف عندهما يُنهي
+       الاقتباس معلّقاً. نقشرهما للعرض — والباقي يبقى مقطعاً متّصلاً من المتن
+       حرفاً بحرف، فلا تتأثر البوابة. */
+    const text = raw.slice(start, end).trim().replace(/[؛,،…]+$/, '').replace(/\.+$/, '').trim()
     if (text.length >= 40 && text.length <= 320) out.push({ text, start: raw.indexOf(text, start), words: tokens(text) })
     start = end
   }
@@ -108,10 +119,12 @@ export function sentences(body) {
 /** ترجيح مقالٍ لسؤال: تطابق العنوان أثقل من المتن، والتكرار لا يُضاعف الوزن */
 export function scoreItem(item, queryTokens) {
   if (!queryTokens.length) return 0
-  const titleWords = new Set(tokens(item?.title || ''))
-  const bodyWords = new Set(tokens(item?.body || ''))
+  /* الطرفان يُردّان إلى الجذور الدلالية: سؤالٌ عن «العيال» يطابق مقالاً عن
+     «الأطفال». والقياس على الجذور لا يوسّع بابَ الردّ — يوسّع باب الوصول إليه. */
+  const titleWords = new Set(tokens(item?.title || '').map(toRoot))
+  const bodyWords = new Set(tokens(item?.body || '').map(toRoot))
   let score = 0
-  for (const word of new Set(queryTokens)) {
+  for (const word of new Set(queryTokens.map(toRoot))) {
     if (titleWords.has(word)) score += 3
     else if (bodyWords.has(word)) score += 1
   }
@@ -120,14 +133,14 @@ export function scoreItem(item, queryTokens) {
 
 /** أفضل جملةٍ في المقال تُجيب السؤال — منسوخةٌ من الأصل بلا تعديل */
 export function bestSentence(item, queryTokens) {
-  const wanted = new Set(queryTokens)
+  const wanted = new Set(queryTokens.map(toRoot))
   const titleKey = normalize(item?.title || '')
   let best = null
   for (const sentence of sentences(item?.body)) {
     /* أول سطرٍ في بعض المتون هو العنوان نفسه — واقتباسُ العنوان ليس جواباً */
     if (normalize(sentence.text) === titleKey) continue
     let hits = 0
-    for (const word of new Set(sentence.words)) if (wanted.has(word)) hits += 1
+    for (const word of new Set(sentence.words.map(toRoot))) if (wanted.has(word)) hits += 1
     if (!hits) continue
     /* نُفضّل الكثافة لا الطول: جملةٌ قصيرة مركّزة خيرٌ من فقرةٍ فيها الكلمة مرّة */
     const density = hits / Math.sqrt(Math.max(6, sentence.words.length))

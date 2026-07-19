@@ -215,7 +215,11 @@ jobs:
           npm run audio:guard
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/data/audio.json src/data/audio-meta.json src/data/site-articles-feed.json src/data/podcast-admin.json package.json scripts/auto-audio.mjs scripts/lib/arabic-audio-engine.mjs scripts/lib/human-reading-pipeline.mjs scripts/test-human-audio-engine.mjs scripts/human-audio-pilot.mjs scripts/finalize-site-audio.mjs scripts/publish-audio-r2.mjs scripts/podcast-dialogue.mjs scripts/podcast-manual-dialogue.mjs scripts/podcast-final-review-locked.mjs scripts/prompts/judge-ar.txt scripts/podcast-release-gate.mjs scripts/build-static.mjs scripts/sync-audio.mjs scripts/build-podcast-admin.mjs src/components/admin/IntelligenceLab.tsx .github/workflows/auto-audio-r2.yml .gitignore
+          # وظيفةٌ آلية تعمل كل ساعة يجب ألا تكتب على شيفرة المصدر أبداً.
+          # كانت تُسجّل ٢٢ مساراً منها scripts/*.mjs و IntelligenceLab.tsx وملفُ
+          # العمل نفسه — فتصطدم بكل عملٍ بشريّ جارٍ، وتُرجِع تعديلاتٍ حيّة إلى
+          # حالةٍ قديمة بلا أن يشعر أحد. الآن لا تُسجَّل إلا البيانات المولَّدة.
+          git add src/data/audio.json src/data/audio-meta.json src/data/site-articles-feed.json src/data/podcast-admin.json
           git add .podcast-state.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No audio changes to commit."

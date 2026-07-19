@@ -50,22 +50,34 @@ const STOP = new Set(normalize(`
 const PREFIX = /^(?:وال|فال|بال|كال|لل|ال|و|ف|ب|ك|ل)/
 /* «ان» و«ون» و«ين» ليست في القائمة عمداً: «امتحان» و«إنسان» و«مكان» تنتهي بها
    وهي من أصل الكلمة لا زائدةٌ عليها — وقشرُها يُحيل «امتحان» إلى «امتح». */
-const SUFFIX = /(?:اتها|اتهم|اتنا|ياتنا|ات|ها|هم|هن|كم|نا|يه|ية|ه|ي)$/
+/* مرتّبةٌ من الأطول إلى الأقصر، وتُجرَّب واحدةً واحدة. ولا تكفي صيغةُ بديلٍ
+   واحدة (…|يه|ه|…): «رأيه» تلتقط «يه» فتُخلّف «را» القصيرة، فيُلغى القشر كلّه
+   وتبقى الكلمة على حالها حشواً لا يطابق شيئاً. وبالتجريب المتدرّج تسقط «يه»
+   فتُجرَّب «ه» فتصحّ «راي» — وهي المقصودة. */
+const SUFFIXES = ['ياتنا', 'اتها', 'اتهم', 'اتنا', 'ات', 'ها', 'هم', 'هن', 'كم', 'نا', 'ية', 'يه', 'ه', 'ي']
 
 export function stem(word) {
   let out = String(word || '')
   const bare = out.replace(PREFIX, '')
   if (bare.length >= 3) out = bare
-  const cut = out.replace(SUFFIX, '')
-  if (cut.length >= 3) out = cut
+  for (const suffix of SUFFIXES) {
+    if (!out.endsWith(suffix)) continue
+    const cut = out.slice(0, -suffix.length)
+    if (cut.length >= 3) return cut
+  }
   return out
 }
 
+/* الحشو يُنخل مرّتين: قبل التجذير وبعده. فـ«رأيه» تنجو من القائمة (وفيها «رأي»
+   و«رأيك» لا «رأيه») ثم تتجذّر إلى «راي» — كلمةٍ لا وجود لها في متونٍ عربية،
+   فتُثقل المقام في المعادلة وتهبط بالترجيح تحت العتبة. وكانت النتيجة أن «وش
+   رأيه في التلقين؟» تُجاب بـ«لا أعرف» بينما «التلقين والحفظ» تُجاب بثلاثة نصوص
+   — والسؤالان واحد. ونخلةٌ واحدة لا تكفي ما دام التجذير يُنشئ حشواً جديداً. */
 export const tokens = (value) => normalize(value)
   .split(' ')
   .filter((word) => word.length > 2 && !STOP.has(word))
   .map(stem)
-  .filter((word) => word.length >= 3)
+  .filter((word) => word.length >= 3 && !STOP.has(word))
 
 /**
  * تقطيع المتن إلى جُمَل مع حفظ الفهرس الأصلي لكل جملة.
@@ -176,6 +188,7 @@ export const SCAFFOLD = Object.freeze({
     ? `عاد د. أحمد إلى هذه الفكرة ${countWord(count)} في ${from} — وهذا نصّه حرفياً:`
     : `عاد د. أحمد إلى هذه الفكرة ${countWord(count)} بين ${from} و${to} — وهذا نصّه حرفياً:`,
   none: 'لم أجد في مكتبة د. أحمد نصّاً يخصّ هذا. لا أُجيب من عندي.',
+  welcomeHeader: 'أهلاً بك. هذه مكتبة د. أحمد الفيلكاوي — أنقل لك ما كتبه بنصّه، ولا أقول شيئاً من عندي.\n\nوهذا أحدث ما كتب:',
 })
 
 const ARABIC_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
@@ -188,7 +201,7 @@ const stamp = (date) => {
  * الراسم الوحيد. تُبنى منه كل رسالةٍ تخرج، ومنه وحده تُعاد البناء عند التحقق.
  * فما لم يمرّ من هنا لا يصل الدكتور — ولا سبيل لدسّ سطرٍ بين السطور.
  */
-export function render(header, citations = []) {
+export function render(header, citations = [], footer = '') {
   const lines = [header, '']
   for (const citation of citations) {
     lines.push(`${citation.when ? `${citation.when} · ` : ''}${citation.title}`)
@@ -196,7 +209,40 @@ export function render(header, citations = []) {
     lines.push(citation.url)
     lines.push('')
   }
+  if (footer) lines.push(footer)
   return lines.join('\n').trim()
+}
+
+/* ═══ ٤·ب · المتعة — وهي كلمات ربطٍ لا اجتهادَ فيها ═══
+ *
+ * الأمانة وحدها تصنع أميناً صارماً لا محدّثاً مؤنساً. فأضفنا ثلاثاً: افتتاحاً
+ * يليق بمن يفتح الباب، ودعوةً تُطيل الحديث بدل أن ينقطع، ودهشةً حين يجد المحرك
+ * فكرةً لاحقت الدكتور سنينَ طوالاً.
+ *
+ * وكلها قوالبُ مجمّدة لا يتغيّر فيها إلا عددٌ أو سنة. والبوابة تتحقق من ذلك
+ * أدناه بمطابقة الذيل بقوالبه — فلا يتسلّل كلامٌ حرّ من هذا الباب.
+ */
+export const TAIL = Object.freeze({
+  more: (count) => `وله في هذا ${count === 1 ? 'نصٌّ آخر' : `${count} نصوصٍ أخرى`} — اكتب «زدني».`,
+  chase: (years) => `فكرةٌ لاحقتْه ${years} سنة.`,
+  ask: 'اسأل عن أي فكرةٍ شئت، وسأنقل لك نصّه فيها.',
+})
+
+const TAIL_SHAPES = [
+  /^وله في هذا (?:نصٌّ آخر|\d+ نصوصٍ أخرى) — اكتب «زدني»\.$/,
+  /^فكرةٌ لاحقتْه \d+ سنة\.$/,
+  /^اسأل عن أي فكرةٍ شئت، وسأنقل لك نصّه فيها\.$/,
+]
+
+export const isKnownTail = (footer) => !footer || TAIL_SHAPES.some((shape) => shape.test(footer))
+
+/** الذيل المناسب: الدهشة تسبق الدعوة، فهي أندر وأطرف */
+export function tailFor(rows = [], shown = 2) {
+  const span = spanYears(rows)
+  const chase = span ? Number(span.to) - Number(span.from) : 0
+  if (chase >= 5) return TAIL.chase(chase)
+  const rest = rows.length - shown
+  return rest > 0 ? TAIL.more(rest) : ''
 }
 
 export function compose(rows = []) {
@@ -211,7 +257,29 @@ export function compose(rows = []) {
     when: stamp(row.item.date),
     quote: row.quote.text,
   }))
-  return { header, citations, text: render(header, citations) }
+  const footer = tailFor(rows, citations.length)
+  return { header, citations, footer, text: render(header, citations, footer) }
+}
+
+/**
+ * الافتتاح عند الإيقاظ. لا نستقبل بجملةٍ جوفاء: نُعرّف، ثم نُري السائل جملةً
+ * حقيقيةً من أحدث ما كتب الدكتور — طُعمٌ من كلامه هو، لا وعدٌ من عندنا.
+ * وهي استشهادٌ كامل يمرّ بالبوابة كسائر الاستشهادات.
+ */
+export function welcome(items = []) {
+  const newest = items
+    .filter((item) => item?.kind === 'article' && item?.body && item?.date)
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)))[0]
+  if (!newest) return { header: SCAFFOLD.welcomeHeader, citations: [], footer: TAIL.ask, text: render(SCAFFOLD.welcomeHeader, [], TAIL.ask) }
+
+  /* أطول جملةٍ مكتملة في أحدث مقال: أوقعُ من أولى جمله وأدلُّ على روحه */
+  const best = sentences(newest.body)
+    .filter((sentence) => sentence.words.length >= 6)
+    .sort((a, b) => b.words.length - a.words.length)[0]
+  if (!best) return { header: SCAFFOLD.welcomeHeader, citations: [], footer: TAIL.ask, text: render(SCAFFOLD.welcomeHeader, [], TAIL.ask) }
+
+  const citations = [{ slug: newest.slug, title: newest.title, url: newest.url, when: stamp(newest.date), quote: best.text }]
+  return { header: SCAFFOLD.welcomeHeader, citations, footer: TAIL.ask, text: render(SCAFFOLD.welcomeHeader, citations, TAIL.ask) }
 }
 
 /* ═══ ٥ · البوابة — آخر ما يمرّ عليه الردّ قبل الإرسال ═══ */
@@ -245,7 +313,16 @@ export function verify(reply, items = []) {
   }
   if (failures.length) return { ok: false, sent: '', failures }
 
-  const rebuilt = citations.length ? render(reply?.header || '', citations) : SCAFFOLD.none
+  /* الذيل بابٌ جديد للكلام، فيُقفل كما أُقفل ما قبله: لا يُقبل إلا ما طابق
+     قوالبه المجمّدة حرفاً بحرف — لا يتغيّر فيها إلا عددٌ أو سنة. ولولا هذا
+     الشرط لصار «الذيل» ثغرةً يمرّ منها أيّ نصٍّ منسوبٍ إلى الدكتور. */
+  if (!isKnownTail(reply?.footer)) {
+    return { ok: false, sent: '', failures: [{ reason: 'ذيلٌ خارج القوالب المعتمدة', footer: reply?.footer }] }
+  }
+
+  const rebuilt = citations.length || reply?.footer
+    ? render(reply?.header || '', citations, reply?.footer || '')
+    : SCAFFOLD.none
   if (rebuilt !== String(reply?.text || '')) {
     return { ok: false, sent: '', failures: [{ reason: 'الرسالة لا تطابق ما صُدِّق عليه' }] }
   }
@@ -363,9 +440,34 @@ if (process.argv.includes('--self-test')) {
     body: 'أسباب أسعار هذه التكنولوجيا الخرافية تأتي من الكسب الرأسمالي أكثر من هدفٍ علميّ حقيقيّ.' }
   assert(search([halfMatch], 'أسعار النفط').length === 0, '★ «أسعار النفط» تُرفض ولو طابقت «أسعار»')
 
+  /* ═══ المتعة — وبابها مُقفلٌ كسائر الأبواب ═══ */
+
+  const hello = welcome(items)
+  assert(verify(hello, items).ok, 'الافتتاح يمرّ بالبوابة')
+  assert(hello.citations[0].slug === 'degree', 'يفتح بأحدث ما كتب الدكتور (2026)')
+  assert(items.find((i) => i.slug === 'degree').body.includes(hello.citations[0].quote),
+    'وجملة الافتتاح منسوخةٌ من متنه حرفياً — لا ترحيبٌ مخترع')
+
+  /* ★ الذيل بابٌ للكلام، فلا يُقبل إلا من قوالبه */
+  const smuggled = { header: 'كتب:', citations: [cite('exam', 'الامتحان في بيوتنا يقيس الفهم')], footer: 'ويرى الدكتور أن الامتحانات كلها فاشلة.' }
+  smuggled.text = render(smuggled.header, smuggled.citations, smuggled.footer)
+  assert(verify(smuggled, items).ok === false, '★ رأيٌ مدسوسٌ في الذيل يُسقط الردّ')
+
+  assert(isKnownTail(TAIL.more(3)) && isKnownTail(TAIL.chase(8)) && isKnownTail(TAIL.ask), 'القوالب الثلاثة معتمدة')
+  assert(isKnownTail('') === true, 'لا ذيل ← مقبول')
+  assert(isKnownTail('وله في هذا 3 نصوصٍ أخرى — اكتب «زدني». وأنا أرى أنه محق.') === false,
+    '★ قالبٌ صحيح أُلحق به كلام يُرفض')
+
+  /* الدهشة تُقال بعددٍ صحيح لا مجاملة */
+  const chaseRows = [
+    { item: { slug: 'a', date: '2017-09-01' }, quote: { text: 'x' } },
+    { item: { slug: 'b', date: '2025-06-01' }, quote: { text: 'y' } },
+  ]
+  assert(tailFor(chaseRows, 2) === TAIL.chase(8), 'ثماني سنوات تُقال ثمانياً، لا «سنتين»')
+
   /* سؤالٌ فارغ لا يُنتج شيئاً */
   assert(search(items, '').length === 0, 'سؤال فارغ ← لا نتائج')
   assert(search(items, 'من هو؟').length === 0, 'كلماتٌ شائعة وحدها ← لا نتائج')
 
-  console.log('✓ اختبارات المكتبة التي تمشي: 19/19')
+  console.log('✓ اختبارات المكتبة التي تمشي: 27/27')
 }

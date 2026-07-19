@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-19T05:19:22.375Z",
+  "generatedAt": "2026-07-19T06:50:18.935Z",
   "episodes": [
     {
       "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
@@ -11,7 +11,7 @@
       "listen": "https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev/success-that-does-not-bring-joy-to-its-ownerarabic.dialogue.mp3",
       "audio": "/audio/success-that-does-not-bring-joy-to-its-ownerarabic.dialogue.mp3",
       "bytes": 3309444,
-      "audioHash": "95a5c108d75e3c63",
+      "audioHash": "db9fcc4e698e1127",
       "hasTranscript": true,
       "utterances": 37,
       "quality": {
@@ -53,7 +53,7 @@
           "listen": "https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev/success-that-does-not-bring-joy-to-its-ownerarabic.dialogue.mp3",
           "audio": "/audio/success-that-does-not-bring-joy-to-its-ownerarabic.dialogue.mp3",
           "bytes": 3309444,
-          "audioHash": "95a5c108d75e3c63",
+          "audioHash": "db9fcc4e698e1127",
           "hasTranscript": true,
           "utterances": 37,
           "quality": {

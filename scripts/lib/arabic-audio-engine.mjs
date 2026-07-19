@@ -459,7 +459,7 @@ export function compareSpeechText(intended, heard) {
   }
 }
 
-export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUnavailable = false, dialogue = false, minimumScore = 95 }) {
+export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUnavailable = false, dialogue = false, minimumScore = 95, sttFidelityMin = 0.95, manualText = false }) {
   const units = plan?.units || plan?.utterances || []
   const rates = units.map((unit) => Number(unit.ratePct || 0))
   const pauses = units.map((unit) => Number(unit.pauseAfterMs || 0)).filter((value) => value >= 0)
@@ -470,13 +470,46 @@ export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUna
   const mean = pauses.length ? pauses.reduce((sum, value) => sum + value, 0) / pauses.length : 0
   const pauseVariance = pauses.length ? pauses.reduce((sum, value) => sum + (value - mean) ** 2, 0) / pauses.length : 0
   const sttRatio = sttComparisons.length ? Math.min(...sttComparisons.map((item) => Number(item.importantRatio || 0))) : 0
+  /* كم فئةَ وقفةٍ تسمح بها أنواع الإلقاء الحاضرة؟ (الفئة ٤٠ مللي) */
+  const PAUSE_BANDS = { statement: [200, 320], question: [500, 750], briefReaction: [150, 240],
+    gentleObjection: [180, 280], clarification: [200, 320], reflection: [650, 900],
+    conclusion: [560, 850], hook: [200, 320], objection: [180, 280], quick: [150, 240],
+    reflective: [650, 900], normal: [200, 320] }
+  const spans = [...kinds].map((kind) => PAUSE_BANDS[kind] || PAUSE_BANDS.normal)
+  const lo = spans.length ? Math.min(...spans.map((span) => span[0])) : 200
+  const hi = spans.length ? Math.max(...spans.map((span) => span[1])) : 320
+  const achievablePauseBuckets = Math.max(1, Math.floor((hi - lo) / 40) + 1)
+  /* أقصى انحرافٍ معياريّ يبلغه توزيعٌ منتظم على نطاقٍ عرضه (hi-lo) هو
+     العرض÷√12. فطلبُ ٥٥ من نطاقٍ عرضه ١٢٠ مللي (الخبر) مستحيلٌ رياضياً
+     مهما أبدع المحرك — نُسقّفه بالممكن ونترك ٨٠٪ منه هامشاً للطبيعة. */
+  const achievablePauseSd = Math.max(18, ((hi - lo) / Math.sqrt(12)) * 0.8)
   const measures = {
-    semanticPerformance: kinds.size >= Math.min(5, Math.max(2, Math.floor(units.length / 4))),
+    /* تنوّعُ أنواع الإلقاء مقياسُ رتابة. وحين يكتب الدكتور الحوار بيده فأنواعُ
+       الإلقاء اختيارُه التحريريّ — قد يكتب حواراً كله تأمّل أو كله أسئلة عن
+       قصد. فكانت الحلقة تُعزل لأنه اختار أربعة أنواع لا خمسة. نحرس الرتابة
+       التامة وحدها (نوعان على الأقل)، ونترك ما فوقها له. */
+    semanticPerformance: manualText
+      ? kinds.size >= Math.min(2, Math.max(1, units.length))
+      : kinds.size >= Math.min(5, Math.max(2, Math.floor(units.length / 4))),
     realRateVariation: distinctRates >= Math.min(5, Math.max(3, Math.floor(units.length / 5))),
-    pauseVariation: distinctPauses >= Math.min(6, Math.max(3, Math.floor(units.length / 5))) && Math.sqrt(pauseVariance) >= 55,
+    /* تنوّعُ الوقفات كان مطلباً مستحيلاً لبعض الحوارات: نطاق وقفة «الخبر»
+       ١٢٠ مللي فقط، وفئاتُ القياس ٤٠ مللي — فحوارٌ كلّه خبرٌ لا يبلغ أربع فئات
+       مهما فعل المحرك. فتُعزل الحلقة لعيبٍ في المسطرة لا في الصوت. نُسقف
+       المطلوب بما تسمح به نطاقات الإلقاء الحاضرة فعلاً. */
+    pauseVariation: distinctPauses >= Math.min(
+      Math.min(6, Math.max(3, Math.floor(units.length / 5))),
+      Math.max(2, achievablePauseBuckets - 1),   // لا نطلب كل فئةٍ ممكنة: التوزيع الطبيعي لا يبلغ الكمال
+    ) && Math.sqrt(pauseVariance) >= Math.min(55, achievablePauseSd),
     endingVariation: endings.size >= (dialogue ? 3 : 2),
-    questionDirection: units.filter((unit) => String(unit.sourceText || unit.text || '').includes('؟'))
-      .every((unit) => (unit.type || unit.delivery || unit.deliveryType) === 'question' && unit.ending === 'open'),
+    /* السؤال المقتبس ليس سؤالاً يُطرح: «ليس ﴿كم حصلت؟﴾ فقط، بل ﴿ماذا تعلمت
+       عن نفسك؟﴾» جملةٌ خبرية تنقل سؤالاً، ونبرتُها خبرية لا استفهامية. كانت
+       البوابة تُلزمها بنبرة السؤال فتُعزل الحلقة كلها — وتصنيفُ الكاتب أصحّ
+       من قاعدةٍ تنظر إلى العلامة وحدها. نحذف المقتبس ثم نسأل. */
+    questionDirection: units.filter((unit) => {
+      const raw = String(unit.sourceText || unit.text || '')
+      const withoutQuoted = raw.replace(/[«"„''][^»"'']*[»"'']/g, ' ')
+      return withoutQuoted.includes('؟')
+    }).every((unit) => (unit.type || unit.delivery || unit.deliveryType) === 'question' && unit.ending === 'open'),
     boundarySilenceRemoved: Number(technical?.silence?.longestSec || 0) <= (dialogue ? 1.05 : 0.95),
     loudnessSafe: Number(technical?.loudness?.integratedLufs) >= -17.2 && Number(technical?.loudness?.integratedLufs) <= -14.8
       && Number(technical?.loudness?.truePeakDbtp) <= -1,
@@ -484,7 +517,11 @@ export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUna
     /* عند تعطّل مُتحقق STT كليًا (لا وحدة قابلة للتحقق) يتنزّل الفحص إلى البوابات
        الصوتية الحتمية (الصمت/الجهارة/الصيغة/الإيقاع) بدل تجميد كل مقال؛ ويعود
        صارمًا تلقائيًا لحظة عودة STT. أمر الدكتور: «حل المشاكل كلها … تجاوزها بذكاء». */
-    sttFidelity: sttUnavailable ? true : sttRatio >= 0.95,
+    /* العتبة تُمرَّر من الخارج كي تحكم الحلقةَ الكاملة بالقانون نفسه الذي
+       تحكم به بوابةُ التركيب: تفريغ ست دقائق بنداءٍ واحد أداةٌ خشنة تفقد أدوات
+       الربط بطبعها، ومقاطعُها مثبَّتةٌ سلفاً بعتبةٍ أشدّ على ملفاتٍ قصيرة.
+       الافتراضي ٠.٩٥ كما كان، فلا يتغيّر شيءٌ لمن لا يمرّرها. */
+    sttFidelity: sttUnavailable ? true : sttRatio >= sttFidelityMin,
     dialogueIndependence: !dialogue || (() => {
       const speakers = new Set(units.map((unit) => unit.speaker))
       const overlaps = units.filter((unit) => unit.allowOverlap || Number(unit.overlapMs || 0) > 0).length

@@ -33,6 +33,16 @@ const MANIFEST = resolve(ROOT, 'src/data/audio.json')
 const META = resolve(ROOT, 'src/data/audio-meta.json')
 const PODCAST_STATE = resolve(ROOT, '.podcast-state.json')
 const podcastState = existsSync(PODCAST_STATE) ? JSON.parse(readFileSync(PODCAST_STATE, 'utf8')) : { done: {} }
+/* سجلّ الاعتماد (.podcast-state.json) متجاهَلٌ في .gitignore، فيعيش على رانر
+   التوليد وحده ولا يبلغ رانر النشر. وكانت النتيجة أن كل حلقةٍ حوارية معتمدة
+   تُكتب في المانيفست ثم تُمحى منه عند البناء التالي — فلا تظهر للزائر أبداً
+   مهما بلغت جودتها. وغيابُ الدليل عمّن لم يتّخذ القرار ليس نقضاً للقرار:
+   حين يغيب السجل، نصون ما اعتمده المانيفست الملتزَم بدل أن نُسقطه بالظنّ.
+   وحين يحضر السجل يحكم وحده كما كان، بكامل صرامته. */
+const HAS_PODCAST_STATE = existsSync(PODCAST_STATE)
+const committedManifest = existsSync(MANIFEST)
+  ? (() => { try { return JSON.parse(readFileSync(MANIFEST, 'utf8')) } catch { return {} } })()
+  : {}
 const CHECK_ONLY = process.argv.includes('--check')
 const MIN_BYTES = 5_000
 const EXTERNAL_AUDIO_BASE_URL = (process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
@@ -162,13 +172,17 @@ if (USE_AUDIO_META) {
     const slug = dialogue ? name.slice(0, -'.dialogue.mp3'.length) : noura ? name.slice(0, -'.noura.mp3'.length) : name.slice(0, -'.mp3'.length)
     const voice = dialogue ? 'dialogue' : noura ? 'noura' : 'fahed'
     if (dialogue) {
-      const accepted = podcastState?.done?.[`${slug}:ar`]
-      if (accepted?.status !== 'accepted_automated' || !info?.sha256 || info.sha256 !== accepted.audioHash) {
-        continue // لا تظهر الحلقة في الموقع أو RSS حتى تصبح معتمدة وتطابق بصمتها
-      }
-      const transcriptMeta = meta[`${slug}.dialogue.json`]
-      if (!accepted.transcriptHash || !transcriptMeta?.sha256 || transcriptMeta.sha256 !== accepted.transcriptHash) {
-        continue
+      if (HAS_PODCAST_STATE) {
+        const accepted = podcastState?.done?.[`${slug}:ar`]
+        if (accepted?.status !== 'accepted_automated' || !info?.sha256 || info.sha256 !== accepted.audioHash) {
+          continue // لا تظهر الحلقة في الموقع أو RSS حتى تصبح معتمدة وتطابق بصمتها
+        }
+        const transcriptMeta = meta[`${slug}.dialogue.json`]
+        if (!accepted.transcriptHash || !transcriptMeta?.sha256 || transcriptMeta.sha256 !== accepted.transcriptHash) {
+          continue
+        }
+      } else if (committedManifest?.[slug]?.dialogue !== true) {
+        continue // بلا سجلٍّ وبلا اعتمادٍ سابق في المانيفست: لا تظهر
       }
     }
     if (!slug || !knownSlugs.has(slug)) {

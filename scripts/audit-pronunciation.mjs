@@ -156,6 +156,19 @@ const lexicon = existsSync(lexPath) ? JSON.parse(readFileSync(lexPath, 'utf8')) 
 const known = new Set(Object.keys(lexicon.entries || {}).flatMap((key) => [key, bareWord(key)]))
 
 const rows = audit(bodies, known)
+
+/* وضع الحارس: يُفشل البناء إن دخل المكتبةَ لفظٌ ثقيل التكرار ليس في القاموس.
+   والعتبة ثلاثٌ عمداً: ما ورد مرّةً قد يكون اسماً عابراً في استشهاد، وما تكرّر
+   ثلاثاً فهو من كلام الدكتور المعتاد — وسيُنطق خطأً في كل حلقةٍ تذكره. */
+if (process.argv.includes('--guard')) {
+  const heavy = rows.filter((row) => row.count >= 3 && row.type === 'دخيل معرَّب')
+  if (!heavy.length) { console.log('✓ حارس النطق: لا لفظ دخيلٍ متكرر خارج القاموس.'); process.exit(0) }
+  console.error(`✘ حارس النطق: ${heavy.length} لفظاً دخيلاً متكرراً ليس في القاموس:\n`)
+  for (const row of heavy.slice(0, 20)) console.error(`   «${row.word}» ×${row.count} · ${row.articles} مقالاً`)
+  console.error('\nأضفها من: لوحة التحكم ← الصوت والبودكاست ← مكتبة الصوت ← قاموس النطق')
+  process.exit(1)
+}
+
 const limit = Number(process.argv.find((a) => a.startsWith('--limit='))?.slice(8) || 60)
 
 console.log(`═══ فاحص النطق · ${Object.keys(bodies).length} متناً · القاموس فيه ${Object.keys(lexicon.entries || {}).length} مدخلاً ═══\n`)

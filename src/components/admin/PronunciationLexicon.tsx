@@ -2,6 +2,8 @@
    ولا يمرّ بي: يكتب هنا، فتقرؤه Firestore، فيسحبه جسرُ القاموس قبل كل توليد. */
 import { useEffect, useMemo, useState } from 'react'
 import { getFirebaseApp } from '../../lib/firebase'
+import lexiconFile from '../../../scripts/pronunciation-lexicon.json'
+import bodies from '../../data/bodies.json'
 
 type Entry = { word: string; sub?: string; diacritics?: string; note?: string; type?: string; updatedAt?: string }
 
@@ -19,6 +21,34 @@ export function checkEntry(word: string, sub: string, diacritics: string): strin
   return ''
 }
 
+
+/* ═══ كشّاف الألفاظ الجديدة ═══
+   نفس منطق scripts/audit-pronunciation.mjs — ومقصودٌ أن يكونا متطابقين: ما
+   يُنبّه عليه البناء يجب أن يراه الدكتور في اللوحة نفسها، وإلا نبّهه سطرٌ في
+   سجلٍّ لا يفتحه أحد. */
+const FOREIGN = /(?:ستات|يشن|تشن|كشن|نستا|غرام|سوشي|سوشا|ميدي|فاشن|فاشي|بلوك|لايك|فولو|هاشت|ترند|كوتش|ديجيت|تكنولوج|استراتيج|بروتوكول|سيناريو|ديموقراط|ايديولوج|انستغ|انستق|سناب|يوتيوب|واتس|تويت|فيسبوك|بودكاست|اونلاين|اوفلاين)/
+const FORM_X = /^(?:[يتنأا]ست|وليست|ليست|لست)/
+const bare = (word: string) => strip(word).replace(/^(?:وال|فال|بال|كال|لل|ال|و|ف|ب|ك|ل)/, '')
+
+export function findNewWords(texts: string[], known: Set<string>, min = 2) {
+  const counts = new Map<string, number>()
+  for (const text of texts) {
+    for (const raw of String(text).split(/[\s.,،؛:!؟()«»"'…]+/)) {
+      const word = strip(raw.trim())
+      if (!word || word.length < 4) continue
+      if (known.has(word) || known.has(bare(word))) continue
+      const stem = bare(word)
+      if (FORM_X.test(stem) || FORM_X.test(word)) continue
+      if (!FOREIGN.test(stem)) continue
+      counts.set(word, (counts.get(word) || 0) + 1)
+    }
+  }
+  return [...counts.entries()]
+    .filter(([, count]) => count >= min)
+    .sort((a, b) => b[1] - a[1])
+    .map(([word, count]) => ({ word, count }))
+}
+
 export function PronunciationLexicon() {
   const [entries, setEntries] = useState<Entry[]>([])
   const [word, setWord] = useState('')
@@ -28,6 +58,15 @@ export function PronunciationLexicon() {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
   const [search, setSearch] = useState('')
+
+  /* الألفاظ التي دخلت مقالاته ولم تدخل قاموسه بعد */
+  const candidates = useMemo(() => {
+    const known = new Set<string>([
+      ...Object.keys((lexiconFile as { entries: Record<string, unknown> }).entries || {}),
+      ...entries.map((entry) => entry.word),
+    ].flatMap((key) => [strip(key), bare(key)]))
+    return findNewWords(Object.values(bodies as Record<string, string>), known).slice(0, 12)
+  }, [entries])
 
   const load = async () => {
     const app = await getFirebaseApp()
@@ -89,6 +128,27 @@ export function PronunciationLexicon() {
         كل كلمةٍ تضيفها هنا تُنطق كما تريد في <strong>كل حلقةٍ قادمة</strong>، ولا تحتاج إعادة كتابة الحوار.
         والنصّ الذي يقرؤه زوّارك لا يتغيّر — الحركات تعمل في طبقة الصوت وحدها.
       </p>
+
+      {candidates.length > 0 && (
+        <div className="mt-4 rounded-xl border border-accent/30 bg-canvas p-3">
+          <p className="text-[.75rem] font-semibold text-accent">
+            {candidates.length === 1 ? 'لفظٌ في مقالاتك' : `${candidates.length} ألفاظٍ في مقالاتك`} ليست في القاموس — ستُنطق باجتهاد المحرك
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {candidates.map((item) => (
+              <button
+                key={item.word}
+                type="button"
+                onClick={() => { setWord(item.word); setDiacritics(''); setSub(''); setNotice('') }}
+                className="rounded-full border border-hair bg-wash px-3 py-1.5 text-[.76rem] text-ink transition-colors hover:border-accent hover:text-accent"
+              >
+                {item.word} <span className="text-soft">×{item.count}</span>
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-[.7rem] text-soft">اضغط أيّها لتضبط نطقه.</p>
+        </div>
+      )}
 
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         <div>

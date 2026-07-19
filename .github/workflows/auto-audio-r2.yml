@@ -157,6 +157,11 @@ jobs:
           # الآن كل حوارٍ أُرسل للتوليد ويُسحب تلقائياً قبل أن يبدأ.
           node scripts/fetch-queued-dialogues.mjs || echo "::warning::تعذّر سحب الحوارات المنتظرة؛ نمضي بما هو موجود."
           npm run podcast:ar:nightly
+          # الحلقة تُولَّد وتُرفع وتُسجَّل… ثم تبقى لوحةُ الدكتور تقول «مسودة» و«غير
+          # مولَّد» إلى الأبد، لأن أحداً لا يُبلّغ Firestore بما جرى: fetch-manual-
+          # dialogues يكتب «generating» ولا كاتبَ للنجاح. فيظنّ الدكتور أن التوليد
+          # فشل ويعيد الإرسال بلا داعٍ. نُبلّغ اللوحة بما يقوله سجلّ المحرك نفسه.
+          node scripts/report-dialogue-status.mjs || echo "::warning::تعذّر تحديث حالة الإنتاج في اللوحة."
         env:
           PODCAST_NO_GEMINI: '1'
           FIREBASE_SERVICE_ACCOUNT: sa.json

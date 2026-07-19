@@ -45,6 +45,21 @@ export function decideReports({ production = [], state = {} } = {}) {
   return reports
 }
 
+/**
+ * القفل بلا مفتاح — العطب الثاني، وهو الأخطر.
+ *
+ * حين يمسح الدكتور حواراً من اللوحة تُرفع رايةُ إيقافٍ دائمة على المقال
+ * (audioControl.dialogueDisabled = true)، تقرؤها صفحة المقال فتحذف الحوار من
+ * المشغّل. ولا يوجد في المشروع كلّه سطرٌ واحد يُنزل تلك الراية. فكل مقالٍ يُمسح
+ * صوته يصير عقيماً إلى الأبد: تُولَّد حلقته وتُرفع إلى R2 وتُسجَّل… ولا تظهر.
+ *
+ * فمن أعاد إرسال حواره للتوليد فقد نقض مسحه بنفسه. لذلك: ما اجتاز البوابات
+ * ونُشر تُنزَّل رايته هنا. وما عُزل تبقى رايته كما هي — لا نكشف حلقةً ساقطة.
+ */
+export function revivals(reports = []) {
+  return reports.filter((report) => report?.status === 'published').map((report) => report.slug)
+}
+
 if (SELF_TEST) {
   const assert = (condition, message) => { if (!condition) throw new Error(`✘ ${message}`) }
   const state = { done: {
@@ -69,7 +84,13 @@ if (SELF_TEST) {
   assert(!('BAD' in byId), 'الاسم غير الآمن يُرفض')
   assert(out.find((item) => item.slug === 'two').note.includes('بوابة البشرية'),
     'سبب العزل يصل الدكتور كما هو — لا رسالة عامة')
-  console.log('✓ اختبارات مُبلّغ حالة الحوار: 7/7')
+
+  const revived = revivals(out)
+  assert(revived.includes('one') && revived.includes('four'), 'المنشور تُنزَّل رايته فيظهر')
+  assert(!revived.includes('two'), 'المعزول تبقى رايته — لا نكشف حلقةً ساقطة')
+  assert(!revived.includes('three') && !revived.includes('five'), 'ما لم يُبلَّغ عنه لا يُمَسّ')
+  assert(revivals([]).length === 0, 'لا تقارير ← لا إحياء')
+  console.log('✓ اختبارات مُبلّغ حالة الحوار: 11/11')
   process.exit(0)
 }
 
@@ -106,3 +127,37 @@ for (const report of reports) {
   console.log(`  ${report.status === 'published' ? '✓' : '⚠'} ${report.slug}: ${report.status}`)
 }
 console.log(`✓ أُبلغت اللوحة عن ${reports.length} حالة.`)
+
+/* إنزال الراية: نكتب في المكان نفسه الذي يرفعها فيه audio-control-status.mjs —
+   site_articles إن وُجد المقال هناك، وإلا content_overrides. لو اختلف المكانان
+   لبقيت رايةٌ مرفوعة في ظلٍّ لا يراه أحد. */
+const objectMap = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+
+for (const slug of revivals(reports)) {
+  const fields = {
+    dialogueDisabled: false,
+    dialogueStatus: 'published',
+    dialogueUpdatedAt: new Date().toISOString(),
+    dialogueMessage: '',
+  }
+  try {
+    const siteRef = db.collection('site_articles').doc(slug)
+    const site = await siteRef.get()
+    if (site.exists) {
+      const current = objectMap(site.data()?.audioControl)
+      await siteRef.set({ audioControl: { ...current, ...fields }, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
+      console.log(`  ↑ ${slug}: أُنزلت راية الإيقاف (site_articles) — الحلقة تظهر الآن.`)
+      continue
+    }
+    const ref = db.collection('content_overrides').doc(`article:${slug}`)
+    const snapshot = await ref.get()
+    const existing = snapshot.exists ? snapshot.data() || {} : {}
+    const patch = objectMap(existing.patch)
+    const current = objectMap(patch.audioControl)
+    await ref.set({ ...existing, patch: { ...patch, audioControl: { ...current, ...fields } }, updatedAt: FieldValue.serverTimestamp() })
+    console.log(`  ↑ ${slug}: أُنزلت راية الإيقاف (content_overrides) — الحلقة تظهر الآن.`)
+  } catch (error) {
+    /* الإبلاغ نجح قبل قليل؛ فشل الإحياء وحده لا يُسقط التشغيلة كلها */
+    console.log(`  ⚠ ${slug}: تعذّر إنزال الراية (${String(error?.message || error).slice(0, 90)}).`)
+  }
+}

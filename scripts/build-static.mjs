@@ -103,7 +103,37 @@ const researchSource = readFileSync(resolve(ROOT, 'src/data/research-papers.ts')
 const researchRuntime = ts.transpileModule(researchSource, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
 }).outputText.replace(/\bexport\s+/g, '')
-const papers = new Function(`${researchRuntime}; return researchPapers`)()
+/* ═══ حذف الدكتور نهائيٌّ في كل مكان ═══
+   ما يحذفه من اللوحة — مقالاً كان أو بحثاً أو كتاباً أو لقاءً — يجب ألا يبقى
+   له أثر: لا صفحة، ولا سطر في الخريطة، ولا مدخل في RSS، ولا رقم في عدّاد.
+   كان المولّد يقرأ الملفات الثابتة وحدها فيعلن ١٦٤ مقالاً بينما الموقع يعرض
+   ١٤٣، ويبني صفحات لمقالات محذوفة، ويبثّها في التغذية. نقرأ قرارات الحذف من
+   Firestore قبل بناء أي شيء، فيصير مصدر الحقيقة واحداً.
+   وإن تعذّر الوصول (بناء محلي بلا مفاتيح) نبني بالملفات كما كان — لا نُسقط
+   البناء، لكن نُعلن ذلك بوضوح كي لا يُنشر بناءٌ أعمى دون أن ندري. */
+const deletedKeys = new Set()
+try {
+  const saPath = resolve(ROOT, process.env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')
+  if (existsSync(saPath) && process.env.FIREBASE_PROJECT_ID) {
+    const { initializeApp, cert, getApps } = await import('firebase-admin/app')
+    const { getFirestore } = await import('firebase-admin/firestore')
+    const app = getApps()[0] || initializeApp({ credential: cert(JSON.parse(readFileSync(saPath, 'utf8'))) })
+    const snapshot = await getFirestore(app).collection('content_overrides').get()
+    snapshot.forEach((document) => {
+      const data = document.data()
+      if (data?.deleted === true) deletedKeys.add(document.id)
+    })
+    console.log(`قرارات الحذف من اللوحة: ${deletedKeys.size} عنصراً لن يُبنى ولا يُحصى.`)
+  } else {
+    console.log('⚠ بناء بلا مفاتيح Firestore: لن تُطبَّق قرارات الحذف من اللوحة.')
+  }
+} catch (error) {
+  console.log(`⚠ تعذّرت قراءة قرارات الحذف (${String(error.message).slice(0, 80)}) — البناء بالملفات الثابتة.`)
+}
+const isDeleted = (kind, slug) => deletedKeys.has(`${kind}:${slug}`)
+const keepAlive = (kind) => (item) => item && item.slug && !isDeleted(kind, item.slug)
+
+const papersAll = new Function(`${researchRuntime}; return researchPapers`)()
 const esc = (s = '') => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 const attr = (s = '') => esc(s).replace(/'/g, '&#39;')
 
@@ -116,15 +146,20 @@ const paperTitlesEn = Object.fromEntries([...grabObject(srcEn, 'paperTitlesEn').
 const articles = [...grab('articles').matchAll(
   /\{ slug: '([^']+)', title: '([^']+)', date: '([^']*)', iso: '([^']*)', cat: '([^']*)',\s*excerpt: '([^']*)'/g
 )].map((m) => ({ slug: m[1], title: m[2].replace(/\\'/g, "'"), date: m[3], iso: m[4], cat: m[5], excerpt: m[6].replace(/\\'/g, "'") }))
+  .filter(keepAlive('article'))
 
 const books = [...grab('books').matchAll(/\{ slug: '([^']+)'[\s\S]*?title: '([^']+)'[\s\S]*?isbn: '([^']*)'[\s\S]*?cover: '([^']*)'[\s\S]*?pdf: '([^']*)'[\s\S]*?desc: '([^']*)'/g)]
   .map((m) => ({ slug: m[1], title: m[2], isbn: m[3], cover: m[4], pdf: m[5], desc: m[6] }))
+  .filter(keepAlive('book'))
 
 const media = [...grab('media').matchAll(/\{ title: '([^']+)', outlet: '([^']*)', url: '([^']*)'/g)]
   .map((m, index) => {
     const id = (m[3].match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || String(index + 1)
     return { slug: `media-${id}`, title: m[1], outlet: m[2], url: m[3] }
   })
+  .filter(keepAlive('media'))
+
+const papers = papersAll.filter(keepAlive('paper'))
 
 const siteArticlesFeedPath = resolve(ROOT, 'src/data/site-articles-feed.json')
 const siteArticlesFeed = existsSync(siteArticlesFeedPath)
@@ -1042,9 +1077,12 @@ const items = feedArticles.map((a) => `    <item>
     </item>`).join('\n')
 
 writeFileSync(resolve(DIST, 'feed.xml'), `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0"><channel>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel>
     <title>د. أحمد حسين الفيلكاوي — مقالات فكرية</title>
     <link>${SITE}</link>
+    <!-- عنوان الخلاصة نفسه: غيابه أشهرُ ما تشكو منه مدققات RSS، ويمنع القارئات
+         من تتبّع الخلاصة إن انتقلت. -->
+    <atom:link href="${SITE}/feed.xml" rel="self" type="application/rss+xml" />
     <description>مقالات في التعليم والتقنية والمجتمع.</description>
     <language>ar</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>

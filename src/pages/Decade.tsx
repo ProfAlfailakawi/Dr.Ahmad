@@ -1,9 +1,11 @@
-import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { useCmsContent } from '../lib/content'
 import type { ArticleRecord } from '../lib/cms'
+import { toRoot } from '../lib/dialect-lexicon'
+import { loadArticleBodies } from '../lib/article-bodies'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
@@ -38,16 +40,48 @@ function chapterRange(chapters: YearChapter[]) {
     : `${chapters[0].year}–${chapters[chapters.length - 1].year}`
 }
 
+/* رحلة فكرةٍ بعينها عبر السنوات: يكتب القارئ «الامتحان» أو «العيال» فيرى متى
+   بدأ الدكتور يكتب فيها، وكيف تنقّلت بين أبوابه، وأين استقرّت. والتصفية تمرّ
+   بالقاموس الجبّار فيلتقي سؤال العاميّة بمقال الفصحى. */
+function matchesIdea(article: ArticleRecord, roots: string[], bodies: Record<string, string>): boolean {
+  if (!roots.length) return true
+  const haystack = `${article.title} ${article.excerpt || ''} ${article.cat} ${bodies[article.slug] || ''}`
+  const words = new Set(
+    haystack.split(/[\s.,،؛:!؟()«»"'…]+/).filter((w) => w.length > 2).map(toRoot),
+  )
+  return roots.some((root) => words.has(root))
+}
+
 export default function Decade() {
   const { articles, loading } = useCmsContent()
+  const [params, setParams] = useSearchParams()
+  const idea = (params.get('فكرة') || params.get('idea') || '').trim()
+  const [draft, setDraft] = useState(idea)
+  const [bodies, setBodies] = useState<Record<string, string>>({})
+
+  useEffect(() => { setDraft(idea) }, [idea])
+  /* المتون تُجلب عند الحاجة وحدها: الرحلة بلا فكرةٍ لا تحتاجها، ومع فكرةٍ
+     تصير ضرورية — فالعنوان وحده لا يكفي للحكم بأن المقال يخصّها. */
+  useEffect(() => {
+    if (!idea || Object.keys(bodies).length) return
+    let alive = true
+    void loadArticleBodies().then((data) => { if (alive) setBodies(data || {}) }).catch(() => {})
+    return () => { alive = false }
+  }, [idea, bodies])
+
   useSeo({
-    title: 'وثيقة العقد',
+    title: idea ? `رحلة فكرة: ${idea}` : 'وثيقة العقد',
     path: '/decade',
-    description: 'سيرة فكرية حيّة تُعيد قراءة عشر سنوات من المقالات: التحولات، والموضوعات الأكثر حضوراً، والنصوص الممثلة لكل مرحلة.',
+    description: idea
+      ? `كيف تنقّلت فكرة «${idea}» في كتابات د. أحمد الفيلكاوي عبر السنوات — بالنصوص والتواريخ.`
+      : 'سيرة فكرية حيّة تُعيد قراءة عشر سنوات من المقالات: التحولات، والموضوعات الأكثر حضوراً، والنصوص الممثلة لكل مرحلة.',
   })
 
   const document = useMemo(() => {
-    const dated = articles.filter((article) => /^(?:19|20)\d{2}/.test(article.iso))
+    const roots = idea.split(/\s+/).filter((w) => w.length > 2).map(toRoot)
+    const dated = articles
+      .filter((article) => /^(?:19|20)\d{2}/.test(article.iso))
+      .filter((article) => matchesIdea(article, roots, bodies))
     if (!dated.length) return null
 
     // النطاق الكامل من أول مقال فعلي إلى آخره — يتجدّد تلقائياً مع أي إضافة (لا يبدأ من latestYear-9)
@@ -120,15 +154,61 @@ export default function Decade() {
       stages,
       turns,
     }
-  }, [articles])
+  }, [articles, idea, bodies])
 
   return (
     <Page className="content-decade page-journey">
       <PageHead
-        label="السيرة الفكرية الحيّة"
-        title="وثيقة العقد."
-        sub="ليست سيرة وظائف ومناصب؛ بل قراءة تتولّد من الأرشيف نفسه: أين بدأ السؤال، ومتى اتسع، وما الذي بقي يُلحّ عاماً بعد عام."
+        label={idea ? 'رحلة فكرة' : 'السيرة الفكرية الحيّة'}
+        title={idea ? `«${idea}» عبر السنوات.` : 'وثيقة العقد.'}
+        sub={idea
+          ? 'متى بدأتْ هذه الفكرة تُلحّ، وكيف تنقّلت بين أبوابه، وأين استقرّت — بالنصوص والتواريخ لا بالانطباع.'
+          : 'ليست سيرة وظائف ومناصب؛ بل قراءة تتولّد من الأرشيف نفسه: أين بدأ السؤال، ومتى اتسع، وما الذي بقي يُلحّ عاماً بعد عام.'}
       />
+
+      {/* حقل الفكرة: يكتب القارئ «الامتحان» أو «العيال» فيرى رحلتها وحدها.
+          والاقتراحات مأخوذةٌ من أكثر ما كتب فيه الدكتور، فلا يبدأ من فراغ. */}
+      <section className="border-b border-hair px-6 py-8 md:px-11">
+        <div className="mx-auto max-w-shell">
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              const value = draft.trim()
+              setParams(value ? { 'فكرة': value } : {})
+            }}
+            className="flex flex-wrap items-center gap-3"
+          >
+            <input
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder="اكتب فكرةً — الامتحان، الهوية، الذكاء الاصطناعي…"
+              className="min-w-[16rem] flex-1 rounded-full border border-hair bg-canvas px-5 py-2.5 text-[.88rem] text-ink outline-none focus:border-accent"
+            />
+            <button type="submit" className="rounded-full bg-accent px-6 py-2.5 text-[.85rem] font-semibold text-white transition-opacity hover:opacity-90">
+              تتبّع الرحلة
+            </button>
+            {idea && (
+              <button type="button" onClick={() => { setDraft(''); setParams({}) }} className="text-[.82rem] text-soft transition-colors hover:text-accent">
+                العقد كاملاً ↺
+              </button>
+            )}
+          </form>
+          {!idea && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {['الامتحان', 'الهوية', 'الذكاء الاصطناعي', 'الأطفال', 'المعلم', 'الشهادة'].map((seed) => (
+                <button
+                  key={seed}
+                  type="button"
+                  onClick={() => { setDraft(seed); setParams({ 'فكرة': seed }) }}
+                  className="rounded-full border border-hair bg-wash px-4 py-1.5 text-[.78rem] text-soft transition-colors hover:border-accent hover:text-accent"
+                >
+                  {seed}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
       {loading && !document ? (
         <div className="px-6 py-24 text-center text-soft">تُقرأ خيوط الأرشيف…</div>

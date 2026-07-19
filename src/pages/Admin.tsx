@@ -24,6 +24,7 @@ import { VoiceBakeoffCard } from '../components/admin/VoiceBakeoff'
 import { ManualDialogueEditor } from '../components/admin/ManualDialogueEditor'
 import { AudioLibrary } from '../components/admin/AudioLibrary'
 import { PronunciationLexicon } from '../components/admin/PronunciationLexicon'
+import { ReaderPulse } from '../components/admin/ReaderPulse'
 import { ProductionHealthCenter } from '../components/admin/ProductionHealthCenter'
 import { AdminTaskFavicon, AdminTaskIndicator } from '../components/admin/AdminTaskFavicon'
 import { UploadField } from '../components/admin/ContentManager'
@@ -321,7 +322,7 @@ function Panel({ email }: { email: string }) {
           <AdminSectionTabs tab={tab} onSelect={chooseTab} />
             {tab === 'dashboard' && <TodayDashboard articles={cms.articles} onOpen={chooseTab} />}
             {tab === 'production' && <ProductionHealthCenter articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />}
-            {tab === 'analytics' && <Indicators articles={cms.articles} />}
+            {tab === 'analytics' && <div className="grid gap-4"><ReaderPulse /><Indicators articles={cms.articles} /></div>}
             {tab === 'studio' && <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} />}
             {tab === 'launch' && <LaunchModeCard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} />}
             {tab === 'lab' && <IntelligenceLab articles={cms.articles} />}

@@ -4,9 +4,11 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 3000,
+    /* ٣٠٠٠ هو الأصل. ويُتجاوَز بـPORT حين يكون مشغولاً بجلسةٍ أخرى تعمل على
+       المشروع نفسه — فلا تتعطّل المعاينة لأن منفذاً واحداً محجوز. */
+    port: Number(process.env.PORT) || 3000,
     host: '0.0.0.0',
-    strictPort: true,
+    strictPort: !process.env.PORT,
   },
   build: {
     rollupOptions: {

@@ -1,9 +1,14 @@
+import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { EASE, FadeUp, Page, PageHead } from '../components/ui'
 import { Newsletter } from '../components/extras'
 import { useSeo } from '../components/seo'
-import { faqs, inboxLinks, testimonials } from '../data'
-import { useExtras } from '../lib/content'
+import { Link } from 'react-router-dom'
+import { faqs, inboxLinks } from '../data'
+import { useExtras, useCmsContent } from '../lib/content'
+import { loadArticleBodies } from '../lib/article-bodies'
+import { pickEchoes, type VoiceEcho } from '../lib/voice-echoes'
+import citations from '../data/citations.json'
 
 type LiveInboxItem = {
   id: string
@@ -164,9 +169,28 @@ export default function Inbox() {
     .map((item) => ({ quote: clean(item.quote) }))
     .filter((item) => item.quote.length >= 35)
 
-  const publicTestimonials = (liveQuotes.length ? liveQuotes : testimonials)
+  /* الشهادةُ حكمٌ على الدكتور يُقدَّم للزائر دليلاً، فلا يجوز أن يكون مصنوعاً.
+     حُذف البديل المخبوز (شهادتان مكتوبتان في الكود) — وحلّت محلّه أصداء من
+     متونه: كلامه هو، بحرفه، منسوباً لمقاله. فإن اعتمد الدكتور شهادةً حقيقية
+     من اللوحة تصدّرت مكانها فوراً. */
+  const publicTestimonials = liveQuotes
     .filter((item, index, all) => all.findIndex((candidate) => clean(candidate.quote) === clean(item.quote)) === index)
   const visibleTestimonials = rotateTestimonials(publicTestimonials).slice(0, 2)
+
+  /* أصداء من المتون: تُعرض حين لا توجد شهادةٌ حقيقية معتمَدة. ولا تُخترع —
+     جملُ الدكتور بحرفها من مقالاتها، تمرّ ببوّابة تحققٍ قبل العرض. */
+  const { articles, papers, media } = useCmsContent()
+  const papersCount = papers.length
+  const mediaCount = media.length
+  const [echoes, setEchoes] = useState<VoiceEcho[]>([])
+  useEffect(() => {
+    if (publicTestimonials.length || !articles.length) return
+    let active = true
+    loadArticleBodies()
+      .then((bodies) => { if (active) setEchoes(pickEchoes(articles, bodies, 2)) })
+      .catch(() => { /* المتون زينة هنا: تعذّرها لا يكسر الصفحة */ })
+    return () => { active = false }
+  }, [articles, publicTestimonials.length])
 
   return (
     <Page>
@@ -176,7 +200,10 @@ export default function Inbox() {
       <section className="border-b border-hair px-6 py-16 md:px-11 md:py-24">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <span className="text-[.76rem] font-semibold uppercase text-accent">الرسالة الأحدث</span>
+            {/* «الرسالة الأحدث» و«ردّي» كانا يُوهمان أن قارئاً كتب وأن الدكتور أجاب،
+                والنصّان معاً يولّدهما النظام من أرشيفه. النصّ باقٍ كما هو —
+                والنسبة وحدها تُصحَّح، فلا يُنسب إلى غائبٍ قولٌ لم يقله. */}
+            <span className="text-[.76rem] font-semibold uppercase text-accent">على هامش المقال</span>
           </FadeUp>
           {featuredLetter ? (
             <div className="mt-8 grid gap-8 lg:grid-cols-[1.35fr_.65fr] lg:items-end">
@@ -191,7 +218,7 @@ export default function Inbox() {
               {featuredLetter.reply && (
                 <FadeUp delay={0.13}>
                   <div className="border-s-2 border-accent ps-6">
-                    <span className="text-[.72rem] font-semibold uppercase text-accent">ردّي المختصر</span>
+                    <span className="text-[.72rem] font-semibold uppercase text-accent">تعقيب الدكتور</span>
                     <p className="mt-3 font-display text-[1.06rem] leading-[1.95] text-ink/82">{featuredLetter.reply}</p>
                   </div>
                 </FadeUp>
@@ -219,13 +246,53 @@ export default function Inbox() {
         </div>
       </section>
 
-      {/* شهادات */}
+      {/* شهادات حقيقية معتمَدة — أو أصداء من متون الدكتور حين لا توجد */}
       <section className="border-b border-hair px-6 py-16 md:px-11 md:py-20">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <span className="text-[.76rem] font-semibold uppercase text-accent">ماذا قالوا</span>
+            <span className="text-[.76rem] font-semibold uppercase text-accent">{publicTestimonials.length ? 'ماذا قالوا' : 'أصداء من المتون'}</span>
+            {!publicTestimonials.length && <p className="mt-2 text-[.84rem] font-light text-soft">جملٌ من مقالات الدكتور، بنصّها ومصدرها.</p>}
           </FadeUp>
-          <div className="mobile-card-rail mt-8 grid gap-6 md:grid-cols-2">
+          {!publicTestimonials.length && echoes.length > 0 && (
+            <div className="mobile-card-rail mt-8 grid gap-6 md:grid-cols-2">
+              {echoes.map((echo, i) => (
+                <motion.figure
+                  key={echo.slug}
+                  initial={reduce ? false : { opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.7, delay: i * 0.08, ease: EASE }}
+                  className="relative flex h-full flex-col rounded-2xl border border-hair bg-wash p-8 md:p-9"
+                >
+                  <span className="absolute right-7 top-3 font-display text-[3.5rem] leading-none text-accent/20">”</span>
+                  <blockquote className="relative font-display text-[1.16rem] font-light leading-[1.95] text-ink/90">{echo.quote}</blockquote>
+                  <figcaption className="mt-5 border-t border-hair pt-4 text-[.82rem] text-soft">
+                    <Link to={`/articles/${echo.slug}`} data-hover className="font-semibold text-ink transition-colors hover:text-accent">{echo.title}</Link>
+                    {echo.iso && <span className="mt-1 block text-[.74rem] font-light text-soft/75">{echo.iso.slice(0, 4)}</span>}
+                  </figcaption>
+                </motion.figure>
+              ))}
+            </div>
+          )}
+          {/* شريطٌ لا يُنكَر: أرقامٌ موثّقة من مصادرها، لا ثناءٌ من مجهول.
+              الاستشهادات تُحدَّث يومياً من Google Scholar بتشغيلة البناء. */}
+          <FadeUp delay={0.12}>
+            <dl className="mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-hair bg-hair md:grid-cols-4">
+              {[
+                { n: citations.total, label: 'استشهاد أكاديمي', to: '/research' },
+                { n: papersCount, label: 'بحث محكّم', to: '/research' },
+                { n: articles.length, label: 'مقالاً منشوراً', to: '/articles' },
+                { n: mediaCount, label: 'لقاءً إعلامياً', to: '/media' },
+              ].filter((item) => Number(item.n) > 0).map((item) => (
+                <Link key={item.label} to={item.to} data-hover className="group bg-canvas px-5 py-6 text-center transition-colors hover:bg-wash">
+                  <dt className="font-display text-[1.7rem] font-bold text-ink transition-colors group-hover:text-accent">{Number(item.n).toLocaleString('en-US')}</dt>
+                  <dd className="mt-1 text-[.78rem] font-light text-soft">{item.label}</dd>
+                </Link>
+              ))}
+            </dl>
+          </FadeUp>
+
+          <div className={`mobile-card-rail mt-8 grid gap-6 md:grid-cols-2 ${publicTestimonials.length ? '' : 'hidden'}`}>
             {visibleTestimonials.map((t, i) => (
               <motion.blockquote
                 key={i}

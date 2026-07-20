@@ -118,6 +118,13 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
       return { shouldRespond: false, reason: 'media-or-link-human' }
     }
     const response = handleIncoming({ db, jid, text: safeText(text), hasMedia, isReplyToAgent: isReplyToBot(message) })
+    /* ★ ما لا جواب له لا يُجاب. حين يُعلن المحرك أنه لا يملك ردّاً (silent)
+       نصمت ونُسكت المحادثة ونترك الأمر للدكتور — بدل إبلاغ السائل بفشل بحث. */
+    if (response.silent) {
+      markManualTakeover(db, jid)
+      db.addAudit('needs-human-silent', redactJid(jid), response.intent || 'no-match')
+      return { ...response, shouldRespond: false, reason: 'needs-human-silent' }
+    }
     if (!response.shouldRespond) db.addAudit('auto-reply-skipped', redactJid(jid), response.reason || 'blocked')
     /* الردّ الناجح لم يكن يُسجَّل قط — يُسجَّل الصمت وحده. فإذا ردّ البوت حيث
        لا يجوز، لم يترك أثراً يُقرأ. نُسجّله الآن ليُعرف من أين دخل. */

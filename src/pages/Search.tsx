@@ -93,7 +93,7 @@ export default function Search() {
               </div>}
 
               {searchStarted && <div className="mt-7 border-t border-hair pt-5">
-                <div className="rail flex gap-5 overflow-x-auto pb-1">
+                <div className="flex flex-wrap gap-x-5 gap-y-2">
                   {categories.map((item) => (
                     <button
                       key={item}
@@ -107,7 +107,7 @@ export default function Search() {
                   ))}
                 </div>
 
-                <div className="rail mt-2 flex gap-5 overflow-x-auto pb-1">
+                <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2">
                   {['الكل', ...years].map((item) => (
                     <button
                       key={item}

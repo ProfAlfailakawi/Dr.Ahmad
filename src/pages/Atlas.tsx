@@ -211,7 +211,7 @@ export default function Atlas() {
   }
 
   const categoryButtons = (
-    <div className="rail -mx-4 mb-8 flex gap-2 overflow-x-auto px-4 pb-2 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0">
+    <div className="mb-8 flex flex-wrap gap-2 md:pb-0">
       <button
         onClick={() => { setActiveCat(null); setSelected(null) }}
         className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-[.83rem] font-medium transition-colors duration-300 ${

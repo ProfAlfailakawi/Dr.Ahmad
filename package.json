@@ -94,7 +94,9 @@
     "dialogues:stage": "node scripts/stage-dialogues-local.mjs",
     "dialogues:stage:self-test": "node scripts/stage-dialogues-local.mjs --self-test",
     "content:purge": "node scripts/purge-deleted-content.mjs",
-    "content:purge:self-test": "node scripts/purge-deleted-content.mjs --self-test"
+    "content:purge:self-test": "node scripts/purge-deleted-content.mjs --self-test",
+    "audio:progress": "node scripts/audio-progress.mjs",
+    "audio:progress:self-test": "node scripts/audio-progress.mjs --self-test"
   },
   "dependencies": {
     "firebase": "^12.15.0",

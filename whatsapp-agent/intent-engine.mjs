@@ -93,7 +93,10 @@ export function classifyIntent(text) {
   for (const [intent, ...rules] of patterns) {
     for (const [regex, confidence] of rules) if (regex.test(value)) return { intent, confidence, normalized: value }
   }
-  if (value.length >= 3) return { intent: INTENTS.SEARCH_TOPIC, confidence: 0.72, normalized: value }
+  /* المنفذ الأخير: ما لم يطابق نمطاً يُعامَل بحثاً عن موضوع. ويُوسَم `fallback`
+     لأنه ليس فهماً بل تخميناً — وداخل الجلسة المفتوحة كان هذا التخمين يبتلع
+     كلَّ ما يُكتب، ومنه ما ليس سؤالاً أصلاً. فالبوّابة تعرفه الآن وتردّه. */
+  if (value.length >= 3) return { intent: INTENTS.SEARCH_TOPIC, confidence: 0.72, normalized: value, fallback: true }
   return { intent: INTENTS.UNKNOWN, confidence: 0.2, normalized: value }
 }
 
@@ -375,7 +378,16 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
       }
 
       const results = searchContent(db, query, { limit: 3 })
-      if (!results.length) return { ...classification, needsHuman: true, text: 'ما لقيت تطابقًا دقيقًا في أرشيف الموقع. اذكر كلمة أخرى أو اختر نوع المادة.' }
+      /* ★ لا جواب ← صمتٌ وتحويل، لا إعلانُ فشل.
+       *
+       * كان يردّ «ما لقيت تطابقًا دقيقًا في أرشيف الموقع». وداخل جلسةٍ مفتوحة
+       * يصل إلى هذا الفرع كلُّ ما يُكتب — ومنه ما ليس سؤالاً أصلاً. فكتب إنسانٌ
+       * شكواه من الفقر ومن رفض توظيفه لهويّته، فقوبل برسالة «لم أجد تطابقاً في
+       * الأرشيف». وهذا أسوأ من الصمت بمراحل: يُشعره أن ألمه استُعلم عنه في
+       * قاعدة بيانات فلم يُوجد.
+       *
+       * والصواب: يصمت البوت، ويُسكت نفسه في المحادثة، ويترك الأمر للدكتور. */
+      return { ...classification, needsHuman: true, silent: true, text: '' }
       return {
         ...classification,
         text: `أقرب المواد لسؤالك:\n${results.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}\n\nاكتب «غيره» لمزيد، أو «لخّص» للأول.`,
@@ -486,21 +498,47 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
      يفضح أن البوت لم يسمعها أصلاً. */
   if (hasMedia) return { allowed: false, reason: 'وسائط — لا يردّ البوت على صوتٍ ولا صورة' }
   const session = pendingSession(db, jid)
-  /* كتب الدكتور بيده: صمتٌ فوريّ حتى تنقضي المدة */
-  if (session?.manual_until && new Date(session.manual_until) > new Date()) return { allowed: false, reason: 'manual-takeover' }
+  const classification0 = classifyIntent(text)
+  const { intent, confidence } = classification0
+  const opensDoor = OPENS_DOOR.has(intent) && confidence >= 0.9
 
-  const { intent, confidence } = classifyIntent(text)
+  /* ═══ كتب الدكتور بيده: صمتٌ فوريّ حتى تنقضي المدة ═══
+   *
+   * ★ إلا جملةَ الإيقاظ. بأمر الدكتور: «أي شخص يكتب الإيقاظ على طول يوقظ».
+   *
+   * وكان الإسكات يسبق التصنيف، فيبتلع الجملة معه: يكتب الدكتور بيده فتصمت
+   * المحادثة ثلاثين دقيقة، فإن كتب أحدٌ فيها «موقع د. أحمد» خلالها قوبل
+   * بالصمت — وهو لم يكتبها إلا لأنه يريد البوت صراحةً. فقُدّم التصنيف على
+   * الإسكات، وتُستثنى الجملة وحدها منه: قاعدتان للدكتور تعارضتا، فرجّح
+   * المطلقة منهما بنفسه.
+   *
+   * ويُسجَّل الاختراق كي يعرف الدكتور أن البوت تكلّم أثناء تدخّله. */
+  if (session?.manual_until && new Date(session.manual_until) > new Date()) {
+    if (!opensDoor) return { allowed: false, reason: 'manual-takeover' }
+    db.addAudit?.('wake-overrides-takeover', db.jidKey(jid), 'جملة الإيقاظ تغلب الإسكات بأمر الدكتور')
+  }
+
   /* أوامر الخصوصية تُطاع دائماً وفي كل حال */
   if (intent === INTENTS.STOP_MESSAGES || intent === INTENTS.RESUME_MESSAGES || intent === INTENTS.DELETE_PREFERENCES) return { allowed: true, reason: 'privacy-command' }
 
   /* قواعد الأدب: تسكته أحياناً رغم أن الباب مفتوح — الطلب الإنسانيّ،
      وساعات الليل، والوسائط، والإكثار. ولا تنبيه في شيءٍ منها بأمر الدكتور. */
-  const opensDoor = OPENS_DOOR.has(intent) && confidence >= 0.9
   const manners = applyBotRules({ db, jid, normalizedText: classifyIntent(text).normalized, hasMedia, opensDoor, at })
   if (!manners.allowed) return { allowed: false, reason: manners.reason }
 
-  /* الباب مفتوح: حوارٌ طبيعيّ بلا أوامر */
-  if (isReplyToAgent || explicitContentSession || sessionAlive(session)) return { allowed: true, reason: 'content-session' }
+  /* ═══ الباب مفتوح: حوارٌ طبيعيّ بلا أوامر ═══
+   *
+   * ★ لكن لا يبتلع كلَّ ما يُكتب. بأمر الدكتور: «لا يردّ إلا إذا أُوقظ، وما
+   * عدا ذلك ما يصير يردّ». وكانت الجلسة تُبيح الردّ على أي نصّ ست ساعات، فمرّ
+   * منها كلامٌ ليس سؤالاً — شكوى رجلٍ من الفقر ورفضِ توظيفه — إلى محرك البحث.
+   *
+   * فداخل الجلسة يُشترط أن يكون الكلام أمراً مفهوماً (نيّةً مطابِقة)، لا
+   * تخميناً من المنفذ الأخير. «زدني» و«لخّص» و«عندك شي عن…» تعمل كما كانت،
+   * وما لم يُفهَم يُترك للدكتور. */
+  const understood = !classification0.fallback
+  if ((isReplyToAgent || explicitContentSession || sessionAlive(session)) && understood) {
+    return { allowed: true, reason: 'content-session' }
+  }
   /* قائمةُ السماح لم تعد تفتح الباب بنفسها. كانت تُجيز الردّ على **أيّ** كلمة
      يكتبها صاحبها بلا جملة إيقاظ — وهو نقضٌ لقاعدة الدكتور: «ما يردّ إلا إذا
      شخص كتب موقع د. أحمد». وهي اليوم فارغة، لكنّ يداً تملؤها غداً تفتح باباً

@@ -131,9 +131,9 @@ function WhoAreYou() {
           </FadeUp>
         ) : skipped ? (
           /* ── تصفّح حرّ: البوابات الثلاث كروابط ── */
-          <div className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 md:pb-0">
+          <div className="mobile-paired-grid grid gap-3 md:grid-cols-3 md:gap-5 md:pb-0">
             {personas.map((g, i) => (
-              <FadeUp key={g.key} delay={i * 0.08} className="w-[72vw] max-w-[320px] shrink-0 snap-start md:w-auto md:max-w-none">
+              <FadeUp key={g.key} delay={i * 0.08} className="h-full">
                 <Link to={g.to} data-hover className="group flex h-full flex-col rounded-2xl border border-hair bg-canvas p-7 transition-colors duration-300 hover:border-accent">
                   <h3 className="font-display text-[1.15rem] font-semibold text-ink">{g.gate}</h3>
                   <p className="mt-2.5 text-[.92rem] font-light leading-relaxed text-soft">{g.d}</p>
@@ -149,9 +149,9 @@ function WhoAreYou() {
             <FadeUp delay={0.05}>
               <h2 className="mb-8 font-display text-[clamp(1.6rem,4vw,2.6rem)] font-semibold leading-[1.3] text-ink">ما الذي جاء بك؟</h2>
             </FadeUp>
-            <div className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 md:pb-0">
+            <div className="mobile-paired-grid grid gap-3 md:grid-cols-3 md:gap-5 md:pb-0">
               {personas.map((g, i) => (
-                <FadeUp key={g.key} delay={0.1 + i * 0.08} className="w-[72vw] max-w-[320px] shrink-0 snap-start md:w-auto md:max-w-none">
+                <FadeUp key={g.key} delay={0.1 + i * 0.08} className="h-full">
                   <button onClick={() => choose(g.key)} data-hover className="group flex h-full w-full flex-col rounded-2xl border border-hair bg-canvas p-7 text-right transition-colors duration-300 hover:border-accent">
                     <h3 className="font-display text-[1.15rem] font-semibold text-ink">{g.gate}</h3>
                     <p className="mt-2.5 text-[.92rem] font-light leading-relaxed text-soft">{g.d}</p>
@@ -252,7 +252,7 @@ function SinceLastVisit() {
 
   return (
     <div className="border-t border-hair bg-wash px-4 py-3.5 sm:px-6 md:px-11">
-      <div className="mx-auto grid max-w-shell gap-2.5 md:rail md:flex md:items-center md:gap-5 md:overflow-x-auto md:whitespace-nowrap">
+      <div className="mx-auto grid max-w-shell gap-2.5 md:flex md:flex-wrap md:items-center md:gap-5">
         {continuation && (
           <Link to={`/articles/${continuation.article.slug}`} className="group relative grid min-w-0 gap-1 rounded-xl border border-hair bg-canvas px-3.5 py-3 text-[.8rem] text-soft transition-colors hover:border-accent md:flex md:shrink-0 md:items-center md:gap-2.5 md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
             <span className="font-semibold text-accent">✦ كنت تتتبع أثر {continuation.label}</span>
@@ -437,7 +437,7 @@ function ThoughtCompass() {
         </FadeUp>
 
         <FadeUp delay={0.1}>
-          <div className="rail -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 md:flex-wrap md:gap-2.5 md:overflow-visible md:px-0">
+          <div className="flex flex-wrap gap-2 md:gap-2.5">
             {axes.map((a) => (
               <button
                 key={a.key}
@@ -454,9 +454,9 @@ function ThoughtCompass() {
           </div>
         </FadeUp>
 
-        <div className="rail -mx-6 mt-7 flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-4 md:mx-0 md:mt-10 md:gap-5 md:px-0">
+        <div className="mobile-paired-grid grid mt-7 gap-3 md:mt-10 md:grid-cols-3 md:gap-5">
           {related.map((a, i) => (
-            <FadeUp key={a.slug} delay={Math.min(i * 0.06, 0.2)} className="w-[56vw] max-w-[248px] shrink-0 snap-start md:w-[31%] md:max-w-none">
+            <FadeUp key={a.slug} delay={Math.min(i * 0.06, 0.2)} className="h-full">
               <Link to={`/articles/${a.slug}`} data-hover className="group flex h-full min-h-[170px] flex-col rounded-2xl border border-hair bg-canvas p-5 transition-colors duration-300 hover:border-accent md:p-6">
                 <time className="text-[.72rem] text-soft">{a.date}</time>
                 <h3 className="mt-2.5 font-display text-[1rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent md:text-[1.12rem]">{a.title}</h3>
@@ -466,9 +466,9 @@ function ThoughtCompass() {
           ))}
         </div>
         <FadeUp delay={0.15}>
-          <div className="rail -mx-6 mt-7 flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-2 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
+          <div className="mobile-paired-grid grid mt-7 gap-3 md:grid-cols-4 md:gap-5">
             {quickLinks.map((item) => (
-              <Link key={`${item.tag}-${item.to}`} to={item.to} className="group flex min-h-[108px] w-[62vw] max-w-[252px] shrink-0 snap-start flex-col justify-between rounded-2xl border border-hair bg-wash px-4 py-3.5 text-right transition-colors hover:border-accent md:w-auto md:max-w-none">
+              <Link key={`${item.tag}-${item.to}`} to={item.to} className="group flex h-full min-h-[108px] flex-col justify-between rounded-2xl border border-hair bg-wash px-4 py-3.5 text-right transition-colors hover:border-accent md:w-auto md:max-w-none">
                 <span className="inline-flex w-fit rounded-full border border-hair px-2 py-0.5 text-[.66rem] text-soft">{item.tag}</span>
                 <span className="line-clamp-2 text-[.86rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">{item.label}</span>
                 <span className="text-[.72rem] font-semibold text-accent">افتح المسار</span>
@@ -655,11 +655,10 @@ function NowHub() {
       <div className="mx-auto max-w-shell px-6 md:px-11">
         <SectionHead label="الآن" title="ما يستحق انتباهك." />
       </div>
-      <div className="rail home-motion-rail mt-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-5 md:gap-5 md:px-[max(2.75rem,calc((100vw-1180px)/2))]">
-        <FadeUp className="w-[70vw] max-w-[500px] shrink-0 snap-start md:w-[48vw]"><LatestCard compact /></FadeUp>
-        <FadeUp delay={0.08} className="w-[58vw] max-w-[270px] shrink-0 snap-start md:w-[34vw]"><DailySpark compact /></FadeUp>
-        <FadeUp delay={0.14} className="w-[58vw] max-w-[270px] shrink-0 snap-start md:w-[31vw]"><OnThisWeek compact /></FadeUp>
-        <span aria-hidden className="w-px shrink-0" />
+      <div className="mobile-paired-grid grid mt-1 gap-3 px-6 md:grid-cols-3 md:gap-5 md:px-[max(2.75rem,calc((100vw-1180px)/2))]">
+        <FadeUp className="col-span-2 h-full md:col-span-1"><LatestCard compact /></FadeUp>
+        <FadeUp delay={0.08} className="h-full"><DailySpark compact /></FadeUp>
+        <FadeUp delay={0.14} className="h-full"><OnThisWeek compact /></FadeUp>
       </div>
     </section>
   )

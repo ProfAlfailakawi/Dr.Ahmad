@@ -128,7 +128,7 @@ export function ThoughtCompassStation({ articles, books, papers }: { articles: A
     <section className="border-t border-hair px-6 py-[58px] md:px-11 md:py-[96px]">
       <div className="mx-auto max-w-shell">
         <FadeUp><Label>بوصلة الفكر</Label><h2 className="font-display text-[clamp(2rem,5vw,3.3rem)] font-semibold leading-[1.25] text-ink"><Reveal>ادخل من الفكرة، لا من نوع الملف.</Reveal></h2></FadeUp>
-        <div className="rail -mx-6 mt-8 flex gap-2 overflow-x-auto px-6 pb-2 md:mx-0 md:px-0">
+        <div className="mt-8 flex flex-wrap gap-2">
           {Object.keys(AXES).map((axis) => <button key={axis} onClick={() => setActive(axis)} className={`shrink-0 rounded-full border px-5 py-2 text-[.86rem] font-semibold transition-colors ${active === axis ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>{axis}</button>)}
         </div>
         <div className="mt-9 grid gap-8 lg:grid-cols-[1fr_.38fr] lg:gap-12">

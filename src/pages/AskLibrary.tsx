@@ -206,7 +206,7 @@ function PersonalBook({ asked, result }: { asked: string; result: Answer }) {
           تجهيز نسخة مطبوعة
         </button>
       </div>
-      <div className="mt-5 flex gap-5 overflow-x-auto border-b border-hair [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="طريقة ترتيب المسار">
+      <div className="mt-5 flex flex-wrap gap-x-5 border-b border-hair" role="tablist" aria-label="طريقة ترتيب المسار">
         {PERSONAS.map((item) => (
           <button
             key={item.id}
@@ -359,7 +359,7 @@ export default function AskLibrary() {
 
           {!asked && (
             <FadeUp delay={0.08}>
-              <div className="mt-6 flex gap-5 overflow-x-auto border-b border-hair pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="mt-6 flex flex-wrap gap-x-5 gap-y-1 border-b border-hair pb-2">
                 {SUGGESTIONS.map((s) => (
                   <button key={s} onClick={() => ask(s)} className="shrink-0 border-b border-transparent py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-ink">
                     {s}

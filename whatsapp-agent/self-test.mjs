@@ -10,6 +10,7 @@ import { createAgent } from './agent.mjs'
 import { quoteCardPayload } from './quote-card.mjs'
 import { runCostAudit } from './cost-audit.mjs'
 import { flags } from './config.mjs'
+import { isQuietHour, repliesInWindow } from './bot-rules.mjs'
 import { parseReminderTime } from './reminders.mjs'
 import { hashOpaque } from './crypto.mjs'
 
@@ -56,7 +57,10 @@ export async function runSelfTest(root) {
   agent.deleteReplyRule(transferRule.id)
   assert.equal(agent.listReplyRules().some((rule) => rule.id === transferRule.id), false)
   agent.manualTakeover('12345@s.whatsapp.net', 1)
-  assert.equal(shouldRespondToMessage({ db, jid: '12345@s.whatsapp.net', text: 'موقع د. أحمد' }).allowed, false)
+  /* ★ تغيّر السلوك بأمر الدكتور: «أي شخص يكتب الإيقاظ على طول يوقظ».
+     فالجملة تغلب الإسكات، وما عداها يبقى صامتاً احتراماً ليده. */
+  assert.equal(shouldRespondToMessage({ db, jid: '12345@s.whatsapp.net', text: 'موقع د. أحمد' }).allowed, true, '★ الجملة تغلب الإسكات')
+  assert.equal(shouldRespondToMessage({ db, jid: '12345@s.whatsapp.net', text: 'عندك شي عن التقييم؟' }).allowed, false, '★ وما عداها يحترم يد الدكتور')
   agent.returnToBot('12345@s.whatsapp.net')
   assert.equal(shouldRespondToMessage({ db, jid: '12345@s.whatsapp.net', text: 'موقع د. أحمد' }).allowed, true)
   assert.equal(agent.onMessage({ jid: '12345@s.whatsapp.net', text: 'https://example.com', message: {} }).reason, 'media-or-link-human')
@@ -81,11 +85,73 @@ export async function runSelfTest(root) {
   /* أما اقتباسُ كلام البوت نفسه فيفتحه — وهو المقصود الأصليّ */
   db.run('INSERT OR IGNORE INTO outbox_messages(message_id,jid,source,created_at) VALUES(?,?,?,?)',
     'FROM-BOT-999', db.jidKey(quoter), 'bot', new Date().toISOString())
-  const botQuote = agent.onMessage({ jid: quoter, text: 'وش قصدك؟', ...quoting('FROM-BOT-999') })
+  /* نصٌّ يُنتج جواباً حقيقياً: «وش قصدك؟» لا يطابق شيئاً في الأرشيف، وقد صار
+     ما لا جواب له يُقابَل بالصمت — فيختلط علينا سببُ الصمت بسبب الباب. */
+  const botQuote = agent.onMessage({ jid: quoter, text: 'آخر مقالة', ...quoting('FROM-BOT-999') })
   assert.equal(botQuote.shouldRespond, true, '★ اقتباسُ كلام البوت يبقى فاتحاً للباب')
 
   /* وبلا اقتباسٍ أصلاً: صمت */
   assert.equal(agent.onMessage({ jid: quoter, text: 'كلام عابر', message: {} }).shouldRespond, false, 'وبلا اقتباس يبقى صامتاً')
+
+  /* ═══ ★ جملة الإيقاظ لا يحدّها عدد ═══
+   *
+   * كان السقف ٥ في اليوم، ويُحسب من intent_logs — أي من المحاولات لا الردود.
+   * فمن راسل ستّ مرات بلا أن يُردّ عليه مرةً، ثم كتب «موقع د. أحمد»، قوبل
+   * بالصمت ورسالةٍ تقول «تجاوز ٥ ردود اليوم» وهي كاذبة. وقع هذا فعلاً.
+   */
+  const capped = '95555@s.whatsapp.net'
+  for (let i = 0; i < 60; i += 1) db.addAudit('auto-reply-sent', db.jidKey(capped), 'اختبار')
+  assert.ok(repliesInWindow(db, capped) >= 60, 'العدّاد يقرأ الردود المُرسلة')
+  assert.equal(agent.onMessage({ jid: capped, text: 'موقع د. أحمد', message: {} }).shouldRespond, true,
+    '★ جملة الإيقاظ تعمل ولو تجاوز العدّاد السقف')
+
+  /* ★ والعدّاد لا يخلط المحاولة بالردّ */
+  const tried = '95556@s.whatsapp.net'
+  for (let i = 0; i < 20; i += 1) {
+    db.run('INSERT INTO intent_logs(jid,input_hash,intent,confidence,created_at) VALUES(?,?,?,?,?)',
+      db.jidKey(tried), 'h', 'SEARCH_TOPIC', 0.7, new Date().toISOString())
+  }
+  assert.equal(repliesInWindow(db, tried), 0, '★ محاولاتٌ لم يُردّ عليها لا تُحسب ردوداً')
+
+  /* ولا صمتَ بالساعة: البوت يعمل أربعاً وعشرين ساعة بأمر الدكتور */
+  assert.equal(isQuietHour(new Date()), false, 'لا ساعات صمت')
+  assert.equal(isQuietHour(new Date('2026-07-21T03:00:00+03:00')), false, 'ولا في الثالثة فجراً')
+
+  /* ═══ ★ جملة الإيقاظ تغلب إسكاتَ اليد ═══
+   *
+   * قاعدتان للدكتور تعارضتا: «من ردّ بيده يصمت البوت» و«الجملة توقظه دائماً».
+   * ورجّح المطلقة بنفسه: «أي شخص يكتب الإيقاظ على طول يوقظ». وكان الإسكات
+   * يسبق التصنيف فيبتلع الجملة معه ثلاثين دقيقة.
+   */
+  const handled = '96009@s.whatsapp.net'
+  agent.manualTakeover(handled, 30)
+  assert.equal(agent.onMessage({ jid: handled, text: 'موقع د. أحمد', message: {} }).shouldRespond, true,
+    '★ جملة الإيقاظ تعمل ولو كان الدكتور قد كتب بيده')
+  assert.equal(agent.onMessage({ jid: handled, text: 'عندك شي عن التقييم؟', message: {} }).shouldRespond, false,
+    '★ وما عداها يبقى صامتاً احتراماً ليد الدكتور')
+  assert.ok(db.get("SELECT COUNT(*) c FROM audit_log WHERE action='wake-overrides-takeover'").c >= 1,
+    'ويُسجَّل الاختراق ليعرفه الدكتور')
+  /* والمطلقات لا تنكسر بالجملة */
+  assert.equal(agent.onMessage({ jid: '120399@g.us', text: 'موقع د. أحمد', message: {} }).shouldRespond, false, '★ ولا تفتح مجموعة')
+  assert.equal(agent.onMessage({ jid: handled, text: 'موقع د. أحمد', message: {}, media: true }).shouldRespond, false, '★ ولا تُبيح وسائط')
+  agent.returnToBot(handled)
+
+  /* ═══ ★ لا يُعلن فشلاً في وجه إنسان ═══
+   *
+   * داخل جلسةٍ مفتوحة يصل إلى محرك البحث كلُّ ما يُكتب — ومنه ما ليس سؤالاً.
+   * كتب رجلٌ بالإنجليزية أنه رُفض توظيفه لهويّته وأنه يعيش في فقر، فردّ عليه
+   * البوت: «ما لقيت تطابقًا دقيقًا في أرشيف الموقع». والصمتُ خيرٌ من هذا.
+   */
+  const griever = '97007@s.whatsapp.net'
+  agent.onMessage({ jid: griever, text: 'موقع د. أحمد', message: {} })   // جلسة مفتوحة
+  const grief = agent.onMessage({ jid: griever, text: 'I have tried to find a job but they rejected me because of my identity. Im fed up. poverty. my salary is very low.', message: {} })
+  assert.equal(grief.shouldRespond, false, '★ شكوى إنسانية لا يردّ عليها البوت')
+  assert.ok(!/ما لقيت تطابق/.test(grief.text || ''), '★ ولا يُعلن فشل بحثٍ في وجهها')
+  assert.ok(db.get("SELECT COUNT(*) c FROM audit_log WHERE action IN ('needs-human-silent','auto-reply-skipped')").c >= 1, 'ويُحوَّل للدكتور')
+  /* والسؤال الحقيقي يبقى مُجاباً */
+  agent.returnToBot(griever)
+  agent.onMessage({ jid: griever, text: 'موقع د. أحمد', message: {} })
+  assert.equal(agent.onMessage({ jid: griever, text: 'عندك شي عن التقييم؟', message: {} }).shouldRespond, true, 'والسؤال عن المحتوى يُجاب')
 
   /* ═══ «زدني» — وعدٌ يُوفى ═══
    *

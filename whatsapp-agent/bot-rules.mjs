@@ -35,7 +35,19 @@ export function sign(text, { skip = false } = {}) {
    وتُضبط من اللوحة: QUIET_FROM=QUIET_UNTIL يعني «لا حظر». */
 export const QUIET_FROM = Number(process.env.WHATSAPP_QUIET_FROM ?? 0)
 export const QUIET_UNTIL = Number(process.env.WHATSAPP_QUIET_UNTIL ?? 0)
-export const DAILY_REPLY_CAP = Number(process.env.WHATSAPP_DAILY_REPLY_CAP ?? 5)
+/* ═══ سقف الردود — حارسُ جموحٍ لا حارسُ أدب ═══
+ *
+ * كان ٥ في اليوم، وكان له معنى يوم كان البوت يستيقظ بعشرات المحفّزات: يمنع
+ * حلقةً مفرغة تُغرق شخصاً برسائل. أما اليوم فلا يستيقظ إلا بجملةٍ واحدة
+ * يكتبها إنسانٌ بقصد — فصار السقف يعاقب أكثر الناس اهتماماً: من سأل ستّ
+ * مرات يُقابَل بصمتٍ بلا تفسير، فيظنّ البوت معطوباً.
+ *
+ * فيبقى السقف لغرضه الأصلي وحده — إمساك الجموح — بعددٍ لا يبلغه إنسان،
+ * ونافذةٍ بالساعة لا باليوم فلا يُقفل الباب إلى الغد. وجملةُ الإيقاظ معفاةٌ
+ * منه نهائياً: قاعدة الدكتور مطلقة لا يحدّها عدد. */
+export const HOURLY_REPLY_CAP = Number(process.env.WHATSAPP_HOURLY_REPLY_CAP ?? 30)
+/* يبقى الاسم القديم مُصدَّراً لمن يستورده — ولا يُستعمل في القرار */
+export const DAILY_REPLY_CAP = HOURLY_REPLY_CAP
 
 /** الساعة بتوقيت الكويت مهما كان توقيت الخادم */
 export function kuwaitHour(at = new Date()) {
@@ -55,14 +67,25 @@ export function isQuietHour(at = new Date()) {
 }
 
 /** كم ردّاً آلياً ذهب لهذا الشخص اليوم؟ */
-export function repliesToday(db, jid) {
+/**
+ * كم ردّاً أُرسل فعلاً لهذا الشخص في الساعة الماضية؟
+ *
+ * كان يعدّ صفوف intent_logs — وهي تُسجَّل عند تصنيف النيّة لا عند إرسال الردّ.
+ * فيمتنع البوت ويُحسب عليه امتناعُه ردّاً. وقد وقع ذلك حرفياً: صفر ردٍّ مُرسَل
+ * والعدّاد يقول ٦، فتظهر رسالة «تجاوز ٥ ردود اليوم» وهي كاذبة.
+ * نعدّ الآن من أثر الإرسال نفسه (auto-reply-sent) — ما أُرسل لا ما نُوي.
+ */
+export function repliesInWindow(db, jid) {
   const key = db.jidKey(jid)
   const row = db.get(
-    "SELECT COUNT(*) c FROM intent_logs WHERE jid=? AND created_at >= datetime('now','start of day')",
+    "SELECT COUNT(*) c FROM audit_log WHERE action='auto-reply-sent' AND target=? AND created_at >= datetime('now','-1 hour')",
     key,
   )
   return Number(row?.c || 0)
 }
+
+/* الاسم القديم يبقى عاملاً لمن يستدعيه */
+export const repliesToday = repliesInWindow
 
 /* ═══ ٣) ما لا يجوز أن تقابله آلة ═══ */
 
@@ -71,6 +94,14 @@ export function repliesToday(db, jid) {
  * هنا يصمت البوت صمتاً تاماً — بلا اعتذارٍ آليّ وبلا تنبيه — لأن الدكتور
  * يقرأ رسائله بنفسه، ولأن ردّاً آلياً على «أبي أستشيرك» أسوأ من الصمت.
  */
+/* ═══ ما لا تردّ عليه آلة ═══
+ *
+ * كانت القائمة عربيةً بحتة. فكتب إنسانٌ بالإنجليزية أنه رُفض توظيفه لهويّته،
+ * وأنه يعيش في فقرٍ وراتبٍ زهيد — فلم يطابق نمطاً واحداً، ومرّ إلى محرك البحث،
+ * فقوبل بـ«ما لقيت تطابقاً دقيقاً في أرشيف الموقع».
+ *
+ * وأُضيفت طبقتان: الإنجليزية، وإشاراتُ الشكوى والضيق بأي لغة. ولا يُشترط أن
+ * تكون الرسالة سؤالاً — من بثّ همّه لا يُحال إلى فهرس. */
 const HUMAN_ONLY = [
   /استشير|استشاره|مشوره/,
   /موعد|اقابلك|مقابله|القاك|زياره/,
@@ -78,6 +109,12 @@ const HUMAN_ONLY = [
   /ساعدني|محتاج مساعده|مشكله|ضايج|زعلان|اشكي|شكوي/,
   /صحيفه|جريده|قناه|تلفزيون|صحفي|تصريح|لقاء اعلامي/,
   /توصيه|تزكيه|شهاده خبره/,
+  /* ألمٌ وضيقٌ ورجاء — بالعربية */
+  /وظيفه|توظيف|راتب|فقر|محتاج شغل|بدون عمل|عاطل|رفضوني|ظلم|تعبت|مكتئب|يأس|ادعيلي|بالله عليك/,
+  /* والإنجليزية — أكثر ما يصل الدكتور من خارج الخليج */
+  /\b(job|salary|poverty|unemploy|rejected|visa|residence permit|scholarship|supervis|recommendation letter|help me|please help|i wish|i am tired|depress|struggl|suffer)\b/i,
+  /* نداءٌ شخصيّ صريح مهما كانت اللغة */
+  /\b(dear (dr|doctor|prof)|أرجوك|ارجوك|رجاءً|رجاء منك)\b/i,
 ]
 
 export function needsHumanOnly(normalizedText = '') {
@@ -120,10 +157,14 @@ export function ensureBotRulesSchema(db) {
  * القرار النهائيّ بعد أن تأذن البوابة. يُرجع سبباً بالعربية كي تفهمه
  * المحاكاة في اللوحة بلا رطانة.
  */
-export function applyBotRules({ db, jid, normalizedText, hasMedia = false, at = new Date() }) {
+export function applyBotRules({ db, jid, normalizedText, hasMedia = false, opensDoor = false, at = new Date() }) {
   if (hasMedia) return { allowed: false, reason: 'وسائط — تحتاج عينك أنت' }
   if (needsHumanOnly(normalizedText)) return { allowed: false, reason: 'طلبٌ إنسانيّ — لا تردّ عليه آلة' }
   if (isQuietHour(at)) return { allowed: false, reason: 'ساعات الصمت (منتصف الليل — السابعة)' }
-  if (repliesToday(db, jid) >= DAILY_REPLY_CAP) return { allowed: false, reason: `تجاوز ${DAILY_REPLY_CAP} ردود اليوم` }
+  /* ★ جملة الإيقاظ لا يحدّها عدد. كانت opensDoor تصل إلى هذه الدالة ثم تُرمى
+     — توقيعها لا يذكرها أصلاً — فيُقابَل من كتب «موقع د. أحمد» بالصمت لأنه
+     راسل قبلها خمس مرات. وهذا نقضٌ لقاعدة الدكتور: الجملة توقظه دائماً. */
+  if (opensDoor) return { allowed: true, reason: '' }
+  if (repliesInWindow(db, jid) >= HOURLY_REPLY_CAP) return { allowed: false, reason: `تجاوز ${HOURLY_REPLY_CAP} ردّاً في الساعة` }
   return { allowed: true, reason: '' }
 }

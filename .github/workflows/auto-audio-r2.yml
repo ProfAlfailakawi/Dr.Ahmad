@@ -114,7 +114,10 @@ jobs:
           npm run audio:human:self-test
           LIMIT="${{ github.event.inputs.limit }}"
           SLUG="${{ github.event.inputs.slug }}"
-          ARGS="--limit=${LIMIT:-8}"
+          # حدُّ التشغيلة المجدولة ٤٠ لا ٨ بأمر الدكتور (٢١-٠٧: «ولّد كل الصوت
+          # بالكامل»). الحدُّ الحقيقيُّ زمنُ التشغيلة لا هذا الرقم: قِيست
+          # الإنتاجية ١٣ ملفاً في ٧٤ دقيقة، فالرقم سقفٌ لا هدف.
+          ARGS="--limit=${LIMIT:-40}"
           if [ -n "$SLUG" ]; then ARGS="$ARGS --slug=$SLUG"; fi
           if [ "${{ github.event.inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
           VOICE="${{ github.event.inputs.voice }}"
@@ -171,6 +174,10 @@ jobs:
           node scripts/report-dialogue-status.mjs || echo "::warning::تعذّر تحديث حالة الإنتاج في اللوحة."
         env:
           PODCAST_NO_GEMINI: '1'
+          # حلقاتُ الحوار كانت واحدةً في التشغيلة (افتراض المحرّك حين لا يُضبط
+          # المتغيّر)، فالـ١٤٣ تحتاج ١٤٣ ساعة. ٥ هو أقصى ما يقبله المحرّك
+          # (Math.min(5,…) في podcast-dialogue.mjs) — فيصير المدى ٢٩ تشغيلة.
+          PODCAST_NIGHTLY_LIMIT: '5'
           FIREBASE_SERVICE_ACCOUNT: sa.json
           FIREBASE_PROJECT_ID: drahmad-8e9e2
           AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}

@@ -217,7 +217,7 @@ export default function ThoughtPaths() {
 
       <section className="border-b border-hair px-6 py-10 md:px-11 md:py-12">
         <div className="mx-auto max-w-shell">
-          <div role="tablist" aria-label="اختر مساراً فكرياً" className="flex snap-x snap-mandatory gap-6 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div role="tablist" aria-label="اختر مساراً فكرياً" className="flex flex-wrap gap-x-6 gap-y-2 pb-1">
             {availablePaths.map((path) => (
               <button
                 key={path.id}

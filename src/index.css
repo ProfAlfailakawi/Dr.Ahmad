@@ -1341,46 +1341,36 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
 }
 
 
-/* قاعدة الهاتف العامة: مجموعات البطاقات تُلفّ أفقياً من اليمين إلى اليسار.
-   لا تكديس عمودي طويل، ولا نصف شاشة فارغ، مع بطاقة تالية ظاهرة جزئياً لتوضيح السحب. */
+/* قاعدة الهاتف العامة: مجموعات البطاقات **شبكةٌ كاملة لا شريطٌ يتحرك**.
+   كانت تُلفّ أفقياً وتُظهر البطاقة التالية مقصوصةً «لتوضيح السحب» — فكان
+   الزائر يرى نصف عنوانٍ ونصف اقتباس، ويظنّ الصفحة مكسورة لا مدعوّةً للسحب.
+   أمرُ الدكتور (٢١-٠٧): «ما أبي أي كرت في الموقع يتحرك… كلها كاملة».
+   فبطاقتان جنباً إلى جنب، كلُّ واحدةٍ تامّةٌ بحدودها، ولا شيء يُقصّ. */
 @media (max-width: 767px) {
   .mobile-card-rail,
   .mobile-paired-grid {
-    display: flex !important;
-    direction: rtl;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: .75rem !important;
     width: auto;
     max-width: none;
-    margin-inline: -1.5rem;
-    padding-inline: 1.5rem;
-    scroll-padding-inline: 1.5rem;
-    padding-bottom: .75rem;
-    gap: 1rem !important;
-    overflow-x: auto !important;
-    overflow-y: visible;
-    grid-template-columns: none !important;
-    scroll-snap-type: inline mandatory;
-    overscroll-behavior-inline: contain;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    touch-action: pan-x pan-y;
+    margin-inline: 0;
+    /* الحشوة الأفقية تُترك لصاحب العنصر: بعض المجموعات كانت أشرطةً تعمّ العرض
+       بـ`-mx-6 px-6`، فلو صُفِّرت حشوتُها لصقت البطاقات بحافّة الشاشة وفاضت. */
+    padding-bottom: 0;
+    overflow: visible !important;
   }
-  .mobile-card-rail::-webkit-scrollbar,
-  .mobile-paired-grid::-webkit-scrollbar { display: none; }
   .mobile-card-rail > *,
   .mobile-paired-grid > * {
-    flex: 0 0 min(74vw, 340px);
-    width: min(74vw, 340px);
+    width: auto;
     min-width: 0;
-    max-width: min(74vw, 340px);
+    max-width: none;
     height: auto;
-    scroll-snap-align: start;
-    scroll-snap-stop: normal;
   }
+  /* بطاقةٌ وحيدة تأخذ العرض كلَّه بدل أن تقف نصفَ صفٍّ فارغ */
   .mobile-card-rail > :only-child,
   .mobile-paired-grid > :only-child {
-    flex-basis: min(86vw, 520px);
-    width: min(86vw, 520px);
-    max-width: min(86vw, 520px);
+    grid-column: 1 / -1;
   }
   .mobile-card-rail :is(p, h2, h3, h4, blockquote, span, time),
   .mobile-paired-grid :is(p, h2, h3, h4, blockquote, span, time) {

@@ -13,7 +13,54 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # بوّابةٌ تسبق النشر. أربعة أعطابٍ بلغت الموقع في يومٍ واحد (٢٠ يوليو)
+  # وكان لدينا اختبارٌ يمسك كلَّ واحدٍ منها — لكنّ أحداً لا يشغّلها عند الرفع.
+  # فوجودُ الاختبار بلا مُشغِّلٍ كعدمه. تُشغَّل هنا كلُّها، وإن احمرّ واحدٌ
+  # منها لم تبدأ خطوةُ النشر أصلاً (needs) — لا نشرَ فوق فحصٍ أحمر.
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --registry=https://registry.npmjs.org/
+
+      - name: WhatsApp agent
+        run: |
+          node whatsapp-agent/self-test.mjs
+          node whatsapp-agent/scholar.mjs --self-test
+
+      - name: Radar, FAQ and site content
+        run: |
+          node scripts/daily-radar.mjs --self-test
+          node scripts/radar-repair.mjs --self-test
+          node scripts/faq-repair.mjs --self-test
+          node scripts/auto-site-content.mjs --self-test
+          node scripts/test-social-templates.mjs
+
+      # حرّاسُ ما أُصلح مؤخّراً: لولاها لعاد كلُّ عطبٍ منها صامتاً كما عاد أوّل مرّة.
+      - name: Content, audio and dialogue guards
+        run: |
+          node scripts/purge-deleted-content.mjs --self-test
+          node scripts/guard-audio-meta-regression.mjs --self-test
+          node scripts/reconcile-audio-meta.mjs --self-test
+          node scripts/explain-failure.mjs --self-test
+          node scripts/stage-dialogues-local.mjs --self-test
+          node scripts/upload-dialogues.mjs --self-test
+          node scripts/audit-article-bodies.mjs --self-test
+
+      - name: TypeScript
+        run: npx tsc --noEmit
+
   build-and-deploy:
+    needs: gate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

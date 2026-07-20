@@ -4,11 +4,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    /* ٣٠٠٠ هو الأصل. ويُتجاوَز بـPORT حين يكون مشغولاً بجلسةٍ أخرى تعمل على
-       المشروع نفسه — فلا تتعطّل المعاينة لأن منفذاً واحداً محجوز. */
-    port: Number(process.env.PORT) || 3000,
+    /* ٣٠٠٠ هو المنفذ الوحيد المسموح بالاتصال به خارجياً في بيئة AI Studio. */
+    port: 3000,
     host: '0.0.0.0',
-    strictPort: !process.env.PORT,
+    strictPort: true,
   },
   build: {
     rollupOptions: {

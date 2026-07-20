@@ -1,0 +1,290 @@
+[
+  {
+    "speaker": "male",
+    "text": "اشتعلت مواقع التواصل والناس بمختلف الدول غضبا على تصريح جازم بالنفي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "أنه لا يوجد في العالم دكتورة جراحة متميزة، وإن وجدت فإما غير متزوجة أو مسترجلة.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "صدمت من رأي القائل الجازم، وهو دكتور أكاديمي معروف.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ومن أين جاء بهذا؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "من أين جئت بهذا النفي الذي لا يبت إلا عن ضعف المصادر؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ما هذه السقطات القاتلة التي أوقعت نفسك بها؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "وأرى أنك قد فجرت على نفسك موجا من التسونامي الذي لن يرحمك.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وقد رأيت الجمع الهائج أكثرهم من الرجال الواعين، وأزواج طبيبات جراحة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فلا يوجد عالم يخلو من طبيبات جراحات متميزات ومتزوجات.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وإذا وجدت طبيبة جراحة بقناعتك مسترجلة؟ لماذا هذا الابتذال الصريح بالمرأة يا هداك الله؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولا مبرر لهذا أبدا.",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولا مبرر، لأن الكلام جاء صريحا قبيحا بحق الجراحات.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "والعالم يعج بهن رغم قلتهن، لاعتبارات مجتمعية.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وما هذه الاعتبارات تحديدا؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "العادات والتقاليد التي تعتبر تخصص الجراحة لا يناسب النساء، خاصة الجراحات الدقيقة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأن الثقافة المجتمعية المسيئة للنساء أثرت بصورة مباشرة على فكرة تقبل النساء كطبيبات جراحة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فغرف العمليات كما يعتقد هي حصن منيع للأطباء الجراحين.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأن المرأة لا تنافس.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأن المرأة لا يمكنها العمل أو المنافسة، وأن المرضى لن يتقبلوا فكرة إجراء عمليات جراحية لهم من قبل النساء.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ولا يجوز أيها الزميل الأكاديمي أن نستقي معلوماتنا وإحصائياتنا من مواقع الإنترنت.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "دون الرجوع إلى مصادر موثوق بها، ولا يمكن أن نأخذ كل ما نقرأ.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وقد اطلعت على دراسات كثيرة تقول عكس ما قلت.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "وتعزو الدراسات قلتهن إلى الصورة المرسومة مسبقا عن النساء الطبيبات، أنها صورة نمطية بكل تأكيد.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "تقول أول رئيسة للكلية الملكية للجراحين في بريطانيا، الدكتورة كلير ماركس، إن عددهن لا يتجاوز ثمانمئة طبيبة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وبنسبة إحدى عشرة بالمئة من مجموع أطباء الجراحة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ونتيجة تقلب الصورة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وقال باحثون من جامعة تورنتو إن النساء أكثر مهارة من الرجال في الجراحة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وفي مسح شمل أطباء مؤهلين حديثا في بريطانيا، أفادت ثمان وستون بالمئة من الطبيبات.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بأن تخصص الجراحة لا يعتبر تخصصا يرحب بالنساء.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "إذن المشكلة اجتماعية، وسيادة المجتمع الذكوري في المقام الأول.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ورغم ذلك، حاضرات ومتميزات في كامل أنوثتهن، متزوجات وغير متزوجات.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وفي مصر يوجد ألفان وسبعمئة وسبع وتسعون طبيبة في تخصص الجراحة، وفي الغالب متزوجات.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وهناك الدكتورة الجراحة منى كسكين، الوحيدة بين أطباء جراحة المخ والأعصاب في غزة، وهي متزوجة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فلا بد من تكسير الصورة النمطية والثقافة المجتمعية المتعلقة بعمل النساء كطبيبات جراحات.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "والواضح أن الزميل لم يتناول المسألة بموضوعية، وتصريحه لا يبت عن منهجية علمية وإحصائيات موثقة.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

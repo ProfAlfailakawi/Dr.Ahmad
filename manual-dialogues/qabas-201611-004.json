@@ -1,0 +1,290 @@
+[
+  {
+    "speaker": "male",
+    "text": "صديقنا الصدوق، هذا صديق الطفولة، لعبنا وترعرعنا معا.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وتسوق بنا السنين لنصبح في مقاعد الدراسة.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وخرجنا إلى سوق العمل في خطى واحدة، وتخطينا معا كل الصعاب.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأخذنا قراراتنا معا.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأخذنا قراراتنا معا، ويكفي أن حلمنا واحد مع قسط من الخيال.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "نعم، هذه الحقيقة في الواقع الحقيقي، قبل أن نبدأ في التعرف إلى الواقع الافتراضي في الفيس بوك.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "ونعلم أن العالم من حولنا يتطور، ولم نغفل يوما عنه.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "إنما وجدنا فيه ما لم نجده في واقعنا.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وكلما أبحرنا أكثر في أعماق التكنولوجيا، أبهرتنا بواقعها.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وبذلك استطعنا أن نعيش واقعا لم نستطع يوما أن نعيشه مع مجتمعنا، ونبوح بمكنوناتنا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "حتى حد الجرأة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "حتى نتصرف بحرية تصل إلى حد الجرأة، دون حسيب ولا رقيب مجتمعي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وقيود ثقافة العيب. وأصبحنا نهرب من واقعنا إلى واقع آخر يستوعبنا أكثر، فنسينا واقعنا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولماذا أصبحنا نفضل العالم الافتراضي عن عالمنا الحقيقي؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "هذا سؤال المقال نفسه، ولكم التفكر في معنى ما يقول.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ودعونا نبدأ في هذا الجزء بالتعرف على ماهية الواقع الحقيقي والافتراضي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وما الجديد القادم.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وما الجديد الذي سيزيد رواد العالم الافتراضي غرقا بعيدا عن الواقع الحقيقي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "إن الواقع الحقيقي هو أن نملك تصورا حقيقيا ويقينا عن الواقع.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "صورة حقيقية وغير مشوهة، على الرغم من وجود رؤى مجازية تعبر عن كون الواقع مشبعا بنقائضه.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "إذ اتسعت رقعته ليشمل ما اعتبرناه ليس واقعيا.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "male",
+    "text": "والواقع الافتراضي هو ترجمة الواقع الحقيقي إلى بيانات رقمية، حيث يندمج الخيال بالواقع.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "هذا مفهوم مجرد. أما مفهومه اللغوي فهو عملية نقل الوعي الإنساني إلى بيئة افتراضية يتم تشكيلها برمجيا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "من خلال تحرر العقل للغوص في تنفيذ الخيال بعيدا عن مكان الجسد.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لا وهمي ولا حقيقي.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهو عالم ليس وهميا وليس حقيقيا، بدليل حدوثه ومعايشة بيئته.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وما الغرض منه إذا كان بهذا الالتباس؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "الغرض من الواقع الافتراضي هو تقريب الواقع الحقيقي، لعدم إمكانية الحصول على واقع حقيقي فعلي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وهذا الواقع الافتراضي مثلته نتائج الثورة التكنولوجية.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "إذ أصبحت الحياة البشرية تنتج في العالم الافتراضي، ومتحكم فيها عبر وسائل الميديا وتكوين الصداقات.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وقد ساعدت مواقع التواصل الاجتماعي، الفيس بوك وغيره، على التواصل في مجموعة واسعة من الطرق والأجهزة الذكية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولكن أعلن مارك في مؤتمر برشلونة ليكمل تلك المتاهة عند مجتمع الفيس بوك.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "أن الواقع الافتراضي هو مستقبل الفيس بوك، وأنه آن الأوان لصناعة تطبيق للواقع الافتراضي على هذا النهج.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "موقع يضم مجتمعا كاملا متعدد الثقافات والجنسيات والأجناس والأعمار، فكيف سيكون في بيئة افتراضية؟",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وتبقى الإجابة المفاجئة والمدوية لانطلاقة مارك في الجزء القادم من المقال.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

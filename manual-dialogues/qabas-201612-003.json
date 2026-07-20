@@ -1,0 +1,290 @@
+[
+  {
+    "speaker": "male",
+    "text": "لقرون طويلة من الزمن، اعتمد البشر على بعضهم البعض في الحصول على المعلومات ونقلها من جيل إلى آخر.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وكان للذاكرة شأن كبير في هذا الأمر.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وذلك بالطبع كان قبل بدء عصر الكتب التي سمحت بتوثيق الأحداث والوقائع.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "أما اليوم فكل شيء.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "أما اليوم، فكل شيء بات محفوظا في سحابة الإنترنت، وأصبح الوصول إليه سهلا ومتاحا للجميع.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ومع هذه الحقيقة، تضاءلت أهمية الذاكرة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "بسبب الاعتماد الكبير على تخزين الأرقام والمعلومات والتواريخ في أجهزتنا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وحفظها في صفحاتنا الخاصة على الإنترنت.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهناك أثر آخر.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهذا من دون ذكر أن مواقع التواصل الاجتماعي خلقت حالة من عدم التركيز المطول.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بسبب كثرة المعلومات الواردة، وعدم القدرة على استيعاب كل ما تحمله بشكل كامل في الوقت القصير المتوفر.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "حتى بات الدماغ أن يفقد صوابه.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لكن للتكنولوجيا فضلا لا ينكر، أليس كذلك؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "صحيح، فالتكنولوجيا سمحت لنا بتطوير مهاراتنا الفنية، ومكنت الموهوبين من تطوير ملكاتهم.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ومن الاستفادة من خبرات فنانين آخرين، بحيث يكون عمل الجميع جميلا ومبدعا ومتفردا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وقوت القدرات البصرية.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأن الاستخدام الدائم للإنترنت وللشاشات المضيئة يتسبب بتقوية القدرات البصرية لدينا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ويجعل قدرتنا على اتخاذ القرارات السريعة أكثر دقة، اعتمادا على العوامل التي نشاهدها حولنا.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهناك بعض الباحثين يصفون الإنترنت بأنه تحول بصورة أو بأخرى إلى صديق عالم بكل شيء.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "male",
+    "text": "ليس فقط بما يخصك أنت شخصيا، بل أيضا كل شيء عن العلوم والتاريخ والطب والأديان والهندسة والجغرافيا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولكن لكل شيء طاقة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "هناك سرعة لتخزين المعلومات في الدماغ، فلكل شيء طاقة احتمالية معينة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ولا يمكن أن نذكر الإيجابيات والمحاسن، وننسى أن لكل إيجابية وميزة تصل إلى السلبية من زخم ما تحتوي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "والأعراض الاضطرابية التي تظهر على المستخدم، رغم اكتسابه للمهارات والقدرات الفنية والتكنولوجية العالية.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بالإضافة إلى المعلومات التي لا حصر لها.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ومن هذه الاضطرابات القلق، وقلة النوم، والشعور بالإرهاق وقت الاستيقاظ في اليوم التالي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وما علاقة الأجهزة بالنوم تحديدا؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لأن الضوء الأزرق، وهو ما يعد طول الموجة الأكثر انتشارا في الهواتف الذكية وأجهزة الكمبيوتر اللوحية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "قد يؤدي إلى اضطراب الساعة البيولوجية لكل منا.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولنتفكر قليلا في هذا العالم التكنولوجي.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فالجميع أصبح يعتمد على التكنولوجيا في عرض المعلومات ونقلها، في الهاتف النقال والإعلانات والتلفزيون وغيرها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وجميع ما حولنا يشكل نوعا من المعلومات المخزنة، بالإضافة إلى ضغط على الجانب البصري على حساب باقي الحواس.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فضلا على أن جميع المعلومات، مع كثرتها، تدخل للدماغ لكن بدون ترتيب.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "إن العادة البشرية في التخزين تقليدية، وبحاجة إلى عقود من الزمن حتى تتطور القدرة التخزينية.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فهل ستبقى المعلومات في أدمغتنا حتى يأتي الزمن الذي تتطور فيه الأدمغة لتواكب سرعة التطور؟",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

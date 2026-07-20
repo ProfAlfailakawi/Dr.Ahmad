@@ -1,0 +1,306 @@
+[
+  {
+    "speaker": "male",
+    "text": "الراحة تدرس، والفكر في إجازة دائمة. جيل مريح، لكنه لا يتحمل وزن فكرة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "في زمن أصبحت فيه الراحة شعارا تربويا، بات السؤال الأخطر: هل نحن نعلم؟ أم ندلك؟",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "اختزل التعليم إلى بيئة ممتعة، وسهلة، وخالية من الضغط.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لكن ما النتيجة؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "طلاب لا يحتملون مشقة التعمق، ولا يقاومون ملل الصمت، ولا يجرؤون على الخروج من منطقة الراحة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وفي دراسة نشرتها الجمعية الأميركية لعلم النفس تبين أمر مهم.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "أن المبالغة في تسهيل المحتوى الدراسي ترتبط بانخفاض قدرة الطالب على التفكير التحليلي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وأن الطلاب الذين وضعوا أمام تحديات ذهنية معتدلة أظهروا أداء أعلى بنسبة أربعين بالمئة في فهم المفاهيم طويلة المدى.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لكننا في نظامنا نربي أبناءنا على الحواف.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لا امتحان صعب، ولا فكرة معقدة، ولا جهد زائد.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فالكل ناجح، والكل مرتاح، والكل يمل من التفكير بعد خمس دقائق.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فهل صارت منتجعات؟",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "هل أصبحت المدارس منتجعات؟ ففي كل حصة نبحث عن لعبة، ونشاط، وتطبيق، ومعلومة سريعة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ونخاف من الصمت، ومن التأمل، ومن فكرة تأخذ وقتها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لكن أليس التبسيط مهارة تربوية محمودة؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "النص يفرق: نحن لا نريح عقولهم، بل نخدرها.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "نعلمهم أن الفهم السريع أفضل من العمق، وأن من يتعب في التفكير مخطئ في الأسلوب.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فتنشأ هشاشة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهكذا صرنا نخرج جيلا بارعا في الانطباع الأول، لكنه ضعيف في المتابعة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "متوتر من أي سؤال خارج المقرر، ويطلب دائما: أبسط، أبسط.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فهل فكرتم يوما أن الراحة المفرطة لا تنتج شيئا؟",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وأن الفكر الحقيقي لا يسكن في وسادة، بل في تحد؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وفي فصل دراسي مثالي، يطلب المعلم من الطلبة أن يفتحوا أجهزتهم ويشاهدوا فيديو مدته دقيقتان.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ثم يجيبوا على اختبار اختياري لا يحاسب عليه أحد.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "ينتهي الدرس بابتسامة، لكن لا أحد تذكر الفكرة، ولا أحد تساءل: ماذا بعد؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فصار خفيفا يستهلك.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لقد تحول التعليم إلى محتوى خفيف، سريع الهضم، يستهلك ثم ينسى.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "كل شيء يجب أن يكون قصيرا وممتعا وبلا ضغط. لكن السؤال: هل هذه راحة أم استقالة فكرية جماعية؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فالطلاب باتوا يتضايقون من القراءة، ويكرهون الجدل، ويتوترون من كلمة ناقش.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "يريدون ملخصا، وشرحا سريعا، ثم راحة. ومع الوقت يتعود الدماغ على الكسل.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وفي تقرير نشرته Education Week وجد أن أكثر من سبعين بالمئة من الطلبة يفضلون المصادر السهلة على القراءة الأصلية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ويظهرون أداء أقل في الاختبارات التي تتطلب تحليلا نقديا أو تركيبا مفاهيميا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فهل الراحة عدوة العلم إذن؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "النص ينصفها: الراحة ليست عدوة العلم، لكن الإفراط فيها ينتج هشاشة معرفية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فكما أن الجسم الذي لا يتحرك يضمر، فإن العقل الذي لا يتعب يفرغ من محتواه.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فنحن نحتاج بيئة داعمة ومناهج ذكية، لكن الذكاء لا يعني التبسيط المفرط، بل أن ندرب أبناءنا على احتمال الفكرة لا استهلاكها.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ففكر مرتاح لا ينهض وطنا، ووعي بلا جهد لا يبني حضارة. والفكر نفسه يرتاح حين يتعب.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

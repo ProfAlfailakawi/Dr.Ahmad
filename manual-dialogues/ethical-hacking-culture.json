@@ -1,0 +1,314 @@
+[
+  {
+    "speaker": "male",
+    "text": "يرتعب الخلق من الاختراقات التي تحدث لهم من الغرباء.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فالهاكرز أشخاص مجهولون يهدفون إلى العبث والقرصنة. هذا المفهوم الذي نسمعه من الجميع.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وكم صرخة تهاوت من الأصدقاء والمعارف يشكون الحال وأنهم تعرضوا إلى الاختراق.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ويهب الجميع.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ويبدأ الجميع بتقديم المساعدة، عسى أن يعود المسلوب.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لكن مفهوم الهاكرز ما زال ضيقا في مجتمعاتنا، ويعبر عن القرصنة السلبية وحدها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "ولم يصلهم بعد مصطلح الاختراق الأخلاقي، أو الهاكر الأخلاقي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "اختراق أخلاقي؟ هذان لفظان لا يجتمعان في أذهان الناس.",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "بل يجتمعان، وهذا المفهوم معروف منذ عام ألفين وخمسة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "إلا أننا لم نسمع به إلا في أواخر عام ألفين وستة عشر. فثقافتنا متأخرة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولم تسمع بعد مجتمعاتنا عن الشركات العالمية التي توظف أناسا هكر.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ويعلمون الهكر للناس، وأن هناك تخصصات جامعية للهكر.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فلم الاستغراب؟",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "نعم، يتم توظيف الهاكر الأخلاقي، فهم قراصنة مطورون.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ولحظة إيضاحية: يهدف من يدخل هذا المجال إلى تكريس خبرته في الحاسوب واختراق المواقع الإلكترونية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "بتفويض رسمي، لكشف الثغرات الأمنية فيها بهدف علاجها، وليس لمجرد استغلالها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "كما أنهم يخترقون المواقع المشبوهة لفضحها، كما يقولون.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهناك تجربة قريبة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولننظر إلى تجربة الهاكرز الأخلاقيين التي تبنتها المملكة العربية السعودية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فقد أعلنت عدة جهات رسمية سعودية احتضانها لعشرات الهاكرز الأخلاقيين.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "في محاولة منها للاستفادة من هذه الفئة التي ساهمت في كشف ثغرات في مواقع عالمية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وتقوم الهيئات السعودية بالإشراف على اختيار الهاكر الأخلاقي وتدريبه.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأن هناك بعض الجهات الحكومية المهمة بدأت في تطويع خبرات الهاكرز لمصلحتها، بهدف تقوية حمايتها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "male",
+    "text": "وما يميزهم عن غيرهم من القراصنة أنهم يستخدمون مهارتهم في الاختراق لفحص نظام بصفة مشروعة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "بهدف تقديم تقرير يقيم المخاطر التي يحتويها النظام.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "والخطر حقيقي.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فيستطيع القراصنة عموما اختراق المواقع الإلكترونية الحكومية وحتى السيادية منها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ومواقع البنوك، والمواقع التي تضم قاعدة بيانات واسعة من المستخدمين، وإيقاع أضرار بأجهزة ضحاياهم.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "إلا أن دور الهاكر الأخلاقي يكمن في التصدي لهم، من خلال كشف الثغرات التي ينفذون منها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لكن كيف نأمن من نعلمه الاختراق؟ أليست مخاطرة؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "النص يجيب بالضوابط لا بالمنع: ضمن ضوابط وأخلاقيات ذات اتجاه وطني.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولو نظرنا بجدية إلى أهمية الهاكر الأخلاقي، لوجدنا أن الجهات الحكومية والخاصة يمكن أن تخوض بهم الدولة حربا إلكترونية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لتلك المواقع التي تشكل خطرا جديا على الدولة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فمواقع الجهات الحكومية والاقتصادية الحساسة لا معزل لها عن التهديد العالمي.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وتجارب العالم في الاختراقات الإلكترونية جعلتهم يحتضنون العشرات من الهاكرز الأخلاقيين.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "الذين ساهموا في الحد منها، وتوجيه الجهات الرسمية لنقاط الضعف لتلافيها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فدعونا ننشر ثقافة الاختراق الأخلاقي، ونفتح للهاكرز أبواب العمل الخلاق، وتكون مهنة تدرس في الجامعات.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ويدرب القراصنة ليتطوروا كهاكرز أخلاقيين يسهمون في وقف الخطر عن مواقعنا. لنبني قراصنة محترفين بأخلاق.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

@@ -1,0 +1,306 @@
+[
+  {
+    "speaker": "male",
+    "text": "في هذا الوقت العصيب وغير المسبوق من انتشار فيروس كورونا حول العالم، وإغلاق المدارس والجامعات.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "أجبر أعدادا كبيرة من الطلاب على البقاء في المنازل.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ونظرا للعزل على مستوى الدولة، وقد يطول الأمر والتعليم متوقف تماما في بلادنا الحبيبة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فلا بد من مبادرات.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فلا بد من مبادرات وحلول للخروج من أزمة التعليم، والحل الناجع هو التعليم الإلكتروني.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وتفعيل منظومة التعليم عن بعد، وهي أساس مطلوب وقائم عليه التعليم الإلكتروني.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "لكن هل الحلول سهلة إلى هذا الحد؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "النص منصف: الحلول ليست بالصعبة ولا بالسهولة المطلقة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولكن يمكن أن يتم إنجازها بسرعة، فالخيارات متاحة وكثيرة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "حيث يمكن لوزارة التربية إطلاق منصتها الإلكترونية، وبث المواد التعليمية تلفزيونيا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "على الرغم أن آلية التعليم عن بعد يجب أن تطبق وفق أفضل المعايير.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "والعمل على تطويرها وتقييمها لضمان استمرارية العملية التعليمية.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وقد نتنازل قليلا.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولكن قد نقدم القليل من التنازلات لإنجاز العمل بأقصى طاقة وأقل وقت، لاستئناف التعليم المتوقف.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وفي هذه المرحلة أصبحت استمرارية التعليم أكثر تحديا للطلاب والمعلمين والمؤسسات التربوية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "أعني أن لا أحد يعرف حقا ما سيحدث غدا، وكيف ستكون الأمور في الأسبوع القادم أو الذي يليه.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فلنجرب ونتكيف.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فقيامنا بالتجربة لنحاول جميعا التكيف معها.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "علينا فقط تكريس الكثير من الجهود لتعزيز أساليب العمل والتواصل بين الطلاب والمعلمين.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ولا يمكننا توقع نتائج مثالية إذا ما جربنا التعليم الإلكتروني.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "نظرا للسرعة الفائقة التي اضطرت فيها المدارس إلى الانتقال إلى هذه الاستراتيجية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "male",
+    "text": "دون أن يكون هناك أي تحضير أو تدريب مسبق، سواء للإدارة المدرسية أو للمعلمين أو لأولياء الأمور.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ونعلم أن هناك بعض الإيجابيات والسلبيات التي ينطوي عليها اعتماد هذه الاستراتيجية، ولكن تعتبر أفضل الحلول.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وهل الأدوات متوفرة فعلا؟ أم أن الكلام نظري؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "النص يعدد الأدوات بأسمائها. فإن جوجل سمحت مجانا لاستخدام أدوات اللقاء المرئي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وكذلك الوزارة لديها منصة مفعلة، وبكل سهولة ممكن التعامل مع الطلبة وتدريسهم بغرف صفية ودردشة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ويمكن أن ينشئ المعلم فيديو فيه شرح للمواد الأساسية، ومنها المواد العلمية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "أو أي موقع تعليمي يمكن استخدامه بيسر ومرونة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهي شبه جاهزة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهي تكاد تكون سهلة ولا تحتاج إلى وقت في تجهيزها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ويتم تحميل الدروس والنشاطات والتدريبات وغيرها للطلبة، كذلك استخدام تطبيقات على الجوال.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وفيديوهات لشرح المواد التي تحتاج إلى شرح، وهذا يتطلب مساعدة التربية والإعلام.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ونشرها عبر التلفزيون أو مواقع التواصل.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فدعونا نخرج من هذه الأزمة وقد حققنا إنجازا في التعليم ككل.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وللطلبة الذين يجلسون في المنازل بسبب العزل، ويتعلموا عن بعد من خلال منظومة التعليم الإلكتروني.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فقد قدمنا الكثير من الحلول البديلة في التعليم، ويمكن للوزارة أو المعلم القيام بها في أضيق الظروف.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ولنأخذ قاعدة أرددها دائما: المدارس تقف والتعليم مستمر مدى الحياة.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

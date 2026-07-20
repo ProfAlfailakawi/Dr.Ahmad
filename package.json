@@ -90,7 +90,9 @@
     "ci:explain": "node scripts/explain-failure.mjs",
     "ci:explain:self-test": "node scripts/explain-failure.mjs --self-test",
     "audio:guard:regression": "node scripts/guard-audio-meta-regression.mjs",
-    "audio:guard:regression:self-test": "node scripts/guard-audio-meta-regression.mjs --self-test"
+    "audio:guard:regression:self-test": "node scripts/guard-audio-meta-regression.mjs --self-test",
+    "dialogues:stage": "node scripts/stage-dialogues-local.mjs",
+    "dialogues:stage:self-test": "node scripts/stage-dialogues-local.mjs --self-test"
   },
   "dependencies": {
     "firebase": "^12.15.0",

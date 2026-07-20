@@ -1,0 +1,290 @@
+[
+  {
+    "speaker": "male",
+    "text": "منذ فترة شهدت القنوات الفضائية، خاصة الكويتية، الحدث البارز: الانتخابات النيابية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وكان هناك لقاءات مع المنتخبين للمجلس والتابعين والناخبين.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ورأينا مشاهد كثيرة لحضور ندوات وخطابات المنتخبين وأتباعهم.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وقتا حافلا.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "يشهدون وقتا حافلا في إرسال الدعاوى وإجراء الاتصالات عن طريق الهاتف النقال.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وغيره من التقنيات التي لا تتوقف، ونشر خطابات المنتخبين وكلماتهم لجذب أكبر عدد.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "والتأثير على العامة في كل مشهد من تلك المشاهد.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وأثارت تلك المشاهد تفكيري: بأن سياسة الصانع تحدد ثقافة المنتج.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "نعم، فتلك الأجهزة التكنولوجية والتقنية الحديثة ساهمت في تحديد ثقافة المنتج.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وأثرت على ثقافة الأفراد، وتبقى سياسة الصانع محدودة في التطوير.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولنستفض قليلا.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فاحتياجات البيئة المحيطة التي تولد ثقافة الفرد أصبحت حاجة ملحة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ولتوليد هذه الثقافة لا بد من تهيئة البيئة المحيطة واحتياجاتها من وقت وجهد وأجهزة حديثة متطورة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهل ثقافة الفرد تولد من الأجهزة الحديثة وحدها؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بل ثقافة الفرد كما يعرفها البعض، ما هي إلا حلول لتحديات يواجهها الفرد مع البيئة المحيطة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأن الناس يقتبسون ثقافتهم من مواقع التواصل المختلفة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ووفرت نقلة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فظهورها وفر نقلة مجتمعية ثقافية للأفراد.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولو نظرنا إلى أصحاب القرار في المجتمع، فإنهم يستخدمون مواقع التواصل بشكل كبير.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ولم لا؟ وهي التي تجتمع بها فئات المجتمع المختلفة، ويكتسبون ثقافاتهم المختلفة منها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "والقلة القليلة هي وحدها التي ليس لها حضور في مواقع التواصل المختلفة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ويمكن لأصحاب القرار أن يعرفوا بشكل دقيق كل ما يدور حولهم من خلالها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وبالتالي فإن تكوين القرار يحتاج إلى التواصل المستمر في مواقع التواصل.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "من أجل تكوين المعلومات والأخبار والفكر المنتشر والثقافة السائدة لدى المجتمع، ليصبح للقرار أساس يناط له.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ومن جهة أخرى.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ومن جهة أخرى يصبح لأصحاب القرار التأثير الكبير على هؤلاء وتغيير توجهاتهم الثقافية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بما يصب في مصالحهم الخاصة، وتكوين المؤيدين والأتباع.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فثقافة أصحاب القرار هي المؤثرة على ثقافة الأفراد وعلاقتهم ببعضهم البعض.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وهي نتيجة واضحة لسياسة أصحاب الواقع الافتراضي، الذين سخروا كل المقومات والعوامل المساعدة على تحديد ثقافة المنتج.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهذا كله يكون على حساب القلة غير المستخدمة للواقع الافتراضي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فماذا بعد هذا التزايد في أعداد الأتباع؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "إذا كان أعداد المؤثرين في المجتمع والأتباع في تزايد على حساب القلة غير المستخدمة للواقع الافتراضي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فإن ما تفرضه مواقع التواصل من ثقافة تحدد علاقة الأفراد ببعضهم سيكون هو النمط السائد.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وبالتالي فإننا أمام ثورة ثقافية يصوغها أصحاب الواقع الافتراضي، وينفذها أصحاب القرار والأتباع.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ويكفي أن خمسة وسبعين بالمئة من مستخدمي الإنترنت يستخدمون مواقع التواصل الاجتماعي يوميا عبر الأجهزة الذكية والحاسوب وغيرها.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

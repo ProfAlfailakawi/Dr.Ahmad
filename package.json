@@ -88,7 +88,9 @@
     "bodies:audit:self-test": "node scripts/audit-article-bodies.mjs --self-test",
     "audio:reconcile": "node scripts/reconcile-audio-meta.mjs",
     "ci:explain": "node scripts/explain-failure.mjs",
-    "ci:explain:self-test": "node scripts/explain-failure.mjs --self-test"
+    "ci:explain:self-test": "node scripts/explain-failure.mjs --self-test",
+    "audio:guard:regression": "node scripts/guard-audio-meta-regression.mjs",
+    "audio:guard:regression:self-test": "node scripts/guard-audio-meta-regression.mjs --self-test"
   },
   "dependencies": {
     "firebase": "^12.15.0",

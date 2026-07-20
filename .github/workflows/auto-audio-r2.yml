@@ -201,6 +201,15 @@ jobs:
 
       # يصالح السجلّ مع R2 قبل التحقّق: مدخلٌ متخلّفٌ عن الواقع (حجمٌ قديم أو ملفٌ
       # لم يعد موجوداً) كان يُسقط كلّ تشغيلة وإن نجح التوليد والرفع كاملين.
+      # يستردّ ما شهد له البوت ثم أسقطته دفعةٌ بشرية وملفُّه ما زال حيّاً على
+      # R2. يسبق المصالح لأن المصالح لا يرى إلا ما في السجلّ، ولا يضيف مدخلاً.
+      - name: Guard the audio manifest against regression
+        run: |
+          set -o pipefail
+          node scripts/guard-audio-meta-regression.mjs --apply 2>&1 | tee -a ci-log.txt
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+
       - name: Reconcile audio manifest with R2
         run: |
           set -o pipefail

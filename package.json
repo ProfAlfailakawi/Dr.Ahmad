@@ -51,7 +51,6 @@
     "radar:repair": "node scripts/radar-repair.mjs",
     "faq:repair": "node scripts/faq-repair.mjs",
     "social:self-test": "node scripts/test-social-templates.mjs",
-
     "content:auto:self-test": "node scripts/auto-site-content.mjs --self-test",
     "testimonials:auto": "node scripts/auto-testimonials.mjs",
     "testimonials:auto:self-test": "node scripts/auto-testimonials.mjs --self-test",
@@ -84,7 +83,9 @@
     "agent:stop-campaign": "node scripts/whatsapp-agent.mjs stop-campaign",
     "podcast:manual-lock:self-test": "node scripts/test-manual-dialogue-lock.mjs",
     "typography:audit": "node scripts/normalize-arabic-typography.mjs",
-    "typography:fix": "node scripts/normalize-arabic-typography.mjs --write"
+    "typography:fix": "node scripts/normalize-arabic-typography.mjs --write",
+    "bodies:audit": "node scripts/audit-article-bodies.mjs",
+    "bodies:audit:self-test": "node scripts/audit-article-bodies.mjs --self-test"
   },
   "dependencies": {
     "firebase": "^12.15.0",

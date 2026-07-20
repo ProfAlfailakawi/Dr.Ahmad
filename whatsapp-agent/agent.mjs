@@ -82,13 +82,22 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     db.addAudit('bridge-secret-created', 'local', `length=${generated.length}`)
     return generated
   }
-  const onMessage = ({ jid, text, message }) => {
-    if (message?.media || /https?:\/\/|www\./i.test(String(text || ''))) {
+  /* ★ العَلَم يصل من المستوى الأعلى: الناقل يرسل onMessage({ jid, text, message,
+     media }) — انظر transport.mjs. وكان هذا التوقيع يُسقط `media` عند التفكيك
+     ثم يبحث عنه في `message.media` حيث لا وجود له، فلم يعمل الحارس ولا مرّة:
+     كلُّ بصمةٍ صوتية وصورةٍ تُعامَل نصّاً، فإن حملت جملة الإيقاظ ردّ عليها
+     البوت. وهذا نقضٌ لقاعدة الدكتور المطلقة: لا يردّ على صوتٍ ولا صورة.
+
+     ونقرأ الموضعين معاً فلا يعود التوقيع يكسر الحارس، ونُمرّر hasMedia إلى
+     المحرك أيضاً — خطُّ دفاعٍ ثانٍ إن أخطأ الأول. */
+  const onMessage = ({ jid, text, message, media }) => {
+    const hasMedia = Boolean(media || message?.media)
+    if (hasMedia || /https?:\/\/|www\./i.test(String(text || ''))) {
       markManualTakeover(db, jid)
-      db.addAudit('needs-human-media-or-link', redactJid(jid), message?.media ? 'media' : 'link')
+      db.addAudit('needs-human-media-or-link', redactJid(jid), hasMedia ? 'media' : 'link')
       return { shouldRespond: false, reason: 'media-or-link-human' }
     }
-    const response = handleIncoming({ db, jid, text: safeText(text), isReplyToAgent: Boolean(message?.message?.extendedTextMessage?.contextInfo?.quotedMessage) })
+    const response = handleIncoming({ db, jid, text: safeText(text), hasMedia, isReplyToAgent: Boolean(message?.message?.extendedTextMessage?.contextInfo?.quotedMessage) })
     if (!response.shouldRespond) db.addAudit('auto-reply-skipped', redactJid(jid), response.reason || 'blocked')
     if (!response.shouldRespond || !flags.autoReply || !flags.send) return response
     if (response.text && state.transport?.sendText) {

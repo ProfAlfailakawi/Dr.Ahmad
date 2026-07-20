@@ -122,7 +122,12 @@ export async function runSelfTest(root) {
   const groupJid = '120363000000000000@g.us'
   assert.equal(shouldRespondToMessage({ db, jid: groupJid, text: 'موقع د. أحمد' }).allowed, false, '★ جملة الإيقاظ لا تفتح باباً في مجموعة')
   assert.equal(shouldRespondToMessage({ db, jid: groupJid, text: 'أي كلام', explicitContentSession: true }).allowed, false, '★ ولا الجلسة المفتوحة تُبيح الردّ في مجموعة')
-  assert.equal(agent.onMessage({ jid: groupJid, text: 'موقع د. أحمد', message: {} }).reason, 'group-never', '★ والناقل نفسه يصمت عن المجموعات')
+  /* السبب صار جملةً عربيةً تُعرض في المحاكي («مجموعة — لا ردّ فيها إطلاقاً»)
+     بدل الرمز 'group-never'، وهو تحسينٌ مقصود لا عطب. فنختبر السلوك ونوعَ
+     المحادثة المذكور فيه، لا نصّ الرمز — فالاختبار يحرس القاعدة لا الصياغة. */
+  const groupGate = agent.onMessage({ jid: groupJid, text: 'موقع د. أحمد', message: {} })
+  assert.equal(groupGate.shouldRespond, false, '★ والناقل نفسه يصمت عن المجموعات')
+  assert.match(String(groupGate.reason || ''), /مجموعة/, '★ وسببُ الصمت يسمّي المجموعة صراحةً')
   assert.equal(handleIncoming({ db, jid: groupJid, text: 'موقع د. أحمد' }).shouldRespond, false, 'ولا يُنتج ردّاً')
 
   /* ★ وما جرى مجرى المجموعة: الحالات والقنوات وقوائم البثّ — قائمةُ سماحٍ مغلقة */

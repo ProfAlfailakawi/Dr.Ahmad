@@ -48,6 +48,8 @@
     "deploy:data-rules": "firebase deploy --config firebase.data.json --only firestore:rules,storage --project drahmad-8e9e2",
     "verify:legacy-retired": "node scripts/verify-legacy-retirement.mjs",
     "content:auto": "node scripts/auto-site-content.mjs",
+    "radar:repair": "node scripts/radar-repair.mjs",
+    "faq:repair": "node scripts/faq-repair.mjs",
     "social:self-test": "node scripts/test-social-templates.mjs",
 
     "content:auto:self-test": "node scripts/auto-site-content.mjs --self-test",

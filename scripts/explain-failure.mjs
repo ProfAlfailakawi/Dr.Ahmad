@@ -66,6 +66,27 @@ export const SIGNATURES = [
     fix: 'npm run audio:r2:self-test ثم أعد التشغيل — الناشرُ الذّرّيُّ يُنظّف المعلَّق بنفسه.',
   },
   {
+    id: 'awscli-bad-flag',
+    match: /Unknown options:\s*--/,
+    what: 'خيارٌ لا تعرفه أداةُ awscli',
+    why: 'تغيّرت خياراتُ الأداة بين إصداراتها فسقط كلُّ نداءٍ يحمله — والحذف أو الرفع لم يقع أصلاً.',
+    fix: 'راجع الخيار في خطوة awscli (‏--no-progress خيارُ cp/sync لا rm؛ البديل ‎--only-show-errors)',
+  },
+  {
+    id: 'r2-delete-failed',
+    match: /فشل حذف \d+ ملفاً/,
+    what: 'تعذّر حذفُ ملفاتٍ من R2',
+    why: 'التشغيلة رفضت أن تدّعي نجاحاً لم يقع، فأوقفت نفسها. لم يُحذف شيء والحالة سليمة كما كانت.',
+    fix: 'أصلح سببَ الرفض أوّلاً (غالباً خيارُ awscli أو مفاتيح R2) ثم أعد التصفير',
+  },
+  {
+    id: 'reset-confirm-mismatch',
+    match: /التنفيذ يحتاج --confirm|خانة «الاستبقاء» فارغة/,
+    what: 'كلمةُ تأكيدِ التصفير لا تطابق ما ينتظره الطرفُ الآخر',
+    why: 'غلافُ التشغيلة والسكربتُ يشترطان صيغتين مختلفتين، فأيُّهما أُرضيَ أغضبَ الآخر.',
+    fix: 'مرِّر للسكربت «امسح-كل-الصوت» دائماً، وأبقِ البوّابة الإنسانية في الغلاف',
+  },
+  {
     id: 'npm-install',
     match: /npm ERR!|ERESOLVE|ENOTFOUND registry/,
     what: 'تعثَّر تركيبُ الحزم',
@@ -143,6 +164,11 @@ if (SELF_TEST) {
   assert(explain('AUDIO_PUBLIC_BASE_URL غير مضبوط').hits.some((h) => h.id === 'missing-secret'), 'يلتقط السرّ الناقص')
   assert(explain('RESOURCE_EXHAUSTED: quota').hits.some((h) => h.id === 'quota-exhausted'), 'يلتقط نفاد الرصيد')
   assert(explain('npm ERR! ERESOLVE').hits.some((h) => h.id === 'npm-install'), 'يلتقط تعثّر الحزم')
+
+  /* ★ أعطابٌ وقعت فعلاً في تصفير ٢١-٠٧ — تُقاس من سجلٍّ حقيقيّ لا من تخيّل */
+  assert(explain('Unknown options: --no-progress').hits.some((h) => h.id === 'awscli-bad-flag'), '★ يلتقط خيار awscli المرفوض')
+  assert(explain('فشل حذف 27 ملفاً.').hits.some((h) => h.id === 'r2-delete-failed'), '★ يلتقط فشل الحذف من R2')
+  assert(explain('✘ التنفيذ يحتاج --confirm=امسح-كل-الصوت').hits.some((h) => h.id === 'reset-confirm-mismatch'), '★ يلتقط تناقض كلمتي التأكيد')
 
   /* الصمتُ أمانةٌ: ما لا يُعرف يُقال إنّه لا يُعرف. */
   const unknown = explain('Something entirely unexpected happened\nError: boom')

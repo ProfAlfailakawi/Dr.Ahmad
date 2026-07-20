@@ -85,7 +85,10 @@
     "typography:audit": "node scripts/normalize-arabic-typography.mjs",
     "typography:fix": "node scripts/normalize-arabic-typography.mjs --write",
     "bodies:audit": "node scripts/audit-article-bodies.mjs",
-    "bodies:audit:self-test": "node scripts/audit-article-bodies.mjs --self-test"
+    "bodies:audit:self-test": "node scripts/audit-article-bodies.mjs --self-test",
+    "audio:reconcile": "node scripts/reconcile-audio-meta.mjs",
+    "ci:explain": "node scripts/explain-failure.mjs",
+    "ci:explain:self-test": "node scripts/explain-failure.mjs --self-test"
   },
   "dependencies": {
     "firebase": "^12.15.0",

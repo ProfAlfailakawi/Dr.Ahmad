@@ -181,12 +181,16 @@ jobs:
           VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
 
       - name: Strict local podcast release gate
-        run: npm run podcast:release:local -- --allow-empty
+        run: |
+          set -o pipefail
+          npm run podcast:release:local -- --allow-empty 2>&1 | tee -a ci-log.txt
         env:
           PODCAST_RELEASE_MIN_SCORE: '94'
 
       - name: Publish generated local audio/transcripts to R2 atomically
-        run: npm run audio:r2:publish
+        run: |
+          set -o pipefail
+          npm run audio:r2:publish 2>&1 | tee -a ci-log.txt
         env:
           AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
           VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
@@ -198,14 +202,19 @@ jobs:
       # يصالح السجلّ مع R2 قبل التحقّق: مدخلٌ متخلّفٌ عن الواقع (حجمٌ قديم أو ملفٌ
       # لم يعد موجوداً) كان يُسقط كلّ تشغيلة وإن نجح التوليد والرفع كاملين.
       - name: Reconcile audio manifest with R2
-        run: node scripts/reconcile-audio-meta.mjs --apply
+        run: |
+          set -o pipefail
+          node scripts/reconcile-audio-meta.mjs --apply 2>&1 | tee -a ci-log.txt
         env:
           AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
 
+      # المخرجات تُنسخ إلى ci-log.txt ليقرأها مُفسِّر التعثُّر عند الفشل.
+      # pipefail ضروريٌّ وإلّا ابتلع الأنبوبُ رمزَ الخروج ومرّ الفشل صامتاً.
       - name: Verify manifests and build
         run: |
-          npm run audio:external:verify
-          npm run build
+          set -o pipefail
+          npm run audio:external:verify 2>&1 | tee -a ci-log.txt
+          npm run build 2>&1 | tee -a ci-log.txt
         env:
           VITE_SITE_URL: https://dr-alfailakawi.com
           AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
@@ -314,3 +323,22 @@ jobs:
           CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
           CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      # عند أيّ فشل: بدل أن يفتح الدكتور سجلّاً بألف سطرٍ بالإنجليزية، يقرأ في
+      # ملخّص التشغيلة سطرين بالعربي: ما الذي انكسر، ولماذا، والأمر الذي يُصلحه.
+      - name: Explain the failure in Arabic
+        if: failure()
+        continue-on-error: true
+        shell: bash
+        run: node scripts/explain-failure.mjs ci-log.txt >> "$GITHUB_STEP_SUMMARY"
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Keep the failure log for download
+        if: failure()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-log
+          path: ci-log.txt
+          retention-days: 7

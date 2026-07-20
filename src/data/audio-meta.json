@@ -1,18 +1,43 @@
 {
   "expectations-that-shape-a-studentarabic.mp3": {
-    "bytes": 1298592,
-    "durationSeconds": 216
+    "bytes": 3029830,
+    "durationSeconds": 189
   },
   "expectations-that-shape-a-studentarabic.noura.mp3": {
-    "bytes": 1324224,
-    "durationSeconds": 221
+    "bytes": 3079985,
+    "durationSeconds": 192
+  },
+  "success-that-does-not-bring-joy-to-its-ownerarabic.dialogue.json": {
+    "bytes": 6088,
+    "sha256": "b00ceab3ef93daeb99041c33bdbac880ee9a08a9b4a031604e401c81fb0142eb",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-07-20T16:24:37.410Z"
+  },
+  "success-that-does-not-bring-joy-to-its-ownerarabic.dialogue.mp3": {
+    "bytes": 3324909,
+    "sha256": "89b91e359ac76e9aa0246f0594f749650621c312e369165cf04ed8a4dda9dd72",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-20T16:24:37.410Z",
+    "durationSeconds": 208
+  },
+  "success-that-does-not-bring-joy-to-its-ownerarabic.mp3": {
+    "bytes": 2990124,
+    "sha256": "048c022386cfdad26247c68814040dceecbcdf56666d2d5fbe5d7604e3e65fab",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-20T16:24:37.472Z",
+    "durationSeconds": 187,
+    "sourceHash": "36dd9cc7de7a573ecefe9387b1ced2ec5b77bdc585abd4d844967ec5ea4050ed",
+    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
+    "humanLikenessScore": 100,
+    "audioJudgeMinimum": null,
+    "acceptedAt": "2026-07-20T16:19:16.748Z"
   },
   "when-the-exam-becomes-the-goalarabic.mp3": {
-    "bytes": 1238832,
-    "durationSeconds": 206
+    "bytes": 2896919,
+    "durationSeconds": 181
   },
   "when-the-exam-becomes-the-goalarabic.noura.mp3": {
-    "bytes": 1249200,
-    "durationSeconds": 208
+    "bytes": 2901516,
+    "durationSeconds": 181
   }
 }

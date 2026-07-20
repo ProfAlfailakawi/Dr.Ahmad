@@ -90,6 +90,26 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
 
      ونقرأ الموضعين معاً فلا يعود التوقيع يكسر الحارس، ونُمرّر hasMedia إلى
      المحرك أيضاً — خطُّ دفاعٍ ثانٍ إن أخطأ الأول. */
+  /**
+   * ★ هل هذه الرسالة ردٌّ على البوت حقاً؟
+   *
+   * كان الشرط `Boolean(contextInfo.quotedMessage)` — أي «هل فيها اقتباسٌ لأيّ
+   * رسالة؟» لا «هل المقتبَس من كلام البوت؟». والاسم يَعِد بالثاني والكودُ يفعل
+   * الأول. فمن اقتبس رسالةَ نفسه — وهو أكثر ما يفعله الناس في واتساب — فُتح له
+   * الباب بلا جملة إيقاظ، وردّ عليه البوت. وهذا نقضٌ للقاعدة المطلقة.
+   *
+   * والتحقّق ممكنٌ بيقين: البوت يسجّل معرّف كل رسالةٍ يرسلها في outbox_messages
+   * (transport.mjs). فنطابق معرّف المقتبَس بها — فلا يفتح البابَ إلا اقتباسُ
+   * كلامِ البوت نفسه، ولا يُفتح باقتباس كلام الناس بعضهم بعضاً.
+   */
+  const isReplyToBot = (message) => {
+    const context = message?.message?.extendedTextMessage?.contextInfo
+    if (!context?.quotedMessage) return false
+    const quotedId = String(context.stanzaId || context.id || '')
+    if (!quotedId) return false
+    return Boolean(db.get('SELECT message_id FROM outbox_messages WHERE message_id=?', quotedId))
+  }
+
   const onMessage = ({ jid, text, message, media }) => {
     const hasMedia = Boolean(media || message?.media)
     if (hasMedia || /https?:\/\/|www\./i.test(String(text || ''))) {
@@ -97,8 +117,11 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
       db.addAudit('needs-human-media-or-link', redactJid(jid), hasMedia ? 'media' : 'link')
       return { shouldRespond: false, reason: 'media-or-link-human' }
     }
-    const response = handleIncoming({ db, jid, text: safeText(text), hasMedia, isReplyToAgent: Boolean(message?.message?.extendedTextMessage?.contextInfo?.quotedMessage) })
+    const response = handleIncoming({ db, jid, text: safeText(text), hasMedia, isReplyToAgent: isReplyToBot(message) })
     if (!response.shouldRespond) db.addAudit('auto-reply-skipped', redactJid(jid), response.reason || 'blocked')
+    /* الردّ الناجح لم يكن يُسجَّل قط — يُسجَّل الصمت وحده. فإذا ردّ البوت حيث
+       لا يجوز، لم يترك أثراً يُقرأ. نُسجّله الآن ليُعرف من أين دخل. */
+    else db.addAudit('auto-reply-sent', redactJid(jid), response.reason || '')
     if (!response.shouldRespond || !flags.autoReply || !flags.send) return response
     if (response.text && state.transport?.sendText) {
       void state.transport.sendText(jid, response.text).catch((error) => db.addAudit('auto-reply-failed', redactJid(jid), redactError(error)))

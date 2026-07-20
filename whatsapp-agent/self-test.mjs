@@ -64,6 +64,29 @@ export async function runSelfTest(root) {
   const session = db.get('SELECT * FROM chat_sessions WHERE jid=?', db.jidKey('12345@s.whatsapp.net'))
   assert.ok(session, 'chat session must use an opaque jid key')
 
+  /* ═══ ★ الاقتباس لا يفتح الباب ═══
+   *
+   * كان الشرط «فيها اقتباسٌ لأيّ رسالة» لا «اقتباسٌ لكلام البوت». فمن اقتبس
+   * رسالةَ نفسه — وهو أكثر ما يفعله الناس — ردّ عليه البوت بلا جملة إيقاظ.
+   * وقع هذا فعلاً: أرسل صديق الدكتور قائمةَ مجلات مقتبساً رسالته، فردّ البوت.
+   */
+  const quoter = '88888@s.whatsapp.net'
+  /* شكلُ رسالة واتساب متداخل: الغلاف فيه `message` وداخله أنواع المحتوى.
+     وهو ما يمرّره الناقل حرفياً (transport.mjs) — فنحاكيه كما هو لا كما نظن. */
+  const quoting = (id) => ({ message: { message: { extendedTextMessage: { contextInfo: { stanzaId: id, quotedMessage: { conversation: 'أي كلام' } } } } } })
+
+  const strangerQuote = agent.onMessage({ jid: quoter, text: 'International journal of business', ...quoting('NOT-FROM-BOT-123') })
+  assert.equal(strangerQuote.shouldRespond, false, '★ اقتباسُ رسالةٍ ليست من البوت لا يفتح الباب')
+
+  /* أما اقتباسُ كلام البوت نفسه فيفتحه — وهو المقصود الأصليّ */
+  db.run('INSERT OR IGNORE INTO outbox_messages(message_id,jid,source,created_at) VALUES(?,?,?,?)',
+    'FROM-BOT-999', db.jidKey(quoter), 'bot', new Date().toISOString())
+  const botQuote = agent.onMessage({ jid: quoter, text: 'وش قصدك؟', ...quoting('FROM-BOT-999') })
+  assert.equal(botQuote.shouldRespond, true, '★ اقتباسُ كلام البوت يبقى فاتحاً للباب')
+
+  /* وبلا اقتباسٍ أصلاً: صمت */
+  assert.equal(agent.onMessage({ jid: quoter, text: 'كلام عابر', message: {} }).shouldRespond, false, 'وبلا اقتباس يبقى صامتاً')
+
   /* ═══ «زدني» — وعدٌ يُوفى ═══
    *
    * كان البوت يقول «وله في هذا نصٌّ آخر — اكتب زدني»، فإذا كتبها السائل ردّ

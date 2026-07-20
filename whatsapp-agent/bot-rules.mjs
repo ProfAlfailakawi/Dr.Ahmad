@@ -11,7 +11,9 @@ import { TIME_ZONE } from './config.mjs'
 
 /* ═══ ١) توقيع الآلة ═══ */
 
-export const BOT_SIGNATURE = '— ردّ آليّ من مكتبة د. أحمد'
+/* التوقيع باسم الدكتور كاملاً بأمره: من قرأ الردّ يعرف من أين جاء وإلى من
+   يعود، فلا يظنّ أن الدكتور كتبه بيده ولا يجهل صاحبه. */
+export const BOT_SIGNATURE = 'رد آلي من موقع د. أحمد حسين الفيلكاوي'
 
 /**
  * من يراسل الدكتور يظنّ أنه يكلّمه هو. فإن ردّ البوت بلا توقيع فقد أوهمه.
@@ -27,19 +29,32 @@ export function sign(text, { skip = false } = {}) {
 
 /* ═══ ٢) قواعد الصمت ═══ */
 
-export const QUIET_FROM = 0      // منتصف الليل
-export const QUIET_UNTIL = 7     // السابعة صباحاً
-export const DAILY_REPLY_CAP = 5
+/* ساعات الصمت — أُلغيت بأمر الدكتور: «ليش حظر؟ ماله داعي حظر إطلاقاً».
+   وحجّتها كانت أن ردّاً في الثالثة فجراً غريب؛ لكن البوت لا يبتدئ أحداً، ولا
+   يردّ إلا على من كتب إليه بنفسه في تلك الساعة — فالمنع كان يُسكته عمّن يطلبه.
+   وتُضبط من اللوحة: QUIET_FROM=QUIET_UNTIL يعني «لا حظر». */
+export const QUIET_FROM = Number(process.env.WHATSAPP_QUIET_FROM ?? 0)
+export const QUIET_UNTIL = Number(process.env.WHATSAPP_QUIET_UNTIL ?? 0)
+/* سقف الردود اليومية لكل شخص. كان ٥ — وهو قليلٌ جداً: من أوقظ البوت وسأله
+   خمسة أسئلة صُدّ عن السادس بصمتٍ لا يفهمه، وظنّ البوت معطوباً. ورُفع إلى
+   عشرين، وجملةُ الإيقاظ نفسها مُعفاة منه دائماً (انظر أدناه). */
+export const DAILY_REPLY_CAP = Number(process.env.WHATSAPP_DAILY_REPLY_CAP ?? 20)
 
 /** الساعة بتوقيت الكويت مهما كان توقيت الخادم */
 export function kuwaitHour(at = new Date()) {
   return Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: TIME_ZONE || 'Asia/Kuwait' }).format(at))
 }
 
-/** ردٌّ من رقمه الشخصيّ في الثالثة فجراً غريبٌ مهما كان ذكياً */
+/**
+ * هل نحن في ساعة صمت؟ لا صمتَ افتراضاً بأمر الدكتور.
+ * وتحتمل النافذة العابرة لمنتصف الليل (٢٣ → ٦) لا الصاعدة وحدها.
+ */
 export function isQuietHour(at = new Date()) {
+  if (QUIET_FROM === QUIET_UNTIL) return false          // لا حظر — وهو الافتراض
   const hour = kuwaitHour(at)
-  return hour >= QUIET_FROM && hour < QUIET_UNTIL
+  return QUIET_FROM < QUIET_UNTIL
+    ? hour >= QUIET_FROM && hour < QUIET_UNTIL
+    : hour >= QUIET_FROM || hour < QUIET_UNTIL
 }
 
 /** كم ردّاً آلياً ذهب لهذا الشخص اليوم؟ */
@@ -108,10 +123,13 @@ export function ensureBotRulesSchema(db) {
  * القرار النهائيّ بعد أن تأذن البوابة. يُرجع سبباً بالعربية كي تفهمه
  * المحاكاة في اللوحة بلا رطانة.
  */
-export function applyBotRules({ db, jid, normalizedText, hasMedia = false, at = new Date() }) {
+export function applyBotRules({ db, jid, normalizedText, hasMedia = false, opensDoor = false, at = new Date() }) {
   if (hasMedia) return { allowed: false, reason: 'وسائط — تحتاج عينك أنت' }
   if (needsHumanOnly(normalizedText)) return { allowed: false, reason: 'طلبٌ إنسانيّ — لا تردّ عليه آلة' }
   if (isQuietHour(at)) return { allowed: false, reason: 'ساعات الصمت (منتصف الليل — السابعة)' }
-  if (repliesToday(db, jid) >= DAILY_REPLY_CAP) return { allowed: false, reason: `تجاوز ${DAILY_REPLY_CAP} ردود اليوم` }
+  /* جملةُ الإيقاظ المنشورة مُعفاةٌ من السقف بأمر الدكتور: «ما يردّ إلا إذا شخص
+     كتب موقع د. أحمد» — قاعدةٌ مطلقة لا يحدّها عدد. ومن كتبها فقد قصد الموقع
+     قصداً، فصدُّه بصمتٍ أسوأُ من الردّ. والسقف يبقى على ما بعدها في الجلسة. */
+  if (!opensDoor && repliesToday(db, jid) >= DAILY_REPLY_CAP) return { allowed: false, reason: `تجاوز ${DAILY_REPLY_CAP} ردود اليوم` }
   return { allowed: true, reason: '' }
 }

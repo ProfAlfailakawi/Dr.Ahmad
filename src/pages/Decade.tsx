@@ -1,9 +1,11 @@
-import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { useCmsContent } from '../lib/content'
 import type { ArticleRecord } from '../lib/cms'
+import { toRoot } from '../lib/dialect-lexicon'
+import { loadArticleBodies } from '../lib/article-bodies'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
@@ -38,16 +40,54 @@ function chapterRange(chapters: YearChapter[]) {
     : `${chapters[0].year}–${chapters[chapters.length - 1].year}`
 }
 
+/* العنوان يتبع ما يُعرض فعلاً. كتابة «ثلاثة فصول» فوق بطاقتين كذبٌ صغير،
+   والصغير منه يُفقد الثقة في الكبير. */
+function chapterCountWord(count: number) {
+  return count === 1 ? 'فصلٌ واحد' : count === 2 ? 'فصلان' : `${['', '', '', 'ثلاثة'][count] || count} فصول`
+}
+
+/* رحلة فكرةٍ بعينها عبر السنوات: يكتب القارئ «الامتحان» أو «العيال» فيرى متى
+   بدأ الدكتور يكتب فيها، وكيف تنقّلت بين أبوابه، وأين استقرّت. والتصفية تمرّ
+   بالقاموس الجبّار فيلتقي سؤال العاميّة بمقال الفصحى. */
+function matchesIdea(article: ArticleRecord, roots: string[], bodies: Record<string, string>): boolean {
+  if (!roots.length) return true
+  const haystack = `${article.title} ${article.excerpt || ''} ${article.cat} ${bodies[article.slug] || ''}`
+  const words = new Set(
+    haystack.split(/[\s.,،؛:!؟()«»"'…]+/).filter((w) => w.length > 2).map(toRoot),
+  )
+  return roots.some((root) => words.has(root))
+}
+
 export default function Decade() {
   const { articles, loading } = useCmsContent()
+  const [params, setParams] = useSearchParams()
+  const idea = (params.get('فكرة') || params.get('idea') || '').trim()
+  const [draft, setDraft] = useState(idea)
+  const [bodies, setBodies] = useState<Record<string, string>>({})
+
+  useEffect(() => { setDraft(idea) }, [idea])
+  /* المتون تُجلب عند الحاجة وحدها: الرحلة بلا فكرةٍ لا تحتاجها، ومع فكرةٍ
+     تصير ضرورية — فالعنوان وحده لا يكفي للحكم بأن المقال يخصّها. */
+  useEffect(() => {
+    if (!idea || Object.keys(bodies).length) return
+    let alive = true
+    void loadArticleBodies().then((data) => { if (alive) setBodies(data || {}) }).catch(() => {})
+    return () => { alive = false }
+  }, [idea, bodies])
+
   useSeo({
-    title: 'وثيقة العقد',
+    title: idea ? `رحلة فكرة: ${idea}` : 'وثيقة العقد',
     path: '/decade',
-    description: 'سيرة فكرية حيّة تُعيد قراءة عشر سنوات من المقالات: التحولات، والموضوعات الأكثر حضوراً، والنصوص الممثلة لكل مرحلة.',
+    description: idea
+      ? `كيف تنقّلت فكرة «${idea}» في كتابات د. أحمد الفيلكاوي عبر السنوات — بالنصوص والتواريخ.`
+      : 'سيرة فكرية حيّة تُعيد قراءة عشر سنوات من المقالات: التحولات، والموضوعات الأكثر حضوراً، والنصوص الممثلة لكل مرحلة.',
   })
 
   const document = useMemo(() => {
-    const dated = articles.filter((article) => /^(?:19|20)\d{2}/.test(article.iso))
+    const roots = idea.split(/\s+/).filter((w) => w.length > 2).map(toRoot)
+    const dated = articles
+      .filter((article) => /^(?:19|20)\d{2}/.test(article.iso))
+      .filter((article) => matchesIdea(article, roots, bodies))
     if (!dated.length) return null
 
     // النطاق الكامل من أول مقال فعلي إلى آخره — يتجدّد تلقائياً مع أي إضافة (لا يبدأ من latestYear-9)
@@ -69,6 +109,8 @@ export default function Decade() {
     }, new Map<string, number>())).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ar'))
 
     const slices = [chapters.slice(0, 3), chapters.slice(3, 6), chapters.slice(6)]
+    /* الفصل الفارغ لا يُعرض أصلاً: بطاقةٌ تقول «لا توجد مادة» ليست معلومة،
+       بل فراغٌ يحمل تاريخاً. نُسقطها كاملةً — ويتمدّد الباقي مكانها. */
     const stages = slices.map((stage, index) => {
       const stageArticles = stage.flatMap((chapter) => chapter.articles)
       const dominant = dominantCategory(stageArticles)
@@ -79,7 +121,7 @@ export default function Decade() {
         dominant,
         article: representative(stageArticles, dominant),
       }
-    })
+    }).filter((stage) => stage.count > 0)
 
     const growth = chapters.slice(1).map((chapter, index) => ({
       chapter,
@@ -120,15 +162,61 @@ export default function Decade() {
       stages,
       turns,
     }
-  }, [articles])
+  }, [articles, idea, bodies])
 
   return (
     <Page className="content-decade page-journey">
       <PageHead
-        label="السيرة الفكرية الحيّة"
-        title="وثيقة العقد."
-        sub="ليست سيرة وظائف ومناصب؛ بل قراءة تتولّد من الأرشيف نفسه: أين بدأ السؤال، ومتى اتسع، وما الذي بقي يُلحّ عاماً بعد عام."
+        label={idea ? 'رحلة فكرة' : 'السيرة الفكرية الحيّة'}
+        title={idea ? `«${idea}» عبر السنوات.` : 'وثيقة العقد.'}
+        sub={idea
+          ? 'متى بدأتْ هذه الفكرة تُلحّ، وكيف تنقّلت بين أبوابه، وأين استقرّت — بالنصوص والتواريخ لا بالانطباع.'
+          : 'ليست سيرة وظائف ومناصب؛ بل قراءة تتولّد من الأرشيف نفسه: أين بدأ السؤال، ومتى اتسع، وما الذي بقي يُلحّ عاماً بعد عام.'}
       />
+
+      {/* حقل الفكرة: يكتب القارئ «الامتحان» أو «العيال» فيرى رحلتها وحدها.
+          والاقتراحات مأخوذةٌ من أكثر ما كتب فيه الدكتور، فلا يبدأ من فراغ. */}
+      <section className="border-b border-hair px-6 py-8 md:px-11">
+        <div className="mx-auto max-w-shell">
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              const value = draft.trim()
+              setParams(value ? { 'فكرة': value } : {})
+            }}
+            className="flex flex-wrap items-center gap-3"
+          >
+            <input
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder="اكتب فكرةً — الامتحان، الهوية، الذكاء الاصطناعي…"
+              className="min-w-[16rem] flex-1 rounded-full border border-hair bg-canvas px-5 py-2.5 text-[.88rem] text-ink outline-none focus:border-accent"
+            />
+            <button type="submit" className="rounded-full bg-accent px-6 py-2.5 text-[.85rem] font-semibold text-white transition-opacity hover:opacity-90">
+              تتبّع الرحلة
+            </button>
+            {idea && (
+              <button type="button" onClick={() => { setDraft(''); setParams({}) }} className="text-[.82rem] text-soft transition-colors hover:text-accent">
+                العقد كاملاً ↺
+              </button>
+            )}
+          </form>
+          {!idea && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {['الامتحان', 'الهوية', 'الذكاء الاصطناعي', 'الأطفال', 'المعلم', 'الشهادة'].map((seed) => (
+                <button
+                  key={seed}
+                  type="button"
+                  onClick={() => { setDraft(seed); setParams({ 'فكرة': seed }) }}
+                  className="rounded-full border border-hair bg-wash px-4 py-1.5 text-[.78rem] text-soft transition-colors hover:border-accent hover:text-accent"
+                >
+                  {seed}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
       {loading && !document ? (
         <div className="px-6 py-24 text-center text-soft">تُقرأ خيوط الأرشيف…</div>
@@ -142,9 +230,6 @@ export default function Decade() {
                 <p className="max-w-3xl font-display text-[clamp(1.35rem,3vw,2rem)] font-medium leading-[1.8] text-ink">
                   من {document.firstYear} إلى {document.latestYear}: {document.span === 10 ? 'عشر سنوات' : `${number.format(document.span)} سنة`} تقرأ نفسها من خلال {number.format(document.articles.length)} مقالاً، لا لتختصر الفكرة في رقم، بل لتكشف حركتها.
                 </p>
-                <p className="mt-5 max-w-2xl text-[.86rem] font-light leading-[1.9] text-soft">
-                  تُحدَّث هذه الصفحة تلقائياً مع كل إضافة أو تعديل في لوحة المحتوى. واختيار النص الممثل يعتمد على اكتماله وحضور موضوع المرحلة، لا على ادعاء أنه الأكثر قراءة.
-                </p>
               </FadeUp>
             </div>
           </section>
@@ -152,10 +237,10 @@ export default function Decade() {
           <section className="border-b border-hair px-6 py-16 md:px-11 md:py-24">
             <div className="mx-auto max-w-shell">
               <FadeUp>
-                <span className="text-[.78rem] font-semibold text-accent">ثلاثة فصول</span>
+                <span className="text-[.78rem] font-semibold text-accent">{chapterCountWord(document.stages.length)}</span>
                 <h2 className="mt-3 font-display text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-ink">كيف تحرّكت الكتابة؟</h2>
               </FadeUp>
-              <div className="mobile-card-rail mt-10 grid gap-px overflow-hidden rounded-2xl border border-hair bg-hair lg:grid-cols-3">
+              <div className={`mobile-card-rail mt-10 grid gap-px overflow-hidden rounded-2xl border border-hair bg-hair ${document.stages.length >= 3 ? 'lg:grid-cols-3' : document.stages.length === 2 ? 'lg:grid-cols-2' : ''}`}>
                 {document.stages.map((stage, index) => (
                   <FadeUp key={stage.range} delay={index * 0.06} className="bg-canvas p-7 md:p-8">
                     <div className="flex items-center justify-between gap-4 text-[.76rem]">

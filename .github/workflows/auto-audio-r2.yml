@@ -195,6 +195,15 @@ jobs:
           CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
 
+      # مصالحة السجلّ مع R2 قبل التحقّق — تفكّ حلقةً مفرغة أوقفت النشر ساعاتٍ:
+      # ملفٌ حُذف بقي مدخلُه فيُرجع 404 أبداً، وملفٌ أُعيد توليده بحجمٍ جديد بقي
+      # حجمُه القديم مسجّلاً. فتفشل كل تشغيلةٍ ويتراجع كل شيء، ولا يُثبَّت السجلّ
+      # الذي كان سيُصلح العطب — فيُعاد التوليد كل ساعةٍ ويُستهلك رصيد Azure سدى.
+      - name: Reconcile audio manifest with R2 reality
+        run: node scripts/reconcile-audio-meta.mjs --apply
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+
       - name: Verify manifests and build
         run: |
           npm run audio:external:verify

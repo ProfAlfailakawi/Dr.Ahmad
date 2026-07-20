@@ -4,8 +4,9 @@
  *
  * - المصدر مغلق على قائمة المؤسسات والمجلات الموجودة في editorial-policy.json.
  * - التصفية الميكانيكية تمنع الموضوعات غير المناسبة والمصادر غير المعتمدة.
- * - الاختيار لا يعتمد على Gemini؛ لذلك لا تتوقف المختارات عند غياب المفتاح أو ازدحام النموذج.
- * - Gemini يحسّن الصياغة العربية فقط عند توفره، مع بديل آمن لا يختلق أي معلومة.
+ * - لا نموذج لغويّ في هذا الطريق البتة: العنوان والوصف والتاريخ من المصدر كما نشرها.
+ * - سطرٌ عربيٌّ واحد يُستنتج ميكانيكياً من نصّ المادة نفسها (بابها)، ولا يُخترع عليها شيء.
+ * - التنويع مفروضٌ في الاختيار: مصدرٌ ظهر حديثاً يتأخّر عن مصدرٍ لم يظهر.
  * - وثيقة واحدة كحد أقصى يوميًا في site_radar، والرابط الأصلي لا يكتبه النموذج.
  */
 import { readFileSync, existsSync } from 'node:fs'
@@ -26,7 +27,6 @@ if (existsSync(envFile)) {
   }
 }
 
-const sleep = (ms) => new Promise((resolveSleep) => setTimeout(resolveSleep, ms))
 const decodeEntities = (value = '') => String(value)
   .replace(/<!\[CDATA\[|\]\]>/g, '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
@@ -121,87 +121,75 @@ const topicSignals = [
   'تعليم', 'تعلم', 'مدرس', 'معلم', 'طالب', 'جامعة', 'ذكاء اصطناعي', 'تقنية', 'منهج',
 ]
 
-function candidateScore(item) {
+/* ═══ الموضوع بالعربية — استنتاجٌ ميكانيكيّ لا ترجمة ═══
+ *
+ * لا نترجم العنوان (لا نملك مترجماً أميناً بلا نموذج)، لكننا نستطيع أن نقول
+ * بصدقٍ في أي بابٍ تقع المادة: نعدّ إشاراتِ كل باب في العنوان والوصف، ونسمّي
+ * الأعلى. جملةٌ قصيرة، مختلفةٌ من مادةٍ لأخرى، ولا تدّعي ما ليس في النص.
+ */
+const TOPIC_BUCKETS = [
+  { label: 'الذكاء الاصطناعي في التعليم', signals: ['artificial intelligence', 'generative ai', 'chatgpt', 'llm', 'machine learning', 'algorithm', 'ai '] },
+  { label: 'التقييم والامتحانات', signals: ['exam', 'test score', 'assessment', 'grading', 'grade', 'standardized'] },
+  { label: 'المعلّم والممارسة الصفّية', signals: ['teacher', 'teaching', 'classroom', 'instruction', 'pedagog', 'curriculum'] },
+  { label: 'الطالب والتحصيل', signals: ['student', 'learner', 'literacy', 'absent', 'enrollment', 'dropout', 'achievement'] },
+  { label: 'التعليم الجامعي', signals: ['university', 'college', 'campus', 'higher education', 'undergraduate', 'faculty'] },
+  { label: 'سياسات التعليم وتمويله', signals: ['policy', 'funding', 'district', 'reform', 'budget', 'legislat', 'federal'] },
+  { label: 'التقنية والمجتمع الرقمي', signals: ['technology', 'digital', 'platform', 'device', 'screen', 'social media', 'edtech'] },
+  { label: 'البحث العلمي والدراسات', signals: ['research', 'study finds', 'researchers', 'evidence', 'data show'] },
+]
+
+function topicOf(item) {
+  const text = `${item.title} ${item.desc}`.toLocaleLowerCase('en')
+  let best = null
+  for (const bucket of TOPIC_BUCKETS) {
+    const hits = bucket.signals.reduce((count, signal) => count + (text.includes(signal) ? 1 : 0), 0)
+    if (hits && (!best || hits > best.hits)) best = { label: bucket.label, hits }
+  }
+  return best?.label || 'التعليم والتقنية'
+}
+
+function candidateScore(item, tiredSources = new Map()) {
   const text = `${item.title} ${item.desc}`.toLocaleLowerCase('en')
   const signalScore = topicSignals.reduce((score, signal) => score + (text.includes(signal) ? 7 : 0), 0)
   const ageHours = item.publishedAt ? Math.max(0, (Date.now() - item.publishedAt.getTime()) / 3_600_000) : 240
   const freshnessScore = Math.max(0, 36 - Math.min(36, ageHours / 12))
   const detailScore = Math.min(12, item.desc.length / 55)
-  return signalScore + freshnessScore + detailScore
+  /* التنويع: مصدرٌ نشر لنا أمس أقلُّ استحقاقاً من مصدرٍ لم يظهر منذ أسبوعين.
+     أربع بطاقاتٍ متتالية من دارٍ واحدة تجعل «الرادار» صفحةَ نشرةٍ واحدة. */
+  const recent = tiredSources.get(item.source) || 0
+  const varietyPenalty = recent * 26
+  return signalScore + freshnessScore + detailScore - varietyPenalty
 }
 
-function pickCandidate(items) {
-  return [...items].sort((left, right) => candidateScore(right) - candidateScore(left))[0] || null
+function pickCandidate(items, tiredSources = new Map()) {
+  return [...items].sort((left, right) => candidateScore(right, tiredSources) - candidateScore(left, tiredSources))[0] || null
 }
 
-function safeSummary(item) {
+/**
+ * بطاقةُ المادة — من المصدر وحده.
+ *
+ * كانت هنا رحلةٌ إلى Gemini يُطلب فيها عنوانٌ عربيّ، فإذا تعذّرت — ورصيدُ
+ * النموذج ينفد وخدمتُه تزدحم — سقطت إلى جملةٍ قالبية واحدة تُكتب فوق كل
+ * مادةٍ في الدنيا، ثم تُنشر. فخرجت أربع بطاقاتٍ متطابقةٍ في أربعة أيام.
+ *
+ * والرادار لا يحتاج نموذجاً ليصدق: المصدر يعطينا عنواناً حقيقياً ووصفاً
+ * حقيقياً وتاريخاً حقيقياً. نعرضها كما نُشرت، ونضيف سطراً عربياً واحداً هو
+ * بابُ المادة — مستنتَجاً من نصّها لا مخترَعاً عليها. فلا اختراع، ولا تكلفة،
+ * ولا انقطاعَ خدمةٍ يُعطّل الصفحة.
+ *
+ * وحقل ar يبقى فارغاً عمداً: هو إقرارٌ بأن لا صياغةَ عربيةً لهذه المادة،
+ * والواجهة تقرأ فراغه فتُصدّر العنوان الأصلي إلى موضع العنوان بدل أن تدفنه.
+ */
+function sourceSummary(item) {
   return {
-    ar: `مادة حديثة موثوقة في التعليم والتقنية من ${item.source}`,
-    arNote: 'اختارها الرادار لارتباطها المباشر بالتعليم أو التعلم أو الذكاء الاصطناعي. العنوان الأصلي والرابط يظهران كما نشرهما المصدر.',
+    ar: '',
+    arNote: topicOf(item),
     en: item.title,
-    enNote: item.desc ? item.desc.slice(0, 220) : 'A recent item selected from a trusted education or technology source.',
+    enNote: item.desc ? item.desc.slice(0, 260) : '',
     source: item.source,
     url: item.link,
     publishedAt: item.publishedAt?.toISOString() || '',
   }
-}
-
-async function geminiSummary(item) {
-  const key = env.GEMINI_API_KEY || env.GOOGLE_API_KEY
-  if (!key) return safeSummary(item)
-  const models = env.GEMINI_MODEL
-    ? [env.GEMINI_MODEL]
-    : ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-pro-latest']
-
-  const prompt = `أنت محرر أكاديمي لموقع أستاذ تكنولوجيا التعليم د. أحمد حسين الفيلكاوي.
-لخّص المادة التالية من مصدر موثوق، من دون اختراع أي معلومة ومن دون تغيير الرابط أو اسم المصدر.
-أعد JSON فقط:
-{"ar":"عنوان عربي دقيق","arNote":"سطر عربي واحد يشرح لماذا تهم القارئ التربوي","enNote":"one short English line on why it matters"}
-
-المصدر: ${item.source}
-العنوان الأصلي: ${item.title}
-الوصف: ${item.desc || 'لا يوجد وصف إضافي؛ التزم بالعنوان فقط.'}`
-
-  let lastError = ''
-  for (let round = 0; round < 2; round += 1) {
-    for (const model of models) {
-      try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: 'application/json', temperature: 0.25 },
-          }),
-          signal: AbortSignal.timeout(35_000),
-        })
-        if (!response.ok) {
-          lastError = `${model} → ${response.status}`
-          continue
-        }
-        const payload = await response.json()
-        const output = JSON.parse(payload?.candidates?.[0]?.content?.parts?.[0]?.text || '{}')
-        const ar = String(output.ar || '').trim()
-        const arNote = String(output.arNote || '').trim()
-        const enNote = String(output.enNote || '').trim()
-        if (ar.length < 12 || arNote.length < 20) throw new Error('صياغة قصيرة أو فارغة')
-        return {
-          ar: ar.slice(0, 210),
-          arNote: arNote.slice(0, 320),
-          en: item.title,
-          enNote: (enNote || safeSummary(item).enNote).slice(0, 300),
-          source: item.source,
-          url: item.link,
-          publishedAt: item.publishedAt?.toISOString() || '',
-        }
-      } catch (error) {
-        lastError = error instanceof Error ? error.message : String(error)
-      }
-    }
-    if (round === 0) await sleep(8_000)
-  }
-  console.warn(`  ⚠ تعذّر تحسين الصياغة بالذكاء الاصطناعي (${lastError}) — استخدمت البديل الآمن.`)
-  return safeSummary(item)
 }
 
 async function firestoreToken() {
@@ -234,13 +222,32 @@ async function todayAlreadyPublished(token, day) {
   return response.ok
 }
 
-async function recentRadarUrls(token) {
+/**
+ * ما نُشر قريباً: روابطُه لمنع التكرار، ومصادرُه لفرض التنويع.
+ * ووزن الإرهاق يتدرّج: آخرُ ما نُشر أثقل من الذي قبله، فلا يُمنع المصدر
+ * الجيد إلى الأبد — يتأخّر أياماً ثم يعود.
+ */
+async function recentRadar(token) {
   try {
     const response = await fetch(`${firestoreBase()}/site_radar?pageSize=60`, { headers: { Authorization: `Bearer ${token}` } })
-    if (!response.ok) return new Set()
+    if (!response.ok) return { urls: new Set(), tiredSources: new Map() }
     const payload = await response.json()
-    return new Set((payload.documents || []).map((document) => document.fields?.url?.stringValue).filter(Boolean))
-  } catch { return new Set() }
+    const documents = (payload.documents || [])
+      .map((document) => ({
+        url: document.fields?.url?.stringValue || '',
+        source: document.fields?.source?.stringValue || '',
+        day: document.fields?.day?.stringValue || '',
+      }))
+      .sort((left, right) => right.day.localeCompare(left.day))
+    const urls = new Set(documents.map((document) => document.url).filter(Boolean))
+    const tiredSources = new Map()
+    documents.slice(0, 6).forEach((document, index) => {
+      if (!document.source) return
+      const weight = (6 - index) / 6            // الأحدث ١٫٠ ثم يتناقص
+      tiredSources.set(document.source, (tiredSources.get(document.source) || 0) + weight)
+    })
+    return { urls, tiredSources }
+  } catch { return { urls: new Set(), tiredSources: new Map() } }
 }
 
 async function publish(item, token, day) {
@@ -261,7 +268,30 @@ function selfTest() {
   if (items.length !== 1 || !items[0].desc || !items[0].publishedAt) throw new Error('فشل اختبار قارئ RSS')
   const selected = pickCandidate(items)
   if (!selected || selected.link !== 'https://example.org/story') throw new Error('فشل اختبار الاختيار')
-  console.log(JSON.stringify({ ok: true, sources: POLICY.allowedSources.length, parsed: items.length, selected: selected.title }, null, 2))
+
+  /* ١) لا جملةً قالبيةً بعد اليوم: بطاقتان من مصدرٍ واحد يجب أن تختلفا. */
+  const cardA = sourceSummary({ ...selected, source: 'Fixture' })
+  const cardB = sourceSummary({
+    source: 'Fixture', title: 'University funding policy reform debated', link: 'https://example.org/two',
+    desc: 'Lawmakers weigh a new budget for higher education districts.', publishedAt: new Date(),
+  })
+  if (cardA.ar || cardB.ar) throw new Error('حقل ar يجب أن يبقى فارغاً — الواجهة تعتمد فراغه')
+  if (!cardA.en || cardA.en !== selected.title) throw new Error('العنوان الأصلي يجب أن يصل كما نشره المصدر')
+  if (cardA.arNote === cardB.arNote) throw new Error('السطر العربي قالبيّ — مادتان مختلفتان أعطتا السطر نفسه')
+  if (cardA.url !== selected.link) throw new Error('الرابط تغيّر')
+
+  /* ٢) التنويع فعّالٌ لا شعار: مصدرٌ ظهر أمس يخسر أمام مصدرٍ لم يظهر. */
+  const rivals = [
+    { source: 'Tired', title: 'AI in the classroom for teachers', link: 'https://a.org/1', desc: 'A long piece about artificial intelligence and student learning in school.'.repeat(3), publishedAt: new Date() },
+    { source: 'Fresh', title: 'AI in the classroom for teachers', link: 'https://b.org/1', desc: 'A long piece about artificial intelligence and student learning in school.'.repeat(3), publishedAt: new Date() },
+  ]
+  if (pickCandidate(rivals, new Map()).source !== 'Tired') throw new Error('الترتيب الأساسي اختلّ')
+  if (pickCandidate(rivals, new Map([['Tired', 1]])).source !== 'Fresh') throw new Error('التنويع لا يعمل — المصدر المُرهَق ما زال يفوز')
+
+  console.log(JSON.stringify({
+    ok: true, sources: POLICY.allowedSources.length, parsed: items.length,
+    selected: selected.title, topic: cardA.arNote, variety: 'enforced', gemini: 'removed',
+  }, null, 2))
 }
 
 if (SELF_TEST) {
@@ -281,7 +311,7 @@ if (await todayAlreadyPublished(token, day)) {
 const raw = (await Promise.all(POLICY.allowedSources.map(fetchFeed))).flat()
 console.log(`\nالتقط ${raw.length} مادة خام`)
 
-const recentUrls = await recentRadarUrls(token)
+const { urls: recentUrls, tiredSources } = await recentRadar(token)
 const pool = raw.filter((item) => {
   if (recentUrls.has(item.link)) return false
   if (item.publishedAt && Date.now() - item.publishedAt.getTime() > 21 * 86_400_000) return false
@@ -299,8 +329,12 @@ if (!pool.length) {
   process.exit(0)
 }
 
-const chosen = pickCandidate(pool)
-const summary = await geminiSummary(chosen)
-console.log(`اختار: ${chosen.title}\nالمصدر: ${chosen.source}\nالرابط: ${chosen.link}`)
+if (tiredSources.size) {
+  console.log(`تنويع: ${[...tiredSources.keys()].join(' · ')} ظهرت حديثاً — تتأخّر في الترجيح`)
+}
+
+const chosen = pickCandidate(pool, tiredSources)
+const summary = sourceSummary(chosen)
+console.log(`اختار: ${chosen.title}\nالمصدر: ${chosen.source}\nالباب: ${summary.arNote}\nالرابط: ${chosen.link}`)
 await publish(summary, token, day)
 console.log('\n✔ نُشرت مختارة الإنترنت في site_radar وتظهر فورًا في /curated')

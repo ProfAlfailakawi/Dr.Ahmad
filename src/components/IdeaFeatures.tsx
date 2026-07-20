@@ -6,6 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as Reac
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { readTone, TONE_LABEL, type Tone } from '../lib/card-intelligence'
 
 type Art = { slug: string; title: string; iso: string; cat: string; excerpt?: string; body?: string }
 
@@ -323,6 +324,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   const [img, setImg] = useState<string | null>(null)
   const [cardQuote, setCardQuote] = useState('')
   const [template, setTemplate] = useState<CardTemplateKey>('midad')
+  const [smartTone, setSmartTone] = useState<Tone | null>(null)
   const [format, setFormat] = useState<CardFormatKey>('square')
   const [quoteSaved, setQuoteSaved] = useState(false)
   const [downloadFeedback, setDownloadFeedback] = useState('')
@@ -480,6 +482,13 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
     setCardQuote(quote)
     setQuoteSaved(isReaderQuoteSaved(current, quote, paragraph))
     setDownloadFeedback('')
+    /* البطاقة تفهم النصّ: نقرأ نبرة الاقتباس فنختار له القالب الذي يليق به —
+       الحزينُ يأخذ فخامة الليل، والقاطعُ يأخذ اللوح. اقتراحٌ لا إلزام: القارئ
+       يبدّل بضغطة. ولا يُثقل البطء: قراءةٌ حسابيّة فوريّة بلا شبكة. */
+    const smart = readTone(quote)
+    const picked = (smart.confidence > 0 ? smart.template : template) as CardTemplateKey
+    setTemplate(picked)
+    setSmartTone(smart.confidence > 0 ? smart.tone : null)
     setView('card'); setPos(null)
     /* اقتباس القارئ يُحتسب بمجرّد صنع البطاقة، لا بحفظها في الدفتر وحده: من ظلّل
        جملةً وصنع منها بطاقة فقد اقتبسها فعلاً. عضوية القارئ الواحدة في المعاملة
@@ -496,9 +505,9 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         },
       }))
     }
-    await renderCard(quote, template, format)
+    await renderCard(quote, picked, format)
   }
-  const chooseTemplate = (tpl: CardTemplateKey) => { setTemplate(tpl); void renderCard(cardQuote, tpl, format) }
+  const chooseTemplate = (tpl: CardTemplateKey) => { setTemplate(tpl); setSmartTone(null); void renderCard(cardQuote, tpl, format) }
   const chooseFormat = (fmt: CardFormatKey) => { setFormat(fmt); void renderCard(cardQuote, template, fmt) }
   const close = () => { setView(null); setImg(null); setSel(''); setQuoteSaved(false); setDownloadFeedback(''); setOffsets({ startOffset: 0, endOffset: 0 }) }
 
@@ -703,12 +712,16 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
               transition={{ duration: 0.32 }} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()} className="quote-card-dialog pb-2"
             >
               <div className="quote-card-controls sticky top-0 z-10 mb-3 flex flex-wrap items-center justify-center gap-1.5 rounded-2xl bg-ink/90 p-2 shadow-lg backdrop-blur">
-                {CARD_TEMPLATES.map((t) => (
-                  <button key={t.key} type="button" onPointerDown={(event) => firstPress(event, () => chooseTemplate(t.key))} onClick={(event) => { if (event.detail === 0) chooseTemplate(t.key) }} title={t.hint}
-                    className={`rounded-full px-3.5 py-1.5 text-[.74rem] font-semibold transition-colors ${template === t.key ? 'bg-canvas text-ink' : 'border border-canvas/35 text-canvas/85 hover:border-canvas'}`}>
-                    {t.label}
-                  </button>
-                ))}
+                {CARD_TEMPLATES.map((t) => {
+                  const isSmart = smartTone != null && template === t.key
+                  return (
+                    <button key={t.key} type="button" onPointerDown={(event) => firstPress(event, () => chooseTemplate(t.key))} onClick={(event) => { if (event.detail === 0) chooseTemplate(t.key) }}
+                      title={isSmart ? `اخترناه لك — النصّ ${TONE_LABEL[smartTone]}` : t.hint}
+                      className={`rounded-full px-3.5 py-1.5 text-[.74rem] font-semibold transition-colors ${template === t.key ? 'bg-canvas text-ink' : 'border border-canvas/35 text-canvas/85 hover:border-canvas'}`}>
+                      {isSmart && '✨ '}{t.label}
+                    </button>
+                  )
+                })}
                 <span className="mx-1 h-4 w-px bg-canvas/30" />
                 {CARD_FORMATS.map((f) => (
                   <button key={f.key} type="button" onPointerDown={(event) => firstPress(event, () => chooseFormat(f.key))} onClick={(event) => { if (event.detail === 0) chooseFormat(f.key) }} title={f.hint}

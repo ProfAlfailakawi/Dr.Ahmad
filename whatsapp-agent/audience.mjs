@@ -54,12 +54,19 @@ export function ensureAudienceSchema(db) {
  * فتتنكّر القروبات في هيئة قوائم يدوية.)
  */
 function purgeDiscoveredGroups(db) {
-  const strays = db.all('SELECT id FROM broadcast_lists WHERE jid IS NOT NULL')
-  for (const row of strays) {
-    db.run('DELETE FROM broadcast_members WHERE list_id=?', row.id)
-    db.run('DELETE FROM broadcast_lists WHERE id=?', row.id)
-  }
-  if (strays.length) db.addAudit('groups.purged', '', `مُحيت ${strays.length} مجموعة مسحوبة`)
+  /* ★ لم يعد يمحو شيئاً.
+     كان يُنفَّذ في **كل إقلاعٍ للوكيل**، فيحذف كل قائمةٍ يحمل عمود jid فيها
+     قيمةً — ومعها كلَّ أعضائها — بلا تأكيدٍ ولا استرجاع. وقد محا ثمانيَ
+     وعشرين دفعةً واحدة (سجلّ 2026-07-19). فمن جمع أرقامه ورتّبها في قائمةٍ
+     ثم أعاد تشغيل الوكيل وجدها ذهبت، ولا يدري لماذا.
+
+     والمقصد الأصليّ صحيح: القروبات المسحوبة آلياً ليست قوائم الدكتور. لكن
+     العلاج كان الحذف، وصار الإخفاء: تُوسَم `hidden` فتغيب عن اللوحة ويبقى
+     كل شيءٍ في مكانه، فما غاب خطأً يعود بشطب الوسم لا بإعادة العمل كلّه.
+     ولا يمحو هذا الملفُّ صفّاً واحداً من قوائم الدكتور بعد اليوم. */
+  const strays = db.all("SELECT id FROM broadcast_lists WHERE jid IS NOT NULL AND COALESCE(kind,'') <> 'hidden'")
+  for (const row of strays) db.run("UPDATE broadcast_lists SET kind='hidden' WHERE id=?", row.id)
+  if (strays.length) db.addAudit('groups.hidden', '', `أُخفيت ${strays.length} مجموعة مسحوبة — ولم تُحذف`)
 }
 
 /**
@@ -100,8 +107,9 @@ export function displayNameOf(row) {
    «الشيخة» إلى «الشيخ» + «ة». */
 const HONORIFIC = /^(?:(?:[أا]\s*\.?\s*د\s*\.|د\s*\.|[أا]\s*\.|م\s*\.)\s*|(?:دكتورة?|الدكتورة?|[أا]ستاذة?|ال[أا]ستاذة?|مهندسة?|المهندسة?|الشيخة?|الحاجة?|المعلمة?|ال[أا]خ|ال[أا]خت)\s+)/
 
-/* رؤوس الأسماء المركّبة: «عبد» و«أبو» و«أم» لا تقوم وحدها أبداً */
-const COMPOUND_HEAD = /^(?:عبد|عبدال|أبو|ابو|أبا|ابا|أم|ام|ابن|بن|ذو|أبي|ابي)$/
+/* رؤوس الأسماء المركّبة: «عبد» و«أبو» و«أم» لا تقوم وحدها أبداً.
+   والكنية الكويتية «بو» و«بو محمد» و«بومحمد» رأسٌ كذلك — تُصان مع تاليها. */
+const COMPOUND_HEAD = /^(?:عبد|عبدال|أبو|ابو|أبا|ابا|أم|ام|ابن|بن|ذو|أبي|ابي|بو|ابو|بومحمد|بوعبدالله)$/
 
 /**
  * كنية النداء في الرسالة — الاسم الأول وحده، لكن بأدبٍ عربيّ:
@@ -114,6 +122,41 @@ const COMPOUND_HEAD = /^(?:عبد|عبدال|أبو|ابو|أبا|ابا|أم|ا
  * قاعدتان: اللقب الذي كتبه الدكتور يبقى، و«عبد» لا تُفصل عمّا بعدها —
  * فمناداة رجلٍ بـ«عبد» وحدها إساءةٌ لا اختصار.
  */
+/**
+ * كاشف الجنس من الاسم والألقاب — لتصريف التحية: «أهلاً» عامّة، لكن «الشيخة»
+ * تُنادى «حيّاكِ» لا «حيّاك». نستدلّ ولا نجزم: عند الشكّ نُحيّد الصيغة فلا نُخطئ.
+ *
+ *   ١) اللقب المؤنّث قاطع: الشيخة · الدكتورة · الأستاذة · الحاجّة · الأخت · أمّ فلان.
+ *   ٢) اللقب المذكّر قاطع: الشيخ · أبو فلان · بو فلان.
+ *   ٣) تاء التأنيث في آخر الاسم الأول (فاطمة · دانة · مها) — أضعفُ دليلاً.
+ *   ٤) أسماءٌ مؤنّثة شائعة بلا تاء (مريم · هند · سعاد · رغد).
+ *
+ * يعيد 'f' أو 'm' أو '' (حياديّ) — والحياديّ يأخذ الصيغة المحايدة فلا يُساء.
+ */
+/* حدُّ الكلمة العربيّة: لا نستعمل \b — إنها لا تعرف الحروف العربية فتفشل على
+   «الشيخ». نطلب بدايةً أو مسافة قبل اللقب، ونهايةً أو مسافة بعده. والصور مطبَّعة
+   الهمزات كي يتساوى «أبو» و«ابو». */
+const norm = (s) => String(s || '').replace(/[أإآٱ]/g, 'ا').replace(/ـ/g, '')
+const FEMALE_TITLE = /(?:^|\s)(?:الشيخه|شيخه|الدكتوره|دكتوره|الاستاذه|استاذه|المهندسه|مهندسه|الحاجه|حاجه|المعلمه|معلمه|الاخت|ام)(?:\s|$)/
+/* «بو» و«ابو» كنيةٌ مذكّرة: بمسافة («بو محمد») أو ملتصقة («بومحمد»). ونطلب أن
+   يتلوها اسمٌ كي لا نلتقط كلمةً تصادف بدأها بـ«بو» أو «ابو». */
+const MALE_TITLE = /(?:^|\s)(?:الشيخ|شيخ|الاخ)(?:\s|$)|(?:^|\s)(?:ابو|بو)(?:\s|محمد|عبد|علي|احمد|خالد|ناصر|سعد|فهد|يوسف|عبدالله)/
+const FEMALE_NAMES = new Set('مريم هند سعاد رغد ابتهال اسماء وضحه نوره نورا دانه امل مها ريم سلمي شيخه موضي بشاير الجوهره لطيفه شهد غزلان روان ميار جوري رنا دلال عبير هيا شذي وعد فاطمه عائشه خديجه زينب سميه منيره حصه شريفه'.split(' '))
+
+export function detectGender(row) {
+  const raw = String(row?.nickname || row?.wa_name || row?.display_name || '')
+  const name = norm(raw).replace(/ة/g, 'ه')
+  /* اللقب المؤنّث يُفحص أولاً: «الشيخة» تحوي «الشيخ» فلو بدأنا بالمذكّر لأخطأنا */
+  if (FEMALE_TITLE.test(name)) return 'f'
+  if (MALE_TITLE.test(name)) return 'm'
+  const bare = norm(raw).replace(HONORIFIC, '').trim()
+  const first = (bare.split(/\s+/).filter(Boolean)[0] || '').replace(/ة$/, 'ه')
+  if (FEMALE_NAMES.has(first)) return 'f'
+  /* تاء التأنيث آخر الاسم الأول — دليلٌ أضعف، لا يُغلَّب على ذكورة اسمٍ معروف */
+  if (/(?:ه|اء)$/.test(first) && first.length >= 3 && !/^(?:عبد|يحي|زكري|اسام|حمز|طلح|معاوي)/.test(first)) return 'f'
+  return ''
+}
+
 export function vocativeOf(row) {
   const raw = String(row.nickname || row.wa_name || row.display_name || '').replace(/[‎‏]/g, '').replace(/\s+/g, ' ').trim()
   if (!raw || /^\+?\d[\d\s-]*$/.test(raw)) return ''      // رقمٌ لا اسم: لا نُنادي به إنساناً
@@ -142,6 +185,11 @@ export function absorbContacts(db, contacts = []) {
     const jid = contact?.id || contact?.jid
     if (!jid || typeof jid !== 'string') continue
     if (!jid.endsWith('@s.whatsapp.net')) continue          // أفراد فقط: لا مجموعات ولا حالات
+    /* الجلسة الجديدة (LID) ترسل معرّفاتٍ مشفّرة «v1:…» بلا رقمٍ حقيقيّ خلفها،
+       فكانت تُخزَّن ٣٠٨٢ «جهة» أرقامها طلاسم — وهي التي رآها الدكتور غريبة.
+       نرفض كل ما لا يبدأ برقمٍ دوليّ حقيقيّ، فلا يعود الطلسم يدخل الدفتر. */
+    const localPart = jid.split('@')[0]
+    if (!/^\d{7,15}(:\d+)?$/.test(localPart)) continue
     const waName = String(contact.name || contact.notify || contact.verifiedName || '').trim()
     const id = db.jidKey(jid)
     const existing = db.get('SELECT id, wa_name FROM contacts WHERE id=?', id)
@@ -357,7 +405,8 @@ function importContactsInner(db, text, { listId = '' } = {}) {
 /* ═══ القوائم ═══ */
 
 export function listLists(db) {
-  return db.all('SELECT * FROM broadcast_lists ORDER BY name COLLATE NOCASE').map((row) => ({
+  /* المخفيّة تغيب عن العرض وتبقى في الجدول — تُستردّ من «المحذوفات» */
+  return db.all("SELECT * FROM broadcast_lists WHERE COALESCE(kind,'') <> 'hidden' ORDER BY name COLLATE NOCASE").map((row) => ({
     id: row.id,
     name: row.name || 'قائمة بلا اسم',
     note: row.note || '',
@@ -385,11 +434,33 @@ export function renameList(db, listId, name, note) {
   return { ok: true }
 }
 
+/**
+ * حذف القائمة صار إخفاءً — والأعضاء يبقون.
+ *
+ * بأمر الدكتور: «تأكّد ١٠٠٠٠٠٪ أن ما في شي يُمسح إطلاقاً». وقد أفنى وقتاً في
+ * انتقاء مئةٍ وتسعةٍ وثمانين رقماً ثم ذهبت القائمة بضغطةٍ واحدة، فلم يبقَ منها
+ * أثر: الصفوف مُسحت من الجدولين معاً.
+ *
+ * فالقائمة تُوسَم `hidden` وتغيب عن اللوحة، وأعضاؤها في مكانهم. ومن ندم على
+ * الحذف استُرجعت له بشطب الوسم — لا بإعادة الانتقاء من أوله.
+ */
 export function deleteList(db, listId) {
-  db.run('DELETE FROM broadcast_members WHERE list_id=?', listId)
-  db.run('DELETE FROM broadcast_lists WHERE id=?', listId)
-  db.addAudit('list.delete', listId, '')
+  db.run("UPDATE broadcast_lists SET kind='hidden', updated_at=? WHERE id=?", now(), listId)
+  const kept = db.get('SELECT COUNT(*) c FROM broadcast_members WHERE list_id=?', listId)?.c || 0
+  db.addAudit('list.hidden', listId, `أُخفيت — و${kept} عضواً محفوظون`)
+  return { ok: true, hidden: true, keptMembers: kept }
+}
+
+/** استرجاع قائمةٍ أُخفيت — بضغطةٍ واحدة، بلا إعادة انتقاء */
+export function restoreList(db, listId) {
+  db.run("UPDATE broadcast_lists SET kind='manual', updated_at=? WHERE id=?", now(), listId)
+  db.addAudit('list.restored', listId, 'أُعيدت بأعضائها')
   return { ok: true }
+}
+
+/** القوائم المخفيّة — ليراها الدكتور ويستردّ ما ندم عليه */
+export function hiddenLists(db) {
+  return db.all("SELECT id,name,note,updated_at,(SELECT COUNT(*) FROM broadcast_members m WHERE m.list_id=broadcast_lists.id) AS members FROM broadcast_lists WHERE COALESCE(kind,'')='hidden' ORDER BY updated_at DESC")
 }
 
 export function listMembers(db, listId) {
@@ -445,8 +516,14 @@ function syncCount(db, listId) {
  */
 export function personalize(text, member, at = new Date()) {
   const hour = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'Asia/Kuwait' }).format(at))
-  const greeting = hour < 12 ? 'صباح الخير' : hour < 17 ? 'مساء الخير' : 'مساء الخير'
-  let out = String(text || '').replace(/\{\s*تحية\s*\}/g, greeting)
+  const greeting = hour < 12 ? 'صباح الخير' : 'مساء الخير'
+  /* {ترحيب} تصريفٌ يخصّ الجنس: «حيّاك الله» للرجل و«حيّاكِ الله» للمرأة، وعند
+     الشكّ «أهلاً» المحايدة. أمّا {تحية} فتبقى «صباح/مساء الخير» للجميع. */
+  const gender = detectGender(member || {})
+  const welcome = gender === 'f' ? 'حيّاكِ الله' : gender === 'm' ? 'حيّاك الله' : 'أهلاً'
+  let out = String(text || '')
+    .replace(/\{\s*تحية\s*\}/g, greeting)
+    .replace(/\{\s*ترحيب\s*\}/g, welcome)
   const vocative = member?.vocative || ''
   if (vocative) out = out.replace(/\{\s*الاسم\s*\}/g, vocative)
   else {
@@ -474,4 +551,40 @@ export function resolveAudience(db, listId) {
 export function previewFor(db, listId, text, limit = 3) {
   const { send } = resolveAudience(db, listId)
   return send.slice(0, limit).map((member) => ({ name: member.name, body: personalize(text, member) }))
+}
+
+/* ═══ اختبار ذاتي: الجنس والألقاب ═══
+   يُشغَّل: node whatsapp-agent/audience.mjs --self-test
+   يحرس أدقّ ما في الشخصنة — إساءةُ مناداةٍ بجنسٍ خطأ تُغضب المتلقّي. */
+if (import.meta.url === `file://${process.argv[1]}` && process.argv.includes('--self-test')) {
+  const assert = (c, m) => { if (!c) throw new Error(`✘ ${m}`) }
+  const g = (name) => detectGender({ nickname: name })
+  const v = (name) => vocativeOf({ nickname: name })
+
+  /* الألقاب المؤنّثة قاطعة */
+  assert(g('الشيخة نوره') === 'f', 'الشيخة أنثى')
+  assert(g('الدكتورة أمل') === 'f', 'الدكتورة أنثى')
+  assert(g('أم خالد') === 'f', 'أمّ فلان أنثى')
+  assert(g('الأخت سميه') === 'f', 'الأخت أنثى')
+  /* الألقاب المذكّرة قاطعة، ولا تخدعها «الشيخة» */
+  assert(g('الشيخ عبدالله') === 'm', '★ الشيخ ذكر — لا تبتلعه الشيخة')
+  assert(g('أبو أنس') === 'm', 'أبو فلان ذكر')
+  assert(g('بو محمد') === 'm', 'بو فلان ذكر')
+  assert(g('بومحمد الكندري') === 'm', '★ الكنية الملتصقة «بومحمد» ذكر')
+  /* الأسماء بلا لقب */
+  assert(g('مريم') === 'f' && g('فاطمة') === 'f' && g('دانه') === 'f', 'أسماء مؤنّثة معروفة')
+  assert(g('حمزة') !== 'f' && g('أسامة') !== 'f', '★ «حمزة» و«أسامة» ليسا أنثى رغم التاء')
+  assert(g('عبدالله') !== 'f', '«عبدالله» ليس أنثى')
+
+  /* الألقاب تُصان في النداء */
+  assert(v('الشيخ عبدالله الصباح') === 'الشيخ عبدالله', 'لقب الشيخ يبقى في النداء')
+  assert(v('الشيخة نوره الاحمد') === 'الشيخة نوره', 'لقب الشيخة يبقى')
+  assert(v('بو محمد العنزي') === 'بو محمد', 'الكنية تُصان')
+
+  /* التحية المصرَّفة */
+  assert(personalize('{ترحيب}', { nickname: 'الشيخة نوره' }).includes('حيّاكِ'), 'المرأة تُنادى «حيّاكِ»')
+  assert(personalize('{ترحيب}', { nickname: 'أبو أنس' }).includes('حيّاك الله'), 'الرجل «حيّاك الله»')
+  assert(personalize('{ترحيب}', { nickname: 'خالد' }) === 'أهلاً', 'المحايد «أهلاً» — لا نُخطئ جنساً')
+
+  console.log('✓ اختبارات الجنس والألقاب: 18/18')
 }

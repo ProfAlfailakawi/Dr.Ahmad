@@ -22,6 +22,40 @@ const decode = (value) => JSON.parse(value, (_key, item) => {
   return legacy || item
 })
 
+/**
+ * تصنيف ما وصل: أنصٌّ هو، أم وسائط، أم ضجيجُ بروتوكول؟
+ *
+ * ثلاثةٌ لا اثنان — والخلط بينها هو الذي أوقع العطبين:
+ *  • **نصّ**: كلامٌ مكتوب بيد إنسان. هو وحده يُردّ عليه.
+ *  • **وسائط**: صوتٌ وصورةٌ وفيديو وموقعٌ واستطلاعٌ وجهة اتصال… يراها الدكتور
+ *    بعينه ولا تردّ عليها آلة.
+ *  • **ضجيج**: حذفُ رسالةٍ، وتفاعلٌ بإيموجي، وإيصالُ قراءة، ومفاتيحُ تعمية.
+ *    لا يُردّ عليه، ولا يُعدّ تدخّلاً من الدكتور. وعدُّه وسائطَ خطأٌ فادح:
+ *    فحذفُ الدكتور رسالةً يصير «ردّاً بيده» فيُسكت البوت عن محادثةٍ لم يدخلها.
+ *
+ * ويُفكّ الغلافان — المؤقتة ولمرّةٍ واحدة — قبل الحكم، وإلا حُكم على الغلاف.
+ */
+export function classifyPayload(payload) {
+  let body = payload || {}
+  for (let depth = 0; depth < 3; depth += 1) {
+    const inner = body.ephemeralMessage?.message || body.viewOnceMessage?.message
+      || body.viewOnceMessageV2?.message || body.viewOnceMessageV2Extension?.message
+      || body.documentWithCaptionMessage?.message || body.editedMessage?.message
+    if (!inner) break
+    body = inner
+  }
+  const NOISE = new Set(['protocolMessage', 'reactionMessage', 'pollUpdateMessage', 'senderKeyDistributionMessage', 'messageContextInfo', 'keepInChatMessage', 'stickerSyncRmrMessage'])
+  const TEXT = new Set(['conversation', 'extendedTextMessage'])
+  const kinds = Object.keys(body).filter((kind) => body[kind] != null)
+  const meaningful = kinds.filter((kind) => !NOISE.has(kind))
+  return {
+    isNoise: meaningful.length === 0,
+    isText: meaningful.length > 0 && meaningful.every((kind) => TEXT.has(kind)),
+    hasMedia: meaningful.some((kind) => !TEXT.has(kind)),
+    body,
+  }
+}
+
 export class MockTransport extends EventEmitter {
   constructor() { super(); this.status = 'disconnected'; this.sent = []; this.qr = null }
   async connect() { this.status = 'connected'; this.emit('status', this.status); return { status: this.status } }
@@ -48,6 +82,20 @@ export async function createWhatsAppTransport({ db, onMessage, onContacts, onQr,
   const makeWASocket = baileys.default || baileys.makeWASocket
   if (typeof makeWASocket !== 'function') throw new Error('إصدار Baileys لا يصدّر makeWASocket المتوقع.')
   const events = new EventEmitter()
+
+  /* بصماتُ ما أرسله البوت للتوّ — تُغلق سباقاً بين حدث الوصول وكتابة السجل.
+     خمسُ ثوانٍ تكفي: صدى الرسالة يعود في أقلّ من ثانيةٍ عادةً، وما جاوزها فهو
+     كلامُ الدكتور فعلاً. والخريطة تُنظَّف بنفسها فلا تتضخّم. */
+  const recentlySent = new Map()
+  const ECHO_WINDOW_MS = 5000
+  const justSentByBot = (text) => {
+    const key = String(text || '').trim().slice(0, 120)
+    if (!key) return false
+    const at = recentlySent.get(key)
+    const now = Date.now()
+    for (const [k, t] of recentlySent) if (now - t > ECHO_WINDOW_MS) recentlySent.delete(k)
+    return Boolean(at && now - at <= ECHO_WINDOW_MS)
+  }
   let socket = null
   let status = 'disconnected'
   let reconnects = 0
@@ -78,7 +126,10 @@ export async function createWhatsAppTransport({ db, onMessage, onContacts, onQr,
   const setStatus = (next, extra = {}) => { status = next; db.setState({ status: next, ...extra }); events.emit('status', { status: next, ...extra }) }
   const connect = async ({ phoneNumber } = {}) => {
     stopping = false
-    setStatus(reconnects ? 'reconnecting' : 'pairing', { qr: null, pairing_code: null })
+    /* لا نمسح qr هنا: باييليز يُطلق connection.update مرّاتٍ متتابعة أثناء
+       الاقتران، فكان كل تحديثٍ يمحو الرمز الذي حفظه سابقه — فيبقى الحقل فارغاً
+       دائماً ولا تعرضه اللوحة أبداً. الرمز يُمحى عند الاتصال الناجح وحده. */
+    setStatus(reconnects ? 'reconnecting' : 'pairing', { pairing_code: null })
     socket = makeWASocket({
       auth: authState,
       printQRInTerminal: false,
@@ -102,12 +153,25 @@ export async function createWhatsAppTransport({ db, onMessage, onContacts, onQr,
         const jid = message?.key?.remoteJid
         const messageId = message?.key?.id
         const fromMe = Boolean(message?.key?.fromMe)
-        const text = message?.message?.conversation || message?.message?.extendedTextMessage?.text || message?.message?.imageMessage?.caption || ''
-        const hasMedia = Boolean(message?.message?.imageMessage || message?.message?.audioMessage || message?.message?.videoMessage || message?.message?.documentMessage || message?.message?.stickerMessage)
+        const { isText, hasMedia, isNoise, body } = classifyPayload(message?.message)
+        /* النصّ يُقرأ من الغلاف المفكوك، وإلا خرج فارغاً في الرسائل المؤقتة */
+        const text = body?.conversation || body?.extendedTextMessage?.text || body?.imageMessage?.caption || ''
         if (!jid || !messageId) continue
+        /* ضجيجُ البروتوكول — حذفٌ، وتفاعلٌ، وإيصالُ قراءة، ومفاتيحُ تعمية.
+           لا هو كلامُ إنسانٍ يُردّ عليه، ولا هو تدخّلٌ يُسكت البوت. يُطرح كلّه
+           قبل كل شيء، وإلا حسبنا حذفَ الدكتور لرسالةٍ ردّاً منه بيده فأسكتنا
+           البوت عن محادثةٍ لم يتدخّل فيها أصلاً. */
+        if (isNoise) continue
         if (fromMe) {
+          /* لا يُسكت البوتَ إلا نصٌّ حقيقيّ كتبه الدكتور بيده. كان كلُّ حدثٍ
+             fromMe يُسكته — بما فيه إيصالاتُ القراءة وتحديثاتُ الحالة ورسائلُ
+             البوت التي تأخّر تسجيلُ معرّفها. فكان يُسكت نفسه بنفسه بعد كل ردّ
+             (تدخّلان متتاليان بفارق ثوانٍ في السجل)، ويظنّ الدكتور أنه معطوب.
+             والقاعدة المقصودة: من ردّ بيده يصمت البوت — لا من فتح المحادثة. */
           const isBotEcho = db.get('SELECT message_id FROM outbox_messages WHERE message_id=?', messageId)
-          if (!isBotEcho) events.emit('manual-takeover', jid)
+          /* تدخّلٌ حقيقيّ = كلامٌ أو وسائط أرسلها الدكتور. والضجيج طُرح أعلاه. */
+          const realReply = isText || hasMedia
+          if (!isBotEcho && realReply && !justSentByBot(text)) events.emit('manual-takeover', jid)
           continue
         }
         if (db.get('SELECT message_id FROM processed_messages WHERE message_id=?', messageId)) continue
@@ -118,7 +182,11 @@ export async function createWhatsAppTransport({ db, onMessage, onContacts, onQr,
     })
     socket.ev.on('connection.update', async (update) => {
       if (update.qr) {
-        db.setState({ status: 'pairing', qr: null, pairing_code: null })
+        /* كان يُكتب qr: null هنا فيُمحى الرمز قبل أن يُحفظ — يُطبع في سجلّ
+           الطرفية وحده، ولا تراه اللوحة أبداً. فيضطر الدكتور إلى فتح السجل
+           أو الرجوع إليّ لكل ربط. نحفظه الآن فتعرضه اللوحة، وهو يتجدّد كل
+           عشرين ثانية فيُستبدل بأحدثه تلقائياً. */
+        db.setState({ status: 'pairing', qr: update.qr, pairing_code: null })
         if (qrcodeTerminal?.generate) qrcodeTerminal.generate(update.qr, { small: true })
         else console.log('ظهر QR للاقتران. استخدم --phone=965XXXXXXXX للحصول على رمز اقتران بدلًا من QR.')
         onQr?.(update.qr); events.emit('qr', update.qr)
@@ -171,6 +239,11 @@ export async function createWhatsAppTransport({ db, onMessage, onContacts, onQr,
     getConnectionStatus: () => status,
     async sendText(jid, text) {
       if (!socket || status !== 'connected') throw new Error('واتساب غير متصل')
+      /* نُعلن نصّ الرسالة قبل إرسالها: حدث messages.upsert قد يصل قبل أن يعود
+         sendMessage، فلا يجد معرّفها في outbox بعدُ فيحسبها رداً من الدكتور
+         ويُسكت البوت — أي أن البوت كان يُسكت نفسه بردّه. */
+      const fingerprint = String(text || '').trim().slice(0, 120)
+      if (fingerprint) recentlySent.set(fingerprint, Date.now())
       const result = await socket.sendMessage(jid, { text })
       const messageId = result?.key?.id || result?.id
       if (messageId) db.run('INSERT OR IGNORE INTO outbox_messages(message_id,jid,source,created_at) VALUES(?,?,?,?)', messageId, db.jidKey(jid), 'bot', new Date().toISOString())

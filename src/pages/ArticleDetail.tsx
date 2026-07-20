@@ -435,12 +435,12 @@ function ReadingLayers({ hasAudio, hasEvolution, slug }: { hasAudio: boolean; ha
         <div className="mt-3 flex flex-wrap gap-2">
           {links.map((link) => (
             link.action === 'audio' ? (
-              <button key="audio" type="button" onClick={() => openAudioPlayer(`article-audio-${slug}`)} className="rounded-full border border-hair bg-canvas px-3.5 py-2 text-[.76rem] leading-none text-soft transition-colors hover:border-accent hover:text-accent">
+              <button key="audio" type="button" onClick={() => openAudioPlayer(`article-audio-${slug}`)} className="rounded-full border border-hair bg-canvas px-3.5 py-1.5 text-[.76rem] leading-[1.5] text-soft transition-colors hover:border-accent hover:text-accent">
                 <span className="font-semibold text-ink">{link.label}</span>
                 <span className="ms-2 text-soft/80">{link.note}</span>
               </button>
             ) : (
-              <a key={link.href} href={link.href} onClick={(event) => { event.preventDefault(); goToLayer(link.href as string) }} className="rounded-full border border-hair bg-canvas px-3.5 py-2 text-[.76rem] leading-none text-soft transition-colors hover:border-accent hover:text-accent">
+              <a key={link.href} href={link.href} onClick={(event) => { event.preventDefault(); goToLayer(link.href as string) }} className="rounded-full border border-hair bg-canvas px-3.5 py-1.5 text-[.76rem] leading-[1.5] text-soft transition-colors hover:border-accent hover:text-accent">
                 <span className="font-semibold text-ink">{link.label}</span>
                 <span className="ms-2 text-soft/80">{link.note}</span>
               </a>

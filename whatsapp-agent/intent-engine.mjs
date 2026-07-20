@@ -395,8 +395,52 @@ function sessionAlive(session) {
   return Date.now() - new Date(last).getTime() < SESSION_HOURS * 3600 * 1000
 }
 
+/** هل هذه محادثةُ مجموعة؟ */
+export const isGroupJid = (jid) => String(jid || '').toLowerCase().endsWith('@g.us')
+
+/**
+ * المحادثات الفردية وحدها — قائمةُ سماحٍ مغلقة، لا قائمةَ منع.
+ *
+ * ومنعُ المجموعات وحدها لا يكفي: واتساب يسوق إلى الوكيل أنواعاً أخرى بالصورة
+ * نفسها — الحالات `status@broadcast`، والقنوات `@newsletter`، وقوائم البثّ
+ * `@broadcast`. ولم يكن في الكود كلّه سطرٌ واحد يميّز نوع المحادثة، فكان ردٌّ
+ * آليّ على حالةِ أحدهم ممكناً تماماً كالردّ في المجموعة.
+ *
+ * وقائمةُ المنع تُصلح ما عرفناه اليوم وتترك ما يستحدثه واتساب غداً؛ أما قائمة
+ * السماح فتصمت عن كل جديدٍ حتى نأذن له. والصمت هو الوضع الآمن هنا.
+ */
+const PRIVATE_CHAT_SUFFIXES = ['@s.whatsapp.net', '@c.us', '@lid']
+export const isPrivateChat = (jid) => {
+  const value = String(jid || '').toLowerCase()
+  return PRIVATE_CHAT_SUFFIXES.some((suffix) => value.endsWith(suffix))
+}
+
+/** وصفٌ عربيّ لنوع المحادثة — ليقرأه الدكتور في السجل بلا رطانة */
+export const chatKindLabel = (jid) => {
+  const value = String(jid || '').toLowerCase()
+  if (value.endsWith('@g.us')) return 'مجموعة'
+  if (value.includes('status@broadcast')) return 'حالة'
+  if (value.endsWith('@broadcast')) return 'قائمة بثّ'
+  if (value.endsWith('@newsletter')) return 'قناة'
+  return 'محادثة غير فردية'
+}
+
 export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, explicitContentSession = false, hasMedia = false, at = new Date() }) {
   if (!jid || isSuppressed(db, jid)) return { allowed: false, reason: 'suppressed' }
+
+  /* ═══ المنع المطلق: المجموعات ═══
+     بأمر الدكتور صراحةً: «ما يصير يرد بالقروب إطلاقاً». وهو قبل كل شيء —
+     قبل الجلسة، وقبل جملة الإيقاظ، وقبل أوامر الخصوصية — لأن الجملة تُكتب
+     في القروب فتفتح جلسةَ ستّ ساعات، فيصير البوت يردّ على كل ما يُقال فيه.
+     وهذا ما وقع فعلاً: ثمانية ردود في ثلاث دقائق داخل مجموعة.
+     ولا يُستثنى شيء: من أراد البوت راسله وحده. */
+  if (!isPrivateChat(jid)) return { allowed: false, reason: `${chatKindLabel(jid)} — لا ردّ فيها إطلاقاً` }
+
+  /* ═══ المنع المطلق: الصوت والصورة ═══
+     قواعد الأدب أدناه تمنع الوسائط، لكنّها طبقةٌ واحدة اعتمدت على عَلَمٍ لم
+     يصل إليها قط. فنمنعها هنا أيضاً صراحةً: ردٌّ آليّ على رسالةٍ صوتية
+     يفضح أن البوت لم يسمعها أصلاً. */
+  if (hasMedia) return { allowed: false, reason: 'وسائط — لا يردّ البوت على صوتٍ ولا صورة' }
   const session = pendingSession(db, jid)
   /* كتب الدكتور بيده: صمتٌ فوريّ حتى تنقضي المدة */
   if (session?.manual_until && new Date(session.manual_until) > new Date()) return { allowed: false, reason: 'manual-takeover' }
@@ -407,12 +451,17 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
 
   /* قواعد الأدب: تسكته أحياناً رغم أن الباب مفتوح — الطلب الإنسانيّ،
      وساعات الليل، والوسائط، والإكثار. ولا تنبيه في شيءٍ منها بأمر الدكتور. */
-  const manners = applyBotRules({ db, jid, normalizedText: classifyIntent(text).normalized, hasMedia, at })
+  const opensDoor = OPENS_DOOR.has(intent) && confidence >= 0.9
+  const manners = applyBotRules({ db, jid, normalizedText: classifyIntent(text).normalized, hasMedia, opensDoor, at })
   if (!manners.allowed) return { allowed: false, reason: manners.reason }
 
   /* الباب مفتوح: حوارٌ طبيعيّ بلا أوامر */
   if (isReplyToAgent || explicitContentSession || sessionAlive(session)) return { allowed: true, reason: 'content-session' }
-  if (isAllowlisted(jid)) return { allowed: true, reason: 'allowlisted-contact' }
+  /* قائمةُ السماح لم تعد تفتح الباب بنفسها. كانت تُجيز الردّ على **أيّ** كلمة
+     يكتبها صاحبها بلا جملة إيقاظ — وهو نقضٌ لقاعدة الدكتور: «ما يردّ إلا إذا
+     شخص كتب موقع د. أحمد». وهي اليوم فارغة، لكنّ يداً تملؤها غداً تفتح باباً
+     لا يعلم به أحد. فتبقى تُقرأ ويُسجَّل أثرها، ولا تُجيز شيئاً. */
+  if (isAllowlisted(jid)) db.addAudit?.('allowlist-no-longer-opens-door', db.jidKey(jid), 'يلزمها جملة الإيقاظ كغيرها')
 
   /* الباب مغلق: لا يفتحه إلا أمرٌ صريح لا يُقال مصادفة */
   if (OPENS_DOOR.has(intent) && confidence >= 0.9) return { allowed: true, reason: 'command-opens-door', opensSession: true }

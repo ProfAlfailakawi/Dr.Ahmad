@@ -76,8 +76,8 @@ export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
 
     const url = new URL(req.url || '/', `http://127.0.0.1:${port}`)
     try {
-      if (req.method === 'GET' && url.pathname === '/health') { writeJson(res, 200, { ok: true, status: agent.status() }); return }
-      if (req.method === 'GET' && url.pathname === '/status') { writeJson(res, 200, agent.status()); return }
+      if (req.method === 'GET' && url.pathname === '/health') { writeJson(res, 200, { ok: true, status: await agent.status() }); return }
+      if (req.method === 'GET' && url.pathname === '/status') { writeJson(res, 200, await agent.status()); return }
       if (req.method === 'GET' && url.pathname === '/campaigns') { writeJson(res, 200, agent.listCampaigns()); return }
       if (req.method === 'GET' && url.pathname === '/admin/groups') { writeJson(res, 200, await agent.discoverGroups()); return }
       if (req.method === 'GET' && url.pathname === '/admin/groups/cached') { writeJson(res, 200, { groups: agent.listBroadcastGroups(), refreshed: false }); return }
@@ -120,6 +120,23 @@ export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
       if (req.method === 'POST' && url.pathname === '/admin/manual-takeover') {
         const body = await readJson(req)
         writeJson(res, 200, agent.manualTakeover(body.jid, body.minutes))
+        return
+      }
+      /* إعادةٌ شاملة بضغطة: الدكتور لا يعرف أرقام JID ولا ينبغي أن يبحث عنها
+         حين يصمت البوت. زرٌّ واحد يُعيده في كل المحادثات. */
+      if (req.method === 'POST' && url.pathname === '/admin/bot-return-all') {
+        writeJson(res, 200, agent.returnAllToBot())
+        return
+      }
+      /* إعادة ربطٍ بضغطة — تُمسح الجلسة ويُقلع العميل فيظهر QR في اللوحة */
+      if (req.method === 'POST' && url.pathname === '/admin/repair') {
+        const body = await readJson(req)
+        if (body.confirm !== true) { writeJson(res, 400, { error: 'confirm-required' }); return }
+        writeJson(res, 202, await agent.repair())
+        return
+      }
+      if (req.method === 'GET' && url.pathname === '/admin/silence') {
+        writeJson(res, 200, agent.silenceState())
         return
       }
       if (req.method === 'POST' && url.pathname === '/admin/bot-return') {

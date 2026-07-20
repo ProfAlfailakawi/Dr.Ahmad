@@ -24,6 +24,7 @@ import { VoiceBakeoffCard } from '../components/admin/VoiceBakeoff'
 import { ManualDialogueEditor } from '../components/admin/ManualDialogueEditor'
 import { AudioLibrary } from '../components/admin/AudioLibrary'
 import { PronunciationLexicon } from '../components/admin/PronunciationLexicon'
+import { ReaderPulse } from '../components/admin/ReaderPulse'
 import { ProductionHealthCenter } from '../components/admin/ProductionHealthCenter'
 import { AdminTaskFavicon, AdminTaskIndicator } from '../components/admin/AdminTaskFavicon'
 import { UploadField } from '../components/admin/ContentManager'
@@ -242,7 +243,7 @@ function CvPdfCard() {
 function Panel({ email }: { email: string }) {
   const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const requestedTab = params.get('tab') as AdminTab | null
-  const allowedTabs: AdminTab[] = ['dashboard','production','analytics','studio','launch','event','articles','books','papers','media','inbox','lab','whatsapp','voice','manual-dialogue','audio-library','cv']
+  const allowedTabs: AdminTab[] = ['dashboard','production','analytics','studio','launch','event','articles','books','papers','media','inbox','lab','whatsapp','voice','manual-dialogue','audio-library','pronunciation','cv']
   const initialTab = requestedTab && allowedTabs.includes(requestedTab) ? requestedTab : 'dashboard'
   const editSlug = params.get('edit') || undefined
   const [tab, setTab] = useState<AdminTab>(initialTab)
@@ -321,14 +322,15 @@ function Panel({ email }: { email: string }) {
           <AdminSectionTabs tab={tab} onSelect={chooseTab} />
             {tab === 'dashboard' && <TodayDashboard articles={cms.articles} onOpen={chooseTab} />}
             {tab === 'production' && <ProductionHealthCenter articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />}
-            {tab === 'analytics' && <Indicators articles={cms.articles} />}
+            {tab === 'analytics' && <div className="grid gap-4"><ReaderPulse /><Indicators articles={cms.articles} /></div>}
             {tab === 'studio' && <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} />}
             {tab === 'launch' && <LaunchModeCard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} />}
             {tab === 'lab' && <IntelligenceLab articles={cms.articles} />}
             {tab === 'whatsapp' && <WhatsAppAgentPanel />}
             {tab === 'voice' && <VoiceBakeoffCard />}
             {tab === 'manual-dialogue' && <ManualDialogueEditor articles={cms.articles} onQueued={() => chooseTab('production')} />}
-            {tab === 'audio-library' && <div className="grid gap-4"><AudioLibrary articles={cms.articles} onChanged={cms.reload} /><PronunciationLexicon /></div>}
+            {tab === 'audio-library' && <AudioLibrary articles={cms.articles} onChanged={cms.reload} />}
+            {tab === 'pronunciation' && <PronunciationLexicon />}
             {tab === 'cv' && <CvPdfCard />}
             {tab === 'articles' && <ContentManager openSlug={editSlug} kind="article" items={cms.articles as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
             {tab === 'books' && <ContentManager openSlug={editSlug} kind="book" items={cms.books as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}

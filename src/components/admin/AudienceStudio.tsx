@@ -256,44 +256,13 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                 </div>
               </div>
 
-              {/* ═══ الرسالة والمعاينة ═══ */}
-              <div className="grid gap-3 rounded-xl border border-hair bg-canvas p-4">
-                <label className="block font-semibold text-ink">الرسالة</label>
-                <textarea className={`${input} min-h-[8rem] leading-relaxed`} value={draft} onChange={(e) => setDraft(e.target.value)} />
-                <p className="text-[.72rem] leading-relaxed text-soft">
-                  اكتب <b className="text-ink">{'{الاسم}'}</b> فيصير اسم كل شخص، و<b className="text-ink">{'{تحية}'}</b> فتصير «صباح الخير» أو «مساء الخير» بحسب وقت الإرسال.
-                  ومن لا نعرف اسمه تصله الجملة سليمةً بلا فراغ.
-                </p>
-                {reach && (
-                  <p className="text-[.78rem] text-ink">
-                    يصل إلى <b>{reach.willSend}</b> شخصاً
-                    {reach.suppressed > 0 && <span className="text-soft"> · {reach.suppressed} طلبوا الإيقاف فلن يصلهم شيء</span>}
-                  </p>
-                )}
-                {samples.length > 0 && (
-                  <div className="grid gap-2">
-                    <span className="text-[.75rem] font-semibold text-soft">هكذا تصلهم بالضبط:</span>
-                    {samples.map((sample, index) => (
-                      <div key={index} className="rounded-xl border border-hair bg-wash px-4 py-3">
-                        <span className="text-[.7rem] text-soft">إلى {sample.name}</span>
-                        <p className="mt-1 whitespace-pre-wrap text-[.82rem] leading-relaxed text-ink">{sample.body}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="max-w-md text-[.75rem] leading-relaxed text-soft">
-                    الإرسال يبقى بيدك: تصنع المسودة هنا، ثم تعتمدها وترسلها من «الحملات المحلية» بالأسفل.
-                    لا تخرج رسالةٌ من رقمك بغير أمرك.
-                  </p>
-                  <button type="button" className={primary} disabled={busy || !draft.trim()}
-                    onClick={() => void act('أُنشئت المسودة — اعتمدها من «الحملات المحلية».', async () => {
-                      await request('/admin/audience/draft', { method: 'POST', body: JSON.stringify({ listId: activeId, name: `${active.name}`, message: draft }) })
-                    })}>
-                    اصنع مسوّدة لهذه القائمة
-                  </button>
-                </div>
-              </div>
+              {/* حُذفت بطاقة «الرسالة والمعاينة» من هنا: كانت تكرّر ما تفعله
+                  «غرفة البثّ» أعلاه — قالبُ التحية والمعاينة وصنعُ المسودة —
+                  وتُحيل على «الحملات المحلية» التي أُزيلت. صار لكلٍّ عملُه:
+                  هنا تُبنى القوائم ويُملأ الدفتر، وهناك يُكتب البثّ ويُرسَل. */}
+              <p className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.78rem] leading-relaxed text-soft">
+                هذه القائمة جاهزةٌ للبثّ. اكتب رسالتها وأرسلها من <b className="text-ink">غرفة البثّ</b> أعلى الصفحة.
+              </p>
             </>
           ) : (
             <p className="rounded-xl border border-hair bg-canvas px-4 py-6 text-center text-[.82rem] text-soft">أنشئ قائمةً أو اخترها لتبدأ.</p>

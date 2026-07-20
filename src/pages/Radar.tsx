@@ -88,9 +88,20 @@ export default function Radar() {
                       <FadeUp key={r.day} delay={Math.min(i * 0.05, 0.2)}>
                         <a href={r.url} target="_blank" rel="noreferrer" data-hover className="group flex h-full flex-col rounded-2xl border border-hair p-6 transition-colors hover:border-accent">
                           <span className="text-[.72rem] text-soft">{r.day} · {r.source}</span>
-                          <h4 className="mt-2.5 font-display text-[1.08rem] font-semibold leading-[1.7] text-ink">{r.ar}</h4>
-                          {r.arNote && <p className="mt-1.5 text-[.87rem] font-light text-soft">{r.arNote}</p>}
-                          <p className="mt-2.5 text-[.84rem] text-soft" dir="ltr" style={{ textAlign: 'left' }}>{r.en}</p>
+                          {/* بلا صياغةٍ عربية (ar فارغ) يتصدّر العنوان الأصلي — لا جملةٌ عامة فوقه */}
+                          {r.ar ? (
+                            <>
+                              <h4 className="mt-2.5 font-display text-[1.08rem] font-semibold leading-[1.7] text-ink">{r.ar}</h4>
+                              {r.arNote && <p className="mt-1.5 text-[.87rem] font-light text-soft">{r.arNote}</p>}
+                              <p className="mt-2.5 text-[.84rem] text-soft" dir="ltr" style={{ textAlign: 'left' }}>{r.en}</p>
+                            </>
+                          ) : (
+                            <>
+                              <h4 className="mt-2.5 font-display text-[1.04rem] font-semibold leading-[1.65] text-ink" dir="ltr" style={{ textAlign: 'left' }}>{r.en}</h4>
+                              {r.enNote && <p className="mt-2 text-[.83rem] font-light leading-relaxed text-soft" dir="ltr" style={{ textAlign: 'left' }}>{r.enNote}</p>}
+                              {r.arNote && <p className="mt-2.5 text-[.8rem] font-light text-soft/80">{r.arNote}</p>}
+                            </>
+                          )}
                           <span className="mt-auto pt-4 text-[.8rem] text-soft transition-colors group-hover:text-accent">اقرأ المادة في مصدرها ←</span>
                         </a>
                       </FadeUp>

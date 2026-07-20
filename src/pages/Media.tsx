@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useSeo } from '../components/seo'
 import { motion, useReducedMotion } from 'framer-motion'
 import { EASE, FadeUp, Page, PageHead } from '../components/ui'
-import { projects } from '../data'
 import { useCmsContent } from '../lib/content'
 
 const id = (url: string) => (url.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || ''
@@ -80,19 +79,6 @@ export default function Media() {
         </div>
         {visibleCount < media.length && <div className="mt-9 text-center"><button type="button" onClick={() => setVisibleCount((count) => count + 10)} className="rounded-full border border-hair px-6 py-3 text-[.84rem] font-semibold text-accent transition-colors hover:border-accent">عرض ١٠ لقاءات إضافية</button></div>}
 
-        <div className="mx-auto mt-20 max-w-shell border-t border-hair pt-14">
-          <FadeUp>
-            <span className="text-[.78rem] font-semibold uppercase text-accent">المشاريع التقنية</span>
-            <div className="mobile-card-rail mt-7 grid gap-8 md:grid-cols-2">
-              {projects.map((p) => (
-                <div key={p.title}>
-                  <h3 className="font-display text-[1.35rem] font-semibold text-ink">{p.title}</h3>
-                  <p className="mt-2 text-[.98rem] font-light leading-[1.8] text-ink/80">{p.desc}</p>
-                </div>
-              ))}
-            </div>
-          </FadeUp>
-        </div>
       </section>
     </Page>
   )

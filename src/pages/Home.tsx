@@ -523,12 +523,6 @@ function ImpactTimeline() {
             </FadeUp>
           ))}
         </ol>
-        <FadeUp delay={0.2}>
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-6 md:mt-10 md:pt-8">
-            <p className="font-display text-[clamp(1.2rem,2.6vw,1.7rem)] font-semibold leading-relaxed text-ink">هذا ليس أرشيفاً… هذه رحلة فكر.</p>
-
-          </div>
-        </FadeUp>
       </div>
     </section>
   )

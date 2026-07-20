@@ -625,10 +625,6 @@ export const media = [
   { title: 'برنامج «حدد مسارك» — نصائح للشباب', outlet: 'حدد مسارك', url: 'https://www.youtube.com/watch?v=-6BvLvZqTik' },
 ]
 
-// المشاريع التقنية
-export const projects = [
-  { title: 'نظام الجدول الدراسي', desc: 'أول برنامج في الكويت لتسهيل إعداد الجدول الدراسي للكليات والأقسام العلمية.' },
-]
 
 // أطروحة الدكتوراه
 export const doctorate = {

@@ -27,7 +27,17 @@ function CardWrap({ c, className, children }: { c: Curio; className: string; chi
   return <div className={className}>{children}</div>
 }
 
+/* مادة الرادار تصل بلا صياغةٍ عربية (ar فارغ) — لأننا لا نترجم بلا مترجمٍ أمين.
+   وحينها يتصدّر العنوان الأصلي بدل أن يُدفن تحت جملةٍ عامة، ويبقى السطر
+   العربي تحته بابَ المادة لا وصفاً مخترعاً لها. */
 function CurioBody({ c }: { c: Curio }) {
+  if (!c.ar) return (
+    <>
+      <h3 className="font-display text-[1.14rem] font-semibold leading-[1.65] text-ink" dir="ltr" style={{ textAlign: 'left' }}>{c.en}</h3>
+      {c.enNote && <p className="mt-2 text-[.86rem] font-light leading-relaxed text-soft" dir="ltr" style={{ textAlign: 'left' }}>{c.enNote}</p>}
+      {c.arNote && <p className="mt-3 text-[.82rem] font-light text-soft/80">{c.arNote}</p>}
+    </>
+  )
   return (
     <>
       <h3 className="font-display text-[1.2rem] font-semibold leading-[1.7] text-ink">{c.ar}</h3>

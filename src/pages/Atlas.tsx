@@ -76,7 +76,10 @@ export default function Atlas() {
       const jitter = ((i * 37) % 21) - 10
       const y = TOP + row * ROW + ROW / 2 + jitter * 0.55
       const w = words[i]
-      const r = 3.4 + ((w - wMin) / (wMax - wMin || 1)) * 8.6
+      /* العين تقرأ المساحة لا نصف القطر. المدى القديم (٣٫٤ ← ١٢) كان يجعل
+         أطول مقال أكبر ١٢ ضعفاً مساحةً وهو أطول مرّتين فقط، فتبتلع نجمةٌ
+         واحدة السماء. المدى هنا يجعل الأكبر ضِعف الأصغر مساحةً — كما هو حقاً. */
+      const r = 4.5 + ((w - wMin) / (wMax - wMin || 1)) * 2.5
       return { ...a, x, y, r, words: w, i, t, row, jitter }
     })
   }, [articles, cats])
@@ -85,7 +88,7 @@ export default function Atlas() {
     ...star,
     x: MOBILE_W - MOBILE_PAD_R - MOBILE_STAR_R_MAX - star.t * (MOBILE_W - MOBILE_PAD_R - MOBILE_STAR_R_MAX - MOBILE_PAD_L),
     y: MOBILE_TOP + star.row * MOBILE_ROW + MOBILE_ROW / 2 + star.jitter * 0.4,
-    r: Math.max(4.2, Math.min(11, star.r * 0.92)),
+    r: Math.max(3.9, Math.min(9, star.r * 0.92)),
   })), [stars])
 
   /* شبكة الأفكار: تخطيط شعاعي حقيقي — كل تصنيف عنقود في قطاع زاوي، والسنة تحدد البعد
@@ -125,7 +128,7 @@ export default function Atlas() {
       const spread = total > 1 ? (within / (total - 1) - 0.5) : 0
       const angle = row * sector + sector * 0.5 + spread * sector * 0.62 - Math.PI / 2
       const radius = maxR * (0.36 + star.t * 0.58) + ((star.i * 23) % 13) - 6
-      return { ...star, x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius, r: Math.max(4.2, Math.min(11, star.r * 0.92)) }
+      return { ...star, x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius, r: Math.max(3.9, Math.min(9, star.r * 0.92)) }
     })
   }, [stars, cats, mobileH])
 

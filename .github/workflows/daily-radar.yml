@@ -46,12 +46,7 @@ jobs:
             echo "::error::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing. Radar cannot publish to Firestore."
             exit 1
           fi
-          if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then
-            echo "::warning::Gemini key is missing. Radar will still publish a safe source-grounded fallback; Arabic wording will be generic."
-          fi
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
 
       - name: Write Firebase service account
@@ -62,8 +57,6 @@ jobs:
       - name: Fetch trusted internet sources and publish today's pick
         run: npm run radar
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           FIREBASE_PROJECT_ID: drahmad-8e9e2
           FIREBASE_SERVICE_ACCOUNT: sa.json
 

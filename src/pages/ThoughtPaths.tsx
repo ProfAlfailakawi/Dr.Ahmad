@@ -217,7 +217,7 @@ export default function ThoughtPaths() {
 
       <section className="border-b border-hair px-6 py-10 md:px-11 md:py-12">
         <div className="mx-auto max-w-shell">
-          <div role="tablist" aria-label="اختر مساراً فكرياً" className="flex flex-wrap gap-x-6 gap-y-2 pb-1">
+          <div role="tablist" aria-label="اختر مساراً فكرياً" className="flex gap-6 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {availablePaths.map((path) => (
               <button
                 key={path.id}
@@ -227,7 +227,7 @@ export default function ThoughtPaths() {
                 aria-selected={active.id === path.id}
                 aria-controls="thought-path-panel"
                 onClick={() => selectPath(path.id)}
-                className={`shrink-0 snap-start border-b py-2 text-[.84rem] transition-colors ${
+                className={`shrink-0 border-b py-2 text-[.84rem] transition-colors ${
                   active.id === path.id ? 'border-ink font-semibold text-ink' : 'border-transparent text-soft hover:text-ink'
                 }`}
               >

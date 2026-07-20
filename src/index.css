@@ -1341,36 +1341,48 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
 }
 
 
-/* قاعدة الهاتف العامة: مجموعات البطاقات **شبكةٌ كاملة لا شريطٌ يتحرك**.
-   كانت تُلفّ أفقياً وتُظهر البطاقة التالية مقصوصةً «لتوضيح السحب» — فكان
-   الزائر يرى نصف عنوانٍ ونصف اقتباس، ويظنّ الصفحة مكسورة لا مدعوّةً للسحب.
-   أمرُ الدكتور (٢١-٠٧): «ما أبي أي كرت في الموقع يتحرك… كلها كاملة».
-   فبطاقتان جنباً إلى جنب، كلُّ واحدةٍ تامّةٌ بحدودها، ولا شيء يُقصّ. */
+/* قاعدة الهاتف العامة: مجموعات البطاقات تُلفّ أفقياً من اليمين إلى اليسار.
+   لا تكديس عمودي طويل، ولا نصف شاشة فارغ، مع بطاقة تالية ظاهرة جزئياً لتوضيح السحب. */
 @media (max-width: 767px) {
   .mobile-card-rail,
   .mobile-paired-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: .75rem !important;
+    display: flex !important;
+    direction: rtl;
     width: auto;
     max-width: none;
-    margin-inline: 0;
-    /* الحشوة الأفقية تُترك لصاحب العنصر: بعض المجموعات كانت أشرطةً تعمّ العرض
-       بـ`-mx-6 px-6`، فلو صُفِّرت حشوتُها لصقت البطاقات بحافّة الشاشة وفاضت. */
-    padding-bottom: 0;
-    overflow: visible !important;
+    margin-inline: -1.5rem;
+    padding-inline: 1.5rem;
+    scroll-padding-inline: 1.5rem;
+    padding-bottom: .75rem;
+    gap: 1rem !important;
+    overflow-x: auto !important;
+    overflow-y: visible;
+    grid-template-columns: none !important;
+    /* «ينقز» — أمر الدكتور (٢١-٠٧): يريد الشريط يلفّ يميناً ويساراً كما هو،
+       لكن بلا قفز. و`mandatory` تُلزم المتصفّح أن يحطّ على نقطةٍ بعينها، فينتزع
+       الشريطَ من إصبعه ويقذفه. الانزلاق الحرّ يُبقي الجمال ويُذهب النقزة. */
+    scroll-snap-type: none;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    touch-action: pan-x pan-y;
   }
+  .mobile-card-rail::-webkit-scrollbar,
+  .mobile-paired-grid::-webkit-scrollbar { display: none; }
   .mobile-card-rail > *,
   .mobile-paired-grid > * {
-    width: auto;
+    flex: 0 0 min(74vw, 340px);
+    width: min(74vw, 340px);
     min-width: 0;
-    max-width: none;
+    max-width: min(74vw, 340px);
     height: auto;
+    scroll-snap-align: none;
   }
-  /* بطاقةٌ وحيدة تأخذ العرض كلَّه بدل أن تقف نصفَ صفٍّ فارغ */
   .mobile-card-rail > :only-child,
   .mobile-paired-grid > :only-child {
-    grid-column: 1 / -1;
+    flex-basis: min(86vw, 520px);
+    width: min(86vw, 520px);
+    max-width: min(86vw, 520px);
   }
   .mobile-card-rail :is(p, h2, h3, h4, blockquote, span, time),
   .mobile-paired-grid :is(p, h2, h3, h4, blockquote, span, time) {

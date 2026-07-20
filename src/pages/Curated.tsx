@@ -191,7 +191,11 @@ export default function Curated() {
     ...radarItems.map(radarAsCurio),
     ...trustedRecent,
   ])
-    .filter((item) => item.ar && item.en && item.source && item.url?.startsWith('https://'))
+    /* العنوان شرطٌ، لا لغتُه. كان الشرط `item.ar` يطلب صياغةً عربية، ومادة
+       الرادار تصل بلا صياغةٍ عربية عمداً (ar فارغ) لأننا لا نترجم بلا مترجمٍ
+       أمين — فسقطت خمس بطاقاتٍ صامتةً من الصفحة، وبقي أحدثُ اختيارٍ ١٥ يوليو
+       بينما في السجلّ موادُّ إلى ٢٠. فنطلب عنواناً موجوداً بأي لغة. */
+    .filter((item) => (item.ar || item.en) && item.en && item.source && item.url?.startsWith('https://'))
     .sort((left, right) => (right.added || '').localeCompare(left.added || '')), [radarItems])
 
   const daily = dynamic[0] || curatedBank[0]

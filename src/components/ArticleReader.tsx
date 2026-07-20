@@ -72,7 +72,12 @@ const PENDING_QUOTE_KEY = 'reader:pending-quote:v1'
 /* الرقم يظهر من أول اقتباس: عتبة الخمسة كانت تُخفي أثر القارئ تماماً، فيقتبس
    ولا يرى شيئاً يتغيّر — وتموت الفكرة الحماسية للموقع. الآن كل جملة اقتُبست
    تحمل أثرها ظاهراً، ويتصاعد الرقم أمام الجميع مع كل قارئ جديد. */
-export const POPULAR_THRESHOLD = 1
+/* عتبة «العبارة التي احتفظ بها القراء».
+   كانت ١٠ ثم ٥، وهُبطت إلى ١ في ١٩ يوليو داخل لقطةٍ عن مزامنة الاقتباسات —
+   على الأرجح لتيسير التجريب — ولم تُعَد. وبقيمة ١ يصير حفظُ قارئٍ واحد سبباً
+   لتظليل العبارة ووسمها «من أكثر ما احتفظ به القراء»، ويظهر فوقها الرقم ١.
+   وهذا يقلب معنى المؤشّر: يَعِد بحكمِ جماعةٍ ويعرض رأي فرد. */
+export const POPULAR_THRESHOLD = 5
 
 const popularHighlightCache = new Map<string, PopularQuote[]>()
 
@@ -508,11 +513,25 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
         <button
           type="button"
           onClick={() => { setTab('settings'); setOpen(true) }}
-          aria-label="إعدادات القراءة والاقتباسات"
+          aria-label="إعدادات القراءة"
           title="إعدادات القراءة"
           className="reader-aa-button flex h-11 min-w-11 items-center justify-center px-2 text-[.82rem] font-semibold text-ink transition-colors hover:text-accent"
         >
           Aa
+        </button>
+        {/* «اقتباساتي» كانت مدفونةً تبويباً داخل اللوحة: لا تُرى حتى تُفتح
+            الإعدادات، فيظنّها القارئ غير موجودة. تخرج هنا بجوار Aa أيقونةً
+            صامتة — بلا كلمة ولا عدد — وتفتح اللوحة على اقتباساته مباشرةً. */}
+        <button
+          type="button"
+          onClick={() => { setTab('quotes'); setOpen(true) }}
+          aria-label={quotes.length ? `اقتباساتي (${quotes.length})` : 'اقتباساتي'}
+          title="اقتباساتي"
+          className="reader-quotes-button flex h-11 min-w-11 items-center justify-center px-2 text-ink transition-colors hover:text-accent"
+        >
+          <svg aria-hidden viewBox="0 0 20 20" className="h-[17px] w-[17px]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5.6 2.8h8.8a1.4 1.4 0 0 1 1.4 1.4v12.4l-5.8-3.4-5.8 3.4V4.2A1.4 1.4 0 0 1 5.6 2.8Z" />
+          </svg>
         </button>
       </div>
 

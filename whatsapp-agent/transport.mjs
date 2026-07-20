@@ -169,7 +169,9 @@ export async function createWhatsAppTransport({ db, onMessage, onContacts, onQr,
              (تدخّلان متتاليان بفارق ثوانٍ في السجل)، ويظنّ الدكتور أنه معطوب.
              والقاعدة المقصودة: من ردّ بيده يصمت البوت — لا من فتح المحادثة. */
           const isBotEcho = db.get('SELECT message_id FROM outbox_messages WHERE message_id=?', messageId)
-          /* تدخّلٌ حقيقيّ = كلامٌ أو وسائط أرسلها الدكتور. والضجيج طُرح أعلاه. */
+          /* تدخّلٌ حقيقيّ = كلامٌ أو وسائط أرسلها الدكتور. والضجيج طُرح أعلاه.
+             وقراءةُ النصّ وحدها لا تكفي: الرسالة المؤقتة يخرج نصّها فارغاً من
+             غلافها، فيُحسب صمتاً وهو كلام. فنعتمد التصنيف لا الحرف. */
           const realReply = isText || hasMedia
           if (!isBotEcho && realReply && !justSentByBot(text)) events.emit('manual-takeover', jid)
           continue

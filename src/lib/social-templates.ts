@@ -237,7 +237,9 @@ const diverseLayouts = (
     .slice(0, count)
 }
 
-const dedupeSlides = (slides: { kicker: string; title: string; body: string }[]) => slides
+type SlideDraft = { kicker: string; title: string; body: string; layout?: SocialVisualLayout }
+
+const dedupeSlides = (slides: SlideDraft[]) => slides
   .filter((slide) => slide.title.trim())
   .filter((slide, index, all) => all.findIndex((candidate) => candidate.title.trim() === slide.title.trim()) === index)
 
@@ -248,10 +250,16 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
   const baseSlides = pack.carouselSlides?.length ? pack.carouselSlides : [
     { kicker: profile.kicker, title: article.title, body: article.excerpt },
   ]
-  const directionSlides = directions.map((item) => ({
+  /* اختيارُ الدكتور يتقدّم على استنتاجنا. حين يحدّد اللوحُ تخطيطاً لاتجاهٍ بعينه
+     (circuit مع «الأداة ذكية…»، orbit مع «ضع الإنسان في المركز») فذلك قرارٌ
+     ذوقيّ لا يُنقض بقاعدة. وقراءةُ الشكل تتولّى ما لم يُحدَّد وحده. */
+  const directionSlides: SlideDraft[] = directions.map((item) => ({
     kicker: item.tone || profile.kicker,
     title: item.headline || article.title,
     body: item.subline || article.excerpt,
+    ...(item.layout && layouts.includes(item.layout as SocialVisualLayout)
+      ? { layout: item.layout as SocialVisualLayout }
+      : {}),
   }))
   const slides = dedupeSlides([
     ...baseSlides,
@@ -274,13 +282,16 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
      تسكن تخطيط الميزان. والمسار يحفظ ما استُعمل فلا يتجاور تخطيطان. */
   const usedLayouts: SocialVisualLayout[] = []
   const instagramLayouts = visualSlides.map((slide, index) => {
-    const layout = layoutForSlide(
-      `${slide.title} ${slide.body}`,
-      topic,
-      selectedLayouts,
-      usedLayouts,
-      `${article.title}:${index}`,
-    )
+    const chosen = (slide as SlideDraft).layout
+    const layout = chosen && chosen !== usedLayouts[usedLayouts.length - 1]
+      ? chosen
+      : layoutForSlide(
+        `${slide.title} ${slide.body}`,
+        topic,
+        selectedLayouts,
+        usedLayouts,
+        `${article.title}:${index}`,
+      )
     usedLayouts.push(layout)
     return layout
   })

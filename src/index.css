@@ -196,6 +196,7 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
   -ms-overflow-style: none;
   overscroll-behavior-inline: contain;
   overscroll-behavior-block: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .rail::-webkit-scrollbar { display: none; }
 @media (hover: hover) and (pointer: fine) {
@@ -1366,6 +1367,9 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
     scrollbar-width: none;
     -ms-overflow-style: none;
     touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+    will-change: scroll-position;
+    transform: translateZ(0);
   }
   .mobile-card-rail::-webkit-scrollbar,
   .mobile-paired-grid::-webkit-scrollbar { display: none; }
@@ -1377,6 +1381,21 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
     max-width: min(74vw, 340px);
     height: auto;
     scroll-snap-align: none;
+    backface-visibility: hidden;
+  }
+
+  /*
+     ثبات الكروت أثناء السحب الأفقي على الهاتف:
+     بعض البطاقات تُكشف بحركة دخول رأسية عند دخولها مجال الرؤية. في الشريط
+     الأفقي يعني ذلك أن البطاقة ترتفع لحظة سحبها من الطرف، فيبدو الأمر كقفزة.
+     نُبقي حركة الصفحة كما هي، ونوقف فقط تحويلات/تلاشي العنصر المباشر داخل
+     الشريط على الهاتف؛ السحب نفسه يظل حرّاً وطبيعياً بلا نقاط جذب إلزامية.
+  */
+  :is(.rail, .mobile-card-rail, .mobile-paired-grid) > [style*="transform"] {
+    transform: none !important;
+  }
+  :is(.rail, .mobile-card-rail, .mobile-paired-grid) > [style*="opacity"] {
+    opacity: 1 !important;
   }
   .mobile-card-rail > :only-child,
   .mobile-paired-grid > :only-child {

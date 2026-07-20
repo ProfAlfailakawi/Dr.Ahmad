@@ -1,0 +1,42 @@
+{
+ "done": {
+  "pilot:success-that-does-not-bring-joy-to-its-ownerarabic:ar": {
+   "contentHash": "6edc65a559ecce78",
+   "pipelineHash": "1867289a40e6da0e",
+   "sourceHash": "b2aa7902ae2fda313bea7606e28f99e7117ca16a7d6700788ccf09833e785208",
+   "audioHash": "89b91e359ac76e9aa0246f0594f749650621c312e369165cf04ed8a4dda9dd72",
+   "transcriptHash": "b00ceab3ef93daeb99041c33bdbac880ee9a08a9b4a031604e401c81fb0142eb",
+   "status": "accepted_pilot",
+   "acceptedAt": "2026-07-20T16:24:16.239Z",
+   "pilot": true
+  },
+  "success-that-does-not-bring-joy-to-its-ownerarabic:ar": {
+   "contentHash": "6edc65a559ecce78",
+   "pipelineHash": "1867289a40e6da0e",
+   "sourceHash": "b2aa7902ae2fda313bea7606e28f99e7117ca16a7d6700788ccf09833e785208",
+   "audioHash": "89b91e359ac76e9aa0246f0594f749650621c312e369165cf04ed8a4dda9dd72",
+   "transcriptHash": "b00ceab3ef93daeb99041c33bdbac880ee9a08a9b4a031604e401c81fb0142eb",
+   "status": "accepted_automated",
+   "acceptedAt": "2026-07-20T16:24:16.239Z",
+   "pilot": false,
+   "promotedFromPilot": true,
+   "promotedAt": "2026-07-20T16:24:16.320Z"
+  }
+ },
+ "storyCount": 0,
+ "totalCount": 1,
+ "pilotGate": {
+  "pass": true,
+  "pipelineHash": "1867289a40e6da0e",
+  "promoted": true,
+  "acceptedAt": "2026-07-20T16:24:16.381Z",
+  "articles": [
+   {
+    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
+    "category": "human",
+    "score": 100,
+    "audioHash": "89b91e359ac76e9aa0246f0594f749650621c312e369165cf04ed8a4dda9dd72"
+   }
+  ]
+ }
+}

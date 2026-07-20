@@ -114,7 +114,12 @@ jobs:
           npm run audio:human:self-test
           LIMIT="${{ github.event.inputs.limit }}"
           SLUG="${{ github.event.inputs.slug }}"
-          ARGS="--limit=${LIMIT:-8}"
+          # الدفعة المجدولة رُفعت من ثمانيةٍ إلى أربعين ملفاً بأمر الدكتور:
+          # «بزرٍّ واحد أولّد كل الصوت». وثمانيةٌ في الساعة تعني خمساً وثلاثين
+          # ساعة لمئةٍ وثلاثٍ وأربعين مقالة بصوتين — أي يومين. وأربعون في
+          # الساعة تُنجزها في ثمانٍ، والتشغيلة تُنهيها في نحو ساعتين فلا تصطدم
+          # بمهلة الوظيفة (ستّ ساعات). فلا يضغط الدكتور شيئاً: الساعاتُ تكفي.
+          ARGS="--limit=${LIMIT:-40}"
           if [ -n "$SLUG" ]; then ARGS="$ARGS --slug=$SLUG"; fi
           if [ "${{ github.event.inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
           VOICE="${{ github.event.inputs.voice }}"

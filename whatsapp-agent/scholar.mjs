@@ -196,6 +196,12 @@ export function spanYears(rows = []) {
 const countWord = (count) => count === 2 ? 'مرتين' : count <= 10 ? `${count} مرات` : `${count} مرة`
 
 export const SCAFFOLD = Object.freeze({
+  /* «زدني» كان وعداً لا يُوفى: نقول «وله في هذا نصٌّ آخر» ثم نرمي النصوص
+     الباقية، فإذا كتبها السائل بحثنا له من جديد بمحرّكٍ آخر فلا يجد شيئاً
+     ويسمع «ما عندي شيءٌ قريبٌ منه». هذه الترويسة تفتح الدفعة التالية من
+     البقية المحفوظة نفسها — فما وعدنا به هو ما نُسلّمه. */
+  moreHeader: 'وهذا بقيةُ ما كتبه في الفكرة نفسها:',
+  exhausted: 'هذا كلُّ ما كتبه في هذه الفكرة. اسأل عن فكرةٍ أخرى وأنقل لك نصّه فيها.',
   onceHeader: 'كتب د. أحمد في هذا — وهذا نصّه حرفياً:',
   manyHeader: (count, from, to) => from === to
     ? `عاد د. أحمد إلى هذه الفكرة ${countWord(count)} في ${from} — وهذا نصّه حرفياً:`
@@ -249,20 +255,42 @@ const TAIL_SHAPES = [
 
 export const isKnownTail = (footer) => !footer || TAIL_SHAPES.some((shape) => shape.test(footer))
 
+/* الترويسة كانت تمرّ بلا فحص: البوابة تحرس الاقتباس والذيل، وتُسلّم بالترويسة
+   لأنها «تأتي من SCAFFOLD». وهذا ائتمانٌ على النيّة لا على البنية — وأيّ خطأٍ
+   مستقبليّ في المُنادي يمرّ منها إلى الدكتور. فنُقفلها بقوالبها كما أُقفل الذيل. */
+const HEADER_SHAPES = [
+  /^كتب د\. أحمد في هذا — وهذا نصّه حرفياً:$/,
+  /^عاد د\. أحمد إلى هذه الفكرة (?:مرتين|\d+ مرات|\d+ مرة) (?:في \d{4}|بين \d{4} و\d{4}) — وهذا نصّه حرفياً:$/,
+  /^وهذا بقيةُ ما كتبه في الفكرة نفسها:$/,
+  /^أهلاً بك\. هذه مكتبة د\. أحمد الفيلكاوي — أنقل لك ما كتبه بنصّه، ولا أقول شيئاً من عندي\.\n\nوهذا أحدث ما كتب:$/,
+]
+
+export const isKnownHeader = (header) => !header || HEADER_SHAPES.some((shape) => shape.test(header))
+
 /** الذيل المناسب: الدهشة تسبق الدعوة، فهي أندر وأطرف */
-export function tailFor(rows = [], shown = 2) {
+export function tailFor(rows = [], shown = 2, { sequential = false } = {}) {
+  const rest = rows.length - shown
+  /* في الدفعات التالية لا مكان للدهشة: السائل يعرف الفكرة وقد رآها، وإنما
+     يريد البقية. فالذيل هنا وعدٌ بما بقي، أو إقرارٌ بأن لا بقيّة. */
+  if (sequential) return rest > 0 ? TAIL.more(rest) : TAIL.ask
   const span = spanYears(rows)
   const chase = span ? Number(span.to) - Number(span.from) : 0
   if (chase >= 5) return TAIL.chase(chase)
-  const rest = rows.length - shown
   return rest > 0 ? TAIL.more(rest) : ''
 }
 
-export function compose(rows = []) {
+/**
+ * التركيب. الوضع الأصلي يعرض الطرفين (أقدم وأحدث) ليرى السائل المسار.
+ * والوضع المتتابع (sequential) يعرضها بالترتيب دفعةً بعد دفعة — وهو ما تحتاجه
+ * «زدني»: من رأى الطرفين لا يُعاد عليه أحدهما، بل يُعطى ما لم يره.
+ */
+export function compose(rows = [], { sequential = false } = {}) {
   if (!rows.length) return { header: '', text: SCAFFOLD.none, citations: [] }
   const span = spanYears(rows)
-  const chosen = span ? [span.earliest, span.latest] : rows.slice(0, 2)
-  const header = span ? SCAFFOLD.manyHeader(rows.length, span.from, span.to) : SCAFFOLD.onceHeader
+  const chosen = sequential ? rows.slice(0, 2) : (span ? [span.earliest, span.latest] : rows.slice(0, 2))
+  const header = sequential
+    ? SCAFFOLD.moreHeader
+    : (span ? SCAFFOLD.manyHeader(rows.length, span.from, span.to) : SCAFFOLD.onceHeader)
   const citations = chosen.map((row) => ({
     slug: row.item.slug,
     title: row.item.title,
@@ -270,7 +298,7 @@ export function compose(rows = []) {
     when: stamp(row.item.date),
     quote: row.quote.text,
   }))
-  const footer = tailFor(rows, citations.length)
+  const footer = tailFor(rows, citations.length, { sequential })
   return { header, citations, footer, text: render(header, citations, footer) }
 }
 
@@ -332,6 +360,9 @@ export function verify(reply, items = []) {
   if (!isKnownTail(reply?.footer)) {
     return { ok: false, sent: '', failures: [{ reason: 'ذيلٌ خارج القوالب المعتمدة', footer: reply?.footer }] }
   }
+  if (!isKnownHeader(reply?.header)) {
+    return { ok: false, sent: '', failures: [{ reason: 'ترويسةٌ خارج القوالب المعتمدة', header: reply?.header }] }
+  }
 
   const rebuilt = citations.length || reply?.footer
     ? render(reply?.header || '', citations, reply?.footer || '')
@@ -342,14 +373,31 @@ export function verify(reply, items = []) {
   return { ok: true, sent: reply.text, failures: [] }
 }
 
-/** الطريق الكامل: سؤال ← بحث ← تركيب ← بوابة. ما يرجع منه يُرسل كما هو. */
-export function answer(items = [], question = '') {
-  const rows = search(items, question)
-  if (!rows.length) return { text: SCAFFOLD.none, verified: true, citations: [] }
-  const reply = compose(rows)
+/**
+ * الطريق الكامل: سؤال ← بحث ← تركيب ← بوابة. ما يرجع منه يُرسل كما هو.
+ *
+ * ويرجع معه `reserve`: أسماءُ ما وجده ولم يعرضه. كان يُرمى، فيقول الذيل
+ * «وله في هذا نصٌّ آخر» ولا يبقى أثرٌ لذلك النصّ؛ فإذا كتب السائل «زدني»
+ * بحثنا له بمحرّكٍ آخر فلا يجد. الآن يُحفظ في الجلسة ويُسلَّم عند الطلب.
+ *
+ * والحدُّ ثمانية لا ثلاثة: الوعد بواحدٍ آخر ثم انقطاعُ الحديث بخلٌ في مكتبةٍ
+ * عاد صاحبها إلى بعض أفكاره خمس مرات. والعدد في الترويسة يبقى صادقاً لأنه
+ * يُحسب من الصفّ نفسه لا من رقمٍ مكتوب.
+ */
+export function answer(items = [], question = '', { limit = 8, skip = [], sequential = false } = {}) {
+  const skipped = new Set(skip)
+  const rows = search(items, question, { limit }).filter((row) => !skipped.has(row.item.slug))
+  if (!rows.length) return { text: SCAFFOLD.none, verified: true, citations: [], reserve: [] }
+  const reply = compose(rows, { sequential })
   const gate = verify(reply, items)
-  if (!gate.ok) return { text: '', verified: false, citations: [], failures: gate.failures }
-  return { text: gate.sent, verified: true, citations: reply.citations }
+  if (!gate.ok) return { text: '', verified: false, citations: [], reserve: [], failures: gate.failures }
+  const shown = new Set(reply.citations.map((citation) => citation.slug))
+  return {
+    text: gate.sent,
+    verified: true,
+    citations: reply.citations,
+    reserve: rows.map((row) => row.item.slug).filter((slug) => !shown.has(slug)),
+  }
 }
 
 /* ═══ ٦ · الاختبارات ═══ */
@@ -411,22 +459,22 @@ if (process.argv.includes('--self-test')) {
   }
   const sealed = (header, citations) => ({ header, citations, text: render(header, citations) })
 
-  const invented = sealed('كتب:', [cite('exam', 'الامتحان يقيس الذكاء وحده ولا شيء غيره.')])
+  const invented = sealed(SCAFFOLD.onceHeader, [cite('exam', 'الامتحان يقيس الذكاء وحده ولا شيء غيره.')])
   assert(verify(invented, items).ok === false, '★ جملةٌ لم يقلها الدكتور تُرفض')
 
   /* التحريف الخفيّ: حرفٌ واحد مقلوب داخل جملةٍ حقيقية (التعليم ← التعلم) */
-  const subtle = sealed('كتب:', [cite('exam', 'حين يصبح الامتحان هو الهدف، يضيع الهدف الحقيقي من التعلم.')])
+  const subtle = sealed(SCAFFOLD.onceHeader, [cite('exam', 'حين يصبح الامتحان هو الهدف، يضيع الهدف الحقيقي من التعلم.')])
   assert(verify(subtle, items).ok === false, '★ تبديل حرفٍ واحد يُسقط الردّ')
 
   /* النسبة إلى مقالٍ آخر: النصّ صحيحٌ لكن صاحبه غير من نُسب إليه */
-  const misattributed = sealed('كتب:', [cite('degree', 'حين يصبح الامتحان هو الهدف، يضيع الهدف الحقيقي من التعليم.')])
+  const misattributed = sealed(SCAFFOLD.onceHeader, [cite('degree', 'حين يصبح الامتحان هو الهدف، يضيع الهدف الحقيقي من التعليم.')])
   assert(verify(misattributed, items).ok === false, '★ نصٌّ صحيح منسوبٌ لمقالٍ غير مقاله يُرفض')
 
   /* المقطع المتّصل الحقيقي يُقبل */
-  assert(verify(sealed('كتب:', [cite('exam', 'الامتحان في بيوتنا يقيس الفهم')]), items).ok === true, 'المقطع المتّصل يُقبل')
+  assert(verify(sealed(SCAFFOLD.onceHeader, [cite('exam', 'الامتحان في بيوتنا يقيس الفهم')]), items).ok === true, 'المقطع المتّصل يُقبل')
 
   /* ★ الدسّ بعد التصديق: نصٌّ صحيح، لكن أُضيف سطرٌ لم يُصدَّق عليه */
-  const injected = sealed('كتب:', [cite('exam', 'الامتحان في بيوتنا يقيس الفهم')])
+  const injected = sealed(SCAFFOLD.onceHeader, [cite('exam', 'الامتحان في بيوتنا يقيس الفهم')])
   injected.text += '\n\nوهذا يعني أن الدكتور يرفض الامتحانات كلها.'
   assert(verify(injected, items).ok === false, '★ سطرٌ مدسوسٌ بعد التصديق يُسقط الردّ')
 
@@ -434,7 +482,7 @@ if (process.argv.includes('--self-test')) {
   const nested = { kind: 'article', slug: 'nest', title: 'الهوية', date: '2025-12-01', url: 'u',
     body: 'أما الهوية الثقافية والعرقية فليست «تفصيلاً تراثياً» بل جذرٌ للانتماء الحقيقي.' }
   const withNested = {
-    header: 'كتب:',
+    header: SCAFFOLD.onceHeader,
     citations: [{ slug: 'nest', title: 'الهوية', url: 'u', when: '', quote: 'أما الهوية الثقافية والعرقية فليست «تفصيلاً تراثياً» بل جذرٌ للانتماء الحقيقي.' }],
   }
   withNested.text = render(withNested.header, withNested.citations)
@@ -462,7 +510,7 @@ if (process.argv.includes('--self-test')) {
     'وجملة الافتتاح منسوخةٌ من متنه حرفياً — لا ترحيبٌ مخترع')
 
   /* ★ الذيل بابٌ للكلام، فلا يُقبل إلا من قوالبه */
-  const smuggled = { header: 'كتب:', citations: [cite('exam', 'الامتحان في بيوتنا يقيس الفهم')], footer: 'ويرى الدكتور أن الامتحانات كلها فاشلة.' }
+  const smuggled = { header: SCAFFOLD.onceHeader, citations: [cite('exam', 'الامتحان في بيوتنا يقيس الفهم')], footer: 'ويرى الدكتور أن الامتحانات كلها فاشلة.' }
   smuggled.text = render(smuggled.header, smuggled.citations, smuggled.footer)
   assert(verify(smuggled, items).ok === false, '★ رأيٌ مدسوسٌ في الذيل يُسقط الردّ')
 

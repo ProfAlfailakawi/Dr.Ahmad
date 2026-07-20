@@ -253,14 +253,4 @@ export const researchPapers: ResearchPaper[] = [
     url: '/research/the-reality-of-using-smart-device-applications-in-learning-applications-by-university-students-at-the-college-of-basic-education-in-kuwait-2',
     verification: 'verified',
   },
-  {
-    slug: 'trends-university-students-interactive-whiteboard-2021-2022',
-    title: 'Trends of University Students at the College of Basic Education Toward the Use of Interactive Whiteboard Technology in Education in Kuwait 2021/2022',
-    titleAr: 'اتجاهات طلبة الجامعة في كلية التربية الأساسية نحو استخدام تقنية السبورة التفاعلية في التعليم في دولة الكويت 2021/2022',
-    meta: 'Interactive Whiteboard · University Student Trends',
-    abstractAr: 'يتناول البحث اتجاهات طلبة كلية التربية الأساسية نحو استخدام تقنية السبورة التفاعلية في التعليم في الكويت خلال العام الأكاديمي 2021/2022، ويستقصي مستوى تقبل الطلبة لهذه التقنية، ومدى إدراكهم لقيمتها في دعم التفاعل، وعرض المحتوى، والفهم، والمشاركة. لم تتوافر في الملفات الحالية نسخة البحث الأصلية أو صفحة الناشر أو الملخص المنشور؛ لذلك لم تُضف تفاصيل عن المنهج والعينة والنتائج حتى لا تُعرض معلومات غير موثقة.',
-    journal: 'Education and Linguistics Research · بيانات المجلد والصفحات تحتاج مراجعة يدوية',
-    url: '/research/trends-university-students-interactive-whiteboard-2021-2022',
-    verification: 'needs-manual-review',
-  },
 ]

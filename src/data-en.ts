@@ -96,8 +96,6 @@ export const paperTitlesEn: Record<string, string> = {
     'The Effectiveness of Web Navigation in Improving Students’ Learning Skills',
   'elearning-research-skills':
     'The Importance of E-Learning in Acquiring Scientific Research Skills for Undergraduate and Graduate Students',
-  'trends-university-students-interactive-whiteboard-2021-2022':
-    'Trends of University Students at the College of Basic Education Toward the Use of Interactive Whiteboard Technology in Education in Kuwait 2021/2022',
 }
 
 /* «ص ١٤٤–١٦٧» → «pp. 144–167» لعرض بيانات النشر بالإنجليزية */

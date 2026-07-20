@@ -92,7 +92,9 @@
     "audio:guard:regression": "node scripts/guard-audio-meta-regression.mjs",
     "audio:guard:regression:self-test": "node scripts/guard-audio-meta-regression.mjs --self-test",
     "dialogues:stage": "node scripts/stage-dialogues-local.mjs",
-    "dialogues:stage:self-test": "node scripts/stage-dialogues-local.mjs --self-test"
+    "dialogues:stage:self-test": "node scripts/stage-dialogues-local.mjs --self-test",
+    "content:purge": "node scripts/purge-deleted-content.mjs",
+    "content:purge:self-test": "node scripts/purge-deleted-content.mjs --self-test"
   },
   "dependencies": {
     "firebase": "^12.15.0",

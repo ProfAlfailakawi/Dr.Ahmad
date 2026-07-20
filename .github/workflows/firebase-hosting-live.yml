@@ -53,6 +53,13 @@ jobs:
         env:
           FIREBASE_DATA_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
 
+      # الحذف نهائيّ: يُمحى المحذوف من الملفات الأساسية نفسها لا من البناء
+      # وحده، فلا تُعيده لقطةٌ ولا دفعةٌ قديمة كما أُعيدت ورقةُ السبورة.
+      - name: Purge panel-deleted content from the source files
+        run: node scripts/purge-deleted-content.mjs --apply
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+
       - name: Build static site
         run: npm run build
         env:

@@ -1,174 +1,39 @@
 {
-  "a-new-kind-of-fatigue-in-old-expressionsarabic.mp3": {
-    "bytes": 2832553,
-    "sha256": "1a60d11dd178d39984fae71da4a75f7008c38bdc1a0aaf92093ed1c3cbe40348",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-20T05:15:08.933Z",
-    "durationSeconds": 177,
-    "sourceHash": "446a000eefdabdb1701d54b48cf163ae9f1fc187c795fc5077033674c73f5af7",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-20T04:39:20.270Z"
-  },
-  "a-new-kind-of-fatigue-in-old-expressionsarabic.noura.mp3": {
-    "bytes": 2899008,
-    "sha256": "10cf77eb29b5b9b70f7879c264a352ee2c397497cd0636f115764833c39192a4",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-20T05:15:08.993Z",
-    "durationSeconds": 181,
-    "sourceHash": "61703d1a6693816f0bafcbbcc43a91438c1b2c50a7d0c3fd99887f039f0ad2c5",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-20T04:42:26.255Z"
-  },
   "expectations-that-shape-a-studentarabic.mp3": {
-    "bytes": 3029830,
-    "durationSeconds": 189
+    "bytes": 1298592,
+    "durationSeconds": 216
   },
   "expectations-that-shape-a-studentarabic.noura.mp3": {
-    "bytes": 3079985,
-    "durationSeconds": 192
+    "bytes": 1324224,
+    "durationSeconds": 221
   },
-  "in-farewell-to-abdullah-ismail-al-kandariarabic.mp3": {
-    "bytes": 3296906,
-    "sha256": "27a615860edc94f1b1bf6cb64e6b71135bdf8087e34db38a3e8c70183f583322",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-20T05:15:09.053Z",
-    "durationSeconds": 206,
-    "sourceHash": "c33cfe13df547aed8b759d0c83c48caab3d22b6ccd938f4c3abe5522462247bf",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-20T04:45:50.480Z"
+  "qabas-201909-001.dialogue.json": {
+    "bytes": 6384,
+    "sha256": "44945712897c01d83547e1e450e608c3b36054c3aaa141443f0341812ee25477",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-07-19T11:59:29.633Z"
   },
-  "in-farewell-to-abdullah-ismail-al-kandariarabic.noura.mp3": {
-    "bytes": 3333686,
-    "sha256": "1c5b6fcc8fde78b677eb17d3fc58386081e52ec07dae440e5cd0de06fe863aef",
+  "qabas-201909-001.dialogue.mp3": {
+    "bytes": 3647991,
+    "sha256": "4be2df058b2cfed4efe196044e2f5d48abba5f509d15c34143fef7ddbf2ff061",
     "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-20T05:15:09.113Z",
-    "durationSeconds": 208,
-    "sourceHash": "78e8e2fd7853e577f03033a4af6261bf1a57a9183bf9fbcce8d375aeaae0e0ca",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-20T04:49:24.519Z"
+    "publishedAt": "2026-07-19T11:59:29.633Z",
+    "durationSeconds": 228
   },
-  "success-that-does-not-bring-joy-to-its-ownerarabic.mp3": {
-    "bytes": 2990124,
-    "sha256": "4dd885f77eb53195bb2ca70ba4ce4ec5fa1f0e4035e1d95c2e00a4ef6f265715",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-20T05:15:09.175Z",
-    "durationSeconds": 187,
-    "sourceHash": "36dd9cc7de7a573ecefe9387b1ced2ec5b77bdc585abd4d844967ec5ea4050ed",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-20T04:03:30.351Z"
+  "qabas-201909-001.mp3": {
+    "bytes": 1424016,
+    "durationSeconds": 237
   },
-  "success-that-does-not-bring-joy-to-its-ownerarabic.noura.mp3": {
-    "bytes": 2995557,
-    "sha256": "0b20dbd3e4be443aedd3c60f5494bc366381bbf18d18ad42dfa7edec0ba336c1",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-20T05:15:09.235Z",
-    "durationSeconds": 187,
-    "sourceHash": "58a2a412ba9ae3295dc85d2b48cfae5f4f09e8b162769b1a17055250ad814738",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-20T04:06:50.684Z"
-  },
-  "the-classroom-that-fears-mistakesarabic.noura.mp3": {
-    "bytes": 3374228,
-    "sha256": "1e85a967e5ac2f14fa65d544def8fffbb5dae6925c166454fe3730b0c2c847a7",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-20T05:15:09.296Z",
-    "durationSeconds": 211,
-    "sourceHash": "f851f0175edea9fcd68d47d936dd76db2e04fa53024b914a426ccbf4796f2403",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-20T04:12:26.697Z"
-  },
-  "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic.mp3": {
-    "bytes": 2957523,
-    "sha256": "c9b3c8f6743a47ec452b902bbfebb2de6eadc1d612c3ec0357f195e142f864f1",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-20T05:15:09.356Z",
-    "durationSeconds": 185,
-    "sourceHash": "cf6a03f4e4a94ac0cbee68ff0f2304b2221bec2b53e8177bce1761064484c2e1",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-20T04:15:39.049Z"
-  },
-  "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic.noura.mp3": {
-    "bytes": 3026904,
-    "sha256": "ab2e7ed51298f69a614899a7bf73cfeda883f08736f03eedccd35ff0eb84a891",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-20T05:15:09.415Z",
-    "durationSeconds": 189,
-    "sourceHash": "ef734d73b0d0625217808293e57ee7e2592761f93a7c132f1d8c9a8821fe9162",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-20T04:18:56.114Z"
-  },
-  "the-year-that-doesnt-begin-with-the-calendararabic.mp3": {
-    "bytes": 2878946,
-    "sha256": "3fdb49925e501a594f7eb90ef63c5ab19520ff44fbfdb9a3e5d6ce3ffa8ed684",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-20T05:15:09.474Z",
-    "durationSeconds": 180,
-    "sourceHash": "893775e0a00524e3375cee82996474a96b0b8e9579f85fde97a1b80a5778ffb8",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-20T05:03:52.942Z"
+  "qabas-201909-001.noura.mp3": {
+    "bytes": 1423008,
+    "durationSeconds": 237
   },
   "when-the-exam-becomes-the-goalarabic.mp3": {
-    "bytes": 2896919,
-    "durationSeconds": 181
+    "bytes": 1238832,
+    "durationSeconds": 206
   },
   "when-the-exam-becomes-the-goalarabic.noura.mp3": {
-    "bytes": 2901516,
-    "durationSeconds": 181
-  },
-  "when-the-teacher-knows-why-he-teachesarabic.mp3": {
-    "bytes": 2862646,
-    "sha256": "5e32aae23db8b47740c0bd66e7bcb552989a7bbf1f04e97195010cd584d2e26a",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-20T05:15:09.533Z",
-    "durationSeconds": 179,
-    "sourceHash": "0a7e3384800abfc44a962a47ce91949944d9322c622517099dc062c8e43cab6e",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-20T04:26:56.719Z"
-  },
-  "when-the-teacher-knows-why-he-teachesarabic.noura.mp3": {
-    "bytes": 2854287,
-    "sha256": "2979a4b442064ea712b042f46943a59fa669d97e836c5a9bc2e1c2dabe099a43",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-20T05:15:09.594Z",
-    "durationSeconds": 178,
-    "sourceHash": "37f8f07a2d4a3abcfb74264823c35630d5f2b5b60f07c015f5c64bd9536e84a0",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-20T04:30:27.321Z"
-  },
-  "when-truth-died-and-the-narrative-survivedarabic.mp3": {
-    "bytes": 2990124,
-    "sha256": "91f57b981d23c04eef809d7267be8ab5627c3e86ed1dda00b3746c57ee80354f",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-20T05:15:09.654Z",
-    "durationSeconds": 187,
-    "sourceHash": "2b4e1e200b55851288af4a554b003bef93b0a3070bfeaf74f3bac4b0caa3ca90",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-20T05:07:53.168Z"
+    "bytes": 1249200,
+    "durationSeconds": 208
   }
 }

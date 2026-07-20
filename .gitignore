@@ -68,8 +68,3 @@ podcast-finalist-retest-samples/
 podcast-dialogue-samples/
 podcast-voice-bakeoff-samples/
 .audio-r2-plan.json
-whatsapp-agent/.env
-
-# نسخُ الطوارئ المحلية — فيها قاعدة بيانات الوكيل بمفاتيح جلسة واتساب
-# وجهاتِ الاتصال. لا تُرفع أبداً: من ملك المفاتيح ربط جهازه بحساب الدكتور.
-.codex-backups/

@@ -3,7 +3,7 @@ import { getDb, getFirebaseApp } from '../../lib/firebase'
 import { useCmsContent } from '../../lib/content'
 import { publicationGate, topicMemory } from '../../lib/intelligence'
 import { describe as describeEcho, findEchoes, indexPast } from '../../lib/echoes'
-import { getArticleBody, getVocalizedBody } from '../../lib/article-bodies'
+import { getArticleBody } from '../../lib/article-bodies'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { normalizeArabicTypography } from '../../lib/arabic-typography'
 
@@ -826,27 +826,13 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
   // ✎ من الموقع: افتح النموذج على العنصر المطلوب أول ما تتوفر القائمة (مرة واحدة)
   const [consumedOpen, setConsumedOpen] = useState(false)
   const hydrateArticleBody = useCallback((item: ManagedRecord) => {
-    if (kind !== 'article') return
-    if (!item.body && item._cms.origin === 'base') {
-      void getArticleBody(item.slug).then((body) => {
-        if (!body) return
-        setForm((previous) => (
-          previous.slug === item.slug && !previous.body ? { ...previous, body } : previous
-        ))
-      })
-    }
-    /* النصّ المُشكَّل محفوظٌ في ملف الريبو لا في Firestore، فكان المربّع يظهر
-       فارغاً وإن كان النصّ موجوداً — ومحرّك الصوت يقرؤه ويعمل. فيرى الدكتور
-       فراغاً ويسمع تشكيلاً، فيظنّ العمل ضاع ويعيده بيده. يُملأ من الملف حين
-       لا يكون في السجلّ نصّ، ولا يُطمس ما حرّره بيده أبداً. */
-    if (!item.bodyVocalized) {
-      void getVocalizedBody(item.slug).then((vocalized) => {
-        if (!vocalized) return
-        setForm((previous) => (
-          previous.slug === item.slug && !previous.bodyVocalized ? { ...previous, bodyVocalized: vocalized } : previous
-        ))
-      })
-    }
+    if (kind !== 'article' || item.body || item._cms.origin !== 'base') return
+    void getArticleBody(item.slug).then((body) => {
+      if (!body) return
+      setForm((previous) => (
+        previous.slug === item.slug && !previous.body ? { ...previous, body } : previous
+      ))
+    })
   }, [kind])
   useEffect(() => {
     if (consumedOpen || !openSlug || current !== undefined) return

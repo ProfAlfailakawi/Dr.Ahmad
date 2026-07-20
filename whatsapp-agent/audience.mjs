@@ -54,19 +54,12 @@ export function ensureAudienceSchema(db) {
  * فتتنكّر القروبات في هيئة قوائم يدوية.)
  */
 function purgeDiscoveredGroups(db) {
-  /* ★ لم يعد يمحو شيئاً.
-     كان يُنفَّذ في **كل إقلاعٍ للوكيل**، فيحذف كل قائمةٍ يحمل عمود jid فيها
-     قيمةً — ومعها كلَّ أعضائها — بلا تأكيدٍ ولا استرجاع. وقد محا ثمانيَ
-     وعشرين دفعةً واحدة (سجلّ 2026-07-19). فمن جمع أرقامه ورتّبها في قائمةٍ
-     ثم أعاد تشغيل الوكيل وجدها ذهبت، ولا يدري لماذا.
-
-     والمقصد الأصليّ صحيح: القروبات المسحوبة آلياً ليست قوائم الدكتور. لكن
-     العلاج كان الحذف، وصار الإخفاء: تُوسَم `hidden` فتغيب عن اللوحة ويبقى
-     كل شيءٍ في مكانه، فما غاب خطأً يعود بشطب الوسم لا بإعادة العمل كلّه.
-     ولا يمحو هذا الملفُّ صفّاً واحداً من قوائم الدكتور بعد اليوم. */
-  const strays = db.all("SELECT id FROM broadcast_lists WHERE jid IS NOT NULL AND COALESCE(kind,'') <> 'hidden'")
-  for (const row of strays) db.run("UPDATE broadcast_lists SET kind='hidden' WHERE id=?", row.id)
-  if (strays.length) db.addAudit('groups.hidden', '', `أُخفيت ${strays.length} مجموعة مسحوبة — ولم تُحذف`)
+  const strays = db.all('SELECT id FROM broadcast_lists WHERE jid IS NOT NULL')
+  for (const row of strays) {
+    db.run('DELETE FROM broadcast_members WHERE list_id=?', row.id)
+    db.run('DELETE FROM broadcast_lists WHERE id=?', row.id)
+  }
+  if (strays.length) db.addAudit('groups.purged', '', `مُحيت ${strays.length} مجموعة مسحوبة`)
 }
 
 /**
@@ -405,8 +398,7 @@ function importContactsInner(db, text, { listId = '' } = {}) {
 /* ═══ القوائم ═══ */
 
 export function listLists(db) {
-  /* المخفيّة تغيب عن العرض وتبقى في الجدول — تُستردّ من «المحذوفات» */
-  return db.all("SELECT * FROM broadcast_lists WHERE COALESCE(kind,'') <> 'hidden' ORDER BY name COLLATE NOCASE").map((row) => ({
+  return db.all('SELECT * FROM broadcast_lists ORDER BY name COLLATE NOCASE').map((row) => ({
     id: row.id,
     name: row.name || 'قائمة بلا اسم',
     note: row.note || '',
@@ -434,33 +426,11 @@ export function renameList(db, listId, name, note) {
   return { ok: true }
 }
 
-/**
- * حذف القائمة صار إخفاءً — والأعضاء يبقون.
- *
- * بأمر الدكتور: «تأكّد ١٠٠٠٠٠٪ أن ما في شي يُمسح إطلاقاً». وقد أفنى وقتاً في
- * انتقاء مئةٍ وتسعةٍ وثمانين رقماً ثم ذهبت القائمة بضغطةٍ واحدة، فلم يبقَ منها
- * أثر: الصفوف مُسحت من الجدولين معاً.
- *
- * فالقائمة تُوسَم `hidden` وتغيب عن اللوحة، وأعضاؤها في مكانهم. ومن ندم على
- * الحذف استُرجعت له بشطب الوسم — لا بإعادة الانتقاء من أوله.
- */
 export function deleteList(db, listId) {
-  db.run("UPDATE broadcast_lists SET kind='hidden', updated_at=? WHERE id=?", now(), listId)
-  const kept = db.get('SELECT COUNT(*) c FROM broadcast_members WHERE list_id=?', listId)?.c || 0
-  db.addAudit('list.hidden', listId, `أُخفيت — و${kept} عضواً محفوظون`)
-  return { ok: true, hidden: true, keptMembers: kept }
-}
-
-/** استرجاع قائمةٍ أُخفيت — بضغطةٍ واحدة، بلا إعادة انتقاء */
-export function restoreList(db, listId) {
-  db.run("UPDATE broadcast_lists SET kind='manual', updated_at=? WHERE id=?", now(), listId)
-  db.addAudit('list.restored', listId, 'أُعيدت بأعضائها')
+  db.run('DELETE FROM broadcast_members WHERE list_id=?', listId)
+  db.run('DELETE FROM broadcast_lists WHERE id=?', listId)
+  db.addAudit('list.delete', listId, '')
   return { ok: true }
-}
-
-/** القوائم المخفيّة — ليراها الدكتور ويستردّ ما ندم عليه */
-export function hiddenLists(db) {
-  return db.all("SELECT id,name,note,updated_at,(SELECT COUNT(*) FROM broadcast_members m WHERE m.list_id=broadcast_lists.id) AS members FROM broadcast_lists WHERE COALESCE(kind,'')='hidden' ORDER BY updated_at DESC")
 }
 
 export function listMembers(db, listId) {

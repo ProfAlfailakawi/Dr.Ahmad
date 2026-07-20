@@ -3,7 +3,16 @@ import { AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUAL_TAKEOVER_MINUTES, MAX
 import { hashOpaque } from './crypto.mjs'
 import { createReminder, parseReminderTime } from './reminders.mjs'
 import { applyBotRules, ensureBotRulesSchema, rememberSent, sign } from './bot-rules.mjs'
-import { answer as scholarAnswer } from './scholar.mjs'
+import { answer as scholarAnswer, SCAFFOLD as SCHOLAR_SCAFFOLD } from './scholar.mjs'
+
+/* ما وعد به محرك المكتبة ولم يُسلّمه بعد: السؤال وما رآه السائل منه. */
+function readFollowup(session) {
+  if (!session?.followup_json) return null
+  try {
+    const parsed = JSON.parse(session.followup_json)
+    return parsed?.question ? parsed : null
+  } catch { return null }
+}
 
 export const INTENTS = Object.freeze({
   LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_BOOK: 'LATEST_BOOK', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', LATEST_PAPER: 'LATEST_PAPER', WELCOME: 'WELCOME', MORE_LIKE_THIS: 'MORE_LIKE_THIS', COMPARE: 'COMPARE', ABOUT_TOPIC: 'ABOUT_TOPIC', UPCOMING_EVENTS: 'UPCOMING_EVENTS', ABOUT_DOCTOR: 'ABOUT_DOCTOR', CURATED_PICKS: 'CURATED_PICKS', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', UNKNOWN: 'UNKNOWN' })
@@ -269,8 +278,37 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
       }
     }
 
-    /* «غيره» و«زدني»: يفهمها البشر بلا شرح، ويجب أن يفهمها البوت داخل الجلسة */
+    /* «غيره» و«زدني»: يفهمها البشر بلا شرح، ويجب أن يفهمها البوت داخل الجلسة.
+     *
+     * وكان يفهمها ثم يُخلف: محرك المكتبة يقول «وله في هذا نصّان آخران — اكتب
+     * زدني»، فإذا كتبها السائل جاء هذا الفرع فبحث بمحرّكٍ آخر (FTS) عن عنوان
+     * المقال الأول، فلم يجد ما يطابقه فقال «ما عندي شيءٌ قريبٌ منه». وعدٌ من
+     * محرّكٍ يُطالَب به محرّكٌ لا يعلم عنه شيئاً.
+     *
+     * فالسؤال المحفوظ يُسأل مرةً أخرى بالمحرك نفسه، مع استثناء ما رآه السائل.
+     * والبوابة تمرّ عليه كما مرّت على الأول — فالبقية استشهاداتٌ لا وعود. */
     case INTENTS.MORE_LIKE_THIS: {
+      const followup = readFollowup(session)
+      if (followup?.question) {
+        const more = scholarAnswer(articleCorpus(db), followup.question, {
+          skip: followup.seen || [],
+          sequential: true,
+        })
+        if (more.verified && more.citations.length) {
+          return {
+            ...classification,
+            text: more.text,
+            contentId: `article:${more.citations[0].slug}`,
+            followup: {
+              question: followup.question,
+              seen: [...(followup.seen || []), ...more.citations.map((citation) => citation.slug)],
+            },
+          }
+        }
+        /* نفدت فعلاً: إقرارٌ يليق بوعدٍ سبق، لا نفيٌ عامّ يُشعر السائل بأنه أخطأ */
+        return { ...classification, text: SCHOLAR_SCAFFOLD.exhausted, clearFollowup: true }
+      }
+
       const seed = session?.content_id ? findContent(db, session.content_id) : null
       const query = seed ? `${seed.title} ${seed.keywords || ''}` : classification.normalized
       const results = searchContent(db, query, { limit: 4 })
@@ -327,7 +365,13 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
          فالتنازل يكون عن الطموح دائماً، لا عن الأمانة. */
       const scholar = scholarAnswer(articleCorpus(db), query)
       if (scholar.verified && scholar.citations.length) {
-        return { ...classification, text: scholar.text, contentId: `article:${scholar.citations[0].slug}` }
+        return {
+          ...classification,
+          text: scholar.text,
+          contentId: `article:${scholar.citations[0].slug}`,
+          /* البقية تُحفظ هنا لا تُرمى — وعليها يقوم وفاءُ «زدني» */
+          followup: { question: query, seen: scholar.citations.map((citation) => citation.slug) },
+        }
       }
 
       const results = searchContent(db, query, { limit: 3 })
@@ -494,6 +538,20 @@ export function handleIncoming({ db, jid, text, isReplyToAgent = false, explicit
     const item = findContent(db, response.contentId)
     if (item?.date) savePreference(db, jid, { lastContentCursor: item.date })
     rememberSent(db, jid, response.contentId)   // فلا يُعاد عليه ما أُرسل
+  }
+  /* حفظُ ما وُعد به. يُكتب بعد الجلسة لأن السطر أعلاه قد يُنشئها للتوّ، ويُمحى
+     حين تنفد البقية أو حين يسأل السائل عن فكرةٍ أخرى — فلا تُسلَّم له بقيةُ
+     سؤالٍ قديم على أنها جوابُ سؤاله الجديد. */
+  /* وتُمحى كذلك حين ينتقل الحديث إلى مادةٍ أخرى: من سأل عن «التلقين» ثم طلب
+     «آخر مقالة» ثم كتب «زدني»، يريد المزيد من الأخيرة لا بقيّة الأولى. */
+  const movedOn = Boolean(response.contentId) && !response.followup
+  if (jid && (response.followup || response.clearFollowup || (movedOn && session?.followup_json))) {
+    const payload = response.followup ? JSON.stringify(response.followup) : null
+    db.run(
+      'INSERT INTO chat_sessions(jid,mode,followup_json,opened_at,last_user_at,updated_at) VALUES(?,?,?,?,?,?)'
+      + ' ON CONFLICT(jid) DO UPDATE SET followup_json=excluded.followup_json,last_user_at=excluded.last_user_at,updated_at=excluded.updated_at',
+      db.jidKey(jid), 'content-session', payload, new Date().toISOString(), new Date().toISOString(), new Date().toISOString(),
+    )
   }
   /* التوقيع: من يراسل الدكتور يظنّ أنه يكلّمه هو. أما ردود الخصوصية
      («تم، لن تصلك رسائل») فإقرارٌ إجرائيّ لا يُنسب لأحد، فلا يُوقَّع. */

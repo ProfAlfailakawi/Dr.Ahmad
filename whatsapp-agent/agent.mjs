@@ -3,7 +3,7 @@ import path from 'node:path'
 import { BRIDGE_PORT, BRIDGE_SECRET_MIN_LENGTH, BROADCAST_DEFAULT_INTERVAL_SECONDS, BROADCAST_MIN_INTERVAL_SECONDS, HEARTBEAT_INTERVAL_MS, HEARTBEAT_STALE_MS, MANUAL_TAKEOVER_MINUTES, MAX_CAMPAIGN_TARGETS, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, projectRoot, redactError, redactJid } from './config.mjs'
 import { openDatabase } from './db.mjs'
 import { syncContentIndex } from './content-index.mjs'
-import { chatKindLabel, handleIncoming, handleIntent, isPrivateChat, markManualTakeover, setSuppression, shouldRespondToMessage } from './intent-engine.mjs'
+import { handleIncoming, handleIntent, markManualTakeover, setSuppression, shouldRespondToMessage } from './intent-engine.mjs'
 import { MockTransport, createWhatsAppTransport } from './transport.mjs'
 import { randomToken } from './crypto.mjs'
 import { createReminder } from './reminders.mjs'
@@ -82,43 +82,16 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     db.addAudit('bridge-secret-created', 'local', `length=${generated.length}`)
     return generated
   }
-  const onMessage = ({ jid, text, message, media = false }) => {
-    /* المجموعات وما جرى مجراها: صمتٌ مطلق بأمر الدكتور — لا جلسة تفتحها ولا
-       جملة إيقاظ. ولا يُسجَّل تدخّلٌ يدويّ هنا: المجموعة ليست محادثةً يعود
-       إليها البوت، وتسجيلُ تدخّلٍ لها يملأ الجدول بما لا معنى له. */
-    if (!isPrivateChat(jid)) {
-      db.addAudit('non-private-ignored', redactJid(jid), `${chatKindLabel(jid)} — لا ردّ إطلاقاً`)
-      return { shouldRespond: false, reason: 'group-never' }
-    }
-    /* الوسائط: كان العَلَم يُقرأ من `message.media` وهو لا يوجد هناك أبداً —
-       الناقل يرسله في المستوى الأعلى `media`. فظلّ الحارس معطّلاً صامتاً
-       (٤٠ تسجيلاً كلّها «link»، وصفرٌ «media»)، حتى ردّ البوت على رسالةٍ
-       صوتية. نقرؤه الآن من موضعه، ونُبقي القراءة القديمة احتياطاً. */
-    const hasMedia = Boolean(media || message?.media)
-    if (hasMedia || /https?:\/\/|www\./i.test(String(text || ''))) {
+  const onMessage = ({ jid, text, message }) => {
+    if (message?.media || /https?:\/\/|www\./i.test(String(text || ''))) {
       markManualTakeover(db, jid)
-      db.addAudit('needs-human-media-or-link', redactJid(jid), hasMedia ? 'media' : 'link')
+      db.addAudit('needs-human-media-or-link', redactJid(jid), message?.media ? 'media' : 'link')
       return { shouldRespond: false, reason: 'media-or-link-human' }
     }
-    /* «ردٌّ على البوت» يفتح الباب بلا جملة إيقاظ — فوجب أن يكون ردّاً على
-       البوت حقاً. وكان يُحسب كذلك باقتباس **أيّ** رسالة، ولو اقتبس المرسِل
-       رسالةَ الدكتور نفسه أو رسالةً لنفسه؛ فيفتح البابَ من لم يوقظ شيئاً.
-       فنسأل السجلّ: هل خرجت الرسالةُ المقتبَسة من البوت فعلاً؟ */
-    const quoted = message?.message?.extendedTextMessage?.contextInfo
-    const quotedId = quoted?.quotedMessage ? quoted?.stanzaId : ''
-    const isReplyToAgent = Boolean(quotedId) && Boolean(db.get('SELECT message_id FROM outbox_messages WHERE message_id=?', quotedId))
-    const response = handleIncoming({ db, jid, text: safeText(text), hasMedia, isReplyToAgent })
+    const response = handleIncoming({ db, jid, text: safeText(text), isReplyToAgent: Boolean(message?.message?.extendedTextMessage?.contextInfo?.quotedMessage) })
     if (!response.shouldRespond) db.addAudit('auto-reply-skipped', redactJid(jid), response.reason || 'blocked')
     if (!response.shouldRespond || !flags.autoReply || !flags.send) return response
     if (response.text && state.transport?.sendText) {
-      /* الحارس الأخير قبل الشبكة — طبقةٌ ثالثة متعمّدة.
-         فوقه حارسان: بوّابةُ النيّة وحارسُ المدخل. ولو انخرم كلاهما بتعديلٍ
-         مستقبليّ لم يخرج من هنا حرفٌ إلى مجموعة. والبثّ المتعمّد لا يمرّ من
-         هذا المسار، فحصرُه هنا لا يمسّه. */
-      if (!isPrivateChat(jid)) {
-        db.addAudit('auto-reply-blocked-at-wire', redactJid(jid), `${chatKindLabel(jid)} — أُوقف عند آخر حاجز`)
-        return { ...response, shouldRespond: false, reason: 'group-never' }
-      }
       void state.transport.sendText(jid, response.text).catch((error) => db.addAudit('auto-reply-failed', redactJid(jid), redactError(error)))
     }
     return response
@@ -615,14 +588,6 @@ async function dispatchDueReminders(state) {
     try {
       if (!flags.send || !state.transport) continue
       const jid = state.db.decryptJid(reminder.jid)
-      /* تذكيرٌ مخزَّنٌ من قبلُ قد يحمل جهةً غير فردية (قروباً أُنشئ فيه قبل
-         المنع). فلا يُرسَل، ويُغلق بهدوء — وإلا نطق البوت في مجموعةٍ بعد
-         ساعاتٍ من إغلاق كل أبوابه. */
-      if (!isPrivateChat(jid)) {
-        state.db.run('UPDATE reminders SET state=?,sent_at=? WHERE id=?', 'cancelled', now, reminder.id)
-        state.db.addAudit('reminder-cancelled-not-private', 'local', chatKindLabel(jid))
-        continue
-      }
       await state.transport.sendText(jid, `هذا التذكير الذي طلبته للمادة.\n${reminder.original_text}`)
       state.db.run('UPDATE reminders SET state=?,sent_at=? WHERE id=?', 'sent', now, reminder.id)
     } catch (error) { state.db.addAudit('reminder-failed', 'local', redactError(error)) }

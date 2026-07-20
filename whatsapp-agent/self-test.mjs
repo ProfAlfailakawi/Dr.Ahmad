@@ -63,6 +63,27 @@ export async function runSelfTest(root) {
   agent.returnToBot('12345@s.whatsapp.net')
   const session = db.get('SELECT * FROM chat_sessions WHERE jid=?', db.jidKey('12345@s.whatsapp.net'))
   assert.ok(session, 'chat session must use an opaque jid key')
+
+  /* ═══ «زدني» — وعدٌ يُوفى ═══
+   *
+   * كان البوت يقول «وله في هذا نصٌّ آخر — اكتب زدني»، فإذا كتبها السائل ردّ
+   * «ما عندي شيءٌ قريبٌ منه الآن». السبب: محرك المكتبة يجد النصوص ويرمي ما لا
+   * يعرضه، ثم يُطالَب بها محرّكٌ آخر لا يعلم عنها شيئاً. الآن تُحفظ البقية في
+   * الجلسة وتُسلَّم من المحرك نفسه. وهذا الاختبار يمنع عودة الخُلف.
+   */
+  const seeker = '77777@s.whatsapp.net'
+  const askAbout = handleIncoming({ db, jid: seeker, text: 'عندك شي عن التعليم؟', explicitContentSession: true })
+  if (/زدني/.test(askAbout.text || '')) {
+    const saved = db.get('SELECT followup_json FROM chat_sessions WHERE jid=?', db.jidKey(seeker))
+    assert.ok(saved?.followup_json, 'البقية الموعودة يجب أن تُحفظ في الجلسة')
+    const promisedSlugs = JSON.parse(saved.followup_json).seen
+    const more = handleIncoming({ db, jid: seeker, text: 'زدني', explicitContentSession: true })
+    assert.ok(!/ما عندي شيءٌ قريبٌ منه/.test(more.text || ''),
+      '★ «زدني» بعد وعدٍ صريح لا يجوز أن تُقابَل بـ«ما عندي شيءٌ قريبٌ منه»')
+    for (const slug of promisedSlugs) {
+      assert.ok(!(more.text || '').includes(`/articles/${slug}`), '★ «زدني» لا تُعيد ما عُرض')
+    }
+  }
   setSuppression(db, '12345@s.whatsapp.net', false)
   assert.equal(db.get('SELECT jid FROM contacts WHERE id=?', hashOpaque('12345@s.whatsapp.net')).jid.startsWith('v1:'), true)
   assert.equal(parseReminderTime('ذكرني بعد ساعتين').source, 'relative')

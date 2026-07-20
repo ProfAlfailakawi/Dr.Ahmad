@@ -462,7 +462,7 @@ function InboxPanel() {
   return (
     <div className="grid gap-4">
       <div className="rounded-2xl border border-accent/25 bg-accent/[.045] p-4 text-[.84rem] leading-relaxed text-soft">
-        <strong className="text-ink">التحديث مباشر الآن.</strong> رسائل التواصل الخاصة تظهر هنا فقط. أمّا «رسائل على الهامش» و«أسئلة تصلني» فينشئهما النظام وينشرهما تلقائيًا من محتوى الموقع، بلا أي خطوة منك.
+        <strong className="text-ink">التحديث مباشر الآن.</strong> رسائل التواصل الخاصة تظهر هنا فقط. أمّا «رسائل على الهامش» و«أسئلة تصلني» فيولّدهما النظام من أرشيفك نفسه — رسائلُ حول مقالاتك وكتبك، وأسئلةٌ من مجالاتك، وأجوبتها من متونك حرفياً. وما تنشره أنت من هنا يتقدّم عليها ويُخفيها.
       </div>
       <p className="text-[.85rem] text-soft">{String(items.length).replace(/[0-9]/g, (d) => '0123456789'[+d])} رسالة — الأحدث أولاً</p>
       {items.map((m) => (

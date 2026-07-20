@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS message_jobs(id TEXT PRIMARY KEY, campaign_id TEXT, j
 CREATE TABLE IF NOT EXISTS message_attempts(id INTEGER PRIMARY KEY AUTOINCREMENT, job_id TEXT NOT NULL, state TEXT NOT NULL, error TEXT, attempted_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS processed_messages(message_id TEXT PRIMARY KEY, jid TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS outbox_messages(message_id TEXT PRIMARY KEY, jid TEXT NOT NULL, source TEXT NOT NULL, created_at TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS chat_sessions(jid TEXT PRIMARY KEY, mode TEXT NOT NULL DEFAULT 'suggest-only', content_id TEXT, opened_at TEXT, last_user_at TEXT, manual_until TEXT, updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS chat_sessions(jid TEXT PRIMARY KEY, mode TEXT NOT NULL DEFAULT 'suggest-only', content_id TEXT, opened_at TEXT, last_user_at TEXT, manual_until TEXT, followup_json TEXT, updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS user_preferences(jid TEXT PRIMARY KEY, payload TEXT NOT NULL, updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS reply_rules(id TEXT PRIMARY KEY, name TEXT NOT NULL, keywords_json TEXT NOT NULL, priority INTEGER NOT NULL DEFAULT 0, match_type TEXT NOT NULL DEFAULT 'any', action_type TEXT NOT NULL DEFAULT 'text', response_text TEXT, content_query TEXT, enabled INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS reply_rule_versions(id INTEGER PRIMARY KEY AUTOINCREMENT, rule_id TEXT NOT NULL, payload_json TEXT NOT NULL, created_at TEXT NOT NULL);
@@ -35,6 +35,13 @@ CREATE TABLE IF NOT EXISTS quote_cards(id TEXT PRIMARY KEY, content_id TEXT NOT 
 CREATE TABLE IF NOT EXISTS audit_log(id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT NOT NULL, target TEXT, detail TEXT, created_at TEXT NOT NULL);
 `
 
+/* الأعمدة المُضافة بعد الإصدار الأول. [الجدول، العمود، تعريفه]
+   followup_json: ما وجده محرك المكتبة ولم يعرضه بعد — سؤالُ السائل والبقية
+   المحفوظة. بدونه كان البوت يعد بـ«زدني» ثم لا يجد ما وعد به. */
+const ADDED_COLUMNS = [
+  ['chat_sessions', 'followup_json', 'TEXT'],
+]
+
 const now = () => new Date().toISOString()
 
 export function openDatabase(dbPath = DB_PATH, options = {}) {
@@ -45,6 +52,13 @@ export function openDatabase(dbPath = DB_PATH, options = {}) {
   }
   const db = new DatabaseSync(dbPath)
   db.exec(schema)
+  /* CREATE TABLE IF NOT EXISTS لا يُضيف عموداً إلى جدولٍ قائم — وقاعدة الدكتور
+     قائمةٌ منذ أشهر. فالأعمدة الجديدة تُضاف هنا صراحةً، ومحاولةً محاولةً، فلا
+     يسقط الإقلاع إن كان العمود موجوداً أصلاً ولا تُمسّ بياناته. */
+  for (const [table, column, definition] of ADDED_COLUMNS) {
+    const present = db.prepare(`PRAGMA table_info(${table})`).all().some((row) => row.name === column)
+    if (!present) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`)
+  }
   const existing = db.prepare('SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 1').get()
   if (!existing) db.prepare('INSERT INTO schema_migrations(version, applied_at) VALUES(?, ?)').run(SCHEMA_VERSION, now())
   return new AgentDatabase(db, options)

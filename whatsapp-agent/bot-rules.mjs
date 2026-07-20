@@ -35,10 +35,7 @@ export function sign(text, { skip = false } = {}) {
    وتُضبط من اللوحة: QUIET_FROM=QUIET_UNTIL يعني «لا حظر». */
 export const QUIET_FROM = Number(process.env.WHATSAPP_QUIET_FROM ?? 0)
 export const QUIET_UNTIL = Number(process.env.WHATSAPP_QUIET_UNTIL ?? 0)
-/* سقف الردود اليومية لكل شخص. كان ٥ — وهو قليلٌ جداً: من أوقظ البوت وسأله
-   خمسة أسئلة صُدّ عن السادس بصمتٍ لا يفهمه، وظنّ البوت معطوباً. ورُفع إلى
-   عشرين، وجملةُ الإيقاظ نفسها مُعفاة منه دائماً (انظر أدناه). */
-export const DAILY_REPLY_CAP = Number(process.env.WHATSAPP_DAILY_REPLY_CAP ?? 20)
+export const DAILY_REPLY_CAP = Number(process.env.WHATSAPP_DAILY_REPLY_CAP ?? 5)
 
 /** الساعة بتوقيت الكويت مهما كان توقيت الخادم */
 export function kuwaitHour(at = new Date()) {
@@ -123,13 +120,10 @@ export function ensureBotRulesSchema(db) {
  * القرار النهائيّ بعد أن تأذن البوابة. يُرجع سبباً بالعربية كي تفهمه
  * المحاكاة في اللوحة بلا رطانة.
  */
-export function applyBotRules({ db, jid, normalizedText, hasMedia = false, opensDoor = false, at = new Date() }) {
+export function applyBotRules({ db, jid, normalizedText, hasMedia = false, at = new Date() }) {
   if (hasMedia) return { allowed: false, reason: 'وسائط — تحتاج عينك أنت' }
   if (needsHumanOnly(normalizedText)) return { allowed: false, reason: 'طلبٌ إنسانيّ — لا تردّ عليه آلة' }
   if (isQuietHour(at)) return { allowed: false, reason: 'ساعات الصمت (منتصف الليل — السابعة)' }
-  /* جملةُ الإيقاظ المنشورة مُعفاةٌ من السقف بأمر الدكتور: «ما يردّ إلا إذا شخص
-     كتب موقع د. أحمد» — قاعدةٌ مطلقة لا يحدّها عدد. ومن كتبها فقد قصد الموقع
-     قصداً، فصدُّه بصمتٍ أسوأُ من الردّ. والسقف يبقى على ما بعدها في الجلسة. */
-  if (!opensDoor && repliesToday(db, jid) >= DAILY_REPLY_CAP) return { allowed: false, reason: `تجاوز ${DAILY_REPLY_CAP} ردود اليوم` }
+  if (repliesToday(db, jid) >= DAILY_REPLY_CAP) return { allowed: false, reason: `تجاوز ${DAILY_REPLY_CAP} ردود اليوم` }
   return { allowed: true, reason: '' }
 }

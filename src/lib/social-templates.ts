@@ -144,6 +144,77 @@ export function visualTopicLabel(topic: VisualTopic) {
   return topicProfiles[topic].label
 }
 
+/* ═══ قراءةُ شكل النصّ — لا موضوعِه وحده ═══
+ *
+ * كان اختيار التخطيط يعرف «عمّا» تتحدث البطاقة (TOPIC_SIGNALS) ولا يعرف «كيف»
+ * تتحدث. فيقع سؤالٌ صريح في تخطيط «مانيفستو»، وتقع مقابلةٌ بين طرفين في تخطيط
+ * لا موضع فيه لطرفين — والتصميم صحيحٌ والنصُّ في غير بيته.
+ *
+ * وشكلُ الجملة يُقرأ من علاماتها لا من معناها: الاستفهام يُعرف بأداته، والمقابلة
+ * بـ«لا… بل»، والعدد برقمه. فنقرؤه ونُسكن كل نصٍّ في التخطيط الذي بُني له.
+ */
+export type TextShape = 'question' | 'contrast' | 'number' | 'sequence' | 'call' | 'definition' | 'statement'
+
+/* ⚠️ لا تُستعمل \b هنا أبداً. حدُّ الكلمة في JavaScript معرَّفٌ على [A-Za-z0-9_]
+   وحدها، فلا يرى الحرف العربي كلمةً ولا يضع بينه وبين جاره حدّاً. وكلُّ نمطٍ
+   كُتب بـ\b سقط صامتاً وأرجع «statement» لكل نصٍّ في الدنيا. البديل الصحيح
+   (?:^|\s) و(?:\s|$). والنصّ يصل مطبَّعاً: أ/إ/آ←ا · ى←ي · ة←ه · بلا تشكيل. */
+const SHAPE_SIGNALS: [TextShape, RegExp][] = [
+  ['question', /[؟?]\s*$|^(?:هل|لماذا|كيف|متي|اين|ماذا|ما الذي|من الذي|اي|ايهما)(?:\s|$)/],
+  /* «لا … بل» قد يفصل بينهما أربع كلمات: «لا يُقاس بما شرحه بل بما لاحظه».
+     وحصرُها في كلمةٍ واحدة يُسقط أكثر مقابلات الدكتور — وهي أسلوبه الغالب. */
+  ['contrast', /(?:^|\s)لا\s+(?:\S+\s+){0,4}بل(?:\s|$)|(?:^|\s)ليس\s+(?:\S+\s+){0,4}(?:بل|وانما|انما)(?:\s|$)|(?:^|\s)بين\s+\S+\s+و\S+|(?:^|\s)من\s+\S+\s+الي\s+\S+|(?:^|\s)لكن(?:\s|$)|(?:^|\s)بينما(?:\s|$)|في المقابل/],
+  ['number', /[0-9٠-٩]|٪|%|(?:^|\s)(?:نسبه|ضعف|اضعاف|ثلث|ربع|نصف|مرات)(?:\s|$)/],
+  ['sequence', /(?:^|\s)(?:اولا|ثانيا|ثالثا)(?:\s|$|،)|(?:^|\s)[-•·]\s/],
+  ['call', /^(?:علينا|يجب|لنبدا|لنسال|فلنبدا|ابدا|توقف|جرب|اسال)(?:\s|$)|ان الاوان|لا بد ان(?:\s|$)/],
+  ['definition', /(?:^|\s)(?:هو|هي)\s+ان(?:\s|$)|(?:^|\s)(?:تعني|يعني)(?:\s|$)|(?:^|\s)المقصود(?:\s|$)|(?:^|\s)تعريف/],
+]
+
+export function detectTextShape(value: string): TextShape {
+  const text = normalizeArabic(String(value || '')).trim()
+  if (!text) return 'statement'
+  for (const [shape, pattern] of SHAPE_SIGNALS) if (pattern.test(text)) return shape
+  return 'statement'
+}
+
+/* لكل شكلٍ بيوتُه، مرتّبةً من الأليق فالأقلّ — ولا يخرج شيءٌ عن التخطيطات
+   الأربعة والعشرين القائمة، فلا يُمسّ الرسم الفنّي بحرف. */
+const SHAPE_LAYOUTS: Record<TextShape, SocialVisualLayout[]> = {
+  question: ['question', 'focus', 'window', 'arch', 'quote'],
+  contrast: ['balance', 'split', 'layers', 'matrix', 'dialogue'],
+  number: ['matrix', 'research', 'signal', 'timeline', 'circuit'],
+  sequence: ['timeline', 'layers', 'notebook', 'matrix', 'research'],
+  call: ['manifesto', 'signature', 'horizon', 'dark', 'focus'],
+  definition: ['editorial', 'notebook', 'research', 'window', 'split'],
+  statement: ['editorial', 'quote', 'orbit', 'human', 'horizon', 'wave'],
+}
+
+/**
+ * التخطيط المناسب لهذه البطاقة بعينها: شكلُ نصّها أولاً، ثم بابُ موضوعها،
+ * ثم الدوران العام. ولا يتكرر تخطيطان متجاوران — فالتنويع شرطُ الجمال لا زينته.
+ */
+function layoutForSlide(
+  text: string,
+  topic: VisualTopic,
+  fallbacks: SocialVisualLayout[],
+  used: SocialVisualLayout[],
+  seed: string,
+): SocialVisualLayout {
+  const shape = detectTextShape(text)
+  const previous = used[used.length - 1]
+  const ranked = [
+    ...SHAPE_LAYOUTS[shape],
+    ...topicProfiles[topic].layouts,
+    ...fallbacks,
+  ].filter((layout, index, all) => all.indexOf(layout) === index)
+
+  const offset = hashText(`${seed}:${shape}`) % Math.max(SHAPE_LAYOUTS[shape].length, 1)
+  const rotated = [...ranked.slice(offset), ...ranked.slice(0, offset)]
+  return rotated.find((layout) => layout !== previous && !used.includes(layout))
+    || rotated.find((layout) => layout !== previous)
+    || ranked[0]
+}
+
 const safeLayout = (value = '', index = 0): SocialVisualLayout =>
   layouts.includes(value as SocialVisualLayout) ? value as SocialVisualLayout : layouts[index % layouts.length]
 
@@ -199,11 +270,26 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
       kicker: `${slide.kicker || profile.kicker} · ${variantLabels[(index - slides.length) % variantLabels.length]}`,
     }
   })
+  /* التخطيط يُختار لكل بطاقةٍ من نصّها هي — سؤالٌ يسكن تخطيط السؤال، ومقابلةٌ
+     تسكن تخطيط الميزان. والمسار يحفظ ما استُعمل فلا يتجاور تخطيطان. */
+  const usedLayouts: SocialVisualLayout[] = []
+  const instagramLayouts = visualSlides.map((slide, index) => {
+    const layout = layoutForSlide(
+      `${slide.title} ${slide.body}`,
+      topic,
+      selectedLayouts,
+      usedLayouts,
+      `${article.title}:${index}`,
+    )
+    usedLayouts.push(layout)
+    return layout
+  })
+
   const instagram: SocialVisualTemplate[] = visualSlides.map((slide, index) => ({
     id: `instagram-${topic}-${index + 1}`,
     platform: 'instagram',
     format: index === 0 ? 'غلاف كاروسيل' : index < slides.length ? 'بطاقة كاروسيل' : 'تنويع بصري بديل',
-    layout: selectedLayouts[index % selectedLayouts.length],
+    layout: instagramLayouts[index],
     topic,
     width: 1080,
     height: 1350,
@@ -222,7 +308,7 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
     id: `story-${topic}-${index + 1}`,
     platform: 'story',
     format: 'قصة عمودية',
-    layout: selectedLayouts[(slides.length + index) % selectedLayouts.length],
+    layout: layoutForSlide(text, topic, selectedLayouts, usedLayouts, `${article.title}:story:${index}`),
     topic,
     width: 1080,
     height: 1920,
@@ -237,7 +323,7 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
     id: `linkedin-${topic}-cover`,
     platform: 'linkedin',
     format: 'LinkedIn 1200×627',
-    layout: selectedLayouts[(slides.length + stories.length) % selectedLayouts.length],
+    layout: layoutForSlide(`${directions[0]?.headline || article.title} ${directions[0]?.subline || article.excerpt}`, topic, selectedLayouts, usedLayouts, `${article.title}:in`),
     topic,
     width: 1200,
     height: 627,
@@ -252,7 +338,7 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
     id: `x-${topic}-square`,
     platform: 'x',
     format: 'X 1080×1080',
-    layout: selectedLayouts[(slides.length + stories.length + 1) % selectedLayouts.length],
+    layout: layoutForSlide(profile.closer, topic, selectedLayouts, usedLayouts, `${article.title}:x`),
     topic,
     width: 1080,
     height: 1080,

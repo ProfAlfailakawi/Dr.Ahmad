@@ -530,5 +530,47 @@ if (process.argv.includes('--self-test')) {
   assert(search(items, '').length === 0, 'سؤال فارغ ← لا نتائج')
   assert(search(items, 'من هو؟').length === 0, 'كلماتٌ شائعة وحدها ← لا نتائج')
 
-  console.log('✓ اختبارات المكتبة التي تمشي: 27/27')
+  /* ═══ «زدني» — الوعد يجب أن يُوفى ═══
+   *
+   * العلّة التي كانت: الذيل يعد بنصوصٍ أخرى، والمحرك يرميها، فإذا طلبها
+   * السائل بحث له محرّكٌ آخر فلم يجد. فنختبر الآن سلسلة الوفاء كاملةً. */
+  const many = [
+    { kind: 'article', slug: 'm1', title: 'التلقين والعقل', date: '2017-01-01', url: 'u1', body: 'التلقين لا يصنع عقلاً ناقداً مهما تكرر على المتعلم. والحفظ وحده لا يكفي.' },
+    { kind: 'article', slug: 'm2', title: 'التلقين في المدارس', date: '2019-01-01', url: 'u2', body: 'حين يسود التلقين في المدارس يغيب السؤال، ويصبح المتعلم متلقياً لا مشاركاً.' },
+    { kind: 'article', slug: 'm3', title: 'بديل التلقين', date: '2021-01-01', url: 'u3', body: 'بديل التلقين أن نطلب من المتعلم أن يشرح ويقارن ويدافع عن رأيه بالحجة.' },
+    { kind: 'article', slug: 'm4', title: 'التلقين والامتحان', date: '2023-01-01', url: 'u4', body: 'يلتقي التلقين والامتحان حين يصير الحفظ طريقاً للنجاة من الدرجة لا للفهم.' },
+  ]
+  const first = answer(many, 'التلقين')
+  assert(first.verified && first.citations.length === 2, 'الدفعة الأولى تعرض شاهدين')
+  assert(first.reserve.length === 2, `البقية تُحفظ لا تُرمى — وجدتُ ${first.reserve.length}`)
+  assert(first.reserve.every((slug) => !first.citations.some((citation) => citation.slug === slug)),
+    'البقية لا تحوي ما عُرض')
+
+  /* ★ الوعد المكتوب في الذيل = ما يستطيع البوت تسليمه فعلاً */
+  const promised = /(\d+) نصوصٍ أخرى/.exec(first.text)
+  if (promised) {
+    assert(Number(promised[1]) === first.reserve.length,
+      `★ وعدَ بـ${promised[1]} ويملك ${first.reserve.length} — هذا الخُلف هو العلّة نفسها`)
+  }
+
+  /* «زدني»: تُسلَّم البقية بترتيبها، ولا يُعاد ما رآه */
+  const seen = first.citations.map((citation) => citation.slug)
+  const second = answer(many, 'التلقين', { skip: seen, sequential: true })
+  assert(second.verified && second.citations.length === 2, '«زدني» تُسلّم الدفعة التالية')
+  assert(second.citations.every((citation) => !seen.includes(citation.slug)), '★ «زدني» لا تُعيد ما عُرض')
+  assert(second.text.startsWith(SCAFFOLD.moreHeader), '«زدني» تفتح بترويسة البقية')
+  assert(second.reserve.length === 0, 'نفدت البقية بعد الدفعة الثانية')
+
+  /* وحين تنفد فعلاً: إقرارٌ صريح لا «ما عندي شيءٌ قريب» بعد وعدٍ صريح */
+  const exhausted = answer(many, 'التلقين', { skip: many.map((item) => item.slug), sequential: true })
+  assert(exhausted.text === SCAFFOLD.none, 'ما بعد النفاد اعتذارٌ صريح لا اختراع')
+
+  /* ═══ الترويسة مُقفلةٌ كالذيل ═══ */
+  assert(isKnownHeader(SCAFFOLD.onceHeader) && isKnownHeader(SCAFFOLD.moreHeader), 'الترويسات المعتمدة تُقبل')
+  assert(isKnownHeader(SCAFFOLD.manyHeader(3, '2017', '2023')), 'ترويسة التعدّد تُقبل')
+  assert(isKnownHeader('كتب د. أحمد أن التلقين خطأ:') === false, '★ ترويسةٌ حرّة تُرفض')
+  const foreignHeader = sealed('وهذا رأيي في المسألة:', [cite('exam', 'الامتحان في بيوتنا يقيس الفهم')])
+  assert(verify(foreignHeader, items).ok === false, '★ ترويسةٌ خارج القوالب تُسقط الردّ ولو صحّ اقتباسه')
+
+  console.log('✓ اختبارات المكتبة التي تمشي: 39/39')
 }

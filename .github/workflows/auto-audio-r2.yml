@@ -114,12 +114,7 @@ jobs:
           npm run audio:human:self-test
           LIMIT="${{ github.event.inputs.limit }}"
           SLUG="${{ github.event.inputs.slug }}"
-          # الدفعة المجدولة رُفعت من ثمانيةٍ إلى أربعين ملفاً بأمر الدكتور:
-          # «بزرٍّ واحد أولّد كل الصوت». وثمانيةٌ في الساعة تعني خمساً وثلاثين
-          # ساعة لمئةٍ وثلاثٍ وأربعين مقالة بصوتين — أي يومين. وأربعون في
-          # الساعة تُنجزها في ثمانٍ، والتشغيلة تُنهيها في نحو ساعتين فلا تصطدم
-          # بمهلة الوظيفة (ستّ ساعات). فلا يضغط الدكتور شيئاً: الساعاتُ تكفي.
-          ARGS="--limit=${LIMIT:-40}"
+          ARGS="--limit=${LIMIT:-8}"
           if [ -n "$SLUG" ]; then ARGS="$ARGS --slug=$SLUG"; fi
           if [ "${{ github.event.inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
           VOICE="${{ github.event.inputs.voice }}"
@@ -199,15 +194,6 @@ jobs:
           CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
           CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
-
-      # مصالحة السجلّ مع R2 قبل التحقّق — تفكّ حلقةً مفرغة أوقفت النشر ساعاتٍ:
-      # ملفٌ حُذف بقي مدخلُه فيُرجع 404 أبداً، وملفٌ أُعيد توليده بحجمٍ جديد بقي
-      # حجمُه القديم مسجّلاً. فتفشل كل تشغيلةٍ ويتراجع كل شيء، ولا يُثبَّت السجلّ
-      # الذي كان سيُصلح العطب — فيُعاد التوليد كل ساعةٍ ويُستهلك رصيد Azure سدى.
-      - name: Reconcile audio manifest with R2 reality
-        run: node scripts/reconcile-audio-meta.mjs --apply
-        env:
-          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
 
       - name: Verify manifests and build
         run: |

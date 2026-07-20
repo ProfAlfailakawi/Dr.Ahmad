@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-20T17:09:56.598Z",
+  "generatedAt": "2026-07-20T18:18:16.453Z",
   "episodes": [
     {
       "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
@@ -15,7 +15,7 @@
       "hasTranscript": true,
       "utterances": 0,
       "quality": {
-        "score": 50,
+        "score": 32,
         "pass": false,
         "metrics": {
           "durationSeconds": 208,
@@ -33,6 +33,7 @@
         "pace": "مقبول",
         "pauses": "يحتاج تقليل الوقفات",
         "issues": [
+          "الحلقة ليست معتمدة آليًا في حالة البودكاست.",
           "لا يوجد تقرير جودة نهائي مجتاز للحلقة.",
           "تطابق STT مع النص المقصود أقل من الحد الصارم.",
           "توجد وقفات طويلة تتجاوز الحد المقبول.",
@@ -59,7 +60,7 @@
           "hasTranscript": true,
           "utterances": 0,
           "quality": {
-            "score": 50,
+            "score": 32,
             "pass": false,
             "metrics": {
               "durationSeconds": 208,
@@ -77,6 +78,7 @@
             "pace": "مقبول",
             "pauses": "يحتاج تقليل الوقفات",
             "issues": [
+              "الحلقة ليست معتمدة آليًا في حالة البودكاست.",
               "لا يوجد تقرير جودة نهائي مجتاز للحلقة.",
               "تطابق STT مع النص المقصود أقل من الحد الصارم.",
               "توجد وقفات طويلة تتجاوز الحد المقبول.",

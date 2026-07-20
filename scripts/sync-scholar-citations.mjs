@@ -30,7 +30,18 @@ try {
   failSoft(error?.name === 'TimeoutError' ? 'انتهت مهلة الاتصال' : 'تعذّر الاتصال')
 }
 if (!response?.ok) failSoft(`أعاد المصدر الحالة ${response?.status || 'unknown'}`)
-const html = await response.text()
+
+/* المهلة تحكم الطلب كلّه لا ترويسته وحدها. فإن وصلت الترويسة في الثانية
+   الحادية عشرة وتأخّر المتن، انطلقت المهلة أثناء قراءته — وهذه القراءة كانت
+   خارج try، فيخرج TimeoutError غير ملتقَط ويسقط `npm run build` كلّه.
+   وسقوطُ نشر الموقع لأن Google Scholar تباطأ ثانيةً واحدة خطأٌ في الأولويات:
+   رقم الاستشهادات زينةٌ لها لقطةٌ محفوظة، والنشر هو الأصل. */
+let html
+try {
+  html = await response.text()
+} catch (error) {
+  failSoft(error?.name === 'TimeoutError' ? 'انتهت المهلة أثناء قراءة الصفحة' : 'تعذّرت قراءة الصفحة')
+}
 
 const citationRows = [...html.matchAll(/<a[^>]+class="gsc_rsb_f[^>]*>([^<]+)<\/a><\/td><td[^>]*class="gsc_rsb_std"[^>]*>([\d,]+)<\/td><td[^>]*class="gsc_rsb_std"[^>]*>([\d,]+)<\/td>/g)]
 const citationRow = citationRows.find((match) => /Citations/i.test(match[1]))

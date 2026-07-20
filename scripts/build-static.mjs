@@ -151,6 +151,25 @@ try {
 } catch (error) {
   console.log(`⚠ تعذّرت قراءة قرارات الحذف (${String(error.message).slice(0, 80)}) — البناء بالملفات الثابتة.`)
 }
+
+/* ما حذفه الدكتور من اللوحة يجب ألا يُنشر أبداً. وكان يُنشر: نشرُ الموقع يبني
+   بلا مفاتيح Firestore، فيبقى `deletedKeys` فارغاً وتُبنى صفحاتُ اثنين
+   وعشرين عنصراً حذفها بيده — بـHTTP 200 وفي خريطة الموقع، فتفهرسها جوجل.
+   والتحذير وحده لا يكفي: سطرٌ رماديّ في سجلٍّ لا يقرؤه أحد. فمتى أُعلن هذا
+   البناءُ بناءَ نشرٍ، صار غيابُ المفاتيح خطأً يُسقطه — أهونُ من موقعٍ يعرض
+   ما أمر صاحبُه بمحوه. */
+if (process.env.REQUIRE_PANEL_DECISIONS === '1' && deletedKeys.size === 0) {
+  console.error('\n✘ بناء نشرٍ بلا قرارات اللوحة.')
+  console.error('  السبب: تعذّر الوصول إلى Firestore، فلا يعرف البناءُ ما حذفتَه.')
+  console.error('  الأثر لو مضى: تُنشر الصفحات المحذوفة وتُفهرَس.')
+  console.error('  الإصلاح: تأكّد من كتابة sa.json وضبط FIREBASE_PROJECT_ID قبل خطوة البناء.\n')
+  process.exit(1)
+}
+/* قرار البناء يُكتب ليقرأه فحص الدخان: كان يقرأ `src/data.ts` وحدها فيطالب
+   بصفحةٍ لمقالٍ حذفه الدكتور، فيُسقط النشر كلَّه. مصدر الحقيقة واحد. */
+if (!existsSync(DIST)) mkdirSync(DIST, { recursive: true })
+writeFileSync(resolve(DIST, '.panel-deleted.json'), `${JSON.stringify([...deletedKeys], null, 2)}\n`)
+
 const isDeleted = (kind, slug) => deletedKeys.has(`${kind}:${slug}`)
 const keepAlive = (kind) => (item) => item && item.slug && !isDeleted(kind, item.slug)
 

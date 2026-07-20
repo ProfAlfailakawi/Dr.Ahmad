@@ -302,7 +302,16 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
             setAvailableDraft(cloud)
             localStorage.setItem(`podcast:manual-dialogue:${slug}`, JSON.stringify(cloud))
             localStorage.removeItem(`podcast:pending-cloud:${slug}`)
-            setNotice(`بدأ الوضع اليدوي بمداخلة واحدة. توجد مسودة سحابية محفوظة (${cloud.length} مداخلة) ويمكن استعادتها عند الحاجة.`)
+            /* العطب نفسه الذي أُصلح للمسودة المحلية أعلاه بقي هنا للسحابية:
+               كان يجد الحوار في السحابة ثم يترك المحرّر بمداخلةٍ فارغة ويكتفي
+               بزرّ استعادة — فيفتح الدكتور المقال فيراه فارغاً ويستنتج أن
+               الحوار لم يُرفع أصلاً. يُحمَّل الآن مباشرةً كما تُحمَّل المحلية.
+               والشرط `!local` صونٌ لما بيده: مسودةٌ محلية قائمة لا تُدهَس،
+               وتبقى السحابية خلف الزرّ لمن أرادها. */
+            if (!local) setTurns(cloud)
+            setNotice(local
+              ? `توجد مسودة سحابية محفوظة (${cloud.length} مداخلة) ويمكن استعادتها عند الحاجة.`
+              : `فُتح الحوار المحفوظ في اللوحة (${cloud.length} مداخلة).`)
             return
           } catch {
             // جرّب المسار الاحتياطي؛ بعض المشاريع لم تُنشر فيها قاعدة المجموعة الجديدة بعد.

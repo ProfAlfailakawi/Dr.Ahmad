@@ -18,11 +18,17 @@ const researchSource = readFileSync(resolve(ROOT, 'src/data/research-papers.ts')
 const runtime = ts.transpileModule(researchSource, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText.replace(/\bexport\s+/g, '')
 const papers = new Function(`${runtime}; return researchPapers`)().map((paper) => paper.slug)
 
+/* ما حذفه الدكتور من اللوحة لا تُبنى له صفحة، فلا يُطالَب بها. القائمة يكتبها
+   البناءُ نفسه، فلا يختلف حَكَمان على شيءٍ واحد. */
+const deletedPath = resolve(DIST, '.panel-deleted.json')
+const deleted = new Set(existsSync(deletedPath) ? JSON.parse(readFileSync(deletedPath, 'utf8')) : [])
+const alive = (kind) => (slug) => !deleted.has(`${kind}:${slug}`)
+
 const expected = [
   '/', '/articles', '/publications', '/research', '/ask', '/atlas', '/cv', '/cv-file/ar', '/cv-file/en', '/upcoming',
-  ...articles.map((slug) => `/articles/${slug}`),
-  ...books.map((slug) => `/publications/${slug}`),
-  ...papers.map((slug) => `/research/${slug}`),
+  ...articles.filter(alive('article')).map((slug) => `/articles/${slug}`),
+  ...books.filter(alive('book')).map((slug) => `/publications/${slug}`),
+  ...papers.filter(alive('paper')).map((slug) => `/research/${slug}`),
 ]
 
 for (const route of expected) {
@@ -39,6 +45,10 @@ for (const route of ['/articles', '/publications', '/research', '/ask', '/atlas'
   if (!sitemap.includes(`https://dr-alfailakawi.com${route}`)) fail(`sitemap لا يحتوي ${route}`)
 }
 
-const minimum = articles.length + books.length + papers.length + 8
+/* العتبة تُحسب من الحيّ لا من الخام: الخام يعدّ ما حذفه الدكتور فتسقط
+   التشغيلة كلَّما حذف شيئاً — وهو عكس المقصود. المقصود ألا تفرغ القائمة. */
+const minimum = articles.filter(alive('article')).length
+  + books.filter(alive('book')).length
+  + papers.filter(alive('paper')).length + 8
 if (expected.length < minimum) fail('عدد المسارات المتوقع غير منطقي')
 console.log(`✔ smoke: ${expected.length} صفحة أساسية وديناميكية سليمة`)

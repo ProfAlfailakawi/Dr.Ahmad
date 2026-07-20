@@ -195,6 +195,13 @@ jobs:
           CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
 
+      # يصالح السجلّ مع R2 قبل التحقّق: مدخلٌ متخلّفٌ عن الواقع (حجمٌ قديم أو ملفٌ
+      # لم يعد موجوداً) كان يُسقط كلّ تشغيلة وإن نجح التوليد والرفع كاملين.
+      - name: Reconcile audio manifest with R2
+        run: node scripts/reconcile-audio-meta.mjs --apply
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+
       - name: Verify manifests and build
         run: |
           npm run audio:external:verify

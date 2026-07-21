@@ -1593,9 +1593,9 @@ function VisualTemplateCard({ template }: { template: SocialVisualTemplate }) {
   }, [template, renderNonce])
   return (
     <div className="overflow-hidden rounded-2xl border border-hair bg-canvas">
-      <div className="relative overflow-hidden bg-wash" style={{ aspectRatio: `${template.width} / ${template.height}` }}>
+      <div className="social-visual-preview relative overflow-hidden bg-wash" style={{ aspectRatio: `${template.width} / ${template.height}` }}>
         {previewUrl
-          ? <img src={previewUrl} alt={template.title} className="h-full w-full object-cover" />
+          ? <img src={previewUrl} alt={template.title} draggable={false} className="h-full w-full select-none object-cover" />
           : renderError
             ? (
               <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-4 text-center">

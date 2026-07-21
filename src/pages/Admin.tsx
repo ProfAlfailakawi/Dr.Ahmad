@@ -57,12 +57,12 @@ const today = () => {
 
 export default function Admin() {
   useSeo({ title: 'لوحة التحكم', path: '/admin', robots: 'noindex, nofollow' })
-  const { user, isAdmin: allowed, loading: checking, refresh } = useAdminAuth()
+  const { user, isAdmin: allowed, loading: checking } = useAdminAuth()
 
   if (!firebaseEnabled) return <SetupGuide />
   if (checking) return <Page><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
   if (!user) return <Login />
-  if (!allowed) return <AccessDenied email={user.email || ''} onRefresh={refresh} />
+  if (!allowed) return <Login blockedEmail={user.email || ''} />
   return <Panel email={user.email || ''} />
 }
 
@@ -97,7 +97,7 @@ function SetupGuide() {
 }
 
 /* ---------- ٢) الدخول ---------- */
-function Login() {
+function Login({ blockedEmail = '' }: { blockedEmail?: string }) {
   const [email, setEmail] = useState('')
   const [pass, setPass] = useState('')
   const [err, setErr] = useState('')
@@ -108,8 +108,10 @@ function Login() {
     setBusy(true); setErr('')
     try {
       const app = await getFirebaseApp()
-      const { getAuth, signInWithEmailAndPassword } = await import('firebase/auth')
-      await signInWithEmailAndPassword(getAuth(app!), email, pass)
+      const { getAuth, signInWithEmailAndPassword, signOut } = await import('firebase/auth')
+      const auth = getAuth(app!)
+      if (auth.currentUser) await signOut(auth)
+      await signInWithEmailAndPassword(auth, email.trim(), pass)
     } catch {
       setErr('تعذّر الدخول — تحقق من البريد وكلمة المرور.')
     }
@@ -121,28 +123,17 @@ function Login() {
       <div className="mx-auto max-w-md px-6 pb-24 pt-40 md:pt-44">
         <h1 className="mb-8 font-display text-3xl font-bold text-ink">لوحة التحكم</h1>
         {pwaEntry && <p className="mb-5 rounded-2xl border border-accent/25 bg-accent/[.05] px-4 py-3 text-[.8rem] leading-relaxed text-soft"><strong className="text-accent">بوابة المالك.</strong> وصلت من نسخة PWA. في المرات القادمة اضغط مطولاً على شعار الموقع حتى يكتمل الخط الرفيع، أو استخدم اختصار «غرفة القيادة» من قائمة أيقونة التطبيق.</p>}
+        {blockedEmail && (
+          <div className="mb-5 rounded-2xl border border-hair bg-wash px-4 py-3 text-[.8rem] leading-relaxed text-soft">
+            <strong className="text-ink">جلسة غير معتمدة.</strong> الحساب الحالي {blockedEmail} لا يملك صلاحية الإنتاج. سجّل أدناه بحساب المالك؛ سيُستبدل الحساب القديم تلقائياً.
+          </div>
+        )}
         <div className="grid gap-4">
           <input className={input} dir="ltr" type="email" placeholder="البريد الإلكتروني" value={email} onChange={(e) => setEmail(e.target.value)} />
           <input className={input} dir="ltr" type="password" placeholder="كلمة المرور" value={pass} onChange={(e) => setPass(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && go()} />
           <button className={btn} onClick={go} disabled={busy || !email || !pass}>{busy ? '…' : 'دخول'}</button>
           {err && <p className="text-[.85rem] text-soft">{err}</p>}
         </div>
-      </div>
-    </Page>
-  )
-}
-
-function AccessDenied({ email, onRefresh }: { email: string; onRefresh: () => Promise<boolean> }) {
-  return (
-    <Page>
-      <div className="mx-auto max-w-xl px-6 pb-24 pt-40 md:pt-44">
-        <p className="mb-3 text-[.82rem] font-semibold uppercase text-accent">حماية الإنتاج</p>
-        <h1 className="font-display text-3xl font-bold text-ink">الحساب ليس مشرفاً بعد.</h1>
-        <p className="mt-5 leading-loose text-soft">
-          تم تسجيل الدخول باسم {email}، لكن رمز الجلسة القديم لم يتعرّف إلى هوية المالك بعد.
-          حدّث الصلاحية مرة واحدة؛ حساب المالك المعتمد يدخل مباشرة، بينما تبقى بقية الحسابات محجوبة.
-        </p>
-        <button type="button" onClick={() => void onRefresh()} className={`${btn} mt-6`}>تحديث صلاحية المالك</button>
       </div>
     </Page>
   )

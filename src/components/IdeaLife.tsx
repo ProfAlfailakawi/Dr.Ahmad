@@ -4,11 +4,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../lib/cms'
 import { useExtras } from '../lib/content'
-import { buildIdeaLife, type IdeaLifeRemoteRecord, type ImpactNode } from '../lib/idea-life'
+import { buildIdeaLife, ideaWords, type IdeaLifeRemoteRecord, type ImpactNode } from '../lib/idea-life'
+import { staticQuestions } from '../questions-data'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
-type TabKey = 'test' | 'time' | 'impact'
+type TabKey = 'test' | 'thread' | 'time' | 'impact'
 
 type Props = {
   article: ArticleRecord
@@ -16,6 +17,37 @@ type Props = {
   books: BookRecord[]
   papers: PaperRecord[]
   media: MediaRecord[]
+}
+
+type ThreadNode = {
+  kind: 'كتاب' | 'بحث' | 'لقاء' | 'سؤال'
+  title: string
+  to?: string
+  href?: string
+}
+
+function ideaThreadFor(article: ArticleRecord, books: BookRecord[], papers: PaperRecord[], media: MediaRecord[]): ThreadNode[] {
+  const mine = new Set(ideaWords(`${article.title} ${article.excerpt || ''} ${article.cat || ''}`))
+  const score = (value: string) => ideaWords(value).reduce((total, token) => total + (mine.has(token) ? 1 : 0), 0)
+  const best = <T,>(items: T[], text: (item: T) => string, minimum = 1) => {
+    const ranked = items
+      .map((item, index) => ({ item, index, score: score(text(item)) }))
+      .filter((entry) => entry.score >= minimum)
+      .sort((left, right) => right.score - left.score || left.index - right.index)
+    return ranked[0]?.item
+  }
+
+  const book = best(books, (item) => `${item.title} ${item.desc || ''}`)
+  const paper = best(papers, (item) => `${item.title} ${item.titleAr || ''} ${item.abstractAr || ''} ${item.meta || ''}`)
+  const appearance = best(media, (item) => `${item.title} ${item.outlet}`)
+  const question = best(staticQuestions, (item) => `${item.ar} ${item.take}`)
+
+  return [
+    book && { kind: 'كتاب' as const, title: book.title, to: `/publications/${book.slug}` },
+    paper && { kind: 'بحث' as const, title: paper.titleAr || paper.title, to: `/research/${paper.slug}` },
+    appearance && { kind: 'لقاء' as const, title: appearance.title, href: appearance.url },
+    question && { kind: 'سؤال' as const, title: question.ar, to: '/questions' },
+  ].filter(Boolean) as ThreadNode[]
 }
 
 function ArrowIcon() {
@@ -40,6 +72,33 @@ function SectionTitle({ index, title, sub }: { index: string; title: string; sub
         {sub && <p className="mt-1 text-[.78rem] leading-[1.75] text-soft">{sub}</p>}
       </div>
     </header>
+  )
+}
+
+function ThreadPanel({ nodes, close }: { nodes: ThreadNode[]; close: () => void }) {
+  return (
+    <div>
+      <SectionTitle index="01" title="الفكرة لا تعيش في صفحة واحدة." sub="مسار منتقى تلقائياً يصل المقال بأقرب كتاب وبحث ولقاء وسؤال من الأرشيف نفسه." />
+      <ol className="relative mt-7 grid gap-4 md:grid-cols-4 md:gap-5 before:absolute before:bottom-6 before:right-[.7rem] before:top-6 before:w-px before:bg-hair md:before:bottom-auto md:before:left-4 md:before:right-4 md:before:top-[1.05rem] md:before:h-px md:before:w-auto">
+        {nodes.map((node, index) => {
+          const content = (
+            <>
+              <span className="relative z-10 flex h-5 w-5 items-center justify-center rounded-full border border-accent/30 bg-canvas shadow-sm"><span className="h-2 w-2 rounded-full bg-accent" /></span>
+              <span className="mt-3 block text-[.62rem] font-semibold text-accent">{String(index + 1).padStart(2, '0')} · {node.kind}</span>
+              <span dir="auto" className="mt-1.5 block break-words text-start font-display text-[.88rem] font-medium leading-[1.65] text-ink transition-colors [overflow-wrap:anywhere] [text-wrap:balance] group-hover:text-accent md:text-[.94rem]">{node.title}</span>
+            </>
+          )
+          return (
+            <li key={`${node.kind}-${node.title}`} className="relative pe-9 md:pe-0">
+              {node.to
+                ? <Link to={node.to} onClick={close} className="group block h-full rounded-2xl border border-hair/70 bg-wash/45 px-4 py-4 transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-accent/35 hover:bg-wash">{content}</Link>
+                : <a href={node.href} target="_blank" rel="noreferrer" className="group block h-full rounded-2xl border border-hair/70 bg-wash/45 px-4 py-4 transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-accent/35 hover:bg-wash">{content}</a>}
+            </li>
+          )
+        })}
+      </ol>
+      <p className="mt-6 border-t border-hair pt-4 text-[.72rem] font-light leading-[1.8] text-soft">لا يدّعي هذا الخيط علاقة سببية؛ إنه أقصر طريق معرفي إلى المواد الأقرب في المعنى داخل الموقع.</p>
+    </div>
   )
 }
 
@@ -199,11 +258,14 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
   const remoteRecords = useExtras<IdeaLifeRemoteRecord>('site_idea_life')
   const remote = remoteRecords.find((record) => record.slug === article.slug && (!record.kind || record.kind === 'article'))
   const model = useMemo(() => buildIdeaLife(article, articles, books, papers, media, remote), [article, articles, books, papers, media, remote])
+  const threadNodes = useMemo(() => ideaThreadFor(article, books, papers, media), [article, books, papers, media])
+  const experienceSignature = useMemo(() => `${model.signature}:${threadNodes.map((node) => `${node.kind}:${node.title}`).join('|')}`, [model.signature, threadNodes])
   const availableTabs = useMemo(() => [
     { key: 'test' as const, label: 'اختبار الفكرة', visible: true },
+    { key: 'thread' as const, label: 'خيط الفكرة', visible: threadNodes.length > 0 },
     { key: 'time' as const, label: 'عبر الزمن', visible: model.predictions.length > 0 || model.timeLinks.length > 0 },
     { key: 'impact' as const, label: 'امتدادها وأثرها', visible: model.impact.length > 1 },
-  ].filter((tab) => tab.visible), [model])
+  ].filter((tab) => tab.visible), [model, threadNodes])
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState<TabKey>('test')
   const [isNew, setIsNew] = useState(false)
@@ -214,9 +276,9 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
   useEffect(() => {
     try {
       const previous = localStorage.getItem(`idea-life:${article.slug}`)
-      setIsNew(Boolean(previous && previous !== model.signature))
+      setIsNew(Boolean(previous && previous !== experienceSignature))
     } catch { setIsNew(false) }
-  }, [article.slug, model.signature])
+  }, [article.slug, experienceSignature])
 
   useEffect(() => {
     if (!open) return
@@ -236,13 +298,13 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
     }
     window.addEventListener('keydown', onKey)
-    try { localStorage.setItem(`idea-life:${article.slug}`, model.signature); setIsNew(false) } catch { /* noop */ }
+    try { localStorage.setItem(`idea-life:${article.slug}`, experienceSignature); setIsNew(false) } catch { /* noop */ }
     return () => {
       document.body.style.overflow = previousOverflow
       window.removeEventListener('keydown', onKey)
       window.requestAnimationFrame(() => triggerButton.current?.focus())
     }
-  }, [article.slug, model.signature, open])
+  }, [article.slug, experienceSignature, open])
 
   useEffect(() => {
     if (!availableTabs.some((item) => item.key === tab)) setTab(availableTabs[0]?.key || 'test')
@@ -260,7 +322,7 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
             initial={{ opacity: 0, y: 28, scale: .99 }} animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: .3, ease: [0.2, 0.7, 0.2, 1] }}
             onClick={(event) => event.stopPropagation()}
-            className="flex max-h-[calc(100dvh-3rem)] w-full max-w-4xl flex-col overflow-hidden rounded-t-[2rem] border border-hair bg-canvas shadow-[0_30px_100px_-36px_rgba(0,0,0,.65)] sm:max-h-[calc(100dvh-2.5rem)] sm:rounded-[2rem]"
+            className="idea-life-dialog flex max-h-[calc(100dvh-3rem)] w-full max-w-4xl flex-col overflow-hidden rounded-t-[2rem] border border-hair bg-canvas shadow-[0_30px_100px_-36px_rgba(0,0,0,.65)] sm:max-h-[calc(100dvh-2.5rem)] sm:rounded-[2rem]"
           >
             <header className="shrink-0 border-b border-hair px-5 pb-0 pt-5 md:px-8 md:pt-7">
               <div className="flex items-start justify-between gap-5">
@@ -289,6 +351,7 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: .2 }}>
                   {tab === 'test' && <TestPanel model={model} />}
+                  {tab === 'thread' && <ThreadPanel nodes={threadNodes} close={() => setOpen(false)} />}
                   {tab === 'time' && <TimePanel article={article} model={model} close={() => setOpen(false)} />}
                   {tab === 'impact' && <ImpactPanel model={model} close={() => setOpen(false)} />}
                 </motion.div>
@@ -310,7 +373,7 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
                 {isNew && <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[.64rem] font-semibold text-accent">جديد منذ قراءتك</span>}
               </span>
               <span className="mt-0.5 block text-[.74rem] leading-[1.7] text-soft">
-                اختبار فكري{model.predictions.length ? ' · مراجعة زمنية' : ''}{model.impact.length > 1 ? ' · امتداد وأثر' : ''}
+                اختبار فكري{threadNodes.length ? ' · خيط معرفي' : ''}{model.predictions.length ? ' · مراجعة زمنية' : ''}{model.impact.length > 1 ? ' · امتداد وأثر' : ''}
               </span>
             </span>
           </span>

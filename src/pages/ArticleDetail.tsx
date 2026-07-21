@@ -16,7 +16,6 @@ import { articleSystem, ideaTokens } from '../lib/intelligence'
 import { getArticleBody } from '../lib/article-bodies'
 import { liveLink } from '../lib/dead-links'
 import { usePersistentAudio } from '../lib/persistent-audio'
-import { staticQuestions } from '../questions-data'
 import { rememberIdeaVisit } from '../lib/idea-memory'
 import { recordArticleVisit } from '../lib/reading-space'
 import { SaveForLaterButton } from '../components/MySpace'
@@ -257,55 +256,6 @@ function bestBookTocMatch(article: ArticleRecord) {
     }
   }
   return best && best.score >= 3 ? best : null
-}
-
-
-function IdeaThread({ article, books, papers, media }: { article: ArticleRecord; books: BookRecord[]; papers: PaperRecord[]; media: MediaRecord[] }) {
-  const path = useMemo(() => {
-    const mine = tokensOf(`${article.title} ${article.excerpt || ''} ${article.cat}`)
-    const score = (value: string) => {
-      let total = 0
-      for (const token of tokensOf(value)) if (mine.has(token)) total += 1
-      return total
-    }
-    const best = <T,>(items: T[], text: (item: T) => string) => [...items]
-      .map((item, index) => ({ item, index, score: score(text(item)) }))
-      .sort((a, b) => b.score - a.score || a.index - b.index)[0]?.item
-
-    const book = best(books, (item) => `${item.title} ${item.desc || ''}`)
-    const paper = best(papers, (item) => `${item.title} ${item.meta || ''}`)
-    const appearance = best(media, (item) => `${item.title} ${item.outlet}`)
-    const question = best(staticQuestions, (item) => `${item.ar} ${item.take}`)
-    return [
-      book && { kind: 'كتاب', title: book.title, to: `/publications/${book.slug}` },
-      paper && { kind: 'بحث', title: paper.title, to: `/research/${paper.slug}` },
-      appearance && { kind: 'لقاء', title: appearance.title, href: appearance.url },
-      question && { kind: 'سؤال', title: question.ar, to: '/questions' },
-    ].filter(Boolean) as { kind: string; title: string; to?: string; href?: string }[]
-  }, [article.cat, article.excerpt, article.title, books, media, papers])
-
-  if (!path.length) return null
-  return (
-    <FadeUp>
-      <section id="idea-thread" className="idea-thread mt-14 overflow-hidden rounded-[2rem] border border-hair bg-wash/45 px-5 py-6 shadow-[0_18px_50px_rgba(20,24,32,.04)] md:px-8 md:py-8" aria-label="خيط الفكرة">
-        <div className="max-w-[42rem]">
-          <p className="text-[.68rem] font-semibold text-accent">خيط الفكرة</p>
-          <h2 className="mt-1 font-display text-[1.18rem] font-semibold leading-[1.55] text-ink md:text-[1.35rem]">الفكرة لا تعيش في صفحة واحدة.</h2>
-        </div>
-        <ol className="mobile-card-rail relative mt-7 grid gap-4 md:grid-cols-4 md:gap-5">
-          <span aria-hidden className="absolute bottom-6 right-[.7rem] top-6 w-px bg-hair md:bottom-auto md:left-4 md:right-4 md:top-[1.05rem] md:h-px md:w-auto" />
-          {path.map((node, index) => {
-            const content = <><span className="relative z-10 flex h-5 w-5 items-center justify-center rounded-full border border-accent/30 bg-canvas shadow-sm"><span className="h-2 w-2 rounded-full bg-accent" /></span><span className="mt-3 block text-[.62rem] font-semibold text-accent">{String(index + 1).padStart(2, '0')} · {node.kind}</span><span dir="auto" className="mt-1.5 block break-words text-start font-display text-[.88rem] font-medium leading-[1.65] text-ink transition-colors [overflow-wrap:anywhere] [text-wrap:balance] group-hover:text-accent md:text-[.94rem]">{node.title}</span></>
-            return (
-              <li key={`${node.kind}-${node.title}`} className="relative pe-9 md:pe-0">
-                {node.to ? <Link to={node.to} className="group block h-full rounded-2xl bg-canvas/70 px-4 py-3 transition-colors hover:bg-canvas">{content}</Link> : <a href={node.href} target="_blank" rel="noreferrer" className="group block h-full rounded-2xl bg-canvas/70 px-4 py-3 transition-colors hover:bg-canvas">{content}</a>}
-              </li>
-            )
-          })}
-        </ol>
-      </section>
-    </FadeUp>
-  )
 }
 
 
@@ -664,9 +614,7 @@ export default function ArticleDetail() {
             <IdeaLife article={article} articles={articles} books={books} papers={papers} media={media} />
           </FadeUp>
 
-          {/* «حياة الفكرة» تجمع الاختبار والزمن والأثر، لكنها لا تلغي «خيط الفكرة»
-              الأصلي الذي يقود القارئ مباشرةً إلى الكتاب والبحث واللقاء والسؤال. */}
-          <IdeaThread article={article} books={books} papers={papers} media={media} />
+          {/* نُقل «خيط الفكرة» بكامل وظيفته إلى نافذة «حياة هذه الفكرة» لتخفيف نهاية المقال من دون حذف الميزة. */}
 
           <FadeUp>
             <section className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-5" aria-label="مشاركة المقال والاستشهاد به">

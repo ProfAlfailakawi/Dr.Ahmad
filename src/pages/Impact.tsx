@@ -97,6 +97,13 @@ export default function Impact() {
     try { return node.url ? new URL(node.url).hostname.replace(/^www\./, '').toLowerCase() : '' } catch { return '' }
   }).filter(Boolean)).size
 
+  const headlineStats = [
+    { label: 'مسارات مكتشفة', value: chains.length },
+    { label: 'صلات قابلة للتحقق', value: linkedNodes.length },
+    { label: 'آثار خارجية مثبتة', value: verifiedNodes },
+    { label: 'جهات مستقلة', value: sourceCount },
+  ].filter((item) => item.value > 10)
+
   return (
     <Page className="content-impact page-journey">
       <PageHead
@@ -107,12 +114,16 @@ export default function Impact() {
 
       <section className="border-b border-hair px-6 py-7 md:px-11">
         <div className="mx-auto flex max-w-shell flex-wrap items-center justify-between gap-6">
-          <dl className="flex flex-wrap gap-x-8 gap-y-3">
-            <div><dt className="text-[.67rem] font-semibold text-accent">مسارات مكتشفة</dt><dd className="mt-1 font-display text-[1.35rem] font-semibold text-ink">{number.format(chains.length)}</dd></div>
-            <div><dt className="text-[.67rem] font-semibold text-accent">صلات قابلة للتحقق</dt><dd className="mt-1 font-display text-[1.35rem] font-semibold text-ink">{number.format(linkedNodes.length)}</dd></div>
-            <div><dt className="text-[.67rem] font-semibold text-accent">آثار خارجية مثبتة</dt><dd className="mt-1 font-display text-[1.35rem] font-semibold text-ink">{number.format(verifiedNodes)}</dd></div>
-            <div><dt className="text-[.67rem] font-semibold text-accent">جهات مستقلة</dt><dd className="mt-1 font-display text-[1.35rem] font-semibold text-ink">{number.format(sourceCount)}</dd></div>
-          </dl>
+          {headlineStats.length > 0 && (
+            <dl className="flex flex-wrap gap-x-8 gap-y-3">
+              {headlineStats.map((item) => (
+                <div key={item.label}>
+                  <dt className="text-[.67rem] font-semibold text-accent">{item.label}</dt>
+                  <dd className="mt-1 font-display text-[1.35rem] font-semibold text-ink">{number.format(item.value)}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
           <div role="tablist" aria-label="تصفية سجل الأثر" className="flex max-w-full gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {[
               ['all', 'الكل'], ['paper', 'علمي'], ['media', 'إعلامي'], ['application', 'تطبيقي'], ['archive', 'أرشيفي'],

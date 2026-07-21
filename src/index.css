@@ -2231,3 +2231,30 @@ html.site-silent .human-core__title-line::after { animation: none !important; op
 @media (display-mode: standalone) {
   .floating-actions { bottom: calc(1rem + env(safe-area-inset-bottom)) !important; }
 }
+
+/* ============================================================
+   أسطح العرض: منع قائمة iOS الأصلية من تغطية التجربة
+   يبقى نص المقال نفسه قابلاً للتحديد؛ المنع محصور في النوافذ والأعمال البصرية.
+   ============================================================ */
+[role="dialog"]:not(.allow-text-selection),
+[role="dialog"]:not(.allow-text-selection) *:not(input):not(textarea):not([contenteditable="true"]),
+.social-visual-preview,
+.social-visual-preview * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+[role="dialog"] input,
+[role="dialog"] textarea,
+[role="dialog"] [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+.social-visual-preview img {
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-drag: none;
+}

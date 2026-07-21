@@ -30,7 +30,14 @@ function ReturningNote({ articles }: { articles: ArticleRecord[] }) {
   const away = snapshot.previous ? Date.now() - snapshot.previous : 0
   const lastIso = snapshot.previous ? new Date(snapshot.previous).toISOString().slice(0, 10) : ''
   const newArticles = away >= 12 * 3600e3 ? articles.filter((article) => article.iso > lastIso).length : 0
-  const resume = snapshot.lastRead && Date.now() - snapshot.lastRead.at < 45 * 864e5 ? snapshot.lastRead : null
+  const currentLastRead = snapshot.lastRead?.slug ? articles.find((article) => article.slug === snapshot.lastRead?.slug) : undefined
+  const resume = currentLastRead && snapshot.lastRead && Date.now() - snapshot.lastRead.at < 45 * 864e5
+    ? { slug: currentLastRead.slug, title: currentLastRead.title, at: snapshot.lastRead.at }
+    : null
+  useEffect(() => {
+    if (!snapshot.lastRead?.slug || currentLastRead) return
+    try { localStorage.removeItem('read:last') } catch { /* noop */ }
+  }, [currentLastRead, snapshot.lastRead?.slug])
   if (!newArticles && !resume) return null
   return (
     <div className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.82rem] text-soft">

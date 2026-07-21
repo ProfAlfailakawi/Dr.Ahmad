@@ -10,6 +10,7 @@ import { firebaseEnabled, getDb } from '../lib/firebase'
 import { trackShare } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
+import { MySpace } from './MySpace'
 
 /* ---------- النشرة البريدية ---------- */
 export function Newsletter({ compact = false }: { compact?: boolean }) {
@@ -101,7 +102,8 @@ export function FloatingActions() {
   if (location.pathname.startsWith('/admin')) return null
 
   return (
-    <div className="floating-actions reader-hide-focus fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[210] transition-[bottom] duration-300 md:right-6">
+    <div className="floating-actions reader-hide-focus fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[210] flex flex-col items-center gap-2 transition-[bottom] duration-300 md:right-6">
+      <MySpace />
       <AnimatePresence>
         {show && !nearBottom && (
           <motion.button

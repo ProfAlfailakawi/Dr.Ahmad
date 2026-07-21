@@ -18,6 +18,8 @@ import { liveLink } from '../lib/dead-links'
 import { usePersistentAudio } from '../lib/persistent-audio'
 import { staticQuestions } from '../questions-data'
 import { rememberIdeaVisit } from '../lib/idea-memory'
+import { recordArticleVisit } from '../lib/reading-space'
+import { SaveForLaterButton } from '../components/MySpace'
 import bookTocLinks from '../data/book-toc-links.json'
 
 const canUseDropCap = (paragraph: string) =>
@@ -557,7 +559,7 @@ export default function ArticleDetail() {
   // يتذكّر جهازُك المقال والفكرة محليًا — بلا حساب ولا ملف شخصي ولا إرسال للخادم.
   useEffect(() => {
     if (!a) return
-    try { localStorage.setItem('read:last', JSON.stringify({ slug: a.slug, title: a.title, at: Date.now() })) } catch { /* noop */ }
+    recordArticleVisit(a)
     markArticleRead(a.slug)
     rememberIdeaVisit({ slug: a.slug, title: a.title, cat: a.cat, excerpt: a.excerpt, body: a.body || staticBody })
   }, [a, staticBody])
@@ -622,7 +624,7 @@ export default function ArticleDetail() {
             {article.body && (
               <div className="article-reading-actions mt-4 flex items-start gap-4 pb-1">
                 <div id="article-audio" className="min-w-0 flex-1"><Listen compact slug={article.slug} title={article.title} text={article.body} audio={article.audio} audioControl={article.audioControl} /></div>
-                <ReaderControls article={article} />
+                <div className="flex shrink-0 items-center gap-2"><SaveForLaterButton slug={article.slug} /><ReaderControls article={article} /></div>
               </div>
             )}
             {article.body && (

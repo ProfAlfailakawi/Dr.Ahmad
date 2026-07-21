@@ -58,7 +58,6 @@
 - **العودة التي لا تُصلِح ما قبلها** — ٣٤٣ كلمة — /articles/the-return-that-fails-to-fix-what-came-before-itarabic
 - **حين ماتت الحقيقة ونجت الرواية** — ٣٣٨ كلمة — /articles/when-truth-died-and-the-narrative-survivedarabic
 - **أكتب لأوقظك… لا لأحبطك!** — ٣٣٤ كلمة — /articles/i-write-to-awaken-you-not-to-discourage-you-2
-- **@DrAhmadkw** — ٣٣٤ كلمة — /articles/jarida-202508-001
 - **ممتاز في الدرجات… ضائع في القرار!** — ٣٢٨ كلمة — /articles/excellent-in-grades-lost-in-decision
 - **جيل يعرف كل شيء… ولا يفهم شيئاً** — ٣٤٩ كلمة — /articles/a-generation-that-knows-everything-and-understands-nothing
 - **خريجو زمن الكورونا.. ولكن!** — ٣٤٤ كلمة — /articles/graduates-in-the-time-of-corona
@@ -80,7 +79,6 @@
 ## المصادر العامة التي تحتاج رابطاً مباشراً
 
 - **الطالب المثالي… مشروع مواطن مطيع؟** — https://www.aljarida.com/author/1178/%D8%AF-%D8%A3%D8%AD%D9%85%D8%AF-%D8%AD%D8%B3%D9%8A%D9%86-%D8%A7%D9%84%D9%81%D9%8A%D9%84%D9%83%D8%A7%D9%88%D9%8A
-- **@DrAhmadkw** — https://www.aljarida.com/author/1178/%D8%AF-%D8%A3%D8%AD%D9%85%D8%AF-%D8%AD%D8%B3%D9%8A%D9%86-%D8%A7%D9%84%D9%81%D9%8A%D9%84%D9%83%D8%A7%D9%88%D9%8A
 - **الرياضات الإلكترونية** — https://www.aljarida.com/author/1178/%D8%AF-%D8%A3%D8%AD%D9%85%D8%AF-%D8%AD%D8%B3%D9%8A%D9%86-%D8%A7%D9%84%D9%81%D9%8A%D9%84%D9%83%D8%A7%D9%88%D9%8A
 - **إنه زمن التعليم الذي يحتاج إلى تعليم… إلى أين؟** — https://www.aljarida.com/author/1178/%D8%AF-%D8%A3%D8%AD%D9%85%D8%AF-%D8%AD%D8%B3%D9%8A%D9%86-%D8%A7%D9%84%D9%81%D9%8A%D9%84%D9%83%D8%A7%D9%88%D9%8A
 - **خريجي زمن الكورونا… ولكن!!** — https://www.alqabas.com/author/332/
@@ -255,7 +253,6 @@
 | [الذكاء الاصطناعي يُدرّس… والعقل البشري يُقصى](/articles/artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2) | 2025 / تقنية | ٤٢٠ | موجود | فهد + نورة | aljarida.com | موجودة | سليم |
 | [أكتب لأوقظك… لا لأحبطك!](/articles/i-write-to-awaken-you-not-to-discourage-you-2) | 2025 / مجتمع | ٣٣٤ | موجود | فهد + نورة | aljarida.com | موجودة | أقل من النطاق المستهدف (٣٣٤) |
 | [نجح في الامتحان… وفشل في السؤال!](/articles/he-passed-the-exam-but-failed-the-question-2) | 2025 / التعليم | ٣٦٨ | موجود | فهد + نورة | aljarida.com | موجودة | سليم |
-| [@DrAhmadkw](/articles/jarida-202508-001) | 2025 / التربية | ٣٣٤ | موجود | فهد + نورة | عام | موجودة | أقل من النطاق المستهدف (٣٣٤)؛ المصدر صفحة كاتب عامة لا رابط المقال المباشر |
 | [من الساحة المدرسية… إلى ساحة المطاعم!](/articles/from-the-schoolyard-to-the-food-court-2) | 2025 / التربية | ٠ | مفقود | مفقود | aljarida.com | موجودة | النص الكامل مفقود؛ لا توجد قراءة صوتية مسجلة |
 | [نُرضعهم حناناً… ونحرمهم تربية!](/articles/we-breastfeed-them-with-tenderness-and-deprive-them-of-education) | 2025 / التربية | ٣٥٥ | موجود | فهد + نورة | aljarida.com | موجودة | سليم |
 | [ربحت أكثر من «هارفارد»… لكنها لا تدرّس عقلاً!](/articles/i-earned-more-than-harvard-but-it-doesnt-teach-brains) | 2025 / التعليم | ٣٩١ | موجود | فهد + نورة | aljarida.com | موجودة | سليم |

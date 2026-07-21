@@ -4,8 +4,8 @@
  *
  * - المصدر مغلق على قائمة المؤسسات والمجلات الموجودة في editorial-policy.json.
  * - التصفية الميكانيكية تمنع الموضوعات غير المناسبة والمصادر غير المعتمدة.
- * - لا نموذج لغويّ في هذا الطريق البتة: العنوان والوصف والتاريخ من المصدر كما نشرها.
- * - سطرٌ عربيٌّ واحد يُستنتج ميكانيكياً من نصّ المادة نفسها (بابها)، ولا يُخترع عليها شيء.
+ * - يترجم العنوان والخلاصة إلى العربية تلقائياً ترجمة أمينة، ويحتفظ بالرابط الأصلي كما هو.
+ * - إن تعذرت خدمة الترجمة لا يظهر نص إنجليزي في الموقع؛ يُستخدم وصف عربي آمن مؤقتاً وتُعاد المحاولة لاحقاً.
  * - التنويع مفروضٌ في الاختيار: مصدرٌ ظهر حديثاً يتأخّر عن مصدرٍ لم يظهر.
  * - وثيقة واحدة كحد أقصى يوميًا في site_radar، والرابط الأصلي لا يكتبه النموذج.
  */
@@ -165,30 +165,54 @@ function pickCandidate(items, tiredSources = new Map()) {
   return [...items].sort((left, right) => candidateScore(right, tiredSources) - candidateScore(left, tiredSources))[0] || null
 }
 
-/**
- * بطاقةُ المادة — من المصدر وحده.
- *
- * كانت هنا رحلةٌ إلى Gemini يُطلب فيها عنوانٌ عربيّ، فإذا تعذّرت — ورصيدُ
- * النموذج ينفد وخدمتُه تزدحم — سقطت إلى جملةٍ قالبية واحدة تُكتب فوق كل
- * مادةٍ في الدنيا، ثم تُنشر. فخرجت أربع بطاقاتٍ متطابقةٍ في أربعة أيام.
- *
- * والرادار لا يحتاج نموذجاً ليصدق: المصدر يعطينا عنواناً حقيقياً ووصفاً
- * حقيقياً وتاريخاً حقيقياً. نعرضها كما نُشرت، ونضيف سطراً عربياً واحداً هو
- * بابُ المادة — مستنتَجاً من نصّها لا مخترَعاً عليها. فلا اختراع، ولا تكلفة،
- * ولا انقطاعَ خدمةٍ يُعطّل الصفحة.
- *
- * وحقل ar يبقى فارغاً عمداً: هو إقرارٌ بأن لا صياغةَ عربيةً لهذه المادة،
- * والواجهة تقرأ فراغه فتُصدّر العنوان الأصلي إلى موضع العنوان بدل أن تدفنه.
- */
-function sourceSummary(item) {
+const hasArabic = (value = '') => /[ء-ي]/.test(value)
+const cleanJson = (value = '') => String(value).replace(/^```(?:json)?\s*|\s*```$/g, '').trim()
+
+function fallbackArabic(item) {
+  const topic = topicOf(item)
   return {
-    ar: '',
-    arNote: topicOf(item),
+    titleAr: `مادة حديثة حول ${topic}`,
+    summaryAr: `التقطها الرادار من مصدر موثوق ضمن محور ${topic}، ويقود الرابط إلى المادة الأصلية.`,
+    translationStatus: 'fallback',
+  }
+}
+
+async function translateArabic(item) {
+  const key = env.GEMINI_API_KEY || env.GOOGLE_API_KEY
+  if (!key) return fallbackArabic(item)
+  const models = env.GEMINI_MODEL ? [env.GEMINI_MODEL] : ['gemini-flash-latest', 'gemini-flash-lite-latest']
+  const prompt = `ترجم المادة التالية إلى العربية الفصحى المعاصرة ترجمة دقيقة بلا إضافة أي معلومة غير موجودة.\nأعد JSON فقط بالشكل: {"titleAr":"...","summaryAr":"..."}.\n- العنوان العربي واضح وطبيعي، لا يتجاوز 120 حرفاً.\n- الخلاصة العربية جملة أو جملتان، لا تتجاوز 260 حرفاً.\n- لا تكتب الاسم الإنجليزي أو النص الإنجليزي داخل الحقول العربية إلا الاختصارات العلمية التي لا بد منها.\nالعنوان: ${item.title}\nالوصف: ${item.desc || ''}\nالمصدر: ${item.source}`
+  for (const model of models) {
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.15 } }),
+        signal: AbortSignal.timeout(30_000),
+      })
+      if (!response.ok) continue
+      const payload = await response.json()
+      const raw = payload?.candidates?.[0]?.content?.parts?.[0]?.text || ''
+      const parsed = JSON.parse(cleanJson(raw))
+      const titleAr = strip(parsed?.titleAr).slice(0, 180)
+      const summaryAr = strip(parsed?.summaryAr).slice(0, 340)
+      if (hasArabic(titleAr) && hasArabic(summaryAr)) return { titleAr, summaryAr, translationStatus: 'translated' }
+    } catch { /* نجرب النموذج التالي ثم البديل الآمن */ }
+  }
+  return fallbackArabic(item)
+}
+
+function sourceSummary(item, translation) {
+  const translated = translation || fallbackArabic(item)
+  return {
+    ar: translated.titleAr,
+    arNote: translated.summaryAr,
     en: item.title,
     enNote: item.desc ? item.desc.slice(0, 260) : '',
     source: item.source,
     url: item.link,
     publishedAt: item.publishedAt?.toISOString() || '',
+    translationStatus: translated.translationStatus || 'fallback',
   }
 }
 
@@ -230,13 +254,18 @@ async function todayAlreadyPublished(token, day) {
 async function recentRadar(token) {
   try {
     const response = await fetch(`${firestoreBase()}/site_radar?pageSize=60`, { headers: { Authorization: `Bearer ${token}` } })
-    if (!response.ok) return { urls: new Set(), tiredSources: new Map() }
+    if (!response.ok) return { urls: new Set(), tiredSources: new Map(), documents: [] }
     const payload = await response.json()
     const documents = (payload.documents || [])
       .map((document) => ({
         url: document.fields?.url?.stringValue || '',
         source: document.fields?.source?.stringValue || '',
         day: document.fields?.day?.stringValue || '',
+        name: String(document.name || '').split('/').pop(),
+        ar: document.fields?.ar?.stringValue || '',
+        en: document.fields?.en?.stringValue || '',
+        enNote: document.fields?.enNote?.stringValue || '',
+        translationStatus: document.fields?.translationStatus?.stringValue || '',
       }))
       .sort((left, right) => right.day.localeCompare(left.day))
     const urls = new Set(documents.map((document) => document.url).filter(Boolean))
@@ -246,8 +275,30 @@ async function recentRadar(token) {
       const weight = (6 - index) / 6            // الأحدث ١٫٠ ثم يتناقص
       tiredSources.set(document.source, (tiredSources.get(document.source) || 0) + weight)
     })
-    return { urls, tiredSources }
-  } catch { return { urls: new Set(), tiredSources: new Map() } }
+    return { urls, tiredSources, documents }
+  } catch { return { urls: new Set(), tiredSources: new Map(), documents: [] } }
+}
+
+async function repairMissingArabic(token, documents = []) {
+  const missing = documents.filter((item) => item.name && item.en && (!hasArabic(item.ar) || item.translationStatus !== 'translated')).slice(0, 12)
+  if (!missing.length) return
+  console.log(`إصلاح عربي: ${missing.length} بطاقة قديمة`)
+  for (const item of missing) {
+    const translated = await translateArabic({ title: item.en, desc: item.enNote, source: item.source })
+    if (translated.translationStatus !== 'translated') {
+      console.warn(`  ⚠ الترجمة غير متاحة الآن لـ ${item.name}؛ ستُعاد المحاولة في التشغيل التالي.`)
+      continue
+    }
+    const fields = {
+      ar: { stringValue: translated.titleAr },
+      arNote: { stringValue: translated.summaryAr },
+      translationStatus: { stringValue: translated.translationStatus },
+    }
+    const response = await fetch(`${firestoreBase()}/site_radar/${encodeURIComponent(item.name)}?updateMask.fieldPaths=ar&updateMask.fieldPaths=arNote&updateMask.fieldPaths=translationStatus`, {
+      method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ fields }),
+    })
+    if (!response.ok) console.warn(`  ⚠ تعذر تحديث ${item.name}: ${response.status}`)
+  }
 }
 
 async function publish(item, token, day) {
@@ -275,8 +326,8 @@ function selfTest() {
     source: 'Fixture', title: 'University funding policy reform debated', link: 'https://example.org/two',
     desc: 'Lawmakers weigh a new budget for higher education districts.', publishedAt: new Date(),
   })
-  if (cardA.ar || cardB.ar) throw new Error('حقل ar يجب أن يبقى فارغاً — الواجهة تعتمد فراغه')
-  if (!cardA.en || cardA.en !== selected.title) throw new Error('العنوان الأصلي يجب أن يصل كما نشره المصدر')
+  if (!hasArabic(cardA.ar) || !hasArabic(cardB.ar)) throw new Error('العنوان العربي الاحتياطي مفقود')
+  if (!cardA.en || cardA.en !== selected.title) throw new Error('العنوان الأصلي يجب أن يبقى محفوظاً للمرجع')
   if (cardA.arNote === cardB.arNote) throw new Error('السطر العربي قالبيّ — مادتان مختلفتان أعطتا السطر نفسه')
   if (cardA.url !== selected.link) throw new Error('الرابط تغيّر')
 
@@ -290,7 +341,7 @@ function selfTest() {
 
   console.log(JSON.stringify({
     ok: true, sources: POLICY.allowedSources.length, parsed: items.length,
-    selected: selected.title, topic: cardA.arNote, variety: 'enforced', gemini: 'removed',
+    selected: selected.title, topic: cardA.arNote, variety: 'enforced', arabic: 'automatic',
   }, null, 2))
 }
 
@@ -303,15 +354,17 @@ const day = new Date().toISOString().slice(0, 10)
 console.log(`رادار المختارات · ${day} · ${POLICY.allowedSources.length} مصادر موثوقة\n`)
 
 const token = await firestoreToken()
+const recentState = await recentRadar(token)
+await repairMissingArabic(token, recentState.documents)
 if (await todayAlreadyPublished(token, day)) {
-  console.log(`✔ مختارة اليوم (${day}) منشورة أصلًا.`)
+  console.log(`✔ مختارة اليوم (${day}) منشورة أصلًا، وتمت مراجعة التعريب القديم.`)
   process.exit(0)
 }
 
 const raw = (await Promise.all(POLICY.allowedSources.map(fetchFeed))).flat()
 console.log(`\nالتقط ${raw.length} مادة خام`)
 
-const { urls: recentUrls, tiredSources } = await recentRadar(token)
+const { urls: recentUrls, tiredSources } = recentState
 const pool = raw.filter((item) => {
   if (recentUrls.has(item.link)) return false
   if (item.publishedAt && Date.now() - item.publishedAt.getTime() > 21 * 86_400_000) return false
@@ -334,7 +387,8 @@ if (tiredSources.size) {
 }
 
 const chosen = pickCandidate(pool, tiredSources)
-const summary = sourceSummary(chosen)
+const translation = await translateArabic(chosen)
+const summary = sourceSummary(chosen, translation)
 console.log(`اختار: ${chosen.title}\nالمصدر: ${chosen.source}\nالباب: ${summary.arNote}\nالرابط: ${chosen.link}`)
 await publish(summary, token, day)
 console.log('\n✔ نُشرت مختارة الإنترنت في site_radar وتظهر فورًا في /curated')

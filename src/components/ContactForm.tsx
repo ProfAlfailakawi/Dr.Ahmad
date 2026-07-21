@@ -125,6 +125,16 @@ export function ContactForm() {
               غيّر نوع الطلب
             </button>
           </div>
+          {active.key === 'محاضرة أو ورشة' && (
+            <p className="mt-3 text-[.76rem] leading-relaxed text-soft">
+              للاطلاع قبل إرسال الطلب: <a href="/files/Dr-Ahmad-Training-Profile.pdf" target="_blank" rel="noreferrer" className="font-medium text-accent transition-colors hover:text-accent-deep">الملف التعريفي والبرامج التدريبية PDF ↗</a>
+            </p>
+          )}
+          {active.key === 'لقاء إعلامي' && (
+            <p className="mt-3 text-[.76rem] leading-relaxed text-soft">
+              للصحافة والبرامج: <a href="/files/Dr-Ahmad-Media-Kit.pdf" target="_blank" rel="noreferrer" className="font-medium text-accent transition-colors hover:text-accent-deep">الملف الإعلامي المختصر PDF ↗</a>
+            </p>
+          )}
 
           <div className="mt-5 grid gap-3.5 sm:grid-cols-2">
             <input value={name} onChange={(e) => { setName(e.target.value); setState('idle') }} placeholder="الاسم" aria-label="الاسم" className={field} />

@@ -59,6 +59,9 @@ jobs:
         env:
           FIREBASE_PROJECT_ID: drahmad-8e9e2
           FIREBASE_SERVICE_ACCOUNT: sa.json
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
 
       - name: Remove temporary credentials
         if: always()

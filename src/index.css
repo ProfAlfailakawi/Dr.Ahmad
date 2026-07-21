@@ -196,7 +196,6 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
   -ms-overflow-style: none;
   overscroll-behavior-inline: contain;
   overscroll-behavior-block: auto;
-  -webkit-overflow-scrolling: touch;
 }
 .rail::-webkit-scrollbar { display: none; }
 @media (hover: hover) and (pointer: fine) {
@@ -865,6 +864,60 @@ body:has(.reader-modal-overlay) .floating-actions {
   pointer-events: none;
 }
 
+/* «مساحتي»: أيقونة صغيرة بحضور هادئ، وطبقة مستقلة لا تتزاحم مع أزرار الموقع. */
+.my-space-trigger {
+  isolation: isolate;
+  transform: translateZ(0);
+}
+.my-space-trigger::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  z-index: -1;
+  border: 1px solid rgb(var(--c-accent) / .2);
+  border-radius: 999px;
+  opacity: 0;
+  transform: scale(.86);
+  transition: opacity .35s var(--E), transform .45s var(--E);
+}
+.my-space-trigger::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(125deg, transparent 22%, rgb(var(--c-canvas) / .62) 48%, transparent 72%);
+  opacity: .38;
+  pointer-events: none;
+}
+.my-space-trigger:hover::before,
+.my-space-trigger:focus-visible::before {
+  opacity: 1;
+  transform: scale(1);
+}
+.my-space-overlay {
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+.my-space-panel {
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--c-accent) / .45) transparent;
+}
+.my-space-panel::-webkit-scrollbar { width: 6px; }
+.my-space-panel::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgb(var(--c-accent) / .35);
+}
+body:has(.my-space-overlay) .floating-actions {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .my-space-trigger::before { transition: none; }
+}
+
 @media (pointer: coarse) {
   .reader-selection-toolbar button {
     min-height: 44px;
@@ -1367,9 +1420,6 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
     scrollbar-width: none;
     -ms-overflow-style: none;
     touch-action: pan-x pan-y;
-    -webkit-overflow-scrolling: touch;
-    will-change: scroll-position;
-    transform: translateZ(0);
   }
   .mobile-card-rail::-webkit-scrollbar,
   .mobile-paired-grid::-webkit-scrollbar { display: none; }
@@ -1381,21 +1431,6 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
     max-width: min(74vw, 340px);
     height: auto;
     scroll-snap-align: none;
-    backface-visibility: hidden;
-  }
-
-  /*
-     ثبات الكروت أثناء السحب الأفقي على الهاتف:
-     بعض البطاقات تُكشف بحركة دخول رأسية عند دخولها مجال الرؤية. في الشريط
-     الأفقي يعني ذلك أن البطاقة ترتفع لحظة سحبها من الطرف، فيبدو الأمر كقفزة.
-     نُبقي حركة الصفحة كما هي، ونوقف فقط تحويلات/تلاشي العنصر المباشر داخل
-     الشريط على الهاتف؛ السحب نفسه يظل حرّاً وطبيعياً بلا نقاط جذب إلزامية.
-  */
-  :is(.rail, .mobile-card-rail, .mobile-paired-grid) > [style*="transform"] {
-    transform: none !important;
-  }
-  :is(.rail, .mobile-card-rail, .mobile-paired-grid) > [style*="opacity"] {
-    opacity: 1 !important;
   }
   .mobile-card-rail > :only-child,
   .mobile-paired-grid > :only-child {

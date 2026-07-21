@@ -231,9 +231,16 @@ function SinceLastVisit() {
     } catch { return null }
   })
   // آخر مقالٍ فتحه الزائر (من جهازه فقط) — يُعرض له بهدوء ليُكمل من حيث توقّف
-  const [lastRead] = useState<{ slug: string; title: string; at: number } | null>(() => {
+  const [lastReadRaw] = useState<{ slug?: string; at?: number } | null>(() => {
     try { return JSON.parse(localStorage.getItem('read:last') || 'null') } catch { return null }
   })
+  const lastReadArticle = lastReadRaw?.slug ? articles.find((article) => article.slug === lastReadRaw.slug) : undefined
+  const lastRead = lastReadArticle ? { slug: lastReadArticle.slug, title: lastReadArticle.title, at: Number(lastReadRaw?.at || 0) } : null
+
+  useEffect(() => {
+    if (!lastReadRaw?.slug || lastReadArticle) return
+    try { localStorage.removeItem('read:last') } catch { /* noop */ }
+  }, [lastReadArticle, lastReadRaw?.slug])
 
   const away = last ? Date.now() - last : 0
   const showSince = last && away >= 12 * 3600e3

@@ -6,6 +6,7 @@ import { FloatingActions } from './components/extras'
 import { CmsProvider } from './lib/content'
 import { useTrackJourney, useTrackView } from './lib/views'
 import { PersistentAudioDock, PersistentAudioProvider } from './lib/persistent-audio'
+import { ReadingMemoryGuard } from './components/MySpace'
 import Home from './pages/Home'
 
 /* تقسيم الكود: الرئيسية فورية، وبقية الصفحات تُحمَّل عند زيارتها فقط —
@@ -257,6 +258,7 @@ export default function App() {
           <WesternDigitsGuard />
           <AdaptiveSilence />
           <ExclusiveDetailsGuard />
+          <ReadingMemoryGuard />
           <RouteJourneyTracker />
           <RouteViewTracker />
           <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import type { ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { trackListen } from './views'
+import { storeLastAudio } from './reading-space'
 
 const ar = (n: number) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 const clock = (seconds: number) => {
@@ -65,6 +66,7 @@ export function PersistentAudioProvider({ children }: { children: ReactNode }) {
     const savePosition = () => {
       if (!state.track || !Number.isFinite(el.currentTime)) return
       try { localStorage.setItem(`audio:pos:${state.track.id}`, String(el.currentTime)) } catch { /* noop */ }
+      storeLastAudio(state.track, el.currentTime, Number.isFinite(el.duration) ? el.duration : state.duration)
     }
     const onTime = () => {
       setState((prev) => ({ ...prev, current: el.currentTime || 0 }))
@@ -90,7 +92,10 @@ export function PersistentAudioProvider({ children }: { children: ReactNode }) {
     const onCanPlay = () => setState((prev) => ({ ...prev, status: 'ready', error: '' }))
     const onLoad = () => setState((prev) => ({ ...prev, status: 'loading', error: '' }))
     const onWaiting = () => { if (!el.paused) setState((prev) => ({ ...prev, status: 'loading' })) }
-    const onPlaying = () => setState((prev) => ({ ...prev, playing: true, status: 'ready', error: '' }))
+    const onPlaying = () => {
+      if (state.track) storeLastAudio(state.track, el.currentTime || 0, Number.isFinite(el.duration) ? el.duration : 0)
+      setState((prev) => ({ ...prev, playing: true, status: 'ready', error: '' }))
+    }
     const onPause = () => { savePosition(); setState((prev) => ({ ...prev, playing: false })) }
     const onEnd = () => {
       savePosition()

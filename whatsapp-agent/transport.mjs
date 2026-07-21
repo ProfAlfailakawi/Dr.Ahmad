@@ -22,6 +22,24 @@ const decode = (value) => JSON.parse(value, (_key, item) => {
   return legacy || item
 })
 
+
+/**
+ * يبدّل Baileys أحياناً بين عنوان الهاتف وعنوان LID للشخص نفسه. لو حُفظت
+ * جلسة الإيقاظ على أحدهما ووصلت الرسالة التالية بالآخر ظنّ البوت أنها محادثة
+ * جديدة وصمت. نثبّت المحادثة الفردية على رقم الهاتف حين يرسله واتساب في
+ * remoteJidAlt، مع إبقاء المجموعات والحالات والقنوات على عنوانها الأصلي.
+ */
+export function canonicalChatJid(message) {
+  const primary = String(message?.key?.remoteJid || '')
+  if (!primary.endsWith('@lid')) return primary
+  const alternatives = [
+    message?.key?.remoteJidAlt,
+    message?.key?.senderPn,
+    message?.key?.participantAlt,
+  ].map((value) => String(value || '')).filter(Boolean)
+  return alternatives.find((value) => /@(s\.whatsapp\.net|c\.us)$/i.test(value)) || primary
+}
+
 export class MockTransport extends EventEmitter {
   constructor() { super(); this.status = 'disconnected'; this.sent = []; this.qr = null }
   async connect() { this.status = 'connected'; this.emit('status', this.status); return { status: this.status } }
@@ -116,7 +134,7 @@ export async function createWhatsAppTransport({ db, onMessage, onContacts, onQr,
     socket.ev.on('messaging-history.set', ({ contacts }) => harvest(contacts, 'history'))
     socket.ev.on('messages.upsert', ({ messages }) => {
       for (const message of messages || []) {
-        const jid = message?.key?.remoteJid
+        const jid = canonicalChatJid(message)
         const messageId = message?.key?.id
         const fromMe = Boolean(message?.key?.fromMe)
         const text = message?.message?.conversation || message?.message?.extendedTextMessage?.text || message?.message?.imageMessage?.caption || ''

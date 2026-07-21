@@ -5,7 +5,7 @@ import path from 'node:path'
 import { openDatabase } from './db.mjs'
 import { buildContentIndex, searchContent } from './content-index.mjs'
 import { classifyIntent, handleIncoming, setSuppression, shouldRespondToMessage } from './intent-engine.mjs'
-import { MockTransport } from './transport.mjs'
+import { MockTransport, canonicalChatJid } from './transport.mjs'
 import { createAgent } from './agent.mjs'
 import { quoteCardPayload } from './quote-card.mjs'
 import { runCostAudit } from './cost-audit.mjs'
@@ -29,6 +29,10 @@ export async function runSelfTest(root) {
   assert.equal(stats.count, items.length)
   assert.ok(agent.bridgeSecret().length >= 64, 'bridge secret must be at least 64 chars')
   assert.equal(classifyIntent('شنو آخر مقالة؟').intent, 'LATEST_ARTICLE')
+  assert.equal(classifyIntent('شنو آخر مقالاته؟').intent, 'LATEST_ARTICLES')
+  assert.equal(classifyIntent('شنو جديد الدكتور؟').intent, 'LATEST_CONTENT')
+  assert.equal(classifyIntent('شنو أكثر مقالة مشاهدة؟').intent, 'MOST_VIEWED_ARTICLE')
+  assert.equal(classifyIntent('شنو أكثر موضوع يكتب عنه؟').intent, 'TOP_ARTICLE_TOPIC')
   assert.equal(classifyIntent('عندي دقيقة').intent, 'ONE_MINUTE')
   assert.equal(classifyIntent('فاجئني').intent, 'SURPRISE_ME')
   assert.equal(searchContent(db, 'الذكاء الاصطناعي', { limit: 3 }).length >= 0, true)
@@ -45,12 +49,23 @@ export async function runSelfTest(root) {
   assert.equal(blocked.allowed, false)
   const personalContent = handle({ db, jid: '12345@s.whatsapp.net', text: 'شنو آخر مقالة؟' })
   assert.equal(personalContent.shouldRespond, false)
+  assert.equal(handle({ db, jid: '12345@s.whatsapp.net', text: 'شنو جديد الدكتور؟' }).shouldRespond, false, '★ الجديد لا يعمل قبل الإيقاظ')
+  assert.equal(handle({ db, jid: '12345@s.whatsapp.net', text: 'شنو أكثر مقالة مشاهدة؟' }).shouldRespond, false, '★ الترتيب لا يعمل قبل الإيقاظ')
   /* ★ «سؤال:» و«اسأل الدكتور» أُغلقتا بأمر الدكتور، وحُصر الإيقاظ في جملته
      المنشورة وحدها. وظلّ الاختبار يطالب بالسلوك القديم فبقي أحمر — ولهذا لم
      يمسك أحدٌ ثغرتَي المجموعة والصوت: الفحص لم يكن يُشغَّل. */
   assert.equal(handle({ db, jid: '12345@s.whatsapp.net', text: 'سؤال: شنو آخر مقالة؟' }).shouldRespond, false, '★ «سؤال:» لم تعد توقظ')
   const result = handle({ db, jid: '12345@s.whatsapp.net', text: 'موقع د. أحمد' })
   assert.equal(result.shouldRespond, true, '★ والجملة المنشورة وحدها توقظ')
+  const naturalNew = handle({ db, jid: '12345@s.whatsapp.net', text: 'شنو جديد الدكتور؟' })
+  assert.equal(naturalNew.shouldRespond, true, '★ وبعد الإيقاظ يفهم سؤال الجديد الطبيعي')
+  assert.match(naturalNew.text || '', /الجديد الآن|مكتبة الدكتور/, '★ ويرد من فهرس الموقع')
+  const naturalArticles = handle({ db, jid: '12345@s.whatsapp.net', text: 'شنو آخر مقالاته؟' })
+  assert.equal(naturalArticles.shouldRespond, true, '★ ويفهم جمع المقالات')
+  assert.match(naturalArticles.text || '', /أحدث .*مقالات|أحدث مقالة/, '★ ويعرض أكثر من خيار عند طلب الجمع')
+  const naturalPopular = handle({ db, jid: '12345@s.whatsapp.net', text: 'شنو أكثر مقالة مشاهدة؟' })
+  assert.equal(naturalPopular.shouldRespond, true, '★ ويفهم الأكثر مشاهدة')
+  assert.match(naturalPopular.text || '', /مؤشر المشاهدة الداخلي/, '★ ولا يدّعي رقماً خارجياً')
   const transferRule = agent.saveReplyRule({ name: 'تحويل وسائط', keywords: ['صورة'], actionType: 'transfer', responseText: 'سأحوّلها لمراجعة بشرية.' })
   assert.equal(agent.listReplyRules().some((rule) => rule.id === transferRule.id), true)
   const transferSimulation = agent.simulateReply({ text: 'صورة من اللقاء' })
@@ -251,6 +266,8 @@ export async function runSelfTest(root) {
   /* والمحادثة الفردية تبقى تعمل — وإلا صار الإصلاح تعطيلاً */
   assert.equal(should({ db, jid: '77777@s.whatsapp.net', text: 'موقع د. أحمد' }).allowed, true, '★ والفردية تُوقظه كما كانت')
   assert.equal(should({ db, jid: '77777@lid', text: 'موقع د. أحمد' }).allowed, true, 'وصيغة lid فردية أيضاً')
+  assert.equal(canonicalChatJid({ key: { remoteJid: '77777@lid', remoteJidAlt: '96577777@s.whatsapp.net' } }), '96577777@s.whatsapp.net', '★ LID ورقم الهاتف يصيران جلسة واحدة')
+  assert.equal(canonicalChatJid({ key: { remoteJid: '120363000@g.us', remoteJidAlt: '96577777@s.whatsapp.net' } }), '120363000@g.us', '★ المجموعة لا تتحول إلى محادثة فردية')
 
   /* ★ الوسائط: العَلَم يصل من المستوى الأعلى `media` لا من داخل `message` */
   assert.equal(onMessage({ jid: '55555@s.whatsapp.net', text: '[وسائط]', message: {}, media: true }).reason, 'media-or-link-human', '★ الصوت والصورة يوقفان الردّ')

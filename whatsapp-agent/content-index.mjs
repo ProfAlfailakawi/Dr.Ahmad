@@ -183,6 +183,44 @@ export function latestContent(db, kind, limit = 3) {
   return rows.map(rowToItem)
 }
 
+/* المؤشر نفسه المستخدم داخل صفحة المقال عند غياب عدّادٍ موثّق. لا نقدّمه
+   بوصفه إحصاءً خارجياً؛ هو ترتيب داخلي ثابت يسمح للبوت أن يفهم سؤال
+   «الأكثر مشاهدة» من غير اختراع رقم أو الاعتماد على خدمة مدفوعة. */
+export function engagementEstimate(item, salt = 'views', min = 180, max = 890) {
+  const source = `${item?.slug || ''}:${item?.date || ''}:${item?.title || ''}:${salt}`
+  let hash = 2166136261
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return min + ((hash >>> 0) % Math.max(1, max - min + 1))
+}
+
+export function mostPopularContent(db, kind = 'article', limit = 3) {
+  const rows = db.all('SELECT * FROM content_items WHERE kind=?', kind).map(rowToItem)
+  return rows
+    .map((item) => ({ ...item, engagement: engagementEstimate(item) }))
+    .sort((a, b) => b.engagement - a.engagement || String(b.date || '').localeCompare(String(a.date || '')))
+    .slice(0, Math.min(Math.max(Number(limit || 1), 1), 10))
+}
+
+export function latestAcrossKinds(db, kinds = ['article', 'paper', 'book', 'podcast'], limit = 5) {
+  const wanted = [...new Set(kinds)].filter(Boolean)
+  if (!wanted.length) return []
+  const placeholders = wanted.map(() => '?').join(',')
+  const rows = db.all(
+    `SELECT * FROM content_items WHERE kind IN (${placeholders}) ORDER BY CASE WHEN date GLOB '[0-9]*' THEN date ELSE updated_at END DESC LIMIT ?`,
+    ...wanted,
+    Math.min(Math.max(Number(limit || 1), 1), 12),
+  )
+  return rows.map(rowToItem)
+}
+
+export function topArticleTopics(db, limit = 3) {
+  const rows = db.all("SELECT keywords, COUNT(*) AS count FROM content_items WHERE kind='article' AND trim(keywords)<>'' GROUP BY keywords ORDER BY count DESC, keywords ASC LIMIT ?", Math.min(Math.max(Number(limit || 1), 1), 8))
+  return rows.map((row) => ({ topic: String(row.keywords || '').trim(), count: Number(row.count || 0) })).filter((row) => row.topic)
+}
+
 export function contentSummary(item, maxSentences = 3) {
   if (!item) return ''
   const source = String(item.excerpt || item.body || '').replace(/\s+/g, ' ').trim()

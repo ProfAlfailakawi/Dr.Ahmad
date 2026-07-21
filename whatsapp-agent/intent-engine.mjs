@@ -1,4 +1,4 @@
-import { contentSummary, findContent, latestContent, normalizeArabic, searchContent } from './content-index.mjs'
+import { contentSummary, findContent, latestContent, mostPopularContent, normalizeArabic, searchContent, topArticleTopics } from './content-index.mjs'
 import { AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUAL_TAKEOVER_MINUTES, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags } from './config.mjs'
 import { hashOpaque } from './crypto.mjs'
 import { createReminder, parseReminderTime } from './reminders.mjs'
@@ -15,7 +15,7 @@ function readFollowup(session) {
 }
 
 export const INTENTS = Object.freeze({
-  LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_BOOK: 'LATEST_BOOK', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', LATEST_PAPER: 'LATEST_PAPER', WELCOME: 'WELCOME', MORE_LIKE_THIS: 'MORE_LIKE_THIS', COMPARE: 'COMPARE', ABOUT_TOPIC: 'ABOUT_TOPIC', UPCOMING_EVENTS: 'UPCOMING_EVENTS', ABOUT_DOCTOR: 'ABOUT_DOCTOR', CURATED_PICKS: 'CURATED_PICKS', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', UNKNOWN: 'UNKNOWN' })
+  LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_ARTICLES: 'LATEST_ARTICLES', MOST_VIEWED_ARTICLE: 'MOST_VIEWED_ARTICLE', CONTENT_OVERVIEW: 'CONTENT_OVERVIEW', TOP_ARTICLE_TOPIC: 'TOP_ARTICLE_TOPIC', LATEST_BOOK: 'LATEST_BOOK', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', LATEST_PAPER: 'LATEST_PAPER', WELCOME: 'WELCOME', MORE_LIKE_THIS: 'MORE_LIKE_THIS', COMPARE: 'COMPARE', ABOUT_TOPIC: 'ABOUT_TOPIC', UPCOMING_EVENTS: 'UPCOMING_EVENTS', ABOUT_DOCTOR: 'ABOUT_DOCTOR', CURATED_PICKS: 'CURATED_PICKS', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', UNKNOWN: 'UNKNOWN' })
 
 /* ملاحظة واجبة: النص يمرّ على normalizeArabic قبل المطابقة، وهو يحوّل
    ة→ه و أ/إ/آ→ا و ى→ي ويحذف الترقيم. فكل نمطٍ هنا يُكتب بالصورة المطبَّعة،
@@ -34,12 +34,19 @@ const patterns = [
      على من لم يقصد فتحه. والنصّ يصل مطبَّعاً (ة→ه، أ→ا)، فـ«الفيلكاوي» تُكتب
      هنا بصورتها المطبَّعة وإلا لم تطابق شيئاً. */
   [INTENTS.WELCOME, [/موقع\s*(ال)?(د|دكتور)\s*\.?\s*(احمد|الفيلكاوي)/, 0.97]],
-  [INTENTS.LATEST_ARTICLE, [/(اخر|احدث).*(مقال|مقاله)|مقاله جديده|شنو كتبت/, 0.95]],
+  /* اللغة الطبيعية بعد الإيقاظ: لا نُجبر الزائر على صيغةٍ واحدة. الترتيب مهم:
+     «أكثر مقالة مشاهدة» تُلتقط قبل «مقالة»، والجمع قبل المفرد. */
+  [INTENTS.MOST_VIEWED_ARTICLE, [/(اكثر|اعلي|اشهر|ابرز).*(مقال|مقاله).*(مشاهده|قراءه|انتشار|تداول)|المقاله?\s*(الاكثر مشاهده|الاكثر قراءه|الاشهر)/, 0.97]],
+  [INTENTS.LATEST_ARTICLES, [/(اخر|احدث|جديد).*(مقالات|مقالاته|مقالات الدكتور)|شنو.*(اخر|احدث).*(مقالات|مقالاته)|شنو.*كتب.*موخرا|شنو.*عنده.*مقالات/, 0.96]],
+  [INTENTS.LATEST_ARTICLE, [/(اخر|احدث|جديد).*(مقال|مقاله|مقالته)|مقاله جديده|شنو كتبت|شنو اخر مقالته/, 0.95]],
+  [INTENTS.LATEST_CONTENT, [/(شنو|وش|ما|ماذا).*(جديد|اخر شي|احدث شي|نشر موخرا).*(الدكتور|د احمد|الفيلكاوي)?|(جديد|اخر شي|احدث شي)\s*(الدكتور|د احمد|الفيلكاوي)|شنو جديده/, 0.96]],
+  [INTENTS.TOP_ARTICLE_TOPIC, [/(اكثر|ابرز).*(موضوع|مجال).*(يكتب|كتب|مقالات)|شنو.*اكثر.*مواضيع/, 0.94]],
+  [INTENTS.CONTENT_OVERVIEW, [/(شنو|وش|ماذا).*(عنده|موجود).*(الموقع|المكتبه)|محتويات\s*(الموقع|المكتبه)|شنو يقدم الموقع/, 0.93]],
   /* «أبحاث الدكتور» — طلبها الدكتور صراحةً، ولا تُقال مصادفة في محادثة */
-  [INTENTS.LATEST_PAPER, [/(ابحاث|بحوث)\s*(الدكتور|د\s*احمد|احمد)?|(اخر|احدث)\s*\S*\s*(بحث|ابحاث)|الابحاث/, 0.94]],
-  [INTENTS.LATEST_BOOK, [/(اخر|احدث|جديد)\s*\S*\s*(كتاب|الكتب)/, 0.94]],
+  [INTENTS.LATEST_PAPER, [/(ابحاث|بحوث)\s*(الدكتور|د\s*احمد|احمد)?|(اخر|احدث)\s*\S*\s*(بحث|ابحاث)|الابحاث|شنو.*(ابحاث|بحوث|بحث).*(الدكتور|له)?/, 0.94]],
+  [INTENTS.LATEST_BOOK, [/(اخر|احدث|جديد)\s*\S*\s*(كتاب|الكتب)|شنو.*(كتب|كتاب).*(الدكتور|له)?|كتب الدكتور/, 0.94]],
   [INTENTS.LATEST_SELECTION, [/(اخر|احدث|جديد)\s*\S*\s*(مختارات)/, 0.94]],
-  [INTENTS.LATEST_PODCAST, [/(اخر|احدث).*(بودكاست|حلقه)|اخر بودكاست/, 0.96]],
+  [INTENTS.LATEST_PODCAST, [/(اخر|احدث).*(بودكاست|حلقه)|اخر بودكاست|شنو.*(بودكاست|حلقات).*(الدكتور|له)?/, 0.96]],
   [INTENTS.MISSED_CONTENT, [/(شنو|ماذا).*(فاتني|فات)/, 0.96], [/(من زمان ما تابعت|ما تابعت من زمان)/, 0.94]],
   [INTENTS.SURPRISE_ME, [/(فاجيني|اختر لي|اختار لي|على ذوقك|شيء من عندك)/, 0.94]],
   [INTENTS.ONE_MINUTE, [/(عندي دقيقه|ما عندي وقت|الزبده|ملخص سريع|اختصرها|الفكره بس)/, 0.96]],
@@ -59,7 +66,7 @@ const patterns = [
   /* اللقاءات والسيرة والمختارات: يسأل عنها الناس كما يسألون عن المقالات،
      وكان البوت لا يعرفها إطلاقاً فيردّ ببحثٍ عشوائي أو يصمت. */
   [INTENTS.UPCOMING_EVENTS, [/(لقاءات|محاضرات|فعاليات|مشاركات|ندوات|مؤتمرات)\s*(ال)?(قادمه|القادمه|الجايه)?|(وين|متي)\s*(بتكون|راح تكون)?\s*(محاضرتك|لقاءك|ندوتك)/, 0.93]],
-  [INTENTS.ABOUT_DOCTOR, [/(السيره|سيره ذاتيه|سيرتك|من هو|تعريف|نبذه عن|هويه|cv)\s*(ال)?(د|دكتور)?\s*(احمد)?/, 0.92]],
+  [INTENTS.ABOUT_DOCTOR, [/(السيره|سيره ذاتيه|سيرتك|من هو|منو|تعريف|نبذه عن|هويه|cv)\s*(ال)?(د|دكتور)?\s*(احمد)?/, 0.92]],
   [INTENTS.CURATED_PICKS, [/(مختارات|المختارات|اختياراتك|ترشيحات|ماذا تقرا|شنو تقرا)/, 0.92]],
   /* داخل الجلسة يريد الناس المزيد والمقارنة والتنقّل — لا أوامر جافّة فقط */
   [INTENTS.MORE_LIKE_THIS, [/^(غيره|غيرها|زدني|كمان|بعد|المزيد|عطني اكثر|شي ثاني|واحد ثاني)/, 0.93]],
@@ -185,6 +192,113 @@ function contentReply(label, item, extra = '') {
 
 function latestOf(db, kind, label) { return contentReply(label, latestContent(db, kind, 1)[0]) }
 
+const KIND_LABEL = Object.freeze({ article: 'مقال', paper: 'بحث', book: 'كتاب', podcast: 'حلقة', curated: 'مختارة' })
+
+function conciseItem(item, prefix = '') {
+  if (!item) return ''
+  const date = item.date ? ` · ${item.date}` : ''
+  return `${prefix}${item.title}${date}
+${item.url}`
+}
+
+function latestArticlesReply(db, limit = 3) {
+  const items = latestContent(db, 'article', limit)
+  if (!items.length) return { text: 'لا توجد مقالات منشورة في الفهرس الآن.' }
+  return {
+    text: `هذه أحدث ${items.length === 1 ? 'مقالة' : 'مقالات'} للدكتور:
+${items.map((item, index) => `${index + 1}. ${conciseItem(item)}`).join('\n\n')}
+
+تقدر تقول: لخّص الأولى، أو عندك شيء عن موضوع معيّن؟`,
+    contentId: items[0].id,
+  }
+}
+
+function freshContentReply(db) {
+  /* نختار جديداً متنوعاً لا قائمةً كلها مقالات: أحدث مقالتين، ثم أحدث مادة
+     مختلفة متاحة. كل سطر من فهرس الموقع، ولا توجد معلومة مُنشأة من الخارج. */
+  const articles = latestContent(db, 'article', 2)
+  const different = ['paper', 'podcast', 'book'].map((kind) => latestContent(db, kind, 1)[0]).filter(Boolean)
+  const items = [...articles, ...different].slice(0, 5)
+  if (!items.length) return { text: 'لا توجد مواد منشورة في الفهرس الآن.' }
+  return {
+    text: `الجديد الآن في مكتبة الدكتور:
+${items.map((item, index) => `${index + 1}. ${KIND_LABEL[item.kind] || 'مادة'} — ${conciseItem(item)}`).join('\n\n')}
+
+وتقدر تسألني بطريقتك: آخر مقالاته، أكثر مقالة مشاهدة، أو عنده شيء عن أي موضوع.`,
+    contentId: items[0].id,
+  }
+}
+
+function mostViewedArticleReply(db) {
+  const item = mostPopularContent(db, 'article', 1)[0]
+  if (!item) return { text: 'لا توجد مقالات منشورة في الفهرس الآن.' }
+  return {
+    text: `الأعلى حالياً في مؤشر المشاهدة الداخلي للموقع:
+${item.title}
+${item.url}
+
+هذا ترتيب داخلي متجدد من بيانات الموقع، وليس رقماً من منصة خارجية.`,
+    contentId: item.id,
+  }
+}
+
+function libraryOverviewReply(db) {
+  const kinds = [
+    ['article', 'مقالة'], ['paper', 'بحثاً'], ['book', 'كتاباً'], ['podcast', 'حلقة'], ['curated', 'مختارة'],
+  ]
+  const counts = kinds.map(([kind, label]) => ({ kind, label, count: Number(db.get('SELECT COUNT(*) c FROM content_items WHERE kind=?', kind)?.c || 0) }))
+  const available = counts.filter((item) => item.count > 0)
+  return {
+    text: `المكتبة تضم الآن:
+${available.map((item) => `• ${item.count} ${item.label}`).join('\n')}
+
+ما تحتاج تحفظ أوامر. اكتب مثلاً: شنو جديد الدكتور؟ عنده شيء عن التقييم؟ آخر أبحاثه؟ أو فاجئني.`,
+  }
+}
+
+function topTopicsReply(db) {
+  const topics = topArticleTopics(db, 4)
+  if (!topics.length) return { text: 'لا توجد موضوعات مصنفة في المقالات الآن.' }
+  return {
+    text: `أكثر المسارات حضوراً في مقالات الدكتور:
+${topics.map((item, index) => `${index + 1}. ${item.topic} — ${item.count} مقالة`).join('\n')}
+
+اكتب اسم أي مسار منها وأختار لك أفضل نقطة بداية من الموقع.`,
+  }
+}
+
+function stableChoice(seed, choices) {
+  const value = String(seed || '')
+  let hash = 0
+  for (let index = 0; index < value.length; index += 1) hash = ((hash << 5) - hash + value.charCodeAt(index)) | 0
+  return choices[Math.abs(hash) % choices.length]
+}
+
+function welcomeReply(db, jid) {
+  const counts = ['article', 'paper', 'book', 'podcast'].map((kind) => ({
+    kind, n: Number(db.get('SELECT COUNT(*) c FROM content_items WHERE kind=?', kind)?.c || 0),
+  }))
+  const label = { article: 'مقالة', paper: 'بحثاً', book: 'كتاباً', podcast: 'حلقة' }
+  const have = counts.filter((c) => c.n).map((c) => `${c.n} ${label[c.kind]}`).join(' · ')
+  const day = new Date().toISOString().slice(0, 10)
+  const openings = [
+    'أهلاً بك. فتحت لك مكتبة د. أحمد الفيلكاوي.',
+    'حيّاك الله. المكتبة جاهزة، واسألني بطريقتك الطبيعية.',
+    'مرحباً بك. من هنا أبحث لك داخل محتوى موقع د. أحمد فقط.',
+  ]
+  const examples = [
+    'شنو جديد الدكتور؟ · شنو آخر مقالاته؟ · شنو أكثر مقالة مشاهدة؟',
+    'عنده شيء عن التقييم؟ · آخر أبحاثه؟ · لخّص لي أحدث مقال.',
+    'فاجئني · قارن بين فكرتين · عطِني مادة أقرأها في دقيقة.',
+  ]
+  return `${stableChoice(`${jid}:${day}:open`, openings)}${have ? `
+${have}` : ''}
+
+${stableChoice(`${jid}:${day}:examples`, examples)}
+
+ولإيقاف الرسائل اكتب: أوقف الرسائل.`
+}
+
 function pendingSession(db, jid) { return jid ? db.get('SELECT * FROM chat_sessions WHERE jid=?', db.jidKey(jid)) : null }
 
 function savePreference(db, jid, patch) {
@@ -252,6 +366,11 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
     case INTENTS.STOP_MESSAGES: setSuppression(db, jid, true); return { ...classification, shouldRespond: true, text: 'تم، لن تصلك رسائل محتوى جديدة. إذا رغبت بالعودة اكتب: رجع الرسائل.' }
     case INTENTS.RESUME_MESSAGES: setSuppression(db, jid, false); return { ...classification, shouldRespond: true, text: 'عاد الاشتراك في رسائل المحتوى.' }
     case INTENTS.DELETE_PREFERENCES: clearPreferences(db, jid); return { ...classification, shouldRespond: true, text: 'حذفت تفضيلاتك المحلية. أبقيت فقط ما يلزم لاحترام إيقاف الرسائل إن طلبته.' }
+    case INTENTS.LATEST_CONTENT: return { ...classification, ...freshContentReply(db) }
+    case INTENTS.LATEST_ARTICLES: return { ...classification, ...latestArticlesReply(db, 3) }
+    case INTENTS.MOST_VIEWED_ARTICLE: return { ...classification, ...mostViewedArticleReply(db) }
+    case INTENTS.CONTENT_OVERVIEW: return { ...classification, ...libraryOverviewReply(db) }
+    case INTENTS.TOP_ARTICLE_TOPIC: return { ...classification, ...topTopicsReply(db) }
     case INTENTS.LATEST_ARTICLE: return { ...classification, ...latestOf(db, 'article', 'أحدث مقالة') }
     case INTENTS.LATEST_BOOK: return { ...classification, ...latestOf(db, 'book', 'أحدث كتاب') }
     case INTENTS.LATEST_PAPER: return { ...classification, ...latestOf(db, 'paper', 'أحدث بحث') }
@@ -274,25 +393,8 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
     }
     /* الترحيب: أول لقاءٍ بين الناس والخدمة. يعرض المدى كلَّه — لا المقالات
        وحدها — لأن من يكتب كلمة الدخول قد يريد بحثاً أو كتاباً أو مقارنة. */
-    case INTENTS.WELCOME: {
-      const counts = ['article', 'paper', 'book', 'podcast'].map((kind) => ({
-        kind, n: Number(db.get('SELECT COUNT(*) c FROM content_items WHERE kind=?', kind)?.c || 0),
-      }))
-      const label = { article: 'مقالة', paper: 'بحثاً', book: 'كتاباً', podcast: 'حلقة' }
-      const have = counts.filter((c) => c.n).map((c) => `${c.n} ${label[c.kind]}`).join(' · ')
-      return {
-        ...classification,
-        text: `أهلاً بك. هذه مكتبة د. أحمد الفيلكاوي${have ? `\n${have}` : ''}\n\n`
-          + 'اكتب ما تريد بلغتك:\n'
-          + '• آخر مقال · آخر بحث · آخر كتاب · آخر بودكاست\n'
-          + '• عندك شي عن التقييم؟ (أو أي موضوع)\n'
-          + '• قارن بين … و…\n'
-          + '• لخّص لي · عندي دقيقة · فاجئني\n'
-          + '• اقرأ لي · استمع بصوت فهد أو نورة\n'
-          + '• بطاقة اقتباس · النشرة الأسبوعية\n\n'
-          + 'ولإيقاف الرسائل في أي وقت اكتب: أوقف الرسائل',
-      }
-    }
+    case INTENTS.WELCOME:
+      return { ...classification, text: welcomeReply(db, jid) }
 
     /* «غيره» و«زدني»: يفهمها البشر بلا شرح، ويجب أن يفهمها البوت داخل الجلسة.
      *
@@ -424,7 +526,7 @@ ${results.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}
       const quote = String(item?.body || item?.excerpt || '').split(/(?<=[.!؟])/u).map((part) => part.trim()).find((part) => part.length >= 25 && part.length <= 180) || item?.excerpt
       return item && quote ? { ...classification, text: `«${quote}»\n— ${item.title}\n${item.url}`, contentId: item.id, quote } : { ...classification, text: 'لا أملك اقتباسًا موثقًا مناسبًا بعد.' }
     }
-    case INTENTS.HELP: return { ...classification, text: 'أقدر أساعدك في محتوى د. أحمد:\n«شنو فاتني؟» · «فاجئني» · «عندي دقيقة» · «آخر مقالة» · «آخر كتاب» · «آخر بودكاست» · «عندك شيء عن…» · «فهد» · «نورة» · «الحوار».\nاكتب طلبك بطريقتك.' }
+    case INTENTS.HELP: return { ...classification, text: 'اسألني بطريقتك الطبيعية داخل محتوى الموقع فقط:\n• شنو جديد الدكتور؟\n• شنو آخر مقالاته؟\n• شنو أكثر مقالة مشاهدة؟\n• عنده شيء عن التقييم؟\n• آخر أبحاثه أو كتبه أو حلقاته\n• لخّص لي · قارن بين… · فاجئني\n\nما تحتاج تحفظ صيغة ثابتة.' }
     case INTENTS.HUMAN_RESPONSE_REQUIRED: return { ...classification, needsHuman: true, text: 'هذا السؤال يحتاج رد د. أحمد نفسه، لذلك تركته له.' }
     case INTENTS.REMIND_ME: {
       const parsed = parseReminderTime(input)

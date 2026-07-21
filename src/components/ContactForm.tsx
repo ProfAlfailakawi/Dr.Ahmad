@@ -127,12 +127,12 @@ export function ContactForm() {
           </div>
           {active.key === 'محاضرة أو ورشة' && (
             <p className="mt-3 text-[.76rem] leading-relaxed text-soft">
-              للاطلاع قبل إرسال الطلب: <a href="/cv-file/ar" className="font-medium text-accent transition-colors hover:text-accent-deep">الملف التعريفي والسيرة المهنية PDF ←</a>
+              للاطلاع قبل إرسال الطلب: <a href="/cv-file/ar" target="_blank" rel="noreferrer" className="font-medium text-accent transition-colors hover:text-accent-deep">الملف التعريفي والسيرة المهنية PDF ↗</a>
             </p>
           )}
           {active.key === 'لقاء إعلامي' && (
             <p className="mt-3 text-[.76rem] leading-relaxed text-soft">
-              للصحافة والبرامج: <a href="/files/Dr-Ahmad-Media-Kit.pdf" target="_blank" rel="noreferrer" className="font-medium text-accent transition-colors hover:text-accent-deep">الملف الإعلامي المختصر PDF ↗</a>
+              للصحافة والبرامج: <a href="/cv-file/ar" target="_blank" rel="noreferrer" className="font-medium text-accent transition-colors hover:text-accent-deep">الملف التعريفي المختصر PDF ↗</a>
             </p>
           )}
 

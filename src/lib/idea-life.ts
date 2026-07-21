@@ -17,6 +17,33 @@ export type RemoteIdeaSignal = {
   relation?: string
 }
 
+export type IdeaUpdateKind = 'study' | 'official' | 'report' | 'field'
+
+export type RemoteIdeaUpdate = {
+  title: string
+  summary: string
+  url: string
+  source?: string
+  publishedAt?: string
+  discoveredAt?: string
+  kind?: IdeaUpdateKind
+  relation?: string
+  confidence?: number
+}
+
+export type IdeaRadarItem = {
+  id?: string
+  ar?: string
+  arNote?: string
+  en?: string
+  enNote?: string
+  source?: string
+  url?: string
+  day?: string
+  status?: string
+  createdAt?: unknown
+}
+
 export type RemotePredictionReview = {
   quote: string
   status?: string
@@ -32,6 +59,7 @@ export type IdeaLifeRemoteRecord = {
   checkedAt?: string
   predictions?: RemotePredictionReview[]
   signals?: RemoteIdeaSignal[]
+  updates?: RemoteIdeaUpdate[]
 }
 
 export type IdeaTest = {
@@ -78,6 +106,7 @@ export type IdeaLifeModel = {
   test: IdeaTest
   predictions: PredictionRecord[]
   timeLinks: TimeLink[]
+  updates: RemoteIdeaUpdate[]
   impact: ImpactNode[]
   signature: string
 }
@@ -381,6 +410,118 @@ function bestMatches<T>(article: ArticleRecord, items: T[], text: (item: T) => s
     .sort((a, b) => b.score - a.score)
 }
 
+const OFFICIAL_SOURCE_RE = /(?:unesco|oecd|world bank|worldbank|who\b|unicef|government|ministry|gov\.|edu\.|جامعة|وزار|هيئة|منظمة|اليونسكو|الأمم المتحدة|البنك الدولي)/i
+const STUDY_SOURCE_RE = /(?:study|research|journal|university|science|دراسة|بحث|باحث|جامعة|مجلة علمية)/i
+const REPORT_SOURCE_RE = /(?:report|policy|framework|guidance|standard|survey|تقرير|سياسة|إطار|دليل|مسح)/i
+
+function timestampIso(value: unknown) {
+  if (!value) return ''
+  if (typeof value === 'string') return /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : ''
+  if (typeof value === 'object' && value && 'toDate' in value && typeof (value as { toDate?: unknown }).toDate === 'function') {
+    try { return ((value as { toDate: () => Date }).toDate()).toISOString().slice(0, 10) } catch { return '' }
+  }
+  return ''
+}
+
+function canonicalIdeaUrl(value = '') {
+  try {
+    const url = new URL(value)
+    url.hash = ''
+    for (const key of [...url.searchParams.keys()]) {
+      if (/^(?:utm_|fbclid|gclid|ref|source)/i.test(key)) url.searchParams.delete(key)
+    }
+    return `${url.hostname.replace(/^www\./, '').toLowerCase()}${url.pathname.replace(/\/$/, '')}${url.search}`
+  } catch { return '' }
+}
+
+function updateKindFor(value: string, source = '', url = ''): IdeaUpdateKind {
+  const text = `${value} ${source} ${url}`
+  if (OFFICIAL_SOURCE_RE.test(text)) return 'official'
+  if (REPORT_SOURCE_RE.test(text)) return 'report'
+  if (STUDY_SOURCE_RE.test(text)) return 'study'
+  return 'field'
+}
+
+function relationForUpdate(kind: IdeaUpdateKind) {
+  if (kind === 'study') return 'يضيف دليلاً أحدث إلى السؤال نفسه'
+  if (kind === 'official') return 'يوسّع السياق المؤسسي للفكرة'
+  if (kind === 'report') return 'يضع الموضوع داخل إطار أحدث'
+  return 'ينقل النقاش من النص إلى الواقع'
+}
+
+function radarUpdatesFor(article: ArticleRecord, radar: IdeaRadarItem[]) {
+  const articleText = `${article.title} ${article.excerpt || ''} ${article.cat || ''}`
+  const articleDate = /^\d{4}-\d{2}-\d{2}/.test(article.iso || '') ? article.iso.slice(0, 10) : ''
+  const updates: RemoteIdeaUpdate[] = []
+  for (const item of radar) {
+    if (item.status === 'hidden' || item.status === 'draft' || !item.url || (!item.ar && !item.en)) continue
+    const publishedAt = timestampIso(item.day) || timestampIso(item.createdAt)
+    const candidateText = `${item.ar || ''} ${item.arNote || ''} ${item.en || ''} ${item.enNote || ''}`
+    const score = overlapCount(articleText, candidateText)
+    const titleScore = overlapCount(article.title, `${item.ar || ''} ${item.en || ''}`)
+    const kind = updateKindFor(candidateText, item.source, item.url)
+    const url = liveLink(item.url)
+    if (!url || (articleDate && publishedAt && publishedAt < articleDate) || score < 2 || (score === 2 && titleScore < 1)) continue
+    const summary = (item.arNote || item.enNote || '').trim()
+      || `مادة حديثة من ${item.source || 'مصدر موثوق'} تفتح زاوية جديدة في موضوع «${article.title}».`
+    updates.push({
+      title: (item.ar || item.en || '').trim(),
+      summary,
+      url,
+      source: item.source,
+      publishedAt,
+      discoveredAt: publishedAt,
+      kind,
+      relation: relationForUpdate(kind),
+      confidence: Math.min(.97, .80 + score * .045 + titleScore * .025),
+    })
+  }
+  return updates
+}
+
+export function ideaUpdatesFor(article: ArticleRecord, remote?: IdeaLifeRemoteRecord, radar: IdeaRadarItem[] = []) {
+  const articleDate = /^\d{4}-\d{2}-\d{2}/.test(article.iso || '') ? article.iso.slice(0, 10) : ''
+  const blocked = new Set<string>()
+  for (const signal of remote?.signals || []) blocked.add(canonicalIdeaUrl(signal.url))
+  for (const prediction of remote?.predictions || []) {
+    for (const evidence of prediction.evidence || []) blocked.add(canonicalIdeaUrl(evidence.url))
+  }
+
+  const combined = [...(remote?.updates || []), ...radarUpdatesFor(article, radar)]
+    .map((item) => ({ ...item, url: liveLink(item.url), kind: item.kind || updateKindFor(`${item.title} ${item.summary}`, item.source, item.url) }))
+    .filter((item): item is RemoteIdeaUpdate & { url: string; kind: IdeaUpdateKind } => Boolean(item.url) && (item.confidence ?? 1) >= .82)
+    .filter((item) => !articleDate || !item.publishedAt || item.publishedAt.slice(0, 10) >= articleDate)
+    .filter((item) => !blocked.has(canonicalIdeaUrl(item.url)))
+    .sort((left, right) => String(right.publishedAt || right.discoveredAt || '').localeCompare(String(left.publishedAt || left.discoveredAt || '')) || (right.confidence || 0) - (left.confidence || 0))
+
+  const unique: RemoteIdeaUpdate[] = []
+  const seen = new Set<string>()
+  for (const item of combined) {
+    const key = canonicalIdeaUrl(item.url) || normalizeIdeaText(item.title)
+    const titleKey = normalizeIdeaText(item.title)
+    if (!key || seen.has(key) || seen.has(`title:${titleKey}`)) continue
+    seen.add(key)
+    seen.add(`title:${titleKey}`)
+    unique.push({ ...item, relation: item.relation || relationForUpdate(item.kind) })
+  }
+
+  const selected: RemoteIdeaUpdate[] = []
+  const kinds = new Set<IdeaUpdateKind>()
+  for (const item of unique) {
+    const kind = item.kind || 'field'
+    if (kinds.has(kind)) continue
+    kinds.add(kind)
+    selected.push(item)
+    if (selected.length >= 4) return selected
+  }
+  for (const item of unique) {
+    if (selected.includes(item)) continue
+    selected.push(item)
+    if (selected.length >= 4) break
+  }
+  return selected
+}
+
 function externalSignalNode(signal: RemoteIdeaSignal): ImpactNode | null {
   const url = liveLink(signal.url)
   if (!url || (signal.confidence ?? 1) < 0.82) return null
@@ -461,10 +602,12 @@ export function buildIdeaLife(
   papers: PaperRecord[],
   media: MediaRecord[],
   remote?: IdeaLifeRemoteRecord,
+  radar: IdeaRadarItem[] = [],
 ): IdeaLifeModel {
   const test = buildIdeaTest(article)
   const predictions = predictionRecordsFor(article, articles, remote)
   const timeLinks = timeLinksFor(article, articles)
+  const updates = ideaUpdatesFor(article, remote, radar)
   const impact = impactNodesFor(article, books, papers, media, remote)
   const signature = tinyHash(JSON.stringify({
     slug: article.slug,
@@ -476,7 +619,8 @@ export function buildIdeaLife(
       (item.evidence || []).map((evidence) => [evidence.title, evidence.url, evidence.publishedAt || '']),
     ]),
     timeLinks: timeLinks.map((item) => [item.role, item.article.slug]),
+    updates: updates.map((item) => [item.kind, item.title, item.url, item.publishedAt || '', item.relation || '']),
     impact: impact.map((item) => [item.label, item.title, item.url || item.to, item.confidence]),
   }))
-  return { test, predictions, timeLinks, impact, signature }
+  return { test, predictions, timeLinks, updates, impact, signature }
 }

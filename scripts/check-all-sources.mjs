@@ -108,6 +108,15 @@ async function harvestFirestore() {
         })
       }
     }
+    for (const [updateIndex, update] of (Array.isArray(data.updates) ? data.updates : []).entries()) {
+      const url = String(update?.url || '')
+      if (!/^https?:\/\//.test(url)) continue
+      found.push({
+        url, kind: 'مستجد فكرة', title: String(update?.title || title).slice(0, 120),
+        slug: document.id, where: 'site_idea_life', fieldPath: `updates.${updateIndex}`,
+        signalType: String(update?.kind || 'field'),
+      })
+    }
   })
   return found
 }
@@ -459,10 +468,21 @@ if (foreign.length && !process.argv.includes('--report-only')) {
         return predictionChanged ? { ...prediction, evidence } : prediction
       })
 
+      const updates = (Array.isArray(data.updates) ? data.updates : []).flatMap((item) => {
+        const url = String(item?.url || '')
+        if (!actions.has(url)) return [item]
+        const replacement = actions.get(url)
+        changed = true
+        if (!replacement) { removed += 1; return [] }
+        updated += 1
+        return [{ ...item, url: replacement, previousUrl: url, sourceHealthRepairedAt: new Date().toISOString() }]
+      })
+
       if (changed) {
         await ref.set({
           signals,
           predictions,
+          updates,
           sourceHealthUpdatedAt: new Date().toISOString(),
         }, { merge: true }).catch(() => undefined)
         console.log(`  🧭 نُقّحت مصادر «حياة الفكرة»: ${slug}`)

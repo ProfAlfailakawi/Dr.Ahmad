@@ -71,9 +71,9 @@ jobs:
         env:
           FIREBASE_PROJECT_ID: drahmad-8e9e2
           FIREBASE_SERVICE_ACCOUNT: sa.json
-          IDEA_LIFE_MAX_ARTICLES: '4'
+          IDEA_LIFE_MAX_ARTICLES: '6'
           IDEA_LIFE_MAX_PAPERS: '1'
-          IDEA_LIFE_STALE_DAYS: '14'
+          IDEA_LIFE_STALE_DAYS: '7'
 
       - name: Remove temporary credentials
         if: always()

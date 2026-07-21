@@ -4,11 +4,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../lib/cms'
 import { useExtras } from '../lib/content'
-import { buildIdeaLife, ideaWords, type IdeaLifeRemoteRecord, type ImpactNode } from '../lib/idea-life'
+import { buildIdeaLife, ideaWords, type IdeaLifeRemoteRecord, type IdeaRadarItem, type IdeaUpdateKind, type ImpactNode, type RemoteIdeaUpdate } from '../lib/idea-life'
 import { liveLink } from '../lib/dead-links'
 import { staticQuestions } from '../questions-data'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
+const updateDate = new Intl.DateTimeFormat('ar-KW-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' })
 
 const verifiedEvidence = <T extends { url?: string }>(items?: T[]) => (items || [])
   .map((item) => ({ ...item, url: liveLink(item.url) }))
@@ -149,12 +150,87 @@ function TestPanel({ model }: { model: ReturnType<typeof buildIdeaLife> }) {
   )
 }
 
+const updateMeta: Record<IdeaUpdateKind, { label: string; index: string }> = {
+  study: { label: 'دراسة جديدة', index: 'دليل' },
+  official: { label: 'تطور رسمي', index: 'سياق' },
+  report: { label: 'تقرير حديث', index: 'قراءة' },
+  field: { label: 'حدث في الميدان', index: 'واقع' },
+}
+
+function readableUpdateDate(value?: string) {
+  if (!value) return ''
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? value.slice(0, 10) : updateDate.format(date)
+}
+
+function IdeaUpdatesPanel({ updates }: { updates: RemoteIdeaUpdate[] }) {
+  const [lead, ...rest] = updates
+  if (!lead) return null
+  const leadMeta = updateMeta[lead.kind || 'field']
+  return (
+    <section aria-labelledby="idea-updates-title" className="relative overflow-hidden rounded-[1.75rem] border border-accent/20 bg-wash/45 px-5 py-6 md:px-7 md:py-7">
+      <span aria-hidden className="absolute -left-14 -top-16 h-40 w-40 rounded-full border border-accent/10" />
+      <span aria-hidden className="absolute -left-7 -top-9 h-24 w-24 rounded-full border border-accent/10" />
+      <div className="relative flex items-start justify-between gap-5 border-b border-hair pb-5">
+        <div>
+          <p className="text-[.66rem] font-semibold tracking-[.08em] text-accent">نبضٌ موثّق بعد النشر</p>
+          <h3 id="idea-updates-title" className="mt-1.5 font-display text-[1.18rem] font-semibold leading-[1.55] text-ink md:text-[1.35rem]">مستجدات الفكرة</h3>
+          <p className="mt-1 max-w-[36rem] text-[.76rem] font-light leading-[1.8] text-soft">لا يتغير النص الأصلي؛ هنا فقط تظهر دراسة أو وثيقة أو واقعة جديدة تستحق أن تُقرأ بجواره.</p>
+        </div>
+        <span aria-hidden className="relative mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent/25 bg-canvas">
+          <span className="absolute h-2.5 w-2.5 rounded-full bg-accent" />
+          <span className="absolute h-6 w-6 rounded-full border border-accent/25" />
+        </span>
+      </div>
+
+      <a href={lead.url} target="_blank" rel="noreferrer" className="group relative mt-6 block border-r-2 border-accent ps-5">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[.66rem] font-semibold text-accent">
+          <span>{leadMeta.label}</span>
+          {readableUpdateDate(lead.publishedAt) && <><span className="text-hair">·</span><time>{readableUpdateDate(lead.publishedAt)}</time></>}
+        </div>
+        <h4 dir="auto" className="mt-2.5 max-w-[45rem] text-start font-display text-[1.05rem] font-semibold leading-[1.7] text-ink transition-colors group-hover:text-accent md:text-[1.18rem]">{lead.title}</h4>
+        <p className="mt-2 max-w-[43rem] text-[.84rem] font-light leading-[1.9] text-soft">{lead.summary}</p>
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[.68rem] text-soft">
+          <span className="font-semibold text-accent">{lead.relation || leadMeta.index}</span>
+          {lead.source && <><span className="text-hair">·</span><span>{lead.source}</span></>}
+          <span className="ms-auto shrink-0 text-accent transition-transform duration-300 group-hover:-translate-x-1">↗</span>
+        </div>
+      </a>
+
+      {rest.length > 0 && (
+        <div className="relative mt-6 divide-y divide-hair border-t border-hair">
+          {rest.map((item) => {
+            const meta = updateMeta[item.kind || 'field']
+            return (
+              <a key={`${item.url}-${item.title}`} href={item.url} target="_blank" rel="noreferrer" className="group grid gap-2 py-4 transition-colors sm:grid-cols-[7rem_1fr_auto] sm:items-start sm:gap-4">
+                <div className="text-[.65rem] leading-[1.7] text-soft">
+                  <span className="block font-semibold text-accent">{meta.label}</span>
+                  {readableUpdateDate(item.publishedAt) && <time className="mt-0.5 block">{readableUpdateDate(item.publishedAt)}</time>}
+                </div>
+                <div>
+                  <h4 dir="auto" className="text-start font-display text-[.91rem] font-medium leading-[1.7] text-ink transition-colors group-hover:text-accent">{item.title}</h4>
+                  <p className="mt-1 text-[.74rem] font-light leading-[1.75] text-soft">{item.relation || meta.index}{item.source ? ` · ${item.source}` : ''}</p>
+                </div>
+                <span className="hidden pt-1 text-accent transition-transform duration-300 group-hover:-translate-x-1 sm:block">↗</span>
+              </a>
+            )
+          })}
+        </div>
+      )}
+      <p className="relative mt-4 border-t border-hair pt-4 text-[.68rem] font-light leading-[1.8] text-soft">تُنتقى المستجدات من مصادر مفتوحة وموثوقة، ويُمنع تكرار الرابط أو العنوان. إذا تعطل المصدر ولم يوجد بديل مؤكد، يختفي المستجد وحده.</p>
+    </section>
+  )
+}
+
 function TimePanel({ article, model, close }: { article: ArticleRecord; model: ReturnType<typeof buildIdeaLife>; close: () => void }) {
+  const predictionIndex = model.updates.length ? '02' : '01'
+  const archiveIndex = String(1 + (model.updates.length ? 1 : 0) + (model.predictions.length ? 1 : 0)).padStart(2, '0')
   return (
     <div className="space-y-10">
+      {model.updates.length > 0 && <IdeaUpdatesPanel updates={model.updates} />}
       {model.predictions.length > 0 && (
         <section>
-          <SectionTitle index="01" title="ما الذي وضعه النص أمام الزمن؟" sub="لا نحكم بصح أو خطأ من خبر واحد؛ نراقب الاتجاه والتوقيت والحجم والنطاق." />
+          <SectionTitle index={predictionIndex} title="ما الذي وضعه النص أمام الزمن؟" sub="لا نحكم بصح أو خطأ من خبر واحد؛ نراقب الاتجاه والتوقيت والحجم والنطاق." />
           <div className="mt-6 space-y-8">
             {model.predictions.map((prediction, index) => (
               <article key={`${prediction.quote}-${index}`} className="border-b border-hair pb-8 last:border-0 last:pb-0">
@@ -196,7 +272,7 @@ function TimePanel({ article, model, close }: { article: ArticleRecord; model: R
 
       {model.timeLinks.length > 0 && (
         <section>
-          <SectionTitle index={model.predictions.length ? '02' : '01'} title="الفكرة داخل أرشيفها" sub="الجذر والتطور يُستخرجان تلقائياً من تشابه المعنى والفاصل الزمني." />
+          <SectionTitle index={archiveIndex} title="الفكرة داخل أرشيفها" sub="الجذر والتطور يُستخرجان تلقائياً من تشابه المعنى والفاصل الزمني." />
           <ol className="relative mt-6 space-y-6 before:absolute before:bottom-2 before:right-[7px] before:top-2 before:w-px before:bg-hair">
             {model.timeLinks.map((link) => (
               <li key={link.article.slug} className="relative ps-7">
@@ -263,14 +339,15 @@ function ImpactPanel({ model, close }: { model: ReturnType<typeof buildIdeaLife>
 
 export default function IdeaLife({ article, articles, books, papers, media }: Props) {
   const remoteRecords = useExtras<IdeaLifeRemoteRecord>('site_idea_life')
+  const radar = useExtras<IdeaRadarItem>('site_radar')
   const remote = remoteRecords.find((record) => record.slug === article.slug && (!record.kind || record.kind === 'article'))
-  const model = useMemo(() => buildIdeaLife(article, articles, books, papers, media, remote), [article, articles, books, papers, media, remote])
+  const model = useMemo(() => buildIdeaLife(article, articles, books, papers, media, remote, radar), [article, articles, books, papers, media, remote, radar])
   const threadNodes = useMemo(() => ideaThreadFor(article, books, papers, media), [article, books, papers, media])
   const experienceSignature = useMemo(() => `${model.signature}:${threadNodes.map((node) => `${node.kind}:${node.title}`).join('|')}`, [model.signature, threadNodes])
   const availableTabs = useMemo(() => [
     { key: 'test' as const, label: 'اختبار الفكرة', visible: true },
     { key: 'thread' as const, label: 'خيط الفكرة', visible: threadNodes.length > 0 },
-    { key: 'time' as const, label: 'عبر الزمن', visible: model.predictions.length > 0 || model.timeLinks.length > 0 },
+    { key: 'time' as const, label: 'عبر الزمن', visible: model.updates.length > 0 || model.predictions.length > 0 || model.timeLinks.length > 0 },
     { key: 'impact' as const, label: 'امتدادها وأثرها', visible: model.impact.length > 1 },
   ].filter((tab) => tab.visible), [model, threadNodes])
   const [open, setOpen] = useState(false)
@@ -338,7 +415,7 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
                   <div className="min-w-0">
                     <p className="text-[.68rem] font-semibold text-accent">حياة الفكرة</p>
                     <h2 id="idea-life-title" className="mt-1 line-clamp-2 font-display text-[1.12rem] font-semibold leading-[1.5] text-ink md:text-[1.32rem]">{article.title}</h2>
-                    <p className="mt-1 text-[.72rem] text-soft">تُختبر، يراقبها الزمن، ويُوثَّق ما يثبت من أثرها.</p>
+                    <p className="mt-1 text-[.72rem] text-soft">تُختبر، تتصل بأرشيفها، وتلتقط ما يستجد حولها.</p>
                   </div>
                 </div>
                 <button ref={closeButton} type="button" onClick={() => setOpen(false)} aria-label="إغلاق حياة الفكرة" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent">
@@ -348,7 +425,7 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
               <div role="tablist" aria-label="أقسام حياة الفكرة" className="mt-5 flex gap-5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {availableTabs.map((item) => (
                   <button key={item.key} type="button" role="tab" aria-selected={tab === item.key} onClick={() => setTab(item.key)} className={`relative shrink-0 pb-3 text-[.78rem] font-semibold transition-colors ${tab === item.key ? 'text-ink' : 'text-soft hover:text-accent'}`}>
-                    {item.label}
+                    <span className="inline-flex items-center gap-1.5">{item.label}{item.key === 'time' && model.updates.length > 0 && <span aria-label="توجد مستجدات موثقة" className="h-1.5 w-1.5 rounded-full bg-accent" />}</span>
                     {tab === item.key && <motion.span layoutId="idea-life-tab" className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-accent" />}
                   </button>
                 ))}
@@ -371,7 +448,7 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
   return (
     <>
       <section className="idea-life-entry mt-11 border-y border-hair py-4" aria-label="حياة الفكرة">
-        <button ref={triggerButton} type="button" onClick={() => setOpen(true)} className="group flex w-full items-center justify-between gap-5 text-start">
+        <button ref={triggerButton} type="button" onClick={() => { if (isNew && model.updates.length) setTab('time'); setOpen(true) }} className="group flex w-full items-center justify-between gap-5 text-start">
           <span className="flex min-w-0 items-center gap-3.5">
             <OrbitMark />
             <span className="min-w-0">
@@ -380,7 +457,7 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
                 {isNew && <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[.64rem] font-semibold text-accent">جديد منذ قراءتك</span>}
               </span>
               <span className="mt-0.5 block text-[.74rem] leading-[1.7] text-soft">
-                اختبار فكري{threadNodes.length ? ' · خيط معرفي' : ''}{model.predictions.length ? ' · مراجعة زمنية' : ''}{model.impact.length > 1 ? ' · امتداد وأثر' : ''}
+                اختبار فكري{threadNodes.length ? ' · خيط معرفي' : ''}{model.updates.length ? ' · مستجدات موثقة' : model.predictions.length ? ' · مراجعة زمنية' : ''}{model.impact.length > 1 ? ' · امتداد وأثر' : ''}
               </span>
             </span>
           </span>

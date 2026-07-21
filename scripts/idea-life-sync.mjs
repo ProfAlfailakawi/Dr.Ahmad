@@ -5,8 +5,9 @@
  * ما تفعله المهمة:
  *  1) تلتقط المقالات الجديدة تلقائياً من المصدر الثابت وFirestore.
  *  2) تستخرج التوقعات حرفياً بقواعد لغوية محلية، بلا نموذج مدفوع.
- *  3) تبحث بحذر عن ذكر عام مباشر عبر GDELT، وعن الاستشهادات العلمية عبر OpenCitations وCrossref.
- *  4) تحفظ فقط الروابط التي تعمل وتتجاوز عتبة تطابق مرتفعة في site_idea_life.
+ *  3) تلتقط «مستجدات الفكرة» من الدراسات المفتوحة والرادار الموثوق، مع تنويع النوع ومنع التكرار.
+ *  4) تبحث بحذر عن ذكر عام مباشر عبر GDELT، وعن الاستشهادات العلمية عبر OpenCitations وCrossref.
+ *  5) تحفظ فقط الروابط التي تعمل وتتجاوز عتبة تطابق مرتفعة في site_idea_life.
  *
  * لا تستخدم OpenAI أو Gemini أو أي API مدفوع، ولا تنشر حكماً «تحقق/فشل» تلقائياً.
  */
@@ -76,6 +77,12 @@ const RESEARCH_CONCEPTS = [
   { ar: /هاتف|شاشه|اجهزه/, en: ['screen time', 'smartphone'] },
   { ar: /صحه نفسيه|نفسي|قلق|اكتئاب/, en: ['mental health', 'wellbeing'] },
   { ar: /دافعيه|تحفيز/, en: ['motivation'] },
+  { ar: /تحول رقمي|رقمنه|اداره رقميه/, en: ['digital transformation', 'digital governance'] },
+  { ar: /قياده|اداره|مؤسسه|مؤسسات/, en: ['leadership', 'organizational change'] },
+  { ar: /جامعات ذكيه|جامعه ذكيه/, en: ['smart university', 'higher education'] },
+  { ar: /تعلم الكتروني|تعليم الكتروني|تعلم مدمج/, en: ['online learning', 'blended learning'] },
+  { ar: /اخلاق|حوكمه|مسؤوليه/, en: ['ethics', 'governance'] },
+  { ar: /مستقبل العمل|سوق العمل|وظائف/, en: ['future of work', 'employment'] },
 ]
 const researchConcepts = (value = '') => RESEARCH_CONCEPTS.filter((concept) => concept.ar.test(normalize(value)))
 const researchQuery = (article, quote) => {
@@ -138,13 +145,14 @@ async function openFirestore() {
 const published = (item) => item && item.hidden !== true && item.deleted !== true && item.status !== 'draft' && item.status !== 'hidden' && item.published !== false
 
 async function loadCloudContent(db) {
-  const [articlesSnap, papersSnap, existingSnap] = await Promise.all([
-    db.collection('site_articles').get(), db.collection('site_papers').get(), db.collection('site_idea_life').get(),
+  const [articlesSnap, papersSnap, existingSnap, radarSnap] = await Promise.all([
+    db.collection('site_articles').get(), db.collection('site_papers').get(), db.collection('site_idea_life').get(), db.collection('site_radar').get(),
   ])
   const articles = articlesSnap.docs.map((doc) => ({ slug: doc.id, ...doc.data(), kind: 'article' })).filter(published)
   const papers = papersSnap.docs.map((doc) => ({ slug: doc.id, ...doc.data(), kind: 'paper' })).filter(published)
+  const radar = radarSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })).filter(published)
   const existing = new Map(existingSnap.docs.map((doc) => [doc.id, { id: doc.id, ...doc.data() }]))
-  return { articles, papers, existing }
+  return { articles, papers, radar, existing }
 }
 
 function mergeBySlug(base, cloud) {
@@ -212,6 +220,130 @@ async function publicMentions(article) {
     }
     return output
   } catch { return [] }
+}
+
+const OFFICIAL_SOURCE_RE = /(?:unesco|oecd|world bank|worldbank|who\b|unicef|government|ministry|gov\.|edu\.|جامعة|وزار|هيئة|منظمة|اليونسكو|الأمم المتحدة|البنك الدولي)/i
+const STUDY_SOURCE_RE = /(?:study|research|journal|university|science|دراسة|بحث|باحث|جامعة|مجلة علمية)/i
+const REPORT_SOURCE_RE = /(?:report|policy|framework|guidance|standard|survey|تقرير|سياسة|إطار|دليل|مسح)/i
+
+function updateKind(value, source = '', url = '') {
+  const text = `${value} ${source} ${url}`
+  if (OFFICIAL_SOURCE_RE.test(text)) return 'official'
+  if (REPORT_SOURCE_RE.test(text)) return 'report'
+  if (STUDY_SOURCE_RE.test(text)) return 'study'
+  return 'field'
+}
+
+function updateRelation(kind) {
+  if (kind === 'study') return 'يضيف دليلاً أحدث إلى السؤال نفسه'
+  if (kind === 'official') return 'يوسّع السياق المؤسسي للفكرة'
+  if (kind === 'report') return 'يضع الموضوع داخل إطار أحدث'
+  return 'ينقل النقاش من النص إلى الواقع'
+}
+
+function dateIso(value) {
+  if (!value) return ''
+  if (typeof value === 'string') return /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : ''
+  if (typeof value?.toDate === 'function') {
+    try { return value.toDate().toISOString().slice(0, 10) } catch { return '' }
+  }
+  return ''
+}
+
+function researchSummary(article, item, index) {
+  const source = item.publisher || item['container-title']?.[0] || 'مصدر علمي مفتوح'
+  const templates = [
+    `دراسة أحدث عبر ${source} تعيد اختبار محور «${article.title}» في سياق بحثي جديد، من دون تحويل نتيجة واحدة إلى حكم نهائي.`,
+    `ينقل هذا العمل المنشور عبر ${source} سؤال «${article.title}» إلى بيانات أحدث وحدود منهجية تستحق القراءة بجوار النص.`,
+    `إضافة علمية من ${source} توسّع الأدلة المتاحة حول القضية التي يناقشها «${article.title}».`,
+    `بحث لاحق عبر ${source} يفتح زاوية قياس جديدة للموضوع نفسه، ويُعرض هنا بوصفه مستجداً لا تصحيحاً صامتاً للمقال.`,
+  ]
+  return templates[index % templates.length]
+}
+
+async function topicStudies(article) {
+  const { concepts, terms } = researchQuery(article, `${article.title} ${article.excerpt || ''}`)
+  if (terms.length < 2 || concepts.length < 2) return []
+  const query = encodeURIComponent(terms.join(' '))
+  const from = /^\d{4}-\d{2}-\d{2}/.test(article.iso || '') ? article.iso.slice(0, 10) : '2016-01-01'
+  const url = `https://api.crossref.org/works?query.bibliographic=${query}&filter=from-pub-date:${from},type:journal-article&sort=published&order=desc&rows=12&select=DOI,title,publisher,container-title,published,URL&mailto=site@dr-alfailakawi.com`
+  try {
+    const response = await fetch(url, { headers: { 'User-Agent': 'DrAlfailakawi-IdeaLife/2.0 (mailto:site@dr-alfailakawi.com)' }, signal: AbortSignal.timeout(25_000) })
+    if (!response.ok) return []
+    const items = (await response.json())?.message?.items || []
+    const output = []
+    for (const [index, item] of items.entries()) {
+      const title = clean(Array.isArray(item.title) ? item.title[0] : item.title)
+      const normalizedTitle = normalize(title)
+      const matchedConcepts = concepts.filter((concept) => concept.en.some((term) => normalizedTitle.includes(term))).length
+      if (!title || matchedConcepts < Math.min(2, concepts.length)) continue
+      const target = item.URL || (item.DOI ? `https://doi.org/${item.DOI}` : '')
+      const live = target ? await liveUrl(target) : ''
+      if (!live) continue
+      const parts = item.published?.['date-parts']?.[0] || []
+      const publishedAt = parts[0] ? `${parts[0]}-${String(parts[1] || 1).padStart(2, '0')}-${String(parts[2] || 1).padStart(2, '0')}` : ''
+      const kind = 'study'
+      output.push({
+        title: title.slice(0, 240), summary: researchSummary(article, item, index), url: live,
+        source: item.publisher || item['container-title']?.[0] || 'Crossref', publishedAt,
+        discoveredAt: new Date().toISOString(), kind, relation: updateRelation(kind), confidence: Math.min(.97, .84 + matchedConcepts * .04),
+      })
+      if (output.length >= 4) break
+    }
+    return output
+  } catch { return [] }
+}
+
+function radarUpdates(article, radar) {
+  const articleText = `${article.title} ${article.excerpt || ''} ${article.cat || ''}`
+  const articleDate = /^\d{4}-\d{2}-\d{2}/.test(article.iso || '') ? article.iso.slice(0, 10) : ''
+  return radar
+    .map((item) => {
+      const publishedAt = dateIso(item.day) || dateIso(item.createdAt)
+      const candidateText = `${item.ar || ''} ${item.arNote || ''} ${item.en || ''} ${item.enNote || ''}`
+      const score = overlap(articleText, candidateText)
+      const titleScore = overlap(article.title, `${item.ar || ''} ${item.en || ''}`)
+      if (!item.url || !item.ar || (articleDate && publishedAt && publishedAt < articleDate) || score < 2 || (score === 2 && titleScore < 1)) return null
+      const kind = updateKind(candidateText, item.source, item.url)
+      return {
+        title: clean(item.ar || item.en).slice(0, 240),
+        summary: clean(item.arNote || item.enNote) || `مادة حديثة من ${item.source || 'مصدر موثوق'} تفتح زاوية جديدة في موضوع «${article.title}».`,
+        url: item.url, source: item.source || '', publishedAt, discoveredAt: new Date().toISOString(), kind,
+        relation: updateRelation(kind), confidence: Math.min(.97, .80 + score * .045 + titleScore * .025),
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) => String(b.publishedAt || '').localeCompare(String(a.publishedAt || '')) || b.confidence - a.confidence)
+    .slice(0, 8)
+}
+
+function updateKey(item) {
+  return canonicalUrl(item.url) || `title:${normalize(item.title)}`
+}
+
+function mergeUpdates(previous = [], fresh = [], blocked = new Set()) {
+  const map = new Map()
+  const now = new Date().toISOString()
+  for (const item of previous) {
+    const key = updateKey(item)
+    if (!key || blocked.has(key)) continue
+    map.set(key, item)
+  }
+  for (const item of fresh) {
+    const key = updateKey(item)
+    if (!key || blocked.has(key) || (item.confidence ?? 1) < .82) continue
+    const old = map.get(key)
+    map.set(key, { ...old, ...item, discoveredAt: old?.discoveredAt || item.discoveredAt || now })
+  }
+  const unique = []
+  const titleSeen = new Set()
+  for (const item of [...map.values()].sort((a, b) => String(b.publishedAt || b.discoveredAt || '').localeCompare(String(a.publishedAt || a.discoveredAt || '')) || (b.confidence || 0) - (a.confidence || 0))) {
+    const title = normalize(item.title)
+    if (!title || titleSeen.has(title)) continue
+    titleSeen.add(title)
+    unique.push(item)
+  }
+  return unique.slice(0, 12)
 }
 
 async function predictionEvidence(article, quote) {
@@ -310,10 +442,11 @@ function dimensions(hasEvidence) {
   }
 }
 
-async function buildArticleRecord(article) {
+async function buildArticleRecord(article, radar = [], previous = {}) {
   const quotes = extractPredictions(article)
-  const [signals, ...evidenceSets] = await Promise.all([
+  const [signals, studies, ...evidenceSets] = await Promise.all([
     publicMentions(article),
+    topicStudies(article),
     ...quotes.map((quote) => predictionEvidence(article, quote)),
   ])
   const reviewedAt = new Date().toISOString()
@@ -321,7 +454,16 @@ async function buildArticleRecord(article) {
     const evidence = evidenceSets[index] || []
     return { quote, status: evidence.length ? 'ظهرت أدلة جديدة' : 'قيد المتابعة', reviewedAt, evidence, dimensions: dimensions(evidence.length > 0) }
   })
-  return { slug: article.slug, kind: 'article', title: article.title, articleIso: article.iso || '', predictions, signals, checkedAt: reviewedAt, engine: 'local-rules+open-sources-v1', costModel: 'zero-paid-ai' }
+  const blocked = new Set([
+    ...signals.map(updateKey),
+    ...predictions.flatMap((prediction) => (prediction.evidence || []).map(updateKey)),
+  ])
+  const updates = mergeUpdates(previous.updates, [...studies, ...radarUpdates(article, radar)], blocked)
+  return {
+    slug: article.slug, kind: 'article', title: article.title, articleIso: article.iso || '',
+    predictions, signals, updates, checkedAt: reviewedAt,
+    engine: 'local-rules+open-sources-v2', costModel: 'zero-paid-ai',
+  }
 }
 
 async function buildPaperRecord(paper) {
@@ -345,11 +487,21 @@ async function selfTest() {
   const query = researchQuery({ title: 'الذكاء الاصطناعي في التعليم', excerpt: '' }, 'ستتغير أدوات تقييم الطالب')
   if (!query.terms.includes('artificial intelligence') || !query.terms.includes('assessment')) throw new Error('فشل توسيع البحث العلمي ثنائي اللغة')
   if (canonicalUrl('https://www.example.com/a?x=1#top') !== 'example.com/a') throw new Error('فشل توحيد روابط الأثر')
+  const radarFixture = radarUpdates(
+    { ...sample, slug: 'sample', title: 'الذكاء الاصطناعي وتقييم الطلاب', excerpt: 'كيف يؤثر الذكاء الاصطناعي في تقييم تعلم الطلاب؟', iso: '2026-01-01', cat: 'تعليم' },
+    [
+      { ar: 'دراسة جديدة عن الذكاء الاصطناعي وتقييم الطلاب', arNote: 'تبحث الدراسة أثر الاستخدام الموجّه داخل التعليم.', en: 'AI and student assessment', source: 'University Research', url: 'https://example.org/study', day: '2026-07-01' },
+      { ar: 'دراسة جديدة عن الذكاء الاصطناعي وتقييم الطلاب', arNote: 'نسخة مكررة.', en: 'AI and student assessment', source: 'University Research', url: 'https://example.org/study', day: '2026-07-01' },
+      { ar: 'خبر رياضي لا علاقة له بالتعليم', arNote: 'نتيجة مباراة.', en: 'Sports result', source: 'News', url: 'https://example.org/sport', day: '2026-07-01' },
+    ],
+  )
+  const merged = mergeUpdates([], radarFixture)
+  if (merged.length !== 1 || merged[0].kind !== 'study') throw new Error('فشل تنويع مستجدات الفكرة أو منع التكرار')
   const staticArticles = loadStaticArticles()
   const staticPapers = loadStaticPapers()
   if (staticArticles.length < 100) throw new Error(`فشل قراءة المقالات الثابتة: ${staticArticles.length}`)
   if (staticPapers.length < 1) throw new Error('فشل قراءة الأبحاث ذات DOI')
-  console.log(`✔ حياة الفكرة: ${staticArticles.length} مقالاً و${staticPapers.length} بحثاً — المحرك يعمل بلا نموذج مدفوع`)
+  console.log(`✔ حياة الفكرة: ${staticArticles.length} مقالاً و${staticPapers.length} بحثاً — المستجدات متنوعة، بلا تكرار أو نموذج مدفوع`)
 }
 
 async function main() {
@@ -364,13 +516,21 @@ async function main() {
   console.log(`حياة الفكرة: ${dueArticles.length} مقالاً + ${duePapers.length} بحثاً`)
 
   for (const article of dueArticles) {
-    const record = await buildArticleRecord(article)
-    await db.collection('site_idea_life').doc(`article-${article.slug}`).set({ ...record, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
-    console.log(`  • مقال: ${article.slug} — ${record.predictions.length} توقع، ${record.signals.length} أثر عام`)
+    const previous = cloud.existing.get(`article-${article.slug}`) || {}
+    const record = await buildArticleRecord(article, cloud.radar, previous)
+    const timestamps = previous.createdAt
+      ? { updatedAt: FieldValue.serverTimestamp() }
+      : { createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }
+    await db.collection('site_idea_life').doc(`article-${article.slug}`).set({ ...record, ...timestamps }, { merge: true })
+    console.log(`  • مقال: ${article.slug} — ${record.predictions.length} توقع، ${record.updates.length} مستجد، ${record.signals.length} أثر عام`)
   }
   for (const paper of duePapers) {
+    const previous = cloud.existing.get(`paper-${paper.slug}`) || {}
     const record = await buildPaperRecord(paper)
-    await db.collection('site_idea_life').doc(`paper-${paper.slug}`).set({ ...record, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
+    const timestamps = previous.createdAt
+      ? { updatedAt: FieldValue.serverTimestamp() }
+      : { createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }
+    await db.collection('site_idea_life').doc(`paper-${paper.slug}`).set({ ...record, ...timestamps }, { merge: true })
     console.log(`  • بحث: ${paper.slug} — ${record.signals.length} استشهادات موثقة`)
   }
   console.log('✔ اكتملت المزامنة بلا ذكاء اصطناعي مدفوع')

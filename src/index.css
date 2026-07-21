@@ -1409,6 +1409,7 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
     max-width: none;
     margin-inline: -1.5rem;
     padding-inline: 1.5rem;
+    padding-top: .55rem;
     scroll-padding-inline: 1.5rem;
     padding-bottom: .75rem;
     gap: 1rem !important;
@@ -1423,6 +1424,16 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
     scrollbar-width: none;
     -ms-overflow-style: none;
     touch-action: pan-x pan-y;
+  }
+  .home-page :is(.rail, .mobile-card-rail, .mobile-paired-grid) {
+    /* الرئيسية تحديداً: الكروت تتحرّك يمين/يسار فقط عند السحب. نلغي أي
+       ترجمة رأسية من حركات الدخول داخل السكك الأفقية، فيبقى الإحساس أفخم
+       وأهدأ ولا يشعر الزائر أن البطاقة «تنقز» تحت إصبعه. */
+    touch-action: pan-x;
+    overscroll-behavior-y: contain;
+  }
+  .home-page :is(.rail, .mobile-card-rail, .mobile-paired-grid) > [style*="transform"] {
+    transform: none !important;
   }
   .mobile-card-rail::-webkit-scrollbar,
   .mobile-paired-grid::-webkit-scrollbar { display: none; }

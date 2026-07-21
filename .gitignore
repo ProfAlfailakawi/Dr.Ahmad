@@ -23,7 +23,6 @@ public/files
 # نظام
 .DS_Store
 whatsapp-agent/node_modules/
-whatsapp-agent/package-lock.json
 whatsapp-agent/*.sqlite
 whatsapp-agent/*.sqlite-*
 whatsapp-agent/session/
@@ -51,6 +50,7 @@ podcast-rejected/
 .audio-human-work/
 .audio-last-known-good/
 .audio-site-patches.json
+.audio-failures.json
 audio-audits/quarantine/
 audio-audits/**/*.mp3
 ArabicPronunciationMemory.sqlite*

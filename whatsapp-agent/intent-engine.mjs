@@ -1,9 +1,23 @@
-import { contentSummary, findContent, latestContent, mostPopularContent, normalizeArabic, searchContent, topArticleTopics } from './content-index.mjs'
-import { AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUAL_TAKEOVER_MINUTES, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags } from './config.mjs'
+import { contentSummary, findContent, latestAudioContent, latestContent, mostPopularContent, normalizeArabic, searchContent, shortReadableContent, topArticleTopics } from './content-index.mjs'
+import { AUDIO_PUBLIC_BASE_URL, AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUAL_TAKEOVER_MINUTES, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, redactJid } from './config.mjs'
 import { hashOpaque } from './crypto.mjs'
 import { createReminder, parseReminderTime } from './reminders.mjs'
-import { applyBotRules, rememberSent, sign } from './bot-rules.mjs'
+import { applyBotRules, sign } from './bot-rules.mjs'
 import { answer as scholarAnswer, SCAFFOLD as SCHOLAR_SCAFFOLD } from './scholar.mjs'
+import {
+  applyReferenceResolution,
+  parseCompoundRequest,
+  parseConversationContext,
+  resolveContextReference,
+  serializeConversationContext,
+  setContextResults,
+} from './conversation-context.mjs'
+import {
+  buildFifteenSecondChallenge,
+  buildQuietIdeaNetwork,
+  extractVerbatimAtSpeed,
+  selectDailyUnsentContent,
+} from './daily-experience.mjs'
 
 /* ما وعد به محرك المكتبة ولم يُسلّمه بعد: السؤال وما رآه السائل منه. */
 function readFollowup(session) {
@@ -15,16 +29,24 @@ function readFollowup(session) {
 }
 
 export const INTENTS = Object.freeze({
-  LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_ARTICLES: 'LATEST_ARTICLES', MOST_VIEWED_ARTICLE: 'MOST_VIEWED_ARTICLE', CONTENT_OVERVIEW: 'CONTENT_OVERVIEW', TOP_ARTICLE_TOPIC: 'TOP_ARTICLE_TOPIC', LATEST_BOOK: 'LATEST_BOOK', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', LATEST_PAPER: 'LATEST_PAPER', WELCOME: 'WELCOME', MORE_LIKE_THIS: 'MORE_LIKE_THIS', COMPARE: 'COMPARE', ABOUT_TOPIC: 'ABOUT_TOPIC', UPCOMING_EVENTS: 'UPCOMING_EVENTS', ABOUT_DOCTOR: 'ABOUT_DOCTOR', CURATED_PICKS: 'CURATED_PICKS', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', UNKNOWN: 'UNKNOWN' })
+  LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_ARTICLES: 'LATEST_ARTICLES', MOST_VIEWED_ARTICLE: 'MOST_VIEWED_ARTICLE', CONTENT_OVERVIEW: 'CONTENT_OVERVIEW', TOP_ARTICLE_TOPIC: 'TOP_ARTICLE_TOPIC', LATEST_BOOK: 'LATEST_BOOK', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', LATEST_PAPER: 'LATEST_PAPER', WELCOME: 'WELCOME', MORE_LIKE_THIS: 'MORE_LIKE_THIS', COMPARE: 'COMPARE', ABOUT_TOPIC: 'ABOUT_TOPIC', UPCOMING_EVENTS: 'UPCOMING_EVENTS', ABOUT_DOCTOR: 'ABOUT_DOCTOR', CURATED_PICKS: 'CURATED_PICKS', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', COMPOUND_REQUEST: 'COMPOUND_REQUEST', CONTEXT_REFERENCE: 'CONTEXT_REFERENCE', READ_SPEED: 'READ_SPEED', IDEA_NETWORK: 'IDEA_NETWORK', CHALLENGE: 'CHALLENGE', CHALLENGE_ANSWER: 'CHALLENGE_ANSWER', SOURCE_PROOF: 'SOURCE_PROOF', SAVE_CONTENT: 'SAVE_CONTENT', LIST_SAVED: 'LIST_SAVED', REMOVE_SAVED: 'REMOVE_SAVED', UNKNOWN: 'UNKNOWN' })
 
 /* ملاحظة واجبة: النص يمرّ على normalizeArabic قبل المطابقة، وهو يحوّل
    ة→ه و أ/إ/آ→ا و ى→ي ويحذف الترقيم. فكل نمطٍ هنا يُكتب بالصورة المطبَّعة،
    وإلا لم يطابق شيئاً أبداً — وهذا ما كان يعطّل «بطاقة اقتباس» و«النشرة
    الأسبوعية» و«أوقف الرسائل» بصمت. */
 const patterns = [
-  [INTENTS.STOP_MESSAGES, [/^(اوقف|وقف|ايقاف|لا ترسل|ما ابي تنبيهات|شيلني من القائمه|الغاء الاشتراك)/, 0.99]],
-  [INTENTS.RESUME_MESSAGES, [/^(رجع الرسائل|فعل الجديد|اشترك مره ثانيه|ابي ارجع)/, 0.99]],
-  [INTENTS.DELETE_PREFERENCES, [/(انس تفضيلاتي|امسح اللي تعرفه عني|احذف تفضيلاتي)/, 0.98]],
+  [INTENTS.STOP_MESSAGES,
+    [/^(?:اوقف|وقف|ايقاف)(?:\s+(?:الرسائل|الرسايل|رسائل المحتوي|التنبيهات|الارسال|البوت))?$/, 0.99],
+    [/^(?:اوقفوا|وقفوا)\s+(?:الرسائل|الرسايل|التنبيهات|الارسال)$/, 0.99],
+    [/^(?:لا ترسل(?: لي)?|لا تدز(?:لي| لي)?|ما ابي تنبيهات|بس لا ترسلون لي|شيلني من القائمه|الغاء الاشتراك)$/, 0.99],
+    [/^(?:لا اريد|لا ابي|ما ابي)\s+(?:رسائل|رسايل|تنبيهات)$/, 0.99],
+    [/^(?:stop|unsubscribe|opt out)$/, 0.99]],
+  [INTENTS.RESUME_MESSAGES,
+    [/^(?:رجع|فعل|شغل)\s+(?:الرسائل|الرسايل|التنبيهات|المحتوي|الارسال)$/, 0.99],
+    [/^(?:فعل الجديد|اشترك مره ثانيه|ابي ارجع|resume|subscribe|opt in)$/, 0.99]],
+  [INTENTS.DELETE_PREFERENCES,
+    [/^(?:انس تفضيلاتي|امسح اللي تعرفه عني|احذف تفضيلاتي|احذف بياناتي|احذف كل معلوماتي|امسح بياناتي|امسح سجلي|لا تحفظ بياناتي|delete my data|please delete my data|remove my data|forget my data)$/, 0.99]],
   /* كلمة الدخول المنشورة في خانة «المعلومات» بواتساب — فكرة صديق الدكتور.
      تُقرأ في اللحظة الصحيحة: وهم يفتحون محادثته. ولا يقولها صديقٌ مصادفةً،
      ومن قالها فهو يسأل عن الموقع بالضبط — فالردّ صحيحٌ في الحالين. */
@@ -33,7 +55,7 @@ const patterns = [
      و«مقالات/أبحاث/كتب/أعمال»، فبعضها يمرّ في كلام الناس عرضاً فيفتح الباب
      على من لم يقصد فتحه. والنصّ يصل مطبَّعاً (ة→ه، أ→ا)، فـ«الفيلكاوي» تُكتب
      هنا بصورتها المطبَّعة وإلا لم تطابق شيئاً. */
-  [INTENTS.WELCOME, [/موقع\s*(ال)?(د|دكتور)\s*\.?\s*(احمد|الفيلكاوي)/, 0.97]],
+  [INTENTS.WELCOME, [/^موقع د (?:احمد|الفيلكاوي)$/, 0.99]],
   /* اللغة الطبيعية بعد الإيقاظ: لا نُجبر الزائر على صيغةٍ واحدة. الترتيب مهم:
      «أكثر مقالة مشاهدة» تُلتقط قبل «مقالة»، والجمع قبل المفرد. */
   [INTENTS.MOST_VIEWED_ARTICLE, [/(اكثر|اعلي|اشهر|ابرز).*(مقال|مقاله).*(مشاهده|قراءه|انتشار|تداول)|المقاله?\s*(الاكثر مشاهده|الاكثر قراءه|الاشهر)/, 0.97]],
@@ -46,19 +68,28 @@ const patterns = [
   [INTENTS.LATEST_PAPER, [/(ابحاث|بحوث)\s*(الدكتور|د\s*احمد|احمد)?|(اخر|احدث)\s*\S*\s*(بحث|ابحاث)|الابحاث|شنو.*(ابحاث|بحوث|بحث).*(الدكتور|له)?/, 0.94]],
   [INTENTS.LATEST_BOOK, [/(اخر|احدث|جديد)\s*\S*\s*(كتاب|الكتب)|شنو.*(كتب|كتاب).*(الدكتور|له)?|كتب الدكتور/, 0.94]],
   [INTENTS.LATEST_SELECTION, [/(اخر|احدث|جديد)\s*\S*\s*(مختارات)/, 0.94]],
-  [INTENTS.LATEST_PODCAST, [/(اخر|احدث).*(بودكاست|حلقه)|اخر بودكاست|شنو.*(بودكاست|حلقات).*(الدكتور|له)?/, 0.96]],
+  [INTENTS.LATEST_PODCAST, [/(اخر|احدث|جديد).*(بودكاست|بود كاست|حلقه|حلقات|حوار|الحوار)|اخر بودكاست|شنو.*(بودكاست|بود كاست|حلقات|الحلقه|الحوار).*(الدكتور|له)?/, 0.96]],
   [INTENTS.MISSED_CONTENT, [/(شنو|ماذا).*(فاتني|فات)/, 0.96], [/(من زمان ما تابعت|ما تابعت من زمان)/, 0.94]],
   [INTENTS.SURPRISE_ME, [/(فاجيني|اختر لي|اختار لي|على ذوقك|شيء من عندك)/, 0.94]],
-  [INTENTS.ONE_MINUTE, [/(عندي دقيقه|ما عندي وقت|الزبده|ملخص سريع|اختصرها|الفكره بس)/, 0.96]],
+  [INTENTS.ONE_MINUTE, [/(عندي دقيقه|عندي دقيقتين|دقيقه وحده|وقت قصير|شي سريع|ماده قصيره|ما عندي وقت|الزبده|ملخص سريع|اختصرها|الفكره بس)/, 0.96]],
+  [INTENTS.READ_SPEED, [/^(?:(?:ابي|اريد|ابغي|عطني|اعطني|ممكن|خله|خلها|خلني)\s+)?(?:30 ثانيه|٣٠ ثانيه|۳۰ ثانيه|نص دقيقه|قراءه (?:30|٣٠|۳۰) ثانيه|دقيقتين|دقيقتان|قراءه دقيقتين|قراءه دقيقتان|اتعمق|التعمق|تعمق)(?:\s+(?:بس|لو سمحت))?$/, 0.97]],
+  [INTENTS.IDEA_NETWORK, [/(شبكه الافكار|مسارات الفكره|امش مع الفكره|مرتبط فيه|مرتبط به|خذني للشبكه)/, 0.96]],
+  [INTENTS.CHALLENGE, [/^(?:اختبرني|تحدي|تحدي 15 ثانيه|سوال اليوم)$/, 0.98]],
+  [INTENTS.CHALLENGE_ANSWER, [/^(?:1|2|3|١|٢|٣)$/, 0.98]],
+  [INTENTS.SOURCE_PROOF, [/^(?:(?:عطني|ابي|اريد|ممكن)\s+)?(?:المصدر|مصدره)(?:\s+لو سمحت)?$|^وين\s+(?:رابط\s+)?المصدر$|^وين قالها$|^اثبات المصدر$/, 0.98]],
+  [INTENTS.SAVE_CONTENT, [/^(?:(?:ابي|ممكن)\s+)?(?:احفظه|احفظها|تحفظه|تحفظها)(?:\s+عندي)?$|^(?:حطه برفي|حطها برفي|خلها عندي|خله عندي)$/, 0.97]],
+  [INTENTS.LIST_SAVED, [/^(?:محفوظاتي|رفي|شنو حفظت|اعرض(?: لي)? المحفوظات|ورني رفي)$/, 0.97]],
+  [INTENTS.REMOVE_SAVED, [/^(?:(?:ممكن|ابي)\s+)?(?:شيله|شيلها|احذفه|احذفها)\s+(?:من\s+)?(?:محفوظاتي|رفي)(?:\s+لو سمحت)?$/, 0.97]],
   [INTENTS.SUMMARY, [/(لخص|ملخص|نبذه|الخلاصه)/, 0.84]],
   /* «فهد» و«نورة» و«حوار» و«كمّل» كلامٌ كويتيٌّ يوميّ وأسماءُ ناس — لا تكفي
      وحدها أبداً، وإلا ردّ البوت على صديقٍ يسأل عن فهد. تطلب الآن طلباً صريحاً. */
   [INTENTS.LISTEN_DIALOGUE, [/(استمع|شغل|سمعني|بصوت)\s*\S*\s*(الحوار|حوار)|^الحوار$/, 0.92]],
-  [INTENTS.LISTEN_FAHED, [/(بصوت فهد|قراءه فهد|صوت الرجل)/, 0.95]],
-  [INTENTS.LISTEN_NOURA, [/(بصوت نوره|بصوت نورا|قراءه نوره|صوت المراه)/, 0.95]],
+  [INTENTS.LISTEN_FAHED, [/(?:اسمع|شغل|سمعني|اقراها لي|اقراه لي|صوت|بصوت|قراءه)\s*(?:لي\s*)?(?:فهد|الرجل|رجل|رجال)|صوت الرجل/, 0.95]],
+  [INTENTS.LISTEN_NOURA, [/(?:اسمع|شغل|سمعني|اقراها لي|اقراه لي|صوت|بصوت|قراءه)\s*(?:لي\s*)?(?:نوره|نورا|المراه|امراه)|صوت المراه/, 0.95]],
   [INTENTS.QUOTE_CARD, [/(بطاقه اقتباس|صوره اقتباس)/, 0.92]],
   [INTENTS.QUOTE, [/(اقتباس|جمله جميله|عطني اقتباس)/, 0.90]],
   [INTENTS.CONTINUE_LISTENING, [/(من وين وقفت|تابع الاستماع|كمل الاستماع|كمل القراءه)/, 0.90]],
+  [INTENTS.READ_ARTICLE, [/(افتح المقال|رابط المقال|ابي اقراه|اقرا المقال)/, 0.94]],
   [INTENTS.HELP, [/(شنو تقدر|الخيارات|مساعده|شلون استخدم|الاوامر|القائمه)/, 0.98]],
   [INTENTS.REMIND_ME, [/(ذكرني|تذكير)/, 0.90]],
   [INTENTS.WEEKLY_DIGEST, [/(ملخص اسبوعي|النشره الاسبوعيه|نشره اسبوعيه)/, 0.94]],
@@ -69,7 +100,7 @@ const patterns = [
   [INTENTS.ABOUT_DOCTOR, [/(السيره|سيره ذاتيه|سيرتك|من هو|منو|تعريف|نبذه عن|هويه|cv)\s*(ال)?(د|دكتور)?\s*(احمد)?/, 0.92]],
   [INTENTS.CURATED_PICKS, [/(مختارات|المختارات|اختياراتك|ترشيحات|ماذا تقرا|شنو تقرا)/, 0.92]],
   /* داخل الجلسة يريد الناس المزيد والمقارنة والتنقّل — لا أوامر جافّة فقط */
-  [INTENTS.MORE_LIKE_THIS, [/^(غيره|غيرها|زدني|كمان|بعد|المزيد|عطني اكثر|شي ثاني|واحد ثاني)/, 0.93]],
+  [INTENTS.MORE_LIKE_THIS, [/^(في\s*)?(غيره|غيرها|زدني|كمان|بعد|المزيد|عطني اكثر|شي ثاني|شيء ثاني|في بعد|واحد ثاني|ماده ثانيه)/, 0.93]],
   [INTENTS.COMPARE, [/(قارن|الفرق بين|ايهما|وش الفرق|مقارنه بين)/, 0.92]],
   [INTENTS.ABOUT_TOPIC, [/(عندك|عندكم|في|لديك)\s*(شي|شيء|مقال|بحث|كتاب|ماده)?\s*(عن|حول|بخصوص)/, 0.90]],
 ]
@@ -77,6 +108,31 @@ const patterns = [
 const clean = (text) => normalizeArabic(String(text || '').slice(0, MAX_MESSAGE_CHARS))
 const compactPhone = (value = '') => String(value).replace(/[^\d]/g, '')
 const jidAccount = (jid = '') => String(jid).split('@')[0].toLowerCase()
+
+/* منفذ «اكتب المصطلح فقط» مفيد، لكن بحث FTS الواسع ليس دليلاً على القصد:
+   «شكراً» و«أنا بخير» تظهران داخل أجسام المقالات أيضاً. نسمح هنا بعبارة اسمية
+   قصيرة تطابق العنوان/التصنيف نفسه، ونرفض ضمائر الحديث والمجاملات والأفعال
+   اليومية. أما السؤال الصريح «عندك شيء عن…» فله نيّة مستقلة أوسع. */
+const CHATTER_OR_PERSONAL = /(?:^|\s)(?:انا|اني|انت|انتي|انتو|احنا|نحن|توني|تو|وصلت|رحت|جيت|شكرا|شكراً|مشكور|تمام|اوكي|حبيبي|حبيبتي|مرحبا|هلا|السلام|وعليكم|صباح|مساء|بخير|شلونك|كيفك|وينك|مع السلامه)(?:\s|$)|\b(?:i|im|am|my|me|we|you|your|thanks?|hello|hi|okay|fine|home|arrived|love)\b/i
+
+function stripGroundedTopicRequest(value) {
+  return clean(value)
+    .replace(/^(?:ابي|اريد|ابغي|عطني|اعطني|هات|ممكن)\s+/, '')
+    .replace(/^(?:شي|شيء|ماده)\s+(?:عن|حول|بخصوص)\s+/, '')
+    .replace(/\s+لو سمحت$/, '')
+    .trim()
+}
+
+function isGroundedTopicPhrase(db, text) {
+  const normalized = stripGroundedTopicRequest(text)
+  const words = normalized.split(/\s+/).filter((word) => word.length > 1)
+  if (!words.length || words.length > 4 || CHATTER_OR_PERSONAL.test(normalized)) return false
+  const candidates = searchContent(db, normalized, { limit: 6 })
+  return candidates.some((item) => {
+    const namedFields = clean(`${item.title || ''} ${item.keywords || ''}`)
+    return words.every((word) => namedFields.includes(word))
+  })
+}
 
 function isAllowlisted(jid = '') {
   if (!AUTO_REPLY_ALLOWLIST.length) return false
@@ -97,9 +153,60 @@ function hasAssistantTrigger(text = '') {
 
 export function classifyIntent(text) {
   const value = clean(text)
-  for (const [intent, ...rules] of patterns) {
+  /* الخصوصية وكلمة الدخول أعلى من أي تحليل سياقي. «أبي أرجع» مثلاً أمر
+     استئناف، لا «ارجع إلى النتيجة السابقة». */
+  for (const [intent, ...rules] of patterns.slice(0, 4)) {
     for (const [regex, confidence] of rules) if (regex.test(value)) return { intent, confidence, normalized: value }
   }
+  /* خيارات الزمن الظاهرة في رسالة الترحيب أفعالٌ على المادة الحالية. نفحصها
+     قبل المحلل المركّب لأن كلمات التلطيف مثل «خلها» قد تبدو له موضوعاً. */
+  for (const [intent, ...rules] of patterns) {
+    if (intent !== INTENTS.READ_SPEED) continue
+    for (const [regex, confidence] of rules) if (regex.test(value)) return { intent, confidence, normalized: value }
+  }
+  const parsedRequest = parseCompoundRequest(value)
+  /* أسماء المالك/النوع ليست موضوع بحث: كان «آخر مقالاته» يبحث عن كلمة
+     «مقالاته»، و«كتب الدكتور» عن «الدكتور»، فيضيع الأمر الأساسي. */
+  const genericTopic = /^(?:الدكتور|د احمد|احمد|الفيلكاوي|مقالاته|مقالات الدكتور|كتب الدكتور|ابحاث الدكتور)$/
+  const voiceOnlyTopic = Boolean(parsedRequest.voice && /^(?:نوره|نورا|فهد|الرجل|رجل|المراه|امراه|الحوار|حوار)$/.test(parsedRequest.topic || ''))
+  const topicIsNoise = genericTopic.test(parsedRequest.topic || '') || voiceOnlyTopic
+  const request = topicIsNoise
+    ? {
+        ...parsedRequest,
+        topic: null,
+        reference: parsedRequest.action && !parsedRequest.kind && !parsedRequest.latest ? 'current' : parsedRequest.reference,
+      }
+    : parsedRequest
+  if (request.reference && !request.more) {
+    return { intent: INTENTS.CONTEXT_REFERENCE, confidence: 0.97, normalized: value, request }
+  }
+  let directMatch = null
+  for (const [intent, ...rules] of patterns.slice(4)) {
+    for (const [regex, confidence] of rules) {
+      if (regex.test(value)) {
+        directMatch = { intent, confidence, normalized: value }
+        break
+      }
+    }
+    if (directMatch) break
+  }
+  /* الطلب المركّب يعلو على أمر النوع فقط عندما يضيف قيداً حقيقياً (موضوعاً أو
+     مدةً أو صوتاً). أما «الأكثر مشاهدة» و«أبرز موضوع» ونحوها فهي أوامر دقيقة
+     بذاتها، فلا يجوز أن يحوّلها وجود كلمة «مقال» إلى بحث مركّب. */
+  const compoundCapableDirectIntents = new Set([
+    INTENTS.LATEST_ARTICLE,
+    INTENTS.LATEST_ARTICLES,
+    INTENTS.LATEST_BOOK,
+    INTENTS.LATEST_PAPER,
+    INTENTS.LATEST_PODCAST,
+    INTENTS.LATEST_SELECTION,
+  ])
+  if (directMatch && !compoundCapableDirectIntents.has(directMatch.intent)) return directMatch
+  if ((request.duration || request.voice) && (request.kind || request.topic || request.latest)) {
+    return { intent: INTENTS.COMPOUND_REQUEST, confidence: 0.95, normalized: value, request }
+  }
+  if (request.topic && request.kind) return { intent: INTENTS.COMPOUND_REQUEST, confidence: 0.94, normalized: value, request }
+  if (directMatch) return directMatch
   /* المنفذ الأخير: ما لم يطابق نمطاً يُعامَل بحثاً عن موضوع. ويُوسَم `fallback`
      لأنه ليس فهماً بل تخميناً — وداخل الجلسة المفتوحة كان هذا التخمين يبتلع
      كلَّ ما يُكتب، ومنه ما ليس سؤالاً أصلاً. فالبوّابة تعرفه الآن وتردّه. */
@@ -167,6 +274,8 @@ function customRuleReply(db, rule, input) {
       ruleName: rule.name,
       text: results.map((item, index) => `${index + 1}. ${item.title}\n${contentSummary(item, 1)}\n${item.url}`).join('\n\n'),
       contentId: results[0].id,
+      contextItems: results.map((item) => item.id),
+      seenContentIds: results.map((item) => item.id),
     }
   }
   /* لا تُرسل القواعد الحرة كلاماً مؤلفاً. التحويل والنص الحر يتركان الرسالة
@@ -178,7 +287,7 @@ const itemLink = (item) => item ? `\n${item.title}\n${item.url}` : ''
 const audioLinks = (item) => {
   if (!item?.audio) return []
   const links = []
-  const base = item.url.replace(/\/articles\/[^/]+$/, '/audio')
+  const base = AUDIO_PUBLIC_BASE_URL
   if (item.audio.fahed) links.push(`فهد: ${base}/${item.slug}.mp3`)
   if (item.audio.noura) links.push(`نورة: ${base}/${item.slug}.noura.mp3`)
   if (item.audio.dialogue) links.push(`الحوار: ${base}/${item.slug}.dialogue.mp3`)
@@ -187,7 +296,7 @@ const audioLinks = (item) => {
 
 function contentReply(label, item, extra = '') {
   if (!item) return { text: 'ما لقيت مادة منشورة مطابقة الآن. اكتب لي الموضوع أو النوع الذي تريده، وأبحث لك من جديد.' }
-  return { text: `${label}:\n${item.title}${item.date ? ` · ${item.date}` : ''}\n${item.excerpt || contentSummary(item, 1)}\n${item.url}${extra}`, contentId: item.id, actions: audioLinks(item) }
+  return { text: `${label}:\n${item.title}${item.date ? ` · ${item.date}` : ''}\n${item.excerpt || contentSummary(item, 1)}\n${item.url}${extra}`, contentId: item.id, contextItems: [item.id], seenContentIds: [item.id], actions: audioLinks(item) }
 }
 
 function latestOf(db, kind, label) { return contentReply(label, latestContent(db, kind, 1)[0]) }
@@ -210,6 +319,8 @@ ${items.map((item, index) => `${index + 1}. ${conciseItem(item)}`).join('\n\n')}
 
 تقدر تقول: لخّص الأولى، أو عندك شيء عن موضوع معيّن؟`,
     contentId: items[0].id,
+    contextItems: items.map((item) => item.id),
+    seenContentIds: items.map((item) => item.id),
   }
 }
 
@@ -224,21 +335,74 @@ function freshContentReply(db) {
     text: `الجديد الآن في مكتبة الدكتور:
 ${items.map((item, index) => `${index + 1}. ${KIND_LABEL[item.kind] || 'مادة'} — ${conciseItem(item)}`).join('\n\n')}
 
-وتقدر تسألني بطريقتك: آخر مقالاته، أكثر مقالة مشاهدة، أو عنده شيء عن أي موضوع.`,
+وتقدر تسألني بطريقتك: آخر مقالاته، مادة في دقيقة، أو عنده شيء عن أي موضوع.`,
     contentId: items[0].id,
+    contextItems: items.map((item) => item.id),
+    seenContentIds: items.map((item) => item.id),
+  }
+}
+
+function latestPodcastReply(db) {
+  const publishedEpisode = latestContent(db, 'podcast', 1)[0]
+  if (publishedEpisode) return contentReply('أحدث حلقة', publishedEpisode)
+
+  /* لا توجد صفحة بودكاست مستقلة في الموقع الآن، لكن توجد «حلقات حوارية»
+     منشورة داخل مشغّل المقالات. سؤال «آخر بودكاست» يجب أن يصل إليها بدل أن
+     يسمع الزائر «ما لقيت» وفي الموقع صوت حواري منشور فعلاً. */
+  const item = latestAudioContent(db, 'dialogue', 1)[0]
+  if (!item) {
+    return { text: 'لا توجد حلقة حوارية منشورة في فهرس الموقع الآن. أقدر أعطيك أحدث مقال صوتي أو أحدث مقالة.' }
+  }
+  const dialogue = audioLinks(item).find((line) => line.startsWith('الحوار:'))
+  return {
+    text: `أحدث حلقة حوارية منشورة من الموقع:
+${item.title}${item.date ? ` · ${item.date}` : ''}
+${contentSummary(item, 1)}
+${item.url}#article-audio${dialogue ? `
+
+${dialogue}` : ''}`,
+    contentId: item.id,
+    contextItems: [item.id],
+    seenContentIds: [item.id],
+    actions: audioLinks(item),
+  }
+}
+
+function oneMinuteReply(db, session, selectedItem = null) {
+  const selected = selectedItem || (session?.content_id ? findContent(db, session.content_id) : null)
+  const item = selected || shortReadableContent(db, 1)[0] || latestContent(db, 'article', 1)[0]
+  if (!item) return { text: 'أرسل عنوان المقالة أو اكتب: آخر مقالة، وأعطيك الزبدة في دقيقة.' }
+  const extract = extractVerbatimAtSpeed(item, '30s')
+  const summary = extract?.text || contentSummary(item, 1) || item.excerpt || ''
+  return {
+    text: `قراءة حرفية في أقل من دقيقة من الموقع:
+${item.title}${item.date ? ` · ${item.date}` : ''}
+«${summary}»
+${item.url}`,
+    contentId: item.id,
+    contextItems: [item.id],
+    seenContentIds: [item.id],
+    evidenceQuotes: extract?.text ? [extract.text] : [],
+    actions: audioLinks(item),
   }
 }
 
 function mostViewedArticleReply(db) {
-  const item = mostPopularContent(db, 'article', 1)[0]
-  if (!item) return { text: 'لا توجد مقالات منشورة في الفهرس الآن.' }
+  const snapshot = mostPopularContent(db, 'article', 1)
+  if (!snapshot.verified || !snapshot.items.length) {
+    return { text: 'لا أملك الآن لقطةً موثقة من عدّاد الموقع، لذلك لن أختار مقالةً وأسمّيها الأكثر قراءة. أقدر أعطيك أحدث مقالة أو بوابة اليوم من الأرشيف.' }
+  }
+  const item = snapshot.items[0]
   return {
-    text: `الأعلى حالياً في مؤشر المشاهدة الداخلي للموقع:
+    text: `الأكثر قراءة في عدّاد الموقع خلال ${snapshot.period}:
 ${item.title}
+${item.verifiedViews} مشاهدة مسجلة
 ${item.url}
 
-هذا ترتيب داخلي متجدد من بيانات الموقع، وليس رقماً من منصة خارجية.`,
+المصدر: عدّاد الموقع الداخلي، والمدة مذكورة أعلاه.`,
     contentId: item.id,
+    contextItems: [item.id],
+    seenContentIds: [item.id],
   }
 }
 
@@ -267,36 +431,265 @@ ${topics.map((item, index) => `${index + 1}. ${item.topic} — ${item.count} م�
   }
 }
 
-function stableChoice(seed, choices) {
-  const value = String(seed || '')
-  let hash = 0
-  for (let index = 0; index < value.length; index += 1) hash = ((hash << 5) - hash + value.charCodeAt(index)) | 0
-  return choices[Math.abs(hash) % choices.length]
+function welcomeReply(db, jid) {
+  const item = selectDailyUnsentContent(db, { jid })
+  if (!item) {
+    const hasArchive = Number(db.get('SELECT COUNT(*) AS count FROM content_items')?.count || 0) > 0
+    return {
+      text: hasArchive
+        ? 'حيّاك الل. فتحت لك مكتبة د. أحمد الفيلكاوي.\n\nمررتَ على كل مواد الأرشيف المسجلة، لذلك لن أكرر مادةً عليك من غير أن تطلبها. اكتب موضوعاً أو نوعاً وأفتحه لك.'
+        : 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي، لكن لا توجد مواد منشورة في الفهرس الآن.',
+      contextItems: [],
+      replaceContextList: true,
+    }
+  }
+  const extract = extractVerbatimAtSpeed(item, '30s')
+  const quote = extract?.text || item.excerpt || contentSummary(item, 1)
+  return {
+    text: `حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي.
+
+بوابة اليوم:
+${item.title}${item.date ? ` · ${item.date}` : ''}
+${quote ? `«${quote}»\n` : ''}${item.url}
+
+شنو يناسب وقتك؟ ٣٠ ثانية · دقيقتان · تعمّق · اختبرني
+ولإيقاف الرسائل اكتب: أوقف الرسائل.`,
+    contentId: item.id,
+    contextItems: [item.id],
+    seenContentIds: [item.id],
+    evidenceQuotes: extract?.text ? [extract.text] : [],
+  }
 }
 
-function welcomeReply(db, jid) {
-  const counts = ['article', 'paper', 'book', 'podcast'].map((kind) => ({
-    kind, n: Number(db.get('SELECT COUNT(*) c FROM content_items WHERE kind=?', kind)?.c || 0),
-  }))
-  const label = { article: 'مقالة', paper: 'بحثاً', book: 'كتاباً', podcast: 'حلقة' }
-  const have = counts.filter((c) => c.n).map((c) => `${c.n} ${label[c.kind]}`).join(' · ')
-  const day = new Date().toISOString().slice(0, 10)
-  const openings = [
-    'أهلاً بك. فتحت لك مكتبة د. أحمد الفيلكاوي.',
-    'حيّاك الله. المكتبة جاهزة، واسألني بطريقتك الطبيعية.',
-    'مرحباً بك. من هنا أبحث لك داخل محتوى موقع د. أحمد فقط.',
-  ]
-  const examples = [
-    'شنو جديد الدكتور؟ · شنو آخر مقالاته؟ · شنو أكثر مقالة مشاهدة؟',
-    'عنده شيء عن التقييم؟ · آخر أبحاثه؟ · لخّص لي أحدث مقال.',
-    'فاجئني · قارن بين فكرتين · عطِني مادة أقرأها في دقيقة.',
-  ]
-  return `${stableChoice(`${jid}:${day}:open`, openings)}${have ? `
-${have}` : ''}
+function contextSelection(db, session, input, request = parseCompoundRequest(input)) {
+  const context = parseConversationContext(session?.context_json)
+  const resolution = resolveContextReference(context, request)
+  /* إذا طلب السائل ترتيباً/اتجاهاً غير موجود فلا نرجعه خفيةً إلى المادة الحالية.
+     كان «الرابع» في قائمة من ثلاثة و«اللي بعده» عند النهاية يعيدان الحالي وكأن
+     الطلب نُفّذ. المرجع الحالي وحده يستطيع استخدام content_id القديم للتوافق مع
+     جلسات ما قبل الذاكرة السياقية. */
+  const invalidRelativeReference = Boolean(
+    request?.reference
+    && request.reference !== 'current'
+    && !resolution,
+  )
+  const contentId = invalidRelativeReference
+    ? null
+    : resolution?.contentId
+      || (context.currentIndex >= 0 ? context.resultIds[context.currentIndex] : null)
+      || session?.content_id
+      || null
+  return { context, request, resolution, item: contentId ? findContent(db, contentId) : null }
+}
 
-${stableChoice(`${jid}:${day}:examples`, examples)}
+function speedFromRequest(request, input = '') {
+  if (/تعمق|عميق|الكامل/.test(clean(input))) return 'deep'
+  const seconds = Number(request?.duration?.seconds || 0)
+  if (seconds > 0 && seconds <= 45) return '30s'
+  if (seconds > 45 && seconds <= 180) return '2min'
+  return '30s'
+}
 
-ولإيقاف الرسائل اكتب: أوقف الرسائل.`
+function extractiveReadingReply(db, item, speed = '30s') {
+  if (!item) return { text: 'اختر مادة أولاً: اكتب آخر مقالاته، ثم قل الأولى أو الثانية.' }
+  if (speed === 'deep') {
+    const doorway = extractVerbatimAtSpeed(item, '2min') || extractVerbatimAtSpeed(item, '30s')
+    const network = buildQuietIdeaNetwork(db, item)
+    const audio = audioLinks(item)
+    return {
+      text: `مدخل التعمّق من النص المنشور:
+${item.title}${item.date ? ` · ${item.date}` : ''}
+${doorway?.text ? `«${doorway.text}»\n` : ''}${item.url}${audio.length ? `\n\nالنسخ الصوتية:\n${audio.join('\n')}` : ''}${network.length ? `\n\nثم امشِ مع الفكرة عبر:\n${network.map((path, index) => `${index + 1}. ${path.title}\n${path.url}`).join('\n')}` : ''}`,
+      contentId: item.id,
+      contextItems: [item.id, ...network.map((path) => path.contentId)],
+      seenContentIds: [item.id, ...network.map((path) => path.contentId)],
+      evidenceQuotes: doorway?.text ? [doorway.text] : [],
+      actions: audio,
+    }
+  }
+  const extract = extractVerbatimAtSpeed(item, speed)
+  if (!extract) return contentReply('المادة المنشورة', item)
+  const label = speed === '2min' ? 'قراءة حرفية في نحو دقيقتين' : 'قراءة حرفية في نحو ٣٠ ثانية'
+  return {
+    text: `${label}:
+${item.title}${item.date ? ` · ${item.date}` : ''}
+«${extract.text}»
+${item.url}`,
+    contentId: item.id,
+    contextItems: [item.id],
+    seenContentIds: [item.id],
+    evidenceQuotes: [extract.text],
+    actions: audioLinks(item),
+  }
+}
+
+function listenReply(item, voice = null) {
+  if (!item) return { text: 'اختر مادة أولاً، ثم قل: اسمعها بصوت نورة أو فهد أو الحوار.' }
+  const available = audioLinks(item)
+  const prefix = voice === 'fahed' ? 'فهد:' : voice === 'noura' ? 'نورة:' : voice === 'dialogue' ? 'الحوار:' : ''
+  const chosen = prefix ? available.find((line) => line.startsWith(prefix)) : available[0]
+  if (!chosen) {
+    return { text: `لا توجد النسخة الصوتية المطلوبة لهذه المادة في فهرس الموقع الآن.
+${item.title}
+${item.url}`, contentId: item.id, contextItems: [item.id], seenContentIds: [item.id] }
+  }
+  return {
+    text: `النسخة الصوتية المنشورة:
+${item.title}
+${chosen}
+${item.url}`,
+    contentId: item.id,
+    contextItems: [item.id],
+    seenContentIds: [item.id],
+    actions: available,
+  }
+}
+
+function sourceProofReply(item) {
+  if (!item) return { text: 'اختر مادة أولاً، ثم اكتب: المصدر.' }
+  const extract = extractVerbatimAtSpeed(item, '30s')
+  return {
+    text: `المصدر المنشور:
+${item.title}${item.date ? ` · ${item.date}` : ''}
+${extract?.text ? `«${extract.text}»\n` : ''}${item.url}`,
+    contentId: item.id,
+    contextItems: [item.id],
+    seenContentIds: [item.id],
+    evidenceQuotes: extract?.text ? [extract.text] : [],
+  }
+}
+
+function ideaNetworkReply(db, item) {
+  if (!item) return { text: 'اختر مادة أولاً، ثم اكتب: شبكة الأفكار.' }
+  const paths = buildQuietIdeaNetwork(db, item)
+  if (!paths.length) return { text: `هذه المادة لا تملك الآن مسارات تقاطع موثقة أخرى في الفهرس.
+${item.title}
+${item.url}`, contentId: item.id, contextItems: [item.id], seenContentIds: [item.id] }
+  return {
+    text: `شبكة أفكار هادئة حول «${item.title}»:
+${paths.map((path, index) => `${index + 1}. ${path.title}${path.sharedConcepts?.length ? `\nيتقاطع في الفهرس عبر: ${path.sharedConcepts.join(' · ')}` : ''}\n${path.url}`).join('\n\n')}
+
+اختر مساراً واحداً: الأول أو الثاني أو الثالث.`,
+    contentId: paths[0].contentId,
+    contextItems: paths.map((path) => path.contentId),
+    seenContentIds: paths.map((path) => path.contentId),
+  }
+}
+
+function challengeReply(db, jid) {
+  const challenge = buildFifteenSecondChallenge(db, { jid })
+  if (!challenge) return { text: 'لا تتوافر الآن ثلاثة عناوين موثقة لبناء التحدّي.' }
+  return {
+    text: `تحدّي ١٥ ثانية — من أي مقال هذا النص؟
+«${challenge.quote}»
+
+${challenge.options.map((option, index) => `${index + 1}. ${option.title}`).join('\n')}
+
+أرسل الرقم فقط.`,
+    contextItems: challenge.options.map((option) => option.contentId),
+    /* العناوين الثلاثة ظهرت فعلاً للزائر؛ كلها تُحسب مشاهدةً حتى لا يعيد
+       تحدّي اليوم العناوين نفسها متخفّيةً كخيارات. */
+    seenContentIds: challenge.options.map((option) => option.contentId),
+    challengeContext: {
+      id: challenge.id,
+      optionIds: challenge.options.map((option) => option.contentId),
+      answerContentId: challenge.answerContentId,
+    },
+    evidenceQuotes: [challenge.quote],
+  }
+}
+
+function challengeAnswerReply(db, session, input) {
+  const context = parseConversationContext(session?.context_json)
+  const challenge = context.challenge
+  if (!challenge) return { text: 'لا يوجد تحدٍّ مفتوح. اكتب: اختبرني.' }
+  const digit = Number(String(input).replace(/[١۱]/g, '1').replace(/[٢۲]/g, '2').replace(/[٣۳]/g, '3'))
+  const selectedId = challenge.optionIds[digit - 1]
+  const answer = findContent(db, challenge.answerContentId)
+  if (!selectedId || !answer) return { text: 'اختر ١ أو ٢ أو ٣.', clearChallenge: true }
+  const correct = selectedId === challenge.answerContentId
+  return {
+    text: `${correct ? 'إجابة صحيحة.' : 'الإجابة الصحيحة هي:'}
+${answer.title}
+${answer.url}`,
+    contentId: answer.id,
+    contextItems: [answer.id],
+    seenContentIds: [answer.id],
+    clearChallenge: true,
+  }
+}
+
+function compoundRequestReply(db, request) {
+  const base = request.topic
+    ? searchContent(db, request.topic, { limit: 80 })
+    : request.kind
+      ? latestContent(db, request.kind, 10)
+      : latestContent(db, 'article', 10)
+  const topicMatches = [...base].sort((left, right) => String(right.date || '').localeCompare(String(left.date || '')))
+  const strict = topicMatches.filter((item) => {
+    if (request.kind && item.kind !== request.kind) return false
+    if (request.voice && !item.audio?.[request.voice]) return false
+    if (request.action === 'listen' && !request.voice && !audioLinks(item).length) return false
+    if (request.duration) {
+      /* «لخّصه في دقيقتين» يحدد طول جوابنا الاستخراجي، لا طول المقال الأصلي.
+         أما الاستماع فيُقاس بمدة الملف المنشور فعلاً، لا بعدد كلمات تقديري. */
+      if (request.action !== 'summary') {
+        const listening = request.action === 'listen' || Boolean(request.voice)
+        const actualSeconds = listening
+          ? Number((request.voice && item.audio?.durations?.[request.voice]) || item.audio?.duration || 0)
+          : Math.ceil(Number(item.words || 0) / 2.2)
+        if (!actualSeconds || actualSeconds > Number(request.duration.seconds || 0)) return false
+      }
+    }
+    return true
+  })
+  if (!strict.length) {
+    const alternatives = topicMatches.slice(0, 3)
+    if (!alternatives.length) return { text: '', silent: true, needsHuman: true }
+    return {
+      text: `وجدت مواد منشورة في الموضوع، لكن لا توجد مادة تجمع الشروط المطلوبة كلها الآن:
+${alternatives.map((item, index) => `${index + 1}. ${item.title}\n${item.url}`).join('\n\n')}
+
+اختر واحداً منها أو خفّف شرط المدة أو الصوت.`,
+      contentId: alternatives[0].id,
+      contextItems: alternatives.map((item) => item.id),
+      seenContentIds: alternatives.map((item) => item.id),
+    }
+  }
+  const item = strict[0]
+  if (request.action === 'listen' || request.voice) return { ...listenReply(item, request.voice), contextItems: strict.map((row) => row.id) }
+  if (request.action === 'summary') return { ...extractiveReadingReply(db, item, speedFromRequest(request)), contextItems: strict.map((row) => row.id) }
+  return { ...contentReply('وجدت لك مادة تطابق الطلب', item), contextItems: strict.map((row) => row.id) }
+}
+
+function weeklyDigestReply(db) {
+  const cutoff = new Date(Date.now() - (7 * 24 * 60 * 60 * 1000)).toISOString().slice(0, 10)
+  const recent = db.all("SELECT * FROM content_items WHERE date>=? AND kind IN ('article','paper','book','podcast') ORDER BY date DESC LIMIT 5", cutoff)
+  const items = recent.length ? recent : latestContent(db, 'article', 3)
+  if (!items.length) return { text: 'لا توجد مواد منشورة في الفهرس الآن.' }
+  const header = recent.length ? 'المواد المنشورة خلال آخر سبعة أيام:' : 'لا توجد مادة مؤرخة خلال آخر سبعة أيام؛ وهذه آخر المواد المنشورة:'
+  return {
+    text: `${header}
+${items.map((item, index) => `${index + 1}. ${conciseItem(item)}`).join('\n\n')}`,
+    contentId: items[0].id,
+    contextItems: items.map((item) => item.id),
+    seenContentIds: items.map((item) => item.id),
+  }
+}
+
+function savedShelfReply(db, jid) {
+  const items = db.all(`SELECT content_items.* FROM saved_content
+    JOIN content_items ON content_items.id=saved_content.content_id
+    WHERE saved_content.jid=? ORDER BY saved_content.saved_at DESC LIMIT 10`, db.jidKey(jid))
+  if (!items.length) return { text: 'رفّك فارغ الآن. عندما تعجبك مادة اكتب: احفظها.', contextItems: [], replaceContextList: true }
+  return {
+    text: `رفّك الخاص:
+${items.map((item, index) => `${index + 1}. ${item.title}\n${item.url}`).join('\n\n')}`,
+    contentId: items[0].id,
+    contextItems: items.map((item) => item.id),
+    seenContentIds: items.map((item) => item.id),
+    replaceContextList: true,
+  }
 }
 
 function pendingSession(db, jid) { return jid ? db.get('SELECT * FROM chat_sessions WHERE jid=?', db.jidKey(jid)) : null }
@@ -313,7 +706,18 @@ export function isSuppressed(db, jid) { return Boolean(jid && db.get('SELECT sup
 export function setSuppression(db, jid, suppressed) {
   if (!jid) return
   const id = hashOpaque(jid); const now = new Date().toISOString();
-  db.run('INSERT INTO contacts(id,jid,display_name,phone,suppressed,created_at,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET suppressed=excluded.suppressed,updated_at=excluded.updated_at', id, db.encryptJid(jid), null, null, suppressed ? 1 : 0, now, now)
+  const forgotten = Boolean(db.get('SELECT 1 AS hit FROM privacy_tombstones WHERE jid=?', id))
+  if (forgotten) {
+    if (suppressed) {
+      db.run(
+        'INSERT INTO contacts(id,jid,display_name,phone,suppressed,nickname,wa_name,source,last_seen_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET jid=excluded.jid,display_name=NULL,phone=NULL,suppressed=1,nickname=NULL,wa_name=NULL,source=NULL,last_seen_at=NULL,updated_at=excluded.updated_at',
+        id, db.encryptJid(''), null, null, 1, null, null, null, null, now, now,
+      )
+    } else db.run('DELETE FROM contacts WHERE id=?', id)
+    db.addAudit(suppressed ? 'opt-out' : 'opt-in', id, 'privacy-tombstone-retained')
+    return
+  }
+  db.run('INSERT INTO contacts(id,jid,display_name,phone,suppressed,created_at,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET jid=excluded.jid,suppressed=excluded.suppressed,updated_at=excluded.updated_at', id, db.encryptJid(jid), null, null, suppressed ? 1 : 0, now, now)
   db.addAudit(suppressed ? 'opt-out' : 'opt-in', id)
 }
 
@@ -323,36 +727,103 @@ export function markManualTakeover(db, jid, minutes = MANUAL_TAKEOVER_MINUTES) {
   const now = new Date().toISOString()
   const jidKey = db.jidKey(jid)
   db.run(
-    `INSERT INTO chat_sessions(jid,mode,manual_until,content_id,followup_json,opened_at,last_user_at,updated_at)
-     VALUES(?,?,?,?,?,?,?,?)
+    `INSERT INTO chat_sessions(jid,mode,manual_until,content_id,followup_json,context_json,opened_at,last_user_at,updated_at)
+     VALUES(?,?,?,?,?,?,?,?,?)
      ON CONFLICT(jid) DO UPDATE SET
        mode=excluded.mode, manual_until=excluded.manual_until, content_id=NULL,
-       followup_json=NULL, opened_at=NULL, last_user_at=NULL, updated_at=excluded.updated_at`,
-    jidKey, 'manual-takeover', until, null, null, null, null, now,
+       followup_json=NULL, context_json=NULL, opened_at=NULL, last_user_at=NULL, updated_at=excluded.updated_at`,
+    jidKey, 'manual-takeover', until, null, null, null, null, null, now,
   )
 }
 
 export function clearPreferences(db, jid) {
   if (!jid) return
-  db.run('DELETE FROM user_preferences WHERE jid=?', db.jidKey(jid))
-  db.addAudit('delete-preferences', hashOpaque(jid))
+  const key = db.jidKey(jid)
+  const suppressed = Boolean(db.get('SELECT suppressed FROM contacts WHERE id=?', key)?.suppressed)
+  const manualUntil = db.get('SELECT manual_until FROM chat_sessions WHERE jid=?', key)?.manual_until || null
+  const keepManualTakeover = Boolean(manualUntil && new Date(manualUntil) > new Date())
+  const reminderIds = db.all('SELECT id,jid FROM reminders').filter((row) => {
+    try { return db.decryptJid(row.jid) === jid } catch { return false }
+  }).map((row) => row.id)
+  const jobIds = db.all('SELECT id,jid FROM message_jobs').filter((row) => {
+    try { return db.decryptJid(row.jid) === jid } catch { return false }
+  }).map((row) => row.id)
+
+  db.transaction(() => {
+    db.run('INSERT OR REPLACE INTO privacy_tombstones(jid,reason,created_at) VALUES(?,?,?)', key, 'user-delete-request', new Date().toISOString())
+    db.run('DELETE FROM user_preferences WHERE jid=?', key)
+    db.run('DELETE FROM sent_content WHERE jid=?', key)
+    db.run('DELETE FROM content_reservations WHERE jid=?', key)
+    db.run('DELETE FROM saved_content WHERE jid=?', key)
+    db.run('DELETE FROM answer_evidence WHERE jid=?', key)
+    db.run('DELETE FROM intent_logs WHERE jid=?', key)
+    db.run('DELETE FROM unresolved_messages WHERE jid=?', key)
+    db.run('DELETE FROM processed_messages WHERE jid=?', key)
+    db.run('DELETE FROM outbox_messages WHERE jid=?', key)
+    db.run('DELETE FROM chat_sessions WHERE jid=?', key)
+    db.run('DELETE FROM campaign_targets WHERE target_id=?', key)
+    db.run('DELETE FROM broadcast_members WHERE opaque_id=?', key)
+    /* السجلات القديمة استخدمت رقماً محجوباً جزئياً؛ الجديدة تستخدم hash فقط.
+       نمحو الصورتين حتى لا يبقى أثرٌ قابل للربط بعد أمر الحذف. */
+    db.run('DELETE FROM audit_log WHERE target IN (?,?)', key, redactJid(jid))
+    for (const id of reminderIds) db.run('DELETE FROM reminders WHERE id=?', id)
+    for (const id of jobIds) {
+      db.run('DELETE FROM message_attempts WHERE job_id=?', id)
+      db.run('DELETE FROM message_jobs WHERE id=?', id)
+    }
+    if (suppressed) {
+      /* نحتفظ فقط ببصمة الإلغاء، لا بالرقم المشفّر ولا الاسم ولا آخر ظهور. وعند
+         إعادة الاشتراك يعيد setSuppression كتابة jid الصحيح من الرسالة نفسها. */
+      db.run('UPDATE contacts SET jid=?,display_name=NULL,phone=NULL,nickname=NULL,wa_name=NULL,source=NULL,last_seen_at=NULL,updated_at=? WHERE id=?', db.encryptJid(''), new Date().toISOString(), key)
+    } else db.run('DELETE FROM contacts WHERE id=?', key)
+    /* حذف التخصيص لا يجوز أن يفتح الباب على حديثٍ يتولاه الدكتور. نعيد حالة
+       الأمان وحدها (hash + وقت الانتهاء) بلا محتوى ولا تفضيلات شخصية. */
+    if (keepManualTakeover) {
+      const stamp = new Date().toISOString()
+      db.run(
+        'INSERT INTO chat_sessions(jid,mode,manual_until,updated_at) VALUES(?,?,?,?) ON CONFLICT(jid) DO UPDATE SET mode=excluded.mode,manual_until=excluded.manual_until,content_id=NULL,followup_json=NULL,context_json=NULL,opened_at=NULL,last_user_at=NULL,updated_at=excluded.updated_at',
+        key, 'manual-takeover', manualUntil, stamp,
+      )
+    }
+  })
+  /* بلا معرّف للشخص: نحفظ أن عملية حذفٍ حدثت لأغراض الصحة، لا لمن حدثت. */
+  db.addAudit('delete-local-personalization', '', 'session,sent,saved,reminders,logs')
 }
 
 /* متون المقالات لمحرك الاستشهاد. تُقرأ من قاعدة البوت نفسها (لا شبكة، لا نموذج)
    وتُحفظ دقيقتين: الفهرس لا يتغيّر بين رسالتين، وقراءة ١٦٤ متناً مع كل حرفٍ
    يكتبه سائلٌ بذخٌ بلا طائل. */
-let corpusCache = { at: 0, items: [] }
+const corpusCacheByDb = new WeakMap()
 const CORPUS_TTL_MS = 120_000
 
 export function articleCorpus(db, now = Date.now()) {
-  if (now - corpusCache.at < CORPUS_TTL_MS && corpusCache.items.length) return corpusCache.items
+  const version = JSON.stringify(db.getSetting('content.indexVersion', null))
+  const cached = corpusCacheByDb.get(db)
+  if (cached && cached.version === version && now - cached.at < CORPUS_TTL_MS && cached.items.length) return cached.items
   const rows = db.all("SELECT slug, title, url, date, body FROM content_items WHERE kind='article' AND body IS NOT NULL AND length(body) > 200")
-  corpusCache = { at: now, items: rows.map((row) => ({ ...row, kind: 'article' })) }
-  return corpusCache.items
+  const next = { at: now, version, items: rows.map((row) => ({ ...row, kind: 'article' })) }
+  corpusCacheByDb.set(db, next)
+  return next.items
 }
 
 export function handleIntent({ db, jid = '', input, session = pendingSession(db, jid), classification = classifyIntent(input) }) {
-  const customRule = matchReplyRule(db, input)
+  /* الرقم المفرد له معنيان بحسب السياق: اختيار نتيجة من قائمة، أو إجابة تحدٍّ.
+     التصنيف العام لا يملك الجلسة، لذلك كان «٢» بعد التحدّي يفتح المقالة الثانية
+     بدلاً من تصحيح الإجابة. وجود تحدٍّ مفتوح وحده يمنح الرقم معنى الإجابة؛ وبعد
+     إغلاقه يعود الرقم فوراً إلى التنقّل العادي بين النتائج. */
+  const activeChallenge = parseConversationContext(session?.context_json).challenge
+  if (activeChallenge && /^(?:1|2|3|١|٢|٣|۱|۲|۳)$/.test(String(input || '').trim())) {
+    classification = { intent: INTENTS.CHALLENGE_ANSWER, confidence: 0.99, normalized: clean(input) }
+  }
+  /* لا تسمح قاعدة لوحةٍ اسمها «1» مثلاً بأن تسبق جواب التحدّي الحقيقي، ولا
+     تسمح لأي قاعدة قابلة للتحرير بأن تعترض أمراً من أوامر الخصوصية. */
+  const bypassCustomRules = new Set([
+    INTENTS.CHALLENGE_ANSWER,
+    INTENTS.STOP_MESSAGES,
+    INTENTS.RESUME_MESSAGES,
+    INTENTS.DELETE_PREFERENCES,
+  ])
+  const customRule = bypassCustomRules.has(classification.intent) ? null : matchReplyRule(db, input)
   if (customRule) return customRuleReply(db, customRule, input)
   const { intent, confidence } = classification
   const logId = jid ? hashOpaque(jid) : null
@@ -361,40 +832,105 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
     db.run('INSERT INTO unresolved_messages(jid,input_hash,text_preview,reason,created_at) VALUES(?,?,?,?,?)', logId, hashOpaque(input), db.encryptText(String(input).slice(0, 180)), 'low-confidence', new Date().toISOString())
     return { ...classification, shouldRespond: true, needsHuman: true, text: 'ما فهمت الطلب بدقة. هل تبحث في المقالات، الكتب، الأبحاث، أم البودكاست؟' }
   }
+  const selection = contextSelection(db, session, input, classification.request || parseCompoundRequest(input))
 
   switch (intent) {
     case INTENTS.STOP_MESSAGES: setSuppression(db, jid, true); return { ...classification, shouldRespond: true, text: 'تم، لن تصلك رسائل محتوى جديدة. إذا رغبت بالعودة اكتب: رجع الرسائل.' }
     case INTENTS.RESUME_MESSAGES: setSuppression(db, jid, false); return { ...classification, shouldRespond: true, text: 'عاد الاشتراك في رسائل المحتوى.' }
-    case INTENTS.DELETE_PREFERENCES: clearPreferences(db, jid); return { ...classification, shouldRespond: true, text: 'حذفت تفضيلاتك المحلية. أبقيت فقط ما يلزم لاحترام إيقاف الرسائل إن طلبته.' }
+    case INTENTS.DELETE_PREFERENCES: clearPreferences(db, jid); return { ...classification, shouldRespond: true, text: 'حذفت بيانات التخصيص المحلية: المحتوى السابق، المحفوظات، السجل والتذكيرات. أبقيت فقط طلب إيقاف الرسائل وفترة استلام الدكتور إن كانا مفعّلين.' }
+    case INTENTS.COMPOUND_REQUEST:
+      return { ...classification, ...compoundRequestReply(db, classification.request || selection.request) }
+    case INTENTS.CONTEXT_REFERENCE: {
+      const item = selection.item
+      if (!item) return { ...classification, text: 'لا يوجد اختيار سابق واضح. اكتب: آخر مقالاته، ثم اختر الأول أو الثاني.' }
+      if (selection.request.action === 'listen') return { ...classification, ...listenReply(item, selection.request.voice), contextResolution: selection.resolution }
+      if (selection.request.action === 'summary') return { ...classification, ...extractiveReadingReply(db, item, speedFromRequest(selection.request, input)), contextResolution: selection.resolution }
+      if (selection.request.action === 'read') return { ...classification, ...contentReply('هذه المادة', item), contextResolution: selection.resolution }
+      return { ...classification, ...contentReply('هذا اختيارك', item), contextResolution: selection.resolution }
+    }
+    case INTENTS.READ_SPEED:
+      return { ...classification, ...extractiveReadingReply(db, selection.item, speedFromRequest(selection.request, input)), preserveContextList: true }
+    case INTENTS.IDEA_NETWORK:
+      return { ...classification, ...ideaNetworkReply(db, selection.item) }
+    case INTENTS.CHALLENGE:
+      return { ...classification, ...challengeReply(db, jid) }
+    case INTENTS.CHALLENGE_ANSWER:
+      return { ...classification, ...challengeAnswerReply(db, session, input) }
+    case INTENTS.SOURCE_PROOF:
+      return { ...classification, ...sourceProofReply(selection.item), preserveContextList: true }
+    case INTENTS.SAVE_CONTENT: {
+      if (!selection.item) return { ...classification, text: 'اختر مادة أولاً، ثم اكتب: احفظها.' }
+      const alreadySaved = Boolean(db.get('SELECT 1 AS saved FROM saved_content WHERE jid=? AND content_id=?', db.jidKey(jid), selection.item.id))
+      if (alreadySaved) {
+        return {
+          ...classification,
+          text: `هذه المادة محفوظة من قبل في رفّك:\n${selection.item.title}\n${selection.item.url}`,
+          contentId: selection.item.id,
+          contextItems: [selection.item.id],
+          seenContentIds: [selection.item.id],
+          preserveContextList: true,
+        }
+      }
+      db.run('INSERT OR IGNORE INTO saved_content(jid,content_id,saved_at) VALUES(?,?,?)', db.jidKey(jid), selection.item.id, new Date().toISOString())
+      return { ...classification, text: `حفظتها في رفّك الخاص:\n${selection.item.title}\n${selection.item.url}`, contentId: selection.item.id, contextItems: [selection.item.id], seenContentIds: [selection.item.id], preserveContextList: true }
+    }
+    case INTENTS.LIST_SAVED:
+      return { ...classification, ...savedShelfReply(db, jid) }
+    case INTENTS.REMOVE_SAVED: {
+      if (!selection.item) return { ...classification, text: 'اختر مادة من محفوظاتك أولاً.' }
+      const wasSaved = Boolean(db.get('SELECT 1 AS saved FROM saved_content WHERE jid=? AND content_id=?', db.jidKey(jid), selection.item.id))
+      if (!wasSaved) {
+        return {
+          ...classification,
+          text: `هذه المادة غير موجودة في رفّك:\n${selection.item.title}`,
+          contentId: selection.item.id,
+          contextItems: [selection.item.id],
+          seenContentIds: [selection.item.id],
+          preserveContextList: true,
+        }
+      }
+      db.run('DELETE FROM saved_content WHERE jid=? AND content_id=?', db.jidKey(jid), selection.item.id)
+      return { ...classification, text: `حذفتها من رفّك:\n${selection.item.title}`, contentId: selection.item.id, contextItems: [selection.item.id], seenContentIds: [selection.item.id], preserveContextList: true }
+    }
     case INTENTS.LATEST_CONTENT: return { ...classification, ...freshContentReply(db) }
     case INTENTS.LATEST_ARTICLES: return { ...classification, ...latestArticlesReply(db, 3) }
     case INTENTS.MOST_VIEWED_ARTICLE: return { ...classification, ...mostViewedArticleReply(db) }
     case INTENTS.CONTENT_OVERVIEW: return { ...classification, ...libraryOverviewReply(db) }
     case INTENTS.TOP_ARTICLE_TOPIC: return { ...classification, ...topTopicsReply(db) }
     case INTENTS.LATEST_ARTICLE: return { ...classification, ...latestOf(db, 'article', 'أحدث مقالة') }
-    case INTENTS.LATEST_BOOK: return { ...classification, ...latestOf(db, 'book', 'أحدث كتاب') }
+    case INTENTS.LATEST_BOOK: {
+      const book = latestContent(db, 'book', 1)[0]
+      return { ...classification, ...contentReply(book?.date ? 'أحدث كتاب منشور' : 'كتاب من مؤلفات الدكتور', book) }
+    }
     case INTENTS.LATEST_PAPER: return { ...classification, ...latestOf(db, 'paper', 'أحدث بحث') }
     case INTENTS.LATEST_SELECTION: return { ...classification, ...latestOf(db, 'curated', 'أحدث مختارة') }
-    case INTENTS.LATEST_PODCAST: return { ...classification, ...latestOf(db, 'podcast', 'أحدث حلقة') }
+    case INTENTS.LATEST_PODCAST: return { ...classification, ...latestPodcastReply(db) }
     case INTENTS.MISSED_CONTENT: {
       const row = jid && db.get('SELECT payload FROM user_preferences WHERE jid=?', db.jidKey(jid)); let cursor = ''
       try { cursor = row ? JSON.parse(row.payload).lastContentCursor || '' : '' } catch { cursor = '' }
       const items = cursor ? db.all('SELECT * FROM content_items WHERE date>? ORDER BY date DESC LIMIT 3', cursor) : latestContent(db, 'article', 3)
-      return { ...classification, text: items.length ? `من آخر مرة، ظهر ${items.length} مواد جديدة. أبدأ لك بالأحدث؟\n${items.map((item) => `${item.title}\n${item.url}`).join('\n')}` : 'ما فاتك شيء جديد مسجل عندي حتى الآن.' }
+      return { ...classification, text: items.length ? `من آخر مرة، ظهر ${items.length} مواد جديدة. أبدأ لك بالأحدث؟\n${items.map((item) => `${item.title}\n${item.url}`).join('\n')}` : 'ما فاتك شيء جديد مسجل عندي حتى الآن.', contentId: items[0]?.id, contextItems: items.map((item) => item.id), seenContentIds: items.map((item) => item.id) }
     }
     case INTENTS.SURPRISE_ME: {
-      const results = searchContent(db, classification.normalized, { limit: 10 }); const item = results[Math.floor(Math.random() * Math.max(results.length, 1))] || latestContent(db, 'article', 1)[0]
-      return { ...classification, ...contentReply('اخترت لك', item, '\nمادة قصيرة من أرشيف الموقع فقط.') }
+      const unseen = selectDailyUnsentContent(db, { jid })
+      if (!unseen) {
+        return {
+          ...classification,
+          text: 'مررتَ على كل مواد الأرشيف المسجلة، ولن أكرر عليك مادةً بصمت. اذكر موضوعاً تريده وأعيد لك منه بطلبك.',
+          contextItems: [],
+          replaceContextList: true,
+        }
+      }
+      return { ...classification, ...contentReply('اخترت لك من الأرشيف', unseen, '\nهذه مادة لم تُرسل لك من قبل.') }
     }
     case INTENTS.ONE_MINUTE:
     case INTENTS.SUMMARY: {
-      const item = session?.content_id ? findContent(db, session.content_id) : latestContent(db, 'article', 1)[0]
-      return item ? { ...classification, ...contentReply('الزبدة', item, `\n${contentSummary(item, 3)}`) } : { ...classification, text: 'أرسل عنوان المقالة أو اكتب: آخر مقالة، وأعطيك الزبدة في دقيقة.' }
+      return { ...classification, ...oneMinuteReply(db, session, selection.item), preserveContextList: Boolean(selection.item) }
     }
     /* الترحيب: أول لقاءٍ بين الناس والخدمة. يعرض المدى كلَّه — لا المقالات
        وحدها — لأن من يكتب كلمة الدخول قد يريد بحثاً أو كتاباً أو مقارنة. */
     case INTENTS.WELCOME:
-      return { ...classification, text: welcomeReply(db, jid) }
+      return { ...classification, ...welcomeReply(db, jid) }
 
     /* «غيره» و«زدني»: يفهمها البشر بلا شرح، ويجب أن يفهمها البوت داخل الجلسة.
      *
@@ -417,6 +953,9 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
             ...classification,
             text: more.text,
             contentId: `article:${more.citations[0].slug}`,
+            contextItems: more.citations.map((citation) => `article:${citation.slug}`),
+            seenContentIds: more.citations.map((citation) => `article:${citation.slug}`),
+            evidenceQuotes: more.citations.map((citation) => citation.quote),
             followup: {
               question: followup.question,
               seen: [...(followup.seen || []), ...more.citations.map((citation) => citation.slug)],
@@ -433,7 +972,7 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
         .filter((item) => !seed || item.id !== seed.id)
         .slice(0, 3)
       if (!results.length) return { ...classification, text: 'ما عندي شيءٌ قريبٌ منه الآن. اذكر موضوعاً وأبحث لك فيه.' }
-      return { ...classification, text: `وهذه قريبةٌ منه:\n${results.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}`, contentId: results[0].id }
+      return { ...classification, text: `وهذه قريبةٌ منه:\n${results.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}`, contentId: results[0].id, contextItems: results.map((item) => item.id), seenContentIds: results.map((item) => item.id) }
     }
 
     /* المقارنة: يفصل الطرفين ثم يعرض ما عنده في كلٍّ منهما */
@@ -444,8 +983,10 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
         .split(/\s+و\s*|\s+وبين\s+/)
         .map((part) => part.trim()).filter((part) => part.length >= 2)
       if (sides.length < 2) return { ...classification, text: 'قارن بين ماذا وماذا؟ اكتب مثلاً: قارن بين التقويم والامتحان.' }
+      const foundAcrossSides = []
       const blocks = sides.slice(0, 2).map((side) => {
         const found = searchContent(db, side, { limit: 2 })
+        foundAcrossSides.push(...found)
         return found.length
           ? `في «${side}»:\n${found.map((item) => `• ${item.title}\n  ${item.url}`).join('\n')}`
           : `في «${side}»: ما لقيت مادةً مخصّصة.`
@@ -453,7 +994,9 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
       return {
         ...classification,
         text: `${blocks.join('\n\n')}\n\nوالمقارنة نفسها رأيٌ يخصّ الدكتور — وهو يقرأ رسالتك.`,
-        contentId: searchContent(db, sides[0], { limit: 1 })[0]?.id,
+        contentId: foundAcrossSides[0]?.id,
+        contextItems: foundAcrossSides.map((item) => item.id),
+        seenContentIds: foundAcrossSides.map((item) => item.id),
       }
     }
 
@@ -473,17 +1016,52 @@ ${SITE_URL}/research` }
 
     case INTENTS.CURATED_PICKS: {
       const picks = latestContent(db, 'curated', 3)
-      if (!picks.length) return { ...classification, text: 'المختارات هنا:\nhttps://dr-alfailakawi.com/curated' }
-      return { ...classification, text: `من مختارات الدكتور:\n${picks.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}\n\nوالبقية: https://dr-alfailakawi.com/curated`, contentId: picks[0].id }
+      if (!picks.length) return { ...classification, text: `المختارات هنا:\n${SITE_URL}/curated` }
+      return { ...classification, text: `من مختارات الدكتور:\n${picks.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}\n\nوالبقية: ${SITE_URL}/curated`, contentId: picks[0].id, contextItems: picks.map((item) => item.id), seenContentIds: picks.map((item) => item.id) }
     }
 
     case INTENTS.ABOUT_TOPIC:
     case INTENTS.SEARCH_TOPIC:
     case INTENTS.SIMILAR_CONTENT: {
       /* «عندك شي عن التقييم؟» — نحذف حشو السؤال ونبحث في الموضوع نفسه */
-      const query = classification.normalized
+      const query = stripGroundedTopicRequest(classification.normalized
         .replace(/^(عندك|عندكم|لديك|في)\s*(شي|شيء|مقال|بحث|كتاب|ماده)?\s*(عن|حول|بخصوص)\s*/, '')
-        .replace(/[؟?]/g, '').trim() || classification.normalized
+        .replace(/[؟?]/g, '').trim()) || stripGroundedTopicRequest(classification.normalized)
+      const preliminary = searchContent(db, query, { limit: 6 })
+      const meaningfulWords = clean(query).split(/\s+/).filter((word) => word.length > 2)
+      if (meaningfulWords.length === 1 && preliminary.length >= 3) {
+        const choices = preliminary.slice(0, 3)
+        return {
+          ...classification,
+          text: `وجدت أكثر من مدخل منشور لهذا المصطلح. أيّها تقصد؟
+${choices.map((item, index) => `${index + 1}. ${item.title}\n${item.url}`).join('\n\n')}
+
+اكتب الأول أو الثاني أو الثالث.`,
+          contentId: choices[0].id,
+          contextItems: choices.map((item) => item.id),
+          seenContentIds: choices.map((item) => item.id),
+        }
+      }
+      /* إذا حمل العنوان أو الكلمات المفتاحية جميع كلمات الموضوع، فهذا هو
+         التطابق الصريح الأعلى سلطة. لا ندعه يُهزم أمام تشابه دلالي في جسم
+         مقال آخر؛ خصوصاً في عبارات مثل «الذكاء الاصطناعي». */
+      const exactNamed = preliminary.filter((item) => {
+        const named = clean(`${item.title || ''} ${item.keywords || ''}`)
+        return meaningfulWords.length > 0 && meaningfulWords.every((word) => named.includes(word))
+      })
+      if (exactNamed.length) {
+        const choices = exactNamed.slice(0, 3)
+        return {
+          ...classification,
+          text: `أقرب المواد المنشورة لهذا الموضوع:
+${choices.map((item, i) => `${i + 1}. ${item.title}
+${item.url}`).join('\n\n')}`,
+          contentId: choices[0].id,
+          contextItems: choices.map((item) => item.id),
+          seenContentIds: choices.map((item) => item.id),
+        }
+      }
+
       /* المكتبة التي تمشي: نُجيب بكلام الدكتور نفسه لا برابطٍ يُحال إليه.
          وإن لم يجد المحرك شاهداً — أو أسقطته البوابة — رجعنا إلى قائمة الروابط.
          فالتنازل يكون عن الطموح دائماً، لا عن الأمانة. */
@@ -493,12 +1071,15 @@ ${SITE_URL}/research` }
           ...classification,
           text: scholar.text,
           contentId: `article:${scholar.citations[0].slug}`,
+          contextItems: scholar.citations.map((citation) => `article:${citation.slug}`),
+          seenContentIds: scholar.citations.map((citation) => `article:${citation.slug}`),
+          evidenceQuotes: scholar.citations.map((citation) => citation.quote),
           /* البقية تُحفظ هنا لا تُرمى — وعليها يقوم وفاءُ «زدني» */
           followup: { question: query, seen: scholar.citations.map((citation) => citation.slug) },
         }
       }
 
-      const results = searchContent(db, query, { limit: 3 })
+      const results = preliminary.slice(0, 3)
       if (results.length) {
         return {
           ...classification,
@@ -507,6 +1088,8 @@ ${results.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}
 
 اكتب «غيره» لمزيد، أو «لخّص» للأول.`,
           contentId: results[0].id,
+          contextItems: results.map((item) => item.id),
+          seenContentIds: results.map((item) => item.id),
         }
       }
       /* لا جواب موثق في الموقع: صمتٌ وتحويل، لا تخمين ولا إعلان فشل. */
@@ -515,24 +1098,49 @@ ${results.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}
     case INTENTS.LISTEN_FAHED:
     case INTENTS.LISTEN_NOURA:
     case INTENTS.LISTEN_DIALOGUE: {
-      const item = session?.content_id ? findContent(db, session.content_id) : latestContent(db, 'article', 1)[0]
+      const item = selection.item || latestContent(db, 'article', 1)[0]
       const wanted = intent === INTENTS.LISTEN_FAHED ? 'fahed' : intent === INTENTS.LISTEN_NOURA ? 'noura' : 'dialogue'
-      if (!item?.audio?.[wanted]) return { ...classification, text: 'هذه النسخة الصوتية غير جاهزة لهذه المادة حاليًا. المتاح فقط ما يظهر في ملف الصوت المنشور.' }
-      return { ...classification, text: `${wanted === 'fahed' ? 'قراءة فهد' : wanted === 'noura' ? 'قراءة نورة' : 'الحوار'}:\n${item.title}\n${item.url}`, contentId: item.id, actions: audioLinks(item) }
+      return { ...classification, ...listenReply(item, wanted), preserveContextList: Boolean(selection.item) }
+    }
+    case INTENTS.CONTINUE_LISTENING:
+      return { ...classification, ...listenReply(selection.item || latestAudioContent(db, 'dialogue', 1)[0]), preserveContextList: Boolean(selection.item) }
+    case INTENTS.READ_ARTICLE:
+      return { ...classification, ...contentReply('رابط المادة المنشورة', selection.item || latestContent(db, 'article', 1)[0]), preserveContextList: Boolean(selection.item) }
+    case INTENTS.WEEKLY_DIGEST:
+      return { ...classification, ...weeklyDigestReply(db) }
+    case INTENTS.CONTENT_BY_MOOD: {
+      const item = selectDailyUnsentContent(db, { jid })
+      if (!item) return { ...classification, text: 'مررتَ على كل مواد الأرشيف المسجلة. اذكر موضوعاً وأختار لك منه.', contextItems: [], replaceContextList: true }
+      return { ...classification, ...extractiveReadingReply(db, item, '30s') }
     }
     case INTENTS.QUOTE:
     case INTENTS.QUOTE_CARD: {
-      const item = session?.content_id ? findContent(db, session.content_id) : latestContent(db, 'article', 1)[0]
+      const item = selection.item || latestContent(db, 'article', 1)[0]
       const quote = String(item?.body || item?.excerpt || '').split(/(?<=[.!؟])/u).map((part) => part.trim()).find((part) => part.length >= 25 && part.length <= 180) || item?.excerpt
-      return item && quote ? { ...classification, text: `«${quote}»\n— ${item.title}\n${item.url}`, contentId: item.id, quote } : { ...classification, text: 'لا أملك اقتباسًا موثقًا مناسبًا بعد.' }
+      return item && quote ? { ...classification, text: `«${quote}»\n— ${item.title}\n${item.url}`, contentId: item.id, contextItems: [item.id], seenContentIds: [item.id], evidenceQuotes: [quote], quote, preserveContextList: Boolean(selection.item) } : { ...classification, text: 'لا أملك اقتباسًا موثقًا مناسبًا بعد.' }
     }
-    case INTENTS.HELP: return { ...classification, text: 'اسألني بطريقتك الطبيعية داخل محتوى الموقع فقط:\n• شنو جديد الدكتور؟\n• شنو آخر مقالاته؟\n• شنو أكثر مقالة مشاهدة؟\n• عنده شيء عن التقييم؟\n• آخر أبحاثه أو كتبه أو حلقاته\n• لخّص لي · قارن بين… · فاجئني\n\nما تحتاج تحفظ صيغة ثابتة.' }
-    case INTENTS.HUMAN_RESPONSE_REQUIRED: return { ...classification, needsHuman: true, text: 'هذا السؤال يحتاج رد د. أحمد نفسه، لذلك تركته له.' }
+    case INTENTS.HELP:
+    case INTENTS.SHOW_OPTIONS:
+      return { ...classification, text: 'اسألني بطريقتك الطبيعية داخل محتوى الموقع فقط:\n• بوابة اليوم · اختبرني\n• آخر مقالاته أو أبحاثه أو كتبه\n• عندك شيء عن أي موضوع؟\n• ٣٠ ثانية · دقيقتان · تعمّق\n• بصوت نورة أو فهد أو الحوار\n• شبكة الأفكار · المصدر · احفظها · محفوظاتي\n\nولا تحتاج حفظ صيغة ثابتة.' }
+    case INTENTS.HUMAN_RESPONSE_REQUIRED: return { ...classification, needsHuman: true, silent: true, text: '' }
     case INTENTS.REMIND_ME: {
       const parsed = parseReminderTime(input)
       if (parsed.ambiguous) return { ...classification, needsHuman: true, text: 'أقدر أذكّرك محليًا، لكن أحتاج وقتًا واضحًا مثل: الجمعة الساعة 7 مساءً.' }
-      const id = createReminder(db, { jid, contentId: session?.content_id || null, originalText: input, dueAt: parsed.dueAt })
-      return { ...classification, text: `تم حفظ التذكير محليًا (${new Date(parsed.dueAt).toLocaleString('ar-KW', { timeZone: 'Asia/Kuwait' })}).`, reminderId: id }
+      const reminderItem = selection.item
+      if (!reminderItem) return { ...classification, text: 'اختر مادةً من الموقع أولاً، ثم اكتب مثلاً: ذكرني بها باجر.' }
+      /* المجدول القديم يعرض original_text عند حلول الموعد؛ لذلك لا نخزّن
+         كلام المستخدم الحر فيه أصلاً. العبارة الثابتة + عنوان/رابط المادة هما
+         وحدهما ما سيخرج من البوت. */
+      const id = createReminder(db, { jid, contentId: reminderItem.id, originalText: 'موعد قراءة المادة المنشورة.', dueAt: parsed.dueAt })
+      return {
+        ...classification,
+        text: `تم حفظ التذكير لهذه المادة (${new Date(parsed.dueAt).toLocaleString('ar-KW', { timeZone: 'Asia/Kuwait' })}):\n${reminderItem.title}\n${reminderItem.url}`,
+        reminderId: id,
+        contentId: reminderItem.id,
+        contextItems: [reminderItem.id],
+        seenContentIds: [reminderItem.id],
+        preserveContextList: true,
+      }
     }
     default: return { ...classification, needsHuman: true, text: 'أرسل لي اسم الموضوع أو اكتب: شنو تقدر تسوي؟' }
   }
@@ -563,7 +1171,9 @@ const OPENS_DOOR = new Set([INTENTS.WELCOME])
  * يجعل الحوار طبيعياً بعد الإيقاظ، بينما يبقى الباب مغلقاً تماماً قبله.
  */
 function sessionAlive(session) {
-  return Boolean(session && ['content-session', 'auto'].includes(session.mode))
+  /* wake_version=0 يعني جلسةً ورثناها من زمن كانت فيه أوامر كثيرة تفتح الباب.
+     لا نستطيع إثبات أنها بدأت بالجملة الحالية، لذلك تُغلق مرةً واحدة بأمان. */
+  return Boolean(session && Number(session.wake_version || 0) >= 1 && ['content-session', 'auto'].includes(session.mode))
 }
 
 /** هل هذه محادثةُ مجموعة؟ */
@@ -597,7 +1207,7 @@ export const chatKindLabel = (jid) => {
 }
 
 export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, explicitContentSession = false, hasMedia = false, at = new Date(), classification = classifyIntent(text) }) {
-  if (!jid || isSuppressed(db, jid)) return { allowed: false, reason: 'suppressed' }
+  if (!jid) return { allowed: false, reason: 'missing-jid' }
 
   /* ═══ المنع المطلق: المجموعات ═══
      بأمر الدكتور صراحةً: «ما يصير يرد بالقروب إطلاقاً». وهو قبل كل شيء —
@@ -607,25 +1217,32 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
      ولا يُستثنى شيء: من أراد البوت راسله وحده. */
   if (!isPrivateChat(jid)) return { allowed: false, reason: `${chatKindLabel(jid)} — لا ردّ فيها إطلاقاً` }
 
-  /* ═══ المنع المطلق: الصوت والصورة ═══
-     قواعد الأدب أدناه تمنع الوسائط، لكنّها طبقةٌ واحدة اعتمدت على عَلَمٍ لم
-     يصل إليها قط. فنمنعها هنا أيضاً صراحةً: ردٌّ آليّ على رسالةٍ صوتية
-     يفضح أن البوت لم يسمعها أصلاً. */
-  if (hasMedia) return { allowed: false, reason: 'وسائط — لا يردّ البوت على صوتٍ ولا صورة' }
   const session = pendingSession(db, jid)
   const classification0 = classification
   const { intent, confidence } = classification0
   const opensDoor = OPENS_DOOR.has(intent) && confidence >= 0.9
 
-  /* أوامر الخصوصية تُطاع دائماً، حتى أثناء الصمت أو التدخل اليدوي. */
+  /* الوسائط صامتة بلا استثناء: لا ننفذ حتى أمراً مكتوباً في وصف صورة أو
+     صوت، لأن الوكيل لا يستطيع إثبات أن النص هو المقصود المستقل عن الوسيط. */
+  if (hasMedia) return { allowed: false, reason: 'وسائط — لا يردّ البوت على صوتٍ ولا صورة' }
+
+  /* أوامر الخصوصية تُنفَّذ دائماً، حتى لمن سبق أن طلب الإيقاف. وإذا كان
+     الدكتور يتكلم بيده تُنفّذ بلا ردّ آلي: اليد أعلى سلطة، والخصوصية لا
+     تنتظر. فـ«التنفيذ» و«الكلام» قراران منفصلان. */
   if (intent === INTENTS.STOP_MESSAGES || intent === INTENTS.RESUME_MESSAGES || intent === INTENTS.DELETE_PREFERENCES) {
-    return { allowed: true, reason: 'privacy-command' }
+    const manual = Boolean(session?.manual_until && new Date(session.manual_until) > at)
+    /* أمر الخصوصية المكتوب في وصف صورة يُنفّذ أيضاً، لكن بلا ردٍّ على الوسيط. */
+    return { allowed: true, reason: 'privacy-command', executeSilently: manual || hasMedia }
   }
+
+  /* الإيقاف يحجب المحتوى، لكنه لا يحجب «رجع الرسائل» أعلاه. كان ترتيب هذين
+     السطرين يجعل الإلغاء طريقاً بلا عودة. */
+  if (isSuppressed(db, jid)) return { allowed: false, reason: 'suppressed' }
 
   /* ═══ كتب الدكتور بيده: صمتٌ مطلق حتى تنقضي المدة ═══
    * الرقم شخصي، ولذلك تدخّل الدكتور هو أعلى سلطة. لا تستطيع جملة الإيقاظ
    * ولا جلسة سابقة ولا اقتباسٌ من البوت أن تعيد الرد الآلي أثناء حديثه. */
-  if (session?.manual_until && new Date(session.manual_until) > new Date()) {
+  if (session?.manual_until && new Date(session.manual_until) > at) {
     return { allowed: false, reason: 'manual-takeover' }
   }
 
@@ -643,9 +1260,15 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
    * فداخل الجلسة يُشترط أن يكون الكلام أمراً مفهوماً (نيّةً مطابِقة)، لا
    * تخميناً من المنفذ الأخير. «زدني» و«لخّص» و«عندك شي عن…» تعمل كما كانت،
    * وما لم يُفهَم يُترك للدكتور. */
-  const activeSession = isReplyToAgent || explicitContentSession || sessionAlive(session)
-  const groundedFallback = classification0.fallback && searchContent(db, text, { limit: 1 }).length > 0
-  const understood = !classification0.fallback || groundedFallback
+  /* اقتباس ردّ البوت لا يفتح الباب من خلف جملة الإيقاظ. إن كانت الجلسة
+     مفتوحة فالاقتباس يعمل ضمنها طبيعياً؛ وإن لم تُفتح، يبقى صامتاً. */
+  const activeSession = explicitContentSession || sessionAlive(session)
+  const groundedFallback = classification0.fallback && isGroundedTopicPhrase(db, text)
+  /* القاعدة المحفوظة من لوحة التحكم أمرٌ مفهوم داخل جلسة مستيقظة، حتى لو كان
+     المصنّف العام لا يعرف صياغتها. لا تفتح القاعدة الباب بنفسها؛ هي تعمل فقط
+     بعد الإيقاظ أو في المعاينة الصريحة. */
+  const configuredRule = activeSession ? matchReplyRule(db, text) : null
+  const understood = (intent !== INTENTS.UNKNOWN && confidence >= 0.7 && !classification0.fallback) || groundedFallback || Boolean(configuredRule)
   if (activeSession && understood) return { allowed: true, reason: groundedFallback ? 'content-session-grounded-search' : 'content-session' }
   /* قائمةُ السماح لم تعد تفتح الباب بنفسها. كانت تُجيز الردّ على **أيّ** كلمة
      يكتبها صاحبها بلا جملة إيقاظ — وهو نقضٌ لقاعدة الدكتور: «ما يردّ إلا إذا
@@ -674,24 +1297,62 @@ export function handleIncoming({ db, jid, text, isReplyToAgent = false, explicit
   const session = db.get('SELECT * FROM chat_sessions WHERE jid=?', db.jidKey(jid))
   if (!gate.allowed) return { ...gate, shouldRespond: false }
   const response = handleIntent({ db, jid, input: text, session, classification })
+  if (gate.executeSilently) {
+    return { ...gate, ...response, text: '', shouldRespond: false, privacyApplied: true }
+  }
+  const isPrivacyReply = gate.reason === 'privacy-command'
   /* الباب انفتح بأمرٍ صريح: تُفتح الجلسة ولو لم يكن في الردّ مادة — وإلا
      رحّبنا بالقادم ثم صمتنا عن سؤاله التالي، وهو أسوأ من ألا نرحّب. */
   if (gate.opensSession && !response.contentId) {
     const stamp = new Date().toISOString()
-    db.run('INSERT INTO chat_sessions(jid,mode,opened_at,last_user_at,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(jid) DO UPDATE SET mode=excluded.mode,manual_until=NULL,last_user_at=excluded.last_user_at,updated_at=excluded.updated_at', db.jidKey(jid), 'content-session', stamp, stamp, stamp)
+    db.run('INSERT INTO chat_sessions(jid,mode,wake_version,opened_at,last_user_at,updated_at) VALUES(?,?,?,?,?,?) ON CONFLICT(jid) DO UPDATE SET mode=excluded.mode,wake_version=excluded.wake_version,manual_until=NULL,last_user_at=excluded.last_user_at,updated_at=excluded.updated_at', db.jidKey(jid), 'content-session', 1, stamp, stamp, stamp)
   }
   const persistSession = Boolean(gate.opensSession || explicitContentSession || sessionAlive(session))
   if (response.contentId) {
     const now = new Date().toISOString()
-    /* اقتباسُ رسالةٍ آلية يجيز جواباً واحداً، لكنه ليس كلمة الإيقاظ ولا يفتح
-       جلسةً دائمة من الخلف. الجلسة المستمرة لا تبدأ إلا بالإيقاظ الصريح أو
-       إذا كانت مفتوحة أصلاً. */
     if (persistSession) {
-      db.run('INSERT INTO chat_sessions(jid,mode,content_id,opened_at,last_user_at,updated_at) VALUES(?,?,?,?,?,?) ON CONFLICT(jid) DO UPDATE SET mode=excluded.mode,manual_until=NULL,content_id=excluded.content_id,last_user_at=excluded.last_user_at,updated_at=excluded.updated_at', db.jidKey(jid), 'content-session', response.contentId, now, now, now)
+      db.run('INSERT INTO chat_sessions(jid,mode,content_id,wake_version,opened_at,last_user_at,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(jid) DO UPDATE SET mode=excluded.mode,wake_version=excluded.wake_version,manual_until=NULL,content_id=excluded.content_id,last_user_at=excluded.last_user_at,updated_at=excluded.updated_at', db.jidKey(jid), 'content-session', response.contentId, 1, now, now, now)
       const item = findContent(db, response.contentId)
       if (item?.date) savePreference(db, jid, { lastContentCursor: item.date })
     }
-    rememberSent(db, jid, response.contentId)   // فلا يُعاد عليه ما أُرسل
+  }
+
+  /* ذاكرة الإشارة لا تحفظ نصوصاً ولا روابط: معرّفات مواد الموقع وترتيبها
+     فقط. الاختيار المفرد داخل قائمةٍ سابقة يغيّر المؤشر ولا يمحو القائمة،
+     ولذلك يبقى «اللي قبله/بعده» صحيحاً بعد التلخيص أو الاستماع. */
+  if (persistSession && !isPrivacyReply) {
+    let nextContext = parseConversationContext(session?.context_json)
+    if (response.contextResolution) {
+      nextContext = applyReferenceResolution(nextContext, response.contextResolution, { lastIntent: response.intent })
+    } else if (Array.isArray(response.contextItems) && (response.contextItems.length || response.replaceContextList)) {
+      const currentId = response.contentId || response.contextItems[0]
+      const existingIndex = nextContext.resultIds.indexOf(currentId)
+      if (response.preserveContextList && response.contextItems.length === 1 && existingIndex >= 0) {
+        nextContext = setContextResults(nextContext, nextContext.resultIds, { currentIndex: existingIndex, lastIntent: response.intent })
+      } else {
+        const selectedIndex = Math.max(0, response.contextItems.indexOf(currentId))
+        nextContext = setContextResults(nextContext, response.contextItems, {
+          currentIndex: selectedIndex,
+          lastIntent: response.intent,
+          lastTopic: response.contextTopic,
+          lastKind: response.contextKind,
+        })
+      }
+    } else if (response.contentId) {
+      const existingIndex = nextContext.resultIds.indexOf(response.contentId)
+      nextContext = existingIndex >= 0
+        ? setContextResults(nextContext, nextContext.resultIds, { currentIndex: existingIndex, lastIntent: response.intent })
+        : setContextResults(nextContext, [response.contentId], { currentIndex: 0, lastIntent: response.intent })
+    }
+    if (response.challengeContext) nextContext = { ...nextContext, challenge: response.challengeContext }
+    if (response.clearChallenge) nextContext = { ...nextContext, challenge: null }
+    const contextJson = serializeConversationContext(nextContext)
+    const stamp = new Date().toISOString()
+    db.run(
+      'INSERT INTO chat_sessions(jid,mode,context_json,opened_at,last_user_at,updated_at) VALUES(?,?,?,?,?,?)'
+      + ' ON CONFLICT(jid) DO UPDATE SET context_json=excluded.context_json,last_user_at=excluded.last_user_at,updated_at=excluded.updated_at',
+      db.jidKey(jid), 'content-session', contextJson, stamp, stamp, stamp,
+    )
   }
   /* حفظُ ما وُعد به. يُكتب بعد الجلسة لأن السطر أعلاه قد يُنشئها للتوّ، ويُمحى
      حين تنفد البقية أو حين يسأل السائل عن فكرةٍ أخرى — فلا تُسلَّم له بقيةُ
@@ -709,9 +1370,22 @@ export function handleIncoming({ db, jid, text, isReplyToAgent = false, explicit
   }
   /* التوقيع: من يراسل الدكتور يظنّ أنه يكلّمه هو. أما ردود الخصوصية
      («تم، لن تصلك رسائل») فإقرارٌ إجرائيّ لا يُنسب لأحد، فلا يُوقَّع. */
-  const isPrivacyReply = gate.reason === 'privacy-command'
   const signed = sign(response.text || '', { skip: isPrivacyReply })
-  return { ...gate, ...response, text: signed, shouldRespond: true }
+  const evidenceIds = [...new Set([
+    response.contentId,
+    ...(Array.isArray(response.contextItems) ? response.contextItems : []),
+  ].filter(Boolean))].slice(0, 20)
+  if (!isPrivacyReply && signed && evidenceIds.length) {
+    db.run(
+      'INSERT INTO answer_evidence(jid,intent,content_ids_json,reply_hash,created_at) VALUES(?,?,?,?,?)',
+      jid ? db.jidKey(jid) : null,
+      String(response.intent || classification.intent || 'UNKNOWN'),
+      JSON.stringify(evidenceIds),
+      hashOpaque(signed),
+      new Date().toISOString(),
+    )
+  }
+  return { ...gate, ...response, text: signed, shouldRespond: true, privacyApplied: isPrivacyReply }
 }
 
 export function describeTimeZone() { return TIME_ZONE }

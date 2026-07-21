@@ -37,6 +37,7 @@ concurrency:
 jobs:
   generate-and-publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 330
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,15 +50,26 @@ jobs:
           node-version: 24
           cache: npm
 
+      - name: Plan work before starting heavy production
+        id: supervisor_before
+        run: node scripts/audio-supervisor.mjs --write --github-output --summary
+
+      - name: Production is already complete
+        if: steps.supervisor_before.outputs.has_work != 'true' && github.event_name != 'workflow_dispatch'
+        run: echo "لا توجد قراءة أو حلقة ناقصة؛ تنتهي الجولة بلا تثبيت أو بناء أو استهلاك إضافي."
+
       - name: Force public npm registry
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           npm config set registry https://registry.npmjs.org/
           node scripts/normalize-npm-registry.mjs
 
       - name: Install dependencies
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 
       - name: Install media and R2 tools
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
@@ -65,6 +77,7 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Restore private pronunciation memory
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         uses: actions/cache/restore@v4
         with:
           path: ArabicPronunciationMemory.sqlite*
@@ -72,13 +85,29 @@ jobs:
           restore-keys: |
             pronunciation-memory-v1-
 
+      - name: Restore resumable audio checkpoints
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .audio-human-work
+            audio-audits
+            .audio-last-known-good
+            .audio-failures.json
+            .audio-site-patches.json
+          key: audio-production-v2-${{ github.run_id }}
+          restore-keys: |
+            audio-production-v2-
+
       - name: Verify podcast safety engines
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           npm run podcast:ar:self-test
           npm run podcast:release:self-test
           npm run audio:r2:self-test
 
       - name: Write Firebase service account
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
             if [ "${{ github.event.inputs.force }}" = "true" ]; then
@@ -94,6 +123,7 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
 
       - name: Generate article readings and publish to R2
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           if [ -f sa.missing ]; then
             if [ "${{ github.event.inputs.force }}" = "true" ]; then
@@ -140,6 +170,7 @@ jobs:
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
 
       - name: Generate approved dialogue podcast if gate is ready
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         continue-on-error: true
         run: |
           if [ -f sa.missing ]; then
@@ -188,6 +219,7 @@ jobs:
           VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
 
       - name: Strict local podcast release gate
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           set -o pipefail
           npm run podcast:release:local -- --allow-empty 2>&1 | tee -a ci-log.txt
@@ -195,6 +227,7 @@ jobs:
           PODCAST_RELEASE_MIN_SCORE: '94'
 
       - name: Publish generated local audio/transcripts to R2 atomically
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           set -o pipefail
           npm run audio:r2:publish 2>&1 | tee -a ci-log.txt
@@ -211,6 +244,7 @@ jobs:
       # يستردّ ما شهد له البوت ثم أسقطته دفعةٌ بشرية وملفُّه ما زال حيّاً على
       # R2. يسبق المصالح لأن المصالح لا يرى إلا ما في السجلّ، ولا يضيف مدخلاً.
       - name: Guard the audio manifest against regression
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           set -o pipefail
           node scripts/guard-audio-meta-regression.mjs --apply 2>&1 | tee -a ci-log.txt
@@ -218,6 +252,7 @@ jobs:
           AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
 
       - name: Reconcile audio manifest with R2
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           set -o pipefail
           node scripts/reconcile-audio-meta.mjs --apply 2>&1 | tee -a ci-log.txt
@@ -227,6 +262,7 @@ jobs:
       # المخرجات تُنسخ إلى ci-log.txt ليقرأها مُفسِّر التعثُّر عند الفشل.
       # pipefail ضروريٌّ وإلّا ابتلع الأنبوبُ رمزَ الخروج ومرّ الفشل صامتاً.
       - name: Verify manifests and build
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           set -o pipefail
           npm run audio:external:verify 2>&1 | tee -a ci-log.txt
@@ -237,12 +273,14 @@ jobs:
           VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
 
       - name: Validate final podcast RSS and public audio ranges
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         run: npm run podcast:release:dist
         env:
           PODCAST_RELEASE_MIN_SCORE: '94'
           PODCAST_VERIFY_REMOTE_AUDIO: 'true'
 
       - name: Finalize R2 transaction after successful gates
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         run: npm run audio:r2:commit
         env:
           CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
@@ -251,6 +289,7 @@ jobs:
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
 
       - name: Attach verified site article audio in Firestore
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         run: npm run audio:site:finalize
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
@@ -258,13 +297,31 @@ jobs:
           AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
           VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
 
+      - name: Refresh the living production ledger
+        if: always()
+        run: node scripts/audio-supervisor.mjs --write --summary
+
+      - name: Save resumable audio checkpoints
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .audio-human-work
+            audio-audits
+            .audio-last-known-good
+            .audio-failures.json
+            .audio-site-patches.json
+          key: audio-production-v2-${{ github.run_id }}
+
       - name: Save accepted pronunciation memory privately
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         uses: actions/cache/save@v4
         with:
           path: ArabicPronunciationMemory.sqlite*
           key: pronunciation-memory-v1-${{ github.run_id }}
 
       - name: Commit generated manifests only after R2 is durable
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           npm run audio:guard
           git config user.name "github-actions[bot]"
@@ -273,7 +330,7 @@ jobs:
           # كانت تُسجّل ٢٢ مساراً منها scripts/*.mjs و IntelligenceLab.tsx وملفُ
           # العمل نفسه — فتصطدم بكل عملٍ بشريّ جارٍ، وتُرجِع تعديلاتٍ حيّة إلى
           # حالةٍ قديمة بلا أن يشعر أحد. الآن لا تُسجَّل إلا البيانات المولَّدة.
-          git add src/data/audio.json src/data/audio-meta.json src/data/site-articles-feed.json src/data/podcast-admin.json
+          git add src/data/audio.json src/data/audio-meta.json src/data/site-articles-feed.json src/data/podcast-admin.json src/data/audio-supervisor.json
           # -f إلزاميّ: الملف متجاهَلٌ في .gitignore، فكان git add يفشل بصمت
           # (الشرطة `|| true` تبتلع الخطأ) ولا يُرفع السجل أبداً. وأثرُ ذلك أن
           # رانر النشر لا يجد دليل الاعتماد، فيسقط إلى «ما كان ظاهراً يبقى» —
@@ -281,6 +338,7 @@ jobs:
           # وبرفع السجل يصير المانيفست قابلاً لإعادة البناء من الحقيقة دائماً،
           # فإن دهسته رفعةٌ محلية قديمة أعادته التشغيلة التالية وحدها.
           git add -f .podcast-state.json 2>/dev/null || true
+          git add -f .audio-failures.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No audio changes to commit."
           else
@@ -356,5 +414,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ci-log
-          path: ci-log.txt
+          path: |
+            ci-log.txt
+            .audio-failures.json
+            src/data/audio-supervisor.json
           retention-days: 7

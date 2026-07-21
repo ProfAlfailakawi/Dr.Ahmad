@@ -11,6 +11,7 @@ import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
 import { buildSocialVisuals, compositionNameOf, analyzeSocialCopy,
   detectVisualTopic, downloadSocialPng, renderSocialPng, visualTopicLabel, type SocialVisualTemplate, type VisualTopic } from '../../lib/social-templates'
+import { SocialDesignStudio } from './SocialDesignStudio'
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
@@ -1707,7 +1708,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const [currentEvents, setCurrentEvents] = useState<CurrentEvent[]>([])
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([])
   const [eventsLoading, setEventsLoading] = useState(false)
-  const [view, setView] = useState<'idea' | 'write' | 'review' | 'distribution' | 'pulse'>('idea')
+  const [view, setView] = useState<'idea' | 'write' | 'review' | 'distribution' | 'pulse' | 'design'>('idea')
   const [pulseIdea, setPulseIdea] = useState('')
   const [pulsePurpose, setPulsePurpose] = useState('فكرة قصيرة تستحق أن تُقال الآن')
   const [pulsePreviewCopy, setPulsePreviewCopy] = useState({ idea: '', purpose: 'فكرة قصيرة تستحق أن تُقال الآن' })
@@ -2232,6 +2233,7 @@ ${pulsePurpose.trim()}`,
             ['review', 'بوابة الجودة'],
             ['distribution', 'التوزيع'],
             ['pulse', 'منشور مستقل'],
+            ['design', 'استوديو التصاميم'],
           ] as const).map(([key, label]) => (
             <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold transition-colors ${view === key ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{label}</button>
           ))}
@@ -2315,6 +2317,13 @@ ${pulsePurpose.trim()}`,
             </div>
           </div>
         </>
+      )}
+
+      {view === 'design' && (
+        <SocialDesignStudio
+          initialText={pulseIdea.trim() || bundle.title.trim() || idea.trim()}
+          initialContext={pulsePurpose.trim() || bundle.excerpt.trim() || angle.trim()}
+        />
       )}
 
       {view === 'pulse' && (

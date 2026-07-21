@@ -30,6 +30,9 @@ export const flags = Object.freeze({
 })
 
 export const SITE_URL = (process.env.SITE_URL || process.env.BASE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
+/* ملفات الصوت المنشورة تعيش في مخزن الموقع العام R2، لا في /audio على Hosting.
+   يبقى قابلاً للتبديل من البيئة، والافتراضي هو النطاق المستخدم في أدوات النشر. */
+export const AUDIO_PUBLIC_BASE_URL = (process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || 'https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev').replace(/\/+$/, '')
 export const TIME_ZONE = process.env.WHATSAPP_TIME_ZONE || 'Asia/Kuwait'
 export const DATA_DIR = process.env.WHATSAPP_AGENT_DATA_DIR || path.join(os.homedir(), 'Library', 'Application Support', 'DrAhmadWhatsAppAgent')
 export const DB_PATH = process.env.WHATSAPP_AGENT_DB || path.join(DATA_DIR, 'agent.sqlite')
@@ -42,7 +45,10 @@ export const MANUAL_TAKEOVER_MINUTES = Math.max(1, Number(process.env.WHATSAPP_M
 export const HEARTBEAT_STALE_MS = Math.max(30_000, Number(process.env.WHATSAPP_HEARTBEAT_STALE_MS || 3 * 60 * 1000))
 export const HEARTBEAT_INTERVAL_MS = Math.max(10_000, Number(process.env.WHATSAPP_HEARTBEAT_INTERVAL_MS || 30_000))
 export const MAX_MESSAGE_CHARS = Math.min(Number(process.env.WHATSAPP_MAX_MESSAGE_CHARS || 4000), 10000)
-export const MAX_CAMPAIGN_TARGETS = Math.min(Math.max(Number(process.env.WHATSAPP_MAX_CAMPAIGN_TARGETS || 5), 1), 100)
+const configuredCampaignTargetLimit = Number(process.env.WHATSAPP_MAX_CAMPAIGN_TARGETS || '')
+export const MAX_CAMPAIGN_TARGETS = Number.isFinite(configuredCampaignTargetLimit) && configuredCampaignTargetLimit > 0
+  ? Math.max(1, Math.floor(configuredCampaignTargetLimit))
+  : Number.POSITIVE_INFINITY
 export const BROADCAST_DEFAULT_INTERVAL_SECONDS = Math.min(Math.max(Number(process.env.WHATSAPP_BROADCAST_INTERVAL_SECONDS || 45), 5), 15 * 60)
 export const BROADCAST_MIN_INTERVAL_SECONDS = Math.min(Math.max(Number(process.env.WHATSAPP_BROADCAST_MIN_INTERVAL_SECONDS || 20), 5), 15 * 60)
 export const RETENTION_DAYS = Math.max(1, Number(process.env.WHATSAPP_RETENTION_DAYS || 7))

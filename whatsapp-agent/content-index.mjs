@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
 import { projectRoot, SITE_URL } from './config.mjs'
+import { toRoot } from './dialect-lexicon.mjs'
 
 const SEARCH_CACHE_LIMIT = 128
 const searchCacheByDb = new WeakMap()
@@ -55,15 +56,51 @@ function hashItem(item) { return crypto.createHash('sha256').update(JSON.stringi
 
 function audioFor(slug, audio, audioMeta) {
   const entry = audio?.[slug]
-  const meta = audioMeta?.[slug]
-  if (!entry && !meta) return null
-  const voices = typeof entry === 'object' ? entry : entry ? { fahed: true } : {}
+  const fahedMeta = audioMeta?.[`${slug}.mp3`]
+  const nouraMeta = audioMeta?.[`${slug}.noura.mp3`]
+  const dialogueMp3Meta = audioMeta?.[`${slug}.dialogue.mp3`]
+  const legacyMeta = audioMeta?.[slug]
+  /* audio.json هو بيان النشر المعتمد. metadata وحدها لا تعلن ملفاً للزائر؛
+     مهمة المصالحة هي التي ترقي الملف الموثق إلى البيان بعد اكتماله. */
+  const voices = typeof entry === 'object' && entry ? { ...entry } : entry ? { fahed: true } : {}
+  if (!Object.values(voices).some(Boolean)) return null
+  const secondsOf = (meta) => Number(meta?.duration || meta?.durationSec || meta?.durationSeconds || 0) || null
+  const durations = {
+    fahed: voices.fahed ? secondsOf(fahedMeta || legacyMeta) : null,
+    noura: voices.noura ? secondsOf(nouraMeta) : null,
+    dialogue: voices.dialogue ? secondsOf(dialogueMp3Meta || legacyMeta) : null,
+  }
   return {
     fahed: Boolean(voices.fahed),
     noura: Boolean(voices.noura),
-    dialogue: Boolean(meta?.dialogue || meta?.dialoguePath || meta?.dialogueUrl),
-    duration: Number(meta?.duration || meta?.durationSec || 0) || null,
+    dialogue: Boolean(voices.dialogue),
+    durations,
+    duration: durations.dialogue || durations.fahed || durations.noura || null,
   }
+}
+
+function semanticSearchText(value, limit = 160) {
+  const normalized = normalizeArabic(value)
+  if (!normalized) return ''
+  const words = normalized.split(/\s+/).filter((word) => word.length > 1)
+  const roots = []
+  const seen = new Set()
+  for (const word of words) {
+    const root = toRoot(word)
+    for (const token of [word, root]) {
+      if (!token || token.length < 2 || seen.has(token)) continue
+      seen.add(token)
+      roots.push(token)
+      if (roots.length >= limit) return roots.join(' ')
+    }
+  }
+  return roots.join(' ')
+}
+
+function searchableField(value, limit) {
+  const source = String(value || '')
+  const semantic = semanticSearchText(source, limit)
+  return semantic ? `${source}\n${semantic}` : source
 }
 
 export function buildContentIndex(root = projectRoot, siteUrl = SITE_URL) {
@@ -116,9 +153,17 @@ export function syncContentIndex(db, root = projectRoot, siteUrl = SITE_URL) {
     const timestamp = new Date().toISOString()
     for (const item of items) {
       insert.run(item.id, item.kind, item.slug, item.title, item.excerpt, item.body, item.url, item.image, item.date, item.words, item.audio ? JSON.stringify(item.audio) : null, item.keywords, item.hash, timestamp)
-      insertFts.run(item.id, item.title, item.excerpt, item.body, item.keywords, item.kind)
+      insertFts.run(
+        item.id,
+        searchableField(item.title, 48),
+        searchableField(item.excerpt, 96),
+        searchableField(item.body, 320),
+        searchableField(item.keywords, 64),
+        item.kind,
+      )
     }
   })
+  db.setSetting('content.indexVersion', { at: new Date().toISOString(), count: items.length })
   db.addAudit('content-index-sync', '', `${items.length} public items indexed`)
   return { count: items.length, kinds: items.reduce((acc, item) => ({ ...acc, [item.kind]: (acc[item.kind] || 0) + 1 }), {}) }
 }
@@ -133,8 +178,14 @@ export function findContent(db, id) { return rowToItem(db.get('SELECT * FROM con
 export function searchContent(db, query, options = {}) {
   const text = normalizeArabic(query)
   if (!text) return []
-  const limit = Math.min(Math.max(Number(options.limit || 3), 1), 10)
-  const tokens = [...new Set(text.split(/\s+/).filter((token) => token.length > 1))].slice(0, 8)
+  /* الطلبات المركبة تضيف قيود النوع/الصوت بعد الاسترجاع؛ قصّ المرشحين عند 10
+     كان يخفي تطابقات صحيحة موجودة أبعد في FTS. يبقى الافتراضي 3، والسقف 80. */
+  const limit = Math.min(Math.max(Number(options.limit || 3), 1), 80)
+  const tokens = [...new Set(text.split(/\s+/).flatMap((token) => {
+    if (token.length <= 1) return []
+    const root = toRoot(token)
+    return root && root !== token ? [token, root] : [token]
+  }).filter((token) => token.length > 1))].slice(0, 10)
   const cacheKey = `${limit}:${tokens.join(' ')}`
   let cache = searchCacheByDb.get(db)
   if (!cache) { cache = new Map(); searchCacheByDb.set(db, cache) }
@@ -172,7 +223,19 @@ export function searchContent(db, query, options = {}) {
     }
   }
 
-  const result = rows.map(rowToItem)
+  let result = rows.map(rowToItem)
+  /* في سؤال موضوعي قصير، نقدّم المادة التي تحمل كلمات الموضوع نفسها في
+     العنوان/الكلمات المفتاحية. يمنع جذر «الذكاء» من تقديم «الذكاء التعليمي»
+     لسؤال «الذكاء الاصطناعي» لمجرد ورود العبارة في جسم مقال بعيد. */
+  const topicNoise = new Set(['ابي', 'اريد', 'ابغي', 'ابغى', 'عندك', 'شي', 'شيء', 'عن', 'موضوع', 'حول', 'ماده'])
+  const literalTopic = text.split(/\s+/).filter((token) => token.length > 1 && !topicNoise.has(token))
+  if (literalTopic.length >= 1 && literalTopic.length <= 4) {
+    const clauses = literalTopic.map(() => "lower(title||' '||keywords) LIKE ?").join(' AND ')
+    const params = literalTopic.map((token) => `%${token.replace(/[%_]/g, '')}%`)
+    const strict = db.all(`SELECT * FROM content_items WHERE ${clauses} ORDER BY date DESC LIMIT ?`, ...params, limit).map(rowToItem)
+    if (strict.length) result = [...strict, ...result.filter((item) => !strict.some((match) => match.id === item.id))]
+  }
+  result = result.slice(0, limit)
   cache.set(cacheKey, result)
   if (cache.size > SEARCH_CACHE_LIMIT) cache.delete(cache.keys().next().value)
   return result
@@ -183,25 +246,70 @@ export function latestContent(db, kind, limit = 3) {
   return rows.map(rowToItem)
 }
 
-/* المؤشر نفسه المستخدم داخل صفحة المقال عند غياب عدّادٍ موثّق. لا نقدّمه
-   بوصفه إحصاءً خارجياً؛ هو ترتيب داخلي ثابت يسمح للبوت أن يفهم سؤال
-   «الأكثر مشاهدة» من غير اختراع رقم أو الاعتماد على خدمة مدفوعة. */
-export function engagementEstimate(item, salt = 'views', min = 180, max = 890) {
-  const source = `${item?.slug || ''}:${item?.date || ''}:${item?.title || ''}:${salt}`
-  let hash = 2166136261
-  for (let index = 0; index < source.length; index += 1) {
-    hash ^= source.charCodeAt(index)
-    hash = Math.imul(hash, 16777619)
-  }
-  return min + ((hash >>> 0) % Math.max(1, max - min + 1))
+export function latestAudioContent(db, voice = 'dialogue', limit = 3) {
+  const rows = db.all(
+    "SELECT * FROM content_items WHERE audio_json IS NOT NULL ORDER BY CASE WHEN date GLOB '[0-9]*' THEN date ELSE updated_at END DESC LIMIT 120",
+  ).map(rowToItem)
+  return rows
+    .filter((item) => item?.audio?.[voice])
+    .slice(0, Math.min(Math.max(Number(limit || 1), 1), 10))
 }
 
+export function shortReadableContent(db, limit = 3) {
+  const rows = db.all(
+    `SELECT * FROM content_items
+     WHERE kind='article'
+     ORDER BY
+       CASE WHEN words BETWEEN 80 AND 360 THEN 0 ELSE 1 END,
+       CASE WHEN date GLOB '[0-9]*' THEN date ELSE updated_at END DESC
+     LIMIT 80`,
+  ).map(rowToItem)
+  return rows.slice(0, Math.min(Math.max(Number(limit || 1), 1), 10))
+}
+
+/**
+ * لا ترتيبَ تقديرياً للمشاهدة.
+ *
+ * كان المحرك يصنع رقماً حتمياً من الـslug والعنوان ثم يسمّيه «مؤشر
+ * مشاهدة». الرقم ثابت، لكنه ليس مشاهدةً ولم يأتِ من الموقع؛ وهذا يناقض
+ * قاعدة البوت الأهم. المصدر المقبول الوحيد هنا لقطةٌ كتبها تقرير الموقع
+ * المحلي بعد أن قرأ عدّاد Firestore الحقيقي. إن غابت اللقطة، نصرّح بغيابها
+ * ولا نضع بديلاً متخيلاً.
+ */
 export function mostPopularContent(db, kind = 'article', limit = 3) {
-  const rows = db.all('SELECT * FROM content_items WHERE kind=?', kind).map(rowToItem)
-  return rows
-    .map((item) => ({ ...item, engagement: engagementEstimate(item) }))
-    .sort((a, b) => b.engagement - a.engagement || String(b.date || '').localeCompare(String(a.date || '')))
+  if (kind !== 'article') return { verified: false, items: [], reason: 'unsupported-kind' }
+  const snapshot = db.getSetting('analytics.articleViews', null)
+  const sourceOk = snapshot?.source === 'firestore:views:monthly'
+  const periodOk = /^\d{4}-(0[1-9]|1[0-2])$/.test(String(snapshot?.period || ''))
+  const collectedAt = String(snapshot?.collectedAt || '')
+  const dateOk = Number.isFinite(Date.parse(collectedAt))
+  if (!sourceOk || !periodOk || !dateOk || !Array.isArray(snapshot?.items)) {
+    return { verified: false, items: [], reason: 'missing-verified-snapshot' }
+  }
+
+  const safeRows = snapshot.items
+    .map((entry) => {
+      const path = String(entry?.path || '')
+      const count = Number(entry?.count)
+      if (!path.startsWith('/articles/') || !Number.isInteger(count) || count < 0) return null
+      let slug = path.slice('/articles/'.length)
+      try { slug = decodeURIComponent(slug) } catch { return null }
+      if (!slug || slug.includes('/') || slug.includes('..')) return null
+      const item = rowToItem(db.get("SELECT * FROM content_items WHERE kind='article' AND slug=?", slug))
+      return item ? { ...item, verifiedViews: count } : null
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.verifiedViews - left.verifiedViews || String(right.date || '').localeCompare(String(left.date || '')))
     .slice(0, Math.min(Math.max(Number(limit || 1), 1), 10))
+
+  return {
+    verified: safeRows.length > 0,
+    items: safeRows,
+    source: snapshot.source,
+    period: snapshot.period,
+    collectedAt,
+    reason: safeRows.length ? '' : 'empty-verified-snapshot',
+  }
 }
 
 export function latestAcrossKinds(db, kinds = ['article', 'paper', 'book', 'podcast'], limit = 5) {

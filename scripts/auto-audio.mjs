@@ -49,6 +49,7 @@ const AUDIO_WORK = resolve(ROOT, '.audio-human-work')
 const AUDIO_LAST_GOOD = resolve(ROOT, '.audio-last-known-good')
 const AUDIO_QUARANTINE = resolve(AUDIO_AUDITS, 'quarantine')
 const PENDING_SITE_PATCHES = resolve(ROOT, '.audio-site-patches.json')
+const FAILURE_LEDGER = resolve(ROOT, '.audio-failures.json')
 const DRY_RUN = process.argv.includes('--dry-run')
 const BASE_ONLY = DRY_RUN || process.argv.includes('--base-only') || process.argv.includes('--local-only')
 const UPGRADE_EXISTING = process.argv.includes('--upgrade-existing')
@@ -184,6 +185,44 @@ function audioMeta() {
 
 function writeAudioMeta(next) {
   atomicJson(AUDIO_META, Object.fromEntries(Object.entries(next).sort(([left], [right]) => left.localeCompare(right))))
+}
+
+function failureLedger() {
+  const value = loadJson(FAILURE_LEDGER, { schemaVersion: 1, items: [] })
+  return { schemaVersion: 1, items: Array.isArray(value.items) ? value.items : [] }
+}
+
+function writeFailureLedger(value) {
+  atomicJson(FAILURE_LEDGER, {
+    schemaVersion: 1,
+    updatedAt: new Date().toISOString(),
+    items: [...value.items].sort((left, right) => `${left.slug}:${left.voice}`.localeCompare(`${right.slug}:${right.voice}`)),
+  })
+}
+
+function recordFailure({ slug, voice, kind, stage, error }) {
+  const ledger = failureLedger()
+  const key = `${slug}:${voice}`
+  const previous = ledger.items.find((item) => `${item.slug}:${item.voice}` === key)
+  const message = String(error?.message || error || 'unknown audio failure')
+    .replace(/(api[_-]?key|token|secret|authorization)\s*[:=]\s*[^\s,;]+/gi, '$1=[redacted]')
+    .replace(/Bearer\s+[A-Za-z0-9._~-]+/gi, 'Bearer [redacted]')
+    .slice(0, 600)
+  const next = {
+    slug, voice, kind, stage,
+    attempts: Number(previous?.attempts || 0) + 1,
+    firstFailedAt: previous?.firstFailedAt || new Date().toISOString(),
+    lastFailedAt: new Date().toISOString(),
+    message,
+  }
+  ledger.items = [...ledger.items.filter((item) => `${item.slug}:${item.voice}` !== key), next]
+  writeFailureLedger(ledger)
+}
+
+function clearFailure(slug, voice) {
+  const ledger = failureLedger()
+  const next = ledger.items.filter((item) => !(item.slug === slug && item.voice === voice))
+  if (next.length !== ledger.items.length) writeFailureLedger({ ...ledger, items: next })
 }
 
 function publicAudioUrl(fileName) {
@@ -501,9 +540,11 @@ async function processOriginals(articles, allOriginals, budget) {
         audit = await synthesizeHumanReading(article, voice, target)
       } catch (error) {
         budget.used += 1
-        console.error(`  ✘ ${article.slug} (${voice.label}): ${String(error.message).slice(0, 320)} — تُتجاوز وتستمر القافلة`)
+        recordFailure({ slug: article.slug, voice: voice.key, kind: 'original', stage: 'generate-reading', error })
+        console.error(`  ✘ ${article.slug} (${voice.label}): ${String(error.message).slice(0, 320)} — تُسجّل للمحاولة التالية وتستمر القافلة`)
         continue
       }
+      clearFailure(article.slug, voice.key)
       if (!USE_R2) {
         atomicCopy(target, publicTarget)
       }
@@ -535,15 +576,22 @@ async function processSiteArticles(articles, budget) {
         missingArticles.add(article.slug)
         console.log(`  ${DRY_RUN ? '○' : '◈'} مُضاف · ${voice.label} · ${article.title.slice(0, 55)}`)
         if (!DRY_RUN && budget.used < JOB_LIMIT) {
-          const audit = await synthesizeHumanReading(article, voice, target)
-          if (USE_R2) {
-            // الرفع مسؤولية الناشر الذري وحده. يبقى الملف مرحلياً محلياً حتى تنجح كل البوابات.
-          } else {
-            await uploadStorageObject(objectName, readFileSync(target))
+          try {
+            await synthesizeHumanReading(article, voice, target)
+            if (USE_R2) {
+              // الرفع مسؤولية الناشر الذري وحده. يبقى الملف مرحلياً محلياً حتى تنجح كل البوابات.
+            } else {
+              await uploadStorageObject(objectName, readFileSync(target))
+            }
+            exists = true
+            clearFailure(article.slug, voice.key)
+            generated += 1
+          } catch (error) {
+            recordFailure({ slug: article.slug, voice: voice.key, kind: 'site', stage: USE_R2 ? 'generate-reading' : 'generate-or-upload', error })
+            console.error(`  ✘ ${article.slug} (${voice.label}): ${String(error.message).slice(0, 320)} — تُسجّل للمحاولة التالية وتستمر القافلة`)
+          } finally {
+            budget.used += 1
           }
-          exists = true
-          budget.used += 1
-          generated += 1
           await sleep(600)
         }
       }

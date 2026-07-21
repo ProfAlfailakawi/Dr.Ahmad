@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ArticleAudioControl, ArticleRecord } from '../../lib/cms'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { manageArticleAudio, type ArticleAudioAction, type ArticleAudioMode } from '../../lib/audio-management'
+import supervisorSnapshot from '../../data/audio-supervisor.json'
 import { Pagination, usePagedList } from '../Pagination'
 
 type Filter = 'all' | 'ready' | 'working' | 'missing'
@@ -60,6 +61,15 @@ const dateLabel = (value?: string) => {
   if (Number.isNaN(date.getTime())) return ''
   return new Intl.DateTimeFormat('ar-KW-u-nu-latn', {
     day: 'numeric', month: 'short', year: 'numeric',
+  }).format(date)
+}
+
+const supervisorUpdatedLabel = (value?: string) => {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat('ar-KW-u-nu-latn', {
+    day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
   }).format(date)
 }
 
@@ -324,6 +334,30 @@ export function AudioLibrary({ articles, onChanged }: Props) {
           </div>
         </div>
         <button type="button" onClick={() => void onChanged()} className="min-h-11 justify-self-start text-[.76rem] font-semibold text-soft transition-colors hover:text-accent md:justify-self-end">تحديث الحالات</button>
+      </div>
+
+      <div className="mb-6 overflow-hidden rounded-[1.4rem] border border-hair bg-canvas/70">
+        <div className="grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-5">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_0_5px_rgba(0,83,125,.08)]" aria-hidden="true" />
+              <p className="text-[.72rem] font-bold text-ink">المشرف الحي للإنتاج</p>
+              <span className="text-[.66rem] text-soft">آخر لقطة {supervisorUpdatedLabel(supervisorSnapshot.generatedAt)}</span>
+            </div>
+            <p className="mt-2 line-clamp-2 text-[.78rem] leading-relaxed text-soft">
+              {supervisorSnapshot.queue.total
+                ? <>يستأنف من آخر نقطة تلقائياً. التالي: <strong className="font-semibold text-ink">{supervisorSnapshot.queue.next?.title || 'العنصر التالي في الطابور'}</strong></>
+                : 'اكتمل الطابور الموثق، وأي مقال أو حوار جديد سيدخل تلقائياً.'}
+            </p>
+          </div>
+          <div className="flex items-center gap-4 sm:justify-end">
+            <div className="text-center"><p className="font-display text-2xl font-bold text-ink">{supervisorSnapshot.progressPercent}%</p><p className="text-[.62rem] text-soft">إنجاز موثق</p></div>
+            <div className="h-9 w-px bg-hair" aria-hidden="true" />
+            <div className="text-center"><p className="font-display text-2xl font-bold text-ink">{supervisorSnapshot.queue.total}</p><p className="text-[.62rem] text-soft">متبقٍ</p></div>
+            {supervisorSnapshot.queue.failed > 0 && <><div className="h-9 w-px bg-hair" aria-hidden="true" /><div className="text-center"><p className="font-display text-2xl font-bold text-red-700 dark:text-red-300">{supervisorSnapshot.queue.failed}</p><p className="text-[.62rem] text-soft">يعاد إصلاحه</p></div></>}
+          </div>
+        </div>
+        <div className="h-1 bg-hair" aria-hidden="true"><div className="h-full bg-accent transition-[width]" style={{ width: `${Math.max(0, Math.min(100, supervisorSnapshot.progressPercent))}%` }} /></div>
       </div>
 
       <div className="mb-5 grid min-w-0 gap-3 lg:grid-cols-[minmax(220px,1fr)_auto] lg:items-center">

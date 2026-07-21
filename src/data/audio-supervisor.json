@@ -1,0 +1,3435 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-21T22:20:20.587Z",
+  "state": "producing",
+  "articles": {
+    "total": 143,
+    "complete": 1
+  },
+  "readings": {
+    "expected": 286,
+    "ready": 12,
+    "missing": 274
+  },
+  "dialogues": {
+    "expected": 143,
+    "ready": 1,
+    "missing": 142
+  },
+  "queue": {
+    "total": 416,
+    "failed": 0,
+    "next": {
+      "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
+      "title": "شهادة امتياز… لدمية بلا وعي!",
+      "kind": "dialogue",
+      "voice": "dialogue",
+      "stage": "generate",
+      "attempts": 0,
+      "lastError": ""
+    },
+    "sample": [
+      {
+        "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
+        "title": "شهادة امتياز… لدمية بلا وعي!",
+        "kind": "dialogue",
+        "voice": "dialogue",
+        "stage": "generate",
+        "attempts": 0,
+        "lastError": ""
+      },
+      {
+        "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
+        "title": "شهادة امتياز… لدمية بلا وعي!",
+        "kind": "reading",
+        "voice": "fahed",
+        "stage": "generate",
+        "attempts": 0,
+        "lastError": ""
+      },
+      {
+        "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
+        "title": "شهادة امتياز… لدمية بلا وعي!",
+        "kind": "reading",
+        "voice": "noura",
+        "stage": "generate",
+        "attempts": 0,
+        "lastError": ""
+      },
+      {
+        "slug": "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2",
+        "title": "خرّيج «كورونا»… وحسابه في التعليم لم يُغلق بعد!",
+        "kind": "dialogue",
+        "voice": "dialogue",
+        "stage": "generate",
+        "attempts": 0,
+        "lastError": ""
+      },
+      {
+        "slug": "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2",
+        "title": "خرّيج «كورونا»… وحسابه في التعليم لم يُغلق بعد!",
+        "kind": "reading",
+        "voice": "fahed",
+        "stage": "generate",
+        "attempts": 0,
+        "lastError": ""
+      },
+      {
+        "slug": "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2",
+        "title": "خرّيج «كورونا»… وحسابه في التعليم لم يُغلق بعد!",
+        "kind": "reading",
+        "voice": "noura",
+        "stage": "generate",
+        "attempts": 0,
+        "lastError": ""
+      },
+      {
+        "slug": "a-generation-that-knows-everything-and-understands-nothing",
+        "title": "جيل يعرف كل شيء… ولا يفهم شيئاً",
+        "kind": "dialogue",
+        "voice": "dialogue",
+        "stage": "generate",
+        "attempts": 0,
+        "lastError": ""
+      },
+      {
+        "slug": "a-generation-that-knows-everything-and-understands-nothing",
+        "title": "جيل يعرف كل شيء… ولا يفهم شيئاً",
+        "kind": "reading",
+        "voice": "fahed",
+        "stage": "generate",
+        "attempts": 0,
+        "lastError": ""
+      },
+      {
+        "slug": "a-generation-that-knows-everything-and-understands-nothing",
+        "title": "جيل يعرف كل شيء… ولا يفهم شيئاً",
+        "kind": "reading",
+        "voice": "noura",
+        "stage": "generate",
+        "attempts": 0,
+        "lastError": ""
+      },
+      {
+        "slug": "a-generation-without-rootsarabic",
+        "title": "جيلٌ بلا جذور",
+        "kind": "dialogue",
+        "voice": "dialogue",
+        "stage": "generate",
+        "attempts": 0,
+        "lastError": ""
+      },
+      {
+        "slug": "a-generation-without-rootsarabic",
+        "title": "جيلٌ بلا جذور",
+        "kind": "reading",
+        "voice": "fahed",
+        "stage": "generate",
+        "attempts": 0,
+        "lastError": ""
+      },
+      {
+        "slug": "a-generation-without-rootsarabic",
+        "title": "جيلٌ بلا جذور",
+        "kind": "reading",
+        "voice": "noura",
+        "stage": "generate",
+        "attempts": 0,
+        "lastError": ""
+      }
+    ]
+  },
+  "progressPercent": 3,
+  "items": [
+    {
+      "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
+      "title": "شهادة امتياز… لدمية بلا وعي!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "a-certificate-of-excellence-for-a-lifeless-doll-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "a-certificate-of-excellence-for-a-lifeless-doll-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "a-certificate-of-excellence-for-a-lifeless-doll-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2",
+      "title": "خرّيج «كورونا»… وحسابه في التعليم لم يُغلق بعد!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "a-generation-that-knows-everything-and-understands-nothing",
+      "title": "جيل يعرف كل شيء… ولا يفهم شيئاً",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "a-generation-that-knows-everything-and-understands-nothing.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "a-generation-that-knows-everything-and-understands-nothing.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "a-generation-that-knows-everything-and-understands-nothing.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "a-generation-without-rootsarabic",
+      "title": "جيلٌ بلا جذور",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "a-generation-without-rootsarabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "a-generation-without-rootsarabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "a-generation-without-rootsarabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "a-new-kind-of-fatigue-in-old-expressionsarabic",
+      "title": "تعبٌ جديد بعبارات قديمة",
+      "readings": {
+        "fahed": {
+          "ready": true,
+          "fileName": "a-new-kind-of-fatigue-in-old-expressionsarabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": true,
+          "fileName": "a-new-kind-of-fatigue-in-old-expressionsarabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "a-new-kind-of-fatigue-in-old-expressionsarabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "a-society-that-fears-the-different-arabic",
+      "title": "المجتمع الذي يخاف من المختلف",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "a-society-that-fears-the-different-arabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "a-society-that-fears-the-different-arabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "a-society-that-fears-the-different-arabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "aggression-in-the-sky-and-steadfastness-withinarabic",
+      "title": "العدوان في السماء… والثبات في الداخل",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "aggression-in-the-sky-and-steadfastness-withinarabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "aggression-in-the-sky-and-steadfastness-withinarabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "aggression-in-the-sky-and-steadfastness-withinarabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "alternative-plans-for-distance-education",
+      "title": "الخطط البديلة للتعليم عن بعد",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "alternative-plans-for-distance-education.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "alternative-plans-for-distance-education.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "alternative-plans-for-distance-education.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+      "title": "الذكاء الاصطناعي يُدرّس… والعقل البشري يُقصى",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic",
+      "title": "أبناءٌ يعرفون المطلوب… ويجهلون لماذا",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "children-who-know-what-is-required-but-do-not-know-whyarabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "children-who-know-what-is-required-but-do-not-know-whyarabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "children-who-know-what-is-required-but-do-not-know-whyarabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic-2",
+      "title": "أبناءٌ يعرفون المطلوب… لكن من علّمهم المعنى؟",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "children-who-know-what-is-required-but-do-not-know-whyarabic-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "children-who-know-what-is-required-but-do-not-know-whyarabic-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "children-who-know-what-is-required-but-do-not-know-whyarabic-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "coming-soon-a-certificate-without-a-mind-2",
+      "title": "قريباً: شهادة بدون عقل!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "coming-soon-a-certificate-without-a-mind-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "coming-soon-a-certificate-without-a-mind-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "coming-soon-a-certificate-without-a-mind-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "competency-based-approach-to-the-trash",
+      "title": "منهج الكفايات.. بطريقه إلى المهملات كسابقيه",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "competency-based-approach-to-the-trash.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "competency-based-approach-to-the-trash.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "competency-based-approach-to-the-trash.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "do-we-contain-or-raise-2",
+      "title": "هل نحتوي… أم نربّي؟",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "do-we-contain-or-raise-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "do-we-contain-or-raise-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "do-we-contain-or-raise-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "dr-jasem-malik-the-lesson-that-never-ends-2",
+      "title": "د. جاسم ملك… الحصّة التي لا تنتهي",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "dr-jasem-malik-the-lesson-that-never-ends-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "dr-jasem-malik-the-lesson-that-never-ends-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "dr-jasem-malik-the-lesson-that-never-ends-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "e-learning-culture-2",
+      "title": "ثقافة التعليم الإلكتروني",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "e-learning-culture-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "e-learning-culture-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "e-learning-culture-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "e-learning-initiatives-and-solutions-2",
+      "title": "مبادرات وحلول للتعليم الإلكتروني",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "e-learning-initiatives-and-solutions-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "e-learning-initiatives-and-solutions-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "e-learning-initiatives-and-solutions-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "eliminating-the-education-epidemic",
+      "title": "القضاء على وباء التعليم.. بالحزم والعزم",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "eliminating-the-education-epidemic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "eliminating-the-education-epidemic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "eliminating-the-education-epidemic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "ethical-hacking-culture",
+      "title": "ثقافة الاختراق الأخلاقي.. قراصنة على خلق",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "ethical-hacking-culture.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "ethical-hacking-culture.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "ethical-hacking-culture.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "excellent-in-grades-lost-in-decision",
+      "title": "ممتاز في الدرجات… ضائع في القرار!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "excellent-in-grades-lost-in-decision.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "excellent-in-grades-lost-in-decision.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "excellent-in-grades-lost-in-decision.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "expectations-that-shape-a-studentarabic",
+      "title": "التوقّعات التي تصنع طالباً",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "expectations-that-shape-a-studentarabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "expectations-that-shape-a-studentarabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "expectations-that-shape-a-studentarabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "freedom-without-thinking-and-openness-without-awareness-2",
+      "title": "حُرية بلا تفكير… وانفتاح بلا وعي!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "freedom-without-thinking-and-openness-without-awareness-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "freedom-without-thinking-and-openness-without-awareness-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "freedom-without-thinking-and-openness-without-awareness-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "from-the-schoolyard-to-the-food-court-2",
+      "title": "من الساحة المدرسية… إلى ساحة المطاعم!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "from-the-schoolyard-to-the-food-court-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "from-the-schoolyard-to-the-food-court-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "from-the-schoolyard-to-the-food-court-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "he-passed-the-exam-but-failed-the-question-2",
+      "title": "نجح في الامتحان… وفشل في السؤال!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "he-passed-the-exam-but-failed-the-question-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "he-passed-the-exam-but-failed-the-question-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "he-passed-the-exam-but-failed-the-question-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "i-earned-more-than-harvard-but-it-doesnt-teach-brains",
+      "title": "ربحت أكثر من «هارفارد»… لكنها لا تدرّس عقلاً!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "i-earned-more-than-harvard-but-it-doesnt-teach-brains.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "i-earned-more-than-harvard-but-it-doesnt-teach-brains.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "i-earned-more-than-harvard-but-it-doesnt-teach-brains.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "title": "أكتب لأوقظك… لا لأحبطك!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "i-write-to-awaken-you-not-to-discourage-you-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "i-write-to-awaken-you-not-to-discourage-you-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "i-write-to-awaken-you-not-to-discourage-you-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "in-farewell-to-abdullah-ismail-al-kandariarabic",
+      "title": "في وداع عبد الله إسماعيل الكندري",
+      "readings": {
+        "fahed": {
+          "ready": true,
+          "fileName": "in-farewell-to-abdullah-ismail-al-kandariarabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": true,
+          "fileName": "in-farewell-to-abdullah-ismail-al-kandariarabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "in-farewell-to-abdullah-ismail-al-kandariarabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "in-their-opinion-surgery-is-a-male-specialty-2",
+      "title": "الجراحة برأيهم تخصص رجولي..؟!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "in-their-opinion-surgery-is-a-male-specialty-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "in-their-opinion-surgery-is-a-male-specialty-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "in-their-opinion-surgery-is-a-male-specialty-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "intelligence-without-a-consciencearabic",
+      "title": "ذكاءٌ بلا ضمير",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "intelligence-without-a-consciencearabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "intelligence-without-a-consciencearabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "intelligence-without-a-consciencearabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "laughing-while-burning-2",
+      "title": "يضحك وهو يحترق",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "laughing-while-burning-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "laughing-while-burning-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "laughing-while-burning-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "lets-achieve-a-higher-level-of-quality-education",
+      "title": "لنصل إلى مستوى جودة تعليم عالٍ!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "lets-achieve-a-higher-level-of-quality-education.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "lets-achieve-a-higher-level-of-quality-education.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "lets-achieve-a-higher-level-of-quality-education.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "lets-work-towards-scientific-research",
+      "title": "لنعمل من أجل بحث علمي",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "lets-work-towards-scientific-research.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "lets-work-towards-scientific-research.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "lets-work-towards-scientific-research.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "past-mistakes-still-persist-in-the-age",
+      "title": "أخطاء الماضي مازالت في زمن التعليم الإلكتروني",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "past-mistakes-still-persist-in-the-age.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "past-mistakes-still-persist-in-the-age.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "past-mistakes-still-persist-in-the-age.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "private-lesson-in-the-age-of-digital-educational-intelligence",
+      "title": "الدروس الخصوصية.. في زمن الذكاء التعليمي الرقمي",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "private-lesson-in-the-age-of-digital-educational-intelligence.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "private-lesson-in-the-age-of-digital-educational-intelligence.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "private-lesson-in-the-age-of-digital-educational-intelligence.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201611-001",
+      "title": "ثقافة تغزو التكنولوجيا أم تكنولوجيا تغزو الثقافة",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201611-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201611-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201611-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201611-002",
+      "title": "سياسة الصانع تحدد ثقافة المنتج",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201611-002.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201611-002.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201611-002.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201611-003",
+      "title": "التناظر بين الواقع الحقيقي والواقع الافتراضي في الفيس بوك ٢",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201611-003.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201611-003.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201611-003.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201611-004",
+      "title": "التناظر بين الواقع الحقيقي والواقع الافتراضي في الفيس بوك",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201611-004.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201611-004.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201611-004.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201611-005",
+      "title": "أصدقاء العالم الافتراضي… نعمة أم نقمة",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201611-005.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201611-005.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201611-005.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201612-001",
+      "title": "هل العبرة في صحة الخبر… أم كثرة المتابعين",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201612-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201612-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201612-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201612-002",
+      "title": "إلى أي مدى يمكن أن تذهب التكنولوجيا بالتعليم؟",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201612-002.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201612-002.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201612-002.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201612-003",
+      "title": "زخم المعلومات يفقد الدماغ صوابه",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201612-003.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201612-003.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201612-003.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201612-004",
+      "title": "توليد الثقافة –ما بين الأمس والحاضر",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201612-004.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201612-004.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201612-004.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201702-001",
+      "title": "هل أصبحت التكنولوجيا أحد مقومات الراحة؟",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201702-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201702-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201702-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201702-002",
+      "title": "إدمان الهاتف … أم غربة",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201702-002.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201702-002.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201702-002.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201702-003",
+      "title": "قصور التشريعات المحلية عن مواكبة التكنولوجيا",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201702-003.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201702-003.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201702-003.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201702-004",
+      "title": "هل التقدم التكنولوجي سيوفر لك الإحساس بالأمان",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201702-004.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201702-004.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201702-004.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201703-001",
+      "title": "أما آن لنا أن نعيد توجيه التقدم التكنولوجي نحو الأولويات الحقيقة",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201703-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201703-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201703-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201703-002",
+      "title": "التكنولوجيا تسهل دس السم في الدسم",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201703-002.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201703-002.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201703-002.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201703-003",
+      "title": "تكنولوجيا عالمية تحتاج تشريعات عالمية",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201703-003.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201703-003.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201703-003.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201703-004",
+      "title": "ماذا سيحدث لو تحررت التكنولوجيا من الرأسمالية؟",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201703-004.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201703-004.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201703-004.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201704-001",
+      "title": "الترجمة بين التكنولوجيا ومجالات الحياة …",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201704-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201704-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201704-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201704-002",
+      "title": "الذوق التكنولوجي يفسد الذوق الطبيعي…",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201704-002.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201704-002.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201704-002.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201704-003",
+      "title": "العصر السبراني حقيقة أم مجرد خيال…",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201704-003.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201704-003.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201704-003.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201704-004",
+      "title": "توظيف التقنيات التكنولوجية في الخطاب الديني…",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201704-004.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201704-004.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201704-004.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201706-001",
+      "title": "الواقع الافتراضي يميط اللثام عن الوجه الحقيقي للبشر",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201706-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201706-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201706-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201706-002",
+      "title": "هذه المرة نقف مع التلفاز…",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201706-002.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201706-002.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201706-002.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201706-003",
+      "title": "هل وضعت البشرية بيضها في سلة واحدة عندما رهنت التكنولوجيا بالكهرباء",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201706-003.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201706-003.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201706-003.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201706-004",
+      "title": "وداوني بالتي كانت هي الداء…",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201706-004.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201706-004.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201706-004.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201707-001",
+      "title": "تقنية النظارات3D تغزو التعليم الجامعي",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201707-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201707-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201707-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201707-002",
+      "title": "العالم إلى أين… نظرة مستقبلية",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201707-002.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201707-002.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201707-002.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201707-003",
+      "title": "الجوازات الذكية (الإلكترونية) أدوات تقتحم الخصوصية",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201707-003.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201707-003.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201707-003.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201707-004",
+      "title": "التكنولوجيا تغزو 40% من سكان الكوكب…",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201707-004.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201707-004.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201707-004.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201708-001",
+      "title": "السعادة قبل أن تسرقها التكنولوجيا",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201708-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201708-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201708-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201708-002",
+      "title": "طوفان قيم الواقع الافتراضي",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201708-002.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201708-002.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201708-002.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201708-003",
+      "title": "الأجهزة اللوحية تتصدر لائحة مسببي التوحد",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201708-003.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201708-003.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201708-003.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201709-001",
+      "title": "السوشل ميديا… محك للأزمات",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201709-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201709-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201709-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201709-002",
+      "title": "أدخل إلى عالم التعليم الالكتروني من أبسط تطبيقات جوالك…",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201709-002.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201709-002.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201709-002.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201709-003",
+      "title": "حوار الحكمة… في وجه الحصار",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201709-003.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201709-003.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201709-003.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201709-004",
+      "title": "شبكات التواصل الاجتماعي تجمعنا… خط الدفاع",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201709-004.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201709-004.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201709-004.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201709-005",
+      "title": "كثرة التطبيقات التعليمية… وعدم الجدوى في الواقع التربوي",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201709-005.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201709-005.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201709-005.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201709-006",
+      "title": "وسائل الإعلام التقليدي والإلكتروني… وسائل دفاع للوحدة الخليجية",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201709-006.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201709-006.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201709-006.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201709-007",
+      "title": "انهيار قيم … أم استنفاذ همم…",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201709-007.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201709-007.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201709-007.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201709-008",
+      "title": "وعي المواطن الخليجي … والحرب الافتراضية",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201709-008.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201709-008.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201709-008.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201709-009",
+      "title": "لا للإملاءات الخارجية… وتصعيد الخطاب السياسي",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201709-009.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201709-009.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201709-009.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201711-001",
+      "title": "معوقات نقل التكنولوجيا…",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201711-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201711-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201711-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201711-002",
+      "title": "شيخوخة المعلومات",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201711-002.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201711-002.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201711-002.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201711-003",
+      "title": "هل سينتهي عصر الهواتف الذكية؟",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201711-003.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201711-003.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201711-003.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201711-004",
+      "title": "أحدث صيحات الموضة التكنولوجية",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201711-004.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201711-004.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201711-004.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201712-001",
+      "title": "مجلس علم… للشيخ جوجل",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201712-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201712-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201712-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201712-002",
+      "title": "تكنولوجيا الواقع المعزز… هل هي صديقة الإنسان أم خروج عن السيطرة؟",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201712-002.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201712-002.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201712-002.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201712-003",
+      "title": "هل وظيفتك مهددة بالانقراض؟",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201712-003.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201712-003.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201712-003.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201712-004",
+      "title": "نحن… ما بعد التكنولوجيا…",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201712-004.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201712-004.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201712-004.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201802-001",
+      "title": "سقطات في منهج الكفايات…",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201802-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201802-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201802-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201802-002",
+      "title": "المخدرات الرقمية… إدمان جديد… حقيقة أم وهم…",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201802-002.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201802-002.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201802-002.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201802-003",
+      "title": "أزمة تطوير التعليم … ما بين تدريب وتأهيل المعلمين",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201802-003.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201802-003.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201802-003.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201802-004",
+      "title": "كليات التربية ومتطلبات العصر",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201802-004.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201802-004.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201802-004.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201802-005",
+      "title": "وحدة التحكم المصغرة Ebots … عقول كويتية تنافس عقول الدول المتقدمة",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201802-005.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201802-005.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201802-005.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201803-001",
+      "title": "منهج الكفايات… ما بين الإنجاز وسوء التخطيط… وردود الأفعال",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201803-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201803-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201803-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201803-003",
+      "title": "طلبتنا ومعلميهم في طريقهم إلى التصحر النفسي…",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201803-003.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201803-003.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201803-003.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201804-001",
+      "title": "مدرسة غابة الإبداع… والضياع",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201804-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201804-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201804-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201805-001",
+      "title": "نعم لخصخصة التعليم… نظرة إصلاحية",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201805-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201805-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201805-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201805-002",
+      "title": "لا تخطؤوا خطأ الصين…",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201805-002.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201805-002.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201805-002.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201805-003",
+      "title": "دور المعلم… كوسيلة إعلامية",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201805-003.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201805-003.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201805-003.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201805-004",
+      "title": "تحية لوزير التربية… رجل القرارات الشجاعة",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201805-004.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201805-004.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201805-004.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201806-001",
+      "title": "كلية التربية… البقرة الحلوب",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201806-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201806-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201806-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201806-002",
+      "title": "إلى من يعترض على قرارات وزير التربية في الغش",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201806-002.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201806-002.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201806-002.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201806-003",
+      "title": "يمكنك إيقاف phubbing \"التعلّق باستخدام الهاتف\"",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201806-003.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201806-003.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201806-003.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201806-004",
+      "title": "المافيا المجتمعية… تفشي وخطر مجتمعي…",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201806-004.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201806-004.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201806-004.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201806-005",
+      "title": "Phubbing… وعاداتها السيئة",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201806-005.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201806-005.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201806-005.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201807-001",
+      "title": "القدوة العلمية… وتصدع الأجيال",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201807-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201807-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201807-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201808-001",
+      "title": "ضياع المضمون في زحام الدراما",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201808-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201808-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201808-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201808-002",
+      "title": "السوشيل ميديا… وما شذ وطاب",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201808-002.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201808-002.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201808-002.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201810-001",
+      "title": "أصول التوجيه للطلبة… فلكل مقام مقال…",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201810-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201810-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201810-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201810-002",
+      "title": "سر اليوتيوب… وغموض المحتوى",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201810-002.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201810-002.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201810-002.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201810-003",
+      "title": "مواقع الإلحاد في السوشيال ميديا… وقد فاحت راحئتها",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201810-003.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201810-003.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201810-003.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201810-004",
+      "title": "لنعمل من أجل أنفسنا لا من أجل الآخرين…",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201810-004.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201810-004.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201810-004.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201811-001",
+      "title": "وسائل الإعلام… بين المجاملة والتمثيل",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201811-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201811-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201811-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201811-002",
+      "title": "انجازات تغرق وفساد يعوم",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201811-002.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201811-002.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201811-002.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201909-001",
+      "title": "السوشيل ميديا والثراء الكاذب",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201909-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201909-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201909-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "qabas-201911-001",
+      "title": "الشدادية فخامة معمارية… ولكن نحو جودة التعليم",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "qabas-201911-001.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "qabas-201911-001.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "qabas-201911-001.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
+      "title": "الراحة تُدرّس… والفكر في إجازة دائمة!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "smartphone-child-a-creative-mind-or-a-child-being-driven",
+      "title": "طفل الهواتف الذكية.. عقل خلاق أم طفل يساق؟!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "smartphone-child-a-creative-mind-or-a-child-being-driven.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "smartphone-child-a-creative-mind-or-a-child-being-driven.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "smartphone-child-a-creative-mind-or-a-child-being-driven.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "students-minds-are-on-vacation-while-chatgpt-works-full-time-2",
+      "title": "عقول الطلاب في إجازة… وChatGPT يشتغل بدوام كامل!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "students-minds-are-on-vacation-while-chatgpt-works-full-time-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "students-minds-are-on-vacation-while-chatgpt-works-full-time-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "students-minds-are-on-vacation-while-chatgpt-works-full-time-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
+      "title": "النجاح الذي لا يفرح صاحبه",
+      "readings": {
+        "fahed": {
+          "ready": true,
+          "fileName": "success-that-does-not-bring-joy-to-its-ownerarabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": true,
+          "fileName": "success-that-does-not-bring-joy-to-its-ownerarabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": true,
+        "fileName": "success-that-does-not-bring-joy-to-its-ownerarabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": true
+    },
+    {
+      "slug": "the-blackboard-that-no-longer-sees-anyone-2",
+      "title": "السبورة التي لم تعد ترى أحداً!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "the-blackboard-that-no-longer-sees-anyone-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "the-blackboard-that-no-longer-sees-anyone-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "the-blackboard-that-no-longer-sees-anyone-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "the-classroom-that-fears-mistakesarabic",
+      "title": "الصفُّ الذي يخاف من الخطأ",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "the-classroom-that-fears-mistakesarabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": true,
+          "fileName": "the-classroom-that-fears-mistakesarabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "the-classroom-that-fears-mistakesarabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "the-excellence-epidemic-or-the-cult-of-grades-2",
+      "title": "عقولنا في عُلب ونتساءل: أين الإبداع؟",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "the-excellence-epidemic-or-the-cult-of-grades-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "the-excellence-epidemic-or-the-cult-of-grades-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "the-excellence-epidemic-or-the-cult-of-grades-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic",
+      "title": "الوطن ليس وجهةَ نظرٍ وقتَ الأزمات",
+      "readings": {
+        "fahed": {
+          "ready": true,
+          "fileName": "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "the-human-who-forgot-himselfarabic",
+      "title": "الإنسان الذي نسي نفسه",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "the-human-who-forgot-himselfarabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "the-human-who-forgot-himselfarabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "the-human-who-forgot-himselfarabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "the-media-is-a-vital-partner-in-the-educational-process",
+      "title": "الإعلام الشريك العضيد للعملية التعليمية",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "the-media-is-a-vital-partner-in-the-educational-process.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "the-media-is-a-vital-partner-in-the-educational-process.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "the-media-is-a-vital-partner-in-the-educational-process.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "the-mind-present-in-absence-absent-in-presence-2",
+      "title": "العقل حاضر في الغياب… وغائب في الحضور!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "the-mind-present-in-absence-absent-in-presence-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "the-mind-present-in-absence-absent-in-presence-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "the-mind-present-in-absence-absent-in-presence-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis",
+      "title": "السوق المفتوح لاقتناء الشهادات أزمة علمية أم أخلاقية؟",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "the-republic-of-degrees-and-the-fall-of-thought-2",
+      "title": "جمهورية الشهادات… وسقوط الفكر!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "the-republic-of-degrees-and-the-fall-of-thought-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "the-republic-of-degrees-and-the-fall-of-thought-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "the-republic-of-degrees-and-the-fall-of-thought-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "the-return-that-fails-to-fix-what-came-before-itarabic",
+      "title": "العودة التي لا تُصلِح ما قبلها",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "the-return-that-fails-to-fix-what-came-before-itarabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "the-return-that-fails-to-fix-what-came-before-itarabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "the-return-that-fails-to-fix-what-came-before-itarabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "the-social-media-swamp-and-plastic-surgery-addiction-2",
+      "title": "مستنقع «السوشيال ميديا» وإدمان عمليات التجميل",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "the-social-media-swamp-and-plastic-surgery-addiction-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "the-social-media-swamp-and-plastic-surgery-addiction-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "the-social-media-swamp-and-plastic-surgery-addiction-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "the-success-that-destroyed-us-2",
+      "title": "النجاح الذي دمّرنا",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "the-success-that-destroyed-us-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "the-success-that-destroyed-us-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "the-success-that-destroyed-us-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "the-teacher-the-last-to-know-2",
+      "title": "المعلّم… آخرُ من يعلم!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "the-teacher-the-last-to-know-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "the-teacher-the-last-to-know-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "the-teacher-the-last-to-know-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "the-teacher-what-do-you-know-about-the-teacher",
+      "title": "المعلم.. وما أدراك ما المعلم",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "the-teacher-what-do-you-know-about-the-teacher.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "the-teacher-what-do-you-know-about-the-teacher.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "the-teacher-what-do-you-know-about-the-teacher.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "the-year-that-doesnt-begin-with-the-calendararabic",
+      "title": "السنة التي لا تبدأ من التقويم",
+      "readings": {
+        "fahed": {
+          "ready": true,
+          "fileName": "the-year-that-doesnt-begin-with-the-calendararabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "the-year-that-doesnt-begin-with-the-calendararabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "the-year-that-doesnt-begin-with-the-calendararabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "todays-childs-confusion-between-education-and-care",
+      "title": "حيرة طفل اليوم.. ما بين التربية والرعاية",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "todays-childs-confusion-between-education-and-care.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "todays-childs-confusion-between-education-and-care.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "todays-childs-confusion-between-education-and-care.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "turning-video-game-obsession-into-creative-meditation-2",
+      "title": "تحويل هوس ألعاب الفيديو إلى تأمل خلاق",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "turning-video-game-obsession-into-creative-meditation-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "turning-video-game-obsession-into-creative-meditation-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "turning-video-game-obsession-into-creative-meditation-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education",
+      "title": "نُرضعهم حناناً… ونحرمهم تربية!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "we-graduated-with-a-degree-but-the-language-was-lost-2",
+      "title": "تخرَّجنا بشهادة… لكن ضاعت اللغة!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "we-graduated-with-a-degree-but-the-language-was-lost-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "we-graduated-with-a-degree-but-the-language-was-lost-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "we-graduated-with-a-degree-but-the-language-was-lost-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "we-handed-them-the-phone-so-theyd-leave-us-alone-2",
+      "title": "سلّمناه الهاتف… ليستريح منا!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "we-handed-them-the-phone-so-theyd-leave-us-alone-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "we-handed-them-the-phone-so-theyd-leave-us-alone-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "we-handed-them-the-phone-so-theyd-leave-us-alone-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "we-prepare-our-children-for-success-and-leave-them-empty-handed-2",
+      "title": "نعجن أبناءنا للنجاح… ونُخرجهم فارغين",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "we-prepare-our-children-for-success-and-leave-them-empty-handed-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "we-prepare-our-children-for-success-and-leave-them-empty-handed-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "we-prepare-our-children-for-success-and-leave-them-empty-handed-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "when-a-student-wishes-for-death-before-the-first-bell-2",
+      "title": "حين يتمنى الطالب الموت… قبل أول جرس!",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "when-a-student-wishes-for-death-before-the-first-bell-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "when-a-student-wishes-for-death-before-the-first-bell-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "when-a-student-wishes-for-death-before-the-first-bell-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2",
+      "title": "حين يصبح الغش ذكاءً… والصدق غباءً",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m",
+      "title": "حين أختبرُ مدرسةَ بناتي… قبل أن تختبرَهنّ",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
+      "title": "حين تصبح الجدية قناعاً للهروب",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "when-seriousness-becomes-a-mask-for-escapearabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "when-seriousness-becomes-a-mask-for-escapearabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "when-seriousness-becomes-a-mask-for-escapearabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "when-the-exam-becomes-the-goalarabic",
+      "title": "حين يصبح الامتحان هو الهدف",
+      "readings": {
+        "fahed": {
+          "ready": false,
+          "fileName": "when-the-exam-becomes-the-goalarabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "when-the-exam-becomes-the-goalarabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "when-the-exam-becomes-the-goalarabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "when-the-teacher-knows-why-he-teachesarabic",
+      "title": "حين يعرف المعلّم لماذا يعلّم",
+      "readings": {
+        "fahed": {
+          "ready": true,
+          "fileName": "when-the-teacher-knows-why-he-teachesarabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": true,
+          "fileName": "when-the-teacher-knows-why-he-teachesarabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "when-the-teacher-knows-why-he-teachesarabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    },
+    {
+      "slug": "when-truth-died-and-the-narrative-survivedarabic",
+      "title": "حين ماتت الحقيقة ونجت الرواية",
+      "readings": {
+        "fahed": {
+          "ready": true,
+          "fileName": "when-truth-died-and-the-narrative-survivedarabic.mp3",
+          "failure": null
+        },
+        "noura": {
+          "ready": false,
+          "fileName": "when-truth-died-and-the-narrative-survivedarabic.noura.mp3",
+          "failure": null
+        }
+      },
+      "dialogue": {
+        "eligible": true,
+        "ready": false,
+        "fileName": "when-truth-died-and-the-narrative-survivedarabic.dialogue.mp3",
+        "failure": null
+      },
+      "complete": false
+    }
+  ],
+  "fingerprint": "3afac21090efc020b174d9bfe6976f9650c489a88abeb1a0131d4e2c17850202"
+}

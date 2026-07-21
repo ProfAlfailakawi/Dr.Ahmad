@@ -944,7 +944,7 @@ export default function Home() {
 
 
   return (
-    <Page>
+    <Page className="home-page">
       <JsonLd data={{
         '@context': 'https://schema.org',
         '@graph': [

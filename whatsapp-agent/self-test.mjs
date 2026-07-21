@@ -5,7 +5,7 @@ import path from 'node:path'
 import { openDatabase } from './db.mjs'
 import { buildContentIndex, searchContent } from './content-index.mjs'
 import { classifyIntent, handleIncoming, setSuppression, shouldRespondToMessage } from './intent-engine.mjs'
-import { MockTransport, canonicalChatJid } from './transport.mjs'
+import { MockTransport, canonicalChatJid, hasMediaPayload } from './transport.mjs'
 import { createAgent } from './agent.mjs'
 import { quoteCardPayload } from './quote-card.mjs'
 import { runCostAudit } from './cost-audit.mjs'
@@ -13,6 +13,7 @@ import { flags } from './config.mjs'
 import { isQuietHour, repliesInWindow } from './bot-rules.mjs'
 import { parseReminderTime } from './reminders.mjs'
 import { hashOpaque } from './crypto.mjs'
+import { runNuclearSelfTest } from './nuclear-self-test.mjs'
 
 export async function runSelfTest(root) {
   process.env.WHATSAPP_AGENT_KEY ||= Buffer.alloc(32, 7).toString('base64')
@@ -33,6 +34,8 @@ export async function runSelfTest(root) {
   assert.equal(classifyIntent('شنو جديد الدكتور؟').intent, 'LATEST_CONTENT')
   assert.equal(classifyIntent('شنو أكثر مقالة مشاهدة؟').intent, 'MOST_VIEWED_ARTICLE')
   assert.equal(classifyIntent('شنو أكثر موضوع يكتب عنه؟').intent, 'TOP_ARTICLE_TOPIC')
+  assert.equal(classifyIntent('آخر بودكاست').intent, 'LATEST_PODCAST')
+  assert.equal(classifyIntent('في شي ثاني؟').intent, 'MORE_LIKE_THIS')
   assert.equal(classifyIntent('عندي دقيقة').intent, 'ONE_MINUTE')
   assert.equal(classifyIntent('فاجئني').intent, 'SURPRISE_ME')
   assert.equal(searchContent(db, 'الذكاء الاصطناعي', { limit: 3 }).length >= 0, true)
@@ -65,10 +68,25 @@ export async function runSelfTest(root) {
   assert.match(naturalArticles.text || '', /أحدث .*مقالات|أحدث مقالة/, '★ ويعرض أكثر من خيار عند طلب الجمع')
   const naturalPopular = handle({ db, jid: '12345@s.whatsapp.net', text: 'شنو أكثر مقالة مشاهدة؟' })
   assert.equal(naturalPopular.shouldRespond, true, '★ ويفهم الأكثر مشاهدة')
-  assert.match(naturalPopular.text || '', /مؤشر المشاهدة الداخلي/, '★ ولا يدّعي رقماً خارجياً')
+  assert.match(naturalPopular.text || '', /لا أملك.*موثق/u, '★ يصرّح بغياب لقطة العدّاد الموثقة')
+  assert.equal(naturalPopular.contentId || null, null, '★ ولا يختار فائزاً مصنوعاً عند غياب البيانات الموثقة')
+  assert.equal(/مؤشر المشاهدة الداخلي|تقدير داخلي/u.test(naturalPopular.text || ''), false, '★ لا يعرض مؤشراً اصطناعياً')
+  const naturalPodcast = handle({ db, jid: '12345@s.whatsapp.net', text: 'آخر بودكاست' })
+  assert.equal(naturalPodcast.shouldRespond, true, '★ ويفهم أحدث بودكاست داخل الجلسة')
+  assert.match(naturalPodcast.text || '', /أحدث حلقة|أحدث حلقة حوارية/, '★ لا يعلن الفشل مع وجود صوت حواري منشور')
+  assert.ok(!/ما لقيت/.test(naturalPodcast.text || ''), '★ آخر بودكاست لا يرجع برسالة فشل وهو يجد مادة صوتية')
+  const quickMinute = handle({ db, jid: '12345@s.whatsapp.net', text: 'عندي دقيقة' })
+  assert.equal(quickMinute.shouldRespond, true, '★ ويفهم طلب المادة القصيرة')
+  assert.match(quickMinute.text || '', /قراءة حرفية.*دقيقة/u, '★ الدقيقة تقدّم نصاً حرفياً لا تلخيصاً مؤلفاً')
+  assert.ok(quickMinute.evidenceQuotes?.length, '★ ويحفظ النص الحرفي بوصفه دليلاً')
+  const quickMinuteSource = db.get('SELECT body,excerpt FROM content_items WHERE id=?', quickMinute.contentId)
+  const normalizedSource = String(quickMinuteSource?.body || quickMinuteSource?.excerpt || '').replace(/\s+/g, ' ').trim()
+  const normalizedQuote = String(quickMinute.evidenceQuotes?.[0] || '').replace(/\s+/g, ' ').trim()
+  assert.ok(normalizedSource.includes(normalizedQuote), '★ النص المعروض مقتطع حرفياً من المادة المنشورة')
+  assert.equal((quickMinute.text || '').match(/https:\/\/dr-alfailakawi\.com\/articles\//g)?.length, 1, '★ لا يكرر رابط/متن المقال كما ظهر في واتساب')
   const transferRule = agent.saveReplyRule({ name: 'تحويل وسائط', keywords: ['صورة'], actionType: 'transfer', responseText: 'سأحوّلها لمراجعة بشرية.' })
   assert.equal(agent.listReplyRules().some((rule) => rule.id === transferRule.id), true)
-  const transferSimulation = agent.simulateReply({ text: 'صورة من اللقاء' })
+  const transferSimulation = agent.simulateReply({ text: 'صورة من اللقاء', inSession: true })
   assert.equal(transferSimulation.ruleId, transferRule.id)
   assert.equal(transferSimulation.preview, '', '★ قاعدة النص الحر لا تُرسل كلاماً مؤلفاً')
   assert.equal(transferSimulation.needsHuman, true, '★ وتتركها للدكتور بصمت')
@@ -109,13 +127,13 @@ export async function runSelfTest(root) {
   const strangerQuote = onMessage({ jid: quoter, text: 'International journal of business', ...quoting('NOT-FROM-BOT-123') })
   assert.equal(strangerQuote.shouldRespond, false, '★ اقتباسُ رسالةٍ ليست من البوت لا يفتح الباب')
 
-  /* أما اقتباسُ كلام البوت نفسه فيفتحه — وهو المقصود الأصليّ */
+  /* حتى اقتباسُ كلام البوت نفسه لا يفتح الباب: جملة الإيقاظ وحدها تفعل ذلك. */
   db.run('INSERT OR IGNORE INTO outbox_messages(message_id,jid,source,created_at) VALUES(?,?,?,?)',
     'FROM-BOT-999', db.jidKey(quoter), 'bot', new Date().toISOString())
   /* نصٌّ يُنتج جواباً حقيقياً: «وش قصدك؟» لا يطابق شيئاً في الأرشيف، وقد صار
      ما لا جواب له يُقابَل بالصمت — فيختلط علينا سببُ الصمت بسبب الباب. */
   const botQuote = onMessage({ jid: quoter, text: 'آخر مقالة', ...quoting('FROM-BOT-999') })
-  assert.equal(botQuote.shouldRespond, true, '★ اقتباسُ كلام البوت يبقى فاتحاً للباب')
+  assert.equal(botQuote.shouldRespond, false, '★ لا اقتباسٌ ولا معرّف رسالة يتجاوز جملة الإيقاظ')
 
   /* وبلا اقتباسٍ أصلاً: صمت */
   assert.equal(onMessage({ jid: quoter, text: 'كلام عابر', message: {} }).shouldRespond, false, 'وبلا اقتباس يبقى صامتاً')
@@ -159,7 +177,7 @@ export async function runSelfTest(root) {
   const cooled = '96010@s.whatsapp.net'
   onMessage({ jid: cooled, text: 'موقع د. أحمد', message: {} })
   agent.manualTakeover(cooled, 1)
-  db.run("UPDATE chat_sessions SET manual_until=? WHERE jid=?", new Date(Date.now() - 1000).toISOString(), db.jidKey(cooled))
+  db.run("UPDATE chat_sessions SET manual_until=? WHERE jid=?", new Date(daytime.getTime() - 1000).toISOString(), db.jidKey(cooled))
   assert.equal(onMessage({ jid: cooled, text: 'آخر مقالة', message: {} }).shouldRespond, false,
     '★ بعد انتهاء الحماية يبقى صامتاً بلا إيقاظ')
   assert.equal(onMessage({ jid: cooled, text: 'موقع د. الفيلكاوي', message: {} }).shouldRespond, true,
@@ -214,9 +232,15 @@ export async function runSelfTest(root) {
   assert.equal(db.get('SELECT jid FROM contacts WHERE id=?', hashOpaque('12345@s.whatsapp.net')).jid.startsWith('v1:'), true)
   assert.equal(parseReminderTime('ذكرني بعد ساعتين').source, 'relative')
   assert.equal(parseReminderTime('الجمعة الساعة 7 مساءً').source, 'friday')
-  const reminderResult = handle({ db, jid: '12345@s.whatsapp.net', text: 'ذكرني بعد ساعتين', explicitContentSession: true })
+  const reminderSeed = handle({ db, jid: '12345@s.whatsapp.net', text: 'آخر مقالة', explicitContentSession: true })
+  assert.ok(reminderSeed.contentId, '★ التذكير لا يعمل إلا على مادة موثقة اختارها المستخدم')
+  const reminderResult = handle({ db, jid: '12345@s.whatsapp.net', text: 'ذكرني بها بعد ساعتين', explicitContentSession: true })
   assert.ok(reminderResult.reminderId)
-  assert.equal(db.get('SELECT jid FROM reminders WHERE id=?', reminderResult.reminderId).jid.startsWith('v1:'), true)
+  const reminderRow = db.get('SELECT jid,original_text FROM reminders WHERE id=?', reminderResult.reminderId)
+  assert.equal(reminderRow.jid.startsWith('v1:'), true)
+  assert.notEqual(reminderRow.original_text, 'موعد قراءة المادة المنشورة.', '★ نص التذكير لا يُحفظ مكشوفاً')
+  assert.match(reminderRow.original_text, /^v1:/, '★ نص التذكير مخزّن بتشفير الإصدار الحالي')
+  assert.equal(db.decryptText(reminderRow.original_text), 'موعد قراءة المادة المنشورة.', '★ ويستعيد نصاً ثابتاً موثقاً لا كلاماً حراً')
   /* مفتاح طوارئ المالك: يوقف الردود فوراً من اللوحة من دون قطع الربط. */
   const emergencyJid = '96666@s.whatsapp.net'
   agent.pauseAutoReplies()
@@ -275,14 +299,12 @@ export async function runSelfTest(root) {
   assert.equal(should({ db, jid: '55555@s.whatsapp.net', text: 'أي كلام', hasMedia: true, explicitContentSession: true }).allowed, false, '★ ولا جلسةٌ مفتوحة')
 
   /* ★ كشف الوسائط في الناقل: «ما ليس نصّاً محضاً فوسائط» — لا قائمةُ منعٍ ناقصة */
-  const TEXT_KINDS = new Set(['conversation', 'extendedTextMessage', 'messageContextInfo', 'senderKeyDistributionMessage'])
-  const looksLikeMedia = (payload) => Object.keys(payload).filter((k) => payload[k] != null).some((k) => !TEXT_KINDS.has(k))
-  assert.equal(looksLikeMedia({ audioMessage: { ptt: true } }), true, '★ البصمة الصوتية وسائط')
-  assert.equal(looksLikeMedia({ locationMessage: {} }), true, '★ والموقع وسائط — لم يكن في القائمة القديمة')
-  assert.equal(looksLikeMedia({ pollCreationMessage: {} }), true, '★ والاستطلاع كذلك')
-  assert.equal(looksLikeMedia({ viewOnceMessage: {} }), true, '★ ورسالة المرّة الواحدة كذلك')
-  assert.equal(looksLikeMedia({ conversation: 'موقع د. أحمد' }), false, 'والنصّ المحض يبقى نصّاً')
-  assert.equal(looksLikeMedia({ extendedTextMessage: { text: 'مرحبا' }, messageContextInfo: {} }), false, 'والنصّ المقتبس نصٌّ أيضاً')
+  assert.equal(hasMediaPayload({ audioMessage: { ptt: true } }), true, '★ البصمة الصوتية وسائط')
+  assert.equal(hasMediaPayload({ locationMessage: {} }), true, '★ والموقع وسائط — لم يكن في القائمة القديمة')
+  assert.equal(hasMediaPayload({ pollCreationMessage: {} }), true, '★ والاستطلاع كذلك')
+  assert.equal(hasMediaPayload({ viewOnceMessage: {} }), true, '★ ورسالة المرّة الواحدة كذلك')
+  assert.equal(hasMediaPayload({ conversation: 'موقع د. أحمد' }), false, 'والنصّ المحض يبقى نصّاً')
+  assert.equal(hasMediaPayload({ extendedTextMessage: { text: 'مرحبا' }, messageContextInfo: {} }), false, 'والنصّ المقتبس نصٌّ أيضاً')
 
   const first = db.get('SELECT * FROM content_items LIMIT 1')
   assert.ok(quoteCardPayload(first))
@@ -290,7 +312,8 @@ export async function runSelfTest(root) {
   assert.equal(cost.zeroCostMode, true)
   db.close()
   fs.rmSync(temp, { recursive: true, force: true })
-  return { ok: true, indexed: stats, cost }
+  const nuclear = await runNuclearSelfTest(root)
+  return { ok: true, indexed: stats, cost, nuclear }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

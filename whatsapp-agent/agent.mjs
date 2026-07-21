@@ -1,21 +1,113 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { BRIDGE_PORT, BRIDGE_SECRET_MIN_LENGTH, BROADCAST_DEFAULT_INTERVAL_SECONDS, BROADCAST_MIN_INTERVAL_SECONDS, HEARTBEAT_INTERVAL_MS, HEARTBEAT_STALE_MS, MANUAL_TAKEOVER_MINUTES, MAX_CAMPAIGN_TARGETS, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, projectRoot, redactError, redactJid } from './config.mjs'
+import { AUDIO_PUBLIC_BASE_URL, BRIDGE_PORT, BRIDGE_SECRET_MIN_LENGTH, BROADCAST_DEFAULT_INTERVAL_SECONDS, BROADCAST_MIN_INTERVAL_SECONDS, HEARTBEAT_INTERVAL_MS, HEARTBEAT_STALE_MS, MANUAL_TAKEOVER_MINUTES, MAX_CAMPAIGN_TARGETS, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, projectRoot, redactError } from './config.mjs'
 import { openDatabase } from './db.mjs'
 import { syncContentIndex } from './content-index.mjs'
-import { handleIncoming, handleIntent, markManualTakeover, setSuppression, shouldRespondToMessage } from './intent-engine.mjs'
+import { INTENTS, classifyIntent, handleIncoming, handleIntent, isPrivateChat, isSuppressed, markManualTakeover, matchReplyRule, setSuppression, shouldRespondToMessage } from './intent-engine.mjs'
 import { MockTransport, createWhatsAppTransport } from './transport.mjs'
 import { randomToken } from './crypto.mjs'
 import { createReminder } from './reminders.mjs'
 import { startLocalBridge } from './bridge.mjs'
 import { addContactByPhone, addMembers, absorbContacts, importContacts, listContactsPage, createList, deleteList, ensureAudienceSchema, jidOf, listContacts, listLists, listMembers, personalize, previewFor, removeMember, renameList, resolveAudience, setNickname, vocativeOf } from './audience.mjs'
-import { ensureBotRulesSchema } from './bot-rules.mjs'
+import { ensureBotRulesSchema, releaseContentReservation, rememberSent, reserveContent, sign } from './bot-rules.mjs'
 
 function safeText(text) { return String(text || '').slice(0, MAX_MESSAGE_CHARS).trim() }
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
+/* ═══ جدار المصدر قبل أن يخرج حرفٌ إلى واتساب ═══
+ *
+ * محرك النيات حتميّ، لكن الدفاع الأخير لا يثق حتى بالمخرجات الداخلية: قد
+ * يضيف قالبٌ جديد رابطاً خارج الموقع، أو يحيل إلى معرّف حُذف من الفهرس، أو
+ * يغيّر حرفاً في اقتباس. نجمع كل سطحٍ قد يراه المستخدم ونُسقط الرد كله عند
+ * أول مخالفة؛ لا نحاول «تنظيفه» جزئياً لأن الباقي قد يعتمد على الجزء المرفوض.
+ */
+const LINK_TOKEN = /(?:https?|ftp):\/\/[^\s<>"'`«»]+|(?:mailto|tel):[^\s<>"'`«»]+|[\p{L}\p{N}._%+-]+@(?:[\p{L}\p{N}](?:[\p{L}\p{N}-]{0,61}[\p{L}\p{N}])?\.)+(?:[\p{L}]{2,63}|xn--[a-z0-9-]{2,59})|(?:www\.)?(?:[\p{L}\p{N}](?:[\p{L}\p{N}-]{0,61}[\p{L}\p{N}])?\.)+(?:[\p{L}]{2,63}|xn--[a-z0-9-]{2,59})(?::\d{1,5})?(?:[/?#][^\s<>"'`«»]*)?|(?:\d{1,3}\.){3}\d{1,3}(?::\d{1,5})?(?:[/?#][^\s<>"'`«»]*)?/giu
+const CONTENT_ID_KEYS = new Set(['contentId', 'answerContentId'])
+const CONTENT_IDS_KEYS = new Set(['contentIds', 'contextItems', 'seenContentIds', 'optionIds'])
+
+function cleanUrlToken(value) {
+  return String(value || '').replace(/[\])}>.,،؛;!?؟'"»]+$/u, '')
+}
+
+function isBelowConfiguredBase(value, configuredBase) {
+  try {
+    const raw = cleanUrlToken(value)
+    /* صيغة www ليست رابطاً مضبوطاً من إعداداتنا؛ لا نخمن لها بروتوكولاً. */
+    if (!/^https?:\/\//i.test(raw)) return false
+    const candidate = new URL(raw)
+    const base = new URL(configuredBase)
+    if (candidate.username || candidate.password || candidate.origin !== base.origin) return false
+    const basePath = base.pathname.replace(/\/+$/, '')
+    return !basePath || basePath === '/' || candidate.pathname === basePath || candidate.pathname.startsWith(`${basePath}/`)
+  } catch { return false }
+}
+
+function collectReferencedContentIds(value, output = new Set(), visited = new Set()) {
+  if (!value || typeof value !== 'object' || visited.has(value)) return output
+  visited.add(value)
+  for (const [key, entry] of Object.entries(value)) {
+    if (CONTENT_ID_KEYS.has(key) && typeof entry === 'string' && entry) output.add(entry)
+    else if (CONTENT_IDS_KEYS.has(key) && Array.isArray(entry)) {
+      for (const id of entry) if (typeof id === 'string' && id) output.add(id)
+    } else if (entry && typeof entry === 'object') collectReferencedContentIds(entry, output, visited)
+  }
+  return output
+}
+
+function outboundStrings(response) {
+  const values = [response?.text]
+  if (Array.isArray(response?.actions)) values.push(...response.actions)
+  return values.filter((value) => typeof value === 'string' && value)
+}
+
+/** أي رابط وارد — ولو بلا https أو بنطاقٍ جديد — يذهب للدكتور بصمت. */
+export function containsInboundLink(value) {
+  LINK_TOKEN.lastIndex = 0
+  const found = LINK_TOKEN.test(String(value || ''))
+  LINK_TOKEN.lastIndex = 0
+  return found
+}
+
+/**
+ * حارسٌ نقيّ قابل للاختبار. الردود الإجرائية الثابتة (ومنها الخصوصية) لا
+ * تحتاج مراجع؛ لكن ما يعلن مرجعاً أو اقتباساً يجب أن يثبت وجوده حرفياً.
+ */
+export function validateGroundedResponse(db, response, { siteUrl = SITE_URL, audioBaseUrl = AUDIO_PUBLIC_BASE_URL } = {}) {
+  if (response?.shouldRespond === false || !outboundStrings(response).length) return { allowed: true, code: 'not-outbound' }
+
+  const references = [...collectReferencedContentIds(response)]
+  const rows = new Map()
+  for (const id of references) {
+    const item = db.get('SELECT id,body,excerpt,url FROM content_items WHERE id=?', id)
+    if (!item) return { allowed: false, code: 'missing-content-reference' }
+    rows.set(id, item)
+  }
+
+  const quotes = [...new Set([
+    ...(Array.isArray(response.evidenceQuotes) ? response.evidenceQuotes : []),
+    ...(typeof response.quote === 'string' && response.quote ? [response.quote] : []),
+  ].map((quote) => String(quote || '')).filter(Boolean))]
+  if (quotes.length && !rows.size) return { allowed: false, code: 'quote-without-content-reference' }
+  for (const quote of quotes) {
+    const exact = [...rows.values()].some((item) => [item.body, item.excerpt].some((source) => String(source || '').includes(quote)))
+    if (!exact) return { allowed: false, code: 'unverified-evidence-quote' }
+  }
+
+  for (const text of outboundStrings(response)) {
+    LINK_TOKEN.lastIndex = 0
+    for (const match of text.matchAll(LINK_TOKEN)) {
+      const url = cleanUrlToken(match[0])
+      if (!isBelowConfiguredBase(url, siteUrl) && !isBelowConfiguredBase(url, audioBaseUrl)) {
+        return { allowed: false, code: 'unapproved-outbound-url' }
+      }
+    }
+    LINK_TOKEN.lastIndex = 0
+  }
+  return { allowed: true, code: 'grounded', references: references.length, quotes: quotes.length }
+}
+
 export function createAgent({ db = openDatabase(), transport, root = projectRoot, mock = false } = {}) {
-  const state = { db, transport: transport || null, root, timers: new Set(), started: false, bridge: null, activeCampaigns: new Set() }
+  const state = { db, transport: transport || null, root, timers: new Set(), started: false, bridge: null, activeCampaigns: new Set(), groundingSequence: 0 }
   /* واجهة الوكيل العامة تُعلن هنا وتُملأ عند الإرجاع: الجسر كان يستقبل `state`
      الخام فينهار على `agent.bridgeSecret is not a function` قبل أن يفتح المنفذ،
      فتظهر اللوحة «غير مرتبط» بينما واتساب متصل فعلاً. */
@@ -103,40 +195,154 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
    * (transport.mjs). فنطابق معرّف المقتبَس بها — فلا يفتح البابَ إلا اقتباسُ
    * كلامِ البوت نفسه، ولا يُفتح باقتباس كلام الناس بعضهم بعضاً.
    */
-  const isReplyToBot = (message) => {
+  const isReplyToBot = (message, jid) => {
     const context = message?.message?.extendedTextMessage?.contextInfo
     if (!context?.quotedMessage) return false
     const quotedId = String(context.stanzaId || context.id || '')
     if (!quotedId) return false
-    return Boolean(db.get('SELECT message_id FROM outbox_messages WHERE message_id=?', quotedId))
+    return Boolean(db.get('SELECT message_id FROM outbox_messages WHERE message_id=? AND jid=?', quotedId, db.jidKey(jid)))
+  }
+
+  const rejectUngrounded = (jid, response, verdict) => {
+    if (isPrivateChat(jid)) markManualTakeover(db, jid)
+    db.addAudit('grounding-firewall-blocked', db.jidKey(jid), `reason=${verdict.code}`)
+    return {
+      ...response,
+      text: '',
+      actions: [],
+      contentId: null,
+      contextItems: [],
+      seenContentIds: [],
+      evidenceQuotes: [],
+      shouldRespond: false,
+      silent: true,
+      needsHuman: true,
+      reason: 'grounding-firewall',
+      groundingFailure: verdict.code,
+    }
+  }
+
+  /**
+   * نجعل كتابات المحرك مؤقتة داخل SAVEPOINT حتى ينجح حارس المصدر. بهذا لا
+   * يُحفظ سياقٌ ولا استشهادٌ ولا تذكيرٌ لردّ رُفض ولم يخرج. أوامر الخصوصية
+   * وحدها تنفّذ معاملتها الداخلية مباشرةً؛ نصوصها إجرائية ثابتة ويمرّرها
+   * الحارس أيضاً قبل أن يُسمح بإرسالها.
+   */
+  const handleGroundedIncoming = (args, { privacyCommand = false } = {}) => {
+    const execute = () => {
+      const response = handleIncoming(args)
+      return { response, verdict: validateGroundedResponse(db, response) }
+    }
+    if (privacyCommand || !db.db?.exec) {
+      const { response, verdict } = execute()
+      return verdict.allowed ? response : rejectUngrounded(args.jid, response, verdict)
+    }
+
+    const savepoint = `grounding_${++state.groundingSequence}`
+    let open = false
+    const rollback = () => {
+      if (!open) return
+      try { db.db.exec(`ROLLBACK TO SAVEPOINT ${savepoint}`) } finally {
+        db.db.exec(`RELEASE SAVEPOINT ${savepoint}`)
+        open = false
+      }
+    }
+    try {
+      db.db.exec(`SAVEPOINT ${savepoint}`)
+      open = true
+      const { response, verdict } = execute()
+      if (!verdict.allowed) {
+        rollback()
+        return rejectUngrounded(args.jid, response, verdict)
+      }
+      db.db.exec(`RELEASE SAVEPOINT ${savepoint}`)
+      open = false
+      return response
+    } catch (error) {
+      try { rollback() } catch (cleanupError) {
+        throw new AggregateError([error, cleanupError], 'فشل حارس المصدر وتنظيف معاملته.')
+      }
+      throw error
+    }
   }
 
   const onMessage = ({ jid, text, message, media, at }) => {
-    if (db.getSetting('agent.runtimePaused', false)) {
-      db.addAudit('auto-reply-skipped', redactJid(jid), 'runtime-paused-by-owner')
+    const hasMedia = Boolean(media || message?.media)
+    const incomingText = safeText(text)
+    const incomingIntent = classifyIntent(incomingText).intent
+    const privacyCommand = [INTENTS.STOP_MESSAGES, INTENTS.RESUME_MESSAGES, INTENTS.DELETE_PREFERENCES].includes(incomingIntent)
+    const runtimePaused = Boolean(db.getSetting('agent.runtimePaused', false))
+    if (runtimePaused && !privacyCommand) {
+      db.addAudit('auto-reply-skipped', db.jidKey(jid), 'runtime-paused-by-owner')
       return { shouldRespond: false, reason: 'runtime-paused-by-owner' }
     }
-    const hasMedia = Boolean(media || message?.media)
-    if (hasMedia || /https?:\/\/|www\./i.test(String(text || ''))) {
-      markManualTakeover(db, jid)
-      db.addAudit('needs-human-media-or-link', redactJid(jid), hasMedia ? 'media' : 'link')
+    const hasLink = containsInboundLink(text)
+    if (!privacyCommand && (hasMedia || hasLink)) {
+      if (isPrivateChat(jid)) markManualTakeover(db, jid)
+      db.addAudit('needs-human-media-or-link', db.jidKey(jid), hasMedia ? 'media' : 'link')
       return { shouldRespond: false, reason: 'media-or-link-human' }
     }
-    const response = handleIncoming({ db, jid, text: safeText(text), hasMedia, isReplyToAgent: isReplyToBot(message), at: at || new Date() })
+    const response = handleGroundedIncoming(
+      { db, jid, text: incomingText, hasMedia, isReplyToAgent: isReplyToBot(message, jid), at: at || new Date() },
+      { privacyCommand },
+    )
+    /* مفتاح الطوارئ يوقف الكلام لا حقوق الخصوصية: نطبّق الأمر ثم نصمت. */
+    if (runtimePaused && privacyCommand) {
+      db.addAudit('privacy-command-applied', '', `${response.intent || incomingIntent};silent=true;runtime-paused=true`)
+      return { ...response, text: '', shouldRespond: false, privacyApplied: true, reason: 'runtime-paused-privacy' }
+    }
     /* ★ ما لا جواب له لا يُجاب. حين يُعلن المحرك أنه لا يملك ردّاً (silent)
        نصمت ونُسكت المحادثة ونترك الأمر للدكتور — بدل إبلاغ السائل بفشل بحث. */
     if (response.silent) {
+      if (response.groundingFailure) return response
       markManualTakeover(db, jid)
-      db.addAudit('needs-human-silent', redactJid(jid), response.intent || 'no-match')
+      db.addAudit('needs-human-silent', db.jidKey(jid), response.intent || 'no-match')
       return { ...response, shouldRespond: false, reason: 'needs-human-silent' }
     }
-    if (!response.shouldRespond) db.addAudit('auto-reply-skipped', redactJid(jid), response.reason || 'blocked')
-    /* الردّ الناجح لم يكن يُسجَّل قط — يُسجَّل الصمت وحده. فإذا ردّ البوت حيث
-       لا يجوز، لم يترك أثراً يُقرأ. نُسجّله الآن ليُعرف من أين دخل. */
-    else db.addAudit('auto-reply-sent', redactJid(jid), response.reason || '')
+    if (response.privacyApplied) db.addAudit('privacy-command-applied', '', `${response.intent || 'privacy'};silent=${!response.shouldRespond}`)
+    else if (!response.shouldRespond) db.addAudit('auto-reply-skipped', db.jidKey(jid), response.reason || 'blocked')
     if (!response.shouldRespond || !flags.autoReply || !flags.send) return response
     if (response.text && state.transport?.sendText) {
-      void state.transport.sendText(jid, response.text).catch((error) => db.addAudit('auto-reply-failed', redactJid(jid), redactError(error)))
+      /* الحجز يمنع سباق «اختيارٍ جديد» فقط. الطلب الصريح لأحدث مقالة أو
+         تلخيص مادة بعينها يجوز أن يكررها عمداً، فلا نرفضه لمجرد أن إرسالاً
+         آخر للمادة نفسها ما زال في الطريق. */
+      const enforceNoRepeat = Boolean(response.enforceNoRepeat) || [
+        INTENTS.WELCOME,
+        INTENTS.SURPRISE_ME,
+        INTENTS.CHALLENGE,
+        INTENTS.CONTENT_BY_MOOD,
+      ].includes(response.intent)
+      const seen = [...new Set(
+        Array.isArray(response.seenContentIds) && response.seenContentIds.length
+          ? response.seenContentIds
+          : response.contentId
+            ? [response.contentId]
+            : enforceNoRepeat && Array.isArray(response.contextItems) ? response.contextItems : [],
+      )]
+      const reserved = []
+      if (enforceNoRepeat) {
+        for (const contentId of seen) {
+          if (reserveContent(db, jid, contentId)) reserved.push(contentId)
+          else {
+            for (const acquired of reserved) releaseContentReservation(db, jid, acquired)
+            db.addAudit('auto-reply-skipped-reservation', db.jidKey(jid), 'content-already-in-flight')
+            return { ...response, text: '', shouldRespond: false, silent: true, reason: 'content-already-in-flight' }
+          }
+        }
+      }
+      const release = () => { for (const contentId of reserved) releaseContentReservation(db, jid, contentId) }
+      try {
+        void Promise.resolve(state.transport.sendText(jid, response.text)).then(() => {
+          for (const contentId of seen) rememberSent(db, jid, contentId)
+          db.addAudit('auto-reply-sent', db.jidKey(jid), response.reason || '')
+        }).catch((error) => {
+          release()
+          db.addAudit('auto-reply-failed', db.jidKey(jid), redactError(error))
+        })
+      } catch (error) {
+        release()
+        db.addAudit('auto-reply-failed', db.jidKey(jid), redactError(error))
+      }
     }
     return response
   }
@@ -238,14 +444,16 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
   }
   const queueCampaign = ({ name, message, targets = [], scheduledAt = null }) => {
     if (!name || !message) throw new Error('اسم الحملة ورسالتها مطلوبان')
-    if (targets.length > MAX_CAMPAIGN_TARGETS) throw new Error(`الحد الآمن للحملة ${MAX_CAMPAIGN_TARGETS} جهة.`)
+    if (Number.isFinite(MAX_CAMPAIGN_TARGETS) && targets.length > MAX_CAMPAIGN_TARGETS) throw new Error(`الحد المضبوط للحملة ${MAX_CAMPAIGN_TARGETS} جهة.`)
     for (const target of targets) if (typeof target === 'string' && !target.includes('@') && target !== 'self') throw new Error('لا تحفظ رقمًا خامًا؛ استخدم الذات أو جهة معروفة بصيغة jid محليًا.')
     const id = randomToken(10); const now = new Date().toISOString()
     db.run('INSERT INTO campaigns(id,name,state,message,created_at,scheduled_at,updated_at) VALUES(?,?,?,?,?,?,?)', id, name, 'draft', safeText(message), now, scheduledAt, now)
     for (const target of targets) {
       const jid = target?.jid || (typeof target === 'string' && target.includes('@') ? target : null)
+      if (jid && !isPrivateChat(jid)) throw new Error('الإرسال إلى القروبات والحالات والقنوات غير مسموح. الحملات لجهات فردية فقط.')
       const targetId = String(target?.id || (jid ? db.jidKey(jid) : target))
-      const targetKind = ['self', 'contact', 'group'].includes(target?.kind) ? target.kind : (jid?.endsWith('@g.us') ? 'group' : (jid ? 'contact' : 'self'))
+      if (db.get('SELECT 1 AS hit FROM privacy_tombstones WHERE jid=?', targetId)) throw new Error('إحدى الجهات طلبت حذف بياناتها؛ لا يمكن إضافتها إلى حملة.')
+      const targetKind = target?.kind === 'self' ? 'self' : (jid ? 'contact' : 'self')
       if (jid) {
         const created = now
         db.run('INSERT INTO contacts(id,jid,display_name,phone,suppressed,created_at,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET updated_at=excluded.updated_at', targetId, db.encryptJid(jid), target?.displayName ? db.encryptText(target.displayName) : null, target?.phone ? db.encryptText(target.phone) : null, target?.suppressed ? 1 : 0, created, created)
@@ -323,14 +531,14 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
   const returnAllToBot = () => {
     const before = silenceState()
     const now = new Date().toISOString()
-    db.run("UPDATE chat_sessions SET mode='suggest-only', manual_until=NULL, content_id=NULL, followup_json=NULL, opened_at=NULL, last_user_at=NULL, updated_at=? WHERE manual_until IS NOT NULL", now)
+    db.run("UPDATE chat_sessions SET mode='suggest-only', manual_until=NULL, content_id=NULL, followup_json=NULL, context_json=NULL, opened_at=NULL, last_user_at=NULL, updated_at=? WHERE manual_until IS NOT NULL", now)
     db.addAudit('bot-wake-enabled-all', '', `أصبح الإيقاظ متاحاً في ${before.silenced} محادثة`)
     return { returned: before.silenced }
   }
 
   const returnToBot = (jid) => {
     const now = new Date().toISOString()
-    db.run("UPDATE chat_sessions SET mode='suggest-only', manual_until=NULL, content_id=NULL, followup_json=NULL, opened_at=NULL, last_user_at=NULL, updated_at=? WHERE jid=?", now, db.jidKey(jid))
+    db.run("UPDATE chat_sessions SET mode='suggest-only', manual_until=NULL, content_id=NULL, followup_json=NULL, context_json=NULL, opened_at=NULL, last_user_at=NULL, updated_at=? WHERE jid=?", now, db.jidKey(jid))
     db.addAudit('bot-wake-enabled', db.jidKey(jid))
     return { jid: db.jidKey(jid), returned: true }
   }
@@ -422,13 +630,68 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     'suppressed': 'طلب إيقاف الرسائل',
     'manual-takeover': 'أنت تتحدث معه الآن',
   }
-  const simulateReply = ({ text, jid = 'simulator@s.whatsapp.net', inSession = false, hasMedia = false } = {}) => {
+  let simulationSerial = 0
+  const simulateReply = ({ text, jid = 'simulator@s.whatsapp.net', inSession = false, hasMedia = false, at = new Date() } = {}) => {
     const clean = safeText(text)
     /* التشغيل متاح طوال اليوم؛ المحاكي يختبر البوابة نفسها بلا نافذة زمنية. */
-    const gate = shouldRespondToMessage({ db, jid, text: clean, explicitContentSession: Boolean(inSession), hasMedia, at: new Date() })
-    const response = handleIntent({ db, jid, input: clean, session: null })
+    const evaluationAt = at instanceof Date ? at : new Date(at)
+    const gate = shouldRespondToMessage({ db, jid, text: clean, explicitContentSession: Boolean(inSession), hasMedia, at: evaluationAt })
+    const classification = classifyIntent(clean)
+    /* المعاينة الإدارية تحتاج أن تُظهر قاعدة التحويل المطابقة حتى عندما تمنع
+       بوابة الإيقاظ الإرسال فعلياً. نقرأ القاعدة بلا تنفيذ ولا فتح جلسة، ثم
+       نبقي النتيجة صامتة: هذا يشرح للدكتور ما سيحدث ولا يخرق شرط الإيقاظ. */
+    const configuredRule = matchReplyRule(db, clean)
+    /* رفضُ البوابة قرارٌ نهائي: لا نُشغّل محرك النية خلفها، لأن المحرك
+       يسجّل النوايا وقد يعدّل الجلسة أو الخصوصية. التصنيف وحده قراءةٌ بلا أثر. */
+    if (!gate.allowed) {
+      return {
+        willReply: false,
+        why: REASONS[gate.reason] || gate.reason,
+        quietNow: false,
+        intent: configuredRule ? 'CUSTOM_RULE' : classification.intent,
+        confidence: configuredRule ? 0.99 : classification.confidence,
+        needsHuman: Boolean(configuredRule || classification.needsHuman),
+        ruleId: configuredRule?.id || null,
+        ruleName: configuredRule?.name || null,
+        preview: '',
+      }
+    }
+
+    /* المعاينة يجب أن تمرّ بالمحرك الحقيقي، لكن داخل SAVEPOINT يُمحى
+       بعده كلُّ ما كتبه: سجلّ النية، الكتم، الحفظ، التذكير، أو غيرها. ونحرّر
+       النقطة حتى إن رمى المحرك خطأً، لئلا تبقى الوصلة داخل معاملةٍ معلّقة. */
+    const savepoint = `simulate_reply_${++simulationSerial}`
+    const sqlite = db.db
+    /* بعض الأوامر (حذف التفضيلات مثلاً) تستخدم db.transaction داخلياً. وBEGIN
+       داخل SAVEPOINT غير جائز في SQLite؛ في المعاينة تكفي نقطة الحفظ الخارجية
+       نفسها. نمرّر واجهةً تقرأ القاعدة الأصلية، لكن تجعل المعاملة الداخلية
+       دالةً عادية، من غير تبديل db المشترك أو ترك حالةٍ مؤقتة عليه. */
+    const previewDb = new Proxy(db, {
+      get(target, property) {
+        if (property === 'transaction') return (fn) => fn()
+        const value = Reflect.get(target, property, target)
+        return typeof value === 'function' ? value.bind(target) : value
+      },
+    })
+    sqlite.exec(`SAVEPOINT ${savepoint}`)
+    const rollbackAndRelease = () => {
+      const cleanupErrors = []
+      try { sqlite.exec(`ROLLBACK TO SAVEPOINT ${savepoint}`) } catch (error) { cleanupErrors.push(error) }
+      try { sqlite.exec(`RELEASE SAVEPOINT ${savepoint}`) } catch (error) { cleanupErrors.push(error) }
+      if (cleanupErrors.length) throw new AggregateError(cleanupErrors, 'تعذّر إغلاق معاملة معاينة الرد.')
+    }
+    let response
+    try {
+      response = handleIntent({ db: previewDb, jid, input: clean, session: null, classification })
+    } catch (error) {
+      try { rollbackAndRelease() } catch (cleanupError) {
+        throw new AggregateError([error, cleanupError], 'فشلت معاينة الرد وتنظيف معاملتها.')
+      }
+      throw error
+    }
+    rollbackAndRelease()
     return {
-      willReply: Boolean(gate.allowed),
+      willReply: true,
       why: REASONS[gate.reason] || gate.reason,
       quietNow: false,
       intent: response.intent,
@@ -436,7 +699,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
       needsHuman: Boolean(response.needsHuman),
       ruleId: response.ruleId || null,
       ruleName: response.ruleName || null,
-      preview: gate.allowed ? (response.text || '') : '',
+      preview: response.text || '',
     }
   }
   const requestRestart = () => {
@@ -457,9 +720,15 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     const now = new Date().toISOString(); let sent = 0; let skipped = 0; let failed = 0
     db.run("UPDATE campaigns SET state='sending',updated_at=? WHERE id=?", now, id)
     for (const target of targets) {
-      if (target.suppressed || target.contact_suppressed) { skipped++; continue }
+      const currentSuppression = db.get('SELECT suppressed FROM contacts WHERE id=?', target.target_id)
+      if (target.suppressed || currentSuppression?.suppressed) { skipped++; continue }
       const jid = resolveCampaignTarget(target)
       if (!jid) { skipped++; db.addAudit('campaign-target-skipped', id, 'unknown-target'); continue }
+      if (!isPrivateChat(jid)) { skipped++; db.addAudit('campaign-target-skipped', id, 'non-private-target'); continue }
+      const manual = db.get('SELECT manual_until FROM chat_sessions WHERE jid=?', db.jidKey(jid))
+      if (manual?.manual_until && new Date(manual.manual_until) > new Date()) {
+        skipped++; db.addAudit('campaign-target-skipped', id, 'manual-takeover'); continue
+      }
       const jobId = randomToken(10); const created = new Date().toISOString()
       db.run('INSERT INTO message_jobs(id,campaign_id,jid,body,state,attempts,available_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)', jobId, id, db.encryptJid(jid), campaign.message, 'sending', 1, created, created, created)
       try {
@@ -488,9 +757,15 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
       for (const [index, target] of targets.entries()) {
         const current = db.get('SELECT state FROM campaigns WHERE id=?', id)
         if (current?.state === 'stopped') { db.addAudit('quiet-broadcast-stopped', id, `sent=${sent}`); break }
-        if (target.suppressed || target.contact_suppressed) { skipped++; continue }
+        const currentSuppression = db.get('SELECT suppressed FROM contacts WHERE id=?', target.target_id)
+        if (target.suppressed || currentSuppression?.suppressed) { skipped++; continue }
         const jid = resolveCampaignTarget(target)
         if (!jid) { skipped++; db.addAudit('quiet-broadcast-target-skipped', id, 'unknown-target'); continue }
+        if (!isPrivateChat(jid)) { skipped++; db.addAudit('quiet-broadcast-target-skipped', id, 'non-private-target'); continue }
+        const manual = db.get('SELECT manual_until FROM chat_sessions WHERE jid=?', db.jidKey(jid))
+        if (manual?.manual_until && new Date(manual.manual_until) > new Date()) {
+          skipped++; db.addAudit('quiet-broadcast-target-skipped', id, 'manual-takeover'); continue
+        }
         const jobId = randomToken(10)
         const created = new Date().toISOString()
         /* لكلٍّ نصّه: {الاسم} يصير لقبه الذي كتبتَه، و{تحية} تتبع ساعة الإرسال.
@@ -526,7 +801,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     const campaign = db.get('SELECT * FROM campaigns WHERE id=?', id); if (!campaign) throw new Error('الحملة غير موجودة')
     if (!['approved', 'queued'].includes(campaign.state)) throw new Error('الحملة يجب أن تكون معتمدة قبل الإرسال.')
     const targets = campaignTargets(id)
-    if (!targets.length) throw new Error('لا توجد جهات أو قروبات في الحملة.')
+    if (!targets.length) throw new Error('لا توجد جهات فردية في الحملة.')
     if (state.activeCampaigns.has(id)) return { id, state: 'sending', alreadyRunning: true }
     state.activeCampaigns.add(id)
     db.run("UPDATE campaigns SET state='queued',updated_at=? WHERE id=?", new Date().toISOString(), id)
@@ -634,15 +909,66 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
   return Object.assign(api, { db, state, index, start, stop, status, sendSelf, audience, onContacts, silenceState, returnAllToBot, repair, pauseAutoReplies, resumeAutoReplies, queueCampaign, approveCampaign, sendCampaign, sendQuietCampaign, stopCampaign, listCampaigns, listBroadcastGroups, discoverGroups, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, requestRestart })
 }
 
-async function dispatchDueReminders(state) {
-  const now = new Date().toISOString(); const rows = state.db.all("SELECT * FROM reminders WHERE state='pending' AND due_at<=? LIMIT 5", now)
+export async function dispatchDueReminders(state, at = new Date()) {
+  const clock = at instanceof Date ? at : new Date(at)
+  const now = clock.toISOString(); const rows = state.db.all("SELECT * FROM reminders WHERE state='pending' AND due_at<=? LIMIT 5", now)
   for (const reminder of rows) {
+    let reservedContentId = null
     try {
       if (!flags.send || !state.transport) continue
       const jid = state.db.decryptJid(reminder.jid)
-      await state.transport.sendText(jid, `هذا التذكير الذي طلبته للمادة.\n${reminder.original_text}`)
+      const target = state.db.jidKey(jid)
+      if (isSuppressed(state.db, jid)) {
+        state.db.run('UPDATE reminders SET state=? WHERE id=?', 'cancelled', reminder.id)
+        state.db.addAudit('reminder-cancelled-suppressed', target, `id=${reminder.id}`)
+        continue
+      }
+      const session = state.db.get('SELECT manual_until FROM chat_sessions WHERE jid=?', state.db.jidKey(jid))
+      if (session?.manual_until && new Date(session.manual_until) > clock) {
+        state.db.addAudit('reminder-deferred-manual', target, `id=${reminder.id}`)
+        continue
+      }
+      /* التذكير ليس صدىً لكلام المستخدم: لا يخرج إلا إن بقيت مادته المختارة
+         موجودة في الفهرس، وبقالبٍ ثابت عنوانُه ورابطُه من قاعدة الموقع فقط. */
+      const item = reminder.content_id
+        ? state.db.get('SELECT id,title,url FROM content_items WHERE id=?', reminder.content_id)
+        : null
+      if (!item || !isBelowConfiguredBase(item.url, SITE_URL)) {
+        state.db.run('UPDATE reminders SET state=? WHERE id=?', 'cancelled', reminder.id)
+        state.db.addAudit('reminder-cancelled-ungrounded', target, `id=${reminder.id};reason=${item ? 'non-site-url' : 'missing-content'}`)
+        continue
+      }
+      const grounded = {
+        shouldRespond: true,
+        text: `هذا تذكيرك بالمادة التي اخترتها:\n${item.title}\n${item.url}`,
+        contentId: item.id,
+        contextItems: [item.id],
+        seenContentIds: [item.id],
+      }
+      const verdict = validateGroundedResponse(state.db, grounded)
+      if (!verdict.allowed) {
+        state.db.run('UPDATE reminders SET state=? WHERE id=?', 'cancelled', reminder.id)
+        state.db.addAudit('grounding-firewall-blocked', target, `reason=${verdict.code};source=reminder`)
+        continue
+      }
+      if (!reserveContent(state.db, jid, item.id)) {
+        state.db.addAudit('reminder-deferred-reservation', target, `id=${reminder.id}`)
+        continue
+      }
+      reservedContentId = item.id
+      await state.transport.sendText(jid, sign(grounded.text))
+      rememberSent(state.db, jid, item.id)
+      reservedContentId = null
       state.db.run('UPDATE reminders SET state=?,sent_at=? WHERE id=?', 'sent', now, reminder.id)
-    } catch (error) { state.db.addAudit('reminder-failed', 'local', redactError(error)) }
+    } catch (error) {
+      if (reservedContentId) {
+        try {
+          const jid = state.db.decryptJid(reminder.jid)
+          releaseContentReservation(state.db, jid, reservedContentId)
+        } catch { /* سيُنظَّف الحجز اليتيم بمهلة الأمان */ }
+      }
+      state.db.addAudit('reminder-failed', 'local', redactError(error))
+    }
   }
 }
 

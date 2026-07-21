@@ -18,7 +18,7 @@
     "audio:dry-run": "node scripts/auto-audio.mjs --dry-run",
     "audio:base": "node scripts/auto-audio.mjs --base-only",
     "audio:human:self-test": "node scripts/test-human-audio-engine.mjs",
-    "audio:quality:self-test": "node scripts/test-human-audio-engine.mjs && node scripts/podcast-dialogue.mjs --self-test && node scripts/podcast-release-gate.mjs --self-test && node scripts/publish-audio-r2.mjs --self-test",
+    "audio:quality:self-test": "node scripts/test-human-audio-engine.mjs && node scripts/podcast-dialogue.mjs --self-test && node scripts/podcast-release-gate.mjs --self-test && node scripts/publish-audio-r2.mjs --self-test && node scripts/audio-supervisor.mjs --self-test",
     "audio:human:pilot": "node scripts/human-audio-pilot.mjs",
     "audio:human:pilot:execute": "node scripts/human-audio-pilot.mjs --execute",
     "audio:legacy": "node scripts/generate-audio.mjs",
@@ -51,7 +51,7 @@
     "content:auto": "node scripts/auto-site-content.mjs",
     "radar:repair": "node scripts/radar-repair.mjs",
     "faq:repair": "node scripts/faq-repair.mjs",
-    "social:self-test": "node scripts/test-social-templates.mjs",
+    "social:self-test": "node scripts/test-social-design-engine.mjs && node scripts/test-social-templates.mjs",
     "content:auto:self-test": "node scripts/auto-site-content.mjs --self-test",
     "testimonials:auto": "node scripts/auto-testimonials.mjs",
     "testimonials:auto:self-test": "node scripts/auto-testimonials.mjs --self-test",
@@ -99,7 +99,9 @@
     "audio:progress": "node scripts/audio-progress.mjs",
     "audio:progress:self-test": "node scripts/audio-progress.mjs --self-test",
     "idea-life:sync": "node scripts/idea-life-sync.mjs",
-    "idea-life:self-test": "node scripts/idea-life-sync.mjs --self-test"
+    "idea-life:self-test": "node scripts/idea-life-sync.mjs --self-test",
+    "audio:supervisor": "node scripts/audio-supervisor.mjs --write",
+    "audio:supervisor:self-test": "node scripts/audio-supervisor.mjs --self-test"
   },
   "dependencies": {
     "firebase": "^12.15.0",

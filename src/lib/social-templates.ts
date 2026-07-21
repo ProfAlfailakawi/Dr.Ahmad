@@ -144,6 +144,53 @@ export function visualTopicLabel(topic: VisualTopic) {
   return topicProfiles[topic].label
 }
 
+export type SocialCopyAnalysis = {
+  topic: VisualTopic
+  topicLabel: string
+  shape: TextShape
+  tone: 'رسمي' | 'إنساني' | 'نقدي' | 'مستقبلي'
+  recommendedFormat: 'منشور واحد' | 'شرائح'
+  recommendedSlides: number
+  keyPhrase: string
+}
+
+export function analyzeSocialCopy(value: string): SocialCopyAnalysis {
+  const raw = String(value || '').replace(/\s+/g, ' ').trim()
+  const topic = detectVisualTopic(raw)
+  const shape = detectTextShape(raw)
+  const normalized = normalizeArabic(raw)
+  const tone: SocialCopyAnalysis['tone'] = /لكن|مشكله|خطر|نقد|يفشل|لا يكفي/.test(normalized)
+    ? 'نقدي'
+    : /انسان|طفل|اسره|مشاعر|كرامه|وعي/.test(normalized)
+      ? 'إنساني'
+      : /مستقبل|تحول|ابتكار|ذكاء اصطناعي|تقنيه/.test(normalized)
+        ? 'مستقبلي'
+        : 'رسمي'
+  const words = raw.split(/\s+/).filter(Boolean)
+  const recommendedSlides = words.length > 95 ? 7 : words.length > 60 ? 5 : words.length > 34 ? 3 : 1
+  const sentences = raw.split(/(?<=[.!؟])/u).map((part) => part.trim()).filter(Boolean)
+  const keyPhrase = (sentences.sort((a, b) => b.length - a.length)[0] || raw).slice(0, 150)
+  return {
+    topic,
+    topicLabel: visualTopicLabel(topic),
+    shape,
+    tone,
+    recommendedFormat: recommendedSlides > 1 ? 'شرائح' : 'منشور واحد',
+    recommendedSlides,
+    keyPhrase,
+  }
+}
+
+const AUTHOR_NAME = 'د. أحمد حسين الفيلكاوي'
+const cleanIdentityFooter = (value = '') => {
+  const cleaned = String(value || '')
+    .replace(/د\.?\s*أحمد\s+حسين\s+الفيلكاوي/gi, '')
+    .replace(/[·|—-]\s*dr-alfailakawi\.com/gi, 'dr-alfailakawi.com')
+    .replace(/^\s*[·|—-]\s*|\s*[·|—-]\s*$/g, '')
+    .trim()
+  return cleaned || 'dr-alfailakawi.com'
+}
+
 /* ═══ قراءةُ شكل النصّ — لا موضوعِه وحده ═══
  *
  * كان اختيار التخطيط يعرف «عمّا» تتحدث البطاقة (TOPIC_SIGNALS) ولا يعرف «كيف»
@@ -341,7 +388,7 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
     kicker: directions[0]?.tone || profile.kicker,
     title: directions[0]?.headline || article.title,
     body: directions[0]?.subline || article.excerpt,
-    footer: 'د. أحمد حسين الفيلكاوي',
+    footer: 'dr-alfailakawi.com',
     source: pack.event?.source || '',
   }
 
@@ -599,7 +646,8 @@ export const compositionLabel: Record<Composition, string> = {
 
 export const compositionNameOf = (layout: SocialVisualLayout) => compositionLabel[compositionOf(layout)]
 
-export async function renderSocialPng(template: SocialVisualTemplate) {
+export async function renderSocialPng(inputTemplate: SocialVisualTemplate) {
+  const template: SocialVisualTemplate = { ...inputTemplate, footer: cleanIdentityFooter(inputTemplate.footer) }
   /* انتظار الخطوط بمهلة: متصفح يعلّق fonts.ready لا يحق له تعليق الرسم كله */
   await Promise.race([document.fonts?.ready, new Promise((resolve) => window.setTimeout(resolve, 3000))])
   const canvas = document.createElement('canvas')
@@ -660,8 +708,58 @@ export async function renderSocialPng(template: SocialVisualTemplate) {
     } catch { return 0 }
   }
 
+  /* بصمةٌ دلالية هادئة يولّدها معنى النص نفسه، لا زخرفةٌ ثابتة فوق كل منشور.
+     الموضوع يختار الرمز، وشكل الجملة يختار التكوين؛ لذلك يصبح التصميم متصلاً
+     بما كتبه الدكتور من دون إدخال صور جاهزة أو كسر الهوية البصرية. */
+  const drawTopicMotif = () => {
+    const x = W * 0.16
+    const y = H * 0.17
+    const r = W * 0.075
+    ctx.save()
+    ctx.globalAlpha = comp === 'layl' ? 0.13 : 0.075
+    ctx.strokeStyle = ink.line
+    ctx.fillStyle = ink.accent
+    ctx.lineWidth = Math.max(1, 1.3 * S)
+    const circle = (cx: number, cy: number, radius: number, fill = false) => {
+      ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); fill ? ctx.fill() : ctx.stroke()
+    }
+    if (template.topic === 'ai') {
+      const points = [[x-r*.65,y-r*.25],[x,y-r*.72],[x+r*.7,y-r*.12],[x-r*.4,y+r*.58],[x+r*.5,y+r*.62],[x,y]]
+      for (const [from, to] of [[0,1],[1,2],[0,5],[2,5],[3,5],[4,5],[3,4]] as const) {
+        ctx.beginPath(); ctx.moveTo(points[from][0], points[from][1]); ctx.lineTo(points[to][0], points[to][1]); ctx.stroke()
+      }
+      for (const [px, py] of points) circle(px, py, 4.2*S, true)
+    } else if (template.topic === 'education') {
+      ctx.beginPath(); ctx.moveTo(x-r*.85,y-r*.75); ctx.lineTo(x-r*.85,y+r*.72); ctx.stroke()
+      for (let index=0; index<5; index++) {
+        const yy = y-r*.66 + index*r*.33
+        ctx.beginPath(); ctx.moveTo(x-r*.66,yy); ctx.lineTo(x+r*(index===4?.4:.78),yy); ctx.stroke()
+      }
+    } else if (template.topic === 'family') {
+      circle(x-r*.34,y,r*.52); circle(x+r*.34,y,r*.52); circle(x,y+r*.34,r*.52)
+      circle(x,y+r*.12,3.8*S,true)
+    } else if (template.topic === 'research') {
+      ctx.beginPath(); ctx.moveTo(x-r*.82,y+r*.72); ctx.lineTo(x-r*.82,y-r*.68); ctx.moveTo(x-r*.82,y+r*.72); ctx.lineTo(x+r*.82,y+r*.72); ctx.stroke()
+      const values=[.48,.2,.65,.38]
+      values.forEach((value,index)=>{ const bx=x-r*.55+index*r*.35; const top=y+r*.6-r*1.15*value; ctx.globalAlpha*=.92; ctx.fillRect(bx,top,r*.18,y+r*.6-top) })
+    } else if (template.topic === 'media') {
+      for (let index=1; index<=3; index++) { ctx.beginPath(); ctx.arc(x-r*.55,y,r*.38*index,-Math.PI*.42,Math.PI*.42); ctx.stroke() }
+      circle(x-r*.55,y,4*S,true)
+    } else if (template.topic === 'future') {
+      ctx.beginPath(); ctx.moveTo(x-r,y+r*.45); ctx.lineTo(x+r,y+r*.45); ctx.stroke()
+      for (let index=-2; index<=2; index++) { ctx.beginPath(); ctx.moveTo(x,y+r*.38); ctx.lineTo(x+index*r*.38,y-r*(.55-Math.abs(index)*.08)); ctx.stroke() }
+      circle(x,y+r*.38,4*S,true)
+    } else if (template.topic === 'human') {
+      circle(x,y,r*.25); circle(x,y,r*.52); circle(x,y,r*.8); circle(x,y,4*S,true)
+    } else {
+      diamond(x,y-r*.35,8*S,ink.accent,.9); diamond(x-r*.38,y+r*.28,5*S,ink.gold,.9); diamond(x+r*.38,y+r*.28,5*S,ink.gold,.9)
+    }
+    ctx.restore()
+  }
+
   ctx.fillStyle = ink.bg
   ctx.fillRect(0, 0, W, H)
+  drawTopicMotif()
   ctx.direction = 'rtl'
   ctx.textBaseline = 'alphabetic'
 

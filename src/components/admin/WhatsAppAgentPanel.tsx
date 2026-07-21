@@ -9,6 +9,7 @@ type AgentStatus = {
   device_name?: string
   updated_at?: string
   flags?: Record<string, boolean>
+  runtimePaused?: boolean
   timeZone?: string
   bridgeOnline?: boolean
   lastHeartbeatAt?: string | null
@@ -129,6 +130,7 @@ export function WhatsAppAgentPanel() {
   const localBridgeDefault = ['http:', '', '127.0.0.1:34321'].join('/')
   const bridgeCandidate = String(import.meta.env.VITE_WHATSAPP_AGENT_BRIDGE_URL || localBridgeDefault).replace(/\/+$/, '')
   const bridge = /^(https?:\/\/)(127\.0\.0\.1|localhost)(:\d+)?$/i.test(bridgeCandidate) ? bridgeCandidate : ''
+  const personalNumberMode = status.flags?.personalNumberMode !== false
 
   const authHeaders = useMemo(() => ({
     Accept: 'application/json',
@@ -320,6 +322,17 @@ export function WhatsAppAgentPanel() {
   }
   useEffect(() => { void loadSilence() }, [status.bridgeOnline])
 
+  const toggleEmergencyPause = async () => {
+    try {
+      const path = status.runtimePaused ? '/admin/agent/resume' : '/admin/agent/pause'
+      await request(path, { method: 'POST' })
+      setNotice(status.runtimePaused ? 'عادت الردود الآلية وفق قواعد الأمان.' : 'توقفت كل الردود الآلية فورًا. الاتصال والفهرس مستمران فقط.')
+      await refresh()
+    } catch {
+      setNotice('تعذّر تغيير حالة الإيقاف الفوري.')
+    }
+  }
+
   const returnBotNow = async () => {
     setReturning(true)
     try {
@@ -492,6 +505,7 @@ export function WhatsAppAgentPanel() {
         <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_auto]">
           <input dir="ltr" className={input} placeholder="Bridge secret — من npm run agent:bridge-secret" value={secret} onChange={(event) => setSecret(event.target.value)} />
           <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => void toggleEmergencyPause()} disabled={!status.bridgeOnline} className={`rounded-full border px-4 py-2 text-[.8rem] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${status.runtimePaused ? 'border-accent bg-accent text-white' : 'border-red-300/70 bg-red-50 text-red-700 hover:border-red-500'}`}>{status.runtimePaused ? 'تشغيل الردود' : 'إيقاف الردود فورًا'}</button>
             <button type="button" onClick={() => void pairNow()} disabled={pairing || !bridgeAlive} className={`${secondary} disabled:opacity-40`}>{pairing ? 'يقترن…' : '⚡ اقتران تلقائي'}</button>
             <button type="button" onClick={saveSecret} className={secondary}>حفظ السر محليًا</button>
             <button type="button" onClick={() => void restartBridge()} disabled={restarting || !status.bridgeOnline} className={secondary}>{restarting ? 'جارٍ إعادة التشغيل' : 'إعادة تشغيل واتساب'}</button>
@@ -525,9 +539,9 @@ export function WhatsAppAgentPanel() {
           )}
         </div>
         <div className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-soft">
-          الوضع الآمن مفعل: لا ردّ على الأهل والربع. لا يفتح البابَ إلا أمرٌ لا يُقال مصادفة —
-          «آخر مقال» · «أبحاث الدكتور» · «آخر بودكاست» · «بطاقة اقتباس» — ثم يجري الحوار طبيعياً
-          داخل الجلسة. ويصمت أمام الوسائط، وطلبِ الموعد والاستشارة والإشراف، وبين منتصف الليل والسابعة.
+          وضع الرقم الشخصي مفعل: لا ردّ على الأهل والربع، ولا مجموعات ولا حالات ولا حملات جماعية.
+          لا يفتح الباب إلا عبارة الإيقاظ المنشورة، وتُغلق الجلسة بعد عشرين دقيقة أو أربعة ردود.
+          تدخلك اليدوي أعلى سلطة دائمًا، ويصمت أمام الوسائط والروابط والموعد والاستشارة والإشراف، وبين الحادية عشرة مساءً والسابعة صباحًا.
         </div>
         {status.last_error && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.8rem] text-soft">{status.last_error}</p>}
         {notice && <p role="status" className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{notice}</p>}
@@ -539,7 +553,7 @@ export function WhatsAppAgentPanel() {
           سطراً ولا تعرف قوائم الدكتور، فتقول «الجهات الجاهزة: 0» وهو يملك ألفين.
           خلفتها BroadcastStudio: قائمةٌ تُختار، ومعاينةٌ تقول كم سيصل، وتجربةٌ على
           النفس قبل الناس. ولا مكانان لوظيفةٍ واحدة. */}
-      <BroadcastStudio request={request} onNotice={setNotice} />
+      {!personalNumberMode && <BroadcastStudio request={request} onNotice={setNotice} />}
 
       {/* حُذف «مركز إدارة الردود» بأمر الدكتور — إزعاجٌ بصريّ بلا فائدة. */}
 
@@ -569,7 +583,7 @@ export function WhatsAppAgentPanel() {
                 <span className="mr-2 text-[.78rem] font-normal text-soft">· {simulation.why}</span>
               </p>
               {simulation.willReply && simulation.quietNow && (
-                <p className="text-[.75rem] text-soft">لكنه الآن في ساعات الصمت (منتصف الليل — السابعة)، فلن يردّ حتى الصباح.</p>
+                <p className="text-[.75rem] text-soft">لكنه الآن في ساعات الصمت (الحادية عشرة مساءً — السابعة صباحًا)، فلن يردّ حتى الصباح.</p>
               )}
               {simulation.preview && <p className="whitespace-pre-wrap text-[.82rem] leading-relaxed text-ink">{simulation.preview}</p>}
             </div>
@@ -580,7 +594,7 @@ export function WhatsAppAgentPanel() {
       {/* حُذفت بطاقة «الحملات المحلية»: كانت تُخفي مسودتك حتى تضغط «اعتماد»، فتظهر
           خطوةٌ ناقصة بلا سياق وتغيب البقية. وغرفة البثّ أعلاه تُري المسار كاملاً
           من أوله — والاعتماد صار داخلها خطوةً لا باباً. */}
-      {bridge && <AudienceStudio request={request} onNotice={setNotice} />}
+      {bridge && !personalNumberMode && <AudienceStudio request={request} onNotice={setNotice} />}
 
 
       {/* حُذف «التشغيل المحلي» بأمر الدكتور — إزعاجٌ بصريّ بلا فائدة. */}

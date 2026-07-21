@@ -338,30 +338,6 @@ const SUGGESTIONS = [
   "كيف صار الامتحان مصدر خوف؟",
 ];
 
-const PERSONAS = [
-  {
-    id: "teacher",
-    label: "معلم",
-    intro:
-      "كتاب شخصي للمعلم: يبدأ من السؤال، ثم يحوله إلى مسار قابل للنقاش داخل الصف.",
-  },
-  {
-    id: "parent",
-    label: "ولي أمر",
-    intro:
-      "كتاب شخصي لولي الأمر: يقرأ الفكرة من أثرها على الطفل والبيت والطمأنينة.",
-  },
-  {
-    id: "student",
-    label: "طالب باحث",
-    intro: "كتاب شخصي للطالب: مصادر مرتبة، سؤال بحثي، ومداخل موثقة للاستشهاد.",
-  },
-  {
-    id: "media",
-    label: "إعلامي",
-    intro: "كتاب تحضيري للقاء: خلاصة، زوايا سؤال، ومصادر تساعد على حوار عميق.",
-  },
-];
 
 const arDigits = (value: number | string) =>
   String(value).replace(/\d/g, (digit) => "٠١٢٣٤٥٦٧٨٩"[Number(digit)]);
@@ -376,7 +352,6 @@ const escapePrint = (value = "") =>
 
 function printPersonalBook(
   asked: string,
-  persona: (typeof PERSONAS)[number],
   chapters: { label: string; item: TimelineItem; note: string }[],
 ) {
   const printWindow = window.open(
@@ -413,15 +388,13 @@ function printPersonalBook(
   printWindow.document
     .write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>مسار قراءة — ${escapePrint(asked)}</title><style>
     @page{size:A4;margin:18mm 17mm 20mm}*{box-sizing:border-box}body{margin:0;color:#14202c;background:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif;line-height:1.75}header{border-top:5px solid #365a7a;border-bottom:1px solid #dfe4e8;padding:20px 0 24px}header small{color:#987b38;font-weight:700}h1{font-size:27px;line-height:1.5;margin:10px 0 8px}.intro{font-size:14px;color:#66717d;margin:0}.question{margin:24px 0 0;border-right:3px solid #987b38;background:#f7f8f7;padding:14px 18px;font-size:18px;font-weight:700}.chapter{display:grid;grid-template-columns:42px 1fr;gap:15px;padding:20px 0;border-bottom:1px solid #e4e7e9;break-inside:avoid}.number{width:38px;height:38px;border:1px solid #cdd5db;border-radius:50%;display:grid;place-items:center;color:#365a7a;font-size:12px;font-weight:700}.meta{margin:0;color:#365a7a;font-size:12px;font-weight:700}.chapter h2{font-size:17px;line-height:1.65;margin:3px 0}.note{font-size:13px;color:#65717c;margin:2px 0}.url{direction:ltr;text-align:right;font-size:10px;color:#8a9299;margin:5px 0 0;overflow-wrap:anywhere}footer{display:flex;justify-content:space-between;gap:20px;margin-top:26px;padding-top:12px;border-top:1px solid #cfd6db;color:#6a737c;font-size:10px}.screen{position:fixed;left:18px;top:18px;border:0;border-radius:999px;background:#365a7a;color:white;padding:10px 18px;font-weight:700;cursor:pointer}@media print{.screen{display:none}}
-  </style></head><body><button class="screen" onclick="window.print()">طباعة / حفظ PDF</button><header><small>كتاب شخصي من الأرشيف · ${escapePrint(persona.label)}</small><h1>مسار قراءة من المواد المنشورة فقط</h1><p class="intro">${escapePrint(persona.intro)}</p><div class="question">«${escapePrint(asked)}»</div></header><main>${rows}</main><footer><span>أُعدّ في ${escapePrint(date)}</span><span>الموقع الرسمي للدكتور أحمد حسين الفيلكاوي · dr-alfailakawi.com</span></footer><script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));<\/script></body></html>`);
+  </style></head><body><button class="screen" onclick="window.print()">طباعة / حفظ PDF</button><header><small>كتاب شخصي من الأرشيف</small><h1>مسار قراءة من المواد المنشورة فقط</h1><p class="intro">مسار زمني واضح يبدأ من السؤال، ويتتبع تطور الفكرة في المواد المنشورة.</p><div class="question">«${escapePrint(asked)}»</div></header><main>${rows}</main><footer><span>أُعدّ في ${escapePrint(date)}</span><span>الموقع الرسمي للدكتور أحمد حسين الفيلكاوي · dr-alfailakawi.com</span></footer><script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));<\/script></body></html>`);
   printWindow.document.close();
   return true;
 }
 
 function PersonalBook({ asked, result }: { asked: string; result: Answer }) {
-  const [persona, setPersona] = useState(PERSONAS[0].id);
   const [printError, setPrintError] = useState(false);
-  const active = PERSONAS.find((item) => item.id === persona) || PERSONAS[0];
   const chapters = [
     result.earliest && {
       label: "الفصل الأول",
@@ -451,7 +424,7 @@ function PersonalBook({ asked, result }: { asked: string; result: Answer }) {
   if (!chapters.length) return null;
   const print = () => {
     setPrintError(false);
-    if (!printPersonalBook(asked, active, chapters)) setPrintError(true);
+    if (!printPersonalBook(asked, chapters)) setPrintError(true);
   };
 
   return (
@@ -485,38 +458,13 @@ function PersonalBook({ asked, result }: { asked: string; result: Answer }) {
       </div>
 
       <div className="px-6 py-7 md:px-8 md:py-8">
-        <div
-          className="grid gap-2 rounded-2xl border border-hair bg-canvas p-1.5 sm:grid-cols-4"
-          role="tablist"
-          aria-label="طريقة ترتيب مسار القراءة"
-        >
-          {PERSONAS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={persona === item.id}
-              onClick={() => setPersona(item.id)}
-              className={`min-h-11 rounded-xl px-3 text-[.8rem] font-medium transition-colors ${persona === item.id ? "bg-accent text-canvas shadow-sm" : "text-soft hover:bg-wash hover:text-ink"}`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-        <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,.75fr)_minmax(0,1.25fr)] md:items-start">
+        <div className="grid gap-6 md:grid-cols-[minmax(0,.72fr)_minmax(0,1.28fr)] md:items-start">
           <div className="rounded-2xl border border-hair bg-canvas p-5">
-            <p className="text-[.7rem] font-semibold text-accent">
-              المسار المختار · {active.label}
+            <p className="text-[.7rem] font-semibold text-accent">سؤال المسار</p>
+            <p className="mt-3 font-display text-[1.04rem] font-semibold leading-[1.9] text-ink">«{asked}»</p>
+            <p className="mt-4 border-r-2 border-accent pr-4 text-[.82rem] font-light leading-[1.9] text-soft">
+              يبدأ المسار من أقدم موضع يلامس السؤال، ثم ينتقل عبر محطات تطور الفكرة حتى أحدث موقف منشور.
             </p>
-            <p className="mt-3 text-[.88rem] font-light leading-[1.9] text-soft">
-              {active.intro}
-            </p>
-            <div className="mt-5 border-r-2 border-accent pr-4">
-              <p className="text-[.7rem] text-soft">السؤال</p>
-              <p className="mt-1 font-display text-[1.02rem] font-semibold leading-[1.8] text-ink">
-                «{asked}»
-              </p>
-            </div>
           </div>
           <ol className="relative space-y-3 before:absolute before:bottom-5 before:right-[1.18rem] before:top-5 before:w-px before:bg-hair">
             {chapters.map(({ label, item, note }, index) => (

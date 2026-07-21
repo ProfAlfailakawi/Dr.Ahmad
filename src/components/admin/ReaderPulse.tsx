@@ -10,6 +10,7 @@
  */
 import { useEffect, useMemo, useState } from 'react'
 import { getFirebaseApp } from '../../lib/firebase'
+import { Pagination, usePagedList } from '../Pagination'
 import { buildRows, sleeping, windowDays, type ViewDoc } from '../readerPulseLogic'
 
 export function ReaderPulse() {
@@ -34,6 +35,7 @@ export function ReaderPulse() {
   const rows = useMemo(() => (docs ? buildRows(docs, days) : []), [docs, days])
   const hot = rows.filter((row) => row.recent > 0).slice(0, 8)
   const quiet = useMemo(() => sleeping(rows), [rows])
+  const quietPages = usePagedList(quiet, 10, String(quiet.length))
   const weekTotal = rows.reduce((sum, row) => sum + row.recent, 0)
   const allTime = rows.reduce((sum, row) => sum + row.total, 0)
 
@@ -76,12 +78,12 @@ export function ReaderPulse() {
               </ul>
             </div>
 
-            <div className={card}>
+            <div id="reader-pulse-quiet" className={`${card} scroll-mt-28`}>
               <p className="text-[.75rem] font-semibold text-accent">نصوصٌ نائمة — تستحقّ إحياءً</p>
               <p className="mt-1 text-[.72rem] leading-relaxed text-soft">قُرئت من قبل، ولم يزرها أحدٌ هذا الأسبوع. انشرها في البثّ فتعود.</p>
               {!quiet.length && <p className="mt-2 text-[.78rem] text-soft">لا شيء نائم — كل ما قُرئ سابقاً يُقرأ الآن.</p>}
               <ul className="mt-2 grid gap-2">
-                {quiet.map((row) => (
+                {quietPages.pageItems.map((row) => (
                   <li key={row.path} className="flex items-baseline justify-between gap-3">
                     <a href={row.path} className="text-[.82rem] leading-relaxed text-ink hover:text-accent" title={row.path}>
                       {row.title.slice(0, 52)}
@@ -90,6 +92,7 @@ export function ReaderPulse() {
                   </li>
                 ))}
               </ul>
+              <Pagination page={quietPages.page} pageCount={quietPages.pageCount} onChange={quietPages.setPage} totalItems={quiet.length} firstItem={quietPages.firstItem} lastItem={quietPages.lastItem} scrollTargetId="reader-pulse-quiet" label="صفحات النصوص النائمة" className="mt-4" />
             </div>
           </div>
 

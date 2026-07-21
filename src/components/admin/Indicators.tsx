@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { getDb, getFirebaseApp } from '../../lib/firebase'
 import type { ArticleRecord } from '../../lib/cms'
 import { useCmsContent } from '../../lib/content'
+import { Pagination, usePagedList } from '../Pagination'
 
 /* أسماء الصفحات الثابتة — ليقرأ الدكتور أسماء مفهومة لا مسارات */
 const PAGE_NAMES: Record<string, string> = {
@@ -236,6 +237,8 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       .filter((row) => (term ? (row.label + ' ' + row.path).includes(term) : true))
   }, [summary.totals, kind, q])
 
+  const detailedPages = usePagedList(detailed, 20, `${kind}|${q}`)
+
   const topMax = Math.max(...summary.topArticles.map((row) => row.count), 1)
   const trendMax = Math.max(...summary.trend.map((row) => row.count), 1)
 
@@ -418,7 +421,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       </section>}
 
       {/* ── التفصيل الممل: كل مسارٍ شوهد، بلا استثناء ── */}
-      {view === 'details' && <section className={card}>
+      {view === 'details' && <section id="admin-indicators-details" className={card}>
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-[.76rem] font-semibold uppercase text-accent">بالتفصيل الممل</p>
@@ -444,10 +447,11 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
           ))}
         </div>
         {detailed.length ? (
-          <ol className="max-h-[520px] min-w-0 divide-y divide-hair overflow-y-auto overflow-x-hidden">
-            {detailed.map((row, index) => (
+          <>
+          <ol className="min-w-0 divide-y divide-hair overflow-x-hidden">
+            {detailedPages.pageItems.map((row, index) => (
               <li key={row.id} className="grid min-w-0 grid-cols-[1.75rem_minmax(0,1fr)_auto_auto] items-center gap-2 py-2.5 sm:gap-3">
-                <span className="w-7 shrink-0 text-[.78rem] text-soft">{index + 1}.</span>
+                <span className="w-7 shrink-0 text-[.78rem] text-soft">{(detailedPages.page - 1) * 20 + index + 1}.</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[.88rem] text-ink">{row.label}</span>
                   <span className="block truncate text-[.7rem] text-soft/70" dir="ltr" style={{ textAlign: 'right' }}>{row.path}</span>
@@ -457,6 +461,17 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
               </li>
             ))}
           </ol>
+          <Pagination
+            page={detailedPages.page}
+            pageCount={detailedPages.pageCount}
+            onChange={detailedPages.setPage}
+            totalItems={detailed.length}
+            firstItem={detailedPages.firstItem}
+            lastItem={detailedPages.lastItem}
+            scrollTargetId="admin-indicators-details"
+            label="صفحات بيانات المشاهدة"
+          />
+          </>
         ) : (
           <p className="text-[.9rem] text-soft">لا مشاهدات مطابقة بعد.</p>
         )}

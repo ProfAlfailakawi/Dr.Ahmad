@@ -34,6 +34,17 @@ function extract(name, opener, closer) {
 const shapeBlock = extract('SHAPE_SIGNALS', 'const SHAPE_SIGNALS', '\n]')
 const layoutBlock = extract('SHAPE_LAYOUTS', 'const SHAPE_LAYOUTS', '\n}')
 
+/* الهوية تُكتب مرةً واحدة: اسم الدكتور داخل التكوين، والتذييل للموقع فقط. */
+if (!SOURCE.includes('cleanIdentityFooter(inputTemplate.footer)')) {
+  throw new Error('★ التذييل لا يمرّ عبر منقّي الهوية — قد يتكرر اسم الدكتور')
+}
+if (!SOURCE.includes("الفيلكاوي/gi, '')")) {
+  throw new Error('★ منقّي الهوية لا يزيل الاسم المكرر من التذييل')
+}
+if (!SOURCE.includes('export function analyzeSocialCopy')) {
+  throw new Error('★ المخرج البصري لا يحلل النص قبل ترتيب القوالب')
+}
+
 /* ★ الحارس الأول: لا \b في أنماطٍ عربية. سقوطٌ صامتٌ لا يكشفه إلا هذا. */
 if (/\\b/.test(shapeBlock)) {
   throw new Error('★ وُجد \\b في أنماط الأشكال — لا يعمل مع العربية ويُسقط النمط صامتاً')
@@ -117,5 +128,5 @@ console.log(JSON.stringify({
   cases: cases.length,
   shapesRead: [...seen].sort(),
   shapesDefined: Object.keys(SHAPE_LAYOUTS).length,
-  guards: ['no-\\b-in-arabic-patterns', 'no-collapse-to-single-shape'],
+  guards: ['no-\\b-in-arabic-patterns', 'no-collapse-to-single-shape', 'single-identity-footer', 'copy-analysis-present'],
 }, null, 2))

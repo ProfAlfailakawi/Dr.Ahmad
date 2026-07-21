@@ -1,6 +1,7 @@
 /* قاموس النطق — يضيف الدكتور كلمةً بنفسه فتُنطق صحيحةً في كل حلقةٍ قادمة.
    ولا يمرّ بي: يكتب هنا، فتقرؤه Firestore، فيسحبه جسرُ القاموس قبل كل توليد. */
 import { useEffect, useMemo, useState } from 'react'
+import { Pagination, usePagedList } from '../Pagination'
 import { getFirebaseApp } from '../../lib/firebase'
 import lexiconFile from '../../../scripts/pronunciation-lexicon.json'
 import bodies from '../../data/bodies.json'
@@ -209,6 +210,9 @@ export function PronunciationLexicon() {
       .sort((a, b) => a.word.localeCompare(b.word, 'ar'))
   }, [entries, search])
 
+  const pendingPages = usePagedList(pending, 6, String(pending.length))
+  const queuePages = usePagedList(queue, 10, String(queue.length))
+  const entryPages = usePagedList(shown, 12, search)
   const field = 'w-full rounded-xl border border-hair bg-canvas px-3 py-2 text-[.85rem] text-ink outline-none focus:border-accent'
 
   return (
@@ -266,12 +270,13 @@ export function PronunciationLexicon() {
             المحرك نطق ألفاظاً باجتهاده في {pending.length === 1 ? 'حلقة' : `${pending.length} حلقات`}
           </p>
           <ul className="mt-2 grid gap-1.5">
-            {pending.map((item) => (
+            {pendingPages.pageItems.map((item) => (
               <li key={item.slug} className="text-[.76rem] leading-relaxed text-soft">
                 <span className="text-ink">{item.slug}</span> — {(item.words || []).map((row) => `«${row.word}»`).join('، ')}
               </li>
             ))}
           </ul>
+          <Pagination page={pendingPages.page} pageCount={pendingPages.pageCount} onChange={pendingPages.setPage} totalItems={pending.length} firstItem={pendingPages.firstItem} lastItem={pendingPages.lastItem} label="صفحات تنبيهات النطق" className="mt-3" />
           <button
             type="button"
             onClick={transferAll}
@@ -288,20 +293,20 @@ export function PronunciationLexicon() {
           <p className="text-[.8rem] font-semibold text-ink">{queue.length} لفظاً بانتظار ضبطك</p>
           <p className="mt-1 text-[.72rem] text-soft">لكلٍّ إمّا حركات (الكلمة نفسها مشكولة) وإمّا نطقٌ بديل. اترك ما لا تعرفه واحفظ الباقي.</p>
           <ul className="mt-3 grid gap-2">
-            {queue.map((row, index) => {
+            {queuePages.pageItems.map((row, index) => {
               const rowProblem = (row.diacritics || row.sub) ? checkEntry(row.word, row.sub, row.diacritics) : ''
               return (
                 <li key={row.word} className="grid gap-2 rounded-xl border border-hair bg-wash p-2.5 md:grid-cols-[9rem_1fr_1fr]">
                   <span className="self-center text-[.82rem] font-semibold text-ink">{row.word}</span>
                   <input
                     value={row.diacritics}
-                    onChange={(event) => editRow(index, { diacritics: event.target.value })}
+                    onChange={(event) => editRow((queuePages.page - 1) * 10 + index, { diacritics: event.target.value })}
                     placeholder="الحركات"
                     className="rounded-lg border border-hair bg-canvas px-2.5 py-1.5 text-[.8rem] text-ink outline-none focus:border-accent"
                   />
                   <input
                     value={row.sub}
-                    onChange={(event) => editRow(index, { sub: event.target.value })}
+                    onChange={(event) => editRow((queuePages.page - 1) * 10 + index, { sub: event.target.value })}
                     placeholder="أو نطقٌ بديل"
                     className="rounded-lg border border-hair bg-canvas px-2.5 py-1.5 text-[.8rem] text-ink outline-none focus:border-accent"
                   />
@@ -310,6 +315,7 @@ export function PronunciationLexicon() {
               )
             })}
           </ul>
+          <Pagination page={queuePages.page} pageCount={queuePages.pageCount} onChange={queuePages.setPage} totalItems={queue.length} firstItem={queuePages.firstItem} lastItem={queuePages.lastItem} label="صفحات طابور ضبط النطق" className="mt-3" />
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <button
               type="button"
@@ -391,7 +397,7 @@ export function PronunciationLexicon() {
         {!shown.length && <p className="mt-3 text-[.78rem] text-soft">لم تُضف كلمةً بعد. القاموس الأساسي يعمل كما هو.</p>}
 
         <ul className="mt-3 grid gap-2">
-          {shown.map((entry) => (
+          {entryPages.pageItems.map((entry) => (
             <li key={entry.word} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hair bg-canvas px-4 py-2.5">
               <span className="text-[.82rem] text-ink">
                 <strong>{entry.word}</strong>
@@ -403,6 +409,7 @@ export function PronunciationLexicon() {
             </li>
           ))}
         </ul>
+        <Pagination page={entryPages.page} pageCount={entryPages.pageCount} onChange={entryPages.setPage} totalItems={shown.length} firstItem={entryPages.firstItem} lastItem={entryPages.lastItem} label="صفحات كلمات القاموس" className="mt-4" />
       </div>
     </details>
   )

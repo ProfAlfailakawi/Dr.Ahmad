@@ -6,6 +6,7 @@ import { useCmsContent } from '../lib/content'
 import { useSeo } from '../components/seo'
 import { dynamicArticleCategories } from '../lib/content-taxonomy'
 import { ReaderFingerprint } from '../components/ReaderResonance'
+import { Pagination, usePagedList } from '../components/Pagination'
 
 export default function Articles() {
   const { articles } = useCmsContent()
@@ -15,7 +16,6 @@ export default function Articles() {
   useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: `${articles.length} مقالاً فكرياً في التعليم والتقنية والمجتمع، منذ ${firstYear}.` })
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('الكل')
-  const [visibleCount, setVisibleCount] = useState(18)
   const categories = useMemo(() => dynamicArticleCategories(articles), [articles])
   const featured = useMemo(() => {
     const selected = essays.flatMap((entry) => {
@@ -35,7 +35,8 @@ export default function Articles() {
   const filtered = articles
     .filter((a) => (cat === 'الكل' ? true : a.cat === cat))
     .filter((a) => (term ? (a.title + ' ' + (a.excerpt || '')).includes(term) : true))
-  const shown = filtered.slice(0, visibleCount)
+  const paged = usePagedList(filtered, 18, `${cat}|${term}`)
+  const shown = paged.pageItems
 
   return (
     <Page className="content-articles page-journey">
@@ -83,7 +84,7 @@ export default function Articles() {
             <div className="relative mb-7">
               <input
                 value={q}
-                onChange={(e) => { setQ(e.target.value); setVisibleCount(18) }}
+                onChange={(e) => setQ(e.target.value)}
                 placeholder="ابحث في المقالات…"
                 aria-label="بحث"
                 className="w-full rounded-full border border-hair bg-canvas py-3.5 pe-12 ps-5 text-[.98rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
@@ -94,7 +95,7 @@ export default function Articles() {
               {categories.map((c) => (
                 <button
                   key={c}
-                  onClick={() => { setCat(c); setVisibleCount(18) }}
+                  onClick={() => setCat(c)}
                   className={`rounded-full border px-4 py-1.5 text-[.85rem] font-medium transition-colors duration-300 ${
                     cat === c ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'
                   }`}
@@ -105,7 +106,7 @@ export default function Articles() {
             </div>
           </FadeUp>
 
-          <ul className="mt-10">
+          <ul id="articles-list" className="mt-10 scroll-mt-28">
             {shown.map((a, i) => (
               <li key={a.slug} className={i === 0 ? '' : 'border-t border-hair'}>
                 <Link
@@ -134,14 +135,7 @@ export default function Articles() {
             <p className="py-16 text-center text-[1rem] font-light text-soft">لا نتائج مطابقة.</p>
           )}
 
-          {visibleCount < filtered.length && (
-            <div className="mt-10 border-t border-hair pt-8 text-center">
-              <button onClick={() => setVisibleCount((count) => count + 18)} className="rounded-full border border-accent px-7 py-3 text-[.88rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">
-                عرض ١٨ مقالاً إضافياً
-              </button>
-              <p className="mt-3 text-[.76rem] text-soft">يظهر المحتوى تدريجياً للحفاظ على هدوء الصفحة وسرعتها.</p>
-            </div>
-          )}
+          <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={filtered.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="articles-list" label="صفحات المقالات" className="mt-10" />
         </div>
       </section>
 

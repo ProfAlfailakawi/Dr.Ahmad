@@ -6,6 +6,7 @@ import type { ArticleRecord } from '../../lib/cms'
 import { loadArticleBodies } from '../../lib/article-bodies'
 import { fetchPublishedExtras } from '../../lib/firebase'
 import { beginAdminTask } from '../../lib/admin-task-state'
+import { Pagination, usePagedList } from '../Pagination'
 import {
   articleSystem,
   automaticSeries,
@@ -238,6 +239,8 @@ function AudioControlCard({ articles }: { articles: ArticleRecord[] }) {
     episodes: { slug: string; title: string; status: string; audio: string; hasTranscript: boolean; utterances: number; quality?: { score?: number; pass?: boolean; pronunciation?: string; pace?: string; pauses?: string; issues?: string[]; metrics?: { durationSeconds?: number; importantRatio?: number | null; longSilences?: number | null } } }[]
     playlists: { title: string; episodes: { slug: string; title: string }[] }[]
   }
+  const episodePages = usePagedList(podcast.episodes, 8, String(podcast.episodes.length))
+  const playlistPages = usePagedList(podcast.playlists, 6, String(podcast.playlists.length))
   return (
     <ToolDetails title="غرفة التحكم الصوتية" note="خاصة لك فقط: تلخص حالة الصوت، ولا تنشر حلقة جديدة من المتصفح." defaultOpen>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -245,9 +248,9 @@ function AudioControlCard({ articles }: { articles: ArticleRecord[] }) {
         <span className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-ink">{noAudio.length}</strong><small className="text-soft">تحتاج صوت</small></span>
       </div>
       <p className="mt-4 text-[.84rem] leading-relaxed text-soft">الحلقات الحوارية المعتمدة تبقى في خلاصة البودكاست فقط بعد اجتياز بوابة الجودة. إعادة التوليد تتم من سكربت الصوت حتى لا نضيف زرًا خطيرًا داخل المتصفح.</p>
-      <div className="mt-5 grid gap-3">
+      <div id="intelligence-podcast-episodes" className="mt-5 grid scroll-mt-28 gap-3">
         <p className="text-[.78rem] font-semibold text-accent">الحلقات الحوارية المنشورة</p>
-        {podcast.episodes.length ? podcast.episodes.map((episode) => (
+        {podcast.episodes.length ? episodePages.pageItems.map((episode) => (
           <div key={episode.slug} className="rounded-xl border border-hair bg-canvas p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
@@ -272,10 +275,11 @@ function AudioControlCard({ articles }: { articles: ArticleRecord[] }) {
         )) : (
           <p className="rounded-xl border border-hair bg-canvas p-4 text-[.84rem] text-soft">لا توجد حلقات حوارية منشورة بعد.</p>
         )}
+        <Pagination page={episodePages.page} pageCount={episodePages.pageCount} onChange={episodePages.setPage} totalItems={podcast.episodes.length} firstItem={episodePages.firstItem} lastItem={episodePages.lastItem} scrollTargetId="intelligence-podcast-episodes" label="صفحات الحلقات الحوارية" className="mt-2" />
       </div>
-      <div className="mt-5 grid gap-3">
+      <div id="intelligence-podcast-playlists" className="mt-5 grid scroll-mt-28 gap-3">
         <p className="text-[.78rem] font-semibold text-accent">قوائم استماع فكرية</p>
-        {podcast.playlists.length ? podcast.playlists.map((playlist) => (
+        {podcast.playlists.length ? playlistPages.pageItems.map((playlist) => (
           <div key={playlist.title} className="rounded-xl border border-hair bg-canvas p-4">
             <p className="font-semibold text-ink">{playlist.title}</p>
             <ul className="mt-2 grid gap-1 text-[.82rem] text-soft">
@@ -285,6 +289,7 @@ function AudioControlCard({ articles }: { articles: ArticleRecord[] }) {
         )) : (
           <p className="rounded-xl border border-hair bg-canvas p-4 text-[.84rem] text-soft">ستُبنى القوائم تلقائيًا مع زيادة الحلقات الحوارية.</p>
         )}
+        <Pagination page={playlistPages.page} pageCount={playlistPages.pageCount} onChange={playlistPages.setPage} totalItems={podcast.playlists.length} firstItem={playlistPages.firstItem} lastItem={playlistPages.lastItem} scrollTargetId="intelligence-podcast-playlists" label="صفحات قوائم الاستماع" className="mt-2" />
       </div>
       <div className="mt-5 rounded-xl border border-hair bg-canvas p-4">
         <p className="font-semibold text-ink">اعتماد الصوت قبل النشر</p>

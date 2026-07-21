@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { useExtras, useCmsContent } from "../lib/content";
 import { loadArticleBodies } from "../lib/article-bodies";
 import { pickEchoes, type VoiceEcho } from "../lib/voice-echoes";
+import { Pagination, usePagedList } from "../components/Pagination";
 
 type LiveInboxItem = {
   id: string;
@@ -108,7 +109,23 @@ export default function Inbox() {
     );
 
   const featuredLetter = letters[0];
-  const letterArchive = letters.slice(1, 7);
+  const letterArchive = letters.slice(1);
+  const letterPages = usePagedList(letterArchive, 6, String(letterArchive.length));
+  const [openCard, setOpenCard] = useState<{ title: string; body: string; reply?: string } | null>(null);
+
+  useEffect(() => {
+    if (!openCard) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenCard(null);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [openCard]);
 
   const liveAnswers = [
     ...liveFaqs.filter(isPublished).map((item) => ({
@@ -126,6 +143,7 @@ export default function Inbox() {
       all.findIndex((candidate) => clean(candidate.q) === clean(item.q)) ===
       index,
   );
+  const questionPages = usePagedList(questions, 6, String(questions.length));
 
   const liveQuotes = liveTestimonials
     .filter(isPublished)
@@ -212,9 +230,12 @@ export default function Inbox() {
                   <span className="absolute right-8 top-3 font-display text-[5rem] leading-none text-accent/15">
                     ”
                   </span>
-                  <p className="relative font-display text-[clamp(1.2rem,2.2vw,1.72rem)] font-light leading-[2] text-ink/92">
+                  <p className="relative line-clamp-5 font-display text-[clamp(1.2rem,2.2vw,1.72rem)] font-light leading-[2] text-ink/92">
                     {featuredLetter.message}
                   </p>
+                  <button type="button" onClick={() => setOpenCard({ title: "رسالة على الهامش", body: featuredLetter.message, reply: featuredLetter.reply })} className="relative mt-6 inline-flex min-h-10 items-center text-[.8rem] font-semibold text-accent transition-colors hover:text-accent-deep">
+                    فتح الرسالة كاملة ←
+                  </button>
                 </blockquote>
               </FadeUp>
               {featuredLetter.reply && (
@@ -223,7 +244,7 @@ export default function Inbox() {
                     <span className="text-[.72rem] font-semibold uppercase text-accent">
                       تعقيب الدكتور
                     </span>
-                    <p className="mt-3 font-display text-[1.06rem] leading-[1.95] text-ink/82">
+                    <p className="mt-3 line-clamp-4 font-display text-[1.06rem] leading-[1.95] text-ink/82">
                       {featuredLetter.reply}
                     </p>
                   </div>
@@ -240,18 +261,18 @@ export default function Inbox() {
           )}
 
           {letterArchive.length > 0 && (
-            <div className="mobile-card-rail mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {letterArchive.map((letter, index) => (
+            <div id="inbox-letters" className="mobile-card-rail mt-12 scroll-mt-28 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {letterPages.pageItems.map((letter, index) => (
                 <FadeUp key={letter.id} delay={Math.min(index * 0.05, 0.25)}>
-                  <article className="h-full rounded-2xl border border-hair bg-canvas p-6">
-                    <p className="font-display text-[1.02rem] font-light leading-[1.9] text-ink/84">
-                      {letter.message}
-                    </p>
-                  </article>
+                  <button type="button" onClick={() => setOpenCard({ title: "رسالة على الهامش", body: letter.message, reply: letter.reply })} className="group flex h-full w-full flex-col rounded-2xl border border-hair bg-canvas p-6 text-right transition-colors hover:border-accent">
+                    <p className="line-clamp-3 font-display text-[1.02rem] font-light leading-[1.9] text-ink/84">{letter.message}</p>
+                    <span className="mt-5 text-[.78rem] font-semibold text-accent">فتح الرسالة ←</span>
+                  </button>
                 </FadeUp>
               ))}
             </div>
           )}
+          <Pagination page={letterPages.page} pageCount={letterPages.pageCount} onChange={letterPages.setPage} totalItems={letterArchive.length} firstItem={letterPages.firstItem} lastItem={letterPages.lastItem} scrollTargetId="inbox-letters" label="صفحات الرسائل" className="mt-9" />
         </div>
       </section>
 
@@ -344,21 +365,20 @@ export default function Inbox() {
             </span>
           </FadeUp>
           {questions.length > 0 && (
-            <div className="mobile-card-rail mt-9 grid gap-10 md:grid-cols-3">
-              {questions.slice(0, 12).map((f, i) => (
+            <div id="inbox-questions" className="mobile-card-rail mt-9 scroll-mt-28 grid gap-8 md:grid-cols-3">
+              {questionPages.pageItems.map((f, i) => (
                 <FadeUp key={f.q} delay={i * 0.07}>
-                  <div className="border-t-2 border-accent pt-5">
-                    <h3 className="font-display text-[1.18rem] font-medium leading-[1.6] text-ink">
-                      {f.q}
-                    </h3>
-                    <p className="mt-3.5 text-[.98rem] font-light leading-[1.9] text-ink/80">
-                      {f.a}
-                    </p>
-                  </div>
+                  <button type="button" onClick={() => setOpenCard({ title: f.q, body: f.a })} className="group w-full border-t-2 border-accent pt-5 text-right">
+                    <h3 className="font-display text-[1.18rem] font-medium leading-[1.6] text-ink">{f.q}</h3>
+                    <p className="mt-3.5 line-clamp-3 text-[.94rem] font-light leading-[1.9] text-ink/75">{f.a}</p>
+                    <span className="mt-4 inline-block text-[.76rem] font-semibold text-accent">قراءة كاملة ←</span>
+                  </button>
                 </FadeUp>
               ))}
             </div>
           )}
+
+          <Pagination page={questionPages.page} pageCount={questionPages.pageCount} onChange={questionPages.setPage} totalItems={questions.length} firstItem={questionPages.firstItem} lastItem={questionPages.lastItem} scrollTargetId="inbox-questions" label="صفحات الأسئلة" className="mt-9" />
 
           {questions.length === 0 && (
             <p className="mt-9 rounded-2xl border border-hair bg-wash px-6 py-5 text-[.88rem] font-light text-soft">
@@ -374,6 +394,18 @@ export default function Inbox() {
           </FadeUp>
         </div>
       </section>
+      {openCard && (
+        <div className="fixed inset-0 z-[120] flex items-end justify-center bg-ink/35 p-0 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-label={openCard.title} onMouseDown={(event) => { if (event.target === event.currentTarget) setOpenCard(null) }}>
+          <article className="max-h-[88dvh] w-full max-w-2xl overflow-y-auto rounded-t-[1.75rem] border border-hair bg-canvas p-6 shadow-2xl sm:rounded-[1.75rem] sm:p-9" tabIndex={-1}>
+            <div className="flex items-start justify-between gap-5 border-b border-hair pb-5">
+              <h2 className="font-display text-[1.25rem] font-semibold leading-relaxed text-ink">{openCard.title}</h2>
+              <button type="button" autoFocus onClick={() => setOpenCard(null)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft hover:border-accent hover:text-accent" aria-label="إغلاق">×</button>
+            </div>
+            <p className="mt-6 whitespace-pre-line font-display text-[1.05rem] font-light leading-[2] text-ink/88">{openCard.body}</p>
+            {openCard.reply && <div className="mt-7 border-r-2 border-accent pr-5"><span className="text-[.72rem] font-semibold text-accent">تعقيب الدكتور</span><p className="mt-2 whitespace-pre-line leading-[1.95] text-ink/82">{openCard.reply}</p></div>}
+          </article>
+        </div>
+      )}
     </Page>
   );
 }

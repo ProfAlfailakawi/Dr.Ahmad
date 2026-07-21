@@ -110,14 +110,18 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     return Boolean(db.get('SELECT message_id FROM outbox_messages WHERE message_id=?', quotedId))
   }
 
-  const onMessage = ({ jid, text, message, media }) => {
+  const onMessage = ({ jid, text, message, media, at }) => {
+    if (db.getSetting('agent.runtimePaused', false)) {
+      db.addAudit('auto-reply-skipped', redactJid(jid), 'runtime-paused-by-owner')
+      return { shouldRespond: false, reason: 'runtime-paused-by-owner' }
+    }
     const hasMedia = Boolean(media || message?.media)
     if (hasMedia || /https?:\/\/|www\./i.test(String(text || ''))) {
       markManualTakeover(db, jid)
       db.addAudit('needs-human-media-or-link', redactJid(jid), hasMedia ? 'media' : 'link')
       return { shouldRespond: false, reason: 'media-or-link-human' }
     }
-    const response = handleIncoming({ db, jid, text: safeText(text), hasMedia, isReplyToAgent: isReplyToBot(message) })
+    const response = handleIncoming({ db, jid, text: safeText(text), hasMedia, isReplyToAgent: isReplyToBot(message), at: at || new Date() })
     /* ★ ما لا جواب له لا يُجاب. حين يُعلن المحرك أنه لا يملك ردّاً (silent)
        نصمت ونُسكت المحادثة ونترك الأمر للدكتور — بدل إبلاغ السائل بفشل بحث. */
     if (response.silent) {
@@ -233,6 +237,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     return result
   }
   const queueCampaign = ({ name, message, targets = [], scheduledAt = null }) => {
+    if (flags.personalNumberMode) throw new Error('الحملات الجماعية معطلة لأن هذا رقم شخصي. استخدم رقماً تجارياً منفصلاً للحملات.')
     if (!name || !message) throw new Error('اسم الحملة ورسالتها مطلوبان')
     if (targets.length > MAX_CAMPAIGN_TARGETS) throw new Error(`الحد الآمن للحملة ${MAX_CAMPAIGN_TARGETS} جهة.`)
     for (const target of targets) if (typeof target === 'string' && !target.includes('@') && target !== 'self') throw new Error('لا تحفظ رقمًا خامًا؛ استخدم الذات أو جهة معروفة بصيغة jid محليًا.')
@@ -444,6 +449,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     return { restartRequestedAt: requestedAt }
   }
   const sendCampaign = async (id, { confirm = false, confirmAgain = false } = {}) => {
+    if (flags.personalNumberMode) throw new Error('الإرسال الجماعي معطل على الرقم الشخصي.')
     if (!confirm || !confirmAgain) throw new Error('إرسال الحملة يحتاج تأكيدين صريحين.')
     if (!flags.send) throw new Error('الإرسال معطّل افتراضيًا. فعّل WHATSAPP_SEND_ENABLED محليًا بعد الاختبار.')
     if (!state.transport || state.transport.getConnectionStatus?.() !== 'connected') throw new Error('اربط واتساب أولًا وتأكد أن الحالة متصل.')
@@ -517,6 +523,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     }
   }
   const sendQuietCampaign = (id, { confirm = false, confirmAgain = false, intervalSeconds = BROADCAST_DEFAULT_INTERVAL_SECONDS } = {}) => {
+    if (flags.personalNumberMode) throw new Error('الإرسال الجماعي معطل على الرقم الشخصي.')
     if (!confirm || !confirmAgain) throw new Error('الإرسال الهادئ يحتاج تأكيدين صريحين.')
     if (!flags.send) throw new Error('الإرسال معطّل افتراضيًا. فعّل WHATSAPP_SEND_ENABLED محليًا بعد الاختبار.')
     if (!state.transport || state.transport.getConnectionStatus?.() !== 'connected') throw new Error('اربط واتساب أولًا وتأكد أن الحالة متصل.')
@@ -551,7 +558,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
         qrImage = await qrcode.toDataURL(String(snapshot.qr), { margin: 1, width: 320, errorCorrectionLevel: 'M' })
       } catch { qrImage = null }
     }
-    return { ...db.state(), qrImage, flags, indexed: Number(db.get('SELECT COUNT(*) AS count FROM content_items')?.count || 0), bridge: Boolean(state.bridge), bridgeOnline, lastHeartbeatAt, heartbeatAgeMs, restartRequestedAt: db.getSetting('bridge.restartRequestedAt', null), port: BRIDGE_PORT, timeZone: TIME_ZONE, health: healthState() }
+    return { ...db.state(), qrImage, flags, runtimePaused: Boolean(db.getSetting('agent.runtimePaused', false)), indexed: Number(db.get('SELECT COUNT(*) AS count FROM content_items')?.count || 0), bridge: Boolean(state.bridge), bridgeOnline, lastHeartbeatAt, heartbeatAgeMs, restartRequestedAt: db.getSetting('bridge.restartRequestedAt', null), port: BRIDGE_PORT, timeZone: TIME_ZONE, health: healthState() }
   }
 
   /**
@@ -581,7 +588,11 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     let why = ''
     let fix = ''
 
-    if (needsAuthScan) {
+    if (db.getSetting('agent.runtimePaused', false)) {
+      code = 'runtime-paused'; label = 'الردود موقوفة بأمر الدكتور'
+      why = 'مفتاح الإيقاف الفوري مفعّل؛ يستمر الربط والفهرس من دون أي رد آلي.'
+      fix = 'اضغط «تشغيل الردود» من اللوحة عندما تريد إعادتها.'
+    } else if (needsAuthScan) {
       code = 'needs-qr'; label = 'يحتاج ربطاً بـ QR'
       why = 'انتهت جلسة واتساب. إعادة التشغيل لا تنفع هنا.'
       fix = 'امسح رمز QR من اللوحة بجوالك.'
@@ -617,8 +628,18 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
 
     return { code, label, why, fix, ready, needsAuthScan, pollFailures, quietNow, silenced, connected }
   }
+  const pauseAutoReplies = () => {
+    db.setSetting('agent.runtimePaused', true)
+    db.addAudit('agent-runtime-paused', 'owner', 'إيقاف فوري من اللوحة')
+    return { paused: true }
+  }
+  const resumeAutoReplies = () => {
+    db.setSetting('agent.runtimePaused', false)
+    db.addAudit('agent-runtime-resumed', 'owner', 'تشغيل الردود من اللوحة')
+    return { paused: false }
+  }
   const setBridge = (server) => { state.bridge = server; return status() }
-  return Object.assign(api, { db, state, index, start, stop, status, sendSelf, audience, onContacts, silenceState, returnAllToBot, repair, queueCampaign, approveCampaign, sendCampaign, sendQuietCampaign, stopCampaign, listCampaigns, listBroadcastGroups, discoverGroups, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, requestRestart })
+  return Object.assign(api, { db, state, index, start, stop, status, sendSelf, audience, onContacts, silenceState, returnAllToBot, repair, pauseAutoReplies, resumeAutoReplies, queueCampaign, approveCampaign, sendCampaign, sendQuietCampaign, stopCampaign, listCampaigns, listBroadcastGroups, discoverGroups, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, requestRestart })
 }
 
 async function dispatchDueReminders(state) {

@@ -1,5 +1,5 @@
 import { contentSummary, findContent, latestContent, normalizeArabic, searchContent } from './content-index.mjs'
-import { AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUAL_TAKEOVER_MINUTES, MAX_MESSAGE_CHARS, TIME_ZONE, flags } from './config.mjs'
+import { AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, CONTENT_SESSION_MINUTES, MANUAL_TAKEOVER_MINUTES, MAX_MESSAGE_CHARS, SESSION_REPLY_CAP, TIME_ZONE, flags } from './config.mjs'
 import { hashOpaque } from './crypto.mjs'
 import { createReminder, parseReminderTime } from './reminders.mjs'
 import { applyBotRules, ensureBotRulesSchema, rememberSent, sign } from './bot-rules.mjs'
@@ -441,14 +441,14 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
 const OPENS_DOOR = new Set([INTENTS.WELCOME])
 
 /** عمر الجلسة: بعد سكوتٍ طويل يُغلق الباب من نفسه فلا يبقى البوت مفتوحاً للأبد */
-const SESSION_HOURS = 6
+const SESSION_MS = CONTENT_SESSION_MINUTES * 60 * 1000
 
 function sessionAlive(session) {
   if (!session) return false
   if (!['content-session', 'auto'].includes(session.mode)) return false
   const last = session.last_user_at || session.opened_at || session.updated_at
   if (!last) return false
-  return Date.now() - new Date(last).getTime() < SESSION_HOURS * 3600 * 1000
+  return Date.now() - new Date(last).getTime() < SESSION_MS
 }
 
 /** هل هذه محادثةُ مجموعة؟ */
@@ -502,24 +502,17 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
   const { intent, confidence } = classification0
   const opensDoor = OPENS_DOOR.has(intent) && confidence >= 0.9
 
-  /* ═══ كتب الدكتور بيده: صمتٌ فوريّ حتى تنقضي المدة ═══
-   *
-   * ★ إلا جملةَ الإيقاظ. بأمر الدكتور: «أي شخص يكتب الإيقاظ على طول يوقظ».
-   *
-   * وكان الإسكات يسبق التصنيف، فيبتلع الجملة معه: يكتب الدكتور بيده فتصمت
-   * المحادثة ثلاثين دقيقة، فإن كتب أحدٌ فيها «موقع د. أحمد» خلالها قوبل
-   * بالصمت — وهو لم يكتبها إلا لأنه يريد البوت صراحةً. فقُدّم التصنيف على
-   * الإسكات، وتُستثنى الجملة وحدها منه: قاعدتان للدكتور تعارضتا، فرجّح
-   * المطلقة منهما بنفسه.
-   *
-   * ويُسجَّل الاختراق كي يعرف الدكتور أن البوت تكلّم أثناء تدخّله. */
-  if (session?.manual_until && new Date(session.manual_until) > new Date()) {
-    if (!opensDoor) return { allowed: false, reason: 'manual-takeover' }
-    db.addAudit?.('wake-overrides-takeover', db.jidKey(jid), 'جملة الإيقاظ تغلب الإسكات بأمر الدكتور')
+  /* أوامر الخصوصية تُطاع دائماً، حتى أثناء الصمت أو التدخل اليدوي. */
+  if (intent === INTENTS.STOP_MESSAGES || intent === INTENTS.RESUME_MESSAGES || intent === INTENTS.DELETE_PREFERENCES) {
+    return { allowed: true, reason: 'privacy-command' }
   }
 
-  /* أوامر الخصوصية تُطاع دائماً وفي كل حال */
-  if (intent === INTENTS.STOP_MESSAGES || intent === INTENTS.RESUME_MESSAGES || intent === INTENTS.DELETE_PREFERENCES) return { allowed: true, reason: 'privacy-command' }
+  /* ═══ كتب الدكتور بيده: صمتٌ مطلق حتى تنقضي المدة ═══
+   * الرقم شخصي، ولذلك تدخّل الدكتور هو أعلى سلطة. لا تستطيع جملة الإيقاظ
+   * ولا جلسة سابقة ولا اقتباسٌ من البوت أن تعيد الرد الآلي أثناء حديثه. */
+  if (session?.manual_until && new Date(session.manual_until) > new Date()) {
+    return { allowed: false, reason: 'manual-takeover' }
+  }
 
   /* قواعد الأدب: تسكته أحياناً رغم أن الباب مفتوح — الطلب الإنسانيّ،
      وساعات الليل، والوسائط، والإكثار. ولا تنبيه في شيءٍ منها بأمر الدكتور. */
@@ -536,6 +529,8 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
    * تخميناً من المنفذ الأخير. «زدني» و«لخّص» و«عندك شي عن…» تعمل كما كانت،
    * وما لم يُفهَم يُترك للدكتور. */
   const understood = !classification0.fallback
+  const sessionReplies = session?.opened_at ? Number(db.get("SELECT COUNT(*) c FROM audit_log WHERE action='auto-reply-sent' AND target=? AND created_at>=?", db.jidKey(jid), session.opened_at)?.c || 0) : 0
+  if (sessionAlive(session) && sessionReplies >= SESSION_REPLY_CAP) return { allowed: false, reason: 'session-reply-cap' }
   if ((isReplyToAgent || explicitContentSession || sessionAlive(session)) && understood) {
     return { allowed: true, reason: 'content-session' }
   }

@@ -7,6 +7,7 @@ import type { AdminTab } from './AdminArchitecture'
 import { fingerprintDialogue } from '../../lib/podcast-dialogue-lock'
 import { dispatchPodcastGeneration } from '../../lib/podcast-generation'
 import { useAdminAuth } from '../../lib/admin-auth'
+import { Pagination, usePagedList } from '../Pagination'
 
 const card = 'min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const pill = 'min-w-0 rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.74rem] font-semibold leading-tight text-soft'
@@ -15,7 +16,7 @@ type Stage = 'draft' | 'queued' | 'generating' | 'pronunciation' | 'needs_review
 
 /* تقرير الفاحص الشامل: كل رابط في الموقع، بحالته وسببه ومكانه واقتراح علاجه */
 type SourcePlace = { kind?: string; title?: string; slug?: string; where?: string }
-type SourceIssue = { url: string; state: string; status?: number; note?: string; advice?: string; places?: SourcePlace[] }
+type SourceIssue = { url: string; state: string; status?: number; note?: string; advice?: string; owned?: boolean; replacement?: string; action?: string; places?: SourcePlace[] }
 type SourceReport = { checkedAt?: string; total?: number; places?: number; ok?: number; problems?: number; warnings?: number; items?: SourceIssue[] }
 const sourceStateLabel: Record<string, string> = {
   dead: 'ميت', unreachable: 'النطاق لا يستجيب', suspect: 'استجابة غريبة',
@@ -170,6 +171,11 @@ export function ProductionHealthCenter({
       setSourcesBusy(false)
     }
   }
+
+  const ownedSourceItems = (sourceReport?.items || []).filter((item) => item.owned)
+  const externalSourceItems = (sourceReport?.items || []).filter((item) => !item.owned)
+  const ownedSourcePages = usePagedList(ownedSourceItems, 8, `${sourceReport?.checkedAt || ''}|${ownedSourceItems.length}`)
+  const externalSourcePages = usePagedList(externalSourceItems, 8, `${sourceReport?.checkedAt || ''}|${externalSourceItems.length}`)
 
   const setStatus = async (slug: string, status: Stage) => {
     setBusy(slug); setMessage('')
@@ -375,36 +381,47 @@ export function ProductionHealthCenter({
               </span>
             </button>
             {sourcesOpen && (
-              <div className="grid gap-2 border-t border-hair p-3">
-                {(sourceReport.items || []).length === 0 && (
-                  <p className="px-2 py-3 text-[.8rem] text-soft">كل المصادر سليمة — لا شيء يحتاج قرارك.</p>
-                )}
-                {(sourceReport.items || []).map((item) => {
-                  const place = item.places?.[0]
-                  const critical = ['dead', 'unreachable', 'suspect'].includes(item.state)
-                  return (
-                    <div key={item.url} className={`min-w-0 rounded-xl border px-3 py-3 ${critical ? 'border-accent/40 bg-accent/[.04]' : 'border-hair bg-wash'}`}>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className={`rounded-full px-2.5 py-1 text-[.68rem] font-semibold ${critical ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>
-                          {sourceStateLabel[item.state] || item.state}{item.status ? ` · ${item.status}` : ''}
-                        </span>
-                        {place?.kind && <span className="text-[.7rem] text-soft">{place.kind}</span>}
+              <div className="grid gap-4 border-t border-hair p-3 lg:grid-cols-2" dir="rtl">
+                <section className="rounded-2xl border border-hair bg-wash p-3">
+                  <div className="mb-3 border-b border-hair pb-3">
+                    <h3 className="text-[.86rem] font-semibold text-ink">مكتبتي</h3>
+                    <p className="mt-1 text-[.7rem] leading-relaxed text-soft">عرض ومقترحات فقط — لا حذف ولا استبدال آلي لأي رابط يخصك.</p>
+                  </div>
+                  <div className="grid gap-2">
+                    {!ownedSourceItems.length && <p className="px-2 py-3 text-[.8rem] text-soft">لا رابط في مكتبتك يحتاج مراجعة.</p>}
+                    {ownedSourcePages.pageItems.map((item) => {
+                      const place = item.places?.[0]
+                      return <div key={item.url} className="min-w-0 rounded-xl border border-hair bg-canvas px-3 py-3">
+                        <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-hair px-2.5 py-1 text-[.68rem] font-semibold text-soft">{sourceStateLabel[item.state] || item.state}{item.status ? ` · ${item.status}` : ''}</span>{place?.kind && <span className="text-[.7rem] text-soft">{place.kind}</span>}</div>
+                        {(place?.title || place?.slug) && <p className="mt-1.5 break-words text-[.84rem] font-semibold leading-[1.6] text-ink">{place.title || place.slug}</p>}
+                        <p className="mt-1 text-[.74rem] leading-relaxed text-soft">{item.note}{item.advice ? ` — ${item.advice}` : ''}</p>
+                        {item.replacement && <a href={item.replacement} target="_blank" rel="noreferrer" className="mt-2 block break-all text-[.72rem] font-semibold text-accent underline underline-offset-4">بديل مقترح فقط ↗</a>}
+                        <a href={item.url} target="_blank" rel="noreferrer" className="mt-2 block break-all text-[.7rem] text-soft underline underline-offset-4">فتح الرابط الحالي ↗</a>
                       </div>
-                      {(place?.title || place?.slug) && (
-                        <p className="mt-1.5 break-words text-[.84rem] font-semibold leading-[1.6] text-ink">{place.title || place.slug}</p>
-                      )}
-                      <p className="mt-1 text-[.74rem] leading-relaxed text-soft">{item.note}{item.advice ? ` — ${item.advice}` : ''}</p>
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-2 inline-block break-all text-[.72rem] text-accent underline underline-offset-4"
-                      >
-                        {item.url} ↗
-                      </a>
-                    </div>
-                  )
-                })}
+                    })}
+                  </div>
+                  <Pagination page={ownedSourcePages.page} pageCount={ownedSourcePages.pageCount} onChange={ownedSourcePages.setPage} totalItems={ownedSourceItems.length} firstItem={ownedSourcePages.firstItem} lastItem={ownedSourcePages.lastItem} label="صفحات مكتبتي" className="mt-4" />
+                </section>
+                <section className="rounded-2xl border border-hair bg-canvas p-3">
+                  <div className="mb-3 border-b border-hair pb-3">
+                    <h3 className="text-[.86rem] font-semibold text-ink">المصادر الخارجية</h3>
+                    <p className="mt-1 text-[.7rem] leading-relaxed text-soft">تُعاد مراجعتها؛ يُستبدل المؤكد، وما ثبت موته بلا بديل يُحذف من الموقع بالكامل.</p>
+                  </div>
+                  <div className="grid gap-2">
+                    {!externalSourceItems.length && <p className="px-2 py-3 text-[.8rem] text-soft">كل المصادر الخارجية سليمة.</p>}
+                    {externalSourcePages.pageItems.map((item) => {
+                      const place = item.places?.[0]
+                      const critical = ['dead', 'unreachable', 'suspect'].includes(item.state)
+                      return <div key={item.url} className={`min-w-0 rounded-xl border px-3 py-3 ${critical ? 'border-accent/40 bg-accent/[.04]' : 'border-hair bg-wash'}`}>
+                        <div className="flex flex-wrap items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-[.68rem] font-semibold ${critical ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>{sourceStateLabel[item.state] || item.state}{item.status ? ` · ${item.status}` : ''}</span>{item.action && <span className="text-[.68rem] font-semibold text-accent">{item.action}</span>}</div>
+                        {(place?.title || place?.slug) && <p className="mt-1.5 break-words text-[.84rem] font-semibold leading-[1.6] text-ink">{place.title || place.slug}</p>}
+                        <p className="mt-1 text-[.74rem] leading-relaxed text-soft">{item.note}{item.advice ? ` — ${item.advice}` : ''}</p>
+                        <a href={item.replacement || item.url} target="_blank" rel="noreferrer" className="mt-2 block break-all text-[.72rem] text-accent underline underline-offset-4">{item.replacement ? 'فتح البديل المعتمد' : 'فتح المصدر'} ↗</a>
+                      </div>
+                    })}
+                  </div>
+                  <Pagination page={externalSourcePages.page} pageCount={externalSourcePages.pageCount} onChange={externalSourcePages.setPage} totalItems={externalSourceItems.length} firstItem={externalSourcePages.firstItem} lastItem={externalSourcePages.lastItem} label="صفحات المصادر الخارجية" className="mt-4" />
+                </section>
               </div>
             )}
           </div>

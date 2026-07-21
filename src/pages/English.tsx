@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom'
 import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { SocialIcon } from '../components/icons'
+import { Pagination, usePagedList } from '../components/Pagination'
 import { links, socials } from '../data'
 import { useCmsContent } from '../lib/content'
 import {
@@ -291,6 +292,7 @@ export function EnglishResearch() {
   const { papers } = useCmsContent()
   useEnglish('Research', '/en/research', `${papers.length} peer-reviewed papers on educational technology, e-learning systems and emerging technologies in higher education.`)
   useTrackView('/en/research', 'English — Research')
+  const paged = usePagedList(papers, 12, String(papers.length))
 
   return (
     <Page>
@@ -309,12 +311,12 @@ export function EnglishResearch() {
               </a>
             </p>
           </FadeUp>
-          <ul>
-            {papers.map((p, i) => (
+          <ul id="english-research-list">
+            {paged.pageItems.map((p, i) => (
               <FadeUp key={p.slug}>
                 <li className="group flex gap-6 border-b border-hair py-8">
                   <span className="w-9 shrink-0 pt-1 font-display text-[1.05rem] font-bold text-accent/50 transition-colors group-hover:text-accent">
-                    {String(i + 1).padStart(2, '0')}
+                    {String((paged.page - 1) * 12 + i + 1).padStart(2, '0')}
                   </span>
                   <div className="min-w-0">
                     <h2 className="text-[1.08rem] font-medium leading-[1.65] text-ink">{paperTitlesEn[p.slug] || p.slug}</h2>
@@ -330,6 +332,7 @@ export function EnglishResearch() {
               </FadeUp>
             ))}
           </ul>
+          <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={papers.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="english-research-list" label="Research pages" className="mt-8" />
         </div>
       </div>
     </Page>

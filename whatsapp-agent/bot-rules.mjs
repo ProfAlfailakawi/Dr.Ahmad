@@ -29,23 +29,13 @@ export function sign(text, { skip = false } = {}) {
 
 /* ═══ ٢) قواعد الصمت ═══ */
 
-/* ساعات الصمت — أُلغيت بأمر الدكتور: «ليش حظر؟ ماله داعي حظر إطلاقاً».
-   وحجّتها كانت أن ردّاً في الثالثة فجراً غريب؛ لكن البوت لا يبتدئ أحداً، ولا
-   يردّ إلا على من كتب إليه بنفسه في تلك الساعة — فالمنع كان يُسكته عمّن يطلبه.
-   وتُضبط من اللوحة: QUIET_FROM=QUIET_UNTIL يعني «لا حظر». */
-export const QUIET_FROM = Number(process.env.WHATSAPP_QUIET_FROM ?? 0)
-export const QUIET_UNTIL = Number(process.env.WHATSAPP_QUIET_UNTIL ?? 0)
-/* ═══ سقف الردود — حارسُ جموحٍ لا حارسُ أدب ═══
- *
- * كان ٥ في اليوم، وكان له معنى يوم كان البوت يستيقظ بعشرات المحفّزات: يمنع
- * حلقةً مفرغة تُغرق شخصاً برسائل. أما اليوم فلا يستيقظ إلا بجملةٍ واحدة
- * يكتبها إنسانٌ بقصد — فصار السقف يعاقب أكثر الناس اهتماماً: من سأل ستّ
- * مرات يُقابَل بصمتٍ بلا تفسير، فيظنّ البوت معطوباً.
- *
- * فيبقى السقف لغرضه الأصلي وحده — إمساك الجموح — بعددٍ لا يبلغه إنسان،
- * ونافذةٍ بالساعة لا باليوم فلا يُقفل الباب إلى الغد. وجملةُ الإيقاظ معفاةٌ
- * منه نهائياً: قاعدة الدكتور مطلقة لا يحدّها عدد. */
-export const HOURLY_REPLY_CAP = Number(process.env.WHATSAPP_HOURLY_REPLY_CAP ?? 30)
+/* ساعات الصمت الافتراضية للرقم الشخصي: 11 مساءً حتى 7 صباحاً.
+   يمكن تغييرها من متغيرات البيئة، وجعل القيمتين متساويتين يعطّلها صراحةً. */
+export const QUIET_FROM = Number(process.env.WHATSAPP_QUIET_FROM ?? 23)
+export const QUIET_UNTIL = Number(process.env.WHATSAPP_QUIET_UNTIL ?? 7)
+/* سقف صارم للرقم الشخصي: خمسة ردود آلية في الساعة لكل شخص.
+   يشمل جملة الإيقاظ أيضاً، حتى لا تتحول إلى وسيلة لإغراق الرقم بالردود. */
+export const HOURLY_REPLY_CAP = Number(process.env.WHATSAPP_HOURLY_REPLY_CAP ?? 5)
 /* يبقى الاسم القديم مُصدَّراً لمن يستورده — ولا يُستعمل في القرار */
 export const DAILY_REPLY_CAP = HOURLY_REPLY_CAP
 
@@ -54,10 +44,7 @@ export function kuwaitHour(at = new Date()) {
   return Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: TIME_ZONE || 'Asia/Kuwait' }).format(at))
 }
 
-/**
- * هل نحن في ساعة صمت؟ لا صمتَ افتراضاً بأمر الدكتور.
- * وتحتمل النافذة العابرة لمنتصف الليل (٢٣ → ٦) لا الصاعدة وحدها.
- */
+/** هل نحن في ساعة الصمت؟ وتدعم النافذة العابرة لمنتصف الليل. */
 export function isQuietHour(at = new Date()) {
   if (QUIET_FROM === QUIET_UNTIL) return false          // لا حظر — وهو الافتراض
   const hour = kuwaitHour(at)
@@ -160,11 +147,7 @@ export function ensureBotRulesSchema(db) {
 export function applyBotRules({ db, jid, normalizedText, hasMedia = false, opensDoor = false, at = new Date() }) {
   if (hasMedia) return { allowed: false, reason: 'وسائط — تحتاج عينك أنت' }
   if (needsHumanOnly(normalizedText)) return { allowed: false, reason: 'طلبٌ إنسانيّ — لا تردّ عليه آلة' }
-  if (isQuietHour(at)) return { allowed: false, reason: 'ساعات الصمت (منتصف الليل — السابعة)' }
-  /* ★ جملة الإيقاظ لا يحدّها عدد. كانت opensDoor تصل إلى هذه الدالة ثم تُرمى
-     — توقيعها لا يذكرها أصلاً — فيُقابَل من كتب «موقع د. أحمد» بالصمت لأنه
-     راسل قبلها خمس مرات. وهذا نقضٌ لقاعدة الدكتور: الجملة توقظه دائماً. */
-  if (opensDoor) return { allowed: true, reason: '' }
+  if (isQuietHour(at)) return { allowed: false, reason: 'ساعات الصمت (الحادية عشرة مساءً — السابعة صباحًا)' }
   if (repliesInWindow(db, jid) >= HOURLY_REPLY_CAP) return { allowed: false, reason: `تجاوز ${HOURLY_REPLY_CAP} ردّاً في الساعة` }
   return { allowed: true, reason: '' }
 }

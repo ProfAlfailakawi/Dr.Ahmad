@@ -1,8 +1,8 @@
-import { useState } from 'react'
 import { useSeo } from '../components/seo'
 import { motion, useReducedMotion } from 'framer-motion'
 import { EASE, FadeUp, Page, PageHead } from '../components/ui'
 import { useCmsContent } from '../lib/content'
+import { Pagination, usePagedList } from '../components/Pagination'
 
 const id = (url: string) => (url.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || ''
 const mediaCount = (count: number) => {
@@ -13,7 +13,7 @@ const mediaCount = (count: number) => {
 
 export default function Media() {
   const { media } = useCmsContent()
-  const [visibleCount, setVisibleCount] = useState(10)
+  const paged = usePagedList(media, 12, String(media.length))
   const count = mediaCount(media.length)
   useSeo({ title: 'الظهور الإعلامي', path: '/media', description: `${count} تلفزيونياً وإذاعياً.` })
   const reduce = useReducedMotion()
@@ -26,8 +26,8 @@ export default function Media() {
       />
 
       <section className="px-6 py-20 md:px-11 md:py-24">
-        <div className="mobile-card-rail mx-auto grid max-w-shell gap-6 md:grid-cols-2 md:gap-7">
-          {media.slice(0, visibleCount).map((m, i) => {
+        <div id="media-grid" className="mobile-card-rail scroll-mt-28 mx-auto grid max-w-shell gap-6 md:grid-cols-2 md:gap-7">
+          {paged.pageItems.map((m, i) => {
             const videoUrl = m.url || ''
             const videoId = id(videoUrl)
             return (
@@ -77,7 +77,7 @@ export default function Media() {
             )
           })}
         </div>
-        {visibleCount < media.length && <div className="mt-9 text-center"><button type="button" onClick={() => setVisibleCount((count) => count + 10)} className="rounded-full border border-hair px-6 py-3 text-[.84rem] font-semibold text-accent transition-colors hover:border-accent">عرض ١٠ لقاءات إضافية</button></div>}
+        <div className="mx-auto mt-9 max-w-shell"><Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={media.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="media-grid" label="صفحات الظهور الإعلامي" /></div>
 
       </section>
     </Page>

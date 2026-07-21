@@ -17,11 +17,21 @@ import {
   type Curio,
 } from "../data-curated";
 import { useExtras } from "../lib/content";
-import { radarSourceArabic, radarTextArabic } from "../lib/radar-display";
+import { radarArabicNote, radarArabicTitle, radarSourceArabic } from "../lib/radar-display";
+import { liveLink } from "../lib/dead-links";
+import { Pagination, usePagedList } from "../components/Pagination";
 /* روابط خارجية ثبت موتها (404/410) عبر الفاحص الأسبوعي — تُصفّى فلا يظهر كرتٌ ميّت.
    وحدات site_radar الميتة تُحذف من Firestore مباشرةً، فلا تصل الصفحة أصلاً. */
 import deadLinks from "../data/curated-dead-links.json";
 const DEAD_LINKS = new Set(Object.keys(deadLinks as Record<string, string>));
+
+const resolvedCurioUrl = (url?: string) => {
+  if (!url) return undefined;
+  const registryUrl = liveLink(url);
+  if (registryUrl && registryUrl !== url) return registryUrl;
+  if (DEAD_LINKS.has(url)) return undefined;
+  return registryUrl;
+};
 
 function CardWrap({
   c,
@@ -32,10 +42,11 @@ function CardWrap({
   className: string;
   children: React.ReactNode;
 }) {
-  if (c.url)
+  const url = resolvedCurioUrl(c.url);
+  if (url)
     return (
       <a
-        href={c.url}
+        href={url}
         target="_blank"
         rel="noreferrer"
         data-hover
@@ -49,8 +60,8 @@ function CardWrap({
 
 /* لا تُعرض في الواجهة إلا الصياغة العربية؛ يبقى الأصل محفوظاً للرابط والتحقق. */
 function CurioBody({ c }: { c: Curio }) {
-  const title = radarTextArabic(c.ar, "مادة حديثة قيد المراجعة العربية");
-  const note = radarTextArabic(c.arNote, "");
+  const title = radarArabicTitle(c.ar, c.en);
+  const note = radarArabicNote(c.arNote, c.en);
   return (
     <>
       <h3 className="font-display text-[1.2rem] font-semibold leading-[1.7] text-ink">
@@ -144,6 +155,7 @@ type RadarItem = {
   url: string;
   day: string;
   status?: string;
+  translationStatus?: string;
   createdAt?: unknown;
 };
 
@@ -156,11 +168,9 @@ const radarKind = (item: RadarItem): Curio["kind"] => {
 
 const radarAsCurio = (item: RadarItem): Curio => ({
   kind: radarKind(item),
-  ar:
-    item.ar ||
-    `مادة حديثة في ${radarKind(item) === "أداة تستحق" ? "الأدوات التعليمية" : radarKind(item) === "مفهوم ناشئ" ? "المفاهيم التربوية الجديدة" : "التعليم والتقنية"}`,
-  arNote: item.arNote,
-  en: item.en || item.ar,
+  ar: radarArabicTitle(item.ar, item.en),
+  arNote: radarArabicNote(item.arNote, item.en),
+  en: item.en || "",
   enNote: item.enNote,
   source: item.source,
   url: item.url,
@@ -168,21 +178,19 @@ const radarAsCurio = (item: RadarItem): Curio => ({
 });
 
 const dedupe = (items: Curio[]) =>
-  items.filter(
-    (item, index, allItems) =>
-      !(item.url && DEAD_LINKS.has(item.url)) &&
-      allItems.findIndex(
-        (candidate) =>
-          (candidate.url || candidate.ar) === (item.url || item.ar),
-      ) === index,
-  );
+  items.filter((item, index, allItems) => {
+    const url = resolvedCurioUrl(item.url);
+    if (item.url && !url) return false;
+    const key = url || item.ar;
+    return allItems.findIndex((candidate) => (resolvedCurioUrl(candidate.url) || candidate.ar) === key) === index;
+  });
 
 function SourceLine({ c }: { c: Curio }) {
   return (
     <div className="mt-4 border-t border-hair pt-3 text-[.78rem] text-soft">
       <p className="flex items-center justify-between gap-3">
         <span>المصدر: {radarSourceArabic(c.source)}</span>
-        {c.url && (
+        {resolvedCurioUrl(c.url) && (
           <span className="shrink-0 text-accent transition-transform duration-300 group-hover:-translate-x-1">
             اذهب للمصدر ←
           </span>
@@ -298,6 +306,7 @@ export default function Curated() {
   const all = dedupe([...dynamic, ...curatedBank]);
   const shown =
     kind === "الكل" ? all : all.filter((item) => item.kind === kind);
+  const paged = usePagedList(shown, 12, kind);
 
   return (
     <Page className="content-curated page-journey">
@@ -392,8 +401,8 @@ export default function Curated() {
             </div>
           </FadeUp>
 
-          <div className="mobile-card-rail mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {shown.map((item, index) => (
+          <div id="curated-grid" className="mobile-card-rail mt-10 scroll-mt-28 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {paged.pageItems.map((item, index) => (
               <motion.div
                 key={item.url || item.ar}
                 initial={reduce ? false : { opacity: 0 }}
@@ -421,6 +430,19 @@ export default function Curated() {
               </motion.div>
             ))}
           </div>
+
+
+          <Pagination
+            page={paged.page}
+            pageCount={paged.pageCount}
+            onChange={paged.setPage}
+            totalItems={shown.length}
+            firstItem={paged.firstItem}
+            lastItem={paged.lastItem}
+            scrollTargetId="curated-grid"
+            className="mt-10"
+            label="صفحات المختارات"
+          />
 
           <FadeUp delay={0.1}>
             <p className="mt-14 border-t border-hair pt-8 text-[.85rem] leading-relaxed text-soft">

@@ -1,10 +1,10 @@
-import { useState } from 'react'
 import { JsonLd, useSeo } from '../components/seo'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, Page, PageHead } from '../components/ui'
 import { useCmsContent } from '../lib/content'
 import { SITE_URL } from '../data'
+import { Pagination, usePagedList } from '../components/Pagination'
 
 const bookCount = (count: number) => {
   if (count === 1) return 'كتاب واحد'
@@ -14,7 +14,7 @@ const bookCount = (count: number) => {
 
 export default function Publications() {
   const { books } = useCmsContent()
-  const [visibleCount, setVisibleCount] = useState(12)
+  const paged = usePagedList(books, 12, String(books.length))
   const count = bookCount(books.length)
   useSeo({ title: 'الكتب المنشورة', path: '/publications', description: `${count} في التعليم والتكنولوجيا والتغيير المجتمعي.` })
   const reduce = useReducedMotion()
@@ -35,8 +35,8 @@ export default function Publications() {
       }} />
       <PageHead label="المؤلفات" title={`${count}.`} sub="مؤلفاتي العلمية والفكرية في التعليم والتكنولوجيا والتغيير المجتمعي." />
       <section className="overflow-hidden px-6 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-20 md:px-11 md:py-24">
-        <div className="mobile-card-rail mx-auto grid w-full max-w-shell min-w-0 grid-cols-2 gap-x-4 gap-y-8 sm:gap-8 lg:grid-cols-3 lg:gap-10">
-          {books.slice(0, visibleCount).map((b, i) => (
+        <div id="books-grid" className="mobile-card-rail scroll-mt-28 mx-auto grid w-full max-w-shell min-w-0 grid-cols-2 gap-x-4 gap-y-8 sm:gap-8 lg:grid-cols-3 lg:gap-10">
+          {paged.pageItems.map((b, i) => (
             <motion.div
               key={b.slug}
               initial={reduce ? false : { opacity: 0 }}
@@ -59,7 +59,7 @@ export default function Publications() {
             </motion.div>
           ))}
         </div>
-        {visibleCount < books.length && <div className="mx-auto mt-10 max-w-shell text-center"><button type="button" onClick={() => setVisibleCount((count) => count + 12)} className="rounded-full border border-hair px-6 py-3 text-[.84rem] font-semibold text-accent transition-colors hover:border-accent">عرض ١٢ كتاباً إضافياً</button></div>}
+        <div className="mx-auto mt-10 max-w-shell"><Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={books.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="books-grid" label="صفحات الكتب" /></div>
       </section>
     </Page>
   )

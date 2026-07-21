@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Pagination, usePagedList } from '../Pagination'
 import { articleCats, books, papers } from '../../data'
 import privateBookLinks from '../../data/private-book-links.json'
 import bookTocLinks from '../../data/book-toc-links.json'
@@ -8,7 +9,8 @@ import { useAdminAuth } from '../../lib/admin-auth'
 import { fetchPublishedExtras, getDb } from '../../lib/firebase'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
-import { buildSocialVisuals, compositionNameOf, detectVisualTopic, downloadSocialPng, renderSocialPng, visualTopicLabel, type SocialVisualTemplate, type VisualTopic } from '../../lib/social-templates'
+import { buildSocialVisuals, compositionNameOf, analyzeSocialCopy,
+  detectVisualTopic, downloadSocialPng, renderSocialPng, visualTopicLabel, type SocialVisualTemplate, type VisualTopic } from '../../lib/social-templates'
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
@@ -1341,7 +1343,7 @@ function standaloneVisualTemplates(idea: string, purpose: string): SocialVisualT
   const title = idea.trim() || 'الفكرة لا تحتاج مقالاً كي تستحق النشر.'
   const body = purpose.trim() || 'اكتب الجملة، واختر القالب، ثم نزّل الصورة الجاهزة للنشر.'
   const topic = detectVisualTopic(`${title} ${body}`)
-  const shared = { platform: 'instagram' as const, width: 1080, height: 1350, topic, title, body, footer: 'د. أحمد حسين الفيلكاوي · dr-alfailakawi.com' }
+  const shared = { platform: 'instagram' as const, width: 1080, height: 1350, topic, title, body, footer: 'dr-alfailakawi.com' }
   // المكتبة الكاملة: التكوينات الستة الموقّعة أولاً، ثم كل تخطيطات المحرك بلا إسقاط.
   const all: { key: string; layout: SocialVisualTemplate['layout']; kicker: string }[] = [
     { key: 'midad', layout: 'question', kicker: 'المداد' },
@@ -1369,6 +1371,7 @@ function standaloneVisualTemplates(idea: string, purpose: string): SocialVisualT
     { key: 'mawja', layout: 'wave', kicker: 'الموجة' },
     { key: 'mizan', layout: 'balance', kicker: 'الميزان' },
   ]
+  const analysis = analyzeSocialCopy(`${title} ${body}`)
   const affinity: Record<string, SocialVisualTemplate['layout'][]> = {
     ai: ['circuit', 'dark', 'signal', 'matrix', 'orbit', 'split'],
     education: ['question', 'arch', 'notebook', 'editorial', 'layers', 'focus'],
@@ -1379,10 +1382,23 @@ function standaloneVisualTemplates(idea: string, purpose: string): SocialVisualT
     human: ['human', 'signature', 'focus', 'quote', 'window', 'dialogue'],
     general: ['editorial', 'question', 'signature', 'focus', 'horizon', 'balance'],
   }
-  const preferred = affinity[topic] || affinity.general
+  const shapeAffinity: Record<typeof analysis.shape, SocialVisualTemplate['layout'][]> = {
+    question: ['question', 'focus', 'window', 'arch', 'dialogue'],
+    contrast: ['balance', 'split', 'layers', 'dialogue', 'manifesto'],
+    number: ['matrix', 'research', 'signal', 'timeline', 'notebook'],
+    sequence: ['timeline', 'layers', 'notebook', 'matrix', 'event'],
+    call: ['manifesto', 'signature', 'horizon', 'dark', 'focus'],
+    definition: ['editorial', 'notebook', 'research', 'window', 'quote'],
+    statement: ['editorial', 'focus', 'signature', 'horizon', 'human'],
+  }
+  const preferredTopic = affinity[topic] || affinity.general
+  const preferredShape = shapeAffinity[analysis.shape]
   const rank = (layout: SocialVisualTemplate['layout']) => {
-    const index = preferred.indexOf(layout)
-    return index === -1 ? 99 : index
+    const shapeIndex = preferredShape.indexOf(layout)
+    const topicIndex = preferredTopic.indexOf(layout)
+    const shapeScore = shapeIndex === -1 ? 80 : shapeIndex * 4
+    const topicScore = topicIndex === -1 ? 20 : topicIndex
+    return shapeScore + topicScore
   }
   return [...all]
     .sort((left, right) => rank(left.layout) - rank(right.layout))
@@ -1571,6 +1587,8 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   }), [bundle, gate, privateMemoryMatches, similarity, styleInsight, weeklyPack])
   const articleSuggestions = useMemo(() => suggestArticleIdeas(richArticles, radar, privateLinks), [privateLinks, radar, richArticles])
   const pulseTemplateShowcase = useMemo(() => standaloneVisualTemplates(pulsePreviewCopy.idea, pulsePreviewCopy.purpose), [pulsePreviewCopy])
+  const pulseCopyAnalysis = useMemo(() => analyzeSocialCopy(`${pulsePreviewCopy.idea} ${pulsePreviewCopy.purpose}`), [pulsePreviewCopy])
+  const pulseTemplatePages = usePagedList(pulseTemplateShowcase, 8, `${pulsePreviewCopy.idea}|${pulsePreviewCopy.purpose}`)
 
   useEffect(() => {
     const timer = window.setTimeout(() => setPulsePreviewCopy({ idea: pulseIdea, purpose: pulsePurpose }), 450)
@@ -2172,18 +2190,27 @@ ${pulsePurpose.trim()}`,
             </div>
           </section>
 
-          <section className={card} aria-labelledby="standalone-templates-title">
+          <section id="standalone-template-library" className={card} aria-labelledby="standalone-templates-title">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-[.76rem] font-semibold uppercase text-accent">الطبعة الفاخرة</p>
                 <h2 id="standalone-templates-title" className="mt-1 font-display text-2xl font-semibold text-ink">مكتبة القوالب كاملة — 24 تكويناً.</h2>
-                <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">اكتب فكرتك في الأعلى فتتحدث المعاينات تلقائياً بعد توقفك لحظة. التكوينات الستة الموقّعة محفوظة، ومعها جميع تخطيطات المحرك الثمانية عشر الأخرى؛ لا قالب مخفي ولا قالب محذوف، والترتيب يتغير ذكياً بحسب موضوع الفكرة.</p>
+                <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">المحرك لا يقرأ الموضوع فقط؛ يميّز السؤال والمقارنة والأرقام والتسلسل والنبرة، ثم يقدّم التكوينات الأنسب أولاً. تعرض الصفحة ثمانية قوالب فقط للمحافظة على الهدوء، وتبقى المكتبة كاملة عبر الترقيم.</p>
               </div>
-              <span className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.72rem] text-soft">{visualTopicLabel(detectVisualTopic(`${pulseIdea} ${pulsePurpose}`))}</span>
+              <span className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.72rem] text-soft">{pulseCopyAnalysis.topicLabel}</span>
             </div>
+
+            <div className="mt-5 grid gap-3 rounded-2xl border border-hair bg-canvas p-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="قراءة المخرج البصري للنص">
+              <div><span className="block text-[.67rem] text-soft">النبرة</span><strong className="mt-1 block text-[.84rem] text-ink">{pulseCopyAnalysis.tone}</strong></div>
+              <div><span className="block text-[.67rem] text-soft">بنية النص</span><strong className="mt-1 block text-[.84rem] text-ink">{{ question: 'سؤال', contrast: 'مقارنة', number: 'أرقام', sequence: 'تسلسل', call: 'دعوة', definition: 'تعريف', statement: 'فكرة مباشرة' }[pulseCopyAnalysis.shape]}</strong></div>
+              <div><span className="block text-[.67rem] text-soft">الصيغة الأنسب</span><strong className="mt-1 block text-[.84rem] text-ink">{pulseCopyAnalysis.recommendedFormat}{pulseCopyAnalysis.recommendedSlides > 1 ? ` · ${pulseCopyAnalysis.recommendedSlides} شرائح` : ''}</strong></div>
+              <div className="min-w-0"><span className="block text-[.67rem] text-soft">العبارة المحورية</span><strong className="mt-1 line-clamp-2 block text-[.8rem] leading-relaxed text-ink">{pulseCopyAnalysis.keyPhrase || 'اكتب الفكرة ليقرأها المخرج البصري.'}</strong></div>
+            </div>
+
             <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-              {pulseTemplateShowcase.map((template) => <VisualTemplateCard key={template.id} template={template} />)}
+              {pulseTemplatePages.pageItems.map((template) => <VisualTemplateCard key={template.id} template={template} />)}
             </div>
+            <Pagination page={pulseTemplatePages.page} pageCount={pulseTemplatePages.pageCount} onChange={pulseTemplatePages.setPage} totalItems={pulseTemplateShowcase.length} firstItem={pulseTemplatePages.firstItem} lastItem={pulseTemplatePages.lastItem} scrollTargetId="standalone-template-library" label="صفحات قوالب السوشال ميديا" className="mt-7" />
           </section>
 
           {pulseEvents.length > 0 && <CurrentEventsCard items={pulseEvents} selected={pulseSelectedEventIds} loading={pulseEventsLoading} onToggle={(id) => setPulseSelectedEventIds((previous) => previous.includes(id) ? previous.filter((item) => item !== id) : [id])} />}

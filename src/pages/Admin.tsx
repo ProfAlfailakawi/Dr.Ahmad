@@ -10,6 +10,7 @@
  */
 import { useEffect, useState } from 'react'
 import { Page } from '../components/ui'
+import { Pagination, usePagedList } from '../components/Pagination'
 import { firebaseEnabled, getDb, getFirebaseApp } from '../lib/firebase'
 import { articleCats } from '../data'
 import { getBaseRecord, type ArticleRecord } from '../lib/cms'
@@ -377,6 +378,7 @@ async function testimonialDocId(messageId: string) {
 function InboxPanel() {
   const [items, setItems] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
+  const paged = usePagedList(items, 10, String(items.length))
 
   useEffect(() => {
     let active = true
@@ -465,7 +467,7 @@ function InboxPanel() {
         <strong className="text-ink">التحديث مباشر الآن.</strong> رسائل التواصل الخاصة تظهر هنا فقط. أمّا «رسائل على الهامش» و«أسئلة تصلني» فيولّدهما النظام من أرشيفك نفسه — رسائلُ حول مقالاتك وكتبك، وأسئلةٌ من مجالاتك، وأجوبتها من متونك حرفياً. وما تنشره أنت من هنا يتقدّم عليها ويُخفيها.
       </div>
       <p className="text-[.85rem] text-soft">{String(items.length).replace(/[0-9]/g, (d) => '0123456789'[+d])} رسالة — الأحدث أولاً</p>
-      {items.map((m) => (
+      {paged.pageItems.map((m) => (
         <div key={m.id} className={card}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2.5">
@@ -489,6 +491,7 @@ function InboxPanel() {
           </div>
         </div>
       ))}
+      <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={items.length} firstItem={paged.firstItem} lastItem={paged.lastItem} label="صفحات رسائل التواصل" className="mt-4" />
     </div>
   )
 }
@@ -530,18 +533,20 @@ function useCollection(name: string) {
 }
 
 function Existing({ items, remove, label }: { items: { id: string; title?: string; ar?: string }[]; remove: (id: string) => void; label: string }) {
+  const paged = usePagedList(items, 10, `${label}|${items.length}`)
   if (!items.length) return null
   return (
     <div className="mt-8">
       <p className="mb-3 text-[.8rem] font-semibold text-soft">{label} المنشورة من اللوحة ({String(items.length).replace(/[0-9]/g, (d) => '0123456789'[+d])})</p>
       <ul className="grid gap-2">
-        {items.map((it) => (
+        {paged.pageItems.map((it) => (
           <li key={it.id} className="flex items-center justify-between gap-3 rounded-xl border border-hair px-4 py-2.5">
             <span className="truncate text-[.9rem] text-ink">{it.title || it.ar}</span>
             <button onClick={() => { if (confirm('حذف نهائي؟')) remove(it.id) }} className="shrink-0 text-[.78rem] text-soft transition-colors hover:text-red-500">حذف</button>
           </li>
         ))}
       </ul>
+      <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={items.length} firstItem={paged.firstItem} lastItem={paged.lastItem} label={`صفحات ${label}`} className="mt-4" />
     </div>
   )
 }

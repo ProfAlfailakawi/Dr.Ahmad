@@ -58,7 +58,9 @@ async function startAdminAuth() {
         try {
           const token = await getIdTokenResult(user)
           if (version !== authVersion) return
-          emit({ user, isAdmin: token.claims.admin === true, loading: false, error: null })
+          const isAdmin = token.claims.admin === true
+          if (isAdmin) { try { localStorage.setItem('pwa:owner-device', '1') } catch { /* private mode */ } }
+          emit({ user, isAdmin, loading: false, error: null })
         } catch (error) {
           if (version !== authVersion) return
           emit({ user, isAdmin: false, loading: false, error: messageFor(error) })
@@ -101,6 +103,7 @@ export function useAdminAuth() {
       const token = await getIdTokenResult(user, true)
       if (version !== authVersion) return false
       const isAdmin = token.claims.admin === true
+      if (isAdmin) { try { localStorage.setItem('pwa:owner-device', '1') } catch { /* private mode */ } }
       emit({ user, isAdmin, loading: false, error: null })
       return isAdmin
     } catch (error) {

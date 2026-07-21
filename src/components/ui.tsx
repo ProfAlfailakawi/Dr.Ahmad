@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useInView, useMotionValue, useReducedMotion, useScroll, useSpring, AnimatePresence } from 'framer-motion'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { LINK_OUT, SHOW_EN_TOGGLE, profile, socials, links } from '../data'
 import { useCmsContent } from '../lib/content'
 import { ThemeToggle } from './extras'
@@ -732,6 +732,22 @@ export function Nav() {
   const { scrollY, scrollYProgress } = useScroll()
   const progress = useSpring(scrollYProgress, { stiffness: 200, damping: 40 })
   const loc = useLocation()
+  const navigate = useNavigate()
+  const ownerPressTimer = useRef<number | null>(null)
+  const ownerPressTriggered = useRef(false)
+  const ownerMode = () => {
+    try {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone)
+      return standalone && localStorage.getItem('pwa:owner-device') === '1'
+    } catch { return false }
+  }
+  const ownerPressStart = () => {
+    if (!ownerMode()) return
+    ownerPressTriggered.current = false
+    ownerPressTimer.current = window.setTimeout(() => { ownerPressTriggered.current = true; navigate('/admin') }, 1200)
+  }
+  const ownerPressEnd = () => { if (ownerPressTimer.current) window.clearTimeout(ownerPressTimer.current); ownerPressTimer.current = null }
+  const ownerLogoClick = (event: React.MouseEvent) => { if (ownerPressTriggered.current) { event.preventDefault(); ownerPressTriggered.current = false } }
   const closeMenu = useCallback(() => setOpen(false), [])
   const closeSearch = useCallback(() => setSearchOpen(false), [])
 
@@ -765,7 +781,7 @@ export function Nav() {
         <AnimatePresence>{searchOpen && <SearchPalette key="search" close={closeSearch} />}</AnimatePresence>
         <nav aria-label="Main navigation" dir="ltr" className={`site-nav ${solid ? 'is-solid' : ''} fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.9] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
           <div className={`mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
-            <Link to="/en" aria-label="Ahmad H. Alfailakawi">
+            <Link to="/en" aria-label="Ahmad H. Alfailakawi" onPointerDown={ownerPressStart} onPointerUp={ownerPressEnd} onPointerCancel={ownerPressEnd} onPointerLeave={ownerPressEnd} onClick={ownerLogoClick}>
               <img src="/logo.png" alt="" className="h-[36px] w-[60px] object-contain opacity-90 dark:invert" style={{ objectPosition: 'left' }} />
             </Link>
             <div className="flex items-center gap-3">
@@ -795,7 +811,7 @@ export function Nav() {
 
       <nav aria-label="التنقّل الرئيسي" className={`site-nav ${solid ? 'is-solid' : ''} fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.9] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
         <div className={`mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
-          <Link to="/" aria-label={profile.name}>
+          <Link to="/" aria-label={profile.name} onPointerDown={ownerPressStart} onPointerUp={ownerPressEnd} onPointerCancel={ownerPressEnd} onPointerLeave={ownerPressEnd} onClick={ownerLogoClick}>
             <img src="/logo.png" alt="" className="h-[36px] w-[60px] object-contain opacity-90 dark:invert" style={{ objectPosition: 'right' }} />
           </Link>
 

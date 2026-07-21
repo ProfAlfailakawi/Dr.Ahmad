@@ -3,6 +3,7 @@ import { useSeo } from '../components/seo'
 import { Page, PageHead, FadeUp, Reveal } from '../components/ui'
 import { Share } from '../components/extras'
 import { useExtras } from '../lib/content'
+import { Pagination, usePagedList } from '../components/Pagination'
 import { Question, LAUNCH_DATE, staticQuestions } from '../questions-data'
 export { LAUNCH_DATE, staticQuestions }
 
@@ -58,7 +59,6 @@ type LiveQuestion = Question & {
 type ArchiveQuestion = Question & { label: string; key: string }
 
 export default function Questions() {
-  const [visibleCount, setVisibleCount] = useState(12)
   useSeo({
     title: 'سؤال يُقلق التعليم',
     path: '/questions',
@@ -104,6 +104,8 @@ export default function Questions() {
   const previousQuestions = [...liveArchive, ...staticArchive]
     .filter((item) => item.ar !== currentQuestion.ar)
     .filter((item, index, all) => all.findIndex((candidate) => candidate.ar === item.ar) === index)
+
+  const paged = usePagedList(previousQuestions, 12, String(previousQuestions.length))
 
   return (
     <Page className="content-questions page-journey">
@@ -155,8 +157,8 @@ export default function Questions() {
           <FadeUp>
             <h3 className="mb-10 font-display text-2xl font-bold text-ink">أسئلة سابقة</h3>
           </FadeUp>
-          <div className="mobile-card-rail grid gap-5">
-            {previousQuestions.slice(0, visibleCount).map((question, index) => (
+          <div id="questions-list" className="mobile-card-rail scroll-mt-28 grid gap-5">
+            {paged.pageItems.map((question, index) => (
               <FadeUp key={question.key} delay={Math.min(index * 0.04, 0.3)}>
                 <article className="rounded-2xl border border-hair p-6">
                   <p className="mb-1 text-[.75rem] text-soft">{question.label}</p>
@@ -171,7 +173,7 @@ export default function Questions() {
               </FadeUp>
             ))}
           </div>
-          {visibleCount < previousQuestions.length && <div className="mt-8 text-center"><button type="button" onClick={() => setVisibleCount((count) => count + 12)} className="rounded-full border border-hair px-6 py-3 text-[.84rem] font-semibold text-accent transition-colors hover:border-accent">عرض ١٢ سؤالاً إضافياً</button></div>}
+          <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={previousQuestions.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="questions-list" label="صفحات الأسئلة" className="mt-8" />
         </div>
       </section>
     </Page>

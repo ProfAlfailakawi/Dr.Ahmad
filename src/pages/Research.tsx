@@ -1,9 +1,9 @@
-import { useState } from 'react'
 import { JsonLd, useSeo } from '../components/seo'
 import { Link } from 'react-router-dom'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { doctorate, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
+import { Pagination, usePagedList } from '../components/Pagination'
 
 const ar = (n: number) => String(n).padStart(2, '0').replace(/[0-9]/g, (d) => '0123456789'[+d])
 const paperCount = (count: number) => {
@@ -14,7 +14,7 @@ const paperCount = (count: number) => {
 
 export default function Research() {
   const { papers } = useCmsContent()
-  const [visibleCount, setVisibleCount] = useState(12)
+  const paged = usePagedList(papers, 12, String(papers.length))
   const count = paperCount(papers.length)
   useSeo({ title: 'المساهمات العلمية', path: '/research', description: `${count} محكّماً في تكنولوجيا التعليم.` })
   return (
@@ -51,12 +51,12 @@ export default function Research() {
               </a>
             </p>
           </FadeUp>
-          <ul>
-            {papers.slice(0, visibleCount).map((p, i) => (
+          <ul id="research-list" className="scroll-mt-28">
+            {paged.pageItems.map((p, i) => (
               <FadeUp key={p.slug} delay={Math.min(i * 0.03, 0.3)}>
                 <li className={i === 0 ? '' : 'border-t border-hair'}>
                   <Link to={`/research/${p.slug}`} className="group flex gap-6 py-6">
-                    <span className="min-w-[40px] pt-1 font-display font-semibold text-soft transition-colors group-hover:text-accent">{ar(i + 1)}</span>
+                    <span className="min-w-[40px] pt-1 font-display font-semibold text-soft transition-colors group-hover:text-accent">{ar((paged.page - 1) * 12 + i + 1)}</span>
                     <span>
                       <span dir="auto" className="block text-[1.14rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">{p.title}</span>
                       {p.titleAr && <span dir="rtl" className="mt-1 block text-[.92rem] font-extralight leading-[1.8] text-soft/90">{p.titleAr}</span>}
@@ -68,7 +68,7 @@ export default function Research() {
               </FadeUp>
             ))}
           </ul>
-          {visibleCount < papers.length && <div className="mt-8 text-center"><button type="button" onClick={() => setVisibleCount((count) => count + 12)} className="rounded-full border border-hair px-6 py-3 text-[.84rem] font-semibold text-accent transition-colors hover:border-accent">عرض ١٢ بحثاً إضافياً</button></div>}
+          <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={papers.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="research-list" label="صفحات الأبحاث" className="mt-8" />
 
           <FadeUp delay={0.15}>
             <div className="mt-16 border-t border-hair pt-9">

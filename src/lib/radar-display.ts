@@ -50,22 +50,63 @@ const COMMON_TERMS: Array<[RegExp, string]> = [
   [/\bSTEM\b/gi, "العلوم والتقنية والهندسة والرياضيات"],
 ];
 
-/** آخر حاجز عرض: السجلات القديمة أو المتعثرة لا تستطيع إعادة عنوان إنجليزي للزائر. */
-export function radarTextArabic(value: unknown, fallback: string) {
-  let text = String(value || "")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (!text) return fallback;
-  for (const [pattern, replacement] of COMMON_TERMS)
-    text = text.replace(pattern, replacement);
-  if (LATIN.test(text)) {
-    text = text
-      .replace(/[A-Za-z][A-Za-z0-9+.#/_-]*/g, "")
-      .replace(/\s+([،؛:.!?؟])/g, "$1")
-      .replace(/\s{2,}/g, " ")
-      .trim();
-  }
-  return ARABIC.test(text) ? text : fallback;
+/* ترجمات بشرية مثبتة للمواد التي وصلت قبل تشديد بوابة التعريب. لا نعرض
+   عبارةً عامة مكان العنوان: إما ترجمة عربية حقيقية، أو لا تُنشر البطاقة. */
+const KNOWN_TITLES: Record<string, string> = {
+  "These Hip-Hop Artists Were Already Teaching":
+    "فنانو الهيب هوب هؤلاء كانوا يمارسون التعليم بالفعل",
+  "OPINION: The days of ‘good guy’ capitalists are over. College students are right to turn against the tech elites":
+    "رأي: انتهى زمن «الرأسمالي الطيب»… ومن حق طلبة الجامعات مساءلة نخب التقنية",
+  "OPINION: The days of 'good guy' capitalists are over. College students are right to turn against the tech elites":
+    "رأي: انتهى زمن «الرأسمالي الطيب»… ومن حق طلبة الجامعات مساءلة نخب التقنية",
+  "PRINCIPAL VOICE: Our off-track high school students weren’t terribly interested in school until we dug into hands-on learning":
+    "صوت مدير مدرسة: لم يستعد طلابنا المتعثرون اهتمامهم بالدراسة إلا بالتعلّم التطبيقي",
+  "PRINCIPAL VOICE: Our off-track high school students weren't terribly interested in school until we dug into hands-on learning":
+    "صوت مدير مدرسة: لم يستعد طلابنا المتعثرون اهتمامهم بالدراسة إلا بالتعلّم التطبيقي",
+};
+
+const KNOWN_NOTES: Record<string, string> = {
+  "These Hip-Hop Artists Were Already Teaching":
+    "برنامج جامعي جديد يمنح فناني الهيب هوب اعتماداً أكاديمياً لنقل خبراتهم المجتمعية والواقعية إلى الصفوف الدراسية.",
+  "OPINION: The days of ‘good guy’ capitalists are over. College students are right to turn against the tech elites":
+    "قراءة نقدية في تحوّل نظرة الجيل الجديد إلى قادة شركات التقنية وعلاقتهم بالجامعات والمجتمع.",
+  "OPINION: The days of 'good guy' capitalists are over. College students are right to turn against the tech elites":
+    "قراءة نقدية في تحوّل نظرة الجيل الجديد إلى قادة شركات التقنية وعلاقتهم بالجامعات والمجتمع.",
+  "PRINCIPAL VOICE: Our off-track high school students weren’t terribly interested in school until we dug into hands-on learning":
+    "تجربة مدرسية أعادت إشراك طلاب كانوا بعيدين عن المسار الدراسي عبر تعلّم عملي مرتبط بالحياة والعمل.",
+  "PRINCIPAL VOICE: Our off-track high school students weren't terribly interested in school until we dug into hands-on learning":
+    "تجربة مدرسية أعادت إشراك طلاب كانوا بعيدين عن المسار الدراسي عبر تعلّم عملي مرتبط بالحياة والعمل.",
+};
+
+const GENERIC_AR = [
+  /^مادة حديثة(?: موثوقة)?(?: حول| في)/,
+  /^التقطها الرادار/,
+  /^اختارها الرادار/,
+  /^مادة حديثة قيد المراجعة/,
+];
+
+function cleanArabic(value: unknown) {
+  let text = String(value || "").replace(/\s+/g, " ").trim();
+  for (const [pattern, replacement] of COMMON_TERMS) text = text.replace(pattern, replacement);
+  if (!text || !ARABIC.test(text) || LATIN.test(text) || GENERIC_AR.some((pattern) => pattern.test(text))) return "";
+  return text;
+}
+
+export function radarArabicTitle(ar: unknown, en: unknown = "") {
+  const genuine = cleanArabic(ar);
+  if (genuine) return genuine;
+  return KNOWN_TITLES[String(en || "").trim()] || "";
+}
+
+export function radarArabicNote(arNote: unknown, en: unknown = "") {
+  const genuine = cleanArabic(arNote);
+  if (genuine) return genuine;
+  return KNOWN_NOTES[String(en || "").trim()] || "";
+}
+
+/** للتوافق مع الاستدعاءات القديمة: لا يُنشئ نصاً عاماً بعد الآن. */
+export function radarTextArabic(value: unknown, fallback = "") {
+  return cleanArabic(value) || fallback;
 }
 
 export function radarSourceArabic(value = "") {

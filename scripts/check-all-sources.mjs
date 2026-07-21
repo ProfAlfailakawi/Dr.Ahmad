@@ -9,8 +9,8 @@
  * لقاءات، ومجموعات Firestore)، ويكتب تقريراً تفصيلياً في `site_health/latest`
  * تقرؤه اللوحة: أين الرابط، ولماذا سقط، ومتى فُحص، وما اقتراح العلاج.
  *
- * لا يحذف شيئاً: القرار للدكتور. الحذف الآلي يبقى في فاحص المختارات القديم
- * وحده (وهو محكوم بقاعدة 404 فقط).
+ * يفصل ملكية الدكتور عن المصادر الخارجية: مكتبته تُعرض له دون أي تعديل،
+ * أما المختارات والرادار فيُستبدل رابطها ببديل مؤكد أو تُحذف بعد تأكيد الموت.
  */
 import { readFileSync, existsSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
@@ -219,7 +219,15 @@ console.log(`فحص ${unique.length} رابطاً فريداً من ${harvested.
 
 let done = 0
 const checked = await mapWithLimit(unique, CONCURRENCY, async (entry) => {
-  const result = await probe(entry.url)
+  let result = await probe(entry.url)
+  /* لا يُحذف مصدر بسبب لقطة واحدة: الميت الحقيقي (404/410) يُعاد فحصه
+     بطلب مستقل قبل تسجيله ميتاً. إن اختلفت النتيجة يؤجَّل القرار. */
+  if (result.state === 'dead') {
+    await new Promise((resolve) => setTimeout(resolve, 350))
+    const confirmation = await probe(entry.url)
+    if (confirmation.state !== 'dead') result = { ...confirmation, note: `اختلف الفحص الثاني؛ أُجّل الحذف. ${confirmation.note || ''}`.trim() }
+    else result.note = `${result.note} · تأكد بفحصين مستقلين`
+  }
   done += 1
   if (done % 25 === 0) console.log(`  … ${done}/${unique.length}`)
   return { ...entry, ...result, advice: ADVICE[result.state] || '' }
@@ -271,6 +279,14 @@ const warnings = checked.filter((item) => !NEEDS_ATTENTION.has(item.state) && it
 const mine = problems.filter(isOwned)
 const foreign = problems.filter((item) => !isOwned(item))
 
+for (const item of problems) {
+  item.owned = isOwned(item)
+  item.replacement = await findCertainReplacement(item.url).catch(() => '')
+  item.action = item.owned
+    ? (item.replacement ? 'بديل مقترح — لم يُطبّق' : 'بانتظار قرارك')
+    : (item.replacement ? 'بديل مؤكد — سيُطبّق تلقائياً' : item.state === 'dead' ? 'سيُحذف من الموقع بالكامل' : 'إعادة فحص قبل القرار')
+}
+
 const summary = {
   checkedAt: new Date().toISOString(),
   total: unique.length,
@@ -289,6 +305,8 @@ const summary = {
     note: item.note,
     advice: item.advice,
     owned: isOwned(item),
+    replacement: item.replacement || '',
+    action: item.action || '',
     places: item.places.slice(0, 3),
   })),
 }
@@ -336,16 +354,29 @@ if (foreign.length && !process.argv.includes('--report-only')) {
     const app = getApps()[0] || initializeApp({ credential: cert(JSON.parse(readFileSync(saCleanup, 'utf8'))) })
     const db = getFirestore(app)
     let removed = 0
+    let updated = 0
     for (const item of foreign) {
       if (item.state !== 'dead') continue
       for (const place of item.places || []) {
         if (!['site_radar', 'site_picks'].includes(place.where)) continue
-        await db.collection(place.where).doc(place.slug).delete().catch(() => undefined)
-        console.log(`  🧹 حُذف من ${place.where}: ${(place.title || place.slug).slice(0, 50)}`)
-        removed += 1
+        const ref = db.collection(place.where).doc(place.slug)
+        if (item.replacement) {
+          await ref.set({
+            url: item.replacement,
+            previousUrl: item.url,
+            sourceHealthRepairedAt: new Date().toISOString(),
+          }, { merge: true }).catch(() => undefined)
+          console.log(`  🔁 استُبدل رابط ${place.where}: ${(place.title || place.slug).slice(0, 50)}`)
+          updated += 1
+        } else {
+          await ref.delete().catch(() => undefined)
+          console.log(`  🧹 حُذف من ${place.where}: ${(place.title || place.slug).slice(0, 50)}`)
+          removed += 1
+        }
       }
     }
-    if (removed) console.log(`✓ حُذف ${removed} عنصراً خارجياً ميتاً تلقائياً.`)
+    if (updated) console.log(`✓ استُبدل ${updated} رابطاً خارجياً ببديل مؤكد.`)
+    if (removed) console.log(`✓ حُذف ${removed} عنصراً خارجياً ميتاً بلا بديل.`)
   }
 }
 
@@ -384,8 +415,9 @@ async function findCertainReplacement(url) {
   let hidden = 0, replaced = 0, revived = 0
 
   for (const item of checked) {
+    if (isOwned(item)) continue
     const wasDead = previous.get(item.url)
-    if (item.state === 'dead' || item.state === 'unreachable') {
+    if (item.state === 'dead') {
       const existing = wasDead || { url: item.url, state: item.state, since: new Date().toISOString() }
       if (!existing.replacement) {
         const replacement = await findCertainReplacement(item.url)

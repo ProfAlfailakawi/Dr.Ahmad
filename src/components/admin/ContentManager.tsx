@@ -6,6 +6,7 @@ import { describe as describeEcho, findEchoes, indexPast } from '../../lib/echoe
 import { getArticleBody } from '../../lib/article-bodies'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { normalizeArabicTypography } from '../../lib/arabic-typography'
+import { Pagination, usePagedList } from '../Pagination'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
 
@@ -861,6 +862,8 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
       })
   }, [descending, items, query])
 
+  const paged = usePagedList(filtered, 15, `${kind}|${query}|${descending}`)
+
   const openNew = () => {
     setError('')
     setForm(blank(kind))
@@ -1023,7 +1026,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
   }
 
   return (
-    <section className="grid min-w-0 max-w-full gap-5">
+    <section id={`admin-content-${kind}`} className="grid min-w-0 max-w-full gap-5">
       <div className="grid min-w-0 gap-4 sm:flex sm:flex-wrap sm:items-end sm:justify-between">
         <div className="min-w-0">
           <p className="text-[.76rem] font-semibold uppercase text-accent">إدارة المحتوى</p>
@@ -1041,7 +1044,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
       {notice && <p className="rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.84rem] text-accent">{notice}</p>}
 
       <div className="grid min-w-0 gap-3 sm:hidden">
-        {filtered.map((item) => (
+        {paged.pageItems.map((item) => (
           <article key={`${item._cms.origin}:${item.slug}`} className={`min-w-0 overflow-hidden rounded-2xl border border-hair bg-canvas p-4 ${item._cms.hidden ? 'opacity-60' : ''}`}>
             <button type="button" onClick={() => openEdit(item)} className="block min-w-0 w-full text-right">
               <span className="block break-words font-medium leading-[1.7] text-ink">{item.title}</span>
@@ -1079,7 +1082,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
             </tr>
           </thead>
           <tbody className="divide-y divide-hair">
-            {filtered.map((item) => (
+            {paged.pageItems.map((item) => (
               <tr
                 key={`${item._cms.origin}:${item.slug}`}
                 tabIndex={0}
@@ -1128,6 +1131,17 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
         </table>
         {!filtered.length && <p className="px-6 py-14 text-center text-[.9rem] text-soft">لا نتائج مطابقة.</p>}
       </div>
+
+      <Pagination
+        page={paged.page}
+        pageCount={paged.pageCount}
+        onChange={paged.setPage}
+        totalItems={filtered.length}
+        firstItem={paged.firstItem}
+        lastItem={paged.lastItem}
+        scrollTargetId={`admin-content-${kind}`}
+        label={`صفحات ${labels[kind].plural}`}
+      />
 
       {current !== undefined && (
         <Editor

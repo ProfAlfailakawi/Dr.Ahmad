@@ -1,4 +1,5 @@
 import { FadeUp, Label, Magnetic, Page } from '../components/ui'
+import { Pagination, usePagedList } from '../components/Pagination'
 import { Newsletter } from '../components/extras'
 import { useSeo } from '../components/seo'
 import { upcoming, type Event as SiteEvent } from '../data'
@@ -10,6 +11,7 @@ export default function Upcoming() {
   const addedEvents = useExtras<SiteEvent & { id: string }>('site_upcoming')
 
   const future = sortUpcomingEvents([...addedEvents, ...upcoming])
+  const paged = usePagedList(future, 12, String(future.length))
 
   return (
     <Page>
@@ -33,8 +35,9 @@ export default function Upcoming() {
       <section className="px-6 py-10 md:px-11 md:py-14">
         <div className="mx-auto max-w-4xl">
           {future.length > 0 ? (
-            <ul className="grid gap-3">
-              {future.map((e, i) => (
+            <>
+            <ul id="upcoming-events-list" className="grid gap-3">
+              {paged.pageItems.map((e, i) => (
                 <FadeUp
                   key={e.iso + e.title}
                   delay={Math.min(i * 0.05, 0.25)}
@@ -65,6 +68,8 @@ export default function Upcoming() {
                 </FadeUp>
               ))}
             </ul>
+            <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={future.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="upcoming-events-list" label="صفحات اللقاءات القادمة" className="mt-8" />
+            </>
           ) : (
             <FadeUp>
               <div className="rounded-xl border border-hair bg-wash px-6 py-12 text-center md:py-14">

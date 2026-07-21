@@ -9,6 +9,7 @@
  * وتناديه باسمه، ولا يرى أحدٌ رقم أحد.
  */
 import { useEffect, useMemo, useState } from 'react'
+import { Pagination, usePagedList } from '../Pagination'
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none placeholder:text-soft/60 focus:border-accent'
@@ -180,6 +181,8 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
     })
   }
 
+  const listPages = usePagedList(lists, 8, String(lists.length))
+  const memberPages = usePagedList(members, 30, `${activeId}|${members.length}`)
   const inList = useMemo(() => new Set(members.map((m) => m.id)), [members])
   const toggle = (id: string) => setPicked((prev) => {
     const next = new Set(prev)
@@ -215,7 +218,7 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
             <button type="button" className={secondary} disabled={busy} onClick={createList}>+</button>
           </div>
           {lists.length === 0 && <p className="mt-1 text-[.75rem] text-soft">لا قوائم بعد. اكتب اسماً واضغط +</p>}
-          {lists.map((list) => {
+          {listPages.pageItems.map((list) => {
             const isActive = list.id === activeId
             return (
               <div key={list.id} className={`rounded-xl border px-4 py-3 transition-colors ${isActive ? 'border-accent bg-canvas' : 'border-hair bg-canvas/60'}`}>
@@ -229,6 +232,7 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
               </div>
             )
           })}
+          <Pagination page={listPages.page} pageCount={listPages.pageCount} onChange={listPages.setPage} totalItems={lists.length} firstItem={listPages.firstItem} lastItem={listPages.lastItem} label="صفحات قوائم الجمهور" className="mt-2" />
         </div>
 
         {/* ═══ الأعضاء والدفتر ═══ */}
@@ -244,7 +248,7 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                 </div>
                 {members.length === 0 && <p className="text-[.78rem] text-soft">القائمة فارغة. اختر من دفترك بالأسفل.</p>}
                 <div className="flex flex-wrap gap-2">
-                  {members.map((member) => (
+                  {memberPages.pageItems.map((member) => (
                     <span key={member.id} className="flex items-center gap-2 rounded-full border border-hair bg-wash px-3 py-1.5 text-[.78rem] text-ink">
                       {member.suppressed && <span title="طلب إيقاف الرسائل — لن يصله شيء">🔕</span>}
                       <button type="button" className="hover:text-accent" title="اكتب لقباً" onClick={() => rename(member.id, member.nickname)}>
@@ -254,6 +258,7 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                     </span>
                   ))}
                 </div>
+                <Pagination page={memberPages.page} pageCount={memberPages.pageCount} onChange={memberPages.setPage} totalItems={members.length} firstItem={memberPages.firstItem} lastItem={memberPages.lastItem} label="صفحات أعضاء القائمة" className="mt-3" />
               </div>
 
               {/* حُذفت بطاقة «الرسالة والمعاينة» من هنا: كانت تكرّر ما تفعله

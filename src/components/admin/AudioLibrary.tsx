@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ArticleAudioControl, ArticleRecord } from '../../lib/cms'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { manageArticleAudio, type ArticleAudioAction, type ArticleAudioMode } from '../../lib/audio-management'
+import { Pagination, usePagedList } from '../Pagination'
 
 type Filter = 'all' | 'ready' | 'working' | 'missing'
 type PlayerState = { slug: string; voice: ArticleAudioMode } | null
@@ -41,14 +42,15 @@ const statusLabel = (status = '', disabled = false, available = false) => {
   if (status === 'failed') return 'تعذّر آخر تشغيل'
   if (status === 'clearing') return 'جارٍ الحذف'
   if (status === 'cleared' || disabled) return 'محذوف وغير ظاهر'
-  if (status === 'published' || available) return 'جاهز للسماع'
+  if (available) return 'جاهز للسماع'
+  if (status === 'published') return 'لا يوجد ملف صوتي'
   return 'غير مولّد'
 }
 
 const statusClass = (status = '', disabled = false, available = false) => {
   if (status === 'failed') return 'text-red-700 dark:text-red-300'
   if (inProgress(status)) return 'text-accent'
-  if (status === 'published' || (available && !disabled)) return 'text-ink'
+  if (available && !disabled) return 'text-ink'
   return 'text-soft'
 }
 
@@ -113,7 +115,8 @@ export function AudioLibrary({ articles, onChanged }: Props) {
     const control = controlFor(article)
     const disabled = disabledFor(control, voice)
     const status = statusFor(control, voice)
-    const available = !disabled && (exists(article.audio?.[voice]) || status === 'published')
+    // الملف الفعلي في بيان الصوت هو مصدر الحقيقة؛ حالة Firestore القديمة لا تعيد ملفاً حُذف.
+    const available = !disabled && exists(article.audio?.[voice])
     return {
       available,
       disabled,
@@ -147,6 +150,8 @@ export function AudioLibrary({ articles, onChanged }: Props) {
   // localControls intentionally changes the derived state of every row.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allArticles, filter, query, localControls])
+
+  const paged = usePagedList(filtered, 20, `${filter}|${query}`)
 
   const totals = useMemo(() => {
     const result = {
@@ -354,8 +359,8 @@ export function AudioLibrary({ articles, onChanged }: Props) {
         <span>المقال</span><span>صوت فهد</span><span>صوت نورة</span><span>الحوار</span>
       </div>
 
-      <div className="divide-y divide-hair border-b border-hair">
-        {filtered.map((article) => (
+      <div id="audio-library-list" className="scroll-mt-28 divide-y divide-hair border-b border-hair">
+        {paged.pageItems.map((article) => (
           <article key={article.slug} className="grid min-w-0 gap-5 px-1 py-5 sm:px-3 lg:grid-cols-[minmax(230px,1.25fr)_repeat(3,minmax(215px,1fr))] lg:gap-5">
             <div className="min-w-0">
               <p className="line-clamp-2 text-[.9rem] font-semibold leading-relaxed text-ink">{article.title}</p>
@@ -373,6 +378,7 @@ export function AudioLibrary({ articles, onChanged }: Props) {
         ))}
         {!filtered.length && <p className="py-16 text-center text-[.84rem] text-soft">لا توجد مقالات تطابق هذا البحث.</p>}
       </div>
+      <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={filtered.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="audio-library-list" label="صفحات مكتبة الصوت" className="mt-7" />
     </section>
   )
 }

@@ -5,6 +5,7 @@ import { useSeo } from '../components/seo'
 import { searchArticles, topKeywordsFor } from '../lib/cms'
 import { useCmsContent } from '../lib/content'
 import { dynamicArticleCategories } from '../lib/content-taxonomy'
+import { Pagination, usePagedList } from '../components/Pagination'
 
 const ar = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 
@@ -29,7 +30,6 @@ export default function Search() {
   const [query, setQuery] = useState(() => searchParams.get('q') || '')
   const [cat, setCat] = useState('الكل')
   const [year, setYear] = useState('الكل')
-  const [visibleCount, setVisibleCount] = useState(24)
 
   const categories = useMemo(() => dynamicArticleCategories(articles), [articles])
   const years = useMemo(() => Array.from(new Set(articles.map((article) => article.iso.slice(0, 4))))
@@ -41,13 +41,13 @@ export default function Search() {
     [articles, normalizedQuery, cat, year, searchStarted],
   )
   const keywords = useMemo(() => topKeywordsFor(results.slice(0, 18), 12), [results])
-  const visibleResults = results.slice(0, visibleCount)
+  const paged = usePagedList(results, 20, `${normalizedQuery}|${cat}|${year}`)
+  const visibleResults = paged.pageItems
 
   const chooseTopic = (topic: string) => {
     setQuery(topic)
     setCat('الكل')
     setYear('الكل')
-    setVisibleCount(24)
   }
 
   return (
@@ -65,7 +65,7 @@ export default function Search() {
               <div className="relative">
                 <input
                   value={query}
-                  onChange={(event) => { setQuery(event.target.value); setVisibleCount(24) }}
+                  onChange={(event) => setQuery(event.target.value)}
                   placeholder="كلمة، فكرة، عنوان، أو سؤال..."
                   aria-label="بحث في المقالات"
                   className="w-full rounded-none border-0 border-b border-hair bg-transparent py-5 pe-14 ps-4 font-display text-[clamp(1.45rem,4vw,2.5rem)] font-semibold leading-[1.5] text-ink outline-none transition-colors placeholder:text-soft/45 focus:border-accent"
@@ -97,7 +97,7 @@ export default function Search() {
                   {categories.map((item) => (
                     <button
                       key={item}
-                      onClick={() => { setCat(item); setVisibleCount(24) }}
+                      onClick={() => setCat(item)}
                       className={`min-h-11 shrink-0 border-b px-1 py-2 text-[.84rem] font-medium transition-colors ${
                         cat === item ? 'border-accent text-accent' : 'border-transparent text-soft hover:border-accent hover:text-accent'
                       }`}
@@ -111,7 +111,7 @@ export default function Search() {
                   {['الكل', ...years].map((item) => (
                     <button
                       key={item}
-                      onClick={() => { setYear(item); setVisibleCount(24) }}
+                      onClick={() => setYear(item)}
                       className={`min-h-11 shrink-0 border-b px-1 py-2 text-[.8rem] transition-colors ${
                         year === item ? 'border-accent text-accent' : 'border-transparent text-soft hover:border-accent hover:text-accent'
                       }`}
@@ -146,7 +146,7 @@ export default function Search() {
             </div>
           </FadeUp>}
 
-          {searchStarted && <ul className="mt-8">
+          {searchStarted && <ul id="search-results" className="mt-8 scroll-mt-28">
             {visibleResults.map((article, index) => (
               <FadeUp key={article.slug} delay={Math.min(index * 0.025, 0.25)}>
                 <li className={index === 0 ? '' : 'border-t border-hair'}>
@@ -167,18 +167,7 @@ export default function Search() {
             ))}
           </ul>}
 
-          {searchStarted && visibleCount < results.length && (
-            <FadeUp>
-              <div className="border-t border-hair pt-8 text-center">
-                <button
-                  onClick={() => setVisibleCount((count) => count + 24)}
-                  className="rounded-full border border-accent px-7 py-3 text-[.9rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
-                >
-                  عرض ٢٤ نتيجة أخرى
-                </button>
-              </div>
-            </FadeUp>
-          )}
+          {searchStarted && <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={results.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="search-results" label="صفحات نتائج البحث" className="mt-8" />}
 
           {!searchStarted && (
             <FadeUp delay={0.05}>

@@ -10,10 +10,13 @@ import { useSeo } from "../components/seo";
 import { FadeUp, Page, PageHead } from "../components/ui";
 import { useExtras } from "../lib/content";
 import {
+  radarArabicNote,
+  radarArabicTitle,
   radarDateArabic,
   radarSourceArabic,
-  radarTextArabic,
 } from "../lib/radar-display";
+import { Pagination, usePagedList } from "../components/Pagination";
+import { liveLink } from "../lib/dead-links";
 
 type RadarItem = {
   ar: string;
@@ -24,6 +27,7 @@ type RadarItem = {
   url: string;
   day: string;
   status?: string;
+  translationStatus?: string;
 };
 
 const arNum = (n: number | string) =>
@@ -58,7 +62,8 @@ export default function Radar() {
   });
 
   const items = useExtras<RadarItem>("site_radar", { realtime: true })
-    .filter((r) => (!r.status || r.status === "published") && r.day)
+    .map((r) => ({ ...r, url: liveLink(r.url) || "", ar: radarArabicTitle(r.ar, r.en), arNote: radarArabicNote(r.arNote, r.en) }))
+    .filter((r) => (!r.status || r.status === "published") && r.day && r.ar && r.url)
     .sort((a, b) => b.day.localeCompare(a.day));
 
   // تجميع أسبوعي مع فواصل سنوية
@@ -76,6 +81,7 @@ export default function Radar() {
   }
 
   const sources = new Set(items.map((i) => i.source));
+  const paged = usePagedList(weeks, 4, String(weeks.length));
 
   return (
     <Page>
@@ -104,9 +110,10 @@ export default function Radar() {
                 </p>
               </FadeUp>
 
-              {weeks.map((w, wi) => (
+              <div id="radar-weeks" className="scroll-mt-28">
+              {paged.pageItems.map((w, wi) => (
                 <div key={w.key} className="mb-14">
-                  {(wi === 0 || weeks[wi - 1].year !== w.year) && (
+                  {(wi === 0 || paged.pageItems[wi - 1].year !== w.year) && (
                     <FadeUp>
                       <h2 className="mb-8 border-b border-hair pb-3 font-display text-2xl font-bold text-accent">
                         {arNum(w.year)}
@@ -142,14 +149,11 @@ export default function Radar() {
                             {radarSourceArabic(r.source)}
                           </span>
                           <h4 className="mt-2.5 font-display text-[1.08rem] font-semibold leading-[1.7] text-ink">
-                            {radarTextArabic(
-                              r.ar,
-                              "مادة حديثة في التعليم والتقنية",
-                            )}
+                            {r.ar}
                           </h4>
-                          {radarTextArabic(r.arNote, "") && (
+                          {r.arNote && (
                             <p className="mt-1.5 text-[.87rem] font-light leading-[1.85] text-soft">
-                              {radarTextArabic(r.arNote, "")}
+                              {r.arNote}
                             </p>
                           )}
                           <span className="mt-auto pt-4 text-[.8rem] text-soft transition-colors group-hover:text-accent">
@@ -161,6 +165,8 @@ export default function Radar() {
                   </div>
                 </div>
               ))}
+              </div>
+              <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={weeks.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="radar-weeks" label="صفحات أرشيف الرادار" />
             </>
           )}
         </div>

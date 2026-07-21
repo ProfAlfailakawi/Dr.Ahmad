@@ -168,13 +168,8 @@ function pickCandidate(items, tiredSources = new Map()) {
 const hasArabic = (value = '') => /[ء-ي]/.test(value)
 const cleanJson = (value = '') => String(value).replace(/^```(?:json)?\s*|\s*```$/g, '').trim()
 
-function fallbackArabic(item) {
-  const topic = topicOf(item)
-  return {
-    titleAr: `مادة حديثة حول ${topic}`,
-    summaryAr: `التقطها الرادار من مصدر موثوق ضمن محور ${topic}، ويقود الرابط إلى المادة الأصلية.`,
-    translationStatus: 'fallback',
-  }
+function fallbackArabic() {
+  return { titleAr: '', summaryAr: '', translationStatus: 'pending' }
 }
 
 async function translateArabic(item) {
@@ -203,7 +198,7 @@ async function translateArabic(item) {
 }
 
 function sourceSummary(item, translation) {
-  const translated = translation || fallbackArabic(item)
+  const translated = translation || fallbackArabic()
   return {
     ar: translated.titleAr,
     arNote: translated.summaryAr,
@@ -321,11 +316,11 @@ function selfTest() {
   if (!selected || selected.link !== 'https://example.org/story') throw new Error('فشل اختبار الاختيار')
 
   /* ١) لا جملةً قالبيةً بعد اليوم: بطاقتان من مصدرٍ واحد يجب أن تختلفا. */
-  const cardA = sourceSummary({ ...selected, source: 'Fixture' })
+  const cardA = sourceSummary({ ...selected, source: 'Fixture' }, { titleAr: 'محو الأمية بالذكاء الاصطناعي للمعلمين', summaryAr: 'بحث جديد عن التعلم داخل الصف.', translationStatus: 'translated' })
   const cardB = sourceSummary({
     source: 'Fixture', title: 'University funding policy reform debated', link: 'https://example.org/two',
     desc: 'Lawmakers weigh a new budget for higher education districts.', publishedAt: new Date(),
-  })
+  }, { titleAr: 'نقاش حول إصلاح تمويل الجامعات', summaryAr: 'مقترح جديد لميزانيات التعليم العالي.', translationStatus: 'translated' })
   if (!hasArabic(cardA.ar) || !hasArabic(cardB.ar)) throw new Error('العنوان العربي الاحتياطي مفقود')
   if (!cardA.en || cardA.en !== selected.title) throw new Error('العنوان الأصلي يجب أن يبقى محفوظاً للمرجع')
   if (cardA.arNote === cardB.arNote) throw new Error('السطر العربي قالبيّ — مادتان مختلفتان أعطتا السطر نفسه')
@@ -388,6 +383,10 @@ if (tiredSources.size) {
 
 const chosen = pickCandidate(pool, tiredSources)
 const translation = await translateArabic(chosen)
+if (translation.translationStatus !== 'translated') {
+  console.log('⊘ تعذرت الترجمة العربية الدقيقة؛ لن تُنشر عبارة عامة. سيعيد المجدول المحاولة لاحقاً.')
+  process.exit(0)
+}
 const summary = sourceSummary(chosen, translation)
 console.log(`اختار: ${chosen.title}\nالمصدر: ${chosen.source}\nالباب: ${summary.arNote}\nالرابط: ${chosen.link}`)
 await publish(summary, token, day)

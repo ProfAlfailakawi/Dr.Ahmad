@@ -9,15 +9,6 @@ import { PersistentAudioDock, PersistentAudioProvider } from './lib/persistent-a
 import { ReadingMemoryGuard } from './components/MySpace'
 import Home from './pages/Home'
 
-
-function PwaHomeEntry() {
-  const standalone = typeof window !== 'undefined' && (
-    window.matchMedia?.('(display-mode: standalone)').matches
-    || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone)
-  )
-  return standalone ? <Navigate to="/launch?source=pwa-root" replace /> : <Home />
-}
-
 /* تقسيم الكود: الرئيسية فورية، وبقية الصفحات تُحمَّل عند زيارتها فقط —
    فأول تحميل للموقع أخف بكثير (نصوص المقالات الـ٢٧٦ك لا تنزل إلا لقارئها) */
 const PwaLaunch = lazy(() => import('./pages/PwaLaunch'))
@@ -30,6 +21,7 @@ const Decade = lazy(() => import('./pages/Decade'))
 const ThoughtPaths = lazy(() => import('./pages/ThoughtPaths'))
 const Media = lazy(() => import('./pages/Media'))
 const CV = lazy(() => import('./pages/CV'))
+const Impact = lazy(() => import('./pages/Impact'))
 const CvFile = lazy(() => import('./pages/CvFile'))
 const Contact = lazy(() => import('./pages/Contact'))
 const BookDetail = lazy(() => import('./pages/BookDetail'))
@@ -168,7 +160,7 @@ function AnimatedRoutes() {
     <AnimatePresence mode="sync">
       <Suspense fallback={<RouteLoadingLine />}>
       <Routes location={loc} key={loc.pathname}>
-        <Route path="/" element={<PwaHomeEntry />} />
+        <Route path="/" element={<Home />} />
         <Route path="/launch" element={<PwaLaunch />} />
         <Route path="/publications" element={<Publications />} />
         <Route path="/publications/:slug" element={<BookDetail />} />
@@ -191,6 +183,8 @@ function AnimatedRoutes() {
         <Route path="/inbox" element={<Inbox />} />
         <Route path="/about" element={<AboutSite />} />
         <Route path="/cv" element={<CV />} />
+        <Route path="/impact/*" element={<Impact />} />
+        <Route path="/cv/impact" element={<Navigate to="/impact" replace />} />
         <Route path="/cv-file/:kind" element={<CvFile />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />

@@ -9,6 +9,7 @@ import { randomToken } from './crypto.mjs'
 import { createReminder } from './reminders.mjs'
 import { startLocalBridge } from './bridge.mjs'
 import { addContactByPhone, addMembers, absorbContacts, importContacts, listContactsPage, createList, deleteList, ensureAudienceSchema, jidOf, listContacts, listLists, listMembers, personalize, previewFor, removeMember, renameList, resolveAudience, setNickname, vocativeOf } from './audience.mjs'
+import { ensureBotRulesSchema } from './bot-rules.mjs'
 
 function safeText(text) { return String(text || '').slice(0, MAX_MESSAGE_CHARS).trim() }
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -20,6 +21,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
      فتظهر اللوحة «غير مرتبط» بينما واتساب متصل فعلاً. */
   const api = {}
   ensureAudienceSchema(db)
+  ensureBotRulesSchema(db)
   const index = () => syncContentIndex(db, root, SITE_URL)
 
   /* ═══ الجمهور: دفتر الأسماء وقوائم الدكتور ═══

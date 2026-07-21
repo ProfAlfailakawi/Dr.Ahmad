@@ -5,6 +5,7 @@ import { Pagination, usePagedList } from '../components/Pagination'
 import { useSeo } from '../components/seo'
 import { useCmsContent, useExtras } from '../lib/content'
 import { buildIdeaLife, type IdeaLifeRemoteRecord, type ImpactKind, type ImpactNode } from '../lib/idea-life'
+import { liveLink } from '../lib/dead-links'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 type FilterKey = 'all' | 'paper' | 'media' | 'application' | 'archive'
@@ -35,8 +36,9 @@ function EvidenceLink({ node }: { node: ImpactNode }) {
     </>
   )
   if (node.to) return <Link to={node.to} className="group block">{content}</Link>
-  if (node.url) return <a href={node.url} target="_blank" rel="noreferrer" className="group block">{content}</a>
-  return <div>{content}</div>
+  const url = liveLink(node.url)
+  if (url) return <a href={url} target="_blank" rel="noreferrer" className="group block">{content}</a>
+  return null
 }
 
 export default function Impact() {
@@ -72,13 +74,17 @@ export default function Impact() {
           kind: 'origin', label: 'العمل العلمي', title: paper.titleAr || paper.title,
           note: paper.meta || 'بحث علمي منشور.', year: paper.iso?.slice(0, 4), to: `/research/${paper.slug}`, confidence: 'موثق',
         },
-        ...(item.signals || []).filter((signal) => signal.url && (signal.confidence ?? 1) >= .82).map((signal) => ({
-          kind: 'paper' as const,
-          label: signal.type === 'academic' ? 'استشهاد علمي' : 'ذكر مباشر',
-          title: signal.title,
-          note: signal.summary || signal.relation || 'إشارة اجتازت فحص المصدر والتطابق.',
-          year: signal.publishedAt?.slice(0, 4), url: signal.url, source: signal.source, confidence: 'موثق' as const,
-        })),
+        ...(item.signals || []).flatMap((signal) => {
+          const url = liveLink(signal.url)
+          if (!url || (signal.confidence ?? 1) < .82) return []
+          return [{
+            kind: 'paper' as const,
+            label: signal.type === 'academic' ? 'استشهاد علمي' : 'ذكر مباشر',
+            title: signal.title,
+            note: signal.summary || signal.relation || 'إشارة اجتازت فحص المصدر والتطابق.',
+            year: signal.publishedAt?.slice(0, 4), url, source: signal.source, confidence: 'موثق' as const,
+          }]
+        }),
       ]
       return nodes.length > 1 ? [{ key: `paper:${paper.slug}`, title: paper.titleAr || paper.title, year: paper.iso?.slice(0, 4), originTo: `/research/${paper.slug}`, nodes }] : []
     })

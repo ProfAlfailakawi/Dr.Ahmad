@@ -1,7 +1,7 @@
 import { JsonLd, useSeo } from '../components/seo'
 import { Link } from 'react-router-dom'
-import { FadeUp, Page, PageHead } from '../components/ui'
-import { doctorate, SITE_URL } from '../data'
+import { FadeUp, Page, PageHead, SocialIcon } from '../components/ui'
+import { academicProfiles, doctorate, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { Pagination, usePagedList } from '../components/Pagination'
 
@@ -39,17 +39,18 @@ export default function Research() {
           <FadeUp>
             <p className="mb-5 text-[.8rem] text-soft">{count} في الأرشيف العلمي</p>
           </FadeUp>
-          {/* ملفاي العلميان الرسميان — سطر هادئ لا بطاقات */}
+          {/* ملفاي العلميان الرسميان — أيقونتان فقط بجوار الأرشيف، بلا سطر نصي طويل */}
           <FadeUp>
-            <p className="mb-10 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-hair pb-6 text-[.88rem] text-soft">
-              <span>ملفي العلمي:</span>
-              <a href="https://scholar.google.com/citations?user=WVAtInIAAAAJ&hl=en" target="_blank" rel="noreferrer" className="group font-semibold text-accent transition-colors hover:text-accent-deep">
-                Google Scholar <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1">←</span>
-              </a>
-              <a href="https://www.researchgate.net/profile/Ahmad-Alfailakawi" target="_blank" rel="noreferrer" className="group font-semibold text-accent transition-colors hover:text-accent-deep">
-                ResearchGate <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1">←</span>
-              </a>
-            </p>
+            <div className="mb-10 flex items-center justify-between border-b border-hair pb-6">
+              <span className="text-[.78rem] text-soft">الملفات الأكاديمية الرسمية</span>
+              <span className="flex items-center gap-2.5">
+                {academicProfiles.map((profileLink) => (
+                  <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className="flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent">
+                    <SocialIcon name={profileLink.label} size={18} />
+                  </a>
+                ))}
+              </span>
+            </div>
           </FadeUp>
           <ul id="research-list" className="scroll-mt-28">
             {paged.pageItems.map((p, i) => (

@@ -127,7 +127,7 @@ export function ContactForm() {
           </div>
           {active.key === 'محاضرة أو ورشة' && (
             <p className="mt-3 text-[.76rem] leading-relaxed text-soft">
-              للاطلاع قبل إرسال الطلب: <a href="/files/Dr-Ahmad-Training-Profile.pdf" target="_blank" rel="noreferrer" className="font-medium text-accent transition-colors hover:text-accent-deep">الملف التعريفي والبرامج التدريبية PDF ↗</a>
+              للاطلاع قبل إرسال الطلب: <a href="/cv-file/ar" className="font-medium text-accent transition-colors hover:text-accent-deep">الملف التعريفي والسيرة المهنية PDF ←</a>
             </p>
           )}
           {active.key === 'لقاء إعلامي' && (

@@ -1,5 +1,6 @@
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from './cms'
 import { toRoot } from './dialect-lexicon'
+import { liveLink } from './dead-links'
 
 export type IdeaCertainty = 'حقيقة موثقة' | 'استنتاج' | 'موقف قيمي' | 'توقع'
 export type PredictionStatus = 'قيد المتابعة' | 'ظهرت إشارة لاحقة' | 'تحتاج زمناً أطول'
@@ -381,7 +382,8 @@ function bestMatches<T>(article: ArticleRecord, items: T[], text: (item: T) => s
 }
 
 function externalSignalNode(signal: RemoteIdeaSignal): ImpactNode | null {
-  if (!signal.url || (signal.confidence ?? 1) < 0.82) return null
+  const url = liveLink(signal.url)
+  if (!url || (signal.confidence ?? 1) < 0.82) return null
   const label = signal.type === 'academic' ? 'أثر علمي' : signal.type === 'application' ? 'أثر تطبيقي' : signal.type === 'media' ? 'أثر إعلامي' : 'ذكر مباشر'
   return {
     kind: signal.type === 'academic' ? 'paper' : signal.type === 'application' ? 'application' : 'external',
@@ -389,7 +391,7 @@ function externalSignalNode(signal: RemoteIdeaSignal): ImpactNode | null {
     title: signal.title,
     note: signal.summary || signal.relation || 'إشارة عامة اجتازت فحص المصدر والرابط والتطابق.',
     year: signal.publishedAt?.slice(0, 4),
-    url: signal.url,
+    url,
     source: signal.source,
     confidence: 'موثق',
   }
@@ -415,10 +417,11 @@ export function impactNodesFor(
   })
 
   const appearance = bestMatches(article, media, (item) => `${item.title} ${item.outlet}`, 3)[0]
-  if (appearance) nodes.push({
+  const appearanceUrl = appearance ? liveLink(appearance.item.url) : undefined
+  if (appearance && appearanceUrl) nodes.push({
     kind: 'media', label: 'في الحوار العام', title: appearance.item.title,
     note: `مادة منشورة عبر ${appearance.item.outlet} تلتقي مع خيط الفكرة.` ,
-    year: appearance.item.iso?.slice(0, 4), url: appearance.item.url, source: appearance.item.outlet, confidence: 'صلة قوية',
+    year: appearance.item.iso?.slice(0, 4), url: appearanceUrl, source: appearance.item.outlet, confidence: 'صلة قوية',
   })
 
   const book = bestMatches(article, books, (item) => `${item.title} ${item.desc || ''}`, 3)[0]

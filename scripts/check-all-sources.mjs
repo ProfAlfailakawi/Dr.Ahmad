@@ -78,6 +78,37 @@ async function harvestFirestore() {
       }
     })
   }
+
+  /* «حياة الفكرة» تحمل الروابط داخل مصفوفتين متداخلتين، ولذلك لم يرها
+     الفاحص الشامل سابقاً. النتيجة: بطاقةٌ تبدو موثقة ثم تقود إلى صفحة ميتة.
+     نجمع كل إشارة ودليل مع مساره الدقيق كي نستبدله بيقين أو نحذف البطاقة
+     وحدها من غير أن نمسّ المقال أو بقية السجل. */
+  const ideaLife = await db.collection('site_idea_life').get().catch(() => null)
+  ideaLife?.forEach((document) => {
+    const data = document.data()
+    const title = String(data.title || document.id).slice(0, 120)
+    for (const [index, signal] of (Array.isArray(data.signals) ? data.signals : []).entries()) {
+      const url = String(signal?.url || '')
+      if (!/^https?:\/\//.test(url)) continue
+      found.push({
+        url, kind: 'أثر خارجي', title: String(signal?.title || title).slice(0, 120),
+        slug: document.id, where: 'site_idea_life', fieldPath: `signals.${index}`,
+        signalType: String(signal?.type || ''),
+      })
+    }
+    for (const [predictionIndex, prediction] of (Array.isArray(data.predictions) ? data.predictions : []).entries()) {
+      for (const [evidenceIndex, evidence] of (Array.isArray(prediction?.evidence) ? prediction.evidence : []).entries()) {
+        const url = String(evidence?.url || '')
+        if (!/^https?:\/\//.test(url)) continue
+        found.push({
+          url, kind: 'أثر خارجي', title: String(evidence?.title || title).slice(0, 120),
+          slug: document.id, where: 'site_idea_life',
+          fieldPath: `predictions.${predictionIndex}.evidence.${evidenceIndex}`,
+          signalType: String(evidence?.type || 'academic'),
+        })
+      }
+    }
+  })
   return found
 }
 
@@ -211,7 +242,14 @@ const harvested = [
 const byUrl = new Map()
 for (const item of harvested) {
   const entry = byUrl.get(item.url) || { url: item.url, places: [] }
-  entry.places.push({ kind: item.kind, title: item.title, slug: item.slug, where: item.where })
+  entry.places.push({
+    kind: item.kind,
+    title: item.title,
+    slug: item.slug,
+    where: item.where,
+    fieldPath: item.fieldPath || '',
+    signalType: item.signalType || '',
+  })
   byUrl.set(item.url, entry)
 }
 const unique = [...byUrl.values()]
@@ -281,7 +319,7 @@ const foreign = problems.filter((item) => !isOwned(item))
 
 for (const item of problems) {
   item.owned = isOwned(item)
-  item.replacement = await findCertainReplacement(item.url).catch(() => '')
+  item.replacement = await findCertainReplacement(item.url, item).catch(() => '')
   item.action = item.owned
     ? (item.replacement ? 'بديل مقترح — لم يُطبّق' : 'بانتظار قرارك')
     : (item.replacement ? 'بديل مؤكد — سيُطبّق تلقائياً' : item.state === 'dead' ? 'سيُحذف من الموقع بالكامل' : 'إعادة فحص قبل القرار')
@@ -307,7 +345,7 @@ const summary = {
     owned: isOwned(item),
     replacement: item.replacement || '',
     action: item.action || '',
-    places: item.places.slice(0, 3),
+    places: item.places.slice(0, 3).map((place) => ({ ...place, fieldPath: place.fieldPath || '', signalType: place.signalType || '' })),
   })),
 }
 
@@ -346,7 +384,8 @@ if (foreign.length && !process.argv.includes('--report-only')) {
     console.log(`\n🧹 نُظّف ${addedBank} رابطاً خارجياً ميتاً من المختارات (يُصفّى وقت العرض).`)
   }
 
-  /* الميت في Firestore (رادار/مختارات اللوحة) يُحذف مباشرةً */
+  /* الميت في Firestore يُصلَح إن وُجد بديل يقيني، وإلا يُزال الكرت نفسه.
+     «حياة الفكرة» مصفوفات متداخلة، فلا نحذف الوثيقة كلها بسبب رابطٍ واحد. */
   const saCleanup = resolve(ROOT, env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')
   if (existsSync(saCleanup)) {
     const { initializeApp, cert, getApps } = await import('firebase-admin/app')
@@ -355,28 +394,83 @@ if (foreign.length && !process.argv.includes('--report-only')) {
     const db = getFirestore(app)
     let removed = 0
     let updated = 0
+    const ideaLifeActions = new Map()
+
     for (const item of foreign) {
       if (item.state !== 'dead') continue
       for (const place of item.places || []) {
-        if (!['site_radar', 'site_picks'].includes(place.where)) continue
-        const ref = db.collection(place.where).doc(place.slug)
-        if (item.replacement) {
-          await ref.set({
-            url: item.replacement,
-            previousUrl: item.url,
-            sourceHealthRepairedAt: new Date().toISOString(),
-          }, { merge: true }).catch(() => undefined)
-          console.log(`  🔁 استُبدل رابط ${place.where}: ${(place.title || place.slug).slice(0, 50)}`)
-          updated += 1
-        } else {
-          await ref.delete().catch(() => undefined)
-          console.log(`  🧹 حُذف من ${place.where}: ${(place.title || place.slug).slice(0, 50)}`)
-          removed += 1
+        if (['site_radar', 'site_picks'].includes(place.where)) {
+          const ref = db.collection(place.where).doc(place.slug)
+          if (item.replacement) {
+            await ref.set({
+              url: item.replacement,
+              previousUrl: item.url,
+              sourceHealthRepairedAt: new Date().toISOString(),
+            }, { merge: true }).catch(() => undefined)
+            console.log(`  🔁 استُبدل رابط ${place.where}: ${(place.title || place.slug).slice(0, 50)}`)
+            updated += 1
+          } else {
+            await ref.delete().catch(() => undefined)
+            console.log(`  🧹 حُذف من ${place.where}: ${(place.title || place.slug).slice(0, 50)}`)
+            removed += 1
+          }
+          continue
+        }
+
+        if (place.where === 'site_idea_life' && place.slug) {
+          const actions = ideaLifeActions.get(place.slug) || new Map()
+          actions.set(item.url, item.replacement || '')
+          ideaLifeActions.set(place.slug, actions)
         }
       }
     }
+
+    /* نقرأ كل وثيقة مرة واحدة، ثم نحدّث الروابط أو نحذف الدليل/المحطة فقط.
+       المطابقة بالرابط لا بالترتيب، لأن حذف عنصر يغيّر الفهارس أثناء الجولة. */
+    for (const [slug, actions] of ideaLifeActions) {
+      const ref = db.collection('site_idea_life').doc(slug)
+      const snapshot = await ref.get().catch(() => null)
+      if (!snapshot?.exists) continue
+      const data = snapshot.data() || {}
+      let changed = false
+
+      const signals = (Array.isArray(data.signals) ? data.signals : []).flatMap((signal) => {
+        const url = String(signal?.url || '')
+        if (!actions.has(url)) return [signal]
+        const replacement = actions.get(url)
+        changed = true
+        if (!replacement) { removed += 1; return [] }
+        updated += 1
+        return [{ ...signal, url: replacement, previousUrl: url, sourceHealthRepairedAt: new Date().toISOString() }]
+      })
+
+      const predictions = (Array.isArray(data.predictions) ? data.predictions : []).map((prediction) => {
+        let predictionChanged = false
+        const evidence = (Array.isArray(prediction?.evidence) ? prediction.evidence : []).flatMap((item) => {
+          const url = String(item?.url || '')
+          if (!actions.has(url)) return [item]
+          const replacement = actions.get(url)
+          changed = true
+          predictionChanged = true
+          if (!replacement) { removed += 1; return [] }
+          updated += 1
+          return [{ ...item, url: replacement, previousUrl: url, sourceHealthRepairedAt: new Date().toISOString() }]
+        })
+        return predictionChanged ? { ...prediction, evidence } : prediction
+      })
+
+      if (changed) {
+        await ref.set({
+          signals,
+          predictions,
+          sourceHealthUpdatedAt: new Date().toISOString(),
+        }, { merge: true }).catch(() => undefined)
+        console.log(`  🧭 نُقّحت مصادر «حياة الفكرة»: ${slug}`)
+      }
+    }
+
     if (updated) console.log(`✓ استُبدل ${updated} رابطاً خارجياً ببديل مؤكد.`)
-    if (removed) console.log(`✓ حُذف ${removed} عنصراً خارجياً ميتاً بلا بديل.`)
+    if (removed) console.log(`✓ حُذف ${removed} كرتاً/دليلاً خارجياً ميتاً بلا بديل.`)
   }
 }
 
@@ -385,26 +479,67 @@ if (foreign.length && !process.argv.includes('--report-only')) {
    لا يبقى للزائر رابطٌ مكسور. والمادة نفسها لا تُمسّ.
    ثم نبحث عن بديل: لا يُقبل إلا إن كان يقيناً لا اجتهاداً — أن يستجيب فعلاً،
    وأن يكون المعرّف نفسه (DOI/الملف) على نطاقٍ رسميٍّ بديل. وما دون ذلك تنبيه. */
-async function findCertainReplacement(url) {
+const comparableTitle = (value = '') => String(value)
+  .normalize('NFKD').toLowerCase()
+  .replace(/[\u064B-\u065F\u0670]/g, '')
+  .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+  .replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim()
+
+const titleMatch = (left, right) => {
+  const a = new Set(comparableTitle(left).split(' ').filter((word) => word.length > 2))
+  const b = new Set(comparableTitle(right).split(' ').filter((word) => word.length > 2))
+  if (!a.size || !b.size) return 0
+  let common = 0
+  for (const word of a) if (b.has(word)) common += 1
+  return common / Math.max(a.size, b.size)
+}
+
+async function crossrefReplacement(item) {
+  const place = item?.places?.find((candidate) => candidate.signalType === 'academic') || item?.places?.[0]
+  const title = String(place?.title || '').trim()
+  if (title.length < 16 || place?.signalType && place.signalType !== 'academic') return ''
+  try {
+    const endpoint = `https://api.crossref.org/works?query.title=${encodeURIComponent(title)}&rows=5&select=DOI,title,URL&mailto=site@dr-alfailakawi.com`
+    const response = await fetch(endpoint, {
+      headers: { 'user-agent': 'DrAlfailakawiSourceRepair/1.0 (mailto:site@dr-alfailakawi.com)' },
+      signal: AbortSignal.timeout(Math.min(TIMEOUT_MS, 10_000)),
+    })
+    if (!response.ok) return ''
+    const works = (await response.json())?.message?.items || []
+    for (const work of works) {
+      const candidateTitle = Array.isArray(work.title) ? work.title[0] : work.title
+      if (titleMatch(title, candidateTitle) < .78) continue
+      const candidate = String(work.URL || (work.DOI ? `https://doi.org/${work.DOI}` : ''))
+      if (!candidate) continue
+      const verdict = await probe(candidate)
+      if (verdict.state === 'ok') return verdict.finalUrl || candidate
+    }
+  } catch { /* لا بديل يقيني */ }
+  return ''
+}
+
+async function findCertainReplacement(url, item = null) {
   /* DOI ميت عند doi.org: نجرّب المُحوّل الرسمي البديل بالمعرّف نفسه حرفياً */
   const doiMatch = url.match(/doi\.org\/(10\.[^\s?#]+)/i)
   if (doiMatch) {
     for (const base of ['https://dx.doi.org/', 'https://doi.org/api/handles/']) {
-      const candidate = base === 'https://doi.org/api/handles/' ? `${base}${doiMatch[1]}` : `${base}${doiMatch[1]}`
+      const candidate = `${base}${doiMatch[1]}`
       const verdict = await probe(candidate)
       /* البديل لا يُقبل إلا إن ردّ ٢٠٠ فعلاً وبنفس المعرّف — لا تخمين */
-      if (verdict.state === 'ok' && base !== 'https://doi.org/api/handles/') return candidate
+      if (verdict.state === 'ok' && base !== 'https://doi.org/api/handles/') return verdict.finalUrl || candidate
     }
-    return ''
   }
   /* http→https على النطاق نفسه: تحسينٌ يقيني لا تخمين فيه */
   if (url.startsWith('http://')) {
     const secure = url.replace(/^http:\/\//, 'https://')
     const verdict = await probe(secure)
-    if (verdict.state === 'ok') return secure
+    if (verdict.state === 'ok') return verdict.finalUrl || secure
   }
-  return ''
+  /* بطاقةٌ علمية مات رابطها: نبحث بعنوانها في Crossref ونقبل فقط تطابقاً
+     مرتفعاً ورابطاً حياً. وما عدا ذلك يُحذف؛ لا نخمن رابطاً عاماً. */
+  return crossrefReplacement(item)
 }
+
 
 {
   const deadPath = resolve(ROOT, 'src/data/dead-links.json')
@@ -420,7 +555,7 @@ async function findCertainReplacement(url) {
     if (item.state === 'dead') {
       const existing = wasDead || { url: item.url, state: item.state, since: new Date().toISOString() }
       if (!existing.replacement) {
-        const replacement = await findCertainReplacement(item.url)
+        const replacement = await findCertainReplacement(item.url, item)
         if (replacement) { existing.replacement = replacement; replaced += 1 }
         else hidden += 1
       }

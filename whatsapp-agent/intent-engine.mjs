@@ -2,7 +2,7 @@ import { contentSummary, findContent, latestContent, normalizeArabic, searchCont
 import { AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUAL_TAKEOVER_MINUTES, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags } from './config.mjs'
 import { hashOpaque } from './crypto.mjs'
 import { createReminder, parseReminderTime } from './reminders.mjs'
-import { applyBotRules, ensureBotRulesSchema, rememberSent, sign } from './bot-rules.mjs'
+import { applyBotRules, rememberSent, sign } from './bot-rules.mjs'
 import { answer as scholarAnswer, SCAFFOLD as SCHOLAR_SCAFFOLD } from './scholar.mjs'
 
 /* ما وعد به محرك المكتبة ولم يُسلّمه بعد: السؤال وما رآه السائل منه. */
@@ -237,10 +237,9 @@ export function articleCorpus(db, now = Date.now()) {
   return corpusCache.items
 }
 
-export function handleIntent({ db, jid = '', input, session = pendingSession(db, jid) }) {
+export function handleIntent({ db, jid = '', input, session = pendingSession(db, jid), classification = classifyIntent(input) }) {
   const customRule = matchReplyRule(db, input)
   if (customRule) return customRuleReply(db, customRule, input)
-  const classification = classifyIntent(input)
   const { intent, confidence } = classification
   const logId = jid ? hashOpaque(jid) : null
   db.run('INSERT INTO intent_logs(jid,input_hash,intent,confidence,created_at) VALUES(?,?,?,?,?)', logId, hashOpaque(input), intent, confidence, new Date().toISOString())
@@ -495,7 +494,7 @@ export const chatKindLabel = (jid) => {
   return 'محادثة غير فردية'
 }
 
-export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, explicitContentSession = false, hasMedia = false, at = new Date() }) {
+export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, explicitContentSession = false, hasMedia = false, at = new Date(), classification = classifyIntent(text) }) {
   if (!jid || isSuppressed(db, jid)) return { allowed: false, reason: 'suppressed' }
 
   /* ═══ المنع المطلق: المجموعات ═══
@@ -512,7 +511,7 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
      يفضح أن البوت لم يسمعها أصلاً. */
   if (hasMedia) return { allowed: false, reason: 'وسائط — لا يردّ البوت على صوتٍ ولا صورة' }
   const session = pendingSession(db, jid)
-  const classification0 = classifyIntent(text)
+  const classification0 = classification
   const { intent, confidence } = classification0
   const opensDoor = OPENS_DOOR.has(intent) && confidence >= 0.9
 
@@ -530,7 +529,7 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
 
   /* قواعد الأدب: تسكته أحياناً رغم أن الباب مفتوح — الطلب الإنسانيّ
      والوسائط ونحوها. ولا تنبيه في شيءٍ منها بأمر الدكتور. */
-  const manners = applyBotRules({ db, jid, normalizedText: classifyIntent(text).normalized, hasMedia, opensDoor, at })
+  const manners = applyBotRules({ db, jid, normalizedText: classification0.normalized, hasMedia, opensDoor, at })
   if (!manners.allowed) return { allowed: false, reason: manners.reason }
 
   /* ═══ الباب مفتوح: حوارٌ طبيعيّ بلا أوامر ═══
@@ -566,22 +565,30 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
 }
 
 export function handleIncoming({ db, jid, text, isReplyToAgent = false, explicitContentSession = false, hasMedia = false, at = new Date() }) {
-  ensureBotRulesSchema(db)
-  const gate = shouldRespondToMessage({ db, jid, text, isReplyToAgent, explicitContentSession, hasMedia, at })
+  /* التصنيف كان يُنفّذ ثلاث مرات للرسالة نفسها: في البوابة، وفي قواعد الأدب،
+     ثم في الرد. نُنشئه مرةً واحدة ونمرّره، فتقلّ كلفة كل تفاعل بلا تغيير المعنى. */
+  const classification = classifyIntent(text)
+  const gate = shouldRespondToMessage({ db, jid, text, isReplyToAgent, explicitContentSession, hasMedia, at, classification })
   const session = db.get('SELECT * FROM chat_sessions WHERE jid=?', db.jidKey(jid))
   if (!gate.allowed) return { ...gate, shouldRespond: false }
-  const response = handleIntent({ db, jid, input: text, session })
+  const response = handleIntent({ db, jid, input: text, session, classification })
   /* الباب انفتح بأمرٍ صريح: تُفتح الجلسة ولو لم يكن في الردّ مادة — وإلا
      رحّبنا بالقادم ثم صمتنا عن سؤاله التالي، وهو أسوأ من ألا نرحّب. */
   if (gate.opensSession && !response.contentId) {
     const stamp = new Date().toISOString()
     db.run('INSERT INTO chat_sessions(jid,mode,opened_at,last_user_at,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(jid) DO UPDATE SET mode=excluded.mode,manual_until=NULL,last_user_at=excluded.last_user_at,updated_at=excluded.updated_at', db.jidKey(jid), 'content-session', stamp, stamp, stamp)
   }
+  const persistSession = Boolean(gate.opensSession || explicitContentSession || sessionAlive(session))
   if (response.contentId) {
     const now = new Date().toISOString()
-    db.run('INSERT INTO chat_sessions(jid,mode,content_id,opened_at,last_user_at,updated_at) VALUES(?,?,?,?,?,?) ON CONFLICT(jid) DO UPDATE SET mode=excluded.mode,manual_until=NULL,content_id=excluded.content_id,last_user_at=excluded.last_user_at,updated_at=excluded.updated_at', db.jidKey(jid), 'content-session', response.contentId, now, now, now)
-    const item = findContent(db, response.contentId)
-    if (item?.date) savePreference(db, jid, { lastContentCursor: item.date })
+    /* اقتباسُ رسالةٍ آلية يجيز جواباً واحداً، لكنه ليس كلمة الإيقاظ ولا يفتح
+       جلسةً دائمة من الخلف. الجلسة المستمرة لا تبدأ إلا بالإيقاظ الصريح أو
+       إذا كانت مفتوحة أصلاً. */
+    if (persistSession) {
+      db.run('INSERT INTO chat_sessions(jid,mode,content_id,opened_at,last_user_at,updated_at) VALUES(?,?,?,?,?,?) ON CONFLICT(jid) DO UPDATE SET mode=excluded.mode,manual_until=NULL,content_id=excluded.content_id,last_user_at=excluded.last_user_at,updated_at=excluded.updated_at', db.jidKey(jid), 'content-session', response.contentId, now, now, now)
+      const item = findContent(db, response.contentId)
+      if (item?.date) savePreference(db, jid, { lastContentCursor: item.date })
+    }
     rememberSent(db, jid, response.contentId)   // فلا يُعاد عليه ما أُرسل
   }
   /* حفظُ ما وُعد به. يُكتب بعد الجلسة لأن السطر أعلاه قد يُنشئها للتوّ، ويُمحى

@@ -145,7 +145,7 @@ export default function CV() {
             </div>
             <div className="mb-14 border-b border-hair pb-10 text-center">
               <p className="mx-auto max-w-[560px] text-[.78rem] font-light leading-[1.8] text-soft">بعض الأعمال لا تنتهي عند النشر؛ يتتبع السجل انتقالها إلى البحث والحوار العام والتطبيق، ولا يعرض محطة بلا رابط يمكن التحقق منه.</p>
-              <Link to="/impact" className="mt-4 inline-block border-b border-accent/35 pb-1 text-[.78rem] font-semibold text-accent transition-colors hover:border-accent">استكشف مسارات الأثر الموثق ←</Link>
+              <Link to="/impact" reloadDocument className="mt-4 inline-block border-b border-accent/35 pb-1 text-[.78rem] font-semibold text-accent transition-colors hover:border-accent">استكشف مسارات الأثر الموثق ←</Link>
             </div>
           </FadeUp>
 

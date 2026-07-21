@@ -9,7 +9,7 @@ import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { SocialIcon } from '../components/icons'
 import { Pagination, usePagedList } from '../components/Pagination'
-import { links, socials } from '../data'
+import { academicProfiles, links, socials } from '../data'
 import { useCmsContent } from '../lib/content'
 import {
   advisoryEn, appointmentsEn, doctorateEn, educationEn,
@@ -299,17 +299,18 @@ export function EnglishResearch() {
       <PageHead label="Research" title="Peer-reviewed contributions" sub={`${papers.length} published papers on educational technology, e-learning systems and emerging technologies in higher education.`} />
       <div className="px-6 py-14 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">
-          {/* الملفان العلميان الرسميان — سطر هادئ يطابق الصفحة العربية */}
+          {/* الملفان العلميان الرسميان — أيقونتان فقط، بلا أسماءٍ طويلة */}
           <FadeUp>
-            <p className="mb-10 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-hair pb-6 text-[.88rem] text-soft">
-              <span>Academic profiles:</span>
-              <a href="https://scholar.google.com/citations?user=WVAtInIAAAAJ&hl=en" target="_blank" rel="noreferrer" className="group font-semibold text-accent transition-colors hover:text-accent-deep">
-                Google Scholar <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
-              </a>
-              <a href="https://www.researchgate.net/profile/Ahmad-Alfailakawi" target="_blank" rel="noreferrer" className="group font-semibold text-accent transition-colors hover:text-accent-deep">
-                ResearchGate <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
-              </a>
-            </p>
+            <div className="mb-10 flex items-center justify-between border-b border-hair pb-6">
+              <span className="text-[.78rem] text-soft">Academic profiles</span>
+              <span className="flex items-center gap-2.5">
+                {academicProfiles.map((profileLink) => (
+                  <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className="flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent">
+                    <SocialIcon name={profileLink.label} size={18} />
+                  </a>
+                ))}
+              </span>
+            </div>
           </FadeUp>
           <ul id="english-research-list">
             {paged.pageItems.map((p, i) => (

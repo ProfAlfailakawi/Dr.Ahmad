@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useInView, useMotionValue, useReducedMotion, useScroll, useSpring, AnimatePresence } from 'framer-motion'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LINK_OUT, SHOW_EN_TOGGLE, profile, socials, links } from '../data'
+import { LINK_OUT, SHOW_EN_TOGGLE, academicProfiles, profile, socials, links } from '../data'
 import { useCmsContent } from '../lib/content'
 import { ThemeToggle } from './extras'
 import { MySpace } from './MySpace'
@@ -486,6 +486,12 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
                 <SocialIcon name={s.label} />
               </a>
             ))}
+            <span aria-hidden className="mx-0.5 h-4 w-px bg-hair" />
+            {academicProfiles.map((profileLink) => (
+              <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className="transition-colors hover:text-accent">
+                <SocialIcon name={profileLink.label} />
+              </a>
+            ))}
           </div>
         </div>
       </motion.div>
@@ -759,7 +765,17 @@ export function Nav() {
     ownerPressTimer.current = null
     setOwnerPressActive(false)
   }
-  const ownerLogoClick = (event: React.MouseEvent) => { if (ownerPressTriggered.current) { event.preventDefault(); ownerPressTriggered.current = false } }
+  const ownerLogoClick = (event: React.MouseEvent) => {
+    if (ownerPressTriggered.current) {
+      event.preventDefault()
+      ownerPressTriggered.current = false
+      return
+    }
+    /* النقر العادي لا يمرّ عبر /launch ولا يعيد شاشة العودة؛ يذهب مباشرةً
+       إلى الرئيسية حتى داخل الـPWA وبعد إغلاق أي لوحة أو نافذة. */
+    event.preventDefault()
+    navigate(loc.pathname === '/en' || loc.pathname.startsWith('/en/') ? '/en' : '/')
+  }
   const ownerLogoContextMenu = (event: React.MouseEvent) => { if (standaloneMode()) event.preventDefault() }
   const closeMenu = useCallback(() => setOpen(false), [])
   const closeSearch = useCallback(() => setSearchOpen(false), [])
@@ -899,6 +915,12 @@ export function Footer() {
                     <SocialIcon name={s.label} />
                   </a>
                 ))}
+                <span aria-hidden className="h-4 w-px bg-hair" />
+                {academicProfiles.map((profileLink) => (
+                  <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className="text-soft transition-colors hover:text-accent">
+                    <SocialIcon name={profileLink.label} />
+                  </a>
+                ))}
               </span>
               <span className="inline-flex items-center gap-2">
                 <TebyanProjectLink label="Tebyan" />
@@ -930,6 +952,12 @@ export function Footer() {
               {socials.map((s) => (
                 <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className="text-soft transition-colors hover:text-accent">
                   <SocialIcon name={s.label} />
+                </a>
+              ))}
+              <span aria-hidden className="h-4 w-px bg-hair" />
+              {academicProfiles.map((profileLink) => (
+                <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className="text-soft transition-colors hover:text-accent">
+                  <SocialIcon name={profileLink.label} />
                 </a>
               ))}
             </span>

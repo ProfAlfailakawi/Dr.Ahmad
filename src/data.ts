@@ -91,6 +91,13 @@ export const socials = [
   { label: 'YouTube', url: 'https://youtube.com/@drahmadalfailakawi' },
 ]
 
+/* الملفات الأكاديمية تُعرض كأيقونات مستقلة بجوار شبكات التواصل، مع فاصل
+   بصري خفيف حتى لا تُفهم بوصفها شبكات اجتماعية عادية. */
+export const academicProfiles = [
+  { label: 'Google Scholar', url: 'https://scholar.google.com/citations?user=WVAtInIAAAAJ&hl=en' },
+  { label: 'ResearchGate', url: 'https://www.researchgate.net/profile/Ahmad-Alfailakawi' },
+]
+
 export const links = {
   booking: 'https://schedule.dr-alfailakawi.com/',
   cv: '/files/cv.pdf',

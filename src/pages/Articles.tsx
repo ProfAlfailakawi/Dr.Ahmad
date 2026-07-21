@@ -1,12 +1,27 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FadeUp, Page, PageHead } from '../components/ui'
-import { essays } from '../data'
 import { useCmsContent } from '../lib/content'
 import { useSeo } from '../components/seo'
 import { dynamicArticleCategories } from '../lib/content-taxonomy'
 import { ReaderFingerprint } from '../components/ReaderResonance'
 import { Pagination, usePagedList } from '../components/Pagination'
+
+const stableHash = (value: string) => {
+  let hash = 2166136261
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return hash >>> 0
+}
+
+const articleCard = (article: { slug: string; cat?: string; title: string; excerpt?: string }) => ({
+  slug: article.slug,
+  tag: article.cat || 'مقال',
+  title: article.title,
+  quote: `«${(article.excerpt || '').slice(0, 150)}${(article.excerpt || '').length > 150 ? '…' : ''}»`,
+})
 
 export default function Articles() {
   const { articles } = useCmsContent()
@@ -18,17 +33,26 @@ export default function Articles() {
   const [cat, setCat] = useState('الكل')
   const categories = useMemo(() => dynamicArticleCategories(articles), [articles])
   const featured = useMemo(() => {
-    const selected = essays.flatMap((entry) => {
-      const live = articles.find((article) => article.slug === entry.slug)
-      return live ? [{ ...entry, title: live.title, tag: live.cat || entry.tag }] : []
-    })
-    if (selected.length) return selected
-    return articles.slice(0, 3).map((article) => ({
-      slug: article.slug,
-      tag: article.cat || 'مقال',
-      title: article.title,
-      quote: `«${(article.excerpt || '').slice(0, 150)}${(article.excerpt || '').length > 150 ? '…' : ''}»`,
-    }))
+    if (!articles.length) return []
+    /* الاختيارات تتبدّل يومياً، لكنها ثابتة طوال اليوم: مقال حديث، وآخر من
+       الأرشيف، وثالث من موضوع مختلف. لا تتكرر الفئة إلا عند ندرة المحتوى. */
+    const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuwait', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+    const eligible = articles.filter((article) => article.title && (article.excerpt || '').trim().length >= 45)
+    const sortedByDate = [...eligible].sort((left, right) => right.iso.localeCompare(left.iso))
+    const latestYear = Number(sortedByDate[0]?.iso.slice(0, 4)) || new Date().getFullYear()
+    const rotate = (pool: typeof eligible, salt: string) => [...pool].sort((left, right) => stableHash(`${day}:${salt}:${left.slug}`) - stableHash(`${day}:${salt}:${right.slug}`))
+    const chosen: typeof eligible = []
+    const choose = (pool: typeof eligible, salt: string, preferNewCategory = true) => {
+      const candidates = rotate(pool.filter((article) => !chosen.some((item) => item.slug === article.slug)), salt)
+      const next = (preferNewCategory ? candidates.find((article) => !chosen.some((item) => item.cat === article.cat)) : null) || candidates[0]
+      if (next) chosen.push(next)
+    }
+
+    choose(sortedByDate.slice(0, Math.min(28, sortedByDate.length)), 'recent', false)
+    choose(eligible.filter((article) => Number(article.iso.slice(0, 4)) <= latestYear - 4), 'archive')
+    choose(eligible, 'unexpected')
+    while (chosen.length < Math.min(3, eligible.length)) choose(eligible, `fill-${chosen.length}`, false)
+    return chosen.map(articleCard)
   }, [articles])
 
   const term = q.trim()

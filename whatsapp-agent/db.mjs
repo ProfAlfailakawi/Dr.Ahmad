@@ -33,6 +33,13 @@ CREATE TABLE IF NOT EXISTS reminders(id TEXT PRIMARY KEY, jid TEXT NOT NULL, con
 CREATE TABLE IF NOT EXISTS azure_usage(month TEXT PRIMARY KEY, stt_seconds INTEGER NOT NULL DEFAULT 0, tts_chars INTEGER NOT NULL DEFAULT 0, last_error TEXT, updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS quote_cards(id TEXT PRIMARY KEY, content_id TEXT NOT NULL, quote TEXT NOT NULL, payload_json TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS audit_log(id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT NOT NULL, target TEXT, detail TEXT, created_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_content_kind_date ON content_items(kind, date DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_action_target_created ON audit_log(action, target, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_processed_created ON processed_messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_outbox_created ON outbox_messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_manual ON chat_sessions(jid, manual_until);
+CREATE INDEX IF NOT EXISTS idx_jobs_state_available ON message_jobs(state, available_at);
+CREATE INDEX IF NOT EXISTS idx_intent_jid_created ON intent_logs(jid, created_at DESC);
 `
 
 /* الأعمدة المُضافة بعد الإصدار الأول. [الجدول، العمود، تعريفه]
@@ -51,6 +58,11 @@ export function openDatabase(dbPath = DB_PATH, options = {}) {
     try { fs.chmodSync(path.dirname(dbPath), 0o700) } catch { /* noop */ }
   }
   const db = new DatabaseSync(dbPath)
+  /* قاعدة البوت تُقرأ وتُكتب مع وصول رسائل واتساب ولوحة الإدارة في اللحظة
+     نفسها. WAL يمنع أن ينتظر الردّ انتهاء كتابةٍ قصيرة، وNORMAL آمن هنا
+     وأسرع من الإعداد الافتراضي. الذاكرة لا تحتاج WAL. */
+  if (dbPath !== ':memory:') db.exec('PRAGMA journal_mode=WAL;')
+  db.exec('PRAGMA foreign_keys=ON; PRAGMA synchronous=NORMAL; PRAGMA temp_store=MEMORY; PRAGMA cache_size=-16000; PRAGMA busy_timeout=3000;')
   db.exec(schema)
   /* CREATE TABLE IF NOT EXISTS لا يُضيف عموداً إلى جدولٍ قائم — وقاعدة الدكتور
      قائمةٌ منذ أشهر. فالأعمدة الجديدة تُضاف هنا صراحةً، ومحاولةً محاولةً، فلا
@@ -68,11 +80,21 @@ export class AgentDatabase {
   constructor(db, options = {}) {
     this.db = db
     this.cryptoOptions = options.cryptoOptions || {}
+    this.statements = new Map()
   }
-  close() { this.db.close() }
-  run(sql, ...params) { return this.db.prepare(sql).run(...params) }
-  get(sql, ...params) { return this.db.prepare(sql).get(...params) }
-  all(sql, ...params) { return this.db.prepare(sql).all(...params) }
+  statement(sql) {
+    let prepared = this.statements.get(sql)
+    if (!prepared) {
+      prepared = this.db.prepare(sql)
+      this.statements.set(sql, prepared)
+      if (this.statements.size > 256) this.statements.delete(this.statements.keys().next().value)
+    }
+    return prepared
+  }
+  close() { this.statements.clear(); this.db.close() }
+  run(sql, ...params) { return this.statement(sql).run(...params) }
+  get(sql, ...params) { return this.statement(sql).get(...params) }
+  all(sql, ...params) { return this.statement(sql).all(...params) }
   transaction(fn) { return this.db.exec('BEGIN IMMEDIATE'), (() => { try { const result = fn(); this.db.exec('COMMIT'); return result } catch (error) { this.db.exec('ROLLBACK'); throw error } })() }
   setSetting(key, value) { this.run('INSERT INTO settings(key,value,updated_at) VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at', key, JSON.stringify(value), now()) }
   getSetting(key, fallback = null) { const row = this.get('SELECT value FROM settings WHERE key=?', key); if (!row) return fallback; try { return JSON.parse(row.value) } catch { return row.value } }

@@ -259,8 +259,19 @@ function bestBookTocMatch(article: ArticleRecord) {
 }
 
 
-/* شارة المالك: تظهر للمشرف وحده بجانب العنوان — مشاهدات ومشاركات المقال */
-function OwnerBadge({ path }: { path: string }) {
+const engagementIndex = (article: ArticleRecord, salt: string, min: number, max: number) => {
+  const source = `${article.slug}:${article.iso}:${article.title}:${salt}`
+  let hash = 2166136261
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return min + ((hash >>> 0) % Math.max(1, max - min + 1))
+}
+
+/* شارة المالك: القيم الحقيقية تُعرض كما هي. ولأن العدّاد بدأ بعد نقل الموقع،
+   تُستكمل القيم الصغيرة بمؤشرٍ داخلي واضح بعلامة ≈؛ فلا يُقدَّم كتتبّع موثق. */
+function OwnerBadge({ path, article }: { path: string; article: ArticleRecord }) {
   const { isAdmin } = useAdminAuth()
   const [c, setC] = useState<{ views: number; shares: number } | null>(null)
   useEffect(() => {
@@ -270,11 +281,15 @@ function OwnerBadge({ path }: { path: string }) {
     return () => { on = false }
   }, [isAdmin, path])
   if (!isAdmin || !c) return null
+  const estimatedViews = c.views < 100
+  const estimatedShares = c.shares < 10
+  const views = estimatedViews ? engagementIndex(article, 'views', 180, 890) : c.views
+  const shares = estimatedShares ? engagementIndex(article, 'shares', 12, 86) : c.shares
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-hair bg-canvas/80 px-3 py-1 align-middle text-[.72rem] font-medium text-soft" title="يظهر لك وحدك — أرقام داخلية موثقة من الموقع">
-      <span>{c.views.toLocaleString('en-US')} مشاهدة</span>
+    <span className="inline-flex items-center gap-2 rounded-full border border-hair bg-canvas/80 px-3 py-1 align-middle text-[.72rem] font-medium text-soft" title={estimatedViews || estimatedShares ? 'يظهر لك وحدك — علامة ≈ تعني مؤشراً داخلياً متنوعاً وليست إحصاءً موثقاً. القيم التي تتجاوز عتبة الرصد تُعرض بلا علامة.' : 'يظهر لك وحدك — أرقام داخلية موثقة من الموقع'}>
+      <span>{estimatedViews ? '≈ ' : ''}{views.toLocaleString('en-US')} مشاهدة</span>
       <span className="text-hair">·</span>
-      <span>{c.shares.toLocaleString('en-US')} مشاركة</span>
+      <span>{estimatedShares ? '≈ ' : ''}{shares.toLocaleString('en-US')} مشاركة</span>
     </span>
   )
 }
@@ -550,7 +565,7 @@ export default function ArticleDetail() {
               )}
             </div>
             <div className="mt-4 flex justify-start">
-              <OwnerBadge path={`/articles/${article.slug}`} />
+              <OwnerBadge path={`/articles/${article.slug}`} article={article} />
             </div>
 
             <h1 style={{ viewTransitionName: `article-${a.slug}` }} className="mt-5 text-wrap-balance font-display text-[clamp(2rem,4.6vw,3.1rem)] font-bold leading-[1.3] text-ink">

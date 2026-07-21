@@ -5,9 +5,14 @@ import { Link } from 'react-router-dom'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../lib/cms'
 import { useExtras } from '../lib/content'
 import { buildIdeaLife, ideaWords, type IdeaLifeRemoteRecord, type ImpactNode } from '../lib/idea-life'
+import { liveLink } from '../lib/dead-links'
 import { staticQuestions } from '../questions-data'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
+
+const verifiedEvidence = <T extends { url?: string }>(items?: T[]) => (items || [])
+  .map((item) => ({ ...item, url: liveLink(item.url) }))
+  .filter((item): item is T & { url: string } => Boolean(item.url))
 
 type TabKey = 'test' | 'thread' | 'time' | 'impact'
 
@@ -40,12 +45,13 @@ function ideaThreadFor(article: ArticleRecord, books: BookRecord[], papers: Pape
   const book = best(books, (item) => `${item.title} ${item.desc || ''}`)
   const paper = best(papers, (item) => `${item.title} ${item.titleAr || ''} ${item.abstractAr || ''} ${item.meta || ''}`)
   const appearance = best(media, (item) => `${item.title} ${item.outlet}`)
+  const appearanceUrl = appearance ? liveLink(appearance.url) : ''
   const question = best(staticQuestions, (item) => `${item.ar} ${item.take}`)
 
   return [
     book && { kind: 'كتاب' as const, title: book.title, to: `/publications/${book.slug}` },
     paper && { kind: 'بحث' as const, title: paper.titleAr || paper.title, to: `/research/${paper.slug}` },
-    appearance && { kind: 'لقاء' as const, title: appearance.title, href: appearance.url },
+    appearance && appearanceUrl && { kind: 'لقاء' as const, title: appearance.title, href: appearanceUrl },
     question && { kind: 'سؤال' as const, title: question.ar, to: '/questions' },
   ].filter(Boolean) as ThreadNode[]
 }
@@ -170,11 +176,11 @@ function TimePanel({ article, model, close }: { article: ArticleRecord; model: R
                     </div>
                   ))}
                 </dl>
-                {prediction.evidence?.length ? (
+                {verifiedEvidence(prediction.evidence).length ? (
                   <div className="mt-5 border-t border-hair pt-4">
                     <p className="text-[.68rem] font-semibold text-accent">أدلة عامة اجتازت الفحص</p>
                     <div className="mt-3 space-y-2">
-                      {prediction.evidence.map((evidence) => (
+                      {verifiedEvidence(prediction.evidence).map((evidence) => (
                         <a key={evidence.url} href={evidence.url} target="_blank" rel="noreferrer" className="group flex items-start justify-between gap-4 text-[.8rem] leading-[1.7] text-soft transition-colors hover:text-accent">
                           <span>{evidence.title}</span><span className="shrink-0">↗</span>
                         </a>
@@ -228,8 +234,9 @@ function ImpactLink({ node, close }: { node: ImpactNode; close: () => void }) {
     </>
   )
   if (node.to) return <Link to={node.to} onClick={close} className="group block">{content}</Link>
-  if (node.url) return <a href={node.url} target="_blank" rel="noreferrer" className="group block">{content}</a>
-  return <div>{content}</div>
+  const url = liveLink(node.url)
+  if (url) return <a href={url} target="_blank" rel="noreferrer" className="group block">{content}</a>
+  return null
 }
 
 function ImpactPanel({ model, close }: { model: ReturnType<typeof buildIdeaLife>; close: () => void }) {
@@ -248,7 +255,7 @@ function ImpactPanel({ model, close }: { model: ReturnType<typeof buildIdeaLife>
       </ol>
       <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-5">
         <p className="max-w-[34rem] text-[.72rem] font-light leading-[1.8] text-soft">«صلة قوية» تعني امتداداً موضوعياً موثق الرابط، لا ادعاء استشهاد أو تطبيق. الأثر المباشر لا يُسمّى كذلك إلا عندما يثبت المصدر العلاقة صراحةً.</p>
-        <Link to="/impact" onClick={close} className="inline-flex shrink-0 items-center gap-2 text-[.78rem] font-semibold text-accent">سجل الأثر الكامل <ArrowIcon /></Link>
+        <Link to="/impact" reloadDocument onClick={close} className="inline-flex shrink-0 items-center gap-2 text-[.78rem] font-semibold text-accent">سجل الأثر الكامل <ArrowIcon /></Link>
       </div>
     </div>
   )

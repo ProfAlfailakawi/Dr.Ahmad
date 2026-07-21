@@ -105,7 +105,13 @@ export default function CvFile() {
         objectUrl = URL.createObjectURL(blob)
         window.location.replace(objectUrl)
       } catch {
-        if (active) setStatus('error')
+        /* داخل الـPWA قد يفشل Firestore أو Cache Storage لحظياً. لا نحبس
+           الزائر في شاشة وسيطة: نفتح النسخة الأساسية مباشرةً، وتبقى شاشة
+           الخطأ احتياطاً فقط إن منع النظام الانتقال نفسه. */
+        if (active) {
+          window.location.replace(fallback)
+          window.setTimeout(() => { if (active) setStatus('error') }, 1200)
+        }
       }
     })()
     return () => {

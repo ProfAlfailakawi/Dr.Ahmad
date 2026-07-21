@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, FadeUp, Label, Magnetic, Page, Reveal, ScheduleProjectLink, SectionHead, SocialIcon, TebyanProjectLink } from '../components/ui'
-import { profile, roundDown10, socials, upcoming, type Event as SiteEvent } from '../data'
+import { academicProfiles, profile, roundDown10, socials, upcoming, type Event as SiteEvent } from '../data'
 import { useCmsContent, useExtras } from '../lib/content'
 import { firebaseEnabled, getDb } from '../lib/firebase'
 import { Newsletter } from '../components/extras'
@@ -887,10 +887,16 @@ function HomeSocialFooter() {
   return (
     <section className="border-t border-hair px-6 py-7 md:px-11 md:py-9">
       <div className="mx-auto max-w-shell">
-        <div className="flex items-center justify-center gap-2.5">
+        <div className="flex flex-wrap items-center justify-center gap-2.5">
           {socials.map((s) => (
             <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className="flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent">
               <SocialIcon name={s.label} size={16} />
+            </a>
+          ))}
+          <span aria-hidden className="mx-0.5 h-5 w-px bg-hair" />
+          {academicProfiles.map((profileLink) => (
+            <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className="flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent">
+              <SocialIcon name={profileLink.label} size={17} />
             </a>
           ))}
           <button type="button" onClick={() => setNewsletterOpen((value) => !value)} aria-expanded={newsletterOpen} aria-label="النشرة البريدية" title="النشرة البريدية" className={`flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${newsletterOpen ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>

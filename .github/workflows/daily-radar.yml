@@ -36,8 +36,10 @@ jobs:
       - name: Install dependencies
         run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 
-      - name: Test RSS parser and trusted-source selection
-        run: node scripts/daily-radar.mjs --self-test
+      - name: Test RSS parser, trusted sources and idea-life engine
+        run: |
+          node scripts/daily-radar.mjs --self-test
+          node scripts/idea-life-sync.mjs --self-test
 
       - name: Validate publishing credentials
         shell: bash
@@ -62,6 +64,16 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+
+      - name: Update idea life from open evidence
+        if: always()
+        run: node scripts/idea-life-sync.mjs
+        env:
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          IDEA_LIFE_MAX_ARTICLES: '4'
+          IDEA_LIFE_MAX_PAPERS: '1'
+          IDEA_LIFE_STALE_DAYS: '14'
 
       - name: Remove temporary credentials
         if: always()

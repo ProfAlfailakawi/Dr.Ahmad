@@ -235,6 +235,7 @@ const STATIC = [
   { path: '/data-deletion', title: 'تعليمات حذف البيانات', desc: 'تعليمات إلغاء الربط وطلب حذف بيانات Facebook وInstagram وLinkedIn.', robots: 'noindex, nofollow' },
   { path: '/ask', title: 'العقل الحي', desc: 'اسأل سؤالاً حقيقياً، فيبني الموقع إجابة موثقة من أرشيف د. أحمد حسين الفيلكاوي فقط: مقالات، تطور زمني، ومصادر.' },
   { path: '/decade', title: 'وثيقة العقد', desc: 'سيرة فكرية حيّة تقرأ عشر سنوات من الكتابة وتكشف تحولات الأسئلة والموضوعات الأكثر إلحاحاً.' },
+  { path: '/impact', title: 'سجل الأثر الموثق', desc: 'رحلات موثقة تُظهر انتقال الأفكار من المقال والبحث إلى الحوار العام والمؤلفات والتطبيق، مع رابط لكل محطة ظاهرة.' },
   { path: '/thought-paths', title: 'مسار الفكرة', desc: 'رحلات تربط المقال بالسؤال والبحث والكتاب واللقاء لتكشف كيف تطورت الفكرة عبر السنوات.' },
   { path: '/search', title: 'البحث العميق', desc: 'بحث متقدم في عناوين المقالات ونصوصها وتصنيفاتها وسنواتها.' },
   { path: '/admin', title: 'لوحة التحكم', desc: 'لوحة إدارة خاصة.', robots: 'noindex, nofollow' },
@@ -719,7 +720,7 @@ function generateBodyHtml(path, lang = 'ar') {
         ${mediaHtml}
       </main>
     `
-  } else if (['/about', '/contact', '/ask', '/decade', '/thought-paths', '/search', '/atlas', '/questions', '/radar', '/curated', '/upcoming', '/inbox'].includes(path)) {
+  } else if (['/about', '/contact', '/ask', '/decade', '/impact', '/thought-paths', '/search', '/atlas', '/questions', '/radar', '/curated', '/upcoming', '/inbox'].includes(path)) {
     const current = STATIC.find((item) => item.path === path)
     const links = [
       ['/', 'الرئيسية'],

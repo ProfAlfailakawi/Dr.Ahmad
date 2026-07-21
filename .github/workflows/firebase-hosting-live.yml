@@ -43,6 +43,7 @@ jobs:
           node scripts/radar-repair.mjs --self-test
           node scripts/faq-repair.mjs --self-test
           node scripts/auto-site-content.mjs --self-test
+          node scripts/idea-life-sync.mjs --self-test
           node scripts/test-social-templates.mjs
 
       # حرّاسُ ما أُصلح مؤخّراً: لولاها لعاد كلُّ عطبٍ منها صامتاً كما عاد أوّل مرّة.

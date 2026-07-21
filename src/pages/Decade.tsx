@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead } from '../components/ui'
-import { useCmsContent } from '../lib/content'
+import { useCmsContent, useExtras } from '../lib/content'
 import type { ArticleRecord } from '../lib/cms'
 import { toRoot } from '../lib/dialect-lexicon'
 import { loadArticleBodies } from '../lib/article-bodies'
+import { predictionRecordsFor, type IdeaLifeRemoteRecord } from '../lib/idea-life'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
@@ -62,25 +63,41 @@ export default function Decade() {
   const { articles, loading } = useCmsContent()
   const [params, setParams] = useSearchParams()
   const idea = (params.get('فكرة') || params.get('idea') || '').trim()
+  const mode = params.get('عرض') === 'تنبؤات' ? 'predictions' : 'journey'
   const [draft, setDraft] = useState(idea)
   const [bodies, setBodies] = useState<Record<string, string>>({})
+  const [bodiesReady, setBodiesReady] = useState(false)
+  const remoteIdeaLife = useExtras<IdeaLifeRemoteRecord>('site_idea_life')
+
+  const updateQuery = (nextIdea = idea, nextMode: 'journey' | 'predictions' = mode) => {
+    const next: Record<string, string> = {}
+    if (nextIdea.trim()) next['فكرة'] = nextIdea.trim()
+    if (nextMode === 'predictions') next['عرض'] = 'تنبؤات'
+    setParams(next)
+  }
 
   useEffect(() => { setDraft(idea) }, [idea])
   /* المتون تُجلب عند الحاجة وحدها: الرحلة بلا فكرةٍ لا تحتاجها، ومع فكرةٍ
      تصير ضرورية — فالعنوان وحده لا يكفي للحكم بأن المقال يخصّها. */
   useEffect(() => {
-    if (!idea || Object.keys(bodies).length) return
+    const needsBodies = Boolean(idea) || mode === 'predictions'
+    if (!needsBodies || bodiesReady) return
     let alive = true
-    void loadArticleBodies().then((data) => { if (alive) setBodies(data || {}) }).catch(() => {})
+    void loadArticleBodies()
+      .then((data) => { if (alive) setBodies(data || {}) })
+      .catch(() => {})
+      .finally(() => { if (alive) setBodiesReady(true) })
     return () => { alive = false }
-  }, [idea, bodies])
+  }, [idea, mode, bodiesReady])
 
   useSeo({
-    title: idea ? `رحلة فكرة: ${idea}` : 'وثيقة العقد',
+    title: mode === 'predictions' ? (idea ? `تنبؤات حول: ${idea}` : 'التنبؤات والمراجعات') : (idea ? `رحلة فكرة: ${idea}` : 'وثيقة العقد'),
     path: '/decade',
-    description: idea
-      ? `كيف تنقّلت فكرة «${idea}» في كتابات د. أحمد الفيلكاوي عبر السنوات — بالنصوص والتواريخ.`
-      : 'سيرة فكرية حيّة تُعيد قراءة عشر سنوات من المقالات: التحولات، والموضوعات الأكثر حضوراً، والنصوص الممثلة لكل مرحلة.',
+    description: mode === 'predictions'
+      ? 'سجل آلي يلتقط التوقعات من النصوص الأصلية، ويحفظها في سياقها، ويراجع اتجاهها وتوقيتها وحجمها ونطاقها عند ظهور أدلة لاحقة.'
+      : idea
+        ? `كيف تنقّلت فكرة «${idea}» في كتابات د. أحمد الفيلكاوي عبر السنوات — بالنصوص والتواريخ.`
+        : 'سيرة فكرية حيّة تُعيد قراءة عشر سنوات من المقالات: التحولات، والموضوعات الأكثر حضوراً، والنصوص الممثلة لكل مرحلة.',
   })
 
   const document = useMemo(() => {
@@ -164,15 +181,44 @@ export default function Decade() {
     }
   }, [articles, idea, bodies])
 
+  const predictionRegister = useMemo(() => {
+    const roots = idea.split(/\s+/).filter((word) => word.length > 2).map(toRoot)
+    return articles
+      .filter((article) => /^(?:19|20)\d{2}/.test(article.iso))
+      .filter((article) => matchesIdea(article, roots, bodies))
+      .flatMap((article) => {
+        const complete = { ...article, body: article.body || bodies[article.slug] }
+        const remote = remoteIdeaLife.find((item) => item.slug === article.slug && (!item.kind || item.kind === 'article'))
+        return predictionRecordsFor(complete, articles, remote).map((prediction) => ({ article: complete, prediction }))
+      })
+      .sort((left, right) => right.article.iso.localeCompare(left.article.iso))
+  }, [articles, bodies, idea, remoteIdeaLife])
+
   return (
     <Page className="content-decade page-journey">
       <PageHead
-        label={idea ? 'رحلة فكرة' : 'السيرة الفكرية الحيّة'}
-        title={idea ? `«${idea}» عبر السنوات.` : 'وثيقة العقد.'}
-        sub={idea
-          ? 'متى بدأتْ هذه الفكرة تُلحّ، وكيف تنقّلت بين أبوابه، وأين استقرّت — بالنصوص والتواريخ لا بالانطباع.'
-          : 'ليست سيرة وظائف ومناصب؛ بل قراءة تتولّد من الأرشيف نفسه: أين بدأ السؤال، ومتى اتسع، وما الذي بقي يُلحّ عاماً بعد عام.'}
+        label={mode === 'predictions' ? 'الزمن يراجع النص' : (idea ? 'رحلة فكرة' : 'السيرة الفكرية الحيّة')}
+        title={mode === 'predictions' ? 'التنبؤات والمراجعات.' : (idea ? `«${idea}» عبر السنوات.` : 'وثيقة العقد.')}
+        sub={mode === 'predictions'
+          ? 'ما الذي وضعته الكتابة أمام المستقبل؟ سجلٌ يستخرج العبارة من أصلها، ثم يراجع الاتجاه والتوقيت والحجم والنطاق من دون تحويل القضايا المعقدة إلى صح أو خطأ.'
+          : idea
+            ? 'متى بدأتْ هذه الفكرة تُلحّ، وكيف تنقّلت بين أبوابه، وأين استقرّت — بالنصوص والتواريخ لا بالانطباع.'
+            : 'ليست سيرة وظائف ومناصب؛ بل قراءة تتولّد من الأرشيف نفسه: أين بدأ السؤال، ومتى اتسع، وما الذي بقي يُلحّ عاماً بعد عام.'}
       />
+
+      <nav className="border-b border-hair px-6 md:px-11" aria-label="أوضاع وثيقة العقد">
+        <div className="mx-auto flex max-w-shell gap-7 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {[
+            { key: 'journey' as const, label: 'رحلة الكتابة' },
+            { key: 'predictions' as const, label: 'التنبؤات والمراجعات' },
+          ].map((item) => (
+            <button key={item.key} type="button" onClick={() => updateQuery(idea, item.key)} className={`relative shrink-0 py-4 text-[.8rem] font-semibold transition-colors ${mode === item.key ? 'text-ink' : 'text-soft hover:text-accent'}`}>
+              {item.label}
+              {mode === item.key && <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-accent" />}
+            </button>
+          ))}
+        </div>
+      </nav>
 
       {/* حقل الفكرة: يكتب القارئ «الامتحان» أو «العيال» فيرى رحلتها وحدها.
           والاقتراحات مأخوذةٌ من أكثر ما كتب فيه الدكتور، فلا يبدأ من فراغ. */}
@@ -182,21 +228,21 @@ export default function Decade() {
             onSubmit={(event) => {
               event.preventDefault()
               const value = draft.trim()
-              setParams(value ? { 'فكرة': value } : {})
+              updateQuery(value, mode)
             }}
             className="flex flex-wrap items-center gap-3"
           >
             <input
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              placeholder="اكتب فكرةً — الامتحان، الهوية، الذكاء الاصطناعي…"
+              placeholder={mode === 'predictions' ? 'صفِّ التنبؤات بفكرة — الشهادة، الذكاء الاصطناعي…' : 'اكتب فكرةً — الامتحان، الهوية، الذكاء الاصطناعي…'}
               className="min-w-[16rem] flex-1 rounded-full border border-hair bg-canvas px-5 py-2.5 text-[.88rem] text-ink outline-none focus:border-accent"
             />
             <button type="submit" className="rounded-full bg-accent px-6 py-2.5 text-[.85rem] font-semibold text-white transition-opacity hover:opacity-90">
-              تتبّع الرحلة
+              {mode === 'predictions' ? 'صفِّ السجل' : 'تتبّع الرحلة'}
             </button>
             {idea && (
-              <button type="button" onClick={() => { setDraft(''); setParams({}) }} className="text-[.82rem] text-soft transition-colors hover:text-accent">
+              <button type="button" onClick={() => { setDraft(''); updateQuery('', mode) }} className="text-[.82rem] text-soft transition-colors hover:text-accent">
                 العقد كاملاً ↺
               </button>
             )}
@@ -207,7 +253,7 @@ export default function Decade() {
                 <button
                   key={seed}
                   type="button"
-                  onClick={() => { setDraft(seed); setParams({ 'فكرة': seed }) }}
+                  onClick={() => { setDraft(seed); updateQuery(seed, mode) }}
                   className="rounded-full border border-hair bg-wash px-4 py-1.5 text-[.78rem] text-soft transition-colors hover:border-accent hover:text-accent"
                 >
                   {seed}
@@ -218,7 +264,79 @@ export default function Decade() {
         </div>
       </section>
 
-      {loading && !document ? (
+      {mode === 'predictions' ? (
+        (loading || !bodiesReady) && !predictionRegister.length ? (
+          <div className="px-6 py-24 text-center text-soft">يُقرأ ما وضعته النصوص أمام الزمن…</div>
+        ) : predictionRegister.length === 0 ? (
+          <div className="px-6 py-24 text-center text-soft">لم يُرصد في هذا النطاق توقعٌ صريح يستحق فتح سجلٍ له.</div>
+        ) : (
+          <section className="px-6 py-14 md:px-11 md:py-20">
+            <div className="mx-auto max-w-3xl">
+              <FadeUp>
+                <div className="flex flex-wrap items-end justify-between gap-5 border-b border-hair pb-7">
+                  <div>
+                    <span className="text-[.75rem] font-semibold text-accent">سجل حيّ يتجدد تلقائياً</span>
+                    <h2 className="mt-2 font-display text-[clamp(1.6rem,3.6vw,2.45rem)] font-bold leading-[1.35] text-ink">{number.format(predictionRegister.length)} توقعاً تحت المراجعة.</h2>
+                  </div>
+                  <p className="max-w-[22rem] text-[.78rem] font-light leading-[1.8] text-soft">العبارة محفوظة من النص الأصلي. لا تتغير حالتها إلا عندما تظهر إشارة لاحقة أو دليل عام يمكن الرجوع إليه.</p>
+                </div>
+              </FadeUp>
+
+              <div className="mt-3 divide-y divide-hair border-b border-hair">
+                {predictionRegister.map(({ article, prediction }, index) => (
+                  <FadeUp key={`${article.slug}:${prediction.quote}`} delay={Math.min(index * .025, .18)}>
+                    <details className="group py-6">
+                      <summary className="cursor-pointer list-none marker:hidden">
+                        <div className="flex items-start justify-between gap-5">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 text-[.68rem] font-semibold text-accent">
+                              <time>{article.iso.slice(0, 4)}</time><span className="text-hair">·</span><span>{prediction.status}</span>
+                            </div>
+                            <blockquote className="mt-2 font-display text-[1.03rem] font-medium leading-[1.85] text-ink md:text-[1.14rem]">«{prediction.quote}»</blockquote>
+                            <p className="mt-2 line-clamp-1 text-[.74rem] text-soft">من مقال: {article.title}</p>
+                          </div>
+                          <span className="relative mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair" aria-hidden="true">
+                            <span className="absolute h-px w-3 bg-accent" /><span className="absolute h-3 w-px bg-accent transition-transform group-open:rotate-90" />
+                          </span>
+                        </div>
+                      </summary>
+                      <div className="mt-6 border-t border-hair pt-5">
+                        <dl className="grid gap-x-9 gap-y-5 sm:grid-cols-2">
+                          {[
+                            ['الاتجاه العام', prediction.dimensions.direction],
+                            ['التوقيت', prediction.dimensions.timing],
+                            ['حجم التأثير', prediction.dimensions.scale],
+                            ['النطاق', prediction.dimensions.scope],
+                          ].map(([term, detail]) => (
+                            <div key={term}>
+                              <dt className="text-[.68rem] font-semibold text-accent">{term}</dt>
+                              <dd className="mt-1.5 text-[.8rem] font-light leading-[1.8] text-soft">{detail}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                        {prediction.laterArticle && (
+                          <Link to={`/articles/${prediction.laterArticle.slug}`} className="mt-6 block border-t border-hair pt-4 text-[.78rem] leading-[1.75] text-soft transition-colors hover:text-accent">
+                            كتابة لاحقة على الخيط نفسه: «{prediction.laterArticle.title}» ←
+                          </Link>
+                        )}
+                        {prediction.evidence?.length ? (
+                          <div className="mt-5 border-t border-hair pt-4">
+                            <p className="text-[.68rem] font-semibold text-accent">دليل عام قابل للتحقق</p>
+                            {prediction.evidence.map((evidence) => (
+                              <a key={evidence.url} href={evidence.url} target="_blank" rel="noreferrer" className="mt-2 block text-[.78rem] leading-[1.75] text-soft transition-colors hover:text-accent">{evidence.title} ↗</a>
+                            ))}
+                          </div>
+                        ) : null}
+                        <Link to={`/articles/${article.slug}`} className="mt-5 inline-block border-b border-accent/30 pb-1 text-[.74rem] font-semibold text-accent">اقرأ النص في سياقه الأصلي ←</Link>
+                      </div>
+                    </details>
+                  </FadeUp>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+      ) : (loading || (Boolean(idea) && !bodiesReady)) && !document ? (
         <div className="px-6 py-24 text-center text-soft">تُقرأ خيوط الأرشيف…</div>
       ) : !document ? (
         <div className="px-6 py-24 text-center text-soft">لا توجد مقالات مؤرخة تكفي لبناء الوثيقة بعد.</div>

@@ -17,6 +17,7 @@ const Articles = lazy(() => import('./pages/Articles'))
 const Search = lazy(() => import('./pages/Search'))
 const AskLibrary = lazy(() => import('./pages/AskLibrary'))
 const Decade = lazy(() => import('./pages/Decade'))
+const Impact = lazy(() => import('./pages/Impact'))
 const ThoughtPaths = lazy(() => import('./pages/ThoughtPaths'))
 const Media = lazy(() => import('./pages/Media'))
 const CV = lazy(() => import('./pages/CV'))
@@ -167,6 +168,7 @@ function AnimatedRoutes() {
         <Route path="/search" element={<Search />} />
         <Route path="/ask" element={<AskLibrary />} />
         <Route path="/decade" element={<Decade />} />
+        <Route path="/impact" element={<Impact />} />
         <Route path="/thought-paths" element={<ThoughtPaths />} />
         <Route path="/articles/:slug" element={<ArticleDetail />} />
         <Route path="/atlas" element={<Atlas />} />

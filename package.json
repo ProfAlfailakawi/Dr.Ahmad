@@ -97,7 +97,9 @@
     "content:purge": "node scripts/purge-deleted-content.mjs",
     "content:purge:self-test": "node scripts/purge-deleted-content.mjs --self-test",
     "audio:progress": "node scripts/audio-progress.mjs",
-    "audio:progress:self-test": "node scripts/audio-progress.mjs --self-test"
+    "audio:progress:self-test": "node scripts/audio-progress.mjs --self-test",
+    "idea-life:sync": "node scripts/idea-life-sync.mjs",
+    "idea-life:self-test": "node scripts/idea-life-sync.mjs --self-test"
   },
   "dependencies": {
     "firebase": "^12.15.0",

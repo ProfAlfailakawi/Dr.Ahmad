@@ -1,14 +1,14 @@
 import { Link, useParams } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { FadeUp, Page, Reveal } from '../components/ui'
-import { getArticleNeighbors, relatedArticles, type ArticleRecord, type BookRecord, type MediaRecord, type PaperRecord } from '../lib/cms'
+import { getArticleNeighbors, type ArticleRecord, type BookRecord, type MediaRecord, type PaperRecord } from '../lib/cms'
 import { SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
 import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, usePopularQuotes } from '../components/ArticleReader'
 import { SelectionTools } from '../components/IdeaFeatures'
 import { openAudioPlayer } from '../components/AudioPlayer'
-import { WriterResearcherBridge, markArticleRead } from '../components/ReaderResonance'
+import { markArticleRead } from '../components/ReaderResonance'
 import { JsonLd, useSeo } from '../components/seo'
 import { fetchOwnerCounts, useTrackView } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
@@ -21,6 +21,7 @@ import { rememberIdeaVisit } from '../lib/idea-memory'
 import { recordArticleVisit } from '../lib/reading-space'
 import { SaveForLaterButton } from '../components/MySpace'
 import bookTocLinks from '../data/book-toc-links.json'
+import IdeaLife from '../components/IdeaLife'
 
 const canUseDropCap = (paragraph: string) =>
   /^[\s\u061C\u200E\u200F]*[\u0621-\u064A]/.test(paragraph)
@@ -481,29 +482,17 @@ function ArticleExtensions({
   articles,
   books,
   papers,
-  media,
-  hasEvolution,
-  paper,
 }: {
   article: ArticleRecord
   articles: ArticleRecord[]
   books: BookRecord[]
   papers: PaperRecord[]
-  media: MediaRecord[]
-  hasEvolution: boolean
-  paper: PaperRecord | null
 }) {
   const { isAdmin } = useAdminAuth()
   return (
-    <div className="article-extensions mt-9 border-t border-hair pt-7">
-      <p className="text-[.76rem] font-semibold text-accent">امتدادات المقال</p>
+    <div className="article-extensions">
       <div className="pb-2">
-        <ArchiveContext a={article} />
-        <ReadingLayers hasAudio={Boolean(article.body)} hasEvolution={hasEvolution} slug={article.slug} />
         <StudentArchive a={article} articles={articles} books={books} papers={papers} />
-        <WriterResearcherBridge articleTitle={article.title} paper={paper ? { slug: paper.slug, title: paper.title } : null} />
-        <TimeDialogue a={article} articles={articles} />
-        <IdeaThread article={article} books={books} papers={papers} media={media} />
         {isAdmin && (
           <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-hair pt-5" aria-label="أدوات المشرف">
             <OwnerEdit tab="articles" slug={article.slug} />
@@ -522,9 +511,6 @@ export default function ArticleDetail() {
   const [bodyLoading, setBodyLoading] = useState(false)
 
   const neighbors = useMemo(() => a ? getArticleNeighbors(a.slug, articles) : { prev: undefined, next: undefined }, [a, articles])
-  const related = useMemo(() => a ? relatedArticles(a, 3, articles) : [], [a, articles])
-  const dive = useMemo(() => (a ? deepDive(a, papers, books) : { paper: null, book: null }), [a, books, papers])
-  const evolution = useMemo(() => (a ? ideaTimePair(a, articles) : { older: null, newer: null }), [a, articles])
 
   useSeo({
     title: a?.title ?? 'مقال',
@@ -675,7 +661,11 @@ export default function ArticleDetail() {
           </FadeUp>
 
           <FadeUp>
-            <section className="mt-14 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-5" aria-label="مشاركة المقال والاستشهاد به">
+            <IdeaLife article={article} articles={articles} books={books} papers={papers} media={media} />
+          </FadeUp>
+
+          <FadeUp>
+            <section className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-5" aria-label="مشاركة المقال والاستشهاد به">
               <Share compact title={a.title} path={`/articles/${a.slug}`} />
               <div className="flex flex-wrap items-center gap-5">
                 {liveLink(article.source) && <a href={liveLink(article.source)} target="_blank" rel="noreferrer" className="text-[.78rem] text-soft transition-colors hover:text-accent">المصدر الأصلي</a>}
@@ -684,48 +674,9 @@ export default function ArticleDetail() {
             </section>
           </FadeUp>
 
-          {(related.length > 0 || article.body) && (
+          {article.body && (
             <FadeUp>
-              <section className="mt-12 border-t border-hair pt-8">
-                {related.length > 0 && (
-                  <>
-                    <span className="text-[.76rem] font-semibold uppercase text-accent">أكمل هذا المسار</span>
-                    <p className="mt-2 text-[.9rem] font-light text-soft">مقالاتٌ على الخيط الفكري نفسه.</p>
-                    <ul className="related-path-grid mobile-paired-grid mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-6">
-                      {related.slice(0, dive.paper || dive.book ? 2 : 3).map((r) => (
-                        <li key={r.slug} className="min-w-0">
-                          <Link to={`/articles/${r.slug}`} viewTransition className="group block h-full min-w-0 rounded-xl border border-hair bg-canvas p-4 text-start transition-colors hover:border-accent/40 sm:border-0 sm:bg-transparent sm:p-0">
-                            <span className="text-[.72rem] font-semibold text-accent">مقال</span>
-                            <span className="mt-1.5 block break-words font-display text-[.96rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent sm:text-[1.05rem]">{r.title}</span>
-                            <time className="mt-1 block text-[.76rem] text-soft">{r.date}</time>
-                          </Link>
-                        </li>
-                      ))}
-                      {dive.paper && (
-                        <li key={dive.paper.slug} className="min-w-0">
-                          <Link to={`/research/${dive.paper.slug}`} className="group block h-full min-w-0 rounded-xl border border-hair bg-canvas p-4 text-start transition-colors hover:border-accent/40 sm:border-0 sm:bg-transparent sm:p-0">
-                            <span className="text-[.72rem] font-semibold text-accent">بحث محكّم</span>
-                            <span className="mt-1.5 block break-words font-display text-[.96rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent sm:text-[1.05rem]">{dive.paper.title}</span>
-                            <span className="mt-1 block text-[.76rem] text-soft">للتعمّق الأكاديمي</span>
-                          </Link>
-                        </li>
-                      )}
-                      {dive.book && !dive.paper && (
-                        <li key={dive.book.slug} className="min-w-0">
-                          <Link to={`/publications/${dive.book.slug}`} className="group block h-full min-w-0 rounded-xl border border-hair bg-canvas p-4 text-start transition-colors hover:border-accent/40 sm:border-0 sm:bg-transparent sm:p-0">
-                            <span className="text-[.72rem] font-semibold text-accent">كتاب</span>
-                            <span className="mt-1.5 block break-words font-display text-[.96rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent sm:text-[1.05rem]">{dive.book.title}</span>
-                            <span className="mt-1 block text-[.76rem] text-soft">للإحاطة الكاملة</span>
-                          </Link>
-                        </li>
-                      )}
-                    </ul>
-                  </>
-                )}
-                {article.body && (
-                  <ArticleExtensions article={article} articles={articles} books={books} papers={papers} media={media} hasEvolution={Boolean(evolution.older || evolution.newer)} paper={dive.paper} />
-                )}
-              </section>
+              <ArticleExtensions article={article} articles={articles} books={books} papers={papers} />
             </FadeUp>
           )}
 

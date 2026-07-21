@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useSeo } from '../components/seo'
 import { Accordion, FadeUp, Label, Page, Reveal } from '../components/ui'
 import { CvSectionEditor } from '../components/admin/CvSectionEditor'
@@ -126,7 +127,7 @@ export default function CV() {
           {/* أثرٌ موثّق — أختام هادئة لا أرقام صاخبة */}
           <FadeUp>
             <p className="mb-8 text-center text-[.76rem] font-semibold uppercase text-accent">أثرٌ موثّق</p>
-            <div className="cv-impact-grid mb-14 grid grid-cols-2 gap-6 border-b border-hair pb-14 md:grid-cols-4">
+            <div className="cv-impact-grid mb-5 grid grid-cols-2 gap-6 md:grid-cols-4">
               {[
                 { n: ar(books.length), l: 'كتاباً منشوراً' },
                 { n: ar(papers.length), l: 'بحثاً محكّماً' },
@@ -141,6 +142,10 @@ export default function CV() {
                   <span className="cv-impact-label mt-4 text-[.85rem] font-light text-soft">{s.l}</span>
                 </div>
               ))}
+            </div>
+            <div className="mb-14 border-b border-hair pb-10 text-center">
+              <p className="mx-auto max-w-[560px] text-[.78rem] font-light leading-[1.8] text-soft">بعض الأعمال لا تنتهي عند النشر؛ يتتبع السجل انتقالها إلى البحث والحوار العام والتطبيق، ولا يعرض محطة بلا رابط يمكن التحقق منه.</p>
+              <Link to="/impact" className="mt-4 inline-block border-b border-accent/35 pb-1 text-[.78rem] font-semibold text-accent transition-colors hover:border-accent">استكشف مسارات الأثر الموثق ←</Link>
             </div>
           </FadeUp>
 

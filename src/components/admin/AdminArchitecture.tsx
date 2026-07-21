@@ -104,7 +104,7 @@ export function AdminSectionTabs({ tab, onSelect }: { tab: AdminTab; onSelect: (
   return (
     <div className="mb-6 flex min-w-0 flex-wrap gap-2 pb-1 md:flex-nowrap md:overflow-x-auto">
       {group.items.map((item) => (
-        <button key={item.tab} type="button" onClick={() => onSelect(item.tab)} className={`min-w-0 rounded-full px-3 py-2 text-[.76rem] font-semibold leading-tight transition-colors sm:shrink-0 sm:px-4 sm:text-[.8rem] ${tab === item.tab ? 'bg-ink text-white' : 'border border-hair bg-wash text-soft hover:border-accent hover:text-accent'}`}>
+        <button key={item.tab} type="button" onClick={() => onSelect(item.tab)} className={`min-h-11 min-w-0 rounded-full px-3 py-2 text-[.76rem] font-semibold leading-tight transition-colors sm:shrink-0 sm:px-4 sm:text-[.8rem] ${tab === item.tab ? 'bg-ink text-white' : 'border border-hair bg-wash text-soft hover:border-accent hover:text-accent'}`}>
           {item.label}
         </button>
       ))}

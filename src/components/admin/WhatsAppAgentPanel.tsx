@@ -130,7 +130,6 @@ export function WhatsAppAgentPanel() {
   const localBridgeDefault = ['http:', '', '127.0.0.1:34321'].join('/')
   const bridgeCandidate = String(import.meta.env.VITE_WHATSAPP_AGENT_BRIDGE_URL || localBridgeDefault).replace(/\/+$/, '')
   const bridge = /^(https?:\/\/)(127\.0\.0\.1|localhost)(:\d+)?$/i.test(bridgeCandidate) ? bridgeCandidate : ''
-  const personalNumberMode = status.flags?.personalNumberMode !== false
 
   const authHeaders = useMemo(() => ({
     Accept: 'application/json',
@@ -539,9 +538,9 @@ export function WhatsAppAgentPanel() {
           )}
         </div>
         <div className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-soft">
-          وضع الرقم الشخصي مفعل: لا مجموعات ولا حالات ولا حملات جماعية. يعمل طوال اليوم بلا حد زمني أو عددي، لكنه صامت قبل جملة الإيقاظ.
-          بعد الإيقاظ تبقى الجلسة حيّة ويتفاعل من فهرس الموقع فقط، من دون تأليف أو مصادر خارجية.
-          تدخلك اليدوي يوقفه فورًا ويمحو الجلسة؛ وبعد فترة الحماية لا يعود إلا بجملة الإيقاظ من جديد. ويصمت أمام الوسائط والروابط والموعد والاستشارة والإشراف.
+          الرد الآلي يعمل في المحادثات الفردية فقط: صامت قبل جملة الإيقاظ، وبعدها يتفاعل من فهرس الموقع بلا تأليف.
+          القوائم ودفتر الأرقام والبث اليدوي مستقلة تمامًا: لا تُرسل شيئًا إلا بأمرك، وبعد معاينة على رقمك وتأكيدين صريحين وفاصل هادئ بين الرسائل.
+          تدخلك اليدوي يوقف الرد الآلي فورًا؛ وبعد فترة الحماية لا يعود إلا بجملة الإيقاظ من جديد.
         </div>
         {status.last_error && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.8rem] text-soft">{status.last_error}</p>}
         {notice && <p role="status" className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{notice}</p>}
@@ -553,7 +552,7 @@ export function WhatsAppAgentPanel() {
           سطراً ولا تعرف قوائم الدكتور، فتقول «الجهات الجاهزة: 0» وهو يملك ألفين.
           خلفتها BroadcastStudio: قائمةٌ تُختار، ومعاينةٌ تقول كم سيصل، وتجربةٌ على
           النفس قبل الناس. ولا مكانان لوظيفةٍ واحدة. */}
-      {!personalNumberMode && <BroadcastStudio request={request} onNotice={setNotice} />}
+      <BroadcastStudio request={request} onNotice={setNotice} />
 
       {/* حُذف «مركز إدارة الردود» بأمر الدكتور — إزعاجٌ بصريّ بلا فائدة. */}
 
@@ -591,7 +590,7 @@ export function WhatsAppAgentPanel() {
       {/* حُذفت بطاقة «الحملات المحلية»: كانت تُخفي مسودتك حتى تضغط «اعتماد»، فتظهر
           خطوةٌ ناقصة بلا سياق وتغيب البقية. وغرفة البثّ أعلاه تُري المسار كاملاً
           من أوله — والاعتماد صار داخلها خطوةً لا باباً. */}
-      {bridge && !personalNumberMode && <AudienceStudio request={request} onNotice={setNotice} />}
+      {bridge && <AudienceStudio request={request} onNotice={setNotice} />}
 
 
       {/* حُذف «التشغيل المحلي» بأمر الدكتور — إزعاجٌ بصريّ بلا فائدة. */}

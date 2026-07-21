@@ -225,19 +225,19 @@ export async function runSelfTest(root) {
   agent.resumeAutoReplies()
   assert.equal((await agent.status()).runtimePaused, false, 'تشغيل الردود يلغي الإيقاف الفوري')
 
-  if (flags.personalNumberMode) {
+  /* البث اليدوي جزء مستقل عن الرد الآلي: يعمل حتى مع وضع الرقم الشخصي،
+     لكنه لا يرسل إلا بأمر المالك وبعد اعتماد وتأكيدين صريحين. */
+  const campaignId = agent.queueCampaign({ name: 'اختبار محلي', message: 'رسالة اختبار', targets: [{ jid: '67890@s.whatsapp.net', kind: 'contact' }] })
+  assert.equal(db.get('SELECT state FROM campaigns WHERE id=?', campaignId).state, 'draft')
+  agent.approveCampaign(campaignId, { confirm: true })
+  if (!flags.send) {
+    await assert.rejects(() => agent.sendCampaign(campaignId, { confirm: true, confirmAgain: true }), /الإرسال معطّل/)
     assert.throws(
-      () => agent.queueCampaign({ name: 'اختبار محلي', message: 'رسالة اختبار', targets: [{ jid: '67890@s.whatsapp.net', kind: 'contact' }] }),
-      /رقم شخصي/,
-      'الحملات معطلة بالكامل على الرقم الشخصي',
+      () => agent.sendQuietCampaign(campaignId, { confirm: true, confirmAgain: true, intervalSeconds: 45 }),
+      /الإرسال معطّل/,
+      'البث الهادئ متاح في وضع الرقم الشخصي، ويقف فقط عند مفتاح الإرسال المحلي',
     )
-  } else {
-    const campaignId = agent.queueCampaign({ name: 'اختبار محلي', message: 'رسالة اختبار', targets: [{ jid: '67890@s.whatsapp.net', kind: 'contact' }] })
-    assert.equal(db.get('SELECT state FROM campaigns WHERE id=?', campaignId).state, 'draft')
-    agent.approveCampaign(campaignId, { confirm: true })
-    if (!flags.send) await assert.rejects(() => agent.sendCampaign(campaignId, { confirm: true, confirmAgain: true }), /الإرسال معطّل/)
-    else await agent.sendCampaign(campaignId, { confirm: true, confirmAgain: true })
-  }
+  } else await agent.sendCampaign(campaignId, { confirm: true, confirmAgain: true })
   await agent.stop()
   setSuppression(db, '12345@s.whatsapp.net', true)
   assert.equal(should({ db, jid: '12345@s.whatsapp.net', text: 'فاجئني' }).allowed, false)

@@ -237,7 +237,6 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     return result
   }
   const queueCampaign = ({ name, message, targets = [], scheduledAt = null }) => {
-    if (flags.personalNumberMode) throw new Error('الحملات الجماعية معطلة لأن هذا رقم شخصي. استخدم رقماً تجارياً منفصلاً للحملات.')
     if (!name || !message) throw new Error('اسم الحملة ورسالتها مطلوبان')
     if (targets.length > MAX_CAMPAIGN_TARGETS) throw new Error(`الحد الآمن للحملة ${MAX_CAMPAIGN_TARGETS} جهة.`)
     for (const target of targets) if (typeof target === 'string' && !target.includes('@') && target !== 'self') throw new Error('لا تحفظ رقمًا خامًا؛ استخدم الذات أو جهة معروفة بصيغة jid محليًا.')
@@ -448,7 +447,6 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     return { restartRequestedAt: requestedAt }
   }
   const sendCampaign = async (id, { confirm = false, confirmAgain = false } = {}) => {
-    if (flags.personalNumberMode) throw new Error('الإرسال الجماعي معطل على الرقم الشخصي.')
     if (!confirm || !confirmAgain) throw new Error('إرسال الحملة يحتاج تأكيدين صريحين.')
     if (!flags.send) throw new Error('الإرسال معطّل افتراضيًا. فعّل WHATSAPP_SEND_ENABLED محليًا بعد الاختبار.')
     if (!state.transport || state.transport.getConnectionStatus?.() !== 'connected') throw new Error('اربط واتساب أولًا وتأكد أن الحالة متصل.')
@@ -522,7 +520,6 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     }
   }
   const sendQuietCampaign = (id, { confirm = false, confirmAgain = false, intervalSeconds = BROADCAST_DEFAULT_INTERVAL_SECONDS } = {}) => {
-    if (flags.personalNumberMode) throw new Error('الإرسال الجماعي معطل على الرقم الشخصي.')
     if (!confirm || !confirmAgain) throw new Error('الإرسال الهادئ يحتاج تأكيدين صريحين.')
     if (!flags.send) throw new Error('الإرسال معطّل افتراضيًا. فعّل WHATSAPP_SEND_ENABLED محليًا بعد الاختبار.')
     if (!state.transport || state.transport.getConnectionStatus?.() !== 'connected') throw new Error('اربط واتساب أولًا وتأكد أن الحالة متصل.')

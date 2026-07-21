@@ -1048,9 +1048,12 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
           <article key={`${item._cms.origin}:${item.slug}`} className={`min-w-0 overflow-hidden rounded-2xl border border-hair bg-canvas p-4 ${item._cms.hidden ? 'opacity-60' : ''}`}>
             <button type="button" onClick={() => openEdit(item)} className="block min-w-0 w-full text-right">
               <span className="block break-words font-medium leading-[1.7] text-ink">{item.title}</span>
-              <span className="mt-1 block max-w-full truncate text-[.68rem] text-soft" dir="ltr">{item.slug}</span>
             </button>
             <p className="mt-2 break-words text-[.76rem] text-soft">{item.date || item.cat || item.outlet || item.isbn || '—'}</p>
+            <details className="mt-2 rounded-xl border border-hair bg-wash px-3 py-2">
+              <summary className="cursor-pointer list-none text-[.7rem] font-semibold text-soft">الرابط المختصر</summary>
+              <span className="mt-1 block max-w-full truncate text-[.68rem] text-soft" dir="ltr">{item.slug}</span>
+            </details>
             <div className="mt-3 flex min-w-0 flex-wrap gap-1.5">
               <span className="rounded-full border border-hair px-2.5 py-1 text-[.68rem] text-soft">{item._cms.origin === 'base' ? 'أصل' : 'مُضاف'}</span>
               {item._cms.modified && <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[.68rem] text-accent">مُعدّل</span>}
@@ -1096,13 +1099,13 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
                     openEdit(item)
                   }
                 }}
-                className={`cursor-pointer transition-colors hover:bg-wash/70 focus-visible:bg-wash ${item._cms.hidden ? 'opacity-55' : ''}`}
+                className={`group cursor-pointer transition-colors hover:bg-wash/70 focus-visible:bg-wash ${item._cms.hidden ? 'opacity-55' : ''}`}
                 aria-label={`تعديل ${item.title}`}
               >
                 <td className="max-w-md px-5 py-4">
                   <button type="button" onClick={() => openEdit(item)} className="block w-full text-right">
                     <span className="block font-medium leading-relaxed text-ink transition-colors hover:text-accent">{item.title}</span>
-                    <span className="mt-1 block truncate text-[.72rem] text-soft" dir="ltr">{item.slug}</span>
+                    <span className="mt-1 block truncate text-[.72rem] text-soft opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100" dir="ltr">{item.slug}</span>
                   </button>
                 </td>
                 <td className="px-4 py-4 text-[.82rem] text-soft">{item.date || item.cat || item.outlet || item.isbn || '—'}</td>

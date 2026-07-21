@@ -69,7 +69,7 @@ export function QuietCommandCenter({ articles, onNavigate }: { articles: Article
           <div>
             <p className="text-[.76rem] font-semibold uppercase text-accent">غرفة القيادة الصامتة</p>
             <h2 className="mt-2 font-display text-[clamp(1.55rem,3vw,2.25rem)] font-semibold leading-[1.4] text-ink">
-              {loading ? 'أرتّب أولويات اليوم…' : decisions.length ? `اليوم لديك ${decisions.length} ${decisions.length === 1 ? 'قرار' : 'قرارات'} فقط.` : 'كل شيء تحت السيطرة.'}
+              {loading ? 'أرتّب أولويات اليوم…' : decisions.length ? `اليوم لديك ${decisions.length} ${decisions.length === 1 ? 'قرار' : 'قرارات'} فقط.` : 'لا توجد مشكلات عاجلة.'}
             </h2>
             <p className="mt-2 max-w-2xl text-[.88rem] leading-relaxed text-soft">لا تعرض هذه الصفحة كل ما يستطيع النظام فعله؛ تعرض فقط ما يحتاج انتباهك الآن.</p>
           </div>

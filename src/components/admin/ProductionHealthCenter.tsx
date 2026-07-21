@@ -100,6 +100,7 @@ export function ProductionHealthCenter({
   const [draftSlugs, setDraftSlugs] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState('')
   const [message, setMessage] = useState('')
+  const [openStages, setOpenStages] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     let active = true
@@ -268,6 +269,18 @@ export function ProductionHealthCenter({
     return { missingBody, missingSource, missingAudio, paperIssues, bookIssues }
   }, [articles, books, papers, staticBodies])
 
+  const archiveCoverage = useMemo(() => {
+    const live = articles.filter((article) => !article._cms.hidden && article.status !== 'draft')
+    const total = live.length || 1
+    const percent = (count: number) => Math.round((count / total) * 100)
+    return [
+      { label: 'الصوت', value: percent(live.filter((article) => article.hasAudio).length) },
+      { label: 'المصادر', value: percent(live.filter((article) => Boolean(article.source || article.url)).length) },
+      { label: 'المقتطفات', value: percent(live.filter((article) => Boolean(article.excerpt?.trim())).length) },
+      { label: 'التصنيف', value: percent(live.filter((article) => Boolean(article.cat?.trim())).length) },
+    ]
+  }, [articles])
+
   const pathIdeas = useMemo(() => {
     const groups = new Map<string, ArticleRecord[]>()
     for (const article of articles) {
@@ -336,7 +349,10 @@ export function ProductionHealthCenter({
                   <audio controls preload="none" src={episode.listen} className="h-10 w-full min-w-0 max-w-full flex-1" />
                 </div>
               )}
-              <StageRail active={status} />
+              <button type="button" onClick={() => setOpenStages((current) => ({ ...current, [article.slug]: !current[article.slug] }))} aria-expanded={Boolean(openStages[article.slug])} className="mt-3 rounded-full border border-hair px-3 py-1.5 text-[.72rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">
+                {openStages[article.slug] ? 'إخفاء المراحل' : 'عرض مراحل الإنتاج'}
+              </button>
+              {openStages[article.slug] && <StageRail active={status} />}
             </article>
           )})}
         </div>
@@ -441,6 +457,27 @@ export function ProductionHealthCenter({
               <span className="mt-1 block text-[.72rem] text-soft">{label}</span>
             </div>
           ))}
+        </div>
+        <div className="mt-5 rounded-2xl border border-hair bg-canvas p-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-[.76rem] font-semibold uppercase text-accent">تغطية الأرشيف</p>
+              <h3 className="mt-1 font-display text-[1.05rem] font-semibold text-ink">نسبة اكتمال العناصر الهادئة.</h3>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {archiveCoverage.map((item) => (
+              <div key={item.label} className="min-w-0">
+                <div className="mb-1.5 flex items-center justify-between gap-3 text-[.76rem]">
+                  <span className="font-semibold text-ink">{item.label}</span>
+                  <span className="text-accent">{item.value}%</span>
+                </div>
+                <span className="block h-2 overflow-hidden rounded-full bg-wash">
+                  <span className="block h-full rounded-full bg-accent" style={{ width: `${item.value}%` }} />
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
         {(health.missingBody.length || health.paperIssues.length) > 0 && (
           <div className="mt-4 grid gap-2 md:grid-cols-2">

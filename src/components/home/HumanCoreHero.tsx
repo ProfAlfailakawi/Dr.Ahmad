@@ -255,7 +255,7 @@ export default function HumanCoreHero() {
   }, [mobileVisual, reduce])
 
   return (
-    <header ref={heroRef} className="human-core relative flex min-h-[100svh] items-center overflow-hidden px-6 pb-28 pt-24 md:px-11 md:pb-28 md:pt-28">
+    <header ref={heroRef} className="human-core relative flex min-h-[92svh] items-center overflow-hidden px-6 pb-24 pt-24 md:px-11 md:pb-24 md:pt-24">
       <canvas ref={canvasRef} className="human-core__canvas pointer-events-none absolute inset-0" aria-hidden="true" />
       <div className="human-core__wash pointer-events-none absolute inset-0" aria-hidden="true" />
       <div className="human-core__words pointer-events-none absolute inset-0" aria-hidden="true">
@@ -270,10 +270,9 @@ export default function HumanCoreHero() {
             <span className="-my-[0.3em] block overflow-hidden py-[0.3em]">
               <motion.span
                 className="human-core__title-line block"
-                data-echo="أُبقي الإنسانَ"
                 initial={reduce ? false : { y: '150%' }}
                 animate={{ y: 0 }}
-                transition={{ duration: 1, delay: 0.25, ease: EASE }}
+                transition={{ duration: 0.76, delay: 0.18, ease: EASE }}
               >
                 أُبقي <span className="human-core__human">الإنسانَ</span>
               </motion.span>
@@ -281,10 +280,9 @@ export default function HumanCoreHero() {
             <span className="-my-[0.3em] block overflow-hidden py-[0.3em]">
               <motion.span
                 className="human-core__title-line human-core__machine block"
-                data-echo="في قلبِ الآلة."
                 initial={reduce ? false : { y: '150%' }}
                 animate={{ y: 0 }}
-                transition={{ duration: 1, delay: 0.39, ease: EASE }}
+                transition={{ duration: 0.76, delay: 0.28, ease: EASE }}
               >
                 في قلبِ الآلة.
               </motion.span>
@@ -292,14 +290,14 @@ export default function HumanCoreHero() {
           </h1>
 
           <div className="human-core__signal my-7" aria-hidden="true">
-            <motion.span initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 1.05, delay: 0.68, ease: EASE }} />
+            <motion.span initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.72, delay: 0.48, ease: EASE }} />
             <i />
           </div>
 
           <motion.div
             initial={reduce ? false : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.85, ease: EASE }}
+            transition={{ duration: 0.52, delay: 0.62, ease: EASE }}
           >
             <p className="font-display text-[clamp(1.15rem,2.4vw,1.6rem)] font-semibold text-ink">{profile.name}</p>
             <p className="human-core__tagline mt-1.5 text-[.95rem] font-light">أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · باحث · مستشار</p>
@@ -313,7 +311,7 @@ export default function HumanCoreHero() {
               className="human-core__portrait relative"
               initial={reduce ? false : { opacity: 0, y: 26, scale: 1.03 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 1.1, delay: 0.75, ease: EASE }}
+              transition={{ duration: 0.82, delay: 0.58, ease: EASE }}
               data-hover={mobileVisual ? undefined : true}
             >
               <div className="human-core__orbit" aria-hidden="true"><span /><span /><span /></div>
@@ -332,7 +330,7 @@ export default function HumanCoreHero() {
           className="order-3 md:col-span-2"
           initial={reduce ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: .75, delay: 1.05, ease: EASE }}
+          transition={{ duration: .5, delay: .76, ease: EASE }}
         >
           <Link to="/cv" className="human-core__cv group mx-auto flex w-full max-w-[620px] items-center justify-between gap-4 rounded-2xl border border-hair bg-wash/70 px-5 py-4 text-right md:px-6">
             <span className="min-w-0">

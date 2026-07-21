@@ -30,7 +30,7 @@ export function Reveal({ children, delay = 0, className = '' }: { children: Reac
       const r = el.getBoundingClientRect()
       // داخل الشاشة رأسياً؟ اكشفه.
       if (r.top < window.innerHeight && r.bottom > 0) setSafety(true)
-    }, 700)
+    }, 520)
     return () => clearTimeout(t)
   }, [reduce])
 
@@ -43,7 +43,7 @@ export function Reveal({ children, delay = 0, className = '' }: { children: Reac
         className="block"
         initial={reduce ? false : { y: '150%' }}
         animate={show ? { y: 0 } : { y: '150%' }}
-        transition={{ duration: 1, ease: EASE, delay }}
+        transition={{ duration: 0.64, ease: EASE, delay }}
       >
         {children}
       </motion.span>
@@ -65,7 +65,7 @@ export function FadeUp({ children, delay = 0, className = '' }: { children: Reac
       if (!el) return
       const r = el.getBoundingClientRect()
       if (r.top < window.innerHeight && r.bottom > 0) setSafety(true)
-    }, 900)
+    }, 650)
     return () => clearTimeout(t)
   }, [reduce])
 
@@ -77,7 +77,7 @@ export function FadeUp({ children, delay = 0, className = '' }: { children: Reac
       className={className}
       initial={reduce ? false : { opacity: 0, y: 22 }}
       animate={show ? { opacity: 1, y: 0 } : { opacity: 0, y: 22 }}
-      transition={{ duration: 0.72, ease: EASE, delay }}
+      transition={{ duration: 0.48, ease: EASE, delay }}
     >
       {children}
     </motion.div>
@@ -325,7 +325,7 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
       initial={reduce ? { opacity: 0 } : { y: '-100%' }}
       animate={reduce ? { opacity: 1 } : { y: 0 }}
       exit={reduce ? { opacity: 0 } : { y: '-100%' }}
-      transition={{ duration: 0.75, ease: EASE }}
+      transition={{ duration: 0.46, ease: EASE }}
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_55%_at_75%_35%,rgba(62,92,120,.055),transparent_65%)]" />
 
@@ -338,7 +338,7 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
                 className="block text-[.68rem] font-semibold uppercase text-accent md:text-[.72rem]"
                 initial={reduce ? false : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.35 + gi * 0.08, ease: EASE }}
+                transition={{ duration: 0.34, delay: 0.18 + gi * 0.05, ease: EASE }}
               >
                 {g.label}
               </motion.span>
@@ -353,7 +353,7 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
                     <motion.div
                       initial={reduce ? false : { y: '150%' }}
                       animate={{ y: 0 }}
-                      transition={{ duration: 0.7, delay: 0.45 + gi * 0.08 + ii * 0.06, ease: EASE }}
+                      transition={{ duration: 0.42, delay: 0.24 + gi * 0.05 + ii * 0.035, ease: EASE }}
                     >
                       {it.sub ? (
                         <div className="py-1">
@@ -463,7 +463,7 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
         className="site-menu-footer relative border-t border-hair px-6 pb-[max(.85rem,env(safe-area-inset-bottom))] pt-3.5 md:px-11 md:py-7"
         initial={reduce ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.8 }}
+        transition={{ duration: 0.36, delay: 0.42 }}
       >
         <div className="mx-auto flex max-w-shell flex-wrap items-center justify-between gap-3.5 md:gap-5">
           <Link
@@ -523,7 +523,7 @@ function EnglishOverlay({ close, openSearch }: { close: () => void; openSearch: 
       initial={reduce ? { opacity: 0 } : { y: '-100%' }}
       animate={reduce ? { opacity: 1 } : { y: 0 }}
       exit={reduce ? { opacity: 0 } : { y: '-100%' }}
-      transition={{ duration: .7, ease: EASE }}
+      transition={{ duration: .44, ease: EASE }}
     >
       <div className="flex flex-1 items-center overflow-y-auto px-6 py-28 md:px-11">
         <div className="mx-auto w-full max-w-shell">

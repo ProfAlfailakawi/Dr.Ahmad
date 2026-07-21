@@ -15,7 +15,7 @@ html {
 
   --c-canvas: 252 252 250;      /* #FCFCFA */
   --c-ink: 21 22 26;            /* #15161A */
-  --c-soft: 124 129 139;        /* #7C818B */
+  --c-soft: 94 101 112;         /* #5E6570 — أوضح للنصوص الثانوية الصغيرة */
   --c-accent: 62 92 120;        /* #3E5C78 */
   --c-accent-deep: 51 80 107;   /* #33506B */
   --c-wash: 244 245 243;        /* #F4F5F3 */
@@ -1003,16 +1003,19 @@ html.dark .book-detail-cover {
 .human-core__title-line { position: relative; width: max-content; max-width: 100%; }
 .human-core__title-line::before,
 .human-core__title-line::after {
-  content: attr(data-echo);
+  content: "";
   position: absolute;
-  inset: 0;
+  inset-inline: .04em;
+  inset-block-end: .16em;
+  height: .12em;
   z-index: -1;
   pointer-events: none;
-  color: rgb(var(--c-accent));
+  background: rgb(var(--c-accent));
+  border-radius: 999px;
   opacity: 0;
 }
-.human-core__title-line::before { transform: translate(2px, -1px); }
-.human-core__title-line::after { transform: translate(-2px, 1px); }
+.human-core__title-line::before { transform: translate(2px, -1px) scaleX(.96); transform-origin: right; }
+.human-core__title-line::after { transform: translate(-2px, 1px) scaleX(.92); transform-origin: left; }
 .human-core:hover .human-core__title-line::before { animation: human-core-echo-a 4.8s steps(1) infinite; }
 .human-core:hover .human-core__title-line::after { animation: human-core-echo-b 4.8s steps(1) infinite; }
 @keyframes human-core-echo-a {
@@ -1211,7 +1214,7 @@ html.dark .human-core__wash {
 html.dark .human-core__scan { mix-blend-mode: screen; }
 
 @media (max-width: 767px) {
-  .human-core { align-items: flex-start; padding-top: 6.8rem; }
+  .human-core { align-items: flex-start; padding-top: 6rem; }
   .human-core__wash {
     background:
       radial-gradient(68% 38% at 50% 45%, rgb(var(--c-accent) / .07), transparent 72%),
@@ -1242,7 +1245,7 @@ html.dark .human-core__scan { mix-blend-mode: screen; }
 }
 
 @media (max-height: 760px) and (min-width: 768px) {
-  .human-core { padding-top: 6rem; padding-bottom: 5.5rem; }
+  .human-core { padding-top: 5.4rem; padding-bottom: 4.8rem; }
   .human-core__portrait-shell { max-width: 440px; }
 }
 

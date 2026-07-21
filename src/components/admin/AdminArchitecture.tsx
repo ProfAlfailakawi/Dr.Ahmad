@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { getDb } from '../../lib/firebase'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
+import { createAnalyticsNamer, decodeAnalyticsPath } from '../../lib/analytics-labels'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../../lib/cms'
 import { EASE } from '../motion'
 
@@ -86,7 +87,7 @@ export function AdminAreaTabs({ tab, onSelect }: { tab: AdminTab; onSelect: (tab
             key={group.area}
             type="button"
             onClick={() => onSelect(defaultTabForArea(group.area))}
-            className={`shrink-0 rounded-full px-4 py-2 text-[.82rem] font-semibold transition-colors ${active ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+            className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-[.82rem] font-semibold transition-colors ${active ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
           >
             {group.label}
           </button>
@@ -149,7 +150,7 @@ export function AdminMobileSubnav({ tab, onSelect }: { tab: AdminTab; onSelect: 
   return (
     <div className="mb-5 grid min-w-0 grid-cols-2 gap-2 md:hidden">
       {group.items.map((item) => (
-        <button key={item.tab} type="button" onClick={() => onSelect(item.tab)} className={`min-w-0 rounded-full px-3 py-2 text-[.76rem] font-semibold leading-tight ${tab === item.tab ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>
+        <button key={item.tab} type="button" onClick={() => onSelect(item.tab)} className={`flex min-h-11 min-w-0 items-center justify-center rounded-full px-3 py-2 text-[.76rem] font-semibold leading-tight ${tab === item.tab ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>
           {item.label}
         </button>
       ))}
@@ -164,7 +165,7 @@ export function AdminMobileNav({ tab, onSelect }: { tab: AdminTab; onSelect: (ta
       <div className="grid min-w-0 grid-cols-4 gap-1.5">
         {ADMIN_GROUPS.map((group) => {
           const active = area === group.area
-          return <button key={group.area} type="button" onClick={() => onSelect(defaultTabForArea(group.area))} className={`min-w-0 rounded-xl px-1.5 py-2 text-[.66rem] font-semibold leading-[1.25] transition-colors sm:text-[.72rem] ${active ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>{group.label}</button>
+          return <button key={group.area} type="button" onClick={() => onSelect(defaultTabForArea(group.area))} className={`min-h-11 min-w-0 rounded-xl px-1.5 py-2 text-[.66rem] font-semibold leading-[1.25] transition-colors sm:text-[.72rem] ${active ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>{group.label}</button>
         })}
       </div>
     </nav>
@@ -178,10 +179,6 @@ const kuwaitDate = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuwa
 
 type JourneyPulseRow = { id: string; from: string; to: string; count: number }
 
-const decodePath = (value: string) => {
-  try { return decodeURIComponent(value) } catch { return value }
-}
-
 const topicLabel = (title: string) => {
   const value = title.trim()
   if (!value || value === 'لا بيانات بعد') return 'حركة الموقع'
@@ -193,27 +190,10 @@ const topicLabel = (title: string) => {
   return value
 }
 
-const pathLabel = (path: string, articles: ArticleRecord[]) => {
-  const clean = decodePath(path || '/')
-  if (clean === '/') return 'الصفحة الرئيسية'
-  if (clean === '/articles') return 'المقالات'
-  if (clean === '/publications') return 'الكتب'
-  if (clean === '/research') return 'الأبحاث'
-  if (clean === '/media') return 'الإعلام'
-  if (clean === '/cv') return 'السيرة'
-  if (clean === '/contact') return 'التواصل'
-  if (clean.startsWith('/articles/')) {
-    const slug = clean.split('/').filter(Boolean).pop()
-    return articles.find((item) => item.slug === slug)?.title || 'مقال'
-  }
-  if (clean.startsWith('/publications/')) return 'كتاب'
-  if (clean.startsWith('/research/')) return 'بحث'
-  return clean.replace(/^\//, '').replace(/[-_/]+/g, ' ') || 'صفحة'
-}
-
 export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]; onOpen: (tab: AdminTab) => void }) {
   const [loading, setLoading] = useState(true)
-  const [data, setData] = useState({ todayViews: 0, topTitle: 'لا بيانات بعد', topCount: 0, recentMessages: 0, healthStatus: 'غير مفحوص', issues: 0, launchActive: false, journeys: [] as JourneyPulseRow[] })
+  const [data, setData] = useState({ todayViews: 0, topTitle: 'لا بيانات بعد', topCount: 0, recentMessages: 0, healthStatus: 'غير مفحوص', issues: 0, sourceDecisions: 0, launchActive: false, journeys: [] as JourneyPulseRow[] })
+  const namer = useMemo(() => createAnalyticsNamer({ articles }), [articles])
 
   const load = async (showLoading = true) => {
     if (showLoading) setLoading(true)
@@ -221,12 +201,13 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
       const db = await getDb()
       if (!db) return
       const { collection, doc, getDoc, getDocs } = await import('firebase/firestore')
-      const [views, messages, health, launch, journeys] = await Promise.all([
+      const [views, messages, health, launch, journeys, sources] = await Promise.all([
         getDocs(collection(db, 'views')).catch(() => null),
         getDocs(collection(db, 'messages')).catch(() => null),
         getDocs(collection(db, 'site_health')).catch(() => null),
         getDoc(doc(db, 'site_settings', 'launch')).catch(() => null),
         getDocs(collection(db, 'journeys')).catch(() => null),
+        getDoc(doc(db, 'site_health', 'sources')).catch(() => null),
       ])
       const today = kuwaitDate()
       let todayViews = 0
@@ -238,14 +219,14 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
         const count = Number((item.data() as { count?: number }).count || 0)
         if (item.id.startsWith(`day:${today}:`)) {
           todayViews += count
-          const path = decodePath(item.id.slice(`day:${today}:`.length))
+          const path = decodeAnalyticsPath(item.id.slice(`day:${today}:`.length))
           if (path.startsWith('/articles/') && count > topCount) {
             topCount = count
             topPath = path
           }
         }
         if (item.id.startsWith('total:') && count > fallbackCount) {
-          const path = decodePath(item.id.slice('total:'.length))
+          const path = decodeAnalyticsPath(item.id.slice('total:'.length))
           if (path.startsWith('/articles/')) {
             fallbackCount = count
             fallbackPath = path
@@ -253,8 +234,7 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
         }
       }
       if (!topPath) { topPath = fallbackPath; topCount = fallbackCount }
-      const topSlug = topPath.split('/').filter(Boolean).pop()
-      const topTitle = articles.find((item) => item.slug === topSlug)?.title || (topCount ? topPath : 'لا بيانات بعد')
+      const topTitle = topPath ? namer.label(topPath) : 'لا بيانات بعد'
       const weekAgo = Date.now() - 7 * 86_400_000
       const recentMessages = (messages?.docs || []).filter((item) => Number((item.data() as { createdAt?: { seconds?: number } }).createdAt?.seconds || 0) * 1000 >= weekAgo).length
       const latestHealth = (health?.docs || []).map((item) => item.data() as { date?: string; status?: string; issueCount?: number }).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))[0]
@@ -268,7 +248,7 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
       }
       for (const item of views?.docs || []) {
         if (!item.id.startsWith('total:')) continue
-        const path = decodePath(item.id.slice('total:'.length))
+        const path = decodeAnalyticsPath(item.id.slice('total:'.length))
         if (!path.startsWith('/_journey/')) continue
         const payload = path.slice('/_journey/'.length); const split = payload.indexOf('>')
         if (split < 1) continue
@@ -279,7 +259,8 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
           if (!current || count > current.count) journeyMap.set(key, { id: `views:${payload}`, from, to, count })
         } catch { /* مسار قديم غير صالح؛ نتجاهله */ }
       }
-      setData({ todayViews, topTitle, topCount, recentMessages, healthStatus: latestHealth?.status || 'غير مفحوص', issues: Number(latestHealth?.issueCount || 0), launchActive, journeys: Array.from(journeyMap.values()).sort((a, b) => b.count - a.count) })
+      const sourceData = sources?.exists() ? sources.data() as { problems?: number } : null
+      setData({ todayViews, topTitle, topCount, recentMessages, healthStatus: latestHealth?.status || 'غير مفحوص', issues: Number(latestHealth?.issueCount || 0), sourceDecisions: Number(sourceData?.problems || 0), launchActive, journeys: Array.from(journeyMap.values()).sort((a, b) => b.count - a.count) })
     } finally {
       if (showLoading) setLoading(false)
     }
@@ -297,12 +278,22 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
 
   const drafts = articles.filter((article) => article.status === 'draft').length
   const scheduled = articles.filter((article) => article.status === 'scheduled' && Date.parse(article.scheduledAt || '') > Date.now()).length
+  const missingAudio = articles.filter((article) => !article._cms.hidden && article.status !== 'draft' && !article.hasAudio).length
+  const audioNeedsReview = articles.filter((article) => {
+    if (article._cms.hidden) return false
+    const control = article.audioControl
+    const value = [
+      control?.readingStatus, control?.fahedStatus, control?.nouraStatus, control?.dialogueStatus,
+      control?.readingMessage, control?.fahedMessage, control?.nouraMessage, control?.dialogueMessage,
+    ].filter(Boolean).join(' ')
+    return /مراجعة|review|failed|error|تعذ|فشل/i.test(value)
+  }).length
   const tasks = [
-    drafts ? { label: `${drafts} مسودة تحتاج قراراً`, tab: 'articles' as AdminTab } : null,
-    scheduled ? { label: `${scheduled} مقال مجدول يستحق مراجعة أخيرة`, tab: 'articles' as AdminTab } : null,
-    data.recentMessages ? { label: `${data.recentMessages} رسالة وصلت خلال آخر 7 أيام`, tab: 'inbox' as AdminTab } : null,
-    data.issues ? { label: `${data.issues} ملاحظة في صحة المحتوى`, tab: 'content-health' as AdminTab } : null,
-  ].filter(Boolean) as { label: string; tab: AdminTab }[]
+    drafts ? { label: `${drafts} مسودة`, note: 'قرار نشر أو تأجيل.', tab: 'articles' as AdminTab } : null,
+    data.sourceDecisions ? { label: `${data.sourceDecisions} مصدر مشكوك`, note: 'اعتماد بديل أو تركه للمراجعة.', tab: 'content-health' as AdminTab } : null,
+    audioNeedsReview ? { label: `${audioNeedsReview} صوت يحتاج مراجعة`, note: 'قرار اعتماد أو إعادة توليد.', tab: 'audio-library' as AdminTab } : null,
+    data.recentMessages ? { label: `${data.recentMessages} رسالة`, note: 'رد أو تحويل أو اعتماد كشهادة.', tab: 'inbox' as AdminTab } : null,
+  ].filter(Boolean) as { label: string; note: string; tab: AdminTab }[]
 
   const pulse = useMemo(() => {
     const outgoingFromArticles = data.journeys.filter((row) => row.from.startsWith('/articles/')).reduce((sum, row) => sum + row.count, 0)
@@ -320,8 +311,10 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
       .filter((item) => item.path !== '/' && item.score > 0)
       .sort((a, b) => b.score - a.score || b.count - a.count)[0]?.path || ''
 
-    const update = data.issues
-      ? { text: `${data.issues} ملاحظة في صحة المحتوى`, tab: 'content-health' as AdminTab }
+    const update = data.sourceDecisions
+      ? { text: `${data.sourceDecisions} مصدر يحتاج قراراً`, tab: 'content-health' as AdminTab }
+      : audioNeedsReview
+        ? { text: `${audioNeedsReview} صوت يحتاج مراجعة`, tab: 'audio-library' as AdminTab }
       : drafts
         ? { text: `${drafts} مسودة تنتظر قرارك`, tab: 'articles' as AdminTab }
         : scheduled
@@ -336,10 +329,10 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
     return {
       sentence,
       reading: data.topTitle,
-      stop: stopPath ? pathLabel(stopPath, articles) : 'لا توجد بيانات كافية بعد',
+      stop: stopPath ? namer.label(stopPath) : 'لا توجد بيانات كافية بعد',
       update,
     }
-  }, [articles, data, drafts, scheduled])
+  }, [audioNeedsReview, data, drafts, namer, scheduled])
 
   return (
     <div className="grid gap-5">
@@ -348,12 +341,13 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
         <div className="relative flex flex-wrap items-start justify-between gap-6">
           <div>
             <p className="text-[.76rem] font-semibold text-white/60">غرفة القيادة الصامتة</p>
-            <h2 className="mt-3 font-display text-[clamp(1.8rem,4vw,3rem)] font-bold leading-[1.35]">{tasks.length ? `اليوم لديك ${tasks.length} قرارات فقط.` : 'كل شيء تحت السيطرة.'}</h2>
-            <p className="mt-3 max-w-2xl text-[.9rem] font-light leading-[1.9] text-white/65">لا تعرض هذه الصفحة كل ما يستطيع النظام فعله؛ تعرض فقط ما يحتاج انتباهك الآن.</p>
+            <h2 className="mt-3 font-display text-[clamp(1.8rem,4vw,3rem)] font-bold leading-[1.35]">{tasks.length ? `اليوم لديك ${tasks.length} قرارات فقط.` : 'لا توجد مشكلات عاجلة.'}</h2>
+            <p className="mt-3 max-w-2xl text-[.9rem] font-light leading-[1.9] text-white/65">هذا الصندوق يعرض القرارات لا كل النواقص. نقص التغطية الصوتية يبقى مسار تطوير مستقلًا، لا إنذارًا أحمر.</p>
           </div>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1.5 text-[.72rem] text-white/65"><span className="pulse relative h-1.5 w-1.5 rounded-full bg-white/70" />{loading ? 'يتصل بالنظام…' : 'يتحدّث تلقائياً'}</span>
         </div>
-        {tasks.length ? <ol className="relative mt-8 grid gap-2.5 md:grid-cols-2">{tasks.map((task, index) => <li key={task.label}><button onClick={() => onOpen(task.tab)} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[.05] px-4 py-3 text-right transition-colors hover:bg-white/[.1]"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-[.75rem]">{index + 1}</span><span className="text-[.86rem] font-medium">{task.label}</span><span className="ms-auto">←</span></button></li>)}</ol> : <p className="relative mt-7 text-[.88rem] text-white/70">يمكنك الآن الكتابة أو المغادرة… النظام هادئ وسليم.</p>}
+        {tasks.length ? <ol className="relative mt-8 grid gap-2.5 md:grid-cols-2">{tasks.map((task, index) => <li key={task.label}><button onClick={() => onOpen(task.tab)} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[.05] px-4 py-3 text-right transition-colors hover:bg-white/[.1]"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-[.75rem]">{index + 1}</span><span className="min-w-0 flex-1"><span className="block text-[.86rem] font-medium">{task.label}</span><span className="mt-0.5 block text-[.72rem] text-white/55">{task.note}</span></span><span className="ms-auto">←</span></button></li>)}</ol> : <p className="relative mt-7 text-[.88rem] text-white/70">يمكنك الآن الكتابة أو المغادرة. النظام لا يطلب تدخلك العاجل.</p>}
+        {missingAudio > 0 && <p className="relative mt-4 rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-[.78rem] leading-relaxed text-white/62">تغطية الصوت: {missingAudio} مادة تنتظر صوتًا. تظهر كمؤشر تطوير، لا كخلل عاجل.</p>}
       </section>
 
       <section className="overflow-hidden rounded-3xl border border-hair bg-wash px-5 py-6 sm:px-7 md:px-8" aria-label="نبض الموقع">

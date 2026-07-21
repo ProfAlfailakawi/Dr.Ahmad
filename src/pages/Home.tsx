@@ -55,7 +55,7 @@ function DailySpark({ compact = false }: { compact?: boolean }) {
 
   if (compact) return card
   return (
-    <section className="border-t border-hair px-6 py-[56px] md:px-11 md:py-[72px]">
+    <section className="border-t border-hair px-6 py-12 md:px-11 md:py-[62px]">
       <div className="mx-auto max-w-shell"><FadeUp>{card}</FadeUp></div>
     </section>
   )
@@ -110,7 +110,7 @@ function WhoAreYou() {
   const active = persona ? personas.find((x) => x.key === persona) ?? null : null
 
   return (
-    <section className="border-t border-hair bg-wash px-6 py-11 md:px-11 md:py-[72px]">
+    <section className="border-t border-hair bg-wash px-6 py-10 md:px-11 md:py-[62px]">
       <div className="mx-auto max-w-shell">
         {active ? (
           /* ── مُشخصَن: لمحة تُقدّم الأنسب له ── */
@@ -188,7 +188,7 @@ function MiniAtlas() {
     r: 2 + (hash(a.title) % 3),
   }))
   return (
-    <section className="border-t border-hair px-6 py-11 md:px-11 md:py-[72px]">
+    <section className="border-t border-hair px-6 py-10 md:px-11 md:py-[62px]">
       <div className="mx-auto max-w-shell">
         <SectionHead label="سماء المقالات" title="كل نجمة مقال." to="/atlas" cta="الخريطة الكاملة" />
         <FadeUp>
@@ -301,7 +301,7 @@ function Signatures() {
     { to: '/questions', t: 'سؤال يُقلق التعليم', dy: -12 },
   ]
   return (
-    <section className="border-t border-hair px-6 py-12 md:px-11 md:py-14">
+    <section className="border-t border-hair px-6 py-10 md:px-11 md:py-12">
       <div className="mx-auto max-w-shell">
         <FadeUp>
           <p className="text-[.78rem] font-semibold text-accent">✦ توقيعات الموقع</p>
@@ -383,7 +383,7 @@ function OnThisWeek({ compact = false }: { compact?: boolean }) {
 
   if (compact) return card
   return (
-    <section className="border-t border-hair px-6 py-11 md:px-11 md:py-[72px]">
+    <section className="border-t border-hair px-6 py-10 md:px-11 md:py-[62px]">
       <div className="mx-auto max-w-shell"><FadeUp>{card}</FadeUp></div>
     </section>
   )
@@ -434,7 +434,7 @@ function ThoughtCompass() {
   ].filter(Boolean) as { to: string; label: string; tag: string }[]
 
   return (
-    <section className="border-t border-hair px-6 py-11 md:px-11 md:py-[100px]">
+    <section className="border-t border-hair px-6 py-10 md:px-11 md:py-[86px]">
       <div className="mx-auto max-w-shell">
         <FadeUp><Label>بوصلة الفكر</Label></FadeUp>
         <FadeUp delay={0.05}>
@@ -511,7 +511,7 @@ function ImpactTimeline() {
   ]
 
   return (
-    <section className="border-t border-hair px-6 py-11 md:px-11 md:py-[100px]">
+    <section className="border-t border-hair px-6 py-10 md:px-11 md:py-[86px]">
       <div className="mx-auto max-w-shell">
         <FadeUp><Label>الأثر</Label></FadeUp>
         <FadeUp delay={0.05}>
@@ -564,7 +564,7 @@ function LatestCard({ compact = false }: { compact?: boolean }) {
   )
   if (compact) return <Link to={`/articles/${latest.slug}`} data-hover className="block h-full">{content}</Link>
   return (
-    <section className="px-6 pb-[56px] md:px-11 md:pb-[100px]">
+    <section className="px-6 pb-12 md:px-11 md:pb-[86px]">
       <div className="mx-auto max-w-shell"><FadeUp><Link to={`/articles/${latest.slug}`} data-hover className="block">{content}</Link></FadeUp></div>
     </section>
   )
@@ -624,7 +624,7 @@ function LaunchSpotlight({ articles, books, papers, media }: { articles: Article
   const linkProps = mediaItem ? { href: to, target: '_blank', rel: 'noreferrer' } : { to }
 
   return (
-    <section className="relative flex min-h-[92svh] items-center overflow-hidden border-b border-hair bg-ink px-6 py-28 text-canvas md:px-11">
+    <section className="relative flex min-h-[88svh] items-center overflow-hidden border-b border-hair bg-ink px-6 py-24 text-canvas md:px-11">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_65%_at_75%_45%,rgba(138,173,204,.23),transparent_66%)]" />
       <div className="relative mx-auto grid w-full max-w-shell items-center gap-12 md:grid-cols-[1.15fr_.85fr] md:gap-16">
         <FadeUp>
@@ -658,7 +658,7 @@ function LaunchSpotlight({ articles, books, papers, media }: { articles: Article
 
 function NowHub() {
   return (
-    <section className="border-t border-hair py-[52px] md:py-[78px]">
+    <section className="border-t border-hair py-[46px] md:py-[68px]">
       <div className="mx-auto max-w-shell px-6 md:px-11">
         <SectionHead label="الآن" title="ما يستحق انتباهك." />
       </div>
@@ -715,7 +715,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
   }, [articles, books, papers, media])
 
   return (
-    <section className="border-t border-hair bg-wash px-6 py-[60px] md:px-11 md:py-[96px]">
+    <section className="border-t border-hair bg-wash px-6 py-[52px] md:px-11 md:py-[84px]">
       <div className="mx-auto max-w-shell">
         <SectionHead label="أعمال مختارة" title="مدخل يختصر الرحلة." />
         <div className="mobile-card-rail grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
@@ -752,7 +752,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
 function ProfileAndBooksLayer({ books }: { books: BookRecord[] }) {
   return (
     <>
-      <section className="px-6 py-11 md:px-11 md:py-[80px]">
+      <section className="px-6 py-10 md:px-11 md:py-[70px]">
         <div className="mx-auto grid max-w-shell items-start gap-10 md:grid-cols-2 md:gap-14">
           <FadeUp>
             <Label>نبذة</Label>
@@ -766,7 +766,7 @@ function ProfileAndBooksLayer({ books }: { books: BookRecord[] }) {
           </FadeUp>
         </div>
       </section>
-      <section className="border-t border-hair bg-wash py-[56px] md:py-[80px]">
+      <section className="border-t border-hair bg-wash py-12 md:py-[70px]">
         <div className="mx-auto max-w-shell px-6 md:px-11">
           <SectionHead label="المؤلفات" title={`${books.length} كتب.`} to="/publications" />
         </div>
@@ -793,7 +793,7 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
   const topMedia = media.slice(0, 3)
   return (
     <>
-      <section className="px-6 py-[56px] md:px-11 md:py-[80px]">
+      <section className="px-6 py-12 md:px-11 md:py-[70px]">
         <div className="mx-auto max-w-shell">
           <SectionHead label="مقالاتي الفكرية" title="بصوتي الخاص." to="/articles" cta="عرض الكل" />
           <div className="grid gap-8 md:grid-cols-[1.5fr_.5fr] md:gap-12">
@@ -812,7 +812,7 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
           </div>
         </div>
       </section>
-      <section className="border-t border-hair bg-wash px-6 py-11 md:px-11 md:py-[80px]">
+      <section className="border-t border-hair bg-wash px-6 py-10 md:px-11 md:py-[70px]">
         <div className="mx-auto max-w-shell">
           <SectionHead label="المساهمات العلمية" title="أبحاث محكّمة." to="/research" cta="عرض الكل" />
           <ol className="mt-2">
@@ -820,7 +820,7 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
           </ol>
         </div>
       </section>
-      <section className="border-t border-hair px-6 py-11 md:px-11 md:py-[80px]">
+      <section className="border-t border-hair px-6 py-10 md:px-11 md:py-[70px]">
         <div className="mx-auto max-w-shell">
           <SectionHead label="الظهور الإعلامي" title="على الشاشة." to="/media" cta="عرض الكل" />
           <div className="grid gap-8 md:grid-cols-[1.55fr_.45fr] md:gap-12">
@@ -928,7 +928,7 @@ function Card({ children, delay = 0, className = '' }: { children: React.ReactNo
       initial={reduce ? false : { opacity: 0, y: 26 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.7, delay, ease: EASE }}
+      transition={{ duration: 0.48, delay, ease: EASE }}
       className={className}
     >
       {children}

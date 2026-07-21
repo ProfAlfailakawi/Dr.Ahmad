@@ -52,8 +52,8 @@ export function buildRows(docs: ViewDoc[], days: string[]): Row[] {
   for (const document of docs) {
     const parsed = parseViewDocumentId(document.id)
     if (!parsed) continue
-    /* المشاركات تُسجَّل تحت /_share — قراءةٌ من نوعٍ آخر لا تُخلط بالزيارات */
-    if (parsed.path.startsWith('/_share')) continue
+    /* أحداث السلوك تُعرض في التحليلات، لكنها ليست صفحة يقرؤها الزائر. */
+    if (parsed.path.startsWith('/_share') || parsed.path.startsWith('/_listen') || parsed.path.startsWith('/_journey/')) continue
     const count = Number(document.count || 0)
     if (parsed.kind === 'total') {
       const previous = totals.get(parsed.path)
@@ -75,4 +75,3 @@ export function buildRows(docs: ViewDoc[], days: string[]): Row[] {
 export function sleeping(rows: Row[], limit = 5): Row[] {
   return rows.filter((row) => row.recent === 0 && row.total >= 3).sort((a, b) => b.total - a.total).slice(0, limit)
 }
-

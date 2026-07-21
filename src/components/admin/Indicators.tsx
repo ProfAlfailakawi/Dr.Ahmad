@@ -1,23 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getDb, getFirebaseApp } from '../../lib/firebase'
+import { analyticsKindOf, createAnalyticsNamer, decodeAnalyticsPath, parseJourneyPath, type AnalyticsKind } from '../../lib/analytics-labels'
 import type { ArticleRecord } from '../../lib/cms'
 import { useCmsContent } from '../../lib/content'
 import { Pagination, usePagedList } from '../Pagination'
 
-/* أسماء الصفحات الثابتة — ليقرأ الدكتور أسماء مفهومة لا مسارات */
-const PAGE_NAMES: Record<string, string> = {
-  '/': 'الرئيسية', '/articles': 'فهرس المقالات', '/publications': 'فهرس الكتب', '/research': 'فهرس الأبحاث',
-  '/media': 'الظهور الإعلامي', '/cv': 'السيرة الأكاديمية', '/contact': 'التواصل', '/about': 'حول الموقع',
-  '/curated': 'المختارات', '/questions': 'سؤال يُقلق التعليم', '/radar': 'أرشيف الرادار', '/inbox': 'رسائل على الهامش',
-  '/atlas': 'سماء المقالات', '/search': 'البحث العميق', '/ask': 'العقل الحي', '/upcoming': 'اللقاءات القادمة',
-}
-type Kind = 'الكل' | 'مقالات' | 'كتب' | 'أبحاث' | 'صفحات' | 'مشاركات'
-const kindOf = (path: string): Exclude<Kind, 'الكل'> =>
-  path.startsWith('/_share') ? 'مشاركات'
-  : path.startsWith('/articles/') ? 'مقالات'
-  : path.startsWith('/publications/') ? 'كتب'
-  : path.startsWith('/research/') ? 'أبحاث'
-  : 'صفحات'
+type Kind = 'الكل' | AnalyticsKind
 
 type ViewRow = {
   id: string
@@ -33,16 +21,8 @@ type JourneyRow = {
 }
 
 function journeyFromViewPath(path: string, count: number): JourneyRow | null {
-  if (!path.startsWith('/_journey/')) return null
-  const payload = path.slice('/_journey/'.length)
-  const split = payload.indexOf('>')
-  if (split < 1) return null
-  try {
-    const from = decodeURIComponent(payload.slice(0, split))
-    const to = decodeURIComponent(payload.slice(split + 1))
-    if (!from || !to) return null
-    return { id: `views:${payload}`, from, to, count }
-  } catch { return null }
+  const parsed = parseJourneyPath(path)
+  return parsed ? { id: `views:${path.slice('/_journey/'.length)}`, from: parsed.from, to: parsed.to, count } : null
 }
 
 type MonthlyReport = {
@@ -73,10 +53,6 @@ function kuwaitDate(offset = 0) {
   }).formatToParts(date)
   const get = (type: string) => parts.find((part) => part.type === type)?.value || ''
   return `${get('year')}-${get('month')}-${get('day')}`
-}
-
-function decodePath(value: string) {
-  try { return decodeURIComponent(value) } catch { return value }
 }
 
 export function Indicators({ articles }: { articles: ArticleRecord[] }) {
@@ -178,16 +154,13 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
   }, [])
 
   const summary = useMemo(() => {
-    const labels = new Map<string, string>(articles.map((article) => [`/articles/${article.slug}`, article.title]))
-    for (const b of books) labels.set(`/publications/${b.slug}`, b.title)
-    for (const p of papers) labels.set(`/research/${p.slug}`, p.title)
-    for (const [path, name] of Object.entries(PAGE_NAMES)) labels.set(path, name)
+    const namer = createAnalyticsNamer({ articles, books, papers, media: [] })
 
     const totals = rows
       .filter((row) => row.id.startsWith('total:'))
       .map((row) => {
-        const path = decodePath(row.id.slice('total:'.length))
-        return { ...row, path, kind: kindOf(path), label: labels.get(path) || row.title || path }
+        const path = decodeAnalyticsPath(row.id.slice('total:'.length))
+        return { ...row, path, kind: analyticsKindOf(path), label: namer.label(path, row.title) }
       })
       .filter((row) => !row.path.startsWith('/_journey/'))
       .sort((a, b) => b.count - a.count)
@@ -207,16 +180,18 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
     }
     for (const row of rows) {
       if (!row.id.startsWith('total:')) continue
-      const parsed = journeyFromViewPath(decodePath(row.id.slice('total:'.length)), row.count)
+      const parsed = journeyFromViewPath(decodeAnalyticsPath(row.id.slice('total:'.length)), row.count)
       if (!parsed?.from || !parsed.to) continue
       const key = `${parsed.from}>${parsed.to}`
       const current = journeyMap.get(key)
       if (!current || parsed.count > current.count) journeyMap.set(key, parsed)
     }
-    const resolvedJourneys = Array.from(journeyMap.values()).sort((a, b) => b.count - a.count)
+    const resolvedJourneys = Array.from(journeyMap.values())
+      .sort((a, b) => b.count - a.count)
+      .map((row) => ({ ...row, human: namer.journey(row.from, row.to) }))
 
     // إجمالي كل نوع — نظرة سريعة قبل الجدول المفصّل
-    const byKind = { مقالات: 0, كتب: 0, أبحاث: 0, صفحات: 0, مشاركات: 0 } as Record<Exclude<Kind, 'الكل'>, number>
+    const byKind = { مقالات: 0, كتب: 0, أبحاث: 0, صفحات: 0, مشاركات: 0, استماع: 0 } as Record<Exclude<Kind, 'الكل'>, number>
     for (const row of totals) byKind[row.kind] += row.count
     return {
       total: totals.reduce((sum, row) => sum + row.count, 0),
@@ -227,7 +202,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       byKind,
       journeys: resolvedJourneys,
     }
-  }, [articles, journeys, rows])
+  }, [articles, books, journeys, papers, rows])
 
   // الجدول المفصّل: فلترة بالنوع + بحث بالاسم
   const detailed = useMemo(() => {
@@ -390,7 +365,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
           <ol className="mt-5 grid min-w-0 gap-2">
             {summary.journeys.slice(0, 6).map((row) => (
               <li key={row.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-hair bg-canvas px-3 py-3 text-[.78rem] sm:px-4 sm:text-[.82rem]">
-                <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-ink" dir="ltr" title={`${row.from} ← ${row.to}`}>{row.from} ← {row.to}</span>
+                <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-ink" title={`${row.from} ← ${row.to}`}>{row.human.title}</span>
                 <span className="shrink-0 text-accent">{ar(row.count)}</span>
               </li>
             ))}
@@ -417,7 +392,12 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       {view === 'journey' && <section className={card}>
         <p className="text-[.76rem] font-semibold uppercase text-accent">رحلة الزائر</p>
         <h2 className="mt-1 font-display text-xl font-semibold text-ink">أكثر الانتقالات تكراراً</h2>
-        {summary.journeys.length ? <ol className="mt-5 grid gap-2 sm:grid-cols-2">{summary.journeys.slice(0, 12).map((row) => <li key={row.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem]"><span className="min-w-0 truncate text-ink" dir="ltr">{row.from} ← {row.to}</span><span className="text-accent">{ar(row.count)}</span></li>)}</ol> : <p className="mt-4 text-[.86rem] text-soft">لا توجد بيانات كافية بعد.</p>}
+        {summary.journeys.length ? <ol className="mt-5 grid gap-3">{summary.journeys.slice(0, 10).map((row) => <li key={row.id} className="grid gap-2 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] md:grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_auto] md:items-center">
+          <span className="min-w-0 truncate text-ink" title={row.from}>{row.human.from}</span>
+          <span className="hidden h-px bg-accent/45 md:block" aria-hidden="true" />
+          <span className="min-w-0 truncate text-ink" title={row.to}>{row.human.to}</span>
+          <span className="w-fit rounded-full border border-hair px-2.5 py-1 text-accent">{ar(row.count)}</span>
+        </li>)}</ol> : <p className="mt-4 text-[.86rem] text-soft">لا توجد بيانات كافية بعد.</p>}
       </section>}
 
       {/* ── التفصيل الممل: كل مسارٍ شوهد، بلا استثناء ── */}
@@ -436,7 +416,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
           />
         </div>
         <div className="mb-5 flex max-w-full flex-wrap gap-2">
-          {(['الكل', 'مقالات', 'كتب', 'أبحاث', 'صفحات', 'مشاركات'] as Kind[]).map((k) => (
+          {(['الكل', 'مقالات', 'كتب', 'أبحاث', 'صفحات', 'مشاركات', 'استماع'] as Kind[]).map((k) => (
             <button
               key={k}
               onClick={() => setKind(k)}
@@ -454,7 +434,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
                 <span className="w-7 shrink-0 text-[.78rem] text-soft">{(detailedPages.page - 1) * 20 + index + 1}.</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[.88rem] text-ink">{row.label}</span>
-                  <span className="block truncate text-[.7rem] text-soft/70" dir="ltr" style={{ textAlign: 'right' }}>{row.path}</span>
+                  <span className="block truncate text-[.7rem] text-soft/80">{row.kind === 'مشاركات' ? 'حدث مشاركة' : row.kind === 'استماع' ? 'حدث استماع' : 'صفحة مقروءة'}</span>
                 </span>
                 <span className="shrink-0 rounded-full border border-hair px-2.5 py-0.5 text-[.72rem] text-soft">{row.kind}</span>
                 <span className="w-14 shrink-0 text-left font-display text-[1rem] font-semibold text-accent" dir="ltr">{ar(row.count)}</span>

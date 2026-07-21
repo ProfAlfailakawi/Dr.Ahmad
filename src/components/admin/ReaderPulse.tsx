@@ -10,10 +10,13 @@
  */
 import { useEffect, useMemo, useState } from 'react'
 import { getFirebaseApp } from '../../lib/firebase'
+import { createAnalyticsNamer } from '../../lib/analytics-labels'
+import { useCmsContent } from '../../lib/content'
 import { Pagination, usePagedList } from '../Pagination'
 import { buildRows, sleeping, windowDays, type ViewDoc } from '../readerPulseLogic'
 
 export function ReaderPulse() {
+  const { articles, books, papers, media } = useCmsContent()
   const [docs, setDocs] = useState<ViewDoc[] | null>(null)
   const [error, setError] = useState('')
 
@@ -32,9 +35,11 @@ export function ReaderPulse() {
   }, [])
 
   const days = useMemo(() => windowDays(), [])
+  const namer = useMemo(() => createAnalyticsNamer({ articles, books, papers, media }), [articles, books, papers, media])
   const rows = useMemo(() => (docs ? buildRows(docs, days) : []), [docs, days])
-  const hot = rows.filter((row) => row.recent > 0).slice(0, 8)
-  const quiet = useMemo(() => sleeping(rows), [rows])
+  const humanRows = useMemo(() => rows.map((row) => ({ ...row, label: namer.label(row.path, row.title) })), [namer, rows])
+  const hot = humanRows.filter((row) => row.recent > 0).slice(0, 8)
+  const quiet = useMemo(() => sleeping(humanRows).map((row) => ({ ...row, label: namer.label(row.path, row.title) })), [humanRows, namer])
   const quietPages = usePagedList(quiet, 10, String(quiet.length))
   const weekTotal = rows.reduce((sum, row) => sum + row.recent, 0)
   const allTime = rows.reduce((sum, row) => sum + row.total, 0)
@@ -70,7 +75,7 @@ export function ReaderPulse() {
                 {hot.map((row) => (
                   <li key={row.path} className="flex items-baseline justify-between gap-3">
                     <a href={row.path} className="text-[.82rem] leading-relaxed text-ink hover:text-accent" title={row.path}>
-                      {row.title.slice(0, 52)}
+                      {row.label.slice(0, 52)}
                     </a>
                     <span className="shrink-0 text-[.75rem] text-soft">{row.recent} · <span className="text-soft/70">{row.total} إجمالاً</span></span>
                   </li>
@@ -86,7 +91,7 @@ export function ReaderPulse() {
                 {quietPages.pageItems.map((row) => (
                   <li key={row.path} className="flex items-baseline justify-between gap-3">
                     <a href={row.path} className="text-[.82rem] leading-relaxed text-ink hover:text-accent" title={row.path}>
-                      {row.title.slice(0, 52)}
+                      {row.label.slice(0, 52)}
                     </a>
                     <span className="shrink-0 text-[.75rem] text-soft">{row.total}</span>
                   </li>

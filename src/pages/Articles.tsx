@@ -56,6 +56,7 @@ export default function Articles() {
   }, [articles])
 
   const term = q.trim()
+  const archiveActive = Boolean(term || cat !== 'الكل')
   const filtered = articles
     .filter((a) => (cat === 'الكل' ? true : a.cat === cat))
     .filter((a) => (term ? (a.title + ' ' + (a.excerpt || '')).includes(term) : true))
@@ -70,8 +71,40 @@ export default function Articles() {
         sub={`${articles.length} مقالاً في التعليم والتقنية والمجتمع، منشورة في الصحافة الكويتية منذ ${firstYear}.`}
       />
 
+      <section className="sticky top-16 z-[120] border-b border-hair bg-canvas/92 px-4 py-3 backdrop-blur-md sm:px-6 md:px-11">
+        <div className="mx-auto grid max-w-shell gap-3 lg:grid-cols-[minmax(260px,.62fr)_minmax(0,1fr)_auto] lg:items-center">
+          <div className="relative">
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="ابحث في المقالات…"
+              aria-label="بحث"
+              className="w-full rounded-full border border-hair bg-canvas py-3 pe-12 ps-5 text-[.94rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
+            />
+            <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-soft">⌕</span>
+          </div>
+          <div className="rail -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
+            {categories.map((c) => (
+              <button
+                key={c}
+                onClick={() => setCat(c)}
+                className={`shrink-0 rounded-full border px-4 py-2 text-[.82rem] font-medium transition-colors duration-300 ${
+                  cat === c ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-4 text-[.8rem] font-semibold text-accent lg:justify-end">
+            <Link to="/search" className="transition-opacity hover:opacity-70">البحث العميق ←</Link>
+            <Link to="/atlas" className="transition-opacity hover:opacity-70">سماء المقالات ←</Link>
+          </div>
+        </div>
+      </section>
+
       {/* featured trio */}
-      <section className="border-b border-hair px-4 py-12 sm:px-6 md:px-11 md:py-20">
+      {!archiveActive && <section className="border-b border-hair px-4 py-10 sm:px-6 md:px-11 md:py-16">
         <div className="mobile-paired-grid mx-auto grid max-w-shell grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 md:gap-8">
           {featured.map((e, i) => (
             <FadeUp key={e.title} delay={i * 0.08} className="h-full min-w-0">
@@ -87,47 +120,15 @@ export default function Articles() {
             </FadeUp>
           ))}
         </div>
-      </section>
+      </section>}
 
       {/* archive */}
-      <section className="px-6 py-16 md:px-11 md:py-20">
+      <section className="px-6 py-12 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <div className="mb-7 flex justify-end">
-              <div className="flex flex-wrap gap-5">
-              <Link to="/search" className="group inline-flex items-center gap-2 text-[.88rem] font-semibold text-accent">
-                <span>البحث العميق</span>
-                <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1">←</span>
-              </Link>
-              <Link to="/atlas" className="group inline-flex items-center gap-2 text-[.88rem] font-semibold text-accent">
-                <span>✦ اعرضها كسماء</span>
-                <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1">←</span>
-              </Link>
-              </div>
-            </div>
-            <div className="relative mb-7">
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="ابحث في المقالات…"
-                aria-label="بحث"
-                className="w-full rounded-full border border-hair bg-canvas py-3.5 pe-12 ps-5 text-[.98rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
-              />
-              <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-soft">⌕</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {categories.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setCat(c)}
-                  className={`rounded-full border px-4 py-1.5 text-[.85rem] font-medium transition-colors duration-300 ${
-                    cat === c ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
+            <p className="text-[.82rem] text-soft">
+              {archiveActive ? `${filtered.length} نتيجة مطابقة` : 'كل المقالات مرتبة من الأحدث إلى الأقدم.'}
+            </p>
           </FadeUp>
 
           <ul id="articles-list" className="mt-10 scroll-mt-28">

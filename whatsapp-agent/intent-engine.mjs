@@ -31,6 +31,23 @@ function readFollowup(session) {
 export const INTENTS = Object.freeze({
   LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_ARTICLES: 'LATEST_ARTICLES', MOST_VIEWED_ARTICLE: 'MOST_VIEWED_ARTICLE', CONTENT_OVERVIEW: 'CONTENT_OVERVIEW', TOP_ARTICLE_TOPIC: 'TOP_ARTICLE_TOPIC', LATEST_BOOK: 'LATEST_BOOK', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', LATEST_PAPER: 'LATEST_PAPER', WELCOME: 'WELCOME', MORE_LIKE_THIS: 'MORE_LIKE_THIS', COMPARE: 'COMPARE', ABOUT_TOPIC: 'ABOUT_TOPIC', UPCOMING_EVENTS: 'UPCOMING_EVENTS', ABOUT_DOCTOR: 'ABOUT_DOCTOR', CURATED_PICKS: 'CURATED_PICKS', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', COMPOUND_REQUEST: 'COMPOUND_REQUEST', CONTEXT_REFERENCE: 'CONTEXT_REFERENCE', READ_SPEED: 'READ_SPEED', IDEA_NETWORK: 'IDEA_NETWORK', CHALLENGE: 'CHALLENGE', CHALLENGE_ANSWER: 'CHALLENGE_ANSWER', SOURCE_PROOF: 'SOURCE_PROOF', SAVE_CONTENT: 'SAVE_CONTENT', LIST_SAVED: 'LIST_SAVED', REMOVE_SAVED: 'REMOVE_SAVED', UNKNOWN: 'UNKNOWN' })
 
+const LEARNABLE_INTENTS = new Set([
+  INTENTS.LATEST_CONTENT, INTENTS.LATEST_ARTICLE, INTENTS.LATEST_ARTICLES,
+  INTENTS.MOST_VIEWED_ARTICLE, INTENTS.CONTENT_OVERVIEW, INTENTS.TOP_ARTICLE_TOPIC,
+  INTENTS.LATEST_BOOK, INTENTS.LATEST_SELECTION, INTENTS.LATEST_PODCAST,
+  INTENTS.LATEST_PAPER, INTENTS.MORE_LIKE_THIS, INTENTS.ABOUT_TOPIC,
+  INTENTS.UPCOMING_EVENTS, INTENTS.ABOUT_DOCTOR, INTENTS.CURATED_PICKS,
+  INTENTS.MISSED_CONTENT, INTENTS.SURPRISE_ME, INTENTS.ONE_MINUTE,
+  INTENTS.SUMMARY, INTENTS.SEARCH_TOPIC, INTENTS.SIMILAR_CONTENT,
+  INTENTS.READ_ARTICLE, INTENTS.LISTEN_FAHED, INTENTS.LISTEN_NOURA,
+  INTENTS.LISTEN_DIALOGUE, INTENTS.SHOW_OPTIONS, INTENTS.HELP,
+  INTENTS.CONTENT_BY_MOOD, INTENTS.QUOTE, INTENTS.QUOTE_CARD,
+  INTENTS.CONTINUE_LISTENING, INTENTS.WEEKLY_DIGEST, INTENTS.READ_SPEED,
+  INTENTS.IDEA_NETWORK, INTENTS.CHALLENGE, INTENTS.SOURCE_PROOF,
+  INTENTS.SAVE_CONTENT, INTENTS.LIST_SAVED, INTENTS.REMOVE_SAVED,
+])
+
+
 /* ملاحظة واجبة: النص يمرّ على normalizeArabic قبل المطابقة، وهو يحوّل
    ة→ه و أ/إ/آ→ا و ى→ي ويحذف الترقيم. فكل نمطٍ هنا يُكتب بالصورة المطبَّعة،
    وإلا لم يطابق شيئاً أبداً — وهذا ما كان يعطّل «بطاقة اقتباس» و«النشرة
@@ -106,6 +123,70 @@ const patterns = [
 ]
 
 const clean = (text) => normalizeArabic(String(text || '').slice(0, MAX_MESSAGE_CHARS))
+
+/* ذاكرة فهمٍ محلية محافظة: لا تكتب جواباً ولا تخمّن معرفة. تحفظ الصيغة التي
+   لم تُفهم بعد الإيقاظ، ثم تتعلم «النية» فقط إذا تكررت الصيغة وتبعها أمر واضح
+   من النوع نفسه ثلاث مرات. بعد التعلم تمر العبارة بالمحرك القائم الذي لا يجيب
+   إلا من فهرس الموقع. لا تُخزَّن العبارة كنص مكشوف؛ تُشفّر داخل قاعدة الماك. */
+const LEARNING_FILLERS = /\b(?:ابي|اريد|ابغي|ممكن|لو سمحت|تكفه|تكفى|عطني|اعطني|ورني|خلني|بس|عاد|يعني|الحين|اليوم)\b/g
+const learningCanonical = (value) => clean(value).replace(LEARNING_FILLERS, ' ').replace(/\s+/g, ' ').trim()
+const learningKeys = (value) => {
+  const normalized = clean(value).replace(/\s+/g, ' ').trim()
+  const canonical = learningCanonical(value) || normalized
+  return { normalized, canonical, patternHash: hashOpaque(`learn:exact:${normalized}`), canonicalHash: hashOpaque(`learn:canonical:${canonical}`) }
+}
+
+export function recordUnresolvedLearning(db, jid, input, reason = 'unresolved-after-wake') {
+  if (!db || !jid || !String(input || '').trim()) return null
+  const keys = learningKeys(input)
+  if (keys.normalized.length < 2 || keys.normalized.length > 180) return null
+  const existingPattern = db.get('SELECT status FROM learning_patterns WHERE pattern_hash=?', keys.patternHash)
+  if (existingPattern?.status === 'ignored') return null
+  const now = new Date()
+  const stamp = now.toISOString()
+  const jidKey = db.jidKey(jid)
+  db.run('INSERT INTO unresolved_messages(jid,input_hash,text_preview,reason,created_at) VALUES(?,?,?,?,?)', jidKey, hashOpaque(input), db.encryptText(String(input).slice(0, 180)), reason, stamp)
+  db.run(`INSERT INTO learning_patterns(pattern_hash,canonical_hash,phrase,hits,status,first_seen_at,last_seen_at)
+          VALUES(?,?,?,?,?,?,?)
+          ON CONFLICT(pattern_hash) DO UPDATE SET hits=hits+1,last_seen_at=excluded.last_seen_at,canonical_hash=excluded.canonical_hash`,
+    keys.patternHash, keys.canonicalHash, db.encryptText(String(input).slice(0, 180)), 1, 'observing', stamp, stamp)
+  const expires = new Date(now.getTime() + 10 * 60 * 1000).toISOString()
+  db.run('INSERT INTO learning_pending(jid,pattern_hash,expires_at,created_at) VALUES(?,?,?,?) ON CONFLICT(jid) DO UPDATE SET pattern_hash=excluded.pattern_hash,expires_at=excluded.expires_at,created_at=excluded.created_at', jidKey, keys.patternHash, expires, stamp)
+  return keys.patternHash
+}
+
+export function confirmPendingLearning(db, jid, intent, at = new Date()) {
+  if (!db || !jid || !LEARNABLE_INTENTS.has(intent)) return null
+  const jidKey = db.jidKey(jid)
+  const pending = db.get('SELECT * FROM learning_pending WHERE jid=?', jidKey)
+  if (!pending) return null
+  db.run('DELETE FROM learning_pending WHERE jid=?', jidKey)
+  if (!pending.expires_at || new Date(pending.expires_at) <= at) return null
+  const stamp = at.toISOString()
+  db.run(`INSERT INTO learning_votes(pattern_hash,intent,confirmations,last_seen_at) VALUES(?,?,1,?)
+          ON CONFLICT(pattern_hash,intent) DO UPDATE SET confirmations=confirmations+1,last_seen_at=excluded.last_seen_at`, pending.pattern_hash, intent, stamp)
+  const votes = db.all('SELECT intent,confirmations FROM learning_votes WHERE pattern_hash=? ORDER BY confirmations DESC,intent ASC', pending.pattern_hash)
+  const top = votes[0]
+  const second = Number(votes[1]?.confirmations || 0)
+  const confirmations = Number(top?.confirmations || 0)
+  const learned = confirmations >= 3 && confirmations - second >= 2 && LEARNABLE_INTENTS.has(top?.intent)
+  db.run('UPDATE learning_patterns SET candidate_intent=?,confirmations=?,status=?,learned_at=CASE WHEN ?=1 THEN COALESCE(learned_at,?) ELSE learned_at END,last_seen_at=? WHERE pattern_hash=?',
+    top?.intent || null, confirmations, learned ? 'learned' : 'observing', learned ? 1 : 0, stamp, stamp, pending.pattern_hash)
+  if (learned) db.addAudit?.('dialect-pattern-learned', pending.pattern_hash, `${top.intent}:${confirmations}`)
+  return { patternHash: pending.pattern_hash, intent: top?.intent || null, confirmations, learned }
+}
+
+export function learnedIntentFor(db, text) {
+  if (!db) return null
+  const keys = learningKeys(text)
+  const row = db.get(`SELECT * FROM learning_patterns
+                      WHERE status='learned' AND candidate_intent IS NOT NULL
+                        AND (pattern_hash=? OR canonical_hash=?)
+                      ORDER BY CASE WHEN pattern_hash=? THEN 0 ELSE 1 END, confirmations DESC LIMIT 1`,
+    keys.patternHash, keys.canonicalHash, keys.patternHash)
+  if (!row || !LEARNABLE_INTENTS.has(row.candidate_intent)) return null
+  return { intent: row.candidate_intent, confidence: Math.min(.94, .82 + Math.min(12, Number(row.confirmations || 0)) * .01), normalized: keys.normalized, learned: true, learningPatternId: row.id }
+}
 const compactPhone = (value = '') => String(value).replace(/[^\d]/g, '')
 const jidAccount = (jid = '') => String(jid).split('@')[0].toLowerCase()
 
@@ -212,6 +293,12 @@ export function classifyIntent(text) {
      كلَّ ما يُكتب، ومنه ما ليس سؤالاً أصلاً. فالبوّابة تعرفه الآن وتردّه. */
   if (value.length >= 3) return { intent: INTENTS.SEARCH_TOPIC, confidence: 0.72, normalized: value, fallback: true }
   return { intent: INTENTS.UNKNOWN, confidence: 0.2, normalized: value }
+}
+
+export function classifyIntentWithLearning(db, text) {
+  const base = classifyIntent(text)
+  if (!base.fallback && base.intent !== INTENTS.UNKNOWN && base.confidence >= .7) return base
+  return learnedIntentFor(db, text) || base
 }
 
 function safeJsonParse(value, fallback) {
@@ -829,9 +916,10 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
   const logId = jid ? hashOpaque(jid) : null
   db.run('INSERT INTO intent_logs(jid,input_hash,intent,confidence,created_at) VALUES(?,?,?,?,?)', logId, hashOpaque(input), intent, confidence, new Date().toISOString())
   if (confidence < 0.7) {
-    db.run('INSERT INTO unresolved_messages(jid,input_hash,text_preview,reason,created_at) VALUES(?,?,?,?,?)', logId, hashOpaque(input), db.encryptText(String(input).slice(0, 180)), 'low-confidence', new Date().toISOString())
+    recordUnresolvedLearning(db, jid, input, 'low-confidence')
     return { ...classification, shouldRespond: true, needsHuman: true, text: 'ما فهمت الطلب بدقة. هل تبحث في المقالات، الكتب، الأبحاث، أم البودكاست؟' }
   }
+  if (!classification.learned) confirmPendingLearning(db, jid, intent)
   const selection = contextSelection(db, session, input, classification.request || parseCompoundRequest(input))
 
   switch (intent) {
@@ -1206,7 +1294,7 @@ export const chatKindLabel = (jid) => {
   return 'محادثة غير فردية'
 }
 
-export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, explicitContentSession = false, hasMedia = false, at = new Date(), classification = classifyIntent(text) }) {
+export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, explicitContentSession = false, hasMedia = false, at = new Date(), classification = classifyIntentWithLearning(db, text) }) {
   if (!jid) return { allowed: false, reason: 'missing-jid' }
 
   /* ═══ المنع المطلق: المجموعات ═══
@@ -1269,7 +1357,8 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
      بعد الإيقاظ أو في المعاينة الصريحة. */
   const configuredRule = activeSession ? matchReplyRule(db, text) : null
   const understood = (intent !== INTENTS.UNKNOWN && confidence >= 0.7 && !classification0.fallback) || groundedFallback || Boolean(configuredRule)
-  if (activeSession && understood) return { allowed: true, reason: groundedFallback ? 'content-session-grounded-search' : 'content-session' }
+  if (activeSession && understood) return { allowed: true, reason: groundedFallback ? 'content-session-grounded-search' : classification0.learned ? 'content-session-learned' : 'content-session' }
+  if (activeSession && !understood) recordUnresolvedLearning(db, jid, text, classification0.fallback ? 'ungrounded-fallback' : 'unknown-after-wake')
   /* قائمةُ السماح لم تعد تفتح الباب بنفسها. كانت تُجيز الردّ على **أيّ** كلمة
      يكتبها صاحبها بلا جملة إيقاظ — وهو نقضٌ لقاعدة الدكتور: «ما يردّ إلا إذا
      شخص كتب موقع د. أحمد». وهي اليوم فارغة، لكنّ يداً تملؤها غداً تفتح باباً
@@ -1292,7 +1381,7 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
 export function handleIncoming({ db, jid, text, isReplyToAgent = false, explicitContentSession = false, hasMedia = false, at = new Date() }) {
   /* التصنيف كان يُنفّذ ثلاث مرات للرسالة نفسها: في البوابة، وفي قواعد الأدب،
      ثم في الرد. نُنشئه مرةً واحدة ونمرّره، فتقلّ كلفة كل تفاعل بلا تغيير المعنى. */
-  const classification = classifyIntent(text)
+  const classification = classifyIntentWithLearning(db, text)
   const gate = shouldRespondToMessage({ db, jid, text, isReplyToAgent, explicitContentSession, hasMedia, at, classification })
   const session = db.get('SELECT * FROM chat_sessions WHERE jid=?', db.jidKey(jid))
   if (!gate.allowed) return { ...gate, shouldRespond: false }

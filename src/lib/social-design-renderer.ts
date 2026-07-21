@@ -5,6 +5,7 @@ import {
   TYPOGRAPHY_MODES,
   type CompositionPlan,
   type LayoutFamilyId,
+  type SocialCampaign,
 } from './social-design-engine'
 
 const esc = (value: unknown) => String(value ?? '')
@@ -242,5 +243,25 @@ export function printCompositionPdf(plan: CompositionPlan) {
   try { popup.opener = null } catch { /* بعض المتصفحات تمنع تعديل opener */ }
   const svg = renderCompositionSvg(plan)
   popup.document.write(`<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>${esc(plan.content.title)}</title><style>@page{size:${plan.format.width}px ${plan.format.height}px;margin:0}html,body{margin:0;background:#fff}svg{display:block;width:100vw;height:100vh} @media print{html,body{width:${plan.format.width}px;height:${plan.format.height}px}}</style></head><body>${svg}<script>addEventListener('load',()=>setTimeout(()=>print(),250))<\/script></body></html>`)
+  popup.document.close()
+}
+
+
+export async function downloadSocialCampaignRaster(campaign: SocialCampaign, type: 'png' | 'jpeg' = 'png') {
+  for (const [index, asset] of campaign.assets.entries()) {
+    await downloadCompositionRaster(asset.plan, type)
+    if (index < campaign.assets.length - 1) await new Promise((resolve) => window.setTimeout(resolve, 180))
+  }
+}
+
+export function printSocialCampaignPdf(campaign: SocialCampaign) {
+  const popup = window.open('', '_blank', 'width=1120,height=900')
+  if (!popup) throw new Error('اسمح بفتح نافذة الطباعة لحفظ الحملة PDF.')
+  try { popup.opener = null } catch { /* noop */ }
+  const pages = campaign.assets.map((asset, index) => {
+    const svg = renderCompositionSvg(asset.plan, { title: `${campaign.title} — ${asset.label}` })
+    return `<section class="page"><header><b>${esc(asset.label)}</b><span>${index + 1}/${campaign.assets.length}</span></header><div class="art">${svg}</div><p>${esc(asset.purpose)}</p></section>`
+  }).join('')
+  popup.document.write(`<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>${esc(campaign.title)}</title><style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{margin:0;background:#fff;font-family:Tajawal,Arial,sans-serif;color:#111}.page{height:185mm;display:grid;grid-template-rows:auto 1fr auto;gap:4mm;break-after:page}.page:last-child{break-after:auto}header{display:flex;justify-content:space-between;font-size:12pt}.art{display:grid;place-items:center;min-height:0}.art svg{display:block;max-width:100%;max-height:160mm;width:auto;height:auto;border-radius:4mm}p{margin:0;color:#666;font-size:9pt}@media screen{body{background:#eee;padding:20px}.page{max-width:1100px;margin:0 auto 24px;background:#fff;padding:24px;height:auto;min-height:720px;box-shadow:0 8px 35px #0002}}</style></head><body>${pages}<script>addEventListener('load',()=>setTimeout(()=>print(),350))<\/script></body></html>`)
   popup.document.close()
 }

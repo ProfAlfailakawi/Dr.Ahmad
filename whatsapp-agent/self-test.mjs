@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { openDatabase } from './db.mjs'
 import { buildContentIndex, searchContent } from './content-index.mjs'
-import { classifyIntent, handleIncoming, setSuppression, shouldRespondToMessage } from './intent-engine.mjs'
+import { classifyIntent, classifyIntentWithLearning, confirmPendingLearning, handleIncoming, recordUnresolvedLearning, setSuppression, shouldRespondToMessage } from './intent-engine.mjs'
 import { MockTransport, canonicalChatJid, hasMediaPayload } from './transport.mjs'
 import { createAgent } from './agent.mjs'
 import { quoteCardPayload } from './quote-card.mjs'
@@ -38,6 +38,19 @@ export async function runSelfTest(root) {
   assert.equal(classifyIntent('في شي ثاني؟').intent, 'MORE_LIKE_THIS')
   assert.equal(classifyIntent('عندي دقيقة').intent, 'ONE_MINUTE')
   assert.equal(classifyIntent('فاجئني').intent, 'SURPRISE_ME')
+  /* الذاكرة المحلية لا تتعلم جواباً ولا تتعلم من مرة واحدة. بعد ثلاث
+     إشارات متطابقة فقط تربط صياغة كويتية غامضة بنية موجودة أصلًا. */
+  const dialectPhrase = 'يمعود شنو توه طالع من جيسه؟'
+  const dialectJid = '96550000001@s.whatsapp.net'
+  assert.equal(classifyIntentWithLearning(db, dialectPhrase).learned, undefined, 'الصياغة الجديدة غير متعلمة أولًا')
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    recordUnresolvedLearning(db, dialectJid, dialectPhrase)
+    const learned = confirmPendingLearning(db, dialectJid, 'LATEST_CONTENT', new Date(daytime.getTime() + attempt * 1000))
+    assert.equal(Boolean(learned?.learned), attempt === 2, 'لا تعتمد الصياغة قبل التأكيد الثالث')
+  }
+  const learnedDialect = classifyIntentWithLearning(db, dialectPhrase)
+  assert.equal(learnedDialect.intent, 'LATEST_CONTENT')
+  assert.equal(learnedDialect.learned, true)
   assert.equal(searchContent(db, 'الذكاء الاصطناعي', { limit: 3 }).length >= 0, true)
   const started = await agent.start()
   assert.equal(started.status, 'connected')

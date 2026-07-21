@@ -25,8 +25,6 @@ type AgentStatus = {
   }
   pairing_code?: string | null
 }
-type Campaign = { id: string; name: string; state: string; created_at: string; approved_at?: string | null; target_count?: number }
-type BroadcastGroup = { id: string; jid: string; name: string; memberCount: number; discoveredAt?: string }
 type ReplyRule = {
   id: string
   name: string
@@ -41,6 +39,8 @@ type ReplyRule = {
 }
 type RuleVersion = { id: number; createdAt: string }
 type Simulation = { willReply?: boolean; why?: string; quietNow?: boolean; intent?: string; confidence?: number; needsHuman?: boolean; ruleId?: string | null; ruleName?: string | null; preview?: string }
+type LearningPattern = { id: number; phrase: string; hits: number; intent: string; confirmations: number; status: 'learned' | 'observing' | 'ignored'; firstSeenAt?: string; lastSeenAt?: string; learnedAt?: string | null }
+type LearningState = { total: number; learned: number; observing: number; ignored: number; policy: string; items: LearningPattern[] }
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none placeholder:text-soft/60 focus:border-accent'
@@ -84,42 +84,11 @@ function parseKeywords(value: string) {
   return value.split(/[,،\n]/).map((item) => item.trim()).filter(Boolean)
 }
 
-function normalizeTargetLine(value: string) {
-  const raw = value.trim()
-  if (!raw) return null
-  if (raw === 'self') return { id: 'self', kind: 'self' as const }
-  if (raw.endsWith('@g.us')) return { jid: raw, kind: 'group' as const, displayName: 'قروب واتساب' }
-  if (raw.endsWith('@s.whatsapp.net')) return { jid: raw, kind: 'contact' as const }
-  const digits = raw.replace(/\D/g, '')
-  if (digits.length === 8) return { jid: `965${digits}@s.whatsapp.net`, kind: 'contact' as const }
-  if (digits.length >= 10 && digits.length <= 15) return { jid: `${digits}@s.whatsapp.net`, kind: 'contact' as const }
-  return null
-}
-
-function parseTargets(value: string) {
-  const parsed = value.split(/\n|,/).map(normalizeTargetLine).filter(Boolean)
-  const seen = new Set<string>()
-  return parsed.filter((target) => {
-    const key = target?.jid || target?.id || ''
-    if (!key || seen.has(key)) return false
-    seen.add(key)
-    return true
-  })
-}
-
 export function WhatsAppAgentPanel() {
   const [status, setStatus] = useState<AgentStatus>({ status: 'unconfigured' })
   const [busy, setBusy] = useState(false)
   const [restarting, setRestarting] = useState(false)
   const [notice, setNotice] = useState('')
-  const [campaignName, setCampaignName] = useState('')
-  const [campaignText, setCampaignText] = useState('')
-  const [campaignTargetsText, setCampaignTargetsText] = useState('')
-  const [groups, setGroups] = useState<BroadcastGroup[]>([])
-  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
-  const [intervalSeconds, setIntervalSeconds] = useState(45)
-  const [sendingCampaignId, setSendingCampaignId] = useState('')
-  const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [secret, setSecret] = useState(() => localStorage.getItem('whatsapp-agent-bridge-secret') || '')
   const [manualJid, setManualJid] = useState('')
   const [rules, setRules] = useState<ReplyRule[]>([])
@@ -127,6 +96,8 @@ export function WhatsAppAgentPanel() {
   const [ruleVersions, setRuleVersions] = useState<Record<string, RuleVersion[]>>({})
   const [simulateText, setSimulateText] = useState('')
   const [simulation, setSimulation] = useState<Simulation | null>(null)
+  const [learning, setLearning] = useState<LearningState>({ total: 0, learned: 0, observing: 0, ignored: 0, policy: '', items: [] })
+  const [learningBusy, setLearningBusy] = useState(false)
   const localBridgeDefault = ['http:', '', '127.0.0.1:34321'].join('/')
   const bridgeCandidate = String(import.meta.env.VITE_WHATSAPP_AGENT_BRIDGE_URL || localBridgeDefault).replace(/\/+$/, '')
   const bridge = /^(https?:\/\/)(127\.0\.0\.1|localhost)(:\d+)?$/i.test(bridgeCandidate) ? bridgeCandidate : ''
@@ -153,16 +124,14 @@ export function WhatsAppAgentPanel() {
     if (!secret.trim()) { setNotice('أدخل سر الجسر المحلي أولًا. السر لا يُرفع للموقع؛ يُحفظ في هذا المتصفح فقط.'); return }
     setBusy(true)
     try {
-      const [nextStatus, nextCampaigns, nextRules, cachedGroups] = await Promise.all([
+      const [nextStatus, nextRules, nextLearning] = await Promise.all([
         request<AgentStatus>('/status'),
-        request<Campaign[]>('/campaigns'),
         request<ReplyRule[]>('/admin/rules'),
-        request<{ groups: BroadcastGroup[] }>('/admin/groups/cached').catch(() => ({ groups: [] })),
+        request<LearningState>('/admin/learning').catch(() => ({ total: 0, learned: 0, observing: 0, ignored: 0, policy: '', items: [] })),
       ])
       setStatus(nextStatus)
-      setCampaigns(nextCampaigns)
       setRules(nextRules)
-      setGroups(cachedGroups.groups || [])
+      setLearning(nextLearning)
       setNotice('تحدّثت حالة واتساب.')
     } catch (error) {
       setNotice(error instanceof Error && error.message === 'secret-missing' ? 'أدخل سر الجسر المحلي أولًا.' : 'تعذّر الوصول إلى جسر واتساب المحلي. تأكد أن الماك شغال والجسر متصل والسر صحيح.')
@@ -215,99 +184,10 @@ export function WhatsAppAgentPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [secret])
 
-  /* اقتران بضغطة: يجلب السر من الجسر المحلي ويحفظه في هذا المتصفح وحده،
-     فلا ينسخ الدكتور أربعاً وستين خانة يدوياً في كل جهاز. */
-  const [pairing, setPairing] = useState(false)
-  const pairNow = async () => {
-    if (!bridge) { setNotice('لم أجد الجسر المحلي.'); return }
-    setPairing(true)
-    try {
-      const response = await fetch(`${bridge}/pair`, { method: 'POST' })
-      if (!response.ok) throw new Error('rejected')
-      const payload = await response.json()
-      const fetched = String(payload.secret || '').trim()
-      if (!fetched) throw new Error('empty')
-      setSecret(fetched)
-      localStorage.setItem('whatsapp-agent-bridge-secret', fetched)
-      setNotice('اقترنت اللوحة بالجسر ✓')
-      await refresh()
-    } catch {
-      setNotice('تعذّر الاقتران التلقائي — الصق السر يدوياً من: node whatsapp-agent/cli.mjs bridge-secret')
-    } finally {
-      setPairing(false)
-    }
-  }
-
   const saveSecret = () => {
     localStorage.setItem('whatsapp-agent-bridge-secret', secret.trim())
     setNotice('حُفظ سر الجسر في هذا المتصفح فقط.')
     void refresh()
-  }
-
-  const selectedGroupTargets = () => groups
-    .filter((group) => selectedGroupIds.includes(group.id))
-    .map((group) => ({ jid: group.jid, kind: 'group', displayName: group.name }))
-
-  const draftTargets = () => [...selectedGroupTargets(), ...parseTargets(campaignTargetsText)]
-
-  const loadGroups = async () => {
-    setBusy(true)
-    try {
-      const result = await request<{ groups: BroadcastGroup[]; refreshed?: boolean }>('/admin/groups')
-      setGroups(result.groups || [])
-      setNotice(result.refreshed ? 'سحبت القروبات من جلسة واتساب الحالية بدون عرض أرقام الأعضاء.' : 'عرضت القروبات المحفوظة محليًا.')
-    } catch (error) {
-      setNotice(error instanceof Error ? `تعذّر سحب القروبات: ${error.message}` : 'تعذّر سحب القروبات من واتساب.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const previewSelf = async () => {
-    if (!campaignText.trim()) return setNotice('اكتب نص الرسالة أولًا.')
-    try {
-      await request('/admin/send-self-preview', { method: 'POST', body: JSON.stringify({ message: campaignText }) })
-      setNotice('أُرسلت معاينة إلى نفسك. إذا لم تصل، تأكد أن الإرسال المحلي مفعّل وأن واتساب متصل.')
-    } catch (error) {
-      setNotice(error instanceof Error ? `تعذّر إرسال المعاينة: ${error.message}` : 'تعذّر إرسال المعاينة.')
-    }
-  }
-
-  const saveDraft = async () => {
-    if (!campaignName.trim() || !campaignText.trim()) return setNotice('اكتب اسم المسودة ونصها أولًا.')
-    const targets = draftTargets()
-    if (bridge && secret.trim()) {
-      try { await request('/campaigns/draft', { method: 'POST', body: JSON.stringify({ name: campaignName, message: campaignText, targets, intervalSeconds }) }) } catch (error) { return setNotice(error instanceof Error ? `تعذّر حفظ المسودة: ${error.message}` : 'تعذّر حفظ المسودة عبر الوكيل المحلي.') }
-    } else {
-      try { localStorage.setItem('whatsapp-agent-draft', JSON.stringify({ name: campaignName, message: campaignText, targets: targets.length, savedAt: new Date().toISOString() })) } catch { /* noop */ }
-    }
-    setNotice(targets.length ? `حُفظت كمسودة مع ${targets.length} جهة/قروب. لا يوجد إرسال قبل الاعتماد.` : 'حُفظت كمسودة فقط؛ لا يوجد إرسال.')
-    setCampaignName('')
-    setCampaignText('')
-    setCampaignTargetsText('')
-    setSelectedGroupIds([])
-    await refresh()
-  }
-
-  const approve = async (id: string) => {
-    try { await request(`/campaigns/${encodeURIComponent(id)}/approve`, { method: 'POST', body: JSON.stringify({ confirm: true }) }); setNotice('اعتمدت المسودة؛ الإرسال الفعلي يحتاج أمر إرسال منفصل ومقفول افتراضيًا.'); await refresh() } catch { setNotice('تعذّر اعتماد المسودة.') }
-  }
-
-  const sendQuiet = async (campaign: Campaign) => {
-    setSendingCampaignId(campaign.id)
-    try {
-      await request(`/campaigns/${encodeURIComponent(campaign.id)}/send-quiet`, { method: 'POST', body: JSON.stringify({ confirm: true, confirmAgain: true, intervalSeconds }) })
-      setNotice(`بدأ الإرسال الهادئ لمسودة «${campaign.name}». الفاصل ${intervalSeconds} ثانية تقريبًا بين كل جهة.`)
-      setTimeout(() => void refresh(), 1200)
-    } catch (error) {
-      setNotice(error instanceof Error ? `لم يبدأ الإرسال: ${error.message}` : 'لم يبدأ الإرسال الهادئ.')
-    } finally {
-      setSendingCampaignId('')
-    }
-  }
-
-  const stopQuiet = async (id: string) => {
-    try { await request(`/campaigns/${encodeURIComponent(id)}/stop`, { method: 'POST' }); setNotice('أوقفت الحملة الهادئة.'); await refresh() } catch { setNotice('تعذّر إيقاف الحملة.') }
   }
 
   /* صمتُ البوت: كم محادثةً يصمت فيها الآن، وزرٌّ يُعيده في كلّها بضغطة.
@@ -418,6 +298,19 @@ export function WhatsAppAgentPanel() {
     try { setSimulation(await request<Simulation>('/admin/simulate', { method: 'POST', body: JSON.stringify({ text: simulateText, jid: manualJid || 'simulator@s.whatsapp.net' }) })) } catch { setNotice('تعذّر تشغيل المحاكي.') }
   }
 
+  const updateLearningPattern = async (id: number, status: 'observing' | 'ignored') => {
+    setLearningBusy(true)
+    try {
+      const next = await request<LearningState>(`/admin/learning/${id}/${status}`, { method: 'POST' })
+      setLearning(next)
+      setNotice(status === 'ignored' ? 'تجاهل البوت هذه الصياغة ولن يتعلمها.' : 'عادت الصياغة للمراقبة المحافظة.')
+    } catch {
+      setNotice('تعذّر تحديث ذاكرة اللهجة المحلية.')
+    } finally {
+      setLearningBusy(false)
+    }
+  }
+
   const flags = useMemo(() => status.flags || { agent: true, send: false, autoReply: false, privateAutoReply: false, voice: false, reminders: false, quoteCard: true }, [status.flags])
   const phases = [
     ['1', 'الوكيل والربط', flags.agent],
@@ -502,10 +395,24 @@ export function WhatsAppAgentPanel() {
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">المنطقة</p><p className="mt-1 font-semibold text-ink">{status.timeZone || 'Asia/Kuwait'}</p></div>
         </div>
         <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_auto]">
-          <input dir="ltr" className={input} placeholder="Bridge secret — من npm run agent:bridge-secret" value={secret} onChange={(event) => setSecret(event.target.value)} />
+          <div>
+            <input
+              dir="ltr"
+              type="password"
+              autoComplete="off"
+              spellCheck={false}
+              aria-label="سر الجسر المحلي"
+              className={input}
+              placeholder="Bridge secret — من npm run agent:bridge-secret"
+              value={secret}
+              onChange={(event) => setSecret(event.target.value)}
+            />
+            <p className="mt-2 text-[.72rem] leading-relaxed text-soft">
+              للحماية لا تقرأ اللوحة السر من الجسر تلقائيًا. أنشئه على الماك، والصقه هنا مرةً واحدة؛ ويبقى في هذا المتصفح فقط.
+            </p>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => void toggleEmergencyPause()} disabled={!status.bridgeOnline} className={`rounded-full border px-4 py-2 text-[.8rem] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${status.runtimePaused ? 'border-accent bg-accent text-white' : 'border-red-300/70 bg-red-50 text-red-700 hover:border-red-500'}`}>{status.runtimePaused ? 'تشغيل الردود' : 'إيقاف الردود فورًا'}</button>
-            <button type="button" onClick={() => void pairNow()} disabled={pairing || !bridgeAlive} className={`${secondary} disabled:opacity-40`}>{pairing ? 'يقترن…' : '⚡ اقتران تلقائي'}</button>
             <button type="button" onClick={saveSecret} className={secondary}>حفظ السر محليًا</button>
             <button type="button" onClick={() => void restartBridge()} disabled={restarting || !status.bridgeOnline} className={secondary}>{restarting ? 'جارٍ إعادة التشغيل' : 'إعادة تشغيل واتساب'}</button>
             {/* يظهر دائماً لا عند الصمت وحده: حين يبدو البوت معطوباً يريد الدكتور
@@ -517,7 +424,7 @@ export function WhatsAppAgentPanel() {
               className={`${secondary} disabled:opacity-40`}
               title="يمسح الجلسة ويطلب رمز QR جديداً"
             >
-              {repairing ? 'يُعيد الربط…' : '🔗 إعادة ربط (QR جديد)'}
+              {repairing ? 'يُعيد الربط…' : 'إعادة ربط واتساب (QR جديد)'}
             </button>
             <button
               type="button"
@@ -584,6 +491,46 @@ export function WhatsAppAgentPanel() {
               {simulation.preview && <p className="whitespace-pre-wrap text-[.82rem] leading-relaxed text-ink">{simulation.preview}</p>}
             </div>
           )}
+        </details>
+      )}
+
+      {bridge && (
+        <details className={card}>
+          <summary className="flex cursor-pointer list-none flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-[.7rem] font-bold uppercase tracking-[.16em] text-accent">Dialect memory · Local only</p>
+              <h3 className="mt-1 font-display text-xl font-semibold text-ink">ذاكرة اللهجة الحيّة</h3>
+              <p className="mt-1 max-w-2xl text-[.78rem] leading-relaxed text-soft">يتعلم من الصياغات الكويتية والعربية التي لم يفهمها، لكن لا يخترع جوابًا: يحفظ النية فقط بعد تكرار مؤكد، ثم يجيب من فهرس الموقع كالمعتاد.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full border border-hair px-3 py-1 text-[.7rem] text-soft">{learning.learned} تعلّمها</span>
+              <span className="rounded-full border border-hair px-3 py-1 text-[.7rem] text-soft">{learning.observing} يراقبها</span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent">＋</span>
+            </div>
+          </summary>
+          <div className="mt-5 grid gap-3">
+            <div className="rounded-2xl border border-accent/25 bg-accent/[.045] p-4">
+              <p className="text-[.8rem] font-semibold text-ink">حماية الفهم قبل الكلام</p>
+              <p className="mt-1 text-[.76rem] leading-relaxed text-soft">{learning.policy || 'لا يعتمد صياغة جديدة إلا بعد ثلاث إشارات متطابقة، ولا يتعلم أي معلومة أو جواب من المستخدم.'}</p>
+            </div>
+            {!learning.items.length ? (
+              <p className="rounded-2xl border border-dashed border-hair p-5 text-center text-[.78rem] text-soft">لا توجد صياغات غامضة حتى الآن. ستظهر هنا فقط بعد الإيقاظ وعند عدم الفهم.</p>
+            ) : (
+              <div className="grid gap-2">
+                {learning.items.slice(0, 24).map((item) => (
+                  <article key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-hair bg-canvas px-4 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[.84rem] font-semibold text-ink">{item.phrase || 'صياغة مشفّرة'}</p>
+                      <p className="mt-1 text-[.7rem] text-soft">{item.status === 'learned' ? `تعلّمها كنية ${item.intent}` : item.status === 'ignored' ? 'متجاهلة' : `تحت المراقبة · ظهرت ${item.hits} مرة · ${item.confirmations}/3 تأكيدات`}</p>
+                    </div>
+                    <button type="button" disabled={learningBusy} className={secondary} onClick={() => void updateLearningPattern(item.id, item.status === 'ignored' ? 'observing' : 'ignored')}>
+                      {item.status === 'ignored' ? 'أعد للمراقبة' : 'لا تتعلمها'}
+                    </button>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
         </details>
       )}
 

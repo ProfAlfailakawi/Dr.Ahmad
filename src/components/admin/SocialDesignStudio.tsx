@@ -1,21 +1,28 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   analyzeSocialContent,
+  createEmptyTasteProfile,
   designHistoryEntry,
   generateSocialDesigns,
+  generateSocialCampaign,
   regenerateFromPlan,
   transformDesignFormat,
+  updateTasteProfile,
   type CompositionPlan,
   type ContentTone,
   type DesignDensity,
   type DesignHistoryEntry,
+  type DesignTasteProfile,
   type SocialFormatId,
   type SocialPlatform,
+  type SocialCampaign,
 } from '../../lib/social-design-engine'
 import {
   downloadCompositionRaster,
   downloadCompositionSvg,
   printCompositionPdf,
+  downloadSocialCampaignRaster,
+  printSocialCampaignPdf,
   renderCompositionSvg,
 } from '../../lib/social-design-renderer'
 
@@ -25,6 +32,7 @@ const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-bold text-
 const ghost = 'rounded-full border border-hair bg-canvas px-4 py-2 text-[.76rem] font-semibold text-soft transition hover:border-accent hover:text-accent disabled:opacity-50'
 const HISTORY_KEY = 'dr-ahmad-social-design-history-v1'
 const SAVED_KEY = 'dr-ahmad-social-design-saved-v1'
+const TASTE_KEY = 'dr-ahmad-social-design-taste-v1'
 
 const toneLabels: Record<ContentTone | 'auto', string> = {
   auto: 'ذكي تلقائي',
@@ -127,7 +135,21 @@ function savePlan(plan: CompositionPlan) {
   return next
 }
 
+function loadTasteProfile(): DesignTasteProfile {
+  if (typeof window === 'undefined') return createEmptyTasteProfile()
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(TASTE_KEY) || 'null')
+    return parsed?.version === 1 ? parsed : createEmptyTasteProfile()
+  } catch { return createEmptyTasteProfile() }
+}
+
+function storeTasteProfile(profile: DesignTasteProfile) {
+  try { window.localStorage.setItem(TASTE_KEY, JSON.stringify(profile)) } catch { /* لا نوقف الاستوديو إن مُنع التخزين */ }
+}
+
 function Preview({ plan, className = '' }: { plan: CompositionPlan; className?: string }) {
+
+
   return (
     <div
       className={`overflow-hidden rounded-2xl border border-hair bg-canvas shadow-sm ${className}`}
@@ -155,6 +177,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [locks, setLocks] = useState({ content: false, style: false, color: false, format: false })
   const [savedPlans, setSavedPlans] = useState<CompositionPlan[]>(() => loadSavedPlans())
   const [showSaved, setShowSaved] = useState(false)
+  const [tasteProfile, setTasteProfile] = useState<DesignTasteProfile>(() => loadTasteProfile())
+  const [campaign, setCampaign] = useState<SocialCampaign | null>(null)
+  const [campaignBusy, setCampaignBusy] = useState(false)
   const textRef = useRef<HTMLTextAreaElement | null>(null)
 
   useEffect(() => { if (initialText && !text.trim()) setText(initialText) }, [initialText])
@@ -193,6 +218,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       seed: `${text}:${context}:${nextGeneration}:${Date.now()}`,
       history: loadHistory(),
       noveltyThreshold: .36,
+      tasteProfile,
     })
     setGeneration(nextGeneration)
     setPlans(result.plans)
@@ -215,6 +241,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       locks,
       history: loadHistory(),
       noveltyThreshold: .38,
+      tasteProfile,
     })
     setPlans(result.plans)
     setSelected(result.plans[0] || selected)
@@ -259,6 +286,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       seed: `carousel:${text}:${context}:${nextGeneration}:${Date.now()}`,
       history: loadHistory(),
       noveltyThreshold: .38,
+      tasteProfile,
     })
     const carouselPlans = result.plans.map((plan, index) => transformDesignFormat(plan, 'instagram-carousel', {
       respectFormatLock: false,
@@ -270,6 +298,47 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     setSelected(null)
     remember(carouselPlans)
     setNotice('بُنيت ستة اتجاهات كاروسيل مختلفة؛ كل اتجاه يعيد توزيع الفكرة على شرائح بدل تمديد قالب واحد.')
+  }
+
+  const teachTaste = (plan: CompositionPlan, signal: 1 | -1) => {
+    const next = updateTasteProfile(tasteProfile, plan, signal)
+    setTasteProfile(next)
+    storeTasteProfile(next)
+    setNotice(signal > 0
+      ? `تعلّم الاستوديو هذا الاختيار. ذاكرة الذوق الآن مبنية على ${next.samples} إشارات.`
+      : 'ابتعد الاستوديو عن هذا الأسلوب في التوليدات القادمة من دون أن يقتل التنوع.')
+  }
+
+  const exportPlan = async (plan: CompositionPlan, type: 'png' | 'jpeg') => {
+    teachTaste(plan, 1)
+    await downloadCompositionRaster(plan, type)
+  }
+
+  const buildCampaign = () => {
+    if (!selected && !plans[0]) {
+      setNotice('ولّد اتجاهًا أولًا، ثم حوّله إلى حملة متكاملة.')
+      return
+    }
+    setCampaignBusy(true)
+    try {
+      const basePlan = selected || plans[0]
+      const next = generateSocialCampaign({
+        text,
+        context,
+        author: 'د. أحمد حسين الفيلكاوي',
+        tone,
+        density,
+        seed: `campaign:${text}:${Date.now()}`,
+        history: loadHistory(),
+        tasteProfile,
+        basePlan,
+        noveltyThreshold: .36,
+      })
+      setCampaign(next)
+      remember(next.assets.map((asset) => asset.plan))
+      setSelected(null)
+      setNotice(`اكتملت حملة من ${next.assets.length} قطع متناسقة وغير مكررة. لجنة الجودة: ${next.qualityScore}٪.`)
+    } finally { setCampaignBusy(false) }
   }
 
   return (
@@ -330,17 +399,45 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <h3 className="mt-1 font-display text-2xl font-bold text-ink">ليست قوالب؛ هذه اتجاهات تكوين.</h3>
               <p className="mt-2 text-[.8rem] leading-relaxed text-soft">كل نتيجة تختلف في العائلة، والهندسة، والخط، والإيقاع، وطريقة إبراز الفكرة.</p>
             </div>
-            <div className="flex flex-wrap gap-2"><button type="button" className={ghost} onClick={() => setShowSaved((value) => !value)}>المحفوظة {savedPlans.length}</button><button type="button" className={ghost} onClick={() => generate()}>توليد دفعة مختلفة</button></div>
+            <div className="flex flex-wrap gap-2"><span className="rounded-full border border-accent/25 bg-accent/[.05] px-4 py-2 text-[.72rem] font-semibold text-accent">لجنة الجودة {Math.round(plans.reduce((sum, plan) => sum + (plan.quality?.score || 0), 0) / plans.length)}٪</span><span className="rounded-full border border-hair px-4 py-2 text-[.72rem] text-soft">ذاكرة ذوقك {tasteProfile.samples} إشارة</span><button type="button" className={primary} disabled={campaignBusy} onClick={buildCampaign}>{campaignBusy ? 'يبني الحملة…' : 'حوّلها إلى حملة'}</button><button type="button" className={ghost} onClick={() => setShowSaved((value) => !value)}>المحفوظة {savedPlans.length}</button><button type="button" className={ghost} onClick={() => generate()}>توليد دفعة مختلفة</button></div>
           </div>
           <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {plans.map((plan) => (
               <article key={plan.id} className="group grid content-start gap-3 rounded-[1.4rem] border border-hair bg-canvas p-3 transition hover:-translate-y-1 hover:border-accent/40 hover:shadow-lg">
                 <button type="button" className="block w-full text-right" onClick={() => setSelected(plan)} aria-label={`افتح ${plan.directionLabel}`}><Preview plan={plan} /></button>
                 <div className="px-1 pb-1">
-                  <div className="flex items-start justify-between gap-3"><div><strong className="block text-[.82rem] text-ink">{plan.directionLabel}</strong><span className="mt-1 block text-[.68rem] text-soft">{plan.format.label}</span></div><span className="rounded-full bg-paper px-2 py-1 text-[.64rem] font-semibold text-accent">{Math.round(plan.novelty * 100)}٪ جديد</span></div>
+                  <div className="flex items-start justify-between gap-3"><div><strong className="block text-[.82rem] text-ink">{plan.directionLabel}</strong><span className="mt-1 block text-[.68rem] text-soft">{plan.format.label}</span></div><div className="flex flex-col items-end gap-1"><span className="rounded-full bg-paper px-2 py-1 text-[.64rem] font-semibold text-accent">جودة {plan.quality?.score || 0}٪</span><span className="text-[.62rem] text-soft">{Math.round(plan.novelty * 100)}٪ جديد</span></div></div>
                   <p className="mt-2 line-clamp-2 text-[.72rem] leading-relaxed text-soft">{plan.rationale.join(' · ')}</p>
-                  <div className="mt-3 flex gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => setSelected(plan)}>تكبير وتعديل</button><button type="button" className={ghost} onClick={() => void downloadCompositionRaster(plan, 'png')}>PNG</button></div>
+                  <div className="mt-3 flex gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => setSelected(plan)}>تكبير وتعديل</button><button type="button" className={ghost} onClick={() => void exportPlan(plan, 'png')}>PNG</button></div>
                 </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+
+      {campaign && (
+        <section className={`${card} overflow-hidden`} aria-labelledby="campaign-title">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-[.72rem] font-bold uppercase tracking-[.16em] text-accent">One idea · Complete campaign</p>
+              <h3 id="campaign-title" className="mt-1 font-display text-2xl font-bold text-ink">حملة واحدة، لكل منصة لغتها.</h3>
+              <p className="mt-2 max-w-2xl text-[.8rem] leading-relaxed text-soft">ليست الصورة نفسها بمقاسات مختلفة؛ كل قطعة أعادت بناء الفكرة لدورها، مع خيط لوني واحد وتكوينات متباعدة.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full border border-hair px-3 py-2 text-[.7rem] text-soft">جودة {campaign.qualityScore}٪</span>
+              <span className="rounded-full border border-hair px-3 py-2 text-[.7rem] text-soft">تماسك {campaign.coherenceScore}٪</span>
+              <span className="rounded-full border border-hair px-3 py-2 text-[.7rem] text-soft">تنوع {campaign.diversityScore}٪</span>
+              <button type="button" className={primary} onClick={() => void downloadSocialCampaignRaster(campaign, 'png')}>تنزيل الحملة PNG</button>
+              <button type="button" className={ghost} onClick={() => printSocialCampaignPdf(campaign)}>PDF للحملة</button>
+            </div>
+          </div>
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            {campaign.assets.map((asset) => (
+              <article key={asset.id} className="rounded-[1.4rem] border border-hair bg-canvas p-3">
+                <button type="button" className="block w-full text-right" onClick={() => setSelected(asset.plan)}><Preview plan={asset.plan} /></button>
+                <div className="px-1 pt-3"><strong className="block text-[.8rem] text-ink">{asset.label}</strong><p className="mt-1 text-[.68rem] leading-relaxed text-soft">{asset.purpose}</p><div className="mt-3 flex gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => setSelected(asset.plan)}>فتح</button><button type="button" className={ghost} onClick={() => void exportPlan(asset.plan, 'png')}>PNG</button></div></div>
               </article>
             ))}
           </div>
@@ -366,14 +463,16 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(310px,.75fr)]">
               <div className="grid place-items-center rounded-[1.5rem] border border-hair bg-canvas p-3 md:p-6"><Preview plan={selected} className="w-full max-w-3xl" /></div>
               <div className="grid content-start gap-4">
+                <section className="rounded-2xl border border-accent/25 bg-accent/[.045] p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">الناقد البصري الداخلي</p><p className="mt-1 text-[.78rem] text-soft">قرأه على الهاتف قبل أن يعرضه لك.</p></div><strong className="font-display text-3xl text-accent">{selected.quality?.score || 0}٪</strong></div><div className="mt-3 flex flex-wrap gap-2">{selected.quality?.strengths.map((item) => <span key={item} className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.66rem] text-soft">✓ {item}</span>)}</div>{selected.quality?.issues.length ? <p className="mt-3 text-[.7rem] leading-relaxed text-soft">{selected.quality.issues.join(' · ')}</p> : null}</section>
                 <section className="rounded-2xl border border-hair bg-canvas p-4">
                   <p className="text-[.7rem] font-bold text-accent">أقفال التعديل</p>
                   <div className="mt-3 flex flex-wrap gap-2"><LockButton active={locks.content} onClick={() => setLocks((value) => ({ ...value, content: !value.content }))}>النص</LockButton><LockButton active={locks.style} onClick={() => setLocks((value) => ({ ...value, style: !value.style }))}>الأسلوب</LockButton><LockButton active={locks.color} onClick={() => setLocks((value) => ({ ...value, color: !value.color }))}>اللون</LockButton><LockButton active={locks.format} onClick={() => setLocks((value) => ({ ...value, format: !value.format }))}>المقاس</LockButton></div>
                 </section>
                 <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">إخراج جديد</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><button className={ghost} type="button" onClick={() => regenerateSelected('smart')}>اقتراح أذكى</button><button className={ghost} type="button" onClick={() => regenerateSelected('luxury')}>أكثر فخامة</button><button className={ghost} type="button" onClick={() => regenerateSelected('calm')}>أكثر هدوءًا</button><button className={ghost} type="button" onClick={() => regenerateSelected('bold')}>أكثر جرأة</button></div></section>
                 <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">تحويل ذكي للمقاس</p><div className="mt-3 flex flex-wrap gap-2">{formatActions.map((action) => <button key={action.id} className={ghost} type="button" onClick={() => transform(action.id)}>{action.label}</button>)}</div></section>
-                <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">التصدير</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><button className={primary} type="button" onClick={() => void downloadCompositionRaster(selected, 'png')}>تنزيل PNG</button><button className={ghost} type="button" onClick={() => void downloadCompositionRaster(selected, 'jpeg')}>تنزيل JPG</button><button className={ghost} type="button" onClick={() => downloadCompositionSvg(selected)}>تنزيل SVG</button><button className={ghost} type="button" onClick={() => printCompositionPdf(selected)}>طباعة / PDF</button></div></section>
-                <button type="button" className={ghost} onClick={() => { const next = savePlan(selected); setSavedPlans(next); setNotice(`حُفظ التصميم محليًا. لديك الآن ${next.length} نسخة محفوظة.`) }}>حفظ نسخة للرجوع إليها</button>
+                <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">التصدير</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><button className={primary} type="button" onClick={() => void exportPlan(selected, 'png')}>تنزيل PNG</button><button className={ghost} type="button" onClick={() => void exportPlan(selected, 'jpeg')}>تنزيل JPG</button><button className={ghost} type="button" onClick={() => downloadCompositionSvg(selected)}>تنزيل SVG</button><button className={ghost} type="button" onClick={() => printCompositionPdf(selected)}>طباعة / PDF</button></div></section>
+                <div className="grid gap-2 sm:grid-cols-2"><button type="button" className={primary} onClick={() => { teachTaste(selected, 1); const next = savePlan(selected); setSavedPlans(next); setNotice(`حُفظ التصميم وتعلّم الاستوديو ذوقك. لديك الآن ${next.length} نسخة محفوظة.`) }}>هذا ذوقي · احفظه</button><button type="button" className={ghost} onClick={() => { teachTaste(selected, -1); setSelected(null); generate() }}>أبعد هذا الأسلوب</button></div>
+                <button type="button" className={ghost} onClick={buildCampaign}>حوّل هذا الاتجاه إلى حملة متكاملة</button>
               </div>
             </div>
           </div>

@@ -7,7 +7,7 @@
  * الاستوديو المستقل عن تقنية الرسم، وأن يبقي النص الأصلي محفوظاً دائماً.
  */
 
-export const SOCIAL_DESIGN_ENGINE_VERSION = '1.0.0'
+export const SOCIAL_DESIGN_ENGINE_VERSION = '2.0.0'
 
 export type ContentKind =
   | 'quote'
@@ -352,6 +352,49 @@ export interface DesignSignature {
   format: SocialFormatId
 }
 
+export interface VisualQuality {
+  score: number
+  band: 'exceptional' | 'excellent' | 'strong' | 'needs-work'
+  readability: number
+  hierarchy: number
+  whitespace: number
+  contrast: number
+  fit: number
+  originality: number
+  platformFit: number
+  issues: string[]
+  strengths: string[]
+}
+
+export interface DesignTasteProfile {
+  version: 1
+  samples: number
+  positiveSamples: number
+  negativeSamples: number
+  updatedAt?: string
+  weights: Partial<Record<keyof DesignSignature, Record<string, number>>>
+}
+
+export type CampaignAssetRole = 'hero' | 'story' | 'reel' | 'linkedin' | 'x' | 'quote' | 'teaser' | 'reminder'
+
+export interface SocialCampaignAsset {
+  id: string
+  role: CampaignAssetRole
+  label: string
+  purpose: string
+  plan: CompositionPlan
+}
+
+export interface SocialCampaign {
+  id: string
+  title: string
+  createdAt: string
+  assets: SocialCampaignAsset[]
+  qualityScore: number
+  coherenceScore: number
+  diversityScore: number
+}
+
 export interface CompositionPlan {
   id: string
   fingerprint: string
@@ -374,6 +417,8 @@ export interface CompositionPlan {
   analysis: Pick<SocialContentAnalysis, 'topic' | 'primaryKind' | 'primaryTone' | 'confidence'>
   fitness: number
   novelty: number
+  quality?: VisualQuality
+  tasteAffinity?: number
   locksApplied: DesignLocks
 }
 
@@ -398,6 +443,7 @@ export interface SocialDesignRequest {
   basePlan?: CompositionPlan
   history?: readonly (DesignHistoryEntry | CompositionPlan)[]
   noveltyThreshold?: number
+  tasteProfile?: DesignTasteProfile
 }
 
 export interface SocialDesignResult {
@@ -410,6 +456,9 @@ export interface SocialDesignResult {
     historyCompared: number
     noveltyThreshold: number
     warnings: string[]
+    candidateCount: number
+    rejectedCount: number
+    averageQuality: number
   }
 }
 
@@ -1220,7 +1269,7 @@ const makeCandidate = (
   const signature: DesignSignature = { layout: layout.id, typography, spatial, accent, framing, cta: ctaPlacement, palette, format: format.id }
   const novelty = noveltyAgainst(signature, history)
   const fitness = layoutFitness(layout, analysis, density, format)
-  return {
+  const draft: CompositionPlan = {
     id: planId(seed, variant, signature),
     fingerprint: fingerprintDesign(signature),
     version: SOCIAL_DESIGN_ENGINE_VERSION,
@@ -1244,6 +1293,7 @@ const makeCandidate = (
     novelty: Number(novelty.toFixed(4)),
     locksApplied: { ...DEFAULT_LOCKS },
   }
+  return { ...draft, quality: critiqueCompositionPlan(draft) }
 }
 
 export function applyDesignLocks(base: CompositionPlan, candidate: CompositionPlan, requested: Partial<DesignLocks> = {}): CompositionPlan {
@@ -1267,11 +1317,12 @@ export function applyDesignLocks(base: CompositionPlan, candidate: CompositionPl
   if (locks.color) result = { ...result, palette: base.palette }
   if (locks.format) result = { ...result, format: base.format, platform: base.platform }
   const signature = signatureOf(result)
-  return {
+  const locked = {
     ...result,
     id: `${candidate.id}-locked-${hashHex(signatureString(signature))}`,
     fingerprint: fingerprintDesign(signature),
   }
+  return { ...locked, quality: critiqueCompositionPlan(locked) }
 }
 
 const selectDiverse = (
@@ -1279,6 +1330,7 @@ const selectDiverse = (
   count: number,
   history: readonly DesignHistoryEntry[],
   noveltyThreshold: number,
+  tasteProfile?: DesignTasteProfile,
 ) => {
   const selected: CompositionPlan[] = []
   const remaining = [...candidates]
@@ -1290,22 +1342,25 @@ const selectDiverse = (
       const pairwiseNovelty = selected.length
         ? 1 - Math.max(...selected.map((plan) => designSimilarity(candidate, plan)))
         : 1
-      const thresholdBonus = candidate.novelty >= noveltyThreshold ? 12 : 0
-      const score = candidate.fitness * 0.53 + candidate.novelty * 25 + pairwiseNovelty * 30 + thresholdBonus
+      const thresholdBonus = candidate.novelty >= noveltyThreshold ? 10 : 0
+      const quality = candidate.quality || critiqueCompositionPlan(candidate, selected)
+      const affinity = tasteAffinity(tasteProfile, candidate)
+      const score = candidate.fitness * .34 + quality.score * .36 + candidate.novelty * 18 + pairwiseNovelty * 22 + thresholdBonus + affinity * 10
       if (score > bestScore) { bestScore = score; bestIndex = index }
     }
     const [picked] = remaining.splice(bestIndex, 1)
     if (!picked) break
-    selected.push({ ...picked, directionIndex: selected.length + 1 })
-    // لا نعيد العائلة نفسها داخل الدفعة، حتى لو تغيّر اللون.
+    selected.push({ ...picked, directionIndex: selected.length + 1, tasteAffinity: tasteAffinity(tasteProfile, picked) })
+    // التنوع البنيوي شرط، لا نسمح لنفس العائلة أن تتخفى بلون مختلف.
     for (let index = remaining.length - 1; index >= 0; index -= 1) {
       if (remaining[index].layout === picked.layout) remaining.splice(index, 1)
     }
   }
-  return selected.map((plan) => ({
-    ...plan,
-    novelty: Number(noveltyAgainst(signatureOf(plan), [...history, ...selected.filter((item) => item.id !== plan.id).map((item) => designHistoryEntry(item))]).toFixed(4)),
-  }))
+  return selected.map((plan) => {
+    const novelty = Number(noveltyAgainst(signatureOf(plan), [...history, ...selected.filter((item) => item.id !== plan.id).map((item) => designHistoryEntry(item))]).toFixed(4))
+    const enriched = { ...plan, novelty, tasteAffinity: tasteAffinity(tasteProfile, plan) }
+    return { ...enriched, quality: critiqueCompositionPlan(enriched, selected) }
+  })
 }
 
 const overrideAnalysis = (analysis: SocialContentAnalysis, request: SocialDesignRequest): SocialContentAnalysis => {
@@ -1336,13 +1391,16 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
     }
   }
 
-  const plans = selectDiverse(candidates, requestedCount, history, noveltyThreshold)
+  const critiqued = candidates.map((candidate) => ({ ...candidate, quality: critiqueCompositionPlan(candidate, candidates) }))
+  const strong = critiqued.filter((candidate) => !candidate.quality?.issues.some((issue) => issue.startsWith('خطأ:')) && (candidate.quality?.score || 0) >= 68)
+  const candidatePool = strong.length >= requestedCount ? strong : critiqued
+  const plans = selectDiverse(candidatePool, requestedCount, history, noveltyThreshold, request.tasteProfile)
   if (plans.some((plan) => plan.novelty < noveltyThreshold)) warnings.push('السجل البصري كثيف؛ اختير أبعد تكوين ممكن مع المحافظة على ملاءمة النص.')
   if (plans.length < requestedCount) warnings.push(`الأقفال الحالية سمحت بـ ${plans.length} اتجاهات متمايزة فقط.`)
   return {
     analysis,
     plans,
-    generation: { seed, requestedCount, producedCount: plans.length, historyCompared: history.length, noveltyThreshold, warnings },
+    generation: { seed, requestedCount, producedCount: plans.length, historyCompared: history.length, noveltyThreshold, warnings, candidateCount: candidates.length, rejectedCount: candidates.length - candidatePool.length, averageQuality: plans.length ? Math.round(plans.reduce((sum, plan) => sum + (plan.quality?.score || 0), 0) / plans.length) : 0 },
   }
 }
 
@@ -1382,7 +1440,8 @@ export function transformDesignFormat(
     locksApplied: locks,
     rationale: [...plan.rationale.filter((line) => !line.includes(' هو الأقرب لبنية النص')), `حُوّل إلى ${format.label} مع إعادة حساب مناطق الأمان`],
   }
-  return { ...transformed, fingerprint: fingerprintDesign(transformed) }
+  const next = { ...transformed, fingerprint: fingerprintDesign(transformed) }
+  return { ...next, quality: critiqueCompositionPlan(next), tasteAffinity: plan.tasteAffinity }
 }
 
 export function regenerateFromPlan(
@@ -1424,6 +1483,157 @@ export function compositionCssVariables(plan: CompositionPlan): Record<string, s
     '--social-body-x': `${plan.geometry.bodyZone.x * 100}%`,
     '--social-body-y': `${plan.geometry.bodyZone.y * 100}%`,
     '--social-body-w': `${plan.geometry.bodyZone.width * 100}%`,
+  }
+}
+
+
+export function createEmptyTasteProfile(): DesignTasteProfile {
+  return { version: 1, samples: 0, positiveSamples: 0, negativeSamples: 0, weights: {} }
+}
+
+const signatureDimensions: (keyof DesignSignature)[] = ['layout', 'typography', 'spatial', 'accent', 'framing', 'cta', 'palette', 'format']
+
+export function updateTasteProfile(profile: DesignTasteProfile | undefined, plan: CompositionPlan, signal: 1 | -1): DesignTasteProfile {
+  const current = profile || createEmptyTasteProfile()
+  const weights: DesignTasteProfile['weights'] = {}
+  for (const dimension of signatureDimensions) weights[dimension] = { ...(current.weights[dimension] || {}) }
+  const signature = signatureOf(plan)
+  for (const dimension of signatureDimensions) {
+    const value = String(signature[dimension])
+    const dimensionWeights = weights[dimension] || (weights[dimension] = {})
+    dimensionWeights[value] = clamp(Number(dimensionWeights[value] || 0) + signal * (dimension === 'layout' || dimension === 'spatial' ? 1.35 : 1), -12, 12)
+  }
+  return {
+    version: 1,
+    samples: current.samples + 1,
+    positiveSamples: current.positiveSamples + (signal > 0 ? 1 : 0),
+    negativeSamples: current.negativeSamples + (signal < 0 ? 1 : 0),
+    updatedAt: new Date().toISOString(),
+    weights,
+  }
+}
+
+export function tasteAffinity(profile: DesignTasteProfile | undefined, plan: CompositionPlan) {
+  if (!profile?.samples) return .5
+  const signature = signatureOf(plan)
+  let weighted = 0
+  let total = 0
+  for (const dimension of signatureDimensions) {
+    const importance = dimension === 'layout' ? 1.45 : dimension === 'spatial' ? 1.25 : dimension === 'typography' ? 1.1 : 1
+    weighted += Number(profile.weights[dimension]?.[String(signature[dimension])] || 0) * importance
+    total += 12 * importance
+  }
+  return Number(clamp(.5 + weighted / Math.max(1, total) * .5, 0, 1).toFixed(4))
+}
+
+const qualityBand = (score: number): VisualQuality['band'] => score >= 94 ? 'exceptional' : score >= 87 ? 'excellent' : score >= 76 ? 'strong' : 'needs-work'
+const boundedQuality = (value: number) => Math.round(clamp(value, 0, 100))
+
+export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly CompositionPlan[] = []): VisualQuality {
+  const palette = PALETTES[plan.palette]
+  const contrastValue = contrastRatio(palette.background, palette.ink)
+  const titleWords = wordsOf(plan.content.title).length
+  const bodyWords = wordsOf(plan.content.body || plan.content.subtitle || plan.content.quote).length
+  const titleLoad = titleWords / Math.max(1, plan.format.maxTitleWords)
+  const bodyLoad = bodyWords / Math.max(1, plan.format.maxBodyWords)
+  const textLoad = titleLoad * .58 + bodyLoad * .42
+  const safe = [plan.geometry.titleZone, plan.geometry.bodyZone].every((zone) => zone.x >= 0 && zone.y >= 0 && zone.x + zone.width <= 1.001 && zone.y <= .94)
+  const duplicate = peers.some((peer) => peer.id !== plan.id && designSimilarity(plan, peer) >= .82)
+  const issues: string[] = []
+  const strengths: string[] = []
+
+  const contrast = boundedQuality(contrastValue >= 7 ? 100 : contrastValue >= 4.5 ? 88 : contrastValue * 18)
+  const readability = boundedQuality(100 - Math.max(0, titleLoad - .74) * 52 - Math.max(0, bodyLoad - .78) * 42 - (safe ? 0 : 45))
+  const hierarchy = boundedQuality(76 + (plan.content.heroWord ? 8 : 0) + (titleWords <= 14 ? 8 : 0) + (plan.content.kicker ? 4 : 0) - (titleWords > 22 ? 18 : 0))
+  const idealLoad = plan.density === 'minimal' ? .38 : plan.density === 'rich' ? .72 : .55
+  const whitespace = boundedQuality(100 - Math.abs(textLoad - idealLoad) * 90 - plan.geometry.decorationBudget * 2)
+  const fit = boundedQuality(100 - Math.max(0, titleLoad - 1) * 70 - Math.max(0, bodyLoad - 1) * 65 - (plan.content.overflowStrategy === 'trimmed-preview' ? 7 : 0))
+  const originality = boundedQuality(plan.novelty * 100 - (duplicate ? 28 : 0))
+  const platformFit = boundedQuality(78 + (plan.format.platform === plan.platform ? 12 : 0) + (plan.format.supportsCarousel && plan.content.slides.length > 1 ? 8 : 0) - (plan.format.id === 'reel-cover' && bodyWords > 20 ? 16 : 0))
+
+  if (!safe) issues.push('خطأ: عنصر نصي خارج منطقة الأمان.')
+  if (contrast < 82) issues.push('التباين يحتاج تقوية.')
+  if (readability < 76) issues.push('النص مزدحم على شاشة الهاتف.')
+  if (fit < 76) issues.push('المحتوى أطول من المساحة المريحة.')
+  if (duplicate) issues.push('قريب بصريًا من اتجاه آخر.')
+  if (contrast >= 92) strengths.push('تباين ممتاز')
+  if (whitespace >= 88) strengths.push('فراغات محسوبة')
+  if (hierarchy >= 90) strengths.push('هرمية واضحة')
+  if (originality >= 78) strengths.push('تكوين متمايز')
+  if (platformFit >= 90) strengths.push('ملائم للمنصة')
+
+  const score = boundedQuality(readability * .23 + hierarchy * .18 + whitespace * .15 + contrast * .16 + fit * .14 + originality * .08 + platformFit * .06)
+  return { score, band: qualityBand(score), readability, hierarchy, whitespace, contrast, fit, originality, platformFit, issues, strengths }
+}
+
+export interface SocialCampaignRequest extends SocialDesignRequest {
+  basePlan?: CompositionPlan
+}
+
+const campaignRoles: { role: CampaignAssetRole; label: string; purpose: string; format: SocialFormatId; tone?: ContentTone; density?: DesignDensity }[] = [
+  { role: 'hero', label: 'المنشور الرئيسي', purpose: 'القطعة المركزية التي تحمل الفكرة كاملة', format: 'instagram-portrait', density: 'balanced' },
+  { role: 'story', label: 'Story', purpose: 'مدخل سريع يُقرأ في ثوانٍ', format: 'story', density: 'minimal' },
+  { role: 'reel', label: 'غلاف Reel', purpose: 'عنوان قوي وآمن داخل منطقة الغلاف', format: 'reel-cover', tone: 'bold', density: 'minimal' },
+  { role: 'linkedin', label: 'LinkedIn', purpose: 'نسخة معرفية مهنية أهدأ', format: 'linkedin-landscape', tone: 'institutional', density: 'balanced' },
+  { role: 'x', label: 'X', purpose: 'فكرة واحدة سريعة وواضحة', format: 'x-landscape', density: 'minimal' },
+  { role: 'quote', label: 'بطاقة اقتباس', purpose: 'جملة قابلة للحفظ والمشاركة', format: 'instagram-square', tone: 'deep', density: 'minimal' },
+  { role: 'teaser', label: 'تشويق قبل النشر', purpose: 'يفتح سؤالًا ولا يحرق الفكرة', format: 'story', tone: 'intellectual', density: 'minimal' },
+  { role: 'reminder', label: 'تذكير بعد النشر', purpose: 'يعيد الفكرة بصياغة عملية ودعوة واضحة', format: 'instagram-square', tone: 'calm', density: 'balanced' },
+]
+
+const campaignText = (role: CampaignAssetRole, analysis: SocialContentAnalysis) => {
+  const title = analysis.structure.title || analysis.structure.keyPoint || analysis.normalizedText
+  const quote = analysis.structure.quote || analysis.structure.keyPoint || title
+  const hero = analysis.structure.heroWord || title.split(/\s+/)[0] || 'فكرة'
+  if (role === 'story') return `${title}\n\nما الذي يتغير لو نظرنا إليها من زاوية أخرى؟`
+  if (role === 'reel') return truncateWords(title, 12)
+  if (role === 'linkedin') return `${title}\n${analysis.structure.subtitle || analysis.structure.keyPoint || quote}`
+  if (role === 'x') return truncateWords(analysis.structure.keyPoint || title, 24)
+  if (role === 'quote') return quote
+  if (role === 'teaser') return `قريبًا…\nسؤال يبدأ من «${hero}» وقد يغيّر طريقة النظر إلى الموضوع.`
+  if (role === 'reminder') return `${title}\n\nالفكرة ما زالت تستحق القراءة والنقاش.`
+  return analysis.structure.original
+}
+
+export function generateSocialCampaign(request: SocialCampaignRequest): SocialCampaign {
+  const analysis = analyzeSocialContent(request.text, request.context, { author: request.author, source: request.source })
+  const history = [...normalizeHistory(request.history)]
+  const assets: SocialCampaignAsset[] = []
+  const usedLayouts = new Set<LayoutFamilyId>()
+  const base = request.basePlan
+  for (const [index, spec] of campaignRoles.entries()) {
+    const result = generateSocialDesigns({
+      ...request,
+      text: campaignText(spec.role, analysis),
+      format: spec.format,
+      platform: 'auto',
+      tone: spec.tone || request.tone,
+      density: spec.density || request.density,
+      count: 4,
+      seed: `${request.seed || request.text}:campaign:${spec.role}:${index}`,
+      history,
+      basePlan: base,
+      locks: base ? { color: true, content: false, style: false, format: false } : request.locks,
+      tasteProfile: request.tasteProfile,
+      noveltyThreshold: Math.max(.34, request.noveltyThreshold || 0),
+    })
+    const picked = result.plans.find((plan) => !usedLayouts.has(plan.layout)) || result.plans[0]
+    if (!picked) continue
+    usedLayouts.add(picked.layout)
+    history.push(designHistoryEntry(picked))
+    assets.push({ id: `${spec.role}-${picked.id}`, role: spec.role, label: spec.label, purpose: spec.purpose, plan: picked })
+  }
+  const qualityScore = assets.length ? Math.round(assets.reduce((sum, asset) => sum + (asset.plan.quality?.score || 0), 0) / assets.length) : 0
+  const coherenceScore = assets.length ? Math.round(70 + Math.min(20, new Set(assets.map((asset) => asset.plan.palette)).size === 1 ? 20 : 10) + Math.min(10, analysis.confidence / 10)) : 0
+  const diversityScore = assets.length ? Math.round(new Set(assets.map((asset) => asset.plan.layout)).size / assets.length * 100) : 0
+  return {
+    id: `campaign-${hashHex(`${request.text}:${request.seed || ''}:${assets.map((asset) => asset.plan.fingerprint).join(':')}`)}`,
+    title: analysis.structure.title || truncateWords(request.text, 12),
+    createdAt: new Date().toISOString(),
+    assets,
+    qualityScore,
+    coherenceScore: boundedQuality(coherenceScore),
+    diversityScore: boundedQuality(diversityScore),
   }
 }
 

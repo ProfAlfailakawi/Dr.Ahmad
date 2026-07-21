@@ -1,9 +1,11 @@
 import fs from 'node:fs'
 import http from 'node:http'
 import https from 'node:https'
+import { timingSafeEqual } from 'node:crypto'
 import { BRIDGE_PORT, BRIDGE_TLS_CERT, BRIDGE_TLS_KEY } from './config.mjs'
 
 const MAX_BODY_BYTES = 128 * 1024
+const PAIRING_SECRET_MIN_LENGTH = 64
 
 function bearer(req) {
   const header = String(req.headers.authorization || '')
@@ -12,6 +14,16 @@ function bearer(req) {
 
 function requestSecret(req) {
   return String(req.headers['x-whatsapp-agent-secret'] || bearer(req) || '').trim()
+}
+
+function requestPairingSecret(req) {
+  return String(req.headers['x-whatsapp-agent-pairing-secret'] || '').trim()
+}
+
+function secretsEqual(candidate, expected) {
+  const left = Buffer.from(String(candidate || ''), 'utf8')
+  const right = Buffer.from(String(expected || ''), 'utf8')
+  return left.length > 0 && left.length === right.length && timingSafeEqual(left, right)
 }
 
 function writeJson(res, status, payload) {
@@ -39,6 +51,11 @@ export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
   const configuredOrigins = String(process.env.WHATSAPP_AGENT_ALLOWED_ORIGIN || '').split(',').map((item) => item.trim()).filter(Boolean)
   const allowedOrigins = new Set(configuredOrigins.length ? configuredOrigins : ['http://127.0.0.1:5173', 'http://localhost:5173', 'https://dr-alfailakawi.com', 'https://www.dr-alfailakawi.com'])
   const secret = agent.bridgeSecret()
+  const pairingBootstrapSecret = String(process.env.WHATSAPP_AGENT_PAIRING_SECRET || '').trim()
+  if (pairingBootstrapSecret && pairingBootstrapSecret.length < PAIRING_SECRET_MIN_LENGTH) {
+    throw new Error(`WHATSAPP_AGENT_PAIRING_SECRET must be at least ${PAIRING_SECRET_MIN_LENGTH} characters.`)
+  }
+  let pairingBootstrapAvailable = Boolean(pairingBootstrapSecret)
   const handler = async (req, res) => {
     const origin = req.headers.origin || ''
     if (origin && !allowedOrigins.has(origin)) { res.writeHead(403); res.end('forbidden'); return }
@@ -48,7 +65,7 @@ export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
     res.setHeader('Access-Control-Allow-Private-Network', 'true')
     if (req.method === 'OPTIONS') {
       res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-WhatsApp-Agent-Secret')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-WhatsApp-Agent-Secret, X-WhatsApp-Agent-Pairing-Secret')
       res.writeHead(204); res.end(); return
     }
     /* نبضة عامة بلا سر: تُثبت للوحة أن الجسر حيّ فتقول «ألصق السر» بدل «غير مرتبط»
@@ -59,15 +76,22 @@ export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
       return
     }
 
-    /* اقتران بضغطة: يسلّم السر للوحة الدكتور وحدها.
-       حدّ الثقة لا يتغيّر بذرّة — الجسر يستمع على 127.0.0.1 فقط (لا يصله إلا
-       ما يعمل على ماكه)، والأصل مقيّد بقائمة نطاقاته المصرّح بها أعلاه، وهي
-       القائمة نفسها التي تحكم كل عملية أخرى (إرسال الحملات وغيرها). فتسليم
-       السر لهذا الأصل بعينه لا يفتح باباً جديداً، ويعفي الدكتور من نسخ أربعٍ
-       وستين خانة يدوياً في كل متصفح. وكل تسليم يُسجَّل في سجل التدقيق. */
+    /* الاقتران لا يثق في Origin وحده: أي XSS داخل نطاقٍ مسموح كان يستطيع سابقاً
+       طلب /pair وسرقة سر الإدارة من الجسر المحلي. لا يُسلَّم السر الآن إلا لمن
+       يثبت امتلاك سر الجسر أصلاً، أو سر Bootstrap محلي مستقل لا يقل عن 64 خانة.
+       سر Bootstrap يُستهلك مرة واحدة في عمر العملية؛ وعند غيابه يبقى النسخ
+       اليدوي من CLI هو المسار الآمن والمتوافق مع اللوحة الحالية. */
     if (req.method === 'POST' && pingUrl.pathname === '/pair') {
       if (!origin) { writeJson(res, 403, { error: 'origin-required' }); return }
-      agent.db?.addAudit?.('bridge-secret-paired', 'local', `origin=${origin}`)
+      const authenticatedWithBridgeSecret = secretsEqual(requestSecret(req), secret)
+      const authenticatedWithBootstrap = pairingBootstrapAvailable && secretsEqual(requestPairingSecret(req), pairingBootstrapSecret)
+      if (!authenticatedWithBridgeSecret && !authenticatedWithBootstrap) {
+        agent.db?.addAudit?.('bridge-secret-pair-rejected', 'local', `origin=${origin}`)
+        writeJson(res, 401, { error: 'pairing-secret-required' })
+        return
+      }
+      if (authenticatedWithBootstrap) pairingBootstrapAvailable = false
+      agent.db?.addAudit?.('bridge-secret-paired', 'local', `origin=${origin}; bootstrap=${authenticatedWithBootstrap}`)
       writeJson(res, 200, { secret })
       return
     }
@@ -202,6 +226,9 @@ export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
         const body = await readJson(req)
         writeJson(res, 200, agent.audience.draftFromList(body.listId, body.name, body.message || '')); return
       }
+      if (req.method === 'GET' && url.pathname === '/admin/learning') { writeJson(res, 200, agent.learningState({ limit: Number(url.searchParams.get('limit') || 80) })); return }
+      const learningStatus = route(req.method, url.pathname, { method: 'POST', regex: /^\/admin\/learning\/(?<id>[^/]+)\/(?<status>observing|ignored)$/ })
+      if (learningStatus) { writeJson(res, 200, agent.setLearningPatternStatus(decodeURIComponent(learningStatus.id), learningStatus.status)); return }
       if (req.method === 'GET' && url.pathname === '/admin/rules') { writeJson(res, 200, agent.listReplyRules()); return }
       if (['POST', 'PUT', 'PATCH'].includes(req.method || '') && url.pathname === '/admin/rules') {
         writeJson(res, 200, agent.saveReplyRule(await readJson(req)))

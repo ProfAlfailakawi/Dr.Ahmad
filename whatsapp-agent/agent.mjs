@@ -3,7 +3,7 @@ import path from 'node:path'
 import { AUDIO_PUBLIC_BASE_URL, BRIDGE_PORT, BRIDGE_SECRET_MIN_LENGTH, BROADCAST_DEFAULT_INTERVAL_SECONDS, BROADCAST_MIN_INTERVAL_SECONDS, HEARTBEAT_INTERVAL_MS, HEARTBEAT_STALE_MS, MANUAL_TAKEOVER_MINUTES, MAX_CAMPAIGN_TARGETS, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, projectRoot, redactError } from './config.mjs'
 import { openDatabase } from './db.mjs'
 import { syncContentIndex } from './content-index.mjs'
-import { INTENTS, classifyIntent, handleIncoming, handleIntent, isPrivateChat, isSuppressed, markManualTakeover, matchReplyRule, setSuppression, shouldRespondToMessage } from './intent-engine.mjs'
+import { INTENTS, classifyIntent, classifyIntentWithLearning, handleIncoming, handleIntent, isPrivateChat, isSuppressed, markManualTakeover, matchReplyRule, setSuppression, shouldRespondToMessage } from './intent-engine.mjs'
 import { MockTransport, createWhatsAppTransport } from './transport.mjs'
 import { randomToken } from './crypto.mjs'
 import { createReminder } from './reminders.mjs'
@@ -636,7 +636,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     /* التشغيل متاح طوال اليوم؛ المحاكي يختبر البوابة نفسها بلا نافذة زمنية. */
     const evaluationAt = at instanceof Date ? at : new Date(at)
     const gate = shouldRespondToMessage({ db, jid, text: clean, explicitContentSession: Boolean(inSession), hasMedia, at: evaluationAt })
-    const classification = classifyIntent(clean)
+    const classification = classifyIntentWithLearning(db, clean)
     /* المعاينة الإدارية تحتاج أن تُظهر قاعدة التحويل المطابقة حتى عندما تمنع
        بوابة الإيقاظ الإرسال فعلياً. نقرأ القاعدة بلا تنفيذ ولا فتح جلسة، ثم
        نبقي النتيجة صامتة: هذا يشرح للدكتور ما سيحدث ولا يخرق شرط الإيقاظ. */
@@ -702,6 +702,48 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
       preview: response.text || '',
     }
   }
+  const learningState = ({ limit = 40 } = {}) => {
+    const rows = db.all(`SELECT * FROM learning_patterns ORDER BY
+      CASE status WHEN 'learned' THEN 0 WHEN 'observing' THEN 1 ELSE 2 END,
+      confirmations DESC,hits DESC,last_seen_at DESC LIMIT ?`, Math.max(1, Math.min(200, Number(limit || 40))))
+    const items = rows.map((row) => {
+      let phrase = ''
+      try { phrase = db.decryptText(row.phrase) } catch { phrase = '' }
+      return {
+        id: row.id, phrase, hits: Number(row.hits || 0), intent: row.candidate_intent || '',
+        confirmations: Number(row.confirmations || 0), status: row.status || 'observing',
+        firstSeenAt: row.first_seen_at, lastSeenAt: row.last_seen_at, learnedAt: row.learned_at || null,
+      }
+    })
+    const counts = db.get(`SELECT COUNT(*) AS total,
+      SUM(CASE WHEN status='learned' THEN 1 ELSE 0 END) AS learned,
+      SUM(CASE WHEN status='observing' THEN 1 ELSE 0 END) AS observing,
+      SUM(CASE WHEN status='ignored' THEN 1 ELSE 0 END) AS ignored
+      FROM learning_patterns`) || {}
+    return {
+      total: Number(counts.total || 0), learned: Number(counts.learned || 0),
+      observing: Number(counts.observing || 0), ignored: Number(counts.ignored || 0), items,
+      policy: 'يتعلم النية فقط بعد ثلاث تأكيدات متطابقة؛ الجواب يبقى من فهرس الموقع.',
+    }
+  }
+  const setLearningPatternStatus = (id, status) => {
+    const allowed = new Set(['observing', 'ignored'])
+    if (!allowed.has(status)) throw new Error('learning-status-not-allowed')
+    const row = db.get('SELECT * FROM learning_patterns WHERE id=?', Number(id))
+    if (!row) throw new Error('learning-pattern-not-found')
+    db.transaction(() => {
+      if (status === 'ignored') {
+        db.run("UPDATE learning_patterns SET status='ignored',candidate_intent=NULL,confirmations=0,learned_at=NULL WHERE id=?", Number(id))
+        db.run('DELETE FROM learning_votes WHERE pattern_hash=?', row.pattern_hash)
+        db.run('DELETE FROM learning_pending WHERE pattern_hash=?', row.pattern_hash)
+      } else {
+        db.run("UPDATE learning_patterns SET status='observing',candidate_intent=NULL,confirmations=0,learned_at=NULL WHERE id=?", Number(id))
+      }
+    })
+    db.addAudit('learning-pattern-status', String(id), status)
+    return learningState({ limit: 80 })
+  }
+
   const requestRestart = () => {
     const requestedAt = new Date().toISOString()
     db.setSetting('bridge.restartRequestedAt', requestedAt)
@@ -906,7 +948,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     return { paused: false }
   }
   const setBridge = (server) => { state.bridge = server; return status() }
-  return Object.assign(api, { db, state, index, start, stop, status, sendSelf, audience, onContacts, silenceState, returnAllToBot, repair, pauseAutoReplies, resumeAutoReplies, queueCampaign, approveCampaign, sendCampaign, sendQuietCampaign, stopCampaign, listCampaigns, listBroadcastGroups, discoverGroups, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, requestRestart })
+  return Object.assign(api, { db, state, index, start, stop, status, sendSelf, audience, onContacts, silenceState, returnAllToBot, repair, pauseAutoReplies, resumeAutoReplies, queueCampaign, approveCampaign, sendCampaign, sendQuietCampaign, stopCampaign, listCampaigns, listBroadcastGroups, discoverGroups, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, learningState, setLearningPatternStatus, requestRestart })
 }
 
 export async function dispatchDueReminders(state, at = new Date()) {

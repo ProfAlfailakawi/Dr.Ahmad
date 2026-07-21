@@ -87,11 +87,13 @@ export function ProductionHealthCenter({
   books,
   papers,
   onOpen,
+  view = 'production',
 }: {
   articles: ArticleRecord[]
   books: BookRecord[]
   papers: PaperRecord[]
   onOpen: (tab: AdminTab) => void
+  view?: 'production' | 'health'
 }) {
   const { user } = useAdminAuth()
   const [remote, setRemote] = useState<Record<string, ProductionState>>({})
@@ -282,7 +284,7 @@ export function ProductionHealthCenter({
 
   return (
     <div className="grid min-w-0 max-w-full gap-5">
-      <section className={card}>
+      {view === 'production' && <section className={card}>
         <div className="grid min-w-0 gap-4 sm:flex sm:items-start sm:justify-between">
           <div className="min-w-0">
             <p className="text-[.76rem] font-semibold uppercase text-accent">غرفة إنتاج البودكاست</p>
@@ -339,9 +341,9 @@ export function ProductionHealthCenter({
           )})}
         </div>
         {message && <p className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{message}</p>}
-      </section>
+      </section>}
 
-      <section className={card}>
+      {view === 'health' && <section className={card}>
         <div className="grid min-w-0 gap-3 sm:flex sm:items-end sm:justify-between">
           <div className="min-w-0">
             <p className="text-[.76rem] font-semibold uppercase text-accent">صحة المحتوى</p>
@@ -446,9 +448,9 @@ export function ProductionHealthCenter({
             {health.paperIssues.slice(0, 3).map((paper) => <button key={paper.slug} type="button" onClick={() => onOpen('papers')} className="rounded-xl border border-hair bg-canvas px-4 py-3 text-start text-[.8rem] text-soft hover:border-accent"><strong className="block text-ink">بحث يحتاج تحققاً</strong>{paper.title}</button>)}
           </div>
         )}
-      </section>
+      </section>}
 
-      <section className={card}>
+      {view === 'health' && <section className={card}>
         <div className="grid min-w-0 gap-3 sm:flex sm:items-start sm:justify-between">
           <div className="min-w-0">
             <p className="text-[.76rem] font-semibold uppercase text-accent">مسارات القراءة الشخصية</p>
@@ -466,7 +468,7 @@ export function ProductionHealthCenter({
             </div>
           ))}
         </div>
-      </section>
+      </section>}
     </div>
   )
 }

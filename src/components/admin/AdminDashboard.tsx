@@ -58,7 +58,7 @@ export function QuietCommandCenter({ articles, onNavigate }: { articles: Article
     if (scheduled) items.push({ label: 'راجع المحتوى المجدول', note: 'تأكد من المواعيد قبل النشر التلقائي.', tab: 'articles', count: scheduled })
     if (missingAudio) items.push({ label: 'أكمل التغطية الصوتية', note: 'مقالات منشورة بلا قراءة أو حوار بعد.', tab: 'lab', count: missingAudio })
     if (drafts) items.push({ label: 'راجع المسودات والمخفي', note: 'محتوى محفوظ لا يظهر للزوار.', tab: 'articles', count: drafts })
-    if (data.health === 'تنبيه') items.push({ label: 'راجع حارس الجودة', note: 'هناك تنبيهات تقنية أو تحريرية.', tab: 'analytics', count: data.healthIssues })
+    if (data.health === 'تنبيه') items.push({ label: 'راجع صحة المحتوى', note: 'هناك مصادر أو مواد تحتاج قراراً.', tab: 'content-health', count: data.healthIssues })
     return items
   }, [data.health, data.healthIssues, data.messages, drafts, missingAudio, scheduled])
 
@@ -85,7 +85,7 @@ export function QuietCommandCenter({ articles, onNavigate }: { articles: Article
           ['مشاهدات اليوم', data.todayViews, 'analytics'],
           ['الرسائل', data.messages, 'inbox'],
           ['المحتوى المجدول', scheduled, 'articles'],
-          ['حالة النظام', data.health === 'سليم' ? 'سليم' : data.health === 'تنبيه' ? `${data.healthIssues} تنبيه` : '—', 'analytics'],
+          ['حالة المحتوى', data.health === 'سليم' ? 'سليم' : data.health === 'تنبيه' ? `${data.healthIssues} تنبيه` : '—', 'content-health'],
         ].map(([label, value, tab]) => <button key={String(label)} onClick={() => onNavigate(String(tab))} className={`${card} text-right transition-colors hover:border-accent`}><span className="text-[.74rem] font-semibold text-soft">{label}</span><span className="mt-2 block font-display text-2xl font-bold text-ink">{value}</span></button>)}
       </section>
 

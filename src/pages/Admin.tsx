@@ -149,6 +149,7 @@ function Login() {
   const [pass, setPass] = useState('')
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
+  const pwaEntry = typeof window !== 'undefined' && (new URLSearchParams(window.location.search).get('source') || '').startsWith('pwa')
 
   const go = async () => {
     setBusy(true); setErr('')
@@ -166,6 +167,7 @@ function Login() {
     <Page>
       <div className="mx-auto max-w-md px-6 pb-24 pt-40 md:pt-44">
         <h1 className="mb-8 font-display text-3xl font-bold text-ink">لوحة التحكم</h1>
+        {pwaEntry && <p className="mb-5 rounded-2xl border border-accent/25 bg-accent/[.05] px-4 py-3 text-[.8rem] leading-relaxed text-soft"><strong className="text-accent">بوابة المالك.</strong> وصلت من نسخة PWA. في المرات القادمة اضغط مطولاً على شعار الموقع حتى يكتمل الخط الرفيع، أو استخدم اختصار «غرفة القيادة» من قائمة أيقونة التطبيق.</p>}
         <div className="grid gap-4">
           <input className={input} dir="ltr" type="email" placeholder="البريد الإلكتروني" value={email} onChange={(e) => setEmail(e.target.value)} />
           <input className={input} dir="ltr" type="password" placeholder="كلمة المرور" value={pass} onChange={(e) => setPass(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && go()} />
@@ -244,7 +246,7 @@ function CvPdfCard() {
 function Panel({ email }: { email: string }) {
   const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const requestedTab = params.get('tab') as AdminTab | null
-  const allowedTabs: AdminTab[] = ['dashboard','production','analytics','studio','launch','event','articles','books','papers','media','inbox','lab','whatsapp','voice','manual-dialogue','audio-library','pronunciation','cv']
+  const allowedTabs: AdminTab[] = ['dashboard','content-health','production','analytics','studio','launch','event','articles','books','papers','media','inbox','lab','whatsapp','voice','manual-dialogue','audio-library','pronunciation','cv']
   const initialTab = requestedTab && allowedTabs.includes(requestedTab) ? requestedTab : 'dashboard'
   const editSlug = params.get('edit') || undefined
   const [tab, setTab] = useState<AdminTab>(initialTab)
@@ -322,7 +324,8 @@ function Panel({ email }: { email: string }) {
           <AdminAreaTabs tab={tab} onSelect={chooseTab} />
           <AdminSectionTabs tab={tab} onSelect={chooseTab} />
             {tab === 'dashboard' && <TodayDashboard articles={cms.articles} onOpen={chooseTab} />}
-            {tab === 'production' && <ProductionHealthCenter articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />}
+            {tab === 'content-health' && <ProductionHealthCenter view="health" articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />}
+            {tab === 'production' && <ProductionHealthCenter view="production" articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />}
             {tab === 'analytics' && <div className="grid gap-4"><ReaderPulse /><Indicators articles={cms.articles} /></div>}
             {tab === 'studio' && <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} />}
             {tab === 'launch' && <LaunchModeCard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} />}

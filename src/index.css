@@ -2153,3 +2153,36 @@ html.site-silent .human-core__title-line::after { animation: none !important; op
 #article-body, #time-dialogue, #student-archive, #idea-thread, #article-audio {
   scroll-margin-block-start: 6.5rem;
 }
+
+/* بوابة المالك في نسخة PWA: لا زر دائم ولا تلوث في الهيدر. يظهر خط تقدّم رفيع
+   فقط أثناء الضغط المطوّل على الشعار، ثم تفتح لوحة الدخول المحمية. */
+@keyframes pwa-owner-hold {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.pwa-owner-progress {
+  position: absolute;
+  inset-inline: 5px;
+  bottom: -7px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgb(var(--c-accent));
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: right center;
+  pointer-events: none;
+}
+.pwa-owner-logo.is-holding .pwa-owner-progress {
+  opacity: .82;
+  animation: pwa-owner-hold 1.35s linear forwards;
+}
+@media (display-mode: standalone) {
+  .pwa-owner-logo {
+    -webkit-touch-callout: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pwa-owner-logo.is-holding .pwa-owner-progress { animation-timing-function: steps(2, end); }
+}

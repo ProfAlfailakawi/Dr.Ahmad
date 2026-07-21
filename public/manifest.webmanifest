@@ -34,5 +34,33 @@
     "standalone"
   ],
   "orientation": "any",
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "غرفة القيادة",
+      "short_name": "الإدارة",
+      "description": "فتح لوحة التحكم المحمية",
+      "url": "/admin?source=pwa-shortcut",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "غرفة الإنتاج",
+      "short_name": "الإنتاج",
+      "description": "فتح طابور إنتاج البودكاست",
+      "url": "/admin?tab=production&source=pwa-shortcut",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
 }

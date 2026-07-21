@@ -7,6 +7,7 @@ import { EASE } from '../motion'
 
 export type AdminTab =
   | 'dashboard'
+  | 'content-health'
   | 'production'
   | 'analytics'
   | 'studio'
@@ -34,13 +35,14 @@ export const ADMIN_GROUPS: NavGroup[] = [
   {
     area: 'system', label: 'النظام', icon: '◉', items: [
       { tab: 'dashboard', label: 'غرفة القيادة', note: 'القرارات والتنبيهات الأهم' },
+      { tab: 'content-health', label: 'صحة المحتوى', note: 'المصادر والنواقص ومسارات القراءة' },
       { tab: 'lab', label: 'المختبر المتقدم', note: 'الفحص والذاكرة والأتمتة' },
       { tab: 'whatsapp', label: 'مساعد واتساب', note: 'وكيل محلي بموافقة الدكتور' },
     ],
   },
   {
     area: 'publishing', label: 'الإنتاج والنشر', icon: '↗', items: [
-      { tab: 'production', label: 'غرفة الإنتاج', note: 'طابور البودكاست وصحة المحتوى' },
+      { tab: 'production', label: 'غرفة الإنتاج', note: 'طابور البودكاست من المسودة للنشر' },
       { tab: 'studio', label: 'استوديو النشر', note: 'من الفكرة إلى الحزمة' },
       { tab: 'manual-dialogue', label: 'الحوار اليدوي', note: 'تحرير الحلقة مداخلةً مداخلة' },
       { tab: 'audio-library', label: 'مكتبة الصوت', note: 'سماع وإعادة توليد وحذف' },
@@ -299,7 +301,7 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
     drafts ? { label: `${drafts} مسودة تحتاج قراراً`, tab: 'articles' as AdminTab } : null,
     scheduled ? { label: `${scheduled} مقال مجدول يستحق مراجعة أخيرة`, tab: 'articles' as AdminTab } : null,
     data.recentMessages ? { label: `${data.recentMessages} رسالة وصلت خلال آخر 7 أيام`, tab: 'inbox' as AdminTab } : null,
-    data.issues ? { label: `${data.issues} ملاحظة في حارس الجودة`, tab: 'lab' as AdminTab } : null,
+    data.issues ? { label: `${data.issues} ملاحظة في صحة المحتوى`, tab: 'content-health' as AdminTab } : null,
   ].filter(Boolean) as { label: string; tab: AdminTab }[]
 
   const pulse = useMemo(() => {
@@ -319,7 +321,7 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
       .sort((a, b) => b.score - a.score || b.count - a.count)[0]?.path || ''
 
     const update = data.issues
-      ? { text: `${data.issues} ملاحظة في حارس الجودة`, tab: 'lab' as AdminTab }
+      ? { text: `${data.issues} ملاحظة في صحة المحتوى`, tab: 'content-health' as AdminTab }
       : drafts
         ? { text: `${drafts} مسودة تنتظر قرارك`, tab: 'articles' as AdminTab }
         : scheduled

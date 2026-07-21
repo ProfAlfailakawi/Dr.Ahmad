@@ -735,22 +735,37 @@ export function Nav() {
   const navigate = useNavigate()
   const ownerPressTimer = useRef<number | null>(null)
   const ownerPressTriggered = useRef(false)
-  const ownerMode = () => {
+  const [ownerPressActive, setOwnerPressActive] = useState(false)
+  const standaloneMode = () => {
     try {
-      const standalone = window.matchMedia('(display-mode: standalone)').matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone)
-      return standalone && localStorage.getItem('pwa:owner-device') === '1'
+      return window.matchMedia('(display-mode: standalone)').matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone)
     } catch { return false }
   }
-  const ownerPressStart = () => {
-    if (!ownerMode()) return
+  const ownerPressStart = (event: React.PointerEvent) => {
+    if (!standaloneMode() || (event.pointerType === 'mouse' && event.button !== 0)) return
+    if (ownerPressTimer.current) window.clearTimeout(ownerPressTimer.current)
     ownerPressTriggered.current = false
-    ownerPressTimer.current = window.setTimeout(() => { ownerPressTriggered.current = true; navigate('/admin') }, 1200)
+    setOwnerPressActive(true)
+    ownerPressTimer.current = window.setTimeout(() => {
+      ownerPressTriggered.current = true
+      setOwnerPressActive(false)
+      try { navigator.vibrate?.(35) } catch { /* unsupported */ }
+      navigate('/admin?source=pwa-logo')
+    }, 1350)
   }
-  const ownerPressEnd = () => { if (ownerPressTimer.current) window.clearTimeout(ownerPressTimer.current); ownerPressTimer.current = null }
+  const ownerPressEnd = () => {
+    if (ownerPressTimer.current) window.clearTimeout(ownerPressTimer.current)
+    ownerPressTimer.current = null
+    setOwnerPressActive(false)
+  }
   const ownerLogoClick = (event: React.MouseEvent) => { if (ownerPressTriggered.current) { event.preventDefault(); ownerPressTriggered.current = false } }
+  const ownerLogoContextMenu = (event: React.MouseEvent) => { if (standaloneMode()) event.preventDefault() }
   const closeMenu = useCallback(() => setOpen(false), [])
   const closeSearch = useCallback(() => setSearchOpen(false), [])
 
+  useEffect(() => () => {
+    if (ownerPressTimer.current) window.clearTimeout(ownerPressTimer.current)
+  }, [])
   useEffect(() => scrollY.on('change', (v) => setScrolled(v > 50)), [scrollY])
   useEffect(() => setOpen(false), [loc.pathname])
   useEffect(() => {
@@ -781,8 +796,9 @@ export function Nav() {
         <AnimatePresence>{searchOpen && <SearchPalette key="search" close={closeSearch} />}</AnimatePresence>
         <nav aria-label="Main navigation" dir="ltr" className={`site-nav ${solid ? 'is-solid' : ''} fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.9] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
           <div className={`mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
-            <Link to="/en" aria-label="Ahmad H. Alfailakawi" onPointerDown={ownerPressStart} onPointerUp={ownerPressEnd} onPointerCancel={ownerPressEnd} onPointerLeave={ownerPressEnd} onClick={ownerLogoClick}>
+            <Link to="/en" aria-label="Ahmad H. Alfailakawi" className={`pwa-owner-logo relative ${ownerPressActive ? 'is-holding' : ''}`} onContextMenu={ownerLogoContextMenu} onPointerDown={ownerPressStart} onPointerUp={ownerPressEnd} onPointerCancel={ownerPressEnd} onPointerLeave={ownerPressEnd} onClick={ownerLogoClick}>
               <img src="/logo.png" alt="" className="h-[36px] w-[60px] object-contain opacity-90 dark:invert" style={{ objectPosition: 'left' }} />
+              <span aria-hidden className="pwa-owner-progress" />
             </Link>
             <div className="flex items-center gap-3">
               <button type="button" onClick={() => setSearchOpen(true)} aria-label="Quick search" title="Quick search (⌘K)" className={`flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent ${open ? 'invisible pointer-events-none' : ''}`}>
@@ -811,8 +827,9 @@ export function Nav() {
 
       <nav aria-label="التنقّل الرئيسي" className={`site-nav ${solid ? 'is-solid' : ''} fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.9] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
         <div className={`mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
-          <Link to="/" aria-label={profile.name} onPointerDown={ownerPressStart} onPointerUp={ownerPressEnd} onPointerCancel={ownerPressEnd} onPointerLeave={ownerPressEnd} onClick={ownerLogoClick}>
+          <Link to="/" aria-label={profile.name} className={`pwa-owner-logo relative ${ownerPressActive ? 'is-holding' : ''}`} onContextMenu={ownerLogoContextMenu} onPointerDown={ownerPressStart} onPointerUp={ownerPressEnd} onPointerCancel={ownerPressEnd} onPointerLeave={ownerPressEnd} onClick={ownerLogoClick}>
             <img src="/logo.png" alt="" className="h-[36px] w-[60px] object-contain opacity-90 dark:invert" style={{ objectPosition: 'right' }} />
+            <span aria-hidden className="pwa-owner-progress" />
           </Link>
 
           <div className="flex items-center gap-3">

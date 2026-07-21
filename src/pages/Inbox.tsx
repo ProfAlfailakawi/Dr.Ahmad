@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { EASE, FadeUp, Page, PageHead } from "../components/ui";
 import { Newsletter } from "../components/extras";
@@ -394,8 +395,8 @@ export default function Inbox() {
           </FadeUp>
         </div>
       </section>
-      {openCard && (
-        <div className="fixed inset-0 z-[120] flex items-end justify-center bg-ink/35 p-0 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-label={openCard.title} onMouseDown={(event) => { if (event.target === event.currentTarget) setOpenCard(null) }}>
+      {openCard && typeof document !== "undefined" ? createPortal(
+        <div className="reader-modal-overlay fixed inset-0 z-[320] flex items-end justify-center bg-ink/35 p-0 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-label={openCard.title} onMouseDown={(event) => { if (event.target === event.currentTarget) setOpenCard(null) }}>
           <article className="max-h-[88dvh] w-full max-w-2xl overflow-y-auto rounded-t-[1.75rem] border border-hair bg-canvas p-6 shadow-2xl sm:rounded-[1.75rem] sm:p-9" tabIndex={-1}>
             <div className="flex items-start justify-between gap-5 border-b border-hair pb-5">
               <h2 className="font-display text-[1.25rem] font-semibold leading-relaxed text-ink">{openCard.title}</h2>
@@ -404,8 +405,9 @@ export default function Inbox() {
             <p className="mt-6 whitespace-pre-line font-display text-[1.05rem] font-light leading-[2] text-ink/88">{openCard.body}</p>
             {openCard.reply && <div className="mt-7 border-r-2 border-accent pr-5"><span className="text-[.72rem] font-semibold text-accent">تعقيب الدكتور</span><p className="mt-2 whitespace-pre-line leading-[1.95] text-ink/82">{openCard.reply}</p></div>}
           </article>
-        </div>
-      )}
+        </div>,
+        document.body,
+      ) : null}
     </Page>
   );
 }

@@ -664,6 +664,10 @@ export default function ArticleDetail() {
             <IdeaLife article={article} articles={articles} books={books} papers={papers} media={media} />
           </FadeUp>
 
+          {/* «حياة الفكرة» تجمع الاختبار والزمن والأثر، لكنها لا تلغي «خيط الفكرة»
+              الأصلي الذي يقود القارئ مباشرةً إلى الكتاب والبحث واللقاء والسؤال. */}
+          <IdeaThread article={article} books={books} papers={papers} media={media} />
+
           <FadeUp>
             <section className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-5" aria-label="مشاركة المقال والاستشهاد به">
               <Share compact title={a.title} path={`/articles/${a.slug}`} />

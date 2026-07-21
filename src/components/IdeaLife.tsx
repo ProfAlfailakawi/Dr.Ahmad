@@ -84,7 +84,7 @@ function TestPanel({ model }: { model: ReturnType<typeof buildIdeaLife> }) {
   )
 }
 
-function TimePanel({ model, close }: { model: ReturnType<typeof buildIdeaLife>; close: () => void }) {
+function TimePanel({ article, model, close }: { article: ArticleRecord; model: ReturnType<typeof buildIdeaLife>; close: () => void }) {
   return (
     <div className="space-y-10">
       {model.predictions.length > 0 && (
@@ -146,7 +146,11 @@ function TimePanel({ model, close }: { model: ReturnType<typeof buildIdeaLife>; 
               </li>
             ))}
           </ol>
-          <Link to="/decade?عرض=تنبؤات" onClick={close} className="mt-7 inline-flex items-center gap-2 border-b border-accent/35 pb-1 text-[.78rem] font-semibold text-accent">
+          <Link
+            to={`/decade?${new URLSearchParams({ عرض: 'تنبؤات', فكرة: article.title, مقال: article.slug }).toString()}`}
+            onClick={close}
+            className="mt-7 inline-flex items-center gap-2 border-b border-accent/35 pb-1 text-[.78rem] font-semibold text-accent"
+          >
             سجل التنبؤات والمراجعات الكامل <ArrowIcon />
           </Link>
         </section>
@@ -244,18 +248,16 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
     if (!availableTabs.some((item) => item.key === tab)) setTab(availableTabs[0]?.key || 'test')
   }, [availableTabs, tab])
 
-  const modal = (
-    <AnimatePresence>
-      {open && (
+  const modal = open ? (
         <motion.div
           className="reader-modal-overlay fixed inset-0 z-[320] flex items-end justify-center bg-ink/45 backdrop-blur-sm sm:items-center sm:p-5"
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           onClick={() => setOpen(false)}
         >
           <motion.section
             ref={dialog}
             role="dialog" aria-modal="true" aria-labelledby="idea-life-title"
-            initial={{ opacity: 0, y: 28, scale: .99 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 18, scale: .99 }}
+            initial={{ opacity: 0, y: 28, scale: .99 }} animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: .3, ease: [0.2, 0.7, 0.2, 1] }}
             onClick={(event) => event.stopPropagation()}
             className="flex max-h-[calc(100dvh-3rem)] w-full max-w-4xl flex-col overflow-hidden rounded-t-[2rem] border border-hair bg-canvas shadow-[0_30px_100px_-36px_rgba(0,0,0,.65)] sm:max-h-[calc(100dvh-2.5rem)] sm:rounded-[2rem]"
@@ -287,16 +289,14 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: .2 }}>
                   {tab === 'test' && <TestPanel model={model} />}
-                  {tab === 'time' && <TimePanel model={model} close={() => setOpen(false)} />}
+                  {tab === 'time' && <TimePanel article={article} model={model} close={() => setOpen(false)} />}
                   {tab === 'impact' && <ImpactPanel model={model} close={() => setOpen(false)} />}
                 </motion.div>
               </AnimatePresence>
             </div>
           </motion.section>
         </motion.div>
-      )}
-    </AnimatePresence>
-  )
+  ) : null
 
   return (
     <>

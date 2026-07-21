@@ -63,16 +63,18 @@ export default function Decade() {
   const { articles, loading } = useCmsContent()
   const [params, setParams] = useSearchParams()
   const idea = (params.get('فكرة') || params.get('idea') || '').trim()
+  const exactArticleSlug = (params.get('مقال') || '').trim()
   const mode = params.get('عرض') === 'تنبؤات' ? 'predictions' : 'journey'
   const [draft, setDraft] = useState(idea)
   const [bodies, setBodies] = useState<Record<string, string>>({})
   const [bodiesReady, setBodiesReady] = useState(false)
   const remoteIdeaLife = useExtras<IdeaLifeRemoteRecord>('site_idea_life')
 
-  const updateQuery = (nextIdea = idea, nextMode: 'journey' | 'predictions' = mode) => {
+  const updateQuery = (nextIdea = idea, nextMode: 'journey' | 'predictions' = mode, nextArticleSlug = exactArticleSlug) => {
     const next: Record<string, string> = {}
     if (nextIdea.trim()) next['فكرة'] = nextIdea.trim()
     if (nextMode === 'predictions') next['عرض'] = 'تنبؤات'
+    if (nextArticleSlug.trim()) next['مقال'] = nextArticleSlug.trim()
     setParams(next)
   }
 
@@ -104,6 +106,7 @@ export default function Decade() {
     const roots = idea.split(/\s+/).filter((w) => w.length > 2).map(toRoot)
     const dated = articles
       .filter((article) => /^(?:19|20)\d{2}/.test(article.iso))
+      .filter((article) => !exactArticleSlug || article.slug === exactArticleSlug)
       .filter((article) => matchesIdea(article, roots, bodies))
     if (!dated.length) return null
 
@@ -179,12 +182,13 @@ export default function Decade() {
       stages,
       turns,
     }
-  }, [articles, idea, bodies])
+  }, [articles, idea, bodies, exactArticleSlug])
 
   const predictionRegister = useMemo(() => {
     const roots = idea.split(/\s+/).filter((word) => word.length > 2).map(toRoot)
     return articles
       .filter((article) => /^(?:19|20)\d{2}/.test(article.iso))
+      .filter((article) => !exactArticleSlug || article.slug === exactArticleSlug)
       .filter((article) => matchesIdea(article, roots, bodies))
       .flatMap((article) => {
         const complete = { ...article, body: article.body || bodies[article.slug] }
@@ -192,7 +196,7 @@ export default function Decade() {
         return predictionRecordsFor(complete, articles, remote).map((prediction) => ({ article: complete, prediction }))
       })
       .sort((left, right) => right.article.iso.localeCompare(left.article.iso))
-  }, [articles, bodies, idea, remoteIdeaLife])
+  }, [articles, bodies, idea, remoteIdeaLife, exactArticleSlug])
 
   return (
     <Page className="content-decade page-journey">
@@ -228,7 +232,7 @@ export default function Decade() {
             onSubmit={(event) => {
               event.preventDefault()
               const value = draft.trim()
-              updateQuery(value, mode)
+              updateQuery(value, mode, '')
             }}
             className="flex flex-wrap items-center gap-3"
           >
@@ -242,18 +246,24 @@ export default function Decade() {
               {mode === 'predictions' ? 'صفِّ السجل' : 'تتبّع الرحلة'}
             </button>
             {idea && (
-              <button type="button" onClick={() => { setDraft(''); updateQuery('', mode) }} className="text-[.82rem] text-soft transition-colors hover:text-accent">
+              <button type="button" onClick={() => { setDraft(''); updateQuery('', mode, '') }} className="text-[.82rem] text-soft transition-colors hover:text-accent">
                 العقد كاملاً ↺
               </button>
             )}
           </form>
+          {exactArticleSlug && idea && (
+            <p className="mt-3 flex flex-wrap items-center gap-2 text-[.74rem] leading-relaxed text-soft">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+              فُتح السجل من مقال «{idea}»؛ العنوان مكتوب والنتيجة مصفّاة وجاهزة للقارئ.
+            </p>
+          )}
           {!idea && (
             <div className="mt-3 flex flex-wrap gap-2">
               {['الامتحان', 'الهوية', 'الذكاء الاصطناعي', 'الأطفال', 'المعلم', 'الشهادة'].map((seed) => (
                 <button
                   key={seed}
                   type="button"
-                  onClick={() => { setDraft(seed); updateQuery(seed, mode) }}
+                  onClick={() => { setDraft(seed); updateQuery(seed, mode, '') }}
                   className="rounded-full border border-hair bg-wash px-4 py-1.5 text-[.78rem] text-soft transition-colors hover:border-accent hover:text-accent"
                 >
                   {seed}
@@ -285,7 +295,7 @@ export default function Decade() {
               <div className="mt-3 divide-y divide-hair border-b border-hair">
                 {predictionRegister.map(({ article, prediction }, index) => (
                   <FadeUp key={`${article.slug}:${prediction.quote}`} delay={Math.min(index * .025, .18)}>
-                    <details className="group py-6">
+                    <details open={Boolean(exactArticleSlug) && index === 0} className="group py-6">
                       <summary className="cursor-pointer list-none marker:hidden">
                         <div className="flex items-start justify-between gap-5">
                           <div className="min-w-0">

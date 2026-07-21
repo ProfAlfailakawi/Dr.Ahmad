@@ -115,7 +115,7 @@ export function SaveForLaterButton({ slug }: { slug: string }) {
   );
 }
 
-export function MySpace() {
+export function MySpace({ variant = 'floating' }: { variant?: 'floating' | 'footer' }) {
   const location = useLocation();
   const { articles } = useCmsContent();
   const audio = usePersistentAudio();
@@ -213,7 +213,7 @@ export function MySpace() {
         onClick={() => setOpen(true)}
         aria-label="فتح مساحتي"
         title="مساحتي"
-        className="my-space-trigger group relative flex h-11 w-11 items-center justify-center rounded-full border border-hair bg-canvas/92 text-ink shadow-[0_12px_32px_-16px_rgba(21,22,26,.52)] backdrop-blur transition-all hover:border-accent hover:text-accent"
+        className={`my-space-trigger group relative flex items-center justify-center rounded-full border border-hair text-ink transition-all hover:border-accent hover:text-accent ${variant === 'footer' ? 'h-10 w-10 bg-transparent shadow-none' : 'h-11 w-11 bg-canvas/92 shadow-[0_12px_32px_-16px_rgba(21,22,26,.52)] backdrop-blur'}`}
       >
         <SpaceIcon />
         {hasJourney && (

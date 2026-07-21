@@ -8,7 +8,6 @@ import { MockTransport, createWhatsAppTransport } from './transport.mjs'
 import { randomToken } from './crypto.mjs'
 import { createReminder } from './reminders.mjs'
 import { startLocalBridge } from './bridge.mjs'
-import { isQuietHour } from './bot-rules.mjs'
 import { addContactByPhone, addMembers, absorbContacts, importContacts, listContactsPage, createList, deleteList, ensureAudienceSchema, jidOf, listContacts, listLists, listMembers, personalize, previewFor, removeMember, renameList, resolveAudience, setNickname, vocativeOf } from './audience.mjs'
 
 function safeText(text) { return String(text || '').slice(0, MAX_MESSAGE_CHARS).trim() }
@@ -166,7 +165,6 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
        الاتصال (setStatus('connected', { qr: null })). */
     transportEvents?.on?.('qr', (code) => db.setState({ status: 'pairing', qr: code || null, pairing_code: null }))
     transportEvents?.on?.('pairing-code', (code) => db.setState({ status: 'pairing', qr: null, pairing_code: code || null }))
-    transportEvents?.on?.('manual-takeover', (jid) => markManualTakeover(db, jid))
     await state.transport.connect({ phoneNumber })
     state.started = true
     if (process.env.WHATSAPP_AGENT_BRIDGE === 'true' && !state.bridge) state.bridge = startLocalBridge(api)
@@ -323,15 +321,16 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
 
   const returnAllToBot = () => {
     const before = silenceState()
-    db.run("UPDATE chat_sessions SET mode='content-session', manual_until=NULL, updated_at=? WHERE manual_until IS NOT NULL", new Date().toISOString())
-    db.addAudit('bot-return-all', '', `أُعيد البوت في ${before.silenced} محادثة`)
+    const now = new Date().toISOString()
+    db.run("UPDATE chat_sessions SET mode='suggest-only', manual_until=NULL, content_id=NULL, followup_json=NULL, opened_at=NULL, last_user_at=NULL, updated_at=? WHERE manual_until IS NOT NULL", now)
+    db.addAudit('bot-wake-enabled-all', '', `أصبح الإيقاظ متاحاً في ${before.silenced} محادثة`)
     return { returned: before.silenced }
   }
 
   const returnToBot = (jid) => {
     const now = new Date().toISOString()
-    db.run("UPDATE chat_sessions SET mode='content-session', manual_until=NULL, updated_at=? WHERE jid=?", now, db.jidKey(jid))
-    db.addAudit('bot-return', db.jidKey(jid))
+    db.run("UPDATE chat_sessions SET mode='suggest-only', manual_until=NULL, content_id=NULL, followup_json=NULL, opened_at=NULL, last_user_at=NULL, updated_at=? WHERE jid=?", now, db.jidKey(jid))
+    db.addAudit('bot-wake-enabled', db.jidKey(jid))
     return { jid: db.jidKey(jid), returned: true }
   }
   const listReplyRules = () => db.all('SELECT * FROM reply_rules ORDER BY enabled DESC, priority DESC, updated_at DESC').map((row) => ({
@@ -357,7 +356,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     if (!String(payload.name || '').trim()) throw new Error('اسم القاعدة مطلوب.')
     if (!keywords.length) throw new Error('أضف كلمة مفتاحية واحدة على الأقل.')
     const matchType = ['any', 'all', 'exact'].includes(payload.matchType) ? payload.matchType : 'any'
-    const actionType = ['text', 'site-content', 'transfer'].includes(payload.actionType) ? payload.actionType : 'text'
+    const actionType = payload.actionType === 'site-content' ? 'site-content' : 'transfer'
     db.run(
       `INSERT INTO reply_rules(id,name,keywords_json,priority,match_type,action_type,response_text,content_query,enabled,created_at,updated_at)
        VALUES(?,?,?,?,?,?,?,?,?,?,?)
@@ -415,6 +414,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     'private-safe-mode': 'كلامٌ عابر — لا يفتح الباب',
     'command-opens-door': 'أمرٌ معروف يفتح الباب',
     'content-session': 'داخل جلسةٍ مفتوحة',
+    'content-session-grounded-search': 'بحثٌ داخل الموقع ضمن جلسةٍ مفتوحة',
     'privacy-command': 'أمر خصوصية — يُطاع دائماً',
     'allowlisted-contact': 'رقمٌ في قائمتك البيضاء',
     'assistant-trigger': 'نداءٌ صريح للمساعد',
@@ -423,16 +423,13 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
   }
   const simulateReply = ({ text, jid = 'simulator@s.whatsapp.net', inSession = false, hasMedia = false } = {}) => {
     const clean = safeText(text)
-    /* المحاكاة تُقيَّم على وقتٍ نهاريّ ثابت، وإلا ظهر كل شيء «صامتاً» لو
-       جرّبها الدكتور بعد منتصف الليل فظنّ البوت معطوباً. وساعةُ الصمت
-       الحقيقية تُبلَّغ على حدة بدل أن تحجب الحكم. */
-    const daytime = new Date(); daytime.setHours(12, 0, 0, 0)
-    const gate = shouldRespondToMessage({ db, jid, text: clean, explicitContentSession: Boolean(inSession), hasMedia, at: daytime })
+    /* التشغيل متاح طوال اليوم؛ المحاكي يختبر البوابة نفسها بلا نافذة زمنية. */
+    const gate = shouldRespondToMessage({ db, jid, text: clean, explicitContentSession: Boolean(inSession), hasMedia, at: new Date() })
     const response = handleIntent({ db, jid, input: clean, session: null })
     return {
       willReply: Boolean(gate.allowed),
       why: REASONS[gate.reason] || gate.reason,
-      quietNow: isQuietHour(),   // «سيردّ — لكن الآن ساعات صمت»
+      quietNow: false,
       intent: response.intent,
       confidence: response.confidence,
       needsHuman: Boolean(response.needsHuman),
@@ -566,7 +563,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
    *
    * العلّة الجذرية التي وصفها الدكتور: اللوحة تفحص «هل العملية حيّة» فتقول
    * «متصل»، والبوت لا يُرسل شيئاً. فيظلّ يجرّب ويحتار ولا يعرف السبب — وقد وقع
-   * ذلك فعلاً: كان ممنوعاً بساعات الصمت واللوحة تقول «متصل».
+   * ذلك فعلاً: كان الردّ ممنوعاً بقاعدة خفية واللوحة تقول «متصل».
    *
    * فنُبلّغ هنا بالحقيقة كاملةً: أجاهزٌ هو؟ أيطلب QR؟ أمحظورٌ بقاعدة؟ وكم مرّة
    * تعثّر؟ ثم نُصنّف الحالة تصنيفاً يفهمه الدكتور ويُريه العلاج، لا رمزاً أخضر
@@ -578,7 +575,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     const connected = snapshot?.status === 'connected'
     const ready = Boolean(state.started && connected)
     const pollFailures = Number(db.getSetting('bridge.pollFailures', 0) || 0)
-    const quietNow = isQuietHour()
+    const quietNow = false
     const now = new Date().toISOString()
     const silenced = db.all('SELECT manual_until FROM chat_sessions WHERE manual_until > ?', now).length
 
@@ -612,10 +609,6 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
       code = 'autoreply-off'; label = 'الردّ الآليّ مغلق'
       why = 'يستقبل ويفهم، لكنه لا يردّ على أحد.'
       fix = 'فعّل WHATSAPP_AUTO_REPLY_ENABLED ثم أعد التشغيل.'
-    } else if (quietNow) {
-      code = 'quiet-hours'; label = 'صامتٌ — ساعات الليل'
-      why = 'قاعدة ساعات الصمت تمنع الردّ في هذه الساعة.'
-      fix = 'اضبط النافذة أو ألغِها من الإعدادات.'
     } else if (pollFailures >= 20) {
       code = 'queue-stuck'; label = 'الطابور متعثّر'
       why = `فشلت قراءة الطابور ${pollFailures} مرة متتالية.`
@@ -623,7 +616,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     } else if (silenced > 0) {
       code = 'manual-takeover'; label = 'صامتٌ — تدخّلٌ يدويّ'
       why = `رددتَ بيدك في ${silenced === 1 ? 'محادثة' : `${silenced} محادثات`}، فصمت البوت فيها.`
-      fix = 'اضغط «أعد البوت الآن».'
+      fix = 'انتظر انتهاء المهلة ثم اطلب من المرسل كتابة جملة الإيقاظ، أو اضغط «اسمح بالإيقاظ الآن».'
     }
 
     return { code, label, why, fix, ready, needsAuthScan, pollFailures, quietNow, silenced, connected }

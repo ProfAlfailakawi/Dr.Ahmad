@@ -9,15 +9,24 @@ import { PersistentAudioDock, PersistentAudioProvider } from './lib/persistent-a
 import { ReadingMemoryGuard } from './components/MySpace'
 import Home from './pages/Home'
 
+
+function PwaHomeEntry() {
+  const standalone = typeof window !== 'undefined' && (
+    window.matchMedia?.('(display-mode: standalone)').matches
+    || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone)
+  )
+  return standalone ? <Navigate to="/launch?source=pwa-root" replace /> : <Home />
+}
+
 /* تقسيم الكود: الرئيسية فورية، وبقية الصفحات تُحمَّل عند زيارتها فقط —
    فأول تحميل للموقع أخف بكثير (نصوص المقالات الـ٢٧٦ك لا تنزل إلا لقارئها) */
+const PwaLaunch = lazy(() => import('./pages/PwaLaunch'))
 const Publications = lazy(() => import('./pages/Publications'))
 const Research = lazy(() => import('./pages/Research'))
 const Articles = lazy(() => import('./pages/Articles'))
 const Search = lazy(() => import('./pages/Search'))
 const AskLibrary = lazy(() => import('./pages/AskLibrary'))
 const Decade = lazy(() => import('./pages/Decade'))
-const Impact = lazy(() => import('./pages/Impact'))
 const ThoughtPaths = lazy(() => import('./pages/ThoughtPaths'))
 const Media = lazy(() => import('./pages/Media'))
 const CV = lazy(() => import('./pages/CV'))
@@ -159,7 +168,8 @@ function AnimatedRoutes() {
     <AnimatePresence mode="sync">
       <Suspense fallback={<RouteLoadingLine />}>
       <Routes location={loc} key={loc.pathname}>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<PwaHomeEntry />} />
+        <Route path="/launch" element={<PwaLaunch />} />
         <Route path="/publications" element={<Publications />} />
         <Route path="/publications/:slug" element={<BookDetail />} />
         <Route path="/research" element={<Research />} />
@@ -168,7 +178,6 @@ function AnimatedRoutes() {
         <Route path="/search" element={<Search />} />
         <Route path="/ask" element={<AskLibrary />} />
         <Route path="/decade" element={<Decade />} />
-        <Route path="/impact" element={<Impact />} />
         <Route path="/thought-paths" element={<ThoughtPaths />} />
         <Route path="/articles/:slug" element={<ArticleDetail />} />
         <Route path="/atlas" element={<Atlas />} />
@@ -211,12 +220,12 @@ function AnimatedRoutes() {
 /** ينتظر تحديث وسوم SEO للصفحة، ثم يسجل مشاهدة واحدة للمسار في الجلسة. */
 function ConditionalNav() {
   const location = useLocation()
-  return location.pathname === '/admin' || location.pathname.startsWith('/cv-file/') ? null : <Nav />
+  return location.pathname === '/admin' || location.pathname === '/launch' || location.pathname.startsWith('/cv-file/') ? null : <Nav />
 }
 
 function ConditionalActions() {
   const location = useLocation()
-  if (location.pathname === '/admin' || location.pathname.startsWith('/cv-file/')) return null
+  if (location.pathname === '/admin' || location.pathname === '/launch' || location.pathname.startsWith('/cv-file/')) return null
   return (
     <>
       <FloatingActions />
@@ -227,13 +236,17 @@ function ConditionalActions() {
 
 function ConditionalFooter() {
   const location = useLocation()
-  return location.pathname === '/' || location.pathname === '/admin' || location.pathname.startsWith('/cv-file/') ? null : <Footer />
+  return location.pathname === '/' || location.pathname === '/admin' || location.pathname === '/launch' || location.pathname.startsWith('/cv-file/') ? null : <Footer />
 }
 
 
 function RouteJourneyTracker() {
   const location = useLocation()
-  useTrackJourney(location.pathname, location.pathname !== '/admin')
+  useTrackJourney(location.pathname, location.pathname !== '/admin' && location.pathname !== '/launch')
+  useEffect(() => {
+    if (['/', '/launch', '/admin'].includes(location.pathname) || location.pathname.startsWith('/cv-file/')) return
+    try { localStorage.setItem('pwa:last-route', `${location.pathname}${location.search}`) } catch { /* private mode */ }
+  }, [location.pathname, location.search])
   return null
 }
 

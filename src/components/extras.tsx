@@ -91,36 +91,73 @@ export function Newsletter({ compact = false }: { compact?: boolean }) {
 export function FloatingActions() {
   const location = useLocation()
   const [show, setShow] = useState(false)
-  const [nearBottom, setNearBottom] = useState(false)
+  const [footerVisible, setFooterVisible] = useState(false)
+  const [nearPageEnd, setNearPageEnd] = useState(false)
   const { scrollY } = useScroll()
-  useEffect(() => scrollY.on('change', (v) => {
-    setShow(v > 700)
-    const remaining = document.documentElement.scrollHeight - (v + window.innerHeight)
-    setNearBottom(remaining < 170)
+
+  useEffect(() => scrollY.on('change', (value) => {
+    setShow(value > 700)
+    const remaining = document.documentElement.scrollHeight - (value + window.innerHeight)
+    setNearPageEnd(remaining < Math.max(360, window.innerHeight * .34))
   }), [scrollY])
 
-  if (location.pathname.startsWith('/admin')) return null
+  useEffect(() => {
+    const update = () => {
+      const value = window.scrollY
+      const remaining = document.documentElement.scrollHeight - (value + window.innerHeight)
+      setShow(value > 700)
+      setNearPageEnd(remaining < Math.max(360, window.innerHeight * .34))
+    }
+    update()
+    window.addEventListener('resize', update, { passive: true })
+    return () => window.removeEventListener('resize', update)
+  }, [location.pathname])
+
+  useEffect(() => {
+    setFooterVisible(false)
+    const footer = document.querySelector('.site-footer')
+    if (!footer || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(
+      ([entry]) => setFooterVisible(Boolean(entry?.isIntersecting)),
+      { rootMargin: '0px 0px 24px 0px', threshold: 0.02 },
+    )
+    observer.observe(footer)
+    return () => observer.disconnect()
+  }, [location.pathname])
+
+  if (location.pathname.startsWith('/admin') || location.pathname === '/launch') return null
 
   return (
-    <div className="floating-actions reader-hide-focus fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[210] flex flex-col items-center gap-2 transition-[bottom] duration-300 md:right-6">
-      <MySpace />
-      <AnimatePresence>
-        {show && !nearBottom && (
-          <motion.button
-            key="top"
-            initial={{ opacity: 0, scale: 0.8, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 10 }}
-            transition={{ duration: 0.3, ease: EASE }}
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            aria-label="العودة للأعلى"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-hair bg-canvas/90 text-ink shadow-[0_10px_28px_-14px_rgba(21,22,26,.5)] backdrop-blur transition-colors hover:border-accent hover:text-accent"
-          >
-            ↑
-          </motion.button>
-        )}
-      </AnimatePresence>
-    </div>
+    <AnimatePresence>
+      {!footerVisible && !nearPageEnd && (
+        <motion.div
+          key="floating-actions"
+          className="floating-actions reader-hide-focus fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[210] flex flex-col items-center gap-2 transition-[bottom] duration-300 md:right-6"
+          initial={{ opacity: 0, scale: .94, y: 8 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: .92, y: 10 }}
+          transition={{ duration: .22, ease: EASE }}
+        >
+          <MySpace />
+          <AnimatePresence>
+            {show && (
+              <motion.button
+                key="top"
+                initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                transition={{ duration: 0.3, ease: EASE }}
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                aria-label="العودة للأعلى"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-hair bg-canvas/90 text-ink shadow-[0_10px_28px_-14px_rgba(21,22,26,.5)] backdrop-blur transition-colors hover:border-accent hover:text-accent"
+              >
+                ↑
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
 

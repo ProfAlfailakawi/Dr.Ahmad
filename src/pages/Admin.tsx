@@ -17,6 +17,7 @@ import { getBaseRecord, type ArticleRecord } from '../lib/cms'
 import { useCmsContent } from '../lib/content'
 import { beginAdminTask } from '../lib/admin-task-state'
 import { normalizeArabicTypography } from '../lib/arabic-typography'
+import { useAdminAuth } from '../lib/admin-auth'
 import { ContentManager, type ManagedKind, type ManagedRecord } from '../components/admin/ContentManager'
 import { Indicators } from '../components/admin/Indicators'
 import { IntelligenceLab } from '../components/admin/IntelligenceLab'
@@ -31,7 +32,6 @@ import { AdminTaskFavicon, AdminTaskIndicator } from '../components/admin/AdminT
 import { UploadField } from '../components/admin/ContentManager'
 import { WhatsAppAgentPanel } from '../components/admin/WhatsAppAgentPanel'
 import { useSeo } from '../components/seo'
-import type { User } from 'firebase/auth'
 import {
   AdminAreaTabs,
   AdminCommandPalette,
@@ -57,59 +57,12 @@ const today = () => {
 
 export default function Admin() {
   useSeo({ title: 'لوحة التحكم', path: '/admin', robots: 'noindex, nofollow' })
-  const [user, setUser] = useState<User | null>(null)
-  const [allowed, setAllowed] = useState(false)
-  const [checking, setChecking] = useState(firebaseEnabled)
-
-  useEffect(() => {
-    if (!firebaseEnabled) return
-    let active = true
-    let unsub = () => {}
-    const safety = window.setTimeout(() => {
-      if (active) setChecking(false)
-    }, 8000)
-    ;(async () => {
-      try {
-        const app = await getFirebaseApp()
-        if (!app || !active) {
-          if (active) setChecking(false)
-          return
-        }
-        const { getAuth, getIdTokenResult, onAuthStateChanged } = await import('firebase/auth')
-        unsub = onAuthStateChanged(getAuth(app), async (u) => {
-          if (!active) return
-          setUser(u)
-          if (!u) {
-            setAllowed(false)
-            setChecking(false)
-            return
-          }
-          try {
-            const token = await getIdTokenResult(u, true)
-            if (active) setAllowed(token.claims.admin === true)
-          } catch {
-            if (active) setAllowed(false)
-          }
-          if (active) setChecking(false)
-        })
-      } catch {
-        if (active) {
-          setAllowed(false)
-          setChecking(false)
-        }
-      }
-    })()
-    return () => {
-      active = false
-      window.clearTimeout(safety)
-      unsub()
-    }
-  }, [])
+  const { user, isAdmin: allowed, loading: checking, refresh } = useAdminAuth()
 
   if (!firebaseEnabled) return <SetupGuide />
   if (checking) return <Page><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
   if (!user) return <Login />
-  if (!allowed) return <AccessDenied email={user.email || ''} />
+  if (!allowed) return <AccessDenied email={user.email || ''} onRefresh={refresh} />
   return <Panel email={user.email || ''} />
 }
 
@@ -129,7 +82,7 @@ function SetupGuide() {
             ['أنشئ مشروعاً', 'ادخل console.firebase.google.com بحساب غوغل ← Add project ← أي اسم (مثل alfailakawi).'],
             ['فعّل قاعدة البيانات', 'من القائمة: Firestore Database ← Create database ← Production mode ← المنطقة الافتراضية.'],
             ['فعّل الدخول', 'Authentication ← Get started ← Email/Password ← Enable. ثم Users ← Add user: بريدك وكلمة مرور قوية.'],
-            ['امنح صلاحية المشرف', 'بعد إنشاء المستخدم، أضف له custom claim باسم admin وقيمته true. دون هذا لن تفتح اللوحة حتى لو كان الحساب مسجلاً.'],
+            ['اعتمد حساب المالك', 'حساب المالك المحدد في قواعد الموقع يدخل مباشرة، ويمكن إبقاء custom claim باسم admin كطبقة إضافية للحسابات الإدارية الأخرى.'],
             ['انسخ المفاتيح', 'Project settings (⚙) ← Your apps ← أيقونة الويب </> ← سجّل التطبيق ← انسخ القيم الست، ويمكن إضافة App Check لاحقاً.'],
           ].map(([t, d], i) => (
             <li key={t} className={card}>
@@ -179,17 +132,17 @@ function Login() {
   )
 }
 
-function AccessDenied({ email }: { email: string }) {
+function AccessDenied({ email, onRefresh }: { email: string; onRefresh: () => Promise<boolean> }) {
   return (
     <Page>
       <div className="mx-auto max-w-xl px-6 pb-24 pt-40 md:pt-44">
         <p className="mb-3 text-[.82rem] font-semibold uppercase text-accent">حماية الإنتاج</p>
         <h1 className="font-display text-3xl font-bold text-ink">الحساب ليس مشرفاً بعد.</h1>
         <p className="mt-5 leading-loose text-soft">
-          تم تسجيل الدخول باسم {email}، لكن قواعد الإنتاج تحتاج custom claim باسم
-          <code className="mx-1 rounded bg-wash px-2 py-0.5 text-accent">admin: true</code>.
-          هذا يمنع أي حساب عادي من قراءة الرسائل أو تعديل محتوى الموقع.
+          تم تسجيل الدخول باسم {email}، لكن رمز الجلسة القديم لم يتعرّف إلى هوية المالك بعد.
+          حدّث الصلاحية مرة واحدة؛ حساب المالك المعتمد يدخل مباشرة، بينما تبقى بقية الحسابات محجوبة.
         </p>
+        <button type="button" onClick={() => void onRefresh()} className={`${btn} mt-6`}>تحديث صلاحية المالك</button>
       </div>
     </Page>
   )

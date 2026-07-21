@@ -7,7 +7,6 @@
  * قاعدةٌ حاكمة بأمر الدكتور: لا تنبيهات. الرقم رقمه الخاص وهو يراه دائماً،
  * فما يحتاج إنساناً يُترك له صامتاً — لا يُرسل له إشعارٌ عن رسالةٍ في يده.
  */
-import { TIME_ZONE } from './config.mjs'
 
 /* ═══ ١) توقيع الآلة ═══ */
 
@@ -27,41 +26,20 @@ export function sign(text, { skip = false } = {}) {
   return `${body}\n\n${BOT_SIGNATURE}`
 }
 
-/* ═══ ٢) قواعد الصمت ═══ */
+/* ═══ ٢) التشغيل الدائم ═══ */
 
-/* ساعات الصمت الافتراضية للرقم الشخصي: 11 مساءً حتى 7 صباحاً.
-   يمكن تغييرها من متغيرات البيئة، وجعل القيمتين متساويتين يعطّلها صراحةً. */
-export const QUIET_FROM = Number(process.env.WHATSAPP_QUIET_FROM ?? 23)
-export const QUIET_UNTIL = Number(process.env.WHATSAPP_QUIET_UNTIL ?? 7)
-/* سقف صارم للرقم الشخصي: خمسة ردود آلية في الساعة لكل شخص.
-   يشمل جملة الإيقاظ أيضاً، حتى لا تتحول إلى وسيلة لإغراق الرقم بالردود. */
-export const HOURLY_REPLY_CAP = Number(process.env.WHATSAPP_HOURLY_REPLY_CAP ?? 5)
-/* يبقى الاسم القديم مُصدَّراً لمن يستورده — ولا يُستعمل في القرار */
-export const DAILY_REPLY_CAP = HOURLY_REPLY_CAP
+/* بأمر الدكتور: لا نافذة صمت ولا سقف عددي. الوكيل متاح طوال اليوم، لكن لا
+   يتكلم أصلاً إلا بعد جملة الإيقاظ، ويصمت فور تدخل الدكتور. نبقي الصادرات
+   القديمة للتوافق مع اللوحة والاختبارات من دون أن تفرض قيداً. */
+export const QUIET_FROM = null
+export const QUIET_UNTIL = null
+export const HOURLY_REPLY_CAP = Number.POSITIVE_INFINITY
+export const DAILY_REPLY_CAP = Number.POSITIVE_INFINITY
 
-/** الساعة بتوقيت الكويت مهما كان توقيت الخادم */
-export function kuwaitHour(at = new Date()) {
-  return Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: TIME_ZONE || 'Asia/Kuwait' }).format(at))
-}
+export function kuwaitHour(at = new Date()) { return at.getHours() }
+export function isQuietHour() { return false }
 
-/** هل نحن في ساعة الصمت؟ وتدعم النافذة العابرة لمنتصف الليل. */
-export function isQuietHour(at = new Date()) {
-  if (QUIET_FROM === QUIET_UNTIL) return false          // لا حظر — وهو الافتراض
-  const hour = kuwaitHour(at)
-  return QUIET_FROM < QUIET_UNTIL
-    ? hour >= QUIET_FROM && hour < QUIET_UNTIL
-    : hour >= QUIET_FROM || hour < QUIET_UNTIL
-}
-
-/** كم ردّاً آلياً ذهب لهذا الشخص اليوم؟ */
-/**
- * كم ردّاً أُرسل فعلاً لهذا الشخص في الساعة الماضية؟
- *
- * كان يعدّ صفوف intent_logs — وهي تُسجَّل عند تصنيف النيّة لا عند إرسال الردّ.
- * فيمتنع البوت ويُحسب عليه امتناعُه ردّاً. وقد وقع ذلك حرفياً: صفر ردٍّ مُرسَل
- * والعدّاد يقول ٦، فتظهر رسالة «تجاوز ٥ ردود اليوم» وهي كاذبة.
- * نعدّ الآن من أثر الإرسال نفسه (auto-reply-sent) — ما أُرسل لا ما نُوي.
- */
+/** عدّاد تشخيصي فقط؛ لا يُستخدم لمنع الردود. */
 export function repliesInWindow(db, jid) {
   const key = db.jidKey(jid)
   const row = db.get(
@@ -70,8 +48,6 @@ export function repliesInWindow(db, jid) {
   )
   return Number(row?.c || 0)
 }
-
-/* الاسم القديم يبقى عاملاً لمن يستدعيه */
 export const repliesToday = repliesInWindow
 
 /* ═══ ٣) ما لا يجوز أن تقابله آلة ═══ */
@@ -147,7 +123,5 @@ export function ensureBotRulesSchema(db) {
 export function applyBotRules({ db, jid, normalizedText, hasMedia = false, opensDoor = false, at = new Date() }) {
   if (hasMedia) return { allowed: false, reason: 'وسائط — تحتاج عينك أنت' }
   if (needsHumanOnly(normalizedText)) return { allowed: false, reason: 'طلبٌ إنسانيّ — لا تردّ عليه آلة' }
-  if (isQuietHour(at)) return { allowed: false, reason: 'ساعات الصمت (الحادية عشرة مساءً — السابعة صباحًا)' }
-  if (repliesInWindow(db, jid) >= HOURLY_REPLY_CAP) return { allowed: false, reason: `تجاوز ${HOURLY_REPLY_CAP} ردّاً في الساعة` }
   return { allowed: true, reason: '' }
 }

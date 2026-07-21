@@ -9,6 +9,21 @@ export type AdminAuthState = {
   error: string | null
 }
 
+
+const DEFAULT_OWNER_EMAILS = ['ah_f@hotmail.com']
+const OWNER_EMAILS = new Set(
+  [...DEFAULT_OWNER_EMAILS, ...String(import.meta.env.VITE_OWNER_EMAILS || '').split(',')]
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean),
+)
+
+export function isOwnerIdentity(user: User | null, claims: Record<string, unknown> = {}) {
+  if (!user) return false
+  if (claims.admin === true) return true
+  const email = String(user.email || claims.email || '').trim().toLowerCase()
+  return Boolean(email && OWNER_EMAILS.has(email))
+}
+
 const initialState: AdminAuthState = {
   user: null,
   isAdmin: false,
@@ -54,11 +69,16 @@ async function startAdminAuth() {
           return
         }
 
-        emit({ user, isAdmin: false, loading: true, error: null })
+        const ownerByEmail = isOwnerIdentity(user)
+        emit({ user, isAdmin: ownerByEmail, loading: !ownerByEmail, error: null })
+        if (ownerByEmail) {
+          try { localStorage.setItem('pwa:owner-device', '1') } catch { /* private mode */ }
+          return
+        }
         try {
           const token = await getIdTokenResult(user)
           if (version !== authVersion) return
-          const isAdmin = token.claims.admin === true
+          const isAdmin = isOwnerIdentity(user, token.claims)
           if (isAdmin) { try { localStorage.setItem('pwa:owner-device', '1') } catch { /* private mode */ } }
           emit({ user, isAdmin, loading: false, error: null })
         } catch (error) {
@@ -97,12 +117,17 @@ export function useAdminAuth() {
     if (!user) return false
 
     const version = ++authVersion
+    if (isOwnerIdentity(user)) {
+      try { localStorage.setItem('pwa:owner-device', '1') } catch { /* private mode */ }
+      emit({ user, isAdmin: true, loading: false, error: null })
+      return true
+    }
     emit({ ...state, loading: true, error: null })
     try {
       const { getIdTokenResult } = await import('firebase/auth')
       const token = await getIdTokenResult(user, true)
       if (version !== authVersion) return false
-      const isAdmin = token.claims.admin === true
+      const isAdmin = isOwnerIdentity(user, token.claims)
       if (isAdmin) { try { localStorage.setItem('pwa:owner-device', '1') } catch { /* private mode */ } }
       emit({ user, isAdmin, loading: false, error: null })
       return isAdmin

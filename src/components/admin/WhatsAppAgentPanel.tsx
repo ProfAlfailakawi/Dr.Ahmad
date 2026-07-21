@@ -337,7 +337,7 @@ export function WhatsAppAgentPanel() {
     setReturning(true)
     try {
       const out = await request<{ returned: number }>('/admin/bot-return-all', { method: 'POST' })
-      setNotice(out.returned ? `✓ عاد البوت في ${out.returned} محادثة — جرّبه الآن.` : 'البوت يعمل أصلاً، لا محادثة صامتة.')
+      setNotice(out.returned ? `✓ أصبح الإيقاظ متاحًا في ${out.returned} محادثة. لن يبدأ الرد إلا بعد جملة الإيقاظ.` : 'لا توجد محادثة داخل فترة الحماية الآن.')
       await loadSilence()
     } catch {
       setNotice('تعذّر إرجاع البوت — تأكّد أن الجسر يعمل على الماك.')
@@ -374,12 +374,12 @@ export function WhatsAppAgentPanel() {
 
   const manualTakeover = async () => {
     if (!manualJid.trim()) return setNotice('اكتب JID المحادثة من واتساب، مثال: 965XXXXXXXX@s.whatsapp.net')
-    try { await request('/admin/manual-takeover', { method: 'POST', body: JSON.stringify({ jid: manualJid, minutes: 30 }) }); setNotice('تم استلام المحادثة يدويًا؛ البوت سيصمت 30 دقيقة.'); await refresh() } catch { setNotice('تعذّر تفعيل الاستلام اليدوي.') }
+    try { await request('/admin/manual-takeover', { method: 'POST', body: JSON.stringify({ jid: manualJid, minutes: 30 }) }); setNotice('تم استلام المحادثة يدويًا. توقف البوت فورًا، وبعد فترة الحماية لن يعود إلا بجملة الإيقاظ.'); await refresh() } catch { setNotice('تعذّر تفعيل الاستلام اليدوي.') }
   }
 
   const returnBot = async () => {
     if (!manualJid.trim()) return setNotice('اكتب JID المحادثة أولًا.')
-    try { await request('/admin/bot-return', { method: 'POST', body: JSON.stringify({ jid: manualJid }) }); setNotice('عاد البوت لهذه المحادثة عند رسالة العميل التالية.'); await refresh() } catch { setNotice('تعذّر إرجاع المحادثة للبوت.') }
+    try { await request('/admin/bot-return', { method: 'POST', body: JSON.stringify({ jid: manualJid }) }); setNotice('أصبح الإيقاظ متاحًا لهذه المحادثة. لن يرد البوت حتى تُكتب جملة الإيقاظ.'); await refresh() } catch { setNotice('تعذّر إتاحة الإيقاظ لهذه المحادثة.') }
   }
 
   const editRule = (rule: ReplyRule) => setRuleForm({ ...rule })
@@ -442,7 +442,7 @@ export function WhatsAppAgentPanel() {
                 {status.health?.label || stateLabel[String(status.status)] || 'غير مرتبط'}
               </span>
             </h2>
-            <p className="mt-2 max-w-2xl text-[.86rem] leading-relaxed text-soft">الجسر مستقل على الماك، والجلسة لا تدخل GitHub ولا Firebase. إذا تدخلت من الهاتف يصمت البوت تلقائيًا، وإذا توقف الماك يتوقف واتساب فقط.</p>
+            <p className="mt-2 max-w-2xl text-[.86rem] leading-relaxed text-soft">الجسر مستقل على الماك، والجلسة لا تدخل GitHub ولا Firebase. يعمل طوال اليوم بلا سقف للردود، لكنه لا يبدأ إلا بجملة الإيقاظ، ويصمت فور تدخلك من الهاتف.</p>
 
             {/* بطاقة التشخيص: الحالة الحقيقية وسببها وعلاجها. كانت اللوحة تقول
                 «متصل ✅» والبوت لا يردّ — لأنها تفحص «هل العملية حيّة» لا «هل
@@ -525,23 +525,23 @@ export function WhatsAppAgentPanel() {
               onClick={() => void returnBotNow()}
               disabled={returning || !status.bridgeOnline}
               className={silence.silenced > 0 ? primary : secondary}
-              title="يُنهي صمت البوت في كل المحادثات فوراً"
+              title="ينهي فترة الحماية ويجعل جملة الإيقاظ متاحة فوراً"
             >
-              {returning ? 'يُعيد البوت…' : silence.silenced > 0 ? `🔇 أعد البوت الآن (${silence.silenced})` : 'أعد البوت الآن'}
+              {returning ? 'يتيح الإيقاظ…' : silence.silenced > 0 ? `اسمح بالإيقاظ الآن (${silence.silenced})` : 'اسمح بالإيقاظ الآن'}
             </button>
           </div>
           {silence.silenced > 0 && (
             <p className="mt-2 text-[.76rem] leading-relaxed text-accent">
               البوت صامتٌ الآن في {silence.silenced === 1 ? 'محادثة واحدة' : `${silence.silenced} محادثات`}
               {silence.until ? ` حتى ${new Date(silence.until).toLocaleTimeString('ar-KW', { hour: '2-digit', minute: '2-digit' })}` : ''} —
-              لأنك رددتَ فيها بيدك. اضغط الزر ليعود حالاً.
+              لأنك رددتَ فيها بيدك. بعد انتهاء الحماية لن يعود تلقائيًا؛ يلزم أن يكتب المرسل جملة الإيقاظ. ويمكنك إتاحة الإيقاظ الآن من الزر.
             </p>
           )}
         </div>
         <div className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-soft">
-          وضع الرقم الشخصي مفعل: لا ردّ على الأهل والربع، ولا مجموعات ولا حالات ولا حملات جماعية.
-          لا يفتح الباب إلا عبارة الإيقاظ المنشورة، وتُغلق الجلسة بعد عشرين دقيقة أو أربعة ردود.
-          تدخلك اليدوي أعلى سلطة دائمًا، ويصمت أمام الوسائط والروابط والموعد والاستشارة والإشراف، وبين الحادية عشرة مساءً والسابعة صباحًا.
+          وضع الرقم الشخصي مفعل: لا مجموعات ولا حالات ولا حملات جماعية. يعمل طوال اليوم بلا حد زمني أو عددي، لكنه صامت قبل جملة الإيقاظ.
+          بعد الإيقاظ تبقى الجلسة حيّة ويتفاعل من فهرس الموقع فقط، من دون تأليف أو مصادر خارجية.
+          تدخلك اليدوي يوقفه فورًا ويمحو الجلسة؛ وبعد فترة الحماية لا يعود إلا بجملة الإيقاظ من جديد. ويصمت أمام الوسائط والروابط والموعد والاستشارة والإشراف.
         </div>
         {status.last_error && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.8rem] text-soft">{status.last_error}</p>}
         {notice && <p role="status" className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{notice}</p>}
@@ -582,9 +582,6 @@ export function WhatsAppAgentPanel() {
                 {simulation.willReply ? '🗣 يردّ' : '🤐 يصمت'}
                 <span className="mr-2 text-[.78rem] font-normal text-soft">· {simulation.why}</span>
               </p>
-              {simulation.willReply && simulation.quietNow && (
-                <p className="text-[.75rem] text-soft">لكنه الآن في ساعات الصمت (الحادية عشرة مساءً — السابعة صباحًا)، فلن يردّ حتى الصباح.</p>
-              )}
               {simulation.preview && <p className="whitespace-pre-wrap text-[.82rem] leading-relaxed text-ink">{simulation.preview}</p>}
             </div>
           )}

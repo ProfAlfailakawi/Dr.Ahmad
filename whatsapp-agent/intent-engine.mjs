@@ -1,5 +1,5 @@
 import { contentSummary, findContent, latestContent, normalizeArabic, searchContent } from './content-index.mjs'
-import { AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, CONTENT_SESSION_MINUTES, MANUAL_TAKEOVER_MINUTES, MAX_MESSAGE_CHARS, SESSION_REPLY_CAP, TIME_ZONE, flags } from './config.mjs'
+import { AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUAL_TAKEOVER_MINUTES, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags } from './config.mjs'
 import { hashOpaque } from './crypto.mjs'
 import { createReminder, parseReminderTime } from './reminders.mjs'
 import { applyBotRules, ensureBotRulesSchema, rememberSent, sign } from './bot-rules.mjs'
@@ -149,16 +149,22 @@ export function matchReplyRule(db, text) {
 
 function customRuleReply(db, rule, input) {
   if (!rule) return null
-  if (rule.actionType === 'transfer') {
-    return { intent: 'CUSTOM_RULE', confidence: 0.99, needsHuman: true, ruleId: rule.id, ruleName: rule.name, text: rule.responseText || 'وصلت رسالتك. سأتركها للدكتور/الموظف حتى لا أعطيك جوابًا غير دقيق.' }
-  }
   if (rule.actionType === 'site-content') {
     const query = rule.contentQuery || input
     const results = searchContent(db, query, { limit: 2 })
-    if (!results.length) return { intent: 'CUSTOM_RULE', confidence: 0.72, needsHuman: true, ruleId: rule.id, ruleName: rule.name, text: 'لم أجد في محتوى الموقع ما يجيب بدقة. سأحوّلها لمراجعة بشرية.' }
-    return { intent: 'CUSTOM_RULE', confidence: 0.94, ruleId: rule.id, ruleName: rule.name, text: `${rule.responseText ? `${rule.responseText}\n\n` : ''}${results.map((item, index) => `${index + 1}. ${item.title}\n${contentSummary(item, 1)}\n${item.url}`).join('\n\n')}`, contentId: results[0].id }
+    if (!results.length) return { intent: 'CUSTOM_RULE', confidence: 0.72, needsHuman: true, silent: true, ruleId: rule.id, ruleName: rule.name, text: '' }
+    return {
+      intent: 'CUSTOM_RULE',
+      confidence: 0.94,
+      ruleId: rule.id,
+      ruleName: rule.name,
+      text: results.map((item, index) => `${index + 1}. ${item.title}\n${contentSummary(item, 1)}\n${item.url}`).join('\n\n'),
+      contentId: results[0].id,
+    }
   }
-  return { intent: 'CUSTOM_RULE', confidence: 0.99, ruleId: rule.id, ruleName: rule.name, text: rule.responseText || 'تم.' }
+  /* لا تُرسل القواعد الحرة كلاماً مؤلفاً. التحويل والنص الحر يتركان الرسالة
+     للدكتور بصمت؛ أما الرد الآلي فمصدره فهرس الموقع وحده. */
+  return { intent: 'CUSTOM_RULE', confidence: 0.99, needsHuman: true, silent: true, ruleId: rule.id, ruleName: rule.name, text: '' }
 }
 
 const itemLink = (item) => item ? `\n${item.title}\n${item.url}` : ''
@@ -199,9 +205,17 @@ export function setSuppression(db, jid, suppressed) {
 
 export function markManualTakeover(db, jid, minutes = MANUAL_TAKEOVER_MINUTES) {
   if (!jid) return
-  const until = new Date(Date.now() + minutes * 60 * 1000).toISOString(); const now = new Date().toISOString()
+  const until = new Date(Date.now() + minutes * 60 * 1000).toISOString()
+  const now = new Date().toISOString()
   const jidKey = db.jidKey(jid)
-  db.run('INSERT INTO chat_sessions(jid,mode,manual_until,updated_at) VALUES(?,?,?,?) ON CONFLICT(jid) DO UPDATE SET mode=excluded.mode,manual_until=excluded.manual_until,updated_at=excluded.updated_at', jidKey, 'manual-takeover', until, now)
+  db.run(
+    `INSERT INTO chat_sessions(jid,mode,manual_until,content_id,followup_json,opened_at,last_user_at,updated_at)
+     VALUES(?,?,?,?,?,?,?,?)
+     ON CONFLICT(jid) DO UPDATE SET
+       mode=excluded.mode, manual_until=excluded.manual_until, content_id=NULL,
+       followup_json=NULL, opened_at=NULL, last_user_at=NULL, updated_at=excluded.updated_at`,
+    jidKey, 'manual-takeover', until, null, null, null, null, now,
+  )
 }
 
 export function clearPreferences(db, jid) {
@@ -345,10 +359,16 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
     /* اللقاءات: تُقرأ من الموقع لا من رأسي — وإن لم يكن ثمّة معلن، نقولها
        بصراحة ونحيل إلى الصفحة بدل أن نخترع موعداً. */
     case INTENTS.UPCOMING_EVENTS:
-      return { ...classification, text: 'اللقاءات والمشاركات القادمة تُعلن هنا أولاً بأول:\nhttps://dr-alfailakawi.com/#events\n\nوإن لم تجد شيئاً معلناً الآن، فلا لقاء مجدولاً بعد.' }
+      return { ...classification, text: `اللقاءات والمشاركات المعلنة في الموقع:
+${SITE_URL}/#events` }
 
     case INTENTS.ABOUT_DOCTOR:
-      return { ...classification, text: 'د. أحمد حسين الفيلكاوي — أستاذ تربية.\nالسيرة الذاتية كاملةً:\nhttps://dr-alfailakawi.com/cv\n\nوالأبحاث المحكّمة:\nhttps://dr-alfailakawi.com/research' }
+      return { ...classification, text: `د. أحمد حسين الفيلكاوي.
+السيرة المنشورة في الموقع:
+${SITE_URL}/cv
+
+والأبحاث المنشورة:
+${SITE_URL}/research` }
 
     case INTENTS.CURATED_PICKS: {
       const picks = latestContent(db, 'curated', 3)
@@ -378,21 +398,18 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
       }
 
       const results = searchContent(db, query, { limit: 3 })
-      /* ★ لا جواب ← صمتٌ وتحويل، لا إعلانُ فشل.
-       *
-       * كان يردّ «ما لقيت تطابقًا دقيقًا في أرشيف الموقع». وداخل جلسةٍ مفتوحة
-       * يصل إلى هذا الفرع كلُّ ما يُكتب — ومنه ما ليس سؤالاً أصلاً. فكتب إنسانٌ
-       * شكواه من الفقر ومن رفض توظيفه لهويّته، فقوبل برسالة «لم أجد تطابقاً في
-       * الأرشيف». وهذا أسوأ من الصمت بمراحل: يُشعره أن ألمه استُعلم عنه في
-       * قاعدة بيانات فلم يُوجد.
-       *
-       * والصواب: يصمت البوت، ويُسكت نفسه في المحادثة، ويترك الأمر للدكتور. */
-      return { ...classification, needsHuman: true, silent: true, text: '' }
-      return {
-        ...classification,
-        text: `أقرب المواد لسؤالك:\n${results.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}\n\nاكتب «غيره» لمزيد، أو «لخّص» للأول.`,
-        contentId: results[0].id,
+      if (results.length) {
+        return {
+          ...classification,
+          text: `أقرب المواد من الموقع لسؤالك:
+${results.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}
+
+اكتب «غيره» لمزيد، أو «لخّص» للأول.`,
+          contentId: results[0].id,
+        }
       }
+      /* لا جواب موثق في الموقع: صمتٌ وتحويل، لا تخمين ولا إعلان فشل. */
+      return { ...classification, needsHuman: true, silent: true, text: '' }
     }
     case INTENTS.LISTEN_FAHED:
     case INTENTS.LISTEN_NOURA:
@@ -440,15 +457,12 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
  */
 const OPENS_DOOR = new Set([INTENTS.WELCOME])
 
-/** عمر الجلسة: بعد سكوتٍ طويل يُغلق الباب من نفسه فلا يبقى البوت مفتوحاً للأبد */
-const SESSION_MS = CONTENT_SESSION_MINUTES * 60 * 1000
-
+/**
+ * الجلسة تبقى مفتوحة ما دام صاحبها لم يتدخل بيده. لا عدّاد ولا مؤقّت؛ هذا
+ * يجعل الحوار طبيعياً بعد الإيقاظ، بينما يبقى الباب مغلقاً تماماً قبله.
+ */
 function sessionAlive(session) {
-  if (!session) return false
-  if (!['content-session', 'auto'].includes(session.mode)) return false
-  const last = session.last_user_at || session.opened_at || session.updated_at
-  if (!last) return false
-  return Date.now() - new Date(last).getTime() < SESSION_MS
+  return Boolean(session && ['content-session', 'auto'].includes(session.mode))
 }
 
 /** هل هذه محادثةُ مجموعة؟ */
@@ -487,7 +501,7 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
   /* ═══ المنع المطلق: المجموعات ═══
      بأمر الدكتور صراحةً: «ما يصير يرد بالقروب إطلاقاً». وهو قبل كل شيء —
      قبل الجلسة، وقبل جملة الإيقاظ، وقبل أوامر الخصوصية — لأن الجملة تُكتب
-     في القروب فتفتح جلسةَ ستّ ساعات، فيصير البوت يردّ على كل ما يُقال فيه.
+     في القروب فتفتح جلسةً، فيصير البوت يردّ على ما يُقال فيه.
      وهذا ما وقع فعلاً: ثمانية ردود في ثلاث دقائق داخل مجموعة.
      ولا يُستثنى شيء: من أراد البوت راسله وحده. */
   if (!isPrivateChat(jid)) return { allowed: false, reason: `${chatKindLabel(jid)} — لا ردّ فيها إطلاقاً` }
@@ -514,26 +528,24 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
     return { allowed: false, reason: 'manual-takeover' }
   }
 
-  /* قواعد الأدب: تسكته أحياناً رغم أن الباب مفتوح — الطلب الإنسانيّ،
-     وساعات الليل، والوسائط، والإكثار. ولا تنبيه في شيءٍ منها بأمر الدكتور. */
+  /* قواعد الأدب: تسكته أحياناً رغم أن الباب مفتوح — الطلب الإنسانيّ
+     والوسائط ونحوها. ولا تنبيه في شيءٍ منها بأمر الدكتور. */
   const manners = applyBotRules({ db, jid, normalizedText: classifyIntent(text).normalized, hasMedia, opensDoor, at })
   if (!manners.allowed) return { allowed: false, reason: manners.reason }
 
   /* ═══ الباب مفتوح: حوارٌ طبيعيّ بلا أوامر ═══
    *
    * ★ لكن لا يبتلع كلَّ ما يُكتب. بأمر الدكتور: «لا يردّ إلا إذا أُوقظ، وما
-   * عدا ذلك ما يصير يردّ». وكانت الجلسة تُبيح الردّ على أي نصّ ست ساعات، فمرّ
+   * عدا ذلك ما يصير يردّ». وكانت الجلسة تُبيح الردّ على أي نصّ بلا تحقق، فمرّ
    * منها كلامٌ ليس سؤالاً — شكوى رجلٍ من الفقر ورفضِ توظيفه — إلى محرك البحث.
    *
    * فداخل الجلسة يُشترط أن يكون الكلام أمراً مفهوماً (نيّةً مطابِقة)، لا
    * تخميناً من المنفذ الأخير. «زدني» و«لخّص» و«عندك شي عن…» تعمل كما كانت،
    * وما لم يُفهَم يُترك للدكتور. */
-  const understood = !classification0.fallback
-  const sessionReplies = session?.opened_at ? Number(db.get("SELECT COUNT(*) c FROM audit_log WHERE action='auto-reply-sent' AND target=? AND created_at>=?", db.jidKey(jid), session.opened_at)?.c || 0) : 0
-  if (sessionAlive(session) && sessionReplies >= SESSION_REPLY_CAP) return { allowed: false, reason: 'session-reply-cap' }
-  if ((isReplyToAgent || explicitContentSession || sessionAlive(session)) && understood) {
-    return { allowed: true, reason: 'content-session' }
-  }
+  const activeSession = isReplyToAgent || explicitContentSession || sessionAlive(session)
+  const groundedFallback = classification0.fallback && searchContent(db, text, { limit: 1 }).length > 0
+  const understood = !classification0.fallback || groundedFallback
+  if (activeSession && understood) return { allowed: true, reason: groundedFallback ? 'content-session-grounded-search' : 'content-session' }
   /* قائمةُ السماح لم تعد تفتح الباب بنفسها. كانت تُجيز الردّ على **أيّ** كلمة
      يكتبها صاحبها بلا جملة إيقاظ — وهو نقضٌ لقاعدة الدكتور: «ما يردّ إلا إذا
      شخص كتب موقع د. أحمد». وهي اليوم فارغة، لكنّ يداً تملؤها غداً تفتح باباً
@@ -563,11 +575,11 @@ export function handleIncoming({ db, jid, text, isReplyToAgent = false, explicit
      رحّبنا بالقادم ثم صمتنا عن سؤاله التالي، وهو أسوأ من ألا نرحّب. */
   if (gate.opensSession && !response.contentId) {
     const stamp = new Date().toISOString()
-    db.run('INSERT INTO chat_sessions(jid,mode,opened_at,last_user_at,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(jid) DO UPDATE SET mode=excluded.mode,last_user_at=excluded.last_user_at,updated_at=excluded.updated_at', db.jidKey(jid), 'content-session', stamp, stamp, stamp)
+    db.run('INSERT INTO chat_sessions(jid,mode,opened_at,last_user_at,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(jid) DO UPDATE SET mode=excluded.mode,manual_until=NULL,last_user_at=excluded.last_user_at,updated_at=excluded.updated_at', db.jidKey(jid), 'content-session', stamp, stamp, stamp)
   }
   if (response.contentId) {
     const now = new Date().toISOString()
-    db.run('INSERT INTO chat_sessions(jid,mode,content_id,opened_at,last_user_at,updated_at) VALUES(?,?,?,?,?,?) ON CONFLICT(jid) DO UPDATE SET mode=excluded.mode,content_id=excluded.content_id,last_user_at=excluded.last_user_at,updated_at=excluded.updated_at', db.jidKey(jid), 'content-session', response.contentId, now, now, now)
+    db.run('INSERT INTO chat_sessions(jid,mode,content_id,opened_at,last_user_at,updated_at) VALUES(?,?,?,?,?,?) ON CONFLICT(jid) DO UPDATE SET mode=excluded.mode,manual_until=NULL,content_id=excluded.content_id,last_user_at=excluded.last_user_at,updated_at=excluded.updated_at', db.jidKey(jid), 'content-session', response.contentId, now, now, now)
     const item = findContent(db, response.contentId)
     if (item?.date) savePreference(db, jid, { lastContentCursor: item.date })
     rememberSent(db, jid, response.contentId)   // فلا يُعاد عليه ما أُرسل

@@ -46,8 +46,7 @@ export const MAX_CAMPAIGN_TARGETS = Math.min(Math.max(Number(process.env.WHATSAP
 export const BROADCAST_DEFAULT_INTERVAL_SECONDS = Math.min(Math.max(Number(process.env.WHATSAPP_BROADCAST_INTERVAL_SECONDS || 45), 5), 15 * 60)
 export const BROADCAST_MIN_INTERVAL_SECONDS = Math.min(Math.max(Number(process.env.WHATSAPP_BROADCAST_MIN_INTERVAL_SECONDS || 20), 5), 15 * 60)
 export const RETENTION_DAYS = Math.max(1, Number(process.env.WHATSAPP_RETENTION_DAYS || 7))
-export const CONTENT_SESSION_MINUTES = Math.min(60, Math.max(5, Number(process.env.WHATSAPP_CONTENT_SESSION_MINUTES || 20)))
-export const SESSION_REPLY_CAP = Math.min(10, Math.max(1, Number(process.env.WHATSAPP_SESSION_REPLY_CAP || 4)))
+/* الجلسة لا تنتهي بعدد ردود أو مؤقّت: تفتحها جملة الإيقاظ وتبقى حيّة حتى يردّ الدكتور بيده. */
 export const AZURE_STT_HARD_STOP_SECONDS = Math.max(60, Number(process.env.WHATSAPP_AZURE_STT_HARD_STOP_SECONDS || 4 * 60 * 60))
 export const AZURE_TTS_HARD_STOP_CHARS = Math.max(1000, Number(process.env.WHATSAPP_AZURE_TTS_HARD_STOP_CHARS || 400000))
 /* نداءات المساعد الصريحة. حُذفت «د. أحمد» و«@دكتور» لأن المُطبِّع يجرّدهما

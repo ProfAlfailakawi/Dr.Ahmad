@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { LINK_OUT, SHOW_EN_TOGGLE, profile, socials, links } from '../data'
 import { useCmsContent } from '../lib/content'
 import { ThemeToggle } from './extras'
+import { MySpace } from './MySpace'
 import { useCvLinks } from '../lib/settings'
 import { SocialIcon } from './icons'
 
@@ -922,6 +923,7 @@ export function Footer() {
           </Link>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-[.9rem] text-soft">
             <span className="flex items-center gap-3">
+              <MySpace variant="footer" />
               <a href={cv.ar} target="_blank" rel="noreferrer" aria-label="السيرة الذاتية PDF" title="السيرة الذاتية PDF" className="text-soft transition-colors hover:text-accent">
                 <SocialIcon name="CV" />
               </a>

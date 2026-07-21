@@ -21,6 +21,20 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SOURCE = readFileSync(resolve(ROOT, 'src/lib/social-templates.ts'), 'utf8')
 
+const STUDIO = readFileSync(resolve(ROOT, 'src/components/admin/PublishingStudio.tsx'), 'utf8')
+if (!STUDIO.includes('visualSeed: `${topic}:${variation}:')) {
+  throw new Error('★ حزمة السوشيال لا تحفظ بذرة التنويع المرتبطة بالموضوع')
+}
+for (const channel of ['const x = rotateBy([', 'const linkedin = rotateBy([', 'const threads = rotateBy([', 'const instagramCaptions = rotateBy([']) {
+  if (!STUDIO.includes(channel)) throw new Error(`★ النسخ النصية لا تتنوع فعلياً: ${channel}`)
+}
+if (!SOURCE.includes("pack.visualSeed || pack.generatedAt")) {
+  throw new Error('★ القوالب البصرية لا تستخدم بذرة النسخة؛ ستتكرر عند إعادة التوليد')
+}
+if (!STUDIO.includes('function mergeSocialPacks(') || !STUDIO.includes('visualSeed: local.visualSeed')) {
+  throw new Error('★ ردّ الخادم قد يمحو التنويع المحلي المرتبط بالموضوع')
+}
+
 /* الوحدة TypeScript وهذا Node عاري. ننتزع منها ما نختبره بدل إدخال أداة
    ترجمةٍ في مسار الاختبار: الأنماط نفسها حرفاً بحرف، فلا نختبر نسخةً منها. */
 function extract(name, opener, closer) {
@@ -128,5 +142,5 @@ console.log(JSON.stringify({
   cases: cases.length,
   shapesRead: [...seen].sort(),
   shapesDefined: Object.keys(SHAPE_LAYOUTS).length,
-  guards: ['no-\\b-in-arabic-patterns', 'no-collapse-to-single-shape', 'single-identity-footer', 'copy-analysis-present'],
+  guards: ['no-\\b-in-arabic-patterns', 'no-collapse-to-single-shape', 'single-identity-footer', 'copy-analysis-present', 'topic-seeded-variation', 'copy-rotation-per-channel', 'remote-pack-cannot-erase-topic-seed'],
 }, null, 2))

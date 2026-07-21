@@ -51,6 +51,8 @@ export type SocialPackVisualInput = {
   stories?: string[]
   visualDirections?: { layout: string; tone: string; headline: string; subline: string }[]
   event?: { source?: string; title?: string } | null
+  generatedAt?: string
+  visualSeed?: string
 }
 
 const layouts: SocialVisualLayout[] = [
@@ -314,7 +316,8 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
     { kicker: 'الخلاصة', title: profile.closer, body: article.excerpt },
   ]).slice(0, 8)
 
-  const selectedLayouts = diverseLayouts(`${article.title}:${pack.event?.title || ''}`, 18, directions, topic)
+  const visualSeed = pack.visualSeed || pack.generatedAt || 'first-edition'
+  const selectedLayouts = diverseLayouts(`${article.title}:${article.excerpt}:${pack.event?.title || ''}:${visualSeed}`, 18, directions, topic)
   const variantLabels = ['معالجة بديلة', 'زاوية إنسانية', 'نسخة مختصرة', 'تكوين بصري آخر', 'وقفة تأمل', 'امتداد الفكرة']
   const visualCount = Math.min(12, Math.max(8, slides.length * 2))
   const visualSlides = Array.from({ length: visualCount }, (_, index) => {
@@ -337,7 +340,7 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
         topic,
         selectedLayouts,
         usedLayouts,
-        `${article.title}:${index}`,
+        `${article.title}:${visualSeed}:${index}`,
       )
     usedLayouts.push(layout)
     return layout
@@ -366,7 +369,7 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
     id: `story-${topic}-${index + 1}`,
     platform: 'story',
     format: 'قصة عمودية',
-    layout: layoutForSlide(text, topic, selectedLayouts, usedLayouts, `${article.title}:story:${index}`),
+    layout: layoutForSlide(text, topic, selectedLayouts, usedLayouts, `${article.title}:${visualSeed}:story:${index}`),
     topic,
     width: 1080,
     height: 1920,
@@ -381,7 +384,7 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
     id: `linkedin-${topic}-cover`,
     platform: 'linkedin',
     format: 'LinkedIn 1200×627',
-    layout: layoutForSlide(`${directions[0]?.headline || article.title} ${directions[0]?.subline || article.excerpt}`, topic, selectedLayouts, usedLayouts, `${article.title}:in`),
+    layout: layoutForSlide(`${directions[0]?.headline || article.title} ${directions[0]?.subline || article.excerpt}`, topic, selectedLayouts, usedLayouts, `${article.title}:${visualSeed}:in`),
     topic,
     width: 1200,
     height: 627,
@@ -396,7 +399,7 @@ export function buildSocialVisuals(pack: SocialPackVisualInput, article: { title
     id: `x-${topic}-square`,
     platform: 'x',
     format: 'X 1080×1080',
-    layout: layoutForSlide(profile.closer, topic, selectedLayouts, usedLayouts, `${article.title}:x`),
+    layout: layoutForSlide(profile.closer, topic, selectedLayouts, usedLayouts, `${article.title}:${visualSeed}:x`),
     topic,
     width: 1080,
     height: 1080,

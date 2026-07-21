@@ -53,13 +53,22 @@ export async function runSelfTest(root) {
   assert.equal(result.shouldRespond, true, '★ والجملة المنشورة وحدها توقظ')
   const transferRule = agent.saveReplyRule({ name: 'تحويل وسائط', keywords: ['صورة'], actionType: 'transfer', responseText: 'سأحوّلها لمراجعة بشرية.' })
   assert.equal(agent.listReplyRules().some((rule) => rule.id === transferRule.id), true)
-  assert.equal(agent.simulateReply({ text: 'صورة من اللقاء' }).ruleId, transferRule.id)
+  const transferSimulation = agent.simulateReply({ text: 'صورة من اللقاء' })
+  assert.equal(transferSimulation.ruleId, transferRule.id)
+  assert.equal(transferSimulation.preview, '', '★ قاعدة النص الحر لا تُرسل كلاماً مؤلفاً')
+  assert.equal(transferSimulation.needsHuman, true, '★ وتتركها للدكتور بصمت')
   assert.equal(agent.replyRuleVersions(transferRule.id).length, 0)
   agent.saveReplyRule({ ...transferRule, responseText: 'نسخة جديدة' })
   assert.equal(agent.replyRuleVersions(transferRule.id).length, 1)
   agent.rollbackReplyRule(transferRule.id, agent.replyRuleVersions(transferRule.id)[0].id)
   agent.deleteReplyRule(transferRule.id)
   assert.equal(agent.listReplyRules().some((rule) => rule.id === transferRule.id), false)
+  const groundedRule = agent.saveReplyRule({ name: 'بحث الموقع', keywords: ['التقييم'], actionType: 'site-content', contentQuery: 'التقييم', responseText: 'نص حر لا ينبغي أن يظهر' })
+  const grounded = handle({ db, jid: '12345@s.whatsapp.net', text: 'التقييم', explicitContentSession: true })
+  assert.equal(grounded.ruleId, groundedRule.id)
+  assert.match(grounded.text || '', /https:\/\/dr-alfailakawi\.com\//, '★ الرد الموضوعي يحمل رابطاً من الموقع')
+  assert.ok(!(grounded.text || '').includes('نص حر لا ينبغي أن يظهر'), '★ لا يسرّب النص الحر إلى الرد')
+  agent.deleteReplyRule(groundedRule.id)
   agent.manualTakeover('12345@s.whatsapp.net', 1)
   /* الرقم شخصي: تدخّل الدكتور أعلى سلطة، حتى جملة الإيقاظ لا تتجاوزه. */
   assert.equal(should({ db, jid: '12345@s.whatsapp.net', text: 'موقع د. أحمد' }).allowed, false, '★ الجملة لا تتجاوز يد الدكتور')
@@ -96,24 +105,23 @@ export async function runSelfTest(root) {
   /* وبلا اقتباسٍ أصلاً: صمت */
   assert.equal(onMessage({ jid: quoter, text: 'كلام عابر', message: {} }).shouldRespond, false, 'وبلا اقتباس يبقى صامتاً')
 
-  /* ═══ سقف الردود يحمي الرقم الشخصي ═══ */
-  const capped = '95555@s.whatsapp.net'
-  for (let i = 0; i < 60; i += 1) db.addAudit('auto-reply-sent', db.jidKey(capped), 'اختبار')
-  assert.ok(repliesInWindow(db, capped) >= 60, 'العدّاد يقرأ الردود المُرسلة')
-  assert.equal(onMessage({ jid: capped, text: 'موقع د. أحمد', message: {} }).shouldRespond, false,
-    '★ حتى جملة الإيقاظ تخضع للسقف كي لا تُستعمل للإغراق')
+  /* ═══ بلا سقف عددي ولا ساعات صمت ═══ */
+  const unlimited = '95555@s.whatsapp.net'
+  for (let i = 0; i < 60; i += 1) db.addAudit('auto-reply-sent', db.jidKey(unlimited), 'اختبار')
+  assert.ok(repliesInWindow(db, unlimited) >= 60, 'العدّاد التشخيصي يقرأ الردود المُرسلة')
+  assert.equal(onMessage({ jid: unlimited, text: 'موقع د. أحمد', message: {} }).shouldRespond, true,
+    '★ كثرة الردود لا تمنع جملة الإيقاظ')
 
-  /* ★ والعدّاد لا يخلط المحاولة بالردّ */
+  /* والعدّاد لا يخلط المحاولة بالردّ؛ بقي للتشخيص فقط. */
   const tried = '95556@s.whatsapp.net'
   for (let i = 0; i < 20; i += 1) {
     db.run('INSERT INTO intent_logs(jid,input_hash,intent,confidence,created_at) VALUES(?,?,?,?,?)',
       db.jidKey(tried), 'h', 'SEARCH_TOPIC', 0.7, new Date().toISOString())
   }
-  assert.equal(repliesInWindow(db, tried), 0, '★ محاولاتٌ لم يُردّ عليها لا تُحسب ردوداً')
+  assert.equal(repliesInWindow(db, tried), 0, 'محاولاتٌ لم يُردّ عليها لا تُحسب ردوداً')
 
-  /* الرقم الشخصي يصمت افتراضياً ليلاً ويعمل نهاراً. */
   assert.equal(isQuietHour(daytime), false, 'يعمل نهاراً')
-  assert.equal(isQuietHour(new Date('2026-07-21T03:00:00+03:00')), true, 'يصمت في الثالثة فجراً')
+  assert.equal(isQuietHour(new Date('2026-07-21T03:00:00+03:00')), false, 'ويعمل في الثالثة فجراً بلا نافذة صمت')
 
   /* ═══ تدخّل الدكتور يمنع أي رد آلي ═══ */
   const handled = '96009@s.whatsapp.net'
@@ -127,6 +135,28 @@ export async function runSelfTest(root) {
   assert.equal(onMessage({ jid: '120399@g.us', text: 'موقع د. أحمد', message: {} }).shouldRespond, false, '★ ولا تفتح مجموعة')
   assert.equal(onMessage({ jid: handled, text: 'موقع د. أحمد', message: {}, media: true }).shouldRespond, false, '★ ولا تُبيح وسائط')
   agent.returnToBot(handled)
+  assert.equal(onMessage({ jid: handled, text: 'عندك شي عن التقييم؟', message: {} }).shouldRespond, false,
+    '★ إتاحة الإيقاظ لا تعيد الجلسة القديمة')
+  assert.equal(onMessage({ jid: handled, text: 'موقع د. أحمد', message: {} }).shouldRespond, true,
+    '★ جملة الإيقاظ وحدها تعيد البوت بعد تدخل الدكتور')
+
+  /* انتهاء مهلة التدخل لا يعيد الجلسة تلقائياً. */
+  const cooled = '96010@s.whatsapp.net'
+  onMessage({ jid: cooled, text: 'موقع د. أحمد', message: {} })
+  agent.manualTakeover(cooled, 1)
+  db.run("UPDATE chat_sessions SET manual_until=? WHERE jid=?", new Date(Date.now() - 1000).toISOString(), db.jidKey(cooled))
+  assert.equal(onMessage({ jid: cooled, text: 'آخر مقالة', message: {} }).shouldRespond, false,
+    '★ بعد انتهاء الحماية يبقى صامتاً بلا إيقاظ')
+  assert.equal(onMessage({ jid: cooled, text: 'موقع د. الفيلكاوي', message: {} }).shouldRespond, true,
+    '★ وبعدها تفتح جملة الإيقاظ جلسة جديدة')
+
+  /* الجلسة المفتوحة لا تنتهي بمرور الزمن. */
+  const persistent = '96011@s.whatsapp.net'
+  onMessage({ jid: persistent, text: 'موقع د. أحمد', message: {} })
+  db.run("UPDATE chat_sessions SET opened_at=?,last_user_at=?,updated_at=? WHERE jid=?",
+    '2020-01-01T00:00:00.000Z', '2020-01-01T00:00:00.000Z', '2020-01-01T00:00:00.000Z', db.jidKey(persistent))
+  assert.equal(onMessage({ jid: persistent, text: 'آخر مقالة', message: {} }).shouldRespond, true,
+    '★ الجلسة تبقى حيّة بلا مؤقّت حتى يتدخل الدكتور')
 
   /* ═══ ★ لا يُعلن فشلاً في وجه إنسان ═══
    *

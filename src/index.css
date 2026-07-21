@@ -2186,3 +2186,48 @@ html.site-silent .human-core__title-line::after { animation: none !important; op
 @media (prefers-reduced-motion: reduce) {
   .pwa-owner-logo.is-holding .pwa-owner-progress { animation-timing-function: steps(2, end); }
 }
+
+/* افتتاح PWA: لا تمرّ النسخة المثبّتة بالرئيسية؛ تعود بهدوء إلى آخر موضع قرأه المستخدم. */
+.pwa-launch {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  min-height: 100dvh;
+  padding: max(2rem, env(safe-area-inset-top)) 1.5rem max(2rem, env(safe-area-inset-bottom));
+  background: rgb(var(--c-canvas));
+}
+.pwa-launch__halo {
+  position: absolute;
+  width: min(78vw, 680px);
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgb(var(--c-accent) / .10), transparent 66%);
+  filter: blur(3px);
+  animation: pwa-launch-breathe 2.8s var(--E) infinite alternate;
+}
+.pwa-launch__content { position: relative; width: min(88vw, 520px); text-align: center; }
+.pwa-launch__logo { margin-inline: auto; height: 3.25rem; width: 5.4rem; object-fit: contain; }
+.pwa-launch__eyebrow { margin-top: 1.4rem; color: rgb(var(--c-accent)); font-size: .72rem; font-weight: 700; letter-spacing: .08em; }
+.pwa-launch h1 { margin-top: .65rem; color: rgb(var(--c-ink)); font-family: "El Messiri", serif; font-size: clamp(2rem, 9vw, 3.5rem); font-weight: 700; line-height: 1.25; }
+.pwa-launch p:not(.pwa-launch__eyebrow) { margin-top: .7rem; color: rgb(var(--c-soft)); font-size: .92rem; font-weight: 300; }
+.pwa-launch__line { margin: 2rem auto 0; height: 2px; width: min(52vw, 210px); overflow: hidden; border-radius: 999px; background: rgb(var(--c-ink) / .08); }
+.pwa-launch__line span { display: block; height: 100%; width: 100%; border-radius: inherit; background: rgb(var(--c-accent)); transform: scaleX(0); transform-origin: right; animation: pwa-launch-progress .92s var(--E) forwards; }
+@keyframes pwa-launch-progress { to { transform: scaleX(1); } }
+@keyframes pwa-launch-breathe { from { transform: scale(.92); opacity: .55; } to { transform: scale(1.05); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .pwa-launch__halo { animation: none; }
+  .pwa-launch__line span { animation-timing-function: steps(2, end); }
+}
+
+
+/* الأزرار العائمة لا تصطدم بشريط Safari السفلي، وتعود إلى الحافة داخل PWA.
+   وعند الاقتراب من الفوتر تختفي كلياً ليحل محلها زر «مساحتي» المدمج فيه. */
+@media (max-width: 639px) {
+  .floating-actions { bottom: calc(6.75rem + env(safe-area-inset-bottom)) !important; }
+}
+@media (display-mode: standalone) {
+  .floating-actions { bottom: calc(1rem + env(safe-area-inset-bottom)) !important; }
+}

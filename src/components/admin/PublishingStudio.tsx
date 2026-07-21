@@ -69,6 +69,7 @@ type PerfectSocialPack = {
   eventHook?: string
   visualDirections: { layout: string; tone: string; headline: string; subline: string }[]
   generatedAt?: string
+  visualSeed?: string
 }
 
 type PerfectArticleResponse = {
@@ -472,37 +473,102 @@ function buildStandaloneSocialPack(idea: string, purpose: string, audience: stri
   ]
   const carouselSlides = rotateBy(carouselPool.slice(1), variation).slice(0, 6)
   carouselSlides.unshift(carouselPool[0])
+  const x = rotateBy([
+    `${thought}
+
+${language.standard}`,
+    `${language.question}
+
+${thought}`,
+    `${language.tension}
+
+${goal}`,
+    `${language.insight}
+
+${thought}`,
+  ], variation).slice(0, 3)
+  const linkedin = rotateBy([
+    `${thought}
+
+أكتب هذه الفكرة لأن ${goal}. بالنسبة إلى ${audience}، ${language.insight}
+
+${language.question}`,
+    `${hook ? `${hook}
+
+` : ''}${thought}
+
+${language.tension}
+
+المعيار الذي أقترحه: ${language.standard}`,
+    `${language.insight}
+
+الفكرة الأساسية: ${thought}
+
+ما يهم ${audience}: ${goal}.
+
+${language.question}`,
+  ], variation).slice(0, 2)
+  const threads = rotateBy([
+    `${thought}
+
+${language.insight}`,
+    `${language.question}
+هذه ليست خاتمة؛ بل بداية النقاش.`,
+    `${goal}.
+
+${language.standard}`,
+    `${language.tension}
+
+وهنا تحديدًا تستحق الفكرة أن تُناقش.`,
+  ], variation).slice(0, 3)
+  const instagramCaptions = rotateBy([
+    `${thought}
+
+${goal}.
+
+${language.hashtags.join(' ')}`,
+    `${hook ? `${hook}
+
+` : ''}${language.tension}
+
+${thought}`,
+    `${language.question}
+
+${language.standard}`,
+    `${language.insight}
+
+${thought}
+
+${language.hashtags.join(' ')}`,
+  ], variation).slice(0, 3)
+  const generatedAt = new Date().toISOString()
 
   return {
-    x: [
-      `${thought}\n\n${language.standard}`,
-      `${language.question}\n\n${thought}`,
-      `${language.tension}\n\n${goal}`,
-    ],
-    linkedin: [
-      `${thought}\n\nأكتب هذه الفكرة لأن ${goal}. بالنسبة إلى ${audience}، ${language.insight}\n\n${language.question}`,
-      `${hook ? `${hook}\n\n` : ''}${thought}\n\n${language.tension}\n\nالمعيار الذي أقترحه: ${language.standard}`,
-    ],
-    threads: [
-      `${thought}\n\n${language.insight}`,
-      `${language.question}\nهذه ليست خاتمة؛ بل بداية النقاش.` ,
-      `${goal}.\n\n${language.standard}`,
-    ],
-    instagramCaptions: [
-      `${thought}\n\n${goal}.\n\n${language.hashtags.join(' ')}`,
-      `${hook ? `${hook}\n\n` : ''}${language.tension}\n\n${thought}`,
-      `${language.question}\n\n${language.standard}`,
-    ],
+    x,
+    linkedin,
+    threads,
+    instagramCaptions,
     carouselSlides,
-    stories: [thought, language.tension, language.standard, language.question, goal],
+    stories: rotateBy([thought, language.tension, language.standard, language.question, goal], variation),
     reelScript: `ابدأ بهذه الجملة: ${thought}. ثم اعرض المفارقة: ${language.tension}. وضّح المعيار: ${language.standard}. اختم بالسؤال: ${language.question}`,
-    whatsapp: `${thought}\n\n${goal}.\n\n${language.question}`,
-    newsletter: `${visualTopicLabel(topic)}\n\n${thought}\n\n${language.insight}\n\n${language.question}`,
+    whatsapp: `${thought}
+
+${goal}.
+
+${language.question}`,
+    newsletter: `${visualTopicLabel(topic)}
+
+${thought}
+
+${language.insight}
+
+${language.question}`,
     hashtags: language.hashtags,
     event: event || null,
     eventHook: event ? 'الربط بالحدث هنا يكشف معنى مرتبطًا بالفكرة، ولا يستخدم الحدث لمجرد اللحاق بالترند.' : '',
     visualDirections,
-    generatedAt: new Date().toISOString(),
+    generatedAt,
+    visualSeed: `${topic}:${variation}:${normalize(`${thought} ${goal}`).slice(0, 72)}`,
   }
 }
 
@@ -527,22 +593,118 @@ function buildArticleSocialPack(articleBundle: Bundle, audience: string, event?:
   ]
   return {
     ...base,
-    x: [
-      `${selected[0] || articleBundle.excerpt}\n\n${articleBundle.title}`,
-      `${language.question}\n\n${articleBundle.title}`,
-      `${language.standard}\n\n${articleBundle.excerpt}`,
-    ],
-    linkedin: [
-      `${articleBundle.title}\n\n${articleBundle.excerpt}\n\n${language.question}`,
-      `${selected.slice(0, 2).join('\n\n')}\n\n${language.standard}`,
-    ],
-    instagramCaptions: [
-      `${articleBundle.title}\n\n${selected[0] || articleBundle.excerpt}\n\n${base.hashtags.join(' ')}`,
-      `${language.tension}\n\n${articleBundle.excerpt}`,
-      `${language.question}\n\nاقرأ المقال كاملًا في الموقع.`,
-    ],
+    x: rotateBy([
+      `${selected[0] || articleBundle.excerpt}
+
+${articleBundle.title}`,
+      `${language.question}
+
+${articleBundle.title}`,
+      `${language.standard}
+
+${articleBundle.excerpt}`,
+      `${language.tension}
+
+${selected[1] || articleBundle.title}`,
+    ], variation).slice(0, 3),
+    linkedin: rotateBy([
+      `${articleBundle.title}
+
+${articleBundle.excerpt}
+
+${language.question}`,
+      `${selected.slice(0, 2).join('\n\n')}
+
+${language.standard}`,
+      `${language.tension}
+
+${articleBundle.excerpt}
+
+${selected[2] || language.question}`,
+    ], variation).slice(0, 2),
+    threads: rotateBy([
+      `${selected[0] || articleBundle.excerpt}
+
+${language.question}`,
+      `${language.tension}
+
+${articleBundle.title}`,
+      `${language.insight}
+
+${selected[1] || articleBundle.excerpt}`,
+      `${language.standard}
+
+اقرأ الفكرة كاملة في الموقع.`,
+    ], variation).slice(0, 3),
+    instagramCaptions: rotateBy([
+      `${articleBundle.title}
+
+${selected[0] || articleBundle.excerpt}
+
+${base.hashtags.join(' ')}`,
+      `${language.tension}
+
+${articleBundle.excerpt}`,
+      `${language.question}
+
+اقرأ المقال كاملًا في الموقع.`,
+      `${selected[1] || language.insight}
+
+${language.standard}
+
+${base.hashtags.join(' ')}`,
+    ], variation).slice(0, 3),
     carouselSlides: slides,
-    newsletter: `${articleBundle.title}\n\n${articleBundle.excerpt}\n\n${selected.slice(0, 2).join('\n\n')}\n\n${language.question}`,
+    newsletter: `${articleBundle.title}
+
+${articleBundle.excerpt}
+
+${selected.slice(0, 2).join('\n\n')}
+
+${language.question}`,
+    visualSeed: `${topic}:${variation}:${normalize(`${articleBundle.title} ${articleBundle.excerpt}`).slice(0, 72)}`,
+  }
+}
+
+const uniqueBy = <T,>(items: T[], keyOf: (item: T) => string) => items.filter((item, index, all) => {
+  const key = keyOf(item).trim()
+  return Boolean(key) && all.findIndex((candidate) => keyOf(candidate).trim() === key) === index
+})
+
+function mergeSocialPacks(local: PerfectSocialPack, remote: PerfectSocialPack, variation: number, event?: CurrentEvent | null): PerfectSocialPack {
+  const mixText = (remoteItems: string[] | undefined, localItems: string[], limit: number) => rotateBy(
+    uniqueBy([...(remoteItems || []), ...localItems], (item) => normalize(item)),
+    variation,
+  ).slice(0, limit)
+  const pick = (remoteValue: string | undefined, localValue: string) => variation % 2 && localValue.trim() ? localValue : (remoteValue?.trim() || localValue)
+  const carouselSlides = rotateBy(uniqueBy(
+    [...(remote.carouselSlides || []), ...local.carouselSlides],
+    (item) => normalize(`${item.kicker} ${item.title} ${item.body}`),
+  ), variation).slice(0, 8)
+  const visualDirections = rotateBy(uniqueBy(
+    [...(remote.visualDirections || []), ...local.visualDirections],
+    (item) => normalize(`${item.layout} ${item.headline} ${item.subline}`),
+  ), variation).slice(0, 8)
+
+  return {
+    ...local,
+    ...remote,
+    x: mixText(remote.x, local.x, 3),
+    linkedin: mixText(remote.linkedin, local.linkedin, 2),
+    threads: mixText(remote.threads, local.threads, 3),
+    instagramCaptions: mixText(remote.instagramCaptions, local.instagramCaptions, 3),
+    carouselSlides,
+    stories: mixText(remote.stories, local.stories, 5),
+    reelScript: pick(remote.reelScript, local.reelScript),
+    whatsapp: pick(remote.whatsapp, local.whatsapp),
+    newsletter: pick(remote.newsletter, local.newsletter),
+    hashtags: uniqueBy([...(remote.hashtags || []), ...local.hashtags], (item) => normalize(item)).slice(0, 10),
+    visualDirections,
+    event: remote.event || event || local.event || null,
+    eventHook: remote.eventHook?.trim() || local.eventHook || '',
+    generatedAt: new Date().toISOString(),
+    /* بذرة محلية مرتبطة بالموضوع والضغطة؛ لا يستطيع ردّ الخادم العام أن يمحوها. */
+    visualSeed: local.visualSeed,
   }
 }
 
@@ -1652,15 +1814,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
         socialPack = buildArticleSocialPack(articleBundle, audience, selectedEvent, variation)
       } else {
         const local = buildArticleSocialPack(articleBundle, audience, selectedEvent, variation)
-        socialPack = {
-          ...local,
-          ...socialPack,
-          carouselSlides: socialPack.carouselSlides?.length ? socialPack.carouselSlides : local.carouselSlides,
-          stories: socialPack.stories?.length ? socialPack.stories : local.stories,
-          visualDirections: socialPack.visualDirections?.length ? socialPack.visualDirections : local.visualDirections,
-          hashtags: socialPack.hashtags?.length ? socialPack.hashtags : local.hashtags,
-          event: socialPack.event || selectedEvent,
-        }
+        socialPack = mergeSocialPacks(local, socialPack, variation, selectedEvent)
         setNotice('بُنيت منظومة توزيع جديدة، وتعرّفت القوالب على موضوع المقال ✓')
       }
       setBundle((previous) => previous.slug === articleBundle.slug ? { ...previous, socialPack } : previous)
@@ -2019,15 +2173,7 @@ ${pulsePurpose.trim()}`,
       }
       const local = buildStandaloneSocialPack(pulseIdea, pulsePurpose, pulseAudience, selectedEvent, variation)
       if (pack) {
-        pack = {
-          ...local,
-          ...pack,
-          carouselSlides: pack.carouselSlides?.length ? pack.carouselSlides : local.carouselSlides,
-          stories: pack.stories?.length ? pack.stories : local.stories,
-          visualDirections: pack.visualDirections?.length ? pack.visualDirections : local.visualDirections,
-          hashtags: pack.hashtags?.length ? pack.hashtags : local.hashtags,
-          event: pack.event || selectedEvent,
-        }
+        pack = mergeSocialPacks(local, pack, variation, selectedEvent)
       } else pack = local
       setPulsePack(pack)
       setNotice(`بُنيت حزمة مستقلة متنوّعة لموضوع «${visualTopicLabel(detectVisualTopic(`${pulseIdea} ${pulsePurpose}`))}» ✓`)

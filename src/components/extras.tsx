@@ -214,11 +214,40 @@ export function OwnerEdit({ tab, slug, className = '' }: { tab: 'articles' | 'bo
   )
 }
 
-/* ---------- «انسخ الاستشهاد» — APA وMLA بنقرة، باسم الدكتور ---------- */
-export function CiteButton({ title, year, container, url, compact = false, contextLabel = 'فتح سياق المقال' }: { title: string; year: string; container: string; url: string; compact?: boolean; contextLabel?: string }) {
+/* ---------- استشهاد أكاديمي ذكي واحد — APA / MLA / Chicago ---------- */
+type CitationStyle = 'apa' | 'mla' | 'chicago'
+
+export function CiteButton({
+  title,
+  year,
+  container,
+  url,
+  authors = 'الفيلكاوي، أحمد حسين',
+  compact = false,
+  contextLabel = 'فتح المصدر الأصلي',
+}: {
+  title: string
+  year: string
+  container: string
+  url: string
+  authors?: string
+  compact?: boolean
+  contextLabel?: string
+}) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
-  const citation = `الفيلكاوي، أحمد حسين. «${title}». ${container}، ${year}، ${url}.`
+  const [style, setStyle] = useState<CitationStyle>('apa')
+  const citations: Record<CitationStyle, string> = {
+    apa: `${authors}. (${year}). ${title}. ${container}. ${url}`,
+    mla: `${authors}. «${title}». ${container}، ${year}، ${url}.`,
+    chicago: `${authors}. «${title}». ${container} (${year}). ${url}.`,
+  }
+  const citation = citations[style]
+  const styles: { id: CitationStyle; label: string }[] = [
+    { id: 'apa', label: 'APA 7' },
+    { id: 'mla', label: 'MLA 9' },
+    { id: 'chicago', label: 'Chicago' },
+  ]
 
   const copy = async () => {
     try {
@@ -237,7 +266,6 @@ export function CiteButton({ title, year, container, url, compact = false, conte
       setCopied(true)
       setTimeout(() => setCopied(false), 1800)
     } catch {
-      // Fallback manual write
       try {
         const textarea = document.createElement('textarea')
         textarea.value = citation
@@ -249,9 +277,7 @@ export function CiteButton({ title, year, container, url, compact = false, conte
         textarea.remove()
         setCopied(true)
         setTimeout(() => setCopied(false), 1800)
-      } catch {
-        /* noop */
-      }
+      } catch { /* noop */ }
     }
   }
 
@@ -275,18 +301,7 @@ export function CiteButton({ title, year, container, url, compact = false, conte
           role="dialog"
           aria-modal="true"
           aria-labelledby="citation-dialog-title"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 2147483000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '100vw',
-            height: '100dvh',
-            writingMode: 'horizontal-tb',
-            direction: 'rtl',
-          }}
+          style={{ position: 'fixed', inset: 0, zIndex: 2147483000, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100vw', height: '100dvh', writingMode: 'horizontal-tb', direction: 'rtl' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -295,14 +310,7 @@ export function CiteButton({ title, year, container, url, compact = false, conte
           <motion.section
             className="citation-card-v2"
             dir="rtl"
-            style={{
-              writingMode: 'horizontal-tb',
-              direction: 'rtl',
-              width: '100%',
-              maxWidth: '540px',
-              minWidth: '280px',
-              boxSizing: 'border-box',
-            }}
+            style={{ writingMode: 'horizontal-tb', direction: 'rtl', width: '100%', maxWidth: '540px', minWidth: '280px', boxSizing: 'border-box' }}
             initial={{ opacity: 0, y: 24, scale: .99 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: .995 }}
@@ -310,15 +318,20 @@ export function CiteButton({ title, year, container, url, compact = false, conte
           >
             <header className="citation-header-v2">
               <div className="citation-heading-v2">
-                <p className="citation-kicker-v2">المصدر والاقتباس</p>
-                <h3 id="citation-dialog-title" className="citation-title-v2">استشهاد جاهز وآمن للنسخ</h3>
+                <p className="citation-kicker-v2">استشهاد أكاديمي ذكي</p>
+                <h3 id="citation-dialog-title" className="citation-title-v2">صيغة واحدة، بثلاثة أنماط معتمدة</h3>
               </div>
               <button type="button" onClick={() => setOpen(false)} className="citation-close-v2" aria-label="إغلاق النافذة">×</button>
             </header>
-            <p className="citation-body-v2">{citation}</p>
+            <div className="citation-style-switch" role="tablist" aria-label="نمط الاستشهاد">
+              {styles.map((item) => (
+                <button key={item.id} type="button" role="tab" aria-selected={style === item.id} onClick={() => { setStyle(item.id); setCopied(false) }} className={style === item.id ? 'is-active' : ''}>{item.label}</button>
+              ))}
+            </div>
+            <p className="citation-body-v2" dir="auto">{citation}</p>
             <footer className="citation-footer-v2">
               <a href={url} target="_blank" rel="noreferrer" className="citation-source-v2">{contextLabel} ↗</a>
-              <button type="button" onClick={copy} className="citation-copy-v2">{copied ? '✓ نُسخ الاستشهاد' : 'نسخ الاستشهاد'}</button>
+              <button type="button" onClick={copy} className="citation-copy-v2">{copied ? '✓ نُسخ الاستشهاد' : `نسخ ${styles.find((item) => item.id === style)?.label}`}</button>
             </footer>
           </motion.section>
         </motion.div>
@@ -331,15 +344,7 @@ export function CiteButton({ title, year, container, url, compact = false, conte
   if (compact) {
     return (
       <>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-expanded={open}
-          aria-haspopup="dialog"
-          aria-label="عرض الاستشهاد المرجعي"
-          title="الاستشهاد المرجعي"
-          className="article-tool-icon"
-        >
+        <button type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-haspopup="dialog" aria-label="عرض الاستشهاد المرجعي" title="الاستشهاد المرجعي" className="article-tool-icon">
           <span aria-hidden className="font-display text-[1.35rem] leading-none">“</span>
         </button>
         {portalElement}
@@ -350,15 +355,9 @@ export function CiteButton({ title, year, container, url, compact = false, conte
   return (
     <>
       <div className="mt-8 rounded-xl border border-hair">
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-expanded={open}
-          aria-haspopup="dialog"
-          className="flex w-full items-center justify-between px-5 py-3 text-[.88rem] font-medium text-soft transition-colors hover:text-accent"
-        >
-          <span>✍ انسخ الاستشهاد الأكاديمي</span>
-          <span className="text-[.82rem] font-semibold text-accent">عرض النافذة ↗</span>
+        <button type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-haspopup="dialog" className="flex w-full items-center justify-between px-5 py-3 text-[.88rem] font-medium text-soft transition-colors hover:text-accent">
+          <span>✍ الاستشهاد الأكاديمي</span>
+          <span className="text-[.82rem] font-semibold text-accent">APA · MLA · Chicago ↗</span>
         </button>
       </div>
       {portalElement}

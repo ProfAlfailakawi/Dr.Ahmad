@@ -490,11 +490,11 @@ export async function generateContentSuggestion(input, fetchImpl = fetch) {
 
 const paperAnalysisCache = new Map()
 const defaultResearchOrcid = 'https://orcid.org/0000-0002-1767-4963'
-const researchAnalysisVersion = '2026-07-23-nuclear-2'
+const researchAnalysisVersion = '2026-07-23-nuclear-3'
 
 function paperAnalysisInput(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new HttpError(400, 'Expected a JSON object')
-  const fields = ['title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'scholar', 'researchgate', 'orcid', 'repository', 'doi', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'studyType', 'keywords', 'iso', 'date', 'year', 'metadataText', 'pdfText', 'analysisText', 'analysisFingerprint']
+  const fields = ['title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'scholar', 'researchgate', 'orcid', 'repository', 'doi', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'studyType', 'keywords', 'iso', 'date', 'year', 'metadataText', 'pdfText', 'analysisText', 'analysisFingerprint', 'fieldEvidence', 'conflictReport']
   const longFields = new Set(['abstractAr', 'metadataText', 'pdfText', 'analysisText'])
   const result = {}
   for (const field of fields) result[field] = boundedString(value[field], longFields.has(field) ? 60_000 : 4_000)
@@ -583,11 +583,25 @@ function optionalPaperText(value, maximum = 2_400) {
   return typeof value === 'string' ? Array.from(value.replace(/\s+/g, ' ').trim()).slice(0, maximum).join('') : ''
 }
 
+function normalizedResearchJson(value, fallback, maximum = 16_000) {
+  const raw = typeof value === 'string' ? value.trim() : value
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw || JSON.stringify(fallback)) : raw
+    return optionalPaperText(JSON.stringify(parsed ?? fallback), maximum)
+  } catch {
+    return JSON.stringify(fallback)
+  }
+}
+
 function normalizePaperAnalysis(value) {
   const parsed = parseSuggestion(value)
   const fields = ['meta', 'abstractAr', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'keywords', 'journal', 'year', 'doi', 'orcid', 'repository']
   const longFields = new Set(['abstractAr', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'methodology'])
-  return Object.fromEntries(fields.map((field) => [field, optionalPaperText(parsed[field], field === 'year' ? 12 : longFields.has(field) ? 4_800 : 2_400)]))
+  return {
+    ...Object.fromEntries(fields.map((field) => [field, optionalPaperText(parsed[field], field === 'year' ? 12 : longFields.has(field) ? 4_800 : 2_400)])),
+    fieldEvidence: normalizedResearchJson(parsed.fieldEvidence, {}, 18_000),
+    conflictReport: normalizedResearchJson(parsed.conflictReport, [], 10_000),
+  }
 }
 
 function absoluteResearchLink(raw, base) {
@@ -730,6 +744,9 @@ async function generatePaperAnalysis(input, fetchImpl = fetch) {
     'الكلمات المفتاحية تُؤخذ حصراً من قسم Keywords/الكلمات المفتاحية في البحث أو Metadata الرسمية؛ لا تولّد كلمات بديلة.',
     'العينة/نطاق الدراسة يجب أن تكون كاملة قدر الإمكان: العدد الكلي، الفئة، المؤسسة/المكان، طريقة الاختيار، والتوزيعات الفرعية أو النوع الاجتماعي متى وردت. لا تختصرها إلى رقم فقط.',
     'السؤال العلمي: انقل سؤال البحث الصريح، أو صيّغ الهدف بصياغة عربية أمينة فقط عندما يرد هدف صريح في المصدر. أبرز النتائج: لخّص النتائج الفعلية دون تعميم زائد.',
+    'أعد fieldEvidence كسلسلة JSON صالحة. مفاتيحها هي أسماء الحقول غير الفارغة فقط، وقيمة كل مفتاح كائن بالشكل: {"source":"PDF الكامل أو Metadata الرسمية أو DOI / Crossref أو صفحة المجلة أو بيانات لوحة التحكم","location":"رقم الصفحة والقسم أو الجدول إن أمكن","quote":"مقتطف قصير جداً يدعم المعلومة"}. لا تضع صفحة أو مقتطفاً إلا إذا رأيته فعلياً.',
+    'أعد conflictReport كسلسلة JSON صالحة تمثل مصفوفة. سجّل فقط التعارض الحقيقي بين مصدرين في DOI أو السنة أو المجلة أو العينة أو المنهج أو النتائج، بالشكل: {"field":"sample","label":"اختلاف العينة","detail":"وصف القيمتين دون ترجيح مختلق","sources":["PDF ص. 12","Metadata"],"blocking":true}. إذا لم يوجد تعارض فأعد [] تماماً.',
+    'لا تعتبر اختلاف الصياغة تعارضاً ما دام المعنى والرقم متطابقين. عند التعارض لا تخترع حلاً؛ سجّله ليمنع النشر حتى يراجَع.',
     `بيانات لوحة التحكم: ${JSON.stringify(input)}`,
     metadata ? `بيانات DOI/Crossref الرسمية: ${metadata}` : '',
     input.metadataText ? `Metadata مرفقة: ${input.metadataText}` : '',
@@ -738,7 +755,7 @@ async function generatePaperAnalysis(input, fetchImpl = fetch) {
     sourceTexts.join('\n').slice(0, 220_000),
   ].filter(Boolean).join('\n\n')
 
-  const analysisFields = ['meta', 'abstractAr', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'keywords', 'journal', 'year', 'doi', 'orcid', 'repository']
+  const analysisFields = ['meta', 'abstractAr', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'keywords', 'journal', 'year', 'doi', 'orcid', 'repository', 'fieldEvidence', 'conflictReport']
   let response
   try {
     response = await fetchWithTimeout(fetchImpl, `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
@@ -769,6 +786,7 @@ async function generatePaperAnalysis(input, fetchImpl = fetch) {
   const raw = payload?.candidates?.[0]?.content?.parts?.map((part) => typeof part?.text === 'string' ? part.text : '').join('')
   const normalized = normalizePaperAnalysis(raw)
   const finalDoi = cleanDoiValue(normalized.doi || discovered.doi)
+  const conflicts = (() => { try { return JSON.parse(normalized.conflictReport || '[]') } catch { return [] } })()
   const result = {
     ...normalized,
     doi: finalDoi,
@@ -781,7 +799,7 @@ async function generatePaperAnalysis(input, fetchImpl = fetch) {
     reviewStatus: 'محكّم',
     openAccess: Boolean(discovered.pdf || discovered.repository || discovered.researchgate),
     analysisConfidence: Math.min(99, 64 + Math.min(32, sources.length * 4)),
-    analysisNeedsReview: false,
+    analysisNeedsReview: Array.isArray(conflicts) && conflicts.some((item) => item && item.blocking !== false),
     analysisFingerprint: input.analysisFingerprint,
     analysisSources: Array.from(new Set(sources)).join('، '),
     analyzedAt: new Date().toISOString(),

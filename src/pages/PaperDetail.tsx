@@ -5,7 +5,7 @@ import { JsonLd, useSeo } from '../components/seo'
 import { CiteButton, OwnerEdit } from '../components/extras'
 import { profile, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
-import { analyzeResearch } from '../lib/research-intelligence'
+import { analyzeResearch, type ResearchEvidence } from '../lib/research-intelligence'
 
 const cleanText = (value = '') => value.replace(/^ملخص عربي:\s*/, '').replace(/\s+/g, ' ').trim()
 const arabicScientific = (value = '') => {
@@ -13,6 +13,13 @@ const arabicScientific = (value = '') => {
   return /[\u0600-\u06ff]/.test(cleaned) ? cleaned : ''
 }
 type ResearchSection = 'metadata' | 'science' | 'sources'
+
+type ScientificCard = {
+  key: string
+  label: string
+  value: string
+  evidence?: ResearchEvidence
+}
 
 function ResearchAccordion({
   id,
@@ -48,6 +55,16 @@ function ResearchAccordion({
   )
 }
 
+function EvidenceStamp({ evidence, fallback = 'المصدر الأصلي' }: { evidence?: ResearchEvidence; fallback?: string }) {
+  const label = evidence?.label || `موثّق من ${fallback}`
+  return (
+    <span className="research-evidence-stamp" title={evidence?.quote || label}>
+      <span aria-hidden>✓</span>
+      <span>{label}</span>
+    </span>
+  )
+}
+
 export default function PaperDetail() {
   const { slug } = useParams()
   const location = useLocation()
@@ -55,6 +72,7 @@ export default function PaperDetail() {
   const index = papers.findIndex((paper) => paper.slug === slug)
   const p = papers[index]
   const [openSection, setOpenSection] = useState<ResearchSection | null>(null)
+  const [readerKey, setReaderKey] = useState('')
   const intelligence = useMemo(() => analyzeResearch(p || {}), [p])
 
   useSeo({ title: p?.title ?? 'بحث', description: p?.abstractAr || p?.meta, path: `/research/${slug}`, type: 'article' })
@@ -69,7 +87,6 @@ export default function PaperDetail() {
   useEffect(() => {
     if (!p || location.hash !== '#research-passport') return
     revealSection('science', 'research-passport')
-    // يعمل عند الدخول المباشر من زر «افهم هذا البحث» في قائمة الأبحاث.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.hash, p?.slug])
 
@@ -88,18 +105,24 @@ export default function PaperDetail() {
   const abstractAr = arabicScientific(p.abstractAr)
   const doiLink = intelligence.links.find((item) => item.id === 'doi')
   const sourceLinks = intelligence.links.filter((item) => item.id !== 'doi')
-  const dataCards = [
-    { label: 'السؤال العلمي', value: arabicScientific(p.researchQuestion || intelligence.researchQuestion) },
-    { label: 'أبرز النتائج', value: arabicScientific(p.keyFinding || intelligence.keyFinding) },
-    { label: 'العينة / نطاق الدراسة', value: arabicScientific(p.sample || intelligence.sample) },
-    { label: 'المنهج', value: arabicScientific(p.methodology || intelligence.methodology) },
-    { label: 'نوع الدراسة', value: studyType },
-    { label: 'التطبيقات', value: arabicScientific(p.applications || intelligence.applications) },
-    { label: 'الإضافة العلمية', value: arabicScientific(p.contribution || intelligence.contribution) },
-    { label: 'القيود', value: arabicScientific(p.limitations || intelligence.limitations) },
+  const dataCards: ScientificCard[] = [
+    { key: 'researchQuestion', label: 'السؤال العلمي', value: arabicScientific(p.researchQuestion || intelligence.researchQuestion), evidence: intelligence.fieldEvidence.researchQuestion },
+    { key: 'sample', label: 'العينة / نطاق الدراسة', value: arabicScientific(p.sample || intelligence.sample), evidence: intelligence.fieldEvidence.sample },
+    { key: 'methodology', label: 'المنهج', value: arabicScientific(p.methodology || intelligence.methodology), evidence: intelligence.fieldEvidence.methodology },
+    { key: 'studyType', label: 'نوع الدراسة', value: studyType, evidence: intelligence.fieldEvidence.studyType },
+    { key: 'keyFinding', label: 'أبرز النتائج', value: arabicScientific(p.keyFinding || intelligence.keyFinding), evidence: intelligence.fieldEvidence.keyFinding },
+    { key: 'applications', label: 'التطبيقات', value: arabicScientific(p.applications || intelligence.applications), evidence: intelligence.fieldEvidence.applications },
+    { key: 'contribution', label: 'الإضافة العلمية', value: arabicScientific(p.contribution || intelligence.contribution), evidence: intelligence.fieldEvidence.contribution },
+    { key: 'limitations', label: 'القيود', value: arabicScientific(p.limitations || intelligence.limitations), evidence: intelligence.fieldEvidence.limitations },
   ].filter((item) => Boolean(item.value))
   const citationUrl = doiLink?.url || intelligence.links.find((item) => item.id === 'publisher')?.url || `${SITE_URL}/research/${p.slug}`
   const metadataCount = [topic, researchers, journal, year, doi, keywords].filter(Boolean).length
+  const evidenceCount = Object.keys(intelligence.fieldEvidence).length
+
+  const goToReaderCard = (card: ScientificCard) => {
+    setReaderKey(card.key)
+    window.requestAnimationFrame(() => document.getElementById(`research-card-${card.key}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+  }
 
   return (
     <Page className="content-research research-detail-page">
@@ -135,6 +158,7 @@ export default function PaperDetail() {
                 <div className="flex flex-wrap gap-2">
                   <span className="research-badge inline-flex rounded-full px-3 py-1.5 text-[.72rem] font-semibold">محكّم</span>
                   {studyType && <span className="research-badge inline-flex rounded-full px-3 py-1.5 text-[.72rem] font-semibold">{studyType}</span>}
+                  {evidenceCount > 0 && <span className="research-badge inline-flex rounded-full px-3 py-1.5 text-[.72rem] font-semibold">{evidenceCount} أختام مصدر</span>}
                 </div>
                 {year && <span className="font-display text-[.84rem] font-bold text-accent">{year}</span>}
               </div>
@@ -151,21 +175,14 @@ export default function PaperDetail() {
           <div className="mt-7 grid gap-4">
             {metadataCount > 0 && (
               <FadeUp delay={0.09}>
-                <ResearchAccordion
-                  id="research-metadata"
-                  eyebrow="هوية البحث"
-                  title="البيانات التوثيقية"
-                  summary={`${metadataCount} عناصر موثقة — تُفتح عند الحاجة فقط`}
-                  open={openSection === 'metadata'}
-                  onToggle={() => setOpenSection((value) => value === 'metadata' ? null : 'metadata')}
-                >
+                <ResearchAccordion id="research-metadata" eyebrow="هوية البحث" title="البيانات التوثيقية" summary={`${metadataCount} عناصر موثقة — تُفتح عند الحاجة فقط`} open={openSection === 'metadata'} onToggle={() => setOpenSection((value) => value === 'metadata' ? null : 'metadata')}>
                   <dl className="research-meta-panel grid gap-px sm:grid-cols-2">
-                    {topic && <div className="research-meta-cell"><dt>الموضوع</dt><dd>{topic}</dd></div>}
-                    <div className="research-meta-cell"><dt>الباحثون</dt><dd>{researchers}</dd></div>
-                    {journal && <div className="research-meta-cell"><dt>المجلة</dt><dd dir="auto">{journal}</dd></div>}
-                    {year && <div className="research-meta-cell"><dt>سنة النشر</dt><dd>{year}</dd></div>}
-                    {doi && <div className="research-meta-cell"><dt>المعرّف الرقمي DOI</dt><dd dir="ltr" className="break-all text-left">{doiLink ? <a href={doiLink.url} target="_blank" rel="noreferrer" className="research-inline-source">{doi} ↗</a> : doi}</dd></div>}
-                    {keywords && <div className="research-meta-cell sm:col-span-2"><dt>الكلمات المفتاحية</dt><dd>{keywords}</dd></div>}
+                    {topic && <div className="research-meta-cell"><dt>الموضوع</dt><dd>{topic}</dd><EvidenceStamp evidence={intelligence.fieldEvidence.topic} /></div>}
+                    <div className="research-meta-cell"><dt>الباحثون</dt><dd>{researchers}</dd><EvidenceStamp fallback="بيانات المؤلف" /></div>
+                    {journal && <div className="research-meta-cell"><dt>المجلة</dt><dd dir="auto">{journal}</dd><EvidenceStamp evidence={intelligence.fieldEvidence.journal} fallback="بيانات النشر" /></div>}
+                    {year && <div className="research-meta-cell"><dt>سنة النشر</dt><dd>{year}</dd><EvidenceStamp evidence={intelligence.fieldEvidence.year} fallback="بيانات النشر" /></div>}
+                    {doi && <div className="research-meta-cell"><dt>المعرّف الرقمي DOI</dt><dd dir="ltr" className="break-all text-left">{doiLink ? <a href={doiLink.url} target="_blank" rel="noreferrer" className="research-inline-source">{doi} ↗</a> : doi}</dd><EvidenceStamp evidence={intelligence.fieldEvidence.doi} fallback="DOI / Crossref" /></div>}
+                    {keywords && <div className="research-meta-cell sm:col-span-2"><dt>الكلمات المفتاحية</dt><dd>{keywords}</dd><EvidenceStamp evidence={intelligence.fieldEvidence.keywords} /></div>}
                   </dl>
                 </ResearchAccordion>
               </FadeUp>
@@ -173,19 +190,26 @@ export default function PaperDetail() {
 
             {dataCards.length > 0 && (
               <FadeUp delay={0.11}>
-                <ResearchAccordion
-                  id="research-passport"
-                  eyebrow="القراءة العلمية"
-                  title="البيانات العلمية الكاملة"
-                  summary={`${dataCards.length} محاور مستخرجة من البحث ومصادره الأصلية`}
-                  open={openSection === 'science'}
-                  onToggle={() => setOpenSection((value) => value === 'science' ? null : 'science')}
-                >
+                <ResearchAccordion id="research-passport" eyebrow="القراءة العلمية" title="البيانات العلمية الكاملة" summary={`${dataCards.length} محاور مستخرجة من البحث ومصادره الأصلية`} open={openSection === 'science'} onToggle={() => setOpenSection((value) => value === 'science' ? null : 'science')}>
+                  <div className="research-smart-reader" aria-label="قارئ البحث الذكي">
+                    <div className="research-smart-reader-head">
+                      <span><strong>قارئ البحث الذكي</strong><small>انتقل مباشرة إلى المحور الذي تريده</small></span>
+                      <span className="research-smart-reader-count">{dataCards.length} محاور</span>
+                    </div>
+                    <div className="research-smart-reader-rail">
+                      {dataCards.map((card, cardIndex) => (
+                        <button key={card.key} type="button" onClick={() => goToReaderCard(card)} className={readerKey === card.key ? 'is-active' : ''}>
+                          <span>{String(cardIndex + 1).padStart(2, '0')}</span>{card.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="research-passport-grid grid gap-px sm:grid-cols-2">
                     {dataCards.map((card) => (
-                      <div key={card.label} className="research-data-card min-w-0 p-5 md:p-6">
+                      <div id={`research-card-${card.key}`} key={card.key} className={`research-data-card min-w-0 scroll-mt-32 p-5 md:p-6 ${readerKey === card.key ? 'is-reader-active' : ''}`}>
                         <h3 className="text-[.75rem] font-bold text-accent">{card.label}</h3>
                         <p className="mt-2 whitespace-pre-line break-words text-[.92rem] leading-[1.95] text-ink [overflow-wrap:anywhere]">{card.value}</p>
+                        <EvidenceStamp evidence={card.evidence} />
                       </div>
                     ))}
                   </div>
@@ -195,26 +219,18 @@ export default function PaperDetail() {
 
             {(abstractAr || sourceLinks.length > 0) && (
               <FadeUp delay={0.13}>
-                <ResearchAccordion
-                  id="research-sources"
-                  eyebrow="النص والمصادر"
-                  title="الملخص والروابط الأصلية"
-                  summary={`${abstractAr ? 'الملخص العربي الكامل' : ''}${abstractAr && sourceLinks.length ? ' · ' : ''}${sourceLinks.length ? `${sourceLinks.length} روابط مباشرة` : ''}`}
-                  open={openSection === 'sources'}
-                  onToggle={() => setOpenSection((value) => value === 'sources' ? null : 'sources')}
-                >
+                <ResearchAccordion id="research-sources" eyebrow="النص والمصادر" title="الملخص والروابط الأصلية" summary={`${abstractAr ? 'الملخص العربي الكامل' : ''}${abstractAr && sourceLinks.length ? ' · ' : ''}${sourceLinks.length ? `${sourceLinks.length} روابط مباشرة` : ''}`} open={openSection === 'sources'} onToggle={() => setOpenSection((value) => value === 'sources' ? null : 'sources')}>
                   {abstractAr && (
                     <div className="research-abstract px-6 py-6 md:px-7">
                       <p className="text-[.76rem] font-bold text-accent">الملخص</p>
                       <p className="mt-3 whitespace-pre-line text-[.96rem] font-normal leading-[2] text-ink">{abstractAr}</p>
+                      <EvidenceStamp evidence={intelligence.fieldEvidence.abstractAr} fallback="ملخص البحث" />
                     </div>
                   )}
                   {sourceLinks.length > 0 && (
                     <nav className="research-source-grid border-t border-hair px-6 py-6 md:px-7" aria-label="روابط البحث">
                       {sourceLinks.map((item) => (
-                        <a key={item.id} href={item.url} target="_blank" rel="noreferrer" className="research-source-card">
-                          <span>{item.label}</span><span aria-hidden>↗</span>
-                        </a>
+                        <a key={item.id} href={item.url} target="_blank" rel="noreferrer" className="research-source-card"><span>{item.label}</span><span aria-hidden>↗</span></a>
                       ))}
                     </nav>
                   )}
@@ -224,7 +240,7 @@ export default function PaperDetail() {
           </div>
 
           <FadeUp delay={0.15}>
-            <CiteButton title={p.title} year={year || 'د.ت.'} container={journal || 'بحث محكّم'} url={citationUrl} contextLabel="فتح مصدر البحث" />
+            <CiteButton title={p.title} year={year || 'د.ت.'} container={journal || 'بحث محكّم'} url={citationUrl} authors={researchers} contextLabel="فتح مصدر البحث" />
           </FadeUp>
 
           <FadeUp>

@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { JsonLd, useSeo } from '../components/seo'
 import { Link } from 'react-router-dom'
 import { FadeUp, Page, PageHead, SocialIcon } from '../components/ui'
@@ -10,10 +11,24 @@ const ar = (n: number) => String(n).padStart(2, '0')
 const paperCount = (count: number) => count === 1 ? 'بحث واحد' : count === 2 ? 'بحثان' : `${count} بحثاً`
 const badge = 'research-badge inline-flex items-center rounded-full px-3 py-1.5 text-[.72rem] font-semibold'
 const arabicOnly = (value = '') => /[\u0600-\u06ff]/.test(value) ? value.trim() : ''
+const normalizeSearch = (value = '') => value.toLowerCase().replace(/[ًٌٍَُِّْـ]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
 
 export default function Research() {
   const { papers } = useCmsContent()
-  const paged = usePagedList(papers, 12, String(papers.length))
+  const [query, setQuery] = useState('')
+  const [typeFilter, setTypeFilter] = useState('الكل')
+  const [yearFilter, setYearFilter] = useState('الكل')
+  const indexed = useMemo(() => papers.map((paper) => ({ paper, intelligence: analyzeResearch(paper) })), [papers])
+  const types = useMemo(() => ['الكل', ...Array.from(new Set(indexed.map(({ intelligence }) => arabicOnly(intelligence.studyType)).filter(Boolean))).sort((left, right) => left.localeCompare(right, 'ar'))], [indexed])
+  const years = useMemo(() => ['الكل', ...Array.from(new Set(indexed.map(({ intelligence }) => intelligence.year).filter(Boolean))).sort((left, right) => right.localeCompare(left))], [indexed])
+  const term = normalizeSearch(query)
+  const filtered = useMemo(() => indexed.filter(({ intelligence }) => {
+    if (typeFilter !== 'الكل' && intelligence.studyType !== typeFilter) return false
+    if (yearFilter !== 'الكل' && intelligence.year !== yearFilter) return false
+    if (!term) return true
+    return intelligence.searchText.includes(term)
+  }), [indexed, term, typeFilter, yearFilter])
+  const paged = usePagedList(filtered, 12, `${papers.length}|${term}|${typeFilter}|${yearFilter}`)
   const count = paperCount(papers.length)
 
   useSeo({ title: 'المساهمات العلمية', path: '/research', description: `${count} محكّماً في تكنولوجيا التعليم والممارسة التربوية.` })
@@ -29,7 +44,7 @@ export default function Research() {
       <section className="px-6 py-16 md:px-11 md:py-24">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <div className="mb-10 flex flex-wrap items-center justify-between gap-5 border-b border-hair pb-6">
+            <div className="mb-8 flex flex-wrap items-center justify-between gap-5 border-b border-hair pb-6">
               <div>
                 <span className="block text-[.82rem] font-semibold text-ink">الأرشيف العلمي المحكّم</span>
                 <span className="mt-1 block text-[.74rem] text-soft">{count} مع وصول مباشر إلى البيانات والمصادر الأصلية</span>
@@ -44,9 +59,33 @@ export default function Research() {
             </div>
           </FadeUp>
 
-          <ul id="research-list" className="grid scroll-mt-28 gap-4">
-            {paged.pageItems.map((p, i) => {
-              const intelligence = analyzeResearch(p)
+          <FadeUp delay={0.04}>
+            <section className="research-index-panel" aria-label="الفهرسة الداخلية للأبحاث">
+              <div className="research-index-search">
+                <label htmlFor="research-index-input">فهرسة داخلية قوية</label>
+                <div className="research-index-input-wrap">
+                  <input id="research-index-input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث بالعنوان، الباحث، الكلمات المفتاحية، المنهج، العينة، المجلة أو DOI…" />
+                  <span aria-hidden>⌕</span>
+                </div>
+              </div>
+              <div className="research-index-filters">
+                <label>نوع الدراسة
+                  <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+                    {types.map((type) => <option key={type}>{type}</option>)}
+                  </select>
+                </label>
+                <label>سنة النشر
+                  <select value={yearFilter} onChange={(event) => setYearFilter(event.target.value)}>
+                    {years.map((year) => <option key={year}>{year}</option>)}
+                  </select>
+                </label>
+                <span className="research-index-result">{filtered.length} نتيجة</span>
+              </div>
+            </section>
+          </FadeUp>
+
+          <ul id="research-list" className="mt-6 grid scroll-mt-28 gap-4">
+            {paged.pageItems.map(({ paper: p, intelligence }, i) => {
               const type = arabicOnly(p.studyType || intelligence.studyType)
               const year = p.year || intelligence.year
               const journal = p.journal || intelligence.journal
@@ -59,6 +98,7 @@ export default function Research() {
                         <div className="mb-3 flex flex-wrap gap-2">
                           <span className={badge}>محكّم</span>
                           {type && <span className={badge}>{type}</span>}
+                          {intelligence.fieldEvidence.sample && <span className={badge}>مصادر موثقة</span>}
                         </div>
                         <Link to={`/research/${p.slug}`} dir="auto" className="research-title-link block text-[1.12rem] font-bold leading-[1.65] text-ink transition-colors hover:text-accent">{p.title}</Link>
                         {p.titleAr && p.titleAr !== p.title && <p dir="rtl" className="mt-1 text-[.92rem] font-light leading-[1.8] text-soft">{p.titleAr}</p>}
@@ -76,7 +116,10 @@ export default function Research() {
               )
             })}
           </ul>
-          <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={papers.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="research-list" label="صفحات الأبحاث" className="mt-8" />
+
+          {filtered.length === 0 && <div className="py-16 text-center text-[.95rem] text-soft">جرّب كلمة أخرى أو أعد الفلاتر إلى «الكل».</div>}
+
+          <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={filtered.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="research-list" label="صفحات الأبحاث" className="mt-8" />
 
           <FadeUp delay={0.15}>
             <div className="mt-16 border-t border-hair pt-9">

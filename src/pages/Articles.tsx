@@ -62,24 +62,29 @@ export default function Articles() {
   const categories = useMemo(() => dynamicArticleCategories(articles), [articles])
   const featured = useMemo(() => {
     if (!articles.length) return []
-    /* الاختيارات تتبدّل يومياً، لكنها ثابتة طوال اليوم: مقال حديث، وآخر من
-       الأرشيف، وثالث من موضوع مختلف. لا تتكرر الفئة إلا عند ندرة المحتوى. */
-    const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuwait', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+    /* ثلاث عدسات مستقلة: حديث، أرشيف، ومفاجأة موضوعية. تتبدل كل ست ساعات
+       وتتعمد اختلاف الفئة والسنة، فلا تظل الواجهة معلّقة على موضوع واحد. */
+    const now = new Date()
+    const kuwait = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuwait', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hour12: false }).formatToParts(now)
+    const part = (type: string) => kuwait.find((item) => item.type === type)?.value || ''
+    const period = `${part('year')}-${part('month')}-${part('day')}-${Math.floor(Number(part('hour') || 0) / 6)}`
     const eligible = articles.filter((article) => article.title && (article.excerpt || '').trim().length >= 45)
-    const sortedByDate = [...eligible].sort((left, right) => right.iso.localeCompare(left.iso))
-    const latestYear = Number(sortedByDate[0]?.iso.slice(0, 4)) || new Date().getFullYear()
-    const rotate = (pool: typeof eligible, salt: string) => [...pool].sort((left, right) => stableHash(`${day}:${salt}:${left.slug}`) - stableHash(`${day}:${salt}:${right.slug}`))
+    const dated = [...eligible].sort((left, right) => right.iso.localeCompare(left.iso))
+    const latestYear = Number(dated[0]?.iso.slice(0, 4)) || new Date().getFullYear()
     const chosen: typeof eligible = []
-    const choose = (pool: typeof eligible, salt: string, preferNewCategory = true) => {
-      const candidates = rotate(pool.filter((article) => !chosen.some((item) => item.slug === article.slug)), salt)
-      const next = (preferNewCategory ? candidates.find((article) => !chosen.some((item) => item.cat === article.cat)) : null) || candidates[0]
+    const rank = (pool: typeof eligible, salt: string) => [...pool].sort((left, right) => stableHash(`${period}:${salt}:${left.slug}`) - stableHash(`${period}:${salt}:${right.slug}`))
+    const pick = (pool: typeof eligible, salt: string, forceNewCategory = true, forceNewYear = false) => {
+      const remaining = rank(pool.filter((article) => !chosen.some((item) => item.slug === article.slug)), salt)
+      const strict = remaining.find((article) => (!forceNewCategory || !chosen.some((item) => item.cat === article.cat)) && (!forceNewYear || !chosen.some((item) => item.iso.slice(0, 4) === article.iso.slice(0, 4))))
+      const categoryDifferent = remaining.find((article) => !chosen.some((item) => item.cat === article.cat))
+      const next = strict || categoryDifferent || remaining[0]
       if (next) chosen.push(next)
     }
 
-    choose(sortedByDate.slice(0, Math.min(28, sortedByDate.length)), 'recent', false)
-    choose(eligible.filter((article) => Number(article.iso.slice(0, 4)) <= latestYear - 4), 'archive')
-    choose(eligible, 'unexpected')
-    while (chosen.length < Math.min(3, eligible.length)) choose(eligible, `fill-${chosen.length}`, false)
+    pick(dated.slice(0, Math.min(36, dated.length)), 'recent', false)
+    pick(eligible.filter((article) => Number(article.iso.slice(0, 4)) <= latestYear - 3), 'archive', true, true)
+    pick(eligible, 'cross-topic', true, true)
+    while (chosen.length < Math.min(3, eligible.length)) pick(eligible, `fill-${chosen.length}`, true)
     return chosen.map(articleCard)
   }, [articles])
 

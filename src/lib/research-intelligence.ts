@@ -11,6 +11,7 @@ export type ResearchIntelligenceInput = {
   researchgate?: string
   orcid?: string
   repository?: string
+  coAuthors?: string
   doi?: string
   methodology?: string
   sample?: string
@@ -31,12 +32,46 @@ export type ResearchIntelligenceInput = {
   analysisFingerprint?: string
   analysisSources?: string
   analyzedAt?: string
+  fieldEvidence?: string | Record<string, unknown>
+  conflictReport?: string | unknown[]
+  qualityReport?: string | Record<string, unknown>
+  qualityReady?: string | boolean
 }
 
 export type ResearchSourceLink = {
   id: 'publisher' | 'pdf' | 'doi' | 'researchgate' | 'scholar' | 'orcid' | 'repository'
   label: string
   url: string
+}
+
+export type ResearchEvidence = {
+  source: string
+  location: string
+  quote: string
+  label: string
+}
+
+export type ResearchConflict = {
+  field: string
+  label: string
+  detail: string
+  sources: string[]
+  blocking: boolean
+}
+
+export type ResearchQualityCheck = {
+  id: string
+  label: string
+  passed: boolean
+  blocking: boolean
+  detail: string
+}
+
+export type ResearchQuality = {
+  ready: boolean
+  score: number
+  checks: ResearchQualityCheck[]
+  blockers: ResearchQualityCheck[]
 }
 
 export type ResearchIntelligence = {
@@ -63,15 +98,20 @@ export type ResearchIntelligence = {
   analysisSources: string
   analyzedAt: string
   links: ResearchSourceLink[]
+  fieldEvidence: Record<string, ResearchEvidence>
+  conflicts: ResearchConflict[]
+  quality: ResearchQuality
+  searchText: string
 }
 
 export const DEFAULT_RESEARCH_ORCID = 'https://orcid.org/0000-0002-1767-4963'
-export const RESEARCH_ANALYSIS_VERSION = '2026-07-23-nuclear-2'
+export const RESEARCH_ANALYSIS_VERSION = '2026-07-23-nuclear-3'
 
-const clean = (value = '') => String(value).replace(/^ملخص عربي:\s*/i, '').replace(/\s+/g, ' ').trim()
+const clean = (value: unknown = '') => String(value ?? '').replace(/^ملخص عربي:\s*/i, '').replace(/\s+/g, ' ').trim()
 const hasArabic = (value = '') => /[\u0600-\u06ff]/.test(value)
 const clip = (value: string, max = 1_200) => value.length <= max ? value : `${value.slice(0, max).replace(/\s+\S*$/, '')}…`
 const pick = (text: string, patterns: RegExp[]) => patterns.map((pattern) => text.match(pattern)?.[1]?.trim()).find(Boolean) || ''
+const normalizeForMatch = (value = '') => clean(value).toLowerCase().replace(/[ًٌٍَُِّْـ]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ')
 const normalizeLink = (value = '') => {
   const trimmed = value.trim()
   if (/^https?:\/\//i.test(trimmed) || /^\/(?!\/)/.test(trimmed)) return trimmed
@@ -104,36 +144,36 @@ const inferStudyType = (text: string) => {
 }
 
 const inferMethodology = (text: string) => pick(text, [
-  /((?:اعتمدت|اعتمد|استخدمت|استخدم|اتبعت|اتبع)\s+(?:الدراسة\s+|البحث\s+)?(?:على\s+)?(?:المنهج|تصميماً|تصميمًا)[^.؟]{0,420})[.؟]?/i,
-  /((?:تم استخدام|جرى استخدام|طُبقت|طبقت)\s+[^.؟]{0,220}(?:استبانة|استبيان|مقابلة|تحليل محتوى|اختبار|مقياس)[^.؟]{0,220})[.؟]?/i,
+  /((?:اعتمدت|اعتمد|استخدمت|استخدم|اتبعت|اتبع)\s+(?:الدراسة\s+|البحث\s+)?(?:على\s+)?(?:المنهج|تصميماً|تصميمًا)[^.؟]{0,680})[.؟]?/i,
+  /((?:تم استخدام|جرى استخدام|طُبقت|طبقت)\s+[^.؟]{0,260}(?:استبانة|استبيان|مقابلة|تحليل محتوى|اختبار|مقياس)[^.؟]{0,360})[.؟]?/i,
 ])
 
 const inferSample = (text: string) => pick(text, [
-  /((?:بلغ|تكونت|تكوّنت|اشتملت|شملت|تألفت|تألّفت)\s+(?:عينة\s+)?(?:البحث|الدراسة)?\s*(?:من\s+)?\(?\s*\d{1,6}\s*\)?\s*[^.؟]{0,560})[.؟]?/i,
-  /((?:طُبقت|طبقت|وُزعت|وزعت)\s+[^.؟]{0,180}(?:على|لدى)\s+(?:عينة\s+)?(?:قوامها|بلغت)?\s*\(?\s*\d{1,6}\s*\)?\s*[^.؟]{0,480})[.؟]?/i,
-  /((?:عينة الدراسة|عينة البحث|المشاركون|المشاركات)\s*[:：،]?\s*(?:قوامها|بلغت|من)?\s*\(?\s*\d{1,6}\s*\)?\s*[^.؟]{0,560})[.؟]?/i,
+  /((?:بلغ|تكونت|تكوّنت|اشتملت|شملت|تألفت|تألّفت)\s+(?:عينة\s+)?(?:البحث|الدراسة)?\s*(?:من\s+)?\(?\s*\d{1,6}\s*\)?\s*[^.؟]{0,980})[.؟]?/i,
+  /((?:طُبقت|طبقت|وُزعت|وزعت)\s+[^.؟]{0,220}(?:على|لدى)\s+(?:عينة\s+)?(?:قوامها|بلغت)?\s*\(?\s*\d{1,6}\s*\)?\s*[^.؟]{0,780})[.؟]?/i,
+  /((?:عينة الدراسة|عينة البحث|المشاركون|المشاركات)\s*[:：،]?\s*(?:قوامها|بلغت|من)?\s*\(?\s*\d{1,6}\s*\)?\s*[^.؟]{0,980})[.؟]?/i,
 ])
 
 const inferQuestion = (text: string) => pick(text, [
-  /((?:سعى|يسعى|يهدف|هدفت|هدف)\s+(?:هذا\s+)?(?:البحث|الدراسة)[^.؟]{0,520})[.؟]?/i,
-  /((?:تتمثل مشكلة|تكمن مشكلة|يناقش البحث|تبحث الدراسة|تقصت الدراسة|استهدفت الدراسة)[^.؟]{0,520})[.؟]?/i,
+  /((?:سعى|يسعى|يهدف|هدفت|هدف)\s+(?:هذا\s+)?(?:البحث|الدراسة)[^.؟]{0,720})[.؟]?/i,
+  /((?:تتمثل مشكلة|تكمن مشكلة|يناقش البحث|تبحث الدراسة|تقصت الدراسة|استهدفت الدراسة)[^.؟]{0,720})[.؟]?/i,
 ])
 
 const inferFinding = (text: string) => pick(text, [
-  /((?:أظهرت النتائج|بيّنت النتائج|بينت النتائج|كشفت النتائج|أسفرت النتائج|توصلت الدراسة|خلصت الدراسة)[^.؟]{0,900})[.؟]?/i,
-  /((?:تشير النتائج|اتضح|تبين أن|تبيّن أن|وُجد أن)[^.؟]{0,900})[.؟]?/i,
+  /((?:أظهرت النتائج|بيّنت النتائج|بينت النتائج|كشفت النتائج|أسفرت النتائج|توصلت الدراسة|خلصت الدراسة)[^.؟]{0,1300})[.؟]?/i,
+  /((?:تشير النتائج|اتضح|تبين أن|تبيّن أن|وُجد أن)[^.؟]{0,1300})[.؟]?/i,
 ])
 
 const inferApplications = (text: string) => pick(text, [
-  /((?:أوصت الدراسة|يوصي البحث|توصي النتائج|وتوصي الدراسة|من التطبيقات|التطبيقات العملية)[^.؟]{0,760})[.؟]?/i,
+  /((?:أوصت الدراسة|يوصي البحث|توصي النتائج|وتوصي الدراسة|من التطبيقات|التطبيقات العملية)[^.؟]{0,980})[.؟]?/i,
 ])
 
 const inferLimitations = (text: string) => pick(text, [
-  /((?:حدود الدراسة|محددات الدراسة|قيود الدراسة|ومن قيود|اقتصرت الدراسة)[^.؟]{0,760})[.؟]?/i,
+  /((?:حدود الدراسة|محددات الدراسة|قيود الدراسة|ومن قيود|اقتصرت الدراسة)[^.؟]{0,980})[.؟]?/i,
 ])
 
 const inferKeywords = (text: string) => {
-  const explicit = pick(text, [/(?:الكلمات المفتاحية|الكلمات الدالة|Keywords?)\s*[:：]\s*([^\n]{4,520})/i])
+  const explicit = pick(text, [/(?:الكلمات المفتاحية|الكلمات الدالة|Keywords?)\s*[:：]\s*([^\n]{4,720})/i])
   return explicit.replace(/[.؛;]+$/, '')
 }
 
@@ -156,10 +196,74 @@ const stableHash = (value: string) => {
   return `r${(hash >>> 0).toString(36)}`
 }
 
+const parseJson = <T,>(value: unknown, fallback: T): T => {
+  if (value && typeof value === 'object') return value as T
+  if (typeof value !== 'string' || !value.trim()) return fallback
+  try { return JSON.parse(value) as T } catch { return fallback }
+}
+
+const evidenceLabels: Record<string, string> = {
+  topic: 'الموضوع', studyType: 'نوع الدراسة', methodology: 'المنهج', sample: 'العينة / نطاق الدراسة',
+  researchQuestion: 'السؤال العلمي', keyFinding: 'أبرز النتائج', contribution: 'الإضافة العلمية',
+  applications: 'التطبيقات', limitations: 'القيود', keywords: 'الكلمات المفتاحية', journal: 'المجلة', year: 'سنة النشر', doi: 'DOI', abstractAr: 'الملخص',
+}
+
+function normalizedEvidence(value: unknown): ResearchEvidence | null {
+  if (typeof value === 'string' && value.trim()) return { source: value.trim(), location: '', quote: '', label: `موثّق من ${value.trim()}` }
+  if (!value || typeof value !== 'object') return null
+  const item = value as Record<string, unknown>
+  const source = clean(item.source || item.label)
+  const location = clean(item.location || item.page || item.section)
+  const quote = clip(clean(item.quote || item.excerpt), 220)
+  if (!source && !location && !quote) return null
+  return { source: source || 'المصدر الأصلي', location, quote, label: `موثّق من ${source || 'المصدر الأصلي'}${location ? ` · ${location}` : ''}` }
+}
+
+function sourceEvidence(input: ResearchIntelligenceInput, field: string, value: string, supplied: Record<string, unknown>) {
+  const direct = normalizedEvidence(supplied[field])
+  if (direct) return direct
+  const needle = normalizeForMatch(value).slice(0, 120)
+  const contains = (material: unknown) => needle.length >= 12 && normalizeForMatch(clean(material)).includes(needle)
+  if (contains(input.pdfText)) return { source: 'PDF الكامل', location: 'النص المستخرج', quote: '', label: 'موثّق من PDF الكامل' }
+  if (contains(input.metadataText)) return { source: 'Metadata الرسمية', location: '', quote: '', label: 'موثّق من Metadata الرسمية' }
+  if (contains(input.abstractAr)) return { source: 'ملخص البحث', location: 'الملخص', quote: '', label: 'موثّق من ملخص البحث' }
+  if (contains(input.analysisText)) return { source: 'النص المرفق', location: '', quote: '', label: 'موثّق من النص المرفق' }
+  const sources = clean(input.analysisSources)
+  if (/PDF/i.test(sources)) return { source: 'PDF والمصادر الأصلية', location: '', quote: '', label: 'موثّق من PDF والمصادر الأصلية' }
+  if (field === 'doi') return { source: 'DOI / Crossref', location: '', quote: '', label: 'موثّق من DOI / Crossref' }
+  if (field === 'journal' || field === 'year') return { source: 'بيانات النشر', location: '', quote: '', label: 'موثّق من بيانات النشر' }
+  return { source: 'بيانات البحث', location: '', quote: '', label: 'موثّق من بيانات البحث' }
+}
+
+function parseConflicts(input: ResearchIntelligenceInput): ResearchConflict[] {
+  const supplied = parseJson<unknown[]>(input.conflictReport, [])
+  const normalized = supplied.flatMap((item) => {
+    if (!item || typeof item !== 'object') return []
+    const row = item as Record<string, unknown>
+    const detail = clean(row.detail || row.description || row.values)
+    if (!detail) return []
+    return [{
+      field: clean(row.field) || 'metadata',
+      label: clean(row.label) || 'تعارض بين المصادر',
+      detail,
+      sources: Array.isArray(row.sources) ? row.sources.map(clean).filter(Boolean) : clean(row.sources).split(/[،,]/).map((part) => part.trim()).filter(Boolean),
+      blocking: row.blocking !== false,
+    }]
+  })
+  const conflicts = [...normalized]
+  const doiCandidates = [input.doi, input.source, input.url, input.pdf, input.metadataText].map((value) => extractDoi(clean(value))).filter(Boolean)
+  const uniqueDois = [...new Set(doiCandidates.map((value) => value.toLowerCase()))]
+  if (uniqueDois.length > 1 && !conflicts.some((item) => item.field === 'doi')) conflicts.push({ field: 'doi', label: 'اختلاف المعرّف الرقمي', detail: uniqueDois.join(' مقابل '), sources: ['بيانات البحث', 'الروابط / Metadata'], blocking: true })
+  const explicitYears = [clean(input.year), clean(input.iso).match(/(?:19|20)\d{2}/)?.[0] || '', clean(input.date).match(/(?:19|20)\d{2}/)?.[0] || '', clean(input.journal).match(/(?:19|20)\d{2}/)?.[0] || ''].filter(Boolean)
+  const uniqueYears = [...new Set(explicitYears)]
+  if (uniqueYears.length > 1 && !conflicts.some((item) => item.field === 'year')) conflicts.push({ field: 'year', label: 'اختلاف سنة النشر', detail: uniqueYears.join(' مقابل '), sources: ['لوحة التحكم', 'بيانات المجلة'], blocking: true })
+  return conflicts
+}
+
 export function researchFingerprint(input: ResearchIntelligenceInput) {
   const payload = [
     RESEARCH_ANALYSIS_VERSION, input.title, input.titleAr, input.meta, input.abstractAr, input.journal, input.source, input.url, input.pdf,
-    input.scholar, input.researchgate, input.orcid, input.repository, input.doi, input.methodology, input.sample,
+    input.scholar, input.researchgate, input.orcid, input.repository, input.coAuthors, input.doi, input.methodology, input.sample,
     input.researchQuestion, input.keyFinding, input.contribution, input.applications, input.limitations, input.studyType,
     input.keywords, input.iso, input.date, input.year, input.metadataText, input.pdfText, input.analysisText,
   ].map(clean).join('\u241f')
@@ -169,16 +273,16 @@ export function researchFingerprint(input: ResearchIntelligenceInput) {
 export function researchLinks(input: ResearchIntelligenceInput, doiValue = ''): ResearchSourceLink[] {
   const doi = normalizeDoi(doiValue || input.doi || extractDoi([input.source, input.url, input.pdf].filter(Boolean).join(' ')))
   const doiUrl = doi ? `https://doi.org/${doi.split('/').map((part) => encodeURIComponent(part)).join('/')}` : ''
-  const source = normalizeLink(input.source || '')
+  const source = normalizeLink(clean(input.source))
   const publisherUrl = source && canonicalLink(source) !== canonicalLink(doiUrl) ? source : ''
   const candidates: ResearchSourceLink[] = [
     { id: 'publisher', label: 'صفحة المجلة', url: publisherUrl },
-    { id: 'pdf', label: 'النص الكامل PDF', url: normalizeLink(input.pdf) },
+    { id: 'pdf', label: 'النص الكامل PDF', url: normalizeLink(clean(input.pdf)) },
     { id: 'doi', label: 'DOI', url: doiUrl },
-    { id: 'researchgate', label: 'ResearchGate', url: normalizeLink(input.researchgate) },
-    { id: 'scholar', label: 'Google Scholar', url: normalizeLink(input.scholar) },
-    { id: 'orcid', label: 'ORCID', url: normalizeOrcid(input.orcid) || DEFAULT_RESEARCH_ORCID },
-    { id: 'repository', label: 'مستودع الجامعة', url: normalizeLink(input.repository) },
+    { id: 'researchgate', label: 'ResearchGate', url: normalizeLink(clean(input.researchgate)) },
+    { id: 'scholar', label: 'Google Scholar', url: normalizeLink(clean(input.scholar)) },
+    { id: 'orcid', label: 'ORCID', url: normalizeOrcid(clean(input.orcid)) || DEFAULT_RESEARCH_ORCID },
+    { id: 'repository', label: 'مستودع الجامعة', url: normalizeLink(clean(input.repository)) },
   ]
   const seen = new Set<string>()
   return candidates.filter((item) => {
@@ -189,7 +293,33 @@ export function researchLinks(input: ResearchIntelligenceInput, doiValue = ''): 
   })
 }
 
-export function analyzeResearch(input: ResearchIntelligenceInput): ResearchIntelligence {
+export function evaluateResearchQuality(input: ResearchIntelligenceInput, intelligence?: Omit<ResearchIntelligence, 'quality'>): ResearchQuality {
+  const data = intelligence || ({} as Omit<ResearchIntelligence, 'quality'>)
+  const title = clean(input.title)
+  const doi = clean(data.doi || input.doi)
+  const links = data.links || researchLinks(input, doi)
+  const core = [clean(data.researchQuestion || input.researchQuestion), clean(data.methodology || input.methodology), clean(data.sample || input.sample), clean(data.keyFinding || input.keyFinding)]
+  const arabicValues = [data.topic || input.meta, data.studyType || input.studyType, ...core, data.applications || input.applications, data.limitations || input.limitations, data.keywords || input.keywords].map(clean).filter(Boolean)
+  const conflicts = data.conflicts || parseConflicts(input)
+  const evidence = data.fieldEvidence || {}
+  const evidenceCore = ['researchQuestion', 'methodology', 'sample', 'keyFinding'].filter((key) => evidence[key]).length
+  const checks: ResearchQualityCheck[] = [
+    { id: 'identity', label: 'هوية البحث الأساسية', passed: Boolean(title), blocking: true, detail: 'العنوان والرابط المختصر' },
+    { id: 'source', label: 'الوصول إلى مصدر أصلي', passed: links.some((item) => ['publisher', 'pdf', 'doi', 'repository'].includes(item.id)), blocking: true, detail: 'PDF أو DOI أو صفحة المجلة أو المستودع' },
+    { id: 'publication', label: 'بيانات النشر', passed: Boolean(clean(data.journal || input.journal) && clean(data.year || input.year)), blocking: true, detail: 'اسم المجلة وسنة النشر' },
+    { id: 'scientific-core', label: 'العمود العلمي الكامل', passed: core.every(Boolean), blocking: true, detail: 'السؤال والمنهج والعينة والنتائج' },
+    { id: 'arabic', label: 'سلامة التعريب العلمي', passed: arabicValues.every(hasArabic), blocking: true, detail: 'الحقول العلمية الظاهرة بالعربية' },
+    { id: 'doi', label: 'سلامة DOI', passed: !doi || /^10\.\d{4,9}\/[\S]+$/i.test(doi), blocking: true, detail: 'صيغة DOI قابلة للفتح' },
+    { id: 'evidence', label: 'ختم مصدر للبيانات الجوهرية', passed: evidenceCore === 4, blocking: true, detail: 'مصدر موثّق لكل محور أساسي' },
+    { id: 'conflicts', label: 'مطابقة المصادر', passed: !conflicts.some((item) => item.blocking), blocking: true, detail: 'لا تعارض غير محسوم بين PDF وDOI وMetadata' },
+    { id: 'cache', label: 'بصمة التحليل', passed: Boolean(clean(input.analysisFingerprint) && clean(input.analyzedAt)), blocking: false, detail: 'إعادة التحليل فقط عند تغيّر البيانات' },
+  ]
+  const score = Math.round((checks.filter((check) => check.passed).length / checks.length) * 100)
+  const blockers = checks.filter((check) => check.blocking && !check.passed)
+  return { ready: blockers.length === 0, score, checks, blockers }
+}
+
+export function analyzeResearch(input: ResearchIntelligenceInput = {}): ResearchIntelligence {
   const abstract = clean(input.abstractAr)
   const journal = clean(input.journal)
   const sourceMaterial = [
@@ -204,7 +334,7 @@ export function analyzeResearch(input: ResearchIntelligenceInput): ResearchIntel
   const keyFinding = clean(input.keyFinding) || inferFinding(sourceMaterial)
   const applications = clean(input.applications) || inferApplications(sourceMaterial)
   const limitations = clean(input.limitations) || inferLimitations(sourceMaterial)
-  const doi = normalizeDoi(input.doi) || extractDoi([sourceMaterial, input.source, input.url, input.pdf].filter(Boolean).join(' '))
+  const doi = normalizeDoi(clean(input.doi)) || extractDoi([sourceMaterial, input.source, input.url, input.pdf].filter(Boolean).join(' '))
   const keywords = clean(input.keywords) || inferKeywords(sourceMaterial)
   const topic = inferTopic(input, keywords)
   const contribution = clean(input.contribution)
@@ -215,30 +345,21 @@ export function analyzeResearch(input: ResearchIntelligenceInput): ResearchIntel
   const evidenceScore = Math.min(100, 56 + available * 4 + (input.pdfText ? 5 : 0) + (input.metadataText ? 4 : 0))
   const confidence = Math.min(100, 48 + available * 5 + (abstract ? 5 : 0) + (input.pdfText ? 8 : 0) + (input.metadataText ? 4 : 0))
   const analysisSources = clean(input.analysisSources) || [abstract && 'الملخص', input.pdfText && 'PDF', input.metadataText && 'البيانات الوصفية', doi && 'DOI', links.length && 'الروابط'].filter(Boolean).join('، ')
-
-  return {
-    reviewStatus: 'محكّم',
-    topic,
-    studyType,
-    methodology: clip(methodology, 3_200),
-    sample: clip(sample, 4_800),
-    researchQuestion: clip(researchQuestion, 3_200),
-    keyFinding: clip(keyFinding, 4_800),
-    contribution: clip(contribution, 3_200),
-    applications: clip(applications, 3_200),
-    limitations: clip(limitations, 3_200),
+  const values: Record<string, string> = { topic, studyType, methodology, sample, researchQuestion, keyFinding, contribution, applications, limitations, keywords, journal, year, doi, abstractAr: abstract }
+  const suppliedEvidence = parseJson<Record<string, unknown>>(input.fieldEvidence, {})
+  const fieldEvidence = Object.fromEntries(Object.entries(values).filter(([, value]) => Boolean(value)).map(([field, value]) => [field, sourceEvidence(input, field, value, suppliedEvidence)]))
+  const conflicts = parseConflicts(input)
+  const partial = {
+    reviewStatus: 'محكّم', topic, studyType, methodology: clip(methodology, 3_200), sample: clip(sample, 4_800),
+    researchQuestion: clip(researchQuestion, 3_200), keyFinding: clip(keyFinding, 4_800), contribution: clip(contribution, 3_200),
+    applications: clip(applications, 3_200), limitations: clip(limitations, 3_200),
     evidenceLabel: evidenceScore >= 90 ? 'بيانات علمية مكتملة' : evidenceScore >= 76 ? 'بيانات علمية واضحة' : 'بيانات علمية أساسية',
-    evidenceScore,
-    doi,
-    keywords,
-    journal,
-    year,
-    openAccess,
-    confidence,
-    needsReview: false,
-    analysisFingerprint: researchFingerprint(input),
-    analysisSources,
-    analyzedAt: clean(input.analyzedAt),
-    links,
+    evidenceScore, doi, keywords, journal, year, openAccess, confidence, needsReview: conflicts.some((item) => item.blocking),
+    analysisFingerprint: researchFingerprint(input), analysisSources, analyzedAt: clean(input.analyzedAt), links, fieldEvidence, conflicts,
+    searchText: normalizeForMatch([input.title, input.titleAr, input.coAuthors, topic, studyType, methodology, sample, researchQuestion, keyFinding, contribution, applications, limitations, keywords, journal, year, doi].map(clean).join(' ')),
   }
+  const quality = evaluateResearchQuality(input, partial)
+  return { ...partial, quality }
 }
+
+export const researchEvidenceLabel = (intelligence: ResearchIntelligence, field: string) => intelligence.fieldEvidence[field]?.label || `موثّق من ${evidenceLabels[field] || 'المصدر الأصلي'}`

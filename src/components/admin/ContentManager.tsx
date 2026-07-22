@@ -6,7 +6,7 @@ import { describe as describeEcho, findEchoes, indexPast } from '../../lib/echoe
 import { getArticleBody } from '../../lib/article-bodies'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { normalizeArabicTypography } from '../../lib/arabic-typography'
-import { analyzeResearch, DEFAULT_RESEARCH_ORCID } from '../../lib/research-intelligence'
+import { analyzeResearch, DEFAULT_RESEARCH_ORCID, evaluateResearchQuality } from '../../lib/research-intelligence'
 import { Pagination, usePagedList } from '../Pagination'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
@@ -77,7 +77,7 @@ const labels: Record<ManagedKind, { singular: string; plural: string }> = {
 const editableFields: Record<ManagedKind, string[]> = {
   article: ['slug', 'title', 'iso', 'date', 'cat', 'excerpt', 'body', 'bodyVocalized', 'source', 'url', 'status', 'scheduledAt'],
   book: ['slug', 'title', 'isbn', 'desc', 'cover', 'pdf', 'coAuthors'],
-  paper: ['slug', 'title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'scholar', 'researchgate', 'orcid', 'repository', 'coAuthors', 'doi', 'reviewStatus', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'year', 'metadataText', 'pdfText', 'analysisText', 'analysisFingerprint', 'analysisSources', 'evidenceLabel', 'evidenceScore', 'keywords', 'openAccess', 'analysisConfidence', 'analysisNeedsReview', 'analyzedAt'],
+  paper: ['slug', 'title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'scholar', 'researchgate', 'orcid', 'repository', 'coAuthors', 'doi', 'reviewStatus', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'year', 'metadataText', 'pdfText', 'analysisText', 'analysisFingerprint', 'analysisSources', 'evidenceLabel', 'evidenceScore', 'keywords', 'openAccess', 'analysisConfidence', 'analysisNeedsReview', 'analyzedAt', 'fieldEvidence', 'conflictReport', 'qualityReport', 'qualityReady'],
   media: ['slug', 'title', 'outlet', 'url', 'iso', 'date'],
 }
 
@@ -159,11 +159,16 @@ async function requestResearchAnalysis(form: Form): Promise<Form> {
   return payload
 }
 
+function researchAnalysisAsForm(value: Record<string, unknown>): Form {
+  return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, item && typeof item === 'object' ? JSON.stringify(item) : String(item ?? '')])) as Form
+}
+
 function mergeResearchAnalysis(previous: Form, result: Form, fingerprint: string): Form {
   const next = { ...previous }
   const hasArabicText = (value = '') => /[\u0600-\u06ff]/.test(value)
   const arabicFields = ['meta', 'abstractAr', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'keywords']
   const sourceFields = ['doi', 'journal', 'year', 'source', 'pdf', 'scholar', 'researchgate', 'orcid', 'repository']
+  const analysisFields = ['fieldEvidence', 'conflictReport']
 
   for (const field of arabicFields) {
     const incoming = String(result[field] || '').trim()
@@ -174,13 +179,17 @@ function mergeResearchAnalysis(previous: Form, result: Form, fingerprint: string
     const incoming = String(result[field] || '').trim()
     if (!String(next[field] || '').trim() && incoming) next[field] = incoming
   }
+  for (const field of analysisFields) {
+    const incoming = String(result[field] || '').trim()
+    if (incoming) next[field] = incoming
+  }
 
   next.reviewStatus = 'محكّم'
   const rawOrcid = String(next.orcid || result.orcid || DEFAULT_RESEARCH_ORCID).trim()
   next.orcid = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/i.test(rawOrcid) ? `https://orcid.org/${rawOrcid}` : rawOrcid || DEFAULT_RESEARCH_ORCID
   next.openAccess = String(result.openAccess ?? previous.openAccess ?? 'false')
   next.analysisConfidence = String(result.analysisConfidence ?? result.confidence ?? previous.analysisConfidence ?? '')
-  next.analysisNeedsReview = 'false'
+  next.analysisNeedsReview = String(result.analysisNeedsReview ?? previous.analysisNeedsReview ?? 'false')
   next.analysisSources = String(result.analysisSources ?? previous.analysisSources ?? '')
   next.analysisFingerprint = String(result.analysisFingerprint ?? fingerprint)
   next.analyzedAt = String(result.analyzedAt ?? new Date().toISOString())
@@ -236,7 +245,7 @@ function blank(kind: ManagedKind): Form {
   const iso = todayIso()
   if (kind === 'article') return { slug: '', title: '', iso, date: dateArabic(iso), cat: '', excerpt: '', body: '', bodyVocalized: '', source: '', url: '', status: 'published', scheduledAt: '', _aiReady: '' }
   if (kind === 'book') return { slug: '', title: '', isbn: '', desc: '', cover: '', pdf: '', coAuthors: '' }
-  if (kind === 'paper') return { slug: '', title: '', titleAr: '', meta: '', abstractAr: '', journal: '', source: '', url: '', pdf: '', scholar: '', researchgate: '', orcid: DEFAULT_RESEARCH_ORCID, repository: '', coAuthors: '', doi: '', reviewStatus: 'محكّم', studyType: '', methodology: '', sample: '', researchQuestion: '', keyFinding: '', contribution: '', applications: '', limitations: '', year: '', metadataText: '', pdfText: '', analysisText: '', analysisFingerprint: '', analysisSources: '', evidenceLabel: '', evidenceScore: '', keywords: '', openAccess: '', analysisConfidence: '', analysisNeedsReview: '', analyzedAt: '' }
+  if (kind === 'paper') return { slug: '', title: '', titleAr: '', meta: '', abstractAr: '', journal: '', source: '', url: '', pdf: '', scholar: '', researchgate: '', orcid: DEFAULT_RESEARCH_ORCID, repository: '', coAuthors: '', doi: '', reviewStatus: 'محكّم', studyType: '', methodology: '', sample: '', researchQuestion: '', keyFinding: '', contribution: '', applications: '', limitations: '', year: '', metadataText: '', pdfText: '', analysisText: '', analysisFingerprint: '', analysisSources: '', evidenceLabel: '', evidenceScore: '', keywords: '', openAccess: '', analysisConfidence: '', analysisNeedsReview: '', analyzedAt: '', fieldEvidence: '', conflictReport: '[]', qualityReport: '', qualityReady: '' }
   return { slug: '', title: '', outlet: '', url: '', iso, date: dateArabic(iso) }
 }
 
@@ -662,7 +671,7 @@ function Editor({
       const remote = await requestResearchAnalysis(form)
       setForm((previous) => ({ ...mergeResearchAnalysis(previous, remote, fingerprint), _researchBusy: '', _researchMessage: 'اكتمل التحليل الشامل وحُفظت بصمته.' }))
     } catch {
-      const local = Object.fromEntries(Object.entries(researchAnalysis).map(([key, value]) => [key, String(value ?? '')])) as Form
+      const local = researchAnalysisAsForm(researchAnalysis)
       setForm((previous) => ({ ...mergeResearchAnalysis(previous, local, fingerprint), _researchBusy: '', _researchMessage: 'اكتمل استخراج البيانات المتاحة وحُفظت بصمته.' }))
     }
   }
@@ -853,11 +862,33 @@ function Editor({
                 </div>
                 {form._researchMessage && <p className="mt-3 text-[.78rem] font-semibold text-accent">{form._researchMessage}</p>}
                 {researchAnalysis && (
-                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="text-[.72rem] text-soft">حالة التحكيم</span><strong className="mt-1 block text-[.9rem] text-ink">محكّم</strong></div>
-                    {(form.studyType || researchAnalysis.studyType) && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="text-[.72rem] text-soft">نوع الدراسة</span><strong className="mt-1 block text-[.9rem] text-ink">{form.studyType || researchAnalysis.studyType}</strong></div>}
-                    <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="text-[.72rem] text-soft">حالة التحليل</span><strong className="mt-1 block text-[.9rem] text-ink">{form.analysisFingerprint === researchAnalysis.analysisFingerprint && form.analyzedAt ? 'محفوظ ومحدّث' : 'جاهز عند الحفظ'}</strong></div>
-                  </div>
+                  <>
+                    <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="text-[.72rem] text-soft">حالة التحكيم</span><strong className="mt-1 block text-[.9rem] text-ink">محكّم</strong></div>
+                      {(form.studyType || researchAnalysis.studyType) && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="text-[.72rem] text-soft">نوع الدراسة</span><strong className="mt-1 block text-[.9rem] text-ink">{form.studyType || researchAnalysis.studyType}</strong></div>}
+                      <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="text-[.72rem] text-soft">بوابة الجودة</span><strong className={`mt-1 block text-[.9rem] ${researchAnalysis.quality.ready ? 'text-accent' : 'text-ink'}`}>{researchAnalysis.quality.ready ? `جاهز للنشر · ${researchAnalysis.quality.score}%` : `قيد الاستكمال · ${researchAnalysis.quality.score}%`}</strong></div>
+                    </div>
+                    <div className="mt-3 rounded-2xl border border-hair bg-canvas p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <strong className="text-[.82rem] text-ink">فحص ما قبل النشر</strong>
+                        <span className="text-[.72rem] font-semibold text-accent">{researchAnalysis.quality.checks.filter((check) => check.passed).length}/{researchAnalysis.quality.checks.length} اجتازت الفحص</span>
+                      </div>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        {researchAnalysis.quality.checks.map((check) => (
+                          <div key={check.id} className="flex items-start gap-2 rounded-xl bg-wash/55 px-3 py-2.5">
+                            <span className={`mt-0.5 ${check.passed ? 'text-accent' : 'text-soft'}`}>{check.passed ? '✓' : '○'}</span>
+                            <span className="min-w-0"><strong className="block text-[.76rem] text-ink">{check.label}</strong><span className="mt-0.5 block text-[.68rem] leading-relaxed text-soft">{check.detail}</span></span>
+                          </div>
+                        ))}
+                      </div>
+                      {researchAnalysis.conflicts.length > 0 && (
+                        <div className="mt-3 rounded-xl border border-accent/25 bg-accent/5 px-3 py-3">
+                          <strong className="text-[.76rem] text-ink">تعارضات تحتاج حسمًا قبل النشر</strong>
+                          {researchAnalysis.conflicts.map((conflict, index) => <p key={`${conflict.field}-${index}`} className="mt-1 text-[.7rem] leading-relaxed text-soft">{conflict.label}: {conflict.detail}</p>)}
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
 
                 <details className="group mt-5 overflow-hidden rounded-2xl border border-hair bg-canvas">
@@ -1007,7 +1038,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
       if (kind === 'paper') {
         const local = analyzeResearch(preparedForm)
         const fingerprint = local.analysisFingerprint
-        let result = Object.fromEntries(Object.entries(local).map(([key, value]) => [key, String(value ?? '')])) as Form
+        let result = researchAnalysisAsForm(local)
         if (preparedForm.analysisFingerprint !== fingerprint || !preparedForm.analyzedAt) {
           try {
             result = await requestResearchAnalysis(preparedForm)
@@ -1017,7 +1048,16 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
         }
         preparedForm = mergeResearchAnalysis(preparedForm, result, fingerprint)
         preparedForm.reviewStatus = 'محكّم'
+        const finalIntelligence = analyzeResearch(preparedForm)
+        const quality = evaluateResearchQuality(preparedForm, finalIntelligence)
+        preparedForm.qualityReport = JSON.stringify(quality)
+        preparedForm.qualityReady = String(quality.ready)
+        preparedForm.analysisNeedsReview = String(finalIntelligence.conflicts.some((conflict) => conflict.blocking))
         setForm(preparedForm)
+        if (!quality.ready) {
+          const blockers = quality.blockers.map((check) => check.label).join('، ')
+          throw new Error(`أوقف نظام ضمان الجودة النشر لحماية الدقة العلمية. استكمل: ${blockers}`)
+        }
       }
       if (kind === 'article') {
         preparedForm = { ...preparedForm, title: normalizeArabicTypography(preparedForm.title || ''), excerpt: normalizeArabicTypography(preparedForm.excerpt || ''), body: normalizeArabicTypography(preparedForm.body || '') }

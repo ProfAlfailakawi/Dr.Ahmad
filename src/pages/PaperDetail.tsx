@@ -127,7 +127,13 @@ export default function PaperDetail() {
     window.requestAnimationFrame(() => document.getElementById(`research-card-${card.key}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
   }
 
+  const { isAdmin } = useAdminAuth()
   const [passportLayer, setPassportLayer] = useState<'layer1' | 'layer2' | 'layer3'>('layer2')
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
+
+  const toggleCard = (key: string) => {
+    setExpandedCards((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
 
   return (
     <Page className="content-research research-detail-page">
@@ -168,7 +174,7 @@ export default function PaperDetail() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-accent/10 px-3.5 py-1 text-[.72rem] font-extrabold text-accent">بحث محكّم</span>
                     {studyType && <span className="rounded-full border border-hair px-3.5 py-1 text-[.72rem] font-semibold text-ink">{studyType}</span>}
-                    {evidenceCount > 0 && <span className="rounded-full border border-accent/20 bg-accent/[.04] px-3.5 py-1 text-[.72rem] font-bold text-accent">✓ {evidenceCount} أدلة موثّقة</span>}
+                    {evidenceCount > 0 && isAdmin && <span className="rounded-full border border-accent/20 bg-accent/[.04] px-3.5 py-1 text-[.72rem] font-bold text-accent">✓ {evidenceCount} أدلة موثّقة</span>}
                   </div>
                   <div className="flex items-center gap-3">
                     {year && <span className="font-display text-[.9rem] font-bold text-accent">{year}</span>}
@@ -225,7 +231,7 @@ export default function PaperDetail() {
                   <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">جهة النشر / وعاء النشر</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{journal || 'مجلة علمية محكّمة'}</strong></div>
                   <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">سنة الصدور</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{year || 'د.ت'}</strong></div>
                   <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">المعرّف المعياري DOI</span><strong className="mt-1 block line-clamp-1 font-mono text-[.8rem] text-accent">{doi || 'مسجّل في قاعدة البيانات'}</strong></div>
-                  <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">حالة التدقيق والموثوقية</span><strong className="mt-1 block text-[.88rem] font-bold text-emerald-600">✓ موثق ومطابق للمصدر</strong></div>
+                  {isAdmin && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">حالة التدقيق والموثوقية</span><strong className="mt-1 block text-[.88rem] font-bold text-emerald-600">✓ موثق ومطابق للمصدر</strong></div>}
                 </div>
               </div>
             </FadeUp>
@@ -253,15 +259,27 @@ export default function PaperDetail() {
                   </div>
 
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                    {dataCards.map((card) => (
-                      <div id={`research-card-${card.key}`} key={card.key} className={`rounded-2xl border border-hair bg-canvas p-5 transition ${readerKey === card.key ? 'border-accent bg-accent/[.03] shadow-md' : ''}`}>
-                        <div className="flex items-center justify-between gap-2">
-                          <h3 className="text-[.8rem] font-bold text-accent">{card.label}</h3>
+                    {dataCards.map((card) => {
+                      const isExpanded = Boolean(expandedCards[card.key])
+                      return (
+                        <div id={`research-card-${card.key}`} key={card.key} className={`rounded-2xl border border-hair bg-canvas p-5 transition ${readerKey === card.key ? 'border-accent bg-accent/[.03] shadow-md' : ''}`}>
+                          <div className="flex items-center justify-between gap-2 cursor-pointer" onClick={() => toggleCard(card.key)}>
+                            <h3 className="text-[.8rem] font-bold text-accent">{card.label}</h3>
+                            <button type="button" className="text-[.72rem] font-bold text-soft hover:text-accent">
+                              {isExpanded ? 'إخفاء ▴' : 'عرض التفاصيل ▾'}
+                            </button>
+                          </div>
+                          {isExpanded ? (
+                            <>
+                              <p className="mt-3 whitespace-pre-line text-[.9rem] leading-[1.9] text-ink">{card.value}</p>
+                              <EvidenceStamp evidence={card.evidence} />
+                            </>
+                          ) : (
+                            <p className="mt-2 text-[.82rem] text-soft line-clamp-1">{card.value}</p>
+                          )}
                         </div>
-                        <p className="mt-2.5 whitespace-pre-line text-[.9rem] leading-[1.9] text-ink">{card.value}</p>
-                        <EvidenceStamp evidence={card.evidence} />
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               </FadeUp>

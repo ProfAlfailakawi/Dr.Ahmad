@@ -95,7 +95,11 @@ function textBlock({
   if (!lines.length) return ''
   const rtl = hasArabic(lines.join(' '))
   const direction = rtl ? 'rtl' : 'ltr'
-  const resolvedAnchor = anchor || 'end'
+  let resolvedAnchor = anchor || 'end'
+  if (rtl) {
+    if (resolvedAnchor === 'end') resolvedAnchor = 'start'
+    else if (resolvedAnchor === 'start') resolvedAnchor = 'end'
+  }
   const text = `<text x="${x}" y="${y}" fill="${fill}" opacity="${opacity}" font-family="${esc(family)}" font-size="${size}" font-weight="${weight}" text-anchor="${resolvedAnchor}" direction="${direction}" unicode-bidi="plaintext" letter-spacing="${letterSpacing}">${lines.map((line, index) => `<tspan x="${x}" dy="${index ? size * lineHeight : 0}">${esc(line)}</tspan>`).join('')}</text>`
   return clipId ? `<g clip-path="url(#${clipId})">${text}</g>` : text
 }
@@ -190,7 +194,7 @@ function footer(plan: CompositionPlan, width: number, height: number) {
   const inverted = plan.accent === 'contrast-band'
   const fill = inverted ? '#ffffff' : p.muted
   const author = plan.content.author || 'د. أحمد حسين الفيلكاوي'
-  return `<g><text x="${width * .91}" y="${height * .93}" fill="${fill}" font-size="${Math.min(width, height) * .025}" font-family="Tajawal" font-weight="600" text-anchor="end" direction="rtl" unicode-bidi="plaintext">${esc(author)}</text><text x="${width * .09}" y="${height * .93}" fill="${fill}" font-size="${Math.min(width, height) * .019}" font-family="Tajawal" font-weight="500" text-anchor="start">dr-alfailakawi.com</text></g>`
+  return `<g><text x="${width * .91}" y="${height * .93}" fill="${fill}" font-size="${Math.min(width, height) * .025}" font-family="Tajawal" font-weight="600" text-anchor="start" direction="rtl" unicode-bidi="plaintext">${esc(author)}</text><text x="${width * .09}" y="${height * .93}" fill="${fill}" font-size="${Math.min(width, height) * .019}" font-family="Tajawal" font-weight="500" text-anchor="start">dr-alfailakawi.com</text></g>`
 }
 
 export function renderCompositionSvg(plan: CompositionPlan, options: { title?: string; ariaLabel?: string } = {}) {

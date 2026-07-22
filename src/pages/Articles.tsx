@@ -62,31 +62,46 @@ export default function Articles() {
   const categories = useMemo(() => dynamicArticleCategories(articles), [articles])
   const featured = useMemo(() => {
     if (!articles.length) return []
-    /* ثلاث عدسات مستقلة: حديث، أرشيف، ومفاجأة موضوعية. تتبدل كل ست ساعات
-       وتتعمد اختلاف الفئة والسنة، فلا تظل الواجهة معلّقة على موضوع واحد. */
+    /* ثلاث عدسات موضوعية متجددة تلقائياً:
+       تضمن تنوع الفئات والمواضيع (مثلاً: تقنية، مجتمع، تعليم/هوية)،
+       وتتبدل دورياً لتضمن إبراز جوانب مختلفة من الإنتاج الفكري. */
     const now = new Date()
-    const kuwait = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuwait', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hour12: false }).formatToParts(now)
+    const kuwait = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuwait', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(now)
     const part = (type: string) => kuwait.find((item) => item.type === type)?.value || ''
-    const period = `${part('year')}-${part('month')}-${part('day')}-${Math.floor(Number(part('hour') || 0) / 6)}`
-    const eligible = articles.filter((article) => article.title && (article.excerpt || '').trim().length >= 45)
-    const dated = [...eligible].sort((left, right) => right.iso.localeCompare(left.iso))
-    const latestYear = Number(dated[0]?.iso.slice(0, 4)) || new Date().getFullYear()
-    const chosen: typeof eligible = []
-    const rank = (pool: typeof eligible, salt: string) => [...pool].sort((left, right) => stableHash(`${period}:${salt}:${left.slug}`) - stableHash(`${period}:${salt}:${right.slug}`))
-    const pick = (pool: typeof eligible, salt: string, forceNewCategory = true, forceNewYear = false) => {
-      const remaining = rank(pool.filter((article) => !chosen.some((item) => item.slug === article.slug)), salt)
-      const strict = remaining.find((article) => (!forceNewCategory || !chosen.some((item) => item.cat === article.cat)) && (!forceNewYear || !chosen.some((item) => item.iso.slice(0, 4) === article.iso.slice(0, 4))))
-      const categoryDifferent = remaining.find((article) => !chosen.some((item) => item.cat === article.cat))
-      const next = strict || categoryDifferent || remaining[0]
-      if (next) chosen.push(next)
-    }
+    // Rotate every 15 minutes or session visit
+    const minuteBlock = Math.floor(Number(part('minute') || 0) / 15)
+    const period = `${part('year')}-${part('month')}-${part('day')}-${part('hour')}-${minuteBlock}`
 
-    pick(dated.slice(0, Math.min(36, dated.length)), 'recent', false)
-    pick(eligible.filter((article) => Number(article.iso.slice(0, 4)) <= latestYear - 3), 'archive', true, true)
-    pick(eligible, 'cross-topic', true, true)
-    while (chosen.length < Math.min(3, eligible.length)) pick(eligible, `fill-${chosen.length}`, true)
+    const pool = cat === 'الكل' ? articles : articles.filter((a) => a.cat === cat)
+    const eligible = pool.filter((article) => article.title && (article.excerpt || '').trim().length >= 30)
+    if (!eligible.length) return []
+
+    const dated = [...eligible].sort((left, right) => right.iso.localeCompare(left.iso))
+    const chosen: typeof eligible = []
+    const rank = (items: typeof eligible, salt: string) => [...items].sort((left, right) => stableHash(`${period}:${salt}:${left.slug}`) - stableHash(`${period}:${salt}:${right.slug}`))
+
+    // Card 1: Recent / Key Highlight
+    const card1Candidates = rank(dated.slice(0, Math.min(20, dated.length)), 'recent')
+    if (card1Candidates[0]) chosen.push(card1Candidates[0])
+
+    // Card 2: Distinct category (or distinct decade/year if inside single category)
+    const card2Candidates = rank(eligible.filter((a) => !chosen.some((c) => c.slug === a.slug)), 'card2')
+    const card2Best = card2Candidates.find((a) => !chosen.some((c) => c.cat === a.cat) && !chosen.some((c) => c.iso.slice(0, 4) === a.iso.slice(0, 4)))
+      || card2Candidates.find((a) => !chosen.some((c) => c.cat === a.cat))
+      || card2Candidates.find((a) => !chosen.some((c) => c.iso.slice(0, 4) === a.iso.slice(0, 4)))
+      || card2Candidates[0]
+    if (card2Best) chosen.push(card2Best)
+
+    // Card 3: Third distinct category & year
+    const card3Candidates = rank(eligible.filter((a) => !chosen.some((c) => c.slug === a.slug)), 'card3')
+    const card3Best = card3Candidates.find((a) => !chosen.some((c) => c.cat === a.cat) && !chosen.some((c) => c.iso.slice(0, 4) === a.iso.slice(0, 4)))
+      || card3Candidates.find((a) => !chosen.some((c) => c.cat === a.cat))
+      || card3Candidates.find((a) => !chosen.some((c) => c.iso.slice(0, 4) === a.iso.slice(0, 4)))
+      || card3Candidates[0]
+    if (card3Best) chosen.push(card3Best)
+
     return chosen.map(articleCard)
-  }, [articles])
+  }, [articles, cat])
 
   const term = q.trim()
   const archiveActive = Boolean(term || cat !== 'الكل')
@@ -138,10 +153,12 @@ export default function Articles() {
       </section>
 
       {/* featured trio - 3 distinct, expressive card variations */}
-      {!archiveActive && <section className="border-b border-hair px-4 py-10 sm:px-6 md:px-11 md:py-16">
+      {!term && featured.length > 0 && <section className="border-b border-hair px-4 py-10 sm:px-6 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">
           <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-[.85rem] font-bold text-accent">إضاءات مختارة وقراءات فكرية</h2>
+            <h2 className="text-[.85rem] font-bold text-accent">
+              {cat === 'الكل' ? 'إضاءات مختارة وقراءات فكرية متنوّعة' : `إضاءات مختارة في قسم (${cat})`}
+            </h2>
             <span className="text-[.75rem] text-soft">3 عدسات موضوعية متجددة</span>
           </div>
           <div className="grid gap-6 md:grid-cols-3">

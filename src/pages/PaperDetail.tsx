@@ -6,6 +6,7 @@ import { CiteButton, OwnerEdit } from '../components/extras'
 import { profile, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { liveLink } from '../lib/dead-links'
+import { analyzeResearch } from '../lib/research-intelligence'
 
 const cleanText = (value = '') => value.replace(/^ملخص عربي:\s*/, '').replace(/\s+/g, ' ').trim()
 
@@ -108,6 +109,7 @@ export default function PaperDetail() {
   const i = papers.findIndex((paper) => paper.slug === slug)
   const p = papers[i]
   const [guideOpen, setGuideOpen] = useState(false)
+  const intelligence = useMemo(() => analyzeResearch(p || {}), [p])
 
   useSeo({ title: p?.title ?? 'بحث', description: p?.abstractAr || p?.meta, path: `/research/${slug}`, type: 'article' })
 
@@ -117,7 +119,7 @@ export default function PaperDetail() {
     const journal = p.journal || 'بحث محكّم'
     const summary = firstSentence(p.abstractAr, p.meta || p.title)
     const parsed = methodologyAndSample(p.abstractAr || '')
-    const finding = mainFinding(p.abstractAr || '')
+    const finding = p.keyFinding || intelligence.keyFinding || mainFinding(p.abstractAr || '')
     const researchers = [profile.fullName, p.coAuthors].filter(Boolean).join('، ')
     const sourceUrl = p.source || p.pdf || `${SITE_URL}/research/${p.slug}`
     const apa = `الفيلكاوي، أحمد حسين${p.coAuthors ? `، و${p.coAuthors}` : ''}. (${year}). ${p.title}. ${journal}. ${sourceUrl}`
@@ -135,8 +137,8 @@ export default function PaperDetail() {
     return {
       summary,
       problem,
-      method: parsed.method,
-      sample: parsed.sample,
+      method: p.methodology || intelligence.methodology || parsed.method,
+      sample: p.sample || intelligence.sample || parsed.sample,
       finding,
       teacherMeaning: teacherMeaning(p.meta || '', p.title),
       gapQuestion: unresolvedQuestion(p.meta || '', p.title),
@@ -145,7 +147,7 @@ export default function PaperDetail() {
       journal,
       year,
     }
-  }, [p])
+  }, [intelligence, p])
 
   if (!p && loading)
     return (
@@ -181,6 +183,9 @@ export default function PaperDetail() {
         ],
         isPartOf: p.journal ? { '@type': 'Periodical', name: p.journal } : undefined,
         sameAs: p.source || p.pdf || undefined,
+        identifier: (p.doi || intelligence.doi) ? { '@type': 'PropertyValue', propertyID: 'DOI', value: p.doi || intelligence.doi } : undefined,
+        keywords: p.keywords || intelligence.keywords || undefined,
+        genre: p.studyType || intelligence.studyType || undefined,
       }} />
       <article className="px-6 pb-24 pt-32 md:px-11 md:pt-40">
         <div className="mx-auto max-w-[760px]">
@@ -191,7 +196,11 @@ export default function PaperDetail() {
           </FadeUp>
 
           <FadeUp delay={0.05}>
-            <span className="mt-8 block text-[.76rem] font-semibold uppercase text-accent">بحث محكّم</span>
+            <div className="mt-8 flex flex-wrap gap-2">
+              {[p.reviewStatus || intelligence.reviewStatus, p.studyType || intelligence.studyType, `${p.evidenceLabel || intelligence.evidenceLabel} · ${p.evidenceScore || intelligence.evidenceScore}/100`, (p.doi || intelligence.doi) ? 'DOI موثّق' : '', (p.openAccess || intelligence.openAccess) ? 'وصول مباشر' : ''].filter(Boolean).map((item) => (
+                <span key={item} className="inline-flex rounded-full border border-hair bg-wash px-3 py-1.5 text-[.7rem] font-semibold text-soft">{item}</span>
+              ))}
+            </div>
             <h1 dir="auto" className="mt-4 font-display text-[clamp(1.7rem,4vw,2.7rem)] font-bold leading-[1.45] text-ink">
               <Reveal>{p.title}</Reveal>
             </h1>
@@ -226,6 +235,31 @@ export default function PaperDetail() {
                 </div>
               )}
             </dl>
+          </FadeUp>
+
+          <FadeUp delay={0.115}>
+            <section className="mt-8 overflow-hidden rounded-[28px] border border-hair bg-wash/70">
+              <div className="border-b border-hair px-6 py-5">
+                <p className="text-[.74rem] font-semibold text-accent">جواز البحث العلمي</p>
+                <h2 className="mt-1 text-[1.05rem] font-bold text-ink">لماذا يستحق هذا البحث القراءة؟</h2>
+                <p className="mt-3 text-[.91rem] font-light leading-[1.95] text-ink/80 dark:text-soft">{p.contribution || intelligence.contribution}</p>
+              </div>
+              <div className="grid gap-px bg-hair sm:grid-cols-2">
+                <div className="bg-canvas p-5"><span className="text-[.72rem] font-semibold text-soft">السؤال العلمي</span><p className="mt-2 text-[.88rem] leading-[1.85] text-ink">{p.researchQuestion || intelligence.researchQuestion}</p></div>
+                <div className="bg-canvas p-5"><span className="text-[.72rem] font-semibold text-soft">أبرز نتيجة</span><p className="mt-2 text-[.88rem] leading-[1.85] text-ink">{p.keyFinding || intelligence.keyFinding || 'تُستكمل النتيجة الدقيقة من الملخص أو النص الكامل.'}</p></div>
+                <div className="bg-canvas p-5"><span className="text-[.72rem] font-semibold text-soft">المنهج</span><p className="mt-2 text-[.86rem] leading-[1.8] text-ink">{p.methodology || intelligence.methodology || 'راجع النص الكامل للتفصيل المنهجي.'}</p></div>
+                <div className="bg-canvas p-5"><span className="text-[.72rem] font-semibold text-soft">العينة / نطاق الدراسة</span><p className="mt-2 text-[.86rem] leading-[1.8] text-ink">{p.sample || intelligence.sample || 'لم يُذكر حجم العينة في البيانات المختصرة.'}</p></div>
+              </div>
+              {(p.keywords || intelligence.keywords || p.doi || intelligence.doi) && (
+                <div className="flex flex-wrap gap-x-5 gap-y-2 px-6 py-4 text-[.74rem] text-soft">
+                  {(p.keywords || intelligence.keywords) && <span><b className="text-ink/75">الكلمات المفتاحية:</b> {p.keywords || intelligence.keywords}</span>}
+                  {(p.doi || intelligence.doi) && <span dir="ltr"><b className="text-ink/75">DOI:</b> {p.doi || intelligence.doi}</span>}
+                </div>
+              )}
+            </section>
+            {intelligence.needsReview && !p.analyzedAt && (
+              <p className="mt-3 text-[.72rem] leading-relaxed text-soft">البيانات التفسيرية المستخرجة تلقائياً تُعرض بحذر؛ الحقول غير المؤكدة تُراجع من لوحة التحكم عند حفظ البحث.</p>
+            )}
           </FadeUp>
 
           {p.abstractAr && (

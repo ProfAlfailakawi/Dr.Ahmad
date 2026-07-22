@@ -94,6 +94,20 @@ export type PaperRecord = {
   researchgate?: string
   doi?: string
   verification?: 'verified' | 'needs-manual-review'
+  reviewStatus?: string
+  studyType?: string
+  methodology?: string
+  sample?: string
+  researchQuestion?: string
+  keyFinding?: string
+  contribution?: string
+  evidenceLabel?: string
+  evidenceScore?: number
+  keywords?: string
+  openAccess?: boolean
+  analysisConfidence?: number
+  analysisNeedsReview?: boolean
+  analyzedAt?: string
   _cms: CmsMeta
 }
 
@@ -132,7 +146,7 @@ const audioMap = audioManifest as Record<string, AudioEntry>
 const fieldsByKind: Record<ContentKind, readonly string[]> = {
   article: ['title', 'date', 'iso', 'cat', 'excerpt', 'body', 'bodyVocalized', 'source', 'url', 'status', 'scheduledAt', 'audio', 'audioControl'],
   book: ['title', 'isbn', 'desc', 'cover', 'pdf'],
-  paper: ['title', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'iso', 'date', 'coAuthors', 'scholar', 'researchgate', 'doi', 'verification'],
+  paper: ['title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'iso', 'date', 'coAuthors', 'scholar', 'researchgate', 'doi', 'verification', 'reviewStatus', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'evidenceLabel', 'evidenceScore', 'keywords', 'openAccess', 'analysisConfidence', 'analysisNeedsReview', 'analyzedAt'],
   media: ['title', 'outlet', 'platform', 'url', 'iso', 'date'],
 }
 
@@ -255,6 +269,20 @@ function buildPaper(value: Record<string, unknown>, cms: CmsMeta): PaperRecord {
     researchgate: stringValue(value.researchgate) || undefined,
     doi: stringValue(value.doi) || undefined,
     verification: stringValue(value.verification) === 'needs-manual-review' ? 'needs-manual-review' : 'verified',
+    reviewStatus: stringValue(value.reviewStatus) || undefined,
+    studyType: stringValue(value.studyType) || undefined,
+    methodology: stringValue(value.methodology) || undefined,
+    sample: stringValue(value.sample) || undefined,
+    researchQuestion: stringValue(value.researchQuestion) || undefined,
+    keyFinding: stringValue(value.keyFinding) || undefined,
+    contribution: stringValue(value.contribution) || undefined,
+    evidenceLabel: stringValue(value.evidenceLabel) || undefined,
+    evidenceScore: typeof value.evidenceScore === 'number' ? value.evidenceScore : Number(stringValue(value.evidenceScore)) || undefined,
+    keywords: stringValue(value.keywords) || undefined,
+    openAccess: typeof value.openAccess === 'boolean' ? value.openAccess : stringValue(value.openAccess) === 'true',
+    analysisConfidence: typeof value.analysisConfidence === 'number' ? value.analysisConfidence : Number(stringValue(value.analysisConfidence)) || undefined,
+    analysisNeedsReview: typeof value.analysisNeedsReview === 'boolean' ? value.analysisNeedsReview : stringValue(value.analysisNeedsReview) === 'true',
+    analyzedAt: stringValue(value.analyzedAt) || undefined,
     _cms: cms,
   }
 }

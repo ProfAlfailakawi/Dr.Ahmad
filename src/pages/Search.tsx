@@ -38,7 +38,7 @@ export default function Search() {
     .sort((a, b) => b.localeCompare(a)), [articles])
   const normalizedQuery = query.trim()
   const searchStarted = normalizedQuery.length >= 2
-  const knowledgeGraph = useMemo(() => buildKnowledgeGraph({ articles, books, papers, media }), [articles])
+  const knowledgeGraph = useMemo(() => buildKnowledgeGraph({ articles, books: books as any, papers: papers as any, media: media as any }), [articles])
   const results = useMemo(() => {
     if (!searchStarted) return []
     const lexical = searchArticles({ query: normalizedQuery, cat, year }, articles)

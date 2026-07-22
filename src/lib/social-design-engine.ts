@@ -367,6 +367,8 @@ export interface VisualQuality {
   strengths: string[]
 }
 
+export type TasteTrait = 'titlePresence' | 'surfaceMode' | 'whitespaceMode' | 'identityPosition' | 'designCharacter'
+
 export interface DesignTasteProfile {
   version: 1
   samples: number
@@ -374,9 +376,10 @@ export interface DesignTasteProfile {
   negativeSamples: number
   updatedAt?: string
   weights: Partial<Record<keyof DesignSignature, Record<string, number>>>
+  traits?: Partial<Record<TasteTrait, Record<string, number>>>
 }
 
-export type CampaignAssetRole = 'hero' | 'story' | 'reel' | 'linkedin' | 'x' | 'quote' | 'teaser' | 'reminder'
+export type CampaignAssetRole = 'hero' | 'story' | 'reel' | 'linkedin' | 'closing' | 'quote' | 'teaser' | 'reminder'
 
 export interface SocialCampaignAsset {
   id: string
@@ -1374,7 +1377,9 @@ const overrideAnalysis = (analysis: SocialContentAnalysis, request: SocialDesign
 
 export function generateSocialDesigns(request: SocialDesignRequest): SocialDesignResult {
   const analysis = overrideAnalysis(analyzeSocialContent(request.text, request.context, { author: request.author, source: request.source }), request)
-  const requestedCount = clamp(Math.round(request.count ?? 6), 4, 8)
+  // لجنة الجودة تعمل دائمًا على ثمانية اتجاهات نهائية داخليًا، ولا تعرض إلا أقوى أربعة.
+  const requestedCount = 8
+  const visibleCount = 4
   const seed = String(request.seed ?? `${normalizeArabicForDesign(request.text)}:${analysis.primaryKind}:${analysis.primaryTone}`)
   const format = resolveFormat(request, analysis)
   const density = request.density && request.density !== 'auto' ? request.density : analysis.density
@@ -1398,9 +1403,14 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
   const valid = critiqued.filter((candidate) => !candidate.quality?.issues.some((issue) => issue.startsWith('خطأ:')) && (candidate.quality?.score || 0) >= 68)
   const strong = valid.filter((candidate) => (candidate.quality?.score || 0) >= 76 && (candidate.quality?.lineFit || 0) >= 76)
   const candidatePool = strong.length >= requestedCount ? strong : valid.length ? valid : critiqued
-  const plans = selectDiverse(candidatePool, requestedCount, history, noveltyThreshold, request.tasteProfile)
+  const finalists = selectDiverse(candidatePool, requestedCount, history, noveltyThreshold, request.tasteProfile)
+  const plans = finalists
+    .map((plan) => ({ ...plan, quality: critiqueCompositionPlan(plan, finalists), tasteAffinity: tasteAffinity(request.tasteProfile, plan) }))
+    .sort((left, right) => ((right.quality?.score || 0) + (right.tasteAffinity || 0) * 8) - ((left.quality?.score || 0) + (left.tasteAffinity || 0) * 8))
+    .slice(0, visibleCount)
+    .map((plan, index) => ({ ...plan, directionIndex: index + 1 }))
   if (plans.some((plan) => plan.novelty < noveltyThreshold)) warnings.push('السجل البصري كثيف؛ اختير أبعد تكوين ممكن مع المحافظة على ملاءمة النص.')
-  if (plans.length < requestedCount) warnings.push(`الأقفال الحالية سمحت بـ ${plans.length} اتجاهات متمايزة فقط.`)
+  if (finalists.length < requestedCount) warnings.push(`الأقفال الحالية سمحت بفحص ${finalists.length} اتجاهات متمايزة فقط قبل اختيار أقوى أربعة.`)
   return {
     analysis,
     plans,
@@ -1527,8 +1537,21 @@ export function compositionTextLayout(plan: CompositionPlan) {
 }
 
 
+const tasteTraitsOf = (plan: CompositionPlan): Record<TasteTrait, string> => {
+  const typography = TYPOGRAPHY_MODES[plan.typography]
+  const palette = PALETTES[plan.palette]
+  const whitespace = plan.quality?.whitespace ?? critiqueCompositionPlan(plan).whitespace
+  return {
+    titlePresence: typography.titleScale >= 1.08 ? 'large' : typography.titleScale <= .94 ? 'quiet' : 'balanced',
+    surfaceMode: palette.isDark ? 'dark' : 'light',
+    whitespaceMode: whitespace >= 88 ? 'airy' : whitespace < 72 ? 'dense' : 'balanced',
+    identityPosition: plan.ctaPlacement === 'footer-inline' ? 'footer' : plan.ctaPlacement === 'none' ? 'minimal' : 'inline',
+    designCharacter: ['editorial-quote', 'quiet-manifesto', 'thought-poster'].includes(plan.layout) ? 'editorial' : ['institutional-signal', 'research-brief', 'event-marquee'].includes(plan.layout) ? 'institutional' : 'expressive',
+  }
+}
+
 export function createEmptyTasteProfile(): DesignTasteProfile {
-  return { version: 1, samples: 0, positiveSamples: 0, negativeSamples: 0, weights: {} }
+  return { version: 1, samples: 0, positiveSamples: 0, negativeSamples: 0, weights: {}, traits: {} }
 }
 
 const signatureDimensions: (keyof DesignSignature)[] = ['layout', 'typography', 'spatial', 'accent', 'framing', 'cta', 'palette', 'format']
@@ -1543,6 +1566,12 @@ export function updateTasteProfile(profile: DesignTasteProfile | undefined, plan
     const dimensionWeights = weights[dimension] || (weights[dimension] = {})
     dimensionWeights[value] = clamp(Number(dimensionWeights[value] || 0) + signal * (dimension === 'layout' || dimension === 'spatial' ? 1.35 : 1), -12, 12)
   }
+  const traits: NonNullable<DesignTasteProfile['traits']> = {}
+  for (const [key, values] of Object.entries(current.traits || {})) traits[key as TasteTrait] = { ...(values || {}) }
+  for (const [key, value] of Object.entries(tasteTraitsOf(plan)) as [TasteTrait, string][]) {
+    const bucket = traits[key] || (traits[key] = {})
+    bucket[value] = clamp(Number(bucket[value] || 0) + signal * 1.2, -12, 12)
+  }
   return {
     version: 1,
     samples: current.samples + 1,
@@ -1550,6 +1579,7 @@ export function updateTasteProfile(profile: DesignTasteProfile | undefined, plan
     negativeSamples: current.negativeSamples + (signal < 0 ? 1 : 0),
     updatedAt: new Date().toISOString(),
     weights,
+    traits,
   }
 }
 
@@ -1562,6 +1592,10 @@ export function tasteAffinity(profile: DesignTasteProfile | undefined, plan: Com
     const importance = dimension === 'layout' ? 1.45 : dimension === 'spatial' ? 1.25 : dimension === 'typography' ? 1.1 : 1
     weighted += Number(profile.weights[dimension]?.[String(signature[dimension])] || 0) * importance
     total += 12 * importance
+  }
+  for (const [key, value] of Object.entries(tasteTraitsOf(plan)) as [TasteTrait, string][]) {
+    weighted += Number(profile.traits?.[key]?.[value] || 0) * 1.15
+    total += 12 * 1.15
   }
   return Number(clamp(.5 + weighted / Math.max(1, total) * .5, 0, 1).toFixed(4))
 }
@@ -1622,7 +1656,7 @@ const campaignRoles: { role: CampaignAssetRole; label: string; purpose: string; 
   { role: 'story', label: 'Story', purpose: 'مدخل سريع يُقرأ في ثوانٍ', format: 'story', density: 'minimal' },
   { role: 'reel', label: 'غلاف Reel', purpose: 'عنوان قوي وآمن داخل منطقة الغلاف', format: 'reel-cover', tone: 'bold', density: 'minimal' },
   { role: 'linkedin', label: 'LinkedIn', purpose: 'نسخة معرفية مهنية أهدأ', format: 'linkedin-landscape', tone: 'institutional', density: 'balanced' },
-  { role: 'x', label: 'X', purpose: 'فكرة واحدة سريعة وواضحة', format: 'x-landscape', density: 'minimal' },
+  { role: 'closing', label: 'الشريحة الختامية', purpose: 'خاتمة تحمل الهوية ودعوة واضحة من دون ازدحام', format: 'instagram-square', tone: 'institutional', density: 'minimal' },
   { role: 'quote', label: 'بطاقة اقتباس', purpose: 'جملة قابلة للحفظ والمشاركة', format: 'instagram-square', tone: 'deep', density: 'minimal' },
   { role: 'teaser', label: 'تشويق قبل النشر', purpose: 'يفتح سؤالًا ولا يحرق الفكرة', format: 'story', tone: 'intellectual', density: 'minimal' },
   { role: 'reminder', label: 'تذكير بعد النشر', purpose: 'يعيد الفكرة بصياغة عملية ودعوة واضحة', format: 'instagram-square', tone: 'calm', density: 'balanced' },
@@ -1639,7 +1673,7 @@ const campaignText = (role: CampaignAssetRole, analysis: SocialContentAnalysis) 
   if (role === 'story') return `${truncateWords(title, 14)}\n\n${truncateWords(support, 18)}`
   if (role === 'reel') return `${hero}\n${truncateWords(title, 10)}`
   if (role === 'linkedin') return `${title}\n\n${truncateWords(lead, 26)}\n${truncateWords(support, 24)}`
-  if (role === 'x') return truncateWords(analysis.structure.keyPoint || lead || title, 24)
+  if (role === 'closing') return `${truncateWords(analysis.structure.keyPoint || title, 15)}\n\n${analysis.structure.cta || 'اقرأ الفكرة كاملة في موقع د. أحمد الفيلكاوي.'}`
   if (role === 'quote') return truncateWords(quote, 28)
   if (role === 'teaser') return sourceQuestion
     ? truncateWords(sourceQuestion, 18)

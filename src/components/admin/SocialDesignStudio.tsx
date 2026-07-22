@@ -184,7 +184,6 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [tone, setTone] = useState<ContentTone | 'auto'>('auto')
   const [density, setDensity] = useState<DesignDensity | 'auto'>('auto')
   const [platform, setPlatform] = useState<SocialPlatform | 'auto'>('auto')
-  const [count, setCount] = useState(6)
   const [plans, setPlans] = useState<CompositionPlan[]>([])
   const [selected, setSelected] = useState<CompositionPlan | null>(null)
   const [notice, setNotice] = useState('')
@@ -230,7 +229,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       tone: overrides.tone ?? tone,
       density: overrides.density ?? density,
       platform: overrides.platform ?? platform,
-      count: overrides.count ?? count,
+      count: 8,
       seed: `${text}:${context}:${nextGeneration}:${Date.now()}`,
       history: loadHistory(),
       noveltyThreshold: .36,
@@ -240,7 +239,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     setPlans(result.plans)
     setSelected(null)
     remember(result.plans)
-    setNotice(result.generation.warnings[0] || `وُلّدت ${result.plans.length} اتجاهات مختلفة فعليًا؛ لا مجرد تغيير لون.`)
+    setNotice(result.generation.warnings[0] || `فحص الناقد ثمانية اتجاهات داخلية وعرض أقوى ${result.plans.length} فقط.`)
   }
 
   const regenerateSelected = (profile: 'smart' | 'luxury' | 'calm' | 'bold') => {
@@ -252,7 +251,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       tone: profileTone,
       density,
       platform,
-      count: 6,
+      count: 8,
       seed: `${profile}:${Date.now()}:${selected.fingerprint}`,
       locks,
       history: loadHistory(),
@@ -298,7 +297,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       tone,
       density,
       platform: 'instagram',
-      count: 6,
+      count: 8,
       seed: `carousel:${text}:${context}:${nextGeneration}:${Date.now()}`,
       history: loadHistory(),
       noveltyThreshold: .38,
@@ -313,7 +312,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     setPlans(carouselPlans)
     setSelected(null)
     remember(carouselPlans)
-    setNotice('بُنيت ستة اتجاهات كاروسيل مختلفة؛ كل اتجاه يعيد توزيع الفكرة على شرائح بدل تمديد قالب واحد.')
+    setNotice('فُحصت ثمانية اتجاهات كاروسيل، وعُرضت أقوى أربعة بتوزيع حقيقي على الشرائح.')
   }
 
   const teachTaste = (plan: CompositionPlan, signal: 1 | -1) => {
@@ -388,7 +387,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           <div className="relative mt-2 flex flex-wrap items-end justify-between gap-4">
             <div>
               <h2 className="font-display text-3xl font-bold text-ink md:text-4xl">استوديو التصميم الذكي</h2>
-              <p className="mt-3 max-w-3xl text-[.88rem] leading-loose text-soft">اكتب الفكرة فقط. المحرك يفهم النبرة والبنية والمنصة، ثم يبني 4–8 تكوينات مختلفة فعليًا باستخدام هندسة محلية مجانية بلا API أو صور جاهزة.</p>
+              <p className="mt-3 max-w-3xl text-[.88rem] leading-loose text-soft">اكتب الفكرة فقط. المحرك يبني ثمانية اتجاهات في الخلفية، يمررها على الناقد البصري، ثم يعرض لك أقوى أربعة فقط — بلا API أو صور جاهزة.</p>
             </div>
             <span className="rounded-full border border-accent/25 bg-accent/[.06] px-4 py-2 text-[.72rem] font-semibold text-accent">لا تكلفة تشغيلية · عربي أولًا</span>
           </div>
@@ -423,8 +422,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           <label className="grid gap-2 text-[.72rem] font-semibold text-soft">النبرة<select className={input} value={tone} onChange={(event) => setTone(event.target.value as ContentTone | 'auto')}>{Object.entries(toneLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
           <label className="grid gap-2 text-[.72rem] font-semibold text-soft">المنصة<select className={input} value={platform} onChange={(event) => setPlatform(event.target.value as SocialPlatform | 'auto')}>{Object.entries(platformLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
           <label className="grid gap-2 text-[.72rem] font-semibold text-soft">الكثافة<select className={input} value={density} onChange={(event) => setDensity(event.target.value as DesignDensity | 'auto')}>{Object.entries(densityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-          <label className="grid gap-2 text-[.72rem] font-semibold text-soft">عدد الاتجاهات<select className={input} value={count} onChange={(event) => setCount(Number(event.target.value))}>{[4, 5, 6, 7, 8].map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
-          <div className="flex items-end"><button type="button" className={`${primary} w-full px-8`} onClick={() => generate()}>ولّد الاتجاهات</button></div>
+          <div className="grid content-end gap-2 rounded-2xl border border-hair bg-canvas px-4 py-3"><span className="text-[.68rem] font-semibold text-soft">لجنة الجودة</span><strong className="text-[.82rem] text-ink">8 محاولات ← أقوى 4</strong></div>
+          <div className="flex items-end"><button type="button" className={`${primary} w-full px-8`} onClick={() => generate()}>ولّد أقوى أربعة</button></div>
         </div>
         {notice && <p className="mt-5 rounded-2xl border border-accent/25 bg-accent/[.05] px-4 py-3 text-[.8rem] leading-relaxed text-accent">{notice}</p>}
       </section>

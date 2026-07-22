@@ -489,14 +489,18 @@ export async function generateContentSuggestion(input, fetchImpl = fetch) {
 
 
 const paperAnalysisCache = new Map()
+const defaultResearchOrcid = 'https://orcid.org/0000-0002-1767-4963'
+const researchAnalysisVersion = '2026-07-23-nuclear-2'
 
 function paperAnalysisInput(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new HttpError(400, 'Expected a JSON object')
-  const fields = ['title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'scholar', 'researchgate', 'orcid', 'repository', 'doi', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'studyType', 'keywords', 'iso', 'date', 'year', 'metadataText', 'analysisText', 'analysisFingerprint']
+  const fields = ['title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'scholar', 'researchgate', 'orcid', 'repository', 'doi', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'studyType', 'keywords', 'iso', 'date', 'year', 'metadataText', 'pdfText', 'analysisText', 'analysisFingerprint']
+  const longFields = new Set(['abstractAr', 'metadataText', 'pdfText', 'analysisText'])
   const result = {}
-  for (const field of fields) result[field] = boundedString(value[field], ['abstractAr', 'metadataText', 'analysisText'].includes(field) ? 30_000 : 2_000)
-  if (!result.title && !result.abstractAr && !result.source && !result.url && !result.pdf && !result.doi) throw new HttpError(400, 'Provide research data or a source')
-  result.analysisFingerprint = result.analysisFingerprint || createHash('sha256').update(fields.map((field) => result[field] || '').join('\u241f')).digest('hex').slice(0, 24)
+  for (const field of fields) result[field] = boundedString(value[field], longFields.has(field) ? 60_000 : 4_000)
+  if (!result.title && !result.abstractAr && !result.source && !result.url && !result.pdf && !result.doi && !result.pdfText) throw new HttpError(400, 'Provide research data or a source')
+  result.orcid = result.orcid || defaultResearchOrcid
+  result.analysisFingerprint = result.analysisFingerprint || createHash('sha256').update([researchAnalysisVersion, ...fields.map((field) => result[field] || '')].join('\u241f')).digest('hex').slice(0, 24)
   return result
 }
 
@@ -557,19 +561,77 @@ async function fetchResearchSource(raw, maximum, accept, fetchImpl = fetch) {
 }
 
 function cleanResearchHtml(html = '') {
-  const links = Array.from(String(html).matchAll(/href\s*=\s*["']([^"']+)["']/gi)).map((match) => match[1]).filter((value) => /doi\.org|orcid\.org|researchgate|scholar\.google|repository|handle\.net/i.test(value)).slice(0, 80)
-  const text = String(html).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ').replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&quot;/gi, '"').replace(/&#39;/gi, "'").replace(/\s+/g, ' ').trim()
-  return `${text.slice(0, 120_000)}${links.length ? `\nالروابط المستخرجة: ${links.join(' | ')}` : ''}`
+  const source = String(html)
+  const links = Array.from(source.matchAll(/href\s*=\s*["']([^"']+)["']/gi)).map((match) => match[1].trim()).filter(Boolean).slice(0, 240)
+  const text = source
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return { text: text.slice(0, 160_000), links }
 }
 
-function optionalPaperText(value, maximum = 1_200) {
+function optionalPaperText(value, maximum = 2_400) {
   return typeof value === 'string' ? Array.from(value.replace(/\s+/g, ' ').trim()).slice(0, maximum).join('') : ''
 }
 
 function normalizePaperAnalysis(value) {
   const parsed = parseSuggestion(value)
-  const fields = ['studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'keywords', 'journal', 'year', 'doi', 'orcid', 'repository']
-  return Object.fromEntries(fields.map((field) => [field, optionalPaperText(parsed[field], field === 'year' ? 12 : 1_200)]))
+  const fields = ['meta', 'abstractAr', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'keywords', 'journal', 'year', 'doi', 'orcid', 'repository']
+  const longFields = new Set(['abstractAr', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'methodology'])
+  return Object.fromEntries(fields.map((field) => [field, optionalPaperText(parsed[field], field === 'year' ? 12 : longFields.has(field) ? 4_800 : 2_400)]))
+}
+
+function absoluteResearchLink(raw, base) {
+  const value = String(raw || '').trim()
+  if (!value || /^(?:javascript|mailto|tel|data):/i.test(value)) return ''
+  try { return new URL(value, base).toString() } catch { return '' }
+}
+
+function cleanDoiValue(value = '') {
+  return String(value).trim().replace(/^doi\s*:\s*/i, '').replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, '').replace(/[\s]+/g, '').replace(/[.,;،؛]+$/, '')
+}
+
+function doiFromText(value = '') {
+  return cleanDoiValue(String(value).match(/10\.\d{4,9}\/[\-._;()/:A-Z0-9]+/i)?.[0] || '')
+}
+
+function classifyResearchLink(url, discovered) {
+  const value = String(url || '').trim()
+  if (!/^https?:\/\//i.test(value)) return
+  const lower = value.toLowerCase()
+  if (!discovered.doi && /doi\.org\//i.test(value)) discovered.doi = cleanDoiValue(value)
+  if (!discovered.orcid && /orcid\.org\/\d{4}-\d{4}-\d{4}-\d{3}[\dX]/i.test(value)) discovered.orcid = value
+  if (!discovered.researchgate && /researchgate\.net/i.test(lower)) discovered.researchgate = value
+  if (!discovered.scholar && /scholar\.google\./i.test(lower)) discovered.scholar = value
+  if (!discovered.pdf && (/\.pdf(?:[?#]|$)/i.test(value) || /(?:download|fulltext|pdf)/i.test(lower))) discovered.pdf = value
+  if (!discovered.repository && /(?:repository|handle\.net|dspace|eprints|digitalcommons|archive)/i.test(lower)) discovered.repository = value
+}
+
+function localResearchPdf(raw) {
+  const value = String(raw || '').trim()
+  if (!/^\/(?:files|uploads)\//i.test(value)) return null
+  let pathname
+  try { pathname = decodeURIComponent(new URL(value, 'https://local.invalid').pathname) } catch { return null }
+  const bases = [root, resolve(process.cwd(), 'public')]
+  for (const base of bases) {
+    const candidate = resolve(base, `.${pathname}`)
+    if (!(candidate === base || candidate.startsWith(`${base}${sep}`))) continue
+    if (!existsSync(candidate) || !statSync(candidate).isFile()) continue
+    const bytes = readFileSync(candidate)
+    if (bytes.length > 24 * 1024 * 1024) throw new HttpError(413, 'Research PDF is too large')
+    if (bytes.subarray(0, 5).toString('ascii') !== '%PDF-') continue
+    return { bytes, finalUrl: value, contentType: 'application/pdf' }
+  }
+  return null
 }
 
 async function crossrefMetadata(doi, fetchImpl = fetch) {
@@ -586,56 +648,117 @@ async function crossrefMetadata(doi, fetchImpl = fetch) {
 async function generatePaperAnalysis(input, fetchImpl = fetch) {
   const cached = paperAnalysisCache.get(input.analysisFingerprint)
   if (cached && cached.expiresAt > Date.now()) return { ...cached.value, cached: true }
-  const sources = [], sourceTexts = [], pdfParts = [], seen = new Set()
-  const urls = [['صفحة المجلة', input.source || input.url], ['مستودع الجامعة', input.repository], ['ResearchGate', input.researchgate], ['ORCID', input.orcid], ['Google Scholar', input.scholar]].filter((entry) => entry[1])
+
+  const sources = []
+  const sourceTexts = []
+  const pdfParts = []
+  const seen = new Set()
+  const discovered = {
+    source: input.source || input.url || '',
+    pdf: input.pdf || '',
+    scholar: input.scholar || '',
+    researchgate: input.researchgate || '',
+    orcid: input.orcid || defaultResearchOrcid,
+    repository: input.repository || '',
+    doi: cleanDoiValue(input.doi) || doiFromText([input.source, input.url, input.pdf].filter(Boolean).join(' ')),
+  }
+
+  const urls = [
+    ['صفحة المجلة', discovered.source],
+    ['مستودع الجامعة', discovered.repository],
+    ['ResearchGate', discovered.researchgate],
+    ['ORCID', discovered.orcid],
+    ['Google Scholar', discovered.scholar],
+  ].filter((entry) => /^https?:\/\//i.test(entry[1]))
+
   for (const [label, raw] of urls) {
     if (seen.has(raw)) continue
     seen.add(raw)
     try {
-      const resource = await fetchResearchSource(raw, 2 * 1024 * 1024, 'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.5', fetchImpl)
-      sourceTexts.push(`\n--- ${label} (${resource.finalUrl}) ---\n${cleanResearchHtml(resource.bytes.toString('utf8'))}`)
+      const resource = await fetchResearchSource(raw, 3 * 1024 * 1024, 'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.5', fetchImpl)
+      const parsed = cleanResearchHtml(resource.bytes.toString('utf8'))
+      sourceTexts.push(`\n--- ${label} (${resource.finalUrl}) ---\n${parsed.text}`)
+      for (const href of parsed.links) {
+        const absolute = absoluteResearchLink(href, resource.finalUrl)
+        if (absolute) classifyResearchLink(absolute, discovered)
+      }
+      classifyResearchLink(resource.finalUrl, discovered)
       sources.push(label)
-    } catch { /* continue with the remaining sources */ }
+    } catch { /* نكمل ببقية المصادر، ولا نكتب رسالة نقص في بيانات البحث. */ }
   }
-  if (input.pdf) {
+
+  const pdfCandidate = discovered.pdf || input.pdf
+  if (pdfCandidate) {
     try {
-      const resource = await fetchResearchSource(input.pdf, 18 * 1024 * 1024, 'application/pdf,*/*;q=0.5', fetchImpl)
-      if (/application\/pdf/i.test(resource.contentType) || resource.bytes.subarray(0, 5).toString('ascii') === '%PDF-') {
+      const resource = localResearchPdf(pdfCandidate) || (/^https?:\/\//i.test(pdfCandidate)
+        ? await fetchResearchSource(pdfCandidate, 24 * 1024 * 1024, 'application/pdf,*/*;q=0.5', fetchImpl)
+        : null)
+      if (resource && (/application\/pdf/i.test(resource.contentType) || resource.bytes.subarray(0, 5).toString('ascii') === '%PDF-')) {
         pdfParts.push({ inlineData: { mimeType: 'application/pdf', data: resource.bytes.toString('base64') } })
+        discovered.pdf = resource.finalUrl || pdfCandidate
         sources.push('PDF الكامل')
       }
-    } catch { /* continue with the remaining sources */ }
+    } catch { /* تبقى البيانات المستخرجة من المصادر الأخرى متاحة. */ }
   }
-  const metadata = await crossrefMetadata(input.doi, fetchImpl)
-  if (metadata) sources.push('DOI / Crossref')
+
+  const doiCandidate = discovered.doi || doiFromText(sourceTexts.join(' '))
+  if (doiCandidate) discovered.doi = doiCandidate
+  const metadata = await crossrefMetadata(doiCandidate, fetchImpl)
+  if (metadata) {
+    sources.push('DOI / Crossref')
+    try {
+      const crossref = JSON.parse(metadata)
+      if (!discovered.source && /^https?:\/\//i.test(String(crossref.URL || ''))) discovered.source = String(crossref.URL)
+    } catch { /* metadata غير صالحة لا توقف بقية التحليل */ }
+  }
   if (input.abstractAr) sources.push('الملخص')
-  if (input.metadataText) sources.push('Metadata المرفقة')
+  if (input.metadataText) sources.push('البيانات الوصفية المرفقة')
+  if (input.pdfText) sources.push('النص المستخرج من PDF')
   sources.push('بيانات لوحة التحكم')
 
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
   if (!apiKey) throw new HttpError(503, 'AI service is not configured')
   const model = process.env.GEMINI_MODEL || 'gemini-3.5-flash'
   if (!/^[A-Za-z0-9._-]+$/.test(model)) throw new HttpError(503, 'AI model is not configured correctly')
+
   const prompt = [
-    'حلّل البحث العلمي تحليلاً توثيقياً دقيقاً. جميع الأبحاث في هذا الأرشيف محكّمة؛ لا تقيّم حالة التحكيم.',
-    'استخدم جميع المواد المرفقة، مع أولوية PDF الكامل والجداول وقسم المنهج والمشاركين ثم الملخص والبيانات الوصفية والروابط.',
-    'استخرج فقط ما تدعمه المصادر. لا تخمّن أي رقم أو معلومة. إذا لم يوجد الحقل أعد سلسلة فارغة تماماً.',
-    'ممنوع كتابة عبارات مثل: لم يذكر، غير متاح، غير ظاهر، يحتاج توثيق، تعذر، راجع النص الكامل.',
-    'في العينة اذكر العدد الدقيق والفئة وأي توزيع فرعي ظاهر. في المنهج اذكر التصميم والأداة. في النتائج اذكر أبرز النتائج الفعلية.',
+    'حلّل البحث العلمي تحليلاً توثيقياً دقيقاً ومباشراً. جميع أبحاث هذا الأرشيف محكّمة افتراضياً؛ لا تقيّم حالة التحكيم.',
+    'قاعدة حاسمة: كل قيمة تعيدها يجب أن تكون مستندة إلى نص صريح داخل PDF أو الجداول أو قسم المنهج/المشاركين أو الملخص أو Metadata أو صفحة المجلة أو Crossref. لا تستنتج معلومة من العنوان وحده ولا تؤلف صياغة لا يدعمها المصدر.',
+    'اقرأ PDF كاملاً، وفتّش تحديداً في: Abstract، Keywords، Method/Methodology، Participants/Sample، الجداول، Results/Findings، Discussion، Limitations، Recommendations.',
+    'إذا لم يوجد الحقل في أي مصدر فأعد سلسلة فارغة تماماً. ممنوع كتابة: لم يذكر، غير متاح، غير ظاهر، يحتاج توثيق، تعذر، راجع النص الكامل، أو أي رسالة نقص.',
+    'أعد الموضوع والملخص ونوع الدراسة والمنهج والعينة والسؤال العلمي والنتائج والإضافة والتطبيقات والقيود والكلمات المفتاحية بالعربية. أبقِ اسم المجلة كما ورد في المصدر. العنوان لا تعِد صياغته.',
+    'الكلمات المفتاحية تُؤخذ حصراً من قسم Keywords/الكلمات المفتاحية في البحث أو Metadata الرسمية؛ لا تولّد كلمات بديلة.',
+    'العينة/نطاق الدراسة يجب أن تكون كاملة قدر الإمكان: العدد الكلي، الفئة، المؤسسة/المكان، طريقة الاختيار، والتوزيعات الفرعية أو النوع الاجتماعي متى وردت. لا تختصرها إلى رقم فقط.',
+    'السؤال العلمي: انقل سؤال البحث الصريح، أو صيّغ الهدف بصياغة عربية أمينة فقط عندما يرد هدف صريح في المصدر. أبرز النتائج: لخّص النتائج الفعلية دون تعميم زائد.',
     `بيانات لوحة التحكم: ${JSON.stringify(input)}`,
-    metadata ? `بيانات DOI/Crossref: ${metadata}` : '',
-    sourceTexts.join('\n').slice(0, 180_000),
+    metadata ? `بيانات DOI/Crossref الرسمية: ${metadata}` : '',
+    input.metadataText ? `Metadata مرفقة: ${input.metadataText}` : '',
+    input.pdfText ? `نص مستخرج من PDF: ${input.pdfText}` : '',
+    input.analysisText ? `تحليل/نص إضافي مرفق: ${input.analysisText}` : '',
+    sourceTexts.join('\n').slice(0, 220_000),
   ].filter(Boolean).join('\n\n')
+
+  const analysisFields = ['meta', 'abstractAr', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'keywords', 'journal', 'year', 'doi', 'orcid', 'repository']
   let response
   try {
     response = await fetchWithTimeout(fetchImpl, `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-      method: 'POST', headers: { accept: 'application/json', 'content-type': 'application/json', 'x-goog-api-key': apiKey },
+      method: 'POST',
+      headers: { accept: 'application/json', 'content-type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: 'أنت محلل أبحاث أكاديمي صارم. لا تختلق بيانات، ولا تعرض رسائل نقص؛ استخدم السلسلة الفارغة للحقل غير الموجود.' }] },
+        systemInstruction: { parts: [{ text: 'أنت محلل أبحاث أكاديمي صارم. لا تختلق أي معلومة. لا تعرض رسائل نقص؛ استخدم السلسلة الفارغة. اكتب الحقول العلمية بالعربية، مع إبقاء اسم المجلة كما هو.' }] },
         contents: [{ role: 'user', parts: [{ text: prompt }, ...pdfParts] }],
-        generationConfig: { temperature: 0.05, maxOutputTokens: 3_500, responseMimeType: 'application/json', responseSchema: { type: 'OBJECT', properties: Object.fromEntries(['studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'keywords', 'journal', 'year', 'doi', 'orcid', 'repository'].map((field) => [field, { type: 'STRING' }])), required: ['studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'keywords', 'journal', 'year', 'doi', 'orcid', 'repository'] } },
+        generationConfig: {
+          temperature: 0.02,
+          maxOutputTokens: 5_500,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: 'OBJECT',
+            properties: Object.fromEntries(analysisFields.map((field) => [field, { type: 'STRING' }])),
+            required: analysisFields,
+          },
+        },
       }),
-    }, envNumber('GEMINI_RESEARCH_TIMEOUT_MS', 55_000, 15_000, 90_000))
+    }, envNumber('GEMINI_RESEARCH_TIMEOUT_MS', 75_000, 20_000, 110_000))
   } catch (error) {
     if (error?.name === 'AbortError') throw new HttpError(504, 'Research analysis timed out')
     if (error instanceof HttpError) throw error
@@ -644,7 +767,25 @@ async function generatePaperAnalysis(input, fetchImpl = fetch) {
   if (!response.ok) throw new HttpError(response.status === 429 ? 503 : 502, 'Research analysis service unavailable')
   const payload = await response.json()
   const raw = payload?.candidates?.[0]?.content?.parts?.map((part) => typeof part?.text === 'string' ? part.text : '').join('')
-  const result = { ...normalizePaperAnalysis(raw), reviewStatus: 'محكّم', openAccess: Boolean(input.pdf || input.repository || input.researchgate), analysisConfidence: Math.min(99, 62 + Math.min(30, sources.length * 5)), analysisNeedsReview: false, analysisFingerprint: input.analysisFingerprint, analysisSources: Array.from(new Set(sources)).join('، '), analyzedAt: new Date().toISOString() }
+  const normalized = normalizePaperAnalysis(raw)
+  const finalDoi = cleanDoiValue(normalized.doi || discovered.doi)
+  const result = {
+    ...normalized,
+    doi: finalDoi,
+    source: discovered.source,
+    pdf: discovered.pdf,
+    scholar: discovered.scholar,
+    researchgate: discovered.researchgate,
+    orcid: discovered.orcid || normalized.orcid || defaultResearchOrcid,
+    repository: discovered.repository || normalized.repository,
+    reviewStatus: 'محكّم',
+    openAccess: Boolean(discovered.pdf || discovered.repository || discovered.researchgate),
+    analysisConfidence: Math.min(99, 64 + Math.min(32, sources.length * 4)),
+    analysisNeedsReview: false,
+    analysisFingerprint: input.analysisFingerprint,
+    analysisSources: Array.from(new Set(sources)).join('، '),
+    analyzedAt: new Date().toISOString(),
+  }
   paperAnalysisCache.set(input.analysisFingerprint, { value: result, expiresAt: Date.now() + 24 * 60 * 60 * 1000 })
   if (paperAnalysisCache.size > 80) paperAnalysisCache.delete(paperAnalysisCache.keys().next().value)
   return { ...result, cached: false }

@@ -215,7 +215,7 @@ export function OwnerEdit({ tab, slug, className = '' }: { tab: 'articles' | 'bo
 }
 
 /* ---------- «انسخ الاستشهاد» — APA وMLA بنقرة، باسم الدكتور ---------- */
-export function CiteButton({ title, year, container, url, compact = false }: { title: string; year: string; container: string; url: string; compact?: boolean }) {
+export function CiteButton({ title, year, container, url, compact = false, contextLabel = 'فتح سياق المقال' }: { title: string; year: string; container: string; url: string; compact?: boolean; contextLabel?: string }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const citation = `الفيلكاوي، أحمد حسين. «${title}». ${container}، ${year}، ${url}.`
@@ -317,7 +317,7 @@ export function CiteButton({ title, year, container, url, compact = false }: { t
             </header>
             <p className="citation-body-v2">{citation}</p>
             <footer className="citation-footer-v2">
-              <a href={url} target="_blank" rel="noreferrer" className="citation-source-v2">فتح سياق المقال ↗</a>
+              <a href={url} target="_blank" rel="noreferrer" className="citation-source-v2">{contextLabel} ↗</a>
               <button type="button" onClick={copy} className="citation-copy-v2">{copied ? '✓ نُسخ الاستشهاد' : 'نسخ الاستشهاد'}</button>
             </footer>
           </motion.section>

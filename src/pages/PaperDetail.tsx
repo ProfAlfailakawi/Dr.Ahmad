@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { JsonLd, useSeo } from '../components/seo'
 import { CiteButton, OwnerEdit } from '../components/extras'
@@ -8,45 +8,73 @@ import { useCmsContent } from '../lib/content'
 import { analyzeResearch } from '../lib/research-intelligence'
 
 const cleanText = (value = '') => value.replace(/^ملخص عربي:\s*/, '').replace(/\s+/g, ' ').trim()
-const firstSentence = (value = '', fallback = '') => {
-  const text = cleanText(value) || fallback
-  return text ? (text.split(/(?<=[.!؟…])\s+/)[0] || text) : ''
+const arabicScientific = (value = '') => {
+  const cleaned = cleanText(value)
+  return /[\u0600-\u06ff]/.test(cleaned) ? cleaned : ''
 }
+type ResearchSection = 'metadata' | 'science' | 'sources'
 
-function CopySnippet({ label, value }: { label: string; value: string }) {
-  const [copied, setCopied] = useState(false)
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(value)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1600)
-    } catch { /* clipboard may be unavailable */ }
-  }
+function ResearchAccordion({
+  id,
+  eyebrow,
+  title,
+  summary,
+  open,
+  onToggle,
+  children,
+}: {
+  id: string
+  eyebrow: string
+  title: string
+  summary: string
+  open: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
   return (
-    <div className="research-copy-card min-w-0 rounded-2xl border p-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[.8rem] font-semibold text-soft">{label}</p>
-        <button onClick={copy} className="rounded-full border border-hair px-3 py-1 text-[.75rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">
-          {copied ? 'نُسخ ✓' : 'نسخ'}
-        </button>
+    <section id={id} className={`research-accordion scroll-mt-28 overflow-hidden rounded-[26px] border ${open ? 'is-open' : ''}`}>
+      <button type="button" onClick={onToggle} className="research-accordion-trigger" aria-expanded={open} aria-controls={`${id}-panel`}>
+        <span className="min-w-0 text-right">
+          <span className="block text-[.72rem] font-extrabold text-accent">{eyebrow}</span>
+          <span className="mt-1 block text-[1.02rem] font-bold text-ink">{title}</span>
+          <span className="mt-1.5 block text-[.78rem] font-normal leading-[1.7] text-soft">{summary}</span>
+        </span>
+        <span aria-hidden className="research-accordion-icon">⌄</span>
+      </button>
+      <div id={`${id}-panel`} className="research-accordion-panel" hidden={!open}>
+        {children}
       </div>
-      <p dir="auto" className="mt-3 min-w-0 break-words text-[.86rem] leading-[1.95] text-ink [overflow-wrap:anywhere]">{value}</p>
-    </div>
+    </section>
   )
 }
 
 export default function PaperDetail() {
   const { slug } = useParams()
+  const location = useLocation()
   const { papers, loading } = useCmsContent()
   const index = papers.findIndex((paper) => paper.slug === slug)
   const p = papers[index]
-  const [guideOpen, setGuideOpen] = useState(false)
+  const [openSection, setOpenSection] = useState<ResearchSection | null>(null)
   const intelligence = useMemo(() => analyzeResearch(p || {}), [p])
 
   useSeo({ title: p?.title ?? 'بحث', description: p?.abstractAr || p?.meta, path: `/research/${slug}`, type: 'article' })
 
+  const revealSection = (section: ResearchSection, id: string) => {
+    setOpenSection(section)
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }))
+  }
+
+  useEffect(() => {
+    if (!p || location.hash !== '#research-passport') return
+    revealSection('science', 'research-passport')
+    // يعمل عند الدخول المباشر من زر «افهم هذا البحث» في قائمة الأبحاث.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.hash, p?.slug])
+
   if (!p && loading) return <Page className="content-research"><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
-  if (!p) return <Page><div className="px-6 pt-44 text-center text-soft">تعذر فتح صفحة البحث.</div></Page>
+  if (!p) return <Page><div className="px-6 pt-44 text-center text-soft">صفحة البحث غير موجودة.</div></Page>
 
   const prev = papers[index - 1]
   const next = papers[index + 1]
@@ -54,19 +82,24 @@ export default function PaperDetail() {
   const journal = p.journal || intelligence.journal
   const researchers = [profile.fullName, p.coAuthors].filter(Boolean).join('، ')
   const doi = p.doi || intelligence.doi
-  const keywords = p.keywords || intelligence.keywords
+  const keywords = arabicScientific(p.keywords || intelligence.keywords)
+  const topic = arabicScientific(intelligence.topic)
+  const studyType = arabicScientific(p.studyType || intelligence.studyType)
+  const abstractAr = arabicScientific(p.abstractAr)
+  const doiLink = intelligence.links.find((item) => item.id === 'doi')
+  const sourceLinks = intelligence.links.filter((item) => item.id !== 'doi')
   const dataCards = [
-    { label: 'السؤال العلمي', value: p.researchQuestion || intelligence.researchQuestion },
-    { label: 'أبرز النتائج', value: p.keyFinding || intelligence.keyFinding },
-    { label: 'المنهج', value: p.methodology || intelligence.methodology },
-    { label: 'العينة / نطاق الدراسة', value: p.sample || intelligence.sample },
-    { label: 'نوع الدراسة', value: p.studyType || intelligence.studyType },
-    { label: 'التطبيقات', value: p.applications || intelligence.applications || p.contribution || intelligence.contribution },
-    { label: 'القيود', value: p.limitations || intelligence.limitations },
-  ].filter((item) => Boolean(item.value?.trim()))
-  const summary = firstSentence(p.abstractAr, p.meta || p.title)
-  const citationUrl = intelligence.links.find((item) => item.id === 'doi')?.url || intelligence.links[0]?.url || `${SITE_URL}/research/${p.slug}`
-  const apa = `الفيلكاوي، أحمد حسين${p.coAuthors ? `، و${p.coAuthors}` : ''}. (${year || 'د.ت.'}). ${p.title}.${journal ? ` ${journal}.` : ''} ${citationUrl}`
+    { label: 'السؤال العلمي', value: arabicScientific(p.researchQuestion || intelligence.researchQuestion) },
+    { label: 'أبرز النتائج', value: arabicScientific(p.keyFinding || intelligence.keyFinding) },
+    { label: 'العينة / نطاق الدراسة', value: arabicScientific(p.sample || intelligence.sample) },
+    { label: 'المنهج', value: arabicScientific(p.methodology || intelligence.methodology) },
+    { label: 'نوع الدراسة', value: studyType },
+    { label: 'التطبيقات', value: arabicScientific(p.applications || intelligence.applications) },
+    { label: 'الإضافة العلمية', value: arabicScientific(p.contribution || intelligence.contribution) },
+    { label: 'القيود', value: arabicScientific(p.limitations || intelligence.limitations) },
+  ].filter((item) => Boolean(item.value))
+  const citationUrl = doiLink?.url || intelligence.links.find((item) => item.id === 'publisher')?.url || `${SITE_URL}/research/${p.slug}`
+  const metadataCount = [topic, researchers, journal, year, doi, keywords].filter(Boolean).length
 
   return (
     <Page className="content-research research-detail-page">
@@ -87,98 +120,112 @@ export default function PaperDetail() {
         sameAs: intelligence.links.map((item) => item.url),
         identifier: doi ? { '@type': 'PropertyValue', propertyID: 'DOI', value: doi } : undefined,
         keywords: keywords || undefined,
-        genre: p.studyType || intelligence.studyType || undefined,
+        genre: studyType || undefined,
       }} />
 
       <article className="px-6 pb-24 pt-32 md:px-11 md:pt-40">
-        <div className="mx-auto max-w-[850px]">
+        <div className="mx-auto max-w-[900px]">
           <FadeUp>
             <Link to="/research" className="text-[.85rem] font-medium text-soft transition-colors hover:text-accent">← كل المساهمات العلمية</Link>
           </FadeUp>
 
           <FadeUp delay={0.05}>
-            <div className="mt-8 flex flex-wrap gap-2">
-              <span className="research-badge inline-flex rounded-full px-3 py-1.5 text-[.72rem] font-semibold">محكّم</span>
-              {(p.studyType || intelligence.studyType) && <span className="research-badge inline-flex rounded-full px-3 py-1.5 text-[.72rem] font-semibold">{p.studyType || intelligence.studyType}</span>}
-              {doi && <span className="research-badge inline-flex rounded-full px-3 py-1.5 text-[.72rem] font-semibold">DOI</span>}
-              {intelligence.openAccess && <span className="research-badge inline-flex rounded-full px-3 py-1.5 text-[.72rem] font-semibold">نص كامل</span>}
-            </div>
-            <h1 dir="auto" className="mt-5 font-display text-[clamp(1.7rem,4vw,2.7rem)] font-bold leading-[1.45] text-ink"><Reveal>{p.title}</Reveal></h1>
-            {p.titleAr && <p dir="rtl" className="mt-3 text-[1.02rem] font-light leading-[1.9] text-soft">{p.titleAr}</p>}
-            <OwnerEdit tab="papers" slug={p.slug} className="mt-3" />
-            <div className="mt-7 h-[3px] w-16 rounded-full bg-accent" />
-          </FadeUp>
-
-          <FadeUp delay={0.1}>
-            <dl className="research-meta-panel mt-10 grid gap-px overflow-hidden rounded-[24px] border sm:grid-cols-2">
-              {p.meta && <div className="research-meta-cell"><dt>الموضوع</dt><dd>{p.meta}</dd></div>}
-              <div className="research-meta-cell"><dt>الباحثون</dt><dd>{researchers}</dd></div>
-              {journal && <div className="research-meta-cell"><dt>المجلة</dt><dd>{journal}</dd></div>}
-              {year && <div className="research-meta-cell"><dt>سنة النشر</dt><dd>{year}</dd></div>}
-              {doi && <div className="research-meta-cell"><dt>DOI</dt><dd dir="ltr" className="break-all text-left">{doi}</dd></div>}
-              {keywords && <div className="research-meta-cell"><dt>الكلمات المفتاحية</dt><dd>{keywords}</dd></div>}
-            </dl>
-          </FadeUp>
-
-          {dataCards.length > 0 && (
-            <FadeUp delay={0.115}>
-              <section className="research-passport mt-8 overflow-hidden rounded-[28px] border">
-                <div className="research-passport-head px-6 py-5 md:px-7">
-                  <p className="text-[.76rem] font-bold text-accent">جواز البحث العلمي</p>
-                  <h2 className="mt-1 text-[1.1rem] font-bold text-ink">البيانات العلمية الكاملة</h2>
-                  {(p.contribution || intelligence.contribution) && <p className="mt-3 text-[.93rem] leading-[1.95] text-ink">{p.contribution || intelligence.contribution}</p>}
+            <header className="research-hero mt-8 rounded-[30px] border px-6 py-7 md:px-9 md:py-9">
+              <div className="flex flex-wrap items-start justify-between gap-5">
+                <div className="flex flex-wrap gap-2">
+                  <span className="research-badge inline-flex rounded-full px-3 py-1.5 text-[.72rem] font-semibold">محكّم</span>
+                  {studyType && <span className="research-badge inline-flex rounded-full px-3 py-1.5 text-[.72rem] font-semibold">{studyType}</span>}
                 </div>
-                <div className="grid gap-px sm:grid-cols-2">
-                  {dataCards.map((card) => (
-                    <div key={card.label} className="research-data-card p-5 md:p-6">
-                      <h3 className="text-[.75rem] font-bold text-accent">{card.label}</h3>
-                      <p className="mt-2 text-[.9rem] leading-[1.9] text-ink">{card.value}</p>
+                {year && <span className="font-display text-[.84rem] font-bold text-accent">{year}</span>}
+              </div>
+              <h1 dir="auto" className="mt-5 font-display text-[clamp(1.65rem,4vw,2.65rem)] font-bold leading-[1.48] text-ink"><Reveal>{p.title}</Reveal></h1>
+              {p.titleAr && p.titleAr !== p.title && <p dir="rtl" className="mt-3 text-[1.02rem] font-light leading-[1.9] text-soft">{p.titleAr}</p>}
+              <OwnerEdit tab="papers" slug={p.slug} className="mt-3" />
+              <div className="mt-7 flex flex-wrap gap-3">
+                {dataCards.length > 0 && <button type="button" onClick={() => revealSection('science', 'research-passport')} className="research-primary-link">افهم هذا البحث ←</button>}
+                {(abstractAr || sourceLinks.length > 0) && <button type="button" onClick={() => revealSection('sources', 'research-sources')} className="research-secondary-link">المصادر الأصلية</button>}
+              </div>
+            </header>
+          </FadeUp>
+
+          <div className="mt-7 grid gap-4">
+            {metadataCount > 0 && (
+              <FadeUp delay={0.09}>
+                <ResearchAccordion
+                  id="research-metadata"
+                  eyebrow="هوية البحث"
+                  title="البيانات التوثيقية"
+                  summary={`${metadataCount} عناصر موثقة — تُفتح عند الحاجة فقط`}
+                  open={openSection === 'metadata'}
+                  onToggle={() => setOpenSection((value) => value === 'metadata' ? null : 'metadata')}
+                >
+                  <dl className="research-meta-panel grid gap-px sm:grid-cols-2">
+                    {topic && <div className="research-meta-cell"><dt>الموضوع</dt><dd>{topic}</dd></div>}
+                    <div className="research-meta-cell"><dt>الباحثون</dt><dd>{researchers}</dd></div>
+                    {journal && <div className="research-meta-cell"><dt>المجلة</dt><dd dir="auto">{journal}</dd></div>}
+                    {year && <div className="research-meta-cell"><dt>سنة النشر</dt><dd>{year}</dd></div>}
+                    {doi && <div className="research-meta-cell"><dt>المعرّف الرقمي DOI</dt><dd dir="ltr" className="break-all text-left">{doiLink ? <a href={doiLink.url} target="_blank" rel="noreferrer" className="research-inline-source">{doi} ↗</a> : doi}</dd></div>}
+                    {keywords && <div className="research-meta-cell sm:col-span-2"><dt>الكلمات المفتاحية</dt><dd>{keywords}</dd></div>}
+                  </dl>
+                </ResearchAccordion>
+              </FadeUp>
+            )}
+
+            {dataCards.length > 0 && (
+              <FadeUp delay={0.11}>
+                <ResearchAccordion
+                  id="research-passport"
+                  eyebrow="القراءة العلمية"
+                  title="البيانات العلمية الكاملة"
+                  summary={`${dataCards.length} محاور مستخرجة من البحث ومصادره الأصلية`}
+                  open={openSection === 'science'}
+                  onToggle={() => setOpenSection((value) => value === 'science' ? null : 'science')}
+                >
+                  <div className="research-passport-grid grid gap-px sm:grid-cols-2">
+                    {dataCards.map((card) => (
+                      <div key={card.label} className="research-data-card min-w-0 p-5 md:p-6">
+                        <h3 className="text-[.75rem] font-bold text-accent">{card.label}</h3>
+                        <p className="mt-2 whitespace-pre-line break-words text-[.92rem] leading-[1.95] text-ink [overflow-wrap:anywhere]">{card.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </ResearchAccordion>
+              </FadeUp>
+            )}
+
+            {(abstractAr || sourceLinks.length > 0) && (
+              <FadeUp delay={0.13}>
+                <ResearchAccordion
+                  id="research-sources"
+                  eyebrow="النص والمصادر"
+                  title="الملخص والروابط الأصلية"
+                  summary={`${abstractAr ? 'الملخص العربي الكامل' : ''}${abstractAr && sourceLinks.length ? ' · ' : ''}${sourceLinks.length ? `${sourceLinks.length} روابط مباشرة` : ''}`}
+                  open={openSection === 'sources'}
+                  onToggle={() => setOpenSection((value) => value === 'sources' ? null : 'sources')}
+                >
+                  {abstractAr && (
+                    <div className="research-abstract px-6 py-6 md:px-7">
+                      <p className="text-[.76rem] font-bold text-accent">الملخص</p>
+                      <p className="mt-3 whitespace-pre-line text-[.96rem] font-normal leading-[2] text-ink">{abstractAr}</p>
                     </div>
-                  ))}
-                </div>
-              </section>
-            </FadeUp>
-          )}
-
-          {p.abstractAr && (
-            <FadeUp delay={0.12}>
-              <section className="research-abstract mt-8 rounded-[24px] border px-6 py-6 md:px-7">
-                <p className="text-[.76rem] font-bold text-accent">الملخص</p>
-                <p className="mt-3 text-[.96rem] font-normal leading-[2] text-ink">{cleanText(p.abstractAr)}</p>
-              </section>
-            </FadeUp>
-          )}
-
-          {intelligence.links.length > 0 && (
-            <FadeUp delay={0.14}>
-              <section className="mt-9">
-                <h2 className="text-[.84rem] font-bold text-ink">جميع روابط البحث</h2>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  {intelligence.links.map((item, linkIndex) => (
-                    <a key={item.id} href={item.url} target="_blank" rel="noreferrer" className={linkIndex === 0 ? 'research-primary-link' : 'research-secondary-link'}>{item.label} ←</a>
-                  ))}
-                </div>
-              </section>
-            </FadeUp>
-          )}
+                  )}
+                  {sourceLinks.length > 0 && (
+                    <nav className="research-source-grid border-t border-hair px-6 py-6 md:px-7" aria-label="روابط البحث">
+                      {sourceLinks.map((item) => (
+                        <a key={item.id} href={item.url} target="_blank" rel="noreferrer" className="research-source-card">
+                          <span>{item.label}</span><span aria-hidden>↗</span>
+                        </a>
+                      ))}
+                    </nav>
+                  )}
+                </ResearchAccordion>
+              </FadeUp>
+            )}
+          </div>
 
           <FadeUp delay={0.15}>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <button onClick={() => setGuideOpen((value) => !value)} className="research-secondary-link" aria-expanded={guideOpen}>{guideOpen ? 'إخفاء رفيق الباحث' : 'افهم هذا البحث'}</button>
-            </div>
-            <CiteButton title={p.title} year={year || 'د.ت.'} container={journal || 'بحث محكّم'} url={`${SITE_URL}/research/${p.slug}`} />
+            <CiteButton title={p.title} year={year || 'د.ت.'} container={journal || 'بحث محكّم'} url={citationUrl} contextLabel="فتح مصدر البحث" />
           </FadeUp>
-
-          {guideOpen && (
-            <FadeUp delay={0.16}>
-              <section className="research-guide mt-10 rounded-[28px] border p-6 md:p-7">
-                <p className="text-[.76rem] font-bold text-accent">رفيق الباحث</p>
-                <h2 className="mt-2 font-display text-[1.4rem] font-semibold text-ink">خلاصة قابلة للاستخدام الأكاديمي</h2>
-                {summary && <div className="research-data-card mt-5 rounded-2xl border p-5"><h3 className="text-[.75rem] font-bold text-accent">البحث في جملة واحدة</h3><p className="mt-3 text-[.92rem] leading-[1.95] text-ink">{summary}</p></div>}
-                <div className="mt-5"><CopySnippet label="APA" value={apa} /></div>
-              </section>
-            </FadeUp>
-          )}
 
           <FadeUp>
             <nav className="mt-16 grid gap-6 border-t border-hair pt-8 sm:grid-cols-2">

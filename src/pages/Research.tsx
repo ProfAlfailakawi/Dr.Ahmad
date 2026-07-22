@@ -9,6 +9,7 @@ import { analyzeResearch } from '../lib/research-intelligence'
 const ar = (n: number) => String(n).padStart(2, '0')
 const paperCount = (count: number) => count === 1 ? 'بحث واحد' : count === 2 ? 'بحثان' : `${count} بحثاً`
 const badge = 'research-badge inline-flex items-center rounded-full px-3 py-1.5 text-[.72rem] font-semibold'
+const arabicOnly = (value = '') => /[\u0600-\u06ff]/.test(value) ? value.trim() : ''
 
 export default function Research() {
   const { papers } = useCmsContent()
@@ -23,7 +24,7 @@ export default function Research() {
         name: 'المساهمات العلمية', url: `${SITE_URL}/research`, inLanguage: 'ar',
         mainEntity: { '@type': 'ItemList', numberOfItems: papers.length, itemListElement: papers.map((paper, index) => ({ '@type': 'ListItem', position: index + 1, url: `${SITE_URL}/research/${paper.slug}`, name: paper.title })) },
       }} />
-      <PageHead label="المساهمات العلمية" title="الأثر العلمي." sub="أبحاث محكّمة تُعرض ببياناتها العلمية وروابطها الكاملة في تجربة قراءة دقيقة وواضحة." />
+      <PageHead label="المساهمات العلمية" title="الأثر العلمي." sub="أبحاث محكّمة تُعرض بهدوء، وتفتح تفاصيلها العلمية ومصادرها الأصلية عند الطلب." />
 
       <section className="px-6 py-16 md:px-11 md:py-24">
         <div className="mx-auto max-w-shell">
@@ -31,7 +32,7 @@ export default function Research() {
             <div className="mb-10 flex flex-wrap items-center justify-between gap-5 border-b border-hair pb-6">
               <div>
                 <span className="block text-[.82rem] font-semibold text-ink">الأرشيف العلمي المحكّم</span>
-                <span className="mt-1 block text-[.74rem] text-soft">{count} مع وصول مباشر إلى جميع المصادر المتاحة</span>
+                <span className="mt-1 block text-[.74rem] text-soft">{count} مع وصول مباشر إلى البيانات والمصادر الأصلية</span>
               </div>
               <span className="flex items-center gap-2.5">
                 {academicProfiles.map((profileLink) => (
@@ -43,54 +44,33 @@ export default function Research() {
             </div>
           </FadeUp>
 
-          <ul id="research-list" className="grid scroll-mt-28 gap-5">
+          <ul id="research-list" className="grid scroll-mt-28 gap-4">
             {paged.pageItems.map((p, i) => {
               const intelligence = analyzeResearch(p)
-              const type = p.studyType || intelligence.studyType
-              const finding = p.keyFinding || intelligence.keyFinding
-              const question = p.researchQuestion || intelligence.researchQuestion
-              const methodology = p.methodology || intelligence.methodology
-              const sample = p.sample || intelligence.sample
-              const keywords = p.keywords || intelligence.keywords
-              const links = intelligence.links
+              const type = arabicOnly(p.studyType || intelligence.studyType)
+              const year = p.year || intelligence.year
+              const journal = p.journal || intelligence.journal
               return (
                 <FadeUp key={p.slug} delay={Math.min(i * 0.03, 0.3)}>
                   <li className="research-list-card overflow-hidden rounded-[26px] border">
-                    <Link to={`/research/${p.slug}`} className="group grid gap-4 p-5 sm:grid-cols-[48px_minmax(0,1fr)] md:p-7">
-                      <span className="pt-1 font-display text-[.86rem] font-bold text-accent">{ar((paged.page - 1) * 12 + i + 1)}</span>
-                      <span className="min-w-0">
-                        <span className="mb-3 flex flex-wrap gap-2">
+                    <div className="grid gap-4 p-5 sm:grid-cols-[48px_minmax(0,1fr)_auto] sm:items-center md:p-7">
+                      <span className="pt-1 font-display text-[.86rem] font-bold text-accent sm:self-start">{ar((paged.page - 1) * 12 + i + 1)}</span>
+                      <div className="min-w-0">
+                        <div className="mb-3 flex flex-wrap gap-2">
                           <span className={badge}>محكّم</span>
                           {type && <span className={badge}>{type}</span>}
-                          {(p.doi || intelligence.doi) && <span className={badge}>DOI</span>}
-                          {intelligence.openAccess && <span className={badge}>نص كامل</span>}
-                        </span>
-                        <span dir="auto" className="block text-[1.16rem] font-bold leading-[1.65] text-ink transition-colors group-hover:text-accent">{p.title}</span>
-                        {p.titleAr && <span dir="rtl" className="mt-1 block text-[.94rem] font-light leading-[1.8] text-soft">{p.titleAr}</span>}
-
-                        <span className="mt-5 grid gap-3 md:grid-cols-2">
-                          {question && <span className="research-data-line"><b>السؤال العلمي</b>{question}</span>}
-                          {finding && <span className="research-data-line"><b>أبرز نتيجة</b>{finding}</span>}
-                          {methodology && <span className="research-data-line"><b>المنهج</b>{methodology}</span>}
-                          {sample && <span className="research-data-line"><b>العينة</b>{sample}</span>}
-                        </span>
-
-                        {(p.journal || intelligence.year || keywords) && (
-                          <span className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-hair pt-4 text-[.78rem] text-soft">
-                            {p.journal && <span><b className="text-ink">المجلة:</b> {p.journal}</span>}
-                            {intelligence.year && <span><b className="text-ink">السنة:</b> {intelligence.year}</span>}
-                            {keywords && <span><b className="text-ink">الكلمات المفتاحية:</b> {keywords}</span>}
-                          </span>
+                        </div>
+                        <Link to={`/research/${p.slug}`} dir="auto" className="research-title-link block text-[1.12rem] font-bold leading-[1.65] text-ink transition-colors hover:text-accent">{p.title}</Link>
+                        {p.titleAr && p.titleAr !== p.title && <p dir="rtl" className="mt-1 text-[.92rem] font-light leading-[1.8] text-soft">{p.titleAr}</p>}
+                        {(journal || year) && (
+                          <p className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[.74rem] text-soft">
+                            {journal && <span dir="auto">{journal}</span>}
+                            {year && <span className="font-semibold text-accent">{year}</span>}
+                          </p>
                         )}
-                      </span>
-                    </Link>
-                    {links.length > 0 && (
-                      <div className="research-card-links flex flex-wrap gap-2 border-t border-hair px-5 py-4 sm:pr-[76px] md:px-7 md:pr-[100px]">
-                        {links.map((item) => (
-                          <a key={`${p.slug}-${item.id}`} href={item.url} target="_blank" rel="noreferrer" className="research-link-chip" onClick={(event) => event.stopPropagation()}>{item.label}</a>
-                        ))}
                       </div>
-                    )}
+                      <Link to={`/research/${p.slug}#research-passport`} className="research-understand-link sm:self-center">افهم هذا البحث <span aria-hidden>←</span></Link>
+                    </div>
                   </li>
                 </FadeUp>
               )

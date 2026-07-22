@@ -6,7 +6,7 @@ import { describe as describeEcho, findEchoes, indexPast } from '../../lib/echoe
 import { getArticleBody } from '../../lib/article-bodies'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { normalizeArabicTypography } from '../../lib/arabic-typography'
-import { analyzeResearch } from '../../lib/research-intelligence'
+import { analyzeResearch, DEFAULT_RESEARCH_ORCID } from '../../lib/research-intelligence'
 import { Pagination, usePagedList } from '../Pagination'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
@@ -160,12 +160,24 @@ async function requestResearchAnalysis(form: Form): Promise<Form> {
 }
 
 function mergeResearchAnalysis(previous: Form, result: Form, fingerprint: string): Form {
-  const autoFields = ['studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'doi', 'keywords', 'journal', 'year', 'orcid', 'repository']
   const next = { ...previous }
-  for (const field of autoFields) {
-    if (!next[field]?.trim() && result[field]?.trim()) next[field] = result[field]
+  const hasArabicText = (value = '') => /[\u0600-\u06ff]/.test(value)
+  const arabicFields = ['meta', 'abstractAr', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'keywords']
+  const sourceFields = ['doi', 'journal', 'year', 'source', 'pdf', 'scholar', 'researchgate', 'orcid', 'repository']
+
+  for (const field of arabicFields) {
+    const incoming = String(result[field] || '').trim()
+    const current = String(next[field] || '').trim()
+    if (incoming && (!current || (!hasArabicText(current) && hasArabicText(incoming)))) next[field] = incoming
   }
+  for (const field of sourceFields) {
+    const incoming = String(result[field] || '').trim()
+    if (!String(next[field] || '').trim() && incoming) next[field] = incoming
+  }
+
   next.reviewStatus = 'محكّم'
+  const rawOrcid = String(next.orcid || result.orcid || DEFAULT_RESEARCH_ORCID).trim()
+  next.orcid = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/i.test(rawOrcid) ? `https://orcid.org/${rawOrcid}` : rawOrcid || DEFAULT_RESEARCH_ORCID
   next.openAccess = String(result.openAccess ?? previous.openAccess ?? 'false')
   next.analysisConfidence = String(result.analysisConfidence ?? result.confidence ?? previous.analysisConfidence ?? '')
   next.analysisNeedsReview = 'false'
@@ -224,7 +236,7 @@ function blank(kind: ManagedKind): Form {
   const iso = todayIso()
   if (kind === 'article') return { slug: '', title: '', iso, date: dateArabic(iso), cat: '', excerpt: '', body: '', bodyVocalized: '', source: '', url: '', status: 'published', scheduledAt: '', _aiReady: '' }
   if (kind === 'book') return { slug: '', title: '', isbn: '', desc: '', cover: '', pdf: '', coAuthors: '' }
-  if (kind === 'paper') return { slug: '', title: '', titleAr: '', meta: '', abstractAr: '', journal: '', source: '', url: '', pdf: '', scholar: '', researchgate: '', orcid: '', repository: '', coAuthors: '', doi: '', reviewStatus: '', studyType: '', methodology: '', sample: '', researchQuestion: '', keyFinding: '', contribution: '', applications: '', limitations: '', year: '', metadataText: '', pdfText: '', analysisText: '', analysisFingerprint: '', analysisSources: '', evidenceLabel: '', evidenceScore: '', keywords: '', openAccess: '', analysisConfidence: '', analysisNeedsReview: '', analyzedAt: '' }
+  if (kind === 'paper') return { slug: '', title: '', titleAr: '', meta: '', abstractAr: '', journal: '', source: '', url: '', pdf: '', scholar: '', researchgate: '', orcid: DEFAULT_RESEARCH_ORCID, repository: '', coAuthors: '', doi: '', reviewStatus: 'محكّم', studyType: '', methodology: '', sample: '', researchQuestion: '', keyFinding: '', contribution: '', applications: '', limitations: '', year: '', metadataText: '', pdfText: '', analysisText: '', analysisFingerprint: '', analysisSources: '', evidenceLabel: '', evidenceScore: '', keywords: '', openAccess: '', analysisConfidence: '', analysisNeedsReview: '', analyzedAt: '' }
   return { slug: '', title: '', outlet: '', url: '', iso, date: dateArabic(iso) }
 }
 
@@ -232,6 +244,10 @@ function asForm(kind: ManagedKind, item: ManagedRecord): Form {
   const form = Object.fromEntries(editableFields[kind].map((field) => [field, String(item[field] ?? '')]))
   if (kind === 'article' && !form.status) form.status = 'published'
   if (kind === 'article' && form.cat && form.excerpt) form._aiReady = '1'
+  if (kind === 'paper') {
+    form.reviewStatus = 'محكّم'
+    if (!form.orcid) form.orcid = DEFAULT_RESEARCH_ORCID
+  }
   return form
 }
 
@@ -808,28 +824,30 @@ function Editor({
 
           {kind === 'paper' && (
             <>
-              <Field label="الترجمة العربية للعنوان (للأبحاث الإنجليزية)" hint="تظهر بخط رفيع تحت العنوان الإنجليزي في قائمة الأبحاث وصفحة البحث. اتركها فارغة للأبحاث العربية.">
-                <input dir="rtl" className={input} value={form.titleAr || ''} onChange={(event) => set('titleAr', event.target.value)} />
-              </Field>
-              <Field label="الوصف / الميتا"><textarea className={`${input} min-h-24`} value={form.meta || ''} onChange={(event) => set('meta', event.target.value)} /></Field>
-              <Field label="الملخص" hint="اكتب الملخص كما تريد ظهوره في صفحة البحث. إذا كان البحث إنجليزيًا يمكن وضع ترجمة أكاديمية عربية هنا.">
-                <textarea className={`${input} min-h-32 leading-loose`} value={form.abstractAr || ''} onChange={(event) => set('abstractAr', event.target.value)} />
-              </Field>
-              <div className="flex flex-wrap items-center gap-3">
-                <button type="button" onClick={() => void suggest()} disabled={form._aiBusy === '1' || (!form.title?.trim() && !form.url?.trim() && !form.source?.trim())} className={secondary}>{form._aiBusy === '1' ? 'أفكّر…' : '✦ اقترح وصف الميتا'}</button>
-                <span className="text-[.75rem] text-soft">الاقتراح قابل للتعديل والمراجعة قبل الحفظ.</span>
-                {form._aiError && <span className="text-[.78rem] text-soft">{form._aiError}</span>}
-              </div>
-              <div className="grid gap-5 sm:grid-cols-2">
-                <Field label="بيانات المجلة"><input className={input} value={form.journal || ''} onChange={(event) => set('journal', event.target.value)} /></Field>
-                <Field label="سنة النشر"><input className={input} dir="ltr" inputMode="numeric" value={form.year || ''} onChange={(event) => set('year', event.target.value)} /></Field>
-              </div>
+              <section className="rounded-3xl border border-accent/30 bg-wash/55 p-5 md:p-6">
+                <p className="text-[.78rem] font-semibold text-accent">إدخال سريع</p>
+                <h3 className="mt-1 text-lg font-bold text-ink">أدخل الأساسيات وارفع PDF فقط</h3>
+                <p className="mt-2 max-w-2xl text-[.8rem] leading-relaxed text-soft">عند الحفظ يقرأ النظام ملف PDF كاملاً وصفحة المجلة وDOI والبيانات الوصفية، ثم يضع العينة والمنهج والنتائج والكلمات المفتاحية والروابط في مواضعها تلقائياً. لا تحتاج إلى تعبئة الحقول العلمية يدوياً.</p>
+                <div className="mt-5 grid gap-5">
+                  <Field label="الترجمة العربية للعنوان (للأبحاث الإنجليزية)" hint="اتركها فارغة إذا كان العنوان عربيًا.">
+                    <input dir="rtl" className={input} value={form.titleAr || ''} onChange={(event) => set('titleAr', event.target.value)} />
+                  </Field>
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <Field label="اسم المجلة (اختياري)"><input className={input} value={form.journal || ''} onChange={(event) => set('journal', event.target.value)} /></Field>
+                    <Field label="سنة النشر (اختياري)"><input className={input} dir="ltr" inputMode="numeric" value={form.year || ''} onChange={(event) => set('year', event.target.value)} /></Field>
+                  </div>
+                  <Field label="رابط صفحة البحث أو المجلة"><input className={input} dir="ltr" type="url" value={form.source || form.url || ''} onChange={(event) => { set('source', event.target.value); set('url', event.target.value) }} /></Field>
+                  <UploadField label="ملف PDF أو رابطه" value={form.pdf || ''} accept="application/pdf" folder="files" slug={form.slug || form.title} maxMb={100} onChange={(value) => set('pdf', value)} />
+                  <Field label="باحثون مشاركون (اختياري)" hint="افصل بين الأسماء بفاصلة."><input className={input} placeholder="مثال: د. فلان الفلاني، د. علّان العلّاني" value={form.coAuthors || ''} onChange={(event) => set('coAuthors', event.target.value)} /></Field>
+                </div>
+              </section>
+
               <section className="rounded-3xl border border-accent/30 bg-wash/70 p-5 md:p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="text-[.78rem] font-semibold text-accent">التحليل العلمي الشامل</p>
-                    <h3 className="mt-1 text-lg font-bold text-ink">يقرأ الملخص وPDF والروابط وDOI والبيانات الوصفية</h3>
-                    <p className="mt-2 max-w-2xl text-[.8rem] leading-relaxed text-soft">يستخرج البيانات العلمية المتاحة، ويخفي الحقول الفارغة في صفحة البحث. تُحفظ بصمة التحليل، فلا يُعاد إلا عند تغيّر الملف أو البيانات.</p>
+                    <h3 className="mt-1 text-lg font-bold text-ink">قراءة موثقة لجميع المصادر</h3>
+                    <p className="mt-2 max-w-2xl text-[.8rem] leading-relaxed text-soft">الحقول الفارغة تختفي من الموقع، ونتيجة التحليل تُحفظ ولا تتجدد إلا عند تغيّر PDF أو البيانات الأساسية.</p>
                   </div>
                   <button type="button" onClick={() => void applyResearchAnalysis()} disabled={form._researchBusy === '1'} className={secondary}>{form._researchBusy === '1' ? 'أحلّل جميع المصادر…' : 'تحليل شامل الآن'}</button>
                 </div>
@@ -837,38 +855,41 @@ function Editor({
                 {researchAnalysis && (
                   <div className="mt-5 grid gap-3 sm:grid-cols-3">
                     <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="text-[.72rem] text-soft">حالة التحكيم</span><strong className="mt-1 block text-[.9rem] text-ink">محكّم</strong></div>
-                    <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="text-[.72rem] text-soft">نوع الدراسة</span><strong className="mt-1 block text-[.9rem] text-ink">{researchAnalysis.studyType}</strong></div>
-                    <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="text-[.72rem] text-soft">حالة التحليل</span><strong className="mt-1 block text-[.9rem] text-ink">{form.analysisFingerprint === researchAnalysis.analysisFingerprint && form.analyzedAt ? 'محفوظ ومحدّث' : 'جاهز للتحليل'}</strong></div>
+                    {(form.studyType || researchAnalysis.studyType) && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="text-[.72rem] text-soft">نوع الدراسة</span><strong className="mt-1 block text-[.9rem] text-ink">{form.studyType || researchAnalysis.studyType}</strong></div>}
+                    <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="text-[.72rem] text-soft">حالة التحليل</span><strong className="mt-1 block text-[.9rem] text-ink">{form.analysisFingerprint === researchAnalysis.analysisFingerprint && form.analyzedAt ? 'محفوظ ومحدّث' : 'جاهز عند الحفظ'}</strong></div>
                   </div>
                 )}
-                <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                  <Field label="حالة التحكيم"><input className={input} value="محكّم" readOnly /></Field>
-                  <Field label="نوع الدراسة"><input className={input} value={form.studyType || ''} onChange={(event) => set('studyType', event.target.value)} /></Field>
-                  <Field label="المنهج"><textarea className={`${input} min-h-24`} value={form.methodology || ''} onChange={(event) => set('methodology', event.target.value)} /></Field>
-                  <Field label="العينة"><textarea className={`${input} min-h-24`} value={form.sample || ''} onChange={(event) => set('sample', event.target.value)} /></Field>
-                </div>
-                <div className="mt-4 grid gap-4">
-                  <Field label="السؤال العلمي"><textarea className={`${input} min-h-24`} value={form.researchQuestion || ''} onChange={(event) => set('researchQuestion', event.target.value)} /></Field>
-                  <Field label="أبرز النتائج"><textarea className={`${input} min-h-24`} value={form.keyFinding || ''} onChange={(event) => set('keyFinding', event.target.value)} /></Field>
-                  <Field label="الإضافة العلمية"><textarea className={`${input} min-h-24`} value={form.contribution || ''} onChange={(event) => set('contribution', event.target.value)} /></Field>
-                  <Field label="التطبيقات"><textarea className={`${input} min-h-24`} value={form.applications || ''} onChange={(event) => set('applications', event.target.value)} /></Field>
-                  <Field label="القيود"><textarea className={`${input} min-h-24`} value={form.limitations || ''} onChange={(event) => set('limitations', event.target.value)} /></Field>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="DOI"><input className={input} dir="ltr" value={form.doi || ''} onChange={(event) => set('doi', event.target.value)} /></Field>
-                    <Field label="الكلمات المفتاحية"><input className={input} value={form.keywords || ''} onChange={(event) => set('keywords', event.target.value)} /></Field>
+
+                <details className="group mt-5 overflow-hidden rounded-2xl border border-hair bg-canvas">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 text-[.82rem] font-bold text-ink marker:hidden [&::-webkit-details-marker]:hidden">
+                    <span>عرض البيانات المستخرجة وتعديلها عند الضرورة</span>
+                    <span className="text-accent transition-transform group-open:rotate-45">＋</span>
+                  </summary>
+                  <div className="grid gap-4 border-t border-hair p-4">
+                    <Field label="الموضوع بالعربية"><input className={input} value={form.meta || ''} onChange={(event) => set('meta', event.target.value)} /></Field>
+                    <Field label="الملخص العربي"><textarea className={`${input} min-h-32 leading-loose`} value={form.abstractAr || ''} onChange={(event) => set('abstractAr', event.target.value)} /></Field>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label="نوع الدراسة"><input className={input} value={form.studyType || ''} onChange={(event) => set('studyType', event.target.value)} /></Field>
+                      <Field label="الكلمات المفتاحية"><input className={input} value={form.keywords || ''} onChange={(event) => set('keywords', event.target.value)} /></Field>
+                      <Field label="المنهج"><textarea className={`${input} min-h-24`} value={form.methodology || ''} onChange={(event) => set('methodology', event.target.value)} /></Field>
+                      <Field label="العينة / نطاق الدراسة"><textarea className={`${input} min-h-24`} value={form.sample || ''} onChange={(event) => set('sample', event.target.value)} /></Field>
+                    </div>
+                    <Field label="السؤال العلمي"><textarea className={`${input} min-h-24`} value={form.researchQuestion || ''} onChange={(event) => set('researchQuestion', event.target.value)} /></Field>
+                    <Field label="أبرز النتائج"><textarea className={`${input} min-h-24`} value={form.keyFinding || ''} onChange={(event) => set('keyFinding', event.target.value)} /></Field>
+                    <Field label="الإضافة العلمية"><textarea className={`${input} min-h-24`} value={form.contribution || ''} onChange={(event) => set('contribution', event.target.value)} /></Field>
+                    <Field label="التطبيقات"><textarea className={`${input} min-h-24`} value={form.applications || ''} onChange={(event) => set('applications', event.target.value)} /></Field>
+                    <Field label="القيود"><textarea className={`${input} min-h-24`} value={form.limitations || ''} onChange={(event) => set('limitations', event.target.value)} /></Field>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label="DOI"><input className={input} dir="ltr" value={form.doi || ''} onChange={(event) => set('doi', event.target.value)} /></Field>
+                      <Field label="ORCID"><input className={input} dir="ltr" type="url" value={form.orcid || DEFAULT_RESEARCH_ORCID} onChange={(event) => set('orcid', event.target.value)} /></Field>
+                      <Field label="Google Scholar"><input className={input} dir="ltr" type="url" value={form.scholar || ''} onChange={(event) => set('scholar', event.target.value)} /></Field>
+                      <Field label="ResearchGate"><input className={input} dir="ltr" type="url" value={form.researchgate || ''} onChange={(event) => set('researchgate', event.target.value)} /></Field>
+                      <Field label="مستودع الجامعة"><input className={input} dir="ltr" type="url" value={form.repository || ''} onChange={(event) => set('repository', event.target.value)} /></Field>
+                    </div>
+                    <Field label="بيانات وصفية إضافية"><textarea className={`${input} min-h-24`} value={form.metadataText || ''} onChange={(event) => set('metadataText', event.target.value)} /></Field>
                   </div>
-                  <Field label="Metadata إضافية" hint="أي بيانات وصفية مرفقة بالبحث يمكن لصقها هنا، ويضمها التحليل تلقائياً."><textarea className={`${input} min-h-24`} value={form.metadataText || ''} onChange={(event) => set('metadataText', event.target.value)} /></Field>
-                </div>
+                </details>
               </section>
-              <Field label="رابط صفحة البحث أو المجلة"><input className={input} dir="ltr" type="url" value={form.source || form.url || ''} onChange={(event) => { set('source', event.target.value); set('url', event.target.value) }} /></Field>
-              <UploadField label="ملف PDF أو رابطه" value={form.pdf || ''} accept="application/pdf" folder="files" slug={form.slug || form.title} maxMb={100} onChange={(value) => set('pdf', value)} />
-              <div className="grid gap-5 sm:grid-cols-2">
-                <Field label="Google Scholar"><input className={input} dir="ltr" type="url" placeholder="https://scholar.google.com/…" value={form.scholar || ''} onChange={(event) => set('scholar', event.target.value)} /></Field>
-                <Field label="ResearchGate"><input className={input} dir="ltr" type="url" placeholder="https://www.researchgate.net/…" value={form.researchgate || ''} onChange={(event) => set('researchgate', event.target.value)} /></Field>
-                <Field label="ORCID"><input className={input} dir="ltr" type="url" placeholder="https://orcid.org/…" value={form.orcid || ''} onChange={(event) => set('orcid', event.target.value)} /></Field>
-                <Field label="مستودع الجامعة"><input className={input} dir="ltr" type="url" value={form.repository || ''} onChange={(event) => set('repository', event.target.value)} /></Field>
-              </div>
-              <Field label="باحثون مشاركون (اختياري)" hint="افصل بين الأسماء بفاصلة — تظهر «بالاشتراك مع…» في صفحة البحث."><input className={input} placeholder="مثال: د. فلان الفلاني، د. علّان العلّاني" value={form.coAuthors || ''} onChange={(event) => set('coAuthors', event.target.value)} /></Field>
             </>
           )}
 

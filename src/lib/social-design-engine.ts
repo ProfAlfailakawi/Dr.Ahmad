@@ -1678,12 +1678,29 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   const core = [readability, hierarchy, whitespace, textContrast, backgroundContrast, fit, lineFit, density, visualWeight, rtlAlignment]
   const coreMinimum = Math.min(...core)
   let score = boundedQuality(raw)
-  if (textContrast < 82 || backgroundContrast < 76) score = Math.min(score, 79)
-  if (coreMinimum < 70 || !safe) score = Math.min(score, 74)
-  if (coreMinimum < 80) score = Math.min(score, 86)
-  const deservesNinety = core.every((value) => value >= 86) && readability >= 90 && hierarchy >= 88 && contrast >= 90 && lineFit >= 92 && rtlAlignment >= 88 && !duplicate
+  const titleOverflow = lineLayout.estimatedTitleLines > lineLayout.titleMaxLines
+  const bodyOverflow = lineLayout.estimatedBodyLines > lineLayout.bodyMaxLines
+  if (titleOverflow || bodyOverflow) score = Math.min(score, 62)
+  if (textContrast < 88 || backgroundContrast < 84) score = Math.min(score, 82)
+  if (coreMinimum < 70 || !safe) score = Math.min(score, 72)
+  if (coreMinimum < 78) score = Math.min(score, 79)
+  if (coreMinimum < 84) score = Math.min(score, 87)
+  const deservesNinety = core.every((value) => value >= 90)
+    && textContrast >= 94
+    && backgroundContrast >= 90
+    && readability >= 92
+    && hierarchy >= 90
+    && lineFit >= 94
+    && rtlAlignment >= 92
+    && visualWeight >= 88
+    && !duplicate
+    && !titleOverflow
+    && !bodyOverflow
   if (!deservesNinety) score = Math.min(score, 89)
-  const deservesExceptional = core.every((value) => value >= 92) && originality >= 82 && platformFit >= 92 && issues.length === 0
+  const deservesExceptional = core.every((value) => value >= 95)
+    && originality >= 86
+    && platformFit >= 94
+    && issues.length === 0
   if (!deservesExceptional) score = Math.min(score, 95)
   return { score, band: qualityBand(score), readability, hierarchy, whitespace, contrast, textContrast, backgroundContrast, density, visualWeight, rtlAlignment, fit, lineFit, originality, platformFit, issues, strengths }
 }

@@ -23,6 +23,34 @@ const articleCard = (article: { slug: string; cat?: string; title: string; excer
   quote: `«${(article.excerpt || '').slice(0, 150)}${(article.excerpt || '').length > 150 ? '…' : ''}»`,
 })
 
+function diversifyArticles<T extends { cat?: string; iso: string; slug: string }>(items: readonly T[]) {
+  const queues = new Map<string, T[]>()
+  for (const item of [...items].sort((left, right) => right.iso.localeCompare(left.iso))) {
+    const key = item.cat || 'مقال'
+    const queue = queues.get(key) || []
+    queue.push(item)
+    queues.set(key, queue)
+  }
+  const categoryOrder = [...queues.keys()].sort((left, right) => {
+    const newestLeft = queues.get(left)?.[0]?.iso || ''
+    const newestRight = queues.get(right)?.[0]?.iso || ''
+    return newestRight.localeCompare(newestLeft) || left.localeCompare(right, 'ar')
+  })
+  const result: T[] = []
+  let previousCategory = ''
+  while (result.length < items.length) {
+    const available = categoryOrder.filter((category) => (queues.get(category)?.length || 0) > 0)
+    if (!available.length) break
+    const nextCategory = available.find((category) => category !== previousCategory) || available[0]
+    const next = queues.get(nextCategory)?.shift()
+    if (!next) break
+    result.push(next)
+    previousCategory = nextCategory
+    categoryOrder.push(categoryOrder.splice(categoryOrder.indexOf(nextCategory), 1)[0])
+  }
+  return result
+}
+
 export default function Articles() {
   const { articles } = useCmsContent()
   // السنة الأولى تُحسب من المقالات نفسها — تتحدّث تلقائياً مع أي إضافة
@@ -60,7 +88,8 @@ export default function Articles() {
   const filtered = articles
     .filter((a) => (cat === 'الكل' ? true : a.cat === cat))
     .filter((a) => (term ? (a.title + ' ' + (a.excerpt || '')).includes(term) : true))
-  const paged = usePagedList(filtered, 18, `${cat}|${term}`)
+  const displayArticles = archiveActive ? filtered : diversifyArticles(filtered)
+  const paged = usePagedList(displayArticles, 18, `${cat}|${term}`)
   const shown = paged.pageItems
 
   return (
@@ -127,7 +156,7 @@ export default function Articles() {
         <div className="mx-auto max-w-shell">
           <FadeUp>
             <p className="text-[.82rem] text-soft">
-              {archiveActive ? `${filtered.length} نتيجة مطابقة` : 'كل المقالات مرتبة من الأحدث إلى الأقدم.'}
+              {archiveActive ? `${filtered.length} نتيجة مطابقة` : 'المقالات موزعة بتنوّع موضوعي، مع الحفاظ على حضور الأحدث.'}
             </p>
           </FadeUp>
 

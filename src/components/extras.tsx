@@ -217,44 +217,26 @@ export function OwnerEdit({ tab, slug, className = '' }: { tab: 'articles' | 'bo
 export function CiteButton({ title, year, container, url, compact = false }: { title: string; year: string; container: string; url: string; compact?: boolean }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
-  // صيغة واحدة أنيقة معتمدة (على نمط MLA بعلامتَي التنصيص «»)
   const citation = `الفيلكاوي، أحمد حسين. «${title}». ${container}، ${year}، ${url}.`
-  const copy = async () => {
-    try { await navigator.clipboard.writeText(citation); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { /* noop */ }
-  }
-  if (compact) return (
-    <div className="relative">
-      <button onClick={() => setOpen(!open)} aria-expanded={open} className="min-h-11 border-b border-hair px-1 text-[.8rem] font-medium text-soft transition-colors hover:border-accent hover:text-accent">
-        الاستشهاد المرجعي
-      </button>
-      {open && (
-        <div className="absolute bottom-[calc(100%+.6rem)] left-0 z-20 w-[min(88vw,430px)] rounded-xl border border-hair bg-canvas p-4 shadow-[0_18px_50px_-34px_rgba(21,22,26,.55)]">
-          <p className="text-[.8rem] font-light leading-[1.9] text-soft">{citation}</p>
-          <button onClick={copy} className="mt-3 min-h-11 border-b border-hair px-1 text-[.74rem] font-semibold text-accent">{copied ? '✓ نُسخ' : 'نسخ الاستشهاد'}</button>
-        </div>
-      )}
-    </div>
-  )
-  return (
-    <div className="mt-8 rounded-xl border border-hair">
-      <button onClick={() => setOpen(!open)} aria-expanded={open}
-        className="flex w-full items-center justify-between px-5 py-3 text-[.88rem] font-medium text-soft transition-colors hover:text-accent">
-        <span>✍ انسخ الاستشهاد الأكاديمي</span>
-        <span className={`transition-transform duration-300 ${open ? 'rotate-180' : ''}`}>⌄</span>
-      </button>
-      {open && (
-        <div className="border-t border-hair p-5">
-          <div className="flex items-start gap-3">
-            <button onClick={copy}
-              className={`shrink-0 rounded-full border px-3.5 py-1 text-[.72rem] font-semibold transition-colors ${copied ? 'border-accent text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
-              {copied ? '✓ نُسخ' : 'نسخ'}
-            </button>
-            <p className="text-[.82rem] font-light leading-[1.9] text-soft">{citation}</p>
-          </div>
-        </div>
-      )}
-    </div>
-  )
+  const copy = async () => { try { await navigator.clipboard.writeText(citation); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { /* noop */ } }
+  useEffect(() => {
+    if (!open) return
+    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false) }
+    document.addEventListener('keydown', close)
+    const previous = document.body.style.overflow; document.body.style.overflow = 'hidden'
+    return () => { document.removeEventListener('keydown', close); document.body.style.overflow = previous }
+  }, [open])
+  if (compact) return <>
+    <button type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-haspopup="dialog" aria-label="عرض الاستشهاد المرجعي" title="الاستشهاد المرجعي" className="article-tool-icon"><span aria-hidden className="font-display text-[1.35rem] leading-none">“</span></button>
+    <AnimatePresence>{open && <motion.div className="fixed inset-0 z-[120] flex items-end justify-center bg-ink/28 p-3 backdrop-blur-[5px] sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-label="الاستشهاد المرجعي" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false) }}>
+      <motion.div className="citation-sheet w-full max-w-[560px] rounded-2xl border border-hair bg-canvas p-5 shadow-[0_28px_90px_-42px_rgba(21,22,26,.72)] sm:p-6" initial={{ opacity: 0, y: 24, scale: .985 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: .99 }} transition={{ duration: .24, ease: EASE }}>
+        <div className="flex items-start justify-between gap-4"><div><p className="text-[.74rem] font-semibold text-accent">المصدر والاقتباس</p><h3 className="mt-1 font-display text-[1.15rem] font-semibold text-ink">استشهاد جاهز وآمن للنسخ.</h3></div><button type="button" onClick={() => setOpen(false)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent" aria-label="إغلاق">×</button></div>
+        <p dir="rtl" className="mt-5 break-words rounded-xl border border-hair bg-wash px-4 py-4 text-[.86rem] font-light leading-[2] text-soft">{citation}</p>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><a href={url} target="_blank" rel="noreferrer" className="text-[.78rem] font-semibold text-soft transition-colors hover:text-accent">فتح سياق المقال ↗</a><button onClick={copy} className="min-h-11 rounded-full bg-accent px-5 py-2.5 text-[.78rem] font-semibold text-white transition-colors hover:bg-accent-deep">{copied ? '✓ نُسخ الاستشهاد' : 'نسخ الاستشهاد'}</button></div>
+      </motion.div>
+    </motion.div>}</AnimatePresence>
+  </>
+  return <div className="mt-8 rounded-xl border border-hair"><button onClick={() => setOpen(!open)} aria-expanded={open} className="flex w-full items-center justify-between px-5 py-3 text-[.88rem] font-medium text-soft transition-colors hover:text-accent"><span>✍ انسخ الاستشهاد الأكاديمي</span><span className={`transition-transform duration-300 ${open ? 'rotate-180' : ''}`}>⌄</span></button>{open && <div className="border-t border-hair p-5"><div className="flex items-start gap-3"><button onClick={copy} className={`shrink-0 rounded-full border px-3.5 py-1 text-[.72rem] font-semibold transition-colors ${copied ? 'border-accent text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>{copied ? '✓ نُسخ' : 'نسخ'}</button><p className="break-words text-[.82rem] font-light leading-[1.9] text-soft">{citation}</p></div></div>}</div>
 }
 
 /* ---------- مبدّل الوضع الليلي ---------- */

@@ -442,30 +442,8 @@ function ArticleClosingNote({ next, related }: { next?: ArticleRecord; related: 
   )
 }
 
-function ArticleExtensions({
-  article,
-  articles,
-  books,
-  papers,
-}: {
-  article: ArticleRecord
-  articles: ArticleRecord[]
-  books: BookRecord[]
-  papers: PaperRecord[]
-}) {
-  const { isAdmin } = useAdminAuth()
-  return (
-    <div className="article-extensions">
-      <div className="pb-2">
-        <StudentArchive a={article} articles={articles} books={books} papers={papers} />
-        {isAdmin && (
-          <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-hair pt-5" aria-label="أدوات المشرف">
-            <OwnerEdit tab="articles" slug={article.slug} />
-          </div>
-        )}
-      </div>
-    </div>
-  )
+function ArticleExtensions({ article, articles, books, papers }: { article: ArticleRecord; articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[] }) {
+  return <div className="article-extensions"><div className="pb-2"><StudentArchive a={article} articles={articles} books={books} papers={papers} /></div></div>
 }
 
 export default function ArticleDetail() {
@@ -564,8 +542,9 @@ export default function ArticleDetail() {
                 </>
               )}
             </div>
-            <div className="mt-4 flex justify-start">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <OwnerBadge path={`/articles/${article.slug}`} article={article} />
+              <OwnerEdit tab="articles" slug={article.slug} className="article-owner-edit" />
             </div>
 
             <h1 style={{ viewTransitionName: `article-${a.slug}` }} className="mt-5 text-wrap-balance font-display text-[clamp(2rem,4.6vw,3.1rem)] font-bold leading-[1.3] text-ink">
@@ -634,8 +613,8 @@ export default function ArticleDetail() {
           <FadeUp>
             <section className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-5" aria-label="مشاركة المقال والاستشهاد به">
               <Share compact title={a.title} path={`/articles/${a.slug}`} />
-              <div className="flex flex-wrap items-center gap-5">
-                {liveLink(article.source) && <a href={liveLink(article.source)} target="_blank" rel="noreferrer" className="text-[.78rem] text-soft transition-colors hover:text-accent">المصدر الأصلي</a>}
+              <div className="article-source-tools" aria-label="المصدر والاستشهاد">
+                {liveLink(article.source) && <a href={liveLink(article.source)} target="_blank" rel="noreferrer" className="article-tool-icon" aria-label="فتح المصدر الأصلي" title="المصدر الأصلي"><span aria-hidden className="text-[1.05rem]">↗</span></a>}
                 <CiteButton compact title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} />
               </div>
             </section>

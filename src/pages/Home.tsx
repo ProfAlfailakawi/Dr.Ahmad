@@ -1,5 +1,5 @@
 import { JsonLd, useSeo } from '../components/seo'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, FadeUp, Label, Magnetic, Page, Reveal, ScheduleProjectLink, SectionHead, SocialIcon, TebyanProjectLink } from '../components/ui'
@@ -724,8 +724,8 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
             const inner = (
               <div className="group flex h-full min-h-[220px] flex-col overflow-hidden rounded-xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent/45 md:min-h-[270px]">
                 {item.image && (
-                  <div className={`flex w-full items-center justify-center ${isBook ? 'h-28 bg-wash p-3' : 'h-24 overflow-hidden md:h-32'}`}>
-                    <img src={item.image} alt="" loading="lazy" className={`${isBook ? 'h-full w-full object-contain' : 'h-full w-full object-cover opacity-90'}`} />
+                  <div className={`flex w-full items-center justify-center ${isBook ? 'h-28 bg-wash p-3' : item.external ? 'selected-media-frame h-24 overflow-hidden md:h-32' : 'h-24 overflow-hidden md:h-32'}`} style={item.external ? ({ '--media-thumb': `url(${item.image})` } as CSSProperties) : undefined}>
+                    <img src={item.image} alt="" loading="lazy" className={`${isBook ? 'h-full w-full object-contain' : item.external ? 'selected-media-thumb h-full w-full opacity-95' : 'h-full w-full object-cover opacity-90'}`} />
                   </div>
                 )}
                 <div className="flex flex-1 flex-col p-4 md:p-7">

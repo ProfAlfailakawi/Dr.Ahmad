@@ -236,6 +236,18 @@ export function CiteButton({ title, year, container, url, compact = false }: { t
             role="dialog"
             aria-modal="true"
             aria-labelledby="citation-dialog-title"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 2147483000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '100vw',
+              height: '100dvh',
+              writingMode: 'horizontal-tb',
+              direction: 'rtl',
+            }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -244,6 +256,14 @@ export function CiteButton({ title, year, container, url, compact = false }: { t
             <motion.section
               className="citation-card-v2"
               dir="rtl"
+              style={{
+                writingMode: 'horizontal-tb',
+                direction: 'rtl',
+                width: '100%',
+                maxWidth: '540px',
+                minWidth: '280px',
+                boxSizing: 'border-box',
+              }}
               initial={{ opacity: 0, y: 24, scale: .99 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 16, scale: .995 }}

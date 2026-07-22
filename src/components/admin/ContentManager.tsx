@@ -77,7 +77,7 @@ const labels: Record<ManagedKind, { singular: string; plural: string }> = {
 const editableFields: Record<ManagedKind, string[]> = {
   article: ['slug', 'title', 'iso', 'date', 'cat', 'excerpt', 'body', 'bodyVocalized', 'source', 'url', 'status', 'scheduledAt'],
   book: ['slug', 'title', 'isbn', 'desc', 'cover', 'pdf', 'coAuthors'],
-  paper: ['slug', 'title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'scholar', 'researchgate', 'coAuthors', 'doi', 'reviewStatus', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'evidenceLabel', 'evidenceScore', 'keywords', 'openAccess', 'analysisConfidence', 'analysisNeedsReview', 'analyzedAt'],
+  paper: ['slug', 'title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'scholar', 'researchgate', 'orcid', 'repository', 'coAuthors', 'doi', 'reviewStatus', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'year', 'metadataText', 'pdfText', 'analysisText', 'analysisFingerprint', 'analysisSources', 'evidenceLabel', 'evidenceScore', 'keywords', 'openAccess', 'analysisConfidence', 'analysisNeedsReview', 'analyzedAt'],
   media: ['slug', 'title', 'outlet', 'url', 'iso', 'date'],
 }
 
@@ -142,6 +142,39 @@ async function requestContentSuggestion(kind: ManagedKind, form: Form): Promise<
   }
 }
 
+
+async function requestResearchAnalysis(form: Form): Promise<Form> {
+  const app = await getFirebaseApp()
+  if (!app) throw new Error('Firebase غير متاح')
+  const { getAuth } = await import('firebase/auth')
+  const token = await getAuth(app).currentUser?.getIdToken()
+  if (!token) throw new Error('انتهت جلسة الدخول')
+  const response = await fetch('/api/ai/paper-analysis', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ ...Object.fromEntries(Object.entries(form).filter(([key]) => !key.startsWith('_'))), analysisFingerprint: analyzeResearch(form).analysisFingerprint }),
+  })
+  const payload = await response.json() as Form & { error?: string; cached?: boolean }
+  if (!response.ok) throw new Error(payload.error || 'تعذّر تحليل البحث')
+  return payload
+}
+
+function mergeResearchAnalysis(previous: Form, result: Form, fingerprint: string): Form {
+  const autoFields = ['studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'doi', 'keywords', 'journal', 'year', 'orcid', 'repository']
+  const next = { ...previous }
+  for (const field of autoFields) {
+    if (!next[field]?.trim() && result[field]?.trim()) next[field] = result[field]
+  }
+  next.reviewStatus = 'محكّم'
+  next.openAccess = String(result.openAccess ?? previous.openAccess ?? 'false')
+  next.analysisConfidence = String(result.analysisConfidence ?? result.confidence ?? previous.analysisConfidence ?? '')
+  next.analysisNeedsReview = 'false'
+  next.analysisSources = String(result.analysisSources ?? previous.analysisSources ?? '')
+  next.analysisFingerprint = String(result.analysisFingerprint ?? fingerprint)
+  next.analyzedAt = String(result.analyzedAt ?? new Date().toISOString())
+  return next
+}
+
 function suggestionKey(kind: ManagedKind, form: Form) {
   if (kind === 'article') return `${form.title || ''}\u0000${form.body || ''}`
   if (kind === 'media') return form.url || ''
@@ -191,7 +224,7 @@ function blank(kind: ManagedKind): Form {
   const iso = todayIso()
   if (kind === 'article') return { slug: '', title: '', iso, date: dateArabic(iso), cat: '', excerpt: '', body: '', bodyVocalized: '', source: '', url: '', status: 'published', scheduledAt: '', _aiReady: '' }
   if (kind === 'book') return { slug: '', title: '', isbn: '', desc: '', cover: '', pdf: '', coAuthors: '' }
-  if (kind === 'paper') return { slug: '', title: '', titleAr: '', meta: '', abstractAr: '', journal: '', source: '', url: '', pdf: '', scholar: '', researchgate: '', coAuthors: '', doi: '', reviewStatus: '', studyType: '', methodology: '', sample: '', researchQuestion: '', keyFinding: '', contribution: '', evidenceLabel: '', evidenceScore: '', keywords: '', openAccess: '', analysisConfidence: '', analysisNeedsReview: '', analyzedAt: '' }
+  if (kind === 'paper') return { slug: '', title: '', titleAr: '', meta: '', abstractAr: '', journal: '', source: '', url: '', pdf: '', scholar: '', researchgate: '', orcid: '', repository: '', coAuthors: '', doi: '', reviewStatus: '', studyType: '', methodology: '', sample: '', researchQuestion: '', keyFinding: '', contribution: '', applications: '', limitations: '', year: '', metadataText: '', pdfText: '', analysisText: '', analysisFingerprint: '', analysisSources: '', evidenceLabel: '', evidenceScore: '', keywords: '', openAccess: '', analysisConfidence: '', analysisNeedsReview: '', analyzedAt: '' }
   return { slug: '', title: '', outlet: '', url: '', iso, date: dateArabic(iso) }
 }
 
@@ -601,26 +634,21 @@ function Editor({
   }, [form._aiBusy, form._aiInput, form.desc, form.meta, form.outlet, form.pdf, form.source, form.title, form.url, kind])
 
   const researchAnalysis = useMemo(() => kind === 'paper' ? analyzeResearch(form) : null, [form, kind])
-  const applyResearchAnalysis = () => {
-    if (!researchAnalysis) return
-    setForm((previous) => ({
-      ...previous,
-      reviewStatus: previous.reviewStatus || researchAnalysis.reviewStatus,
-      studyType: previous.studyType || researchAnalysis.studyType,
-      methodology: previous.methodology || researchAnalysis.methodology,
-      sample: previous.sample || researchAnalysis.sample,
-      researchQuestion: previous.researchQuestion || researchAnalysis.researchQuestion,
-      keyFinding: previous.keyFinding || researchAnalysis.keyFinding,
-      contribution: previous.contribution || researchAnalysis.contribution,
-      evidenceLabel: researchAnalysis.evidenceLabel,
-      evidenceScore: String(researchAnalysis.evidenceScore),
-      doi: previous.doi || researchAnalysis.doi,
-      keywords: previous.keywords || researchAnalysis.keywords,
-      openAccess: String(researchAnalysis.openAccess),
-      analysisConfidence: String(researchAnalysis.confidence),
-      analysisNeedsReview: String(researchAnalysis.needsReview),
-      analyzedAt: researchAnalysis.analyzedAt,
-    }))
+  const applyResearchAnalysis = async () => {
+    if (!researchAnalysis || form._researchBusy === '1') return
+    const fingerprint = researchAnalysis.analysisFingerprint
+    if (form.analysisFingerprint === fingerprint && form.analyzedAt) {
+      setForm((previous) => ({ ...previous, reviewStatus: 'محكّم', _researchMessage: 'التحليل محفوظ ومحدّث.' }))
+      return
+    }
+    setForm((previous) => ({ ...previous, _researchBusy: '1', _researchMessage: '' }))
+    try {
+      const remote = await requestResearchAnalysis(form)
+      setForm((previous) => ({ ...mergeResearchAnalysis(previous, remote, fingerprint), _researchBusy: '', _researchMessage: 'اكتمل التحليل الشامل وحُفظت بصمته.' }))
+    } catch {
+      const local = Object.fromEntries(Object.entries(researchAnalysis).map(([key, value]) => [key, String(value ?? '')])) as Form
+      setForm((previous) => ({ ...mergeResearchAnalysis(previous, local, fingerprint), _researchBusy: '', _researchMessage: 'اكتمل استخراج البيانات المتاحة وحُفظت بصمته.' }))
+    }
   }
 
   return (
@@ -792,43 +820,53 @@ function Editor({
                 <span className="text-[.75rem] text-soft">الاقتراح قابل للتعديل والمراجعة قبل الحفظ.</span>
                 {form._aiError && <span className="text-[.78rem] text-soft">{form._aiError}</span>}
               </div>
-              <Field label="بيانات المجلة (اختياري)"><input className={input} value={form.journal || ''} onChange={(event) => set('journal', event.target.value)} /></Field>
-              <section className="rounded-3xl border border-accent/20 bg-wash/70 p-5 md:p-6">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field label="بيانات المجلة"><input className={input} value={form.journal || ''} onChange={(event) => set('journal', event.target.value)} /></Field>
+                <Field label="سنة النشر"><input className={input} dir="ltr" inputMode="numeric" value={form.year || ''} onChange={(event) => set('year', event.target.value)} /></Field>
+              </div>
+              <section className="rounded-3xl border border-accent/30 bg-wash/70 p-5 md:p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="text-[.78rem] font-semibold text-accent">بصمة البحث الذكية</p>
-                    <h3 className="mt-1 text-lg font-bold text-ink">يفهم البحث ويضع بياناته في مكانها تلقائياً</h3>
-                    <p className="mt-2 max-w-2xl text-[.78rem] leading-relaxed text-soft">يعمل محلياً عند الحفظ، ولا يستبدل أي معلومة حررتها بنفسك. النتائج منخفضة الثقة تُعلّم للمراجعة بدل اختلاق بيانات.</p>
+                    <p className="text-[.78rem] font-semibold text-accent">التحليل العلمي الشامل</p>
+                    <h3 className="mt-1 text-lg font-bold text-ink">يقرأ الملخص وPDF والروابط وDOI والبيانات الوصفية</h3>
+                    <p className="mt-2 max-w-2xl text-[.8rem] leading-relaxed text-soft">يستخرج البيانات العلمية المتاحة، ويخفي الحقول الفارغة في صفحة البحث. تُحفظ بصمة التحليل، فلا يُعاد إلا عند تغيّر الملف أو البيانات.</p>
                   </div>
-                  <button type="button" onClick={applyResearchAnalysis} className={secondary}>تحليل الآن</button>
+                  <button type="button" onClick={() => void applyResearchAnalysis()} disabled={form._researchBusy === '1'} className={secondary}>{form._researchBusy === '1' ? 'أحلّل جميع المصادر…' : 'تحليل شامل الآن'}</button>
                 </div>
+                {form._researchMessage && <p className="mt-3 text-[.78rem] font-semibold text-accent">{form._researchMessage}</p>}
                 {researchAnalysis && (
                   <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="text-[.72rem] text-soft">النوع المتوقع</span><strong className="mt-1 block text-[.88rem] text-ink">{researchAnalysis.studyType}</strong></div>
-                    <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="text-[.72rem] text-soft">وضوح الدليل</span><strong className="mt-1 block text-[.88rem] text-ink">{researchAnalysis.evidenceScore}/100</strong></div>
-                    <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="text-[.72rem] text-soft">ثقة الاستخراج</span><strong className="mt-1 block text-[.88rem] text-ink">{researchAnalysis.confidence}% {researchAnalysis.needsReview ? '· يحتاج مراجعة' : '· جاهز'}</strong></div>
+                    <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="text-[.72rem] text-soft">حالة التحكيم</span><strong className="mt-1 block text-[.9rem] text-ink">محكّم</strong></div>
+                    <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="text-[.72rem] text-soft">نوع الدراسة</span><strong className="mt-1 block text-[.9rem] text-ink">{researchAnalysis.studyType}</strong></div>
+                    <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="text-[.72rem] text-soft">حالة التحليل</span><strong className="mt-1 block text-[.9rem] text-ink">{form.analysisFingerprint === researchAnalysis.analysisFingerprint && form.analyzedAt ? 'محفوظ ومحدّث' : 'جاهز للتحليل'}</strong></div>
                   </div>
                 )}
                 <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                  <Field label="حالة التحكيم"><input className={input} value={form.reviewStatus || ''} onChange={(event) => set('reviewStatus', event.target.value)} /></Field>
+                  <Field label="حالة التحكيم"><input className={input} value="محكّم" readOnly /></Field>
                   <Field label="نوع الدراسة"><input className={input} value={form.studyType || ''} onChange={(event) => set('studyType', event.target.value)} /></Field>
                   <Field label="المنهج"><textarea className={`${input} min-h-24`} value={form.methodology || ''} onChange={(event) => set('methodology', event.target.value)} /></Field>
                   <Field label="العينة"><textarea className={`${input} min-h-24`} value={form.sample || ''} onChange={(event) => set('sample', event.target.value)} /></Field>
                 </div>
                 <div className="mt-4 grid gap-4">
                   <Field label="السؤال العلمي"><textarea className={`${input} min-h-24`} value={form.researchQuestion || ''} onChange={(event) => set('researchQuestion', event.target.value)} /></Field>
-                  <Field label="أبرز نتيجة"><textarea className={`${input} min-h-24`} value={form.keyFinding || ''} onChange={(event) => set('keyFinding', event.target.value)} /></Field>
+                  <Field label="أبرز النتائج"><textarea className={`${input} min-h-24`} value={form.keyFinding || ''} onChange={(event) => set('keyFinding', event.target.value)} /></Field>
                   <Field label="الإضافة العلمية"><textarea className={`${input} min-h-24`} value={form.contribution || ''} onChange={(event) => set('contribution', event.target.value)} /></Field>
+                  <Field label="التطبيقات"><textarea className={`${input} min-h-24`} value={form.applications || ''} onChange={(event) => set('applications', event.target.value)} /></Field>
+                  <Field label="القيود"><textarea className={`${input} min-h-24`} value={form.limitations || ''} onChange={(event) => set('limitations', event.target.value)} /></Field>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field label="DOI"><input className={input} dir="ltr" value={form.doi || ''} onChange={(event) => set('doi', event.target.value)} /></Field>
                     <Field label="الكلمات المفتاحية"><input className={input} value={form.keywords || ''} onChange={(event) => set('keywords', event.target.value)} /></Field>
                   </div>
+                  <Field label="Metadata إضافية" hint="أي بيانات وصفية مرفقة بالبحث يمكن لصقها هنا، ويضمها التحليل تلقائياً."><textarea className={`${input} min-h-24`} value={form.metadataText || ''} onChange={(event) => set('metadataText', event.target.value)} /></Field>
                 </div>
               </section>
-              <UploadField label="رابط البحث أو PDF" value={form.source || form.url || ''} accept="application/pdf" folder="files" slug={form.slug || form.title} maxMb={100} onChange={(value) => { set('source', value); set('url', value) }} />
+              <Field label="رابط صفحة البحث أو المجلة"><input className={input} dir="ltr" type="url" value={form.source || form.url || ''} onChange={(event) => { set('source', event.target.value); set('url', event.target.value) }} /></Field>
+              <UploadField label="ملف PDF أو رابطه" value={form.pdf || ''} accept="application/pdf" folder="files" slug={form.slug || form.title} maxMb={100} onChange={(value) => set('pdf', value)} />
               <div className="grid gap-5 sm:grid-cols-2">
-                <Field label="رابط Google Scholar (اختياري)" hint="يظهر كأيقونة في صفحة البحث إن مُلئ."><input className={input} dir="ltr" type="url" placeholder="https://scholar.google.com/…" value={form.scholar || ''} onChange={(event) => set('scholar', event.target.value)} /></Field>
-                <Field label="رابط ResearchGate (اختياري)"><input className={input} dir="ltr" type="url" placeholder="https://www.researchgate.net/…" value={form.researchgate || ''} onChange={(event) => set('researchgate', event.target.value)} /></Field>
+                <Field label="Google Scholar"><input className={input} dir="ltr" type="url" placeholder="https://scholar.google.com/…" value={form.scholar || ''} onChange={(event) => set('scholar', event.target.value)} /></Field>
+                <Field label="ResearchGate"><input className={input} dir="ltr" type="url" placeholder="https://www.researchgate.net/…" value={form.researchgate || ''} onChange={(event) => set('researchgate', event.target.value)} /></Field>
+                <Field label="ORCID"><input className={input} dir="ltr" type="url" placeholder="https://orcid.org/…" value={form.orcid || ''} onChange={(event) => set('orcid', event.target.value)} /></Field>
+                <Field label="مستودع الجامعة"><input className={input} dir="ltr" type="url" value={form.repository || ''} onChange={(event) => set('repository', event.target.value)} /></Field>
               </div>
               <Field label="باحثون مشاركون (اختياري)" hint="افصل بين الأسماء بفاصلة — تظهر «بالاشتراك مع…» في صفحة البحث."><input className={input} placeholder="مثال: د. فلان الفلاني، د. علّان العلّاني" value={form.coAuthors || ''} onChange={(event) => set('coAuthors', event.target.value)} /></Field>
             </>
@@ -946,25 +984,18 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
     try {
       let preparedForm = { ...form }
       if (kind === 'paper') {
-        const intelligence = analyzeResearch(preparedForm)
-        preparedForm = {
-          ...preparedForm,
-          reviewStatus: preparedForm.reviewStatus || intelligence.reviewStatus,
-          studyType: preparedForm.studyType || intelligence.studyType,
-          methodology: preparedForm.methodology || intelligence.methodology,
-          sample: preparedForm.sample || intelligence.sample,
-          researchQuestion: preparedForm.researchQuestion || intelligence.researchQuestion,
-          keyFinding: preparedForm.keyFinding || intelligence.keyFinding,
-          contribution: preparedForm.contribution || intelligence.contribution,
-          evidenceLabel: intelligence.evidenceLabel,
-          evidenceScore: String(intelligence.evidenceScore),
-          doi: preparedForm.doi || intelligence.doi,
-          keywords: preparedForm.keywords || intelligence.keywords,
-          openAccess: String(intelligence.openAccess),
-          analysisConfidence: String(intelligence.confidence),
-          analysisNeedsReview: String(intelligence.needsReview),
-          analyzedAt: intelligence.analyzedAt,
+        const local = analyzeResearch(preparedForm)
+        const fingerprint = local.analysisFingerprint
+        let result = Object.fromEntries(Object.entries(local).map(([key, value]) => [key, String(value ?? '')])) as Form
+        if (preparedForm.analysisFingerprint !== fingerprint || !preparedForm.analyzedAt) {
+          try {
+            result = await requestResearchAnalysis(preparedForm)
+          } catch {
+            // يحفظ الاستخراج المحلي الموثوق، وتبقى الحقول غير الموجودة مخفية في الواجهة العامة.
+          }
         }
+        preparedForm = mergeResearchAnalysis(preparedForm, result, fingerprint)
+        preparedForm.reviewStatus = 'محكّم'
         setForm(preparedForm)
       }
       if (kind === 'article') {

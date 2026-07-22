@@ -359,6 +359,11 @@ export interface VisualQuality {
   hierarchy: number
   whitespace: number
   contrast: number
+  textContrast: number
+  backgroundContrast: number
+  density: number
+  visualWeight: number
+  rtlAlignment: number
   fit: number
   lineFit: number
   originality: number
@@ -1600,12 +1605,21 @@ export function tasteAffinity(profile: DesignTasteProfile | undefined, plan: Com
   return Number(clamp(.5 + weighted / Math.max(1, total) * .5, 0, 1).toFixed(4))
 }
 
-const qualityBand = (score: number): VisualQuality['band'] => score >= 94 ? 'exceptional' : score >= 87 ? 'excellent' : score >= 76 ? 'strong' : 'needs-work'
+const qualityBand = (score: number): VisualQuality['band'] => score >= 96 ? 'exceptional' : score >= 90 ? 'excellent' : score >= 80 ? 'strong' : 'needs-work'
 const boundedQuality = (value: number) => Math.round(clamp(value, 0, 100))
+const contrastQuality = (ratio: number) => boundedQuality(ratio >= 7 ? 100 : ratio >= 4.5 ? 84 + (ratio - 4.5) / 2.5 * 15 : ratio >= 3 ? 56 + (ratio - 3) / 1.5 * 27 : ratio * 18)
 
 export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly CompositionPlan[] = []): VisualQuality {
   const palette = PALETTES[plan.palette]
-  const contrastValue = contrastRatio(palette.background, palette.ink)
+  const backgroundInkRatio = contrastRatio(palette.background, palette.ink)
+  const surfaceInkRatio = contrastRatio(palette.surface, palette.ink)
+  const backgroundMutedRatio = contrastRatio(palette.background, palette.muted)
+  const surfaceMutedRatio = contrastRatio(palette.surface, palette.muted)
+  const accentBackgroundRatio = contrastRatio(palette.background, palette.accent)
+  const accentSurfaceRatio = contrastRatio(palette.surface, palette.accent)
+  const mainContrastRatio = Math.min(backgroundInkRatio, surfaceInkRatio)
+  const secondaryContrastRatio = Math.min(backgroundMutedRatio, surfaceMutedRatio)
+  const accentContrastRatio = Math.min(accentBackgroundRatio, accentSurfaceRatio)
   const titleWords = wordsOf(plan.content.title).length
   const bodyWords = wordsOf(plan.content.body || plan.content.subtitle || plan.content.quote).length
   const titleLoad = titleWords / Math.max(1, plan.format.maxTitleWords)
@@ -1614,37 +1628,64 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   const lineLayout = compositionTextLayout(plan)
   const titleLineLoad = lineLayout.estimatedTitleLines / Math.max(1, lineLayout.titleMaxLines)
   const bodyLineLoad = lineLayout.estimatedBodyLines / Math.max(1, lineLayout.bodyMaxLines)
-  const safe = [plan.geometry.titleZone, plan.geometry.bodyZone].every((zone) => zone.x >= 0 && zone.y >= 0 && zone.x + zone.width <= 1.001 && zone.y <= .94)
+  const zones = [plan.geometry.titleZone, plan.geometry.bodyZone]
+  const safe = zones.every((zone) => zone.x >= 0 && zone.y >= 0 && zone.x + zone.width <= 1.001 && zone.y + Math.min(.32, zone.maxLines * .055) <= .95)
   const duplicate = peers.some((peer) => peer.id !== plan.id && designSimilarity(plan, peer) >= .82)
   const issues: string[] = []
   const strengths: string[] = []
-
-  const contrast = boundedQuality(contrastValue >= 7 ? 100 : contrastValue >= 4.5 ? 88 : contrastValue * 18)
-  const readability = boundedQuality(100 - Math.max(0, titleLoad - .74) * 52 - Math.max(0, bodyLoad - .78) * 42 - (safe ? 0 : 45))
-  const hierarchy = boundedQuality(76 + (plan.content.heroWord ? 8 : 0) + (titleWords <= 14 ? 8 : 0) + (plan.content.kicker ? 4 : 0) - (titleWords > 22 ? 18 : 0))
-  const idealLoad = plan.density === 'minimal' ? .38 : plan.density === 'rich' ? .72 : .55
-  const whitespace = boundedQuality(100 - Math.abs(textLoad - idealLoad) * 90 - plan.geometry.decorationBudget * 2)
-  const fit = boundedQuality(100 - Math.max(0, titleLoad - 1) * 70 - Math.max(0, bodyLoad - 1) * 65 - (plan.content.overflowStrategy === 'trimmed-preview' ? 7 : 0))
-  const lineFit = boundedQuality(100 - Math.max(0, titleLineLoad - 1) * 82 - Math.max(0, bodyLineLoad - 1) * 72)
-  const originality = boundedQuality(plan.novelty * 100 - (duplicate ? 28 : 0))
-  const platformFit = boundedQuality(78 + (plan.format.platform === plan.platform ? 12 : 0) + (plan.format.supportsCarousel && plan.content.slides.length > 1 ? 8 : 0) - (plan.format.id === 'reel-cover' && bodyWords > 20 ? 16 : 0))
-
+  const textContrast = contrastQuality(Math.min(mainContrastRatio, secondaryContrastRatio))
+  const backgroundContrast = contrastQuality(Math.min(mainContrastRatio, accentContrastRatio))
+  const contrast = boundedQuality(textContrast * .72 + backgroundContrast * .28)
+  const readability = boundedQuality(100 - Math.max(0, titleLoad - .70) * 58 - Math.max(0, bodyLoad - .74) * 48 - Math.max(0, 86 - textContrast) * .42 - (safe ? 0 : 48))
+  const hierarchy = boundedQuality(72 + (plan.content.heroWord ? 8 : 0) + (titleWords <= 12 ? 10 : titleWords <= 17 ? 5 : 0) + (plan.content.kicker ? 4 : 0) - (titleWords > 21 ? 20 : 0) - (bodyLoad > .92 ? 8 : 0))
+  const idealLoad = plan.density === 'minimal' ? .34 : plan.density === 'rich' ? .68 : .51
+  const density = boundedQuality(100 - Math.abs(textLoad - idealLoad) * 118 - Math.max(0, plan.geometry.decorationBudget - (plan.density === 'rich' ? 2 : 1)) * 7)
+  const whitespace = boundedQuality(density * .72 + (100 - plan.geometry.decorationBudget * 10) * .28)
+  const fit = boundedQuality(100 - Math.max(0, titleLoad - 1) * 78 - Math.max(0, bodyLoad - 1) * 72 - (plan.content.overflowStrategy === 'trimmed-preview' ? 9 : 0))
+  const lineFit = boundedQuality(100 - Math.max(0, titleLineLoad - 1) * 90 - Math.max(0, bodyLineLoad - 1) * 80)
+  const originality = boundedQuality(plan.novelty * 100 - (duplicate ? 30 : 0))
+  const platformFit = boundedQuality(76 + (plan.format.platform === plan.platform ? 13 : 0) + (plan.format.supportsCarousel && plan.content.slides.length > 1 ? 8 : 0) - (plan.format.id === 'reel-cover' && bodyWords > 18 ? 18 : 0))
+  const titleRight = plan.geometry.titleZone.x + plan.geometry.titleZone.width
+  const bodyRight = plan.geometry.bodyZone.x + plan.geometry.bodyZone.width
+  const rtlAlignment = boundedQuality(100 - Math.abs(titleRight - bodyRight) * 220 - Math.abs(plan.geometry.titleZone.x - plan.geometry.bodyZone.x) * 45)
+  const titleCenter = plan.geometry.titleZone.y + Math.min(.22, plan.geometry.titleZone.maxLines * .035)
+  const bodyCenter = plan.geometry.bodyZone.y + Math.min(.30, plan.geometry.bodyZone.maxLines * .035)
+  const occupiedCenter = titleCenter * .58 + bodyCenter * .42
+  const targetCenter = plan.geometry.visualWeight === 'top' ? .30 : plan.geometry.visualWeight === 'bottom' ? .66 : plan.geometry.visualWeight === 'center' ? .48 : .50
+  const visualWeight = boundedQuality(100 - Math.abs(occupiedCenter - targetCenter) * 185 - Math.max(0, Math.abs(plan.geometry.titleZone.width - plan.geometry.bodyZone.width) - .34) * 45)
   if (!safe) issues.push('خطأ: عنصر نصي خارج منطقة الأمان.')
-  if (contrast < 82) issues.push('التباين يحتاج تقوية.')
-  if (readability < 76) issues.push('النص مزدحم على شاشة الهاتف.')
-  if (fit < 76) issues.push('المحتوى أطول من المساحة المريحة.')
+  if (textContrast < 82) issues.push('تباين النصوص الأساسية أو الثانوية ضعيف فعلياً.')
+  if (backgroundContrast < 78) issues.push('الفصل بين العناصر والخلفية غير كافٍ.')
+  if (readability < 78) issues.push('القراءة على الهاتف تحتاج تخفيفاً أو تكبيراً.')
+  if (density < 76) issues.push('كثافة العناصر لا تناسب المساحة المتاحة.')
+  if (whitespace < 76) issues.push('نسبة البياض والمسافات غير متوازنة.')
+  if (visualWeight < 76) issues.push('الوزن البصري لا ينسجم مع موضع العناصر الرئيسي.')
+  if (rtlAlignment < 82) issues.push('محاذاة RTL بين كتل النص غير دقيقة.')
+  if (hierarchy < 80) issues.push('التسلسل البصري لا يبرز العنصر الرئيسي بوضوح.')
+  if (fit < 78) issues.push('المحتوى أطول من المساحة المريحة.')
   if (lineLayout.estimatedTitleLines > lineLayout.titleMaxLines) issues.push('خطأ: العنوان سيتجاوز عدد الأسطر الآمن.')
   if (lineLayout.estimatedBodyLines > lineLayout.bodyMaxLines) issues.push('المتن سيتجاوز عدد الأسطر المريح.')
-  if (duplicate) issues.push('قريب بصريًا من اتجاه آخر.')
-  if (contrast >= 92) strengths.push('تباين ممتاز')
-  if (whitespace >= 88) strengths.push('فراغات محسوبة')
-  if (hierarchy >= 90) strengths.push('هرمية واضحة')
-  if (lineFit >= 92) strengths.push('لا قصّ ولا تزاحم')
-  if (originality >= 78) strengths.push('تكوين متمايز')
-  if (platformFit >= 90) strengths.push('ملائم للمنصة')
-
-  const score = boundedQuality(readability * .20 + hierarchy * .16 + whitespace * .14 + contrast * .15 + fit * .12 + lineFit * .13 + originality * .06 + platformFit * .04)
-  return { score, band: qualityBand(score), readability, hierarchy, whitespace, contrast, fit, lineFit, originality, platformFit, issues, strengths }
+  if (duplicate) issues.push('قريب بصرياً من اتجاه آخر.')
+  if (textContrast >= 94 && backgroundContrast >= 90) strengths.push('تباين نص وخلفية ممتاز')
+  if (whitespace >= 90 && density >= 88) strengths.push('فراغات وكثافة محسوبة')
+  if (hierarchy >= 92) strengths.push('تسلسل بصري واضح')
+  if (rtlAlignment >= 94) strengths.push('محاذاة RTL دقيقة')
+  if (visualWeight >= 90) strengths.push('وزن بصري متزن')
+  if (lineFit >= 94 && readability >= 90) strengths.push('قراءة هاتفية مريحة')
+  if (originality >= 80) strengths.push('تكوين متمايز')
+  if (platformFit >= 92) strengths.push('ملائم للمنصة')
+  const raw = readability * .16 + hierarchy * .13 + whitespace * .10 + contrast * .15 + fit * .09 + lineFit * .10 + originality * .04 + platformFit * .05 + density * .06 + visualWeight * .06 + rtlAlignment * .06
+  const core = [readability, hierarchy, whitespace, textContrast, backgroundContrast, fit, lineFit, density, visualWeight, rtlAlignment]
+  const coreMinimum = Math.min(...core)
+  let score = boundedQuality(raw)
+  if (textContrast < 82 || backgroundContrast < 76) score = Math.min(score, 79)
+  if (coreMinimum < 70 || !safe) score = Math.min(score, 74)
+  if (coreMinimum < 80) score = Math.min(score, 86)
+  const deservesNinety = core.every((value) => value >= 86) && readability >= 90 && hierarchy >= 88 && contrast >= 90 && lineFit >= 92 && rtlAlignment >= 88 && !duplicate
+  if (!deservesNinety) score = Math.min(score, 89)
+  const deservesExceptional = core.every((value) => value >= 92) && originality >= 82 && platformFit >= 92 && issues.length === 0
+  if (!deservesExceptional) score = Math.min(score, 95)
+  return { score, band: qualityBand(score), readability, hierarchy, whitespace, contrast, textContrast, backgroundContrast, density, visualWeight, rtlAlignment, fit, lineFit, originality, platformFit, issues, strengths }
 }
 
 export interface SocialCampaignRequest extends SocialDesignRequest {
@@ -1691,12 +1732,13 @@ export function generateSocialCampaign(request: SocialCampaignRequest): SocialCa
   const warnings: string[] = []
 
   for (const [index, spec] of campaignRoles.entries()) {
+    const roleText = campaignText(spec.role, analysis)
     let picked: CompositionPlan | undefined
     let fallback: CompositionPlan | undefined
-    for (let attempt = 0; attempt < 3 && !picked; attempt += 1) {
+    for (let attempt = 0; attempt < 8 && !picked; attempt += 1) {
       const result = generateSocialDesigns({
         ...request,
-        text: campaignText(spec.role, analysis),
+        text: roleText,
         format: spec.format,
         platform: 'auto',
         tone: spec.tone || request.tone,
@@ -1716,12 +1758,40 @@ export function generateSocialCampaign(request: SocialCampaignRequest): SocialCa
         && (plan.quality?.lineFit || 0) >= 80
         && !plan.quality?.issues.some((issue) => issue.startsWith('خطأ:')))
     }
+    if (!picked) {
+      const roleAnalysis = overrideAnalysis(
+        analyzeSocialContent(roleText, request.context, { author: request.author, source: request.source }),
+        { ...request, text: roleText, tone: spec.tone || request.tone, density: spec.density || request.density },
+      )
+      const roleFormat = SOCIAL_FORMATS[spec.format]
+      const roleDensity = spec.density || (request.density && request.density !== 'auto' ? request.density : roleAnalysis.density)
+      const rescueCandidates = Object.values(LAYOUT_FAMILIES)
+        .filter((layout) => !usedLayouts.has(layout.id))
+        .flatMap((layout, layoutIndex) => Array.from({ length: 4 }, (_, variant) => {
+          const candidate = makeCandidate(
+            layout,
+            roleAnalysis,
+            roleFormat,
+            roleDensity,
+            `${request.seed || request.text}:campaign-rescue:${spec.role}:${layout.id}`,
+            layoutIndex * 7 + variant,
+            history,
+          )
+          return base ? applyDesignLocks(base, candidate, { color: true, content: false, style: false, format: false }) : candidate
+        }))
+        .map((candidate) => ({ ...candidate, quality: critiqueCompositionPlan(candidate, [...assets.map((asset) => asset.plan), candidate]) }))
+        .filter((candidate) => (candidate.quality?.score || 0) >= 68
+          && (candidate.quality?.lineFit || 0) >= 76
+          && !candidate.quality?.issues.some((issue) => issue.startsWith('خطأ:')))
+        .sort((left, right) => ((right.quality?.score || 0) + right.novelty * 8) - ((left.quality?.score || 0) + left.novelty * 8))
+      picked = rescueCandidates[0]
+    }
     picked ||= fallback
     if (!picked) {
       warnings.push(`تعذّر بناء ${spec.label} من دون خفض الجودة.`)
       continue
     }
-    if ((picked.quality?.score || 0) < 78) warnings.push(`${spec.label} يحتاج مراجعة بصرية قبل النشر.`)
+    if ((picked.quality?.score || 0) < 68 || picked.quality?.issues.some((issue) => issue.startsWith('خطأ:'))) warnings.push(`${spec.label} يحتاج مراجعة بصرية قبل النشر.`)
     usedLayouts.add(picked.layout)
     history.push(designHistoryEntry(picked))
     assets.push({ id: `${spec.role}-${picked.id}`, role: spec.role, label: spec.label, purpose: spec.purpose, plan: picked })

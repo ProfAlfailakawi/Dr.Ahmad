@@ -1,6 +1,7 @@
 import { createHash, createPublicKey, verify as verifySignature } from 'node:crypto'
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs'
 import { createServer } from 'node:http'
+import { lookup } from 'node:dns/promises'
 import { extname, join, resolve, sep } from 'node:path'
 import { pipeline } from 'node:stream'
 import { pathToFileURL } from 'node:url'
@@ -55,6 +56,7 @@ function canonicalRedirectLocation(req) {
 
 const articleSuggestionPath = '/api/ai/article-suggestion'
 const contentSuggestionPath = '/api/ai/content-suggestion'
+const paperAnalysisPath = '/api/ai/paper-analysis'
 const perfectArticlePath = '/api/ai/perfect-article'
 const socialPackPath = '/api/ai/social-pack'
 const socialIdeasPath = '/api/ai/social-ideas'
@@ -483,6 +485,169 @@ export async function generateContentSuggestion(input, fetchImpl = fetch) {
     ?.map((part) => typeof part?.text === 'string' ? part.text : '')
     .join('')
   return normalizeContentSuggestion(input.kind, raw)
+}
+
+
+const paperAnalysisCache = new Map()
+
+function paperAnalysisInput(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new HttpError(400, 'Expected a JSON object')
+  const fields = ['title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'scholar', 'researchgate', 'orcid', 'repository', 'doi', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'studyType', 'keywords', 'iso', 'date', 'year', 'metadataText', 'analysisText', 'analysisFingerprint']
+  const result = {}
+  for (const field of fields) result[field] = boundedString(value[field], ['abstractAr', 'metadataText', 'analysisText'].includes(field) ? 30_000 : 2_000)
+  if (!result.title && !result.abstractAr && !result.source && !result.url && !result.pdf && !result.doi) throw new HttpError(400, 'Provide research data or a source')
+  result.analysisFingerprint = result.analysisFingerprint || createHash('sha256').update(fields.map((field) => result[field] || '').join('\u241f')).digest('hex').slice(0, 24)
+  return result
+}
+
+function isPrivateAddress(address = '') {
+  const value = String(address).toLowerCase()
+  if (value === '::1' || value === '::' || value.startsWith('fe80:') || value.startsWith('fc') || value.startsWith('fd')) return true
+  const match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(value)
+  if (!match) return false
+  const a = Number(match[1]), b = Number(match[2])
+  return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || a >= 224
+}
+
+async function safeResearchUrl(raw) {
+  let parsed
+  try { parsed = new URL(raw) } catch { throw new HttpError(400, 'Invalid research URL') }
+  if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) throw new HttpError(400, 'Invalid research URL')
+  const host = parsed.hostname.toLowerCase()
+  if (host === 'localhost' || host.endsWith('.localhost') || isPrivateAddress(host)) throw new HttpError(400, 'Invalid research URL')
+  const records = await lookup(host, { all: true, verbatim: true })
+  if (!records.length || records.some((record) => isPrivateAddress(record.address))) throw new HttpError(400, 'Invalid research URL')
+  return parsed.toString()
+}
+
+async function readLimited(response, maximum) {
+  const declared = Number(response.headers.get('content-length'))
+  if (Number.isFinite(declared) && declared > maximum) throw new HttpError(413, 'Research source is too large')
+  const reader = response.body?.getReader?.()
+  if (!reader) {
+    const bytes = Buffer.from(await response.arrayBuffer())
+    if (bytes.length > maximum) throw new HttpError(413, 'Research source is too large')
+    return bytes
+  }
+  const chunks = []; let total = 0
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    if (total > maximum) { await reader.cancel(); throw new HttpError(413, 'Research source is too large') }
+    chunks.push(Buffer.from(value))
+  }
+  return Buffer.concat(chunks, total)
+}
+
+async function fetchResearchSource(raw, maximum, accept, fetchImpl = fetch) {
+  let current = await safeResearchUrl(raw)
+  for (let redirects = 0; redirects < 4; redirects += 1) {
+    const response = await fetchWithTimeout(fetchImpl, current, { method: 'GET', redirect: 'manual', headers: { accept, 'user-agent': 'DrAlfailakawi-Research-Analyzer/1.0' } }, envNumber('RESEARCH_FETCH_TIMEOUT_MS', 14_000, 4_000, 25_000))
+    if ([301, 302, 303, 307, 308].includes(response.status)) {
+      const location = response.headers.get('location')
+      if (!location) throw new HttpError(502, 'Invalid research redirect')
+      current = await safeResearchUrl(new URL(location, current).toString())
+      continue
+    }
+    if (!response.ok) throw new HttpError(502, 'Research source unavailable')
+    return { bytes: await readLimited(response, maximum), contentType: String(response.headers.get('content-type') || ''), finalUrl: current }
+  }
+  throw new HttpError(502, 'Too many research redirects')
+}
+
+function cleanResearchHtml(html = '') {
+  const links = Array.from(String(html).matchAll(/href\s*=\s*["']([^"']+)["']/gi)).map((match) => match[1]).filter((value) => /doi\.org|orcid\.org|researchgate|scholar\.google|repository|handle\.net/i.test(value)).slice(0, 80)
+  const text = String(html).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ').replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&quot;/gi, '"').replace(/&#39;/gi, "'").replace(/\s+/g, ' ').trim()
+  return `${text.slice(0, 120_000)}${links.length ? `\nالروابط المستخرجة: ${links.join(' | ')}` : ''}`
+}
+
+function optionalPaperText(value, maximum = 1_200) {
+  return typeof value === 'string' ? Array.from(value.replace(/\s+/g, ' ').trim()).slice(0, maximum).join('') : ''
+}
+
+function normalizePaperAnalysis(value) {
+  const parsed = parseSuggestion(value)
+  const fields = ['studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'keywords', 'journal', 'year', 'doi', 'orcid', 'repository']
+  return Object.fromEntries(fields.map((field) => [field, optionalPaperText(parsed[field], field === 'year' ? 12 : 1_200)]))
+}
+
+async function crossrefMetadata(doi, fetchImpl = fetch) {
+  const cleanDoi = boundedString(doi, 300).replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, '')
+  if (!cleanDoi) return ''
+  try {
+    const response = await fetchWithTimeout(fetchImpl, `https://api.crossref.org/works/${encodeURIComponent(cleanDoi)}`, { headers: { accept: 'application/json' } }, 10_000)
+    if (!response.ok) return ''
+    const message = JSON.parse((await readLimited(response, 512 * 1024)).toString('utf8'))?.message || {}
+    return JSON.stringify({ DOI: message.DOI, title: message.title, author: message.author, containerTitle: message['container-title'], published: message.published, subject: message.subject, abstract: message.abstract, URL: message.URL, type: message.type })
+  } catch { return '' }
+}
+
+async function generatePaperAnalysis(input, fetchImpl = fetch) {
+  const cached = paperAnalysisCache.get(input.analysisFingerprint)
+  if (cached && cached.expiresAt > Date.now()) return { ...cached.value, cached: true }
+  const sources = [], sourceTexts = [], pdfParts = [], seen = new Set()
+  const urls = [['صفحة المجلة', input.source || input.url], ['مستودع الجامعة', input.repository], ['ResearchGate', input.researchgate], ['ORCID', input.orcid], ['Google Scholar', input.scholar]].filter((entry) => entry[1])
+  for (const [label, raw] of urls) {
+    if (seen.has(raw)) continue
+    seen.add(raw)
+    try {
+      const resource = await fetchResearchSource(raw, 2 * 1024 * 1024, 'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.5', fetchImpl)
+      sourceTexts.push(`\n--- ${label} (${resource.finalUrl}) ---\n${cleanResearchHtml(resource.bytes.toString('utf8'))}`)
+      sources.push(label)
+    } catch { /* continue with the remaining sources */ }
+  }
+  if (input.pdf) {
+    try {
+      const resource = await fetchResearchSource(input.pdf, 18 * 1024 * 1024, 'application/pdf,*/*;q=0.5', fetchImpl)
+      if (/application\/pdf/i.test(resource.contentType) || resource.bytes.subarray(0, 5).toString('ascii') === '%PDF-') {
+        pdfParts.push({ inlineData: { mimeType: 'application/pdf', data: resource.bytes.toString('base64') } })
+        sources.push('PDF الكامل')
+      }
+    } catch { /* continue with the remaining sources */ }
+  }
+  const metadata = await crossrefMetadata(input.doi, fetchImpl)
+  if (metadata) sources.push('DOI / Crossref')
+  if (input.abstractAr) sources.push('الملخص')
+  if (input.metadataText) sources.push('Metadata المرفقة')
+  sources.push('بيانات لوحة التحكم')
+
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
+  if (!apiKey) throw new HttpError(503, 'AI service is not configured')
+  const model = process.env.GEMINI_MODEL || 'gemini-3.5-flash'
+  if (!/^[A-Za-z0-9._-]+$/.test(model)) throw new HttpError(503, 'AI model is not configured correctly')
+  const prompt = [
+    'حلّل البحث العلمي تحليلاً توثيقياً دقيقاً. جميع الأبحاث في هذا الأرشيف محكّمة؛ لا تقيّم حالة التحكيم.',
+    'استخدم جميع المواد المرفقة، مع أولوية PDF الكامل والجداول وقسم المنهج والمشاركين ثم الملخص والبيانات الوصفية والروابط.',
+    'استخرج فقط ما تدعمه المصادر. لا تخمّن أي رقم أو معلومة. إذا لم يوجد الحقل أعد سلسلة فارغة تماماً.',
+    'ممنوع كتابة عبارات مثل: لم يذكر، غير متاح، غير ظاهر، يحتاج توثيق، تعذر، راجع النص الكامل.',
+    'في العينة اذكر العدد الدقيق والفئة وأي توزيع فرعي ظاهر. في المنهج اذكر التصميم والأداة. في النتائج اذكر أبرز النتائج الفعلية.',
+    `بيانات لوحة التحكم: ${JSON.stringify(input)}`,
+    metadata ? `بيانات DOI/Crossref: ${metadata}` : '',
+    sourceTexts.join('\n').slice(0, 180_000),
+  ].filter(Boolean).join('\n\n')
+  let response
+  try {
+    response = await fetchWithTimeout(fetchImpl, `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      method: 'POST', headers: { accept: 'application/json', 'content-type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: 'أنت محلل أبحاث أكاديمي صارم. لا تختلق بيانات، ولا تعرض رسائل نقص؛ استخدم السلسلة الفارغة للحقل غير الموجود.' }] },
+        contents: [{ role: 'user', parts: [{ text: prompt }, ...pdfParts] }],
+        generationConfig: { temperature: 0.05, maxOutputTokens: 3_500, responseMimeType: 'application/json', responseSchema: { type: 'OBJECT', properties: Object.fromEntries(['studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'keywords', 'journal', 'year', 'doi', 'orcid', 'repository'].map((field) => [field, { type: 'STRING' }])), required: ['studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'keywords', 'journal', 'year', 'doi', 'orcid', 'repository'] } },
+      }),
+    }, envNumber('GEMINI_RESEARCH_TIMEOUT_MS', 55_000, 15_000, 90_000))
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new HttpError(504, 'Research analysis timed out')
+    if (error instanceof HttpError) throw error
+    throw new HttpError(502, 'Research analysis service unavailable')
+  }
+  if (!response.ok) throw new HttpError(response.status === 429 ? 503 : 502, 'Research analysis service unavailable')
+  const payload = await response.json()
+  const raw = payload?.candidates?.[0]?.content?.parts?.map((part) => typeof part?.text === 'string' ? part.text : '').join('')
+  const result = { ...normalizePaperAnalysis(raw), reviewStatus: 'محكّم', openAccess: Boolean(input.pdf || input.repository || input.researchgate), analysisConfidence: Math.min(99, 62 + Math.min(30, sources.length * 5)), analysisNeedsReview: false, analysisFingerprint: input.analysisFingerprint, analysisSources: Array.from(new Set(sources)).join('، '), analyzedAt: new Date().toISOString() }
+  paperAnalysisCache.set(input.analysisFingerprint, { value: result, expiresAt: Date.now() + 24 * 60 * 60 * 1000 })
+  if (paperAnalysisCache.size > 80) paperAnalysisCache.delete(paperAnalysisCache.keys().next().value)
+  return { ...result, cached: false }
 }
 
 export async function generateArticleSuggestion(input, fetchImpl = fetch) {
@@ -1822,7 +1987,7 @@ export function createRequestHandler({
       return
     }
 
-    if ([articleSuggestionPath, contentSuggestionPath, perfectArticlePath, socialPackPath, socialIdeasPath, currentContextPath].includes(url.pathname)) {
+    if ([articleSuggestionPath, contentSuggestionPath, paperAnalysisPath, perfectArticlePath, socialPackPath, socialIdeasPath, currentContextPath].includes(url.pathname)) {
       if (method !== 'POST') {
         sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' })
         return
@@ -1844,6 +2009,11 @@ export function createRequestHandler({
       }
       const body = await readJsonBody(req)
 
+      if (url.pathname === paperAnalysisPath) {
+        const input = paperAnalysisInput(body)
+        sendJson(res, 200, await generatePaperAnalysis(input))
+        return
+      }
       if (url.pathname === perfectArticlePath) {
         const input = perfectArticleInput(body)
         sendJson(res, 200, await createPerfectArticle(input))

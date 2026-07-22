@@ -92,6 +92,8 @@ export type PaperRecord = {
   coAuthors?: string
   scholar?: string
   researchgate?: string
+  orcid?: string
+  repository?: string
   doi?: string
   verification?: 'verified' | 'needs-manual-review'
   reviewStatus?: string
@@ -101,6 +103,14 @@ export type PaperRecord = {
   researchQuestion?: string
   keyFinding?: string
   contribution?: string
+  applications?: string
+  limitations?: string
+  year?: string
+  metadataText?: string
+  pdfText?: string
+  analysisText?: string
+  analysisFingerprint?: string
+  analysisSources?: string
   evidenceLabel?: string
   evidenceScore?: number
   keywords?: string
@@ -146,7 +156,7 @@ const audioMap = audioManifest as Record<string, AudioEntry>
 const fieldsByKind: Record<ContentKind, readonly string[]> = {
   article: ['title', 'date', 'iso', 'cat', 'excerpt', 'body', 'bodyVocalized', 'source', 'url', 'status', 'scheduledAt', 'audio', 'audioControl'],
   book: ['title', 'isbn', 'desc', 'cover', 'pdf'],
-  paper: ['title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'iso', 'date', 'coAuthors', 'scholar', 'researchgate', 'doi', 'verification', 'reviewStatus', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'evidenceLabel', 'evidenceScore', 'keywords', 'openAccess', 'analysisConfidence', 'analysisNeedsReview', 'analyzedAt'],
+  paper: ['title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'iso', 'date', 'coAuthors', 'scholar', 'researchgate', 'orcid', 'repository', 'doi', 'verification', 'reviewStatus', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'year', 'metadataText', 'pdfText', 'analysisText', 'analysisFingerprint', 'analysisSources', 'evidenceLabel', 'evidenceScore', 'keywords', 'openAccess', 'analysisConfidence', 'analysisNeedsReview', 'analyzedAt'],
   media: ['title', 'outlet', 'platform', 'url', 'iso', 'date'],
 }
 
@@ -267,6 +277,8 @@ function buildPaper(value: Record<string, unknown>, cms: CmsMeta): PaperRecord {
     coAuthors: stringValue(value.coAuthors) || undefined,
     scholar: stringValue(value.scholar) || undefined,
     researchgate: stringValue(value.researchgate) || undefined,
+    orcid: stringValue(value.orcid) || undefined,
+    repository: stringValue(value.repository) || undefined,
     doi: stringValue(value.doi) || undefined,
     verification: stringValue(value.verification) === 'needs-manual-review' ? 'needs-manual-review' : 'verified',
     reviewStatus: stringValue(value.reviewStatus) || undefined,
@@ -276,6 +288,14 @@ function buildPaper(value: Record<string, unknown>, cms: CmsMeta): PaperRecord {
     researchQuestion: stringValue(value.researchQuestion) || undefined,
     keyFinding: stringValue(value.keyFinding) || undefined,
     contribution: stringValue(value.contribution) || undefined,
+    applications: stringValue(value.applications) || undefined,
+    limitations: stringValue(value.limitations) || undefined,
+    year: stringValue(value.year) || undefined,
+    metadataText: stringValue(value.metadataText) || undefined,
+    pdfText: stringValue(value.pdfText) || undefined,
+    analysisText: stringValue(value.analysisText) || undefined,
+    analysisFingerprint: stringValue(value.analysisFingerprint) || undefined,
+    analysisSources: stringValue(value.analysisSources) || undefined,
     evidenceLabel: stringValue(value.evidenceLabel) || undefined,
     evidenceScore: typeof value.evidenceScore === 'number' ? value.evidenceScore : Number(stringValue(value.evidenceScore)) || undefined,
     keywords: stringValue(value.keywords) || undefined,

@@ -12,6 +12,25 @@ export type ResearchPaper = {
   scholar?: string
   coAuthors?: string
   doi?: string
+  reviewStatus?: string
+  studyType?: string
+  methodology?: string
+  sample?: string
+  researchQuestion?: string
+  keyFinding?: string
+  contribution?: string
+  applications?: string
+  limitations?: string
+  keywords?: string
+  orcid?: string
+  repository?: string
+  year?: string
+  metadataText?: string
+  pdfText?: string
+  analysisText?: string
+  analysisFingerprint?: string
+  analysisSources?: string
+  analyzedAt?: string
   url: string
   verification?: 'verified' | 'needs-manual-review'
 }
@@ -25,6 +44,8 @@ export const researchPapers: ResearchPaper[] = [
     meta: 'تكنولوجيا التعليم · اتجاهات أعضاء هيئة التدريس',
     abstractAr: 'هدفت الدراسة إلى تقصي اتجاهات أعضاء هيئة التدريس نحو استخدام تكنولوجيا التعليم في كلية التربية الأساسية بالهيئة العامة للتعليم التطبيقي والتدريب في دولة الكويت. استخدم الباحثان المنهج الوصفي المسحي، وأعدّا استبانة لقياس اتجاهات أعضاء هيئة التدريس بعد التحقق من صدقها وثباتها، ثم طبقاها على عينة من أعضاء الهيئة التدريسية. تناولت الأداة الجوانب المرتبطة بأهمية تكنولوجيا التعليم، ومستوى الاستخدام، والاستعداد المهني، والمعوقات التي قد تحد من توظيفها. وأظهرت النتائج صورة ميدانية لاتجاهات أفراد العينة نحو استخدام التكنولوجيا في التدريس الجامعي، بما يساعد على تحديد احتياجات التدريب والدعم المؤسسي اللازمة لزيادة الاستخدام الفعّال داخل الكلية.',
     journal: 'مجلة العلوم التربوية، كلية الدراسات العليا للتربية، جامعة القاهرة · 2017',
+    sample: 'تكونت عينة الدراسة من 246 عضواً من أعضاء هيئة التدريس في كلية التربية الأساسية بدولة الكويت.',
+    year: '2017',
     source: 'https://doi.org/10.21608/SSJ.2017.50847',
     pdf: 'https://search.shamaa.org/PDF/Articles/EGJes/JesVol25No1P2Y2017/jes_2017-v25-n1-p2_001-030.pdf',
     researchgate: 'https://www.researchgate.net/publication/342135278_atjahat_alhyyt_altdrysyt_nhw_astkhdam_tknwlwjya_altlym_fy_klyt_altrbyt_alasasyt_fy_alhyyt_alamt_lltlym_alttbyqy_waltdryb_bdwlt_alkwyt_The_study_aimed_at_exploring_faculty_members_trends_toward_the_use',

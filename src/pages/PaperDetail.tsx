@@ -5,77 +5,12 @@ import { JsonLd, useSeo } from '../components/seo'
 import { CiteButton, OwnerEdit } from '../components/extras'
 import { profile, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
-import { liveLink } from '../lib/dead-links'
 import { analyzeResearch } from '../lib/research-intelligence'
 
 const cleanText = (value = '') => value.replace(/^ملخص عربي:\s*/, '').replace(/\s+/g, ' ').trim()
-
 const firstSentence = (value = '', fallback = '') => {
   const text = cleanText(value) || fallback
-  if (!text) return ''
-  return text.split(/(?<=[.!؟…])\s+/)[0] || text
-}
-
-const paperYear = (paper: { journal?: string; iso?: string; date?: string }) =>
-  (paper.journal?.match(/20\d{2}/) || paper.iso?.match(/20\d{2}/) || paper.date?.match(/20\d{2}/) || ['2026'])[0]
-
-const methodologyAndSample = (text = '') => {
-  const clean = cleanText(text)
-  const method = (
-    clean.match(/(اعتمد(?:ت الدراسة)?[^.؟]*?(?:المنهج[^.؟]*|الاستبانة[^.؟]*|الوصفي[^.؟]*|التحليلي[^.؟]*|المسحي[^.؟]*))[.؟]?/) ||
-    clean.match(/(استخدم(?:ت الدراسة)?[^.؟]*?(?:المنهج[^.؟]*|الاستبانة[^.؟]*|العينة[^.؟]*))[.؟]?/) ||
-    clean.match(/(طبّق[^.؟]*?(?:استبانة|أداة الدراسة|العينة)[^.؟]*)[.؟]?/)
-  )?.[1]?.trim()
-
-  const sampleNumbers = Array.from(new Set(Array.from(clean.matchAll(/\b(\d{2,4})\b/g)).map((match) => match[1])))
-    .filter((item) => Number(item) >= 30)
-    .slice(0, 4)
-
-  const sampleLabel = sampleNumbers.length
-    ? `العينة المذكورة في الملخص تضم ${sampleNumbers.join('، ')} مشاركاً/مشاركاً أو رقماً مرتبطاً بالعينة.`
-    : 'لم يذكر الملخص المختصر حجم العينة بوضوح؛ راجع نص PDF أو صفحة الناشر للتفاصيل الدقيقة.'
-
-  return {
-    method: method || 'يستخدم البحث مقاربة وصفية/تحليلية لفهم القضية في سياقها التعليمي، مع أداة جمع بيانات يشرحها النص الأصلي أو ملف PDF.',
-    sample: sampleLabel,
-  }
-}
-
-const mainFinding = (text = '') => {
-  const clean = cleanText(text)
-  return (
-    clean.match(/((?:أظهرت|أظهرت النتائج|بينت النتائج|بيّنت النتائج|كشفت النتائج|خلصت الدراسة)[^.؟]*[.؟]?)/)?.[1]?.trim() ||
-    clean.match(/((?:وجود|عدم وجود|جاءت|تبين أن|وتقدم النتائج)[^.؟]*[.؟]?)/)?.[1]?.trim() ||
-    firstSentence(clean)
-  )
-}
-
-const teacherMeaning = (meta = '', title = '') => {
-  const text = `${meta} ${title}`
-  if (/تعلم إلكتروني|LMS|E-Learning|التحول الرقمي|تكنولوجيا|Technology|واقع معزز|ذكاء/i.test(text)) {
-    return 'المغزى للمعلم واضح: التقنية ليست قيمة بحد ذاتها؛ القيمة في الجاهزية، والتصميم التربوي، والتدريب الذي يجعل الأداة تخدم التعلم فعلاً.'
-  }
-  if (/اتجاهات|Awareness|وعي|Faculty|Members/i.test(text)) {
-    return 'قبل أن نعمم أي أداة أو مبادرة، علينا أن نفهم درجة القبول والوعي عند المعلمين؛ لأن القناعة المهنية جزء من نجاح التطبيق، لا تفصيل ثانوي.'
-  }
-  if (/Special Needs|الاحتياجات الخاصة/i.test(text)) {
-    return 'تقول النتيجة للمعلم إن الإتاحة ليست إضافة تجميلية؛ بل شرطٌ لعدالة التعلم. أي تطوير تقني يجب أن يبدأ من سؤال: هل يصل لجميع المتعلمين؟'
-  }
-  return 'بالنسبة للمعلم، فالقيمة العملية هنا هي تحويل النتيجة إلى قرار صفّي أو مؤسسي: ما الذي ينبغي تطويره في الممارسة، وما الذي يحتاج دعماً أو تدريباً إضافياً؟'
-}
-
-const unresolvedQuestion = (meta = '', title = '') => {
-  const text = `${meta} ${title}`
-  if (/اتجاهات|وعي|Awareness/i.test(text)) {
-    return 'السؤال الذي يبقى مفتوحاً: كيف تتحول الاتجاهات أو درجة الوعي من موقف معلَن إلى ممارسة فعلية يمكن ملاحظتها داخل القاعات الدراسية؟'
-  }
-  if (/فاعلية|أهمية|Effectiveness|Importance/i.test(text)) {
-    return 'السؤال غير المحسوم هنا: هل يستمر هذا الأثر على المدى البعيد، وهل يظهر بالدرجة نفسها في تخصصات ومؤسسات تعليمية مختلفة؟'
-  }
-  if (/معوقات|Obstacles/i.test(text)) {
-    return 'ما السؤال الذي لم يجب عنه البحث بالكامل؟ ما التدخل العملي الأكثر جدوى لتجاوز هذه المعوقات، وكيف نقيس أثره بعد التنفيذ؟'
-  }
-  return 'السؤال الذي لم يحسمه الملخص وحده: ماذا يحدث لو انتقلنا من الرصد والوصف إلى تجربة تطبيقية تقيس الأثر الحقيقي على التعلم نفسه؟'
+  return text ? (text.split(/(?<=[.!؟…])\s+/)[0] || text) : ''
 }
 
 function CopySnippet({ label, value }: { label: string; value: string }) {
@@ -85,20 +20,17 @@ function CopySnippet({ label, value }: { label: string; value: string }) {
       await navigator.clipboard.writeText(value)
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1600)
-    } catch {
-      /* noop */
-    }
+    } catch { /* clipboard may be unavailable */ }
   }
-
   return (
-    <div className="min-w-0 rounded-2xl border border-hair bg-white/80 p-4 dark:bg-white/[0.02]">
+    <div className="research-copy-card min-w-0 rounded-2xl border p-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-[.8rem] font-semibold text-soft">{label}</p>
-        <button onClick={copy} className="rounded-full border border-hair px-3 py-1 text-[.75rem] text-soft transition-colors hover:border-accent hover:text-accent">
+        <button onClick={copy} className="rounded-full border border-hair px-3 py-1 text-[.75rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">
           {copied ? 'نُسخ ✓' : 'نسخ'}
         </button>
       </div>
-      <p dir="auto" className="mt-3 min-w-0 break-words text-[.86rem] leading-[1.95] text-ink/85 [overflow-wrap:anywhere] dark:text-soft">{value}</p>
+      <p dir="auto" className="mt-3 min-w-0 break-words text-[.86rem] leading-[1.95] text-ink [overflow-wrap:anywhere]">{value}</p>
     </div>
   )
 }
@@ -106,300 +38,152 @@ function CopySnippet({ label, value }: { label: string; value: string }) {
 export default function PaperDetail() {
   const { slug } = useParams()
   const { papers, loading } = useCmsContent()
-  const i = papers.findIndex((paper) => paper.slug === slug)
-  const p = papers[i]
+  const index = papers.findIndex((paper) => paper.slug === slug)
+  const p = papers[index]
   const [guideOpen, setGuideOpen] = useState(false)
   const intelligence = useMemo(() => analyzeResearch(p || {}), [p])
 
   useSeo({ title: p?.title ?? 'بحث', description: p?.abstractAr || p?.meta, path: `/research/${slug}`, type: 'article' })
 
-  const guide = useMemo(() => {
-    if (!p) return null
-    const year = paperYear(p)
-    const journal = p.journal || 'بحث محكّم'
-    const summary = firstSentence(p.abstractAr, p.meta || p.title)
-    const parsed = methodologyAndSample(p.abstractAr || '')
-    const finding = p.keyFinding || intelligence.keyFinding || mainFinding(p.abstractAr || '')
-    const researchers = [profile.fullName, p.coAuthors].filter(Boolean).join('، ')
-    const sourceUrl = p.source || p.pdf || `${SITE_URL}/research/${p.slug}`
-    const apa = `الفيلكاوي، أحمد حسين${p.coAuthors ? `، و${p.coAuthors}` : ''}. (${year}). ${p.title}. ${journal}. ${sourceUrl}`
+  if (!p && loading) return <Page className="content-research"><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
+  if (!p) return <Page><div className="px-6 pt-44 text-center text-soft">تعذر فتح صفحة البحث.</div></Page>
 
-    const problem = (() => {
-      const title = p.title
-      if (/اتجاهات|Trends/i.test(title)) return 'يحاول البحث فهم اتجاهات المشاركين نحو القضية المدروسة: هل هناك قبول؟ تحفظ؟ وما العوامل التي تفسر ذلك؟'
-      if (/فاعلية|Effectiveness/i.test(title)) return 'المشكلة الأساسية هنا هي قياس مدى فاعلية الأداة أو الممارسة التعليمية: هل تضيف شيئاً ملموساً فعلاً أم لا؟'
-      if (/أهمية|Importance/i.test(title)) return 'يسأل البحث عن الأهمية العملية لهذه الأداة أو الفكرة: لماذا ينبغي أن نهتم بها داخل البيئة التعليمية؟'
-      if (/معوقات|Obstacles/i.test(title)) return 'يركز البحث على تشخيص العوائق التي تمنع التطبيق الجيد، سواء كانت تقنية أو بشرية أو تنظيمية.'
-      if (/وعي|Awareness/i.test(title)) return 'يبحث هذا العمل في درجة الوعي والفهم بالمفهوم المدروس، لأن أي تطبيق ناجح يبدأ من وضوح المفهوم لا من تكرار المصطلح.'
-      return `يحاول هذا البحث أن يفسر القضية المرتبطة بـ ${p.meta || 'موضوع الدراسة'}، وأن يقدّم قراءة علمية تساعد على الفهم واتخاذ القرار.`
-    })()
-
-    return {
-      summary,
-      problem,
-      method: p.methodology || intelligence.methodology || parsed.method,
-      sample: p.sample || intelligence.sample || parsed.sample,
-      finding,
-      teacherMeaning: teacherMeaning(p.meta || '', p.title),
-      gapQuestion: unresolvedQuestion(p.meta || '', p.title),
-      apa,
-      researchers,
-      journal,
-      year,
-    }
-  }, [intelligence, p])
-
-  if (!p && loading)
-    return (
-      <Page className="content-research article-journey">
-        <div className="px-6 pt-44 text-center text-soft">لحظة…</div>
-      </Page>
-    )
-
-  if (!p)
-    return (
-      <Page>
-        <div className="px-6 pt-44 text-center text-soft">لم يُعثر على البحث.</div>
-      </Page>
-    )
-
-  const prev = papers[i - 1]
-  const next = papers[i + 1]
+  const prev = papers[index - 1]
+  const next = papers[index + 1]
+  const year = intelligence.year
+  const journal = p.journal || intelligence.journal
+  const researchers = [profile.fullName, p.coAuthors].filter(Boolean).join('، ')
+  const doi = p.doi || intelligence.doi
+  const keywords = p.keywords || intelligence.keywords
+  const dataCards = [
+    { label: 'السؤال العلمي', value: p.researchQuestion || intelligence.researchQuestion },
+    { label: 'أبرز النتائج', value: p.keyFinding || intelligence.keyFinding },
+    { label: 'المنهج', value: p.methodology || intelligence.methodology },
+    { label: 'العينة / نطاق الدراسة', value: p.sample || intelligence.sample },
+    { label: 'نوع الدراسة', value: p.studyType || intelligence.studyType },
+    { label: 'التطبيقات', value: p.applications || intelligence.applications || p.contribution || intelligence.contribution },
+    { label: 'القيود', value: p.limitations || intelligence.limitations },
+  ].filter((item) => Boolean(item.value?.trim()))
+  const summary = firstSentence(p.abstractAr, p.meta || p.title)
+  const citationUrl = intelligence.links.find((item) => item.id === 'doi')?.url || intelligence.links[0]?.url || `${SITE_URL}/research/${p.slug}`
+  const apa = `الفيلكاوي، أحمد حسين${p.coAuthors ? `، و${p.coAuthors}` : ''}. (${year || 'د.ت.'}). ${p.title}.${journal ? ` ${journal}.` : ''} ${citationUrl}`
 
   return (
-    <Page>
+    <Page className="content-research research-detail-page">
       <JsonLd data={{
         '@context': 'https://schema.org',
         '@type': 'ScholarlyArticle',
         '@id': `${SITE_URL}/research/${p.slug}#article`,
         headline: p.title,
         description: cleanText(p.abstractAr || p.meta || ''),
-        datePublished: `${paperYear(p)}-01-01`,
+        datePublished: year ? `${year}-01-01` : undefined,
         inLanguage: 'ar',
         url: `${SITE_URL}/research/${p.slug}`,
         author: [
           { '@type': 'Person', '@id': `${SITE_URL}/#person`, name: profile.fullName },
           ...(p.coAuthors ? [{ '@type': 'Person', name: p.coAuthors }] : []),
         ],
-        isPartOf: p.journal ? { '@type': 'Periodical', name: p.journal } : undefined,
-        sameAs: p.source || p.pdf || undefined,
-        identifier: (p.doi || intelligence.doi) ? { '@type': 'PropertyValue', propertyID: 'DOI', value: p.doi || intelligence.doi } : undefined,
-        keywords: p.keywords || intelligence.keywords || undefined,
+        isPartOf: journal ? { '@type': 'Periodical', name: journal } : undefined,
+        sameAs: intelligence.links.map((item) => item.url),
+        identifier: doi ? { '@type': 'PropertyValue', propertyID: 'DOI', value: doi } : undefined,
+        keywords: keywords || undefined,
         genre: p.studyType || intelligence.studyType || undefined,
       }} />
+
       <article className="px-6 pb-24 pt-32 md:px-11 md:pt-40">
-        <div className="mx-auto max-w-[760px]">
+        <div className="mx-auto max-w-[850px]">
           <FadeUp>
-            <Link to="/research" className="text-[.85rem] text-soft transition-colors hover:text-accent">
-              ← كل المساهمات العلمية
-            </Link>
+            <Link to="/research" className="text-[.85rem] font-medium text-soft transition-colors hover:text-accent">← كل المساهمات العلمية</Link>
           </FadeUp>
 
           <FadeUp delay={0.05}>
             <div className="mt-8 flex flex-wrap gap-2">
-              {[p.reviewStatus || intelligence.reviewStatus, p.studyType || intelligence.studyType, `${p.evidenceLabel || intelligence.evidenceLabel} · ${p.evidenceScore || intelligence.evidenceScore}/100`, (p.doi || intelligence.doi) ? 'DOI موثّق' : '', (p.openAccess || intelligence.openAccess) ? 'وصول مباشر' : ''].filter(Boolean).map((item) => (
-                <span key={item} className="inline-flex rounded-full border border-hair bg-wash px-3 py-1.5 text-[.7rem] font-semibold text-soft">{item}</span>
-              ))}
+              <span className="research-badge inline-flex rounded-full px-3 py-1.5 text-[.72rem] font-semibold">محكّم</span>
+              {(p.studyType || intelligence.studyType) && <span className="research-badge inline-flex rounded-full px-3 py-1.5 text-[.72rem] font-semibold">{p.studyType || intelligence.studyType}</span>}
+              {doi && <span className="research-badge inline-flex rounded-full px-3 py-1.5 text-[.72rem] font-semibold">DOI</span>}
+              {intelligence.openAccess && <span className="research-badge inline-flex rounded-full px-3 py-1.5 text-[.72rem] font-semibold">نص كامل</span>}
             </div>
-            <h1 dir="auto" className="mt-4 font-display text-[clamp(1.7rem,4vw,2.7rem)] font-bold leading-[1.45] text-ink">
-              <Reveal>{p.title}</Reveal>
-            </h1>
-            {p.titleAr && (
-              <p dir="rtl" className="mt-3 text-[1.02rem] font-extralight leading-[1.9] text-soft">{p.titleAr}</p>
-            )}
+            <h1 dir="auto" className="mt-5 font-display text-[clamp(1.7rem,4vw,2.7rem)] font-bold leading-[1.45] text-ink"><Reveal>{p.title}</Reveal></h1>
+            {p.titleAr && <p dir="rtl" className="mt-3 text-[1.02rem] font-light leading-[1.9] text-soft">{p.titleAr}</p>}
             <OwnerEdit tab="papers" slug={p.slug} className="mt-3" />
-            <div className="mt-7 h-[2px] w-16 bg-accent" />
+            <div className="mt-7 h-[3px] w-16 rounded-full bg-accent" />
           </FadeUp>
 
           <FadeUp delay={0.1}>
-            <dl className="mt-10 divide-y divide-hair border-y border-hair">
-              {p.meta && (
-                <div className="flex flex-wrap gap-4 py-5">
-                  <dt className="w-32 shrink-0 text-[.85rem] text-soft">الموضوع</dt>
-                  <dd className="text-[.98rem] text-ink">{p.meta}</dd>
-                </div>
-              )}
-              <div className="flex flex-wrap gap-4 py-5">
-                <dt className="w-32 shrink-0 text-[.85rem] text-soft">الباحث</dt>
-                <dd className="text-[.98rem] text-ink">
-                  {profile.fullName}
-                  {(p as { coAuthors?: string }).coAuthors?.trim() && (
-                    <span className="text-soft"> — بالاشتراك مع {(p as { coAuthors?: string }).coAuthors}</span>
-                  )}
-                </dd>
-              </div>
-              {p.journal && (
-                <div className="flex flex-wrap gap-4 py-5">
-                  <dt className="w-32 shrink-0 text-[.85rem] text-soft">النشر</dt>
-                  <dd className="text-[.98rem] text-accent">{p.journal}</dd>
-                </div>
-              )}
+            <dl className="research-meta-panel mt-10 grid gap-px overflow-hidden rounded-[24px] border sm:grid-cols-2">
+              {p.meta && <div className="research-meta-cell"><dt>الموضوع</dt><dd>{p.meta}</dd></div>}
+              <div className="research-meta-cell"><dt>الباحثون</dt><dd>{researchers}</dd></div>
+              {journal && <div className="research-meta-cell"><dt>المجلة</dt><dd>{journal}</dd></div>}
+              {year && <div className="research-meta-cell"><dt>سنة النشر</dt><dd>{year}</dd></div>}
+              {doi && <div className="research-meta-cell"><dt>DOI</dt><dd dir="ltr" className="break-all text-left">{doi}</dd></div>}
+              {keywords && <div className="research-meta-cell"><dt>الكلمات المفتاحية</dt><dd>{keywords}</dd></div>}
             </dl>
           </FadeUp>
 
-          <FadeUp delay={0.115}>
-            <section className="mt-8 overflow-hidden rounded-[28px] border border-hair bg-wash/70">
-              <div className="border-b border-hair px-6 py-5">
-                <p className="text-[.74rem] font-semibold text-accent">جواز البحث العلمي</p>
-                <h2 className="mt-1 text-[1.05rem] font-bold text-ink">لماذا يستحق هذا البحث القراءة؟</h2>
-                <p className="mt-3 text-[.91rem] font-light leading-[1.95] text-ink/80 dark:text-soft">{p.contribution || intelligence.contribution}</p>
-              </div>
-              <div className="grid gap-px bg-hair sm:grid-cols-2">
-                <div className="bg-canvas p-5"><span className="text-[.72rem] font-semibold text-soft">السؤال العلمي</span><p className="mt-2 text-[.88rem] leading-[1.85] text-ink">{p.researchQuestion || intelligence.researchQuestion}</p></div>
-                <div className="bg-canvas p-5"><span className="text-[.72rem] font-semibold text-soft">أبرز نتيجة</span><p className="mt-2 text-[.88rem] leading-[1.85] text-ink">{p.keyFinding || intelligence.keyFinding || 'تُستكمل النتيجة الدقيقة من الملخص أو النص الكامل.'}</p></div>
-                <div className="bg-canvas p-5"><span className="text-[.72rem] font-semibold text-soft">المنهج</span><p className="mt-2 text-[.86rem] leading-[1.8] text-ink">{p.methodology || intelligence.methodology || 'راجع النص الكامل للتفصيل المنهجي.'}</p></div>
-                <div className="bg-canvas p-5"><span className="text-[.72rem] font-semibold text-soft">العينة / نطاق الدراسة</span><p className="mt-2 text-[.86rem] leading-[1.8] text-ink">{p.sample || intelligence.sample || 'لم يُذكر حجم العينة في البيانات المختصرة.'}</p></div>
-              </div>
-              {(p.keywords || intelligence.keywords || p.doi || intelligence.doi) && (
-                <div className="flex flex-wrap gap-x-5 gap-y-2 px-6 py-4 text-[.74rem] text-soft">
-                  {(p.keywords || intelligence.keywords) && <span><b className="text-ink/75">الكلمات المفتاحية:</b> {p.keywords || intelligence.keywords}</span>}
-                  {(p.doi || intelligence.doi) && <span dir="ltr"><b className="text-ink/75">DOI:</b> {p.doi || intelligence.doi}</span>}
+          {dataCards.length > 0 && (
+            <FadeUp delay={0.115}>
+              <section className="research-passport mt-8 overflow-hidden rounded-[28px] border">
+                <div className="research-passport-head px-6 py-5 md:px-7">
+                  <p className="text-[.76rem] font-bold text-accent">جواز البحث العلمي</p>
+                  <h2 className="mt-1 text-[1.1rem] font-bold text-ink">البيانات العلمية الكاملة</h2>
+                  {(p.contribution || intelligence.contribution) && <p className="mt-3 text-[.93rem] leading-[1.95] text-ink">{p.contribution || intelligence.contribution}</p>}
                 </div>
-              )}
-            </section>
-            {intelligence.needsReview && !p.analyzedAt && (
-              <p className="mt-3 text-[.72rem] leading-relaxed text-soft">البيانات التفسيرية المستخرجة تلقائياً تُعرض بحذر؛ الحقول غير المؤكدة تُراجع من لوحة التحكم عند حفظ البحث.</p>
-            )}
-          </FadeUp>
-
-          {p.abstractAr && (
-            <FadeUp delay={0.12}>
-              <section className="mt-8 rounded-2xl border border-hair bg-wash px-6 py-5">
-                <p className="text-[.76rem] font-semibold text-accent">الملخص</p>
-                <p className="mt-3 text-[.95rem] font-light leading-[1.95] text-ink/80 dark:text-soft">{cleanText(p.abstractAr)}</p>
+                <div className="grid gap-px sm:grid-cols-2">
+                  {dataCards.map((card) => (
+                    <div key={card.label} className="research-data-card p-5 md:p-6">
+                      <h3 className="text-[.75rem] font-bold text-accent">{card.label}</h3>
+                      <p className="mt-2 text-[.9rem] leading-[1.9] text-ink">{card.value}</p>
+                    </div>
+                  ))}
+                </div>
               </section>
             </FadeUp>
           )}
 
-          <FadeUp delay={0.14}>
-            <div className="mt-10 flex flex-wrap gap-3">
-              {liveLink(p.source) && (
-                <a href={liveLink(p.source)} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-full bg-accent px-7 py-3.5 font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep">
-                  صفحة البحث لدى الناشر ←
-                </a>
-              )}
-              {liveLink(p.pdf) && (
-                <a href={liveLink(p.pdf)} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-full border-[1.5px] border-accent px-7 py-3.5 font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas">
-                  تحميل نسخة PDF
-                </a>
-              )}
-              {!liveLink(p.source) && !liveLink(p.pdf) && (
-                <Link to="/contact" className="inline-flex items-center rounded-full border-[1.5px] border-accent px-7 py-3.5 font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas">
-                  اطلب نسخة
-                </Link>
-              )}
-              {guide && (
-                <button
-                  onClick={() => setGuideOpen((current) => !current)}
-                  className="inline-flex items-center rounded-full border border-hair px-6 py-3.5 font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
-                  aria-expanded={guideOpen}
-                >
-                  {guideOpen ? 'إخفاء رفيق الباحث' : 'افهم هذا البحث'}
-                </button>
-              )}
-            </div>
-            {(p as { verification?: string }).verification === 'needs-manual-review' && (
-              <p className="mt-4 rounded-xl border border-amber-300/50 bg-amber-50/70 px-4 py-3 text-[.82rem] leading-[1.8] text-amber-900 dark:bg-amber-950/20 dark:text-amber-100">
-                بيانات هذا البحث مأخوذة من قائمة الإنتاج العلمي، ويحتاج رابط الناشر والملخص الأصلي إلى مراجعة يدوية نهائية.
-              </p>
-            )}
-            {(() => {
-              const links = p as { scholar?: string; researchgate?: string }
-              const scholar = links.scholar
-              const researchgate = links.researchgate
-              if (!scholar && !researchgate) return null
-              const btn = 'inline-flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent'
-              return (
-                <div className="mt-7 flex items-center gap-3">
-                  <span className="text-[.82rem] text-soft">فهرسة البحث نفسه</span>
-                  {scholar && (
-                    <a href={scholar} target="_blank" rel="noreferrer" aria-label="البحث نفسه في Google Scholar" title="Google Scholar" className={btn}>
-                      <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="currentColor" aria-hidden="true"><path d="M5.242 13.769 0 9.5 12 0l12 9.5-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5s-5.548 1.749-6.758 4.269zM12 10a7 7 0 1 0 0 14 7 7 0 0 0 0-14z" /></svg>
-                    </a>
-                  )}
-                  {researchgate && (
-                    <a href={researchgate} target="_blank" rel="noreferrer" aria-label="صفحة البحث نفسه في ResearchGate" title="ResearchGate" className={btn}>
-                      <span className="text-[.72rem] font-bold leading-none tracking-tight">R<span className="text-accent">G</span></span>
-                    </a>
-                  )}
+          {p.abstractAr && (
+            <FadeUp delay={0.12}>
+              <section className="research-abstract mt-8 rounded-[24px] border px-6 py-6 md:px-7">
+                <p className="text-[.76rem] font-bold text-accent">الملخص</p>
+                <p className="mt-3 text-[.96rem] font-normal leading-[2] text-ink">{cleanText(p.abstractAr)}</p>
+              </section>
+            </FadeUp>
+          )}
+
+          {intelligence.links.length > 0 && (
+            <FadeUp delay={0.14}>
+              <section className="mt-9">
+                <h2 className="text-[.84rem] font-bold text-ink">جميع روابط البحث</h2>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {intelligence.links.map((item, linkIndex) => (
+                    <a key={item.id} href={item.url} target="_blank" rel="noreferrer" className={linkIndex === 0 ? 'research-primary-link' : 'research-secondary-link'}>{item.label} ←</a>
+                  ))}
                 </div>
-              )
-            })()}
-            <CiteButton title={p.title} year={(p.journal?.match(/20[0-2][0-9]/) || ['2022'])[0]} container={p.journal || 'بحث محكّم'} url={`${SITE_URL}/research/${p.slug}`} />
+              </section>
+            </FadeUp>
+          )}
+
+          <FadeUp delay={0.15}>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button onClick={() => setGuideOpen((value) => !value)} className="research-secondary-link" aria-expanded={guideOpen}>{guideOpen ? 'إخفاء رفيق الباحث' : 'افهم هذا البحث'}</button>
+            </div>
+            <CiteButton title={p.title} year={year || 'د.ت.'} container={journal || 'بحث محكّم'} url={`${SITE_URL}/research/${p.slug}`} />
           </FadeUp>
 
-          {guide && guideOpen && (
+          {guideOpen && (
             <FadeUp delay={0.16}>
-              <section className="mt-10 rounded-[30px] border border-hair bg-wash/90 p-6 md:p-7">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                  <div>
-                    <p className="text-[.76rem] font-semibold text-accent">رفيق الباحث</p>
-                    <h2 className="mt-2 font-display text-[1.45rem] font-semibold text-ink">طبقة سريعة لفهم البحث واستخدامه</h2>
-                    <p className="mt-2 max-w-[620px] text-[.88rem] leading-[1.9] text-soft">بدلاً من الاكتفاء بالملخص وملف PDF، تُعرض لك هنا خلاصة عملية قابلة للفهم السريع والتوظيف الأكاديمي المباشر.</p>
-                  </div>
-                  <div className="rounded-2xl border border-hair bg-white/80 px-4 py-3 text-[.8rem] leading-[1.8] text-soft dark:bg-white/[0.02]">
-                    <span className="block text-ink">{guide.journal}</span>
-                    <span>الباحثون: {guide.researchers}</span>
-                  </div>
-                </div>
-
-                <div className="mobile-card-rail mt-6 grid gap-4 md:grid-cols-2">
-                  <div className="rounded-2xl border border-hair bg-white/80 p-5 dark:bg-white/[0.02]">
-                    <p className="text-[.75rem] font-semibold text-accent">البحث في جملة واحدة</p>
-                    <p className="mt-3 text-[.92rem] leading-[1.95] text-ink/85 dark:text-soft">{guide.summary}</p>
-                  </div>
-                  <div className="rounded-2xl border border-hair bg-white/80 p-5 dark:bg-white/[0.02]">
-                    <p className="text-[.75rem] font-semibold text-accent">المشكلة التي حاول حلها</p>
-                    <p className="mt-3 text-[.92rem] leading-[1.95] text-ink/85 dark:text-soft">{guide.problem}</p>
-                  </div>
-                  <div className="rounded-2xl border border-hair bg-white/80 p-5 dark:bg-white/[0.02]">
-                    <p className="text-[.75rem] font-semibold text-accent">المنهج والعينة</p>
-                    <p className="mt-3 text-[.92rem] leading-[1.95] text-ink/85 dark:text-soft">{guide.method}</p>
-                    <p className="mt-3 text-[.86rem] leading-[1.85] text-soft">{guide.sample}</p>
-                  </div>
-                  <div className="rounded-2xl border border-hair bg-white/80 p-5 dark:bg-white/[0.02]">
-                    <p className="text-[.75rem] font-semibold text-accent">أهم نتيجة</p>
-                    <p className="mt-3 text-[.92rem] leading-[1.95] text-ink/85 dark:text-soft">{guide.finding}</p>
-                  </div>
-                  <div className="rounded-2xl border border-hair bg-white/80 p-5 dark:bg-white/[0.02]">
-                    <p className="text-[.75rem] font-semibold text-accent">ماذا تعني النتيجة للمعلم؟</p>
-                    <p className="mt-3 text-[.92rem] leading-[1.95] text-ink/85 dark:text-soft">{guide.teacherMeaning}</p>
-                  </div>
-                  <div className="rounded-2xl border border-hair bg-white/80 p-5 dark:bg-white/[0.02]">
-                    <p className="text-[.75rem] font-semibold text-accent">ما السؤال الذي لم يجب عنه البحث؟</p>
-                    <p className="mt-3 text-[.92rem] leading-[1.95] text-ink/85 dark:text-soft">{guide.gapQuestion}</p>
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  <CopySnippet label="APA" value={guide.apa} />
-                </div>
-
-                <div className="mt-6 flex flex-wrap gap-3 text-[.82rem] text-soft">
-                  <span className="rounded-full border border-hair px-4 py-2">الناشر/المجلة: {guide.journal}</span>
-                  <span className="rounded-full border border-hair px-4 py-2">سنة النشر: {guide.year}</span>
-                  <span className="rounded-full border border-hair px-4 py-2">الباحثون: {guide.researchers}</span>
-                  {p.pdf && <a href={liveLink(p.pdf)} target="_blank" rel="noreferrer" className="rounded-full border border-hair px-4 py-2 transition-colors hover:border-accent hover:text-accent">رابط PDF</a>}
-                  {liveLink(p.source) && <a href={liveLink(p.source)} target="_blank" rel="noreferrer" className="rounded-full border border-hair px-4 py-2 transition-colors hover:border-accent hover:text-accent">رابط الناشر</a>}
-                </div>
+              <section className="research-guide mt-10 rounded-[28px] border p-6 md:p-7">
+                <p className="text-[.76rem] font-bold text-accent">رفيق الباحث</p>
+                <h2 className="mt-2 font-display text-[1.4rem] font-semibold text-ink">خلاصة قابلة للاستخدام الأكاديمي</h2>
+                {summary && <div className="research-data-card mt-5 rounded-2xl border p-5"><h3 className="text-[.75rem] font-bold text-accent">البحث في جملة واحدة</h3><p className="mt-3 text-[.92rem] leading-[1.95] text-ink">{summary}</p></div>}
+                <div className="mt-5"><CopySnippet label="APA" value={apa} /></div>
               </section>
             </FadeUp>
           )}
 
           <FadeUp>
             <nav className="mt-16 grid gap-6 border-t border-hair pt-8 sm:grid-cols-2">
-              {prev ? (
-                <Link to={`/research/${prev.slug}`} className="group">
-                  <span className="text-[.78rem] text-soft">السابق</span>
-                  <span className="mt-1 block font-display text-[1.02rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{prev.title}</span>
-                </Link>
-              ) : <span />}
-              {next && (
-                <Link to={`/research/${next.slug}`} className="group sm:text-left">
-                  <span className="text-[.78rem] text-soft">التالي</span>
-                  <span className="mt-1 block font-display text-[1.02rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{next.title}</span>
-                </Link>
-              )}
+              {prev ? <Link to={`/research/${prev.slug}`} className="group"><span className="text-[.78rem] text-soft">السابق</span><span className="mt-1 block font-display text-[1.02rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{prev.title}</span></Link> : <span />}
+              {next && <Link to={`/research/${next.slug}`} className="group sm:text-left"><span className="text-[.78rem] text-soft">التالي</span><span className="mt-1 block font-display text-[1.02rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{next.title}</span></Link>}
             </nav>
           </FadeUp>
         </div>

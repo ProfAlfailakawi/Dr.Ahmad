@@ -232,7 +232,7 @@ export function CiteButton({ title, year, container, url, compact = false }: { t
       <AnimatePresence>
         {open && (
           <motion.div
-            className="citation-dialog-layer"
+            className="citation-portal-v2"
             role="dialog"
             aria-modal="true"
             aria-labelledby="citation-dialog-title"
@@ -241,26 +241,27 @@ export function CiteButton({ title, year, container, url, compact = false }: { t
             exit={{ opacity: 0 }}
             onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false) }}
           >
-            <motion.div
-              className="citation-sheet"
-              initial={{ opacity: 0, y: 28, scale: .985 }}
+            <motion.section
+              className="citation-card-v2"
+              dir="rtl"
+              initial={{ opacity: 0, y: 24, scale: .99 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 18, scale: .99 }}
-              transition={{ duration: .24, ease: EASE }}
+              exit={{ opacity: 0, y: 16, scale: .995 }}
+              transition={{ duration: .22, ease: EASE }}
             >
-              <div className="citation-sheet-head">
-                <div className="min-w-0">
-                  <p className="text-[.74rem] font-semibold text-accent">المصدر والاقتباس</p>
-                  <h3 id="citation-dialog-title" className="mt-1 font-display text-[1.15rem] font-semibold text-ink">استشهاد جاهز وآمن للنسخ.</h3>
+              <header className="citation-header-v2">
+                <div className="citation-heading-v2">
+                  <p className="citation-kicker-v2">المصدر والاقتباس</p>
+                  <h3 id="citation-dialog-title" className="citation-title-v2">استشهاد جاهز وآمن للنسخ</h3>
                 </div>
-                <button type="button" onClick={() => setOpen(false)} className="citation-close" aria-label="إغلاق">×</button>
-              </div>
-              <p dir="rtl" className="citation-text">{citation}</p>
-              <div className="citation-actions">
-                <a href={url} target="_blank" rel="noreferrer" className="citation-source-link">فتح سياق المقال ↗</a>
-                <button onClick={copy} className="citation-copy-button">{copied ? '✓ نُسخ الاستشهاد' : 'نسخ الاستشهاد'}</button>
-              </div>
-            </motion.div>
+                <button type="button" onClick={() => setOpen(false)} className="citation-close-v2" aria-label="إغلاق النافذة">×</button>
+              </header>
+              <p className="citation-body-v2">{citation}</p>
+              <footer className="citation-footer-v2">
+                <a href={url} target="_blank" rel="noreferrer" className="citation-source-v2">فتح سياق المقال ↗</a>
+                <button type="button" onClick={copy} className="citation-copy-v2">{copied ? '✓ نُسخ الاستشهاد' : 'نسخ الاستشهاد'}</button>
+              </footer>
+            </motion.section>
           </motion.div>
         )}
       </AnimatePresence>,

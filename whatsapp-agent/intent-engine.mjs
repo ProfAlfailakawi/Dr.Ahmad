@@ -258,9 +258,16 @@ export function classifyIntent(text) {
         reference: parsedRequest.action && !parsedRequest.kind && !parsedRequest.latest ? 'current' : parsedRequest.reference,
       }
     : parsedRequest
-  if (request.reference && !request.more) {
-    return { intent: INTENTS.CONTEXT_REFERENCE, confidence: 0.97, normalized: value, request }
-  }
+  const STANDALONE_INTENTS = new Set([
+    INTENTS.SAVE_CONTENT,
+    INTENTS.REMOVE_SAVED,
+    INTENTS.LIST_SAVED,
+    INTENTS.STOP_MESSAGES,
+    INTENTS.RESUME_MESSAGES,
+    INTENTS.DELETE_PREFERENCES,
+    INTENTS.WELCOME,
+  ])
+
   let directMatch = null
   for (const [intent, ...rules] of patterns.slice(4)) {
     for (const [regex, confidence] of rules) {
@@ -271,6 +278,16 @@ export function classifyIntent(text) {
     }
     if (directMatch) break
   }
+
+  if (directMatch && STANDALONE_INTENTS.has(directMatch.intent)) {
+    return directMatch
+  }
+
+  if (request.reference && !request.more) {
+    return { intent: INTENTS.CONTEXT_REFERENCE, confidence: 0.97, normalized: value, request }
+  }
+
+  if (directMatch) return directMatch
   /* الطلب المركّب يعلو على أمر النوع فقط عندما يضيف قيداً حقيقياً (موضوعاً أو
      مدةً أو صوتاً). أما «الأكثر مشاهدة» و«أبرز موضوع» ونحوها فهي أوامر دقيقة
      بذاتها، فلا يجوز أن يحوّلها وجود كلمة «مقال» إلى بحث مركّب. */
@@ -578,7 +595,7 @@ function speedFromRequest(request, input = '') {
 }
 
 function extractiveReadingReply(db, item, speed = '30s') {
-  if (!item) return { text: 'اختر مادة أولاً: اكتب آخر مقالاته، ثم قل الأولى أو الثانية.' }
+  if (!item) return { text: 'اختر مادة أولاً: اكتب آخر مقالاته، ثم قل الأولى أو الثانية.', contentId: null }
   if (speed === 'deep') {
     const doorway = extractVerbatimAtSpeed(item, '2min') || extractVerbatimAtSpeed(item, '30s')
     const network = buildQuietIdeaNetwork(db, item)

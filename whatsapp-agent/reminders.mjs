@@ -44,7 +44,8 @@ function nextLocalDate(reference, year, month, day, hour, minute) {
 export function createReminder(db, { jid, contentId = null, originalText, dueAt }) {
   const id = crypto.randomBytes(10).toString('base64url'); const nowIso = new Date().toISOString()
   if (!jid) throw new Error('لا يمكن إنشاء تذكير بلا جهة محادثة')
-  db.run('INSERT INTO reminders(id,jid,content_id,due_at,original_text,state,created_at) VALUES(?,?,?,?,?,?,?)', id, db.encryptJid(jid), contentId, dueAt, String(originalText).slice(0, 300), 'pending', nowIso)
+  const encText = typeof db.encryptText === 'function' ? db.encryptText(String(originalText).slice(0, 300)) : String(originalText).slice(0, 300)
+  db.run('INSERT INTO reminders(id,jid,content_id,due_at,original_text,state,created_at) VALUES(?,?,?,?,?,?,?)', id, db.encryptJid(jid), contentId, dueAt, encText, 'pending', nowIso)
   db.addAudit('reminder-created', 'local', `id=${id}`)
   return id
 }

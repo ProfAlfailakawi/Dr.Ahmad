@@ -40,6 +40,16 @@ export function canonicalChatJid(message) {
   return alternatives.find((value) => /@(s\.whatsapp\.net|c\.us)$/i.test(value)) || primary
 }
 
+export function hasMediaPayload(message) {
+  if (!message) return false
+  const msg = message.message || message
+  if (typeof msg !== 'object' || msg === null) return false
+  const keys = Object.keys(msg).filter((k) => k !== 'messageContextInfo' && k !== 'senderKeyDistributionMessage')
+  if (keys.length === 0) return false
+  const nonTextKeys = keys.filter((k) => k !== 'conversation' && k !== 'extendedTextMessage')
+  return nonTextKeys.length > 0
+}
+
 export class MockTransport extends EventEmitter {
   constructor() { super(); this.status = 'disconnected'; this.sent = []; this.qr = null }
   async connect() { this.status = 'connected'; this.emit('status', this.status); return { status: this.status } }

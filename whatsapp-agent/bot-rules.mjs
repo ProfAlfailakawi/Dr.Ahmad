@@ -1,3 +1,5 @@
+import { normalizeArabic } from './content-index.mjs'
+
 /**
  * قواعد أدب البوت — طبقةٌ فوق البوابة، لا بديلٌ عنها.
  *
@@ -66,23 +68,26 @@ export const repliesToday = repliesInWindow
  * وأُضيفت طبقتان: الإنجليزية، وإشاراتُ الشكوى والضيق بأي لغة. ولا يُشترط أن
  * تكون الرسالة سؤالاً — من بثّ همّه لا يُحال إلى فهرس. */
 const HUMAN_ONLY = [
-  /استشير|استشاره|مشوره/,
-  /موعد|اقابلك|مقابله|القاك|زياره/,
-  /اشراف|مشرف|رساله (ماجستير|دكتوراه)|ماجستير|دكتوراه|اطروحه/,
-  /ساعدني|محتاج مساعده|مشكله|ضايج|زعلان|اشكي|شكوي/,
-  /صحيفه|جريده|قناه|تلفزيون|صحفي|تصريح|لقاء اعلامي/,
-  /توصيه|تزكيه|شهاده خبره/,
+  /استشير|استشاره|مشوره|نصيحه/u,
+  /موعد|اقابلك|مقابله|القاك|زياره/u,
+  /اشراف|مشرف|رساله (ماجستير|دكتوراه)|ماجستير|دكتوراه|اطروحه/u,
+  /ساعدني|محتاج مساعده|مشكله|ضايج|زعلان|اشكي|شكوي/u,
+  /صحيفه|جريده|قناه|تلفزيون|صحفي|تصريح|لقاء اعلامي/u,
+  /توصيه|تزكيه|شهاده خبره/u,
   /* ألمٌ وضيقٌ ورجاء — بالعربية */
-  /وظيفه|توظيف|راتب|فقر|محتاج شغل|بدون عمل|عاطل|رفضوني|ظلم|تعبت|مكتئب|يأس|ادعيلي|بالله عليك/,
+  /وظيفه|توظيف|راتب|فقر|محتاج شغل|بدون عمل|عاطل|رفضوني|ظلم|مظلوم|تعبت|مكت|\u0645\u0643\u062A|مكت[ئءا]|مكتئب|مكتءب|اكتئاب|اكتءاب|ياس|يأس|ادعيلي|بالله عليك/u,
+  /* سلامة ودواء وحاجة ملحة وقانون واستثمار وفتوى */
+  /اموت|أموت|انتحر|أنتحر|اوذي نفسي|أؤذي نفسي|اذي نفسي|تشخيص|دوايي|دوائي|نصيحه قانونيه|نصيحة قانونية|استثمر|أستثمر|فتوى|فتوه|فتوي|اتصل بي|عاجل/u,
   /* والإنجليزية — أكثر ما يصل الدكتور من خارج الخليج */
-  /\b(job|salary|poverty|unemploy|rejected|visa|residence permit|scholarship|supervis|recommendation letter|help me|please help|i wish|i am tired|depress|struggl|suffer)\b/i,
+  /\b(job|salary|poverty|unemploy|unemployed|rejected|visa|residence permit|scholarship|supervis|supervision|recommendation letter|help me|please help|i wish|i am tired|depress|depressed|struggl|struggling|suffer|kill myself|suicide|hurt myself|diagnosis|medication|legal advice|invest|fatwa|call me)\b/iu,
   /* نداءٌ شخصيّ صريح مهما كانت اللغة */
-  /\b(dear (dr|doctor|prof)|أرجوك|ارجوك|رجاءً|رجاء منك)\b/i,
+  /\b(dear (dr|doctor|prof)|أرجوك|ارجوك|رجاءً|رجاء منك)\b/iu,
 ]
 
-export function needsHumanOnly(normalizedText = '') {
-  const value = String(normalizedText || '')
-  return HUMAN_ONLY.some((pattern) => pattern.test(value))
+export function needsHumanOnly(text = '') {
+  const value = String(text || '')
+  const norm = normalizeArabic(value)
+  return HUMAN_ONLY.some((pattern) => pattern.test(value) || pattern.test(norm))
 }
 
 /* ═══ ٤) ذاكرة ما أُرسل ═══ */
@@ -108,9 +113,28 @@ export function rememberSent(db, jid, contentId) {
   )
 }
 
+export function reserveContent(db, jid, contentId) {
+  if (!jid || !contentId) return
+  db.run(
+    'INSERT OR IGNORE INTO content_reservations(jid, content_id, reserved_at) VALUES(?,?,?)',
+    db.jidKey(jid), contentId, new Date().toISOString(),
+  )
+}
+
+export function releaseContentReservation(db, jid, contentId) {
+  if (!jid || !contentId) return
+  db.run(
+    'DELETE FROM content_reservations WHERE jid=? AND content_id=?',
+    db.jidKey(jid), contentId,
+  )
+}
+
 export function ensureBotRulesSchema(db) {
   db.run(`CREATE TABLE IF NOT EXISTS sent_content(
     jid TEXT NOT NULL, content_id TEXT NOT NULL, sent_at TEXT NOT NULL,
+    PRIMARY KEY(jid, content_id))`)
+  db.run(`CREATE TABLE IF NOT EXISTS content_reservations(
+    jid TEXT NOT NULL, content_id TEXT NOT NULL, reserved_at TEXT NOT NULL,
     PRIMARY KEY(jid, content_id))`)
 }
 

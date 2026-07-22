@@ -114,7 +114,14 @@ const SYNONYM = buildMap()
 /** يردّ كلمةً إلى جذرها الدلاليّ إن وُجد، وإلا يعيدها كما هي */
 export function toRoot(word) {
   const key = normalize(word)
-  return SYNONYM.get(key) || key
+  const direct = SYNONYM.get(key)
+  if (direct) return direct
+  if (key.length > 3 && key.startsWith('ال')) {
+    const unal = key.slice(2)
+    const unalMatch = SYNONYM.get(unal)
+    if (unalMatch) return unalMatch
+  }
+  return key
 }
 
 /** حجم القاموس — للتقارير والاختبار */

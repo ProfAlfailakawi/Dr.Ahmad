@@ -139,7 +139,23 @@ export function buildContentIndex(root = projectRoot, siteUrl = SITE_URL) {
 
   const unique = new Map()
   for (const item of items) { item.hash = hashItem({ ...item, hash: undefined }); if (!unique.has(item.id)) unique.set(item.id, item) }
-  return [...unique.values()]
+  // رسم معرفة خفيف داخل الفهرس: يضيف عناوين أقرب الامتدادات إلى حقل البحث،
+  // فيفهم الوكيل السؤال غير المباشر من دون توليد معلومة خارج الموقع.
+  const indexed = [...unique.values()]
+  const tokenSet = (value) => new Set(semanticSearchText(value, 80).split(/\s+/).filter(Boolean))
+  const sets = new Map(indexed.map((item) => [item.id, tokenSet(`${item.title} ${item.excerpt} ${item.keywords}`)]))
+  for (const item of indexed) {
+    const own = sets.get(item.id) || new Set()
+    const related = indexed.filter((candidate) => candidate.id !== item.id).map((candidate) => {
+      const other = sets.get(candidate.id) || new Set(); let common = 0
+      for (const token of own) if (other.has(token)) common += 1
+      return { candidate, score: common * 2 + (candidate.kind !== item.kind ? 1 : 0) }
+    }).filter((row) => row.score >= 5).sort((a, b) => b.score - a.score).slice(0, 5)
+    item.related = related.map((row) => row.candidate.id)
+    item.keywords = `${item.keywords || ''} ${related.map((row) => row.candidate.title).join(' ')}`.trim()
+    item.hash = hashItem({ ...item, hash: undefined })
+  }
+  return indexed
 }
 
 export function syncContentIndex(db, root = projectRoot, siteUrl = SITE_URL) {

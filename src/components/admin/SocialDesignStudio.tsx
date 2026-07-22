@@ -34,6 +34,7 @@ const HISTORY_KEY = 'dr-ahmad-social-design-history-v1'
 const SAVED_KEY = 'dr-ahmad-social-design-saved-v1'
 const TASTE_KEY = 'dr-ahmad-social-design-taste-v1'
 const TASTE_LEDGER_KEY = 'dr-ahmad-social-design-taste-ledger-v1'
+const QUALITY_THRESHOLD_KEY = 'dr-ahmad-social-quality-threshold-v1'
 
 const toneLabels: Record<ContentTone | 'auto', string> = {
   auto: 'ذكي تلقائي',
@@ -195,6 +196,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [tasteLedger, setTasteLedger] = useState<TasteSignalLedger>(() => loadTasteLedger())
   const [campaign, setCampaign] = useState<SocialCampaign | null>(null)
   const [campaignBusy, setCampaignBusy] = useState(false)
+  const [qualityThreshold, setQualityThreshold] = useState(() => Number(localStorage.getItem(QUALITY_THRESHOLD_KEY) || 82))
   const textRef = useRef<HTMLTextAreaElement | null>(null)
 
   useEffect(() => { if (initialText && !text.trim()) setText(initialText) }, [initialText])
@@ -236,6 +238,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       tasteProfile,
     })
     setGeneration(nextGeneration)
+    localStorage.setItem('dr-ahmad-social-design-generated-count', String(Number(localStorage.getItem('dr-ahmad-social-design-generated-count') || 0) + result.generation.requestedCount))
     setPlans(result.plans)
     setSelected(null)
     remember(result.plans)
@@ -345,6 +348,11 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   }
 
   const exportPlan = async (plan: CompositionPlan, type: 'png' | 'jpeg') => {
+    const score = plan.quality?.score || 0
+    if (score < qualityThreshold || (plan.quality?.lineFit || 0) < 78 || plan.quality?.issues.some((issue) => issue.startsWith('خطأ:'))) {
+      setNotice(`منع محرك الجودة التصدير: النتيجة ${score}٪ والحد ${qualityThreshold}٪. اختر اتجاهًا أقوى أو أعد توليده.`)
+      return
+    }
     teachTaste(plan, 1)
     await downloadCompositionRaster(plan, type)
   }
@@ -370,6 +378,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         noveltyThreshold: .36,
       })
       setCampaign(next)
+      localStorage.setItem('dr-ahmad-social-campaign-count', String(Number(localStorage.getItem('dr-ahmad-social-campaign-count') || 0) + 1))
       remember(next.assets.map((asset) => asset.plan))
       setSelected(null)
       setNotice(next.ready
@@ -436,7 +445,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <h3 className="mt-1 font-display text-2xl font-bold text-ink">ليست قوالب؛ هذه اتجاهات تكوين.</h3>
               <p className="mt-2 text-[.8rem] leading-relaxed text-soft">كل نتيجة تختلف في العائلة، والهندسة، والخط، والإيقاع، وطريقة إبراز الفكرة.</p>
             </div>
-            <div className="flex flex-wrap gap-2"><span className="rounded-full border border-accent/25 bg-accent/[.05] px-4 py-2 text-[.72rem] font-semibold text-accent">لجنة الجودة {Math.round(plans.reduce((sum, plan) => sum + (plan.quality?.score || 0), 0) / plans.length)}٪</span><span className="rounded-full border border-hair px-4 py-2 text-[.72rem] text-soft">ذاكرة ذوقك {Object.keys(tasteLedger).length} اتجاه</span>{Object.keys(tasteLedger).length > 0 && <button type="button" className={ghost} onClick={resetTaste}>إعادة ضبط الذوق</button>}<button type="button" className={primary} disabled={campaignBusy} onClick={buildCampaign}>{campaignBusy ? 'يبني الحملة…' : 'حوّلها إلى حملة'}</button><button type="button" className={ghost} onClick={() => setShowSaved((value) => !value)}>المحفوظة {savedPlans.length}</button><button type="button" className={ghost} onClick={() => generate()}>توليد دفعة مختلفة</button></div>
+            <div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 rounded-full border border-hair bg-canvas px-3 py-2 text-[.7rem] text-soft">حد التصدير <input aria-label="حد جودة التصدير" className="w-14 bg-transparent text-center font-bold text-accent outline-none" type="number" min="70" max="98" value={qualityThreshold} onChange={(event) => { const next=Math.max(70,Math.min(98,Number(event.target.value)||82)); setQualityThreshold(next); localStorage.setItem(QUALITY_THRESHOLD_KEY,String(next)) }} />٪</label><span className="rounded-full border border-accent/25 bg-accent/[.05] px-4 py-2 text-[.72rem] font-semibold text-accent">لجنة الجودة {Math.round(plans.reduce((sum, plan) => sum + (plan.quality?.score || 0), 0) / plans.length)}٪</span><span className="rounded-full border border-hair px-4 py-2 text-[.72rem] text-soft">ذاكرة ذوقك {Object.keys(tasteLedger).length} اتجاه</span>{Object.keys(tasteLedger).length > 0 && <button type="button" className={ghost} onClick={resetTaste}>إعادة ضبط الذوق</button>}<button type="button" className={primary} disabled={campaignBusy} onClick={buildCampaign}>{campaignBusy ? 'يبني الحملة…' : 'حوّلها إلى حملة'}</button><button type="button" className={ghost} onClick={() => setShowSaved((value) => !value)}>المحفوظة {savedPlans.length}</button><button type="button" className={ghost} onClick={() => generate()}>توليد دفعة مختلفة</button></div>
           </div>
           <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {plans.map((plan) => (
@@ -472,6 +481,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             </div>
           </div>
           {!campaign.ready && campaign.warnings.length > 0 && <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[.76rem] leading-relaxed text-amber-900">{campaign.warnings.join(' · ')}</p>}
+          <div className="mt-5 overflow-x-auto pb-2"><ol className="flex min-w-max items-center gap-2" aria-label="الخط الزمني المقترح للحملة">{campaign.assets.map((asset, index) => <li key={`timeline-${asset.id}`} className="flex items-center gap-2"><div className="rounded-2xl border border-hair bg-canvas px-4 py-3"><span className="block text-[.62rem] font-bold text-accent">اليوم {index + 1}</span><strong className="mt-1 block text-[.74rem] text-ink">{asset.label}</strong><span className="mt-1 block max-w-[160px] text-[.62rem] leading-relaxed text-soft">{asset.purpose}</span></div>{index < campaign.assets.length - 1 && <span aria-hidden className="text-soft/50">←</span>}</li>)}</ol></div>
           <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {campaign.assets.map((asset) => (
               <article key={asset.id} className="rounded-[1.4rem] border border-hair bg-canvas p-3">

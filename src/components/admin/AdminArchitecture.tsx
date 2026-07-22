@@ -26,6 +26,7 @@ export type AdminTab =
   | 'pronunciation'
   | 'cv'
   | 'whatsapp'
+  | 'monitor'
 
 export type AdminArea = 'system' | 'publishing' | 'library' | 'audience'
 
@@ -36,6 +37,7 @@ export const ADMIN_GROUPS: NavGroup[] = [
   {
     area: 'system', label: 'النظام', icon: '◉', items: [
       { tab: 'dashboard', label: 'غرفة القيادة', note: 'القرارات والتنبيهات الأهم' },
+      { tab: 'monitor', label: 'مراقب الإنتاج', note: 'التصميم والصوت والروابط وواتساب والحملات' },
       { tab: 'content-health', label: 'صحة المحتوى', note: 'المصادر والنواقص ومسارات القراءة' },
       { tab: 'lab', label: 'المختبر المتقدم', note: 'الفحص والذاكرة والأتمتة' },
       { tab: 'whatsapp', label: 'مساعد واتساب', note: 'وكيل محلي بموافقة الدكتور' },

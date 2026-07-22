@@ -3,6 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { searchArticles, topKeywordsFor } from '../lib/cms'
+import { books, papers, media } from '../data'
+import { buildKnowledgeGraph, graphSearch } from '../lib/knowledge-graph'
 import { useCmsContent } from '../lib/content'
 import { dynamicArticleCategories } from '../lib/content-taxonomy'
 import { Pagination, usePagedList } from '../components/Pagination'
@@ -36,10 +38,13 @@ export default function Search() {
     .sort((a, b) => b.localeCompare(a)), [articles])
   const normalizedQuery = query.trim()
   const searchStarted = normalizedQuery.length >= 2
-  const results = useMemo(
-    () => searchStarted ? searchArticles({ query: normalizedQuery, cat, year }, articles) : [],
-    [articles, normalizedQuery, cat, year, searchStarted],
-  )
+  const knowledgeGraph = useMemo(() => buildKnowledgeGraph({ articles, books, papers, media }), [articles])
+  const results = useMemo(() => {
+    if (!searchStarted) return []
+    const lexical = searchArticles({ query: normalizedQuery, cat, year }, articles)
+    const graphRanks = new Map(graphSearch(knowledgeGraph, normalizedQuery, 80).filter((row) => row.node.kind === 'article').map((row) => [row.node.slug, row.score]))
+    return lexical.slice().sort((left, right) => (graphRanks.get(right.slug) || 0) - (graphRanks.get(left.slug) || 0) || right.iso.localeCompare(left.iso))
+  }, [articles, normalizedQuery, cat, year, searchStarted, knowledgeGraph])
   const keywords = useMemo(() => topKeywordsFor(results.slice(0, 18), 12), [results])
   const paged = usePagedList(results, 20, `${normalizedQuery}|${cat}|${year}`)
   const visibleResults = paged.pageItems

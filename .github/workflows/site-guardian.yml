@@ -1,0 +1,35 @@
+name: Site Guardian
+on:
+  schedule:
+    - cron: '17 1 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: site-guardian
+  cancel-in-progress: false
+jobs:
+  guardian:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24.18.0'
+          cache: npm
+      - run: npm ci
+      - name: Repair verifiable external links
+        run: node scripts/check-all-sources.mjs
+        continue-on-error: true
+      - name: Prune provable audio orphans
+        run: node scripts/prune-orphan-audio.mjs && node scripts/prune-missing-audio.mjs
+      - run: npm run guardian:write
+      - run: npm run knowledge:build
+      - run: npm run lint
+      - name: Commit verified repairs and report
+        run: |
+          git config user.name "site-guardian[bot]"
+          git config user.email "site-guardian[bot]@users.noreply.github.com"
+          git add src/data/site-guardian.json src/data/knowledge-graph.json src/data/curated-dead-links.json src/data/dead-links.json src/data/audio.json src/data/audio-meta.json || true
+          git diff --cached --quiet || git commit -m "chore: refresh site guardian report"
+          git push || true

@@ -162,7 +162,6 @@ export default function PaperDetail() {
           <FadeUp>
             <div className="flex items-center justify-between gap-4">
               <Link to="/research" className="text-[.85rem] font-medium text-soft transition-colors hover:text-accent">← كل المساهمات العلمية</Link>
-              <span className="rounded-full border border-hair bg-paper px-3 py-1 text-[.72rem] font-semibold text-accent">البصمة الأكاديمية v2.0</span>
             </div>
           </FadeUp>
 

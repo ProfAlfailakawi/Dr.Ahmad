@@ -723,8 +723,12 @@ export async function runNuclearSelfTest(root = process.cwd()) {
       })
     }
 
-    const audioManifest = JSON.parse(fs.readFileSync(path.join(root, 'src', 'data', 'audio.json'), 'utf8'))
-    const audioMeta = JSON.parse(fs.readFileSync(path.join(root, 'src', 'data', 'audio-meta.json'), 'utf8'))
+    const readOptionalJsonObject = (file) => {
+      const raw = fs.readFileSync(file, 'utf8').trim()
+      return raw ? JSON.parse(raw) : {}
+    }
+    const audioManifest = readOptionalJsonObject(path.join(root, 'src', 'data', 'audio.json'))
+    const audioMeta = readOptionalJsonObject(path.join(root, 'src', 'data', 'audio-meta.json'))
     const voiceCases = [
       ['fahed', INTENTS.LISTEN_FAHED, 'اسمعها بصوت فهد', '.mp3'],
       ['noura', INTENTS.LISTEN_NOURA, 'اسمعها بصوت نورة', '.noura.mp3'],

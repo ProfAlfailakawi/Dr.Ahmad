@@ -360,6 +360,7 @@ export interface VisualQuality {
   whitespace: number
   contrast: number
   fit: number
+  lineFit: number
   originality: number
   platformFit: number
   issues: string[]
@@ -393,6 +394,8 @@ export interface SocialCampaign {
   qualityScore: number
   coherenceScore: number
   diversityScore: number
+  ready: boolean
+  warnings: string[]
 }
 
 export interface CompositionPlan {
@@ -1392,8 +1395,9 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
   }
 
   const critiqued = candidates.map((candidate) => ({ ...candidate, quality: critiqueCompositionPlan(candidate, candidates) }))
-  const strong = critiqued.filter((candidate) => !candidate.quality?.issues.some((issue) => issue.startsWith('خطأ:')) && (candidate.quality?.score || 0) >= 68)
-  const candidatePool = strong.length >= requestedCount ? strong : critiqued
+  const valid = critiqued.filter((candidate) => !candidate.quality?.issues.some((issue) => issue.startsWith('خطأ:')) && (candidate.quality?.score || 0) >= 68)
+  const strong = valid.filter((candidate) => (candidate.quality?.score || 0) >= 76 && (candidate.quality?.lineFit || 0) >= 76)
+  const candidatePool = strong.length >= requestedCount ? strong : valid.length ? valid : critiqued
   const plans = selectDiverse(candidatePool, requestedCount, history, noveltyThreshold, request.tasteProfile)
   if (plans.some((plan) => plan.novelty < noveltyThreshold)) warnings.push('السجل البصري كثيف؛ اختير أبعد تكوين ممكن مع المحافظة على ملاءمة النص.')
   if (plans.length < requestedCount) warnings.push(`الأقفال الحالية سمحت بـ ${plans.length} اتجاهات متمايزة فقط.`)
@@ -1487,6 +1491,42 @@ export function compositionCssVariables(plan: CompositionPlan): Record<string, s
 }
 
 
+const estimateWrappedLineCount = (value: string, maxChars: number) => {
+  const source = wordsOf(value)
+  if (!source.length) return 0
+  let lines = 1
+  let current = 0
+  for (const word of source) {
+    const width = Math.max(1, [...word].length)
+    if (current && current + 1 + width > maxChars) {
+      lines += 1
+      current = width
+    } else current += (current ? 1 : 0) + width
+  }
+  return lines
+}
+
+export function compositionTextLayout(plan: CompositionPlan) {
+  const landscape = plan.format.width / plan.format.height > 1.35
+  const typography = TYPOGRAPHY_MODES[plan.typography]
+  const normalizedTitleWidth = clamp(plan.geometry.titleZone.width / .72, .58, 1.24)
+  const normalizedBodyWidth = clamp(plan.geometry.bodyZone.width / .72, .58, 1.24)
+  const titleMaxChars = clamp(Math.round((landscape ? 27 : 20) * normalizedTitleWidth / Math.max(.78, typography.titleScale)), 10, 38)
+  const bodyMaxChars = clamp(Math.round((landscape ? 46 : 32) * normalizedBodyWidth), 18, 58)
+  const titleMaxLines = Math.max(1, typography.maxLines)
+  const bodyMaxLines = plan.density === 'minimal' ? 2 : plan.density === 'rich' ? Math.min(6, plan.geometry.bodyZone.maxLines) : Math.min(4, plan.geometry.bodyZone.maxLines)
+  const bodySource = plan.content.subtitle || plan.content.body || plan.content.quote
+  return {
+    titleMaxChars,
+    bodyMaxChars,
+    titleMaxLines,
+    bodyMaxLines,
+    estimatedTitleLines: estimateWrappedLineCount(plan.content.title, titleMaxChars),
+    estimatedBodyLines: estimateWrappedLineCount(bodySource, bodyMaxChars),
+  }
+}
+
+
 export function createEmptyTasteProfile(): DesignTasteProfile {
   return { version: 1, samples: 0, positiveSamples: 0, negativeSamples: 0, weights: {} }
 }
@@ -1537,6 +1577,9 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   const titleLoad = titleWords / Math.max(1, plan.format.maxTitleWords)
   const bodyLoad = bodyWords / Math.max(1, plan.format.maxBodyWords)
   const textLoad = titleLoad * .58 + bodyLoad * .42
+  const lineLayout = compositionTextLayout(plan)
+  const titleLineLoad = lineLayout.estimatedTitleLines / Math.max(1, lineLayout.titleMaxLines)
+  const bodyLineLoad = lineLayout.estimatedBodyLines / Math.max(1, lineLayout.bodyMaxLines)
   const safe = [plan.geometry.titleZone, plan.geometry.bodyZone].every((zone) => zone.x >= 0 && zone.y >= 0 && zone.x + zone.width <= 1.001 && zone.y <= .94)
   const duplicate = peers.some((peer) => peer.id !== plan.id && designSimilarity(plan, peer) >= .82)
   const issues: string[] = []
@@ -1548,6 +1591,7 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   const idealLoad = plan.density === 'minimal' ? .38 : plan.density === 'rich' ? .72 : .55
   const whitespace = boundedQuality(100 - Math.abs(textLoad - idealLoad) * 90 - plan.geometry.decorationBudget * 2)
   const fit = boundedQuality(100 - Math.max(0, titleLoad - 1) * 70 - Math.max(0, bodyLoad - 1) * 65 - (plan.content.overflowStrategy === 'trimmed-preview' ? 7 : 0))
+  const lineFit = boundedQuality(100 - Math.max(0, titleLineLoad - 1) * 82 - Math.max(0, bodyLineLoad - 1) * 72)
   const originality = boundedQuality(plan.novelty * 100 - (duplicate ? 28 : 0))
   const platformFit = boundedQuality(78 + (plan.format.platform === plan.platform ? 12 : 0) + (plan.format.supportsCarousel && plan.content.slides.length > 1 ? 8 : 0) - (plan.format.id === 'reel-cover' && bodyWords > 20 ? 16 : 0))
 
@@ -1555,15 +1599,18 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   if (contrast < 82) issues.push('التباين يحتاج تقوية.')
   if (readability < 76) issues.push('النص مزدحم على شاشة الهاتف.')
   if (fit < 76) issues.push('المحتوى أطول من المساحة المريحة.')
+  if (lineLayout.estimatedTitleLines > lineLayout.titleMaxLines) issues.push('خطأ: العنوان سيتجاوز عدد الأسطر الآمن.')
+  if (lineLayout.estimatedBodyLines > lineLayout.bodyMaxLines) issues.push('المتن سيتجاوز عدد الأسطر المريح.')
   if (duplicate) issues.push('قريب بصريًا من اتجاه آخر.')
   if (contrast >= 92) strengths.push('تباين ممتاز')
   if (whitespace >= 88) strengths.push('فراغات محسوبة')
   if (hierarchy >= 90) strengths.push('هرمية واضحة')
+  if (lineFit >= 92) strengths.push('لا قصّ ولا تزاحم')
   if (originality >= 78) strengths.push('تكوين متمايز')
   if (platformFit >= 90) strengths.push('ملائم للمنصة')
 
-  const score = boundedQuality(readability * .23 + hierarchy * .18 + whitespace * .15 + contrast * .16 + fit * .14 + originality * .08 + platformFit * .06)
-  return { score, band: qualityBand(score), readability, hierarchy, whitespace, contrast, fit, originality, platformFit, issues, strengths }
+  const score = boundedQuality(readability * .20 + hierarchy * .16 + whitespace * .14 + contrast * .15 + fit * .12 + lineFit * .13 + originality * .06 + platformFit * .04)
+  return { score, band: qualityBand(score), readability, hierarchy, whitespace, contrast, fit, lineFit, originality, platformFit, issues, strengths }
 }
 
 export interface SocialCampaignRequest extends SocialDesignRequest {
@@ -1584,14 +1631,20 @@ const campaignRoles: { role: CampaignAssetRole; label: string; purpose: string; 
 const campaignText = (role: CampaignAssetRole, analysis: SocialContentAnalysis) => {
   const title = analysis.structure.title || analysis.structure.keyPoint || analysis.normalizedText
   const quote = analysis.structure.quote || analysis.structure.keyPoint || title
-  const hero = analysis.structure.heroWord || title.split(/\s+/)[0] || 'فكرة'
-  if (role === 'story') return `${title}\n\nما الذي يتغير لو نظرنا إليها من زاوية أخرى؟`
-  if (role === 'reel') return truncateWords(title, 12)
-  if (role === 'linkedin') return `${title}\n${analysis.structure.subtitle || analysis.structure.keyPoint || quote}`
-  if (role === 'x') return truncateWords(analysis.structure.keyPoint || title, 24)
-  if (role === 'quote') return quote
-  if (role === 'teaser') return `قريبًا…\nسؤال يبدأ من «${hero}» وقد يغيّر طريقة النظر إلى الموضوع.`
-  if (role === 'reminder') return `${title}\n\nالفكرة ما زالت تستحق القراءة والنقاش.`
+  const hero = analysis.structure.heroWord || wordsOf(title)[0] || 'الفكرة'
+  const sourceSentences = splitSentences(analysis.structure.original).filter((sentence) => wordsOf(sentence).length >= 3)
+  const lead = sourceSentences[0] || analysis.structure.keyPoint || title
+  const support = sourceSentences.find((sentence) => sentence !== lead) || analysis.structure.subtitle || quote
+  const sourceQuestion = sourceSentences.find((sentence) => /[؟?]/.test(sentence))
+  if (role === 'story') return `${truncateWords(title, 14)}\n\n${truncateWords(support, 18)}`
+  if (role === 'reel') return `${hero}\n${truncateWords(title, 10)}`
+  if (role === 'linkedin') return `${title}\n\n${truncateWords(lead, 26)}\n${truncateWords(support, 24)}`
+  if (role === 'x') return truncateWords(analysis.structure.keyPoint || lead || title, 24)
+  if (role === 'quote') return truncateWords(quote, 28)
+  if (role === 'teaser') return sourceQuestion
+    ? truncateWords(sourceQuestion, 18)
+    : `ما الذي تكشفه فكرة «${hero}» حين نضعها تحت الاختبار؟`
+  if (role === 'reminder') return `${truncateWords(quote, 20)}\n\nاقرأ الفكرة في سياقها الكامل.`
   return analysis.structure.original
 }
 
@@ -1601,31 +1654,55 @@ export function generateSocialCampaign(request: SocialCampaignRequest): SocialCa
   const assets: SocialCampaignAsset[] = []
   const usedLayouts = new Set<LayoutFamilyId>()
   const base = request.basePlan
+  const warnings: string[] = []
+
   for (const [index, spec] of campaignRoles.entries()) {
-    const result = generateSocialDesigns({
-      ...request,
-      text: campaignText(spec.role, analysis),
-      format: spec.format,
-      platform: 'auto',
-      tone: spec.tone || request.tone,
-      density: spec.density || request.density,
-      count: 4,
-      seed: `${request.seed || request.text}:campaign:${spec.role}:${index}`,
-      history,
-      basePlan: base,
-      locks: base ? { color: true, content: false, style: false, format: false } : request.locks,
-      tasteProfile: request.tasteProfile,
-      noveltyThreshold: Math.max(.34, request.noveltyThreshold || 0),
-    })
-    const picked = result.plans.find((plan) => !usedLayouts.has(plan.layout)) || result.plans[0]
-    if (!picked) continue
+    let picked: CompositionPlan | undefined
+    let fallback: CompositionPlan | undefined
+    for (let attempt = 0; attempt < 3 && !picked; attempt += 1) {
+      const result = generateSocialDesigns({
+        ...request,
+        text: campaignText(spec.role, analysis),
+        format: spec.format,
+        platform: 'auto',
+        tone: spec.tone || request.tone,
+        density: spec.density || request.density,
+        count: 8,
+        seed: `${request.seed || request.text}:campaign:${spec.role}:${index}:${attempt}`,
+        history,
+        basePlan: base,
+        locks: base ? { color: true, content: false, style: false, format: false } : request.locks,
+        tasteProfile: request.tasteProfile,
+        noveltyThreshold: Math.max(.36, request.noveltyThreshold || 0),
+      })
+      fallback ||= result.plans[0]
+      picked = result.plans.find((plan) =>
+        !usedLayouts.has(plan.layout)
+        && (plan.quality?.score || 0) >= 78
+        && (plan.quality?.lineFit || 0) >= 80
+        && !plan.quality?.issues.some((issue) => issue.startsWith('خطأ:')))
+    }
+    picked ||= fallback
+    if (!picked) {
+      warnings.push(`تعذّر بناء ${spec.label} من دون خفض الجودة.`)
+      continue
+    }
+    if ((picked.quality?.score || 0) < 78) warnings.push(`${spec.label} يحتاج مراجعة بصرية قبل النشر.`)
     usedLayouts.add(picked.layout)
     history.push(designHistoryEntry(picked))
     assets.push({ id: `${spec.role}-${picked.id}`, role: spec.role, label: spec.label, purpose: spec.purpose, plan: picked })
   }
+
   const qualityScore = assets.length ? Math.round(assets.reduce((sum, asset) => sum + (asset.plan.quality?.score || 0), 0) / assets.length) : 0
-  const coherenceScore = assets.length ? Math.round(70 + Math.min(20, new Set(assets.map((asset) => asset.plan.palette)).size === 1 ? 20 : 10) + Math.min(10, analysis.confidence / 10)) : 0
+  const paletteCount = new Set(assets.map((asset) => asset.plan.palette)).size
+  const coherenceScore = assets.length ? Math.round(72 + (paletteCount === 1 ? 18 : paletteCount <= 2 ? 10 : 2) + Math.min(10, analysis.confidence / 10)) : 0
   const diversityScore = assets.length ? Math.round(new Set(assets.map((asset) => asset.plan.layout)).size / assets.length * 100) : 0
+  const ready = assets.length === campaignRoles.length
+    && qualityScore >= 78
+    && diversityScore >= 75
+    && assets.every((asset) => (asset.plan.quality?.lineFit || 0) >= 76 && !asset.plan.quality?.issues.some((issue) => issue.startsWith('خطأ:')))
+  if (!ready && !warnings.length) warnings.push('الحملة لم تجتز لجنة الجودة كاملة؛ أعد توليدها قبل النشر.')
+
   return {
     id: `campaign-${hashHex(`${request.text}:${request.seed || ''}:${assets.map((asset) => asset.plan.fingerprint).join(':')}`)}`,
     title: analysis.structure.title || truncateWords(request.text, 12),
@@ -1634,6 +1711,8 @@ export function generateSocialCampaign(request: SocialCampaignRequest): SocialCa
     qualityScore,
     coherenceScore: boundedQuality(coherenceScore),
     diversityScore: boundedQuality(diversityScore),
+    ready,
+    warnings,
   }
 }
 
@@ -1662,8 +1741,11 @@ export function validateCompositionPlan(plan: CompositionPlan, peers: readonly C
   if (!plan.content.title.trim()) issues.push({ severity: 'error', code: 'missing-title', message: 'التصميم بلا عنوان.' })
   const titleWords = wordsOf(plan.content.title).length
   const bodyWords = wordsOf(plan.content.body).length
+  const lineLayout = compositionTextLayout(plan)
   if (titleWords > plan.format.maxTitleWords) issues.push({ severity: 'warning', code: 'title-overflow', message: `العنوان ${titleWords} كلمة ويتجاوز المجال المريح (${plan.format.maxTitleWords}).` })
   if (bodyWords > plan.format.maxBodyWords) issues.push({ severity: 'warning', code: 'body-overflow', message: `المتن ${bodyWords} كلمة ويتجاوز المجال المريح (${plan.format.maxBodyWords}).` })
+  if (lineLayout.estimatedTitleLines > lineLayout.titleMaxLines) issues.push({ severity: 'error', code: 'title-overflow', message: `العنوان يحتاج ${lineLayout.estimatedTitleLines} أسطر والمتاح ${lineLayout.titleMaxLines}.` })
+  if (lineLayout.estimatedBodyLines > lineLayout.bodyMaxLines) issues.push({ severity: 'warning', code: 'body-overflow', message: `المتن يحتاج ${lineLayout.estimatedBodyLines} أسطر والمتاح ${lineLayout.bodyMaxLines}.` })
   for (const zone of [plan.geometry.titleZone, plan.geometry.bodyZone]) {
     if (zone.x < 0 || zone.y < 0 || zone.x + zone.width > 1.001 || zone.y > 0.94) {
       issues.push({ severity: 'error', code: 'unsafe-zone', message: 'إحدى مناطق النص خرجت من حدود اللوحة.' })

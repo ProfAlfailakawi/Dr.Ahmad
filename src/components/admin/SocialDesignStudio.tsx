@@ -33,6 +33,7 @@ const ghost = 'rounded-full border border-hair bg-canvas px-4 py-2 text-[.76rem]
 const HISTORY_KEY = 'dr-ahmad-social-design-history-v1'
 const SAVED_KEY = 'dr-ahmad-social-design-saved-v1'
 const TASTE_KEY = 'dr-ahmad-social-design-taste-v1'
+const TASTE_LEDGER_KEY = 'dr-ahmad-social-design-taste-ledger-v1'
 
 const toneLabels: Record<ContentTone | 'auto', string> = {
   auto: 'ذكي تلقائي',
@@ -147,6 +148,20 @@ function storeTasteProfile(profile: DesignTasteProfile) {
   try { window.localStorage.setItem(TASTE_KEY, JSON.stringify(profile)) } catch { /* لا نوقف الاستوديو إن مُنع التخزين */ }
 }
 
+type TasteSignalLedger = Record<string, 1 | -1>
+
+function loadTasteLedger(): TasteSignalLedger {
+  if (typeof window === 'undefined') return {}
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(TASTE_LEDGER_KEY) || '{}')
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch { return {} }
+}
+
+function storeTasteLedger(ledger: TasteSignalLedger) {
+  try { window.localStorage.setItem(TASTE_LEDGER_KEY, JSON.stringify(ledger)) } catch { /* الذاكرة اختيارية ولا تعطل التصدير */ }
+}
+
 function Preview({ plan, className = '' }: { plan: CompositionPlan; className?: string }) {
 
 
@@ -178,6 +193,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [savedPlans, setSavedPlans] = useState<CompositionPlan[]>(() => loadSavedPlans())
   const [showSaved, setShowSaved] = useState(false)
   const [tasteProfile, setTasteProfile] = useState<DesignTasteProfile>(() => loadTasteProfile())
+  const [tasteLedger, setTasteLedger] = useState<TasteSignalLedger>(() => loadTasteLedger())
   const [campaign, setCampaign] = useState<SocialCampaign | null>(null)
   const [campaignBusy, setCampaignBusy] = useState(false)
   const textRef = useRef<HTMLTextAreaElement | null>(null)
@@ -301,12 +317,32 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   }
 
   const teachTaste = (plan: CompositionPlan, signal: 1 | -1) => {
-    const next = updateTasteProfile(tasteProfile, plan, signal)
+    const previousSignal = tasteLedger[plan.fingerprint]
+    if (previousSignal === signal) {
+      setNotice(signal > 0 ? 'هذا الاتجاه محفوظ أصلًا في ذاكرة ذوقك؛ لن نضاعف وزنه بسبب تكرار التنزيل.' : 'هذا الأسلوب مستبعد أصلًا من ذاكرتك.')
+      return tasteProfile
+    }
+    let next = tasteProfile
+    if (previousSignal) next = updateTasteProfile(next, plan, previousSignal === 1 ? -1 : 1)
+    next = updateTasteProfile(next, plan, signal)
+    const nextLedger = { ...tasteLedger, [plan.fingerprint]: signal }
     setTasteProfile(next)
+    setTasteLedger(nextLedger)
     storeTasteProfile(next)
+    storeTasteLedger(nextLedger)
     setNotice(signal > 0
-      ? `تعلّم الاستوديو هذا الاختيار. ذاكرة الذوق الآن مبنية على ${next.samples} إشارات.`
+      ? `تعلّم الاستوديو هذا الاختيار مرة واحدة. ذاكرة الذوق الآن مبنية على ${Object.keys(nextLedger).length} اتجاهات مستقلة.`
       : 'ابتعد الاستوديو عن هذا الأسلوب في التوليدات القادمة من دون أن يقتل التنوع.')
+    return next
+  }
+
+  const resetTaste = () => {
+    const empty = createEmptyTasteProfile()
+    setTasteProfile(empty)
+    setTasteLedger({})
+    storeTasteProfile(empty)
+    storeTasteLedger({})
+    setNotice('أُعيد ضبط ذاكرة الذوق فقط؛ لم تُحذف تصاميمك المحفوظة ولا تاريخ التنويع.')
   }
 
   const exportPlan = async (plan: CompositionPlan, type: 'png' | 'jpeg') => {
@@ -337,7 +373,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       setCampaign(next)
       remember(next.assets.map((asset) => asset.plan))
       setSelected(null)
-      setNotice(`اكتملت حملة من ${next.assets.length} قطع متناسقة وغير مكررة. لجنة الجودة: ${next.qualityScore}٪.`)
+      setNotice(next.ready
+        ? `اكتملت حملة من ${next.assets.length} قطع متناسقة وغير مكررة واجتازت لجنة الجودة: ${next.qualityScore}٪.`
+        : next.warnings[0] || 'الحملة تحتاج إعادة توليد قبل التصدير.')
     } finally { setCampaignBusy(false) }
   }
 
@@ -399,7 +437,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <h3 className="mt-1 font-display text-2xl font-bold text-ink">ليست قوالب؛ هذه اتجاهات تكوين.</h3>
               <p className="mt-2 text-[.8rem] leading-relaxed text-soft">كل نتيجة تختلف في العائلة، والهندسة، والخط، والإيقاع، وطريقة إبراز الفكرة.</p>
             </div>
-            <div className="flex flex-wrap gap-2"><span className="rounded-full border border-accent/25 bg-accent/[.05] px-4 py-2 text-[.72rem] font-semibold text-accent">لجنة الجودة {Math.round(plans.reduce((sum, plan) => sum + (plan.quality?.score || 0), 0) / plans.length)}٪</span><span className="rounded-full border border-hair px-4 py-2 text-[.72rem] text-soft">ذاكرة ذوقك {tasteProfile.samples} إشارة</span><button type="button" className={primary} disabled={campaignBusy} onClick={buildCampaign}>{campaignBusy ? 'يبني الحملة…' : 'حوّلها إلى حملة'}</button><button type="button" className={ghost} onClick={() => setShowSaved((value) => !value)}>المحفوظة {savedPlans.length}</button><button type="button" className={ghost} onClick={() => generate()}>توليد دفعة مختلفة</button></div>
+            <div className="flex flex-wrap gap-2"><span className="rounded-full border border-accent/25 bg-accent/[.05] px-4 py-2 text-[.72rem] font-semibold text-accent">لجنة الجودة {Math.round(plans.reduce((sum, plan) => sum + (plan.quality?.score || 0), 0) / plans.length)}٪</span><span className="rounded-full border border-hair px-4 py-2 text-[.72rem] text-soft">ذاكرة ذوقك {Object.keys(tasteLedger).length} اتجاه</span>{Object.keys(tasteLedger).length > 0 && <button type="button" className={ghost} onClick={resetTaste}>إعادة ضبط الذوق</button>}<button type="button" className={primary} disabled={campaignBusy} onClick={buildCampaign}>{campaignBusy ? 'يبني الحملة…' : 'حوّلها إلى حملة'}</button><button type="button" className={ghost} onClick={() => setShowSaved((value) => !value)}>المحفوظة {savedPlans.length}</button><button type="button" className={ghost} onClick={() => generate()}>توليد دفعة مختلفة</button></div>
           </div>
           <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {plans.map((plan) => (
@@ -429,10 +467,12 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <span className="rounded-full border border-hair px-3 py-2 text-[.7rem] text-soft">جودة {campaign.qualityScore}٪</span>
               <span className="rounded-full border border-hair px-3 py-2 text-[.7rem] text-soft">تماسك {campaign.coherenceScore}٪</span>
               <span className="rounded-full border border-hair px-3 py-2 text-[.7rem] text-soft">تنوع {campaign.diversityScore}٪</span>
-              <button type="button" className={primary} onClick={() => void downloadSocialCampaignRaster(campaign, 'png')}>تنزيل الحملة PNG</button>
-              <button type="button" className={ghost} onClick={() => printSocialCampaignPdf(campaign)}>PDF للحملة</button>
+              <span className={`rounded-full px-3 py-2 text-[.7rem] font-semibold ${campaign.ready ? 'bg-accent/10 text-accent' : 'bg-amber-50 text-amber-800'}`}>{campaign.ready ? 'جاهزة للنشر' : 'تحتاج إعادة توليد'}</span>
+              <button type="button" className={primary} disabled={!campaign.ready} onClick={() => void downloadSocialCampaignRaster(campaign, 'png')}>تنزيل الحملة PNG</button>
+              <button type="button" className={ghost} disabled={!campaign.ready} onClick={() => printSocialCampaignPdf(campaign)}>PDF للحملة</button>
             </div>
           </div>
+          {!campaign.ready && campaign.warnings.length > 0 && <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[.76rem] leading-relaxed text-amber-900">{campaign.warnings.join(' · ')}</p>}
           <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {campaign.assets.map((asset) => (
               <article key={asset.id} className="rounded-[1.4rem] border border-hair bg-canvas p-3">

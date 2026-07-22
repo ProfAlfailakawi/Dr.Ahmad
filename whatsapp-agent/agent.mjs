@@ -709,9 +709,14 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     const items = rows.map((row) => {
       let phrase = ''
       try { phrase = db.decryptText(row.phrase) } catch { phrase = '' }
+      const evidence = db.get(`SELECT COUNT(*) AS confirmations,COUNT(DISTINCT jid_hash) AS sources,
+        COUNT(DISTINCT day_key) AS days FROM learning_evidence
+        WHERE pattern_hash=? AND (?='' OR intent=?)`, row.pattern_hash, row.candidate_intent || '', row.candidate_intent || '') || {}
       return {
         id: row.id, phrase, hits: Number(row.hits || 0), intent: row.candidate_intent || '',
-        confirmations: Number(row.confirmations || 0), status: row.status || 'observing',
+        confirmations: Number(evidence.confirmations || row.confirmations || 0),
+        evidenceSources: Number(evidence.sources || 0), evidenceDays: Number(evidence.days || 0),
+        status: row.status || 'observing',
         firstSeenAt: row.first_seen_at, lastSeenAt: row.last_seen_at, learnedAt: row.learned_at || null,
       }
     })
@@ -723,7 +728,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     return {
       total: Number(counts.total || 0), learned: Number(counts.learned || 0),
       observing: Number(counts.observing || 0), ignored: Number(counts.ignored || 0), items,
-      policy: 'يتعلم النية فقط بعد ثلاث تأكيدات متطابقة؛ الجواب يبقى من فهرس الموقع.',
+      policy: 'يتعلم النية فقط بعد ثلاث قرائن عالية الثقة؛ من مصدرين مستقلين أو عبر ثلاثة أيام. الجواب يبقى من فهرس الموقع ولا يتعلم معلومة من المستخدم.',
     }
   }
   const setLearningPatternStatus = (id, status) => {
@@ -735,9 +740,13 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
       if (status === 'ignored') {
         db.run("UPDATE learning_patterns SET status='ignored',candidate_intent=NULL,confirmations=0,learned_at=NULL WHERE id=?", Number(id))
         db.run('DELETE FROM learning_votes WHERE pattern_hash=?', row.pattern_hash)
+        db.run('DELETE FROM learning_evidence WHERE pattern_hash=?', row.pattern_hash)
         db.run('DELETE FROM learning_pending WHERE pattern_hash=?', row.pattern_hash)
       } else {
         db.run("UPDATE learning_patterns SET status='observing',candidate_intent=NULL,confirmations=0,learned_at=NULL WHERE id=?", Number(id))
+        db.run('DELETE FROM learning_votes WHERE pattern_hash=?', row.pattern_hash)
+        db.run('DELETE FROM learning_evidence WHERE pattern_hash=?', row.pattern_hash)
+        db.run('DELETE FROM learning_pending WHERE pattern_hash=?', row.pattern_hash)
       }
     })
     db.addAudit('learning-pattern-status', String(id), status)

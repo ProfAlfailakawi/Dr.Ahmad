@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { openDatabase } from './db.mjs'
-import { buildContentIndex, searchContent } from './content-index.mjs'
+import { buildContentIndex, latestAudioContent, searchContent } from './content-index.mjs'
 import { classifyIntent, classifyIntentWithLearning, confirmPendingLearning, handleIncoming, recordUnresolvedLearning, setSuppression, shouldRespondToMessage } from './intent-engine.mjs'
 import { MockTransport, canonicalChatJid, hasMediaPayload } from './transport.mjs'
 import { createAgent } from './agent.mjs'
@@ -38,15 +38,27 @@ export async function runSelfTest(root) {
   assert.equal(classifyIntent('في شي ثاني؟').intent, 'MORE_LIKE_THIS')
   assert.equal(classifyIntent('عندي دقيقة').intent, 'ONE_MINUTE')
   assert.equal(classifyIntent('فاجئني').intent, 'SURPRISE_ME')
-  /* الذاكرة المحلية لا تتعلم جواباً ولا تتعلم من مرة واحدة. بعد ثلاث
-     إشارات متطابقة فقط تربط صياغة كويتية غامضة بنية موجودة أصلًا. */
+  /* الذاكرة المحلية لا تتعلم جواباً ولا تتعلم من مرة واحدة، ولا تسمح لشخص
+     واحد أن يدرّبها بثلاث نقرات متتالية. تعتمد النية فقط بعد ثلاث قرائن عالية
+     الثقة من مصدرين مستقلين على الأقل. */
   const dialectPhrase = 'يمعود شنو توه طالع من جيسه؟'
-  const dialectJid = '96550000001@s.whatsapp.net'
+  const dialectJids = ['96550000001@s.whatsapp.net', '96550000002@s.whatsapp.net', '96550000003@s.whatsapp.net']
   assert.equal(classifyIntentWithLearning(db, dialectPhrase).learned, undefined, 'الصياغة الجديدة غير متعلمة أولًا')
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    recordUnresolvedLearning(db, dialectJid, dialectPhrase)
-    const learned = confirmPendingLearning(db, dialectJid, 'LATEST_CONTENT', new Date(daytime.getTime() + attempt * 1000))
-    assert.equal(Boolean(learned?.learned), attempt === 2, 'لا تعتمد الصياغة قبل التأكيد الثالث')
+
+  recordUnresolvedLearning(db, dialectJids[0], dialectPhrase)
+  const firstEvidence = confirmPendingLearning(db, dialectJids[0], 'LATEST_CONTENT', new Date(daytime.getTime() + 1000), .97)
+  assert.equal(firstEvidence?.confirmations, 1)
+  assert.equal(Boolean(firstEvidence?.learned), false)
+
+  recordUnresolvedLearning(db, dialectJids[0], dialectPhrase)
+  const duplicateEvidence = confirmPendingLearning(db, dialectJids[0], 'LATEST_CONTENT', new Date(daytime.getTime() + 2000), .97)
+  assert.equal(duplicateEvidence?.confirmations, 1, 'تكرار الشخص نفسه في اليوم نفسه لا يضيف قرينة')
+  assert.equal(duplicateEvidence?.duplicateEvidence, true)
+
+  for (let attempt = 1; attempt < dialectJids.length; attempt += 1) {
+    recordUnresolvedLearning(db, dialectJids[attempt], dialectPhrase)
+    const learned = confirmPendingLearning(db, dialectJids[attempt], 'LATEST_CONTENT', new Date(daytime.getTime() + 3000 + attempt * 1000), .97)
+    assert.equal(Boolean(learned?.learned), attempt === 2, 'لا تعتمد الصياغة قبل ثلاث قرائن مستقلة')
   }
   const learnedDialect = classifyIntentWithLearning(db, dialectPhrase)
   assert.equal(learnedDialect.intent, 'LATEST_CONTENT')
@@ -86,8 +98,14 @@ export async function runSelfTest(root) {
   assert.equal(/مؤشر المشاهدة الداخلي|تقدير داخلي/u.test(naturalPopular.text || ''), false, '★ لا يعرض مؤشراً اصطناعياً')
   const naturalPodcast = handle({ db, jid: '12345@s.whatsapp.net', text: 'آخر بودكاست' })
   assert.equal(naturalPodcast.shouldRespond, true, '★ ويفهم أحدث بودكاست داخل الجلسة')
-  assert.match(naturalPodcast.text || '', /أحدث حلقة|أحدث حلقة حوارية/, '★ لا يعلن الفشل مع وجود صوت حواري منشور')
-  assert.ok(!/ما لقيت/.test(naturalPodcast.text || ''), '★ آخر بودكاست لا يرجع برسالة فشل وهو يجد مادة صوتية')
+  const indexedDialogue = latestAudioContent(db, 'dialogue', 1)
+  if (indexedDialogue.length) {
+    assert.match(naturalPodcast.text || '', /أحدث حلقة|أحدث حلقة حوارية/, '★ لا يعلن الفشل مع وجود صوت حواري منشور')
+    assert.ok(!/لا توجد حلقة/.test(naturalPodcast.text || ''), '★ وجود الصوت يمنع رسالة الغياب')
+  } else {
+    assert.match(naturalPodcast.text || '', /لا توجد حلقة حوارية منشورة/u, '★ عند غياب الصوت يصرّح بالحقيقة ولا يؤلف حلقة')
+    assert.equal(naturalPodcast.contentId || null, null, '★ لا يربط حلقة وهمية عند غياب البيانات')
+  }
   const quickMinute = handle({ db, jid: '12345@s.whatsapp.net', text: 'عندي دقيقة' })
   assert.equal(quickMinute.shouldRespond, true, '★ ويفهم طلب المادة القصيرة')
   assert.match(quickMinute.text || '', /قراءة حرفية.*دقيقة/u, '★ الدقيقة تقدّم نصاً حرفياً لا تلخيصاً مؤلفاً')

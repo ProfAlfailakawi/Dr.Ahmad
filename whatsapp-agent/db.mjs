@@ -4,7 +4,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { DB_PATH, RETENTION_DAYS, ensureSafeDataDir } from './config.mjs'
 import { encrypt, decrypt, hashOpaque } from './crypto.mjs'
 
-export const SCHEMA_VERSION = 5
+export const SCHEMA_VERSION = 6
 
 const schema = `
 PRAGMA foreign_keys = ON;
@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS intent_logs(id INTEGER PRIMARY KEY AUTOINCREMENT, jid
 CREATE TABLE IF NOT EXISTS unresolved_messages(id INTEGER PRIMARY KEY AUTOINCREMENT, jid TEXT, input_hash TEXT NOT NULL, text_preview TEXT NOT NULL, reason TEXT NOT NULL, resolved INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS learning_patterns(id INTEGER PRIMARY KEY AUTOINCREMENT, pattern_hash TEXT NOT NULL UNIQUE, canonical_hash TEXT NOT NULL, phrase TEXT NOT NULL, hits INTEGER NOT NULL DEFAULT 1, candidate_intent TEXT, confirmations INTEGER NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'observing', first_seen_at TEXT NOT NULL, last_seen_at TEXT NOT NULL, learned_at TEXT);
 CREATE TABLE IF NOT EXISTS learning_votes(pattern_hash TEXT NOT NULL, intent TEXT NOT NULL, confirmations INTEGER NOT NULL DEFAULT 1, last_seen_at TEXT NOT NULL, PRIMARY KEY(pattern_hash, intent));
+CREATE TABLE IF NOT EXISTS learning_evidence(pattern_hash TEXT NOT NULL, intent TEXT NOT NULL, jid_hash TEXT NOT NULL, day_key TEXT NOT NULL, confirmed_at TEXT NOT NULL, PRIMARY KEY(pattern_hash, intent, jid_hash, day_key));
 CREATE TABLE IF NOT EXISTS learning_pending(jid TEXT PRIMARY KEY, pattern_hash TEXT NOT NULL, expires_at TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS reminders(id TEXT PRIMARY KEY, jid TEXT NOT NULL, content_id TEXT, due_at TEXT NOT NULL, original_text TEXT NOT NULL, state TEXT NOT NULL DEFAULT 'pending', created_at TEXT NOT NULL, sent_at TEXT);
 CREATE TABLE IF NOT EXISTS azure_usage(month TEXT PRIMARY KEY, stt_seconds INTEGER NOT NULL DEFAULT 0, tts_chars INTEGER NOT NULL DEFAULT 0, last_error TEXT, updated_at TEXT NOT NULL);
@@ -51,6 +52,8 @@ CREATE INDEX IF NOT EXISTS idx_intent_jid_created ON intent_logs(jid, created_at
 CREATE INDEX IF NOT EXISTS idx_learning_status_hits ON learning_patterns(status, confirmations DESC, hits DESC, last_seen_at DESC);
 CREATE INDEX IF NOT EXISTS idx_learning_canonical ON learning_patterns(canonical_hash, status);
 CREATE INDEX IF NOT EXISTS idx_learning_pending_expires ON learning_pending(expires_at);
+CREATE INDEX IF NOT EXISTS idx_learning_evidence_pattern ON learning_evidence(pattern_hash, intent, confirmed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_learning_evidence_source ON learning_evidence(jid_hash, confirmed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_saved_content_jid_created ON saved_content(jid, saved_at DESC);
 CREATE INDEX IF NOT EXISTS idx_content_reservations_time ON content_reservations(reserved_at);
 CREATE INDEX IF NOT EXISTS idx_answer_evidence_jid_created ON answer_evidence(jid, created_at DESC);
@@ -130,7 +133,7 @@ export class AgentDatabase {
   loadAuth(kind, name) { const row = this.get('SELECT value FROM whatsapp_auth WHERE kind=? AND name=?', kind, name); return row ? decrypt(row.value, this.cryptoOptions) : null }
   deleteAuth() { this.run('DELETE FROM whatsapp_auth') }
   addAudit(action, target = '', detail = '') { this.run('INSERT INTO audit_log(action,target,detail,created_at) VALUES(?,?,?,?)', action, target, detail, now()) }
-  purgeExpired(days = RETENTION_DAYS) { this.run("DELETE FROM intent_logs WHERE created_at < datetime('now', ?)", `-${days} days`); this.run("DELETE FROM unresolved_messages WHERE created_at < datetime('now', ?)", `-${days} days`); this.run("DELETE FROM message_attempts WHERE attempted_at < datetime('now', ?)", `-${days} days`); this.run("DELETE FROM processed_messages WHERE created_at < datetime('now', ?)", `-${days} days`); this.run("DELETE FROM outbox_messages WHERE created_at < datetime('now', ?)", `-${days} days`); this.run("DELETE FROM learning_pending WHERE expires_at < datetime('now')"); this.run("DELETE FROM learning_patterns WHERE status='observing' AND confirmations=0 AND last_seen_at < datetime('now','-90 days')") }
+  purgeExpired(days = RETENTION_DAYS) { this.run("DELETE FROM intent_logs WHERE created_at < datetime('now', ?)", `-${days} days`); this.run("DELETE FROM unresolved_messages WHERE created_at < datetime('now', ?)", `-${days} days`); this.run("DELETE FROM message_attempts WHERE attempted_at < datetime('now', ?)", `-${days} days`); this.run("DELETE FROM processed_messages WHERE created_at < datetime('now', ?)", `-${days} days`); this.run("DELETE FROM outbox_messages WHERE created_at < datetime('now', ?)", `-${days} days`); this.run("DELETE FROM learning_pending WHERE expires_at < datetime('now')"); this.run("DELETE FROM learning_patterns WHERE status='observing' AND confirmations=0 AND last_seen_at < datetime('now','-90 days')"); this.run("DELETE FROM learning_evidence WHERE confirmed_at < datetime('now','-365 days')") }
   jidKey(jid) { return hashOpaque(jid) }
   encryptJid(jid) { return encrypt(jid, this.cryptoOptions) }
   decryptJid(value) { return decrypt(value, this.cryptoOptions) }

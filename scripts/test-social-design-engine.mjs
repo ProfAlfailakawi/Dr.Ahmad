@@ -6,6 +6,7 @@ import ts from 'typescript'
 
 const sourcePath = resolve('src/lib/social-design-engine.ts')
 const source = await readFile(sourcePath, 'utf8')
+const studioSource = await readFile(resolve('src/components/admin/SocialDesignStudio.tsx'), 'utf8')
 const compiled = ts.transpileModule(source, {
   compilerOptions: {
     target: ts.ScriptTarget.ES2020,
@@ -81,6 +82,7 @@ assert.equal(audit.valid, true)
 assert.equal(audit.uniqueLayouts, 8)
 assert.equal(audit.uniqueFingerprints, 8)
 assert.ok(first.plans.every((plan) => plan.quality?.score >= 68), 'الناقد البصري لا يعرض اتجاهًا ضعيفًا')
+assert.ok(first.plans.every((plan) => (plan.quality?.lineFit || 0) >= 76), 'الناقد يفحص عدد الأسطر الفعلي لا عدد الكلمات فقط')
 assert.ok(first.generation.candidateCount >= 32)
 assert.ok(first.generation.averageQuality >= 75)
 
@@ -97,6 +99,7 @@ const overloaded = { ...base, content: { ...base.content, title: Array.from({ le
 const overloadedQuality = engine.critiqueCompositionPlan(overloaded)
 assert.ok(overloadedQuality.score < (base.quality?.score || 100))
 assert.ok(overloadedQuality.issues.length > 0)
+assert.ok(overloadedQuality.lineFit < (base.quality?.lineFit || 100), 'النص المزدحم يخفض ملاءمة الأسطر')
 
 const campaign = engine.generateSocialCampaign({ ...request, basePlan: base, tasteProfile: reinforcedTaste, seed: 'campaign-test' })
 assert.equal(campaign.assets.length, 8)
@@ -106,13 +109,17 @@ assert.ok(new Set(campaign.assets.map((asset) => asset.plan.layout)).size >= 6, 
 assert.equal(new Set(campaign.assets.map((asset) => asset.plan.palette)).size, 1, 'الحملة متماسكة لونيًا')
 assert.ok(campaign.qualityScore >= 75)
 assert.ok(campaign.coherenceScore >= 80)
+assert.equal(campaign.ready, true, 'لا تُصدّر الحملة قبل اجتياز جميع القطع لجنة الجودة')
+assert.deepEqual(campaign.warnings, [])
+assert.ok(studioSource.includes('TASTE_LEDGER_KEY'), 'ذاكرة الذوق تمنع تكرار التنزيل من تضخيم نفس الاختيار')
+assert.ok(studioSource.includes('previousSignal === signal'), 'الإشارة المكررة لا تضاعف وزن التصميم')
 
 console.log(JSON.stringify({
   ok: true,
   engineVersion: engine.SOCIAL_DESIGN_ENGINE_VERSION,
-  cases: 20,
+  cases: 25,
   generatedDirections: first.plans.length,
   uniqueLayouts: audit.uniqueLayouts,
   carouselSlides: long.structure.slides.length,
-  guards: ['arabic-analysis', 'deterministic-output', 'real-layout-diversity', 'history-novelty', 'lock-semantics', 'format-transform', 'contrast-and-overflow-audit', 'visual-critic', 'taste-memory', 'campaign-coherence', 'campaign-diversity'],
+  guards: ['arabic-analysis', 'deterministic-output', 'real-layout-diversity', 'history-novelty', 'lock-semantics', 'format-transform', 'contrast-and-overflow-audit', 'visual-critic', 'rendered-line-fit', 'taste-memory', 'taste-deduplication', 'campaign-release-gate', 'campaign-coherence', 'campaign-diversity'],
 }, null, 2))

@@ -39,7 +39,7 @@ type ReplyRule = {
 }
 type RuleVersion = { id: number; createdAt: string }
 type Simulation = { willReply?: boolean; why?: string; quietNow?: boolean; intent?: string; confidence?: number; needsHuman?: boolean; ruleId?: string | null; ruleName?: string | null; preview?: string }
-type LearningPattern = { id: number; phrase: string; hits: number; intent: string; confirmations: number; status: 'learned' | 'observing' | 'ignored'; firstSeenAt?: string; lastSeenAt?: string; learnedAt?: string | null }
+type LearningPattern = { id: number; phrase: string; hits: number; intent: string; confirmations: number; evidenceSources?: number; evidenceDays?: number; status: 'learned' | 'observing' | 'ignored'; firstSeenAt?: string; lastSeenAt?: string; learnedAt?: string | null }
 type LearningState = { total: number; learned: number; observing: number; ignored: number; policy: string; items: LearningPattern[] }
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
@@ -511,7 +511,7 @@ export function WhatsAppAgentPanel() {
           <div className="mt-5 grid gap-3">
             <div className="rounded-2xl border border-accent/25 bg-accent/[.045] p-4">
               <p className="text-[.8rem] font-semibold text-ink">حماية الفهم قبل الكلام</p>
-              <p className="mt-1 text-[.76rem] leading-relaxed text-soft">{learning.policy || 'لا يعتمد صياغة جديدة إلا بعد ثلاث إشارات متطابقة، ولا يتعلم أي معلومة أو جواب من المستخدم.'}</p>
+              <p className="mt-1 text-[.76rem] leading-relaxed text-soft">{learning.policy || 'لا يعتمد صياغة جديدة إلا بعد ثلاث قرائن عالية الثقة من مصدرين مستقلين أو عبر ثلاثة أيام، ولا يتعلم أي معلومة أو جواب من المستخدم.'}</p>
             </div>
             {!learning.items.length ? (
               <p className="rounded-2xl border border-dashed border-hair p-5 text-center text-[.78rem] text-soft">لا توجد صياغات غامضة حتى الآن. ستظهر هنا فقط بعد الإيقاظ وعند عدم الفهم.</p>
@@ -521,7 +521,11 @@ export function WhatsAppAgentPanel() {
                   <article key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-hair bg-canvas px-4 py-3">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[.84rem] font-semibold text-ink">{item.phrase || 'صياغة مشفّرة'}</p>
-                      <p className="mt-1 text-[.7rem] text-soft">{item.status === 'learned' ? `تعلّمها كنية ${item.intent}` : item.status === 'ignored' ? 'متجاهلة' : `تحت المراقبة · ظهرت ${item.hits} مرة · ${item.confirmations}/3 تأكيدات`}</p>
+                      <p className="mt-1 text-[.7rem] text-soft">{item.status === 'learned'
+                        ? `تعلّمها كنية ${item.intent} · ${item.confirmations} قرائن · ${item.evidenceSources || 0} مصادر`
+                        : item.status === 'ignored'
+                          ? 'متجاهلة'
+                          : `تحت المراقبة · ظهرت ${item.hits} مرة · ${item.confirmations}/3 قرائن · ${item.evidenceSources || 0} مصادر · ${item.evidenceDays || 0} أيام`}</p>
                     </div>
                     <button type="button" disabled={learningBusy} className={secondary} onClick={() => void updateLearningPattern(item.id, item.status === 'ignored' ? 'observing' : 'ignored')}>
                       {item.status === 'ignored' ? 'أعد للمراقبة' : 'لا تتعلمها'}

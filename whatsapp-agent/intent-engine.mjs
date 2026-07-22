@@ -155,25 +155,48 @@ export function recordUnresolvedLearning(db, jid, input, reason = 'unresolved-af
   return keys.patternHash
 }
 
-export function confirmPendingLearning(db, jid, intent, at = new Date()) {
-  if (!db || !jid || !LEARNABLE_INTENTS.has(intent)) return null
+export function confirmPendingLearning(db, jid, intent, at = new Date(), confidence = 1) {
+  if (!db || !jid || !LEARNABLE_INTENTS.has(intent) || Number(confidence || 0) < .88) return null
   const jidKey = db.jidKey(jid)
   const pending = db.get('SELECT * FROM learning_pending WHERE jid=?', jidKey)
   if (!pending) return null
   db.run('DELETE FROM learning_pending WHERE jid=?', jidKey)
   if (!pending.expires_at || new Date(pending.expires_at) <= at) return null
+
   const stamp = at.toISOString()
-  db.run(`INSERT INTO learning_votes(pattern_hash,intent,confirmations,last_seen_at) VALUES(?,?,1,?)
-          ON CONFLICT(pattern_hash,intent) DO UPDATE SET confirmations=confirmations+1,last_seen_at=excluded.last_seen_at`, pending.pattern_hash, intent, stamp)
-  const votes = db.all('SELECT intent,confirmations FROM learning_votes WHERE pattern_hash=? ORDER BY confirmations DESC,intent ASC', pending.pattern_hash)
-  const top = votes[0]
-  const second = Number(votes[1]?.confirmations || 0)
+  const dayKey = stamp.slice(0, 10)
+  const inserted = db.run(`INSERT OR IGNORE INTO learning_evidence(pattern_hash,intent,jid_hash,day_key,confirmed_at)
+                           VALUES(?,?,?,?,?)`, pending.pattern_hash, intent, jidKey, dayKey, stamp)
+  if (!Number(inserted?.changes || 0)) {
+    db.addAudit?.('dialect-learning-duplicate-evidence', pending.pattern_hash, `${intent}:${jidKey.slice(0, 10)}:${dayKey}`)
+  }
+
+  const evidence = db.all(`SELECT intent,COUNT(*) AS confirmations,COUNT(DISTINCT jid_hash) AS sources,
+                           MIN(confirmed_at) AS first_at,MAX(confirmed_at) AS last_at
+                           FROM learning_evidence WHERE pattern_hash=?
+                           GROUP BY intent ORDER BY confirmations DESC,intent ASC`, pending.pattern_hash)
+  for (const row of evidence) {
+    db.run(`INSERT INTO learning_votes(pattern_hash,intent,confirmations,last_seen_at) VALUES(?,?,?,?)
+            ON CONFLICT(pattern_hash,intent) DO UPDATE SET confirmations=excluded.confirmations,last_seen_at=excluded.last_seen_at`,
+      pending.pattern_hash, row.intent, Number(row.confirmations || 0), row.last_at || stamp)
+  }
+
+  const top = evidence[0]
+  const second = Number(evidence[1]?.confirmations || 0)
   const confirmations = Number(top?.confirmations || 0)
-  const learned = confirmations >= 3 && confirmations - second >= 2 && LEARNABLE_INTENTS.has(top?.intent)
+  const sources = Number(top?.sources || 0)
+  const firstAt = top?.first_at ? new Date(top.first_at) : at
+  const lastAt = top?.last_at ? new Date(top.last_at) : at
+  const spanDays = Math.max(0, Math.floor((lastAt.getTime() - firstAt.getTime()) / 86_400_000))
+  /* حماية من تلويث الذاكرة: لا تكفي ثلاث نقرات متتالية من الشخص نفسه.
+     تعتمد الصياغة بعد ثلاث قرائن عالية الثقة، ومن مصدرين مستقلين على الأقل،
+     أو من المصدر نفسه في ثلاثة أيام مختلفة. */
+  const evidenceIsIndependent = sources >= 2 || spanDays >= 2
+  const learned = confirmations >= 3 && confirmations - second >= 2 && evidenceIsIndependent && LEARNABLE_INTENTS.has(top?.intent)
   db.run('UPDATE learning_patterns SET candidate_intent=?,confirmations=?,status=?,learned_at=CASE WHEN ?=1 THEN COALESCE(learned_at,?) ELSE learned_at END,last_seen_at=? WHERE pattern_hash=?',
     top?.intent || null, confirmations, learned ? 'learned' : 'observing', learned ? 1 : 0, stamp, stamp, pending.pattern_hash)
-  if (learned) db.addAudit?.('dialect-pattern-learned', pending.pattern_hash, `${top.intent}:${confirmations}`)
-  return { patternHash: pending.pattern_hash, intent: top?.intent || null, confirmations, learned }
+  if (learned) db.addAudit?.('dialect-pattern-learned', pending.pattern_hash, `${top.intent}:${confirmations}:${sources}:${spanDays}`)
+  return { patternHash: pending.pattern_hash, intent: top?.intent || null, confirmations, sources, spanDays, learned, duplicateEvidence: !Number(inserted?.changes || 0) }
 }
 
 export function learnedIntentFor(db, text) {
@@ -936,7 +959,7 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
     recordUnresolvedLearning(db, jid, input, 'low-confidence')
     return { ...classification, shouldRespond: true, needsHuman: true, text: 'ما فهمت الطلب بدقة. هل تبحث في المقالات، الكتب، الأبحاث، أم البودكاست؟' }
   }
-  if (!classification.learned) confirmPendingLearning(db, jid, intent)
+  if (!classification.learned) confirmPendingLearning(db, jid, intent, new Date(), confidence)
   const selection = contextSelection(db, session, input, classification.request || parseCompoundRequest(input))
 
   switch (intent) {

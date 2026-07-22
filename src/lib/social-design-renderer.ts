@@ -3,6 +3,7 @@ import {
   FRAMING_MODES,
   PALETTES,
   TYPOGRAPHY_MODES,
+  compositionTextLayout,
   type CompositionPlan,
   type LayoutFamilyId,
   type SocialCampaign,
@@ -165,9 +166,10 @@ export function renderCompositionSvg(plan: CompositionPlan, options: { title?: s
   const palette = PALETTES[plan.palette]
   const typography = TYPOGRAPHY_MODES[plan.typography]
   const min = Math.min(width, height)
-  const titleLines = wrap(plan.content.title, plan.format.width > plan.format.height ? 25 : 19, typography.maxLines)
+  const textLayout = compositionTextLayout(plan)
+  const titleLines = wrap(plan.content.title, textLayout.titleMaxChars, textLayout.titleMaxLines)
   const bodySource = plan.content.subtitle || plan.content.body || plan.content.quote
-  const bodyLines = wrap(bodySource, plan.format.width > plan.format.height ? 44 : 31, plan.density === 'minimal' ? 2 : plan.density === 'rich' ? 5 : 3)
+  const bodyLines = wrap(bodySource, textLayout.bodyMaxChars, textLayout.bodyMaxLines)
   const titleSize = min * (.062 * typography.titleScale) * (titleLines.length > 3 ? .86 : 1)
   const bodySize = min * .027
   const tx = plan.geometry.titleZone.x * width + plan.geometry.titleZone.width * width

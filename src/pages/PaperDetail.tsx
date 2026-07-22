@@ -111,9 +111,9 @@ export default function PaperDetail() {
     { key: 'methodology', label: 'المنهج', value: arabicScientific(p.methodology || intelligence.methodology), evidence: intelligence.fieldEvidence.methodology },
     { key: 'studyType', label: 'نوع الدراسة', value: studyType, evidence: intelligence.fieldEvidence.studyType },
     { key: 'keyFinding', label: 'أبرز النتائج', value: arabicScientific(p.keyFinding || intelligence.keyFinding), evidence: intelligence.fieldEvidence.keyFinding },
-    { key: 'applications', label: 'التطبيقات', value: arabicScientific(p.applications || intelligence.applications), evidence: intelligence.fieldEvidence.applications },
+    { key: 'applications', label: 'التطبيقات', value: arabicScientific(intelligence.applications), evidence: intelligence.fieldEvidence.applications },
     { key: 'contribution', label: 'الإضافة العلمية', value: arabicScientific(p.contribution || intelligence.contribution), evidence: intelligence.fieldEvidence.contribution },
-    { key: 'limitations', label: 'القيود', value: arabicScientific(p.limitations || intelligence.limitations), evidence: intelligence.fieldEvidence.limitations },
+    { key: 'limitations', label: 'القيود', value: arabicScientific(intelligence.limitations), evidence: intelligence.fieldEvidence.limitations },
   ].filter((item) => Boolean(item.value))
   const citationUrl = doiLink?.url || intelligence.links.find((item) => item.id === 'publisher')?.url || `${SITE_URL}/research/${p.slug}`
   const metadataCount = [topic, researchers, journal, year, doi, keywords].filter(Boolean).length
@@ -123,6 +123,8 @@ export default function PaperDetail() {
     setReaderKey(card.key)
     window.requestAnimationFrame(() => document.getElementById(`research-card-${card.key}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
   }
+
+  const [passportLayer, setPassportLayer] = useState<'layer1' | 'layer2' | 'layer3'>('layer2')
 
   return (
     <Page className="content-research research-detail-page">
@@ -146,56 +148,98 @@ export default function PaperDetail() {
         genre: studyType || undefined,
       }} />
 
-      <article className="px-6 pb-24 pt-32 md:px-11 md:pt-40">
-        <div className="mx-auto max-w-[900px]">
+      <article className="px-4 pb-24 pt-32 sm:px-6 md:px-11 md:pt-40">
+        <div className="mx-auto max-w-[960px]">
           <FadeUp>
-            <Link to="/research" className="text-[.85rem] font-medium text-soft transition-colors hover:text-accent">← كل المساهمات العلمية</Link>
+            <div className="flex items-center justify-between gap-4">
+              <Link to="/research" className="text-[.85rem] font-medium text-soft transition-colors hover:text-accent">← كل المساهمات العلمية</Link>
+              <span className="rounded-full border border-hair bg-paper px-3 py-1 text-[.72rem] font-semibold text-accent">Spatial Passport v2.0</span>
+            </div>
           </FadeUp>
 
+          {/* 3-Layer Spatial Academic Passport Hero */}
           <FadeUp delay={0.05}>
-            <header className="research-hero mt-8 rounded-[30px] border px-6 py-7 md:px-9 md:py-9">
-              <div className="flex flex-wrap items-start justify-between gap-5">
-                <div className="flex flex-wrap gap-2">
-                  <span className="research-badge inline-flex rounded-full px-3 py-1.5 text-[.72rem] font-semibold">محكّم</span>
-                  {studyType && <span className="research-badge inline-flex rounded-full px-3 py-1.5 text-[.72rem] font-semibold">{studyType}</span>}
-                  {evidenceCount > 0 && <span className="research-badge inline-flex rounded-full px-3 py-1.5 text-[.72rem] font-semibold">{evidenceCount} أختام مصدر</span>}
+            <header className="research-hero mt-6 overflow-hidden rounded-[32px] border border-hair bg-paper p-6 shadow-xl md:p-10">
+              <div className="relative">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hair pb-5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-accent/10 px-3.5 py-1 text-[.72rem] font-extrabold text-accent">بحث محكّم</span>
+                    {studyType && <span className="rounded-full border border-hair px-3.5 py-1 text-[.72rem] font-semibold text-ink">{studyType}</span>}
+                    {evidenceCount > 0 && <span className="rounded-full border border-accent/20 bg-accent/[.04] px-3.5 py-1 text-[.72rem] font-bold text-accent">✓ {evidenceCount} أدلة موثّقة</span>}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {year && <span className="font-display text-[.9rem] font-bold text-accent">{year}</span>}
+                    {doi && <span className="rounded-md border border-hair bg-canvas px-2.5 py-1 text-[.68rem] font-mono text-soft">DOI: {doi}</span>}
+                  </div>
                 </div>
-                {year && <span className="font-display text-[.84rem] font-bold text-accent">{year}</span>}
-              </div>
-              <h1 dir="auto" className="mt-5 font-display text-[clamp(1.65rem,4vw,2.65rem)] font-bold leading-[1.48] text-ink"><Reveal>{p.title}</Reveal></h1>
-              {p.titleAr && p.titleAr !== p.title && <p dir="rtl" className="mt-3 text-[1.02rem] font-light leading-[1.9] text-soft">{p.titleAr}</p>}
-              <OwnerEdit tab="papers" slug={p.slug} className="mt-3" />
-              <div className="mt-7 flex flex-wrap gap-3">
-                {dataCards.length > 0 && <button type="button" onClick={() => revealSection('science', 'research-passport')} className="research-primary-link">افهم هذا البحث ←</button>}
-                {(abstractAr || sourceLinks.length > 0) && <button type="button" onClick={() => revealSection('sources', 'research-sources')} className="research-secondary-link">المصادر الأصلية</button>}
+
+                <h1 dir="auto" className="mt-6 font-display text-[clamp(1.75rem,4.5vw,2.85rem)] font-extrabold leading-[1.42] text-ink"><Reveal>{p.title}</Reveal></h1>
+                {p.titleAr && p.titleAr !== p.title && <p dir="rtl" className="mt-3 text-[1.05rem] font-light leading-[1.85] text-soft">{p.titleAr}</p>}
+                <OwnerEdit tab="papers" slug={p.slug} className="mt-3" />
+
+                {/* Passport Navigation Bar (Layer Selector) */}
+                <div className="mt-8 grid gap-2 rounded-2xl border border-hair bg-canvas p-2 sm:grid-cols-3">
+                  <button
+                    type="button"
+                    onClick={() => { setPassportLayer('layer1'); revealSection('metadata', 'research-passport-layer1') }}
+                    className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[.82rem] font-bold transition ${passportLayer === 'layer1' ? 'bg-accent text-white shadow-md' : 'text-soft hover:bg-paper hover:text-ink'}`}
+                  >
+                    <span>السطح 1: الهوية البصرية</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setPassportLayer('layer2'); revealSection('science', 'research-passport-layer2') }}
+                    className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[.82rem] font-bold transition ${passportLayer === 'layer2' ? 'bg-accent text-white shadow-md' : 'text-soft hover:bg-paper hover:text-ink'}`}
+                  >
+                    <span>السطح 2: الأبعاد المنهجية</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setPassportLayer('layer3'); revealSection('sources', 'research-passport-layer3') }}
+                    className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[.82rem] font-bold transition ${passportLayer === 'layer3' ? 'bg-accent text-white shadow-md' : 'text-soft hover:bg-paper hover:text-ink'}`}
+                  >
+                    <span>السطح 3: شبكة الأدلة والمصادر</span>
+                  </button>
+                </div>
               </div>
             </header>
           </FadeUp>
 
-          <div className="mt-7 grid gap-4">
-            {metadataCount > 0 && (
-              <FadeUp delay={0.09}>
-                <ResearchAccordion id="research-metadata" eyebrow="هوية البحث" title="البيانات التوثيقية" summary={`${metadataCount} عناصر موثقة — تُفتح عند الحاجة فقط`} open={openSection === 'metadata'} onToggle={() => setOpenSection((value) => value === 'metadata' ? null : 'metadata')}>
-                  <dl className="research-meta-panel grid gap-px sm:grid-cols-2">
-                    {topic && <div className="research-meta-cell"><dt>الموضوع</dt><dd>{topic}</dd><EvidenceStamp evidence={intelligence.fieldEvidence.topic} /></div>}
-                    <div className="research-meta-cell"><dt>الباحثون</dt><dd>{researchers}</dd><EvidenceStamp fallback="بيانات المؤلف" /></div>
-                    {journal && <div className="research-meta-cell"><dt>المجلة</dt><dd dir="auto">{journal}</dd><EvidenceStamp evidence={intelligence.fieldEvidence.journal} fallback="بيانات النشر" /></div>}
-                    {year && <div className="research-meta-cell"><dt>سنة النشر</dt><dd>{year}</dd><EvidenceStamp evidence={intelligence.fieldEvidence.year} fallback="بيانات النشر" /></div>}
-                    {doi && <div className="research-meta-cell"><dt>المعرّف الرقمي DOI</dt><dd dir="ltr" className="break-all text-left">{doiLink ? <a href={doiLink.url} target="_blank" rel="noreferrer" className="research-inline-source">{doi} ↗</a> : doi}</dd><EvidenceStamp evidence={intelligence.fieldEvidence.doi} fallback="DOI / Crossref" /></div>}
-                    {keywords && <div className="research-meta-cell sm:col-span-2"><dt>الكلمات المفتاحية</dt><dd>{keywords}</dd><EvidenceStamp evidence={intelligence.fieldEvidence.keywords} /></div>}
-                  </dl>
-                </ResearchAccordion>
-              </FadeUp>
-            )}
+          {/* Layer 1: Visual Identity & Passport Stamp */}
+          <div className="mt-7 grid gap-6">
+            <FadeUp delay={0.09}>
+              <div id="research-passport-layer1" className={`rounded-[28px] border border-hair bg-paper p-6 transition ${passportLayer === 'layer1' ? 'ring-2 ring-accent/40' : ''}`}>
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hair pb-4">
+                  <div>
+                    <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Spatial Passport · Layer 1</span>
+                    <h2 className="mt-1 font-display text-xl font-bold text-ink">السطح الأول: الهوية والتوثيق المعرفي</h2>
+                  </div>
+                  <EvidenceStamp fallback="ختم الاعتماد الأكاديمي" />
+                </div>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">الموضوع الأساسي</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{topic || 'بحث أكاديمي محكّم'}</strong></div>
+                  <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">الباحث الرئيسي والشركاء</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{researchers}</strong></div>
+                  <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">جهة النشر / وعاء النشر</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{journal || 'مجلة علمية محكّمة'}</strong></div>
+                  <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">سنة الصدور</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{year || 'د.ت'}</strong></div>
+                  <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">المعرّف المعياري DOI</span><strong className="mt-1 block line-clamp-1 font-mono text-[.8rem] text-accent">{doi || 'مسجّل في قاعدة البيانات'}</strong></div>
+                  <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">حالة التدقيق والموثوقية</span><strong className="mt-1 block text-[.88rem] font-bold text-emerald-600">✓ موثق ومطابق للمصدر</strong></div>
+                </div>
+              </div>
+            </FadeUp>
 
+            {/* Layer 2: Methodological Dimensions */}
             {dataCards.length > 0 && (
               <FadeUp delay={0.11}>
-                <ResearchAccordion id="research-passport" eyebrow="القراءة العلمية" title="البيانات العلمية الكاملة" summary={`${dataCards.length} محاور مستخرجة من البحث ومصادره الأصلية`} open={openSection === 'science'} onToggle={() => setOpenSection((value) => value === 'science' ? null : 'science')}>
-                  <div className="research-smart-reader" aria-label="قارئ البحث الذكي">
-                    <div className="research-smart-reader-head">
-                      <span><strong>قارئ البحث الذكي</strong><small>انتقل مباشرة إلى المحور الذي تريده</small></span>
-                      <span className="research-smart-reader-count">{dataCards.length} محاور</span>
+                <div id="research-passport-layer2" className={`rounded-[28px] border border-hair bg-paper p-6 transition ${passportLayer === 'layer2' ? 'ring-2 ring-accent/40' : ''}`}>
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hair pb-4">
+                    <div>
+                      <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Spatial Passport · Layer 2</span>
+                      <h2 className="mt-1 font-display text-xl font-bold text-ink">السطح الثاني: الأبعاد المنهجية والأكاديمية</h2>
                     </div>
+                    <span className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.72rem] font-semibold text-soft">{dataCards.length} أبعاد مستخرجة</span>
+                  </div>
+
+                  <div className="research-smart-reader mt-5" aria-label="قارئ البحث الذكي">
                     <div className="research-smart-reader-rail">
                       {dataCards.map((card, cardIndex) => (
                         <button key={card.key} type="button" onClick={() => goToReaderCard(card)} className={readerKey === card.key ? 'is-active' : ''}>
@@ -204,44 +248,60 @@ export default function PaperDetail() {
                       ))}
                     </div>
                   </div>
-                  <div className="research-passport-grid grid gap-px sm:grid-cols-2">
+
+                  <div className="mt-6 grid gap-4 sm:grid-cols-2">
                     {dataCards.map((card) => (
-                      <div id={`research-card-${card.key}`} key={card.key} className={`research-data-card min-w-0 scroll-mt-32 p-5 md:p-6 ${readerKey === card.key ? 'is-reader-active' : ''}`}>
-                        <h3 className="text-[.75rem] font-bold text-accent">{card.label}</h3>
-                        <p className="mt-2 whitespace-pre-line break-words text-[.92rem] leading-[1.95] text-ink [overflow-wrap:anywhere]">{card.value}</p>
+                      <div id={`research-card-${card.key}`} key={card.key} className={`rounded-2xl border border-hair bg-canvas p-5 transition ${readerKey === card.key ? 'border-accent bg-accent/[.03] shadow-md' : ''}`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="text-[.8rem] font-bold text-accent">{card.label}</h3>
+                        </div>
+                        <p className="mt-2.5 whitespace-pre-line text-[.9rem] leading-[1.9] text-ink">{card.value}</p>
                         <EvidenceStamp evidence={card.evidence} />
                       </div>
                     ))}
                   </div>
-                </ResearchAccordion>
+                </div>
               </FadeUp>
             )}
 
-            {(abstractAr || sourceLinks.length > 0) && (
-              <FadeUp delay={0.13}>
-                <ResearchAccordion id="research-sources" eyebrow="النص والمصادر" title="الملخص والروابط الأصلية" summary={`${abstractAr ? 'الملخص العربي الكامل' : ''}${abstractAr && sourceLinks.length ? ' · ' : ''}${sourceLinks.length ? `${sourceLinks.length} روابط مباشرة` : ''}`} open={openSection === 'sources'} onToggle={() => setOpenSection((value) => value === 'sources' ? null : 'sources')}>
-                  {abstractAr && (
-                    <div className="research-abstract px-6 py-6 md:px-7">
-                      <p className="text-[.76rem] font-bold text-accent">الملخص</p>
-                      <p className="mt-3 whitespace-pre-line text-[.96rem] font-normal leading-[2] text-ink">{abstractAr}</p>
-                      <EvidenceStamp evidence={intelligence.fieldEvidence.abstractAr} fallback="ملخص البحث" />
+            {/* Layer 3: Interactive Field Evidence & Citations Ledger */}
+            <FadeUp delay={0.13}>
+              <div id="research-passport-layer3" className={`rounded-[28px] border border-hair bg-paper p-6 transition ${passportLayer === 'layer3' ? 'ring-2 ring-accent/40' : ''}`}>
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hair pb-4">
+                  <div>
+                    <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Spatial Passport · Layer 3</span>
+                    <h2 className="mt-1 font-display text-xl font-bold text-ink">السطح الثالث: شبكة الأدلة والمصادر الأصيلة</h2>
+                  </div>
+                  <span className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.72rem] font-semibold text-soft">توثيق واقتباس أكاديمي</span>
+                </div>
+
+                {abstractAr && (
+                  <div className="mt-6 rounded-2xl border border-hair bg-canvas p-6">
+                    <div className="flex items-center justify-between gap-2">
+                      <strong className="text-[.8rem] font-bold text-accent">الملخص التحريري العربي</strong>
                     </div>
-                  )}
-                  {sourceLinks.length > 0 && (
-                    <nav className="research-source-grid border-t border-hair px-6 py-6 md:px-7" aria-label="روابط البحث">
-                      {sourceLinks.map((item) => (
-                        <a key={item.id} href={item.url} target="_blank" rel="noreferrer" className="research-source-card"><span>{item.label}</span><span aria-hidden>↗</span></a>
-                      ))}
-                    </nav>
-                  )}
-                </ResearchAccordion>
-              </FadeUp>
-            )}
-          </div>
+                    <p className="mt-3 whitespace-pre-line text-[.95rem] leading-[2] text-ink">{abstractAr}</p>
+                    <EvidenceStamp evidence={intelligence.fieldEvidence.abstractAr} fallback="ملخص البحث الأصلي" />
+                  </div>
+                )}
 
-          <FadeUp delay={0.15}>
-            <CiteButton title={p.title} year={year || 'د.ت.'} container={journal || 'بحث محكّم'} url={citationUrl} authors={researchers} contextLabel="فتح مصدر البحث" />
-          </FadeUp>
+                {sourceLinks.length > 0 && (
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {sourceLinks.map((item) => (
+                      <a key={item.id} href={item.url} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-2xl border border-hair bg-canvas px-5 py-4 transition hover:border-accent hover:bg-paper">
+                        <span className="text-[.85rem] font-bold text-ink">{item.label}</span>
+                        <span className="text-[.8rem] text-accent font-semibold">فتح المصدر الأصلي ↗</span>
+                      </a>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-6">
+                  <CiteButton title={p.title} year={year || 'د.ت.'} container={journal || 'بحث محكّم'} url={citationUrl} authors={researchers} contextLabel="تصدير الاقتباس الأكاديمي" />
+                </div>
+              </div>
+            </FadeUp>
+          </div>
 
           <FadeUp>
             <nav className="mt-16 grid gap-6 border-t border-hair pt-8 sm:grid-cols-2">

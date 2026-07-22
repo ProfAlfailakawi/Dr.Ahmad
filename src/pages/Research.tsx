@@ -87,7 +87,7 @@ export default function Research() {
           <ul id="research-list" className="mt-6 grid scroll-mt-28 gap-4">
             {paged.pageItems.map(({ paper: p, intelligence }, i) => {
               const type = arabicOnly(p.studyType || intelligence.studyType)
-              const year = p.year || intelligence.year
+              const year = intelligence.year
               const journal = p.journal || intelligence.journal
               return (
                 <FadeUp key={p.slug} delay={Math.min(i * 0.03, 0.3)}>

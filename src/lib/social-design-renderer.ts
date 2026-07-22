@@ -2,6 +2,7 @@ import {
   ACCENT_STRATEGIES,
   FRAMING_MODES,
   PALETTES,
+  SPATIAL_PATTERNS,
   TYPOGRAPHY_MODES,
   compositionTextLayout,
   type CompositionPlan,
@@ -72,7 +73,7 @@ function textBlock({
   lineHeight = 1.25,
   fill,
   weight = 600,
-  anchor,
+  anchor = 'end',
   opacity = 1,
   family = 'Tajawal',
   letterSpacing = 0,
@@ -94,8 +95,7 @@ function textBlock({
   if (!lines.length) return ''
   const rtl = hasArabic(lines.join(' '))
   const direction = rtl ? 'rtl' : 'ltr'
-  // في SVG تتبع start/end اتجاه الكتابة؛ start هو الحافة اليمنى الصحيحة للنص العربي.
-  const resolvedAnchor = anchor || (rtl ? 'start' : 'end')
+  const resolvedAnchor = anchor || 'end'
   const text = `<text x="${x}" y="${y}" fill="${fill}" opacity="${opacity}" font-family="${esc(family)}" font-size="${size}" font-weight="${weight}" text-anchor="${resolvedAnchor}" direction="${direction}" unicode-bidi="plaintext" letter-spacing="${letterSpacing}">${lines.map((line, index) => `<tspan x="${x}" dy="${index ? size * lineHeight : 0}">${esc(line)}</tspan>`).join('')}</text>`
   return clipId ? `<g clip-path="url(#${clipId})">${text}</g>` : text
 }
@@ -190,7 +190,7 @@ function footer(plan: CompositionPlan, width: number, height: number) {
   const inverted = plan.accent === 'contrast-band'
   const fill = inverted ? '#ffffff' : p.muted
   const author = plan.content.author || 'د. أحمد حسين الفيلكاوي'
-  return `<g><text x="${width * .91}" y="${height * .93}" fill="${fill}" font-size="${Math.min(width, height) * .025}" font-family="Tajawal" font-weight="600" text-anchor="start" direction="rtl" unicode-bidi="plaintext">${esc(author)}</text><text x="${width * .09}" y="${height * .93}" fill="${fill}" font-size="${Math.min(width, height) * .019}" font-family="Tajawal" font-weight="500">dr-alfailakawi.com</text></g>`
+  return `<g><text x="${width * .91}" y="${height * .93}" fill="${fill}" font-size="${Math.min(width, height) * .025}" font-family="Tajawal" font-weight="600" text-anchor="end" direction="rtl" unicode-bidi="plaintext">${esc(author)}</text><text x="${width * .09}" y="${height * .93}" fill="${fill}" font-size="${Math.min(width, height) * .019}" font-family="Tajawal" font-weight="500" text-anchor="start">dr-alfailakawi.com</text></g>`
 }
 
 export function renderCompositionSvg(plan: CompositionPlan, options: { title?: string; ariaLabel?: string } = {}) {
@@ -205,22 +205,33 @@ export function renderCompositionSvg(plan: CompositionPlan, options: { title?: s
   const bodyLines = wrap(bodySource, textLayout.bodyMaxChars, textLayout.bodyMaxLines)
   const safeInsetX = Math.max(plan.format.safeInset * width, width * .045)
   const safeInsetY = Math.max(plan.format.safeInset * min, height * .035)
+
+  const spatialAlign = SPATIAL_PATTERNS[plan.spatial]?.align || 'right'
+  const isCentered = spatialAlign === 'center'
+
   const titleZoneX = Math.max(safeInsetX, plan.geometry.titleZone.x * width)
   const titleZoneRight = Math.min(width - safeInsetX, (plan.geometry.titleZone.x + plan.geometry.titleZone.width) * width)
   const bodyZoneX = Math.max(safeInsetX, plan.geometry.bodyZone.x * width)
   const bodyZoneRight = Math.min(width - safeInsetX, (plan.geometry.bodyZone.x + plan.geometry.bodyZone.width) * width)
   const titleZoneWidth = Math.max(width * .22, titleZoneRight - titleZoneX)
   const bodyZoneWidth = Math.max(width * .22, bodyZoneRight - bodyZoneX)
+
   const titleBaseSize = min * (.062 * typography.titleScale) * (titleLines.length > 3 ? .86 : 1)
   const titleMaxHeight = Math.max(min * .16, Math.min(height * .34, Math.max(1, plan.geometry.titleZone.maxLines) * titleBaseSize * typography.lineHeight * 1.08))
   const bodyBaseSize = min * .027
   const bodyMaxHeight = Math.max(min * .12, Math.min(height * .3, Math.max(1, plan.geometry.bodyZone.maxLines) * bodyBaseSize * 1.55 * 1.08))
+
   const titleSize = fittedFontSize(titleLines, titleBaseSize, titleZoneWidth, titleMaxHeight, typography.lineHeight, .52)
   const bodySize = fittedFontSize(bodyLines, bodyBaseSize, bodyZoneWidth, bodyMaxHeight, 1.55, .62)
-  const tx = titleZoneRight
+
+  const titleAnchor: 'end' | 'middle' | 'start' = isCentered ? 'middle' : 'end'
+  const bodyAnchor: 'end' | 'middle' | 'start' = isCentered ? 'middle' : 'end'
+
+  const tx = isCentered ? titleZoneX + titleZoneWidth / 2 : titleZoneRight
   const ty = Math.max(safeInsetY + titleSize, plan.geometry.titleZone.y * height)
-  const bx = bodyZoneRight
+  const bx = isCentered ? bodyZoneX + bodyZoneWidth / 2 : bodyZoneRight
   const by = Math.max(safeInsetY + bodySize, plan.geometry.bodyZone.y * height)
+
   const kicker = plan.content.kicker || plan.directionLabel
   const titleFill = palette.ink
   const bodyFill = palette.muted
@@ -228,18 +239,22 @@ export function renderCompositionSvg(plan: CompositionPlan, options: { title?: s
   const decor = `${layoutDecor(plan.layout, plan, width, height)}${accentDecor(plan, width, height)}`
   const kickerLines = wrap(kicker, 34, 1)
   const kickerSize = fittedFontSize(kickerLines, min * .021, width * .38, min * .06, 1.2, .72)
-  const kickerX = width - safeInsetX
+  const kickerX = isCentered ? width / 2 : width - safeInsetX
   const kickerY = Math.max(safeInsetY + kickerSize, height * .105)
-  const titleClipY = Math.max(safeInsetY, ty - titleSize * 1.15)
-  const bodyClipY = Math.max(safeInsetY, by - bodySize * 1.15)
+  const kickerAnchor = isCentered ? 'middle' : 'end'
+
+  const titleClipY = Math.max(safeInsetY, ty - titleSize * 1.25)
+  const bodyClipY = Math.max(safeInsetY, by - bodySize * 1.25)
   const clipPrefix = `safe-${plan.fingerprint.replace(/[^a-z0-9_-]/gi, '').slice(0, 18) || 'composition'}`
   const titleClipId = `${clipPrefix}-title`
   const bodyClipId = `${clipPrefix}-body`
   const kickerClipId = `${clipPrefix}-kicker`
-  const clipDefinitions = `<clipPath id="${titleClipId}"><rect x="${titleZoneX}" y="${titleClipY}" width="${titleZoneWidth}" height="${Math.min(height - safeInsetY - titleClipY, titleMaxHeight + titleSize * 1.5)}"/></clipPath><clipPath id="${bodyClipId}"><rect x="${bodyZoneX}" y="${bodyClipY}" width="${bodyZoneWidth}" height="${Math.min(height - safeInsetY - bodyClipY, bodyMaxHeight + bodySize * 1.5)}"/></clipPath><clipPath id="${kickerClipId}"><rect x="${width * .5}" y="${safeInsetY}" width="${width * .5 - safeInsetX}" height="${height * .16}"/></clipPath>`
-  const kickerText = textBlock({ lines: kickerLines, x: kickerX, y: kickerY, size: kickerSize, fill: plan.layout === 'event-marquee' ? '#ffffff' : palette.accent, weight: 700, family: 'Tajawal', letterSpacing: 1.2, clipId: kickerClipId })
-  const titleText = textBlock({ lines: titleLines, x: tx, y: ty, size: titleSize, fill: titleFill, weight: typography.titleWeight, family: typography.displayFamily, lineHeight: typography.lineHeight, clipId: titleClipId })
-  const bodyText = textBlock({ lines: bodyLines, x: bx, y: by, size: bodySize, fill: bodyFill, weight: 500, family: typography.bodyFamily, lineHeight: 1.55, clipId: bodyClipId })
+
+  const clipDefinitions = `<clipPath id="${titleClipId}"><rect x="${titleZoneX - 16}" y="${titleClipY}" width="${titleZoneWidth + 32}" height="${Math.min(height - safeInsetY - titleClipY, titleMaxHeight + titleSize * 2)}"/></clipPath><clipPath id="${bodyClipId}"><rect x="${bodyZoneX - 16}" y="${bodyClipY}" width="${bodyZoneWidth + 32}" height="${Math.min(height - safeInsetY - bodyClipY, bodyMaxHeight + bodySize * 2)}"/></clipPath><clipPath id="${kickerClipId}"><rect x="${safeInsetX}" y="${safeInsetY}" width="${width - safeInsetX * 2}" height="${height * .2}"/></clipPath>`
+
+  const kickerText = textBlock({ lines: kickerLines, x: kickerX, y: kickerY, size: kickerSize, fill: plan.layout === 'event-marquee' ? '#ffffff' : palette.accent, weight: 700, family: 'Tajawal', letterSpacing: 1.2, clipId: kickerClipId, anchor: kickerAnchor })
+  const titleText = textBlock({ lines: titleLines, x: tx, y: ty, size: titleSize, fill: titleFill, weight: typography.titleWeight, family: typography.displayFamily, lineHeight: typography.lineHeight, clipId: titleClipId, anchor: titleAnchor })
+  const bodyText = textBlock({ lines: bodyLines, x: bx, y: by, size: bodySize, fill: bodyFill, weight: 500, family: typography.bodyFamily, lineHeight: 1.55, clipId: bodyClipId, anchor: bodyAnchor })
   const cta = plan.content.cta && plan.ctaPlacement !== 'none'
     ? `<g><rect x="${width * .64}" y="${height * .82}" width="${width * .27}" height="${height * .055}" rx="${height * .0275}" fill="${palette.accent}"/><text x="${width * .775}" y="${height * .855}" fill="#fff" font-family="Tajawal" font-size="${min * .021}" font-weight="700" text-anchor="middle" direction="rtl">${esc(plan.content.cta)}</text></g>`
     : ''

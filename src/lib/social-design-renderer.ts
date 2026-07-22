@@ -100,8 +100,11 @@ function textBlock({
     if (resolvedAnchor === 'end') resolvedAnchor = 'start'
     else if (resolvedAnchor === 'start') resolvedAnchor = 'end'
   }
-  const text = `<text x="${x}" y="${y}" fill="${fill}" opacity="${opacity}" font-family="${esc(family)}" font-size="${size}" font-weight="${weight}" text-anchor="${resolvedAnchor}" direction="${direction}" unicode-bidi="plaintext" letter-spacing="${letterSpacing}">${lines.map((line, index) => `<tspan x="${x}" dy="${index ? size * lineHeight : 0}">${esc(line)}</tspan>`).join('')}</text>`
-  return clipId ? `<g clip-path="url(#${clipId})">${text}</g>` : text
+  const content = lines.map((line, index) => {
+    const lineY = y + (index ? index * size * lineHeight : 0)
+    return `<text x="${x}" y="${lineY}" fill="${fill}" opacity="${opacity}" font-family="${esc(family)}" font-size="${size}" font-weight="${weight}" text-anchor="${resolvedAnchor}" direction="${direction}" unicode-bidi="plaintext" letter-spacing="${letterSpacing}">${esc(line)}</text>`
+  }).join('')
+  return clipId ? `<g clip-path="url(#${clipId})">${content}</g>` : content
 }
 
 function commonDecor(plan: CompositionPlan, width: number, height: number) {

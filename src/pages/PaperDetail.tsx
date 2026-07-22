@@ -6,6 +6,7 @@ import { CiteButton, OwnerEdit } from '../components/extras'
 import { profile, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { analyzeResearch, type ResearchEvidence } from '../lib/research-intelligence'
+import { useAdminAuth } from '../lib/admin-auth'
 
 const cleanText = (value = '') => value.replace(/^ملخص عربي:\s*/, '').replace(/\s+/g, ' ').trim()
 const arabicScientific = (value = '') => {
@@ -56,6 +57,8 @@ function ResearchAccordion({
 }
 
 function EvidenceStamp({ evidence, fallback = 'المصدر الأصلي' }: { evidence?: ResearchEvidence; fallback?: string }) {
+  const { isAdmin } = useAdminAuth()
+  if (!isAdmin) return null
   const label = evidence?.label || `موثّق من ${fallback}`
   return (
     <span className="research-evidence-stamp" title={evidence?.quote || label}>
@@ -153,11 +156,11 @@ export default function PaperDetail() {
           <FadeUp>
             <div className="flex items-center justify-between gap-4">
               <Link to="/research" className="text-[.85rem] font-medium text-soft transition-colors hover:text-accent">← كل المساهمات العلمية</Link>
-              <span className="rounded-full border border-hair bg-paper px-3 py-1 text-[.72rem] font-semibold text-accent">Spatial Passport v2.0</span>
+              <span className="rounded-full border border-hair bg-paper px-3 py-1 text-[.72rem] font-semibold text-accent">البصمة الأكاديمية v2.0</span>
             </div>
           </FadeUp>
 
-          {/* 3-Layer Spatial Academic Passport Hero */}
+          {/* 3-Level Academic Passport Hero */}
           <FadeUp delay={0.05}>
             <header className="research-hero mt-6 overflow-hidden rounded-[32px] border border-hair bg-paper p-6 shadow-xl md:p-10">
               <div className="relative">
@@ -177,28 +180,28 @@ export default function PaperDetail() {
                 {p.titleAr && p.titleAr !== p.title && <p dir="rtl" className="mt-3 text-[1.05rem] font-light leading-[1.85] text-soft">{p.titleAr}</p>}
                 <OwnerEdit tab="papers" slug={p.slug} className="mt-3" />
 
-                {/* Passport Navigation Bar (Layer Selector) */}
+                {/* Passport Navigation Bar (Level Selector) */}
                 <div className="mt-8 grid gap-2 rounded-2xl border border-hair bg-canvas p-2 sm:grid-cols-3">
                   <button
                     type="button"
                     onClick={() => { setPassportLayer('layer1'); revealSection('metadata', 'research-passport-layer1') }}
                     className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[.82rem] font-bold transition ${passportLayer === 'layer1' ? 'bg-accent text-white shadow-md' : 'text-soft hover:bg-paper hover:text-ink'}`}
                   >
-                    <span>السطح 1: الهوية البصرية</span>
+                    <span>المستوى 1: الهوية والتوثيق</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => { setPassportLayer('layer2'); revealSection('science', 'research-passport-layer2') }}
                     className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[.82rem] font-bold transition ${passportLayer === 'layer2' ? 'bg-accent text-white shadow-md' : 'text-soft hover:bg-paper hover:text-ink'}`}
                   >
-                    <span>السطح 2: الأبعاد المنهجية</span>
+                    <span>المستوى 2: الأبعاد المنهجية</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => { setPassportLayer('layer3'); revealSection('sources', 'research-passport-layer3') }}
                     className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[.82rem] font-bold transition ${passportLayer === 'layer3' ? 'bg-accent text-white shadow-md' : 'text-soft hover:bg-paper hover:text-ink'}`}
                   >
-                    <span>السطح 3: شبكة الأدلة والمصادر</span>
+                    <span>المستوى 3: شبكة الأدلة والمصادر</span>
                   </button>
                 </div>
               </div>
@@ -211,8 +214,8 @@ export default function PaperDetail() {
               <div id="research-passport-layer1" className={`rounded-[28px] border border-hair bg-paper p-6 transition ${passportLayer === 'layer1' ? 'ring-2 ring-accent/40' : ''}`}>
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hair pb-4">
                   <div>
-                    <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Spatial Passport · Layer 1</span>
-                    <h2 className="mt-1 font-display text-xl font-bold text-ink">السطح الأول: الهوية والتوثيق المعرفي</h2>
+                    <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Academic Level 1</span>
+                    <h2 className="mt-1 font-display text-xl font-bold text-ink">المستوى الأول: الهوية والتوثيق الأكاديمي</h2>
                   </div>
                   <EvidenceStamp fallback="ختم الاعتماد الأكاديمي" />
                 </div>
@@ -233,8 +236,8 @@ export default function PaperDetail() {
                 <div id="research-passport-layer2" className={`rounded-[28px] border border-hair bg-paper p-6 transition ${passportLayer === 'layer2' ? 'ring-2 ring-accent/40' : ''}`}>
                   <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hair pb-4">
                     <div>
-                      <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Spatial Passport · Layer 2</span>
-                      <h2 className="mt-1 font-display text-xl font-bold text-ink">السطح الثاني: الأبعاد المنهجية والأكاديمية</h2>
+                      <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Academic Level 2</span>
+                      <h2 className="mt-1 font-display text-xl font-bold text-ink">المستوى الثاني: الأبعاد المنهجية والأكاديمية</h2>
                     </div>
                     <span className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.72rem] font-semibold text-soft">{dataCards.length} أبعاد مستخرجة</span>
                   </div>
@@ -269,8 +272,8 @@ export default function PaperDetail() {
               <div id="research-passport-layer3" className={`rounded-[28px] border border-hair bg-paper p-6 transition ${passportLayer === 'layer3' ? 'ring-2 ring-accent/40' : ''}`}>
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hair pb-4">
                   <div>
-                    <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Spatial Passport · Layer 3</span>
-                    <h2 className="mt-1 font-display text-xl font-bold text-ink">السطح الثالث: شبكة الأدلة والمصادر الأصيلة</h2>
+                    <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Academic Level 3</span>
+                    <h2 className="mt-1 font-display text-xl font-bold text-ink">المستوى الثالث: شبكة الأدلة والمراجع الأصيلة</h2>
                   </div>
                   <span className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.72rem] font-semibold text-soft">توثيق واقتباس أكاديمي</span>
                 </div>

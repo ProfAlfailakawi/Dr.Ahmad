@@ -137,22 +137,111 @@ export default function Articles() {
         </div>
       </section>
 
-      {/* featured trio */}
+      {/* featured trio - 3 distinct, expressive card variations */}
       {!archiveActive && <section className="border-b border-hair px-4 py-10 sm:px-6 md:px-11 md:py-16">
-        <div className="mobile-paired-grid mx-auto grid max-w-shell grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 md:gap-8">
-          {featured.map((e, i) => (
-            <FadeUp key={e.title} delay={i * 0.08} className="h-full min-w-0">
-              <Link
-                to={`/articles/${e.slug}`}
-                viewTransition
-                className="group flex h-full min-w-0 flex-col rounded-xl border border-hair border-t-2 border-t-accent bg-canvas p-4 text-start transition-colors duration-300 hover:border-accent/40 sm:p-5 md:rounded-none md:border-x-0 md:border-b-0 md:bg-transparent md:px-0"
-              >
-                <span className="text-[.68rem] font-semibold uppercase text-accent sm:text-[.76rem]">{e.tag}</span>
-                <h2 style={{ viewTransitionName: `article-${e.slug}` }} className="my-2 break-words font-display text-[1rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent sm:my-3 sm:text-[1.2rem] md:text-[1.34rem]">{e.title}</h2>
-                <blockquote className="line-clamp-4 break-words font-display text-[.82rem] leading-[1.75] text-soft sm:text-[.95rem] md:text-[1.02rem]">{e.quote}</blockquote>
-              </Link>
-            </FadeUp>
-          ))}
+        <div className="mx-auto max-w-shell">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-[.85rem] font-bold text-accent">إضاءات مختارة وقراءات فكرية</h2>
+            <span className="text-[.75rem] text-soft">3 عدسات موضوعية متجددة</span>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            {featured.map((e, i) => {
+              // Card style variation 0: Highlight Hero Card
+              if (i === 0) {
+                return (
+                  <FadeUp key={e.title} delay={0} className="h-full min-w-0">
+                    <Link
+                      to={`/articles/${e.slug}`}
+                      viewTransition
+                      className="group flex h-full min-w-0 flex-col justify-between rounded-2xl border border-accent/30 bg-accent/[.045] p-6 shadow-sm transition-all duration-300 hover:border-accent hover:bg-accent/[.07] hover:shadow-md"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-[.7rem] font-bold text-white">
+                            <span className="h-1.5 w-1.5 rounded-full bg-white/80" />
+                            {e.tag} · أبرز مقال
+                          </span>
+                          <span className="text-[.75rem] font-bold text-accent">01</span>
+                        </div>
+                        <h3 style={{ viewTransitionName: `article-${e.slug}` }} className="mt-4 break-words font-display text-[1.18rem] font-bold leading-[1.5] text-ink transition-colors group-hover:text-accent sm:text-[1.32rem]">
+                          {e.title}
+                        </h3>
+                        <blockquote className="mt-3 line-clamp-4 break-words font-display text-[.9rem] leading-[1.8] text-soft">
+                          {e.quote}
+                        </blockquote>
+                      </div>
+                      <div className="mt-6 flex items-center justify-between border-t border-accent/20 pt-4 text-[.78rem] font-bold text-accent">
+                        <span>اقرأ المقال الكامل</span>
+                        <span className="transition-transform group-hover:translate-x-1">←</span>
+                      </div>
+                    </Link>
+                  </FadeUp>
+                )
+              }
+
+              // Card style variation 1: Archival Framed Card
+              if (i === 1) {
+                return (
+                  <FadeUp key={e.title} delay={0.08} className="h-full min-w-0">
+                    <Link
+                      to={`/articles/${e.slug}`}
+                      viewTransition
+                      className="group flex h-full min-w-0 flex-col justify-between rounded-2xl border border-hair border-t-4 border-t-accent bg-paper p-6 transition-all duration-300 hover:border-accent/50 hover:shadow-md"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="inline-flex rounded-md border border-hair bg-canvas px-2.5 py-1 text-[.7rem] font-bold text-soft">
+                            {e.tag} · قراءة من الأرشيف
+                          </span>
+                          <span className="text-[.75rem] font-bold text-soft">02</span>
+                        </div>
+                        <h3 style={{ viewTransitionName: `article-${e.slug}` }} className="mt-4 break-words font-display text-[1.12rem] font-bold leading-[1.52] text-ink transition-colors group-hover:text-accent sm:text-[1.25rem]">
+                          {e.title}
+                        </h3>
+                        <blockquote className="mt-3 line-clamp-4 break-words font-display text-[.88rem] leading-[1.8] text-soft/90">
+                          {e.quote}
+                        </blockquote>
+                      </div>
+                      <div className="mt-6 flex items-center justify-between border-t border-hair pt-4 text-[.78rem] font-semibold text-soft group-hover:text-accent">
+                        <span>استكشف هذا المقال</span>
+                        <span className="transition-transform group-hover:translate-x-1">←</span>
+                      </div>
+                    </Link>
+                  </FadeUp>
+                )
+              }
+
+              // Card style variation 2: Editorial Cross-topic Card
+              return (
+                <FadeUp key={e.title} delay={0.16} className="h-full min-w-0">
+                  <Link
+                    to={`/articles/${e.slug}`}
+                    viewTransition
+                    className="group flex h-full min-w-0 flex-col justify-between rounded-2xl border border-hair border-r-4 border-r-accent bg-canvas p-6 transition-all duration-300 hover:border-accent/60 hover:bg-paper hover:shadow-md"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="inline-flex rounded-full bg-accent/10 px-3 py-1 text-[.7rem] font-bold text-accent">
+                          {e.tag} · إضاءة موضوعية
+                        </span>
+                        <span className="text-[.75rem] font-bold text-soft">03</span>
+                      </div>
+                      <h3 style={{ viewTransitionName: `article-${e.slug}` }} className="mt-4 break-words font-display text-[1.12rem] font-bold leading-[1.52] text-ink transition-colors group-hover:text-accent sm:text-[1.25rem]">
+                        {e.title}
+                      </h3>
+                      <blockquote className="mt-3 line-clamp-4 break-words font-display text-[.88rem] font-normal leading-[1.8] text-soft">
+                        {e.quote}
+                      </blockquote>
+                    </div>
+                    <div className="mt-6 flex items-center justify-between border-t border-hair pt-4 text-[.78rem] font-semibold text-soft group-hover:text-accent">
+                      <span>مقال ذو صلة</span>
+                      <span className="transition-transform group-hover:translate-x-1">←</span>
+                    </div>
+                  </Link>
+                </FadeUp>
+              )
+            })}
+          </div>
         </div>
       </section>}
 

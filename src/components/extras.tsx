@@ -219,81 +219,151 @@ export function CiteButton({ title, year, container, url, compact = false }: { t
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const citation = `الفيلكاوي، أحمد حسين. «${title}». ${container}، ${year}، ${url}.`
-  const copy = async () => { try { await navigator.clipboard.writeText(citation); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { /* noop */ } }
+
+  const copy = async () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(citation)
+      } else {
+        const textarea = document.createElement('textarea')
+        textarea.value = citation
+        textarea.style.position = 'fixed'
+        textarea.style.opacity = '0'
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        textarea.remove()
+      }
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    } catch {
+      // Fallback manual write
+      try {
+        const textarea = document.createElement('textarea')
+        textarea.value = citation
+        textarea.style.position = 'fixed'
+        textarea.style.opacity = '0'
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        textarea.remove()
+        setCopied(true)
+        setTimeout(() => setCopied(false), 1800)
+      } catch {
+        /* noop */
+      }
+    }
+  }
+
   useEffect(() => {
     if (!open) return
     const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false) }
     document.addEventListener('keydown', close)
-    const previous = document.body.style.overflow; document.body.style.overflow = 'hidden'
-    return () => { document.removeEventListener('keydown', close); document.body.style.overflow = previous }
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', close)
+      document.body.style.overflow = previous
+    }
   }, [open])
-  if (compact) {
-    const dialog = typeof document !== 'undefined' ? createPortal(
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            className="citation-portal-v2"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="citation-dialog-title"
+
+  const dialog = (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="citation-portal-v2"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="citation-dialog-title"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 2147483000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100vw',
+            height: '100dvh',
+            writingMode: 'horizontal-tb',
+            direction: 'rtl',
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false) }}
+        >
+          <motion.section
+            className="citation-card-v2"
+            dir="rtl"
             style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 2147483000,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '100vw',
-              height: '100dvh',
               writingMode: 'horizontal-tb',
               direction: 'rtl',
+              width: '100%',
+              maxWidth: '540px',
+              minWidth: '280px',
+              boxSizing: 'border-box',
             }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false) }}
+            initial={{ opacity: 0, y: 24, scale: .99 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: .995 }}
+            transition={{ duration: .22, ease: EASE }}
           >
-            <motion.section
-              className="citation-card-v2"
-              dir="rtl"
-              style={{
-                writingMode: 'horizontal-tb',
-                direction: 'rtl',
-                width: '100%',
-                maxWidth: '540px',
-                minWidth: '280px',
-                boxSizing: 'border-box',
-              }}
-              initial={{ opacity: 0, y: 24, scale: .99 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 16, scale: .995 }}
-              transition={{ duration: .22, ease: EASE }}
-            >
-              <header className="citation-header-v2">
-                <div className="citation-heading-v2">
-                  <p className="citation-kicker-v2">المصدر والاقتباس</p>
-                  <h3 id="citation-dialog-title" className="citation-title-v2">استشهاد جاهز وآمن للنسخ</h3>
-                </div>
-                <button type="button" onClick={() => setOpen(false)} className="citation-close-v2" aria-label="إغلاق النافذة">×</button>
-              </header>
-              <p className="citation-body-v2">{citation}</p>
-              <footer className="citation-footer-v2">
-                <a href={url} target="_blank" rel="noreferrer" className="citation-source-v2">فتح سياق المقال ↗</a>
-                <button type="button" onClick={copy} className="citation-copy-v2">{copied ? '✓ نُسخ الاستشهاد' : 'نسخ الاستشهاد'}</button>
-              </footer>
-            </motion.section>
-          </motion.div>
-        )}
-      </AnimatePresence>,
-      document.body,
-    ) : null
+            <header className="citation-header-v2">
+              <div className="citation-heading-v2">
+                <p className="citation-kicker-v2">المصدر والاقتباس</p>
+                <h3 id="citation-dialog-title" className="citation-title-v2">استشهاد جاهز وآمن للنسخ</h3>
+              </div>
+              <button type="button" onClick={() => setOpen(false)} className="citation-close-v2" aria-label="إغلاق النافذة">×</button>
+            </header>
+            <p className="citation-body-v2">{citation}</p>
+            <footer className="citation-footer-v2">
+              <a href={url} target="_blank" rel="noreferrer" className="citation-source-v2">فتح سياق المقال ↗</a>
+              <button type="button" onClick={copy} className="citation-copy-v2">{copied ? '✓ نُسخ الاستشهاد' : 'نسخ الاستشهاد'}</button>
+            </footer>
+          </motion.section>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
 
-    return <>
-      <button type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-haspopup="dialog" aria-label="عرض الاستشهاد المرجعي" title="الاستشهاد المرجعي" className="article-tool-icon"><span aria-hidden className="font-display text-[1.35rem] leading-none">“</span></button>
-      {dialog}
-    </>
+  const portalElement = typeof document !== 'undefined' ? createPortal(dialog, document.body) : null
+
+  if (compact) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-expanded={open}
+          aria-haspopup="dialog"
+          aria-label="عرض الاستشهاد المرجعي"
+          title="الاستشهاد المرجعي"
+          className="article-tool-icon"
+        >
+          <span aria-hidden className="font-display text-[1.35rem] leading-none">“</span>
+        </button>
+        {portalElement}
+      </>
+    )
   }
-  return <div className="mt-8 rounded-xl border border-hair"><button onClick={() => setOpen(!open)} aria-expanded={open} className="flex w-full items-center justify-between px-5 py-3 text-[.88rem] font-medium text-soft transition-colors hover:text-accent"><span>✍ انسخ الاستشهاد الأكاديمي</span><span className={`transition-transform duration-300 ${open ? 'rotate-180' : ''}`}>⌄</span></button>{open && <div className="border-t border-hair p-5"><div className="flex items-start gap-3"><button onClick={copy} className={`shrink-0 rounded-full border px-3.5 py-1 text-[.72rem] font-semibold transition-colors ${copied ? 'border-accent text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>{copied ? '✓ نُسخ' : 'نسخ'}</button><p className="break-words text-[.82rem] font-light leading-[1.9] text-soft">{citation}</p></div></div>}</div>
+
+  return (
+    <>
+      <div className="mt-8 rounded-xl border border-hair">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-expanded={open}
+          aria-haspopup="dialog"
+          className="flex w-full items-center justify-between px-5 py-3 text-[.88rem] font-medium text-soft transition-colors hover:text-accent"
+        >
+          <span>✍ انسخ الاستشهاد الأكاديمي</span>
+          <span className="text-[.82rem] font-semibold text-accent">عرض النافذة ↗</span>
+        </button>
+      </div>
+      {portalElement}
+    </>
+  )
 }
 
 /* ---------- مبدّل الوضع الليلي ---------- */

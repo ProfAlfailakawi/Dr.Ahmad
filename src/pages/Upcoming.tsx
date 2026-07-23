@@ -4,7 +4,7 @@ import { Newsletter } from '../components/extras'
 import { useSeo } from '../components/seo'
 import { upcoming, type Event as SiteEvent } from '../data'
 import { useExtras } from '../lib/content'
-import { sortUpcomingEvents } from '../lib/events'
+import { downloadEventIcs, googleCalendarUrl, sortUpcomingEvents } from '../lib/events'
 
 export default function Upcoming() {
   useSeo({ title: 'اللقاءات القادمة', path: '/upcoming', description: 'محاضرات وورش عمل ومؤتمرات قادمة للدكتور أحمد حسين الفيلكاوي.' })
@@ -54,16 +54,36 @@ export default function Upcoming() {
                       <p className="mt-1 text-[.8rem] text-soft">{e.org} · {e.place}</p>
                     </div>
 
-                    {/^https?:\/\//.test(e.url || '') && (
+                    <div className="flex shrink-0 flex-wrap items-center gap-2">
+                      {/^https?:\/\//.test(e.url || '') && (
+                        <a
+                          href={e.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="w-fit rounded-full border border-accent px-4 py-2 text-[.8rem] font-semibold text-accent transition-colors duration-300 hover:bg-accent hover:text-white"
+                        >
+                          التسجيل
+                        </a>
+                      )}
+                      {/* «أضف إلى تقويمي» — Google مباشرة وICS لتقويم Apple وOutlook */}
                       <a
-                        href={e.url}
+                        href={googleCalendarUrl(e)}
                         target="_blank"
                         rel="noreferrer"
-                        className="w-fit shrink-0 rounded-full border border-accent px-4 py-2 text-[.8rem] font-semibold text-accent transition-colors duration-300 hover:bg-accent hover:text-white"
+                        title="أضف إلى تقويم Google"
+                        className="rounded-full border border-hair px-3.5 py-2 text-[.76rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent"
                       >
-                        التسجيل
+                        + تقويم Google
                       </a>
-                    )}
+                      <button
+                        type="button"
+                        onClick={() => downloadEventIcs(e)}
+                        title="ملف تقويم يفتحه Apple وOutlook"
+                        className="rounded-full border border-hair px-3.5 py-2 text-[.76rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent"
+                      >
+                        + تقويمي (ICS)
+                      </button>
+                    </div>
                   </li>
                 </FadeUp>
               ))}

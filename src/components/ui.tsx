@@ -246,7 +246,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { to: '/research', label: 'الأبحاث المحكمة' },
       { to: '/publications', label: 'الكتب المنشورة' },
-      { to: '/inbox', label: 'من بريدي', description: 'رسائل مختارة' },
+      { to: '/inbox', label: 'رسائل على الهامش', description: 'رسائل من الأرشيف الحي' },
       { to: '/curated', label: 'المختارات', allLabel: 'جميع المختارات', sub: [
         { to: '/questions', label: 'سؤال يُقلق التعليم', description: 'أسئلة تربوية' },
         { to: '/radar', label: 'أرشيف الرادار', description: 'مختارات أسبوعية' },

@@ -303,10 +303,19 @@ export default function Curated() {
 
   const daily = dynamic[0] || curatedBank[0];
   const book = thisMonthsBook();
-  const all = dedupe([...dynamic, ...curatedBank]);
+  /* عدالة العرض (مقترح معتمد): المادة الرئيسية لا تتكرر في الرادار،
+     والمعروض أعلى الصفحة كله لا يعود في الشبكة أسفلها — التكرار يوحي
+     بغباءٍ حتى لو كان التصميم جميلاً. */
+  const radarFour = dynamic.slice(1, 5);
+  const curioKey = (item: Curio) => resolvedCurioUrl(item.url) || item.ar;
+  const highlightedKeys = new Set([daily, book, ...radarFour].filter(Boolean).map((item) => curioKey(item as Curio)));
+  const all = dedupe([...dynamic, ...curatedBank]).filter((item) => !highlightedKeys.has(curioKey(item)));
   const shown =
     kind === "الكل" ? all : all.filter((item) => item.kind === kind);
   const paged = usePagedList(shown, 12, kind);
+  /* صدق الوسم: «الأحدث من الإنترنت» لا تُقال حين نعمل على الاحتياطي */
+  const radarLive = radarItems.length > 0;
+  const latestAdded = dynamic[0]?.added ? fmtAdded(dynamic[0].added) : "";
 
   return (
     <Page className="content-curated page-journey">
@@ -321,11 +330,15 @@ export default function Curated() {
           <FadeUp>
             <div className="flex flex-wrap items-center gap-3">
               <span className="inline-flex items-center gap-2.5 text-[.82rem] font-semibold text-accent">
-                <span className="pulse relative h-2 w-2 rounded-full bg-accent" />
-                الأحدث من الإنترنت
+                <span className={`relative h-2 w-2 rounded-full bg-accent ${radarLive ? "pulse" : ""}`} />
+                {radarLive ? "الأحدث من الإنترنت" : "من مختاراتٍ موثوقة"}
               </span>
               <span className="text-[.85rem] text-soft">
-                · {today} · يتحدّث تلقائيًا عند وصول مادةٍ موثوقة جديدة
+                {radarLive
+                  ? `· ${today} · يتحدّث تلقائيًا عند وصول مادةٍ موثوقة جديدة`
+                  : latestAdded
+                    ? `· آخر تحديث فعلي: ${latestAdded}`
+                    : "· يعود التحديث التلقائي فور توفر المصدر الحي"}
               </span>
             </div>
           </FadeUp>
@@ -383,7 +396,8 @@ export default function Curated() {
         </div>
       </section>
 
-      <RadarSection items={dynamic} />
+      {/* الرادار يعرض ما بعد المادة الرئيسية — لا تكرار فوق بعضه */}
+      <RadarSection items={radarFour} />
 
       <section className="px-6 py-14 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">

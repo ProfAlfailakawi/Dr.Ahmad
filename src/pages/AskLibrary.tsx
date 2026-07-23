@@ -720,6 +720,18 @@ export default function AskLibrary() {
                                 ? "الخلاصة محصورة في الشواهد الظاهرة أدناه."
                                 : "عُرض بديل محلي محافظ لا يتجاوز الشواهد."}
                             </p>
+                            {/* سطر الثقة والخصوصية — مقترح معتمد: صدقٌ هادئ لا يثقل الصفحة */}
+                            <p className="mt-3 border-t border-hair pt-3 text-[.68rem] leading-relaxed text-soft/85">
+                              الإجابة مبنية على مواد منشورة في هذا الموقع، وليست فتوى ولا تشخيصاً شخصياً.
+                              سؤالك يُعالج للإجابة فقط — لا يُنشر ولا يظهر لغيرك، ويمكنك مشاركة النتيجة برابط الصفحة نفسه.
+                            </p>
+                            <Link
+                              to="/thought-paths"
+                              className="mt-5 inline-flex items-center gap-2 rounded-full border border-accent/35 px-5 py-2.5 text-[.8rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
+                            >
+                              استكشف المسار الفكري
+                              <span aria-hidden>←</span>
+                            </Link>
                           </>
                         ) : null}
                       </section>

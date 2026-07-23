@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useSeo } from '../components/seo'
 import { Page, PageHead, FadeUp, Reveal } from '../components/ui'
 import { Share } from '../components/extras'
@@ -146,8 +147,16 @@ export default function Questions() {
             </div>
           </FadeUp>
           <FadeUp delay={0.3}>
-            <div className="mt-10">
+            <div className="mt-10 flex flex-wrap items-center gap-4">
               <Share title={`سؤال يُقلق التعليم: ${currentQuestion.ar}`} path="/questions" />
+              {/* الجسر إلى العقل الحي: السؤال يفتح المكتبة كلها بنقرة (مقترح معتمد) */}
+              <Link
+                to={`/ask?q=${encodeURIComponent(currentQuestion.ar)}`}
+                className="inline-flex items-center gap-2 rounded-full border border-accent/35 px-5 py-2.5 text-[.82rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
+              >
+                ابحث عن هذا السؤال في أرشيفي
+                <span aria-hidden>←</span>
+              </Link>
             </div>
           </FadeUp>
         </div>

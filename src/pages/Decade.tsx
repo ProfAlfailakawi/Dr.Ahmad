@@ -294,6 +294,17 @@ export default function Decade() {
                   <p className="max-w-[22rem] text-[.78rem] font-light leading-[1.8] text-soft">العبارة محفوظة من النص الأصلي. لا تتغير حالتها إلا عندما تظهر إشارة لاحقة أو دليل عام يمكن الرجوع إليه.</p>
                 </div>
               </FadeUp>
+              <FadeUp>
+                {/* منهجية التقييم بكلمات لا أرقام — مقترح معتمد */}
+                <div className="mt-6 rounded-2xl border border-hair bg-wash/40 px-5 py-4">
+                  <p className="text-[.72rem] font-semibold text-accent">كيف يُقرأ هذا السجل؟</p>
+                  <p className="mt-2 text-[.78rem] font-light leading-[1.9] text-soft">
+                    يُلتقط التوقع بصيغته الحرفية من النص المنشور بتاريخه، ثم يُراجع على أربعة أبعاد: الاتجاه والتوقيت والحجم والنطاق.
+                    والحكم كلماتٌ واضحة لا نِسب: «ظهرت إشارة لاحقة» حين تصل كتابةٌ أحدث تفتح الاتجاه نفسه، و«تحتاج زمناً أطول» لما لم تمضِ عليه سنتان،
+                    و«قيد المتابعة» لما ينتظر دليلاً عاماً يُحال إليه. لا يتحول توقعٌ إلى «متحقق» بغير مصدرٍ يمكن الرجوع إليه.
+                  </p>
+                </div>
+              </FadeUp>
 
               <div className="mt-3 divide-y divide-hair border-b border-hair">
                 {predictionRegister.map(({ article, prediction }, index) => (

@@ -313,7 +313,11 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
   if (bestEffort?.file && existsSync(bestEffort.file)) {
     const probe = probeAudio(bestEffort.file)
     const wpm = Number(bestEffort.measuredWpm || 0)
-    const audioSound = probe.durationSec >= 0.45 && statSync(bestEffort.file).size > 4000 && wpm >= 85 && wpm <= 195
+    /* الوحدات القصيرة (عنوان من كلمات معدودة): حساب WPM فيها ضجيجٌ خالص —
+       أجزاء الثانية من امتداد Azure تهوي بالرقم إلى السبعينات رغم STT كامل.
+       أرضية 85 كانت تُسقط المقالة كلها لعنوانها؛ للقصير أرضية 60 والباقي كما هو. */
+    const wpmFloor = countArabicWords(bestEffort.unit?.pronunciationText || '') <= 7 ? 60 : 85
+    const audioSound = probe.durationSec >= 0.45 && statSync(bestEffort.file).size > 4000 && wpm >= wpmFloor && wpm <= 195
     const negationLost = (bestEffort.comparison?.missingImportant || []).some((word) => /^(لا|لم|لن|ليس|ليست|غير|دون)$/.test(word))
     if (audioSound && !negationLost) {
       const sttNote = bestEffort.comparison?.sttUnavailable

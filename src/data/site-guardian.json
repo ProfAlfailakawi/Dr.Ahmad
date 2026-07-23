@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "checkedAt": "2026-07-22T12:00:25.473Z",
+  "checkedAt": "2026-07-23T04:33:04.059Z",
   "status": "attention",
   "counts": {
     "articles": 143,
-    "missingAudio": 129,
+    "missingAudio": 118,
     "missingImages": 0,
     "brokenInternal": 0,
     "orphans": 0,
@@ -23,13 +23,6 @@
       "severity": "info",
       "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic-2",
       "title": "أبناءٌ يعرفون المطلوب… لكن من علّمهم المعنى؟",
-      "note": "لا يوجد صوت منشور بعد"
-    },
-    {
-      "kind": "audio",
-      "severity": "info",
-      "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic",
-      "title": "أبناءٌ يعرفون المطلوب… ويجهلون لماذا",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -77,22 +70,8 @@
     {
       "kind": "audio",
       "severity": "info",
-      "slug": "the-blackboard-that-no-longer-sees-anyone-2",
-      "title": "السبورة التي لم تعد ترى أحداً!",
-      "note": "لا يوجد صوت منشور بعد"
-    },
-    {
-      "kind": "audio",
-      "severity": "info",
       "slug": "students-minds-are-on-vacation-while-chatgpt-works-full-time-2",
       "title": "عقول الطلاب في إجازة… وChatGPT يشتغل بدوام كامل!",
-      "note": "لا يوجد صوت منشور بعد"
-    },
-    {
-      "kind": "audio",
-      "severity": "info",
-      "slug": "the-teacher-the-last-to-know-2",
-      "title": "المعلّم… آخرُ من يعلم!",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -105,36 +84,8 @@
     {
       "kind": "audio",
       "severity": "info",
-      "slug": "the-mind-present-in-absence-absent-in-presence-2",
-      "title": "العقل حاضر في الغياب… وغائب في الحضور!",
-      "note": "لا يوجد صوت منشور بعد"
-    },
-    {
-      "kind": "audio",
-      "severity": "info",
-      "slug": "when-a-student-wishes-for-death-before-the-first-bell-2",
-      "title": "حين يتمنى الطالب الموت… قبل أول جرس!",
-      "note": "لا يوجد صوت منشور بعد"
-    },
-    {
-      "kind": "audio",
-      "severity": "info",
-      "slug": "we-handed-them-the-phone-so-theyd-leave-us-alone-2",
-      "title": "سلّمناه الهاتف… ليستريح منا!",
-      "note": "لا يوجد صوت منشور بعد"
-    },
-    {
-      "kind": "audio",
-      "severity": "info",
       "slug": "the-republic-of-degrees-and-the-fall-of-thought-2",
       "title": "جمهورية الشهادات… وسقوط الفكر!",
-      "note": "لا يوجد صوت منشور بعد"
-    },
-    {
-      "kind": "audio",
-      "severity": "info",
-      "slug": "freedom-without-thinking-and-openness-without-awareness-2",
-      "title": "حُرية بلا تفكير… وانفتاح بلا وعي!",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -149,20 +100,6 @@
       "severity": "info",
       "slug": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
       "title": "الذكاء الاصطناعي يُدرّس… والعقل البشري يُقصى",
-      "note": "لا يوجد صوت منشور بعد"
-    },
-    {
-      "kind": "audio",
-      "severity": "info",
-      "slug": "i-write-to-awaken-you-not-to-discourage-you-2",
-      "title": "أكتب لأوقظك… لا لأحبطك!",
-      "note": "لا يوجد صوت منشور بعد"
-    },
-    {
-      "kind": "audio",
-      "severity": "info",
-      "slug": "he-passed-the-exam-but-failed-the-question-2",
-      "title": "نجح في الامتحان… وفشل في السؤال!",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -189,13 +126,6 @@
     {
       "kind": "audio",
       "severity": "info",
-      "slug": "excellent-in-grades-lost-in-decision",
-      "title": "ممتاز في الدرجات… ضائع في القرار!",
-      "note": "لا يوجد صوت منشور بعد"
-    },
-    {
-      "kind": "audio",
-      "severity": "info",
       "slug": "we-graduated-with-a-degree-but-the-language-was-lost-2",
       "title": "تخرَّجنا بشهادة… لكن ضاعت اللغة!",
       "note": "لا يوجد صوت منشور بعد"
@@ -212,13 +142,6 @@
       "severity": "info",
       "slug": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
       "title": "الراحة تُدرّس… والفكر في إجازة دائمة!",
-      "note": "لا يوجد صوت منشور بعد"
-    },
-    {
-      "kind": "audio",
-      "severity": "info",
-      "slug": "coming-soon-a-certificate-without-a-mind-2",
-      "title": "قريباً: شهادة بدون عقل!",
       "note": "لا يوجد صوت منشور بعد"
     },
     {

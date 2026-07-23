@@ -278,6 +278,52 @@ function archiveDoors(db, limit = 6) {
   return doors
 }
 
+/* التسامح الإملائي (أمر «يفهم كل شيء»): «التعلليم» تجد «التعليم» —
+   مسافة تحرير ≤2 على مفردات الفهرس الحقيقية، لا تخمين خارجها */
+function editDistance(left, right) {
+  if (Math.abs(left.length - right.length) > 2) return 3
+  const rows = Array.from({ length: left.length + 1 }, (_, i) => [i, ...Array(right.length).fill(0)])
+  for (let j = 1; j <= right.length; j += 1) rows[0][j] = j
+  for (let i = 1; i <= left.length; i += 1) {
+    for (let j = 1; j <= right.length; j += 1) {
+      rows[i][j] = Math.min(
+        rows[i - 1][j] + 1,
+        rows[i][j - 1] + 1,
+        rows[i - 1][j - 1] + (left[i - 1] === right[j - 1] ? 0 : 1),
+      )
+    }
+  }
+  return rows[left.length][right.length]
+}
+
+function indexVocabulary(db) {
+  const rows = db.all("SELECT title, keywords FROM content_items") || []
+  const vocabulary = new Set()
+  for (const row of rows) {
+    for (const word of clean(`${row.title || ''} ${row.keywords || ''}`).split(/\s+/)) {
+      if (word.length >= 4) vocabulary.add(word)
+    }
+  }
+  return [...vocabulary]
+}
+
+function repairTypos(db, words) {
+  const vocabulary = indexVocabulary(db)
+  let repaired = false
+  const output = words.map((word) => {
+    if (word.length < 4 || vocabulary.includes(word)) return word
+    let best = null
+    for (const candidate of vocabulary) {
+      const distance = editDistance(word, candidate)
+      if (distance <= 2 && (!best || distance < best.distance)) best = { candidate, distance }
+      if (best?.distance === 1) break
+    }
+    if (best) { repaired = true; return best.candidate }
+    return word
+  })
+  return { words: output, repaired }
+}
+
 function nearestSuggestions(db, rawText, limit = 3) {
   const normalized = stripGroundedTopicRequest(rawText)
   const words = normalized.split(/\s+/).filter((word) => word.length > 1)
@@ -287,6 +333,20 @@ function nearestSuggestions(db, rawText, limit = 3) {
     for (const word of words) {
       const single = namedContentMatches(db, [word], limit)
       if (single.length) { found = single; break }
+    }
+  }
+  /* الملاذ الإملائي: أصلح الكلمات على مفردات الفهرس ثم أعد المحاولة */
+  if (!found.length && words.length) {
+    const repair = repairTypos(db, words.map((word) => clean(word)))
+    if (repair.repaired) {
+      found = namedContentMatches(db, repair.words.slice(0, 4), limit)
+      if (!found.length) found = searchContent(db, repair.words.join(' '), { limit })
+      if (!found.length) {
+        for (const word of repair.words) {
+          const single = namedContentMatches(db, [word], limit)
+          if (single.length) { found = single; break }
+        }
+      }
     }
   }
   return found.slice(0, limit)

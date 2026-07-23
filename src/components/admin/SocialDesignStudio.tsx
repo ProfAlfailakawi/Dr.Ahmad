@@ -27,8 +27,10 @@ import {
   renderCompositionSvg,
   setRenderPreferences,
 } from '../../lib/social-design-renderer'
-import { type LayoutFamilyId, type StudioCommandParse, parseStudioCommand } from '../../lib/social-design-engine'
+import { type LayoutFamilyId, type StudioCommandParse, type PaletteId, type PlanContent, parseStudioCommand, critiqueCompositionPlan, PALETTES } from '../../lib/social-design-engine'
 import { currentSeason } from '../../lib/seasons'
+import { getDb } from '../../lib/firebase'
+import { useCmsContent } from '../../lib/content'
 
 const card = 'rounded-[1.75rem] border border-hair bg-paper p-5 shadow-sm md:p-7'
 const input = 'w-full rounded-2xl border border-hair bg-canvas px-4 py-3 text-[.88rem] text-ink outline-none transition focus:border-accent'
@@ -182,6 +184,23 @@ function Preview({ plan, className = '' }: { plan: CompositionPlan; className?: 
   )
 }
 
+/* حقل تحرير مباشر (مقترحات الصديق ١٢): يلتزم عند المغادرة أو Enter — فلا يضج
+   التراجع بكل ضغطة حرف، ويُعاد فحص الجودة عند كل التزام */
+function EditableText({ label, value, onCommit, multiline = false }: { label: string; value: string; onCommit: (next: string) => void; multiline?: boolean }) {
+  const [draft, setDraft] = useState(value)
+  useEffect(() => { setDraft(value) }, [value])
+  const commit = () => { if (draft !== value) onCommit(draft) }
+  const shared = 'w-full rounded-xl border border-hair bg-paper px-3 py-2 text-[.8rem] text-ink outline-none focus:border-accent'
+  return (
+    <label className="grid gap-1">
+      <span className="text-[.64rem] font-semibold text-soft">{label}</span>
+      {multiline
+        ? <textarea value={draft} rows={3} onChange={(event) => setDraft(event.target.value)} onBlur={commit} className={`${shared} resize-y leading-relaxed`} />
+        : <input value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === 'Enter') (event.target as HTMLInputElement).blur() }} className={shared} />}
+    </label>
+  )
+}
+
 function LockButton({ active, children, onClick }: { active: boolean; children: ReactNode; onClick: () => void }) {
   return <button type="button" onClick={onClick} className={`rounded-full px-3 py-1.5 text-[.7rem] font-semibold transition ${active ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{active ? 'مقفول · ' : ''}{children}</button>
 }
@@ -194,6 +213,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [platform, setPlatform] = useState<SocialPlatform | 'auto'>('auto')
   const [plans, setPlans] = useState<CompositionPlan[]>([])
   const [selected, setSelected] = useState<CompositionPlan | null>(null)
+  /* المحرر المباشر (١٢-١٥): تراجع/إعادة داخل جلسة النافذة + إعادة فحص الجودة حية */
+  const [editUndo, setEditUndo] = useState<CompositionPlan[]>([])
+  const [editRedo, setEditRedo] = useState<CompositionPlan[]>([])
+  const editedPlanIdRef = useRef<string | null>(null)
   const [notice, setNotice] = useState('')
   const [generation, setGeneration] = useState(0)
   const [locks, setLocks] = useState({ content: false, style: false, color: false, format: false })
@@ -201,6 +224,49 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [showSaved, setShowSaved] = useState(false)
   const [tasteProfile, setTasteProfile] = useState<DesignTasteProfile>(() => loadTasteProfile())
   const [tasteLedger, setTasteLedger] = useState<TasteSignalLedger>(() => loadTasteLedger())
+
+  /* ذوقك يرافقك: مزامنة ذاكرة الذوق لحسابك — تتبعك من الجوال للمكتب.
+     الأحدث توقيتاً يفوز، ولا شيء يعطل الاستوديو إن غابت الشبكة. */
+  const tasteSyncedRef = useRef(false)
+  useEffect(() => {
+    if (tasteSyncedRef.current) return
+    tasteSyncedRef.current = true
+    void (async () => {
+      try {
+        const db = await getDb()
+        if (!db) return
+        const { doc, getDoc } = await import('firebase/firestore')
+        const snapshot = await getDoc(doc(db, 'site_settings', 'design-taste'))
+        if (!snapshot.exists()) return
+        const remote = snapshot.data() as { profile?: DesignTasteProfile; ledger?: TasteSignalLedger; updatedAt?: number }
+        const localStamp = Number(localStorage.getItem('dr-ahmad-taste-updated') || 0)
+        if (Number(remote.updatedAt || 0) > localStamp && remote.profile) {
+          setTasteProfile(remote.profile)
+          if (remote.ledger) setTasteLedger(remote.ledger)
+          try {
+            localStorage.setItem(TASTE_KEY, JSON.stringify(remote.profile))
+            if (remote.ledger) localStorage.setItem(TASTE_LEDGER_KEY, JSON.stringify(remote.ledger))
+            localStorage.setItem('dr-ahmad-taste-updated', String(remote.updatedAt))
+          } catch { /* noop */ }
+        }
+      } catch { /* المزامنة رفاهية — المحلي يعمل دوماً */ }
+    })()
+  }, [])
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const db = await getDb()
+          if (!db) return
+          const { doc, setDoc } = await import('firebase/firestore')
+          const stamp = Date.now()
+          await setDoc(doc(db, 'site_settings', 'design-taste'), { profile: tasteProfile, ledger: tasteLedger, updatedAt: stamp }, { merge: true })
+          try { localStorage.setItem('dr-ahmad-taste-updated', String(stamp)) } catch { /* noop */ }
+        } catch { /* noop */ }
+      })()
+    }, 2500)
+    return () => window.clearTimeout(timer)
+  }, [tasteProfile, tasteLedger])
   const [campaign, setCampaign] = useState<SocialCampaign | null>(null)
   const [campaignBusy, setCampaignBusy] = useState(false)
   const [qualityThreshold, setQualityThreshold] = useState(() => Number(localStorage.getItem(QUALITY_THRESHOLD_KEY) || 82))
@@ -293,6 +359,77 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     setNotice(result.generation.warnings[0] || `فحص الناقد ثمانية اتجاهات داخلية وعرض أقوى ${result.plans.length} فقط.`)
   }
   generateRef.current = () => generate()
+
+  /* ═══ رنين القراء: الجمل التي ظللها جمهورك الحقيقي — بضغطة تصير تصميماً ═══ */
+  const { articles: cmsArticles } = useCmsContent()
+  const [resonance, setResonance] = useState<{ quote: string; title: string; count: number }[] | null>(null)
+  const [resonanceBusy, setResonanceBusy] = useState(false)
+  const loadResonance = async () => {
+    if (resonance) { setResonance(null); return }
+    setResonanceBusy(true)
+    try {
+      const db = await getDb()
+      if (!db) { setNotice('Firebase غير متاح الآن.'); return }
+      const { collection, getDocs } = await import('firebase/firestore')
+      const snapshot = await getDocs(collection(db, 'article_highlights'))
+      const rows = snapshot.docs
+        .map((item) => item.data() as { slug?: string; paragraph?: number; startOffset?: number; endOffset?: number; count?: number })
+        .filter((item) => item.slug && Number(item.count || 0) >= 1)
+        .sort((left, right) => Number(right.count || 0) - Number(left.count || 0))
+        .slice(0, 24)
+      const resolved: { quote: string; title: string; count: number }[] = []
+      for (const row of rows) {
+        const article = cmsArticles.find((candidate) => candidate.slug === row.slug)
+        if (!article?.body) continue
+        const paragraph = article.body.split('\n\n')[Number(row.paragraph || 0)] || ''
+        const quote = paragraph.slice(Number(row.startOffset || 0), Number(row.endOffset || 0)).replace(/\s+/g, ' ').trim()
+        if (quote.length < 15 || quote.length > 220) continue
+        if (resolved.some((item) => item.quote === quote)) continue
+        resolved.push({ quote, title: article.title, count: Number(row.count || 0) })
+        if (resolved.length >= 6) break
+      }
+      setResonance(resolved)
+      if (!resolved.length) setNotice('لا تظليلات قابلة للتحويل بعد — ستظهر هنا كلما ظلل قراؤك جملاً.')
+    } catch { setNotice('تعذر جلب تظليلات القراء الآن.') }
+    finally { setResonanceBusy(false) }
+  }
+  const designFromResonance = (item: { quote: string; title: string }) => {
+    setText(item.quote)
+    setContext(`اقتباس انتخبه القراء بتظليلهم من مقال «${item.title}»`)
+    setResonance(null)
+    setNotice('جملة قرائك في الاستوديو — التوليد يبدأ حالاً.')
+  }
+
+  /* ═══ المحرر المباشر (١٢-١٥): كل التزامٍ يعيد فحص الجودة فوراً ═══ */
+  const syncPlanEverywhere = (plan: CompositionPlan) => {
+    setSelected(plan)
+    setPlans((list) => list.map((item) => (item.id === plan.id ? plan : item)))
+  }
+  const editPlan = (mutate: (plan: CompositionPlan) => CompositionPlan) => {
+    if (!selected) return
+    if (editedPlanIdRef.current !== selected.id) { setEditUndo([]); setEditRedo([]); editedPlanIdRef.current = selected.id }
+    const next = mutate(selected)
+    const requalified = { ...next, quality: critiqueCompositionPlan(next, plans.filter((plan) => plan.id !== next.id)) }
+    setEditUndo((stack) => [...stack.slice(-19), selected])
+    setEditRedo([])
+    syncPlanEverywhere(requalified)
+  }
+  const editContent = (patch: Partial<PlanContent>) => editPlan((plan) => ({ ...plan, content: { ...plan.content, ...patch } }))
+  const editPalette = (palette: PaletteId) => editPlan((plan) => ({ ...plan, palette }))
+  const undoEdit = () => {
+    if (!selected || !editUndo.length) return
+    const previous = editUndo[editUndo.length - 1]
+    setEditUndo((stack) => stack.slice(0, -1))
+    setEditRedo((stack) => [...stack, selected])
+    syncPlanEverywhere(previous)
+  }
+  const redoEdit = () => {
+    if (!selected || !editRedo.length) return
+    const next = editRedo[editRedo.length - 1]
+    setEditRedo((stack) => stack.slice(0, -1))
+    setEditUndo((stack) => [...stack, selected])
+    syncPlanEverywhere(next)
+  }
 
   /* التعديل بالكلام (مقترح ١١): «خله أفخم وداكن» · «حوّله ستوري» · «بدون متن» */
   const applySpeechEdit = () => {
@@ -514,12 +651,26 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-accent/25 bg-accent/[.06] px-4 py-2 text-[.72rem] font-semibold text-accent">لا تكلفة تشغيلية · عربي أولًا</span>
+              <button type="button" title="الجمل التي ظللها قراؤك بأيديهم — جمهورك ينتخب اقتباساتك" onClick={() => void loadResonance()} className={`rounded-full px-4 py-2 text-[.72rem] font-semibold transition ${resonance ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{resonanceBusy ? 'يجلب الرنين…' : '♥ جمل قرائي الرنانة'}</button>
               <button type="button" title="شعارك المخطوط كختم صغير على قرص ورقي — يظهر في المعاينة والتصدير" onClick={() => setSealOn((value) => !value)} className={`rounded-full px-4 py-2 text-[.72rem] font-semibold transition ${sealOn ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{sealOn ? '✓ ' : ''}ختم الهوية</button>
               {activeSeason && <button type="button" title={`رسمة خطية هادئة بمناسبة ${activeSeason.label}`} onClick={() => setSeasonalOn((value) => !value)} className={`rounded-full px-4 py-2 text-[.72rem] font-semibold transition ${seasonalOn ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{seasonalOn ? '✓ ' : ''}لمسة {activeSeason.label}</button>}
             </div>
           </div>
         </div>
 
+        {resonance && resonance.length > 0 && (
+          <div className="mt-4 rounded-2xl border border-accent/20 bg-accent/[.04] p-4">
+            <p className="text-[.7rem] font-bold text-accent">جمهورك انتخب هذه الجمل بتظليله — اضغط واحدة لتصير تصميماً:</p>
+            <div className="mt-2.5 grid gap-2">
+              {resonance.map((item) => (
+                <button key={item.quote} type="button" onClick={() => designFromResonance(item)} className="rounded-xl border border-hair bg-canvas px-4 py-2.5 text-right text-[.8rem] leading-relaxed text-ink transition-colors hover:border-accent">
+                  «{item.quote}»
+                  <span className="mt-1 block text-[.66rem] text-soft">{item.title} · {item.count} {item.count === 1 ? 'تظليل' : 'تظليلاً'}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="mt-7 grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,.7fr)]">
           <label className="grid gap-2 text-[.75rem] font-semibold text-soft">
             الجملة أو الموضوع
@@ -674,6 +825,44 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <div className="grid place-items-center rounded-[1.5rem] border border-hair bg-canvas p-3 md:p-6"><Preview plan={selected} className="w-full max-w-3xl" /></div>
               <div className="grid content-start gap-4">
                 <section className="rounded-2xl border border-accent/25 bg-accent/[.045] p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">الناقد البصري الداخلي</p><p className="mt-1 text-[.78rem] text-soft">قرأه على الهاتف قبل أن يعرضه لك.</p></div><strong className="font-display text-3xl text-accent">{selected.quality?.score || 0}٪</strong></div><div className="mt-3 flex flex-wrap gap-2">{selected.quality?.strengths.map((item) => <span key={item} className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.66rem] text-soft">✓ {item}</span>)}</div>{selected.quality?.issues.length ? <p className="mt-3 text-[.7rem] leading-relaxed text-soft">{selected.quality.issues.join(' · ')}</p> : null}</section>
+                {/* المحرر المباشر (١٢-١٥): نصوص ولوحات بتراجع وفحص جودة حي */}
+                <section className="rounded-2xl border border-hair bg-canvas p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[.7rem] font-bold text-accent">المحرر المباشر</p>
+                    <div className="flex gap-1.5">
+                      <button type="button" disabled={!editUndo.length} onClick={undoEdit} className={`rounded-full border px-3 py-1 text-[.68rem] font-semibold transition-colors ${editUndo.length ? 'border-hair text-soft hover:border-accent hover:text-accent' : 'border-hair/50 text-soft/40'}`}>↩ تراجع</button>
+                      <button type="button" disabled={!editRedo.length} onClick={redoEdit} className={`rounded-full border px-3 py-1 text-[.68rem] font-semibold transition-colors ${editRedo.length ? 'border-hair text-soft hover:border-accent hover:text-accent' : 'border-hair/50 text-soft/40'}`}>↪ إعادة</button>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid gap-2.5">
+                    <EditableText label="العنوان" value={selected.content.title} onCommit={(next) => editContent({ title: next })} />
+                    <EditableText label="العنوان الفرعي" value={selected.content.subtitle} onCommit={(next) => editContent({ subtitle: next })} />
+                    <EditableText label="المتن" multiline value={selected.content.body} onCommit={(next) => editContent({ body: next })} />
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <EditableText label="الدعوة" value={selected.content.cta} onCommit={(next) => editContent({ cta: next })} />
+                      <EditableText label="الكلمة البطلة" value={selected.content.heroWord} onCommit={(next) => editContent({ heroWord: next })} />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <p className="text-[.64rem] font-semibold text-soft">المنظومة اللونية — بنقرة، والناقد يعيد الحكم فوراً</p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {(Object.keys(PALETTES) as PaletteId[]).map((paletteId) => {
+                        const paletteSpec = PALETTES[paletteId]
+                        return (
+                          <button
+                            key={paletteId}
+                            type="button"
+                            title={paletteId}
+                            aria-label={`لوحة ${paletteId}`}
+                            onClick={() => editPalette(paletteId)}
+                            className={`h-7 w-7 rounded-full border-2 transition-transform hover:scale-110 ${selected.palette === paletteId ? 'border-accent ring-2 ring-accent/30' : 'border-hair'}`}
+                            style={{ background: `linear-gradient(135deg, ${paletteSpec.background} 55%, ${paletteSpec.accent} 55%)` }}
+                          />
+                        )
+                      })}
+                    </div>
+                  </div>
+                </section>
                 <section className="rounded-2xl border border-hair bg-canvas p-4">
                   <p className="text-[.7rem] font-bold text-accent">أقفال التعديل</p>
                   <div className="mt-3 flex flex-wrap gap-2"><LockButton active={locks.content} onClick={() => setLocks((value) => ({ ...value, content: !value.content }))}>النص</LockButton><LockButton active={locks.style} onClick={() => setLocks((value) => ({ ...value, style: !value.style }))}>الأسلوب</LockButton><LockButton active={locks.color} onClick={() => setLocks((value) => ({ ...value, color: !value.color }))}>اللون</LockButton><LockButton active={locks.format} onClick={() => setLocks((value) => ({ ...value, format: !value.format }))}>المقاس</LockButton></div>

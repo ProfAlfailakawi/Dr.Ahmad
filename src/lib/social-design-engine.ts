@@ -1971,7 +1971,24 @@ export function generateSocialCampaign(request: SocialCampaignRequest): SocialCa
   const history = [...normalizeHistory(request.history)]
   const assets: SocialCampaignAsset[] = []
   const usedLayouts = new Set<LayoutFamilyId>()
-  const base = request.basePlan
+  /* تماسك ألوان الحملة (مقترح الصديق ١٧): لوحة الأساس تُورَّث للحملة كلها فقط
+     إن كانت قوية التباين — الضعيفة تُستبدل بأقوى اللوحات تبايناً فلا تسمّم
+     القطع السبع كلها بميراثٍ باهت */
+  let base = request.basePlan
+  if (base) {
+    const baseQuality = base.quality || critiqueCompositionPlan(base)
+    if (baseQuality.textContrast < 82 || baseQuality.backgroundContrast < 78) {
+      const strongest = (Object.keys(PALETTES) as PaletteId[])
+        .map((id) => {
+          const candidate = { ...base!, palette: id }
+          const quality = critiqueCompositionPlan(candidate)
+          return { id, quality }
+        })
+        .filter((item) => item.quality.textContrast >= 82 && item.quality.backgroundContrast >= 78)
+        .sort((left, right) => right.quality.score - left.quality.score)[0]
+      if (strongest) base = { ...base, palette: strongest.id, quality: strongest.quality }
+    }
+  }
   const warnings: string[] = []
 
   for (const [index, spec] of campaignRoles.entries()) {

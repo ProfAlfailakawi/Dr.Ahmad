@@ -1,0 +1,37 @@
+name: بريد المساء — رسائل اليوم في سطر
+
+on:
+  schedule:
+    # 15:30 UTC = 18:30 مساء الكويت
+    - cron: '30 15 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: daily-inbox
+  cancel-in-progress: true
+
+jobs:
+  compose-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: تحضير حساب الخدمة
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}' > sa.json
+      - name: تلخيص رسائل اليوم (عدد ومواضيع فقط)
+        run: node scripts/daily-inbox.mjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+      - name: نشر البريد إلى R2 ليلتقطه البوت
+        run: |
+          aws s3 cp build/daily-inbox.json "s3://${{ vars.CLOUDFLARE_R2_BUCKET }}/reports/daily-inbox-latest.json" \
+            --endpoint-url "${{ secrets.CLOUDFLARE_R2_ENDPOINT }}" \
+            --content-type "application/json" --cache-control "no-cache" --no-progress
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_EC2_METADATA_DISABLED: 'true'

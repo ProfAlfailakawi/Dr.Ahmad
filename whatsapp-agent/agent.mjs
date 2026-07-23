@@ -416,21 +416,29 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     } catch (error) { db.addAudit('db-snapshot-failed', '', redactError(error)) }
   }
 
-  const WEEKLY_REPORT_URL = process.env.WEEKLY_REPORT_URL
-    || 'https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev/reports/weekly-latest.json'
+  const REPORT_FEED_BASE = process.env.REPORT_FEED_BASE
+    || 'https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev/reports'
 
-  async function deliverWeeklyReport() {
+  /* قناة تقارير موحدة: الجمعة الأسبوعية + بريد المساء اليومي — كل تقرير
+     يُسلَّم مرة واحدة بمعرّفه، والفارغ (count=0) لا يُرسل أصلاً */
+  async function deliverReportFeed(fileName, settingKey) {
     try {
       if (!state.started || !state.transport) return
-      const response = await fetch(WEEKLY_REPORT_URL, { cache: 'no-store' })
+      const response = await fetch(`${REPORT_FEED_BASE}/${fileName}`, { cache: 'no-store' })
       if (!response.ok) return
       const report = await response.json()
       if (!report || typeof report.id !== 'string' || typeof report.text !== 'string' || !report.text.trim()) return
-      if (db.getSetting('weekly-report-last') === report.id) return
+      if (report.empty === true) return
+      if (db.getSetting(settingKey) === report.id) return
       await sendSelf(report.text.trim())
-      db.setSetting('weekly-report-last', report.id)
-      db.addAudit('weekly-report-delivered', '', report.id)
-    } catch { /* الشبكة غابت أو التقرير لم يُنشر بعد — المحاولة التالية بعد ثلاث ساعات */ }
+      db.setSetting(settingKey, report.id)
+      db.addAudit('report-feed-delivered', '', `${settingKey}:${report.id}`)
+    } catch { /* الشبكة غابت أو التقرير لم يُنشر بعد — تُعاد المحاولة في الدورة التالية */ }
+  }
+
+  async function deliverWeeklyReport() {
+    await deliverReportFeed('weekly-latest.json', 'weekly-report-last')
+    await deliverReportFeed('daily-inbox-latest.json', 'daily-inbox-last')
   }
 
   /* عتبات الإنعاش — بأرقام الدكتور */

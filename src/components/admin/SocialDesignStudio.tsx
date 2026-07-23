@@ -20,11 +20,15 @@ import {
 import {
   downloadCompositionRaster,
   downloadCompositionSvg,
+  getRenderPreferences,
   printCompositionPdf,
   downloadSocialCampaignRaster,
   printSocialCampaignPdf,
   renderCompositionSvg,
+  setRenderPreferences,
 } from '../../lib/social-design-renderer'
+import { type LayoutFamilyId } from '../../lib/social-design-engine'
+import { currentSeason } from '../../lib/seasons'
 
 const card = 'rounded-[1.75rem] border border-hair bg-paper p-5 shadow-sm md:p-7'
 const input = 'w-full rounded-2xl border border-hair bg-canvas px-4 py-3 text-[.88rem] text-ink outline-none transition focus:border-accent'
@@ -35,6 +39,9 @@ const SAVED_KEY = 'dr-ahmad-social-design-saved-v1'
 const TASTE_KEY = 'dr-ahmad-social-design-taste-v1'
 const TASTE_LEDGER_KEY = 'dr-ahmad-social-design-taste-ledger-v1'
 const QUALITY_THRESHOLD_KEY = 'dr-ahmad-social-quality-threshold-v1'
+const SEAL_KEY = 'dr-ahmad-social-seal-v1'
+const SEASONAL_KEY = 'dr-ahmad-social-seasonal-v1'
+const CAMPAIGN_SEED_KEY = 'studio-campaign-seed'
 
 const toneLabels: Record<ContentTone | 'auto', string> = {
   auto: 'ذكي تلقائي',
@@ -199,6 +206,20 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [qualityThreshold, setQualityThreshold] = useState(() => Number(localStorage.getItem(QUALITY_THRESHOLD_KEY) || 82))
   const textRef = useRef<HTMLTextAreaElement | null>(null)
 
+  /* ختم الهوية ولمسة الموسم: تفضيلان يسريان على المعاينة والتصدير معاً،
+     ويبقيان محفوظين في هذا المتصفح. */
+  const [sealOn, setSealOn] = useState(() => { try { return localStorage.getItem(SEAL_KEY) === '1' } catch { return false } })
+  const [seasonalOn, setSeasonalOn] = useState(() => { try { return localStorage.getItem(SEASONAL_KEY) !== '0' } catch { return true } })
+  const activeSeason = useMemo(() => currentSeason(), [])
+  // أثناء الرسم لا بعده: المعاينات تقرأ التفضيل في نفس الدورة التي تغيّر فيها
+  useMemo(() => setRenderPreferences({ seal: sealOn, seasonal: seasonalOn && Boolean(activeSeason) }), [sealOn, seasonalOn, activeSeason])
+  useEffect(() => {
+    try {
+      localStorage.setItem(SEAL_KEY, sealOn ? '1' : '0')
+      localStorage.setItem(SEASONAL_KEY, seasonalOn ? '1' : '0')
+    } catch { /* noop */ }
+  }, [sealOn, seasonalOn])
+
   useEffect(() => { if (initialText && !text.trim()) setText(initialText) }, [initialText])
   useEffect(() => { if (initialContext && !context.trim()) setContext(initialContext) }, [initialContext])
 
@@ -233,12 +254,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const hasInput = text.trim().length >= 3
   const analysis = useMemo(() => analyzeSocialContent(hasInput ? text : 'فكرة معرفية جديدة', context, { author: 'د. أحمد حسين الفيلكاوي' }), [context, hasInput, text])
 
-  const generate = (overrides: { tone?: ContentTone | 'auto'; density?: DesignDensity | 'auto'; platform?: SocialPlatform | 'auto'; count?: number } = {}) => {
+  const generate = (overrides: { tone?: ContentTone | 'auto'; density?: DesignDensity | 'auto'; platform?: SocialPlatform | 'auto'; count?: number; preferLayout?: LayoutFamilyId } = {}) => {
     if (text.trim().length < 3) {
       setNotice('اكتب جملة أو فكرة أولًا؛ المحرك لا يصنع تصميمًا فارغًا.')
       textRef.current?.focus()
       return
     }
+    if (overrides.platform && overrides.platform !== platform) setPlatform(overrides.platform)
     const nextGeneration = generation + 1
     const result = generateSocialDesigns({
       text,
@@ -252,6 +274,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       history: loadHistory(),
       noveltyThreshold: .36,
       tasteProfile,
+      ...(overrides.preferLayout ? { preferLayout: overrides.preferLayout } : {}),
     })
     setGeneration(nextGeneration)
     localStorage.setItem('dr-ahmad-social-design-generated-count', String(Number(localStorage.getItem('dr-ahmad-social-design-generated-count') || 0) + result.generation.requestedCount))
@@ -374,21 +397,31 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     await downloadCompositionRaster(plan, type)
   }
 
-  const buildCampaign = () => {
-    if (!selected && !plans[0]) {
-      setNotice('ولّد اتجاهًا أولًا، ثم حوّله إلى حملة متكاملة.')
-      return
+  /* تصدير كل المقاسات بنقرة: الأصل ثم مربع وستوري وLinkedIn — كل نسخة
+     تُعاد هندستها لمقاسها (لا تمديد صورة)، وتنزل ملفاً ملفاً. */
+  const exportAllSizes = async (plan: CompositionPlan) => {
+    const targets: SocialFormatId[] = ['instagram-square', 'story', 'linkedin-landscape']
+    setNotice('أصدّر الطقم الكامل: الأصل + مربع + ستوري + LinkedIn…')
+    teachTaste(plan, 1)
+    await downloadCompositionRaster(plan, 'png')
+    for (const target of targets) {
+      if (target === plan.format.id) continue
+      const variant = transformDesignFormat(plan, target, { respectFormatLock: false, seed: `${plan.fingerprint}:batch:${target}` })
+      await downloadCompositionRaster(variant, 'png')
     }
+    setNotice('نزل الطقم الكامل — نسخة مهيأة لكل منصة بهندستها الخاصة.')
+  }
+
+  const runCampaign = (campaignText: string, campaignContext: string, basePlan?: CompositionPlan) => {
     setCampaignBusy(true)
     try {
-      const basePlan = selected || plans[0]
       const next = generateSocialCampaign({
-        text,
-        context,
+        text: campaignText,
+        context: campaignContext,
         author: 'د. أحمد حسين الفيلكاوي',
         tone,
         density,
-        seed: `campaign:${text}:${Date.now()}`,
+        seed: `campaign:${campaignText}:${Date.now()}`,
         history: loadHistory(),
         tasteProfile,
         basePlan,
@@ -403,6 +436,39 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         : next.warnings[0] || 'الحملة تحتاج إعادة توليد قبل التصدير.')
     } finally { setCampaignBusy(false) }
   }
+  const runCampaignRef = useRef(runCampaign)
+  runCampaignRef.current = runCampaign
+
+  const buildCampaign = () => {
+    if (!selected && !plans[0]) {
+      setNotice('ولّد اتجاهًا أولًا، ثم حوّله إلى حملة متكاملة.')
+      return
+    }
+    runCampaign(text, context, selected || plans[0])
+  }
+
+  /* «حملة من مقال بنقرة»: بذرة قادمة من مكتبة المقالات — نملأ الحقول ونبني
+     الحملة فوراً من دون أي نقرة إضافية. */
+  useEffect(() => {
+    let raw = ''
+    try {
+      raw = localStorage.getItem(CAMPAIGN_SEED_KEY) || ''
+      if (raw) localStorage.removeItem(CAMPAIGN_SEED_KEY)
+    } catch { /* noop */ }
+    if (!raw) return
+    try {
+      const seed = JSON.parse(raw) as { text?: string; context?: string }
+      const seedText = String(seed?.text || '').trim()
+      if (!seedText) return
+      const seedContext = String(seed?.context || '').trim()
+      setText(seedText)
+      setContext(seedContext)
+      autoGenerateKeyRef.current = `${seedText}::${seedContext}`
+      setNotice('وصل المقال من المكتبة — أبني له حملة متكاملة الآن…')
+      window.setTimeout(() => { runCampaignRef.current(seedText, seedContext) }, 80)
+    } catch { /* بذرة تالفة: نتجاهلها بصمت */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className="grid gap-5">
@@ -415,7 +481,11 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <h2 className="font-display text-3xl font-bold text-ink md:text-4xl">استوديو التصميم الذكي</h2>
               <p className="mt-3 max-w-3xl text-[.88rem] leading-loose text-soft">اكتب الفكرة فقط — يبدأ التوليد وحده وأنت تكتب. المحرك يبني ثمانية اتجاهات فنية في الخلفية، يمررها على الناقد البصري، ثم يعرض لك أقوى أربعة فقط — بلا API أو صور جاهزة.</p>
             </div>
-            <span className="rounded-full border border-accent/25 bg-accent/[.06] px-4 py-2 text-[.72rem] font-semibold text-accent">لا تكلفة تشغيلية · عربي أولًا</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-accent/25 bg-accent/[.06] px-4 py-2 text-[.72rem] font-semibold text-accent">لا تكلفة تشغيلية · عربي أولًا</span>
+              <button type="button" title="شعارك المخطوط كختم صغير على قرص ورقي — يظهر في المعاينة والتصدير" onClick={() => setSealOn((value) => !value)} className={`rounded-full px-4 py-2 text-[.72rem] font-semibold transition ${sealOn ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{sealOn ? '✓ ' : ''}ختم الهوية</button>
+              {activeSeason && <button type="button" title={`رسمة خطية هادئة بمناسبة ${activeSeason.label}`} onClick={() => setSeasonalOn((value) => !value)} className={`rounded-full px-4 py-2 text-[.72rem] font-semibold transition ${seasonalOn ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{seasonalOn ? '✓ ' : ''}لمسة {activeSeason.label}</button>}
+            </div>
           </div>
         </div>
 
@@ -440,7 +510,23 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
 
         {hasInput && <div className="mt-4 flex flex-wrap gap-2">
           {analysis.suggestions.slice(0, 5).map((suggestion) => (
-            <button key={suggestion.id} type="button" className={ghost} title={suggestion.reason} onClick={() => suggestion.id === 'shorten' ? shorten() : suggestion.id === 'carousel' ? makeCarousel() : suggestion.id === 'quiet-version' ? generate({ tone: 'calm' }) : generate()}>{suggestion.label}</button>
+            <button
+              key={suggestion.id}
+              type="button"
+              className={ghost}
+              title={suggestion.reason}
+              onClick={() => {
+                // كل رقاقة تنفذ وعدها حرفياً — لا توليد عام يتنكر بلافتة ذكية
+                if (suggestion.id === 'shorten') shorten()
+                else if (suggestion.id === 'carousel') makeCarousel()
+                else if (suggestion.id === 'quiet-version') generate({ tone: 'calm' })
+                else if (suggestion.id === 'hero-word') generate({ preferLayout: 'hero-word' })
+                else if (suggestion.id === 'poster') generate({ preferLayout: 'hero-word', tone: 'bold' })
+                else if (suggestion.id === 'story') generate({ platform: 'story' })
+                else if (suggestion.id === 'linkedin') generate({ platform: 'linkedin' })
+                else generate()
+              }}
+            >{suggestion.label}</button>
           ))}
         </div>}
 
@@ -536,7 +622,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 </section>
                 <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">إخراج جديد</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><button className={ghost} type="button" onClick={() => regenerateSelected('smart')}>اقتراح أذكى</button><button className={ghost} type="button" onClick={() => regenerateSelected('luxury')}>أكثر فخامة</button><button className={ghost} type="button" onClick={() => regenerateSelected('calm')}>أكثر هدوءًا</button><button className={ghost} type="button" onClick={() => regenerateSelected('bold')}>أكثر جرأة</button></div></section>
                 <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">تحويل ذكي للمقاس</p><div className="mt-3 flex flex-wrap gap-2">{formatActions.map((action) => <button key={action.id} className={ghost} type="button" onClick={() => transform(action.id)}>{action.label}</button>)}</div></section>
-                <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">التصدير</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><button className={primary} type="button" onClick={() => void exportPlan(selected, 'png')}>تنزيل PNG</button><button className={ghost} type="button" onClick={() => void exportPlan(selected, 'jpeg')}>تنزيل JPG</button><button className={ghost} type="button" onClick={() => downloadCompositionSvg(selected)}>تنزيل SVG</button><button className={ghost} type="button" onClick={() => printCompositionPdf(selected)}>طباعة / PDF</button></div></section>
+                <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">التصدير</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><button className={primary} type="button" onClick={() => void exportPlan(selected, 'png')}>تنزيل PNG</button><button className={ghost} type="button" onClick={() => void exportPlan(selected, 'jpeg')}>تنزيل JPG</button><button className={ghost} type="button" onClick={() => void downloadCompositionSvg(selected)}>تنزيل SVG</button><button className={ghost} type="button" onClick={() => printCompositionPdf(selected)}>طباعة / PDF</button><button className={`${primary} sm:col-span-2`} type="button" title="الأصل + مربع + ستوري + LinkedIn، كل نسخة بهندسة مقاسها" onClick={() => void exportAllSizes(selected)}>كل المقاسات دفعة واحدة</button></div></section>
                 <div className="grid gap-2 sm:grid-cols-2"><button type="button" className={primary} onClick={() => { teachTaste(selected, 1); const next = savePlan(selected); setSavedPlans(next); setNotice(`حُفظ التصميم وتعلّم الاستوديو ذوقك. لديك الآن ${next.length} نسخة محفوظة.`) }}>هذا ذوقي · احفظه</button><button type="button" className={ghost} onClick={() => { teachTaste(selected, -1); setSelected(null); generate() }}>أبعد هذا الأسلوب</button></div>
                 <button type="button" className={ghost} onClick={buildCampaign}>حوّل هذا الاتجاه إلى حملة متكاملة</button>
               </div>

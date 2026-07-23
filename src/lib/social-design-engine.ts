@@ -456,6 +456,8 @@ export interface SocialDesignRequest {
   history?: readonly (DesignHistoryEntry | CompositionPlan)[]
   noveltyThreshold?: number
   tasteProfile?: DesignTasteProfile
+  /** رغبة صريحة من المستخدم بعائلة تكوين بعينها (زر «اجعلها كلمة بطلة» مثلاً) */
+  preferLayout?: LayoutFamilyId
 }
 
 export interface SocialDesignResult {
@@ -1477,13 +1479,17 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
   const warnings: string[] = []
   if (Object.values(locks).some(Boolean) && !request.basePlan) warnings.push('طُلب قفل عناصر من دون تصميم أساس؛ أُهملت الأقفال لهذه الدفعة.')
 
+  // الرغبة الصريحة سلطة: العائلة المطلوبة تتصدر الترتيب ويرتفع لياقة مرشحيها
+  // بما يضمن حضورها في الأربعة المعروضة — من دون إلغاء التنويع حولها.
+  const preferenceBoost = (layoutId: LayoutFamilyId) => request.preferLayout === layoutId ? 55 : 0
   const rankedLayouts = seededOrder(Object.values(LAYOUT_FAMILIES), seed, 'layout-order')
-    .sort((left, right) => layoutFitness(right, analysis, density, format) - layoutFitness(left, analysis, density, format))
+    .sort((left, right) => (layoutFitness(right, analysis, density, format) + preferenceBoost(right.id)) - (layoutFitness(left, analysis, density, format) + preferenceBoost(left.id)))
   const candidates: CompositionPlan[] = []
   for (const [layoutIndex, layout] of rankedLayouts.entries()) {
     for (let variant = 0; variant < 4; variant += 1) {
       const candidate = makeCandidate(layout, analysis, format, density, seed, layoutIndex * 7 + variant, history)
-      candidates.push(request.basePlan ? applyDesignLocks(request.basePlan, candidate, locks) : candidate)
+      const boosted = preferenceBoost(layout.id) ? { ...candidate, fitness: roundScore(candidate.fitness + preferenceBoost(layout.id)) } : candidate
+      candidates.push(request.basePlan ? applyDesignLocks(request.basePlan, boosted, locks) : boosted)
     }
   }
 
@@ -1492,11 +1498,22 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
   const strong = valid.filter((candidate) => (candidate.quality?.score || 0) >= 76 && (candidate.quality?.lineFit || 0) >= 76)
   const candidatePool = strong.length >= requestedCount ? strong : valid.length ? valid : critiqued
   const finalists = selectDiverse(candidatePool, requestedCount, history, noveltyThreshold, request.tasteProfile)
-  const plans = finalists
+  let plans = finalists
     .map((plan) => ({ ...plan, quality: critiqueCompositionPlan(plan, finalists), tasteAffinity: tasteAffinity(request.tasteProfile, plan) }))
     .sort((left, right) => ((right.quality?.score || 0) + (right.tasteAffinity || 0) * 8) - ((left.quality?.score || 0) + (left.tasteAffinity || 0) * 8))
     .slice(0, visibleCount)
-    .map((plan, index) => ({ ...plan, directionIndex: index + 1 }))
+  // وعد الزر يُنفَّذ حرفياً: إن طلب المستخدم عائلة بعينها ولم تصعد بجودتها،
+  // نصعد أقوى مرشح منها إلى الصدارة بدل أن يضيع الطلب في فرز الجودة العام.
+  if (request.preferLayout && !plans.some((plan) => plan.layout === request.preferLayout)) {
+    const champion = [...finalists, ...candidatePool]
+      .filter((plan) => plan.layout === request.preferLayout)
+      .sort((left, right) => (right.quality?.score || 0) - (left.quality?.score || 0))[0]
+    if (champion) {
+      const enriched = { ...champion, quality: critiqueCompositionPlan(champion, finalists), tasteAffinity: tasteAffinity(request.tasteProfile, champion) }
+      plans = [enriched, ...plans.filter((plan) => plan.fingerprint !== enriched.fingerprint)].slice(0, visibleCount)
+    }
+  }
+  plans = plans.map((plan, index) => ({ ...plan, directionIndex: index + 1 }))
   if (plans.some((plan) => plan.novelty < noveltyThreshold)) warnings.push('السجل البصري كثيف؛ اختير أبعد تكوين ممكن مع المحافظة على ملاءمة النص.')
   if (finalists.length < requestedCount) warnings.push(`الأقفال الحالية سمحت بفحص ${finalists.length} اتجاهات متمايزة فقط قبل اختيار أقوى أربعة.`)
   return {

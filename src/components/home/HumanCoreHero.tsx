@@ -1,8 +1,27 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, SocialIcon } from '../ui'
 import { profile } from '../../data'
+import { currentSeason, seasonStrokePath } from '../../lib/seasons'
+
+/* لمسة الموسم: رسمة خطٍّ واحد (هلال، شراع) تحضر بأدب أيام المناسبة وتغيب
+   سائر السنة — تشاركها نواة التقويم نفسها مع استوديو التصاميم. */
+function SeasonalGrace() {
+  const season = useMemo(() => currentSeason(), [])
+  if (!season) return null
+  const star = season.id === 'eid-fitr' || season.id === 'eid-adha'
+    ? <circle cx="78" cy="26" r="4" fill="currentColor" />
+    : null
+  return (
+    <span className="human-core__season" aria-hidden="true" title={season.greeting}>
+      <svg viewBox="0 0 100 100" role="presentation">
+        <path d={seasonStrokePath(season.id)} fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+        {star}
+      </svg>
+    </span>
+  )
+}
 
 type Point = { x: number; y: number }
 
@@ -256,6 +275,7 @@ export default function HumanCoreHero() {
 
   return (
     <header ref={heroRef} className="human-core relative flex min-h-[92svh] items-center overflow-hidden px-6 pb-24 pt-24 md:px-11 md:pb-24 md:pt-24">
+      <SeasonalGrace />
       <canvas ref={canvasRef} className="human-core__canvas pointer-events-none absolute inset-0" aria-hidden="true" />
       <div className="human-core__wash pointer-events-none absolute inset-0" aria-hidden="true" />
       <div className="human-core__words pointer-events-none absolute inset-0" aria-hidden="true">

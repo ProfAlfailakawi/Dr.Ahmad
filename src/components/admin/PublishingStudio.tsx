@@ -1709,6 +1709,15 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([])
   const [eventsLoading, setEventsLoading] = useState(false)
   const [view, setView] = useState<'idea' | 'write' | 'review' | 'distribution' | 'pulse' | 'design'>('idea')
+
+  // بذرة «حملة من مقال»: عند وصولها نفتح استوديو التصاميم فوراً، وعند وجودها
+  // مخزنة (وصل الحدث قبل تركيب هذا المكوّن) نلتقطها في أول تركيب.
+  useEffect(() => {
+    const openDesign = () => setView('design')
+    window.addEventListener('studio:campaign-seed', openDesign)
+    try { if (localStorage.getItem('studio-campaign-seed')) setView('design') } catch { /* noop */ }
+    return () => window.removeEventListener('studio:campaign-seed', openDesign)
+  }, [])
   const [pulseIdea, setPulseIdea] = useState('')
   const [pulsePurpose, setPulsePurpose] = useState('فكرة قصيرة تستحق أن تُقال الآن')
   const [pulsePreviewCopy, setPulsePreviewCopy] = useState({ idea: '', purpose: 'فكرة قصيرة تستحق أن تُقال الآن' })

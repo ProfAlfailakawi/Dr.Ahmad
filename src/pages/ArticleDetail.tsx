@@ -25,6 +25,33 @@ import IdeaLife from '../components/IdeaLife'
 const canUseDropCap = (paragraph: string) =>
   /^[\s\u061C\u200E\u200F]*[\u0621-\u064A]/.test(paragraph)
 
+/* \u062A\u0648\u0642\u064A\u0639 \u0627\u0644\u062E\u062A\u0627\u0645: \u062D\u064A\u0646 \u064A\u0628\u0644\u063A \u0627\u0644\u0642\u0627\u0631\u0626 \u0646\u0647\u0627\u064A\u0629 \u0627\u0644\u0646\u0635 \u064A\u0638\u0647\u0631 \u0628\u0647\u062F\u0648\u0621\u064D \u062E\u0637\u064C\u0651 \u0648\u0634\u0639\u0627\u0631\u064C \u0648\u0627\u0633\u0645 \u2014
+   \u0643\u062A\u0648\u0642\u064A\u0639 \u0627\u0644\u0643\u0627\u062A\u0628 \u0641\u064A \u0630\u064A\u0644 \u0631\u0633\u0627\u0644\u062A\u0647. \u0645\u062D\u0644\u064A \u0627\u0644\u062D\u0631\u0643\u0629\u060C \u0648\u064A\u062D\u062A\u0631\u0645 \u0645\u0646 \u0637\u0644\u0628 \u062A\u0642\u0644\u064A\u0644 \u0627\u0644\u062D\u0631\u0643\u0629. */
+function ClosingSignature() {
+  const ref = useRef<HTMLDivElement | null>(null)
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const element = ref.current
+    if (!element) return
+    if (typeof IntersectionObserver === 'undefined') { setVisible(true); return }
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        setVisible(true)
+        observer.disconnect()
+      }
+    }, { rootMargin: '0px 0px -8% 0px' })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+  return (
+    <div ref={ref} className={`closing-signature mt-14 text-center ${visible ? 'is-visible' : ''}`} aria-hidden="true">
+      <span className="closing-signature__rule mx-auto block h-px w-14 bg-accent/50" />
+      <img src="/logo.png" alt="" width={72} height={44} className="closing-signature__mark mx-auto mt-5 h-11 w-[72px] object-contain opacity-85 dark:invert" loading="lazy" decoding="async" />
+      <span className="closing-signature__name mt-3 block font-display text-[1.02rem] font-semibold text-ink/85">{'\u062F. \u0623\u062D\u0645\u062F \u062D\u0633\u064A\u0646 \u0627\u0644\u0641\u064A\u0644\u0643\u0627\u0648\u064A'}</span>
+    </div>
+  )
+}
+
 
 function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
   const audio = usePersistentAudio()
@@ -493,6 +520,22 @@ export default function ArticleDetail() {
     rememberIdeaVisit({ slug: a.slug, title: a.title, cat: a.cat, excerpt: a.excerpt, body: a.body || staticBody })
   }, [a, staticBody])
 
+  /* وضع السكينة: زرٌّ واحد يُغيّب كل شيء إلا النص — قراءةٌ كأنها ورقة.
+     Escape أو زر الخروج يعيد الصفحة كما كانت، ومغادرة المقال تنهيه تلقائياً. */
+  const [serenity, setSerenity] = useState(false)
+  useEffect(() => {
+    const root = document.documentElement
+    if (serenity) root.classList.add('serenity-mode')
+    else root.classList.remove('serenity-mode')
+    return () => root.classList.remove('serenity-mode')
+  }, [serenity])
+  useEffect(() => {
+    if (!serenity) return
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setSerenity(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [serenity])
+
   if (!a && loading)
     return (
       <Page className="content-articles article-journey">
@@ -542,7 +585,7 @@ export default function ArticleDetail() {
                 </>
               )}
             </div>
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="serenity-hide mt-4 flex flex-wrap items-center justify-between gap-3">
               <OwnerBadge path={`/articles/${article.slug}`} article={article} />
               <OwnerEdit tab="articles" slug={article.slug} className="article-owner-edit" />
             </div>
@@ -552,13 +595,13 @@ export default function ArticleDetail() {
             </h1>
             <div className="mt-6 h-[2px] w-16 bg-accent" />
             {article.body && (
-              <div className="article-reading-actions mt-4 flex items-start gap-4 pb-1">
+              <div className="article-reading-actions serenity-hide mt-4 flex items-start gap-4 pb-1">
                 <div id="article-audio" className="min-w-0 flex-1"><Listen compact slug={article.slug} title={article.title} text={article.body} audio={article.audio} audioControl={article.audioControl} /></div>
-                <div className="flex shrink-0 items-center gap-2"><SaveForLaterButton slug={article.slug} /><ReaderControls article={article} /></div>
+                <div className="flex shrink-0 items-center gap-2"><SaveForLaterButton slug={article.slug} /><button type="button" onClick={() => setSerenity(true)} title="وضع السكينة — يبقى النص وحده" aria-label="وضع السكينة" className="article-tool-icon"><span aria-hidden className="text-[1.02rem] leading-none">۩</span></button><ReaderControls article={article} /></div>
               </div>
             )}
             {article.body && (
-              <p className="mt-1.5 text-[.68rem] leading-relaxed text-soft/75">
+              <p className="serenity-hide mt-1.5 text-[.68rem] leading-relaxed text-soft/75">
                 حدّد أي جملة داخل المقال؛ تظهر عندها أداتا «عبر السنوات» و«بطاقة اقتباس».
               </p>
             )}
@@ -572,6 +615,7 @@ export default function ArticleDetail() {
             ) : article.body ? (
               <>
                 <SyncedArticleBody slug={article.slug} body={article.body} />
+                <ClosingSignature />
                 {/* أداة التحديد لا تظهر إلا حين يختار القارئ نصاً؛ لا تزاحم نهاية المقال. */}
                 <SelectionTools current={article} articles={articles} body={article.body} excerpt={article.excerpt} />
               </>
@@ -604,13 +648,13 @@ export default function ArticleDetail() {
             )}
           </FadeUp>
 
-          <FadeUp>
+          <FadeUp className="serenity-hide">
             <IdeaLife article={article} articles={articles} books={books} papers={papers} media={media} />
           </FadeUp>
 
           {/* نُقل «خيط الفكرة» بكامل وظيفته إلى نافذة «حياة هذه الفكرة» لتخفيف نهاية المقال من دون حذف الميزة. */}
 
-          <FadeUp>
+          <FadeUp className="serenity-hide">
             <section className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-5" aria-label="مشاركة المقال والاستشهاد به">
               <Share compact title={a.title} path={`/articles/${a.slug}`} />
               <div className="article-source-tools" aria-label="المصدر والاستشهاد">
@@ -621,12 +665,12 @@ export default function ArticleDetail() {
           </FadeUp>
 
           {article.body && (
-            <FadeUp>
+            <FadeUp className="serenity-hide">
               <ArticleExtensions article={article} articles={articles} books={books} papers={papers} />
             </FadeUp>
           )}
 
-          <FadeUp>
+          <FadeUp className="serenity-hide">
             <nav className="mt-16 grid items-start gap-6 border-t border-hair pt-8 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
               {next ? (
                 <Link to={`/articles/${next.slug}`} className="group">
@@ -653,6 +697,12 @@ export default function ArticleDetail() {
           </FadeUp>
         </div>
       </article>
+
+      {serenity && (
+        <button type="button" onClick={() => setSerenity(false)} className="serenity-exit" aria-label="الخروج من وضع السكينة">
+          خروج من السكينة
+        </button>
+      )}
     </Page>
   )
 }

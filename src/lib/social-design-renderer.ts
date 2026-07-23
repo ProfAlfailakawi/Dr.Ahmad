@@ -18,6 +18,28 @@ import {
   type Palette,
   type SocialCampaign,
 } from './social-design-engine'
+import { currentSeason, seasonStrokePath } from './seasons'
+
+/* ------------------------------------------------------------------ */
+/*     تفضيلات الإخراج: ختم الهوية ولمسة الموسم — للمعاينة والتصدير معاً    */
+/* ------------------------------------------------------------------ */
+
+export interface RenderPreferences {
+  /** ختم الشعار المخطوط — اختياري بأمر الدكتور */
+  seal: boolean
+  /** لمسة الموسم الخطية (رمضان/العيد/الوطني) حين يكون الموسم قائماً */
+  seasonal: boolean
+}
+
+let renderPreferences: RenderPreferences = { seal: false, seasonal: false }
+
+export function setRenderPreferences(preferences: Partial<RenderPreferences>) {
+  renderPreferences = { ...renderPreferences, ...preferences }
+}
+
+export function getRenderPreferences(): RenderPreferences {
+  return { ...renderPreferences }
+}
 
 /* ------------------------------------------------------------------ */
 /*                         أدوات نصية أساسية                           */
@@ -549,6 +571,46 @@ function mapKeywords(s: Scene) {
   return [...new Set(pool)].slice(0, 3)
 }
 
+/**
+ * ختم الهوية: الشعار المخطوط على قرص ورقي صغير بحلقة شعرية — يعمل على
+ * الفاتح والداكن. يتموضع أعلى اليسار (قبالة الشارة اليمنى) وينزل تحت
+ * الأشرطة العلوية في تكوينات الحدث والسينما.
+ */
+function identitySeal(s: Scene, href: string) {
+  const { palette: p, h, min } = s
+  const r = min * .042
+  const topOffset = s.plan.layout === 'event-marquee' ? h * (s.isTall ? .1 : .13) + min * .035
+    : s.plan.layout === 'cinematic-window' ? h * (s.isTall ? .07 : .085) + min * .035
+      : 0
+  const cx = s.safeX + r
+  const cy = Math.max(s.safeY + r, topOffset + r)
+  const size = r * 1.34
+  return `<g opacity=".96">
+    <circle cx="${round(cx)}" cy="${round(cy)}" r="${round(r)}" fill="#FCFBF7" stroke="${p.rule}" stroke-width="1.2"/>
+    <image href="${esc(href)}" x="${round(cx - size / 2)}" y="${round(cy - size / 2)}" width="${round(size)}" height="${round(size)}" preserveAspectRatio="xMidYMid meet"/>
+  </g>`
+}
+
+/** لمسة الموسم: رسمة خط واحد رفيعة بلون الهوية — حضورٌ لا زخرفة. */
+function seasonalDecor(s: Scene, sealVisible: boolean) {
+  const season = currentSeason()
+  if (!season) return ''
+  const { palette: p, h, min } = s
+  const size = min * .095
+  const topOffset = s.plan.layout === 'event-marquee' ? h * (s.isTall ? .1 : .13) + min * .035
+    : s.plan.layout === 'cinematic-window' ? h * (s.isTall ? .07 : .085) + min * .035
+      : 0
+  const x = s.safeX
+  const y = Math.max(s.safeY, topOffset) + (sealVisible ? min * .1 : 0)
+  const star = season.id === 'eid-fitr' || season.id === 'eid-adha'
+    ? `<circle cx="78" cy="26" r="4" fill="${p.accent}"/>`
+    : ''
+  return `<g transform="translate(${round(x)} ${round(y)}) scale(${round(size / 100)})" opacity=".4" aria-hidden="true">
+    <path d="${seasonStrokePath(season.id)}" fill="none" stroke="${p.accent}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    ${star}
+  </g>`
+}
+
 /* ------------------------------------------------------------------ */
 /*                     المشاهد الفنية الاثنا عشر                        */
 /* ------------------------------------------------------------------ */
@@ -1008,7 +1070,23 @@ const PAINTERS: Record<CompositionPlan['layout'], Painter> = {
 /*                         نقطة الرسم الرئيسية                          */
 /* ------------------------------------------------------------------ */
 
-export function renderCompositionSvg(plan: CompositionPlan, options: { title?: string; ariaLabel?: string; fontCss?: string } = {}) {
+export interface RenderSvgOptions {
+  title?: string
+  ariaLabel?: string
+  fontCss?: string
+  /** مصدر صورة الختم — المعاينة تقرأ /logo.png والتصدير يمرر Data URI مضمّناً */
+  sealHref?: string
+}
+
+function identityLayer(s: Scene, options: RenderSvgOptions) {
+  const sealVisible = renderPreferences.seal
+  return [
+    sealVisible ? identitySeal(s, options.sealHref || '/logo.png') : '',
+    renderPreferences.seasonal ? seasonalDecor(s, sealVisible) : '',
+  ].join('')
+}
+
+export function renderCompositionSvg(plan: CompositionPlan, options: RenderSvgOptions = {}) {
   const s = sceneOf(plan)
   const glow = plan.layout === 'hero-word' || plan.layout === 'quiet-orbit' ? 'center'
     : plan.layout === 'quote-stage' || plan.layout === 'human-note' ? 'top-right'
@@ -1019,7 +1097,7 @@ export function renderCompositionSvg(plan: CompositionPlan, options: { title?: s
   const scenePaint = painter(s)
   const accessible = esc(options.ariaLabel || `${plan.directionLabel}: ${plan.content.title}`)
   const fontStyle = options.fontCss ? `<style>${options.fontCss}</style>` : ''
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${s.w}" height="${s.h}" viewBox="0 0 ${s.w} ${s.h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${esc(options.title || plan.content.title)}</title><defs>${fontStyle}${bg.defs}${scenePaint.defs || ''}</defs>${bg.markup}${frameDecor(s)}${scenePaint.markup}</svg>`
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${s.w}" height="${s.h}" viewBox="0 0 ${s.w} ${s.h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${esc(options.title || plan.content.title)}</title><defs>${fontStyle}${bg.defs}${scenePaint.defs || ''}</defs>${bg.markup}${frameDecor(s)}${scenePaint.markup}${identityLayer(s, options)}</svg>`
 }
 
 /* ------------------------------------------------------------------ */
@@ -1028,7 +1106,7 @@ export function renderCompositionSvg(plan: CompositionPlan, options: { title?: s
 
 /** يرسم شريحة داخلية من السلسلة بإخراج موحد مع الغلاف: نفس اللوح والخط والهوية،
     مع رقم شبحي كبير، ولمسة تعتمد على دور الشريحة (سؤال/دليل/خاتمة/دعوة). */
-function renderCarouselSlideSvg(plan: CompositionPlan, slideIndex: number, options: { fontCss?: string } = {}) {
+function renderCarouselSlideSvg(plan: CompositionPlan, slideIndex: number, options: RenderSvgOptions = {}) {
   const slide = plan.content.slides[slideIndex]
   if (!slide) return renderCompositionSvg(plan, options)
   const s = sceneOf(plan)
@@ -1095,11 +1173,11 @@ function renderCarouselSlideSvg(plan: CompositionPlan, slideIndex: number, optio
   const ghostIndex = `<text x="${round(s.safeX)}" y="${round(s.safeY + min * .16)}" fill="${p.accent}" opacity=".14" font-family="Tajawal" font-weight="500" font-size="${round(min * .17)}" text-anchor="start">${arabicIndex(slideIndex + 1)}</text>`
   const fontStyle = options.fontCss ? `<style>${options.fontCss}</style>` : ''
   const accessible = esc(`شريحة ${slideIndex + 1} من ${total}: ${slide.title}`)
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${accessible}</title><defs>${fontStyle}${bg.defs}</defs>${bg.markup}${ghostIndex}${roleDecor}${stack}${identityFooter(s)}</svg>`
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${accessible}</title><defs>${fontStyle}${bg.defs}</defs>${bg.markup}${ghostIndex}${roleDecor}${stack}${identityFooter(s)}${identityLayer(s, options)}</svg>`
 }
 
 /** كل لوحات التصميم: الغلاف ثم بقية الشرائح إن كانت الخطة سلسلة. */
-export function renderCompositionSeries(plan: CompositionPlan, options: { fontCss?: string } = {}) {
+export function renderCompositionSeries(plan: CompositionPlan, options: RenderSvgOptions = {}) {
   const series = [renderCompositionSvg(plan, options)]
   if (plan.content.slides.length > 1) {
     for (let index = 1; index < plan.content.slides.length; index += 1) series.push(renderCarouselSlideSvg(plan, index, options))
@@ -1112,6 +1190,22 @@ export function renderCompositionSeries(plan: CompositionPlan, options: { fontCs
 /* ------------------------------------------------------------------ */
 
 let embeddedFontCssPromise: Promise<string> | null = null
+let sealDataUriPromise: Promise<string> | null = null
+
+/** صورة SVG المعزولة عند التصدير لا تصل إلى /logo.png — نضمّن الختم Base64 مرة ونخزنه. */
+async function sealDataUri(): Promise<string> {
+  if (sealDataUriPromise) return sealDataUriPromise
+  sealDataUriPromise = (async () => {
+    try {
+      const response = await fetch('/logo.png')
+      if (!response.ok) return ''
+      return `data:image/png;base64,${toBase64(await response.arrayBuffer())}`
+    } catch {
+      return ''
+    }
+  })()
+  return sealDataUriPromise
+}
 
 const toBase64 = (buffer: ArrayBuffer) => {
   const bytes = new Uint8Array(buffer)
@@ -1176,8 +1270,9 @@ function triggerDownload(url: string, name: string) {
   anchor.remove()
 }
 
-export function downloadCompositionSvg(plan: CompositionPlan) {
-  const blob = new Blob([renderCompositionSvg(plan)], { type: 'image/svg+xml;charset=utf-8' })
+export async function downloadCompositionSvg(plan: CompositionPlan) {
+  const sealHref = renderPreferences.seal ? await sealDataUri() : ''
+  const blob = new Blob([renderCompositionSvg(plan, sealHref ? { sealHref } : {})], { type: 'image/svg+xml;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   triggerDownload(url, fileName(plan, 'svg'))
   window.setTimeout(() => URL.revokeObjectURL(url), 1_000)
@@ -1215,7 +1310,9 @@ async function rasterizeSvg(svg: string, width: number, height: number, type: 'p
 export async function downloadCompositionRaster(plan: CompositionPlan, type: 'png' | 'jpeg' = 'png') {
   await document.fonts?.ready
   const fontCss = await embeddedFontCss()
-  const series = renderCompositionSeries(plan, { fontCss })
+  const TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+  const sealHref = renderPreferences.seal ? (await sealDataUri() || TRANSPARENT_PIXEL) : ''
+  const series = renderCompositionSeries(plan, { fontCss, ...(sealHref ? { sealHref } : {}) })
   const extension = type === 'jpeg' ? 'jpg' : 'png'
   const background = PALETTES[plan.palette].background
   for (const [index, svg] of series.entries()) {

@@ -113,12 +113,24 @@ export function rememberSent(db, jid, contentId) {
   )
 }
 
+/* عمر الحجز دقائق لا أيام: الحجز يُحرَّر بعد الإرسال، لكن قتل العملية بين
+   الحجز والتحرير (إعادة تشغيل، انهيار) كان يترك صفوفاً يتيمة تخنق كل ردٍّ
+   لاحق إلى الأبد. الكنّاس يزيل ما شاخ قبل كل محاولة حجز. */
+const RESERVATION_TTL_MS = 10 * 60 * 1000
+
 export function reserveContent(db, jid, contentId) {
-  if (!jid || !contentId) return
+  if (!jid || !contentId) return false
   db.run(
+    'DELETE FROM content_reservations WHERE reserved_at < ?',
+    new Date(Date.now() - RESERVATION_TTL_MS).toISOString(),
+  )
+  const result = db.run(
     'INSERT OR IGNORE INTO content_reservations(jid, content_id, reserved_at) VALUES(?,?,?)',
     db.jidKey(jid), contentId, new Date().toISOString(),
   )
+  /* كانت الدالة لا تُرجع شيئاً فيُقيَّم كل حجزٍ ناجحٍ فاشلاً ويُخنق الرد —
+     هذا سبب «كتبتُ ولم يظهر شيء». النجاح هو إدراج صفٍّ جديد فعلاً. */
+  return Number(result?.changes ?? 0) > 0
 }
 
 export function releaseContentReservation(db, jid, contentId) {

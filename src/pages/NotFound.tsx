@@ -23,24 +23,29 @@ export default function NotFound() {
 
   return (
     <Page>
-      <section className="px-6 pb-24 pt-36 md:px-11 md:pt-44">
+      <section className="relative overflow-hidden px-6 pb-24 pt-36 md:px-11 md:pt-44">
         <div className="mx-auto max-w-[680px] text-center">
           <FadeUp>
-            <motion.span
-              className="not-found-code block font-display text-[clamp(5rem,15vw,9rem)] font-bold leading-none text-accent/15"
-              initial={{ opacity: 0, scale: 0.94 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, ease: EASE }}
-            >
-              404
-            </motion.span>
+            <div className="relative py-6">
+              {/* أفلاك هادئة من لغة الهوية — الرقم فكرة خرجت عن مدارها */}
+              <div className="not-found-orbits" aria-hidden="true"><span /><span /><span /><i /></div>
+              <motion.span
+                className="not-found-code relative block font-display text-[clamp(5rem,15vw,9rem)] font-bold leading-none text-accent/15"
+                initial={{ opacity: 0, scale: 0.94 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, ease: EASE }}
+              >
+                404
+              </motion.span>
+            </div>
 
-            <h1 className="mt-4 font-display text-[clamp(1.7rem,4.2vw,2.6rem)] font-semibold text-ink">
-              <Reveal>لا شيء هنا.</Reveal>
+            <h1 className="mt-2 font-display text-[clamp(1.7rem,4.2vw,2.6rem)] font-semibold text-ink">
+              <Reveal>هذه الصفحة خرجت عن المدار.</Reveal>
             </h1>
 
             <p className="not-found-copy mx-auto mt-5 max-w-[460px] text-[1.02rem] font-light leading-[1.9] text-soft">
-              الصفحة التي تبحث عنها غير موجودة — أو ربما تغيّر عنوانها بعد تجديد الموقع.
+              ربما تغيّر عنوانها بعد تجديد الموقع، وربما لم تُكتب بعد.
+              الأفكار الحقيقية كلها ما زالت هنا — والبحث أقصر طريق إليها.
             </p>
           </FadeUp>
 

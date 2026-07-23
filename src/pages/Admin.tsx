@@ -217,6 +217,14 @@ function Panel({ email }: { email: string }) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  // «حملة من مقال بنقرة»: زر المقالات يطلق هذا الحدث فتقفز اللوحة إلى الاستوديو.
+  useEffect(() => {
+    const toStudio = () => chooseTab('studio')
+    window.addEventListener('studio:campaign-seed', toStudio)
+    return () => window.removeEventListener('studio:campaign-seed', toStudio)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const openTransferredArticle = async (slug: string) => {
     await cms.reload()
     const url = new URL(window.location.href)

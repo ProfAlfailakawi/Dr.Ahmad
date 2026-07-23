@@ -1002,13 +1002,19 @@ export function markManualTakeover(db, jid, minutes = MANUAL_TAKEOVER_MINUTES) {
   const until = new Date(Date.now() + minutes * 60 * 1000).toISOString()
   const now = new Date().toISOString()
   const jidKey = db.jidKey(jid)
+  /* بأمر الدكتور (٢٠٢٦-٠٧-٢٣): تدخله اليدوي يُصمت البوت مدةَ المهلة فقط —
+     الجلسة لا تُهدم. كانت تُقلب إلى manual-takeover فيموت الباب للأبد ويحتاج
+     الشخص «إيقاظاً» جديداً بعد كل محادثة خاصة، وهذا الإزعاج الذي اشتكاه.
+     الآن: الصمت قائم ما دام manual_until في المستقبل (البوابة تفحصه بمعزل عن
+     الوضع)، وبعده يستأنف البوت وحده. سياقُ ما قبل الخصوصية يُمسح احتراماً
+     لحديث الدكتور — استئنافٌ نظيف لا استكمالُ تنصّت. */
   db.run(
-    `INSERT INTO chat_sessions(jid,mode,manual_until,content_id,followup_json,context_json,opened_at,last_user_at,updated_at)
-     VALUES(?,?,?,?,?,?,?,?,?)
+    `INSERT INTO chat_sessions(jid,mode,manual_until,updated_at)
+     VALUES(?,?,?,?)
      ON CONFLICT(jid) DO UPDATE SET
-       mode=excluded.mode, manual_until=excluded.manual_until, content_id=NULL,
-       followup_json=NULL, context_json=NULL, opened_at=NULL, last_user_at=NULL, updated_at=excluded.updated_at`,
-    jidKey, 'manual-takeover', until, null, null, null, null, null, now,
+       manual_until=excluded.manual_until, content_id=NULL,
+       followup_json=NULL, context_json=NULL, updated_at=excluded.updated_at`,
+    jidKey, 'suggest-only', until, now,
   )
 }
 

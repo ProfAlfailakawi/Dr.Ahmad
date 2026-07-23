@@ -3145,3 +3145,10 @@ html.serenity-mode body {
   background: rgb(var(--c-accent) / .6);
   translate: 0 calc(min(15rem, 41vw) * -1);
 }
+
+/* أثناء تحديد النص: الأزرار العائمة تنزوي فلا تركب فوق التحديد وشريطه (ملاحظة الدكتور من الهاتف) */
+body.selection-active .floating-actions {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}

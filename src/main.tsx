@@ -3,6 +3,18 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 
+/* شفاء الحزم اليتيمة: هاتفٌ فتح رابطاً بهيكلٍ قديم أثناء نشرةٍ جديدة يطلب
+   حزمةً تغيّر اسمها فتغيب المتون (صفحة «قيد الإضافة» الزائفة). فشلُ التحميل
+   الكسول = إعادة تحميلٍ ذاتية مرة واحدة فيأتي الهيكل الجديد بحزمه الصحيحة. */
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault()
+  try {
+    if (sessionStorage.getItem('chunk-heal') === '1') return
+    sessionStorage.setItem('chunk-heal', '1')
+  } catch { /* حارس التكرار اختياري */ }
+  window.location.reload()
+})
+
 declare global {
   interface Window {
     __appBootFallbackTimer?: number

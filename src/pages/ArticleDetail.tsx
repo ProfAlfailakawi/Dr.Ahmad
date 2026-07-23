@@ -625,6 +625,9 @@ export default function ArticleDetail() {
                 {/* أداة التحديد لا تظهر إلا حين يختار القارئ نصاً؛ لا تزاحم نهاية المقال. */}
                 <SelectionTools current={article} articles={articles} body={article.body} excerpt={article.excerpt} />
               </>
+            ) : loading ? (
+              /* المتون حزمة كسولة: أثناء وصولها لا نتهم مقالاً كاملاً بأنه «قيد الإضافة» */
+              <p className="mt-14 text-center text-[.9rem] font-light text-soft">يُحضر النص الكامل…</p>
             ) : (
               <>
                 {a.excerpt && (

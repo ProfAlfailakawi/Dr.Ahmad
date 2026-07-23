@@ -1713,9 +1713,10 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   // بذرة «حملة من مقال»: عند وصولها نفتح استوديو التصاميم فوراً، وعند وجودها
   // مخزنة (وصل الحدث قبل تركيب هذا المكوّن) نلتقطها في أول تركيب.
   useEffect(() => {
-    const openDesign = () => setView('design')
+    /* بأمر الدكتور: أزيل التبويب المكرر — البذرة يوجهها Admin لتبويب الاستوديو المستقل */
+    const openDesign = () => {}
     window.addEventListener('studio:campaign-seed', openDesign)
-    try { if (localStorage.getItem('studio-campaign-seed')) setView('design') } catch { /* noop */ }
+    try { localStorage.getItem('studio-campaign-seed') } catch { /* noop */ }
     return () => window.removeEventListener('studio:campaign-seed', openDesign)
   }, [])
   const [pulseIdea, setPulseIdea] = useState('')
@@ -2242,7 +2243,6 @@ ${pulsePurpose.trim()}`,
             ['review', 'بوابة الجودة'],
             ['distribution', 'التوزيع'],
             ['pulse', 'منشور مستقل'],
-            ['design', 'استوديو التصاميم'],
           ] as const).map(([key, label]) => (
             <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold transition-colors ${view === key ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{label}</button>
           ))}
@@ -2326,13 +2326,6 @@ ${pulsePurpose.trim()}`,
             </div>
           </div>
         </>
-      )}
-
-      {view === 'design' && (
-        <SocialDesignStudio
-          initialText={pulseIdea.trim() || bundle.title.trim() || idea.trim()}
-          initialContext={pulsePurpose.trim() || bundle.excerpt.trim() || angle.trim()}
-        />
       )}
 
       {view === 'pulse' && (

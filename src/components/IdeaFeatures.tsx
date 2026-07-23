@@ -321,6 +321,12 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
     return () => query.removeEventListener('change', sync)
   }, [])
   const [view, setView] = useState<null | 'thread' | 'card'>(null)
+  /* أثناء التحديد تنزوي الأزرار العائمة (ملاحظة الدكتور: كانت تركب فوق
+     التحديد وشريطه في الهاتف) — تعود فور زوال التحديد */
+  useEffect(() => {
+    document.body.classList.toggle('selection-active', Boolean(pos))
+    return () => document.body.classList.remove('selection-active')
+  }, [pos])
   const [img, setImg] = useState<string | null>(null)
   const [cardQuote, setCardQuote] = useState('')
   const [template, setTemplate] = useState<CardTemplateKey>('midad')

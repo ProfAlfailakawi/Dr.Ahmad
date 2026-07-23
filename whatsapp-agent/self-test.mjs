@@ -205,13 +205,16 @@ export async function runSelfTest(root) {
   assert.equal(onMessage({ jid: handled, text: 'موقع د. أحمد', message: {} }).shouldRespond, true,
     '★ جملة الإيقاظ وحدها تعيد البوت بعد تدخل الدكتور')
 
-  /* انتهاء مهلة التدخل لا يعيد الجلسة تلقائياً. */
+  /* بأمر الدكتور (٢٠٢٦-٠٧-٢٣): مهلة تدخله صمتٌ مؤقت لا هدمٌ للجلسة —
+     بعد انقضائها يستأنف البوت وحده بلا إيقاظ جديد (كان الإزعاج المشكو). */
   const cooled = '96010@s.whatsapp.net'
   onMessage({ jid: cooled, text: 'موقع د. أحمد', message: {} })
   agent.manualTakeover(cooled, 1)
-  db.run("UPDATE chat_sessions SET manual_until=? WHERE jid=?", new Date(daytime.getTime() - 1000).toISOString(), db.jidKey(cooled))
   assert.equal(onMessage({ jid: cooled, text: 'آخر مقالة', message: {} }).shouldRespond, false,
-    '★ بعد انتهاء الحماية يبقى صامتاً بلا إيقاظ')
+    '★ أثناء مهلة الدكتور صمتٌ تام')
+  db.run("UPDATE chat_sessions SET manual_until=? WHERE jid=?", new Date(daytime.getTime() - 1000).toISOString(), db.jidKey(cooled))
+  assert.equal(onMessage({ jid: cooled, text: 'آخر مقالة', message: {} }).shouldRespond, true,
+    '★ بعد انقضاء المهلة يستأنف البوت وحده — الجلسة لم تُهدم')
   assert.equal(onMessage({ jid: cooled, text: 'موقع د. الفيلكاوي', message: {} }).shouldRespond, true,
     '★ وبعدها تفتح جملة الإيقاظ جلسة جديدة')
 

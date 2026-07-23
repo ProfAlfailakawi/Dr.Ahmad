@@ -7,7 +7,7 @@
  * الاستوديو المستقل عن تقنية الرسم، وأن يبقي النص الأصلي محفوظاً دائماً.
  */
 
-export const SOCIAL_DESIGN_ENGINE_VERSION = '2.0.0'
+export const SOCIAL_DESIGN_ENGINE_VERSION = '2.1.0'
 
 export type ContentKind =
   | 'quote'
@@ -330,6 +330,7 @@ export interface PlanContent {
   author: string
   source: string
   slides: CarouselSlide[]
+  keywords?: string[]
   omittedWordCount: number
   overflowStrategy: 'none' | 'trimmed-preview' | 'carousel'
 }
@@ -856,6 +857,19 @@ const slideRole = (sentence: string, index: number, total: number, kind: Content
   return index === 1 ? 'context' : 'insight'
 }
 
+/** بنود مرقّمة صراحةً (أولاً/ثانياً/…): حدودها هي حدود الشرائح — لا قصّ في منتصف بند. */
+const ORDINAL_MARKER = /(?:أولاً|اولاً|أولا|اولا|ثانياً|ثانيا|ثالثاً|ثالثا|رابعاً|رابعا|خامساً|خامسا|سادساً|سادسا|سابعاً|سابعا|ثامناً|ثامنا|تاسعاً|تاسعا|عاشراً|عاشرا)/u
+
+function splitByOrdinals(text: string) {
+  const segments = text.split(new RegExp(`(?=(?:^|\\s)${ORDINAL_MARKER.source}\\s*[:：ـ-])`, 'u'))
+    .map((part) => part.trim())
+    .filter(Boolean)
+  // مقدمة + بندان فأكثر، وإلا فلا معنى للتقسيم البنودي
+  return segments.length >= 3 ? segments : null
+}
+
+const stripOrdinalPrefix = (value: string) => value.replace(new RegExp(`^\\s*${ORDINAL_MARKER.source}\\s*[:：ـ-]\\s*`, 'u'), '').trim() || value
+
 export function segmentTextForCarousel(
   input: string,
   options: { minimumSlides?: number; maximumSlides?: number; targetWordsPerSlide?: number; kind?: ContentKind } = {},
@@ -866,6 +880,36 @@ export function segmentTextForCarousel(
   const maximumSlides = clamp(Math.round(options.maximumSlides ?? 8), minimumSlides, 12)
   const target = clamp(Math.round(options.targetWordsPerSlide ?? 34), 16, 64)
   const kind = options.kind || 'core-idea'
+  const ordinalChunks = splitByOrdinals(text)
+  if (ordinalChunks) {
+    // كل بند شريحة كما كتبه صاحبه؛ ودعوة ختامية ملتصقة بآخر بند تستقل بشريحتها.
+    const expanded = [...ordinalChunks]
+    const last = expanded[expanded.length - 1]
+    const lastSentences = splitSentences(last)
+    if (lastSentences.length > 1 && /(?:سجل|احجز|انضم|اقرا|شاهد|تواصل|شارك|اكتشف|تابع|حمل)/.test(normalizeArabicForDesign(lastSentences[lastSentences.length - 1]))) {
+      expanded[expanded.length - 1] = lastSentences.slice(0, -1).join(' ')
+      expanded.push(lastSentences[lastSentences.length - 1])
+    }
+    const limited = expanded.slice(0, maximumSlides)
+    if (limited.length < expanded.length) limited[limited.length - 1] = expanded.slice(limited.length - 1).join(' ')
+    return limited.map((chunk, index) => {
+      const display = stripOrdinalPrefix(chunk)
+      const role = slideRole(chunk, index, limited.length, kind)
+      const title = truncateWords(display, role === 'cover' ? 13 : 10)
+      const remaining = display.startsWith(title.replace(/…$/u, '')) && wordsOf(display).length > wordsOf(title).length
+        ? display.slice(title.replace(/…$/u, '').length).trim().replace(/^[،؛:,.!?؟]+\s*/u, '')
+        : ''
+      return {
+        id: `slide-${index + 1}-${hashHex(chunk)}`,
+        index: index + 1,
+        role,
+        kicker: role === 'cover' ? KIND_LABELS[kind] : `${index + 1} / ${limited.length}`,
+        title,
+        body: remaining,
+        sourceText: chunk,
+      }
+    })
+  }
   const sourceSentences = splitSentences(text)
   const chunks: string[] = []
   let active: string[] = []
@@ -1002,7 +1046,23 @@ export function analyzeSocialContent(input: string, context = '', metadata: { au
   const combined = normalizeWhitespace(`${text}\n${context}`)
   const normalized = normalizeArabicForDesign(combined)
   const metrics = textMetrics(text)
-  const kinds = signalScores<ContentKind>(normalized, KIND_SIGNALS, 'core-idea')
+  // النص نفسه هو الحاكم في تحديد النوع؛ السياق مرجِّح بنصف الوزن فقط —
+  // كي لا يقلب «من محاضرة عن كذا» اقتباساً صريحاً إلى إعلان محاضرة.
+  const kindsFromText = signalScores<ContentKind>(normalizeArabicForDesign(text), KIND_SIGNALS, 'core-idea')
+  const kindsFromContext = context.trim() ? signalScores<ContentKind>(normalizeArabicForDesign(context), KIND_SIGNALS, 'core-idea') : []
+  const mergedKindScores = new Map<ContentKind, { score: number; reasons: string[] }>()
+  for (const entry of kindsFromText) mergedKindScores.set(entry.id, { score: entry.score, reasons: [...entry.reasons] })
+  for (const entry of kindsFromContext) {
+    const current = mergedKindScores.get(entry.id) || { score: 0, reasons: [] }
+    current.score += entry.score * 0.45
+    for (const reason of entry.reasons) if (!current.reasons.includes(reason)) current.reasons.push(`${reason} (من السياق)`)
+    mergedKindScores.set(entry.id, current)
+  }
+  const mergedMaximum = Math.max(...[...mergedKindScores.values()].map((entry) => entry.score), 1)
+  const kinds = [...mergedKindScores.entries()]
+    .map(([id, entry]) => ({ id, score: entry.score, confidence: roundScore((entry.score / mergedMaximum) * 100), reasons: entry.reasons }))
+    .filter((entry) => entry.score > 0)
+    .sort((left, right) => right.score - left.score || left.id.localeCompare(right.id))
   let primaryKind: ContentKind = kinds[0]?.id || 'core-idea'
   // السؤال الصريح سلطة بنيوية أعلى، بينما أسماء الخدمات أعلى من «فكرة عامة».
   if (metrics.hasQuestion && !['lecture', 'course', 'consultation', 'media-appearance'].includes(primaryKind)) primaryKind = 'provocative-question'
@@ -1020,7 +1080,14 @@ export function analyzeSocialContent(input: string, context = '', metadata: { au
       const rightScore = (/[؟?]/.test(right) ? 5 : 0) + (/(?:لا.+بل|ليس.+بل)/.test(normalizeArabicForDesign(right)) ? 8 : 0) + Math.min(wordsOf(right).length, 24)
       return rightScore - leftScore
     })[0] || title
-  const subtitle = sentences.find((sentence) => normalizeArabicForDesign(sentence) !== normalizeArabicForDesign(title)) || ''
+  // مقارنة بلا علامات ترقيم: «حديثة.» و«حديثة» جملة واحدة — كانت النقطة
+  // الختامية تخدع الاختيار فيُعاد العنوان نفسه بوصفه جملة ثانية.
+  const contentKey = (value: string) => normalizeArabicForDesign(value).replace(/[^\p{L}\p{N}\s]+/gu, ' ').replace(/\s+/g, ' ').trim()
+  const titleContentKey = contentKey(title)
+  const subtitle = sentences.find((sentence) => {
+    const key = contentKey(sentence)
+    return key && key !== titleContentKey && wordsOf(sentence).length >= 3
+  }) || ''
   const cta = explicitCta(sentences) || fallbackCta(primaryKind)
   const slides = segmentTextForCarousel(text, {
     minimumSlides: metrics.isLong ? 4 : 3,
@@ -1189,15 +1256,30 @@ const contentForPlan = (analysis: SocialContentAnalysis, format: SocialFormatSpe
   const titleLimit = Math.max(7, Math.round(format.maxTitleWords * (layout.textBias === 'title' ? 0.72 : 1)))
   const bodyLimit = Math.max(12, Math.round(format.maxBodyWords * (layout.textBias === 'body' ? 1 : 0.75)))
   const title = truncateWords(layout.textBias === 'quote' && structure.quote ? structure.quote : structure.title, titleLimit)
-  const sourceBody = layout.textBias === 'data' ? structure.keyPoint : (structure.subtitle || structure.keyPoint)
+  // المتن لا يكرر العنوان أبداً: النص القصير يترك العنوان وحيداً بدل عرض الجملة مرتين.
+  const titleKey = normalizeArabicForDesign(title.replace(/…$/u, ''))
+  const distinct = (value: string) => {
+    const key = normalizeArabicForDesign(String(value || '').replace(/…$/u, ''))
+    return Boolean(key) && key !== titleKey && !(titleKey.length > 12 && (key.startsWith(titleKey) || titleKey.startsWith(key)))
+  }
+  const bodyCandidates = layout.textBias === 'data'
+    ? [structure.keyPoint, structure.subtitle]
+    : [structure.subtitle, structure.keyPoint]
+  const sourceBody = bodyCandidates.find(distinct) || ''
   const body = truncateWords(sourceBody, bodyLimit)
   const included = Math.min(analysis.metrics.words, wordsOf(title).length + wordsOf(body).length)
-  const carousel = format.supportsCarousel && analysis.metrics.words > format.maxTitleWords + format.maxBodyWords
+  // الشرائح تُرفق أيضاً حين تكون بنية النص تسلسلية صراحةً (أولاً/ثانياً أو نقاط)
+  // لا فقط حين يفيض عدد الكلمات — كي لا يضيع كاروسيل حقيقي لمجرد أنه موجز.
+  const carousel = format.supportsCarousel && (
+    analysis.metrics.words > format.maxTitleWords + format.maxBodyWords
+    || analysis.primaryKind === 'carousel'
+    || analysis.metrics.bullets >= 2
+  ) && structure.slides.length >= 2
   return {
     original: structure.original,
     kicker: KIND_LABELS[analysis.primaryKind],
     title,
-    subtitle: truncateWords(structure.subtitle, Math.round(bodyLimit * 0.72)),
+    subtitle: distinct(structure.subtitle) ? truncateWords(structure.subtitle, Math.round(bodyLimit * 0.72)) : '',
     body,
     quote: truncateWords(structure.quote, bodyLimit),
     heroWord: structure.heroWord,
@@ -1205,6 +1287,7 @@ const contentForPlan = (analysis: SocialContentAnalysis, format: SocialFormatSpe
     author: structure.author,
     source: structure.source,
     slides: carousel ? structure.slides : [],
+    keywords: structure.keywords.slice(0, 6),
     omittedWordCount: Math.max(0, analysis.metrics.words - included),
     overflowStrategy: carousel ? 'carousel' : analysis.metrics.words > included ? 'trimmed-preview' : 'none',
   }
@@ -1551,7 +1634,7 @@ const tasteTraitsOf = (plan: CompositionPlan): Record<TasteTrait, string> => {
     surfaceMode: palette.isDark ? 'dark' : 'light',
     whitespaceMode: whitespace >= 88 ? 'airy' : whitespace < 72 ? 'dense' : 'balanced',
     identityPosition: plan.ctaPlacement === 'footer-inline' ? 'footer' : plan.ctaPlacement === 'none' ? 'minimal' : 'inline',
-    designCharacter: ['editorial-quote', 'quiet-manifesto', 'thought-poster'].includes(plan.layout) ? 'editorial' : ['institutional-signal', 'research-brief', 'event-marquee'].includes(plan.layout) ? 'institutional' : 'expressive',
+    designCharacter: ['editorial-axis', 'quote-stage', 'human-note', 'chapter-stack'].includes(plan.layout) ? 'editorial' : ['event-marquee', 'modular-brief', 'evidence-ledger'].includes(plan.layout) ? 'institutional' : 'expressive',
   }
 }
 

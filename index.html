@@ -37,6 +37,9 @@
     <link href="/fonts/fonts.css" rel="stylesheet" />
     <!-- صورة LCP (البورتريه) — تحميل مبكّر لتسريع أكبر عنصر مرئي -->
     <link rel="preload" href="/portrait.webp" as="image" fetchpriority="high" />
+    <!-- المحتوى الحي يُجلب بعد أول رسمة من Firestore؛ فتح القناة مبكراً يختصر جولة الشبكة -->
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+    <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
     <script id="canonical-host-redirect">
       (function () {
         var canonicalHost = 'dr-alfailakawi.com';

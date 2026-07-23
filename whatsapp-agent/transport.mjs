@@ -70,8 +70,22 @@ export class MockTransport extends EventEmitter {
 
 export async function createWhatsAppTransport({ db, onMessage, onContacts, onQr, onPairingCode, maxReconnects = 4 } = {}) {
   let baileys
-  try { baileys = await import('@whiskeysockets/baileys') } catch (error) {
-    throw new Error(`Baileys غير مثبت. نفّذ npm install داخل whatsapp-agent. (${redactError(error)})`)
+  try { baileys = await import('@whiskeysockets/baileys') } catch (initialError) {
+    /* شفاء ذاتي: استبدال مجلد المشروع بنسخة جديدة يمحو node_modules فيدخل
+       البوت حلقة انهيار صامتة (هذا ما أوقفه فعلاً في ٢٠٢٦-٠٧-٢٢). نحاول
+       تثبيت الاعتماديات مرة واحدة من قفل الحزم نفسه ثم نعيد الاستيراد. */
+    try {
+      const { execFileSync } = await import('node:child_process')
+      const { fileURLToPath } = await import('node:url')
+      const path = await import('node:path')
+      const agentDir = path.dirname(fileURLToPath(import.meta.url))
+      console.error('Baileys مفقود — أحاول إعادة تثبيت الاعتماديات ذاتياً (npm ci)…')
+      execFileSync('npm', ['ci', '--no-audit', '--no-fund'], { cwd: agentDir, stdio: 'ignore', timeout: 240000 })
+      baileys = await import('@whiskeysockets/baileys')
+      console.error('نجح الشفاء الذاتي: الاعتماديات عادت والبوت يكمل إقلاعه.')
+    } catch {
+      throw new Error(`Baileys غير مثبت. نفّذ npm install داخل whatsapp-agent. (${redactError(initialError)})`)
+    }
   }
   const makeWASocket = baileys.default || baileys.makeWASocket
   if (typeof makeWASocket !== 'function') throw new Error('إصدار Baileys لا يصدّر makeWASocket المتوقع.')

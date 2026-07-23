@@ -1,6 +1,7 @@
 import {
   createContext,
   createElement,
+  startTransition,
   useCallback,
   useContext,
   useEffect,
@@ -44,7 +45,7 @@ export function useExtras<T>(collectionName: string, options: { realtime?: boole
 
     if (!realtime) {
       fetchExtras<T>(collectionName).then((items) => {
-        if (active) setData(items as T[])
+        if (active) startTransition(() => setData(items as T[]))
       })
       return () => { active = false }
     }
@@ -58,14 +59,14 @@ export function useExtras<T>(collectionName: string, options: { realtime?: boole
           query(collection(db, collectionName), orderBy('createdAt', 'desc')),
           (snapshot) => {
             if (!active) return
-            setData(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })) as T[])
+            startTransition(() => setData(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })) as T[]))
           },
           () => {
-            fetchExtras<T>(collectionName).then((items) => { if (active) setData(items as T[]) })
+            fetchExtras<T>(collectionName).then((items) => { if (active) startTransition(() => setData(items as T[])) })
           },
         )
       } catch {
-        fetchExtras<T>(collectionName).then((items) => { if (active) setData(items as T[]) })
+        fetchExtras<T>(collectionName).then((items) => { if (active) startTransition(() => setData(items as T[])) })
       }
     })()
 
@@ -141,8 +142,12 @@ export function CmsProvider({ children }: { children: ReactNode }) {
           return [collectionMap[name], documents(snapshot)] as const
         }),
       )
-      setRemote(Object.fromEntries(entries) as RemoteCmsData)
-      setError(null)
+      // تحديث غير عاجل: دمج المحتوى الحي يعيد رسم الموقع كله، وجعله قابلاً
+      // للمقاطعة يمنع تجميد نقرة أو تنقّل تزامن وصول البيانات معه.
+      startTransition(() => {
+        setRemote(Object.fromEntries(entries) as RemoteCmsData)
+        setError(null)
+      })
     } catch (loadError) {
       setError(errorMessage(loadError))
     } finally {
@@ -176,8 +181,10 @@ export function CmsProvider({ children }: { children: ReactNode }) {
             collection(db, name),
             (snapshot) => {
               if (!active) return
-              setRemote((previous) => ({ ...previous, [key]: documents(snapshot) }))
-              setError(null)
+              startTransition(() => {
+                setRemote((previous) => ({ ...previous, [key]: documents(snapshot) }))
+                setError(null)
+              })
               finish(key)
             },
             (snapshotError) => {

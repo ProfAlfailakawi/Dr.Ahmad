@@ -202,6 +202,22 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   useEffect(() => { if (initialText && !text.trim()) setText(initialText) }, [initialText])
   useEffect(() => { if (initialContext && !context.trim()) setContext(initialContext) }, [initialContext])
 
+  // «يفهم من أول كلمة»: توليد تلقائي مؤجل أثناء الكتابة، مرة واحدة لكل نص —
+  // الزر يبقى لإعادة التوليد بدفعة مختلفة على النص نفسه.
+  const autoGenerateKeyRef = useRef('')
+  const generateRef = useRef<() => void>(() => {})
+  useEffect(() => {
+    const clean = text.trim()
+    if (clean.length < 3) return
+    const key = `${clean}::${context.trim()}`
+    if (autoGenerateKeyRef.current === key) return
+    const timer = window.setTimeout(() => {
+      autoGenerateKeyRef.current = key
+      generateRef.current()
+    }, 850)
+    return () => window.clearTimeout(timer)
+  }, [text, context])
+
   useEffect(() => {
     if (!selected) return
     const previousOverflow = document.body.style.overflow
@@ -244,6 +260,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     remember(result.plans)
     setNotice(result.generation.warnings[0] || `فحص الناقد ثمانية اتجاهات داخلية وعرض أقوى ${result.plans.length} فقط.`)
   }
+  generateRef.current = () => generate()
 
   const regenerateSelected = (profile: 'smart' | 'luxury' | 'calm' | 'bold') => {
     if (!selected) return
@@ -396,7 +413,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           <div className="relative mt-2 flex flex-wrap items-end justify-between gap-4">
             <div>
               <h2 className="font-display text-3xl font-bold text-ink md:text-4xl">استوديو التصميم الذكي</h2>
-              <p className="mt-3 max-w-3xl text-[.88rem] leading-loose text-soft">اكتب الفكرة فقط. المحرك يبني ثمانية اتجاهات في الخلفية، يمررها على الناقد البصري، ثم يعرض لك أقوى أربعة فقط — بلا API أو صور جاهزة.</p>
+              <p className="mt-3 max-w-3xl text-[.88rem] leading-loose text-soft">اكتب الفكرة فقط — يبدأ التوليد وحده وأنت تكتب. المحرك يبني ثمانية اتجاهات فنية في الخلفية، يمررها على الناقد البصري، ثم يعرض لك أقوى أربعة فقط — بلا API أو صور جاهزة.</p>
             </div>
             <span className="rounded-full border border-accent/25 bg-accent/[.06] px-4 py-2 text-[.72rem] font-semibold text-accent">لا تكلفة تشغيلية · عربي أولًا</span>
           </div>

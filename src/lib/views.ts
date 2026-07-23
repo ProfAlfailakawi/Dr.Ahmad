@@ -206,8 +206,14 @@ export function useTrackJourney(path: string, enabled = true) {
     try {
       const rawPrevious = window.sessionStorage.getItem('journey:last-path') || ''
       const previous = rawPrevious ? normalizePath(rawPrevious) : ''
-      if (previous && previous !== normalizedPath) void trackJourney(previous, normalizedPath)
       window.sessionStorage.setItem('journey:last-path', normalizedPath)
+      if (previous && previous !== normalizedPath) {
+        // التسجيل مؤجل لوقت الخمول عمداً: أول رحلة في الجلسة كانت توقظ حزمة
+        // Firebase كاملة (~1MB تقييماً على الخيط الرئيسي) في لحظة التنقل نفسها،
+        // فيهتز دخول الصفحة. لا نربط الإلغاء بالتنظيف كي لا تضيع الرحلة عند
+        // التنقل السريع المتتابع — ومنع التكرار تتكفل به ذاكرة الجلسة.
+        afterFirstPaint(() => { void trackJourney(previous, normalizedPath) })
+      }
     } catch { /* لا تؤثر على تجربة الزائر */ }
   }, [enabled, path])
 }

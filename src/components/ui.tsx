@@ -808,7 +808,7 @@ export function Nav() {
   if (english) {
     return (
       <>
-        <motion.div className="fixed left-0 z-[240] h-[2px] w-full origin-left bg-accent" style={{ scaleX: progress }} animate={{ top: solid ? 63 : 75 }} transition={{ duration: .25, ease: EASE }} />
+        <motion.div className="site-scroll-progress fixed left-0 z-[240] h-[2px] w-full origin-left bg-accent" style={{ scaleX: progress }} animate={{ top: solid ? 63 : 75 }} transition={{ duration: .25, ease: EASE }} />
         <AnimatePresence>{open && <EnglishOverlay key="en-ov" close={closeMenu} openSearch={() => { closeMenu(); setSearchOpen(true) }} />}</AnimatePresence>
         <AnimatePresence>{searchOpen && <SearchPalette key="search" close={closeSearch} />}</AnimatePresence>
         <nav aria-label="Main navigation" dir="ltr" className={`site-nav ${solid ? 'is-solid' : ''} fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.9] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
@@ -837,7 +837,7 @@ export function Nav() {
 
   return (
     <>
-      <motion.div className="fixed right-0 z-[240] h-[2px] w-full origin-right bg-accent" style={{ scaleX: progress }} animate={{ top: solid ? 63 : 75 }} transition={{ duration: .25, ease: EASE }} />
+      <motion.div className="site-scroll-progress fixed right-0 z-[240] h-[2px] w-full origin-right bg-accent" style={{ scaleX: progress }} animate={{ top: solid ? 63 : 75 }} transition={{ duration: .25, ease: EASE }} />
 
       <AnimatePresence>{open && <Overlay key="ov" close={closeMenu} openSearch={() => { closeMenu(); setSearchOpen(true) }} />}</AnimatePresence>
       <AnimatePresence>{searchOpen && <SearchPalette key="search" close={closeSearch} />}</AnimatePresence>

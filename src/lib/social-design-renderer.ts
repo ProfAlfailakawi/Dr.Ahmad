@@ -410,24 +410,26 @@ function frameDecor(s: Scene) {
 }
 
 /** سطر الهوية: مسطرة شعرية، الاسم يميناً، النطاق يساراً بتباعد لاتيني أنيق. */
-function identityFooter(s: Scene, options: { mode?: 'standard' | 'center' | 'none'; y?: number } = {}) {
+function identityFooter(s: Scene, options: { mode?: 'standard' | 'center' | 'none'; y?: number; nameless?: boolean } = {}) {
   const { palette: p, w, h, min } = s
   const mode = options.mode ?? 'standard'
   if (mode === 'none') return ''
   const y = options.y ?? h - s.safeY * .92
   const nameSize = Math.max(15, min * .0225)
   const domainSize = Math.max(11, min * .0165)
+  /* nameless: للمشاهد التي ترسم الاسم داخل تكوينها — التذييل نطاقٌ فقط،
+     فلا يتكرر اسم الدكتور مرتين في التصميم الواحد (ملاحظته بالحرف) */
   if (mode === 'center') {
     return [
-      textBlock({ lines: [s.author], x: w / 2, y: y - min * .036, size: nameSize, fill: p.ink, weight: 600, anchor: 'middle', family: 'Tajawal', opacity: .92 }),
+      options.nameless ? '' : textBlock({ lines: [s.author], x: w / 2, y: y - min * .036, size: nameSize, fill: p.ink, weight: 600, anchor: 'middle', family: 'Tajawal', opacity: .92 }),
       textBlock({ lines: ['dr-alfailakawi.com'], x: w / 2, y, size: domainSize, fill: p.muted, weight: 500, anchor: 'middle', family: 'Tajawal', letterSpacing: 2.2, opacity: .9 }),
     ].join('')
   }
   const ruleY = y - nameSize * 1.55
   return `
     <line x1="${s.safeX}" y1="${round(ruleY)}" x2="${w - s.safeX}" y2="${round(ruleY)}" stroke="${p.rule}" stroke-width="1.1" opacity=".9"/>
-    ${textBlock({ lines: [s.author], x: w - s.safeX, y, size: nameSize, fill: p.ink, weight: 600, anchor: 'end', family: 'Tajawal', opacity: .94 })}
-    ${textBlock({ lines: ['dr-alfailakawi.com'], x: s.safeX, y, size: domainSize, fill: p.muted, weight: 500, anchor: 'start', family: 'Tajawal', letterSpacing: 2 })}`
+    ${options.nameless ? '' : textBlock({ lines: [s.author], x: w - s.safeX, y, size: nameSize, fill: p.ink, weight: 600, anchor: 'end', family: 'Tajawal', opacity: .94 })}
+    ${textBlock({ lines: ['dr-alfailakawi.com'], x: options.nameless ? w - s.safeX : s.safeX, y, size: domainSize, fill: p.muted, weight: 500, anchor: options.nameless ? 'end' : 'start', family: 'Tajawal', letterSpacing: 2 })}`
 }
 
 /** النطاق الرأسي المتاح للمحتوى فوق سطر الهوية. */
@@ -698,7 +700,7 @@ const paintQuoteStage: Painter = (s) => {
     carouselItem(s),
   ], contentBand(s), .42)
   return {
-    markup: [stack, identityFooter(s, { mode: 'center' })].join(''),
+    markup: [stack, identityFooter(s, { mode: 'center', nameless: true })].join(''),
   }
 }
 
@@ -997,7 +999,7 @@ const paintHumanNote: Painter = (s) => {
       drawStack(innerItems, { top: sheetTop + pad, bottom: sheetTop + sheetH - pad - signatureH }, .4),
       textBlock({ lines: [s.author], x: sheetX + pad, y: sheetTop + sheetH - pad * .75, size: Math.max(15, min * .024), fill: p.accent, weight: 700, anchor: 'start', family: 'El Messiri' }),
       carouselItem(s, { gap: 0 }).draw(sheetTop + sheetH + min * .025),
-      identityFooter(s, { mode: 'center' }),
+      identityFooter(s, { mode: 'center', nameless: true }),
     ].join(''),
   }
 }

@@ -1,11 +1,9 @@
 {
-  "warning": "SAFE DERIVED LINKS ONLY — لا يحتوي نصوص الكتب أو مساراتها الخاصة.",
+  "warning": "SAFE DERIVED LINKS ONLY — لا نصوص ولا مسارات ولا أرقام صفحات للكتب الخاصة.",
   "generatedAt": "2026-07-14T01:08:20.901Z",
   "books": [
     {
       "title": "Digital education",
-      "pages": 96,
-      "sampledPages": 96,
       "linkedPublicBook": {
         "slug": "digital-education",
         "title": "التعليم ومتطلبات العصر.. (التعلم الرقمي)",
@@ -85,8 +83,6 @@
     },
     {
       "title": "gamification",
-      "pages": 100,
-      "sampledPages": 100,
       "linkedPublicBook": {
         "slug": "gamification",
         "title": "التلعيب Gamification وعالم الألعاب",
@@ -166,8 +162,6 @@
     },
     {
       "title": "Handy-Tech",
-      "pages": 100,
-      "sampledPages": 100,
       "linkedPublicBook": {
         "slug": "handy-tech",
         "title": "تكنولوجيا ذوي الاحتياجات الخاصة",
@@ -247,8 +241,6 @@
     },
     {
       "title": "Kids-Tech",
-      "pages": 112,
-      "sampledPages": 112,
       "linkedPublicBook": {
         "slug": "kids-tech",
         "title": "الطفل والتكنولوجيا",
@@ -265,8 +257,6 @@
     },
     {
       "title": "MegaData",
-      "pages": 84,
-      "sampledPages": 84,
       "linkedPublicBook": {
         "slug": "mega-data",
         "title": "حوكمة الذكاء الاصطناعي والبيانات الضخمة",
@@ -306,8 +296,6 @@
     },
     {
       "title": "SmartSchool",
-      "pages": 120,
-      "sampledPages": 120,
       "linkedPublicBook": {
         "slug": "smart-school",
         "title": "المدارس الذكية",
@@ -387,8 +375,6 @@
     },
     {
       "title": "Teaching",
-      "pages": 200,
-      "sampledPages": 200,
       "linkedPublicBook": {
         "slug": "teaching",
         "title": "مناهج وطرق التدريس (تكنولوجيا التعليم)",
@@ -468,8 +454,6 @@
     },
     {
       "title": "Vertual World",
-      "pages": 88,
-      "sampledPages": 88,
       "linkedPublicBook": {
         "slug": "virtual-world",
         "title": "العالم الافتراضي",
@@ -481,8 +465,6 @@
     },
     {
       "title": "موسوعة تكنولوجيا التعليم",
-      "pages": 696,
-      "sampledPages": 696,
       "linkedPublicBook": {
         "slug": "encyclopedia",
         "title": "موسوعة تكنولوجيا التعليم",

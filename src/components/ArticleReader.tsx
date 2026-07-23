@@ -77,7 +77,8 @@ const PENDING_QUOTE_KEY = 'reader:pending-quote:v1'
    على الأرجح لتيسير التجريب — ولم تُعَد. وبقيمة ١ يصير حفظُ قارئٍ واحد سبباً
    لتظليل العبارة ووسمها «من أكثر ما احتفظ به القراء»، ويظهر فوقها الرقم ١.
    وهذا يقلب معنى المؤشّر: يَعِد بحكمِ جماعةٍ ويعرض رأي فرد. */
-export const POPULAR_THRESHOLD = 5
+/* عتبة ظهور الخط والرقم تحت الجملة — ٣ قراء (كانت ٥ فبدت الميزة ميتة في أي اختبار صغير) */
+export const POPULAR_THRESHOLD = 3
 
 const popularHighlightCache = new Map<string, PopularQuote[]>()
 

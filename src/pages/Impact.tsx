@@ -50,6 +50,7 @@ export default function Impact() {
   const { articles, books, papers, media, loading } = useCmsContent()
   const remote = useExtras<IdeaLifeRemoteRecord>('site_idea_life')
   const [filter, setFilter] = useState<FilterKey>('all')
+  const [yearFilter, setYearFilter] = useState<string | null>(null)
 
   const chains = useMemo<Chain[]>(() => {
     const articleChains = articles.flatMap((article) => {
@@ -93,8 +94,17 @@ export default function Impact() {
       .sort((left, right) => (right.year || '').localeCompare(left.year || '') || left.title.localeCompare(right.title, 'ar'))
   }, [articles, books, media, papers, remote])
 
-  const visible = useMemo(() => chains.filter((chain) => filter === 'all' || chain.nodes.some((node) => nodeMatchesFilter(node, filter))), [chains, filter])
-  const visiblePages = usePagedList(visible, 10, `${filter}:${visible.map((chain) => chain.key).join('|')}`)
+  const visible = useMemo(() => chains
+    .filter((chain) => filter === 'all' || chain.nodes.some((node) => nodeMatchesFilter(node, filter)))
+    .filter((chain) => !yearFilter || chain.year === yearFilter), [chains, filter, yearFilter])
+  const visiblePages = usePagedList(visible, 10, `${filter}:${yearFilter || ''}:${visible.map((chain) => chain.key).join('|')}`)
+
+  /* الملخص السنوي (مقترح معتمد): كم رحلة أثر وُثقت في كل سنة، وكل سنة مرشِّح */
+  const yearSummary = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const chain of chains) if (chain.year) counts.set(chain.year, (counts.get(chain.year) || 0) + 1)
+    return [...counts.entries()].sort((left, right) => right[0].localeCompare(left[0]))
+  }, [chains])
   const linkedNodes = chains.flatMap((chain) => chain.nodes).filter((node) => node.kind !== 'origin')
   const verifiedEvidence = linkedNodes.filter((node) => node.confidence === 'موثق')
   const verifiedNodes = verifiedEvidence.length
@@ -138,10 +148,43 @@ export default function Impact() {
             ))}
           </div>
         </div>
+        {yearSummary.length > 1 && (
+          <div className="impact-no-print mx-auto mt-5 flex max-w-shell flex-wrap items-center gap-x-4 gap-y-2">
+            <span className="text-[.68rem] font-semibold text-soft">حصاد السنوات:</span>
+            {yearSummary.map(([year, count]) => (
+              <button
+                key={year}
+                type="button"
+                onClick={() => setYearFilter(yearFilter === year ? null : year)}
+                className={`border-b pb-0.5 text-[.74rem] transition-colors ${yearFilter === year ? 'border-accent font-semibold text-accent' : 'border-transparent text-soft hover:text-accent'}`}
+              >
+                {year} · {count === 1 ? 'رحلة واحدة' : count === 2 ? 'رحلتان' : count <= 10 ? `${number.format(count)} رحلات` : `${number.format(count)} رحلة`}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="ms-auto rounded-full border border-hair px-4 py-1.5 text-[.72rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent"
+            >
+              نسخة رسمية للطباعة ⎙
+            </button>
+          </div>
+        )}
       </section>
 
       <section className="px-6 py-14 md:px-11 md:py-20">
         <div className="mx-auto max-w-4xl">
+          {/* معيار كل نوع (مقترح معتمد): يعرف الزائر متى يستحق الأثر مكانه هنا */}
+          <details className="impact-no-print mb-9 rounded-2xl border border-hair bg-wash px-6 py-4">
+            <summary className="cursor-pointer text-[.84rem] font-semibold text-ink transition-colors hover:text-accent">ما الذي يؤهل أثراً لدخول هذا السجل؟</summary>
+            <ul className="mt-4 space-y-2.5 text-[.8rem] font-light leading-[1.9] text-soft">
+              <li><span className="font-medium text-ink">العلمي</span> — استشهاد أو ذكر صريح للعمل في مصدر أكاديمي يمكن فتحه والتحقق منه.</li>
+              <li><span className="font-medium text-ink">الإعلامي</span> — تغطية أو استضافة تشير إلى العمل نفسه، لا إلى موضوعه العام فحسب.</li>
+              <li><span className="font-medium text-ink">التطبيقي</span> — جهة تبنّت الفكرة في برنامج أو ممارسة، والمصدر يثبت العلاقة صراحةً.</li>
+              <li><span className="font-medium text-ink">الأرشيفي</span> — تطور موثق داخل أرشيف الموقع نفسه: مقال يمتد إلى بحث أو كتاب أو حوار.</li>
+            </ul>
+            <p className="mt-4 border-t border-hair pt-3 text-[.74rem] font-light leading-[1.8] text-soft">وما لم يبلغ عتبة الإثبات يبقى قيد التحقق خارج العرض العام — لا يظهر هنا ادعاء ينتظر دليله.</p>
+          </details>
           {loading && !chains.length ? (
             <p className="py-20 text-center text-soft">تُراجع الأدلة والروابط…</p>
           ) : visible.length === 0 ? (

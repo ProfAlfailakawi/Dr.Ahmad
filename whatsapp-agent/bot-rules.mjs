@@ -21,24 +21,8 @@ export const BOT_SIGNATURE = 'رد آلي من موقع د. أحمد حسين ا
  * التوقيع يُلحق مرةً واحدة، ولا يُلحق بردود الخصوصية (فهي إقرارٌ إجرائيّ
  * قصير لا حديثٌ منسوب لأحد).
  */
-/* اللمسة النووية (أمر الدكتور ٢٠٢٦-٠٧-٢٣): جمالٌ بلا تغيير حرفٍ من المحتوى —
-   سطرُ عنوانٍ يليه رابطٌ يُعرض عريضاً بتنسيق واتساب، فتقرأ العين القائمة قبل
-   أن تقرأ الروابط. الترقيم (1. أو •) يبقى خارج التعريض ليحتفظ بشكله. */
-export function beautify(text = '') {
-  const lines = String(text).split('\n')
-  return lines.map((line, index) => {
-    const current = line.trim()
-    const next = (lines[index + 1] || '').trim()
-    if (!current || /^https?:\/\//.test(current) || !/^https?:\/\//.test(next)) return line
-    if (current.includes('*')) return line
-    const match = current.match(/^(\d+[.)]\s*|[-•]\s*)?(.{3,})$/)
-    if (!match) return line
-    return line.replace(current, `${match[1] || ''}*${match[2]}*`)
-  }).join('\n')
-}
-
 export function sign(text, { skip = false } = {}) {
-  const body = beautify(String(text || '').trim())
+  const body = String(text || '').trim()
   if (!body || skip) return body
   if (body.includes(BOT_SIGNATURE)) return body
   return `${body}\n\n${BOT_SIGNATURE}`

@@ -224,13 +224,15 @@ export default function PaperDetail() {
                   </div>
                   <EvidenceStamp fallback="ختم الاعتماد الأكاديمي" />
                 </div>
+                {/* صدق البيانات (أمر الدكتور): الحقل الفارغ يختفي بهدوء — لا يُدّعى
+                    DOI «مسجّل» ولا «مجلة محكّمة» بلا اسمها. البيانات من البحث نفسه فقط. */}
                 <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">الموضوع الأساسي</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{topic || 'بحث أكاديمي محكّم'}</strong></div>
+                  {topic && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">الموضوع الأساسي</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{topic}</strong></div>}
                   <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">الباحث الرئيسي والشركاء</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{researchers}</strong></div>
-                  <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">جهة النشر / وعاء النشر</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{journal || 'مجلة علمية محكّمة'}</strong></div>
-                  <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">سنة الصدور</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{year || 'د.ت'}</strong></div>
-                  <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">المعرّف المعياري DOI</span><strong className="mt-1 block line-clamp-1 font-mono text-[.8rem] text-accent">{doi || 'مسجّل في قاعدة البيانات'}</strong></div>
-                  {isAdmin && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">حالة التدقيق والموثوقية</span><strong className="mt-1 block text-[.88rem] font-bold text-emerald-600">✓ موثق ومطابق للمصدر</strong></div>}
+                  {journal && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">جهة النشر / وعاء النشر</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{journal}</strong></div>}
+                  {year && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">سنة الصدور</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{year}</strong></div>}
+                  {doi && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">المعرّف المعياري DOI</span><strong className="mt-1 block line-clamp-1 font-mono text-[.8rem] text-accent">{doi}</strong></div>}
+                  {isAdmin && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">حالة التدقيق والموثوقية</span><strong className={`mt-1 block text-[.88rem] font-bold ${p.analysisNeedsReview ? 'text-soft' : 'text-emerald-600'}`}>{p.analysisNeedsReview ? 'قيد التدقيق — يحتاج مراجعتك' : '✓ موثق ومطابق للمصدر'}</strong></div>}
                 </div>
               </div>
             </FadeUp>

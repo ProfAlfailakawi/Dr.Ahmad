@@ -312,16 +312,9 @@ async function synthesizeHumanReading(article, voice, target) {
     quarantineDirectory: AUDIO_QUARANTINE,
     azureKey: env.AZURE_SPEECH_KEY,
     azureRegion: env.AZURE_SPEECH_REGION || 'uaenorth',
-    /* أمر الدكتور (٢٠٢٦-٠٧-٢٣): لا خدمات مدفوعة إطلاقاً. حكم Gemini الصوتي كان
-       يُستدعى بلا فائدة (رصيد مستنفد → 429 في كل قراءة) ثم يُتجاوز — الآن لا
-       يُستدعى أصلاً إلا بطلب صريح PODCAST_AUDIO_JUDGE=1. البوابة الحتمية
-       (STT + الإيقاع + الصمت + الجهارة + النفي) هي الحارس، وهي مجانية وصارمة. */
-    geminiKey: env.PODCAST_AUDIO_JUDGE === '1' ? (env.GEMINI_API_KEY || env.GOOGLE_API_KEY || '') : '',
-    requireAudioJudge: false,
-    /* ٩٥ كانت ترمي قراءاتٍ سليمة لغياب «تنويعة» جمالية واحدة (91/100) رغم اجتياز
-       كل البوابات الحرجة (النطق والنفي والصمت والجهارة تبقى قاطعة بمعزل عن الدرجة).
-       ٩٠ تسمح بهفوة تنويع واحدة غير حرجة — والحرج ما زال يُسقط فوراً. */
-    minimumHumanScore: 90,
+    geminiKey: env.GEMINI_API_KEY || env.GOOGLE_API_KEY || '',
+    requireAudioJudge: !TECHNICAL_ONLY,
+    minimumHumanScore: 95,
   })
 }
 

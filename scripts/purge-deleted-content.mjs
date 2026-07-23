@@ -589,12 +589,14 @@ for (const slug of articleSlugs) {
       `articles/${slug}/index.html`,
       `og/articles/${slug}.svg`,
       `og/articles/${slug}.png`,
+      `og/articles/${slug}.jpg`,
     ])
       addIfExists(`${prefix}${rel}`);
   }
   for (const rel of [
     `public/og/articles/${slug}.svg`,
     `public/og/articles/${slug}.png`,
+    `public/og/articles/${slug}.jpg`,
     `manual-dialogues/${slug}.json`,
     `podcast-audits/dialogues/${slug}.txt`,
   ])

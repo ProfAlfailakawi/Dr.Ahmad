@@ -62,7 +62,6 @@ src/components/admin/WhatsAppAgentPanel.tsx  (رسالة إسعاف إرشادي
 index.html                                (اتصال مسبق بـ Firestore)
 firebase.json                             (تخزين أسبوع لصور الجذر)
 whatsapp-agent/transport.mjs              (الشفاء الذاتي للاعتماديات)
-whatsapp-agent/أصلح-البوت.command         (الإصلاح بنقرتين — جديد)
 اقرأني-تحديث-2026-07-23.txt               (هذا الملف)
 
 كل شيء مفحوص: TypeScript نظيف، البناء ناجح، حارس الأداء مجتاز،
@@ -130,4 +129,25 @@ src/components/admin/ContentManager.tsx، whatsapp-agent/bot-rules.mjs
 whatsapp-agent/intent-engine.mjs، whatsapp-agent/audience.mjs، whatsapp-agent/agent.mjs،
 src/pages/CV.tsx، src/components/admin/BroadcastStudio.tsx،
 scripts/auto-audio.mjs، scripts/podcast-dialogue.mjs
+
+الدفعة السادسة (الختامية — البوت المقيم وتنظيف وضع القراءة)
+------------------------------------------------------------
+13) البوت المقيم — استقلال مطلق بلا أزرار: أُلغي ملف الأمر الخارجي بأمر
+    الدكتور، وصار التثبيت يوطّن البوت كاملاً (شيفرة + اعتماديات + لقطة
+    مصادر الفهرس) في بيت بياناته:
+    ~/Library/Application Support/DrAhmadWhatsAppAgent/app
+    ويشغّله من هناك. احذف مجلد الموقع كله متى شئت — البوت لا يتأثر.
+    بُرهن عملياً: أُخفي مجلد المصدر بالكامل وأعيد الإقلاع فبقي البوت حياً
+    متصلاً. والمثبّت يرث إعدادات الخدمة (وافتراضاته الآن «يرد ويرسل» —
+    كان تثبيت قديم يطفئها خلسة مع كل npm install وأُصلح ذلك).
+    كل npm install مستقبلاً من أي نسخة مجلد يجدد النسخة المقيمة تلقائياً.
+
+14) تنظيف وضع القراءة: أُزيل «وضع التركيز» القديم من قائمة Aa (مع إبطال
+    أثره لمن سبق تفعيله) — «وضع السكينة» ۩ هو الوضع الوحيد المعتمد.
+    والشريط المتحرك الجميل باقٍ في كل الموقع، ويغيب داخل السكينة وحدها.
+
+ملفات الدفعة السادسة:
+whatsapp-agent/install-macos.mjs، src/components/ArticleReader.tsx،
+src/pages/ArticleDetail.tsx، src/components/admin/WhatsAppAgentPanel.tsx
+(وحُذف whatsapp-agent/أصلح-البوت.command)
 

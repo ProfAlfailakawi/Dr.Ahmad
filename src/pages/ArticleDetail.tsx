@@ -555,7 +555,8 @@ export default function ArticleDetail() {
 
   return (
     <Page className="content-articles article-journey">
-      <ArticleProgressBar slug={article.slug} />
+      {/* الشريط المتحرك جميل في الموقع كله؛ وفي السكينة يغيب مع كل ما ليس نصاً */}
+      {!serenity && <ArticleProgressBar slug={article.slug} />}
 
       <JsonLd
         data={{

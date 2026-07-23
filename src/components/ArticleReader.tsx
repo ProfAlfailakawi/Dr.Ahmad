@@ -165,7 +165,8 @@ function applyPreferences(preferences: ReaderPreferences) {
   root.style.setProperty('--article-line', String(preferences.lineHeight))
   root.style.setProperty('--article-width', `${preferences.width}ch`)
   root.classList.toggle('reader-paper', preferences.theme === 'paper')
-  root.classList.toggle('reader-focus', preferences.focus)
+  /* الوضع القديم متقاعد: لا يُطبَّق حتى لمن سبق أن فعّله وبقي تفضيله محفوظاً */
+  root.classList.remove('reader-focus')
   root.dataset.readerPopular = 'on'
 
   const dark = preferences.theme === 'dark'
@@ -605,13 +606,8 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
                       <SettingChoice value="paper" current={preferences.theme} label="ورقية" onClick={() => setPreferences({ theme: 'paper' })} />
                     </div>
                   </section>
-                  <section className="grid gap-3 border-t border-hair pt-5">
-                    <label className="flex cursor-pointer items-center justify-between gap-4 rounded-2xl border border-hair bg-wash/45 px-4 py-3">
-                      <span><span className="block text-[.8rem] font-semibold text-ink">وضع التركيز</span><span className="mt-0.5 block text-[.7rem] text-soft">يخفي التنقل والعناصر الثانوية أثناء القراءة.</span></span>
-                      <input type="checkbox" checked={preferences.focus} onChange={(event) => setPreferences({ focus: event.target.checked })} className="h-4 w-4 accent-[rgb(var(--c-accent))]" />
-                    </label>
-
-                  </section>
+                  {/* أُزيل «وضع التركيز» القديم بأمر الدكتور — حلّ محله «وضع السكينة» ۩
+                      بجوار هذا الزر، وهو أنقى وأشمل؛ ازدواج الوضعين كان يربك القارئ. */}
                   <p className="text-[.7rem] leading-[1.8] text-soft">تُحفظ هذه الاختيارات على هذا الجهاز فقط، وتُطبّق تلقائيًا على بقية المقالات.</p>
                 </div>
               ) : (

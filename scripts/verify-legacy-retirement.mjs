@@ -13,7 +13,10 @@ for (const asset of ['files/cv.pdf', 'files/cv-en.pdf', 'files/digital-education
   expect(existsSync(resolve(ROOT, asset)), `الملف المنقول مفقود: ${asset}`)
 }
 
-for (const dataFile of ['src/data.ts', 'data.ts']) {
+/* النسخة الجذرية القديمة data.ts أُزيلت نهائياً من المستودع — غيابها أقوى
+   صور التقاعد، فلا يُدقق إلا الموجود. src/data.ts يبقى إلزامياً. */
+expect(existsSync(resolve(ROOT, 'src/data.ts')), 'src/data.ts مفقود — مصدر البيانات الأساسي')
+for (const dataFile of ['src/data.ts', 'data.ts'].filter((p) => existsSync(resolve(ROOT, p)))) {
   const text = read(dataFile)
   expect(!/https:\/\/dr-alfailakawi\.com\/(?:signature_articles|scholarly_contributi)\//i.test(text), `${dataFile} ما زال يحتوي رابط محتوى للموقع السابق`)
   expect(/cvEn:\s*'\/files\/cv-en\.pdf'/.test(text), `${dataFile} لا يربط السيرة الإنجليزية الجديدة`)
@@ -46,7 +49,7 @@ expect(rewrites.some((x) => x.source === '/scholarly_contributi/**' && x.destina
 expect(regexPairs.some((x) => x.includes('curated-insights/') && x.endsWith(' -> /inbox')), 'تحويل From My Inbox المتداخل مفقود')
 expect(regexPairs.some((x) => x.includes('reading-room|watch-listen') && x.endsWith(' -> /curated')), 'تحويل أقسام WordPress المتداخلة إلى المختارات مفقود')
 
-for (const runtime of ['index.html', 'server.mjs', 'src/data.ts', 'data.ts']) {
+for (const runtime of ['index.html', 'server.mjs', 'src/data.ts', 'data.ts'].filter((p) => existsSync(resolve(ROOT, p)))) {
   expect(!read(runtime).includes('208.115.236.10'), `${runtime} ما زال يعتمد عنوان الخادم القديم`)
 }
 

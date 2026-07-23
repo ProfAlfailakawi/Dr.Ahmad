@@ -119,8 +119,9 @@ export async function runSelfTest(root) {
   assert.equal(agent.listReplyRules().some((rule) => rule.id === transferRule.id), true)
   const transferSimulation = agent.simulateReply({ text: 'صورة من اللقاء', inSession: true })
   assert.equal(transferSimulation.ruleId, transferRule.id)
-  assert.equal(transferSimulation.preview, '', '★ قاعدة النص الحر لا تُرسل كلاماً مؤلفاً')
-  assert.equal(transferSimulation.needsHuman, true, '★ وتتركها للدكتور بصمت')
+  /* بأمر الدكتور (٢٠٢٦-٠٧-٢٣): لا صمت — إشعار استلام ثابت، لا كلام مؤلف باسمه */
+  assert.equal(transferSimulation.preview, 'وصلت رسالتك، وسيردّ عليك الدكتور بنفسه.', '★ قاعدة النص الحر تُقرّ بالاستلام بعبارة ثابتة لا كلاماً مؤلفاً')
+  assert.equal(transferSimulation.needsHuman, true, '★ وتصل الرسالة للدكتور نفسه')
   assert.equal(agent.replyRuleVersions(transferRule.id).length, 0)
   agent.saveReplyRule({ ...transferRule, responseText: 'نسخة جديدة' })
   assert.equal(agent.replyRuleVersions(transferRule.id).length, 1)

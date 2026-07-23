@@ -1,0 +1,50 @@
+{
+ "done": {},
+ "storyCount": 0,
+ "totalCount": 0,
+ "pilotGate": {
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-23T18:36:16.316Z",
+  "pipelineHash": "a7e3c1026bee9d0a",
+  "required": 3,
+  "passed": 0,
+  "failed": 3,
+  "autoPromote": true,
+  "articles": [
+   {
+    "slug": "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m",
+    "title": "حين أختبرُ مدرسةَ بناتي… قبل أن تختبرَهنّ",
+    "category": "human",
+    "status": "missing"
+   },
+   {
+    "slug": "the-return-that-fails-to-fix-what-came-before-itarabic",
+    "title": "العودة التي لا تُصلِح ما قبلها",
+    "category": "analytical",
+    "status": "missing"
+   },
+   {
+    "slug": "when-the-teacher-knows-why-he-teachesarabic",
+    "title": "حين يعرف المعلّم لماذا يعلّم",
+    "category": "reflective",
+    "status": "missing"
+   }
+  ],
+  "pass": false,
+  "promoted": false
+ },
+ "failures": {
+  "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m": {
+   "attempts": 1,
+   "lastFailedAt": "2026-07-23T18:35:49.287Z"
+  },
+  "the-return-that-fails-to-fix-what-came-before-itarabic": {
+   "attempts": 1,
+   "lastFailedAt": "2026-07-23T18:36:02.766Z"
+  },
+  "when-the-teacher-knows-why-he-teachesarabic": {
+   "attempts": 1,
+   "lastFailedAt": "2026-07-23T18:36:16.316Z"
+  }
+ }
+}

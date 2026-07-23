@@ -383,7 +383,29 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     state.watchdogSince = Date.now()
     state.timers.add(setInterval(() => selfHeal(), 60_000))
     if (flags.reminders) state.timers.add(setInterval(() => void dispatchDueReminders(state), 30000))
+    /* تقرير الجمعة (أمر الدكتور ٢٠٢٦-٠٧-٢٣): سير عمل أسبوعي يؤلف أرقام الأسبوع
+       وينشرها JSON في R2 — والبوت يلتقطها هنا ويسلمها للدكتور في محادثته
+       الذاتية مرة واحدة لكل تقرير (منع التكرار بمعرّف التقرير في الإعدادات). */
+    state.timers.add(setInterval(() => void deliverWeeklyReport(), 3 * 60 * 60 * 1000))
+    setTimeout(() => void deliverWeeklyReport(), 90_000)
     return db.state()
+  }
+
+  const WEEKLY_REPORT_URL = process.env.WEEKLY_REPORT_URL
+    || 'https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev/reports/weekly-latest.json'
+
+  async function deliverWeeklyReport() {
+    try {
+      if (!state.started || !state.transport) return
+      const response = await fetch(WEEKLY_REPORT_URL, { cache: 'no-store' })
+      if (!response.ok) return
+      const report = await response.json()
+      if (!report || typeof report.id !== 'string' || typeof report.text !== 'string' || !report.text.trim()) return
+      if (db.getSetting('weekly-report-last') === report.id) return
+      await sendSelf(report.text.trim())
+      db.setSetting('weekly-report-last', report.id)
+      db.addAudit('weekly-report-delivered', '', report.id)
+    } catch { /* الشبكة غابت أو التقرير لم يُنشر بعد — المحاولة التالية بعد ثلاث ساعات */ }
   }
 
   /* عتبات الإنعاش — بأرقام الدكتور */

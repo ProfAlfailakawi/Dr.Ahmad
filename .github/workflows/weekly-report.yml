@@ -1,0 +1,37 @@
+name: تقرير الجمعة — أسبوعك في سطور
+
+on:
+  schedule:
+    # الجمعة 04:30 UTC = 07:30 صباح الكويت
+    - cron: '30 4 * * 5'
+  workflow_dispatch:
+
+concurrency:
+  group: weekly-report
+  cancel-in-progress: true
+
+jobs:
+  compose-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: تحضير حساب الخدمة
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}' > sa.json
+      - name: تأليف التقرير من أرقام الأسبوع الحقيقية
+        run: node scripts/weekly-report.mjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+      - name: نشر التقرير إلى R2 ليلتقطه بوت الدكتور
+        run: |
+          aws s3 cp build/weekly-report.json "s3://${{ vars.CLOUDFLARE_R2_BUCKET }}/reports/weekly-latest.json" \
+            --endpoint-url "${{ secrets.CLOUDFLARE_R2_ENDPOINT }}" \
+            --content-type "application/json" --cache-control "no-cache" --no-progress
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_EC2_METADATA_DISABLED: 'true'

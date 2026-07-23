@@ -299,6 +299,30 @@ function firstStrongSentence(body?: string, excerpt?: string) {
   return (parts[0] || excerpt || '').slice(0, 220)
 }
 
+function getParagraphTextOffset(paragraphElement: HTMLElement, targetContainer: Node, targetOffset: number): number {
+  let length = 0
+  const walker = document.createTreeWalker(paragraphElement, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentElement
+      if (parent?.closest('.reader-popular-badge, [aria-hidden="true"], button, .sentence-equalizer')) {
+        return NodeFilter.FILTER_REJECT
+      }
+      return NodeFilter.FILTER_ACCEPT
+    },
+  })
+
+  let currentNode = walker.nextNode()
+  while (currentNode) {
+    if (currentNode === targetContainer) {
+      return length + Math.min(targetOffset, currentNode.nodeValue?.length || 0)
+    }
+    length += currentNode.nodeValue?.length || 0
+    currentNode = walker.nextNode()
+  }
+
+  return -1
+}
+
 /* ═══════════ أداة التحديد الموحّدة ═══════════ */
 export function SelectionTools({ current, articles, body, excerpt }: { current: Art; articles: Art[]; body?: string; excerpt?: string }) {
   const [sel, setSel] = useState('')
@@ -371,13 +395,12 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         let startOffset = 0
         let endOffset = 0
         if (paragraphElement) {
-          try {
-            const preRange = range.cloneRange()
-            preRange.selectNodeContents(paragraphElement)
-            preRange.setEnd(range.startContainer, range.startOffset)
-            startOffset = preRange.toString().length
-            endOffset = startOffset + text.length
-          } catch {
+          const calcStart = getParagraphTextOffset(paragraphElement, range.startContainer, range.startOffset)
+          const calcEnd = getParagraphTextOffset(paragraphElement, range.endContainer, range.endOffset)
+          if (calcStart >= 0) {
+            startOffset = calcStart
+            endOffset = calcEnd > startOffset ? calcEnd : startOffset + text.length
+          } else {
             const idx = paragraphText.indexOf(text)
             startOffset = idx >= 0 ? idx : 0
             endOffset = startOffset + text.length

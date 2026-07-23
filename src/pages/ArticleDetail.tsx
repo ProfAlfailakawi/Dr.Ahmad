@@ -5,7 +5,7 @@ import { getArticleNeighbors, type ArticleRecord, type BookRecord, type MediaRec
 import { SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
-import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, usePopularQuotes } from '../components/ArticleReader'
+import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, usePopularQuotes, type PopularQuote } from '../components/ArticleReader'
 import { SelectionTools } from '../components/IdeaFeatures'
 import { openAudioPlayer } from '../components/AudioPlayer'
 import { ArticlePulse, markArticleRead } from '../components/ReaderResonance'
@@ -248,7 +248,49 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
                 onClick={() => seekWord(paragraph.startWord)}
                 className={`${pIdx === 0 && canUseDropCap(paragraph.text) ? 'dropcap ' : ''}${activeAudio ? 'synced-paragraph' : ''}${isParagraphActive ? ' is-audio-active' : ''}`.trim() || undefined}
               >
-                <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} />
+                {activeAudio ? (
+                  paragraph.sentences.map((sentence, sIdx) => {
+                    const isSentenceActive = isParagraphActive && sIdx === activeSentence
+
+                    const sentenceQuotes = paragraphQuotes.map((q) => {
+                      const qStart = Math.max(0, q.startOffset - sentence.charStart)
+                      const qEnd = Math.min(sentence.text.length, q.endOffset - sentence.charStart)
+                      if (qEnd > qStart && (qEnd - qStart) >= 2) {
+                        const isFirstFragment = q.startOffset >= sentence.charStart && q.startOffset < sentence.charEnd
+                        return {
+                          ...q,
+                          startOffset: qStart,
+                          endOffset: qEnd,
+                          quote: sentence.text.slice(qStart, qEnd),
+                          hideBadge: !isFirstFragment,
+                        }
+                      }
+                      if (q.quote && sentence.text.includes(q.quote)) {
+                        const idx = sentence.text.indexOf(q.quote)
+                        return { ...q, startOffset: idx, endOffset: idx + q.quote.length, hideBadge: false }
+                      }
+                      return null
+                    }).filter(Boolean) as (PopularQuote & { hideBadge?: boolean })[]
+
+                    return (
+                      <span
+                        key={sIdx}
+                        ref={isSentenceActive ? activeSentenceRef : null}
+                        onClick={(e) => handleSentenceClick(e, sentence.wordStart)}
+                        className={`sentence-item${isSentenceActive ? ' is-sentence-active' : ''}`}
+                      >
+                        {isSentenceActive && (
+                          <span className="sentence-equalizer" aria-hidden="true">
+                            <span /><span /><span />
+                          </span>
+                        )}
+                        <ReaderParagraphText text={sentence.text} popularQuotes={sentenceQuotes} />
+                      </span>
+                    )
+                  })
+                ) : (
+                  <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} />
+                )}
               </p>
             </div>
           )

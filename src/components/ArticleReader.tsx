@@ -822,7 +822,8 @@ export function ReaderParagraphText({ text, popularQuotes = [] }: { text: string
     if (match.start > index) nodes.push(text.slice(index, match.start))
     const content = text.slice(match.start, match.end)
     if (match.kind === 'popular' && match.popular) {
-      nodes.push(<PopularHighlightMark key={`popular-${matchIndex}`} count={match.popular.count}>{content}</PopularHighlightMark>)
+      const hideBadge = (match.popular as PopularQuote & { hideBadge?: boolean }).hideBadge
+      nodes.push(<PopularHighlightMark key={`popular-${matchIndex}`} count={match.popular.count} hideBadge={hideBadge}>{content}</PopularHighlightMark>)
     } else if (match.term) {
       const term = match.term
       nodes.push(
@@ -844,7 +845,7 @@ export function ReaderParagraphText({ text, popularQuotes = [] }: { text: string
   return <>{nodes}</>
 }
 
-function PopularHighlightMark({ children, count }: { children: ReactNode; count: number }) {
+function PopularHighlightMark({ children, count, hideBadge }: { children: ReactNode; count: number; hideBadge?: boolean }) {
   const [open, setOpen] = useState(false)
   const label = `حُفظت ${count.toLocaleString('en-US')} مرة`
   const toggle = () => setOpen((current) => !current)
@@ -863,15 +864,15 @@ function PopularHighlightMark({ children, count }: { children: ReactNode; count:
           if (event.key === 'Escape') setOpen(false)
         }}
       >{children}</mark>
-      {/* مسافة غير قاصمة قبل الرقم: تمنع المتصفح من كسر السطر بينه وبين آخر
-          كلمةٍ في الخط المظلَّل، فلا يبقى الرقم يتيماً ولا يُقصّ ما قبله. */}
-      {'\u2060'}<span className="reader-popular-note" aria-hidden="true">{count.toLocaleString('en-US')}</span>
-      {open && (
-        /* تُثبَّت في وسط الشاشة أفقياً لا فوق الكلمة: التموضع النسبي كان يُخرجها عن
-           الإطار متى وقعت الجملة عند الحافة (وهو الأغلب في الجوال). */
-        <span role="tooltip" className="reader-popular-tip absolute top-full z-20 mt-2 w-max max-w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-hair bg-canvas px-3 py-2 text-[.68rem] font-normal leading-[1.7] text-soft shadow-[0_12px_30px_-18px_rgba(0,0,0,.45)]">
-          {label} · من أكثر العبارات التي احتفظ بها القراء
-        </span>
+      {!hideBadge && (
+        <>
+          {'\u2060'}<span className="reader-popular-note" aria-hidden="true">{count.toLocaleString('en-US')}</span>
+          {open && (
+            <span role="tooltip" className="reader-popular-tip absolute top-full z-20 mt-2 w-max max-w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-hair bg-canvas px-3 py-2 text-[.68rem] font-normal leading-[1.7] text-soft shadow-[0_12px_30px_-18px_rgba(0,0,0,.45)]">
+              {label} · من أكثر العبارات التي احتفظ بها القراء
+            </span>
+          )}
+        </>
       )}
     </span>
   )

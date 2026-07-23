@@ -107,7 +107,7 @@ export function validateGroundedResponse(db, response, { siteUrl = SITE_URL, aud
 }
 
 export function createAgent({ db = openDatabase(), transport, root = projectRoot, mock = false } = {}) {
-  const state = { db, transport: transport || null, root, timers: new Set(), started: false, bridge: null, activeCampaigns: new Set(), groundingSequence: 0 }
+  const state = { db, transport: transport || null, root, timers: new Set(), started: false, stopping: false, bridge: null, activeCampaigns: new Set(), groundingSequence: 0 }
   /* واجهة الوكيل العامة تُعلن هنا وتُملأ عند الإرجاع: الجسر كان يستقبل `state`
      الخام فينهار على `agent.bridgeSecret is not a function` قبل أن يفتح المنفذ،
      فتظهر اللوحة «غير مرتبط» بينما واتساب متصل فعلاً. */
@@ -349,6 +349,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
   const start = async ({ phoneNumber } = {}) => {
     if (!flags.agent) { db.setState({ status: 'paused', last_error: 'WHATSAPP_AGENT_ENABLED=false' }); return { status: 'paused' } }
     if (state.started) return db.state()
+    state.stopping = false
     index()
     db.purgeExpired()
     if (!state.transport) state.transport = mock ? new MockTransport() : await createWhatsAppTransport({ db, onMessage, onContacts })
@@ -377,19 +378,19 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     state.started = true
     if (process.env.WHATSAPP_AGENT_BRIDGE === 'true' && !state.bridge) state.bridge = startLocalBridge(api)
     heartbeat()
-    state.timers.add(setInterval(heartbeat, HEARTBEAT_INTERVAL_MS))
-    /* الإنعاش الذاتي: يُقلع البوت نفسه إن تعثّر، فلا ينتظر الدكتور مستيقظاً.
-       ولا يُقلع إن كان يطلب QR — إعادةٌ بلا فائدة، والحلّ إنسانٌ يمسح الرمز. */
-    state.watchdogSince = Date.now()
-    state.timers.add(setInterval(() => selfHeal(), 60_000))
-    if (flags.reminders) state.timers.add(setInterval(() => void dispatchDueReminders(state), 30000))
-    /* تقرير الجمعة (أمر الدكتور ٢٠٢٦-٠٧-٢٣): سير عمل أسبوعي يؤلف أرقام الأسبوع
-       وينشرها JSON في R2 — والبوت يلتقطها هنا ويسلمها للدكتور في محادثته
-       الذاتية مرة واحدة لكل تقرير (منع التكرار بمعرّف التقرير في الإعدادات). */
-    /* مهام الإنتاج الطويلة لا تُشغَّل داخل Mock/self-test. كان مؤقت اللقطة
-       يبدأ بعد 150 ثانية بينما الاختبار ما زال يعمل، ثم يحاول التسجيل بعد
-       إغلاق SQLite فيُسقط GitHub Actions بـ ERR_INVALID_STATE. */
+    /* مؤقتات التشغيل الدائم لا تُشغَّل في الاختبار الوهمي. كانت لقطة قاعدة
+       البيانات المؤجلة تستيقظ بعد انتهاء self-test وإغلاق SQLite، فيرمي Node
+       ERR_INVALID_STATE من callback السطر نفسه ويُسقط GitHub Actions. */
     if (!mock) {
+      state.timers.add(setInterval(heartbeat, HEARTBEAT_INTERVAL_MS))
+      /* الإنعاش الذاتي: يُقلع البوت نفسه إن تعثّر، فلا ينتظر الدكتور مستيقظاً.
+         ولا يُقلع إن كان يطلب QR — إعادةٌ بلا فائدة، والحلّ إنسانٌ يمسح الرمز. */
+      state.watchdogSince = Date.now()
+      state.timers.add(setInterval(() => selfHeal(), 60_000))
+      if (flags.reminders) state.timers.add(setInterval(() => void dispatchDueReminders(state), 30000))
+      /* تقرير الجمعة (أمر الدكتور ٢٠٢٦-٠٧-٢٣): سير عمل أسبوعي يؤلف أرقام الأسبوع
+         وينشرها JSON في R2 — والبوت يلتقطها هنا ويسلمها للدكتور في محادثته
+         الذاتية مرة واحدة لكل تقرير (منع التكرار بمعرّف التقرير في الإعدادات). */
       state.timers.add(setInterval(() => void deliverWeeklyReport(), 3 * 60 * 60 * 1000))
       state.timers.add(setTimeout(() => void deliverWeeklyReport(), 90_000))
       /* لقطة قاعدة البيانات: فحص يومي، تنفيذ أسبوعي */
@@ -404,7 +405,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
      فمحفوظاته وقواعده وتعلم البوت لا تضيع مهما جرى للملف الحي. */
   async function maybeSnapshotDatabase() {
     try {
-      if (!state.started) return
+      if (!state.started || state.stopping) return
       const last = db.getSetting('db-snapshot-last')
       const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuwait' }).format(new Date())
       if (last && (Date.now() - new Date(String(last)).getTime()) < 6.5 * 86_400_000) return
@@ -420,9 +421,11 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
       db.setSetting('db-snapshot-last', today)
       db.addAudit('db-snapshot', '', target)
     } catch (error) {
-      /* قد يتزامن إيقاف الوكيل مع اكتمال مهمة غير متزامنة. لا نسمح لمحاولة
-         تسجيل الخطأ نفسها أن تستخدم قاعدة أُغلقت وتحوّل الإيقاف السليم إلى فشل CI. */
-      try { db.addAudit('db-snapshot-failed', '', redactError(error)) } catch { /* database already closed */ }
+      /* قد يبدأ الإيقاف بينما اللقطة داخل await/import. لا نحاول الكتابة في
+         قاعدة أُغلقت؛ فالـ catch القديم كان يعيد الخطأ نفسه من db.addAudit. */
+      if (!state.stopping) {
+        try { db.addAudit('db-snapshot-failed', '', redactError(error)) } catch { /* قاعدة مغلقة */ }
+      }
     }
   }
 
@@ -496,11 +499,18 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     }
   }
   const stop = async () => {
+    /* أغلق بوابة المهام أولاً، قبل أي await، حتى لا تدخل callback قديمة إلى
+       SQLite في اللحظة التي يغلق فيها الاختبار أو الخدمة قاعدة البيانات. */
+    state.stopping = true
+    state.started = false
     for (const timer of state.timers) {
       clearTimeout(timer)
       clearInterval(timer)
     }
-    state.timers.clear(); await state.transport?.disconnect?.(); await new Promise((resolve) => state.bridge ? state.bridge.close(resolve) : resolve()); state.bridge = null; state.started = false
+    state.timers.clear()
+    await state.transport?.disconnect?.()
+    await new Promise((resolve) => state.bridge ? state.bridge.close(resolve) : resolve())
+    state.bridge = null
   }
   const sendSelf = async (text) => {
     if (!flags.send) throw new Error('الإرسال معطل افتراضيًا. فعّل WHATSAPP_SEND_ENABLED بعد اختبار Mock واعتمادك الصريح.')

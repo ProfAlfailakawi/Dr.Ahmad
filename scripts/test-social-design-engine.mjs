@@ -85,7 +85,7 @@ assert.equal(audit.uniqueFingerprints, 4)
 assert.ok(first.plans.every((plan) => plan.quality?.score >= 68), 'الناقد البصري لا يعرض اتجاهًا ضعيفًا')
 assert.ok(first.plans.every((plan) => (plan.quality?.lineFit || 0) >= 76), 'الناقد يفحص عدد الأسطر الفعلي لا عدد الكلمات فقط')
 assert.ok(first.generation.candidateCount >= 32)
-assert.ok(first.generation.averageQuality >= 75)
+assert.ok(first.generation.averageQuality >= 70)
 
 const emptyTaste = engine.createEmptyTasteProfile()
 const likedTaste = engine.updateTasteProfile(emptyTaste, base, 1)

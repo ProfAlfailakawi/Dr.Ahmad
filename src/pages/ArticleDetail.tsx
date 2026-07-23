@@ -245,45 +245,10 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
               <p
                 ref={(element) => { paragraphRefs.current[pIdx] = element }}
                 data-reader-paragraph={pIdx}
-                onClick={() => !activeAudio && seekWord(paragraph.startWord)}
+                onClick={() => seekWord(paragraph.startWord)}
                 className={`${pIdx === 0 && canUseDropCap(paragraph.text) ? 'dropcap ' : ''}${activeAudio ? 'synced-paragraph' : ''}${isParagraphActive ? ' is-audio-active' : ''}`.trim() || undefined}
               >
-                {activeAudio ? (
-                  paragraph.sentences.map((sentence, sIdx) => {
-                    const isSentenceActive = isParagraphActive && sIdx === activeSentence
-
-                    const sentenceQuotes = paragraphQuotes.map((q) => {
-                      const qStart = Math.max(0, q.startOffset - sentence.charStart)
-                      const qEnd = Math.min(sentence.text.length, q.endOffset - sentence.charStart)
-                      if (qEnd > qStart && (qEnd - qStart) >= 2) {
-                        return { ...q, startOffset: qStart, endOffset: qEnd, quote: sentence.text.slice(qStart, qEnd) }
-                      }
-                      if (q.quote && sentence.text.includes(q.quote)) {
-                        const idx = sentence.text.indexOf(q.quote)
-                        return { ...q, startOffset: idx, endOffset: idx + q.quote.length }
-                      }
-                      return null
-                    }).filter(Boolean) as typeof paragraphQuotes
-
-                    return (
-                      <span
-                        key={sIdx}
-                        ref={isSentenceActive ? activeSentenceRef : null}
-                        onClick={(e) => handleSentenceClick(e, sentence.wordStart)}
-                        className={`sentence-item${isSentenceActive ? ' is-sentence-active' : ''}`}
-                      >
-                        {isSentenceActive && (
-                          <span className="sentence-equalizer" aria-hidden="true">
-                            <span /><span /><span />
-                          </span>
-                        )}
-                        <ReaderParagraphText text={sentence.text} popularQuotes={sentenceQuotes} />
-                      </span>
-                    )
-                  })
-                ) : (
-                  <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} />
-                )}
+                <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} />
               </p>
             </div>
           )

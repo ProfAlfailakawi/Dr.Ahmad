@@ -2257,10 +2257,12 @@ html.site-silent .human-core__title-line::after { animation: none !important; op
 /* الأزرار العائمة لا تصطدم بشريط Safari السفلي، وتعود إلى الحافة داخل PWA.
    وعند الاقتراب من الفوتر تختفي كلياً ليحل محلها زر «مساحتي» المدمج فيه. */
 @media (max-width: 639px) {
-  .floating-actions { bottom: calc(6.75rem + env(safe-area-inset-bottom)) !important; }
+  .floating-actions { bottom: calc(1.5rem + env(safe-area-inset-bottom)) !important; }
+  body.audio-dock-open .floating-actions { bottom: calc(6.75rem + env(safe-area-inset-bottom)) !important; }
 }
 @media (display-mode: standalone) {
   .floating-actions { bottom: calc(1rem + env(safe-area-inset-bottom)) !important; }
+  body.audio-dock-open .floating-actions { bottom: calc(6.25rem + env(safe-area-inset-bottom)) !important; }
 }
 
 /* ============================================================

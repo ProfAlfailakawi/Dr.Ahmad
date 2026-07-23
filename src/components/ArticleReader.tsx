@@ -920,16 +920,29 @@ async function findCanonicalHighlight(input: PopularQuoteInput, version: string,
        شرط ٨٠٪ الصارم كان يفتح عدّاداً جديداً عند أدنى اختلاف في حدود التحديد،
        فيبقى الرقم الظاهر جامداً بينما تتناثر عدّادات يتيمة بقيمة ١.
        نقبل الاندماج متى تقاطع التحديدان فعلياً وتشاركا نصف الكلمات على الأقل،
-       ونختار الأقوى تقاطعاً عند تعدد المرشحين. */
+       ونختار الأقوى تقاطعاً عند تعدد المرشحين.
+       نسمح باختلاف في الطول يصل إلى 30% زيادة أو نقصان من التحديد الأصلي لرفع العداد نفسه. */
     const scored = candidates
       .map((item) => {
         const spans = intervalOverlap(startOffset, endOffset, item.start, item.end)
         const existingText = paragraphText.slice(item.start, item.end)
         const words = wordOverlap(input.quote, existingText)
-        return { item, spans, words }
+        
+        const lenUser = endOffset - startOffset
+        const lenExisting = item.end - item.start
+        const lenDiffRatio = lenUser > 0 && lenExisting > 0 ? Math.abs(lenUser - lenExisting) / lenExisting : 1
+        
+        // إذا كان الاختلاف في حدود 30% (زيادة أو نقصان) والتقاطع ممتاز، فهذا تطابق صريح
+        const withinThirtyPercent = lenDiffRatio <= 0.30 && spans >= 0.30
+        
+        return { item, spans, words, withinThirtyPercent }
       })
-      .filter(({ spans, words }) => spans >= .35 && words >= .5)
-      .sort((left, right) => (right.spans + right.words) - (left.spans + left.words))
+      .filter(({ spans, words, withinThirtyPercent }) => (spans >= .35 && words >= .5) || withinThirtyPercent)
+      .sort((left, right) => {
+        if (left.withinThirtyPercent && !right.withinThirtyPercent) return -1
+        if (!left.withinThirtyPercent && right.withinThirtyPercent) return 1
+        return (right.spans + right.words) - (left.spans + left.words)
+      })
     return scored[0]?.item || null
   } catch {
     return null

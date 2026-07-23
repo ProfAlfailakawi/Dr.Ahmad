@@ -12,7 +12,6 @@ export type AdminTab =
   | 'production'
   | 'analytics'
   | 'studio'
-  | 'design'
   | 'launch'
   | 'event'
   | 'articles'
@@ -34,24 +33,20 @@ export type AdminArea = 'system' | 'publishing' | 'library' | 'audience'
 type NavItem = { tab: AdminTab; label: string; note: string }
 type NavGroup = { area: AdminArea; label: string; icon: string; items: NavItem[] }
 
-/* الترتيب المنطقي (بأمر الدكتور ٢٠٢٦-٠٧-٢٣):
-   النظام = العين والقرار · الإنتاج والنشر = خط السير من النص إلى الإطلاق
-   المكتبة = محفوظة كما هي حرفاً حرفاً («مضبوطة ١٠٠٠٠٪») · الجمهور = كل من يخاطب الناس */
 export const ADMIN_GROUPS: NavGroup[] = [
   {
     area: 'system', label: 'النظام', icon: '◉', items: [
       { tab: 'dashboard', label: 'غرفة القيادة', note: 'القرارات والتنبيهات الأهم' },
-      { tab: 'monitor', label: 'مراقب الإنتاج', note: 'التصميم والصوت والروابط والحملات' },
+      { tab: 'monitor', label: 'مراقب الإنتاج', note: 'التصميم والصوت والروابط وواتساب والحملات' },
       { tab: 'content-health', label: 'صحة المحتوى', note: 'المصادر والنواقص ومسارات القراءة' },
       { tab: 'lab', label: 'المختبر المتقدم', note: 'الفحص والذاكرة والأتمتة' },
+      { tab: 'whatsapp', label: 'مساعد واتساب', note: 'وكيل محلي بموافقة الدكتور' },
     ],
   },
   {
-    /* خط سير حقيقي: النص → التصميم → الصوت وضبطه → الإبراز */
     area: 'publishing', label: 'الإنتاج والنشر', icon: '↗', items: [
-      { tab: 'studio', label: 'استوديو النشر', note: 'من الفكرة إلى الحزمة' },
-      { tab: 'design', label: 'استوديو التصاميم', note: 'المشاهد الفنية الاثنا عشر بنقرة' },
       { tab: 'production', label: 'غرفة الإنتاج', note: 'طابور البودكاست من المسودة للنشر' },
+      { tab: 'studio', label: 'استوديو النشر', note: 'من الفكرة إلى الحزمة' },
       { tab: 'manual-dialogue', label: 'الحوار اليدوي', note: 'تحرير الحلقة مداخلةً مداخلة' },
       { tab: 'audio-library', label: 'مكتبة الصوت', note: 'سماع وإعادة توليد وحذف' },
       { tab: 'pronunciation', label: 'قاموس النطق', note: 'اضبط نطق أي كلمة' },
@@ -72,7 +67,6 @@ export const ADMIN_GROUPS: NavGroup[] = [
   {
     area: 'audience', label: 'الجمهور', icon: '◎', items: [
       { tab: 'inbox', label: 'الرسائل', note: 'طلبات التواصل والتعاون' },
-      { tab: 'whatsapp', label: 'مساعد واتساب', note: 'البوت الذي يخاطب جمهورك' },
       { tab: 'analytics', label: 'التحليلات', note: 'المشاهدات ورحلة الزائر' },
     ],
   },

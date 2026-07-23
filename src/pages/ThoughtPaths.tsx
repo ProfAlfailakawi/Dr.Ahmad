@@ -85,8 +85,6 @@ type PathNode = {
   description?: string
   to?: string
   href?: string
-  /* تسمية العلاقة (مقترح معتمد): كيف ترتبط هذه المادة بجارتها في المسار */
-  relation?: string
 }
 
 type ThoughtQuestion = {
@@ -119,21 +117,6 @@ export default function ThoughtPaths() {
   })
   const active = availablePaths.find((path) => path.id === activeId) || availablePaths[0] || paths[0]
 
-  /* «أكمل من حيث توقفت» (مقترح معتمد): آخر مسار زاره القارئ يُحفظ محلياً */
-  const LAST_PATH_KEY = 'thought-paths:last:v1'
-  const [resumeId, setResumeId] = useState<string | null>(null)
-  useEffect(() => {
-    try {
-      const last = localStorage.getItem(LAST_PATH_KEY)
-      if (last && last !== activeId) setResumeId(last)
-    } catch { /* noop */ }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-  useEffect(() => {
-    try { localStorage.setItem(LAST_PATH_KEY, activeId) } catch { /* noop */ }
-  }, [activeId])
-  const resumePath = resumeId && resumeId !== activeId ? availablePaths.find((path) => path.id === resumeId) : undefined
-
   useSeo({
     title: 'مسار الفكرة',
     path: '/thought-paths',
@@ -162,11 +145,9 @@ export default function ThoughtPaths() {
     const earliest = [...clearArticles].sort((a, b) => a.iso.localeCompare(b.iso))[0]
     const latest = [...clearArticles].sort((a, b) => b.iso.localeCompare(a.iso))[0]
     const question = bestMatch<ThoughtQuestion>([...staticQuestions, ...extraQuestions], (item) => `${item.ar} ${item.take}`, active)
-    /* عتبة ثقة أعلى للوصلات الجانبية (مقترح معتمد): مرساة + إشارة على الأقل،
-       وإلا أُخفي العنصر بصمت — لا وصلة تقديرية ولا اعتذار عنها */
-    const paper = bestMatch(papers, (item) => `${item.title} ${item.meta} ${item.journal || ''}`, active, 7)
-    const book = bestMatch(books, (item) => `${item.title} ${item.desc}`, active, 7)
-    const mediaItem = bestMatch(media, (item) => `${item.title} ${item.outlet} ${item.platform || ''}`, active, 7)
+    const paper = bestMatch(papers, (item) => `${item.title} ${item.meta} ${item.journal || ''}`, active)
+    const book = bestMatch(books, (item) => `${item.title} ${item.desc}`, active)
+    const mediaItem = bestMatch(media, (item) => `${item.title} ${item.outlet} ${item.platform || ''}`, active)
 
     const nodes: PathNode[] = []
     if (earliest) nodes.push({
@@ -185,7 +166,6 @@ export default function ThoughtPaths() {
     if (paper) nodes.push({
       key: `paper-${paper.slug}`,
       label: 'الدليل الأكاديمي',
-      relation: 'خلفية علمية',
       title: paper.title,
       description: paper.journal || paper.meta,
       to: `/research/${paper.slug}`,
@@ -193,7 +173,6 @@ export default function ThoughtPaths() {
     if (book) nodes.push({
       key: `book-${book.slug}`,
       label: 'السياق الأوسع',
-      relation: 'امتداد',
       title: book.title,
       description: shorten(book.desc),
       to: `/publications/${book.slug}`,
@@ -201,7 +180,6 @@ export default function ThoughtPaths() {
     if (mediaItem) nodes.push({
       key: `media-${mediaItem.slug}`,
       label: 'حين خرجت الفكرة إلى الحوار العام',
-      relation: 'تطبيق',
       title: mediaItem.title,
       description: mediaItem.outlet,
       href: mediaItem.url,
@@ -209,20 +187,19 @@ export default function ThoughtPaths() {
     if (latest && latest.slug !== earliest?.slug) nodes.push({
       key: `latest-${latest.slug}`,
       label: `أحدث كتابة في المسار · ${latest.year}`,
-      relation: 'تحوّل الفكرة',
       title: latest.title,
       description: shorten(latest.excerpt),
       to: `/articles/${latest.slug}`,
     })
 
-    /* زمن المسار التقريبي (مقترح معتمد): متنا المقالين على سرعة قراءة عربية
-       مريحة (٢٠٠ كلمة/د) + دقيقة لكل محطة جانبية */
-    const wordCount = (value = '') => value.split(/\s+/).filter(Boolean).length
-    const articleWords = wordCount(earliest?.body || earliest?.excerpt) + (latest && latest.slug !== earliest?.slug ? wordCount(latest.body || latest.excerpt) : 0)
-    const sideStops = nodes.length - (earliest ? 1 : 0) - (latest && latest.slug !== earliest?.slug ? 1 : 0)
-    const minutes = Math.max(1, Math.round(articleWords / 200) + sideStops)
+    const missing: string[] = []
+    if (!earliest) missing.push('مقال')
+    if (!question) missing.push('سؤال')
+    if (!paper) missing.push('بحث')
+    if (!book) missing.push('كتاب')
+    if (!mediaItem) missing.push('لقاء إعلامي')
 
-    return { nodes, minutes }
+    return { nodes, missing }
   }, [active, articles, books, extraQuestions, media, papers])
 
   const selectPath = (id: string) => {
@@ -240,15 +217,6 @@ export default function ThoughtPaths() {
 
       <section className="border-b border-hair px-6 py-10 md:px-11 md:py-12">
         <div className="mx-auto max-w-shell">
-          {resumePath && (
-            <button
-              type="button"
-              onClick={() => { selectPath(resumePath.id); setResumeId(null) }}
-              className="mb-5 rounded-full border border-hair bg-wash px-4 py-2 text-[.78rem] text-soft transition-colors hover:border-accent hover:text-accent"
-            >
-              أكمل من حيث توقفت: {resumePath.title} ←
-            </button>
-          )}
           <div role="tablist" aria-label="اختر مساراً فكرياً" className="flex gap-6 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {availablePaths.map((path) => (
               <button
@@ -281,11 +249,6 @@ export default function ThoughtPaths() {
             <span className="text-[.78rem] font-medium text-soft">كيف بدأت الفكرة عندي… وكيف تطورت؟</span>
             <h2 className="mt-3 font-display text-[clamp(2rem,5vw,3.25rem)] font-bold leading-[1.35] text-ink">{active.title}</h2>
             <p className="mt-4 max-w-2xl text-[1rem] font-light leading-[1.95] text-soft">{active.intro}</p>
-            {journey.nodes.length > 0 && (
-              <p className="mt-4 text-[.76rem] font-medium text-soft">
-                {journey.nodes.length} محطات · قراءة المسار كاملاً نحو {journey.minutes === 1 ? 'دقيقة' : journey.minutes === 2 ? 'دقيقتين' : journey.minutes <= 10 ? `${journey.minutes} دقائق` : `${journey.minutes} دقيقة`}
-              </p>
-            )}
           </FadeUp>
 
           {loading && journey.nodes.length === 0 ? (
@@ -301,10 +264,7 @@ export default function ThoughtPaths() {
               {journey.nodes.map((node, index) => {
                 const content = (
                   <>
-                    <span className="text-[.73rem] font-medium text-soft">
-                      {String(index + 1).padStart(2, '0')} · {node.label}
-                      {node.relation && <span className="ms-2 rounded-full border border-hair px-2 py-0.5 text-[.66rem]">{node.relation}</span>}
-                    </span>
+                    <span className="text-[.73rem] font-medium text-soft">{String(index + 1).padStart(2, '0')} · {node.label}</span>
                     <h3 className="mt-2 font-display text-[1.2rem] font-semibold leading-[1.65] text-ink transition-colors group-hover:text-accent">{node.title}</h3>
                     {node.description && <p className="mt-2 text-[.86rem] font-light leading-[1.85] text-soft">{node.description}</p>}
                     {(node.to || node.href) && <span className="mt-3 inline-block text-[.76rem] font-medium text-soft transition-colors group-hover:text-accent">المادة ←</span>}
@@ -327,6 +287,13 @@ export default function ThoughtPaths() {
             </FadeUp>
           )}
 
+          {journey.missing.length > 0 && journey.nodes.length > 0 && (
+            <FadeUp>
+              <p className="mt-12 border-t border-hair pt-5 text-[.78rem] font-light leading-[1.8] text-soft">
+                لم نضف وصلة تقديرية لـ{journey.missing.join(' أو ')}؛ لا توجد مادة مطابقة بوضوح في الأرشيف حالياً.
+              </p>
+            </FadeUp>
+          )}
         </div>
       </section>
     </Page>

@@ -57,24 +57,6 @@ export function sortUpcomingEvents<T extends Pick<SiteEvent, 'iso' | 'time' | 't
     .sort((left, right) => eventEndTimestamp(left) - eventEndTimestamp(right))
 }
 
-export function sortPastEvents<T extends Pick<SiteEvent, 'iso' | 'time' | 'title'>>(events: T[], now = Date.now()) {
-  return events
-    .filter((event, index, list) => list.findIndex((candidate) => candidate.iso === event.iso && candidate.title === event.title) === index)
-    .filter((event) => !isUpcomingEvent(event, now) && Number.isFinite(eventEndTimestamp(event)))
-    .sort((left, right) => eventEndTimestamp(right) - eventEndTimestamp(left))
-}
-
-/* حالة التسجيل التلقائية (مقترح معتمد): تُحسب من التاريخ وحده، بلا صيانة يدوية */
-export function eventStatus(event: Pick<SiteEvent, 'iso' | 'time' | 'url'>, now = Date.now()): { key: 'today' | 'soon' | 'open' | 'announced'; label: string } | null {
-  if (!isUpcomingEvent(event, now)) return null
-  const kuwaitToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuwait' }).format(new Date(now))
-  if (event.iso === kuwaitToday) return { key: 'today', label: 'اليوم' }
-  const start = Date.parse(`${event.iso}T00:00:00+03:00`)
-  if (start - now <= 7 * 86_400_000) return { key: 'soon', label: 'اقترب الموعد' }
-  if (/^https?:\/\//.test(event.url || '')) return { key: 'open', label: 'التسجيل مفتوح' }
-  return { key: 'announced', label: 'معلن' }
-}
-
 /* ═══ «أضف إلى تقويمي» — مقترح معتمد ═══
    اللقاء يذهب إلى تقويم الزائر بنقرة: رابط Google مباشر، وملف ICS يفتحه
    تقويم Apple وOutlook. كله محلي بلا خدمات وسيطة. */

@@ -1,0 +1,275 @@
+import { useEffect } from 'react'
+import { getDb } from './firebase'
+
+const memorySeen = new Set<string>()
+const pendingWrites = new Map<string, Promise<boolean>>()
+const pendingJourneys = new Map<string, Promise<boolean>>()
+
+const normalizePath = (value: string) => {
+  const trimmed = value.trim()
+  if (!trimmed) return '/'
+  const withSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
+  return withSlash.length > 1 ? withSlash.replace(/\/+$/, '') : withSlash
+}
+
+export const encodeViewPath = (path: string) => encodeURIComponent(normalizePath(path))
+
+const kuwaitDay = (date = new Date()) => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kuwait',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date)
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]))
+  return `${value.year}-${value.month}-${value.day}`
+}
+
+export function viewDocumentIds(path: string, date = new Date()) {
+  const encodedPath = encodeViewPath(path)
+  return {
+    total: `total:${encodedPath}`,
+    day: `day:${kuwaitDay(date)}:${encodedPath}`,
+  }
+}
+
+export type ParsedViewDocument = {
+  kind: 'total' | 'day'
+  path: string
+  day?: string
+}
+
+export function parseViewDocumentId(id: string): ParsedViewDocument | null {
+  try {
+    if (id.startsWith('total:')) {
+      return { kind: 'total', path: decodeURIComponent(id.slice('total:'.length)) }
+    }
+    if (id.startsWith('day:')) {
+      const day = id.slice(4, 14)
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || id[14] !== ':') return null
+      return { kind: 'day', day, path: decodeURIComponent(id.slice(15)) }
+    }
+  } catch {
+    return null
+  }
+  return null
+}
+
+const wasSeen = (key: string) => {
+  if (memorySeen.has(key)) return true
+  try {
+    return window.sessionStorage.getItem(key) === '1'
+  } catch {
+    return false
+  }
+}
+
+const markSeen = (key: string) => {
+  memorySeen.add(key)
+  try {
+    window.sessionStorage.setItem(key, '1')
+  } catch {
+    // الذاكرة المؤقتة أعلاه تمنع التكرار حتى إن حجب المتصفح sessionStorage.
+  }
+}
+
+const afterFirstPaint = (callback: () => void) => {
+  if (typeof window === 'undefined') return () => {}
+  let cancelled = false
+  const run = () => { if (!cancelled) callback() }
+  const win = window as typeof window & {
+    requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number
+    cancelIdleCallback?: (id: number) => void
+  }
+  const id = win.requestIdleCallback
+    ? win.requestIdleCallback(run, { timeout: 3000 })
+    : window.setTimeout(run, 1400)
+  return () => {
+    cancelled = true
+    if (win.cancelIdleCallback && typeof id === 'number') win.cancelIdleCallback(id)
+    else window.clearTimeout(id)
+  }
+}
+
+function incrementViewDocument(id: string, title: string): Promise<boolean> {
+  const sessionKey = `view:${id}`
+  if (wasSeen(sessionKey)) return Promise.resolve(true)
+  const pending = pendingWrites.get(sessionKey)
+  if (pending) return pending
+
+  const write = (async () => {
+    try {
+      const db = await getDb()
+      if (!db) return false
+      const { doc, increment, serverTimestamp, setDoc, updateDoc } = await import('firebase/firestore')
+      const ref = doc(db, 'views', id)
+
+      try {
+        await setDoc(ref, {
+          count: increment(1),
+          title,
+          updatedAt: serverTimestamp(),
+        }, { merge: true })
+      } catch {
+        // قواعد views تسمح بتثبيت العنوان عند الإنشاء فقط. إذا تغيّر عنوان
+        // المحتوى لاحقاً، نزيد العدّاد من دون محاولة تعديل العنوان القديم.
+        await updateDoc(ref, {
+          count: increment(1),
+          updatedAt: serverTimestamp(),
+        })
+      }
+
+      markSeen(sessionKey)
+      return true
+    } catch {
+      return false
+    } finally {
+      pendingWrites.delete(sessionKey)
+    }
+  })()
+
+  pendingWrites.set(sessionKey, write)
+  return write
+}
+
+function journeyId(from: string, to: string) {
+  return `${encodeViewPath(from)}>${encodeViewPath(to)}`.slice(0, 900)
+}
+
+async function trackJourney(from: string, to: string): Promise<boolean> {
+  if (!from || from === to || from === '/admin' || to === '/admin') return false
+  const sessionKey = `journey:${journeyId(from, to)}`
+  if (wasSeen(sessionKey)) return true
+  const pending = pendingJourneys.get(sessionKey)
+  if (pending) return pending
+
+  const write = (async () => {
+    // نسجل الرحلة أيضاً داخل مجموعة views التي ثبت أنها تعمل في الاستضافة الساكنة.
+    // بهذا لا تعتمد رحلة الزائر على نشر endpoint أو قواعد مجموعة إضافية.
+    const bridgePath = `/_journey/${encodeURIComponent(normalizePath(from))}>${encodeURIComponent(normalizePath(to))}`
+    const bridgeIds = viewDocumentIds(bridgePath)
+    const [bridgeTotal, bridgeDay] = await Promise.all([
+      incrementViewDocument(bridgeIds.total, `رحلة: ${from} ← ${to}`),
+      incrementViewDocument(bridgeIds.day, `رحلة: ${from} ← ${to}`),
+    ])
+    if (bridgeTotal && bridgeDay) {
+      markSeen(sessionKey)
+      return true
+    }
+
+    // المسار الأساسي يمر عبر الخادم. هذا يتجاوز مشكلة أن قواعد Firestore قد لا
+    // تكون نُشرت بعد، ويستمر حتى لو أغلق الزائر الصفحة سريعاً بفضل keepalive.
+    try {
+      const response = await fetch('/api/journey', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ from, to }),
+        keepalive: true,
+        cache: 'no-store',
+      })
+      if (response.ok) {
+        markSeen(sessionKey)
+        return true
+      }
+    } catch { /* نجرّب Firestore مباشرة كمسار احتياطي */ }
+
+    try {
+      const db = await getDb()
+      if (!db) return false
+      const { doc, increment, serverTimestamp, setDoc } = await import('firebase/firestore')
+      await setDoc(doc(db, 'journeys', journeyId(from, to)), {
+        from,
+        to,
+        count: increment(1),
+        updatedAt: serverTimestamp(),
+      }, { merge: true })
+      markSeen(sessionKey)
+      return true
+    } catch { return false }
+    finally { pendingJourneys.delete(sessionKey) }
+  })()
+
+  pendingJourneys.set(sessionKey, write)
+  return write
+}
+
+
+/**
+ * يسجل انتقال الزائر بين جميع صفحات الموقع، لا الصفحات التي تملك عدّاد مشاهدة فقط.
+ * التخزين مؤقت داخل الجلسة ولا يحتوي أي معرّف شخصي.
+ */
+export function useTrackJourney(path: string, enabled = true) {
+  useEffect(() => {
+    if (!enabled || typeof window === 'undefined') return
+    const normalizedPath = normalizePath(path)
+    if (!normalizedPath || normalizedPath === '/admin') return
+    try {
+      const rawPrevious = window.sessionStorage.getItem('journey:last-path') || ''
+      const previous = rawPrevious ? normalizePath(rawPrevious) : ''
+      window.sessionStorage.setItem('journey:last-path', normalizedPath)
+      if (previous && previous !== normalizedPath) {
+        // التسجيل مؤجل لوقت الخمول عمداً: أول رحلة في الجلسة كانت توقظ حزمة
+        // Firebase كاملة (~1MB تقييماً على الخيط الرئيسي) في لحظة التنقل نفسها،
+        // فيهتز دخول الصفحة. لا نربط الإلغاء بالتنظيف كي لا تضيع الرحلة عند
+        // التنقل السريع المتتابع — ومنع التكرار تتكفل به ذاكرة الجلسة.
+        afterFirstPaint(() => { void trackJourney(previous, normalizedPath) })
+      }
+    } catch { /* لا تؤثر على تجربة الزائر */ }
+  }, [enabled, path])
+}
+
+/**
+ * يسجل مشاهدة واحدة للمسار في الجلسة: إجمالي للمسار + عدّاد يومي بتوقيت الكويت.
+ * لا يقرأ مستند views، ولذلك يعمل للزائر العام مع قواعد القراءة الخاصة بالمشرف.
+ */
+export function useTrackView(path: string, title: string, enabled = true) {
+  useEffect(() => {
+    if (!enabled || typeof window === 'undefined') return
+
+    const normalizedPath = normalizePath(path)
+    const safeTitle = title.trim().slice(0, 200) || normalizedPath
+    const ids = viewDocumentIds(normalizedPath)
+    const pathSessionKey = `view:path:${encodeViewPath(normalizedPath)}`
+
+    return afterFirstPaint(() => {
+      if (wasSeen(pathSessionKey)) return
+      void Promise.all([
+        incrementViewDocument(ids.total, safeTitle),
+        incrementViewDocument(ids.day, safeTitle),
+      ]).then(([totalSaved, daySaved]) => {
+        if (totalSaved && daySaved) markSeen(pathSessionKey)
+      })
+    })
+  }, [enabled, path, title])
+}
+
+/** نقرة مشاركة تُحصى على مسار «_share» الموازي — نفس آلية المشاهدات وقواعدها */
+export function trackShare(path: string, title: string) {
+  const p = `/_share${normalizePath(path)}`
+  const ids = viewDocumentIds(p)
+  void incrementViewDocument(ids.total, `مشاركة: ${title.trim().slice(0, 180)}`)
+  void incrementViewDocument(ids.day, `مشاركة: ${title.trim().slice(0, 180)}`)
+}
+
+/** معلم استماع (25/50/75٪) على مسار «_listen» الموازي — مرة لكل معلم في الجلسة (من برومت البودكاست) */
+export function trackListen(path: string, title: string, pct: number, voice: string) {
+  const p = `/_listen${pct}${normalizePath(path)}`
+  const ids = viewDocumentIds(p)
+  const t = `استماع ${pct}٪ (${voice}): ${title.trim().slice(0, 160)}`
+  void incrementViewDocument(ids.total, t)
+  void incrementViewDocument(ids.day, t)
+}
+
+/** للمشرف فقط: عدّادا المقال (مشاهدات ومشاركات) ليظهرا بجانب العنوان */
+export async function fetchOwnerCounts(path: string): Promise<{ views: number; shares: number } | null> {
+  try {
+    const db = await getDb()
+    if (!db) return null
+    const { doc, getDoc } = await import('firebase/firestore')
+    const [v, s] = await Promise.all([
+      getDoc(doc(db, 'views', `total:${encodeViewPath(path)}`)),
+      getDoc(doc(db, 'views', `total:${encodeViewPath(`/_share${normalizePath(path)}`)}`)),
+    ])
+    return { views: Number(v.data()?.count || 0), shares: Number(s.data()?.count || 0) }
+  } catch { return null }
+}

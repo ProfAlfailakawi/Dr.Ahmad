@@ -1,44 +1,16 @@
-import { Link } from 'react-router-dom'
 import { FadeUp, Label, Magnetic, Page } from '../components/ui'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { Newsletter } from '../components/extras'
 import { useSeo } from '../components/seo'
 import { upcoming, type Event as SiteEvent } from '../data'
-import { useCmsContent, useExtras } from '../lib/content'
-import { normalizeArabic } from '../lib/cms'
-import { downloadEventIcs, eventStatus, googleCalendarUrl, sortPastEvents, sortUpcomingEvents } from '../lib/events'
-
-/* ربط اللقاء المنتهي بمادته (مقترح معتمد): إن وُلد من اللقاء مقال أو تسجيل، يظهر أثره */
-const eventTokens = (text = '') => new Set(normalizeArabic(text).split(/\s+/).filter((word) => word.length > 3))
-function eventOutcome(event: SiteEvent, articles: { slug: string; title: string }[], media: { slug: string; title: string; url?: string }[]) {
-  const tokens = eventTokens(`${event.title} ${event.org || ''}`)
-  if (tokens.size < 2) return null
-  const overlap = (title: string) => {
-    const candidate = eventTokens(title)
-    let shared = 0
-    for (const token of tokens) if (candidate.has(token)) shared += 1
-    return shared
-  }
-  for (const article of articles) if (overlap(article.title) >= 2) return { label: 'قراءة أثره مقالاً', to: `/articles/${article.slug}` }
-  for (const item of media) if (overlap(item.title) >= 2) return { label: 'مشاهدة تسجيله', to: `/media`, href: item.url }
-  return null
-}
-
-const statusTone: Record<string, string> = {
-  today: 'bg-accent text-white',
-  soon: 'border border-accent/50 text-accent',
-  open: 'border border-hair text-soft',
-  announced: 'border border-hair text-soft',
-}
+import { useExtras } from '../lib/content'
+import { downloadEventIcs, googleCalendarUrl, sortUpcomingEvents } from '../lib/events'
 
 export default function Upcoming() {
   useSeo({ title: 'اللقاءات القادمة', path: '/upcoming', description: 'محاضرات وورش عمل ومؤتمرات قادمة للدكتور أحمد حسين الفيلكاوي.' })
   const addedEvents = useExtras<SiteEvent & { id: string }>('site_upcoming')
-  const { articles, media } = useCmsContent()
 
-  const all = [...addedEvents, ...upcoming]
-  const future = sortUpcomingEvents(all)
-  const past = sortPastEvents(all).slice(0, 12)
+  const future = sortUpcomingEvents([...addedEvents, ...upcoming])
   const paged = usePagedList(future, 12, String(future.length))
 
   return (
@@ -77,13 +49,7 @@ export default function Upcoming() {
                     </div>
 
                     <div className="min-w-0">
-                      <span className="flex flex-wrap items-center gap-2">
-                        {e.kind && <span className="text-[.68rem] font-semibold text-accent">{e.kind}</span>}
-                        {(() => {
-                          const status = eventStatus(e)
-                          return status ? <span className={`rounded-full px-2.5 py-0.5 text-[.64rem] font-semibold ${statusTone[status.key]}`}>{status.label}</span> : null
-                        })()}
-                      </span>
+                      {e.kind && <span className="text-[.68rem] font-semibold text-accent">{e.kind}</span>}
                       <h2 className="mt-0.5 font-display text-[1.08rem] font-medium leading-[1.5] text-ink">{e.title}</h2>
                       <p className="mt-1 text-[.8rem] text-soft">{e.org} · {e.place}</p>
                     </div>
@@ -143,33 +109,6 @@ export default function Upcoming() {
                   </Magnetic>
                 </div>
               </div>
-            </FadeUp>
-          )}
-
-          {/* أرشيف اللقاءات المنقضية (مقترح معتمد): يطوي نفسه ولا يزاحم القادم */}
-          {past.length > 0 && (
-            <FadeUp delay={0.06}>
-              <details className="mt-10 rounded-xl border border-hair bg-wash px-5 py-4">
-                <summary className="cursor-pointer text-[.84rem] font-semibold text-ink transition-colors hover:text-accent">
-                  لقاءات انقضت — {past.length}
-                </summary>
-                <ul className="mt-4 divide-y divide-hair">
-                  {past.map((e) => {
-                    const outcome = eventOutcome(e, articles, media)
-                    return (
-                      <li key={`past-${e.iso}-${e.title}`} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-3">
-                        <time dateTime={e.iso} className="shrink-0 text-[.76rem] font-semibold text-soft">{e.date}</time>
-                        <span className="min-w-0 flex-1 text-[.86rem] text-ink">{e.title}<span className="text-soft"> · {e.org}</span></span>
-                        {outcome && (
-                          outcome.href
-                            ? <a href={outcome.href} target="_blank" rel="noreferrer" className="shrink-0 text-[.74rem] font-semibold text-accent transition-colors hover:text-accent-deep">{outcome.label} ←</a>
-                            : <Link to={outcome.to} className="shrink-0 text-[.74rem] font-semibold text-accent transition-colors hover:text-accent-deep">{outcome.label} ←</Link>
-                        )}
-                      </li>
-                    )
-                  })}
-                </ul>
-              </details>
             </FadeUp>
           )}
 

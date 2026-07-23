@@ -22,7 +22,6 @@ import { ContentManager, type ManagedKind, type ManagedRecord } from '../compone
 import { Indicators } from '../components/admin/Indicators'
 import { IntelligenceLab } from '../components/admin/IntelligenceLab'
 import { PublishingStudio } from '../components/admin/PublishingStudio'
-import { SocialDesignStudio } from '../components/admin/SocialDesignStudio'
 import { VoiceBakeoffCard } from '../components/admin/VoiceBakeoff'
 import { ManualDialogueEditor } from '../components/admin/ManualDialogueEditor'
 import { AudioLibrary } from '../components/admin/AudioLibrary'
@@ -192,7 +191,7 @@ function CvPdfCard() {
 function Panel({ email }: { email: string }) {
   const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const requestedTab = params.get('tab') as AdminTab | null
-  const allowedTabs: AdminTab[] = ['dashboard','monitor','content-health','production','analytics','studio','design','launch','event','articles','books','papers','media','inbox','lab','whatsapp','voice','manual-dialogue','audio-library','pronunciation','cv']
+  const allowedTabs: AdminTab[] = ['dashboard','monitor','content-health','production','analytics','studio','launch','event','articles','books','papers','media','inbox','lab','whatsapp','voice','manual-dialogue','audio-library','pronunciation','cv']
   const initialTab = requestedTab && allowedTabs.includes(requestedTab) ? requestedTab : 'dashboard'
   const editSlug = params.get('edit') || undefined
   const [tab, setTab] = useState<AdminTab>(initialTab)
@@ -218,12 +217,11 @@ function Panel({ email }: { email: string }) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // «حملة من مقال بنقرة»: زر المقالات يطلق هذا الحدث فتقفز اللوحة إلى
-  // استوديو التصاميم مباشرة (تبويبه المستقل الجديد — يستهلك البذرة بنفسه).
+  // «حملة من مقال بنقرة»: زر المقالات يطلق هذا الحدث فتقفز اللوحة إلى الاستوديو.
   useEffect(() => {
-    const toDesign = () => chooseTab('design')
-    window.addEventListener('studio:campaign-seed', toDesign)
-    return () => window.removeEventListener('studio:campaign-seed', toDesign)
+    const toStudio = () => chooseTab('studio')
+    window.addEventListener('studio:campaign-seed', toStudio)
+    return () => window.removeEventListener('studio:campaign-seed', toStudio)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -284,7 +282,6 @@ function Panel({ email }: { email: string }) {
             {tab === 'production' && <ProductionHealthCenter view="production" articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />}
             {tab === 'analytics' && <div className="grid gap-4"><ReaderPulse /><Indicators articles={cms.articles} /></div>}
             {tab === 'studio' && <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} />}
-            {tab === 'design' && <SocialDesignStudio />}
             {tab === 'launch' && <LaunchModeCard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} />}
             {tab === 'lab' && <IntelligenceLab articles={cms.articles} />}
             {tab === 'whatsapp' && <WhatsAppAgentPanel />}

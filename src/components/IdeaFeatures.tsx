@@ -331,18 +331,9 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
 
   useEffect(() => {
     let timer = 0
-    /* التحديد نفسه اقتباس (أمر الدكتور): من ظلّل جملةً فقد صوّت لها — لا يشترط
-       صنع بطاقة ولا حفظ. يُحتسب مرة عند اكتمال التحديد (رفع الإصبع)، وذاكرة
-       الجلسة تمنع تكرار الإرسال، وعضوية القارئ في الخادم تمنع تكرار العدّ. */
-    const countedSelections = new Set<string>()
-    /* علمٌ يُستهلك لا حدثٌ أخير: iOS يطلق selectionchange بعد رفع الإصبع
-       (مقابض التحديد) فيلغي مؤقّت pointerup — العلم يصمد حتى يُستهلك */
-    let settledPending = false
-    const inspectSelection = (event?: Event) => {
-      if (event?.type === 'pointerup' || event?.type === 'touchend') settledPending = true
+    const inspectSelection = () => {
       window.clearTimeout(timer)
       timer = window.setTimeout(() => {
-        const settled = settledPending
         if (view) return
         const selection = window.getSelection()
         const text = selection?.toString().replace(/\s+/g, ' ').trim() || ''
@@ -384,23 +375,6 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         setOffsets({ startOffset, endOffset })
         /* أسفل التحديد كلّه (لا أول سطر منه) — عليه نُلصق الشريط في الجوال */
         setPos({ x, y, bottom: range.getBoundingClientRect().bottom })
-        if (settled && text.split(/\s+/).filter(Boolean).length >= 4) {
-          settledPending = false
-          const countKey = `${current.slug}:${Number.isInteger(paragraphIndex) ? paragraphIndex : 0}:${text.slice(0, 90)}`
-          if (!countedSelections.has(countKey)) {
-            countedSelections.add(countKey)
-            window.dispatchEvent(new CustomEvent('reader:quote-saved', {
-              detail: {
-                slug: current.slug,
-                body: body || current.body || '',
-                quote: text,
-                paragraph: Number.isInteger(paragraphIndex) ? paragraphIndex : 0,
-                startOffset,
-                endOffset,
-              },
-            }))
-          }
-        }
       }, 90)
     }
     document.addEventListener('selectionchange', inspectSelection)

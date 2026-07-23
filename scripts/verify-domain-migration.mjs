@@ -147,7 +147,7 @@ function checkRepository() {
     }
   }
 
-  for (const path of ['src/data.ts', 'data.ts'].filter((p) => existsSync(resolve(ROOT, p)))) {
+  for (const path of ['src/data.ts', 'data.ts']) {
     const content = read(path)
     expect(!content.includes('http://schedule.dr-alfailakawi.com'), `${path} يحتوي رابط حجز غير مشفّر`)
   }

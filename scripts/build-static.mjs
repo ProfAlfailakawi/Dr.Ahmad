@@ -17,10 +17,6 @@ import sharp from 'sharp'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = resolve(ROOT, 'dist')
-/* خطوط بطاقات المشاركة: على لينكس (CI) يقرأ fontconfig خطوط الموقع TTF من
-   scripts/og-fonts فتخرج البطاقات بخط الهوية، وعلى ماك يتكفل CoreText بخط
-   عربي نظيف. يُضبط هنا قبل أول تصيير SVG. */
-process.env.FONTCONFIG_FILE = resolve(ROOT, 'scripts/og-fonts/fonts.conf')
 if (!existsSync(DIST)) { console.error('✘ شغّل `npm run build` أولاً.'); process.exit(1) }
 
 /* لا نسمح ببناء ينسخ أصواتاً لا يعرفها bundle. لأن Vite يعمل قبل هذا
@@ -254,8 +250,8 @@ const routes = [
   ...STATIC,
   ...books.map((b) => ({ path: `/publications/${b.slug}`, title: b.title, desc: b.desc, isbn: b.isbn })),
   ...papers.map((p) => ({ path: `/research/${p.slug}`, title: p.title, desc: p.abstractAr || `بحث محكّم — ${p.meta}`, type: 'article' })),
-  ...articles.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt, type: 'article', iso: a.iso, cat: a.cat, image: `/og/articles/${a.slug}.jpg` })),
-  ...siteArticlesFeed.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt || a.title, type: 'article', iso: a.iso, cat: a.cat || 'مقال', image: `/og/articles/${a.slug}.jpg` })),
+  ...articles.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt, type: 'article', iso: a.iso, cat: a.cat })),
+  ...siteArticlesFeed.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt || a.title, type: 'article', iso: a.iso, cat: a.cat || 'مقال' })),
 ]
 
 const LEGACY_REDIRECTS = [
@@ -867,8 +863,7 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
   const hasName = title.includes('Alfailakawi') || title.includes('د. أحمد حسين الفيلكاوي')
   const full = isAdmin ? title : path === '/' || hasName ? title : en ? `${title} — Dr. Ahmad H. Alfailakawi` : `${title} — د. أحمد حسين الفيلكاوي`
   const url = SITE + path
-  /* بطاقة المقال الخاصة إن وُلدت، وإلا البطاقة الموحدة */
-  const img = image ? `${SITE}${image}` : `${SITE}${HOME_OG}`
+  const img = `${SITE}${HOME_OG}`
 
   // مسار التفصيل يحدّد نوع Schema والفتات (Breadcrumb)
   const isArticlePage = /^\/(?:en\/)?articles\//.test(path)
@@ -1039,17 +1034,10 @@ function listenTimeText(slug, fallbackMinutes = 0) {
   return ''
 }
 
-/* التفاف RTL صريح: بدونه تقفز علامات الترقيم (… و؟) إلى الطرف الخطأ
-   لأن مصيّر SVG يفترض فقرة LTR */
-const rtlWrap = (text = '') => `‫${text}‬`
-
 async function generateArticleOg() {
   const out = resolve(DIST, 'og/articles')
   mkdirSync(out, { recursive: true })
-  const seen = new Set()
-  const ogArticles = [...articles, ...siteArticlesFeed.map((item) => ({ cat: 'مقال', excerpt: '', ...item }))]
-    .filter((article) => !seen.has(article.slug) && seen.add(article.slug))
-  for (const article of ogArticles) {
+  for (const article of articles) {
     const theme = articleThemes[article.cat] || { accent: '#3E5C78', accentSoft: '#E7EEF6', chip: 'مقالة' }
     const body = bodies[article.slug] || article.excerpt || ''
     const titleLines = wrapSvgText(article.title, 26).slice(0, 3)
@@ -1076,17 +1064,16 @@ async function generateArticleOg() {
   <image href="${logoDataUri}" x="145" y="448" width="138" height="70" preserveAspectRatio="xMidYMid meet"/>
   <text x="224" y="528" text-anchor="middle" class="soft" font-size="19">${attr(SITE_HOST)}</text>
   <rect x="404" y="96" width="160" height="40" rx="20" class="accent-soft"/>
-  <text x="484" y="122" text-anchor="middle" class="accent" font-size="21" font-weight="700">${attr(rtlWrap(article.cat))}</text>
+  <text x="484" y="122" text-anchor="middle" class="accent" font-size="21" font-weight="700">${attr(article.cat)}</text>
   <text x="1080" y="124" text-anchor="end" direction="ltr" class="soft" font-size="22" font-weight="700">${attr(article.iso.replace(/-/g, ' / '))}</text>
-  <text x="760" y="124" text-anchor="middle" class="soft" font-size="20" font-weight="600">${attr(rtlWrap(duration))}</text>
-  ${titleLines.map((line, i) => `<text x="1080" y="${210 + i * 64}" text-anchor="end" class="display ink" font-size="${titleFont}" font-weight="700">${attr(rtlWrap(line))}</text>`).join('\n  ')}
+  <text x="760" y="124" text-anchor="middle" class="soft" font-size="20" font-weight="600">${attr(duration)}</text>
+  ${titleLines.map((line, i) => `<text x="1080" y="${210 + i * 64}" text-anchor="end" class="display ink" font-size="${titleFont}" font-weight="700">${attr(line)}</text>`).join('\n  ')}
   <rect x="730" y="338" width="350" height="2" class="accent" opacity=".55"/>
-  ${quoteLines.map((line, i) => `<text x="1080" y="${396 + i * 40}" text-anchor="end" class="soft" font-size="28" font-weight="400">${attr(rtlWrap(line))}</text>`).join('\n  ')}
-  <text x="1080" y="548" text-anchor="end" class="accent" font-size="24" font-weight="700">${attr(rtlWrap('اقرأ أو استمع للمقال عبر الموقع'))}</text>
+  ${quoteLines.map((line, i) => `<text x="1080" y="${396 + i * 40}" text-anchor="end" class="soft" font-size="28" font-weight="400">${attr(line)}</text>`).join('\n  ')}
+  <text x="1080" y="548" text-anchor="end" class="accent" font-size="24" font-weight="700">اقرأ أو استمع للمقال عبر الموقع</text>
 </svg>`
-    await sharp(Buffer.from(svg)).jpeg({ quality: 88, mozjpeg: true }).toFile(resolve(out, `${article.slug}.jpg`))
+    await sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toFile(resolve(out, `${article.slug}.png`))
   }
-  return ogArticles.length
 }
 
 const publicRoutes = uniqueRoutes(routes)
@@ -1099,10 +1086,7 @@ for (const r of publicRoutes) {
 writeFileSync(resolve(DIST, '404.html'), render({ path: '/404', title: 'الصفحة غير موجودة', desc: 'الصفحة المطلوبة غير موجودة.' }), 'utf8')
 writeFileSync(resolve(DIST, 'admin.html'), render({ path: '/admin', title: 'لوحة التحكم', desc: 'لوحة إدارة خاصة.', robots: 'noindex, nofollow' }), 'utf8')
 writeFileSync(resolve(DIST, 'offline.html'), render({ path: '/offline', title: 'أنت غير متصل', desc: 'هذه الصفحة متاحة عند انقطاع الاتصال.' }), 'utf8')
-// بطاقة مشاركة خاصة لكل مقال (بأمر الدكتور بعد صدمة المعاينة العامة):
-// عنوان المقال وتصنيفه وأول جملة منه بهوية الموقع — بدل بطاقة موحّدة باهتة.
-const ogCount = await generateArticleOg()
-console.log(`✔ بطاقات مشاركة المقالات: ${ogCount} بطاقة بهوية الموقع`)
+// بطاقات المشاركة موحّدة عمداً على التصميم المعتمد؛ لا تُولّد تصاميم مقالات منفصلة.
 
 /* ---------- sitemap ---------- */
 const sm = `<?xml version="1.0" encoding="UTF-8"?>

@@ -162,7 +162,7 @@ export function WhatsAppAgentPanel() {
       const alive = await pingBridge()
       if (alive && secret.trim()) void refresh()
       else if (alive) setNotice('الجسر يعمل على الماك ✓ — ألصق سر الجسر أدناه مرة واحدة لتتصل اللوحة به.')
-      else setNotice('لا أصل إلى الجسر المحلي. تأكد أن الماك شغّال وأن وكيل واتساب يعمل عليه.')
+      else setNotice('لا أصل إلى الجسر المحلي — البوت متوقف على الماك غالباً. الإسعاف بنقرتين: افتح مجلد الموقع ← whatsapp-agent ← انقر ملف «أصلح-البوت.command» مرتين، وسيثبّت ويعيد التشغيل ويطمئنك بالعربي. (يحدث عادة بعد استبدال مجلد الموقع بنسخة جديدة.)')
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

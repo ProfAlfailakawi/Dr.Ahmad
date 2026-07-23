@@ -125,13 +125,30 @@ export const normalizeIdeaText = (value = '') => value
   .replace(/\s+/g, ' ')
   .trim()
 
-export const ideaWords = (value = '') => Array.from(new Set(
-  normalizeIdeaText(value)
-    .split(/\s+/)
-    .filter((word) => word.length > 2 && !AR_STOP.has(word))
-    .map(toRoot)
-    .filter((word) => word.length > 2),
-))
+/* التفتيت والتجذير أغلى خطوة هنا، ونداءات المقارنة الزوجية (كل مقال ضد كل مقال)
+   كانت تعيدها على النص نفسه مئات المرات — فتجمّدت صفحة العقد ٤ ثوانٍ كاملة.
+   ذاكرة بسيطة بسقفٍ ثابت تجعل كل نصٍّ يُجذَّر مرة واحدة في عمر الصفحة. */
+const ideaWordsCache = new Map<string, string[]>()
+const IDEA_WORDS_CACHE_LIMIT = 900
+
+export const ideaWords = (value = '') => {
+  const key = String(value)
+  const cached = ideaWordsCache.get(key)
+  if (cached) return cached
+  const words = Array.from(new Set(
+    normalizeIdeaText(key)
+      .split(/\s+/)
+      .filter((word) => word.length > 2 && !AR_STOP.has(word))
+      .map(toRoot)
+      .filter((word) => word.length > 2),
+  ))
+  if (ideaWordsCache.size >= IDEA_WORDS_CACHE_LIMIT) {
+    const oldest = ideaWordsCache.keys().next().value
+    if (oldest !== undefined) ideaWordsCache.delete(oldest)
+  }
+  ideaWordsCache.set(key, words)
+  return words
+}
 
 const sentences = (value = '') => value
   .replace(/\r/g, '')

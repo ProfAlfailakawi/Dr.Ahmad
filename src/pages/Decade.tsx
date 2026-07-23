@@ -185,6 +185,9 @@ export default function Decade() {
   }, [articles, idea, bodies, exactArticleSlug])
 
   const predictionRegister = useMemo(() => {
+    // السجل يُحسب في وضع التنبؤات وحده: حسابه الزوجي الثقيل كان يجمّد
+    // دخول «وثيقة العقد» أربع ثوانٍ رغم أن وضع الرحلة لا يعرضه أصلاً.
+    if (mode !== 'predictions') return []
     const roots = idea.split(/\s+/).filter((word) => word.length > 2).map(toRoot)
     return articles
       .filter((article) => /^(?:19|20)\d{2}/.test(article.iso))
@@ -196,7 +199,7 @@ export default function Decade() {
         return predictionRecordsFor(complete, articles, remote).map((prediction) => ({ article: complete, prediction }))
       })
       .sort((left, right) => right.article.iso.localeCompare(left.article.iso))
-  }, [articles, bodies, idea, remoteIdeaLife, exactArticleSlug])
+  }, [articles, bodies, idea, remoteIdeaLife, exactArticleSlug, mode])
 
   return (
     <Page className="content-decade page-journey">

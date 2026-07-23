@@ -249,6 +249,44 @@ function blank(kind: ManagedKind): Form {
   return { slug: '', title: '', outlet: '', url: '', iso, date: dateArabic(iso) }
 }
 
+/* مركز جاهزية النشر (مقترح معتمد — البند 18): فحوص موحدة لكل نوع قبل الحفظ.
+   إرشاد لا حاجز — البوابة الصلبة تبقى في حزام البناء (guard-private-books). */
+const PRIVATE_FINGERPRINTS = ['private-books', 'books-memory', 'مادة خام سرية', 'privateUse', 'localPath', '/Users/', 'file://', 'C:\\']
+function publishReadiness(kind: ManagedKind, form: Form) {
+  const checks: { label: string; ok: boolean }[] = []
+  if (kind === 'article') {
+    checks.push(
+      { label: 'متن وافٍ (٣٠٠ كلمة فأكثر)', ok: (form.body || '').trim().split(/\s+/).filter(Boolean).length >= 300 },
+      { label: 'تاريخ النشر', ok: Boolean(form.iso) },
+    )
+  } else if (kind === 'book') {
+    checks.push(
+      { label: 'وصف تعريفي (٢٠ كلمة فأكثر)', ok: (form.desc || '').trim().split(/\s+/).filter(Boolean).length >= 20 },
+      { label: 'غلاف الكتاب', ok: Boolean(form.cover) },
+    )
+  } else if (kind === 'paper') {
+    checks.push(
+      { label: 'المجلة أو جهة النشر', ok: Boolean((form.journal || form.meta || '').trim()) },
+      { label: 'ملخص عربي', ok: Boolean((form.abstractAr || '').trim()) },
+      { label: 'رابط أو DOI للتحقق', ok: Boolean((form.url || form.doi || form.pdf || form.source || '').trim()) },
+    )
+  } else {
+    checks.push(
+      { label: 'رابط يوتيوب صالح', ok: /(?:v=|youtu\.be\/|shorts\/|embed\/)[\w-]{6,}/.test(form.url || '') },
+      { label: 'الجهة الإعلامية', ok: Boolean((form.outlet || '').trim()) },
+      { label: 'تاريخ اللقاء', ok: Boolean(form.iso) },
+    )
+  }
+  /* الإنذار الأمني الفوري: بصمة المنظومة الخاصة في حقل عام تُكشف وقت الكتابة لا وقت البناء */
+  const publicText = kind === 'article'
+    ? `${form.title || ''} ${form.excerpt || ''} ${form.body || ''}`
+    : kind === 'book'
+      ? `${form.title || ''} ${form.desc || ''}`
+      : `${form.title || ''} ${form.titleAr || ''} ${form.abstractAr || ''} ${form.meta || ''} ${form.desc || ''}`
+  const leaked = PRIVATE_FINGERPRINTS.find((marker) => publicText.includes(marker))
+  return { checks, leaked }
+}
+
 function asForm(kind: ManagedKind, item: ManagedRecord): Form {
   const form = Object.fromEntries(editableFields[kind].map((field) => [field, String(item[field] ?? '')]))
   if (kind === 'article' && !form.status) form.status = 'published'
@@ -954,6 +992,30 @@ function Editor({
           )}
 
           {error && <p className="rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.86rem] text-soft">{error}</p>}
+          {(() => {
+            const readiness = publishReadiness(kind, form)
+            const done = readiness.checks.filter((check) => check.ok).length
+            return (
+              <div className="rounded-xl border border-hair bg-wash px-4 py-3">
+                <p className="text-[.72rem] font-semibold text-soft">
+                  جاهزية النشر: <span className={done === readiness.checks.length ? 'text-accent' : 'text-ink'}>{done}/{readiness.checks.length}</span>
+                  <span className="ms-2 font-light">— إرشاد لا شرط؛ الحفظ متاح دائماً.</span>
+                </p>
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
+                  {readiness.checks.map((check) => (
+                    <span key={check.label} className={`text-[.74rem] ${check.ok ? 'text-accent' : 'text-soft'}`}>
+                      {check.ok ? '✓' : '○'} {check.label}
+                    </span>
+                  ))}
+                </div>
+                {readiness.leaked && (
+                  <p className="mt-2.5 rounded-lg border border-red-300/50 bg-canvas px-3 py-2 text-[.76rem] font-semibold text-red-600">
+                    ⚠ إنذار أمني: حقل عام يحمل بصمة المنظومة الخاصة («{readiness.leaked}»). احذفها قبل النشر — حزام البناء سيوقف الموقع كله إن بقيت.
+                  </p>
+                )}
+              </div>
+            )
+          })()}
           <div className="flex flex-wrap items-center gap-3 border-t border-hair pt-5">
             <button type="button" onClick={onSave} disabled={busy || !form.title?.trim() || !form.slug?.trim() || (kind === 'article' && (form.body || '').trim().length < 40)} className={primary}>
               {busy && kind === 'article' && form._aiReady !== '1' ? 'جارٍ تجهيز التصنيف والمقتطف…' : busy ? 'جارٍ الحفظ…' : kind === 'article' && form.status === 'scheduled' ? 'حفظ وجدولة' : kind === 'article' && form.status === 'draft' ? 'حفظ كمسودة' : 'حفظ ونشر'}

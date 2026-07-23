@@ -4,11 +4,25 @@ import { useSeo } from '../components/seo'
 import { Page, PageHead, FadeUp, Reveal } from '../components/ui'
 import { Share } from '../components/extras'
 import { useExtras } from '../lib/content'
+import { normalizeArabic } from '../lib/cms'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { Question, LAUNCH_DATE, staticQuestions } from '../questions-data'
 export { LAUNCH_DATE, staticQuestions }
 
 const clean = (value = '') => value.replace(/\s+/g, ' ').trim()
+
+/* تصنيف تلقائي للأسئلة (مقترح معتمد): يُستنتج من نص السؤال نفسه، بلا صيانة يدوية */
+const QUESTION_TOPICS: [string, RegExp][] = [
+  ['الذكاء الاصطناعي والتقنية', /ذكاء|خوارزم|تقني|رقمي|الاله|شاشه|هاتف|روبوت|تطبيق|انترنت/],
+  ['التقويم والامتحانات', /امتحان|اختبار|درجه|درجات|تقويم|قياس|شهاده|رسوب|نجاح/],
+  ['المعلم والمدرسة', /معلم|مدرس|مدرسه|فصل|تدريس|منهج|حصه/],
+  ['الطالب والأسرة', /طالب|طفل|ابناء|اسره|بيت|والد|تربيه/],
+]
+const questionTopic = (text: string) => {
+  const folded = normalizeArabic(text)
+  for (const [label, pattern] of QUESTION_TOPICS) if (pattern.test(folded)) return label
+  return 'فكر تربوي'
+}
 const isPublished = (item: { status?: string; published?: boolean }) =>
   item.published !== false && item.status !== 'draft' && item.status !== 'hidden'
 
@@ -105,8 +119,14 @@ export default function Questions() {
   const previousQuestions = [...liveArchive, ...staticArchive]
     .filter((item) => item.ar !== currentQuestion.ar)
     .filter((item, index, all) => all.findIndex((candidate) => candidate.ar === item.ar) === index)
+    .map((item) => ({ ...item, topic: questionTopic(`${item.ar} ${item.take}`) }))
 
-  const paged = usePagedList(previousQuestions, 12, String(previousQuestions.length))
+  const [topicFilter, setTopicFilter] = useState<string | null>(null)
+  const topics = Array.from(new Set(previousQuestions.map((item) => item.topic)))
+  const filteredQuestions = topicFilter ? previousQuestions.filter((item) => item.topic === topicFilter) : previousQuestions
+  const currentTopic = questionTopic(`${currentQuestion.ar} ${currentQuestion.take}`)
+
+  const paged = usePagedList(filteredQuestions, 12, `${topicFilter || ''}:${filteredQuestions.length}`)
 
   return (
     <Page className="content-questions page-journey">
@@ -121,6 +141,7 @@ export default function Questions() {
             <div className="mb-6 flex flex-wrap items-center gap-3 text-[.82rem] font-semibold text-accent">
               <span>السؤال الأحدث</span>
               {currentDate && <span className="font-normal text-soft">· {currentDate}</span>}
+              <span className="rounded-full border border-accent/30 px-3 py-1 text-[.68rem] font-semibold">{currentTopic}</span>
             </div>
           </FadeUp>
           <Reveal>
@@ -164,13 +185,39 @@ export default function Questions() {
       <section className="px-6 py-16 md:px-11 md:py-20">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <h3 className="mb-10 font-display text-2xl font-bold text-ink">أسئلة سابقة</h3>
+            <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
+              <h3 className="font-display text-2xl font-bold text-ink">أسئلة سابقة</h3>
+              {topics.length > 1 && (
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTopicFilter(null)}
+                    className={`rounded-full border px-3.5 py-1.5 text-[.74rem] font-semibold transition-colors ${!topicFilter ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
+                  >
+                    الكل
+                  </button>
+                  {topics.map((topic) => (
+                    <button
+                      key={topic}
+                      type="button"
+                      onClick={() => setTopicFilter(topicFilter === topic ? null : topic)}
+                      className={`rounded-full border px-3.5 py-1.5 text-[.74rem] font-semibold transition-colors ${topicFilter === topic ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
+                    >
+                      {topic}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </FadeUp>
           <div id="questions-list" className="mobile-card-rail scroll-mt-28 grid gap-5">
             {paged.pageItems.map((question, index) => (
               <FadeUp key={question.key} delay={Math.min(index * 0.04, 0.3)}>
                 <article className="rounded-2xl border border-hair p-6">
-                  <p className="mb-1 text-[.75rem] text-soft">{question.label}</p>
+                  <p className="mb-1 flex flex-wrap items-center gap-2 text-[.75rem] text-soft">
+                    {question.label}
+                    <span className="rounded-full border border-hair px-2.5 py-0.5 text-[.64rem] font-semibold text-accent">{question.topic}</span>
+                  </p>
                   <p className="font-display text-xl font-semibold leading-relaxed text-ink">{question.ar}</p>
                   {question.en && (
                     <p className="mt-2 text-[.9rem] text-soft" dir="ltr" style={{ textAlign: 'left' }}>
@@ -182,7 +229,7 @@ export default function Questions() {
               </FadeUp>
             ))}
           </div>
-          <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={previousQuestions.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="questions-list" label="صفحات الأسئلة" className="mt-8" />
+          <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={filteredQuestions.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="questions-list" label="صفحات الأسئلة" className="mt-8" />
         </div>
       </section>
     </Page>

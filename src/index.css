@@ -2053,6 +2053,18 @@ html.site-silent .human-core__title-line::after { animation: none !important; op
   }
   .article-body { max-width: 100% !important; }
   .article-body p { font-size: 12.5pt !important; line-height: 1.9 !important; color: #111 !important; }
+  /* صفحة الأثر الرسمية: تُطبع الرحلات وحدها، وتُختم بسطر توثيق */
+  .impact-no-print, .content-impact [role="tablist"] { display: none !important; }
+  .content-impact article { break-inside: avoid; }
+  .content-impact::after {
+    content: "وثيقة مولّدة من سجل الأثر الموثق  ·  د. أحمد حسين الفيلكاوي  ·  dr-alfailakawi.com";
+    display: block;
+    margin: 18pt 24pt 0;
+    padding-top: 8pt;
+    border-top: 1px solid #bbb;
+    font: 10pt "Tajawal", sans-serif;
+    color: #555;
+  }
   h1 { font-size: 24pt !important; line-height: 1.35 !important; }
   h1, h2, h3, blockquote, figure { break-after: avoid; break-inside: avoid; }
   a { color: #111 !important; text-decoration: none !important; }

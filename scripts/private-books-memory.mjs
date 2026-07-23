@@ -180,7 +180,7 @@ function sectionHints(bookSnippets, importantTerms) {
       .slice(0, 5)
     return {
       label: `محور خاص ${index + 1}`,
-      page: snippet.page,
+      /* رقم الصفحة معلومة خاصة — يبقى في ذاكرة الجهاز ولا يدخل الملف العام */
       keywords: textTerms.length ? textTerms : fallbackTerms.slice(index, index + 4),
       note: 'إشارة مشتقة آمنة من الكتاب الخاص؛ لا تحتوي نصًا من PDF ولا تظهر للزوار.',
     }
@@ -251,12 +251,13 @@ const memory = {
 }
 
 const safeLinks = {
-  warning: 'SAFE DERIVED LINKS ONLY — لا يحتوي نصوص الكتب أو مساراتها الخاصة.',
+  /* قاعدة الحزام (مقترح معتمد): لا نصوص ولا مسارات ولا أرقام صفحات —
+     المطابقة تقوم على المصطلحات وحدها، وأرقام الصفحات معلومة خاصة تبقى
+     في ذاكرة الجهاز (books-memory.json) لا في ملفٍ يصل حزمة عامة. */
+  warning: 'SAFE DERIVED LINKS ONLY — لا نصوص ولا مسارات ولا أرقام صفحات للكتب الخاصة.',
   generatedAt: memory.generatedAt,
   books: books.map((book) => ({
     title: book.title,
-    pages: book.pages,
-    sampledPages: book.sampledPages,
     linkedPublicBook: book.linkedPublicBook
       ? { slug: book.linkedPublicBook.slug, title: book.linkedPublicBook.title, confidence: book.linkedPublicBook.confidence }
       : null,

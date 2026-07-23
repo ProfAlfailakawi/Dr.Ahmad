@@ -1,4 +1,4 @@
-import { useMemo, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useMemo, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { EASE, FadeUp, Page, PageHead } from '../components/ui'
@@ -24,11 +24,13 @@ const arDigits = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '012
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
 const ATLAS_STOP = new Set(['هذا','هذه','ذلك','الذي','التي','على','الى','من','في','عن','مع','بين','بعد','قبل','كان','كانت','يكون','تكون','كيف','لكن','لان','وقد','وهو','وهي','كل','غير','عند','حتى','حول','ماذا','لماذا'])
-const ideaTokens = (text = '') => new Set(text
+const foldAtlas = (text = '') => text
   .replace(/[ً-ْٰ]/g, '')
   .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي')
+  .toLowerCase()
+const ideaTokens = (text = '') => new Set(foldAtlas(text)
   .replace(/[^\p{L}\p{N} ]/gu, ' ')
-  .toLowerCase().split(/\s+/).filter((word) => word.length > 3 && !ATLAS_STOP.has(word)))
+  .split(/\s+/).filter((word) => word.length > 3 && !ATLAS_STOP.has(word)))
 const ideaOverlap = (left: Set<string>, right: Set<string>) => {
   if (!left.size || !right.size) return 0
   let shared = 0
@@ -81,9 +83,29 @@ export default function Atlas() {
   const nav = useNavigate()
   const [hover, setHover] = useState<number | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
-  const [activeCat, setActiveCat] = useState<string | null>(null)
-  const [view, setView] = useState<AtlasView>('timeline')
+  /* حالة الخريطة تعيش في الرابط (مقترح معتمد): مشاركة المشهد نفسه ممكنة */
+  const [activeCat, setActiveCat] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return new URLSearchParams(window.location.search).get('cat') || null
+  })
+  const [view, setView] = useState<AtlasView>(() => {
+    if (typeof window === 'undefined') return 'timeline'
+    return new URLSearchParams(window.location.search).get('view') === 'graph' ? 'graph' : 'timeline'
+  })
+  const [query, setQuery] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    return new URLSearchParams(window.location.search).get('q') || ''
+  })
   const [lens, setLens] = useState<{ x: number; y: number; scope: AtlasScope } | null>(null)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (view === 'graph') params.set('view', 'graph'); else params.delete('view')
+    if (activeCat) params.set('cat', activeCat); else params.delete('cat')
+    if (query.trim()) params.set('q', query.trim()); else params.delete('q')
+    const search = params.toString()
+    window.history.replaceState(null, '', `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`)
+  }, [view, activeCat, query])
 
   const stars = useMemo(() => {
     const activeYears = Array.from(new Set(articles.map((a) => a.iso.slice(0, 4)).filter(Boolean)))
@@ -226,7 +248,19 @@ export default function Atlas() {
     }))
   }, [stars, mobileStars])
 
-  const dim = (star: (typeof stars)[number]) => (activeCat && star.cat !== activeCat ? 0.12 : 1)
+  /* «ابحث عن فكرة في السماء» (مقترح معتمد): النجوم غير المطابقة تخفت ولا تختفي */
+  const searchMatches = useMemo(() => {
+    const needle = foldAtlas(query.trim())
+    if (!needle) return null
+    return new Set(stars
+      .filter((star) => foldAtlas(`${star.title} ${star.excerpt || ''} ${categoryLabel(star.cat)}`).includes(needle))
+      .map((star) => star.i))
+  }, [query, stars])
+
+  const dim = (star: (typeof stars)[number]) => {
+    if (searchMatches && !searchMatches.has(star.i)) return 0.08
+    return activeCat && star.cat !== activeCat ? 0.12 : 1
+  }
   const activeIndex = hover ?? selected
   const active = activeIndex !== null ? layout.find((star) => star.i === activeIndex) : null
   const mobileActive = activeIndex !== null ? mobileLayout.find((star) => star.i === activeIndex) : null
@@ -364,8 +398,22 @@ export default function Atlas() {
           <FadeUp>{categoryButtons}</FadeUp>
 
           <FadeUp delay={0.04}>
-            <div className="mb-5 flex items-center justify-between gap-4">
-              <p className="hidden max-w-[34rem] text-[.78rem] font-light text-soft sm:block">{viewHint}</p>
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+              <div className="w-full sm:max-w-[19rem]">
+                <input
+                  value={query}
+                  onChange={(event) => { setQuery(event.target.value); setSelected(null) }}
+                  placeholder="ابحث عن فكرة في السماء…"
+                  aria-label="ابحث عن فكرة في خريطة المقالات"
+                  className="w-full rounded-full border border-hair bg-canvas px-4 py-2 text-[.82rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
+                />
+                {searchMatches !== null && (
+                  <p className="mt-1.5 ps-4 text-[.7rem] font-light text-soft">
+                    {searchMatches.size === 0 ? 'لا نجمة تحمل هذه الفكرة حالياً.' : searchMatches.size === 1 ? 'نجمة واحدة تضيء.' : searchMatches.size === 2 ? 'نجمتان تضيئان.' : `${arDigits(searchMatches.size)} ${searchMatches.size <= 10 ? 'نجوم تضيء' : 'نجمة تضيء'}.`}
+                  </p>
+                )}
+              </div>
+              <p className="hidden max-w-[30rem] text-[.78rem] font-light text-soft lg:block">{viewHint}</p>
               <div className="ms-auto inline-flex rounded-full border border-hair bg-canvas p-1" role="group" aria-label="طريقة عرض خريطة الأفكار">
                 <button type="button" onClick={() => setView('timeline')} aria-pressed={view === 'timeline'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'timeline' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>المسار الزمني</button>
                 <button type="button" onClick={() => setView('graph')} aria-pressed={view === 'graph'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'graph' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>شبكة الأفكار</button>
@@ -418,7 +466,7 @@ export default function Atlas() {
                   if (view === 'timeline' && link.kind === 'affinity' && !connected) return null
                   if (view === 'timeline' && link.kind === 'evolution' && !connected && (!activeCat || from.cat !== activeCat || to.cat !== activeCat)) return null
                   if (view === 'graph' && !connected && !ambientLinkIds.has(linkKey(link))) return null
-                  const hiddenByCategory = activeCat && from.cat !== activeCat && to.cat !== activeCat
+                  const hiddenByCategory = (activeCat && from.cat !== activeCat && to.cat !== activeCat) || (searchMatches !== null && !searchMatches.has(link.from) && !searchMatches.has(link.to))
                   const graphVisible = view === 'graph' && !connected
                   return <path key={`mobile-link-${link.kind}-${link.from}-${link.to}`} d={pathBetween(from, to, view)} fill="none" className={link.kind === 'evolution' ? 'stroke-accent' : 'stroke-soft'} strokeWidth={connected ? 2.2 : 1.05} strokeOpacity={hiddenByCategory ? 0.025 : connected ? 0.52 : graphVisible ? 0.18 : link.kind === 'evolution' ? 0.105 : 0.08} strokeDasharray={link.kind === 'affinity' ? '4 5' : undefined} strokeLinecap="round" />
                 })}
@@ -532,7 +580,7 @@ export default function Atlas() {
                   if (view === 'timeline' && link.kind === 'affinity' && !connected) return null
                   if (view === 'timeline' && link.kind === 'evolution' && !connected && (!activeCat || from.cat !== activeCat || to.cat !== activeCat)) return null
                   if (view === 'graph' && !connected && !ambientLinkIds.has(linkKey(link))) return null
-                  const hiddenByCategory = activeCat && from.cat !== activeCat && to.cat !== activeCat
+                  const hiddenByCategory = (activeCat && from.cat !== activeCat && to.cat !== activeCat) || (searchMatches !== null && !searchMatches.has(link.from) && !searchMatches.has(link.to))
                   const graphVisible = view === 'graph' && !connected
                   return <path key={`desktop-link-${link.kind}-${link.from}-${link.to}`} d={pathBetween(from, to, view)} fill="none" className={link.kind === 'evolution' ? 'stroke-accent' : 'stroke-soft'} strokeWidth={connected ? 1.9 : .82} strokeOpacity={hiddenByCategory ? 0.022 : connected ? 0.44 : graphVisible ? 0.16 : link.kind === 'evolution' ? 0.092 : 0.064} strokeDasharray={link.kind === 'affinity' ? '3 5' : undefined} strokeLinecap="round" />
                 })}
@@ -650,11 +698,18 @@ export default function Atlas() {
                         </div>
                       )}
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {(ideaTrail.length ? ideaTrail : related.slice(0, 3)).map((item) => (
-                          <Link key={`idea-${item.kind}-${item.star.slug}`} to={`/articles/${item.star.slug}`} className="rounded-full border border-hair px-3 py-1.5 text-[.7rem] text-soft transition-colors hover:border-accent hover:text-accent">
-                            {item.kind === 'evolution' ? 'تطور' : 'صلة'} · {arDigits(item.star.iso.slice(0, 4))} · {item.star.title}
-                          </Link>
-                        ))}
+                        {(ideaTrail.length ? ideaTrail : related.slice(0, 3)).map((item) => {
+                          /* «لماذا ارتبطتا؟» (مقترح معتمد): الكلمات التي يتقاسمها المقالان */
+                          const activeTokens = ideaTokens(`${active.title} ${active.excerpt || ''}`)
+                          const otherTokens = ideaTokens(`${item.star.title} ${item.star.excerpt || ''}`)
+                          const shared = [...activeTokens].filter((token) => otherTokens.has(token)).slice(0, 2)
+                          return (
+                            <Link key={`idea-${item.kind}-${item.star.slug}`} to={`/articles/${item.star.slug}`} className="rounded-full border border-hair px-3 py-1.5 text-[.7rem] text-soft transition-colors hover:border-accent hover:text-accent">
+                              {item.kind === 'evolution' ? 'تطور' : 'صلة'} · {arDigits(item.star.iso.slice(0, 4))} · {item.star.title}
+                              {item.kind === 'affinity' && shared.length > 0 && <span className="text-accent/80"> · يجمعهما: {shared.join('، ')}</span>}
+                            </Link>
+                          )
+                        })}
                       </div>
                     </div>
                   </div>

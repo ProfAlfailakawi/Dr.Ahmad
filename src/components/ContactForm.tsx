@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { EASE } from './ui'
 import { firebaseEnabled, getDb } from '../lib/firebase'
@@ -42,8 +42,32 @@ export function ContactForm() {
   const [website, setWebsite] = useState('')
   const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
   const [err, setErr] = useState('')
+  const [reference, setReference] = useState('')
 
   const active = TOPICS.find((t) => t.key === topic)
+
+  /* مسودة محلية (مقترح معتمد): لو خرج الزائر قبل الإرسال وجد كلامه بانتظاره */
+  const DRAFT_KEY = 'contact:draft:v1'
+  useEffect(() => {
+    try {
+      const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null')
+      if (draft && typeof draft === 'object') {
+        if (draft.name && !name) setName(String(draft.name))
+        if (draft.email && !email) setEmail(String(draft.email))
+        if (draft.message && !message) setMessage(String(draft.message))
+        if (draft.topic && !topic && TOPICS.some((t) => t.key === draft.topic)) setTopic(draft.topic)
+      }
+    } catch { /* noop */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        if (name || email || message || topic) localStorage.setItem(DRAFT_KEY, JSON.stringify({ name, email, message, topic }))
+      } catch { /* noop */ }
+    }, 600)
+    return () => window.clearTimeout(timer)
+  }, [name, email, message, topic])
 
   const valid =
     name.trim().length > 1 &&
@@ -63,6 +87,8 @@ export function ContactForm() {
       if (!db) throw new Error('no-db')
       const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
       const insight = contactInsight(topic, message)
+      /* رقم مرجعي إنساني قصير (مقترح معتمد): تاريخ اليوم + أربع خانات */
+      const referenceNumber = `AH-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${String(Math.floor(1000 + Math.random() * 9000))}`
       await addDoc(collection(db, 'messages'), {
         name: name.trim(),
         email: email.trim(),
@@ -70,9 +96,14 @@ export function ContactForm() {
         message: message.trim(),
         intent: insight.intent,
         quality: insight.quality,
+        reference: referenceNumber,
         createdAt: serverTimestamp(),
       })
-      try { localStorage.setItem('contact:last-submit', String(Date.now())) } catch { /* noop */ }
+      try {
+        localStorage.setItem('contact:last-submit', String(Date.now()))
+        localStorage.removeItem(DRAFT_KEY)
+      } catch { /* noop */ }
+      setReference(referenceNumber)
       setState('done')
       setName(''); setEmail(''); setMessage('')
     } catch {
@@ -90,7 +121,15 @@ export function ContactForm() {
         className="rounded-2xl border border-hair bg-wash p-10 text-center"
       >
         <span className="font-display text-[1.6rem] font-semibold text-accent">وصلتني رسالتك.</span>
-        <p className="mt-3 text-[.98rem] font-light text-soft">سأعود إليك في أقرب فرصة. شكراً لك.</p>
+        {reference && (
+          <p className="mt-4 inline-block rounded-full border border-accent/30 bg-canvas px-5 py-2 text-[.85rem] font-semibold text-accent" dir="ltr">
+            {reference}
+          </p>
+        )}
+        <p className="mt-3 text-[.98rem] font-light text-soft">
+          احتفظ بالرقم المرجعي أعلاه إن أحببت المتابعة.
+          الرد عادةً خلال يومين إلى ثلاثة أيام عمل، وبريدك يُستخدم للرد فقط ولا يُشارك مع أحد.
+        </p>
       </motion.div>
     )
 

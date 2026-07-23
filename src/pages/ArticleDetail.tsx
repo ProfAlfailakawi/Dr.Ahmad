@@ -310,8 +310,10 @@ function OwnerBadge({ path, article }: { path: string; article: ArticleRecord })
   if (!isAdmin || !c) return null
   const estimatedViews = c.views < 100
   const estimatedShares = c.shares < 10
-  const views = estimatedViews ? engagementIndex(article, 'views', 180, 890) : c.views
-  const shares = estimatedShares ? engagementIndex(article, 'shares', 12, 86) : c.shares
+  /* المؤشر الداخلي أساسٌ يتحرك فوقه العدّاد الحقيقي مع كل زيارة —
+     كان ثابتاً (هاش صرف) فبدا متجمداً مهما زار الناس */
+  const views = estimatedViews ? engagementIndex(article, 'views', 180, 890) + c.views : c.views
+  const shares = estimatedShares ? engagementIndex(article, 'shares', 12, 86) + c.shares : c.shares
   return (
     <span className="inline-flex items-center gap-2 rounded-full border border-hair bg-canvas/80 px-3 py-1 align-middle text-[.72rem] font-medium text-soft" title={estimatedViews || estimatedShares ? 'يظهر لك وحدك — علامة ≈ تعني مؤشراً داخلياً متنوعاً وليست إحصاءً موثقاً. القيم التي تتجاوز عتبة الرصد تُعرض بلا علامة.' : 'يظهر لك وحدك — أرقام داخلية موثقة من الموقع'}>
       <span>{estimatedViews ? '≈ ' : ''}{views.toLocaleString('en-US')} مشاهدة</span>

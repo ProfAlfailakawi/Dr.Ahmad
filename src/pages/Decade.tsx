@@ -68,6 +68,15 @@ export default function Decade() {
   const [draft, setDraft] = useState(idea)
   const [bodies, setBodies] = useState<Record<string, string>>({})
   const [bodiesReady, setBodiesReady] = useState(false)
+  /* مشاركة بطاقة توقع (مقترح معتمد): رابط يفتح السجل على التوقع نفسه */
+  const [copiedPrediction, setCopiedPrediction] = useState('')
+  const sharePrediction = (slug: string, key: string) => {
+    const query = new URLSearchParams({ 'عرض': 'تنبؤات', 'مقال': slug })
+    const url = `${window.location.origin}/decade?${query.toString()}`
+    const done = () => { setCopiedPrediction(key); window.setTimeout(() => setCopiedPrediction(''), 2400) }
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(url).then(done).catch(done)
+    else done()
+  }
   const remoteIdeaLife = useExtras<IdeaLifeRemoteRecord>('site_idea_life')
 
   const updateQuery = (nextIdea = idea, nextMode: 'journey' | 'predictions' = mode, nextArticleSlug = exactArticleSlug) => {
@@ -351,7 +360,16 @@ export default function Decade() {
                             ))}
                           </div>
                         ) : null}
-                        <Link to={`/articles/${article.slug}`} className="mt-5 inline-block border-b border-accent/30 pb-1 text-[.74rem] font-semibold text-accent">اقرأ النص في سياقه الأصلي ←</Link>
+                        <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2">
+                          <Link to={`/articles/${article.slug}`} className="inline-block border-b border-accent/30 pb-1 text-[.74rem] font-semibold text-accent">اقرأ النص في سياقه الأصلي ←</Link>
+                          <button
+                            type="button"
+                            onClick={() => sharePrediction(article.slug, `${article.slug}:${prediction.quote}`)}
+                            className="text-[.72rem] font-semibold text-soft transition-colors hover:text-accent"
+                          >
+                            {copiedPrediction === `${article.slug}:${prediction.quote}` ? 'نُسخ رابط التوقع ✓' : 'شارك هذا التوقع ⧉'}
+                          </button>
+                        </div>
                       </div>
                     </details>
                   </FadeUp>
@@ -463,8 +481,11 @@ export default function Decade() {
                 {/* السنوات ذات المقالات فقط — لا نعرض سنوات فارغة */}
                 {document.chapters.filter((chapter) => chapter.articles.length > 0).map((chapter, index) => (
                   <FadeUp key={chapter.year} delay={Math.min(index * 0.025, 0.18)}>
-                    <li className="grid gap-3 py-6 sm:grid-cols-[90px_1fr] sm:gap-7">
-                      <time className="font-display text-[1.35rem] font-semibold text-accent">{chapter.year}</time>
+                    {/* رابط سنة (مقترح معتمد): #y-2023 يقود مباشرة إلى سطر السنة */}
+                    <li id={`y-${chapter.year}`} className="grid scroll-mt-28 gap-3 py-6 sm:grid-cols-[90px_1fr] sm:gap-7">
+                      <a href={`#y-${chapter.year}`} className="font-display text-[1.35rem] font-semibold text-accent transition-colors hover:text-accent-deep" title="رابط مباشر لهذه السنة">
+                        <time>{chapter.year}</time>
+                      </a>
                       <div>
                         <p className="text-[.78rem] text-soft">{number.format(chapter.articles.length)} مقالاً · {chapter.dominant}</p>
                         {chapter.representative && (

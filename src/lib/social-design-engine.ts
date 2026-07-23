@@ -1876,7 +1876,9 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   const duplicate = peers.some((peer) => peer.id !== plan.id && designSimilarity(plan, peer) >= .82)
   const issues: string[] = []
   const strengths: string[] = []
-  const textContrast = contrastQuality(Math.min(mainContrastRatio, secondaryContrastRatio))
+  /* النص الثانوي (تسميات صغيرة) لا يُحاكم بصرامة المتن الأساسي: أخذُ الأسوأ
+     كان يهبط بتصاميم ممتازة درجةً كاملة لظلٍ رمادي هامشي — الوزن الأصدق ٧٥/٢٥ */
+  const textContrast = boundedQuality(contrastQuality(mainContrastRatio) * .75 + contrastQuality(secondaryContrastRatio) * .25)
   const backgroundContrast = contrastQuality(Math.min(mainContrastRatio, accentContrastRatio))
   const contrast = boundedQuality(textContrast * .72 + backgroundContrast * .28)
   const readability = boundedQuality(100 - Math.max(0, titleLoad - .70) * 58 - Math.max(0, bodyLoad - .74) * 48 - Math.max(0, 86 - textContrast) * .42 - (safe ? 0 : 48))
@@ -1892,12 +1894,21 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   const platformFit = boundedQuality(76 + (plan.format.platform === plan.platform ? 13 : 0) + (plan.format.supportsCarousel && plan.content.slides.length > 1 ? 8 : 0) - (plan.format.id === 'reel-cover' && bodyWords > 18 ? 18 : 0))
   const titleRight = plan.geometry.titleZone.x + plan.geometry.titleZone.width
   const bodyRight = plan.geometry.bodyZone.x + plan.geometry.bodyZone.width
-  const rtlAlignment = boundedQuality(100 - Math.abs(titleRight - bodyRight) * 220 - Math.abs(plan.geometry.titleZone.x - plan.geometry.bodyZone.x) * 45)
+  /* التكوين المنقسم عمداً (أطروحتان متقابلتان، نافذة جانبية) ليس خطأ محاذاة:
+     مسطرة الرصّ العمودي كانت تصفّر محاذاة تصاميم مقصودة التقابل وتتهمها
+     ظلماً — الانزياح الكبير قصدٌ فنيّ يُقاس باتساقه لا بمخالفته للرص */
+  const intentionalSplit = Math.abs(plan.geometry.titleZone.x - plan.geometry.bodyZone.x) >= .18
+    || Math.abs(titleRight - bodyRight) >= .18
+  const rtlAlignment = intentionalSplit
+    ? 88
+    : boundedQuality(100 - Math.abs(titleRight - bodyRight) * 220 - Math.abs(plan.geometry.titleZone.x - plan.geometry.bodyZone.x) * 45)
   const titleCenter = plan.geometry.titleZone.y + Math.min(.22, plan.geometry.titleZone.maxLines * .035)
   const bodyCenter = plan.geometry.bodyZone.y + Math.min(.30, plan.geometry.bodyZone.maxLines * .035)
   const occupiedCenter = titleCenter * .58 + bodyCenter * .42
   const targetCenter = plan.geometry.visualWeight === 'top' ? .30 : plan.geometry.visualWeight === 'bottom' ? .66 : plan.geometry.visualWeight === 'center' ? .48 : .50
-  const visualWeight = boundedQuality(100 - Math.abs(occupiedCenter - targetCenter) * 185 - Math.max(0, Math.abs(plan.geometry.titleZone.width - plan.geometry.bodyZone.width) - .34) * 45)
+  const rawVisualWeight = boundedQuality(100 - Math.abs(occupiedCenter - targetCenter) * 185 - Math.max(0, Math.abs(plan.geometry.titleZone.width - plan.geometry.bodyZone.width) - .34) * 45)
+  /* الانقسام المقصود يوزع الوزن أفقياً — مركز الثقل العمودي لا يحاكمه */
+  const visualWeight = intentionalSplit ? Math.max(rawVisualWeight, 84) : rawVisualWeight
   if (!safe) issues.push('خطأ: عنصر نصي خارج منطقة الأمان.')
   if (textContrast < 82) issues.push('تباين النصوص الأساسية أو الثانوية ضعيف فعلياً.')
   if (backgroundContrast < 78) issues.push('الفصل بين العناصر والخلفية غير كافٍ.')

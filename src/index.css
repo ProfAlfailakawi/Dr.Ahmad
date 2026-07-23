@@ -815,7 +815,7 @@ iframe { color-scheme: light; }
   .sig-star { animation: none; }
 }
 
-/* القراءة المتزامنة — إبراز هادئ للفقرة الحالية من دون تغيير تنسيق المقال الأصلي */
+/* القراءة المتزامنة — إبراز هادئ للفقرة والعبارة الحالية من دون تغيير تنسيق المقال الأصلي */
 .article-body-synced .synced-paragraph {
   position: relative;
   margin-inline: -0.75rem;
@@ -826,13 +826,81 @@ iframe { color-scheme: light; }
 }
 
 .article-body-synced .synced-paragraph:hover {
-  background: rgb(var(--c-accent) / 0.055);
+  background: rgb(var(--c-accent) / 0.04);
 }
 
 .article-body-synced .synced-paragraph.is-audio-active {
-  background: rgb(var(--c-accent) / 0.09);
+  background: rgb(var(--c-accent) / 0.05);
   box-shadow: inset -3px 0 0 rgb(var(--c-accent));
   transform: translateX(-2px);
+}
+
+/* تتبع العبارات والجمل داخل الفقرة النشطة */
+.sentence-item {
+  display: inline;
+  position: relative;
+  padding-inline: 0.18em;
+  padding-block: 0.08em;
+  border-radius: 0.35em;
+  transition: background-color 280ms var(--E), color 280ms var(--E), box-shadow 280ms var(--E);
+  cursor: pointer;
+}
+
+.sentence-item:hover {
+  background-color: rgb(var(--c-accent) / 0.07);
+}
+
+.sentence-item.is-sentence-active {
+  background-color: rgb(var(--c-accent) / 0.15);
+  color: rgb(var(--c-ink));
+  font-weight: 400;
+  box-shadow: 0 0 0 1px rgb(var(--c-accent) / 0.28), 0 2px 10px -2px rgb(var(--c-accent) / 0.16);
+}
+
+html.dark .sentence-item.is-sentence-active {
+  background-color: rgb(var(--c-accent) / 0.26);
+  box-shadow: 0 0 0 1px rgb(var(--c-accent) / 0.4), 0 2px 14px -2px rgb(var(--c-accent) / 0.3);
+}
+
+html.reader-paper .sentence-item.is-sentence-active {
+  background-color: rgba(62, 92, 120, 0.18);
+}
+
+/* Equalizer Bars Animation */
+.sentence-equalizer {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 1.5px;
+  height: 12px;
+  width: 10px;
+  margin-inline-end: 0.35em;
+  margin-inline-start: 0.15em;
+  vertical-align: middle;
+  color: rgb(var(--c-accent));
+}
+
+.sentence-equalizer span {
+  display: block;
+  width: 2px;
+  background-color: currentColor;
+  border-radius: 1px;
+  animation: eq-bounce 0.85s ease-in-out infinite alternate;
+}
+
+.sentence-equalizer span:nth-child(1) { height: 35%; animation-delay: 0s; }
+.sentence-equalizer span:nth-child(2) { height: 85%; animation-delay: 0.22s; }
+.sentence-equalizer span:nth-child(3) { height: 55%; animation-delay: 0.44s; }
+
+@keyframes eq-bounce {
+  0% { height: 20%; }
+  100% { height: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sentence-equalizer span {
+    animation: none;
+    height: 60%;
+  }
 }
 
 .synced-reading-toolbar {

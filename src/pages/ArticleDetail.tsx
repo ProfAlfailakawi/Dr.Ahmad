@@ -56,41 +56,122 @@ function ClosingSignature() {
 function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
   const audio = usePersistentAudio()
   const popularQuotes = usePopularQuotes(slug, body)
-  const refs = useRef<(HTMLParagraphElement | null)[]>([])
+  const paragraphRefs = useRef<(HTMLParagraphElement | null)[]>([])
+  const activeSentenceRef = useRef<HTMLSpanElement | null>(null)
+
   const [followEnabled, setFollowEnabled] = useState(() => {
     if (typeof window === 'undefined') return true
     return localStorage.getItem('article-audio-follow') !== 'off'
   })
-  const paragraphs = useMemo(() => body.split('\n\n').map((text) => ({ text, words: Math.max(1, text.trim().split(/\s+/).length) })), [body])
-  const totalWords = paragraphs.reduce((sum, item) => sum + item.words, 0)
-  const paragraphStarts = useMemo(() => {
-    let words = 0
-    return paragraphs.map((paragraph) => {
-      const start = words
-      words += paragraph.words
-      return start
+
+  // Parse body into structured paragraphs & sentences with word offsets
+  const { paragraphs, flatSentences, totalWords } = useMemo(() => {
+    const rawParagraphs = body.split('\n\n')
+    let globalWordOffset = 0
+
+    const parsedParagraphs = rawParagraphs.map((pText, pIdx) => {
+      const matches = Array.from(pText.matchAll(/[^.!?؟:\n]+[.!?؟:]*/g))
+      const rawSentences = matches.length > 0 ? matches.map((m) => m[0]) : [pText]
+
+      let pWordOffset = globalWordOffset
+      let pCharOffset = 0
+
+      const sentences = rawSentences.map((sText, sIdx) => {
+        const trimmed = sText.trim()
+        const words = Math.max(1, trimmed.split(/\s+/).filter(Boolean).length)
+        const sWordStart = pWordOffset
+        pWordOffset += words
+        const sCharStart = pCharOffset
+        pCharOffset += sText.length
+
+        return {
+          sIdx,
+          text: sText,
+          trimmedText: trimmed,
+          charStart: sCharStart,
+          charEnd: pCharOffset,
+          wordStart: sWordStart,
+          wordEnd: pWordOffset,
+          words,
+        }
+      })
+
+      const startWord = globalWordOffset
+      globalWordOffset = pWordOffset
+
+      return {
+        pIdx,
+        text: pText,
+        startWord,
+        endWord: globalWordOffset,
+        words: Math.max(1, globalWordOffset - startWord),
+        sentences,
+      }
     })
-  }, [paragraphs])
+
+    const flat: {
+      pIdx: number
+      sIdx: number
+      text: string
+      wordStart: number
+      wordEnd: number
+    }[] = []
+
+    parsedParagraphs.forEach((p) => {
+      p.sentences.forEach((s) => {
+        flat.push({
+          pIdx: p.pIdx,
+          sIdx: s.sIdx,
+          text: s.trimmedText,
+          wordStart: s.wordStart,
+          wordEnd: s.wordEnd,
+        })
+      })
+    })
+
+    return {
+      paragraphs: parsedParagraphs,
+      flatSentences: flat,
+      totalWords: Math.max(1, globalWordOffset),
+    }
+  }, [body])
+
   const activeAudio = Boolean(audio.track?.path === `/articles/${slug}` && !audio.track?.label.includes('الحوار') && audio.duration > 0)
-  const activeParagraph = useMemo(() => {
-    if (!activeAudio || !followEnabled || !audio.duration || !totalWords) return -1
+
+  // Determine active paragraph and sentence
+  const { activeParagraph, activeSentence, currentFlatIndex } = useMemo(() => {
+    if (!activeAudio || !followEnabled || !audio.duration || !totalWords || flatSentences.length === 0) {
+      return { activeParagraph: -1, activeSentence: -1, currentFlatIndex: -1 }
+    }
     const currentWords = Math.min(totalWords - 1, Math.max(0, (audio.current / audio.duration) * totalWords))
-    let index = 0
-    for (let i = 0; i < paragraphStarts.length; i += 1) {
-      if (currentWords >= paragraphStarts[i]) index = i
-      else break
-    }
-    return index
-  }, [activeAudio, audio.current, audio.duration, followEnabled, paragraphStarts, totalWords])
 
-  const commitFollow = (value: boolean) => {
-    setFollowEnabled(value)
-    try { localStorage.setItem('article-audio-follow', value ? 'on' : 'off') } catch { /* noop */ }
+    let flatIdx = 0
+    for (let i = 0; i < flatSentences.length; i += 1) {
+      if (currentWords >= flatSentences[i].wordStart) {
+        flatIdx = i
+      } else {
+        break
+      }
+    }
+
+    const currentItem = flatSentences[flatIdx]
+    return {
+      activeParagraph: currentItem ? currentItem.pIdx : -1,
+      activeSentence: currentItem ? currentItem.sIdx : -1,
+      currentFlatIndex: flatIdx,
+    }
+  }, [activeAudio, audio.current, audio.duration, flatSentences, followEnabled, totalWords])
+
+  // Broadcast current active sentence text to AudioPlayer
+  useEffect(() => {
+    if (!activeAudio || !followEnabled || currentFlatIndex < 0 || !flatSentences[currentFlatIndex]) return
+    const text = flatSentences[currentFlatIndex].text
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('article-audio-follow-change', { detail: { enabled: value } }))
+      window.dispatchEvent(new CustomEvent('article-audio-active-sentence', { detail: { text } }))
     }
-  }
+  }, [activeAudio, currentFlatIndex, flatSentences, followEnabled])
 
+  // Sync article follow setting
   useEffect(() => {
     const syncFollow = (event: Event) => {
       const next = (event as CustomEvent<{ enabled?: boolean }>).detail?.enabled
@@ -100,43 +181,109 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
     return () => window.removeEventListener('article-audio-follow-change', syncFollow)
   }, [])
 
+  // Listen for sentence jump commands (prev / next)
+  useEffect(() => {
+    const handleJumpSentence = (event: Event) => {
+      const direction = (event as CustomEvent<{ direction?: 'next' | 'prev' }>).detail?.direction
+      if (!direction || !activeAudio || !audio.duration || flatSentences.length === 0) return
+
+      let nextFlatIdx = currentFlatIndex
+      if (direction === 'next') {
+        nextFlatIdx = Math.min(flatSentences.length - 1, Math.max(0, currentFlatIndex + 1))
+      } else if (direction === 'prev') {
+        nextFlatIdx = Math.max(0, currentFlatIndex - 1)
+      }
+
+      const targetWord = flatSentences[nextFlatIdx]?.wordStart ?? 0
+      audio.seekTo((targetWord / totalWords) * audio.duration)
+      if (!audio.playing) void audio.toggle()
+    }
+
+    window.addEventListener('article-audio-jump-sentence', handleJumpSentence)
+    return () => window.removeEventListener('article-audio-jump-sentence', handleJumpSentence)
+  }, [activeAudio, audio, currentFlatIndex, flatSentences, totalWords])
+
+  // Smooth scroll active sentence into optimal reading area
   useEffect(() => {
     if (!activeAudio || !followEnabled || activeParagraph < 0) return
-    const element = refs.current[activeParagraph]
-    if (!element) return
-    const rect = element.getBoundingClientRect()
+    const targetEl = activeSentenceRef.current || paragraphRefs.current[activeParagraph]
+    if (!targetEl) return
+
+    const rect = targetEl.getBoundingClientRect()
     const topLimit = 116
     const bottomLimit = window.innerHeight * 0.72
-    if (rect.top < topLimit || rect.bottom > bottomLimit) {
-      element.scrollIntoView({ behavior: audio.playing ? 'smooth' : 'auto', block: 'center' })
-    }
-  }, [activeAudio, activeParagraph, audio.playing, followEnabled])
 
-  const seekParagraph = (index: number) => {
+    if (rect.top < topLimit || rect.bottom > bottomLimit) {
+      targetEl.scrollIntoView({ behavior: audio.playing ? 'smooth' : 'auto', block: 'center' })
+    }
+  }, [activeAudio, activeParagraph, activeSentence, audio.playing, followEnabled])
+
+  const seekWord = (wordIndex: number) => {
     if (!activeAudio || !audio.duration) return
-    const previousWords = paragraphStarts[index] || 0
-    audio.seekTo((previousWords / totalWords) * audio.duration)
+    audio.seekTo((wordIndex / totalWords) * audio.duration)
     if (!audio.playing) void audio.toggle()
+  }
+
+  const handleSentenceClick = (event: React.MouseEvent, wordIndex: number) => {
+    const selection = window.getSelection()?.toString().trim()
+    if (selection && selection.length > 0) return
+    if (!activeAudio) return
+    event.stopPropagation()
+    seekWord(wordIndex)
   }
 
   return (
     <>
-      {/* أُزيل شريط «تتبع المقالة» بطلب الدكتور — مكرر: زر «تتبع النص» في مشغل
-          الصوت يدير الحالة نفسها (article-audio-follow) والنقر على الفقرات باقٍ. */}
-      {/* نبض المقال: كان مفصولاً عن الصفحة فبدت منظومة الرنين ميتة — عاد بوصلته */}
       <ArticlePulse slug={slug} />
       <div id="article-body" className={`article-body mt-7 ${activeAudio ? 'article-body-synced' : ''}`}>
-        {paragraphs.map((paragraph, index) => {
-          const paragraphQuotes = popularQuotes.filter((quote) => quote.paragraph === index)
+        {paragraphs.map((paragraph, pIdx) => {
+          const paragraphQuotes = popularQuotes.filter((quote) => quote.paragraph === pIdx)
+          const isParagraphActive = pIdx === activeParagraph
+
           return (
-            <div key={index} className="popular-highlight-paragraph group relative">
+            <div key={pIdx} className="popular-highlight-paragraph group relative">
               <p
-                ref={(element) => { refs.current[index] = element }}
-                data-reader-paragraph={index}
-                onClick={() => seekParagraph(index)}
-                className={`${index === 0 && canUseDropCap(paragraph.text) ? 'dropcap ' : ''}${activeAudio ? 'synced-paragraph' : ''}${index === activeParagraph ? ' is-audio-active' : ''}`.trim() || undefined}
+                ref={(element) => { paragraphRefs.current[pIdx] = element }}
+                data-reader-paragraph={pIdx}
+                onClick={() => !activeAudio && seekWord(paragraph.startWord)}
+                className={`${pIdx === 0 && canUseDropCap(paragraph.text) ? 'dropcap ' : ''}${activeAudio ? 'synced-paragraph' : ''}${isParagraphActive ? ' is-audio-active' : ''}`.trim() || undefined}
               >
-                <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} />
+                {activeAudio ? (
+                  paragraph.sentences.map((sentence, sIdx) => {
+                    const isSentenceActive = isParagraphActive && sIdx === activeSentence
+
+                    const sentenceQuotes = paragraphQuotes.map((q) => {
+                      const qStart = Math.max(0, q.startOffset - sentence.charStart)
+                      const qEnd = Math.min(sentence.text.length, q.endOffset - sentence.charStart)
+                      if (qEnd > qStart && (qEnd - qStart) >= 2) {
+                        return { ...q, startOffset: qStart, endOffset: qEnd, quote: sentence.text.slice(qStart, qEnd) }
+                      }
+                      if (q.quote && sentence.text.includes(q.quote)) {
+                        const idx = sentence.text.indexOf(q.quote)
+                        return { ...q, startOffset: idx, endOffset: idx + q.quote.length }
+                      }
+                      return null
+                    }).filter(Boolean) as typeof paragraphQuotes
+
+                    return (
+                      <span
+                        key={sIdx}
+                        ref={isSentenceActive ? activeSentenceRef : null}
+                        onClick={(e) => handleSentenceClick(e, sentence.wordStart)}
+                        className={`sentence-item${isSentenceActive ? ' is-sentence-active' : ''}`}
+                      >
+                        {isSentenceActive && (
+                          <span className="sentence-equalizer" aria-hidden="true">
+                            <span /><span /><span />
+                          </span>
+                        )}
+                        <ReaderParagraphText text={sentence.text} popularQuotes={sentenceQuotes} />
+                      </span>
+                    )
+                  })
+                ) : (
+                  <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} />
+                )}
               </p>
             </div>
           )

@@ -1084,7 +1084,9 @@ async function generateArticleOg() {
   ${quoteLines.map((line, i) => `<text x="1080" y="${396 + i * 40}" text-anchor="end" class="soft" font-size="28" font-weight="400">${attr(rtlWrap(line))}</text>`).join('\n  ')}
   <text x="1080" y="548" text-anchor="end" class="accent" font-size="24" font-weight="700">${attr(rtlWrap('اقرأ أو استمع للمقال عبر الموقع'))}</text>
 </svg>`
-    await sharp(Buffer.from(svg)).jpeg({ quality: 88, mozjpeg: true }).toFile(resolve(out, `${article.slug}.jpg`))
+    const targetFile = resolve(out, `${article.slug}.jpg`)
+    mkdirSync(dirname(targetFile), { recursive: true })
+    await sharp(Buffer.from(svg)).jpeg({ quality: 88, mozjpeg: true }).toFile(targetFile)
   }
   return ogArticles.length
 }

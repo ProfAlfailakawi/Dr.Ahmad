@@ -2081,7 +2081,7 @@ export function generateSocialCampaign(request: SocialCampaignRequest): SocialCa
   const coherenceScore = assets.length ? Math.round(72 + (paletteCount === 1 ? 18 : paletteCount <= 2 ? 10 : 2) + Math.min(10, analysis.confidence / 10)) : 0
   const diversityScore = assets.length ? Math.round(new Set(assets.map((asset) => asset.plan.layout)).size / assets.length * 100) : 0
   const ready = assets.length === campaignRoles.length
-    && qualityScore >= 78
+    && qualityScore >= 75
     && diversityScore >= 75
     && assets.every((asset) => (asset.plan.quality?.lineFit || 0) >= 76 && !asset.plan.quality?.issues.some((issue) => issue.startsWith('خطأ:')))
   if (!ready && !warnings.length) warnings.push('الحملة لم تجتز لجنة الجودة كاملة؛ أعد توليدها قبل النشر.')

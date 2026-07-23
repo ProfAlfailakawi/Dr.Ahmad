@@ -387,10 +387,10 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
        وينشرها JSON في R2 — والبوت يلتقطها هنا ويسلمها للدكتور في محادثته
        الذاتية مرة واحدة لكل تقرير (منع التكرار بمعرّف التقرير في الإعدادات). */
     state.timers.add(setInterval(() => void deliverWeeklyReport(), 3 * 60 * 60 * 1000))
-    setTimeout(() => void deliverWeeklyReport(), 90_000)
+    state.timers.add(setTimeout(() => void deliverWeeklyReport(), 90_000))
     /* لقطة قاعدة البيانات: فحص يومي، تنفيذ أسبوعي */
     state.timers.add(setInterval(() => void maybeSnapshotDatabase(), 24 * 60 * 60 * 1000))
-    setTimeout(() => void maybeSnapshotDatabase(), 150_000)
+    state.timers.add(setTimeout(() => void maybeSnapshotDatabase(), 150_000))
     return db.state()
   }
 
@@ -399,6 +399,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
      فمحفوظاته وقواعده وتعلم البوت لا تضيع مهما جرى للملف الحي. */
   async function maybeSnapshotDatabase() {
     try {
+      if (!state.started) return
       const last = db.getSetting('db-snapshot-last')
       const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuwait' }).format(new Date())
       if (last && (Date.now() - new Date(String(last)).getTime()) < 6.5 * 86_400_000) return
@@ -486,7 +487,10 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     }
   }
   const stop = async () => {
-    for (const timer of state.timers) clearInterval(timer)
+    for (const timer of state.timers) {
+      clearTimeout(timer)
+      clearInterval(timer)
+    }
     state.timers.clear(); await state.transport?.disconnect?.(); await new Promise((resolve) => state.bridge ? state.bridge.close(resolve) : resolve()); state.bridge = null; state.started = false
   }
   const sendSelf = async (text) => {

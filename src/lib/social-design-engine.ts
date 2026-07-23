@@ -407,6 +407,23 @@ export interface SocialCampaign {
   warnings: string[]
 }
 
+/* الطبقة الحرة (أمر الدكتور: محرر طبقات بالسحب): عنصر يضاف فوق التكوين
+   بإحداثيات نسبية 0..1 — يرسمه المصيّر بألوان اللوحة نفسها فلا ينشز */
+export interface PlanOverlay {
+  id: string
+  kind: 'text' | 'rule' | 'circle' | 'rect'
+  x: number
+  y: number
+  width: number
+  height: number
+  text?: string
+  size?: number
+  weight?: number
+  color: 'ink' | 'accent' | 'muted' | 'paper'
+  opacity: number
+  align?: 'start' | 'middle' | 'end'
+}
+
 export interface CompositionPlan {
   id: string
   fingerprint: string
@@ -414,6 +431,8 @@ export interface CompositionPlan {
   directionIndex: number
   directionLabel: string
   rationale: string[]
+  /** طبقات المحرر الحر — اختيارية ولا تدخل في بصمة التصميم */
+  overlays?: PlanOverlay[]
   format: SocialFormatSpec
   platform: SocialPlatform
   density: DesignDensity

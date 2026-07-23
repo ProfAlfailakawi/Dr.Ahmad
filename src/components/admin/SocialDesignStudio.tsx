@@ -27,7 +27,7 @@ import {
   renderCompositionSvg,
   setRenderPreferences,
 } from '../../lib/social-design-renderer'
-import { type LayoutFamilyId, type StudioCommandParse, type PaletteId, type PlanContent, parseStudioCommand, critiqueCompositionPlan, PALETTES } from '../../lib/social-design-engine'
+import { type LayoutFamilyId, type StudioCommandParse, type PaletteId, type PlanContent, type PlanOverlay, parseStudioCommand, critiqueCompositionPlan, PALETTES } from '../../lib/social-design-engine'
 import { currentSeason } from '../../lib/seasons'
 import { getDb } from '../../lib/firebase'
 import { useCmsContent } from '../../lib/content'
@@ -431,6 +431,98 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     syncPlanEverywhere(next)
   }
 
+  /* ═══ الطبقات الحرة (أمر الدكتور: محرر بالسحب): إضافة وسحب وتحجيم فوق التصميم ═══ */
+  const [freeMode, setFreeMode] = useState(false)
+  const [activeOverlay, setActiveOverlay] = useState<string | null>(null)
+  const dragRef = useRef<{ id: string; mode: 'move' | 'resize'; startX: number; startY: number; origin: PlanOverlay } | null>(null)
+  const canvasRef = useRef<HTMLDivElement | null>(null)
+
+  const addOverlay = (kind: PlanOverlay['kind']) => {
+    if (!selected) return
+    const overlay: PlanOverlay = {
+      id: `ov-${Date.now().toString(36)}`,
+      kind,
+      x: kind === 'rule' ? .2 : .3,
+      y: .42,
+      width: kind === 'circle' ? .18 : kind === 'rule' ? .6 : .4,
+      height: kind === 'circle' ? .18 : kind === 'rule' ? .004 : kind === 'rect' ? .2 : .1,
+      text: kind === 'text' ? 'نص جديد — حرّرني' : undefined,
+      size: kind === 'text' ? .034 : undefined,
+      color: kind === 'text' ? 'ink' : 'accent',
+      opacity: kind === 'text' ? 1 : .55,
+      align: 'end',
+    }
+    editPlan((plan) => ({ ...plan, overlays: [...(plan.overlays || []), overlay] }))
+    setActiveOverlay(overlay.id)
+    setFreeMode(true)
+  }
+  const patchOverlay = (id: string, patch: Partial<PlanOverlay>) =>
+    editPlan((plan) => ({ ...plan, overlays: (plan.overlays || []).map((item) => item.id === id ? { ...item, ...patch } : item) }))
+  const removeOverlay = (id: string) => {
+    editPlan((plan) => ({ ...plan, overlays: (plan.overlays || []).filter((item) => item.id !== id) }))
+    setActiveOverlay(null)
+  }
+  /* مشاهد الانبهار الجاهزة: توقيعات فنية بضغطة — بألوان اللوحة نفسها */
+  const addFlourish = (preset: 'gilded-arcs' | 'orbit' | 'horizon') => {
+    if (!selected) return
+    const stamp = Date.now().toString(36)
+    const flourishes: PlanOverlay[] = preset === 'gilded-arcs' ? [
+      { id: `fl-${stamp}-a`, kind: 'circle', x: .62, y: -.18, width: .55, height: .55, color: 'accent', opacity: .16 },
+      { id: `fl-${stamp}-b`, kind: 'circle', x: .68, y: -.12, width: .42, height: .42, color: 'accent', opacity: .26 },
+      { id: `fl-${stamp}-c`, kind: 'rule', x: .08, y: .88, width: .3, height: .004, color: 'accent', opacity: .6 },
+    ] : preset === 'orbit' ? [
+      { id: `fl-${stamp}-a`, kind: 'circle', x: -.1, y: .55, width: .5, height: .5, color: 'muted', opacity: .2 },
+      { id: `fl-${stamp}-b`, kind: 'circle', x: .02, y: .67, width: .26, height: .26, color: 'accent', opacity: .3 },
+    ] : [
+      { id: `fl-${stamp}-a`, kind: 'rule', x: .08, y: .78, width: .84, height: .003, color: 'muted', opacity: .5 },
+      { id: `fl-${stamp}-b`, kind: 'rule', x: .08, y: .8, width: .5, height: .005, color: 'accent', opacity: .7 },
+    ]
+    editPlan((plan) => ({ ...plan, overlays: [...(plan.overlays || []), ...flourishes] }))
+    setFreeMode(true)
+  }
+  const beginDrag = (event: React.PointerEvent, overlay: PlanOverlay, mode: 'move' | 'resize') => {
+    event.preventDefault()
+    event.stopPropagation()
+    dragRef.current = { id: overlay.id, mode, startX: event.clientX, startY: event.clientY, origin: { ...overlay } }
+    setActiveOverlay(overlay.id)
+    const onMove = (move: PointerEvent) => {
+      const drag = dragRef.current
+      const canvas = canvasRef.current
+      if (!drag || !canvas) return
+      const bounds = canvas.getBoundingClientRect()
+      const deltaX = (move.clientX - drag.startX) / bounds.width
+      const deltaY = (move.clientY - drag.startY) / bounds.height
+      const clampRatio = (value: number, minimum = -0.4, maximum = 1.2) => Math.max(minimum, Math.min(maximum, value))
+      /* معاينة حية بلا تراجع لكل حركة: نلتزم مرة واحدة عند الإفلات */
+      setSelected((current) => {
+        if (!current) return current
+        return {
+          ...current,
+          overlays: (current.overlays || []).map((item) => item.id !== drag.id ? item : drag.mode === 'move'
+            ? { ...item, x: clampRatio(drag.origin.x + deltaX), y: clampRatio(drag.origin.y + deltaY) }
+            : { ...item, width: clampRatio(drag.origin.width + deltaX, .02, 1.4), height: clampRatio(drag.origin.height + deltaY, .003, 1.2) }),
+        }
+      })
+    }
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      const drag = dragRef.current
+      dragRef.current = null
+      if (!drag) return
+      setSelected((current) => {
+        if (!current) return current
+        const moved = (current.overlays || []).find((item) => item.id === drag.id)
+        if (!moved) return current
+        /* الالتزام النهائي عبر editPlan لتسجيل التراجع وإعادة فحص الجودة */
+        setTimeout(() => patchOverlay(drag.id, moved), 0)
+        return current
+      })
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
+
   /* التعديل بالكلام (مقترح ١١): «خله أفخم وداكن» · «حوّله ستوري» · «بدون متن» */
   const applySpeechEdit = () => {
     const command = speechEdit.trim()
@@ -822,9 +914,82 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <button type="button" className={ghost} onClick={() => setSelected(null)}>إغلاق</button>
             </div>
             <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(310px,.75fr)]">
-              <div className="grid place-items-center rounded-[1.5rem] border border-hair bg-canvas p-3 md:p-6"><Preview plan={selected} className="w-full max-w-3xl" /></div>
+              <div className="grid place-items-center rounded-[1.5rem] border border-hair bg-canvas p-3 md:p-6">
+                {/* الكانفس الحر: المعاينة نفسها تصير سطح سحبٍ للطبقات */}
+                <div ref={canvasRef} className="relative w-full max-w-3xl" style={{ touchAction: freeMode ? 'none' : undefined }}>
+                  <Preview plan={selected} className="w-full" />
+                  {freeMode && (selected.overlays || []).map((overlay) => (
+                    <div
+                      key={overlay.id}
+                      onPointerDown={(event) => beginDrag(event, overlay, 'move')}
+                      className={`absolute cursor-move rounded-md border-2 border-dashed transition-colors ${activeOverlay === overlay.id ? 'border-accent bg-accent/10' : 'border-accent/35 hover:border-accent/70'}`}
+                      style={{
+                        left: `${overlay.x * 100}%`,
+                        top: `${overlay.y * 100}%`,
+                        width: `${Math.max(overlay.width, .04) * 100}%`,
+                        height: `${Math.max(overlay.height, .035) * 100}%`,
+                      }}
+                    >
+                      <span
+                        onPointerDown={(event) => beginDrag(event, overlay, 'resize')}
+                        className="absolute -bottom-1.5 -right-1.5 h-4 w-4 cursor-nwse-resize rounded-full border-2 border-white bg-accent shadow"
+                        title="اسحب للتحجيم"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="grid content-start gap-4">
                 <section className="rounded-2xl border border-accent/25 bg-accent/[.045] p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">الناقد البصري الداخلي</p><p className="mt-1 text-[.78rem] text-soft">قرأه على الهاتف قبل أن يعرضه لك.</p></div><strong className="font-display text-3xl text-accent">{selected.quality?.score || 0}٪</strong></div><div className="mt-3 flex flex-wrap gap-2">{selected.quality?.strengths.map((item) => <span key={item} className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.66rem] text-soft">✓ {item}</span>)}</div>{selected.quality?.issues.length ? <p className="mt-3 text-[.7rem] leading-relaxed text-soft">{selected.quality.issues.join(' · ')}</p> : null}</section>
+                {/* الطبقات الحرة بالسحب (أمر الكمال المطلق) */}
+                <section className="rounded-2xl border border-hair bg-canvas p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[.7rem] font-bold text-accent">الطبقات الحرة</p>
+                    <button type="button" onClick={() => setFreeMode((value) => !value)} className={`rounded-full px-3 py-1 text-[.68rem] font-semibold transition ${freeMode ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}>{freeMode ? '✓ وضع السحب فعّال' : 'فعّل السحب'}</button>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    <button type="button" className={ghost} onClick={() => addOverlay('text')}>+ نص</button>
+                    <button type="button" className={ghost} onClick={() => addOverlay('rule')}>+ خط</button>
+                    <button type="button" className={ghost} onClick={() => addOverlay('circle')}>+ دائرة</button>
+                    <button type="button" className={ghost} onClick={() => addOverlay('rect')}>+ إطار</button>
+                  </div>
+                  <p className="mt-2 text-[.64rem] font-semibold text-soft">مشاهد انبهار جاهزة — بألوان اللوحة نفسها:</p>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    <button type="button" className={ghost} onClick={() => addFlourish('gilded-arcs')}>أقواس مذهّبة</button>
+                    <button type="button" className={ghost} onClick={() => addFlourish('orbit')}>مدار هادئ</button>
+                    <button type="button" className={ghost} onClick={() => addFlourish('horizon')}>خط الأفق</button>
+                  </div>
+                  {(selected.overlays || []).length > 0 && (
+                    <div className="mt-3 grid gap-1.5">
+                      {(selected.overlays || []).map((overlay) => (
+                        <div key={overlay.id} className={`rounded-xl border px-3 py-2 ${activeOverlay === overlay.id ? 'border-accent bg-accent/[.05]' : 'border-hair'}`}>
+                          <div className="flex items-center justify-between gap-2">
+                            <button type="button" onClick={() => { setActiveOverlay(overlay.id); setFreeMode(true) }} className="text-[.72rem] font-semibold text-ink hover:text-accent">
+                              {overlay.kind === 'text' ? `نص: ${String(overlay.text || '').slice(0, 18)}…` : overlay.kind === 'rule' ? 'خط' : overlay.kind === 'circle' ? 'دائرة' : 'إطار'}
+                            </button>
+                            <button type="button" onClick={() => removeOverlay(overlay.id)} className="text-[.66rem] text-soft hover:text-red-500">حذف</button>
+                          </div>
+                          {activeOverlay === overlay.id && (
+                            <div className="mt-2 grid gap-2">
+                              {overlay.kind === 'text' && (
+                                <input value={overlay.text || ''} onChange={(event) => patchOverlay(overlay.id, { text: event.target.value })} className="w-full rounded-lg border border-hair bg-paper px-2.5 py-1.5 text-[.76rem] text-ink outline-none focus:border-accent" />
+                              )}
+                              <div className="flex flex-wrap items-center gap-3">
+                                {(['ink', 'accent', 'muted', 'paper'] as const).map((color) => (
+                                  <button key={color} type="button" title={color} onClick={() => patchOverlay(overlay.id, { color })} className={`h-5 w-5 rounded-full border-2 ${overlay.color === color ? 'border-accent' : 'border-hair'}`} style={{ background: color === 'ink' ? '#15161A' : color === 'accent' ? '#3E5C78' : color === 'muted' ? '#626A76' : '#FCFBF7' }} />
+                                ))}
+                                <label className="flex items-center gap-1.5 text-[.64rem] text-soft">شفافية<input type="range" min="10" max="100" value={Math.round(overlay.opacity * 100)} onChange={(event) => patchOverlay(overlay.id, { opacity: Number(event.target.value) / 100 })} className="w-20 accent-[#3E5C78]" /></label>
+                                {overlay.kind === 'text' && (
+                                  <label className="flex items-center gap-1.5 text-[.64rem] text-soft">حجم<input type="range" min="15" max="90" value={Math.round((overlay.size || .03) * 1000)} onChange={(event) => patchOverlay(overlay.id, { size: Number(event.target.value) / 1000 })} className="w-20 accent-[#3E5C78]" /></label>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
                 {/* المحرر المباشر (١٢-١٥): نصوص ولوحات بتراجع وفحص جودة حي */}
                 <section className="rounded-2xl border border-hair bg-canvas p-4">
                   <div className="flex items-center justify-between gap-3">

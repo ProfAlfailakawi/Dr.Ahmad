@@ -1088,6 +1088,39 @@ function identityLayer(s: Scene, options: RenderSvgOptions) {
   ].join('')
 }
 
+/* ═══ طبقات المحرر الحر (أمر الدكتور): تُرسم فوق التكوين بألوان لوحته ═══ */
+function overlaysLayer(s: Scene) {
+  const overlays = s.plan.overlays
+  if (!overlays?.length) return ''
+  const { palette: p, w, h, min } = s
+  const colorOf = (name: string) => name === 'accent' ? p.accent : name === 'muted' ? p.muted : name === 'paper' ? p.surface : p.ink
+  const parts = overlays.map((overlay) => {
+    const x = overlay.x * w
+    const y = overlay.y * h
+    const width = Math.max(0.02, overlay.width) * w
+    const height = Math.max(0.01, overlay.height) * h
+    const color = colorOf(overlay.color)
+    const opacity = Math.max(.05, Math.min(1, overlay.opacity))
+    if (overlay.kind === 'rule') {
+      return `<line x1="${round(x)}" y1="${round(y)}" x2="${round(x + width)}" y2="${round(y)}" stroke="${color}" stroke-width="${round(Math.max(1.5, height))}" stroke-linecap="round" opacity="${opacity}"/>`
+    }
+    if (overlay.kind === 'circle') {
+      const radius = Math.min(width, height) / 2
+      return `<circle cx="${round(x + width / 2)}" cy="${round(y + height / 2)}" r="${round(radius)}" fill="none" stroke="${color}" stroke-width="${round(Math.max(1.5, min * .004))}" opacity="${opacity}"/>`
+    }
+    if (overlay.kind === 'rect') {
+      return `<rect x="${round(x)}" y="${round(y)}" width="${round(width)}" height="${round(height)}" rx="${round(min * .02)}" fill="none" stroke="${color}" stroke-width="${round(Math.max(1.5, min * .004))}" opacity="${opacity}"/>`
+    }
+    const size = Math.max(12, (overlay.size || .03) * min)
+    const anchor = overlay.align || 'end'
+    const anchorX = anchor === 'middle' ? x + width / 2 : anchor === 'start' ? x : x + width
+    const maxChars = Math.max(6, Math.floor(width / (size * .5)))
+    const lines = wrap(String(overlay.text || ''), maxChars, 6)
+    return textBlock({ lines, x: anchorX, y: y + size, size, fill: color, weight: overlay.weight || 600, anchor, family: 'Tajawal', opacity })
+  })
+  return `<g data-overlays="true">${parts.join('')}</g>`
+}
+
 export function renderCompositionSvg(plan: CompositionPlan, options: RenderSvgOptions = {}) {
   const s = sceneOf(plan)
   const glow = plan.layout === 'hero-word' || plan.layout === 'quiet-orbit' ? 'center'
@@ -1099,7 +1132,7 @@ export function renderCompositionSvg(plan: CompositionPlan, options: RenderSvgOp
   const scenePaint = painter(s)
   const accessible = esc(options.ariaLabel || `${plan.directionLabel}: ${plan.content.title}`)
   const fontStyle = options.fontCss ? `<style>${options.fontCss}</style>` : ''
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${s.w}" height="${s.h}" viewBox="0 0 ${s.w} ${s.h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${esc(options.title || plan.content.title)}</title><defs>${fontStyle}${bg.defs}${scenePaint.defs || ''}</defs>${bg.markup}${frameDecor(s)}${scenePaint.markup}${identityLayer(s, options)}</svg>`
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${s.w}" height="${s.h}" viewBox="0 0 ${s.w} ${s.h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${esc(options.title || plan.content.title)}</title><defs>${fontStyle}${bg.defs}${scenePaint.defs || ''}</defs>${bg.markup}${frameDecor(s)}${scenePaint.markup}${overlaysLayer(s)}${identityLayer(s, options)}</svg>`
 }
 
 /* ------------------------------------------------------------------ */

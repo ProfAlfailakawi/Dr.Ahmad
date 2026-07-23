@@ -220,11 +220,46 @@ const jidAccount = (jid = '') => String(jid).split('@')[0].toLowerCase()
 const CHATTER_OR_PERSONAL = /(?:^|\s)(?:انا|اني|انت|انتي|انتو|احنا|نحن|توني|تو|وصلت|رحت|جيت|شكرا|شكراً|مشكور|تمام|اوكي|حبيبي|حبيبتي|مرحبا|هلا|السلام|وعليكم|صباح|مساء|بخير|شلونك|كيفك|وينك|مع السلامه)(?:\s|$)|\b(?:i|im|am|my|me|we|you|your|thanks?|hello|hi|okay|fine|home|arrived|love)\b/i
 
 function stripGroundedTopicRequest(value) {
+  /* قشر المحادثة الطبيعية قبل البحث: «هل تكلم الدكتور عن موضوع الطفل؟»
+     جوهرها «الطفل». كانت أصداف السؤال (هل/تكلم/الدكتور/عن/موضوع) تُحسب
+     كلماتِ موضوعٍ فيفشل التأريض ويصمت البوت داخل جلسة مستيقظة — وهو أصل
+     شكوى «يسكت وما يكمل». القشر محصور بألفاظ الصدفة المعجمية وحدها،
+     وكل ما بعده يمر بالبوابات القائمة نفسها بلا أي تغيير في القواعد. */
   return clean(value)
+    .replace(/[؟?!]+/g, ' ')
     .replace(/^(?:ابي|اريد|ابغي|عطني|اعطني|هات|ممكن)\s+/, '')
     .replace(/^(?:شي|شيء|ماده)\s+(?:عن|حول|بخصوص)\s+/, '')
+    .replace(/(?:^|\s)(?:هل|وش|شنو|ايش)(?=\s)/g, ' ')
+    .replace(/(?:^|\s)(?:تكلم|يتكلم|تحدث|يتحدث|حكه|حكي|يحكي|كتب|يكتب|قال|يقول|تطرق|يتطرق|ناقش|يناقش|تناول|يتناول|طرح|يطرح|غطه|يغطي)(?=\s)/g, ' ')
+    .replace(/(?:^|\s)(?:رايه|رايك|رايكم|موقفه|نظرته|قوله)(?=\s)/g, ' ')
+    .replace(/(?:^|\s)(?:الدكتور|دكتور|احمد|الفيلكاوي)(?=\s|$)/g, ' ')
+    /* «عن بعد» مركّبٌ اصطلاحي (التعليم عن بعد) — لا يُقشر «عن» قبله */
+    .replace(/(?:^|\s)عن(?=\s)(?!\s*بعد)/g, ' ')
+    .replace(/(?:^|\s)(?:في|حول|بخصوص)(?=\s)/g, ' ')
+    .replace(/(?:^|\s)(?:موضوع|مواضيع|قضيه|قضايا|مساله|مسائل)(?=\s)/g, ' ')
     .replace(/\s+لو سمحت$/, '')
+    .replace(/\s+/g, ' ')
     .trim()
+}
+
+/* سؤال تغطية: «هل تكلم/كتب/تطرق … عن …؟» — يستحق جواباً يبدأ بنعم الموثقة. */
+function isCoverageQuestion(normalized = '') {
+  return /(?:^|\s)هل(?:\s|$)/.test(normalized)
+    && /(?:تكلم|يتكلم|تحدث|يتحدث|كتب|يكتب|قال|تطرق|يتطرق|ناقش|تناول|طرح|غطه)/.test(normalized)
+}
+
+/* مسح اسمي مباشر: الفهرس صغير (~200 مادة)، فمسحه المطبّع أدقّ من ترتيب FTS
+   في المطابقات الاسمية الصريحة — «التعليم عن بعد» يجب أن يجد «الخطط البديلة
+   للتعليم عن بعد» ولو تصدّرت المشابهات الدلالية نتائج البحث النصي. */
+function namedContentMatches(db, words, limit = 3) {
+  if (!words.length || words.length > 4) return []
+  const rows = db.all("SELECT * FROM content_items ORDER BY date DESC") || []
+  return rows
+    .filter((item) => {
+      const named = clean(`${item.title || ''} ${item.keywords || ''}`)
+      return words.every((word) => named.includes(word))
+    })
+    .slice(0, limit)
 }
 
 function isGroundedTopicPhrase(db, text) {
@@ -232,10 +267,11 @@ function isGroundedTopicPhrase(db, text) {
   const words = normalized.split(/\s+/).filter((word) => word.length > 1)
   if (!words.length || words.length > 4 || CHATTER_OR_PERSONAL.test(normalized)) return false
   const candidates = searchContent(db, normalized, { limit: 6 })
-  return candidates.some((item) => {
+  const grounded = candidates.some((item) => {
     const namedFields = clean(`${item.title || ''} ${item.keywords || ''}`)
     return words.every((word) => namedFields.includes(word))
   })
+  return grounded || namedContentMatches(db, words, 1).length > 0
 }
 
 function isAllowlisted(jid = '') {
@@ -1173,17 +1209,24 @@ ${choices.map((item, index) => `${index + 1}. ${item.title}\n${item.url}`).join(
       /* إذا حمل العنوان أو الكلمات المفتاحية جميع كلمات الموضوع، فهذا هو
          التطابق الصريح الأعلى سلطة. لا ندعه يُهزم أمام تشابه دلالي في جسم
          مقال آخر؛ خصوصاً في عبارات مثل «الذكاء الاصطناعي». */
-      const exactNamed = preliminary.filter((item) => {
+      const exactNamedFromSearch = preliminary.filter((item) => {
         const named = clean(`${item.title || ''} ${item.keywords || ''}`)
         return meaningfulWords.length > 0 && meaningfulWords.every((word) => named.includes(word))
       })
+      // المسح الاسمي المباشر يسند FTS حين تتصدر المشابهات الدلالية عناوينها
+      const exactNamed = exactNamedFromSearch.length
+        ? exactNamedFromSearch
+        : namedContentMatches(db, meaningfulWords, 3)
+      const coverageQuestion = isCoverageQuestion(classification.normalized)
       if (exactNamed.length) {
         const choices = exactNamed.slice(0, 3)
         return {
           ...classification,
-          text: `أقرب المواد المنشورة لهذا الموضوع:
+          text: `${coverageQuestion ? 'نعم — تناول هذا الموضوع في مواده المنشورة:' : 'أقرب المواد المنشورة لهذا الموضوع:'}
 ${choices.map((item, i) => `${i + 1}. ${item.title}
-${item.url}`).join('\n\n')}`,
+${item.url}`).join('\n\n')}
+
+تقدر تقول: لخّص الأولى، أو اسمعني الثانية.`,
           contentId: choices[0].id,
           contextItems: choices.map((item) => item.id),
           seenContentIds: choices.map((item) => item.id),
@@ -1197,7 +1240,7 @@ ${item.url}`).join('\n\n')}`,
       if (scholar.verified && scholar.citations.length) {
         return {
           ...classification,
-          text: scholar.text,
+          text: coverageQuestion ? `نعم — تكلم عنه بلسانه:\n\n${scholar.text}` : scholar.text,
           contentId: `article:${scholar.citations[0].slug}`,
           contextItems: scholar.citations.map((citation) => `article:${citation.slug}`),
           seenContentIds: scholar.citations.map((citation) => `article:${citation.slug}`),

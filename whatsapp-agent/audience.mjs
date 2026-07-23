@@ -135,8 +135,23 @@ const FEMALE_TITLE = /(?:^|\s)(?:الشيخه|شيخه|الدكتوره|دكتو
    يتلوها اسمٌ كي لا نلتقط كلمةً تصادف بدأها بـ«بو» أو «ابو». */
 const MALE_TITLE = /(?:^|\s)(?:الشيخ|شيخ|الاخ)(?:\s|$)|(?:^|\s)(?:ابو|بو)(?:\s|محمد|عبد|علي|احمد|خالد|ناصر|سعد|فهد|يوسف|عبدالله)/
 const FEMALE_NAMES = new Set('مريم هند سعاد رغد ابتهال اسماء وضحه نوره نورا دانه امل مها ريم سلمي شيخه موضي بشاير الجوهره لطيفه شهد غزلان روان ميار جوري رنا دلال عبير هيا شذي وعد فاطمه عائشه خديجه زينب سميه منيره حصه شريفه'.split(' '))
+/* الأسماء المذكّرة الشائعة خليجياً — ترفع تغطية {الأخ} و{عزيزي} من غير مجازفة؛
+   وما ليس في المعجمين يبقى حياداً مهذباً لا يخطئ جنس أحد. */
+const MALE_NAMES = new Set('محمد احمد خالد يوسف علي عمر حسن حسين ابراهيم عبدالله عبدالرحمن عبدالعزيز عبداللطيف عبدالمحسن فهد سعد سعود ناصر بدر بندر تركي طلال وليد ماجد مشعل مشاري جاسم جابر صباح مبارك راشد سالم سلمان سليمان حمد حمود حمدان عذبي فيصل نواف ثامر انس اوس زيد يزيد طارق عادل عصام كريم رائد باسل هاني وائل فواز عيسي موسي داود يعقوب اسامه حمزه معاذ عقيل منصور مساعد متعب نايف صالح محسن جمال كمال نبيل سامي رامي فادي شادي غانم غازي عماد ضاري مرزوق عوض مطلق دحام برجس'.split(' '))
+
+/**
+ * كاشف الجهات: «مركز أعيان للتدريب» ليس رجلاً ولا امرأة — إنه جهة تُخاطَب
+ * بالجمع المهذّب: «السادة… حيّاكم». الكشف بالمعجم المؤسسي في أي موضع من الاسم.
+ */
+const ORG_MARKER = /(?:^|\s)(?:شركه|مؤسسه|مركز|معهد|اكاديميه|جمعيه|مكتب|فريق|قناه|مدرسه|جامعه|كليه|وزاره|هيئه|اداره|مستشفي|عياده|صيدليه|مطعم|مقهي|متجر|محل|مجموعه|مصنع|مزرعه|منصه|تطبيق|نادي|روضه|حضانه)(?:\s|$)|(?:لل(?:تدريب|تجاره|استشارات|تعليم|تطوير|خدمات|مقاولات|عقارات|دعايه|اعلان))|(?:القابضه|الدوليه|العالميه|والتوزيع|وشركاه)(?:\s|$)|\b(?:co|company|llc|inc|center|centre|academy|institute|group|school|team|store|trading|est)\b/i
+
+export function detectEntityKind(row) {
+  const raw = norm(String(row?.nickname || row?.wa_name || row?.display_name || '')).replace(/ة/g, 'ه')
+  return ORG_MARKER.test(raw) ? 'org' : 'person'
+}
 
 export function detectGender(row) {
+  if (detectEntityKind(row) === 'org') return ''
   const raw = String(row?.nickname || row?.wa_name || row?.display_name || '')
   const name = norm(raw).replace(/ة/g, 'ه')
   /* اللقب المؤنّث يُفحص أولاً: «الشيخة» تحوي «الشيخ» فلو بدأنا بالمذكّر لأخطأنا */
@@ -145,6 +160,7 @@ export function detectGender(row) {
   const bare = norm(raw).replace(HONORIFIC, '').trim()
   const first = (bare.split(/\s+/).filter(Boolean)[0] || '').replace(/ة$/, 'ه')
   if (FEMALE_NAMES.has(first)) return 'f'
+  if (MALE_NAMES.has(first)) return 'm'
   /* تاء التأنيث آخر الاسم الأول — دليلٌ أضعف، لا يُغلَّب على ذكورة اسمٍ معروف */
   if (/(?:ه|اء)$/.test(first) && first.length >= 3 && !/^(?:عبد|يحي|زكري|اسام|حمز|طلح|معاوي)/.test(first)) return 'f'
   return ''
@@ -153,6 +169,9 @@ export function detectGender(row) {
 export function vocativeOf(row) {
   const raw = String(row.nickname || row.wa_name || row.display_name || '').replace(/[‎‏]/g, '').replace(/\s+/g, ' ').trim()
   if (!raw || /^\+?\d[\d\s-]*$/.test(raw)) return ''      // رقمٌ لا اسم: لا نُنادي به إنساناً
+
+  /* الجهة تُنادى باسمها كاملاً: قصّ «مركز أعيان للتدريب» إلى «مركز» عبث */
+  if (detectEntityKind(row) === 'org') return raw
 
   let title = ''
   let rest = raw
@@ -444,6 +463,8 @@ export function listMembers(db, listId) {
     name: displayNameOf(row),
     vocative: vocativeOf(row),
     nickname: row.nickname || '',
+    wa_name: row.wa_name || '',
+    display_name: row.display_name || '',
     tail: String(row.phone || '').slice(-4),
     suppressed: Boolean(row.suppressed),
   }))
@@ -487,14 +508,37 @@ function syncCount(db, listId) {
 export function personalize(text, member, at = new Date()) {
   const hour = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'Asia/Kuwait' }).format(at))
   const greeting = hour < 12 ? 'صباح الخير' : 'مساء الخير'
-  /* {ترحيب} تصريفٌ يخصّ الجنس: «حيّاك الله» للرجل و«حيّاكِ الله» للمرأة، وعند
-     الشكّ «أهلاً» المحايدة. أمّا {تحية} فتبقى «صباح/مساء الخير» للجميع. */
+  /* {ترحيب} تصريفٌ يخصّ الجنس والجهة: «حيّاك/حيّاكِ» للفرد، و«حيّاكم» للجهة،
+     وعند الشكّ «أهلاً» المحايدة. أمّا {تحية} فتبقى «صباح/مساء الخير» للجميع. */
+  const entity = detectEntityKind(member || {})
   const gender = detectGender(member || {})
-  const welcome = gender === 'f' ? 'حيّاكِ الله' : gender === 'm' ? 'حيّاك الله' : 'أهلاً'
+  const welcome = entity === 'org' ? 'حيّاكم الله' : gender === 'f' ? 'حيّاكِ الله' : gender === 'm' ? 'حيّاك الله' : 'أهلاً'
+  const vocativeName = member?.vocative || ''
+  /* {الأخ}: «الأخ خالد» / «الأخت مريم» / «السادة في مركز أعيان للتدريب»؛
+     وعند غياب الاسم أو حياد الجنس يسقط اللقب ويبقى الاسم وحده بلا إساءة.
+     {عزيزي}: «عزيزي خالد» / «عزيزتي مريم» / «الأعزاء في …» / «عزيزنا خالد» حياداً. */
+  const brotherly = !vocativeName ? ''
+    : entity === 'org' ? `السادة في ${vocativeName}`
+      : gender === 'f' ? `الأخت ${vocativeName}`
+        : gender === 'm' ? `الأخ ${vocativeName}`
+          : vocativeName
+  const dearly = !vocativeName ? ''
+    : entity === 'org' ? `الأعزاء في ${vocativeName}`
+      : gender === 'f' ? `عزيزتي ${vocativeName}`
+        : gender === 'm' ? `عزيزي ${vocativeName}`
+          : `عزيزنا ${vocativeName}`
   let out = String(text || '')
     .replace(/\{\s*تحية\s*\}/g, greeting)
     .replace(/\{\s*ترحيب\s*\}/g, welcome)
-  const vocative = member?.vocative || ''
+  for (const [token, value] of [['الأخ', brotherly], ['الاخ', brotherly], ['عزيزي', dearly]]) {
+    const pattern = new RegExp(`\\{\\s*${token}\\s*\\}`, 'g')
+    if (value) out = out.replace(pattern, value)
+    else {
+      out = out.replace(new RegExp(` *\\{\\s*${token}\\s*\\} *`, 'g'), '')
+      out = out.replace(/^[ \t]*[،,:]\s*/gm, '')
+    }
+  }
+  const vocative = vocativeName
   if (vocative) out = out.replace(/\{\s*الاسم\s*\}/g, vocative)
   else {
     /* بلا اسم: يسقط الرمز وحده، وتبقى الفاصلة ملتصقةً بما قبلها —
@@ -554,7 +598,30 @@ if (import.meta.url === `file://${process.argv[1]}` && process.argv.includes('--
   /* التحية المصرَّفة */
   assert(personalize('{ترحيب}', { nickname: 'الشيخة نوره' }).includes('حيّاكِ'), 'المرأة تُنادى «حيّاكِ»')
   assert(personalize('{ترحيب}', { nickname: 'أبو أنس' }).includes('حيّاك الله'), 'الرجل «حيّاك الله»')
-  assert(personalize('{ترحيب}', { nickname: 'خالد' }) === 'أهلاً', 'المحايد «أهلاً» — لا نُخطئ جنساً')
+  /* «خالد» صار معروفاً ذكراً بمعجم الأسماء؛ الحياد يُختبر باسمٍ ملتبس حقاً */
+  assert(personalize('{ترحيب}', { nickname: 'خالد' }).includes('حيّاك الله'), 'خالد يُعرف ذكراً بالمعجم')
+  assert(personalize('{ترحيب}', { nickname: 'نضال' }) === 'أهلاً', 'المحايد «أهلاً» — لا نُخطئ جنساً')
 
-  console.log('✓ اختبارات الجنس والألقاب: 18/18')
+  /* ═══ الجهات: شركة أو مركز تدريب تُخاطَب بالجمع المهذّب ═══ */
+  const orgRow = { nickname: 'مركز أعيان للتدريب' }
+  assert(detectEntityKind(orgRow) === 'org', '«مركز … للتدريب» جهة')
+  assert(detectEntityKind({ nickname: 'شركة الخليج القابضة' }) === 'org', 'الشركة جهة')
+  assert(detectEntityKind({ wa_name: 'أكاديمية المستقبل' }) === 'org', 'الأكاديمية جهة ولو من اسم واتساب')
+  assert(detectEntityKind({ nickname: 'مركزي خالد' }) === 'person', '★ «مركزي» اسم شخص لا جهة — حد الكلمة يحمينا')
+  assert(detectGender(orgRow) === '', 'الجهة بلا جنس')
+  assert(vocativeOf(orgRow) === 'مركز أعيان للتدريب', 'الجهة تُنادى باسمها كاملاً لا مبتوراً')
+  assert(personalize('{ترحيب}', orgRow).includes('حيّاكم'), 'الجهة «حيّاكم الله»')
+
+  /* ═══ وسما {الأخ} و{عزيزي} المصرَّفان ═══ */
+  const withVoc = (row) => ({ ...row, vocative: vocativeOf(row) })
+  assert(personalize('{الأخ}،', withVoc({ nickname: 'خالد العنزي' })).startsWith('الأخ خالد'), '«الأخ خالد»')
+  assert(personalize('{الأخ}،', withVoc({ nickname: 'الأخت سميه المطيري' })).includes('الأخت'), '«الأخت» للأنثى')
+  assert(personalize('{الأخ}،', withVoc(orgRow)).startsWith('السادة في مركز أعيان'), 'الجهة «السادة في …»')
+  assert(personalize('{عزيزي}', withVoc({ nickname: 'أبو أنس' })).startsWith('عزيزي أبو أنس'), '«عزيزي» للرجل')
+  assert(personalize('{عزيزي}', withVoc({ nickname: 'مريم' })).startsWith('عزيزتي مريم'), '«عزيزتي» للأنثى')
+  assert(personalize('{عزيزي}', withVoc(orgRow)).startsWith('الأعزاء في'), 'الجهة «الأعزاء في …»')
+  assert(personalize('{عزيزي}', withVoc({ nickname: 'نضال' })).startsWith('عزيزنا نضال'), 'الحياد «عزيزنا» — لا نخطئ جنساً')
+  assert(personalize('{الأخ}، وصلكم', {}) === 'وصلكم', 'بلا اسم يسقط الوسم بلا فاصلة يتيمة')
+
+  console.log('✓ اختبارات الجنس والألقاب والجهات: 33/33')
 }

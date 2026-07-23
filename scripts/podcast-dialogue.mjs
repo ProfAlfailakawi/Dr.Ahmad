@@ -4748,7 +4748,21 @@ else if (nightly) {
   const nightlyPool = NO_GEMINI
     ? ARTICLES.filter((article) => existsSync(resolve(ROOT, 'manual-dialogues', `${article.slug}.json`)))
     : ARTICLES
-  queue = nightlyPool.filter((article) => {
+  /* عدالة الليل أمام التعثر: مقالٌ فشل الليلة الماضية كان يعود لنفس مقعده
+     في الخمسة الأوائل كل ليلة، فيأكل الطاقة ويجيع الطابور خلفه إلى الأبد.
+     الآن: المتعثر حديثاً (أقل من ٢٠ ساعة) يفسح مقعده لغيره ويعود بعد تهدئته،
+     والمتعثرون عموماً في آخر الصف — فلا يقف القطار على عربة عصية أبداً. */
+  const failures = state.failures || {}
+  const cooldownMs = 20 * 60 * 60 * 1000
+  const recentlyFailed = (slug) => {
+    const at = failures[slug]?.lastFailedAt
+    return Boolean(at) && (Date.now() - new Date(at).getTime()) < cooldownMs
+  }
+  const failureRank = (slug) => Number(failures[slug]?.attempts || 0)
+  const fairPool = [...nightlyPool].sort((left, right) =>
+    (Number(recentlyFailed(left.slug)) - Number(recentlyFailed(right.slug)))
+    || (failureRank(left.slug) - failureRank(right.slug)))
+  queue = fairPool.filter((article) => {
     const sourceHash = createHash('sha256').update(article.body).digest('hex')
     const expected = createHash('sha256').update(`${sourceHash}|ar|${ACTIVE_PIPELINE_HASH}`).digest('hex').slice(0, 16)
     const saved = state.done[`${article.slug}:ar`]
@@ -4865,7 +4879,17 @@ for (const a of queue) {
   for (const l of executionLangs) {
     const r = await produce(a, l).catch((e) => { console.error('  ✘', String(e).slice(0, 150)); return 'fail' })
     if (r === 'ok' || (PILOT_MODE && r === 'skip')) done++
-    if (r === 'fail') failed++
+    if (r === 'fail') {
+      failed++
+      /* سجل التهدئة: يقرأه اختيار الليلة القادمة فيفسح المتعثر مقعده */
+      state.failures = state.failures || {}
+      const previous = state.failures[a.slug] || {}
+      state.failures[a.slug] = { attempts: Number(previous.attempts || 0) + 1, lastFailedAt: new Date().toISOString() }
+      saveState()
+    } else if (r === 'ok' && state.failures?.[a.slug]) {
+      delete state.failures[a.slug]
+      saveState()
+    }
   }
 }
 if (PILOT_MODE) {

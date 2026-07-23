@@ -822,7 +822,9 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
         /* لكلٍّ نصّه: {الاسم} يصير لقبه الذي كتبتَه، و{تحية} تتبع ساعة الإرسال.
            فلا تخرج رسالةٌ واحدة جامدة، بل رسالةٌ لكل إنسانٍ باسمه. */
         const contact = db.get('SELECT * FROM contacts WHERE id=?', target.target_id)
-        const body = personalize(campaign.message, { vocative: contact ? vocativeOf(contact) : '' })
+        /* نمرر جهة الاتصال كاملة لا الكنية وحدها: كاشفا الجنس والجهة يقرآن
+           الاسم نفسه ليصرّفا {الأخ} و{عزيزي} و{ترحيب} صرفاً صحيحاً. */
+        const body = personalize(campaign.message, contact ? { ...contact, vocative: vocativeOf(contact) } : {})
         db.run('INSERT INTO message_jobs(id,campaign_id,jid,body,state,attempts,available_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)', jobId, id, db.encryptJid(jid), db.encryptText(body), 'sending', 1, created, created, created)
         try {
           await state.transport.sendText(jid, body)

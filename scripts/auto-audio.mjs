@@ -225,6 +225,42 @@ function clearFailure(slug, voice) {
   if (next.length !== ledger.items.length) writeFailureLedger({ ...ledger, items: next })
 }
 
+/* ═══ عدالة الطابور أمام التعثر ═══
+ * كان المتعثر المزمن يُعاد كل تشغيلة فيأكل الميزانية اليومية ويجوّع
+ * الأصحاء خلفه — فتبدو القافلة «تفشل» وهي محبوسة خلف وحدات عصية.
+ * القاعدة الآن: (١) من فشل قبل أقل من عشرين ساعة يُتجاوز بلا حرق ميزانية
+ * ويحتفظ بدوره غداً، (٢) المتعثرون يُؤخَّرون آخر الصف فلا يحجبون جديداً،
+ * (٣) الخطأ العابر (شبكة/429/5xx) يمنح محاولة ثانية فورية قبل التسجيل. */
+const FAILURE_COOLDOWN_MS = 20 * 60 * 60 * 1000
+
+function failureRecordFor(slug, voice, ledger = failureLedger()) {
+  return ledger.items.find((item) => item.slug === slug && item.voice === voice) || null
+}
+
+function inFailureCooldown(slug, voice, ledger) {
+  const record = failureRecordFor(slug, voice, ledger)
+  if (!record?.lastFailedAt) return false
+  return (Date.now() - new Date(record.lastFailedAt).getTime()) < FAILURE_COOLDOWN_MS
+}
+
+function orderByFailureFairness(articles, ledger = failureLedger()) {
+  const failing = new Set(ledger.items.map((item) => item.slug))
+  return [...articles].sort((left, right) => Number(failing.has(left.slug)) - Number(failing.has(right.slug)))
+}
+
+const TRANSIENT_ERROR = /(?:429|too many|rate.?limit|5\d\d|timeout|timed out|ETIMEDOUT|ECONNRESET|ECONNREFUSED|EAI_AGAIN|network|fetch failed|socket hang up)/i
+
+async function withTransientRetry(run, label) {
+  try {
+    return await run()
+  } catch (error) {
+    if (!TRANSIENT_ERROR.test(String(error?.message || error))) throw error
+    console.log(`  ↻ خطأ عابر في ${label} — محاولة ثانية بعد ثماني ثوانٍ…`)
+    await sleep(8000)
+    return run()
+  }
+}
+
 function publicAudioUrl(fileName) {
   return AUDIO_PUBLIC_BASE_URL ? `${AUDIO_PUBLIC_BASE_URL}/${fileName}` : `/audio/${fileName}`
 }
@@ -515,8 +551,13 @@ async function processOriginals(articles, allOriginals, budget) {
   let missing = 0
   const missingArticles = new Set()
   if (!DRY_RUN) atomicJson(MANIFEST, rebuildOriginalManifest(allOriginals))
-  for (const article of articles) {
+  const fairnessLedger = failureLedger()
+  for (const article of orderByFailureFairness(articles, fairnessLedger)) {
     for (const voice of VOICES) {
+      if (!DRY_RUN && inFailureCooldown(article.slug, voice.key, fairnessLedger)) {
+        console.log(`  ⏸ ${article.slug} (${voice.label}) في تهدئة بعد تعثر حديث — دوره محفوظ غداً ولا يحرق ميزانية اليوم`)
+        continue
+      }
       const fileName = `${article.slug}${voice.suffix}.mp3`
       const target = resolve(AUDIO_DIR, fileName)
       const publicTarget = resolve(PUBLIC_AUDIO_DIR, fileName)
@@ -537,7 +578,7 @@ async function processOriginals(articles, allOriginals, budget) {
          معلقاً ساعات على وحدة واحدة عصية (كان r002 يقتل كل التشغيلات المتتالية) */
       let audit
       try {
-        audit = await synthesizeHumanReading(article, voice, target)
+        audit = await withTransientRetry(() => synthesizeHumanReading(article, voice, target), `${article.slug} (${voice.label})`)
       } catch (error) {
         budget.used += 1
         recordFailure({ slug: article.slug, voice: voice.key, kind: 'original', stage: 'generate-reading', error })
@@ -563,7 +604,8 @@ async function processSiteArticles(articles, budget) {
   const missingArticles = new Set()
   const pending = loadJson(PENDING_SITE_PATCHES, { schemaVersion: 1, items: [] })
   const pendingByDocument = new Map((pending.items || []).map((item) => [item.documentName, item]))
-  for (const article of articles) {
+  const fairnessLedger = failureLedger()
+  for (const article of orderByFailureFairness(articles, fairnessLedger)) {
     const audio = { ...(article.currentAudio || {}) }
     for (const voice of VOICES) {
       const fileName = `${article.slug}${voice.suffix}.mp3`
@@ -575,9 +617,13 @@ async function processSiteArticles(articles, budget) {
         missing += 1
         missingArticles.add(article.slug)
         console.log(`  ${DRY_RUN ? '○' : '◈'} مُضاف · ${voice.label} · ${article.title.slice(0, 55)}`)
+        if (!DRY_RUN && inFailureCooldown(article.slug, voice.key, fairnessLedger)) {
+          console.log(`  ⏸ ${article.slug} (${voice.label}) في تهدئة بعد تعثر حديث — دوره محفوظ غداً ولا يحرق ميزانية اليوم`)
+          continue
+        }
         if (!DRY_RUN && budget.used < JOB_LIMIT) {
           try {
-            await synthesizeHumanReading(article, voice, target)
+            await withTransientRetry(() => synthesizeHumanReading(article, voice, target), `${article.slug} (${voice.label})`)
             if (USE_R2) {
               // الرفع مسؤولية الناشر الذري وحده. يبقى الملف مرحلياً محلياً حتى تنجح كل البوابات.
             } else {

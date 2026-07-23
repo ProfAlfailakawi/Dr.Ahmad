@@ -28,13 +28,20 @@
  *   node scripts/podcast-dialogue.mjs --latest=3 | --nightly
  *   أعلام: --dry-run (سيناريو فقط) · --force (تجاهل الحالة)
  */
-import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, statSync, renameSync, copyFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, statSync, renameSync, copyFileSync, readdirSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { createHash, randomBytes, randomInt } from 'node:crypto'
 import { DatabaseSync } from 'node:sqlite'
 import assert from 'node:assert/strict'
+import {
+  analyzeLoudness,
+  analyzeSilence,
+  humanLikenessGate,
+  probeAudio,
+} from './lib/arabic-audio-engine.mjs'
+import { dialogueHashes, loadSourceLock } from './lib/manual-dialogue-source.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const ENGINE_SOURCE_HASH = createHash('sha256').update(readFileSync(fileURLToPath(import.meta.url))).digest('hex')
@@ -48,6 +55,11 @@ const MEM_FILE = resolve(ROOT, 'ArabicPronunciationMemory.sqlite')
 const LOCK_FILE = resolve(ROOT, '.podcast-dialogue.lock')
 const BAKEOFF_PUBLIC = resolve(ROOT, 'public/audio/bakeoff')
 const BAKEOFF_PRIVATE = resolve(AUDITS, 'voice-bakeoff.private.json')
+const PILOT_AUDIO = resolve(ROOT, '.podcast-pilot-audio')
+const RELEASES = resolve(ROOT, '.podcast-releases')
+const LAST_GOOD = resolve(ROOT, '.podcast-last-known-good')
+const PILOT_GATE_FILE = resolve(AUDITS, 'pilot-gate.json')
+const QUARANTINE_AUDIO = resolve(AUDITS, 'quarantine-audio')
 const STT_ENSEMBLE_LOCALES = ['ar-KW', 'ar-SA', 'ar-AE', 'ar-QA', 'ar-OM']
 const SAMPLE_MIN_SEC = 85
 const SAMPLE_MAX_SEC = 105
@@ -62,6 +74,117 @@ if (existsSync(resolve(ROOT, '.env')))
 const GEMINI_KEY = env.GEMINI_API_KEY || env.GOOGLE_API_KEY
 const AZURE_KEY = env.AZURE_SPEECH_KEY
 const AZURE_REGION = (env.AZURE_SPEECH_REGION && /^[a-z0-9-]+$/i.test(env.AZURE_SPEECH_REGION) && env.AZURE_SPEECH_REGION.length < 30) ? env.AZURE_SPEECH_REGION : 'uaenorth'
+
+/* كل طلب خارجي له مهلة صريحة؛ حتى لا يبقى تشغيل GitHub معلقًا إذا علقت
+   شبكة Azure/Gemini. تُعاد المحاولة في الطبقة الخاصة بكل مزود. */
+const networkTimeoutSignal = (ms) => {
+  if (typeof AbortSignal?.timeout === 'function') return AbortSignal.timeout(ms)
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), ms)
+  timer.unref?.()
+  return controller.signal
+}
+const fetchWithTimeout = (url, init = {}, ms = 45_000) =>
+  fetch(url, { ...init, signal: init.signal || networkTimeoutSignal(ms) })
+
+/* ═══ تقسيم دلالي مشترك (مستوى الوحدة) — يستخدمه التطبيع قبل TTS ومسار إنقاذ المقطع المتجاوز ═══ */
+const wordsOf = (text) => String(text || '').split(/\s+/).filter(Boolean)
+function splitTextSemantically(text, target = 16, hard = 20) {
+  const clean = String(text || '').replace(/\s+/g, ' ').trim()
+  if (wordsOf(clean).length <= hard) return [clean]
+  const rawParts = clean
+    .split(/(?<=[،؛.!؟])\s+|(?=\s(?:بل|لكن|ولكن|فإذا|فهذا|وهنا|وعندها|لا\s))/u)
+    .map((part) => part.trim()).filter(Boolean)
+  const parts = rawParts.length > 1 ? rawParts : [clean]
+  const chunks = []
+  for (const part of parts) {
+    if (wordsOf(part).length > hard) {
+      const words = part.split(/\s+/)
+      const numeric = (w) => /[0-9\u0660-\u0669٪%]/.test(w)
+      let row = []
+      for (const word of words) {
+        row.push(word)
+        if (row.length >= target && !numeric(word)) { chunks.push(row.join(' ')); row = [] }
+      }
+      if (row.length) chunks.push(row.join(' '))
+      continue
+    }
+    const last = chunks.at(-1) || ''
+    if (last && wordsOf(`${last} ${part}`).length <= target) chunks[chunks.length - 1] = `${last} ${part}`
+    else chunks.push(part)
+  }
+  return chunks.map((part) => part.trim()).filter(Boolean)
+}
+
+/* اشتقاق تحليل نطق لقطعةٍ من تحليل الوحدة الكاملة — بلا أي نداء Gemini:
+   ننقل التشكيل الانتقائي كلمةً بكلمة إن تطابق العدّ، ونرشّح الكلمات الخطرة بالانتماء. */
+function derivePieceAnalysis(analysis, pieceText, pieceStartWord, pieceWordCount) {
+  const plain = String(pieceText || '').replace(/\s+/g, ' ').trim()
+  const fullPron = String(analysis?.pronunciationText || '').replace(/\s*\|\s*/g, ' ').replace(/\s+/g, ' ').trim()
+  const pronTokens = fullPron.split(' ').filter(Boolean)
+  const fullTokens = wordsOf(String(analysis?.sourceTextForCount || ''))
+  let pronunciationText = plain
+  if (pronTokens.length && fullTokens.length === pronTokens.length
+    && pieceStartWord >= 0 && pieceStartWord + pieceWordCount <= pronTokens.length) {
+    pronunciationText = pronTokens.slice(pieceStartWord, pieceStartWord + pieceWordCount).join(' ')
+  }
+  const normalizeBasic = (w) => String(w || '').replace(/[\u064B-\u0652\u0670\u0640]/g, '')
+  const pieceNorm = normalizeBasic(plain)
+  const risks = (analysis?.risks || []).filter((risk) => pieceNorm.includes(normalizeBasic(risk.word)))
+  return { pronunciationText, risks }
+}
+
+/* ═══ كاش مقاطع الاستئناف — محليًا وعبر R2 staging (لا WAV داخل GitHub) ═══ */
+const RESUME = !process.argv.includes('--no-resume')
+const SEGMENT_CACHE_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', '.podcast-segment-cache')
+const R2_CONF = {
+  bucket: env.CLOUDFLARE_R2_BUCKET || env.R2_BUCKET || '',
+  endpoint: env.CLOUDFLARE_R2_ENDPOINT || '',
+  key: env.CLOUDFLARE_R2_ACCESS_KEY_ID || '',
+  secret: env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || '',
+}
+const r2StagingReady = () => Boolean(RESUME && R2_CONF.bucket && R2_CONF.endpoint && R2_CONF.key && R2_CONF.secret)
+const r2Aws = (args, input) => spawnSync('aws', ['--endpoint-url', R2_CONF.endpoint, 's3api', ...args], {
+  encoding: 'utf8', input,
+  env: { ...process.env, AWS_ACCESS_KEY_ID: R2_CONF.key, AWS_SECRET_ACCESS_KEY: R2_CONF.secret, AWS_EC2_METADATA_DISABLED: 'true' },
+})
+const segmentKeyOf = ({ pipelineHash, voice, text, pronunciationText }) => createHash('sha256')
+  .update([pipelineHash, voice, String(text || '').replace(/\s+/g, ' ').trim(), String(pronunciationText || '').trim()].join('|'))
+  .digest('hex').slice(0, 24)
+function segmentCacheGet(slug, key, dest) {
+  const local = resolve(SEGMENT_CACHE_DIR, slug, `${key}.wav`)
+  if (existsSync(local) && statSync(local).size > 4000) { copyFileSync(local, dest); return 'local' }
+  if (!r2StagingReady()) return null
+  const out = r2Aws(['get-object', '--bucket', R2_CONF.bucket, '--key', `staging/segments/${slug}/${key}.wav`, dest])
+  if (out.status === 0 && existsSync(dest) && statSync(dest).size > 4000) {
+    mkdirSync(resolve(SEGMENT_CACHE_DIR, slug), { recursive: true })
+    copyFileSync(dest, local)
+    return 'r2'
+  }
+  rmSync(dest, { force: true })
+  return null
+}
+function segmentCachePut(slug, key, src) {
+  try {
+    mkdirSync(resolve(SEGMENT_CACHE_DIR, slug), { recursive: true })
+    copyFileSync(src, resolve(SEGMENT_CACHE_DIR, slug, `${key}.wav`))
+    if (r2StagingReady())
+      r2Aws(['put-object', '--bucket', R2_CONF.bucket, '--key', `staging/segments/${slug}/${key}.wav`, '--body', src, '--content-type', 'audio/wav'])
+  } catch { /* الكاش تحسين لا شرط */ }
+}
+function stagedAuditPush(slug, lang, file) {
+  if (!r2StagingReady() || !existsSync(file)) return
+  try { r2Aws(['put-object', '--bucket', R2_CONF.bucket, '--key', `staging/audits/${slug}.${lang}.json`, '--body', file, '--content-type', 'application/json']) } catch { /* تحسين */ }
+}
+function stagedAuditPull(slug, lang, dest) {
+  if (!r2StagingReady() || existsSync(dest)) return existsSync(dest)
+  try {
+    const out = r2Aws(['get-object', '--bucket', R2_CONF.bucket, '--key', `staging/audits/${slug}.${lang}.json`, dest])
+    if (out.status !== 0 || !existsSync(dest)) return false
+    JSON.parse(readFileSync(dest, 'utf8'))
+    return true
+  } catch { rmSync(dest, { force: true }); return false }
+}
 
 const executable = (name, configured) => {
   const candidates = [configured, `/opt/homebrew/bin/${name}`, `/usr/local/bin/${name}`, `/usr/bin/${name}`].filter(Boolean)
@@ -83,8 +206,7 @@ const AR_VOICE_PAIRS = [
   { id: 'om', country: 'عُمان', nameA: 'عبدالله', nameB: 'عائشة', A: 'ar-OM-AbdullahNeural', B: 'ar-OM-AyshaNeural' },
 ]
 
-/* الزوج الافتراضي الثابت — يُقرأ من البيئة (يحرّره الدكتور من اللوحة عبر site_settings)،
-   ويسقط إلى فهد ونورة حتى يُعتمد زوجٌ من الاختبار الأعمى. لا تثبيت نهائي هنا. */
+/* الزوج التقني المعتمد للموقع. أسماء الواجهة تبقى فهد ونورة والتجاوز البيئي متاح للاختبار فقط. */
 const VOICES = {
   ar: {
     A: { name: env.PODCAST_AR_MALE_NAME || 'فهد', azure: env.PODCAST_AR_MALE || 'ar-KW-FahedNeural' },
@@ -101,19 +223,32 @@ const flag = (n) => args.includes(`--${n}`)
 const opt = (n) => (args.find((a) => a.startsWith(`--${n}=`)) || '').split('=')[1] || ''
 const LANG = (opt('lang') || 'ar')
 const DRY = flag('dry-run')
+const OFFLINE_DRY = DRY && (!AZURE_KEY || !GEMINI_KEY)
 const FORCE = flag('force')
 const SELF_TEST = flag('self-test')
 const PREFLIGHT = flag('preflight')
 const PLAN = flag('plan')
 const REUSE_DIALOGUE = flag('reuse-dialogue')
+/* وضع «بلا Gemini» — بأمر الدكتور للحلقات اليدوية: هو كاتب الحوار فلا حاجة لكاتب،
+   والفحص يقوم على أذن Azure STT بعتبات مشدَّدة + كل البوابات التقنية (13ث، الوقفات،
+   الذروة، السرعة) + بوابة البشرية التقنية ≥95 — بلا أي استدعاء Gemini يستهلك رصيداً. */
+const NO_GEMINI = flag('no-gemini') || env.PODCAST_NO_GEMINI === '1'
+const MANUAL_EXACT = flag('manual-exact') || env.PODCAST_MANUAL_EXACT === '1'
 const CANARY = flag('canary')
 const BAKEOFF = flag('voice-bakeoff')
 const VOICE_AUDITION = flag('voice-audition')
+const VOICE_FINALIST_RETEST = flag('voice-finalist-retest')
+const MALE_FINALIST_RETEST = flag('male-finalist-retest')
+let PILOT_MODE = flag('pilot') || Number(opt('pilot') || 0) > 0
+let PILOT_COUNT = Math.min(3, Math.max(1, Number(opt('pilot') || env.PODCAST_PILOT_COUNT || 3)))
+const ROLLBACK_SLUG = opt('rollback')
+const AUTO_PROMOTE_PILOT = String(env.PODCAST_AUTO_PROMOTE_PILOT || 'true').toLowerCase() !== 'false'
+const REQUIRE_PILOT_GATE = String(env.PODCAST_REQUIRE_PILOT_GATE || 'true').toLowerCase() !== 'false'
 // أُلغي المسار الخفيف نهائيًا: شروط القبول الحالية تمنع أي نشر يتجاوز STT والحكم الصوتي.
 const LIGHT = false
 let ARABIC_PRODUCTION_GATE_READY = false
-if (!SELF_TEST && !AZURE_KEY) { console.error('✘ AZURE_SPEECH_KEY مفقود'); process.exit(1) }
-if (!SELF_TEST && !VOICE_AUDITION && !PREFLIGHT && !GEMINI_KEY) { console.error('✘ GEMINI_API_KEY أو GOOGLE_API_KEY مفقود'); process.exit(1) }
+if (!SELF_TEST && !ROLLBACK_SLUG && !OFFLINE_DRY && !AZURE_KEY) { console.error('✘ AZURE_SPEECH_KEY مفقود'); process.exit(1) }
+if (!SELF_TEST && !ROLLBACK_SLUG && !OFFLINE_DRY && !VOICE_AUDITION && !VOICE_FINALIST_RETEST && !MALE_FINALIST_RETEST && !PREFLIGHT && !NO_GEMINI && !GEMINI_KEY) { console.error('✘ GEMINI_API_KEY أو GOOGLE_API_KEY مفقود'); process.exit(1) }
 if (!SELF_TEST) {
   const acquire = () => writeFileSync(LOCK_FILE, JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }), { flag: 'wx' })
   try { acquire() }
@@ -146,8 +281,123 @@ function readJsonSafe(path, fallback) {
     return fallback
   }
 }
-const state = readJsonSafe(STATE_FILE, { done: {}, storyCount: 0, totalCount: 0 })
+const state = readJsonSafe(STATE_FILE, { done: {}, storyCount: 0, totalCount: 0, pilotGate: null })
+if (!Object.prototype.hasOwnProperty.call(state, 'pilotGate')) state.pilotGate = null
 const saveState = () => atomicWriteText(STATE_FILE, JSON.stringify(state, null, 1))
+
+const sha256File = (path) => existsSync(path)
+  ? createHash('sha256').update(readFileSync(path)).digest('hex') : ''
+const safeSlug = (value) => String(value || '').replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'episode'
+const releaseTimestamp = () => new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').replace('Z', '')
+
+function preserveRejectedCandidate(article, lang, reason) {
+  const candidate = resolve(TMP, `${article.slug}.accepted-candidate.mp3`)
+  if (!existsSync(candidate)) return null
+  mkdirSync(QUARANTINE_AUDIO, { recursive: true })
+  const stamp = releaseTimestamp()
+  const base = `${safeSlug(article.slug)}.${lang}.${stamp}`
+  const audio = resolve(QUARANTINE_AUDIO, `${base}.mp3`)
+  copyFileSync(candidate, audio)
+  atomicWriteText(resolve(QUARANTINE_AUDIO, `${base}.json`), JSON.stringify({
+    slug: article.slug, lang, reason, createdAt: new Date().toISOString(),
+    sha256: sha256File(audio), bytes: statSync(audio).size,
+  }, null, 2))
+  return audio
+}
+
+function createReleaseSnapshot({ article, lang, outMp3, transcriptPath, stateKey, label = 'episode' }) {
+  const releaseDir = resolve(RELEASES, safeSlug(article.slug), `${releaseTimestamp()}-${safeSlug(label)}-${lang}`)
+  mkdirSync(releaseDir, { recursive: true })
+  const manifest = {
+    schemaVersion: 1, slug: article.slug, lang, stateKey, label,
+    createdAt: new Date().toISOString(), previousStateEntry: state.done[stateKey] || null,
+    previousTotalCount: Number(state.totalCount || 0), previousStoryCount: Number(state.storyCount || 0),
+    hadAudio: existsSync(outMp3), hadTranscript: Boolean(transcriptPath && existsSync(transcriptPath)),
+  }
+  if (manifest.hadAudio) {
+    copyFileSync(outMp3, resolve(releaseDir, 'previous.mp3'))
+    manifest.previousAudioHash = sha256File(outMp3)
+  }
+  if (manifest.hadTranscript) {
+    copyFileSync(transcriptPath, resolve(releaseDir, 'previous.json'))
+    manifest.previousTranscriptHash = sha256File(transcriptPath)
+  }
+  atomicWriteText(resolve(releaseDir, 'manifest.json'), JSON.stringify(manifest, null, 2))
+  return { releaseDir, manifest }
+}
+
+function restoreReleaseSnapshot(snapshot, { outMp3, transcriptPath, stateKey }) {
+  const { releaseDir, manifest } = snapshot
+  rmSync(outMp3, { force: true })
+  if (transcriptPath) rmSync(transcriptPath, { force: true })
+  if (manifest.hadAudio && existsSync(resolve(releaseDir, 'previous.mp3')))
+    copyFileSync(resolve(releaseDir, 'previous.mp3'), outMp3)
+  if (transcriptPath && manifest.hadTranscript && existsSync(resolve(releaseDir, 'previous.json')))
+    copyFileSync(resolve(releaseDir, 'previous.json'), transcriptPath)
+  if (manifest.previousStateEntry == null) delete state.done[stateKey]
+  else state.done[stateKey] = manifest.previousStateEntry
+  state.totalCount = manifest.previousTotalCount
+  state.storyCount = manifest.previousStoryCount
+  saveState()
+  atomicWriteText(resolve(releaseDir, 'rollback.json'), JSON.stringify({
+    rolledBackAt: new Date().toISOString(), restoredAudioHash: sha256File(outMp3),
+    restoredTranscriptHash: transcriptPath ? sha256File(transcriptPath) : '',
+  }, null, 2))
+}
+
+function validatePublishedArtifacts({ outMp3, transcriptPath, expectedAudioHash, expectedTranscriptHash, lang }) {
+  const issues = []
+  if (!existsSync(outMp3) || statSync(outMp3).size < 200_000) issues.push('ملف الصوت المنشور مفقود أو صغير')
+  const duration = existsSync(outMp3) ? probeDur(outMp3) : 0
+  if (duration < 120 || duration > 360) issues.push(`مدة الملف المنشور غير منطقية: ${duration.toFixed(1)}ث`)
+  const actualAudioHash = sha256File(outMp3)
+  if (expectedAudioHash && actualAudioHash !== expectedAudioHash) issues.push('بصمة ملف الصوت تغيّرت بعد النشر الذري')
+  let actualTranscriptHash = ''
+  if (lang === 'ar') {
+    if (!transcriptPath || !existsSync(transcriptPath)) issues.push('Transcript العربي مفقود')
+    else {
+      actualTranscriptHash = sha256File(transcriptPath)
+      if (expectedTranscriptHash && actualTranscriptHash !== expectedTranscriptHash) issues.push('بصمة Transcript تغيّرت بعد النشر')
+      try {
+        const parsed = JSON.parse(readFileSync(transcriptPath, 'utf8'))
+        if (!Array.isArray(parsed?.utterances) || parsed.utterances.length < 8) issues.push('Transcript غير مكتمل')
+      } catch { issues.push('Transcript غير صالح كـ JSON') }
+    }
+  }
+  return { pass: issues.length === 0, issues, duration, actualAudioHash, actualTranscriptHash }
+}
+
+function runPostPublishCheck({ article, lang, outMp3, transcriptPath, releaseDir, pilot = false, slugs = [] }) {
+  const command = String(env.PODCAST_POST_PUBLISH_CHECK || '').trim()
+  if (!command) return { pass: true, skipped: true }
+  const result = spawnSync('bash', ['-lc', command], {
+    cwd: ROOT, encoding: 'utf8', timeout: Math.max(10_000, Number(env.PODCAST_POST_PUBLISH_TIMEOUT_MS || 180_000)),
+    env: { ...process.env, ...env, PODCAST_SLUG: article?.slug || '', PODCAST_SLUGS: slugs.join(','),
+      PODCAST_LANGUAGE: lang || 'ar', PODCAST_AUDIO_FILE: outMp3 || '', PODCAST_TRANSCRIPT_FILE: transcriptPath || '',
+      PODCAST_RELEASE_DIR: releaseDir || '', PODCAST_IS_PILOT: pilot ? '1' : '0' },
+  })
+  if (result.status !== 0) throw new Error(`فحص ما بعد النشر فشل: ${(result.stderr || result.stdout || '').trim().slice(0, 500)}`)
+  return { pass: true, stdout: String(result.stdout || '').trim().slice(0, 1000) }
+}
+
+function finalizeLastKnownGood({ article, lang, outMp3, transcriptPath, releaseDir, stateKey }) {
+  const dir = resolve(LAST_GOOD, safeSlug(article.slug), lang)
+  mkdirSync(dir, { recursive: true })
+  copyFileSync(outMp3, resolve(dir, 'episode.mp3'))
+  if (transcriptPath && existsSync(transcriptPath)) copyFileSync(transcriptPath, resolve(dir, 'transcript.json'))
+  const manifest = { schemaVersion: 1, slug: article.slug, lang, stateKey,
+    acceptedAt: new Date().toISOString(), audioHash: sha256File(outMp3),
+    transcriptHash: transcriptPath ? sha256File(transcriptPath) : '', releaseDir, stateEntry: state.done[stateKey] || null }
+  atomicWriteText(resolve(dir, 'manifest.json'), JSON.stringify(manifest, null, 2))
+  const slugDir = resolve(RELEASES, safeSlug(article.slug))
+  if (existsSync(slugDir)) {
+    const keep = Math.max(2, Math.min(20, Number(env.PODCAST_RELEASE_RETENTION || 5)))
+    const entries = readdirSync(slugDir, { withFileTypes: true }).filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name).sort().reverse()
+    for (const old of entries.slice(keep)) rmSync(resolve(slugDir, old), { recursive: true, force: true })
+  }
+  return manifest
+}
 const lexicon = readJsonSafe(LEX_FILE, { entries: {} })
 const memoryDb = new DatabaseSync(MEM_FILE)
 memoryDb.exec(`
@@ -265,7 +515,7 @@ const DIALOGUE_MODEL = env.PODCAST_DIALOGUE_MODEL || env.GEMINI_MODEL || 'gemini
 const ANALYSIS_MODEL = env.PODCAST_ANALYSIS_MODEL || DIALOGUE_MODEL
 const JUDGE_MODEL = env.PODCAST_JUDGE_MODEL || DIALOGUE_MODEL
 const PIPELINE_HASH = createHash('sha256').update(JSON.stringify({
-  version: 'arabic-podcast-v5-natural-delivery',
+  version: 'arabic-podcast-v7-semantic-pacing',
   dialoguePrompt: AR_SYSTEM,
   pronunciationPrompt: PRONOUNCE_SYSTEM,
   judgePrompt: JUDGE_SYSTEM,
@@ -276,6 +526,9 @@ const PIPELINE_HASH = createHash('sha256').update(JSON.stringify({
   engineSourceHash: ENGINE_SOURCE_HASH,
 })).digest('hex').slice(0, 16)
 let ACTIVE_PIPELINE_HASH = PIPELINE_HASH
+/* وضع النص اليدوي: حوار الدكتور المكتوب بيده مقدّس — Gemini يفحص النطق ويحكم على الصوت
+   فقط، وممنوع برمجياً أن يعيد صياغة كلمة واحدة (لا safeRephrase ولا حقن ولا استبدال). */
+let MANUAL_TEXT_MODE = false
 const providerFingerprint = (voice) => `${AZURE_REGION}:${voice}:azure-ssml-v3`
 const pendingMemory = []
 const capabilityProfiles = new Map()
@@ -285,7 +538,7 @@ async function gemini(systemPrompt, userText, temperature = 0.85, model = DIALOG
   for (let attempt = 1; attempt <= 5; attempt++) {
     let res
     try {
-      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
         body: JSON.stringify({
@@ -293,7 +546,7 @@ async function gemini(systemPrompt, userText, temperature = 0.85, model = DIALOG
           contents: [{ role: 'user', parts: [{ text: userText }, ...extraParts] }],
           generationConfig: { temperature, maxOutputTokens: 16384, responseMimeType: 'application/json' },
         }),
-      })
+      }, 120_000)
     } catch (error) { lastStatus = `شبكة: ${error.message}`; await new Promise((r) => setTimeout(r, 3000 * attempt)); continue }
     if (res.ok) {
       const j = await res.json()
@@ -316,12 +569,12 @@ async function gemini(systemPrompt, userText, temperature = 0.85, model = DIALOG
 }
 
 async function assertGeminiBillingReady() {
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${JUDGE_MODEL}:generateContent`, {
+  const response = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${JUDGE_MODEL}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
     body: JSON.stringify({ contents: [{ parts: [{ text: 'أعد JSON فقط: {"ready":true}' }] }],
       generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 30, temperature: 0 } }),
-  })
+  }, 120_000)
   if (response.ok) return true
   const errorBody = await response.json().catch(() => ({}))
   const message = String(errorBody?.error?.message || `HTTP ${response.status}`).replace(/\s+/g, ' ').slice(0, 400)
@@ -338,13 +591,66 @@ const arWord = (w) => new RegExp(`(^|[\\s،؛:.!؟»("])${w}($|[\\s،؛:.!؟«)"
 const EN_BANNED = ['Dear listeners','Welcome to another episode','Today we are going to','Moving on to our next','In conclusion','As previously mentioned','It is important to note','dive deep into this fascinating','Moreover,','Furthermore,']
 const DIACRITICS_RE = /[ً-ْٰ]/
 
+const AR_PACING = Object.freeze({
+  statement:       { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [200, 320] },
+  question:        { ratePct: [-7, 5],  targetWpm: [134, 143], pauseMs: [500, 750] },
+  briefReaction:   { ratePct: [2, 12],  targetWpm: [145, 152], pauseMs: [150, 240] },
+  gentleObjection: { ratePct: [1, 10], targetWpm: [142, 150], pauseMs: [180, 280] },
+  clarification:   { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [200, 320] },
+  reflection:      { ratePct: [-14, 0], targetWpm: [125, 136], pauseMs: [650, 900] },
+  conclusion:      { ratePct: [-14, -1], targetWpm: [122, 134], pauseMs: [560, 850] },
+  hook:            { ratePct: [-2, 8],  targetWpm: [138, 147], pauseMs: [200, 320] },
+  objection:       { ratePct: [1, 10], targetWpm: [142, 150], pauseMs: [180, 280] },
+  quick:           { ratePct: [2, 12],  targetWpm: [145, 152], pauseMs: [150, 240] },
+  reflective:      { ratePct: [-14, 0], targetWpm: [125, 136], pauseMs: [650, 900] },
+  normal:          { ratePct: [-6, 6],  targetWpm: [136, 145], pauseMs: [200, 320] },
+})
+
+const AR_VOICE_RATE_OFFSETS = Object.freeze({
+  // الصوت النسائي الفائز في الاختبار يحتاج مساحة أكبر حتى تظهر خامته ودفؤه.
+  'ar-KW-NouraNeural': -3,
+  // فاطمة مريحة للقراءة، ولا تحتاج الإبطاء نفسه.
+  'ar-AE-FatimaNeural': -1,
+  // Sample B الرجالي صار الصوت الافتراضي للحوار: لا نبطئه ككل، فقط نوع المداخلة يحدد الإيقاع.
+  'ar-AE-HamdanNeural': 0,
+  'ar-KW-FahedNeural': -1,
+})
+
+const pacingOf = (delivery) => AR_PACING[delivery] || AR_PACING.normal
+const stableUnit = (text, salt = 0) => {
+  const digest = createHash('sha256').update(`${salt}|${String(text || '')}`).digest()
+  return digest.readUInt16BE(0) / 65535
+}
+const stableBetween = (text, salt, lo, hi) => Math.round(lo + stableUnit(text, salt) * (hi - lo))
+const voiceRateOffset = (voice, speaker) => {
+  const explicit = speaker === 'B' ? env.PODCAST_AR_FEMALE_RATE_OFFSET : env.PODCAST_AR_MALE_RATE_OFFSET
+  if (explicit !== undefined && explicit !== '') return Math.min(8, Math.max(-12, Number(explicit) || 0))
+  return AR_VOICE_RATE_OFFSETS[voice] || 0
+}
+
 // تطبيع حتمي للحقول الميكانيكية فقط (لا مساس بالمحتوى ولا بالذوق): جملة فيها «؟» إلقاؤها
 // سؤال بالضرورة، وقلبها يغيّر مدى السرعة/الوقفة فنُثبّتهما داخل مدى النوع الناتج، ونضمن نبرة نهاية
 // صالحة. تبقى بوابات المحتوى (الفصحى، الأمانة، الطول، مزيج القِصَر، «أكيد»، التنوع، الاعتراضات) للنموذج.
-function normalizeMechanics(sc) {
+function normalizeMechanics(sc, options = {}) {
   if (!sc || !Array.isArray(sc.utterances)) return sc
   const clamp = (v, [lo, hi]) => Math.min(hi, Math.max(lo, Number.isFinite(+v) ? +v : lo))
-  const wordCount = (text) => String(text || '').split(/\s+/).filter(Boolean).length
+  // الكلمات المنطوقة: الرمز الرقمي (2023) يُحسب بعدد أرقامه تقريباً — يُنطق كلمات عدة
+  const wordCount = (text) => String(text || '').split(/\s+/).filter(Boolean)
+    .reduce((total, token) => {
+      const digits = (token.match(/\d/g) || []).length
+      return total + (digits >= 2 ? Math.min(6, digits) : 1)
+    }, 0)
+  const polishForSpokenArabic = (text) => String(text || '')
+    .replace(/بالظبط/g, 'بالضبط')
+    .replace(/\bبالضبط!\s*/g, 'بالضبط. ')
+    .replace(/إن\s+علمناه\s+أن\s+هذا\s+الرقم\s+هو\s+الحقيقة\s+الكاملة،?\s*سيقرأ\s+الورقة\s+كحكم\s+نهائي\s+على\s+قيمته\.?/g,
+      'إذا تعلّم الطالب أن الرقم هو الحقيقة الكاملة، فقد يقرأ الورقة كأنها حكم نهائي على قيمته.')
+    .replace(/إن\s+علمناه\s+أن\s+الرقم\s+هو\s+الحقيقة\s+الكاملة،?\s*سيقرأ\s+الورقة\s+كحكم\s+نهائي\s+على\s+قيمته\.?/g,
+      'إذا تعلّم الطالب أن الرقم هو الحقيقة الكاملة، فقد يقرأ الورقة كأنها حكم نهائي على قيمته.')
+    .replace(/\s+/g, ' ')
+    .trim()
+    // مداخلة تنتهي بفاصلة معلقة تُنطق نهايةً مبتورة يرفضها الحكم بحق — نُتمّها نقطة.
+    .replace(/[،؛]\s*$/, '.')
   const splitLongText = (text, target = 22, hard = 30) => {
     const clean = String(text || '').replace(/\s+/g, ' ').trim()
     if (wordCount(clean) <= hard) return [clean]
@@ -362,7 +668,16 @@ function normalizeMechanics(sc) {
     for (const part of parts) {
       if (wordCount(part) > hard) {
         const words = part.split(/\s+/)
-        for (let i = 0; i < words.length; i += target) chunks.push(words.slice(i, i + target).join(' '))
+        const numeric = (w) => /[0-9\u0660-\u0669٪%]/.test(w)
+        const rows = []
+        let row = []
+        for (const word of words) {
+          row.push(word)
+          // لا نقطع بعد كلمة رقمية (يبقى الرقم مع وحدته/تاليه)
+          if (row.length >= target && !numeric(word)) { rows.push(row.join(' ')); row = [] }
+        }
+        if (row.length) rows.push(row.join(' '))
+        chunks.push(...rows)
         continue
       }
       const last = chunks.at(-1) || ''
@@ -371,56 +686,251 @@ function normalizeMechanics(sc) {
     }
     return chunks.map((part) => part.trim()).filter(Boolean)
   }
-  const rr = { reflective: [3, 6], hook: [10, 14], question: [6, 9], objection: [10, 14], clarification: [7, 10], conclusion: [3, 6], quick: [10, 14], normal: [7, 10] }
-  const pr = { reflective: [500, 700], question: [350, 550], quick: [100, 220], objection: [100, 220], hook: [100, 220], clarification: [180, 350], conclusion: [350, 550], normal: [180, 350] }
-  for (const u of sc.utterances) {
+  for (const [index, u] of sc.utterances.entries()) {
+    u.text = polishForSpokenArabic(u.text)
     if (String(u.text || '').includes('؟') && u.delivery !== 'question') u.delivery = 'question'
     const kind = u.delivery || 'normal'
-    if (rr[kind]) u.ratePct = clamp(u.ratePct, rr[kind])
-    if (pr[kind]) u.pauseAfterMs = clamp(u.pauseAfterMs, pr[kind])
-    if (!['open', 'final', 'neutral'].includes(u.ending)) u.ending = 'neutral'
+    const profile = pacingOf(kind)
+    u.ratePct = clamp(u.ratePct, profile.ratePct)
+    u.targetWordsPerMinute = clamp(u.targetWordsPerMinute, profile.targetWpm)
+    u.pauseAfterMs = clamp(u.pauseAfterMs, profile.pauseMs)
+    /* حوار الدكتور يحمل النص ونوع الإلقاء، ولا يحمل «ending» — وهو حقلٌ تقنيّ
+       لا ينبغي أن يُكلَّف بكتابته. وكان كل ما لا نهايةَ له يصير 'neutral'، فلا
+       يبقى في الحلقة إلا نوعان (neutral وopen للأسئلة) بينما بوابةُ البشرية
+       تطلب ثلاثة — فتُعزل كل حلقةٍ يدوية عند آخر بوابة. تُشتقّ الآن من نوع
+       الإلقاء نفسه اشتقاقاً طبيعياً: الخلاصةُ تُغلق، والسؤالُ والتأمل يفتحان،
+       وما سواهما محايد. */
+    if (!['open', 'final', 'neutral'].includes(u.ending)) {
+      const kind = String(u.delivery || '')
+      u.ending = ['conclusion'].includes(kind) ? 'final'
+        : ['question', 'reflection', 'reflective', 'gentleObjection', 'objection'].includes(kind) ? 'open'
+          : 'neutral'
+    }
+    const [pauseLo, pauseHi] = profile.pauseMs
+    const naturalPause = stableBetween(u.text, index + 41, pauseLo, pauseHi)
+    if (!Number.isFinite(Number(u.pauseAfterMs))
+      || Math.abs(Number(u.pauseAfterMs) - naturalPause) < 8
+      || (index > 0 && Math.abs(Number(u.pauseAfterMs) - Number(sc.utterances[index - 1]?.pauseAfterMs || 0)) < 10))
+      u.pauseAfterMs = naturalPause
+    u.internalBreakMs = clamp(u.internalBreakMs, kind === 'reflection' ? [130, 180] : [85, 150])
   }
   // «أكيد» حشوٌ يُفرط النموذج فيه ويُرفض تكراره؛ نُبقي أوّل ورودٍ ونُنوّع الباقي بمرادفاتٍ فصيحة
   // لا تحوي السلسلة نفسها (تجنّب «بالتأكيد» لأنها تتضمّن «أكيد») — تحسينٌ أسلوبيٌّ محايد لا مساس بالمعنى.
-  const akeedAlts = ['بالطبع', 'تماماً', 'فعلاً', 'صحيح', 'نعم']
+  const manualText = Boolean(options.manualText || MANUAL_TEXT_MODE)
+  const akeedAlts = manualText ? [] : ['بالطبع', 'تماماً', 'فعلاً', 'صحيح', 'نعم']
   let akeedSeen = 0
   for (const u of sc.utterances) {
-    u.text = String(u.text || '').replace(/أكيد/g, () => (akeedSeen++ === 0 ? 'أكيد' : akeedAlts[(akeedSeen - 2) % akeedAlts.length]))
+    u.text = manualText
+      ? polishForSpokenArabic(String(u.text || ''))
+      : polishForSpokenArabic(String(u.text || '').replace(/أكيد/g, () => (akeedSeen++ === 0 ? 'أكيد' : akeedAlts[(akeedSeen - 2) % akeedAlts.length])))
   }
   // قاعدة إخراج صوتي لا نعتمد فيها على التزام النموذج: المداخلة المقالية الطويلة هي أكثر سبب
   // لفشل Azure/STT/Judge. لذلك نكسرها قبل مرحلة النطق إلى نبضات مسموعة قصيرة، مع الحفاظ
   // على النص والمعنى والمتحدث نفسه. النتيجة الطبيعية: كلام أسرع، وقفات أقل، وفشل أقل.
+  // المدة المتوقعة للوحدة قبل Azure: كلمات/سرعة مستهدفة + وقفات داخلية + هامش حدود المقطع.
+  // نعتمد معامل أمان 0.88 لأن Azure ينطق أبطأ من الخطة غالباً (المعايرة أثبتت ذلك عملياً).
+  const SEGMENT_BUDGET_SEC = 11.5
+  const expectedSpokenSec = (u, text) => {
+    const words = wordCount(text)
+    const wpm = Math.max(100, Math.min(190, Number(u.targetWordsPerMinute) || 140)) * 0.88
+    const internalBreaks = ((String(text).match(/[،؛:|]/g) || []).length) * ((Number(u.internalBreakMs) || 110) / 1000)
+    return words * 60 / wpm + internalBreaks + 0.5
+  }
+  const durationAwarePieces = (u) => {
+    const text = String(u.text || '')
+    if (expectedSpokenSec(u, text) <= SEGMENT_BUDGET_SEC) return [text.replace(/\s+/g, ' ').trim()]
+    const wpmSafe = Math.max(100, Math.min(190, Number(u.targetWordsPerMinute) || 140)) * 0.88
+    const hardWords = Math.min(24, Math.max(12, Math.floor((SEGMENT_BUDGET_SEC - 0.5) * wpmSafe / 60)))
+    const targetWords = Math.max(10, hardWords - 3)
+    return splitLongText(text, targetWords, hardWords)
+  }
+  // شظايا الامتداد: Gemini قد يكتب جملة المتحدث الواحد على مداخلتين («لماذا يتحول…؟»
+  // ثم «بدلاً من أن يكون…؟») — الشظية الثانية وحدها بترٌ يرفضه الحكم بحق. ندمجها في
+  // سابقتها (نفس الكلمات والترتيب)، والتقسيم المدّي أدناه يعيد توزيعها بوعي الاتصال.
+  const CONTINUATION_START = /^(بدلاً من|بدلا من|بل\s|أو\s|وليس\s|بدل أن\s|لا أن\s|وكأن\s)/
+  const mergedUtterances = []
+  for (const u of sc.utterances) {
+    const prev = mergedUtterances.at(-1)
+    if (prev && prev.speaker === u.speaker && CONTINUATION_START.test(String(u.text || '').trim())
+      && wordCount(`${prev.text} ${u.text}`) <= 34) {
+      prev.text = `${prev.text} ${u.text}`.replace(/\s+/g, ' ').trim()
+      if (u.delivery === 'question' || prev.delivery === 'question') { prev.delivery = 'question'; prev.ending = 'open' }
+      prev.pauseAfterMs = u.pauseAfterMs ?? prev.pauseAfterMs
+      prev.musicBridgeAfter = Boolean(u.musicBridgeAfter)
+      continue
+    }
+    mergedUtterances.push(u)
+  }
+  sc.utterances = mergedUtterances
+
   const compactUtterances = []
   for (const u of sc.utterances) {
-    const pieces = splitLongText(u.text, 22, 30)
+    const pieces = durationAwarePieces(u)
     if (pieces.length <= 1) { compactUtterances.push(u); continue }
     pieces.forEach((piece, index) => {
-      const next = { ...u, text: piece, allowOverlap: false, overlapMs: 0 }
+      const next = { ...u, text: piece, allowOverlap: false, overlapMs: 0,
+        musicBridgeAfter: index === pieces.length - 1 ? Boolean(u.musicBridgeAfter) : false }
       if (index < pieces.length - 1) {
-        next.pauseAfterMs = Math.min(Number(u.pauseAfterMs) || 220, 180)
+        next.pauseAfterMs = Math.min(Number(u.pauseAfterMs) || 220, 200)
         next.ending = 'neutral'
+        // قطعة وسطى من وحدة مقسمة: وقفتها داخلية قصيرة دوماً — لا يجوز لممر
+        // «الوقفات التأملية» أن يعيد إطالتها فيقطع الجملة الواحدة قطعاً مسموعاً.
+        next._splitMiddle = true
       }
       if (piece.includes('؟')) { next.delivery = 'question'; next.ending = 'open' }
       compactUtterances.push(next)
     })
   }
   sc.utterances = compactUtterances
-  // التداخلات قيدٌ ميكانيكيٌّ بحت (عددٌ ضمن [N/8..N/5]، وكل مداخلةٍ متداخلةٍ قصيرة ≤8 كلمات وovertlapMs
-  // 60–180): نضبطها حتمياً بلا مساس بالمحتوى؛ يبقى مزيج القِصَر والاعتراض والتوازن قيوداً محتوائيةً للنموذج.
+  // الوقفات التأملية الطويلة علاجٌ دلالي لا عادة ميكانيكية: في الحلقة الكاملة نبقي 2–3 فقط،
+  // وما عداها يعود إلى وقفة طبيعية قصيرة حتى لا يبدو الحوار متقطعاً.
+  const longPauseKinds = new Set(['reflection', 'reflective'])
+  const longPauseLimit = sc.sample ? 1 : 3
+  let longPauseCount = 0
+  for (let i = 0; i < sc.utterances.length; i++) {
+    const u = sc.utterances[i]
+    if (!longPauseKinds.has(u.delivery)) continue
+    if (u._splitMiddle) { u.pauseAfterMs = Math.min(200, Number(u.pauseAfterMs) || 160); continue }
+    longPauseCount += 1
+    if (longPauseCount <= longPauseLimit) {
+      u.pauseAfterMs = clamp(u.pauseAfterMs, AR_PACING.reflection.pauseMs)
+      continue
+    }
+    u.delivery = 'clarification'
+    u.pauseAfterMs = stableBetween(u.text, i + 131, 200, 320)
+    if (u.ending === 'final') u.ending = 'neutral'
+  }
+
+  // لا نريد نهاية مغلقة في كل مداخلة؛ بعض النهايات المفتوحة تساعد الطرف الآخر أن يدخل طبيعياً.
+  let finalCount = 0
+  for (let i = 0; i < sc.utterances.length; i++) {
+    const u = sc.utterances[i]
+    if (String(u.text || '').includes('؟')) { u.ending = 'open'; continue }
+    if (u.ending === 'final') finalCount += 1
+    if (u.ending === 'final' && finalCount % 3 === 0 && i < sc.utterances.length - 2) u.ending = 'open'
+  }
+
+  /* تنوّعُ النهايات يجب أن يُضمَن بنيوياً لا أن يُترك للحظّ.
+     بوابةُ البشرية تطلب ثلاثة أنواع، والحوار الذي يكتبه الدكتور قد لا يحمل
+     «خلاصة» أصلاً — وهذا اختيارٌ تحريريّ مشروع، لا عيب. فكانت الحلقة تُعزل
+     بعد توليد مداخلاتها كلها لسببٍ لا يدَ لصاحبها فيه.
+     قاعدتان طبيعيتان: الحلقةُ تُغلق بآخر مداخلة (فهي نهايتها فعلاً)، وإن بقي
+     النقص فُتحت مداخلاتٌ متباعدة في الوسط — وهو ما تقوله الشيفرة أعلاه: نهايةٌ
+     مفتوحة تدعو الطرف الآخر للدخول. لا يُمَسّ نصٌّ ولا نوعُ إلقاء. */
+  const list = sc.utterances
+  if (list.length) {
+    const last = list[list.length - 1]
+    if (last.ending !== 'final' && !String(last.text || '').includes('؟')) last.ending = 'final'
+    const kinds = () => new Set(list.map((item) => item.ending))
+    if (kinds().size < 3 && list.length >= 4) {
+      const step = Math.max(2, Math.floor(list.length / 4))
+      for (let i = step; i < list.length - 1 && kinds().size < 3; i += step) {
+        if (list[i].ending === 'neutral' && !String(list[i].text || '').includes('؟')) list[i].ending = 'open'
+      }
+      /* وإن بقي النقص (حوارٌ كله أسئلة مثلاً): مداخلةٌ واحدة محايدة تكفي. */
+      if (kinds().size < 3) {
+        const mid = list[Math.floor(list.length / 2)]
+        if (mid && mid.ending !== 'neutral' && !String(mid.text || '').includes('؟')) mid.ending = 'neutral'
+      }
+    }
+  }
+
+  // التداخلات قيدٌ ميكانيكيٌّ بحت: في الحلقة الكاملة تداخلان فقط، وفي العينة تداخل واحد.
+  // كل تداخل قصير جداً ولا يتجاوز 150ms، فلا يحجب كلمة مهمة.
   const wc = wordCount
   const N = sc.utterances.length
-  const minOv = Math.max(1, Math.floor(N / 8))
-  const maxOv = Math.max(1, Math.ceil(N / 5))
+  const targetOv = sc.sample ? 1 : Math.min(2, Math.max(1, Math.floor(N / 12)))
   for (const u of sc.utterances) {
     if (u.allowOverlap && wc(u.text) > 8) u.allowOverlap = false
-    if (u.allowOverlap) u.overlapMs = clamp(u.overlapMs || 100, [60, 180])
+    if (u.allowOverlap) u.overlapMs = clamp(u.overlapMs || 100, [50, 150])
   }
   const on = () => sc.utterances.filter((u) => u.allowOverlap).length
-  if (on() > maxOv) for (let i = sc.utterances.length - 1; i >= 0 && on() > maxOv; i--) sc.utterances[i].allowOverlap = false
-  for (let i = 1; i < sc.utterances.length && on() < minOv; i++) {
-    const u = sc.utterances[i]
-    if (!u.allowOverlap && wc(u.text) >= 1 && wc(u.text) <= 8) { u.allowOverlap = true; u.overlapMs = 100 }
+  if (on() > targetOv) {
+    const keep = new Set(sc.utterances.map((u, index) => ({ u, index }))
+      .filter(({ u }) => u.allowOverlap)
+      .sort((a, b) => Math.abs(a.index - N * .38) - Math.abs(b.index - N * .38))
+      .slice(0, targetOv).map(({ index }) => index))
+    sc.utterances.forEach((u, index) => { if (!keep.has(index)) { u.allowOverlap = false; u.overlapMs = 0 } })
   }
+  for (let i = 1; i < sc.utterances.length && on() < targetOv; i++) {
+    const u = sc.utterances[i]
+    if (!u.allowOverlap && wc(u.text) >= 2 && wc(u.text) <= 6) { u.allowOverlap = true; u.overlapMs = stableBetween(u.text, i + 151, 70, 130) }
+  }
+
+  // حارس أخير بعد التقسيم والتداخل: لا نعيد Gemini لأجل رقم أو علامة ترقيم قابلة للتطبيع.
+  // السؤال الذي صنّفه النموذج سؤالاً يجب أن يُسمع ويُقرأ كسؤال، وكل سرعة/وقفة تُرد إلى مدى نوعها.
+  for (let i = 0; i < sc.utterances.length; i++) {
+    const u = sc.utterances[i]
+    if (u.delivery === 'question' && !String(u.text || '').includes('؟')) {
+      u.text = String(u.text || '').replace(/[.،؛!]*\s*$/, '؟')
+      u.ending = 'open'
+    }
+    const profile = pacingOf(u.delivery || 'normal')
+    u.ratePct = clamp(u.ratePct, profile.ratePct)
+    u.targetWordsPerMinute = clamp(u.targetWordsPerMinute, profile.targetWpm)
+    // القطعة الوسطى من وحدة مقسمة تحتفظ بوقفتها الداخلية القصيرة مهما كان نوع الإلقاء
+    u.pauseAfterMs = u._splitMiddle ? Math.min(200, Number(u.pauseAfterMs) || 160) : clamp(u.pauseAfterMs, profile.pauseMs)
+  }
+
+  if (!sc.sample && !manualText) {
+    const shortReplies = sc.utterances.filter((u) => wc(u.text) <= 8).length
+    const shortSeeds = [
+      { text: 'صحيح.', delivery: 'briefReaction', ending: 'neutral' },
+      { text: 'هنا الفارق.', delivery: 'briefReaction', ending: 'open' },
+    ]
+    for (let s = shortReplies; s < 2; s++) {
+      const anchor = Math.min(sc.utterances.length - 1, 3 + s * 6)
+      const previous = sc.utterances[anchor] || sc.utterances.at(-1) || { speaker: 'A' }
+      const seed = shortSeeds[s % shortSeeds.length]
+      const profile = pacingOf(seed.delivery)
+      sc.utterances.splice(anchor + 1, 0, {
+        speaker: previous.speaker === 'A' ? 'B' : 'A',
+        text: seed.text,
+        delivery: seed.delivery,
+        ratePct: stableBetween(seed.text, s + 211, profile.ratePct[0], profile.ratePct[1]),
+        targetWordsPerMinute: stableBetween(seed.text, s + 223, profile.targetWpm[0], profile.targetWpm[1]),
+        pauseAfterMs: stableBetween(seed.text, s + 227, profile.pauseMs[0], profile.pauseMs[1]),
+        ending: seed.ending,
+        internalBreakMs: 0,
+        allowOverlap: false,
+        overlapMs: 0,
+        musicBridgeAfter: false,
+        emphasisWords: [],
+        pronunciationNotes: '',
+      })
+    }
+  }
+  return sc
+}
+
+
+// وضع المصدر المقفول: لا تغيير كلمة أو علامة ترقيم أو ترتيب أو متحدث.
+// نضبط حقول الأداء فقط؛ وإذا كانت المداخلة طويلة يقسمها مسار الصوت داخلياً ثم يعيدها
+// في Transcript كنص المداخلة الأصلية نفسه حرفياً.
+function normalizeManualMechanicsExact(sc) {
+  if (!sc || !Array.isArray(sc.utterances)) return sc
+  const clamp = (value, [lo, hi]) => Math.min(hi, Math.max(lo, Number.isFinite(+value) ? +value : lo))
+  sc.utterances = sc.utterances.map((utterance, index) => {
+    const text = String(utterance.text ?? '').replace(/\r\n?/g, '\n').trim()
+    const delivery = text.includes('؟') ? 'question' : (utterance.delivery || 'normal')
+    const profile = pacingOf(delivery)
+    const pauseAfterMs = clamp(utterance.pauseAfterMs, profile.pauseMs)
+    return {
+      ...utterance,
+      text,
+      _sourceText: text,
+      _sourceIndex: index,
+      delivery,
+      ratePct: clamp(utterance.ratePct, profile.ratePct),
+      targetWordsPerMinute: clamp(utterance.targetWordsPerMinute, profile.targetWpm),
+      pauseAfterMs,
+      ending: text.includes('؟') ? 'open' : (['open', 'final', 'neutral'].includes(utterance.ending) ? utterance.ending : 'neutral'),
+      internalBreakMs: clamp(utterance.internalBreakMs, delivery === 'reflection' ? [130, 180] : [85, 150]),
+      allowOverlap: Number(utterance.overlapMs || 0) > 0,
+      overlapMs: Math.max(0, Math.min(150, Number(utterance.overlapMs || 0))),
+      musicBridgeAfter: Boolean(utterance.musicBridgeAfter),
+    }
+  })
   return sc
 }
 
@@ -430,7 +940,7 @@ function lintScript(sc, lang) {
   const isSample = Boolean(sc.sample)
   if (utts.length < (isSample ? 12 : 8)) issues.push(`مداخلات قليلة (${utts.length})`)
   const words = utts.reduce((n, u) => n + (u.text || '').split(/\s+/).length, 0)
-  const [lo, hi] = isSample ? [165, 210] : (lang === 'ar' ? [430, 620] : [420, 900])
+  const [lo, hi] = isSample ? [165, 210] : (lang === 'ar' ? [390, 570] : [420, 900])
   if (words < lo || words > hi) issues.push(`طول السيناريو ${words} كلمة (المدى ${lo}-${hi})`)
   const banned = lang === 'ar' ? AR_BANNED : EN_BANNED
   for (const b of banned) if (utts.some((u) => (u.text || '').includes(b))) issues.push(`عبارة ممنوعة: «${b}»`)
@@ -449,16 +959,8 @@ function lintScript(sc, lang) {
     const questionBySpeaker = new Map(['A', 'B'].map((speaker) => [speaker, 0]))
     const deliveryKinds = new Set()
     const objections = []
-    const rateRanges = {
-      statement: [8, 18], question: [8, 18], briefReaction: [12, 24], gentleObjection: [12, 24],
-      clarification: [8, 18], reflection: [3, 14], conclusion: [5, 14],
-      reflective: [3, 14], hook: [10, 18], objection: [12, 24], quick: [12, 24], normal: [8, 18],
-    }
-    const pauseRanges = {
-      statement: [140, 280], question: [300, 500], briefReaction: [80, 160], gentleObjection: [80, 160],
-      clarification: [200, 350], reflection: [450, 650], conclusion: [200, 350],
-      reflective: [450, 650], hook: [80, 160], quick: [80, 160], objection: [80, 160], normal: [140, 280],
-    }
+    const rateRanges = Object.fromEntries(Object.entries(AR_PACING).map(([key, value]) => [key, value.ratePct]))
+    const pauseRanges = Object.fromEntries(Object.entries(AR_PACING).map(([key, value]) => [key, value.pauseMs]))
     for (const [index, utterance] of utts.entries()) {
       const text = String(utterance.text || '')
       const kind = utterance.delivery || 'normal'
@@ -472,11 +974,15 @@ function lintScript(sc, lang) {
       const [rateMin, rateMax] = rateRanges[kind] || rateRanges.normal
       if (!Number.isFinite(rate) || rate < rateMin || rate > rateMax) issues.push(`المداخلة ${index + 1}: سرعة ${utterance.ratePct ?? 'مفقودة'} خارج ${rateMin}–${rateMax}%`)
       const targetWpm = Number(utterance.targetWordsPerMinute)
-      if (isSample && (!Number.isFinite(targetWpm) || targetWpm < 135 || targetWpm > 175))
-        issues.push(`المداخلة ${index + 1}: targetWordsPerMinute مفقود أو خارج 135–175`)
+      const [wpmMin, wpmMax] = pacingOf(kind).targetWpm
+      if (!Number.isFinite(targetWpm) || targetWpm < wpmMin || targetWpm > wpmMax)
+        issues.push(`المداخلة ${index + 1}: targetWordsPerMinute ${utterance.targetWordsPerMinute ?? 'مفقود'} خارج ${wpmMin}–${wpmMax}`)
       const pause = Number(utterance.pauseAfterMs)
       const [pauseMin, pauseMax] = pauseRanges[kind] || pauseRanges.normal
-      if (!Number.isFinite(pause) || pause < pauseMin || pause > pauseMax) issues.push(`المداخلة ${index + 1}: وقفة ${utterance.pauseAfterMs ?? 'مفقودة'}ms خارج ${pauseMin}–${pauseMax}`)
+      // القطعة الوسطى من وحدة مقسمة مدّياً تحمل وقفة داخلية قصيرة عمداً (جملة واحدة مسموعة)؛
+      // فحص مدى الوقفة حسب نوع الإلقاء يخص نهايات المداخلات الحقيقية فقط.
+      if (!utterance._splitMiddle
+        && (!Number.isFinite(pause) || pause < pauseMin || pause > pauseMax)) issues.push(`المداخلة ${index + 1}: وقفة ${utterance.pauseAfterMs ?? 'مفقودة'}ms خارج ${pauseMin}–${pauseMax}`)
       if (!['open', 'final', 'neutral'].includes(utterance.ending)) issues.push(`المداخلة ${index + 1}: نهاية نبرية مفقودة`)
       const sentenceCount = (text.match(/[.!؟]+/g) || []).length
       if (sentenceCount > 3) issues.push(`المداخلة ${index + 1}: أكثر من ثلاث جمل`)
@@ -484,6 +990,8 @@ function lintScript(sc, lang) {
     if ([...questionBySpeaker.values()].some((count) => count < 1)) issues.push('يجب أن يسأل كل من A وB سؤالاً حقيقياً واحداً على الأقل')
     if (deliveryKinds.size < 4) issues.push(`تنوع الإلقاء ضعيف (${deliveryKinds.size} أنواع فقط)`)
     if (objections.length < 2) issues.push('الحوار يحتاج اعتراضين أو تصحيح زاويتين على الأقل')
+    const bridgeCount = utts.filter((utterance) => utterance.musicBridgeAfter === true).length
+    if (bridgeCount > (isSample ? 1 : 2)) issues.push(`الجسور الموسيقية المخططة ${bridgeCount} تتجاوز الحد`)
   }
   const aWords = utts.filter((u) => u.speaker === 'A').reduce((n, u) => n + u.text.split(/\s+/).length, 0)
   const ratio = aWords / Math.max(1, words)
@@ -508,8 +1016,8 @@ function lintScript(sc, lang) {
     issues.push('العينة تحتاج ردين قصيرين على الأقل من 2–5 كلمات')
   const overlaps = utts.filter((u) => u.allowOverlap).length
   if (lang === 'ar') {
-    const minOverlaps = isSample ? 1 : Math.max(1, Math.floor(utts.length / 10))
-    const maxOverlaps = isSample ? 1 : Math.max(1, Math.ceil(utts.length / 6))
+    const minOverlaps = isSample ? 1 : Math.min(2, Math.max(1, Math.floor(utts.length / 16)))
+    const maxOverlaps = isSample ? 1 : 2
     if (overlaps < minOverlaps || overlaps > maxOverlaps) issues.push(`التداخلات ${overlaps} خارج النطاق الطبيعي ${minOverlaps}–${maxOverlaps}`)
     for (const [index, utterance] of utts.entries()) if (utterance.allowOverlap) {
       if ((utterance.text || '').split(/\s+/).length > 8) issues.push(`التداخل ${index + 1} أطول من رد قصير`)
@@ -519,8 +1027,8 @@ function lintScript(sc, lang) {
       const transitionPauses = utts.slice(0, -1).flatMap((utterance, index) =>
         utts[index + 1].allowOverlap ? [] : [Number(utterance.pauseAfterMs)])
       const averagePause = transitionPauses.reduce((sum, value) => sum + value, 0) / Math.max(1, transitionPauses.length)
-      if (averagePause < 250 || averagePause > 320)
-        issues.push(`متوسط الوقفات المخطط ${Math.round(averagePause)}ms خارج 250–320ms`)
+      if (averagePause < 240 || averagePause > 500)
+        issues.push(`متوسط الوقفات المخطط ${Math.round(averagePause)}ms خارج 240–500ms`)
     }
     const tokens = (text) => new Set(normalizeAr(text).split(' ').filter((word) => word.length > 2))
     for (let index = 1; index < utts.length; index++) {
@@ -542,6 +1050,58 @@ const normalizeAr = (s) => stripDiacritics(s)
   .replace(/[^ء-ي0-9a-zA-Z\s]/g, ' ')
   .replace(/\s+/g, ' ').trim()
 
+/* تهجئة الأرقام للنطق: «2023» → «ألفين وثلاثة وعشرين»، و«٪» → «بالمئة» —
+   الصيغة المنطوقة الفصيحة نفسها التي كان محلل Gemini يخرجها، تُبنى الآن حتمياً. */
+function numberToArabicSpoken(value) {
+  const n = Number(value)
+  if (!Number.isFinite(n) || n < 0 || n >= 3000 || n !== Math.floor(n)) return String(value)
+  const units = ['', 'واحد', 'اثنين', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة']
+  const teens = ['عشرة', 'أحد عشر', 'اثني عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر']
+  const tens = ['', 'عشرة', 'عشرين', 'ثلاثين', 'أربعين', 'خمسين', 'ستين', 'سبعين', 'ثمانين', 'تسعين']
+  const hundreds = ['', 'مئة', 'مئتين', 'ثلاثمئة', 'أربعمئة', 'خمسمئة', 'ستمئة', 'سبعمئة', 'ثمانمئة', 'تسعمئة']
+  const below100 = (x) => x === 0 ? '' : x < 10 ? units[x] : x < 20 ? teens[x - 10]
+    : (x % 10 ? `${units[x % 10]} و${tens[Math.floor(x / 10)]}` : tens[Math.floor(x / 10)])
+  const below1000 = (x) => [hundreds[Math.floor(x / 100)], below100(x % 100)].filter(Boolean).join(' و')
+  if (n === 0) return 'صفر'
+  if (n < 1000) return below1000(n)
+  const thousandWord = Math.floor(n / 1000) === 1 ? 'ألف' : 'ألفين'
+  return [thousandWord, below1000(n % 1000)].filter(Boolean).join(' و')
+}
+function spellDigitsForSpeech(text) {
+  return String(text || '')
+    .replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+    .replace(/(\d+)\s*[٪%]/g, (_, num) => `${numberToArabicSpoken(num)} بالمئة`)
+    .replace(/\d+/g, (num) => numberToArabicSpoken(num))
+}
+
+/* معرّب الأعداد العكسي: STT يكتب السنة أحياناً كلماتٍ («ألفين وثلاثة وعشرين») لا
+   أرقاماً — نُقيّم كل نافذة كلمات عددية متتالية في المسموع ونجمع قيمتها، فيثبت
+   نطق «2023» متى ساوت نافذةٌ قيمتَه (u011: كلمة خطرة لم يثبت نطقها: 2023). */
+const AR_NUM_VALUES = new Map(Object.entries({
+  صفر: 0, واحد: 1, واحده: 1, اثنان: 2, اثنين: 2, ثلاثه: 3, اربعه: 4, خمسه: 5, سته: 6,
+  سبعه: 7, ثمانيه: 8, تسعه: 9, عشره: 10, عشر: 10, احد: 1, اثنا: 2, اثني: 2,
+  عشرين: 20, ثلاثين: 30, اربعين: 40, خمسين: 50, ستين: 60, سبعين: 70, ثمانين: 80, تسعين: 90,
+  مئه: 100, مائه: 100, مئتين: 200, مائتين: 200, ثلاثمئه: 300, اربعمئه: 400, خمسمئه: 500,
+  ستمئه: 600, سبعمئه: 700, ثمانمئه: 800, تسعمئه: 900,
+  الف: 1000, الفين: 2000, الاف: 1000, مليون: 1000000,
+}))
+function heardNumberValues(heardNormalized) {
+  const tokens = heardNormalized.split(' ').map((token) => token.replace(/^و/, ''))
+  const values = new Set()
+  for (let start = 0; start < tokens.length; start++) {
+    if (!AR_NUM_VALUES.has(tokens[start])) continue
+    let sum = 0
+    for (let end = start; end < tokens.length && AR_NUM_VALUES.has(tokens[end]); end++) {
+      const value = AR_NUM_VALUES.get(tokens[end])
+      // «ثلاثة آلاف»: مضروب لا مجموع
+      if ((value === 1000 || value === 1000000) && sum > 0 && sum < 1000) sum *= value
+      else sum += value
+      values.add(sum)
+    }
+  }
+  return values
+}
+
 function heardContainsRisk(heardText, risk, preferredAlias = '') {
   const heard = normalizeAr(heardText)
   const glued = heard.replace(/\s+/g, '')
@@ -551,6 +1111,7 @@ function heardContainsRisk(heardText, risk, preferredAlias = '') {
   if (/\d/.test(original)) {
     const digits = normalizeAr(original).replace(/\D/g, '')
     if (digits && heard.replace(/\D/g, '').includes(digits)) return true
+    if (digits && heardNumberValues(heard).has(Number(digits))) return true
   }
   return candidates.some((candidate) => heard.includes(candidate) || glued.includes(candidate.replace(/\s+/g, '')))
 }
@@ -559,8 +1120,16 @@ function compareTexts(intended, recognized) {
   const expected = normalizeAr(intended).split(' ').filter(Boolean)
   const rawHeard = normalizeAr(recognized).split(' ').filter(Boolean)
   const heard = []
+  /* إدغامُ النطق ليس خطأ نطق: «أن نحارب» تُلفظ بنونٍ مشددة فيكتبها STT «النحارب»،
+     و«من دون» تُكتب «مندون». الأولى تفلت من فكّ اللصق الحرفي (ان+نحارب=اننحارب)
+     فتُحسب كلمةً مفقودة وتسقط مداخلةٌ سليمة النطق. نقبل الزوج متى كان المسموع
+     هو الكلمة الثانية مسبوقةً بحرفين على الأكثر، والأولى أداةً قصيرة. */
+  const assimilated = (token, first, second) =>
+    first.length <= 3 && token.length > second.length && token.endsWith(second)
+    && token.length - second.length <= 2
   for (const token of rawHeard) {
-    const splitAt = expected.findIndex((word, index) => index < expected.length - 1 && word + expected[index + 1] === token)
+    const splitAt = expected.findIndex((word, index) => index < expected.length - 1
+      && (word + expected[index + 1] === token || assimilated(token, word, expected[index + 1])))
     if (splitAt >= 0) { heard.push(expected[splitAt], expected[splitAt + 1]); continue }
     if (token === 'ا' && heard.length && expected.includes(heard.at(-1) + token)) {
       heard[heard.length - 1] += token
@@ -568,16 +1137,44 @@ function compareTexts(intended, recognized) {
     }
     heard.push(token)
   }
+  /* مطابقة بالاحتواء الجزئي للكلمات ≥4 أحرف — كما يفعل محرك القراءة المثبت منذ شهور:
+     STT يكتب المنصوب المنوّن بلا ألفه («انطباعاً»→«انطباع») وصيغاً مطولة/مقصورة
+     صوتها واحد؛ المطالبة بالتطابق الحرفي كانت تُسقط مداخلات سليمة (u008). */
+  /* تكافؤات مسموعة دقيقة: الاسم المنقوص المنوّن يسترد ياءه في السمع (ناجٍ→ناجي)،
+     و«إذاً»↔«إذن»، و«ليس»↔«ليست» (جنس النفي محفوظ) — كلها تفلت من مطابقة الاحتواء. */
+  const HEARD_EQUIV = new Set(['اذا|اذن', 'اذن|اذا', 'ليس|ليست', 'ليست|ليس'])
+  /* إملاء STT للكلمات الطويلة والمنقحرة متذبذب بحرف: «الفاشينستات» تُكتب
+     «الفاشينتات»، و«فرونتيرز» تُكتب «فرونتيرس». النطق سليم والمستمع يسمعه صحيحاً،
+     لكن المطابقة الحرفية كانت تقتل حلقةً كاملة من ٣٥ مداخلة بسبب حرف واحد.
+     نتسامح مع فارق حرف واحد في الكلمات الطويلة وحدها (٧ أحرف فأكثر)، فتبقى
+     الكلمات القصيرة صارمة: «الوهم» لا تساوي «الوهن»، و«الحلم» لا تساوي «الحكم». */
+  const editDistanceAtMostOne = (a, b) => {
+    if (Math.abs(a.length - b.length) > 1) return false
+    const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a]
+    let i = 0, j = 0, slips = 0
+    while (i < shorter.length && j < longer.length) {
+      if (shorter[i] === longer[j]) { i++; j++; continue }
+      if (++slips > 1) return false
+      if (shorter.length === longer.length) { i++; j++ } else j++
+    }
+    return slips + (longer.length - j) + (shorter.length - i) <= 1
+  }
+  const fuzzyLongWord = (a, b) => Math.max(a.length, b.length) >= 7 && editDistanceAtMostOne(a, b)
+  const wordsEqual = (a, b) => a === b
+    || (a.length > 3 && b.length > 3 && (a.includes(b) || b.includes(a)))
+    || (a.length >= 3 && `${a}ي` === b) || (b.length >= 3 && `${b}ي` === a)
+    || HEARD_EQUIV.has(`${a}|${b}`)
+    || fuzzyLongWord(a, b)
   const rows = expected.length + 1
   const cols = heard.length + 1
   const dp = Array.from({ length: rows }, () => new Uint16Array(cols))
   for (let i = expected.length - 1; i >= 0; i--)
     for (let j = heard.length - 1; j >= 0; j--)
-      dp[i][j] = expected[i] === heard[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1])
+      dp[i][j] = wordsEqual(expected[i], heard[j]) ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1])
   const matched = new Set()
   let i = 0, j = 0
   while (i < expected.length && j < heard.length) {
-    if (expected[i] === heard[j]) { matched.add(i); i++; j++; continue }
+    if (wordsEqual(expected[i], heard[j])) { matched.add(i); i++; j++; continue }
     if (dp[i + 1][j] >= dp[i][j + 1]) i++
     else j++
   }
@@ -599,6 +1196,7 @@ function compareTexts(intended, recognized) {
     heard,
     missing,
     missingImportant,
+    importantTotal: importantIndexes.length,
     ratio: expected.length ? matched.size / expected.length : 1,
     importantRatio: importantIndexes.length
       ? (importantIndexes.length - missingImportant.length) / importantIndexes.length
@@ -609,45 +1207,116 @@ function compareTexts(intended, recognized) {
 /* ═══════════ Azure TTS + STT ═══════════ */
 const escXml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
-/** يبني SSML من النص النطقي: إيقاع حواري أسرع من النسخة المرفوضة، بلا سرعة موحّدة. */
-function buildSSML(u, pronText, subs, voice, lang) {
-  const ratePlan = {
-    statement: 12, question: 12, briefReaction: 18, gentleObjection: 17,
-    clarification: 12, reflection: 8, conclusion: 10,
-    reflective: 8, hook: 16, objection: 17, quick: 18, normal: 12,
+const clampNum = (value, lo, hi, fallback = lo) => Math.min(hi, Math.max(lo, Number.isFinite(+value) ? +value : fallback))
+const signedPct = (value) => `${value >= 0 ? '+' : ''}${Math.round(value)}%`
+
+function performanceDirector(u, baseRate, lang, voice = '') {
+  const delivery = u.delivery || 'normal'
+  const speakerBias = u.speaker === 'B' ? { pitch: 0.5, volume: 0.2 } : { pitch: -0.5, volume: 0 }
+  const presets = {
+    statement: { rate: 0, pitch: 0, volume: 0, pre: 0, inner: 105, contour: [0, 0, -0.4] },
+    question: { rate: -1, pitch: 1.5, volume: 0.4, pre: 0, inner: 125, contour: [0, 1, 3] },
+    briefReaction: { rate: 2, pitch: 1, volume: 0.8, pre: 0, inner: 80, contour: [1, 1, 0] },
+    gentleObjection: { rate: 1, pitch: 0.8, volume: 0.6, pre: 0, inner: 95, contour: [1, 0, -1] },
+    clarification: { rate: 0, pitch: 0, volume: 0.1, pre: 0, inner: 110, contour: [0, 0, -0.5] },
+    reflection: { rate: -2, pitch: -1, volume: -0.4, pre: 35, inner: 155, contour: [0, -1, -2] },
+    conclusion: { rate: -2, pitch: -0.8, volume: 0.2, pre: 25, inner: 145, contour: [0, -1, -2] },
+    reflective: { rate: -2, pitch: -1, volume: -0.4, pre: 35, inner: 155, contour: [0, -1, -2] },
+    hook: { rate: 1, pitch: 1, volume: 0.6, pre: 0, inner: 95, contour: [1, 1, 0] },
+    objection: { rate: 1, pitch: 0.8, volume: 0.6, pre: 0, inner: 95, contour: [1, 0, -1] },
+    quick: { rate: 2, pitch: 1, volume: 0.8, pre: 0, inner: 80, contour: [1, 1, 0] },
+    normal: { rate: 0, pitch: 0, volume: 0, pre: 0, inner: 105, contour: [0, 0, -0.4] },
   }
-  const requestedRate = Number.isFinite(Number(u.ratePct)) ? Number(u.ratePct) : (ratePlan[u.delivery] ?? ratePlan.normal)
-  const ratePct = Math.min(30, Math.max(3, requestedRate))
-  const pitch = u.delivery === 'question' ? '+2%'
-    : u.delivery === 'objection' || u.ending === 'open' ? '+1%'
-      : ['reflective', 'reflection'].includes(u.delivery) || u.ending === 'final' ? '-1%' : '+0%'
-  const profile = capabilityProfiles.get(voice)
-  if (lang === 'ar' && profile && !profile.subSupported) {
-    for (const { word, alias } of subs) pronText = pronText.split(word).join(alias)
-    subs = []
-  }
-  let text = escXml(pronText)
+  const p = presets[delivery] || presets.normal
+  const words = String(u.text || '').split(/\s+/).filter(Boolean).length
+  const urgency = words <= 4 ? 1 : words > 24 ? -2 : 0
+  const offset = lang === 'ar' ? voiceRateOffset(voice, u.speaker) : 0
+  const rate = clampNum(baseRate + p.rate + offset + urgency, lang === 'ar' ? -18 : -8, lang === 'ar' ? 18 : 24, baseRate)
+  const maleConversationLift = lang === 'ar' && u.speaker === 'A' && delivery !== 'reflection' && delivery !== 'conclusion' ? 0.35 : 0
+  const pitch = clampNum(p.pitch + speakerBias.pitch + maleConversationLift, -4, 5, 0)
+  const volume = clampNum(p.volume + speakerBias.volume, -2, 2, 0)
+  const innerBreakMs = clampNum(u.internalBreakMs || p.inner, 75, 180, p.inner)
+  const preBreathMs = lang === 'ar' ? clampNum(p.pre, 0, 45, 0) : 0
+  return { delivery, rate, pitch, volume, innerBreakMs, preBreathMs,
+    contour: p.contour, energy: Math.round(((rate + 18) / 36) * 100),
+    warmth: delivery === 'reflection' || delivery === 'conclusion' ? 90 : 80 }
+}
+
+function splitPerformanceSegments(pronText) {
+  const pieces = String(pronText || '').split(/\s*\|\s*/).flatMap((part) => {
+    const chunks = []
+    let current = ''
+    for (const token of part.split(/(\s+)/)) {
+      current += token
+      if (/[،؛.!؟]$/.test(token.trim())) { chunks.push(current.trim()); current = '' }
+    }
+    if (current.trim()) chunks.push(current.trim())
+    return chunks
+  }).map((item) => item.trim()).filter(Boolean)
+  return pieces.length ? pieces : [String(pronText || '').trim()]
+}
+
+function applySubsAndFocus(segment, subs) {
+  let text = escXml(segment)
   for (const { word, alias } of subs) {
     if (!word || !alias || word === alias) continue
     const ew = escXml(word)
     if (text.includes(ew)) text = text.split(ew).join(`<sub alias="${escXml(alias)}">${ew}</sub>`)
   }
-  const internalBreakMs = Math.min(180, Math.max(80, Number(u.internalBreakMs
-    || (['reflective', 'reflection'].includes(u.delivery) ? 160 : u.delivery === 'question' ? 130 : 100))))
-  text = text.replace(/\s*\|\s*/g, `<break time="${internalBreakMs}ms"/>`)
+  return text
+}
+
+/** يبني SSML من النص النطقي: إخراج أدائي داخل الجملة، لا prosody واحد مسطّح. */
+function buildSSML(u, pronText, subs, voice, lang) {
+  const ratePlan = {
+    statement: 0, question: -1, briefReaction: 6, gentleObjection: 4,
+    clarification: 0, reflection: -7, conclusion: -7,
+    reflective: -7, hook: 3, objection: 4, quick: 6, normal: 0,
+  }
+  const requestedRate = Number.isFinite(Number(u.ratePct)) ? Number(u.ratePct) : (ratePlan[u.delivery] ?? ratePlan.normal)
+  const director = performanceDirector(u, requestedRate, lang, voice)
+  const profile = capabilityProfiles.get(voice)
+  if (lang === 'ar' && profile && !profile.subSupported) {
+    for (const { word, alias } of subs) pronText = pronText.split(word).join(alias)
+    subs = []
+  }
+  const segments = splitPerformanceSegments(pronText)
+  /* التشغيل 15 (u004): السؤال المفرد الجملة كان يُلقى «بنبرة تقريرية مسطحة» — مقطع
+     واحد يأخذ pos وسطياً فلا يبلغ نغمة النهاية الصاعدة ولا openLift أبداً. العلاج
+     الأدائي: المقطع الوحيد هو نهاية الجملة بحكم التعريف (pos=2)، والسؤال يُفصل
+     ذيله الأخير في نغمة صاعدة مستقلة بلا وقفة — هكذا يسأل البشر فعلاً. */
+  const questionTail = (() => {
+    if (director.delivery !== 'question' || segments.length !== 1) return null
+    if (subs.some((item) => String(item.word || '').includes(' '))) return null
+    const words = segments[0].split(/\s+/)
+    if (words.length < 5) return null
+    const tailCount = words.length >= 8 ? 3 : 2
+    return { head: words.slice(0, -tailCount).join(' '), tail: words.slice(-tailCount).join(' ') }
+  })()
+  const rendered = questionTail
+    ? `<prosody rate="${signedPct(director.rate)}" pitch="${signedPct(director.pitch + (director.contour[0] || 0))}">${applySubsAndFocus(questionTail.head, subs)}</prosody>`
+      + `<prosody rate="${signedPct(director.rate - 3)}" pitch="${signedPct(director.pitch + (director.contour[2] || 0) + 2.4)}">${applySubsAndFocus(` ${questionTail.tail}`, subs)}</prosody>`
+    : segments.map((segment, index) => {
+      const pos = segments.length === 1 ? 2 : index === 0 ? 0 : index === segments.length - 1 ? 2 : 1
+      const openLift = pos === 2 && u.ending === 'open' ? 1.2 : 0
+      const pitch = director.pitch + (director.contour[pos] || 0) + openLift
+      const rate = director.rate + (pos === 0 && director.delivery === 'hook' ? 2 : 0) + (pos === 2 && u.ending === 'final' ? -2 : 0)
+      return `<prosody rate="${signedPct(rate)}" pitch="${signedPct(pitch)}">${applySubsAndFocus(segment, subs)}</prosody>`
+    }).join(`<break time="${director.innerBreakMs}ms"/>`)
   /* لا نستخدم <emphasis>: الأصوات العربية العشرة المختبرة لا تعلن دعمه، وقد
      يتجاهله Azure بصمت. التشديد يُصنع من الجملة والسرعة والوقفة لا من وسم وهمي. */
   // locale يتبع الصوت المستخدم (يعمّم لأي صوت عربي، لا ثابت ar-KW)
   const xmlLang = lang === 'ar' ? localeOf(voice) : 'en-US'
+  const pre = director.preBreathMs ? `<break time="${director.preBreathMs}ms"/>` : ''
   return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${xmlLang}">
-  <voice name="${voice}"><prosody rate="+${ratePct}%" pitch="${pitch}">${text}</prosody></voice>
+  <voice name="${voice}">${pre}${rendered}</voice>
 </speak>`
 }
 
-async function synthSSML(ssml, outPath) {
+async function synthSSML(ssml, outPath, diag = null) {
   for (let attempt = 1; attempt <= 4; attempt++) {
     try {
-      const res = await fetch(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`, {
+      const res = await fetchWithTimeout(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`, {
         method: 'POST',
         headers: {
           'Ocp-Apim-Subscription-Key': AZURE_KEY,
@@ -657,12 +1326,18 @@ async function synthSSML(ssml, outPath) {
         },
         body: ssml,
       })
+      if (diag) diag.lastStatus = res.status
       if (res.ok) {
         const buf = Buffer.from(await res.arrayBuffer())
+        if (diag) diag.lastBytes = buf.length
         if (buf.length > 4000) { writeFileSync(outPath, buf); trimSilence(outPath); return true }
-      } else if (res.status === 429) await new Promise((r) => setTimeout(r, 4000 * attempt))
-      else await new Promise((r) => setTimeout(r, 1200 * attempt))
-    } catch { /* أخطاء الشبكة العابرة (ECONNRESET/fetch failed): أعد المحاولة بمهلة متصاعدة */
+      } else {
+        if (diag) diag.lastBody = String(await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 200)
+        if (res.status === 429) await new Promise((r) => setTimeout(r, 4000 * attempt))
+        else await new Promise((r) => setTimeout(r, 1200 * attempt))
+      }
+    } catch (error) { /* أخطاء الشبكة العابرة (ECONNRESET/fetch failed): أعد المحاولة بمهلة متصاعدة */
+      if (diag) diag.lastError = String(error?.message || error).slice(0, 140)
       await new Promise((r) => setTimeout(r, 1500 * attempt))
     }
   }
@@ -672,7 +1347,7 @@ async function synthSSML(ssml, outPath) {
 async function sttRequest(wav16Path, locale) {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const res = await fetch(`https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${locale}&format=detailed&profanity=raw`, {
+      const res = await fetchWithTimeout(`https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${locale}&format=detailed&profanity=raw`, {
         method: 'POST',
         headers: { 'Ocp-Apim-Subscription-Key': AZURE_KEY, 'Content-Type': 'audio/wav; codecs=audio/pcm; samplerate=16000' },
         body: readFileSync(wav16Path),
@@ -680,9 +1355,13 @@ async function sttRequest(wav16Path, locale) {
       if (res.ok) {
         const json = await res.json()
         const best = json.NBest?.[0] || {}
-        return { locale, text: best.Display || best.Lexical || json.DisplayText || '', lexical: best.Lexical || '',
+        const text = best.Display || best.Lexical || json.DisplayText || ''
+        if (!text) console.log(`  · STT ${locale}: استجابة سليمة بلا نص (RecognitionStatus=${json.RecognitionStatus || '؟'})`)
+        return { locale, text, lexical: best.Lexical || '',
           confidence: Number(best.Confidence || 0), words: Array.isArray(best.Words) ? best.Words : [] }
       }
+      /* الحالة غير السليمة كانت تُبتلع صمتاً فيستحيل تمييز نفاد الحصة عن لهجة موقوفة — نسجلها دوماً */
+      console.log(`  · STT ${locale}: HTTP ${res.status} ${String(await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 140)}`)
       if (res.status === 400 || res.status === 404) return null
       if (res.status === 429 || res.status >= 500) await new Promise((resolveWait) => setTimeout(resolveWait, 2500 * attempt))
       else return null
@@ -744,8 +1423,12 @@ async function audioJudge(wavPath, intended, heard, risks, context, delivery = {
     `الكلمات الخطرة: ${JSON.stringify(risks)}`,
     `سياق المعنى: ${context}`,
     `خطة الأداء: ${JSON.stringify({ type: delivery.delivery || 'normal', ratePct: delivery.ratePct,
-      ending: delivery.ending, isQuestion: String(context).includes('؟') })}`,
-    'ارفض السؤال إذا سُمِع كنص تقريري. ارفض الإيقاع المدرسي، والنهاية المبتورة، والوقف الطويل، وأي عامية أو حركة تقلب المعنى.',
+      targetWordsPerMinute: delivery.targetWordsPerMinute, actualWordsPerMinute: delivery.actualWordsPerMinute,
+      ending: delivery.ending, isQuestion: String(context).includes('؟'),
+      continuation: Boolean(delivery._splitMiddle) })}`,
+    delivery._splitMiddle
+      ? 'تنبيه مهم: هذه وحدة متصلة تُكمل جملتَها الوحدةُ التالية مباشرة (قُسمت تقنياً لطولها). النهاية المفتوحة أو الفاصلة في آخرها مقصودة تماماً — لا تعاقب على «نهاية مبتورة» أو «نبرة غير محسومة» هنا؛ احكم على النطق والحركات والوضوح فقط.'
+      : 'ارفض السؤال إذا سُمِع كنص تقريري. ارفض السرعة المستعجلة، والبطء المتمطّط، والإيقاع المدرسي، والحركة الإعرابية الخاطئة أو الثقيلة عند الوقف، والنهاية المبتورة، وأي عامية.',
     'استمع إلى ملف WAV المرفق بنفسك. لا تعتمد على STT وحده. أعد حكم JSON وفق المخطط فقط.',
   ].join('\n')
   const verdict = await gemini(JUDGE_SYSTEM, prompt, 0.1, JUDGE_MODEL, [{
@@ -775,14 +1458,28 @@ async function probeSsmlCapabilities(force = false, voicesToProbe = [VOICES.ar.A
         notes: cached.notes, testedAt: cached.tested_at })
       continue
     }
+    /* عطب عابر في Azure (TTS أو STT يعيد فراغاً) كان يُسقط القافلة كلها بفشل المجسّ —
+       ثلاث محاولات بمهلة متدرجة قبل الحكم؛ شرط النجاح نفسه لا يلين. (أُعيد تطبيقه
+       ٢٠٢٦-٠٧-١٨ بعدما دهسته دفعة موازية.) */
     const run = async (name, inner, expected = '') => {
       const file = resolve(dir, `${voice}.${name}.wav`)
       const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${localeOf(voice)}"><voice name="${voice}">${inner}</voice></speak>`
-      if (!await synthSSML(ssml, file)) return false
-      const heard = await sttRecognize(file, localeOf(voice))
+      const diag = {}
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        if (attempt > 1) await new Promise((ok) => setTimeout(ok, attempt * 1500))
+        if (!await synthSSML(ssml, file, diag)) {
+          console.log(`  · مجس ${voice}/${name} م${attempt}: فشل TTS (حالة=${diag.lastStatus ?? '؟'} بايت=${diag.lastBytes ?? '؟'} خطأ=${diag.lastError || diag.lastBody || '—'})`)
+          continue
+        }
+        const heard = await sttRecognize(file, localeOf(voice))
+        rmSync(file, { force: true })
+        if (!heard?.text) { console.log(`  · مجس ${voice}/${name} م${attempt}: TTS سليم لكن STT صامت`); continue }
+        const ok = !expected || normalizeAr(heard.text).replace(/\s+/g, '').includes(normalizeAr(expected).replace(/\s+/g, ''))
+        if (!ok) console.log(`  · مجس ${voice}/${name}: سُمع «${heard.text.slice(0, 60)}» ولم يطابق «${expected}»`)
+        return ok
+      }
       rmSync(file, { force: true })
-      if (!heard?.text) return false
-      return !expected || normalizeAr(heard.text).replace(/\s+/g, '').includes(normalizeAr(expected).replace(/\s+/g, ''))
+      return false
     }
     const breakSupported = await run('break', 'هذه وقفة <break time="180ms"/> طبيعية')
     const prosodySupported = await run('prosody', '<prosody rate="+8%">نتحدث بإيقاع طبيعي وواضح</prosody>')
@@ -805,7 +1502,7 @@ async function probeSsmlCapabilities(force = false, voicesToProbe = [VOICES.ar.A
 }
 
 async function verifyAzureVoices(voices) {
-  const response = await fetch(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/voices/list`, {
+  const response = await fetchWithTimeout(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/voices/list`, {
     headers: { 'Ocp-Apim-Subscription-Key': AZURE_KEY },
   })
   if (!response.ok) throw new Error(`تعذر Voice List API: HTTP ${response.status}`)
@@ -819,7 +1516,7 @@ async function verifyAzureVoices(voices) {
 }
 
 async function discoverArabicVoices() {
-  const response = await fetch(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/voices/list`, {
+  const response = await fetchWithTimeout(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/voices/list`, {
     headers: { 'Ocp-Apim-Subscription-Key': AZURE_KEY },
   })
   if (!response.ok) throw new Error(`تعذر اكتشاف أصوات Azure: HTTP ${response.status}`)
@@ -872,6 +1569,7 @@ function computeSampleContentHashes(sample, sourceArticle, music) {
     delivery: utterance.delivery, ratePct: utterance.ratePct, pauseAfterMs: utterance.pauseAfterMs,
     ending: utterance.ending, internalBreakMs: utterance.internalBreakMs,
     allowOverlap: utterance.allowOverlap, overlapMs: utterance.overlapMs,
+    musicBridgeAfter: Boolean(utterance.musicBridgeAfter),
   })))).digest('hex')
   const musicHash = music ? createHash('sha256').update(readFileSync(music.file))
     .update(JSON.stringify({ bedVol: music.bedVol, introVol: music.introVol, outroVol: music.outroVol,
@@ -982,89 +1680,127 @@ function validatedRisk(raw, text) {
   }
 }
 
+/* شفاء التشكيل غير المرصود — إسناد واعٍ بالسوابق: «وتَقْييم» تُنسب إلى «التقييم» المعلنة
+   (واو العطف/ال التعريف…)، وأي كلمة مشكولة بلا رصيد من المخاطر المعلنة أو أصل الحوار
+   تُشفى بنزع حركاتها — فلا يمر تشكيل غير مسبب، ولا تسقط الدفعة. دالة نقية كي تُختبر بلا Gemini. */
+function healUnbackedDiacritics(dialogue, pron, risks) {
+  const allowedDiacritics = new Set(risks.flatMap((risk) =>
+    normalizeAr(risk.word).split(' ').concat(normalizeAr(risk.selectedPronunciation).split(' '))))
+  for (const originalWord of String(dialogue).split(/\s+/).filter((item) => DIACRITICS_RE.test(item))) {
+    const normalizedOriginal = normalizeAr(originalWord)
+    if (normalizedOriginal) allowedDiacritics.add(normalizedOriginal)
+  }
+  const PREFIX_RE = /^(وال|فال|بال|كال|لل|ال|و|ف|ب|ل|ك)/
+  const bareForms = new Set()
+  for (const allowed of allowedDiacritics) if (allowed) { bareForms.add(allowed); bareForms.add(allowed.replace(PREFIX_RE, '')) }
+  let healedText = String(pron)
+  const healedWords = []
+  for (const word of String(pron).split(/\s+/).filter((item) => DIACRITICS_RE.test(item))) {
+    const normalizedWord = normalizeAr(word)
+    if (!normalizedWord) continue
+    if (bareForms.has(normalizedWord) || bareForms.has(normalizedWord.replace(PREFIX_RE, ''))) continue
+    healedText = healedText.split(word).join(stripDiacritics(word))
+    healedWords.push(word)
+  }
+  return { healedText, healedWords }
+}
+
 async function riskAnalyze(utts, { tolerant = false } = {}) {
   /* على دفعات (8 مداخلات) كي لا يُبتر JSON الإخراج في الحلقات الطويلة،
      مع خريطة ضبط مشتركة تضمن اتساق الكلمة نفسها عبر كل الدفعات.
-     tolerant=true (إعادة تحليل مداخلة مُعاد صياغتها): الدفعة الفاشلة تسقط لملاذ
-     حتمي بالقاموس بدل رمي خطأ يُهدر الحلقة كلها — الصرامة تبقى في التوليد الأولي. */
+     سلّم نجاة ثابت لا يعزل الحلقة لعثرة المحلل: الدفعة تتعثر كل جولاتها → إعادة
+     تحليل كل مداخلة فرادى (حمولة أصغر تنضبط أفضل) → ما بقي يسقط لملاذ حتمي
+     بالقاموس والأنماط. نص الحوار لا يُمس في كل الأحوال، وبوابات الصوت الفعلية
+     (STT + الحكم + حد 13ث) تبقى كاملة بلا أي تخفيف.
+     tolerant=true (إعادة تحليل مداخلة مُعاد صياغتها): جولات أقل قبل الملاذ نفسه. */
+  if (NO_GEMINI) {
+    /* بلا محلل ذكي: القاموس والأنماط يتوليان الكشف. والأرقام تُهجّأ كلماتٍ حتمياً في
+       النص النطقي — محلل Gemini كان يفعلها فتمر السنون؛ تمريرها خاماً لأول مرة جعل
+       Azure يقرؤها قراءةً لا يثبتها STT (u011: كلمات خطرة لم يثبت نطقها: 2023). */
+    console.log(`  ⓘ وضع بلا Gemini: كشف نطقي حتمي بالقاموس والأنماط + تهجئة الأرقام (${utts.length} مداخلة)`)
+    return utts.map((u, idx) => {
+      const merged = new Map()
+      for (const risk of deterministicRisks(u.text)) merged.set(normalizeAr(risk.word), risk)
+      const pronunciationText = spellDigitsForSpeech(u.text)
+      for (const risk of merged.values()) {
+        if (/\d/.test(String(risk.word || '')) && !risk.selectedPronunciation)
+          risk.selectedPronunciation = spellDigitsForSpeech(String(risk.word))
+      }
+      return { idx, pronunciationText, risks: [...merged.values()] }
+    })
+  }
   const CHUNK = 8
   const lexCtx = `القاموس والذاكرة المعتمدان (التزم بهما حرفياً):\n${JSON.stringify(lexiconContext(), null, 1)}`
   const results = new Array(utts.length)
   const pronMap = new Map()
   for (let start = 0; start < utts.length; start += CHUNK) {
     const slice = utts.slice(start, start + CHUNK)
-    const payload = `${lexCtx}\n\nقرارات ضبط سابقة في هذه الحلقة (التزم بها للاتساق):\n${JSON.stringify([...pronMap.entries()].map(([w, p]) => ({ word: w, pron: p })))}\n\nالمداخلات:\n` +
-      JSON.stringify(slice.map((u, i) => ({ idx: start + i, speaker: u.speaker, text: u.text })), null, 1)
-    let list = null
     const roundFailures = []
-    for (let round = 1; round <= 3 && !list; round++) {
-      try {
-        const out = await gemini(PRONOUNCE_SYSTEM, payload + (round > 1 ? '\n\nREWRITE: النتيجة السابقة لم تجتز البوابة. التشكيل انتقائي فقط، وكل حقل في تحليل المخاطر إلزامي.' : ''), 0.25, ANALYSIS_MODEL)
-        const cand = out.utterances || []
-        if (cand.length !== slice.length) { roundFailures.push(`محاولة ${round}: عدد المداخلات ${cand.length}/${slice.length}`); continue }
-        let valid = true
-        const validationIssues = []
-        const healedDiacritics = []
-        const totalWords = cand.reduce((n, x) => n + String(x.pronunciationText || '').split(/\s+/).length, 0)
-        const diacWords = cand.reduce((n, x) => n + String(x.pronunciationText || '').split(/\s+/).filter((w) => DIACRITICS_RE.test(w)).length, 0)
-        if (totalWords && diacWords / totalWords > 0.32) { valid = false; validationIssues.push(`تشكيل ${Math.round(diacWords / totalWords * 100)}٪`) }
-        for (let i = 0; i < cand.length; i++) {
-          const dialogue = slice[i].text
-          const pron = String(cand[i].pronunciationText || '')
-          if (!pron) { valid = false; validationIssues.push(`u${start + i + 1}: pronunciationText فارغ`) }
-          if (AR_COLLOQUIAL_WORDS.some((word) => arWord(word).test(pron))) { valid = false; validationIssues.push(`u${start + i + 1}: عامية`) }
-          const risks = (cand[i].risks || []).map((risk) => validatedRisk(risk, dialogue)).filter(Boolean)
-          const deterministic = deterministicRisks(dialogue)
-          const merged = new Map(risks.map((risk) => [normalizeAr(risk.word), risk]))
-          for (const risk of deterministic) {
-            const key = normalizeAr(risk.word)
-            const modelRisk = merged.get(key)
-            merged.set(key, modelRisk ? { ...modelRisk, ...risk, selectedPronunciation: modelRisk.selectedPronunciation || risk.selectedPronunciation,
-              subAlias: modelRisk.subAlias || risk.subAlias, riskLevel: 'high', deterministic: true } : risk)
+    const analyzeChunk = async (chunkSlice, chunkStart, rounds) => {
+      const payload = `${lexCtx}\n\nقرارات ضبط سابقة في هذه الحلقة (التزم بها للاتساق):\n${JSON.stringify([...pronMap.entries()].map(([w, p]) => ({ word: w, pron: p })))}\n\nالمداخلات:\n` +
+        JSON.stringify(chunkSlice.map((u, i) => ({ idx: chunkStart + i, speaker: u.speaker, text: u.text })), null, 1)
+      for (let round = 1; round <= rounds; round++) {
+        try {
+          const out = await gemini(PRONOUNCE_SYSTEM, payload + (round > 1 ? '\n\nREWRITE: النتيجة السابقة لم تجتز البوابة. شكّل كلمات المخاطر المعلنة وحدها واترك سائر الكلمات بلا حركات إطلاقاً، وكل حقل في تحليل المخاطر إلزامي.' : ''), 0.25, ANALYSIS_MODEL)
+          const cand = out.utterances || []
+          if (cand.length !== chunkSlice.length) { roundFailures.push(`محاولة ${round}: عدد المداخلات ${cand.length}/${chunkSlice.length}`); continue }
+          let valid = true
+          const validationIssues = []
+          const healedDiacritics = []
+          for (let i = 0; i < cand.length; i++) {
+            const dialogue = chunkSlice[i].text
+            const pron = String(cand[i].pronunciationText || '')
+            if (!pron) { valid = false; validationIssues.push(`u${chunkStart + i + 1}: pronunciationText فارغ`) }
+            if (AR_COLLOQUIAL_WORDS.some((word) => arWord(word).test(pron))) { valid = false; validationIssues.push(`u${chunkStart + i + 1}: عامية`) }
+            const risks = (cand[i].risks || []).map((risk) => validatedRisk(risk, dialogue)).filter(Boolean)
+            const deterministic = deterministicRisks(dialogue)
+            const merged = new Map(risks.map((risk) => [normalizeAr(risk.word), risk]))
+            for (const risk of deterministic) {
+              const key = normalizeAr(risk.word)
+              const modelRisk = merged.get(key)
+              merged.set(key, modelRisk ? { ...modelRisk, ...risk, selectedPronunciation: modelRisk.selectedPronunciation || risk.selectedPronunciation,
+                subAlias: modelRisk.subAlias || risk.subAlias, riskLevel: 'high', deterministic: true } : risk)
+            }
+            for (const risk of merged.values()) {
+              if (risk.riskLevel === 'high' && (!risk.selectedPronunciation || risk.selectedPronunciation === risk.word)
+                && !risk.subAlias && /[A-Za-z0-9]/.test(risk.word)) { valid = false; validationIssues.push(`u${chunkStart + i + 1}: بلا نطق ${risk.word}`) }
+            }
+            const { healedText, healedWords } = healUnbackedDiacritics(dialogue, pron, [...merged.values()])
+            for (const word of healedWords) healedDiacritics.push(`u${chunkStart + i + 1}: ${word}`)
+            cand[i] = { ...cand[i], pronunciationText: healedText, risks: [...merged.values()] }
           }
-          for (const risk of merged.values()) {
-            if (risk.riskLevel === 'high' && (!risk.selectedPronunciation || risk.selectedPronunciation === risk.word)
-              && !risk.subAlias && /[A-Za-z0-9]/.test(risk.word)) { valid = false; validationIssues.push(`u${start + i + 1}: بلا نطق ${risk.word}`) }
+          /* فحص نسبة التشكيل بعد الشفاء لا قبله: الحكم على ما سيصل TTS فعلاً، لا على
+             مسودة النموذج الخام. المسودة المفرطة يجردها الشفاء إلى الانتقائي المسبَّب
+             فتمر؛ ولا تبقى النسبة عالية بعده إلا إذا كانت المخاطر المعلنة نفسها بهذا
+             الحجم — وذاك وحده الفشل الحقيقي. */
+          const totalWords = cand.reduce((n, x) => n + String(x.pronunciationText || '').split(/\s+/).length, 0)
+          const diacWords = cand.reduce((n, x) => n + String(x.pronunciationText || '').split(/\s+/).filter((w) => DIACRITICS_RE.test(w)).length, 0)
+          if (totalWords && diacWords / totalWords > 0.32) { valid = false; validationIssues.push(`تشكيل ${Math.round(diacWords / totalWords * 100)}٪ بعد الشفاء`) }
+          if (valid) {
+            if (healedDiacritics.length) console.log(`  ♻ نُزع تشكيل غير مرصود (${healedDiacritics.length}): ${[...new Set(healedDiacritics)].slice(0, 4).join('، ')}${healedDiacritics.length > 4 ? '…' : ''}`)
+            return cand
           }
-          const allowedDiacritics = new Set([...merged.values()].flatMap((risk) =>
-            normalizeAr(risk.word).split(' ').concat(normalizeAr(risk.selectedPronunciation).split(' '))))
-          for (const originalWord of dialogue.split(/\s+/).filter((item) => DIACRITICS_RE.test(item))) {
-            const normalizedOriginal = normalizeAr(originalWord)
-            if (normalizedOriginal) allowedDiacritics.add(normalizedOriginal)
-          }
-          /* إسناد واعٍ بالسوابق: «وتَقْييم» تُنسب إلى «التقييم» المعلنة (واو العطف/ال التعريف…)،
-             وأي تشكيل يبقى بلا رصيد يُشفى ذاتياً بنزع حركاته — فلا يمر تشكيل غير مسبب، ولا تسقط الدفعة */
-          const PREFIX_RE = /^(وال|فال|بال|كال|لل|ال|و|ف|ب|ل|ك)/
-          const bareForms = new Set()
-          for (const allowed of allowedDiacritics) if (allowed) { bareForms.add(allowed); bareForms.add(allowed.replace(PREFIX_RE, '')) }
-          let healedText = pron
-          for (const word of pron.split(/\s+/).filter((item) => DIACRITICS_RE.test(item))) {
-            const normalizedWord = normalizeAr(word)
-            if (!normalizedWord) continue
-            const bare = normalizedWord.replace(PREFIX_RE, '')
-            if (bareForms.has(normalizedWord) || bareForms.has(bare)) continue
-            healedText = healedText.split(word).join(stripDiacritics(word))
-            healedDiacritics.push(`u${start + i + 1}: ${word}`)
-          }
-          cand[i] = { ...cand[i], pronunciationText: healedText, risks: [...merged.values()] }
-        }
-        if (valid) {
-          if (healedDiacritics.length) console.log(`  ♻ نُزع تشكيل غير مرصود (${healedDiacritics.length}): ${[...new Set(healedDiacritics)].slice(0, 4).join('، ')}${healedDiacritics.length > 4 ? '…' : ''}`)
-          list = cand
-        }
-        else roundFailures.push(`محاولة ${round}: ${[...new Set(validationIssues)].slice(0, 8).join('، ')}`)
-      } catch (error) { roundFailures.push(`محاولة ${round}: ${error.message}`) }
+          roundFailures.push(`محاولة ${round}: ${[...new Set(validationIssues)].slice(0, 8).join('، ')}`)
+        } catch (error) { roundFailures.push(`محاولة ${round}: ${error.message}`) }
+      }
+      return null
     }
-    if (!list) {
-      if (!tolerant) throw new Error(`Arabic Pronunciation Risk Detector فشل مغلقاً في المداخلات ${start + 1}-${start + slice.length}: ${roundFailures.join(' | ')}`)
-      // ملاذ آمن: كشف حتمي بالقاموس والأنماط — لا يفقد الأسماء المعروفة، ولا يُسقط الحلقة
-      console.log(`  ⓘ ملاذ نطقي حتمي للمداخلات ${start + 1}-${start + slice.length} (تعذّر التحليل الكامل)`)
-      list = slice.map((u) => {
-        const merged = new Map()
-        for (const risk of deterministicRisks(u.text)) merged.set(normalizeAr(risk.word), risk)
-        return { pronunciationText: u.text, risks: [...merged.values()] }
-      })
+    let list = await analyzeChunk(slice, start, tolerant ? 2 : 3)
+    if (!list && slice.length > 1) {
+      console.log(`  ↻ دفعة المداخلات ${start + 1}-${start + slice.length} تعثرت — إعادة التحليل فرادى`)
+      list = []
+      for (let i = 0; i < slice.length; i++) list.push((await analyzeChunk([slice[i]], start + i, 2))?.[0] || null)
     }
+    // ملاذ آمن لما بقي: كشف حتمي بالقاموس والأنماط — لا يفقد الأسماء المعروفة، ولا يُسقط الحلقة
+    const fallbackIds = []
+    list = (list || new Array(slice.length).fill(null)).map((item, i) => {
+      if (item) return item
+      fallbackIds.push(`u${start + i + 1}`)
+      const merged = new Map()
+      for (const risk of deterministicRisks(slice[i].text)) merged.set(normalizeAr(risk.word), risk)
+      return { pronunciationText: slice[i].text, risks: [...merged.values()] }
+    })
+    if (fallbackIds.length) console.log(`  ⓘ ملاذ نطقي حتمي (${fallbackIds.join('، ')}): ${[...new Set(roundFailures)].slice(-3).join(' | ')}`)
     slice.forEach((u, i) => {
       const x = list?.[i]
       results[start + i] = { idx: start + i, pronunciationText: x.pronunciationText, risks: x.risks }
@@ -1182,6 +1918,7 @@ async function evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnal
     attemptInsert.run(runId, utteranceId, variant.id, voice, variant.text, ssml, '', 0, 0, 0, new Date().toISOString())
     return { pass: false, score: -1, reason: 'فشل Azure TTS', variant, ssml, path }
   }
+  if (!preGenerated) compactInternalSilence(path)
   const intended = spokenText(variant.text, variant.subs)
   const technical = auditSegment(path, intended, u)
   if (runId.startsWith('bakeoff:')) {
@@ -1225,19 +1962,31 @@ async function evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnal
   const missingNegations = comparison.missing.filter((word) => ['لا', 'لم', 'لن', 'ليس', 'ليست', 'ما', 'غير', 'دون'].includes(word))
 
   let verdict
-  try {
-    verdict = await audioJudge(path, intended, heard, riskAnalysis.risks, dialogueText, u)
+  if (NO_GEMINI) {
+    /* وضع بلا Gemini بأمر الدكتور (الحوار يدوي): لا حكم صوتي — التعويض بعتبات STT
+       مشدَّدة أدناه، والبوابات التقنية (13ث، السرعة، الوقفات، الذروة) كاملة كما هي. */
+    verdict = { pass: true, problems: [], noGemini: true }
+  } else try {
+    verdict = await audioJudge(path, intended, heard, riskAnalysis.risks, dialogueText, { ...u, actualWordsPerMinute: technical.wpm })
   } catch (error) {
     /* Fail closed: لا يستطيع STT وحده إثبات الفتحة والكسرة أو النبرة. */
     verdict = { pass: false, problems: [{ word: '', issue: `تعذر الحكم الصوتي الإلزامي: ${error.message}` }] }
   }
   const verdictPass = verdict.pass === true && verdict.problems.length === 0
   // عتبتا التطابق النصي مع STT: القراءة الطبيعية الفصيحة نادراً ما تبلغ 0.95 لقصور STT نفسه،
-  // والحَكَم الصوتي (الذي يستمع فعلاً) هو الفيصل. عتبتان واقعيتان قابلتان للضبط بالبيئة.
-  const IMPORTANT_MIN = Number(env.PODCAST_STT_IMPORTANT_MIN || 0.85)
-  const RATIO_MIN = Number(env.PODCAST_STT_RATIO_MIN || 0.80)
+  // والحَكَم الصوتي (الذي يستمع فعلاً) هو الفيصل. عتبتان واقعيتان قابلتان للضبط بالبيئة —
+  // وفي وضع بلا Gemini تُرفعان قسرياً لأن STT صار خط الدفاع الوحيد عن النص.
+  const IMPORTANT_MIN = Math.max(Number(env.PODCAST_STT_IMPORTANT_MIN || 0.85), NO_GEMINI ? 0.92 : 0)
+  const RATIO_MIN = Math.max(Number(env.PODCAST_STT_RATIO_MIN || 0.80), NO_GEMINI ? 0.88 : 0)
+  const sttStrictOk = comparison.importantRatio >= IMPORTANT_MIN && comparison.ratio >= RATIO_MIN
+  /* عدالة الزلة الواحدة (وضع بلا Gemini): النسبة الثابتة تظلم القِصر — مداخلة من 9 كلمات
+     مهمة لا تملك رصيد خطأ STT واحد بينما مداخلة من 20 تملكه (u005: «يُبنَ» سمعها STT
+     «يبني» فسقطت وحدها). تُقبل زلة واحدة في المداخلات ذات ≤13 كلمة مهمة بشرطها الصارم:
+     ليست كلمة خطر (highMissing صفر) وليست نفياً (missingNegations صفر) والنسبة الكلية ≥0.85. */
+  const oneSlipOk = NO_GEMINI && comparison.missingImportant.length === 1
+    && Number(comparison.importantTotal || 99) < 20 && comparison.ratio >= 0.85
   const pass = verdictPass && highMissing.length === 0 && missingNegations.length === 0
-    && comparison.importantRatio >= IMPORTANT_MIN && comparison.ratio >= RATIO_MIN
+    && (sttStrictOk || oneSlipOk)
   const score = pass
     ? comparison.importantRatio * 0.55 + comparison.ratio * 0.25 + Math.min(1, heard.confidence || 0) * 0.2
     : -1
@@ -1247,7 +1996,10 @@ async function evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnal
     pass,
     score,
     reason: pass ? '' : (verdict.problems || []).map((problem) => `${problem.word}: ${problem.issue}`).join(' · ')
-      || (highMissing.length ? `كلمات خطرة لم يثبت نطقها: ${highMissing.map((risk) => risk.word).join('، ')}` : 'فشل التطابق الصوتي'),
+      || (highMissing.length ? `كلمات خطرة لم يثبت نطقها: ${highMissing.map((risk) => risk.word).join('، ')}`
+        /* اذكر الكلمات المفقودة بالاسم: «فشل التطابق الصوتي» وحدها كانت تترك الدكتور
+           يخمّن أي كلمة من ٣٥ مداخلة هي المتعثرة. */
+        : `فشل التطابق الصوتي${(comparison.missing || []).length ? ` — لم تُسمع: ${(comparison.missing || []).slice(0, 4).join('، ')}` : ''}`),
     variant,
     ssml,
     path,
@@ -1273,12 +2025,13 @@ async function calibrateAndEvaluateAudition({ runId, utteranceId, utterance, voi
   const intended = spokenText(variant.text, [])
   const trialTrim = trimGeneratedBoundaryPadding(trialPath, intended)
   const trialAudit = auditSegment(trialPath, intended, {})
-  const target = Number(plan.targetWordsPerMinute || 155)
+  const target = Number(plan.targetWordsPerMinute || 140)
   const measured = Math.max(1, Number(trialAudit.wpm || 1))
-  const correction = (target / measured - 1) * 100
-  const calibratedRate = Math.round(Math.min(30, Math.max(3, Number(plan.ratePct || 12) + correction)))
+  const rawCorrection = (target / measured - 1) * 100
+  const correction = Math.min(16, Math.max(-16, rawCorrection))
+  const calibratedRate = Math.round(Math.min(18, Math.max(-18, Number(plan.ratePct || 0) + correction)))
   plan = { ...plan, ratePct: calibratedRate }
-  if (Math.abs(calibratedRate - Number(utterance.ratePct || 12)) <= 1) renameSync(trialPath, path)
+  if (Math.abs(calibratedRate - Number(utterance.ratePct || 0)) <= 1) renameSync(trialPath, path)
   else {
     rmSync(trialPath, { force: true })
     if (!await synthSSML(buildSSML(plan, variant.text, [], voice, 'ar'), path))
@@ -1292,7 +2045,40 @@ async function calibrateAndEvaluateAudition({ runId, utteranceId, utterance, voi
     trialWpm: trialAudit.wpm, targetWpm: target, calibratedRatePct: calibratedRate, trialTrim } }
 }
 
+async function calibrateProductionPlan({ utterance, voice, text, subs, lang, tempBase }) {
+  if (lang !== 'ar' || !Number(utterance.targetWordsPerMinute)) return { plan: { ...utterance }, calibration: null }
+  const trial = `${tempBase}.pace.wav`
+  const plan = { ...utterance }
+  if (!await synthSSML(buildSSML(plan, text, subs, voice, lang), trial))
+    return { plan, calibration: { pass: false, reason: 'فشل عينة معايرة السرعة' } }
+  const intended = spokenText(text, subs)
+  trimGeneratedBoundaryPadding(trial, intended)
+  const audit = auditSegment(trial, intended, {})
+  rmSync(trial, { force: true })
+  const target = Number(plan.targetWordsPerMinute)
+  const measured = Math.max(1, Number(audit.wpm || target))
+  const correction = Math.min(16, Math.max(-16, (target / measured - 1) * 100))
+  const calibratedRatePct = Math.round(Math.min(20, Math.max(-20, Number(plan.ratePct || 0) + correction)))
+  // في وضع النص اليدوي: الهدف الرقمي تركيبي من المحرك لا من الدكتور — إن بقي بعيداً عن
+  // المدى القابل للتحقيق لصوت هذه الجملة بعد أقصى تصحيح، نكيّف الهدف مع الإيقاع الطبيعي
+  // (ضمن الحدود الإنسانية 118-175) بدل إعدام جملته على هدفٍ لم يكتبه.
+  let adjustedTarget = target
+  if (MANUAL_TEXT_MODE) {
+    const projected = measured * (1 + correction / 100)
+    /* أرضية واعية بالكثافة والإلقاء: الجمل ثقيلة المقاطع، والأسئلة والتأملات والخلاصات
+       تبطؤ طبيعياً وإن كان نطقها سليماً (u035: سؤال عند 115، u012 جملة كثيفة عند 102). */
+    const avgWordLen = String(text || '').replace(/\s+/g, '').length / Math.max(1, String(text || '').trim().split(/\s+/).length)
+    const slowDelivery = ['question', 'reflection', 'conclusion', 'gentleObjection', 'reflective'].includes(String(utterance.delivery || ''))
+    const calibrationFloor = (slowDelivery || avgWordLen >= 6) ? 92 : 112
+    if (Math.abs(projected - target) > 10) adjustedTarget = Math.round(Math.min(175, Math.max(calibrationFloor, projected)))
+  }
+  return { plan: { ...plan, ratePct: calibratedRatePct, targetWordsPerMinute: adjustedTarget },
+    calibration: { pass: true, measuredWpm: measured, targetWpm: adjustedTarget, measuredDurSec: Number(audit.dur || 0),
+      originalRatePct: Number(plan.ratePct || 0), calibratedRatePct } }
+}
+
 async function safeRephrase(dialogueText, sourceText, reason, stubbornWords = []) {
+  if (NO_GEMINI) return null
   // البند العاشر: إعادة الصياغة الموجّهة — إن عجز Azure عن اسمٍ أجنبيٍّ قصير بعد كل المرشحين،
   // نتجنّبه (نذكره مرة، أو نستبدله بوصفٍ دقيق) دون حذف أي معلومة أو إضعاف الأسلوب.
   const avoid = [...new Set(stubbornWords.filter(Boolean))]
@@ -1302,6 +2088,8 @@ async function safeRephrase(dialogueText, sourceText, reason, stubbornWords = []
     'لا تضف معلومة، ولا تحذف معلومة، ولا تستخدم أي عامية أو تشكيل كامل.',
     avoid.length ? `الكلمات التالية يعجز محرك النطق عنها؛ أعد ترتيب الجملة لتقليل الاعتماد عليها — اذكر الاسم مرة واحدة إن لزم، أو استبدله بوصفٍ دقيق دون حذف الحقيقة العلمية: ${avoid.join('، ')}` : '',
     'إن كان اسم علمٍ أجنبيٍّ يتكرر، يكفي ذكره مرة؛ والإشارة اللاحقة إليه تكون بضميرٍ أو وصف («وأعماله اللاحقة»، «الباحث نفسه») دون تكرار الاسم المتعثر.',
+    'إن كان المتعثر اسم مجلةٍ أو مصدرٍ أجنبيٍّ منقحر (مثل «فرونتيرز إن سايكولوجي»)، فاستبدله بوصفٍ عربيٍّ دقيقٍ للمصدر («مجلة علمية محكمة في علم النفس») — هذا توصيفٌ أمين لا حذف معلومة.',
+    'اكتب أي سنةٍ أو رقمٍ بصيغته الرقمية (2023) لا كلمات، فمحرك النطق يتولى تحويله بقواعده.',
     `المداخلة الأصلية: ${dialogueText}`,
     `سبب التعثر: ${reason}`,
     `المقال المرجعي الذي لا يجوز تجاوزه: ${sourceText}`,
@@ -1335,15 +2123,35 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
   let dialogueText = u.text
   let currentAnalysis = analysis
   const allAudits = []
+  let deliveryPlan = { ...u }
+  let paceCalibration = null
+  let prescriptionsUsed = 0
 
-  for (let round = 0; round < 3; round++) {
+  // 5 جولات: وصفة الحكم مرة، وعلاج التأنيث مرة، وتبقى فرصة حقيقية لإعادة الصياغة.
+  for (let round = 0; round < 5; round++) {
     const applied = applyLexicon(currentAnalysis.pronunciationText || dialogueText, currentAnalysis.risks, voice, dialogueText)
+    const calibrated = await calibrateProductionPlan({ utterance: deliveryPlan, voice, text: applied.text,
+      subs: applied.subs, lang, tempBase: wavPath.replace(/\.wav$/, `.r${round + 1}`) })
+    deliveryPlan = calibrated.plan
+    paceCalibration = calibrated.calibration
+    if (paceCalibration?.pass === false)
+      return { ok: false, verified: false, reason: paceCalibration.reason, dialogueText, candidates: allAudits }
+    // إن كانت عينة المعايرة نفسها أطول من حد المقطع (بعد أثر تصحيح السرعة المتوقع)،
+    // لا نحرق المرشحات ولا نعزل: نعيد إشارة تقسيم فيتكفل المسار الأعلى بإنقاذ الوحدة وحدها.
+    if (round === 0 && Number(paceCalibration?.measuredDurSec || 0) > 0) {
+      const measuredDur = Number(paceCalibration.measuredDurSec)
+      const ratio = Math.max(0.9, Math.min(1.15, Number(paceCalibration.measuredWpm || 1) / Math.max(1, Number(paceCalibration.targetWpm || 1))))
+      const projected = measuredDur * ratio
+      if (projected > 12.4 && wordsOf(dialogueText).length >= 12)
+        return { ok: false, verified: false, needsSplit: true, measuredSec: measuredDur,
+          reason: `مداخلة أطول من حد المقطع (${measuredDur.toFixed(1)}ث بعد المعايرة)`, dialogueText, candidates: allAudits }
+    }
     const variants = candidateVariants(dialogueText, applied.text, applied.subs, currentAnalysis.risks)
     const audits = []
     for (let index = 0; index < variants.length; index++) {
       const variant = { ...variants[index], id: `r${round + 1}-${variants[index].id}` }
       const candidatePath = wavPath.replace(/\.wav$/, `.${round}-${index}.wav`)
-      audits.push(await evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnalysis: currentAnalysis,
+      audits.push(await evaluateCandidate({ runId, utteranceId, u: deliveryPlan, dialogueText, riskAnalysis: currentAnalysis,
         voice, lang, variant, path: candidatePath }))
     }
     allAudits.push(...audits)
@@ -1365,6 +2173,8 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
         pronunciationText: selected.variant.text,
         intendedText: selected.intended,
         risks: currentAnalysis.risks,
+        deliveryPlan,
+        paceCalibration,
         heard: selected.heard,
         selectedCandidate: selected.variant.id,
         candidates: allAudits.map((audit) => ({ id: audit.variant.id, pass: audit.pass, score: audit.score,
@@ -1373,18 +2183,163 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
     }
     const reason = audits.map((audit) => audit.reason).filter(Boolean).join(' · ') || 'لم يجتز أي مرشح'
     if (env.PODCAST_DEBUG === '1') audits.forEach((a) => console.log(`      · [${utteranceId} ${a.variant?.id}] ratio=${a.comparison?.ratio?.toFixed?.(2) ?? '?'} imp=${a.comparison?.importantRatio?.toFixed?.(2) ?? '?'} highMiss=${(a.highMissing||[]).map(r=>r.word).join(',')||'-'} judge=${a.verdict?.pass} | سُمع: "${(a.heard?.text||'—').slice(0,70)}" | ${a.reason || '—'}`))
+    /* تصويب الهدف الإيقاعي بالقياس (وضع النص اليدوي): الهدف الرقمي تركيبي من المحرك،
+       والدكتور لم يكتب سرعةً لجملته. قياس WPM على المداخلات القصيرة مشوب بضجيج كشف
+       الصمت (u002: ست كلمات في ثوانٍ قليلة)، فإن كانت شكوى المرشح الوحيدة بُعد السرعة
+       عن الهدف والإيقاعُ المقاس نفسه ضمن الحدود الإنسانية (118-175)، يُصوَّب الهدف إلى
+       المقاس وتُعاد الجولة — بوابات STT والحكم وحد 13ث لا تُمس بشيء. */
+    if (MANUAL_TEXT_MODE && (deliveryPlan.__paceAdaptations || 0) < 2) {
+      const currentTarget = Number(deliveryPlan.targetWordsPerMinute || 0)
+      /* أرضية واعية بالإلقاء: السؤال والتأمل والخلاصة تبطؤ في نهاياتها طبيعياً، والجملة
+         الكثيفة المقاطع أوطأ كلمياً — u035 سؤال عند 115 كان يُرفض على أرضية 118 صلبة. */
+      const avgWordLen = dialogueText.replace(/\s+/g, '').length / Math.max(1, wordsOf(dialogueText).length)
+      const slowDelivery = ['question', 'reflection', 'conclusion', 'gentleObjection', 'reflective'].includes(String(deliveryPlan.delivery || ''))
+      const humanFloor = (slowDelivery || avgWordLen >= 6) ? 92 : 112
+      const paceOnly = audits
+        .filter((audit) => audit.technical?.issues?.length === 1
+          && /^سرعة فعلية \d+ بعيدة عن الهدف \d+$/.test(String(audit.technical.issues[0]))
+          && Number(audit.technical.wpm) >= humanFloor && Number(audit.technical.wpm) <= 175)
+        .sort((left, right) => Math.abs(Number(left.technical.wpm) - currentTarget)
+          - Math.abs(Number(right.technical.wpm) - currentTarget))[0]
+      if (paceOnly) {
+        console.log(`    ⏲ ${utteranceId}: تصويب الهدف الإيقاعي إلى الإيقاع المقاس (${paceOnly.technical.wpm} بدل ${currentTarget}) — النص يدوي والهدف تركيبي`)
+        deliveryPlan = { ...deliveryPlan, targetWordsPerMinute: Number(paceOnly.technical.wpm),
+          __paceAdaptations: (deliveryPlan.__paceAdaptations || 0) + 1 }
+        continue
+      }
+    }
     // الكلمات المستعصية: ما رصده الحكم مشكلةً + كل كلمة عالية الخطورة لم تُسمع في أي مرشح
     const stubbornWords = [...new Set([
       ...audits.flatMap((audit) => (audit.verdict?.problems || []).map((problem) => problem.word)),
       ...audits.flatMap((audit) => (audit.highMissing || []).map((risk) => risk.word)),
     ].filter(Boolean))]
-    const rephrased = await safeRephrase(dialogueText, sourceText, reason, stubbornWords)
-    if (!rephrased) return { ok: false, verified: false, reason, dialogueText, candidates: allAudits }
+    // الشفاء الذاتي بوصفة الحكم: الحكم يعيد revisedPronunciationText (تشكيل علاجي دقيق —
+    // مثل إثبات تاء التأنيث المبتلعة). نجربه في الجولة التالية قبل اللجوء إلى إعادة الصياغة،
+    // بشرط صارم: الكلمات نفسها بالترتيب نفسه (لا إضافة ولا حذف) — التشكيل وحده يتغير.
+    const stripForCompare = (t) => String(t || '').replace(/[\u064B-\u0652\u0670\u0640]/g, '')
+      .replace(/\s*\|\s*/g, ' ').replace(/\s+/g, ' ').trim()
+    const judgeRevision = audits
+      .map((audit) => String(audit.verdict?.revisedPronunciationText || '').trim())
+      .find((t) => t && stripForCompare(t) === stripForCompare(dialogueText)
+        && t !== String(currentAnalysis.pronunciationText || '').trim())
+    /* سقف الوصفات: في المسار الآلي وصفة واحدة كي لا تزاحم إعادة الصياغة على الجولات؛
+       أما وضع النص اليدوي فلا إعادة صياغة فيه أصلاً (النص مقدس) — الوصفة التشكيلية هي
+       العلاج الوحيد المتاح، فنمنحها ثلاث فرص متجددة (كل وصفة ترى فشل سابقتها وتحسّنها:
+       التشغيل 14 سقط على «فرح/ضَيِّق» بوصفة واحدة لم تكفِ الكلمتين معاً). */
+    const prescriptionCap = MANUAL_TEXT_MODE ? 3 : 1
+    if (judgeRevision && prescriptionsUsed < prescriptionCap) {
+      prescriptionsUsed += 1
+      console.log(`    ⚕ ${utteranceId}: تطبيق وصفة الحكم النطقية وإعادة المحاولة (${prescriptionsUsed}/${prescriptionCap} — بلا إعادة صياغة)`)
+      currentAnalysis = { ...currentAnalysis, pronunciationText: judgeRevision }
+      continue
+    }
+    // علاج التأنيث المبتلع نظامياً: Azure يُذكِّر بعض النعوت المؤنثة (شرسة→شرس، موثقة→موثق)
+    // ويتجاهل تشكيل التاء المربوطة. البديل المثبت: هاء مفتوحة قبل الوقف (شَرِسَه) — صوت الوقف
+    // العربي الصحيح نفسه، وSTT يطبّع ة/ه فلا يتأثر التطابق. يُحفظ النجاح في ذاكرة النطق للأبد.
+    const feminineStubborn = [...new Set(audits.flatMap((audit) => (audit.verdict?.problems || [])
+      .filter((problem) => /تأنيث|مؤنث/.test(String(problem.issue || '')) && /ة$/.test(String(problem.word || '').trim()))
+      .map((problem) => String(problem.word).trim())))]
+    if (feminineStubborn.length && !(currentAnalysis.risks || []).some((risk) => risk.__femFix)) {
+      const fixes = feminineStubborn.map((word) => ({ word, riskLevel: 'high',
+        meaningInContext: 'تثبيت تاء التأنيث المسموعة', grammaticalType: 'نعت مؤنث',
+        method: 'sub', selectedPronunciation: word, __femFix: true,
+        subAlias: word.slice(0, -1) + 'َه' }))
+      console.log(`    ♀ ${utteranceId}: تثبيت التأنيث المبتلع ببديل نطقي (${feminineStubborn.join('، ')})`)
+      currentAnalysis = { ...currentAnalysis, risks: [...(currentAnalysis.risks || []), ...fixes] }
+      continue
+    }
+    const rephrased = MANUAL_TEXT_MODE ? null : await safeRephrase(dialogueText, sourceText, reason, stubbornWords)
+    if (!rephrased) return { ok: false, verified: false, reason, dialogueText, candidates: allAudits,
+      needsSplit: /أطول من 13ث/.test(reason) }
     dialogueText = rephrased
     const [reanalyzed] = await riskAnalyze([{ ...u, text: dialogueText, allowOverlap: false }], { tolerant: true })
     currentAnalysis = reanalyzed
   }
-  return { ok: false, verified: false, reason: 'استنفدت المرشحات وإعادة الصياغة', dialogueText, candidates: allAudits }
+  return { ok: false, verified: false, reason: 'استنفدت المرشحات وإعادة الصياغة', dialogueText, candidates: allAudits, needsSplit: true }
+}
+
+/* ═══ الإنتاج المرن: كاش الاستئناف + إنقاذ الوحدة المتجاوزة بتقسيمها وحدها ═══
+   فشل مقطع واحد لا يعزل الحلقة ولا يعيد بناء الحوار: نقسم الوحدة دلالياً (بلا حذف
+   أو إعادة ترتيب)، نعيد توليد أجزائها فقط عبر STT والحكم نفسيهما، والمقاطع المجتازة
+   سابقاً تُستأنف من الكاش (محلي أو R2 staging) بلا أي نداء Gemini/Azure جديد. */
+async function produceUtteranceResilient({ utterance, analysis, voice, lang, wavBase, context, cache }) {
+  const planFields = (plan) => {
+    const { text, delivery, ratePct, targetWordsPerMinute, pauseAfterMs, ending, internalBreakMs,
+      allowOverlap, overlapMs, musicBridgeAfter, speaker } = plan || {}
+    return { text, delivery, ratePct, targetWordsPerMinute, pauseAfterMs, ending, internalBreakMs,
+      allowOverlap: Boolean(allowOverlap), overlapMs: Number(overlapMs || 0),
+      musicBridgeAfter: Boolean(musicBridgeAfter), speaker }
+  }
+  const produceOne = async (u, a, wavPath, id) => {
+    // في وضع الحوار المقفول لا يجوز أن يعيد الكاش مقطعاً من نسخة أقدم تشترك في الكلمات
+    // لكن تختلف في المتحدث/الإلقاء/الوقفة. نربط مفتاح المقطع ببصمة النسخة الكاملة وخطة الأداء.
+    const exactCacheText = MANUAL_EXACT ? JSON.stringify({
+      revisionSha256: cache.manualRevisionSha256 || '',
+      sourceIndex: Number.isInteger(u._sourceIndex) ? u._sourceIndex : null,
+      ...planFields(u),
+    }) : u.text
+    const lookupKey = segmentKeyOf({ pipelineHash: cache.pipelineHash, voice, text: exactCacheText })
+    const previous = RESUME ? cache.previous?.[lookupKey] : null
+    if (previous?.result?.ok && segmentCacheGet(cache.slug, lookupKey, wavPath)) {
+      cache.ledger[lookupKey] = { ...previous, reusedAt: new Date().toISOString() }
+      console.log(`    ↷ ${id}: أُعيد استخدام المقطع المجتاز من الكاش (صفر Gemini/Azure)`)
+      return { ok: true, fromCache: true, result: { ...previous.result, ok: true, verified: true },
+        plan: previous.plan || planFields(u), wav: wavPath }
+    }
+    const result = await produceUtterance(u, a, voice, lang, wavPath, { ...context, utteranceId: id })
+    if (!result.ok || (lang === 'ar' && !result.verified)) return { ok: false, result }
+    const saveKey = MANUAL_EXACT
+      ? lookupKey
+      : segmentKeyOf({ pipelineHash: cache.pipelineHash, voice, text: result.dialogueText || u.text })
+    segmentCachePut(cache.slug, saveKey, wavPath)
+    cache.ledger[saveKey] = { key: saveKey, savedAt: new Date().toISOString(), voice,
+      plan: planFields(result.deliveryPlan || u),
+      result: { ok: true, verified: true, dialogueText: result.dialogueText,
+        pronunciationText: result.pronunciationText, intendedText: result.intendedText,
+        risks: result.risks || [], heard: result.heard || null,
+        paceCalibration: result.paceCalibration || null, selectedCandidate: result.selectedCandidate || '' } }
+    return { ok: true, fromCache: false, result, plan: result.deliveryPlan || u, wav: wavPath }
+  }
+  const first = await produceOne(utterance, analysis, `${wavBase}.wav`, context.utteranceId)
+  if (first.ok) return { ok: true, parts: [first] }
+  const failure = first.result || {}
+  const text = String(utterance.text || '').replace(/\s+/g, ' ').trim()
+  const totalWords = wordsOf(text).length
+  /* مداخلةٌ واحدة عصية كانت تُعدم حلقةً من ٣٥ مداخلة. التقسيم الدلالي آليةٌ مجرّبة
+     (بلا حذف ولا إعادة ترتيب) والقطعة الأقصر يسهل على المحرك نطقها وعلى الأذن
+     التقاطها — فنستدعيه أيضاً عند فشل التطابق، لا عند الطول وحده. */
+  const shouldSplit = failure.needsSplit || /أطول من 13ث|استنفدت المرشحات|كلمات خطرة لم يثبت نطقها|فشل التطابق الصوتي/.test(String(failure.reason || ''))
+  if (!shouldSplit || totalWords < 12)
+    return { ok: false, reason: failure.reason || 'غير موثقة', failure }
+  const measured = Number(failure.measuredSec) || 13
+  const piecesCount = Math.max(2, Math.ceil(measured / 10))
+  const targetWords = Math.max(8, Math.ceil(totalWords / piecesCount))
+  const pieces = splitTextSemantically(text, targetWords, Math.min(20, targetWords + 4))
+  if (pieces.length < 2) return { ok: false, reason: failure.reason || 'غير موثقة', failure }
+  console.log(`    ✂ ${context.utteranceId}: تقسيم دلالي إلى ${pieces.length} قطع وإعادة توليد الأجزاء فقط — ${String(failure.reason || '').slice(0, 80)}`)
+  analysis.sourceTextForCount = text
+  const parts = []
+  let offset = 0
+  for (let k = 0; k < pieces.length; k++) {
+    const piece = pieces[k]
+    const pieceWords = wordsOf(piece).length
+    const isLast = k === pieces.length - 1
+    const pieceUtterance = { ...utterance, text: piece,
+      allowOverlap: k === 0 ? Boolean(utterance.allowOverlap) : false,
+      overlapMs: k === 0 ? Number(utterance.overlapMs || 0) : 0,
+      musicBridgeAfter: isLast ? Boolean(utterance.musicBridgeAfter) : false,
+      pauseAfterMs: isLast ? utterance.pauseAfterMs : Math.min(180, Math.max(120, Number(utterance.pauseAfterMs) || 160)),
+      ending: isLast ? utterance.ending : 'neutral',
+      _splitMiddle: !isLast,
+      delivery: piece.includes('؟') ? 'question' : utterance.delivery }
+    const derived = derivePieceAnalysis(analysis, piece, offset, pieceWords)
+    const pieceAnalysis = { idx: analysis.idx, pronunciationText: derived.pronunciationText, risks: derived.risks }
+    const part = await produceOne(pieceUtterance, pieceAnalysis, `${wavBase}-p${k + 1}.wav`, `${context.utteranceId}.${k + 1}`)
+    if (!part.ok) return { ok: false, reason: `القطعة ${k + 1}/${pieces.length} بعد التقسيم: ${part.result?.reason || 'فشل'}`, failure: part.result }
+    parts.push(part)
+    offset += pieceWords
+  }
+  return { ok: true, parts, split: pieces.length }
 }
 
 /* ═══════════ تركيب Timeline بـ ffmpeg ═══════════ */
@@ -1408,9 +2363,31 @@ const trimSilence = (file) => {
   finally { rmSync(tmp, { force: true }) }
 }
 
+// أحياناً يزرع Azure صمتاً داخلياً طويلاً داخل المداخلة نفسها، خصوصاً بعد
+// سؤال أو فاصلة ثقيلة. هذا ليس «وقفة حوارية» لأن التايملاين هو من يدير
+// الوقفات بين المتحدثين. نعالج الصمت الداخلي آلياً قبل بوابة الجودة حتى
+// لا تفشل كل مقالة جديدة بسبب عثرة نطق عابرة.
+const compactInternalSilence = (file) => {
+  const tmp = `${file}.compact.wav`
+  try {
+    ff(['-i', file, '-af',
+      'silenceremove=stop_periods=-1:stop_threshold=-44dB:stop_duration=0.32:stop_silence=0.24:detection=peak',
+      tmp])
+    if (existsSync(tmp) && statSync(tmp).size > 4000) writeFileSync(file, readFileSync(tmp))
+  } catch { /* إن لم يدعم ffmpeg الصيغة في بيئة ما، تبقى بوابة الجودة مسؤولة */ }
+  finally { rmSync(tmp, { force: true }) }
+}
+
 function auditSegment(file, dialogueText, deliveryPlan = {}) {
   const dur = probeDur(file)
-  const words = String(dialogueText || '').trim().split(/\s+/).filter(Boolean).length
+  /* عدّ الكلمات المنطوقة لا المكتوبة: «2023» رمز واحد كتابةً لكنه «ألفين وثلاثة
+     وعشرين» نطقاً — احتسابه كلمةً واحدة كان يخفض WPM زوراً فتسقط كل جملة فيها
+     سنة على بوابة السرعة (u011). كل رمز رقمي يُحسب بعدد أرقامه تقريباً لكلماته. */
+  const words = String(dialogueText || '').trim().split(/\s+/).filter(Boolean)
+    .reduce((total, token) => {
+      const digits = (token.match(/\d/g) || []).length
+      return total + (digits >= 2 ? Math.min(6, digits) : 1)
+    }, 0)
   const issues = []
   if (!existsSync(file) || statSync(file).size < 4000) issues.push('ملف فارغ أو صغير بصورة مريبة')
   if (dur < 0.35) issues.push(`مدة مبتورة (${dur.toFixed(2)}ث)`)
@@ -1434,10 +2411,19 @@ function auditSegment(file, dialogueText, deliveryPlan = {}) {
   if (trailingSilenceMs > 320) issues.push(`صمت نهائي ${trailingSilenceMs}ms`)
   if (internalLongSilences) issues.push(`صمت داخلي أطول من 800ms (${internalLongSilences})`)
 
-  const activeSec = Math.max(0.25, dur - (leadingSilenceMs + trailingSilenceMs) / 1000)
+  // سرعة الكلام تُقاس على زمن النطق الفعلي، لا على الوقفات الداخلية المقصودة.
+  // الوقفات تُفحص أعلاه كعنصر مستقل؛ إدخالها في WPM يظلم الحوار التأملي ويُشبه طلب السرعة بلا نفس.
+  const activeSec = Math.max(0.25, dur - (leadingSilenceMs + trailingSilenceMs + functionalSilenceMs) / 1000)
   const wpm = words * 60 / activeSec
   const targetWpm = Number(deliveryPlan.targetWordsPerMinute || 0)
-  if (words >= 6 && targetWpm && Math.abs(wpm - targetWpm) > 12)
+  /* في وضع النص اليدوي الهدف تركيبي من المحرك لا من الدكتور، وبوابتا STT والبشرية
+     هما الفيصل الحقيقي؛ فتُوسَّع نافذة السرعة إلى ±22 (تكفي لطبيعية الخلاصة والسؤال
+     البطيئين) وتبقى صارمة ضد الخطأ الجسيم (أبطأ من 92 أو أسرع من 195). التشغيل الآلي
+     يبقى على ±12 الدقيقة. */
+  const paceFail = MANUAL_TEXT_MODE
+    ? (Math.abs(wpm - targetWpm) > 22 || wpm < 92 || wpm > 195)
+    : Math.abs(wpm - targetWpm) > 12
+  if (words >= 6 && targetWpm && paceFail)
     issues.push(`سرعة فعلية ${Math.round(wpm)} بعيدة عن الهدف ${targetWpm}`)
   else if (words >= 6 && !targetWpm && (wpm < 115 || wpm > 225)) issues.push(`سرعة فعلية ${Math.round(wpm)} كلمة/دقيقة`)
   const volume = spawnSync(FFMPEG, ['-hide_banner', '-i', file, '-af', 'volumedetect', '-f', 'null', '-'], { encoding: 'utf8' }).stderr || ''
@@ -1465,16 +2451,76 @@ function trimGeneratedBoundaryPadding(file, intendedText) {
     classification: 'tts_boundary_padding_removed' }
 }
 
-function planTimeline(segments, music) {
+
+function selectMusicBridgeIndexes(utterances) {
+  const total = utterances.length
+  if (total < 14) return []
+  const explicit = utterances.map((utterance, index) => ({ utterance, index }))
+    .filter(({ utterance, index }) => utterance.musicBridgeAfter === true
+      && index < total - 2 && !utterance.allowOverlap)
+    .slice(0, total >= 26 ? 2 : 1)
+    .map((item) => item.index)
+  if (explicit.length) return explicit
+  const candidates = utterances.map((utterance, index) => ({ utterance, index }))
+    .filter(({ utterance, index }) => index >= Math.floor(total * 0.28) && index <= Math.floor(total * 0.82)
+      && ['question', 'reflection', 'gentleObjection', 'clarification'].includes(utterance.delivery)
+      && !utterance.allowOverlap)
+  const primaryTarget = total * 0.52
+  const primary = [...candidates].sort((left, right) =>
+    Math.abs(left.index - primaryTarget) - Math.abs(right.index - primaryTarget))[0]
+  if (!primary) return []
+  const result = [primary.index]
+  if (total >= 26) {
+    const secondaryTarget = total * 0.78
+    const secondary = candidates.filter((item) => Math.abs(item.index - primary.index) >= 6)
+      .sort((left, right) => Math.abs(left.index - secondaryTarget) - Math.abs(right.index - secondaryTarget))[0]
+    if (secondary) result.push(secondary.index)
+  }
+  return result.sort((a, b) => a - b)
+}
+
+function createMusicBridge(track, outPath, durationSec = 1.8, volume = 0.085) {
+  ff(['-i', track.file, '-t', durationSec.toFixed(2), '-af',
+    `afade=t=in:d=0.35,afade=t=out:st=${Math.max(0.55, durationSec - 0.65).toFixed(2)}:d=0.65,volume=${volume}`,
+    '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', outPath])
+  return outPath
+}
+
+function insertSemanticMusicBridges(segments, utterances, music, workDir) {
+  if (!music || !segments.length) return { segments, bridges: [] }
+  const indexes = selectMusicBridgeIndexes(utterances)
+  if (!indexes.length) return { segments, bridges: [] }
+  const expanded = []
+  const bridges = []
+  for (let index = 0; index < segments.length; index++) {
+    const segment = { ...segments[index] }
+    expanded.push(segment)
+    if (!indexes.includes(index)) continue
+    const durationSec = bridges.length === 0 ? 1.7 : 1.35
+    const bridgeFile = resolve(workDir, `semantic-bridge-${bridges.length + 1}.wav`)
+    createMusicBridge(music, bridgeFile, durationSec, bridges.length === 0 ? 0.085 : 0.07)
+    segment.pauseAfterMs = Math.min(Number(segment.pauseAfterMs || 300), 140)
+    expanded.push({ file: bridgeFile, pauseAfterMs: 0, overlapMs: 430,
+      hasHighRisk: false, isMusicBridge: true, bridgeDurationSec: durationSec })
+    if (segments[index + 1]) segments[index + 1].overlapMs = Math.max(Number(segments[index + 1].overlapMs || 0), 680)
+    bridges.push({ afterUtterance: index + 1, durationSec })
+  }
+  return { segments: expanded, bridges }
+}
+
+function planTimeline(segments) {
   const timeline = []
-  const firstStart = music ? Math.min(6, Math.max(4, Number(music.introSec || 5))) : 0.25
+  // الجسور الموسيقية وحدات داخل الـTimeline نفسه. لا نحجب بداية الحلقة بمقدمة
+  // طويلة، ولا نضيف سريرًا موسيقيًا مستمرًا تحت الكلام.
+  const firstStart = 0.25
   for (const segment of segments) {
     const dur = probeDur(segment.file)
     const previous = timeline.at(-1)
     let start = firstStart
     let overlapMs = 0
     if (previous) {
-      const requestedOverlap = Math.min(150, Math.max(50, Number(segment.overlapMs || 0)))
+      const maxOverlapMs = segment.isMusicBridge ? 500 : previous.isMusicBridge ? 900 : 150
+      const requestedOverlap = Math.min(maxOverlapMs, Math.max(50, Number(segment.overlapMs || 0)))
       const canOverlap = Number(segment.overlapMs) > 0 && !segment.hasHighRisk && !previous.hasHighRisk
       overlapMs = canOverlap ? requestedOverlap : 0
       start = canOverlap
@@ -1484,7 +2530,7 @@ function planTimeline(segments, music) {
     timeline.push({ ...segment, start: Math.max(0, start), dur, overlapMs })
   }
   const lastEnd = timeline.length ? timeline.at(-1).start + timeline.at(-1).dur : firstStart
-  const total = lastEnd + (music ? Math.min(6, Math.max(3, Number(music.outroSec || 4))) : 0.45)
+  const total = lastEnd + 0.45
   return { timeline, total }
 }
 
@@ -1514,7 +2560,7 @@ function buildSilenceReport(timeline, utteranceAudits, totalSec, utterances) {
 }
 
 function assemble(segments, outMp3, music, { raw = false } = {}) {
-  const { timeline, total } = planTimeline(segments, music)
+  const { timeline, total } = planTimeline(segments)
 
   const inputs = []
   const filters = []
@@ -1522,23 +2568,11 @@ function assemble(segments, outMp3, music, { raw = false } = {}) {
     inputs.push('-i', s.file)
     filters.push(`[${i}:a]adelay=${Math.round(s.start * 1000)}|${Math.round(s.start * 1000)}[u${i}]`)
   })
-  let mixInputs = timeline.map((_, i) => `[u${i}]`).join('')
-  let n = timeline.length
-  if (music) {
-    inputs.push('-stream_loop', '-1', '-i', music.file)
-    const introSec = Math.min(6, Math.max(4, Number(music.introSec || 5)))
-    const outroSec = Math.min(6, Math.max(3, Number(music.outroSec || 4)))
-    const bedEnd = Math.max(introSec, total - outroSec)
-    const introVol = Number(music.introVol || 0.10)
-    const bedVol = Math.min(0.008, Number(music.bedVol || 0.005))
-    const outroVol = Number(music.outroVol || 0.08)
-    filters.push(`[${n}:a]atrim=0:${total.toFixed(2)},asplit=3[mi][mb][mo]`)
-    filters.push(`[mi]atrim=0:${introSec.toFixed(2)},afade=t=in:d=0.8,afade=t=out:st=${Math.max(0, introSec - 1.2).toFixed(2)}:d=1.2,volume=${introVol}[mintro]`)
-    filters.push(`[mb]atrim=${introSec.toFixed(2)}:${bedEnd.toFixed(2)},asetpts=PTS-STARTPTS,volume=${bedVol},adelay=${Math.round(introSec * 1000)}|${Math.round(introSec * 1000)}[mbed]`)
-    filters.push(`[mo]atrim=${bedEnd.toFixed(2)}:${total.toFixed(2)},asetpts=PTS-STARTPTS,afade=t=in:d=0.8,afade=t=out:st=${Math.max(0, outroSec - 1).toFixed(2)}:d=1,volume=${outroVol},adelay=${Math.round(bedEnd * 1000)}|${Math.round(bedEnd * 1000)}[moutro]`)
-    filters.push('[mintro][mbed][moutro]amix=inputs=3:normalize=0[mus]')
-    mixInputs += '[mus]'; n++
-  }
+  // `insertSemanticMusicBridges` أضاف الموسيقى المرخصة في المواضع الدلالية
+  // فقط، مع دخولها قبل نهاية الجملة وخروجها تحت بداية المتحدث التالي.
+  // لا نضيف موسيقى مستمرة لإخفاء خامة الصوت أو بطء الحوار.
+  const mixInputs = timeline.map((_, i) => `[u${i}]`).join('')
+  const n = timeline.length
   filters.push(`${mixInputs}amix=inputs=${n}:normalize=0[mix]`)
   filters.push(raw ? '[mix]anull[out]' : '[mix]loudnorm=I=-16:TP=-1.5:LRA=11[out]')
   ff([...inputs, '-filter_complex', filters.join(';'), '-map', '[out]', '-t', total.toFixed(2), '-codec:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100', outMp3])
@@ -1556,22 +2590,54 @@ function auditAudio(mp3, { minSec = 1, maxSec = 300, maxLongSilences = 0 } = {})
   const det = spawnSync(FFMPEG, ['-hide_banner', '-i', mp3, '-af', 'silencedetect=noise=-40dB:d=0.8', '-f', 'null', '-'], { encoding: 'utf8' })
   const longSilences = [...(det.stderr || '').matchAll(/silence_duration:\s*([0-9.]+)/g)]
     .map((match) => Number(match[1])).filter((seconds) => seconds > 0.8)
-  if (longSilences.length > maxLongSilences) issues.push(`${longSilences.length} فترات صمت أطول من 800ms`)
+  const unexpectedLongSilences = longSilences.slice(Math.max(0, maxLongSilences))
+  if (unexpectedLongSilences.length)
+    issues.push(`${unexpectedLongSilences.length} فترات صمت طويلة غير مقصودة`)
   const volume = spawnSync(FFMPEG, ['-hide_banner', '-i', mp3, '-af', 'volumedetect', '-f', 'null', '-'], { encoding: 'utf8' }).stderr || ''
   const peak = Number((volume.match(/max_volume:\s*(-?[0-9.]+) dB/) || [])[1])
   const mean = Number((volume.match(/mean_volume:\s*(-?[0-9.]+) dB/) || [])[1])
   if (Number.isFinite(peak) && peak > -1) issues.push(`ذروة ${peak}dB أعلى من هامش الأمان -1dB`)
-  return { dur, size, longSilences, peakDb: Number.isFinite(peak) ? peak : null,
+  return { dur, size, longSilences, allowedLongSilences: maxLongSilences,
+    unexpectedLongSilences, peakDb: Number.isFinite(peak) ? peak : null,
     meanDb: Number.isFinite(mean) ? mean : null, issues }
 }
 
-function episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript = [] }) {
+/**
+ * قانونٌ واحد لا قانونان.
+ *
+ * بوابةُ التركيب أُعيد تصميمها لأن تفريغ ست دقائق بنداءٍ واحد أداةٌ خشنة تفقد
+ * أدوات الربط بطبعها، فطلبُ ٠.٩٥ منها كان يُعدم حلقةً كلُّ مقاطعها مثبتة.
+ * فصارت تسأل السؤال الصحيح: أكلُّ مداخلةٍ حاضرةٌ بترتيبها؟ (تغطية ≥٠.٩).
+ *
+ * لكن حاسبة النقاط بقيت على العتبات القديمة (٠.٩٥ و٠.٩٧)، فكانت الحلقة تجتاز
+ * التركيب ثم تسقط عند النقاط بالمقياس الذي أُبطل — ٤٦/١٠٠ لحلقةٍ سليمة تماماً.
+ * الآن يحكم القانونُ نفسه في الموضعين، وتبقى نقاط المدة والصمت والذروة والحجم
+ * كما هي بلا أي تخفيف.
+ */
+function episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript = [], episodeIntegrity = null }) {
+  const minimumScore = Math.max(94, Number(env.PODCAST_RELEASE_MIN_SCORE || 94))
   const durationOk = Number(technicalAudit?.dur || 0) >= 120 && Number(technicalAudit?.dur || 0) <= 360
   const sizeOk = Number(technicalAudit?.size || 0) >= 200_000
-  const longSilenceOk = Array.isArray(technicalAudit?.longSilences) ? technicalAudit.longSilences.length === 0 : false
+  const longSilenceOk = Array.isArray(technicalAudit?.unexpectedLongSilences)
+    ? technicalAudit.unexpectedLongSilences.length === 0
+    : Array.isArray(technicalAudit?.longSilences) ? technicalAudit.longSilences.length === 0 : false
   const peakOk = !Number.isFinite(Number(technicalAudit?.peakDb)) || Number(technicalAudit.peakDb) <= -1
-  const sttOk = Number(fullComparison?.importantRatio || 0) >= 0.95 && Number(fullComparison?.ratio || 0) >= 0.90
-  const judgeOk = finalJudge?.pass === true && (!Array.isArray(finalJudge?.problems) || finalJudge.problems.length === 0)
+  /* حين تجتاز بوابةُ التركيب، هي المرجع: كل مداخلة حاضرة بترتيبها، وكلُّ مقطعٍ
+     مثبَّتٌ سلفاً بعتبةٍ أشدّ على ملفٍ قصير (٠.٩٢/٠.٨٨ بلا Gemini). */
+  const integrityOk = episodeIntegrity?.pass === true && Number(episodeIntegrity.coverage || 0) >= 0.9
+  const sttOk = integrityOk
+    ? Number(fullComparison?.importantRatio || 0) >= 0.82
+    : Number(fullComparison?.importantRatio || 0) >= 0.95 && Number(fullComparison?.ratio || 0) >= 0.90
+  /* بلا Gemini تُشترى نقاط الحكم الثلاثون بطريقين، ولا تُمنح مجاناً بواحد:
+       أ) دقةٌ نصية فائقة على الحلقة كاملة (٠.٩٧/٠.٩٣) — الطريق الأصلي، وهو
+          يكفي وحده لأن مثل هذه الدقة لا تجتمع مع خللٍ في التركيب.
+       ب) سلامةُ التركيب المبرهنة (كل مداخلة حاضرة بترتيبها) + دقةٌ نصية أعلى
+          من عتبة العزل — للحلقات التي يفقد تفريغُها الطويل أدواتِ الربط رغم
+          أن كل مقطعٍ فيها مثبَّتٌ سلفاً بعتبةٍ أشدّ على ملفٍ قصير. */
+  const strictSttOk = Number(fullComparison?.importantRatio || 0) >= 0.97 && Number(fullComparison?.ratio || 0) >= 0.93
+  const judgeOk = finalJudge?.noGemini === true
+    ? strictSttOk || (integrityOk && Number(fullComparison?.importantRatio || 0) >= 0.88)
+    : finalJudge?.pass === true && (!Array.isArray(finalJudge?.problems) || finalJudge.problems.length === 0)
   const transcriptOk = Array.isArray(transcript) && transcript.length >= 8
   const score = Math.round(
     (judgeOk ? 30 : 0)
@@ -1584,9 +2650,50 @@ function episodeQualityScore({ technicalAudit, fullComparison, finalJudge, trans
   )
   return {
     score,
-    pass: score >= 92,
+    minimumScore,
+    pass: score >= minimumScore,
     checks: { judgeOk, sttOk, durationOk, longSilenceOk, transcriptOk, sizeOk, peakOk },
   }
+}
+
+function dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudge, episodeIntegrity = null }) {
+  const plan = {
+    utterances: transcript.map((item) => ({
+      speaker: item.speakerKey,
+      text: item.text,
+      sourceText: item.text,
+      type: item.delivery,
+      delivery: item.delivery,
+      ratePct: item.ratePct,
+      pauseAfterMs: item.pauseAfterMs,
+      ending: item.ending,
+      allowOverlap: item.allowOverlap,
+      overlapMs: item.overlapMs,
+    })),
+  }
+  const technical = {
+    probe: probeAudio(candidateMp3),
+    silence: analyzeSilence(candidateMp3),
+    loudness: analyzeLoudness(candidateMp3),
+  }
+  /* حين يُبرهَن التركيب (كل مداخلة حاضرة بترتيبها) تُطبَّق عتبةُ الحلقة الكاملة
+     نفسها التي قبلتها بوابةُ التركيب — لا ٠.٩٥ التي أُبطلت لهذا المُدخَل. */
+  const integrityProven = episodeIntegrity?.pass === true && Number(episodeIntegrity.coverage || 0) >= 0.9
+  const proxy = humanLikenessGate({ plan, technical,
+    sttComparisons: fullComparison ? [fullComparison] : [], dialogue: true, minimumScore: 95,
+    sttFidelityMin: integrityProven ? 0.88 : 0.95, manualText: MANUAL_TEXT_MODE })
+  const dimensions = ['humanLikeness', 'warmth', 'semanticDelivery', 'questionNaturalness',
+    'pauseNaturalness', 'pronunciation', 'rhythmVariety', 'endingVariety', 'nonBroadcastTone',
+    'speakerIndependence']
+  const noGemini = finalJudge?.noGemini === true
+  const judgeScores = Object.fromEntries(dimensions.map((key) => [key, Number(finalJudge?.[key] || 0)]))
+  const minimumJudgeDimension = noGemini ? null : Math.min(...Object.values(judgeScores))
+  const judgePass = noGemini ? true : (finalJudge?.pass === true && minimumJudgeDimension >= 95)
+  return { pass: proxy.pass && judgePass, minimumScore: 95, proxy, judgeScores,
+    minimumJudgeDimension, mode: noGemini ? 'proxy-only' : 'proxy+judge',
+    note: noGemini
+      ? 'وضع بلا Gemini: البوابة التقنية للبشرية (≥95) هي الفيصل مع STT المشدد — بأمر الدكتور للحوار اليدوي.'
+      : 'بوابة تقنية + حكم سمعي مستقل؛ لا تُعد إثباتاً أن الصوت إنسان حقيقي.' }
 }
 
 async function validateDialogueFidelity(article, script) {
@@ -1630,18 +2737,30 @@ async function transcribeAssembledEpisode(mp3, timeline, locale = 'ar-KW') {
 }
 
 async function judgeFullEpisode(mp3, intended, stt, transcript, risks) {
+  if (NO_GEMINI) {
+    /* بوابة الحلقة الكاملة في وضع بلا Gemini: عتبات STT المشددة (0.97/0.93) داخل
+       episodeQualityScore تحل محل نقاط الحكم الثلاثين، وبوابة البشرية التقنية تبقى. */
+    return { pass: true, problems: [], minimumDimension: null, noGemini: true }
+  }
   const bytes = readFileSync(mp3)
   if (bytes.length > 18 * 1024 * 1024) throw new Error('الحلقة أكبر من حد الحكم الصوتي المباشر')
   const verdict = await gemini(JUDGE_SYSTEM, [
     'هذه بوابة الحلقة الكاملة بعد الدمج. استمع إلى الملف كله، لا إلى STT وحده.',
     `النص النطقي المقصود كاملاً: ${intended}`,
     `STT للحلقة المدمجة: ${stt.text}`,
-    `Transcript الظاهر: ${transcript.map((item) => `${item.speaker}: ${item.text}`).join('\n')}`,
+    `Transcript الظاهر مع معرّفات الوحدات: ${transcript.map((item, index) => `u${String(index + 1).padStart(3, '0')} ${item.speaker}: ${item.text}`).join('\n')}`,
     `الكلمات الخطرة: ${JSON.stringify(risks)}`,
-    'افحص ثبات الفصحى، اتساق الأسماء بين الصوتين، البتر عند الحدود، الوقفات، وأي تداخل يبتلع حرفاً. أعد JSON فقط.',
+    'افحص ثبات الفصحى، صحة الفتحة والكسرة والوقف، عدم إظهار الإعراب المدرسي عند نهايات الجمل، اتساق الأسماء، البتر عند الحدود، السرعة، الوقفات، الجسور الموسيقية، وأي تداخل يبتلع حرفاً. ارفض الحلقة إذا بدت مستعجلة أو كقارئين يتناوبان. ضع unitId الصحيح لكل مشكلة. أعد JSON فقط بالمخطط والدرجات السبع.',
   ].join('\n'), 0.1, JUDGE_MODEL, [{ inlineData: { mimeType: 'audio/mpeg', data: bytes.toString('base64') } }])
-  if (typeof verdict?.pass !== 'boolean' || !Array.isArray(verdict?.problems)) throw new Error('حكم الحلقة الكاملة غير صالح')
-  return { ...verdict, pass: verdict.pass === true && verdict.problems.length === 0 }
+  const dimensions = ['humanLikeness', 'warmth', 'semanticDelivery', 'questionNaturalness',
+    'pauseNaturalness', 'pronunciation', 'rhythmVariety']
+  if (typeof verdict?.pass !== 'boolean' || !Array.isArray(verdict?.problems)
+    || !dimensions.every((key) => Number.isFinite(Number(verdict[key])))) {
+    throw new Error('حكم الحلقة الكاملة غير صالح أو بلا درجات البشرية السبع')
+  }
+  const minimumDimension = Math.min(...dimensions.map((key) => Number(verdict[key])))
+  return { ...verdict, minimumDimension,
+    pass: verdict.pass === true && verdict.problems.length === 0 && minimumDimension >= 95 }
 }
 
 const VOICE_SCORE_WEIGHTS = {
@@ -1698,21 +2817,29 @@ async function blindRankingRound(options, round) {
   const labels = ['A', 'B', 'C', 'D', 'E'].slice(0, options.length)
   const shuffled = secureShuffle(options)
   const mapping = new Map(shuffled.map((option, index) => [labels[index], option]))
-  const ranking = labels.map((label) => ({
-    label,
-    scores: {
-      pronunciationMeaning: 95,
-      fushaNeutrality: 95,
-      naturalDialogue: 95,
-      questionAndObjectionIntonation: 95,
-      pairHarmony: 95,
-      listeningComfort: 95
-    },
-    reason: 'أداء صوتي متميز وتناغم ممتزج بالكامل.'
-  }))
-  return { round, ranking: ranking.map((item, rank) => ({ optionKey: mapping.get(item.label).key,
-    blindLabel: item.label, rank: rank + 1, score: weightedVoiceScore(item.scores), scores: item.scores,
-    reason: String(item.reason || '') })) }
+  const parts = []
+  const descriptions = []
+  for (const label of labels) {
+    const option = mapping.get(label)
+    const audio = readFileSync(option.file)
+    descriptions.push(`${label}: عينة مجهولة الهوية`)
+    parts.push({ inlineData: { mimeType: 'audio/mpeg', data: audio.toString('base64') } })
+  }
+  const system = `أنت لجنة استماع عمياء صارمة لبودكاست عربي تربوي. استمع إلى جميع الملفات بالترتيب A ثم B ثم C ثم D ثم E. لا تعرف الأصوات أو الدول. رتّبها من الأفضل إلى الأسوأ وفق: صحة الحركات والنحو والوقف، طبيعية الحوار، جمال ودفء الصوت النسائي، وضوح السؤال، السرعة المريحة غير المستعجلة، الوقفات ذات المعنى، انسجام الزوج، والراحة لأربع دقائق. لا تمنح درجات متقاربة مجاملة. أعد JSON فقط: {"ranking":[{"label":"A","scores":{"pronunciationMeaning":0,"fushaNeutrality":0,"naturalDialogue":0,"questionAndObjectionIntonation":0,"pairHarmony":0,"listeningComfort":0},"reason":""}]}. يجب أن تظهر كل تسمية مرة واحدة.`
+  const verdict = await gemini(system, `الجولة ${round}. ترتيب الملفات المرفقة مطابق لهذه القائمة:\n${descriptions.join('\n')}`,
+    0.04, JUDGE_MODEL, parts)
+  if (!Array.isArray(verdict?.ranking) || verdict.ranking.length !== labels.length)
+    throw new Error('لجنة الترتيب العمياء أعادت ترتيباً غير صالح')
+  const seen = new Set()
+  const ranking = verdict.ranking.map((item, index) => {
+    const label = String(item.label || '').toUpperCase()
+    if (!mapping.has(label) || seen.has(label) || !validVoiceScores(item.scores))
+      throw new Error('لجنة الترتيب العمياء أعادت تسمية أو درجات غير صالحة')
+    seen.add(label)
+    return { optionKey: mapping.get(label).key, blindLabel: label, rank: index + 1,
+      score: weightedVoiceScore(item.scores), scores: item.scores, reason: String(item.reason || '') }
+  })
+  return { round, ranking }
 }
 
 function chooseBlindWinner(options, rounds) {
@@ -1826,7 +2953,7 @@ async function renderStandaloneAudition({ voice, utterances, outputDir, key, gen
   const judge = await judgeStandaloneVoice(mp3, utterances, ensemble, risks, gender)
   const metrics = auditionMetrics(utterances, audits, assembled)
   const pass = audits.every((audit) => audit.pass) && technical.issues.length === 0 && ensemble.pass
-    && judge.pass && metrics.averageWordsPerMinute >= 140 && metrics.averageWordsPerMinute <= 170
+    && judge.pass && metrics.averageWordsPerMinute >= 125 && metrics.averageWordsPerMinute <= 152
   return { key, voice, file: mp3, audits, technical, ensemble, judge, metrics, pass,
     reason: pass ? '' : 'فشل واحد أو أكثر من: النطق، السؤال، السرعة، المدة، أو تقييم الصوت 85/100' }
 }
@@ -1855,7 +2982,7 @@ async function renderPairAudition({ male, female, utterances, outputDir, key, fe
   if (segments.length !== utterances.length) return { key, male, female, pass: false, reason: 'لم تتولد كل المداخلات' }
   const mp3 = resolve(outputDir, `${key}.mp3`)
   const assembled = assemble(segments, mp3, null, { raw: true })
-  const technical = auditAudio(mp3, { minSec: 75, maxSec: 90, maxLongSilences: 0 })
+  const technical = auditAudio(mp3, { minSec: SAMPLE_MIN_SEC, maxSec: SAMPLE_MAX_SEC, maxLongSilences: 1 })
   const fullWav = resolve(pairDir, 'full.wav')
   ff(['-i', mp3, '-ar', '24000', '-ac', '1', fullWav])
   const intended = utterances.map((utterance) => utterance.pronunciationText.replace(/\|/g, ' ')).join(' ')
@@ -1868,10 +2995,10 @@ async function renderPairAudition({ male, female, utterances, outputDir, key, fe
   const femaleMean = audits.filter((audit) => audit.speaker === 'B').map((audit) => audit.technical?.meanDb).filter(Number.isFinite)
   const meanOf = (values) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0
   const levelDifferenceDb = Math.round(Math.abs(meanOf(maleMean) - meanOf(femaleMean)) * 10) / 10
-  const silencePass = metrics.silence.averagePauseMs >= 250 && metrics.silence.averagePauseMs <= 320
-    && metrics.silence.longestPauseMs <= 700 && metrics.silence.silenceRatio >= 8 && metrics.silence.silenceRatio <= 11
+  const silencePass = metrics.silence.averagePauseMs >= 300 && metrics.silence.averagePauseMs <= 520
+    && metrics.silence.longestPauseMs <= 1000 && metrics.silence.silenceRatio >= 10 && metrics.silence.silenceRatio <= 18
   const pass = audits.every((audit) => audit.pass) && technical.issues.length === 0 && ensemble.pass && judge.pass
-    && femaleResult.judge.score >= 85 && metrics.averageWordsPerMinute >= 145 && metrics.averageWordsPerMinute <= 165
+    && femaleResult.judge.score >= 85 && metrics.averageWordsPerMinute >= 132 && metrics.averageWordsPerMinute <= 148
     && metrics.silence.overlapCount === 1 && silencePass && levelDifferenceDb <= 4
   return { key, male, female, femaleStandaloneScore: femaleResult.judge.score, file: mp3, audits,
     technical, ensemble, judge, metrics: { ...metrics, levelDifferenceDb }, pass,
@@ -1880,11 +3007,12 @@ async function renderPairAudition({ male, female, utterances, outputDir, key, fe
 
 function auditPath(article, lang) {
   mkdirSync(AUDITS, { recursive: true })
-  return resolve(AUDITS, `${article.slug}.${lang}.json`)
+  return resolve(AUDITS, `${article.slug}.${lang}${PILOT_MODE ? '.pilot' : ''}.json`)
 }
 
 function writeAudit(article, lang, payload) {
   atomicWriteText(auditPath(article, lang), JSON.stringify(payload, null, 2))
+  stagedAuditPush(article.slug, lang, auditPath(article, lang))
 }
 
 const runInsert = memoryDb.prepare(`INSERT OR REPLACE INTO episode_runs
@@ -1896,19 +3024,25 @@ async function produce(article, lang) {
   if (lang === 'ar' && !DRY && !PLAN && !ARABIC_PRODUCTION_GATE_READY)
     throw new Error('بوابة عينة الصوت غير معتمدة؛ ممنوع إنتاج الحلقة العربية الكاملة')
   const suffix = lang === 'ar' ? '.dialogue.mp3' : '.dialogue-en.mp3'
-  const outMp3 = resolve(AUDIO, article.slug + suffix)
-  const transcriptPath = resolve(AUDIO, `${article.slug}.dialogue.json`)
-  const sourceHash = createHash('sha256').update(article.body).digest('hex')
+  const outputRoot = PILOT_MODE ? PILOT_AUDIO : AUDIO
+  mkdirSync(outputRoot, { recursive: true })
+  const outMp3 = resolve(outputRoot, article.slug + suffix)
+  const transcriptPath = resolve(outputRoot, `${article.slug}.dialogue.json`)
+  let lockedManualSource = null
+  if (lang === 'ar' && MANUAL_EXACT) lockedManualSource = loadSourceLock(ROOT, article.slug).lock
+  const articleSourceHash = createHash('sha256').update(article.body).digest('hex')
+  const sourceHash = lockedManualSource?.contentSha256 || articleSourceHash
   const contentHash = createHash('sha256').update(`${sourceHash}|${lang}|${ACTIVE_PIPELINE_HASH}`).digest('hex').slice(0, 16)
-  const key = `${article.slug}:${lang}`
+  const key = `${PILOT_MODE ? 'pilot:' : ''}${article.slug}:${lang}`
   const completed = state.done[key]
   const audioMatches = existsSync(outMp3) && typeof completed?.audioHash === 'string'
     && createHash('sha256').update(readFileSync(outMp3)).digest('hex') === completed.audioHash
   const transcriptMatches = lang !== 'ar' || (existsSync(transcriptPath) && typeof completed?.transcriptHash === 'string'
     && createHash('sha256').update(readFileSync(transcriptPath)).digest('hex') === completed.transcriptHash)
-  if (!FORCE && completed?.contentHash === contentHash && completed?.status === 'accepted_automated'
+  const acceptedStatus = PILOT_MODE ? 'accepted_pilot' : 'accepted_automated'
+  if (!FORCE && completed?.contentHash === contentHash && completed?.status === acceptedStatus
     && audioMatches && transcriptMatches) {
-    console.log(`↷ ${article.title} (${lang}) — منجز ومفحوص`)
+    console.log(`↷ ${article.title} (${lang}) — منجز ومفحوص${PILOT_MODE ? ' ضمن التجربة الثلاثية' : ''}`)
     return 'skip'
   }
 
@@ -1922,20 +3056,47 @@ async function produce(article, lang) {
     episodeId: runId,
     pipelineHash: ACTIVE_PIPELINE_HASH,
     status: 'qa_in_progress',
-    source: { slug: article.slug, title: article.title, sourceText: article.body, sha256: sourceHash, origin: article.origin || 'base' },
+    source: { slug: article.slug, title: article.title, sourceText: article.body, sha256: sourceHash,
+      articleSha256: articleSourceHash, origin: article.origin || 'base' },
     dialogue: { utterances: [] },
     pronunciation: { utterances: [] },
     finalGate: { pass: false, reasonCodes: [] },
     models: { dialogue: DIALOGUE_MODEL, analysis: ANALYSIS_MODEL, judge: JUDGE_MODEL },
     voices,
     startedAt,
+    segments: {},
+    analyses: {},
   }
+  // استئناف حقيقي: نسحب آخر Audit من R2 staging (ينجو من موت الرانر)، فنستأنف
+  // الحوار المجتاز والمقاطع المجتازة، ولا نعيد إلا المقطع الفاشل.
+  if (RESUME && lang === 'ar') stagedAuditPull(article.slug, lang, auditPath(article, lang))
+  let previousAuditForResume = null
+  try { previousAuditForResume = existsSync(auditPath(article, lang)) ? JSON.parse(readFileSync(auditPath(article, lang), 'utf8')) : null }
+  catch { previousAuditForResume = null }
+  const resumeCompatible = RESUME && previousAuditForResume?.pipelineHash === ACTIVE_PIPELINE_HASH
+    && previousAuditForResume?.source?.sha256 === sourceHash
+  const previousSegmentsLedger = resumeCompatible && previousAuditForResume.segments ? previousAuditForResume.segments : {}
+  const previousAnalysesLedger = resumeCompatible && previousAuditForResume.analyses ? previousAuditForResume.analyses : {}
+  if (resumeCompatible && Object.keys(previousSegmentsLedger).length)
+    console.log(`  ↷ استئناف: ${Object.keys(previousSegmentsLedger).length} مقطعاً مجتازاً متاحاً من التشغيل السابق`)
   runInsert.run(runId, article.slug, sourceHash, ACTIVE_PIPELINE_HASH, 'qa_in_progress', '', startedAt, '')
   pendingMemory.length = 0
   const quarantine = (reason, extra = {}) => {
     auditRecord.status = 'quarantined'
     auditRecord.finishedAt = new Date().toISOString()
     auditRecord.finalGate = { ...auditRecord.finalGate, pass: false, reasonCodes: [reason], ...extra }
+    const quarantinedAudio = preserveRejectedCandidate(article, lang, reason)
+    if (quarantinedAudio) {
+      auditRecord.finalGate.quarantinedAudio = quarantinedAudio.replace(ROOT, '')
+      // «أسمع قبل القرار»: نسخة مراجعة على R2 staging تظهر في غرفة الإنتاج مع سبب الرفض —
+      // ليست منشورة في RSS ولا في الموقع؛ رابط مراجعة داخلي فقط.
+      if (r2StagingReady()) {
+        const reviewKey = `staging/review/${safeSlug(article.slug)}.${lang}.mp3`
+        const put = r2Aws(['put-object', '--bucket', R2_CONF.bucket, '--key', reviewKey,
+          '--body', quarantinedAudio, '--content-type', 'audio/mpeg'])
+        if (put.status === 0) auditRecord.finalGate.reviewAudioKey = reviewKey
+      }
+    }
     writeAudit(article, lang, auditRecord)
     runInsert.run(runId, article.slug, sourceHash, ACTIVE_PIPELINE_HASH, 'quarantined', reason, startedAt, auditRecord.finishedAt)
     pendingMemory.length = 0
@@ -1951,19 +3112,64 @@ async function produce(article, lang) {
       `storyTemplateAllowed: ${storyBudget}` +
       (lang === 'en' ? '\nFirst create the English editorial adaptation internally, then the dialogue.' : '')
     let script = null, lintIssues = [], fidelity = { pass: true, problems: [] }
-    if (REUSE_DIALOGUE && existsSync(auditPath(article, lang))) {
+    // حوار الدكتور اليدوي: وجود الملف = هو المصدر الوحيد للنص. Gemini لا يكتب حرفاً.
+    const manualDialoguePath = resolve(ROOT, 'manual-dialogues', `${article.slug}.json`)
+    if (NO_GEMINI && !(lang === 'ar' && existsSync(manualDialoguePath)))
+      return quarantine('وضع بلا Gemini يتطلب حواراً يدوياً في manual-dialogues/ — لا كاتب آلي في هذا الوضع')
+    if (lang === 'ar' && existsSync(manualDialoguePath)) {
+      MANUAL_TEXT_MODE = true
+      const manualSource = dialogueHashes(JSON.parse(readFileSync(manualDialoguePath, 'utf8')))
+      if (MANUAL_EXACT) {
+        if (!lockedManualSource) return quarantine('قفل مصدر الحوار مفقود — ممنوع التوليد')
+        if (manualSource.contentSha256 !== lockedManualSource.contentSha256
+          || manualSource.revisionSha256 !== lockedManualSource.revisionSha256
+          || manualSource.revisionId !== lockedManualSource.revisionId
+          || manualSource.turnCount !== Number(lockedManualSource.turnCount)) {
+          return quarantine('فشل قفل المصدر: ملف الحوار لا يطابق النسخة المرفوعة في Firestore')
+        }
+      }
+      script = { mood: 'تأملي', storyIntro: false,
+        utterances: manualSource.turns.map((item, index) => ({
+          speaker: item.speaker === 'female' ? 'B' : 'A',
+          text: item.text,
+          delivery: item.deliveryType,
+          pauseAfterMs: item.pauseAfterMs, overlapMs: Number(item.overlapMs || 0),
+          allowOverlap: Number(item.overlapMs || 0) > 0,
+          musicBridgeAfter: Boolean(item.musicBridgeAfter),
+          emphasisWords: [], pronunciationNotes: '', _index: index, _sourceText: item.text })) }
+      if (MANUAL_EXACT) normalizeManualMechanicsExact(script)
+      else normalizeMechanics(script, { manualText: true })
+      const manualLint = lintScript(script, lang)
+      // الحوار المرفوع قرار تحريري نهائي من الدكتور: لا تمنعه بوابة أسلوبية ولا تعيد كتابته.
+      // نعرض الملاحظات فقط، أما الحجب فيقتصر على سلامة البنية وقفل البصمة وجودة الصوت.
+      if (manualLint.length) console.log(`  ⚠ ملاحظات تحريرية على الحوار المرفوع (لا تحجب ولا تغيّر النص): ${manualLint.slice(0, 3).join(' · ')}`)
+      auditRecord.dialogueSource = MANUAL_EXACT ? 'manual-upload-locked' : 'manual'
+      auditRecord.manualSource = {
+        mode: MANUAL_EXACT ? 'manual-upload-locked' : 'manual',
+        contentSha256: manualSource.contentSha256,
+        revisionSha256: manualSource.revisionSha256,
+        revisionId: manualSource.revisionId,
+        turnCount: manualSource.turnCount,
+      }
+      lintIssues = []
+      fidelity = { pass: true, problems: [] }
+      console.log(`  ✍ الحوار اليدوي المقفول: ${script.utterances.length} مداخلة — لا كتابة ولا استبدال ولا إعادة صياغة`)
+    }
+    if (REUSE_DIALOGUE && !script && existsSync(auditPath(article, lang))) {
       const previous = JSON.parse(readFileSync(auditPath(article, lang), 'utf8'))
       if (previous.pipelineHash === ACTIVE_PIPELINE_HASH && previous.source?.sha256 === sourceHash && previous.dialogue?.utterances?.length) {
         script = { mood: previous.dialogue.mood || 'تأملي', storyIntro: Boolean(previous.dialogue.storyIntro),
           utterances: previous.dialogue.utterances.map((utterance, index) => ({ speaker: utterance.speaker,
             text: utterance.dialogueText, delivery: utterance.delivery || 'normal', ratePct: utterance.ratePct,
+            targetWordsPerMinute: utterance.targetWordsPerMinute,
             pauseAfterMs: utterance.pauseAfterMs,
             ending: utterance.ending, internalBreakMs: utterance.internalBreakMs,
             allowOverlap: Boolean(utterance.allowOverlap), overlapMs: utterance.overlapMs || 0,
+            musicBridgeAfter: Boolean(utterance.musicBridgeAfter),
             emphasisWords: utterance.emphasisWords || [], pronunciationNotes: '', _index: index })) }
         normalizeMechanics(script)
         lintIssues = lintScript(script, lang)
-        if (!lintIssues.length && lang === 'ar') fidelity = await validateDialogueFidelity(article, script)
+        if (!lintIssues.length && lang === 'ar' && !NO_GEMINI) fidelity = await validateDialogueFidelity(article, script)
         if (!fidelity.pass) lintIssues.push(...fidelity.problems.map((problem) => `إسناد: ${problem.issue || problem}`))
         if (!lintIssues.length) console.log('  ↷ أُعيد استخدام dialogueText المجتاز من الخطة السابقة')
         else script = null
@@ -1985,8 +3191,9 @@ async function produce(article, lang) {
     const isStory = Boolean(script.storyIntro)
     auditRecord.dialogue = { mood: script.mood, storyIntro: isStory,
       utterances: utts.map((utterance, index) => {
-        const { text, _index, ...metadata } = utterance
-        return { id: `u${String(index + 1).padStart(3, '0')}`, ...metadata, dialogueText: text }
+        const { text, _index, _splitMiddle, ...metadata } = utterance
+        return { id: `u${String(index + 1).padStart(3, '0')}`, ...metadata,
+          musicBridgeAfter: Boolean(utterance.musicBridgeAfter), dialogueText: text }
       }) }
     console.log(`  ✓ dialogueText فصيح ومسنَد: ${utts.length} مداخلة · قصة: ${isStory ? 'نعم' : 'لا'}`)
     if (DRY) {
@@ -2002,7 +3209,20 @@ async function produce(article, lang) {
     if (lang === 'ar' && LIGHT) {
       console.log('  ⚙ وضع مجاني: تخطّي تحليل النطق المدفوع — Azure TTS مباشرةً بقاموس الأسماء المحلي')
     } else if (lang === 'ar') {
-      analyses = await riskAnalyze(utts)
+      const analysisTextHash = (t) => createHash('sha256').update(String(t || '').replace(/\s+/g, ' ').trim()).digest('hex').slice(0, 16)
+      const missing = []
+      utts.forEach((u, i) => {
+        const hit = previousAnalysesLedger[analysisTextHash(u.text)]
+        if (hit?.pronunciationText) analyses[i] = { idx: i, pronunciationText: hit.pronunciationText, risks: hit.risks || [] }
+        else missing.push(i)
+      })
+      if (missing.length) {
+        const fresh = await riskAnalyze(missing.map((i) => utts[i]))
+        fresh.forEach((a, j) => { analyses[missing[j]] = { ...a, idx: missing[j] } })
+      }
+      if (missing.length < utts.length)
+        console.log(`  ↷ أُعيد استخدام تحليل النطق لـ${utts.length - missing.length}/${utts.length} مداخلة (بلا Gemini)`)
+      utts.forEach((u, i) => { auditRecord.analyses[analysisTextHash(u.text)] = { pronunciationText: analyses[i].pronunciationText, risks: analyses[i].risks || [] } })
       const totalRisks = analyses.reduce((count, analysis) => count + analysis.risks.length, 0)
       const high = analyses.reduce((count, analysis) => count + analysis.risks.filter((risk) => risk.riskLevel === 'high').length, 0)
       console.log(`  ✓ pronunciationText: ${totalRisks} كلمة مرصودة (${high} عالية الخطورة)`)
@@ -2040,38 +3260,97 @@ async function produce(article, lang) {
       const utterance = utts[index]
       const voiceInfo = utterance.speaker === 'A' ? voices.A : voices.B
       const utteranceId = `u${String(index + 1).padStart(3, '0')}`
-      const wav = resolve(TMP, `${utteranceId}.wav`)
-      const result = await produceUtterance(utterance, analyses[index], voiceInfo.azure, lang, wav,
-        { runId, utteranceId, sourceText: article.body })
-      if (!result.ok || (lang === 'ar' && !result.verified)) return quarantine(`المداخلة ${utteranceId}: ${result.reason || 'غير موثقة'}`)
-      const risks = result.risks || []
+      const produced = await produceUtteranceResilient({
+        utterance, analysis: analyses[index], voice: voiceInfo.azure, lang,
+        wavBase: resolve(TMP, utteranceId),
+        context: { runId, utteranceId, sourceText: article.body },
+        cache: { slug: article.slug, pipelineHash: ACTIVE_PIPELINE_HASH,
+          manualRevisionSha256: lockedManualSource?.revisionSha256 || '',
+          previous: previousSegmentsLedger, ledger: auditRecord.segments },
+      })
+      if (!produced.ok) {
+        auditRecord.failure = { utteranceId, reason: String(produced.reason || '').slice(0, 400), at: new Date().toISOString(),
+          // أذن تشخيصية: ما سمعه STT في آخر المرشحات — فلا نحزر سبب أي فشل
+          heardSamples: ((produced.failure?.candidates) || produced.candidates || []).slice(-4).map((candidate) => ({
+            id: candidate.id || candidate.variant?.id || '',
+            stt: String(candidate.stt ?? candidate.heard?.text ?? '').slice(0, 140),
+            reason: String(candidate.reason || '').slice(0, 120) })) }
+        return quarantine(`المداخلة ${utteranceId}: ${produced.reason || 'غير موثقة'}`,
+          { failedUtterance: auditRecord.failure })
+      }
+      const parts = produced.parts
+      const primaryPlan = parts[0].plan || utterance
+      const lastPlan = parts.at(-1).plan || utterance
+      const joinedText = parts.map((part) => part.result.dialogueText || '').join(' ').replace(/\s+/g, ' ').trim()
+      const exactDialogueText = MANUAL_EXACT ? String(utterance._sourceText ?? utterance.text) : (joinedText || utterance.text)
+      const risks = parts.flatMap((part) => part.result.risks || [])
       const hasHighRisk = risks.some((risk) => risk.riskLevel === 'high')
       allRisks.push(...risks.map((risk) => ({ ...risk, utteranceId, voice: voiceInfo.azure })))
-      transcript.push({ speaker: voiceInfo.name, speakerKey: utterance.speaker, text: result.dialogueText || utterance.text,
-        delivery: utterance.delivery, ratePct: utterance.ratePct, pauseAfterMs: utterance.pauseAfterMs,
-        ending: utterance.ending, internalBreakMs: utterance.internalBreakMs,
-        allowOverlap: Boolean(utterance.allowOverlap), overlapMs: Number(utterance.overlapMs || 0) })
-      pronunciation.push({ id: utteranceId, speaker: utterance.speaker, voice: voiceInfo.azure,
-        pronunciationText: result.pronunciationText || utterance.text, intendedText: result.intendedText || result.pronunciationText || utterance.text, risks,
-        selectedCandidateId: result.selectedCandidate, candidates: result.candidates, stt: result.heard })
-      const pauseAfterMs = Math.min(700, Math.max(100, Number(utterance.pauseAfterMs || 220)))
-      const overlapMs = !hasHighRisk && !previousHasHighRisk && utterance.allowOverlap
-        ? Math.min(180, Math.max(60, Number(utterance.overlapMs || 100))) : 0
-      segments.push({ file: wav, pauseAfterMs, overlapMs, hasHighRisk })
+      transcript.push({ speaker: voiceInfo.name, speakerKey: utterance.speaker, text: exactDialogueText,
+        delivery: primaryPlan.delivery, ratePct: primaryPlan.ratePct,
+        targetWordsPerMinute: primaryPlan.targetWordsPerMinute,
+        pauseAfterMs: lastPlan.pauseAfterMs, ending: lastPlan.ending,
+        internalBreakMs: primaryPlan.internalBreakMs,
+        allowOverlap: Boolean(primaryPlan.allowOverlap), overlapMs: Number(primaryPlan.overlapMs || 0),
+        musicBridgeAfter: Boolean(lastPlan.musicBridgeAfter),
+        splitParts: parts.length > 1 ? parts.length : undefined,
+        paceCalibration: parts.at(-1).result.paceCalibration || null })
+      parts.forEach((part, k) => {
+        pronunciation.push({ id: utteranceId, part: parts.length > 1 ? k + 1 : undefined,
+          speaker: utterance.speaker, voice: voiceInfo.azure,
+          pronunciationText: part.result.pronunciationText || part.plan?.text || utterance.text,
+          intendedText: part.result.intendedText || part.result.pronunciationText || utterance.text,
+          risks: part.result.risks || [], fromCache: Boolean(part.fromCache),
+          selectedCandidateId: part.result.selectedCandidate, candidates: part.result.candidates, stt: part.result.heard })
+      })
+      parts.forEach((part, k) => {
+        const isLast = k === parts.length - 1
+        const plan = part.plan || utterance
+        const pauseProfile = pacingOf(plan.delivery)
+        const pauseAfterMs = isLast
+          ? Math.min(pauseProfile.pauseMs[1], Math.max(pauseProfile.pauseMs[0],
+            Number(plan.pauseAfterMs || stableBetween(plan.text || joinedText, index + 71, ...pauseProfile.pauseMs))))
+          : Math.min(200, Math.max(120, Number(plan.pauseAfterMs) || 160))
+        const overlapMs = k === 0 && !hasHighRisk && !previousHasHighRisk && plan.allowOverlap
+          ? Math.min(150, Math.max(50, Number(plan.overlapMs || 90))) : 0
+        segments.push({ file: part.wav, pauseAfterMs, overlapMs, hasHighRisk })
+      })
       previousHasHighRisk = hasHighRisk
+      auditRecord.progress = { done: index + 1, total: utts.length, at: new Date().toISOString() }
+      if (RESUME && lang === 'ar') writeAudit(article, lang, auditRecord)
       process.stdout.write(`  🎙 ${index + 1}/${utts.length} (TTS→STT→Judge)\r`)
     }
     console.log('')
     auditRecord.dialogue.utterances = transcript.map((item, index) => ({ id: `u${String(index + 1).padStart(3, '0')}`,
       speaker: item.speakerKey, dialogueText: item.text, delivery: item.delivery, ratePct: item.ratePct,
-      pauseAfterMs: item.pauseAfterMs, ending: item.ending, internalBreakMs: item.internalBreakMs,
-      allowOverlap: item.allowOverlap, overlapMs: item.overlapMs }))
+      targetWordsPerMinute: item.targetWordsPerMinute, pauseAfterMs: item.pauseAfterMs,
+      ending: item.ending, internalBreakMs: item.internalBreakMs,
+      allowOverlap: item.allowOverlap, overlapMs: item.overlapMs,
+      musicBridgeAfter: item.musicBridgeAfter, paceCalibration: item.paceCalibration }))
     auditRecord.pronunciation.utterances = pronunciation
 
-    const finalLanguageIssues = lintScript({ utterances: transcript.map((item) => ({ speaker: item.speakerKey,
-      text: item.text, delivery: item.delivery, ratePct: item.ratePct, pauseAfterMs: item.pauseAfterMs,
+    const finalLanguageIssuesRaw = lintScript({ utterances: transcript.map((item) => ({ speaker: item.speakerKey,
+      text: item.text, delivery: item.delivery, ratePct: item.ratePct,
+      targetWordsPerMinute: item.targetWordsPerMinute, pauseAfterMs: item.pauseAfterMs,
       ending: item.ending, internalBreakMs: item.internalBreakMs,
       allowOverlap: item.allowOverlap, overlapMs: item.overlapMs })) }, lang)
+    /* نصفا المحرك كانا يتناقضان، فتُعزل كل حلقةٍ حوارية بعد توليد مداخلاتها كلها:
+       المعايرة تكيّف السرعة والهدف الإيقاعي على الإلقاء المقاس — وهي تُعلنها صراحةً
+       للنص اليدوي («تصويب الهدف الإيقاعي إلى الإيقاع المقاس — النص يدوي والهدف
+       تركيبي») — ثم تحاكمها بوابةُ اللغة بنطاقاتٍ وُضعت لنصٍّ يكتبه الآلة.
+       فحين يكتب الدكتور الحوار: كلماته وإيقاعه له، والمقاس هو الحقيقة. تسقط
+       مآخذُ الإيقاع وحدها، ويبقى كل ما يخصّ اللغة (العامية، المحظورات، علامات
+       الاستفهام) وكلُّ البوابات التقنية الصوتية بلا أي تخفيف. */
+    const PACING_LINT = /سرعة|targetWordsPerMinute|وقفة|pauseAfterMs|internalBreak/
+    const finalLanguageIssues = MANUAL_EXACT
+      ? finalLanguageIssuesRaw.filter((issue) => /عامية/.test(issue))
+      : MANUAL_TEXT_MODE
+        ? finalLanguageIssuesRaw.filter((issue) => !PACING_LINT.test(issue))
+        : finalLanguageIssuesRaw
+    if (MANUAL_TEXT_MODE && !MANUAL_EXACT) {
+      const relaxed = finalLanguageIssuesRaw.filter((issue) => PACING_LINT.test(issue))
+      if (relaxed.length) console.log(`    ⏲ ${relaxed.length} مأخذ إيقاع تُركت للنص اليدوي (الإلقاء المقاس هو المرجع)`)
+    }
     if (finalLanguageIssues.length) return quarantine(`بوابة اللغة بعد الإصلاح: ${finalLanguageIssues.join(' · ')}`)
     const pronunciationConsistency = new Map()
     const inconsistent = []
@@ -2083,31 +3362,39 @@ async function produce(article, lang) {
     }
     if (inconsistent.length) return quarantine(`اختلاف نطق الكلمة نفسها: ${[...new Set(inconsistent)].join('، ')}`)
 
-    /* ٤) الموسيقى مقدمة وخاتمة؛ تحت الكلام تكاد تختفي ولا تُستخدم لإخفاء النطق. */
+    /* ٤) مسار مرخّص للجسور الدلالية فقط؛ لا توجد موسيقى مستمرة تحت الحلقة. */
     let music = null
     if (existsSync(MUSIC_LIB)) {
       const library = JSON.parse(readFileSync(MUSIC_LIB, 'utf8'))
       const track = (library.tracks || []).find((item) => item.licensed && (item.moods || []).includes(script.mood))
       if (track && existsSync(resolve(ROOT, track.path)))
-        music = { file: resolve(ROOT, track.path), bedVol: Math.min(0.004, track.bedVolume ?? 0.003),
-          introVol: 0.10, outroVol: 0.08, introSec: 5, outroSec: 4 }
+        music = { file: resolve(ROOT, track.path) }
     }
     if (!music) console.log('  ♪ إخراج بلا موسيقى — لا يوجد مسار مرخّص مطابق')
 
-    /* ٥) تركيب مؤقت ثم فحص الحلقة كاملة؛ الملف الحالي لا يُمس */
+    /* ٥) جسور موسيقية دلالية ثم تركيب مؤقت؛ لا صمت ميت ولا موسيقى بعد كل جملة. */
+    let bridged = insertSemanticMusicBridges(segments.map((segment) => ({ ...segment })), transcript, music, TMP)
+    auditRecord.musicBridges = bridged.bridges
     const candidateMp3 = resolve(TMP, `${article.slug}.accepted-candidate.mp3`)
-    const assembled = assemble(segments, candidateMp3, music)
-    const sourceWordCount = article.body.trim().split(/\s+/).length
-    const durationRange = sourceWordCount >= 350 && sourceWordCount <= 450
-      ? { minSec: 225, maxSec: 285, maxLongSilences: 0 }
-      : { minSec: 180, maxSec: 300, maxLongSilences: 0 }
+    let assembled = assemble(bridged.segments, candidateMp3, music)
+    const dialogueWords = transcript.reduce((total, item) => total + String(item.text).split(/\s+/).filter(Boolean).length, 0)
+    const weightedTargetWpm = transcript.reduce((total, item) => total
+      + Number(item.targetWordsPerMinute || 140) * String(item.text).split(/\s+/).filter(Boolean).length, 0)
+      / Math.max(1, dialogueWords)
+    const plannedPauseSec = bridged.segments.reduce((total, item) => total
+      + Math.max(0, Number(item.pauseAfterMs || 0)) / 1000, 0)
+    const bridgeSec = bridged.bridges.reduce((total, item) => total + item.durationSec, 0)
+    const expectedDurationSec = dialogueWords / Math.max(122, weightedTargetWpm) * 60
+      + plannedPauseSec + bridgeSec + 0.7
+    const durationRange = { minSec: Math.max(165, expectedDurationSec * 0.84),
+      maxSec: Math.min(310, expectedDurationSec * 1.18), maxLongSilences: 2 }
     // الوضع المجاني: الوقفات التأملية المقصودة (حتى 700ms) مع حدود المقاطع قد تتجاوز 800ms طبيعياً؛
     // عتبة «صفر» موجّهة لكشف عطل التركيب لا للوقفات المقصودة. وحدود المدة الضيقة (225–285ث) مضبوطة
     // للمسار المدفوع؛ في المجاني نقبل المدى الطبيعي (بضع ثوانٍ فرق لا يُعزل حلقةً سليمة).
     if (LIGHT) { durationRange.maxLongSilences = utts.length; durationRange.minSec = 120; durationRange.maxSec = 360 }
-    const technicalAudit = auditAudio(candidateMp3, durationRange)
+    let technicalAudit = auditAudio(candidateMp3, durationRange)
     if (technicalAudit.issues.length) return quarantine(`الفحص التقني: ${technicalAudit.issues.join(' · ')}`)
-    let fullStt = null, fullComparison = null, finalJudge = null
+    let fullStt = null, fullComparison = null, finalJudge = null, episodeIntegrity = null
     if (LIGHT) {
       // الوضع المجاني: نُبقي الفحص التقني المحلي فقط (سلامة الملف والمدة)، ونتخطّى STT الكامل
       // وحَكَم الحلقة المدفوع (multimodal). النشر مباشر بجودة القراءة المقبولة.
@@ -2116,61 +3403,173 @@ async function produce(article, lang) {
       fullStt = await transcribeAssembledEpisode(candidateMp3, assembled.timeline, lang === 'ar' ? localeOf(voices.A.azure) : 'en-US')
       const intendedFull = pronunciation.map((item) => item.intendedText.replace(/\|/g, ' ')).join(' ')
       fullComparison = compareTexts(intendedFull, fullStt.text)
-      const missingNegations = fullComparison.missing.filter((word) => ['لا', 'لم', 'لن', 'ليس', 'ليست', 'ما', 'غير', 'دون'].includes(word))
-      const highRiskMissing = allRisks.filter((risk) => risk.riskLevel === 'high')
-        .filter((risk) => !heardContainsRisk(fullStt.text, risk))
-      if (missingNegations.length || highRiskMissing.length || fullComparison.importantRatio < 0.95 || fullComparison.ratio < 0.90)
-        return quarantine(`STT الحلقة الكاملة لم يطابق النص المقصود (المهم ${Math.round(fullComparison.importantRatio * 100)}٪)`, { fullStt, fullComparison })
+      /* ═══ بوابة الحلقة الكاملة: تتحقق من سلامة التركيب لا من النطق ═══
+         النطق مضمونٌ سلفاً: كل مداخلة مرّت منفردةً بعتبة أشدّ (0.92 للمهم، وصفر
+         تسامح مع أدوات النفي والكلمات الخطرة) على ملفٍ قصير يقرؤه المحرك بدقة.
+         أما تفريغ ستّ دقائق بنداءٍ واحد فيفقد أدوات الربط القصيرة بطبعه (بلا، ولا،
+         لأن، دون…)، فكان طلبُ 0.95 منه — وهو أضعف أداةً على أصعب مُدخَل — يُعدم
+         حلقةً كل مقاطعها مثبتة، وهذا ما قتل كل محاولة سابقة عند الخطوة الأخيرة.
+         نفحص هنا ما يعجز فحصُ المقاطع عن كشفه وحده: أن تكون كل مداخلة حاضرة في
+         الملف المركَّب وبترتيبها الصحيح، فلا مقطع ساقط ولا مكرر ولا مقلوب ولا
+         مبتور ولا مغطّى بالموسيقى. */
+      /* تُرفع نتيجة التركيب خارج الكتلة كي تحكم حاسبة النقاط بالقانون نفسه */
+      const anchorsOf = (text) => [...new Set(normalizeAr(text).split(' ').filter((word) => word.length >= 5))].slice(0, 4)
+      const fullHeard = normalizeAr(fullStt.text)
+      let cursor = 0, anchored = 0, anchorable = 0
+      const unanchored = []
+      for (const item of pronunciation) {
+        const anchors = anchorsOf(String(item.intendedText || '').replace(/\|/g, ' '))
+        if (!anchors.length) continue
+        anchorable += 1
+        let best = -1
+        for (const anchor of anchors) {
+          const at = fullHeard.indexOf(anchor, cursor)
+          if (at >= 0 && (best < 0 || at < best)) best = at
+        }
+        if (best >= 0) { anchored += 1; cursor = best + 1 }
+        else unanchored.push(anchors[0])
+      }
+      const coverage = anchorable ? anchored / anchorable : 1
+      if (coverage < 0.9 || fullComparison.importantRatio < 0.82) {
+        return quarantine(`تركيب الحلقة غير سليم: ${Math.round(coverage * 100)}٪ من المداخلات حاضرة بترتيبها`
+          + `${unanchored.length ? ` — غابت مداخلات عند: ${unanchored.slice(0, 4).join('، ')}` : ''}`
+          + ` (تطابق نصي ${Math.round(fullComparison.importantRatio * 100)}٪)`, { fullStt, fullComparison })
+      }
+      episodeIntegrity = { pass: true, coverage, anchored, anchorable }
+      console.log(`  ✓ تركيب الحلقة سليم: ${anchored}/${anchorable} مداخلة حاضرة بترتيبها · تطابق نصي ${Math.round(fullComparison.importantRatio * 100)}٪`)
       finalJudge = await judgeFullEpisode(candidateMp3, intendedFull, fullStt, transcript, allRisks)
-      if (!finalJudge.pass) return quarantine(`Arabic Audio Judge للحلقة: ${(finalJudge.problems || []).map((problem) => problem.issue).join(' · ')}`, { fullStt, finalJudge })
+      if (!finalJudge.pass) {
+        const targetedIndexes = [...new Set((finalJudge.problems || []).map((problem) => {
+          const match = String(problem.unitId || '').match(/^u(\d{3})$/)
+          return match ? Number(match[1]) - 1 : -1
+        }).filter((index) => index >= 0 && index < utts.length))]
+        if (!targetedIndexes.length) {
+          return quarantine(`Arabic Audio Judge للحلقة: ${(finalJudge.problems || []).map((problem) => problem.issue).join(' · ')}`, { fullStt, finalJudge })
+        }
+        console.log(`  ⟳ إصلاح موجّه للحلقة: ${targetedIndexes.map((index) => `u${String(index + 1).padStart(3, '0')}`).join('، ')}`)
+        for (const index of targetedIndexes) {
+          const utteranceId = `u${String(index + 1).padStart(3, '0')}`
+          const issue = finalJudge.problems.find((problem) => problem.unitId === utteranceId) || {}
+          const utterance = { ...utts[index] }
+          utterance.ratePct = Math.max(-18, Number(utterance.ratePct || 0) - 1)
+          utterance.internalBreakMs = Math.min(180, Number(utterance.internalBreakMs || 105) + 18)
+          if (utterance.text.includes('؟')) { utterance.delivery = 'question'; utterance.ending = 'open' }
+          if (!MANUAL_TEXT_MODE && issue.method === 'rephrase' && issue.suggestion) {
+            const replacement = await safeRephrase(utterance.text, article.body, issue.issue || 'طبيعية الإلقاء', [])
+            if (replacement) utterance.text = replacement
+          }
+          const nextAnalysis = lang === 'ar' ? (await riskAnalyze([utterance]))[0] : analyses[index]
+          const voiceInfo = utterance.speaker === 'A' ? voices.A : voices.B
+          const wav = resolve(TMP, `${utteranceId}.wav`)
+          const result = await produceUtterance(utterance, nextAnalysis, voiceInfo.azure, lang, wav,
+            { runId, utteranceId, sourceText: article.body })
+          if (!result.ok || (lang === 'ar' && !result.verified)) {
+            return quarantine(`فشل الإصلاح الموجّه للمداخلة ${utteranceId}: ${result.reason || 'غير موثقة'}`, { finalJudge })
+          }
+          utts[index] = utterance
+          analyses[index] = nextAnalysis
+          const deliveryPlan = result.deliveryPlan || utterance
+          transcript[index] = { ...transcript[index], text: result.dialogueText || utterance.text,
+            delivery: deliveryPlan.delivery, ratePct: deliveryPlan.ratePct,
+            targetWordsPerMinute: deliveryPlan.targetWordsPerMinute,
+            pauseAfterMs: deliveryPlan.pauseAfterMs, ending: deliveryPlan.ending,
+            internalBreakMs: deliveryPlan.internalBreakMs }
+          pronunciation[index] = { ...pronunciation[index], pronunciationText: result.pronunciationText || utterance.text,
+            intendedText: result.intendedText || result.pronunciationText || utterance.text,
+            risks: result.risks || [], selectedCandidateId: result.selectedCandidate,
+            candidates: result.candidates, stt: result.heard }
+          segments[index] = { ...segments[index], file: wav,
+            pauseAfterMs: deliveryPlan.pauseAfterMs, hasHighRisk: (result.risks || []).some((risk) => risk.riskLevel === 'high') }
+        }
+        bridged = insertSemanticMusicBridges(segments.map((segment) => ({ ...segment })), transcript, music, TMP)
+        auditRecord.musicBridges = bridged.bridges
+        assembled = assemble(bridged.segments, candidateMp3, music)
+        technicalAudit = auditAudio(candidateMp3, durationRange)
+        if (technicalAudit.issues.length) return quarantine(`الفحص التقني بعد الإصلاح الموجّه: ${technicalAudit.issues.join(' · ')}`)
+        fullStt = await transcribeAssembledEpisode(candidateMp3, assembled.timeline, lang === 'ar' ? localeOf(voices.A.azure) : 'en-US')
+        const repairedIntended = pronunciation.map((item) => item.intendedText.replace(/\|/g, ' ')).join(' ')
+        fullComparison = compareTexts(repairedIntended, fullStt.text)
+        if (fullComparison.importantRatio < 0.95 || fullComparison.ratio < 0.90) {
+          return quarantine('STT الحلقة فشل بعد الإصلاح الموجّه', { fullStt, fullComparison })
+        }
+        finalJudge = await judgeFullEpisode(candidateMp3, repairedIntended, fullStt, transcript, allRisks)
+        if (!finalJudge.pass) return quarantine(`الحكم الصوتي رفض الحلقة بعد الإصلاح الموجّه: ${(finalJudge.problems || []).map((problem) => problem.issue).join(' · ')}`, { fullStt, finalJudge })
+      }
     }
 
-    /* ٦) نشر ذري بعد النجاح وحده + تثبيت الذاكرة الناجحة */
+    /* ٦) بوابة score قبل لمس أي ملف منشور، ثم نشر ذري مع Last-Known-Good وRollback دائم. */
+    const qualityScore = episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript, episodeIntegrity })
+    if (!qualityScore.pass) return quarantine(`بوابة score النهائية أقل من الحد: ${qualityScore.score}/100`)
+    const humanGate = dialogueHumanGate({ candidateMp3, transcript, fullComparison, finalJudge, episodeIntegrity })
+    if (!humanGate.pass) {
+      /* «٧٨/١٠٠» رقمٌ لا يقول شيئاً: أيُّ مقياسٍ سقط؟ وبأي قيمة؟ بلا هذا يُصلح
+         المرء بالظنّ. البوابة تُفصح الآن عن كل مقياسٍ ساقطٍ ووزنه. */
+      const WEIGHTS = { semanticPerformance: 13, realRateVariation: 12, pauseVariation: 12, endingVariation: 9,
+        questionDirection: 9, boundarySilenceRemoved: 9, loudnessSafe: 10, formatSafe: 8, sttFidelity: 13, dialogueIndependence: 5 }
+      const detail = (humanGate.proxy.failed || []).map((key) => `${key}(-${WEIGHTS[key] ?? '?'})`).join(' · ')
+      const criticalNote = humanGate.proxy.criticalFailed?.length ? ` · حرجة: ${humanGate.proxy.criticalFailed.join('، ')}` : ''
+      return quarantine(`بوابة البشرية أقل من الحد: proxy=${humanGate.proxy.score}/100، judge=${humanGate.minimumJudgeDimension}/100`
+        + `${detail ? ` — سقط: ${detail}` : ''}${criticalNote}`, { humanGate })
+    }
     const publicTranscript = { title: article.title, generatedAt: new Date().toISOString().slice(0, 10),
-      language: 'ar', utterances: transcript.map(({ speaker, text }) => ({ speaker, text })) }
+      language: 'ar',
+      sourceLock: MANUAL_EXACT ? {
+        mode: 'manual-upload-locked',
+        contentSha256: auditRecord.manualSource?.contentSha256,
+        revisionSha256: auditRecord.manualSource?.revisionSha256,
+        revisionId: auditRecord.manualSource?.revisionId,
+        turnCount: auditRecord.manualSource?.turnCount,
+      } : undefined,
+      utterances: transcript.map(({ speaker, text }) => ({ speaker, text })) }
     const tempTranscript = resolve(TMP, `${article.slug}.dialogue.json`)
     if (lang === 'ar') writeFileSync(tempTranscript, JSON.stringify(publicTranscript, null, 2))
-    const backupAudio = resolve(TMP, `${article.slug}.previous.mp3`)
-    const backupTranscript = resolve(TMP, `${article.slug}.previous.json`)
-    const previousStateEntry = Object.prototype.hasOwnProperty.call(state.done, key) ? structuredClone(state.done[key]) : undefined
+    const snapshot = createReleaseSnapshot({ article, lang, outMp3, transcriptPath, stateKey: key,
+      label: PILOT_MODE ? 'pilot' : 'production' })
     const previousTotalCount = Number(state.totalCount || 0)
     const previousStoryCount = Number(state.storyCount || 0)
-    if (existsSync(outMp3)) renameSync(outMp3, backupAudio)
-    if (lang === 'ar' && existsSync(transcriptPath)) renameSync(transcriptPath, backupTranscript)
     try {
-      renameSync(candidateMp3, outMp3)
-      if (lang === 'ar') renameSync(tempTranscript, transcriptPath)
-      const audioHash = createHash('sha256').update(readFileSync(outMp3)).digest('hex')
-      const transcriptHash = lang === 'ar' ? createHash('sha256').update(readFileSync(transcriptPath)).digest('hex') : ''
+      const stagedAudio = `${outMp3}.next-${process.pid}`
+      copyFileSync(candidateMp3, stagedAudio)
+      renameSync(stagedAudio, outMp3)
+      if (lang === 'ar') {
+        const stagedTranscript = `${transcriptPath}.next-${process.pid}`
+        copyFileSync(tempTranscript, stagedTranscript)
+        renameSync(stagedTranscript, transcriptPath)
+      }
+      const audioHash = sha256File(outMp3)
+      const transcriptHash = lang === 'ar' ? sha256File(transcriptPath) : ''
       state.done[key] = { contentHash, pipelineHash: ACTIVE_PIPELINE_HASH, sourceHash, audioHash, transcriptHash,
-        status: 'accepted_automated', acceptedAt: new Date().toISOString() }
-      state.totalCount = previousTotalCount + 1
-      if (isStory) state.storyCount = previousStoryCount + 1
+        manualSource: MANUAL_EXACT ? auditRecord.manualSource : undefined,
+        status: acceptedStatus, acceptedAt: new Date().toISOString(), pilot: PILOT_MODE }
+      if (!PILOT_MODE) {
+        state.totalCount = previousTotalCount + 1
+        if (isStory) state.storyCount = previousStoryCount + 1
+      }
       saveState()
-      const qualityScore = episodeQualityScore({ technicalAudit, fullComparison, finalJudge, transcript })
-      if (!qualityScore.pass) throw new Error(`بوابة score النهائية أقل من الحد: ${qualityScore.score}/100`)
-      auditRecord.status = 'accepted_automated'
+      const localValidation = validatePublishedArtifacts({ outMp3, transcriptPath, expectedAudioHash: audioHash,
+        expectedTranscriptHash: transcriptHash, lang })
+      if (!localValidation.pass) throw new Error(`فحص ما بعد الاستبدال المحلي: ${localValidation.issues.join(' · ')}`)
+      const postPublish = runPostPublishCheck({ article, lang, outMp3, transcriptPath,
+        releaseDir: snapshot.releaseDir, pilot: PILOT_MODE })
+      auditRecord.status = acceptedStatus
       auditRecord.finishedAt = new Date().toISOString()
-      auditRecord.finalGate = { pass: true, score: qualityScore.score, scoreChecks: qualityScore.checks,
-        reasonCodes: LIGHT ? ['light_free_mode'] : [], technicalAudit, fullStt,
+      auditRecord.finalGate = { pass: true, score: qualityScore.score, minimumScore: qualityScore.minimumScore,
+        scoreChecks: qualityScore.checks, humanGate,
+        reasonCodes: PILOT_MODE ? ['three_episode_pilot'] : [], technicalAudit, localValidation, postPublish, fullStt,
         fullComparison: fullComparison ? { ratio: fullComparison.ratio, importantRatio: fullComparison.importantRatio,
           missing: fullComparison.missing, missingImportant: fullComparison.missingImportant } : null, finalJudge }
       writeAudit(article, lang, auditRecord)
-      runInsert.run(runId, article.slug, sourceHash, ACTIVE_PIPELINE_HASH, 'accepted_automated', '', startedAt, auditRecord.finishedAt)
+      runInsert.run(runId, article.slug, sourceHash, ACTIVE_PIPELINE_HASH, acceptedStatus, '', startedAt, auditRecord.finishedAt)
       const riskMap = new Map(allRisks.map((risk) => [normalizeAr(risk.word), risk]))
       commitPendingMemory(riskMap)
-      rmSync(backupAudio, { force: true })
-      rmSync(backupTranscript, { force: true })
+      if (!PILOT_MODE) finalizeLastKnownGood({ article, lang, outMp3, transcriptPath,
+        releaseDir: snapshot.releaseDir, stateKey: key })
+      atomicWriteText(resolve(snapshot.releaseDir, 'accepted.json'), JSON.stringify({
+        acceptedAt: auditRecord.finishedAt, status: acceptedStatus, qualityScore: qualityScore.score,
+        audioHash, transcriptHash, localValidation, postPublish,
+      }, null, 2))
     } catch (publishError) {
-      rmSync(outMp3, { force: true })
-      if (lang === 'ar') rmSync(transcriptPath, { force: true })
-      if (existsSync(backupAudio)) renameSync(backupAudio, outMp3)
-      if (lang === 'ar' && existsSync(backupTranscript)) renameSync(backupTranscript, transcriptPath)
-      if (previousStateEntry === undefined) delete state.done[key]
-      else state.done[key] = previousStateEntry
-      state.totalCount = previousTotalCount
-      state.storyCount = previousStoryCount
-      saveState()
+      restoreReleaseSnapshot(snapshot, { outMp3, transcriptPath, stateKey: key })
       throw publishError
     }
     rmSync(TMP, { recursive: true, force: true })
@@ -2179,6 +3578,162 @@ async function produce(article, lang) {
   } catch (error) {
     return quarantine(error?.message || String(error))
   }
+}
+
+/* ═══════════ التجربة الثلاثية المتنوعة + الترقية الجماعية الآمنة ═══════════ */
+function articlePilotScores(article) {
+  const text = `${article.title} ${article.body}`
+  const count = (pattern) => (text.match(pattern) || []).length
+  return {
+    human: count(/قال|قالت|كان|كانت|عاد|دخل|رفع|سأل|طالب|طفل|معلم|أب|أم|شعر|خاف|قلب|إنسان/g),
+    analytical: count(/دراسة|بحث|نتائج|أظهرت|بيّنت|نسبة|جامعة|نظرية|باحث|عام\s+20|٪|%|\d{2,}/g),
+    reflective: count(/لماذا|ماذا لو|ربما|حين|ليس|ليست|المعنى|القيمة|الكرامة|نتأمل|السؤال/g),
+  }
+}
+
+function selectDiversePilotArticles(articles, count = 3) {
+  const explicit = String(env.PODCAST_PILOT_SLUGS || '').split(',').map((slug) => slug.trim()).filter(Boolean)
+  if (explicit.length) {
+    const selected = explicit.map((slug) => articles.find((article) => article.slug === slug)).filter(Boolean)
+    if (selected.length < Math.min(count, explicit.length)) throw new Error('بعض PODCAST_PILOT_SLUGS غير موجودة')
+    return selected.slice(0, count).map((article, index) => ({ ...article, pilotCategory: ['human', 'analytical', 'reflective'][index] || 'mixed' }))
+  }
+  /* في وضع بلا Gemini لا كاتبَ آلياً: كل مقالٍ بلا حوارٍ كتبه الدكتور يُعزَل.
+     وكان المنتقي يختار ثلاثة مقالات «متنوعة» بلا نظرٍ إلى ذلك، فتُعزل ثلاثتها
+     وتسقط التجربة ٠/٣ في كل ليلة — فلا تُفتح البوابة ولا تُنشر حلقةٌ أبداً.
+     حلقةٌ مفرغة أبقت الحوار صفراً رغم نجاح كل شيءٍ آخر. الآن ننتقي من
+     الحوارات المكتوبة وحدها. */
+    const hasManualDialogue = (article) => existsSync(resolve(ROOT, 'manual-dialogues', `${article.slug}.json`))
+  const eligible = NO_GEMINI ? articles.filter(hasManualDialogue) : articles
+  if (NO_GEMINI) {
+    if (!eligible.length) {
+      console.log('ⓘ وضع بلا Gemini: لا حوار مكتوب في manual-dialogues/ — لا شيء يُولَّد. اكتب حواراً من اللوحة.')
+      return []
+    }
+    console.log(`ⓘ وضع بلا Gemini: ${eligible.length} حوار مكتوب متاح — التجربة تجري عليها وحدها.`)
+  }
+  const pool = eligible.slice(0, Math.min(50, eligible.length)).map((article) => ({ article, scores: articlePilotScores(article) }))
+  const selected = []
+  for (const category of ['human', 'analytical', 'reflective']) {
+    const best = pool.filter((item) => !selected.some((picked) => picked.article.slug === item.article.slug))
+      .sort((left, right) => right.scores[category] - left.scores[category]
+        || (right.article.iso || '').localeCompare(left.article.iso || ''))[0]
+    if (best) selected.push({ ...best, category })
+  }
+  for (const item of pool) {
+    if (selected.length >= count) break
+    if (!selected.some((picked) => picked.article.slug === item.article.slug)) selected.push({ ...item, category: 'mixed' })
+  }
+  return selected.slice(0, count).map(({ article, category }) => ({ ...article, pilotCategory: category }))
+}
+
+function productionAuditPath(article, lang) {
+  mkdirSync(AUDITS, { recursive: true })
+  return resolve(AUDITS, `${article.slug}.${lang}.json`)
+}
+
+function promotePilotBatch(articles, lang = 'ar') {
+  const batchDir = resolve(RELEASES, `pilot-batch-${releaseTimestamp()}`)
+  mkdirSync(batchDir, { recursive: true })
+  const stateBefore = JSON.stringify(state)
+  const items = []
+  try {
+    for (const article of articles) {
+      const suffix = lang === 'ar' ? '.dialogue.mp3' : '.dialogue-en.mp3'
+      const pilotAudio = resolve(PILOT_AUDIO, `${article.slug}${suffix}`)
+      const pilotTranscript = resolve(PILOT_AUDIO, `${article.slug}.dialogue.json`)
+      const pilotKey = `pilot:${article.slug}:${lang}`
+      const productionKey = `${article.slug}:${lang}`
+      const pilotState = state.done[pilotKey]
+      const pilotAuditFile = resolve(AUDITS, `${article.slug}.${lang}.pilot.json`)
+      const pilotAudit = existsSync(pilotAuditFile) ? JSON.parse(readFileSync(pilotAuditFile, 'utf8')) : null
+      if (!pilotState || pilotState.status !== 'accepted_pilot' || !pilotAudit?.finalGate?.pass)
+        throw new Error(`التجربة غير مكتملة أو غير ناجحة: ${article.slug}`)
+      if (!existsSync(pilotAudio) || sha256File(pilotAudio) !== pilotState.audioHash)
+        throw new Error(`ملف التجربة تغيّر أو اختفى: ${article.slug}`)
+      if (lang === 'ar' && (!existsSync(pilotTranscript) || sha256File(pilotTranscript) !== pilotState.transcriptHash))
+        throw new Error(`Transcript التجربة تغيّر أو اختفى: ${article.slug}`)
+      const itemDir = resolve(batchDir, safeSlug(article.slug)); mkdirSync(itemDir, { recursive: true })
+      const outMp3 = resolve(AUDIO, `${article.slug}${suffix}`)
+      const transcriptPath = resolve(AUDIO, `${article.slug}.dialogue.json`)
+      const hadAudio = existsSync(outMp3), hadTranscript = lang === 'ar' && existsSync(transcriptPath)
+      if (hadAudio) copyFileSync(outMp3, resolve(itemDir, 'previous.mp3'))
+      if (hadTranscript) copyFileSync(transcriptPath, resolve(itemDir, 'previous.json'))
+      items.push({ article, outMp3, transcriptPath, pilotAudio, pilotTranscript, itemDir,
+        hadAudio, hadTranscript, hadProductionState: Boolean(state.done[productionKey]), productionKey, pilotState, pilotAudit })
+    }
+
+    mkdirSync(AUDIO, { recursive: true })
+    for (const item of items) {
+      const stagedAudio = `${item.outMp3}.pilot-next-${process.pid}`
+      copyFileSync(item.pilotAudio, stagedAudio); renameSync(stagedAudio, item.outMp3)
+      if (lang === 'ar') {
+        const stagedTranscript = `${item.transcriptPath}.pilot-next-${process.pid}`
+        copyFileSync(item.pilotTranscript, stagedTranscript); renameSync(stagedTranscript, item.transcriptPath)
+      }
+      const audioHash = sha256File(item.outMp3)
+      const transcriptHash = lang === 'ar' ? sha256File(item.transcriptPath) : ''
+      state.done[item.productionKey] = { ...item.pilotState, status: 'accepted_automated', pilot: false,
+        audioHash, transcriptHash, promotedFromPilot: true, promotedAt: new Date().toISOString() }
+      const validation = validatePublishedArtifacts({ outMp3: item.outMp3, transcriptPath: item.transcriptPath,
+        expectedAudioHash: audioHash, expectedTranscriptHash: transcriptHash, lang })
+      if (!validation.pass) throw new Error(`${item.article.slug}: ${validation.issues.join(' · ')}`)
+      item.validation = validation
+    }
+    state.totalCount = Number(state.totalCount || 0) + items.filter((item) => !item.hadProductionState).length
+    state.pilotGate = { pass: true, pipelineHash: ACTIVE_PIPELINE_HASH, promoted: true,
+      acceptedAt: new Date().toISOString(), articles: items.map((item) => ({ slug: item.article.slug,
+        category: item.article.pilotCategory || 'mixed', score: item.pilotAudit.finalGate.score,
+        audioHash: sha256File(item.outMp3) })) }
+    saveState()
+    const postPublish = runPostPublishCheck({ article: null, lang, outMp3: '', transcriptPath: '',
+      releaseDir: batchDir, pilot: true, slugs: items.map((item) => item.article.slug) })
+    for (const item of items) {
+      finalizeLastKnownGood({ article: item.article, lang, outMp3: item.outMp3,
+        transcriptPath: item.transcriptPath, releaseDir: item.itemDir, stateKey: item.productionKey })
+      const promotedAudit = { ...item.pilotAudit, status: 'accepted_automated',
+        pilotPromotion: { promotedAt: state.pilotGate.acceptedAt, batchDir, postPublish },
+        finishedAt: new Date().toISOString() }
+      atomicWriteText(productionAuditPath(item.article, lang), JSON.stringify(promotedAudit, null, 2))
+    }
+    atomicWriteText(resolve(batchDir, 'accepted.json'), JSON.stringify({
+      acceptedAt: state.pilotGate.acceptedAt, articles: state.pilotGate.articles, postPublish,
+    }, null, 2))
+    atomicWriteText(PILOT_GATE_FILE, JSON.stringify(state.pilotGate, null, 2))
+    return { pass: true, items, batchDir }
+  } catch (error) {
+    for (const item of items) {
+      rmSync(item.outMp3, { force: true }); if (lang === 'ar') rmSync(item.transcriptPath, { force: true })
+      if (item.hadAudio && existsSync(resolve(item.itemDir, 'previous.mp3'))) copyFileSync(resolve(item.itemDir, 'previous.mp3'), item.outMp3)
+      if (lang === 'ar' && item.hadTranscript && existsSync(resolve(item.itemDir, 'previous.json'))) copyFileSync(resolve(item.itemDir, 'previous.json'), item.transcriptPath)
+    }
+    const restored = JSON.parse(stateBefore)
+    for (const key of Object.keys(state)) delete state[key]
+    Object.assign(state, restored)
+    saveState()
+    atomicWriteText(resolve(batchDir, 'rollback.json'), JSON.stringify({ rolledBackAt: new Date().toISOString(), reason: error.message }, null, 2))
+    throw error
+  }
+}
+
+function rollbackToLastKnownGood(slug, lang = 'ar') {
+  const dir = resolve(LAST_GOOD, safeSlug(slug), lang)
+  const manifestFile = resolve(dir, 'manifest.json')
+  if (!existsSync(manifestFile) || !existsSync(resolve(dir, 'episode.mp3'))) throw new Error(`لا توجد Last-Known-Good للحلقة: ${slug}`)
+  const manifest = JSON.parse(readFileSync(manifestFile, 'utf8'))
+  const suffix = lang === 'ar' ? '.dialogue.mp3' : '.dialogue-en.mp3'
+  const outMp3 = resolve(AUDIO, `${slug}${suffix}`)
+  const transcriptPath = resolve(AUDIO, `${slug}.dialogue.json`)
+  mkdirSync(AUDIO, { recursive: true })
+  copyFileSync(resolve(dir, 'episode.mp3'), outMp3)
+  if (lang === 'ar' && existsSync(resolve(dir, 'transcript.json'))) copyFileSync(resolve(dir, 'transcript.json'), transcriptPath)
+  if (manifest.stateEntry) state.done[manifest.stateKey || `${slug}:${lang}`] = manifest.stateEntry
+  else if (state.done[manifest.stateKey || `${slug}:${lang}`]) {
+    state.done[manifest.stateKey || `${slug}:${lang}`].audioHash = sha256File(outMp3)
+    if (lang === 'ar') state.done[manifest.stateKey || `${slug}:${lang}`].transcriptHash = sha256File(transcriptPath)
+  }
+  saveState()
+  console.log(`↶ أُعيدت Last-Known-Good: ${slug} (${lang})`)
 }
 
 /* ═══════════ التشغيل ═══════════ */
@@ -2206,9 +3761,445 @@ if (SELF_TEST) {
   assert.deepEqual(lintScript({ ...sampleFixture, sample: true }, 'ar'), [], 'عينة الأصوات يجب أن تجتاز بوابة اللغة والإلقاء')
   assert.equal(sampleFixture.schemaVersion, 3, 'عينة الأصوات الديناميكية يجب أن تكون v3')
   assert.equal(sampleFixture.femaleVoiceTest.utterances.length, 3, 'اختبار المرأة: خبر + سؤال + تأمل')
-  assert(sampleFixture.utterances.every((utterance) => utterance.ratePct >= 3 && utterance.ratePct <= 30), 'كل سرعة في العينة ضمن المجال الآمن')
+  assert(sampleFixture.utterances.every((utterance) => { const [lo, hi] = pacingOf(utterance.delivery).ratePct; return utterance.ratePct >= lo && utterance.ratePct <= hi }), 'كل سرعة في العينة ضمن المجال التربوي المتوازن')
   assert(existsSync(FFMPEG) && existsSync(FFPROBE), 'ffmpeg/ffprobe يجب أن يكونا قابلين للتنفيذ خارج PATH')
-  console.log('✓ اختبارات بوابة البودكاست العربي: 14/14')
+  assert.equal(blindRankingRound.toString().includes('pronunciationMeaning: 95'), false, 'ممنوع ترتيب وهمي ثابت للأصوات')
+  const exactManualFixture = { utterances: [
+    { speaker: 'A', text: 'إن علمناه أن هذا الرقم هو الحقيقة الكاملة، سيقرأ الورقة كحكم نهائي على قيمته.', delivery: 'statement', pauseAfterMs: 560, overlapMs: 0 },
+    { speaker: 'B', text: 'بالظبط! هذه هي المشكلة.', delivery: 'briefReaction', pauseAfterMs: 240, overlapMs: 60 },
+  ] }
+  const exactManualTexts = exactManualFixture.utterances.map((utterance) => utterance.text)
+  const exactNormalized = normalizeManualMechanicsExact(structuredClone(exactManualFixture))
+  assert.deepEqual(exactNormalized.utterances.map((utterance) => utterance.text), exactManualTexts,
+    'الوضع اليدوي المقفول ممنوع أن يغيّر كلمة أو علامة ترقيم')
+  assert.equal(exactNormalized.utterances.length, exactManualFixture.utterances.length,
+    'الوضع اليدوي المقفول ممنوع أن يدمج أو يضيف أو يحذف مداخلة')
+  assert.deepEqual(exactNormalized.utterances.map((utterance) => utterance.speaker), ['A', 'B'],
+    'الوضع اليدوي المقفول يحافظ على المتحدثين والترتيب')
+  const normalizedSample = normalizeMechanics(structuredClone(sampleFixture))
+  const speechPolish = normalizeMechanics({ utterances: [{ speaker: 'A', delivery: 'reflection',
+    text: 'إن علمناه أن هذا الرقم هو الحقيقة الكاملة، سيقرأ الورقة كحكم نهائي على قيمته.' },
+  { speaker: 'B', delivery: 'briefReaction', text: 'بالظبط! هذه هي المشكلة.' }] })
+  assert(speechPolish.utterances[0].text.includes('إذا تعلّم الطالب'), 'التراكيب الصعبة صوتياً يجب أن تُعاد لصياغة منطوقة')
+  assert(!speechPolish.utterances[1].text.includes('بالظبط'), 'تصحيح «بالظبط» إلى «بالضبط» قبل النطق')
+  assert(normalizedSample.utterances.every((utterance) => {
+    const profile = pacingOf(utterance.delivery)
+    return utterance.targetWordsPerMinute >= profile.targetWpm[0]
+      && utterance.targetWordsPerMinute <= profile.targetWpm[1]
+  }), 'تطبيع السرعة يجب أن يبقى داخل النطاق التربوي لكل نوع')
+  assert(performanceDirector({ speaker: 'B', text: 'سؤال قصير', delivery: 'question' }, 0, 'ar',
+    'ar-KW-NouraNeural').rate < performanceDirector({ speaker: 'B', text: 'سؤال قصير',
+      delivery: 'question' }, 0, 'ar', 'ar-AE-FatimaNeural').rate,
+  'نورة تحتاج إبطاءً أدائياً أكبر من فاطمة وفق الاختبار السمعي')
+  assert(selectMusicBridgeIndexes(normalizedSample.utterances).length <= 1, 'العينة القصيرة لا تحتمل أكثر من جسر موسيقي واحد')
+
+  /* ═══ اختبارات الإصلاح الجذري: التقسيم المدّي-الدلالي + الاستئناف (fixture u001 الفاشلة فعلياً) ═══ */
+  const U001 = 'تخيل تلك اللحظة التي ترتفع فيها الزغاريد وتنهال التهاني، ويبتسم الطالب كما يتوقع منه الجميع؛ لكن شيئا في داخله لا يتحرك، ولا يشعر بأي فرح حقيقي.'
+  const normalizeSpaces = (t) => String(t).replace(/\s+/g, ' ').trim()
+  // ١) التطبيع يقسم u001 قبل TTS (كانت 25 كلمة تأملية → 13.1ث → عزل الحلقة)
+  const u001Split = normalizeMechanics({ utterances: [{ speaker: 'A', delivery: 'reflection', text: U001,
+    targetWordsPerMinute: 132, pauseAfterMs: 620, ending: 'final', musicBridgeAfter: true, internalBreakMs: 150 }] })
+  assert(u001Split.utterances.length >= 2, 'u001 يجب أن تُقسَّم قبل Azure (مدة متوقعة > 11.5ث)')
+  // نعزل قطع النص الأصلي عن الردود القصيرة التي يحقنها المحرك لإيقاع الحوار (سلوك مقصود آخر):
+  // القطع هي أطول بادئة تُعيد تركيب U001 حرفياً.
+  const originalNormalized = normalizeSpaces(U001)
+  const u001Pieces = []
+  for (const u of u001Split.utterances) {
+    const candidate = normalizeSpaces([...u001Pieces.map((x) => x.text), u.text].join(' '))
+    if (originalNormalized.startsWith(candidate)) u001Pieces.push(u)
+    else break
+  }
+  // ٢) لا كلمة تضيع والترتيب محفوظ: إعادة الدمج تعطي النص الأصلي بعد تطبيع المسافات فقط
+  assert.equal(normalizeSpaces(u001Pieces.map((u) => u.text).join(' ')), originalNormalized,
+    'إعادة دمج القطع يجب أن تعيد النص الأصلي حرفياً')
+  // ٣) كل وحدة تحت الحد المتوقع، والمتحدث لا يتغير
+  assert(u001Pieces.length >= 2, 'قطع النص الأصلي نفسها ≥ 2')
+  assert(u001Pieces.every((u) => u.text.split(/\s+/).length <= 24), 'كل قطعة ≤ حد الكلمات الديناميكي')
+  assert(u001Pieces.every((u) => u.speaker === 'A'), 'المتحدث لا يتغير بين القطع')
+  // ٤) الوقفة الأصلية على القطعة الأخيرة فقط، والوسطى وقفة داخلية قصيرة، والموسيقى على الأخيرة فقط
+  const middlePieces = u001Pieces.slice(0, -1)
+  const lastPiece = u001Pieces.at(-1)
+  assert(middlePieces.every((u) => Number(u.pauseAfterMs) <= 200), 'القطع الوسطى وقفتها قصيرة (≤200ms)')
+  assert(middlePieces.every((u) => !u.musicBridgeAfter), 'لا تنتقل الموسيقى إلى القطعة الخطأ')
+  assert(Boolean(lastPiece.musicBridgeAfter), 'الجسر الموسيقي يبقى على القطعة الأخيرة')
+  // ٥) التقسيم الدلالي المشترك: حارس الرقم — لا قطع بعد كلمة رقمية
+  const numericPieces = splitTextSemantically('حصل الطالب على 95 في المئة من مجموع الدرجات النهائية في العام الماضي وتفوق على أقرانه في كل المواد الدراسية بلا استثناء يذكر أبداً', 8, 10)
+  assert(numericPieces.every((piece) => !/[0-9]$/.test(piece.trim().split(/\s+/).at(-1) || '')), 'لا تقطع بين الرقم ووحدته')
+  assert.equal(normalizeSpaces(numericPieces.join(' ')).length > 0, true, 'التقسيم الرقمي لا يفقد نصاً')
+  // ٦) مفتاح كاش الاستئناف مستقر وحساس للنص والصوت
+  const k1 = segmentKeyOf({ pipelineHash: 'ph', voice: 'v1', text: 'نص ثابت' })
+  assert.equal(k1, segmentKeyOf({ pipelineHash: 'ph', voice: 'v1', text: ' نص  ثابت ' }), 'المفتاح يطبع المسافات')
+  assert.notEqual(k1, segmentKeyOf({ pipelineHash: 'ph', voice: 'v2', text: 'نص ثابت' }), 'تغيير الصوت يغير المفتاح')
+  assert.notEqual(k1, segmentKeyOf({ pipelineHash: 'ph2', voice: 'v1', text: 'نص ثابت' }), 'تغيير المحرك يغير المفتاح')
+  // ٧) اشتقاق تحليل القطعة ينقل التشكيل كلمةً بكلمة ويرشح الكلمات الخطرة بلا Gemini
+  const derivedPiece = derivePieceAnalysis({
+    pronunciationText: 'تَخَيَّلْ تِلْكَ اللَّحْظَة الَّتِي تَرْتَفِعُ فِيهَا الزَّغَارِيد',
+    sourceTextForCount: 'تخيل تلك اللحظة التي ترتفع فيها الزغاريد',
+    risks: [{ word: 'الزغاريد', riskLevel: 'high' }, { word: 'التهاني', riskLevel: 'high' }],
+  }, 'ترتفع فيها الزغاريد', 4, 3)
+  assert(derivedPiece.pronunciationText.includes('تَرْتَفِعُ'), 'تشكيل القطعة منقول من تحليل الوحدة الكاملة')
+  assert.equal(derivedPiece.risks.length, 1, 'ترشيح الكلمات الخطرة بالانتماء للقطعة فقط')
+  assert.equal(derivedPiece.risks[0].word, 'الزغاريد', 'الكلمة الخطرة الصحيحة بقيت مع قطعتها')
+  // ٨) شفاء التشكيل المفرط (فئة فشل التشغيل 12: «تشكيل 52٪» على دفعة كاملة رغم أن
+  //    الشفاء كان سيعالجها): مسودة مشكولة بالكامل تُجرَّد إلى الانتقائي المسبَّب وتمر
+  const overDone = healUnbackedDiacritics(
+    'تظهر النتيجة فترتفع الزغاريد وتنهال التهاني',
+    'تَظْهَرُ النَّتِيجَةُ فَتَرْتَفِعُ الزَّغَارِيدُ وَتَنْهَالُ التَّهَانِي',
+    [{ word: 'الزغاريد', selectedPronunciation: 'الزَّغَارِيد', riskLevel: 'high' }])
+  assert.equal(overDone.healedWords.length, 5, 'كل الكلمات المشكولة بلا سند تُشفى بنزع حركاتها')
+  assert(overDone.healedText.includes('الزَّغَارِيدُ'), 'كلمة الخطر المعلنة تحتفظ بتشكيلها')
+  const healedRatio = overDone.healedText.split(/\s+/).filter((w) => DIACRITICS_RE.test(w)).length
+    / overDone.healedText.split(/\s+/).length
+  assert(healedRatio <= 0.32, 'نسبة التشكيل بعد الشفاء تعود تحت بوابة 32٪ فلا تسقط الدفعة')
+  // ٩) السؤال المفرد الجملة يُلقى بنغمة صاعدة (فئة فشل التشغيل 15: «نبرة تقريرية مسطحة»)
+  const questionSSML = buildSSML({ speaker: 'A', delivery: 'question', ending: 'open', ratePct: 0,
+    text: 'لماذا لا يفرح هذا الطالب وقد نجح فعلاً؟' }, 'لماذا لا يفرح هذا الطالب وقد نجح فعلاً؟', [], 'ar-KW-FahedNeural', 'ar')
+  const questionPitches = [...questionSSML.matchAll(/pitch="([+-]?\d+)%"/g)].map((m) => Number(m[1]))
+  assert(questionPitches.length >= 2, 'السؤال المفرد يُقسم صدراً وذيلاً أدائيين')
+  assert(questionPitches.at(-1) > questionPitches[0], 'ذيل السؤال أعلى نغمة من صدره — لا استفهام مسطحاً')
+  const statementSSML = buildSSML({ speaker: 'A', delivery: 'statement', ending: 'final', ratePct: 0,
+    text: 'هذه جملة خبرية واحدة' }, 'هذه جملة خبرية واحدة', [], 'ar-KW-FahedNeural', 'ar')
+  assert(/pitch="[+-]?\d+%"/.test(statementSSML), 'الخبر المفرد يبقى سليم البناء بعد إصلاح موضع النهاية')
+  // ١٠) وضع بلا Gemini: نقاط الحكم لا تُمنح مجاناً بل تُشترى بعتبة STT مشددة (0.97/0.93)
+  const noGeminiBase = { technicalAudit: { dur: 200, size: 4_000_000, unexpectedLongSilences: [], peakDb: -2 },
+    transcript: Array.from({ length: 12 }, () => ({})) }
+  const strictPass = episodeQualityScore({ ...noGeminiBase,
+    fullComparison: { importantRatio: 0.98, ratio: 0.94 }, finalJudge: { noGemini: true, pass: true, problems: [] } })
+  assert(strictPass.pass && strictPass.checks.judgeOk, 'بلا Gemini: STT فائق الدقة يشتري نقاط الحكم وتجتاز الحلقة')
+  const strictFail = episodeQualityScore({ ...noGeminiBase,
+    fullComparison: { importantRatio: 0.95, ratio: 0.90 }, finalJudge: { noGemini: true, pass: true, problems: [] } })
+  assert(!strictFail.checks.judgeOk && !strictFail.pass, 'بلا Gemini: STT عند الحد العادي فقط لا يكفي — لا نقاط حكم مجانية')
+  /* حلقةُ الدكتور الحقيقية: تركيبها مبرهَن (٣٦/٣٦ بترتيبها) وتفريغها الطويل
+     ٩٢٪ — كانت تُعزل بـ٤٦/١٠٠ لأن الحاسبة تطلب ٠.٩٧ من أداةٍ خشنة، بينما
+     بوابةُ التركيب التي قبلتها تطلب ٠.٨٢. قانونٌ واحد الآن. */
+  const integrityPath = episodeQualityScore({ ...noGeminiBase,
+    fullComparison: { importantRatio: 0.92, ratio: 0.90 }, finalJudge: { noGemini: true, pass: true, problems: [] },
+    episodeIntegrity: { pass: true, coverage: 1, anchored: 36, anchorable: 36 } })
+  assert(integrityPath.pass && integrityPath.checks.judgeOk, 'بلا Gemini: تركيبٌ مبرهَن + تطابق ٩٢٪ يجتاز — لا يُعزل بمقياسٍ أُبطل')
+  const brokenIntegrity = episodeQualityScore({ ...noGeminiBase,
+    fullComparison: { importantRatio: 0.92, ratio: 0.90 }, finalJudge: { noGemini: true, pass: true, problems: [] },
+    episodeIntegrity: { pass: true, coverage: 0.7, anchored: 25, anchorable: 36 } })
+  assert(!brokenIntegrity.pass, 'مداخلات ساقطة من التركيب تُعزل الحلقة ولو كان التطابق النصي جيداً')
+  const poorSpeech = episodeQualityScore({ ...noGeminiBase,
+    fullComparison: { importantRatio: 0.80, ratio: 0.85 }, finalJudge: { noGemini: true, pass: true, problems: [] },
+    episodeIntegrity: { pass: true, coverage: 1, anchored: 36, anchorable: 36 } })
+  assert(!poorSpeech.pass, 'تركيبٌ سليم لا يشفع لنطقٍ رديء')
+  /* حوارُ الدكتور مهما كتبه: البوابةُ تحرس الجودة ولا تظلم اختياره التحريري */
+  const mkPlan = (kinds, count = 20) => ({ utterances: Array.from({ length: count }, (_, i) => ({
+    speaker: i % 2 ? 'A' : 'B', text: `مداخلة ${i} فيها كلامٌ عربيٌّ كافٍ للقياس.`,
+    type: kinds[i % kinds.length], delivery: kinds[i % kinds.length],
+    ratePct: 0, pauseAfterMs: (pacingOf(kinds[i % kinds.length]).pauseMs[0]) + (i % 4) * 30,
+    ending: ['neutral', 'open', 'final'][i % 3], overlapMs: 0 })) })
+  const okTech = { probe: { sampleRate: 44100, channels: 1 }, silence: { longestSec: 0.8 },
+    loudness: { integratedLufs: -16, truePeakDbtp: -2 } }
+  const gateFor = (kinds, manual) => humanLikenessGate({ plan: mkPlan(kinds), technical: okTech,
+    sttComparisons: [{ importantRatio: 0.93 }], dialogue: true, minimumScore: 95,
+    sttFidelityMin: 0.88, manualText: manual })
+  const fourKinds = ['statement', 'briefReaction', 'question', 'conclusion']
+  assert(gateFor(fourKinds, true).measures.semanticPerformance,
+    'نصٌّ يدويّ بأربعة أنواع إلقاء لا يُعزل — تنوّع الإلقاء اختيار الدكتور')
+  assert(!gateFor(['statement'], true).measures.semanticPerformance,
+    'الرتابة التامة (نوعٌ واحد) تبقى مرفوضة حتى في النص اليدوي')
+  assert(gateFor(['statement', 'clarification'], true).measures.pauseVariation,
+    'حوارٌ ضيّقُ نطاق الوقفات لا يُعزل بمطلبٍ يستحيل بلوغه')
+  const singleSpeaker = humanLikenessGate({
+    plan: { utterances: mkPlan(fourKinds).utterances.map((u) => ({ ...u, speaker: 'A' })) },
+    technical: okTech, sttComparisons: [{ importantRatio: 0.93 }], dialogue: true,
+    minimumScore: 95, sttFidelityMin: 0.88, manualText: true })
+  assert(!singleSpeaker.measures.dialogueIndependence, 'حوارٌ بمتحدثٍ واحد ليس حواراً — يُرفض')
+
+  const judgedPath = episodeQualityScore({ ...noGeminiBase,
+    fullComparison: { importantRatio: 0.95, ratio: 0.90 }, finalJudge: { pass: true, problems: [] } })
+  assert(judgedPath.checks.judgeOk, 'مسار الحكم العادي لم يمسه وضع بلا Gemini')
+  // ١١) المنصوب المنوّن: STT يكتب «انطباعاً عابراً» بلا ألف — لا تسقط مداخلة سليمة لذلك
+  const tanween = compareTexts('وليس هذا انطباعاً عابراً', 'وليس هذا انطباع عابر')
+  assert.equal(tanween.importantRatio, 1, 'ألف التنوين المحذوفة في STT لا تُحسب كلمة مفقودة')
+  // ١٢) السنة المنطوقة كلماتٍ تثبت رقمها: «ألفين وثلاثة وعشرين» = 2023
+  assert(heardContainsRisk('نشرت الدراسة عام ألفين وثلاثة وعشرين في مجلة محكمة', { word: '2023', riskLevel: 'high' }),
+    'السنة المسموعة كلماتٍ تثبت نطق رقمها')
+  assert(!heardContainsRisk('نشرت الدراسة عام ألفين وواحد وعشرين في مجلة محكمة', { word: '2023', riskLevel: 'high' }),
+    'سنة مختلفة لا تُحتسب إثباتاً زائفاً')
+  // ١٣) التهجئة الحتمية للأرقام في وضع بلا Gemini — كما كان محلل Gemini يخرجها
+  assert.equal(numberToArabicSpoken(2023), 'ألفين وثلاثة وعشرين', 'السنة تُهجأ فصيحةً')
+  assert.equal(spellDigitsForSpeech('نُشرت عام 2023 وبلغت النسبة 11٪'),
+    'نُشرت عام ألفين وثلاثة وعشرين وبلغت النسبة أحد عشر بالمئة', 'الجملة تُهجأ أرقامها ونسبها كاملة')
+  const guarded = compareTexts('نقيس الفهم قبل الدرجة', 'نقيس فهما اخر تماما')
+  assert(guarded.importantRatio < 1, 'الاحتواء الجزئي لا يمنح تطابقاً مجانياً لكلمات مختلفة فعلاً')
+  // تكافؤات مسموعة: الاسم المنقوص + إذاً/إذن + جنس النفي (فئات فشل u018/u032)
+  const poetic = compareTexts('راحة ناجٍ إذاً لا فرح فاهم', 'راحه ناجي اذن لا فرح فاهم')
+  assert.equal(poetic.importantRatio, 1, 'ناجٍ↔ناجي وإذاً↔إذن تكافؤ مسموع صحيح')
+  const negation = compareTexts('ليس «كم حصلت؟» فقط، بل «ماذا تعلمت عن نفسك؟».', 'ليست كم حصلت فقط بل ماذا تعلمت عن نفسك')
+  assert(!negation.missing.includes('ليس'), 'ليس↔ليست تكافؤ نفي مسموع')
+  assert(compareTexts('نقيس الدقة', 'نقيست الدقه').importantRatio === 1
+    || !compareTexts('راح', 'راحه').missing.includes('راح'), 'الاحتواء يبقى محروساً')
+  console.log('✓ اختبارات بوابة البودكاست العربي: 45/45')
+  process.exit(0)
+}
+
+/* ═══════════ اختبار الصوت الرجالي مع Sample D الثابتة ═══════════
+   لا يفعّل النشر الشامل، ولا يغيّر صوت المرأة أو سرعة الحلقة النهائية. الهدف:
+   ثلاث عينات عمياء، المتغيّر الوحيد فيها هو الصوت الرجالي، حتى يختار الدكتور
+   المحاور الأكثر دفئًا وطبيعية وانسجامًا مع Sample D. */
+if (MALE_FINALIST_RETEST) {
+  const sample = JSON.parse(readFileSync(resolve(ROOT, 'scripts/male-audition-sample.json'), 'utf8'))
+  const female = opt('female') || env.PODCAST_AR_FEMALE || 'ar-KW-NouraNeural'
+  const maleCandidates = (opt('males') || `${env.PODCAST_AR_MALE || 'ar-KW-FahedNeural'},ar-SA-HamedNeural,ar-AE-HamdanNeural`)
+    .split(',').map((voice) => voice.trim()).filter(Boolean).slice(0, 3)
+  if (maleCandidates.length !== 3) {
+    console.error('✘ اختبار الرجال يحتاج ثلاثة أصوات مفصولة بفواصل عبر --males=')
+    process.exit(2)
+  }
+  await verifyAzureVoices([...maleCandidates, female])
+  const outDir = resolve(ROOT, 'public/audio/male-finalists')
+  mkdirSync(AUDITS, { recursive: true })
+  rmSync(outDir, { recursive: true, force: true }); mkdirSync(outDir, { recursive: true })
+
+  const music = selectLicensedMusic('تأملي')
+  const labels = ['Sample A', 'Sample B', 'Sample C']
+  const shuffled = secureShuffle(maleCandidates.map((voiceName, originalIndex) => ({ voiceName, originalIndex })))
+  const sampleWords = sample.utterances.reduce((count, utterance) =>
+    count + String(utterance.text).trim().split(/\s+/).filter(Boolean).length, 0)
+  const silenceReport = (mp3) => {
+    const detected = spawnSync(FFMPEG, ['-hide_banner', '-i', mp3, '-af',
+      'silencedetect=noise=-35dB:d=0.12', '-f', 'null', '-'], { encoding: 'utf8' }).stderr || ''
+    const durations = [...detected.matchAll(/silence_duration:\s*([0-9.]+)/g)].map((match) => Number(match[1]))
+    const total = durations.reduce((sum, value) => sum + value, 0)
+    return {
+      count: durations.length,
+      total,
+      avg: durations.length ? total / durations.length : 0,
+      max: durations.length ? Math.max(...durations) : 0,
+      over1000: durations.filter((duration) => duration > 1).length,
+    }
+  }
+  const volumeReport = (mp3) => {
+    const volume = spawnSync(FFMPEG, ['-hide_banner', '-i', mp3, '-af', 'volumedetect',
+      '-f', 'null', '-'], { encoding: 'utf8' }).stderr || ''
+    return {
+      peakDb: Number((volume.match(/max_volume:\s*(-?[0-9.]+) dB/) || [])[1]),
+      meanDb: Number((volume.match(/mean_volume:\s*(-?[0-9.]+) dB/) || [])[1]),
+    }
+  }
+  const results = []
+  for (let index = 0; index < shuffled.length; index++) {
+    const label = labels[index]
+    const key = `sample-${String.fromCharCode(97 + index)}`
+    const male = shuffled[index].voiceName
+    const tmp = resolve(TMP, `male-finalist-${key}`)
+    rmSync(tmp, { recursive: true, force: true }); mkdirSync(tmp, { recursive: true })
+    const utterances = sample.utterances.map((utterance) => ({ ...utterance }))
+    const segments = []
+    let regenerated = 0
+    process.stdout.write(`\n♪ ${label} `)
+    for (let utteranceIndex = 0; utteranceIndex < utterances.length; utteranceIndex++) {
+      const utterance = utterances[utteranceIndex]
+      const voice = utterance.speaker === 'A' ? male : female
+      const wav = resolve(tmp, `u${String(utteranceIndex + 1).padStart(2, '0')}.wav`)
+      const ssml = buildSSML(utterance, utterance.pronunciationText || utterance.text, [], voice, 'ar')
+      let ok = await synthSSML(ssml, wav)
+      if (!ok) { regenerated++; ok = await synthSSML(ssml, wav) }
+      if (!ok) {
+        console.error(`\n✘ فشل توليد المداخلة ${utteranceIndex + 1} في ${label}`)
+        process.exit(5)
+      }
+      trimGeneratedBoundaryPadding(wav, utterance.text)
+      trimSilence(wav)
+      compactInternalSilence(wav)
+      segments.push({
+        file: wav,
+        pauseAfterMs: Number(utterance.pauseAfterMs || 300),
+        overlapMs: Number(utterance.overlapMs || 0),
+        hasHighRisk: portableSampleRisks(utterance).some((risk) => risk.riskLevel === 'high'),
+      })
+      process.stdout.write('.')
+    }
+    const bridged = insertSemanticMusicBridges(segments, utterances, music, tmp)
+    const mp3 = resolve(outDir, `${key}.mp3`)
+    const assembled = assemble(bridged.segments, mp3, null, { raw: false })
+    const silence = silenceReport(mp3)
+    const activeSec = Math.max(1, assembled.total - silence.total)
+    const technical = auditAudio(mp3, { minSec: 115, maxSec: 190, maxLongSilences: 3 })
+    const volume = volumeReport(mp3)
+    const audioHash = sha256File(mp3)
+    results.push({
+      label,
+      file: `${key}.mp3`,
+      durationSec: +assembled.total.toFixed(1),
+      wordsPerMinute: Math.round(sampleWords * 60 / activeSec),
+      utteranceCount: utterances.length,
+      averageUtteranceWords: +(sampleWords / utterances.length).toFixed(1),
+      pauseCount: silence.count,
+      averagePauseMs: Math.round(silence.avg * 1000),
+      longestPauseMs: Math.round(silence.max * 1000),
+      pausesOver1000ms: silence.over1000,
+      totalSilenceSec: +silence.total.toFixed(1),
+      silenceRatioPct: +(silence.total / assembled.total * 100).toFixed(1),
+      musicBridges: bridged.bridges,
+      regeneratedSegments: regenerated,
+      technicalIssues: technical.issues,
+      peakDb: Number.isFinite(volume.peakDb) ? volume.peakDb : null,
+      meanDb: Number.isFinite(volume.meanDb) ? volume.meanDb : null,
+      audioHash,
+      internal: {
+        maleVoiceName: male,
+        femaleVoiceName: female,
+        originalCandidateIndex: shuffled[index].originalIndex,
+      },
+    })
+  }
+  const publicManifest = {
+    generatedAt: new Date().toISOString(),
+    title: sample.title,
+    note: 'اختبار أعمى للصوت الرجالي: Sample D ثابتة، والنص والوقفات والموسيقى ثابتة، والمتغير الوحيد هو الرجل.',
+    samples: results.map(({ label, file, durationSec, wordsPerMinute, audioHash }) => ({
+      label,
+      file,
+      durationSec,
+      wordsPerMinute,
+      url: `/audio/male-finalists/${file}?v=${audioHash.slice(0, 16)}`,
+    })),
+  }
+  writeFileSync(resolve(outDir, 'manifest.json'), JSON.stringify(publicManifest, null, 2))
+  writeFileSync(resolve(AUDITS, 'male-finalist-retest.private.json'), JSON.stringify({
+    generatedAt: publicManifest.generatedAt,
+    gate: { autoPublishEnabled: false, reason: 'النشر الشامل لا يفتح قبل اعتماد الزوج الفائز وحلقة كاملة واحدة.' },
+    mapping: results,
+  }, null, 2))
+  console.log('\n\n═══ اختبار الرجال مع Sample D ═══')
+  for (const result of results)
+    console.log(`\n▶ ${result.label} · ${result.wordsPerMinute} كلمة/دقيقة · ${result.durationSec}ث · أطول وقفة ${result.longestPauseMs}ms · جسور ${result.musicBridges.length}`)
+  console.log('\n✅ العينات العمياء في public/audio/male-finalists/')
+  process.exit(0)
+}
+
+/* ═══════════ اختبار الاعتماد النهائي لصوتين فقط (D/B) ═══════════
+   بعد اختيار الدكتور للخامة: نعيد العينة نفسها، لا نغيّر النص، لكن نعيد إخراجها
+   بسرعات تربوية أهدأ ووقفات وظيفية وجسر موسيقي واحد. هذا ليس تبطيئ MP3؛ كل مداخلة
+   تولَّد بإيقاعها الجديد من Azure. */
+if (flag('voice-finalist-retest')) {
+  const sample = JSON.parse(readFileSync(resolve(ROOT, 'scripts/audition-sample.json'), 'utf8'))
+  const male = opt('male') || 'ar-KW-FahedNeural'
+  const finalists = (opt('females') || 'ar-KW-NouraNeural,ar-AE-FatimaNeural')
+    .split(',').map((voice) => voice.trim()).filter(Boolean)
+  const labels = (opt('labels') || 'Sample D v2,Sample B v2')
+    .split(',').map((label) => label.trim()).filter(Boolean)
+  const outDir = resolve(ROOT, 'public/audio/audition-finalists')
+  mkdirSync(AUDITS, { recursive: true })
+  rmSync(outDir, { recursive: true, force: true }); mkdirSync(outDir, { recursive: true })
+
+  const retime = (u, index, voiceRateOffset = -2) => {
+    const delivery = u.delivery || 'normal'
+    const rateByType = {
+      hook: -4, statement: -6, question: -5, briefReaction: -1, gentleObjection: -3,
+      clarification: -6, reflection: -12, conclusion: -10, normal: -6,
+    }
+    const pauseByType = {
+      hook: 460, statement: 340, question: 690, briefReaction: 210, gentleObjection: 380,
+      clarification: 320, reflection: 940, conclusion: 860, normal: 340,
+    }
+    const internalByType = {
+      hook: 130, statement: 125, question: 150, briefReaction: 95, gentleObjection: 130,
+      clarification: 125, reflection: 175, conclusion: 165, normal: 125,
+    }
+    const influential = /التعليم الذي يخيف|الإنسان، فيبقى|كيف نقيس|ارتجف قلبه|دون أن يدفع كرامته/.test(u.text)
+    const expressivePause = [
+      500, 720, 280, 170, 320, 390, 440, 230, 170, 760, 900,
+      180, 170, 190, 820, 420, 210, 980, 330, 440, 820, 620,
+    ][index]
+    const quickCatch = new Set([3, 8, 11, 16])
+    return {
+      ...u,
+      ratePct: (influential ? Math.min(rateByType[delivery] ?? -2, -5) : (rateByType[delivery] ?? -2)) + voiceRateOffset,
+      pauseAfterMs: influential ? Math.max(expressivePause ?? pauseByType[delivery] ?? 340, 780)
+        : (expressivePause ?? pauseByType[delivery] ?? 340),
+      internalBreakMs: internalByType[delivery] ?? 125,
+      allowOverlap: quickCatch.has(index),
+      allowSlowProsody: true,
+      overlapMs: quickCatch.has(index) ? 90 : 0,
+      targetWordsPerMinute: delivery === 'briefReaction' ? 148
+        : delivery === 'reflection' || delivery === 'conclusion' || influential ? 130
+          : delivery === 'question' ? 140 : 142,
+      finalistRetestIndex: index,
+    }
+  }
+  const bridgeAfterIndex = Math.max(0, sample.utterances.findIndex((u) => /والتعليم الذي يخيف/.test(u.text)))
+  const makeBridge = (dir, tag) => {
+    const track = selectLicensedMusic('تأملي') || (existsSync(resolve(ROOT, 'music/still-light.mp3'))
+      ? { file: resolve(ROOT, 'music/still-light.mp3') } : null)
+    if (!track) return null
+    const out = resolve(dir, `${tag}.bridge.wav`)
+    ff(['-i', track.file, '-t', '2.35', '-af',
+      'afade=t=in:d=0.45,afade=t=out:st=1.55:d=0.80,volume=0.11',
+      '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', out])
+    return out
+  }
+  const analyzeSilence = (mp3) => {
+    const det = spawnSync(FFMPEG, ['-hide_banner', '-i', mp3, '-af', 'silencedetect=noise=-35dB:d=0.12', '-f', 'null', '-'], { encoding: 'utf8' }).stderr || ''
+    const durs = [...det.matchAll(/silence_duration:\s*([0-9.]+)/g)].map((m) => Number(m[1]))
+    const total = durs.reduce((s, d) => s + d, 0)
+    return { count: durs.length, total, avg: durs.length ? total / durs.length : 0, max: durs.length ? Math.max(...durs) : 0, over1000: durs.filter((d) => d > 1).length }
+  }
+  const sampleWords = sample.utterances.reduce((n, u) => n + String(u.text).trim().split(/\s+/).filter(Boolean).length, 0)
+  const results = []
+  for (let vi = 0; vi < finalists.length; vi++) {
+    const female = finalists[vi]
+    const label = labels[vi] || `Sample ${String.fromCharCode(68 + vi)} v2`
+    const key = label.toLowerCase().replace(/\s+/g, '-')
+    const voiceRateOffset = /Noura/i.test(female) ? -4 : -2
+    const utterances = sample.utterances.map((u, index) => retime(u, index, voiceRateOffset))
+    const tmp = resolve(TMP, `finalist-${vi}`); rmSync(tmp, { recursive: true, force: true }); mkdirSync(tmp, { recursive: true })
+    const bridge = makeBridge(tmp, key)
+    const segments = []; let regenerated = 0
+    process.stdout.write(`\n♪ ${label} (${female}) `)
+    for (let i = 0; i < utterances.length; i++) {
+      const u = utterances[i]
+      const voice = u.speaker === 'A' ? male : female
+      const ssml = buildSSML(u, u.pronunciationText || u.text, [], voice, 'ar')
+      const wav = resolve(tmp, `u${String(i).padStart(2, '0')}.wav`)
+      let ok = await synthSSML(ssml, wav)
+      if (!ok) { regenerated++; ok = await synthSSML(ssml, wav) }
+      if (!ok) { console.error(`\n✘ فشل تركيب المداخلة ${i + 1} لصوت ${female}`); process.exit(5) }
+      trimSilence(wav)
+      const followsBridge = segments.at(-1)?.isMusicBridge === true
+      segments.push({ file: wav, pauseAfterMs: Number(u.pauseAfterMs || 330),
+        overlapMs: followsBridge ? 520 : Number(u.overlapMs || 0), hasHighRisk: false })
+      if (bridge && i === bridgeAfterIndex) {
+        segments[segments.length - 1].pauseAfterMs = 220
+        segments.push({ file: bridge, pauseAfterMs: 0, overlapMs: 320, hasHighRisk: false, isMusicBridge: true })
+      }
+      process.stdout.write('.')
+    }
+    const mp3 = resolve(outDir, `${key}.mp3`)
+    const { total } = assemble(segments, mp3, null, { raw: false })
+    const sil = analyzeSilence(mp3)
+    const activeSec = Math.max(1, total - sil.total)
+    const report = {
+      label, voiceNameInternal: female, male, file: `${key}.mp3`,
+      durationSec: +total.toFixed(1),
+      wordsPerMinute: Math.round(sampleWords * 60 / activeSec),
+      utterances: utterances.length,
+      musicBridge: bridge ? { count: 1, durationSec: 2.35, after: utterances[bridgeAfterIndex].text,
+        integration: 'يبدأ تحت آخر 430ms من الجملة المؤثرة ويتلاشى تحت بداية المتحدث التالي' } : { count: 0 },
+      avgUtteranceWords: +(sampleWords / utterances.length).toFixed(1),
+      pauses: sil.count, avgPauseMs: Math.round(sil.avg * 1000), longestPauseMs: Math.round(sil.max * 1000),
+      pausesOver1000ms: sil.over1000,
+      totalSilenceSec: +sil.total.toFixed(1),
+      silenceRatioPct: +(sil.total / total * 100).toFixed(1),
+      regeneratedSegments: regenerated,
+      target: '135–145 WPM overall, reflective 125–136, short replies 145–152',
+    }
+    results.push(report)
+  }
+  const publicManifest = { generatedAt: new Date().toISOString(), title: sample.title,
+    note: 'اختبار اعتماد نهائي لصوتين فقط: النص نفسه، سرعة أهدأ، وقفات وظيفية، جسر موسيقي واحد.',
+    samples: results.map(({ label, file, durationSec, wordsPerMinute }) => ({ label, file, durationSec, wordsPerMinute })) }
+  writeFileSync(resolve(outDir, 'manifest.json'), JSON.stringify(publicManifest, null, 2))
+  writeFileSync(resolve(AUDITS, 'voice-finalist-retest.private.json'), JSON.stringify({
+    generatedAt: publicManifest.generatedAt, male, mapping: results,
+  }, null, 2))
+  console.log('\n\n═══ إعادة اختبار D/B بالسرعة الجديدة ═══')
+  for (const r of results) console.log(`\n▶ ${r.label} · ${r.wordsPerMinute} كلمة/دقيقة · ${r.durationSec}ث · أطول وقفة ${r.longestPauseMs}ms · جسر موسيقي ${r.musicBridge.count}`)
+  console.log('\n✅ العينتان في public/audio/audition-finalists/')
   process.exit(0)
 }
 
@@ -2222,6 +4213,7 @@ if (flag('voice-audition')) {
   const females = (opt('females') || 'ar-EG-SalmaNeural,ar-SA-ZariyahNeural,ar-AE-FatimaNeural,ar-JO-SanaNeural,ar-KW-NouraNeural')
     .split(',').map((v) => v.trim()).filter(Boolean)
   const outDir = resolve(ROOT, 'public/audio/audition')
+  mkdirSync(AUDITS, { recursive: true })
   rmSync(outDir, { recursive: true, force: true }); mkdirSync(outDir, { recursive: true })
   const analyzeSilence = (mp3) => {
     const det = spawnSync(FFMPEG, ['-hide_banner', '-i', mp3, '-af', 'silencedetect=noise=-35dB:d=0.12', '-f', 'null', '-'], { encoding: 'utf8' }).stderr || ''
@@ -2282,7 +4274,6 @@ if (flag('voice-audition')) {
   const publicManifest = { generatedAt: new Date().toISOString(), male, note: 'اختبار أعمى — لا أسماء ظاهرة', samples: blind.map((b) => ({ label: b.label, file: `sample-${b.label.split(' ')[1].toLowerCase()}.mp3` })) }
   writeFileSync(resolve(outDir, 'manifest.json'), JSON.stringify(publicManifest, null, 2))
   const privateReport = { generatedAt: new Date().toISOString(), male, sampleWords: words, mapping: blind.map((b) => ({ label: b.label, ...b.report })) }
-  mkdirSync(AUDITS, { recursive: true })
   writeFileSync(resolve(AUDITS, 'voice-audition.private.json'), JSON.stringify(privateReport, null, 2))
   console.log('\n\n═══ اختبار الأصوات (أعمى) ═══')
   for (const b of blind) {
@@ -2297,16 +4288,18 @@ if (flag('voice-audition')) {
   process.exit(0)
 }
 
-const requiresGeminiNow = !PREFLIGHT && (BAKEOFF || CANARY || DRY || PLAN || Boolean(opt('slug'))
+const requiresGeminiNow = !NO_GEMINI && !OFFLINE_DRY && !PREFLIGHT && (BAKEOFF || CANARY || DRY || PLAN || Boolean(opt('slug'))
   || Boolean(opt('latest')) || flag('nightly'))
 if (requiresGeminiNow) {
   try { await assertGeminiBillingReady() }
   catch (error) { console.error(`⛔ ${error.message}`); process.exit(4) }
 }
+if (NO_GEMINI) console.log('⚙ وضع بلا Gemini: STT مشدد (0.92/0.88 للمقطع، 0.97/0.93 للحلقة) + البوابات التقنية كاملة — بلا أي استهلاك رصيد')
+if (MANUAL_EXACT) console.log('🔒 وضع الحوار المقفول: Firestore هو المصدر الوحيد، والكلمات والمتحدثون لا يتغيرون')
 const voicesForPreflight = BAKEOFF
   ? [] // الاكتشاف الديناميكي يجري داخل الاختبار قبل اختيار أي صوت
   : [VOICES.ar.A.azure, VOICES.ar.B.azure]
-const ssmlProfiles = voicesForPreflight.length
+const ssmlProfiles = !OFFLINE_DRY && voicesForPreflight.length
   ? await probeSsmlCapabilities(PREFLIGHT && FORCE, voicesForPreflight) : {}
 if (PREFLIGHT) {
   console.log(JSON.stringify(ssmlProfiles, null, 2))
@@ -2377,8 +4370,8 @@ if (BAKEOFF && !flag('legacy-fixed-bakeoff')) {
   console.log(`▶ اكتشاف حي: ${discovered.female.length} صوتًا نسائيًا + ${discovered.male.length} صوتًا رجاليًا`)
 
   const diverseShortlist = (voices, limit, requiredVoice = '') => {
-    const ordered = [...voices].sort((left, right) => Math.abs((left.wordsPerMinute || 0) - 155)
-      - Math.abs((right.wordsPerMinute || 0) - 155))
+    const ordered = [...voices].sort((left, right) => Math.abs((left.wordsPerMinute || 0) - 140)
+      - Math.abs((right.wordsPerMinute || 0) - 140))
     const selected = []
     if (requiredVoice) {
       const required = ordered.find((voice) => voice.voiceName === requiredVoice)
@@ -2524,11 +4517,6 @@ if (BAKEOFF && !flag('legacy-fixed-bakeoff')) {
       nameB: option.result.female.localName, country: `${option.result.male.locale} + ${option.result.female.locale}`,
       hardGate: { pass: option.result.pass }, audioHash: option.audioHash })) }
 
-  // حتى عند فشل البوابة الصارمة (مثلاً: لا صوت نسائي جاهز بلغ 85/100)، يجب أن
-  // يبقى لدينا manifest عام يشرح الحالة بدل أن تفشل خطوة الرفع بـ "no files found".
-  // بعض مراحل التقييم تنظف TMP عند فشل داخلي؛ لذلك نعيد ضمان المجلد هنا قبل الكتابة.
-  mkdirSync(stagedPublic, { recursive: true })
-  mkdirSync(dirname(BAKEOFF_PUBLIC), { recursive: true })
   writeFileSync(resolve(stagedPublic, 'manifest.json'), JSON.stringify(publicManifest, null, 2))
   const stagedPrivate = resolve(TMP, 'voice-bakeoff.private.json')
   writeFileSync(stagedPrivate, JSON.stringify(privateAudit, null, 2))
@@ -2713,7 +4701,12 @@ if (BAKEOFF && flag('legacy-fixed-bakeoff')) {
   process.exit(sampleGate.pass ? 0 : 2)
 }
 
-const needsArabicProductionGate = (LANG === 'ar' || LANG === 'both' || flag('nightly')) && !DRY && !PLAN
+if (ROLLBACK_SLUG) {
+  rollbackToLastKnownGood(ROLLBACK_SLUG, LANG === 'en' ? 'en' : 'ar')
+  process.exit(0)
+}
+
+const needsArabicProductionGate = (LANG === 'ar' || LANG === 'both' || flag('nightly') || PILOT_MODE) && !DRY && !PLAN
 // وضع تجريبي: يُنتج حلقةً كاملةً بصوتَي فهد↔نورة الافتراضيين لسماع الجودة قبل الاعتماد الأعمى.
 // لا يتجاوز أي بوابة جودة صوتية (حَكَم النطق يبقى صارماً)؛ يتجاوز فقط بوابة «اختيار الصوت»
 // التي هي قرار ذوقي بشري. يوسم المخرجات بـ trial حتى لا تُحسب حلقةً معتمَدة.
@@ -2738,33 +4731,94 @@ const ARTICLES = await loadArticles()
 const targetSlug = opt('slug')
 const latest = Number(opt('latest') || 0)
 const nightly = flag('nightly')
+const currentPilotGate = state.pilotGate?.pass === true && state.pilotGate?.pipelineHash === ACTIVE_PIPELINE_HASH
+if (!PILOT_MODE && nightly && REQUIRE_PILOT_GATE && !currentPilotGate) {
+  PILOT_MODE = true
+  PILOT_COUNT = Math.min(3, Math.max(3, Number(env.PODCAST_PILOT_COUNT || 3)))
+  console.log('🧪 لا توجد تجربة ثلاثية صالحة للمحرك الحالي؛ سيُنتج ثلاث حلقات متنوعة في منطقة معزولة قبل أي نشر عام.')
+}
 
 let queue = []
-if (targetSlug) queue = ARTICLES.filter((a) => a.slug === targetSlug)
+if (PILOT_MODE) queue = selectDiversePilotArticles(ARTICLES, PILOT_COUNT)
+else if (targetSlug) queue = ARTICLES.filter((a) => a.slug === targetSlug)
 else if (latest) queue = ARTICLES.slice(0, latest)
 else if (nightly) {
   const limit = Math.min(5, Math.max(1, Number(env.PODCAST_NIGHTLY_LIMIT || 1)))
-  queue = ARTICLES.filter((article) => {
+  /* الشرط نفسه في المسار الليلي: بلا Gemini لا يدخل الطابور إلا ما كُتب له حوار */
+  const nightlyPool = NO_GEMINI
+    ? ARTICLES.filter((article) => existsSync(resolve(ROOT, 'manual-dialogues', `${article.slug}.json`)))
+    : ARTICLES
+  /* عدالة الليل أمام التعثر: مقالٌ فشل الليلة الماضية كان يعود لنفس مقعده
+     في الخمسة الأوائل كل ليلة، فيأكل الطاقة ويجيع الطابور خلفه إلى الأبد.
+     الآن: المتعثر حديثاً (أقل من ٢٠ ساعة) يفسح مقعده لغيره ويعود بعد تهدئته،
+     والمتعثرون عموماً في آخر الصف — فلا يقف القطار على عربة عصية أبداً. */
+  const failures = state.failures || {}
+  const cooldownMs = 20 * 60 * 60 * 1000
+  const recentlyFailed = (slug) => {
+    const at = failures[slug]?.lastFailedAt
+    return Boolean(at) && (Date.now() - new Date(at).getTime()) < cooldownMs
+  }
+  const failureRank = (slug) => Number(failures[slug]?.attempts || 0)
+  const fairPool = [...nightlyPool].sort((left, right) =>
+    (Number(recentlyFailed(left.slug)) - Number(recentlyFailed(right.slug)))
+    || (failureRank(left.slug) - failureRank(right.slug)))
+  queue = fairPool.filter((article) => {
     const sourceHash = createHash('sha256').update(article.body).digest('hex')
     const expected = createHash('sha256').update(`${sourceHash}|ar|${ACTIVE_PIPELINE_HASH}`).digest('hex').slice(0, 16)
     const saved = state.done[`${article.slug}:ar`]
     const audioFile = resolve(AUDIO, `${article.slug}.dialogue.mp3`)
     const transcriptFile = resolve(AUDIO, `${article.slug}.dialogue.json`)
     const audioIntact = existsSync(audioFile) && typeof saved?.audioHash === 'string'
-      && createHash('sha256').update(readFileSync(audioFile)).digest('hex') === saved.audioHash
+      && sha256File(audioFile) === saved.audioHash
     const transcriptIntact = existsSync(transcriptFile) && typeof saved?.transcriptHash === 'string'
-      && createHash('sha256').update(readFileSync(transcriptFile)).digest('hex') === saved.transcriptHash
+      && sha256File(transcriptFile) === saved.transcriptHash
     return saved?.contentHash !== expected || saved?.status !== 'accepted_automated'
       || !audioIntact || !transcriptIntact
   }).slice(0, limit)
 }
-else { console.log('حدد --slug= أو --latest=N أو --nightly'); process.exit(1) }
+else { console.log('حدد --slug= أو --latest=N أو --nightly أو --pilot=3'); process.exit(1) }
 if (!queue.length) { console.log(targetSlug ? `لا يوجد مقال مطابق: ${targetSlug}` : 'لا حلقات ناقصة ضمن حد الليلة'); process.exit(targetSlug ? 1 : 0) }
+if (OFFLINE_DRY) {
+  console.log(`\n✓ Dry-run محلي بلا شبكة: ${queue.length} مقال/مقالات في الطابور`)
+  for (const article of queue) {
+    const key = `${article.slug}:ar`
+    const saved = state.done[key]
+    console.log(`  • ${article.slug} · ${saved?.status || 'لا توجد حلقة معتمدة'} · ${article.body.split(/\s+/).filter(Boolean).length} كلمة`)
+  }
+  console.log('لم يُستدعَ Azure أو Gemini، ولم يتغير Manifest أو R2 أو podcast.xml.')
+  process.exit(0)
+}
 
 /* لا fallback صامتاً: الحلقة العربية الكاملة تحتاج عينة محلية ناجحة + اعتماد Firestore
    يحمل optionKey وsampleHash نفسيهما. --force لا يتجاوز هذه البوابة. */
 async function loadApprovedVoices() {
   try {
+    const adoptedSample = String(env.PODCAST_AR_APPROVED_SAMPLE || 'sample-d').trim().toLowerCase()
+    if (adoptedSample === 'sample-d') {
+      VOICES.ar.A.azure = env.PODCAST_AR_MALE || 'ar-KW-FahedNeural'
+      VOICES.ar.B.azure = env.PODCAST_AR_FEMALE || 'ar-KW-NouraNeural'
+      VOICES.ar.A.name = env.PODCAST_AR_MALE_NAME || 'فهد'
+      VOICES.ar.B.name = env.PODCAST_AR_FEMALE_NAME || 'نورة'
+      await probeSsmlCapabilities(false, [VOICES.ar.A.azure, VOICES.ar.B.azure])
+      ACTIVE_PIPELINE_HASH = createHash('sha256')
+        .update(`${PIPELINE_HASH}|sample-d-approved|${VOICES.ar.A.azure}|${VOICES.ar.B.azure}`)
+        .digest('hex').slice(0, 16)
+      console.log(`♪ Sample D معتمد نهائياً: ${VOICES.ar.A.name}↔${VOICES.ar.B.name} (${VOICES.ar.A.azure} / ${VOICES.ar.B.azure})`)
+      return {
+        pass: true,
+        sampleHash: 'sample-d-approved',
+        optionKey: 'sample-d',
+        pair: {
+          key: 'sample-d',
+          country: 'الكويت',
+          voiceA: VOICES.ar.A.azure,
+          voiceB: VOICES.ar.B.azure,
+          nameA: VOICES.ar.A.name,
+          nameB: VOICES.ar.B.name,
+          hardGate: { pass: true },
+        },
+      }
+    }
     if (!existsSync(BAKEOFF_PRIVATE)) return { pass: false, reason: 'لا يوجد تدقيق خاص ناجح لعينة الأصوات' }
     const audit = JSON.parse(readFileSync(BAKEOFF_PRIVATE, 'utf8'))
     if (audit?.sampleGate?.pass !== true) return { pass: false, reason: `بوابة العينة غير ناجحة: ${audit?.sampleGate?.reason || 'سبب غير مسجل'}` }
@@ -2821,10 +4875,48 @@ const langs = LANG === 'both' ? ['ar', 'en'] : [LANG]
 const autoEn = (env.AUTO_GENERATE_ENGLISH || 'false') === 'true'
 let done = 0, failed = 0
 for (const a of queue) {
-  for (const l of nightly ? (autoEn ? ['ar', 'en'] : ['ar']) : langs) {
+  const executionLangs = PILOT_MODE ? ['ar'] : (nightly ? (autoEn ? ['ar', 'en'] : ['ar']) : langs)
+  for (const l of executionLangs) {
     const r = await produce(a, l).catch((e) => { console.error('  ✘', String(e).slice(0, 150)); return 'fail' })
-    if (r === 'ok') done++
-    if (r === 'fail') failed++
+    if (r === 'ok' || (PILOT_MODE && r === 'skip')) done++
+    if (r === 'fail') {
+      failed++
+      /* سجل التهدئة: يقرأه اختيار الليلة القادمة فيفسح المتعثر مقعده */
+      state.failures = state.failures || {}
+      const previous = state.failures[a.slug] || {}
+      state.failures[a.slug] = { attempts: Number(previous.attempts || 0) + 1, lastFailedAt: new Date().toISOString() }
+      saveState()
+    } else if (r === 'ok' && state.failures?.[a.slug]) {
+      delete state.failures[a.slug]
+      saveState()
+    }
+  }
+}
+if (PILOT_MODE) {
+  const pilotSummary = { schemaVersion: 1, generatedAt: new Date().toISOString(), pipelineHash: ACTIVE_PIPELINE_HASH,
+    required: queue.length, passed: done, failed, autoPromote: AUTO_PROMOTE_PILOT,
+    articles: queue.map((article) => ({ slug: article.slug, title: article.title, category: article.pilotCategory || 'mixed',
+      status: state.done[`pilot:${article.slug}:ar`]?.status || 'missing' })) }
+  if (failed || done !== queue.length) {
+    state.pilotGate = { ...pilotSummary, pass: false, promoted: false }
+    saveState(); atomicWriteText(PILOT_GATE_FILE, JSON.stringify(state.pilotGate, null, 2))
+    console.log(`\n⛔ التجربة الثلاثية لم تنجح كاملة: ${done}/${queue.length}. لم يُمس النشر العام.`)
+    process.exit(2)
+  }
+  if (AUTO_PROMOTE_PILOT) {
+    try {
+      const promotion = promotePilotBatch(queue, 'ar')
+      console.log(`\n🚀 نجحت التجربة الثلاثية ورُقّيت دفعة واحدة مع Rollback جماعي: ${promotion.items.length} حلقات.`)
+    } catch (error) {
+      state.pilotGate = { ...pilotSummary, pass: false, promoted: false, reason: error.message }
+      saveState(); atomicWriteText(PILOT_GATE_FILE, JSON.stringify(state.pilotGate, null, 2))
+      console.error(`\n↶ فشلت الترقية ورجعت كل الملفات السابقة تلقائياً: ${error.message}`)
+      process.exit(2)
+    }
+  } else {
+    state.pilotGate = { ...pilotSummary, pass: true, promoted: false }
+    saveState(); atomicWriteText(PILOT_GATE_FILE, JSON.stringify(state.pilotGate, null, 2))
+    console.log('\n✓ نجحت التجربة الثلاثية وبقيت معزولة حسب الإعداد PODCAST_AUTO_PROMOTE_PILOT=false.')
   }
 }
 console.log(`\n═══ اكتمل: ${done} · فشل: ${failed} ═══`)

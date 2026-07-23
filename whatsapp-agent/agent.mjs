@@ -386,11 +386,16 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     /* تقرير الجمعة (أمر الدكتور ٢٠٢٦-٠٧-٢٣): سير عمل أسبوعي يؤلف أرقام الأسبوع
        وينشرها JSON في R2 — والبوت يلتقطها هنا ويسلمها للدكتور في محادثته
        الذاتية مرة واحدة لكل تقرير (منع التكرار بمعرّف التقرير في الإعدادات). */
-    state.timers.add(setInterval(() => void deliverWeeklyReport(), 3 * 60 * 60 * 1000))
-    state.timers.add(setTimeout(() => void deliverWeeklyReport(), 90_000))
-    /* لقطة قاعدة البيانات: فحص يومي، تنفيذ أسبوعي */
-    state.timers.add(setInterval(() => void maybeSnapshotDatabase(), 24 * 60 * 60 * 1000))
-    state.timers.add(setTimeout(() => void maybeSnapshotDatabase(), 150_000))
+    /* مهام الإنتاج الطويلة لا تُشغَّل داخل Mock/self-test. كان مؤقت اللقطة
+       يبدأ بعد 150 ثانية بينما الاختبار ما زال يعمل، ثم يحاول التسجيل بعد
+       إغلاق SQLite فيُسقط GitHub Actions بـ ERR_INVALID_STATE. */
+    if (!mock) {
+      state.timers.add(setInterval(() => void deliverWeeklyReport(), 3 * 60 * 60 * 1000))
+      state.timers.add(setTimeout(() => void deliverWeeklyReport(), 90_000))
+      /* لقطة قاعدة البيانات: فحص يومي، تنفيذ أسبوعي */
+      state.timers.add(setInterval(() => void maybeSnapshotDatabase(), 24 * 60 * 60 * 1000))
+      state.timers.add(setTimeout(() => void maybeSnapshotDatabase(), 150_000))
+    }
     return db.state()
   }
 
@@ -414,7 +419,11 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
       for (const name of snapshots.slice(0, Math.max(0, snapshots.length - 8))) unlinkSync(join(backupDir, name))
       db.setSetting('db-snapshot-last', today)
       db.addAudit('db-snapshot', '', target)
-    } catch (error) { db.addAudit('db-snapshot-failed', '', redactError(error)) }
+    } catch (error) {
+      /* قد يتزامن إيقاف الوكيل مع اكتمال مهمة غير متزامنة. لا نسمح لمحاولة
+         تسجيل الخطأ نفسها أن تستخدم قاعدة أُغلقت وتحوّل الإيقاف السليم إلى فشل CI. */
+      try { db.addAudit('db-snapshot-failed', '', redactError(error)) } catch { /* database already closed */ }
+    }
   }
 
   const REPORT_FEED_BASE = process.env.REPORT_FEED_BASE

@@ -70,9 +70,9 @@ export function bestEcho(body: string, title: string): string {
  */
 export const verifyEcho = (quote: string, body: string) => Boolean(quote) && String(body || '').includes(quote)
 
-/* الدوران بنبضةٍ لا بعشوائية: الصفحة الواحدة تعطي النتيجة نفسها لزائرَين في
-   اليوم نفسه، وتتغيّر مع الأيام. فلا يرقص المحتوى تحت عين القارئ عند كل تحديث. */
-export const echoPulse = () => Math.floor(Date.now() / (2 * 86_400_000))
+/* بأمر الدكتور (٢٠٢٦-٠٧-٢٣): الأصداء تتجدد مع كل تحديث صفحة — قرعةٌ لكل
+   زيارة، لا نبضة أيام. الثبات داخل الزيارة الواحدة يبقى (تُحسب مرة عند الفتح). */
+export const echoPulse = () => Math.floor(Math.random() * 1_000_003)
 
 /**
  * أصداء مرتّبةً بالأحدث، مصفّاةً بالبوّابة، مدوَّرةً بالنبضة.

@@ -15,31 +15,35 @@ import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const SAFE_JSON = resolve(ROOT, 'src/data/private-book-links.json')
+/* كل ملف عام مشتق من منظومة الكتب يخضع للفحص نفسه — بابا التسريب المعروفان */
+const SAFE_JSON_FILES = ['src/data/private-book-links.json', 'src/data/book-toc-links.json']
 const DIST = resolve(ROOT, 'dist')
 
 const failures = []
 
-/* ═══ الطبقة الأولى: نقاء الملف الآمن ═══ */
+/* ═══ الطبقة الأولى: نقاء الملفات الآمنة ═══ */
 const FORBIDDEN_KEYS = new Set(['path', 'localPath', 'filePath', 'fileName', 'file', 'pdf', 'pdfPath', 'pages', 'sampledPages', 'page', 'pageStart', 'pageEnd', 'totalPages', 'sha256', 'bytes', 'text', 'snippets', 'pdfText'])
 const MAX_STRING = 220
 
 let safe = null
-if (existsSync(SAFE_JSON)) {
-  safe = JSON.parse(readFileSync(SAFE_JSON, 'utf8'))
+for (const relative of SAFE_JSON_FILES) {
+  const fullPath = resolve(ROOT, relative)
+  if (!existsSync(fullPath)) continue
+  const parsed = JSON.parse(readFileSync(fullPath, 'utf8'))
+  if (relative.includes('private-book-links')) safe = parsed
   const walk = (node, trail = '$') => {
     if (Array.isArray(node)) return node.forEach((item, index) => walk(item, `${trail}[${index}]`))
     if (node && typeof node === 'object') {
       for (const [key, value] of Object.entries(node)) {
-        if (FORBIDDEN_KEYS.has(key)) failures.push(`مفتاح ممنوع «${key}» في ${trail} داخل private-book-links.json`)
+        if (FORBIDDEN_KEYS.has(key)) failures.push(`مفتاح ممنوع «${key}» في ${trail} داخل ${relative}`)
         if (typeof value === 'string' && value.length > MAX_STRING && key !== 'warning') {
-          failures.push(`نص طويل مريب (${value.length} حرفاً) في ${trail}.${key} — قد يكون متناً مسرباً`)
+          failures.push(`نص طويل مريب (${value.length} حرفاً) في ${trail}.${key} داخل ${relative} — قد يكون متناً مسرباً`)
         }
         walk(value, `${trail}.${key}`)
       }
     }
   }
-  walk(safe)
+  walk(parsed)
 }
 
 /* ═══ الطبقة الثانية: بصمات منظومة الكتب الخاصة لا تغادر حزمة الإدارة ═══

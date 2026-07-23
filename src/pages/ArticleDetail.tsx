@@ -8,7 +8,7 @@ import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
 import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, usePopularQuotes } from '../components/ArticleReader'
 import { SelectionTools } from '../components/IdeaFeatures'
 import { openAudioPlayer } from '../components/AudioPlayer'
-import { markArticleRead } from '../components/ReaderResonance'
+import { ArticlePulse, markArticleRead } from '../components/ReaderResonance'
 import { JsonLd, useSeo } from '../components/seo'
 import { fetchOwnerCounts, useTrackView } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
@@ -123,6 +123,8 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
     <>
       {/* أُزيل شريط «تتبع المقالة» بطلب الدكتور — مكرر: زر «تتبع النص» في مشغل
           الصوت يدير الحالة نفسها (article-audio-follow) والنقر على الفقرات باقٍ. */}
+      {/* نبض المقال: كان مفصولاً عن الصفحة فبدت منظومة الرنين ميتة — عاد بوصلته */}
+      <ArticlePulse slug={slug} />
       <div id="article-body" className={`article-body mt-7 ${activeAudio ? 'article-body-synced' : ''}`}>
         {paragraphs.map((paragraph, index) => {
           const paragraphQuotes = popularQuotes.filter((quote) => quote.paragraph === index)
@@ -265,7 +267,8 @@ function deepDive(a: { title: string; excerpt?: string }, papers: PaperRecord[],
   }
 }
 
-type BookTocSection = { label: string; pages: string; keywords?: string[] }
+/* لا أرقام صفحات هنا: عناوين الفصول المنشورة وحدها — أرقام النسخ الداخلية محظورة (أمر الدكتور) */
+type BookTocSection = { label: string; keywords?: string[] }
 type BookTocLink = { title: string; sections?: BookTocSection[] }
 
 function bestBookTocMatch(article: ArticleRecord) {
@@ -391,7 +394,7 @@ function StudentArchive({ a, articles, books, papers }: { a: ArticleRecord; arti
             {bookPageLink && (
               <p className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-soft">
                 قريب من «{bookPageLink.bookTitle}»<br />
-                {bookPageLink.section.label} · الصفحات {bookPageLink.section.pages}
+                فصل: {bookPageLink.section.label}
               </p>
             )}
           </div>

@@ -190,7 +190,10 @@ export function articleSystem(article: ArticleLike, articles: ArticleLike[], boo
     xPost: `${quote}\n\n${article.title}`,
     linkedin: `${article.title}\n\n${article.excerpt || first}\n\nالسؤال الذي يستحق النقاش: ماذا نربح حين نضع الإنسان أولاً؟`,
     videoScript: `في دقيقة واحدة: ${article.title}. الفكرة ليست في الحدث وحده، بل في أثره على الإنسان. لننظر إلى السؤال من زاوية الطالب والمعلم والمعنى.`,
-    studentQuestion: `ناقش: كيف تغيّر هذه الفكرة طريقة فهمك للتعليم أو التقنية؟`,
+    /* سؤال مشتق من جملة المقال الحقيقية — لا قالب واحد يُلصق بكل المقالات */
+    studentQuestion: quote
+      ? `ناقش: يقول المقال «${quote.length > 110 ? `${quote.slice(0, 107)}…` : quote}» — إلى أي مدى يصحّ هذا في تجربتك، ومتى يحتاج إلى قيد؟`
+      : `ناقش: ما أقوى حجة مع فكرة «${article.title}»، وما أقوى حجة عليها؟`,
     slide: `العنوان: ${article.title}\nالفكرة المركزية: ${article.excerpt || first}\nسؤال ختامي: ماذا يحدث عندما يغيب الإنسان عن القرار؟`,
     podcast: `فهد: «قد تبدو الفكرة واضحة من العنوان.»\nنورة: «لكن أثرها الحقيقي يظهر عندما نربطها بحياة الطالب والمعلم.»`,
     quotes: [quote, ...body.replace(/\s+/g, ' ').split(/(?<=[.!؟])\s+/).filter((s) => s.length > 55 && s.length < 150).slice(0, 3)].slice(0, 4),

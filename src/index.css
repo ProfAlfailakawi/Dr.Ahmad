@@ -3019,6 +3019,8 @@ html.serenity-mode .site-nav,
 html.serenity-mode .site-footer,
 html.serenity-mode .floating-actions,
 html.serenity-mode .persistent-audio-dock,
+/* الخط المتحرك جميل في كل الموقع — إلا في السكينة (أمر الدكتور): يسكن معها */
+html.serenity-mode .site-scroll-progress,
 html.serenity-mode .serenity-hide {
   display: none !important;
 }

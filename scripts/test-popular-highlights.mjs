@@ -88,7 +88,7 @@ for (const token of [
   "article_highlight_members",
   "signInAnonymously",
   "articleContentVersion",
-  "POPULAR_THRESHOLD = 5",
+  "POPULAR_THRESHOLD = 3",
   "reader:quote-saved",
   "reader:popular-quote-updated",
   "findCanonicalHighlight",
@@ -101,7 +101,7 @@ for (const token of [
   "article_highlight_members/{highlightKey}/readers/{readerId}",
   "existsAfter",
   "request.resource.data.count == resource.data.count - 1",
-  "allow read: if false",
+  "allow read, write: if false",
 ]) assert(rulesSource.includes(token), `missing Firestore rule invariant: ${token}`)
 
 assert(!readerSource.includes('article_quote_counts'), 'old client counter must not be used')

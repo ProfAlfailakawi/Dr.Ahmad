@@ -368,13 +368,21 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         const paragraphElement = element.closest<HTMLElement>('[data-reader-paragraph]')
         const paragraphIndex = Number(paragraphElement?.dataset.readerParagraph || 0)
         const paragraphText = paragraphElement?.textContent || ''
-        const exactStart = range.startContainer.parentElement?.closest('[data-reader-paragraph]') === paragraphElement && range.startContainer.nodeType === Node.TEXT_NODE
-          ? range.startOffset
-          : paragraphText.indexOf(text)
-        const startOffset = exactStart >= 0 ? exactStart : Math.max(0, paragraphText.indexOf(text))
-        const endOffset = range.endContainer.parentElement?.closest('[data-reader-paragraph]') === paragraphElement && range.endContainer.nodeType === Node.TEXT_NODE
-          ? Math.max(startOffset, range.endOffset)
-          : Math.min(paragraphText.length, startOffset + text.length)
+        let startOffset = 0
+        let endOffset = 0
+        if (paragraphElement) {
+          try {
+            const preRange = range.cloneRange()
+            preRange.selectNodeContents(paragraphElement)
+            preRange.setEnd(range.startContainer, range.startOffset)
+            startOffset = preRange.toString().length
+            endOffset = startOffset + text.length
+          } catch {
+            const idx = paragraphText.indexOf(text)
+            startOffset = idx >= 0 ? idx : 0
+            endOffset = startOffset + text.length
+          }
+        }
         const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0)
         const rect = rects[0] || range.getBoundingClientRect()
         if (!rect || (!rect.width && !rect.height)) return

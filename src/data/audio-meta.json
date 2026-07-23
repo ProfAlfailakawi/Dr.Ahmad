@@ -3,10 +3,6 @@
     "durationSeconds": 235,
     "bytes": 3369213
   },
-  "a-generation-without-rootsarabic.noura.mp3": {
-    "durationSeconds": 240,
-    "bytes": 3366705
-  },
   "a-new-kind-of-fatigue-in-old-expressionsarabic.mp3": {
     "sha256": "1a60d11dd178d39984fae71da4a75f7008c38bdc1a0aaf92093ed1c3cbe40348",
     "contentType": "audio/mpeg",
@@ -29,163 +25,15 @@
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-20T04:42:26.255Z",
-    "bytes": 2898591
-  },
-  "children-who-know-what-is-required-but-do-not-know-whyarabic.mp3": {
-    "durationSeconds": 229,
-    "bytes": 3169010
-  },
-  "coming-soon-a-certificate-without-a-mind-2.mp3": {
-    "sha256": "1f7be107db06d792a0a8d887264883102542f7048a66f0a40254897c546b2938",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:06.354Z",
-    "durationSeconds": 235,
-    "sourceHash": "5ecb6f97aed072621a3f3e75e46654d3ad4b8c50efbb89069d7893b6518dd0ed",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T09:04:29.633Z",
-    "bytes": 3767946
-  },
-  "coming-soon-a-certificate-without-a-mind-2.noura.mp3": {
-    "sha256": "71fb457adb23decb14612751dc405d1325422f8e40931013593fb9a291de4de6",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:06.406Z",
-    "durationSeconds": 234,
-    "sourceHash": "526715c5a9e63f03f4ef6a406a1462b9811d01a09f03c096d4cc86b3b6f0765e",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T09:09:49.850Z",
-    "bytes": 3750391
-  },
-  "competency-based-approach-to-the-trash.noura.mp3": {
-    "sha256": "266e917e75161658a599f99caaf243347ac58614ca11ff7ed85b8d127437f01a",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:06.457Z",
-    "durationSeconds": 215,
-    "sourceHash": "afe58495fbf657ef6341f6760c46079c79539ea8b5a597add93a12d1e0f202e4",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T10:03:42.625Z",
-    "bytes": 3445281
-  },
-  "ethical-hacking-culture.mp3": {
-    "sha256": "6481514767a5f57414f38f0ad7db2cbbf6a15f9fff18e8f91a748d8142b281f3",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:06.508Z",
-    "durationSeconds": 217,
-    "sourceHash": "e7781eeb7013c3143805b153e0dd06e1c5463b58693c3769b3ecd738282ce7d1",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T09:31:45.603Z",
-    "bytes": 3472031
-  },
-  "ethical-hacking-culture.noura.mp3": {
-    "sha256": "4d900764878832c56004f90f8ae2a6eab04dea6eb6e6e673d83424ba7a0d22ef",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:06.558Z",
-    "durationSeconds": 221,
-    "sourceHash": "5744f94064120431f1f00b80a8843b80ff281c7925780e74a4eda6ee0264e992",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T09:37:09.816Z",
-    "bytes": 3544337
-  },
-  "excellent-in-grades-lost-in-decision.mp3": {
-    "sha256": "c7ab5843086d4fc74a1cf8267ea086007c4fdb423e1b3aeb40f3a92e6925850e",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:06.607Z",
-    "durationSeconds": 184,
-    "sourceHash": "e3a232420468024a323b7bb1dae6d45a2ecf5f054148baad5c73701a17c8cfe1",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T08:36:46.114Z",
-    "bytes": 2969226
-  },
-  "excellent-in-grades-lost-in-decision.noura.mp3": {
-    "sha256": "0fa8b4c51bbe6b72867a0cd3550c3e40c7dbc04ed6c3f426ec00eca81970f7e0",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:06.657Z",
-    "durationSeconds": 184,
-    "sourceHash": "611812c415094c2e30fcbc2300ca425a734b8aa2cc8f5adc3e965b27368234dc",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T08:41:01.904Z",
-    "bytes": 2944148
+    "bytes": 2899008
   },
   "expectations-that-shape-a-studentarabic.mp3": {
-    "bytes": 3063684,
-    "durationSeconds": 191
+    "bytes": 3029830,
+    "durationSeconds": 189
   },
   "expectations-that-shape-a-studentarabic.noura.mp3": {
-    "bytes": 3059505,
-    "durationSeconds": 191
-  },
-  "freedom-without-thinking-and-openness-without-awareness-2.mp3": {
-    "sha256": "33de8ac2d12133a4bd2aa03d559c61abbf2337e693d3311539014496701a0033",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:06.705Z",
-    "durationSeconds": 200,
-    "sourceHash": "dfb8a17eba1e74cfb23312be21fc39016e71bd351cfa97892cab17e98f33aa2f",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T08:13:31.946Z",
-    "bytes": 3199939
-  },
-  "freedom-without-thinking-and-openness-without-awareness-2.noura.mp3": {
-    "sha256": "209668d8a94a26864e816345f43a352f79d2c9b2511760c5df8c494ee7d6a1ab",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:06.755Z",
-    "durationSeconds": 202,
-    "sourceHash": "87ab74aa27ba71c7b1f6cefc9208c0fb61cfccd896f3b06012d5ae18afe818f6",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T08:18:05.078Z",
-    "bytes": 3228360
-  },
-  "he-passed-the-exam-but-failed-the-question-2.mp3": {
-    "sha256": "422a2b6fe8cdd7888e8197b5db47e84fcc9d2f85556dd77afc6f97b98543b4ed",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:06.805Z",
-    "durationSeconds": 199,
-    "sourceHash": "03c4d268c049cbcb634a67120be4e245709737e87d42ecf0855254df5dd991d2",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T08:22:33.275Z",
-    "bytes": 3186564
-  },
-  "he-passed-the-exam-but-failed-the-question-2.noura.mp3": {
-    "sha256": "fbd2145cbb65d20c1395e6e12b5fc0c051904bb09000b057c6eeedc94b17ba48",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:06.855Z",
-    "durationSeconds": 204,
-    "sourceHash": "eea04af5f9cae9d61fc4bea625455275fe08df948f258a3f229a543fe60ceaab",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T08:27:06.347Z",
-    "bytes": 3263887
-  },
-  "i-write-to-awaken-you-not-to-discourage-you-2.mp3": {
-    "sha256": "a4c49b02050fe2237ce6d9a92b033597ec036c137c95862d1a04d09ef79792ff",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T02:29:37.151Z",
-    "durationSeconds": 184,
-    "sourceHash": "17f19f6840a96935c6899d1b89283ed4333c0c0db3df1a58fd570e12771288c7",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T02:11:07.639Z",
-    "bytes": 2913219
+    "bytes": 3079985,
+    "durationSeconds": 192
   },
   "in-farewell-to-abdullah-ismail-al-kandariarabic.mp3": {
     "sha256": "27a615860edc94f1b1bf6cb64e6b71135bdf8087e34db38a3e8c70183f583322",
@@ -203,117 +51,26 @@
     "sha256": "1c5b6fcc8fde78b677eb17d3fc58386081e52ec07dae440e5cd0de06fe863aef",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-20T05:15:09.113Z",
-    "durationSeconds": 207,
+    "durationSeconds": 208,
     "sourceHash": "78e8e2fd7853e577f03033a4af6261bf1a57a9183bf9fbcce8d375aeaae0e0ca",
     "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-20T04:49:24.519Z",
-    "bytes": 3314460
+    "bytes": 3333686
   },
-  "past-mistakes-still-persist-in-the-age.mp3": {
-    "sha256": "b4dbc0ab3aa30173afcc3a176c10716b03ad95227e6e7e4c1770b0baf18bbe79",
+  "success-that-does-not-bring-joy-to-its-ownerarabic.dialogue.json": {
+    "bytes": 6088,
+    "sha256": "b00ceab3ef93daeb99041c33bdbac880ee9a08a9b4a031604e401c81fb0142eb",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-07-20T16:24:37.410Z"
+  },
+  "success-that-does-not-bring-joy-to-its-ownerarabic.dialogue.mp3": {
+    "bytes": 3324909,
+    "sha256": "89b91e359ac76e9aa0246f0594f749650621c312e369165cf04ed8a4dda9dd72",
     "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:06.905Z",
-    "durationSeconds": 210,
-    "sourceHash": "13de68d3c04b20641cf45007b6b9acda3ca977c181714444f6f6d9f6c42e023f",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T09:41:31.320Z",
-    "bytes": 3366287
-  },
-  "past-mistakes-still-persist-in-the-age.noura.mp3": {
-    "sha256": "13dbdcb6bb309010bdc9eb1b0fac89be5e50716b720d016842fa6c344ef96d45",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:06.955Z",
-    "durationSeconds": 209,
-    "sourceHash": "f541fe03ec543bddcbaae0b4bfdb69e2ba875a37bd11a8c901206556f84abcbf",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T09:46:04.579Z",
-    "bytes": 3351240
-  },
-  "private-lesson-in-the-age-of-digital-educational-intelligence.mp3": {
-    "durationSeconds": 255,
-    "bytes": 3373392
-  },
-  "private-lesson-in-the-age-of-digital-educational-intelligence.noura.mp3": {
-    "durationSeconds": 259,
-    "bytes": 3433578
-  },
-  "qabas-201712-004.mp3": {
-    "bytes": 2654502,
-    "sha256": "a7921aebed5c35af58b5b3d02f81333891bafe818140462437757995bcb887b1",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T21:44:49.833Z",
-    "durationSeconds": 166,
-    "sourceHash": "44320dbee1ccbc62682acd96fbfd268d4438e1bff019ca80a70972245350f8bf",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T21:07:32.481Z"
-  },
-  "qabas-201712-004.noura.mp3": {
-    "bytes": 2705075,
-    "sha256": "9af39349ee1811894e5ff8ead1e92c49cbe5033cd013d2ad6ee710c02bf0db70",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T21:44:49.892Z",
-    "durationSeconds": 169,
-    "sourceHash": "469a3128f19c2d025a9a2b5960ac62c2cf907ed68bc6193e6bb4bb86699916f4",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T21:11:49.119Z"
-  },
-  "qabas-201802-001.mp3": {
-    "bytes": 3373810,
-    "sha256": "5aeaddff0120de03c276a7efe554feea3bd64bc6cad74a71eda15c64bf5a0774",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T21:44:49.952Z",
-    "durationSeconds": 211,
-    "sourceHash": "8b118c5d9de11e40689a5eb8ab1c8b52858f616b9b4492c1955b6176bacbd4c9",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T21:16:46.845Z"
-  },
-  "qabas-201802-001.noura.mp3": {
-    "bytes": 3396798,
-    "sha256": "eb5c986d098a1c2423baee413b1f993549681206788c344a1e567a5ac85196c4",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T21:44:50.013Z",
-    "durationSeconds": 212,
-    "sourceHash": "2d7e3140372b3e918786957dc4eb7d683a07dc62dd5161ba5a48fde4fee54ce5",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T21:22:36.692Z"
-  },
-  "qabas-201802-003.mp3": {
-    "bytes": 3100047,
-    "sha256": "9abd74cd8a515b4c767ddeb5fa3693d3e9f48e55a61af288be58d5a76d0032a7",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T21:44:50.071Z",
-    "durationSeconds": 194,
-    "sourceHash": "254469e6c7294dc089038c42ea5a3cf8807a197de9bf9ff3b9076a151bfe1429",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T21:26:51.699Z"
-  },
-  "qabas-201802-003.noura.mp3": {
-    "bytes": 3158561,
-    "sha256": "bb5bd5f2f1c5c6728b3739b50862363e2cc92672a7b2a82bacbc2144a632be3d",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T21:44:50.129Z",
-    "durationSeconds": 197,
-    "sourceHash": "85318f0bfc1dd94ec42ef0a785a906818c27cfa7d1019b5ccf2f0cfe26d1ded9",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T21:31:53.049Z"
+    "publishedAt": "2026-07-20T16:24:37.410Z",
+    "durationSeconds": 208
   },
   "success-that-does-not-bring-joy-to-its-ownerarabic.mp3": {
     "bytes": 2990124,
@@ -339,21 +96,9 @@
     "acceptedAt": "2026-07-20T04:06:50.684Z",
     "bytes": 2995557
   },
-  "the-blackboard-that-no-longer-sees-anyone-2.mp3": {
-    "sha256": "cd14c896f5cafc2fd0a53fa399f264c2bbe93bd82335dd2a174ae8ffb54900e0",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:07.004Z",
-    "durationSeconds": 225,
-    "sourceHash": "13fac63707d581f145e94a806c2884e7afcffeca151255bc86876ee70151f306",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T07:44:29.183Z",
-    "bytes": 3608285
-  },
   "the-blackboard-that-no-longer-sees-anyone-2.noura.mp3": {
-    "durationSeconds": 228,
-    "bytes": 3655933
+    "durationSeconds": 308,
+    "bytes": 3782992
   },
   "the-classroom-that-fears-mistakesarabic.noura.mp3": {
     "sha256": "1e85a967e5ac2f14fa65d544def8fffbb5dae6925c166454fe3730b0c2c847a7",
@@ -389,7 +134,7 @@
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-20T04:18:56.114Z",
-    "bytes": 3021888
+    "bytes": 3026904
   },
   "the-human-who-forgot-himselfarabic.mp3": {
     "durationSeconds": 237,
@@ -399,38 +144,6 @@
     "durationSeconds": 241,
     "bytes": 3416442
   },
-  "the-mind-present-in-absence-absent-in-presence-2.mp3": {
-    "sha256": "68fa2b497f2bd786eb6943945ee3c574f5322193ce8f631b25a25b8a259af0c5",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:07.055Z",
-    "durationSeconds": 196,
-    "sourceHash": "7ae4425347556508ede20f856fdeb653ab4d49e3309104544f5001eace93b5b1",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T07:57:31.174Z",
-    "bytes": 3141425
-  },
-  "the-mind-present-in-absence-absent-in-presence-2.noura.mp3": {
-    "sha256": "12c0a6f7308bd3b9a35330fdb8cf271da71399c0909bdf0dbdf7b3a4fba0c04f",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:07.104Z",
-    "durationSeconds": 197,
-    "sourceHash": "9e6961aa5f151ffeff06487bc5987a9767023ca3e25f9a1578f82e31d80b0de9",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T08:01:24.563Z",
-    "bytes": 3157307
-  },
-  "the-social-media-swamp-and-plastic-surgery-addiction-2.mp3": {
-    "durationSeconds": 248,
-    "bytes": 3377154
-  },
-  "the-social-media-swamp-and-plastic-surgery-addiction-2.noura.mp3": {
-    "durationSeconds": 252,
-    "bytes": 3360435
-  },
   "the-success-that-destroyed-us-2.mp3": {
     "durationSeconds": 244,
     "bytes": 3289800
@@ -438,38 +151,6 @@
   "the-success-that-destroyed-us-2.noura.mp3": {
     "durationSeconds": 248,
     "bytes": 3303175
-  },
-  "the-teacher-the-last-to-know-2.mp3": {
-    "sha256": "f268c66adae9045a44238e2d22ec2832e2d3e54586941639bc0dc477cf98ba03",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:07.155Z",
-    "durationSeconds": 198,
-    "sourceHash": "9053a399b37dc7a09393d42d1eb3fdacd8cd6a7991e51fda552324b293725d99",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T07:49:08.712Z",
-    "bytes": 3172772
-  },
-  "the-teacher-the-last-to-know-2.noura.mp3": {
-    "sha256": "7251e8637cf0fd9652be6f85a232f3579740c6550e15829994a1b91938da8dfc",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:07.204Z",
-    "durationSeconds": 200,
-    "sourceHash": "bfd006807bc4c65dae7bafe33e25a85361781e155b231005f8b6ebd2776e386d",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T07:53:40.164Z",
-    "bytes": 3197849
-  },
-  "the-teacher-what-do-you-know-about-the-teacher.mp3": {
-    "durationSeconds": 245,
-    "bytes": 3318639
-  },
-  "the-teacher-what-do-you-know-about-the-teacher.noura.mp3": {
-    "durationSeconds": 249,
-    "bytes": 3365451
   },
   "the-year-that-doesnt-begin-with-the-calendararabic.mp3": {
     "sha256": "3fdb49925e501a594f7eb90ef63c5ab19520ff44fbfdb9a3e5d6ce3ffa8ed684",
@@ -483,93 +164,17 @@
     "acceptedAt": "2026-07-20T05:03:52.942Z",
     "bytes": 2878946
   },
-  "todays-childs-confusion-between-education-and-care.mp3": {
-    "durationSeconds": 237,
-    "bytes": 3186982
-  },
-  "todays-childs-confusion-between-education-and-care.noura.mp3": {
-    "durationSeconds": 240,
-    "bytes": 3207880
-  },
-  "turning-video-game-obsession-into-creative-meditation-2.mp3": {
-    "durationSeconds": 245,
-    "bytes": 3259707
-  },
-  "turning-video-game-obsession-into-creative-meditation-2.noura.mp3": {
-    "durationSeconds": 247,
-    "bytes": 3284785
-  },
-  "we-handed-them-the-phone-so-theyd-leave-us-alone-2.mp3": {
-    "sha256": "7e3a7a4f833905a05d5d7df735a2ace5013a6eb933d3b999dccfc4f4db89f80b",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T02:29:37.505Z",
-    "durationSeconds": 239,
-    "sourceHash": "bc2346789254105d6ebb32cd7ef67bb372bb1b7a308a3a01f2a526a6316d7058",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T01:38:12.419Z",
-    "bytes": 3823952
-  },
-  "we-handed-them-the-phone-so-theyd-leave-us-alone-2.noura.mp3": {
-    "sha256": "e4f28c636e10c2f894f1a2f8713f23e9ff14916e26eb8ea9507a9e4d5053b098",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T02:29:37.564Z",
-    "durationSeconds": 241,
-    "sourceHash": "685dcbf9ed6c8cd23ec9d3393825e477350593c3a2e3a4aa99928db1ab5a00cb",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T01:43:12.072Z",
-    "bytes": 3849448
-  },
-  "when-a-student-wishes-for-death-before-the-first-bell-2.mp3": {
-    "sha256": "977cc0c67a8bee33b122d8fe4a4bb86cb133c03dbdcf8d8d9d4b216205936a54",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:07.254Z",
-    "durationSeconds": 215,
-    "sourceHash": "ef0aa82f937b3b15a491f5276c9cc71934622b4719cbc3b36858e4cddcac0459",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T08:05:30.490Z",
-    "bytes": 3436086
-  },
-  "when-a-student-wishes-for-death-before-the-first-bell-2.noura.mp3": {
-    "sha256": "7903cea2d1ac78b5cd06f942874db5ec6d8b5f9bd8e677ea1271ef1b99e28227",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:07.304Z",
-    "durationSeconds": 218,
-    "sourceHash": "237acde1f56b34270fc5eff87c4c4829b6228eba835a623fe64dc9192052194e",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T08:09:30.884Z",
-    "bytes": 3484987
-  },
   "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m.mp3": {
     "durationSeconds": 277,
     "bytes": 3813085
   },
-  "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m.noura.mp3": {
-    "sha256": "bd3a34864f92de45a86b01e90f98ec9ad87ce619df923de0a002fc175539250b",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-07-23T10:26:07.355Z",
-    "durationSeconds": 242,
-    "sourceHash": "d5d8b91062cccfea946e27eefe58807bcb05df77e4218722ae64af5431aae051",
-    "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
-    "humanLikenessScore": 100,
-    "audioJudgeMinimum": null,
-    "acceptedAt": "2026-07-23T07:36:44.521Z",
-    "bytes": 3871599
-  },
   "when-the-exam-becomes-the-goalarabic.mp3": {
-    "bytes": 2921996,
-    "durationSeconds": 183
+    "bytes": 2896919,
+    "durationSeconds": 181
   },
   "when-the-exam-becomes-the-goalarabic.noura.mp3": {
-    "bytes": 2941222,
-    "durationSeconds": 184
+    "bytes": 2901516,
+    "durationSeconds": 181
   },
   "when-the-teacher-knows-why-he-teachesarabic.mp3": {
     "sha256": "5e32aae23db8b47740c0bd66e7bcb552989a7bbf1f04e97195010cd584d2e26a",
@@ -599,13 +204,13 @@
     "sha256": "91f57b981d23c04eef809d7267be8ab5627c3e86ed1dda00b3746c57ee80354f",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-20T05:15:09.654Z",
-    "durationSeconds": 186,
+    "durationSeconds": 187,
     "sourceHash": "2b4e1e200b55851288af4a554b003bef93b0a3070bfeaf74f3bac4b0caa3ca90",
     "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-20T05:07:53.168Z",
-    "bytes": 2973405
+    "bytes": 2990124
   },
   "when-truth-died-and-the-narrative-survivedarabic.noura.mp3": {
     "durationSeconds": 223,

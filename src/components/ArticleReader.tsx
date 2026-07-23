@@ -927,21 +927,22 @@ async function findCanonicalHighlight(input: PopularQuoteInput, version: string,
         const spans = intervalOverlap(startOffset, endOffset, item.start, item.end)
         const existingText = paragraphText.slice(item.start, item.end)
         const words = wordOverlap(input.quote, existingText)
-        
-        const lenUser = endOffset - startOffset
-        const lenExisting = item.end - item.start
-        const lenDiffRatio = lenUser > 0 && lenExisting > 0 ? Math.abs(lenUser - lenExisting) / lenExisting : 1
-        
-        // إذا كان الاختلاف في حدود 30% (زيادة أو نقصان) والتقاطع ممتاز، فهذا تطابق صريح
-        const withinThirtyPercent = lenDiffRatio <= 0.30 && spans >= 0.30
-        
-        return { item, spans, words, withinThirtyPercent }
+
+        const lenUser = Math.max(1, endOffset - startOffset)
+        const lenExisting = Math.max(1, item.end - item.start)
+        const lenDiffRatio = Math.abs(lenUser - lenExisting) / lenExisting
+
+        // يتقاطعان في حدود الفقرة ذاتها وبنسبة اختلاف لا تتجاوز 30% زيادة أو نقصانًا
+        const hasIntersection = Math.max(startOffset, item.start) < Math.min(endOffset, item.end)
+        const withinThirtyPercent = lenDiffRatio <= 0.30 && (spans > 0.15 || words > 0.20 || hasIntersection)
+
+        return { item, spans, words, lenDiffRatio, withinThirtyPercent }
       })
-      .filter(({ spans, words, withinThirtyPercent }) => (spans >= .35 && words >= .5) || withinThirtyPercent)
+      .filter(({ spans, words, withinThirtyPercent }) => withinThirtyPercent || (spans >= .35 && words >= .40))
       .sort((left, right) => {
         if (left.withinThirtyPercent && !right.withinThirtyPercent) return -1
         if (!left.withinThirtyPercent && right.withinThirtyPercent) return 1
-        return (right.spans + right.words) - (left.spans + left.words)
+        return (right.spans + right.words - right.lenDiffRatio) - (left.spans + left.words - left.lenDiffRatio)
       })
     return scored[0]?.item || null
   } catch {

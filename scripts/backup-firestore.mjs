@@ -111,13 +111,27 @@ async function restoreDrill(backup) {
     written.push({ drillId, item })
   }
 
+  /* مطابقة قانونية لا حرفية: Firestore يعيد الحقول بترتيب مفاتيح مختلف عن
+     المُرسل، ويطبع الطوابع الزمنية بدقة نانو — فنفرز المفاتيح عودياً ونطبع
+     الأزمنة قبل المقارنة. الاختلاف الحقيقي في القيم يبقى مكشوفاً. */
+  const canonical = (value, key = '') => {
+    if (Array.isArray(value)) return value.map((item) => canonical(item))
+    if (value && typeof value === 'object') {
+      return Object.fromEntries(Object.keys(value).sort().map((name) => [name, canonical(value[name], name)]))
+    }
+    if (key === 'timestampValue' && typeof value === 'string') {
+      const ms = Date.parse(value)
+      return Number.isFinite(ms) ? new Date(ms).toISOString() : value
+    }
+    return value
+  }
   let matched = 0
   for (const { drillId, item } of written) {
     const readBack = await api(`${basePath()}/${DRILL_COLLECTION}/${drillId}`)
-    const expected = JSON.stringify(item.doc.fields || {})
-    const actual = JSON.stringify(readBack.fields || {})
+    const expected = JSON.stringify(canonical(item.doc.fields || {}))
+    const actual = JSON.stringify(canonical(readBack.fields || {}))
     if (expected === actual) matched += 1
-    else console.error(`  ✘ اختلاف في عينة ${item.collection}/${drillId}`)
+    else console.error(`  ✘ اختلاف حقيقي في عينة ${item.collection}/${drillId}`)
   }
 
   for (const { drillId } of written) {

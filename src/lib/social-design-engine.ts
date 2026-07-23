@@ -440,6 +440,125 @@ export interface DesignHistoryEntry {
   generatedAt?: string
 }
 
+/* ═══════════ محلل الأوامر العربية والخليجية (مقترحات صديق الدكتور ١-٧ و١١) ═══════════
+   «أبي بوستر فاخر لمحاضرة بعنوان مستقبل المعلم» تُفهم محلياً بلا أي سحابة:
+   يُستخرج النوع والنبرة والمقاس والقيود، وتُجرَّد كلمات الأمر من المحتوى الحقيقي،
+   ويُعرض للدكتور ما فُهم بدرجة ثقة وافتراضات صريحة — فهمٌ قاعدي صادق لا ادعاء ذكاء. */
+export type StudioCommandParse = {
+  content: string
+  contextHint: string
+  tone?: ContentTone
+  format?: SocialFormatId
+  platform?: SocialPlatform
+  preferLayout?: LayoutFamilyId
+  heroWord?: string
+  noBody: boolean
+  noCta: boolean
+  understood: { label: string; value: string }[]
+  assumptions: string[]
+  confidence: number
+}
+
+const COMMAND_TONES: [RegExp, ContentTone, string][] = [
+  [/(?:^|\s)(?:فاخر|فخم|ملكي|راقي)(?:\s|$)/, 'luxury', 'فاخرة'],
+  [/(?:^|\s)(?:هادئ|هادي|بهدوء)(?:\s|$)/, 'calm', 'هادئة'],
+  [/(?:^|\s)(?:أكاديمي|اكاديمي|علمي)(?:\s|$)/, 'academic', 'أكاديمية'],
+  [/(?:^|\s)(?:رسمي|مؤسسي)(?:\s|$)/, 'formal', 'رسمية'],
+  [/(?:^|\s)(?:جريء|جري|قوي|صارخ)(?:\s|$)/, 'bold', 'جريئة'],
+  [/(?:^|\s)(?:إنساني|انساني|دافئ)(?:\s|$)/, 'human', 'إنسانية'],
+  [/(?:^|\s)(?:ملهم|محفز)(?:\s|$)/, 'inspiring', 'ملهمة'],
+  [/(?:^|\s)(?:عميق|تأملي|داكن|غامق)(?:\s|$)/, 'deep', 'عميقة/داكنة'],
+]
+
+const COMMAND_FORMATS: [RegExp, SocialFormatId, SocialPlatform | undefined, string][] = [
+  [/(?:^|\s)(?:ستوري|استوري|قصة|قصه)(?:\s|$)/, 'story', 'story', 'ستوري'],
+  [/(?:^|\s)(?:ريل|ريلز)(?:\s|$)/, 'reel-cover', 'reel', 'غلاف ريل'],
+  [/(?:^|\s)(?:كاروسيل|سلسلة|سلسله|شرائح)(?:\s|$)/, 'instagram-carousel', 'instagram', 'كاروسيل'],
+  [/(?:^|\s)(?:تغريدة|تغريده|تويتر)(?:\s|$)/, 'x-square', 'x', 'منشور X'],
+  [/(?:^|\s)(?:لينكد\s?إن|لينكد\s?ان|linkedin)(?:\s|$)/i, 'linkedin-square', 'linkedin', 'منشور LinkedIn'],
+  [/(?:^|\s)(?:بنترست|pinterest)(?:\s|$)/i, 'pinterest-tall', 'pinterest', 'تصميم Pinterest'],
+]
+
+const COMMAND_KIND_HINTS: [RegExp, string, string][] = [
+  [/(?:^|\s)(?:لمحاضرة|لمحاضره|محاضرة|محاضره|لندوة|لندوه)(?:\s|$)/, 'محاضرة', 'إعلان محاضرة'],
+  [/(?:^|\s)(?:لكتاب|كتاب|لإصدار|لاصدار)(?:\s|$)/, 'كتاب', 'تصميم كتاب'],
+  [/(?:^|\s)(?:لبحث|بحث|لدراسة|لدراسه)(?:\s|$)/, 'بحث', 'تصميم بحث'],
+  [/(?:^|\s)(?:لدورة|لدوره|دورة تدريبية|دوره تدريبيه)(?:\s|$)/, 'دورة تدريبية', 'إعلان دورة'],
+  [/(?:^|\s)(?:لدعوة|لدعوه|دعوة|دعوه)(?:\s|$)/, 'دعوة', 'بطاقة دعوة'],
+  [/(?:^|\s)(?:إعلان|اعلان)(?:\s|$)/, 'إعلان', 'إعلان'],
+  [/(?:^|\s)(?:اقتباس|مقولة|مقوله)(?:\s|$)/, 'اقتباس', 'بطاقة اقتباس'],
+]
+
+const COMMAND_OPENERS = /^\s*(?:أبي|ابي|أبغى|ابغى|ابغي|أبا|ابا|أريد|اريد|بغيت|ودي|سوّ لي|سو لي|سوي لي|سويلي|صمم لي|صمملي|اصنع لي|اعمل لي|اعطني|عطني)\s+/
+const COMMAND_ARTIFACTS = /^\s*(?:تصميم|بوستر|بوست|منشور|صورة|صوره|بطاقة|بطاقه)\s*/
+const COMMAND_CONNECTORS = /^\s*(?:عن|حول|بخصوص|إلى|الى|بعنوان|عنوانه|عنوانها)[:\s]+/
+
+export function parseStudioCommand(raw: string): StudioCommandParse {
+  const original = String(raw || '').replace(/\s+/g, ' ').trim()
+  const understood: StudioCommandParse['understood'] = []
+  const assumptions: string[] = []
+  let working = original
+  let signals = 0
+  let tone: ContentTone | undefined
+  let format: SocialFormatId | undefined
+  let platform: SocialPlatform | undefined
+  let preferLayout: LayoutFamilyId | undefined
+  let heroWord: string | undefined
+  let contextParts: string[] = []
+  let noBody = false
+  let noCta = false
+
+  const consume = (pattern: RegExp) => {
+    const match = working.match(pattern)
+    if (!match) return false
+    working = working.replace(pattern, ' ').replace(/\s+/g, ' ').trim()
+    return true
+  }
+
+  /* القيود أولاً — تصلح في أي موضع من الجملة */
+  if (consume(/(?:^|\s)(?:بدون|بلا)\s*(?:متن|نص طويل)(?:\s|$)/)) { noBody = true; signals += 1; understood.push({ label: 'قيد', value: 'بدون متن' }) }
+  if (consume(/(?:^|\s)(?:بدون|بلا)\s*(?:دعوة|دعوه|زر)(?:\s|$)/)) { noCta = true; signals += 1; understood.push({ label: 'قيد', value: 'بدون دعوة' }) }
+
+  /* الكلمة البطلة: «خل النجاح بطل» أو «اجعل الإنسان كلمة بطلة» */
+  const hero = working.match(/(?:اجعل|خل|خلي|خله)\s+(?:كلمة\s+)?([؀-ۿ]{2,})\s+(?:كلمة\s+)?بطل(?:ة|ه)?/)
+  if (hero) {
+    heroWord = hero[1]
+    preferLayout = 'hero-word'
+    signals += 1
+    understood.push({ label: 'الكلمة البطلة', value: heroWord })
+    working = working.replace(hero[0], ' ').replace(/\s+/g, ' ').trim()
+  }
+
+  for (const [pattern, id, platformId, label] of COMMAND_FORMATS) {
+    if (consume(pattern)) { format = id; platform = platformId; signals += 1; understood.push({ label: 'المقاس', value: label }); break }
+  }
+  for (const [pattern, id, label] of COMMAND_TONES) {
+    if (consume(pattern)) { tone = id; signals += 1; understood.push({ label: 'النبرة', value: label }); break }
+  }
+  for (const [pattern, hint, label] of COMMAND_KIND_HINTS) {
+    if (consume(pattern)) { contextParts.push(hint); signals += 1; understood.push({ label: 'النوع', value: label }); break }
+  }
+
+  /* أفعال الطلب وكلمات القالب — تُجرَّد من بداية الجملة على جولات */
+  for (let round = 0; round < 4; round += 1) {
+    let stripped = false
+    if (consume(COMMAND_OPENERS)) { stripped = true; signals += 1 }
+    if (consume(COMMAND_ARTIFACTS)) { stripped = true; signals += 1 }
+    if (consume(COMMAND_CONNECTORS)) stripped = true
+    if (!stripped) break
+  }
+
+  const content = working.trim() || original
+  if (!working.trim()) assumptions.push('الجملة كلها كلمات أمر؛ استعملت النص كما هو محتوىً.')
+  if (noBody) assumptions.push('سأخفض الكثافة لأدنى درجة — إسقاط المتن كلياً يتم من محرر التصميم.')
+  if (noCta) assumptions.push('إسقاط الدعوة نهائياً يتم من محرر التصميم؛ خففت حضورها هنا.')
+  if (tone === 'deep') assumptions.push('«داكن/عميق» يميل باللوحات نحو العمق الليلي المتاح في هذه النبرة.')
+  if (content !== original) understood.push({ label: 'المحتوى الحقيقي', value: content.length > 60 ? `${content.slice(0, 57)}…` : content })
+
+  const confidence = Math.min(.95, .5 + signals * .11)
+  return { content, contextHint: contextParts.join(' · '), tone, format, platform, preferLayout, heroWord, noBody, noCta, understood, assumptions, confidence }
+}
+
 export interface SocialDesignRequest {
   text: string
   context?: string
@@ -617,7 +736,9 @@ const KIND_SIGNALS: Record<ContentKind, readonly WeightedSignal[]> = {
   ],
   statistic: [
     { pattern: /[0-9٠-٩]+\s*(?:٪|%|بالمئه|مليون|مليار|الف)/, weight: 9, reason: 'قيمة عددية' },
-    { pattern: /(?:نسبه|احصائي|اضعاف|ثلث|ربع|نصف)/, weight: 6, reason: 'لغة إحصائية' },
+    /* حدود كلمات صريحة (صمام ملاحظة الصديق): مشتقات مثل «الرقمية/الرقمنة»
+       ليست لغة إحصاء ولا يجوز أن توهم المصنف */
+    { pattern: /(?:^|\s)(?:نسبه|احصائيه?|اضعاف|ثلث|ربع|نصف)(?:\s|$)/, weight: 6, reason: 'لغة إحصائية' },
   ],
   recommendation: [
     { pattern: /(?:انصح|نوصي|توصيه|يفضل|من الافضل|علينا|ينبغي|يجب)/, weight: 7, reason: 'توصية أو فعل مطلوب' },
@@ -1724,7 +1845,10 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   const bodyWords = wordsOf(plan.content.body || plan.content.subtitle || plan.content.quote).length
   const titleLoad = titleWords / Math.max(1, plan.format.maxTitleWords)
   const bodyLoad = bodyWords / Math.max(1, plan.format.maxBodyWords)
-  const textLoad = titleLoad * .58 + bodyLoad * .42
+  /* تصميم «العنوان وحده» خيار فني مشروع (ملاحظة الصديق): كان يُحاكم على متنٍ
+     غير موجود فتهبط كثافته ظلماً — حمولته تُقاس على العنوان وحده بمثاليةٍ تليق به */
+  const titleOnly = bodyWords === 0
+  const textLoad = titleOnly ? titleLoad : titleLoad * .58 + bodyLoad * .42
   const lineLayout = compositionTextLayout(plan)
   const titleLineLoad = lineLayout.estimatedTitleLines / Math.max(1, lineLayout.titleMaxLines)
   const bodyLineLoad = lineLayout.estimatedBodyLines / Math.max(1, lineLayout.bodyMaxLines)
@@ -1738,7 +1862,9 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   const contrast = boundedQuality(textContrast * .72 + backgroundContrast * .28)
   const readability = boundedQuality(100 - Math.max(0, titleLoad - .70) * 58 - Math.max(0, bodyLoad - .74) * 48 - Math.max(0, 86 - textContrast) * .42 - (safe ? 0 : 48))
   const hierarchy = boundedQuality(72 + (plan.content.heroWord ? 8 : 0) + (titleWords <= 12 ? 10 : titleWords <= 17 ? 5 : 0) + (plan.content.kicker ? 4 : 0) - (titleWords > 21 ? 20 : 0) - (bodyLoad > .92 ? 8 : 0))
-  const idealLoad = plan.density === 'minimal' ? .34 : plan.density === 'rich' ? .68 : .51
+  const idealLoad = titleOnly
+    ? (plan.density === 'minimal' ? .3 : .48)
+    : plan.density === 'minimal' ? .34 : plan.density === 'rich' ? .68 : .51
   const density = boundedQuality(100 - Math.abs(textLoad - idealLoad) * 118 - Math.max(0, plan.geometry.decorationBudget - (plan.density === 'rich' ? 2 : 1)) * 7)
   const whitespace = boundedQuality(density * .72 + (100 - plan.geometry.decorationBudget * 10) * .28)
   const fit = boundedQuality(100 - Math.max(0, titleLoad - 1) * 78 - Math.max(0, bodyLoad - 1) * 72 - (plan.content.overflowStrategy === 'trimmed-preview' ? 9 : 0))

@@ -27,7 +27,7 @@ import {
   renderCompositionSvg,
   setRenderPreferences,
 } from '../../lib/social-design-renderer'
-import { type LayoutFamilyId } from '../../lib/social-design-engine'
+import { type LayoutFamilyId, type StudioCommandParse, parseStudioCommand } from '../../lib/social-design-engine'
 import { currentSeason } from '../../lib/seasons'
 
 const card = 'rounded-[1.75rem] border border-hair bg-paper p-5 shadow-sm md:p-7'
@@ -229,7 +229,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const generateRef = useRef<() => void>(() => {})
   useEffect(() => {
     const clean = text.trim()
-    if (clean.length < 3) return
+    /* كلمة واحدة تكفي لبدء التوليد (مقترح الصديق ١) — حرفان فأكثر */
+    if (clean.length < 2) return
     const key = `${clean}::${context.trim()}`
     if (autoGenerateKeyRef.current === key) return
     const timer = window.setTimeout(() => {
@@ -251,30 +252,38 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     }
   }, [selected])
 
-  const hasInput = text.trim().length >= 3
+  const hasInput = text.trim().length >= 2
   const analysis = useMemo(() => analyzeSocialContent(hasInput ? text : 'فكرة معرفية جديدة', context, { author: 'د. أحمد حسين الفيلكاوي' }), [context, hasInput, text])
+  /* لوحة «ما فهمه الاستوديو» (مقترح الصديق ٧) */
+  const [commandParse, setCommandParse] = useState<StudioCommandParse | null>(null)
+  const [speechEdit, setSpeechEdit] = useState('')
 
   const generate = (overrides: { tone?: ContentTone | 'auto'; density?: DesignDensity | 'auto'; platform?: SocialPlatform | 'auto'; count?: number; preferLayout?: LayoutFamilyId } = {}) => {
-    if (text.trim().length < 3) {
-      setNotice('اكتب جملة أو فكرة أولًا؛ المحرك لا يصنع تصميمًا فارغًا.')
+    if (text.trim().length < 2) {
+      setNotice('اكتب كلمة أو فكرة أولًا؛ المحرك لا يصنع تصميمًا فارغًا.')
       textRef.current?.focus()
       return
     }
+    /* المحلل الخليجي المحلي (مقترحات ١-٦): يفصل الأمر عن المحتوى ويستخرج
+       النوع والنبرة والمقاس والقيود — ويعمل دوماً بلا سحابة */
+    const parsed = parseStudioCommand(text)
+    setCommandParse(parsed.understood.length ? parsed : null)
     if (overrides.platform && overrides.platform !== platform) setPlatform(overrides.platform)
     const nextGeneration = generation + 1
     const result = generateSocialDesigns({
-      text,
-      context,
+      text: parsed.content,
+      context: [context, parsed.contextHint].filter(Boolean).join(' · '),
       author: 'د. أحمد حسين الفيلكاوي',
-      tone: overrides.tone ?? tone,
-      density: overrides.density ?? density,
-      platform: overrides.platform ?? platform,
+      tone: overrides.tone ?? (parsed.tone || tone),
+      density: overrides.density ?? (parsed.noBody ? 'minimal' : density),
+      platform: overrides.platform ?? (parsed.platform || platform),
+      ...(parsed.format ? { format: parsed.format } : {}),
       count: 8,
       seed: `${text}:${context}:${nextGeneration}:${Date.now()}`,
       history: loadHistory(),
       noveltyThreshold: .36,
       tasteProfile,
-      ...(overrides.preferLayout ? { preferLayout: overrides.preferLayout } : {}),
+      ...((overrides.preferLayout || parsed.preferLayout) ? { preferLayout: overrides.preferLayout || parsed.preferLayout } : {}),
     })
     setGeneration(nextGeneration)
     localStorage.setItem('dr-ahmad-social-design-generated-count', String(Number(localStorage.getItem('dr-ahmad-social-design-generated-count') || 0) + result.generation.requestedCount))
@@ -284,6 +293,28 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     setNotice(result.generation.warnings[0] || `فحص الناقد ثمانية اتجاهات داخلية وعرض أقوى ${result.plans.length} فقط.`)
   }
   generateRef.current = () => generate()
+
+  /* التعديل بالكلام (مقترح ١١): «خله أفخم وداكن» · «حوّله ستوري» · «بدون متن» */
+  const applySpeechEdit = () => {
+    const command = speechEdit.trim()
+    if (!command) return
+    const parsed = parseStudioCommand(command)
+    if (!parsed.tone && !parsed.format && !parsed.noBody && !parsed.preferLayout && !parsed.platform) {
+      setNotice('ما فهمت الأمر — جرّب: «خله أفخم» أو «حوّله ستوري» أو «بدون متن».')
+      return
+    }
+    if (parsed.format && selected) {
+      transform(parsed.format)
+      if (!parsed.tone && !parsed.noBody) { setSpeechEdit(''); return }
+    }
+    generate({
+      ...(parsed.tone ? { tone: parsed.tone } : {}),
+      ...(parsed.noBody ? { density: 'minimal' as DesignDensity } : {}),
+      ...(parsed.platform && !selected ? { platform: parsed.platform } : {}),
+      ...(parsed.preferLayout ? { preferLayout: parsed.preferLayout } : {}),
+    })
+    setSpeechEdit('')
+  }
 
   const regenerateSelected = (profile: 'smart' | 'luxury' | 'calm' | 'bold') => {
     if (!selected) return
@@ -547,6 +578,33 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <p className="text-[.72rem] font-bold uppercase tracking-[.16em] text-accent">Creative directions</p>
               <h3 className="mt-1 font-display text-2xl font-bold text-ink">ليست قوالب؛ هذه اتجاهات تكوين.</h3>
               <p className="mt-2 text-[.8rem] leading-relaxed text-soft">كل نتيجة تختلف في العائلة، والهندسة، والخط، والإيقاع، وطريقة إبراز الفكرة.</p>
+            </div>
+            {/* لوحة الفهم (مقترح الصديق ٧): ما فهمه الاستوديو من أمرك، بثقة وافتراضات صريحة */}
+            {commandParse && (
+              <div className="mb-3 rounded-2xl border border-accent/20 bg-accent/[.04] px-4 py-3">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[.72rem]">
+                  <span className="font-bold text-accent">فهمتُ:</span>
+                  {commandParse.understood.map((item) => (
+                    <span key={`${item.label}-${item.value}`} className="text-soft"><span className="font-semibold text-ink">{item.label}:</span> {item.value}</span>
+                  ))}
+                  <span className="ms-auto rounded-full border border-accent/25 px-2.5 py-0.5 text-[.64rem] font-bold text-accent">ثقة {Math.round(commandParse.confidence * 100)}٪</span>
+                </div>
+                {commandParse.assumptions.length > 0 && (
+                  <p className="mt-1.5 text-[.66rem] font-light leading-relaxed text-soft">افتراضات: {commandParse.assumptions.join(' · ')}</p>
+                )}
+              </div>
+            )}
+            {/* التعديل بالكلام (مقترح ١١): أمرٌ خليجي قصير يعيد تشكيل النتائج */}
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <input
+                value={speechEdit}
+                onChange={(event) => setSpeechEdit(event.target.value)}
+                onKeyDown={(event) => { if (event.key === 'Enter') applySpeechEdit() }}
+                placeholder="عدّل بالكلام: خله أفخم · حوّله ستوري · بدون متن…"
+                aria-label="تعديل التصميم بالكلام"
+                className="min-w-[16rem] flex-1 rounded-full border border-hair bg-canvas px-4 py-2 text-[.78rem] text-ink outline-none placeholder:text-soft/60 focus:border-accent"
+              />
+              <button type="button" className={ghost} onClick={applySpeechEdit}>طبّق</button>
             </div>
             <div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 rounded-full border border-hair bg-canvas px-3 py-2 text-[.7rem] text-soft">حد التصدير <input aria-label="حد جودة التصدير" className="w-14 bg-transparent text-center font-bold text-accent outline-none" type="number" min="70" max="98" value={qualityThreshold} onChange={(event) => { const next=Math.max(70,Math.min(98,Number(event.target.value)||82)); setQualityThreshold(next); localStorage.setItem(QUALITY_THRESHOLD_KEY,String(next)) }} />٪</label><span className="rounded-full border border-accent/25 bg-accent/[.05] px-4 py-2 text-[.72rem] font-semibold text-accent">لجنة الجودة {Math.round(plans.reduce((sum, plan) => sum + (plan.quality?.score || 0), 0) / plans.length)}٪</span><span className="rounded-full border border-hair px-4 py-2 text-[.72rem] text-soft">ذاكرة ذوقك {Object.keys(tasteLedger).length} اتجاه</span>{Object.keys(tasteLedger).length > 0 && <button type="button" className={ghost} onClick={resetTaste}>إعادة ضبط الذوق</button>}<button type="button" className={primary} disabled={campaignBusy} onClick={buildCampaign}>{campaignBusy ? 'يبني الحملة…' : 'حوّلها إلى حملة'}</button><button type="button" className={ghost} onClick={() => setShowSaved((value) => !value)}>المحفوظة {savedPlans.length}</button><button type="button" className={ghost} onClick={() => generate()}>توليد دفعة مختلفة</button></div>
           </div>

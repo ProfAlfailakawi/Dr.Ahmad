@@ -217,7 +217,7 @@ const jidAccount = (jid = '') => String(jid).split('@')[0].toLowerCase()
    «شكراً» و«أنا بخير» تظهران داخل أجسام المقالات أيضاً. نسمح هنا بعبارة اسمية
    قصيرة تطابق العنوان/التصنيف نفسه، ونرفض ضمائر الحديث والمجاملات والأفعال
    اليومية. أما السؤال الصريح «عندك شيء عن…» فله نيّة مستقلة أوسع. */
-const CHATTER_OR_PERSONAL = /(?:^|\s)(?:انا|اني|انت|انتي|انتو|احنا|نحن|توني|تو|وصلت|رحت|جيت|شكرا|شكراً|مشكور|تمام|اوكي|حبيبي|حبيبتي|مرحبا|هلا|السلام|وعليكم|صباح|مساء|بخير|شلونك|كيفك|وينك|مع السلامه)(?:\s|$)|\b(?:i|im|am|my|me|we|you|your|thanks?|hello|hi|okay|fine|home|arrived|love)\b/i
+const CHATTER_OR_PERSONAL = /(?:^|\s)(?:انا|اني|انت|انتي|انتو|احنا|نحن|توني|تو|وصلت|رحت|جيت|شكرا|شكراً|مشكور|تمام|اوكي|حبيبي|حبيبتي|مرحبا|هلا|السلام|وعليكم|صباح|مساء|بخير|شلونك|كيفك|وينك|مع السلامه|عمرك|عمره|تسكن|يسكن|ساكن|متزوج|اطفالك|عيالك|راتبك|رقمك|عنوانك|ايميلك|بريدك)(?:\s|$)|\b(?:i|im|am|my|me|we|you|your|thanks?|hello|hi|okay|fine|home|arrived|love)\b/i
 
 function stripGroundedTopicRequest(value) {
   /* قشر المحادثة الطبيعية قبل البحث: «هل تكلم الدكتور عن موضوع الطفل؟»
@@ -260,6 +260,59 @@ function namedContentMatches(db, words, limit = 3) {
       return words.every((word) => named.includes(word))
     })
     .slice(0, limit)
+}
+
+
+/* ═══ «البوت لا يصمت» (أمر الدكتور ٢٠٢٦-٠٧-٢٣) ═══
+   كل مسارٍ كان يسكت صار يجيب بصدقٍ مسنَد: «لعلك تقصد…» بمواد حقيقية من
+   الفهرس، أو أبواب الأرشيف الفعلية — بلا تأليف حرفٍ واحد. الصمت الوحيد
+   الباقي في المنظومة: تدخل الدكتور اليدوي في المحادثة (manual-takeover). */
+function archiveDoors(db, limit = 6) {
+  const rows = db.all("SELECT keywords, COUNT(*) AS n FROM content_items WHERE keywords IS NOT NULL AND keywords != '' GROUP BY keywords ORDER BY n DESC") || []
+  const doors = []
+  for (const row of rows) {
+    const first = String(row.keywords || '').trim().split(/\s+/)[0]
+    if (first && !doors.includes(first)) doors.push(first)
+    if (doors.length >= limit) break
+  }
+  return doors
+}
+
+function nearestSuggestions(db, rawText, limit = 3) {
+  const normalized = stripGroundedTopicRequest(rawText)
+  const words = normalized.split(/\s+/).filter((word) => word.length > 1)
+  let found = words.length ? namedContentMatches(db, words.slice(0, 4), limit) : []
+  if (!found.length && normalized) found = searchContent(db, normalized, { limit })
+  if (!found.length) {
+    for (const word of words) {
+      const single = namedContentMatches(db, [word], limit)
+      if (single.length) { found = single; break }
+    }
+  }
+  return found.slice(0, limit)
+}
+
+function noSilenceReply(db, rawText, { offDomain = false } = {}) {
+  if (!offDomain) {
+    const near = nearestSuggestions(db, rawText, 3)
+    if (near.length) {
+      return {
+        needsHuman: true,
+        text: `ما وجدت هذا الموضوع بهذا اللفظ في الموقع. لعلك تقصد:\n${near.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n\n')}\n\nتقدر تقول: لخّص الأولى، أو اسمعني الثانية — أو اذكر الموضوع بكلمةٍ أخرى.`,
+        contextItems: near.map((item) => item.id),
+        seenContentIds: near.map((item) => item.id),
+        replaceContextList: true,
+      }
+    }
+  }
+  const doors = archiveDoors(db)
+  const doorsLine = doors.length ? `\nأبواب الأرشيف الحاضرة: ${doors.join(' · ')}.` : ''
+  return {
+    needsHuman: true,
+    text: offDomain
+      ? `سؤالك خارج المحتوى المنشور في الموقع، وقد وصل للدكتور يجيبك بنفسه.${doorsLine}\nوإن أحببت الآن: اكتب «بوابة اليوم» أو اسأل عن أي موضوعٍ من مقالاته.`
+      : `هذا الموضوع لم يُنشر عنه في الموقع بعد، ووصلت رسالتك للدكتور نفسه.${doorsLine}\nاسأل داخل أي بابٍ منها، أو اكتب «آخر مقالاته».`,
+  }
 }
 
 function isGroundedTopicPhrase(db, text) {
@@ -429,7 +482,7 @@ function customRuleReply(db, rule, input) {
   if (rule.actionType === 'site-content') {
     const query = rule.contentQuery || input
     const results = searchContent(db, query, { limit: 2 })
-    if (!results.length) return { intent: 'CUSTOM_RULE', confidence: 0.72, needsHuman: true, silent: true, ruleId: rule.id, ruleName: rule.name, text: '' }
+    if (!results.length) return { intent: 'CUSTOM_RULE', confidence: 0.72, ruleId: rule.id, ruleName: rule.name, ...noSilenceReply(db, query) }
     return {
       intent: 'CUSTOM_RULE',
       confidence: 0.94,
@@ -443,7 +496,7 @@ function customRuleReply(db, rule, input) {
   }
   /* لا تُرسل القواعد الحرة كلاماً مؤلفاً. التحويل والنص الحر يتركان الرسالة
      للدكتور بصمت؛ أما الرد الآلي فمصدره فهرس الموقع وحده. */
-  return { intent: 'CUSTOM_RULE', confidence: 0.99, needsHuman: true, silent: true, ruleId: rule.id, ruleName: rule.name, text: '' }
+  return { intent: 'CUSTOM_RULE', confidence: 0.99, needsHuman: true, ruleId: rule.id, ruleName: rule.name, text: 'وصلت رسالتك، وسيردّ عليك الدكتور بنفسه.' }
 }
 
 const itemLink = (item) => item ? `\n${item.title}\n${item.url}` : ''
@@ -808,7 +861,7 @@ function compoundRequestReply(db, request) {
   })
   if (!strict.length) {
     const alternatives = topicMatches.slice(0, 3)
-    if (!alternatives.length) return { text: '', silent: true, needsHuman: true }
+    if (!alternatives.length) return noSilenceReply(db, String(request.topic || ''))
     return {
       text: `وجدت مواد منشورة في الموضوع، لكن لا توجد مادة تجمع الشروط المطلوبة كلها الآن:
 ${alternatives.map((item, index) => `${index + 1}. ${item.title}\n${item.url}`).join('\n\n')}
@@ -1187,6 +1240,11 @@ ${SITE_URL}/research` }
     case INTENTS.ABOUT_TOPIC:
     case INTENTS.SEARCH_TOPIC:
     case INTENTS.SIMILAR_CONTENT: {
+      /* سؤال شخصي تسلّل إلى البحث («كم عمرك؟ وين تسكن؟»): لا يُجاب بمقالات
+         عشوائية — مسار خارج النطاق الصادق نفسه */
+      if (CHATTER_OR_PERSONAL.test(classification.normalized)) {
+        return { ...classification, ...noSilenceReply(db, input, { offDomain: true }) }
+      }
       /* «عندك شي عن التقييم؟» — نحذف حشو السؤال ونبحث في الموضوع نفسه */
       const query = stripGroundedTopicRequest(classification.normalized
         .replace(/^(عندك|عندكم|لديك|في)\s*(شي|شيء|مقال|بحث|كتاب|ماده)?\s*(عن|حول|بخصوص)\s*/, '')
@@ -1263,8 +1321,8 @@ ${results.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}
           seenContentIds: results.map((item) => item.id),
         }
       }
-      /* لا جواب موثق في الموقع: صمتٌ وتحويل، لا تخمين ولا إعلان فشل. */
-      return { ...classification, needsHuman: true, silent: true, text: '' }
+      /* لا جواب موثق: لا صمت بعد اليوم — «لعلك تقصد» بمواد حقيقية + تحويل */
+      return { ...classification, ...noSilenceReply(db, input) }
     }
     case INTENTS.LISTEN_FAHED:
     case INTENTS.LISTEN_NOURA:
@@ -1293,7 +1351,7 @@ ${results.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}
     case INTENTS.HELP:
     case INTENTS.SHOW_OPTIONS:
       return { ...classification, text: 'اسألني بطريقتك الطبيعية داخل محتوى الموقع فقط:\n• بوابة اليوم · اختبرني\n• آخر مقالاته أو أبحاثه أو كتبه\n• عندك شيء عن أي موضوع؟\n• ٣٠ ثانية · دقيقتان · تعمّق\n• بصوت نورة أو فهد أو الحوار\n• شبكة الأفكار · المصدر · احفظها · محفوظاتي\n\nولا تحتاج حفظ صيغة ثابتة.' }
-    case INTENTS.HUMAN_RESPONSE_REQUIRED: return { ...classification, needsHuman: true, silent: true, text: '' }
+    case INTENTS.HUMAN_RESPONSE_REQUIRED: return { ...classification, ...noSilenceReply(db, input, { offDomain: true }) }
     case INTENTS.REMIND_ME: {
       const parsed = parseReminderTime(input)
       if (parsed.ambiguous) return { ...classification, needsHuman: true, text: 'أقدر أذكّرك محليًا، لكن أحتاج وقتًا واضحًا مثل: الجمعة الساعة 7 مساءً.' }

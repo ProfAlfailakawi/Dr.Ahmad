@@ -383,7 +383,54 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     state.watchdogSince = Date.now()
     state.timers.add(setInterval(() => selfHeal(), 60_000))
     if (flags.reminders) state.timers.add(setInterval(() => void dispatchDueReminders(state), 30000))
+    /* تقرير الجمعة (أمر الدكتور ٢٠٢٦-٠٧-٢٣): سير عمل أسبوعي يؤلف أرقام الأسبوع
+       وينشرها JSON في R2 — والبوت يلتقطها هنا ويسلمها للدكتور في محادثته
+       الذاتية مرة واحدة لكل تقرير (منع التكرار بمعرّف التقرير في الإعدادات). */
+    state.timers.add(setInterval(() => void deliverWeeklyReport(), 3 * 60 * 60 * 1000))
+    setTimeout(() => void deliverWeeklyReport(), 90_000)
+    /* لقطة قاعدة البيانات: فحص يومي، تنفيذ أسبوعي */
+    state.timers.add(setInterval(() => void maybeSnapshotDatabase(), 24 * 60 * 60 * 1000))
+    setTimeout(() => void maybeSnapshotDatabase(), 150_000)
     return db.state()
+  }
+
+  /* درع بيانات البوت (أمر الدكتور ٢٠٢٦-٠٧-٢٣): لقطة أسبوعية ذاتية لقاعدة sqlite
+     عبر VACUUM INTO (نسخة متسقة حتى أثناء العمل)، والاحتفاظ بآخر ٨ لقطات —
+     فمحفوظاته وقواعده وتعلم البوت لا تضيع مهما جرى للملف الحي. */
+  async function maybeSnapshotDatabase() {
+    try {
+      const last = db.getSetting('db-snapshot-last')
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuwait' }).format(new Date())
+      if (last && (Date.now() - new Date(String(last)).getTime()) < 6.5 * 86_400_000) return
+      const { mkdirSync, readdirSync, unlinkSync } = await import('node:fs')
+      const { join, dirname } = await import('node:path')
+      const { DB_PATH } = await import('./config.mjs')
+      const backupDir = join(dirname(DB_PATH), 'backups')
+      mkdirSync(backupDir, { recursive: true })
+      const target = join(backupDir, `agent-${today}.sqlite`)
+      db.run(`VACUUM INTO '${target.replace(/'/g, "''")}'`)
+      const snapshots = readdirSync(backupDir).filter((name) => /^agent-\d{4}-\d{2}-\d{2}\.sqlite$/.test(name)).sort()
+      for (const name of snapshots.slice(0, Math.max(0, snapshots.length - 8))) unlinkSync(join(backupDir, name))
+      db.setSetting('db-snapshot-last', today)
+      db.addAudit('db-snapshot', '', target)
+    } catch (error) { db.addAudit('db-snapshot-failed', '', redactError(error)) }
+  }
+
+  const WEEKLY_REPORT_URL = process.env.WEEKLY_REPORT_URL
+    || 'https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev/reports/weekly-latest.json'
+
+  async function deliverWeeklyReport() {
+    try {
+      if (!state.started || !state.transport) return
+      const response = await fetch(WEEKLY_REPORT_URL, { cache: 'no-store' })
+      if (!response.ok) return
+      const report = await response.json()
+      if (!report || typeof report.id !== 'string' || typeof report.text !== 'string' || !report.text.trim()) return
+      if (db.getSetting('weekly-report-last') === report.id) return
+      await sendSelf(report.text.trim())
+      db.setSetting('weekly-report-last', report.id)
+      db.addAudit('weekly-report-delivered', '', report.id)
+    } catch { /* الشبكة غابت أو التقرير لم يُنشر بعد — المحاولة التالية بعد ثلاث ساعات */ }
   }
 
   /* عتبات الإنعاش — بأرقام الدكتور */

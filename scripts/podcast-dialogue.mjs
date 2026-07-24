@@ -1131,9 +1131,16 @@ function compareTexts(intended, recognized) {
   const assimilated = (token, first, second) =>
     first.length <= 3 && token.length > second.length && token.endsWith(second)
     && token.length - second.length <= 2
+  /* «لا الصدق» تُلفظ بإدغام لام النفي في لام التعريف فيكتبها STT «للصدق» (u002):
+     ألفُ «لا» وألفُ «ال» تسقطان صوتاً فتبقى لامان مشددتان. النفيُ محفوظٌ في اللام
+     والنطق سليم، لكن المطابقة الحرفية تحسب «لا» و«الصدق» مفقودتين معاً فتُسقط
+     مداخلةً سليمة. نفكّ اللصق متى ساوى المسموعُ «لل» + جذعَ الكلمة المعرّفة. */
+  const laAlContraction = (token, first, second) =>
+    first === 'لا' && second.startsWith('ال') && second.length > 2 && token === `لل${second.slice(2)}`
   for (const token of rawHeard) {
     const splitAt = expected.findIndex((word, index) => index < expected.length - 1
-      && (word + expected[index + 1] === token || assimilated(token, word, expected[index + 1])))
+      && (word + expected[index + 1] === token || assimilated(token, word, expected[index + 1])
+        || laAlContraction(token, word, expected[index + 1])))
     if (splitAt >= 0) { heard.push(expected[splitAt], expected[splitAt + 1]); continue }
     if (token === 'ا' && heard.length && expected.includes(heard.at(-1) + token)) {
       heard[heard.length - 1] += token

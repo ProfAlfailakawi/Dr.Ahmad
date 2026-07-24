@@ -74,10 +74,6 @@ if (existsSync(resolve(ROOT, '.env')))
 const GEMINI_KEY = env.GEMINI_API_KEY || env.GOOGLE_API_KEY
 const AZURE_KEY = env.AZURE_SPEECH_KEY
 const AZURE_REGION = (env.AZURE_SPEECH_REGION && /^[a-z0-9-]+$/i.test(env.AZURE_SPEECH_REGION) && env.AZURE_SPEECH_REGION.length < 30) ? env.AZURE_SPEECH_REGION : 'uaenorth'
-/* مزوّد التعرّف على الكلام: 'azure' (مدفوع الحصة) أو 'whisper' (مفتوحٌ مجانيٌّ محليّ
-   داخل الرَنَّار). Whisper يُبقي شرط الدكتور — التحقّق من النطق كاملاً — بلا حصّة. */
-const STT_PROVIDER = (env.PODCAST_STT_PROVIDER || 'azure').toLowerCase()
-const WHISPER_MODEL = env.PODCAST_WHISPER_MODEL || 'small'
 
 /* كل طلب خارجي له مهلة صريحة؛ حتى لا يبقى تشغيل GitHub معلقًا إذا علقت
    شبكة Azure/Gemini. تُعاد المحاولة في الطبقة الخاصة بكل مزود. */
@@ -1131,35 +1127,9 @@ function compareTexts(intended, recognized) {
   const assimilated = (token, first, second) =>
     first.length <= 3 && token.length > second.length && token.endsWith(second)
     && token.length - second.length <= 2
-  /* «لا» النافية لامُها تبتلع أوّلَ الكلمة التالية في الطلاقة فيلصقها STT كلمةً
-     واحدةً تبدأ بلامِ النفي: «لا الصدق»→«للصدق» (u002)، «لا يكافأ»→«لأكافة» (u003).
-     النطقُ سليمٌ والنفيُ محفوظٌ في اللام الباقية، لكنّ المطابقة الحرفية تحسب «لا»
-     والكلمةَ التالية مفقودتين معاً فتُسقط مداخلةً سليمة. نفكّ اللصق متى بدأ المسموع
-     بلامِ النفي (لا/لل) وطابَق ما بعده جذعَ الكلمة التالية (بعد إسقاط «ال» أو حرف
-     المضارعة البادئ) احتواءً أو بفارق حرفٍ واحد — وهو دليلٌ صوتيٌّ أنّ النفي نُطق.
-     الاشتراطُ ببداية «لا/لل» يمنع القبول حين يُسقط الـTTS النفي فعلاً (فلا لامَ تبقى). */
-  const laContraction = (token, first, second) => {
-    if (first !== 'لا' || !(token.startsWith('لا') || token.startsWith('لل'))) return false
-    const stem = second.replace(/^(ال|[يتنأ])/, '')
-    const body = token.replace(/^(لل|لا)/, '')
-    if (stem.length < 2 || body.length < 2) return false
-    if (body === stem || body.includes(stem) || stem.includes(body)) return true
-    if (Math.abs(body.length - stem.length) > 1) return false
-    let slips = 0, i = 0, j = 0
-    while (i < body.length && j < stem.length) {
-      if (body[i] === stem[j]) { i++; j++; continue }
-      if (++slips > 1) return false
-      if (body.length === stem.length) { i++; j++ } else if (body.length > stem.length) i++; else j++
-    }
-    return slips + (body.length - i) + (stem.length - j) <= 1
-  }
   for (const token of rawHeard) {
-    /* لا تُفكّك كلمةً مسموعةً تطابق كلمةً متوقّعةً بنفسها: «الصحة» كلمةٌ صحيحة، لكن
-       قاعدة الإدغام كانت تلتهمها ظنّاً أنّها «عن»+«صحة» (لورود الزوج لاحقاً في النص)
-       فتُحسب «الصحة» مفقودةً زوراً (u015). الشرط يمنع الالتهام دون كسر الإدغام الحق. */
-    const splitAt = expected.includes(token) ? -1 : expected.findIndex((word, index) => index < expected.length - 1
-      && (word + expected[index + 1] === token || assimilated(token, word, expected[index + 1])
-        || laContraction(token, word, expected[index + 1])))
+    const splitAt = expected.findIndex((word, index) => index < expected.length - 1
+      && (word + expected[index + 1] === token || assimilated(token, word, expected[index + 1])))
     if (splitAt >= 0) { heard.push(expected[splitAt], expected[splitAt + 1]); continue }
     if (token === 'ا' && heard.length && expected.includes(heard.at(-1) + token)) {
       heard[heard.length - 1] += token
@@ -1176,10 +1146,8 @@ function compareTexts(intended, recognized) {
   /* إملاء STT للكلمات الطويلة والمنقحرة متذبذب بحرف: «الفاشينستات» تُكتب
      «الفاشينتات»، و«فرونتيرز» تُكتب «فرونتيرس». النطق سليم والمستمع يسمعه صحيحاً،
      لكن المطابقة الحرفية كانت تقتل حلقةً كاملة من ٣٥ مداخلة بسبب حرف واحد.
-     نتسامح مع فارق حرف واحد في الكلمات الطويلة وحدها (٦ أحرف فأكثر): «الشاشة»
-     تُكتب «الشرشة» (u019)، و«تقارير» تُكتب «تقرير» (u015) — النطق سليم والحرف
-     الواحد قصورُ STT. تبقى الكلمات ذوات الخمسة أحرفٍ فأقلّ صارمةً: «الوهم» لا
-     تساوي «الوهن»، و«الحلم» لا تساوي «الحكم». والنفيُ محميٌّ بفحصٍ مستقلٍّ لا يمسّه هذا. */
+     نتسامح مع فارق حرف واحد في الكلمات الطويلة وحدها (٧ أحرف فأكثر)، فتبقى
+     الكلمات القصيرة صارمة: «الوهم» لا تساوي «الوهن»، و«الحلم» لا تساوي «الحكم». */
   const editDistanceAtMostOne = (a, b) => {
     if (Math.abs(a.length - b.length) > 1) return false
     const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a]
@@ -1191,20 +1159,12 @@ function compareTexts(intended, recognized) {
     }
     return slips + (longer.length - j) + (shorter.length - i) <= 1
   }
-  const fuzzyLongWord = (a, b) => Math.max(a.length, b.length) >= 6 && editDistanceAtMostOne(a, b)
-  /* تكافؤ صوتيّ للمُطبَقات مع نظائرها المرقّقة (ط/ت، ص/س، ض/د، ظ/ذ/ز): أشهرُ خلطٍ
-     في تعرّف العربية، خاصّةً الأعلام الأعجمية — «أرسطو» تُكتب «أرستو» (u033). نطوي
-     الحرفين إلى واحدٍ ونقارن، لكن للكلمات ذوات الخمسة أحرفٍ فأكثر فقط كي تبقى القصيرة
-     صارمة («صار»≠«سار»). الحُرّاس المُوثَّقون سالمون: «الوهم/الوهن» و«الحلم/الحكم»
-     يختلفان بحرفٍ غيرِ مُطبَقٍ فلا يطويهما هذا. */
-  const phoneticFold = (w) => w.replace(/ط/g, 'ت').replace(/ظ/g, 'ز').replace(/ض/g, 'د').replace(/ص/g, 'س').replace(/ذ/g, 'ز')
-  const phoneticEquiv = (a, b) => Math.min(a.length, b.length) >= 5 && a !== b && phoneticFold(a) === phoneticFold(b)
+  const fuzzyLongWord = (a, b) => Math.max(a.length, b.length) >= 7 && editDistanceAtMostOne(a, b)
   const wordsEqual = (a, b) => a === b
     || (a.length > 3 && b.length > 3 && (a.includes(b) || b.includes(a)))
     || (a.length >= 3 && `${a}ي` === b) || (b.length >= 3 && `${b}ي` === a)
     || HEARD_EQUIV.has(`${a}|${b}`)
     || fuzzyLongWord(a, b)
-    || phoneticEquiv(a, b)
   const rows = expected.length + 1
   const cols = heard.length + 1
   const dp = Array.from({ length: rows }, () => new Uint16Array(cols))
@@ -1384,24 +1344,7 @@ async function synthSSML(ssml, outPath, diag = null) {
   return false
 }
 
-/* التعرّف المجاني عبر Whisper المحلي (faster-whisper): يحوّل الصوت إلى نص بلا
-   حساب ولا حصّة، فيحفظ شرط الدكتور (تحقّق النطق كاملاً) مجاناً. يعيد شكل Azure نفسه. */
-function whisperTranscribe(wav16Path, locale) {
-  const lang = String(locale || 'ar-KW').slice(0, 2).toLowerCase()
-  const out = spawnSync('python3', [resolve(ROOT, 'scripts/whisper-stt.py'), wav16Path, lang, WHISPER_MODEL], {
-    encoding: 'utf8', maxBuffer: 96 * 1024 * 1024, timeout: 300_000,
-  })
-  if (out.status !== 0) {
-    console.log(`  · Whisper ${locale}: فشل (${String(out.stderr || out.error?.message || '').replace(/\s+/g, ' ').slice(0, 160)})`)
-    return null
-  }
-  const text = String(out.stdout || '').trim()
-  if (!text) { console.log(`  · Whisper ${locale}: بلا نص`); return null }
-  return { locale, text, lexical: text, confidence: 0.9, words: [] }
-}
-
 async function sttRequest(wav16Path, locale) {
-  if (STT_PROVIDER === 'whisper') return whisperTranscribe(wav16Path, locale)
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const res = await fetchWithTimeout(`https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${locale}&format=detailed&profanity=raw`, {
@@ -2250,9 +2193,7 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
       /* أرضية واعية بالإلقاء: السؤال والتأمل والخلاصة تبطؤ في نهاياتها طبيعياً، والجملة
          الكثيفة المقاطع أوطأ كلمياً — u035 سؤال عند 115 كان يُرفض على أرضية 118 صلبة. */
       const avgWordLen = dialogueText.replace(/\s+/g, '').length / Math.max(1, wordsOf(dialogueText).length)
-      /* «briefReaction» ردٌّ قصيرٌ موزونٌ يُقرأ بتمهّلٍ لا باستعجال (u022: ست كلمات
-         عند 109) — يُعامَل معاملة الإلقاء البطيء الطبيعي كالتأمل والخلاصة. */
-      const slowDelivery = ['question', 'reflection', 'conclusion', 'gentleObjection', 'reflective', 'briefReaction'].includes(String(deliveryPlan.delivery || ''))
+      const slowDelivery = ['question', 'reflection', 'conclusion', 'gentleObjection', 'reflective'].includes(String(deliveryPlan.delivery || ''))
       const humanFloor = (slowDelivery || avgWordLen >= 6) ? 92 : 112
       const paceOnly = audits
         .filter((audit) => audit.technical?.issues?.length === 1

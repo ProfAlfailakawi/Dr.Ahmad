@@ -33,6 +33,7 @@ import { ProductionHealthCenter } from '../components/admin/ProductionHealthCent
 import { AdminTaskFavicon, AdminTaskIndicator } from '../components/admin/AdminTaskFavicon'
 import { UploadField } from '../components/admin/ContentManager'
 import { WhatsAppAgentPanel } from '../components/admin/WhatsAppAgentPanel'
+import { BotMessagesPanel } from '../components/admin/BotMessagesPanel'
 import { ProductionMonitor } from '../components/admin/ProductionMonitor'
 import { useSeo } from '../components/seo'
 import {
@@ -193,7 +194,7 @@ function CvPdfCard() {
 function Panel({ email }: { email: string }) {
   const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const requestedTab = params.get('tab') as AdminTab | null
-  const allowedTabs: AdminTab[] = ['dashboard','monitor','content-health','production','analytics','studio','design','image-lab','launch','event','articles','books','papers','media','inbox','lab','whatsapp','voice','manual-dialogue','audio-library','pronunciation','cv']
+  const allowedTabs: AdminTab[] = ['dashboard','monitor','content-health','production','analytics','studio','design','image-lab','launch','event','articles','books','papers','media','inbox','lab','whatsapp','bot-messages','voice','manual-dialogue','audio-library','pronunciation','cv']
   const initialTab = requestedTab && allowedTabs.includes(requestedTab) ? requestedTab : 'dashboard'
   const editSlug = params.get('edit') || undefined
   const [tab, setTab] = useState<AdminTab>(initialTab)
@@ -224,7 +225,9 @@ function Panel({ email }: { email: string }) {
   useEffect(() => {
     const toDesign = () => chooseTab('design')
     window.addEventListener('studio:campaign-seed', toDesign)
-    return () => window.removeEventListener('studio:campaign-seed', toDesign)
+    // البصمة البصرية القادمة من مختبر الصور تقفز باللوحة إلى الاستوديو ليلتقطها
+    window.addEventListener('studio:dna-palette', toDesign)
+    return () => { window.removeEventListener('studio:campaign-seed', toDesign); window.removeEventListener('studio:dna-palette', toDesign) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -290,6 +293,7 @@ function Panel({ email }: { email: string }) {
             {tab === 'launch' && <LaunchModeCard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} />}
             {tab === 'lab' && <IntelligenceLab articles={cms.articles} />}
             {tab === 'whatsapp' && <WhatsAppAgentPanel />}
+            {tab === 'bot-messages' && <BotMessagesPanel />}
             {tab === 'voice' && <VoiceBakeoffCard />}
             {tab === 'manual-dialogue' && <ManualDialogueEditor articles={cms.articles} onQueued={() => chooseTab('production')} />}
             {tab === 'audio-library' && <AudioLibrary articles={cms.articles} onChanged={cms.reload} />}

@@ -3,6 +3,7 @@ import { AUDIO_PUBLIC_BASE_URL, AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUA
 import { hashOpaque } from './crypto.mjs'
 import { createReminder, parseReminderTime } from './reminders.mjs'
 import { applyBotRules, sign } from './bot-rules.mjs'
+import { getBotMessages } from './bot-messages.mjs'
 import { answer as scholarAnswer, SCAFFOLD as SCHOLAR_SCAFFOLD } from './scholar.mjs'
 import {
   applyReferenceResolution,
@@ -371,12 +372,13 @@ function noSilenceReply(db, rawText, { offDomain = false } = {}) {
     }
   }
   const doors = archiveDoors(db)
-  const doorsLine = doors.length ? `\nأبواب الأرشيف الحاضرة: ${doors.join(' · ')}.` : ''
+  const MSG = getBotMessages()
+  const doorsLine = doors.length ? `\n${MSG.doorsPrefix}${doors.join(' · ')}.` : ''
   return {
     needsHuman: true,
     text: offDomain
-      ? `سؤالك خارج المحتوى المنشور في الموقع، وقد وصل للدكتور يجيبك بنفسه.${doorsLine}\nوإن أحببت الآن: اكتب «بوابة اليوم» أو اسأل عن أي موضوعٍ من مقالاته.`
-      : `هذا الموضوع لم يُنشر عنه في الموقع بعد، ووصلت رسالتك للدكتور نفسه.${doorsLine}\nاسأل داخل أي بابٍ منها، أو اكتب «آخر مقالاته».`,
+      ? `${MSG.notPublishedReached}${doorsLine}\n${MSG.notPublishedReachedCta}`
+      : `${MSG.notPublishedNew}${doorsLine}\n${MSG.notPublishedNewCta}`,
   }
 }
 
@@ -589,7 +591,7 @@ function customRuleReply(db, rule, input) {
   }
   /* لا تُرسل القواعد الحرة كلاماً مؤلفاً. التحويل والنص الحر يتركان الرسالة
      للدكتور بصمت؛ أما الرد الآلي فمصدره فهرس الموقع وحده. */
-  return { intent: 'CUSTOM_RULE', confidence: 0.99, needsHuman: true, ruleId: rule.id, ruleName: rule.name, text: 'وصلت رسالتك، وسيردّ عليك الدكتور بنفسه.' }
+  return { intent: 'CUSTOM_RULE', confidence: 0.99, needsHuman: true, ruleId: rule.id, ruleName: rule.name, text: getBotMessages().humanHandoff }
 }
 
 const itemLink = (item) => item ? `\n${item.title}\n${item.url}` : ''
@@ -604,7 +606,7 @@ const audioLinks = (item) => {
 }
 
 function contentReply(label, item, extra = '') {
-  if (!item) return { text: 'ما لقيت مادة منشورة مطابقة الآن. اكتب لي الموضوع أو النوع الذي تريده، وأبحث لك من جديد.' }
+  if (!item) return { text: getBotMessages().noMatch }
   return { text: `${label}:\n${item.title}${item.date ? ` · ${item.date}` : ''}\n${item.excerpt || contentSummary(item, 1)}\n${item.url}${extra}`, contentId: item.id, contextItems: [item.id], seenContentIds: [item.id], actions: audioLinks(item) }
 }
 
@@ -798,14 +800,15 @@ function proactiveLine(db, jid, seenIds = []) {
 }
 
 function welcomeReply(db, jid, at = new Date(), mood = 'neutral') {
+  const MSG = getBotMessages()
   const greet = `${moodPrefix(mood)}${timeGreeting(at)}`
   const item = selectDailyUnsentContent(db, { jid })
   if (!item) {
     const hasArchive = Number(db.get('SELECT COUNT(*) AS count FROM content_items')?.count || 0) > 0
     return {
       text: hasArchive
-        ? `${greet} · حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي.\n\nمررتَ على كل مواد الأرشيف المسجلة، لذلك لن أكرر مادةً عليك من غير أن تطلبها. اكتب موضوعاً أو نوعاً وأفتحه لك.`
-        : `${greet} · حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي، لكن لا توجد مواد منشورة في الفهرس الآن.`,
+        ? `${greet} · ${MSG.welcomeLine}.\n\nمررتَ على كل مواد الأرشيف المسجلة، لذلك لن أكرر مادةً عليك من غير أن تطلبها. اكتب موضوعاً أو نوعاً وأفتحه لك.`
+        : `${greet} · ${MSG.welcomeLine}، لكن لا توجد مواد منشورة في الفهرس الآن.`,
       contextItems: [],
       replaceContextList: true,
     }
@@ -813,14 +816,14 @@ function welcomeReply(db, jid, at = new Date(), mood = 'neutral') {
   const extract = extractVerbatimAtSpeed(item, '30s')
   const quote = extract?.text || item.excerpt || contentSummary(item, 1)
   return {
-    text: `${greet} · حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي.
+    text: `${greet} · ${MSG.welcomeLine}.
 
-بوابة اليوم:
+${MSG.dailyGateLabel}
 ${item.title}${item.date ? ` · ${item.date}` : ''}
 ${quote ? `«${quote}»\n` : ''}${item.url}
 
-شنو يناسب وقتك؟ ٣٠ ثانية · دقيقتان · تعمّق · اختبرني
-ولإيقاف الرسائل اكتب: أوقف الرسائل.${proactiveLine(db, jid, [item.id])}`,
+${MSG.optionsPrompt}
+${MSG.stopHint}${proactiveLine(db, jid, [item.id])}`,
     contentId: item.id,
     contextItems: [item.id],
     seenContentIds: [item.id],
@@ -1180,6 +1183,7 @@ export function articleCorpus(db, now = Date.now()) {
 }
 
 export function handleIntent({ db, jid = '', input, session = pendingSession(db, jid), classification = classifyIntent(input) }) {
+  const MSG = getBotMessages()
   /* الرقم المفرد له معنيان بحسب السياق: اختيار نتيجة من قائمة، أو إجابة تحدٍّ.
      التصنيف العام لا يملك الجلسة، لذلك كان «٢» بعد التحدّي يفتح المقالة الثانية
      بدلاً من تصحيح الإجابة. وجود تحدٍّ مفتوح وحده يمنح الرقم معنى الإجابة؛ وبعد
@@ -1203,14 +1207,14 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
   db.run('INSERT INTO intent_logs(jid,input_hash,intent,confidence,created_at) VALUES(?,?,?,?,?)', logId, hashOpaque(input), intent, confidence, new Date().toISOString())
   if (confidence < 0.7) {
     recordUnresolvedLearning(db, jid, input, 'low-confidence')
-    return { ...classification, shouldRespond: true, needsHuman: true, text: 'ما فهمت الطلب بدقة. هل تبحث في المقالات، الكتب، الأبحاث، أم البودكاست؟' }
+    return { ...classification, shouldRespond: true, needsHuman: true, text: MSG.clarify }
   }
   if (!classification.learned) confirmPendingLearning(db, jid, intent, new Date(), confidence)
   const selection = contextSelection(db, session, input, classification.request || parseCompoundRequest(input))
 
   switch (intent) {
-    case INTENTS.STOP_MESSAGES: setSuppression(db, jid, true); return { ...classification, shouldRespond: true, text: 'تم، لن تصلك رسائل محتوى جديدة. إذا رغبت بالعودة اكتب: رجع الرسائل.' }
-    case INTENTS.RESUME_MESSAGES: setSuppression(db, jid, false); return { ...classification, shouldRespond: true, text: 'عاد الاشتراك في رسائل المحتوى.' }
+    case INTENTS.STOP_MESSAGES: setSuppression(db, jid, true); return { ...classification, shouldRespond: true, text: MSG.stopConfirm }
+    case INTENTS.RESUME_MESSAGES: setSuppression(db, jid, false); return { ...classification, shouldRespond: true, text: MSG.resumeConfirm }
     case INTENTS.DELETE_PREFERENCES: clearPreferences(db, jid); return { ...classification, shouldRespond: true, text: 'حذفت بيانات التخصيص المحلية: المحتوى السابق، المحفوظات، السجل والتذكيرات. أبقيت فقط طلب إيقاف الرسائل وفترة استلام الدكتور إن كانا مفعّلين.' }
     case INTENTS.COMPOUND_REQUEST:
       return { ...classification, ...compoundRequestReply(db, classification.request || selection.request) }

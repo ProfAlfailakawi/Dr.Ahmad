@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { extractVisualDna, type VisualDna } from '../../lib/visual-dna'
 
 /*
  * مختبر الصور — تحريرٌ احترافيٌّ كاملٌ داخل المتصفح، بلا API ولا تكلفة ولا رفعٍ
@@ -81,6 +82,7 @@ export function ImageLab() {
   const [preset, setPreset] = useState('original')
   const [compare, setCompare] = useState(false)
   const [dragging, setDragging] = useState(false)
+  const [dna, setDna] = useState<VisualDna | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const loadFile = useCallback((file: File) => {
@@ -88,7 +90,7 @@ export function ImageLab() {
     setFileName(file.name.replace(/\.[^.]+$/, '') || 'صورة')
     const url = URL.createObjectURL(file)
     const img = new Image()
-    img.onload = () => { setImage(img); URL.revokeObjectURL(url) }
+    img.onload = () => { setImage(img); setDna(null); URL.revokeObjectURL(url) }
     img.src = url
   }, [])
 
@@ -198,6 +200,20 @@ export function ImageLab() {
     }, type, 0.94)
   }
 
+  /* البصمة البصرية من هذه الصورة: تُستخرج من اللوحة المُحرَّرة (فتحمل تعديلاتك)،
+     ثم تُرسَل إلى استوديو التصاميم فيلبسها كل تصميمٍ تولّده — بلا خدمة ولا رفع. */
+  const extractDna = () => {
+    const source = canvasRef.current || image
+    if (!source) return
+    const result = extractVisualDna(source)
+    if (result) setDna(result)
+  }
+  const sendDnaToStudio = () => {
+    if (!dna) return
+    try { localStorage.setItem('studio-dna-palette', JSON.stringify(dna)) } catch { /* noop */ }
+    window.dispatchEvent(new CustomEvent('studio:dna-palette'))
+  }
+
   const card = 'rounded-2xl border border-hair bg-canvas p-4'
   const ghost = 'rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.72rem] font-semibold text-soft transition hover:border-accent hover:text-accent'
   const primary = 'rounded-full bg-accent px-4 py-2 text-[.76rem] font-semibold text-white transition hover:bg-accent-deep'
@@ -266,6 +282,29 @@ export function ImageLab() {
               <button type="button" className={primary} onClick={() => download('image/png')}>تنزيل PNG</button>
               <button type="button" className={ghost} onClick={() => download('image/jpeg')}>تنزيل JPG</button>
             </div>
+          )}
+
+          {/* البصمة البصرية: استخرج ألوان الصورة ثم أرسلها إلى استوديو التصاميم */}
+          {image && (
+            <section className={card}>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[.7rem] font-bold text-accent">البصمة البصرية</p>
+                <button type="button" className={ghost} onClick={extractDna}>استخرج ألوان الصورة</button>
+              </div>
+              {dna
+                ? (
+                  <div className="mt-3 grid gap-2.5">
+                    <span className="flex w-fit overflow-hidden rounded-full border border-hair">{dna.swatches.slice(0, 6).map((color, index) => <span key={index} className="h-6 w-6" style={{ background: color }} />)}</span>
+                    <div className="flex flex-wrap items-center gap-2 text-[.66rem] text-soft">
+                      <span>اللوحة المشتقّة ({dna.isDark ? 'داكنة' : 'فاتحة'}):</span>
+                      {[dna.palette.background, dna.palette.ink, dna.palette.accent, dna.palette.accentSoft].map((color, index) => <span key={index} className="h-5 w-5 rounded-full border border-hair" style={{ background: color }} title={color} />)}
+                    </div>
+                    <button type="button" className={primary} onClick={sendDnaToStudio}>استخدمها في استوديو التصاميم ←</button>
+                    <p className="text-[.62rem] leading-relaxed text-soft">تنتقل الألوان إلى الاستوديو فيلبسها كل تصميمٍ تولّده — لوحةٌ مضمونةُ القراءة مبنيّةٌ حول لون صورتك.</p>
+                  </div>
+                )
+                : <p className="mt-2 text-[.68rem] leading-relaxed text-soft">استخرج لوحةَ ألوانٍ من هذه الصورة (بعد تعديلاتك) لتكسو بها تصاميم الاستوديو.</p>}
+            </section>
           )}
         </div>
       </div>

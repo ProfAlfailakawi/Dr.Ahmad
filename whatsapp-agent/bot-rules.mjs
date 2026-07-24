@@ -1,4 +1,5 @@
 import { normalizeArabic } from './content-index.mjs'
+import { getBotMessages } from './bot-messages.mjs'
 
 /**
  * قواعد أدب البوت — طبقةٌ فوق البوابة، لا بديلٌ عنها.
@@ -38,10 +39,13 @@ export function beautify(text = '') {
 }
 
 export function sign(text, { skip = false } = {}) {
+  /* التوقيع قابلٌ للتحرير من اللوحة؛ البديل المضمّن هو BOT_SIGNATURE نفسه فلا
+     يتغيّر السلوك حين يغيب Firestore. */
+  const signature = getBotMessages().signature || BOT_SIGNATURE
   const body = beautify(String(text || '').trim())
   if (!body || skip) return body
-  if (body.includes(BOT_SIGNATURE)) return body
-  return `${body}\n\n${BOT_SIGNATURE}`
+  if (body.includes(signature)) return body
+  return `${body}\n\n${signature}`
 }
 
 /* ═══ ٢) التشغيل الدائم ═══ */

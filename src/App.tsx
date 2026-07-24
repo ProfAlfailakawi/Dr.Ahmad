@@ -24,6 +24,7 @@ const CV = lazy(() => import('./pages/CV'))
 const Impact = lazy(() => import('./pages/Impact'))
 const CvFile = lazy(() => import('./pages/CvFile'))
 const Contact = lazy(() => import('./pages/Contact'))
+const Card = lazy(() => import('./pages/Card'))
 const BookDetail = lazy(() => import('./pages/BookDetail'))
 const ArticleDetail = lazy(() => import('./pages/ArticleDetail'))
 const Curated = lazy(() => import('./pages/Curated'))
@@ -187,6 +188,7 @@ function AnimatedRoutes() {
         <Route path="/cv/impact" element={<Navigate to="/impact" replace />} />
         <Route path="/cv-file/:kind" element={<CvFile />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/card" element={<Card />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfUse />} />
         <Route path="/data-deletion" element={<DataDeletion />} />

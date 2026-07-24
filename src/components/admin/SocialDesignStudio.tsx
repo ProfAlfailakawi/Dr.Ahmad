@@ -25,9 +25,11 @@ import {
   downloadSocialCampaignRaster,
   printSocialCampaignPdf,
   renderCompositionSvg,
+  infographicVariantOf,
   setRenderPreferences,
 } from '../../lib/social-design-renderer'
-import { type LayoutFamilyId, type StudioCommandParse, type PaletteId, type PlanContent, type PlanOverlay, parseStudioCommand, critiqueCompositionPlan, PALETTES } from '../../lib/social-design-engine'
+import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, parseStudioCommand, critiqueCompositionPlan, predictEngagement, PALETTES } from '../../lib/social-design-engine'
+import { extractVisualDnaFromFile, type VisualDna } from '../../lib/visual-dna'
 import { downloadDesignVideo, motionSupported, type MotionStyle } from '../../lib/design-motion'
 import { currentSeason } from '../../lib/seasons'
 import { getDb } from '../../lib/firebase'
@@ -37,6 +39,14 @@ const card = 'rounded-[1.75rem] border border-hair bg-paper p-5 shadow-sm md:p-7
 const input = 'w-full rounded-2xl border border-hair bg-canvas px-4 py-3 text-[.88rem] text-ink outline-none transition focus:border-accent'
 const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50'
 const ghost = 'rounded-full border border-hair bg-canvas px-4 py-2 text-[.76rem] font-semibold text-soft transition hover:border-accent hover:text-accent disabled:opacity-50'
+// الاتجاهات الفنية الخمسة للإنفوجرافيك — لاختيارها يدوياً في المحرر.
+const INFO_VARIANTS: { id: InfographicVariantId; label: string }[] = [
+  { id: 'rail', label: 'السكة' },
+  { id: 'ordinal', label: 'الأرقام' },
+  { id: 'cards', label: 'البطاقات' },
+  { id: 'timeline', label: 'المسار' },
+  { id: 'ring', label: 'الحلقة' },
+]
 const HISTORY_KEY = 'dr-ahmad-social-design-history-v1'
 const SAVED_KEY = 'dr-ahmad-social-design-saved-v1'
 const TASTE_KEY = 'dr-ahmad-social-design-taste-v1'
@@ -273,6 +283,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [videoBusy, setVideoBusy] = useState('')
   const [videoProgress, setVideoProgress] = useState(0)
   const [qualityThreshold, setQualityThreshold] = useState(() => Number(localStorage.getItem(QUALITY_THRESHOLD_KEY) || 82))
+  /* البصمة البصرية: لوحةٌ مستخرجةٌ من صورةٍ محلية تكسو كل الاتجاهات الحالية
+     والقادمة حتى تُزال — بلا خدمةٍ خارجية ولا رفعٍ لأي خادم. */
+  const [dna, setDna] = useState<VisualDna | null>(null)
+  const [dnaBusy, setDnaBusy] = useState(false)
   const textRef = useRef<HTMLTextAreaElement | null>(null)
 
   /* ختم الهوية ولمسة الموسم: تفضيلان يسريان على المعاينة والتصدير معاً،
@@ -280,6 +294,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [sealOn, setSealOn] = useState(() => { try { return localStorage.getItem(SEAL_KEY) === '1' } catch { return false } })
   const [seasonalOn, setSeasonalOn] = useState(() => { try { return localStorage.getItem(SEASONAL_KEY) !== '0' } catch { return true } })
   const activeSeason = useMemo(() => currentSeason(), [])
+  // مختبر الأداء: تنبّؤ التفاعل للتصميم المختار — يُحسب محلياً عند كل تغيير.
+  const forecast = useMemo(() => (selected ? predictEngagement(selected) : null), [selected])
   // أثناء الرسم لا بعده: المعاينات تقرأ التفضيل في نفس الدورة التي تغيّر فيها
   useMemo(() => setRenderPreferences({ seal: sealOn, seasonal: seasonalOn && Boolean(activeSeason) }), [sealOn, seasonalOn, activeSeason])
   useEffect(() => {
@@ -356,9 +372,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     })
     setGeneration(nextGeneration)
     localStorage.setItem('dr-ahmad-social-design-generated-count', String(Number(localStorage.getItem('dr-ahmad-social-design-generated-count') || 0) + result.generation.requestedCount))
-    setPlans(result.plans)
+    // البصمة البصرية القائمة تكسو الدفعة الجديدة أيضاً، ويعيد الناقد حكمه عليها.
+    const finalPlans = dna
+      ? result.plans.map((plan) => { const skinned = { ...plan, paletteOverride: dna.palette }; return { ...skinned, quality: critiqueCompositionPlan(skinned, result.plans) } })
+      : result.plans
+    setPlans(finalPlans)
     setSelected(null)
-    remember(result.plans)
+    remember(finalPlans)
     setNotice(result.generation.warnings[0] || `فحص الناقد ثمانية اتجاهات داخلية وعرض أقوى ${result.plans.length} فقط.`)
   }
   generateRef.current = () => generate()
@@ -418,7 +438,26 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     syncPlanEverywhere(requalified)
   }
   const editContent = (patch: Partial<PlanContent>) => editPlan((plan) => ({ ...plan, content: { ...plan.content, ...patch } }))
-  const editPalette = (palette: PaletteId) => editPlan((plan) => ({ ...plan, palette }))
+  // اختيار لوحة هوية بنقرة يرفع البصمة البصرية عن هذا التصميم (لا يتزاحمان).
+  const editPalette = (palette: PaletteId) => editPlan((plan) => ({ ...plan, palette, paletteOverride: undefined }))
+
+  /* ═══ البصمة البصرية: استخراج لوحةٍ من صورةٍ ثم كسوةُ كل الاتجاهات بها ═══ */
+  const applyDnaOverride = (palette: Palette | null) => {
+    setPlans((list) => list.map((plan) => { const skinned = { ...plan, paletteOverride: palette ?? undefined }; return { ...skinned, quality: critiqueCompositionPlan(skinned, list.filter((peer) => peer.id !== plan.id)) } }))
+    setSelected((current) => { if (!current) return current; const skinned = { ...current, paletteOverride: palette ?? undefined }; return { ...skinned, quality: critiqueCompositionPlan(skinned) } })
+  }
+  const runVisualDna = async (file: File) => {
+    setDnaBusy(true)
+    try {
+      const result = await extractVisualDnaFromFile(file)
+      if (!result) { setNotice('تعذّرت قراءة الصورة — جرّب صورة أخرى (PNG أو JPG).'); return }
+      setDna(result)
+      applyDnaOverride(result.palette)
+      setNotice('استُخرجت البصمة البصرية وكست كل الاتجاهات — والناقد أعاد حكمه. أزلها متى شئت.')
+    } catch { setNotice('تعذّر استخراج البصمة البصرية الآن.') }
+    finally { setDnaBusy(false) }
+  }
+  const clearVisualDna = () => { setDna(null); applyDnaOverride(null); setNotice('أُزيلت البصمة البصرية وعادت اللوحات المختارة.') }
   const undoEdit = () => {
     if (!selected || !editUndo.length) return
     const previous = editUndo[editUndo.length - 1]
@@ -733,6 +772,18 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  /* البصمة البصرية القادمة من مختبر الصور: نلتقطها عند الفتح فتلبسها كل دفعة تُولَّد. */
+  useEffect(() => {
+    let raw = ''
+    try { raw = localStorage.getItem('studio-dna-palette') || ''; if (raw) localStorage.removeItem('studio-dna-palette') } catch { /* noop */ }
+    if (!raw) return
+    try {
+      const seed = JSON.parse(raw) as VisualDna
+      if (seed?.palette?.background) { setDna(seed); applyDnaOverride(seed.palette); setNotice('وصلت البصمة البصرية من مختبر الصور — كل تصميمٍ ستولّده سيلبس ألوان صورتك.') }
+    } catch { /* بصمة تالفة: نتجاهلها */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   return (
     <div className="grid gap-5">
       <section className={`${card} overflow-hidden`}>
@@ -964,6 +1015,27 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               </div>
               <div className="grid content-start gap-4 pb-6 lg:max-h-full lg:overflow-y-auto lg:pl-1">
                 <section className="rounded-2xl border border-accent/30 bg-accent/[.09] p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">الناقد البصري الداخلي</p><p className="mt-1 text-[.78rem] text-ink/70">قرأه على الهاتف قبل أن يعرضه لك.</p></div><strong className="font-display text-3xl text-accent">{selected.quality?.score || 0}٪</strong></div><div className="mt-3 flex flex-wrap gap-2">{selected.quality?.strengths.map((item) => <span key={item} className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.66rem] font-medium text-ink">✓ {item}</span>)}</div>{selected.quality?.issues.length ? <p className="mt-3 text-[.72rem] leading-relaxed text-ink/80">{selected.quality.issues.join(' · ')}</p> : null}{selected.rationale?.length ? <div className="mt-4 rounded-xl border border-hair bg-paper/70 p-3"><p className="text-[.64rem] font-bold text-accent">قراءة المخرج الفنّي</p><ul className="mt-2 grid gap-1">{selected.rationale.slice(0, 3).map((line) => <li key={line} className="text-[.72rem] leading-relaxed text-ink/85">• {line}</li>)}</ul></div> : null}</section>
+                {/* مختبر الأداء (أ-٣): يتنبّأ بقوة التوقّف والتفاعل — لا يكرّر الناقد (الجودة) بل يكمّله */}
+                {forecast && (
+                  <section className="rounded-2xl border border-hair bg-canvas p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div><p className="text-[.7rem] font-bold text-accent">مختبر الأداء · تنبّؤ التفاعل</p><p className="mt-1 text-[.72rem] text-ink/60">يقيس قوة التوقّف والتفاعل — لا جودة التصميم.</p></div>
+                      <strong className="font-display text-3xl text-accent">{forecast.score}٪</strong>
+                    </div>
+                    <div className="mt-3 grid gap-1.5">
+                      {forecast.signals.map((signal) => (
+                        <div key={signal.id} className="flex items-center gap-2">
+                          <span className="w-28 shrink-0 text-[.66rem] text-soft">{signal.label}</span>
+                          <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-hair/60"><span className={`block h-full rounded-full ${signal.score >= 70 ? 'bg-accent' : 'bg-accent/40'}`} style={{ width: `${signal.score}%` }} /></span>
+                          <span className="w-9 shrink-0 text-left text-[.64rem] font-semibold tabular-nums text-ink/70">{signal.score}٪</span>
+                        </div>
+                      ))}
+                    </div>
+                    {forecast.tips.length
+                      ? <ul className="mt-3 grid gap-1">{forecast.tips.slice(0, 2).map((tip) => <li key={tip} className="text-[.7rem] leading-relaxed text-ink/75">↑ {tip}</li>)}</ul>
+                      : <p className="mt-3 text-[.7rem] text-ink/70">{forecast.highlights.length ? `قويٌّ في: ${forecast.highlights.join(' · ')}.` : 'إشاراته متوازنة — جاهزٌ للنشر.'}</p>}
+                  </section>
+                )}
                 {/* الطبقات الحرة بالسحب (أمر الكمال المطلق) */}
                 <section className="rounded-2xl border border-hair bg-canvas p-4">
                   <div className="flex items-center justify-between gap-3">
@@ -1050,6 +1122,35 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                       })}
                     </div>
                   </div>
+                  {/* البصمة البصرية: ألوانٌ من صورة الدكتور تكسو كل الاتجاهات — بلا رفعٍ لأي خادم */}
+                  <div className="mt-3 border-t border-hair pt-3">
+                    <p className="text-[.64rem] font-semibold text-soft">بصمة بصرية — ألوانٌ من صورة تكسو كل الاتجاهات</p>
+                    {dna ? (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                        <span className="flex overflow-hidden rounded-full border border-hair">{dna.swatches.slice(0, 5).map((color, index) => <span key={index} className="h-5 w-5" style={{ background: color }} />)}</span>
+                        <span className="rounded-full border border-accent/30 bg-accent/[.06] px-2.5 py-1 text-[.62rem] font-semibold text-accent">مطبّقة على {plans.length} اتجاه</span>
+                        <button type="button" onClick={clearVisualDna} className="rounded-full border border-hair px-2.5 py-1 text-[.62rem] font-semibold text-soft transition hover:border-accent hover:text-accent">أزل البصمة</button>
+                      </div>
+                    ) : (
+                      <label className={`mt-1.5 inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-dashed border-hair px-3 py-1.5 text-[.66rem] font-semibold text-soft transition hover:border-accent hover:text-accent ${dnaBusy ? 'pointer-events-none opacity-60' : ''}`}>
+                        <input type="file" accept="image/*" className="hidden" disabled={dnaBusy} onChange={(event) => { const file = event.target.files?.[0]; if (file) void runVisualDna(file); event.currentTarget.value = '' }} />
+                        {dnaBusy ? 'يستخرج الألوان…' : '⬆ استخرج ألواناً من صورة'}
+                      </label>
+                    )}
+                  </div>
+                  {/* اتجاه الإنفوجرافيك الفنّي: اختيارٌ يدويّ يتقدّم على الانتقاء التلقائي — يظهر للإنفوجرافيك فقط */}
+                  {selected.layout === 'infographic' && (
+                    <div className="mt-3 border-t border-hair pt-3">
+                      <p className="text-[.64rem] font-semibold text-soft">اتجاه الإنفوجرافيك الفنّي — بنقرة</p>
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {INFO_VARIANTS.map(({ id, label }) => {
+                          const active = (selected.infoVariant || infographicVariantOf(selected)) === id
+                          return <button key={id} type="button" onClick={() => editPlan((plan) => ({ ...plan, infoVariant: id }))} className={`rounded-full px-2.5 py-1 text-[.66rem] font-semibold transition ${active ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{label}</button>
+                        })}
+                        {selected.infoVariant && <button type="button" onClick={() => editPlan((plan) => ({ ...plan, infoVariant: undefined }))} className="rounded-full border border-hair px-2.5 py-1 text-[.66rem] font-semibold text-soft transition hover:border-accent hover:text-accent">تلقائي</button>}
+                      </div>
+                    </div>
+                  )}
                 </section>
                 <section className="rounded-2xl border border-hair bg-canvas p-4">
                   <p className="text-[.7rem] font-bold text-accent">أقفال التعديل</p>

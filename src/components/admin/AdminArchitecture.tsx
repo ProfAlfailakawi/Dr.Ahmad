@@ -28,6 +28,7 @@ export type AdminTab =
   | 'pronunciation'
   | 'cv'
   | 'whatsapp'
+  | 'bot-messages'
   | 'monitor'
 
 export type AdminArea = 'system' | 'publishing' | 'library' | 'audience'
@@ -75,6 +76,7 @@ export const ADMIN_GROUPS: NavGroup[] = [
     area: 'audience', label: 'الجمهور', icon: '◎', items: [
       { tab: 'inbox', label: 'الرسائل', note: 'طلبات التواصل والتعاون' },
       { tab: 'whatsapp', label: 'مساعد واتساب', note: 'البوت الذي يخاطب جمهورك' },
+      { tab: 'bot-messages', label: 'رسائل البوت', note: 'حرّر ما يقوله البوت بلا كود' },
       { tab: 'analytics', label: 'التحليلات', note: 'المشاهدات ورحلة الزائر' },
     ],
   },

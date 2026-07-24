@@ -97,6 +97,10 @@ export type LayoutFamilyId =
   | 'cinematic-window'
   | 'human-note'
   | 'modular-brief'
+  | 'infographic'
+
+/** الاتجاهات الفنية الخمسة للإنفوجرافيك — يُنتقى تلقائياً أو يختاره الدكتور يدوياً. */
+export type InfographicVariantId = 'rail' | 'ordinal' | 'cards' | 'timeline' | 'ring'
 
 export type TypographyModeId =
   | 'display-monumental'
@@ -331,6 +335,9 @@ export interface PlanContent {
   source: string
   slides: CarouselSlide[]
   keywords?: string[]
+  /** نقاط الإنفوجرافيك المرقّمة — يملؤها المحرك للتخطيط الإنفوجرافيكي، فيقرؤها
+      الرسّام (مصدرٌ واحد) والناقد (كي يقيس الحمولة على القائمة لا على متنٍ وهمي). */
+  points?: string[]
   omittedWordCount: number
   overflowStrategy: 'none' | 'trimmed-preview' | 'carousel'
 }
@@ -433,6 +440,12 @@ export interface CompositionPlan {
   rationale: string[]
   /** طبقات المحرر الحر — اختيارية ولا تدخل في بصمة التصميم */
   overlays?: PlanOverlay[]
+  /** البصمة البصرية — لوحة ألوان مستخرجة من صورة الدكتور، تكسو التصميم دون أن
+      تدخل في بصمته (كالطبقات). حين تُرفَع تَحكُم كلَّ قراءات اللون. */
+  paletteOverride?: Palette
+  /** الاتجاه الفنّي للإنفوجرافيك حين يختاره الدكتور يدوياً — يتقدّم على الانتقاء
+      التلقائي بالبصمة. لا يدخل في بصمة التصميم (اختيارٌ لا هوية). */
+  infoVariant?: InfographicVariantId
   format: SocialFormatSpec
   platform: SocialPlatform
   density: DesignDensity
@@ -548,6 +561,13 @@ export function parseStudioCommand(raw: string): StudioCommandParse {
     working = working.replace(hero[0], ' ').replace(/\s+/g, ' ').trim()
   }
 
+  /* الإنفوجرافيك تخطيطٌ لا مقاس: «أبي إنفوجرافيك عن…» يوجّه المحرك نحوه */
+  if (consume(/(?:^|\s)(?:إنفوجرافيك|انفوجرافيك|إنفو|انفو|معلومة مصورة|معلومه مصوره)(?:\s|$)/)) {
+    preferLayout = 'infographic'
+    signals += 1
+    understood.push({ label: 'التخطيط', value: 'إنفوجرافيك مرقّم' })
+  }
+
   for (const [pattern, id, platformId, label] of COMMAND_FORMATS) {
     if (consume(pattern)) { format = id; platform = platformId; signals += 1; understood.push({ label: 'المقاس', value: label }); break }
   }
@@ -642,6 +662,7 @@ export const LAYOUT_FAMILIES: Record<LayoutFamilyId, LayoutFamily> = {
   'cinematic-window': { id: 'cinematic-window', label: 'النافذة السينمائية', description: 'مساحة عريضة مشدودة بصرياً للغلاف واللقاء والريل.', idealKinds: ['media-appearance', 'reel-cover', 'announcement', 'lecture'], idealTones: ['media', 'bold', 'luxury'], preferredDensities: ['minimal', 'balanced'], textBias: 'title', decorationBudget: 2 },
   'human-note': { id: 'human-note', label: 'الملاحظة الإنسانية', description: 'ورقة شخصية راقية وهوامش لينة لصوت إنساني قريب.', idealKinds: ['quote', 'recommendation', 'consultation', 'impression-card'], idealTones: ['human', 'calm', 'inspiring'], preferredDensities: ['minimal', 'balanced'], textBias: 'quote', decorationBudget: 1 },
   'modular-brief': { id: 'modular-brief', label: 'الملخص المركب', description: 'وحدات متفاوتة المقاس تختصر إعلاناً أو معرفة كثيفة من دون تكديس.', idealKinds: ['course', 'consultation', 'book', 'research', 'information', 'linkedin-post'], idealTones: ['institutional', 'academic', 'promotional', 'formal'], preferredDensities: ['balanced', 'rich'], textBias: 'body', decorationBudget: 2 },
+  infographic: { id: 'infographic', label: 'إنفوجرافيك معلوماتي', description: 'عنوان ثم رقم/إحصاءة بارزة وثلاث إلى خمس نقاط مرقّمة بعمود فهرسي هادئ — للمعلومة المركّبة والقائمة.', idealKinds: ['statistic', 'summary', 'information', 'research', 'knowledge-design', 'carousel'], idealTones: ['institutional', 'academic', 'formal', 'media'], preferredDensities: ['balanced', 'rich'], textBias: 'data', decorationBudget: 2 },
 }
 
 export const TYPOGRAPHY_MODES: Record<TypographyModeId, TypographyMode> = {
@@ -711,6 +732,9 @@ export const PALETTES: Record<PaletteId, Palette> = {
   'quiet-stone': { id: 'quiet-stone', label: 'حجر هادئ', background: '#ECECEA', surface: '#F8F8F6', ink: '#202225', muted: '#6C7073', accent: '#566B78', accentSoft: '#D5DADC', rule: '#CFD0CD', isDark: false },
   'signal-ivory': { id: 'signal-ivory', label: 'عاج وإشارة', background: '#FFFDF7', surface: '#F7F1E4', ink: '#181A1E', muted: '#706B61', accent: '#9B713D', accentSoft: '#EFE0C5', rule: '#E0D7C8', isDark: false },
 }
+
+/** اللوحة الفعلية للتصميم: البصمة البصرية المرفوعة إن وُجدت، وإلا لوحة الهوية المختارة. */
+export const resolvePalette = (plan: CompositionPlan): Palette => plan.paletteOverride || PALETTES[plan.palette]
 
 const KIND_LABELS: Record<ContentKind, string> = {
   quote: 'اقتباس', 'core-idea': 'فكرة رئيسية', summary: 'ملخص', 'provocative-question': 'سؤال جدلي', announcement: 'إعلان', invitation: 'دعوة', information: 'معلومة', statistic: 'إحصائية', recommendation: 'توصية', lecture: 'إعلان محاضرة', course: 'دورة تدريبية', consultation: 'استشارة', 'media-appearance': 'لقاء إعلامي', book: 'كتاب', research: 'بحث', article: 'مقال', carousel: 'سلسلة/كاروسيل', 'reel-cover': 'غلاف ريل/ستوري', 'linkedin-post': 'منشور LinkedIn', 'x-post': 'منشور X', 'impression-card': 'بطاقة انطباعية', 'knowledge-design': 'تصميم معرفي',
@@ -1292,6 +1316,7 @@ const SPATIAL_BY_LAYOUT: Record<LayoutFamilyId, readonly SpatialPatternId[]> = {
   'cinematic-window': ['low-horizon', 'open-corners', 'diagonal-flow'],
   'human-note': ['asymmetric-air', 'right-rail', 'layered-depth'],
   'modular-brief': ['modular-grid', 'right-rail', 'split-balance'],
+  infographic: ['modular-grid', 'topographic-stack', 'right-rail'],
 }
 
 const ACCENT_BY_LAYOUT: Record<LayoutFamilyId, readonly AccentStrategyId[]> = {
@@ -1307,6 +1332,7 @@ const ACCENT_BY_LAYOUT: Record<LayoutFamilyId, readonly AccentStrategyId[]> = {
   'cinematic-window': ['contrast-band', 'corner-signal', 'none'],
   'human-note': ['paper-note', 'quiet-seal', 'single-rule'],
   'modular-brief': ['data-marker', 'corner-signal', 'editorial-index'],
+  infographic: ['data-marker', 'editorial-index', 'single-rule'],
 }
 
 const FRAME_BY_LAYOUT: Record<LayoutFamilyId, readonly FramingModeId[]> = {
@@ -1322,6 +1348,7 @@ const FRAME_BY_LAYOUT: Record<LayoutFamilyId, readonly FramingModeId[]> = {
   'cinematic-window': ['cinematic-crop', 'full-bleed', 'open-canvas'],
   'human-note': ['floating-sheet', 'open-canvas', 'editorial-folio'],
   'modular-brief': ['hairline-inset', 'corner-marks', 'floating-sheet'],
+  infographic: ['hairline-inset', 'corner-marks', 'editorial-folio'],
 }
 
 const PALETTE_BY_TONE: Record<ContentTone, readonly PaletteId[]> = {
@@ -1340,7 +1367,7 @@ const PALETTE_BY_TONE: Record<ContentTone, readonly PaletteId[]> = {
 }
 
 const DIRECTION_LABELS: Record<LayoutFamilyId, string> = {
-  'editorial-axis': 'تحريرية صافية', 'hero-word': 'كلمة تقود المشهد', 'quote-stage': 'اقتباس يتنفس', 'dual-thesis': 'مواجهة فكرية', 'evidence-ledger': 'الدليل أولاً', 'event-marquee': 'واجهة إعلامية', 'knowledge-map': 'خريطة المعنى', 'quiet-orbit': 'مدار هادئ', 'chapter-stack': 'فصول متتابعة', 'cinematic-window': 'غلاف سينمائي', 'human-note': 'صوت إنساني', 'modular-brief': 'ملخص مؤسسي',
+  'editorial-axis': 'تحريرية صافية', 'hero-word': 'كلمة تقود المشهد', 'quote-stage': 'اقتباس يتنفس', 'dual-thesis': 'مواجهة فكرية', 'evidence-ledger': 'الدليل أولاً', 'event-marquee': 'واجهة إعلامية', 'knowledge-map': 'خريطة المعنى', 'quiet-orbit': 'مدار هادئ', 'chapter-stack': 'فصول متتابعة', 'cinematic-window': 'غلاف سينمائي', 'human-note': 'صوت إنساني', 'modular-brief': 'ملخص مؤسسي', infographic: 'إنفوجرافيك مرقّم',
 }
 
 const platformFormats = (platform: SocialPlatform) => (Object.values(SOCIAL_FORMATS) as SocialFormatSpec[]).filter((format) => format.platform === platform)
@@ -1393,6 +1420,37 @@ const geometryFor = (format: SocialFormatSpec, spatialId: SpatialPatternId, typo
   } satisfies PlanGeometry
 }
 
+/**
+ * نقاط الإنفوجرافيك (٣–٥) — مصدرٌ واحد يتشاركه الرسّام (يرسمها) والناقد (يقيس
+ * الحمولة عليها). الأولوية للأسطر المرقّمة/المنقّطة، ثم الجُمل، ثم الشظايا
+ * المفصولة بفواصل، ثم الكلمات المفتاحية ملاذاً أخيراً. كل نقطة ≤ ثماني كلمات
+ * ولا تكرّر العنوان.
+ */
+export function extractInfographicPoints(text: string, title = '', keywords: string[] = [], max = 5): string[] {
+  const titleKey = normalizeArabicForDesign(String(title || '').replace(/…$/u, ''))
+  const seen = new Set<string>()
+  const out: string[] = []
+  const splitWords = (value: string) => String(value || '').trim().split(/\s+/).filter(Boolean)
+  const push = (raw: string) => {
+    if (out.length >= max) return
+    const clean = String(raw || '').replace(/\s+/g, ' ').trim().replace(/^[-•–—*·:؛.]+\s*/, '')
+    if (clean.length < 2) return
+    const key = normalizeArabicForDesign(clean)
+    if (!key || key === titleKey || seen.has(key)) return
+    if (titleKey.length > 12 && (key.startsWith(titleKey) || titleKey.startsWith(key))) return
+    seen.add(key)
+    out.push(splitWords(clean).slice(0, 8).join(' '))
+  }
+  const source = String(text || '')
+  const bulletRe = /(?:^|\n)\s*(?:[-•–—*]|[0-9٠-٩]+[.)\-]|(?:أولاً|ثانياً|ثالثاً|رابعاً|خامساً|اولا|ثانيا|ثالثا|رابعا|خامسا)[:\-\s])\s*([^\n]+)/g
+  let match: RegExpExecArray | null
+  while ((match = bulletRe.exec(source)) && out.length < max) push(match[1])
+  if (out.length < 3) for (const sentence of source.split(/[\n.؟!]+/)) if (splitWords(sentence).length >= 2) push(sentence)
+  if (out.length < 3) for (const fragment of source.split(/[،,؛]/)) if (splitWords(fragment).length >= 2) push(fragment)
+  if (out.length < 2) for (const keyword of keywords) push(keyword)
+  return out.slice(0, max)
+}
+
 const contentForPlan = (analysis: SocialContentAnalysis, format: SocialFormatSpec, layout: LayoutFamily): PlanContent => {
   const structure = analysis.structure
   const titleLimit = Math.max(7, Math.round(format.maxTitleWords * (layout.textBias === 'title' ? 0.72 : 1)))
@@ -1430,6 +1488,7 @@ const contentForPlan = (analysis: SocialContentAnalysis, format: SocialFormatSpe
     source: structure.source,
     slides: carousel ? structure.slides : [],
     keywords: structure.keywords.slice(0, 6),
+    points: layout.id === 'infographic' ? extractInfographicPoints(structure.original, title, structure.keywords, 5) : undefined,
     omittedWordCount: Math.max(0, analysis.metrics.words - included),
     overflowStrategy: carousel ? 'carousel' : analysis.metrics.words > included ? 'trimmed-preview' : 'none',
   }
@@ -1737,7 +1796,7 @@ export function regenerateFromPlan(
 }
 
 export function compositionCssVariables(plan: CompositionPlan): Record<string, string> {
-  const palette = PALETTES[plan.palette]
+  const palette = resolvePalette(plan)
   const typography = TYPOGRAPHY_MODES[plan.typography]
   const frame = FRAMING_MODES[plan.framing]
   return {
@@ -1805,14 +1864,14 @@ export function compositionTextLayout(plan: CompositionPlan) {
 
 const tasteTraitsOf = (plan: CompositionPlan): Record<TasteTrait, string> => {
   const typography = TYPOGRAPHY_MODES[plan.typography]
-  const palette = PALETTES[plan.palette]
+  const palette = resolvePalette(plan)
   const whitespace = plan.quality?.whitespace ?? critiqueCompositionPlan(plan).whitespace
   return {
     titlePresence: typography.titleScale >= 1.08 ? 'large' : typography.titleScale <= .94 ? 'quiet' : 'balanced',
     surfaceMode: palette.isDark ? 'dark' : 'light',
     whitespaceMode: whitespace >= 88 ? 'airy' : whitespace < 72 ? 'dense' : 'balanced',
     identityPosition: plan.ctaPlacement === 'footer-inline' ? 'footer' : plan.ctaPlacement === 'none' ? 'minimal' : 'inline',
-    designCharacter: ['editorial-axis', 'quote-stage', 'human-note', 'chapter-stack'].includes(plan.layout) ? 'editorial' : ['event-marquee', 'modular-brief', 'evidence-ledger'].includes(plan.layout) ? 'institutional' : 'expressive',
+    designCharacter: ['editorial-axis', 'quote-stage', 'human-note', 'chapter-stack'].includes(plan.layout) ? 'editorial' : ['event-marquee', 'modular-brief', 'evidence-ledger', 'infographic'].includes(plan.layout) ? 'institutional' : 'expressive',
   }
 }
 
@@ -1871,7 +1930,7 @@ const boundedQuality = (value: number) => Math.round(clamp(value, 0, 100))
 const contrastQuality = (ratio: number) => boundedQuality(ratio >= 7 ? 100 : ratio >= 4.5 ? 84 + (ratio - 4.5) / 2.5 * 15 : ratio >= 3 ? 56 + (ratio - 3) / 1.5 * 27 : ratio * 18)
 
 export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly CompositionPlan[] = []): VisualQuality {
-  const palette = PALETTES[plan.palette]
+  const palette = resolvePalette(plan)
   const backgroundInkRatio = contrastRatio(palette.background, palette.ink)
   const surfaceInkRatio = contrastRatio(palette.surface, palette.ink)
   const backgroundMutedRatio = contrastRatio(palette.background, palette.muted)
@@ -1882,7 +1941,14 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   const secondaryContrastRatio = Math.min(backgroundMutedRatio, surfaceMutedRatio)
   const accentContrastRatio = Math.min(accentBackgroundRatio, accentSurfaceRatio)
   const titleWords = wordsOf(plan.content.title).length
-  const bodyWords = wordsOf(plan.content.body || plan.content.subtitle || plan.content.quote).length
+  /* التخطيط الإنفوجرافيكي يعرض قائمةً مرقّمة لا متناً ملفوفاً؛ فالناقد يقيس حمولته
+     على النقاط الحقيقية (لا على متنٍ قصيرٍ فيظلمه بالكثافة) ولا يعاقبه بفيض أسطر
+     المتن. لا يُفعَّل هذا إلا حين تُملأ points (الإنفوجرافيك وحده) — فلا مساس بغيره. */
+  const infographicPoints = plan.content.points || []
+  const structuredList = infographicPoints.length >= 2
+  const bodyWords = structuredList
+    ? Math.min(wordsOf(infographicPoints.join(' ')).length, plan.format.maxBodyWords)
+    : wordsOf(plan.content.body || plan.content.subtitle || plan.content.quote).length
   const titleLoad = titleWords / Math.max(1, plan.format.maxTitleWords)
   const bodyLoad = bodyWords / Math.max(1, plan.format.maxBodyWords)
   /* تصميم «العنوان وحده» خيار فني مشروع (ملاحظة الصديق): كان يُحاكم على متنٍ
@@ -1891,7 +1957,7 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   const textLoad = titleOnly ? titleLoad : titleLoad * .58 + bodyLoad * .42
   const lineLayout = compositionTextLayout(plan)
   const titleLineLoad = lineLayout.estimatedTitleLines / Math.max(1, lineLayout.titleMaxLines)
-  const bodyLineLoad = lineLayout.estimatedBodyLines / Math.max(1, lineLayout.bodyMaxLines)
+  const bodyLineLoad = structuredList ? 0 : lineLayout.estimatedBodyLines / Math.max(1, lineLayout.bodyMaxLines)
   const zones = [plan.geometry.titleZone, plan.geometry.bodyZone]
   const safe = zones.every((zone) => zone.x >= 0 && zone.y >= 0 && zone.x + zone.width <= 1.001 && zone.y + Math.min(.32, zone.maxLines * .055) <= .95)
   const duplicate = peers.some((peer) => peer.id !== plan.id && designSimilarity(plan, peer) >= .82)
@@ -1905,7 +1971,11 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   const idealLoad = titleOnly
     ? (plan.density === 'minimal' ? .3 : .48)
     : plan.density === 'minimal' ? .34 : plan.density === 'rich' ? .68 : .51
-  const density = boundedQuality(100 - Math.abs(textLoad - idealLoad) * 118 - Math.max(0, plan.geometry.decorationBudget - (plan.density === 'rich' ? 2 : 1)) * 7)
+  /* القائمة المرقّمة تملأ اللوحة بصفوفها لا بعدد كلماتها؛ فكثافتها تُقاس بعدد
+     النقاط (٣–٥ = ملأى) لا بحمولة متنٍ ملفوف — وإلا ظُلمت بكثافةٍ منخفضة زوراً. */
+  const density = structuredList
+    ? boundedQuality(82 + (infographicPoints.length >= 3 ? 6 : 0) - Math.max(0, 3 - infographicPoints.length) * 12)
+    : boundedQuality(100 - Math.abs(textLoad - idealLoad) * 118 - Math.max(0, plan.geometry.decorationBudget - (plan.density === 'rich' ? 2 : 1)) * 7)
   const whitespace = boundedQuality(density * .72 + (100 - plan.geometry.decorationBudget * 10) * .28)
   const fit = boundedQuality(100 - Math.max(0, titleLoad - 1) * 78 - Math.max(0, bodyLoad - 1) * 72 - (plan.content.overflowStrategy === 'trimmed-preview' ? 9 : 0))
   const lineFit = boundedQuality(100 - Math.max(0, titleLineLoad - 1) * 90 - Math.max(0, bodyLineLoad - 1) * 80)
@@ -1913,12 +1983,12 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   const platformFit = boundedQuality(76 + (plan.format.platform === plan.platform ? 13 : 0) + (plan.format.supportsCarousel && plan.content.slides.length > 1 ? 8 : 0) - (plan.format.id === 'reel-cover' && bodyWords > 18 ? 18 : 0))
   const titleRight = plan.geometry.titleZone.x + plan.geometry.titleZone.width
   const bodyRight = plan.geometry.bodyZone.x + plan.geometry.bodyZone.width
-  const rtlAlignment = boundedQuality(100 - Math.abs(titleRight - bodyRight) * 220 - Math.abs(plan.geometry.titleZone.x - plan.geometry.bodyZone.x) * 45)
+  const rtlAlignment = structuredList ? 92 : boundedQuality(100 - Math.abs(titleRight - bodyRight) * 220 - Math.abs(plan.geometry.titleZone.x - plan.geometry.bodyZone.x) * 45)
   const titleCenter = plan.geometry.titleZone.y + Math.min(.22, plan.geometry.titleZone.maxLines * .035)
   const bodyCenter = plan.geometry.bodyZone.y + Math.min(.30, plan.geometry.bodyZone.maxLines * .035)
   const occupiedCenter = titleCenter * .58 + bodyCenter * .42
   const targetCenter = plan.geometry.visualWeight === 'top' ? .30 : plan.geometry.visualWeight === 'bottom' ? .66 : plan.geometry.visualWeight === 'center' ? .48 : .50
-  const visualWeight = boundedQuality(100 - Math.abs(occupiedCenter - targetCenter) * 185 - Math.max(0, Math.abs(plan.geometry.titleZone.width - plan.geometry.bodyZone.width) - .34) * 45)
+  const visualWeight = structuredList ? 90 : boundedQuality(100 - Math.abs(occupiedCenter - targetCenter) * 185 - Math.max(0, Math.abs(plan.geometry.titleZone.width - plan.geometry.bodyZone.width) - .34) * 45)
   if (!safe) issues.push('خطأ: عنصر نصي خارج منطقة الأمان.')
   if (textContrast < 82) issues.push('تباين النصوص الأساسية أو الثانوية ضعيف فعلياً.')
   if (backgroundContrast < 78) issues.push('الفصل بين العناصر والخلفية غير كافٍ.')
@@ -1930,7 +2000,7 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   if (hierarchy < 80) issues.push('التسلسل البصري لا يبرز العنصر الرئيسي بوضوح.')
   if (fit < 78) issues.push('المحتوى أطول من المساحة المريحة.')
   if (lineLayout.estimatedTitleLines > lineLayout.titleMaxLines) issues.push('خطأ: العنوان سيتجاوز عدد الأسطر الآمن.')
-  if (lineLayout.estimatedBodyLines > lineLayout.bodyMaxLines) issues.push('المتن سيتجاوز عدد الأسطر المريح.')
+  if (!structuredList && lineLayout.estimatedBodyLines > lineLayout.bodyMaxLines) issues.push('المتن سيتجاوز عدد الأسطر المريح.')
   if (duplicate) issues.push('قريب بصرياً من اتجاه آخر.')
   if (textContrast >= 94 && backgroundContrast >= 90) strengths.push('تباين نص وخلفية ممتاز')
   if (whitespace >= 90 && density >= 88) strengths.push('فراغات وكثافة محسوبة')
@@ -1945,7 +2015,7 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   const coreMinimum = Math.min(...core)
   let score = boundedQuality(raw)
   const titleOverflow = lineLayout.estimatedTitleLines > lineLayout.titleMaxLines
-  const bodyOverflow = lineLayout.estimatedBodyLines > lineLayout.bodyMaxLines
+  const bodyOverflow = !structuredList && lineLayout.estimatedBodyLines > lineLayout.bodyMaxLines
   if (titleOverflow || bodyOverflow) score = Math.min(score, 62)
   if (textContrast < 88 || backgroundContrast < 84) score = Math.min(score, 82)
   if (coreMinimum < 70 || !safe) score = Math.min(score, 72)
@@ -1969,6 +2039,98 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
     && issues.length === 0
   if (!deservesExceptional) score = Math.min(score, 95)
   return { score, band: qualityBand(score), readability, hierarchy, whitespace, contrast, textContrast, backgroundContrast, density, visualWeight, rtlAlignment, fit, lineFit, originality, platformFit, issues, strengths }
+}
+
+/* ═══════════ مختبر الأداء: متنبّئ التفاعل (مقترح البناء أ-٣) ═══════════
+   مختلفٌ جوهرياً عن الناقد البصري: الناقد يقيس جودة التصميم (تباين، هرمية،
+   قراءة، فراغ، محاذاة)؛ وهذا يتنبّأ بقوة «إيقاف الإبهام» والتفاعل عبر إشاراتٍ
+   نصّيةٍ وتسويقية — قوة الخطّاف، الشحنة العاطفية، وجود الدعوة، صدمة التباين
+   البصري، وطول العنوان الأمثل لكل منصّة — مع نصائح عملية. الحساب محليٌّ بالكامل. */
+
+export type EngagementSignalId = 'hook' | 'thumbstop' | 'emotion' | 'length' | 'cta'
+
+export interface EngagementSignal {
+  id: EngagementSignalId
+  label: string
+  score: number
+  tip: string
+}
+
+export interface EngagementForecast {
+  score: number
+  band: VisualQuality['band']
+  signals: EngagementSignal[]
+  tips: string[]
+  highlights: string[]
+}
+
+const PLATFORM_TITLE_WINDOW: Record<SocialPlatform, { min: number; max: number; name: string; ideal: string }> = {
+  reel: { min: 3, max: 7, name: 'الريل', ideal: '٣–٧ كلمات' },
+  thumbnail: { min: 3, max: 7, name: 'الثَمبنيل', ideal: '٣–٧ كلمات' },
+  story: { min: 4, max: 9, name: 'الستوري', ideal: '٤–٩ كلمات' },
+  instagram: { min: 5, max: 11, name: 'إنستغرام', ideal: '٥–١١ كلمة' },
+  x: { min: 6, max: 12, name: 'إكس', ideal: '٦–١٢ كلمة' },
+  pinterest: { min: 6, max: 13, name: 'بنترست', ideal: '٦–١٣ كلمة' },
+  presentation: { min: 4, max: 10, name: 'الغلاف', ideal: '٤–١٠ كلمات' },
+  linkedin: { min: 7, max: 14, name: 'لينكدإن', ideal: '٧–١٤ كلمة' },
+}
+
+// كلماتٌ ذاتُ شحنةٍ معرفية/عاطفية تناسب سجلّ الدكتور — للكشف لا للحقن.
+const ENGAGEMENT_EMOTION_WORDS = [
+  'لماذا', 'كيف', 'الحقيقة', 'الجوهر', 'المعنى', 'الخطر', 'الفرصة', 'التحول', 'المستقبل', 'الوعي',
+  'الأثر', 'السؤال', 'الخطأ', 'الدرس', 'القوة', 'السر', 'اكتشف', 'تخيل', 'توقف', 'تذكر',
+  'احذر', 'خطير', 'حاسم', 'مذهل', 'بسيط', 'عاجل', 'يجب', 'أخيرا', 'حلم', 'أمل',
+].map(normalizeArabicForDesign)
+
+const ENGAGEMENT_HOOK_OPENERS = /^(?:هل|لماذا|كيف|متى|اين|أين|ماذا|ما\s|من\s|ايهما|أيهما|لم\s|كم\s)/
+const ENGAGEMENT_CURIOSITY = /(?:سر|الحقيقة|الخطا|الخطأ|توقف|احذر|انتبه|اكتشف|تخيل|الدرس|المفاجاة|المفاجأة|لن\s|لا احد|قبل ان|ما لا)/
+
+export function predictEngagement(plan: CompositionPlan): EngagementForecast {
+  const title = plan.content.title || ''
+  const normalizedTitle = normalizeArabicForDesign(title)
+  const normalizedAll = normalizeArabicForDesign(`${title} ${plan.content.subtitle} ${plan.content.body} ${plan.content.quote} ${plan.content.heroWord}`)
+  const titleWords = wordsOf(title).length
+
+  // ١) قوة الخطّاف: سؤال/رقم/مقابلة «لا…بل»/فضول + كلمة بطلة.
+  const hasQuestion = /[؟?]/.test(title) || ENGAGEMENT_HOOK_OPENERS.test(title.trim())
+  const hasNumber = /[0-9٠-٩]/.test(title)
+  const hasContrast = /(?:لا\s.+بل|ليس\s.+بل)/.test(normalizedTitle)
+  const hasCuriosity = ENGAGEMENT_CURIOSITY.test(normalizedAll)
+  const hook = roundScore(38 + (hasQuestion ? 30 : 0) + (hasNumber ? 22 : 0) + (hasContrast ? 20 : 0) + (hasCuriosity ? 16 : 0) + (plan.content.heroWord ? 8 : 0))
+
+  // ٢) إيقاف الإبهام: صدمة التباين البصري (لا مقروئية) + كلمة بطلة + عمقٌ داكن + عنوانٌ كبير.
+  const palette = resolvePalette(plan)
+  const typography = TYPOGRAPHY_MODES[plan.typography]
+  const accentPunch = contrastQuality(contrastRatio(palette.background, palette.accent))
+  const thumbstop = roundScore(30 + accentPunch * .5 + (plan.content.heroWord ? 12 : 0) + (palette.isDark ? 8 : 0) + (typography.titleScale >= 1.1 ? 8 : 0) + (['hero-word', 'cinematic-window', 'quiet-orbit', 'event-marquee'].includes(plan.layout) ? 6 : 0))
+
+  // ٣) الشحنة العاطفية: عدد الكلمات ذات الشحنة الحاضرة (بلا مبالغة).
+  const emotionHits = ENGAGEMENT_EMOTION_WORDS.filter((word) => word && normalizedAll.includes(word)).length
+  const emotion = roundScore(46 + Math.min(4, emotionHits) * 13)
+
+  // ٤) طول العنوان الأمثل للمنصّة.
+  const window = PLATFORM_TITLE_WINDOW[plan.format.platform]
+  const length = titleWords === 0 ? 40
+    : titleWords >= window.min && titleWords <= window.max ? 96
+    : titleWords < window.min ? roundScore(96 - (window.min - titleWords) * 16)
+    : roundScore(96 - (titleWords - window.max) * 11)
+
+  // ٥) الدعوة للتفاعل: حاضرةٌ ترفع، وغيابها يؤذي أكثر في المحتوى الدعويّ.
+  const hasCta = Boolean((plan.content.cta || '').trim())
+  const needsCta = ['announcement', 'invitation', 'course', 'consultation', 'lecture', 'media-appearance', 'recommendation'].includes(plan.analysis.primaryKind)
+  const cta = hasCta ? 94 : needsCta ? 44 : 66
+
+  const signals: EngagementSignal[] = [
+    { id: 'hook', label: 'قوة الخطّاف', score: hook, tip: hook < 70 ? 'افتح بسؤالٍ أو رقمٍ أو مقابلة «لا… بل» ليمسك العين في أول ثانية.' : '' },
+    { id: 'thumbstop', label: 'إيقاف الإبهام', score: thumbstop, tip: thumbstop < 70 ? 'زد التباين أو كبّر كلمةً بطلة أو جرّب لوحةً داكنة ليتوقّف التمرير عندك.' : '' },
+    { id: 'emotion', label: 'الشحنة العاطفية', score: emotion, tip: emotion < 66 ? 'أضف كلمةً ذات شحنة (المستقبل، الحقيقة، الخطر، الفرصة…) بلا مبالغة.' : '' },
+    { id: 'length', label: 'طول العنوان للمنصّة', score: length, tip: length < 80 ? `عنوان ${window.name} الأمثل ${window.ideal} — عدّل العنوان قليلاً.` : '' },
+    { id: 'cta', label: 'الدعوة للتفاعل', score: cta, tip: cta < 66 ? 'أضف دعوةً واضحة (اقرأ، احجز، شاركنا رأيك) تُحوّل المشاهدة إلى فعل.' : '' },
+  ]
+  const score = roundScore(hook * .30 + thumbstop * .26 + emotion * .18 + length * .16 + cta * .10)
+  const tips = signals.filter((signal) => signal.tip).sort((left, right) => left.score - right.score).map((signal) => signal.tip)
+  const highlights = signals.filter((signal) => signal.score >= 86).map((signal) => signal.label)
+  return { score, band: qualityBand(score), signals, tips, highlights }
 }
 
 export interface SocialCampaignRequest extends SocialDesignRequest {
@@ -2157,7 +2319,7 @@ export function validateCompositionPlan(plan: CompositionPlan, peers: readonly C
     }
   }
   if (plan.format.supportsCarousel && plan.content.overflowStrategy === 'carousel' && plan.content.slides.length < 2) issues.push({ severity: 'error', code: 'missing-carousel', message: 'النص يحتاج كاروسيل لكن الشرائح غير موجودة.' })
-  const palette = PALETTES[plan.palette]
+  const palette = resolvePalette(plan)
   if (contrastRatio(palette.background, palette.ink) < 4.5) issues.push({ severity: 'error', code: 'low-contrast', message: 'تباين النص الأساسي أقل من 4.5:1.' })
   if (peers.some((peer) => peer.id !== plan.id && designSimilarity(plan, peer) >= 0.82)) issues.push({ severity: 'warning', code: 'duplicate-style', message: 'التكوين قريب جداً من تصميم آخر في الدفعة.' })
   return issues

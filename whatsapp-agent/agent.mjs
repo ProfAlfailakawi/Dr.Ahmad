@@ -10,6 +10,7 @@ import { createReminder } from './reminders.mjs'
 import { startLocalBridge } from './bridge.mjs'
 import { addContactByPhone, addMembers, absorbContacts, importContacts, listContactsPage, createList, deleteList, ensureAudienceSchema, jidOf, listContacts, listLists, listMembers, personalize, previewFor, removeMember, renameList, resolveAudience, setNickname, vocativeOf } from './audience.mjs'
 import { ensureBotRulesSchema, releaseContentReservation, rememberSent, reserveContent, sign } from './bot-rules.mjs'
+import { refreshBotMessages } from './bot-messages.mjs'
 
 function safeText(text) { return String(text || '').slice(0, MAX_MESSAGE_CHARS).trim() }
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -466,6 +467,10 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
       /* لقطة قاعدة البيانات: فحص يومي، تنفيذ أسبوعي */
       state.timers.add(setInterval(() => void maybeSnapshotDatabase(), 24 * 60 * 60 * 1000))
       state.timers.add(setTimeout(() => void maybeSnapshotDatabase(), 150_000))
+      /* قوالب رسائل البوت (أمر الدكتور): تُجلب من Firestore أول الإقلاع ثم كل ٥
+         دقائق، مع بدائلَ مضمّنةٍ تحمي من أي انقطاع. لا تُجلب في الاختبار الوهمي. */
+      void refreshBotMessages({ force: true })
+      state.timers.add(setInterval(() => void refreshBotMessages(), 5 * 60 * 1000))
     }
     return db.state()
   }

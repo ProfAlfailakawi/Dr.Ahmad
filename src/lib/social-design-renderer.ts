@@ -11,10 +11,12 @@
 
 import {
   FRAMING_MODES,
-  PALETTES,
   TYPOGRAPHY_MODES,
   compositionTextLayout,
+  extractInfographicPoints,
+  resolvePalette,
   type CompositionPlan,
+  type InfographicVariantId,
   type Palette,
   type SocialCampaign,
 } from './social-design-engine'
@@ -56,6 +58,11 @@ const words = (value: string) => String(value || '').trim().split(/\s+/).filter(
 const hasArabic = (value: string) => /[؀-ۿ]/.test(value)
 const clamp = (value: number, minimum: number, maximum: number) => Math.max(minimum, Math.min(maximum, value))
 const round = (value: number) => Math.round(value * 100) / 100
+
+/** بصمةٌ رقميةٌ ثابتةٌ من نصّ — لاختيار متغيّرٍ فنّيٍّ يتنوّع بين الاتجاهات والدفعات بلا عشوائية. */
+const hashString = (value: string) => { let h = 2166136261; for (let i = 0; i < value.length; i += 1) { h ^= value.charCodeAt(i); h = Math.imul(h, 16777619) } return h >>> 0 }
+/** تحويل الأرقام العربية-الهندية إلى غربية (لقراءة قيمة الإحصاءة عدداً). */
+const toWesternDigits = (value: string) => String(value || '').replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
 
 // سياسة الموقع المعتمدة أرقام غربية في كل النصوص (WesternDigitsGuard يفرضها في
 // المعاينة)؛ نلتزم بها هنا أيضاً كي يتطابق ملف التصدير مع ما يراه الدكتور.
@@ -296,7 +303,7 @@ interface Scene {
 }
 
 function sceneOf(plan: CompositionPlan): Scene {
-  const palette = PALETTES[plan.palette]
+  const palette = resolvePalette(plan)
   const typography = TYPOGRAPHY_MODES[plan.typography]
   const w = plan.format.width
   const h = plan.format.height
@@ -569,6 +576,19 @@ function cleanEventTitle(title: string, timing: string[]) {
     .replace(/\s*[—–\-،,]\s*(?=[—–\-،,])/gu, '')
     .trim()
   return clean.length >= 6 ? clean : title
+}
+
+/**
+ * استخراج ٣–٥ نقاط قصيرة للإنفوجرافيك: الأسطر المرقّمة/المنقّطة أولاً، ثم الجُمل
+ * الكاملة، ثم الشظايا المفصولة بفواصل، ثم الكلمات المفتاحية ملاذاً أخيراً. كل نقطة
+ * تُقصَّر إلى ثماني كلمات ولا تكرّر العنوان — كي تبقى القائمة نظيفة بلا حشو.
+ */
+function extractPoints(plan: CompositionPlan, max = 5): string[] {
+  /* المصدر الواحد: النقاط التي ملأها المحرك (يراها الناقد أيضاً). عند غيابها
+     (خططٌ مُنشأةٌ يدوياً) نستخرجها بالدالة نفسها كي لا يختلف الرسم عن الحكم. */
+  const provided = plan.content.points
+  if (provided && provided.length) return provided.slice(0, max)
+  return extractInfographicPoints(plan.content.original || `${plan.content.title} ${plan.content.body}`, plan.content.title, (plan.content as { keywords?: string[] }).keywords || [], max)
 }
 
 /**
@@ -1077,6 +1097,242 @@ const paintModularBrief: Painter = (s) => {
   return { markup: [stack, identityFooter(s)].join('') }
 }
 
+/* ١٣ — إنفوجرافيك مرقّم بخمسة اتجاهاتٍ فنية (أمر الدكتور: إبداعٌ وتنويع).
+   جوهرٌ واحد (عنوان + إحصاءةٌ اختيارية + نقاطٌ مرقّمة)، وخمسُ كسواتٍ متمايزة —
+   يُنتقى الاتجاه ببصمة التصميم فيتنوّع بين الاتجاهات والدفعات بلا تكرارٍ ولا عشوائية:
+   • السكة    — أقراصٌ فهرسيةٌ يميناً وفواصلُ شعرية (تحريريّ صافٍ).
+   • الأرقام  — أرقامٌ ترتيبيةٌ ضخمةٌ محفورةٌ بالخط (مجلاتيّ).
+   • البطاقات — كلُّ نقطةٍ في بطاقةٍ لينةٍ بشارةٍ صغيرة (مؤسسيّ مركّب).
+   • المسار   — عقدٌ متّصلةٌ بخيطٍ رأسيٍّ للخطوات (تدفّقٌ زمني).
+   • الحلقة   — الإحصاءة في حلقةٍ بيانيةٍ بقوسِ نسبتها (بصريّ للأرقام). */
+export type InfoVariant = InfographicVariantId
+
+/**
+ * انتقاء الاتجاه الفنّي للإنفوجرافيك — مصدرٌ واحدٌ للحقيقة يستدعيه الرسّام والفحص.
+ * قائمةٌ مرجّحةٌ بالمحتوى (المسار للخطوات، الحلقة/البطاقات للأرقام) تُنتقى منها ببصمة
+ * التصميم، فيتنوّع الاتجاه بين الاتجاهات والدفعات بثباتٍ بلا عشوائية.
+ */
+export function infographicVariantOf(plan: CompositionPlan): InfoVariant {
+  // اختيار الدكتور اليدوي يتقدّم على الانتقاء التلقائي بالبصمة.
+  if (plan.infoVariant) return plan.infoVariant
+  const figure = extractFigure(`${plan.content.subtitle} ${distinctBody(plan)} ${plan.content.original}`)
+  const ordered = /(?:^|\n)\s*(?:[0-9٠-٩]+[.)\-]|أولاً|ثانياً|ثالثاً|أولا|ثانيا|ثالثا|خطوة)/.test(plan.content.original) || /(?:خطوات|كيف)/.test(plan.content.title)
+  const pool: InfoVariant[] = ['rail', 'ordinal', 'cards']
+  pool.push(ordered ? 'timeline' : 'rail', 'timeline')
+  if (figure) pool.push('ring', 'ring', 'cards')
+  return pool[hashString(plan.fingerprint) % pool.length]
+}
+
+const paintInfographic: Painter = (s) => {
+  const { palette: p, w, min } = s
+  const contentW = w - s.safeX * 2
+  const figure = extractFigure(`${s.plan.content.subtitle} ${s.bodyText} ${s.plan.content.original}`)
+  const pointKeys0 = new Set(extractPoints(s.plan, 6).map((point) => normalizeForCompare(point)))
+  const variant = infographicVariantOf(s.plan)
+
+  const maxPoints = variant === 'cards' || variant === 'ring' ? (s.isTall ? 5 : 3) : s.isWide ? 3 : s.isTall ? 5 : 4
+  const points = extractPoints(s.plan, maxPoints)
+  const pointKeys = new Set(points.map((point) => normalizeForCompare(point)))
+  const badgeR = min * .026
+  const badgeCol = badgeR * 2 + min * .032
+  const title = fitTitle(s, contentW, { base: min * .05, maxLines: 3 })
+
+  /* لا تكرار في اللوحة الواحدة: الشارة الافتتاحية تصنيفٌ (نوع المحتوى) لا جملة،
+     والدعوة تُسقَط إن طابقت نقطة — فلا يتكرّر النصّ ثلاث مرات. */
+  const kickerScene: Scene = { ...s, kicker: s.plan.content.kicker || s.plan.directionLabel || s.kicker }
+  const ctaScene: Scene = { ...s, cta: s.cta && !pointKeys.has(normalizeForCompare(s.cta)) ? s.cta : '' }
+
+  /* تسمية الإحصاءة: جملةُ الرقم منزوعةً منها الأرقام، ولا تكرّر نقطة. */
+  const figSize = min * (s.isWide ? .085 : .105)
+  let statLabel = ''
+  if (figure) {
+    const carrier = s.plan.content.original.split(/[\n.؟!،,]+/).find((sentence) => /[0-9٠-٩]/.test(sentence) && words(sentence).length >= 2) || ''
+    const stripLead = (value: string) => value.replace(/^\s*(?:نحو|حوالي|قرابة|زهاء|أكثر من|اكثر من|أقل من|اقل من|من|في|إلى|الى|هي|هو|أي|اي)\s+/u, '')
+    let derived = stripLead(stripLead(carrier
+      .replace(/[0-9٠-٩]+(?:[.,،][0-9٠-٩]+)?\s*(?:٪|%|مليون|مليار|ألف|الف|ضعف|أضعاف)?/u, '')
+      .replace(/\s+/g, ' ')
+      .trim()))
+      .replace(/\s+(?:في|من|على|إلى|الى|عن|مع|بـ)\s*$/u, '')
+      .trim()
+    if (words(derived).length < 2 || pointKeys0.has(normalizeForCompare(derived))) {
+      const sub = s.plan.content.subtitle
+      derived = sub && normalizeForCompare(sub) !== normalizeForCompare(s.titleText) && !pointKeys0.has(normalizeForCompare(sub)) ? sub : ''
+    }
+    statLabel = words(derived).slice(0, 5).join(' ')
+  }
+  const rowSize = Math.max(15, min * .026)
+
+  /* ── شارات الإحصاءة (تختلف بالاتجاه) ── */
+  const horizontalStat = (): StackItem => figure ? {
+    h: figSize * 1.16,
+    gap: min * .04,
+    draw: (top) => {
+      const numW = lineWidthPx(`${figure.value}${figure.unit}`, figSize)
+      const labelSize = Math.max(13, min * .024)
+      const labelLines = statLabel ? wrap(statLabel, Math.max(8, (contentW - numW - min * .05) / (labelSize * .555)), 2) : []
+      const labelH = blockHeight(labelLines, labelSize, 1.4)
+      return [
+        `<text x="${round(w - s.safeX)}" y="${round(top + figSize * .9)}" text-anchor="end" direction="ltr"><tspan fill="${p.accent}" font-family="Tajawal" font-weight="500" font-size="${round(figSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal" font-weight="500" font-size="${round(figSize * .48)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
+        labelLines.length ? textBlock({ lines: labelLines, x: w - s.safeX - numW - min * .05, y: top + (figSize * 1.16 - labelH) / 2 + labelSize * .82, size: labelSize, fill: p.muted, weight: 500, family: s.bodyFamily, lineHeight: 1.4 }) : '',
+      ].join('')
+    },
+  } : { h: 0, draw: () => '' }
+
+  const cardStat = (): StackItem => figure ? {
+    h: figSize * 1.5,
+    gap: min * .04,
+    draw: (top) => {
+      const cardH = figSize * 1.5
+      const pad = min * .04
+      const labelSize = Math.max(13, min * .024)
+      const labelLines = statLabel ? wrap(statLabel, Math.max(6, (contentW - pad * 2 - lineWidthPx(`${figure.value}${figure.unit}`, figSize)) / (labelSize * .555)), 2) : []
+      const labelH = blockHeight(labelLines, labelSize, 1.35)
+      return [
+        `<g filter="url(#${s.uid}-shadow)"><rect x="${round(s.safeX)}" y="${round(top)}" width="${round(contentW)}" height="${round(cardH)}" rx="${round(min * .028)}" fill="${p.accent}"/></g>`,
+        `<text x="${round(w - s.safeX - pad)}" y="${round(top + cardH / 2 + figSize * .34)}" text-anchor="end" direction="ltr"><tspan fill="#FFFFFF" font-family="Tajawal" font-weight="700" font-size="${round(figSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="rgba(255,255,255,.82)" font-family="Tajawal" font-weight="500" font-size="${round(figSize * .48)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
+        labelLines.length ? textBlock({ lines: labelLines, x: s.safeX + pad, y: top + cardH / 2 - labelH / 2 + labelSize * .82, size: labelSize, fill: 'rgba(255,255,255,.9)', weight: 500, anchor: 'start', family: s.bodyFamily, lineHeight: 1.35 }) : '',
+      ].join('')
+    },
+  } : { h: 0, draw: () => '' }
+
+  const ringStat = (): StackItem => {
+    if (!figure) return { h: 0, draw: () => '' }
+    const ringD = min * (s.isWide ? .24 : .3)
+    return {
+      h: ringD,
+      gap: min * .04,
+      draw: (top) => {
+        const cx = w / 2
+        const cy = top + ringD / 2
+        const R = ringD / 2 - min * .012
+        const num = parseFloat(toWesternDigits(figure.value))
+        const pct = figure.unit === '٪' && isFinite(num) ? clamp(num / 100, 0.03, 1) : 0.66
+        const a0 = -Math.PI / 2
+        const a1 = a0 + pct * Math.PI * 2
+        const large = pct > 0.5 ? 1 : 0
+        const sx = cx + R * Math.cos(a0), sy = cy + R * Math.sin(a0)
+        const ex = cx + R * Math.cos(a1), ey = cy + R * Math.sin(a1)
+        const numSize = R * 0.82
+        return [
+          `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(R)}" fill="none" stroke="${p.rule}" stroke-width="${round(min * .018)}" opacity=".7"/>`,
+          `<path d="M ${round(sx)} ${round(sy)} A ${round(R)} ${round(R)} 0 ${large} 1 ${round(ex)} ${round(ey)}" fill="none" stroke="${p.accent}" stroke-width="${round(min * .022)}" stroke-linecap="round"/>`,
+          `<text x="${round(cx)}" y="${round(cy + numSize * .34)}" text-anchor="middle" direction="ltr"><tspan fill="${p.accent}" font-family="Tajawal" font-weight="700" font-size="${round(numSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal" font-weight="500" font-size="${round(numSize * .4)}" dx="4">${esc(figure.unit)}</tspan>` : ''}</text>`,
+          statLabel ? textBlock({ lines: [words(statLabel).slice(0, 4).join(' ')], x: cx, y: cy + R + min * .05, size: Math.max(12, min * .022), fill: p.muted, weight: 500, anchor: 'middle', family: s.bodyFamily }) : '',
+        ].join('')
+      },
+    }
+  }
+
+  /* ── صفوف النقاط (تختلف بالاتجاه) ── */
+  const railRows = (): StackItem[] => points.map((point, index) => {
+    const lines = wrap(point, Math.max(8, (contentW - badgeCol) / (rowSize * .555)), 2)
+    const textH = blockHeight(lines, rowSize, 1.42)
+    const rowH = Math.max(badgeR * 2, textH)
+    return {
+      h: rowH,
+      gap: index === 0 ? min * .045 : min * .038,
+      draw: (top) => {
+        const cy = top + rowH / 2
+        const cx = w - s.safeX - badgeR
+        return [
+          index === 0 ? '' : `<line x1="${round(s.safeX)}" y1="${round(top - min * .019)}" x2="${round(w - s.safeX)}" y2="${round(top - min * .019)}" stroke="${p.rule}" stroke-width="1" opacity=".5"/>`,
+          `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(badgeR)}" fill="${p.accent}"/>`,
+          textBlock({ lines: [arabicNumber(index + 1)], x: cx, y: round(cy + badgeR * .37), size: badgeR * 1.05, fill: '#FFFFFF', weight: 700, anchor: 'middle', family: 'Tajawal' }),
+          textBlock({ lines, x: w - s.safeX - badgeCol, y: top + (rowH - textH) / 2 + rowSize * .82, size: rowSize, fill: p.ink, weight: 500, family: s.bodyFamily, lineHeight: 1.42 }),
+        ].join('')
+      },
+    }
+  })
+
+  const ordinalRows = (): StackItem[] => {
+    const ordSize = min * .07
+    const ordCol = ordSize * 1.5 + min * .022
+    return points.map((point, index) => {
+      const lines = wrap(point, Math.max(8, (contentW - ordCol) / (rowSize * .555)), 2)
+      const textH = blockHeight(lines, rowSize, 1.44)
+      const rowH = Math.max(ordSize, textH)
+      return {
+        h: rowH,
+        gap: index === 0 ? min * .05 : min * .045,
+        draw: (top) => {
+          const cy = top + rowH / 2
+          return [
+            `<text x="${round(w - s.safeX)}" y="${round(cy + ordSize * .35)}" fill="none" stroke="${p.accent}" stroke-width="1.4" font-family="El Messiri" font-weight="700" font-size="${round(ordSize)}" text-anchor="end" direction="ltr" opacity=".92">${esc(arabicIndex(index + 1))}</text>`,
+            textBlock({ lines, x: w - s.safeX - ordCol, y: top + (rowH - textH) / 2 + rowSize * .82, size: rowSize, fill: p.ink, weight: 500, family: s.bodyFamily, lineHeight: 1.44 }),
+          ].join('')
+        },
+      }
+    })
+  }
+
+  const cardRows = (): StackItem[] => {
+    const pad = min * .032
+    return points.map((point, index) => {
+      const lines = wrap(point, Math.max(8, (contentW - badgeCol - pad * 2) / (rowSize * .555)), 2)
+      const textH = blockHeight(lines, rowSize, 1.42)
+      const cardH = Math.max(badgeR * 2, textH) + pad * 2
+      return {
+        h: cardH,
+        gap: index === 0 ? min * .04 : min * .02,
+        draw: (top) => {
+          const cy = top + cardH / 2
+          const cx = w - s.safeX - pad - badgeR
+          return [
+            `<rect x="${round(s.safeX)}" y="${round(top)}" width="${round(contentW)}" height="${round(cardH)}" rx="${round(min * .022)}" fill="${p.surface}" stroke="${p.rule}" stroke-width="1" opacity="${p.isDark ? 1 : .96}"/>`,
+            `<rect x="${round(w - s.safeX - min * .006)}" y="${round(top + pad * .7)}" width="${round(min * .006)}" height="${round(cardH - pad * 1.4)}" rx="3" fill="${p.accent}"/>`,
+            `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(badgeR)}" fill="${p.accent}"/>`,
+            textBlock({ lines: [arabicNumber(index + 1)], x: cx, y: round(cy + badgeR * .37), size: badgeR * 1.05, fill: '#FFFFFF', weight: 700, anchor: 'middle', family: 'Tajawal' }),
+            textBlock({ lines, x: w - s.safeX - pad - badgeR * 2 - min * .018, y: top + (cardH - textH) / 2 + rowSize * .82, size: rowSize, fill: p.ink, weight: 500, family: s.bodyFamily, lineHeight: 1.42 }),
+          ].join('')
+        },
+      }
+    })
+  }
+
+  const timelineRows = (): StackItem[] => {
+    const total = points.length
+    const lineGap = min * .045
+    return points.map((point, index) => {
+      const lines = wrap(point, Math.max(8, (contentW - badgeCol) / (rowSize * .555)), 2)
+      const textH = blockHeight(lines, rowSize, 1.42)
+      const rowH = Math.max(badgeR * 2.1, textH)
+      return {
+        h: rowH,
+        gap: index === 0 ? min * .04 : lineGap,
+        draw: (top) => {
+          const cy = top + rowH / 2
+          const cx = w - s.safeX - badgeR
+          const connector = index < total - 1
+            ? `<line x1="${round(cx)}" y1="${round(cy + badgeR)}" x2="${round(cx)}" y2="${round(top + rowH + lineGap + badgeR)}" stroke="${p.accent}" stroke-width="1.6" opacity=".45"/>`
+            : ''
+          return [
+            connector,
+            `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(badgeR)}" fill="${p.surface}" stroke="${p.accent}" stroke-width="2"/>`,
+            textBlock({ lines: [arabicNumber(index + 1)], x: cx, y: round(cy + badgeR * .37), size: badgeR * 1.02, fill: p.accent, weight: 700, anchor: 'middle', family: 'Tajawal' }),
+            textBlock({ lines, x: w - s.safeX - badgeCol, y: top + (rowH - textH) / 2 + rowSize * .82, size: rowSize, fill: p.ink, weight: 500, family: s.bodyFamily, lineHeight: 1.42 }),
+          ].join('')
+        },
+      }
+    })
+  }
+
+  const statItem = variant === 'ring' ? ringStat() : variant === 'cards' ? cardStat() : horizontalStat()
+  const rowItems = variant === 'ordinal' ? ordinalRows()
+    : variant === 'cards' ? cardRows()
+    : variant === 'timeline' ? timelineRows()
+    : railRows()
+
+  const stack = drawStack([
+    kickerItem(kickerScene),
+    textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: p.ink, weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: figure ? '' : s.hero, emphasisFill: p.accent, gap: min * .03 }),
+    statItem,
+    ...rowItems,
+    ctaItem(ctaScene, { gap: min * .05 }),
+    carouselItem(s),
+  ], contentBand(s), .4)
+  return { markup: [stack, identityFooter(s)].join('') }
+}
+
 const PAINTERS: Record<CompositionPlan['layout'], Painter> = {
   'editorial-axis': paintEditorialAxis,
   'hero-word': paintHeroWord,
@@ -1090,6 +1346,7 @@ const PAINTERS: Record<CompositionPlan['layout'], Painter> = {
   'cinematic-window': paintCinematicWindow,
   'human-note': paintHumanNote,
   'modular-brief': paintModularBrief,
+  infographic: paintInfographic,
 }
 
 /* ------------------------------------------------------------------ */
@@ -1373,7 +1630,7 @@ export async function downloadCompositionRaster(plan: CompositionPlan, type: 'pn
   const sealHref = renderPreferences.seal ? (await sealDataUri() || TRANSPARENT_PIXEL) : ''
   const series = renderCompositionSeries(plan, { fontCss, ...(sealHref ? { sealHref } : {}) })
   const extension = type === 'jpeg' ? 'jpg' : 'png'
-  const background = PALETTES[plan.palette].background
+  const background = resolvePalette(plan).background
   for (const [index, svg] of series.entries()) {
     const base = fileName(plan, extension)
     const name = series.length > 1 ? base.replace(`.${extension}`, `-${index + 1}of${series.length}.${extension}`) : base

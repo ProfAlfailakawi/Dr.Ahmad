@@ -26,6 +26,12 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
+    // قوالب رسائل بوت الواتساب: قراءةٌ عامة (يجلبها البوت عبر REST بلا مصادقة)،
+    // والتحرير للمشرف من اللوحة حصراً. البدائل المضمّنة في الكود تحمي من الانقطاع.
+    match /bot_messages/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
     match /site_books/{id} {
       allow read: if true;
       allow create, update, delete: if isAdmin();

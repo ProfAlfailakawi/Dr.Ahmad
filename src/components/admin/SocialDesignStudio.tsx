@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import {
   analyzeSocialContent,
   createEmptyTasteProfile,
@@ -908,7 +908,23 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
 
       {selected && (
         <div className="fixed inset-0 z-[90] grid place-items-center bg-ink/70 p-3 backdrop-blur-md" role="dialog" aria-modal="true" aria-label="محرر التصميم">
-          <div className="flex max-h-[96vh] w-full max-w-7xl flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-paper shadow-2xl">
+          {/* المحرر سطحٌ فاتحٌ ثابت مهما كان وضع الموقع (فاتح/داكن): كان الوضع
+             الداكن يقلب النصوص إلى أزرق/رمادي باهت فلا يُقرأ («ما أدري شنو مكتوب»).
+             نُثبّت متغيّرات اللون على قيم الوضع الفاتح داخل المحرر فقط. */}
+          <div
+            className="flex max-h-[96vh] w-full max-w-7xl flex-col overflow-hidden rounded-[2rem] border border-black/10 shadow-2xl"
+            style={{
+              '--c-canvas': '252 252 250',
+              '--c-ink': '21 22 26',
+              '--c-soft': '94 101 112',
+              '--c-accent': '62 92 120',
+              '--c-accent-deep': '51 80 107',
+              '--c-wash': '244 245 243',
+              '--c-hair': 'rgba(21, 22, 26, 0.09)',
+              colorScheme: 'light',
+              background: '#FCFCFA',
+            } as CSSProperties}
+          >
             <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-hair px-4 py-4 md:px-6">
               <div><p className="text-[.7rem] font-bold uppercase tracking-[.16em] text-accent">التصميم المختار</p><h3 className="mt-1 font-display text-2xl font-bold text-ink">{selected.directionLabel}</h3></div>
               <button type="button" className={ghost} onClick={() => setSelected(null)}>إغلاق</button>
@@ -943,7 +959,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                   ))}
                 </div>
               </div>
-              <div className="grid content-start gap-4 lg:max-h-full lg:overflow-y-auto lg:pl-1">
+              <div className="grid content-start gap-4 pb-6 lg:max-h-full lg:overflow-y-auto lg:pl-1">
                 <section className="rounded-2xl border border-accent/30 bg-accent/[.09] p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">الناقد البصري الداخلي</p><p className="mt-1 text-[.78rem] text-ink/70">قرأه على الهاتف قبل أن يعرضه لك.</p></div><strong className="font-display text-3xl text-accent">{selected.quality?.score || 0}٪</strong></div><div className="mt-3 flex flex-wrap gap-2">{selected.quality?.strengths.map((item) => <span key={item} className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.66rem] font-medium text-ink">✓ {item}</span>)}</div>{selected.quality?.issues.length ? <p className="mt-3 text-[.72rem] leading-relaxed text-ink/80">{selected.quality.issues.join(' · ')}</p> : null}{selected.rationale?.length ? <div className="mt-4 rounded-xl border border-hair bg-paper/70 p-3"><p className="text-[.64rem] font-bold text-accent">قراءة المخرج الفنّي</p><ul className="mt-2 grid gap-1">{selected.rationale.slice(0, 3).map((line) => <li key={line} className="text-[.72rem] leading-relaxed text-ink/85">• {line}</li>)}</ul></div> : null}</section>
                 {/* الطبقات الحرة بالسحب (أمر الكمال المطلق) */}
                 <section className="rounded-2xl border border-hair bg-canvas p-4">

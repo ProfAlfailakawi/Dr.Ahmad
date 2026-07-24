@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS user_preferences(jid TEXT PRIMARY KEY, payload TEXT N
 CREATE TABLE IF NOT EXISTS sent_content(jid TEXT NOT NULL, content_id TEXT NOT NULL, sent_at TEXT NOT NULL, PRIMARY KEY(jid, content_id));
 CREATE TABLE IF NOT EXISTS content_reservations(jid TEXT NOT NULL, content_id TEXT NOT NULL, reserved_at TEXT NOT NULL, PRIMARY KEY(jid, content_id));
 CREATE TABLE IF NOT EXISTS saved_content(jid TEXT NOT NULL, content_id TEXT NOT NULL, saved_at TEXT NOT NULL, PRIMARY KEY(jid, content_id));
+CREATE TABLE IF NOT EXISTS chat_interests(jid TEXT NOT NULL, topic TEXT NOT NULL, hits INTEGER NOT NULL DEFAULT 1, last_at TEXT NOT NULL, PRIMARY KEY(jid, topic));
 CREATE TABLE IF NOT EXISTS answer_evidence(id INTEGER PRIMARY KEY AUTOINCREMENT, jid TEXT, intent TEXT NOT NULL, content_ids_json TEXT NOT NULL, reply_hash TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS privacy_tombstones(jid TEXT PRIMARY KEY, reason TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS reply_rules(id TEXT PRIMARY KEY, name TEXT NOT NULL, keywords_json TEXT NOT NULL, priority INTEGER NOT NULL DEFAULT 0, match_type TEXT NOT NULL DEFAULT 'any', action_type TEXT NOT NULL DEFAULT 'text', response_text TEXT, content_query TEXT, enabled INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);

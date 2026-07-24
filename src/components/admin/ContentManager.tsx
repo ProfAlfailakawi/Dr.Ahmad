@@ -3,7 +3,7 @@ import { getDb, getFirebaseApp } from '../../lib/firebase'
 import { useCmsContent } from '../../lib/content'
 import { publicationGate, topicMemory } from '../../lib/intelligence'
 import { describe as describeEcho, findEchoes, indexPast } from '../../lib/echoes'
-import { getArticleBody } from '../../lib/article-bodies'
+import { getArticleBody, getArticleVocalizedBody } from '../../lib/article-bodies'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { normalizeArabicTypography } from '../../lib/arabic-typography'
 import { analyzeResearch, DEFAULT_RESEARCH_ORCID, evaluateResearchQuality } from '../../lib/research-intelligence'
@@ -1035,13 +1035,26 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
   // ✎ من الموقع: افتح النموذج على العنصر المطلوب أول ما تتوفر القائمة (مرة واحدة)
   const [consumedOpen, setConsumedOpen] = useState(false)
   const hydrateArticleBody = useCallback((item: ManagedRecord) => {
-    if (kind !== 'article' || item.body || item._cms.origin !== 'base') return
-    void getArticleBody(item.slug).then((body) => {
-      if (!body) return
-      setForm((previous) => (
-        previous.slug === item.slug && !previous.body ? { ...previous, body } : previous
-      ))
-    })
+    /* المقالات القاعدية (base) يعيش متنها ونصّها المشكّل في الملفات الساكنة لا في
+       سجلّ CMS. نُحضِر الاثنين معاً حين يُفتح المحرر — فقد كان حقل «النص المُشكَّل»
+       يظهر فارغاً رغم توفّره على الموقع (يُقرأ من bodies-vocalized.json). */
+    if (kind !== 'article' || item._cms.origin !== 'base') return
+    if (!item.body) {
+      void getArticleBody(item.slug).then((body) => {
+        if (!body) return
+        setForm((previous) => (
+          previous.slug === item.slug && !previous.body ? { ...previous, body } : previous
+        ))
+      })
+    }
+    if (!item.bodyVocalized) {
+      void getArticleVocalizedBody(item.slug).then((bodyVocalized) => {
+        if (!bodyVocalized) return
+        setForm((previous) => (
+          previous.slug === item.slug && !previous.bodyVocalized ? { ...previous, bodyVocalized } : previous
+        ))
+      })
+    }
   }, [kind])
   useEffect(() => {
     if (consumedOpen || !openSlug || current !== undefined) return

@@ -744,8 +744,56 @@ function timeGreeting(at = new Date()) {
   return 'مساء الخير 🌙'
 }
 
-function welcomeReply(db, jid, at = new Date()) {
-  const greet = timeGreeting(at)
+/* كشف مزاج الرسالة (أمر الدكتور «نبرة تتكيّف مع المزاج»): إشاراتٌ لفظية صريحة
+   فقط — لا نخمّن المشاعر ولا نؤلّف. المحايد هو الأصل حتى تظهر قرينة واضحة. */
+const MOOD_WARM = /(رائع|ممتاز|جميل|حلو|شكرا|شكراً|مشكور|أحسنت|احسنت|مبدع|واو|وااو|يعطيك العافيه|تسلم|فرحت|سعدت|👏|🌹|❤|😍|🔥)/
+const MOOD_LOW = /(زعلان|حزين|تعبان|معصب|متضايق|مضايق|للاسف|للأسف|مو راضي|سيّئ|سيئ|ما اشتغل|مو شغال|خربان|مشكله|مشكلة|احبطت|يائس|😢|😞|💔|😡)/
+function detectMood(text = '') {
+  const value = clean(text)
+  if (MOOD_LOW.test(value)) return 'low'
+  if (MOOD_WARM.test(value)) return 'warm'
+  return 'neutral'
+}
+function moodPrefix(mood) {
+  if (mood === 'warm') return 'سعيدٌ بحماسك 🌟 '
+  if (mood === 'low') return 'حيّاك، وأرجو أن يخفّف هذا عنك قليلاً 🌿 '
+  return ''
+}
+
+/* ذاكرة الاهتمام عبر الأيام: نتذكّر مواضيع كل سائلٍ لا محتوى رسائله — عدّادٌ
+   بسيطٌ بالموضوع، يخدم اقتراحاً استباقياً بمادةٍ حقيقية لاحقاً. بلا تأليف. */
+function recordInterest(db, jid, topicPhrase) {
+  try {
+    const topic = clean(topicPhrase).split(/\s+/).filter((word) => word.length > 3).slice(0, 3).join(' ')
+    if (!topic) return
+    const key = db.jidKey ? db.jidKey(jid) : jid
+    db.run(
+      `INSERT INTO chat_interests(jid,topic,hits,last_at) VALUES(?,?,1,?)
+       ON CONFLICT(jid,topic) DO UPDATE SET hits=hits+1, last_at=excluded.last_at`,
+      key, topic, new Date().toISOString(),
+    )
+  } catch { /* الذاكرة إضافةٌ لا تُعطّل رداً */ }
+}
+function topInterest(db, jid) {
+  try {
+    const key = db.jidKey ? db.jidKey(jid) : jid
+    const row = db.get('SELECT topic, hits FROM chat_interests WHERE jid=? ORDER BY hits DESC, last_at DESC LIMIT 1', key)
+    return row && row.hits >= 2 ? row.topic : ''
+  } catch { return '' }
+}
+/* اقتراحٌ استباقيّ بمادةٍ حقيقية مرتبطة باهتمام السائل — يُرجِع سطراً أو فراغاً،
+   ولا يُكرّر ما رآه، ولا يُطلق إلا حين توجد مادةٌ فعلية. */
+function proactiveLine(db, jid, seenIds = []) {
+  const topic = topInterest(db, jid)
+  if (!topic) return ''
+  const matches = searchContent(db, topic, { limit: 4 }).filter((item) => !seenIds.includes(item.id))
+  if (!matches.length) return ''
+  const pick = matches[0]
+  return `\n\nوبما أنك كثيراً ما تسأل عن «${topic}» — قد يعجبك أيضاً:\n${pick.title}\n${pick.url}`
+}
+
+function welcomeReply(db, jid, at = new Date(), mood = 'neutral') {
+  const greet = `${moodPrefix(mood)}${timeGreeting(at)}`
   const item = selectDailyUnsentContent(db, { jid })
   if (!item) {
     const hasArchive = Number(db.get('SELECT COUNT(*) AS count FROM content_items')?.count || 0) > 0
@@ -767,7 +815,7 @@ ${item.title}${item.date ? ` · ${item.date}` : ''}
 ${quote ? `«${quote}»\n` : ''}${item.url}
 
 شنو يناسب وقتك؟ ٣٠ ثانية · دقيقتان · تعمّق · اختبرني
-ولإيقاف الرسائل اكتب: أوقف الرسائل.`,
+ولإيقاف الرسائل اكتب: أوقف الرسائل.${proactiveLine(db, jid, [item.id])}`,
     contentId: item.id,
     contextItems: [item.id],
     seenContentIds: [item.id],
@@ -1251,7 +1299,7 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
     /* الترحيب: أول لقاءٍ بين الناس والخدمة. يعرض المدى كلَّه — لا المقالات
        وحدها — لأن من يكتب كلمة الدخول قد يريد بحثاً أو كتاباً أو مقارنة. */
     case INTENTS.WELCOME:
-      return { ...classification, ...welcomeReply(db, jid) }
+      return { ...classification, ...welcomeReply(db, jid, new Date(), detectMood(input)) }
 
     /* «غيره» و«زدني»: يفهمها البشر بلا شرح، ويجب أن يفهمها البوت داخل الجلسة.
      *
@@ -1353,6 +1401,7 @@ ${SITE_URL}/research` }
       const query = stripGroundedTopicRequest(classification.normalized
         .replace(/^(عندك|عندكم|لديك|في)\s*(شي|شيء|مقال|بحث|كتاب|ماده)?\s*(عن|حول|بخصوص)\s*/, '')
         .replace(/[؟?]/g, '').trim()) || stripGroundedTopicRequest(classification.normalized)
+      recordInterest(db, jid, query)
       const preliminary = searchContent(db, query, { limit: 6 })
       const meaningfulWords = clean(query).split(/\s+/).filter((word) => word.length > 2)
       if (meaningfulWords.length === 1 && preliminary.length >= 3) {

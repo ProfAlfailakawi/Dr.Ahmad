@@ -166,13 +166,77 @@ function pickCandidate(items, tiredSources = new Map()) {
 }
 
 const hasArabic = (value = '') => /[ء-ي]/.test(value)
+const hasLatin = (value = '') => /[A-Za-z]/.test(value)
 const cleanJson = (value = '') => String(value).replace(/^```(?:json)?\s*|\s*```$/g, '').trim()
+
+/* المصطلحات التي تنجو من الترجمة الآلية بحروفٍ لاتينية — نُعرّبها كي تجتاز
+   بوابة العرض التي ترفض أي حرفٍ لاتيني في صفحةٍ اشترط مالكها أن تكون عربية. */
+const TRANSLIT = [
+  [/\bChatGPT\b/gi, 'شات جي بي تي'],
+  [/\bNotebookLM\b/gi, 'نوتبوك إل إم'],
+  [/\bOpenAI\b/gi, 'أوبن إيه آي'],
+  [/\bMicrosoft\b/gi, 'مايكروسوفت'],
+  [/\bGoogle\b/gi, 'غوغل'],
+  [/\bChatbot(s)?\b/gi, 'روبوت المحادثة'],
+  [/\bAI\b/gi, 'الذكاء الاصطناعي'],
+  [/\bLMS\b/gi, 'نظام إدارة التعلّم'],
+  [/\bSTEM\b/gi, 'العلوم والتقنية والهندسة والرياضيات'],
+  [/\bEdTech\b/gi, 'تقنيات التعليم'],
+]
+const arabize = (value = '') => {
+  let text = String(value).replace(/\s+/g, ' ').trim()
+  for (const [pattern, replacement] of TRANSLIT) text = text.replace(pattern, replacement)
+  return text.replace(/\s+/g, ' ').trim()
+}
+/** يقبل النص فقط إن صار عربياً خالصاً بلا حرفٍ لاتيني (مطابقةً لبوابة العرض). */
+const acceptArabic = (value = '') => {
+  const text = arabize(value)
+  return text && hasArabic(text) && !hasLatin(text) ? text : ''
+}
 
 function fallbackArabic() {
   return { titleAr: '', summaryAr: '', translationStatus: 'pending' }
 }
 
+/* مسارٌ مجاني تماماً للتعريب: بلا مفتاح ولا فوترة (أمر الدكتور: لا خدمات مدفوعة).
+   نقطة غوغل المجانية أولاً لجودتها، ثم MyMemory احتياطاً. لا يُنشر نصٌّ إنجليزي:
+   إن فشل المساران يبقى الحقل فارغاً وتُعاد المحاولة لاحقاً. */
+async function googleFreeTranslate(text) {
+  if (!text) return ''
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ar&dt=t&q=${encodeURIComponent(String(text).slice(0, 800))}`
+  const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(20_000) })
+  if (!response.ok) return ''
+  const data = await response.json()
+  return Array.isArray(data?.[0]) ? strip(data[0].map((segment) => segment?.[0] || '').join('')) : ''
+}
+async function myMemoryTranslate(text) {
+  if (!text) return ''
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(String(text).slice(0, 480))}&langpair=en|ar`
+  const response = await fetch(url, { signal: AbortSignal.timeout(20_000) })
+  if (!response.ok) return ''
+  const data = await response.json()
+  return strip(data?.responseData?.translatedText || '')
+}
+async function freeTranslateArabic(item) {
+  for (const engine of [googleFreeTranslate, myMemoryTranslate]) {
+    try {
+      const titleAr = acceptArabic(await engine(item.title))
+      if (!titleAr) continue
+      const summaryAr = item.desc ? acceptArabic(await engine(item.desc)) : ''
+      return { titleAr: titleAr.slice(0, 180), summaryAr: summaryAr.slice(0, 340), translationStatus: 'translated' }
+    } catch { /* نجرّب المحرك التالي المجاني */ }
+  }
+  return fallbackArabic(item)
+}
+
+/** التعريب الموحّد: Gemini إن توفّر مفتاحٌ عامل، وإلا المسار المجاني الكامل. */
 async function translateArabic(item) {
+  const gemini = await geminiTranslate(item)
+  if (gemini.translationStatus === 'translated') return gemini
+  return freeTranslateArabic(item)
+}
+
+async function geminiTranslate(item) {
   const key = env.GEMINI_API_KEY || env.GOOGLE_API_KEY
   if (!key) return fallbackArabic(item)
   const models = env.GEMINI_MODEL ? [env.GEMINI_MODEL] : ['gemini-flash-latest', 'gemini-flash-lite-latest']

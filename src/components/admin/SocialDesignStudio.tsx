@@ -28,6 +28,7 @@ import {
   setRenderPreferences,
 } from '../../lib/social-design-renderer'
 import { type LayoutFamilyId, type StudioCommandParse, type PaletteId, type PlanContent, type PlanOverlay, parseStudioCommand, critiqueCompositionPlan, PALETTES } from '../../lib/social-design-engine'
+import { downloadDesignVideo, motionSupported, type MotionStyle } from '../../lib/design-motion'
 import { currentSeason } from '../../lib/seasons'
 import { getDb } from '../../lib/firebase'
 import { useCmsContent } from '../../lib/content'
@@ -269,6 +270,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   }, [tasteProfile, tasteLedger])
   const [campaign, setCampaign] = useState<SocialCampaign | null>(null)
   const [campaignBusy, setCampaignBusy] = useState(false)
+  const [videoBusy, setVideoBusy] = useState('')
+  const [videoProgress, setVideoProgress] = useState(0)
   const [qualityThreshold, setQualityThreshold] = useState(() => Number(localStorage.getItem(QUALITY_THRESHOLD_KEY) || 82))
   const textRef = useRef<HTMLTextAreaElement | null>(null)
 
@@ -1055,6 +1058,18 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">إخراج جديد</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><button className={ghost} type="button" onClick={() => regenerateSelected('smart')}>اقتراح أذكى</button><button className={ghost} type="button" onClick={() => regenerateSelected('luxury')}>أكثر فخامة</button><button className={ghost} type="button" onClick={() => regenerateSelected('calm')}>أكثر هدوءًا</button><button className={ghost} type="button" onClick={() => regenerateSelected('bold')}>أكثر جرأة</button></div></section>
                 <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">تحويل ذكي للمقاس</p><div className="mt-3 flex flex-wrap gap-2">{formatActions.map((action) => <button key={action.id} className={ghost} type="button" onClick={() => transform(action.id)}>{action.label}</button>)}</div></section>
                 <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">التصدير</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><button className={primary} type="button" onClick={() => void exportPlan(selected, 'png')}>تنزيل PNG</button><button className={ghost} type="button" onClick={() => void exportPlan(selected, 'jpeg')}>تنزيل JPG</button><button className={ghost} type="button" onClick={() => void downloadCompositionSvg(selected)}>تنزيل SVG</button><button className={ghost} type="button" onClick={() => printCompositionPdf(selected)}>طباعة / PDF</button><button className={`${primary} sm:col-span-2`} type="button" title="الأصل + مربع + ستوري + LinkedIn، كل نسخة بهندسة مقاسها" onClick={() => void exportAllSizes(selected)}>كل المقاسات دفعة واحدة</button></div></section>
+                {/* الحركة والفيديو (مقترح الصديق ٩): تصميمك الثابت يصير فيديو Reel */}
+                {motionSupported() && (
+                  <section className="rounded-2xl border border-accent/30 bg-accent/[.06] p-4">
+                    <p className="text-[.7rem] font-bold text-accent">صدّر فيديو · Reel</p>
+                    <p className="mt-1 text-[.72rem] text-ink/70">حوّل هذا التصميم إلى فيديو حيّ للمشاركة — بلا تكلفة، داخل جهازك.</p>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                      {([['kenburns', 'زحف سينمائي'], ['reveal', 'ظهور تدريجي'], ['pulse', 'نبضة هادئة']] as [MotionStyle, string][]).map(([id, label]) => (
+                        <button key={id} type="button" disabled={Boolean(videoBusy)} className={`${ghost} ${videoBusy ? 'opacity-50' : ''}`} onClick={async () => { setVideoBusy(id); setVideoProgress(0); try { await downloadDesignVideo(selected, { style: id, onProgress: setVideoProgress }); setNotice('صُدّر الفيديو ونزَّلته ✓ (WebM جاهز للمشاركة)') } catch (error) { setNotice(`تعذّر تصدير الفيديو: ${error instanceof Error ? error.message : 'خطأ'}`) } finally { setVideoBusy(''); setVideoProgress(0) } }}>{videoBusy === id ? `يصوّر… ${Math.round(videoProgress * 100)}٪` : label}</button>
+                      ))}
+                    </div>
+                  </section>
+                )}
                 <div className="grid gap-2 sm:grid-cols-2"><button type="button" className={primary} onClick={() => { teachTaste(selected, 1); const next = savePlan(selected); setSavedPlans(next); setNotice(`حُفظ التصميم وتعلّم الاستوديو ذوقك. لديك الآن ${next.length} نسخة محفوظة.`) }}>هذا ذوقي · احفظه</button><button type="button" className={ghost} onClick={() => { teachTaste(selected, -1); setSelected(null); generate() }}>أبعد هذا الأسلوب</button></div>
                 <button type="button" className={ghost} onClick={buildCampaign}>حوّل هذا الاتجاه إلى حملة متكاملة</button>
               </div>

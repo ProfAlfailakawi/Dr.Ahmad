@@ -384,8 +384,14 @@ export function MySpace({ variant = 'floating' }: { variant?: 'floating' | 'foot
                     </button>
                   </div>
 
+                  {/* المزامنة تظهر دائماً (حتى في المساحة الفارغة) كي يكتشفها
+                     المتابع من أول مرة — كانت لا تُعرَض إطلاقاً (لم تُركَّب أصلاً). */}
+                  <div className="px-5 pt-5 md:px-8">
+                    <CrossDeviceSync />
+                  </div>
+
                   {!hasJourney ? (
-                    <div className="px-7 py-14 text-center md:px-12 md:py-16">
+                    <div className="px-7 py-12 text-center md:px-12 md:py-14">
                       <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-accent/25 bg-wash text-accent">
                         <SpaceIcon />
                       </span>

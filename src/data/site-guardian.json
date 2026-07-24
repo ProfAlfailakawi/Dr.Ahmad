@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "checkedAt": "2026-07-24T04:32:11.820Z",
+  "checkedAt": "2026-07-23T16:41:38.654Z",
   "status": "attention",
   "counts": {
     "articles": 143,
-    "missingAudio": 91,
+    "missingAudio": 128,
     "missingImages": 0,
     "brokenInternal": 0,
     "orphans": 0,
@@ -23,6 +23,13 @@
       "severity": "info",
       "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic-2",
       "title": "أبناءٌ يعرفون المطلوب… لكن من علّمهم المعنى؟",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic",
+      "title": "أبناءٌ يعرفون المطلوب… ويجهلون لماذا",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -77,6 +84,13 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "the-teacher-the-last-to-know-2",
+      "title": "المعلّم… آخرُ من يعلم!",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "dr-jasem-malik-the-lesson-that-never-ends-2",
       "title": "د. جاسم ملك… الحصّة التي لا تنتهي",
       "note": "لا يوجد صوت منشور بعد"
@@ -84,8 +98,36 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "the-mind-present-in-absence-absent-in-presence-2",
+      "title": "العقل حاضر في الغياب… وغائب في الحضور!",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "when-a-student-wishes-for-death-before-the-first-bell-2",
+      "title": "حين يتمنى الطالب الموت… قبل أول جرس!",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "we-handed-them-the-phone-so-theyd-leave-us-alone-2",
+      "title": "سلّمناه الهاتف… ليستريح منا!",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "the-republic-of-degrees-and-the-fall-of-thought-2",
       "title": "جمهورية الشهادات… وسقوط الفكر!",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "freedom-without-thinking-and-openness-without-awareness-2",
+      "title": "حُرية بلا تفكير… وانفتاح بلا وعي!",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -100,6 +142,20 @@
       "severity": "info",
       "slug": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
       "title": "الذكاء الاصطناعي يُدرّس… والعقل البشري يُقصى",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "title": "أكتب لأوقظك… لا لأحبطك!",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "he-passed-the-exam-but-failed-the-question-2",
+      "title": "نجح في الامتحان… وفشل في السؤال!",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -126,6 +182,13 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "excellent-in-grades-lost-in-decision",
+      "title": "ممتاز في الدرجات… ضائع في القرار!",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "we-graduated-with-a-degree-but-the-language-was-lost-2",
       "title": "تخرَّجنا بشهادة… لكن ضاعت اللغة!",
       "note": "لا يوجد صوت منشور بعد"
@@ -142,6 +205,13 @@
       "severity": "info",
       "slug": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
       "title": "الراحة تُدرّس… والفكر في إجازة دائمة!",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "coming-soon-a-certificate-without-a-mind-2",
+      "title": "قريباً: شهادة بدون عقل!",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -175,8 +245,36 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "ethical-hacking-culture",
+      "title": "ثقافة الاختراق الأخلاقي.. قراصنة على خلق",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "turning-video-game-obsession-into-creative-meditation-2",
+      "title": "تحويل هوس ألعاب الفيديو إلى تأمل خلاق",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "past-mistakes-still-persist-in-the-age",
+      "title": "أخطاء الماضي مازالت في زمن التعليم الإلكتروني",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "the-media-is-a-vital-partner-in-the-educational-process",
       "title": "الإعلام الشريك العضيد للعملية التعليمية",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "private-lesson-in-the-age-of-digital-educational-intelligence",
+      "title": "الدروس الخصوصية.. في زمن الذكاء التعليمي الرقمي",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -217,6 +315,13 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "competency-based-approach-to-the-trash",
+      "title": "منهج الكفايات.. بطريقه إلى المهملات كسابقيه",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "smartphone-child-a-creative-mind-or-a-child-being-driven",
       "title": "طفل الهواتف الذكية.. عقل خلاق أم طفل يساق؟!",
       "note": "لا يوجد صوت منشور بعد"
@@ -224,8 +329,43 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "the-social-media-swamp-and-plastic-surgery-addiction-2",
+      "title": "مستنقع «السوشيال ميديا» وإدمان عمليات التجميل",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "lets-achieve-a-higher-level-of-quality-education",
       "title": "لنصل إلى مستوى جودة تعليم عالٍ!",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "the-teacher-what-do-you-know-about-the-teacher",
+      "title": "المعلم.. وما أدراك ما المعلم",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201911-001",
+      "title": "الشدادية فخامة معمارية… ولكن نحو جودة التعليم",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201909-001",
+      "title": "السوشيل ميديا والثراء الكاذب",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "todays-childs-confusion-between-education-and-care",
+      "title": "حيرة طفل اليوم.. ما بين التربية والرعاية",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -245,6 +385,20 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "qabas-201811-001",
+      "title": "وسائل الإعلام… بين المجاملة والتمثيل",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201811-002",
+      "title": "انجازات تغرق وفساد يعوم",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "qabas-201810-001",
       "title": "أصول التوجيه للطلبة… فلكل مقام مقال…",
       "note": "لا يوجد صوت منشور بعد"
@@ -259,8 +413,43 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "qabas-201810-003",
+      "title": "مواقع الإلحاد في السوشيال ميديا… وقد فاحت راحئتها",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201810-004",
+      "title": "لنعمل من أجل أنفسنا لا من أجل الآخرين…",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201808-001",
+      "title": "ضياع المضمون في زحام الدراما",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201808-002",
+      "title": "السوشيل ميديا… وما شذ وطاب",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "qabas-201807-001",
       "title": "القدوة العلمية… وتصدع الأجيال",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201806-003",
+      "title": "يمكنك إيقاف phubbing \"التعلّق باستخدام الهاتف\"",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -287,8 +476,22 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "qabas-201806-002",
+      "title": "إلى من يعترض على قرارات وزير التربية في الغش",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "qabas-201805-003",
       "title": "دور المعلم… كوسيلة إعلامية",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201805-004",
+      "title": "تحية لوزير التربية… رجل القرارات الشجاعة",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -308,8 +511,64 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "qabas-201804-001",
+      "title": "مدرسة غابة الإبداع… والضياع",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201803-003",
+      "title": "طلبتنا ومعلميهم في طريقهم إلى التصحر النفسي…",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201803-001",
+      "title": "منهج الكفايات… ما بين الإنجاز وسوء التخطيط… وردود الأفعال",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201802-005",
+      "title": "وحدة التحكم المصغرة Ebots … عقول كويتية تنافس عقول الدول المتقدمة",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201802-004",
+      "title": "كليات التربية ومتطلبات العصر",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201802-003",
+      "title": "أزمة تطوير التعليم … ما بين تدريب وتأهيل المعلمين",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201802-001",
+      "title": "سقطات في منهج الكفايات…",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "qabas-201802-002",
       "title": "المخدرات الرقمية… إدمان جديد… حقيقة أم وهم…",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201712-004",
+      "title": "نحن… ما بعد التكنولوجيا…",
       "note": "لا يوجد صوت منشور بعد"
     },
     {

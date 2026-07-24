@@ -140,7 +140,9 @@ function distinctBody(plan: CompositionPlan) {
   /* المتن أولاً ثم العنوان الفرعي: حين يحرّر الدكتور حقلاً في الاستوديو يجب
      أن ينعكس فوراً مهما قصُر — كان الشرط «٣ كلمات» يبتلع كتابته فتظهر
      المعاينة فارغة. نقبل الآن أي نصٍّ غير فارغ لا يكرّر العنوان. */
-  for (const candidate of [plan.content.body, plan.content.subtitle, plan.content.quote]) {
+  /* العنوان الفرعي صار له مكانه الخاص (الشارة/التمهيد)، فلا يزاحم المتن هنا —
+     وبذلك يظهر الاثنان معاً حين يملؤهما الدكتور. */
+  for (const candidate of [plan.content.body, plan.content.quote]) {
     const clean = normalizeForCompare(candidate)
     if (!clean) continue
     if (clean === title) continue
@@ -300,7 +302,9 @@ function sceneOf(plan: CompositionPlan): Scene {
   const h = plan.format.height
   const min = Math.min(w, h)
   const bodyText = distinctBody(plan)
-  const cta = plan.ctaPlacement === 'none' ? '' : (plan.content.cta || '')
+  /* الدعوة تظهر متى ملأها الدكتور مهما كان تخطيط الوضع — «الدعوة ما تطلع»
+     كان سببها إخفاؤها في تكوينات ctaPlacement='none' رغم كتابتها. */
+  const cta = plan.content.cta || ''
   return {
     plan,
     palette,
@@ -312,7 +316,7 @@ function sceneOf(plan: CompositionPlan): Scene {
     safeX: Math.max(plan.format.safeInset * w, w * .055),
     safeY: Math.max(plan.format.safeInset * min, h * .045),
     uid: `n-${plan.fingerprint.replace(/[^a-z0-9_-]/gi, '').slice(0, 16) || 'plan'}`,
-    kicker: plan.content.kicker || plan.directionLabel,
+    kicker: plan.content.subtitle || plan.content.kicker || plan.directionLabel,
     titleText: plan.content.title,
     bodyText,
     hero: plan.content.heroWord || '',

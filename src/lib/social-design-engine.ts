@@ -1480,12 +1480,33 @@ const noveltyAgainst = (signature: DesignSignature, history: readonly DesignHist
 
 const planId = (seed: string, index: number, signature: DesignSignature) => `social-${hashHex(`${seed}:${index}:${signatureString(signature)}`)}`
 
-const planRationale = (analysis: SocialContentAnalysis, layout: LayoutFamily, format: SocialFormatSpec, novelty: number) => [
-  `${KIND_LABELS[analysis.primaryKind]} بنبرة ${TONE_LABELS[analysis.primaryTone]}`,
-  `${layout.label}: ${layout.description}`,
-  `${format.label} هو الأقرب لبنية النص`,
-  novelty < 0.35 ? 'أُبعدت عناصره الثانوية عن أقرب تكوين محفوظ' : 'تكوين بعيد عن السجل البصري القريب',
-]
+/* قراءة المخرج الفنّي (مقترح الصديق ١): لكل اتجاهٍ شعورٌ يصنعه وجمهورٌ يؤثّر فيه —
+   فالاستوديو يفكّر كمخرجٍ لا كمحرّر قوالب. تُعرض في لوحة الناقد داخل المحرّر. */
+const TONE_DIRECTION: Record<ContentTone, { feeling: string; audience: string }> = {
+  formal: { feeling: 'وقارٍ ومصداقية', audience: 'المؤسسات وصنّاع القرار' },
+  institutional: { feeling: 'ثقةٍ ورسوخ', audience: 'الجهات الرسمية والشركاء' },
+  luxury: { feeling: 'رُقيٍّ وتميّز', audience: 'ذوّاقة التصميم والنخبة' },
+  human: { feeling: 'دفءٍ وقُربٍ إنساني', audience: 'الجمهور العام والمتابع اليومي' },
+  inspiring: { feeling: 'حماسةٍ وتطلّع', audience: 'الشباب والباحثين عن الإلهام' },
+  deep: { feeling: 'تأمّلٍ وسكون', audience: 'القارئ المتأنّي والمفكّر' },
+  bold: { feeling: 'جُرأةٍ توقف التمرير', audience: 'متصفّح السوشيال السريع' },
+  calm: { feeling: 'هدوءٍ وصفاءٍ بصري', audience: 'الباحث عن راحةٍ للعين' },
+  academic: { feeling: 'رصانةٍ ودقّة', audience: 'الأكاديميين والطلاب' },
+  media: { feeling: 'حيويةٍ وآنية', audience: 'الإعلاميين وجمهور الأخبار' },
+  promotional: { feeling: 'دعوةٍ صريحةٍ للفعل', audience: 'الجمهور المستهدَف بالحملة' },
+  intellectual: { feeling: 'عمقٍ فكري', audience: 'المثقّفين وصنّاع الرأي' },
+}
+
+const planRationale = (analysis: SocialContentAnalysis, layout: LayoutFamily, format: SocialFormatSpec, novelty: number) => {
+  const dir = TONE_DIRECTION[analysis.primaryTone] || TONE_DIRECTION.intellectual
+  return [
+    `يخدم الفكرة: ${layout.label} — ${layout.description}`,
+    `الشعور الذي يصنعه: إحساسٌ بـ${dir.feeling}`,
+    `الجمهور الذي يؤثّر فيه: ${dir.audience}`,
+    `${KIND_LABELS[analysis.primaryKind]} بنبرة ${TONE_LABELS[analysis.primaryTone]} · ${format.label} أقرب لبنية النص`,
+    novelty < 0.35 ? 'أُبعدت عناصره الثانوية عن أقرب تكوين محفوظ' : 'تكوين بعيد عن السجل البصري القريب',
+  ]
+}
 
 const makeCandidate = (
   layout: LayoutFamily,

@@ -735,14 +735,24 @@ ${topics.map((item, index) => `${index + 1}. ${item.topic} — ${item.count} م�
   }
 }
 
-function welcomeReply(db, jid) {
+/* البوت يحسّ الوقت (أمر الدكتور: «يخليه حيّاً ومنتبهاً»): تحيةٌ بتوقيت الكويت
+   الفعلي — صباحاً وظهراً وليلاً — تسبق «حيّاك الله» فيبدو كإنسانٍ منتبهٍ للساعة. */
+function timeGreeting(at = new Date()) {
+  const hour = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kuwait', hour: '2-digit', hourCycle: 'h23' }).format(at))
+  if (hour >= 5 && hour < 11) return 'صباح الخير 🌅'
+  if (hour >= 11 && hour < 17) return 'نهارك سعيد ☀️'
+  return 'مساء الخير 🌙'
+}
+
+function welcomeReply(db, jid, at = new Date()) {
+  const greet = timeGreeting(at)
   const item = selectDailyUnsentContent(db, { jid })
   if (!item) {
     const hasArchive = Number(db.get('SELECT COUNT(*) AS count FROM content_items')?.count || 0) > 0
     return {
       text: hasArchive
-        ? 'حيّاك الل. فتحت لك مكتبة د. أحمد الفيلكاوي.\n\nمررتَ على كل مواد الأرشيف المسجلة، لذلك لن أكرر مادةً عليك من غير أن تطلبها. اكتب موضوعاً أو نوعاً وأفتحه لك.'
-        : 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي، لكن لا توجد مواد منشورة في الفهرس الآن.',
+        ? `${greet} · حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي.\n\nمررتَ على كل مواد الأرشيف المسجلة، لذلك لن أكرر مادةً عليك من غير أن تطلبها. اكتب موضوعاً أو نوعاً وأفتحه لك.`
+        : `${greet} · حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي، لكن لا توجد مواد منشورة في الفهرس الآن.`,
       contextItems: [],
       replaceContextList: true,
     }
@@ -750,7 +760,7 @@ function welcomeReply(db, jid) {
   const extract = extractVerbatimAtSpeed(item, '30s')
   const quote = extract?.text || item.excerpt || contentSummary(item, 1)
   return {
-    text: `حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي.
+    text: `${greet} · حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي.
 
 بوابة اليوم:
 ${item.title}${item.date ? ` · ${item.date}` : ''}

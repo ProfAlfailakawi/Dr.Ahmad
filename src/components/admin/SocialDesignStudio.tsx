@@ -917,8 +917,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                «خلّ مكان المعاينة ثابتاً والأدوات متحركة») */}
             <div className="grid min-h-0 flex-1 gap-5 p-4 md:p-6 lg:grid-cols-[minmax(0,1.32fr)_minmax(320px,.7fr)]">
               <div className="grid content-start justify-items-center rounded-[1.5rem] border border-hair bg-canvas p-3 md:p-6 lg:sticky lg:top-0 lg:self-start">
-                {/* الكانفس الحر: المعاينة نفسها تصير سطح سحبٍ للطبقات */}
-                <div ref={canvasRef} className="relative w-full max-w-3xl" style={{ touchAction: freeMode ? 'none' : undefined }}>
+                {/* الكانفس الحر: المعاينة نفسها تصير سطح سحبٍ للطبقات. نحدّ عرضها
+                   بحسب نسبة المقاس كي لا يتجاوز ارتفاعُها الشاشة فتُقصّ («المعاينة
+                   مو كامله») — الآن يظهر التصميمُ كاملاً مهما طال (ستوري وغيره). */}
+                <div ref={canvasRef} className="relative mx-auto w-full" style={{ maxWidth: `min(100%, calc(76vh * ${selected.format.width} / ${selected.format.height}))`, touchAction: freeMode ? 'none' : undefined }}>
                   <Preview plan={selected} className="w-full" />
                   {freeMode && (selected.overlays || []).map((overlay) => (
                     <div
@@ -942,7 +944,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 </div>
               </div>
               <div className="grid content-start gap-4 lg:max-h-full lg:overflow-y-auto lg:pl-1">
-                <section className="rounded-2xl border border-accent/25 bg-accent/[.045] p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">الناقد البصري الداخلي</p><p className="mt-1 text-[.78rem] text-soft">قرأه على الهاتف قبل أن يعرضه لك.</p></div><strong className="font-display text-3xl text-accent">{selected.quality?.score || 0}٪</strong></div><div className="mt-3 flex flex-wrap gap-2">{selected.quality?.strengths.map((item) => <span key={item} className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.66rem] text-soft">✓ {item}</span>)}</div>{selected.quality?.issues.length ? <p className="mt-3 text-[.7rem] leading-relaxed text-soft">{selected.quality.issues.join(' · ')}</p> : null}</section>
+                <section className="rounded-2xl border border-accent/30 bg-accent/[.09] p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">الناقد البصري الداخلي</p><p className="mt-1 text-[.78rem] text-ink/70">قرأه على الهاتف قبل أن يعرضه لك.</p></div><strong className="font-display text-3xl text-accent">{selected.quality?.score || 0}٪</strong></div><div className="mt-3 flex flex-wrap gap-2">{selected.quality?.strengths.map((item) => <span key={item} className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.66rem] font-medium text-ink">✓ {item}</span>)}</div>{selected.quality?.issues.length ? <p className="mt-3 text-[.72rem] leading-relaxed text-ink/80">{selected.quality.issues.join(' · ')}</p> : null}{selected.rationale?.length ? <div className="mt-4 rounded-xl border border-hair bg-paper/70 p-3"><p className="text-[.64rem] font-bold text-accent">قراءة المخرج الفنّي</p><ul className="mt-2 grid gap-1">{selected.rationale.slice(0, 3).map((line) => <li key={line} className="text-[.72rem] leading-relaxed text-ink/85">• {line}</li>)}</ul></div> : null}</section>
                 {/* الطبقات الحرة بالسحب (أمر الكمال المطلق) */}
                 <section className="rounded-2xl border border-hair bg-canvas p-4">
                   <div className="flex items-center justify-between gap-3">

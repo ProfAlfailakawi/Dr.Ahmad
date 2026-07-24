@@ -115,6 +115,114 @@ export function SaveForLaterButton({ slug }: { slug: string }) {
   );
 }
 
+/* مزامنة عبر الأجهزة — اختيارية، محلي افتراضي. مكوّن مستقل يحمّل منطق المزامنة
+   كسولاً فلا يُثقل «مساحتي» لمن لا يفعّلها، ويتحمّل غياب السحابة بسلاسة. */
+function CrossDeviceSync() {
+  const [code, setCode] = useState<string | null>(null)
+  const [ready, setReady] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const [entry, setEntry] = useState('')
+  const [status, setStatus] = useState<'idle' | 'busy' | 'ok' | 'unavailable' | 'error' | 'copied'>('idle')
+
+  useEffect(() => {
+    let active = true
+    void import('../lib/myspace-sync').then(async (module) => {
+      const existing = module.getSyncCode()
+      if (!active) return
+      setCode(existing)
+      setReady(true)
+      if (existing) { setStatus('busy'); const outcome = await module.syncNow(existing); if (active) setStatus(outcome === 'synced' ? 'ok' : outcome === 'unavailable' ? 'unavailable' : 'error') }
+    })
+    return () => { active = false }
+  }, [])
+
+  const enable = async () => {
+    setStatus('busy')
+    const module = await import('../lib/myspace-sync')
+    const fresh = module.generateSyncCode()
+    const outcome = await module.syncNow(fresh)
+    if (outcome === 'unavailable') { setStatus('unavailable'); return }
+    module.setSyncCode(fresh); setCode(fresh); setStatus('ok')
+  }
+  const connect = async () => {
+    const module = await import('../lib/myspace-sync')
+    const norm = module.normalizeSyncCode(entry)
+    if (norm.replace(/-/g, '').length < 8) { setStatus('error'); return }
+    setStatus('busy')
+    const outcome = await module.syncNow(norm)
+    if (outcome === 'unavailable') { setStatus('unavailable'); return }
+    module.setSyncCode(norm); setCode(norm); setEntry(''); setStatus('ok')
+  }
+  const syncAgain = async () => {
+    if (!code) return
+    setStatus('busy')
+    const module = await import('../lib/myspace-sync')
+    const outcome = await module.syncNow(code)
+    setStatus(outcome === 'synced' ? 'ok' : outcome === 'unavailable' ? 'unavailable' : 'error')
+  }
+  const disable = async () => {
+    const module = await import('../lib/myspace-sync')
+    module.setSyncCode(null); setCode(null); setStatus('idle')
+  }
+  const copyCode = async () => {
+    if (!code || !navigator.clipboard) return
+    try { await navigator.clipboard.writeText(code); setStatus('copied') } catch { /* تجاهل */ }
+  }
+
+  if (!ready) return null
+  const message = status === 'busy' ? 'جارٍ المزامنة…'
+    : status === 'ok' ? 'تمت المزامنة ✓'
+    : status === 'copied' ? 'نُسخ الرمز ✓'
+    : status === 'unavailable' ? 'المزامنة غير متاحة الآن — كلُّ شيءٍ يبقى محفوظاً على جهازك.'
+    : status === 'error' ? 'تعذّرت المزامنة — تحقّق من الرمز وحاول ثانيةً.'
+    : ''
+
+  return (
+    <section className="rounded-2xl border border-hair bg-canvas p-5">
+      <button type="button" onClick={() => setExpanded((value) => !value)} className="flex w-full items-center justify-between gap-3 text-right">
+        <span>
+          <span className="text-[.7rem] font-semibold text-accent">المزامنة عبر الأجهزة · اختيارية</span>
+          <span className="mt-1 block text-[.76rem] text-soft">{code ? 'مُفعّلة — قراءتُك ومحفوظاتك تنتقل بين هاتفك وحاسوبك.' : 'اربط هاتفك وحاسوبك بلا حساب. الوضع المحلي يبقى الافتراضي.'}</span>
+        </span>
+        <span className="shrink-0 text-soft">{expanded ? '−' : '+'}</span>
+      </button>
+
+      {expanded && (
+        <div className="mt-4 grid gap-3">
+          {code ? (
+            <>
+              <div className="rounded-xl border border-hair bg-paper p-3">
+                <p className="text-[.66rem] font-semibold text-soft">رمزك السرّي — أدخله في جهازك الآخر:</p>
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <code dir="ltr" className="select-all font-mono text-[.95rem] tracking-wide text-ink">{code}</code>
+                  <button type="button" onClick={copyCode} className="shrink-0 rounded-full border border-hair px-3 py-1 text-[.68rem] font-semibold text-soft hover:border-accent hover:text-accent">نسخ</button>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={syncAgain} className="rounded-full bg-accent px-4 py-2 text-[.74rem] font-semibold text-white">زامن الآن</button>
+                <button type="button" onClick={disable} className="rounded-full border border-hair px-4 py-2 text-[.74rem] font-semibold text-soft hover:border-red-400 hover:text-red-500">أوقف المزامنة على هذا الجهاز</button>
+              </div>
+              <p className="text-[.66rem] leading-[1.7] text-soft">الرمزُ مفتاحُ بياناتك — احفظه سرّاً ولا تشاركه. إيقاف المزامنة لا يمحو ما على جهازك.</p>
+            </>
+          ) : (
+            <>
+              <button type="button" onClick={enable} className="rounded-full bg-accent px-4 py-2 text-[.78rem] font-semibold text-white">فعّل المزامنة وأنشئ رمزاً</button>
+              <div className="rounded-xl border border-hair bg-paper p-3">
+                <p className="text-[.66rem] font-semibold text-soft">أو أدخل رمزاً من جهازٍ آخر:</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <input dir="ltr" value={entry} onChange={(event) => setEntry(event.target.value)} placeholder="xxxx-xxxx-xxxx" className="w-full rounded-lg border border-hair bg-canvas px-3 py-2 font-mono text-[.82rem] text-ink outline-none focus:border-accent" />
+                  <button type="button" onClick={connect} className="shrink-0 rounded-full border border-hair px-4 py-2 text-[.72rem] font-semibold text-soft hover:border-accent hover:text-accent">اربط</button>
+                </div>
+              </div>
+            </>
+          )}
+          {message && <p className={`text-[.72rem] font-medium ${status === 'error' ? 'text-red-500' : status === 'unavailable' ? 'text-soft' : 'text-accent'}`}>{message}</p>}
+        </div>
+      )}
+    </section>
+  )
+}
+
 export function MySpace({ variant = 'floating' }: { variant?: 'floating' | 'footer' }) {
   const location = useLocation();
   const { articles } = useCmsContent();

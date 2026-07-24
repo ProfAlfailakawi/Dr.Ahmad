@@ -69,3 +69,19 @@ podcast-dialogue-samples/
 podcast-voice-bakeoff-samples/
 .audio-r2-plan.json
 ci-log.txt
+
+# ── حماية جذرية من الرفعات المسطّحة التي تكسر النشر وتسرّب الخصوصية ──
+# مجلّد نسخ codex الاحتياطية (محادثات واتساب خاصة + أسماء مكسورة تُفشل checkout)
+.codex-backups/
+# أي قاعدة sqlite في أي مكان (خاصة بالبوت — لا تُرفع أبداً)
+*.sqlite
+*.sqlite-*
+agent-*.sqlite
+# نسخ بيانات احتياطية شاردة في الجذر (الأصل في src/data)
+/audio-meta-*.json
+/bodies-vocalized-*.json
+/podcast-state-*.json
+/audio-*.json.bak
+# ملفات موجّهات/مذكّرات شاردة في الجذر
+/PROMPT-*.txt
+/prompt-*.txt

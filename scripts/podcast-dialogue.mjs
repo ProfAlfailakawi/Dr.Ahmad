@@ -2242,7 +2242,9 @@ async function produceUtterance(u, analysis, voice, lang, wavPath, { runId, utte
       /* أرضية واعية بالإلقاء: السؤال والتأمل والخلاصة تبطؤ في نهاياتها طبيعياً، والجملة
          الكثيفة المقاطع أوطأ كلمياً — u035 سؤال عند 115 كان يُرفض على أرضية 118 صلبة. */
       const avgWordLen = dialogueText.replace(/\s+/g, '').length / Math.max(1, wordsOf(dialogueText).length)
-      const slowDelivery = ['question', 'reflection', 'conclusion', 'gentleObjection', 'reflective'].includes(String(deliveryPlan.delivery || ''))
+      /* «briefReaction» ردٌّ قصيرٌ موزونٌ يُقرأ بتمهّلٍ لا باستعجال (u022: ست كلمات
+         عند 109) — يُعامَل معاملة الإلقاء البطيء الطبيعي كالتأمل والخلاصة. */
+      const slowDelivery = ['question', 'reflection', 'conclusion', 'gentleObjection', 'reflective', 'briefReaction'].includes(String(deliveryPlan.delivery || ''))
       const humanFloor = (slowDelivery || avgWordLen >= 6) ? 92 : 112
       const paceOnly = audits
         .filter((audit) => audit.technical?.issues?.length === 1

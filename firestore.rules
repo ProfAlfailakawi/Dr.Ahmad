@@ -176,6 +176,19 @@ service cloud.firestore {
       allow update: if isAdmin() || isValidQuoteCountUpdate(id);
     }
 
+    // «مساحتي» عبر الأجهزة: مزامنة اختيارية بلا حساب. معرّف الوثيقة رمزٌ سرّي
+    // عشوائي يعرفه صاحبه وحده — ومعرفةُ الرمز هي الإذن. لا اسم ولا بريد ولا هوية.
+    // نتحقق من الشكل والحجم فقط، ولا نسمح بالحذف. الوثيقة: { data: نص، updatedAt }.
+    match /myspace_sync/{code} {
+      allow read: if code.size() >= 6 && code.size() <= 64;
+      allow create, update: if code.size() >= 6 && code.size() <= 64
+        && request.resource.data.keys().hasOnly(['data', 'updatedAt'])
+        && request.resource.data.data is string
+        && request.resource.data.data.size() <= 200000
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if false;
+    }
+
     // كل ما عدا ذلك: مغلق.
     match /{document=**} {
       allow read, write: if false;

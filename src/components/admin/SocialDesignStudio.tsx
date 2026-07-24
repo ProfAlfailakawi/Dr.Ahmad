@@ -27,6 +27,7 @@ import {
   renderCompositionSvg,
   infographicVariantOf,
   setRenderPreferences,
+  type BackgroundPattern,
 } from '../../lib/social-design-renderer'
 import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, parseStudioCommand, critiqueCompositionPlan, predictEngagement, PALETTES } from '../../lib/social-design-engine'
 import { extractVisualDnaFromFile, type VisualDna } from '../../lib/visual-dna'
@@ -54,6 +55,15 @@ const TASTE_LEDGER_KEY = 'dr-ahmad-social-design-taste-ledger-v1'
 const QUALITY_THRESHOLD_KEY = 'dr-ahmad-social-quality-threshold-v1'
 const SEAL_KEY = 'dr-ahmad-social-seal-v1'
 const SEASONAL_KEY = 'dr-ahmad-social-seasonal-v1'
+const PATTERN_KEY = 'dr-ahmad-social-pattern-v1'
+const DNA_FAVES_KEY = 'dr-ahmad-social-dna-faves-v1'
+const BG_PATTERNS: { id: BackgroundPattern; label: string }[] = [
+  { id: 'none', label: 'بلا نمط' },
+  { id: 'dots', label: 'نقطية' },
+  { id: 'lines', label: 'خطوط' },
+  { id: 'giri', label: 'زخرفة' },
+  { id: 'mesh', label: 'تدرّج شبكي' },
+]
 const CAMPAIGN_SEED_KEY = 'studio-campaign-seed'
 
 const toneLabels: Record<ContentTone | 'auto', string> = {
@@ -291,17 +301,30 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
      ويبقيان محفوظين في هذا المتصفح. */
   const [sealOn, setSealOn] = useState(() => { try { return localStorage.getItem(SEAL_KEY) === '1' } catch { return false } })
   const [seasonalOn, setSeasonalOn] = useState(() => { try { return localStorage.getItem(SEASONAL_KEY) !== '0' } catch { return true } })
+  const [bgPattern, setBgPattern] = useState<BackgroundPattern>(() => { try { return (localStorage.getItem(PATTERN_KEY) as BackgroundPattern) || 'none' } catch { return 'none' } })
+  const [dnaFaves, setDnaFaves] = useState<VisualDna[]>(() => { try { return JSON.parse(localStorage.getItem(DNA_FAVES_KEY) || '[]') } catch { return [] } })
+  const [phoneView, setPhoneView] = useState(false)
   const activeSeason = useMemo(() => currentSeason(), [])
   // مختبر الأداء: تنبّؤ التفاعل للتصميم المختار — يُحسب محلياً عند كل تغيير.
   const forecast = useMemo(() => (selected ? predictEngagement(selected) : null), [selected])
   // أثناء الرسم لا بعده: المعاينات تقرأ التفضيل في نفس الدورة التي تغيّر فيها
-  useMemo(() => setRenderPreferences({ seal: sealOn, seasonal: seasonalOn && Boolean(activeSeason) }), [sealOn, seasonalOn, activeSeason])
+  useMemo(() => setRenderPreferences({ seal: sealOn, seasonal: seasonalOn && Boolean(activeSeason), pattern: bgPattern }), [sealOn, seasonalOn, activeSeason, bgPattern])
   useEffect(() => {
     try {
       localStorage.setItem(SEAL_KEY, sealOn ? '1' : '0')
       localStorage.setItem(SEASONAL_KEY, seasonalOn ? '1' : '0')
+      localStorage.setItem(PATTERN_KEY, bgPattern)
     } catch { /* noop */ }
-  }, [sealOn, seasonalOn])
+  }, [sealOn, seasonalOn, bgPattern])
+  const saveDnaFave = () => {
+    if (!dna) return
+    setDnaFaves((list) => {
+      const next = [dna, ...list.filter((fav) => fav.palette.accent !== dna.palette.accent)].slice(0, 8)
+      try { localStorage.setItem(DNA_FAVES_KEY, JSON.stringify(next)) } catch { /* noop */ }
+      return next
+    })
+    setNotice('حُفظت البصمة في المفضّلة — طبّقها بنقرةٍ متى شئت.')
+  }
 
   useEffect(() => { if (initialText && !text.trim()) setText(initialText) }, [initialText])
   useEffect(() => { if (initialContext && !context.trim()) setContext(initialContext) }, [initialContext])
@@ -831,6 +854,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <button type="button" title="الجمل التي ظللها قراؤك بأيديهم — جمهورك ينتخب اقتباساتك" onClick={() => void loadResonance()} className={`rounded-full px-4 py-2 text-[.72rem] font-semibold transition ${resonance ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{resonanceBusy ? 'يجلب الرنين…' : '♥ جمل قرائي الرنانة'}</button>
               <button type="button" title="شعارك المخطوط كختم صغير على قرص ورقي — يظهر في المعاينة والتصدير" onClick={() => setSealOn((value) => !value)} className={`rounded-full px-4 py-2 text-[.72rem] font-semibold transition ${sealOn ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{sealOn ? '✓ ' : ''}ختم الهوية</button>
               {activeSeason && <button type="button" title={`رسمة خطية هادئة بمناسبة ${activeSeason.label}`} onClick={() => setSeasonalOn((value) => !value)} className={`rounded-full px-4 py-2 text-[.72rem] font-semibold transition ${seasonalOn ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{seasonalOn ? '✓ ' : ''}لمسة {activeSeason.label}</button>}
+              {/* أنماط الخلفية الراقية (أمر الدكتور): خفيفةٌ جداً وقابلةٌ للإطفاء */}
+              <span className="inline-flex items-center gap-0.5 rounded-full border border-hair bg-canvas px-2 py-1" title="نمط خلفيةٍ راقٍ خفيف — يظهر في المعاينة والتصدير">
+                <span className="px-1 text-[.68rem] text-soft">خلفية:</span>
+                {BG_PATTERNS.map((pat) => (
+                  <button key={pat.id} type="button" onClick={() => setBgPattern(pat.id)} className={`rounded-full px-2 py-0.5 text-[.66rem] font-semibold transition ${bgPattern === pat.id ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>{pat.label}</button>
+                ))}
+              </span>
             </div>
           </div>
         </div>
@@ -1018,10 +1048,24 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                «خلّ مكان المعاينة ثابتاً والأدوات متحركة») */}
             <div className="grid min-h-0 flex-1 gap-5 p-4 md:p-6 lg:grid-cols-[minmax(0,1.32fr)_minmax(320px,.7fr)]">
               <div className="grid content-start justify-items-center rounded-[1.5rem] border border-hair bg-canvas p-3 md:p-6 lg:sticky lg:top-0 lg:self-start">
+                {/* «أرني كما يراه المتابع» (أمر الدكتور، النقطة ٢٠): إطار هاتفٍ بالحجم الفعلي */}
+                <div className="mb-3 flex w-full items-center justify-between gap-2">
+                  <span className="text-[.66rem] font-semibold text-soft">{phoneView ? 'كما يراه المتابع على هاتفه' : 'المعاينة'}</span>
+                  <button type="button" onClick={() => setPhoneView((value) => !value)} className={`rounded-full px-3 py-1 text-[.66rem] font-semibold transition ${phoneView ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}>{phoneView ? '✓ عرض الاستوديو' : '📱 أرني كما يراه المتابع'}</button>
+                </div>
+                {phoneView && (
+                  <div className="mx-auto w-full" style={{ maxWidth: 300 }}>
+                    <div className="relative rounded-[2.4rem] border-[11px] border-ink bg-ink shadow-2xl">
+                      <div className="absolute left-1/2 top-2 z-10 h-3.5 w-24 -translate-x-1/2 rounded-full bg-black/60" />
+                      <div className="overflow-hidden rounded-[1.7rem] bg-black"><Preview plan={selected} className="w-full" /></div>
+                    </div>
+                    <p className="mt-2 text-center text-[.62rem] leading-relaxed text-soft">بالحجم الفعلي على الهاتف — إن لم تُقرأ الفكرة فوراً هنا، فلن تُقرأ في الخلاصة.</p>
+                  </div>
+                )}
                 {/* الكانفس الحر: المعاينة نفسها تصير سطح سحبٍ للطبقات. نحدّ عرضها
                    بحسب نسبة المقاس كي لا يتجاوز ارتفاعُها الشاشة فتُقصّ («المعاينة
                    مو كامله») — الآن يظهر التصميمُ كاملاً مهما طال (ستوري وغيره). */}
-                <div ref={canvasRef} className="relative mx-auto w-full" style={{ maxWidth: `min(100%, calc(76vh * ${selected.format.width} / ${selected.format.height}))`, touchAction: freeMode ? 'none' : undefined }}>
+                <div ref={canvasRef} className={`relative mx-auto w-full ${phoneView ? 'hidden' : ''}`} style={{ maxWidth: `min(100%, calc(76vh * ${selected.format.width} / ${selected.format.height}))`, touchAction: freeMode ? 'none' : undefined }}>
                   <Preview plan={selected} className="w-full" />
                   {freeMode && (selected.overlays || []).map((overlay) => (
                     <div
@@ -1161,6 +1205,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                         <span className="flex overflow-hidden rounded-full border border-hair">{dna.swatches.slice(0, 5).map((color, index) => <span key={index} className="h-5 w-5" style={{ background: color }} />)}</span>
                         <span className="rounded-full border border-accent/30 bg-accent/[.06] px-2.5 py-1 text-[.62rem] font-semibold text-accent">مطبّقة فعلياً على {plans.length} اتجاه</span>
                         <span className="text-[.6rem] text-soft">خلفية · توهجات · زوايا · توقيع لوني</span>
+                        <button type="button" onClick={saveDnaFave} className="rounded-full border border-accent/40 px-2.5 py-1 text-[.62rem] font-semibold text-accent transition hover:bg-accent hover:text-white">★ احفظ في المفضّلة</button>
                         <button type="button" onClick={clearVisualDna} className="rounded-full border border-hair px-2.5 py-1 text-[.62rem] font-semibold text-soft transition hover:border-accent hover:text-accent">أزل البصمة</button>
                       </div>
                     ) : (
@@ -1168,6 +1213,15 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                         <input type="file" accept="image/*" className="hidden" disabled={dnaBusy} onChange={(event) => { const file = event.target.files?.[0]; if (file) void runVisualDna(file); event.currentTarget.value = '' }} />
                         {dnaBusy ? 'يستخرج الألوان…' : '⬆ استخرج ألواناً من صورة'}
                       </label>
+                    )}
+                    {dnaFaves.length > 0 && (
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        <span className="text-[.6rem] text-soft">بصماتك المفضّلة:</span>
+                        {dnaFaves.map((fave, index) => (
+                          <button key={index} type="button" title="طبّق هذه البصمة على كل الاتجاهات" onClick={() => { setDna(fave); applyDnaOverride(fave.palette); setNotice('طُبّقت بصمةٌ مفضّلة على كل الاتجاهات.') }} className="h-6 w-6 rounded-full border-2 border-hair transition hover:scale-110" style={{ background: `linear-gradient(135deg, ${fave.palette.background} 50%, ${fave.palette.accent} 50%)` }} />
+                        ))}
+                        <button type="button" onClick={() => { setDnaFaves([]); try { localStorage.removeItem(DNA_FAVES_KEY) } catch { /* noop */ } }} className="rounded-full border border-hair px-2 py-0.5 text-[.58rem] text-soft transition hover:border-accent hover:text-accent">امسح</button>
+                      </div>
                     )}
                   </div>
                   {/* اتجاه الإنفوجرافيك الفنّي: اختيارٌ يدويّ يتقدّم على الانتقاء التلقائي — يظهر للإنفوجرافيك فقط */}

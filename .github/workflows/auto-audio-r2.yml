@@ -354,7 +354,24 @@ jobs:
               # --autostash لازم: البناء يولّد ملفات خارج قائمة git add أعلاه،
               # فتبقى غير مُدرَجة ويرفض rebase العمل معها («You have unstaged
               # changes»). فتُنحّى جانباً ثم تُعاد بعد إعادة الأساس.
-              git pull --rebase --autostash origin main || { echo "تعذّر إعادة الأساس."; exit 1; }
+              # القافلة هي المصدر الأوثق لملفات الصوت المُدارة آلياً. حين ترفع
+              # يدُ بشرٍ (GitHub Desktop مثلاً) نسخةً قديمةً أو تحذف ملفات الحالة،
+              # يتعارض rebase تعارضاً لا يُحَلّ تلقائياً فتقف القافلة. الآن نحسم
+              # التعارض لصالح القافلة (نسخة theirs المُعاد تطبيقها) ونتابع — فلا
+              # يوقفها تصادمٌ بشريٌّ بعد اليوم، والصوت في R2 سليمٌ في الحالين.
+              if ! git pull --rebase --autostash origin main; then
+                echo "تعارضٌ على ملفات الصوت — أحسمه لصالح القافلة وأتابع."
+                for managed in src/data/audio.json src/data/audio-meta.json src/data/site-articles-feed.json src/data/podcast-admin.json src/data/audio-supervisor.json; do
+                  git checkout --theirs -- "$managed" 2>/dev/null || true
+                  git add -- "$managed" 2>/dev/null || true
+                done
+                git add -f .podcast-state.json .audio-failures.json 2>/dev/null || true
+                if ! GIT_EDITOR=true git rebase --continue 2>/dev/null; then
+                  echo "تعذّر إكمال إعادة الأساس؛ أُجهضها وأعيد بأساسٍ نظيف في المحاولة التالية."
+                  git rebase --abort 2>/dev/null || true
+                  git reset --hard origin/main 2>/dev/null || true
+                fi
+              fi
               sleep $((attempt * 5))
             done
             if [ -z "$pushed" ]; then

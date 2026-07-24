@@ -1202,18 +1202,8 @@ const podcastEpisodes = episodeItem(feedArticles, (a) => {
     const dlg = resolve(ROOT, 'audio', `${a.slug}.dialogue.mp3`)
     const transcript = resolve(ROOT, 'audio', `${a.slug}.dialogue.json`)
     if (visibleDialogueAsset(a.slug, dlg, transcript)) return { file: dlg, rel: `${a.slug}.dialogue.mp3` }
-    // القراءة العادية: إمّا {slug}.mp3 (فهد) أو {slug}.noura.mp3 (نورة) — القافلة
-    // تولّد التلاوة بأيّ الصوتين، وكان المبنى يبحث عن {slug}.mp3 وحده فتختفي تلاوات
-    // نورة من الخلاصة. نقبل أيّهما وُجِد (ملفّاً أو مدخلاً في المانيفست audioMeta).
-    const plainRel = `${a.slug}.mp3`
-    const plain = resolve(ROOT, 'audio', plainRel)
-    if (existsSync(plain) || Number(audioMeta?.[plainRel]?.bytes) > 0)
-      return { file: existsSync(plain) ? plain : null, rel: plainRel }
-    const nouraRel = `${a.slug}.noura.mp3`
-    const noura = resolve(ROOT, 'audio', nouraRel)
-    if (existsSync(noura) || Number(audioMeta?.[nouraRel]?.bytes) > 0)
-      return { file: existsSync(noura) ? noura : null, rel: nouraRel }
-    return { file: null, rel: plainRel }
+    const plain = resolve(ROOT, 'audio', `${a.slug}.mp3`)
+    return { file: existsSync(plain) ? plain : null, rel: `${a.slug}.mp3` }
   })
   .map(({ a, rel, asset }) => {
     const bytes = asset.bytes

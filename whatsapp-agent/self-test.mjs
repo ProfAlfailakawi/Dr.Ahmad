@@ -5,7 +5,7 @@ import path from 'node:path'
 import { openDatabase } from './db.mjs'
 import { buildContentIndex, latestAudioContent, searchContent } from './content-index.mjs'
 import { classifyIntent, classifyIntentWithLearning, confirmPendingLearning, handleIncoming, recordUnresolvedLearning, setSuppression, shouldRespondToMessage } from './intent-engine.mjs'
-import { MockTransport, canonicalChatJid, hasMediaPayload } from './transport.mjs'
+import { MockTransport, canonicalChatJid, hasMediaPayload, resolveSelfJid } from './transport.mjs'
 import { createAgent } from './agent.mjs'
 import { quoteCardPayload } from './quote-card.mjs'
 import { runCostAudit } from './cost-audit.mjs'
@@ -22,6 +22,9 @@ export async function runSelfTest(root) {
   const handle = (args) => handleIncoming({ ...args, at: args?.at || daytime })
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'dr-ahmad-wa-'))
   const db = openDatabase(':memory:', { cryptoOptions: { allowEphemeral: true } })
+  assert.equal(resolveSelfJid({ credsMe: { id: '96512345678:17@s.whatsapp.net' } }), '96512345678@s.whatsapp.net', '★ المعاينة تُرسل إلى PN الحقيقي للحساب لا إلى self الوهمي')
+  assert.equal(resolveSelfJid({ socketUser: { id: '12345:9@lid' } }), '12345@lid', '★ LID المنظّف احتياطٌ حين يغيب PN')
+  assert.equal(resolveSelfJid({ socketUser: { id: 'self@s.whatsapp.net' } }), '', '★ العنوان الوهمي self مرفوض صراحةً')
   const items = buildContentIndex(root)
   assert.ok(items.length >= 10, 'content index should discover public records')
   const agent = createAgent({ db, transport: new MockTransport(), root, mock: true })

@@ -140,14 +140,30 @@ const FEMALE_NAMES = new Set('مريم هند سعاد رغد ابتهال اس�
 const MALE_NAMES = new Set('محمد احمد خالد يوسف علي عمر حسن حسين ابراهيم عبدالله عبدالرحمن عبدالعزيز عبداللطيف عبدالمحسن فهد سعد سعود ناصر بدر بندر تركي طلال وليد ماجد مشعل مشاري جاسم جابر صباح مبارك راشد سالم سلمان سليمان حمد حمود حمدان عذبي فيصل نواف ثامر انس اوس زيد يزيد طارق عادل عصام كريم رائد باسل هاني وائل فواز عيسي موسي داود يعقوب اسامه حمزه معاذ عقيل منصور مساعد متعب نايف صالح محسن جمال كمال نبيل سامي رامي فادي شادي غانم غازي عماد ضاري مرزوق عوض مطلق دحام برجس'.split(' '))
 
 /**
- * كاشف الجهات: «مركز أعيان للتدريب» ليس رجلاً ولا امرأة — إنه جهة تُخاطَب
- * بالجمع المهذّب: «السادة… حيّاكم». الكشف بالمعجم المؤسسي في أي موضع من الاسم.
+ * كاشف الجهات: «مركز أعيان للتدريب» جهة، لكن «الدكتور فلان . كلية التربية»
+ * إنسانٌ أُلحق باسمِه مكانُ عمله. كان البحث في السطر كله يجعل كلمة «كلية»
+ * تهزم لقب «الدكتور» في بدايته، فيتحول {عزيزي} إلى «الأعزاء في…».
+ *
+ * القاعدة الحاسمة: اللقب الشخصي الصريح في البداية يسبق أي وصفٍ مؤسسي لاحق.
+ * أما إذا بدأ الاسم نفسه بلفظٍ مؤسسي فتبقى الجهة جهةً كما هي.
  */
 const ORG_MARKER = /(?:^|\s)(?:شركه|مؤسسه|مركز|معهد|اكاديميه|جمعيه|مكتب|فريق|قناه|مدرسه|جامعه|كليه|وزاره|هيئه|اداره|مستشفي|عياده|صيدليه|مطعم|مقهي|متجر|محل|مجموعه|مصنع|مزرعه|منصه|تطبيق|نادي|روضه|حضانه)(?:\s|$)|(?:لل(?:تدريب|تجاره|استشارات|تعليم|تطوير|خدمات|مقاولات|عقارات|دعايه|اعلان))|(?:القابضه|الدوليه|العالميه|والتوزيع|وشركاه)(?:\s|$)|\b(?:co|company|llc|inc|center|centre|academy|institute|group|school|team|store|trading|est)\b/i
 
+const contactLabel = (row) => String(row?.nickname || row?.wa_name || row?.display_name || '')
+  .replace(/[‎‏]/g, '')
+  .replace(/\s+/g, ' ')
+  .trim()
+
 export function detectEntityKind(row) {
-  const raw = norm(String(row?.nickname || row?.wa_name || row?.display_name || '')).replace(/ة/g, 'ه')
-  return ORG_MARKER.test(raw) ? 'org' : 'person'
+  const label = contactLabel(row)
+  if (!label) return 'person'
+
+  /* «د.» و«الدكتور» و«الأستاذ» وما شابهها دليلٌ شخصي أقوى من «كلية» أو
+     «قسم» أو «جامعة» تأتي بعد الاسم بوصفها ملاحظةً من دفتر الهاتف. */
+  if (HONORIFIC.test(label)) return 'person'
+
+  const normalized = norm(label).replace(/ة/g, 'ه')
+  return ORG_MARKER.test(normalized) ? 'org' : 'person'
 }
 
 export function detectGender(row) {
@@ -608,6 +624,10 @@ if (import.meta.url === `file://${process.argv[1]}` && process.argv.includes('--
   assert(detectEntityKind({ nickname: 'شركة الخليج القابضة' }) === 'org', 'الشركة جهة')
   assert(detectEntityKind({ wa_name: 'أكاديمية المستقبل' }) === 'org', 'الأكاديمية جهة ولو من اسم واتساب')
   assert(detectEntityKind({ nickname: 'مركزي خالد' }) === 'person', '★ «مركزي» اسم شخص لا جهة — حد الكلمة يحمينا')
+  const drWithWorkplace = { nickname: 'الدكتور عبد اللطيف عبد الرحمن الكندري . بومحمد . كلية التربية . قسم تكنولوجيا التعليم' }
+  assert(detectEntityKind(drWithWorkplace) === 'person', '★ لقب الدكتور يحسم أنه شخص ولو ذُكرت الكلية والقسم بعد اسمه')
+  assert(vocativeOf(drWithWorkplace) === 'الدكتور عبد اللطيف', '★ ملاحظات جهة العمل لا تدخل في النداء')
+  assert(personalize('{عزيزي}', { ...drWithWorkplace, vocative: vocativeOf(drWithWorkplace) }) === 'عزيزي الدكتور عبد اللطيف', '★ {عزيزي} تبقى مفرداً للدكتور ولا تتحول إلى «الأعزاء في»')
   assert(detectGender(orgRow) === '', 'الجهة بلا جنس')
   assert(vocativeOf(orgRow) === 'مركز أعيان للتدريب', 'الجهة تُنادى باسمها كاملاً لا مبتوراً')
   assert(personalize('{ترحيب}', orgRow).includes('حيّاكم'), 'الجهة «حيّاكم الله»')
@@ -623,5 +643,5 @@ if (import.meta.url === `file://${process.argv[1]}` && process.argv.includes('--
   assert(personalize('{عزيزي}', withVoc({ nickname: 'نضال' })).startsWith('عزيزنا نضال'), 'الحياد «عزيزنا» — لا نخطئ جنساً')
   assert(personalize('{الأخ}، وصلكم', {}) === 'وصلكم', 'بلا اسم يسقط الوسم بلا فاصلة يتيمة')
 
-  console.log('✓ اختبارات الجنس والألقاب والجهات: 33/33')
+  console.log('✓ اختبارات الجنس والألقاب والجهات: 36/36')
 }

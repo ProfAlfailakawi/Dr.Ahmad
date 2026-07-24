@@ -50,14 +50,45 @@ export function hasMediaPayload(message) {
   return nonTextKeys.length > 0
 }
 
+
+/**
+ * عنوان الحساب المرتبط نفسه. «self@s.whatsapp.net» ليس عنوان واتساب حقيقياً؛
+ * كان sendMessage يقبله شكلياً ثم لا تصل المعاينة إلى الهاتف. نأخذ PN الحقيقي
+ * من بيانات الجلسة، ونطبّعه من لاحقة الجهاز، ثم نستخدم LID فقط كخيار احتياطي.
+ */
+export function resolveSelfJid({ socketUser = {}, credsMe = {}, normalizeJid } = {}) {
+  const fallbackNormalize = (value) => {
+    const raw = String(value || '').trim()
+    const match = raw.match(/^([^@]+?)@(s\.whatsapp\.net|c\.us|lid)$/i)
+    if (!match) return ''
+    const local = match[1].replace(/:\d+$/, '')
+    const server = match[2].toLowerCase() === 'c.us' ? 's.whatsapp.net' : match[2].toLowerCase()
+    return local && local.toLowerCase() !== 'self' && server ? `${local}@${server}` : ''
+  }
+  const normalize = (value) => {
+    try {
+      const normalized = typeof normalizeJid === 'function' ? normalizeJid(String(value || '')) : ''
+      return fallbackNormalize(normalized || value)
+    } catch {
+      return fallbackNormalize(value)
+    }
+  }
+  const candidates = [credsMe?.id, socketUser?.id, credsMe?.lid, socketUser?.lid]
+    .map(normalize)
+    .filter(Boolean)
+  return candidates.find((jid) => jid.endsWith('@s.whatsapp.net'))
+    || candidates.find((jid) => jid.endsWith('@lid'))
+    || ''
+}
+
 export class MockTransport extends EventEmitter {
-  constructor() { super(); this.status = 'disconnected'; this.sent = []; this.qr = null }
+  constructor() { super(); this.status = 'disconnected'; this.sent = []; this.qr = null; this.selfJid = '96500000000@s.whatsapp.net' }
   async connect() { this.status = 'connected'; this.emit('status', this.status); return { status: this.status } }
   async disconnect() { this.status = 'disconnected'; this.emit('status', this.status) }
   getConnectionStatus() { return this.status }
   async sendText(jid, text) { if (this.status !== 'connected') throw new Error('mock transport is disconnected'); this.sent.push({ jid, text }); return { id: `mock-${this.sent.length}` } }
   async sendMedia(jid, media) { this.sent.push({ jid, media }); return { id: `mock-media-${this.sent.length}` } }
-  async sendSelf(text) { return this.sendText('self@s.whatsapp.net', text) }
+  async sendSelf(text) { return this.sendText(this.selfJid, text) }
   async syncContacts() { return { count: 0 } }
   async discoverGroups() { return [{ jid: '120363000000000000@g.us', name: 'مجموعة اختبار محلية', memberCount: 3, membersReadable: false }] }
   async discoverBroadcastLists() { return { supported: false, reason: 'mock transport' } }
@@ -249,6 +280,11 @@ export async function createWhatsAppTransport({ db, onMessage, onContacts, onQr,
       const messageId = result?.key?.id || result?.id
       if (messageId) db.run('INSERT OR IGNORE INTO outbox_messages(message_id,jid,source,created_at) VALUES(?,?,?,?)', messageId, db.jidKey(jid), 'bot', new Date().toISOString())
       return result
+    },
+    async sendSelf(text) {
+      const jid = resolveSelfJid({ socketUser: socket?.user, credsMe: authState.creds?.me, normalizeJid: baileys.jidNormalizedUser })
+      if (!jid) throw new Error('تعذّر تحديد رقم الحساب المرتبط. أعد ربط واتساب ثم جرّب المعاينة.')
+      return transport.sendText(jid, text)
     },
     async sendMedia(jid, media) { if (!socket || status !== 'connected') throw new Error('واتساب غير متصل'); return socket.sendMessage(jid, media) },
     async syncContacts() { return { count: 0, supported: false, reason: 'لا تُحفظ جهات الاتصال إلا عند طلب المزامنة.' } },

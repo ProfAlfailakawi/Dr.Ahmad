@@ -591,9 +591,12 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     if (!flags.send) throw new Error('الإرسال معطل افتراضيًا. فعّل WHATSAPP_SEND_ENABLED بعد اختبار Mock واعتمادك الصريح.')
     if (!state.transport) throw new Error('الوكيل غير مشغّل')
     const clean = safeText(text); if (!clean) throw new Error('النص فارغ')
-    const result = state.transport.sendSelf ? await state.transport.sendSelf(clean) : await state.transport.sendText('self@s.whatsapp.net', clean)
-    db.addAudit('send-self', 'self', `chars=${clean.length}`)
-    return result
+    if (!state.transport.sendSelf) throw new Error('الناقل الحالي لا يدعم إرسال المعاينة إلى الحساب المرتبط.')
+    const result = await state.transport.sendSelf(clean)
+    const messageId = String(result?.key?.id || result?.id || '').trim()
+    if (!messageId) throw new Error('لم يؤكد واتساب استلام المعاينة. لم تُعرض رسالة نجاح كاذبة.')
+    db.addAudit('send-self', 'self', `chars=${clean.length}; message=${messageId.slice(-8)}`)
+    return { ok: true, messageId }
   }
   const queueCampaign = ({ name, message, targets = [], scheduledAt = null }) => {
     if (!name || !message) throw new Error('اسم الحملة ورسالتها مطلوبان')

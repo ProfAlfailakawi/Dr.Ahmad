@@ -8,14 +8,15 @@ import { profile, socials, academicProfiles, links, site } from '../data'
  * وزرٌّ واحدٌ يحفظ جهة اتصالك في هاتف من أمامك (ملف vCard قياسي)، ثم روابطك
  * الرسمية بهدوء. لا خدمة خارجية، ولا تلوّث على صفحاتك القائمة.
  */
+const SAVED_CONTACT_TITLE = 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي'
+
 function buildVCard() {
   return [
     'BEGIN:VCARD',
     'VERSION:3.0',
     `FN:${profile.fullName}`,
     'N:الفيلكاوي;أحمد;حسين;د.;',
-    `TITLE:${profile.eyebrow}`,
-    'ORG:الهيئة العامة للتعليم التطبيقي والتدريب (PAAET) · جامعة الكويت',
+    `TITLE:${SAVED_CONTACT_TITLE}`,
     `URL:${site.url}`,
     ...academicProfiles.map((item) => `URL:${item.url}`),
     ...socials.map((item) => `URL:${item.url}`),

@@ -1,0 +1,71 @@
+name: حارس التوقّف الصامت — هل توقّف جدول؟
+
+# أمر الدكتور: المختارات وقفت ٥ أيام بلا إشعار. هذا الحارس يفحص آخر نجاحٍ لكل جدولٍ
+# أساسيّ كل ٦ ساعات، وإن تجاوز أيٌّ منها نافذته المتوقّعة يفتح/يحدّث Issue فيصلك تنبيه.
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # كل ٦ ساعات
+  workflow_dispatch: {}       # وتشغيلٌ يدويّ عند الحاجة
+
+permissions:
+  actions: read
+  issues: write
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: فحص طزاجة الجداول الأساسية
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # "ملف الجدول:أقصى عمرٍ بالساعات:اسمٌ ودّي"
+          WATCH=(
+            "daily-radar.yml:40:رادار المختارات"
+            "auto-audio-r2.yml:8:توليد الصوت إلى R2"
+            "daily-inbox.yml:40:بريد المساء"
+            "check-curated-links.yml:40:فحص المصادر"
+            "auto-site-content.yml:40:نشر الرسائل والأسئلة"
+            "backup-firestore.yml:200:درع النسخ الاحتياطي"
+            "weekly-report.yml:200:تقرير الجمعة"
+          )
+          NOW=$(date -u +%s)
+          STALE=""
+          for entry in "${WATCH[@]}"; do
+            file="${entry%%:*}"; rest="${entry#*:}"; maxh="${rest%%:*}"; name="${rest#*:}"
+            last=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$file" --status success --limit 1 --json createdAt --jq '.[0].createdAt // ""' 2>/dev/null || echo "")
+            if [ -z "$last" ]; then
+              STALE="${STALE}\n• ${name} (\`${file}\`): لا نجاحٌ مسجّل بعد."
+              continue
+            fi
+            lastEpoch=$(date -u -d "$last" +%s 2>/dev/null || echo 0)
+            ageH=$(( (NOW - lastEpoch) / 3600 ))
+            echo "$name: آخر نجاح قبل ${ageH}h (الحد ${maxh}h)"
+            if [ "$ageH" -gt "$maxh" ]; then
+              STALE="${STALE}\n• ${name} (\`${file}\`): آخر نجاحٍ قبل ${ageH} ساعة — تجاوز الحد ${maxh}h."
+            fi
+          done
+
+          TITLE="⚠ توقّف جدولٌ تلقائي — يحتاج نظرك"
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title $TITLE" --json number --jq '.[0].number // ""' 2>/dev/null || echo "")
+
+          if [ -n "$STALE" ]; then
+            BODY="رصد الحارس جداولَ لم تنجح ضمن نافذتها المتوقّعة:\n${STALE}\n\nالغالب أن السبب فشلُ checkout أو خطأٌ في الجدول نفسه — افتح تبويب Actions وافحص آخر تشغيلة للجدول المذكور. (تحديثٌ تلقائيّ كل ٦ ساعات.)"
+            printf "%b" "$BODY" > /tmp/body.md
+            if [ -n "$existing" ]; then
+              gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body-file /tmp/body.md
+              echo "حُدّث Issue #$existing"
+            else
+              gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body-file /tmp/body.md
+              echo "فُتح Issue جديد"
+            fi
+            exit 1   # يجعل التشغيلة حمراء أيضاً كإشارةٍ بصرية
+          else
+            echo "كل الجداول طازجة ✓"
+            if [ -n "$existing" ]; then
+              gh issue close "$existing" --repo "$GITHUB_REPOSITORY" --comment "عادت كل الجداول للعمل ✓ — أُغلق تلقائياً."
+              echo "أُغلق Issue #$existing (تعافٍ)"
+            fi
+          fi

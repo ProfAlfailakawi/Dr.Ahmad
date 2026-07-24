@@ -802,7 +802,8 @@ export async function renderSocialPng(inputTemplate: SocialVisualTemplate) {
       drawWrapped(ctx, template.body, W / 2, afterTitle + 84 * S, W - pad * 3.1, Math.round(W * 0.029 * 1.85), isStory ? 8 : 5)
     }
     sourceBadge(true, H - pad * 2.3)
-    sealStamp(ctx, W / 2, H - pad * 1.62, 34 * S, ink.gold, S)
+    // الختم يعلو النطاق بفسحةٍ واضحة (~34px): كان قريباً منه (~12px) فبدا متداخلاً معه.
+    sealStamp(ctx, W / 2, H - pad * 1.85, 34 * S, ink.gold, S)
     await drawLogo(pad * 1.05, H - pad * 0.92, false)
     ctx.fillStyle = ink.accent; ctx.font = sans(600, W * 0.021); ctx.textAlign = 'center'
     ctx.fillText(template.footer || 'dr-alfailakawi.com', W / 2, H - pad * 0.98)

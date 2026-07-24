@@ -379,11 +379,13 @@ function fitBody(s: Scene, zoneWidth: number, opts: { base?: number; maxLines?: 
 /** خلفية من طبقتين: غسل لوني هادئ + توهج قطري خافت + حبيبات طباعية دقيقة. */
 function backdrop(s: Scene, options: { glow?: 'top-left' | 'top-right' | 'bottom' | 'center' | 'none'; grain?: boolean } = {}) {
   const { palette: p, w, h, uid } = s
+  const spectrum = p.spectrum?.length ? p.spectrum : [p.accent, p.accentSoft, p.rule]
   const glow = options.glow ?? 'top-left'
   const glowPos = glow === 'top-left' ? { cx: .18, cy: .12 } : glow === 'top-right' ? { cx: .84, cy: .14 } : glow === 'bottom' ? { cx: .5, cy: .95 } : { cx: .5, cy: .5 }
   const parts = [
     `<rect width="${w}" height="${h}" fill="url(#${uid}-wash)"/>`,
     glow === 'none' ? '' : `<rect width="${w}" height="${h}" fill="url(#${uid}-glow)"/>`,
+    p.dna ? `<rect width="${w}" height="${h}" fill="url(#${uid}-dna-a)"/><rect width="${w}" height="${h}" fill="url(#${uid}-dna-b)"/>` : '',
     options.grain === false ? '' : `<rect width="${w}" height="${h}" filter="url(#${uid}-grain)" opacity="${p.isDark ? .05 : .035}"/>`,
   ]
   const defs = `
@@ -392,8 +394,16 @@ function backdrop(s: Scene, options: { glow?: 'top-left' | 'top-right' | 'bottom
       <stop offset="1" stop-color="${p.surface}"/>
     </linearGradient>
     <radialGradient id="${uid}-glow" cx="${glowPos.cx}" cy="${glowPos.cy}" r="${s.isWide ? .75 : .62}">
-      <stop offset="0" stop-color="${p.accentSoft}" stop-opacity="${p.isDark ? .5 : .55}"/>
-      <stop offset="1" stop-color="${p.accentSoft}" stop-opacity="0"/>
+      <stop offset="0" stop-color="${spectrum[0]}" stop-opacity="${p.isDark ? .34 : .22}"/>
+      <stop offset="1" stop-color="${spectrum[0]}" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="${uid}-dna-a" cx=".88" cy=".12" r=".68">
+      <stop offset="0" stop-color="${spectrum[1] || spectrum[0]}" stop-opacity="${p.isDark ? .22 : .14}"/>
+      <stop offset="1" stop-color="${spectrum[1] || spectrum[0]}" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="${uid}-dna-b" cx=".12" cy=".92" r=".74">
+      <stop offset="0" stop-color="${spectrum[2] || spectrum[0]}" stop-opacity="${p.isDark ? .20 : .12}"/>
+      <stop offset="1" stop-color="${spectrum[2] || spectrum[0]}" stop-opacity="0"/>
     </radialGradient>
     <filter id="${uid}-grain" x="0" y="0" width="100%" height="100%">
       <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch" result="n"/>
@@ -431,6 +441,17 @@ function frameDecor(s: Scene) {
     parts.push(`<path d="M ${inset} ${h - inset} V ${inset + r} A ${r} ${r} 0 0 1 ${w - inset} ${inset + r} V ${h - inset}" fill="none" stroke="${p.rule}" stroke-width="1.6" opacity=".9"/>`)
   }
   return parts.join('')
+}
+
+/** توقيع البصمة: أربعة ألوان موزعة كعلامات طباعية دقيقة في أطراف اللوحة. */
+function dnaSignature(s: Scene) {
+  const colors = s.palette.spectrum
+  if (!s.palette.dna || !colors?.length) return ''
+  const unit = Math.max(5, Math.round(s.min * .008))
+  const gap = Math.max(3, Math.round(unit * .55))
+  const x = Math.round(s.safeX * .48)
+  const y = Math.round(s.h - s.safeY * .48)
+  return `<g data-visual-dna="true" opacity=".92">${colors.slice(0, 4).map((color, index) => `<rect x="${x + index * (unit * 2 + gap)}" y="${y}" width="${unit * 2}" height="${unit}" rx="${unit / 2}" fill="${color}"/>`).join('')}</g>`
 }
 
 /** سطر الهوية: مسطرة شعرية، الاسم يميناً، النطاق يساراً بتباعد لاتيني أنيق. */
@@ -1476,7 +1497,7 @@ export function renderCompositionSvg(plan: CompositionPlan, options: RenderSvgOp
   const scenePaint = painter(s)
   const accessible = esc(options.ariaLabel || `${plan.directionLabel}: ${plan.content.title}`)
   const fontStyle = options.fontCss ? `<style>${options.fontCss}</style>` : ''
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${s.w}" height="${s.h}" viewBox="0 0 ${s.w} ${s.h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${esc(options.title || plan.content.title)}</title><defs>${fontStyle}${bg.defs}${scenePaint.defs || ''}</defs>${bg.markup}${frameDecor(s)}${scenePaint.markup}${overlaysLayer(s)}${identityLayer(s, options)}</svg>`
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${s.w}" height="${s.h}" viewBox="0 0 ${s.w} ${s.h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${esc(options.title || plan.content.title)}</title><defs>${fontStyle}${bg.defs}${scenePaint.defs || ''}</defs>${bg.markup}${frameDecor(s)}${scenePaint.markup}${dnaSignature(s)}${overlaysLayer(s)}${identityLayer(s, options)}</svg>`
 }
 
 /* ------------------------------------------------------------------ */

@@ -30,7 +30,6 @@ import {
 } from '../../lib/social-design-renderer'
 import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, parseStudioCommand, critiqueCompositionPlan, predictEngagement, PALETTES } from '../../lib/social-design-engine'
 import { extractVisualDnaFromFile, type VisualDna } from '../../lib/visual-dna'
-import { downloadDesignVideo, motionSupported, type MotionStyle } from '../../lib/design-motion'
 import { currentSeason } from '../../lib/seasons'
 import { getDb } from '../../lib/firebase'
 import { useCmsContent } from '../../lib/content'
@@ -281,8 +280,6 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   }, [tasteProfile, tasteLedger])
   const [campaign, setCampaign] = useState<SocialCampaign | null>(null)
   const [campaignBusy, setCampaignBusy] = useState(false)
-  const [videoBusy, setVideoBusy] = useState('')
-  const [videoProgress, setVideoProgress] = useState(0)
   const [qualityThreshold, setQualityThreshold] = useState(() => Number(localStorage.getItem(QUALITY_THRESHOLD_KEY) || 82))
   /* البصمة البصرية: لوحةٌ مستخرجةٌ من صورةٍ محلية تكسو كل الاتجاهات الحالية
      والقادمة حتى تُزال — بلا خدمةٍ خارجية ولا رفعٍ لأي خادم. */
@@ -604,9 +601,12 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       noveltyThreshold: .38,
       tasteProfile,
     })
-    setPlans(result.plans)
-    setSelected(result.plans[0] || selected)
-    remember(result.plans)
+    const regenerated = dna
+      ? result.plans.map((plan) => { const skinned = { ...plan, paletteOverride: dna.palette }; return { ...skinned, quality: critiqueCompositionPlan(skinned, result.plans) } })
+      : result.plans
+    setPlans(regenerated)
+    setSelected(regenerated[0] || selected)
+    remember(regenerated)
     setNotice(profile === 'smart' ? 'بُني اقتراح أذكى مع الابتعاد عن تاريخك البصري.' : `بُنيت نسخة ${toneLabels[profileTone]} مع احترام الأقفال.`)
   }
 
@@ -649,9 +649,16 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       noveltyThreshold: .38,
       tasteProfile,
     })
-    const carouselPlans = result.plans.map((plan, index) => transformDesignFormat(plan, 'instagram-carousel', {
-      respectFormatLock: false,
-      seed: `${plan.fingerprint}:carousel:${index}`,
+    const carouselDrafts = result.plans.map((plan, index) => {
+      const transformed = transformDesignFormat(plan, 'instagram-carousel', {
+        respectFormatLock: false,
+        seed: `${plan.fingerprint}:carousel:${index}`,
+      })
+      return dna ? { ...transformed, paletteOverride: dna.palette } : transformed
+    })
+    const carouselPlans = carouselDrafts.map((plan) => ({
+      ...plan,
+      quality: critiqueCompositionPlan(plan, carouselDrafts.filter((peer) => peer.id !== plan.id)),
     }))
     setPlatform('instagram')
     setGeneration(nextGeneration)
@@ -718,7 +725,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const runCampaign = (campaignText: string, campaignContext: string, basePlan?: CompositionPlan) => {
     setCampaignBusy(true)
     try {
-      const next = generateSocialCampaign({
+      let next = generateSocialCampaign({
         text: campaignText,
         context: campaignContext,
         author: 'د. أحمد حسين الفيلكاوي',
@@ -730,6 +737,29 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         basePlan,
         noveltyThreshold: .36,
       })
+      if (dna) {
+        const drafts = next.assets.map((asset) => ({ ...asset.plan, paletteOverride: dna.palette }))
+        const assets = next.assets.map((asset, index) => {
+          const plan = drafts[index]
+          return {
+            ...asset,
+            plan: { ...plan, quality: critiqueCompositionPlan(plan, drafts.filter((peer) => peer.id !== plan.id)) },
+          }
+        })
+        const qualityScore = Math.round(assets.reduce((sum, asset) => sum + (asset.plan.quality?.score || 0), 0) / Math.max(1, assets.length))
+        const dnaWarning = assets.some((asset) => asset.plan.quality?.issues.some((issue) => issue.startsWith('خطأ:')))
+          ? 'البصمة البصرية سببت مشكلة أمان في قطعة واحدة على الأقل؛ أعد التوليد أو أزل البصمة.'
+          : qualityScore < 75
+            ? 'تحتاج الحملة مراجعة إضافية بعد تطبيق البصمة البصرية.'
+            : ''
+        next = {
+          ...next,
+          assets,
+          qualityScore,
+          ready: next.ready && !dnaWarning,
+          warnings: dnaWarning ? [...next.warnings, dnaWarning] : next.warnings,
+        }
+      }
       setCampaign(next)
       localStorage.setItem('dr-ahmad-social-campaign-count', String(Number(localStorage.getItem('dr-ahmad-social-campaign-count') || 0) + 1))
       remember(next.assets.map((asset) => asset.plan))
@@ -1129,7 +1159,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                     {dna ? (
                       <div className="mt-1.5 flex flex-wrap items-center gap-2">
                         <span className="flex overflow-hidden rounded-full border border-hair">{dna.swatches.slice(0, 5).map((color, index) => <span key={index} className="h-5 w-5" style={{ background: color }} />)}</span>
-                        <span className="rounded-full border border-accent/30 bg-accent/[.06] px-2.5 py-1 text-[.62rem] font-semibold text-accent">مطبّقة على {plans.length} اتجاه</span>
+                        <span className="rounded-full border border-accent/30 bg-accent/[.06] px-2.5 py-1 text-[.62rem] font-semibold text-accent">مطبّقة فعلياً على {plans.length} اتجاه</span>
+                        <span className="text-[.6rem] text-soft">خلفية · توهجات · زوايا · توقيع لوني</span>
                         <button type="button" onClick={clearVisualDna} className="rounded-full border border-hair px-2.5 py-1 text-[.62rem] font-semibold text-soft transition hover:border-accent hover:text-accent">أزل البصمة</button>
                       </div>
                     ) : (
@@ -1160,18 +1191,6 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">إخراج جديد</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><button className={ghost} type="button" onClick={() => regenerateSelected('smart')}>اقتراح أذكى</button><button className={ghost} type="button" onClick={() => regenerateSelected('luxury')}>أكثر فخامة</button><button className={ghost} type="button" onClick={() => regenerateSelected('calm')}>أكثر هدوءًا</button><button className={ghost} type="button" onClick={() => regenerateSelected('bold')}>أكثر جرأة</button></div></section>
                 <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">تحويل ذكي للمقاس</p><div className="mt-3 flex flex-wrap gap-2">{formatActions.map((action) => <button key={action.id} className={ghost} type="button" onClick={() => transform(action.id)}>{action.label}</button>)}</div></section>
                 <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">التصدير</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><button className={primary} type="button" onClick={() => void exportPlan(selected, 'png')}>تنزيل PNG</button><button className={ghost} type="button" onClick={() => void exportPlan(selected, 'jpeg')}>تنزيل JPG</button><button className={ghost} type="button" onClick={() => void downloadCompositionSvg(selected)}>تنزيل SVG</button><button className={ghost} type="button" onClick={() => printCompositionPdf(selected)}>طباعة / PDF</button><button className={`${primary} sm:col-span-2`} type="button" title="الأصل + مربع + ستوري + LinkedIn، كل نسخة بهندسة مقاسها" onClick={() => void exportAllSizes(selected)}>كل المقاسات دفعة واحدة</button></div></section>
-                {/* الحركة والفيديو (مقترح الصديق ٩): تصميمك الثابت يصير فيديو Reel */}
-                {motionSupported() && (
-                  <section className="rounded-2xl border border-accent/30 bg-accent/[.06] p-4">
-                    <p className="text-[.7rem] font-bold text-accent">صدّر فيديو · Reel</p>
-                    <p className="mt-1 text-[.72rem] text-ink/70">حوّل هذا التصميم إلى فيديو حيّ للمشاركة — بلا تكلفة، داخل جهازك.</p>
-                    <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                      {([['kenburns', 'زحف سينمائي'], ['reveal', 'ظهور تدريجي'], ['pulse', 'نبضة هادئة']] as [MotionStyle, string][]).map(([id, label]) => (
-                        <button key={id} type="button" disabled={Boolean(videoBusy)} className={`${ghost} ${videoBusy ? 'opacity-50' : ''}`} onClick={async () => { setVideoBusy(id); setVideoProgress(0); try { await downloadDesignVideo(selected, { style: id, onProgress: setVideoProgress }); setNotice('صُدّر الفيديو ونزَّلته ✓ (WebM جاهز للمشاركة)') } catch (error) { setNotice(`تعذّر تصدير الفيديو: ${error instanceof Error ? error.message : 'خطأ'}`) } finally { setVideoBusy(''); setVideoProgress(0) } }}>{videoBusy === id ? `يصوّر… ${Math.round(videoProgress * 100)}٪` : label}</button>
-                      ))}
-                    </div>
-                  </section>
-                )}
                 <div className="grid gap-2 sm:grid-cols-2"><button type="button" className={primary} onClick={() => { teachTaste(selected, 1); const next = savePlan(selected); setSavedPlans(next); setNotice(`حُفظ التصميم وتعلّم الاستوديو ذوقك. لديك الآن ${next.length} نسخة محفوظة.`) }}>هذا ذوقي · احفظه</button><button type="button" className={ghost} onClick={() => { teachTaste(selected, -1); setSelected(null); generate() }}>أبعد هذا الأسلوب</button></div>
                 <button type="button" className={ghost} onClick={buildCampaign}>حوّل هذا الاتجاه إلى حملة متكاملة</button>
               </div>

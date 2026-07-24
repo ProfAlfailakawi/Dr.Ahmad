@@ -12,6 +12,7 @@ import { trackShare } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
 import { MySpace } from './MySpace'
+import { safeLink } from '../lib/dead-links'
 
 /* ---------- النشرة البريدية ---------- */
 export function Newsletter({ compact = false }: { compact?: boolean }) {
@@ -237,10 +238,13 @@ export function CiteButton({
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [style, setStyle] = useState<CitationStyle>('apa')
+  const [exportState, setExportState] = useState<'idle' | 'done' | 'error'>('idle')
+  const sourceUrl = safeLink(url)
+  const sourceSuffix = sourceUrl ? ` ${sourceUrl}` : ''
   const citations: Record<CitationStyle, string> = {
-    apa: `${authors}. (${year}). ${title}. ${container}. ${url}`,
-    mla: `${authors}. «${title}». ${container}، ${year}، ${url}.`,
-    chicago: `${authors}. «${title}». ${container} (${year}). ${url}.`,
+    apa: `${authors}. (${year}). ${title}. ${container}.${sourceSuffix}`,
+    mla: `${authors}. «${title}». ${container}، ${year}.${sourceSuffix}`,
+    chicago: `${authors}. «${title}». ${container} (${year}).${sourceSuffix}`,
   }
   const citation = citations[style]
   const styles: { id: CitationStyle; label: string }[] = [
@@ -281,21 +285,39 @@ export function CiteButton({
     }
   }
 
-  /* تصديرٌ أكاديميّ حقيقي (أمر الدكتور «خلّه يشتغل أو امسحه»): يُنزّل ملف RIS
-     يستورده Zotero وEndNote وMendeley مباشرةً — لا مجرّد رابطٍ للمصدر. */
+  /* تصدير أكاديمي حقيقي: ملف RIS بترميز UTF-8، مع تأخير تحرير الرابط
+     حتى لا تلغيه Safari على الهاتف قبل بدء التنزيل. */
   const exportRis = () => {
-    const authorLines = String(authors).split(/[،,]/).map((name) => name.trim()).filter(Boolean).map((name) => `AU  - ${name}`).join('\n')
-    const ris = ['TY  - JOUR', `TI  - ${title}`, authorLines, year ? `PY  - ${year}` : '', container ? `JO  - ${container}` : '', url ? `UR  - ${url}` : '', 'ER  - '].filter(Boolean).join('\n')
+    setExportState('idle')
+    const normalizedYear = String(year || '').match(/\d{4}/)?.[0] || ''
+    const doi = String(sourceUrl || url || '').match(/10\.\d{4,9}\/[^\s?#]+/i)?.[0]?.replace(/[.,;]+$/, '')
+    const lines = [
+      'TY  - JOUR',
+      `TI  - ${title}`,
+      authors ? `AU  - ${authors}` : '',
+      normalizedYear ? `PY  - ${normalizedYear}` : '',
+      container ? `JO  - ${container}` : '',
+      doi ? `DO  - ${doi}` : '',
+      sourceUrl ? `UR  - ${sourceUrl}` : '',
+      'LA  - ar',
+      'ER  - ',
+    ].filter(Boolean)
     try {
-      const blob = new Blob([ris], { type: 'application/x-research-info-systems' })
+      const blob = new Blob([`\uFEFF${lines.join('\r\n')}\r\n`], { type: 'application/x-research-info-systems;charset=utf-8' })
+      const objectUrl = URL.createObjectURL(blob)
       const link = document.createElement('a')
-      link.href = URL.createObjectURL(blob)
-      link.download = `${String(title).slice(0, 48).replace(/[^\p{L}\p{N} ]/gu, '').trim() || 'citation'}.ris`
+      link.href = objectUrl
+      link.download = `${String(title).slice(0, 56).replace(/[^\p{L}\p{N} _-]/gu, '').trim() || 'citation'}.ris`
+      link.style.display = 'none'
       document.body.appendChild(link)
       link.click()
       link.remove()
-      URL.revokeObjectURL(link.href)
-    } catch { /* التنزيل قد يُحجب */ }
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1800)
+      setExportState('done')
+      window.setTimeout(() => setExportState('idle'), 2200)
+    } catch {
+      setExportState('error')
+    }
   }
   const isExport = /تصدير|export|ris/i.test(contextLabel)
 
@@ -343,12 +365,18 @@ export function CiteButton({
             </header>
             <div className="citation-style-switch" role="tablist" aria-label="نمط الاستشهاد">
               {styles.map((item) => (
-                <button key={item.id} type="button" role="tab" aria-selected={style === item.id} onClick={() => { setStyle(item.id); setCopied(false) }} className={style === item.id ? 'is-active' : ''}>{item.label}</button>
+                <button key={item.id} type="button" role="tab" aria-selected={style === item.id} onClick={() => { setStyle(item.id); setCopied(false); setExportState('idle') }} className={style === item.id ? 'is-active' : ''}>{item.label}</button>
               ))}
             </div>
             <p className="citation-body-v2" dir="auto">{citation}</p>
             <footer className="citation-footer-v2">
-              <a href={url} target="_blank" rel="noreferrer" className="citation-source-v2">{contextLabel} ↗</a>
+              {isExport ? (
+                <button type="button" onClick={exportRis} className="citation-export-v2" aria-live="polite">
+                  {exportState === 'done' ? '✓ نُزّل ملف RIS' : exportState === 'error' ? 'تعذّر التنزيل — جرّب النسخ' : 'تصدير RIS لبرامج المراجع ↓'}
+                </button>
+              ) : sourceUrl ? (
+                <a href={sourceUrl} target="_blank" rel="noreferrer" className="citation-source-v2">{contextLabel} ↗</a>
+              ) : <span />}
               <button type="button" onClick={copy} className="citation-copy-v2">{copied ? '✓ نُسخ الاستشهاد' : `نسخ ${styles.find((item) => item.id === style)?.label}`}</button>
             </footer>
           </motion.section>

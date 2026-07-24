@@ -9,7 +9,7 @@ import { buildIdeaLife, type IdeaLifeRemoteRecord, type ImpactKind, type ImpactN
 import { liveLink } from '../lib/dead-links'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
-type FilterKey = 'all' | 'paper' | 'media' | 'application' | 'archive'
+type FilterKey = 'all' | 'paper' | 'media' | 'archive'
 
 type Chain = {
   key: string
@@ -46,7 +46,7 @@ export default function Impact() {
   useSeo({
     title: 'سجل الأثر الموثق',
     path: '/impact',
-    description: 'رحلات موثقة تُظهر كيف انتقلت الأفكار من المقال والبحث إلى الحوار العام والمؤلفات والتطبيق، مع رابط لكل محطة ظاهرة.',
+    description: 'رحلات موثقة تُظهر كيف انتقلت الأفكار من المقال والبحث إلى الحوار العام والمؤلفات، مع رابط لكل محطة ظاهرة.',
   })
   const { articles, books, papers, media, loading } = useCmsContent()
   const remote = useExtras<IdeaLifeRemoteRecord>('site_idea_life')
@@ -57,7 +57,7 @@ export default function Impact() {
     const articleChains = articles.flatMap((article) => {
       const record = remote.find((item) => item.slug === article.slug && (!item.kind || item.kind === 'article'))
       const model = buildIdeaLife(article, articles, books, papers, media, record)
-      const visibleNodes = model.impact
+      const visibleNodes = model.impact.filter((node) => node.kind !== 'application')
       if (visibleNodes.length <= 1) return []
       return [{
         key: `article:${article.slug}`,
@@ -145,7 +145,7 @@ export default function Impact() {
           )}
           <div role="tablist" aria-label="تصفية سجل الأثر" className="flex max-w-full gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {[
-              ['all', 'الكل'], ['paper', 'علمي'], ['media', 'إعلامي'], ['application', 'تطبيقي'], ['archive', 'أرشيفي'],
+              ['all', 'الكل'], ['paper', 'علمي'], ['media', 'إعلامي'], ['archive', 'أرشيفي'],
             ].map(([key, label]) => (
               <button key={key} type="button" role="tab" aria-selected={filter === key} onClick={() => setFilter(key as FilterKey)} className={`shrink-0 rounded-full border px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${filter === key ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>{label}</button>
             ))}
@@ -177,19 +177,6 @@ export default function Impact() {
 
       <section className="px-6 py-14 md:px-11 md:py-20">
         <div className="mx-auto max-w-4xl">
-          {/* أُزيلت بطاقة «معيار الأثر» بأمر الدكتور: منهجيةٌ داخلية لا تُعرض للعموم. */}
-          {false && (
-          <details className="impact-no-print mb-9 rounded-2xl border border-hair bg-wash px-6 py-4">
-            <summary className="cursor-pointer text-[.84rem] font-semibold text-ink transition-colors hover:text-accent">ما الذي يؤهل أثراً لدخول هذا السجل؟</summary>
-            <ul className="mt-4 space-y-2.5 text-[.8rem] font-light leading-[1.9] text-soft">
-              <li><span className="font-medium text-ink">العلمي</span> — استشهاد أو ذكر صريح للعمل في مصدر أكاديمي يمكن فتحه والتحقق منه.</li>
-              <li><span className="font-medium text-ink">الإعلامي</span> — تغطية أو استضافة تشير إلى العمل نفسه، لا إلى موضوعه العام فحسب.</li>
-              <li><span className="font-medium text-ink">التطبيقي</span> — جهة تبنّت الفكرة في برنامج أو ممارسة، والمصدر يثبت العلاقة صراحةً.</li>
-              <li><span className="font-medium text-ink">الأرشيفي</span> — تطور موثق داخل أرشيف الموقع نفسه: مقال يمتد إلى بحث أو كتاب أو حوار.</li>
-            </ul>
-            <p className="mt-4 border-t border-hair pt-3 text-[.74rem] font-light leading-[1.8] text-soft">وما لم يبلغ عتبة الإثبات يبقى قيد التحقق خارج العرض العام — لا يظهر هنا ادعاء ينتظر دليله.</p>
-          </details>
-          )}
           {loading && !chains.length ? (
             <p className="py-20 text-center text-soft">تُراجع الأدلة والروابط…</p>
           ) : visible.length === 0 ? (

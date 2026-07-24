@@ -127,6 +127,8 @@ type TwinCitation = {
   quote?: string;
   url?: string;
 };
+type AnswerMode = 'direct' | 'timeline' | 'connections'
+
 type TwinAnswer = {
   answer: string;
   citations: TwinCitation[];
@@ -139,34 +141,19 @@ function matchRefs(
   books: BookRecord[],
   papers: PaperRecord[],
 ): Ref[] {
-  const refs: (Ref & { score: number })[] = [];
-  for (const b of books) {
-    const nb = norm(b.title + " " + (b.desc || ""));
-    let score = 0;
-    for (const w of qTokens) if (nb.includes(w)) score++;
-    if (score >= 2)
-      refs.push({
-        kind: "كتاب",
-        slug: b.slug,
-        title: b.title,
-        href: `/publications/${b.slug}`,
-        score,
-      });
+  const query = new Set(qTokens)
+  const scoreText = (value: string) => tokenize(value).reduce((score, root) => score + (query.has(root) ? 1 : 0), 0)
+  const refs: (Ref & { score: number })[] = []
+  for (const book of books) {
+    const score = scoreText(`${book.title} ${book.desc || ''}`)
+    if (score > 0) refs.push({ kind: 'كتاب', slug: book.slug, title: book.title, href: `/publications/${book.slug}`, score })
   }
-  for (const p of papers) {
-    const np = norm(p.title + " " + ((p as { meta?: string }).meta || ""));
-    let score = 0;
-    for (const w of qTokens) if (np.includes(w)) score++;
-    if (score >= 2)
-      refs.push({
-        kind: "بحث محكّم",
-        slug: p.slug,
-        title: p.title,
-        href: `/research/${p.slug}`,
-        score,
-      });
+  for (const paper of papers) {
+    const title = paper.titleAr || paper.title
+    const score = scoreText(`${title} ${paper.meta || ''} ${paper.abstractAr || ''} ${paper.keywords || ''} ${paper.keyFinding || ''}`)
+    if (score > 0) refs.push({ kind: 'بحث محكّم', slug: paper.slug, title, href: `/research/${paper.slug}`, score: score + 1 })
   }
-  return refs.sort((a, b) => b.score - a.score).slice(0, 3);
+  return refs.sort((a, b) => b.score - a.score || a.title.localeCompare(b.title, 'ar')).slice(0, 4)
 }
 
 function compactText(text = "", limit = 460) {
@@ -220,11 +207,18 @@ function answer(
       for (const root of bodyRoots)
         bodyCount.set(root, (bodyCount.get(root) || 0) + 1);
       let score = 0;
+      const normalizedQuestion = norm(question).trim();
+      const normalizedTitle = norm(a.title);
+      const normalizedExcerpt = norm(a.excerpt || '');
+      if (normalizedQuestion && normalizedTitle.includes(normalizedQuestion)) score += 12;
+      if (normalizedQuestion && normalizedExcerpt.includes(normalizedQuestion)) score += 6;
       for (const w of q) {
-        if (titleRoots.has(w)) score += 4;
-        if (excerptRoots.has(w)) score += 2;
-        score += Math.min(6, bodyCount.get(w) || 0);
+        if (titleRoots.has(w)) score += 5;
+        if (excerptRoots.has(w)) score += 3;
+        score += Math.min(5, bodyCount.get(w) || 0);
       }
+      const matchedRoots = q.filter((root) => titleRoots.has(root) || excerptRoots.has(root) || bodyCount.has(root)).length;
+      score += matchedRoots >= Math.min(3, q.length) ? 4 : 0;
       return { a, score };
     })
     .sort(
@@ -265,7 +259,7 @@ function answer(
           )}، وكأن الفكرة عند الدكتور ليست تقنية أو تربوية وحدها، بل سؤال إنساني يتغير سياقه.`
       : undefined;
   const refs = matchRefs(q, books, papers);
-  const top = scored.filter((item) => item.score >= 6).slice(0, 2);
+  const top = scored.filter((item) => item.score >= 5).slice(0, 3);
 
   const hits: Hit[] = [];
   for (const { a } of top) {
@@ -281,7 +275,7 @@ function answer(
       let score = 0;
       for (const w of q)
         if (paragraph.includes(w))
-          score += 1 + Math.min(2, paragraph.split(w).length - 1 - 1);
+          score += 1 + Math.min(2, Math.max(0, paragraph.split(w).length - 2));
       if (p.length > 700) score -= 1;
       if (score > bestScore) {
         bestScore = score;
@@ -529,6 +523,13 @@ export default function AskLibrary() {
   );
   const [twin, setTwin] = useState<TwinAnswer | null>(null);
   const [twinLoading, setTwinLoading] = useState(false);
+  const [answerMode, setAnswerMode] = useState<AnswerMode>('direct');
+  const [answerCopied, setAnswerCopied] = useState(false);
+  const coverage = useMemo(() => {
+    if (!result) return null;
+    const evidence = result.hits.length + result.refs.length;
+    return evidence >= 5 ? { label: 'تغطية قوية', note: `${evidence} شواهد من أكثر من نوع` } : evidence >= 3 ? { label: 'تغطية متوسطة', note: `${evidence} شواهد قابلة للفتح` } : { label: 'تغطية محدودة', note: 'المتاح قليل، والجواب يصرّح بحدوده' };
+  }, [result]);
 
   useEffect(() => {
     let active = true;
@@ -618,6 +619,8 @@ export default function AskLibrary() {
     setAsked("");
     setQ("");
     setTwin(null);
+    setAnswerMode('direct');
+    setAnswerCopied(false);
     setTimeout(() => inputRef.current?.focus(), 60);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -627,11 +630,36 @@ export default function AskLibrary() {
     if (trimmed.length < 4) return;
     setQ(trimmed);
     setAsked(trimmed);
+    setAnswerMode('direct');
+    setAnswerCopied(false);
     setTimeout(
       () =>
         resRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
       80,
     );
+  };
+
+  const timelineAnswer = result?.earliest && result?.latest
+    ? `يبدأ الخيط في «${result.earliest.title}» سنة ${result.earliest.iso.slice(0, 4)}، ويصل إلى «${result.latest.title}» سنة ${result.latest.iso.slice(0, 4)}. هذا عرض لمسار النشر، لا ادعاء بأن الموقف لم يتغير إلا بهذه المواد.`
+    : 'لا يكفي الأرشيف المتاح لبناء خط زمني موثوق لهذا السؤال.';
+  const connectionsAnswer = result
+    ? result.refs.length
+      ? `يرتبط السؤال بـ${result.refs.length === 1 ? 'مصدر إضافي' : `${result.refs.length} مصادر إضافية`} من الكتب والأبحاث. تظهر الروابط أدناه بوصفها امتدادات موضوعية، لا اقتباسات ولا إثباتاً تلقائياً لاتفاقها الكامل.`
+      : 'لم تظهر صلة قوية بكتاب أو بحث ضمن البيانات العامة المتاحة الآن.'
+    : '';
+  const visibleAnswer = answerMode === 'timeline' ? timelineAnswer : answerMode === 'connections' ? connectionsAnswer : twin?.answer || '';
+  const copyArchiveAnswer = async () => {
+    if (!result || !visibleAnswer) return;
+    const sources = [
+      ...result.hits.map((item) => `- ${item.title}: /articles/${item.slug}`),
+      ...result.refs.map((item) => `- ${item.title}: ${item.href}`),
+    ].join('\n');
+    const payload = `${asked}\n\n${visibleAnswer}\n\nالمصادر:\n${sources}`;
+    try {
+      await navigator.clipboard.writeText(payload);
+      setAnswerCopied(true);
+      window.setTimeout(() => setAnswerCopied(false), 1800);
+    } catch { /* النسخ رفاهية ولا يعطّل الجواب */ }
   };
 
   return (
@@ -706,32 +734,38 @@ export default function AskLibrary() {
                         <h2 className="mt-2 font-display text-[1.16rem] font-semibold leading-relaxed text-ink">
                           خلاصة مرتبطة بمصادرها، لا رأي من خارج الأرشيف.
                         </h2>
-                        {twinLoading && !twin ? (
-                          <p className="mt-5 animate-pulse text-[.88rem] leading-[1.95] text-soft">
-                            أرتّب الشواهد الأقرب إلى سؤالك…
-                          </p>
-                        ) : twin ? (
+                        <div className="mt-5 grid grid-cols-3 gap-2" role="tablist" aria-label="عدسة الجواب">
+                          {([
+                            ['direct', 'جواب مباشر'],
+                            ['timeline', 'خيط زمني'],
+                            ['connections', 'شبكة المصادر'],
+                          ] as [AnswerMode, string][]).map(([id, label]) => (
+                            <button key={id} type="button" role="tab" aria-selected={answerMode === id} onClick={() => setAnswerMode(id)} className={`min-h-11 rounded-xl border px-2 py-2 text-[.7rem] font-semibold transition ${answerMode === id ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>{label}</button>
+                          ))}
+                        </div>
+                        {coverage && (
+                          <div className="mt-4 flex flex-wrap items-center gap-2 text-[.68rem]">
+                            <span className="rounded-full border border-accent/30 bg-accent/[.05] px-3 py-1 font-semibold text-accent">{coverage.label}</span>
+                            <span className="text-soft">{coverage.note}</span>
+                          </div>
+                        )}
+                        {answerMode === 'direct' && twinLoading && !twin ? (
+                          <p className="mt-5 animate-pulse text-[.88rem] leading-[1.95] text-soft">أرتّب الشواهد الأقرب إلى سؤالك…</p>
+                        ) : visibleAnswer ? (
                           <>
-                            <p className="mt-5 whitespace-pre-line text-[.96rem] font-light leading-[2.05] text-ink/90">
-                              {twin.answer}
-                            </p>
+                            <p className="mt-5 whitespace-pre-line text-[.96rem] font-light leading-[2.05] text-ink/90">{visibleAnswer}</p>
                             <p className="mt-4 text-[.68rem] leading-relaxed text-soft">
-                              {twin.source === "ai"
-                                ? "الخلاصة محصورة في الشواهد الظاهرة أدناه."
-                                : "عُرض بديل محلي محافظ لا يتجاوز الشواهد."}
+                              {answerMode === 'direct'
+                                ? twin?.source === 'ai' ? 'الخلاصة محصورة في الشواهد الظاهرة أدناه.' : 'عُرض بديل محلي محافظ لا يتجاوز الشواهد.'
+                                : 'هذه عدسة تنظيمية مبنية على تواريخ وروابط المواد الظاهرة، وليست اقتباساً جديداً.'}
                             </p>
-                            {/* سطر الثقة والخصوصية — مقترح معتمد: صدقٌ هادئ لا يثقل الصفحة */}
                             <p className="mt-3 border-t border-hair pt-3 text-[.68rem] leading-relaxed text-soft/85">
-                              الإجابة مبنية على مواد منشورة في هذا الموقع، وليست فتوى ولا تشخيصاً شخصياً.
-                              سؤالك يُعالج للإجابة فقط — لا يُنشر ولا يظهر لغيرك، ويمكنك مشاركة النتيجة برابط الصفحة نفسه.
+                              الإجابة مبنية على مواد منشورة في هذا الموقع، وليست فتوى ولا تشخيصاً شخصياً. سؤالك يُعالج للإجابة فقط ولا يُنشر.
                             </p>
-                            <Link
-                              to="/thought-paths"
-                              className="mt-5 inline-flex items-center gap-2 rounded-full border border-accent/35 px-5 py-2.5 text-[.8rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
-                            >
-                              استكشف المسار الفكري
-                              <span aria-hidden>←</span>
-                            </Link>
+                            <div className="mt-5 flex flex-wrap gap-2">
+                              <button type="button" onClick={() => void copyArchiveAnswer()} className="inline-flex min-h-11 items-center rounded-full border border-hair px-5 text-[.76rem] font-semibold text-ink transition hover:border-accent hover:text-accent">{answerCopied ? '✓ نُسخ الجواب بمصادره' : 'نسخ الجواب بمصادره'}</button>
+                              <Link to="/thought-paths" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-accent/35 px-5 text-[.76rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">استكشف المسار الفكري <span aria-hidden>←</span></Link>
+                            </div>
                           </>
                         ) : null}
                       </section>

@@ -33,3 +33,43 @@ export function liveLink(url?: string | null): string | undefined {
   if (entry.replacement) return entry.replacement
   return undefined
 }
+
+
+/**
+ * ينظّف الرابط قبل عرضه للزائر. يقبل روابط الموقع النسبية وHTTP(S) فقط،
+ * ويحوّل DOI الخام إلى رابطه القياسي. أي نص مركّب أو بروتوكول خطِر يختفي.
+ */
+export function safeLink(url?: string | null): string | undefined {
+  const raw = String(url || '').trim()
+  if (!raw) return undefined
+
+  // طبّق سجل الروابط قبل التطبيع حتى لا تضيع المطابقة بسبب شرطة أو ترميز.
+  const registered = liveLink(raw)
+  if (!registered) return undefined
+  const candidate = String(registered).trim()
+  if (!candidate || /[\u0000-\u001F\u007F<>]/.test(candidate)) return undefined
+  if (/^(javascript|data|vbscript|file):/i.test(candidate)) return undefined
+
+  const doi = candidate
+    .replace(/^doi:\s*/i, '')
+    .replace(/[)\]}>.,;،؛]+$/g, '')
+    .trim()
+  if (/^10\.\d{4,9}\/\S+$/i.test(doi)) {
+    return `https://doi.org/${encodeURI(doi)}`
+  }
+
+  if (candidate.startsWith('/') && !candidate.startsWith('//')) {
+    return /\s/.test(candidate) ? undefined : candidate
+  }
+
+  // المسافات داخل الرابط علامة شائعة على دمج نصين أو عنوانٍ مكسور.
+  if (/\s/.test(candidate)) return undefined
+  try {
+    const parsed = new URL(candidate)
+    if (!/^https?:$/.test(parsed.protocol)) return undefined
+    if (!parsed.hostname || /\s/.test(parsed.hostname)) return undefined
+    return parsed.toString()
+  } catch {
+    return undefined
+  }
+}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { EASE, FadeUp, Page, PageHead } from "../components/ui";
@@ -9,6 +9,7 @@ import { useExtras, useCmsContent } from "../lib/content";
 import { loadArticleBodies } from "../lib/article-bodies";
 import { pickEchoes, type VoiceEcho } from "../lib/voice-echoes";
 import { Pagination, usePagedList } from "../components/Pagination";
+import { buildArchiveDialogues } from "../lib/archive-dialogue";
 
 type LiveInboxItem = {
   id: string;
@@ -168,7 +169,8 @@ export default function Inbox() {
 
   /* أصداء من المتون: تُعرض حين لا توجد شهادةٌ حقيقية معتمَدة. ولا تُخترع —
      جملُ الدكتور بحرفها من مقالاتها، تمرّ ببوّابة تحققٍ قبل العرض. */
-  const { articles } = useCmsContent();
+  const { articles, books, papers } = useCmsContent();
+  const archiveDialogues = useMemo(() => buildArchiveDialogues(articles, books, papers), [articles, books, papers]);
   const [echoes, setEchoes] = useState<VoiceEcho[]>([]);
   useEffect(() => {
     if (publicTestimonials.length || !articles.length) return;
@@ -213,6 +215,46 @@ export default function Inbox() {
         </p>
       </div>
 
+      {archiveDialogues.length > 0 && (
+        <section className="border-b border-hair bg-wash/35 px-6 py-14 md:px-11 md:py-20" aria-labelledby="archive-dialogue-title">
+          <div className="mx-auto max-w-shell">
+            <FadeUp>
+              <div className="grid gap-5 md:grid-cols-[minmax(0,.72fr)_minmax(0,1.28fr)] md:items-end">
+                <div>
+                  <span className="text-[.72rem] font-bold text-accent">الأرشيف الذي يحاور نفسه</span>
+                  <h2 id="archive-dialogue-title" className="mt-2 font-display text-[clamp(1.45rem,3vw,2.25rem)] font-semibold leading-[1.55] text-ink">ليست اقتباسات عشوائية؛ إنها خيوط بين المواد.</h2>
+                </div>
+                <p className="text-[.84rem] font-light leading-[1.9] text-soft">كل بطاقة تصرّح هل هي فكرة مستخلصة أم خلاصة مركبة، وتعيدك إلى المصادر العامة القابلة للفتح. لا تُعرض نصوص الكتب الخاصة ولا تُنسب صياغة جديدة إلى الدكتور بوصفها اقتباساً.</p>
+              </div>
+            </FadeUp>
+            <div className="mobile-card-rail mt-8 grid gap-5 md:grid-cols-2">
+              {archiveDialogues.map((item, index) => (
+                <FadeUp key={item.id} delay={Math.min(index * .06, .2)}>
+                  <article className="flex h-full min-w-0 flex-col overflow-hidden rounded-[1.5rem] border border-hair bg-canvas p-6 shadow-[0_18px_55px_-48px_rgba(21,32,44,.55)] transition hover:border-accent/55">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="rounded-full bg-accent/[.08] px-3 py-1 text-[.66rem] font-bold text-accent">{item.label}</span>
+                      <span className="text-[.63rem] font-semibold text-soft">{item.mode} · ليست اقتباساً حرفياً</span>
+                    </div>
+                    <h3 className="mt-5 font-display text-[1.12rem] font-semibold leading-[1.65] text-ink">{item.title}</h3>
+                    <p className="mt-3 flex-1 text-[.86rem] font-light leading-[1.95] text-ink/78">{item.body}</p>
+                    <div className="mt-6 border-t border-hair pt-4">
+                      <span className="text-[.64rem] font-semibold text-soft">افتح الخيط من مصادره</span>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {item.sources.map((source) => (
+                          <Link key={`${item.id}:${source.to}`} to={source.to} className="max-w-full rounded-full border border-hair px-3 py-1.5 text-[.68rem] font-semibold text-ink transition hover:border-accent hover:text-accent">
+                            <span className="text-accent">{source.kind}</span> · <span className="[overflow-wrap:anywhere]">{source.title}</span>{source.year ? ` · ${source.year}` : ''}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </article>
+                </FadeUp>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* الرسالة الأحدث */}
       <section className="border-b border-hair px-6 py-16 md:px-11 md:py-24">
         <div className="mx-auto max-w-shell">
@@ -255,8 +297,7 @@ export default function Inbox() {
           ) : (
             <FadeUp delay={0.06}>
               <div className="mt-8 rounded-[2rem] border border-hair bg-wash p-8 text-soft">
-                لا توجد رسالة منشورة الآن؛ يراجع النظام الأرشيف ويحدّث هذا
-                الموضع تلقائيًا عند اعتماد مادة جديدة.
+                لا توجد رسالة حيّة معتمدة الآن. في الأعلى يواصل «الأرشيف الذي يحاور نفسه» كشف خيوط موثقة من المواد العامة.
               </div>
             </FadeUp>
           )}

@@ -238,6 +238,10 @@ export interface Palette {
   accentSoft: string
   rule: string
   isDark: boolean
+  /** ألوان البصمة المتعددة؛ يستخدمها العارض في الغسلات والزوايا لا في النص الخام. */
+  spectrum?: string[]
+  /** علامة أن اللوحة مستخرجة من صورة، لا لوحة جاهزة. */
+  dna?: boolean
 }
 
 export interface TextMetrics {

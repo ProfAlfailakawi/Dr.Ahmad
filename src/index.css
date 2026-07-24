@@ -3263,3 +3263,38 @@ body.selection-active .floating-actions {
   pointer-events: none;
   transition: opacity .25s ease;
 }
+
+/* تنزيل الاستشهاد الأكاديمي — زر حقيقي لا رابط وهمي */
+.citation-export-v2 {
+  display: inline-flex !important;
+  min-height: 44px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid rgb(var(--c-accent)) !important;
+  border-radius: 14px !important;
+  background: transparent !important;
+  padding: 10px 16px !important;
+  color: rgb(var(--c-accent)) !important;
+  font-size: .78rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: background .2s ease, color .2s ease !important;
+}
+.citation-export-v2:hover {
+  background: rgb(var(--c-accent)) !important;
+  color: #fff !important;
+}
+
+/* حارس الهاتف: النصوص الطويلة وDOI وأسماء المجلات لا تكسر بطاقاتها */
+.content-research article,
+.content-research article *,
+.citation-card-v2,
+.citation-card-v2 * {
+  min-width: 0;
+}
+.content-research strong,
+.content-research p,
+.content-research a,
+.citation-body-v2 {
+  overflow-wrap: anywhere;
+}

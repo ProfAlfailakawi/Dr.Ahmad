@@ -7,6 +7,7 @@ import { profile, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { analyzeResearch, type ResearchEvidence } from '../lib/research-intelligence'
 import { useAdminAuth } from '../lib/admin-auth'
+import { safeLink } from '../lib/dead-links'
 
 const cleanText = (value = '') => value.replace(/^ملخص عربي:\s*/, '').replace(/\s+/g, ' ').trim()
 const arabicScientific = (value = '') => {
@@ -107,7 +108,11 @@ export default function PaperDetail() {
   const studyType = arabicScientific(p.studyType || intelligence.studyType)
   const abstractAr = arabicScientific(p.abstractAr)
   const doiLink = intelligence.links.find((item) => item.id === 'doi')
-  const sourceLinks = intelligence.links.filter((item) => item.id !== 'doi')
+  const sourceLinks = intelligence.links.flatMap((item) => {
+    if (item.id === 'doi') return []
+    const url = safeLink(item.url)
+    return url ? [{ ...item, url }] : []
+  })
   const dataCards: ScientificCard[] = [
     { key: 'researchQuestion', label: 'السؤال العلمي', value: arabicScientific(p.researchQuestion || intelligence.researchQuestion), evidence: intelligence.fieldEvidence.researchQuestion },
     { key: 'sample', label: 'العينة / نطاق الدراسة', value: arabicScientific(p.sample || intelligence.sample), evidence: intelligence.fieldEvidence.sample },
@@ -118,7 +123,7 @@ export default function PaperDetail() {
     { key: 'contribution', label: 'الإضافة العلمية', value: arabicScientific(p.contribution || intelligence.contribution), evidence: intelligence.fieldEvidence.contribution },
     { key: 'limitations', label: 'القيود', value: arabicScientific(intelligence.limitations), evidence: intelligence.fieldEvidence.limitations },
   ].filter((item) => Boolean(item.value))
-  const citationUrl = doiLink?.url || intelligence.links.find((item) => item.id === 'publisher')?.url || `${SITE_URL}/research/${p.slug}`
+  const citationUrl = safeLink(doiLink?.url) || safeLink(intelligence.links.find((item) => item.id === 'publisher')?.url) || `${SITE_URL}/research/${p.slug}`
   const metadataCount = [topic, researchers, journal, year, doi, keywords].filter(Boolean).length
   const evidenceCount = Object.keys(intelligence.fieldEvidence).length
 
@@ -151,7 +156,7 @@ export default function PaperDetail() {
           ...(p.coAuthors ? [{ '@type': 'Person', name: p.coAuthors }] : []),
         ],
         isPartOf: journal ? { '@type': 'Periodical', name: journal } : undefined,
-        sameAs: intelligence.links.map((item) => item.url),
+        sameAs: intelligence.links.map((item) => safeLink(item.url)).filter(Boolean),
         identifier: doi ? { '@type': 'PropertyValue', propertyID: 'DOI', value: doi } : undefined,
         keywords: keywords || undefined,
         genre: studyType || undefined,
@@ -229,9 +234,9 @@ export default function PaperDetail() {
                 <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {topic && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">الموضوع الأساسي</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{topic}</strong></div>}
                   <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">الباحث الرئيسي والشركاء</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{researchers}</strong></div>
-                  {journal && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">جهة النشر / وعاء النشر</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{journal}</strong></div>}
+                  {journal && <div className="min-w-0 overflow-hidden rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">جهة النشر / وعاء النشر</span><strong dir="auto" className="mt-1 block min-w-0 whitespace-normal text-[.88rem] font-bold leading-[1.85] text-ink [overflow-wrap:anywhere]">{journal}</strong></div>}
                   {year && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">سنة الصدور</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{year}</strong></div>}
-                  {doi && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">المعرّف المعياري DOI</span><strong className="mt-1 block line-clamp-1 font-mono text-[.8rem] text-accent">{doi}</strong></div>}
+                  {doi && <div className="min-w-0 overflow-hidden rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">المعرّف المعياري DOI</span><strong dir="ltr" className="mt-1 block min-w-0 font-mono text-[.8rem] text-accent [overflow-wrap:anywhere]">{doi}</strong></div>}
                   {isAdmin && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">حالة التدقيق والموثوقية</span><strong className={`mt-1 block text-[.88rem] font-bold ${p.analysisNeedsReview ? 'text-soft' : 'text-emerald-600'}`}>{p.analysisNeedsReview ? 'قيد التدقيق — يحتاج مراجعتك' : '✓ موثق ومطابق للمصدر'}</strong></div>}
                 </div>
               </div>
@@ -310,9 +315,9 @@ export default function PaperDetail() {
                 {sourceLinks.length > 0 && (
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
                     {sourceLinks.map((item) => (
-                      <a key={item.id} href={item.url} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-2xl border border-hair bg-canvas px-5 py-4 transition hover:border-accent hover:bg-paper">
-                        <span className="text-[.85rem] font-bold text-ink">{item.label}</span>
-                        <span className="text-[.8rem] text-accent font-semibold">فتح المصدر الأصلي ↗</span>
+                      <a key={item.id} href={item.url} target="_blank" rel="noreferrer" className="flex min-w-0 flex-col items-start gap-2 overflow-hidden rounded-2xl border border-hair bg-canvas px-5 py-4 transition hover:border-accent hover:bg-paper sm:flex-row sm:items-center sm:justify-between">
+                        <span className="min-w-0 text-[.85rem] font-bold text-ink [overflow-wrap:anywhere]">{item.label}</span>
+                        <span className="shrink-0 text-[.8rem] font-semibold text-accent">فتح المصدر الأصلي ↗</span>
                       </a>
                     ))}
                   </div>

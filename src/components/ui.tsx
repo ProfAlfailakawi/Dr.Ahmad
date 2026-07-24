@@ -712,6 +712,17 @@ function SearchPalette({ close }: { close: () => void }) {
           <button type="button" onClick={close} className="min-h-11 px-2 text-[.75rem] text-soft transition-colors hover:text-accent">إغلاق</button>
         </div>
 
+        <nav aria-label="مسارات البحث" className="grid grid-cols-2 gap-2 border-b border-hair bg-wash/45 px-3 py-3 sm:px-5">
+          <Link to={deepTo} onClick={close} className="group min-w-0 rounded-xl border border-hair bg-canvas px-3 py-3 transition hover:border-accent sm:px-4">
+            <span className="block text-[.62rem] font-bold text-accent">نتائج وفلاتر</span>
+            <span className="mt-1 flex items-center justify-between gap-2 text-[.82rem] font-semibold text-ink group-hover:text-accent"><span>البحث المتقدم</span><span aria-hidden>←</span></span>
+          </Link>
+          <Link to={askTo} onClick={close} className="group min-w-0 rounded-xl border border-accent/30 bg-accent/[.05] px-3 py-3 transition hover:border-accent sm:px-4">
+            <span className="block text-[.62rem] font-bold text-accent">جواب من المتون</span>
+            <span className="mt-1 flex items-center justify-between gap-2 text-[.82rem] font-semibold text-ink group-hover:text-accent"><span>اسأل الأرشيف</span><span aria-hidden>←</span></span>
+          </Link>
+        </nav>
+
         <div className="min-h-0 flex-1 overflow-y-auto p-2 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-h-[48vh]">
           {!query.trim() ? null : results.length ? results.map((item) => (
             <Link
@@ -727,17 +738,10 @@ function SearchPalette({ close }: { close: () => void }) {
             <div className="px-5 py-10 text-center">
               <p className="font-display text-[1rem] font-semibold text-ink">لم أجد تطابقاً واضحاً.</p>
               <p className="mt-2 text-[.8rem] text-soft">جرّب عبارة أقصر، أو أرسل السؤال نفسه إلى «العقل الحي».</p>
-              <div className="mt-4 flex justify-center gap-4"><Link to={deepTo} onClick={close} className="min-h-11 border-b border-hair px-1 py-2 text-[.76rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">البحث المتقدم</Link><Link to={askTo} onClick={close} className="min-h-11 border-b border-hair px-1 py-2 text-[.76rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">اسأل الأرشيف</Link></div>
+              <p className="mt-4 text-[.76rem] font-medium text-accent">اختر أحد المسارين الواضحين أعلى النتائج.</p>
             </div>
           )}
         </div>
-
-        {query.trim() && results.length > 0 && (
-          <div className="flex items-center justify-end gap-5 border-t border-hair px-5 py-3 text-[.74rem]">
-            <Link to={deepTo} onClick={close} className="text-soft transition-colors hover:text-accent">البحث المتقدم</Link>
-            <Link to={askTo} onClick={close} className="text-soft transition-colors hover:text-accent">اسأل الأرشيف</Link>
-          </div>
-        )}
       </motion.div>
     </motion.div>
   )

@@ -99,8 +99,8 @@ export type LayoutFamilyId =
   | 'modular-brief'
   | 'infographic'
 
-/** الاتجاهات الفنية الخمسة للإنفوجرافيك — يُنتقى تلقائياً أو يختاره الدكتور يدوياً. */
-export type InfographicVariantId = 'rail' | 'ordinal' | 'cards' | 'timeline' | 'ring'
+/** الاتجاهات الفنية للإنفوجرافيك — تُنتقى تلقائياً أو يختارها الدكتور يدوياً. */
+export type InfographicVariantId = 'rail' | 'ordinal' | 'cards' | 'timeline' | 'ring' | 'spotlight'
 
 export type TypographyModeId =
   | 'display-monumental'

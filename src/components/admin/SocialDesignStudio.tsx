@@ -46,6 +46,7 @@ const INFO_VARIANTS: { id: InfographicVariantId; label: string }[] = [
   { id: 'cards', label: 'البطاقات' },
   { id: 'timeline', label: 'المسار' },
   { id: 'ring', label: 'الحلقة' },
+  { id: 'spotlight', label: 'الواجهة' },
 ]
 const HISTORY_KEY = 'dr-ahmad-social-design-history-v1'
 const SAVED_KEY = 'dr-ahmad-social-design-saved-v1'

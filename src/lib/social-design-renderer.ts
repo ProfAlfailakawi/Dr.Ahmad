@@ -64,6 +64,16 @@ const hashString = (value: string) => { let h = 2166136261; for (let i = 0; i < 
 /** تحويل الأرقام العربية-الهندية إلى غربية (لقراءة قيمة الإحصاءة عدداً). */
 const toWesternDigits = (value: string) => String(value || '').replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
 
+/** تفتيح/تغميق لونٍ سداسيّ (amt>0 نحو الأبيض، amt<0 نحو الأسود) — للتدرّجات الراقية. */
+const hexShade = (hex: string, amt: number) => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim())
+  if (!m) return hex
+  const n = parseInt(m[1], 16)
+  const mix = (c: number) => amt >= 0 ? Math.round(c + (255 - c) * amt) : Math.round(c * (1 + amt))
+  const parts = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => clamp(mix(c), 0, 255).toString(16).padStart(2, '0'))
+  return `#${parts.join('')}`
+}
+
 // سياسة الموقع المعتمدة أرقام غربية في كل النصوص (WesternDigitsGuard يفرضها في
 // المعاينة)؛ نلتزم بها هنا أيضاً كي يتطابق ملف التصدير مع ما يراه الدكتور.
 const arabicNumber = (value: number) => String(value)
@@ -1119,7 +1129,7 @@ export function infographicVariantOf(plan: CompositionPlan): InfoVariant {
   const ordered = /(?:^|\n)\s*(?:[0-9٠-٩]+[.)\-]|أولاً|ثانياً|ثالثاً|أولا|ثانيا|ثالثا|خطوة)/.test(plan.content.original) || /(?:خطوات|كيف)/.test(plan.content.title)
   const pool: InfoVariant[] = ['rail', 'ordinal', 'cards']
   pool.push(ordered ? 'timeline' : 'rail', 'timeline')
-  if (figure) pool.push('ring', 'ring', 'cards')
+  if (figure) pool.push('ring', 'ring', 'cards', 'spotlight')
   return pool[hashString(plan.fingerprint) % pool.length]
 }
 
@@ -1162,6 +1172,24 @@ const paintInfographic: Painter = (s) => {
   }
   const rowSize = Math.max(15, min * .026)
 
+  /* ── التشطيب الراقي (مستوى Apple): تدرّجات ناعمة وعمقٌ محسوب بلا ضجيج ── */
+  const uid = s.uid
+  const accGrad = `${uid}-ig-acc`, badgeHi = `${uid}-ig-hi`, hairGrad = `${uid}-ig-hair`, arcGrad = `${uid}-ig-arc`, glowId = `${uid}-ig-glow`
+  const infoDefs = `
+    <linearGradient id="${accGrad}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${hexShade(p.accent, .18)}"/><stop offset="1" stop-color="${hexShade(p.accent, -.08)}"/></linearGradient>
+    <linearGradient id="${arcGrad}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${hexShade(p.accent, .3)}"/><stop offset="1" stop-color="${hexShade(p.accent, -.06)}"/></linearGradient>
+    <radialGradient id="${badgeHi}" cx="0.5" cy="0.28" r="0.75"><stop offset="0" stop-color="#ffffff" stop-opacity="0.4"/><stop offset="0.72" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="${hairGrad}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${p.rule}" stop-opacity="0"/><stop offset="0.5" stop-color="${p.rule}" stop-opacity="0.85"/><stop offset="1" stop-color="${p.rule}" stop-opacity="0"/></linearGradient>
+    <filter id="${glowId}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${round(min * .014)}"/></filter>`
+  /** قرص فهرسيّ ثلاثيّ الأبعاد: تدرّجٌ لطيفٌ ولمعةٌ علويةٌ ناعمة — يعطي عمق أزرار Apple. */
+  const premiumBadge = (cx: number, cy: number, r: number, num: string) => [
+    `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(r)}" fill="url(#${accGrad})"/>`,
+    `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(r)}" fill="url(#${badgeHi})"/>`,
+    textBlock({ lines: [num], x: cx, y: round(cy + r * .37), size: r * 1.02, fill: '#FFFFFF', weight: 700, anchor: 'middle', family: 'Tajawal' }),
+  ].join('')
+  /** فاصلٌ شعريٌّ يتلاشى عند الطرفين — أرقّ من الخط الصلب. */
+  const hairline = (xa: number, xb: number, y: number) => `<rect x="${round(Math.min(xa, xb))}" y="${round(y - .7)}" width="${round(Math.abs(xb - xa))}" height="1.4" fill="url(#${hairGrad})"/>`
+
   /* ── شارات الإحصاءة (تختلف بالاتجاه) ── */
   const horizontalStat = (): StackItem => figure ? {
     h: figSize * 1.16,
@@ -1172,7 +1200,8 @@ const paintInfographic: Painter = (s) => {
       const labelLines = statLabel ? wrap(statLabel, Math.max(8, (contentW - numW - min * .05) / (labelSize * .555)), 2) : []
       const labelH = blockHeight(labelLines, labelSize, 1.4)
       return [
-        `<text x="${round(w - s.safeX)}" y="${round(top + figSize * .9)}" text-anchor="end" direction="ltr"><tspan fill="${p.accent}" font-family="Tajawal" font-weight="500" font-size="${round(figSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal" font-weight="500" font-size="${round(figSize * .48)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
+        `<text x="${round(w - s.safeX)}" y="${round(top + figSize * .9)}" text-anchor="end" direction="ltr"><tspan fill="url(#${accGrad})" font-family="Tajawal" font-weight="700" font-size="${round(figSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal" font-weight="500" font-size="${round(figSize * .48)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
+        `<rect x="${round(w - s.safeX - numW)}" y="${round(top + figSize * 1.04)}" width="${round(numW)}" height="${round(min * .006)}" rx="${round(min * .003)}" fill="url(#${accGrad})" opacity=".9"/>`,
         labelLines.length ? textBlock({ lines: labelLines, x: w - s.safeX - numW - min * .05, y: top + (figSize * 1.16 - labelH) / 2 + labelSize * .82, size: labelSize, fill: p.muted, weight: 500, family: s.bodyFamily, lineHeight: 1.4 }) : '',
       ].join('')
     },
@@ -1188,7 +1217,8 @@ const paintInfographic: Painter = (s) => {
       const labelLines = statLabel ? wrap(statLabel, Math.max(6, (contentW - pad * 2 - lineWidthPx(`${figure.value}${figure.unit}`, figSize)) / (labelSize * .555)), 2) : []
       const labelH = blockHeight(labelLines, labelSize, 1.35)
       return [
-        `<g filter="url(#${s.uid}-shadow)"><rect x="${round(s.safeX)}" y="${round(top)}" width="${round(contentW)}" height="${round(cardH)}" rx="${round(min * .028)}" fill="${p.accent}"/></g>`,
+        `<g filter="url(#${s.uid}-shadow)"><rect x="${round(s.safeX)}" y="${round(top)}" width="${round(contentW)}" height="${round(cardH)}" rx="${round(min * .028)}" fill="url(#${accGrad})"/></g>`,
+        `<rect x="${round(s.safeX)}" y="${round(top)}" width="${round(contentW)}" height="${round(cardH * .5)}" rx="${round(min * .028)}" fill="#ffffff" opacity=".07"/>`,
         `<text x="${round(w - s.safeX - pad)}" y="${round(top + cardH / 2 + figSize * .34)}" text-anchor="end" direction="ltr"><tspan fill="#FFFFFF" font-family="Tajawal" font-weight="700" font-size="${round(figSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="rgba(255,255,255,.82)" font-family="Tajawal" font-weight="500" font-size="${round(figSize * .48)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
         labelLines.length ? textBlock({ lines: labelLines, x: s.safeX + pad, y: top + cardH / 2 - labelH / 2 + labelSize * .82, size: labelSize, fill: 'rgba(255,255,255,.9)', weight: 500, anchor: 'start', family: s.bodyFamily, lineHeight: 1.35 }) : '',
       ].join('')
@@ -1213,10 +1243,14 @@ const paintInfographic: Painter = (s) => {
         const sx = cx + R * Math.cos(a0), sy = cy + R * Math.sin(a0)
         const ex = cx + R * Math.cos(a1), ey = cy + R * Math.sin(a1)
         const numSize = R * 0.82
+        const sw = round(min * .024)
+        const arc = `M ${round(sx)} ${round(sy)} A ${round(R)} ${round(R)} 0 ${large} 1 ${round(ex)} ${round(ey)}`
         return [
-          `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(R)}" fill="none" stroke="${p.rule}" stroke-width="${round(min * .018)}" opacity=".7"/>`,
-          `<path d="M ${round(sx)} ${round(sy)} A ${round(R)} ${round(R)} 0 ${large} 1 ${round(ex)} ${round(ey)}" fill="none" stroke="${p.accent}" stroke-width="${round(min * .022)}" stroke-linecap="round"/>`,
-          `<text x="${round(cx)}" y="${round(cy + numSize * .34)}" text-anchor="middle" direction="ltr"><tspan fill="${p.accent}" font-family="Tajawal" font-weight="700" font-size="${round(numSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal" font-weight="500" font-size="${round(numSize * .4)}" dx="4">${esc(figure.unit)}</tspan>` : ''}</text>`,
+          `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(R)}" fill="none" stroke="${p.rule}" stroke-width="${sw}" opacity=".45"/>`,
+          `<path d="${arc}" fill="none" stroke="url(#${arcGrad})" stroke-width="${sw}" stroke-linecap="round" filter="url(#${glowId})" opacity=".55"/>`,
+          `<path d="${arc}" fill="none" stroke="url(#${arcGrad})" stroke-width="${sw}" stroke-linecap="round"/>`,
+          `<circle cx="${round(sx)}" cy="${round(sy)}" r="${round(sw / 2)}" fill="${hexShade(p.accent, .3)}"/>`,
+          `<text x="${round(cx)}" y="${round(cy + numSize * .34)}" text-anchor="middle" direction="ltr"><tspan fill="url(#${accGrad})" font-family="Tajawal" font-weight="700" font-size="${round(numSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal" font-weight="500" font-size="${round(numSize * .4)}" dx="4">${esc(figure.unit)}</tspan>` : ''}</text>`,
           statLabel ? textBlock({ lines: [words(statLabel).slice(0, 4).join(' ')], x: cx, y: cy + R + min * .05, size: Math.max(12, min * .022), fill: p.muted, weight: 500, anchor: 'middle', family: s.bodyFamily }) : '',
         ].join('')
       },
@@ -1235,9 +1269,8 @@ const paintInfographic: Painter = (s) => {
         const cy = top + rowH / 2
         const cx = w - s.safeX - badgeR
         return [
-          index === 0 ? '' : `<line x1="${round(s.safeX)}" y1="${round(top - min * .019)}" x2="${round(w - s.safeX)}" y2="${round(top - min * .019)}" stroke="${p.rule}" stroke-width="1" opacity=".5"/>`,
-          `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(badgeR)}" fill="${p.accent}"/>`,
-          textBlock({ lines: [arabicNumber(index + 1)], x: cx, y: round(cy + badgeR * .37), size: badgeR * 1.05, fill: '#FFFFFF', weight: 700, anchor: 'middle', family: 'Tajawal' }),
+          index === 0 ? '' : hairline(s.safeX, w - s.safeX, top - min * .019),
+          premiumBadge(cx, cy, badgeR, arabicNumber(index + 1)),
           textBlock({ lines, x: w - s.safeX - badgeCol, y: top + (rowH - textH) / 2 + rowSize * .82, size: rowSize, fill: p.ink, weight: 500, family: s.bodyFamily, lineHeight: 1.42 }),
         ].join('')
       },
@@ -1278,10 +1311,10 @@ const paintInfographic: Painter = (s) => {
           const cy = top + cardH / 2
           const cx = w - s.safeX - pad - badgeR
           return [
-            `<rect x="${round(s.safeX)}" y="${round(top)}" width="${round(contentW)}" height="${round(cardH)}" rx="${round(min * .022)}" fill="${p.surface}" stroke="${p.rule}" stroke-width="1" opacity="${p.isDark ? 1 : .96}"/>`,
-            `<rect x="${round(w - s.safeX - min * .006)}" y="${round(top + pad * .7)}" width="${round(min * .006)}" height="${round(cardH - pad * 1.4)}" rx="3" fill="${p.accent}"/>`,
-            `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(badgeR)}" fill="${p.accent}"/>`,
-            textBlock({ lines: [arabicNumber(index + 1)], x: cx, y: round(cy + badgeR * .37), size: badgeR * 1.05, fill: '#FFFFFF', weight: 700, anchor: 'middle', family: 'Tajawal' }),
+            `<g filter="url(#${s.uid}-shadow)"><rect x="${round(s.safeX)}" y="${round(top)}" width="${round(contentW)}" height="${round(cardH)}" rx="${round(min * .024)}" fill="${p.surface}" stroke="${p.rule}" stroke-width="1" opacity="${p.isDark ? 1 : .98}"/></g>`,
+            `<rect x="${round(s.safeX)}" y="${round(top)}" width="${round(contentW)}" height="${round(cardH * .5)}" rx="${round(min * .024)}" fill="#ffffff" opacity="${p.isDark ? .03 : .05}"/>`,
+            `<rect x="${round(w - s.safeX - min * .0055)}" y="${round(top + pad * .7)}" width="${round(min * .0055)}" height="${round(cardH - pad * 1.4)}" rx="3" fill="url(#${accGrad})"/>`,
+            premiumBadge(cx, cy, badgeR, arabicNumber(index + 1)),
             textBlock({ lines, x: w - s.safeX - pad - badgeR * 2 - min * .018, y: top + (cardH - textH) / 2 + rowSize * .82, size: rowSize, fill: p.ink, weight: 500, family: s.bodyFamily, lineHeight: 1.42 }),
           ].join('')
         },
@@ -1303,11 +1336,12 @@ const paintInfographic: Painter = (s) => {
           const cy = top + rowH / 2
           const cx = w - s.safeX - badgeR
           const connector = index < total - 1
-            ? `<line x1="${round(cx)}" y1="${round(cy + badgeR)}" x2="${round(cx)}" y2="${round(top + rowH + lineGap + badgeR)}" stroke="${p.accent}" stroke-width="1.6" opacity=".45"/>`
+            ? `<rect x="${round(cx - min * .0018)}" y="${round(cy + badgeR)}" width="${round(min * .0036)}" height="${round(top + rowH + lineGap + badgeR - (cy + badgeR))}" rx="${round(min * .0018)}" fill="url(#${accGrad})" opacity=".55"/>`
             : ''
           return [
             connector,
-            `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(badgeR)}" fill="${p.surface}" stroke="${p.accent}" stroke-width="2"/>`,
+            `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(badgeR * 1.2)}" fill="none" stroke="url(#${accGrad})" stroke-width="1" opacity=".28"/>`,
+            `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(badgeR)}" fill="${p.surface}" stroke="url(#${accGrad})" stroke-width="2.6"/>`,
             textBlock({ lines: [arabicNumber(index + 1)], x: cx, y: round(cy + badgeR * .37), size: badgeR * 1.02, fill: p.accent, weight: 700, anchor: 'middle', family: 'Tajawal' }),
             textBlock({ lines, x: w - s.safeX - badgeCol, y: top + (rowH - textH) / 2 + rowSize * .82, size: rowSize, fill: p.ink, weight: 500, family: s.bodyFamily, lineHeight: 1.42 }),
           ].join('')
@@ -1316,21 +1350,50 @@ const paintInfographic: Painter = (s) => {
     })
   }
 
-  const statItem = variant === 'ring' ? ringStat() : variant === 'cards' ? cardStat() : horizontalStat()
+  /* الواجهة (spotlight): رقمٌ ضخمٌ بطلٌ كشرائح Apple، ونقاطٌ متمركزةٌ فاصلُها شعريٌّ يتلاشى. */
+  const spotlightStat = (): StackItem => {
+    if (!figure) return horizontalStat()
+    const heroSize = min * (s.isWide ? .2 : .26)
+    return {
+      h: heroSize * .92 + (statLabel ? min * .05 : 0),
+      gap: min * .05,
+      draw: (top) => [
+        `<text x="${round(w / 2)}" y="${round(top + heroSize * .8)}" text-anchor="middle" direction="ltr"><tspan fill="url(#${accGrad})" font-family="Tajawal" font-weight="700" font-size="${round(heroSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal" font-weight="500" font-size="${round(heroSize * .34)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
+        statLabel ? textBlock({ lines: [words(statLabel).slice(0, 5).join(' ')], x: w / 2, y: top + heroSize * .8 + min * .05, size: Math.max(13, min * .024), fill: p.muted, weight: 500, anchor: 'middle', family: s.bodyFamily }) : '',
+      ].join(''),
+    }
+  }
+  const spotlightRows = (): StackItem[] => points.slice(0, s.isTall ? 4 : 3).map((point, index) => {
+    const size = Math.max(14, min * .026)
+    const lines = wrap(point, Math.max(8, (contentW - min * .1) / (size * .555)), 2)
+    const textH = blockHeight(lines, size, 1.4)
+    return {
+      h: textH,
+      gap: index === 0 ? min * .06 : min * .042,
+      draw: (top) => [
+        index > 0 ? hairline(w / 2 - min * .075, w / 2 + min * .075, top - min * .021) : '',
+        textBlock({ lines, x: w / 2, y: top + size * .82, size, fill: p.ink, weight: 500, anchor: 'middle', family: s.bodyFamily, lineHeight: 1.4 }),
+      ].join(''),
+    }
+  })
+
+  const statItem = variant === 'ring' ? ringStat() : variant === 'cards' ? cardStat() : variant === 'spotlight' ? spotlightStat() : horizontalStat()
   const rowItems = variant === 'ordinal' ? ordinalRows()
     : variant === 'cards' ? cardRows()
     : variant === 'timeline' ? timelineRows()
+    : variant === 'spotlight' ? spotlightRows()
     : railRows()
 
+  const titleAnchor = variant === 'spotlight' ? 'middle' : 'end'
   const stack = drawStack([
-    kickerItem(kickerScene),
-    textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: p.ink, weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: figure ? '' : s.hero, emphasisFill: p.accent, gap: min * .03 }),
+    variant === 'spotlight' ? kickerItem({ ...kickerScene, kicker: kickerScene.kicker } as Scene, { x: w / 2, anchor: 'middle' }) : kickerItem(kickerScene),
+    textItem({ lines: title.lines, x: variant === 'spotlight' ? w / 2 : w - s.safeX, size: title.size, fill: p.ink, weight: s.titleWeight, anchor: titleAnchor, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: figure ? '' : s.hero, emphasisFill: p.accent, gap: min * .03 }),
     statItem,
     ...rowItems,
-    ctaItem(ctaScene, { gap: min * .05 }),
+    ctaItem(ctaScene, { align: variant === 'spotlight' ? 'center' : 'right', gap: min * .05 }),
     carouselItem(s),
-  ], contentBand(s), .4)
-  return { markup: [stack, identityFooter(s)].join('') }
+  ], contentBand(s), variant === 'spotlight' ? .46 : .4)
+  return { defs: infoDefs, markup: [stack, identityFooter(s, variant === 'spotlight' ? { mode: 'center' } : {})].join('') }
 }
 
 const PAINTERS: Record<CompositionPlan['layout'], Painter> = {

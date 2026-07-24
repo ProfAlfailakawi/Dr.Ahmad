@@ -1,0 +1,6 @@
+ملفات يتيمة متتبَّعة في الجذر — البناء يمسحها قبل كل تشغيلة، فحذفها من الريبو يُريح:
+
+git rm App.tsx ArticleDetail.tsx PaperDetail.tsx IdeaFeatures.tsx public/sitemap.xml
+
+تأكدتُ أنها غير مستعملة: src/main.tsx يستورد ./App أي src/App.tsx (٢٧٣ سطراً)
+لا الجذر (٩٣٩ سطراً — نسخة قديمة). و public/sitemap.xml ٩٥ سطراً بينما المولَّد ٢١٢.

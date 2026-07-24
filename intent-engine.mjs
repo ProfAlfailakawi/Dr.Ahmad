@@ -3,6 +3,7 @@ import { AUDIO_PUBLIC_BASE_URL, AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUA
 import { hashOpaque } from './crypto.mjs'
 import { createReminder, parseReminderTime } from './reminders.mjs'
 import { applyBotRules, sign } from './bot-rules.mjs'
+import { getBotMessages } from './bot-messages.mjs'
 import { answer as scholarAnswer, SCAFFOLD as SCHOLAR_SCAFFOLD } from './scholar.mjs'
 import {
   applyReferenceResolution,
@@ -78,7 +79,10 @@ const patterns = [
   [INTENTS.MOST_VIEWED_ARTICLE, [/(اكثر|اعلي|اشهر|ابرز).*(مقال|مقاله).*(مشاهده|قراءه|انتشار|تداول)|المقاله?\s*(الاكثر مشاهده|الاكثر قراءه|الاشهر)/, 0.97]],
   [INTENTS.LATEST_ARTICLES, [/(اخر|احدث|جديد).*(مقالات|مقالاته|مقالات الدكتور)|شنو.*(اخر|احدث).*(مقالات|مقالاته)|شنو.*كتب.*موخرا|شنو.*عنده.*مقالات/, 0.96]],
   [INTENTS.LATEST_ARTICLE, [/(اخر|احدث|جديد).*(مقال|مقاله|مقالته)|مقاله جديده|شنو كتبت|شنو اخر مقالته/, 0.95]],
-  [INTENTS.LATEST_CONTENT, [/(شنو|وش|ما|ماذا).*(جديد|اخر شي|احدث شي|نشر موخرا).*(الدكتور|د احمد|الفيلكاوي)?|(جديد|اخر شي|احدث شي)\s*(الدكتور|د احمد|الفيلكاوي)|شنو جديده/, 0.96]],
+  [INTENTS.LATEST_CONTENT, [/(شنو|وش|ما|ماذا).*(جديد|اخر شي|احدث شي|نشر موخرا).*(الدكتور|د احمد|الفيلكاوي)?|(جديد|اخر شي|احدث شي)\s*(الدكتور|د احمد|الفيلكاوي)|شنو جديده/, 0.96],
+    /* متابعاتٌ قصيرة بعد بطاقةٍ أُرسلت: «جديده؟» «عنده جديد؟» «فيه جديد؟» — تُفهم
+       طلباً للأحدث لا صمتاً (أمر الدكتور: يردّ على كل شيء). */
+    [/^\s*جديده?\s*[؟?]?\s*$|(عنده|فيه|في|عندكم|لديه)\s*(شي\s*)?جديد|شي\s*جديد|جديد\s*(الدكتور|عنده)/, 0.92]],
   [INTENTS.TOP_ARTICLE_TOPIC, [/(اكثر|ابرز).*(موضوع|مجال).*(يكتب|كتب|مقالات)|شنو.*اكثر.*مواضيع/, 0.94]],
   [INTENTS.CONTENT_OVERVIEW, [/(شنو|وش|ماذا).*(عنده|موجود).*(الموقع|المكتبه)|محتويات\s*(الموقع|المكتبه)|شنو يقدم الموقع/, 0.93]],
   /* «أبحاث الدكتور» — طلبها الدكتور صراحةً، ولا تُقال مصادفة في محادثة */
@@ -117,7 +121,9 @@ const patterns = [
   [INTENTS.ABOUT_DOCTOR, [/(السيره|سيره ذاتيه|سيرتك|من هو|منو|تعريف|نبذه عن|هويه|cv)\s*(ال)?(د|دكتور)?\s*(احمد)?/, 0.92]],
   [INTENTS.CURATED_PICKS, [/(مختارات|المختارات|اختياراتك|ترشيحات|ماذا تقرا|شنو تقرا)/, 0.92]],
   /* داخل الجلسة يريد الناس المزيد والمقارنة والتنقّل — لا أوامر جافّة فقط */
-  [INTENTS.MORE_LIKE_THIS, [/^(في\s*)?(غيره|غيرها|زدني|كمان|بعد|المزيد|عطني اكثر|شي ثاني|شيء ثاني|في بعد|واحد ثاني|ماده ثانيه)/, 0.93]],
+  [INTENTS.MORE_LIKE_THIS, [/^(في\s*)?(غيره|غيرها|زدني|كمان|بعد|المزيد|عطني اكثر|شي ثاني|شيء ثاني|في بعد|واحد ثاني|ماده ثانيه)/, 0.93],
+    /* «شنو عنده بعد الدكتور؟» «عنده بعد؟» «شنو بعد؟» — طلب المزيد بصياغةٍ سؤالية */
+    [/(شنو|وش|ايش)\s*(عنده|عندكم|فيه|بعد)\s*(بعد|شي|ثاني|غيره)?|عنده\s*(شي\s*)?بعد|بعده\s*شي/, 0.92]],
   [INTENTS.COMPARE, [/(قارن|الفرق بين|ايهما|وش الفرق|مقارنه بين)/, 0.92]],
   [INTENTS.ABOUT_TOPIC, [/(عندك|عندكم|في|لديك)\s*(شي|شيء|مقال|بحث|كتاب|ماده)?\s*(عن|حول|بخصوص)/, 0.90]],
 ]
@@ -278,6 +284,52 @@ function archiveDoors(db, limit = 6) {
   return doors
 }
 
+/* التسامح الإملائي (أمر «يفهم كل شيء»): «التعلليم» تجد «التعليم» —
+   مسافة تحرير ≤2 على مفردات الفهرس الحقيقية، لا تخمين خارجها */
+function editDistance(left, right) {
+  if (Math.abs(left.length - right.length) > 2) return 3
+  const rows = Array.from({ length: left.length + 1 }, (_, i) => [i, ...Array(right.length).fill(0)])
+  for (let j = 1; j <= right.length; j += 1) rows[0][j] = j
+  for (let i = 1; i <= left.length; i += 1) {
+    for (let j = 1; j <= right.length; j += 1) {
+      rows[i][j] = Math.min(
+        rows[i - 1][j] + 1,
+        rows[i][j - 1] + 1,
+        rows[i - 1][j - 1] + (left[i - 1] === right[j - 1] ? 0 : 1),
+      )
+    }
+  }
+  return rows[left.length][right.length]
+}
+
+function indexVocabulary(db) {
+  const rows = db.all("SELECT title, keywords FROM content_items") || []
+  const vocabulary = new Set()
+  for (const row of rows) {
+    for (const word of clean(`${row.title || ''} ${row.keywords || ''}`).split(/\s+/)) {
+      if (word.length >= 4) vocabulary.add(word)
+    }
+  }
+  return [...vocabulary]
+}
+
+function repairTypos(db, words) {
+  const vocabulary = indexVocabulary(db)
+  let repaired = false
+  const output = words.map((word) => {
+    if (word.length < 4 || vocabulary.includes(word)) return word
+    let best = null
+    for (const candidate of vocabulary) {
+      const distance = editDistance(word, candidate)
+      if (distance <= 2 && (!best || distance < best.distance)) best = { candidate, distance }
+      if (best?.distance === 1) break
+    }
+    if (best) { repaired = true; return best.candidate }
+    return word
+  })
+  return { words: output, repaired }
+}
+
 function nearestSuggestions(db, rawText, limit = 3) {
   const normalized = stripGroundedTopicRequest(rawText)
   const words = normalized.split(/\s+/).filter((word) => word.length > 1)
@@ -287,6 +339,20 @@ function nearestSuggestions(db, rawText, limit = 3) {
     for (const word of words) {
       const single = namedContentMatches(db, [word], limit)
       if (single.length) { found = single; break }
+    }
+  }
+  /* الملاذ الإملائي: أصلح الكلمات على مفردات الفهرس ثم أعد المحاولة */
+  if (!found.length && words.length) {
+    const repair = repairTypos(db, words.map((word) => clean(word)))
+    if (repair.repaired) {
+      found = namedContentMatches(db, repair.words.slice(0, 4), limit)
+      if (!found.length) found = searchContent(db, repair.words.join(' '), { limit })
+      if (!found.length) {
+        for (const word of repair.words) {
+          const single = namedContentMatches(db, [word], limit)
+          if (single.length) { found = single; break }
+        }
+      }
     }
   }
   return found.slice(0, limit)
@@ -306,12 +372,41 @@ function noSilenceReply(db, rawText, { offDomain = false } = {}) {
     }
   }
   const doors = archiveDoors(db)
-  const doorsLine = doors.length ? `\nأبواب الأرشيف الحاضرة: ${doors.join(' · ')}.` : ''
+  const MSG = getBotMessages()
+  const doorsLine = doors.length ? `\n${MSG.doorsPrefix}${doors.join(' · ')}.` : ''
   return {
     needsHuman: true,
     text: offDomain
-      ? `سؤالك خارج المحتوى المنشور في الموقع، وقد وصل للدكتور يجيبك بنفسه.${doorsLine}\nوإن أحببت الآن: اكتب «بوابة اليوم» أو اسأل عن أي موضوعٍ من مقالاته.`
-      : `هذا الموضوع لم يُنشر عنه في الموقع بعد، ووصلت رسالتك للدكتور نفسه.${doorsLine}\nاسأل داخل أي بابٍ منها، أو اكتب «آخر مقالاته».`,
+      ? `${MSG.notPublishedReached}${doorsLine}\n${MSG.notPublishedReachedCta}`
+      : `${MSG.notPublishedNew}${doorsLine}\n${MSG.notPublishedNewCta}`,
+  }
+}
+
+/* إنقاذٌ مسنَد (أمر الدكتور: «خل يحاول يبحث من قاعدة البيانات ويجاوب بدل الصمت»):
+   حين يُسقط حارسُ المصدر جواباً طموحاً — استشهادٌ لم يُتحقَّق — لا نصمت في وجه
+   سؤالٍ عن موضوعٍ منشور، بل نردّ بأقرب موادّ الدكتور الحقيقية (عناوين وروابط من
+   الأرشيف، يستحيل أن تكون مؤلَّفة). ويبقى الصمتُ لِما هو شخصيٌّ أو إنسانيٌّ أو
+   خارج النطاق: هناك لا رابطَ يليق، والتحويلُ للدكتور أرحم من ردٍّ بارد.
+   يُرجِع null حين لا يليق ردٌّ مسنَد — فيُبقي المتّصلُ صمتَه المقصود. */
+export function groundedRescue(db, rawText) {
+  const normalized = clean(rawText || '')
+  if (!normalized || CHATTER_OR_PERSONAL.test(normalized)) return null
+  const query = stripGroundedTopicRequest(normalized)
+  const words = query.split(/\s+/).filter((word) => word.length > 2)
+  if (!words.length) return null
+  const results = searchContent(db, query, { limit: 4 })
+  const onDomain = results.filter((item) => {
+    const named = clean(`${item.title || ''} ${item.keywords || ''}`)
+    return words.some((word) => named.includes(word))
+  })
+  const chosen = onDomain.length ? onDomain : namedContentMatches(db, words, 3)
+  if (!chosen.length) return null
+  const choices = chosen.slice(0, 3)
+  return {
+    text: `ما عندي جوابٌ محرَّرٌ جاهزٌ بهذا، لكن هذي أقربُ موادّ الدكتور المنشورة لسؤالك:\n${choices.map((item, index) => `${index + 1}. ${item.title}\n${item.url}`).join('\n\n')}\n\nقل «لخّص الأولى» أو «اسمعني الثانية».`,
+    contentId: choices[0].id,
+    contextItems: choices.map((item) => item.id),
+    seenContentIds: choices.map((item) => item.id),
   }
 }
 
@@ -496,7 +591,7 @@ function customRuleReply(db, rule, input) {
   }
   /* لا تُرسل القواعد الحرة كلاماً مؤلفاً. التحويل والنص الحر يتركان الرسالة
      للدكتور بصمت؛ أما الرد الآلي فمصدره فهرس الموقع وحده. */
-  return { intent: 'CUSTOM_RULE', confidence: 0.99, needsHuman: true, ruleId: rule.id, ruleName: rule.name, text: 'وصلت رسالتك، وسيردّ عليك الدكتور بنفسه.' }
+  return { intent: 'CUSTOM_RULE', confidence: 0.99, needsHuman: true, ruleId: rule.id, ruleName: rule.name, text: getBotMessages().humanHandoff }
 }
 
 const itemLink = (item) => item ? `\n${item.title}\n${item.url}` : ''
@@ -511,7 +606,7 @@ const audioLinks = (item) => {
 }
 
 function contentReply(label, item, extra = '') {
-  if (!item) return { text: 'ما لقيت مادة منشورة مطابقة الآن. اكتب لي الموضوع أو النوع الذي تريده، وأبحث لك من جديد.' }
+  if (!item) return { text: getBotMessages().noMatch }
   return { text: `${label}:\n${item.title}${item.date ? ` · ${item.date}` : ''}\n${item.excerpt || contentSummary(item, 1)}\n${item.url}${extra}`, contentId: item.id, contextItems: [item.id], seenContentIds: [item.id], actions: audioLinks(item) }
 }
 
@@ -647,14 +742,73 @@ ${topics.map((item, index) => `${index + 1}. ${item.topic} — ${item.count} م�
   }
 }
 
-function welcomeReply(db, jid) {
+/* البوت يحسّ الوقت (أمر الدكتور: «يخليه حيّاً ومنتبهاً»): تحيةٌ بتوقيت الكويت
+   الفعلي — صباحاً وظهراً وليلاً — تسبق «حيّاك الله» فيبدو كإنسانٍ منتبهٍ للساعة. */
+function timeGreeting(at = new Date()) {
+  const hour = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kuwait', hour: '2-digit', hourCycle: 'h23' }).format(at))
+  if (hour >= 5 && hour < 11) return 'صباح الخير 🌅'
+  if (hour >= 11 && hour < 17) return 'نهارك سعيد ☀️'
+  return 'مساء الخير 🌙'
+}
+
+/* كشف مزاج الرسالة (أمر الدكتور «نبرة تتكيّف مع المزاج»): إشاراتٌ لفظية صريحة
+   فقط — لا نخمّن المشاعر ولا نؤلّف. المحايد هو الأصل حتى تظهر قرينة واضحة. */
+const MOOD_WARM = /(رائع|ممتاز|جميل|حلو|شكرا|شكراً|مشكور|أحسنت|احسنت|مبدع|واو|وااو|يعطيك العافيه|تسلم|فرحت|سعدت|👏|🌹|❤|😍|🔥)/
+const MOOD_LOW = /(زعلان|حزين|تعبان|معصب|متضايق|مضايق|للاسف|للأسف|مو راضي|سيّئ|سيئ|ما اشتغل|مو شغال|خربان|مشكله|مشكلة|احبطت|يائس|😢|😞|💔|😡)/
+function detectMood(text = '') {
+  const value = clean(text)
+  if (MOOD_LOW.test(value)) return 'low'
+  if (MOOD_WARM.test(value)) return 'warm'
+  return 'neutral'
+}
+function moodPrefix(mood) {
+  if (mood === 'warm') return 'سعيدٌ بحماسك 🌟 '
+  if (mood === 'low') return 'حيّاك، وأرجو أن يخفّف هذا عنك قليلاً 🌿 '
+  return ''
+}
+
+/* ذاكرة الاهتمام عبر الأيام: نتذكّر مواضيع كل سائلٍ لا محتوى رسائله — عدّادٌ
+   بسيطٌ بالموضوع، يخدم اقتراحاً استباقياً بمادةٍ حقيقية لاحقاً. بلا تأليف. */
+function recordInterest(db, jid, topicPhrase) {
+  try {
+    const topic = clean(topicPhrase).split(/\s+/).filter((word) => word.length > 3).slice(0, 3).join(' ')
+    if (!topic) return
+    const key = db.jidKey ? db.jidKey(jid) : jid
+    db.run(
+      `INSERT INTO chat_interests(jid,topic,hits,last_at) VALUES(?,?,1,?)
+       ON CONFLICT(jid,topic) DO UPDATE SET hits=hits+1, last_at=excluded.last_at`,
+      key, topic, new Date().toISOString(),
+    )
+  } catch { /* الذاكرة إضافةٌ لا تُعطّل رداً */ }
+}
+function topInterest(db, jid) {
+  try {
+    const key = db.jidKey ? db.jidKey(jid) : jid
+    const row = db.get('SELECT topic, hits FROM chat_interests WHERE jid=? ORDER BY hits DESC, last_at DESC LIMIT 1', key)
+    return row && row.hits >= 2 ? row.topic : ''
+  } catch { return '' }
+}
+/* اقتراحٌ استباقيّ بمادةٍ حقيقية مرتبطة باهتمام السائل — يُرجِع سطراً أو فراغاً،
+   ولا يُكرّر ما رآه، ولا يُطلق إلا حين توجد مادةٌ فعلية. */
+function proactiveLine(db, jid, seenIds = []) {
+  const topic = topInterest(db, jid)
+  if (!topic) return ''
+  const matches = searchContent(db, topic, { limit: 4 }).filter((item) => !seenIds.includes(item.id))
+  if (!matches.length) return ''
+  const pick = matches[0]
+  return `\n\nوبما أنك كثيراً ما تسأل عن «${topic}» — قد يعجبك أيضاً:\n${pick.title}\n${pick.url}`
+}
+
+function welcomeReply(db, jid, at = new Date(), mood = 'neutral') {
+  const MSG = getBotMessages()
+  const greet = `${moodPrefix(mood)}${timeGreeting(at)}`
   const item = selectDailyUnsentContent(db, { jid })
   if (!item) {
     const hasArchive = Number(db.get('SELECT COUNT(*) AS count FROM content_items')?.count || 0) > 0
     return {
       text: hasArchive
-        ? 'حيّاك الل. فتحت لك مكتبة د. أحمد الفيلكاوي.\n\nمررتَ على كل مواد الأرشيف المسجلة، لذلك لن أكرر مادةً عليك من غير أن تطلبها. اكتب موضوعاً أو نوعاً وأفتحه لك.'
-        : 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي، لكن لا توجد مواد منشورة في الفهرس الآن.',
+        ? `${greet} · ${MSG.welcomeLine}.\n\nمررتَ على كل مواد الأرشيف المسجلة، لذلك لن أكرر مادةً عليك من غير أن تطلبها. اكتب موضوعاً أو نوعاً وأفتحه لك.`
+        : `${greet} · ${MSG.welcomeLine}، لكن لا توجد مواد منشورة في الفهرس الآن.`,
       contextItems: [],
       replaceContextList: true,
     }
@@ -662,14 +816,14 @@ function welcomeReply(db, jid) {
   const extract = extractVerbatimAtSpeed(item, '30s')
   const quote = extract?.text || item.excerpt || contentSummary(item, 1)
   return {
-    text: `حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي.
+    text: `${greet} · ${MSG.welcomeLine}.
 
-بوابة اليوم:
+${MSG.dailyGateLabel}
 ${item.title}${item.date ? ` · ${item.date}` : ''}
 ${quote ? `«${quote}»\n` : ''}${item.url}
 
-شنو يناسب وقتك؟ ٣٠ ثانية · دقيقتان · تعمّق · اختبرني
-ولإيقاف الرسائل اكتب: أوقف الرسائل.`,
+${MSG.optionsPrompt}
+${MSG.stopHint}${proactiveLine(db, jid, [item.id])}`,
     contentId: item.id,
     contextItems: [item.id],
     seenContentIds: [item.id],
@@ -942,13 +1096,19 @@ export function markManualTakeover(db, jid, minutes = MANUAL_TAKEOVER_MINUTES) {
   const until = new Date(Date.now() + minutes * 60 * 1000).toISOString()
   const now = new Date().toISOString()
   const jidKey = db.jidKey(jid)
+  /* بأمر الدكتور (٢٠٢٦-٠٧-٢٣): تدخله اليدوي يُصمت البوت مدةَ المهلة فقط —
+     الجلسة لا تُهدم. كانت تُقلب إلى manual-takeover فيموت الباب للأبد ويحتاج
+     الشخص «إيقاظاً» جديداً بعد كل محادثة خاصة، وهذا الإزعاج الذي اشتكاه.
+     الآن: الصمت قائم ما دام manual_until في المستقبل (البوابة تفحصه بمعزل عن
+     الوضع)، وبعده يستأنف البوت وحده. سياقُ ما قبل الخصوصية يُمسح احتراماً
+     لحديث الدكتور — استئنافٌ نظيف لا استكمالُ تنصّت. */
   db.run(
-    `INSERT INTO chat_sessions(jid,mode,manual_until,content_id,followup_json,context_json,opened_at,last_user_at,updated_at)
-     VALUES(?,?,?,?,?,?,?,?,?)
+    `INSERT INTO chat_sessions(jid,mode,manual_until,updated_at)
+     VALUES(?,?,?,?)
      ON CONFLICT(jid) DO UPDATE SET
-       mode=excluded.mode, manual_until=excluded.manual_until, content_id=NULL,
-       followup_json=NULL, context_json=NULL, opened_at=NULL, last_user_at=NULL, updated_at=excluded.updated_at`,
-    jidKey, 'manual-takeover', until, null, null, null, null, null, now,
+       manual_until=excluded.manual_until, content_id=NULL,
+       followup_json=NULL, context_json=NULL, updated_at=excluded.updated_at`,
+    jidKey, 'suggest-only', until, now,
   )
 }
 
@@ -1023,6 +1183,7 @@ export function articleCorpus(db, now = Date.now()) {
 }
 
 export function handleIntent({ db, jid = '', input, session = pendingSession(db, jid), classification = classifyIntent(input) }) {
+  const MSG = getBotMessages()
   /* الرقم المفرد له معنيان بحسب السياق: اختيار نتيجة من قائمة، أو إجابة تحدٍّ.
      التصنيف العام لا يملك الجلسة، لذلك كان «٢» بعد التحدّي يفتح المقالة الثانية
      بدلاً من تصحيح الإجابة. وجود تحدٍّ مفتوح وحده يمنح الرقم معنى الإجابة؛ وبعد
@@ -1046,14 +1207,14 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
   db.run('INSERT INTO intent_logs(jid,input_hash,intent,confidence,created_at) VALUES(?,?,?,?,?)', logId, hashOpaque(input), intent, confidence, new Date().toISOString())
   if (confidence < 0.7) {
     recordUnresolvedLearning(db, jid, input, 'low-confidence')
-    return { ...classification, shouldRespond: true, needsHuman: true, text: 'ما فهمت الطلب بدقة. هل تبحث في المقالات، الكتب، الأبحاث، أم البودكاست؟' }
+    return { ...classification, shouldRespond: true, needsHuman: true, text: MSG.clarify }
   }
   if (!classification.learned) confirmPendingLearning(db, jid, intent, new Date(), confidence)
   const selection = contextSelection(db, session, input, classification.request || parseCompoundRequest(input))
 
   switch (intent) {
-    case INTENTS.STOP_MESSAGES: setSuppression(db, jid, true); return { ...classification, shouldRespond: true, text: 'تم، لن تصلك رسائل محتوى جديدة. إذا رغبت بالعودة اكتب: رجع الرسائل.' }
-    case INTENTS.RESUME_MESSAGES: setSuppression(db, jid, false); return { ...classification, shouldRespond: true, text: 'عاد الاشتراك في رسائل المحتوى.' }
+    case INTENTS.STOP_MESSAGES: setSuppression(db, jid, true); return { ...classification, shouldRespond: true, text: MSG.stopConfirm }
+    case INTENTS.RESUME_MESSAGES: setSuppression(db, jid, false); return { ...classification, shouldRespond: true, text: MSG.resumeConfirm }
     case INTENTS.DELETE_PREFERENCES: clearPreferences(db, jid); return { ...classification, shouldRespond: true, text: 'حذفت بيانات التخصيص المحلية: المحتوى السابق، المحفوظات، السجل والتذكيرات. أبقيت فقط طلب إيقاف الرسائل وفترة استلام الدكتور إن كانا مفعّلين.' }
     case INTENTS.COMPOUND_REQUEST:
       return { ...classification, ...compoundRequestReply(db, classification.request || selection.request) }
@@ -1147,7 +1308,7 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
     /* الترحيب: أول لقاءٍ بين الناس والخدمة. يعرض المدى كلَّه — لا المقالات
        وحدها — لأن من يكتب كلمة الدخول قد يريد بحثاً أو كتاباً أو مقارنة. */
     case INTENTS.WELCOME:
-      return { ...classification, ...welcomeReply(db, jid) }
+      return { ...classification, ...welcomeReply(db, jid, new Date(), detectMood(input)) }
 
     /* «غيره» و«زدني»: يفهمها البشر بلا شرح، ويجب أن يفهمها البوت داخل الجلسة.
      *
@@ -1249,6 +1410,7 @@ ${SITE_URL}/research` }
       const query = stripGroundedTopicRequest(classification.normalized
         .replace(/^(عندك|عندكم|لديك|في)\s*(شي|شيء|مقال|بحث|كتاب|ماده)?\s*(عن|حول|بخصوص)\s*/, '')
         .replace(/[؟?]/g, '').trim()) || stripGroundedTopicRequest(classification.normalized)
+      recordInterest(db, jid, query)
       const preliminary = searchContent(db, query, { limit: 6 })
       const meaningfulWords = clean(query).split(/\s+/).filter((word) => word.length > 2)
       if (meaningfulWords.length === 1 && preliminary.length >= 3) {
@@ -1499,7 +1661,17 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
   const configuredRule = activeSession ? matchReplyRule(db, text) : null
   const understood = (intent !== INTENTS.UNKNOWN && confidence >= 0.7 && !classification0.fallback) || groundedFallback || Boolean(configuredRule)
   if (activeSession && understood) return { allowed: true, reason: groundedFallback ? 'content-session-grounded-search' : classification0.learned ? 'content-session-learned' : 'content-session' }
-  if (activeSession && !understood) recordUnresolvedLearning(db, jid, text, classification0.fallback ? 'ungrounded-fallback' : 'unknown-after-wake')
+  if (activeSession && !understood) {
+    recordUnresolvedLearning(db, jid, text, classification0.fallback ? 'ungrounded-fallback' : 'unknown-after-wake')
+    /* أمر الدكتور: «يردّ على كل شيء داخل الجلسة — لو فهم ولو ما فهم؛ إن كان
+       غامضاً فوضّح أو اقترح أو اسأل». فالسؤال المفتوح (استفهامٌ صريح، لا شكوى
+       إنسانية ولا كلامٌ عابر) يُقابَل بمساعدةٍ ومقترحات لا بصمت. والبيانُ غير
+       السؤالي (كالشكوى) يبقى للدكتور صامتاً كما كان — «الصمت خيرٌ من ردٍّ بارد». */
+    const isQuestion = /[؟?]\s*$|(?:^|\s)(?:شنو|وش|ايش|كيف|متى|وين|هل|ليش|منو|كم|ايهم|ايها|شلون|عطني|اعطني|ورني|وريني|ابي|ابغى|ودي|فيه|عنده|عندكم|لديك|ممكن)(?:\s|$)/.test(classification0.normalized)
+    if (isQuestion && !CHATTER_OR_PERSONAL.test(classification0.normalized)) {
+      return { allowed: true, reason: 'active-clarify' }
+    }
+  }
   /* قائمةُ السماح لم تعد تفتح الباب بنفسها. كانت تُجيز الردّ على **أيّ** كلمة
      يكتبها صاحبها بلا جملة إيقاظ — وهو نقضٌ لقاعدة الدكتور: «ما يردّ إلا إذا
      شخص كتب موقع د. أحمد». وهي اليوم فارغة، لكنّ يداً تملؤها غداً تفتح باباً

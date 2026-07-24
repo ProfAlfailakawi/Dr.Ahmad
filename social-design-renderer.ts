@@ -11,10 +11,12 @@
 
 import {
   FRAMING_MODES,
-  PALETTES,
   TYPOGRAPHY_MODES,
   compositionTextLayout,
+  extractInfographicPoints,
+  resolvePalette,
   type CompositionPlan,
+  type InfographicVariantId,
   type Palette,
   type SocialCampaign,
 } from './social-design-engine'
@@ -24,14 +26,19 @@ import { currentSeason, seasonStrokePath } from './seasons'
 /*     تفضيلات الإخراج: ختم الهوية ولمسة الموسم — للمعاينة والتصدير معاً    */
 /* ------------------------------------------------------------------ */
 
+/** أنماط الخلفية الراقية — كلها خفيفةٌ جداً، والافتراضي بلا نمط (لا تلوّث). */
+export type BackgroundPattern = 'none' | 'dots' | 'lines' | 'giri' | 'mesh'
+
 export interface RenderPreferences {
   /** ختم الشعار المخطوط — اختياري بأمر الدكتور */
   seal: boolean
   /** لمسة الموسم الخطية (رمضان/العيد/الوطني) حين يكون الموسم قائماً */
   seasonal: boolean
+  /** نمط خلفيةٍ راقٍ اختياري: نقطية · خطوط · زخرفة إسلامية · تدرّج شبكي */
+  pattern: BackgroundPattern
 }
 
-let renderPreferences: RenderPreferences = { seal: false, seasonal: false }
+let renderPreferences: RenderPreferences = { seal: false, seasonal: false, pattern: 'none' }
 
 export function setRenderPreferences(preferences: Partial<RenderPreferences>) {
   renderPreferences = { ...renderPreferences, ...preferences }
@@ -56,6 +63,21 @@ const words = (value: string) => String(value || '').trim().split(/\s+/).filter(
 const hasArabic = (value: string) => /[؀-ۿ]/.test(value)
 const clamp = (value: number, minimum: number, maximum: number) => Math.max(minimum, Math.min(maximum, value))
 const round = (value: number) => Math.round(value * 100) / 100
+
+/** بصمةٌ رقميةٌ ثابتةٌ من نصّ — لاختيار متغيّرٍ فنّيٍّ يتنوّع بين الاتجاهات والدفعات بلا عشوائية. */
+const hashString = (value: string) => { let h = 2166136261; for (let i = 0; i < value.length; i += 1) { h ^= value.charCodeAt(i); h = Math.imul(h, 16777619) } return h >>> 0 }
+/** تحويل الأرقام العربية-الهندية إلى غربية (لقراءة قيمة الإحصاءة عدداً). */
+const toWesternDigits = (value: string) => String(value || '').replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+
+/** تفتيح/تغميق لونٍ سداسيّ (amt>0 نحو الأبيض، amt<0 نحو الأسود) — للتدرّجات الراقية. */
+const hexShade = (hex: string, amt: number) => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim())
+  if (!m) return hex
+  const n = parseInt(m[1], 16)
+  const mix = (c: number) => amt >= 0 ? Math.round(c + (255 - c) * amt) : Math.round(c * (1 + amt))
+  const parts = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => clamp(mix(c), 0, 255).toString(16).padStart(2, '0'))
+  return `#${parts.join('')}`
+}
 
 // سياسة الموقع المعتمدة أرقام غربية في كل النصوص (WesternDigitsGuard يفرضها في
 // المعاينة)؛ نلتزم بها هنا أيضاً كي يتطابق ملف التصدير مع ما يراه الدكتور.
@@ -137,9 +159,14 @@ const normalizeForCompare = (value: string) => String(value || '')
 
 function distinctBody(plan: CompositionPlan) {
   const title = normalizeForCompare(plan.content.title)
-  for (const candidate of [plan.content.subtitle, plan.content.body, plan.content.quote]) {
+  /* المتن أولاً ثم العنوان الفرعي: حين يحرّر الدكتور حقلاً في الاستوديو يجب
+     أن ينعكس فوراً مهما قصُر — كان الشرط «٣ كلمات» يبتلع كتابته فتظهر
+     المعاينة فارغة. نقبل الآن أي نصٍّ غير فارغ لا يكرّر العنوان. */
+  /* العنوان الفرعي صار له مكانه الخاص (الشارة/التمهيد)، فلا يزاحم المتن هنا —
+     وبذلك يظهر الاثنان معاً حين يملؤهما الدكتور. */
+  for (const candidate of [plan.content.body, plan.content.quote]) {
     const clean = normalizeForCompare(candidate)
-    if (!clean || words(candidate).length < 3) continue
+    if (!clean) continue
     if (clean === title) continue
     if (title.length > 12 && (clean.startsWith(title) || title.startsWith(clean))) continue
     return candidate
@@ -291,13 +318,15 @@ interface Scene {
 }
 
 function sceneOf(plan: CompositionPlan): Scene {
-  const palette = PALETTES[plan.palette]
+  const palette = resolvePalette(plan)
   const typography = TYPOGRAPHY_MODES[plan.typography]
   const w = plan.format.width
   const h = plan.format.height
   const min = Math.min(w, h)
   const bodyText = distinctBody(plan)
-  const cta = plan.ctaPlacement === 'none' ? '' : (plan.content.cta || '')
+  /* الدعوة تظهر متى ملأها الدكتور مهما كان تخطيط الوضع — «الدعوة ما تطلع»
+     كان سببها إخفاؤها في تكوينات ctaPlacement='none' رغم كتابتها. */
+  const cta = plan.content.cta || ''
   return {
     plan,
     palette,
@@ -309,7 +338,7 @@ function sceneOf(plan: CompositionPlan): Scene {
     safeX: Math.max(plan.format.safeInset * w, w * .055),
     safeY: Math.max(plan.format.safeInset * min, h * .045),
     uid: `n-${plan.fingerprint.replace(/[^a-z0-9_-]/gi, '').slice(0, 16) || 'plan'}`,
-    kicker: plan.content.kicker || plan.directionLabel,
+    kicker: plan.content.subtitle || plan.content.kicker || plan.directionLabel,
     titleText: plan.content.title,
     bodyText,
     hero: plan.content.heroWord || '',
@@ -353,16 +382,54 @@ function fitBody(s: Scene, zoneWidth: number, opts: { base?: number; maxLines?: 
 /* ------------------------------------------------------------------ */
 
 /** خلفية من طبقتين: غسل لوني هادئ + توهج قطري خافت + حبيبات طباعية دقيقة. */
+/** نجمةٌ ثمانيةٌ (خاتم) لنمط الزخرفة الإسلامية — مسارٌ مغلقٌ يُبلَّط في الخلفية. */
+const octagramPath = (cx: number, cy: number, R: number, r: number) => {
+  let d = ''
+  for (let i = 0; i < 16; i += 1) {
+    const ang = i * Math.PI / 8 - Math.PI / 2
+    const rad = i % 2 === 0 ? R : r
+    d += `${i === 0 ? 'M' : 'L'} ${round(cx + Math.cos(ang) * rad)} ${round(cy + Math.sin(ang) * rad)} `
+  }
+  return `${d}Z`
+}
+
+/** طبقة نمط الخلفية المختار — خفيفةٌ جداً، بألوان اللوحة فلا تنشز. */
+function patternLayer(s: Scene): { def: string; rect: string } {
+  const kind = renderPreferences.pattern || 'none'
+  if (kind === 'none') return { def: '', rect: '' }
+  const { palette: p, w, h, uid, min } = s
+  const id = `${uid}-pat`
+  if (kind === 'dots') {
+    const g = round(min * .052)
+    return { def: `<pattern id="${id}" width="${g}" height="${g}" patternUnits="userSpaceOnUse"><circle cx="${round(g / 2)}" cy="${round(g / 2)}" r="${round(min * .0045)}" fill="${p.ink}"/></pattern>`, rect: `<rect width="${w}" height="${h}" fill="url(#${id})" opacity="${p.isDark ? .07 : .05}"/>` }
+  }
+  if (kind === 'lines') {
+    const g = round(min * .032)
+    return { def: `<pattern id="${id}" width="${g}" height="${g}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${g}" stroke="${p.ink}" stroke-width="1"/></pattern>`, rect: `<rect width="${w}" height="${h}" fill="url(#${id})" opacity="${p.isDark ? .06 : .045}"/>` }
+  }
+  if (kind === 'giri') {
+    const g = round(min * .15)
+    return { def: `<pattern id="${id}" width="${g}" height="${g}" patternUnits="userSpaceOnUse"><path d="${octagramPath(g / 2, g / 2, g * .42, g * .17)}" fill="none" stroke="${p.accent}" stroke-width="1.1"/></pattern>`, rect: `<rect width="${w}" height="${h}" fill="url(#${id})" opacity="${p.isDark ? .1 : .07}"/>` }
+  }
+  // mesh: بؤرٌ لونيةٌ ناعمةٌ إضافية تصنع تدرّجاً شبكياً حديثاً
+  return {
+    def: `<radialGradient id="${id}-a" cx=".82" cy=".8" r=".5"><stop offset="0" stop-color="${p.accent}" stop-opacity="${p.isDark ? .22 : .14}"/><stop offset="1" stop-color="${p.accent}" stop-opacity="0"/></radialGradient><radialGradient id="${id}-b" cx=".1" cy=".88" r=".46"><stop offset="0" stop-color="${p.accentSoft}" stop-opacity="${p.isDark ? .32 : .45}"/><stop offset="1" stop-color="${p.accentSoft}" stop-opacity="0"/></radialGradient>`,
+    rect: `<rect width="${w}" height="${h}" fill="url(#${id}-a)"/><rect width="${w}" height="${h}" fill="url(#${id}-b)"/>`,
+  }
+}
+
 function backdrop(s: Scene, options: { glow?: 'top-left' | 'top-right' | 'bottom' | 'center' | 'none'; grain?: boolean } = {}) {
   const { palette: p, w, h, uid } = s
   const glow = options.glow ?? 'top-left'
   const glowPos = glow === 'top-left' ? { cx: .18, cy: .12 } : glow === 'top-right' ? { cx: .84, cy: .14 } : glow === 'bottom' ? { cx: .5, cy: .95 } : { cx: .5, cy: .5 }
+  const pat = patternLayer(s)
   const parts = [
     `<rect width="${w}" height="${h}" fill="url(#${uid}-wash)"/>`,
     glow === 'none' ? '' : `<rect width="${w}" height="${h}" fill="url(#${uid}-glow)"/>`,
+    pat.rect,
     options.grain === false ? '' : `<rect width="${w}" height="${h}" filter="url(#${uid}-grain)" opacity="${p.isDark ? .05 : .035}"/>`,
   ]
-  const defs = `
+  const defs = pat.def + `
     <linearGradient id="${uid}-wash" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="${p.background}"/>
       <stop offset="1" stop-color="${p.surface}"/>
@@ -564,13 +631,40 @@ function cleanEventTitle(title: string, timing: string[]) {
   return clean.length >= 6 ? clean : title
 }
 
-/** كلمات مفتاحية لخريطة المعرفة: من المحرك إن وُجدت، وإلا من كلمات العنوان الرصينة. */
-function mapKeywords(s: Scene) {
-  const provided = (s.plan.content as { keywords?: string[] }).keywords
-  const fallback = words(s.titleText).filter((word) => word.replace(/[^\p{L}]/gu, '').length >= 4)
-  const pool = (provided?.length ? provided : fallback)
-    .filter((word) => normalizeForCompare(word) !== normalizeForCompare(s.hero))
-  return [...new Set(pool)].slice(0, 3)
+/**
+ * استخراج ٣–٥ نقاط قصيرة للإنفوجرافيك: الأسطر المرقّمة/المنقّطة أولاً، ثم الجُمل
+ * الكاملة، ثم الشظايا المفصولة بفواصل، ثم الكلمات المفتاحية ملاذاً أخيراً. كل نقطة
+ * تُقصَّر إلى ثماني كلمات ولا تكرّر العنوان — كي تبقى القائمة نظيفة بلا حشو.
+ */
+function extractPoints(plan: CompositionPlan, max = 5): string[] {
+  /* المصدر الواحد: النقاط التي ملأها المحرك (يراها الناقد أيضاً). عند غيابها
+     (خططٌ مُنشأةٌ يدوياً) نستخرجها بالدالة نفسها كي لا يختلف الرسم عن الحكم. */
+  const provided = plan.content.points
+  if (provided && provided.length) return provided.slice(0, max)
+  return extractInfographicPoints(plan.content.original || `${plan.content.title} ${plan.content.body}`, plan.content.title, (plan.content as { keywords?: string[] }).keywords || [], max)
+}
+
+/**
+ * كلمات مفتاحية لخريطة المعرفة. الأولوية لمفاهيم مستقلة عن العنوان (من المحرك
+ * أو من المتن) كي لا تتكرّر كلمات العنوان في العقد فوق ظهورها في السطر —
+ * وهي العلّة التي رآها الدكتور: العنوان يظهر ثلاث مرات (سطراً، ومركزاً، وعُقداً).
+ * `fromTitle` تُعلم الرسّام أنه لم يجد مفاهيم مستقلة فيسقط سطرَ العنوان المكرّر
+ * ويترك الخريطة نفسها (المركز + العُقد) تمثّل الفكرة مرة واحدة.
+ */
+function mapKeywords(s: Scene): { list: string[]; fromTitle: boolean } {
+  const heroNorm = normalizeForCompare(s.hero)
+  const titleWords = new Set(words(s.titleText).map((word) => normalizeForCompare(word)))
+  const provided = (s.plan.content as { keywords?: string[] }).keywords || []
+  const bodyConcepts = words(s.bodyText).filter((word) => word.replace(/[^\p{L}]/gu, '').length >= 4)
+  const distinct = [...provided, ...bodyConcepts]
+    .filter((word) => {
+      const norm = normalizeForCompare(word)
+      return norm && norm !== heroNorm && !titleWords.has(norm)
+    })
+  if (distinct.length) return { list: [...new Set(distinct)].slice(0, 3), fromTitle: false }
+  const titleFallback = words(s.titleText)
+    .filter((word) => word.replace(/[^\p{L}]/gu, '').length >= 4 && normalizeForCompare(word) !== heroNorm)
+  return { list: [...new Set(titleFallback)].slice(0, 3), fromTitle: true }
 }
 
 /**
@@ -827,12 +921,15 @@ const paintEventMarquee: Painter = (s) => {
 const paintKnowledgeMap: Painter = (s) => {
   const { palette: p, w, h, min } = s
   const title = fitTitle(s, w - s.safeX * 2, { base: min * .052, maxLines: 3 })
-  const titleH = blockHeight(title.lines, title.size, s.titleLineHeight)
-  const keywords = mapKeywords(s)
+  const { list: keywords, fromTitle } = mapKeywords(s)
+  /* حين تُشتقّ العُقد من العنوان نفسه (لا مفاهيم مستقلة) نُسقط سطر العنوان
+     المكرّر ونترك الخريطة تنطق الفكرة مرة واحدة — علاج تكرار العنوان. */
+  const showTitleHeading = !fromTitle
+  const titleH = showTitleHeading ? blockHeight(title.lines, title.size, s.titleLineHeight) : 0
   const hero = s.hero || words(s.titleText)[0] || '·'
   const band = contentBand(s)
   const titleTop = band.top + min * .01
-  const mapTop = titleTop + titleH + min * .05
+  const mapTop = titleTop + titleH + (showTitleHeading ? min * .05 : min * .02)
   const centerX = s.isWide ? w * .26 : w / 2
   const centerY = s.isWide ? h * .52 : (mapTop + band.bottom) / 2
   const coreR = clamp(textUnits(hero) * min * .017, min * .1, min * .16)
@@ -851,7 +948,7 @@ const paintKnowledgeMap: Painter = (s) => {
   return {
     markup: [
       kickerItem(s).draw(titleTop - min * .045),
-      textBlock({ lines: title.lines, x: w - s.safeX, y: titleTop + title.size * .82, size: title.size, fill: p.ink, weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight }),
+      showTitleHeading ? textBlock({ lines: title.lines, x: w - s.safeX, y: titleTop + title.size * .82, size: title.size, fill: p.ink, weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight }) : '',
       `<circle cx="${round(centerX)}" cy="${round(centerY)}" r="${round(orbitR)}" fill="none" stroke="${p.rule}" stroke-width="1.1" opacity=".55"/>`,
       `<g filter="url(#${s.uid}-shadow)"><circle cx="${round(centerX)}" cy="${round(centerY)}" r="${round(coreR)}" fill="${p.accent}"/></g>`,
       textBlock({ lines: [hero], x: centerX, y: centerY + min * .013, size: clamp((coreR * 1.55) / Math.max(1, textUnits(hero) * .555), min * .022, min * .04), fill: '#FFFFFF', weight: 700, anchor: 'middle', family: 'El Messiri' }),
@@ -1053,6 +1150,295 @@ const paintModularBrief: Painter = (s) => {
   return { markup: [stack, identityFooter(s)].join('') }
 }
 
+/* ١٣ — إنفوجرافيك مرقّم بخمسة اتجاهاتٍ فنية (أمر الدكتور: إبداعٌ وتنويع).
+   جوهرٌ واحد (عنوان + إحصاءةٌ اختيارية + نقاطٌ مرقّمة)، وخمسُ كسواتٍ متمايزة —
+   يُنتقى الاتجاه ببصمة التصميم فيتنوّع بين الاتجاهات والدفعات بلا تكرارٍ ولا عشوائية:
+   • السكة    — أقراصٌ فهرسيةٌ يميناً وفواصلُ شعرية (تحريريّ صافٍ).
+   • الأرقام  — أرقامٌ ترتيبيةٌ ضخمةٌ محفورةٌ بالخط (مجلاتيّ).
+   • البطاقات — كلُّ نقطةٍ في بطاقةٍ لينةٍ بشارةٍ صغيرة (مؤسسيّ مركّب).
+   • المسار   — عقدٌ متّصلةٌ بخيطٍ رأسيٍّ للخطوات (تدفّقٌ زمني).
+   • الحلقة   — الإحصاءة في حلقةٍ بيانيةٍ بقوسِ نسبتها (بصريّ للأرقام). */
+export type InfoVariant = InfographicVariantId
+
+/**
+ * انتقاء الاتجاه الفنّي للإنفوجرافيك — مصدرٌ واحدٌ للحقيقة يستدعيه الرسّام والفحص.
+ * قائمةٌ مرجّحةٌ بالمحتوى (المسار للخطوات، الحلقة/البطاقات للأرقام) تُنتقى منها ببصمة
+ * التصميم، فيتنوّع الاتجاه بين الاتجاهات والدفعات بثباتٍ بلا عشوائية.
+ */
+export function infographicVariantOf(plan: CompositionPlan): InfoVariant {
+  // اختيار الدكتور اليدوي يتقدّم على الانتقاء التلقائي بالبصمة.
+  if (plan.infoVariant) return plan.infoVariant
+  const figure = extractFigure(`${plan.content.subtitle} ${distinctBody(plan)} ${plan.content.original}`)
+  const ordered = /(?:^|\n)\s*(?:[0-9٠-٩]+[.)\-]|أولاً|ثانياً|ثالثاً|أولا|ثانيا|ثالثا|خطوة)/.test(plan.content.original) || /(?:خطوات|كيف)/.test(plan.content.title)
+  const pool: InfoVariant[] = ['rail', 'ordinal', 'cards']
+  pool.push(ordered ? 'timeline' : 'rail', 'timeline')
+  if (figure) pool.push('ring', 'ring', 'cards', 'spotlight')
+  return pool[hashString(plan.fingerprint) % pool.length]
+}
+
+const paintInfographic: Painter = (s) => {
+  const { palette: p, w, min } = s
+  const contentW = w - s.safeX * 2
+  const figure = extractFigure(`${s.plan.content.subtitle} ${s.bodyText} ${s.plan.content.original}`)
+  const pointKeys0 = new Set(extractPoints(s.plan, 6).map((point) => normalizeForCompare(point)))
+  const variant = infographicVariantOf(s.plan)
+
+  const maxPoints = variant === 'cards' || variant === 'ring' ? (s.isTall ? 5 : 3) : s.isWide ? 3 : s.isTall ? 5 : 4
+  const points = extractPoints(s.plan, maxPoints)
+  const pointKeys = new Set(points.map((point) => normalizeForCompare(point)))
+  const badgeR = min * .026
+  const badgeCol = badgeR * 2 + min * .032
+  const title = fitTitle(s, contentW, { base: min * .05, maxLines: 3 })
+
+  /* لا تكرار في اللوحة الواحدة: الشارة الافتتاحية تصنيفٌ (نوع المحتوى) لا جملة،
+     والدعوة تُسقَط إن طابقت نقطة — فلا يتكرّر النصّ ثلاث مرات. */
+  const kickerScene: Scene = { ...s, kicker: s.plan.content.kicker || s.plan.directionLabel || s.kicker }
+  const ctaScene: Scene = { ...s, cta: s.cta && !pointKeys.has(normalizeForCompare(s.cta)) ? s.cta : '' }
+
+  /* تسمية الإحصاءة: جملةُ الرقم منزوعةً منها الأرقام، ولا تكرّر نقطة. */
+  const figSize = min * (s.isWide ? .085 : .105)
+  let statLabel = ''
+  if (figure) {
+    const carrier = s.plan.content.original.split(/[\n.؟!،,]+/).find((sentence) => /[0-9٠-٩]/.test(sentence) && words(sentence).length >= 2) || ''
+    const stripLead = (value: string) => value.replace(/^\s*(?:نحو|حوالي|قرابة|زهاء|أكثر من|اكثر من|أقل من|اقل من|من|في|إلى|الى|هي|هو|أي|اي)\s+/u, '')
+    let derived = stripLead(stripLead(carrier
+      .replace(/[0-9٠-٩]+(?:[.,،][0-9٠-٩]+)?\s*(?:٪|%|مليون|مليار|ألف|الف|ضعف|أضعاف)?/u, '')
+      .replace(/\s+/g, ' ')
+      .trim()))
+      .replace(/\s+(?:في|من|على|إلى|الى|عن|مع|بـ)\s*$/u, '')
+      .trim()
+    if (words(derived).length < 2 || pointKeys0.has(normalizeForCompare(derived))) {
+      const sub = s.plan.content.subtitle
+      derived = sub && normalizeForCompare(sub) !== normalizeForCompare(s.titleText) && !pointKeys0.has(normalizeForCompare(sub)) ? sub : ''
+    }
+    statLabel = words(derived).slice(0, 5).join(' ')
+  }
+  const rowSize = Math.max(15, min * .026)
+
+  /* ── التشطيب الراقي (مستوى Apple): تدرّجات ناعمة وعمقٌ محسوب بلا ضجيج ── */
+  const uid = s.uid
+  const accGrad = `${uid}-ig-acc`, badgeHi = `${uid}-ig-hi`, hairGrad = `${uid}-ig-hair`, arcGrad = `${uid}-ig-arc`, glowId = `${uid}-ig-glow`
+  const infoDefs = `
+    <linearGradient id="${accGrad}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${hexShade(p.accent, .18)}"/><stop offset="1" stop-color="${hexShade(p.accent, -.08)}"/></linearGradient>
+    <linearGradient id="${arcGrad}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${hexShade(p.accent, .3)}"/><stop offset="1" stop-color="${hexShade(p.accent, -.06)}"/></linearGradient>
+    <radialGradient id="${badgeHi}" cx="0.5" cy="0.28" r="0.75"><stop offset="0" stop-color="#ffffff" stop-opacity="0.4"/><stop offset="0.72" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="${hairGrad}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${p.rule}" stop-opacity="0"/><stop offset="0.5" stop-color="${p.rule}" stop-opacity="0.85"/><stop offset="1" stop-color="${p.rule}" stop-opacity="0"/></linearGradient>
+    <filter id="${glowId}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${round(min * .014)}"/></filter>`
+  /** قرص فهرسيّ ثلاثيّ الأبعاد: تدرّجٌ لطيفٌ ولمعةٌ علويةٌ ناعمة — يعطي عمق أزرار Apple. */
+  const premiumBadge = (cx: number, cy: number, r: number, num: string) => [
+    `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(r)}" fill="url(#${accGrad})"/>`,
+    `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(r)}" fill="url(#${badgeHi})"/>`,
+    textBlock({ lines: [num], x: cx, y: round(cy + r * .37), size: r * 1.02, fill: '#FFFFFF', weight: 700, anchor: 'middle', family: 'Tajawal' }),
+  ].join('')
+  /** فاصلٌ شعريٌّ يتلاشى عند الطرفين — أرقّ من الخط الصلب. */
+  const hairline = (xa: number, xb: number, y: number) => `<rect x="${round(Math.min(xa, xb))}" y="${round(y - .7)}" width="${round(Math.abs(xb - xa))}" height="1.4" fill="url(#${hairGrad})"/>`
+
+  /* ── شارات الإحصاءة (تختلف بالاتجاه) ── */
+  const horizontalStat = (): StackItem => figure ? {
+    h: figSize * 1.16,
+    gap: min * .04,
+    draw: (top) => {
+      const numW = lineWidthPx(`${figure.value}${figure.unit}`, figSize)
+      const labelSize = Math.max(13, min * .024)
+      const labelLines = statLabel ? wrap(statLabel, Math.max(8, (contentW - numW - min * .05) / (labelSize * .555)), 2) : []
+      const labelH = blockHeight(labelLines, labelSize, 1.4)
+      return [
+        `<text x="${round(w - s.safeX)}" y="${round(top + figSize * .9)}" text-anchor="end" direction="ltr"><tspan fill="url(#${accGrad})" font-family="Tajawal" font-weight="700" font-size="${round(figSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal" font-weight="500" font-size="${round(figSize * .48)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
+        `<rect x="${round(w - s.safeX - numW)}" y="${round(top + figSize * 1.04)}" width="${round(numW)}" height="${round(min * .006)}" rx="${round(min * .003)}" fill="url(#${accGrad})" opacity=".9"/>`,
+        labelLines.length ? textBlock({ lines: labelLines, x: w - s.safeX - numW - min * .05, y: top + (figSize * 1.16 - labelH) / 2 + labelSize * .82, size: labelSize, fill: p.muted, weight: 500, family: s.bodyFamily, lineHeight: 1.4 }) : '',
+      ].join('')
+    },
+  } : { h: 0, draw: () => '' }
+
+  const cardStat = (): StackItem => figure ? {
+    h: figSize * 1.5,
+    gap: min * .04,
+    draw: (top) => {
+      const cardH = figSize * 1.5
+      const pad = min * .04
+      const labelSize = Math.max(13, min * .024)
+      const labelLines = statLabel ? wrap(statLabel, Math.max(6, (contentW - pad * 2 - lineWidthPx(`${figure.value}${figure.unit}`, figSize)) / (labelSize * .555)), 2) : []
+      const labelH = blockHeight(labelLines, labelSize, 1.35)
+      return [
+        `<g filter="url(#${s.uid}-shadow)"><rect x="${round(s.safeX)}" y="${round(top)}" width="${round(contentW)}" height="${round(cardH)}" rx="${round(min * .028)}" fill="url(#${accGrad})"/></g>`,
+        `<rect x="${round(s.safeX)}" y="${round(top)}" width="${round(contentW)}" height="${round(cardH * .5)}" rx="${round(min * .028)}" fill="#ffffff" opacity=".07"/>`,
+        `<text x="${round(w - s.safeX - pad)}" y="${round(top + cardH / 2 + figSize * .34)}" text-anchor="end" direction="ltr"><tspan fill="#FFFFFF" font-family="Tajawal" font-weight="700" font-size="${round(figSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="rgba(255,255,255,.82)" font-family="Tajawal" font-weight="500" font-size="${round(figSize * .48)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
+        labelLines.length ? textBlock({ lines: labelLines, x: s.safeX + pad, y: top + cardH / 2 - labelH / 2 + labelSize * .82, size: labelSize, fill: 'rgba(255,255,255,.9)', weight: 500, anchor: 'start', family: s.bodyFamily, lineHeight: 1.35 }) : '',
+      ].join('')
+    },
+  } : { h: 0, draw: () => '' }
+
+  const ringStat = (): StackItem => {
+    if (!figure) return { h: 0, draw: () => '' }
+    const ringD = min * (s.isWide ? .24 : .3)
+    return {
+      h: ringD,
+      gap: min * .04,
+      draw: (top) => {
+        const cx = w / 2
+        const cy = top + ringD / 2
+        const R = ringD / 2 - min * .012
+        const num = parseFloat(toWesternDigits(figure.value))
+        const pct = figure.unit === '٪' && isFinite(num) ? clamp(num / 100, 0.03, 1) : 0.66
+        const a0 = -Math.PI / 2
+        const a1 = a0 + pct * Math.PI * 2
+        const large = pct > 0.5 ? 1 : 0
+        const sx = cx + R * Math.cos(a0), sy = cy + R * Math.sin(a0)
+        const ex = cx + R * Math.cos(a1), ey = cy + R * Math.sin(a1)
+        const numSize = R * 0.82
+        const sw = round(min * .024)
+        const arc = `M ${round(sx)} ${round(sy)} A ${round(R)} ${round(R)} 0 ${large} 1 ${round(ex)} ${round(ey)}`
+        return [
+          `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(R)}" fill="none" stroke="${p.rule}" stroke-width="${sw}" opacity=".45"/>`,
+          `<path d="${arc}" fill="none" stroke="url(#${arcGrad})" stroke-width="${sw}" stroke-linecap="round" filter="url(#${glowId})" opacity=".55"/>`,
+          `<path d="${arc}" fill="none" stroke="url(#${arcGrad})" stroke-width="${sw}" stroke-linecap="round"/>`,
+          `<circle cx="${round(sx)}" cy="${round(sy)}" r="${round(sw / 2)}" fill="${hexShade(p.accent, .3)}"/>`,
+          `<text x="${round(cx)}" y="${round(cy + numSize * .34)}" text-anchor="middle" direction="ltr"><tspan fill="url(#${accGrad})" font-family="Tajawal" font-weight="700" font-size="${round(numSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal" font-weight="500" font-size="${round(numSize * .4)}" dx="4">${esc(figure.unit)}</tspan>` : ''}</text>`,
+          statLabel ? textBlock({ lines: [words(statLabel).slice(0, 4).join(' ')], x: cx, y: cy + R + min * .05, size: Math.max(12, min * .022), fill: p.muted, weight: 500, anchor: 'middle', family: s.bodyFamily }) : '',
+        ].join('')
+      },
+    }
+  }
+
+  /* ── صفوف النقاط (تختلف بالاتجاه) ── */
+  const railRows = (): StackItem[] => points.map((point, index) => {
+    const lines = wrap(point, Math.max(8, (contentW - badgeCol) / (rowSize * .555)), 2)
+    const textH = blockHeight(lines, rowSize, 1.42)
+    const rowH = Math.max(badgeR * 2, textH)
+    return {
+      h: rowH,
+      gap: index === 0 ? min * .045 : min * .038,
+      draw: (top) => {
+        const cy = top + rowH / 2
+        const cx = w - s.safeX - badgeR
+        return [
+          index === 0 ? '' : hairline(s.safeX, w - s.safeX, top - min * .019),
+          premiumBadge(cx, cy, badgeR, arabicNumber(index + 1)),
+          textBlock({ lines, x: w - s.safeX - badgeCol, y: top + (rowH - textH) / 2 + rowSize * .82, size: rowSize, fill: p.ink, weight: 500, family: s.bodyFamily, lineHeight: 1.42 }),
+        ].join('')
+      },
+    }
+  })
+
+  const ordinalRows = (): StackItem[] => {
+    const ordSize = min * .07
+    const ordCol = ordSize * 1.5 + min * .022
+    return points.map((point, index) => {
+      const lines = wrap(point, Math.max(8, (contentW - ordCol) / (rowSize * .555)), 2)
+      const textH = blockHeight(lines, rowSize, 1.44)
+      const rowH = Math.max(ordSize, textH)
+      return {
+        h: rowH,
+        gap: index === 0 ? min * .05 : min * .045,
+        draw: (top) => {
+          const cy = top + rowH / 2
+          return [
+            `<text x="${round(w - s.safeX)}" y="${round(cy + ordSize * .35)}" fill="none" stroke="${p.accent}" stroke-width="1.4" font-family="El Messiri" font-weight="700" font-size="${round(ordSize)}" text-anchor="end" direction="ltr" opacity=".92">${esc(arabicIndex(index + 1))}</text>`,
+            textBlock({ lines, x: w - s.safeX - ordCol, y: top + (rowH - textH) / 2 + rowSize * .82, size: rowSize, fill: p.ink, weight: 500, family: s.bodyFamily, lineHeight: 1.44 }),
+          ].join('')
+        },
+      }
+    })
+  }
+
+  const cardRows = (): StackItem[] => {
+    const pad = min * .032
+    return points.map((point, index) => {
+      const lines = wrap(point, Math.max(8, (contentW - badgeCol - pad * 2) / (rowSize * .555)), 2)
+      const textH = blockHeight(lines, rowSize, 1.42)
+      const cardH = Math.max(badgeR * 2, textH) + pad * 2
+      return {
+        h: cardH,
+        gap: index === 0 ? min * .04 : min * .02,
+        draw: (top) => {
+          const cy = top + cardH / 2
+          const cx = w - s.safeX - pad - badgeR
+          return [
+            `<g filter="url(#${s.uid}-shadow)"><rect x="${round(s.safeX)}" y="${round(top)}" width="${round(contentW)}" height="${round(cardH)}" rx="${round(min * .024)}" fill="${p.surface}" stroke="${p.rule}" stroke-width="1" opacity="${p.isDark ? 1 : .98}"/></g>`,
+            `<rect x="${round(s.safeX)}" y="${round(top)}" width="${round(contentW)}" height="${round(cardH * .5)}" rx="${round(min * .024)}" fill="#ffffff" opacity="${p.isDark ? .03 : .05}"/>`,
+            `<rect x="${round(w - s.safeX - min * .0055)}" y="${round(top + pad * .7)}" width="${round(min * .0055)}" height="${round(cardH - pad * 1.4)}" rx="3" fill="url(#${accGrad})"/>`,
+            premiumBadge(cx, cy, badgeR, arabicNumber(index + 1)),
+            textBlock({ lines, x: w - s.safeX - pad - badgeR * 2 - min * .018, y: top + (cardH - textH) / 2 + rowSize * .82, size: rowSize, fill: p.ink, weight: 500, family: s.bodyFamily, lineHeight: 1.42 }),
+          ].join('')
+        },
+      }
+    })
+  }
+
+  const timelineRows = (): StackItem[] => {
+    const total = points.length
+    const lineGap = min * .045
+    return points.map((point, index) => {
+      const lines = wrap(point, Math.max(8, (contentW - badgeCol) / (rowSize * .555)), 2)
+      const textH = blockHeight(lines, rowSize, 1.42)
+      const rowH = Math.max(badgeR * 2.1, textH)
+      return {
+        h: rowH,
+        gap: index === 0 ? min * .04 : lineGap,
+        draw: (top) => {
+          const cy = top + rowH / 2
+          const cx = w - s.safeX - badgeR
+          const connector = index < total - 1
+            ? `<rect x="${round(cx - min * .0018)}" y="${round(cy + badgeR)}" width="${round(min * .0036)}" height="${round(top + rowH + lineGap + badgeR - (cy + badgeR))}" rx="${round(min * .0018)}" fill="url(#${accGrad})" opacity=".55"/>`
+            : ''
+          return [
+            connector,
+            `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(badgeR * 1.2)}" fill="none" stroke="url(#${accGrad})" stroke-width="1" opacity=".28"/>`,
+            `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(badgeR)}" fill="${p.surface}" stroke="url(#${accGrad})" stroke-width="2.6"/>`,
+            textBlock({ lines: [arabicNumber(index + 1)], x: cx, y: round(cy + badgeR * .37), size: badgeR * 1.02, fill: p.accent, weight: 700, anchor: 'middle', family: 'Tajawal' }),
+            textBlock({ lines, x: w - s.safeX - badgeCol, y: top + (rowH - textH) / 2 + rowSize * .82, size: rowSize, fill: p.ink, weight: 500, family: s.bodyFamily, lineHeight: 1.42 }),
+          ].join('')
+        },
+      }
+    })
+  }
+
+  /* الواجهة (spotlight): رقمٌ ضخمٌ بطلٌ كشرائح Apple، ونقاطٌ متمركزةٌ فاصلُها شعريٌّ يتلاشى. */
+  const spotlightStat = (): StackItem => {
+    if (!figure) return horizontalStat()
+    const heroSize = min * (s.isWide ? .2 : .26)
+    return {
+      h: heroSize * .92 + (statLabel ? min * .05 : 0),
+      gap: min * .05,
+      draw: (top) => [
+        `<text x="${round(w / 2)}" y="${round(top + heroSize * .8)}" text-anchor="middle" direction="ltr"><tspan fill="url(#${accGrad})" font-family="Tajawal" font-weight="700" font-size="${round(heroSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal" font-weight="500" font-size="${round(heroSize * .34)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
+        statLabel ? textBlock({ lines: [words(statLabel).slice(0, 5).join(' ')], x: w / 2, y: top + heroSize * .8 + min * .05, size: Math.max(13, min * .024), fill: p.muted, weight: 500, anchor: 'middle', family: s.bodyFamily }) : '',
+      ].join(''),
+    }
+  }
+  const spotlightRows = (): StackItem[] => points.slice(0, s.isTall ? 4 : 3).map((point, index) => {
+    const size = Math.max(14, min * .026)
+    const lines = wrap(point, Math.max(8, (contentW - min * .1) / (size * .555)), 2)
+    const textH = blockHeight(lines, size, 1.4)
+    return {
+      h: textH,
+      gap: index === 0 ? min * .06 : min * .042,
+      draw: (top) => [
+        index > 0 ? hairline(w / 2 - min * .075, w / 2 + min * .075, top - min * .021) : '',
+        textBlock({ lines, x: w / 2, y: top + size * .82, size, fill: p.ink, weight: 500, anchor: 'middle', family: s.bodyFamily, lineHeight: 1.4 }),
+      ].join(''),
+    }
+  })
+
+  const statItem = variant === 'ring' ? ringStat() : variant === 'cards' ? cardStat() : variant === 'spotlight' ? spotlightStat() : horizontalStat()
+  const rowItems = variant === 'ordinal' ? ordinalRows()
+    : variant === 'cards' ? cardRows()
+    : variant === 'timeline' ? timelineRows()
+    : variant === 'spotlight' ? spotlightRows()
+    : railRows()
+
+  const titleAnchor = variant === 'spotlight' ? 'middle' : 'end'
+  const stack = drawStack([
+    variant === 'spotlight' ? kickerItem({ ...kickerScene, kicker: kickerScene.kicker } as Scene, { x: w / 2, anchor: 'middle' }) : kickerItem(kickerScene),
+    textItem({ lines: title.lines, x: variant === 'spotlight' ? w / 2 : w - s.safeX, size: title.size, fill: p.ink, weight: s.titleWeight, anchor: titleAnchor, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: figure ? '' : s.hero, emphasisFill: p.accent, gap: min * .03 }),
+    statItem,
+    ...rowItems,
+    ctaItem(ctaScene, { align: variant === 'spotlight' ? 'center' : 'right', gap: min * .05 }),
+    carouselItem(s),
+  ], contentBand(s), variant === 'spotlight' ? .46 : .4)
+  return { defs: infoDefs, markup: [stack, identityFooter(s, variant === 'spotlight' ? { mode: 'center' } : {})].join('') }
+}
+
 const PAINTERS: Record<CompositionPlan['layout'], Painter> = {
   'editorial-axis': paintEditorialAxis,
   'hero-word': paintHeroWord,
@@ -1066,6 +1452,7 @@ const PAINTERS: Record<CompositionPlan['layout'], Painter> = {
   'cinematic-window': paintCinematicWindow,
   'human-note': paintHumanNote,
   'modular-brief': paintModularBrief,
+  infographic: paintInfographic,
 }
 
 /* ------------------------------------------------------------------ */
@@ -1088,6 +1475,39 @@ function identityLayer(s: Scene, options: RenderSvgOptions) {
   ].join('')
 }
 
+/* ═══ طبقات المحرر الحر (أمر الدكتور): تُرسم فوق التكوين بألوان لوحته ═══ */
+function overlaysLayer(s: Scene) {
+  const overlays = s.plan.overlays
+  if (!overlays?.length) return ''
+  const { palette: p, w, h, min } = s
+  const colorOf = (name: string) => name === 'accent' ? p.accent : name === 'muted' ? p.muted : name === 'paper' ? p.surface : p.ink
+  const parts = overlays.map((overlay) => {
+    const x = overlay.x * w
+    const y = overlay.y * h
+    const width = Math.max(0.02, overlay.width) * w
+    const height = Math.max(0.01, overlay.height) * h
+    const color = colorOf(overlay.color)
+    const opacity = Math.max(.05, Math.min(1, overlay.opacity))
+    if (overlay.kind === 'rule') {
+      return `<line x1="${round(x)}" y1="${round(y)}" x2="${round(x + width)}" y2="${round(y)}" stroke="${color}" stroke-width="${round(Math.max(1.5, height))}" stroke-linecap="round" opacity="${opacity}"/>`
+    }
+    if (overlay.kind === 'circle') {
+      const radius = Math.min(width, height) / 2
+      return `<circle cx="${round(x + width / 2)}" cy="${round(y + height / 2)}" r="${round(radius)}" fill="none" stroke="${color}" stroke-width="${round(Math.max(1.5, min * .004))}" opacity="${opacity}"/>`
+    }
+    if (overlay.kind === 'rect') {
+      return `<rect x="${round(x)}" y="${round(y)}" width="${round(width)}" height="${round(height)}" rx="${round(min * .02)}" fill="none" stroke="${color}" stroke-width="${round(Math.max(1.5, min * .004))}" opacity="${opacity}"/>`
+    }
+    const size = Math.max(12, (overlay.size || .03) * min)
+    const anchor = overlay.align || 'end'
+    const anchorX = anchor === 'middle' ? x + width / 2 : anchor === 'start' ? x : x + width
+    const maxChars = Math.max(6, Math.floor(width / (size * .5)))
+    const lines = wrap(String(overlay.text || ''), maxChars, 6)
+    return textBlock({ lines, x: anchorX, y: y + size, size, fill: color, weight: overlay.weight || 600, anchor, family: 'Tajawal', opacity })
+  })
+  return `<g data-overlays="true">${parts.join('')}</g>`
+}
+
 export function renderCompositionSvg(plan: CompositionPlan, options: RenderSvgOptions = {}) {
   const s = sceneOf(plan)
   const glow = plan.layout === 'hero-word' || plan.layout === 'quiet-orbit' ? 'center'
@@ -1099,7 +1519,7 @@ export function renderCompositionSvg(plan: CompositionPlan, options: RenderSvgOp
   const scenePaint = painter(s)
   const accessible = esc(options.ariaLabel || `${plan.directionLabel}: ${plan.content.title}`)
   const fontStyle = options.fontCss ? `<style>${options.fontCss}</style>` : ''
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${s.w}" height="${s.h}" viewBox="0 0 ${s.w} ${s.h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${esc(options.title || plan.content.title)}</title><defs>${fontStyle}${bg.defs}${scenePaint.defs || ''}</defs>${bg.markup}${frameDecor(s)}${scenePaint.markup}${identityLayer(s, options)}</svg>`
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${s.w}" height="${s.h}" viewBox="0 0 ${s.w} ${s.h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${esc(options.title || plan.content.title)}</title><defs>${fontStyle}${bg.defs}${scenePaint.defs || ''}</defs>${bg.markup}${frameDecor(s)}${scenePaint.markup}${overlaysLayer(s)}${identityLayer(s, options)}</svg>`
 }
 
 /* ------------------------------------------------------------------ */
@@ -1316,7 +1736,7 @@ export async function downloadCompositionRaster(plan: CompositionPlan, type: 'pn
   const sealHref = renderPreferences.seal ? (await sealDataUri() || TRANSPARENT_PIXEL) : ''
   const series = renderCompositionSeries(plan, { fontCss, ...(sealHref ? { sealHref } : {}) })
   const extension = type === 'jpeg' ? 'jpg' : 'png'
-  const background = PALETTES[plan.palette].background
+  const background = resolvePalette(plan).background
   for (const [index, svg] of series.entries()) {
     const base = fileName(plan, extension)
     const name = series.length > 1 ? base.replace(`.${extension}`, `-${index + 1}of${series.length}.${extension}`) : base

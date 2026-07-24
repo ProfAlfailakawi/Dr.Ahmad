@@ -26,19 +26,14 @@ import { currentSeason, seasonStrokePath } from './seasons'
 /*     تفضيلات الإخراج: ختم الهوية ولمسة الموسم — للمعاينة والتصدير معاً    */
 /* ------------------------------------------------------------------ */
 
-/** أنماط الخلفية الراقية — كلها خفيفةٌ جداً، والافتراضي بلا نمط (لا تلوّث). */
-export type BackgroundPattern = 'none' | 'dots' | 'lines' | 'giri' | 'mesh'
-
 export interface RenderPreferences {
   /** ختم الشعار المخطوط — اختياري بأمر الدكتور */
   seal: boolean
   /** لمسة الموسم الخطية (رمضان/العيد/الوطني) حين يكون الموسم قائماً */
   seasonal: boolean
-  /** نمط خلفيةٍ راقٍ اختياري: نقطية · خطوط · زخرفة إسلامية · تدرّج شبكي */
-  pattern: BackgroundPattern
 }
 
-let renderPreferences: RenderPreferences = { seal: false, seasonal: false, pattern: 'none' }
+let renderPreferences: RenderPreferences = { seal: false, seasonal: false }
 
 export function setRenderPreferences(preferences: Partial<RenderPreferences>) {
   renderPreferences = { ...renderPreferences, ...preferences }
@@ -382,54 +377,16 @@ function fitBody(s: Scene, zoneWidth: number, opts: { base?: number; maxLines?: 
 /* ------------------------------------------------------------------ */
 
 /** خلفية من طبقتين: غسل لوني هادئ + توهج قطري خافت + حبيبات طباعية دقيقة. */
-/** نجمةٌ ثمانيةٌ (خاتم) لنمط الزخرفة الإسلامية — مسارٌ مغلقٌ يُبلَّط في الخلفية. */
-const octagramPath = (cx: number, cy: number, R: number, r: number) => {
-  let d = ''
-  for (let i = 0; i < 16; i += 1) {
-    const ang = i * Math.PI / 8 - Math.PI / 2
-    const rad = i % 2 === 0 ? R : r
-    d += `${i === 0 ? 'M' : 'L'} ${round(cx + Math.cos(ang) * rad)} ${round(cy + Math.sin(ang) * rad)} `
-  }
-  return `${d}Z`
-}
-
-/** طبقة نمط الخلفية المختار — خفيفةٌ جداً، بألوان اللوحة فلا تنشز. */
-function patternLayer(s: Scene): { def: string; rect: string } {
-  const kind = renderPreferences.pattern || 'none'
-  if (kind === 'none') return { def: '', rect: '' }
-  const { palette: p, w, h, uid, min } = s
-  const id = `${uid}-pat`
-  if (kind === 'dots') {
-    const g = round(min * .052)
-    return { def: `<pattern id="${id}" width="${g}" height="${g}" patternUnits="userSpaceOnUse"><circle cx="${round(g / 2)}" cy="${round(g / 2)}" r="${round(min * .0045)}" fill="${p.ink}"/></pattern>`, rect: `<rect width="${w}" height="${h}" fill="url(#${id})" opacity="${p.isDark ? .07 : .05}"/>` }
-  }
-  if (kind === 'lines') {
-    const g = round(min * .032)
-    return { def: `<pattern id="${id}" width="${g}" height="${g}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${g}" stroke="${p.ink}" stroke-width="1"/></pattern>`, rect: `<rect width="${w}" height="${h}" fill="url(#${id})" opacity="${p.isDark ? .06 : .045}"/>` }
-  }
-  if (kind === 'giri') {
-    const g = round(min * .15)
-    return { def: `<pattern id="${id}" width="${g}" height="${g}" patternUnits="userSpaceOnUse"><path d="${octagramPath(g / 2, g / 2, g * .42, g * .17)}" fill="none" stroke="${p.accent}" stroke-width="1.1"/></pattern>`, rect: `<rect width="${w}" height="${h}" fill="url(#${id})" opacity="${p.isDark ? .1 : .07}"/>` }
-  }
-  // mesh: بؤرٌ لونيةٌ ناعمةٌ إضافية تصنع تدرّجاً شبكياً حديثاً
-  return {
-    def: `<radialGradient id="${id}-a" cx=".82" cy=".8" r=".5"><stop offset="0" stop-color="${p.accent}" stop-opacity="${p.isDark ? .22 : .14}"/><stop offset="1" stop-color="${p.accent}" stop-opacity="0"/></radialGradient><radialGradient id="${id}-b" cx=".1" cy=".88" r=".46"><stop offset="0" stop-color="${p.accentSoft}" stop-opacity="${p.isDark ? .32 : .45}"/><stop offset="1" stop-color="${p.accentSoft}" stop-opacity="0"/></radialGradient>`,
-    rect: `<rect width="${w}" height="${h}" fill="url(#${id}-a)"/><rect width="${w}" height="${h}" fill="url(#${id}-b)"/>`,
-  }
-}
-
 function backdrop(s: Scene, options: { glow?: 'top-left' | 'top-right' | 'bottom' | 'center' | 'none'; grain?: boolean } = {}) {
   const { palette: p, w, h, uid } = s
   const glow = options.glow ?? 'top-left'
   const glowPos = glow === 'top-left' ? { cx: .18, cy: .12 } : glow === 'top-right' ? { cx: .84, cy: .14 } : glow === 'bottom' ? { cx: .5, cy: .95 } : { cx: .5, cy: .5 }
-  const pat = patternLayer(s)
   const parts = [
     `<rect width="${w}" height="${h}" fill="url(#${uid}-wash)"/>`,
     glow === 'none' ? '' : `<rect width="${w}" height="${h}" fill="url(#${uid}-glow)"/>`,
-    pat.rect,
     options.grain === false ? '' : `<rect width="${w}" height="${h}" filter="url(#${uid}-grain)" opacity="${p.isDark ? .05 : .035}"/>`,
   ]
-  const defs = pat.def + `
+  const defs = `
     <linearGradient id="${uid}-wash" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="${p.background}"/>
       <stop offset="1" stop-color="${p.surface}"/>

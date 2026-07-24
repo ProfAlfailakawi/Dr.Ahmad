@@ -13,6 +13,7 @@ export type AdminTab =
   | 'analytics'
   | 'studio'
   | 'design'
+  | 'image-lab'
   | 'launch'
   | 'event'
   | 'articles'
@@ -27,6 +28,7 @@ export type AdminTab =
   | 'pronunciation'
   | 'cv'
   | 'whatsapp'
+  | 'bot-messages'
   | 'monitor'
 
 export type AdminArea = 'system' | 'publishing' | 'library' | 'audience'
@@ -51,6 +53,7 @@ export const ADMIN_GROUPS: NavGroup[] = [
     area: 'publishing', label: 'الإنتاج والنشر', icon: '↗', items: [
       { tab: 'studio', label: 'استوديو النشر', note: 'من الفكرة إلى الحزمة' },
       { tab: 'design', label: 'استوديو التصاميم', note: 'المشاهد الفنية الاثنا عشر بنقرة' },
+      { tab: 'image-lab', label: 'مختبر الصور', note: 'تحرير احترافي للصور بلا تكلفة' },
       { tab: 'production', label: 'غرفة الإنتاج', note: 'طابور البودكاست من المسودة للنشر' },
       { tab: 'manual-dialogue', label: 'الحوار اليدوي', note: 'تحرير الحلقة مداخلةً مداخلة' },
       { tab: 'audio-library', label: 'مكتبة الصوت', note: 'سماع وإعادة توليد وحذف' },
@@ -73,6 +76,7 @@ export const ADMIN_GROUPS: NavGroup[] = [
     area: 'audience', label: 'الجمهور', icon: '◎', items: [
       { tab: 'inbox', label: 'الرسائل', note: 'طلبات التواصل والتعاون' },
       { tab: 'whatsapp', label: 'مساعد واتساب', note: 'البوت الذي يخاطب جمهورك' },
+      { tab: 'bot-messages', label: 'رسائل البوت', note: 'حرّر ما يقوله البوت بلا كود' },
       { tab: 'analytics', label: 'التحليلات', note: 'المشاهدات ورحلة الزائر' },
     ],
   },

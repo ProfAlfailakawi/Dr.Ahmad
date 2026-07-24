@@ -1237,9 +1237,45 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
     }
   }
 
+  /* حذفٌ ليّنٌ يفشل بأمان: يُخفي العنصر عن الموقع (يخرج فوراً عبر مرشّح hidden
+     المُثبَت في الواجهة والبناء) لكنه يُبقي المستند كاملاً — فلا يُفقد شيءٌ أبداً.
+     يُستعاد بزرّ «إظهار» نفسه. الحذف النهائي منفصلٌ ومقصودٌ في purgeItem. */
   const deleteItem = async (item: ManagedRecord) => {
-    if (!window.confirm(`حذف «${item.title}» نهائياً من الموقع؟ لا يمكن التراجع عن حذف العناصر المضافة.`)) return
-    const task = beginAdminTask('حذف عنصر')
+    if (!window.confirm(`نقل «${item.title}» إلى سلة المحذوفات؟ يبقى محفوظاً بالكامل ويمكنك استعادته بزرّ «إظهار» — لا يُفقد شيء.`)) return
+    const task = beginAdminTask('نقل إلى السلة')
+    setBusy(true)
+    try {
+      const db = await getDb()
+      if (!db) throw new Error('Firebase غير متاح')
+      const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
+      if (item._cms.origin === 'added') {
+        await setDoc(doc(db, collections[kind], item._cms.docId || item.slug), {
+          hidden: true,
+          trashedAt: serverTimestamp(),
+        }, { merge: true })
+      } else {
+        // عناصر الأصل موجودة في الشفرة؛ نُخفيها بإخفاءٍ قابلٍ للاستعادة بلا حذفٍ دائم ولا عبثٍ بملف المصدر.
+        await setDoc(doc(db, 'content_overrides', `${kind}:${item._cms.baseSlug || item.slug}`), {
+          hidden: true,
+          trashedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }, { merge: true })
+      }
+      await done('✓ نُقل إلى سلة المحذوفات — محفوظٌ بالكامل، استعِده متى شئت بزرّ «إظهار».')
+      task.complete('نُقل إلى السلة')
+    } catch (reason) {
+      setNotice(reason instanceof Error ? reason.message : 'تعذّر نقل العنصر إلى السلة')
+      task.fail(reason, 'تعذّر نقل العنصر إلى السلة')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  /* الحذف النهائي: قرارٌ مقصودٌ لا رجعة فيه، متاحٌ للعناصر المخفيّة/المحذوفة فقط. */
+  const purgeItem = async (item: ManagedRecord) => {
+    if (!window.confirm(`حذف «${item.title}» نهائياً بلا رجعة؟ هذا يمحوه تماماً — لا يمكن استعادته بعدها.`)) return
+    if (!window.confirm('تأكيدٌ أخير: هل أنت متأكد من الحذف النهائي الذي لا رجعة فيه؟')) return
+    const task = beginAdminTask('حذف نهائي')
     setBusy(true)
     try {
       const db = await getDb()
@@ -1248,18 +1284,17 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
       if (item._cms.origin === 'added') {
         await deleteDoc(doc(db, collections[kind], item._cms.docId || item.slug))
       } else {
-        // عناصر الأصل موجودة في الشفرة؛ نحذفها من الموقع بطابع حذف دائم بدلاً من العبث بملف المصدر.
         await setDoc(doc(db, 'content_overrides', `${kind}:${item._cms.baseSlug || item.slug}`), {
           deleted: true,
           hidden: true,
           updatedAt: serverTimestamp(),
         }, { merge: true })
       }
-      await done(item._cms.origin === 'added' ? '✓ حُذف العنصر نهائياً.' : '✓ حُذف العنصر من الموقع مع حماية ملفات الأصل من التعديل.')
-      task.complete('حُذف العنصر')
+      await done('✓ حُذف العنصر نهائياً.')
+      task.complete('حُذف نهائياً')
     } catch (reason) {
-      setNotice(reason instanceof Error ? reason.message : 'تعذّر حذف العنصر')
-      task.fail(reason, 'تعذّر حذف العنصر')
+      setNotice(reason instanceof Error ? reason.message : 'تعذّر الحذف النهائي')
+      task.fail(reason, 'تعذّر الحذف النهائي')
     } finally {
       setBusy(false)
     }
@@ -1322,8 +1357,10 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
             </div>
             <div className="mt-4 grid min-w-0 grid-cols-3 gap-2 text-[.72rem]">
               <button type="button" onClick={() => openEdit(item)} className="min-w-0 rounded-full border border-accent/30 px-2 py-2 font-semibold text-accent">تعديل</button>
-              <button type="button" disabled={busy} onClick={() => void toggleVisibility(item)} className="min-w-0 rounded-full border border-hair px-2 py-2 text-soft disabled:opacity-50">{item._cms.hidden ? 'إظهار' : 'إخفاء'}</button>
-              <button type="button" disabled={busy} onClick={() => void deleteItem(item)} className="min-w-0 rounded-full border border-red-700/20 px-2 py-2 font-semibold text-red-700/80 disabled:opacity-50 dark:text-red-300/80">حذف</button>
+              <button type="button" disabled={busy} onClick={() => void toggleVisibility(item)} className="min-w-0 rounded-full border border-hair px-2 py-2 text-soft disabled:opacity-50">{item._cms.hidden ? 'استعادة' : 'إخفاء'}</button>
+              {item._cms.hidden
+                ? <button type="button" disabled={busy} onClick={() => void purgeItem(item)} className="min-w-0 rounded-full border border-red-700/30 px-2 py-2 font-semibold text-red-700/85 disabled:opacity-50 dark:text-red-300/85">حذف نهائي</button>
+                : <button type="button" disabled={busy} onClick={() => void deleteItem(item)} className="min-w-0 rounded-full border border-red-700/20 px-2 py-2 font-semibold text-red-700/80 disabled:opacity-50 dark:text-red-300/80">حذف</button>}
             </div>
             {kind === 'article' && (
               <button type="button" onClick={() => sendToDesignStudio(item)} className="mt-2 w-full rounded-full border border-accent/30 bg-accent/[.05] px-3 py-2 text-[.72rem] font-semibold text-accent transition hover:bg-accent/10">حملة تصاميم من هذا المقال</button>
@@ -1384,8 +1421,10 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
                   <div className="flex flex-wrap items-center gap-3 text-[.78rem]">
                     <button type="button" onClick={() => openEdit(item)} className="font-semibold text-accent hover:text-accent-deep">تعديل</button>
                     {kind === 'article' && <button type="button" onClick={() => sendToDesignStudio(item)} className="font-semibold text-accent/80 hover:text-accent" title="يبني حملة تصاميم اجتماعية من عنوان المقال ومقتطفه">حملة</button>}
-                    <button type="button" disabled={busy} onClick={() => void toggleVisibility(item)} className="text-soft hover:text-accent">{item._cms.hidden ? 'إظهار' : 'إخفاء'}</button>
-                    <button type="button" disabled={busy} onClick={() => void deleteItem(item)} className="font-semibold text-red-700/75 transition-colors hover:text-red-700 dark:text-red-300/80 dark:hover:text-red-300">حذف</button>
+                    <button type="button" disabled={busy} onClick={() => void toggleVisibility(item)} className="text-soft hover:text-accent">{item._cms.hidden ? 'استعادة' : 'إخفاء'}</button>
+                    {item._cms.hidden
+                      ? <button type="button" disabled={busy} onClick={() => void purgeItem(item)} className="font-semibold text-red-700/80 transition-colors hover:text-red-700 dark:text-red-300/85 dark:hover:text-red-300">حذف نهائي</button>
+                      : <button type="button" disabled={busy} onClick={() => void deleteItem(item)} className="font-semibold text-red-700/75 transition-colors hover:text-red-700 dark:text-red-300/80 dark:hover:text-red-300">حذف</button>}
                     {item._cms.origin === 'base' && (item._cms.modified || item._cms.hidden) && (
                       <button type="button" disabled={busy} onClick={() => void resetOriginal(item)} className="text-soft hover:text-accent">استعادة الأصل</button>
                     )}

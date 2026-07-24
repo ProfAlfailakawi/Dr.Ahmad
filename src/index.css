@@ -3083,6 +3083,49 @@ html.site-silent .human-core__title-line::after { animation: none !important; op
 }
 
 /* ============================================================
+   خريطة الأثر — الحصيلة في أرقامٍ هادئة بهوية الموقع
+   ============================================================ */
+.impact-map-eyebrow {
+  font-size: .7rem;
+  font-weight: 850;
+  letter-spacing: .01em;
+  color: rgb(var(--c-accent));
+}
+.impact-map-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 1px;
+  background: rgb(var(--c-ink) / .09);
+  border: 1px solid rgb(var(--c-ink) / .10);
+  border-radius: 1.4rem;
+  overflow: hidden;
+  box-shadow: 0 22px 55px -50px rgb(var(--c-ink) / .55);
+}
+.impact-map-stat {
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+  background: rgb(var(--c-canvas));
+  padding: 1.5rem 1rem;
+  text-align: center;
+  transition: background-color .25s ease;
+}
+.impact-map-stat:hover { background: rgb(var(--c-accent) / .05); }
+.impact-map-value {
+  font-size: clamp(1.7rem, 4.4vw, 2.35rem);
+  font-weight: 700;
+  line-height: 1;
+  color: rgb(var(--c-ink));
+  font-variant-numeric: tabular-nums;
+}
+.impact-map-label {
+  font-size: .7rem;
+  font-weight: 600;
+  line-height: 1.55;
+  color: rgb(var(--c-soft));
+}
+
+/* ============================================================
    وضع السكينة — قراءةٌ كأنها ورقة: كل شيء يغيب إلا النص
    ============================================================ */
 html.serenity-mode .site-nav,

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FadeUp, Page, PageHead } from '../components/ui'
+import ImpactMap from '../components/ImpactMap'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { useSeo } from '../components/seo'
 import { useCmsContent, useExtras } from '../lib/content'
@@ -127,6 +128,8 @@ export default function Impact() {
         title="سجل الأثر الموثق."
         sub="يبدأ السجل بالصلات القابلة للتحقق داخل الأرشيف، ويميّزها بوضوح عن الأثر الخارجي المثبت. لا تُرفع الصلة الموضوعية إلى مرتبة الأثر إلا عندما يثبت المصدر العلاقة صراحةً."
       />
+
+      <ImpactMap />
 
       <section className="border-b border-hair px-6 py-7 md:px-11">
         <div className="mx-auto flex max-w-shell flex-wrap items-center justify-between gap-6">

@@ -13,6 +13,7 @@ export type AdminTab =
   | 'analytics'
   | 'studio'
   | 'design'
+  | 'image-lab'
   | 'launch'
   | 'event'
   | 'articles'
@@ -51,6 +52,7 @@ export const ADMIN_GROUPS: NavGroup[] = [
     area: 'publishing', label: 'الإنتاج والنشر', icon: '↗', items: [
       { tab: 'studio', label: 'استوديو النشر', note: 'من الفكرة إلى الحزمة' },
       { tab: 'design', label: 'استوديو التصاميم', note: 'المشاهد الفنية الاثنا عشر بنقرة' },
+      { tab: 'image-lab', label: 'مختبر الصور', note: 'تحرير احترافي للصور بلا تكلفة' },
       { tab: 'production', label: 'غرفة الإنتاج', note: 'طابور البودكاست من المسودة للنشر' },
       { tab: 'manual-dialogue', label: 'الحوار اليدوي', note: 'تحرير الحلقة مداخلةً مداخلة' },
       { tab: 'audio-library', label: 'مكتبة الصوت', note: 'سماع وإعادة توليد وحذف' },

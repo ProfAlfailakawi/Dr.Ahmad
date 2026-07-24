@@ -22,22 +22,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: حصانة الصوت — استعادة المانيفست من آخر التزام للقافلة قبل أي فحص
-        run: |
-          # العلاج الجذري: رفعةٌ بشرية من مجلدٍ قديم (GitHub Desktop) كانت تُرجِع
-          # audio-meta إلى حالةٍ قديمة فيسقط الفحص النووي ويتعطّل النشر. القافلة
-          # هي المصدر الأوثق لملفات الصوت الآلية؛ نستعيد نسختها دائماً قبل الفحص
-          # فلا يكسر الموقعَ رفعٌ بشريٌّ أبداً — والصوت في R2 سليمٌ في الحالين.
-          LAST=$(git log --format='%H' -n 150 --grep='auto-publish new audio to R2' -- src/data/audio-meta.json | head -1)
-          if [ -n "$LAST" ] && [ "$LAST" != "$(git rev-parse HEAD)" ]; then
-            git checkout "$LAST" -- src/data/audio-meta.json src/data/audio.json src/data/audio-supervisor.json 2>/dev/null || true
-            echo "::notice::استُعيدت ملفات الصوت الآلية من آخر التزام للقافلة ${LAST}"
-          else
-            echo "ملفات الصوت على أحدث التزام للقافلة — لا حاجة للاستعادة."
-          fi
 
       - name: Setup Node
         uses: actions/setup-node@v5

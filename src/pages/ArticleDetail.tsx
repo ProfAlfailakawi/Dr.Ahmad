@@ -848,27 +848,32 @@ export default function ArticleDetail() {
           )}
 
           <FadeUp className="serenity-hide">
-            <nav className="mt-16 grid items-start gap-6 border-t border-hair pt-8 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+            {/* صفٌّ واحدٌ على الجوّال كالكمبيوتر (أمر الدكتور): يمين «السابق»،
+               وسطٌ «جميع المقالات»، يسار «التالي» — بعنوانٍ مختصرٍ سطراً واحداً
+               وخطٍّ أصغر أجمل. */}
+            <nav className="mt-16 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-t border-hair pt-8 sm:gap-6">
               {next ? (
-                <Link to={`/articles/${next.slug}`} className="group">
-                  <span className="text-[.78rem] text-soft">السابق</span>
-                  <span className="mt-1 block font-display text-[1.05rem] font-medium leading-[1.5] text-ink transition-colors group-hover:text-accent">
+                <Link to={`/articles/${next.slug}`} className="group min-w-0">
+                  <span className="text-[.64rem] text-soft sm:text-[.78rem]">السابق</span>
+                  <span className="mt-0.5 block truncate font-display text-[.8rem] font-medium leading-[1.5] text-ink transition-colors group-hover:text-accent sm:whitespace-normal sm:text-[1.05rem]">
                     {next.title}
                   </span>
                 </Link>
               ) : (
                 <span />
               )}
-              <Link to="/articles" className="min-h-11 self-center border-b border-hair px-1 py-2 text-center text-[.76rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">
+              <Link to="/articles" className="min-h-11 self-center whitespace-nowrap border-b border-hair px-1 py-2 text-center text-[.66rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent sm:text-[.76rem]">
                 جميع المقالات
               </Link>
-              {prev && (
-                <Link to={`/articles/${prev.slug}`} className="group sm:text-left">
-                  <span className="text-[.78rem] text-soft">التالي</span>
-                  <span className="mt-1 block font-display text-[1.05rem] font-medium leading-[1.5] text-ink transition-colors group-hover:text-accent">
+              {prev ? (
+                <Link to={`/articles/${prev.slug}`} className="group min-w-0 text-left">
+                  <span className="text-[.64rem] text-soft sm:text-[.78rem]">التالي</span>
+                  <span className="mt-0.5 block truncate font-display text-[.8rem] font-medium leading-[1.5] text-ink transition-colors group-hover:text-accent sm:whitespace-normal sm:text-[1.05rem]">
                     {prev.title}
                   </span>
                 </Link>
+              ) : (
+                <span />
               )}
             </nav>
           </FadeUp>

@@ -174,7 +174,8 @@ export default function Impact() {
 
       <section className="px-6 py-14 md:px-11 md:py-20">
         <div className="mx-auto max-w-4xl">
-          {/* معيار كل نوع (مقترح معتمد): يعرف الزائر متى يستحق الأثر مكانه هنا */}
+          {/* أُزيلت بطاقة «معيار الأثر» بأمر الدكتور: منهجيةٌ داخلية لا تُعرض للعموم. */}
+          {false && (
           <details className="impact-no-print mb-9 rounded-2xl border border-hair bg-wash px-6 py-4">
             <summary className="cursor-pointer text-[.84rem] font-semibold text-ink transition-colors hover:text-accent">ما الذي يؤهل أثراً لدخول هذا السجل؟</summary>
             <ul className="mt-4 space-y-2.5 text-[.8rem] font-light leading-[1.9] text-soft">
@@ -185,6 +186,7 @@ export default function Impact() {
             </ul>
             <p className="mt-4 border-t border-hair pt-3 text-[.74rem] font-light leading-[1.8] text-soft">وما لم يبلغ عتبة الإثبات يبقى قيد التحقق خارج العرض العام — لا يظهر هنا ادعاء ينتظر دليله.</p>
           </details>
+          )}
           {loading && !chains.length ? (
             <p className="py-20 text-center text-soft">تُراجع الأدلة والروابط…</p>
           ) : visible.length === 0 ? (

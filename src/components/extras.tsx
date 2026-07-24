@@ -281,6 +281,24 @@ export function CiteButton({
     }
   }
 
+  /* تصديرٌ أكاديميّ حقيقي (أمر الدكتور «خلّه يشتغل أو امسحه»): يُنزّل ملف RIS
+     يستورده Zotero وEndNote وMendeley مباشرةً — لا مجرّد رابطٍ للمصدر. */
+  const exportRis = () => {
+    const authorLines = String(authors).split(/[،,]/).map((name) => name.trim()).filter(Boolean).map((name) => `AU  - ${name}`).join('\n')
+    const ris = ['TY  - JOUR', `TI  - ${title}`, authorLines, year ? `PY  - ${year}` : '', container ? `JO  - ${container}` : '', url ? `UR  - ${url}` : '', 'ER  - '].filter(Boolean).join('\n')
+    try {
+      const blob = new Blob([ris], { type: 'application/x-research-info-systems' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `${String(title).slice(0, 48).replace(/[^\p{L}\p{N} ]/gu, '').trim() || 'citation'}.ris`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(link.href)
+    } catch { /* التنزيل قد يُحجب */ }
+  }
+  const isExport = /تصدير|export|ris/i.test(contextLabel)
+
   useEffect(() => {
     if (!open) return
     const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false) }

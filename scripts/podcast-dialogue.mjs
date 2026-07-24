@@ -1192,11 +1192,19 @@ function compareTexts(intended, recognized) {
     return slips + (longer.length - j) + (shorter.length - i) <= 1
   }
   const fuzzyLongWord = (a, b) => Math.max(a.length, b.length) >= 6 && editDistanceAtMostOne(a, b)
+  /* تكافؤ صوتيّ للمُطبَقات مع نظائرها المرقّقة (ط/ت، ص/س، ض/د، ظ/ذ/ز): أشهرُ خلطٍ
+     في تعرّف العربية، خاصّةً الأعلام الأعجمية — «أرسطو» تُكتب «أرستو» (u033). نطوي
+     الحرفين إلى واحدٍ ونقارن، لكن للكلمات ذوات الخمسة أحرفٍ فأكثر فقط كي تبقى القصيرة
+     صارمة («صار»≠«سار»). الحُرّاس المُوثَّقون سالمون: «الوهم/الوهن» و«الحلم/الحكم»
+     يختلفان بحرفٍ غيرِ مُطبَقٍ فلا يطويهما هذا. */
+  const phoneticFold = (w) => w.replace(/ط/g, 'ت').replace(/ظ/g, 'ز').replace(/ض/g, 'د').replace(/ص/g, 'س').replace(/ذ/g, 'ز')
+  const phoneticEquiv = (a, b) => Math.min(a.length, b.length) >= 5 && a !== b && phoneticFold(a) === phoneticFold(b)
   const wordsEqual = (a, b) => a === b
     || (a.length > 3 && b.length > 3 && (a.includes(b) || b.includes(a)))
     || (a.length >= 3 && `${a}ي` === b) || (b.length >= 3 && `${b}ي` === a)
     || HEARD_EQUIV.has(`${a}|${b}`)
     || fuzzyLongWord(a, b)
+    || phoneticEquiv(a, b)
   const rows = expected.length + 1
   const cols = heard.length + 1
   const dp = Array.from({ length: rows }, () => new Uint16Array(cols))

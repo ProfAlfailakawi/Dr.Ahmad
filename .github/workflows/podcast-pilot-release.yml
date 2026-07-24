@@ -44,7 +44,7 @@ jobs:
           npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000 --fetch-timeout=120000
           sudo apt-get update
           sudo apt-get install -y ffmpeg
-          python -m pip install --user awscli
+          python -m pip install --user awscli faster-whisper
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Write Firebase service account
@@ -127,11 +127,12 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: sa.json
           FIREBASE_PROJECT_ID: drahmad-8e9e2
           AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
-          # المنطقة مثبّتة على eastus (منطقة قافلة السرد العاملة) — عالجت فشل SSML للحوار على centralus
-          AZURE_SPEECH_REGION: eastus
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
           PODCAST_RELEASE_MIN_SCORE: '94'
           PODCAST_NO_GEMINI: '1'
           PODCAST_MANUAL_EXACT: '1'
+          # التعرّف على الكلام مجاناً عبر Whisper المحلي (بلا حصّة Azure STT) — يحفظ التحقّق الكامل
+          PODCAST_STT_PROVIDER: whisper
           CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
           CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
           CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}

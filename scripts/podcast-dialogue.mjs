@@ -74,6 +74,10 @@ if (existsSync(resolve(ROOT, '.env')))
 const GEMINI_KEY = env.GEMINI_API_KEY || env.GOOGLE_API_KEY
 const AZURE_KEY = env.AZURE_SPEECH_KEY
 const AZURE_REGION = (env.AZURE_SPEECH_REGION && /^[a-z0-9-]+$/i.test(env.AZURE_SPEECH_REGION) && env.AZURE_SPEECH_REGION.length < 30) ? env.AZURE_SPEECH_REGION : 'uaenorth'
+/* مزوّد التعرّف على الكلام: 'azure' (مدفوع الحصة) أو 'whisper' (مفتوحٌ مجانيٌّ محليّ
+   داخل الرَنَّار). Whisper يُبقي شرط الدكتور — التحقّق من النطق كاملاً — بلا حصّة. */
+const STT_PROVIDER = (env.PODCAST_STT_PROVIDER || 'azure').toLowerCase()
+const WHISPER_MODEL = env.PODCAST_WHISPER_MODEL || 'small'
 
 /* كل طلب خارجي له مهلة صريحة؛ حتى لا يبقى تشغيل GitHub معلقًا إذا علقت
    شبكة Azure/Gemini. تُعاد المحاولة في الطبقة الخاصة بكل مزود. */
@@ -1344,7 +1348,24 @@ async function synthSSML(ssml, outPath, diag = null) {
   return false
 }
 
+/* التعرّف المجاني عبر Whisper المحلي (faster-whisper): يحوّل الصوت إلى نص بلا
+   حساب ولا حصّة، فيحفظ شرط الدكتور (تحقّق النطق كاملاً) مجاناً. يعيد شكل Azure نفسه. */
+function whisperTranscribe(wav16Path, locale) {
+  const lang = String(locale || 'ar-KW').slice(0, 2).toLowerCase()
+  const out = spawnSync('python3', [resolve(ROOT, 'scripts/whisper-stt.py'), wav16Path, lang, WHISPER_MODEL], {
+    encoding: 'utf8', maxBuffer: 96 * 1024 * 1024, timeout: 300_000,
+  })
+  if (out.status !== 0) {
+    console.log(`  · Whisper ${locale}: فشل (${String(out.stderr || out.error?.message || '').replace(/\s+/g, ' ').slice(0, 160)})`)
+    return null
+  }
+  const text = String(out.stdout || '').trim()
+  if (!text) { console.log(`  · Whisper ${locale}: بلا نص`); return null }
+  return { locale, text, lexical: text, confidence: 0.9, words: [] }
+}
+
 async function sttRequest(wav16Path, locale) {
+  if (STT_PROVIDER === 'whisper') return whisperTranscribe(wav16Path, locale)
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const res = await fetchWithTimeout(`https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${locale}&format=detailed&profanity=raw`, {

@@ -48,6 +48,10 @@ type ReaderPreferences = {
   theme: ReaderTheme
   showPopular: boolean
   focus: boolean
+  /* القراءة المشكّلة: النص نفسه بالحركات الكاملة (كل المقالات مشكّلة ١٤٣/١٤٣).
+     اختيارٌ على الجهاز، والبنية المقطعية مطابقة للنص المجرّد حرفاً بحرف بعد نزع
+     الحركات، فلا يتأثّر تزامن الصوت ولا تظليل العبارات. */
+  vocalized: boolean
 }
 
 type XrayTerm = {
@@ -89,6 +93,7 @@ const DEFAULT_PREFS: ReaderPreferences = {
   theme: 'light',
   showPopular: true,
   focus: false,
+  vocalized: false,
 }
 
 const AR_STOP = new Set(['من', 'في', 'على', 'إلى', 'عن', 'أن', 'إن', 'ما', 'لا', 'هذا', 'هذه', 'التي', 'الذي', 'مع', 'أو', 'ثم', 'قد', 'كل', 'بين', 'هو', 'هي', 'كان', 'كانت', 'لكن', 'حتى', 'إذا', 'عند', 'بعد', 'قبل', 'كما', 'لأن', 'حين', 'كيف', 'لماذا', 'أم', 'بل', 'نحن', 'هم', 'أنت', 'أنا', 'به', 'له', 'لها', 'فيه', 'فيها', 'ذلك', 'تلك', 'أي', 'كذلك', 'أيضا', 'دون', 'غير', 'عبر', 'خلال', 'حول', 'نحو'])
@@ -156,6 +161,7 @@ function getPreferences(): ReaderPreferences {
     theme: stored.theme === 'dark' || stored.theme === 'paper' || stored.theme === 'light' ? stored.theme : siteTheme,
     showPopular: stored.showPopular !== false,
     focus: Boolean(stored.focus),
+    vocalized: Boolean(stored.vocalized),
   }
 }
 
@@ -176,7 +182,7 @@ function applyPreferences(preferences: ReaderPreferences) {
   window.dispatchEvent(new CustomEvent('reader:theme-changed', { detail: { dark } }))
 }
 
-function useReaderPreferences() {
+export function useReaderPreferences() {
   const [preferences, setPreferencesState] = useState<ReaderPreferences>(() => getPreferences())
 
   useEffect(() => {
@@ -358,7 +364,7 @@ export function ReadingTimeLabel({ slug, text }: { slug: string; text?: string }
   return <span className="text-soft">{remaining <= 1 ? 'بقي أقل من دقيقة' : `بقي ${remaining.toLocaleString('en-US')} دقائق`}</span>
 }
 
-function SettingChoice<T extends string | number>({ value, current, label, onClick }: { value: T; current: T; label: string; onClick: () => void }) {
+function SettingChoice<T extends string | number | boolean>({ value, current, label, onClick }: { value: T; current: T; label: string; onClick: () => void }) {
   const active = value === current
   return (
     <button
@@ -606,6 +612,14 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
                       <SettingChoice value="dark" current={preferences.theme} label="داكنة" onClick={() => setPreferences({ theme: 'dark' })} />
                       <SettingChoice value="paper" current={preferences.theme} label="ورقية" onClick={() => setPreferences({ theme: 'paper' })} />
                     </div>
+                  </section>
+                  <section>
+                    <p className="text-[.76rem] font-semibold text-ink">التشكيل</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <SettingChoice value={false} current={preferences.vocalized} label="بدون" onClick={() => setPreferences({ vocalized: false })} />
+                      <SettingChoice value={true} current={preferences.vocalized} label="نص مشكّل" onClick={() => setPreferences({ vocalized: true })} />
+                    </div>
+                    <p className="mt-2 text-[.68rem] leading-[1.7] text-soft">كل المقالات متوفّرة بنصٍّ مشكّلٍ كامل الحركات لقراءةٍ أدقّ.</p>
                   </section>
                   {/* أُزيل «وضع التركيز» القديم بأمر الدكتور — حلّ محله «وضع السكينة» ۩
                       بجوار هذا الزر، وهو أنقى وأشمل؛ ازدواج الوضعين كان يربك القارئ. */}

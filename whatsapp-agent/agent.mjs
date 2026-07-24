@@ -3,7 +3,7 @@ import path from 'node:path'
 import { AUDIO_PUBLIC_BASE_URL, BRIDGE_PORT, BRIDGE_SECRET_MIN_LENGTH, BROADCAST_DEFAULT_INTERVAL_SECONDS, BROADCAST_MIN_INTERVAL_SECONDS, HEARTBEAT_INTERVAL_MS, HEARTBEAT_STALE_MS, MANUAL_TAKEOVER_MINUTES, MAX_CAMPAIGN_TARGETS, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, projectRoot, redactError } from './config.mjs'
 import { openDatabase } from './db.mjs'
 import { syncContentIndex } from './content-index.mjs'
-import { INTENTS, classifyIntent, classifyIntentWithLearning, handleIncoming, handleIntent, isPrivateChat, isSuppressed, markManualTakeover, matchReplyRule, setSuppression, shouldRespondToMessage } from './intent-engine.mjs'
+import { INTENTS, classifyIntent, classifyIntentWithLearning, groundedRescue, handleIncoming, handleIntent, isPrivateChat, isSuppressed, markManualTakeover, matchReplyRule, setSuppression, shouldRespondToMessage } from './intent-engine.mjs'
 import { MockTransport, createWhatsAppTransport } from './transport.mjs'
 import { randomToken } from './crypto.mjs'
 import { createReminder } from './reminders.mjs'
@@ -203,7 +203,24 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     return Boolean(db.get('SELECT message_id FROM outbox_messages WHERE message_id=? AND jid=?', quotedId, db.jidKey(jid)))
   }
 
-  const rejectUngrounded = (jid, response, verdict) => {
+  const rejectUngrounded = (jid, response, verdict, incomingText = '') => {
+    /* بدل الصمت التام: إن كان السؤالُ عن موضوعٍ منشور، ننقذه بأقرب موادّ
+       الدكتور الحقيقية (روابط لا تُؤلَّف). والصمتُ يبقى لِما هو شخصيٌّ أو خارج
+       النطاق حيث لا رابطَ يليق. الإنقاذ مسنَدٌ بذاته فلا يُعاد فحصه. */
+    const rescue = groundedRescue(db, incomingText)
+    if (rescue) {
+      db.addAudit('grounding-rescue', db.jidKey(jid), `reason=${verdict.code}`)
+      return {
+        ...response,
+        ...rescue,
+        actions: [],
+        evidenceQuotes: [],
+        shouldRespond: true,
+        silent: false,
+        needsHuman: false,
+        reason: 'grounding-rescue',
+      }
+    }
     if (isPrivateChat(jid)) markManualTakeover(db, jid)
     db.addAudit('grounding-firewall-blocked', db.jidKey(jid), `reason=${verdict.code}`)
     return {
@@ -235,7 +252,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     }
     if (privacyCommand || !db.db?.exec) {
       const { response, verdict } = execute()
-      return verdict.allowed ? response : rejectUngrounded(args.jid, response, verdict)
+      return verdict.allowed ? response : rejectUngrounded(args.jid, response, verdict, args.text)
     }
 
     const savepoint = `grounding_${++state.groundingSequence}`
@@ -253,7 +270,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
       const { response, verdict } = execute()
       if (!verdict.allowed) {
         rollback()
-        return rejectUngrounded(args.jid, response, verdict)
+        return rejectUngrounded(args.jid, response, verdict, args.text)
       }
       db.db.exec(`RELEASE SAVEPOINT ${savepoint}`)
       open = false
@@ -264,6 +281,37 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
       }
       throw error
     }
+  }
+
+  /* 🔔 جرس التصعيد (المُقتبَس من مواصفة صديق الدكتور): حين يتنحى البوت عن
+     محادثةٍ تحتاج بشراً لا يكفي الصمت الداخلي — يصل الدكتورَ نداءٌ فوري في
+     محادثته الذاتية باسم السائل وخلاصة سؤاله. مهلة ٣٠ دقيقة لكل محادثة
+     كي لا ينقلب الجرسُ إزعاجاً، والجرس لا يُسقط الرد أبداً إن تعطل. */
+  const BELL_COOLDOWN_MS = 30 * 60 * 1000
+  const ringOwnerBell = (jid, incomingText, cause) => {
+    try {
+      if (!flags.send || !state.transport || !isPrivateChat(jid)) return
+      const bellKey = `escalation-bell:${db.jidKey(jid)}`
+      const lastRing = Number(db.getSetting(bellKey, 0))
+      if (Date.now() - lastRing < BELL_COOLDOWN_MS) return
+      db.setSetting(bellKey, Date.now())
+      const phone = String(jid).split('@')[0].split(':')[0]
+      const snippet = safeText(incomingText).slice(0, 140)
+      const reasonLine = cause === 'media'
+        ? 'أرسل وسائط أو رابطاً — والبوت لا يفتحها بقاعدتك.'
+        : cause === 'answered'
+          ? 'أجبتُه جواباً محايداً وأُشعر أنه يحتاج ردّك البشري.'
+          : 'لم أجد له جواباً صادقاً من الأرشيف فتنحّيتُ وأسكتُّ المحادثة.'
+      const lines = [
+        '🔔 محادثة تحتاجك يا دكتور',
+        `من: ‎+${phone}`,
+        snippet ? `قال: «${snippet}»` : '',
+        reasonLine,
+        'ردُّك عليه بخط يدك يُبقي البوت متنحياً ٣٠ دقيقة تتجدد مع كل رد.',
+      ]
+      void Promise.resolve(sendSelf(lines.filter(Boolean).join('\n'))).catch(() => {})
+      db.addAudit('escalation-bell', db.jidKey(jid), cause)
+    } catch { /* جرسٌ معطوب لا يعطل البوت */ }
   }
 
   const onMessage = ({ jid, text, message, media, at }) => {
@@ -280,6 +328,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     if (!privacyCommand && (hasMedia || hasLink)) {
       if (isPrivateChat(jid)) markManualTakeover(db, jid)
       db.addAudit('needs-human-media-or-link', db.jidKey(jid), hasMedia ? 'media' : 'link')
+      ringOwnerBell(jid, incomingText, 'media')
       return { shouldRespond: false, reason: 'media-or-link-human' }
     }
     const response = handleGroundedIncoming(
@@ -294,15 +343,33 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     /* ★ ما لا جواب له لا يُجاب. حين يُعلن المحرك أنه لا يملك ردّاً (silent)
        نصمت ونُسكت المحادثة ونترك الأمر للدكتور — بدل إبلاغ السائل بفشل بحث. */
     if (response.silent) {
-      if (response.groundingFailure) return response
+      if (response.groundingFailure) {
+        ringOwnerBell(jid, incomingText, 'silent')
+        return response
+      }
       markManualTakeover(db, jid)
       db.addAudit('needs-human-silent', db.jidKey(jid), response.intent || 'no-match')
+      ringOwnerBell(jid, incomingText, 'silent')
       return { ...response, shouldRespond: false, reason: 'needs-human-silent' }
     }
     if (response.privacyApplied) db.addAudit('privacy-command-applied', '', `${response.intent || 'privacy'};silent=${!response.shouldRespond}`)
     else if (!response.shouldRespond) db.addAudit('auto-reply-skipped', db.jidKey(jid), response.reason || 'blocked')
     if (!response.shouldRespond || !flags.autoReply || !flags.send) return response
+    if (response.needsHuman) ringOwnerBell(jid, incomingText, 'answered')
     if (response.text && state.transport?.sendText) {
+      /* حارس التكرار (من مواصفة صديق الدكتور): السؤال المعاد الذي أنتج
+         الجواب الحرفي نفسه خلال عشر دقائق لا يستحق نسخه — إشارةٌ مختصرة
+         للأعلى تكفي أدباً، ولا صمت. الأجوبة المتجددة (فاجئني ونحوها)
+         تختلف نصاً كل مرة فلا يمسها الحارس أصلاً. */
+      const repeatKey = `repeat-guard:${db.jidKey(jid)}`
+      const priorReply = db.getSetting(repeatKey, null)
+      const repeatedVerbatim = Boolean(
+        priorReply && priorReply.text === response.text
+        && Date.now() - Number(priorReply.at) < 10 * 60 * 1000,
+      )
+      const outgoingText = repeatedVerbatim
+        ? 'أرسلتُ لك هذا الجواب قبل قليل ⬆️ — وإن كنتَ تقصد شيئاً آخر فوضّح لي أكثر.'
+        : response.text
       /* الحجز يمنع سباق «اختيارٍ جديد» فقط. الطلب الصريح لأحدث مقالة أو
          تلخيص مادة بعينها يجوز أن يكررها عمداً، فلا نرفضه لمجرد أن إرسالاً
          آخر للمادة نفسها ما زال في الطريق. */
@@ -320,7 +387,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
             : enforceNoRepeat && Array.isArray(response.contextItems) ? response.contextItems : [],
       )]
       const reserved = []
-      if (enforceNoRepeat) {
+      if (enforceNoRepeat && !repeatedVerbatim) {
         for (const contentId of seen) {
           if (reserveContent(db, jid, contentId)) reserved.push(contentId)
           else {
@@ -332,9 +399,12 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
       }
       const release = () => { for (const contentId of reserved) releaseContentReservation(db, jid, contentId) }
       try {
-        void Promise.resolve(state.transport.sendText(jid, response.text)).then(() => {
-          for (const contentId of seen) rememberSent(db, jid, contentId)
-          db.addAudit('auto-reply-sent', db.jidKey(jid), response.reason || '')
+        void Promise.resolve(state.transport.sendText(jid, outgoingText)).then(() => {
+          if (!repeatedVerbatim) {
+            for (const contentId of seen) rememberSent(db, jid, contentId)
+            db.setSetting(repeatKey, { text: response.text, at: Date.now() })
+          }
+          db.addAudit('auto-reply-sent', db.jidKey(jid), repeatedVerbatim ? 'repeat-guard-brief' : response.reason || '')
         }).catch((error) => {
           release()
           db.addAudit('auto-reply-failed', db.jidKey(jid), redactError(error))

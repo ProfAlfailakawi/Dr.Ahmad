@@ -375,6 +375,34 @@ function noSilenceReply(db, rawText, { offDomain = false } = {}) {
   }
 }
 
+/* إنقاذٌ مسنَد (أمر الدكتور: «خل يحاول يبحث من قاعدة البيانات ويجاوب بدل الصمت»):
+   حين يُسقط حارسُ المصدر جواباً طموحاً — استشهادٌ لم يُتحقَّق — لا نصمت في وجه
+   سؤالٍ عن موضوعٍ منشور، بل نردّ بأقرب موادّ الدكتور الحقيقية (عناوين وروابط من
+   الأرشيف، يستحيل أن تكون مؤلَّفة). ويبقى الصمتُ لِما هو شخصيٌّ أو إنسانيٌّ أو
+   خارج النطاق: هناك لا رابطَ يليق، والتحويلُ للدكتور أرحم من ردٍّ بارد.
+   يُرجِع null حين لا يليق ردٌّ مسنَد — فيُبقي المتّصلُ صمتَه المقصود. */
+export function groundedRescue(db, rawText) {
+  const normalized = clean(rawText || '')
+  if (!normalized || CHATTER_OR_PERSONAL.test(normalized)) return null
+  const query = stripGroundedTopicRequest(normalized)
+  const words = query.split(/\s+/).filter((word) => word.length > 2)
+  if (!words.length) return null
+  const results = searchContent(db, query, { limit: 4 })
+  const onDomain = results.filter((item) => {
+    const named = clean(`${item.title || ''} ${item.keywords || ''}`)
+    return words.some((word) => named.includes(word))
+  })
+  const chosen = onDomain.length ? onDomain : namedContentMatches(db, words, 3)
+  if (!chosen.length) return null
+  const choices = chosen.slice(0, 3)
+  return {
+    text: `ما عندي جوابٌ محرَّرٌ جاهزٌ بهذا، لكن هذي أقربُ موادّ الدكتور المنشورة لسؤالك:\n${choices.map((item, index) => `${index + 1}. ${item.title}\n${item.url}`).join('\n\n')}\n\nقل «لخّص الأولى» أو «اسمعني الثانية».`,
+    contentId: choices[0].id,
+    contextItems: choices.map((item) => item.id),
+    seenContentIds: choices.map((item) => item.id),
+  }
+}
+
 function isGroundedTopicPhrase(db, text) {
   const normalized = stripGroundedTopicRequest(text)
   const words = normalized.split(/\s+/).filter((word) => word.length > 1)

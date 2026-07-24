@@ -137,9 +137,12 @@ const normalizeForCompare = (value: string) => String(value || '')
 
 function distinctBody(plan: CompositionPlan) {
   const title = normalizeForCompare(plan.content.title)
-  for (const candidate of [plan.content.subtitle, plan.content.body, plan.content.quote]) {
+  /* المتن أولاً ثم العنوان الفرعي: حين يحرّر الدكتور حقلاً في الاستوديو يجب
+     أن ينعكس فوراً مهما قصُر — كان الشرط «٣ كلمات» يبتلع كتابته فتظهر
+     المعاينة فارغة. نقبل الآن أي نصٍّ غير فارغ لا يكرّر العنوان. */
+  for (const candidate of [plan.content.body, plan.content.subtitle, plan.content.quote]) {
     const clean = normalizeForCompare(candidate)
-    if (!clean || words(candidate).length < 3) continue
+    if (!clean) continue
     if (clean === title) continue
     if (title.length > 12 && (clean.startsWith(title) || title.startsWith(clean))) continue
     return candidate
@@ -564,13 +567,27 @@ function cleanEventTitle(title: string, timing: string[]) {
   return clean.length >= 6 ? clean : title
 }
 
-/** كلمات مفتاحية لخريطة المعرفة: من المحرك إن وُجدت، وإلا من كلمات العنوان الرصينة. */
-function mapKeywords(s: Scene) {
-  const provided = (s.plan.content as { keywords?: string[] }).keywords
-  const fallback = words(s.titleText).filter((word) => word.replace(/[^\p{L}]/gu, '').length >= 4)
-  const pool = (provided?.length ? provided : fallback)
-    .filter((word) => normalizeForCompare(word) !== normalizeForCompare(s.hero))
-  return [...new Set(pool)].slice(0, 3)
+/**
+ * كلمات مفتاحية لخريطة المعرفة. الأولوية لمفاهيم مستقلة عن العنوان (من المحرك
+ * أو من المتن) كي لا تتكرّر كلمات العنوان في العقد فوق ظهورها في السطر —
+ * وهي العلّة التي رآها الدكتور: العنوان يظهر ثلاث مرات (سطراً، ومركزاً، وعُقداً).
+ * `fromTitle` تُعلم الرسّام أنه لم يجد مفاهيم مستقلة فيسقط سطرَ العنوان المكرّر
+ * ويترك الخريطة نفسها (المركز + العُقد) تمثّل الفكرة مرة واحدة.
+ */
+function mapKeywords(s: Scene): { list: string[]; fromTitle: boolean } {
+  const heroNorm = normalizeForCompare(s.hero)
+  const titleWords = new Set(words(s.titleText).map((word) => normalizeForCompare(word)))
+  const provided = (s.plan.content as { keywords?: string[] }).keywords || []
+  const bodyConcepts = words(s.bodyText).filter((word) => word.replace(/[^\p{L}]/gu, '').length >= 4)
+  const distinct = [...provided, ...bodyConcepts]
+    .filter((word) => {
+      const norm = normalizeForCompare(word)
+      return norm && norm !== heroNorm && !titleWords.has(norm)
+    })
+  if (distinct.length) return { list: [...new Set(distinct)].slice(0, 3), fromTitle: false }
+  const titleFallback = words(s.titleText)
+    .filter((word) => word.replace(/[^\p{L}]/gu, '').length >= 4 && normalizeForCompare(word) !== heroNorm)
+  return { list: [...new Set(titleFallback)].slice(0, 3), fromTitle: true }
 }
 
 /**
@@ -827,12 +844,15 @@ const paintEventMarquee: Painter = (s) => {
 const paintKnowledgeMap: Painter = (s) => {
   const { palette: p, w, h, min } = s
   const title = fitTitle(s, w - s.safeX * 2, { base: min * .052, maxLines: 3 })
-  const titleH = blockHeight(title.lines, title.size, s.titleLineHeight)
-  const keywords = mapKeywords(s)
+  const { list: keywords, fromTitle } = mapKeywords(s)
+  /* حين تُشتقّ العُقد من العنوان نفسه (لا مفاهيم مستقلة) نُسقط سطر العنوان
+     المكرّر ونترك الخريطة تنطق الفكرة مرة واحدة — علاج تكرار العنوان. */
+  const showTitleHeading = !fromTitle
+  const titleH = showTitleHeading ? blockHeight(title.lines, title.size, s.titleLineHeight) : 0
   const hero = s.hero || words(s.titleText)[0] || '·'
   const band = contentBand(s)
   const titleTop = band.top + min * .01
-  const mapTop = titleTop + titleH + min * .05
+  const mapTop = titleTop + titleH + (showTitleHeading ? min * .05 : min * .02)
   const centerX = s.isWide ? w * .26 : w / 2
   const centerY = s.isWide ? h * .52 : (mapTop + band.bottom) / 2
   const coreR = clamp(textUnits(hero) * min * .017, min * .1, min * .16)
@@ -851,7 +871,7 @@ const paintKnowledgeMap: Painter = (s) => {
   return {
     markup: [
       kickerItem(s).draw(titleTop - min * .045),
-      textBlock({ lines: title.lines, x: w - s.safeX, y: titleTop + title.size * .82, size: title.size, fill: p.ink, weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight }),
+      showTitleHeading ? textBlock({ lines: title.lines, x: w - s.safeX, y: titleTop + title.size * .82, size: title.size, fill: p.ink, weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight }) : '',
       `<circle cx="${round(centerX)}" cy="${round(centerY)}" r="${round(orbitR)}" fill="none" stroke="${p.rule}" stroke-width="1.1" opacity=".55"/>`,
       `<g filter="url(#${s.uid}-shadow)"><circle cx="${round(centerX)}" cy="${round(centerY)}" r="${round(coreR)}" fill="${p.accent}"/></g>`,
       textBlock({ lines: [hero], x: centerX, y: centerY + min * .013, size: clamp((coreR * 1.55) / Math.max(1, textUnits(hero) * .555), min * .022, min * .04), fill: '#FFFFFF', weight: 700, anchor: 'middle', family: 'El Messiri' }),

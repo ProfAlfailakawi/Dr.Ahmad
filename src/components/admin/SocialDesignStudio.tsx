@@ -908,13 +908,15 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
 
       {selected && (
         <div className="fixed inset-0 z-[90] grid place-items-center bg-ink/70 p-3 backdrop-blur-md" role="dialog" aria-modal="true" aria-label="محرر التصميم">
-          <div className="max-h-[96vh] w-full max-w-7xl overflow-y-auto rounded-[2rem] border border-white/10 bg-paper p-4 shadow-2xl md:p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div><p className="text-[.7rem] font-bold uppercase tracking-[.16em] text-accent">Selected direction</p><h3 className="mt-1 font-display text-2xl font-bold text-ink">{selected.directionLabel}</h3></div>
+          <div className="flex max-h-[96vh] w-full max-w-7xl flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-paper shadow-2xl">
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-hair px-4 py-4 md:px-6">
+              <div><p className="text-[.7rem] font-bold uppercase tracking-[.16em] text-accent">التصميم المختار</p><h3 className="mt-1 font-display text-2xl font-bold text-ink">{selected.directionLabel}</h3></div>
               <button type="button" className={ghost} onClick={() => setSelected(null)}>إغلاق</button>
             </div>
-            <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(310px,.75fr)]">
-              <div className="grid place-items-center rounded-[1.5rem] border border-hair bg-canvas p-3 md:p-6">
+            {/* المعاينة تثبت يميناً والأدوات وحدها تنساب يساراً (أمر الدكتور:
+               «خلّ مكان المعاينة ثابتاً والأدوات متحركة») */}
+            <div className="grid min-h-0 flex-1 gap-5 p-4 md:p-6 lg:grid-cols-[minmax(0,1.32fr)_minmax(320px,.7fr)]">
+              <div className="grid content-start justify-items-center rounded-[1.5rem] border border-hair bg-canvas p-3 md:p-6 lg:sticky lg:top-0 lg:self-start">
                 {/* الكانفس الحر: المعاينة نفسها تصير سطح سحبٍ للطبقات */}
                 <div ref={canvasRef} className="relative w-full max-w-3xl" style={{ touchAction: freeMode ? 'none' : undefined }}>
                   <Preview plan={selected} className="w-full" />
@@ -939,7 +941,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                   ))}
                 </div>
               </div>
-              <div className="grid content-start gap-4">
+              <div className="grid content-start gap-4 lg:max-h-full lg:overflow-y-auto lg:pl-1">
                 <section className="rounded-2xl border border-accent/25 bg-accent/[.045] p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">الناقد البصري الداخلي</p><p className="mt-1 text-[.78rem] text-soft">قرأه على الهاتف قبل أن يعرضه لك.</p></div><strong className="font-display text-3xl text-accent">{selected.quality?.score || 0}٪</strong></div><div className="mt-3 flex flex-wrap gap-2">{selected.quality?.strengths.map((item) => <span key={item} className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.66rem] text-soft">✓ {item}</span>)}</div>{selected.quality?.issues.length ? <p className="mt-3 text-[.7rem] leading-relaxed text-soft">{selected.quality.issues.join(' · ')}</p> : null}</section>
                 {/* الطبقات الحرة بالسحب (أمر الكمال المطلق) */}
                 <section className="rounded-2xl border border-hair bg-canvas p-4">

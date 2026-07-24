@@ -5,7 +5,7 @@ import { getArticleNeighbors, type ArticleRecord, type BookRecord, type MediaRec
 import { SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
-import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, usePopularQuotes, type PopularQuote } from '../components/ArticleReader'
+import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, useReaderPreferences, usePopularQuotes, type PopularQuote } from '../components/ArticleReader'
 import { SelectionTools } from '../components/IdeaFeatures'
 import { openAudioPlayer } from '../components/AudioPlayer'
 import { ArticlePulse, markArticleRead } from '../components/ReaderResonance'
@@ -13,7 +13,7 @@ import { JsonLd, useSeo } from '../components/seo'
 import { fetchOwnerCounts, useTrackView } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
 import { articleSystem, ideaTokens } from '../lib/intelligence'
-import { getArticleBody } from '../lib/article-bodies'
+import { getArticleBody, getArticleVocalizedBody } from '../lib/article-bodies'
 import { liveLink } from '../lib/dead-links'
 import { usePersistentAudio } from '../lib/persistent-audio'
 import { rememberIdeaVisit } from '../lib/idea-memory'
@@ -637,7 +637,9 @@ export default function ArticleDetail() {
   const { articles, books, papers, media, loading } = useCmsContent()
   const a = articles.find((article) => article.slug === slug)
   const [staticBody, setStaticBody] = useState<string | undefined>()
+  const [vocalizedBody, setVocalizedBody] = useState<string | undefined>()
   const [bodyLoading, setBodyLoading] = useState(false)
+  const { preferences } = useReaderPreferences()
 
   const neighbors = useMemo(() => a ? getArticleNeighbors(a.slug, articles) : { prev: undefined, next: undefined }, [a, articles])
 
@@ -670,6 +672,17 @@ export default function ArticleDetail() {
       })
     return () => { active = false }
   }, [a?.slug, a?.body])
+
+  /* القراءة المشكّلة: يُحمَّل النص المشكّل كسولاً عند تفعيل الخيار فقط، ويُبدَّل
+     بالنص المجرّد عند إطفائه — والبنية مطابقة فلا يتأثّر الصوت ولا التظليل. */
+  useEffect(() => {
+    let active = true
+    if (!a || !preferences.vocalized) { setVocalizedBody(undefined); return () => { active = false } }
+    getArticleVocalizedBody(a.slug)
+      .then((body) => { if (active) setVocalizedBody(body) })
+      .catch(() => { if (active) setVocalizedBody(undefined) })
+    return () => { active = false }
+  }, [a?.slug, preferences.vocalized])
 
   // يتذكّر جهازُك المقال والفكرة محليًا — بلا حساب ولا ملف شخصي ولا إرسال للخادم.
   useEffect(() => {
@@ -710,7 +723,8 @@ export default function ArticleDetail() {
     )
 
   const { prev, next } = neighbors
-  const article: ArticleRecord = { ...a, body: a.body || staticBody }
+  const plainBody = a.body || staticBody
+  const article: ArticleRecord = { ...a, body: (preferences.vocalized && vocalizedBody) ? vocalizedBody : plainBody }
 
   return (
     <Page className="content-articles article-journey">

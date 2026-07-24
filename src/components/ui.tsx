@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useInView, useMotionValue, useReducedMotion, useScroll, useSpring, AnimatePresence } from 'framer-motion'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LINK_OUT, SHOW_EN_TOGGLE, academicProfiles, profile, socials, links } from '../data'
-import { useCmsContent } from '../lib/content'
+import { LINK_OUT, SHOW_EN_TOGGLE, academicProfiles, profile, socials, links, upcoming, type Event } from '../data'
+import { useCmsContent, useExtras } from '../lib/content'
+import { sortUpcomingEvents } from '../lib/events'
 import { ThemeToggle } from './extras'
 import { MySpace } from './MySpace'
 import { useCvLinks } from '../lib/settings'
@@ -271,6 +272,16 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
   // العنوان والسهم يفتحان الفروع معاً؛ ورابط «جميع…» يبقى واضحاً ومستقلاً.
   const [openSub, setOpenSub] = useState<string | null>(null)
 
+  /* «اللقاءات القادمة» تُخفى من القائمة حين لا لقاء مُعلَناً — كي لا يقود الرابط
+     إلى صفحةٍ فارغة. القائمة مغلقةٌ حتى يفتحها الزائر، وبيانات اللقاءات تُحمَّل
+     مع الصفحة، فتستقر الحالة قبل أن تُرى — بلا وميض. تعود فور إعلان لقاءٍ جديد. */
+  const cmsUpcoming = useExtras<Event & { id: string }>('site_upcoming')
+  const hasUpcoming = useMemo(() => sortUpcomingEvents([...cmsUpcoming, ...upcoming]).length > 0, [cmsUpcoming])
+  const groups = useMemo(
+    () => hasUpcoming ? GROUPS : GROUPS.map((group) => ({ ...group, items: group.items.filter((item) => item.to !== '/upcoming') })),
+    [hasUpcoming],
+  )
+
   useEffect(() => {
     const dialog = dialogRef.current
     if (!dialog) return
@@ -332,7 +343,7 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
       <div className="relative flex-1 overflow-y-auto overscroll-contain">
         <div className="flex min-h-full items-start px-6 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(5.4rem+env(safe-area-inset-top))] md:items-center md:px-11 md:py-28">
         <div className="mx-auto grid w-full max-w-shell gap-5 md:grid-cols-3 md:gap-x-12 md:gap-y-10">
-          {GROUPS.map((g, gi) => (
+          {groups.map((g, gi) => (
             <div key={g.label} className="border-b border-hair pb-5 md:border-0 md:pb-0">
               <motion.span
                 className="block text-[.68rem] font-semibold uppercase text-accent md:text-[.72rem]"

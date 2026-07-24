@@ -557,6 +557,61 @@ const vocalizedBodyMatches = (body = '', vocalized = '') =>
   Boolean(body.trim() && vocalized.trim())
   && stripArabicDiacritics(body) === stripArabicDiacritics(vocalized)
 
+/* سجل التغييرات: كل حفظٍ يُبقي لقطةً من النسخة السابقة. هنا نعرضها ونستعيدها.
+   نستعلم بمفتاحٍ واحد (key) ونرتّب في الذاكرة — بلا حاجة لفهرسٍ مركّب في Firestore. */
+type HistoryVersion = { id: string; savedAt: number; snapshot: Record<string, string> }
+function ChangeLog({ kind, slug, onRestore }: { kind: ManagedKind; slug: string; onRestore: (snapshot: Record<string, string>) => void }) {
+  const [versions, setVersions] = useState<HistoryVersion[]>([])
+  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    void (async () => {
+      setLoading(true)
+      try {
+        const db = await getDb()
+        if (!db) { if (active) setLoading(false); return }
+        const { collection, query, where, limit, getDocs } = await import('firebase/firestore')
+        const rows = await getDocs(query(collection(db, 'content_history'), where('key', '==', `${kind}__${slug}`), limit(60)))
+        if (!active) return
+        const parsed = rows.docs.map((entry) => {
+          const data = entry.data()
+          let snapshot: Record<string, string> = {}
+          try { snapshot = JSON.parse(String(data.snapshot || '{}')) } catch { snapshot = {} }
+          const savedAt = typeof data.savedAt?.toMillis === 'function' ? data.savedAt.toMillis() : 0
+          return { id: entry.id, savedAt, snapshot }
+        }).sort((left, right) => right.savedAt - left.savedAt).slice(0, 25)
+        setVersions(parsed)
+      } catch { /* السجل مساعِد؛ نتجاهل بهدوء */ } finally { if (active) setLoading(false) }
+    })()
+    return () => { active = false }
+  }, [kind, slug])
+
+  if (loading || !versions.length) return null
+  return (
+    <section className="rounded-2xl border border-hair bg-wash p-4">
+      <button type="button" onClick={() => setOpen((value) => !value)} className="flex w-full items-center justify-between gap-3 text-right">
+        <span className="text-[.78rem] font-bold text-accent">سجل التغييرات · {versions.length}</span>
+        <span className="text-[.72rem] text-soft">{open ? 'إخفاء ▲' : 'عرض النسخ السابقة ▼'}</span>
+      </button>
+      {open && (
+        <>
+          <p className="mt-2 text-[.7rem] leading-relaxed text-soft">كل حفظٍ يُبقي نسخةً سابقة. «استعادة» تُعيد النسخة إلى المحرّر، ولا تُحفظ حتى تضغط حفظ.</p>
+          <ul className="mt-3 grid gap-2">
+            {versions.map((version) => (
+              <li key={version.id} className="flex items-center justify-between gap-3 rounded-xl border border-hair bg-canvas px-3 py-2">
+                <span className="min-w-0 text-[.72rem] text-soft">{version.savedAt ? new Date(version.savedAt).toLocaleString('ar-KW-u-nu-arab', { dateStyle: 'medium', timeStyle: 'short' }) : 'نسخة سابقة'}</span>
+                <button type="button" onClick={() => { if (window.confirm('استعادة هذه النسخة إلى المحرّر؟ راجعها ثم اضغط حفظ لاعتمادها.')) onRestore(version.snapshot) }} className="shrink-0 rounded-full border border-accent/40 px-3 py-1 text-[.7rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">استعادة</button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  )
+}
+
 function Editor({
   kind,
   current,
@@ -1016,6 +1071,7 @@ function Editor({
               </div>
             )
           })()}
+          {current && <ChangeLog kind={kind} slug={current.slug} onRestore={(snapshot) => setForm((previous) => ({ ...previous, ...snapshot }))} />}
           <div className="flex flex-wrap items-center gap-3 border-t border-hair pt-5">
             <button type="button" onClick={onSave} disabled={busy || !form.title?.trim() || !form.slug?.trim() || (kind === 'article' && (form.body || '').trim().length < 40)} className={primary}>
               {busy && kind === 'article' && form._aiReady !== '1' ? 'جارٍ تجهيز التصنيف والمقتطف…' : busy ? 'جارٍ الحفظ…' : kind === 'article' && form.status === 'scheduled' ? 'حفظ وجدولة' : kind === 'article' && form.status === 'draft' ? 'حفظ كمسودة' : 'حفظ ونشر'}
@@ -1166,6 +1222,22 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
 
       const collision = items.find((item) => item.slug === slug && item !== current)
       if (!current && collision) throw new Error('هذا الرابط المختصر مستخدم؛ غيّره قبل النشر.')
+
+      // سجل التغييرات: نحفظ لقطةً من النسخة السابقة قبل الكتابة فوقها، فتبقى
+      // كل نسخةٍ قابلةً للاستعادة. مساعِدٌ لا يُعطّل الحفظ إن تعذّر.
+      if (current) {
+        try {
+          const previousSnapshot = Object.fromEntries(editableFields[kind].map((field) => [field, current[field] ?? '']))
+          await setDoc(doc(db, 'content_history', `${kind}__${slug}__${Date.now()}`), {
+            key: `${kind}__${slug}`, // مفتاحٌ واحدٌ لاستعلامٍ بلا حاجة لفهرسٍ مركّب
+            kind,
+            slug,
+            title: String(current.title || slug),
+            snapshot: JSON.stringify(previousSnapshot),
+            savedAt: serverTimestamp(),
+          })
+        } catch { /* السجل مساعِد؛ لا يمنع الحفظ إن فشل */ }
+      }
 
       if (!current) {
         await setDoc(doc(db, collections[kind], slug), { ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })

@@ -13,6 +13,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            /*
+            !/.codex-backups/
+            !/*.txt
+            !/agent-*.sqlite
+            !/audio-meta-*.json
+            !/bodies-vocalized-*.json
+            !/podcast-state-*.json
+            !/whatsapp-agent/*.command
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v5
         with:
           node-version: '24.18.0'

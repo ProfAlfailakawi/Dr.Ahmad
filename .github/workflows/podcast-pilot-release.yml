@@ -133,6 +133,8 @@ jobs:
           PODCAST_MANUAL_EXACT: '1'
           # التعرّف على الكلام مجاناً عبر Whisper المحلي (بلا حصّة Azure STT) — يحفظ التحقّق الكامل
           PODCAST_STT_PROVIDER: whisper
+          # نموذج medium أدقّ بكثير للعربية الفصحى (small كان يُخطئ فيُسقط تطابقاً سليماً)
+          PODCAST_WHISPER_MODEL: medium
           CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
           CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
           CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}

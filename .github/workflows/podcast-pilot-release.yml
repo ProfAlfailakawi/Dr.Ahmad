@@ -127,7 +127,8 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: sa.json
           FIREBASE_PROJECT_ID: drahmad-8e9e2
           AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
-          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+          # المنطقة مثبّتة على eastus (منطقة قافلة السرد العاملة) — عالجت فشل SSML للحوار على centralus
+          AZURE_SPEECH_REGION: eastus
           PODCAST_RELEASE_MIN_SCORE: '94'
           PODCAST_NO_GEMINI: '1'
           PODCAST_MANUAL_EXACT: '1'

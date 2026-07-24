@@ -1131,16 +1131,32 @@ function compareTexts(intended, recognized) {
   const assimilated = (token, first, second) =>
     first.length <= 3 && token.length > second.length && token.endsWith(second)
     && token.length - second.length <= 2
-  /* «لا الصدق» تُلفظ بإدغام لام النفي في لام التعريف فيكتبها STT «للصدق» (u002):
-     ألفُ «لا» وألفُ «ال» تسقطان صوتاً فتبقى لامان مشددتان. النفيُ محفوظٌ في اللام
-     والنطق سليم، لكن المطابقة الحرفية تحسب «لا» و«الصدق» مفقودتين معاً فتُسقط
-     مداخلةً سليمة. نفكّ اللصق متى ساوى المسموعُ «لل» + جذعَ الكلمة المعرّفة. */
-  const laAlContraction = (token, first, second) =>
-    first === 'لا' && second.startsWith('ال') && second.length > 2 && token === `لل${second.slice(2)}`
+  /* «لا» النافية لامُها تبتلع أوّلَ الكلمة التالية في الطلاقة فيلصقها STT كلمةً
+     واحدةً تبدأ بلامِ النفي: «لا الصدق»→«للصدق» (u002)، «لا يكافأ»→«لأكافة» (u003).
+     النطقُ سليمٌ والنفيُ محفوظٌ في اللام الباقية، لكنّ المطابقة الحرفية تحسب «لا»
+     والكلمةَ التالية مفقودتين معاً فتُسقط مداخلةً سليمة. نفكّ اللصق متى بدأ المسموع
+     بلامِ النفي (لا/لل) وطابَق ما بعده جذعَ الكلمة التالية (بعد إسقاط «ال» أو حرف
+     المضارعة البادئ) احتواءً أو بفارق حرفٍ واحد — وهو دليلٌ صوتيٌّ أنّ النفي نُطق.
+     الاشتراطُ ببداية «لا/لل» يمنع القبول حين يُسقط الـTTS النفي فعلاً (فلا لامَ تبقى). */
+  const laContraction = (token, first, second) => {
+    if (first !== 'لا' || !(token.startsWith('لا') || token.startsWith('لل'))) return false
+    const stem = second.replace(/^(ال|[يتنأ])/, '')
+    const body = token.replace(/^(لل|لا)/, '')
+    if (stem.length < 2 || body.length < 2) return false
+    if (body === stem || body.includes(stem) || stem.includes(body)) return true
+    if (Math.abs(body.length - stem.length) > 1) return false
+    let slips = 0, i = 0, j = 0
+    while (i < body.length && j < stem.length) {
+      if (body[i] === stem[j]) { i++; j++; continue }
+      if (++slips > 1) return false
+      if (body.length === stem.length) { i++; j++ } else if (body.length > stem.length) i++; else j++
+    }
+    return slips + (body.length - i) + (stem.length - j) <= 1
+  }
   for (const token of rawHeard) {
     const splitAt = expected.findIndex((word, index) => index < expected.length - 1
       && (word + expected[index + 1] === token || assimilated(token, word, expected[index + 1])
-        || laAlContraction(token, word, expected[index + 1])))
+        || laContraction(token, word, expected[index + 1])))
     if (splitAt >= 0) { heard.push(expected[splitAt], expected[splitAt + 1]); continue }
     if (token === 'ا' && heard.length && expected.includes(heard.at(-1) + token)) {
       heard[heard.length - 1] += token

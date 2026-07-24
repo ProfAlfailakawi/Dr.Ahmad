@@ -25,6 +25,7 @@ export type AdminTab =
   | 'voice'
   | 'manual-dialogue'
   | 'audio-library'
+  | 'sound-caravan'
   | 'pronunciation'
   | 'cv'
   | 'whatsapp'
@@ -57,6 +58,7 @@ export const ADMIN_GROUPS: NavGroup[] = [
       { tab: 'production', label: 'غرفة الإنتاج', note: 'طابور البودكاست من المسودة للنشر' },
       { tab: 'manual-dialogue', label: 'الحوار اليدوي', note: 'تحرير الحلقة مداخلةً مداخلة' },
       { tab: 'audio-library', label: 'مكتبة الصوت', note: 'سماع وإعادة توليد وحذف' },
+      { tab: 'sound-caravan', label: 'قافلة الصوت', note: 'تقدّم تصويت المقالات الـ143 بالأصوات الثلاثة' },
       { tab: 'pronunciation', label: 'قاموس النطق', note: 'اضبط نطق أي كلمة' },
       { tab: 'voice', label: 'اختيار الأصوات', note: 'تجارب الأصوات وضبط الجودة' },
       { tab: 'launch', label: 'وضع الإطلاق', note: 'إبراز عمل في الواجهة' },

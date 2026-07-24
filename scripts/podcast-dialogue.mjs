@@ -1154,7 +1154,10 @@ function compareTexts(intended, recognized) {
     return slips + (body.length - i) + (stem.length - j) <= 1
   }
   for (const token of rawHeard) {
-    const splitAt = expected.findIndex((word, index) => index < expected.length - 1
+    /* لا تُفكّك كلمةً مسموعةً تطابق كلمةً متوقّعةً بنفسها: «الصحة» كلمةٌ صحيحة، لكن
+       قاعدة الإدغام كانت تلتهمها ظنّاً أنّها «عن»+«صحة» (لورود الزوج لاحقاً في النص)
+       فتُحسب «الصحة» مفقودةً زوراً (u015). الشرط يمنع الالتهام دون كسر الإدغام الحق. */
+    const splitAt = expected.includes(token) ? -1 : expected.findIndex((word, index) => index < expected.length - 1
       && (word + expected[index + 1] === token || assimilated(token, word, expected[index + 1])
         || laContraction(token, word, expected[index + 1])))
     if (splitAt >= 0) { heard.push(expected[splitAt], expected[splitAt + 1]); continue }

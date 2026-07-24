@@ -35,6 +35,7 @@ import { UploadField } from '../components/admin/ContentManager'
 import { WhatsAppAgentPanel } from '../components/admin/WhatsAppAgentPanel'
 import { BotMessagesPanel } from '../components/admin/BotMessagesPanel'
 import { ProductionMonitor } from '../components/admin/ProductionMonitor'
+import { SoundCaravanBoard } from '../components/admin/SoundCaravanBoard'
 import { useSeo } from '../components/seo'
 import {
   AdminAreaTabs,
@@ -297,6 +298,7 @@ function Panel({ email }: { email: string }) {
             {tab === 'voice' && <VoiceBakeoffCard />}
             {tab === 'manual-dialogue' && <ManualDialogueEditor articles={cms.articles} onQueued={() => chooseTab('production')} />}
             {tab === 'audio-library' && <AudioLibrary articles={cms.articles} onChanged={cms.reload} />}
+            {tab === 'sound-caravan' && <SoundCaravanBoard articles={cms.articles} />}
             {tab === 'pronunciation' && <PronunciationLexicon />}
             {tab === 'cv' && <CvPdfCard />}
             {tab === 'articles' && <ContentManager openSlug={editSlug} kind="article" items={cms.articles as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}

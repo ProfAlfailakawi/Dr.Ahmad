@@ -1,6 +1,7 @@
 import React, { useLayoutEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'
 
 /* شفاء الحزم اليتيمة: هاتفٌ فتح رابطاً بهيكلٍ قديم أثناء نشرةٍ جديدة يطلب
@@ -31,7 +32,11 @@ function AppBoot() {
     }
   }, [])
 
-  return <App />
+  return (
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  )
 }
 
 const root = document.getElementById('root')

@@ -1176,8 +1176,10 @@ function compareTexts(intended, recognized) {
   /* إملاء STT للكلمات الطويلة والمنقحرة متذبذب بحرف: «الفاشينستات» تُكتب
      «الفاشينتات»، و«فرونتيرز» تُكتب «فرونتيرس». النطق سليم والمستمع يسمعه صحيحاً،
      لكن المطابقة الحرفية كانت تقتل حلقةً كاملة من ٣٥ مداخلة بسبب حرف واحد.
-     نتسامح مع فارق حرف واحد في الكلمات الطويلة وحدها (٧ أحرف فأكثر)، فتبقى
-     الكلمات القصيرة صارمة: «الوهم» لا تساوي «الوهن»، و«الحلم» لا تساوي «الحكم». */
+     نتسامح مع فارق حرف واحد في الكلمات الطويلة وحدها (٦ أحرف فأكثر): «الشاشة»
+     تُكتب «الشرشة» (u019)، و«تقارير» تُكتب «تقرير» (u015) — النطق سليم والحرف
+     الواحد قصورُ STT. تبقى الكلمات ذوات الخمسة أحرفٍ فأقلّ صارمةً: «الوهم» لا
+     تساوي «الوهن»، و«الحلم» لا تساوي «الحكم». والنفيُ محميٌّ بفحصٍ مستقلٍّ لا يمسّه هذا. */
   const editDistanceAtMostOne = (a, b) => {
     if (Math.abs(a.length - b.length) > 1) return false
     const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a]
@@ -1189,7 +1191,7 @@ function compareTexts(intended, recognized) {
     }
     return slips + (longer.length - j) + (shorter.length - i) <= 1
   }
-  const fuzzyLongWord = (a, b) => Math.max(a.length, b.length) >= 7 && editDistanceAtMostOne(a, b)
+  const fuzzyLongWord = (a, b) => Math.max(a.length, b.length) >= 6 && editDistanceAtMostOne(a, b)
   const wordsEqual = (a, b) => a === b
     || (a.length > 3 && b.length > 3 && (a.includes(b) || b.includes(a)))
     || (a.length >= 3 && `${a}ي` === b) || (b.length >= 3 && `${b}ي` === a)

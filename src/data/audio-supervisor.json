@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-24T05:41:57.192Z",
+  "generatedAt": "2026-07-23T23:51:32.877Z",
   "state": "repairing",
   "articles": {
     "total": 143,
@@ -8,8 +8,8 @@
   },
   "readings": {
     "expected": 286,
-    "ready": 78,
-    "missing": 208
+    "ready": 62,
+    "missing": 224
   },
   "dialogues": {
     "expected": 143,
@@ -17,8 +17,8 @@
     "missing": 143
   },
   "queue": {
-    "total": 351,
-    "failed": 190,
+    "total": 367,
+    "failed": 184,
     "next": {
       "slug": "a-society-that-fears-the-different-arabic",
       "title": "المجتمع الذي يخاف من المختلف",
@@ -139,7 +139,7 @@
       }
     ]
   },
-  "progressPercent": 18.2,
+  "progressPercent": 14.5,
   "items": [
     {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
@@ -657,12 +657,12 @@
       "title": "د. جاسم ملك… الحصّة التي لا تنتهي",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "dr-jasem-malik-the-lesson-that-never-ends-2.mp3",
           "failure": null
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "dr-jasem-malik-the-lesson-that-never-ends-2.noura.mp3",
           "failure": null
         }
@@ -931,12 +931,12 @@
       "title": "من الساحة المدرسية… إلى ساحة المطاعم!",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "from-the-schoolyard-to-the-food-court-2.mp3",
           "failure": null
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "from-the-schoolyard-to-the-food-court-2.noura.mp3",
           "failure": null
         }
@@ -1132,12 +1132,12 @@
       "title": "ذكاءٌ بلا ضمير",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "intelligence-without-a-consciencearabic.mp3",
           "failure": null
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "intelligence-without-a-consciencearabic.noura.mp3",
           "failure": null
         }
@@ -1155,12 +1155,12 @@
       "title": "يضحك وهو يحترق",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "laughing-while-burning-2.mp3",
           "failure": null
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "laughing-while-burning-2.noura.mp3",
           "failure": null
         }
@@ -3948,30 +3948,12 @@
         "fahed": {
           "ready": false,
           "fileName": "qabas-201810-001.mp3",
-          "failure": {
-            "slug": "qabas-201810-001",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-24T01:24:37.024Z",
-            "lastFailedAt": "2026-07-24T01:24:37.024Z",
-            "message": "r014 فشل بعد 3 محاولات: STT 0٪، السرعة 84/133"
-          }
+          "failure": null
         },
         "noura": {
           "ready": false,
           "fileName": "qabas-201810-001.noura.mp3",
-          "failure": {
-            "slug": "qabas-201810-001",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-24T01:26:41.786Z",
-            "lastFailedAt": "2026-07-24T01:26:41.786Z",
-            "message": "r014 فشل بعد 3 محاولات: STT 0٪، السرعة 82/123"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -3989,30 +3971,12 @@
         "fahed": {
           "ready": false,
           "fileName": "qabas-201810-002.mp3",
-          "failure": {
-            "slug": "qabas-201810-002",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-24T01:26:48.123Z",
-            "lastFailedAt": "2026-07-24T01:26:48.123Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 84/141"
-          }
+          "failure": null
         },
         "noura": {
           "ready": false,
           "fileName": "qabas-201810-002.noura.mp3",
-          "failure": {
-            "slug": "qabas-201810-002",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-24T01:27:09.332Z",
-            "lastFailedAt": "2026-07-24T01:27:09.332Z",
-            "message": "r003 فشل بعد 3 محاولات: STT 0٪، السرعة 78/133"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -4028,12 +3992,12 @@
       "title": "مواقع الإلحاد في السوشيال ميديا… وقد فاحت راحئتها",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "qabas-201810-003.mp3",
           "failure": null
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "qabas-201810-003.noura.mp3",
           "failure": null
         }
@@ -4051,12 +4015,12 @@
       "title": "لنعمل من أجل أنفسنا لا من أجل الآخرين…",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "qabas-201810-004.mp3",
           "failure": null
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "qabas-201810-004.noura.mp3",
           "failure": null
         }
@@ -4081,16 +4045,7 @@
         "noura": {
           "ready": false,
           "fileName": "qabas-201811-001.noura.mp3",
-          "failure": {
-            "slug": "qabas-201811-001",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-24T01:44:32.315Z",
-            "lastFailedAt": "2026-07-24T01:44:32.315Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=88/100، judge=undefined/100"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -4106,12 +4061,12 @@
       "title": "انجازات تغرق وفساد يعوم",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "qabas-201811-002.mp3",
           "failure": null
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "qabas-201811-002.noura.mp3",
           "failure": null
         }
@@ -4131,16 +4086,7 @@
         "fahed": {
           "ready": false,
           "fileName": "qabas-201909-001.mp3",
-          "failure": {
-            "slug": "qabas-201909-001",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-24T01:53:39.357Z",
-            "lastFailedAt": "2026-07-24T01:53:39.357Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=88/100، judge=undefined/100"
-          }
+          "failure": null
         },
         "noura": {
           "ready": false,
@@ -4161,12 +4107,12 @@
       "title": "الشدادية فخامة معمارية… ولكن نحو جودة التعليم",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "qabas-201911-001.mp3",
           "failure": null
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "qabas-201911-001.noura.mp3",
           "failure": null
         }
@@ -5321,5 +5267,5 @@
       "complete": false
     }
   ],
-  "fingerprint": "3de981666a09d5be79baf5c04ad69b6965e3c2ee5315b89aa58642d6d6954905"
+  "fingerprint": "88ef18abac96e26ebb89830a7564a3ea3b63ff362f63f020b7f82f9fe4e08dda"
 }

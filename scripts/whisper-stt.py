@@ -18,9 +18,13 @@ def main() -> int:
         return 3
     try:
         model = WhisperModel(model_name, device="cpu", compute_type="int8")
+        # vad_filter=True كان يقتطع الكلمات القصيرة على الأطراف («لا» النافية) فتسقط
+        # مداخلةٌ سليمة النطق (u002). نطفئه: المقاطع قصيرة ونظيفة أصلاً (توليد TTS)،
+        # فلا صمت طويل يستدعي الترشيح. beam_size=5 يرفع دقة العربية،
+        # وtemperature=0 يجعل النتيجة حتمية قابلة للتكرار.
         segments, _info = model.transcribe(
-            wav, language=lang, beam_size=1, vad_filter=True,
-            condition_on_previous_text=False,
+            wav, language=lang, beam_size=5, vad_filter=False,
+            temperature=0.0, condition_on_previous_text=False,
         )
         text = " ".join(seg.text.strip() for seg in segments).strip()
         # نطبع النص فقط (بلا أسطر إضافية) ليقرأه المحرّك مباشرةً

@@ -1,0 +1,2106 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-07-24T01:53:39.357Z",
+  "items": [
+    {
+      "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T09:10:12.164Z",
+      "lastFailedAt": "2026-07-23T09:10:12.164Z",
+      "message": "r002 فشل بعد 3 محاولات: STT 100٪، السرعة 79/145"
+    },
+    {
+      "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T09:10:36.007Z",
+      "lastFailedAt": "2026-07-23T09:10:36.007Z",
+      "message": "r002 فشل بعد 3 محاولات: STT 100٪، السرعة 79/146"
+    },
+    {
+      "slug": "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:41:29.672Z",
+      "lastFailedAt": "2026-07-23T16:41:29.672Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:41:38.409Z",
+      "lastFailedAt": "2026-07-23T16:41:38.409Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "a-generation-that-knows-everything-and-understands-nothing",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T09:22:53.507Z",
+      "lastFailedAt": "2026-07-23T09:22:53.507Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
+    },
+    {
+      "slug": "a-generation-that-knows-everything-and-understands-nothing",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T09:26:53.213Z",
+      "lastFailedAt": "2026-07-23T09:26:53.213Z",
+      "message": "r023 فشل بعد 3 محاولات: STT 75٪، السرعة 130/141"
+    },
+    {
+      "slug": "a-generation-without-rootsarabic",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T05:34:58.753Z",
+      "lastFailedAt": "2026-07-23T05:34:58.753Z",
+      "message": "r024 فشل بعد 3 محاولات: STT 67٪، السرعة 134/138"
+    },
+    {
+      "slug": "a-society-that-fears-the-different-arabic",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T01:07:47.425Z",
+      "lastFailedAt": "2026-07-23T05:37:54.716Z",
+      "message": "r016 فشل بعد 3 محاولات: STT 82٪، السرعة 126/129"
+    },
+    {
+      "slug": "a-society-that-fears-the-different-arabic",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T01:09:31.558Z",
+      "lastFailedAt": "2026-07-23T05:39:42.942Z",
+      "message": "r011 فشل بعد 3 محاولات: STT 86٪، السرعة 133/137"
+    },
+    {
+      "slug": "aggression-in-the-sky-and-steadfastness-withinarabic",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T00:40:49.709Z",
+      "lastFailedAt": "2026-07-23T05:09:46.301Z",
+      "message": "r020 فشل بعد 3 محاولات: STT 77٪، السرعة 127/139"
+    },
+    {
+      "slug": "aggression-in-the-sky-and-steadfastness-withinarabic",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T00:43:18.809Z",
+      "lastFailedAt": "2026-07-23T05:12:13.983Z",
+      "message": "r020 فشل بعد 3 محاولات: STT 77٪، السرعة 124/134"
+    },
+    {
+      "slug": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T02:26:19.941Z",
+      "lastFailedAt": "2026-07-23T07:00:45.814Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
+    },
+    {
+      "slug": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T02:30:52.334Z",
+      "lastFailedAt": "2026-07-23T07:05:30.782Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
+    },
+    {
+      "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T00:46:10.255Z",
+      "lastFailedAt": "2026-07-23T05:15:09.067Z",
+      "message": "r020 فشل بعد 3 محاولات: STT 88٪، السرعة 123/122"
+    },
+    {
+      "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T00:49:02.361Z",
+      "lastFailedAt": "2026-07-23T05:18:18.789Z",
+      "message": "r020 فشل بعد 3 محاولات: STT 88٪، السرعة 123/124"
+    },
+    {
+      "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-22T12:54:43.712Z",
+      "lastFailedAt": "2026-07-23T05:21:28.723Z",
+      "message": "r017 فشل بعد 3 محاولات: STT 79٪، السرعة 133/138"
+    },
+    {
+      "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T00:54:58.835Z",
+      "lastFailedAt": "2026-07-23T05:24:39.746Z",
+      "message": "r017 فشل بعد 3 محاولات: STT 71٪، السرعة 134/138"
+    },
+    {
+      "slug": "coming-soon-a-certificate-without-a-mind-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T11:32:51.077Z",
+      "lastFailedAt": "2026-07-23T11:32:51.077Z",
+      "message": "r002 فشل بعد 3 محاولات: STT 88٪، السرعة 98/141"
+    },
+    {
+      "slug": "competency-based-approach-to-the-trash",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T09:58:58.935Z",
+      "lastFailedAt": "2026-07-23T09:58:58.935Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=90/100، judge=undefined/100"
+    },
+    {
+      "slug": "do-we-contain-or-raise-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T02:16:38.283Z",
+      "lastFailedAt": "2026-07-23T06:50:39.484Z",
+      "message": "r007 فشل بعد 3 محاولات: STT 91٪، السرعة 133/138"
+    },
+    {
+      "slug": "do-we-contain-or-raise-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T02:21:40.233Z",
+      "lastFailedAt": "2026-07-23T06:55:56.905Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
+    },
+    {
+      "slug": "e-learning-initiatives-and-solutions-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T12:44:30.978Z",
+      "lastFailedAt": "2026-07-23T12:44:30.978Z",
+      "message": "r006 فشل بعد 3 محاولات: STT 100٪، السرعة 79/133"
+    },
+    {
+      "slug": "e-learning-initiatives-and-solutions-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T12:45:33.535Z",
+      "lastFailedAt": "2026-07-23T12:45:33.535Z",
+      "message": "r006 فشل بعد 3 محاولات: STT 100٪، السرعة 83/135"
+    },
+    {
+      "slug": "eliminating-the-education-epidemic",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:40:37.183Z",
+      "lastFailedAt": "2026-07-23T16:40:37.183Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "eliminating-the-education-epidemic",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:40:45.910Z",
+      "lastFailedAt": "2026-07-23T16:40:45.910Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "ethical-hacking-culture",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:50:56.256Z",
+      "lastFailedAt": "2026-07-23T16:50:56.256Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "ethical-hacking-culture",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:51:04.616Z",
+      "lastFailedAt": "2026-07-23T16:51:04.616Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "excellent-in-grades-lost-in-decision",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:50:39.500Z",
+      "lastFailedAt": "2026-07-23T16:50:39.500Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "excellent-in-grades-lost-in-decision",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:50:47.859Z",
+      "lastFailedAt": "2026-07-23T16:50:47.859Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "freedom-without-thinking-and-openness-without-awareness-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:50:05.960Z",
+      "lastFailedAt": "2026-07-23T16:50:05.960Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "freedom-without-thinking-and-openness-without-awareness-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:50:14.315Z",
+      "lastFailedAt": "2026-07-23T16:50:14.315Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "he-passed-the-exam-but-failed-the-question-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:50:22.724Z",
+      "lastFailedAt": "2026-07-23T16:50:22.724Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "he-passed-the-exam-but-failed-the-question-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:50:31.101Z",
+      "lastFailedAt": "2026-07-23T16:50:31.101Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "i-earned-more-than-harvard-but-it-doesnt-teach-brains",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T08:29:47.334Z",
+      "lastFailedAt": "2026-07-23T08:29:47.334Z",
+      "message": "r014 فشل بعد 3 محاولات: STT 88٪، السرعة 132/136"
+    },
+    {
+      "slug": "i-earned-more-than-harvard-but-it-doesnt-teach-brains",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T08:32:26.967Z",
+      "lastFailedAt": "2026-07-23T08:32:26.967Z",
+      "message": "r014 فشل بعد 3 محاولات: STT 92٪، السرعة 134/138"
+    },
+    {
+      "slug": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T02:37:53.598Z",
+      "lastFailedAt": "2026-07-23T07:12:55.288Z",
+      "message": "r025 فشل بعد 3 محاولات: STT 43٪، السرعة 136/142"
+    },
+    {
+      "slug": "in-their-opinion-surgery-is-a-male-specialty-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T12:15:45.936Z",
+      "lastFailedAt": "2026-07-23T12:15:45.936Z",
+      "message": "r004 فشل بعد 3 محاولات: STT 96٪، السرعة 134/137"
+    },
+    {
+      "slug": "in-their-opinion-surgery-is-a-male-specialty-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T12:16:41.205Z",
+      "lastFailedAt": "2026-07-23T12:16:41.205Z",
+      "message": "r005 فشل بعد 3 محاولات: STT 100٪، السرعة 73/131"
+    },
+    {
+      "slug": "lets-achieve-a-higher-level-of-quality-education",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:40:54.731Z",
+      "lastFailedAt": "2026-07-23T16:40:54.731Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "lets-achieve-a-higher-level-of-quality-education",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:41:03.458Z",
+      "lastFailedAt": "2026-07-23T16:41:03.458Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "lets-work-towards-scientific-research",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:41:12.186Z",
+      "lastFailedAt": "2026-07-23T16:41:12.186Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "lets-work-towards-scientific-research",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:41:20.920Z",
+      "lastFailedAt": "2026-07-23T16:41:20.920Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "past-mistakes-still-persist-in-the-age",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:51:13.026Z",
+      "lastFailedAt": "2026-07-23T16:51:13.026Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "past-mistakes-still-persist-in-the-age",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:51:21.385Z",
+      "lastFailedAt": "2026-07-23T16:51:21.385Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "private-lesson-in-the-age-of-digital-educational-intelligence",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:52:36.827Z",
+      "lastFailedAt": "2026-07-23T16:52:36.827Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "private-lesson-in-the-age-of-digital-educational-intelligence",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:52:45.207Z",
+      "lastFailedAt": "2026-07-23T16:52:45.207Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201611-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:41:47.128Z",
+      "lastFailedAt": "2026-07-23T16:41:47.128Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201611-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:41:55.857Z",
+      "lastFailedAt": "2026-07-23T16:41:55.857Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201611-002",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:42:04.582Z",
+      "lastFailedAt": "2026-07-23T16:42:04.582Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201611-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:42:13.308Z",
+      "lastFailedAt": "2026-07-23T16:42:13.308Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201611-003",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:52:53.567Z",
+      "lastFailedAt": "2026-07-23T16:52:53.567Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201611-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:53:01.933Z",
+      "lastFailedAt": "2026-07-23T16:53:01.933Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201611-004",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:53:10.291Z",
+      "lastFailedAt": "2026-07-23T16:53:10.291Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201611-004",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:53:18.656Z",
+      "lastFailedAt": "2026-07-23T16:53:18.657Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201611-005",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:53:27.028Z",
+      "lastFailedAt": "2026-07-23T16:53:27.028Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201611-005",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:53:35.409Z",
+      "lastFailedAt": "2026-07-23T16:53:35.409Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201612-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:53:43.768Z",
+      "lastFailedAt": "2026-07-23T16:53:43.768Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201612-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:53:52.164Z",
+      "lastFailedAt": "2026-07-23T16:53:52.164Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201612-002",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:54:00.632Z",
+      "lastFailedAt": "2026-07-23T16:54:00.632Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201612-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:54:09.096Z",
+      "lastFailedAt": "2026-07-23T16:54:09.096Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201612-003",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:54:17.468Z",
+      "lastFailedAt": "2026-07-23T16:54:17.468Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201612-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:54:25.871Z",
+      "lastFailedAt": "2026-07-23T16:54:25.871Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201612-004",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:29:52.010Z",
+      "lastFailedAt": "2026-07-23T18:29:52.010Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201612-004",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:30:00.789Z",
+      "lastFailedAt": "2026-07-23T18:30:00.789Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201702-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:30:09.470Z",
+      "lastFailedAt": "2026-07-23T18:30:09.470Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201702-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:30:18.168Z",
+      "lastFailedAt": "2026-07-23T18:30:18.168Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201702-002",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:30:26.842Z",
+      "lastFailedAt": "2026-07-23T18:30:26.842Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201702-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:30:35.525Z",
+      "lastFailedAt": "2026-07-23T18:30:35.525Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201702-003",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:30:44.200Z",
+      "lastFailedAt": "2026-07-23T18:30:44.200Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201702-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:30:52.886Z",
+      "lastFailedAt": "2026-07-23T18:30:52.886Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201702-004",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:31:01.558Z",
+      "lastFailedAt": "2026-07-23T18:31:01.558Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201702-004",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:31:10.251Z",
+      "lastFailedAt": "2026-07-23T18:31:10.251Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201703-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:31:18.921Z",
+      "lastFailedAt": "2026-07-23T18:31:18.921Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201703-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:31:27.610Z",
+      "lastFailedAt": "2026-07-23T18:31:27.610Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201703-002",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:31:36.296Z",
+      "lastFailedAt": "2026-07-23T18:31:36.296Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201703-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:31:44.986Z",
+      "lastFailedAt": "2026-07-23T18:31:44.986Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201703-003",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:31:53.667Z",
+      "lastFailedAt": "2026-07-23T18:31:53.667Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201703-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:32:02.376Z",
+      "lastFailedAt": "2026-07-23T18:32:02.376Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201703-004",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:32:11.060Z",
+      "lastFailedAt": "2026-07-23T18:32:11.060Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201703-004",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:32:19.739Z",
+      "lastFailedAt": "2026-07-23T18:32:19.739Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201704-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:32:28.434Z",
+      "lastFailedAt": "2026-07-23T18:32:28.434Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201704-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:32:37.122Z",
+      "lastFailedAt": "2026-07-23T18:32:37.122Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201704-002",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:32:45.815Z",
+      "lastFailedAt": "2026-07-23T18:32:45.815Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201704-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:32:54.496Z",
+      "lastFailedAt": "2026-07-23T18:32:54.496Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201704-003",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:33:03.199Z",
+      "lastFailedAt": "2026-07-23T18:33:03.199Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201704-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:33:11.892Z",
+      "lastFailedAt": "2026-07-23T18:33:11.892Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201704-004",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:33:20.586Z",
+      "lastFailedAt": "2026-07-23T18:33:20.586Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201704-004",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:33:30.194Z",
+      "lastFailedAt": "2026-07-23T18:33:30.194Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201706-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:33:38.880Z",
+      "lastFailedAt": "2026-07-23T18:33:38.880Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201706-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:33:47.593Z",
+      "lastFailedAt": "2026-07-23T18:33:47.593Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201706-002",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:33:56.268Z",
+      "lastFailedAt": "2026-07-23T18:33:56.268Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201706-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:34:04.950Z",
+      "lastFailedAt": "2026-07-23T18:34:04.950Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201706-003",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:34:13.644Z",
+      "lastFailedAt": "2026-07-23T18:34:13.644Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201706-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:34:22.342Z",
+      "lastFailedAt": "2026-07-23T18:34:22.342Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201706-004",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:34:31.033Z",
+      "lastFailedAt": "2026-07-23T18:34:31.033Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201706-004",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:34:39.723Z",
+      "lastFailedAt": "2026-07-23T18:34:39.723Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201707-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:34:48.500Z",
+      "lastFailedAt": "2026-07-23T18:34:48.500Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201707-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:34:57.237Z",
+      "lastFailedAt": "2026-07-23T18:34:57.237Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201707-002",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:35:05.927Z",
+      "lastFailedAt": "2026-07-23T18:35:05.927Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201707-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:35:14.596Z",
+      "lastFailedAt": "2026-07-23T18:35:14.596Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201707-003",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:35:23.340Z",
+      "lastFailedAt": "2026-07-23T18:35:23.340Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201707-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T18:35:32.002Z",
+      "lastFailedAt": "2026-07-23T18:35:32.002Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201707-004",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:19:54.497Z",
+      "lastFailedAt": "2026-07-23T20:19:54.497Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201707-004",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:20:03.301Z",
+      "lastFailedAt": "2026-07-23T20:20:03.301Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201708-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:20:11.978Z",
+      "lastFailedAt": "2026-07-23T20:20:11.978Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201708-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:20:20.678Z",
+      "lastFailedAt": "2026-07-23T20:20:20.678Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201708-002",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:20:29.356Z",
+      "lastFailedAt": "2026-07-23T20:20:29.356Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201708-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:20:38.032Z",
+      "lastFailedAt": "2026-07-23T20:20:38.032Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201708-003",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:20:46.706Z",
+      "lastFailedAt": "2026-07-23T20:20:46.706Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201708-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:20:55.389Z",
+      "lastFailedAt": "2026-07-23T20:20:55.389Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:21:04.064Z",
+      "lastFailedAt": "2026-07-23T20:21:04.064Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:21:12.740Z",
+      "lastFailedAt": "2026-07-23T20:21:12.740Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-002",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:21:21.408Z",
+      "lastFailedAt": "2026-07-23T20:21:21.408Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:21:30.075Z",
+      "lastFailedAt": "2026-07-23T20:21:30.075Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-003",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:21:38.748Z",
+      "lastFailedAt": "2026-07-23T20:21:38.748Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:21:47.424Z",
+      "lastFailedAt": "2026-07-23T20:21:47.424Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-004",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:21:56.110Z",
+      "lastFailedAt": "2026-07-23T20:21:56.110Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-004",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:22:04.803Z",
+      "lastFailedAt": "2026-07-23T20:22:04.803Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-005",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:22:13.472Z",
+      "lastFailedAt": "2026-07-23T20:22:13.472Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-005",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:22:22.143Z",
+      "lastFailedAt": "2026-07-23T20:22:22.143Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-006",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:22:30.817Z",
+      "lastFailedAt": "2026-07-23T20:22:30.817Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-006",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:22:39.490Z",
+      "lastFailedAt": "2026-07-23T20:22:39.490Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-007",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:22:48.166Z",
+      "lastFailedAt": "2026-07-23T20:22:48.166Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-007",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:22:56.847Z",
+      "lastFailedAt": "2026-07-23T20:22:56.847Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-008",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:23:05.522Z",
+      "lastFailedAt": "2026-07-23T20:23:05.522Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-008",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:23:14.201Z",
+      "lastFailedAt": "2026-07-23T20:23:14.201Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-009",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:23:22.874Z",
+      "lastFailedAt": "2026-07-23T20:23:22.874Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201709-009",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:23:31.552Z",
+      "lastFailedAt": "2026-07-23T20:23:31.552Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201711-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:23:40.227Z",
+      "lastFailedAt": "2026-07-23T20:23:40.227Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201711-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:23:48.888Z",
+      "lastFailedAt": "2026-07-23T20:23:48.888Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201711-002",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:23:57.564Z",
+      "lastFailedAt": "2026-07-23T20:23:57.564Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201711-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:24:06.212Z",
+      "lastFailedAt": "2026-07-23T20:24:06.212Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201711-003",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:24:14.890Z",
+      "lastFailedAt": "2026-07-23T20:24:14.890Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201711-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:24:23.537Z",
+      "lastFailedAt": "2026-07-23T20:24:23.537Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201711-004",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:24:32.237Z",
+      "lastFailedAt": "2026-07-23T20:24:32.237Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201711-004",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:24:40.915Z",
+      "lastFailedAt": "2026-07-23T20:24:40.915Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201712-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:24:49.625Z",
+      "lastFailedAt": "2026-07-23T20:24:49.625Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201712-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:24:58.464Z",
+      "lastFailedAt": "2026-07-23T20:24:58.464Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201712-002",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:25:07.173Z",
+      "lastFailedAt": "2026-07-23T20:25:07.173Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201712-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:25:15.855Z",
+      "lastFailedAt": "2026-07-23T20:25:15.855Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201712-003",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:25:24.501Z",
+      "lastFailedAt": "2026-07-23T20:25:24.501Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201712-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T20:25:33.171Z",
+      "lastFailedAt": "2026-07-23T20:25:33.171Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201802-002",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T21:22:49.300Z",
+      "lastFailedAt": "2026-07-23T21:22:49.300Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 83٪، السرعة 88/142"
+    },
+    {
+      "slug": "qabas-201802-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T21:23:00.038Z",
+      "lastFailedAt": "2026-07-23T21:23:00.038Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 83٪، السرعة 89/136"
+    },
+    {
+      "slug": "qabas-201805-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T23:10:38.970Z",
+      "lastFailedAt": "2026-07-23T23:10:38.970Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 84/134"
+    },
+    {
+      "slug": "qabas-201805-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T23:10:46.903Z",
+      "lastFailedAt": "2026-07-23T23:10:46.904Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 84/143"
+    },
+    {
+      "slug": "qabas-201805-002",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T23:11:48.867Z",
+      "lastFailedAt": "2026-07-23T23:11:48.867Z",
+      "message": "r007 فشل بعد 3 محاولات: STT 0٪، السرعة 82/123"
+    },
+    {
+      "slug": "qabas-201805-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T23:12:22.249Z",
+      "lastFailedAt": "2026-07-23T23:12:22.249Z",
+      "message": "r004 فشل بعد 3 محاولات: STT 0٪، السرعة 84/132"
+    },
+    {
+      "slug": "qabas-201805-003",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T23:12:28.455Z",
+      "lastFailedAt": "2026-07-23T23:12:28.455Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 83/136"
+    },
+    {
+      "slug": "qabas-201805-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T23:12:33.610Z",
+      "lastFailedAt": "2026-07-23T23:12:33.610Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 80/138"
+    },
+    {
+      "slug": "qabas-201806-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T23:19:43.812Z",
+      "lastFailedAt": "2026-07-23T23:19:43.812Z",
+      "message": "r016 فشل بعد 3 محاولات: STT 0٪، السرعة 70/130"
+    },
+    {
+      "slug": "qabas-201806-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T23:22:42.666Z",
+      "lastFailedAt": "2026-07-23T23:22:42.666Z",
+      "message": "r016 فشل بعد 3 محاولات: STT 0٪، السرعة 69/130"
+    },
+    {
+      "slug": "qabas-201806-004",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T23:35:36.432Z",
+      "lastFailedAt": "2026-07-23T23:35:36.432Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 68/134"
+    },
+    {
+      "slug": "qabas-201806-004",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T23:35:43.678Z",
+      "lastFailedAt": "2026-07-23T23:35:43.678Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 69/135"
+    },
+    {
+      "slug": "qabas-201806-005",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T23:35:51.151Z",
+      "lastFailedAt": "2026-07-23T23:35:51.151Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 79/137"
+    },
+    {
+      "slug": "qabas-201806-005",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T23:36:00.229Z",
+      "lastFailedAt": "2026-07-23T23:36:00.229Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 76/137"
+    },
+    {
+      "slug": "qabas-201807-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T23:36:07.588Z",
+      "lastFailedAt": "2026-07-23T23:36:07.588Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 79/145"
+    },
+    {
+      "slug": "qabas-201807-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T23:36:13.981Z",
+      "lastFailedAt": "2026-07-23T23:36:13.981Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 78/136"
+    },
+    {
+      "slug": "qabas-201808-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T23:38:49.896Z",
+      "lastFailedAt": "2026-07-23T23:38:49.896Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=90/100، judge=undefined/100"
+    },
+    {
+      "slug": "qabas-201810-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-24T01:24:37.024Z",
+      "lastFailedAt": "2026-07-24T01:24:37.024Z",
+      "message": "r014 فشل بعد 3 محاولات: STT 0٪، السرعة 84/133"
+    },
+    {
+      "slug": "qabas-201810-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-24T01:26:41.786Z",
+      "lastFailedAt": "2026-07-24T01:26:41.786Z",
+      "message": "r014 فشل بعد 3 محاولات: STT 0٪، السرعة 82/123"
+    },
+    {
+      "slug": "qabas-201810-002",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-24T01:26:48.123Z",
+      "lastFailedAt": "2026-07-24T01:26:48.123Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 84/141"
+    },
+    {
+      "slug": "qabas-201810-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-24T01:27:09.332Z",
+      "lastFailedAt": "2026-07-24T01:27:09.332Z",
+      "message": "r003 فشل بعد 3 محاولات: STT 0٪، السرعة 78/133"
+    },
+    {
+      "slug": "qabas-201811-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-24T01:44:32.315Z",
+      "lastFailedAt": "2026-07-24T01:44:32.315Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=88/100، judge=undefined/100"
+    },
+    {
+      "slug": "qabas-201909-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-24T01:53:39.357Z",
+      "lastFailedAt": "2026-07-24T01:53:39.357Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=88/100، judge=undefined/100"
+    },
+    {
+      "slug": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T08:54:08.715Z",
+      "lastFailedAt": "2026-07-23T08:54:08.715Z",
+      "message": "r028 فشل بعد 3 محاولات: STT 46٪، السرعة 133/135"
+    },
+    {
+      "slug": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T08:59:27.810Z",
+      "lastFailedAt": "2026-07-23T08:59:27.810Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
+    },
+    {
+      "slug": "smartphone-child-a-creative-mind-or-a-child-being-driven",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T10:08:30.793Z",
+      "lastFailedAt": "2026-07-23T10:08:30.793Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
+    },
+    {
+      "slug": "smartphone-child-a-creative-mind-or-a-child-being-driven",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T10:13:18.709Z",
+      "lastFailedAt": "2026-07-23T10:13:18.709Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
+    },
+    {
+      "slug": "students-minds-are-on-vacation-while-chatgpt-works-full-time-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T01:33:32.610Z",
+      "lastFailedAt": "2026-07-23T06:04:58.866Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
+    },
+    {
+      "slug": "students-minds-are-on-vacation-while-chatgpt-works-full-time-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T01:38:35.489Z",
+      "lastFailedAt": "2026-07-23T06:10:09.105Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
+    },
+    {
+      "slug": "the-blackboard-that-no-longer-sees-anyone-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:49:07.356Z",
+      "lastFailedAt": "2026-07-23T16:49:07.356Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "the-classroom-that-fears-mistakesarabic",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T00:38:15.395Z",
+      "lastFailedAt": "2026-07-23T05:07:16.680Z",
+      "message": "r015 فشل بعد 3 محاولات: STT 4٪، السرعة 130/133"
+    },
+    {
+      "slug": "the-excellence-epidemic-or-the-cult-of-grades-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T01:19:05.194Z",
+      "lastFailedAt": "2026-07-23T05:49:46.355Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
+    },
+    {
+      "slug": "the-excellence-epidemic-or-the-cult-of-grades-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T01:23:58.726Z",
+      "lastFailedAt": "2026-07-23T05:54:55.844Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
+    },
+    {
+      "slug": "the-media-is-a-vital-partner-in-the-educational-process",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T09:50:03.940Z",
+      "lastFailedAt": "2026-07-23T09:50:03.940Z",
+      "message": "r015 فشل بعد 3 محاولات: STT 96٪، السرعة 102/141"
+    },
+    {
+      "slug": "the-media-is-a-vital-partner-in-the-educational-process",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T09:54:20.184Z",
+      "lastFailedAt": "2026-07-23T09:54:20.184Z",
+      "message": "r015 فشل بعد 3 محاولات: STT 93٪، السرعة 101/142"
+    },
+    {
+      "slug": "the-mind-present-in-absence-absent-in-presence-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:49:32.439Z",
+      "lastFailedAt": "2026-07-23T16:49:32.440Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "the-mind-present-in-absence-absent-in-presence-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:49:40.798Z",
+      "lastFailedAt": "2026-07-23T16:49:40.798Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T12:20:36.907Z",
+      "lastFailedAt": "2026-07-23T12:20:36.907Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
+    },
+    {
+      "slug": "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T12:24:47.370Z",
+      "lastFailedAt": "2026-07-23T12:24:47.370Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
+    },
+    {
+      "slug": "the-republic-of-degrees-and-the-fall-of-thought-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T02:07:15.589Z",
+      "lastFailedAt": "2026-07-23T06:41:06.260Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 100٪، السرعة 76/135"
+    },
+    {
+      "slug": "the-republic-of-degrees-and-the-fall-of-thought-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T02:07:22.790Z",
+      "lastFailedAt": "2026-07-23T06:41:12.969Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 100٪، السرعة 82/137"
+    },
+    {
+      "slug": "the-return-that-fails-to-fix-what-came-before-itarabic",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T00:58:30.467Z",
+      "lastFailedAt": "2026-07-23T05:28:04.114Z",
+      "message": "r016 فشل بعد 3 محاولات: STT 77٪، السرعة 134/137"
+    },
+    {
+      "slug": "the-return-that-fails-to-fix-what-came-before-itarabic",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T01:01:00.988Z",
+      "lastFailedAt": "2026-07-23T05:30:40.636Z",
+      "message": "r016 فشل بعد 3 محاولات: STT 77٪، السرعة 129/132"
+    },
+    {
+      "slug": "the-social-media-swamp-and-plastic-surgery-addiction-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:51:29.802Z",
+      "lastFailedAt": "2026-07-23T16:51:29.802Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "the-social-media-swamp-and-plastic-surgery-addiction-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:51:38.161Z",
+      "lastFailedAt": "2026-07-23T16:51:38.161Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "the-teacher-the-last-to-know-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:49:15.671Z",
+      "lastFailedAt": "2026-07-23T16:49:15.671Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "the-teacher-the-last-to-know-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:49:24.045Z",
+      "lastFailedAt": "2026-07-23T16:49:24.045Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "the-teacher-what-do-you-know-about-the-teacher",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:51:46.557Z",
+      "lastFailedAt": "2026-07-23T16:51:46.557Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "the-teacher-what-do-you-know-about-the-teacher",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:51:54.938Z",
+      "lastFailedAt": "2026-07-23T16:51:54.938Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "the-year-that-doesnt-begin-with-the-calendararabic",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T01:01:33.354Z",
+      "lastFailedAt": "2026-07-23T05:31:14.008Z",
+      "message": "r005 فشل بعد 3 محاولات: STT 88٪، السرعة 138/141"
+    },
+    {
+      "slug": "todays-childs-confusion-between-education-and-care",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:52:03.327Z",
+      "lastFailedAt": "2026-07-23T16:52:03.327Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "todays-childs-confusion-between-education-and-care",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:52:11.699Z",
+      "lastFailedAt": "2026-07-23T16:52:11.699Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "turning-video-game-obsession-into-creative-meditation-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:52:20.101Z",
+      "lastFailedAt": "2026-07-23T16:52:20.101Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "turning-video-game-obsession-into-creative-meditation-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:52:28.472Z",
+      "lastFailedAt": "2026-07-23T16:52:28.472Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 4,
+      "firstFailedAt": "2026-07-22T05:45:02.086Z",
+      "lastFailedAt": "2026-07-22T23:51:59.898Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 75٪، السرعة 80/140"
+    },
+    {
+      "slug": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 4,
+      "firstFailedAt": "2026-07-22T05:45:11.823Z",
+      "lastFailedAt": "2026-07-22T23:52:07.428Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 100٪، السرعة 76/141"
+    },
+    {
+      "slug": "we-graduated-with-a-degree-but-the-language-was-lost-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T08:45:19.461Z",
+      "lastFailedAt": "2026-07-23T08:45:19.461Z",
+      "message": "r029 فشل بعد 3 محاولات: STT 86٪، السرعة 132/137"
+    },
+    {
+      "slug": "we-graduated-with-a-degree-but-the-language-was-lost-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T08:49:49.091Z",
+      "lastFailedAt": "2026-07-23T08:49:49.091Z",
+      "message": "r029 فشل بعد 3 محاولات: STT 86٪، السرعة 129/133"
+    },
+    {
+      "slug": "we-handed-them-the-phone-so-theyd-leave-us-alone-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 2,
+      "firstFailedAt": "2026-07-23T04:07:04.266Z",
+      "lastFailedAt": "2026-07-23T06:35:37.879Z",
+      "message": "r002 فشل بعد 3 محاولات: STT 75٪، السرعة 86/149"
+    },
+    {
+      "slug": "we-prepare-our-children-for-success-and-leave-them-empty-handed-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T09:18:22.210Z",
+      "lastFailedAt": "2026-07-23T09:18:22.210Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 100٪، السرعة 81/142"
+    },
+    {
+      "slug": "we-prepare-our-children-for-success-and-leave-them-empty-handed-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T09:18:31.184Z",
+      "lastFailedAt": "2026-07-23T09:18:31.184Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 80٪، السرعة 84/136"
+    },
+    {
+      "slug": "when-a-student-wishes-for-death-before-the-first-bell-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:49:49.195Z",
+      "lastFailedAt": "2026-07-23T16:49:49.196Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "when-a-student-wishes-for-death-before-the-first-bell-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:49:57.561Z",
+      "lastFailedAt": "2026-07-23T16:49:57.561Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T09:12:16.099Z",
+      "lastFailedAt": "2026-07-23T09:12:16.099Z",
+      "message": "r011 فشل بعد 3 محاولات: STT 88٪، السرعة 115/130"
+    },
+    {
+      "slug": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T09:18:11.724Z",
+      "lastFailedAt": "2026-07-23T09:18:11.724Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
+    },
+    {
+      "slug": "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:48:58.905Z",
+      "lastFailedAt": "2026-07-23T16:48:58.905Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T00:55:39.911Z",
+      "lastFailedAt": "2026-07-23T05:25:06.894Z",
+      "message": "r003 فشل بعد 3 محاولات: STT 78٪، السرعة 142/137"
+    },
+    {
+      "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "firstFailedAt": "2026-07-22T00:56:02.663Z",
+      "lastFailedAt": "2026-07-23T05:25:29.518Z",
+      "message": "r003 فشل بعد 3 محاولات: STT 78٪، السرعة 137/134"
+    }
+  ]
+}

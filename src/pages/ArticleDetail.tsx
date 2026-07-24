@@ -769,9 +769,9 @@ export default function ArticleDetail() {
             </h1>
             <div className="mt-6 h-[2px] w-16 bg-accent" />
             {article.body && (
-              <div className="article-reading-actions serenity-hide mt-4 flex items-start gap-4 pb-1">
-                <div id="article-audio" className="min-w-0 flex-1"><Listen compact slug={article.slug} title={article.title} text={article.body} audio={article.audio} audioControl={article.audioControl} /></div>
-                <div className="flex shrink-0 items-center gap-2"><SaveForLaterButton slug={article.slug} /><button type="button" onClick={() => setSerenity(true)} title="وضع السكينة — يبقى النص وحده" aria-label="وضع السكينة" className="article-tool-icon"><span aria-hidden className="text-[1.02rem] leading-none">۩</span></button><ReaderControls article={article} /></div>
+              <div className="article-reading-actions serenity-hide mt-4 flex flex-wrap items-center gap-x-4 gap-y-3 pb-1">
+                <div className="flex shrink-0 items-center gap-2 order-1 sm:order-2"><SaveForLaterButton slug={article.slug} /><button type="button" onClick={() => setSerenity(true)} title="وضع السكينة — يبقى النص وحده" aria-label="وضع السكينة" className="article-tool-icon"><span aria-hidden className="text-[1.02rem] leading-none">۩</span></button><ReaderControls article={article} /></div>
+                <div id="article-audio" className="order-2 w-full min-w-0 sm:order-1 sm:w-auto sm:flex-1"><Listen compact slug={article.slug} title={article.title} text={article.body} audio={article.audio} audioControl={article.audioControl} /></div>
               </div>
             )}
             {article.body && (

@@ -96,31 +96,56 @@ async function probeSeconds(url) {
   } catch { return 0 } finally { try { unlinkSync(temp) } catch { /* مؤقتٌ ذهب */ } }
 }
 
-const names = Object.keys(meta).filter((name) => name.endsWith('.mp3'))
-console.log(`═══ مصالحة ${names.length} مدخلاً مع R2 ═══\n`)
+/* اكتشافٌ من R2 (العلاج الجذري): المُصالِح القديم كان يتحقّق فقط من مداخل السجلّ
+   الموجودة، فإن فقد السجلُّ مداخلَ — تشغيلةٌ ملغاة تكتب سجلاً جزئياً، أو دهسٌ من
+   جلسةٍ متزامنة، أو حسم تعارضٍ يأخذ نسخةً أصغر — لم يستطع استعادتها، فتنهار الخلاصة
+   (شوهد: ١٠٤→٢٥، والخلاصة نزلت ٥٦→١٣). الآن نسأل R2 عن كل ملفٍ ممكن (مقال × صوت)
+   ونضيف ما وُجِد وغاب عن السجلّ. فيصير السجلّ دائماً ⩾ ما في R2 ولا يُحذف إلا ما
+   غاب فعلاً (404) — فالدهس يصير غير مؤذٍ: أيّ تشغيلةٍ تعيد بناءه من الحقيقة. */
+const feedPath = resolve(ROOT, 'src/data/site-articles-feed.json')
+let slugs = []
+try { slugs = JSON.parse(readFileSync(feedPath, 'utf8')).map((article) => article?.slug).filter(Boolean) }
+catch { console.warn('  ⚠ تعذّر قراءة قائمة المقالات — نكتفي بمداخل السجلّ.') }
+const READING_SUFFIXES = ['.mp3', '.noura.mp3']
+const candidates = new Set(Object.keys(meta).filter((name) => name.endsWith('.mp3')))
+for (const slug of slugs) for (const suffix of READING_SUFFIXES) candidates.add(`${slug}${suffix}`)
+console.log(`═══ مصالحة ${candidates.size} ملفاً محتملاً مع R2 (السجلّ يحمل ${Object.keys(meta).length}) ═══\n`)
 
 const dropped = []
 const refreshed = []
-for (const name of names) {
+const added = []
+for (const name of candidates) {
   const entry = meta[name]
   const { status, bytes } = await head(`${base}/${encodeURIComponent(name)}`)
-  const verdict = decideEntry({ name, recordedBytes: Number(entry?.bytes || 0), status, remoteBytes: bytes })
-  if (verdict.action === 'drop') { dropped.push(name); console.log(`  ✘ يُحذف · ${name} · ${verdict.why}`) }
-  else if (verdict.action === 'refresh') {
-    refreshed.push(name)
-    /* المدّة تُقاس من الملف نفسه لا تُورَّث. فالفرق ليس جودةً أعلى لنصٍّ واحد:
-       قيس ملفٌ منها فإذا هو ١٨٩ ثانية والسجلّ يقول ٢١٦ — قراءةٌ أخرى بتمامها.
-       ولو نقلنا الحجم وتركنا المدّة لعرض المشغّل زمناً لا يطابق ما يُسمع. */
-    const seconds = await probeSeconds(`${base}/${encodeURIComponent(name)}`)
-    meta[name] = { ...entry, bytes: verdict.bytes, ...(seconds ? { durationSeconds: seconds } : {}) }
-    console.log(`  ↻ يُحدَّث · ${name} · ${verdict.why} بايت${seconds ? ` · ${entry?.durationSeconds || '؟'} ← ${seconds} ثانية` : ' · تعذّر قياس المدّة'}`)
+  if (status === 200 || status === 206) {
+    if (!entry) {
+      /* ملفٌ حيٌّ على R2 غائبٌ عن السجلّ ⇐ يُضاف. عتبة 200KB تحمي من إضافة ردٍّ
+         خاطئٍ صغير. المدّة تُقاس من الملف نفسه؛ فإن تعذّرت يُضاف بالحجم وحده. */
+      if (bytes > 200_000) {
+        const seconds = await probeSeconds(`${base}/${encodeURIComponent(name)}`)
+        meta[name] = { ...(seconds ? { durationSeconds: seconds } : {}), bytes }
+        added.push(name)
+        console.log(`  ＋ يُضاف · ${name} · ${bytes} بايت${seconds ? ` · ${seconds} ثانية` : ''}`)
+      }
+    } else {
+      const verdict = decideEntry({ name, recordedBytes: Number(entry?.bytes || 0), status, remoteBytes: bytes })
+      if (verdict.action === 'refresh') {
+        refreshed.push(name)
+        const seconds = await probeSeconds(`${base}/${encodeURIComponent(name)}`)
+        meta[name] = { ...entry, bytes: verdict.bytes, ...(seconds ? { durationSeconds: seconds } : {}) }
+        console.log(`  ↻ يُحدَّث · ${name} · ${verdict.why} بايت`)
+      }
+    }
+  } else if (status === 404 && entry) {
+    dropped.push(name)
+    console.log(`  ✘ يُحذف · ${name} · لا وجود له على R2`)
   }
 }
 for (const name of dropped) delete meta[name]
 
-console.log(`\n── محذوف: ${dropped.length} · محدَّث: ${refreshed.length} · سليم: ${names.length - dropped.length - refreshed.length} ──`)
-if (!dropped.length && !refreshed.length) { console.log('\n✓ السجلّ يطابق R2 — لا شيء يُفعل.'); process.exit(0) }
+console.log(`\n── مضاف: ${added.length} · محدَّث: ${refreshed.length} · محذوف: ${dropped.length} ──`)
+if (!added.length && !refreshed.length && !dropped.length) { console.log('\n✓ السجلّ يطابق R2 — لا شيء يُفعل.'); process.exit(0) }
 
 if (!apply) { console.log('\nⓘ تشغيلةٌ جافّة: لم يُكتب شيء. أضف --apply للحفظ.'); process.exit(0) }
 writeFileSync(metaPath, `${JSON.stringify(meta, null, 2)}\n`)
-console.log('\n✓ حُفظ السجلّ مصالَحاً مع R2.')
+console.log('\n✓ حُفظ السجلّ مصالَحاً مع R2 (⩾ ما في R2 دائماً).')

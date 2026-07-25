@@ -11,9 +11,25 @@ import { startLocalBridge } from './bridge.mjs'
 import { addContactByPhone, addMembers, absorbContacts, importContacts, listContactsPage, createList, deleteList, ensureAudienceSchema, jidOf, listContacts, listLists, listMembers, personalize, previewFor, removeMember, renameList, resolveAudience, setNickname, vocativeOf } from './audience.mjs'
 import { ensureBotRulesSchema, releaseContentReservation, rememberSent, reserveContent, sign } from './bot-rules.mjs'
 import { refreshBotMessages } from './bot-messages.mjs'
+import { KNOWLEDGE_MODES, SOURCE_POLICIES } from './knowledge-modes.mjs'
 
 function safeText(text) { return String(text || '').slice(0, MAX_MESSAGE_CHARS).trim() }
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const DEFAULT_KNOWLEDGE_PERSONALITY = Object.freeze({
+  verbosity: 'layered',
+  dialect: 'kuwaiti-light',
+  initiative: 'one-question',
+  signature: 'always',
+  memoryConsent: 'explicit',
+})
+const KNOWLEDGE_PERSONALITY_OPTIONS = Object.freeze({
+  verbosity: ['brief', 'layered', 'detailed'],
+  dialect: ['formal-arabic', 'kuwaiti-light', 'neutral-arabic'],
+  initiative: ['none', 'one-question', 'guided'],
+  signature: ['always'],
+  memoryConsent: ['explicit'],
+})
 
 /* ═══ جدار المصدر قبل أن يخرج حرفٌ إلى واتساب ═══
  *
@@ -76,6 +92,19 @@ export function containsInboundLink(value) {
 export function validateGroundedResponse(db, response, { siteUrl = SITE_URL, audioBaseUrl = AUDIO_PUBLIC_BASE_URL } = {}) {
   if (response?.shouldRespond === false || !outboundStrings(response).length) return { allowed: true, code: 'not-outbound' }
 
+  const approvedExternalUrls = new Set()
+  const externalEvidence = Array.isArray(response?.externalEvidence) ? response.externalEvidence : []
+  for (const evidence of externalEvidence) {
+    if (!evidence?.id || !evidence?.url) return { allowed: false, code: 'invalid-external-evidence' }
+    let row = null
+    try { row = db.get('SELECT id,url,quote,claim,enabled FROM trusted_evidence WHERE id=?', evidence.id) } catch { row = null }
+    if (!row || !row.enabled) return { allowed: false, code: 'missing-trusted-evidence' }
+    if (cleanUrlToken(row.url) !== cleanUrlToken(evidence.url)) return { allowed: false, code: 'external-evidence-url-mismatch' }
+    if (evidence.quote && String(row.quote || '') !== String(evidence.quote)) return { allowed: false, code: 'external-evidence-quote-mismatch' }
+    if (evidence.claim && String(row.claim || '') !== String(evidence.claim)) return { allowed: false, code: 'external-evidence-claim-mismatch' }
+    approvedExternalUrls.add(cleanUrlToken(row.url))
+  }
+
   const references = [...collectReferencedContentIds(response)]
   const rows = new Map()
   for (const id of references) {
@@ -98,13 +127,13 @@ export function validateGroundedResponse(db, response, { siteUrl = SITE_URL, aud
     LINK_TOKEN.lastIndex = 0
     for (const match of text.matchAll(LINK_TOKEN)) {
       const url = cleanUrlToken(match[0])
-      if (!isBelowConfiguredBase(url, siteUrl) && !isBelowConfiguredBase(url, audioBaseUrl)) {
+      if (!isBelowConfiguredBase(url, siteUrl) && !isBelowConfiguredBase(url, audioBaseUrl) && !approvedExternalUrls.has(url)) {
         return { allowed: false, code: 'unapproved-outbound-url' }
       }
     }
     LINK_TOKEN.lastIndex = 0
   }
-  return { allowed: true, code: 'grounded', references: references.length, quotes: quotes.length }
+  return { allowed: true, code: 'grounded', references: references.length, quotes: quotes.length, externalEvidence: externalEvidence.length }
 }
 
 export function createAgent({ db = openDatabase(), transport, root = projectRoot, mock = false } = {}) {
@@ -809,6 +838,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
         needsHuman: Boolean(configuredRule || classification.needsHuman),
         ruleId: configuredRule?.id || null,
         ruleName: configuredRule?.name || null,
+        mode: KNOWLEDGE_MODES.ARCHIVE,
         preview: '',
       }
     }
@@ -855,6 +885,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
       needsHuman: Boolean(response.needsHuman),
       ruleId: response.ruleId || null,
       ruleName: response.ruleName || null,
+      mode: response.mode || KNOWLEDGE_MODES.ARCHIVE,
       preview: response.text || '',
     }
   }
@@ -1022,6 +1053,86 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     return { id, state: 'queued', intervalSeconds: campaignInterval(intervalSeconds), targets: targets.length }
   }
   const createLocalReminder = ({ jid, contentId = null, originalText, dueAt }) => createReminder(db, { jid, contentId, originalText, dueAt })
+  const knowledgePersonality = () => {
+    const stored = db.getSetting('knowledge.personality', {}) || {}
+    return { ...DEFAULT_KNOWLEDGE_PERSONALITY, ...stored, signature: 'always', memoryConsent: 'explicit' }
+  }
+  const saveKnowledgePersonality = (payload = {}) => {
+    const current = knowledgePersonality()
+    const next = { ...current }
+    for (const [key, allowed] of Object.entries(KNOWLEDGE_PERSONALITY_OPTIONS)) {
+      if (payload[key] == null) continue
+      if (!allowed.includes(String(payload[key]))) throw new Error(`invalid-personality-${key}`)
+      next[key] = String(payload[key])
+    }
+    db.setSetting('knowledge.personality', next)
+    db.addAudit('knowledge-personality-updated', 'local', Object.entries(next).map(([key, value]) => `${key}=${value}`).join(';'))
+    return next
+  }
+  const listTrustedEvidence = ({ limit = 100, domain = '', enabled = null } = {}) => {
+    const clauses = []
+    const params = []
+    if (domain) { clauses.push('domain=?'); params.push(String(domain)) }
+    if (enabled === true || enabled === false) { clauses.push('enabled=?'); params.push(enabled ? 1 : 0) }
+    const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
+    const rows = db.all(`SELECT id,domain,source_name,source_type,title,claim,quote,url,published_at,retrieved_at,authority,enabled,created_at,updated_at FROM trusted_evidence ${where} ORDER BY updated_at DESC LIMIT ?`, ...params, Math.max(1, Math.min(500, Number(limit || 100))))
+    return rows.map((row) => ({
+      id: row.id, domain: row.domain, sourceName: row.source_name, sourceType: row.source_type,
+      title: row.title, claim: row.claim, quote: row.quote || '', url: row.url,
+      publishedAt: row.published_at || '', retrievedAt: row.retrieved_at || '',
+      authority: row.authority || '', enabled: Boolean(row.enabled), createdAt: row.created_at, updatedAt: row.updated_at,
+    }))
+  }
+  const saveTrustedEvidence = (payload = {}) => {
+    const sourceName = safeText(payload.sourceName || payload.source || '')
+    const sourceType = safeText(payload.sourceType || '')
+    const title = safeText(payload.title || '')
+    const claim = safeText(payload.claim || '')
+    const quote = safeText(payload.quote || '')
+    const domain = safeText(payload.domain || 'current').toLowerCase()
+    const authority = safeText(payload.authority || '')
+    const url = String(payload.url || '').trim()
+    if (!sourceName || !sourceType || !title || !claim) throw new Error('trusted-evidence-required-fields')
+    if (!Object.prototype.hasOwnProperty.call(SOURCE_POLICIES, domain)) throw new Error('trusted-evidence-invalid-domain')
+    let parsed
+    try { parsed = new URL(url) } catch { throw new Error('trusted-evidence-invalid-url') }
+    if (parsed.protocol !== 'https:' || parsed.username || parsed.password) throw new Error('trusted-evidence-https-required')
+    const id = safeText(payload.id || `evidence-${Date.now()}-${randomToken(6)}`)
+    const now = new Date().toISOString()
+    const publishedAt = payload.publishedAt ? String(payload.publishedAt).slice(0, 40) : null
+    const retrievedAt = payload.retrievedAt ? String(payload.retrievedAt).slice(0, 40) : now
+    const enabled = payload.enabled === false ? 0 : 1
+    db.run(`INSERT INTO trusted_evidence(id,domain,source_name,source_type,title,claim,quote,url,published_at,retrieved_at,authority,enabled,created_at,updated_at)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      ON CONFLICT(id) DO UPDATE SET domain=excluded.domain,source_name=excluded.source_name,source_type=excluded.source_type,title=excluded.title,claim=excluded.claim,quote=excluded.quote,url=excluded.url,published_at=excluded.published_at,retrieved_at=excluded.retrieved_at,authority=excluded.authority,enabled=excluded.enabled,updated_at=excluded.updated_at`,
+    id, domain, sourceName, sourceType, title, claim, quote || null, parsed.toString(), publishedAt, retrievedAt, authority || null, enabled, now, now)
+    db.addAudit('trusted-evidence-saved', id, `domain=${domain};enabled=${enabled}`)
+    return listTrustedEvidence({ limit: 1 }).find((item) => item.id === id) || {
+      id, domain, sourceName, sourceType, title, claim, quote, url: parsed.toString(), publishedAt: publishedAt || '', retrievedAt, authority, enabled: Boolean(enabled), createdAt: now, updatedAt: now,
+    }
+  }
+  const knowledgeState = () => {
+    const evidence = db.get(`SELECT COUNT(*) AS total,SUM(CASE WHEN enabled=1 THEN 1 ELSE 0 END) AS enabled,MAX(updated_at) AS last_updated FROM trusted_evidence`) || {}
+    const evidenceDomains = db.all(`SELECT domain,COUNT(*) AS total,SUM(CASE WHEN enabled=1 THEN 1 ELSE 0 END) AS enabled FROM trusted_evidence GROUP BY domain ORDER BY total DESC`)
+    const intents = db.all(`SELECT intent,COUNT(*) AS total,ROUND(AVG(confidence),3) AS confidence FROM intent_logs GROUP BY intent ORDER BY total DESC LIMIT 20`)
+    const gaps = db.all(`SELECT COALESCE(NULLIF(topic_label,''),'موضوع غير مصنّف') AS topic,reason,COUNT(*) AS total FROM unresolved_messages WHERE resolved=0 GROUP BY topic_label,reason ORDER BY total DESC LIMIT 20`)
+    const answers = db.all(`SELECT intent,COUNT(*) AS total FROM answer_evidence GROUP BY intent ORDER BY total DESC LIMIT 20`)
+    const sessions = db.get(`SELECT COUNT(*) AS total,SUM(CASE WHEN manual_until > ? THEN 1 ELSE 0 END) AS human FROM chat_sessions`, new Date().toISOString()) || {}
+    return {
+      modes: [
+        { id: KNOWLEDGE_MODES.ARCHIVE, label: 'من أرشيف د. أحمد', boundary: 'محتوى الموقع واقتباسات حرفية فقط' },
+        { id: KNOWLEDGE_MODES.VERIFIED_RESEARCH, label: 'بحث موثوق', boundary: 'أدلة خارجية معتمدة ومؤرخة، منفصلة عن رأي الدكتور' },
+        { id: KNOWLEDGE_MODES.EXPLAIN, label: 'اشرح لي', boundary: 'شرح متدرج يحافظ على حدود المصدر' },
+        { id: KNOWLEDGE_MODES.DIALOGUE, label: 'حاورني', boundary: 'اختبار واعتراض وسيناريو بلا اختلاق' },
+        { id: KNOWLEDGE_MODES.HUMAN, label: 'تدخل إنساني', boundary: 'حالات شخصية وصحية وقانونية وحساسة' },
+      ],
+      sourcePolicies: SOURCE_POLICIES,
+      evidence: { total: Number(evidence.total || 0), enabled: Number(evidence.enabled || 0), lastUpdatedAt: evidence.last_updated || null, domains: evidenceDomains.map((row) => ({ domain: row.domain, total: Number(row.total || 0), enabled: Number(row.enabled || 0) })) },
+      conversations: { active: Number(sessions.total || 0), human: Number(sessions.human || 0), intents: intents.map((row) => ({ intent: row.intent, total: Number(row.total || 0), confidence: Number(row.confidence || 0) })), gaps: gaps.map((row) => ({ topic: row.topic || 'موضوع غير مصنّف', reason: row.reason, total: Number(row.total || 0) })), answers: answers.map((row) => ({ intent: row.intent, total: Number(row.total || 0) })) },
+      personality: knowledgePersonality(),
+      privacy: 'تعرض هذه اللوحة أعداد النيات والفجوات فقط؛ لا تعرض نصوص الناس ولا أرقامهم.',
+    }
+  }
   const status = async () => {
     const heartbeatState = db.getSetting('bridge.heartbeat', null)
     const lastHeartbeatAt = heartbeatState?.at || null
@@ -1115,7 +1226,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     return { paused: false }
   }
   const setBridge = (server) => { state.bridge = server; return status() }
-  return Object.assign(api, { db, state, index, start, stop, status, sendSelf, audience, onContacts, silenceState, returnAllToBot, repair, pauseAutoReplies, resumeAutoReplies, queueCampaign, approveCampaign, sendCampaign, sendQuietCampaign, stopCampaign, listCampaigns, listBroadcastGroups, discoverGroups, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, learningState, setLearningPatternStatus, requestRestart })
+  return Object.assign(api, { db, state, index, start, stop, status, knowledgeState, knowledgePersonality, saveKnowledgePersonality, listTrustedEvidence, saveTrustedEvidence, sendSelf, audience, onContacts, silenceState, returnAllToBot, repair, pauseAutoReplies, resumeAutoReplies, queueCampaign, approveCampaign, sendCampaign, sendQuietCampaign, stopCampaign, listCampaigns, listBroadcastGroups, discoverGroups, createLocalReminder, onMessage, setBridge, bridgeSecret, manualTakeover, returnToBot, listReplyRules, saveReplyRule, deleteReplyRule, replyRuleVersions, rollbackReplyRule, simulateReply, learningState, setLearningPatternStatus, requestRestart })
 }
 
 export async function dispatchDueReminders(state, at = new Date()) {

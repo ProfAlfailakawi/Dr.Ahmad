@@ -84,9 +84,31 @@ const hexShade = (hex: string, amt: number) => {
 const arabicNumber = (value: number) => String(value)
 const arabicIndex = (value: number) => value < 10 ? `0${value}` : String(value)
 
-/** تقدير عرض النص بوحدات نسبية (الحرف العربي = 1). */
-function textUnits(value: string) {
-  return Array.from(value).reduce((total, character) => {
+/* قياس حقيقي للنص العربي في المتصفح، مع بديل حتمي أثناء البناء الثابت.
+   نطبّع القياس على خط 100px، لذلك تبقى دوال التخطيط القديمة متوافقة بينما
+   يصير كسر السطر مبنيًا على الخط المحمّل نفسه لا على عدّ الحروف. */
+let measureContext: CanvasRenderingContext2D | null | undefined
+const measureCache = new Map<string, number>()
+function measuredUnits(value: string, family = 'Tajawal') {
+  const cleanValue = String(value || '')
+  const cacheKey = `${family}:${cleanValue}`
+  const cached = measureCache.get(cacheKey)
+  if (cached != null) return cached
+  if (measureContext === undefined) {
+    try {
+      const canvas = typeof document !== 'undefined' ? document.createElement('canvas') : null
+      measureContext = canvas?.getContext('2d') || null
+    } catch { measureContext = null }
+  }
+  if (measureContext) {
+    measureContext.font = `500 100px ${family}, Tajawal, sans-serif`
+    measureContext.direction = hasArabic(cleanValue) ? 'rtl' : 'ltr'
+    const measured = measureContext.measureText(cleanValue).width / 55.5
+    measureCache.set(cacheKey, measured)
+    if (measureCache.size > 1200) measureCache.clear()
+    return measured
+  }
+  return Array.from(cleanValue).reduce((total, character) => {
     if (/\s/.test(character)) return total + .42
     if (/[؀-ۿ]/.test(character)) return total + 1
     if (/[A-Z]/.test(character)) return total + .86
@@ -95,40 +117,58 @@ function textUnits(value: string) {
   }, 0)
 }
 
-/** عرض تقريبي بالبكسل لسطر بحجم خط معيّن. */
-const lineWidthPx = (line: string, size: number) => textUnits(line) * size * .555
+function textUnits(value: string) { return measuredUnits(value) }
 
-/** لفّ النص على أسطر ضمن حد وحدات، مع موازنة السطر الأخير كي لا تبقى كلمة يتيمة. */
+/** عرض بالبكسل وفق القياس الفعلي حين يكون Canvas متاحًا. */
+const lineWidthPx = (line: string, size: number) => measuredUnits(line) * size * .555
+
+/** موازنة ديناميكية: تفحص نقاط القطع الممكنة وتختار أقل تفاوت بين الأسطر،
+    مع عقوبة واضحة للسطر اليتيم والفيضان. */
+function balancedWrap(sourceWords: string[], budget: number, maxLines: number) {
+  const n = sourceWords.length
+  const memo = new Map<string, { lines: string[]; score: number; consumed: number }>()
+  const solve = (start: number, left: number): { lines: string[]; score: number; consumed: number } => {
+    const key = `${start}:${left}`
+    const hit = memo.get(key); if (hit) return hit
+    if (start >= n || left <= 0) return { lines: [], score: start >= n ? 0 : 1e6, consumed: start }
+    let best = { lines: [] as string[], score: 1e9, consumed: start }
+    let line = ''
+    for (let end = start; end < n; end += 1) {
+      line = line ? `${line} ${sourceWords[end]}` : sourceWords[end]
+      const width = textUnits(line)
+      if (width > budget * 1.16 && end > start) break
+      const tail = solve(end + 1, left - 1)
+      const fill = Math.min(1.4, width / budget)
+      const rag = Math.pow(1 - Math.min(fill, 1), 2) * 100
+      const overflow = width > budget ? Math.pow(width / budget - 1, 2) * 700 : 0
+      const lonely = end === start && end < n - 1 ? 34 : 0
+      const finalOrphan = end + 1 === n && start > 0 && (end - start + 1) === 1 ? 85 : 0
+      const score = rag + overflow + lonely + finalOrphan + tail.score
+      if (score < best.score) best = { lines: [line, ...tail.lines], score, consumed: tail.consumed }
+    }
+    memo.set(key, best)
+    return best
+  }
+  return solve(0, maxLines)
+}
+
 function wrap(value: string, maxUnits: number, maxLines: number) {
   const source = words(value)
   if (!source.length) return []
   const budget = Math.max(4, maxUnits)
-  const lines: string[] = []
-  let line = ''
-  let consumed = 0
-  for (const word of source) {
-    const next = line ? `${line} ${word}` : word
-    if (textUnits(next) <= budget || !line) line = next
-    else {
-      lines.push(line)
-      consumed += words(line).length
-      line = word
-      if (lines.length >= maxLines - 1) break
-    }
-  }
-  if (line && lines.length < maxLines) {
-    lines.push(line)
-    consumed += words(line).length
-  }
-  if (consumed < source.length && lines.length) lines[lines.length - 1] = `${lines[lines.length - 1].replace(/[.…]+$/, '')}…`
-  // موازنة تحريرية: إن انتهى اللف بكلمة واحدة قصيرة في سطر أخير، ننزل إليها كلمة من السطر السابق.
+  const result = balancedWrap(source, budget, Math.max(1, maxLines))
+  const lines = result.lines.slice(0, maxLines)
+  if (result.consumed < source.length && lines.length) lines[lines.length - 1] = `${lines[lines.length - 1].replace(/[.…]+$/, '')}…`
   if (lines.length >= 2) {
     const last = words(lines[lines.length - 1])
     const previous = words(lines[lines.length - 2])
     if (last.length === 1 && previous.length > 2 && !lines[lines.length - 1].endsWith('…')) {
       const moved = previous.pop() as string
-      lines[lines.length - 2] = previous.join(' ')
-      lines[lines.length - 1] = `${moved} ${last.join(' ')}`
+      const candidate = `${moved} ${last.join(' ')}`
+      if (textUnits(candidate) <= budget * 1.05) {
+        lines[lines.length - 2] = previous.join(' ')
+        lines[lines.length - 1] = candidate
+      }
     }
   }
   return lines
@@ -1497,35 +1537,49 @@ function identityLayer(s: Scene, options: RenderSvgOptions) {
 
 /* ═══ طبقات المحرر الحر (أمر الدكتور): تُرسم فوق التكوين بألوان لوحته ═══ */
 function overlaysLayer(s: Scene) {
-  const overlays = s.plan.overlays
-  if (!overlays?.length) return ''
+  const overlays = [...(s.plan.overlays || [])].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
+  if (!overlays.length) return ''
   const { palette: p, w, h, min } = s
   const colorOf = (name: string) => name === 'accent' ? p.accent : name === 'muted' ? p.muted : name === 'paper' ? p.surface : p.ink
+  const definitions: string[] = []
   const parts = overlays.map((overlay) => {
     const x = overlay.x * w
     const y = overlay.y * h
     const width = Math.max(0.02, overlay.width) * w
     const height = Math.max(0.01, overlay.height) * h
     const color = colorOf(overlay.color)
-    const opacity = Math.max(.05, Math.min(1, overlay.opacity))
-    if (overlay.kind === 'rule') {
-      return `<line x1="${round(x)}" y1="${round(y)}" x2="${round(x + width)}" y2="${round(y)}" stroke="${color}" stroke-width="${round(Math.max(1.5, height))}" stroke-linecap="round" opacity="${opacity}"/>`
+    const opacity = Math.max(.05, Math.min(1, overlay.opacity ?? 1))
+    const rotation = Number(overlay.rotation || 0)
+    const cx = x + width / 2
+    const cy = y + height / 2
+    const transform = rotation ? ` transform="rotate(${round(rotation)} ${round(cx)} ${round(cy)})"` : ''
+    const blend = overlay.blendMode && overlay.blendMode !== 'normal' ? ` style="mix-blend-mode:${esc(overlay.blendMode)}"` : ''
+    if (overlay.kind === 'image' && overlay.src) {
+      const clipId = `ov-clip-${esc(overlay.id).replace(/[^a-zA-Z0-9_-]/g, '')}`
+      const mask = overlay.mask || 'rounded'
+      if (mask === 'circle') definitions.push(`<clipPath id="${clipId}"><ellipse cx="${round(cx)}" cy="${round(cy)}" rx="${round(width / 2)}" ry="${round(height / 2)}"/></clipPath>`)
+      else if (mask === 'rounded') definitions.push(`<clipPath id="${clipId}"><rect x="${round(x)}" y="${round(y)}" width="${round(width)}" height="${round(height)}" rx="${round(min * .022)}"/></clipPath>`)
+      const focusX = clamp(overlay.focalX ?? .5, 0, 1)
+      const focusY = clamp(overlay.focalY ?? .5, 0, 1)
+      const alignX = focusX < .34 ? 'xMin' : focusX > .66 ? 'xMax' : 'xMid'
+      const alignY = focusY < .34 ? 'YMin' : focusY > .66 ? 'YMax' : 'YMid'
+      const preserve = `${alignX}${alignY} ${overlay.fit === 'contain' ? 'meet' : 'slice'}`
+      return `<g${transform}${blend} opacity="${opacity}"${mask !== 'none' ? ` clip-path="url(#${clipId})"` : ''}><image href="${esc(overlay.src)}" x="${round(x)}" y="${round(y)}" width="${round(width)}" height="${round(height)}" preserveAspectRatio="${preserve}"/></g>`
     }
+    if (overlay.kind === 'rule') return `<line${transform}${blend} x1="${round(x)}" y1="${round(y)}" x2="${round(x + width)}" y2="${round(y)}" stroke="${color}" stroke-width="${round(Math.max(1.5, height))}" stroke-linecap="round" opacity="${opacity}"/>`
     if (overlay.kind === 'circle') {
       const radius = Math.min(width, height) / 2
-      return `<circle cx="${round(x + width / 2)}" cy="${round(y + height / 2)}" r="${round(radius)}" fill="none" stroke="${color}" stroke-width="${round(Math.max(1.5, min * .004))}" opacity="${opacity}"/>`
+      return `<circle${transform}${blend} cx="${round(cx)}" cy="${round(cy)}" r="${round(radius)}" fill="none" stroke="${color}" stroke-width="${round(Math.max(1.5, min * .004))}" opacity="${opacity}"/>`
     }
-    if (overlay.kind === 'rect') {
-      return `<rect x="${round(x)}" y="${round(y)}" width="${round(width)}" height="${round(height)}" rx="${round(min * .02)}" fill="none" stroke="${color}" stroke-width="${round(Math.max(1.5, min * .004))}" opacity="${opacity}"/>`
-    }
+    if (overlay.kind === 'rect') return `<rect${transform}${blend} x="${round(x)}" y="${round(y)}" width="${round(width)}" height="${round(height)}" rx="${round(min * .02)}" fill="none" stroke="${color}" stroke-width="${round(Math.max(1.5, min * .004))}" opacity="${opacity}"/>`
     const size = Math.max(12, (overlay.size || .03) * min)
     const anchor = overlay.align || 'end'
     const anchorX = anchor === 'middle' ? x + width / 2 : anchor === 'start' ? x : x + width
-    const maxChars = Math.max(6, Math.floor(width / (size * .5)))
-    const lines = wrap(String(overlay.text || ''), maxChars, 6)
-    return textBlock({ lines, x: anchorX, y: y + size, size, fill: color, weight: overlay.weight || 600, anchor, family: 'Tajawal', opacity })
+    const maxUnits = Math.max(6, width / Math.max(1, size * .555))
+    const lines = wrap(String(overlay.text || ''), maxUnits, 6)
+    return `<g${transform}${blend}>${textBlock({ lines, x: anchorX, y: y + size, size, fill: color, weight: overlay.weight || 600, anchor, family: 'Tajawal', opacity })}</g>`
   })
-  return `<g data-overlays="true">${parts.join('')}</g>`
+  return `<g data-overlays="true">${definitions.length ? `<defs>${definitions.join('')}</defs>` : ''}${parts.join('')}</g>`
 }
 
 export function renderCompositionSvg(plan: CompositionPlan, options: RenderSvgOptions = {}) {

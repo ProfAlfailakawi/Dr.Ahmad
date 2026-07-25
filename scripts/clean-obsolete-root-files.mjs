@@ -1,13 +1,18 @@
 import { readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { basename, join, resolve } from 'node:path'
 
-// هذه ملفات قديمة يتيمة خارج src/ كانت بعض أدوات المزامنة تعتبرها التطبيق الحقيقي.
+// هذه ملفات قديمة يتيمة خارج المسارات الحية كانت بعض أدوات المزامنة تعتبرها التطبيق الحقيقي.
 // حذفها قبل كل بناء يلغي ازدواجية مصدر التطبيق ويمنع أدوات المزامنة من اختيار شجرة قديمة خارج src/.
 const obsolete = [
   'App.tsx',
   'ArticleDetail.tsx',
   'PaperDetail.tsx',
   'IdeaFeatures.tsx',
+  'SocialDesignStudio.tsx',
+  'social-design-engine.ts',
+  'social-design-renderer.ts',
+  'agent.mjs',
+  'intent-engine.mjs',
   'public/sitemap.xml',
 ]
 

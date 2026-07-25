@@ -46,7 +46,7 @@ export default function Impact() {
   useSeo({
     title: 'سجل الأثر الموثق',
     path: '/impact',
-    description: 'رحلات موثقة تُظهر كيف انتقلت الأفكار من المقال والبحث إلى الحوار العام والمؤلفات، مع رابط لكل محطة ظاهرة.',
+    description: 'مسارات قابلة للتحقق تتبع انتقال الفكرة بين المقال والبحث والكتاب والحوار العام، مع فصل واضح بين القرابة الموضوعية والأثر المثبت.',
   })
   const { articles, books, papers, media, loading } = useCmsContent()
   const remote = useExtras<IdeaLifeRemoteRecord>('site_idea_life')
@@ -126,8 +126,15 @@ export default function Impact() {
       <PageHead
         label="من الفكرة إلى الميدان"
         title="سجل الأثر الموثق."
-        sub="سجلٌّ لا يُبالغ: يبدأ بما يمكن التحقّق منه في الأرشيف، ويفصله عن الأثر الخارجي المثبت — فلا تُرفع صلةٌ إلى مرتبة الأثر إلا بشهادة مصدرها."
+        sub="خريطةٌ تتبع انتقال الفكرة بين المقال والبحث والكتاب والحوار العام. كل محطة تعود إلى مصدرها، وتبقى القرابة الموضوعية منفصلة بوضوح عن الأثر الذي تثبته جهة مستقلة."
       />
+
+      <section className="border-b border-hair px-6 py-5 md:px-11">
+        <div className="mx-auto flex max-w-shell flex-wrap items-center justify-between gap-3">
+          <p className="text-[.78rem] leading-relaxed text-soft">للقراءة الكلية قبل الدخول في المسارات التفصيلية.</p>
+          <Link to="/thought" className="rounded-full border border-hair px-4 py-2 text-[.76rem] font-semibold text-accent transition-colors hover:border-accent">فكر د. أحمد في لقطة واحدة ←</Link>
+        </div>
+      </section>
 
       <ImpactMap />
 

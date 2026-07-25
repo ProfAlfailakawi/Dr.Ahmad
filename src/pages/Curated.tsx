@@ -320,9 +320,9 @@ export default function Curated() {
   return (
     <Page className="content-curated page-journey">
       <PageHead
-        label="من اختياراتي"
-        title="المختارات."
-        sub="ما أختاره لكم من أحداثٍ وأبحاثٍ وأدواتٍ حديثة، بمصادرها الأصلية وروابطها الموثوقة."
+        label="مختارات د. أحمد"
+        title="ما يستحق أن يبقى في المشهد."
+        sub="قراءاتٌ وأدواتٌ وأحداثٌ أختارها بعد التحقق من قيمتها؛ لكل مادة سياقٌ يوضح سبب الاختيار، وطريقٌ مباشر إلى مصدرها الأول."
       />
 
       <section className="border-b border-hair px-6 py-14 md:px-11 md:py-20">

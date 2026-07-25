@@ -632,6 +632,9 @@ if (import.meta.url === `file://${process.argv[1]}` && process.argv.includes('--
   assert(detectEntityKind(drWithWorkplace) === 'person', '★ لقب الدكتور يحسم أنه شخص ولو ذُكرت الكلية والقسم بعد اسمه')
   assert(vocativeOf(drWithWorkplace) === 'الدكتور عبد اللطيف', '★ ملاحظات جهة العمل لا تدخل في النداء')
   assert(personalize('{عزيزي}', { ...drWithWorkplace, vocative: vocativeOf(drWithWorkplace) }) === 'عزيزي الدكتور عبد اللطيف', '★ {عزيزي} تبقى مفرداً للدكتور ولا تتحول إلى «الأعزاء في»')
+  const drAbdulrahman = { nickname: 'الدكتور عبد الرحمن' }
+  assert(vocativeOf(drAbdulrahman) === 'الدكتور عبد الرحمن', '★ الاسم المركب عبد الرحمن لا يُقصّ إلى عبد')
+  assert(personalize('{عزيزي}', { ...drAbdulrahman, vocative: vocativeOf(drAbdulrahman) }) === 'عزيزي الدكتور عبد الرحمن', '★ الصياغة المطلوبة: عزيزي الدكتور عبد الرحمن')
   assert(detectGender(orgRow) === '', 'الجهة بلا جنس')
   assert(vocativeOf(orgRow) === 'مركز أعيان للتدريب', 'الجهة تُنادى باسمها كاملاً لا مبتوراً')
   assert(personalize('{ترحيب}', orgRow).includes('حيّاكم'), 'الجهة «حيّاكم الله»')
@@ -647,5 +650,5 @@ if (import.meta.url === `file://${process.argv[1]}` && process.argv.includes('--
   assert(personalize('{عزيزي}', withVoc({ nickname: 'نضال' })).startsWith('عزيزنا نضال'), 'الحياد «عزيزنا» — لا نخطئ جنساً')
   assert(personalize('{الأخ}، وصلكم', {}) === 'وصلكم', 'بلا اسم يسقط الوسم بلا فاصلة يتيمة')
 
-  console.log('✓ اختبارات الجنس والألقاب والجهات: 36/36')
+  console.log('✓ اختبارات الجنس والألقاب والجهات: 38/38')
 }

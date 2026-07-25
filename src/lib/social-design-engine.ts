@@ -420,19 +420,41 @@ export interface SocialCampaign {
 
 /* الطبقة الحرة (أمر الدكتور: محرر طبقات بالسحب): عنصر يضاف فوق التكوين
    بإحداثيات نسبية 0..1 — يرسمه المصيّر بألوان اللوحة نفسها فلا ينشز */
+export type OverlayBlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'soft-light' | 'luminosity'
+export type OverlayImageFit = 'cover' | 'contain'
+export type OverlayMask = 'none' | 'rounded' | 'circle'
+
 export interface PlanOverlay {
   id: string
-  kind: 'text' | 'rule' | 'circle' | 'rect'
+  kind: 'text' | 'rule' | 'circle' | 'rect' | 'image'
   x: number
   y: number
   width: number
   height: number
   text?: string
+  /** Data URL محلي فقط؛ لا يُرفع تلقائيًا ولا يدخل في فهرس المحتوى. */
+  src?: string
+  name?: string
+  /** جواز الصورة: بيانات منشأ وترخيص محلية تبقى مع الطبقة والتصدير. */
+  sourceUrl?: string
+  owner?: string
+  license?: string
+  importedAt?: string
+  semanticDescription?: string
   size?: number
   weight?: number
   color: 'ink' | 'accent' | 'muted' | 'paper'
   opacity: number
   align?: 'start' | 'middle' | 'end'
+  rotation?: number
+  zIndex?: number
+  locked?: boolean
+  groupId?: string
+  blendMode?: OverlayBlendMode
+  fit?: OverlayImageFit
+  focalX?: number
+  focalY?: number
+  mask?: OverlayMask
 }
 
 export interface CompositionPlan {
@@ -2285,14 +2307,14 @@ export interface SocialCampaignRequest extends SocialDesignRequest {
 }
 
 const campaignRoles: { role: CampaignAssetRole; label: string; purpose: string; format: SocialFormatId; tone?: ContentTone; density?: DesignDensity }[] = [
-  { role: 'hero', label: 'المنشور الرئيسي', purpose: 'القطعة المركزية التي تحمل الفكرة كاملة', format: 'instagram-portrait', density: 'balanced' },
-  { role: 'story', label: 'Story', purpose: 'مدخل سريع يُقرأ في ثوانٍ', format: 'story', density: 'minimal' },
-  { role: 'reel', label: 'غلاف Reel', purpose: 'عنوان قوي وآمن داخل منطقة الغلاف', format: 'reel-cover', tone: 'bold', density: 'minimal' },
-  { role: 'linkedin', label: 'LinkedIn', purpose: 'نسخة معرفية مهنية أهدأ', format: 'linkedin-landscape', tone: 'institutional', density: 'balanced' },
-  { role: 'closing', label: 'الشريحة الختامية', purpose: 'خاتمة تحمل الهوية ودعوة واضحة من دون ازدحام', format: 'instagram-square', tone: 'institutional', density: 'minimal' },
-  { role: 'quote', label: 'بطاقة اقتباس', purpose: 'جملة قابلة للحفظ والمشاركة', format: 'instagram-square', tone: 'deep', density: 'minimal' },
-  { role: 'teaser', label: 'تشويق قبل النشر', purpose: 'يفتح سؤالًا ولا يحرق الفكرة', format: 'story', tone: 'intellectual', density: 'minimal' },
-  { role: 'reminder', label: 'تذكير بعد النشر', purpose: 'يعيد الفكرة بصياغة عملية ودعوة واضحة', format: 'instagram-square', tone: 'calm', density: 'balanced' },
+  { role: 'teaser', label: 'التمهيد', purpose: 'سؤال أو لمحة تفتح الباب من دون كشف الحجة كاملة', format: 'story', tone: 'intellectual', density: 'minimal' },
+  { role: 'hero', label: 'التوقف', purpose: 'المشهد أو العبارة التي توقف المتابع في أول ثانية', format: 'instagram-portrait', density: 'balanced' },
+  { role: 'quote', label: 'المفارقة', purpose: 'ما نعتقده عادةً، وما تكشفه الفكرة على خلافه', format: 'instagram-square', tone: 'deep', density: 'minimal' },
+  { role: 'linkedin', label: 'الدليل', purpose: 'الرقم أو الاقتباس أو العلاقة الموثقة التي تسند الحجة', format: 'linkedin-landscape', tone: 'institutional', density: 'balanced' },
+  { role: 'story', label: 'التفسير', purpose: 'طبقة قصيرة تشرح لماذا يهم الموضوع الآن', format: 'story', density: 'minimal' },
+  { role: 'reel', label: 'التطبيق', purpose: 'قرار أو خطوة عملية تتحول إلى غلاف واضح وآمن', format: 'reel-cover', tone: 'bold', density: 'minimal' },
+  { role: 'closing', label: 'الختام', purpose: 'خلاصة وهوية ودعوة إلى المادة الكاملة من دون ازدحام', format: 'instagram-square', tone: 'institutional', density: 'minimal' },
+  { role: 'reminder', label: 'الاستعادة', purpose: 'عودة هادئة إلى الفكرة بعد النشر من زاوية جديدة', format: 'instagram-square', tone: 'calm', density: 'balanced' },
 ]
 
 const campaignText = (role: CampaignAssetRole, analysis: SocialContentAnalysis) => {

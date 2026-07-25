@@ -6,6 +6,14 @@ import { applyBotRules, sign } from './bot-rules.mjs'
 import { getBotMessages } from './bot-messages.mjs'
 import { answer as scholarAnswer, SCAFFOLD as SCHOLAR_SCAFFOLD } from './scholar.mjs'
 import {
+  dialogueModeReply,
+  explainModeReply,
+  humanSafeReply,
+  KNOWLEDGE_MODES,
+  sensitiveDomain,
+  verifiedResearchReply,
+} from './knowledge-modes.mjs'
+import {
   applyReferenceResolution,
   parseCompoundRequest,
   parseConversationContext,
@@ -31,7 +39,7 @@ function readFollowup(session) {
 }
 
 export const INTENTS = Object.freeze({
-  LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_ARTICLES: 'LATEST_ARTICLES', MOST_VIEWED_ARTICLE: 'MOST_VIEWED_ARTICLE', CONTENT_OVERVIEW: 'CONTENT_OVERVIEW', TOP_ARTICLE_TOPIC: 'TOP_ARTICLE_TOPIC', LATEST_BOOK: 'LATEST_BOOK', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', LATEST_PAPER: 'LATEST_PAPER', WELCOME: 'WELCOME', MORE_LIKE_THIS: 'MORE_LIKE_THIS', COMPARE: 'COMPARE', ABOUT_TOPIC: 'ABOUT_TOPIC', UPCOMING_EVENTS: 'UPCOMING_EVENTS', ABOUT_DOCTOR: 'ABOUT_DOCTOR', CURATED_PICKS: 'CURATED_PICKS', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', COMPOUND_REQUEST: 'COMPOUND_REQUEST', CONTEXT_REFERENCE: 'CONTEXT_REFERENCE', READ_SPEED: 'READ_SPEED', IDEA_NETWORK: 'IDEA_NETWORK', CHALLENGE: 'CHALLENGE', CHALLENGE_ANSWER: 'CHALLENGE_ANSWER', SOURCE_PROOF: 'SOURCE_PROOF', SAVE_CONTENT: 'SAVE_CONTENT', LIST_SAVED: 'LIST_SAVED', REMOVE_SAVED: 'REMOVE_SAVED', CORRECTION: 'CORRECTION', UNKNOWN: 'UNKNOWN' })
+  LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_ARTICLES: 'LATEST_ARTICLES', MOST_VIEWED_ARTICLE: 'MOST_VIEWED_ARTICLE', CONTENT_OVERVIEW: 'CONTENT_OVERVIEW', TOP_ARTICLE_TOPIC: 'TOP_ARTICLE_TOPIC', LATEST_BOOK: 'LATEST_BOOK', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', LATEST_PAPER: 'LATEST_PAPER', WELCOME: 'WELCOME', MORE_LIKE_THIS: 'MORE_LIKE_THIS', COMPARE: 'COMPARE', ABOUT_TOPIC: 'ABOUT_TOPIC', UPCOMING_EVENTS: 'UPCOMING_EVENTS', ABOUT_DOCTOR: 'ABOUT_DOCTOR', CURATED_PICKS: 'CURATED_PICKS', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', VERIFIED_RESEARCH: 'VERIFIED_RESEARCH', EXPLAIN_MODE: 'EXPLAIN_MODE', DIALOGUE_MODE: 'DIALOGUE_MODE', HUMAN_HANDOFF: 'HUMAN_HANDOFF', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', COMPOUND_REQUEST: 'COMPOUND_REQUEST', CONTEXT_REFERENCE: 'CONTEXT_REFERENCE', READ_SPEED: 'READ_SPEED', IDEA_NETWORK: 'IDEA_NETWORK', CHALLENGE: 'CHALLENGE', CHALLENGE_ANSWER: 'CHALLENGE_ANSWER', SOURCE_PROOF: 'SOURCE_PROOF', SAVE_CONTENT: 'SAVE_CONTENT', LIST_SAVED: 'LIST_SAVED', REMOVE_SAVED: 'REMOVE_SAVED', CORRECTION: 'CORRECTION', UNKNOWN: 'UNKNOWN' })
 
 const LEARNABLE_INTENTS = new Set([
   INTENTS.LATEST_CONTENT, INTENTS.LATEST_ARTICLE, INTENTS.LATEST_ARTICLES,
@@ -45,7 +53,7 @@ const LEARNABLE_INTENTS = new Set([
   INTENTS.LISTEN_DIALOGUE, INTENTS.SHOW_OPTIONS, INTENTS.HELP,
   INTENTS.CONTENT_BY_MOOD, INTENTS.QUOTE, INTENTS.QUOTE_CARD,
   INTENTS.CONTINUE_LISTENING, INTENTS.WEEKLY_DIGEST, INTENTS.READ_SPEED,
-  INTENTS.IDEA_NETWORK, INTENTS.CHALLENGE, INTENTS.SOURCE_PROOF,
+  INTENTS.EXPLAIN_MODE, INTENTS.DIALOGUE_MODE, INTENTS.IDEA_NETWORK, INTENTS.CHALLENGE, INTENTS.SOURCE_PROOF,
   INTENTS.SAVE_CONTENT, INTENTS.LIST_SAVED, INTENTS.REMOVE_SAVED,
 ])
 
@@ -115,6 +123,10 @@ const patterns = [
   [INTENTS.HELP, [/(شنو تقدر|الخيارات|مساعده|شلون استخدم|الاوامر|القائمه)/, 0.98]],
   [INTENTS.REMIND_ME, [/(ذكرني|تذكير)/, 0.90]],
   [INTENTS.WEEKLY_DIGEST, [/(ملخص اسبوعي|النشره الاسبوعيه|نشره اسبوعيه)/, 0.94]],
+  [INTENTS.VERIFIED_RESEARCH, [/(بحث موثوق|مصادر خارجيه|دراسه حديثه|ما تقوله الدراسات|مصدر رسمي|جهه رسميه)/, 0.97]],
+  [INTENTS.EXPLAIN_MODE, [/(اشرح لي|اشرحها|بالتفصيل|في سطرين|في دقيقه|لطالب|لولي امر|لمعلم|لباحث)/, 0.95]],
+  [INTENTS.DIALOGUE_MODE, [/(حاورني|عارضني|اختبر الفكره|رحله خمس دقائق|ناقشني|اسالني)/, 0.96]],
+  [INTENTS.HUMAN_HANDOFF, [/(دواء|علاج|تشخيص|اعراض|مرض|صحتي|نفسي|اكتئاب|انتحار|قانون|محكمه|قضيه|شكوي|شكوى|محامي|موعد|اقابلك|اتواصل مع الدكتور|اشراف|مشكلتي|ابني|بنتي|زوجي|زوجتي|ساعدني شخصيا)/, 0.96]],
   [INTENTS.HUMAN_RESPONSE_REQUIRED, [/(رايك|ماذا تري|هل تعتقد|ابي رايك)/, 0.82]],
   /* اللقاءات والسيرة والمختارات: يسأل عنها الناس كما يسألون عن المقالات،
      وكان البوت لا يعرفها إطلاقاً فيردّ ببحثٍ عشوائي أو يصمت. */
@@ -148,6 +160,32 @@ const learningKeys = (value) => {
   return { normalized, canonical, patternHash: hashOpaque(`learn:exact:${normalized}`), canonicalHash: hashOpaque(`learn:canonical:${canonical}`) }
 }
 
+/* موضوعٌ تجميعي آمن للفجوة: لا نخزّن أسماءً أو جملاً مكشوفة. نطابق فقط
+   قاموس محاور عام ثابت؛ وما لا يطابقه يبقى «موضوع غير مصنّف». بهذه الطريقة
+   تستطيع اللوحة قول «الذكاء الاصطناعي تكرر 38 مرة» من دون عرض سؤال أحد. */
+const GAP_TOPICS = [
+  ['الذكاء الاصطناعي', /(?:ذكاء اصطناعي|الذكاء|ai|شات جي بي تي|chatgpt|روبوت)/],
+  ['التقييم والاختبارات', /(?:تقييم|اختبار|امتحان|درجات|قياس|تحصيل)/],
+  ['التعليم والتعلّم', /(?:تعليم|تعلم|تدريس|مدرسه|مدرسة|جامعه|جامعة|صف|مناهج)/],
+  ['المعلم ودوره', /(?:معلم|مدرس|استاذ|أستاذ|هيئه تدريسيه|هيئة تدريسية)/],
+  ['الطالب والمتعلم', /(?:طالب|طلبه|طلاب|متعلم)/],
+  ['التقنية والتحول الرقمي', /(?:تقنيه|تقنية|تكنولوجيا|رقمي|منصه|منصة|تطبيق)/],
+  ['التربية والأسرة', /(?:تربيه|تربية|اسره|أسرة|والد|ابن|طفل)/],
+  ['البحث العلمي', /(?:بحث|دراسه|دراسة|مصدر|مراجع|جامعات|محكم)/],
+  ['الكتب والمقالات', /(?:كتاب|كتب|مقال|مقالات|قراءه|قراءة|مؤلف)/],
+  ['الإعلام والمجتمع', /(?:اعلام|إعلام|مجتمع|سوشيال|تواصل اجتماعي|منصات)/],
+  ['الصوت والبودكاست', /(?:صوت|بودكاست|استماع|حلقه|حلقة)/],
+]
+function safeGapTopic(value) {
+  const domain = sensitiveDomain(value)
+  if (domain === 'health') return 'معلومات صحية عامة'
+  if (domain === 'law') return 'معلومات قانونية عامة'
+  if (domain === 'appointment') return 'تواصل ومواعيد'
+  if (domain === 'personal') return 'طلب شخصي يحتاج تدخلاً بشرياً'
+  const normalized = clean(value)
+  return GAP_TOPICS.find(([, pattern]) => pattern.test(normalized))?.[0] || 'موضوع غير مصنّف'
+}
+
 export function recordUnresolvedLearning(db, jid, input, reason = 'unresolved-after-wake') {
   if (!db || !jid || !String(input || '').trim()) return null
   const keys = learningKeys(input)
@@ -157,7 +195,7 @@ export function recordUnresolvedLearning(db, jid, input, reason = 'unresolved-af
   const now = new Date()
   const stamp = now.toISOString()
   const jidKey = db.jidKey(jid)
-  db.run('INSERT INTO unresolved_messages(jid,input_hash,text_preview,reason,created_at) VALUES(?,?,?,?,?)', jidKey, hashOpaque(input), db.encryptText(String(input).slice(0, 180)), reason, stamp)
+  db.run('INSERT INTO unresolved_messages(jid,input_hash,text_preview,reason,topic_label,created_at) VALUES(?,?,?,?,?,?)', jidKey, hashOpaque(input), db.encryptText(String(input).slice(0, 180)), reason, safeGapTopic(input), stamp)
   db.run(`INSERT INTO learning_patterns(pattern_hash,canonical_hash,phrase,hits,status,first_seen_at,last_seen_at)
           VALUES(?,?,?,?,?,?,?)
           ON CONFLICT(pattern_hash) DO UPDATE SET hits=hits+1,last_seen_at=excluded.last_seen_at,canonical_hash=excluded.canonical_hash`,
@@ -1386,6 +1424,14 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
     case INTENTS.STOP_MESSAGES: setSuppression(db, jid, true); return { ...classification, shouldRespond: true, text: MSG.stopConfirm }
     case INTENTS.RESUME_MESSAGES: setSuppression(db, jid, false); return { ...classification, shouldRespond: true, text: MSG.resumeConfirm }
     case INTENTS.DELETE_PREFERENCES: clearPreferences(db, jid); return { ...classification, shouldRespond: true, text: 'حذفت بيانات التخصيص المحلية: المحتوى السابق، المحفوظات، السجل والتذكيرات. أبقيت فقط طلب إيقاف الرسائل وفترة استلام الدكتور إن كانا مفعّلين.' }
+    case INTENTS.VERIFIED_RESEARCH:
+      return { ...classification, ...verifiedResearchReply(db, input) }
+    case INTENTS.EXPLAIN_MODE:
+      return { ...classification, ...explainModeReply(db, session, input) }
+    case INTENTS.DIALOGUE_MODE:
+      return { ...classification, ...dialogueModeReply(db, session, input) }
+    case INTENTS.HUMAN_HANDOFF:
+      return { ...classification, ...humanSafeReply(input) }
     case INTENTS.COMPOUND_REQUEST:
       return { ...classification, ...compoundRequestReply(db, classification.request || selection.request) }
     case INTENTS.CORRECTION:
@@ -1615,7 +1661,7 @@ ${SITE_URL}/research` }
     case INTENTS.HELP:
     case INTENTS.SHOW_OPTIONS:
       return { ...classification, text: 'اسألني بطريقتك الطبيعية داخل محتوى الموقع فقط:\n• بوابة اليوم · اختبرني\n• آخر مقالاته أو أبحاثه أو كتبه\n• عندك شيء عن أي موضوع؟\n• ٣٠ ثانية · دقيقتان · تعمّق\n• بصوت نورة أو فهد أو الحوار\n• شبكة الأفكار · المصدر · احفظها · محفوظاتي\n\nولا تحتاج حفظ صيغة ثابتة.' }
-    case INTENTS.HUMAN_RESPONSE_REQUIRED: return { ...classification, ...noSilenceReply(db, input, { offDomain: true }) }
+    case INTENTS.HUMAN_RESPONSE_REQUIRED: return { ...classification, ...humanSafeReply(input) }
     case INTENTS.REMIND_ME: {
       const parsed = parseReminderTime(input)
       if (parsed.ambiguous) return { ...classification, needsHuman: true, text: 'أقدر أذكّرك محليًا، لكن أحتاج وقتًا واضحًا مثل: الجمعة الساعة 7 مساءً.' }
@@ -1756,12 +1802,13 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
   /* اقتباس ردّ البوت لا يفتح الباب من خلف جملة الإيقاظ. إن كانت الجلسة
      مفتوحة فالاقتباس يعمل ضمنها طبيعياً؛ وإن لم تُفتح، يبقى صامتاً. */
   const activeSession = explicitContentSession || sessionAlive(session)
+  const sensitive = sensitiveDomain(text)
   const groundedFallback = classification0.fallback && isGroundedTopicPhrase(db, text)
   /* القاعدة المحفوظة من لوحة التحكم أمرٌ مفهوم داخل جلسة مستيقظة، حتى لو كان
      المصنّف العام لا يعرف صياغتها. لا تفتح القاعدة الباب بنفسها؛ هي تعمل فقط
      بعد الإيقاظ أو في المعاينة الصريحة. */
   const configuredRule = activeSession ? matchReplyRule(db, text) : null
-  const understood = (intent !== INTENTS.UNKNOWN && confidence >= 0.7 && !classification0.fallback) || groundedFallback || Boolean(configuredRule)
+  const understood = (intent !== INTENTS.UNKNOWN && confidence >= 0.7 && !classification0.fallback) || groundedFallback || Boolean(configuredRule) || Boolean(sensitive)
   if (activeSession && understood) return { allowed: true, reason: groundedFallback ? 'content-session-grounded-search' : classification0.learned ? 'content-session-learned' : 'content-session' }
   if (activeSession && !understood) {
     recordUnresolvedLearning(db, jid, text, classification0.fallback ? 'ungrounded-fallback' : 'unknown-after-wake')
@@ -1796,11 +1843,21 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
 export function handleIncoming({ db, jid, text, isReplyToAgent = false, explicitContentSession = false, hasMedia = false, at = new Date() }) {
   /* التصنيف كان يُنفّذ ثلاث مرات للرسالة نفسها: في البوابة، وفي قواعد الأدب،
      ثم في الرد. نُنشئه مرةً واحدة ونمرّره، فتقلّ كلفة كل تفاعل بلا تغيير المعنى. */
-  const classification = classifyIntentWithLearning(db, text)
+  let classification = classifyIntentWithLearning(db, text)
+  const sensitive = sensitiveDomain(text)
+  const normalizedInput = clean(text)
+  const personalSensitive = Boolean(sensitive && /(?:انا|اني|لي|عندي|حالتي|مرضي|صحتي|ابني|بنتي|زوجي|زوجتي|والدي|والدتي|شنو اسوي|ماذا افعل|ساعدني)/.test(normalizedInput))
+  /* طلب البحث العام في الصحة أو القانون يبقى ممكنًا من سجل أدلة رسمي، لكن
+     الحالة الشخصية تُحوّل دائماً إلى الإنسان حتى لو احتوت عبارة «بحث موثق»؛
+     فرق الثقة بين النيتين لا يجوز أن يحوّل سؤال علاجٍ فردي إلى جواب آلي. */
+  if (sensitive && (personalSensitive || classification.intent === INTENTS.UNKNOWN || classification.fallback)) {
+    classification = { intent: INTENTS.HUMAN_HANDOFF, confidence: 0.99, normalized: normalizedInput, knowledgeMode: KNOWLEDGE_MODES.HUMAN }
+  }
   const gate = shouldRespondToMessage({ db, jid, text, isReplyToAgent, explicitContentSession, hasMedia, at, classification })
   const session = db.get('SELECT * FROM chat_sessions WHERE jid=?', db.jidKey(jid))
   if (!gate.allowed) return { ...gate, shouldRespond: false }
   const response = handleIntent({ db, jid, input: text, session, classification })
+  response.mode = response.mode || KNOWLEDGE_MODES.ARCHIVE
   if (gate.executeSilently) {
     return { ...gate, ...response, text: '', shouldRespond: false, privacyApplied: true }
   }

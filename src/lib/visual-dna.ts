@@ -207,3 +207,142 @@ export function extractVisualDnaFromFile(file: File): Promise<VisualDna | null> 
     image.src = url
   })
 }
+
+export interface StudioImagePassport {
+  dataUrl: string
+  fileName: string
+  mime: string
+  width: number
+  height: number
+  aspectRatio: number
+  orientation: 'portrait' | 'landscape' | 'square'
+  luminance: number
+  contrast: number
+  edgeDensity: number
+  negativeSpace: 'right' | 'left' | 'top' | 'bottom' | 'balanced'
+  focalX: number
+  focalY: number
+  recommendedFit: 'cover' | 'contain'
+  cropNotes: string[]
+}
+
+function imagePassport(source: HTMLImageElement, file: File): StudioImagePassport | null {
+  const max = 1600
+  const scale = Math.min(1, max / Math.max(source.naturalWidth, source.naturalHeight))
+  const width = Math.max(1, Math.round(source.naturalWidth * scale))
+  const height = Math.max(1, Math.round(source.naturalHeight * scale))
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  if (!ctx) return null
+  ctx.drawImage(source, 0, 0, width, height)
+
+  const sample = document.createElement('canvas')
+  const sw = 96
+  const sh = Math.max(32, Math.round(96 * height / width))
+  sample.width = sw
+  sample.height = sh
+  const sctx = sample.getContext('2d', { willReadFrequently: true })
+  if (!sctx) return null
+  sctx.drawImage(source, 0, 0, sw, sh)
+  const data = sctx.getImageData(0, 0, sw, sh).data
+  const lum = new Float32Array(sw * sh)
+  let sum = 0
+  let sumSq = 0
+  for (let i = 0, p = 0; i < data.length; i += 4, p += 1) {
+    const value = (.2126 * data[i] + .7152 * data[i + 1] + .0722 * data[i + 2]) / 255
+    lum[p] = value
+    sum += value
+    sumSq += value * value
+  }
+  const mean = sum / lum.length
+  const variance = Math.max(0, sumSq / lum.length - mean * mean)
+  let edges = 0
+  const zones = { left: 0, right: 0, top: 0, bottom: 0 }
+  const zoneCount = { left: 0, right: 0, top: 0, bottom: 0 }
+  let weightedX = 0
+  let weightedY = 0
+  let weightedTotal = 0
+  for (let y = 1; y < sh - 1; y += 1) {
+    for (let x = 1; x < sw - 1; x += 1) {
+      const index = y * sw + x
+      const gx = Math.abs(lum[index + 1] - lum[index - 1])
+      const gy = Math.abs(lum[index + sw] - lum[index - sw])
+      const edge = Math.min(1, (gx + gy) * 1.8)
+      edges += edge
+      const weight = edge + Math.abs(lum[index] - mean) * .35
+      weightedX += x * weight
+      weightedY += y * weight
+      weightedTotal += weight
+      if (x < sw * .38) { zones.left += edge; zoneCount.left += 1 }
+      if (x > sw * .62) { zones.right += edge; zoneCount.right += 1 }
+      if (y < sh * .38) { zones.top += edge; zoneCount.top += 1 }
+      if (y > sh * .62) { zones.bottom += edge; zoneCount.bottom += 1 }
+    }
+  }
+  const normalizedZones = Object.entries(zones).map(([key, value]) => ({ key: key as keyof typeof zones, score: value / Math.max(1, zoneCount[key as keyof typeof zones]) }))
+  normalizedZones.sort((a, b) => a.score - b.score)
+  const quiet = normalizedZones[0]
+  const second = normalizedZones[1]
+  const negativeSpace = quiet && second && quiet.score < second.score * .88 ? quiet.key : 'balanced'
+  const aspectRatio = source.naturalWidth / source.naturalHeight
+  const focalX = weightedTotal ? clamp((weightedX / weightedTotal) / sw) : .5
+  const focalY = weightedTotal ? clamp((weightedY / weightedTotal) / sh) : .5
+  const outputType = file.type === 'image/png' ? 'image/png' : 'image/jpeg'
+  const dataUrl = canvas.toDataURL(outputType, outputType === 'image/jpeg' ? .88 : undefined)
+  const orientation = aspectRatio > 1.08 ? 'landscape' : aspectRatio < .92 ? 'portrait' : 'square'
+  const cropNotes = [
+    negativeSpace === 'balanced' ? 'المساحات متوازنة؛ ضع النص في طبقة مستقلة واختبر التباين.' : `أهدأ مساحة للنص تبدو في جهة ${negativeSpace === 'right' ? 'اليمين' : negativeSpace === 'left' ? 'اليسار' : negativeSpace === 'top' ? 'الأعلى' : 'الأسفل'}.`,
+    `نقطة التركيز التقنية قرب ${Math.round(focalX * 100)}٪ أفقيًا و${Math.round(focalY * 100)}٪ عموديًا.`,
+    aspectRatio > 1.7 ? 'الصورة عريضة؛ ستحتاج قصًا واعيًا للمربع والستوري.' : aspectRatio < .7 ? 'الصورة طولية؛ راقب فقدان الأطراف في النسخ العريضة.' : 'نسبة الصورة مرنة نسبيًا عبر أكثر من منصة.',
+  ]
+  return {
+    dataUrl,
+    fileName: file.name,
+    mime: outputType,
+    width: source.naturalWidth,
+    height: source.naturalHeight,
+    aspectRatio,
+    orientation,
+    luminance: Math.round(mean * 100),
+    contrast: Math.round(Math.sqrt(variance) * 100),
+    edgeDensity: Math.round(edges / Math.max(1, (sw - 2) * (sh - 2)) * 100),
+    negativeSpace,
+    focalX,
+    focalY,
+    recommendedFit: aspectRatio > .72 && aspectRatio < 1.65 ? 'cover' : 'contain',
+    cropNotes,
+  }
+}
+
+/** تحليل محلي تقني للصورة + نسخة مضغوطة للمحرر. لا يغادر الملف المتصفح. */
+export function analyzeStudioImageFromFile(file: File): Promise<StudioImagePassport | null> {
+  return new Promise((resolve) => {
+    if (!file || !file.type.startsWith('image/')) { resolve(null); return }
+    const url = URL.createObjectURL(file)
+    const image = new Image()
+    image.onload = () => {
+      try { resolve(imagePassport(image, file)) } catch { resolve(null) }
+      finally { URL.revokeObjectURL(url) }
+    }
+    image.onerror = () => { URL.revokeObjectURL(url); resolve(null) }
+    image.src = url
+  })
+}
+
+
+/** يجلب صورةً يختارها المستخدم من مكتبة الموقع نفسها ثم يمرّرها إلى المحلل
+ * المحلي. لا يُستخدم للبحث الخارجي، ولا يتجاوز CORS أو حالة الترخيص. */
+export async function analyzeStudioImageFromUrl(url: string, fileName = 'library-image'): Promise<StudioImagePassport | null> {
+  try {
+    const response = await fetch(url, { credentials: 'same-origin' })
+    if (!response.ok) return null
+    const blob = await response.blob()
+    if (!blob.type.startsWith('image/')) return null
+    const extension = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg'
+    const safeName = fileName.replace(/[^\p{L}\p{N}._-]+/gu, '-').replace(/^-+|-+$/g, '') || 'library-image'
+    const file = new File([blob], safeName.includes('.') ? safeName : `${safeName}.${extension}`, { type: blob.type })
+    return analyzeStudioImageFromFile(file)
+  } catch { return null }
+}

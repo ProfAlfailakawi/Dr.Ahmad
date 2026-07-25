@@ -38,9 +38,52 @@ type ReplyRule = {
   updatedAt?: string
 }
 type RuleVersion = { id: number; createdAt: string }
-type Simulation = { willReply?: boolean; why?: string; quietNow?: boolean; intent?: string; confidence?: number; needsHuman?: boolean; ruleId?: string | null; ruleName?: string | null; preview?: string }
+type Simulation = { willReply?: boolean; why?: string; quietNow?: boolean; intent?: string; mode?: string; confidence?: number; needsHuman?: boolean; ruleId?: string | null; ruleName?: string | null; preview?: string }
 type LearningPattern = { id: number; phrase: string; hits: number; intent: string; confirmations: number; evidenceSources?: number; evidenceDays?: number; status: 'learned' | 'observing' | 'ignored'; firstSeenAt?: string; lastSeenAt?: string; learnedAt?: string | null }
 type LearningState = { total: number; learned: number; observing: number; ignored: number; policy: string; items: LearningPattern[] }
+type AgentScreen = 'live' | 'knowledge' | 'conversations' | 'personality' | 'protection'
+type KnowledgePersonality = {
+  verbosity: 'brief' | 'layered' | 'detailed'
+  dialect: 'formal-arabic' | 'kuwaiti-light' | 'neutral-arabic'
+  initiative: 'none' | 'one-question' | 'guided'
+  signature: 'always'
+  memoryConsent: 'explicit'
+}
+type KnowledgeState = {
+  modes: { id: string; label: string; boundary: string }[]
+  sourcePolicies: Record<string, string[]>
+  evidence: { total: number; enabled: number; lastUpdatedAt: string | null; domains: { domain: string; total: number; enabled: number }[] }
+  conversations: {
+    active: number; human: number
+    intents: { intent: string; total: number; confidence: number }[]
+    gaps: { topic?: string; reason: string; total: number }[]
+    answers: { intent: string; total: number }[]
+  }
+  personality: KnowledgePersonality
+  privacy: string
+}
+type TrustedEvidence = {
+  id: string; domain: string; sourceName: string; sourceType: string; title: string
+  claim: string; quote: string; url: string; publishedAt: string; retrievedAt: string
+  authority: string; enabled: boolean; createdAt?: string; updatedAt?: string
+}
+
+const DEFAULT_PERSONALITY: KnowledgePersonality = {
+  verbosity: 'layered', dialect: 'kuwaiti-light', initiative: 'one-question', signature: 'always', memoryConsent: 'explicit',
+}
+const EMPTY_KNOWLEDGE: KnowledgeState = {
+  modes: [], sourcePolicies: {}, evidence: { total: 0, enabled: 0, lastUpdatedAt: null, domains: [] },
+  conversations: { active: 0, human: 0, intents: [], gaps: [], answers: [] },
+  personality: DEFAULT_PERSONALITY,
+  privacy: 'تعرض اللوحة أعدادًا مجمعة فقط، من دون نصوص الناس أو أرقامهم.',
+}
+const AGENT_SCREENS: { id: AgentScreen; label: string; hint: string }[] = [
+  { id: 'live', label: 'حي الآن', hint: 'الحالة والتشغيل' },
+  { id: 'knowledge', label: 'المعرفة', hint: 'المصادر والفجوات' },
+  { id: 'conversations', label: 'المحادثات', hint: 'مؤشرات بلا كشف النصوص' },
+  { id: 'personality', label: 'الشخصية', hint: 'النبرة والإيقاع' },
+  { id: 'protection', label: 'الحماية', hint: 'السياسات والأدلة' },
+]
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none placeholder:text-soft/60 focus:border-accent'
@@ -98,6 +141,12 @@ export function WhatsAppAgentPanel() {
   const [simulation, setSimulation] = useState<Simulation | null>(null)
   const [learning, setLearning] = useState<LearningState>({ total: 0, learned: 0, observing: 0, ignored: 0, policy: '', items: [] })
   const [learningBusy, setLearningBusy] = useState(false)
+  const [screen, setScreen] = useState<AgentScreen>('live')
+  const [knowledge, setKnowledge] = useState<KnowledgeState>(EMPTY_KNOWLEDGE)
+  const [personality, setPersonality] = useState<KnowledgePersonality>(DEFAULT_PERSONALITY)
+  const [trustedEvidence, setTrustedEvidence] = useState<TrustedEvidence[]>([])
+  const [evidenceBusy, setEvidenceBusy] = useState(false)
+  const [evidenceForm, setEvidenceForm] = useState({ domain: 'education', sourceName: '', sourceType: 'جامعة أو دورية محكّمة', title: '', claim: '', quote: '', url: '', publishedAt: '', authority: '' })
   const localBridgeDefault = ['http:', '', '127.0.0.1:34321'].join('/')
   const bridgeCandidate = String(import.meta.env.VITE_WHATSAPP_AGENT_BRIDGE_URL || localBridgeDefault).replace(/\/+$/, '')
   const bridge = /^(https?:\/\/)(127\.0\.0\.1|localhost)(:\d+)?$/i.test(bridgeCandidate) ? bridgeCandidate : ''
@@ -124,14 +173,19 @@ export function WhatsAppAgentPanel() {
     if (!secret.trim()) { setNotice('أدخل سر الجسر المحلي أولًا. السر لا يُرفع للموقع؛ يُحفظ في هذا المتصفح فقط.'); return }
     setBusy(true)
     try {
-      const [nextStatus, nextRules, nextLearning] = await Promise.all([
+      const [nextStatus, nextRules, nextLearning, nextKnowledge, nextEvidence] = await Promise.all([
         request<AgentStatus>('/status'),
         request<ReplyRule[]>('/admin/rules'),
         request<LearningState>('/admin/learning').catch(() => ({ total: 0, learned: 0, observing: 0, ignored: 0, policy: '', items: [] })),
+        request<KnowledgeState>('/admin/knowledge').catch(() => EMPTY_KNOWLEDGE),
+        request<TrustedEvidence[]>('/admin/trusted-evidence?limit=80').catch(() => []),
       ])
       setStatus(nextStatus)
       setRules(nextRules)
       setLearning(nextLearning)
+      setKnowledge(nextKnowledge)
+      setPersonality(nextKnowledge.personality || DEFAULT_PERSONALITY)
+      setTrustedEvidence(nextEvidence)
       setNotice('تحدّثت حالة واتساب.')
     } catch (error) {
       setNotice(error instanceof Error && error.message === 'secret-missing' ? 'أدخل سر الجسر المحلي أولًا.' : 'تعذّر الوصول إلى جسر واتساب المحلي. تأكد أن الماك شغال والجسر متصل والسر صحيح.')
@@ -311,6 +365,43 @@ export function WhatsAppAgentPanel() {
     }
   }
 
+  const savePersonality = async () => {
+    try {
+      const saved = await request<KnowledgePersonality>('/admin/personality', { method: 'POST', body: JSON.stringify(personality) })
+      setPersonality(saved)
+      setKnowledge((current) => ({ ...current, personality: saved }))
+      setNotice('حُفظ إيقاع الحوار وحدوده في الوكيل المحلي.')
+    } catch { setNotice('تعذّر حفظ شخصية الحوار.') }
+  }
+
+  const saveEvidence = async () => {
+    if (!evidenceForm.sourceName.trim() || !evidenceForm.title.trim() || !evidenceForm.claim.trim() || !evidenceForm.url.trim()) {
+      setNotice('أكمل المصدر والعنوان والادعاء والرابط قبل اعتماد الدليل.')
+      return
+    }
+    setEvidenceBusy(true)
+    try {
+      const saved = await request<TrustedEvidence>('/admin/trusted-evidence', { method: 'POST', body: JSON.stringify(evidenceForm) })
+      setTrustedEvidence((current) => [saved, ...current.filter((item) => item.id !== saved.id)])
+      setEvidenceForm((current) => ({ ...current, title: '', claim: '', quote: '', url: '', publishedAt: '', authority: '' }))
+      setNotice('أُضيف الدليل إلى القاعدة الموثوقة. لن يستخدمه البوت إلا بعد اجتياز حارس الادعاء والرابط.')
+      const next = await request<KnowledgeState>('/admin/knowledge').catch(() => null)
+      if (next) { setKnowledge(next); setPersonality(next.personality || personality) }
+    } catch (error) {
+      setNotice(error instanceof Error ? `تعذّر اعتماد الدليل: ${error.message}` : 'تعذّر اعتماد الدليل.')
+    } finally { setEvidenceBusy(false) }
+  }
+
+  const turnGapIntoCampaign = (gap: { topic?: string; reason: string; total: number }) => {
+    const seed = {
+      text: `فجوة معرفية متكررة: ${gap.topic || gap.reason}`,
+      context: `ظهرت ${gap.total} مرة في مؤشرات البوت المجمعة. صمّم حملة توضيحية موثقة من دون استخدام نصوص أو بيانات شخصية.`,
+    }
+    localStorage.setItem('studio-campaign-seed', JSON.stringify(seed))
+    window.dispatchEvent(new CustomEvent('studio:campaign-seed'))
+    setNotice('انتقلت الفجوة المجمعة إلى استوديو التصاميم كبذرة حملة، من دون نقل أي رسالة أو رقم شخصي.')
+  }
+
   const flags = useMemo(() => status.flags || { agent: true, send: false, autoReply: false, privateAutoReply: false, voice: false, reminders: false, quoteCard: true }, [status.flags])
   const phases = [
     ['1', 'الوكيل والربط', flags.agent],
@@ -322,6 +413,188 @@ export function WhatsAppAgentPanel() {
 
   return (
     <div className="admin-dashboard grid min-w-0 gap-4">
+      <nav aria-label="أقسام وكيل واتساب" className="mobile-card-rail flex snap-x snap-mandatory gap-2 overflow-x-auto rounded-2xl border border-hair bg-wash p-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {AGENT_SCREENS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setScreen(item.id)}
+            className={`min-w-[9.5rem] snap-start rounded-xl px-4 py-3 text-right transition-colors ${screen === item.id ? 'bg-accent text-white' : 'bg-canvas text-ink hover:text-accent'}`}
+          >
+            <span className="block text-[.84rem] font-semibold">{item.label}</span>
+            <span className={`mt-1 block text-[.68rem] ${screen === item.id ? 'text-white/75' : 'text-soft'}`}>{item.hint}</span>
+          </button>
+        ))}
+      </nav>
+
+      {screen !== 'live' && notice && <p role="status" className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-soft">{notice}</p>}
+
+      {screen === 'knowledge' && (
+        <section className={card}>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-[.7rem] font-bold uppercase tracking-[.14em] text-accent">Knowledge system</p>
+              <h2 className="mt-1 font-display text-2xl font-semibold text-ink">معرفةٌ تعرف حدودها.</h2>
+              <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">خمسة أوضاع داخل تجربة واحدة؛ كل وضع يصرّح بما يستطيع فعله، ويفصل أرشيف الدكتور عن البحث الخارجي والتدخل الإنساني.</p>
+            </div>
+            <button type="button" className={secondary} onClick={() => void refresh()} disabled={busy}>{busy ? 'يحدّث…' : 'تحديث المؤشرات'}</button>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">الأدلة المعتمدة</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.evidence.enabled}</p><p className="text-[.7rem] text-soft">من أصل {knowledge.evidence.total}</p></article>
+            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">جلسات مسجلة محليًا</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.conversations.active}</p><p className="text-[.7rem] text-soft">من دون عرض نصوصها</p></article>
+            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">فجوات تحتاج مادة</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.conversations.gaps.reduce((sum, item) => sum + item.total, 0)}</p><p className="text-[.7rem] text-soft">مصنّفة موضوعيًا بلا نصوص شخصية</p></article>
+          </div>
+          <div className="mt-5 grid gap-3 lg:grid-cols-5">
+            {knowledge.modes.map((mode, index) => (
+              <article key={mode.id} className="rounded-2xl border border-hair bg-canvas p-4">
+                <p className="text-[.66rem] font-semibold text-accent">0{index + 1}</p>
+                <h3 className="mt-2 text-[.88rem] font-semibold text-ink">{mode.label}</h3>
+                <p className="mt-2 text-[.72rem] leading-relaxed text-soft">{mode.boundary}</p>
+              </article>
+            ))}
+          </div>
+          <div className="mt-5 grid gap-3 lg:grid-cols-[1.1fr_.9fr]">
+            <div className="rounded-2xl border border-hair bg-canvas p-4">
+              <h3 className="text-[.88rem] font-semibold text-ink">فجوات المعرفة</h3>
+              <p className="mt-1 text-[.72rem] leading-relaxed text-soft">بيانات مجمعة فقط. لا تظهر الرسالة الأصلية ولا صاحبها.</p>
+              <div className="mt-3 grid gap-2">
+                {!knowledge.conversations.gaps.length && <p className="rounded-xl border border-dashed border-hair p-4 text-[.76rem] text-soft">لا توجد فجوات غير محلولة حتى الآن.</p>}
+                {knowledge.conversations.gaps.slice(0, 8).map((gap) => (
+                  <div key={`${gap.topic || 'unclassified'}-${gap.reason}`} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hair px-3 py-3">
+                    <div><p className="text-[.78rem] font-semibold text-ink">{gap.topic || 'موضوع غير مصنّف'}</p><p className="mt-1 text-[.68rem] text-soft">{gap.reason} · تكررت {gap.total} مرة</p></div>
+                    <button type="button" className={secondary} onClick={() => turnGapIntoCampaign(gap)}>حوّلها إلى حملة</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-accent/25 bg-accent/[.045] p-4">
+              <h3 className="text-[.88rem] font-semibold text-ink">دورة المعرفة الحية</h3>
+              <p className="mt-2 text-[.76rem] leading-relaxed text-soft">السؤال المتكرر يتحول إلى فجوة مجهولة الهوية، ثم إلى مادة أو حملة موثقة، ثم يعود إلى الموقع والبوت بعد اعتمادك. لا ينتقل أي نص شخصي إلى الاستوديو.</p>
+              <p className="mt-4 text-[.7rem] leading-relaxed text-accent">{knowledge.privacy}</p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {screen === 'conversations' && (
+        <section className={card}>
+          <p className="text-[.7rem] font-bold uppercase tracking-[.14em] text-accent">Privacy-safe signals</p>
+          <h2 className="mt-1 font-display text-2xl font-semibold text-ink">المحادثات بوصفها مؤشرات، لا صندوق تجسس.</h2>
+          <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">تعرض اللوحة النية ودرجة الفهم ومكان انقطاع الحوار فقط، من دون الرسائل أو الأرقام أو الأسماء.</p>
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            <div className="rounded-2xl border border-hair bg-canvas p-4">
+              <h3 className="text-[.86rem] font-semibold text-ink">أكثر النيات ورودًا</h3>
+              <div className="mt-3 grid gap-2">
+                {!knowledge.conversations.intents.length && <p className="text-[.74rem] text-soft">لا توجد بيانات بعد.</p>}
+                {knowledge.conversations.intents.slice(0, 12).map((item) => (
+                  <div key={item.intent} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-hair px-3 py-2.5">
+                    <div><p className="text-[.78rem] font-semibold text-ink">{item.intent}</p><p className="text-[.66rem] text-soft">ثقة وسطية {Math.round(item.confidence * 100)}٪</p></div>
+                    <span className="font-display text-xl text-accent">{item.total}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-hair bg-canvas p-4">
+              <h3 className="text-[.86rem] font-semibold text-ink">أين انقطع الحوار؟</h3>
+              <div className="mt-3 grid gap-2">
+                {!knowledge.conversations.gaps.length && <p className="text-[.74rem] text-soft">لا توجد فجوات غير محلولة.</p>}
+                {knowledge.conversations.gaps.slice(0, 12).map((item) => (
+                  <div key={`${item.topic || 'unclassified'}-${item.reason}`} className="flex items-center justify-between gap-3 rounded-xl border border-hair px-3 py-2.5">
+                    <div><p className="text-[.76rem] font-semibold text-ink">{item.topic || 'موضوع غير مصنّف'}</p><p className="mt-1 text-[.66rem] text-soft">{item.reason}</p></div><span className="font-display text-xl text-accent">{item.total}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 rounded-2xl border border-accent/25 bg-accent/[.045] p-4 text-[.76rem] leading-relaxed text-soft">التدخل الإنساني النشط الآن: <strong className="text-ink">{knowledge.conversations.human}</strong>. هذه القيمة تعدّ الجلسات المحمية بعد تدخل الدكتور، ولا تكشف محتواها.</div>
+        </section>
+      )}
+
+      {screen === 'personality' && (
+        <section className={card}>
+          <p className="text-[.7rem] font-bold uppercase tracking-[.14em] text-accent">Conversation character</p>
+          <h2 className="mt-1 font-display text-2xl font-semibold text-ink">شخصية دافئة بلا تمثيل.</h2>
+          <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">الإعدادات تضبط الإيقاع، ولا تسمح للبوت بادعاء أنه الدكتور أو بتذكر تفضيل من دون موافقة صريحة.</p>
+          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <label className="grid gap-2 text-[.76rem] font-semibold text-ink">طول الإجابة
+              <select className={input} value={personality.verbosity} onChange={(event) => setPersonality((current) => ({ ...current, verbosity: event.target.value as KnowledgePersonality['verbosity'] }))}>
+                <option value="brief">مختصرة</option><option value="layered">متدرجة</option><option value="detailed">تفصيلية</option>
+              </select>
+            </label>
+            <label className="grid gap-2 text-[.76rem] font-semibold text-ink">نبرة اللغة
+              <select className={input} value={personality.dialect} onChange={(event) => setPersonality((current) => ({ ...current, dialect: event.target.value as KnowledgePersonality['dialect'] }))}>
+                <option value="formal-arabic">عربية فصيحة</option><option value="kuwaiti-light">كويتية خفيفة</option><option value="neutral-arabic">عربية محايدة</option>
+              </select>
+            </label>
+            <label className="grid gap-2 text-[.76rem] font-semibold text-ink">المبادرة
+              <select className={input} value={personality.initiative} onChange={(event) => setPersonality((current) => ({ ...current, initiative: event.target.value as KnowledgePersonality['initiative'] }))}>
+                <option value="none">لا يسأل</option><option value="one-question">سؤال واحد له قيمة</option><option value="guided">حوار موجّه</option>
+              </select>
+            </label>
+            <label className="grid gap-2 text-[.76rem] font-semibold text-ink">التوقيع الآلي
+              <select className={`${input} cursor-not-allowed opacity-80`} value="always" disabled aria-describedby="bot-signature-safety">
+                <option value="always">دائمًا — حماية ثابتة</option>
+              </select>
+              <span id="bot-signature-safety" className="text-[.64rem] font-normal leading-relaxed text-soft">لا يمكن تعطيله حتى لا يُفهم الرد الآلي على أنه صادر من الدكتور.</span>
+            </label>
+          </div>
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-hair bg-canvas p-4">
+            <div><p className="text-[.8rem] font-semibold text-ink">الذاكرة: بموافقة صريحة فقط</p><p className="mt-1 text-[.72rem] leading-relaxed text-soft">لا يستنتج الجنس أو اللقب أو التفضيلات من الاسم، ولا يحفظها لمجرد تكرار الحديث.</p></div>
+            <button type="button" className={primary} onClick={() => void savePersonality()}>حفظ الشخصية</button>
+          </div>
+        </section>
+      )}
+
+      {screen === 'protection' && (
+        <section className={card}>
+          <p className="text-[.7rem] font-bold uppercase tracking-[.14em] text-accent">Evidence firewall</p>
+          <h2 className="mt-1 font-display text-2xl font-semibold text-ink">المصدر قبل الجواب.</h2>
+          <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">أي رابط خارجي يظل ممنوعًا حتى يُسجل هنا بدليله، ثم يطابق الحارس المعرّف والرابط والاقتباس والادعاء حرفيًا قبل الإرسال.</p>
+          <div className="mt-5 grid gap-3 lg:grid-cols-4">
+            {Object.entries(knowledge.sourcePolicies).map(([domain, policies]) => (
+              <article key={domain} className="rounded-2xl border border-hair bg-canvas p-4">
+                <h3 className="text-[.82rem] font-semibold text-ink">{domain === 'education' ? 'التعليم' : domain === 'health' ? 'الصحة' : domain === 'law' ? 'القانون' : 'الحديث والمتغير'}</h3>
+                <ul className="mt-3 grid gap-1.5 text-[.7rem] leading-relaxed text-soft">{policies.map((policy) => <li key={policy}>— {policy}</li>)}</ul>
+              </article>
+            ))}
+          </div>
+          <div className="mt-5 grid gap-4 xl:grid-cols-[.9fr_1.1fr]">
+            <div className="rounded-2xl border border-hair bg-canvas p-4">
+              <h3 className="text-[.88rem] font-semibold text-ink">اعتماد دليل خارجي</h3>
+              <p className="mt-1 text-[.7rem] leading-relaxed text-soft">لا يجلب النظام مصدرًا بنفسه ولا يفترض ترخيصه؛ أنت تعتمد السجل، والحارس يقيّد استخدامه بالصياغة المحفوظة.</p>
+              <div className="mt-4 grid gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <select className={input} value={evidenceForm.domain} onChange={(event) => setEvidenceForm((current) => ({ ...current, domain: event.target.value }))}><option value="education">التعليم</option><option value="health">الصحة</option><option value="law">القانون</option><option value="current">حديث ومتغير</option></select>
+                  <input className={input} value={evidenceForm.sourceType} onChange={(event) => setEvidenceForm((current) => ({ ...current, sourceType: event.target.value }))} placeholder="نوع المصدر" />
+                </div>
+                <input className={input} value={evidenceForm.sourceName} onChange={(event) => setEvidenceForm((current) => ({ ...current, sourceName: event.target.value }))} placeholder="الجامعة أو الجهة أو الدورية" />
+                <input className={input} value={evidenceForm.title} onChange={(event) => setEvidenceForm((current) => ({ ...current, title: event.target.value }))} placeholder="عنوان المصدر" />
+                <textarea className={`${input} min-h-24 resize-y`} value={evidenceForm.claim} onChange={(event) => setEvidenceForm((current) => ({ ...current, claim: event.target.value }))} placeholder="الادعاء المحدد الذي يسمح للبوت باستخدامه" />
+                <textarea className={`${input} min-h-20 resize-y`} value={evidenceForm.quote} onChange={(event) => setEvidenceForm((current) => ({ ...current, quote: event.target.value }))} placeholder="اقتباس حرفي اختياري" />
+                <input dir="ltr" className={input} value={evidenceForm.url} onChange={(event) => setEvidenceForm((current) => ({ ...current, url: event.target.value }))} placeholder="https:// المصدر الأصلي" />
+                <div className="grid gap-3 sm:grid-cols-2"><input className={input} value={evidenceForm.publishedAt} onChange={(event) => setEvidenceForm((current) => ({ ...current, publishedAt: event.target.value }))} placeholder="تاريخ النشر" /><input className={input} value={evidenceForm.authority} onChange={(event) => setEvidenceForm((current) => ({ ...current, authority: event.target.value }))} placeholder="الجهة أو المؤلف" /></div>
+                <button type="button" className={primary} disabled={evidenceBusy} onClick={() => void saveEvidence()}>{evidenceBusy ? 'يعتمد…' : 'اعتماد الدليل'}</button>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-hair bg-canvas p-4">
+              <div className="flex items-center justify-between gap-3"><h3 className="text-[.88rem] font-semibold text-ink">سجل الأدلة</h3><span className="rounded-full border border-hair px-3 py-1 text-[.68rem] text-soft">{knowledge.evidence.enabled} معتمد</span></div>
+              <div className="mt-4 grid max-h-[38rem] gap-2 overflow-y-auto pl-1">
+                {!trustedEvidence.length && <p className="rounded-xl border border-dashed border-hair p-5 text-center text-[.74rem] text-soft">لا توجد أدلة خارجية بعد؛ لذلك يرفض وضع البحث الموثق التخمين تلقائيًا.</p>}
+                {trustedEvidence.map((item) => (
+                  <article key={item.id} className="rounded-xl border border-hair p-3">
+                    <div className="flex items-start justify-between gap-3"><div><p className="text-[.78rem] font-semibold text-ink">{item.title}</p><p className="mt-1 text-[.66rem] text-soft">{item.sourceName} · {item.domain}</p></div><span className={`rounded-full px-2 py-1 text-[.62rem] ${item.enabled ? 'bg-accent/10 text-accent' : 'border border-hair text-soft'}`}>{item.enabled ? 'معتمد' : 'موقوف'}</span></div>
+                    <p className="mt-2 text-[.7rem] leading-relaxed text-soft">{item.claim}</p>
+                    <p dir="ltr" className="mt-2 truncate text-[.62rem] text-accent">{item.url}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {screen === 'live' && (
+        <>
       {/* حتى قسم الحالة يُطوى بأمر الدكتور. لكن الحالة نفسها (متصل/غير متصل)
           تبقى في العنوان — فما فائدة كرتٍ يخفي الخبر الوحيد الذي تريده بنظرة؟ */}
       <details className={card}>
@@ -545,6 +818,8 @@ export function WhatsAppAgentPanel() {
 
 
       {/* حُذف «التشغيل المحلي» بأمر الدكتور — إزعاجٌ بصريّ بلا فائدة. */}
+        </>
+      )}
     </div>
   )
 }

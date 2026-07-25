@@ -259,24 +259,24 @@ function SinceLastVisit() {
 
   return (
     <div className="border-t border-hair bg-wash px-4 py-3.5 sm:px-6 md:px-11">
-      <div className="mx-auto grid max-w-shell gap-2.5 md:rail md:flex md:items-center md:gap-5 md:overflow-x-auto md:whitespace-nowrap">
+      <div className="rail mx-auto flex max-w-shell snap-x snap-mandatory items-stretch gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:items-center md:gap-5 md:whitespace-nowrap">
         {continuation && (
-          <Link to={`/articles/${continuation.article.slug}`} className="group relative grid min-w-0 gap-1 rounded-xl border border-hair bg-canvas px-3.5 py-3 text-[.8rem] text-soft transition-colors hover:border-accent md:flex md:shrink-0 md:items-center md:gap-2.5 md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
-            <span className="font-semibold text-accent">✦ كنت تتتبع أثر {continuation.label}</span>
+          <Link to={`/articles/${continuation.article.slug}`} className="group relative grid min-h-[8.25rem] w-[84vw] max-w-[27rem] shrink-0 snap-start content-center gap-1 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft transition-colors hover:border-accent md:min-h-0 md:w-auto md:max-w-none md:items-center md:gap-2.5 md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
+            <span className="font-semibold text-accent">كنت تتتبع أثر {continuation.label}</span>
             <span className="min-w-0 pe-7 leading-relaxed text-ink transition-colors group-hover:text-accent md:pe-0">أكمل من هنا: «{continuation.article.title}»</span>
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent md:static md:translate-y-0 md:opacity-0 md:transition-opacity md:duration-300 md:group-hover:opacity-100">←</span>
           </Link>
         )}
         {resume && (
-          <Link to={`/articles/${resume.slug}`} className="group relative grid min-w-0 gap-1 rounded-xl border border-hair bg-canvas px-3.5 py-3 text-[.8rem] text-soft transition-colors hover:border-accent md:flex md:shrink-0 md:items-center md:gap-2.5 md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
-            <span className="font-semibold text-accent">↩ أكمل قراءتك</span>
+          <Link to={`/articles/${resume.slug}`} className="group relative grid min-h-[8.25rem] w-[84vw] max-w-[27rem] shrink-0 snap-start content-center gap-1 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft transition-colors hover:border-accent md:min-h-0 md:w-auto md:max-w-none md:items-center md:gap-2.5 md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
+            <span className="font-semibold text-accent">أكمل قراءتك</span>
             <span className="min-w-0 pe-7 leading-relaxed text-ink transition-colors group-hover:text-accent md:pe-0">«{resume.title}»</span>
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent md:static md:translate-y-0 md:opacity-0 md:transition-opacity md:duration-300 md:group-hover:opacity-100">←</span>
           </Link>
         )}
         {bits.length > 0 && (
-          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-hair bg-canvas px-3.5 py-3 text-[.8rem] text-soft md:shrink-0 md:flex-nowrap md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
-            <span className="w-full font-semibold text-accent md:w-auto">✦ منذ زيارتك الأخيرة</span>
+          <div className="flex min-h-[8.25rem] w-[84vw] max-w-[27rem] shrink-0 snap-start flex-wrap content-center items-center gap-x-3 gap-y-1 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft md:min-h-0 md:w-auto md:max-w-none md:flex-nowrap md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
+            <span className="w-full font-semibold text-accent md:w-auto">منذ زيارتك الأخيرة</span>
             {bits.map((b, i) => (
               <Link key={b.to} to={b.to} className="transition-colors hover:text-accent">
                 {b.t}{i < bits.length - 1 ? ' ·' : ''}
@@ -795,7 +795,7 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
     <>
       <section className="px-6 py-12 md:px-11 md:py-[70px]">
         <div className="mx-auto max-w-shell">
-          <SectionHead label="مقالاتي الفكرية" title="بصوتي الخاص." to="/articles" cta="عرض الكل" />
+          <SectionHead label="المقالات الفكرية" title="أفكارٌ تلاحق زمنها." to="/articles" cta="عرض الكل" />
           <div className="grid gap-8 md:grid-cols-[1.5fr_.5fr] md:gap-12">
             <FadeUp>
               {topArticles[0] && <Link to={`/articles/${topArticles[0].slug}`} data-hover className="group block">
@@ -814,7 +814,7 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
       </section>
       <section className="border-t border-hair bg-wash px-6 py-10 md:px-11 md:py-[70px]">
         <div className="mx-auto max-w-shell">
-          <SectionHead label="المساهمات العلمية" title="أبحاث محكّمة." to="/research" cta="عرض الكل" />
+          <SectionHead label="المساهمات العلمية" title="من السؤال إلى الدليل." to="/research" cta="عرض الكل" />
           <ol className="mt-2">
             {topPapers.map((paper, i) => <FadeUp key={paper.slug} delay={Math.min(i * 0.06, 0.24)}><li className={i ? 'border-t border-hair' : ''}><Link to={`/research/${paper.slug}`} className="group flex items-baseline gap-6 py-6"><span className="w-8 shrink-0 font-display text-[1.4rem] font-bold text-accent/70">{arNum(i + 1)}</span><span className="flex-1"><span className="block text-[1.1rem] font-medium leading-[1.7] text-ink transition-colors group-hover:text-accent">{paper.title}</span><span className="mt-1 block text-[.8rem] text-soft">{paper.meta}</span></span><span className="text-soft">←</span></Link></li></FadeUp>)}
           </ol>

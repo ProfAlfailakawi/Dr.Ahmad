@@ -70,6 +70,45 @@ function OrbitMark() {
   )
 }
 
+type TracePoint = { label: string; title: string; year?: string; to?: string; href?: string; current?: boolean }
+
+function IdeaTrace({ article, model }: { article: ArticleRecord; model: ReturnType<typeof buildIdeaLife> }) {
+  const older = model.timeLinks.find((item) => item.role === 'جذر')
+  const newer = model.timeLinks.find((item) => item.role === 'تطور')
+  const extension = model.impact.find((item) => item.kind === 'paper' || item.kind === 'book')
+  const points: TracePoint[] = [
+    older && { label: 'بداية سابقة', title: older.article.title, year: older.article.iso.slice(0, 4), to: `/articles/${older.article.slug}` },
+    { label: 'المقال الحالي', title: article.title, year: article.iso.slice(0, 4), current: true },
+    newer && { label: 'تطور لاحق', title: newer.article.title, year: newer.article.iso.slice(0, 4), to: `/articles/${newer.article.slug}` },
+    extension && { label: extension.kind === 'paper' ? 'امتداد بحثي' : 'امتداد في كتاب', title: extension.title, year: extension.year, to: extension.to, href: extension.url },
+  ].filter(Boolean) as TracePoint[]
+
+  if (points.length < 2) return null
+  return (
+    <section className="mt-10 rounded-[1.4rem] border border-hair bg-wash/35 px-4 py-5 md:px-6" aria-labelledby="idea-trace-title">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[.66rem] font-semibold text-accent">أثر الفكرة</p>
+          <h2 id="idea-trace-title" className="mt-1 font-display text-[1.05rem] font-semibold text-ink">مسارٌ موجز يفتح أصوله.</h2>
+        </div>
+        <Link to="/thought" className="text-[.7rem] font-semibold text-accent transition-opacity hover:opacity-70">المشهد الفكري الكامل ←</Link>
+      </div>
+      <ol className="relative mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden before:absolute before:right-4 before:top-[.55rem] before:h-px before:w-[calc(100%-2rem)] before:bg-hair">
+        {points.map((point, index) => {
+          const body = <>
+            <span className={`relative z-10 block h-3 w-3 rounded-full border ${point.current ? 'border-accent bg-accent' : 'border-accent/40 bg-canvas'}`} />
+            <span className="mt-3 block text-[.62rem] font-semibold text-accent">{point.label}{point.year ? ` · ${point.year}` : ''}</span>
+            <strong className="mt-1.5 block line-clamp-2 font-display text-[.8rem] font-medium leading-[1.6] text-ink">{point.title}</strong>
+          </>
+          const cls = `group relative w-[72vw] max-w-[17rem] shrink-0 snap-start rounded-xl border px-4 pb-4 pt-3 text-start transition-colors md:w-auto md:flex-1 ${point.current ? 'border-accent/35 bg-accent/[.045]' : 'border-hair bg-canvas hover:border-accent/35'}`
+          return <li key={`${point.label}-${point.title}-${index}`} className="contents">{point.to ? <Link to={point.to} className={cls}>{body}</Link> : point.href ? <a href={point.href} target="_blank" rel="noreferrer" className={cls}>{body}</a> : <div className={cls}>{body}</div>}</li>
+        })}
+      </ol>
+      <p className="mt-3 text-[.68rem] font-light leading-[1.75] text-soft">يُبنى هذا المسار من الصلات الظاهرة في الأرشيف. وهو يصف تطور الموضوع، لا يدّعي اقتباساً أو علاقة سببية من دون مصدر صريح.</p>
+    </section>
+  )
+}
+
 function SectionTitle({ index, title, sub }: { index: string; title: string; sub?: string }) {
   return (
     <header className="grid grid-cols-[2.2rem_1fr] gap-3 border-b border-hair pb-4">
@@ -447,7 +486,8 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
 
   return (
     <>
-      <section className="idea-life-entry mt-11 border-y border-hair py-4" aria-label="حياة الفكرة">
+      <IdeaTrace article={article} model={model} />
+      <section className="idea-life-entry mt-5 border-y border-hair py-4" aria-label="حياة الفكرة">
         <button ref={triggerButton} type="button" onClick={() => { if (isNew && model.updates.length) setTab('time'); setOpen(true) }} className="group flex w-full items-center justify-between gap-5 text-start">
           <span className="flex min-w-0 items-center gap-3.5">
             <OrbitMark />

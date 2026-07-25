@@ -336,7 +336,8 @@ export function analyzeStudioImageFromFile(file: File): Promise<StudioImagePassp
  * المحلي. لا يُستخدم للبحث الخارجي، ولا يتجاوز CORS أو حالة الترخيص. */
 export async function analyzeStudioImageFromUrl(url: string, fileName = 'library-image'): Promise<StudioImagePassport | null> {
   try {
-    const response = await fetch(url, { credentials: 'same-origin' })
+    const absolute = /^https?:\/\//i.test(url)
+    const response = await fetch(url, { credentials: absolute ? 'omit' : 'same-origin' })
     if (!response.ok) return null
     const blob = await response.blob()
     if (!blob.type.startsWith('image/')) return null

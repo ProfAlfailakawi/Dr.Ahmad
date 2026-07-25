@@ -4,7 +4,7 @@ import { FadeUp, Page, PageHead } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { useCmsContent } from '../lib/content'
 import { ideaWords } from '../lib/idea-life'
-import { PROJECT_START_YEAR, getJourneyYearsSpan } from '../lib/project-meta'
+import { PROJECT_START_YEAR, getMinimumCompletedJourneyYears } from '../lib/project-meta'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
@@ -80,7 +80,6 @@ export default function ThoughtOverview() {
       recurring: evolution[0],
       evolving: [...evolution].sort((a, b) => b.growth - a.growth || b.years - a.years)[0],
       strongest,
-      writingYears: getJourneyYearsSpan(),
     }
   }, [articles, books, papers])
 
@@ -99,17 +98,17 @@ export default function ThoughtOverview() {
           <FadeUp>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {[
-                { label: 'سنوات الرحلة العلمية', value: model.writingYears, note: 'منذ 2015 وحتى اليوم' },
-                { label: 'الكتب', value: books.length, note: 'مؤلفات علمية وفكرية منشورة' },
-                { label: 'الأبحاث', value: papers.length, note: 'دراسات ومساهمات محكمة' },
-                { label: 'المقالات', value: articles.length, note: 'نصوص منشورة داخل الأرشيف' },
+                { label: 'سنوات الرحلة العلمية', value: `${getMinimumCompletedJourneyYears()}+`, note: `بدأت عام ${PROJECT_START_YEAR}` },
+                { label: 'الكتب', value: number.format(books.length), note: 'مؤلفات علمية وفكرية منشورة' },
+                { label: 'الأبحاث', value: number.format(papers.length), note: 'دراسات ومساهمات محكمة' },
+                { label: 'المقالات', value: number.format(articles.length), note: 'نصوص منشورة داخل الأرشيف' },
               ].map((item) => (
                 <div key={item.label} className="flex min-h-[132px] flex-col justify-between rounded-[1.5rem] border border-hair bg-paper p-4 sm:p-5">
                   <div>
                     <span className="text-[.68rem] font-semibold leading-relaxed text-accent">{item.label}</span>
                     <p className="mt-1 text-[.62rem] leading-relaxed text-soft">{item.note}</p>
                   </div>
-                  <strong className="mt-4 block font-display text-[clamp(1.9rem,5vw,3rem)] font-semibold leading-none text-ink">{number.format(Number(item.value))}</strong>
+                  <strong className="mt-4 block font-display text-[clamp(1.9rem,5vw,3rem)] font-semibold leading-none text-ink">{item.value}</strong>
                 </div>
               ))}
             </div>

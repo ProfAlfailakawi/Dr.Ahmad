@@ -10,3 +10,7 @@ export function clampJourneyStartYear(years: number[]) {
   if (!sane.length) return PROJECT_START_YEAR
   return Math.min(PROJECT_START_YEAR, ...sane)
 }
+
+export function getMinimumCompletedJourneyYears(referenceDate = new Date()) {
+  return Math.max(1, referenceDate.getFullYear() - PROJECT_START_YEAR - 1)
+}

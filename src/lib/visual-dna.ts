@@ -335,9 +335,11 @@ export function analyzeStudioImageFromFile(file: File): Promise<StudioImagePassp
 /** يجلب صورةً يختارها المستخدم من مكتبة الموقع نفسها ثم يمرّرها إلى المحلل
  * المحلي. لا يُستخدم للبحث الخارجي، ولا يتجاوز CORS أو حالة الترخيص. */
 export async function analyzeStudioImageFromUrl(url: string, fileName = 'library-image'): Promise<StudioImagePassport | null> {
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), 6500)
   try {
     const absolute = /^https?:\/\//i.test(url)
-    const response = await fetch(url, { credentials: absolute ? 'omit' : 'same-origin' })
+    const response = await fetch(url, { credentials: absolute ? 'omit' : 'same-origin', signal: controller.signal })
     if (!response.ok) return null
     const blob = await response.blob()
     if (!blob.type.startsWith('image/')) return null
@@ -346,4 +348,5 @@ export async function analyzeStudioImageFromUrl(url: string, fileName = 'library
     const file = new File([blob], safeName.includes('.') ? safeName : `${safeName}.${extension}`, { type: blob.type })
     return analyzeStudioImageFromFile(file)
   } catch { return null }
+  finally { window.clearTimeout(timer) }
 }

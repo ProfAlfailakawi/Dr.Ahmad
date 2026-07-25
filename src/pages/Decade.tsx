@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { useCmsContent, useExtras } from '../lib/content'
+import { PROJECT_START_YEAR } from '../lib/project-meta'
 import type { ArticleRecord } from '../lib/cms'
 import { toRoot } from '../lib/dialect-lexicon'
 import { loadArticleBodies } from '../lib/article-bodies'
@@ -122,7 +123,7 @@ export default function Decade() {
     // النطاق الكامل من أول مقال فعلي إلى آخره — يتجدّد تلقائياً مع أي إضافة (لا يبدأ من latestYear-9)
     const allYears = dated.map((article) => Number(article.iso.slice(0, 4)))
     const latestYear = Math.max(...allYears)
-    const firstYear = Math.min(...allYears)
+    const firstYear = Math.min(PROJECT_START_YEAR, ...allYears)
     const span = latestYear - firstYear + 1
     const decadeArticles = dated
     const chapters: YearChapter[] = Array.from({ length: span }, (_, offset) => {
@@ -167,7 +168,7 @@ export default function Decade() {
       firstActive && {
         year: firstActive.year,
         title: 'بداية نافذة العقد',
-        description: `يظهر في الأرشيف ${number.format(firstActive.articles.length)} ${firstActive.articles.length === 1 ? 'نص' : 'نصوص'}، وكان «${firstActive.dominant}» الموضوع الأكثر حضوراً.`,
+        description: `تبدأ الرحلة من ${PROJECT_START_YEAR}، ويظهر في أول سنة نشطة داخل الأرشيف ${number.format(firstActive.articles.length)} ${firstActive.articles.length === 1 ? 'نص' : 'نصوص'}، وكان «${firstActive.dominant}» الموضوع الأكثر حضوراً.`,
       },
       growth && growth.delta > 0 && {
         year: growth.chapter.year,

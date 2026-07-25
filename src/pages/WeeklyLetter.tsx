@@ -5,6 +5,7 @@ import { JsonLd, useSeo } from '../components/seo'
 import { useCmsContent } from '../lib/content'
 import { SITE_URL, profile } from '../data'
 import { categoryLabel } from '../lib/content-taxonomy'
+import { PROJECT_START_ISO } from '../lib/project-meta'
 
 const arDigits = (value: number | string) => String(value).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])
 
@@ -24,7 +25,7 @@ function openingLine(body = '', excerpt = '') {
 export default function WeeklyLetter() {
   const { articles } = useCmsContent()
   const ordered = useMemo(() => [...articles].filter((a) => a.title && a.iso).sort((a, b) => b.iso.localeCompare(a.iso)), [articles])
-  const earliestIso = useMemo(() => ordered.length ? ordered[ordered.length - 1].iso : '2016-01-01', [ordered])
+  const earliestIso = useMemo(() => ordered.length ? ordered[ordered.length - 1].iso : PROJECT_START_ISO, [ordered])
   const latest = ordered[0]
 
   useSeo({

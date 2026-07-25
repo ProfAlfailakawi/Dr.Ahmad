@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useCmsContent } from '../lib/content'
+import { PROJECT_START_YEAR } from '../lib/project-meta'
 
 /* البصمة المعرفية — امتداد لفكرة «نواة الإنسان» في الهيرو:
    كل حلقة سنة، كل نقطة مقال في موضع شهره من سنته،
@@ -21,12 +22,13 @@ export default function KnowledgeFingerprint() {
       if (!byYear.has(year)) byYear.set(year, [])
       byYear.get(year)!.push(article.iso)
     }
-    const years = [...byYear.keys()].sort()
+    const latestActiveYear = Math.max(PROJECT_START_YEAR, ...[...byYear.keys()].map((value) => Number(value) || PROJECT_START_YEAR))
+    const years = Array.from({ length: latestActiveYear - PROJECT_START_YEAR + 1 }, (_, index) => String(PROJECT_START_YEAR + index))
     const rings = years.map((year, index) => ({ year, radius: R0 + index * RING_GAP }))
     const maxRing = R0 + Math.max(years.length - 1, 0) * RING_GAP
 
     const dots = years.flatMap((year, yearIndex) => {
-      const items = byYear.get(year)!
+      const items = byYear.get(year) || []
       const radius = R0 + yearIndex * RING_GAP
       return items.map((iso, index) => {
         const date = new Date(iso)

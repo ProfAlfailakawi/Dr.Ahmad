@@ -4,6 +4,7 @@ import { FadeUp, Page, PageHead } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { useCmsContent } from '../lib/content'
 import { ideaWords } from '../lib/idea-life'
+import { PROJECT_START_YEAR, getJourneyYearsSpan } from '../lib/project-meta'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
@@ -26,7 +27,7 @@ export default function ThoughtOverview() {
       return map
     }, new Map<string, number>()).entries()].sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0], 'ar'))
 
-    const firstYear = years[0] || '2015'
+    const firstYear = String(PROJECT_START_YEAR)
     const latestYear = years[years.length - 1] || firstYear
     const midpoint = years[Math.max(0, Math.floor(years.length / 2))] || firstYear
     const periods = [
@@ -79,6 +80,7 @@ export default function ThoughtOverview() {
       recurring: evolution[0],
       evolving: [...evolution].sort((a, b) => b.growth - a.growth || b.years - a.years)[0],
       strongest,
+      writingYears: getJourneyYearsSpan(),
     }
   }, [articles, books, papers])
 
@@ -95,16 +97,19 @@ export default function ThoughtOverview() {
       <section className="px-6 py-14 md:px-11 md:py-20">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {[
-                ['سنوات الكتابة', model.years.length],
-                ['الكتب', books.length],
-                ['الأبحاث', papers.length],
-                ['المقالات', articles.length],
-              ].map(([label, value]) => (
-                <div key={String(label)} className="rounded-[1.5rem] border border-hair bg-paper p-5">
-                  <span className="text-[.7rem] font-semibold text-accent">{label}</span>
-                  <strong className="mt-2 block font-display text-3xl font-semibold text-ink">{number.format(Number(value))}</strong>
+                { label: 'سنوات الرحلة العلمية', value: model.writingYears, note: 'منذ 2015 وحتى اليوم' },
+                { label: 'الكتب', value: books.length, note: 'مؤلفات علمية وفكرية منشورة' },
+                { label: 'الأبحاث', value: papers.length, note: 'دراسات ومساهمات محكمة' },
+                { label: 'المقالات', value: articles.length, note: 'نصوص منشورة داخل الأرشيف' },
+              ].map((item) => (
+                <div key={item.label} className="flex min-h-[132px] flex-col justify-between rounded-[1.5rem] border border-hair bg-paper p-4 sm:p-5">
+                  <div>
+                    <span className="text-[.68rem] font-semibold leading-relaxed text-accent">{item.label}</span>
+                    <p className="mt-1 text-[.62rem] leading-relaxed text-soft">{item.note}</p>
+                  </div>
+                  <strong className="mt-4 block font-display text-[clamp(1.9rem,5vw,3rem)] font-semibold leading-none text-ink">{number.format(Number(item.value))}</strong>
                 </div>
               ))}
             </div>

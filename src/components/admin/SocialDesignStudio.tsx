@@ -149,22 +149,25 @@ function probeImageUrl(url: string, timeoutMs = 3500): Promise<ImageProbe | null
   })
 }
 
-async function verifyExternalVisuals(items: ExternalVisualResult[], limit = 10) {
+async function verifyExternalVisuals(items: ExternalVisualResult[], limit = 10): Promise<ExternalVisualResult[]> {
   const candidates = items.slice(0, Math.max(limit, 12))
-  const checked = await Promise.all(candidates.map(async (item) => {
-    const urls = [...new Set([item.thumbnailUrl, item.imageUrl].filter(Boolean))]
+  const checked: Array<ExternalVisualResult | null> = await Promise.all(candidates.map(async (item): Promise<ExternalVisualResult | null> => {
+    const urls = [...new Set([item.thumbnailUrl, item.imageUrl].filter((url): url is string => Boolean(url)))]
     for (const url of urls) {
       const probe = await probeImageUrl(url)
-      if (probe) return {
-        ...item,
-        thumbnailUrl: probe.url,
-        width: item.width || probe.width || undefined,
-        height: item.height || probe.height || undefined,
+      if (probe) {
+        const verified: ExternalVisualResult = {
+          ...item,
+          thumbnailUrl: probe.url,
+          ...(item.width || probe.width ? { width: item.width || probe.width } : {}),
+          ...(item.height || probe.height ? { height: item.height || probe.height } : {}),
+        }
+        return verified
       }
     }
     return null
   }))
-  return checked.filter((item): item is ExternalVisualResult => Boolean(item)).slice(0, limit)
+  return checked.filter((item): item is ExternalVisualResult => item !== null).slice(0, limit)
 }
 
 function RemoteVisualThumbnail({ src, alt, className }: { src: string; alt: string; className: string }) {

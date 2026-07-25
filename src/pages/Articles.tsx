@@ -56,7 +56,7 @@ export default function Articles() {
   // السنة الأولى تُحسب من المقالات نفسها — تتحدّث تلقائياً مع أي إضافة
   const years = articles.map((a) => Number(a.iso.slice(0, 4))).filter((y) => y >= 1990)
   const firstYear = years.length ? Math.min(...years) : new Date().getFullYear()
-  useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: `${articles.length} مقالاً فكرياً في التعليم والتقنية والمجتمع، منذ ${firstYear}.` })
+  useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: `مؤلفاتي العلمية والفكرية في التعليم والتكنولوجيا والتغيير المجتمعي — ${articles.length} مقالاً.` })
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('الكل')
   const categories = useMemo(() => dynamicArticleCategories(articles), [articles])
@@ -117,7 +117,7 @@ export default function Articles() {
       <PageHead
         label="المقالات الفكرية"
         title="بصوتي الخاص."
-        sub={`${articles.length} مقالاً في التعليم والتقنية والمجتمع، منشورة في الصحافة الكويتية منذ ${firstYear}.`}
+        sub="مؤلفاتي العلمية والفكرية في التعليم والتكنولوجيا والتغيير المجتمعي."
       />
 
       <section className="sticky top-16 z-[120] border-b border-hair bg-canvas/92 px-4 py-3 backdrop-blur-md sm:px-6 md:px-11">

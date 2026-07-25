@@ -202,7 +202,7 @@ export default function Inbox() {
     : "بانتظار أول تحديث حي";
 
   return (
-    <Page>
+    <Page className="inbox-page">
       <PageHead
         label="رسائل على الهامش"
         title="رسالةٌ تفتح نافذة."
@@ -224,10 +224,10 @@ export default function Inbox() {
                   <span className="text-[.72rem] font-bold text-accent">الأرشيف الذي يحاور نفسه</span>
                   <h2 id="archive-dialogue-title" className="mt-2 font-display text-[clamp(1.45rem,3vw,2.25rem)] font-semibold leading-[1.55] text-ink">ليست اقتباسات عشوائية؛ إنها خيوط بين المواد.</h2>
                 </div>
-                <p className="text-[.84rem] font-light leading-[1.9] text-soft">كل بطاقة تصرّح هل هي فكرة مستخلصة أم خلاصة مركبة، وتعيدك إلى المصادر العامة القابلة للفتح. لا تُعرض نصوص الكتب الخاصة ولا تُنسب صياغة جديدة إلى الدكتور بوصفها اقتباساً.</p>
+                <p className="text-[.84rem] font-light leading-[1.9] text-soft">كلُّ بطاقةٍ تُصرّح بطبيعتها — فكرةٌ مستخلَصةٌ أم خلاصةٌ مركّبة — وتفتح لك مصادرها العامّة كما هي. لا نعرض نصَّ كتابٍ خاص، ولا نضع على لساني صياغةً لم أقلها.</p>
               </div>
             </FadeUp>
-            <div className="mobile-card-rail mt-8 grid gap-5 md:grid-cols-2">
+            <div className="mt-8 grid gap-5 md:grid-cols-2">
               {archiveDialogues.map((item, index) => (
                 <FadeUp key={item.id} delay={Math.min(index * .06, .2)}>
                   <article className="flex h-full min-w-0 flex-col overflow-hidden rounded-[1.5rem] border border-hair bg-canvas p-6 shadow-[0_18px_55px_-48px_rgba(21,32,44,.55)] transition hover:border-accent/55">

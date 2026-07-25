@@ -39,7 +39,7 @@ export default function Research() {
         name: 'المساهمات العلمية', url: `${SITE_URL}/research`, inLanguage: 'ar',
         mainEntity: { '@type': 'ItemList', numberOfItems: papers.length, itemListElement: papers.map((paper, index) => ({ '@type': 'ListItem', position: index + 1, url: `${SITE_URL}/research/${paper.slug}`, name: paper.title })) },
       }} />
-      <PageHead label="المساهمات العلمية" title="الأثر العلمي." sub="أبحاث محكّمة تُعرض بهدوء، وتفتح تفاصيلها العلمية ومصادرها الأصلية عند الطلب." />
+      <PageHead label="المساهمات العلمية" title="الأثر العلمي." sub="أبحاثي المحكّمة، تُعرَض بهدوء وتنفتح على تفاصيلها ومصادرها الأصلية حين تطلبها." />
 
       <section className="px-6 py-16 md:px-11 md:py-24">
         <div className="mx-auto max-w-shell">

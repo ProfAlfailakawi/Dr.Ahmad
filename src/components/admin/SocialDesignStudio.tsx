@@ -1079,7 +1079,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             {/* المعاينة تثبت يميناً والأدوات وحدها تنساب يساراً (أمر الدكتور:
                «خلّ مكان المعاينة ثابتاً والأدوات متحركة») */}
             <div className="grid min-h-0 flex-1 gap-5 p-4 md:p-6 lg:grid-cols-[minmax(0,1.32fr)_minmax(320px,.7fr)]">
-              <div className="grid content-start justify-items-center rounded-[1.5rem] border border-hair bg-canvas p-3 md:p-6 lg:sticky lg:top-0 lg:self-start">
+              <div className="grid content-start justify-items-center rounded-[1.5rem] border border-hair bg-canvas p-3 md:p-6 min-h-0 lg:max-h-full lg:overflow-y-auto">
                 {/* «أرني كما يراه المتابع» (النقطة ٢٠) + «خريطة الانتباه» (النقطة ٨) */}
                 <div className="mb-3 flex w-full flex-wrap items-center justify-between gap-2">
                   <span className="text-[.66rem] font-semibold text-soft">{phoneView ? 'كما يراه المتابع على هاتفه' : 'المعاينة'}</span>
@@ -1095,7 +1095,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                   </div>
                 )}
                 {phoneView && (
-                  <div className="mx-auto w-full" style={{ maxWidth: 300 }}>
+                  <div className="mx-auto w-full" style={{ maxWidth: `min(300px, calc(62vh * ${selected.format.width} / ${selected.format.height}))` }}>
                     <div className="relative rounded-[2.4rem] border-[11px] border-ink bg-ink shadow-2xl">
                       <div className="absolute left-1/2 top-2 z-10 h-3.5 w-24 -translate-x-1/2 rounded-full bg-black/60" />
                       <div className="overflow-hidden rounded-[1.7rem] bg-black"><Preview plan={selected} className="w-full" /></div>
@@ -1106,7 +1106,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 {/* الكانفس الحر: المعاينة نفسها تصير سطح سحبٍ للطبقات. نحدّ عرضها
                    بحسب نسبة المقاس كي لا يتجاوز ارتفاعُها الشاشة فتُقصّ («المعاينة
                    مو كامله») — الآن يظهر التصميمُ كاملاً مهما طال (ستوري وغيره). */}
-                <div ref={canvasRef} className={`relative mx-auto w-full ${phoneView ? 'hidden' : ''}`} style={{ maxWidth: `min(100%, calc(76vh * ${selected.format.width} / ${selected.format.height}))`, touchAction: freeMode ? 'none' : undefined }}>
+                <div ref={canvasRef} className={`relative mx-auto w-full ${phoneView ? 'hidden' : ''}`} style={{ maxWidth: `min(100%, calc(68vh * ${selected.format.width} / ${selected.format.height}))`, touchAction: freeMode ? 'none' : undefined }}>
                   <Preview plan={selected} className="w-full" />
                   {attention && <AttentionOverlay map={attention} w={selected.format.width} h={selected.format.height} />}
                   {freeMode && (selected.overlays || []).map((overlay) => (

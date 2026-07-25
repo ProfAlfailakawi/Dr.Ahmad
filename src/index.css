@@ -3302,3 +3302,29 @@ body.selection-active .floating-actions {
 .citation-body-v2 {
   overflow-wrap: anywhere;
 }
+
+/* استوديو التصاميم — معاينة كاملة ومتوازنة داخل شاشة التحرير.
+   Desktop يحتفظ بالأعمدة الثلاثة، والهاتف يعرض لوحة واحدة في كل مرة. */
+.social-editor-canvas {
+  max-width: min(100%, calc((100dvh - 190px) * var(--preview-ratio, 1)));
+  max-height: calc(100dvh - 190px);
+}
+.social-editor-phone-preview {
+  max-width: min(300px, calc(62dvh * var(--preview-ratio, 1)));
+}
+@media (max-width: 1023px) {
+  .social-editor-canvas {
+    max-width: min(100%, calc((100dvh - 230px) * var(--preview-ratio, 1)));
+    max-height: calc(100dvh - 230px);
+  }
+  .social-editor-phone-preview {
+    max-width: min(270px, calc((100dvh - 250px) * var(--preview-ratio, 1)));
+    max-height: calc(100dvh - 250px);
+  }
+}
+@media (max-width: 420px) {
+  .social-editor-canvas {
+    max-width: min(100%, calc((100dvh - 218px) * var(--preview-ratio, 1)));
+    max-height: calc(100dvh - 218px);
+  }
+}

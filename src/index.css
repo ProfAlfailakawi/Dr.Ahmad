@@ -1498,14 +1498,14 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
     -ms-overflow-style: none;
     touch-action: pan-x pan-y;
   }
-  .home-page :is(.rail, .mobile-card-rail, .mobile-paired-grid) {
-    /* الرئيسية تحديداً: الكروت تتحرّك يمين/يسار فقط عند السحب. نلغي أي
+  :is(.home-page, .inbox-page) :is(.rail, .mobile-card-rail, .mobile-paired-grid) {
+    /* الرئيسية وصندوق الوارد: الكروت تتحرّك يمين/يسار فقط عند السحب. نلغي أي
        ترجمة رأسية من حركات الدخول داخل السكك الأفقية، فيبقى الإحساس أفخم
-       وأهدأ ولا يشعر الزائر أن البطاقة «تنقز» تحت إصبعه. */
+       وأهدأ ولا يشعر الزائر أن البطاقة «تنقز» أو تصعد وتنزل تحت إصبعه. */
     touch-action: pan-x;
     overscroll-behavior-y: contain;
   }
-  .home-page :is(.rail, .mobile-card-rail, .mobile-paired-grid) > [style*="transform"] {
+  :is(.home-page, .inbox-page) :is(.rail, .mobile-card-rail, .mobile-paired-grid) > [style*="transform"] {
     transform: none !important;
   }
   .mobile-card-rail::-webkit-scrollbar,

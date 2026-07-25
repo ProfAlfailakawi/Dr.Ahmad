@@ -322,7 +322,7 @@ export default function Curated() {
       <PageHead
         label="من اختياراتي"
         title="المختارات."
-        sub="أحداث وأبحاث وأدوات حديثة، بروابط أصلية ومصادر موثوقة."
+        sub="ما أختاره لكم من أحداثٍ وأبحاثٍ وأدواتٍ حديثة، بمصادرها الأصلية وروابطها الموثوقة."
       />
 
       <section className="border-b border-hair px-6 py-14 md:px-11 md:py-20">

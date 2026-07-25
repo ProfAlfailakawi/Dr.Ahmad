@@ -174,7 +174,11 @@ export function detectGender(row) {
   if (FEMALE_TITLE.test(name)) return 'f'
   if (MALE_TITLE.test(name)) return 'm'
   const bare = norm(raw).replace(HONORIFIC, '').trim()
-  const first = (bare.split(/\s+/).filter(Boolean)[0] || '').replace(/ة$/, 'ه')
+  /* الاسم المركّب («عبد الرحمن») يُلمّ بلا مسافة لمطابقة المعجم («عبدالرحمن»)،
+     فيُنادى «عزيزي الدكتور عبد الرحمن» لا «عزيزنا» حياداً. */
+  const words = bare.split(/\s+/).filter(Boolean)
+  const head = words[0] || ''
+  const first = (COMPOUND_HEAD.test(head) && words[1] ? `${head}${words[1]}` : head).replace(/ة$/, 'ه')
   if (FEMALE_NAMES.has(first)) return 'f'
   if (MALE_NAMES.has(first)) return 'm'
   /* تاء التأنيث آخر الاسم الأول — دليلٌ أضعف، لا يُغلَّب على ذكورة اسمٍ معروف */

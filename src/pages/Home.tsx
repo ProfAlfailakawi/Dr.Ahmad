@@ -13,6 +13,7 @@ import HumanCoreHero from '../components/home/HumanCoreHero'
 import { ideaContinuation } from '../lib/idea-memory'
 import { sortUpcomingEvents } from '../lib/events'
 import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
+import { PROJECT_START_YEAR } from '../lib/project-meta'
 
 const arNum = (n: number) => String(n).padStart(2, '0')
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
@@ -496,7 +497,7 @@ function ImpactTimeline() {
   const { articles, books, papers } = useCmsContent()
   const years = articles.map((a) => +a.iso.slice(0, 4))
   if (!articles.length) return null
-  const firstYear = Math.min(...years)
+  const firstYear = Math.min(PROJECT_START_YEAR, ...years)
   const latestYear = Math.max(...years)
   const byYear: Record<number, number> = {}
   years.forEach((y) => { byYear[y] = (byYear[y] || 0) + 1 })
@@ -504,7 +505,7 @@ function ImpactTimeline() {
   const latest = articles[0]
 
   const steps = [
-    { y: String(firstYear), t: 'البداية — أول مقالٍ فكري في الصحافة الكويتية.' },
+    { y: String(firstYear), t: 'البداية — انطلاق الرحلة العلمية التي تشكّل منها المشروع الفكري.' },
     { y: `${peakYear[0]}`, t: `ذروة الإنتاج — ${peakYear[1]} مقالاً في عامٍ واحد.` },
     { y: 'مرجع', t: `أرشيفٌ مؤلَّف — ${books.length} كتب و${papers.length} بحثاً محكّماً.` },
     { y: String(latestYear), t: `الأحدث — «${latest.title}».` },

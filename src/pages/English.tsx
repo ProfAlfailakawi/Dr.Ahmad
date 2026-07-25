@@ -17,6 +17,7 @@ import {
 } from '../data-en'
 import { useCvLinks } from '../lib/settings'
 import { useTrackView } from '../lib/views'
+import { PROJECT_START_YEAR } from '../lib/project-meta'
 
 /* يقلب المستند إلى الإنجليزية (اتجاه + لغة + عنوان) ويعيده عربياً عند المغادرة */
 function useEnglish(title: string, path: string, description: string) {
@@ -65,7 +66,7 @@ function Impact() {
 /* ---------- /en — الصفحة الرئيسية ---------- */
 export function EnglishHome() {
   const { articles, books, papers } = useCmsContent()
-  const firstYear = articles.length ? Math.min(...articles.map((article) => Number(article.year) || new Date().getFullYear())) : 2016
+  const firstYear = articles.length ? Math.min(PROJECT_START_YEAR, ...articles.map((article) => Number(article.year) || new Date().getFullYear())) : PROJECT_START_YEAR
   useEnglish('Professor of Educational Technology & AI', '/en', `Official website of Dr. Ahmad H. Alfailakawi — ${books.length} books, ${papers.length} peer-reviewed papers, and ${articles.length} essays since ${firstYear}.`)
   useTrackView('/en', 'English — Home')
 

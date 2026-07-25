@@ -98,6 +98,13 @@ type ReleaseVariant = {
   score: number
 }
 
+type ZeroDecisionSummary = {
+  approved: ReleaseVariant
+  campaignReady: boolean
+  campaignQuality: number
+  note: string
+}
+
 const AUTOPILOT_PRESETS: { id: AutoPilotModeId; label: string; note: string; tone: ContentTone; density: DesignDensity; preferLayout: LayoutFamilyId; platform?: SocialPlatform | 'auto'; imageTreatment?: NonNullable<PlanOverlay['imageTreatment']> }[] = [
   { id: 'safe', label: 'النسخة الآمنة', note: 'أوضح قراءة وأعلى موثوقية للنشر الرسمي.', tone: 'formal', density: 'balanced', preferLayout: 'editorial-axis', platform: 'auto', imageTreatment: 'editorial' },
   { id: 'editorial', label: 'الغلاف التحريري', note: 'غلاف مجلة فكرية بهدوء وهيبة.', tone: 'intellectual', density: 'minimal', preferLayout: 'cinematic-window', platform: 'instagram', imageTreatment: 'cinematic' },
@@ -399,6 +406,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [autoFinalsBusy, setAutoFinalsBusy] = useState(false)
   const [releasePackBusy, setReleasePackBusy] = useState(false)
   const [releasePack, setReleasePack] = useState<ReleaseVariant[]>([])
+  const [zeroDecisionBusy, setZeroDecisionBusy] = useState(false)
+  const [zeroDecision, setZeroDecision] = useState<ZeroDecisionSummary | null>(null)
   const [qualityThreshold, setQualityThreshold] = useState(() => Number(localStorage.getItem(QUALITY_THRESHOLD_KEY) || 82))
   /* البصمة البصرية: لوحةٌ مستخرجةٌ من صورةٍ محلية تكسو كل الاتجاهات الحالية
      والقادمة حتى تُزال — بلا خدمةٍ خارجية ولا رفعٍ لأي خادم. */
@@ -1396,7 +1405,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         { id: 'viral', label: 'Viral', note: 'أقوى نسخة للتوقف والانتشار البصري السريع.', plan: viralPlan, score: scorePlan(viralPlan) },
       ].sort((a, b) => b.score - a.score)
       setReleasePack(pack)
+      setZeroDecision(null)
       setNotice('بُنيت الآن حزمة النشر العليا: Final / Safer / Viral — ثلاث نهايات تفهم سبب وجودها، لا نسخًا عشوائية.')
+      return pack
     } finally {
       setReleasePackBusy(false)
     }
@@ -1413,6 +1424,63 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       setNotice('نُزّلت حزمة Final / Safer / Viral كاملةً — جاهزة للاعتماد أو المقارنة المباشرة.')
     } finally {
       setReleasePackBusy(false)
+    }
+  }
+
+  const runZeroDecisionMode = async () => {
+    if (text.trim().length < 2) {
+      setNotice('اكتب العنوان أولًا كي يتخذ النظام قرار النشر الكامل من الصفر.')
+      textRef.current?.focus()
+      return
+    }
+    setZeroDecisionBusy(true)
+    try {
+      let champion = bestPlanForRelease()
+      if (!champion) {
+        await runAutopilot()
+        champion = bestPlanForRelease()
+      }
+      if (!champion) {
+        setNotice('تعذر تكوين بطل بصري أولي. أعد المحاولة بعنوان أوضح.')
+        return
+      }
+      const builtPack = await buildReleasePack(champion)
+      const releaseBase = builtPack && builtPack.length ? builtPack : (releasePack.length ? releasePack : null)
+      const computedPack = releaseBase || [
+        { id: 'final' as const, label: 'Final', note: 'النسخة المرجعية الأعلى اتزانًا للنشر الرسمي.', plan: champion, score: scorePlan(champion) },
+      ]
+      const approved = [...computedPack].sort((a, b) => b.score - a.score)[0]
+      runCampaign(text, context, approved.plan)
+      const campaignText = approved.plan.content.original || text
+      const quickCampaign = generateSocialCampaign({
+        text: campaignText,
+        context,
+        author: 'د. أحمد حسين الفيلكاوي',
+        tone,
+        density,
+        seed: `zero-decision:${approved.plan.id}:${Date.now()}`,
+        history: loadHistory(),
+        tasteProfile,
+        basePlan: approved.plan,
+        noveltyThreshold: .36,
+      })
+      const summary: ZeroDecisionSummary = {
+        approved,
+        campaignReady: quickCampaign.ready,
+        campaignQuality: quickCampaign.qualityScore,
+        note: approved.id === 'viral'
+          ? 'اعتمد النظام النسخة الأعلى توقفًا لأنها الأكثر احتمالًا لصنع أثر سريع مع بقاء الحملة قابلة للبناء.'
+          : approved.id === 'safer'
+            ? 'اعتمد النظام النسخة الأكثر أمانًا لأن اتزانها ووضوحها تفوقا على جاذبية البدائل في هذا السياق.'
+            : 'اعتمد النظام النسخة المرجعية لأنها الأكثر توازنًا بين الهيبة والقراءة وقوة التوقف.'
+      }
+      setZeroDecision(summary)
+      if (!releasePack.length) setReleasePack(computedPack)
+      setSelected(approved.plan)
+      setStage('publish')
+      setNotice('وضع القرار الصفري أنجز الدورة كاملة: اختار، وحسم، وبنى حزمة النشر، واقترح النسخة الأولى المعتمدة.')
+    } finally {
+      setZeroDecisionBusy(false)
     }
   }
 
@@ -1509,6 +1577,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       setReservePlans(championPlans.filter((plan) => !triptych.some((item) => item.id === plan.id)))
       setAutopilotPack(finalPack)
       setReleasePack([])
+      setZeroDecision(null)
       setSelected(triptych[0] || null)
       setGeneration(nextGeneration)
       setStage('directions')
@@ -1733,7 +1802,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           <label className="grid gap-2 text-[.72rem] font-semibold text-soft">المنصة<select className={input} value={platform} onChange={(event) => setPlatform(event.target.value as SocialPlatform | 'auto')}>{Object.entries(platformLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
           <label className="grid gap-2 text-[.72rem] font-semibold text-soft">الكثافة<select className={input} value={density} onChange={(event) => setDensity(event.target.value as DesignDensity | 'auto')}>{Object.entries(densityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
           <div className="grid content-end gap-2 rounded-2xl border border-hair bg-canvas px-4 py-3"><span className="text-[.68rem] font-semibold text-soft">اختيار المخرج</span><strong className="text-[.82rem] text-ink">8 احتمالات ← 3 رؤى متباعدة</strong></div>
-          <div className="grid gap-2 md:grid-cols-3"><button type="button" className={`${primary} w-full px-8`} onClick={() => generate()}>ابنِ ثلاث رؤى فنية</button><button type="button" className={`${ghost} w-full`} onClick={() => void runAutopilot()} disabled={autopilotBusy}>{autopilotBusy ? 'يبني النهايات العالمية…' : 'الطيار الآلي العالمي'}</button><button type="button" className={`${ghost} w-full`} onClick={() => void buildReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'يبني الحزمة العليا…' : 'Final / Safer / Viral'}</button></div>
+          <div className="grid gap-2 md:grid-cols-4"><button type="button" className={`${primary} w-full px-8`} onClick={() => generate()}>ابنِ ثلاث رؤى فنية</button><button type="button" className={`${ghost} w-full`} onClick={() => void runAutopilot()} disabled={autopilotBusy}>{autopilotBusy ? 'يبني النهايات العالمية…' : 'الطيار الآلي العالمي'}</button><button type="button" className={`${ghost} w-full`} onClick={() => void buildReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'يبني الحزمة العليا…' : 'Final / Safer / Viral'}</button><button type="button" className={`${ghost} w-full`} onClick={() => void runZeroDecisionMode()} disabled={zeroDecisionBusy}>{zeroDecisionBusy ? 'يحسم القرار الكامل…' : 'وضع القرار الصفري'}</button></div>
         </div>
         {notice && <p className="mt-5 rounded-2xl border border-accent/25 bg-accent/[.05] px-4 py-3 text-[.8rem] leading-relaxed text-accent">{notice}</p>}
         </>}
@@ -1776,13 +1845,14 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               />
               <button type="button" className={ghost} onClick={applySpeechEdit}>طبّق</button>
             </div>
-            <div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 rounded-full border border-hair bg-canvas px-3 py-2 text-[.7rem] text-soft">حد التصدير <input aria-label="حد جودة التصدير" className="w-14 bg-transparent text-center font-bold text-accent outline-none" type="number" min="70" max="98" value={qualityThreshold} onChange={(event) => { const next=Math.max(70,Math.min(98,Number(event.target.value)||82)); setQualityThreshold(next); localStorage.setItem(QUALITY_THRESHOLD_KEY,String(next)) }} />٪</label><span className="rounded-full border border-accent/25 bg-accent/[.05] px-4 py-2 text-[.72rem] font-semibold text-accent">لجنة الجودة {Math.round(plans.reduce((sum, plan) => sum + (plan.quality?.score || 0), 0) / plans.length)}٪</span><span className="rounded-full border border-hair px-4 py-2 text-[.72rem] text-soft">ذاكرة ذوقك {Object.keys(tasteLedger).length} اتجاه</span>{Object.keys(tasteLedger).length > 0 && <button type="button" className={ghost} onClick={resetTaste}>إعادة ضبط الذوق</button>}<button type="button" className={ghost} onClick={() => void runAutopilot()} disabled={autopilotBusy}>{autopilotBusy ? 'يعيد بناء الأفضل…' : 'أعد بناء 5 نهايات'}</button><button type="button" className={ghost} onClick={() => void buildReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'يبني الحزمة العليا…' : 'ابنِ Final / Safer / Viral'}</button><button type="button" className={ghost} onClick={() => void exportAutoFinals()} disabled={autoFinalsBusy || (!autopilotPack.length && !plans.length)}>{autoFinalsBusy ? 'يصدر النهائيات…' : 'صدّر 3 نهائيات'}</button><button type="button" className={primary} disabled={campaignBusy} onClick={() => { buildCampaign(); setStage('publish') }}>{campaignBusy ? 'يبني الحملة…' : 'حوّلها إلى حملة سردية'}</button><button type="button" className={ghost} onClick={() => setShowSaved((value) => !value)}>المحفوظة {savedPlans.length}</button><button type="button" className={ghost} onClick={() => generate()}>توليد دفعة مختلفة</button></div>
+            <div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 rounded-full border border-hair bg-canvas px-3 py-2 text-[.7rem] text-soft">حد التصدير <input aria-label="حد جودة التصدير" className="w-14 bg-transparent text-center font-bold text-accent outline-none" type="number" min="70" max="98" value={qualityThreshold} onChange={(event) => { const next=Math.max(70,Math.min(98,Number(event.target.value)||82)); setQualityThreshold(next); localStorage.setItem(QUALITY_THRESHOLD_KEY,String(next)) }} />٪</label><span className="rounded-full border border-accent/25 bg-accent/[.05] px-4 py-2 text-[.72rem] font-semibold text-accent">لجنة الجودة {Math.round(plans.reduce((sum, plan) => sum + (plan.quality?.score || 0), 0) / plans.length)}٪</span><span className="rounded-full border border-hair px-4 py-2 text-[.72rem] text-soft">ذاكرة ذوقك {Object.keys(tasteLedger).length} اتجاه</span>{Object.keys(tasteLedger).length > 0 && <button type="button" className={ghost} onClick={resetTaste}>إعادة ضبط الذوق</button>}<button type="button" className={ghost} onClick={() => void runAutopilot()} disabled={autopilotBusy}>{autopilotBusy ? 'يعيد بناء الأفضل…' : 'أعد بناء 5 نهايات'}</button><button type="button" className={ghost} onClick={() => void buildReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'يبني الحزمة العليا…' : 'ابنِ Final / Safer / Viral'}</button><button type="button" className={ghost} onClick={() => void runZeroDecisionMode()} disabled={zeroDecisionBusy}>{zeroDecisionBusy ? 'يحسم القرار…' : 'القرار الصفري'}</button><button type="button" className={ghost} onClick={() => void exportAutoFinals()} disabled={autoFinalsBusy || (!autopilotPack.length && !plans.length)}>{autoFinalsBusy ? 'يصدر النهائيات…' : 'صدّر 3 نهائيات'}</button><button type="button" className={primary} disabled={campaignBusy} onClick={() => { buildCampaign(); setStage('publish') }}>{campaignBusy ? 'يبني الحملة…' : 'حوّلها إلى حملة سردية'}</button><button type="button" className={ghost} onClick={() => setShowSaved((value) => !value)}>المحفوظة {savedPlans.length}</button><button type="button" className={ghost} onClick={() => generate()}>توليد دفعة مختلفة</button></div>
           </div>
           <div className="mt-5 grid gap-3 lg:grid-cols-3">
             {artDirections.map((direction, index) => <article key={direction.id} className="rounded-2xl border border-hair bg-canvas p-4"><div className="flex items-start justify-between gap-3"><div><span className="text-[.62rem] font-bold text-accent">الرؤية {index + 1}</span><h4 className="mt-1 text-[.9rem] font-bold text-ink">{direction.title}</h4></div><span className="rounded-full bg-paper px-2 py-1 text-[.62rem] font-semibold text-accent">قرب الهوية {direction.identityFit}٪</span></div><p className="mt-2 text-[.72rem] leading-relaxed text-soft">{direction.description}</p><dl className="mt-3 grid gap-2"><div><dt className="text-[.6rem] font-semibold text-soft">الشعور</dt><dd className="text-[.68rem] text-ink">{direction.feeling}</dd></div><div><dt className="text-[.6rem] font-semibold text-soft">الصورة المطلوبة</dt><dd className="text-[.68rem] leading-relaxed text-ink">{direction.imageNeed}</dd></div><div><dt className="text-[.6rem] font-semibold text-soft">الخطر</dt><dd className="text-[.68rem] leading-relaxed text-ink">{direction.risk}</dd></div></dl><button type="button" className={`${ghost} mt-3 w-full`} onClick={() => generate({ tone: direction.tone, platform: direction.platform, preferLayout: direction.preferLayout })}>أعد بناء هذه الرؤية</button></article>)}
           </div>
           {autopilotPack.length > 0 && <div className="mt-4 grid gap-3 xl:grid-cols-5 md:grid-cols-2"><div className="rounded-2xl border border-accent/20 bg-accent/[.04] p-4 xl:col-span-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold uppercase tracking-[.16em] text-accent">Creative Director Autopilot</p><h4 className="mt-1 text-[1rem] font-bold text-ink">خمس نهايات لا خمس محاولات عشوائية.</h4><p className="mt-1 text-[.72rem] leading-relaxed text-soft">الطيار الآلي يبني خمس نسخ نهائية: آمنة، تحريرية، فاخرة، عالية التوقف، ونسخة دليل — ثم يختار منها الأجدر بالعرض، ويستطيع الآن تصدير أفضل 3 نهائيات بضغطة واحدة.</p></div><div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-accent/20 bg-white/70 px-3 py-1.5 text-[.66rem] font-semibold text-accent">الأفضل الآن {autopilotPack[0]?.label || '—'} · {autopilotPack[0]?.worldScore || 0}٪</span><button type="button" className={ghost} onClick={() => void exportAutoFinals()} disabled={autoFinalsBusy}>{autoFinalsBusy ? 'يصدر النهائيات…' : 'تنزيل أفضل 3'}</button></div></div></div>{autopilotPack.map((item) => <article key={item.id} className="rounded-2xl border border-hair bg-canvas p-3"><div className="flex items-center justify-between gap-2"><strong className="text-[.76rem] text-ink">{item.label}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.58rem] text-soft">{item.worldScore}٪</span></div><p className="mt-2 text-[.66rem] leading-relaxed text-soft">{item.note}</p><div className="mt-2 flex flex-wrap gap-1.5 text-[.58rem] text-soft"><span className="rounded-full border border-hair px-2 py-1">جودة {item.qualityScore}٪</span><span className="rounded-full border border-hair px-2 py-1">توقف {item.stopScore}٪</span></div><button type="button" className={`${ghost} mt-3 w-full`} onClick={() => { setSelected(item.plan); setStage('edit') }}>افتح هذه النسخة</button></article>)}</div>}
           {releasePack.length > 0 && <div className="mt-4 grid gap-3 md:grid-cols-3"><div className="rounded-2xl border border-accent/20 bg-accent/[.04] p-4 md:col-span-3"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold uppercase tracking-[.16em] text-accent">Absolute Release Pack</p><h4 className="mt-1 text-[1rem] font-bold text-ink">ثلاث نسخ لا يحتاج بعدها الفريق إلى سؤال: ماذا ننشر؟</h4><p className="mt-1 text-[.72rem] leading-relaxed text-soft">هذه الحزمة ليست تبديلًا سطحيًا؛ كل نسخة بُنيت لوظيفة نشر مختلفة: المرجع الرسمي، النسخة الأكثر أمانًا، والنسخة الأعلى قابلية للتوقف والانتشار.</p></div><div className="flex flex-wrap gap-2"><button type="button" className={ghost} onClick={() => void buildReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'يعيد بناء الحزمة…' : 'أعد بناء الحزمة'}</button><button type="button" className={primary} onClick={() => void exportReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'ينزّل الحزمة…' : 'تنزيل Final / Safer / Viral'}</button></div></div></div>{releasePack.map((item) => <article key={item.id} className="rounded-2xl border border-hair bg-canvas p-3"><button type="button" className="block w-full text-right" onClick={() => { setSelected(item.plan); setStage('edit') }}><Preview plan={item.plan} /></button><div className="pt-3"><div className="flex items-center justify-between gap-2"><strong className="text-[.8rem] text-ink">{item.label}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.58rem] text-soft">{item.score}٪</span></div><p className="mt-2 text-[.66rem] leading-relaxed text-soft">{item.note}</p><div className="mt-3 flex gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => { setSelected(item.plan); setStage('edit') }}>فتح</button><button type="button" className={ghost} onClick={() => void exportPlan(item.plan, 'png')}>PNG</button></div></div></article>)}</div>}
+          {zeroDecision && <section className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.68rem] font-bold uppercase tracking-[.16em] text-emerald-700">Zero-Decision Mode</p><h4 className="mt-1 text-[1rem] font-bold text-ink">النظام حسم قرار النشر بدلًا عنك.</h4><p className="mt-1 max-w-3xl text-[.74rem] leading-relaxed text-soft">{zeroDecision.note}</p></div><div className="flex flex-wrap gap-2"><span className="rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-[.64rem] font-semibold text-emerald-700">النسخة المعتمدة: {zeroDecision.approved.label}</span><span className="rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-[.64rem] font-semibold text-emerald-700">درجة النسخة {zeroDecision.approved.score}٪</span><span className="rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-[.64rem] font-semibold text-emerald-700">الحملة {zeroDecision.campaignQuality}٪</span></div></div><div className="mt-3 flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => { setSelected(zeroDecision.approved.plan); setStage('edit') }}>افتح النسخة المعتمدة</button><button type="button" className={ghost} onClick={() => void exportPlan(zeroDecision.approved.plan, 'png')}>تنزيل النسخة المعتمدة</button><button type="button" className={ghost} onClick={() => void exportReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'ينزّل الحزمة…' : 'تنزيل الحزمة كاملة'}</button><span className={`rounded-full px-3 py-2 text-[.66rem] font-semibold ${zeroDecision.campaignReady ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>{zeroDecision.campaignReady ? 'الحملة جاهزة مبدئيًا' : 'الحملة تحتاج مراجعة نهائية'}</span></div></section>}
           <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-hair bg-canvas p-3"><span className="me-auto text-[.68rem] font-semibold text-soft">مفاتيح إبداع غير عادية:</span><button type="button" className={ghost} onClick={() => { setNotice('أبتعد عن تاريخك البصري بمقدار مضبوط مع إبقاء الهوية.'); generate({ tone: 'bold', preferLayout: 'quiet-orbit' }) }}>اكسر ذوقي بذكاء</button><button type="button" className={ghost} onClick={() => generate({ tone: 'human', density: 'minimal', preferLayout: 'human-note' })}>لا تجعلها تبدو مصممة</button><button type="button" className={ghost} onClick={() => generate({ tone: 'deep', density: 'minimal', preferLayout: 'cinematic-window' })}>التصميم الصامت</button></div>
           <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {plans.map((plan) => (

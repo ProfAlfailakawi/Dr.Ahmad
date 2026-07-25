@@ -29,7 +29,7 @@ import {
   setRenderPreferences,
   type BackgroundPattern,
 } from '../../lib/social-design-renderer'
-import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, parseStudioCommand, critiqueCompositionPlan, predictEngagement, PALETTES } from '../../lib/social-design-engine'
+import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, type AttentionMap, type DesignExplanation, parseStudioCommand, critiqueCompositionPlan, predictEngagement, computeAttentionMap, explainDesign, PALETTES } from '../../lib/social-design-engine'
 import { extractVisualDnaFromFile, type VisualDna } from '../../lib/visual-dna'
 import { currentSeason } from '../../lib/seasons'
 import { getDb } from '../../lib/firebase'
@@ -205,6 +205,34 @@ function Preview({ plan, className = '' }: { plan: CompositionPlan; className?: 
   )
 }
 
+/* طبقة خريطة الانتباه (النقطة ٨): تُرسم فوق المعاينة بمساحة إحداثيات المقاس
+   نفسها (بكسلاته) فتبقى البؤر دائريّةً والأرقام غير مشوّهة مهما اختلفت النسبة.
+   طبقةٌ حراريّةٌ دافئةٌ (الأحمر = أعلى جذب) + مسارٌ مرقّمٌ يحاكي تدرّج العين. */
+function AttentionOverlay({ map, w, h }: { map: AttentionMap; w: number; h: number }) {
+  const unit = Math.min(w, h)
+  const warm = (intensity: number) => (intensity >= 0.8 ? '#ff2d2d' : intensity >= 0.55 ? '#ff8a00' : '#ffd000')
+  const toArabic = (value: number) => String(value).replace(/[0-9]/g, (digit) => '٠١٢٣٤٥٦٧٨٩'[Number(digit)])
+  const gazePoints = map.gaze.map((step) => `${(step.x * w).toFixed(1)},${(step.y * h).toFixed(1)}`).join(' ')
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
+      <defs>
+        <filter id="attn-blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation={unit * 0.02} /></filter>
+      </defs>
+      <g filter="url(#attn-blur)" opacity="0.7">
+        {map.hotspots.map((spot) => <circle key={`halo-${spot.id}`} cx={spot.x * w} cy={spot.y * h} r={spot.radius * unit} fill={warm(spot.intensity)} opacity={0.18 + spot.intensity * 0.3} />)}
+        {map.hotspots.map((spot) => <circle key={`core-${spot.id}`} cx={spot.x * w} cy={spot.y * h} r={spot.radius * unit * 0.5} fill={warm(spot.intensity)} opacity={0.26 + spot.intensity * 0.36} />)}
+      </g>
+      {map.gaze.length > 1 && <polyline points={gazePoints} fill="none" stroke="#0a84ff" strokeWidth={unit * 0.008} strokeDasharray={`${unit * 0.022} ${unit * 0.016}`} strokeLinejoin="round" strokeLinecap="round" opacity="0.9" />}
+      {map.gaze.map((step) => (
+        <g key={`gaze-${step.order}`}>
+          <circle cx={step.x * w} cy={step.y * h} r={unit * 0.03} fill="#0a84ff" stroke="#fff" strokeWidth={unit * 0.006} />
+          <text x={step.x * w} y={step.y * h} dy={unit * 0.012} textAnchor="middle" fontSize={unit * 0.036} fontWeight="700" fill="#fff">{toArabic(step.order)}</text>
+        </g>
+      ))}
+    </svg>
+  )
+}
+
 /* حقل تحرير مباشر (مقترحات الصديق ١٢): يلتزم عند المغادرة أو Enter — فلا يضج
    التراجع بكل ضغطة حرف، ويُعاد فحص الجودة عند كل التزام */
 function EditableText({ label, value, onCommit, multiline = false }: { label: string; value: string; onCommit: (next: string) => void; multiline?: boolean }) {
@@ -304,9 +332,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [bgPattern, setBgPattern] = useState<BackgroundPattern>(() => { try { return (localStorage.getItem(PATTERN_KEY) as BackgroundPattern) || 'none' } catch { return 'none' } })
   const [dnaFaves, setDnaFaves] = useState<VisualDna[]>(() => { try { return JSON.parse(localStorage.getItem(DNA_FAVES_KEY) || '[]') } catch { return [] } })
   const [phoneView, setPhoneView] = useState(false)
+  const [attentionOn, setAttentionOn] = useState(false)
   const activeSeason = useMemo(() => currentSeason(), [])
   // مختبر الأداء: تنبّؤ التفاعل للتصميم المختار — يُحسب محلياً عند كل تغيير.
   const forecast = useMemo(() => (selected ? predictEngagement(selected) : null), [selected])
+  // خريطة الانتباه (٨) وشرح التعثّر (٢٢): محاكاةٌ وتشخيصٌ محليّان للتصميم المختار.
+  const attention = useMemo<AttentionMap | null>(() => (selected && attentionOn ? computeAttentionMap(selected) : null), [selected, attentionOn])
+  const explanation = useMemo<DesignExplanation | null>(() => (selected ? explainDesign(selected) : null), [selected])
   // أثناء الرسم لا بعده: المعاينات تقرأ التفضيل في نفس الدورة التي تغيّر فيها
   useMemo(() => setRenderPreferences({ seal: sealOn, seasonal: seasonalOn && Boolean(activeSeason), pattern: bgPattern }), [sealOn, seasonalOn, activeSeason, bgPattern])
   useEffect(() => {
@@ -1048,11 +1080,20 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                «خلّ مكان المعاينة ثابتاً والأدوات متحركة») */}
             <div className="grid min-h-0 flex-1 gap-5 p-4 md:p-6 lg:grid-cols-[minmax(0,1.32fr)_minmax(320px,.7fr)]">
               <div className="grid content-start justify-items-center rounded-[1.5rem] border border-hair bg-canvas p-3 md:p-6 lg:sticky lg:top-0 lg:self-start">
-                {/* «أرني كما يراه المتابع» (أمر الدكتور، النقطة ٢٠): إطار هاتفٍ بالحجم الفعلي */}
-                <div className="mb-3 flex w-full items-center justify-between gap-2">
+                {/* «أرني كما يراه المتابع» (النقطة ٢٠) + «خريطة الانتباه» (النقطة ٨) */}
+                <div className="mb-3 flex w-full flex-wrap items-center justify-between gap-2">
                   <span className="text-[.66rem] font-semibold text-soft">{phoneView ? 'كما يراه المتابع على هاتفه' : 'المعاينة'}</span>
-                  <button type="button" onClick={() => setPhoneView((value) => !value)} className={`rounded-full px-3 py-1 text-[.66rem] font-semibold transition ${phoneView ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}>{phoneView ? '✓ عرض الاستوديو' : '📱 أرني كما يراه المتابع'}</button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button type="button" onClick={() => setAttentionOn((value) => !value)} disabled={phoneView} title="محاكاةٌ تقديريّةٌ لأين تقع العين أوّلاً" className={`rounded-full px-3 py-1 text-[.66rem] font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${attentionOn && !phoneView ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}>{attentionOn ? '✓ خريطة الانتباه' : '🔥 خريطة الانتباه'}</button>
+                    <button type="button" onClick={() => setPhoneView((value) => !value)} className={`rounded-full px-3 py-1 text-[.66rem] font-semibold transition ${phoneView ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}>{phoneView ? '✓ عرض الاستوديو' : '📱 أرني كما يراه المتابع'}</button>
+                  </div>
                 </div>
+                {attentionOn && attention && !phoneView && (
+                  <div className="mb-3 w-full rounded-xl border border-accent/25 bg-accent/[.06] px-3 py-2">
+                    <p className="text-[.68rem] leading-relaxed text-ink/85">👁️ {attention.summary}</p>
+                    <p className="mt-1 text-[.62rem] text-soft">توازن توزّع الانتباه: <strong className="text-accent">{attention.balance}٪</strong> — {attention.balance >= 78 ? 'موزّعٌ ناضج' : attention.balance >= 60 ? 'مقبول' : 'مركّزٌ في بؤرةٍ واحدة'}</p>
+                  </div>
+                )}
                 {phoneView && (
                   <div className="mx-auto w-full" style={{ maxWidth: 300 }}>
                     <div className="relative rounded-[2.4rem] border-[11px] border-ink bg-ink shadow-2xl">
@@ -1067,6 +1108,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                    مو كامله») — الآن يظهر التصميمُ كاملاً مهما طال (ستوري وغيره). */}
                 <div ref={canvasRef} className={`relative mx-auto w-full ${phoneView ? 'hidden' : ''}`} style={{ maxWidth: `min(100%, calc(76vh * ${selected.format.width} / ${selected.format.height}))`, touchAction: freeMode ? 'none' : undefined }}>
                   <Preview plan={selected} className="w-full" />
+                  {attention && <AttentionOverlay map={attention} w={selected.format.width} h={selected.format.height} />}
                   {freeMode && (selected.overlays || []).map((overlay) => (
                     <div
                       key={overlay.id}
@@ -1089,7 +1131,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 </div>
               </div>
               <div className="grid content-start gap-4 pb-6 lg:max-h-full lg:overflow-y-auto lg:pl-1">
-                <section className="rounded-2xl border border-accent/30 bg-accent/[.09] p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">الناقد البصري الداخلي</p><p className="mt-1 text-[.78rem] text-ink/70">قرأه على الهاتف قبل أن يعرضه لك.</p></div><strong className="font-display text-3xl text-accent">{selected.quality?.score || 0}٪</strong></div><div className="mt-3 flex flex-wrap gap-2">{selected.quality?.strengths.map((item) => <span key={item} className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.66rem] font-medium text-ink">✓ {item}</span>)}</div>{selected.quality?.issues.length ? <p className="mt-3 text-[.72rem] leading-relaxed text-ink/80">{selected.quality.issues.join(' · ')}</p> : null}{selected.rationale?.length ? <div className="mt-4 rounded-xl border border-hair bg-paper/70 p-3"><p className="text-[.64rem] font-bold text-accent">قراءة المخرج الفنّي</p><ul className="mt-2 grid gap-1">{selected.rationale.slice(0, 3).map((line) => <li key={line} className="text-[.72rem] leading-relaxed text-ink/85">• {line}</li>)}</ul></div> : null}</section>
+                <section className="rounded-2xl border border-accent/30 bg-accent/[.09] p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">الناقد البصري الداخلي</p><p className="mt-1 text-[.78rem] text-ink/70">قرأه على الهاتف قبل أن يعرضه لك.</p></div><strong className="font-display text-3xl text-accent">{selected.quality?.score || 0}٪</strong></div><div className="mt-3 flex flex-wrap gap-2">{selected.quality?.strengths.map((item) => <span key={item} className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.66rem] font-medium text-ink">✓ {item}</span>)}</div>{selected.quality?.issues.length ? <p className="mt-3 text-[.72rem] leading-relaxed text-ink/80">{selected.quality.issues.join(' · ')}</p> : null}{explanation && (explanation.reasons.length > 0 || !explanation.healthy) ? <div className="mt-3 rounded-xl border border-accent/20 bg-canvas/70 p-3"><p className="text-[.72rem] font-semibold text-ink/90">🔍 لماذا هذه النتيجة؟ {explanation.verdict}</p>{explanation.reasons.length ? <ul className="mt-2 grid gap-2">{explanation.reasons.map((reason) => <li key={reason.dimension} className="rounded-lg border border-hair bg-paper/70 px-3 py-2"><div className="flex items-center justify-between gap-2"><strong className="text-[.7rem] text-ink">{reason.severity === 'critical' ? '⛔' : '⚠️'} {reason.dimension}</strong><span className={`rounded-full px-2 py-0.5 text-[.6rem] font-bold ${reason.severity === 'critical' ? 'bg-red-500/15 text-red-600' : 'bg-amber-500/15 text-amber-700'}`}>{reason.score}٪</span></div><p className="mt-1 text-[.68rem] leading-relaxed text-soft">{reason.why}</p><p className="mt-1 text-[.68rem] leading-relaxed text-accent">↳ {reason.fix}</p></li>)}</ul> : null}{!explanation.healthy ? <p className="mt-2 rounded-lg bg-accent/[.08] px-3 py-2 text-[.68rem] font-semibold text-accent">أهمّ خطوةٍ الآن: {explanation.nextStep}</p> : null}</div> : null}{selected.rationale?.length ? <div className="mt-4 rounded-xl border border-hair bg-paper/70 p-3"><p className="text-[.64rem] font-bold text-accent">قراءة المخرج الفنّي</p><ul className="mt-2 grid gap-1">{selected.rationale.slice(0, 3).map((line) => <li key={line} className="text-[.72rem] leading-relaxed text-ink/85">• {line}</li>)}</ul></div> : null}</section>
                 {/* مختبر الأداء (أ-٣): يتنبّأ بقوة التوقّف والتفاعل — لا يكرّر الناقد (الجودة) بل يكمّله */}
                 {forecast && (
                   <section className="rounded-2xl border border-hair bg-canvas p-4">

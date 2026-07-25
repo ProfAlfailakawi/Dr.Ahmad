@@ -2137,6 +2137,149 @@ export function predictEngagement(plan: CompositionPlan): EngagementForecast {
   return { score, band: qualityBand(score), signals, tips, highlights }
 }
 
+/* ═══════════ خريطة الانتباه ومحاكاة مسار العين (النقطة ٨) ═══════════
+   محاكاةٌ تقديريّةٌ لا قياسٌ فعليّ للعين: تستنتج بؤر الجذب من هرميّة
+   العناصر ومواقعها الحقيقيّة (من هندسة الخطّة) ووزنها البصريّ، ثمّ
+   ترتّبها على مسار قراءةٍ عربيٍّ يبدأ من أعلى اليمين. تُعرَض فوق
+   المعاينة كطبقةٍ حراريّةٍ ومسارٍ مرقّم، فيرى الدكتور أين تقع العين
+   أوّلاً — وهل تتوزّع بنضجٍ أم تتكدّس — قبل النشر. */
+const toArabicDigits = (value: number | string) => String(value).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[Number(d)])
+
+export interface AttentionHotspot {
+  id: string
+  label: string
+  /** مركز البؤرة أفقياً 0..1 (يسار→يمين بنظام SVG) */
+  x: number
+  /** موضع البؤرة عمودياً 0..1 (أعلى→أسفل) */
+  y: number
+  /** نصف قطر التأثير 0..1 */
+  radius: number
+  /** شدّة الجذب 0..1 */
+  intensity: number
+}
+export interface AttentionGaze { x: number; y: number; order: number; label: string }
+export interface AttentionMap {
+  hotspots: AttentionHotspot[]
+  gaze: AttentionGaze[]
+  summary: string
+  /** توازن توزّع الانتباه 0..100 — التكدّس في بؤرةٍ واحدةٍ يخفضه */
+  balance: number
+  firstFixation: string
+}
+
+export function computeAttentionMap(plan: CompositionPlan): AttentionMap {
+  const g = plan.geometry
+  const c = plan.content
+  // العربيّة تُقرأ يميناً، فمدخل التثبيت الأوّل عند يمين الكتلة، ومركز كتلتها هو ثقلها البصريّ.
+  const midX = (z: { x: number; width: number }) => clamp(z.x + z.width * 0.5, 0.08, 0.92)
+  const readX = (z: { x: number; width: number }) => clamp(z.x + z.width * 0.84, 0.1, 0.94)
+  const hotspots: AttentionHotspot[] = []
+  const gaze: AttentionGaze[] = []
+  let order = 0
+  const push = (hotspot: AttentionHotspot, gazeLabel = hotspot.label) => {
+    hotspots.push(hotspot)
+    gaze.push({ x: hotspot.x, y: hotspot.y, order: ++order, label: gazeLabel })
+  }
+
+  // ١) البؤرة الأقوى: كلمةٌ بطلة (أضخم عنصر) وإلا العنوان.
+  const hero = (c.heroWord || '').trim()
+  const titleY = clamp(g.titleZone.y + 0.04, 0.08, 0.9)
+  if (hero) {
+    const heroY = clamp(Math.max(0.42, g.titleZone.y + 0.06), 0.2, 0.82)
+    push({ id: 'hero', label: `الكلمة البطلة «${truncateWords(hero, 2)}»`, x: 0.5, y: heroY, radius: 0.36, intensity: 1 }, 'الكلمة البطلة')
+  } else if (c.title) {
+    hotspots.push({ id: 'title', label: 'العنوان', x: midX(g.titleZone), y: titleY, radius: 0.32, intensity: 1 })
+    gaze.push({ x: readX(g.titleZone), y: titleY, order: ++order, label: 'العنوان' })
+  }
+
+  // ٢) الكتلة الثانية: نقاط الإنفوجرافيك المرقّمة، وإلا الاقتباس أو المتن.
+  const points = c.points && c.points.length ? c.points : []
+  if (points.length) {
+    const step = 0.5 / Math.max(1, Math.min(4, points.length))
+    points.slice(0, 4).forEach((_, index) => {
+      const y = clamp(g.bodyZone.y + step * (index + 0.5) + 0.02, 0.2, 0.94)
+      push({ id: `pt${index}`, label: `النقطة ${toArabicDigits(index + 1)}`, x: readX(g.bodyZone), y, radius: 0.19, intensity: clamp(0.64 - index * 0.08, 0.32, 0.7) })
+    })
+  } else if (c.quote) {
+    push({ id: 'quote', label: 'الاقتباس', x: midX(g.bodyZone), y: clamp(g.bodyZone.y + 0.06, 0.3, 0.9), radius: 0.26, intensity: 0.66 })
+  } else if (c.body || c.subtitle) {
+    push({ id: 'body', label: 'المتن', x: readX(g.bodyZone), y: clamp(g.bodyZone.y + 0.06, 0.3, 0.92), radius: 0.24, intensity: 0.58 })
+  }
+
+  // ٣) الدعوة للتفاعل حسب موضعها المقرّر في الخطّة.
+  const cta = (c.cta || '').trim()
+  if (cta && plan.ctaPlacement !== 'none') {
+    const place = plan.ctaPlacement
+    const ctaX = place === 'edge-tab' ? 0.9 : place === 'lower-rail' ? 0.72 : place === 'under-title' ? midX(g.titleZone) : 0.5
+    const ctaY = place === 'under-title' ? clamp(g.titleZone.y + 0.16, 0.2, 0.9) : place === 'edge-tab' ? 0.5 : 0.9
+    push({ id: 'cta', label: 'الدعوة للتفاعل', x: ctaX, y: ctaY, radius: 0.2, intensity: 0.5 }, 'الدعوة')
+  }
+
+  // توازن التوزّع: انتشارٌ عموديٌّ أوسع وبؤرٌ متعددة = توزيعٌ أنضج؛ التكدّس يُنقصه.
+  const ys = hotspots.map((hotspot) => hotspot.y)
+  const spread = ys.length > 1 ? Math.max(...ys) - Math.min(...ys) : 0
+  const balance = roundScore(46 + spread * 74 + Math.min(3, hotspots.length - 1) * 6)
+
+  const labels = gaze.map((step) => step.label)
+  const firstFixation = labels[0] || 'العنوان'
+  const summary = labels.length <= 1
+    ? `العين تستقرّ كلّها على ${firstFixation} — بؤرةٌ واحدةٌ مهيمنة.`
+    : `تبدأ العين من ${labels[0]} أعلى اليمين، ثمّ تتدرّج إلى ${labels.slice(1).join('، فـ')}.`
+
+  return { hotspots, gaze, summary, balance, firstFixation }
+}
+
+/* ═══════════ الاستوديو يشرح تعثّره (النقطة ٢٢) ═══════════
+   حين لا يبلغ التصميم القمّة لا يكتفي بعرض رقمٍ صامت: يشخّص أضعف
+   أبعاده بلغةٍ بشريّةٍ صريحة — لماذا ضعُف البُعد وكيف يُعالَج — مرتّبةً
+   الأسوأ أوّلاً، مع إنصافٍ لمواطن قوّته وخطوةٍ تاليةٍ واحدةٍ أعلى أثراً. */
+export interface DesignReason {
+  dimension: string
+  score: number
+  severity: 'critical' | 'weak'
+  why: string
+  fix: string
+}
+export interface DesignExplanation {
+  verdict: string
+  band: VisualQuality['band']
+  reasons: DesignReason[]
+  strengths: string[]
+  nextStep: string
+  healthy: boolean
+}
+
+const QUALITY_DIMENSION_GUIDE: { key: keyof VisualQuality; label: string; why: string; fix: string }[] = [
+  { key: 'lineFit', label: 'اتّساع النصّ للمساحة', why: 'النصّ أطول من المساحة المتاحة، فينكسر سطرُه أو يُقصّ طرفُه.', fix: 'اختصر العنوان أو المتن قليلاً، أو اختر مقاساً أطول يسع النصّ.' },
+  { key: 'readability', label: 'المقروئيّة', why: 'كثافة النصّ أو ضعف تباينه يُتعبان القراءة في الثانية الأولى.', fix: 'قلّل عدد الكلمات وارفع تباين لون النصّ عن الخلفية.' },
+  { key: 'textContrast', label: 'تباين النصّ', why: 'لون النصّ قريبٌ من الخلفية فيصعب تمييزه على الشاشات الصغيرة.', fix: 'اجعل النصّ أغمق أو الخلفية أفتح — أو بدّل اللوحة إلى داكنة.' },
+  { key: 'hierarchy', label: 'الهرميّة البصريّة', why: 'لا عنصر يقود العين بوضوح؛ الكلّ يتنافس بوزنٍ واحد.', fix: 'كبّر العنوان أو أبرِز كلمةً بطلة تتصدّر المشهد.' },
+  { key: 'whitespace', label: 'التنفّس والفراغ', why: 'العناصر متزاحمةٌ بلا فراغٍ يريح العين ويُبرز المهمّ.', fix: 'قلّل الزخرفة أو حجم المحتوى ليتنفّس التصميم.' },
+  { key: 'rtlAlignment', label: 'محاذاة العربيّة', why: 'محاذاة كتل النصّ غير متّسقةٍ مع اتجاه القراءة يميناً.', fix: 'وحّد محاذاة العنوان والمتن إلى اليمين.' },
+  { key: 'fit', label: 'ملاءمة المحتوى للمقاس', why: 'حجم المحتوى لا يناسب أبعاد هذا المقاس.', fix: 'وازن كمّية النصّ مع نسبة المقاس، أو انقله إلى مقاسٍ أنسب.' },
+  { key: 'platformFit', label: 'ملاءمة المنصّة', why: 'طول العنوان أو النسبة لا يوافقان أفضل ممارسات المنصّة.', fix: 'اضبط طول العنوان على المدى الأمثل لهذه المنصّة.' },
+  { key: 'originality', label: 'التميّز', why: 'الاتجاه قريبٌ من تصميمٍ سابقٍ في الدفعة.', fix: 'ولّد دفعةً مختلفة أو بدّل العائلة التخطيطيّة.' },
+]
+
+export function explainDesign(plan: CompositionPlan): DesignExplanation {
+  const quality = plan.quality || critiqueCompositionPlan(plan)
+  const reasons: DesignReason[] = []
+  for (const guide of QUALITY_DIMENSION_GUIDE) {
+    const raw = quality[guide.key]
+    if (typeof raw !== 'number' || raw >= 80) continue
+    reasons.push({ dimension: guide.label, score: Math.round(raw), severity: raw < 62 ? 'critical' : 'weak', why: guide.why, fix: guide.fix })
+  }
+  reasons.sort((left, right) => left.score - right.score)
+  const band = quality.band
+  const healthy = band === 'exceptional' || band === 'excellent' || reasons.length === 0
+  const verdict = band === 'exceptional' ? 'تصميمٌ استثنائيّ — لا ملاحظات تُذكر.'
+    : band === 'excellent' ? 'تصميمٌ ممتاز؛ لمساتٌ صغيرةٌ تُبلغه الكمال.'
+    : band === 'strong' ? 'تصميمٌ قويّ، ومعه نقاطٌ قابلةٌ للرفع.'
+    : 'التصميم دون المستوى المطلوب — إليك ما أوقفه بالضبط ولماذا.'
+  const nextStep = reasons[0] ? reasons[0].fix : 'جاهزٌ للنشر — لا خطوةَ ضروريّة الآن.'
+  return { verdict, band, reasons: reasons.slice(0, 5), strengths: quality.strengths || [], nextStep, healthy }
+}
+
 export interface SocialCampaignRequest extends SocialDesignRequest {
   basePlan?: CompositionPlan
 }

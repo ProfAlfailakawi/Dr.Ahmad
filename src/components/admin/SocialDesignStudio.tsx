@@ -126,6 +126,53 @@ function selectDistinctTriptych(plans: CompositionPlan[]) {
   return selected
 }
 
+type ImageProbe = { url: string; width: number; height: number }
+
+function probeImageUrl(url: string, timeoutMs = 3500): Promise<ImageProbe | null> {
+  if (!url || typeof Image === 'undefined') return Promise.resolve(null)
+  return new Promise((resolve) => {
+    const image = new Image()
+    let settled = false
+    const finish = (value: ImageProbe | null) => {
+      if (settled) return
+      settled = true
+      window.clearTimeout(timer)
+      image.onload = null
+      image.onerror = null
+      resolve(value)
+    }
+    const timer = window.setTimeout(() => finish(null), timeoutMs)
+    image.referrerPolicy = 'no-referrer'
+    image.onload = () => finish({ url, width: image.naturalWidth || 0, height: image.naturalHeight || 0 })
+    image.onerror = () => finish(null)
+    image.src = url
+  })
+}
+
+async function verifyExternalVisuals(items: ExternalVisualResult[], limit = 10) {
+  const candidates = items.slice(0, Math.max(limit, 12))
+  const checked = await Promise.all(candidates.map(async (item) => {
+    const urls = [...new Set([item.thumbnailUrl, item.imageUrl].filter(Boolean))]
+    for (const url of urls) {
+      const probe = await probeImageUrl(url)
+      if (probe) return {
+        ...item,
+        thumbnailUrl: probe.url,
+        width: item.width || probe.width || undefined,
+        height: item.height || probe.height || undefined,
+      }
+    }
+    return null
+  }))
+  return checked.filter((item): item is ExternalVisualResult => Boolean(item)).slice(0, limit)
+}
+
+function RemoteVisualThumbnail({ src, alt, className }: { src: string; alt: string; className: string }) {
+  const [failed, setFailed] = useState(false)
+  if (failed || !src) return <div className={`${className} grid place-items-center bg-paper text-center text-[.64rem] leading-relaxed text-soft`}><span>تعذّر تحميل المعاينة<br />جرّب مصدرًا آخر</span></div>
+  return <img src={src} alt={alt} className={className} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} />
+}
+
 function StageRail({ stage, onChange }: { stage: StudioStage; onChange: (stage: StudioStage) => void }) {
   return <nav aria-label="مراحل استوديو التصميم" className="overflow-x-auto pb-1"><ol className="flex min-w-max gap-2">{STUDIO_STAGES.map((item) => <li key={item.id}><button type="button" onClick={() => onChange(item.id)} className={`min-w-[170px] rounded-2xl border px-4 py-3 text-right transition ${stage === item.id ? 'border-accent bg-accent text-white shadow-sm' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}><span className="text-[.62rem] font-bold tracking-[.12em] opacity-75">{item.number}</span><strong className="mt-1 block text-[.8rem]">{item.label}</strong><span className="mt-1 block text-[.64rem] opacity-80">{item.description}</span></button></li>)}</ol></nav>
 }
@@ -344,6 +391,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [externalQuery, setExternalQuery] = useState('')
   const [generatorBusy, setGeneratorBusy] = useState(false)
   const [lastVisualSearchSignature, setLastVisualSearchSignature] = useState('')
+  const externalSearchSequenceRef = useRef(0)
   const [selected, setSelected] = useState<CompositionPlan | null>(null)
   /* المحرر المباشر (١٢-١٥): تراجع/إعادة داخل جلسة النافذة + إعادة فحص الجودة حية */
   const [editUndo, setEditUndo] = useState<CompositionPlan[]>([])
@@ -493,22 +541,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   useEffect(() => { if (initialText && !text.trim()) setText(initialText) }, [initialText])
   useEffect(() => { if (initialContext && !context.trim()) setContext(initialContext) }, [initialContext])
 
-  // «يفهم من أول كلمة»: توليد تلقائي مؤجل أثناء الكتابة، مرة واحدة لكل نص —
-  // الزر يبقى لإعادة التوليد بدفعة مختلفة على النص نفسه.
-  const autoGenerateKeyRef = useRef('')
-  const generateRef = useRef<() => void>(() => {})
-  useEffect(() => {
-    const clean = text.trim()
-    /* كلمة واحدة تكفي لبدء التوليد (مقترح الصديق ١) — حرفان فأكثر */
-    if (clean.length < 2) return
-    const key = `${clean}::${context.trim()}`
-    if (autoGenerateKeyRef.current === key) return
-    const timer = window.setTimeout(() => {
-      autoGenerateKeyRef.current = key
-      generateRef.current()
-    }, 850)
-    return () => window.clearTimeout(timer)
-  }, [text, context])
+  // لا ينتقل الاستوديو تلقائيًا أثناء الكتابة. التحليل يتحدّث لحظيًا،
+  // أمّا بناء التصاميم والبحث الخارجي فلا يبدأان إلا بأمر صريح من المستخدم.
 
   useEffect(() => {
     if (!selected) return
@@ -534,13 +568,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const bestExternalVisual = externalVisuals[0]
   const imageGeneratorEndpoint = (import.meta as any)?.env?.VITE_STUDIO_IMAGE_GENERATOR_ENDPOINT as string | undefined
 
-  useEffect(() => {
-    if (!hasInput || stage !== 'idea') return
-    const signature = `${visualSearchPlan.queries.join('|')}::${visualSearchPlan.englishQueries.join('|')}`
-    if (signature === lastVisualSearchSignature || externalBusy) return
-    const timer = window.setTimeout(() => { void runExternalSearch(visualSearchPlan.queries[0] || visualSearchPlan.headline) }, 900)
-    return () => window.clearTimeout(timer)
-  }, [externalBusy, hasInput, lastVisualSearchSignature, stage, visualSearchPlan])
+  // البحث الخارجي لا يعمل أثناء الكتابة؛ يبدأ فقط من زر البحث أو من الطيار الآلي.
+  // هذا يمنع تراكم الطلبات وتعليق الهاتف عند كل تغيير في النص.
   const clicheWarnings = useMemo(() => detectVisualCliches(imageDescription), [imageDescription])
   useEffect(() => {
     try { localStorage.setItem('dr-ahmad-creative-identity-v1', JSON.stringify(creativeIdentity)) } catch { /* الذاكرة اختيارية */ }
@@ -590,7 +619,6 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     remember(finalPlans)
     setNotice(result.generation.warnings[0] || 'فحص المخرج ثمانية احتمالات داخليًا، ثم اختار ثلاث رؤى متباعدة بدل نتائج متقاربة.')
   }
-  generateRef.current = () => generate()
 
   /* ═══ رنين القراء: الجمل التي ظللها جمهورك الحقيقي — بضغطة تصير تصميماً ═══ */
   const { articles: cmsArticles, books: cmsBooks } = useCmsContent()
@@ -709,11 +737,50 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   }
 
   const applyExternalVisual = async (item: ExternalVisualResult, autoTreatment?: NonNullable<PlanOverlay['imageTreatment']>) => {
+    if (imageBusy) return
     setImageBusy(true)
     try {
-      const result = await analyzeStudioImageFromUrl(item.imageUrl, item.title)
-      if (!result) { setNotice('وصلت بيانات الصورة الخارجية لكن تحليلها التقني تعذّر الآن. جرّب مرشحًا آخر أو افتح الصفحة الأصلية.'); return }
-      const source = item.pageUrl || item.imageUrl
+      const urls = [...new Set([item.imageUrl, item.thumbnailUrl].filter(Boolean))]
+      let result: StudioImagePassport | null = null
+      let workingUrl = ''
+      for (const url of urls) {
+        result = await analyzeStudioImageFromUrl(url, item.title)
+        if (result) { workingUrl = url; break }
+      }
+      if (!result) {
+        for (const url of urls) {
+          const probe = await probeImageUrl(url, 4000)
+          if (!probe) continue
+          workingUrl = probe.url
+          const width = item.width || probe.width || 1200
+          const height = item.height || probe.height || 900
+          const aspectRatio = width / Math.max(1, height)
+          result = {
+            dataUrl: workingUrl,
+            fileName: item.title || 'external-image',
+            mime: 'image/jpeg',
+            width,
+            height,
+            aspectRatio,
+            orientation: aspectRatio > 1.08 ? 'landscape' : aspectRatio < .92 ? 'portrait' : 'square',
+            luminance: 50,
+            contrast: 45,
+            edgeDensity: 35,
+            negativeSpace: 'balanced',
+            focalX: .5,
+            focalY: .5,
+            recommendedFit: 'cover',
+            cropNotes: ['تعذّر تحليل البكسلات بسبب قيود المصدر؛ استُخدم قص مركزي آمن ويمكن ضبط نقطة التركيز يدويًا.', 'المصدر والترخيص محفوظان في جواز الصورة.'],
+          }
+          break
+        }
+      }
+      if (!result) {
+        setExternalVisuals((items) => items.filter((candidate) => candidate.id !== item.id))
+        setNotice('هذه الصورة غير قابلة للتحميل من المصدر الحالي، فتم استبعادها. اختر المرشح التالي.')
+        return
+      }
+      const source = item.pageUrl || workingUrl || item.imageUrl
       const description = item.description || item.title
       setImagePassport(result)
       setImageDescription(description)
@@ -723,33 +790,41 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       if (autoTreatment) {
         applyImageLedDirection(autoTreatment, result, { source, owner: item.author, license: item.license, description })
       } else {
-        setNotice(`اختيرت صورة من ${item.providerLabel} وحُللت محليًا. جواز الصورة يعرض المصدر والترخيص قبل الاعتماد.`)
+        setNotice(`اختيرت صورة من ${item.providerLabel} وأُنشئ جوازها. إن منع المصدر تحليل البكسلات، يستمر التصميم بقص آمن بدل التعليق.`)
       }
     } catch {
-      setNotice('تعذّر إعداد جواز الصورة من المرشح الخارجي الآن.')
+      setExternalVisuals((items) => items.filter((candidate) => candidate.id !== item.id))
+      setNotice('تعذّر تحميل هذا المرشح وتم استبعاده تلقائيًا. اختر صورة أخرى.')
     } finally { setImageBusy(false) }
   }
   const runExternalSearch = async (overrideQuery?: string) => {
-    if (!hasInput) return
+    if (!hasInput || externalBusy) return
     const query = (overrideQuery || externalQuery || visualSearchPlan.queries[0] || visualSearchPlan.headline).trim()
     if (!query) return
     const signature = `${query}::${visualSearchPlan.queries.join('|')}::${visualSearchPlan.englishQueries.join('|')}`
+    const sequence = ++externalSearchSequenceRef.current
     setExternalBusy(true)
     setExternalError('')
     setLastVisualSearchSignature(signature)
     try {
       const queryPlan = { ...visualSearchPlan, queries: [query, ...visualSearchPlan.queries.filter((item) => item !== query)] }
-      const results = await searchExternalVisualSources(queryPlan, 12)
+      const rawResults = await searchExternalVisualSources(queryPlan, 12)
+      if (sequence !== externalSearchSequenceRef.current) return
+      const results = await verifyExternalVisuals(rawResults, 10)
+      if (sequence !== externalSearchSequenceRef.current) return
       setExternalVisuals(results)
       setExternalQuery(query)
       setLastVisualSearchSignature(signature)
-      if (results.length) setNotice(`عُثر على ${results.length} مرشحًا بصريًا من مصادر مجانية وموثقة.`)
-      else setNotice('لم أجد مرشحات قوية بهذه العبارة. جرّب استعلامًا أقصر أو بدّل الزاوية البصرية.')
+      if (results.length) setNotice(`تم التحقق من ${results.length} صور قابلة للعرض من المصادر المجانية؛ أُزيلت الروابط المكسورة تلقائيًا.`)
+      else setNotice('لم أجد صورة قابلة للتحميل بهذه العبارة. جرّب عبارة أقصر أو استخدم Pexels/Wikimedia بدل الاستعلام العام.')
     } catch {
+      if (sequence !== externalSearchSequenceRef.current) return
       setExternalVisuals([])
-      setExternalError('تعذّر جلب المرشحات الخارجية الآن. استمرّت المكتبة المحلية بالعمل.')
-      setNotice('تعذّر جلب المرشحات الخارجية الآن. استمرّت المكتبة المحلية بالعمل.')
-    } finally { setExternalBusy(false) }
+      setExternalError('توقف البحث ضمن المهلة المحددة حتى لا يعلق الاستوديو. جرّب مرة أخرى أو استخدم صورة من جهازك.')
+      setNotice('أوقفت البحث ضمن المهلة الآمنة حتى لا يعلق الهاتف.')
+    } finally {
+      if (sequence === externalSearchSequenceRef.current) setExternalBusy(false)
+    }
   }
   const copyGenerationPrompt = async () => {
     try {
@@ -1615,7 +1690,6 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       const seedContext = String(seed?.context || '').trim()
       setText(seedText)
       setContext(seedContext)
-      autoGenerateKeyRef.current = `${seedText}::${seedContext}`
       setNotice('وصل المقال من المكتبة — أبني له حملة متكاملة الآن…')
       window.setTimeout(() => { runCampaignRef.current(seedText, seedContext) }, 80)
     } catch { /* بذرة تالفة: نتجاهلها بصمت */ }
@@ -1679,7 +1753,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         <div className="mt-7 grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,.7fr)]">
           <label className="grid gap-2 text-[.75rem] font-semibold text-soft">
             الجملة أو الموضوع
-            <textarea ref={textRef} className={`${input} min-h-36 resize-y text-base leading-loose`} value={text} onChange={(event) => setText(event.target.value)} placeholder="مثال: الذكاء الاصطناعي لا يجب أن يسرق من المعلم إنسانيته" />
+            <textarea ref={textRef} className={`${input} min-h-36 resize-y text-base leading-loose`} value={text} onChange={(event) => setText(event.target.value)} placeholder="مثال: الذكاء الاصطناعي لا يجب أن يسرق من المعلم إنسانيته" /><span className="text-[.62rem] font-normal leading-relaxed text-soft">اكتب براحتك؛ لن ينتقل الاستوديو أو يبدأ البحث حتى تضغط زر البناء.</span>
           </label>
           <label className="grid gap-2 text-[.75rem] font-semibold text-soft">
             السياق أو الهدف — اختياري
@@ -1720,13 +1794,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
 
         {hasInput && (
           <section className="mt-4 rounded-2xl border border-hair bg-canvas p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.68rem] font-bold text-accent">ذكاء الصور · جواز الصورة</p><p className="mt-1 text-[.72rem] text-soft">يبدأ من مكتبة الموقع، ثم يبحث تلقائيًا في المصادر المجانية المفتوحة <strong className="text-ink">Wikimedia Commons</strong> و<strong className="text-ink">Pexels</strong> و<strong className="text-ink">Openverse</strong>. بعد الاختيار يُحلَّل القص ونقطة التركيز والمساحة الهادئة محليًا، ويُنشأ جواز صورة واضح بالمصدر والترخيص وسبب الاختيار.</p></div><label className={`${ghost} cursor-pointer`}><input type="file" accept="image/*" className="hidden" disabled={imageBusy} onChange={(event) => { const file = event.target.files?.[0]; if (file) void runImagePassport(file); event.currentTarget.value = '' }} />{imageBusy ? 'يحلل الصورة…' : 'حمّل صورة مرشحة'}</label></div>
+            <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.68rem] font-bold text-accent">ذكاء الصور · جواز الصورة</p><p className="mt-1 text-[.72rem] text-soft">يبدأ من مكتبة الموقع، ثم يبحث عند طلبك أو عند تشغيل الطيار الآلي في المصادر المجانية المفتوحة <strong className="text-ink">Wikimedia Commons</strong> و<strong className="text-ink">Pexels</strong> و<strong className="text-ink">Openverse</strong>. بعد الاختيار يُحلَّل القص ونقطة التركيز والمساحة الهادئة محليًا، ويُنشأ جواز صورة واضح بالمصدر والترخيص وسبب الاختيار.</p></div><label className={`${ghost} cursor-pointer`}><input type="file" accept="image/*" className="hidden" disabled={imageBusy} onChange={(event) => { const file = event.target.files?.[0]; if (file) void runImagePassport(file); event.currentTarget.value = '' }} />{imageBusy ? 'يحلل الصورة…' : 'حمّل صورة مرشحة'}</label></div>
             <div className="mt-4 grid gap-4 xl:grid-cols-[1.15fr_.85fr]">
               <section className="rounded-2xl border border-hair bg-paper/60 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.66rem] font-bold text-accent">البحث البصري الذكي</p><p className="mt-1 text-[.68rem] leading-relaxed text-soft">يبني الاستوديو الاستعلام من القضية المركزية لا من كلمات عشوائية، ويقترح مصادر مجانية وموثقة أولًا.</p></div><button type="button" className={ghost} disabled={externalBusy} onClick={() => void runExternalSearch()}>{externalBusy ? 'يبحث…' : 'أعد البحث الآن'}</button></div>
                 <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
                   <input className={input} value={externalQuery || visualSearchPlan.queries[0] || ''} onChange={(event) => setExternalQuery(event.target.value)} placeholder="عبارة البحث البصري" />
-                  <div className="flex flex-wrap gap-2"><button type="button" className={ghost} onClick={() => void runExternalSearch(externalQuery || visualSearchPlan.queries[0])}>ابحث</button><button type="button" className={ghost} onClick={() => void copyGenerationPrompt()}>انسخ Prompt</button><button type="button" className={ghost} disabled={generatorBusy} onClick={() => void runGenerator()}>{generatorBusy ? 'يولّد…' : 'ولّد عند الحاجة'}</button></div>
+                  <div className="flex flex-wrap gap-2"><button type="button" className={ghost} onClick={() => void runExternalSearch(externalQuery || visualSearchPlan.queries[0])}>ابحث</button><button type="button" className={ghost} onClick={() => void copyGenerationPrompt()}>انسخ Prompt</button><button type="button" className={ghost} disabled={!imageGeneratorEndpoint || generatorBusy} onClick={() => void runGenerator()}>{generatorBusy ? 'يولّد…' : imageGeneratorEndpoint ? 'ولّد صورة جديدة' : 'مولّد الصور غير موصول'}</button></div>
                 </div>
                 <div className="mt-3 rounded-xl border border-hair bg-canvas px-3 py-3">
                   <p className="text-[.62rem] font-semibold text-soft">عبارات البحث المقترحة</p>
@@ -1737,7 +1811,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 <div className="mt-3 rounded-xl border border-hair bg-canvas px-3 py-3">
                   <p className="text-[.62rem] font-semibold text-soft">Prompt التوليد البصري</p>
                   <textarea readOnly rows={4} className={`${input} mt-2 min-h-28 resize-y text-[.72rem] leading-relaxed`} value={visualSearchPlan.generationPrompt} />
-                  <p className="mt-2 text-[.6rem] leading-relaxed text-soft">التوليد لا يحل محل الترخيص. عند عدم ربط مزود توليد يبقى هذا الـPrompt جاهزًا للنسخ أو للربط بخادمك لاحقًا.</p>
+                  <p className="mt-2 text-[.6rem] leading-relaxed text-soft">البحث المجاني يعمل الآن مباشرة. أمّا توليد صورة جديدة بالذكاء الاصطناعي فيحتاج مزودًا خلفيًا موصولًا؛ عند غيابه يبقى هذا الـPrompt جاهزًا للنسخ.</p>
                 </div>
                 {externalError && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[.68rem] text-amber-900">{externalError}</p>}
               </section>
@@ -1749,7 +1823,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             {bestExternalVisual && <section className="mt-3 rounded-2xl border border-accent/15 bg-accent/[.035] p-4">
               <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.66rem] font-bold text-accent">المرشح الأقوى الآن</p><p className="mt-1 text-[.68rem] leading-relaxed text-soft">هذا الترشيح الأعلى صلةً من بين النتائج المجانية الحالية، ويصلح غالبًا للعنوان والقص عبر المنصات.</p></div><span className="rounded-full border border-accent/20 bg-white/70 px-3 py-1.5 text-[.62rem] font-semibold text-accent">درجة الملاءمة {bestExternalVisual.score}/99</span></div>
               <div className="mt-3 grid gap-3 md:grid-cols-[180px_1fr]">
-                <img src={bestExternalVisual.thumbnailUrl} alt={bestExternalVisual.title} className="aspect-[4/3] w-full rounded-2xl border border-hair object-cover" loading="lazy" />
+                <RemoteVisualThumbnail src={bestExternalVisual.thumbnailUrl} alt={bestExternalVisual.title} className="aspect-[4/3] w-full rounded-2xl border border-hair object-cover" />
                 <div className="grid gap-2">
                   <div className="flex flex-wrap items-center gap-2"><strong className="text-[.86rem] text-ink">{bestExternalVisual.title}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.56rem] text-soft">{bestExternalVisual.providerLabel}</span><span className="rounded-full border border-hair px-2 py-1 text-[.56rem] text-soft">{bestExternalVisual.orientation === 'landscape' ? 'أفقي' : bestExternalVisual.orientation === 'portrait' ? 'عمودي' : bestExternalVisual.orientation === 'square' ? 'مربع' : 'غير محدد'}</span></div>
                   <p className="text-[.68rem] leading-relaxed text-soft">{bestExternalVisual.description}</p>
@@ -1761,7 +1835,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             <details className="mt-3 rounded-xl border border-hair bg-paper/55"><summary className="cursor-pointer list-none px-4 py-3 text-[.7rem] font-semibold text-ink">مرشحات من مكتبة الموقع <span className="ms-2 font-normal text-soft">مرتبة دلاليًا بحسب الموضوع</span></summary><div className="mobile-card-rail flex snap-x snap-mandatory gap-2 overflow-x-auto border-t border-hair p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{libraryImages.map((item) => <button key={item.id} type="button" disabled={imageBusy} onClick={() => void runLibraryImage(item)} className="group w-32 shrink-0 snap-start overflow-hidden rounded-xl border border-hair bg-canvas text-right transition hover:border-accent disabled:opacity-50"><img src={item.url} alt="" className="aspect-[4/3] w-full object-cover" loading="lazy" /><span className="block px-2.5 py-2"><strong className="line-clamp-1 block text-[.65rem] text-ink group-hover:text-accent">{item.title}</strong><span className="mt-1 line-clamp-2 block text-[.58rem] leading-relaxed text-soft">{item.note}</span></span></button>)}</div></details>
             <details className="mt-3 rounded-xl border border-hair bg-paper/55" open={externalVisuals.length > 0}>
               <summary className="cursor-pointer list-none px-4 py-3 text-[.7rem] font-semibold text-ink">مرشحات خارجية مجانية <span className="ms-2 font-normal text-soft">مرتبة تلقائيًا من البحث البصري الذكي</span></summary>
-              <div className="mobile-card-rail flex snap-x snap-mandatory gap-3 overflow-x-auto border-t border-hair p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{externalBusy ? <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">أبحث الآن في المصادر المجانية…</p> : externalVisuals.length ? externalVisuals.map((item, index) => <article key={item.id} className={`w-[220px] shrink-0 snap-start overflow-hidden rounded-2xl border bg-canvas ${index === 0 ? 'border-accent/30 shadow-[0_16px_40px_rgba(17,41,75,.08)]' : 'border-hair'}`}><img src={item.thumbnailUrl} alt={item.title} className="aspect-[4/3] w-full object-cover" loading="lazy" /><div className="grid gap-2 p-3 text-right"><div className="flex items-start justify-between gap-2"><strong className="line-clamp-2 text-[.72rem] text-ink">{item.title}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.56rem] text-soft">{item.providerLabel}</span></div><div className="flex flex-wrap gap-2">{index === 0 ? <span className="rounded-full border border-accent/20 bg-accent/[.06] px-2 py-1 text-[.54rem] font-semibold text-accent">الأقوى الآن</span> : null}<span className="rounded-full border border-hair px-2 py-1 text-[.54rem] text-soft">{item.score}/99</span><span className="rounded-full border border-hair px-2 py-1 text-[.54rem] text-soft">{item.orientation === 'landscape' ? 'أفقي' : item.orientation === 'portrait' ? 'عمودي' : item.orientation === 'square' ? 'مربع' : 'غير محدد'}</span></div><p className="line-clamp-3 text-[.62rem] leading-relaxed text-soft">{item.description}</p><p className="text-[.58rem] leading-relaxed text-soft"><strong className="text-ink">لماذا اختيرت؟</strong> {item.rationale}</p><p className="text-[.56rem] text-soft">{item.author} · {item.license}</p><div className="flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => void applyExternalVisual(item, index === 0 ? 'cinematic' : 'editorial')}>ابنِ بها</button><button type="button" className={ghost} onClick={() => void applyExternalVisual(item)}>حلّل</button><a href={item.pageUrl || item.imageUrl} target="_blank" rel="noreferrer" className={ghost}>المصدر</a></div></div></article>) : <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">لا توجد مرشحات خارجية بعد. اكتب الفكرة وسيبدأ البحث التلقائي، أو اضغط «أعد البحث الآن».</p>}</div>
+              <div className="mobile-card-rail flex snap-x snap-mandatory gap-3 overflow-x-auto border-t border-hair p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{externalBusy ? <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">أبحث الآن في المصادر المجانية…</p> : externalVisuals.length ? externalVisuals.map((item, index) => <article key={item.id} className={`w-[220px] shrink-0 snap-start overflow-hidden rounded-2xl border bg-canvas ${index === 0 ? 'border-accent/30 shadow-[0_16px_40px_rgba(17,41,75,.08)]' : 'border-hair'}`}><RemoteVisualThumbnail src={item.thumbnailUrl} alt={item.title} className="aspect-[4/3] w-full object-cover" /><div className="grid gap-2 p-3 text-right"><div className="flex items-start justify-between gap-2"><strong className="line-clamp-2 text-[.72rem] text-ink">{item.title}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.56rem] text-soft">{item.providerLabel}</span></div><div className="flex flex-wrap gap-2">{index === 0 ? <span className="rounded-full border border-accent/20 bg-accent/[.06] px-2 py-1 text-[.54rem] font-semibold text-accent">الأقوى الآن</span> : null}<span className="rounded-full border border-hair px-2 py-1 text-[.54rem] text-soft">{item.score}/99</span><span className="rounded-full border border-hair px-2 py-1 text-[.54rem] text-soft">{item.orientation === 'landscape' ? 'أفقي' : item.orientation === 'portrait' ? 'عمودي' : item.orientation === 'square' ? 'مربع' : 'غير محدد'}</span></div><p className="line-clamp-3 text-[.62rem] leading-relaxed text-soft">{item.description}</p><p className="text-[.58rem] leading-relaxed text-soft"><strong className="text-ink">لماذا اختيرت؟</strong> {item.rationale}</p><p className="text-[.56rem] text-soft">{item.author} · {item.license}</p><div className="flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => void applyExternalVisual(item, index === 0 ? 'cinematic' : 'editorial')}>ابنِ بها</button><button type="button" className={ghost} onClick={() => void applyExternalVisual(item)}>حلّل</button><a href={item.pageUrl || item.imageUrl} target="_blank" rel="noreferrer" className={ghost}>المصدر</a></div></div></article>) : <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">لا توجد مرشحات خارجية بعد. اضغط «أعد البحث الآن» بعد اكتمال الفكرة. لا يبدأ البحث أثناء الكتابة حتى لا يعلق الهاتف.</p>}</div>
             </details>
             {imagePassport ? <div className="mt-4 grid gap-4 lg:grid-cols-[220px_1fr]">
               <div className="overflow-hidden rounded-2xl border border-hair bg-paper"><img src={imagePassport.dataUrl} alt="معاينة الصورة المرشحة" className="aspect-square h-full w-full object-cover" /></div>

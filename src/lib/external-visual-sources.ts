@@ -41,6 +41,16 @@ const truncate = (value: string, count: number) => {
 }
 const normalize = (value = '') => clean(value).toLowerCase()
 
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = 6000) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(input, { ...init, signal: controller.signal })
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 function unique(list: string[]) {
   return [...new Set(list.map((item) => clean(item)).filter(Boolean))]
 }
@@ -144,9 +154,14 @@ function computeCandidateScore(item: Omit<ExternalVisualResult, 'score' | 'orien
   let score = 50 + matchBoost - avoidPenalty
   if (orientation === 'landscape') score += 12
   if (orientation === 'square') score += 8
+  // موثوقية التحميل جزء من الجودة: Pexels وWikimedia أكثر ثباتًا في الواجهة،
+  // بينما روابط Openverse قد تكون وسيطة أو تمنع العرض الخارجي.
+  if (item.provider === 'pexels') score += 12
+  if (item.provider === 'wikimedia') score += 8
+  if (item.provider === 'openverse') score -= 12
   if (plan.tone === 'documentary' && item.provider === 'pexels') score += 12
   if (plan.tone === 'data' && item.provider === 'wikimedia') score += 10
-  if (plan.tone === 'editorial' && item.provider === 'openverse') score += 7
+  if (plan.tone === 'editorial' && item.provider === 'openverse') score += 3
   if (item.provider === 'wikimedia' && /diagram|chart|research|education|teacher|school|university|library/i.test(haystack)) score += 7
   if (item.provider === 'pexels' && /teacher|student|classroom|library|study/i.test(haystack)) score += 7
   return {
@@ -168,7 +183,7 @@ async function searchWikimedia(query: string, plan: VisualSearchPlan, limit = 8)
   url.searchParams.set('iiprop', 'url|extmetadata|size')
   url.searchParams.set('iiurlwidth', '900')
   url.searchParams.set('inprop', 'url')
-  const response = await fetch(url.toString())
+  const response = await fetchWithTimeout(url.toString())
   if (!response.ok) throw new Error('wikimedia_search_failed')
   const payload = await response.json() as { query?: { pages?: Record<string, any> } }
   const pages = Object.values(payload.query?.pages || {})
@@ -203,7 +218,7 @@ async function searchPexels(query: string, plan: VisualSearchPlan, limit = 8): P
   url.searchParams.set('query', query)
   url.searchParams.set('per_page', String(Math.max(4, Math.min(limit, 15))))
   url.searchParams.set('orientation', plan.tone === 'documentary' ? 'landscape' : 'landscape')
-  const response = await fetch(url.toString(), { headers: { Authorization: apiKey } })
+  const response = await fetchWithTimeout(url.toString(), { headers: { Authorization: apiKey } })
   if (!response.ok) throw new Error('pexels_search_failed')
   const payload = await response.json() as { photos?: any[] }
   return (payload.photos || []).map((photo) => {
@@ -233,7 +248,7 @@ async function searchOpenverse(query: string, plan: VisualSearchPlan, limit = 8)
   url.searchParams.set('page_size', String(Math.max(4, Math.min(limit, 14))))
   url.searchParams.set('license_type', 'commercial')
   url.searchParams.set('mature', 'false')
-  const response = await fetch(url.toString())
+  const response = await fetchWithTimeout(url.toString())
   if (!response.ok) throw new Error('openverse_search_failed')
   const payload = await response.json() as { results?: any[] }
   return (payload.results || []).map((item) => {
@@ -244,7 +259,7 @@ async function searchOpenverse(query: string, plan: VisualSearchPlan, limit = 8)
       title: item.title || 'Openverse image',
       description: item.title || item.tags?.slice?.(0, 5)?.join(' · ') || 'صورة مجانية من Openverse.',
       thumbnailUrl: item.thumbnail || item.url || '',
-      imageUrl: item.thumbnail || item.url || '',
+      imageUrl: item.url || item.thumbnail || '',
       pageUrl: item.foreign_landing_url || item.detail_url || item.url || '',
       author: item.creator || 'Openverse',
       license: item.license ? `${String(item.license).toUpperCase()}${item.license_version ? ` ${item.license_version}` : ''}` : 'راجع صفحة المصدر',
@@ -254,27 +269,26 @@ async function searchOpenverse(query: string, plan: VisualSearchPlan, limit = 8)
       rationale: 'مصدر مجاني مفتوح يوسّع الخيارات التحريرية والرمزية عبر مواد مرخّصة.',
     }
     return { ...base, ...computeCandidateScore(base, plan) }
-  }).filter((item) => item.thumbnailUrl && item.imageUrl)
+  }).filter((item) => item.thumbnailUrl && item.imageUrl && /^https:\/\//i.test(item.thumbnailUrl) && /^https:\/\//i.test(item.imageUrl))
 }
 
 export async function searchExternalVisualSources(plan: VisualSearchPlan, limit = 10): Promise<ExternalVisualResult[]> {
-  const bundle = unique([...plan.queries.slice(0, 3), ...plan.englishQueries.slice(0, 2)]).slice(0, 4)
-  const collected: ExternalVisualResult[] = []
-  for (const query of bundle) {
-    const [wikimedia, pexels, openverse] = await Promise.allSettled([
-      searchWikimedia(query, plan, Math.ceil(limit / 2)),
-      searchPexels(query, plan, Math.ceil(limit / 2)),
-      searchOpenverse(query, plan, Math.ceil(limit / 2)),
-    ])
-    if (wikimedia.status === 'fulfilled') collected.push(...wikimedia.value)
-    if (pexels.status === 'fulfilled') collected.push(...pexels.value)
-    if (openverse.status === 'fulfilled') collected.push(...openverse.value)
-    if (collected.length >= limit * 3) break
-  }
+  // استعلامان كحد أقصى، وكل المصادر تعمل بالتوازي. الحد الزمني داخل كل طلب
+  // يمنع مصدرًا واحدًا من تعليق الاستوديو كاملًا على الهاتف.
+  const bundle = unique([...plan.queries.slice(0, 2), ...plan.englishQueries.slice(0, 1)]).slice(0, 2)
+  const tasks = bundle.flatMap((query) => [
+    searchWikimedia(query, plan, Math.ceil(limit / 2)),
+    searchPexels(query, plan, Math.ceil(limit / 2)),
+    searchOpenverse(query, plan, Math.ceil(limit / 3)),
+  ])
+  const settled = await Promise.allSettled(tasks)
+  const collected = settled.flatMap((result) => result.status === 'fulfilled' ? result.value : [])
   const deduped = new Map<string, ExternalVisualResult>()
   for (const item of collected) {
     const key = item.imageUrl || item.pageUrl || item.id
     if (!deduped.has(key) || (deduped.get(key)?.score || 0) < item.score) deduped.set(key, item)
   }
-  return [...deduped.values()].sort((a, b) => b.score - a.score || a.providerLabel.localeCompare(b.providerLabel)).slice(0, limit)
+  return [...deduped.values()]
+    .sort((a, b) => b.score - a.score || a.providerLabel.localeCompare(b.providerLabel))
+    .slice(0, limit)
 }

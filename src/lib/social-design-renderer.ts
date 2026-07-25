@@ -1084,6 +1084,41 @@ const paintChapterStack: Painter = (s) => {
 /** ١٠ — النافذة السينمائية: أشرطة عرض ولوح عنوان عالي التباين. */
 const paintCinematicWindow: Painter = (s) => {
   const { palette: p, w, h, min, uid } = s
+  const heroImage = s.plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background' && item.src)
+  if (heroImage) {
+    const zone = heroImage.textZone || 'right'
+    const rightSide = zone !== 'left'
+    const contentW = w * (s.isWide ? .54 : .64)
+    const title = fitTitle(s, contentW, { base: min * (s.isTall ? .062 : .072), maxLines: s.isTall ? 4 : 3 })
+    const body = fitBody(s, contentW, { maxLines: s.isTall ? 3 : 2 })
+    const titleH = blockHeight(title.lines, title.size, s.titleLineHeight)
+    const bodyH = blockHeight(body.lines, body.size, 1.64)
+    const titleX = rightSide ? w - s.safeX : s.safeX
+    const anchor = rightSide ? 'end' as const : 'start' as const
+    const top = zone === 'bottom' ? h * .48 : zone === 'top' ? h * .19 : h * .27
+    const lineX = rightSide ? w - s.safeX + min * .018 : s.safeX - min * .018
+    const kickerSize = Math.max(13, min * .021)
+    const kickerW = Math.min(contentW * .58, lineWidthPx(s.kicker, kickerSize) + min * .08)
+    const kickerX = rightSide ? w - s.safeX - kickerW : s.safeX
+    const kickerTextX = rightSide ? kickerX + kickerW / 2 : kickerX + kickerW / 2
+    const titleTop = top + min * .085
+    const bodyTop = titleTop + titleH + min * .065
+    const ctaTop = bodyTop + bodyH + min * .06
+    return {
+      markup: [
+        `<rect x="${round(kickerX)}" y="${round(top)}" width="${round(kickerW)}" height="${round(min * .058)}" rx="${round(min * .029)}" fill="${p.accent}" opacity=".94"/>`,
+        textBlock({ lines: [s.kicker], x: kickerTextX, y: top + min * .038, size: kickerSize, fill: '#F7F5EF', weight: 700, anchor: 'middle', family: 'Tajawal' }),
+        `<rect x="${round(lineX)}" y="${round(titleTop - min * .01)}" width="${round(min * .007)}" height="${round(Math.max(titleH, min * .16))}" rx="${round(min * .004)}" fill="${p.accent}"/>`,
+        textBlock({ lines: title.lines, x: titleX, y: titleTop + title.size * .82, size: title.size, fill: '#F7F5EF', weight: 700, anchor, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent }),
+        body.lines.length ? textBlock({ lines: body.lines, x: titleX, y: bodyTop + body.size * .82, size: body.size, fill: 'rgba(247,245,239,.82)', weight: 400, anchor, family: s.bodyFamily, lineHeight: 1.64 }) : '',
+        s.cta ? textBlock({ lines: [s.cta], x: titleX, y: ctaTop + min * .022, size: Math.max(13, min * .021), fill: p.accent, weight: 700, anchor, family: 'Tajawal' }) : '',
+        s.slides > 1 ? textBlock({ lines: [`01/${String(s.slides).padStart(2, '0')}`], x: s.safeX, y: s.safeY * .72, size: Math.max(12, min * .019), fill: 'rgba(247,245,239,.74)', weight: 600, anchor: 'start', family: 'Tajawal' }) : '',
+        heroImage.owner || heroImage.license ? textBlock({ lines: [`المصدر البصري: ${heroImage.owner || 'غير محدد'} · ${heroImage.license || 'راجع الأصل'}`], x: w - s.safeX, y: h - s.safeY - min * .065, size: Math.max(10, min * .014), fill: 'rgba(247,245,239,.58)', weight: 400, anchor: 'end', family: 'Tajawal' }) : '',
+        s.slides > 1 ? carouselItem(s, { gap: 0 }).draw(h - s.safeY - min * .1) : '',
+        identityFooter(s, { mode: rightSide ? 'standard' : 'center' }),
+      ].join(''),
+    }
+  }
   const barH = h * (s.isTall ? .07 : .085)
   const pad = min * .055
   const title = fitTitle(s, w - s.safeX * 2 - pad * 2, { base: min * .07 })
@@ -1535,9 +1570,52 @@ function identityLayer(s: Scene, options: RenderSvgOptions) {
   ].join('')
 }
 
+/** الصور البطولية تُرسم تحت التكوين لا فوقه، كي تصبح الصورة هي المسرح ويظل النص
+    جزءًا من الإخراج لا ملصقًا موضوعًا فوق صورة. كل معالجة هنا حتمية وتظهر في
+    المعاينة والتصدير بالطريقة نفسها. */
+function imageUnderlayLayer(s: Scene) {
+  const images = [...(s.plan.overlays || [])]
+    .filter((item) => item.kind === 'image' && item.src && item.imageRole === 'background')
+    .sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
+  if (!images.length) return { defs: '', markup: '' }
+  const { w, h, palette: p } = s
+  const definitions: string[] = []
+  const markup = images.map((overlay, index) => {
+    const id = `hero-${esc(overlay.id).replace(/[^a-zA-Z0-9_-]/g, '')}-${index}`
+    const treatment = overlay.imageTreatment || 'cinematic'
+    const focusX = clamp(overlay.focalX ?? .5, 0, 1)
+    const focusY = clamp(overlay.focalY ?? .5, 0, 1)
+    const alignX = focusX < .34 ? 'xMin' : focusX > .66 ? 'xMax' : 'xMid'
+    const alignY = focusY < .34 ? 'YMin' : focusY > .66 ? 'YMax' : 'YMid'
+    const preserve = `${alignX}${alignY} slice`
+    const saturation = treatment === 'documentary' ? .82 : treatment === 'editorial' ? .62 : treatment === 'duotone' ? .18 : treatment === 'none' ? 1 : .48
+    const contrast = treatment === 'none' ? 1 : treatment === 'documentary' ? 1.06 : 1.16
+    const filterId = `${id}-filter`
+    definitions.push(`<filter id="${filterId}" x="-10%" y="-10%" width="120%" height="120%"><feColorMatrix type="saturate" values="${round(saturation)}"/><feComponentTransfer><feFuncR type="linear" slope="${round(contrast)}" intercept="${round((1 - contrast) / 2)}"/><feFuncG type="linear" slope="${round(contrast)}" intercept="${round((1 - contrast) / 2)}"/><feFuncB type="linear" slope="${round(contrast)}" intercept="${round((1 - contrast) / 2)}"/></feComponentTransfer></filter>`)
+    const textZone = overlay.textZone || (focusX < .45 ? 'right' : 'left')
+    const shade = clamp(overlay.readabilityShade ?? .72, 0, .95)
+    const gradientId = `${id}-shade`
+    const gradient = textZone === 'right'
+      ? `<linearGradient id="${gradientId}" x1="100%" y1="50%" x2="0%" y2="50%"><stop offset="0%" stop-color="${p.background}" stop-opacity="${round(shade)}"/><stop offset="58%" stop-color="${p.background}" stop-opacity="${round(shade * .42)}"/><stop offset="100%" stop-color="${p.background}" stop-opacity="0"/></linearGradient>`
+      : textZone === 'left'
+        ? `<linearGradient id="${gradientId}" x1="0%" y1="50%" x2="100%" y2="50%"><stop offset="0%" stop-color="${p.background}" stop-opacity="${round(shade)}"/><stop offset="58%" stop-color="${p.background}" stop-opacity="${round(shade * .42)}"/><stop offset="100%" stop-color="${p.background}" stop-opacity="0"/></linearGradient>`
+        : textZone === 'top'
+          ? `<linearGradient id="${gradientId}" x1="50%" y1="0%" x2="50%" y2="100%"><stop offset="0%" stop-color="${p.background}" stop-opacity="${round(shade)}"/><stop offset="58%" stop-color="${p.background}" stop-opacity="${round(shade * .35)}"/><stop offset="100%" stop-color="${p.background}" stop-opacity="0"/></linearGradient>`
+          : `<linearGradient id="${gradientId}" x1="50%" y1="100%" x2="50%" y2="0%"><stop offset="0%" stop-color="${p.background}" stop-opacity="${round(shade)}"/><stop offset="58%" stop-color="${p.background}" stop-opacity="${round(shade * .38)}"/><stop offset="100%" stop-color="${p.background}" stop-opacity="0"/></linearGradient>`
+    definitions.push(gradient)
+    const vignette = clamp(overlay.vignette ?? .34, 0, .8)
+    const vignetteId = `${id}-vignette`
+    definitions.push(`<radialGradient id="${vignetteId}" cx="50%" cy="44%" r="72%"><stop offset="48%" stop-color="#000000" stop-opacity="0"/><stop offset="100%" stop-color="#000000" stop-opacity="${round(vignette)}"/></radialGradient>`)
+    const opacity = clamp(overlay.opacity ?? 1, .1, 1)
+    const tint = treatment === 'duotone' ? `<rect width="${w}" height="${h}" fill="${p.accent}" opacity=".22" style="mix-blend-mode:color"/>` : ''
+    return `<g data-hero-image="true" opacity="${round(opacity)}"><image href="${esc(overlay.src)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="${preserve}" filter="url(#${filterId})"/>${tint}<rect width="${w}" height="${h}" fill="url(#${gradientId})"/><rect width="${w}" height="${h}" fill="url(#${vignetteId})"/></g>`
+  }).join('')
+  return { defs: definitions.join(''), markup }
+}
+
 /* ═══ طبقات المحرر الحر (أمر الدكتور): تُرسم فوق التكوين بألوان لوحته ═══ */
 function overlaysLayer(s: Scene) {
-  const overlays = [...(s.plan.overlays || [])].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
+  const overlays = [...(s.plan.overlays || [])].filter((item) => item.imageRole !== 'background').sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
   if (!overlays.length) return ''
   const { palette: p, w, h, min } = s
   const colorOf = (name: string) => name === 'accent' ? p.accent : name === 'muted' ? p.muted : name === 'paper' ? p.surface : p.ink
@@ -1591,9 +1669,10 @@ export function renderCompositionSvg(plan: CompositionPlan, options: RenderSvgOp
   const bg = backdrop(s, { glow })
   const painter = PAINTERS[plan.layout] || paintEditorialAxis
   const scenePaint = painter(s)
+  const hero = imageUnderlayLayer(s)
   const accessible = esc(options.ariaLabel || `${plan.directionLabel}: ${plan.content.title}`)
   const fontStyle = options.fontCss ? `<style>${options.fontCss}</style>` : ''
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${s.w}" height="${s.h}" viewBox="0 0 ${s.w} ${s.h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${esc(options.title || plan.content.title)}</title><defs>${fontStyle}${bg.defs}${scenePaint.defs || ''}</defs>${bg.markup}${frameDecor(s)}${scenePaint.markup}${dnaSignature(s)}${overlaysLayer(s)}${identityLayer(s, options)}</svg>`
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${s.w}" height="${s.h}" viewBox="0 0 ${s.w} ${s.h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${esc(options.title || plan.content.title)}</title><defs>${fontStyle}${bg.defs}${scenePaint.defs || ''}${hero.defs}</defs>${bg.markup}${hero.markup}${frameDecor(s)}${scenePaint.markup}${dnaSignature(s)}${overlaysLayer(s)}${identityLayer(s, options)}</svg>`
 }
 
 /* ------------------------------------------------------------------ */

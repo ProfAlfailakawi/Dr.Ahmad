@@ -423,6 +423,9 @@ export interface SocialCampaign {
 export type OverlayBlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'soft-light' | 'luminosity'
 export type OverlayImageFit = 'cover' | 'contain'
 export type OverlayMask = 'none' | 'rounded' | 'circle'
+export type OverlayImageRole = 'foreground' | 'background'
+export type OverlayImageTreatment = 'none' | 'cinematic' | 'documentary' | 'duotone' | 'editorial'
+export type OverlayTextZone = 'right' | 'left' | 'top' | 'bottom' | 'center'
 
 export interface PlanOverlay {
   id: string
@@ -455,6 +458,13 @@ export interface PlanOverlay {
   focalX?: number
   focalY?: number
   mask?: OverlayMask
+  /** حين تكون الصورة خلفية، يرسمها المصيّر قبل النص ويضع فوقها معالجة قراءة. */
+  imageRole?: OverlayImageRole
+  imageTreatment?: OverlayImageTreatment
+  textZone?: OverlayTextZone
+  vignette?: number
+  /** مقدار التعتيم الموجه للنص من 0 إلى 1. */
+  readabilityShade?: number
 }
 
 export interface CompositionPlan {
@@ -1989,6 +1999,9 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   const duplicate = peers.some((peer) => peer.id !== plan.id && designSimilarity(plan, peer) >= .82)
   const issues: string[] = []
   const strengths: string[] = []
+  const heroImage = plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background' && item.src)
+  const heroMetadataComplete = !heroImage || Boolean(heroImage.sourceUrl && heroImage.owner && heroImage.license)
+  const heroReadabilitySafe = !heroImage || (heroImage.readabilityShade ?? .72) >= .5
   const textContrast = contrastQuality(Math.min(mainContrastRatio, secondaryContrastRatio))
   const backgroundContrast = contrastQuality(Math.min(mainContrastRatio, accentContrastRatio))
   const contrast = boundedQuality(textContrast * .72 + backgroundContrast * .28)
@@ -2028,6 +2041,10 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   if (lineLayout.estimatedTitleLines > lineLayout.titleMaxLines) issues.push('خطأ: العنوان سيتجاوز عدد الأسطر الآمن.')
   if (!structuredList && lineLayout.estimatedBodyLines > lineLayout.bodyMaxLines) issues.push('المتن سيتجاوز عدد الأسطر المريح.')
   if (duplicate) issues.push('قريب بصرياً من اتجاه آخر.')
+  if (heroImage && !heroMetadataComplete) issues.push('جواز الصورة البطولية ناقص: سجّل المصدر والمالك والترخيص قبل النشر.')
+  if (heroImage && !heroReadabilitySafe) issues.push('التعتيم الموجّه فوق الصورة البطولية منخفض وقد يضعف قراءة النص.')
+  if (heroImage?.imageTreatment) strengths.push('صورة بطولية بمعالجة فنية موجهة')
+  if (heroImage && heroMetadataComplete) strengths.push('جواز صورة مكتمل وقابل للتدقيق')
   if (textContrast >= 94 && backgroundContrast >= 90) strengths.push('تباين نص وخلفية ممتاز')
   if (whitespace >= 90 && density >= 88) strengths.push('فراغات وكثافة محسوبة')
   if (hierarchy >= 92) strengths.push('تسلسل بصري واضح')
@@ -2045,6 +2062,8 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   if (titleOverflow || bodyOverflow) score = Math.min(score, 62)
   if (textContrast < 88 || backgroundContrast < 84) score = Math.min(score, 82)
   if (coreMinimum < 70 || !safe) score = Math.min(score, 72)
+  if (!heroMetadataComplete) score = Math.min(score, 86)
+  if (!heroReadabilitySafe) score = Math.min(score, 79)
   if (coreMinimum < 78) score = Math.min(score, 79)
   if (coreMinimum < 84) score = Math.min(score, 87)
   const deservesNinety = core.every((value) => value >= 90)

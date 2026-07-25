@@ -244,7 +244,7 @@ async function searchOpenverse(query: string, plan: VisualSearchPlan, limit = 8)
       title: item.title || 'Openverse image',
       description: item.title || item.tags?.slice?.(0, 5)?.join(' · ') || 'صورة مجانية من Openverse.',
       thumbnailUrl: item.thumbnail || item.url || '',
-      imageUrl: item.url || item.thumbnail || '',
+      imageUrl: item.thumbnail || item.url || '',
       pageUrl: item.foreign_landing_url || item.detail_url || item.url || '',
       author: item.creator || 'Openverse',
       license: item.license ? `${String(item.license).toUpperCase()}${item.license_version ? ` ${item.license_version}` : ''}` : 'راجع صفحة المصدر',

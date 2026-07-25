@@ -61,6 +61,7 @@ const perfectArticlePath = '/api/ai/perfect-article'
 const socialPackPath = '/api/ai/social-pack'
 const socialIdeasPath = '/api/ai/social-ideas'
 const currentContextPath = '/api/ai/current-context'
+const studioImagePath = '/api/ai/studio-image'
 const archiveAnswerPath = '/api/ai/archive-answer'
 const journeyPath = '/api/journey'
 const adminNowPath = '/api/admin/site-now'
@@ -892,6 +893,136 @@ export function serverArticleSimilarity(title, body, existing = []) {
   }).sort((left, right) => right.score - left.score).slice(0, 5)
   const highest = matches[0]?.score || 0
   return { matches, highest, originality: Math.max(0, Math.round((1 - highest) * 100)), repeated: highest >= .52 }
+}
+
+const studioImageMetaphors = Object.freeze([
+  'a threshold between shadow and light, suggesting a mind crossing into a new understanding',
+  'an empty chair carrying the emotional weight of an absent voice, without melodrama',
+  'a quiet human gesture reflected in glass, revealing two layers of meaning at once',
+  'a seam of warm light interrupting a disciplined architectural darkness',
+  'a suspended page, object, or silhouette that feels like a thought becoming visible',
+  'a restrained visual paradox: order on one side, human uncertainty on the other',
+  'an archive-like object treated as a contemporary symbol of memory and responsibility',
+  'a distant figure facing a vast, intelligent negative space, dignified rather than lonely',
+])
+
+function studioImageInput(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new HttpError(400, 'Expected a JSON object')
+  const idea = boundedString(value.idea, 1_200)
+  if (!idea) throw new HttpError(400, 'Provide an idea')
+  return {
+    idea,
+    context: boundedString(value.context, 2_000),
+    issue: boundedString(value.issue, 800),
+    tension: boundedString(value.tension, 800),
+    emotion: boundedString(value.emotion, 400),
+    audience: boundedString(value.audience, 500),
+    visualReason: boundedString(value.visualReason, 900),
+    avoid: boundedString(value.avoid, 900),
+    persona: boundedString(value.persona, 120),
+    lighting: boundedString(value.lighting, 120),
+    negativeSpace: boundedString(value.negativeSpace, 120),
+    orientation: ['portrait', 'landscape', 'square'].includes(value.orientation) ? value.orientation : 'portrait',
+    clientPrompt: boundedString(value.prompt, 2_048),
+  }
+}
+
+export function buildEliteStudioImagePrompt(input) {
+  const signature = createHash('sha256').update([input.idea, input.context, input.issue].join('|')).digest()
+  const metaphor = studioImageMetaphors[signature[0] % studioImageMetaphors.length]
+  const orientation = input.orientation === 'landscape'
+    ? 'cinematic 16:9 landscape composition'
+    : input.orientation === 'square'
+      ? 'editorial 1:1 square composition'
+      : 'premium 4:5 portrait editorial composition'
+  const negativeSpace = input.negativeSpace === 'compact'
+    ? 'controlled breathing room without empty decorative areas'
+    : input.negativeSpace === 'balanced'
+      ? 'balanced negative space with a calm text-safe zone on the right'
+      : 'generous, intentional negative space on the right for Arabic typography'
+  const lighting = input.lighting === 'dramatic'
+    ? 'sculpted cinematic light, deep blacks, one precise luminous accent'
+    : input.lighting === 'soft'
+      ? 'soft directional light, refined tonal transitions, tactile depth'
+      : 'natural directional light with cinematic discipline and believable texture'
+  const subject = input.issue || input.idea
+  const emotionalGoal = input.emotion || 'quiet intellectual awe, human dignity, and emotional truth'
+  const visualArgument = input.visualReason || input.tension || 'show the human consequence of the idea rather than illustrating it literally'
+  const forbidden = [
+    input.avoid,
+    'generic stock-photo smiles',
+    'glowing brains',
+    'robot hands touching human hands',
+    'floating UI holograms',
+    'blue cyber grids',
+    'literal icons',
+    'obvious classroom clichés',
+    'text, letters, captions, logos, watermarks, interface elements',
+    'plastic skin, exaggerated HDR, oversaturated colors, artificial corporate staging',
+  ].filter(Boolean).join(', ')
+  return [
+    `Create a world-class ${orientation} for an internationally respected Arab academic and public intellectual.`,
+    `Core idea (Arabic): ${subject}.`,
+    input.context ? `Context: ${input.context}.` : '',
+    input.audience ? `Audience: ${input.audience}.` : '',
+    `Do not illustrate the sentence literally. Translate it into an emotionally intelligent visual metaphor: ${metaphor}.`,
+    `The visual argument must ${visualArgument}.`,
+    `Emotional register: ${emotionalGoal}; profound but never sentimental, powerful but never loud.`,
+    `Art direction: museum-grade editorial photography, contemporary cultural magazine cover, cinematic documentary realism, restrained luxury, authentic materials, nuanced human presence, one unforgettable focal event.`,
+    `Composition: ${negativeSpace}; strong hierarchy; meaningful foreground, middle ground, and background; asymmetrical balance; deliberate crop; no visual clutter.`,
+    `Light and color: ${lighting}; graphite, ink, warm ivory, muted mineral tones, and one subtle accent only when conceptually justified.`,
+    `Cultural direction: globally sophisticated, Arab-sensitive, intellectually serious, free of stereotypes, costumes, flags, or decorative orientalism unless the idea explicitly requires them.`,
+    `Image quality: believable anatomy, natural hands, authentic facial emotion when people appear, tactile surfaces, fine editorial grain, premium lens language, timeless rather than trendy.`,
+    `Avoid completely: ${forbidden}.`,
+    input.clientPrompt ? `Additional creative brief: ${input.clientPrompt}.` : '',
+    `The final image must feel commissioned by the strongest editorial art director in the world and should make viewers pause before they read a single word.`,
+  ].filter(Boolean).join(' ').slice(0, 2048)
+}
+
+export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
+  const accountId = String(process.env.CLOUDFLARE_ACCOUNT_ID || '').trim()
+  const apiToken = String(process.env.CLOUDFLARE_API_TOKEN || '').trim()
+  const model = String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/black-forest-labs/flux-1-schnell').trim()
+  if (!accountId || !apiToken) throw new HttpError(503, 'Cloudflare Workers AI is not configured')
+  if (!/^[a-f0-9]{32}$/i.test(accountId)) throw new HttpError(503, 'Cloudflare account is not configured correctly')
+  if (!/^@cf\/[A-Za-z0-9._/-]+$/.test(model)) throw new HttpError(503, 'Cloudflare image model is not configured correctly')
+
+  const prompt = buildEliteStudioImagePrompt(input)
+  const seed = Number.parseInt(createHash('sha256').update(`${input.idea}|${Date.now()}`).digest('hex').slice(0, 8), 16) >>> 0
+  let response
+  try {
+    response = await fetchWithTimeout(fetchImpl,
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          authorization: `Bearer ${apiToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ prompt, seed, steps: envNumber('CLOUDFLARE_IMAGE_STEPS', 8, 4, 8) }),
+      }, envNumber('CLOUDFLARE_IMAGE_TIMEOUT_MS', 45_000, 10_000, 55_000))
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new HttpError(504, 'Image generation timed out')
+    throw new HttpError(502, 'Image generation service unavailable')
+  }
+  if (!response.ok) {
+    if (response.status === 429) throw new HttpError(503, 'Image generation is busy', { 'retry-after': '30' })
+    throw new HttpError(502, 'Image generation failed')
+  }
+  let payload
+  try { payload = await response.json() } catch { throw new HttpError(502, 'Image generation returned an invalid response') }
+  const image = payload?.result?.image || payload?.image
+  if (typeof image !== 'string' || image.length < 1_000 || image.length > 20_000_000) throw new HttpError(502, 'Image generation returned no usable image')
+  return {
+    imageUrl: `data:image/jpeg;base64,${image}`,
+    sourceUrl: 'https://developers.cloudflare.com/workers-ai/models/flux-1-schnell/',
+    owner: 'Cloudflare Workers AI · FLUX.1 schnell',
+    license: 'AI-generated image — review model terms before external commercial use',
+    description: input.issue || input.idea,
+    prompt,
+    model,
+    generatedAt: new Date().toISOString(),
+  }
 }
 
 function boundedString(value, maximum = 2_000) {
@@ -2146,7 +2277,7 @@ export function createRequestHandler({
       return
     }
 
-    if ([articleSuggestionPath, contentSuggestionPath, paperAnalysisPath, perfectArticlePath, socialPackPath, socialIdeasPath, currentContextPath].includes(url.pathname)) {
+    if ([articleSuggestionPath, contentSuggestionPath, paperAnalysisPath, perfectArticlePath, socialPackPath, socialIdeasPath, currentContextPath, studioImagePath].includes(url.pathname)) {
       if (method !== 'POST') {
         sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' })
         return
@@ -2168,6 +2299,11 @@ export function createRequestHandler({
       }
       const body = await readJsonBody(req)
 
+      if (url.pathname === studioImagePath) {
+        const input = studioImageInput(body)
+        sendJson(res, 200, await generateCloudflareStudioImage(input))
+        return
+      }
       if (url.pathname === paperAnalysisPath) {
         const input = paperAnalysisInput(body)
         sendJson(res, 200, await generatePaperAnalysis(input))

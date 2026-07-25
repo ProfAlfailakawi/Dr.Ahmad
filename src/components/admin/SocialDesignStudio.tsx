@@ -8,6 +8,7 @@ import {
   regenerateFromPlan,
   transformDesignFormat,
   updateTasteProfile,
+  designSimilarity,
   type CompositionPlan,
   type ContentTone,
   type DesignDensity,
@@ -77,6 +78,33 @@ const STUDIO_STAGES = [
 
 type StudioStage = typeof STUDIO_STAGES[number]['id']
 type MobileEditorPanel = 'preview' | 'layers' | 'properties'
+
+type AutoPilotModeId = 'safe' | 'editorial' | 'luxury' | 'impact' | 'evidence'
+type AutoPilotCandidate = {
+  id: AutoPilotModeId
+  label: string
+  note: string
+  plan: CompositionPlan
+  worldScore: number
+  qualityScore: number
+  stopScore: number
+}
+
+type ReleaseVariant = {
+  id: 'final' | 'safer' | 'viral'
+  label: string
+  note: string
+  plan: CompositionPlan
+  score: number
+}
+
+const AUTOPILOT_PRESETS: { id: AutoPilotModeId; label: string; note: string; tone: ContentTone; density: DesignDensity; preferLayout: LayoutFamilyId; platform?: SocialPlatform | 'auto'; imageTreatment?: NonNullable<PlanOverlay['imageTreatment']> }[] = [
+  { id: 'safe', label: 'النسخة الآمنة', note: 'أوضح قراءة وأعلى موثوقية للنشر الرسمي.', tone: 'formal', density: 'balanced', preferLayout: 'editorial-axis', platform: 'auto', imageTreatment: 'editorial' },
+  { id: 'editorial', label: 'الغلاف التحريري', note: 'غلاف مجلة فكرية بهدوء وهيبة.', tone: 'intellectual', density: 'minimal', preferLayout: 'cinematic-window', platform: 'instagram', imageTreatment: 'cinematic' },
+  { id: 'luxury', label: 'الفاخر الصامت', note: 'رقي بصري أقل كلاماً وأكثر هيبة.', tone: 'luxury', density: 'minimal', preferLayout: 'quiet-orbit', platform: 'instagram', imageTreatment: 'duotone' },
+  { id: 'impact', label: 'نسخة التوقف', note: 'مصممة لالتقاط العين بسرعة من أول ثانية.', tone: 'bold', density: 'minimal', preferLayout: 'hero-word', platform: 'instagram', imageTreatment: 'cinematic' },
+  { id: 'evidence', label: 'نسخة الدليل', note: 'تدفع الرقم أو الحجة إلى الواجهة بلا ضجيج.', tone: 'academic', density: 'balanced', preferLayout: 'evidence-ledger', platform: 'linkedin', imageTreatment: 'documentary' },
+]
 
 function selectDistinctTriptych(plans: CompositionPlan[]) {
   const selected: CompositionPlan[] = []
@@ -366,6 +394,11 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   }, [tasteProfile, tasteLedger])
   const [campaign, setCampaign] = useState<SocialCampaign | null>(null)
   const [campaignBusy, setCampaignBusy] = useState(false)
+  const [autopilotBusy, setAutopilotBusy] = useState(false)
+  const [autopilotPack, setAutopilotPack] = useState<AutoPilotCandidate[]>([])
+  const [autoFinalsBusy, setAutoFinalsBusy] = useState(false)
+  const [releasePackBusy, setReleasePackBusy] = useState(false)
+  const [releasePack, setReleasePack] = useState<ReleaseVariant[]>([])
   const [qualityThreshold, setQualityThreshold] = useState(() => Number(localStorage.getItem(QUALITY_THRESHOLD_KEY) || 82))
   /* البصمة البصرية: لوحةٌ مستخرجةٌ من صورةٍ محلية تكسو كل الاتجاهات الحالية
      والقادمة حتى تُزال — بلا خدمةٍ خارجية ولا رفعٍ لأي خادم. */
@@ -388,6 +421,47 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   // خريطة الانتباه (٨) وشرح التعثّر (٢٢): محاكاةٌ وتشخيصٌ محليّان للتصميم المختار.
   const attention = useMemo<AttentionMap | null>(() => (selected && attentionOn ? computeAttentionMap(selected) : null), [selected, attentionOn])
   const explanation = useMemo<DesignExplanation | null>(() => (selected ? explainDesign(selected) : null), [selected])
+  const globalCritic = useMemo(() => {
+    if (!selected) return null
+    const quality = selected.quality || critiqueCompositionPlan(selected, plans.filter((peer) => peer.id !== selected.id))
+    const stop = predictEngagement(selected)
+    const imageDriven = Boolean(selected.overlays?.some((item) => item.kind === 'image' && item.imageRole === 'background'))
+    const score = Math.round(quality.score * .62 + stop.score * .24 + selected.novelty * 9 + (selected.tasteAffinity || 0) * 5 + (imageDriven ? 3 : 0))
+    const verdict = score >= 92 ? 'جاهز لمنافسة أفضل الإخراجات.' : score >= 86 ? 'قوي جدًا ويستحق النشر.' : score >= 80 ? 'ممتاز لكن يمكن دفعه أكثر.' : 'جيد، ويحتاج دفعة أخرى قبل أن يبهر.'
+    const nextStep = quality.issues[0] || stop.tips[0] || 'جرّب نسخة الطيار الآلي أو بدّل زاوية المشهد.'
+    return { score, verdict, nextStep, imageDriven, stop }
+  }, [plans, selected])
+  const designLineage = useMemo(() => {
+    if (!selected) return null
+    const history = loadHistory().filter((entry) => entry.fingerprint !== selected.fingerprint)
+    if (!history.length) return null
+    const nearest = history
+      .map((entry) => ({ entry, similarity: designSimilarity(selected, entry.signature) }))
+      .sort((left, right) => right.similarity - left.similarity)[0]
+    if (!nearest) return null
+    const sameFamily = nearest.entry.signature.layout === selected.layout
+    return {
+      similarity: Math.round(nearest.similarity * 100),
+      message: nearest.similarity >= .82
+        ? 'هذا الاتجاه قريب جدًا من سلالة سابقة؛ الأفضل كسر النبرة أو المعالجة قبل الاعتماد النهائي.'
+        : nearest.similarity >= .66
+          ? 'هذا الاتجاه امتداد ناضج لسلالة سابقة مع تطور واضح.'
+          : 'الاتجاه الحالي يفتح سلالة جديدة شبه مستقلة عن تاريخك.' ,
+      family: sameFamily ? 'العائلة نفسها' : 'عائلة مختلفة',
+    }
+  }, [selected])
+  const designProvenance = useMemo(() => {
+    if (!selected) return null
+    const hero = selected.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background')
+    return {
+      source: hero?.sourceUrl || imageSource || 'غير مسجل',
+      owner: hero?.owner || imageOwner || 'غير مسجل',
+      license: hero?.license || imageLicense || 'غير مسجل',
+      reasons: selected.rationale?.slice(0, 4) || [],
+      heroMode: hero?.imageTreatment || 'لا توجد صورة بطولية',
+      slides: selected.content.slides?.length || 0,
+    }
+  }, [selected, imageLicense, imageOwner, imageSource])
   // أثناء الرسم لا بعده: المعاينات تقرأ التفضيل في نفس الدورة التي تغيّر فيها
   useMemo(() => setRenderPreferences({ seal: sealOn, seasonal: seasonalOn && Boolean(activeSeason), pattern: bgPattern }), [sealOn, seasonalOn, activeSeason, bgPattern])
   useEffect(() => {
@@ -625,17 +699,23 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     finally { setImageBusy(false) }
   }
 
-  const applyExternalVisual = async (item: ExternalVisualResult) => {
+  const applyExternalVisual = async (item: ExternalVisualResult, autoTreatment?: NonNullable<PlanOverlay['imageTreatment']>) => {
     setImageBusy(true)
     try {
       const result = await analyzeStudioImageFromUrl(item.imageUrl, item.title)
       if (!result) { setNotice('وصلت بيانات الصورة الخارجية لكن تحليلها التقني تعذّر الآن. جرّب مرشحًا آخر أو افتح الصفحة الأصلية.'); return }
+      const source = item.pageUrl || item.imageUrl
+      const description = item.description || item.title
       setImagePassport(result)
-      setImageDescription(item.description || item.title)
-      setImageSource(item.pageUrl || item.imageUrl)
+      setImageDescription(description)
+      setImageSource(source)
       setImageOwner(item.author)
       setImageLicense(item.license)
-      setNotice(`اختيرت صورة من ${item.providerLabel} وحُللت محليًا. جواز الصورة يعرض المصدر والترخيص قبل الاعتماد.`)
+      if (autoTreatment) {
+        applyImageLedDirection(autoTreatment, result, { source, owner: item.author, license: item.license, description })
+      } else {
+        setNotice(`اختيرت صورة من ${item.providerLabel} وحُللت محليًا. جواز الصورة يعرض المصدر والترخيص قبل الاعتماد.`)
+      }
     } catch {
       setNotice('تعذّر إعداد جواز الصورة من المرشح الخارجي الآن.')
     } finally { setImageBusy(false) }
@@ -702,6 +782,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         license: payload.license || 'تحتاج مراجعة سياسة المزود',
         requiresAttribution: false,
         rationale: 'صورة مولدة بعد تعذر إيجاد مرشح بصري مناسب أو الرغبة في اتجاه أصلي.',
+        score: 90,
+        orientation: 'unknown',
       })
     } catch {
       setNotice('تعذّر التوليد البصري الآن. بقي Prompt التوليد جاهزًا والبحث الخارجي يعمل.')
@@ -730,6 +812,86 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [activeGuides, setActiveGuides] = useState<{ x?: number; y?: number }>({})
   const dragRef = useRef<{ id: string; mode: 'move' | 'resize'; startX: number; startY: number; origins: PlanOverlay[]; originalPlan: CompositionPlan } | null>(null)
   const canvasRef = useRef<HTMLDivElement | null>(null)
+
+  const cinematicTextZone = (passport: StudioImagePassport): NonNullable<PlanOverlay['textZone']> => {
+    if (passport.negativeSpace === 'right') return 'right'
+    if (passport.negativeSpace === 'left') return 'left'
+    if (passport.negativeSpace === 'top') return 'top'
+    if (passport.negativeSpace === 'bottom') return 'bottom'
+    return passport.focalX < .46 ? 'right' : 'left'
+  }
+  const buildImageLedPlan = (
+    plan: CompositionPlan,
+    treatment: NonNullable<PlanOverlay['imageTreatment']>,
+    passport: StudioImagePassport,
+    metadata?: { source?: string; owner?: string; license?: string; description?: string },
+  ) => {
+    const roleId = `hero-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+    const zone = cinematicTextZone(passport)
+    const existing = (plan.overlays || []).filter((item) => item.imageRole !== 'background')
+    const background: PlanOverlay = {
+      id: roleId,
+      kind: 'image',
+      x: 0,
+      y: 0,
+      width: 1,
+      height: 1,
+      src: passport.dataUrl,
+      name: passport.fileName,
+      sourceUrl: metadata?.source || imageSource.trim() || undefined,
+      owner: metadata?.owner || imageOwner.trim() || undefined,
+      license: metadata?.license || imageLicense.trim() || undefined,
+      importedAt: new Date().toISOString(),
+      semanticDescription: metadata?.description || imageDescription.trim() || undefined,
+      color: 'paper',
+      opacity: 1,
+      zIndex: -100,
+      locked: true,
+      rotation: 0,
+      blendMode: 'normal',
+      fit: 'cover',
+      focalX: passport.focalX,
+      focalY: passport.focalY,
+      mask: 'none',
+      imageRole: 'background',
+      imageTreatment: treatment,
+      textZone: zone,
+      vignette: treatment === 'documentary' ? .22 : treatment === 'editorial' ? .32 : treatment === 'duotone' ? .38 : .46,
+      readabilityShade: treatment === 'documentary' ? .58 : treatment === 'editorial' ? .68 : .76,
+    }
+    const palette: PaletteId = treatment === 'duotone' ? 'graphite-gold' : 'brand-night'
+    const layout: LayoutFamilyId = treatment === 'documentary' ? 'editorial-axis' : treatment === 'editorial' ? 'quote-stage' : 'cinematic-window'
+    const next = {
+      ...plan,
+      layout,
+      palette,
+      paletteOverride: undefined,
+      density: treatment === 'documentary' ? 'balanced' : 'minimal',
+      framing: treatment === 'editorial' ? 'editorial-folio' : 'cinematic-crop',
+      overlays: [background, ...existing],
+      rationale: [
+        `الصورة أصبحت المسرح الأساسي للتكوين بمعالجة ${treatment === 'cinematic' ? 'سينمائية' : treatment === 'documentary' ? 'وثائقية' : treatment === 'duotone' ? 'ثنائية اللون' : 'تحريرية'}.`,
+        `اختيرت منطقة النص ${zone === 'right' ? 'يمينًا' : zone === 'left' ? 'يسارًا' : zone === 'top' ? 'أعلى' : zone === 'bottom' ? 'أسفل' : 'في الوسط'} بحسب أهدأ مساحة في الصورة.`,
+        'حافظ المحرك على المصدر والترخيص ونقطة التركيز داخل جواز الصورة.',
+        ...(plan.rationale || []).slice(0, 2),
+      ],
+    } as CompositionPlan
+    return next
+  }
+  const applyImageLedDirection = (
+    treatment: NonNullable<PlanOverlay['imageTreatment']>,
+    passportOverride?: StudioImagePassport,
+    metadata?: { source?: string; owner?: string; license?: string; description?: string },
+  ) => {
+    if (!selected) { setNotice('اختر اتجاهًا أولًا، ثم حوّل الصورة إلى مشهد بطولي.'); return }
+    const passport = passportOverride || imagePassport
+    if (!passport) { setNotice('اختر صورة أولًا كي أبني حولها المشهد السينمائي.'); return }
+    editPlan((plan) => buildImageLedPlan(plan, treatment, passport, metadata))
+    setFreeMode(false)
+    setMobileEditorPanel('preview')
+    setStage('edit')
+    setNotice('بُني مشهد بصري بطولي حول الصورة: معالجة، تعتيم موجه، نقطة تركيز، ومناطق قراءة — لا مجرد صورة خلف النص.')
+  }
 
   const addOverlay = (kind: PlanOverlay['kind']) => {
     if (!selected) return
@@ -825,7 +987,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     setNotice(axis === 'x' ? 'وُزعت الطبقات المحددة أفقيًا بمسافات متساوية.' : 'وُزعت الطبقات المحددة رأسيًا بمسافات متساوية.')
   }
   const copyOverlayStyle = (overlay: PlanOverlay) => {
-    setOverlayStyleClipboard({ color: overlay.color, opacity: overlay.opacity, rotation: overlay.rotation, size: overlay.size, weight: overlay.weight, align: overlay.align, blendMode: overlay.blendMode, fit: overlay.fit, mask: overlay.mask })
+    setOverlayStyleClipboard({ color: overlay.color, opacity: overlay.opacity, rotation: overlay.rotation, size: overlay.size, weight: overlay.weight, align: overlay.align, blendMode: overlay.blendMode, fit: overlay.fit, mask: overlay.mask, imageRole: overlay.imageRole, imageTreatment: overlay.imageTreatment, textZone: overlay.textZone, vignette: overlay.vignette, readabilityShade: overlay.readabilityShade })
     setNotice('نُسخ نمط الطبقة. حدّد طبقة أو أكثر ثم اختر «ألصق النمط».')
   }
   const pasteOverlayStyle = () => {
@@ -1099,6 +1261,39 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         basePlan,
         noveltyThreshold: .36,
       })
+      const heroImage = basePlan?.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background' && item.src)
+      if (heroImage) {
+        const treatmentForRole: Partial<Record<SocialCampaign['assets'][number]['role'], NonNullable<PlanOverlay['imageTreatment']>>> = {
+          hero: 'cinematic', teaser: 'cinematic', story: 'documentary', quote: 'editorial', linkedin: 'editorial', closing: 'duotone', reminder: 'documentary', reel: 'cinematic',
+        }
+        const assets = next.assets.map((asset, index) => {
+          const treatment = treatmentForRole[asset.role] || (index % 2 ? 'editorial' : 'documentary')
+          const imageLayer: PlanOverlay = {
+            ...heroImage,
+            id: `${heroImage.id}-${asset.role}-${index}`,
+            imageTreatment: treatment,
+            textZone: index % 3 === 0 ? heroImage.textZone : index % 3 === 1 ? (heroImage.textZone === 'right' ? 'left' : 'right') : 'bottom',
+            readabilityShade: treatment === 'documentary' ? .58 : treatment === 'duotone' ? .8 : .7,
+            vignette: treatment === 'documentary' ? .2 : .38,
+            locked: true,
+            zIndex: -100,
+          }
+          const plan = {
+            ...asset.plan,
+            palette: treatment === 'duotone' ? 'graphite-gold' as PaletteId : 'brand-night' as PaletteId,
+            paletteOverride: undefined,
+            framing: treatment === 'documentary' ? 'full-bleed' as const : 'cinematic-crop' as const,
+            layout: asset.role === 'linkedin' ? 'editorial-axis' as LayoutFamilyId : asset.role === 'quote' ? 'quote-stage' as LayoutFamilyId : asset.role === 'closing' ? 'hero-word' as LayoutFamilyId : 'cinematic-window' as LayoutFamilyId,
+            overlays: [imageLayer, ...(asset.plan.overlays || []).filter((item) => item.imageRole !== 'background')],
+            rationale: [`هذه القطعة فصل بصري مستقل في الحملة بمعالجة ${treatment}.`, ...(asset.plan.rationale || [])],
+          }
+          return { ...asset, plan }
+        })
+        const drafts = assets.map((asset) => asset.plan)
+        const requalified = assets.map((asset) => ({ ...asset, plan: { ...asset.plan, quality: critiqueCompositionPlan(asset.plan, drafts.filter((peer) => peer.id !== asset.plan.id)) } }))
+        const qualityScore = Math.round(requalified.reduce((sum, asset) => sum + (asset.plan.quality?.score || 0), 0) / Math.max(1, requalified.length))
+        next = { ...next, assets: requalified, qualityScore, ready: next.ready && qualityScore >= 75 }
+      }
       if (dna) {
         const drafts = next.assets.map((asset) => ({ ...asset.plan, paletteOverride: dna.palette }))
         const assets = next.assets.map((asset, index) => {
@@ -1133,6 +1328,198 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   }
   const runCampaignRef = useRef(runCampaign)
   runCampaignRef.current = runCampaign
+
+  const exportAutoFinals = async () => {
+    const candidates = [...autopilotPack.map((item) => item.plan), ...plans].filter(Boolean)
+    const finalists = candidates
+      .map((plan) => ({ plan, score: Math.round(((plan.quality?.score || 0) * .7) + predictEngagement(plan).score * .3) }))
+      .sort((left, right) => right.score - left.score)
+    const picked: CompositionPlan[] = []
+    for (const candidate of finalists) {
+      if (picked.every((item) => designSimilarity(item, candidate.plan) < .72)) picked.push(candidate.plan)
+      if (picked.length === 3) break
+    }
+    if (!picked.length) {
+      setNotice('لا توجد نسخ نهائية جاهزة للتصدير بعد.')
+      return
+    }
+    setAutoFinalsBusy(true)
+    try {
+      for (const plan of picked) await downloadCompositionRaster(plan, 'png')
+      setNotice(`نُزّلت ${picked.length} نسخ نهائية جاهزة للنشر — مختلفة حقًا لا تكرارًا شكليًا.`)
+    } finally {
+      setAutoFinalsBusy(false)
+    }
+  }
+
+  const bestPlanForRelease = () => selected || autopilotPack[0]?.plan || plans[0] || null
+
+  const scorePlan = (plan: CompositionPlan) => Math.round(((plan.quality?.score || 0) * .68) + predictEngagement(plan).score * .22 + plan.novelty * 10)
+
+  const buildReleasePack = async (baseOverride?: CompositionPlan | null) => {
+    const base = baseOverride || bestPlanForRelease()
+    if (!base) {
+      setNotice('ولّد اتجاهًا قويًا أولًا، ثم ابنِ حزمة النشر العليا.')
+      return
+    }
+    setReleasePackBusy(true)
+    try {
+      const hero = base.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background')
+      const carryHero = (plan: CompositionPlan, treatment?: NonNullable<PlanOverlay['imageTreatment']>) => {
+        if (!hero || !imagePassport) return plan
+        return buildImageLedPlan(plan, treatment || hero.imageTreatment || 'cinematic', imagePassport, { source: hero.sourceUrl, owner: hero.owner, license: hero.license, description: hero.semanticDescription })
+      }
+      const finalPlan = carryHero(base, 'cinematic')
+      const saferResult = regenerateFromPlan(base, {
+        tone: 'formal',
+        density: 'balanced',
+        platform: 'linkedin',
+        count: 4,
+        seed: `safer:${base.id}:${Date.now()}`,
+        history: loadHistory(),
+        tasteProfile,
+      })
+      const viralResult = regenerateFromPlan(base, {
+        tone: 'bold',
+        density: 'minimal',
+        platform: 'instagram',
+        count: 4,
+        seed: `viral:${base.id}:${Date.now()}`,
+        history: loadHistory(),
+        tasteProfile,
+      })
+      const saferPlan = saferResult.plans.map((plan) => carryHero(plan, 'editorial')).sort((a, b) => scorePlan(b) - scorePlan(a))[0] || finalPlan
+      const viralPlan = viralResult.plans.map((plan) => carryHero(plan, 'cinematic')).sort((a, b) => scorePlan(b) - scorePlan(a))[0] || finalPlan
+      const pack: ReleaseVariant[] = [
+        { id: 'final', label: 'Final', note: 'النسخة المرجعية الأعلى اتزانًا للنشر الرسمي.', plan: finalPlan, score: scorePlan(finalPlan) },
+        { id: 'safer', label: 'Safer', note: 'أهدأ وأكثر تحفظًا للجهات والمؤسسات والبيئات الحساسة.', plan: saferPlan, score: scorePlan(saferPlan) },
+        { id: 'viral', label: 'Viral', note: 'أقوى نسخة للتوقف والانتشار البصري السريع.', plan: viralPlan, score: scorePlan(viralPlan) },
+      ].sort((a, b) => b.score - a.score)
+      setReleasePack(pack)
+      setNotice('بُنيت الآن حزمة النشر العليا: Final / Safer / Viral — ثلاث نهايات تفهم سبب وجودها، لا نسخًا عشوائية.')
+    } finally {
+      setReleasePackBusy(false)
+    }
+  }
+
+  const exportReleasePack = async () => {
+    if (!releasePack.length) {
+      await buildReleasePack()
+      return
+    }
+    setReleasePackBusy(true)
+    try {
+      for (const item of releasePack) await downloadCompositionRaster(item.plan, 'png')
+      setNotice('نُزّلت حزمة Final / Safer / Viral كاملةً — جاهزة للاعتماد أو المقارنة المباشرة.')
+    } finally {
+      setReleasePackBusy(false)
+    }
+  }
+
+  const runAutopilot = async () => {
+    if (text.trim().length < 2) {
+      setNotice('اكتب العنوان أولًا كي يبني الطيار الآلي خمس نهايات عالمية.')
+      textRef.current?.focus()
+      return
+    }
+    setAutopilotBusy(true)
+    try {
+      const parsed = parseStudioCommand(text)
+      setCommandParse(parsed.understood.length ? parsed : null)
+      const nextGeneration = generation + 1
+      const localHistory = loadHistory()
+      let passport = imagePassport
+      let sourceMeta: { source?: string; owner?: string; license?: string; description?: string } | undefined = imagePassport
+        ? { source: imageSource, owner: imageOwner, license: imageLicense, description: imageDescription }
+        : undefined
+      if (!passport) {
+        let best = bestExternalVisual
+        if (!best && hasInput) {
+          try {
+            const query = (externalQuery || visualSearchPlan.queries[0] || visualSearchPlan.headline).trim()
+            const queryPlan = { ...visualSearchPlan, queries: [query, ...visualSearchPlan.queries.filter((item) => item !== query)] }
+            const results = await searchExternalVisualSources(queryPlan, 12)
+            if (results.length) {
+              setExternalVisuals(results)
+              best = results[0]
+            }
+          } catch { /* noop */ }
+        }
+        if (best?.imageUrl) {
+          try {
+            const analyzed = await analyzeStudioImageFromUrl(best.imageUrl, best.title)
+            if (analyzed) {
+              passport = analyzed
+              sourceMeta = { source: best.pageUrl || best.imageUrl, owner: best.author, license: best.license, description: best.description || best.title }
+              setImagePassport(analyzed)
+              setImageDescription(sourceMeta.description || '')
+              setImageSource(sourceMeta.source || '')
+              setImageOwner(sourceMeta.owner || '')
+              setImageLicense(sourceMeta.license || '')
+            }
+          } catch { /* يبقى الطيار الآلي يعمل حتى بلا صورة */ }
+        }
+      }
+      const pool: AutoPilotCandidate[] = []
+      for (const preset of AUTOPILOT_PRESETS) {
+        let attempts = 0
+        let winner: AutoPilotCandidate | null = null
+        while (attempts < 2 && !winner) {
+          const result = generateSocialDesigns({
+            text: parsed.content,
+            context: [context, parsed.contextHint].filter(Boolean).join(' · '),
+            author: 'د. أحمد حسين الفيلكاوي',
+            tone: preset.tone,
+            density: preset.density,
+            platform: preset.platform ?? (parsed.platform || platform),
+            count: 8,
+            seed: `autopilot:${preset.id}:${text}:${context}:${nextGeneration}:${Date.now()}:${attempts}`,
+            history: localHistory,
+            noveltyThreshold: .42,
+            tasteProfile,
+            preferLayout: preset.preferLayout,
+          })
+          const candidates = result.plans.map((plan) => {
+            const withImage = passport && preset.imageTreatment ? buildImageLedPlan(plan, preset.imageTreatment, passport, sourceMeta) : plan
+            const quality = critiqueCompositionPlan(withImage, result.plans.filter((peer) => peer.id !== plan.id))
+            const enriched = { ...withImage, quality }
+            const stop = predictEngagement(enriched)
+            const worldScore = Math.round(quality.score * .62 + stop.score * .24 + enriched.novelty * 9 + (enriched.tasteAffinity || 0) * 5 + (passport ? 3 : 0))
+            return { id: preset.id, label: preset.label, note: preset.note, plan: enriched, worldScore, qualityScore: quality.score, stopScore: stop.score }
+          }).sort((left, right) => right.worldScore - left.worldScore)
+          if (candidates[0]?.worldScore >= 85 || attempts === 1) winner = candidates[0] || null
+          attempts += 1
+        }
+        if (winner) pool.push(winner)
+      }
+      const distinct: AutoPilotCandidate[] = []
+      for (const candidate of pool.sort((left, right) => right.worldScore - left.worldScore)) {
+        if (distinct.every((item) => designSimilarity(item.plan, candidate.plan) < .72)) distinct.push(candidate)
+        if (distinct.length === 5) break
+      }
+      const finalPack = (distinct.length ? distinct : pool).slice(0, 5)
+      const championPlans = finalPack.map((item, index) => ({
+        ...item.plan,
+        directionIndex: index + 1,
+        directionLabel: `${item.label}`,
+        rationale: [`نسخة الطيار الآلي: ${item.note}`, `تقييم عالمي ${item.worldScore}٪ · جودة داخلية ${item.qualityScore}٪ · قوة توقف ${item.stopScore}٪.`, ...(item.plan.rationale || []).slice(0, 3)],
+      }))
+      const triptych = selectDistinctTriptych(championPlans)
+      setPlans(triptych)
+      setReservePlans(championPlans.filter((plan) => !triptych.some((item) => item.id === plan.id)))
+      setAutopilotPack(finalPack)
+      setReleasePack([])
+      setSelected(triptych[0] || null)
+      setGeneration(nextGeneration)
+      setStage('directions')
+      remember(championPlans)
+      setNotice(passport
+        ? 'بنى الطيار الآلي خمس نهايات عالمية، اختار الصورة الأقوى تلقائيًا، وأعاد المحاولة عند ضعف النسخة حتى خرج بأفضل عرض.'
+        : 'بنى الطيار الآلي خمس نهايات عالمية، وأعاد المحاولة داخليًا عند ضعف النسخة حتى رفع الجودة قدر الإمكان.')
+    } finally {
+      setAutopilotBusy(false)
+    }
+  }
 
   const buildCampaign = () => {
     if (!selected && !plans[0]) {
@@ -1297,14 +1684,14 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                   <div className="flex flex-wrap items-center gap-2"><strong className="text-[.86rem] text-ink">{bestExternalVisual.title}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.56rem] text-soft">{bestExternalVisual.providerLabel}</span><span className="rounded-full border border-hair px-2 py-1 text-[.56rem] text-soft">{bestExternalVisual.orientation === 'landscape' ? 'أفقي' : bestExternalVisual.orientation === 'portrait' ? 'عمودي' : bestExternalVisual.orientation === 'square' ? 'مربع' : 'غير محدد'}</span></div>
                   <p className="text-[.68rem] leading-relaxed text-soft">{bestExternalVisual.description}</p>
                   <p className="text-[.62rem] leading-relaxed text-soft"><strong className="text-ink">سبب الترشيح:</strong> {bestExternalVisual.rationale}</p>
-                  <div className="flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => void applyExternalVisual(bestExternalVisual)}>استخدم المرشح الأقوى</button><a href={bestExternalVisual.pageUrl || bestExternalVisual.imageUrl} target="_blank" rel="noreferrer" className={ghost}>افتح المصدر</a></div>
+                  <div className="flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => void applyExternalVisual(bestExternalVisual, 'cinematic')}>ابنِ المشهد مباشرة</button><button type="button" className={ghost} onClick={() => void applyExternalVisual(bestExternalVisual)}>حلّل الصورة فقط</button><a href={bestExternalVisual.pageUrl || bestExternalVisual.imageUrl} target="_blank" rel="noreferrer" className={ghost}>افتح المصدر</a></div>
                 </div>
               </div>
             </section>}
             <details className="mt-3 rounded-xl border border-hair bg-paper/55"><summary className="cursor-pointer list-none px-4 py-3 text-[.7rem] font-semibold text-ink">مرشحات من مكتبة الموقع <span className="ms-2 font-normal text-soft">مرتبة دلاليًا بحسب الموضوع</span></summary><div className="mobile-card-rail flex snap-x snap-mandatory gap-2 overflow-x-auto border-t border-hair p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{libraryImages.map((item) => <button key={item.id} type="button" disabled={imageBusy} onClick={() => void runLibraryImage(item)} className="group w-32 shrink-0 snap-start overflow-hidden rounded-xl border border-hair bg-canvas text-right transition hover:border-accent disabled:opacity-50"><img src={item.url} alt="" className="aspect-[4/3] w-full object-cover" loading="lazy" /><span className="block px-2.5 py-2"><strong className="line-clamp-1 block text-[.65rem] text-ink group-hover:text-accent">{item.title}</strong><span className="mt-1 line-clamp-2 block text-[.58rem] leading-relaxed text-soft">{item.note}</span></span></button>)}</div></details>
             <details className="mt-3 rounded-xl border border-hair bg-paper/55" open={externalVisuals.length > 0}>
               <summary className="cursor-pointer list-none px-4 py-3 text-[.7rem] font-semibold text-ink">مرشحات خارجية مجانية <span className="ms-2 font-normal text-soft">مرتبة تلقائيًا من البحث البصري الذكي</span></summary>
-              <div className="mobile-card-rail flex snap-x snap-mandatory gap-3 overflow-x-auto border-t border-hair p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{externalBusy ? <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">أبحث الآن في المصادر المجانية…</p> : externalVisuals.length ? externalVisuals.map((item, index) => <article key={item.id} className={`w-[220px] shrink-0 snap-start overflow-hidden rounded-2xl border bg-canvas ${index === 0 ? 'border-accent/30 shadow-[0_16px_40px_rgba(17,41,75,.08)]' : 'border-hair'}`}><img src={item.thumbnailUrl} alt={item.title} className="aspect-[4/3] w-full object-cover" loading="lazy" /><div className="grid gap-2 p-3 text-right"><div className="flex items-start justify-between gap-2"><strong className="line-clamp-2 text-[.72rem] text-ink">{item.title}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.56rem] text-soft">{item.providerLabel}</span></div><div className="flex flex-wrap gap-2">{index === 0 ? <span className="rounded-full border border-accent/20 bg-accent/[.06] px-2 py-1 text-[.54rem] font-semibold text-accent">الأقوى الآن</span> : null}<span className="rounded-full border border-hair px-2 py-1 text-[.54rem] text-soft">{item.score}/99</span><span className="rounded-full border border-hair px-2 py-1 text-[.54rem] text-soft">{item.orientation === 'landscape' ? 'أفقي' : item.orientation === 'portrait' ? 'عمودي' : item.orientation === 'square' ? 'مربع' : 'غير محدد'}</span></div><p className="line-clamp-3 text-[.62rem] leading-relaxed text-soft">{item.description}</p><p className="text-[.58rem] leading-relaxed text-soft"><strong className="text-ink">لماذا اختيرت؟</strong> {item.rationale}</p><p className="text-[.56rem] text-soft">{item.author} · {item.license}</p><div className="flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => void applyExternalVisual(item)}>استخدمها</button><a href={item.pageUrl || item.imageUrl} target="_blank" rel="noreferrer" className={ghost}>المصدر</a></div></div></article>) : <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">لا توجد مرشحات خارجية بعد. اكتب الفكرة وسيبدأ البحث التلقائي، أو اضغط «أعد البحث الآن».</p>}</div>
+              <div className="mobile-card-rail flex snap-x snap-mandatory gap-3 overflow-x-auto border-t border-hair p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{externalBusy ? <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">أبحث الآن في المصادر المجانية…</p> : externalVisuals.length ? externalVisuals.map((item, index) => <article key={item.id} className={`w-[220px] shrink-0 snap-start overflow-hidden rounded-2xl border bg-canvas ${index === 0 ? 'border-accent/30 shadow-[0_16px_40px_rgba(17,41,75,.08)]' : 'border-hair'}`}><img src={item.thumbnailUrl} alt={item.title} className="aspect-[4/3] w-full object-cover" loading="lazy" /><div className="grid gap-2 p-3 text-right"><div className="flex items-start justify-between gap-2"><strong className="line-clamp-2 text-[.72rem] text-ink">{item.title}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.56rem] text-soft">{item.providerLabel}</span></div><div className="flex flex-wrap gap-2">{index === 0 ? <span className="rounded-full border border-accent/20 bg-accent/[.06] px-2 py-1 text-[.54rem] font-semibold text-accent">الأقوى الآن</span> : null}<span className="rounded-full border border-hair px-2 py-1 text-[.54rem] text-soft">{item.score}/99</span><span className="rounded-full border border-hair px-2 py-1 text-[.54rem] text-soft">{item.orientation === 'landscape' ? 'أفقي' : item.orientation === 'portrait' ? 'عمودي' : item.orientation === 'square' ? 'مربع' : 'غير محدد'}</span></div><p className="line-clamp-3 text-[.62rem] leading-relaxed text-soft">{item.description}</p><p className="text-[.58rem] leading-relaxed text-soft"><strong className="text-ink">لماذا اختيرت؟</strong> {item.rationale}</p><p className="text-[.56rem] text-soft">{item.author} · {item.license}</p><div className="flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => void applyExternalVisual(item, index === 0 ? 'cinematic' : 'editorial')}>ابنِ بها</button><button type="button" className={ghost} onClick={() => void applyExternalVisual(item)}>حلّل</button><a href={item.pageUrl || item.imageUrl} target="_blank" rel="noreferrer" className={ghost}>المصدر</a></div></div></article>) : <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">لا توجد مرشحات خارجية بعد. اكتب الفكرة وسيبدأ البحث التلقائي، أو اضغط «أعد البحث الآن».</p>}</div>
             </details>
             {imagePassport ? <div className="mt-4 grid gap-4 lg:grid-cols-[220px_1fr]">
               <div className="overflow-hidden rounded-2xl border border-hair bg-paper"><img src={imagePassport.dataUrl} alt="معاينة الصورة المرشحة" className="aspect-square h-full w-full object-cover" /></div>
@@ -1313,7 +1700,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 <div className="grid gap-2 sm:grid-cols-2"><input className={input} value={imageDescription} onChange={(event) => setImageDescription(event.target.value)} placeholder="صف المشهد لاختبار الكليشيه" /><input className={input} value={imageSource} onChange={(event) => setImageSource(event.target.value)} placeholder="المصدر أو الرابط" /><input className={input} value={imageOwner} onChange={(event) => setImageOwner(event.target.value)} placeholder="المالك أو المصور" /><input className={input} value={imageLicense} onChange={(event) => setImageLicense(event.target.value)} placeholder="نوع الترخيص" /></div>
                 <ul className="grid gap-1">{imagePassport.cropNotes.map((note) => <li key={note} className="text-[.69rem] leading-relaxed text-soft">— {note}</li>)}</ul>
                 {clicheWarnings.length > 0 ? <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[.7rem] leading-relaxed text-amber-900"><strong>تنبيه ضد الكليشيه:</strong> {clicheWarnings.map((item) => `${item.label}: ${item.alternative}`).join(' · ')}</div> : imageDescription && <p className="rounded-xl border border-accent/20 bg-accent/[.04] px-3 py-2 text-[.68rem] text-accent">لم يلتقط الفحص الوصفي أحد الكليشيهات الثمانية المعروفة. هذا فحص وصفي، لا حكم فني نهائي.</p>}
-                <div className="flex flex-wrap gap-2"><button type="button" className={primary} disabled={!selected} onClick={() => addOverlay('image')}>أضف الصورة إلى اللوحة</button><span className="rounded-full border border-hair px-3 py-2 text-[.62rem] text-soft">البصمة اللونية اختيار مستقل داخل المحرر؛ جواز الصورة لا يغيّر ألوان التصميم تلقائيًا.</span><span className="self-center text-[.62rem] text-soft">المصدر: {imageSource || 'غير مسجل'} · الترخيص: {imageLicense || 'غير مسجل'}</span></div>
+                <div className="grid gap-3"><div className="flex flex-wrap gap-2"><button type="button" className={primary} disabled={!selected} onClick={() => applyImageLedDirection('cinematic')}>مشهد سينمائي كامل</button><button type="button" className={ghost} disabled={!selected} onClick={() => applyImageLedDirection('documentary')}>وثائقي إنساني</button><button type="button" className={ghost} disabled={!selected} onClick={() => applyImageLedDirection('editorial')}>غلاف تحريري</button><button type="button" className={ghost} disabled={!selected} onClick={() => applyImageLedDirection('duotone')}>ثنائي اللون فاخر</button><button type="button" className={ghost} disabled={!selected} onClick={() => addOverlay('image')}>أضفها كطبقة حرة</button></div><div className="flex flex-wrap gap-2"><span className="rounded-full border border-hair px-3 py-2 text-[.62rem] text-soft">المخرج يحدد منطقة النص من المساحة الهادئة ويثبت نقطة التركيز تلقائيًا.</span><span className="self-center text-[.62rem] text-soft">المصدر: {imageSource || 'غير مسجل'} · الترخيص: {imageLicense || 'غير مسجل'}</span></div></div>
               </div>
             </div> : <p className="mt-3 rounded-xl border border-dashed border-hair px-4 py-5 text-center text-[.72rem] text-soft">ابدأ بصورة من مكتبتك أو صور المقالات والفعاليات. لا تُرفع الصورة إلى أي خادم.</p>}
           </section>
@@ -1346,7 +1733,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           <label className="grid gap-2 text-[.72rem] font-semibold text-soft">المنصة<select className={input} value={platform} onChange={(event) => setPlatform(event.target.value as SocialPlatform | 'auto')}>{Object.entries(platformLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
           <label className="grid gap-2 text-[.72rem] font-semibold text-soft">الكثافة<select className={input} value={density} onChange={(event) => setDensity(event.target.value as DesignDensity | 'auto')}>{Object.entries(densityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
           <div className="grid content-end gap-2 rounded-2xl border border-hair bg-canvas px-4 py-3"><span className="text-[.68rem] font-semibold text-soft">اختيار المخرج</span><strong className="text-[.82rem] text-ink">8 احتمالات ← 3 رؤى متباعدة</strong></div>
-          <div className="flex items-end"><button type="button" className={`${primary} w-full px-8`} onClick={() => generate()}>ابنِ ثلاث رؤى فنية</button></div>
+          <div className="grid gap-2 md:grid-cols-3"><button type="button" className={`${primary} w-full px-8`} onClick={() => generate()}>ابنِ ثلاث رؤى فنية</button><button type="button" className={`${ghost} w-full`} onClick={() => void runAutopilot()} disabled={autopilotBusy}>{autopilotBusy ? 'يبني النهايات العالمية…' : 'الطيار الآلي العالمي'}</button><button type="button" className={`${ghost} w-full`} onClick={() => void buildReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'يبني الحزمة العليا…' : 'Final / Safer / Viral'}</button></div>
         </div>
         {notice && <p className="mt-5 rounded-2xl border border-accent/25 bg-accent/[.05] px-4 py-3 text-[.8rem] leading-relaxed text-accent">{notice}</p>}
         </>}
@@ -1360,6 +1747,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <p className="text-[.72rem] font-bold uppercase tracking-[.16em] text-accent">Creative directions</p>
               <h3 className="mt-1 font-display text-2xl font-bold text-ink">ليست قوالب؛ هذه اتجاهات تكوين.</h3>
               <p className="mt-2 text-[.8rem] leading-relaxed text-soft">ثلاث رؤى مختلفة في الشعور والمنطق البصري؛ المحرك احتفظ بـ{reservePlans.length} بدائل داخلية من دون تلويث الواجهة.</p>
+              {autopilotPack.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{autopilotPack.map((item) => <span key={item.id} className="rounded-full border border-accent/20 bg-accent/[.05] px-3 py-1.5 text-[.66rem] font-semibold text-accent">{item.label} {item.worldScore}٪</span>)}</div>}
             </div>
             {/* لوحة الفهم (مقترح الصديق ٧): ما فهمه الاستوديو من أمرك، بثقة وافتراضات صريحة */}
             {commandParse && (
@@ -1388,11 +1776,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               />
               <button type="button" className={ghost} onClick={applySpeechEdit}>طبّق</button>
             </div>
-            <div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 rounded-full border border-hair bg-canvas px-3 py-2 text-[.7rem] text-soft">حد التصدير <input aria-label="حد جودة التصدير" className="w-14 bg-transparent text-center font-bold text-accent outline-none" type="number" min="70" max="98" value={qualityThreshold} onChange={(event) => { const next=Math.max(70,Math.min(98,Number(event.target.value)||82)); setQualityThreshold(next); localStorage.setItem(QUALITY_THRESHOLD_KEY,String(next)) }} />٪</label><span className="rounded-full border border-accent/25 bg-accent/[.05] px-4 py-2 text-[.72rem] font-semibold text-accent">لجنة الجودة {Math.round(plans.reduce((sum, plan) => sum + (plan.quality?.score || 0), 0) / plans.length)}٪</span><span className="rounded-full border border-hair px-4 py-2 text-[.72rem] text-soft">ذاكرة ذوقك {Object.keys(tasteLedger).length} اتجاه</span>{Object.keys(tasteLedger).length > 0 && <button type="button" className={ghost} onClick={resetTaste}>إعادة ضبط الذوق</button>}<button type="button" className={primary} disabled={campaignBusy} onClick={() => { buildCampaign(); setStage('publish') }}>{campaignBusy ? 'يبني الحملة…' : 'حوّلها إلى حملة سردية'}</button><button type="button" className={ghost} onClick={() => setShowSaved((value) => !value)}>المحفوظة {savedPlans.length}</button><button type="button" className={ghost} onClick={() => generate()}>توليد دفعة مختلفة</button></div>
+            <div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 rounded-full border border-hair bg-canvas px-3 py-2 text-[.7rem] text-soft">حد التصدير <input aria-label="حد جودة التصدير" className="w-14 bg-transparent text-center font-bold text-accent outline-none" type="number" min="70" max="98" value={qualityThreshold} onChange={(event) => { const next=Math.max(70,Math.min(98,Number(event.target.value)||82)); setQualityThreshold(next); localStorage.setItem(QUALITY_THRESHOLD_KEY,String(next)) }} />٪</label><span className="rounded-full border border-accent/25 bg-accent/[.05] px-4 py-2 text-[.72rem] font-semibold text-accent">لجنة الجودة {Math.round(plans.reduce((sum, plan) => sum + (plan.quality?.score || 0), 0) / plans.length)}٪</span><span className="rounded-full border border-hair px-4 py-2 text-[.72rem] text-soft">ذاكرة ذوقك {Object.keys(tasteLedger).length} اتجاه</span>{Object.keys(tasteLedger).length > 0 && <button type="button" className={ghost} onClick={resetTaste}>إعادة ضبط الذوق</button>}<button type="button" className={ghost} onClick={() => void runAutopilot()} disabled={autopilotBusy}>{autopilotBusy ? 'يعيد بناء الأفضل…' : 'أعد بناء 5 نهايات'}</button><button type="button" className={ghost} onClick={() => void buildReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'يبني الحزمة العليا…' : 'ابنِ Final / Safer / Viral'}</button><button type="button" className={ghost} onClick={() => void exportAutoFinals()} disabled={autoFinalsBusy || (!autopilotPack.length && !plans.length)}>{autoFinalsBusy ? 'يصدر النهائيات…' : 'صدّر 3 نهائيات'}</button><button type="button" className={primary} disabled={campaignBusy} onClick={() => { buildCampaign(); setStage('publish') }}>{campaignBusy ? 'يبني الحملة…' : 'حوّلها إلى حملة سردية'}</button><button type="button" className={ghost} onClick={() => setShowSaved((value) => !value)}>المحفوظة {savedPlans.length}</button><button type="button" className={ghost} onClick={() => generate()}>توليد دفعة مختلفة</button></div>
           </div>
           <div className="mt-5 grid gap-3 lg:grid-cols-3">
             {artDirections.map((direction, index) => <article key={direction.id} className="rounded-2xl border border-hair bg-canvas p-4"><div className="flex items-start justify-between gap-3"><div><span className="text-[.62rem] font-bold text-accent">الرؤية {index + 1}</span><h4 className="mt-1 text-[.9rem] font-bold text-ink">{direction.title}</h4></div><span className="rounded-full bg-paper px-2 py-1 text-[.62rem] font-semibold text-accent">قرب الهوية {direction.identityFit}٪</span></div><p className="mt-2 text-[.72rem] leading-relaxed text-soft">{direction.description}</p><dl className="mt-3 grid gap-2"><div><dt className="text-[.6rem] font-semibold text-soft">الشعور</dt><dd className="text-[.68rem] text-ink">{direction.feeling}</dd></div><div><dt className="text-[.6rem] font-semibold text-soft">الصورة المطلوبة</dt><dd className="text-[.68rem] leading-relaxed text-ink">{direction.imageNeed}</dd></div><div><dt className="text-[.6rem] font-semibold text-soft">الخطر</dt><dd className="text-[.68rem] leading-relaxed text-ink">{direction.risk}</dd></div></dl><button type="button" className={`${ghost} mt-3 w-full`} onClick={() => generate({ tone: direction.tone, platform: direction.platform, preferLayout: direction.preferLayout })}>أعد بناء هذه الرؤية</button></article>)}
           </div>
+          {autopilotPack.length > 0 && <div className="mt-4 grid gap-3 xl:grid-cols-5 md:grid-cols-2"><div className="rounded-2xl border border-accent/20 bg-accent/[.04] p-4 xl:col-span-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold uppercase tracking-[.16em] text-accent">Creative Director Autopilot</p><h4 className="mt-1 text-[1rem] font-bold text-ink">خمس نهايات لا خمس محاولات عشوائية.</h4><p className="mt-1 text-[.72rem] leading-relaxed text-soft">الطيار الآلي يبني خمس نسخ نهائية: آمنة، تحريرية، فاخرة، عالية التوقف، ونسخة دليل — ثم يختار منها الأجدر بالعرض، ويستطيع الآن تصدير أفضل 3 نهائيات بضغطة واحدة.</p></div><div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-accent/20 bg-white/70 px-3 py-1.5 text-[.66rem] font-semibold text-accent">الأفضل الآن {autopilotPack[0]?.label || '—'} · {autopilotPack[0]?.worldScore || 0}٪</span><button type="button" className={ghost} onClick={() => void exportAutoFinals()} disabled={autoFinalsBusy}>{autoFinalsBusy ? 'يصدر النهائيات…' : 'تنزيل أفضل 3'}</button></div></div></div>{autopilotPack.map((item) => <article key={item.id} className="rounded-2xl border border-hair bg-canvas p-3"><div className="flex items-center justify-between gap-2"><strong className="text-[.76rem] text-ink">{item.label}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.58rem] text-soft">{item.worldScore}٪</span></div><p className="mt-2 text-[.66rem] leading-relaxed text-soft">{item.note}</p><div className="mt-2 flex flex-wrap gap-1.5 text-[.58rem] text-soft"><span className="rounded-full border border-hair px-2 py-1">جودة {item.qualityScore}٪</span><span className="rounded-full border border-hair px-2 py-1">توقف {item.stopScore}٪</span></div><button type="button" className={`${ghost} mt-3 w-full`} onClick={() => { setSelected(item.plan); setStage('edit') }}>افتح هذه النسخة</button></article>)}</div>}
+          {releasePack.length > 0 && <div className="mt-4 grid gap-3 md:grid-cols-3"><div className="rounded-2xl border border-accent/20 bg-accent/[.04] p-4 md:col-span-3"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold uppercase tracking-[.16em] text-accent">Absolute Release Pack</p><h4 className="mt-1 text-[1rem] font-bold text-ink">ثلاث نسخ لا يحتاج بعدها الفريق إلى سؤال: ماذا ننشر؟</h4><p className="mt-1 text-[.72rem] leading-relaxed text-soft">هذه الحزمة ليست تبديلًا سطحيًا؛ كل نسخة بُنيت لوظيفة نشر مختلفة: المرجع الرسمي، النسخة الأكثر أمانًا، والنسخة الأعلى قابلية للتوقف والانتشار.</p></div><div className="flex flex-wrap gap-2"><button type="button" className={ghost} onClick={() => void buildReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'يعيد بناء الحزمة…' : 'أعد بناء الحزمة'}</button><button type="button" className={primary} onClick={() => void exportReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'ينزّل الحزمة…' : 'تنزيل Final / Safer / Viral'}</button></div></div></div>{releasePack.map((item) => <article key={item.id} className="rounded-2xl border border-hair bg-canvas p-3"><button type="button" className="block w-full text-right" onClick={() => { setSelected(item.plan); setStage('edit') }}><Preview plan={item.plan} /></button><div className="pt-3"><div className="flex items-center justify-between gap-2"><strong className="text-[.8rem] text-ink">{item.label}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.58rem] text-soft">{item.score}٪</span></div><p className="mt-2 text-[.66rem] leading-relaxed text-soft">{item.note}</p><div className="mt-3 flex gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => { setSelected(item.plan); setStage('edit') }}>فتح</button><button type="button" className={ghost} onClick={() => void exportPlan(item.plan, 'png')}>PNG</button></div></div></article>)}</div>}
           <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-hair bg-canvas p-3"><span className="me-auto text-[.68rem] font-semibold text-soft">مفاتيح إبداع غير عادية:</span><button type="button" className={ghost} onClick={() => { setNotice('أبتعد عن تاريخك البصري بمقدار مضبوط مع إبقاء الهوية.'); generate({ tone: 'bold', preferLayout: 'quiet-orbit' }) }}>اكسر ذوقي بذكاء</button><button type="button" className={ghost} onClick={() => generate({ tone: 'human', density: 'minimal', preferLayout: 'human-note' })}>لا تجعلها تبدو مصممة</button><button type="button" className={ghost} onClick={() => generate({ tone: 'deep', density: 'minimal', preferLayout: 'cinematic-window' })}>التصميم الصامت</button></div>
           <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {plans.map((plan) => (
@@ -1491,7 +1881,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 <div className="flex items-center justify-between gap-2"><div><p className="text-[.7rem] font-bold text-accent">الطبقات</p><p className="mt-1 text-[.62rem] text-soft">ترتيب، قفل، محاذاة، أقنعة وصور.</p></div><button type="button" onClick={() => setFreeMode((value) => !value)} className={`rounded-full px-2.5 py-1 text-[.62rem] font-semibold ${freeMode ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>{freeMode ? 'السحب فعّال' : 'فعّل السحب'}</button></div>
                 <div className="flex flex-wrap gap-1.5"><button type="button" className={ghost} onClick={() => addOverlay('text')}>نص</button><button type="button" className={ghost} onClick={() => addOverlay('rule')}>خط</button><button type="button" className={ghost} onClick={() => addOverlay('circle')}>دائرة</button><button type="button" className={ghost} onClick={() => addOverlay('rect')}>إطار</button><button type="button" className={ghost} onClick={() => addOverlay('image')}>صورة</button></div>
                 {selectedOverlayIds.length > 0 && <div className="rounded-xl border border-hair bg-paper p-2.5"><div className="flex items-center justify-between gap-2"><span className="text-[.62rem] font-semibold text-soft">{selectedOverlayIds.length} محددة</span><button type="button" className="text-[.6rem] text-soft hover:text-accent" onClick={() => setSelectedOverlayIds([])}>إلغاء التحديد</button></div><div className="mt-2 flex flex-wrap gap-1"><button type="button" className={ghost} onClick={groupSelectedOverlays}>تجميع</button><button type="button" className={ghost} onClick={ungroupSelectedOverlays}>فك المجموعة</button><button type="button" className={ghost} onClick={() => distributeSelectedOverlays('x')}>توزيع أفقي</button><button type="button" className={ghost} onClick={() => distributeSelectedOverlays('y')}>توزيع رأسي</button><button type="button" className={ghost} disabled={!overlayStyleClipboard} onClick={pasteOverlayStyle}>ألصق النمط</button></div></div>}
-                <div className="grid gap-2">{(selected.overlays || []).length ? [...(selected.overlays || [])].sort((a,b)=>(b.zIndex||0)-(a.zIndex||0)).map((overlay) => <div key={overlay.id} className={`rounded-xl border p-2.5 ${activeOverlay === overlay.id ? 'border-accent bg-accent/[.04]' : selectedOverlayIds.includes(overlay.id) ? 'border-accent/40 bg-accent/[.02]' : 'border-hair bg-paper'}`}><div className="flex items-center justify-between gap-2"><div className="flex min-w-0 flex-1 items-center gap-2"><input type="checkbox" aria-label="تحديد الطبقة" checked={selectedOverlayIds.includes(overlay.id)} onChange={() => toggleOverlaySelection(overlay.id)} className="accent-current" /><button type="button" className="min-w-0 flex-1 truncate text-right text-[.68rem] font-semibold text-ink" onClick={() => { setActiveOverlay(overlay.id); setSelectedOverlayIds((current) => current.includes(overlay.id) ? current : [overlay.id]); setFreeMode(true) }}>{overlay.kind === 'text' ? String(overlay.text || 'نص').slice(0,22) : overlay.kind === 'image' ? `صورة: ${overlay.name || 'مرشحة'}` : overlay.kind === 'rule' ? 'خط' : overlay.kind === 'circle' ? 'دائرة' : 'إطار'}</button></div><button type="button" className="text-[.62rem] text-soft hover:text-red-500" onClick={() => removeOverlay(overlay.id)}>حذف</button></div>{activeOverlay === overlay.id && <div className="mt-2 grid gap-2"><div className="flex flex-wrap gap-1"><button type="button" className={ghost} onClick={() => moveOverlayLayer(overlay.id, 1)}>للأمام</button><button type="button" className={ghost} onClick={() => moveOverlayLayer(overlay.id, -1)}>للخلف</button><button type="button" className={ghost} onClick={() => duplicateOverlay(overlay)}>نسخ</button><button type="button" className={ghost} onClick={() => copyOverlayStyle(overlay)}>نسخ النمط</button><button type="button" className={ghost} onClick={() => patchOverlay(overlay.id, { locked: !overlay.locked })}>{overlay.locked ? 'فك القفل' : 'قفل'}</button></div><div className="grid grid-cols-3 gap-1">{(['right','center','left','top','middle','bottom'] as const).map((target) => <button key={target} type="button" className="rounded-lg border border-hair px-1 py-1 text-[.58rem] text-soft hover:border-accent hover:text-accent" onClick={() => alignOverlay(overlay.id, target)}>{({right:'يمين',center:'وسط أفقي',left:'يسار',top:'أعلى',middle:'وسط رأسي',bottom:'أسفل'} as const)[target]}</button>)}</div><label className="grid gap-1 text-[.6rem] text-soft">دوران<input type="range" min="-180" max="180" value={overlay.rotation || 0} onChange={(event) => patchOverlay(overlay.id, { rotation: Number(event.target.value) })} /></label><label className="grid gap-1 text-[.6rem] text-soft">شفافية<input type="range" min="5" max="100" value={Math.round(overlay.opacity*100)} onChange={(event) => patchOverlay(overlay.id, { opacity:Number(event.target.value)/100 })} /></label>{overlay.kind === 'image' && <><label className="grid gap-1 text-[.6rem] text-soft">الدمج<select className={input} value={overlay.blendMode || 'normal'} onChange={(event) => patchOverlay(overlay.id,{ blendMode:event.target.value as PlanOverlay['blendMode']})}><option value="normal">عادي</option><option value="multiply">Multiply</option><option value="screen">Screen</option><option value="overlay">Overlay</option><option value="soft-light">Soft Light</option><option value="luminosity">Luminosity</option></select></label><label className="grid gap-1 text-[.6rem] text-soft">القناع<select className={input} value={overlay.mask || 'rounded'} onChange={(event) => patchOverlay(overlay.id,{ mask:event.target.value as PlanOverlay['mask']})}><option value="none">بدون</option><option value="rounded">مستدير</option><option value="circle">دائري</option></select></label><label className="grid gap-1 text-[.6rem] text-soft">نقطة التركيز أفقياً<input type="range" min="0" max="100" value={Math.round((overlay.focalX ?? .5)*100)} onChange={(event)=>patchOverlay(overlay.id,{focalX:Number(event.target.value)/100})}/></label><label className="grid gap-1 text-[.6rem] text-soft">نقطة التركيز رأسياً<input type="range" min="0" max="100" value={Math.round((overlay.focalY ?? .5)*100)} onChange={(event)=>patchOverlay(overlay.id,{focalY:Number(event.target.value)/100})}/></label><div className="rounded-lg border border-hair bg-canvas px-2.5 py-2 text-[.58rem] leading-relaxed text-soft"><strong className="block text-ink">جواز الصورة</strong>{overlay.owner || 'مالك غير مسجل'} · {overlay.license || 'ترخيص غير مسجل'}{overlay.sourceUrl && <span dir="ltr" className="mt-1 block truncate text-accent">{overlay.sourceUrl}</span>}</div></>}</div>}</div>) : <p className="rounded-xl border border-dashed border-hair p-4 text-center text-[.65rem] leading-relaxed text-soft">لا طبقات إضافية. التصميم الأساسي محفوظ كما هو.</p>}</div>
+                <div className="grid gap-2">{(selected.overlays || []).length ? [...(selected.overlays || [])].sort((a,b)=>(b.zIndex||0)-(a.zIndex||0)).map((overlay) => <div key={overlay.id} className={`rounded-xl border p-2.5 ${activeOverlay === overlay.id ? 'border-accent bg-accent/[.04]' : selectedOverlayIds.includes(overlay.id) ? 'border-accent/40 bg-accent/[.02]' : 'border-hair bg-paper'}`}><div className="flex items-center justify-between gap-2"><div className="flex min-w-0 flex-1 items-center gap-2"><input type="checkbox" aria-label="تحديد الطبقة" checked={selectedOverlayIds.includes(overlay.id)} onChange={() => toggleOverlaySelection(overlay.id)} className="accent-current" /><button type="button" className="min-w-0 flex-1 truncate text-right text-[.68rem] font-semibold text-ink" onClick={() => { setActiveOverlay(overlay.id); setSelectedOverlayIds((current) => current.includes(overlay.id) ? current : [overlay.id]); setFreeMode(true) }}>{overlay.kind === 'text' ? String(overlay.text || 'نص').slice(0,22) : overlay.kind === 'image' ? `صورة: ${overlay.name || 'مرشحة'}` : overlay.kind === 'rule' ? 'خط' : overlay.kind === 'circle' ? 'دائرة' : 'إطار'}</button></div><button type="button" className="text-[.62rem] text-soft hover:text-red-500" onClick={() => removeOverlay(overlay.id)}>حذف</button></div>{activeOverlay === overlay.id && <div className="mt-2 grid gap-2"><div className="flex flex-wrap gap-1"><button type="button" className={ghost} onClick={() => moveOverlayLayer(overlay.id, 1)}>للأمام</button><button type="button" className={ghost} onClick={() => moveOverlayLayer(overlay.id, -1)}>للخلف</button><button type="button" className={ghost} onClick={() => duplicateOverlay(overlay)}>نسخ</button><button type="button" className={ghost} onClick={() => copyOverlayStyle(overlay)}>نسخ النمط</button><button type="button" className={ghost} onClick={() => patchOverlay(overlay.id, { locked: !overlay.locked })}>{overlay.locked ? 'فك القفل' : 'قفل'}</button></div><div className="grid grid-cols-3 gap-1">{(['right','center','left','top','middle','bottom'] as const).map((target) => <button key={target} type="button" className="rounded-lg border border-hair px-1 py-1 text-[.58rem] text-soft hover:border-accent hover:text-accent" onClick={() => alignOverlay(overlay.id, target)}>{({right:'يمين',center:'وسط أفقي',left:'يسار',top:'أعلى',middle:'وسط رأسي',bottom:'أسفل'} as const)[target]}</button>)}</div><label className="grid gap-1 text-[.6rem] text-soft">دوران<input type="range" min="-180" max="180" value={overlay.rotation || 0} onChange={(event) => patchOverlay(overlay.id, { rotation: Number(event.target.value) })} /></label><label className="grid gap-1 text-[.6rem] text-soft">شفافية<input type="range" min="5" max="100" value={Math.round(overlay.opacity*100)} onChange={(event) => patchOverlay(overlay.id, { opacity:Number(event.target.value)/100 })} /></label>{overlay.kind === 'image' && <><label className="grid gap-1 text-[.6rem] text-soft">دور الصورة<select className={input} value={overlay.imageRole || 'foreground'} onChange={(event) => patchOverlay(overlay.id,{ imageRole:event.target.value as PlanOverlay['imageRole'], x:event.target.value === 'background' ? 0 : overlay.x, y:event.target.value === 'background' ? 0 : overlay.y, width:event.target.value === 'background' ? 1 : overlay.width, height:event.target.value === 'background' ? 1 : overlay.height, mask:event.target.value === 'background' ? 'none' : overlay.mask })}><option value="foreground">طبقة حرة</option><option value="background">صورة بطولية كاملة</option></select></label>{overlay.imageRole === 'background' && <><label className="grid gap-1 text-[.6rem] text-soft">المعالجة<select className={input} value={overlay.imageTreatment || 'cinematic'} onChange={(event) => patchOverlay(overlay.id,{ imageTreatment:event.target.value as PlanOverlay['imageTreatment']})}><option value="cinematic">سينمائية</option><option value="documentary">وثائقية</option><option value="editorial">تحريرية</option><option value="duotone">ثنائية اللون</option><option value="none">طبيعية</option></select></label><label className="grid gap-1 text-[.6rem] text-soft">منطقة النص<select className={input} value={overlay.textZone || 'right'} onChange={(event) => patchOverlay(overlay.id,{ textZone:event.target.value as PlanOverlay['textZone']})}><option value="right">يمين</option><option value="left">يسار</option><option value="top">أعلى</option><option value="bottom">أسفل</option><option value="center">وسط</option></select></label><label className="grid gap-1 text-[.6rem] text-soft">قوة التعتيم<input type="range" min="10" max="95" value={Math.round((overlay.readabilityShade ?? .72)*100)} onChange={(event)=>patchOverlay(overlay.id,{readabilityShade:Number(event.target.value)/100})}/></label><label className="grid gap-1 text-[.6rem] text-soft">الحواف السينمائية<input type="range" min="0" max="80" value={Math.round((overlay.vignette ?? .34)*100)} onChange={(event)=>patchOverlay(overlay.id,{vignette:Number(event.target.value)/100})}/></label></>}<label className="grid gap-1 text-[.6rem] text-soft">الدمج<select className={input} value={overlay.blendMode || 'normal'} onChange={(event) => patchOverlay(overlay.id,{ blendMode:event.target.value as PlanOverlay['blendMode']})}><option value="normal">عادي</option><option value="multiply">Multiply</option><option value="screen">Screen</option><option value="overlay">Overlay</option><option value="soft-light">Soft Light</option><option value="luminosity">Luminosity</option></select></label><label className="grid gap-1 text-[.6rem] text-soft">القناع<select className={input} value={overlay.mask || 'rounded'} onChange={(event) => patchOverlay(overlay.id,{ mask:event.target.value as PlanOverlay['mask']})}><option value="none">بدون</option><option value="rounded">مستدير</option><option value="circle">دائري</option></select></label><label className="grid gap-1 text-[.6rem] text-soft">نقطة التركيز أفقياً<input type="range" min="0" max="100" value={Math.round((overlay.focalX ?? .5)*100)} onChange={(event)=>patchOverlay(overlay.id,{focalX:Number(event.target.value)/100})}/></label><label className="grid gap-1 text-[.6rem] text-soft">نقطة التركيز رأسياً<input type="range" min="0" max="100" value={Math.round((overlay.focalY ?? .5)*100)} onChange={(event)=>patchOverlay(overlay.id,{focalY:Number(event.target.value)/100})}/></label><div className="rounded-lg border border-hair bg-canvas px-2.5 py-2 text-[.58rem] leading-relaxed text-soft"><strong className="block text-ink">جواز الصورة</strong>{overlay.owner || 'مالك غير مسجل'} · {overlay.license || 'ترخيص غير مسجل'}{overlay.sourceUrl && <span dir="ltr" className="mt-1 block truncate text-accent">{overlay.sourceUrl}</span>}</div></>}</div>}</div>) : <p className="rounded-xl border border-dashed border-hair p-4 text-center text-[.65rem] leading-relaxed text-soft">لا طبقات إضافية. التصميم الأساسي محفوظ كما هو.</p>}</div>
               </aside>
               <div className={`${mobileEditorPanel === 'preview' ? 'grid' : 'hidden'} min-h-0 content-center justify-items-center overflow-hidden rounded-[1.25rem] border border-hair bg-canvas p-2.5 md:p-4 lg:grid lg:max-h-full`}>
                 {/* «أرني كما يراه المتابع» (النقطة ٢٠) + «خريطة الانتباه» (النقطة ٨) */}
@@ -1554,6 +1944,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 <button type="button" onClick={() => setProfessionalCheckOpen((value) => !value)} className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-right transition ${professionalCheckOpen ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-ink hover:border-accent'}`}><span><strong className="block text-[.74rem]">فحص احترافي</strong><span className="mt-1 block text-[.64rem] opacity-75">تقييم داخلي ومحاكاة تقديرية؛ ليست بيانات نشر فعلية ولا تتبع عين بشرياً.</span></span><span aria-hidden>{professionalCheckOpen ? '−' : '+'}</span></button>
                 <div className={professionalCheckOpen ? 'grid gap-4' : 'hidden'}>
                 <section className="rounded-2xl border border-accent/30 bg-accent/[.09] p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">تقييم داخلي للتكوين</p><p className="mt-1 text-[.72rem] text-ink/60">قواعد محلية للتباين والقراءة والتوازن؛ ليست اختباراً بشرياً.</p></div><strong className="font-display text-3xl text-accent">{selected.quality?.score || 0}٪</strong></div><div className="mt-3 flex flex-wrap gap-2">{selected.quality?.strengths.map((item) => <span key={item} className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.66rem] font-medium text-ink">✓ {item}</span>)}</div>{selected.quality?.issues.length ? <p className="mt-3 text-[.72rem] leading-relaxed text-ink/80">{selected.quality.issues.join(' · ')}</p> : null}{explanation && (explanation.reasons.length > 0 || !explanation.healthy) ? <div className="mt-3 rounded-xl border border-accent/20 bg-canvas/70 p-3"><p className="text-[.72rem] font-semibold text-ink/90">🔍 لماذا هذه النتيجة؟ {explanation.verdict}</p>{explanation.reasons.length ? <ul className="mt-2 grid gap-2">{explanation.reasons.map((reason) => <li key={reason.dimension} className="rounded-lg border border-hair bg-paper/70 px-3 py-2"><div className="flex items-center justify-between gap-2"><strong className="text-[.7rem] text-ink">{reason.severity === 'critical' ? '⛔' : '⚠️'} {reason.dimension}</strong><span className={`rounded-full px-2 py-0.5 text-[.6rem] font-bold ${reason.severity === 'critical' ? 'bg-red-500/15 text-red-600' : 'bg-amber-500/15 text-amber-700'}`}>{reason.score}٪</span></div><p className="mt-1 text-[.68rem] leading-relaxed text-soft">{reason.why}</p><p className="mt-1 text-[.68rem] leading-relaxed text-accent">↳ {reason.fix}</p></li>)}</ul> : null}{!explanation.healthy ? <p className="mt-2 rounded-lg bg-accent/[.08] px-3 py-2 text-[.68rem] font-semibold text-accent">أهمّ خطوةٍ الآن: {explanation.nextStep}</p> : null}</div> : null}{selected.rationale?.length ? <div className="mt-4 rounded-xl border border-hair bg-paper/70 p-3"><p className="text-[.64rem] font-bold text-accent">قراءة المخرج الفنّي</p><ul className="mt-2 grid gap-1">{selected.rationale.slice(0, 3).map((line) => <li key={line} className="text-[.72rem] leading-relaxed text-ink/85">• {line}</li>)}</ul></div> : null}</section>
+                {globalCritic && <section className="rounded-2xl border border-hair bg-canvas p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">حكم الناقد العالمي</p><p className="mt-1 text-[.72rem] text-ink/60">درجة مركبة من الجودة والقراءة وقوة التوقف والتميّز عن تاريخك.</p></div><strong className="font-display text-3xl text-accent">{globalCritic.score}٪</strong></div><p className="mt-3 text-[.74rem] leading-relaxed text-ink/85">{globalCritic.verdict}</p><div className="mt-3 flex flex-wrap gap-2"><span className="rounded-full border border-hair bg-paper px-3 py-1 text-[.66rem] text-ink">{globalCritic.imageDriven ? 'مشهد بصري بطولي' : 'تكوين طباعي/مركب'}</span><span className="rounded-full border border-hair bg-paper px-3 py-1 text-[.66rem] text-ink">قوة التوقف {globalCritic.stop.score}٪</span>{globalCritic.score >= qualityThreshold ? <span className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-[.66rem] font-semibold text-emerald-700">جاهز للتصدير وفق الحد الحالي</span> : <span className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-[.66rem] font-semibold text-amber-700">لم يبلغ حد التصدير الحالي بعد</span>}</div><p className="mt-3 rounded-xl bg-accent/[.06] px-3 py-2 text-[.68rem] leading-relaxed text-accent">أهم دفعة الآن: {globalCritic.nextStep}</p></section>}
+                {designLineage && <section className="rounded-2xl border border-hair bg-canvas p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">سلالة التصميم</p><p className="mt-1 text-[.72rem] text-ink/60">هل هذه النسخة امتداد ذكي أم تكرار لما سبق؟</p></div><strong className="font-display text-2xl text-accent">{designLineage.similarity}٪</strong></div><p className="mt-3 text-[.72rem] leading-relaxed text-ink/85">{designLineage.message}</p><span className="mt-3 inline-flex rounded-full border border-hair bg-paper px-3 py-1 text-[.64rem] text-soft">{designLineage.family}</span></section>}
+                {designProvenance && <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">شهادة منشأ التصميم</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl border border-hair bg-paper/70 px-3 py-2"><p className="text-[.6rem] font-semibold text-soft">المصدر</p><p className="mt-1 text-[.7rem] leading-relaxed text-ink break-all">{designProvenance.source}</p></div><div className="rounded-xl border border-hair bg-paper/70 px-3 py-2"><p className="text-[.6rem] font-semibold text-soft">المالك / الترخيص</p><p className="mt-1 text-[.7rem] leading-relaxed text-ink">{designProvenance.owner} · {designProvenance.license}</p></div><div className="rounded-xl border border-hair bg-paper/70 px-3 py-2"><p className="text-[.6rem] font-semibold text-soft">المعالجة البطولية</p><p className="mt-1 text-[.7rem] leading-relaxed text-ink">{designProvenance.heroMode}</p></div><div className="rounded-xl border border-hair bg-paper/70 px-3 py-2"><p className="text-[.6rem] font-semibold text-soft">بنية الكاروسيل</p><p className="mt-1 text-[.7rem] leading-relaxed text-ink">{designProvenance.slides ? `${designProvenance.slides} شريحة` : 'ليس كاروسيلاً'}</p></div></div>{designProvenance.reasons.length ? <ul className="mt-3 grid gap-1">{designProvenance.reasons.map((reason) => <li key={reason} className="text-[.7rem] leading-relaxed text-ink/80">• {reason}</li>)}</ul> : null}</section>}
                 {/* مختبر الأداء (أ-٣): يتنبّأ بقوة التوقّف والتفاعل — لا يكرّر الناقد (الجودة) بل يكمّله */}
                 {forecast && (
                   <section className="rounded-2xl border border-hair bg-canvas p-4">

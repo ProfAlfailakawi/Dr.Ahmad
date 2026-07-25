@@ -1403,7 +1403,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         { id: 'final', label: 'Final', note: 'النسخة المرجعية الأعلى اتزانًا للنشر الرسمي.', plan: finalPlan, score: scorePlan(finalPlan) },
         { id: 'safer', label: 'Safer', note: 'أهدأ وأكثر تحفظًا للجهات والمؤسسات والبيئات الحساسة.', plan: saferPlan, score: scorePlan(saferPlan) },
         { id: 'viral', label: 'Viral', note: 'أقوى نسخة للتوقف والانتشار البصري السريع.', plan: viralPlan, score: scorePlan(viralPlan) },
-      ].sort((a, b) => b.score - a.score)
+      ]
+      pack.sort((a, b) => b.score - a.score)
       setReleasePack(pack)
       setZeroDecision(null)
       setNotice('بُنيت الآن حزمة النشر العليا: Final / Safer / Viral — ثلاث نهايات تفهم سبب وجودها، لا نسخًا عشوائية.')

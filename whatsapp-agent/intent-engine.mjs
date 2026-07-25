@@ -17,6 +17,7 @@ import {
   buildFifteenSecondChallenge,
   buildQuietIdeaNetwork,
   extractVerbatimAtSpeed,
+  isVerbatimFromItem,
   selectDailyUnsentContent,
 } from './daily-experience.mjs'
 
@@ -30,7 +31,7 @@ function readFollowup(session) {
 }
 
 export const INTENTS = Object.freeze({
-  LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_ARTICLES: 'LATEST_ARTICLES', MOST_VIEWED_ARTICLE: 'MOST_VIEWED_ARTICLE', CONTENT_OVERVIEW: 'CONTENT_OVERVIEW', TOP_ARTICLE_TOPIC: 'TOP_ARTICLE_TOPIC', LATEST_BOOK: 'LATEST_BOOK', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', LATEST_PAPER: 'LATEST_PAPER', WELCOME: 'WELCOME', MORE_LIKE_THIS: 'MORE_LIKE_THIS', COMPARE: 'COMPARE', ABOUT_TOPIC: 'ABOUT_TOPIC', UPCOMING_EVENTS: 'UPCOMING_EVENTS', ABOUT_DOCTOR: 'ABOUT_DOCTOR', CURATED_PICKS: 'CURATED_PICKS', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', COMPOUND_REQUEST: 'COMPOUND_REQUEST', CONTEXT_REFERENCE: 'CONTEXT_REFERENCE', READ_SPEED: 'READ_SPEED', IDEA_NETWORK: 'IDEA_NETWORK', CHALLENGE: 'CHALLENGE', CHALLENGE_ANSWER: 'CHALLENGE_ANSWER', SOURCE_PROOF: 'SOURCE_PROOF', SAVE_CONTENT: 'SAVE_CONTENT', LIST_SAVED: 'LIST_SAVED', REMOVE_SAVED: 'REMOVE_SAVED', UNKNOWN: 'UNKNOWN' })
+  LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_ARTICLES: 'LATEST_ARTICLES', MOST_VIEWED_ARTICLE: 'MOST_VIEWED_ARTICLE', CONTENT_OVERVIEW: 'CONTENT_OVERVIEW', TOP_ARTICLE_TOPIC: 'TOP_ARTICLE_TOPIC', LATEST_BOOK: 'LATEST_BOOK', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', LATEST_PAPER: 'LATEST_PAPER', WELCOME: 'WELCOME', MORE_LIKE_THIS: 'MORE_LIKE_THIS', COMPARE: 'COMPARE', ABOUT_TOPIC: 'ABOUT_TOPIC', UPCOMING_EVENTS: 'UPCOMING_EVENTS', ABOUT_DOCTOR: 'ABOUT_DOCTOR', CURATED_PICKS: 'CURATED_PICKS', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', COMPOUND_REQUEST: 'COMPOUND_REQUEST', CONTEXT_REFERENCE: 'CONTEXT_REFERENCE', READ_SPEED: 'READ_SPEED', IDEA_NETWORK: 'IDEA_NETWORK', CHALLENGE: 'CHALLENGE', CHALLENGE_ANSWER: 'CHALLENGE_ANSWER', SOURCE_PROOF: 'SOURCE_PROOF', SAVE_CONTENT: 'SAVE_CONTENT', LIST_SAVED: 'LIST_SAVED', REMOVE_SAVED: 'REMOVE_SAVED', CORRECTION: 'CORRECTION', UNKNOWN: 'UNKNOWN' })
 
 const LEARNABLE_INTENTS = new Set([
   INTENTS.LATEST_CONTENT, INTENTS.LATEST_ARTICLE, INTENTS.LATEST_ARTICLES,
@@ -123,7 +124,12 @@ const patterns = [
   /* داخل الجلسة يريد الناس المزيد والمقارنة والتنقّل — لا أوامر جافّة فقط */
   [INTENTS.MORE_LIKE_THIS, [/^(في\s*)?(غيره|غيرها|زدني|كمان|بعد|المزيد|عطني اكثر|شي ثاني|شيء ثاني|في بعد|واحد ثاني|ماده ثانيه)/, 0.93],
     /* «شنو عنده بعد الدكتور؟» «عنده بعد؟» «شنو بعد؟» — طلب المزيد بصياغةٍ سؤالية */
-    [/(شنو|وش|ايش)\s*(عنده|عندكم|فيه|بعد)\s*(بعد|شي|ثاني|غيره)?|عنده\s*(شي\s*)?بعد|بعده\s*شي/, 0.92]],
+    [/(شنو|وش|ايش)\s*(عنده|عندكم|فيه|بعد)\s*(بعد|شي|ثاني|غيره)?|عنده\s*(شي\s*)?بعد|بعده\s*شي/, 0.92],
+    /* «وين ال٨؟» «وين الباقي؟» «ورني البقية» «وينهم» — بعد أن يقول البوت «عاد
+       ٨ مرات» ويعرض الطرفين، يسأل السائل عن البقية. هي «زدني» بصياغةٍ أخرى:
+       تُكمِل من الصفّ المحفوظ نفسه لا من بحثٍ جديد. و«وين المصدر» و«وين محاضرتك»
+       مُلتقَطتان قبلها في نمطيهما (SOURCE_PROOF/UPCOMING_EVENTS) فلا تتضاربان. */
+    [/(?:^|\s)(?:وين|فين|اين)\s*(?:ال)?\s*[\d٠-٩]+|(?:وين|فين|اين|ورني|وريني|عطني|اعرض|شوف|ابي|اريد)\s*(?:لي\s*)?(?:ال)?(?:باقي|بقيه|بقيتها|بقيتهم|باقيها|باقيهم|الباقيات)|^(?:الباقي|الباقيه|البقيه|بقيتها|الباقيات)\s*[؟?]?$|(?:^|\s)(?:وينهم|فينهم)(?:\s|$|[؟?])/, 0.92]],
   [INTENTS.COMPARE, [/(قارن|الفرق بين|ايهما|وش الفرق|مقارنه بين)/, 0.92]],
   [INTENTS.ABOUT_TOPIC, [/(عندك|عندكم|في|لديك)\s*(شي|شيء|مقال|بحث|كتاب|ماده)?\s*(عن|حول|بخصوص)/, 0.90]],
 ]
@@ -224,6 +230,38 @@ const jidAccount = (jid = '') => String(jid).split('@')[0].toLowerCase()
    قصيرة تطابق العنوان/التصنيف نفسه، ونرفض ضمائر الحديث والمجاملات والأفعال
    اليومية. أما السؤال الصريح «عندك شيء عن…» فله نيّة مستقلة أوسع. */
 const CHATTER_OR_PERSONAL = /(?:^|\s)(?:انا|اني|انت|انتي|انتو|احنا|نحن|توني|تو|وصلت|رحت|جيت|شكرا|شكراً|مشكور|تمام|اوكي|حبيبي|حبيبتي|مرحبا|هلا|السلام|وعليكم|صباح|مساء|بخير|شلونك|كيفك|وينك|مع السلامه|عمرك|عمره|تسكن|يسكن|ساكن|متزوج|اطفالك|عيالك|راتبك|رقمك|عنوانك|ايميلك|بريدك)(?:\s|$)|\b(?:i|im|am|my|me|we|you|your|thanks?|hello|hi|okay|fine|home|arrived|love)\b/i
+
+/* ═══ التصحيح: حين يقول السائل «مو صح» أو «مو عن كذا» أو «لا، أقصد كذا» ═══
+   كان «هذا» في «هذا مو صح» يخطف الرسالة إلى «اعرض الحالي» فيكرّر ما رُفض. نلتقط
+   التصحيح صراحةً قبل مرجع السياق. والالتقاط محصورٌ بعلاماتٍ صريحة كي لا يبتلع
+   سؤالاً فيه «مو» عابرة أو «غلط» داخل استفهام. */
+const CORRECTION_MARK = /(?:^|\s)(?:مو\s*صح|مب\s*صح|مو\s*صحيح|مو\s*صحيحه|غير\s*صحيح|مو\s*هذا|مو\s*هذي|مو\s*ذا|مو\s*هو|مو\s*هي|مو\s*المقصود|مو\s*قصدي|ما\s*اقصد|ماقصد|لا\s*اقصد|ليس\s*هذا|مب\s*هذا|مو\s*ذي)(?:\s|$)/
+const CORRECTION_BARE = /^(?:لا+\s*[،,]?\s*)?(?:غلط|خطا|خطأ|غير صحيح|مو صح|مب صح|مو صحيح|مو مضبوط|مب مضبوط)\s*[،,.!؟?]*\s*$/
+const CORRECTION_NOT_ABOUT = /(?:مو|مب|ليس|مش|مهو|ماهو)\s*عن\s+(.+)$/
+const CORRECTION_MEANT = /(?:^|\s)(?:اقصد|قصدي|قصدت|بل|انما|ابي|اريد|ابغي|ابغى)\s+(?:عن\s+)?(.+)$/
+
+const cleanTopic = (raw) => clean(raw)
+  .replace(/[؟?!.،,]+$/g, '')
+  .replace(/^(?:شي|شيء|مقال|مقاله|بحث|كتاب|ماده|مادة|موضوع)\s+(?:عن|حول|بخصوص)?\s*/,'')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+/* يُرجِع { isCorrection, topic } — topic هو الموضوع الجديد إن ذُكر (يريده السائل)،
+   وإلا null (رفضٌ مجرّد ننتقل عنده للمرشّح التالي). «مو عن X» تعني: النتيجة ليست
+   عن X وهو ما أراده — فنبحث X. */
+function detectCorrection(value) {
+  const v = String(value || '')
+  const notAbout = CORRECTION_NOT_ABOUT.exec(v)
+  if (notAbout) return { isCorrection: true, topic: cleanTopic(notAbout[1]) || null }
+  if (CORRECTION_BARE.test(v)) return { isCorrection: true, topic: null }
+  if (CORRECTION_MARK.test(v)) {
+    const meant = CORRECTION_MEANT.exec(v)
+    return { isCorrection: true, topic: meant ? (cleanTopic(meant[1]) || null) : null }
+  }
+  const meantOnly = /^لا+\s*[،,]?\s*(?:اقصد|قصدي|بل|انما)\s+(.+)$/.exec(v)
+  if (meantOnly) return { isCorrection: true, topic: cleanTopic(meantOnly[1]) || null }
+  return { isCorrection: false, topic: null }
+}
 
 function stripGroundedTopicRequest(value) {
   /* قشر المحادثة الطبيعية قبل البحث: «هل تكلم الدكتور عن موضوع الطفل؟»
@@ -451,6 +489,17 @@ export function classifyIntent(text) {
   for (const [intent, ...rules] of patterns) {
     if (intent !== INTENTS.READ_SPEED) continue
     for (const [regex, confidence] of rules) if (regex.test(value)) return { intent, confidence, normalized: value }
+  }
+  /* التصحيح يعلو على مرجع «الحالي»: «هذا مو صح» كان «هذا» فيه يخطفه إلى «اعرض
+     الحالي» فيكرّر ما رفضه السائل. لكنه يتنحّى أمام تنقّلٍ صريح: «مو هذا اللي
+     بعده» ليست تصحيحاً بل انتقالٌ للتالي — «بعده/قبله/الترتيب» هي الأمر الفعلي. */
+  const correction = detectCorrection(value)
+  if (correction.isCorrection) {
+    const navProbe = parseCompoundRequest(value)
+    const isNavigation = navProbe.reference === 'next' || navProbe.reference === 'previous' || navProbe.ordinal !== null
+    if (!isNavigation) {
+      return { intent: INTENTS.CORRECTION, confidence: 0.9, normalized: value, correction }
+    }
   }
   const parsedRequest = parseCompoundRequest(value)
   /* أسماء المالك/النوع ليست موضوع بحث: كان «آخر مقالاته» يبحث عن كلمة
@@ -1182,6 +1231,127 @@ export function articleCorpus(db, now = Date.now()) {
   return next.items
 }
 
+/* ═══ بحثٌ في موضوعٍ من مصادر الدكتور وحدها — يُستعمل من «عندك شي عن…» ومن
+   التصحيح «مو عن كذا». يستثني ما رُفض فلا يُعاد. التنازل عن الطموح لا الأمانة:
+   تطابقٌ اسميّ صريح ← كلامُ الدكتور نفسه عبر البوابة ← قائمةُ روابط ← مصارحة. */
+function topicSearchReply(db, jid, query, { exclude = [], coverageQuestion = false, allowDisambiguation = true } = {}) {
+  const excludeSet = new Set(exclude)
+  const keep = (item) => item && !excludeSet.has(item.id)
+  recordInterest(db, jid, query)
+  const preliminary = searchContent(db, query, { limit: 6 }).filter(keep)
+  const meaningfulWords = clean(query).split(/\s+/).filter((word) => word.length > 2)
+
+  if (allowDisambiguation && meaningfulWords.length === 1 && preliminary.length >= 3) {
+    const choices = preliminary.slice(0, 3)
+    return {
+      text: `وجدت أكثر من مدخل منشور لهذا المصطلح. أيّها تقصد؟\n${choices.map((item, index) => `${index + 1}. ${item.title}\n${item.url}`).join('\n\n')}\n\nاكتب الأول أو الثاني أو الثالث.`,
+      contentId: choices[0].id, contextItems: choices.map((item) => item.id), seenContentIds: choices.map((item) => item.id),
+    }
+  }
+
+  const exactNamedFromSearch = preliminary.filter((item) => {
+    const named = clean(`${item.title || ''} ${item.keywords || ''}`)
+    return meaningfulWords.length > 0 && meaningfulWords.every((word) => named.includes(word))
+  })
+  const exactNamed = (exactNamedFromSearch.length ? exactNamedFromSearch : namedContentMatches(db, meaningfulWords, 3)).filter(keep)
+  if (exactNamed.length) {
+    const choices = exactNamed.slice(0, 3)
+    return {
+      text: `${coverageQuestion ? 'نعم — تناول هذا الموضوع في مواده المنشورة:' : 'أقرب المواد المنشورة لهذا الموضوع:'}\n${choices.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n\n')}\n\nتقدر تقول: لخّص الأولى، أو اسمعني الثانية.`,
+      contentId: choices[0].id, contextItems: choices.map((item) => item.id), seenContentIds: choices.map((item) => item.id),
+    }
+  }
+
+  const skipSlugs = [...excludeSet].filter((id) => String(id).startsWith('article:')).map((id) => String(id).slice('article:'.length))
+  const scholar = scholarAnswer(articleCorpus(db), query, { skip: skipSlugs })
+  if (scholar.verified && scholar.citations.length) {
+    return {
+      text: coverageQuestion ? `نعم — تكلم عنه بلسانه:\n\n${scholar.text}` : scholar.text,
+      contentId: `article:${scholar.citations[0].slug}`,
+      contextItems: scholar.citations.map((citation) => `article:${citation.slug}`),
+      seenContentIds: scholar.citations.map((citation) => `article:${citation.slug}`),
+      evidenceQuotes: scholar.citations.map((citation) => citation.quote),
+      followup: { question: query, seen: scholar.citations.map((citation) => citation.slug) },
+    }
+  }
+
+  const results = preliminary.slice(0, 3)
+  if (results.length) {
+    return {
+      text: `أقرب المواد من الموقع لسؤالك:\n${results.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}\n\nاكتب «غيره» لمزيد، أو «لخّص» للأول.`,
+      contentId: results[0].id, contextItems: results.map((item) => item.id), seenContentIds: results.map((item) => item.id),
+    }
+  }
+  return noSilenceReply(db, query)
+}
+
+/* ═══ التصحيح: «مو صح» أو «مو عن X» أو «أقصد Y». نستبعد ما رُفض، ونبحث الموضوع
+   الجديد إن ذُكر، وإلا ننتقل للمرشّح التالي من آخر قائمة، وإلا نصارح. لا نكرّر
+   المرفوض ولا نؤلّف من عندنا — فالبوت يفهم أنه أخطأ ويصحّح، لا يعاند. */
+function correctionReply(db, jid, session, input, correction = null) {
+  const info = correction && typeof correction === 'object' ? correction : detectCorrection(clean(input))
+  const context = parseConversationContext(session?.context_json)
+  const rejected = (context.resultIds && context.resultIds[context.currentIndex]) || session?.content_id || null
+  const exclude = rejected ? [rejected] : []
+
+  if (info.topic) {
+    return topicSearchReply(db, jid, info.topic, { exclude, coverageQuestion: false })
+  }
+
+  const remaining = (context.resultIds || [])
+    .filter((id, index) => index > context.currentIndex)
+    .map((id) => findContent(db, id))
+    .filter(Boolean)
+    .slice(0, 3)
+  if (remaining.length) {
+    return {
+      text: `تمام، مو هي. ${remaining.length === 1 ? 'لعلّك تقصد هذه:' : 'لعلّك تقصد إحدى هذه:'}\n${remaining.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n\n')}\n\nوإن ما زالت غير مقصودك، اذكر الموضوع بلفظه وأبحث لك من جديد.`,
+      contentId: remaining[0].id, contextItems: remaining.map((item) => item.id), seenContentIds: remaining.map((item) => item.id),
+    }
+  }
+  return { text: 'تمام، أستبعدها. اذكر الموضوع بلفظه — مثلاً: «عندك شي عن الذكاء الاصطناعي؟» — وأبحث لك في مصادر الدكتور وحدها.' }
+}
+
+/* ═══ التلخيص الحقيقي: «اختصرها» يجب أن يقصّر فعلاً لا أن يُعيد النصّ نفسه —
+   حتى المختارات القصيرة. نقطف أكثفَ عبارةٍ دلالةً (مقطوعةً على الشرطة وعلامات
+   الوقف) بشرط أن تكون منسوخةً حرفاً بحرف من المتن (isVerbatimFromItem) فلا تحريف. */
+function distilledClause(item) {
+  const source = String(item?.body || item?.excerpt || '').trim()
+  if (!source) return null
+  const whole = source.replace(/\s+/g, ' ').trim()
+  const clauses = source
+    .split(/\s*[—–]\s*|[.؟!\n؛…]+/)
+    .map((part) => part.trim())
+    .filter((part) => part.length >= 14 && part.length < whole.length && isVerbatimFromItem(item, part))
+  if (!clauses.length) return { text: whole, whole: true }
+  const dense = (text) => {
+    const words = clean(text).split(/\s+/).filter((word) => word.length > 2)
+    return new Set(words).size / Math.sqrt(Math.max(6, words.length))
+  }
+  let best = clauses[0]
+  let bestScore = -1
+  for (const clause of clauses) {
+    const score = dense(clause)
+    if (score > bestScore) { bestScore = score; best = clause }
+  }
+  return { text: best, whole: false }
+}
+
+function summaryReply(db, item) {
+  if (!item) return { text: 'اختر مادة أولاً: اكتب آخر مقالاته، ثم قل الأولى أو الثانية.', contentId: null }
+  const distilled = distilledClause(item)
+  if (!distilled) return contentReply('المادة المنشورة', item)
+  const note = distilled.whole ? 'هي مختصرةٌ أصلاً، وهذا لبّها بنصّه:' : 'الزبدة في جملةٍ من نصّه:'
+  return {
+    text: `${note}\n${item.title}${item.date ? ` · ${item.date}` : ''}\n«${distilled.text}»\n${item.url}`,
+    contentId: item.id,
+    contextItems: [item.id],
+    seenContentIds: [item.id],
+    evidenceQuotes: [distilled.text],
+    actions: audioLinks(item),
+  }
+}
+
 export function handleIntent({ db, jid = '', input, session = pendingSession(db, jid), classification = classifyIntent(input) }) {
   const MSG = getBotMessages()
   /* الرقم المفرد له معنيان بحسب السياق: اختيار نتيجة من قائمة، أو إجابة تحدٍّ.
@@ -1218,11 +1388,13 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
     case INTENTS.DELETE_PREFERENCES: clearPreferences(db, jid); return { ...classification, shouldRespond: true, text: 'حذفت بيانات التخصيص المحلية: المحتوى السابق، المحفوظات، السجل والتذكيرات. أبقيت فقط طلب إيقاف الرسائل وفترة استلام الدكتور إن كانا مفعّلين.' }
     case INTENTS.COMPOUND_REQUEST:
       return { ...classification, ...compoundRequestReply(db, classification.request || selection.request) }
+    case INTENTS.CORRECTION:
+      return { ...classification, ...correctionReply(db, jid, session, input, classification.correction) }
     case INTENTS.CONTEXT_REFERENCE: {
       const item = selection.item
       if (!item) return { ...classification, text: 'لا يوجد اختيار سابق واضح. اكتب: آخر مقالاته، ثم اختر الأول أو الثاني.' }
       if (selection.request.action === 'listen') return { ...classification, ...listenReply(item, selection.request.voice), contextResolution: selection.resolution }
-      if (selection.request.action === 'summary') return { ...classification, ...extractiveReadingReply(db, item, speedFromRequest(selection.request, input)), contextResolution: selection.resolution }
+      if (selection.request.action === 'summary') return { ...classification, ...summaryReply(db, item), contextResolution: selection.resolution }
       if (selection.request.action === 'read') return { ...classification, ...contentReply('هذه المادة', item), contextResolution: selection.resolution }
       return { ...classification, ...contentReply('هذا اختيارك', item), contextResolution: selection.resolution }
     }
@@ -1410,81 +1582,11 @@ ${SITE_URL}/research` }
       const query = stripGroundedTopicRequest(classification.normalized
         .replace(/^(عندك|عندكم|لديك|في)\s*(شي|شيء|مقال|بحث|كتاب|ماده)?\s*(عن|حول|بخصوص)\s*/, '')
         .replace(/[؟?]/g, '').trim()) || stripGroundedTopicRequest(classification.normalized)
-      recordInterest(db, jid, query)
-      const preliminary = searchContent(db, query, { limit: 6 })
-      const meaningfulWords = clean(query).split(/\s+/).filter((word) => word.length > 2)
-      if (meaningfulWords.length === 1 && preliminary.length >= 3) {
-        const choices = preliminary.slice(0, 3)
-        return {
-          ...classification,
-          text: `وجدت أكثر من مدخل منشور لهذا المصطلح. أيّها تقصد؟
-${choices.map((item, index) => `${index + 1}. ${item.title}\n${item.url}`).join('\n\n')}
-
-اكتب الأول أو الثاني أو الثالث.`,
-          contentId: choices[0].id,
-          contextItems: choices.map((item) => item.id),
-          seenContentIds: choices.map((item) => item.id),
-        }
-      }
-      /* إذا حمل العنوان أو الكلمات المفتاحية جميع كلمات الموضوع، فهذا هو
-         التطابق الصريح الأعلى سلطة. لا ندعه يُهزم أمام تشابه دلالي في جسم
-         مقال آخر؛ خصوصاً في عبارات مثل «الذكاء الاصطناعي». */
-      const exactNamedFromSearch = preliminary.filter((item) => {
-        const named = clean(`${item.title || ''} ${item.keywords || ''}`)
-        return meaningfulWords.length > 0 && meaningfulWords.every((word) => named.includes(word))
-      })
-      // المسح الاسمي المباشر يسند FTS حين تتصدر المشابهات الدلالية عناوينها
-      const exactNamed = exactNamedFromSearch.length
-        ? exactNamedFromSearch
-        : namedContentMatches(db, meaningfulWords, 3)
+      /* المنطق نفسه صار مشتركاً مع التصحيح («مو عن كذا») عبر topicSearchReply:
+         تطابقٌ اسميّ ← كلامُ الدكتور بالبوابة ← قائمةُ روابط ← مصارحة، مع حفظ
+         «زدني». فأيّ تحسينٍ للبحث يسري على المسارين معاً. */
       const coverageQuestion = isCoverageQuestion(classification.normalized)
-      if (exactNamed.length) {
-        const choices = exactNamed.slice(0, 3)
-        return {
-          ...classification,
-          text: `${coverageQuestion ? 'نعم — تناول هذا الموضوع في مواده المنشورة:' : 'أقرب المواد المنشورة لهذا الموضوع:'}
-${choices.map((item, i) => `${i + 1}. ${item.title}
-${item.url}`).join('\n\n')}
-
-تقدر تقول: لخّص الأولى، أو اسمعني الثانية.`,
-          contentId: choices[0].id,
-          contextItems: choices.map((item) => item.id),
-          seenContentIds: choices.map((item) => item.id),
-        }
-      }
-
-      /* المكتبة التي تمشي: نُجيب بكلام الدكتور نفسه لا برابطٍ يُحال إليه.
-         وإن لم يجد المحرك شاهداً — أو أسقطته البوابة — رجعنا إلى قائمة الروابط.
-         فالتنازل يكون عن الطموح دائماً، لا عن الأمانة. */
-      const scholar = scholarAnswer(articleCorpus(db), query)
-      if (scholar.verified && scholar.citations.length) {
-        return {
-          ...classification,
-          text: coverageQuestion ? `نعم — تكلم عنه بلسانه:\n\n${scholar.text}` : scholar.text,
-          contentId: `article:${scholar.citations[0].slug}`,
-          contextItems: scholar.citations.map((citation) => `article:${citation.slug}`),
-          seenContentIds: scholar.citations.map((citation) => `article:${citation.slug}`),
-          evidenceQuotes: scholar.citations.map((citation) => citation.quote),
-          /* البقية تُحفظ هنا لا تُرمى — وعليها يقوم وفاءُ «زدني» */
-          followup: { question: query, seen: scholar.citations.map((citation) => citation.slug) },
-        }
-      }
-
-      const results = preliminary.slice(0, 3)
-      if (results.length) {
-        return {
-          ...classification,
-          text: `أقرب المواد من الموقع لسؤالك:
-${results.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n')}
-
-اكتب «غيره» لمزيد، أو «لخّص» للأول.`,
-          contentId: results[0].id,
-          contextItems: results.map((item) => item.id),
-          seenContentIds: results.map((item) => item.id),
-        }
-      }
-      /* لا جواب موثق: لا صمت بعد اليوم — «لعلك تقصد» بمواد حقيقية + تحويل */
-      return { ...classification, ...noSilenceReply(db, input) }
+      return { ...classification, ...topicSearchReply(db, jid, query, { coverageQuestion }) }
     }
     case INTENTS.LISTEN_FAHED:
     case INTENTS.LISTEN_NOURA:

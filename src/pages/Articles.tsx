@@ -56,7 +56,7 @@ export default function Articles() {
   // السنة الأولى تُحسب من المقالات نفسها — تتحدّث تلقائياً مع أي إضافة
   const years = articles.map((a) => Number(a.iso.slice(0, 4))).filter((y) => y >= 1990)
   const firstYear = years.length ? Math.min(...years) : new Date().getFullYear()
-  useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: `مؤلفاتي العلمية والفكرية في التعليم والتكنولوجيا والتغيير المجتمعي — ${articles.length} مقالاً.` })
+  useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: `مقالات فكرية تتتبّع تحولات التعليم والتقنية والمجتمع منذ انطلاق الرحلة العلمية عام 2015 — ${articles.length} مقالاً.` })
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('الكل')
   const categories = useMemo(() => dynamicArticleCategories(articles), [articles])
@@ -116,8 +116,8 @@ export default function Articles() {
     <Page className="content-articles page-journey">
       <PageHead
         label="المقالات الفكرية"
-        title="بصوتي الخاص."
-        sub="مؤلفاتي العلمية والفكرية في التعليم والتكنولوجيا والتغيير المجتمعي."
+        title="أفكارٌ تلاحق زمنها."
+        sub="مقالاتٌ أكتبها منذ انطلاق رحلتي العلمية عام 2015؛ أقرأ فيها تحولات التعليم والتقنية والمجتمع، وأتتبع ما تتركه في الإنسان والممارسة والحياة العامة."
       />
 
       <section className="sticky top-16 z-[120] border-b border-hair bg-canvas/92 px-4 py-3 backdrop-blur-md sm:px-6 md:px-11">
@@ -161,12 +161,12 @@ export default function Articles() {
             </h2>
             <span className="text-[.75rem] text-soft">3 عدسات موضوعية متجددة</span>
           </div>
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="article-featured-rail -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0">
             {featured.map((e, i) => {
               // Card style variation 0: Highlight Hero Card
               if (i === 0) {
                 return (
-                  <FadeUp key={e.title} delay={0} className="h-full min-w-0">
+                  <FadeUp key={e.title} delay={0} className="h-auto w-[86vw] max-w-[24rem] shrink-0 snap-start self-stretch md:h-full md:w-auto md:max-w-none md:shrink md:snap-none">
                     <Link
                       to={`/articles/${e.slug}`}
                       viewTransition
@@ -199,7 +199,7 @@ export default function Articles() {
               // Card style variation 1: Archival Framed Card
               if (i === 1) {
                 return (
-                  <FadeUp key={e.title} delay={0.08} className="h-full min-w-0">
+                  <FadeUp key={e.title} delay={0.08} className="h-auto w-[86vw] max-w-[24rem] shrink-0 snap-start self-stretch md:h-full md:w-auto md:max-w-none md:shrink md:snap-none">
                     <Link
                       to={`/articles/${e.slug}`}
                       viewTransition
@@ -230,7 +230,7 @@ export default function Articles() {
 
               // Card style variation 2: Editorial Cross-topic Card
               return (
-                <FadeUp key={e.title} delay={0.16} className="h-full min-w-0">
+                <FadeUp key={e.title} delay={0.16} className="h-auto w-[86vw] max-w-[24rem] shrink-0 snap-start self-stretch md:h-full md:w-auto md:max-w-none md:shrink md:snap-none">
                   <Link
                     to={`/articles/${e.slug}`}
                     viewTransition

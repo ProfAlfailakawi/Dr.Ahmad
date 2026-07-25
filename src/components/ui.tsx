@@ -250,7 +250,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
       { to: '/inbox', label: 'رسائل على الهامش', description: 'رسائل من الأرشيف الحي' },
       { to: '/curated', label: 'المختارات', allLabel: 'جميع المختارات', sub: [
         { to: '/questions', label: 'سؤال يُقلق التعليم', description: 'أسئلة تربوية' },
-        { to: '/radar', label: 'أرشيف الرادار', description: 'مختارات أسبوعية' },
+        { to: '/radar', label: 'أرشيف الرادار', description: 'ما يستحق المتابعة' },
       ] },
       { to: '/upcoming', label: 'اللقاءات القادمة' },
     ],

@@ -4,7 +4,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { DB_PATH, RETENTION_DAYS, ensureSafeDataDir } from './config.mjs'
 import { encrypt, decrypt, hashOpaque } from './crypto.mjs'
 
-export const SCHEMA_VERSION = 6
+export const SCHEMA_VERSION = 7
 
 const schema = `
 PRAGMA foreign_keys = ON;
@@ -30,11 +30,12 @@ CREATE TABLE IF NOT EXISTS content_reservations(jid TEXT NOT NULL, content_id TE
 CREATE TABLE IF NOT EXISTS saved_content(jid TEXT NOT NULL, content_id TEXT NOT NULL, saved_at TEXT NOT NULL, PRIMARY KEY(jid, content_id));
 CREATE TABLE IF NOT EXISTS chat_interests(jid TEXT NOT NULL, topic TEXT NOT NULL, hits INTEGER NOT NULL DEFAULT 1, last_at TEXT NOT NULL, PRIMARY KEY(jid, topic));
 CREATE TABLE IF NOT EXISTS answer_evidence(id INTEGER PRIMARY KEY AUTOINCREMENT, jid TEXT, intent TEXT NOT NULL, content_ids_json TEXT NOT NULL, reply_hash TEXT NOT NULL, created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS trusted_evidence(id TEXT PRIMARY KEY, domain TEXT NOT NULL, source_name TEXT NOT NULL, source_type TEXT NOT NULL, title TEXT NOT NULL, claim TEXT NOT NULL, quote TEXT, url TEXT NOT NULL, published_at TEXT, retrieved_at TEXT NOT NULL, authority TEXT, enabled INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS privacy_tombstones(jid TEXT PRIMARY KEY, reason TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS reply_rules(id TEXT PRIMARY KEY, name TEXT NOT NULL, keywords_json TEXT NOT NULL, priority INTEGER NOT NULL DEFAULT 0, match_type TEXT NOT NULL DEFAULT 'any', action_type TEXT NOT NULL DEFAULT 'text', response_text TEXT, content_query TEXT, enabled INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS reply_rule_versions(id INTEGER PRIMARY KEY AUTOINCREMENT, rule_id TEXT NOT NULL, payload_json TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS intent_logs(id INTEGER PRIMARY KEY AUTOINCREMENT, jid TEXT, input_hash TEXT NOT NULL, intent TEXT NOT NULL, confidence REAL NOT NULL, created_at TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS unresolved_messages(id INTEGER PRIMARY KEY AUTOINCREMENT, jid TEXT, input_hash TEXT NOT NULL, text_preview TEXT NOT NULL, reason TEXT NOT NULL, resolved INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS unresolved_messages(id INTEGER PRIMARY KEY AUTOINCREMENT, jid TEXT, input_hash TEXT NOT NULL, text_preview TEXT NOT NULL, reason TEXT NOT NULL, topic_label TEXT, resolved INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS learning_patterns(id INTEGER PRIMARY KEY AUTOINCREMENT, pattern_hash TEXT NOT NULL UNIQUE, canonical_hash TEXT NOT NULL, phrase TEXT NOT NULL, hits INTEGER NOT NULL DEFAULT 1, candidate_intent TEXT, confirmations INTEGER NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'observing', first_seen_at TEXT NOT NULL, last_seen_at TEXT NOT NULL, learned_at TEXT);
 CREATE TABLE IF NOT EXISTS learning_votes(pattern_hash TEXT NOT NULL, intent TEXT NOT NULL, confirmations INTEGER NOT NULL DEFAULT 1, last_seen_at TEXT NOT NULL, PRIMARY KEY(pattern_hash, intent));
 CREATE TABLE IF NOT EXISTS learning_evidence(pattern_hash TEXT NOT NULL, intent TEXT NOT NULL, jid_hash TEXT NOT NULL, day_key TEXT NOT NULL, confirmed_at TEXT NOT NULL, PRIMARY KEY(pattern_hash, intent, jid_hash, day_key));
@@ -58,6 +59,7 @@ CREATE INDEX IF NOT EXISTS idx_learning_evidence_source ON learning_evidence(jid
 CREATE INDEX IF NOT EXISTS idx_saved_content_jid_created ON saved_content(jid, saved_at DESC);
 CREATE INDEX IF NOT EXISTS idx_content_reservations_time ON content_reservations(reserved_at);
 CREATE INDEX IF NOT EXISTS idx_answer_evidence_jid_created ON answer_evidence(jid, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_trusted_evidence_domain ON trusted_evidence(domain, enabled, published_at DESC);
 `
 
 /* الأعمدة المُضافة بعد الإصدار الأول. [الجدول، العمود، تعريفه]
@@ -71,6 +73,7 @@ const ADDED_COLUMNS = [
   ['contacts', 'wa_name', 'TEXT'],
   ['contacts', 'source', "TEXT DEFAULT 'whatsapp'"],
   ['contacts', 'last_seen_at', 'TEXT'],
+  ['unresolved_messages', 'topic_label', 'TEXT'],
 ]
 
 const now = () => new Date().toISOString()

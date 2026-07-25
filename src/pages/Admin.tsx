@@ -603,7 +603,7 @@ function PickForm() {
   return (
     <div className={card}>
       <p className="mb-5 text-[.85rem] leading-relaxed text-soft">
-        تنضم لمخزون «من اختياراتي» فوراً، وتدخل دورة «جديد اليوم» تلقائياً.
+        تنضم إلى «مختارات د. أحمد» فوراً، وتدخل دورة «جديد اليوم» تلقائياً.
         <span className="text-accent"> الشرط الوحيد: مصدر موثوق مُسمّى.</span>
       </p>
       <div className="grid gap-4">

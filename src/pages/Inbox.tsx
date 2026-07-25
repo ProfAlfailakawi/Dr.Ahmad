@@ -221,15 +221,15 @@ export default function Inbox() {
             <FadeUp>
               <div className="grid gap-5 md:grid-cols-[minmax(0,.72fr)_minmax(0,1.28fr)] md:items-end">
                 <div>
-                  <span className="text-[.72rem] font-bold text-accent">الأرشيف الذي يحاور نفسه</span>
-                  <h2 id="archive-dialogue-title" className="mt-2 font-display text-[clamp(1.45rem,3vw,2.25rem)] font-semibold leading-[1.55] text-ink">ليست اقتباسات عشوائية؛ إنها خيوط بين المواد.</h2>
+                  <span className="text-[.72rem] font-bold text-accent">خيوط من الأرشيف</span>
+                  <h2 id="archive-dialogue-title" className="mt-2 font-display text-[clamp(1.45rem,3vw,2.25rem)] font-semibold leading-[1.55] text-ink">حين تتجاور المواد، تظهر فكرة جديدة.</h2>
                 </div>
-                <p className="text-[.84rem] font-light leading-[1.9] text-soft">كلُّ بطاقةٍ تُصرّح بطبيعتها — فكرةٌ مستخلَصةٌ أم خلاصةٌ مركّبة — وتفتح لك مصادرها العامّة كما هي. لا نعرض نصَّ كتابٍ خاص، ولا نضع على لساني صياغةً لم أقلها.</p>
+                <p className="text-[.84rem] font-light leading-[1.9] text-soft">تقرأ هذه البطاقات الصلات بين المواد المنشورة، وتوضح الفرق بين فكرةٍ تُستخلص من مصدر واحد وخلاصةٍ تُبنى من أكثر من مصدر. كل مسار يعيدك إلى أصله العام القابل للفتح، ولا تُقدَّم صياغةٌ مركّبة على أنها قولٌ حرفي للدكتور.</p>
               </div>
             </FadeUp>
-            <div className="mt-8 grid gap-5 md:grid-cols-2">
+            <div className="archive-dialogue-rail mobile-card-rail mt-8 grid items-stretch gap-5 md:grid-cols-2">
               {archiveDialogues.map((item, index) => (
-                <FadeUp key={item.id} delay={Math.min(index * .06, .2)}>
+                <FadeUp key={item.id} delay={Math.min(index * .06, .2)} className="flex h-full">
                   <article className="flex h-full min-w-0 flex-col overflow-hidden rounded-[1.5rem] border border-hair bg-canvas p-6 shadow-[0_18px_55px_-48px_rgba(21,32,44,.55)] transition hover:border-accent/55">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="rounded-full bg-accent/[.08] px-3 py-1 text-[.66rem] font-bold text-accent">{item.label}</span>
@@ -238,7 +238,7 @@ export default function Inbox() {
                     <h3 className="mt-5 font-display text-[1.12rem] font-semibold leading-[1.65] text-ink">{item.title}</h3>
                     <p className="mt-3 flex-1 text-[.86rem] font-light leading-[1.95] text-ink/78">{item.body}</p>
                     <div className="mt-6 border-t border-hair pt-4">
-                      <span className="text-[.64rem] font-semibold text-soft">افتح الخيط من مصادره</span>
+                      <span className="text-[.64rem] font-semibold text-soft">ارجع إلى المواد التي بنت هذا المسار</span>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {item.sources.map((source) => (
                           <Link key={`${item.id}:${source.to}`} to={source.to} className="max-w-full rounded-full border border-hair px-3 py-1.5 text-[.68rem] font-semibold text-ink transition hover:border-accent hover:text-accent">
@@ -297,7 +297,7 @@ export default function Inbox() {
           ) : (
             <FadeUp delay={0.06}>
               <div className="mt-8 rounded-[2rem] border border-hair bg-wash p-8 text-soft">
-                لا توجد رسالة حيّة معتمدة الآن. في الأعلى يواصل «الأرشيف الذي يحاور نفسه» كشف خيوط موثقة من المواد العامة.
+                لا توجد رسالة حيّة معتمدة الآن. في الأعلى يواصل «خيوط من الأرشيف» كشف صلات موثقة من المواد العامة.
               </div>
             </FadeUp>
           )}

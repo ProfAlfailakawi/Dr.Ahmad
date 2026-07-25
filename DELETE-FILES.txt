@@ -1,15 +1,18 @@
-هذه الملفات القديمة يتيمة خارج src/ ويجب ألا تدخل أي بناء أو مزامنة:
+احذف هذه النسخ الجذرية القديمة بعد دمج ملفات هذا التحديث:
 
-public/sitemap.xml
 App.tsx
 ArticleDetail.tsx
 PaperDetail.tsx
 IdeaFeatures.tsx
+SocialDesignStudio.tsx
+social-design-engine.ts
+social-design-renderer.ts
+agent.mjs
+intent-engine.mjs
+public/sitemap.xml
 
-الحماية أصبحت تلقائية:
-- npm run build يبدأ بتشغيل scripts/clean-obsolete-root-files.mjs ويحذف هذه النسخ فقط.
-- التطبيق الحقيقي يبدأ من src/main.tsx ويستورد src/App.tsx.
-- sitemap.xml يُولَّد تلقائياً أثناء البناء.
+السبب: المصدر الحي الوحيد للواجهة ومحرك التصميم هو src/، والمصدر الحي الوحيد للوكيل هو whatsapp-agent/.
+للتطبيق الآمن شغّل:
+node scripts/clean-obsolete-root-files.mjs
 
-السبب الجذري المثبت لمشكلة 413:
-الطلب الظاهر في المتصفح يتجه إلى submitmanualdialogue، بينما هذا الاسم غير موجود في أي ملف حي داخل src في النسخة الحالية. هذا يثبت أن لوحة التحكم المنشورة كانت تشغّل حزمة قديمة أو شجرة مصدر بديلة/مخزنة. إزالة نسخ الجذر اليتيمة تمنع ازدواجية المصدر، وفحص البناء يمنع رجوع endpoint القديم، وتحديث Service Worker في /admin يجلب النسخة الحديثة. المسار الحالي لا يرفع Word إلى Function أصلاً؛ يقرأه محلياً ثم يحفظ المداخلات النصية فقط في Firestore.
+السكريبت لا يحذف أي ميزة حية؛ يحذف النسخ الجذرية اليتيمة فقط، ثم ينظف صفحات/صور المقالات التي لم يعد لها سجل منشور.

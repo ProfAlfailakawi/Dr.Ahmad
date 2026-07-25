@@ -226,6 +226,18 @@ export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
         const body = await readJson(req)
         writeJson(res, 200, agent.audience.draftFromList(body.listId, body.name, body.message || '')); return
       }
+      if (req.method === 'GET' && url.pathname === '/admin/knowledge') { writeJson(res, 200, agent.knowledgeState()); return }
+      if (req.method === 'GET' && url.pathname === '/admin/personality') { writeJson(res, 200, agent.knowledgePersonality()); return }
+      if (req.method === 'POST' && url.pathname === '/admin/personality') { writeJson(res, 200, agent.saveKnowledgePersonality(await readJson(req))); return }
+      if (req.method === 'GET' && url.pathname === '/admin/trusted-evidence') {
+        const enabledParam = url.searchParams.get('enabled')
+        writeJson(res, 200, agent.listTrustedEvidence({
+          limit: Number(url.searchParams.get('limit') || 100),
+          domain: url.searchParams.get('domain') || '',
+          enabled: enabledParam == null ? null : enabledParam === 'true' || enabledParam === '1',
+        })); return
+      }
+      if (req.method === 'POST' && url.pathname === '/admin/trusted-evidence') { writeJson(res, 200, agent.saveTrustedEvidence(await readJson(req))); return }
       if (req.method === 'GET' && url.pathname === '/admin/learning') { writeJson(res, 200, agent.learningState({ limit: Number(url.searchParams.get('limit') || 80) })); return }
       const learningStatus = route(req.method, url.pathname, { method: 'POST', regex: /^\/admin\/learning\/(?<id>[^/]+)\/(?<status>observing|ignored)$/ })
       if (learningStatus) { writeJson(res, 200, agent.setLearningPatternStatus(decodeURIComponent(learningStatus.id), learningStatus.status)); return }

@@ -1498,16 +1498,20 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
     -ms-overflow-style: none;
     touch-action: pan-x pan-y;
   }
-  :is(.home-page, .inbox-page) :is(.rail, .mobile-card-rail, .mobile-paired-grid) {
+  :is(.home-page, .inbox-page, .content-articles) :is(.rail, .mobile-card-rail, .mobile-paired-grid) {
     /* الرئيسية وصندوق الوارد: الكروت تتحرّك يمين/يسار فقط عند السحب. نلغي أي
        ترجمة رأسية من حركات الدخول داخل السكك الأفقية، فيبقى الإحساس أفخم
        وأهدأ ولا يشعر الزائر أن البطاقة «تنقز» أو تصعد وتنزل تحت إصبعه. */
     touch-action: pan-x;
     overscroll-behavior-y: contain;
   }
-  :is(.home-page, .inbox-page) :is(.rail, .mobile-card-rail, .mobile-paired-grid) > [style*="transform"] {
+  :is(.home-page, .inbox-page, .content-articles) :is(.rail, .mobile-card-rail, .mobile-paired-grid) > [style*="transform"] {
     transform: none !important;
   }
+
+  .archive-dialogue-rail { align-items: stretch; overflow-y: hidden !important; }
+  .archive-dialogue-rail > * { display: flex; align-self: stretch; }
+  .archive-dialogue-rail article { width: 100%; min-height: 100%; }
   .mobile-card-rail::-webkit-scrollbar,
   .mobile-paired-grid::-webkit-scrollbar { display: none; }
   .mobile-card-rail > *,

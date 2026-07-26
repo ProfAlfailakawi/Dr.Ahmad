@@ -4,9 +4,11 @@ set -euo pipefail
 SERVICE_ID="${CLOUD_RUN_SERVICE_ID:-dr-api}"
 REGION="${CLOUD_RUN_REGION:-europe-west1}"
 SECRET_NAME="${CLOUDFLARE_TOKEN_SECRET_NAME:-cloudflare-workers-ai-token}"
-MODEL="${CLOUDFLARE_IMAGE_MODEL:-@cf/black-forest-labs/flux-1-schnell}"
-STEPS="${CLOUDFLARE_IMAGE_STEPS:-8}"
+MODEL="${CLOUDFLARE_IMAGE_MODEL:-@cf/black-forest-labs/flux-2-klein-4b}"
+STEPS="${CLOUDFLARE_IMAGE_STEPS:-4}"
 TIMEOUT_MS="${CLOUDFLARE_IMAGE_TIMEOUT_MS:-45000}"
+VISION_MODEL="${CLOUDFLARE_VISION_CRITIC_MODEL:-@cf/moondream/moondream3.1-9B-A2B}"
+VISION_TIMEOUT_MS="${CLOUDFLARE_VISION_CRITIC_TIMEOUT_MS:-24000}"
 ALLOW_DIRECT_FALLBACK="${ALLOW_DIRECT_CLOUD_RUN_TOKEN_FALLBACK:-true}"
 
 : "${CLOUDFLARE_ACCOUNT_ID:?Set CLOUDFLARE_ACCOUNT_ID before running this script.}"
@@ -25,16 +27,23 @@ if [[ "${CLOUDFLARE_PREFLIGHT:-true}" != "false" ]]; then
   node --input-type=module <<'NODE'
 const accountId = String(process.env.CLOUDFLARE_ACCOUNT_ID || '').trim()
 const token = String(process.env.CLOUDFLARE_API_TOKEN || '').trim()
-const model = String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/black-forest-labs/flux-1-schnell').trim()
+const model = String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/black-forest-labs/flux-2-klein-4b').trim()
+const form = new FormData()
+form.append('prompt', 'A restrained charcoal circle on warm ivory paper, museum-grade editorial still life, no text')
+form.append('width', '512')
+form.append('height', '640')
+form.append('seed', '142857')
 const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
   method: 'POST',
-  headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json', accept: 'application/json' },
-  body: JSON.stringify({ prompt: 'A restrained charcoal circle on warm ivory paper, museum-grade editorial still life, no text', seed: 142857, steps: 4 }),
+  headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
+  body: form,
 })
+const bytes = Buffer.from(await response.arrayBuffer())
 let payload = null
-try { payload = await response.json() } catch { /* handled below */ }
+try { payload = JSON.parse(bytes.toString('utf8')) } catch { /* binary image is valid */ }
 const image = payload?.result?.image || payload?.image
-if (!response.ok || typeof image !== 'string' || image.length < 1000) {
+const binaryImage = bytes[0] === 0xff || bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+if (!response.ok || (!binaryImage && (typeof image !== 'string' || image.length < 1000))) {
   const detail = payload?.errors?.[0]?.message || payload?.message || payload?.error || `HTTP ${response.status}`
   console.error(`Cloudflare preflight failed: ${detail}`)
   process.exit(1)
@@ -96,7 +105,7 @@ configure_with_secret_manager() {
     --project="$PROJECT_ID" \
     --region="$REGION" \
     --remove-env-vars=CLOUDFLARE_API_TOKEN \
-    --update-env-vars="^|^CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID}|CLOUDFLARE_IMAGE_MODEL=${MODEL}|CLOUDFLARE_IMAGE_STEPS=${STEPS}|CLOUDFLARE_IMAGE_TIMEOUT_MS=${TIMEOUT_MS}|CLOUDFLARE_TOKEN_STORAGE=secret-manager" \
+    --update-env-vars="^|^CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID}|CLOUDFLARE_IMAGE_MODEL=${MODEL}|CLOUDFLARE_IMAGE_STEPS=${STEPS}|CLOUDFLARE_IMAGE_TIMEOUT_MS=${TIMEOUT_MS}|CLOUDFLARE_VISION_CRITIC_MODEL=${VISION_MODEL}|CLOUDFLARE_VISION_CRITIC_TIMEOUT_MS=${VISION_TIMEOUT_MS}|STUDIO_IMAGE_REQUIRE_VISION_CRITIC=true|CLOUDFLARE_TOKEN_STORAGE=secret-manager" \
     --update-secrets="CLOUDFLARE_API_TOKEN=${SECRET_NAME}:latest" \
     --quiet
 
@@ -120,7 +129,7 @@ configure_with_direct_runtime_environment() {
     --project="$PROJECT_ID" \
     --region="$REGION" \
     --remove-secrets=CLOUDFLARE_API_TOKEN \
-    --update-env-vars="^|^CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID}|CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}|CLOUDFLARE_IMAGE_MODEL=${MODEL}|CLOUDFLARE_IMAGE_STEPS=${STEPS}|CLOUDFLARE_IMAGE_TIMEOUT_MS=${TIMEOUT_MS}|CLOUDFLARE_TOKEN_STORAGE=cloud-run-environment" \
+    --update-env-vars="^|^CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID}|CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}|CLOUDFLARE_IMAGE_MODEL=${MODEL}|CLOUDFLARE_IMAGE_STEPS=${STEPS}|CLOUDFLARE_IMAGE_TIMEOUT_MS=${TIMEOUT_MS}|CLOUDFLARE_VISION_CRITIC_MODEL=${VISION_MODEL}|CLOUDFLARE_VISION_CRITIC_TIMEOUT_MS=${VISION_TIMEOUT_MS}|STUDIO_IMAGE_REQUIRE_VISION_CRITIC=true|CLOUDFLARE_TOKEN_STORAGE=cloud-run-environment" \
     --quiet
 
   echo "::notice::Cloudflare token connected from GitHub Secrets through the Cloud Run revision."

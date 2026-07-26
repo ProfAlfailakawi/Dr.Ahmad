@@ -219,10 +219,13 @@ export interface StudioImagePassport {
   luminance: number
   contrast: number
   edgeDensity: number
+  visualScore: number
+  zoneScores: { right: number; left: number; top: number; bottom: number }
   negativeSpace: 'right' | 'left' | 'top' | 'bottom' | 'balanced'
   focalX: number
   focalY: number
   recommendedFit: 'cover' | 'contain'
+  cropRisk: 'low' | 'medium' | 'high'
   cropNotes: string[]
 }
 
@@ -281,7 +284,11 @@ function imagePassport(source: HTMLImageElement, file: File): StudioImagePasspor
       if (y > sh * .62) { zones.bottom += edge; zoneCount.bottom += 1 }
     }
   }
-  const normalizedZones = Object.entries(zones).map(([key, value]) => ({ key: key as keyof typeof zones, score: value / Math.max(1, zoneCount[key as keyof typeof zones]) }))
+  const normalizedZoneRecord = Object.fromEntries(Object.entries(zones).map(([key, value]) => [
+    key,
+    value / Math.max(1, zoneCount[key as keyof typeof zones]),
+  ])) as Record<keyof typeof zones, number>
+  const normalizedZones = Object.entries(normalizedZoneRecord).map(([key, score]) => ({ key: key as keyof typeof zones, score }))
   normalizedZones.sort((a, b) => a.score - b.score)
   const quiet = normalizedZones[0]
   const second = normalizedZones[1]
@@ -292,6 +299,18 @@ function imagePassport(source: HTMLImageElement, file: File): StudioImagePasspor
   const outputType = file.type === 'image/png' ? 'image/png' : 'image/jpeg'
   const dataUrl = canvas.toDataURL(outputType, outputType === 'image/jpeg' ? .88 : undefined)
   const orientation = aspectRatio > 1.08 ? 'landscape' : aspectRatio < .92 ? 'portrait' : 'square'
+  const edgeDensity = edges / Math.max(1, (sw - 2) * (sh - 2))
+  const visualScore = Math.round(clamp(
+    .34
+      + Math.min(.24, Math.sqrt(variance) * 1.45)
+      + (edgeDensity >= .018 && edgeDensity <= .38 ? .22 : .1)
+      + (negativeSpace === 'balanced' ? .08 : .16),
+  ) * 100)
+  const cropRisk = aspectRatio > 1.78 || aspectRatio < .58
+    ? 'high'
+    : aspectRatio > 1.58 || aspectRatio < .72
+      ? 'medium'
+      : 'low'
   const cropNotes = [
     negativeSpace === 'balanced' ? 'المساحات متوازنة؛ ضع النص في طبقة مستقلة واختبر التباين.' : `أهدأ مساحة للنص تبدو في جهة ${negativeSpace === 'right' ? 'اليمين' : negativeSpace === 'left' ? 'اليسار' : negativeSpace === 'top' ? 'الأعلى' : 'الأسفل'}.`,
     `نقطة التركيز التكنولوجية قرب ${Math.round(focalX * 100)}٪ أفقيًا و${Math.round(focalY * 100)}٪ عموديًا.`,
@@ -307,11 +326,19 @@ function imagePassport(source: HTMLImageElement, file: File): StudioImagePasspor
     orientation,
     luminance: Math.round(mean * 100),
     contrast: Math.round(Math.sqrt(variance) * 100),
-    edgeDensity: Math.round(edges / Math.max(1, (sw - 2) * (sh - 2)) * 100),
+    edgeDensity: Math.round(edgeDensity * 100),
+    visualScore,
+    zoneScores: {
+      right: Math.round(normalizedZoneRecord.right * 1000) / 10,
+      left: Math.round(normalizedZoneRecord.left * 1000) / 10,
+      top: Math.round(normalizedZoneRecord.top * 1000) / 10,
+      bottom: Math.round(normalizedZoneRecord.bottom * 1000) / 10,
+    },
     negativeSpace,
     focalX,
     focalY,
     recommendedFit: aspectRatio > .72 && aspectRatio < 1.65 ? 'cover' : 'contain',
+    cropRisk,
     cropNotes,
   }
 }

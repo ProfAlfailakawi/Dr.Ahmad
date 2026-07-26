@@ -181,6 +181,12 @@ export function AudioLibrary({ articles, onChanged }: Props) {
     return result
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allArticles, localControls])
+  /* أرقام الواجهة تُشتق من ملفات الصوت المرتبطة بالمقالات التي يراها الدكتور
+     الآن، لا من لقطة JSON قديمة قد تتأخر عن R2 عدة تشغيلات. */
+  const liveExpectedVoices = allArticles.length * voices.length
+  const liveReadyVoices = totals.voices.fahed + totals.voices.noura + totals.voices.dialogue
+  const liveRemainingVoices = Math.max(0, liveExpectedVoices - liveReadyVoices)
+  const liveProgressPercent = Math.round((liveReadyVoices / Math.max(1, liveExpectedVoices)) * 1000) / 10
 
   useEffect(() => {
     if (!totals.working) return
@@ -346,19 +352,19 @@ export function AudioLibrary({ articles, onChanged }: Props) {
               <span className="text-[.66rem] text-soft">آخر لقطة {supervisorUpdatedLabel(supervisorSnapshot.generatedAt)}</span>
             </div>
             <p className="mt-2 line-clamp-2 text-[.78rem] leading-relaxed text-soft">
-              {supervisorSnapshot.queue.total
-                ? <>يستأنف من آخر نقطة تلقائياً. التالي: <strong className="font-semibold text-ink">{supervisorSnapshot.queue.next?.title || 'العنصر التالي في الطابور'}</strong></>
+              {liveRemainingVoices
+                ? <>يستأنف من آخر نقطة تلقائياً. التالي: <strong className="font-semibold text-ink">{supervisorSnapshot.queue.next?.title || 'أول ملف غير مكتمل في الطابور'}</strong></>
                 : 'اكتمل الطابور الموثق، وأي مقال أو حوار جديد سيدخل تلقائياً.'}
             </p>
           </div>
           <div className="flex items-center gap-4 sm:justify-end">
-            <div className="text-center"><p className="font-display text-2xl font-bold text-ink">{supervisorSnapshot.progressPercent}%</p><p className="text-[.62rem] text-soft">إنجاز موثق</p></div>
+            <div className="text-center"><p className="font-display text-2xl font-bold text-ink">{liveProgressPercent}%</p><p className="text-[.62rem] text-soft">مرتبط فعليًا</p></div>
             <div className="h-9 w-px bg-hair" aria-hidden="true" />
-            <div className="text-center"><p className="font-display text-2xl font-bold text-ink">{supervisorSnapshot.queue.total}</p><p className="text-[.62rem] text-soft">متبقٍ</p></div>
+            <div className="text-center"><p className="font-display text-2xl font-bold text-ink">{liveRemainingVoices}</p><p className="text-[.62rem] text-soft">متبقٍ</p></div>
             {supervisorSnapshot.queue.failed > 0 && <><div className="h-9 w-px bg-hair" aria-hidden="true" /><div className="text-center"><p className="font-display text-2xl font-bold text-red-700 dark:text-red-300">{supervisorSnapshot.queue.failed}</p><p className="text-[.62rem] text-soft">يعاد إصلاحه</p></div></>}
           </div>
         </div>
-        <div className="h-1 bg-hair" aria-hidden="true"><div className="h-full bg-accent transition-[width]" style={{ width: `${Math.max(0, Math.min(100, supervisorSnapshot.progressPercent))}%` }} /></div>
+        <div className="h-1 bg-hair" aria-hidden="true"><div className="h-full bg-accent transition-[width]" style={{ width: `${Math.max(0, Math.min(100, liveProgressPercent))}%` }} /></div>
       </div>
 
       <div className="mb-5 grid min-w-0 gap-3 lg:grid-cols-[minmax(220px,1fr)_auto] lg:items-center">

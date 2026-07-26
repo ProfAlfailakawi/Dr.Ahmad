@@ -1092,35 +1092,95 @@ const paintCinematicWindow: Painter = (s) => {
   const heroImage = s.plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background' && item.src)
   if (heroImage) {
     const zone = heroImage.textZone || 'right'
+    const horizontalZone = zone === 'right' || zone === 'left'
     const rightSide = zone !== 'left'
-    const contentW = w * (s.isWide ? .54 : .64)
-    const title = fitTitle(s, contentW, { base: min * (s.isTall ? .062 : .072), maxLines: s.isTall ? 4 : 3 })
-    const body = fitBody(s, contentW, { maxLines: s.isTall ? 3 : 2 })
+    const contentW = w * (horizontalZone ? (s.isWide ? .52 : .64) : .78)
+    const imageLayout = s.plan.layout
+    const variant = imageLayout === 'hero-word'
+      ? 'monument'
+      : ['quote-stage', 'human-note', 'quiet-orbit'].includes(imageLayout)
+        ? 'quiet'
+        : ['evidence-ledger', 'modular-brief', 'infographic', 'knowledge-map'].includes(imageLayout)
+          ? 'ledger'
+          : imageLayout === 'event-marquee'
+            ? 'marquee'
+            : imageLayout === 'cinematic-window'
+              ? 'cinematic'
+              : 'editorial'
+    const titleBase = variant === 'monument'
+      ? min * (s.isTall ? .086 : .1)
+      : variant === 'quiet'
+        ? min * .069
+        : variant === 'ledger'
+          ? min * .058
+          : variant === 'marquee'
+            ? min * .078
+            : min * (s.isTall ? .062 : .072)
+    const title = fitTitle(s, contentW, { base: titleBase, maxLines: variant === 'monument' ? 3 : s.isTall ? 4 : 3 })
+    const body = fitBody(s, contentW, { maxLines: variant === 'ledger' ? 4 : variant === 'quiet' ? 3 : s.isTall ? 3 : 2 })
     const titleH = blockHeight(title.lines, title.size, s.titleLineHeight)
     const bodyH = blockHeight(body.lines, body.size, 1.64)
-    const titleX = rightSide ? w - s.safeX : s.safeX
-    const anchor = rightSide ? 'end' as const : 'start' as const
-    const top = zone === 'bottom' ? h * .48 : zone === 'top' ? h * .19 : h * .27
-    const lineX = rightSide ? w - s.safeX + min * .018 : s.safeX - min * .018
+    const titleX = horizontalZone ? (rightSide ? w - s.safeX : s.safeX) : w - s.safeX
+    const anchor = horizontalZone ? (rightSide ? 'end' as const : 'start' as const) : 'end' as const
+    const top = zone === 'bottom'
+      ? h * (variant === 'monument' ? .54 : .5)
+      : zone === 'top'
+        ? h * .16
+        : h * (variant === 'quiet' ? .31 : .24)
+    const lineX = anchor === 'end' ? titleX + min * .018 : titleX - min * .018
     const kickerSize = Math.max(13, min * .021)
     const kickerW = Math.min(contentW * .58, lineWidthPx(s.kicker, kickerSize) + min * .08)
-    const kickerX = rightSide ? w - s.safeX - kickerW : s.safeX
-    const kickerTextX = rightSide ? kickerX + kickerW / 2 : kickerX + kickerW / 2
-    const titleTop = top + min * .085
+    const kickerX = anchor === 'end' ? titleX - kickerW : titleX
+    const kickerTextX = kickerX + kickerW / 2
+    const titleTop = top + (variant === 'monument' ? min * .035 : min * .085)
     const bodyTop = titleTop + titleH + min * .065
     const ctaTop = bodyTop + bodyH + min * .06
+    const textInk = p.isDark ? '#F7F5EF' : p.ink
+    const textMuted = p.isDark ? 'rgba(247,245,239,.82)' : p.muted
+    const titleMarkup = textBlock({
+      lines: title.lines,
+      x: titleX,
+      y: titleTop + title.size * .82,
+      size: title.size,
+      fill: textInk,
+      weight: variant === 'quiet' ? 600 : 700,
+      anchor,
+      family: s.displayFamily,
+      lineHeight: s.titleLineHeight,
+      emphasisWord: s.hero,
+      emphasisFill: p.accent,
+    })
+    const bodyMarkup = body.lines.length ? textBlock({
+      lines: body.lines,
+      x: titleX,
+      y: bodyTop + body.size * .82,
+      size: body.size,
+      fill: textMuted,
+      weight: 400,
+      anchor,
+      family: s.bodyFamily,
+      lineHeight: 1.64,
+    }) : ''
+    const ornament = variant === 'monument'
+      ? `<circle cx="${round(anchor === 'end' ? titleX - contentW + min * .04 : titleX + contentW - min * .04)}" cy="${round(titleTop + min * .04)}" r="${round(min * .034)}" fill="none" stroke="${p.accent}" stroke-width="${round(min * .006)}" opacity=".9"/>`
+      : variant === 'quiet'
+        ? textBlock({ lines: ['”'], x: anchor === 'end' ? titleX : titleX + min * .09, y: titleTop - min * .025, size: min * .12, fill: p.accent, weight: 700, anchor, family: s.displayFamily, opacity: .82 })
+        : variant === 'ledger'
+          ? `${textBlock({ lines: ['01'], x: anchor === 'end' ? titleX - contentW : titleX + contentW, y: top + min * .035, size: min * .058, fill: p.accent, weight: 700, anchor: anchor === 'end' ? 'start' : 'end', family: 'Tajawal', opacity: .82 })}<line x1="${round(anchor === 'end' ? titleX - contentW : titleX)}" y1="${round(top + min * .06)}" x2="${round(anchor === 'end' ? titleX : titleX + contentW)}" y2="${round(top + min * .06)}" stroke="${p.rule}" stroke-width="1.2" opacity=".8"/>`
+          : variant === 'marquee' || variant === 'cinematic'
+            ? `<rect x="${round(kickerX)}" y="${round(top)}" width="${round(kickerW)}" height="${round(min * .058)}" rx="${round(variant === 'cinematic' ? min * .029 : min * .012)}" fill="${p.accent}" opacity=".96"/>`
+            : `<rect x="${round(lineX)}" y="${round(titleTop - min * .01)}" width="${round(min * .006)}" height="${round(Math.max(titleH, min * .15))}" rx="${round(min * .004)}" fill="${p.accent}"/>`
+    const showKickerPill = variant === 'marquee' || variant === 'cinematic'
     return {
       markup: [
-        `<rect x="${round(kickerX)}" y="${round(top)}" width="${round(kickerW)}" height="${round(min * .058)}" rx="${round(min * .029)}" fill="${p.accent}" opacity=".94"/>`,
-        textBlock({ lines: [s.kicker], x: kickerTextX, y: top + min * .038, size: kickerSize, fill: '#F7F5EF', weight: 700, anchor: 'middle', family: 'Tajawal' }),
-        `<rect x="${round(lineX)}" y="${round(titleTop - min * .01)}" width="${round(min * .007)}" height="${round(Math.max(titleH, min * .16))}" rx="${round(min * .004)}" fill="${p.accent}"/>`,
-        textBlock({ lines: title.lines, x: titleX, y: titleTop + title.size * .82, size: title.size, fill: '#F7F5EF', weight: 700, anchor, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent }),
-        body.lines.length ? textBlock({ lines: body.lines, x: titleX, y: bodyTop + body.size * .82, size: body.size, fill: 'rgba(247,245,239,.82)', weight: 400, anchor, family: s.bodyFamily, lineHeight: 1.64 }) : '',
+        ornament,
+        showKickerPill ? textBlock({ lines: [s.kicker], x: kickerTextX, y: top + min * .038, size: kickerSize, fill: '#F7F5EF', weight: 700, anchor: 'middle', family: 'Tajawal' }) : variant === 'ledger' || variant === 'monument' ? '' : textBlock({ lines: [s.kicker], x: titleX, y: top + min * .025, size: kickerSize, fill: p.accent, weight: 700, anchor, family: 'Tajawal' }),
+        titleMarkup,
+        bodyMarkup,
         s.cta ? textBlock({ lines: [s.cta], x: titleX, y: ctaTop + min * .022, size: Math.max(13, min * .021), fill: p.accent, weight: 700, anchor, family: 'Tajawal' }) : '',
         s.slides > 1 ? textBlock({ lines: [`01/${String(s.slides).padStart(2, '0')}`], x: s.safeX, y: s.safeY * .72, size: Math.max(12, min * .019), fill: 'rgba(247,245,239,.74)', weight: 600, anchor: 'start', family: 'Tajawal' }) : '',
-        heroImage.owner || heroImage.license ? textBlock({ lines: [`المصدر البصري: ${heroImage.owner || 'غير محدد'} · ${heroImage.license || 'راجع الأصل'}`], x: w - s.safeX, y: h - s.safeY - min * .065, size: Math.max(10, min * .014), fill: 'rgba(247,245,239,.58)', weight: 400, anchor: 'end', family: 'Tajawal' }) : '',
         s.slides > 1 ? carouselItem(s, { gap: 0 }).draw(h - s.safeY - min * .1) : '',
-        identityFooter(s, { mode: rightSide ? 'standard' : 'center' }),
+        identityFooter(s, { mode: variant === 'quiet' ? 'center' : 'standard' }),
       ].join(''),
     }
   }
@@ -1675,10 +1735,9 @@ export function renderCompositionSvg(plan: CompositionPlan, options: RenderSvgOp
         : 'top-left'
   const bg = backdrop(s, { glow })
   const heroImage = plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background' && item.src)
-  /* أصل المشكلة: الخلفية البطولية كانت تُحقن في الخطة، لكن كثيرًا من الرسامين
-     لا يقرأون منطق الصورة ولا منطقة النص الهادئة، فيبنون ورقة/إطارًا فوقها
-     فتبدو النتيجة خاطئة. الحل: أي خطة فيها صورة بطولية تُرسم عبر الرسام
-     السينمائي المخصص للصورة لأنه الوحيد الذي يحترم textZone والتدرج والقراءة. */
+  /* الصورة البطولية تمرّ عبر رسّام واعٍ بمنطقة النص، لكنه يحترم عائلة الخطة
+     نفسها (اقتباس/حدث/كلمة بطلة/سجل معرفة). هكذا لا تتحول كل النتائج إلى
+     النافذة السينمائية ذاتها لمجرد وجود صورة. */
   const painter = heroImage ? paintCinematicWindow : (PAINTERS[plan.layout] || paintEditorialAxis)
   const scenePaint = painter(s)
   const hero = imageUnderlayLayer(s)

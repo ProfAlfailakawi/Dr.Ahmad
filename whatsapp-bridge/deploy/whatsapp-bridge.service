@@ -2,6 +2,7 @@
 Description=Dr Alfailakawi WhatsApp Bridge
 After=network-online.target
 Wants=network-online.target
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -12,7 +13,6 @@ EnvironmentFile=/etc/whatsapp-bridge.env
 ExecStart=/usr/bin/node /opt/whatsapp-bridge/service-runner.mjs
 Restart=always
 RestartSec=5
-StartLimitIntervalSec=0
 KillMode=control-group
 TimeoutStopSec=20
 UMask=0077

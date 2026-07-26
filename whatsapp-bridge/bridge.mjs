@@ -152,6 +152,8 @@ const puppeteer = {
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: config.clientId, dataPath: config.sessionDir }),
   puppeteer,
+  deviceName: config.deviceName,
+  browserName: 'Dr Ahmad Assistant',
   takeoverOnConflict: false,
   authTimeoutMs: 120_000,
   qrMaxRetries: 0,
@@ -178,6 +180,7 @@ client.on('ready', () => {
   runtime.connected = true
   runtime.lastError = ''
   void safeEmit('status', { status: 'connected' })
+  void syncContactsToServer()
   log('info', 'connected')
 })
 
@@ -207,6 +210,28 @@ async function sendBotText(jid, text) {
   } catch (error) {
     await safeEmit('delivery-failed', { jid, error: error instanceof Error ? error.message : String(error) })
     throw error
+  }
+}
+
+async function syncContactsToServer() {
+  try {
+    const contacts = await client.getContacts()
+    const compact = contacts.flatMap((contact) => {
+      const jid = String(contact?.id?._serialized || '')
+      if (!jid.endsWith('@c.us') || !/^\d{7,15}@c\.us$/.test(jid)) return []
+      return [{
+        jid,
+        name: String(contact.name || contact.pushname || contact.shortName || '').slice(0, 120),
+      }]
+    })
+    let accepted = 0
+    for (let offset = 0; offset < compact.length; offset += 350) {
+      const response = await safeEmit('contacts-sync', { contacts: compact.slice(offset, offset + 350) })
+      accepted += Number(response?.accepted || 0)
+    }
+    log('info', 'contacts-synced', { accepted })
+  } catch (error) {
+    log('warn', 'contacts-sync-failed', { error: error instanceof Error ? error.message : String(error) })
   }
 }
 
@@ -264,6 +289,11 @@ async function executeCommand(command) {
       const jid = normalizeChatId(command.payload?.jid)
       const text = String(command.payload?.text || '').trim()
       if (!jid || !text) throw new Error('invalid-send-message-command')
+      await sendBotText(jid, text)
+    } else if (command.type === 'send-self-message') {
+      const jid = normalizeChatId(client.info?.wid?._serialized)
+      const text = String(command.payload?.text || '').trim()
+      if (!jid || !text) throw new Error('self-chat-unavailable')
       await sendBotText(jid, text)
     } else {
       throw new Error(`unsupported-command:${command.type}`)

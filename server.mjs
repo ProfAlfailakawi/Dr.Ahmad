@@ -73,7 +73,7 @@ const audioManagePath = '/api/admin/audio/manage'
 const sourcesCheckPath = '/api/admin/sources/check'
 const maxArticleRequestBytes = 128 * 1024
 const firebaseJwksUrl = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
-const articleCategories = Object.freeze(['التعليم', 'التربية', 'مجتمع', 'تقنية', 'هوية', 'إعلام', 'بحث'])
+const articleCategories = Object.freeze(['التعليم', 'التربية', 'مجتمع', 'تكنولوجيا', 'هوية', 'إعلام', 'بحث'])
 const articleCategoryPattern = /^[\p{L}][\p{L}\p{M}\s-]{1,38}$/u
 const contentKinds = Object.freeze(['article', 'book', 'paper', 'media'])
 
@@ -946,15 +946,15 @@ const studioConceptProfiles = Object.freeze([
     test: /تلاعب|تحريف|تزوير|تزييف|غش|خداع|فساد|محاباة|واسطة|انحياز|manipulat|corrupt|fraud|cheat|bias/i,
     label: 'التلاعب بالمعايير التعليمية',
     interpretation: 'hidden influence distorts educational standards, assessment, or opportunity while the institution still appears orderly',
-    scene: 'Inside a contemporary classroom, a perfectly ordered row of empty student desks recedes into the background. On the nearest desk, a rigid transparent measuring straightedge used as a symbol of educational standards is visibly bent by one concealed hand emerging from beneath the desk. The manipulation is subtle but unmistakable; the setting is unmistakably educational.',
-    anchors: 'real classroom desks, one concealed hand, a visibly distorted measuring tool, orderly student chairs, institutional calm masking unethical interference',
-    inference: 'education is being quietly manipulated from inside the system',
-    avoid: 'a person hiding behind a book, hanging books, random reading scenes, generic students studying, legal courtroom imagery, puppets, readable exam text',
+    scene: 'Photorealistic contemporary classroom with orderly empty desks. On the front desk sits a balanced brass scale holding identical blank exam sheets. A concealed hand beneath the desk secretly pulls one pan downward with a thin thread, making the unfair manipulation immediately visible. The classroom setting, assessment papers, and hidden interference must all be unmistakable.',
+    anchors: 'real contemporary classroom, orderly student desks, balanced brass scale, identical blank exam sheets, one concealed hand, a visible thin thread pulling one pan down',
+    inference: 'fair educational assessment is being secretly manipulated from inside the system',
+    avoid: 'a person hiding behind a book, any book covering a face, hanging books, random reading scenes, generic students studying, legal courtroom imagery, puppets, readable exam text, abstract symbolism without a classroom',
   },
   {
     key: 'education-ai',
-    test: /ذكاء اصطناعي|الذكاء الاصطناعي|تقنية|رقمي|خوارزم|روبوت|chatgpt|artificial intelligence|algorithm|digital/i,
-    label: 'الإنسانية أمام التقنية',
+    test: /ذكاء اصطناعي|الذكاء الاصطناعي|تكنولوجيا|\u062a\u0642\u0646\u064a(?:\u0629|\u0647|\u0627\u062a)?|رقمي|خوارزم|روبوت|chatgpt|artificial intelligence|algorithm|digital/i,
+    label: 'الإنسانية أمام التكنولوجيا',
     interpretation: 'technology changes education, but the decisive question is what remains human, relational, and ethically accountable',
     scene: 'A real teacher stands beside an empty student chair in a quiet classroom at dusk. A precise cold rectangle of machine light reaches the desk, while the teacher protects a small pool of warm natural light around the chair. No screens or robots are visible; the conflict is expressed through light, distance, and human presence.',
     anchors: 'teacher, student chair, classroom, cold machine-like light versus warm human light, unmistakable educational relationship',
@@ -1116,59 +1116,43 @@ function studioImageInput(value) {
 export function buildEliteStudioImagePrompt(input) {
   const { concept, world } = compileStudioVisualDirection(input)
   const orientation = input.orientation === 'landscape'
-    ? 'cinematic 16:9 landscape composition'
+    ? '16:9 landscape'
     : input.orientation === 'square'
-      ? 'editorial 1:1 square composition'
-      : 'premium 4:5 portrait editorial composition'
+      ? '1:1 square'
+      : '4:5 portrait'
   const negativeSpace = input.negativeSpace === 'compact'
-    ? 'controlled breathing room without empty decorative areas'
+    ? 'controlled breathing room'
     : input.negativeSpace === 'balanced'
-      ? 'balanced negative space with a calm text-safe zone chosen from the actual subject placement'
-      : 'generous intentional negative space for later Arabic typography, without placing any text inside the image'
+      ? 'balanced negative space with one calm text-safe zone'
+      : 'generous intentional negative space for later Arabic typography'
   const lighting = input.lighting === 'dramatic'
-    ? 'sculpted cinematic light, deep tonal separation, one precise luminous accent'
+    ? 'sculpted cinematic light with deep tonal separation'
     : input.lighting === 'soft'
-      ? 'soft directional light, refined tonal transitions, tactile depth'
-      : 'natural directional light with cinematic discipline and believable texture'
-  const subject = input.issue || input.idea
-  const emotionalGoal = input.emotion || 'quiet intellectual force, human dignity, and emotional truth'
+      ? 'soft directional light with tactile depth'
+      : 'natural directional light with believable texture'
   const forbidden = [
     input.avoid,
     concept.avoid,
-    'generic stock-photo smiles',
-    'random person reading',
-    'book or paper covering a face',
-    'glowing brains',
-    'robot hands touching human hands',
-    'floating UI holograms',
-    'blue cyber grids',
-    'literal icons',
-    'text, Arabic letters, Latin letters, captions, logos, watermarks, interface elements',
-    'plastic skin, exaggerated HDR, oversaturated colors, artificial corporate staging',
+    'text, letters, numbers, captions, logos, watermarks, UI elements',
+    'generic stock-photo smiles, random reading, books covering faces',
+    'glowing brains, robot hands, holograms, cyber grids',
+    'plastic skin, bad anatomy, extra fingers, oversaturated colors',
   ].filter(Boolean).join(', ')
   return [
-    `Generate the image only — no typography, no title, no logo, no caption. Create a world-class ${orientation} for an internationally respected Arab academic and public intellectual.`,
-    `Arabic title: ${subject}.`,
-    `Correct semantic interpretation in English: ${concept.interpretation}.`,
-    `REQUIRED VISIBLE SCENE: ${concept.scene}`,
-    `NON-NEGOTIABLE RELEVANCE ANCHORS: ${concept.anchors}.`,
-    `Meaning test: even without the title, an intelligent viewer should infer that ${concept.inference}. If that inference is not visually clear, the image is wrong.`,
-    input.context ? `Context to respect: ${input.context}.` : '',
-    input.audience ? `Audience: ${input.audience}.` : '',
-    input.visualReason ? `Human consequence to reveal: ${input.visualReason}.` : '',
-    `Distinct visual world for this generation — ${world.label}: ${world.direction}. This is one art family among many; do not imitate a previous template.`,
-    input.variation ? `Fresh-generation mandate: ${input.variation}` : '',
-    `Reject completely: ${forbidden}.`,
-    `Emotional register: ${emotionalGoal}; profound but never sentimental, powerful but never loud.`,
-    `Composition: ${negativeSpace}; clear foreground and background, asymmetrical balance, deliberate crop, no clutter.`,
-    `Light and color: ${lighting}; concept-led palette, never default cyber blue.`,
-    `Cultural direction: globally sophisticated and Arab-sensitive, without stereotypes or decorative orientalism.`,
-    `Image quality: believable anatomy, natural hands, authentic materials, coherent shadows, premium editorial detail.`,
-    `Do not produce a merely beautiful unrelated picture. Semantic accuracy is more important than atmosphere.`,
-  ].filter(Boolean).join(' ').slice(0, 2048)
+    `Photorealistic world-class editorial photograph, ${orientation}.`,
+    `THE SCENE MUST BE EXACTLY THIS: ${concept.scene}`,
+    `VISIBLE OBJECTS THAT MUST APPEAR: ${concept.anchors}.`,
+    `The viewer must instantly understand that ${concept.inference}.`,
+    `Art direction: ${world.direction}.`,
+    `Composition: ${negativeSpace}, clear foreground and background, asymmetrical balance, no clutter.`,
+    `Lighting: ${lighting}.`,
+    input.variation ? `Fresh variation: ${input.variation}` : '',
+    `Do not include: ${forbidden}.`,
+    `Generate image only. Semantic accuracy comes before beauty.`,
+  ].filter(Boolean).join(' ').slice(0, 1900)
 }
 
-async function assessStudioImageRelevance({ input, direction, image }, fetchImpl = fetch) {
+async function assessStudioImageRelevance({ input, direction, image, imageMime = 'image/jpeg' }, fetchImpl = fetch) {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
   if (!apiKey || !image || image.length > 12_000_000) return null
   const configuredModel = process.env.STUDIO_VISION_CRITIC_MODEL || process.env.EDITORIAL_GEMINI_MODEL || 'gemini-2.5-flash-lite'
@@ -1182,7 +1166,7 @@ async function assessStudioImageRelevance({ input, direction, image }, fetchImpl
           systemInstruction: { parts: [{ text: 'You are a severe editorial image relevance judge. Judge semantic match before beauty. Return JSON only.' }] },
           contents: [{ role: 'user', parts: [
             { text: `Arabic title: ${input.issue || input.idea}\nIntended interpretation: ${direction.concept.interpretation}\nRequired anchors: ${direction.concept.anchors}\nViewer inference: ${direction.concept.inference}\nScore 0-100. Reject unrelated reading scenes, books covering faces, generic mood images, or missing educational anchors.` },
-            { inlineData: { mimeType: 'image/jpeg', data: image } },
+            { inlineData: { mimeType: imageMime, data: image } },
           ] }],
           generationConfig: {
             temperature: .1,
@@ -1216,38 +1200,156 @@ async function assessStudioImageRelevance({ input, direction, image }, fetchImpl
   } catch { return null }
 }
 
+function detectStudioImageMime(bytes) {
+  if (!Buffer.isBuffer(bytes) || bytes.length < 12) return ''
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg'
+  if (bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'image/png'
+  if (bytes.subarray(0, 4).toString('ascii') === 'RIFF' && bytes.subarray(8, 12).toString('ascii') === 'WEBP') return 'image/webp'
+  if (bytes.subarray(0, 6).toString('ascii').startsWith('GIF8')) return 'image/gif'
+  if (bytes.subarray(4, 12).toString('ascii').includes('ftypavif')) return 'image/avif'
+  return ''
+}
+
+function normalizeStudioImageCandidate(value, hintedMime = '') {
+  if (typeof value !== 'string') return null
+  let raw = value.trim()
+  let declaredMime = /^image\/(?:jpeg|jpg|png|webp|gif|avif)$/i.test(hintedMime) ? hintedMime.toLowerCase().replace('image/jpg', 'image/jpeg') : ''
+  const dataUri = raw.match(/^data:(image\/(?:jpeg|jpg|png|webp|gif|avif))(?:;charset=[^;,]+)?;base64,([\s\S]+)$/i)
+  if (dataUri) {
+    declaredMime = dataUri[1].toLowerCase().replace('image/jpg', 'image/jpeg')
+    raw = dataUri[2]
+  }
+  if (/^https?:\/\//i.test(raw)) return null
+  raw = raw.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/')
+  if (!raw || raw.length < 320 || raw.length > 28_000_000 || !/^[A-Za-z0-9+/]*={0,2}$/.test(raw)) return null
+  while (raw.length % 4) raw += '='
+  let bytes
+  try { bytes = Buffer.from(raw, 'base64') } catch { return null }
+  if (bytes.length < 256 || bytes.length > 18_000_000) return null
+  const detectedMime = detectStudioImageMime(bytes)
+  if (!detectedMime) return null
+  return { base64: bytes.toString('base64'), mime: detectedMime || declaredMime, byteLength: bytes.length }
+}
+
+function collectStudioImageCandidates(value, depth = 0, output = []) {
+  if (depth > 5 || value == null) return output
+  if (typeof value === 'string') {
+    if (/^data:image\//i.test(value) || value.length > 320) output.push(value)
+    return output
+  }
+  if (Array.isArray(value)) {
+    for (const item of value.slice(0, 12)) collectStudioImageCandidates(item, depth + 1, output)
+    return output
+  }
+  if (typeof value !== 'object') return output
+  const preferredKeys = new Set(['image', 'imagebase64', 'image_base64', 'base64', 'b64_json', 'datauri', 'data_uri'])
+  const containerKeys = new Set(['result', 'data', 'output', 'outputs', 'images', 'response'])
+  for (const [key, item] of Object.entries(value)) {
+    const normalizedKey = key.toLowerCase().replace(/[^a-z0-9_]/g, '')
+    if (preferredKeys.has(normalizedKey) && typeof item === 'string') output.push(item)
+    else if (containerKeys.has(normalizedKey) || Array.isArray(item) || (item && typeof item === 'object')) collectStudioImageCandidates(item, depth + 1, output)
+  }
+  return output
+}
+
+function cloudflareFailureDetail(payload) {
+  const firstError = Array.isArray(payload?.errors) ? payload.errors[0] : null
+  return boundedString(firstError?.message || payload?.message || payload?.error || payload?.detail, 240)
+}
+
+async function decodeCloudflareStudioImageResponse(response) {
+  const contentType = String(response.headers.get('content-type') || '').toLowerCase()
+  const cfRay = boundedString(response.headers.get('cf-ray'), 80)
+  const raw = Buffer.from(await response.arrayBuffer())
+  if (raw.length > 28_000_000) throw new HttpError(502, 'Image generation response was too large')
+
+  const directMime = detectStudioImageMime(raw)
+  if (directMime) return { base64: raw.toString('base64'), mime: directMime, byteLength: raw.length }
+
+  const text = raw.toString('utf8').replace(/^\uFEFF/, '').trim()
+  let payload = null
+  try { payload = JSON.parse(text) } catch {
+    const directBase64 = normalizeStudioImageCandidate(text, contentType.split(';')[0])
+    if (directBase64) return directBase64
+    throw new HttpError(502, `Image generation returned an unreadable response${contentType ? ` (${contentType})` : ''}`)
+  }
+
+  if (payload?.success === false) {
+    const detail = cloudflareFailureDetail(payload)
+    throw new HttpError(502, detail ? `Image generation failed: ${detail}` : 'Image generation failed')
+  }
+
+  const candidates = collectStudioImageCandidates(payload)
+  for (const candidate of candidates) {
+    const normalized = normalizeStudioImageCandidate(candidate, contentType.split(';')[0])
+    if (normalized) return normalized
+  }
+
+  const detail = cloudflareFailureDetail(payload)
+  const shape = payload && typeof payload === 'object' ? Object.keys(payload).slice(0, 8).join(',') : typeof payload
+  console.warn('[studio-image] Cloudflare response contained no decodable image', {
+    contentType: contentType || 'unknown',
+    bytes: raw.length,
+    shape: shape || 'empty',
+    cfRay: cfRay || undefined,
+    detail: detail || undefined,
+  })
+  throw new HttpError(502, `Image generation returned no usable image${detail ? `: ${detail}` : ''}`)
+}
+
 async function requestCloudflareImage({ accountId, apiToken, model, prompt, seed }, fetchImpl) {
-  let response
-  try {
-    response = await fetchWithTimeout(fetchImpl,
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
-        method: 'POST',
-        headers: {
-          accept: 'application/json',
-          authorization: `Bearer ${apiToken}`,
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({ prompt, seed, steps: envNumber('CLOUDFLARE_IMAGE_STEPS', 8, 4, 8) }),
-      }, envNumber('CLOUDFLARE_IMAGE_TIMEOUT_MS', 45_000, 10_000, 55_000))
-  } catch (error) {
-    if (error?.name === 'AbortError') throw new HttpError(504, 'Image generation timed out')
-    throw new HttpError(502, 'Image generation service unavailable')
-  }
-  if (!response.ok) {
-    if (response.status === 429) throw new HttpError(503, 'Image generation is busy', { 'retry-after': '30' })
-    let detail = ''
+  const steps = envNumber('CLOUDFLARE_IMAGE_STEPS', 8, 4, 8)
+  const timeout = envNumber('CLOUDFLARE_IMAGE_TIMEOUT_MS', 45_000, 10_000, 55_000)
+  let lastError = null
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    let response
+    const attemptSeed = (Number(seed || 0) + attempt * 104_729) >>> 0
     try {
-      const failure = await response.json()
-      const first = Array.isArray(failure?.errors) ? failure.errors[0] : null
-      detail = boundedString(first?.message || failure?.message || failure?.error, 240)
-    } catch { /* Cloudflare may return an empty error body */ }
-    throw new HttpError(502, detail ? `Image generation failed: ${detail}` : `Image generation failed with HTTP ${response.status}`)
+      response = await fetchWithTimeout(fetchImpl,
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
+          method: 'POST',
+          headers: {
+            accept: 'application/json',
+            authorization: `Bearer ${apiToken}`,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({ prompt, seed: attemptSeed, steps }),
+        }, timeout)
+    } catch (error) {
+      if (error?.name === 'AbortError') lastError = new HttpError(504, 'Image generation timed out')
+      else lastError = new HttpError(502, 'Image generation service unavailable')
+      if (attempt === 0) continue
+      throw lastError
+    }
+
+    if (!response.ok) {
+      if (response.status === 429) throw new HttpError(503, 'Image generation is busy', { 'retry-after': '30' })
+      let detail = ''
+      try {
+        const raw = Buffer.from(await response.arrayBuffer()).toString('utf8')
+        const failure = JSON.parse(raw || '{}')
+        detail = cloudflareFailureDetail(failure)
+      } catch { /* Cloudflare may return an empty error body */ }
+      lastError = new HttpError(502, detail ? `Image generation failed: ${detail}` : `Image generation failed with HTTP ${response.status}`)
+      if (attempt === 0 && response.status >= 500) continue
+      throw lastError
+    }
+
+    try {
+      const decoded = await decodeCloudflareStudioImageResponse(response)
+      return { ...decoded, transportAttempts: attempt + 1, seed: attemptSeed }
+    } catch (error) {
+      lastError = error
+      const recoverablePayload = error instanceof HttpError
+        && error.status === 502
+        && /no usable image|unreadable response/i.test(error.message)
+      if (attempt === 0 && recoverablePayload) continue
+      throw error
+    }
   }
-  let payload
-  try { payload = await response.json() } catch { throw new HttpError(502, 'Image generation returned an invalid response') }
-  const image = payload?.result?.image || payload?.image
-  if (typeof image !== 'string' || image.length < 1_000 || image.length > 20_000_000) throw new HttpError(502, 'Image generation returned no usable image')
-  return image
+
+  throw lastError || new HttpError(502, 'Image generation service unavailable')
 }
 
 export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
@@ -1263,9 +1365,9 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
   const firstPrompt = buildEliteStudioImagePrompt(input)
   const firstSeed = Number.parseInt(createHash('sha256').update(`${input.idea}|${requestId}|${input.variation}|${Date.now()}`).digest('hex').slice(0, 8), 16) >>> 0
   const firstImage = await requestCloudflareImage({ accountId, apiToken, model, prompt: firstPrompt, seed: firstSeed }, fetchImpl)
-  const firstCritic = await assessStudioImageRelevance({ input, direction: firstDirection, image: firstImage }, fetchImpl)
+  const firstCritic = await assessStudioImageRelevance({ input, direction: firstDirection, image: firstImage.base64, imageMime: firstImage.mime }, fetchImpl)
 
-  let chosen = { image: firstImage, prompt: firstPrompt, seed: firstSeed, direction: firstDirection, critic: firstCritic, attempts: 1 }
+  let chosen = { image: firstImage, prompt: firstPrompt, seed: firstImage.seed ?? firstSeed, direction: firstDirection, critic: firstCritic, attempts: 1 }
   if (firstCritic && (!firstCritic.topicMatch || firstCritic.score < 72)) {
     const retryInput = {
       ...input,
@@ -1281,14 +1383,16 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
     const retryPrompt = buildEliteStudioImagePrompt(retryInput)
     const retrySeed = Number.parseInt(createHash('sha256').update(`${retryInput.idea}|${retryInput.regenerationId}|${Date.now()}`).digest('hex').slice(0, 8), 16) >>> 0
     const retryImage = await requestCloudflareImage({ accountId, apiToken, model, prompt: retryPrompt, seed: retrySeed }, fetchImpl)
-    const retryCritic = await assessStudioImageRelevance({ input: retryInput, direction: retryDirection, image: retryImage }, fetchImpl)
+    const retryCritic = await assessStudioImageRelevance({ input: retryInput, direction: retryDirection, image: retryImage.base64, imageMime: retryImage.mime }, fetchImpl)
     const firstScore = firstCritic?.score ?? 0
     const retryScore = retryCritic?.score ?? (firstScore + 1)
-    if (retryScore >= firstScore) chosen = { image: retryImage, prompt: retryPrompt, seed: retrySeed, direction: retryDirection, critic: retryCritic, attempts: 2 }
+    if (retryScore >= firstScore) chosen = { image: retryImage, prompt: retryPrompt, seed: retryImage.seed ?? retrySeed, direction: retryDirection, critic: retryCritic, attempts: 2 }
   }
 
   return {
-    imageUrl: `data:image/jpeg;base64,${chosen.image}`,
+    imageUrl: `data:${chosen.image.mime};base64,${chosen.image.base64}`,
+    imageMime: chosen.image.mime,
+    imageBytes: chosen.image.byteLength,
     sourceUrl: 'https://developers.cloudflare.com/workers-ai/models/flux-1-schnell/',
     owner: 'توليد أصلي داخل الاستوديو',
     license: 'نموذج FLUX عبر Cloudflare',
@@ -1308,7 +1412,7 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
     semanticScene: chosen.direction.concept.scene,
     relevanceScore: chosen.critic?.score ?? null,
     relevanceReason: chosen.critic?.reason || '',
-    generationAttempts: chosen.attempts,
+    generationAttempts: chosen.attempts + Math.max(0, Number(chosen.image.transportAttempts || 1) - 1),
   }
 }
 
@@ -1780,7 +1884,7 @@ function fallbackStandaloneIdeas(input, world) {
       `ما الذي لا يقوله الخبر عن «${trimAtWord(event.title, 74)}»؟`,
       `الخبر يشرح ما حدث، لكن السؤال التربوي الأهم هو: ما الذي سيتغير في الإنسان بعد أن تهدأ الضجة؟`,
       'تعليق راهن قصير يربط الحدث بالمعنى الإنساني من دون إعادة صياغة الخبر.',
-      'الجمهور العام', 'تعليق راهن', `حدث حديث من ${event.source} ويمكن ربطه طبيعيًا بمجال التعليم والتقنية.`, event,
+      'الجمهور العام', 'تعليق راهن', `حدث حديث من ${event.source} ويمكن ربطه طبيعيًا بمجال التعليم والتكنولوجيا.`, event,
     )
   }
   for (const book of input.books.slice(0, 2)) {
@@ -1800,7 +1904,7 @@ function fallbackStandaloneIdeas(input, world) {
     )
   }
   const evergreen = [
-    ['السرعة ليست دائمًا تقدمًا', 'كلما اختصرنا الوقت بالتقنية، اسأل: هل اختصرنا الفهم أيضًا؟', 'ومضة نقدية قصيرة قابلة للنشر في X وInstagram.', 'الجمهور العام', 'ومضة'],
+    ['السرعة ليست دائمًا تقدمًا', 'كلما اختصرنا الوقت بالتكنولوجيا، اسأل: هل اختصرنا الفهم أيضًا؟', 'ومضة نقدية قصيرة قابلة للنشر في X وInstagram.', 'الجمهور العام', 'ومضة'],
     ['سؤال لا يُطرح في اجتماعات التطوير', 'قبل شراء الأداة الجديدة: ما المشكلة الإنسانية التي ستحلها فعلًا؟', 'فتح نقاش مهني بلا وعظ أو ضجيج.', 'القيادات التعليمية', 'سؤال'],
     ['مشهد صغير يكشف نظامًا كاملًا', 'ابدأ بموقف يومي بين معلم وطالب، ثم اترك القارئ يرى المشكلة الأكبر من خلاله.', 'منشور إنساني مبني على مشهد لا على تقرير.', 'المعلمون وأولياء الأمور', 'مشهد'],
     ['الفكرة التي تبدو صحيحة أكثر من اللازم', 'اختر مسلمة تربوية شائعة، واكشف الحد الذي تتحول عنده من حل إلى مشكلة.', 'منشور مفارق يثير التفكير من دون استفزاز مصطنع.', 'الجمهور العام', 'مفارقة'],

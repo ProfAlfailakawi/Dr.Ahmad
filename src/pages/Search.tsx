@@ -6,7 +6,7 @@ import { searchArticles, topKeywordsFor } from '../lib/cms'
 import { books, papers, media } from '../data'
 import { buildKnowledgeGraph, graphSearch, type KnowledgeKind } from '../lib/knowledge-graph'
 import { useCmsContent } from '../lib/content'
-import { dynamicArticleCategories } from '../lib/content-taxonomy'
+import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { staticQuestions } from '../questions-data'
 
@@ -17,7 +17,7 @@ const suggestedTopics = [
   'التعليم',
   'الأسرة',
   'الهوية',
-  'التقنية',
+  'التكنولوجيا',
   'المستقبل',
 ]
 
@@ -297,20 +297,20 @@ export default function Search() {
                           <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2">
                             {categories.map((item) => (
                               <button
-                                key={item}
+                                key={categoryLabel(item)}
                                 onClick={() => setCat(item)}
                                 className={`min-h-11 shrink-0 border-b px-1 py-2 text-[.84rem] font-medium transition-colors ${
                                   cat === item ? 'border-accent text-accent' : 'border-transparent text-soft hover:border-accent hover:text-accent'
                                 }`}
                               >
-                                {item}
+                                {categoryLabel(item)}
                               </button>
                             ))}
                           </div>
                           <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2">
                             {['الكل', ...years].map((item) => (
                               <button
-                                key={item}
+                                key={categoryLabel(item)}
                                 onClick={() => setYear(item)}
                                 className={`min-h-11 shrink-0 border-b px-1 py-2 text-[.8rem] transition-colors ${
                                   year === item ? 'border-accent text-accent' : 'border-transparent text-soft hover:border-accent hover:text-accent'

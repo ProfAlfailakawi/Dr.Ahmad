@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { readTone, TONE_LABEL, type Tone } from '../lib/card-intelligence'
+import { categoryLabel } from '../lib/content-taxonomy'
 
 type Art = { slug: string; title: string; iso: string; cat: string; excerpt?: string; body?: string }
 
@@ -748,7 +749,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                         <Link to={`/articles/${a.slug}`} onClick={close} className="mt-0.5 block font-display text-[1.02rem] font-medium leading-[1.6] text-ink transition-colors hover:text-accent">
                           {a.title}
                         </Link>
-                        <span className="mt-1 block text-[.72rem] text-soft">{a.cat} · {overlap > 0 ? `${ar(overlap)} ${overlap === 1 ? 'صلة' : 'صلات'} مشتركة` : 'امتداد من المرحلة نفسها'}</span>
+                        <span className="mt-1 block text-[.72rem] text-soft">{categoryLabel(a.cat)} · {overlap > 0 ? `${ar(overlap)} ${overlap === 1 ? 'صلة' : 'صلات'} مشتركة` : 'امتداد من المرحلة نفسها'}</span>
                       </li>
                     ))}
                   </ol>

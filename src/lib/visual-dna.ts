@@ -294,7 +294,7 @@ function imagePassport(source: HTMLImageElement, file: File): StudioImagePasspor
   const orientation = aspectRatio > 1.08 ? 'landscape' : aspectRatio < .92 ? 'portrait' : 'square'
   const cropNotes = [
     negativeSpace === 'balanced' ? 'المساحات متوازنة؛ ضع النص في طبقة مستقلة واختبر التباين.' : `أهدأ مساحة للنص تبدو في جهة ${negativeSpace === 'right' ? 'اليمين' : negativeSpace === 'left' ? 'اليسار' : negativeSpace === 'top' ? 'الأعلى' : 'الأسفل'}.`,
-    `نقطة التركيز التقنية قرب ${Math.round(focalX * 100)}٪ أفقيًا و${Math.round(focalY * 100)}٪ عموديًا.`,
+    `نقطة التركيز التكنولوجية قرب ${Math.round(focalX * 100)}٪ أفقيًا و${Math.round(focalY * 100)}٪ عموديًا.`,
     aspectRatio > 1.7 ? 'الصورة عريضة؛ ستحتاج قصًا واعيًا للمربع والستوري.' : aspectRatio < .7 ? 'الصورة طولية؛ راقب فقدان الأطراف في النسخ العريضة.' : 'نسبة الصورة مرنة نسبيًا عبر أكثر من منصة.',
   ]
   return {
@@ -316,7 +316,7 @@ function imagePassport(source: HTMLImageElement, file: File): StudioImagePasspor
   }
 }
 
-/** تحليل محلي تقني للصورة + نسخة مضغوطة للمحرر. لا يغادر الملف المتصفح. */
+/** تحليل محلي تكنولوجي للصورة + نسخة مضغوطة للمحرر. لا يغادر الملف المتصفح. */
 export function analyzeStudioImageFromFile(file: File): Promise<StudioImagePassport | null> {
   return new Promise((resolve) => {
     if (!file || !file.type.startsWith('image/')) { resolve(null); return }

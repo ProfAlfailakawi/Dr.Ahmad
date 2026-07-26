@@ -234,7 +234,7 @@ function themeOf(article: ArticleRecord) {
 }
 
 const themeLabel = (article: ArticleRecord) => ({
-  technology: 'التقنية والإنسان',
+  technology: 'التكنولوجيا والإنسان',
   assessment: 'القياس والتقييم',
   family: 'الطفل والأسرة',
   education: 'التعليم والممارسة الصفية',
@@ -274,7 +274,7 @@ function pressureTests(article: ArticleRecord, claim: string) {
   const context = article.cat || themeLabel(article)
   switch (themeOf(article)) {
     case 'technology': return [
-      `هل يبقى استنتاج «${cue}» نفسه عندما تصبح التقنية أداةً مساعدة تحت إشراف واعٍ، لا بديلاً عن التفكير؟`,
+      `هل يبقى استنتاج «${cue}» نفسه عندما تصبح التكنولوجيا أداةً مساعدة تحت إشراف واعٍ، لا بديلاً عن التفكير؟`,
       `في سياق «${context}»، هل تنطبق النتيجة على المبتدئ والخبير بالدرجة نفسها، أم تغيّر الخبرة أثر الأداة؟`,
       `ما الذي قد نخسره في القضية التي يطرحها «${article.title}» إن منعنا الأداة تماماً، لا إن استخدمناها بلا ضوابط فقط؟`,
     ]

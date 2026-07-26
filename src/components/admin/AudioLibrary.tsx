@@ -4,6 +4,7 @@ import { useAdminAuth } from '../../lib/admin-auth'
 import { manageArticleAudio, type ArticleAudioAction, type ArticleAudioMode } from '../../lib/audio-management'
 import supervisorSnapshot from '../../data/audio-supervisor.json'
 import { Pagination, usePagedList } from '../Pagination'
+import { categoryLabel } from '../../lib/content-taxonomy'
 
 type Filter = 'all' | 'ready' | 'working' | 'missing'
 type PlayerState = { slug: string; voice: ArticleAudioMode } | null
@@ -399,7 +400,7 @@ export function AudioLibrary({ articles, onChanged }: Props) {
             <div className="min-w-0">
               <p className="line-clamp-2 text-[.9rem] font-semibold leading-relaxed text-ink">{article.title}</p>
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[.7rem] text-soft">
-                {article.cat && <span>{article.cat}</span>}
+                {article.cat && <span>{categoryLabel(article.cat)}</span>}
                 {article.iso && <span dir="ltr">{article.iso}</span>}
                 {article._cms.hidden && <span>مخفي</span>}
               </div>

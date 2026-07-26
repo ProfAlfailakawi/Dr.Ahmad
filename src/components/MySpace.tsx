@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { useCmsContent } from "../lib/content";
+import { categoryLabel } from "../lib/content-taxonomy";
 import { usePersistentAudio } from "../lib/persistent-audio";
 import {
   SPACE_EVENT,
@@ -494,7 +495,7 @@ export function MySpace({ variant = 'floating' }: { variant?: 'floating' | 'foot
                               >
                                 <span className="min-w-0">
                                   <span className="block text-[.68rem] text-soft">
-                                    {item.cat}
+                                    {categoryLabel(item.cat)}
                                   </span>
                                   <span className="mt-1 line-clamp-2 block text-[.84rem] font-medium leading-[1.55] text-ink group-hover:text-accent">
                                     {item.title}

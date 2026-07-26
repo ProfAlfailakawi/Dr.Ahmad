@@ -62,8 +62,8 @@ const layouts: SocialVisualLayout[] = [
 
 const topicProfiles: Record<VisualTopic, { label: string; kicker: string; closer: string; layouts: SocialVisualLayout[] }> = {
   ai: {
-    label: 'ذكاء اصطناعي وتقنية',
-    kicker: 'الإنسان داخل التقنية',
+    label: 'ذكاء اصطناعي وتكنولوجيا',
+    kicker: 'الإنسان داخل التكنولوجيا',
     closer: 'الأداة تتغير؛ المعيار الإنساني يبقى.',
     layouts: ['circuit', 'signal', 'orbit', 'matrix', 'dark', 'split', 'manifesto', 'question'],
   },
@@ -871,7 +871,7 @@ export async function renderSocialPng(inputTemplate: SocialVisualTemplate) {
     diamond(W / 2 + Math.min(W * 0.34, ctx.measureText(template.kicker).width / 2 + 46 * S), pad * 0.82 + 58 * S, 5 * S, ink.gold)
     hairline(pad, pad * 0.82 + 96 * S, W - pad, pad * 0.82 + 96 * S, ink.ink, 1.6 * S)
     ctx.fillStyle = ink.soft; ctx.font = sans(400, W * 0.019); ctx.textAlign = 'right'
-    ctx.fillText('رأي · تربية وتقنية', W - pad, pad * 0.82 + 128 * S)
+    ctx.fillText('رأي · تربية وتكنولوجيا', W - pad, pad * 0.82 + 128 * S)
     ctx.textAlign = 'left'
     ctx.fillText(template.footer || 'dr-alfailakawi.com', pad, pad * 0.82 + 128 * S)
     hairline(pad, pad * 0.82 + 146 * S, W - pad, pad * 0.82 + 146 * S, ink.line, 1.1 * S)

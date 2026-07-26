@@ -8,6 +8,7 @@ import type { ArticleRecord } from '../lib/cms'
 import { toRoot } from '../lib/dialect-lexicon'
 import { loadArticleBodies } from '../lib/article-bodies'
 import { predictionRecordsFor, type IdeaLifeRemoteRecord } from '../lib/idea-life'
+import { categoryLabel } from '../lib/content-taxonomy'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
@@ -168,7 +169,7 @@ export default function Decade() {
       firstActive && {
         year: firstActive.year,
         title: 'بداية نافذة العقد',
-        description: `تبدأ الرحلة من ${PROJECT_START_YEAR}، ويظهر في أول سنة نشطة داخل الأرشيف ${number.format(firstActive.articles.length)} ${firstActive.articles.length === 1 ? 'نص' : 'نصوص'}، وكان «${firstActive.dominant}» الموضوع الأكثر حضوراً.`,
+        description: `تبدأ الرحلة من ${PROJECT_START_YEAR}، ويظهر في أول سنة نشطة داخل الأرشيف ${number.format(firstActive.articles.length)} ${firstActive.articles.length === 1 ? 'نص' : 'نصوص'}، وكان «${categoryLabel(firstActive.dominant)}» الموضوع الأكثر حضوراً.`,
       },
       growth && growth.delta > 0 && {
         year: growth.chapter.year,
@@ -178,7 +179,7 @@ export default function Decade() {
       themeShift && {
         year: themeShift.chapter.year,
         title: 'تحوّل في مركز الاهتمام',
-        description: `تغيّر الموضوع الأكثر حضوراً في الأرشيف السنوي من «${themeShift.previous.dominant}» إلى «${themeShift.chapter.dominant}».`,
+        description: `تغيّر الموضوع الأكثر حضوراً في الأرشيف السنوي من «${categoryLabel(themeShift.previous.dominant)}» إلى «${categoryLabel(themeShift.chapter.dominant)}».`,
       },
     ].filter(Boolean) as { year: number; title: string; description: string }[]
 
@@ -408,7 +409,7 @@ export default function Decade() {
                       <span className="font-semibold text-accent">{stage.label}</span>
                       <span className="text-soft">{stage.range}</span>
                     </div>
-                    <p className="mt-5 text-[.82rem] text-soft">{number.format(stage.count)} مقالاً · الأبرز موضوعياً: {stage.dominant || '—'}</p>
+                    <p className="mt-5 text-[.82rem] text-soft">{number.format(stage.count)} مقالاً · الأبرز موضوعياً: {stage.dominant ? categoryLabel(stage.dominant) : '—'}</p>
                     {stage.article ? (
                       <Link to={`/articles/${stage.article.slug}`} className="group mt-5 block border-t border-hair pt-5">
                         <span className="text-[.72rem] text-soft">أبرز مقال في هذه المرحلة</span>
@@ -439,7 +440,7 @@ export default function Decade() {
                     return (
                       <FadeUp key={category} delay={Math.min(index * 0.04, 0.2)}>
                         <div className="flex items-center justify-between gap-4 text-[.84rem]">
-                          <span className="font-medium text-ink">{category}</span>
+                          <span className="font-medium text-ink">{categoryLabel(category)}</span>
                           <span className="text-soft">{number.format(count)}</span>
                         </div>
                         <div className="mt-2 h-[3px] overflow-hidden rounded-full bg-hair">
@@ -488,7 +489,7 @@ export default function Decade() {
                         <time>{chapter.year}</time>
                       </a>
                       <div>
-                        <p className="text-[.78rem] text-soft">{number.format(chapter.articles.length)} مقالاً · {chapter.dominant}</p>
+                        <p className="text-[.78rem] text-soft">{number.format(chapter.articles.length)} مقالاً · {categoryLabel(chapter.dominant)}</p>
                         {chapter.representative && (
                           <Link to={`/articles/${chapter.representative.slug}`} className="mt-1.5 block font-display text-[1.05rem] font-medium leading-[1.65] text-ink transition-colors hover:text-accent">
                             {chapter.representative.title} ←

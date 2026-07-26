@@ -21,6 +21,7 @@ import { recordArticleVisit } from '../lib/reading-space'
 import { SaveForLaterButton } from '../components/MySpace'
 import bookTocLinks from '../data/book-toc-links.json'
 import IdeaLife from '../components/IdeaLife'
+import { categoryLabel } from '../lib/content-taxonomy'
 
 const canUseDropCap = (paragraph: string) =>
   /^[\s\u061C\u200E\u200F]*[\u0621-\u064A]/.test(paragraph)
@@ -490,7 +491,7 @@ function ArchiveContext({ a }: { a: ArticleRecord }) {
         <p className="text-[.74rem] font-semibold text-accent">مقال من الأرشيف</p>
         <p className="mt-1 text-[.86rem] font-light leading-[1.8] text-soft">
           نُشر عام {year.toLocaleString('en-US')}، ويُقرأ بوصفه جزءاً من سياقه الزمني ومسار تطوّر الفكرة.
-          {needsTimeContext ? ' بعض النقاشات التقنية والتربوية تتغير مع الزمن، لذلك يبقى التاريخ هنا جزءاً من معنى النص.' : ''}
+          {needsTimeContext ? ' بعض النقاشات التكنولوجية والتربوية تتغير مع الزمن، لذلك يبقى التاريخ هنا جزءاً من معنى النص.' : ''}
         </p>
       </aside>
     </FadeUp>
@@ -534,7 +535,7 @@ function StudentArchive({ a, articles, books, papers }: { a: ArticleRecord; arti
           </div>
           <div>
             <p className="text-[.76rem] font-semibold text-accent">مصطلحات مفتاحية</p>
-            <p className="mt-2 text-[.9rem] leading-relaxed text-soft">{terms.join(' · ') || a.cat}</p>
+            <p className="mt-2 text-[.9rem] leading-relaxed text-soft">{terms.join(' · ') || categoryLabel(a.cat)}</p>
           </div>
           <div>
             <p className="text-[.76rem] font-semibold text-accent">للإحالة السريعة</p>
@@ -749,7 +750,7 @@ export default function ArticleDetail() {
         <div className="mx-auto max-w-[720px]">
           <FadeUp delay={0.05}>
             <div className="flex flex-wrap items-center gap-3 text-[.8rem]">
-              <span className="font-semibold text-accent">{a.cat}</span>
+              <span className="font-semibold text-accent">{categoryLabel(a.cat)}</span>
               <span className="h-1 w-1 rounded-full bg-hair" />
               <time className="text-soft">{a.date}</time>
               {article.body && (

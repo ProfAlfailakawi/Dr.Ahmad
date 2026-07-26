@@ -5,6 +5,7 @@ import { useSeo } from '../components/seo'
 import { useCmsContent } from '../lib/content'
 import { ideaWords } from '../lib/idea-life'
 import { PROJECT_START_YEAR, getMinimumCompletedJourneyYears } from '../lib/project-meta'
+import { categoryLabel } from '../lib/content-taxonomy'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
@@ -128,7 +129,7 @@ export default function ThoughtOverview() {
                   {model.categories.map(([category, count], index) => (
                     <li key={category}>
                       <div className="flex items-center justify-between gap-4 text-[.78rem]">
-                        <span className="font-semibold text-ink">{String(index + 1).padStart(2, '0')} · {category}</span>
+                        <span className="font-semibold text-ink">{String(index + 1).padStart(2, '0')} · {categoryLabel(category)}</span>
                         <span className="text-soft">{number.format(count)}</span>
                       </div>
                       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-wash">
@@ -167,7 +168,7 @@ export default function ThoughtOverview() {
                   <div key={period.label} className="relative ms-9 rounded-2xl border border-hair bg-canvas p-5 md:ms-0 md:mt-7">
                     <span className="absolute -right-[2.25rem] top-4 flex h-4 w-4 items-center justify-center rounded-full border border-accent/40 bg-paper md:-top-[2.2rem] md:right-4"><span className="h-1.5 w-1.5 rounded-full bg-accent" /></span>
                     <span className="text-[.68rem] font-semibold text-accent">{period.label} · {period.from}–{period.to}</span>
-                    <strong className="mt-2 block font-display text-xl font-semibold text-ink">{period.dominant}</strong>
+                    <strong className="mt-2 block font-display text-xl font-semibold text-ink">{categoryLabel(period.dominant)}</strong>
                     <p className="mt-2 text-[.78rem] leading-relaxed text-soft">{number.format(period.count)} مادة في هذه المرحلة.</p>
                   </div>
                 ))}

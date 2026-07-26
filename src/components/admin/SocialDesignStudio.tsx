@@ -191,6 +191,82 @@ function probeImageUrl(url: string, timeoutMs = 3500): Promise<ImageProbe | null
   })
 }
 
+function generatedImageFileFromDataUri(dataUri: string, fileName: string): File | null {
+  const match = dataUri.match(/^data:(image\/(?:jpeg|jpg|png|webp|gif|avif))(?:;charset=[^;,]+)?;base64,([\s\S]+)$/i)
+  if (!match) return null
+  const mime = match[1].toLowerCase().replace('image/jpg', 'image/jpeg')
+  const raw = match[2].replace(/\s+/g, '')
+  if (!raw || raw.length > 28_000_000) return null
+  try {
+    const binary = window.atob(raw)
+    if (binary.length < 256 || binary.length > 18_000_000) return null
+    const bytes = new Uint8Array(binary.length)
+    for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index)
+    const extension = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : mime === 'image/gif' ? 'gif' : mime === 'image/avif' ? 'avif' : 'jpg'
+    const safeName = fileName.replace(/\.[A-Za-z0-9]+$/, '') || 'dr-ahmad-ai'
+    return new File([bytes], `${safeName}.${extension}`, { type: mime })
+  } catch { return null }
+}
+
+function generatedImageDataUri(payload: unknown): string {
+  const record = payload && typeof payload === 'object' ? payload as Record<string, unknown> : {}
+  const nested = record.result && typeof record.result === 'object' ? record.result as Record<string, unknown> : {}
+  const value = [record.imageUrl, record.image, record.imageBase64, nested.image, nested.imageUrl]
+    .find((item): item is string => typeof item === 'string' && item.trim().length > 100)
+  if (!value) return ''
+  const raw = value.trim()
+  if (/^data:image\//i.test(raw)) return raw
+  const mime = typeof record.imageMime === 'string' && /^image\//i.test(record.imageMime) ? record.imageMime : 'image/jpeg'
+  return `data:${mime};base64,${raw.replace(/\s+/g, '')}`
+}
+
+function basicGeneratedImagePassport(imageUrl: string, fileName: string, file?: File | null): Promise<StudioImagePassport | null> {
+  return new Promise((resolve) => {
+    const image = new Image()
+    const objectUrl = file ? URL.createObjectURL(file) : ''
+    const cleanup = () => { if (objectUrl) URL.revokeObjectURL(objectUrl) }
+    const timer = window.setTimeout(() => { image.onload = null; image.onerror = null; cleanup(); resolve(null) }, 20_000)
+    image.onload = () => {
+      window.clearTimeout(timer)
+      cleanup()
+      const width = image.naturalWidth || 0
+      const height = image.naturalHeight || 0
+      if (!width || !height) { resolve(null); return }
+      const aspectRatio = width / height
+      resolve({
+        dataUrl: imageUrl,
+        fileName,
+        mime: imageUrl.match(/^data:(image\/[^;,]+)/i)?.[1] || 'image/jpeg',
+        width,
+        height,
+        aspectRatio,
+        orientation: aspectRatio > 1.08 ? 'landscape' : aspectRatio < .92 ? 'portrait' : 'square',
+        luminance: 50,
+        contrast: 50,
+        edgeDensity: 35,
+        negativeSpace: 'balanced',
+        focalX: .5,
+        focalY: .5,
+        recommendedFit: 'cover',
+        cropNotes: ['الصورة المولدة صالحة؛ استُخدم تحليل بصري آمن لأن التحليل التفصيلي تعذّر على الجهاز.', 'يمكن ضبط نقطة التركيز والقص يدويًا داخل التحرير.'],
+      })
+    }
+    image.onerror = () => { window.clearTimeout(timer); cleanup(); resolve(null) }
+    image.src = objectUrl || imageUrl
+  })
+}
+
+async function analyzeGeneratedStudioImage(imageUrl: string, fileName: string): Promise<StudioImagePassport | null> {
+  const localFile = generatedImageFileFromDataUri(imageUrl, fileName)
+  if (localFile) {
+    const detailed = await analyzeStudioImageFromFile(localFile)
+    if (detailed) return detailed
+  }
+  const detailedFromUrl = await analyzeStudioImageFromUrl(imageUrl, fileName)
+  if (detailedFromUrl) return detailedFromUrl
+  return basicGeneratedImagePassport(imageUrl, fileName, localFile)
+}
+
 async function verifyExternalVisuals(items: ExternalVisualResult[], limit = 10): Promise<ExternalVisualResult[]> {
   const candidates = items.slice(0, Math.max(limit, 12))
   const checked: Array<ExternalVisualResult | null> = await Promise.all(candidates.map(async (item): Promise<ExternalVisualResult | null> => {
@@ -639,7 +715,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     if (/not configured|account is not configured|503/i.test(message)) return 'مسار dr-api يعمل، لكن بيانات Cloudflare Workers AI غير مربوطة في بيئة Cloud Run. لم أستبدل الصورة بصورة جاهزة كي يبقى الفرق واضحًا.'
     if (/timed out|abort|504/i.test(message)) return 'انتهت مهلة توليد Cloudflare قبل وصول الصورة. لم ينتقل النظام إلى Pexels تلقائيًا.'
     if (/busy|429/i.test(message)) return 'خدمة التوليد مشغولة الآن. انتظر قليلًا ثم استخدم «أعد التوليد من الصفر».'
-    if (/no usable image|empty|analysis_failed/i.test(message)) return 'وصل رد من خدمة التوليد لكنه لم يتضمن صورة صالحة للاستخدام.'
+    if (/analysis_failed/i.test(message)) return 'وصلت الصورة المولدة، لكن الجهاز لم يتمكن من فتحها داخل المحرر. سيعيد النظام فكها بمسار آمن في المحاولة التالية.'
+    if (/no usable image|empty/i.test(message)) return 'خدمة التوليد لم ترسل بيانات صورة قابلة للفتح؛ سيعيد النظام الطلب ببذرة جديدة بدل استخدام صورة جاهزة.'
     return `تعذّر توليد الصورة الأصلية: ${message || 'فشل غير معروف في خدمة التوليد'}. لم يستخدم النظام صورة جاهزة بدلًا منها.`
   }
 
@@ -792,7 +869,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       if (!result) { setNotice('تعذّر تحليل الصورة محليًا. جرّب PNG أو JPG آخر.'); return }
       setImagePassport(result)
       setImageDescription((value) => value || file.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' '))
-      setNotice('اكتمل جواز الصورة تقنيًا: القص، نقطة التركيز، المساحة الهادئة، والتباين. أضف المصدر والترخيص قبل الاعتماد.')
+      setNotice('اكتملت معالجة جواز الصورة تكنولوجيًا: القص، نقطة التركيز، المساحة الهادئة، والتباين. أضف المصدر والترخيص قبل الاعتماد.')
     } catch { setNotice('تعذّر إعداد جواز الصورة الآن.') }
     finally { setImageBusy(false) }
   }
@@ -969,9 +1046,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         const payload = await response.json().catch(() => ({})) as { error?: string; detail?: string; code?: string }
         throw new Error([payload.error, payload.detail, payload.code, `HTTP ${response.status}`].filter(Boolean).join(' · '))
       }
-      const payload = await response.json() as { imageUrl?: string; sourceUrl?: string; owner?: string; license?: string; description?: string; prompt?: string; model?: string; generatedAt?: string; requestId?: string; visualWorld?: string; visualWorldLabel?: string; imageTreatment?: NonNullable<PlanOverlay['imageTreatment']>; layoutHint?: LayoutFamilyId; paletteHint?: PaletteId; conceptKey?: string; conceptLabel?: string; semanticScene?: string; relevanceScore?: number | null; relevanceReason?: string; generationAttempts?: number }
-      if (!payload.imageUrl) throw new Error('generator_empty')
-      const passport = await analyzeStudioImageFromUrl(payload.imageUrl, `dr-ahmad-ai-${Date.now()}.jpg`)
+      const payload = await response.json() as { imageUrl?: string; image?: string; imageBase64?: string; result?: { image?: string; imageUrl?: string }; sourceUrl?: string; owner?: string; license?: string; description?: string; prompt?: string; model?: string; generatedAt?: string; requestId?: string; visualWorld?: string; visualWorldLabel?: string; imageTreatment?: NonNullable<PlanOverlay['imageTreatment']>; layoutHint?: LayoutFamilyId; paletteHint?: PaletteId; conceptKey?: string; conceptLabel?: string; semanticScene?: string; relevanceScore?: number | null; relevanceReason?: string; generationAttempts?: number; imageMime?: string; imageBytes?: number }
+      const imageUrl = generatedImageDataUri(payload)
+      if (!imageUrl) throw new Error('generator_empty')
+      const passport = await analyzeGeneratedStudioImage(imageUrl, `dr-ahmad-ai-${Date.now()}`)
       if (!passport) throw new Error('generator_image_analysis_failed')
       return {
         passport,

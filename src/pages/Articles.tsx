@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { useCmsContent } from '../lib/content'
 import { useSeo } from '../components/seo'
-import { dynamicArticleCategories } from '../lib/content-taxonomy'
+import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
 import { ReaderFingerprint } from '../components/ReaderResonance'
 import { Pagination, usePagedList } from '../components/Pagination'
 
@@ -18,7 +18,7 @@ const stableHash = (value: string) => {
 
 const articleCard = (article: { slug: string; cat?: string; title: string; excerpt?: string }) => ({
   slug: article.slug,
-  tag: article.cat || 'مقال',
+  tag: article.cat ? categoryLabel(article.cat) : 'مقال',
   title: article.title,
   quote: `«${(article.excerpt || '').slice(0, 150)}${(article.excerpt || '').length > 150 ? '…' : ''}»`,
 })
@@ -56,14 +56,14 @@ export default function Articles() {
   // السنة الأولى تُحسب من المقالات نفسها — تتحدّث تلقائياً مع أي إضافة
   const years = articles.map((a) => Number(a.iso.slice(0, 4))).filter((y) => y >= 1990)
   const firstYear = years.length ? Math.min(...years) : new Date().getFullYear()
-  useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: `مقالات فكرية تتتبّع تحولات التعليم والتقنية والمجتمع منذ انطلاق الرحلة العلمية عام 2015 — ${articles.length} مقالاً.` })
+  useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: `مقالات فكرية تتتبّع تحولات التعليم والتكنولوجيا والمجتمع منذ انطلاق الرحلة العلمية عام 2015 — ${articles.length} مقالاً.` })
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('الكل')
   const categories = useMemo(() => dynamicArticleCategories(articles), [articles])
   const featured = useMemo(() => {
     if (!articles.length) return []
     /* ثلاث عدسات موضوعية متجددة تلقائياً:
-       تضمن تنوع الفئات والمواضيع (مثلاً: تقنية، مجتمع، تعليم/هوية)،
+       تضمن تنوع الفئات والمواضيع (مثلاً: تكنولوجيا، مجتمع، تعليم/هوية)،
        وتتبدل دورياً لتضمن إبراز جوانب مختلفة من الإنتاج الفكري. */
     const now = new Date()
     const kuwait = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuwait', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(now)
@@ -117,7 +117,7 @@ export default function Articles() {
       <PageHead
         label="المقالات الفكرية"
         title="أفكارٌ تلاحق زمنها."
-        sub="مقالاتٌ أكتبها منذ انطلاق رحلتي العلمية عام 2015؛ أقرأ فيها تحولات التعليم والتقنية والمجتمع، وأتتبع ما تتركه في الإنسان والممارسة والحياة العامة."
+        sub="مقالاتٌ أكتبها منذ انطلاق رحلتي العلمية عام 2015؛ أقرأ فيها تحولات التعليم والتكنولوجيا والمجتمع، وأتتبع ما تتركه في الإنسان والممارسة والحياة العامة."
       />
 
       <section className="sticky top-16 z-[120] border-b border-hair bg-canvas/92 px-4 py-3 backdrop-blur-md sm:px-6 md:px-11">
@@ -141,7 +141,7 @@ export default function Articles() {
                   cat === c ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'
                 }`}
               >
-                {c}
+                {categoryLabel(c)}
               </button>
             ))}
           </div>
@@ -157,7 +157,7 @@ export default function Articles() {
         <div className="mx-auto max-w-shell">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-[.85rem] font-bold text-accent">
-              {cat === 'الكل' ? 'إضاءات مختارة وقراءات فكرية متنوّعة' : `إضاءات مختارة في قسم (${cat})`}
+              {cat === 'الكل' ? 'إضاءات مختارة وقراءات فكرية متنوّعة' : `إضاءات مختارة في قسم (${categoryLabel(cat)})`}
             </h2>
             <span className="text-[.75rem] text-soft">3 عدسات موضوعية متجددة</span>
           </div>
@@ -290,7 +290,7 @@ export default function Articles() {
                       </span>
                     )}
                   </span>
-                  <span className="shrink-0 text-[.78rem] text-soft">{a.cat}</span>
+                  <span className="shrink-0 text-[.78rem] text-soft">{categoryLabel(a.cat)}</span>
                 </Link>
               </li>
             ))}

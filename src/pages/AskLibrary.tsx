@@ -11,6 +11,7 @@ import { useCmsContent } from "../lib/content";
 import type { ArticleRecord, BookRecord, PaperRecord } from "../lib/cms";
 import { useSeo } from "../components/seo";
 import { loadArticleBodies } from "../lib/article-bodies";
+import { categoryLabel } from "../lib/content-taxonomy";
 
 const norm = (s: string) =>
   s
@@ -256,7 +257,7 @@ function answer(
           .map((cat) => `«${cat}»`)
           .join(
             " و",
-          )}، وكأن الفكرة عند الدكتور ليست تقنية أو تربوية وحدها، بل سؤال إنساني يتغير سياقه.`
+          )}، وكأن الفكرة عند الدكتور ليست تكنولوجية أو تربوية وحدها، بل سؤال إنساني يتغير سياقه.`
       : undefined;
   const refs = matchRefs(q, books, papers);
   const top = scored.filter((item) => item.score >= 5).slice(0, 3);
@@ -866,7 +867,7 @@ export default function AskLibrary() {
                                   <li key={item.slug} className="relative">
                                     <span className="absolute right-[-25px] top-2 h-2 w-2 rounded-full bg-accent" />
                                     <span className="text-[.74rem] text-soft">
-                                      {item.iso.slice(0, 4)} · {item.cat}
+                                      {item.iso.slice(0, 4)} · {categoryLabel(item.cat)}
                                     </span>
                                     <Link
                                       to={`/articles/${item.slug}`}

@@ -51,7 +51,7 @@ const audienceFrom = (context: string, analysis: SocialContentAnalysis) => {
 
 const visualNeedFrom = (source: string, analysis: SocialContentAnalysis): { need: VisualNeed; reason: string } => {
   if (analysis.primaryKind === 'statistic' || /(?:%|٪|رقم|نسبة|دراسة|بيانات|نتيجة)/.test(source)) return { need: 'data', reason: 'المحتوى يحمل دليلاً رقمياً؛ البنية البيانية أوضح من صورة زخرفية.' }
-  if (/(?:إنسان|معلم|طالب|طفل|أسرة|خوف|قلق|كرامة|هوية)/.test(source)) return { need: 'human', reason: 'جوهر الفكرة إنساني، والصورة الوثائقية أقرب إلى معناها من الرمز التقني المباشر.' }
+  if (/(?:إنسان|معلم|طالب|طفل|أسرة|خوف|قلق|كرامة|هوية)/.test(source)) return { need: 'human', reason: 'جوهر الفكرة إنساني، والصورة الوثائقية أقرب إلى معناها من الرمز التكنولوجي المباشر.' }
   if (/(?:مدرسة|جامعة|فصل|مدينة|مكان|ميدان)/.test(source)) return { need: 'place', reason: 'السياق المكاني جزء من الحجة، ويمكن للمشهد أن يحمل الفكرة قبل قراءة العنوان.' }
   if (words(analysis.structure.title).length <= 7 && analysis.structure.heroWord) return { need: 'typography', reason: 'العنوان قصير وله كلمة بطلة؛ يمكن للتايبوجرافي وحده أن يحمل لحظة التوقف.' }
   return { need: 'symbol', reason: 'المعنى تجريدي؛ يحتاج رمزاً غير مباشر يفتح التأويل من دون كليشيه.' }
@@ -78,7 +78,7 @@ export function buildCreativeBrief(text: string, context: string, analysis: Soci
     emotion,
     audience: audienceFrom(context, analysis),
     memory: truncate(analysis.structure.keyPoint || title, 18),
-    avoid: visual.need === 'human' ? 'تجنّب الصورة التقنية المباشرة أو الوجه المصطنع الذي يحوّل القضية الإنسانية إلى إعلان.' : 'تجنّب الرمز المستهلك أو الصورة التي تشرح الكلمات حرفياً من دون إضافة معنى.',
+    avoid: visual.need === 'human' ? 'تجنّب الصورة التكنولوجية المباشرة أو الوجه المصطنع الذي يحوّل القضية الإنسانية إلى إعلان.' : 'تجنّب الرمز المستهلك أو الصورة التي تشرح الكلمات حرفياً من دون إضافة معنى.',
     visualNeed: visual.need,
     visualReason: visual.reason,
     confidence: Math.max(58, Math.min(98, Math.round(analysis.confidence))),
@@ -133,14 +133,14 @@ export function buildArtDirections(brief: CreativeBrief): ArtDirection[] {
 }
 
 const CLICHE_PATTERNS: { pattern: RegExp; label: string; alternative: string }[] = [
-  { pattern: /روبوت.*(?:يد|إنسان)|يد.*روبوت/, label: 'روبوت يلمس يد إنسان', alternative: 'ابحث عن أثر التقنية على سلوك إنسان حقيقي، لا عن رمز التقنية نفسها.' },
+  { pattern: /روبوت.*(?:يد|إنسان)|يد.*روبوت/, label: 'روبوت يلمس يد إنسان', alternative: 'ابحث عن أثر التكنولوجيا على سلوك إنسان حقيقي، لا عن رمز التكنولوجيا نفسها.' },
   { pattern: /دماغ.*(?:مضي|رقمي|شبك)/, label: 'دماغ مضيء', alternative: 'استخدم مساراً بصرياً أو تفصيلاً مادياً يدل على التفكير من دون رسم الدماغ.' },
   { pattern: /طفل.*شاش|شاش.*طفل/, label: 'طفل أمام شاشة زرقاء', alternative: 'التقط نتيجة الاستخدام في العلاقة أو المكان، لا الشاشة بوصفها الموضوع كله.' },
   { pattern: /معلم.*سبور.*مبتسم/, label: 'معلم أمام سبورة مبتسماً', alternative: 'استخدم لحظة قرار أو حوار أو تردد داخل الصف.' },
   { pattern: /مصباح.*فكر|فكر.*مصباح/, label: 'مصباح الفكرة', alternative: 'اجعل الفكرة تظهر في علاقة العناصر أو الفراغ، لا في رمز جاهز.' },
   { pattern: /شطرنج.*استراتيج|استراتيج.*شطرنج/, label: 'الشطرنج للاستراتيجية', alternative: 'استخدم مفترقاً أو ترتيباً أو قراراً له صلة حقيقية بالمحتوى.' },
   { pattern: /كتب.*تطير|كتاب.*طائر/, label: 'كتب تطير', alternative: 'استخدم أثر القراءة أو هامشاً أو ورقة حقيقية تحمل معنى المادة.' },
-  { pattern: /شبك.*وجه|وجه.*رقمي/, label: 'شبكة رقمية على وجه', alternative: 'استخدم ضوءاً أو انعكاساً أو حاجزاً مادياً يعبّر عن العلاقة بالتقنية.' },
+  { pattern: /شبك.*وجه|وجه.*رقمي/, label: 'شبكة رقمية على وجه', alternative: 'استخدم ضوءاً أو انعكاساً أو حاجزاً مادياً يعبّر عن العلاقة بالتكنولوجيا.' },
 ]
 
 export function detectVisualCliches(description: string) {

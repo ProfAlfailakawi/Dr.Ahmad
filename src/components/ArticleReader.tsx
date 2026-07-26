@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { getDb, getFirebaseAuth } from '../lib/firebase'
+import { categoryLabel } from '../lib/content-taxonomy'
 
 export type ReaderArticle = {
   slug: string
@@ -1393,7 +1394,7 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
                           <span className="absolute right-0 top-[.42em] h-3 w-3 rounded-full border-2 border-accent bg-canvas" />
                           <span className="text-[.7rem] font-semibold text-accent">{article.iso.slice(0, 4)}</span>
                           <Link to={`/articles/${article.slug}`} onClick={closeSheet} className="mt-1 block font-display text-[.98rem] font-medium leading-[1.65] text-ink transition-colors hover:text-accent">{article.title}</Link>
-                          <span className="mt-1 block text-[.7rem] text-soft">{article.cat}{overlap ? ` · ${overlap.toLocaleString('en-US')} صلة مشتركة` : ''}</span>
+                          <span className="mt-1 block text-[.7rem] text-soft">{categoryLabel(article.cat)}{overlap ? ` · ${overlap.toLocaleString('en-US')} صلة مشتركة` : ''}</span>
                         </li>
                       ))}
                     </ol>

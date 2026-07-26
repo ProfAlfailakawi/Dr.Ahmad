@@ -157,7 +157,7 @@ function fitExactWords(value: string, target: number) {
     'والفكرة هنا ليست في مقاومة الجديد، بل في أن نمنحه معنى تربويًا يحفظ الإنسان قبل أن يحتفل بالأداة.',
     'حين يتقدم الإجراء على الغاية، يصبح التطوير أسرع، لكنه لا يصبح بالضرورة أعدل أو أعمق أو أكثر أثرًا.',
     'لهذا يحتاج القرار التعليمي إلى سؤال بسيط: ما الذي سيتغير فعليًا في وعي الطالب وفي حضور المعلم؟',
-    'التقنية الجيدة لا تلغي العلاقة الإنسانية، بل تمنحها وقتًا أوسع للفهم والحوار والتأمل والمراجعة الصادقة.',
+    'التكنولوجيا الجيدة لا تلغي العلاقة الإنسانية، بل تمنحها وقتًا أوسع للفهم والحوار والتأمل والمراجعة الصادقة.',
     'وكلما ازدادت قدرة النظام، ازدادت مسؤوليتنا عن الحدود والقيم واللغة التي تشرح للناس لماذا نستخدمه.',
     'لا نحتاج حماسًا أقل، بل نحتاج بصيرة أكبر توازن بين الإمكان والمصلحة وبين السرعة وكرامة المتعلم.',
     'المعيار ليس حجم الانبهار، وإنما جودة الأثر الذي يبقى بعد أن تهدأ الضجة وتتحول الفكرة إلى ممارسة يومية.',
@@ -181,10 +181,10 @@ function buildExactLocalArticle(idea: string, audience: string, angle: string, r
   const base = buildArticleDraft(idea, audience, angle, related)
   const nearest = related.slice(0, 2).map((article) => article.title).join('، ')
   const extension = [
-    `وإذا كانت هذه الفكرة قريبة من موضوعات سابقة مثل ${nearest || 'الإنسان والتعليم والتقنية'}، فإن زاويتها الجديدة ينبغي أن تبدأ من اللحظة الراهنة لا من تكرار الإجابات القديمة.`,
+    `وإذا كانت هذه الفكرة قريبة من موضوعات سابقة مثل ${nearest || 'الإنسان والتعليم والتكنولوجيا'}، فإن زاويتها الجديدة ينبغي أن تبدأ من اللحظة الراهنة لا من تكرار الإجابات القديمة.`,
     `المطلوب ليس مقالًا يصف الظاهرة فقط، بل نصًا يختبر افتراضاتها، ويقارن بين الوعد الذي تعلنه والنتيجة التي يلمسها الناس في الواقع.`,
     `بالنسبة إلى ${audience}، تصبح المسؤولية أوضح: ترجمة الفكرة إلى قرار يمكن شرحه، وقياس أثره، والتراجع عنه حين يثبت أنه يختصر الإنسان بدل أن يخدمه.`,
-    `وهنا تظهر قيمة ${angle}: فهي لا تضع التقنية في مواجهة التربية، بل تضع كلتيهما أمام معيار واحد هو المعنى الإنساني الذي نريد حمايته.`,
+    `وهنا تظهر قيمة ${angle}: فهي لا تضع التكنولوجيا في مواجهة التربية، بل تضع كلتيهما أمام معيار واحد هو المعنى الإنساني الذي نريد حمايته.`,
   ].join('\n\n')
   return fitExactWords(`${base}\n\n${extension}`, target)
 }
@@ -277,7 +277,7 @@ function uniqueArticleSlug(title: string, articles: ArticleRecord[]) {
 
 function chooseCat(idea: string) {
   const text = normalize(idea)
-  if (/ذكاء|تقني|تكنولوجيا|رقمي|شاشه|شاشة/.test(text)) return 'تقنية'
+  if (/ذكاء|تقني|تكنولوجيا|رقمي|شاشه|شاشة/.test(text)) return 'تكنولوجيا'
   if (/هويه|لغه|ثقافه|قيم/.test(text)) return 'هوية'
   if (/اعلام|منصه|سوشال|ميديا/.test(text)) return 'إعلام'
   if (/بحث|دراسه|جامعه|اكاديمي/.test(text)) return 'بحث'
@@ -338,13 +338,13 @@ function topicLanguage(topic: VisualTopic) {
     ai: {
       insight: 'القيمة ليست في ذكاء الأداة وحده، بل في نوع التفكير الذي تتركه للإنسان.',
       tension: 'كلما أصبحت الإجابة أسرع، ازدادت حاجتنا إلى سؤال يختبر الفهم لا الانبهار.',
-      standard: 'تقنية جيدة تعيد للإنسان قدرته على القرار، ولا تستبدلها عنه.',
+      standard: 'تكنولوجيا جيدة تعيد للإنسان قدرته على القرار، ولا تستبدلها عنه.',
       question: 'هل توسّع الأداة تفكيرنا… أم تختصره قبل أن يبدأ؟',
       hashtags: ['#الذكاء_الاصطناعي', '#تكنولوجيا_التعليم', '#الإنسان'],
       directions: [
-        { layout: 'circuit', tone: 'الإنسان داخل التقنية', headline: 'الأداة ذكية… فهل التجربة إنسانية؟', subline: 'اقرأ أثر التقنية في التفكير والعلاقة والقرار.' },
+        { layout: 'circuit', tone: 'الإنسان داخل التكنولوجيا', headline: 'الأداة ذكية… فهل التجربة إنسانية؟', subline: 'اقرأ أثر التكنولوجيا في التفكير والعلاقة والقرار.' },
         { layout: 'signal', tone: 'إشارة رقمية', headline: 'الإجابة الأسرع ليست دائمًا الأذكى.', subline: 'المعيار: ماذا بقي للمتعلم كي يكتشفه بنفسه؟' },
-        { layout: 'orbit', tone: 'مدار القرار', headline: 'ضع الإنسان في المركز.', subline: 'ثم اجعل التقنية تدور حول حاجته، لا العكس.' },
+        { layout: 'orbit', tone: 'مدار القرار', headline: 'ضع الإنسان في المركز.', subline: 'ثم اجعل التكنولوجيا تدور حول حاجته، لا العكس.' },
         { layout: 'dark', tone: 'ما خلف الشاشة', headline: 'حين تختفي الأداة… ماذا بقي من الفهم؟', subline: 'هذا هو الاختبار الحقيقي.' },
       ],
     },
@@ -410,7 +410,7 @@ function topicLanguage(topic: VisualTopic) {
         { layout: 'horizon', tone: 'أفق القرار', headline: 'المستقبل يبدأ من قرار اليوم.', subline: 'ليس كل جديد اتجاهًا يستحق الاتباع.' },
         { layout: 'orbit', tone: 'خريطة الاحتمالات', headline: 'لا تتنبأ فقط… صمّم البدائل.', subline: 'الاستشراف الجيد يوسّع مساحة القرار.' },
         { layout: 'manifesto', tone: 'بيان للمستقبل', headline: 'ما لا نصممه بوعي… قد يُفرض علينا.', subline: 'ابدأ بالقيم قبل الأدوات.' },
-        { layout: 'circuit', tone: 'بنية الغد', headline: 'التقنية تبني الممكن.', subline: 'والإنسان يقرر ما يستحق أن يصبح واقعًا.' },
+        { layout: 'circuit', tone: 'بنية الغد', headline: 'التكنولوجيا تبني الممكن.', subline: 'والإنسان يقرر ما يستحق أن يصبح واقعًا.' },
       ],
     },
     human: {
@@ -976,7 +976,7 @@ function buildSevenDayCampaign(bundle: Bundle, pack: WeeklyPack): SevenDayCampai
       day: 'اليوم ٦',
       platform: 'Instagram Story',
       goal: 'تصويت أو تفاعل سريع',
-      copy: `هل ترى أن «${bundle.title}» قضية تقنية أم إنسانية أولًا؟\n\n[تقنية]\n[إنسانية]\n[الاثنان معًا]`,
+      copy: `هل ترى أن «${bundle.title}» قضية تكنولوجية أم إنسانية أولًا؟\n\n[تكنولوجيا]\n[إنسانية]\n[الاثنان معًا]`,
     },
     {
       day: 'اليوم ٧',
@@ -1024,8 +1024,8 @@ function buildWeeklyPack(bundle: Bundle, articles: ArticleRecord[], radar: Radar
   const quote = strongestQuote(pool.map((article) => `${article.excerpt || ''} ${article.body || ''}`).join(' ') || bundle.body)
   const radarTop = radar[0]
   const radarComment = radarTop
-    ? `${radarTop.ar}\n\nاللافت في هذا الحدث أنه لا يخص التقنية وحدها؛ بل يفتح سؤالًا تربويًا أعمق: كيف نحافظ على الإنسان داخل موجة التغيير؟\n\nيرتبط ذلك بما كتبته في «${bundle.related[0]?.title || bundle.title}».`
-    : `لا توجد مادة رادار منشورة اليوم. التعليق الجاهز:\n\n${bundle.title}\n\nقد يبدو الموضوع تقنيًا، لكنه في التعليم سؤال إنساني أولًا: ماذا يتغير في الطالب والمعلم حين تتغير الأداة؟`
+    ? `${radarTop.ar}\n\nاللافت في هذا الحدث أنه لا يخص التكنولوجيا وحدها؛ بل يفتح سؤالًا تربويًا أعمق: كيف نحافظ على الإنسان داخل موجة التغيير؟\n\nيرتبط ذلك بما كتبته في «${bundle.related[0]?.title || bundle.title}».`
+    : `لا توجد مادة رادار منشورة اليوم. التعليق الجاهز:\n\n${bundle.title}\n\nقد يبدو الموضوع تكنولوجيًا، لكنه في التعليم سؤال إنساني أولًا: ماذا يتغير في الطالب والمعلم حين تتغير الأداة؟`
   return {
     linkedin: [
       `${bundle.title}\n\n${bundle.excerpt}\n\nالفكرة ليست في سرعة التغيير، بل في المعنى الذي نحافظ عليه ونحن نتغير.`,
@@ -1038,11 +1038,11 @@ function buildWeeklyPack(bundle: Bundle, articles: ArticleRecord[], radar: Radar
       `كل تطوير تعليمي لا يبدأ من الإنسان، ينتهي غالبًا إلى إجراء جميل… ومعنى ناقص.`,
     ],
     generalX: [
-      `ليست المشكلة أن التقنية تتقدم بسرعة.\nالمشكلة أن أسئلتنا التربوية أحيانًا تتأخر عنها.`,
+      `ليست المشكلة أن التكنولوجيا تتقدم بسرعة.\nالمشكلة أن أسئلتنا التربوية أحيانًا تتأخر عنها.`,
       `في التعليم، لا يكفي أن نعرف ماذا يستطيع الذكاء الاصطناعي أن يفعل.\nالأهم: ماذا يجب ألا نسمح له أن يختصر؟`,
       `المعلم لا يفقد قيمته حين تظهر أداة جديدة.\nيفقدها فقط إذا اختزلنا التعليم في نقل المعلومة، ونسينا بناء الإنسان.`,
     ],
-    instagram: `${bundle.title}\n\n${quote}\n\nفكرة للنقاش: كيف نجعل التقنية تخدم الإنسان لا تختصره؟\n\n#التعليم #الذكاء_الاصطناعي #تكنولوجيا_التعليم`,
+    instagram: `${bundle.title}\n\n${quote}\n\nفكرة للنقاش: كيف نجعل التكنولوجيا تخدم الإنسان لا تختصره؟\n\n#التعليم #الذكاء_الاصطناعي #تكنولوجيا_التعليم`,
     question: `لو كنت في قاعة تدريب: ما السؤال الأول الذي ستطرحه حول «${bundle.title}»؟`,
     quote,
     radarComment,
@@ -1054,12 +1054,12 @@ function suggestArticleIdeas(articles: ArticleRecord[], radar: RadarItem[], priv
     { title: 'المعلم حين يصبح الذكاء الاصطناعي زميلًا لا بديلًا', idea: 'زاوية عن العلاقة العملية بين المعلم والأدوات الذكية داخل الصف.' },
     { title: 'الطالب الذي يعرف الإجابة ولا يعرف الطريق إليها', idea: 'عن أثر الإجابات الفورية في بناء التفكير والصبر المعرفي.' },
     { title: 'من يربّي الخوارزمية؟', idea: 'سؤال أخلاقي حول البيانات والقيم والتحيز في التعليم.' },
-    { title: 'الأسرة أمام واجب رقمي جديد', idea: 'كيف يتغير دور ولي الأمر حين تصبح التقنية جزءًا من التعلم اليومي؟' },
+    { title: 'الأسرة أمام واجب رقمي جديد', idea: 'كيف يتغير دور ولي الأمر حين تصبح التكنولوجيا جزءًا من التعلم اليومي؟' },
     { title: 'الجامعة في زمن المحتوى المتولد', idea: 'ما الذي يبقى من البحث والكتابة الأكاديمية حين تتغير أدوات الإنتاج؟' },
   ]
   const radarIdeas = radar.slice(0, 3).map((item) => ({
     title: `ماذا يعني ${item.ar || item.en || 'هذا الحدث'} للتعليم؟`,
-    idea: item.arNote || 'تعليق تربوي على حدث تقني/تعليمي راهن وربطه بأرشيف الدكتور.',
+    idea: item.arNote || 'تعليق تربوي على حدث تكنولوجي/تعليمي راهن وربطه بأرشيف الدكتور.',
   }))
   const privateIdeas = privateLinks.slice(0, 3).map((book) => ({
     title: `من كتاب «${book.title}» إلى سؤال جديد في التعليم`,
@@ -1190,8 +1190,8 @@ function ArchiveWakeCard({
   const seasonal =
     month >= 5 && month <= 7 ? 'الاختبارات والتخرج وتسجيل الجامعة وبداية القرار الأكاديمي'
       : month >= 8 && month <= 10 ? 'العودة للدراسة والمعلم والطالب والبيت'
-        : month >= 11 || month <= 2 ? 'التقنية والهوية والأسرة في نهاية وبداية العام'
-          : 'التعليم والتقنية والإنسان في منتصف العام'
+        : month >= 11 || month <= 2 ? 'التكنولوجيا والهوية والأسرة في نهاية وبداية العام'
+          : 'التعليم والتكنولوجيا والإنسان في منتصف العام'
   const candidates = relatedForIdea(seasonal, articles, (article) => `${article.excerpt || ''} ${article.body || ''}`, 12)
     .filter((article) => Number(article.iso?.slice(0, 4) || 3000) <= now.getFullYear() - 2)
     .slice(0, 4)
@@ -1637,7 +1637,7 @@ function PerfectSocialPackCard({
           <div>
             <p className="text-[.76rem] font-semibold uppercase text-accent">منظومة السوشيال · {visuals.topicLabel}</p>
             <h2 className="mt-1 font-display text-2xl font-semibold text-ink">كل موضوع يتعرّف على لغته البصرية.</h2>
-            <p className="mt-2 text-[.82rem] leading-relaxed text-soft">يقرأ النظام الفكرة أولًا، ثم يختار تكوينات تناسب التعليم أو التقنية أو الأسرة أو البحث أو الإعلام أو المستقبل — مع تنويع جديد في كل مرة.</p>
+            <p className="mt-2 text-[.82rem] leading-relaxed text-soft">يقرأ النظام الفكرة أولًا، ثم يختار تكوينات تناسب التعليم أو التكنولوجيا أو الأسرة أو البحث أو الإعلام أو المستقبل — مع تنويع جديد في كل مرة.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" disabled={busy} onClick={onRegenerate} className={ghost}>{busy ? 'أعيد البناء…' : 'تنويع جديد'}</button>
@@ -2336,7 +2336,7 @@ ${pulsePurpose.trim()}`,
             <h2 className="mt-1 font-display text-2xl font-semibold text-ink">غرّد أو انشر فكرة… من دون أن تكتب مقالًا.</h2>
             <p className="mt-2 max-w-3xl text-[.84rem] leading-relaxed text-soft">اكتب خاطرًا، موقفًا، سؤالًا أو تعليقًا على حدث. الاستوديو يصنع لكل منصة صياغتها وقالبها البصري، ويغيّر الشكل والنبرة في كل مرة.</p>
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_13rem_auto]">
-              <Field label="الفكرة أو الجملة"><textarea className={`${input} min-h-28`} value={pulseIdea} onChange={(event) => { setPulseIdea(event.target.value); setPulsePack(null) }} placeholder="مثال: ليست المشكلة أن التقنية تتقدم… بل أن أسئلتنا التربوية تتأخر." /></Field>
+              <Field label="الفكرة أو الجملة"><textarea className={`${input} min-h-28`} value={pulseIdea} onChange={(event) => { setPulseIdea(event.target.value); setPulsePack(null) }} placeholder="مثال: ليست المشكلة أن التكنولوجيا تتقدم… بل أن أسئلتنا التربوية تتأخر." /></Field>
               <Field label="الهدف أو الزاوية"><textarea className={`${input} min-h-28`} value={pulsePurpose} onChange={(event) => { setPulsePurpose(event.target.value); setPulsePack(null) }} placeholder="ماذا تريد أن يبقى في ذهن القارئ؟" /></Field>
               <Field label="الجمهور"><select className={input} value={pulseAudience} onChange={(event) => setPulseAudience(event.target.value)}><option>الجمهور العام</option><option>المعلمون</option><option>أولياء الأمور</option><option>القيادات التعليمية</option><option>الباحثون</option></select></Field>
               <div className="flex items-end"><button type="button" disabled={pulseBusy} className={`${primary} w-full`} onClick={() => void generatePulse()}>{pulseBusy ? 'أبني الحزمة…' : 'ابنِ المنشور'}</button></div>

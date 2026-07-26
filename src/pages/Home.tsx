@@ -800,7 +800,7 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
           <div className="grid gap-8 md:grid-cols-[1.5fr_.5fr] md:gap-12">
             <FadeUp>
               {topArticles[0] && <Link to={`/articles/${topArticles[0].slug}`} data-hover className="group block">
-                <div className="flex items-center gap-2.5 text-[.78rem]"><span className="font-semibold text-accent">{topArticles[0].cat}</span><span className="h-1 w-1 rounded-full bg-hair" /><time className="text-soft">{topArticles[0].date}</time></div>
+                <div className="flex items-center gap-2.5 text-[.78rem]"><span className="font-semibold text-accent">{categoryLabel(topArticles[0].cat)}</span><span className="h-1 w-1 rounded-full bg-hair" /><time className="text-soft">{topArticles[0].date}</time></div>
                 <h3 className="mt-4 font-display text-[clamp(1.6rem,3.4vw,2.4rem)] font-semibold leading-[1.4] text-ink transition-colors group-hover:text-accent">{topArticles[0].title}</h3>
                 {topArticles[0].excerpt && <p className="mt-4 max-w-xl text-[1.02rem] font-light leading-[1.9] text-ink/80">{topArticles[0].excerpt}</p>}
               </Link>}

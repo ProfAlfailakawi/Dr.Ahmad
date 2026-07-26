@@ -6,12 +6,12 @@
 const SOURCE_LABELS: Record<string, string> = {
   "Times Kuwait": "تايمز الكويت",
   "Times Kuwait — Education": "تايمز الكويت — التعليم",
-  "MIT Technology Review": "مجلة معهد ماساتشوستس للتقنية",
+  "MIT Technology Review": "مجلة معهد ماساتشوستس للتكنولوجيا",
   EdSurge: "إدسيرج",
   Edutopia: "إديوتوبيا",
   "The Hechinger Report": "تقرير هيتشنغر",
   ScienceDaily: "ساينس ديلي",
-  "MIT News": "أخبار معهد ماساتشوستس للتقنية",
+  "MIT News": "أخبار معهد ماساتشوستس للتكنولوجيا",
   "The Conversation": "ذا كونفرسيشن",
   Reuters: "رويترز",
   "Project Gutenberg": "مشروع غوتنبرغ",
@@ -23,7 +23,7 @@ const SOURCE_LABELS: Record<string, string> = {
   "Connected Papers": "كونكتد بيبرز",
   "Allen Institute for AI": "معهد ألن للذكاء الاصطناعي",
   "Khan Academy (غير ربحية)": "أكاديمية خان — مؤسسة غير ربحية",
-  MIT: "معهد ماساتشوستس للتقنية",
+  MIT: "معهد ماساتشوستس للتكنولوجيا",
   CAST: "مؤسسة كاست",
   "TED (2006)": "منصة تِد — ٢٠٠٦",
   "Stanford HAI": "معهد ستانفورد للذكاء الاصطناعي المتمحور حول الإنسان",
@@ -47,7 +47,7 @@ const COMMON_TERMS: Array<[RegExp, string]> = [
   [/\bOpenAI\b/gi, "أوبن إيه آي"],
   [/\bAI\b/gi, "الذكاء الاصطناعي"],
   [/\bLMS\b/gi, "نظام إدارة التعلّم"],
-  [/\bSTEM\b/gi, "العلوم والتقنية والهندسة والرياضيات"],
+  [/\bSTEM\b/gi, "العلوم والتكنولوجيا والهندسة والرياضيات"],
 ];
 
 /* ترجمات بشرية مثبتة للمواد التي وصلت قبل تشديد بوابة التعريب. لا نعرض
@@ -56,9 +56,9 @@ const KNOWN_TITLES: Record<string, string> = {
   "These Hip-Hop Artists Were Already Teaching":
     "فنانو الهيب هوب هؤلاء كانوا يمارسون التعليم بالفعل",
   "OPINION: The days of ‘good guy’ capitalists are over. College students are right to turn against the tech elites":
-    "رأي: انتهى زمن «الرأسمالي الطيب»… ومن حق طلبة الجامعات مساءلة نخب التقنية",
+    "رأي: انتهى زمن «الرأسمالي الطيب»… ومن حق طلبة الجامعات مساءلة نخب التكنولوجيا",
   "OPINION: The days of 'good guy' capitalists are over. College students are right to turn against the tech elites":
-    "رأي: انتهى زمن «الرأسمالي الطيب»… ومن حق طلبة الجامعات مساءلة نخب التقنية",
+    "رأي: انتهى زمن «الرأسمالي الطيب»… ومن حق طلبة الجامعات مساءلة نخب التكنولوجيا",
   "PRINCIPAL VOICE: Our off-track high school students weren’t terribly interested in school until we dug into hands-on learning":
     "صوت مدير مدرسة: لم يستعد طلابنا المتعثرون اهتمامهم بالدراسة إلا بالتعلّم التطبيقي",
   "PRINCIPAL VOICE: Our off-track high school students weren't terribly interested in school until we dug into hands-on learning":
@@ -69,9 +69,9 @@ const KNOWN_NOTES: Record<string, string> = {
   "These Hip-Hop Artists Were Already Teaching":
     "برنامج جامعي جديد يمنح فناني الهيب هوب اعتماداً أكاديمياً لنقل خبراتهم المجتمعية والواقعية إلى الصفوف الدراسية.",
   "OPINION: The days of ‘good guy’ capitalists are over. College students are right to turn against the tech elites":
-    "قراءة نقدية في تحوّل نظرة الجيل الجديد إلى قادة شركات التقنية وعلاقتهم بالجامعات والمجتمع.",
+    "قراءة نقدية في تحوّل نظرة الجيل الجديد إلى قادة شركات التكنولوجيا وعلاقتهم بالجامعات والمجتمع.",
   "OPINION: The days of 'good guy' capitalists are over. College students are right to turn against the tech elites":
-    "قراءة نقدية في تحوّل نظرة الجيل الجديد إلى قادة شركات التقنية وعلاقتهم بالجامعات والمجتمع.",
+    "قراءة نقدية في تحوّل نظرة الجيل الجديد إلى قادة شركات التكنولوجيا وعلاقتهم بالجامعات والمجتمع.",
   "PRINCIPAL VOICE: Our off-track high school students weren’t terribly interested in school until we dug into hands-on learning":
     "تجربة مدرسية أعادت إشراك طلاب كانوا بعيدين عن المسار الدراسي عبر تعلّم عملي مرتبط بالحياة والعمل.",
   "PRINCIPAL VOICE: Our off-track high school students weren't terribly interested in school until we dug into hands-on learning":

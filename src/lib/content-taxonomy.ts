@@ -1,4 +1,5 @@
 import type { ArticleRecord } from './cms'
+import { systemUiTerminology } from './system-ui-terminology'
 
 const preferredOrder = ['التعليم', 'التربية', 'مجتمع', 'تقنية', 'هوية', 'إعلام', 'بحث']
 
@@ -21,5 +22,5 @@ export function dynamicArticleCategories(
 
 export function categoryLabel(category: string) {
   if (category === 'مجتمع') return 'المجتمع'
-  return category
+  return systemUiTerminology(category)
 }

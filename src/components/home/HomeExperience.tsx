@@ -7,6 +7,7 @@ import { staticQuestions, LAUNCH_DATE } from '../../pages/Questions'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../../lib/cms'
 import type { Event as SiteEvent } from '../../data'
 import type { Curio } from '../../data-curated'
+import { categoryLabel } from '../../lib/content-taxonomy'
 
 type Persona = 'reader' | 'scholar' | 'org'
 const PERSONAS: { key: Persona; label: string; title: string; desc: string; links: { to: string; label: string }[] }[] = [
@@ -85,7 +86,7 @@ export function NowStation({ articles }: { articles: ArticleRecord[] }) {
             <Link to={`/articles/${latest.slug}`} data-hover className="group relative flex min-h-[330px] flex-col justify-between overflow-hidden rounded-3xl border border-hair bg-canvas p-7 transition-colors hover:border-accent md:p-10">
               <span className="pointer-events-none absolute -left-20 -top-24 h-64 w-64 rounded-full bg-accent/[.075] blur-3xl" />
               <div className="relative">
-                <p className="flex items-center gap-2.5 text-[.78rem] font-semibold text-accent"><span className="pulse relative h-2 w-2 rounded-full bg-accent" />الأحدث · {latest.cat}</p>
+                <p className="flex items-center gap-2.5 text-[.78rem] font-semibold text-accent"><span className="pulse relative h-2 w-2 rounded-full bg-accent" />الأحدث · {categoryLabel(latest.cat)}</p>
                 <h2 className="mt-6 max-w-3xl font-display text-[clamp(1.8rem,4vw,3rem)] font-semibold leading-[1.42] text-ink transition-colors group-hover:text-accent">{latest.title}</h2>
                 {latest.excerpt && <p className="mt-5 max-w-2xl text-[1rem] font-light leading-[1.95] text-soft">{latest.excerpt}</p>}
               </div>

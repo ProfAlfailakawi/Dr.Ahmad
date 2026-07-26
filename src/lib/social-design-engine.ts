@@ -781,7 +781,7 @@ const TONE_LABELS: Record<ContentTone, string> = {
 }
 
 const TOPIC_LABELS: Record<ContentTopic, string> = {
-  ai: 'الذكاء الاصطناعي والتقنية', education: 'التعليم والتعلّم', family: 'الأسرة والتربية', research: 'البحث والمعرفة', media: 'الإعلام والمجتمع الرقمي', leadership: 'القيادة والمستقبل', human: 'الإنسان والمعنى', book: 'الكتب والقراءة', general: 'فكرة عامة',
+  ai: 'الذكاء الاصطناعي والتكنولوجيا', education: 'التعليم والتعلّم', family: 'الأسرة والتربية', research: 'البحث والمعرفة', media: 'الإعلام والمجتمع الرقمي', leadership: 'القيادة والمستقبل', human: 'الإنسان والمعنى', book: 'الكتب والقراءة', general: 'فكرة عامة',
 }
 
 type WeightedSignal = { pattern: RegExp; weight: number; reason: string }
@@ -880,7 +880,7 @@ const TONE_SIGNALS: Record<ContentTone, readonly WeightedSignal[]> = {
 }
 
 const TOPIC_SIGNALS: Record<ContentTopic, readonly WeightedSignal[]> = {
-  ai: [{ pattern: /(?:ذكاء اصطناعي|خوارزم|تقني|تكنولوجيا|روبوت|نماذج لغويه|بيانات)/, weight: 7, reason: 'مصطلحات تقنية' }],
+  ai: [{ pattern: /(?:ذكاء اصطناعي|خوارزم|تقني|تكنولوجيا|روبوت|نماذج لغويه|بيانات)/, weight: 7, reason: 'مصطلحات تكنولوجية' }],
   education: [{ pattern: /(?:تعليم|تعلم|معلم|طالب|مدرس|صف|تقويم|تقييم|منهج|تربوي)/, weight: 7, reason: 'مصطلحات تعليمية' }],
   family: [{ pattern: /(?:طفل|اطفال|اسره|والد|اموم|مراهق|تربيه منزليه)/, weight: 7, reason: 'مصطلحات أسرية' }],
   research: [{ pattern: /(?:بحث|دراسه|منهج|عينه|نتائج|احصائ|اكاديمي|جامع)/, weight: 7, reason: 'مصطلحات بحثية' }],

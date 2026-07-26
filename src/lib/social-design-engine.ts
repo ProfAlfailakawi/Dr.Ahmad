@@ -1697,7 +1697,7 @@ const selectDiverse = (
       const thresholdBonus = candidate.novelty >= noveltyThreshold ? 10 : 0
       const quality = candidate.quality || critiqueCompositionPlan(candidate, selected)
       const affinity = tasteAffinity(tasteProfile, candidate)
-      const score = candidate.fitness * .34 + quality.score * .36 + candidate.novelty * 18 + pairwiseNovelty * 22 + thresholdBonus + affinity * 10
+      const score = candidate.fitness * .24 + quality.score * .42 + candidate.novelty * 22 + pairwiseNovelty * 30 + thresholdBonus + affinity * 8
       if (score > bestScore) { bestScore = score; bestIndex = index }
     }
     const [picked] = remaining.splice(bestIndex, 1)
@@ -1705,7 +1705,7 @@ const selectDiverse = (
     selected.push({ ...picked, directionIndex: selected.length + 1, tasteAffinity: tasteAffinity(tasteProfile, picked) })
     // التنوع البنيوي شرط، لا نسمح لنفس العائلة أن تتخفى بلون مختلف.
     for (let index = remaining.length - 1; index >= 0; index -= 1) {
-      if (remaining[index].layout === picked.layout) remaining.splice(index, 1)
+      if (remaining[index].layout === picked.layout || designSimilarity(remaining[index], picked) >= 0.48) remaining.splice(index, 1)
     }
   }
   return selected.map((plan) => {
@@ -1731,16 +1731,22 @@ const selectVisibleThemeDiversity = (ranked: readonly CompositionPlan[], count: 
     for (let index = 0; index < pool.length; index += 1) {
       const candidate = pool[index]
       const quality = candidate.quality?.score || 0
-      const newPalette = selected.every((item) => item.palette !== candidate.palette) ? 14 : 0
+      const newPalette = selected.every((item) => item.palette !== candidate.palette) ? 15 : 0
       const newSurface = selected.length && selected.every((item) => surface(item) !== surface(candidate)) ? 12 : selected.some((item) => surface(item) !== surface(candidate)) ? 5 : 0
-      const newLayout = selected.every((item) => item.layout !== candidate.layout) ? 10 : 0
-      const distance = selected.length ? Math.min(...selected.map((item) => 1 - designSimilarity(item, candidate))) * 18 : 18
-      const score = quality + newPalette + newSurface + newLayout + distance
+      const newLayout = selected.every((item) => item.layout !== candidate.layout) ? 16 : 0
+      const newSpatial = selected.every((item) => item.spatial !== candidate.spatial) ? 12 : 0
+      const newTypography = selected.every((item) => item.typography !== candidate.typography) ? 10 : 0
+      const newFraming = selected.every((item) => item.framing !== candidate.framing) ? 8 : 0
+      const distance = selected.length ? Math.min(...selected.map((item) => 1 - designSimilarity(item, candidate))) * 32 : 32
+      const score = quality + newPalette + newSurface + newLayout + newSpatial + newTypography + newFraming + distance
       if (score > bestScore) { bestScore = score; bestIndex = index }
     }
     const [picked] = pool.splice(bestIndex, 1)
     if (!picked) break
     selected.push(picked)
+    for (let index = pool.length - 1; index >= 0; index -= 1) {
+      if (designSimilarity(pool[index], picked) >= 0.46) pool.splice(index, 1)
+    }
   }
   return selected
 }
@@ -1754,7 +1760,7 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
   const format = resolveFormat(request, analysis)
   const density = request.density && request.density !== 'auto' ? request.density : analysis.density
   const history = normalizeHistory(request.history)
-  const noveltyThreshold = clamp(request.noveltyThreshold ?? 0.32, 0, 0.9)
+  const noveltyThreshold = clamp(request.noveltyThreshold ?? 0.42, 0, 0.9)
   const locks = { ...DEFAULT_LOCKS, ...request.locks }
   const warnings: string[] = []
   if (Object.values(locks).some(Boolean) && !request.basePlan) warnings.push('طُلب قفل عناصر من دون تصميم أساس؛ أُهملت الأقفال لهذه الدفعة.')
@@ -1766,7 +1772,7 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
     .sort((left, right) => (layoutFitness(right, analysis, density, format) + preferenceBoost(right.id)) - (layoutFitness(left, analysis, density, format) + preferenceBoost(left.id)))
   const candidates: CompositionPlan[] = []
   for (const [layoutIndex, layout] of rankedLayouts.entries()) {
-    for (let variant = 0; variant < 4; variant += 1) {
+    for (let variant = 0; variant < 6; variant += 1) {
       const candidate = makeCandidate(layout, analysis, format, density, seed, layoutIndex * 7 + variant, history)
       const boosted = preferenceBoost(layout.id) ? { ...candidate, fitness: roundScore(candidate.fitness + preferenceBoost(layout.id)) } : candidate
       candidates.push(request.basePlan ? applyDesignLocks(request.basePlan, boosted, locks) : boosted)
@@ -1774,8 +1780,8 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
   }
 
   const critiqued = candidates.map((candidate) => ({ ...candidate, quality: critiqueCompositionPlan(candidate, candidates) }))
-  const valid = critiqued.filter((candidate) => !candidate.quality?.issues.some((issue) => issue.startsWith('خطأ:')) && (candidate.quality?.score || 0) >= 68)
-  const strong = valid.filter((candidate) => (candidate.quality?.score || 0) >= 76 && (candidate.quality?.lineFit || 0) >= 76)
+  const valid = critiqued.filter((candidate) => !candidate.quality?.issues.some((issue) => issue.startsWith('خطأ:')) && (candidate.quality?.score || 0) >= 72 && (candidate.quality?.lineFit || 0) >= 74)
+  const strong = valid.filter((candidate) => (candidate.quality?.score || 0) >= 82 && (candidate.quality?.lineFit || 0) >= 82 && candidate.novelty >= Math.min(noveltyThreshold, 0.5))
   const candidatePool = strong.length >= requestedCount ? strong : valid.length ? valid : critiqued
   const finalists = selectDiverse(candidatePool, requestedCount, history, noveltyThreshold, request.tasteProfile)
   const rankedVisible = finalists

@@ -4,7 +4,7 @@ import { buildEliteStudioImagePrompt } from '../server.mjs'
 
 const glossary = JSON.parse(readFileSync(new URL('../src/data/dr-ahmad-domain-glossary.json', import.meta.url), 'utf8'))
 assert.ok(Array.isArray(glossary))
-assert.ok(glossary.length >= 80, 'The personal glossary must cover the full multidisciplinary CV, not one isolated term.')
+assert.ok(glossary.length >= 280, 'The personal glossary must cover the multidisciplinary CV and modern educational-technology vocabulary.')
 assert.equal(new Set(glossary.map((entry) => entry.id)).size, glossary.length, 'Glossary ids must be unique.')
 for (const entry of glossary) {
   assert.ok(entry.canonicalAr && entry.canonicalEn && entry.meaningAr)
@@ -27,6 +27,16 @@ const cases = [
   ['شات', 'ChatGPT in Education'],
   ['جودة', 'Quality and Academic Accreditation'],
   ['ميتافيرس', 'Metaverse in Education'],
+  ['برومبت', 'Prompt Engineering'],
+  ['RAG', 'Retrieval-Augmented Generation'],
+  ['XAI', 'Explainable AI'],
+  ['ADDIE', 'ADDIE Model'],
+  ['UDL', 'Universal Design for Learning'],
+  ['SCORM', 'SCORM'],
+  ['بلوم', 'Bloom Taxonomy'],
+  ['ألفا', 'Cronbach Alpha'],
+  ['فاشنستات', 'Influencer Culture'],
+  ['موسوعة', 'Educational Technology Encyclopedia'],
 ]
 
 for (const [idea, canonical] of cases) {
@@ -41,6 +51,27 @@ for (const [idea, canonical] of cases) {
   assert.match(prompt, new RegExp(canonical.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), `The first word “${idea}” must resolve to ${canonical}.`)
 }
 
+// Cloud Run no longer needs to COPY the large glossary file: the browser sends a
+// validated synthetic concept profile, and the server must honour it directly.
+const syntheticPrompt = buildEliteStudioImagePrompt({
+  idea: 'مصطلح مركب جديد',
+  issue: 'مصطلح مركب جديد في التعليم',
+  context: 'تعليم جامعي',
+  orientation: 'portrait',
+  glossaryConcept: 'compound-custom-concept',
+  glossaryLabel: 'مفهوم د. أحمد المركب',
+  glossaryCanonicalEn: 'Dr Ahmad Compound Concept',
+  glossaryMeaning: 'معنى تخصصي مركب أرسله الرسم المعرفي من الواجهة إلى الخادم.',
+  glossaryScenes: ['مشهد تعليمي مضيء يربط المفهوم بالجمهور والغاية'],
+  glossaryAvoid: ['صورة عامة بلا معنى'],
+  preferredWorlds: ['sunlit-campus'],
+  moods: ['bright', 'human'],
+  regenerationId: 'synthetic-profile',
+})
+assert.match(syntheticPrompt, /Dr Ahmad Compound Concept/i)
+assert.match(syntheticPrompt, /sunlit contemporary campus/i)
+assert.match(syntheticPrompt, /معنى تخصصي مركب/i)
+
 const positivePrompt = buildEliteStudioImagePrompt({
   idea: 'تلعيب',
   issue: 'التلعيب في التعليم',
@@ -52,18 +83,32 @@ const positivePrompt = buildEliteStudioImagePrompt({
 assert.match(positivePrompt, /optimistic|daylight|luminous|alive/i)
 assert.match(positivePrompt, /Do not make the scene sad, gloomy, lonely, ominous/i)
 
-const forcedWorldPrompts = [
+const forcedWorlds = [
   ['playful-systems', /gameful learning system|achievement tokens|progress markers/i],
-  ['daylight-learning', /bright premium educational editorial|generous daylight/i],
-  ['color-field-editorial', /editorial color-field|optimistic color/i],
-].map(([world, expected], index) => {
+  ['sunlit-campus', /sunlit contemporary campus|airy architecture/i],
+  ['living-learning-lab', /hands-on learning laboratory|real prototypes/i],
+  ['kinetic-collage', /editorial photographic collage|dynamic diagonals/i],
+  ['spatial-learning', /spatial learning installation|layered depth/i],
+]
+const forcedWorldPrompts = forcedWorlds.map(([world, expected], index) => {
   const prompt = buildEliteStudioImagePrompt({
     idea: 'تلعيب', issue: 'التلعيب في التعليم', context: 'تعليم جامعي', orientation: 'portrait',
+    glossaryConcept: 'gamification', glossaryLabel: 'التلعيب', glossaryCanonicalEn: 'Gamification',
+    glossaryMeaning: 'توظيف عناصر الألعاب مثل النقاط والمستويات والشارات لتحفيز التعلم، وليس التلاعب.',
+    glossaryScenes: ['رحلة تعلم راقية تتدرج عبر مستويات واضحة وشارات إنجاز'],
+    glossaryAvoid: ['التلاعب', 'الممرات المظلمة', 'الفصل الفارغ الحزين'],
     preferredWorlds: [world], moods: ['bright', 'playful', 'energetic'], regenerationId: `world-${index}`,
   })
   assert.match(prompt, expected)
   return prompt
 })
-assert.equal(new Set(forcedWorldPrompts).size, 3, 'The generated design batch must contain genuinely distinct visual worlds.')
+assert.equal(new Set(forcedWorldPrompts).size, forcedWorlds.length, 'The generated batch must contain genuinely distinct visual worlds.')
 
-console.log(JSON.stringify({ ok: true, glossaryEntries: glossary.length, firstWordCases: cases.length, positiveMoodGuard: true, distinctVisualWorlds: forcedWorldPrompts.length }, null, 2))
+console.log(JSON.stringify({
+  ok: true,
+  glossaryEntries: glossary.length,
+  firstWordCases: cases.length,
+  syntheticCloudRunProfile: true,
+  positiveMoodGuard: true,
+  distinctVisualWorlds: forcedWorldPrompts.length,
+}, null, 2))

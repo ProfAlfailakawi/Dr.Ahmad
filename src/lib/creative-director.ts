@@ -72,18 +72,18 @@ export function buildCreativeBrief(text: string, context: string, analysis: Soci
         : analysis.primaryTone === 'bold' ? 'توترٌ فكري يدفع إلى التوقف'
           : 'فضولٌ هادئ يدعو إلى إعادة النظر'
   const visual = visualNeedFrom(source, analysis)
-  const domainAvoid = domain.avoid.slice(0, 7).join('، ')
+  const domainAvoid = domain.avoid.slice(0, 10).join('، ')
   return {
-    issue: truncate(domain.primary?.canonicalAr || title, 18),
+    issue: truncate(title, 18),
     tension: truncate(question || `التوتر بين ${hero} وما يترتب عليه في الواقع`, 22),
     hook: truncate(question || analysis.structure.quote || title, 16),
     evidence: truncate(evidence || key, 24),
     emotion,
     audience: audienceFrom(context, analysis),
     memory: truncate(analysis.structure.keyPoint || title, 18),
-    avoid: visual.need === 'human' ? 'تجنّب الصورة التكنولوجية المباشرة أو الوجه المصطنع الذي يحوّل القضية الإنسانية إلى إعلان.' : 'تجنّب الرمز المستهلك أو الصورة التي تشرح الكلمات حرفياً من دون إضافة معنى.',
+    avoid: [visual.need === 'human' ? 'تجنّب الصورة التكنولوجية المباشرة أو الوجه المصطنع الذي يحوّل القضية الإنسانية إلى إعلان.' : 'تجنّب الرمز المستهلك أو الصورة التي تشرح الكلمات حرفياً من دون إضافة معنى.', domainAvoid].filter(Boolean).join(' '),
     visualNeed: visual.need,
-    visualReason: domain.primary ? `${domain.primary.meaningAr} لذلك يجب أن يحمل المشهد معنى المجال الدقيق، لا أن يكتفي بصورة تعليمية عامة.` : visual.reason,
+    visualReason: domain.recognizedTerms.length ? `${domain.compoundMeaning} لذلك يجب أن يحمل المشهد المعنى المركب الدقيق، لا أن يختزل العنوان في أول كلمة أو في صورة تعليمية عامة.` : visual.reason,
     confidence: Math.max(58, Math.min(99, Math.round(Math.max(analysis.confidence, domain.confidence)))),
   }
 }

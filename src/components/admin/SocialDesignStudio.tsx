@@ -104,6 +104,7 @@ type ZeroDecisionSummary = {
   campaignReady: boolean
   campaignQuality: number
   note: string
+  visualOrigin: StudioVisualOrigin
 }
 
 type GeneratedStudioImage = {
@@ -111,9 +112,22 @@ type GeneratedStudioImage = {
   metadata: { source?: string; owner?: string; license?: string; description?: string }
   prompt: string
   model: string
+  generatedAt?: string
+  requestId?: string
 }
 
+type StudioVisualMode = 'generate' | 'ready'
+type StudioVisualOrigin = 'generated' | 'ready' | 'none'
+
 type ZeroDecisionPhase = 'idle' | 'understand' | 'prompt' | 'image' | 'compose' | 'critic' | 'campaign' | 'done'
+
+const FRESH_GENERATION_VARIATIONS = [
+  'Build the scene around an unexpected physical metaphor and a single irreversible visual event; avoid any composition that resembles a stock photograph.',
+  'Use quiet cinematic tension, architectural negative space, and one human trace rather than a literal subject; the result must feel commissioned, not generated.',
+  'Create a restrained visual paradox with museum-grade material detail, asymmetrical balance, and a focal event that becomes clearer only after a second look.',
+  'Translate the idea into a poetic documentary moment with authentic imperfection, layered depth, and a daring crop; no obvious symbolism or generic technology imagery.',
+  'Invent a culturally intelligent editorial scene that could become the signature cover of a major international ideas magazine; elegant, human, and impossible to confuse with a template.',
+] as const
 
 const AUTOPILOT_PRESETS: { id: AutoPilotModeId; label: string; note: string; tone: ContentTone; density: DesignDensity; preferLayout: LayoutFamilyId; platform?: SocialPlatform | 'auto'; imageTreatment?: NonNullable<PlanOverlay['imageTreatment']> }[] = [
   { id: 'safe', label: 'النسخة الآمنة', note: 'أوضح قراءة وأعلى موثوقية للنشر الرسمي.', tone: 'formal', density: 'balanced', preferLayout: 'editorial-axis', platform: 'auto', imageTreatment: 'editorial' },
@@ -471,6 +485,12 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [zeroDecision, setZeroDecision] = useState<ZeroDecisionSummary | null>(null)
   const [zeroDecisionPhase, setZeroDecisionPhase] = useState<ZeroDecisionPhase>('idle')
   const [generatedPrompt, setGeneratedPrompt] = useState('')
+  const [visualMode, setVisualMode] = useState<StudioVisualMode>('generate')
+  const [visualOrigin, setVisualOrigin] = useState<StudioVisualOrigin>('none')
+  const [visualFailure, setVisualFailure] = useState('')
+  const [generatedModel, setGeneratedModel] = useState('')
+  const [generatedAt, setGeneratedAt] = useState('')
+  const generationSerialRef = useRef(0)
   const [qualityThreshold, setQualityThreshold] = useState(() => Number(localStorage.getItem(QUALITY_THRESHOLD_KEY) || 82))
   /* البصمة البصرية: لوحةٌ مستخرجةٌ من صورةٍ محلية تكسو كل الاتجاهات الحالية
      والقادمة حتى تُزال — بلا خدمةٍ خارجية ولا رفعٍ لأي خادم. */
@@ -582,6 +602,17 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const hasOpenverseProvider = useMemo(() => externalVisuals.some((item) => item.provider === 'openverse'), [externalVisuals])
   const bestExternalVisual = externalVisuals[0]
   const imageGeneratorEndpoint = ((import.meta as any)?.env?.VITE_STUDIO_IMAGE_GENERATOR_ENDPOINT as string | undefined) || '/api/ai/studio-image'
+
+  const describeGeneratorFailure = (error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error || '')
+    if (/admin_auth_required|admin access required|403/i.test(message)) return 'جلسة الإدارة غير مخوّلة لتوليد الصور. أعد تسجيل الدخول إلى لوحة التحكم ثم جرّب مجددًا.'
+    if (/firebase_unavailable/i.test(message)) return 'تعذّر الوصول إلى جلسة Firebase، لذلك لم يصل طلب التوليد إلى الخادم.'
+    if (/not configured|account is not configured|503/i.test(message)) return 'Cloudflare Workers AI غير مربوط فعليًا بخدمة dr-api بعد. لم أستبدل الصورة بصورة جاهزة كي يبقى الفرق واضحًا.'
+    if (/timed out|abort|504/i.test(message)) return 'انتهت مهلة توليد Cloudflare قبل وصول الصورة. لم ينتقل النظام إلى Pexels تلقائيًا.'
+    if (/busy|429/i.test(message)) return 'خدمة التوليد مشغولة الآن. انتظر قليلًا ثم استخدم «أعد التوليد من الصفر».'
+    if (/no usable image|empty|analysis_failed/i.test(message)) return 'وصل رد من خدمة التوليد لكنه لم يتضمن صورة صالحة للاستخدام.'
+    return `تعذّر توليد الصورة الأصلية: ${message || 'فشل غير معروف في خدمة التوليد'}. لم يستخدم النظام صورة جاهزة بدلًا منها.`
+  }
 
   // البحث الخارجي لا يعمل أثناء الكتابة؛ يبدأ فقط من زر البحث أو من الطيار الآلي.
   // هذا يمنع تراكم الطلبات وتعليق الهاتف عند كل تغيير في النص.
@@ -751,61 +782,76 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     finally { setImageBusy(false) }
   }
 
+  const resolveExternalVisualPassport = async (item: ExternalVisualResult) => {
+    const urls = [...new Set([item.imageUrl, item.thumbnailUrl].filter(Boolean))]
+    let passport: StudioImagePassport | null = null
+    let workingUrl = ''
+    for (const url of urls) {
+      passport = await analyzeStudioImageFromUrl(url, item.title)
+      if (passport) { workingUrl = url; break }
+    }
+    if (!passport) {
+      for (const url of urls) {
+        const probe = await probeImageUrl(url, 4000)
+        if (!probe) continue
+        workingUrl = probe.url
+        const width = item.width || probe.width || 1200
+        const height = item.height || probe.height || 900
+        const aspectRatio = width / Math.max(1, height)
+        passport = {
+          dataUrl: workingUrl,
+          fileName: item.title || 'external-image',
+          mime: 'image/jpeg',
+          width,
+          height,
+          aspectRatio,
+          orientation: aspectRatio > 1.08 ? 'landscape' : aspectRatio < .92 ? 'portrait' : 'square',
+          luminance: 50,
+          contrast: 45,
+          edgeDensity: 35,
+          negativeSpace: 'balanced',
+          focalX: .5,
+          focalY: .5,
+          recommendedFit: 'cover',
+          cropNotes: ['تعذّر تحليل البكسلات بسبب قيود المصدر؛ استُخدم قص مركزي آمن ويمكن ضبط نقطة التركيز يدويًا.', 'المصدر والترخيص محفوظان في جواز الصورة.'],
+        }
+        break
+      }
+    }
+    if (!passport) return null
+    return {
+      passport,
+      metadata: {
+        source: item.pageUrl || workingUrl || item.imageUrl,
+        owner: item.author,
+        license: item.license,
+        description: item.description || item.title,
+      },
+    }
+  }
+
   const applyExternalVisual = async (item: ExternalVisualResult, autoTreatment?: NonNullable<PlanOverlay['imageTreatment']>) => {
     if (imageBusy) return
     setImageBusy(true)
     try {
-      const urls = [...new Set([item.imageUrl, item.thumbnailUrl].filter(Boolean))]
-      let result: StudioImagePassport | null = null
-      let workingUrl = ''
-      for (const url of urls) {
-        result = await analyzeStudioImageFromUrl(url, item.title)
-        if (result) { workingUrl = url; break }
-      }
-      if (!result) {
-        for (const url of urls) {
-          const probe = await probeImageUrl(url, 4000)
-          if (!probe) continue
-          workingUrl = probe.url
-          const width = item.width || probe.width || 1200
-          const height = item.height || probe.height || 900
-          const aspectRatio = width / Math.max(1, height)
-          result = {
-            dataUrl: workingUrl,
-            fileName: item.title || 'external-image',
-            mime: 'image/jpeg',
-            width,
-            height,
-            aspectRatio,
-            orientation: aspectRatio > 1.08 ? 'landscape' : aspectRatio < .92 ? 'portrait' : 'square',
-            luminance: 50,
-            contrast: 45,
-            edgeDensity: 35,
-            negativeSpace: 'balanced',
-            focalX: .5,
-            focalY: .5,
-            recommendedFit: 'cover',
-            cropNotes: ['تعذّر تحليل البكسلات بسبب قيود المصدر؛ استُخدم قص مركزي آمن ويمكن ضبط نقطة التركيز يدويًا.', 'المصدر والترخيص محفوظان في جواز الصورة.'],
-          }
-          break
-        }
-      }
-      if (!result) {
+      const resolved = await resolveExternalVisualPassport(item)
+      if (!resolved) {
         setExternalVisuals((items) => items.filter((candidate) => candidate.id !== item.id))
         setNotice('هذه الصورة غير قابلة للتحميل من المصدر الحالي، فتم استبعادها. اختر المرشح التالي.')
         return
       }
-      const source = item.pageUrl || workingUrl || item.imageUrl
-      const description = item.description || item.title
-      setImagePassport(result)
-      setImageDescription(description)
-      setImageSource(source)
-      setImageOwner(item.author)
-      setImageLicense(item.license)
+      const { passport, metadata } = resolved
+      setImagePassport(passport)
+      setImageDescription(metadata.description || '')
+      setImageSource(metadata.source || '')
+      setImageOwner(metadata.owner || '')
+      setImageLicense(metadata.license || '')
+      setVisualOrigin('ready')
+      setVisualFailure('')
       if (autoTreatment) {
-        applyImageLedDirection(autoTreatment, result, { source, owner: item.author, license: item.license, description })
+        applyImageLedDirection(autoTreatment, passport, metadata)
       } else {
-        setNotice(`اختيرت صورة من ${item.providerLabel} وأُنشئ جوازها. إن منع المصدر تحليل البكسلات، يستمر التصميم بقص آمن بدل التعليق.`)
+        setNotice(`اختيرت صورة جاهزة من ${item.providerLabel} وأُنشئ جوازها. المصدر ظاهر بوضوح ولن تُحسب كتوليد ذكاء اصطناعي.`)
       }
     } catch {
       setExternalVisuals((items) => items.filter((candidate) => candidate.id !== item.id))
@@ -849,7 +895,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       setNotice('تعذّر النسخ الآلي. انسخه يدويًا من الحقل الظاهر.')
     }
   }
-  const requestGeneratedStudioImage = async (): Promise<GeneratedStudioImage> => {
+  const requestGeneratedStudioImage = async (options: { regenerationId?: string; variation?: string } = {}): Promise<GeneratedStudioImage> => {
     const app = await getFirebaseApp()
     if (!app) throw new Error('firebase_unavailable')
     const { getAuth } = await import('firebase/auth')
@@ -877,13 +923,15 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           negativeSpace: creativeIdentity.negativeSpace,
           orientation: platform === 'presentation' || platform === 'linkedin' || platform === 'x' ? 'landscape' : 'portrait',
           prompt: visualSearchPlan.generationPrompt,
+          regenerationId: options.regenerationId,
+          variation: options.variation,
         }),
       })
       if (!response.ok) {
-        const payload = await response.json().catch(() => ({})) as { error?: string }
-        throw new Error(payload.error || `generator_${response.status}`)
+        const payload = await response.json().catch(() => ({})) as { error?: string; detail?: string; code?: string }
+        throw new Error([payload.error, payload.detail, payload.code, `HTTP ${response.status}`].filter(Boolean).join(' · '))
       }
-      const payload = await response.json() as { imageUrl?: string; sourceUrl?: string; owner?: string; license?: string; description?: string; prompt?: string; model?: string }
+      const payload = await response.json() as { imageUrl?: string; sourceUrl?: string; owner?: string; license?: string; description?: string; prompt?: string; model?: string; generatedAt?: string; requestId?: string }
       if (!payload.imageUrl) throw new Error('generator_empty')
       const passport = await analyzeStudioImageFromUrl(payload.imageUrl, `dr-ahmad-ai-${Date.now()}.jpg`)
       if (!passport) throw new Error('generator_image_analysis_failed')
@@ -897,6 +945,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         },
         prompt: payload.prompt || visualSearchPlan.generationPrompt,
         model: payload.model || '@cf/black-forest-labs/flux-1-schnell',
+        generatedAt: payload.generatedAt,
+        requestId: payload.requestId,
       }
     } finally {
       window.clearTimeout(timer)
@@ -910,20 +960,28 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     setImageOwner(generated.metadata.owner || 'Cloudflare Workers AI')
     setImageLicense(generated.metadata.license || 'AI-generated image')
     setGeneratedPrompt(generated.prompt)
+    setGeneratedModel(generated.model)
+    setGeneratedAt(generated.generatedAt || new Date().toISOString())
+    setVisualOrigin('generated')
+    setVisualFailure('')
   }
 
   const runGenerator = async () => {
     if (generatorBusy) return
     setGeneratorBusy(true)
     try {
-      const generated = await requestGeneratedStudioImage()
+      const serial = ++generationSerialRef.current
+      const generated = await requestGeneratedStudioImage({
+        regenerationId: `manual-${Date.now()}-${serial}`,
+        variation: FRESH_GENERATION_VARIATIONS[serial % FRESH_GENERATION_VARIATIONS.length],
+      })
       installGeneratedImage(generated)
       setNotice('وُلّدت صورة أصلية من الفكرة، ثم حُللت محليًا وصار لها جواز قص وتركيز ومصدر واضح.')
     } catch (error) {
-      const message = error instanceof Error ? error.message : ''
-      setNotice(message.includes('not configured')
-        ? 'خدمة Cloudflare Workers AI جاهزة في الكود وتحتاج إضافة السر إلى Cloud Run مرة واحدة.'
-        : 'تعذّر توليد الصورة الآن؛ سيبقى القرار الصفري قادرًا على استخدام أقوى صورة موثقة من المصادر المجانية بدل التعليق.')
+      const message = describeGeneratorFailure(error)
+      setVisualFailure(message)
+      setVisualOrigin('none')
+      setNotice(message)
     } finally { setGeneratorBusy(false) }
   }
   const undoEdit = () => {
@@ -1504,7 +1562,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     try {
       const hero = base.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background')
       const carryHero = (plan: CompositionPlan, treatment?: NonNullable<PlanOverlay['imageTreatment']>) => {
-        const passport = options.passport || imagePassport
+        const passport = Object.prototype.hasOwnProperty.call(options, 'passport') ? options.passport ?? null : imagePassport
         if (!hero || !passport) return plan
         return buildImageLedPlan(plan, treatment || hero.imageTreatment || 'cinematic', passport, options.metadata || { source: hero.sourceUrl, owner: hero.owner, license: hero.license, description: hero.semanticDescription })
       }
@@ -1558,17 +1616,20 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     }
   }
 
-  const runZeroDecisionMode = async () => {
+  const runZeroDecisionMode = async (requestedMode: StudioVisualMode = visualMode) => {
     if (text.trim().length < 2) {
       setNotice('اكتب الفكرة أولًا، وبعدها اترك كل القرار للمخرج الذكي.')
       textRef.current?.focus()
       return
     }
     if (zeroDecisionBusy) return
+    setVisualMode(requestedMode)
     setZeroDecisionBusy(true)
     setZeroDecision(null)
     setReleasePack([])
     setCampaign(null)
+    setVisualFailure('')
+    setGeneratedPrompt('')
     setZeroDecisionPhase('understand')
     setNotice('أفهم المعنى العميق للفكرة الآن… لا أبحث عن شكل جميل فقط، بل عن مشهد يلامس الإنسان.')
     try {
@@ -1576,41 +1637,88 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       let metadata: { source?: string; owner?: string; license?: string; description?: string } | undefined
 
       setZeroDecisionPhase('prompt')
-      setNotice('أكتب الآن توجيهًا بصريًا أصليًا يليق باسمك، بعيدًا عن الصور المستهلكة والكليشيهات.')
-      try {
-        setZeroDecisionPhase('image')
-        const generated = await requestGeneratedStudioImage()
+      setNotice(requestedMode === 'generate'
+        ? 'أكتب توجيهًا بصريًا أصليًا ثم أرسله إلى Cloudflare لصناعة مشهد جديد من الصفر — بلا أي انتقال خفي إلى Pexels.'
+        : 'أحوّل الفكرة إلى عبارات بحث تحريرية، ثم أفحص الصور الجاهزة وأختار الأقوى من المصادر الموثقة.')
+      setZeroDecisionPhase('image')
+
+      if (requestedMode === 'generate') {
+        let generated: GeneratedStudioImage | null = null
+        let lastError: unknown = null
+        for (let attempt = 0; attempt < 2 && !generated; attempt += 1) {
+          const serial = ++generationSerialRef.current
+          setNotice(attempt === 0
+            ? 'Cloudflare يصنع الصورة الأصلية الآن… لن أستخدم صورة جاهزة مكانها.'
+            : 'المحاولة الأولى لم تكتمل؛ أعيد التوليد ببذرة واستعارة بصرية مختلفتين تمامًا.')
+          try {
+            generated = await requestGeneratedStudioImage({
+              regenerationId: `zero-${Date.now()}-${serial}-${attempt}`,
+              variation: FRESH_GENERATION_VARIATIONS[serial % FRESH_GENERATION_VARIATIONS.length],
+            })
+          } catch (error) {
+            lastError = error
+          }
+        }
+        if (!generated) {
+          const failure = describeGeneratorFailure(lastError)
+          setVisualOrigin('none')
+          setVisualFailure(failure)
+          throw new Error(`studio_visual_failure:${failure}`)
+        }
         installGeneratedImage(generated)
         passport = generated.passport
         metadata = generated.metadata
-      } catch {
-        setNotice('لم يكتمل التوليد في المهلة الآمنة؛ أنتقل فورًا إلى أقوى صورة موثقة بدل أن أعلّق الاستوديو.')
-        try {
-          const query = (externalQuery || visualSearchPlan.queries[0] || visualSearchPlan.headline).trim()
-          const queryPlan = { ...visualSearchPlan, queries: [query, ...visualSearchPlan.queries.filter((item) => item !== query)] }
-          const rawResults = await searchExternalVisualSources(queryPlan, 12)
-          const verified = await verifyExternalVisuals(rawResults, 8)
-          setExternalVisuals(verified)
-          const best = verified[0]
-          if (best) {
-            const analyzed = await analyzeStudioImageFromUrl(best.imageUrl || best.thumbnailUrl, best.title)
-            if (analyzed) {
-              passport = analyzed
-              metadata = { source: best.pageUrl || best.imageUrl, owner: best.author, license: best.license, description: best.description || best.title }
-              setImagePassport(analyzed)
-              setImageDescription(metadata.description || '')
-              setImageSource(metadata.source || '')
-              setImageOwner(metadata.owner || '')
-              setImageLicense(metadata.license || '')
-            }
-          }
-        } catch { /* التصميم الطباعي يبقى مسارًا صالحًا بدل إيقاف الدورة */ }
+      } else {
+        setNotice('أبحث الآن عن صورة جاهزة قوية، ثم أتحقق من صلاحية رابطها ومصدرها قبل أن تدخل التصميم.')
+        const queries = [...new Set([
+          externalQuery,
+          visualSearchPlan.queries[0],
+          visualSearchPlan.englishQueries[0],
+          visualSearchPlan.headline,
+        ].map((item) => String(item || '').trim()).filter(Boolean))].slice(0, 3)
+        const merged = new Map<string, ExternalVisualResult>()
+        for (const query of queries) {
+          try {
+            const queryPlan = { ...visualSearchPlan, queries: [query, ...visualSearchPlan.queries.filter((item) => item !== query)] }
+            const rawResults = await searchExternalVisualSources(queryPlan, 12)
+            const verified = await verifyExternalVisuals(rawResults, 8)
+            for (const item of verified) merged.set(item.id, item)
+            if (merged.size >= 8) break
+          } catch { /* نكمل بالاستعلام التالي بدل تعليق الدورة */ }
+        }
+        const verified = [...merged.values()].sort((left, right) => right.score - left.score)
+        setExternalVisuals(verified)
+        let chosen: ExternalVisualResult | null = null
+        let resolved: Awaited<ReturnType<typeof resolveExternalVisualPassport>> = null
+        for (const candidate of verified.slice(0, 6)) {
+          resolved = await resolveExternalVisualPassport(candidate)
+          if (resolved) { chosen = candidate; break }
+        }
+        if (!chosen || !resolved) {
+          const failure = 'لم أجد صورة جاهزة صالحة وموثقة لهذه الفكرة ضمن المهلة. لم أستبدلها بصورة مولدة أو بتصميم قديم.'
+          setVisualOrigin('none')
+          setVisualFailure(failure)
+          throw new Error(`studio_visual_failure:${failure}`)
+        }
+        passport = resolved.passport
+        metadata = resolved.metadata
+        setImagePassport(passport)
+        setImageDescription(metadata.description || chosen.title)
+        setImageSource(metadata.source || chosen.pageUrl || chosen.imageUrl)
+        setImageOwner(metadata.owner || chosen.author)
+        setImageLicense(metadata.license || chosen.license)
+        setGeneratedModel('')
+        setGeneratedAt('')
+        setGeneratedPrompt('')
+        setVisualOrigin('ready')
+        setVisualFailure('')
+        setNotice(`اختار المخرج صورة جاهزة من ${chosen.providerLabel} بعد فحص ${verified.length} مرشحين صالحين.`)
       }
 
       setZeroDecisionPhase('compose')
       setNotice('أبني عشرات الاحتمالات في الخلفية، وأقصي المتشابه والضعيف قبل أن تراه.')
-      const autoPack = await runAutopilot({ passport, metadata, keepStage: true, quiet: true })
-      const champion = autoPack[0]?.plan || bestPlanForRelease()
+      const autoPack = await runAutopilot({ passport, metadata, keepStage: true, quiet: true, allowExternalSearch: false })
+      const champion = autoPack[0]?.plan || null
       if (!champion) throw new Error('no_champion')
 
       setZeroDecisionPhase('critic')
@@ -1633,6 +1741,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         approved,
         campaignReady: Boolean(completeCampaign?.ready),
         campaignQuality: completeCampaign?.qualityScore || 0,
+        visualOrigin: requestedMode === 'generate' ? 'generated' : 'ready',
         note: approved.id === 'viral'
           ? 'اختار النظام النسخة الأعلى توقفًا لأن الفكرة تحتاج لحظة بصرية تسبق القراءة، مع الحفاظ على الوقار.'
           : approved.id === 'safer'
@@ -1645,16 +1754,23 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       setStage('directions')
       setZeroDecisionPhase('done')
       teachTaste(approved.plan, 1)
-      setNotice('انتهى القرار الكامل. أمامك الآن تصميم واحد معتمد — تدخلك اختياري ولا يبدأ إلا من تبويب التحرير.')
-    } catch {
+      setNotice(requestedMode === 'generate'
+        ? 'اكتمل التوليد الحقيقي من الصفر، ثم حُسم أفضل إخراج. الصورة المعروضة مولدة وليست من Pexels.'
+        : 'اكتمل مسار الصورة الجاهزة، ثم حُسم أفضل إخراج. المصدر والترخيص ظاهران بوضوح.')
+    } catch (error) {
       setZeroDecisionPhase('idle')
-      setNotice('تعذر إكمال الدورة هذه المرة من دون خفض المستوى. أعد المحاولة؛ النظام لم يعتمد نتيجة ضعيفة.')
+      const raw = error instanceof Error ? error.message : ''
+      const failure = raw.startsWith('studio_visual_failure:')
+        ? raw.slice('studio_visual_failure:'.length)
+        : 'تعذر إكمال الدورة هذه المرة من دون خفض المستوى. بقيت النتيجة السابقة كما هي ولم يعتمد النظام نتيجة ضعيفة.'
+      setVisualFailure(failure)
+      setNotice(failure)
     } finally {
       setZeroDecisionBusy(false)
     }
   }
 
-  const runAutopilot = async (options: { passport?: StudioImagePassport | null; metadata?: { source?: string; owner?: string; license?: string; description?: string }; keepStage?: boolean; quiet?: boolean } = {}): Promise<AutoPilotCandidate[]> => {
+  const runAutopilot = async (options: { passport?: StudioImagePassport | null; metadata?: { source?: string; owner?: string; license?: string; description?: string }; keepStage?: boolean; quiet?: boolean; allowExternalSearch?: boolean } = {}): Promise<AutoPilotCandidate[]> => {
     if (text.trim().length < 2) {
       setNotice('اكتب العنوان أولًا كي يبني الطيار الآلي خمس نهايات عالمية.')
       textRef.current?.focus()
@@ -1666,11 +1782,12 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       setCommandParse(parsed.understood.length ? parsed : null)
       const nextGeneration = generation + 1
       const localHistory = loadHistory()
-      let passport = options.passport || imagePassport
-      let sourceMeta: { source?: string; owner?: string; license?: string; description?: string } | undefined = options.metadata || (imagePassport
+      const hasPassportOverride = Object.prototype.hasOwnProperty.call(options, 'passport')
+      let passport = hasPassportOverride ? options.passport ?? null : imagePassport
+      let sourceMeta: { source?: string; owner?: string; license?: string; description?: string } | undefined = options.metadata || (!hasPassportOverride && imagePassport
         ? { source: imageSource, owner: imageOwner, license: imageLicense, description: imageDescription }
         : undefined)
-      if (!passport) {
+      if (!passport && options.allowExternalSearch !== false) {
         let best = bestExternalVisual
         if (!best && hasInput) {
           try {
@@ -1804,10 +1921,15 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   }, [])
 
   const approvedPlan = selected || zeroDecision?.approved.plan || releasePack[0]?.plan || autopilotPack[0]?.plan || plans[0] || null
+  const approvedHero = approvedPlan?.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background')
+  const approvedVisualOrigin: StudioVisualOrigin = zeroDecision?.visualOrigin || visualOrigin
+  const approvedImageSource = approvedHero?.sourceUrl || imageSource
+  const approvedImageOwner = approvedHero?.owner || imageOwner
+  const approvedImageLicense = approvedHero?.license || imageLicense
   const zeroDecisionSteps: { id: ZeroDecisionPhase; label: string; note: string }[] = [
     { id: 'understand', label: 'فهم المعنى', note: 'القضية والجمهور والأثر' },
-    { id: 'prompt', label: 'إخراج الفكرة', note: 'استعارة بصرية غير متوقعة' },
-    { id: 'image', label: 'خلق الصورة', note: 'توليد أصلي أو بديل موثق' },
+    { id: 'prompt', label: 'إخراج الفكرة', note: visualMode === 'generate' ? 'برومبت فني أصلي ومختلف' : 'عبارات بحث تحريرية ذكية' },
+    { id: 'image', label: visualMode === 'generate' ? 'توليد الصورة' : 'انتقاء الصورة', note: visualMode === 'generate' ? 'Cloudflare فقط · بلا بديل خفي' : 'مصدر جاهز وموثق فقط' },
     { id: 'compose', label: 'بناء التكوين', note: 'عشرات الاحتمالات في الخلفية' },
     { id: 'critic', label: 'النقد العالمي', note: 'قراءة وهيبة وأصالة' },
     { id: 'campaign', label: 'الحملة', note: 'مقاسات وسرد متكامل' },
@@ -1836,12 +1958,12 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-white/70 px-3 py-1.5 text-[.62rem] font-black uppercase tracking-[.18em] text-accent shadow-sm backdrop-blur">Zero-Decision Creative Director</div>
               <h2 className="mt-4 font-display text-3xl font-bold leading-tight text-ink md:text-5xl">اكتب الفكرة… وأنا أتولى الباقي.</h2>
-              <p className="mt-4 max-w-2xl text-[.88rem] leading-loose text-soft md:text-[.95rem]">لا قوالب ولا أسئلة تقنية ولا خيارات تربكك. المخرج يفهم المعنى، يكتب التوجيه البصري، يولّد أو ينتقي الصورة، يبني عشرات الاحتمالات، ينتقدها، ثم يعرض لك نتيجة واحدة معتمدة. تدخلك يبدأ فقط عندما تفتح التحرير.</p>
+              <p className="mt-4 max-w-2xl text-[.88rem] leading-loose text-soft md:text-[.95rem]">اختر مسار الصورة بوضوح: <strong className="text-ink">توليد أصلي</strong> من Cloudflare أو <strong className="text-ink">صورة جاهزة موثقة</strong>. لا خلط ولا انتقال خفي بينهما؛ بعدها يتولى المخرج كل شيء ويعرض نتيجة واحدة معتمدة.</p>
             </div>
             <div className="grid min-w-[230px] gap-2 sm:grid-cols-2 md:min-w-[340px]">
-              <span className="rounded-2xl border border-hair bg-white/75 px-4 py-3 text-[.68rem] text-soft shadow-sm backdrop-blur"><strong className="block text-[.76rem] text-ink">Cloudflare Workers AI</strong>توليد صورة أصلية من الفكرة</span>
+              <span className="rounded-2xl border border-hair bg-white/75 px-4 py-3 text-[.68rem] text-soft shadow-sm backdrop-blur"><strong className="block text-[.76rem] text-ink">مسار التوليد</strong>Cloudflare فقط · صورة جديدة من الصفر</span>
               <span className="rounded-2xl border border-hair bg-white/75 px-4 py-3 text-[.68rem] text-soft shadow-sm backdrop-blur"><strong className="block text-[.76rem] text-ink">قرار صفري</strong>أفضل نتيجة واحدة فقط</span>
-              <span className="rounded-2xl border border-hair bg-white/75 px-4 py-3 text-[.68rem] text-soft shadow-sm backdrop-blur"><strong className="block text-[.76rem] text-ink">مصادر احتياطية</strong>Pexels · Wikimedia · Openverse</span>
+              <span className="rounded-2xl border border-hair bg-white/75 px-4 py-3 text-[.68rem] text-soft shadow-sm backdrop-blur"><strong className="block text-[.76rem] text-ink">مسار الجاهز</strong>Pexels · Wikimedia · Openverse</span>
               <span className="rounded-2xl border border-hair bg-white/75 px-4 py-3 text-[.68rem] text-soft shadow-sm backdrop-blur"><strong className="block text-[.76rem] text-ink">محركات مخفية</strong>الناقد · الحملة · عدم التكرار</span>
             </div>
           </div>
@@ -1860,10 +1982,25 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                   <summary className="cursor-pointer text-[.72rem] font-semibold text-soft">أضف سياقًا اختياريًا فقط عند الحاجة</summary>
                   <textarea className="mt-3 min-h-24 w-full resize-y rounded-xl border border-hair bg-canvas px-4 py-3 text-[.82rem] leading-loose text-ink outline-none focus:border-accent" value={context} onChange={(event) => setContext(event.target.value)} placeholder="الجمهور، المناسبة، الرسالة التي يجب أن تبقى، أو أي حساسية ثقافية." />
                 </details>
-                <button type="button" onClick={() => void runZeroDecisionMode()} disabled={zeroDecisionBusy || text.trim().length < 2} className="group relative mt-5 w-full overflow-hidden rounded-[1.45rem] bg-ink px-6 py-5 text-right text-white shadow-[0_22px_50px_rgba(15,23,42,.22)] transition hover:-translate-y-0.5 hover:shadow-[0_28px_70px_rgba(15,23,42,.28)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0">
+                <div className="mt-5 rounded-[1.45rem] border border-hair bg-paper/80 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,.7)]" role="tablist" aria-label="مصدر الصورة">
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <button type="button" role="tab" aria-selected={visualMode === 'generate'} disabled={zeroDecisionBusy} onClick={() => { setVisualMode('generate'); setVisualFailure(''); setNotice('مسار التوليد لا يستخدم Pexels عند الفشل؛ إمّا صورة أصلية حقيقية أو رسالة واضحة بالمشكلة.') }} className={`relative overflow-hidden rounded-[1.15rem] border px-4 py-4 text-right transition ${visualMode === 'generate' ? 'border-ink bg-ink text-white shadow-[0_14px_32px_rgba(15,23,42,.16)]' : 'border-transparent bg-canvas text-ink hover:border-accent/30'}`}>
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[.56rem] font-black uppercase tracking-[.1em] ${visualMode === 'generate' ? 'bg-white/12 text-white' : 'bg-accent/10 text-accent'}`}>AI Original</span>
+                      <strong className="mt-3 block text-[.88rem]">توليد من الصفر</strong>
+                      <span className={`mt-1.5 block text-[.64rem] leading-relaxed ${visualMode === 'generate' ? 'text-white/65' : 'text-soft'}`}>Cloudflare يصنع مشهدًا جديدًا. لا انتقال خفي إلى الصور الجاهزة.</span>
+                    </button>
+                    <button type="button" role="tab" aria-selected={visualMode === 'ready'} disabled={zeroDecisionBusy} onClick={() => { setVisualMode('ready'); setVisualFailure(''); setNotice('مسار الجاهز يبحث فقط في المصادر المفتوحة، ويفصح عن المصدر والترخيص بوضوح.') }} className={`relative overflow-hidden rounded-[1.15rem] border px-4 py-4 text-right transition ${visualMode === 'ready' ? 'border-accent bg-accent text-white shadow-[0_14px_32px_rgba(62,92,120,.18)]' : 'border-transparent bg-canvas text-ink hover:border-accent/30'}`}>
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[.56rem] font-black uppercase tracking-[.1em] ${visualMode === 'ready' ? 'bg-white/14 text-white' : 'bg-paper text-soft'}`}>Curated Source</span>
+                      <strong className="mt-3 block text-[.88rem]">صورة جاهزة</strong>
+                      <span className={`mt-1.5 block text-[.64rem] leading-relaxed ${visualMode === 'ready' ? 'text-white/72' : 'text-soft'}`}>اختيار ذكي من Pexels وWikimedia وOpenverse بعد فحص الرابط.</span>
+                    </button>
+                  </div>
+                </div>
+                <button type="button" onClick={() => void runZeroDecisionMode(visualMode)} disabled={zeroDecisionBusy || text.trim().length < 2} className="group relative mt-3 w-full overflow-hidden rounded-[1.45rem] bg-ink px-6 py-5 text-right text-white shadow-[0_22px_50px_rgba(15,23,42,.22)] transition hover:-translate-y-0.5 hover:shadow-[0_28px_70px_rgba(15,23,42,.28)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0">
                   <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_0%,rgba(255,255,255,.22),transparent_36%)] opacity-80" />
-                  <span className="relative flex items-center justify-between gap-4"><span><strong className="block text-[1rem] md:text-[1.08rem]">{zeroDecisionBusy ? 'أصنع النتيجة المعتمدة الآن…' : 'صمّم لي — واتخذ القرار كاملًا'}</strong><span className="mt-1 block text-[.68rem] leading-relaxed text-white/62">صورة أصلية · إخراج بصري · ناقد عالمي · حملة · أفضل نسخة فقط</span></span><span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/15 bg-white/10 text-xl transition group-hover:translate-x-[-3px]">←</span></span>
+                  <span className="relative flex items-center justify-between gap-4"><span><strong className="block text-[1rem] md:text-[1.08rem]">{zeroDecisionBusy ? (visualMode === 'generate' ? 'أولّد المشهد وأصنع النتيجة…' : 'أنتقي الصورة وأصنع النتيجة…') : visualMode === 'generate' ? 'ولّد من الصفر — وصمّم لي' : 'اختر الأقوى الجاهز — وصمّم لي'}</strong><span className="mt-1 block text-[.68rem] leading-relaxed text-white/62">{visualMode === 'generate' ? 'Cloudflare فقط · صورة أصلية · لا Pexels عند الفشل' : 'مصدر موثق · فحص تلقائي · أفضل صورة جاهزة فقط'}</span></span><span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/15 bg-white/10 text-xl transition group-hover:translate-x-[-3px]">←</span></span>
                 </button>
+                {visualFailure && <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[.72rem] leading-relaxed text-rose-800"><strong className="block">المسار لم يبدّل المصدر من وراءك</strong><span className="mt-1 block">{visualFailure}</span></div>}
                 {notice && <p className="mt-4 rounded-2xl border border-accent/20 bg-accent/[.045] px-4 py-3 text-[.76rem] leading-relaxed text-accent">{notice}</p>}
               </div>
               <div className="border-t border-hair bg-[linear-gradient(180deg,rgba(62,92,120,.055),rgba(255,255,255,.3))] p-5 md:p-7 xl:border-r xl:border-t-0">
@@ -2037,8 +2174,12 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <div><div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[.62rem] font-black uppercase tracking-[.12em] text-emerald-700">Approved by Zero-Decision</div><h3 className="mt-4 font-display text-3xl font-bold leading-tight text-ink">هذه هي النتيجة التي اعتمدها المخرج.</h3><p className="mt-3 text-[.82rem] leading-loose text-soft">{zeroDecision?.note || 'تم اختيارها بعد مقارنة الجودة وقوة التوقف والقراءة والأصالة وملاءمة الفكرة والجمهور.'}</p></div>
               <div className="grid grid-cols-3 gap-2"><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{approvedPlan.quality?.score || 0}٪</strong><span className="text-[.62rem] text-soft">جودة التكوين</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{predictEngagement(approvedPlan).score}٪</strong><span className="text-[.62rem] text-soft">قوة التوقف</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{zeroDecision?.campaignQuality || campaign?.qualityScore || 0}٪</strong><span className="text-[.62rem] text-soft">جودة الحملة</span></div></div>
               <div className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.66rem] font-bold text-accent">لماذا هذه النسخة؟</p><ul className="mt-2 grid gap-1.5">{approvedPlan.rationale.slice(0,4).map((line) => <li key={line} className="text-[.7rem] leading-relaxed text-ink/80">• {line}</li>)}</ul></div>
-              <div className="rounded-2xl border border-hair bg-canvas p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.66rem] font-bold text-accent">الصورة والمصدر</p><p className="mt-1 text-[.68rem] leading-relaxed text-soft">{imageOwner || 'تكوين طباعي أصلي'} · {imageLicense || 'لا توجد صورة خارجية'}</p></div><span className="rounded-full border border-hair px-3 py-1 text-[.6rem] text-soft">{imageSource?.includes('cloudflare') || imageOwner?.includes('Cloudflare') ? 'مولدة بالذكاء الاصطناعي' : imageSource ? 'مصدر موثق' : 'بلا صورة'}</span></div></div>
-              <div className="grid gap-2 sm:grid-cols-2"><button type="button" className={`${primary} rounded-[1.2rem] py-3.5`} onClick={() => { setSelected(approvedPlan); setStage('edit') }}>افتح التحرير</button><button type="button" className={`${ghost} rounded-[1.2rem] py-3.5`} onClick={() => handleStageChange('publish')}>انتقل إلى النشر</button><button type="button" className={`${ghost} sm:col-span-2`} onClick={() => void runZeroDecisionMode()} disabled={zeroDecisionBusy}>{zeroDecisionBusy ? 'يعيد الإخراج من الصفر…' : 'أعد الإخراج من الصفر'}</button></div>
+              <div className={`overflow-hidden rounded-2xl border p-4 ${approvedVisualOrigin === 'generated' ? 'border-violet-200 bg-[linear-gradient(135deg,rgba(124,58,237,.07),rgba(255,255,255,.7))]' : approvedVisualOrigin === 'ready' ? 'border-accent/25 bg-[linear-gradient(135deg,rgba(62,92,120,.07),rgba(255,255,255,.7))]' : 'border-hair bg-canvas'}`}>
+                <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.66rem] font-bold text-accent">هوية الصورة</p><h4 className="mt-1 text-[.88rem] font-bold text-ink">{approvedVisualOrigin === 'generated' ? 'مولدة من الصفر بالذكاء الاصطناعي' : approvedVisualOrigin === 'ready' ? 'صورة جاهزة منتقاة وموثقة' : 'تكوين بصري بلا صورة'}</h4><p className="mt-1.5 text-[.66rem] leading-relaxed text-soft">{approvedImageOwner || 'لا يوجد مالك خارجي'} · {approvedImageLicense || 'لا يوجد ترخيص خارجي'}</p></div><span className={`rounded-full px-3 py-1.5 text-[.6rem] font-black ${approvedVisualOrigin === 'generated' ? 'bg-violet-100 text-violet-700' : approvedVisualOrigin === 'ready' ? 'bg-accent/10 text-accent' : 'bg-paper text-soft'}`}>{approvedVisualOrigin === 'generated' ? 'AI GENERATED' : approvedVisualOrigin === 'ready' ? 'READY SOURCE' : 'TYPOGRAPHIC'}</span></div>
+                {approvedVisualOrigin === 'generated' && <div className="mt-3 grid gap-2 rounded-xl border border-violet-100 bg-white/55 px-3 py-2.5 text-[.62rem] text-soft sm:grid-cols-2"><span><strong className="text-ink">النموذج:</strong> {generatedModel || 'Cloudflare Workers AI'}</span><span><strong className="text-ink">وقت التوليد:</strong> {generatedAt ? new Date(generatedAt).toLocaleString('ar-KW') : 'هذه الجلسة'}</span></div>}
+                {approvedImageSource && <p dir="ltr" className="mt-3 truncate text-left text-[.58rem] text-accent">{approvedImageSource}</p>}
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2"><button type="button" className={`${primary} rounded-[1.2rem] py-3.5`} onClick={() => { setSelected(approvedPlan); setStage('edit') }}>افتح التحرير</button><button type="button" className={`${ghost} rounded-[1.2rem] py-3.5`} onClick={() => handleStageChange('publish')}>انتقل إلى النشر</button><button type="button" className="rounded-[1.2rem] border border-violet-200 bg-violet-50 px-4 py-3 text-[.72rem] font-bold text-violet-700 transition hover:border-violet-400 disabled:opacity-50" onClick={() => void runZeroDecisionMode('generate')} disabled={zeroDecisionBusy}>{zeroDecisionBusy && visualMode === 'generate' ? 'يولّد من الصفر…' : 'أعد التوليد من الصفر'}</button><button type="button" className="rounded-[1.2rem] border border-accent/25 bg-accent/[.055] px-4 py-3 text-[.72rem] font-bold text-accent transition hover:border-accent/50 disabled:opacity-50" onClick={() => void runZeroDecisionMode('ready')} disabled={zeroDecisionBusy}>{zeroDecisionBusy && visualMode === 'ready' ? 'يبحث عن جاهز مختلف…' : 'اختر جاهزًا مختلفًا'}</button></div>
             </div>
           </div> : <div className="grid min-h-[360px] place-items-center rounded-[1.6rem] border border-dashed border-hair bg-canvas p-8 text-center"><div><h3 className="font-display text-2xl font-bold text-ink">لا توجد نتيجة معتمدة بعد.</h3><p className="mt-2 text-[.78rem] text-soft">ارجع إلى تبويب الفكرة واضغط «صمّم لي».</p><button type="button" className={`${primary} mt-4`} onClick={() => setStage('idea')}>العودة إلى الفكرة</button></div></div>}
         </section>

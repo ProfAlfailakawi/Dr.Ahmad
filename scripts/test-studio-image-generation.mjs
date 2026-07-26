@@ -15,6 +15,8 @@ const input = {
   negativeSpace: 'generous',
   orientation: 'portrait',
   clientPrompt: '',
+  regenerationId: 'self-test-fresh-1',
+  variation: 'Use a restrained visual paradox and a daring asymmetrical crop.',
 }
 
 const prompt = buildEliteStudioImagePrompt(input)
@@ -22,7 +24,11 @@ assert.ok(prompt.length >= 700, 'The elite prompt must carry a complete art dire
 assert.ok(prompt.length <= 2048, 'The prompt must respect the Cloudflare model limit.')
 assert.match(prompt, /visual metaphor/i)
 assert.match(prompt, /Arabic typography/i)
+assert.match(prompt, /Fresh-generation mandate/i)
 assert.doesNotMatch(prompt, /watermark\s*$/i)
+
+const differentPrompt = buildEliteStudioImagePrompt({ ...input, regenerationId: 'self-test-fresh-2', variation: 'Use a quiet human trace inside monumental negative space.' })
+assert.notEqual(prompt, differentPrompt, 'Fresh regeneration must alter the art direction instead of replaying the same prompt.')
 
 const previousAccount = process.env.CLOUDFLARE_ACCOUNT_ID
 const previousToken = process.env.CLOUDFLARE_API_TOKEN
@@ -47,6 +53,8 @@ try {
   assert.match(calledUrl, /\/ai\/run\/@cf\/black-forest-labs\/flux-1-schnell$/)
   assert.match(result.imageUrl, /^data:image\/jpeg;base64,/)
   assert.equal(result.model, '@cf/black-forest-labs/flux-1-schnell')
+  assert.equal(result.requestId, input.regenerationId)
+  assert.ok(Number.isInteger(result.seed))
   console.log('Studio image generation self-test passed.')
 } finally {
   if (previousAccount == null) delete process.env.CLOUDFLARE_ACCOUNT_ID

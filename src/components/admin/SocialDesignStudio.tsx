@@ -107,60 +107,31 @@ type ZeroDecisionSummary = {
   visualOrigin: StudioVisualOrigin
 }
 
+type StudioImageMetadata = {
+  source?: string
+  owner?: string
+  license?: string
+  description?: string
+  visualWorld?: string
+  visualWorldLabel?: string
+  imageTreatment?: NonNullable<PlanOverlay['imageTreatment']>
+  layoutHint?: LayoutFamilyId
+  paletteHint?: PaletteId
+  conceptKey?: string
+  conceptLabel?: string
+  semanticScene?: string
+  relevanceScore?: number | null
+  relevanceReason?: string
+  generationAttempts?: number
+}
+
 type GeneratedStudioImage = {
   passport: StudioImagePassport
-  metadata: { source?: string; owner?: string; license?: string; description?: string }
+  metadata: StudioImageMetadata
   prompt: string
   model: string
   generatedAt?: string
   requestId?: string
-}
-
-type GeneratedImagePayload = {
-  imageBase64?: string
-  mimeType?: string
-  imageBytes?: number
-  imageUrl?: string
-  sourceUrl?: string
-  owner?: string
-  license?: string
-  description?: string
-  prompt?: string
-  model?: string
-  generatedAt?: string
-  requestId?: string
-}
-
-function generatedImageFileFromPayload(payload: GeneratedImagePayload, fileName: string): File | null {
-  let encoded = String(payload.imageBase64 || '').trim()
-  let mimeType = String(payload.mimeType || 'image/jpeg').split(';', 1)[0].trim().toLowerCase()
-
-  if (!encoded && payload.imageUrl?.startsWith('data:image/')) {
-    const match = payload.imageUrl.match(/^data:(image\/[a-z0-9.+-]+)(?:;charset=[^;,]+)?;base64,(.+)$/is)
-    if (match) {
-      mimeType = match[1].toLowerCase()
-      encoded = match[2]
-    }
-  }
-
-  encoded = encoded.replace(/\s+/g, '')
-  if (!encoded || !/^image\/(jpeg|png|webp)$/i.test(mimeType)) return null
-
-  try {
-    const binary = window.atob(encoded)
-    if (binary.length < 512 || binary.length > 15_000_000) return null
-    const bytes = new Uint8Array(binary.length)
-    const chunk = 32_768
-    for (let start = 0; start < binary.length; start += chunk) {
-      const end = Math.min(binary.length, start + chunk)
-      for (let index = start; index < end; index += 1) bytes[index] = binary.charCodeAt(index)
-    }
-    const extension = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg'
-    const safeName = fileName.replace(/[^\p{L}\p{N}._-]+/gu, '-').replace(/^-+|-+$/g, '') || 'generated-image'
-    return new File([bytes], safeName.includes('.') ? safeName : `${safeName}.${extension}`, { type: mimeType })
-  } catch {
-    return null
-  }
 }
 
 type StudioVisualMode = 'generate' | 'ready'
@@ -537,6 +508,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [visualFailure, setVisualFailure] = useState('')
   const [generatedModel, setGeneratedModel] = useState('')
   const [generatedAt, setGeneratedAt] = useState('')
+  const [generatedVisualWorld, setGeneratedVisualWorld] = useState('')
+  const [generatedRelevanceScore, setGeneratedRelevanceScore] = useState<number | null>(null)
+  const [generatedRelevanceReason, setGeneratedRelevanceReason] = useState('')
   const generationSerialRef = useRef(0)
   const [qualityThreshold, setQualityThreshold] = useState(() => Number(localStorage.getItem(QUALITY_THRESHOLD_KEY) || 82))
   /* البصمة البصرية: لوحةٌ مستخرجةٌ من صورةٍ محلية تكسو كل الاتجاهات الحالية
@@ -665,8 +639,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     if (/not configured|account is not configured|503/i.test(message)) return 'مسار dr-api يعمل، لكن بيانات Cloudflare Workers AI غير مربوطة في بيئة Cloud Run. لم أستبدل الصورة بصورة جاهزة كي يبقى الفرق واضحًا.'
     if (/timed out|abort|504/i.test(message)) return 'انتهت مهلة توليد Cloudflare قبل وصول الصورة. لم ينتقل النظام إلى Pexels تلقائيًا.'
     if (/busy|429/i.test(message)) return 'خدمة التوليد مشغولة الآن. انتظر قليلًا ثم استخدم «أعد التوليد من الصفر».'
-    if (/generator_image_analysis_failed|analysis_failed/i.test(message)) return 'وصلت الصورة الأصلية من Cloudflare، لكن المتصفح لم يفك ترميزها محليًا. تم إصلاح مسار Base64 المباشر لمنع هذه المشكلة.'
-    if (/no usable image|generator_empty|empty/i.test(message)) return 'ردّ Cloudflare لم يحمل بيانات صورة قابلة للاستخدام. يظهر هذا التنبيه بدل التحويل الخفي إلى Pexels.'
+    if (/no usable image|empty|analysis_failed/i.test(message)) return 'وصل رد من خدمة التوليد لكنه لم يتضمن صورة صالحة للاستخدام.'
     return `تعذّر توليد الصورة الأصلية: ${message || 'فشل غير معروف في خدمة التوليد'}. لم يستخدم النظام صورة جاهزة بدلًا منها.`
   }
 
@@ -959,7 +932,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     if (!user) throw new Error('admin_auth_required')
     const token = await user.getIdToken()
     const controller = new AbortController()
-    const timer = window.setTimeout(() => controller.abort(), 56_000)
+    const timer = window.setTimeout(() => controller.abort(), 110_000)
     try {
       const requestBody = JSON.stringify({
         idea: text.trim(),
@@ -996,18 +969,28 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         const payload = await response.json().catch(() => ({})) as { error?: string; detail?: string; code?: string }
         throw new Error([payload.error, payload.detail, payload.code, `HTTP ${response.status}`].filter(Boolean).join(' · '))
       }
-      const payload = await response.json() as GeneratedImagePayload
-      const generatedFile = generatedImageFileFromPayload(payload, `dr-ahmad-ai-${Date.now()}`)
-      let passport = generatedFile ? await analyzeStudioImageFromFile(generatedFile) : null
-      if (!passport && payload.imageUrl) passport = await analyzeStudioImageFromUrl(payload.imageUrl, `dr-ahmad-ai-${Date.now()}.jpg`)
-      if (!passport) throw new Error(payload.imageBase64 || payload.imageUrl ? 'generator_image_analysis_failed' : 'generator_empty')
+      const payload = await response.json() as { imageUrl?: string; sourceUrl?: string; owner?: string; license?: string; description?: string; prompt?: string; model?: string; generatedAt?: string; requestId?: string; visualWorld?: string; visualWorldLabel?: string; imageTreatment?: NonNullable<PlanOverlay['imageTreatment']>; layoutHint?: LayoutFamilyId; paletteHint?: PaletteId; conceptKey?: string; conceptLabel?: string; semanticScene?: string; relevanceScore?: number | null; relevanceReason?: string; generationAttempts?: number }
+      if (!payload.imageUrl) throw new Error('generator_empty')
+      const passport = await analyzeStudioImageFromUrl(payload.imageUrl, `dr-ahmad-ai-${Date.now()}.jpg`)
+      if (!passport) throw new Error('generator_image_analysis_failed')
       return {
         passport,
         metadata: {
-          source: payload.sourceUrl || 'Cloudflare Workers AI',
-          owner: payload.owner || 'Cloudflare Workers AI',
-          license: payload.license || 'AI-generated image — review model terms',
+          source: payload.sourceUrl || 'مولد الصور الداخلي',
+          owner: payload.owner || 'توليد أصلي داخل الاستوديو',
+          license: payload.license || 'نموذج FLUX',
           description: payload.description || creativeBrief.issue,
+          visualWorld: payload.visualWorld,
+          visualWorldLabel: payload.visualWorldLabel,
+          imageTreatment: payload.imageTreatment,
+          layoutHint: payload.layoutHint,
+          paletteHint: payload.paletteHint,
+          conceptKey: payload.conceptKey,
+          conceptLabel: payload.conceptLabel,
+          semanticScene: payload.semanticScene,
+          relevanceScore: payload.relevanceScore,
+          relevanceReason: payload.relevanceReason,
+          generationAttempts: payload.generationAttempts,
         },
         prompt: payload.prompt || visualSearchPlan.generationPrompt,
         model: payload.model || '@cf/black-forest-labs/flux-1-schnell',
@@ -1022,12 +1005,15 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const installGeneratedImage = (generated: GeneratedStudioImage) => {
     setImagePassport(generated.passport)
     setImageDescription(generated.metadata.description || creativeBrief.issue)
-    setImageSource(generated.metadata.source || 'Cloudflare Workers AI')
-    setImageOwner(generated.metadata.owner || 'Cloudflare Workers AI')
-    setImageLicense(generated.metadata.license || 'AI-generated image')
+    setImageSource(generated.metadata.source || 'مولد الصور الداخلي')
+    setImageOwner(generated.metadata.owner || 'توليد أصلي داخل الاستوديو')
+    setImageLicense(generated.metadata.license || 'نموذج FLUX')
     setGeneratedPrompt(generated.prompt)
     setGeneratedModel(generated.model)
     setGeneratedAt(generated.generatedAt || new Date().toISOString())
+    setGeneratedVisualWorld(generated.metadata.visualWorldLabel || '')
+    setGeneratedRelevanceScore(typeof generated.metadata.relevanceScore === 'number' ? generated.metadata.relevanceScore : null)
+    setGeneratedRelevanceReason(generated.metadata.relevanceReason || '')
     setVisualOrigin('generated')
     setVisualFailure('')
   }
@@ -1085,11 +1071,12 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     plan: CompositionPlan,
     treatment: NonNullable<PlanOverlay['imageTreatment']>,
     passport: StudioImagePassport,
-    metadata?: { source?: string; owner?: string; license?: string; description?: string },
+    metadata?: StudioImageMetadata,
   ) => {
     const roleId = `hero-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
     const zone = cinematicTextZone(passport)
     const existing = (plan.overlays || []).filter((item) => item.imageRole !== 'background')
+    const resolvedTreatment = metadata?.imageTreatment || treatment
     const background: PlanOverlay = {
       id: roleId,
       kind: 'image',
@@ -1115,25 +1102,25 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       focalY: passport.focalY,
       mask: 'none',
       imageRole: 'background',
-      imageTreatment: treatment,
+      imageTreatment: resolvedTreatment,
       textZone: zone,
-      vignette: treatment === 'documentary' ? .22 : treatment === 'editorial' ? .32 : treatment === 'duotone' ? .38 : .46,
-      readabilityShade: treatment === 'documentary' ? .58 : treatment === 'editorial' ? .68 : .76,
+      vignette: resolvedTreatment === 'documentary' ? .22 : resolvedTreatment === 'editorial' ? .32 : resolvedTreatment === 'duotone' ? .38 : .46,
+      readabilityShade: resolvedTreatment === 'documentary' ? .58 : resolvedTreatment === 'editorial' ? .68 : .76,
     }
-    const palette: PaletteId = treatment === 'duotone' ? 'graphite-gold' : 'brand-night'
-    const layout: LayoutFamilyId = treatment === 'documentary' ? 'editorial-axis' : treatment === 'editorial' ? 'quote-stage' : 'cinematic-window'
+    const palette: PaletteId = metadata?.paletteHint || (resolvedTreatment === 'duotone' ? 'graphite-gold' : 'brand-night')
+    const layout: LayoutFamilyId = metadata?.layoutHint || (resolvedTreatment === 'documentary' ? 'editorial-axis' : resolvedTreatment === 'editorial' ? 'quote-stage' : resolvedTreatment === 'duotone' ? 'quiet-orbit' : 'cinematic-window')
     const next = {
       ...plan,
       layout,
       palette,
       paletteOverride: undefined,
-      density: treatment === 'documentary' ? 'balanced' : 'minimal',
-      framing: treatment === 'editorial' ? 'editorial-folio' : 'cinematic-crop',
+      density: resolvedTreatment === 'documentary' ? 'balanced' : 'minimal',
+      framing: resolvedTreatment === 'editorial' ? 'editorial-folio' : resolvedTreatment === 'documentary' ? 'open-canvas' : 'cinematic-crop',
       overlays: [background, ...existing],
       rationale: [
-        `الصورة أصبحت المسرح الأساسي للتكوين بمعالجة ${treatment === 'cinematic' ? 'سينمائية' : treatment === 'documentary' ? 'وثائقية' : treatment === 'duotone' ? 'ثنائية اللون' : 'تحريرية'}.`,
+        `الصورة أصبحت المسرح الأساسي للتكوين ببصمة ${metadata?.visualWorldLabel || (resolvedTreatment === 'cinematic' ? 'سينمائية' : resolvedTreatment === 'documentary' ? 'وثائقية' : resolvedTreatment === 'duotone' ? 'ثنائية اللون' : 'تحريرية')}.`,
         `اختيرت منطقة النص ${zone === 'right' ? 'يمينًا' : zone === 'left' ? 'يسارًا' : zone === 'top' ? 'أعلى' : zone === 'bottom' ? 'أسفل' : 'في الوسط'} بحسب أهدأ مساحة في الصورة.`,
-        'حافظ المحرك على المصدر والترخيص ونقطة التركيز داخل جواز الصورة.',
+        'حافظ المحرك على بيانات المنشأ داخل جواز الصورة من دون طباعتها فوق العمل البصري.',
         ...(plan.rationale || []).slice(0, 2),
       ],
     } as CompositionPlan
@@ -1142,7 +1129,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const applyImageLedDirection = (
     treatment: NonNullable<PlanOverlay['imageTreatment']>,
     passportOverride?: StudioImagePassport,
-    metadata?: { source?: string; owner?: string; license?: string; description?: string },
+    metadata?: StudioImageMetadata,
   ) => {
     if (!selected) { setNotice('اختر اتجاهًا أولًا، ثم حوّل الصورة إلى مشهد بطولي.'); return }
     const passport = passportOverride || imagePassport
@@ -1618,7 +1605,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
 
   const scorePlan = (plan: CompositionPlan) => Math.round(((plan.quality?.score || 0) * .68) + predictEngagement(plan).score * .22 + plan.novelty * 10)
 
-  const buildReleasePack = async (baseOverride?: CompositionPlan | null, options: { passport?: StudioImagePassport | null; metadata?: { source?: string; owner?: string; license?: string; description?: string }; quiet?: boolean } = {}) => {
+  const buildReleasePack = async (baseOverride?: CompositionPlan | null, options: { passport?: StudioImagePassport | null; metadata?: StudioImageMetadata; quiet?: boolean } = {}) => {
     const base = baseOverride || bestPlanForRelease()
     if (!base) {
       setNotice('ولّد اتجاهًا قويًا أولًا، ثم ابنِ حزمة النشر العليا.')
@@ -1700,7 +1687,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     setNotice('أفهم المعنى العميق للفكرة الآن… لا أبحث عن شكل جميل فقط، بل عن مشهد يلامس الإنسان.')
     try {
       let passport: StudioImagePassport | null = null
-      let metadata: { source?: string; owner?: string; license?: string; description?: string } | undefined
+      let metadata: StudioImageMetadata | undefined
 
       setZeroDecisionPhase('prompt')
       setNotice(requestedMode === 'generate'
@@ -1776,6 +1763,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         setGeneratedModel('')
         setGeneratedAt('')
         setGeneratedPrompt('')
+        setGeneratedVisualWorld('')
+        setGeneratedRelevanceScore(null)
+        setGeneratedRelevanceReason('')
         setVisualOrigin('ready')
         setVisualFailure('')
         setNotice(`اختار المخرج صورة جاهزة من ${chosen.providerLabel} بعد فحص ${verified.length} مرشحين صالحين.`)
@@ -1836,7 +1826,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     }
   }
 
-  const runAutopilot = async (options: { passport?: StudioImagePassport | null; metadata?: { source?: string; owner?: string; license?: string; description?: string }; keepStage?: boolean; quiet?: boolean; allowExternalSearch?: boolean } = {}): Promise<AutoPilotCandidate[]> => {
+  const runAutopilot = async (options: { passport?: StudioImagePassport | null; metadata?: StudioImageMetadata; keepStage?: boolean; quiet?: boolean; allowExternalSearch?: boolean } = {}): Promise<AutoPilotCandidate[]> => {
     if (text.trim().length < 2) {
       setNotice('اكتب العنوان أولًا كي يبني الطيار الآلي خمس نهايات عالمية.')
       textRef.current?.focus()
@@ -1850,7 +1840,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       const localHistory = loadHistory()
       const hasPassportOverride = Object.prototype.hasOwnProperty.call(options, 'passport')
       let passport = hasPassportOverride ? options.passport ?? null : imagePassport
-      let sourceMeta: { source?: string; owner?: string; license?: string; description?: string } | undefined = options.metadata || (!hasPassportOverride && imagePassport
+      let sourceMeta: StudioImageMetadata | undefined = options.metadata || (!hasPassportOverride && imagePassport
         ? { source: imageSource, owner: imageOwner, license: imageLicense, description: imageDescription }
         : undefined)
       if (!passport && options.allowExternalSearch !== false) {
@@ -2242,7 +2232,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <div className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.66rem] font-bold text-accent">لماذا هذه النسخة؟</p><ul className="mt-2 grid gap-1.5">{approvedPlan.rationale.slice(0,4).map((line) => <li key={line} className="text-[.7rem] leading-relaxed text-ink/80">• {line}</li>)}</ul></div>
               <div className={`overflow-hidden rounded-2xl border p-4 ${approvedVisualOrigin === 'generated' ? 'border-violet-200 bg-[linear-gradient(135deg,rgba(124,58,237,.07),rgba(255,255,255,.7))]' : approvedVisualOrigin === 'ready' ? 'border-accent/25 bg-[linear-gradient(135deg,rgba(62,92,120,.07),rgba(255,255,255,.7))]' : 'border-hair bg-canvas'}`}>
                 <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.66rem] font-bold text-accent">هوية الصورة</p><h4 className="mt-1 text-[.88rem] font-bold text-ink">{approvedVisualOrigin === 'generated' ? 'مولدة من الصفر بالذكاء الاصطناعي' : approvedVisualOrigin === 'ready' ? 'صورة جاهزة منتقاة وموثقة' : 'تكوين بصري بلا صورة'}</h4><p className="mt-1.5 text-[.66rem] leading-relaxed text-soft">{approvedImageOwner || 'لا يوجد مالك خارجي'} · {approvedImageLicense || 'لا يوجد ترخيص خارجي'}</p></div><span className={`rounded-full px-3 py-1.5 text-[.6rem] font-black ${approvedVisualOrigin === 'generated' ? 'bg-violet-100 text-violet-700' : approvedVisualOrigin === 'ready' ? 'bg-accent/10 text-accent' : 'bg-paper text-soft'}`}>{approvedVisualOrigin === 'generated' ? 'AI GENERATED' : approvedVisualOrigin === 'ready' ? 'READY SOURCE' : 'TYPOGRAPHIC'}</span></div>
-                {approvedVisualOrigin === 'generated' && <div className="mt-3 grid gap-2 rounded-xl border border-violet-100 bg-white/55 px-3 py-2.5 text-[.62rem] text-soft sm:grid-cols-2"><span><strong className="text-ink">النموذج:</strong> {generatedModel || 'Cloudflare Workers AI'}</span><span><strong className="text-ink">وقت التوليد:</strong> {generatedAt ? new Date(generatedAt).toLocaleString('ar-KW') : 'هذه الجلسة'}</span></div>}
+                {approvedVisualOrigin === 'generated' && <div className="mt-3 grid gap-2 rounded-xl border border-violet-100 bg-white/55 px-3 py-2.5 text-[.62rem] text-soft sm:grid-cols-2"><span><strong className="text-ink">البصمة الفنية:</strong> {generatedVisualWorld || 'يحددها المخرج لكل فكرة'}</span><span><strong className="text-ink">مطابقة المعنى:</strong> {generatedRelevanceScore == null ? 'فحص بصري داخلي' : `${generatedRelevanceScore}٪`}</span>{generatedRelevanceReason && <span className="sm:col-span-2"><strong className="text-ink">حكم المطابقة:</strong> {generatedRelevanceReason}</span>}<span className="sm:col-span-2 text-[.56rem]">بيانات النموذج والمصدر محفوظة في جواز التصميم ولا تُطبع داخل الصورة.</span></div>}
                 {approvedImageSource && <p dir="ltr" className="mt-3 truncate text-left text-[.58rem] text-accent">{approvedImageSource}</p>}
               </div>
               <div className="grid gap-2 sm:grid-cols-2"><button type="button" className={`${primary} rounded-[1.2rem] py-3.5`} onClick={() => { setSelected(approvedPlan); setStage('edit') }}>افتح التحرير</button><button type="button" className={`${ghost} rounded-[1.2rem] py-3.5`} onClick={() => handleStageChange('publish')}>انتقل إلى النشر</button><button type="button" className="rounded-[1.2rem] border border-violet-200 bg-violet-50 px-4 py-3 text-[.72rem] font-bold text-violet-700 transition hover:border-violet-400 disabled:opacity-50" onClick={() => void runZeroDecisionMode('generate')} disabled={zeroDecisionBusy}>{zeroDecisionBusy && visualMode === 'generate' ? 'يولّد من الصفر…' : 'أعد التوليد من الصفر'}</button><button type="button" className="rounded-[1.2rem] border border-accent/25 bg-accent/[.055] px-4 py-3 text-[.72rem] font-bold text-accent transition hover:border-accent/50 disabled:opacity-50" onClick={() => void runZeroDecisionMode('ready')} disabled={zeroDecisionBusy}>{zeroDecisionBusy && visualMode === 'ready' ? 'يبحث عن جاهز مختلف…' : 'اختر جاهزًا مختلفًا'}</button></div>

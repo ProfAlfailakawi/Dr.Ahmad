@@ -117,15 +117,15 @@ export function buildVisualSearchPlan(text: string, context: string, brief: Crea
   const generationPrompt = [
     `Create an unforgettable, museum-grade editorial image for an internationally respected Arab academic and public intellectual.`,
     `Core idea in Arabic: ${brief.issue}.`,
-    `Do not illustrate the sentence literally; translate it into a sophisticated visual metaphor that reveals the human consequence of the idea.`,
+    `Translate the Arabic idea into a semantically exact physical scene before applying style. The educational subject and the central conflict must remain unmistakable even without the headline.`,
     `Emotional register: ${brief.emotion}; intellectually powerful, emotionally truthful, restrained, never sentimental or theatrical.`,
     `Audience: ${brief.audience}. Visual argument: ${brief.visualReason}.`,
-    `Art direction: ${identity.imageRealism === 'documentary' ? 'cinematic documentary realism with authentic human presence' : identity.imageRealism === 'abstract' ? 'poetic conceptual realism with one precise symbolic event' : 'world-class cultural magazine cover photography'}, ${identity.lighting} directional light, tactile materials, layered depth, one unforgettable focal point.`,
+    `Art direction must be selected anew for this idea rather than copying one template: choose among documentary realism, forensic still life, architectural minimalism, physical paper sculpture, shadow theatre, or a believable visual paradox. Use ${identity.lighting} directional light, tactile materials, layered depth, and one concept-specific focal event.`,
     `Composition: ${identity.negativeSpace === 'generous' ? 'generous intentional negative space on the right for Arabic typography' : identity.negativeSpace === 'compact' ? 'controlled breathing room with a disciplined text-safe zone' : 'balanced asymmetrical negative space with a calm text-safe zone on the right'}, premium 4:5 portrait crop, meaningful foreground and background, no visual clutter.`,
     `Palette: graphite, ink, warm ivory, muted mineral tones, with one subtle accent only when conceptually justified.`,
     `Cultural sensitivity: globally sophisticated and Arab-aware, free of stereotypes, flags, costumes, decorative orientalism, or generic corporate staging.`,
     `Avoid completely: ${brief.avoid}; glowing brains, robot hands, holograms, blue cyber grids, generic classroom stock photos, fake smiles, text, Arabic or Latin letters, logos, captions, watermarks, plastic skin, exaggerated HDR, oversaturation.`,
-    `The image must make the viewer pause before reading a single word and feel commissioned by the strongest editorial art director in the world.`,
+    `Semantic gate: reject any beautiful image that could fit an unrelated title. The viewer must infer the central conflict before reading a single word.`,
   ].join(' ').slice(0, 2048)
   return {
     headline,

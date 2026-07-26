@@ -775,7 +775,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       platform: overrides.platform ?? (parsed.platform || platform),
       ...(parsed.format ? { format: parsed.format } : {}),
       count: 8,
-      seed: `${text}:${expertContext}:${domainUnderstanding.primary?.id || 'general'}:${nextGeneration}:${Date.now()}`,
+      seed: `${text}:${expertContext}:${domainUnderstanding.recognizedTerms.slice(0, 5).map((item) => item.id).join('-') || domainUnderstanding.primary?.id || 'general'}:${nextGeneration}:${Date.now()}`,
       history: loadHistory(),
       noveltyThreshold: .36,
       tasteProfile,
@@ -1051,7 +1051,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         prompt: visualSearchPlan.generationPrompt,
         glossaryConcept: visualSearchPlan.glossaryConcept,
         glossaryLabel: visualSearchPlan.glossaryLabel,
-        glossaryCanonicalEn: visualSearchPlan.understanding.primary?.canonicalEn,
+        glossaryCanonicalEn: visualSearchPlan.glossaryCanonicalEn,
         glossaryMeaning: visualSearchPlan.glossaryMeaning,
         glossaryScenes: visualSearchPlan.visualScenes,
         glossaryAvoid: visualSearchPlan.avoidTerms,
@@ -2141,7 +2141,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const approvedImageOwner = approvedHero?.owner || imageOwner
   const approvedImageLicense = approvedHero?.license || imageLicense
   const zeroDecisionSteps: { id: ZeroDecisionPhase; label: string; note: string }[] = [
-    { id: 'understand', label: 'فهم المعنى', note: domainUnderstanding.primary ? `${domainUnderstanding.primary.canonicalAr} · ${domainUnderstanding.confidence}٪` : 'القضية والجمهور والأثر' },
+    { id: 'understand', label: 'فهم المعنى', note: domainUnderstanding.recognizedTerms.length ? `${domainUnderstanding.recognizedTerms.slice(0, 3).map((item) => item.canonicalAr).join(' + ')} · ${domainUnderstanding.confidence}٪` : 'القضية والجمهور والأثر' },
     { id: 'prompt', label: 'إخراج الفكرة', note: visualMode === 'generate' ? 'برومبت فني أصلي ومختلف' : 'عبارات بحث تحريرية ذكية' },
     { id: 'image', label: visualMode === 'generate' ? 'توليد الصورة' : 'انتقاء الصورة', note: visualMode === 'generate' ? 'Cloudflare فقط · بلا بديل خفي' : 'مصدر جاهز وموثق فقط' },
     { id: 'compose', label: 'بناء التكوين', note: 'عشرات الاحتمالات في الخلفية' },
@@ -2192,10 +2192,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                   <span className="text-[.72rem] font-black uppercase tracking-[.12em] text-accent">الفكرة الوحيدة التي أحتاجها منك</span>
                   <textarea ref={textRef} className="min-h-[190px] w-full resize-y rounded-[1.5rem] border border-hair bg-paper px-5 py-5 text-[1.08rem] font-medium leading-[2] text-ink outline-none transition placeholder:text-soft/45 focus:border-accent focus:shadow-[0_0_0_4px_rgba(62,92,120,.08)]" value={text} onChange={(event) => setText(event.target.value)} placeholder="اكتب العنوان أو الفكرة كما هي في ذهنك… يمكنك أن تطيل؛ لن يقاطعك الاستوديو ولن يبدأ قبل ضغط الزر." />
                 </label>
-                {domainUnderstanding.primary && <div className="mt-3 overflow-hidden rounded-2xl border border-emerald-200/80 bg-[linear-gradient(135deg,rgba(236,253,245,.96),rgba(255,255,255,.9))] px-4 py-3 shadow-sm">
-                  <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.6rem] font-black uppercase tracking-[.12em] text-emerald-700">قاموس د. أحمد فهم المصطلح</p><h3 className="mt-1 text-[.86rem] font-bold text-ink">{domainUnderstanding.primary.canonicalAr} <span dir="ltr" className="font-normal text-soft">· {domainUnderstanding.primary.canonicalEn}</span></h3></div><span className="rounded-full bg-emerald-100 px-3 py-1 text-[.6rem] font-bold text-emerald-700">ثقة {domainUnderstanding.confidence}٪</span></div>
-                  <p className="mt-2 text-[.68rem] leading-relaxed text-soft">{domainUnderstanding.primary.meaningAr}</p>
-                  {domainUnderstanding.matches.length > 1 && <div className="mt-2 flex flex-wrap gap-1.5">{domainUnderstanding.matches.slice(1).map((entry) => <span key={entry.id} className="rounded-full border border-emerald-100 bg-white/80 px-2.5 py-1 text-[.56rem] text-soft">صلة محتملة: {entry.canonicalAr}</span>)}</div>}
+                {domainUnderstanding.recognizedTerms.length > 0 && <div className="mt-3 overflow-hidden rounded-2xl border border-emerald-200/80 bg-[linear-gradient(135deg,rgba(236,253,245,.96),rgba(255,255,255,.9))] px-4 py-3 shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.6rem] font-black uppercase tracking-[.12em] text-emerald-700">الرسم المعرفي الشخصي فهم العبارة</p><h3 className="mt-1 text-[.86rem] font-bold text-ink">{domainUnderstanding.recognizedTerms.slice(0, 4).map((item) => item.canonicalAr).join(' + ')}</h3></div><div className="flex flex-wrap gap-1.5"><span className="rounded-full bg-emerald-100 px-3 py-1 text-[.6rem] font-bold text-emerald-700">ثقة {domainUnderstanding.confidence}٪</span><span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[.58rem] font-semibold text-emerald-800">سعة تركيبية {new Intl.NumberFormat('ar-KW-u-nu-latn').format(domainUnderstanding.conceptCapacity)} مفهوم</span></div></div>
+                  <p className="mt-2 text-[.68rem] leading-relaxed text-soft">{domainUnderstanding.compoundMeaning}</p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">{domainUnderstanding.recognizedTerms.slice(0, 10).map((entry) => <span key={`${entry.kind}-${entry.id}`} className="rounded-full border border-emerald-100 bg-white/80 px-2.5 py-1 text-[.56rem] text-soft">{entry.kind === 'concept' ? 'مفهوم' : entry.kind === 'audience' ? 'جمهور' : entry.kind === 'context' ? 'سياق' : entry.kind === 'action' ? 'غاية' : entry.kind === 'outcome' ? 'ناتج' : 'منهج'}: {entry.canonicalAr}</span>)}</div>
                 </div>}
                 <details className="mt-3 rounded-2xl border border-hair bg-paper/70 px-4 py-3">
                   <summary className="cursor-pointer text-[.72rem] font-semibold text-soft">أضف سياقًا اختياريًا فقط عند الحاجة</summary>

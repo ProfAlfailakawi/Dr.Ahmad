@@ -873,8 +873,7 @@
       "وسائل التواصل",
       "social media",
       "منصات التواصل",
-      "المؤثرون",
-      "فاشنستات"
+      "المؤثرون"
     ],
     "meaningAr": "منصات النشر والتفاعل والشبكات التي تعيد تشكيل الانتباه والهوية والرأي والعلاقات.",
     "visualScenes": [
@@ -2897,6 +2896,6907 @@
       "forensic-still-life",
       "kinetic-system",
       "architectural-silence"
+    ]
+  },
+  {
+    "id": "addie",
+    "canonicalAr": "نموذج ADDIE",
+    "canonicalEn": "ADDIE Model",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "نموذج ADDIE",
+      "ADDIE Model",
+      "أدي",
+      "تحليل تصميم تطوير تنفيذ تقويم"
+    ],
+    "meaningAr": "نموذج منهجي للتصميم التعليمي يمر بالتحليل والتصميم والتطوير والتنفيذ والتقويم.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "sam-model",
+    "canonicalAr": "نموذج SAM",
+    "canonicalEn": "Successive Approximation Model",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "نموذج SAM",
+      "Successive Approximation Model",
+      "سام",
+      "successive approximation"
+    ],
+    "meaningAr": "نموذج تصميم تعليمي تكراري يعتمد النماذج الأولية والتحسين السريع بدل المسار الخطي الطويل.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "assure-model",
+    "canonicalAr": "نموذج ASSURE",
+    "canonicalEn": "ASSURE Model",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "نموذج ASSURE",
+      "ASSURE Model",
+      "اشور",
+      "ASSURE instructional model"
+    ],
+    "meaningAr": "نموذج لتخطيط الدرس ودمج الوسائط والتكنولوجيا وفق خصائص المتعلمين والأهداف والمشاركة والتقويم.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "dick-carey-model",
+    "canonicalAr": "نموذج ديك وكاري",
+    "canonicalEn": "Dick and Carey Model",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "نموذج ديك وكاري",
+      "Dick and Carey Model",
+      "ديك وكاري",
+      "Dick Carey"
+    ],
+    "meaningAr": "نموذج تصميم نظم تعليمية يربط تحليل الأهداف والمتعلمين والأداء والاستراتيجيات والتقويم.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "kemp-model",
+    "canonicalAr": "نموذج كيمب",
+    "canonicalEn": "Kemp Instructional Design Model",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "نموذج كيمب",
+      "Kemp Instructional Design Model",
+      "كيمب",
+      "Morrison Ross Kemp"
+    ],
+    "meaningAr": "نموذج مرن للتصميم التعليمي ينظر إلى عناصر العملية بوصفها منظومة مترابطة غير خطية.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "backward-design",
+    "canonicalAr": "التصميم العكسي",
+    "canonicalEn": "Backward Design",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "التصميم العكسي",
+      "Backward Design",
+      "ابدأ بالنتائج",
+      "understanding by design",
+      "UbD"
+    ],
+    "meaningAr": "تصميم يبدأ بمخرجات التعلّم والأدلة المقبولة ثم يبني الأنشطة والمحتوى.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "instructional-systems-design",
+    "canonicalAr": "تصميم النظم التعليمية",
+    "canonicalEn": "Instructional Systems Design",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "تصميم النظم التعليمية",
+      "Instructional Systems Design",
+      "ISD",
+      "نظم تعليمية"
+    ],
+    "meaningAr": "مدخل منظومي لتحليل مشكلة الأداء وتصميم الحل التعليمي وتطويره وتنفيذه وتقويمه.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "learning-objectives",
+    "canonicalAr": "الأهداف التعليمية",
+    "canonicalEn": "Learning Objectives",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "الأهداف التعليمية",
+      "Learning Objectives",
+      "نواتج التعلم",
+      "هدف سلوكي",
+      "instructional objectives"
+    ],
+    "meaningAr": "عبارات دقيقة تصف ما يتوقع أن يعرفه المتعلم أو يؤديه بعد تجربة التعلّم.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "bloom-taxonomy",
+    "canonicalAr": "تصنيف بلوم",
+    "canonicalEn": "Bloom Taxonomy",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "تصنيف بلوم",
+      "Bloom Taxonomy",
+      "بلوم",
+      "Bloom revised taxonomy"
+    ],
+    "meaningAr": "إطار لتنظيم مستويات العمليات المعرفية من التذكر والفهم إلى التحليل والتقويم والإبداع.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "gagne-nine-events",
+    "canonicalAr": "أحداث جانييه التسعة",
+    "canonicalEn": "Gagne Nine Events of Instruction",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "أحداث جانييه التسعة",
+      "Gagne Nine Events of Instruction",
+      "جانييه",
+      "Gagné"
+    ],
+    "meaningAr": "تسلسل إرشادي يشمل جذب الانتباه وتوضيح الأهداف واستدعاء السابق وتقديم المحتوى والممارسة والتغذية الراجعة والتقويم والنقل.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "merrill-principles",
+    "canonicalAr": "مبادئ ميريل للتدريس",
+    "canonicalEn": "Merrill First Principles of Instruction",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "مبادئ ميريل للتدريس",
+      "Merrill First Principles of Instruction",
+      "ميريل",
+      "first principles"
+    ],
+    "meaningAr": "مبادئ تجعل التعلّم قائمًا على مشكلة واقعية والتنشيط والعرض والتطبيق والدمج.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "arcs-model",
+    "canonicalAr": "نموذج ARCS للدافعية",
+    "canonicalEn": "ARCS Motivation Model",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "نموذج ARCS للدافعية",
+      "ARCS Motivation Model",
+      "ARCS",
+      "كيلر",
+      "attention relevance confidence satisfaction"
+    ],
+    "meaningAr": "نموذج لتحفيز المتعلم عبر الانتباه والملاءمة والثقة والرضا.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "universal-design-learning",
+    "canonicalAr": "التصميم الشامل للتعلّم",
+    "canonicalEn": "Universal Design for Learning",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "التصميم الشامل للتعلّم",
+      "Universal Design for Learning",
+      "UDL",
+      "التصميم الشامل",
+      "universal design"
+    ],
+    "meaningAr": "إطار يوفّر طرائق متعددة للمشاركة والتمثيل والعمل والتعبير لزيادة إتاحة التعلّم.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "cognitive-load",
+    "canonicalAr": "الحمل المعرفي",
+    "canonicalEn": "Cognitive Load",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "الحمل المعرفي",
+      "Cognitive Load",
+      "cognitive load theory",
+      "ذاكرة عاملة"
+    ],
+    "meaningAr": "مقدار الجهد الواقع على الذاكرة العاملة، ويجب إدارة الحمل الداخلي والخارجي والداعم في التصميم.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "multimedia-learning-principles",
+    "canonicalAr": "مبادئ التعلّم بالوسائط المتعددة",
+    "canonicalEn": "Multimedia Learning Principles",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "مبادئ التعلّم بالوسائط المتعددة",
+      "Multimedia Learning Principles",
+      "مبادئ ماير",
+      "Mayer principles"
+    ],
+    "meaningAr": "مبادئ مبنية على كيفية معالجة الكلمات والصور لتقليل الحمل وتحسين بناء الفهم.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "learning-objects",
+    "canonicalAr": "كائنات التعلّم",
+    "canonicalEn": "Learning Objects",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "كائنات التعلّم",
+      "Learning Objects",
+      "كائن تعليمي",
+      "digital learning object"
+    ],
+    "meaningAr": "وحدات تعليمية رقمية صغيرة قابلة لإعادة الاستخدام ضمن سياقات ومقررات متعددة.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "open-educational-resources",
+    "canonicalAr": "الموارد التعليمية المفتوحة",
+    "canonicalEn": "Open Educational Resources",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "الموارد التعليمية المفتوحة",
+      "Open Educational Resources",
+      "OER",
+      "مصادر مفتوحة"
+    ],
+    "meaningAr": "مواد تعليم وتعلّم وبحث ذات ترخيص مفتوح يسمح بالاستخدام والتكييف والمشاركة.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "mooc",
+    "canonicalAr": "المقررات المفتوحة واسعة الالتحاق",
+    "canonicalEn": "Massive Open Online Courses",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "المقررات المفتوحة واسعة الالتحاق",
+      "Massive Open Online Courses",
+      "MOOC",
+      "موك",
+      "المساقات المفتوحة"
+    ],
+    "meaningAr": "مقررات إلكترونية مفتوحة تستوعب أعدادًا كبيرة وتجمع المحتوى والنشاط والتفاعل والتقويم.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "scorm",
+    "canonicalAr": "معيار SCORM",
+    "canonicalEn": "SCORM",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "معيار SCORM",
+      "SCORM",
+      "سكورم",
+      "Sharable Content Object Reference Model"
+    ],
+    "meaningAr": "معيار لحزم المحتوى الإلكتروني وتشغيله وتتبع تقدمه داخل نظم إدارة التعلّم.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "xapi",
+    "canonicalAr": "معيار xAPI",
+    "canonicalEn": "Experience API",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "معيار xAPI",
+      "Experience API",
+      "Tin Can API",
+      "اكس اي بي"
+    ],
+    "meaningAr": "معيار يسجل خبرات التعلّم في سياقات متعددة بصيغة فاعل وفعل ومفعول ويوفر بيانات أوسع من LMS.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "lti",
+    "canonicalAr": "معيار LTI",
+    "canonicalEn": "Learning Tools Interoperability",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "معيار LTI",
+      "Learning Tools Interoperability",
+      "LTI",
+      "تكامل أدوات التعلم"
+    ],
+    "meaningAr": "معيار لربط الأدوات الخارجية بمنصات التعلّم وتبادل الهوية والسياق والنتائج بأمان.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "microlearning",
+    "canonicalAr": "التعلّم المصغّر",
+    "canonicalEn": "Microlearning",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "التعلّم المصغّر",
+      "Microlearning",
+      "تعلم مصغر",
+      "micro learning"
+    ],
+    "meaningAr": "خبرات تعلم قصيرة مركزة تعالج هدفًا واحدًا ويمكن استهلاكها وتطبيقها بسرعة.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "flipped-classroom",
+    "canonicalAr": "الصف المقلوب",
+    "canonicalEn": "Flipped Classroom",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "الصف المقلوب",
+      "Flipped Classroom",
+      "التعلم المقلوب",
+      "الفصل المعكوس"
+    ],
+    "meaningAr": "نموذج يدرس فيه المتعلم المحتوى الأساسي قبل اللقاء ويخصص وقت الصف للتطبيق والنقاش والدعم.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "blended-learning",
+    "canonicalAr": "التعلّم المدمج",
+    "canonicalEn": "Blended Learning",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "التعلّم المدمج",
+      "Blended Learning",
+      "تعليم مدمج",
+      "blended education"
+    ],
+    "meaningAr": "دمج مخطط بين التعلم الحضوري والرقمي بحيث يكمل كل منهما الآخر.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "hybrid-learning",
+    "canonicalAr": "التعلّم الهجين",
+    "canonicalEn": "Hybrid Learning",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "التعلّم الهجين",
+      "Hybrid Learning",
+      "تعليم هجين",
+      "hyflex"
+    ],
+    "meaningAr": "تنظيم يسمح بتعلم حضوري وعن بعد أو متزامن وغير متزامن بمرونة ضمن تجربة واحدة.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "competency-based-learning",
+    "canonicalAr": "التعلّم القائم على الكفايات",
+    "canonicalEn": "Competency-Based Learning",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "التعلّم القائم على الكفايات",
+      "Competency-Based Learning",
+      "CBE",
+      "تعليم قائم على الكفاءة"
+    ],
+    "meaningAr": "تقدم يعتمد إتقان كفايات واضحة وإظهار دليل أداء بدل الاعتماد على الزمن الدراسي وحده.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "mastery-learning",
+    "canonicalAr": "التعلّم للإتقان",
+    "canonicalEn": "Mastery Learning",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "التعلّم للإتقان",
+      "Mastery Learning",
+      "تعلم الإتقان",
+      "Bloom mastery"
+    ],
+    "meaningAr": "منهج يمنح وقتًا ودعمًا متنوعين حتى يحقق المتعلم مستوى الإتقان قبل الانتقال.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "personalized-learning",
+    "canonicalAr": "التعلّم الشخصي",
+    "canonicalEn": "Personalized Learning",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "التعلّم الشخصي",
+      "Personalized Learning",
+      "تعلم مخصص",
+      "personalised learning"
+    ],
+    "meaningAr": "تكييف الأهداف والمسار والسرعة والدعم وفق احتياجات المتعلم مع إبقاء دوره فاعلًا.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "self-directed-learning",
+    "canonicalAr": "التعلّم الموجّه ذاتيًا",
+    "canonicalEn": "Self-Directed Learning",
+    "domain": "التصميم التعليمي ونظم التعلّم",
+    "aliases": [
+      "التعلّم الموجّه ذاتيًا",
+      "Self-Directed Learning",
+      "تعلم ذاتي",
+      "self directed"
+    ],
+    "meaningAr": "قدرة المتعلم على تشخيص احتياجاته وصياغة أهدافه واختيار موارده وتقويم تقدمه.",
+    "visualScenes": [
+      "مخطط تعلّم مادي تتحول فيه الأهداف إلى أنشطة وتقويم بصورة واضحة",
+      "فريق يصمم تجربة تعلم عبر بطاقات ومراحل مترابطة",
+      "مسار تعليمي منظم يربط الاحتياج بالهدف والنشاط والدليل"
+    ],
+    "avoid": [
+      "قالب برمجي عام",
+      "شاشات مليئة بالنصوص",
+      "مخططات زخرفية بلا معنى"
+    ],
+    "moods": [
+      "clear",
+      "creative",
+      "academic"
+    ],
+    "preferredWorlds": [
+      "tactile-learning",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "behaviorism",
+    "canonicalAr": "السلوكية",
+    "canonicalEn": "Behaviorism",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "السلوكية",
+      "Behaviorism",
+      "تعلم سلوكي",
+      "تعزيز وعقاب"
+    ],
+    "meaningAr": "نظرية تركز على السلوك القابل للملاحظة وعلاقته بالمثير والاستجابة والتعزيز.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "cognitivism",
+    "canonicalAr": "المعرفية",
+    "canonicalEn": "Cognitivism",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "المعرفية",
+      "Cognitivism",
+      "النظرية المعرفية",
+      "cognitive theory"
+    ],
+    "meaningAr": "منظور يدرس معالجة المعلومات والانتباه والذاكرة وبناء المخططات العقلية.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "constructivism",
+    "canonicalAr": "البنائية",
+    "canonicalEn": "Constructivism",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "البنائية",
+      "Constructivism",
+      "التعلم البنائي",
+      "constructivist learning"
+    ],
+    "meaningAr": "منظور يرى أن المتعلم يبني المعرفة عبر النشاط والخبرة والتفاوض الاجتماعي.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "connectivism",
+    "canonicalAr": "الاتصالية",
+    "canonicalEn": "Connectivism",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "الاتصالية",
+      "Connectivism",
+      "نظرية الاتصال",
+      "connectivist"
+    ],
+    "meaningAr": "نظرية تفسر التعلم في الشبكات الرقمية بوصفه قدرة على بناء الروابط والوصول إلى المعرفة المتغيرة.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "social-learning-theory",
+    "canonicalAr": "نظرية التعلّم الاجتماعي",
+    "canonicalEn": "Social Learning Theory",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "نظرية التعلّم الاجتماعي",
+      "Social Learning Theory",
+      "باندورا",
+      "observational learning"
+    ],
+    "meaningAr": "تعلم يحدث بالملاحظة والنمذجة والتفاعل بين الفرد والسلوك والبيئة.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "experiential-learning",
+    "canonicalAr": "التعلّم بالخبرة",
+    "canonicalEn": "Experiential Learning",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "التعلّم بالخبرة",
+      "Experiential Learning",
+      "كولب",
+      "Kolb cycle"
+    ],
+    "meaningAr": "تعلم يتطور عبر خبرة ملموسة وتأمل ومفهوم وتجريب نشط.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "situated-learning",
+    "canonicalAr": "التعلّم الموقفي",
+    "canonicalEn": "Situated Learning",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "التعلّم الموقفي",
+      "Situated Learning",
+      "تعلم سياقي",
+      "community of practice"
+    ],
+    "meaningAr": "تعلم يتشكل داخل سياق اجتماعي حقيقي وممارسة مشتركة لا في عزلة عن الاستخدام.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "collaborative-learning",
+    "canonicalAr": "التعلّم التشاركي",
+    "canonicalEn": "Collaborative Learning",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "التعلّم التشاركي",
+      "Collaborative Learning",
+      "تعلم تعاوني واسع",
+      "collaboration"
+    ],
+    "meaningAr": "بناء مشترك للمعرفة عبر الحوار وتقاسم المسؤولية وحل المشكلات.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "cooperative-learning",
+    "canonicalAr": "التعلّم التعاوني",
+    "canonicalEn": "Cooperative Learning",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "التعلّم التعاوني",
+      "Cooperative Learning",
+      "تعلم بالمجموعات",
+      "cooperative groups"
+    ],
+    "meaningAr": "تعلم منظم في مجموعات صغيرة مع اعتماد متبادل ومسؤولية فردية ومهارات اجتماعية.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "project-based-learning",
+    "canonicalAr": "التعلّم القائم على المشروعات",
+    "canonicalEn": "Project-Based Learning",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "التعلّم القائم على المشروعات",
+      "Project-Based Learning",
+      "PjBL",
+      "تعلم بالمشروع"
+    ],
+    "meaningAr": "تعلم ممتد يبني فيه المتعلم منتجًا أو حلًا أصيلًا لسؤال أو تحدٍ واقعي.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "problem-based-learning",
+    "canonicalAr": "التعلّم القائم على المشكلات",
+    "canonicalEn": "Problem-Based Learning",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "التعلّم القائم على المشكلات",
+      "Problem-Based Learning",
+      "PBL",
+      "تعلم بالمشكلة"
+    ],
+    "meaningAr": "تعلم يبدأ بمشكلة معقدة تقود البحث والتعاون واكتساب المعرفة اللازمة للحل.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "inquiry-based-learning",
+    "canonicalAr": "التعلّم القائم على الاستقصاء",
+    "canonicalEn": "Inquiry-Based Learning",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "التعلّم القائم على الاستقصاء",
+      "Inquiry-Based Learning",
+      "استقصاء",
+      "inquiry learning"
+    ],
+    "meaningAr": "تعلم يقوده السؤال وجمع الأدلة والتحليل وبناء تفسير قابل للمراجعة.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "discovery-learning",
+    "canonicalAr": "التعلّم بالاكتشاف",
+    "canonicalEn": "Discovery Learning",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "التعلّم بالاكتشاف",
+      "Discovery Learning",
+      "برونر",
+      "discovery method"
+    ],
+    "meaningAr": "تعلم يصل فيه المتعلم إلى العلاقات والمبادئ عبر الاستكشاف الموجه بدل تلقيها جاهزة.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "case-based-learning",
+    "canonicalAr": "التعلّم القائم على الحالات",
+    "canonicalEn": "Case-Based Learning",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "التعلّم القائم على الحالات",
+      "Case-Based Learning",
+      "دراسة حالة",
+      "case method"
+    ],
+    "meaningAr": "تعلم يحلل حالات واقعية لاتخاذ قرار وربط النظرية بالسياق.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "peer-learning",
+    "canonicalAr": "تعلّم الأقران",
+    "canonicalEn": "Peer Learning",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "تعلّم الأقران",
+      "Peer Learning",
+      "تعليم الأقران",
+      "peer instruction"
+    ],
+    "meaningAr": "تعلم يتبادل فيه المتعلمون الشرح والتغذية الراجعة والدعم تحت تنظيم تربوي.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "active-learning",
+    "canonicalAr": "التعلّم النشط",
+    "canonicalEn": "Active Learning",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "التعلّم النشط",
+      "Active Learning",
+      "تعلم نشط",
+      "مشاركة نشطة"
+    ],
+    "meaningAr": "تعلم يتطلب من المتعلم التفكير والعمل والمناقشة والإنتاج بدل الاستماع السلبي.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "authentic-learning",
+    "canonicalAr": "التعلّم الأصيل",
+    "canonicalEn": "Authentic Learning",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "التعلّم الأصيل",
+      "Authentic Learning",
+      "تعلم واقعي",
+      "authentic tasks"
+    ],
+    "meaningAr": "تعلم يستخدم مهامًا وسياقات وأدوات قريبة من الممارسة الحقيقية.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "lifelong-learning",
+    "canonicalAr": "التعلّم مدى الحياة",
+    "canonicalEn": "Lifelong Learning",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "التعلّم مدى الحياة",
+      "Lifelong Learning",
+      "تعلم مستمر",
+      "continuous learning"
+    ],
+    "meaningAr": "استمرار اكتساب المعرفة والمهارات والقيم عبر مراحل الحياة وسياقاتها.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "andragogy",
+    "canonicalAr": "تعليم الكبار",
+    "canonicalEn": "Andragogy",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "تعليم الكبار",
+      "Andragogy",
+      "أندراغوجيا",
+      "adult learning"
+    ],
+    "meaningAr": "مبادئ تعلم الراشدين التي تراعي الخبرة والاستقلال والحاجة المباشرة للتطبيق.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "heutagogy",
+    "canonicalAr": "التعلّم المحدد ذاتيًا",
+    "canonicalEn": "Heutagogy",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "التعلّم المحدد ذاتيًا",
+      "Heutagogy",
+      "هيوتاغوجيا",
+      "self determined learning"
+    ],
+    "meaningAr": "مدخل يمنح المتعلم استقلالًا عاليًا في تحديد ما وكيف يتعلم وتطوير قدرته على التعلم.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "pedagogy",
+    "canonicalAr": "علم التربية والتعليم",
+    "canonicalEn": "Pedagogy",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "علم التربية والتعليم",
+      "Pedagogy",
+      "بيداغوجيا",
+      "طرائق تعليم الأطفال"
+    ],
+    "meaningAr": "نظرية وممارسة التعليم التي تجمع الأهداف والمحتوى والطريقة والعلاقة والتقويم.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "metacognition",
+    "canonicalAr": "ما وراء المعرفة",
+    "canonicalEn": "Metacognition",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "ما وراء المعرفة",
+      "Metacognition",
+      "تفكير في التفكير",
+      "metacognitive skills"
+    ],
+    "meaningAr": "وعي المتعلم بعمليات تفكيره وقدرته على التخطيط والمراقبة والتقويم والتعديل.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "self-regulated-learning",
+    "canonicalAr": "التعلّم المنظّم ذاتيًا",
+    "canonicalEn": "Self-Regulated Learning",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "التعلّم المنظّم ذاتيًا",
+      "Self-Regulated Learning",
+      "SRL",
+      "تنظيم ذاتي"
+    ],
+    "meaningAr": "إدارة المتعلم لأهدافه ودافعيته واستراتيجياته ووقته ومراقبة تقدمه.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "learning-motivation",
+    "canonicalAr": "الدافعية للتعلّم",
+    "canonicalEn": "Learning Motivation",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "الدافعية للتعلّم",
+      "Learning Motivation",
+      "تحفيز المتعلم",
+      "motivation"
+    ],
+    "meaningAr": "القوى الداخلية والخارجية التي توجه الانتباه والمثابرة والاختيار في التعلم.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "flow-learning",
+    "canonicalAr": "التدفّق في التعلّم",
+    "canonicalEn": "Flow in Learning",
+    "domain": "علوم التعلّم ونظرياته",
+    "aliases": [
+      "التدفّق في التعلّم",
+      "Flow in Learning",
+      "حالة التدفق",
+      "flow state"
+    ],
+    "meaningAr": "حالة تركيز عميق تحدث عندما يتوازن التحدي مع المهارة وتكون الأهداف والتغذية الراجعة واضحة.",
+    "visualScenes": [
+      "متعلم يبني فهمًا تدريجيًا عبر تفاعل إنساني ومهمة حقيقية",
+      "عناصر معرفية تتغير علاقاتها مع ظهور معنى جديد",
+      "بيئة تعلم تظهر التفكير والمراجعة والتغذية الراجعة لا الحفظ فقط"
+    ],
+    "avoid": [
+      "دماغ مضيء",
+      "كتب تطير",
+      "مصباح الفكرة"
+    ],
+    "moods": [
+      "human",
+      "intellectual",
+      "calm"
+    ],
+    "preferredWorlds": [
+      "optimistic-human",
+      "human-documentary",
+      "paper-sculpture"
+    ]
+  },
+  {
+    "id": "machine-learning",
+    "canonicalAr": "تعلّم الآلة",
+    "canonicalEn": "Machine Learning",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "تعلّم الآلة",
+      "Machine Learning",
+      "ML",
+      "machine intelligence"
+    ],
+    "meaningAr": "خوارزميات تتعلم أنماطًا من البيانات للتنبؤ أو التصنيف أو اتخاذ توصية دون برمجة كل قاعدة يدويًا.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "deep-learning",
+    "canonicalAr": "التعلّم العميق",
+    "canonicalEn": "Deep Learning",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "التعلّم العميق",
+      "Deep Learning",
+      "DL",
+      "deep neural networks"
+    ],
+    "meaningAr": "فرع من تعلم الآلة يستخدم شبكات عصبية متعددة الطبقات لاستخراج تمثيلات معقدة.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "large-language-models",
+    "canonicalAr": "النماذج اللغوية الكبيرة",
+    "canonicalEn": "Large Language Models",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "النماذج اللغوية الكبيرة",
+      "Large Language Models",
+      "LLM",
+      "LLMs",
+      "نموذج لغوي كبير"
+    ],
+    "meaningAr": "نماذج تتعلم أنماط اللغة من بيانات ضخمة لتوليد النص وفهمه، مع احتمالات للخطأ والتحيز.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "natural-language-processing",
+    "canonicalAr": "معالجة اللغة الطبيعية",
+    "canonicalEn": "Natural Language Processing",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "معالجة اللغة الطبيعية",
+      "Natural Language Processing",
+      "NLP",
+      "معالجة اللغات"
+    ],
+    "meaningAr": "مجال يمكّن الحاسوب من تحليل اللغة البشرية وفهمها وتوليدها.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "prompt-engineering",
+    "canonicalAr": "هندسة الأوامر",
+    "canonicalEn": "Prompt Engineering",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "هندسة الأوامر",
+      "Prompt Engineering",
+      "برومبت",
+      "prompt design",
+      "صياغة الأوامر"
+    ],
+    "meaningAr": "تصميم التعليمات والسياق والأمثلة والقيود للحصول على مخرجات أدق من نماذج الذكاء الاصطناعي.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "retrieval-augmented-generation",
+    "canonicalAr": "التوليد المعزّز بالاسترجاع",
+    "canonicalEn": "Retrieval-Augmented Generation",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "التوليد المعزّز بالاسترجاع",
+      "Retrieval-Augmented Generation",
+      "RAG",
+      "راج"
+    ],
+    "meaningAr": "ربط النموذج بمصادر مسترجعة موثوقة قبل التوليد لتقليل التخمين وزيادة قابلية التوثيق.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "ai-agents",
+    "canonicalAr": "وكلاء الذكاء الاصطناعي",
+    "canonicalEn": "AI Agents",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "وكلاء الذكاء الاصطناعي",
+      "AI Agents",
+      "agentic AI",
+      "وكلاء أذكياء"
+    ],
+    "meaningAr": "أنظمة تستخدم نموذجًا للتخطيط واستدعاء الأدوات وتنفيذ خطوات ومراجعة النتائج لتحقيق هدف.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "intelligent-tutoring-systems",
+    "canonicalAr": "نظم التدريس الذكية",
+    "canonicalEn": "Intelligent Tutoring Systems",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "نظم التدريس الذكية",
+      "Intelligent Tutoring Systems",
+      "ITS",
+      "المعلم الذكي"
+    ],
+    "meaningAr": "أنظمة تقدم دعمًا وتغذية راجعة وتكييفًا يشبه بعض وظائف المعلم الخصوصي.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "recommendation-systems",
+    "canonicalAr": "نظم التوصية",
+    "canonicalEn": "Recommendation Systems",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "نظم التوصية",
+      "Recommendation Systems",
+      "recommender systems",
+      "توصيات تعلم"
+    ],
+    "meaningAr": "أنظمة ترتب محتوى أو مسارات أو موارد وفق بيانات المتعلم والسياق مع ضرورة مراقبة التحيز.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "predictive-analytics",
+    "canonicalAr": "التحليلات التنبؤية",
+    "canonicalEn": "Predictive Analytics",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "التحليلات التنبؤية",
+      "Predictive Analytics",
+      "تنبؤ تعليمي",
+      "predictive models"
+    ],
+    "meaningAr": "استخدام البيانات والنماذج لتقدير نتائج مستقبلية مثل التعثر أو النجاح لدعم تدخل مسؤول.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "educational-data-mining",
+    "canonicalAr": "تنقيب البيانات التعليمية",
+    "canonicalEn": "Educational Data Mining",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "تنقيب البيانات التعليمية",
+      "Educational Data Mining",
+      "EDM",
+      "تنقيب تعلم"
+    ],
+    "meaningAr": "استخراج أنماط من بيانات البيئات التعليمية لفهم التعلم وتحسينه.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "algorithmic-bias",
+    "canonicalAr": "التحيز الخوارزمي",
+    "canonicalEn": "Algorithmic Bias",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "التحيز الخوارزمي",
+      "Algorithmic Bias",
+      "تحيز رقمي",
+      "AI bias"
+    ],
+    "meaningAr": "انحراف منهجي في البيانات أو التصميم أو الاستخدام يؤدي إلى نتائج غير عادلة لفئات معينة.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "ai-fairness",
+    "canonicalAr": "الإنصاف في الذكاء الاصطناعي",
+    "canonicalEn": "AI Fairness",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "الإنصاف في الذكاء الاصطناعي",
+      "AI Fairness",
+      "fair AI",
+      "عدالة خوارزمية"
+    ],
+    "meaningAr": "مبادئ وقياسات وإجراءات للحد من التمييز وتوزيع المنافع والمخاطر بصورة عادلة.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "explainable-ai",
+    "canonicalAr": "الذكاء الاصطناعي القابل للتفسير",
+    "canonicalEn": "Explainable AI",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "الذكاء الاصطناعي القابل للتفسير",
+      "Explainable AI",
+      "XAI",
+      "تفسير الخوارزمية"
+    ],
+    "meaningAr": "أساليب تجعل أسباب مخرجات النموذج مفهومة بدرجة تناسب المستخدم والقرار.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "responsible-ai",
+    "canonicalAr": "الذكاء الاصطناعي المسؤول",
+    "canonicalEn": "Responsible AI",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "الذكاء الاصطناعي المسؤول",
+      "Responsible AI",
+      "RAI",
+      "ذكاء مسؤول"
+    ],
+    "meaningAr": "تطوير واستخدام الذكاء الاصطناعي وفق العدالة والشفافية والخصوصية والسلامة والمساءلة.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "human-centered-ai",
+    "canonicalAr": "الذكاء الاصطناعي المتمركز حول الإنسان",
+    "canonicalEn": "Human-Centered AI",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "الذكاء الاصطناعي المتمركز حول الإنسان",
+      "Human-Centered AI",
+      "HCAI",
+      "human in the loop"
+    ],
+    "meaningAr": "تصميم يجعل الإنسان وحقوقه وحكمه واحتياجاته في مركز النظام الذكي.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "ai-literacy",
+    "canonicalAr": "محو أمية الذكاء الاصطناعي",
+    "canonicalEn": "AI Literacy",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "محو أمية الذكاء الاصطناعي",
+      "AI Literacy",
+      "ثقافة الذكاء الاصطناعي",
+      "وعي AI"
+    ],
+    "meaningAr": "معرفة قدرات الذكاء الاصطناعي وحدوده وبياناته وأخلاقياته واستخدامه الناقد والمنتج.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "automated-grading",
+    "canonicalAr": "التصحيح الآلي",
+    "canonicalEn": "Automated Grading",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "التصحيح الآلي",
+      "Automated Grading",
+      "automatic assessment",
+      "رصد آلي"
+    ],
+    "meaningAr": "استخدام نظم آلية لتقدير استجابات أو أعمال مع ضرورة التحقق من الصدق والعدالة والإشراف البشري.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "ai-assessment",
+    "canonicalAr": "تقويم التعلّم بالذكاء الاصطناعي",
+    "canonicalEn": "AI-Enabled Assessment",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "تقويم التعلّم بالذكاء الاصطناعي",
+      "AI-Enabled Assessment",
+      "تقويم ذكي",
+      "AI assessment"
+    ],
+    "meaningAr": "توظيف الذكاء الاصطناعي لتصميم أو تحليل أو تخصيص التقويم مع حماية العدالة والخصوصية.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "plagiarism-detection",
+    "canonicalAr": "كشف الانتحال",
+    "canonicalEn": "Plagiarism Detection",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "كشف الانتحال",
+      "Plagiarism Detection",
+      "كشف السرقة العلمية",
+      "similarity checker"
+    ],
+    "meaningAr": "أدوات تقارن النصوص وتكشف التشابه، ولا تستبدل الحكم الأكاديمي على السياق والأصالة.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "ai-hallucination",
+    "canonicalAr": "هلوسة الذكاء الاصطناعي",
+    "canonicalEn": "AI Hallucination",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "هلوسة الذكاء الاصطناعي",
+      "AI Hallucination",
+      "hallucinations",
+      "اختلاق النموذج"
+    ],
+    "meaningAr": "إنتاج معلومات تبدو مقنعة لكنها غير صحيحة أو غير مدعومة، ما يستلزم التحقق من المصادر.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "computer-vision",
+    "canonicalAr": "الرؤية الحاسوبية",
+    "canonicalEn": "Computer Vision",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "الرؤية الحاسوبية",
+      "Computer Vision",
+      "CV AI",
+      "تحليل الصور"
+    ],
+    "meaningAr": "تقنيات تمكّن الحاسوب من تحليل الصور والفيديو واستخراج الكائنات والأنماط.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "speech-recognition",
+    "canonicalAr": "التعرّف على الكلام",
+    "canonicalEn": "Speech Recognition",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "التعرّف على الكلام",
+      "Speech Recognition",
+      "ASR",
+      "تحويل الصوت إلى نص"
+    ],
+    "meaningAr": "تحويل الكلام المنطوق إلى نص أو أوامر مع تحديات اللهجات والدقة والخصوصية.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "text-to-speech",
+    "canonicalAr": "تحويل النص إلى كلام",
+    "canonicalEn": "Text to Speech",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "تحويل النص إلى كلام",
+      "Text to Speech",
+      "TTS",
+      "نطق آلي"
+    ],
+    "meaningAr": "توليد صوت من النص، ويستخدم في الإتاحة والمحتوى الصوتي والتعليم.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "speech-to-text",
+    "canonicalAr": "تحويل الكلام إلى نص",
+    "canonicalEn": "Speech to Text",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "تحويل الكلام إلى نص",
+      "Speech to Text",
+      "STT",
+      "إملاء صوتي"
+    ],
+    "meaningAr": "تحويل الصوت إلى نص قابل للبحث والتحرير والتحليل.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "synthetic-media",
+    "canonicalAr": "الوسائط الاصطناعية",
+    "canonicalEn": "Synthetic Media",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "الوسائط الاصطناعية",
+      "Synthetic Media",
+      "AI media",
+      "محتوى مولد"
+    ],
+    "meaningAr": "صور وصوت وفيديو ونص تنتجها نماذج ذكاء اصطناعي وتحتاج وسمًا وتحققًا وأخلاقيات استخدام.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "deepfake",
+    "canonicalAr": "التزييف العميق",
+    "canonicalEn": "Deepfake",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "التزييف العميق",
+      "Deepfake",
+      "ديب فيك",
+      "deep fake"
+    ],
+    "meaningAr": "وسائط مولدة أو معدلة تحاكي أشخاصًا أو أحداثًا بصورة قد تستخدم للتضليل.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "ai-readiness",
+    "canonicalAr": "الجاهزية للذكاء الاصطناعي",
+    "canonicalEn": "AI Readiness",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "الجاهزية للذكاء الاصطناعي",
+      "AI Readiness",
+      "استعداد AI",
+      "جاهزية مؤسسية"
+    ],
+    "meaningAr": "مدى توافر الاستراتيجية والبيانات والبنية والكفاءات والحوكمة والثقافة اللازمة للتبني المسؤول.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "ai-adoption",
+    "canonicalAr": "تبنّي الذكاء الاصطناعي",
+    "canonicalEn": "AI Adoption",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "تبنّي الذكاء الاصطناعي",
+      "AI Adoption",
+      "اعتماد AI",
+      "قبول الذكاء الاصطناعي"
+    ],
+    "meaningAr": "عملية قبول واستخدام ودمج نظم الذكاء الاصطناعي على مستوى الفرد أو المؤسسة.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "ai-competencies",
+    "canonicalAr": "كفايات الذكاء الاصطناعي",
+    "canonicalEn": "AI Competencies",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "كفايات الذكاء الاصطناعي",
+      "AI Competencies",
+      "مهارات AI",
+      "AI skills"
+    ],
+    "meaningAr": "معارف ومهارات وقيم لازمة لفهم الأدوات الذكية واستخدامها وتقويمها وتصميمها بمسؤولية.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "ai-policy",
+    "canonicalAr": "سياسات الذكاء الاصطناعي",
+    "canonicalEn": "AI Policy",
+    "domain": "الذكاء الاصطناعي والبيانات في التعليم",
+    "aliases": [
+      "سياسات الذكاء الاصطناعي",
+      "AI Policy",
+      "سياسة استخدام AI",
+      "institutional AI policy"
+    ],
+    "meaningAr": "قواعد مؤسسية تحدد الاستخدامات المقبولة والمسؤوليات والخصوصية والنزاهة والتوثيق والمراجعة.",
+    "visualScenes": [
+      "منظومة تعليمية تستخدم بيانات واضحة لدعم قرار إنساني",
+      "معلم أو باحث يراجع مخرجات ذكية ويحتفظ بسلطة الحكم",
+      "تدفق معلومات منظم يتحول إلى دعم تعلم قابل للتفسير"
+    ],
+    "avoid": [
+      "روبوت يلامس يد إنسان",
+      "دماغ رقمي مضيء",
+      "أكواد وشبكات عشوائية",
+      "واجهة دردشة حرفية"
+    ],
+    "moods": [
+      "future",
+      "precise",
+      "human"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "kinetic-system",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "extended-reality",
+    "canonicalAr": "الواقع الممتد",
+    "canonicalEn": "Extended Reality",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "الواقع الممتد",
+      "Extended Reality",
+      "XR",
+      "الواقع الغامر"
+    ],
+    "meaningAr": "مصطلح جامع للواقع الافتراضي والمعزز والمختلط وتطبيقاتها التفاعلية.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "mixed-reality",
+    "canonicalAr": "الواقع المختلط",
+    "canonicalEn": "Mixed Reality",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "الواقع المختلط",
+      "Mixed Reality",
+      "MR",
+      "واقع مدمج"
+    ],
+    "meaningAr": "دمج عناصر رقمية ومادية تتفاعل مكانيًا في الوقت الحقيقي.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "virtual-labs",
+    "canonicalAr": "المختبرات الافتراضية",
+    "canonicalEn": "Virtual Laboratories",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "المختبرات الافتراضية",
+      "Virtual Laboratories",
+      "virtual lab",
+      "مختبر افتراضي"
+    ],
+    "meaningAr": "بيئات رقمية تحاكي التجارب وتتيح التدريب والاستكشاف بأمان ومرونة.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "simulation-learning",
+    "canonicalAr": "التعلّم بالمحاكاة",
+    "canonicalEn": "Simulation-Based Learning",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "التعلّم بالمحاكاة",
+      "Simulation-Based Learning",
+      "simulation",
+      "محاكاة تعليمية"
+    ],
+    "meaningAr": "تعلم عبر نموذج يمثل نظامًا أو موقفًا حقيقيًا ويتيح التجريب واتخاذ القرار والتغذية الراجعة.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "digital-twins-education",
+    "canonicalAr": "التوائم الرقمية في التعليم",
+    "canonicalEn": "Digital Twins in Education",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "التوائم الرقمية في التعليم",
+      "Digital Twins in Education",
+      "digital twin",
+      "توأم رقمي"
+    ],
+    "meaningAr": "نماذج رقمية متصلة بكيان أو عملية حقيقية لدراسة الأداء والمحاكاة والتحسين.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "haptic-learning",
+    "canonicalAr": "التعلّم اللمسي",
+    "canonicalEn": "Haptic Learning",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "التعلّم اللمسي",
+      "Haptic Learning",
+      "haptics",
+      "تغذية راجعة لمسية"
+    ],
+    "meaningAr": "استخدام اللمس والقوة والاهتزاز لتمثيل معلومات أو مهارات داخل تجربة تعليمية.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "avatars-learning",
+    "canonicalAr": "الشخصيات الافتراضية في التعلّم",
+    "canonicalEn": "Learning Avatars",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "الشخصيات الافتراضية في التعلّم",
+      "Learning Avatars",
+      "avatar",
+      "أفاتار"
+    ],
+    "meaningAr": "تمثيلات رقمية للمستخدم أو المرشد داخل البيئات الافتراضية، مع آثار على الهوية والحضور والتفاعل.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "video-360",
+    "canonicalAr": "الفيديو بزاوية 360 درجة",
+    "canonicalEn": "360-Degree Video",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "الفيديو بزاوية 360 درجة",
+      "360-Degree Video",
+      "360 video",
+      "فيديو غامر"
+    ],
+    "meaningAr": "فيديو يسمح بالنظر حول المشهد ويستخدم للزيارات والتدريب والمواقف الغامرة.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "three-d-printing",
+    "canonicalAr": "الطباعة ثلاثية الأبعاد",
+    "canonicalEn": "3D Printing",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "الطباعة ثلاثية الأبعاد",
+      "3D Printing",
+      "3D printer",
+      "طباعة مجسمات"
+    ],
+    "meaningAr": "تصنيع نماذج مادية طبقة فوق طبقة لدعم التصميم والهندسة والتجريب.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "coding-education",
+    "canonicalAr": "تعليم البرمجة",
+    "canonicalEn": "Coding Education",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "تعليم البرمجة",
+      "Coding Education",
+      "coding",
+      "برمجة للطلاب"
+    ],
+    "meaningAr": "تعلم بناء التعليمات والبرامج وتنمية التفكير المنطقي وحل المشكلات.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "computational-thinking",
+    "canonicalAr": "التفكير الحاسوبي",
+    "canonicalEn": "Computational Thinking",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "التفكير الحاسوبي",
+      "Computational Thinking",
+      "CT",
+      "تفكير خوارزمي"
+    ],
+    "meaningAr": "صياغة المشكلات عبر التفكيك والتجريد والأنماط والخوارزميات بحيث يمكن حلها منهجيًا.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "wearable-technology",
+    "canonicalAr": "التكنولوجيا القابلة للارتداء",
+    "canonicalEn": "Wearable Technology",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "التكنولوجيا القابلة للارتداء",
+      "Wearable Technology",
+      "wearables",
+      "أجهزة قابلة للارتداء"
+    ],
+    "meaningAr": "أجهزة وحساسات تلبس على الجسم وتستخدم للتفاعل والقياس والدعم.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "smart-classroom",
+    "canonicalAr": "الفصل الذكي",
+    "canonicalEn": "Smart Classroom",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "الفصل الذكي",
+      "Smart Classroom",
+      "صف ذكي",
+      "smart learning space"
+    ],
+    "meaningAr": "مساحة تعليمية توظف الاتصال والأجهزة والبيانات والمرونة لخدمة تفاعل وتعلم أفضل.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "smart-university",
+    "canonicalAr": "الجامعة الذكية",
+    "canonicalEn": "Smart University",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "الجامعة الذكية",
+      "Smart University",
+      "جامعة رقمية ذكية",
+      "smart campus"
+    ],
+    "meaningAr": "جامعة توظف البيانات والمنصات والبنية والحوكمة لتحسين التعلم والبحث والخدمات والقرار.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "blockchain-credentials",
+    "canonicalAr": "الشهادات الرقمية بالبلوكتشين",
+    "canonicalEn": "Blockchain Credentials",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "الشهادات الرقمية بالبلوكتشين",
+      "Blockchain Credentials",
+      "blockchain education",
+      "اعتماد رقمي موثوق"
+    ],
+    "meaningAr": "استخدام سجلات موزعة للتحقق من الشهادات والإنجازات وتقليل التزوير.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "digital-badges",
+    "canonicalAr": "الشارات الرقمية",
+    "canonicalEn": "Digital Badges",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "الشارات الرقمية",
+      "Digital Badges",
+      "badges",
+      "micro credentials"
+    ],
+    "meaningAr": "تمثيلات رقمية موثقة لمهارة أو إنجاز، وقد ترتبط بأدلة ومعايير وهوية المتعلم.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "microcredentials",
+    "canonicalAr": "المؤهلات المصغّرة",
+    "canonicalEn": "Microcredentials",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "المؤهلات المصغّرة",
+      "Microcredentials",
+      "micro-credentials",
+      "اعتمادات مصغرة"
+    ],
+    "meaningAr": "اعتمادات قصيرة تركز على كفاية محددة وتوثق تعلمًا أصغر من الدرجة التقليدية.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "eportfolio",
+    "canonicalAr": "ملف الإنجاز الإلكتروني",
+    "canonicalEn": "E-Portfolio",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "ملف الإنجاز الإلكتروني",
+      "E-Portfolio",
+      "portfolio",
+      "محفظة إلكترونية"
+    ],
+    "meaningAr": "مجموعة رقمية منظمة من أعمال المتعلم وأدلته وتأملاته وتطوره.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "nfc-education",
+    "canonicalAr": "الاتصال قريب المدى في التعليم",
+    "canonicalEn": "NFC in Education",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "الاتصال قريب المدى في التعليم",
+      "NFC in Education",
+      "NFC",
+      "near field communication"
+    ],
+    "meaningAr": "استخدام الاتصال قريب المدى للوصول السريع أو التحقق أو التفاعل في بيئات التعليم.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "byod",
+    "canonicalAr": "أحضر جهازك الشخصي",
+    "canonicalEn": "Bring Your Own Device",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "أحضر جهازك الشخصي",
+      "Bring Your Own Device",
+      "BYOD",
+      "جهازك الشخصي"
+    ],
+    "meaningAr": "سياسة تسمح باستخدام أجهزة المتعلمين الشخصية للتعلم مع متطلبات للإنصاف والأمن والدعم.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "ubiquitous-learning",
+    "canonicalAr": "التعلّم المنتشر",
+    "canonicalEn": "Ubiquitous Learning",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "التعلّم المنتشر",
+      "Ubiquitous Learning",
+      "u-learning",
+      "تعلم في كل مكان"
+    ],
+    "meaningAr": "تعلم متاح عبر الأجهزة والسياقات والأوقات مع انتقال سلس ودعم سياقي.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "ambient-intelligence",
+    "canonicalAr": "الذكاء المحيطي",
+    "canonicalEn": "Ambient Intelligence",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "الذكاء المحيطي",
+      "Ambient Intelligence",
+      "AmI",
+      "بيئات ذكية محيطة"
+    ],
+    "meaningAr": "بيئات تستشعر السياق وتستجيب للمستخدم بصورة غير بارزة لدعم احتياجاته.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "educational-apps",
+    "canonicalAr": "التطبيقات التعليمية",
+    "canonicalEn": "Educational Applications",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "التطبيقات التعليمية",
+      "Educational Applications",
+      "تطبيق تعليمي",
+      "learning apps"
+    ],
+    "meaningAr": "برمجيات موجهة لهدف تعلم محدد تجمع المحتوى والتفاعل والتغذية الراجعة.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "digital-storytelling",
+    "canonicalAr": "السرد القصصي الرقمي",
+    "canonicalEn": "Digital Storytelling",
+    "domain": "البيئات الغامرة والتكنولوجيات الناشئة",
+    "aliases": [
+      "السرد القصصي الرقمي",
+      "Digital Storytelling",
+      "قصة رقمية",
+      "digital stories"
+    ],
+    "meaningAr": "دمج السرد بالصوت والصورة والفيديو لإنتاج معنى أو تعلم أو تعبير شخصي.",
+    "visualScenes": [
+      "متعلم يتفاعل مع طبقات مكانية مرتبطة بهدف تعليمي واضح",
+      "نموذج ثلاثي الأبعاد يربط المفهوم بالتجربة والحركة",
+      "بيئة غامرة تحتفظ بحضور الإنسان والهدف التربوي"
+    ],
+    "avoid": [
+      "خوذة واقع افتراضي بلا سياق",
+      "مدينة خيال علمي",
+      "نيون أزرق عام"
+    ],
+    "moods": [
+      "immersive",
+      "curious",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "color-field-editorial",
+      "tactile-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "formative-assessment",
+    "canonicalAr": "التقويم التكويني",
+    "canonicalEn": "Formative Assessment",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "التقويم التكويني",
+      "Formative Assessment",
+      "تقويم بنائي",
+      "assessment for learning"
+    ],
+    "meaningAr": "تقويم أثناء التعلم يقدم أدلة وتغذية راجعة لتعديل التدريس وتحسين تعلم الطالب.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "summative-assessment",
+    "canonicalAr": "التقويم الختامي",
+    "canonicalEn": "Summative Assessment",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "التقويم الختامي",
+      "Summative Assessment",
+      "تقويم نهائي",
+      "assessment of learning"
+    ],
+    "meaningAr": "تقويم في نهاية وحدة أو مقرر للحكم على مستوى تحقق المخرجات.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "diagnostic-assessment",
+    "canonicalAr": "التقويم التشخيصي",
+    "canonicalEn": "Diagnostic Assessment",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "التقويم التشخيصي",
+      "Diagnostic Assessment",
+      "اختبار تشخيصي",
+      "تشخيص تعلم"
+    ],
+    "meaningAr": "تقويم يحدد المعرفة السابقة ونقاط القوة والفجوات قبل التدريس أو التدخل.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "authentic-assessment",
+    "canonicalAr": "التقويم الأصيل",
+    "canonicalEn": "Authentic Assessment",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "التقويم الأصيل",
+      "Authentic Assessment",
+      "تقويم واقعي",
+      "authentic evaluation"
+    ],
+    "meaningAr": "تقويم يطلب أداء مهام حقيقية أو قريبة من الممارسة ويستخدم معايير واضحة.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "performance-assessment",
+    "canonicalAr": "تقويم الأداء",
+    "canonicalEn": "Performance Assessment",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "تقويم الأداء",
+      "Performance Assessment",
+      "performance based assessment",
+      "تقييم أداء"
+    ],
+    "meaningAr": "تقويم يلاحظ إنتاج أو تنفيذ مهمة أو مهارة بدل الاقتصار على اختيار إجابة.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "portfolio-assessment",
+    "canonicalAr": "التقويم بملف الإنجاز",
+    "canonicalEn": "Portfolio Assessment",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "التقويم بملف الإنجاز",
+      "Portfolio Assessment",
+      "ملف إنجاز",
+      "portfolio evaluation"
+    ],
+    "meaningAr": "تقويم مجموعة أعمال منتقاة تظهر التطور والجودة والتأمل عبر الزمن.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "rubrics",
+    "canonicalAr": "سلالم التقدير",
+    "canonicalEn": "Rubrics",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "سلالم التقدير",
+      "Rubrics",
+      "روبرك",
+      "rubric",
+      "محك تقدير"
+    ],
+    "meaningAr": "أداة تصف معايير الأداء ومستوياته لتوجيه العمل وزيادة اتساق الحكم.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "item-analysis",
+    "canonicalAr": "تحليل مفردات الاختبار",
+    "canonicalEn": "Item Analysis",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "تحليل مفردات الاختبار",
+      "Item Analysis",
+      "صعوبة الفقرة",
+      "تمييز الفقرة"
+    ],
+    "meaningAr": "تحليل إحصائي لجودة أسئلة الاختبار مثل الصعوبة والتمييز وفعالية البدائل.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "psychometrics",
+    "canonicalAr": "القياس النفسي والتربوي",
+    "canonicalEn": "Psychometrics",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "القياس النفسي والتربوي",
+      "Psychometrics",
+      "سيكومتري",
+      "educational measurement"
+    ],
+    "meaningAr": "علم بناء وقياس الخصائص الكامنة والتحقق من جودة الأدوات والدرجات.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "learning-outcomes",
+    "canonicalAr": "مخرجات التعلّم",
+    "canonicalEn": "Learning Outcomes",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "مخرجات التعلّم",
+      "Learning Outcomes",
+      "نواتج تعلم",
+      "course outcomes"
+    ],
+    "meaningAr": "عبارات قابلة للقياس تصف المعرفة والمهارات والقيم المتوقعة بعد التعلم.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "educational-kpi",
+    "canonicalAr": "مؤشرات الأداء التعليمية",
+    "canonicalEn": "Educational Key Performance Indicators",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "مؤشرات الأداء التعليمية",
+      "Educational Key Performance Indicators",
+      "KPI",
+      "مؤشر أداء"
+    ],
+    "meaningAr": "مقاييس مختارة لمتابعة تقدم هدف تعليمي أو مؤسسي مع تفسيرها ضمن السياق.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "educational-measurement",
+    "canonicalAr": "القياس التربوي",
+    "canonicalEn": "Educational Measurement",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "القياس التربوي",
+      "Educational Measurement",
+      "measurement",
+      "قياس تحصيل"
+    ],
+    "meaningAr": "إسناد قيم أو درجات لخصائص أو أداء وفق قواعد وأدوات محددة.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "program-evaluation",
+    "canonicalAr": "تقويم البرامج",
+    "canonicalEn": "Program Evaluation",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "تقويم البرامج",
+      "Program Evaluation",
+      "تقييم برنامج",
+      "evaluation study"
+    ],
+    "meaningAr": "جمع وتحليل أدلة للحكم على ملاءمة برنامج وفاعليته وكفاءته وأثره واستدامته.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "feedback-learning",
+    "canonicalAr": "التغذية الراجعة",
+    "canonicalEn": "Feedback for Learning",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "التغذية الراجعة",
+      "Feedback for Learning",
+      "feedback",
+      "رجع الصدى"
+    ],
+    "meaningAr": "معلومات محددة تساعد المتعلم على معرفة موقعه والخطوة التالية وكيفية تحسين الأداء.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "peer-assessment",
+    "canonicalAr": "تقويم الأقران",
+    "canonicalEn": "Peer Assessment",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "تقويم الأقران",
+      "Peer Assessment",
+      "peer review students",
+      "تقييم زملاء"
+    ],
+    "meaningAr": "تقويم المتعلمين لأعمال بعضهم وفق معايير مع تدريب وضبط للجودة.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "self-assessment",
+    "canonicalAr": "التقويم الذاتي",
+    "canonicalEn": "Self-Assessment",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "التقويم الذاتي",
+      "Self-Assessment",
+      "self evaluation",
+      "تقييم ذاتي"
+    ],
+    "meaningAr": "حكم المتعلم على أدائه وفق معايير وأدلة لدعم الوعي والتنظيم الذاتي.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "computer-adaptive-testing",
+    "canonicalAr": "الاختبار التكيفي المحوسب",
+    "canonicalEn": "Computerized Adaptive Testing",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "الاختبار التكيفي المحوسب",
+      "Computerized Adaptive Testing",
+      "CAT",
+      "اختبار تكيفي"
+    ],
+    "meaningAr": "اختبار يختار السؤال التالي وفق استجابة المتعلم لتقدير قدرته بكفاءة.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "e-assessment",
+    "canonicalAr": "التقويم الإلكتروني",
+    "canonicalEn": "E-Assessment",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "التقويم الإلكتروني",
+      "E-Assessment",
+      "اختبار إلكتروني",
+      "online assessment"
+    ],
+    "meaningAr": "تصميم وتنفيذ وإدارة وتحليل التقويم باستخدام بيئات رقمية.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "online-proctoring",
+    "canonicalAr": "المراقبة الإلكترونية للاختبارات",
+    "canonicalEn": "Online Proctoring",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "المراقبة الإلكترونية للاختبارات",
+      "Online Proctoring",
+      "remote proctoring",
+      "مراقبة عن بعد"
+    ],
+    "meaningAr": "مراقبة الاختبار عن بعد بأدوات بشرية أو آلية مع قضايا خصوصية وعدالة ودقة.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "sampling-research",
+    "canonicalAr": "المعاينة في البحث",
+    "canonicalEn": "Research Sampling",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "المعاينة في البحث",
+      "Research Sampling",
+      "عينة البحث",
+      "sampling"
+    ],
+    "meaningAr": "اختيار وحدات من مجتمع الدراسة بطريقة تناسب السؤال والتصميم وإمكانات التعميم.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "survey-research",
+    "canonicalAr": "البحث المسحي",
+    "canonicalEn": "Survey Research",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "البحث المسحي",
+      "Survey Research",
+      "مسح",
+      "survey study"
+    ],
+    "meaningAr": "جمع بيانات منظمة من عينة لوصف اتجاهات أو خصائص أو علاقات.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "questionnaire",
+    "canonicalAr": "الاستبانة",
+    "canonicalEn": "Questionnaire",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "الاستبانة",
+      "Questionnaire",
+      "استبيان",
+      "survey instrument"
+    ],
+    "meaningAr": "أداة أسئلة مكتوبة لقياس متغيرات أو آراء مع ضرورة التحقق من الصياغة والصدق والثبات.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "research-interview",
+    "canonicalAr": "المقابلة البحثية",
+    "canonicalEn": "Research Interview",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "المقابلة البحثية",
+      "Research Interview",
+      "interview",
+      "مقابلة شبه مقننة"
+    ],
+    "meaningAr": "أداة حوار لجمع بيانات عميقة وفق درجة من التنظيم والمرونة.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "focus-groups",
+    "canonicalAr": "مجموعات التركيز",
+    "canonicalEn": "Focus Groups",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "مجموعات التركيز",
+      "Focus Groups",
+      "focus group",
+      "مجموعة بؤرية"
+    ],
+    "meaningAr": "مناقشة جماعية موجهة لفهم الخبرات والتصورات والتفاعل حول موضوع.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "experimental-research",
+    "canonicalAr": "البحث التجريبي",
+    "canonicalEn": "Experimental Research",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "البحث التجريبي",
+      "Experimental Research",
+      "experiment",
+      "تصميم تجريبي"
+    ],
+    "meaningAr": "تصميم يختبر أثر متغير مستقل مع ضبط وتوزيع يسمح باستدلال سببي قوي.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "quasi-experimental",
+    "canonicalAr": "البحث شبه التجريبي",
+    "canonicalEn": "Quasi-Experimental Research",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "البحث شبه التجريبي",
+      "Quasi-Experimental Research",
+      "شبه تجريبي",
+      "quasi experiment"
+    ],
+    "meaningAr": "تصميم يختبر تدخلًا دون توزيع عشوائي كامل ويستخدم ضوابط وتحليلات لتقوية الاستدلال.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "correlational-research",
+    "canonicalAr": "البحث الارتباطي",
+    "canonicalEn": "Correlational Research",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "البحث الارتباطي",
+      "Correlational Research",
+      "correlation study",
+      "دراسة ارتباطية"
+    ],
+    "meaningAr": "دراسة قوة واتجاه العلاقة بين متغيرات دون إثبات السببية وحدها.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "descriptive-research",
+    "canonicalAr": "البحث الوصفي",
+    "canonicalEn": "Descriptive Research",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "البحث الوصفي",
+      "Descriptive Research",
+      "منهج وصفي",
+      "descriptive study"
+    ],
+    "meaningAr": "وصف ظاهرة أو مجتمع أو ممارسة كما هي باستخدام بيانات منظمة.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "qualitative-research",
+    "canonicalAr": "البحث النوعي",
+    "canonicalEn": "Qualitative Research",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "البحث النوعي",
+      "Qualitative Research",
+      "كيفي",
+      "نوعي"
+    ],
+    "meaningAr": "بحث يفسر المعاني والخبرات والسياقات عبر بيانات مثل المقابلات والملاحظة والوثائق.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "quantitative-research",
+    "canonicalAr": "البحث الكمي",
+    "canonicalEn": "Quantitative Research",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "البحث الكمي",
+      "Quantitative Research",
+      "كمي",
+      "quantitative"
+    ],
+    "meaningAr": "بحث يستخدم القياس والبيانات العددية والتحليل الإحصائي لاختبار أسئلة أو فرضيات.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "mixed-methods",
+    "canonicalAr": "البحوث المختلطة",
+    "canonicalEn": "Mixed Methods Research",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "البحوث المختلطة",
+      "Mixed Methods Research",
+      "mixed methods",
+      "منهج مختلط"
+    ],
+    "meaningAr": "دمج منهجي للبيانات الكمية والنوعية للحصول على فهم أوسع أو تفسير متكامل.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "systematic-review",
+    "canonicalAr": "المراجعة المنهجية",
+    "canonicalEn": "Systematic Review",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "المراجعة المنهجية",
+      "Systematic Review",
+      "systematic literature review",
+      "SLR"
+    ],
+    "meaningAr": "مراجعة تستخدم سؤالًا وبروتوكولًا وبحثًا واختيارًا وتقويمًا وتركيبًا شفافًا للدراسات.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "scoping-review",
+    "canonicalAr": "المراجعة الاستكشافية",
+    "canonicalEn": "Scoping Review",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "المراجعة الاستكشافية",
+      "Scoping Review",
+      "scoping study",
+      "مراجعة نطاقية"
+    ],
+    "meaningAr": "مراجعة ترسم نطاق الأدلة والمفاهيم والفجوات في مجال واسع أو ناشئ.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "meta-analysis",
+    "canonicalAr": "التحليل البعدي",
+    "canonicalEn": "Meta-Analysis",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "التحليل البعدي",
+      "Meta-Analysis",
+      "ميتا تحليل",
+      "meta analysis"
+    ],
+    "meaningAr": "دمج إحصائي لنتائج دراسات متقاربة لتقدير أثر كلي ودراسة التباين.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "bibliometrics",
+    "canonicalAr": "القياسات الببليومترية",
+    "canonicalEn": "Bibliometrics",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "القياسات الببليومترية",
+      "Bibliometrics",
+      "bibliometric analysis",
+      "تحليل ببليومتري"
+    ],
+    "meaningAr": "تحليل أنماط النشر والاستشهاد والتعاون والموضوعات باستخدام بيانات ببليوغرافية.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "effect-size",
+    "canonicalAr": "حجم الأثر",
+    "canonicalEn": "Effect Size",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "حجم الأثر",
+      "Effect Size",
+      "Cohen d",
+      "effect"
+    ],
+    "meaningAr": "مقياس لحجم الفرق أو العلاقة يتجاوز مجرد الدلالة الإحصائية.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "hypothesis-testing",
+    "canonicalAr": "اختبار الفرضيات",
+    "canonicalEn": "Hypothesis Testing",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "اختبار الفرضيات",
+      "Hypothesis Testing",
+      "فرض صفري",
+      "statistical hypothesis"
+    ],
+    "meaningAr": "إطار لاتخاذ قرار بشأن فرضية باستخدام بيانات واحتمال خطأ محدد.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "p-value",
+    "canonicalAr": "القيمة الاحتمالية",
+    "canonicalEn": "P-Value",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "القيمة الاحتمالية",
+      "P-Value",
+      "p value",
+      "الدلالة الإحصائية"
+    ],
+    "meaningAr": "احتمال الحصول على بيانات مساوية أو أشد تطرفًا بافتراض صحة الفرض الصفري، وليس حجم الأثر أو احتمال صحة الفرض.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "cronbach-alpha",
+    "canonicalAr": "معامل ألفا كرونباخ",
+    "canonicalEn": "Cronbach Alpha",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "معامل ألفا كرونباخ",
+      "Cronbach Alpha",
+      "alpha reliability",
+      "ألفا"
+    ],
+    "meaningAr": "مؤشر للاتساق الداخلي لبنود مقياس، ويحتاج تفسيرًا مع بنية الأداة وعدد البنود.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "exploratory-factor-analysis",
+    "canonicalAr": "التحليل العاملي الاستكشافي",
+    "canonicalEn": "Exploratory Factor Analysis",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "التحليل العاملي الاستكشافي",
+      "Exploratory Factor Analysis",
+      "EFA",
+      "تحليل عاملي استكشافي"
+    ],
+    "meaningAr": "أسلوب يستكشف البنية الكامنة والعوامل التي تفسر ارتباطات البنود.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "confirmatory-factor-analysis",
+    "canonicalAr": "التحليل العاملي التوكيدي",
+    "canonicalEn": "Confirmatory Factor Analysis",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "التحليل العاملي التوكيدي",
+      "Confirmatory Factor Analysis",
+      "CFA",
+      "تحليل عاملي تأكيدي"
+    ],
+    "meaningAr": "اختبار مدى مطابقة نموذج قياس مفترض للبيانات.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "regression-analysis",
+    "canonicalAr": "تحليل الانحدار",
+    "canonicalEn": "Regression Analysis",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "تحليل الانحدار",
+      "Regression Analysis",
+      "regression",
+      "انحدار متعدد"
+    ],
+    "meaningAr": "نماذج تقدر علاقة متغير تابع بمتغيرات مفسرة للتنبؤ أو التفسير مع فحص الافتراضات.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "anova",
+    "canonicalAr": "تحليل التباين",
+    "canonicalEn": "Analysis of Variance",
+    "domain": "التقويم والقياس والبحث العلمي",
+    "aliases": [
+      "تحليل التباين",
+      "Analysis of Variance",
+      "ANOVA",
+      "انوفا"
+    ],
+    "meaningAr": "اختبار فروق متوسطات مجموعات مع تحليل التباين داخلها وبينها.",
+    "visualScenes": [
+      "أدلة مرتبة تسمح بالمقارنة والحكم المنهجي",
+      "عملية قياس تظهر الفرق بين المؤشر والإنسان الذي يمثله",
+      "طاولة بحث دقيقة تربط السؤال بالأداة والنتيجة"
+    ],
+    "avoid": [
+      "أرقام عائمة",
+      "آلة حاسبة عامة",
+      "شهادة ودرجات بلا سياق"
+    ],
+    "moods": [
+      "academic",
+      "data",
+      "precise"
+    ],
+    "preferredWorlds": [
+      "forensic-still-life",
+      "archival-future",
+      "archival-future"
+    ]
+  },
+  {
+    "id": "digital-identity",
+    "canonicalAr": "الهوية الرقمية",
+    "canonicalEn": "Digital Identity",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "الهوية الرقمية",
+      "Digital Identity",
+      "هوية إلكترونية",
+      "online identity"
+    ],
+    "meaningAr": "تمثيل الفرد وسمعته وبياناته وعلاقاته عبر المنصات والأنظمة الرقمية.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "digital-privacy",
+    "canonicalAr": "الخصوصية الرقمية",
+    "canonicalEn": "Digital Privacy",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "الخصوصية الرقمية",
+      "Digital Privacy",
+      "privacy",
+      "حماية الخصوصية"
+    ],
+    "meaningAr": "حق الفرد في معرفة وجمع واستخدام ومشاركة بياناته والسيطرة عليها.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "cybersecurity-awareness",
+    "canonicalAr": "الوعي بالأمن السيبراني",
+    "canonicalEn": "Cybersecurity Awareness",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "الوعي بالأمن السيبراني",
+      "Cybersecurity Awareness",
+      "أمن سيبراني",
+      "cyber safety"
+    ],
+    "meaningAr": "معرفة المخاطر الرقمية وممارسات حماية الحسابات والأجهزة والبيانات والسلوك.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "cyberbullying",
+    "canonicalAr": "التنمّر الإلكتروني",
+    "canonicalEn": "Cyberbullying",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "التنمّر الإلكتروني",
+      "Cyberbullying",
+      "تنمر رقمي",
+      "online bullying"
+    ],
+    "meaningAr": "إيذاء متكرر عبر المنصات أو الرسائل أو النشر يستغل الانتشار والديمومة والاختلال في القوة.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "misinformation",
+    "canonicalAr": "المعلومات المضللة غير المقصودة",
+    "canonicalEn": "Misinformation",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "المعلومات المضللة غير المقصودة",
+      "Misinformation",
+      "معلومة خاطئة",
+      "false information"
+    ],
+    "meaningAr": "معلومات غير صحيحة تنتشر دون نية مؤكدة للخداع وتحتاج تحققًا وتصحيحًا.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "disinformation",
+    "canonicalAr": "التضليل المتعمّد",
+    "canonicalEn": "Disinformation",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "التضليل المتعمّد",
+      "Disinformation",
+      "معلومات مضللة",
+      "fake news"
+    ],
+    "meaningAr": "معلومات زائفة تصنع أو تنشر عمدًا للتأثير أو الخداع.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "media-literacy",
+    "canonicalAr": "التربية الإعلامية والمعلوماتية",
+    "canonicalEn": "Media and Information Literacy",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "التربية الإعلامية والمعلوماتية",
+      "Media and Information Literacy",
+      "MIL",
+      "وعي إعلامي"
+    ],
+    "meaningAr": "قدرة الوصول إلى الرسائل وتحليلها وتقويمها وإنتاجها وفهم المؤسسات والخوارزميات المؤثرة فيها.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "information-literacy",
+    "canonicalAr": "الثقافة المعلوماتية",
+    "canonicalEn": "Information Literacy",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "الثقافة المعلوماتية",
+      "Information Literacy",
+      "محو أمية معلوماتية",
+      "information skills"
+    ],
+    "meaningAr": "تحديد الحاجة للمعلومة والبحث عنها وتقويمها واستخدامها وتوثيقها بأخلاق.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "digital-literacy",
+    "canonicalAr": "الثقافة الرقمية",
+    "canonicalEn": "Digital Literacy",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "الثقافة الرقمية",
+      "Digital Literacy",
+      "محو الأمية الرقمية",
+      "digital skills"
+    ],
+    "meaningAr": "استخدام الأدوات الرقمية بفهم نقدي وآمن وإبداعي للتعلم والعمل والمشاركة.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "data-literacy",
+    "canonicalAr": "الثقافة البيانية",
+    "canonicalEn": "Data Literacy",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "الثقافة البيانية",
+      "Data Literacy",
+      "محو أمية البيانات",
+      "data skills"
+    ],
+    "meaningAr": "قراءة البيانات وفهم مصدرها وتمثيلها وتحليلها ونقدها واستخدامها في القرار.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "digital-wellbeing",
+    "canonicalAr": "الرفاه الرقمي",
+    "canonicalEn": "Digital Wellbeing",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "الرفاه الرقمي",
+      "Digital Wellbeing",
+      "صحة رقمية",
+      "digital wellness"
+    ],
+    "meaningAr": "توازن واعٍ في استخدام التكنولوجيا يحمي النوم والانتباه والعلاقات والصحة والمعنى.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "screen-time",
+    "canonicalAr": "وقت الشاشة",
+    "canonicalEn": "Screen Time",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "وقت الشاشة",
+      "Screen Time",
+      "زمن الشاشة",
+      "screen use"
+    ],
+    "meaningAr": "مدة ونمط وسياق استخدام الشاشات، ويجب تفسيره مع نوع النشاط والعمر والمحتوى والعلاقة.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "parental-mediation",
+    "canonicalAr": "الوساطة الوالدية الرقمية",
+    "canonicalEn": "Parental Mediation",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "الوساطة الوالدية الرقمية",
+      "Parental Mediation",
+      "رقابة أبوية",
+      "parental guidance"
+    ],
+    "meaningAr": "استراتيجيات الحوار والمشاركة والقواعد والمتابعة التي توجه استخدام الأبناء للوسائط.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "digital-footprint",
+    "canonicalAr": "البصمة الرقمية",
+    "canonicalEn": "Digital Footprint",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "البصمة الرقمية",
+      "Digital Footprint",
+      "أثر رقمي",
+      "online footprint"
+    ],
+    "meaningAr": "آثار البيانات والمحتوى والتفاعلات التي يتركها الفرد عمدًا أو آليًا عبر الزمن.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "influencer-culture",
+    "canonicalAr": "ثقافة المؤثرين",
+    "canonicalEn": "Influencer Culture",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "ثقافة المؤثرين",
+      "Influencer Culture",
+      "فاشنستات",
+      "influencers"
+    ],
+    "meaningAr": "منظومة تأثير تجاري واجتماعي تبني الثقة والهوية والرغبات عبر شخصيات المنصات.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "creator-economy",
+    "canonicalAr": "اقتصاد المبدعين",
+    "canonicalEn": "Creator Economy",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "اقتصاد المبدعين",
+      "Creator Economy",
+      "content creators",
+      "اقتصاد المحتوى"
+    ],
+    "meaningAr": "اقتصاد يعتمد إنتاج المحتوى وبناء الجمهور والمنصات والرعاية والاشتراكات والمنتجات الرقمية.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "platform-economy",
+    "canonicalAr": "اقتصاد المنصات",
+    "canonicalEn": "Platform Economy",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "اقتصاد المنصات",
+      "Platform Economy",
+      "platformization",
+      "اقتصاد رقمي منصاتي"
+    ],
+    "meaningAr": "نموذج تنظّم فيه المنصات التفاعل والأسواق والبيانات والقواعد بين أطراف متعددة.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "algorithmic-feeds",
+    "canonicalAr": "الخلاصات الخوارزمية",
+    "canonicalEn": "Algorithmic Feeds",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "الخلاصات الخوارزمية",
+      "Algorithmic Feeds",
+      "خوارزمية المنصة",
+      "recommendation feed"
+    ],
+    "meaningAr": "ترتيب آلي للمحتوى وفق توقع التفاعل، بما يؤثر في الانتباه والمعرفة والفقاعات.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "attention-economy",
+    "canonicalAr": "اقتصاد الانتباه",
+    "canonicalEn": "Attention Economy",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "اقتصاد الانتباه",
+      "Attention Economy",
+      "سرقة الانتباه",
+      "engagement economy"
+    ],
+    "meaningAr": "منافسة المنصات والمحتوى على وقت المستخدم وتركيزه بوصفهما موردًا اقتصاديًا.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "digital-divide",
+    "canonicalAr": "الفجوة الرقمية",
+    "canonicalEn": "Digital Divide",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "الفجوة الرقمية",
+      "Digital Divide",
+      "عدم المساواة الرقمية",
+      "digital inequality"
+    ],
+    "meaningAr": "فروق الوصول والأجهزة والاتصال والمهارات والدعم والقدرة على تحويل الاستخدام إلى منفعة.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "online-safety",
+    "canonicalAr": "السلامة على الإنترنت",
+    "canonicalEn": "Online Safety",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "السلامة على الإنترنت",
+      "Online Safety",
+      "أمان رقمي",
+      "internet safety"
+    ],
+    "meaningAr": "ممارسات وسياسات تحمي المستخدم من الاستغلال والاحتيال والإيذاء والمحتوى والمخاطر.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "digital-rights",
+    "canonicalAr": "الحقوق الرقمية",
+    "canonicalEn": "Digital Rights",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "الحقوق الرقمية",
+      "Digital Rights",
+      "حقوق الإنترنت",
+      "online rights"
+    ],
+    "meaningAr": "امتداد الحقوق الإنسانية إلى الخصوصية والتعبير والوصول والإنصاف والمساءلة في البيئة الرقمية.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "digital-ethics",
+    "canonicalAr": "الأخلاقيات الرقمية",
+    "canonicalEn": "Digital Ethics",
+    "domain": "المجتمع الرقمي والإعلام والطفل والأسرة",
+    "aliases": [
+      "الأخلاقيات الرقمية",
+      "Digital Ethics",
+      "أخلاق التكنولوجيا",
+      "tech ethics"
+    ],
+    "meaningAr": "فحص القيم والمسؤوليات والآثار في تصميم واستخدام الأنظمة والمنصات والبيانات.",
+    "visualScenes": [
+      "علاقة إنسانية تتأثر بمنصة أو جهاز من دون أن تكون الشاشة هي البطل",
+      "أثر رقمي يظهر في الانتباه أو الهوية أو القرار داخل مشهد يومي",
+      "أسرة أو متعلم يوازن بين الاتصال والحضور الإنساني"
+    ],
+    "avoid": [
+      "أيقونات تطبيقات عائمة",
+      "سيلفي مؤثرين مبتذل",
+      "هاتف مضيء في غرفة مظلمة دائمًا"
+    ],
+    "moods": [
+      "human",
+      "balanced",
+      "critical"
+    ],
+    "preferredWorlds": [
+      "human-documentary",
+      "visual-paradox",
+      "optimistic-human"
+    ]
+  },
+  {
+    "id": "digital-strategy",
+    "canonicalAr": "الاستراتيجية الرقمية",
+    "canonicalEn": "Digital Strategy",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "الاستراتيجية الرقمية",
+      "Digital Strategy",
+      "خطة رقمية",
+      "digital roadmap"
+    ],
+    "meaningAr": "رؤية وأولويات ومحفظة مبادرات تربط التكنولوجيا بأهداف المؤسسة وقيمتها وقدراتها.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "change-management",
+    "canonicalAr": "إدارة التغيير",
+    "canonicalEn": "Change Management",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "إدارة التغيير",
+      "Change Management",
+      "إدارة التحول",
+      "organizational change"
+    ],
+    "meaningAr": "تخطيط ودعم انتقال الأفراد والعمليات والثقافة من وضع حالي إلى وضع مستهدف.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "innovation-management",
+    "canonicalAr": "إدارة الابتكار",
+    "canonicalEn": "Innovation Management",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "إدارة الابتكار",
+      "Innovation Management",
+      "إدارة الإبداع",
+      "innovation portfolio"
+    ],
+    "meaningAr": "منظومة توليد الأفكار واختيارها وتجريبها وتوسيعها وقياس قيمتها.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "educational-leadership",
+    "canonicalAr": "القيادة التربوية",
+    "canonicalEn": "Educational Leadership",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "القيادة التربوية",
+      "Educational Leadership",
+      "قيادة تعليمية",
+      "school leadership"
+    ],
+    "meaningAr": "توجيه الرؤية والثقافة والناس والموارد لتحسين التعلم والعدالة والقدرة المؤسسية.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "knowledge-management",
+    "canonicalAr": "إدارة المعرفة",
+    "canonicalEn": "Knowledge Management",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "إدارة المعرفة",
+      "Knowledge Management",
+      "KM",
+      "معرفة مؤسسية"
+    ],
+    "meaningAr": "التقاط المعرفة وتنظيمها ومشاركتها وتطبيقها والمحافظة عليها داخل المؤسسة.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "institutional-governance",
+    "canonicalAr": "الحوكمة المؤسسية",
+    "canonicalEn": "Institutional Governance",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "الحوكمة المؤسسية",
+      "Institutional Governance",
+      "governance",
+      "حوكمة جامعية"
+    ],
+    "meaningAr": "توزيع الصلاحيات والمسؤوليات والرقابة والشفافية واتخاذ القرار داخل المؤسسة.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "data-governance",
+    "canonicalAr": "حوكمة البيانات",
+    "canonicalEn": "Data Governance",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "حوكمة البيانات",
+      "Data Governance",
+      "إدارة البيانات المؤسسية",
+      "data stewardship"
+    ],
+    "meaningAr": "سياسات وأدوار ومعايير لجودة البيانات وأمنها وخصوصيتها وإتاحتها واستخدامها المسؤول.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "quality-assurance",
+    "canonicalAr": "ضمان الجودة",
+    "canonicalEn": "Quality Assurance",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "ضمان الجودة",
+      "Quality Assurance",
+      "QA education",
+      "جودة مؤسسية"
+    ],
+    "meaningAr": "عمليات منهجية للتأكد من تحقق المعايير والتحسين المستمر في البرامج والخدمات.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "curriculum-mapping",
+    "canonicalAr": "خرائط المناهج",
+    "canonicalEn": "Curriculum Mapping",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "خرائط المناهج",
+      "Curriculum Mapping",
+      "خريطة منهج",
+      "curriculum alignment"
+    ],
+    "meaningAr": "تمثيل يربط المخرجات والمحتوى والأنشطة والتقويم عبر المقررات والمستويات.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "professional-learning-communities",
+    "canonicalAr": "مجتمعات التعلّم المهنية",
+    "canonicalEn": "Professional Learning Communities",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "مجتمعات التعلّم المهنية",
+      "Professional Learning Communities",
+      "PLC",
+      "مجتمع مهني"
+    ],
+    "meaningAr": "فرق مهنية تتعلم تعاونيًا من الأدلة والممارسة لتحسين نتائج المتعلمين.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "strategic-planning",
+    "canonicalAr": "التخطيط الاستراتيجي",
+    "canonicalEn": "Strategic Planning",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "التخطيط الاستراتيجي",
+      "Strategic Planning",
+      "خطة استراتيجية",
+      "strategic management"
+    ],
+    "meaningAr": "تحديد الاتجاه والأهداف والمبادرات والمؤشرات والموارد والمخاطر على مدى زمني.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "project-management",
+    "canonicalAr": "إدارة المشروعات",
+    "canonicalEn": "Project Management",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "إدارة المشروعات",
+      "Project Management",
+      "PM",
+      "إدارة مشروع"
+    ],
+    "meaningAr": "تخطيط وتنفيذ ومتابعة نطاق وزمن وتكلفة وجودة ومخاطر وأصحاب مصلحة لتحقيق مخرج.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "risk-management",
+    "canonicalAr": "إدارة المخاطر",
+    "canonicalEn": "Risk Management",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "إدارة المخاطر",
+      "Risk Management",
+      "مخاطر مؤسسية",
+      "risk assessment"
+    ],
+    "meaningAr": "تحديد المخاطر وتحليل احتمالها وأثرها وتخطيط الاستجابة والمراقبة.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "business-continuity",
+    "canonicalAr": "استمرارية الأعمال",
+    "canonicalEn": "Business Continuity",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "استمرارية الأعمال",
+      "Business Continuity",
+      "BCP",
+      "استمرارية التعليم"
+    ],
+    "meaningAr": "قدرة المؤسسة على استمرار الخدمات الحرجة والتعافي من الاضطرابات.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "digital-maturity",
+    "canonicalAr": "النضج الرقمي",
+    "canonicalEn": "Digital Maturity",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "النضج الرقمي",
+      "Digital Maturity",
+      "maturity model",
+      "نضج التحول"
+    ],
+    "meaningAr": "مستوى تطور الاستراتيجية والعمليات والبيانات والتكنولوجيا والثقافة والمهارات الرقمية.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "institutional-readiness",
+    "canonicalAr": "الجاهزية المؤسسية",
+    "canonicalEn": "Institutional Readiness",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "الجاهزية المؤسسية",
+      "Institutional Readiness",
+      "readiness assessment",
+      "استعداد المؤسسة"
+    ],
+    "meaningAr": "قدرة المؤسسة الحالية على تبني تغيير من حيث القيادة والثقافة والموارد والمهارات والبنية.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "educational-policy",
+    "canonicalAr": "السياسات التعليمية",
+    "canonicalEn": "Educational Policy",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "السياسات التعليمية",
+      "Educational Policy",
+      "policy making",
+      "سياسة تربوية"
+    ],
+    "meaningAr": "قرارات وقواعد توجه أهداف التعليم وموارده وممارساته وحقوق الأطراف ومساءلتها.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "curriculum-governance",
+    "canonicalAr": "حوكمة المناهج",
+    "canonicalEn": "Curriculum Governance",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "حوكمة المناهج",
+      "Curriculum Governance",
+      "إدارة المناهج",
+      "curriculum committee"
+    ],
+    "meaningAr": "هياكل وعمليات اعتماد المناهج ومراجعتها وتحديثها وضمان اتساقها وجودتها.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "academic-advising",
+    "canonicalAr": "الإرشاد الأكاديمي",
+    "canonicalEn": "Academic Advising",
+    "domain": "القيادة والتحول المؤسسي والجودة",
+    "aliases": [
+      "الإرشاد الأكاديمي",
+      "Academic Advising",
+      "advising",
+      "توجيه أكاديمي"
+    ],
+    "meaningAr": "دعم الطالب في فهم البرنامج واتخاذ قرارات الدراسة والتقدم والنجاح.",
+    "visualScenes": [
+      "منظومة مؤسسية تتغير بنيتها لا واجهتها فقط",
+      "قيادة تربط البيانات بالقرار والمسؤولية",
+      "فرق عمل تتحرك عبر مسار تحول واضح وقابل للقياس"
+    ],
+    "avoid": [
+      "ناطحات سحاب عامة",
+      "مصافحة رجال أعمال",
+      "تروس متداخلة مبتذلة"
+    ],
+    "moods": [
+      "institutional",
+      "confident",
+      "efficient"
+    ],
+    "preferredWorlds": [
+      "architectural-silence",
+      "daylight-learning",
+      "kinetic-system"
+    ]
+  },
+  {
+    "id": "book-educational-technology-encyclopedia",
+    "canonicalAr": "موسوعة تكنولوجيا التعليم",
+    "canonicalEn": "Educational Technology Encyclopedia",
+    "domain": "أعمال ومشروعات د. أحمد حسين الفيلكاوي",
+    "aliases": [
+      "موسوعة تكنولوجيا التعليم",
+      "Educational Technology Encyclopedia",
+      "موسوعة الدكتور أحمد",
+      "educational tech encyclopedia"
+    ],
+    "meaningAr": "كتاب للدكتور أحمد يقدم تكنولوجيا التعليم في صيغة ورقية إبداعية وتفاعلية تجمع المفهوم والتطبيق.",
+    "visualScenes": [
+      "أثر معرفي موثق يجمع الكتاب والبحث والتطبيق في مسار واحد",
+      "مشروع كويتي تعليمي يتحول من فكرة إلى أداة يستخدمها الناس",
+      "أرشيف معاصر يبرز امتداد تجربة د. أحمد بين التعليم والتكنولوجيا والمجتمع"
+    ],
+    "avoid": [
+      "سيرة ذاتية تجارية",
+      "جوائز وهمية",
+      "نصوص أو شعارات غير صحيحة"
+    ],
+    "moods": [
+      "dignified",
+      "intellectual",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "archival-future",
+      "tactile-learning",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "book-century-learning",
+    "canonicalAr": "التعلّم ومتطلبات القرن",
+    "canonicalEn": "Learning and the Requirements of the Century",
+    "domain": "أعمال ومشروعات د. أحمد حسين الفيلكاوي",
+    "aliases": [
+      "التعلّم ومتطلبات القرن",
+      "Learning and the Requirements of the Century",
+      "التعلم الرقمي كتاب",
+      "متطلبات القرن"
+    ],
+    "meaningAr": "كتاب للدكتور أحمد يتناول تحولات التعلّم الرقمي ومتطلبات المتعلم والمؤسسة في القرن الحديث.",
+    "visualScenes": [
+      "أثر معرفي موثق يجمع الكتاب والبحث والتطبيق في مسار واحد",
+      "مشروع كويتي تعليمي يتحول من فكرة إلى أداة يستخدمها الناس",
+      "أرشيف معاصر يبرز امتداد تجربة د. أحمد بين التعليم والتكنولوجيا والمجتمع"
+    ],
+    "avoid": [
+      "سيرة ذاتية تجارية",
+      "جوائز وهمية",
+      "نصوص أو شعارات غير صحيحة"
+    ],
+    "moods": [
+      "dignified",
+      "intellectual",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "archival-future",
+      "tactile-learning",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "book-gaming-world",
+    "canonicalAr": "الألعاب وعالم الألعاب",
+    "canonicalEn": "Gaming and the World of Games",
+    "domain": "أعمال ومشروعات د. أحمد حسين الفيلكاوي",
+    "aliases": [
+      "الألعاب وعالم الألعاب",
+      "Gaming and the World of Games",
+      "كتاب الألعاب",
+      "عالم الألعاب"
+    ],
+    "meaningAr": "كتاب للدكتور أحمد يتناول الألعاب وثقافتها وعلاقتها بالتعلم والطفل والمجتمع.",
+    "visualScenes": [
+      "أثر معرفي موثق يجمع الكتاب والبحث والتطبيق في مسار واحد",
+      "مشروع كويتي تعليمي يتحول من فكرة إلى أداة يستخدمها الناس",
+      "أرشيف معاصر يبرز امتداد تجربة د. أحمد بين التعليم والتكنولوجيا والمجتمع"
+    ],
+    "avoid": [
+      "سيرة ذاتية تجارية",
+      "جوائز وهمية",
+      "نصوص أو شعارات غير صحيحة"
+    ],
+    "moods": [
+      "dignified",
+      "intellectual",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "archival-future",
+      "tactile-learning",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "book-disabled-technology",
+    "canonicalAr": "تكنولوجيا ذوي الإعاقة",
+    "canonicalEn": "Disabled Technology",
+    "domain": "أعمال ومشروعات د. أحمد حسين الفيلكاوي",
+    "aliases": [
+      "تكنولوجيا ذوي الإعاقة",
+      "Disabled Technology",
+      "كتاب تكنولوجيا المعاقين",
+      "التكنولوجيا وذوي الاحتياجات"
+    ],
+    "meaningAr": "كتاب للدكتور أحمد عن دور التكنولوجيا المساندة في الإتاحة والاستقلال والتعلم.",
+    "visualScenes": [
+      "أثر معرفي موثق يجمع الكتاب والبحث والتطبيق في مسار واحد",
+      "مشروع كويتي تعليمي يتحول من فكرة إلى أداة يستخدمها الناس",
+      "أرشيف معاصر يبرز امتداد تجربة د. أحمد بين التعليم والتكنولوجيا والمجتمع"
+    ],
+    "avoid": [
+      "سيرة ذاتية تجارية",
+      "جوائز وهمية",
+      "نصوص أو شعارات غير صحيحة"
+    ],
+    "moods": [
+      "dignified",
+      "intellectual",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "archival-future",
+      "tactile-learning",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "book-child-technology",
+    "canonicalAr": "الطفل والتكنولوجيا",
+    "canonicalEn": "Child and Technology",
+    "domain": "أعمال ومشروعات د. أحمد حسين الفيلكاوي",
+    "aliases": [
+      "الطفل والتكنولوجيا",
+      "Child and Technology",
+      "كتاب الطفل",
+      "child technology book"
+    ],
+    "meaningAr": "كتاب للدكتور أحمد عن علاقة الطفل بالأجهزة والمنصات والفرص والمخاطر ودور الأسرة.",
+    "visualScenes": [
+      "أثر معرفي موثق يجمع الكتاب والبحث والتطبيق في مسار واحد",
+      "مشروع كويتي تعليمي يتحول من فكرة إلى أداة يستخدمها الناس",
+      "أرشيف معاصر يبرز امتداد تجربة د. أحمد بين التعليم والتكنولوجيا والمجتمع"
+    ],
+    "avoid": [
+      "سيرة ذاتية تجارية",
+      "جوائز وهمية",
+      "نصوص أو شعارات غير صحيحة"
+    ],
+    "moods": [
+      "dignified",
+      "intellectual",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "archival-future",
+      "tactile-learning",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "book-ai-big-data",
+    "canonicalAr": "الذكاء الاصطناعي وحوسبة البيانات الضخمة",
+    "canonicalEn": "Artificial Intelligence and Big Data Computerization",
+    "domain": "أعمال ومشروعات د. أحمد حسين الفيلكاوي",
+    "aliases": [
+      "الذكاء الاصطناعي وحوسبة البيانات الضخمة",
+      "Artificial Intelligence and Big Data Computerization",
+      "كتاب الذكاء والبيانات",
+      "AI big data book"
+    ],
+    "meaningAr": "كتاب للدكتور أحمد يربط الذكاء الاصطناعي والبيانات الضخمة بالتعليم والمجتمع والقرار.",
+    "visualScenes": [
+      "أثر معرفي موثق يجمع الكتاب والبحث والتطبيق في مسار واحد",
+      "مشروع كويتي تعليمي يتحول من فكرة إلى أداة يستخدمها الناس",
+      "أرشيف معاصر يبرز امتداد تجربة د. أحمد بين التعليم والتكنولوجيا والمجتمع"
+    ],
+    "avoid": [
+      "سيرة ذاتية تجارية",
+      "جوائز وهمية",
+      "نصوص أو شعارات غير صحيحة"
+    ],
+    "moods": [
+      "dignified",
+      "intellectual",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "archival-future",
+      "tactile-learning",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "book-smart-schools",
+    "canonicalAr": "المدارس الذكية",
+    "canonicalEn": "Smart Schools Book",
+    "domain": "أعمال ومشروعات د. أحمد حسين الفيلكاوي",
+    "aliases": [
+      "المدارس الذكية",
+      "Smart Schools Book",
+      "كتاب المدارس الذكية"
+    ],
+    "meaningAr": "كتاب للدكتور أحمد يناقش المدرسة الذكية كبنية تعلم وقيادة وبيانات لا كمجرد أجهزة.",
+    "visualScenes": [
+      "أثر معرفي موثق يجمع الكتاب والبحث والتطبيق في مسار واحد",
+      "مشروع كويتي تعليمي يتحول من فكرة إلى أداة يستخدمها الناس",
+      "أرشيف معاصر يبرز امتداد تجربة د. أحمد بين التعليم والتكنولوجيا والمجتمع"
+    ],
+    "avoid": [
+      "سيرة ذاتية تجارية",
+      "جوائز وهمية",
+      "نصوص أو شعارات غير صحيحة"
+    ],
+    "moods": [
+      "dignified",
+      "intellectual",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "archival-future",
+      "tactile-learning",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "book-teaching-technology",
+    "canonicalAr": "مناهج وطرق التدريس وتكنولوجيا التدريس",
+    "canonicalEn": "Teaching Methods and Teaching Technology",
+    "domain": "أعمال ومشروعات د. أحمد حسين الفيلكاوي",
+    "aliases": [
+      "مناهج وطرق التدريس وتكنولوجيا التدريس",
+      "Teaching Methods and Teaching Technology",
+      "كتاب طرق التدريس",
+      "تكنولوجيا التدريس"
+    ],
+    "meaningAr": "كتاب للدكتور أحمد يربط طرق التدريس بالتصميم والأدوات والتفاعل والتقويم.",
+    "visualScenes": [
+      "أثر معرفي موثق يجمع الكتاب والبحث والتطبيق في مسار واحد",
+      "مشروع كويتي تعليمي يتحول من فكرة إلى أداة يستخدمها الناس",
+      "أرشيف معاصر يبرز امتداد تجربة د. أحمد بين التعليم والتكنولوجيا والمجتمع"
+    ],
+    "avoid": [
+      "سيرة ذاتية تجارية",
+      "جوائز وهمية",
+      "نصوص أو شعارات غير صحيحة"
+    ],
+    "moods": [
+      "dignified",
+      "intellectual",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "archival-future",
+      "tactile-learning",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "book-virtual-world",
+    "canonicalAr": "العالم الافتراضي",
+    "canonicalEn": "Virtual World Book",
+    "domain": "أعمال ومشروعات د. أحمد حسين الفيلكاوي",
+    "aliases": [
+      "العالم الافتراضي",
+      "Virtual World Book",
+      "كتاب العالم الافتراضي"
+    ],
+    "meaningAr": "كتاب للدكتور أحمد يتناول البيئات الافتراضية وتأثيرها في التعلم والهوية والمجتمع.",
+    "visualScenes": [
+      "أثر معرفي موثق يجمع الكتاب والبحث والتطبيق في مسار واحد",
+      "مشروع كويتي تعليمي يتحول من فكرة إلى أداة يستخدمها الناس",
+      "أرشيف معاصر يبرز امتداد تجربة د. أحمد بين التعليم والتكنولوجيا والمجتمع"
+    ],
+    "avoid": [
+      "سيرة ذاتية تجارية",
+      "جوائز وهمية",
+      "نصوص أو شعارات غير صحيحة"
+    ],
+    "moods": [
+      "dignified",
+      "intellectual",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "archival-future",
+      "tactile-learning",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "e-attendance-project",
+    "canonicalAr": "برنامج E-Attendance",
+    "canonicalEn": "E-Attendance",
+    "domain": "أعمال ومشروعات د. أحمد حسين الفيلكاوي",
+    "aliases": [
+      "برنامج E-Attendance",
+      "E-Attendance",
+      "اي اتندنس",
+      "برنامج الحضور QR"
+    ],
+    "meaningAr": "مشروع أنشأه الدكتور أحمد للحضور الطلابي باستخدام رمز QR على الأجهزة الذكية.",
+    "visualScenes": [
+      "أثر معرفي موثق يجمع الكتاب والبحث والتطبيق في مسار واحد",
+      "مشروع كويتي تعليمي يتحول من فكرة إلى أداة يستخدمها الناس",
+      "أرشيف معاصر يبرز امتداد تجربة د. أحمد بين التعليم والتكنولوجيا والمجتمع"
+    ],
+    "avoid": [
+      "سيرة ذاتية تجارية",
+      "جوائز وهمية",
+      "نصوص أو شعارات غير صحيحة"
+    ],
+    "moods": [
+      "dignified",
+      "intellectual",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "archival-future",
+      "tactile-learning",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "schedule-portal-project",
+    "canonicalAr": "برنامج الجداول الجامعية",
+    "canonicalEn": "University Scheduling Portal",
+    "domain": "أعمال ومشروعات د. أحمد حسين الفيلكاوي",
+    "aliases": [
+      "برنامج الجداول الجامعية",
+      "University Scheduling Portal",
+      "schedule.dr-alfailakawi.com",
+      "برنامج الجداول"
+    ],
+    "meaningAr": "نظام كويتي لتكوين جداول الأقسام والكليات العلمية طوّره الدكتور أحمد بالتعاون مع د. عبدالعزيز العنزي.",
+    "visualScenes": [
+      "أثر معرفي موثق يجمع الكتاب والبحث والتطبيق في مسار واحد",
+      "مشروع كويتي تعليمي يتحول من فكرة إلى أداة يستخدمها الناس",
+      "أرشيف معاصر يبرز امتداد تجربة د. أحمد بين التعليم والتكنولوجيا والمجتمع"
+    ],
+    "avoid": [
+      "سيرة ذاتية تجارية",
+      "جوائز وهمية",
+      "نصوص أو شعارات غير صحيحة"
+    ],
+    "moods": [
+      "dignified",
+      "intellectual",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "archival-future",
+      "tactile-learning",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "dr-alfailakawi-website",
+    "canonicalAr": "الموقع الرسمي للدكتور أحمد الفيلكاوي",
+    "canonicalEn": "Dr-Alfailakawi.com",
+    "domain": "أعمال ومشروعات د. أحمد حسين الفيلكاوي",
+    "aliases": [
+      "الموقع الرسمي للدكتور أحمد الفيلكاوي",
+      "Dr-Alfailakawi.com",
+      "موقع الدكتور",
+      "dr alfailakawi"
+    ],
+    "meaningAr": "منصة معرفية تجمع مؤلفات الدكتور أحمد وأبحاثه ومقالاته ومشروعاته في التعليم والتكنولوجيا والمجتمع.",
+    "visualScenes": [
+      "أثر معرفي موثق يجمع الكتاب والبحث والتطبيق في مسار واحد",
+      "مشروع كويتي تعليمي يتحول من فكرة إلى أداة يستخدمها الناس",
+      "أرشيف معاصر يبرز امتداد تجربة د. أحمد بين التعليم والتكنولوجيا والمجتمع"
+    ],
+    "avoid": [
+      "سيرة ذاتية تجارية",
+      "جوائز وهمية",
+      "نصوص أو شعارات غير صحيحة"
+    ],
+    "moods": [
+      "dignified",
+      "intellectual",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "archival-future",
+      "tactile-learning",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "national-fruitful-program",
+    "canonicalAr": "البرنامج الوطني المثمر",
+    "canonicalEn": "National Fruitful Program",
+    "domain": "أعمال ومشروعات د. أحمد حسين الفيلكاوي",
+    "aliases": [
+      "البرنامج الوطني المثمر",
+      "National Fruitful Program",
+      "مثمر",
+      "fruitful program"
+    ],
+    "meaningAr": "برنامج شبابي وطني أشرف عليه الدكتور أحمد ضمن عمله في الهيئة العامة للشباب.",
+    "visualScenes": [
+      "أثر معرفي موثق يجمع الكتاب والبحث والتطبيق في مسار واحد",
+      "مشروع كويتي تعليمي يتحول من فكرة إلى أداة يستخدمها الناس",
+      "أرشيف معاصر يبرز امتداد تجربة د. أحمد بين التعليم والتكنولوجيا والمجتمع"
+    ],
+    "avoid": [
+      "سيرة ذاتية تجارية",
+      "جوائز وهمية",
+      "نصوص أو شعارات غير صحيحة"
+    ],
+    "moods": [
+      "dignified",
+      "intellectual",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "archival-future",
+      "tactile-learning",
+      "daylight-learning"
+    ]
+  },
+  {
+    "id": "reach-network",
+    "canonicalAr": "شبكة Reach",
+    "canonicalEn": "Reach Network",
+    "domain": "أعمال ومشروعات د. أحمد حسين الفيلكاوي",
+    "aliases": [
+      "شبكة Reach",
+      "Reach Network",
+      "Reach",
+      "ريتش"
+    ],
+    "meaningAr": "شبكة مهنية وردت ضمن السيرة وتندرج في امتداد التواصل والخبرة المهنية للدكتور أحمد.",
+    "visualScenes": [
+      "أثر معرفي موثق يجمع الكتاب والبحث والتطبيق في مسار واحد",
+      "مشروع كويتي تعليمي يتحول من فكرة إلى أداة يستخدمها الناس",
+      "أرشيف معاصر يبرز امتداد تجربة د. أحمد بين التعليم والتكنولوجيا والمجتمع"
+    ],
+    "avoid": [
+      "سيرة ذاتية تجارية",
+      "جوائز وهمية",
+      "نصوص أو شعارات غير صحيحة"
+    ],
+    "moods": [
+      "dignified",
+      "intellectual",
+      "creative"
+    ],
+    "preferredWorlds": [
+      "archival-future",
+      "tactile-learning",
+      "daylight-learning"
     ]
   }
 ]

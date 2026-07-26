@@ -903,7 +903,8 @@ const drAhmadDomainGlossary = (() => {
     const parsed = JSON.parse(readFileSync(drAhmadGlossaryPath, 'utf8'))
     return Array.isArray(parsed) ? parsed.filter((item) => item && typeof item === 'object' && item.id && item.canonicalAr) : []
   } catch (error) {
-    console.warn('[studio-image] Domain glossary unavailable', error instanceof Error ? error.message : error)
+    const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
+    if (code && code !== 'ENOENT') console.warn('[studio-image] Domain glossary unavailable', error instanceof Error ? error.message : error)
     return []
   }
 })()
@@ -936,11 +937,45 @@ function glossaryAliasScore(input, alias) {
   return overlap ? 55 + Math.round((overlap / Math.max(1, targetTokens.length)) * 35) : 0
 }
 
+function requestGlossaryEntry(input) {
+  const label = boundedString(input.glossaryLabel, 500)
+  const canonicalEn = boundedString(input.glossaryCanonicalEn, 500)
+  const meaning = boundedString(input.glossaryMeaning, 4_000)
+  const scenes = boundedArray(input.glossaryScenes, 18, (item) => boundedString(item, 800))
+  const avoid = boundedArray(input.glossaryAvoid, 32, (item) => boundedString(item, 500))
+  const preferredWorlds = boundedArray(input.preferredWorlds, 18, (item) => boundedString(item, 80))
+  const moods = boundedArray(input.moods, 18, (item) => boundedString(item, 80))
+  if (!label && !canonicalEn && !meaning && !scenes.length) return null
+  return {
+    id: boundedString(input.glossaryConcept, 500) || `request-${createHash('sha256').update([label, canonicalEn, meaning].join('|')).digest('hex').slice(0, 16)}`,
+    canonicalAr: label || boundedString(input.issue, 500) || boundedString(input.idea, 500) || 'مفهوم معرفي مركب',
+    canonicalEn: canonicalEn || label || 'Domain-specific educational concept',
+    domain: 'الرسم المعرفي الشخصي لد. أحمد',
+    aliases: [label, canonicalEn].filter(Boolean),
+    meaningAr: meaning || boundedString(input.visualReason, 2_000) || 'مفهوم مركب فُسّر في الواجهة من خلال قاموس د. أحمد وسياقه المتخصص.',
+    visualScenes: scenes,
+    avoid,
+    preferredWorlds,
+    moods,
+  }
+}
+
 function selectDrAhmadGlossaryEntry(input) {
   const idea = [input.idea, input.issue, input.glossaryLabel, input.glossaryCanonicalEn].filter(Boolean).join(' ')
   const context = [input.context, input.tension, input.visualReason].filter(Boolean).join(' ')
+  const requestEntry = requestGlossaryEntry(input)
   const explicit = input.glossaryConcept ? drAhmadDomainGlossary.find((entry) => entry.id === input.glossaryConcept) : null
-  if (explicit) return explicit
+  if (explicit) return requestEntry ? {
+    ...explicit,
+    canonicalAr: requestEntry.canonicalAr || explicit.canonicalAr,
+    canonicalEn: requestEntry.canonicalEn || explicit.canonicalEn,
+    meaningAr: requestEntry.meaningAr || explicit.meaningAr,
+    visualScenes: requestEntry.visualScenes.length ? requestEntry.visualScenes : explicit.visualScenes,
+    avoid: [...new Set([...(explicit.avoid || []), ...requestEntry.avoid])],
+    preferredWorlds: requestEntry.preferredWorlds.length ? requestEntry.preferredWorlds : explicit.preferredWorlds,
+    moods: [...new Set([...(explicit.moods || []), ...requestEntry.moods])],
+  } : explicit
+  if (requestEntry) return requestEntry
   const ranked = drAhmadDomainGlossary.map((entry) => {
     const aliases = [entry.canonicalAr, entry.canonicalEn, ...(Array.isArray(entry.aliases) ? entry.aliases : [])]
     const direct = Math.max(...aliases.map((alias) => glossaryAliasScore(idea, alias)), 0)
@@ -980,6 +1015,30 @@ const studioVisualWorlds = Object.freeze([
   {
     id: 'daylight-learning', label: 'التعلّم المضيء', mood: 'bright', treatment: 'documentary', layoutHint: 'editorial-axis', paletteHint: 'scholar-blue',
     direction: 'bright premium educational editorial photography, generous daylight, optimistic spatial rhythm, clean contemporary materials, active learning energy, sophisticated rather than childish',
+  },
+  {
+    id: 'sunlit-campus', label: 'الحرم الجامعي المشرق', mood: 'bright', treatment: 'documentary', layoutHint: 'chapter-stack', paletteHint: 'signal-ivory',
+    direction: 'sunlit contemporary campus or learning commons, airy architecture, active human movement, warm pale materials, optimistic institutional confidence, no empty corridor and no gloomy symmetry',
+  },
+  {
+    id: 'living-learning-lab', label: 'مختبر التعلّم الحي', mood: 'collaborative', treatment: 'documentary', layoutHint: 'modular-brief', paletteHint: 'scholar-blue',
+    direction: 'a lively hands-on learning laboratory with real prototypes, cards, tools and human collaboration, natural daylight, visible experimentation, sophisticated color accents, authentic rather than staged',
+  },
+  {
+    id: 'kinetic-collage', label: 'الكولاج الحركي', mood: 'energetic', treatment: 'editorial', layoutHint: 'dual-thesis', paletteHint: 'signal-ivory',
+    direction: 'premium editorial photographic collage built from two or three materially coherent educational fragments, dynamic diagonals, optimistic color, strong rhythm, one clear conceptual relationship, not a dark cinematic still',
+  },
+  {
+    id: 'spatial-learning', label: 'التعلّم المكاني', mood: 'immersive', treatment: 'editorial', layoutHint: 'quiet-orbit', paletteHint: 'warm-parchment',
+    direction: 'an elegant spatial learning installation with layered depth, tactile markers, pathways and scale changes, bright museum-like light, curiosity and discovery, no headset cliché and no science-fiction neon',
+  },
+  {
+    id: 'optimistic-data', label: 'البيانات المتفائلة', mood: 'data', treatment: 'editorial', layoutHint: 'evidence-ledger', paletteHint: 'scholar-blue',
+    direction: 'physical data storytelling using real objects, measured spacing and one vivid accent, clean daylight, academic precision with human warmth, no floating charts, no readable numbers and no corporate dashboard',
+  },
+  {
+    id: 'material-future', label: 'المستقبل المادي', mood: 'future', treatment: 'editorial', layoutHint: 'hero-word', paletteHint: 'signal-ivory',
+    direction: 'a hopeful future expressed through believable contemporary materials, prototypes and architectural light, one bold transformation, refined color, no robots, no glowing portals and no dystopia',
   },
   {
     id: 'playful-systems', label: 'النظام اللعبي الراقي', mood: 'playful', treatment: 'editorial', layoutHint: 'modular-brief', paletteHint: 'signal-ivory',
@@ -1192,9 +1251,18 @@ function compileStudioVisualDirection(input) {
   const compatibleWorlds = compatibleIds.map((id) => studioVisualWorlds.find((item) => item.id === id)).filter(Boolean)
   const freshWorlds = compatibleWorlds.filter((item) => !recent.has(item.id))
   const moodSet = new Set([...(input.moods || []), ...(concept.moods || [])])
-  const positiveMood = ['bright', 'playful', 'energetic', 'optimistic', 'creative', 'warm', 'collaborative', 'curious'].some((mood) => moodSet.has(mood))
-  const moodWorlds = (freshWorlds.length ? freshWorlds : compatibleWorlds).filter((item) => !positiveMood || !['dramatic'].includes(item.mood))
-  const pool = moodWorlds.length ? moodWorlds : freshWorlds.length ? freshWorlds : compatibleWorlds.length ? compatibleWorlds : studioVisualWorlds
+  const sourceMood = [input.idea, input.context, input.issue, input.tension, input.emotion].filter(Boolean).join(' ')
+  const explicitlySerious = /حزن|وفاة|فقد|عنف|تنمر|خوف|قلق|ازمه|أزمة|كارث|تهديد|dark|grief|violence|fear|crisis|threat/i.test(sourceMood)
+  const positiveMood = ['bright', 'playful', 'energetic', 'optimistic', 'creative', 'warm', 'collaborative', 'curious', 'dynamic'].some((mood) => moodSet.has(mood)) || !explicitlySerious
+  const baseWorlds = freshWorlds.length ? freshWorlds : compatibleWorlds
+  const moodWorlds = baseWorlds.filter((item) => {
+    if (!positiveMood) return true
+    if (['dramatic', 'neutral'].includes(item.mood)) return false
+    if (['brand-night', 'graphite-gold'].includes(item.paletteHint)) return false
+    return true
+  })
+  const positiveFallback = studioVisualWorlds.filter((item) => !['dramatic', 'neutral'].includes(item.mood) && !['brand-night', 'graphite-gold'].includes(item.paletteHint))
+  const pool = moodWorlds.length ? moodWorlds : positiveMood ? positiveFallback : freshWorlds.length ? freshWorlds : compatibleWorlds.length ? compatibleWorlds : studioVisualWorlds
   const world = pool[(signature[1] + signature[4] + signature[7]) % pool.length] || studioVisualWorlds[0]
   return { concept, world, signature }
 }

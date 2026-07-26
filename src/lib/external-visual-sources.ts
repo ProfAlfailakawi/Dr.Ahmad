@@ -16,6 +16,7 @@ export type VisualSearchPlan = {
   glossaryConcept?: string
   glossaryLabel?: string
   glossaryMeaning?: string
+  glossaryCanonicalEn?: string
   visualScenes: string[]
   preferredWorlds: string[]
   moods: string[]
@@ -91,12 +92,14 @@ function visualSeed(brief: CreativeBrief) {
 export function buildVisualSearchPlan(text: string, context: string, brief: CreativeBrief, identity: CreativeIdentity): VisualSearchPlan {
   const understanding = interpretDrAhmadDomain(text, context)
   const seeds = visualSeed(brief)
-  const headline = truncate(brief.issue || understanding.primary?.canonicalAr || brief.hook || text || 'فكرة بصرية', 12)
-  const glossaryQueries = understanding.primary ? [
-    understanding.primary.canonicalAr,
-    understanding.primary.canonicalEn,
-    ...understanding.primary.aliases.slice(0, 4),
-    ...understanding.visualScenes.slice(0, 3),
+  const firstRecognized = understanding.recognizedTerms[0]
+  const headline = truncate(brief.issue || understanding.primary?.canonicalAr || firstRecognized?.canonicalAr || brief.hook || text || 'فكرة بصرية', 12)
+  const glossaryQueries = understanding.recognizedTerms.length ? [
+    understanding.primary?.canonicalAr || '',
+    understanding.primary?.canonicalEn || '',
+    ...(understanding.primary?.aliases.slice(0, 4) || []),
+    ...understanding.recognizedTerms.slice(0, 8).flatMap((item) => [item.canonicalAr, item.canonicalEn]),
+    ...understanding.visualScenes.slice(0, 4),
   ] : []
   const queries = unique([
     ...glossaryQueries,
@@ -108,8 +111,9 @@ export function buildVisualSearchPlan(text: string, context: string, brief: Crea
     ...(seeds.ar || []),
   ]).slice(0, 9)
   const englishQueries = unique([
-    understanding.primary?.canonicalEn || '',
+    understanding.primary?.canonicalEn || firstRecognized?.canonicalEn || '',
     ...(understanding.primary?.aliases.filter((alias) => /[a-z]/i.test(alias)) || []),
+    ...understanding.recognizedTerms.slice(0, 8).map((item) => item.canonicalEn),
     `${headline} ${seeds.en[0] || ''}`,
     `${brief.visualNeed} ${seeds.en[1] || ''}`,
     `${identity.persona} ${seeds.en[2] || ''}`,
@@ -147,14 +151,15 @@ export function buildVisualSearchPlan(text: string, context: string, brief: Crea
     englishQueries,
     avoidTerms,
     generationPrompt,
-    rationale: understanding.primary
-      ? `فهم القاموس المصطلح بوصفه «${understanding.primary.canonicalAr}» في مجال ${understanding.primary.domain} بدرجة ${understanding.confidence}٪، ثم بنى البحث والمشهد على المعنى المتخصص لا على التشابه اللفظي.`
+    rationale: understanding.recognizedTerms.length
+      ? `فهم الرسم المعرفي ${understanding.recognizedTerms.slice(0, 5).map((item) => `«${item.canonicalAr}»`).join(' + ')} بدرجة ${understanding.confidence}٪، ثم ركّب المعنى المتخصص والسياق والجمهور والغاية بدل الاعتماد على تشابه كلمة واحدة.`
       : `الأولوية لصورة ${brief.visualNeed === 'data' ? 'تحمل الدليل' : brief.visualNeed === 'human' ? 'إنسانية غير مصطنعة' : 'تحريرية غير مباشرة'} وتترك مساحة للعنوان، مع الابتعاد عن الكليشيهات المستهلكة.`,
     tone: understanding.moods.includes('human') ? 'documentary' : understanding.moods.includes('data') || understanding.moods.includes('academic') ? 'data' : seeds.tone,
     understanding,
-    glossaryConcept: understanding.primary?.id,
-    glossaryLabel: understanding.primary?.canonicalAr,
-    glossaryMeaning: understanding.primary?.meaningAr,
+    glossaryConcept: understanding.primary?.id || (understanding.recognizedTerms.length ? `compound-${understanding.recognizedTerms.slice(0, 5).map((item) => item.id).join('-')}` : undefined),
+    glossaryLabel: understanding.primary?.canonicalAr || understanding.recognizedTerms.slice(0, 4).map((item) => item.canonicalAr).join(' + '),
+    glossaryCanonicalEn: understanding.primary?.canonicalEn || understanding.recognizedTerms.slice(0, 4).map((item) => item.canonicalEn).filter(Boolean).join(' + '),
+    glossaryMeaning: understanding.compoundMeaning || understanding.primary?.meaningAr,
     visualScenes: understanding.visualScenes,
     preferredWorlds: understanding.preferredWorlds,
     moods: understanding.moods,

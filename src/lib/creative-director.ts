@@ -1,4 +1,5 @@
 import type { ContentTone, LayoutFamilyId, SocialContentAnalysis, SocialPlatform } from './social-design-engine'
+import { interpretDrAhmadDomain } from './dr-ahmad-domain-glossary'
 
 export type VisualNeed = 'human' | 'place' | 'symbol' | 'data' | 'typography'
 export type ArtDirectionId = 'documentary' | 'iconic' | 'knowledge'
@@ -58,7 +59,8 @@ const visualNeedFrom = (source: string, analysis: SocialContentAnalysis): { need
 }
 
 export function buildCreativeBrief(text: string, context: string, analysis: SocialContentAnalysis): CreativeBrief {
-  const source = clean(`${text} ${context}`)
+  const domain = interpretDrAhmadDomain(text, context)
+  const source = clean(`${text} ${context} ${domain.expandedContext}`)
   const title = analysis.structure.title || firstSentence(text)
   const key = analysis.structure.keyPoint || analysis.structure.quote || firstSentence(text)
   const hero = analysis.structure.heroWord || words(title)[0] || 'الفكرة'
@@ -70,8 +72,9 @@ export function buildCreativeBrief(text: string, context: string, analysis: Soci
         : analysis.primaryTone === 'bold' ? 'توترٌ فكري يدفع إلى التوقف'
           : 'فضولٌ هادئ يدعو إلى إعادة النظر'
   const visual = visualNeedFrom(source, analysis)
+  const domainAvoid = domain.avoid.slice(0, 7).join('، ')
   return {
-    issue: truncate(title, 18),
+    issue: truncate(domain.primary?.canonicalAr || title, 18),
     tension: truncate(question || `التوتر بين ${hero} وما يترتب عليه في الواقع`, 22),
     hook: truncate(question || analysis.structure.quote || title, 16),
     evidence: truncate(evidence || key, 24),
@@ -80,8 +83,8 @@ export function buildCreativeBrief(text: string, context: string, analysis: Soci
     memory: truncate(analysis.structure.keyPoint || title, 18),
     avoid: visual.need === 'human' ? 'تجنّب الصورة التكنولوجية المباشرة أو الوجه المصطنع الذي يحوّل القضية الإنسانية إلى إعلان.' : 'تجنّب الرمز المستهلك أو الصورة التي تشرح الكلمات حرفياً من دون إضافة معنى.',
     visualNeed: visual.need,
-    visualReason: visual.reason,
-    confidence: Math.max(58, Math.min(98, Math.round(analysis.confidence))),
+    visualReason: domain.primary ? `${domain.primary.meaningAr} لذلك يجب أن يحمل المشهد معنى المجال الدقيق، لا أن يكتفي بصورة تعليمية عامة.` : visual.reason,
+    confidence: Math.max(58, Math.min(99, Math.round(Math.max(analysis.confidence, domain.confidence)))),
   }
 }
 

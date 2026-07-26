@@ -1,3 +1,37 @@
+# إصلاح صلاحية Secret Manager في GitHub Actions
+
+إذا ظهر الخطأ:
+
+```text
+Permission secretmanager.secrets.create denied
+```
+
+فهذا لا يعني أن Cloudflare أو التوكن الجديد فاشلان. ظهور رسالة `Cloudflare preflight passed` يثبت أن Account ID والتوكن والصلاحيات والنموذج يعملون. المشكلة فقط أن حساب Google المستخدم في GitHub Actions لا يملك إنشاء أسرار داخل Google Secret Manager.
+
+النسخة الحالية تعالج ذلك تلقائياً بطبقتين:
+
+1. تحاول أولاً التخزين المفضل داخل **Google Secret Manager**.
+2. عند رفض IAM، تكمل النشر دون سقوط، وتأخذ التوكن من **GitHub Secrets** وتوصله إلى مراجعة Cloud Run كمتغير تشغيل. لا يكتب التوكن في المستودع أو ZIP أو ملفات React.
+3. مسار الصحة يعرض `tokenStorage` بقيمة `secret-manager` أو `cloud-run-environment` لتسهيل التشخيص.
+4. عندما تمنح الصلاحية لاحقاً، التشغيل التالي يهاجر تلقائياً إلى Secret Manager.
+
+للوضع الأمني المفضل دائماً، امنح حساب النشر:
+
+```text
+github-firebase-hosting@gen-lang-client-0200723670.iam.gserviceaccount.com
+```
+
+الدور التالي على مشروع `gen-lang-client-0200723670`:
+
+```text
+Secret Manager Admin
+roles/secretmanager.admin
+```
+
+بعدها أعد تشغيل GitHub Actions. لا حاجة لإنشاء توكن Cloudflare جديد مرة أخرى ما دام التوكن الحالي جديداً ونجح في الـpreflight.
+
+---
+
 # ربط Cloudflare Workers AI باستوديو التصاميم
 
 ## المعمارية المعتمدة

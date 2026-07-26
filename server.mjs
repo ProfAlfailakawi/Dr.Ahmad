@@ -2287,6 +2287,7 @@ export function createRequestHandler({
         route: studioImagePath,
         aliases: studioImageAliases,
         configured,
+        tokenStorage: String(process.env.CLOUDFLARE_TOKEN_STORAGE || (configured ? 'legacy-or-manual' : 'not-configured')),
         model: String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/black-forest-labs/flux-1-schnell'),
         revision: String(process.env.K_REVISION || 'local'),
       })

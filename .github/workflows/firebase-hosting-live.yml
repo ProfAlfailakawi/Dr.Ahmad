@@ -82,6 +82,7 @@ jobs:
           node scripts/test-social-templates.mjs
           node scripts/test-studio-image-generation.mjs
           node scripts/test-studio-image-route.mjs
+          node scripts/test-cloudflare-deploy-fallback.mjs
 
       # حرّاسُ ما أُصلح مؤخّراً: لولاها لعاد كلُّ عطبٍ منها صامتاً كما عاد أوّل مرّة.
       - name: Content, audio and dialogue guards
@@ -203,6 +204,9 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID || '6267458602007e25acb26f4fa71511c3' }}
           # Rotate the token that appeared in chat, then store the replacement as this repository secret.
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # Keeps deployment operational when this Firebase service account lacks Secret Manager Admin.
+          # The script still prefers Secret Manager and migrates automatically when IAM is granted.
+          ALLOW_DIRECT_CLOUD_RUN_TOKEN_FALLBACK: 'true'
         run: |
           set -euo pipefail
 
@@ -235,7 +239,7 @@ jobs:
           for attempt in {1..12}; do
             if HEALTH="$(curl --fail --silent --show-error --max-time 10 "$SERVICE_URL/api/ai/studio-image/health")"; then
               printf '%s\n' "$HEALTH"
-              node -e 'const value=JSON.parse(process.argv[1]); if(!value.ok || value.route!=="/api/ai/studio-image") process.exit(1); if(!value.configured) console.log("::warning::dr-api route is live, but Cloudflare credentials are not configured on this revision.")' "$HEALTH"
+              node -e 'const value=JSON.parse(process.argv[1]); if(!value.ok || value.route!=="/api/ai/studio-image") process.exit(1); if(!value.configured) console.log("::warning::dr-api route is live, but Cloudflare credentials are not configured on this revision."); else console.log(`::notice::Cloudflare token storage: ${value.tokenStorage || "unknown"}`)' "$HEALTH"
               echo "::notice::dr-api image route is live on the new Cloud Run revision."
               break
             fi

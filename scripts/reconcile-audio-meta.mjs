@@ -35,7 +35,7 @@ export function decideEntry({ name, recordedBytes, status, remoteBytes }) {
   if (status === 404) return { action: 'drop', why: 'لا وجود له على R2' }
   if (status !== 200 && status !== 206) return { action: 'keep', why: `حالة عابرة ${status} — لا نحكم` }
   if (!remoteBytes || !recordedBytes) return { action: 'keep', why: 'حجمٌ ناقص — لا نحكم' }
-  if (remoteBytes === recordedBytes) return { action: 'keep', why: 'مطابق' }
+  if (remoteBytes === recordedBytes) return { action: 'verify', why: 'مطابق ومتحقق على R2' }
   return { action: 'refresh', why: `${recordedBytes} ← ${remoteBytes}`, bytes: remoteBytes }
 }
 
@@ -45,7 +45,7 @@ if (SELF_TEST) {
   const assert = (c, m) => { if (!c) throw new Error(`✘ ${m}`) }
 
   assert(decideEntry({ status: 404 }).action === 'drop', '★ المحذوف يُحذف من السجلّ — وإلا فشلت كل تشغيلةٍ أبداً')
-  assert(decideEntry({ status: 200, recordedBytes: 100, remoteBytes: 100 }).action === 'keep', 'المطابق لا يُمَسّ')
+  assert(decideEntry({ status: 200, recordedBytes: 100, remoteBytes: 100 }).action === 'verify', 'المطابق يُوسم متحققاً بلا إعادة توليد')
   const refreshed = decideEntry({ status: 200, recordedBytes: 100, remoteBytes: 300 })
   assert(refreshed.action === 'refresh' && refreshed.bytes === 300, '★ المختلف يأخذ حجم R2 — فالخادم هو ما يسمعه الناس')
   /* ★ العارض لا يُحذف: 429 من R2 عند الضغط لا يعني أن الملف ذهب */
@@ -114,6 +114,7 @@ console.log(`═══ مصالحة ${candidates.size} ملفاً محتملاً
 const dropped = []
 const refreshed = []
 const added = []
+const verified = []
 for (const name of candidates) {
   const entry = meta[name]
   const { status, bytes } = await head(`${base}/${encodeURIComponent(name)}`)
@@ -123,7 +124,12 @@ for (const name of candidates) {
          خاطئٍ صغير. المدّة تُقاس من الملف نفسه؛ فإن تعذّرت يُضاف بالحجم وحده. */
       if (bytes > 200_000) {
         const seconds = await probeSeconds(`${base}/${encodeURIComponent(name)}`)
-        meta[name] = { ...(seconds ? { durationSeconds: seconds } : {}), bytes }
+        meta[name] = {
+          ...(seconds ? { durationSeconds: seconds } : {}),
+          bytes,
+          validationStatus: 'verified-r2',
+          verifiedAt: new Date().toISOString(),
+        }
         added.push(name)
         console.log(`  ＋ يُضاف · ${name} · ${bytes} بايت${seconds ? ` · ${seconds} ثانية` : ''}`)
       }
@@ -132,8 +138,26 @@ for (const name of candidates) {
       if (verdict.action === 'refresh') {
         refreshed.push(name)
         const seconds = await probeSeconds(`${base}/${encodeURIComponent(name)}`)
-        meta[name] = { ...entry, bytes: verdict.bytes, ...(seconds ? { durationSeconds: seconds } : {}) }
+        meta[name] = {
+          ...entry,
+          bytes: verdict.bytes,
+          ...(seconds ? { durationSeconds: seconds } : {}),
+          validationStatus: 'verified-r2',
+          verifiedAt: entry.verifiedAt || new Date().toISOString(),
+        }
         console.log(`  ↻ يُحدَّث · ${name} · ${verdict.why} بايت`)
+      } else if (verdict.action === 'verify' && (entry.validationStatus !== 'verified-r2' || !entry.verifiedAt)) {
+        verified.push(name)
+        const seconds = Number(entry.durationSeconds || 0) > 0
+          ? Number(entry.durationSeconds)
+          : await probeSeconds(`${base}/${encodeURIComponent(name)}`)
+        meta[name] = {
+          ...entry,
+          ...(seconds ? { durationSeconds: seconds } : {}),
+          validationStatus: 'verified-r2',
+          verifiedAt: entry.verifiedAt || new Date().toISOString(),
+        }
+        console.log(`  ✓ موثّق · ${name} · موجود على R2 بالحجم نفسه`)
       }
     }
   } else if (status === 404 && entry) {
@@ -143,8 +167,8 @@ for (const name of candidates) {
 }
 for (const name of dropped) delete meta[name]
 
-console.log(`\n── مضاف: ${added.length} · محدَّث: ${refreshed.length} · محذوف: ${dropped.length} ──`)
-if (!added.length && !refreshed.length && !dropped.length) { console.log('\n✓ السجلّ يطابق R2 — لا شيء يُفعل.'); process.exit(0) }
+console.log(`\n── مضاف: ${added.length} · موثّق: ${verified.length} · محدَّث: ${refreshed.length} · محذوف: ${dropped.length} ──`)
+if (!added.length && !verified.length && !refreshed.length && !dropped.length) { console.log('\n✓ السجلّ يطابق R2 — لا شيء يُفعل.'); process.exit(0) }
 
 if (!apply) { console.log('\nⓘ تشغيلةٌ جافّة: لم يُكتب شيء. أضف --apply للحفظ.'); process.exit(0) }
 writeFileSync(metaPath, `${JSON.stringify(meta, null, 2)}\n`)

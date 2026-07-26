@@ -266,7 +266,7 @@ export function WhatsAppAgentPanel() {
       setNotice(out.returned ? `✓ أصبح الإيقاظ متاحًا في ${out.returned} محادثة. لن يبدأ الرد إلا بعد جملة الإيقاظ.` : 'لا توجد محادثة داخل فترة الحماية الآن.')
       await loadSilence()
     } catch {
-      setNotice('تعذّر إرجاع البوت — تأكّد أن الجسر يعمل على الماك.')
+      setNotice('تعذّر إرجاع البوت — تأكّد أن الجسر يعمل على السيرفر المخصص.')
     } finally { setReturning(false) }
   }
 
@@ -434,7 +434,7 @@ export function WhatsAppAgentPanel() {
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">الأدلة المعتمدة</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.evidence.enabled}</p><p className="text-[.7rem] text-soft">من أصل {knowledge.evidence.total}</p></article>
-            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">جلسات مسجلة محليًا</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.conversations.active}</p><p className="text-[.7rem] text-soft">من دون عرض نصوصها</p></article>
+            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">جلسات محمية</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.conversations.active}</p><p className="text-[.7rem] text-soft">من دون عرض نصوصها</p></article>
             <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">فجوات تحتاج مادة</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.conversations.gaps.reduce((sum, item) => sum + item.total, 0)}</p><p className="text-[.7rem] text-soft">مصنّفة موضوعيًا بلا نصوص شخصية</p></article>
           </div>
           <div className="mt-5 grid gap-3 lg:grid-cols-5">
@@ -595,12 +595,12 @@ export function WhatsAppAgentPanel() {
           <div>
             <p className="text-[.75rem] font-semibold uppercase text-accent">مساعد د. أحمد داخل واتساب</p>
             <h2 className="mt-1 flex flex-wrap items-center gap-3 font-display text-2xl font-semibold text-ink">
-              وكيل محلي بموافقة الدكتور.
+              وكيل خاص بموافقة الدكتور.
               <span className={`rounded-full px-3 py-1 text-[.72rem] font-semibold ${status.status === 'connected' ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>
                 {status.health?.label || stateLabel[String(status.status)] || 'غير مرتبط'}
               </span>
             </h2>
-            <p className="mt-2 max-w-2xl text-[.86rem] leading-relaxed text-soft">الجسر مستقل على الماك، والجلسة لا تدخل GitHub ولا Firebase. يعمل طوال اليوم بلا سقف للردود، لكنه لا يبدأ إلا بجملة الإيقاظ، ويصمت فور تدخلك من الهاتف.</p>
+            <p className="mt-2 max-w-2xl text-[.86rem] leading-relaxed text-soft">الجسر يعمل على سيرفره المخصص طوال اليوم؛ لا يحتاج Chrome مفتوحًا على جهازك. الجلسة مشفّرة خارج GitHub، والبوت يصمت فور تدخلك من الهاتف.</p>
 
             {/* بطاقة التشخيص: الحالة الحقيقية وسببها وعلاجها. كانت اللوحة تقول
                 «متصل ✅» والبوت لا يردّ — لأنها تفحص «هل العملية حيّة» لا «هل
@@ -753,7 +753,7 @@ export function WhatsAppAgentPanel() {
         <details className={card}>
           <summary className="flex cursor-pointer list-none flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-[.7rem] font-bold uppercase tracking-[.16em] text-accent">Dialect memory · Local only</p>
+              <p className="text-[.7rem] font-bold uppercase tracking-[.16em] text-accent">Dialect memory · Controlled</p>
               <h3 className="mt-1 font-display text-xl font-semibold text-ink">ذاكرة اللهجة الحيّة</h3>
               <p className="mt-1 max-w-2xl text-[.78rem] leading-relaxed text-soft">يتعلم من الصياغات الكويتية والعربية التي لم يفهمها، لكن لا يخترع جوابًا: يحفظ النية فقط بعد تكرار مؤكد، ثم يجيب من فهرس الموقع كالمعتاد.</p>
             </div>

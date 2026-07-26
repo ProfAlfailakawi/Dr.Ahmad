@@ -281,6 +281,28 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
       && missingRisks.length === 0 && negationMissing.length === 0
     attempts.push({ attempt, ratePct: working.ratePct, targetWpm: target, measuredWpm, pacePass, padding,
       stt: heard, comparison, missingRisks: missingRisks.map((risk) => risk.word), negationMissing })
+    /* تعطّل STT لا يجوز أن يضاعف فاتورة TTS ثلاث مرات للوحدة نفسها. إذا كان
+       الملف الأول صالحًا تقنيًا وإيقاعه ضمن المجال، نثبّته فورًا ونترك بوابات
+       التجميع/الصمت/الجهارة تحكم على القراءة كاملة. */
+    if (!heard) {
+      const probe = probeAudio(trimmed)
+      const audioSound = probe.durationSec >= .45
+        && statSync(trimmed).size > 4_000
+        && measuredWpm >= 85
+        && measuredWpm <= 195
+      if (audioSound && pacePass) {
+        return {
+          file: trimmed,
+          unit: working,
+          attempts,
+          comparison,
+          heard: null,
+          measuredWpm,
+          bestEffort: true,
+          sttUnavailable: true,
+        }
+      }
+    }
     if (pacePass && sttPass) {
       if (bestEffort && bestEffort.file !== trimmed) rmSync(bestEffort.file, { force: true })
       rememberAcceptedPronunciations(working, voice)
@@ -392,26 +414,63 @@ export async function renderHumanReading({
   azureKey,
   azureRegion = 'uaenorth',
   geminiKey = '',
-  requireAudioJudge = true,
+  requireAudioJudge = false,
   minimumHumanScore = 95,
   maxAttempts = 3,
 }) {
   if (!azureKey) throw new Error('AZURE_SPEECH_KEY مفقود')
   const voice = READING_VOICES[voiceKey]
   if (!voice) throw new Error(`صوت غير معروف: ${voiceKey}`)
-  const workDir = resolve(workRoot, `${article.slug}-${voiceKey}-${process.pid}`)
-  cleanWorkDirectory(workDir)
+  /* اسمٌ ثابت يجعل نقطة التقدم قابلةً للاستئناف من cache بعد timeout أو انقطاع
+     الشبكة. الاسم السابق كان يحتوي PID ويُمسح عند كل إقلاع، فتضيع المقاطع
+     السليمة ويُعاد شراؤها من Azure. */
+  const workDir = resolve(workRoot, `${article.slug}-${voiceKey}`)
+  mkdirSync(workDir, { recursive: true })
   mkdirSync(dirname(auditFile), { recursive: true })
   mkdirSync(quarantineDirectory, { recursive: true })
   const startedAt = new Date().toISOString()
   const plan = planReadingPerformance({ title: article.title, sourceText: article.body, vocalizedText: article.bodyVocalized || '', voiceKey })
-  const articleSourceHash = sourceHash({ title: article.title, text: `${article.body} ${article.bodyVocalized || ''}`, voice: voice.azure })
+  const articleSourceHash = sourceHash({ title: article.title, text: `${article.body}\0${article.bodyVocalized || ''}`, voice: voice.azure })
   let unitResults = []
+  let completed = false
   try {
     for (const unit of plan.units) {
       process.stdout.write(`    ${voice.label} ${unit.id}/${plan.units.length}\r`)
-      unitResults.push(await synthesizeAndVerifyUnit({ unit, voice, workDir, key: azureKey,
-        region: azureRegion, maxAttempts }))
+      const checkpointAudio = resolve(workDir, `${unit.id}.accepted.wav`)
+      const checkpointJson = resolve(workDir, `${unit.id}.accepted.json`)
+      const checkpointHash = createHash('sha256')
+        .update(`${HUMAN_READING_PIPELINE_HASH}\0${voice.azure}\0${JSON.stringify(unit)}`)
+        .digest('hex')
+      let checkpoint = null
+      try {
+        checkpoint = JSON.parse(readFileSync(checkpointJson, 'utf8'))
+        const probe = probeAudio(checkpointAudio)
+        if (checkpoint.hash !== checkpointHash || probe.durationSec < .45 || statSync(checkpointAudio).size <= 4_000) checkpoint = null
+      } catch {
+        checkpoint = null
+      }
+      if (checkpoint?.result) {
+        unitResults.push({ ...checkpoint.result, file: checkpointAudio, resumed: true })
+        continue
+      }
+      const result = await synthesizeAndVerifyUnit({ unit, voice, workDir, key: azureKey,
+        region: azureRegion, maxAttempts })
+      copyFileSync(result.file, checkpointAudio)
+      atomicWriteJson(checkpointJson, {
+        schemaVersion: 1,
+        hash: checkpointHash,
+        acceptedAt: new Date().toISOString(),
+        result: {
+          unit: result.unit,
+          attempts: result.attempts,
+          comparison: result.comparison,
+          heard: result.heard,
+          measuredWpm: result.measuredWpm,
+          bestEffort: Boolean(result.bestEffort),
+          sttUnavailable: Boolean(result.sttUnavailable),
+        },
+      })
+      unitResults.push({ ...result, file: checkpointAudio })
     }
     process.stdout.write('\n')
     const candidate = resolve(workDir, `${article.slug}.${voiceKey}.candidate.mp3`)
@@ -440,7 +499,9 @@ export async function renderHumanReading({
         sttComparisons: verifiedComparisons,
         sttUnavailable: verifiedComparisons.length === 0,
         minimumScore: minimumHumanScore })
-      audioJudge = await geminiAudioJudge({ file: candidate, plan, key: geminiKey })
+      audioJudge = requireAudioJudge
+        ? await geminiAudioJudge({ file: candidate, plan, key: geminiKey })
+        : null
       /* judge غائب (لا مفتاح) → يُحترم requireAudioJudge. judge غير متاح وقتيًا
          (نفاد رصيد/شبكة) → نتنزّل إلى البوابة الحتمية فلا يحرم عطلُ Gemini المقالَ. */
       const judgePass = audioJudge == null ? !requireAudioJudge : (audioJudge.unavailable ? true : audioJudge.pass)
@@ -502,9 +563,10 @@ export async function renderHumanReading({
     stageAcceptedFile({ candidate, output })
     audit.audio = { bytes: statSync(output).size, sha256: createHash('sha256').update(readFileSync(output)).digest('hex') }
     atomicWriteJson(auditFile, audit)
+    completed = true
     return audit
   } finally {
-    if (process.env.HUMAN_AUDIO_KEEP_WORK !== '1') rmSync(workDir, { recursive: true, force: true })
+    if (completed && process.env.HUMAN_AUDIO_KEEP_WORK !== '1') rmSync(workDir, { recursive: true, force: true })
   }
 }
 
@@ -513,10 +575,11 @@ export function readingNeedsGeneration({ article, voiceKey, output, auditFile, e
   if (!existsSync(auditFile)) return { needed: false, reason: 'legacy_last_known_good' }
   try {
     const audit = JSON.parse(readFileSync(auditFile, 'utf8'))
-    const expectedSourceHash = sourceHash({ title: article.title, text: `${article.body} ${article.bodyVocalized || ''}`, voice: READING_VOICES[voiceKey].azure })
+    const expectedSourceHash = sourceHash({ title: article.title, text: `${article.body}\0${article.bodyVocalized || ''}`, voice: READING_VOICES[voiceKey].azure })
     if (audit.status !== 'accepted') return { needed: true, reason: 'previous_not_accepted' }
     if (audit.sourceHash !== expectedSourceHash) return { needed: true, reason: 'source_changed' }
-    if (audit.pipelineHash !== HUMAN_READING_PIPELINE_HASH) return { needed: true, reason: 'pipeline_changed' }
+    /* نسخة المحرك ليست سببًا لإعادة شراء ملفٍ صالح ولم يتغير نصه. من يريد
+       ترقية صوتٍ قديم يطلبها صراحةً عبر --upgrade-existing. */
     return { needed: false, reason: 'content_hash_match' }
   } catch {
     return { needed: true, reason: 'invalid_audit' }

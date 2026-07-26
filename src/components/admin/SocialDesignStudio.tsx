@@ -9,6 +9,7 @@ import {
   transformDesignFormat,
   updateTasteProfile,
   designSimilarity,
+  SOCIAL_FORMATS,
   type CompositionPlan,
   type ContentTone,
   type DesignDensity,
@@ -125,11 +126,21 @@ type StudioImageMetadata = {
   relevanceScore?: number | null
   relevanceReason?: string
   generationAttempts?: number
-  semanticVerified?: boolean
+  semanticVerified?: boolean | null
   criticSource?: string
   imageCaption?: string
   missingAnchor?: string
   literalSubjects?: string[]
+  visualScore?: number | null
+  visualReasons?: string[]
+  safeTextZone?: StudioImagePassport['negativeSpace']
+  zoneScores?: StudioImagePassport['zoneScores']
+  imageWidth?: number
+  imageHeight?: number
+  targetWidth?: number
+  targetHeight?: number
+  nativeAspect?: boolean
+  formatId?: string
 }
 
 type GeneratedStudioImage = {
@@ -275,10 +286,13 @@ function basicGeneratedImagePassport(imageUrl: string, fileName: string, file?: 
         luminance: 50,
         contrast: 50,
         edgeDensity: 35,
+        visualScore: 70,
+        zoneScores: { right: 35, left: 35, top: 35, bottom: 35 },
         negativeSpace: 'balanced',
         focalX: .5,
         focalY: .5,
         recommendedFit: 'cover',
+        cropRisk: 'medium',
         cropNotes: ['الصورة المولدة صالحة؛ استُخدم تحليل بصري آمن لأن التحليل التفصيلي تعذّر على الجهاز.', 'يمكن ضبط نقطة التركيز والقص يدويًا داخل التحرير.'],
       })
     }
@@ -963,10 +977,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           luminance: 50,
           contrast: 45,
           edgeDensity: 35,
+          visualScore: 66,
+          zoneScores: { right: 35, left: 35, top: 35, bottom: 35 },
           negativeSpace: 'balanced',
           focalX: .5,
           focalY: .5,
           recommendedFit: 'cover',
+          cropRisk: 'medium',
           cropNotes: ['تعذّر تحليل البكسلات بسبب قيود المصدر؛ استُخدم قص مركزي آمن ويمكن ضبط نقطة التركيز يدويًا.', 'المصدر والترخيص محفوظان في جواز الصورة.'],
         }
         break
@@ -1049,7 +1066,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       setNotice('تعذّر النسخ الآلي. انسخه يدويًا من الحقل الظاهر.')
     }
   }
-  const requestGeneratedStudioImage = async (options: { regenerationId?: string; variation?: string; preferredWorld?: string; recentVisualWorlds?: string[]; candidateIndex?: number } = {}): Promise<GeneratedStudioImage> => {
+  const requestGeneratedStudioImage = async (options: { regenerationId?: string; variation?: string; preferredWorld?: string; recentVisualWorlds?: string[]; candidateIndex?: number; textZone?: StudioImagePassport['negativeSpace'] } = {}): Promise<GeneratedStudioImage> => {
     const app = await getFirebaseApp()
     if (!app) throw new Error('firebase_unavailable')
     const { getAuth } = await import('firebase/auth')
@@ -1059,6 +1076,18 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     const controller = new AbortController()
     const timer = window.setTimeout(() => controller.abort(), 110_000)
     try {
+      const platformFormat: Record<SocialPlatform | 'auto', SocialFormatId> = {
+        auto: 'instagram-portrait',
+        instagram: 'instagram-portrait',
+        story: 'story',
+        reel: 'reel-cover',
+        linkedin: 'linkedin-landscape',
+        x: 'x-landscape',
+        pinterest: 'pinterest-tall',
+        presentation: 'widescreen-cover',
+        thumbnail: 'video-thumbnail',
+      }
+      const targetFormat = selected?.format || SOCIAL_FORMATS[platformFormat[platform]]
       const requestBody = JSON.stringify({
         idea: text.trim(),
         context: context.trim(),
@@ -1071,7 +1100,15 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         persona: creativeIdentity.persona,
         lighting: creativeIdentity.lighting,
         negativeSpace: creativeIdentity.negativeSpace,
-        orientation: platform === 'presentation' || platform === 'linkedin' || platform === 'x' ? 'landscape' : 'portrait',
+        orientation: targetFormat.width > targetFormat.height * 1.08
+          ? 'landscape'
+          : targetFormat.height > targetFormat.width * 1.08
+            ? 'portrait'
+            : 'square',
+        targetWidth: targetFormat.width,
+        targetHeight: targetFormat.height,
+        formatId: targetFormat.id,
+        textZone: options.textZone || (Number(options.candidateIndex || 0) % 3 === 0 ? 'right' : Number(options.candidateIndex || 0) % 3 === 1 ? 'bottom' : 'left'),
         prompt: visualSearchPlan.generationPrompt,
         glossaryConcept: visualSearchPlan.glossaryConcept,
         glossaryLabel: visualSearchPlan.glossaryLabel,
@@ -1105,18 +1142,36 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         const payload = await response.json().catch(() => ({})) as { error?: string; detail?: string; code?: string }
         throw new Error([payload.error, payload.detail, payload.code, `HTTP ${response.status}`].filter(Boolean).join(' · '))
       }
-      const payload = await response.json() as { imageUrl?: string; image?: string; imageBase64?: string; result?: { image?: string; imageUrl?: string }; sourceUrl?: string; owner?: string; license?: string; description?: string; prompt?: string; model?: string; generatedAt?: string; requestId?: string; visualWorld?: string; visualWorldLabel?: string; imageTreatment?: NonNullable<PlanOverlay['imageTreatment']>; layoutHint?: LayoutFamilyId; paletteHint?: PaletteId; conceptKey?: string; conceptLabel?: string; semanticScene?: string; relevanceScore?: number | null; relevanceReason?: string; generationAttempts?: number; imageMime?: string; imageBytes?: number; semanticVerified?: boolean; criticSource?: string; imageCaption?: string; missingAnchor?: string; literalSubjects?: string[] }
+      const payload = await response.json() as { imageUrl?: string; image?: string; imageBase64?: string; result?: { image?: string; imageUrl?: string }; sourceUrl?: string; owner?: string; license?: string; description?: string; prompt?: string; model?: string; generatedAt?: string; requestId?: string; visualWorld?: string; visualWorldLabel?: string; imageTreatment?: NonNullable<PlanOverlay['imageTreatment']>; layoutHint?: LayoutFamilyId; paletteHint?: PaletteId; conceptKey?: string; conceptLabel?: string; semanticScene?: string; relevanceScore?: number | null; relevanceReason?: string; generationAttempts?: number; imageMime?: string; imageBytes?: number; semanticVerified?: boolean | null; criticSource?: string; imageCaption?: string; missingAnchor?: string; literalSubjects?: string[]; visualScore?: number | null; visualReasons?: string[]; safeTextZone?: StudioImagePassport['negativeSpace']; zoneScores?: StudioImagePassport['zoneScores']; imageWidth?: number; imageHeight?: number; targetWidth?: number; targetHeight?: number; nativeAspect?: boolean; formatId?: string }
       const relevanceScore = typeof payload.relevanceScore === 'number' ? payload.relevanceScore : null
+      const visualScore = typeof payload.visualScore === 'number' ? payload.visualScore : null
       /* لا نعتمد صورة فشل الناقد الدلالي ثم نطلب من المستخدم مراجعتها يدويًا؛
          هذا كان يسمح بمرور صورة جميلة لكنها لا تعبّر عن الفكرة. الحكم الصريح
          من الخادم نهائي، وأي نتيجة دون الحد تُرفض قبل تركيبها داخل التصميم. */
       if (payload.semanticVerified === false || (relevanceScore != null && relevanceScore < 86)) {
         throw new Error(`semantic_rejected · ${payload.relevanceReason || payload.missingAnchor || `score ${relevanceScore ?? 0}`}`)
       }
+      if (visualScore != null && visualScore < 62) {
+        throw new Error(`visual_rejected · ${(payload.visualReasons || []).join(', ') || `score ${visualScore}`}`)
+      }
       const imageUrl = generatedImageDataUri(payload)
       if (!imageUrl) throw new Error('generator_empty')
-      const passport = await analyzeGeneratedStudioImage(imageUrl, `dr-ahmad-ai-${Date.now()}`)
-      if (!passport) throw new Error('generator_image_analysis_failed')
+      const analyzedPassport = await analyzeGeneratedStudioImage(imageUrl, `dr-ahmad-ai-${Date.now()}`)
+      if (!analyzedPassport) throw new Error('generator_image_analysis_failed')
+      const trustedSafeZone = payload.safeTextZone && payload.safeTextZone !== 'balanced'
+        ? payload.safeTextZone
+        : analyzedPassport.negativeSpace
+      const passport: StudioImagePassport = {
+        ...analyzedPassport,
+        negativeSpace: trustedSafeZone,
+        visualScore: typeof payload.visualScore === 'number' ? Math.round((analyzedPassport.visualScore + payload.visualScore) / 2) : analyzedPassport.visualScore,
+        zoneScores: payload.zoneScores || analyzedPassport.zoneScores,
+        cropRisk: payload.nativeAspect ? 'low' : analyzedPassport.cropRisk,
+        cropNotes: [
+          payload.nativeAspect ? `وُلّدت الصورة أصلًا على نسبة ${payload.imageWidth || analyzedPassport.width}×${payload.imageHeight || analyzedPassport.height}؛ لا يوجد قصّ تعويضي في المقاس الأساسي.` : 'الصورة ليست مولّدة على النسبة الأصلية؛ يطبّق المحرك قصًا واعيًا بحسب نقطة التركيز.',
+          ...analyzedPassport.cropNotes,
+        ],
+      }
       return {
         passport,
         metadata: {
@@ -1140,9 +1195,19 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           imageCaption: payload.imageCaption,
           missingAnchor: payload.missingAnchor,
           literalSubjects: payload.literalSubjects,
+          visualScore: payload.visualScore,
+          visualReasons: payload.visualReasons,
+          safeTextZone: payload.safeTextZone,
+          zoneScores: payload.zoneScores,
+          imageWidth: payload.imageWidth,
+          imageHeight: payload.imageHeight,
+          targetWidth: payload.targetWidth,
+          targetHeight: payload.targetHeight,
+          nativeAspect: payload.nativeAspect,
+          formatId: payload.formatId,
         },
         prompt: payload.prompt || visualSearchPlan.generationPrompt,
-        model: payload.model || '@cf/black-forest-labs/flux-1-schnell',
+        model: payload.model || '@cf/black-forest-labs/flux-2-klein-4b',
         generatedAt: payload.generatedAt,
         requestId: payload.requestId,
       }
@@ -1247,14 +1312,14 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       cinematic: 'brand-night',
     }
     const fallbackLayout: Record<NonNullable<PlanOverlay['imageTreatment']>, LayoutFamilyId> = {
-      none: 'cinematic-window',
-      documentary: 'cinematic-window',
-      editorial: 'cinematic-window',
-      duotone: 'cinematic-window',
+      none: 'editorial-axis',
+      documentary: 'human-note',
+      editorial: 'editorial-axis',
+      duotone: 'quiet-orbit',
       cinematic: 'cinematic-window',
     }
-    const serverLayoutHint = !styleOverride?.ignoreServerStyle && metadata?.layoutHint === 'cinematic-window'
-      ? metadata.layoutHint
+    const serverLayoutHint = !styleOverride?.ignoreServerStyle
+      ? metadata?.layoutHint
       : undefined
     const palette: PaletteId = styleOverride?.palette
       || (styleOverride?.ignoreServerStyle ? fallbackPalette[resolvedTreatment] : metadata?.paletteHint || fallbackPalette[resolvedTreatment])
@@ -1901,6 +1966,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             variation: `${FRESH_GENERATION_VARIATIONS[(serial + index) % FRESH_GENERATION_VARIATIONS.length]} This image must be structurally and emotionally distinct from the other candidates in the same batch.`,
             preferredWorld,
             candidateIndex: index,
+            textZone: index === 0 ? 'right' : index === 1 ? 'bottom' : 'left',
             recentVisualWorlds: [...history, ...visualWorldTargets.filter((_, worldIndex) => worldIndex < index)],
           })
         }))

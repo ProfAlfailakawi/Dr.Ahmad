@@ -30,7 +30,8 @@ const atomicJson = (file, value) => {
 
 const validMeta = (entry) => Number(entry?.bytes || 0) >= MIN_BYTES
   && Number(entry?.durationSeconds || entry?.duration || entry?.durationSec || 0) > 0
-  && Boolean(entry?.sha256 || entry?.etag || entry?.publishedAt || entry?.acceptedAt)
+  && Boolean(entry?.sha256 || entry?.etag || entry?.publishedAt || entry?.acceptedAt
+    || (entry?.validationStatus === 'verified-r2' && entry?.verifiedAt))
 
 const titleMap = (root) => {
   const source = fs.readFileSync(path.join(root, 'src/data.ts'), 'utf8')
@@ -58,9 +59,14 @@ function buildSnapshot(root = ROOT, now = new Date()) {
   const failuresDoc = readJson(path.join(root, '.audio-failures.json'), { items: [] })
   const titles = titleMap(root)
   const dialogueDir = path.join(root, 'podcast-audits/dialogues')
-  const dialogueSlugs = fs.existsSync(dialogueDir)
+  const auditedDialogueSlugs = fs.existsSync(dialogueDir)
     ? new Set(fs.readdirSync(dialogueDir).filter((name) => name.endsWith('.txt')).map((name) => name.slice(0, -4)))
     : new Set()
+  const manualDialogueDir = path.join(root, 'manual-dialogues')
+  const manualDialogueSlugs = fs.existsSync(manualDialogueDir)
+    ? fs.readdirSync(manualDialogueDir).filter((name) => name.endsWith('.json')).map((name) => name.slice(0, -5))
+    : []
+  const dialogueSlugs = new Set([...auditedDialogueSlugs, ...manualDialogueSlugs])
   const slugs = Object.keys(bodies).sort()
   const items = []
   const queue = []
@@ -90,7 +96,8 @@ function buildSnapshot(root = ROOT, now = new Date()) {
     })
   }
 
-  queue.sort((left, right) => (right.attempts - left.attempts) || left.slug.localeCompare(right.slug) || left.voice.localeCompare(right.voice))
+  /* الجديد والسليم أولاً؛ المتعثر ذو المحاولات الكثيرة لا يأكل كل دفعة. */
+  queue.sort((left, right) => (left.attempts - right.attempts) || left.slug.localeCompare(right.slug) || left.voice.localeCompare(right.voice))
   const readingExpected = slugs.length * 2
   const readingReady = items.reduce((sum, item) => sum + Number(item.readings.fahed.ready) + Number(item.readings.noura.ready), 0)
   const dialogueExpected = items.filter((item) => item.dialogue.eligible).length
@@ -141,6 +148,7 @@ function selfTest() {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'audio-supervisor-'))
   fs.mkdirSync(path.join(temp, 'src/data'), { recursive: true })
   fs.mkdirSync(path.join(temp, 'podcast-audits/dialogues'), { recursive: true })
+  fs.mkdirSync(path.join(temp, 'manual-dialogues'), { recursive: true })
   fs.writeFileSync(path.join(temp, 'src/data.ts'), "export const articles = [\n{ slug: 'a', title: 'أ' },\n{ slug: 'b', title: 'ب' },\n]\n")
   atomicJson(path.join(temp, 'src/data/bodies.json'), { a: 'نص', b: 'نص' })
   atomicJson(path.join(temp, 'src/data/audio.json'), { a: { fahed: true, noura: true, dialogue: true }, b: { fahed: true } })
@@ -151,7 +159,7 @@ function selfTest() {
     'b.mp3': { bytes: 6000, durationSeconds: 10, sha256: 'x' },
   })
   fs.writeFileSync(path.join(temp, 'podcast-audits/dialogues/a.txt'), 'حوار')
-  fs.writeFileSync(path.join(temp, 'podcast-audits/dialogues/b.txt'), 'حوار')
+  fs.writeFileSync(path.join(temp, 'manual-dialogues/b.json'), '[]')
   atomicJson(path.join(temp, '.audio-failures.json'), { items: [{ slug: 'b', voice: 'noura', stage: 'generate', attempts: 2, message: 'temporary' }] })
   const snapshot = buildSnapshot(temp, new Date('2026-07-22T00:00:00Z'))
   assert.equal(snapshot.readings.expected, 4)

@@ -1382,8 +1382,19 @@ function compileStudioVisualDirection(input) {
   const signature = createHash('sha256').update([input.idea, input.context, input.issue, input.regenerationId, input.variation, ...(input.recentVisualWorlds || [])].join('|')).digest()
   const baseConcept = selectStudioConcept(input)
   const concept = conceptWithSemanticBlueprint(baseConcept, input, signature)
-  const requestedWorlds = [...new Set([concept.semanticRouteWorld, ...(input.preferredWorlds || []), ...(concept.preferredWorlds || [])].filter(Boolean))]
-  const compatibleIds = concept.semanticRouteWorld ? [concept.semanticRouteWorld] : requestedWorlds.length ? requestedWorlds : (studioWorldCompatibility[concept.key] || studioVisualWorlds.map((item) => item.id))
+  /* طلبُ الواجهة لعالمٍ بصري بعينه هو عقدُ تنويع، لا اقتراح تجميلي. كان
+     المسار الدلالي يسبق هذا الطلب فيُلغي العوالم الثلاثة المتباعدة ويعيد
+     المشهد نفسه. نُبقي الدلالة في المشهد والمرتكزات، لكن نسمح للمخرج المطلوب
+     أن يغيّر مادّة الصورة وإيقاعها فعلًا. */
+  const preferredWorlds = [...new Set((input.preferredWorlds || []).filter(Boolean))]
+  const requestedWorlds = [...new Set([...preferredWorlds, concept.semanticRouteWorld, ...(concept.preferredWorlds || [])].filter(Boolean))]
+  const compatibleIds = preferredWorlds.length
+    ? preferredWorlds
+    : concept.semanticRouteWorld
+      ? [concept.semanticRouteWorld]
+      : requestedWorlds.length
+        ? requestedWorlds
+        : (studioWorldCompatibility[concept.key] || studioVisualWorlds.map((item) => item.id))
   const recent = new Set(input.recentVisualWorlds || [])
   const compatibleWorlds = compatibleIds.map((id) => studioVisualWorlds.find((item) => item.id === id)).filter(Boolean)
   const freshWorlds = compatibleWorlds.filter((item) => !recent.has(item.id))
@@ -1408,6 +1419,17 @@ function studioImageInput(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new HttpError(400, 'Expected a JSON object')
   const idea = boundedString(value.idea, 1_200)
   if (!idea) throw new HttpError(400, 'Provide an idea')
+  const orientation = ['portrait', 'landscape', 'square'].includes(value.orientation) ? value.orientation : 'portrait'
+  const defaultDimensions = orientation === 'landscape'
+    ? { width: 1536, height: 864 }
+    : orientation === 'square'
+      ? { width: 1024, height: 1024 }
+      : { width: 1024, height: 1280 }
+  const targetWidth = clamp(Math.trunc(Number(value.targetWidth || defaultDimensions.width)), 256, 1920)
+  const targetHeight = clamp(Math.trunc(Number(value.targetHeight || defaultDimensions.height)), 256, 1920)
+  const maxSide = Math.max(targetWidth, targetHeight)
+  const scale = Math.min(1, 1536 / maxSide)
+  const snap = (number) => clamp(Math.round((number * scale) / 32) * 32, 256, 1920)
   return {
     idea,
     context: boundedString(value.context, 2_000),
@@ -1420,7 +1442,13 @@ function studioImageInput(value) {
     persona: boundedString(value.persona, 120),
     lighting: boundedString(value.lighting, 120),
     negativeSpace: boundedString(value.negativeSpace, 120),
-    orientation: ['portrait', 'landscape', 'square'].includes(value.orientation) ? value.orientation : 'portrait',
+    orientation,
+    targetWidth,
+    targetHeight,
+    generationWidth: snap(targetWidth),
+    generationHeight: snap(targetHeight),
+    textZone: ['right', 'left', 'top', 'bottom', 'balanced'].includes(value.textZone) ? value.textZone : 'balanced',
+    formatId: boundedString(value.formatId, 80),
     clientPrompt: boundedString(value.prompt, 3_500),
     glossaryConcept: boundedString(value.glossaryConcept, 120),
     glossaryLabel: boundedString(value.glossaryLabel, 220),
@@ -1450,6 +1478,15 @@ export function buildEliteStudioImagePrompt(input) {
     : input.negativeSpace === 'balanced'
       ? 'balanced negative space with one calm text-safe zone'
       : 'generous intentional negative space for later Arabic typography'
+  const textSafeZone = input.textZone === 'right'
+    ? 'Keep the right 42% calm and free of faces, hands, essential objects, hard edges, and high-frequency detail for later Arabic typography.'
+    : input.textZone === 'left'
+      ? 'Keep the left 42% calm and free of faces, hands, essential objects, hard edges, and high-frequency detail for later Arabic typography.'
+      : input.textZone === 'top'
+        ? 'Keep the upper 34% calm and free of faces, hands, essential objects, hard edges, and high-frequency detail for later Arabic typography.'
+        : input.textZone === 'bottom'
+          ? 'Keep the lower 36% calm and free of faces, hands, essential objects, hard edges, and high-frequency detail for later Arabic typography.'
+          : 'Create one clearly identifiable calm region for later Arabic typography, without weakening the focal subject.'
   const moodSet = new Set([...(input.moods || []), ...(concept.moods || []), concept.semanticRouteMood].filter(Boolean))
   const positiveMood = input.semanticBlueprint?.emotionalValence === 'positive'
     || ['bright', 'playful', 'energetic', 'optimistic', 'creative', 'warm', 'collaborative', 'curious'].some((mood) => moodSet.has(mood))
@@ -1463,7 +1500,8 @@ export function buildEliteStudioImagePrompt(input) {
     input.avoid,
     concept.avoid,
     ...(input.semanticBlueprint?.forbidden || []),
-    'text, letters, numbers, captions, logos, watermarks, readable interfaces',
+    'any text, letters, numbers, captions, logos, watermarks, pseudo-writing, typographic marks, fake glyphs',
+    'screens, monitors, floating panels, dashboards, projections, holograms, transparent interfaces, UI icons, equations, diagrams',
     'decorative flowers with no conceptual function',
     'generic laptop group or generic classroom',
     'random stock-photo smiles, chess, books covering faces',
@@ -1480,129 +1518,258 @@ export function buildEliteStudioImagePrompt(input) {
     `THE VIEWER MUST INFER: ${concept.inference}.`,
     `Art direction: ${world.direction}.`,
     moodDirection,
-    `COMPOSITION: ${negativeSpace}, clear focal hierarchy, asymmetrical balance, no clutter.`,
+    `COMPOSITION: ${negativeSpace}, clear focal hierarchy, asymmetrical balance, no clutter. ${textSafeZone}`,
     input.variation ? `Fresh variation: ${input.variation}` : '',
     `FORBIDDEN: ${forbidden}.`,
     'Semantic accuracy and visible anchors come before beauty. Do not substitute a generic metaphor, generic classroom, or generic people-with-laptops scene for the literal compound subject.',
   ].filter(Boolean).join(' ').slice(0, 1980)
 }
 
-async function assessStudioImageWithGemini({ input, direction, image, imageMime = 'image/jpeg' }, fetchImpl = fetch) {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
-  if (!apiKey || !image || image.length > 12_000_000) return null
-  const configuredModel = process.env.STUDIO_VISION_CRITIC_MODEL || process.env.EDITORIAL_GEMINI_MODEL || 'gemini-2.5-flash-lite'
-  if (!/^[A-Za-z0-9._-]+$/.test(configuredModel)) return null
-  try {
-    const response = await fetchWithTimeout(fetchImpl,
-      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(configuredModel)}:generateContent`, {
-        method: 'POST',
-        headers: { accept: 'application/json', 'content-type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: 'You are a severe editorial image relevance judge. Judge semantic match before beauty. Return JSON only.' }] },
-          contents: [{ role: 'user', parts: [
-            { text: `Arabic title: ${input.issue || input.idea}\nIntended interpretation: ${direction.concept.interpretation}\nRequired anchors: ${direction.concept.anchors}\nMandatory literal subjects: ${(input.literalAnchors || []).join(' + ')}\nViewer inference: ${direction.concept.inference}\nScore 0-100. Reject flowers, generic laptop groups, generic classrooms, chess, mood-only imagery, or any image that drops a part of the compound title.` },
-            { inlineData: { mimeType: imageMime, data: image } },
-          ] }],
-          generationConfig: {
-            temperature: .05,
-            maxOutputTokens: 420,
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: 'OBJECT',
-              properties: {
-                score: { type: 'INTEGER' },
-                topicMatch: { type: 'BOOLEAN' },
-                reason: { type: 'STRING' },
-                missingAnchor: { type: 'STRING' },
-                correction: { type: 'STRING' },
-              },
-              required: ['score', 'topicMatch', 'reason', 'missingAnchor', 'correction'],
-            },
-          },
-        }),
-      }, envNumber('STUDIO_VISION_CRITIC_TIMEOUT_MS', 14_000, 5_000, 22_000))
-    if (!response.ok) return null
-    const payload = await response.json()
-    const raw = payload?.candidates?.[0]?.content?.parts?.map((part) => typeof part?.text === 'string' ? part.text : '').join('')
-    const parsed = parseLooseJsonObject(raw)
-    if (!parsed) return null
-    return {
-      score: clamp(Math.trunc(Number(parsed.score || 0)), 0, 100),
-      topicMatch: Boolean(parsed.topicMatch),
-      reason: boundedString(parsed.reason, 500),
-      missingAnchor: boundedString(parsed.missingAnchor, 300),
-      correction: boundedString(parsed.correction, 500),
-      source: 'gemini-vision',
-      caption: '',
-    }
-  } catch { return null }
-}
-
-async function describeStudioImageWithCloudflare({ accountId, apiToken, image, imageMime }, fetchImpl = fetch) {
-  if (!accountId || !apiToken || !image || image.length > 16_000_000) return ''
-  try {
-    const bytes = Buffer.from(image, 'base64')
-    const form = new FormData()
-    const extension = imageMime === 'image/png' ? 'png' : imageMime === 'image/webp' ? 'webp' : 'jpg'
-    form.append('files', new Blob([bytes], { type: imageMime || 'image/jpeg' }), `studio-candidate.${extension}`)
-    form.append('conversionOptions', JSON.stringify({ output: { format: 'text' } }))
-    const response = await fetchWithTimeout(fetchImpl,
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/tomarkdown`, {
-        method: 'POST',
-        headers: { authorization: `Bearer ${apiToken}` },
-        body: form,
-      }, envNumber('CLOUDFLARE_IMAGE_CAPTION_TIMEOUT_MS', 18_000, 6_000, 28_000))
-    if (!response.ok) return ''
-    const payload = await response.json()
-    const result = Array.isArray(payload?.result) ? payload.result[0] : payload?.result
-    return boundedString(result?.data || result?.description || result?.text, 3_500)
-  } catch { return '' }
-}
-
-async function judgeStudioCaptionWithCloudflare({ accountId, apiToken, input, direction, caption }, fetchImpl = fetch) {
-  if (!caption) return null
-  const model = String(process.env.CLOUDFLARE_SEMANTIC_CRITIC_MODEL || process.env.CLOUDFLARE_SEMANTIC_DIRECTOR_MODEL || '@cf/meta/llama-3.1-8b-instruct-fast').trim()
+async function assessStudioImageWithCloudflareVision({ accountId, apiToken, input, direction, image, imageMime }, fetchImpl = fetch) {
+  if (!accountId || !apiToken || !image || image.length > 16_000_000) return null
+  const model = String(process.env.CLOUDFLARE_VISION_CRITIC_MODEL || '@cf/moondream/moondream3.1-9B-A2B').trim()
   if (!/^@cf\/[A-Za-z0-9._/-]+$/.test(model)) return null
-  const prompt = [
-    'You are a strict semantic gate for editorial images. Return JSON only.',
+  const textZone = input.textZone === 'right'
+    ? 'right 42%'
+    : input.textZone === 'left'
+      ? 'left 42%'
+      : input.textZone === 'top'
+        ? 'upper 34%'
+        : input.textZone === 'bottom'
+          ? 'lower 36%'
+          : 'clearest calm region'
+  const question = [
+    'Act as an unforgiving visual-quality gate for a premium Arabic editorial design studio.',
+    'Inspect the actual pixels. The image is still raw: the studio has NOT overlaid any title yet.',
     `TITLE: ${input.issue || input.idea}`,
     `PRECISE MEANING: ${input.semanticBlueprint?.canonicalMeaning || direction.concept.interpretation}`,
     `MANDATORY LITERAL SUBJECTS: ${(input.literalAnchors || []).join(' + ') || 'none'}`,
     `REQUIRED VISIBLE ANCHORS: ${direction.concept.anchors}`,
     `EXPECTED VIEWER INFERENCE: ${direction.concept.inference}`,
-    `ACTUAL IMAGE DESCRIPTION: ${caption}`,
-    'Reject if the image is decorative flowers, a generic laptop group, generic classroom, chess, unrelated office scene, mood-only photo, or if any half of a compound title is missing.',
-    'Score 0-100. topicMatch is true only when the exact compound meaning is visible without relying on the title text.',
-    'Return {"score":integer,"topicMatch":boolean,"reason":string,"missingAnchor":string,"correction":string}.',
+    `TYPOGRAPHY SAFE ZONE THAT MUST BE CALM AND EMPTY: ${textZone}.`,
+    'Hard-fail conditions: any readable or fake text, letters, numbers, pseudo-writing, glyph-like marks, logos or watermarks; any floating UI, hologram, dashboard, projection, transparent interface or screen full of interface marks; a generic laptop group, decorative flowers, chess, generic classroom, unrelated office scene, mood-only image; a required half of the compound meaning is absent; the requested typography zone contains a face, hand, focal object, hard edge or dense detail.',
+    'Return exactly one JSON object and nothing else. Fill every value from the actual image; never copy placeholder/default values.',
+    'Required keys: score (integer 0-100), topicMatch (boolean), hasTextOrGlyphs (boolean), interfaceContamination (boolean), textSafeZoneClean (boolean), visualNoise (boolean), reason (string), missingAnchor (string), correction (string), caption (specific string describing the actual pixels).',
+    'score is 0-100. topicMatch may be true only when the exact compound meaning is visibly inferable without reading the title. caption must describe only what is actually visible. Be strict: if unsure about fake writing or a UI panel, mark it true.',
   ].join('\n')
-  try {
-    const response = await fetchWithTimeout(fetchImpl,
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
-        method: 'POST',
-        headers: { accept: 'application/json', authorization: `Bearer ${apiToken}`, 'content-type': 'application/json' },
-        body: JSON.stringify({ prompt, max_tokens: 520, temperature: .03, top_p: .5 }),
-      }, envNumber('CLOUDFLARE_SEMANTIC_CRITIC_TIMEOUT_MS', 14_000, 5_000, 24_000))
-    if (!response.ok) return null
-    const payload = await response.json()
-    const parsed = parseLooseJsonObject(payload?.result?.response ?? payload?.result ?? payload?.response)
-    if (!parsed) return null
-    return {
-      score: clamp(Math.trunc(Number(parsed.score || 0)), 0, 100),
-      topicMatch: Boolean(parsed.topicMatch),
-      reason: boundedString(parsed.reason, 500),
-      missingAnchor: boundedString(parsed.missingAnchor, 300),
-      correction: boundedString(parsed.correction, 500),
-      source: 'cloudflare-caption-gate',
-      caption,
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(fetchImpl,
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
+          method: 'POST',
+          headers: { accept: 'application/json', authorization: `Bearer ${apiToken}`, 'content-type': 'application/json' },
+          body: JSON.stringify({
+            task: 'query',
+            image: `data:${imageMime || 'image/jpeg'};base64,${image}`,
+            question,
+            reasoning: false,
+            stream: false,
+            max_tokens: 900,
+            temperature: 0,
+            top_p: .2,
+          }),
+        }, envNumber('CLOUDFLARE_VISION_CRITIC_TIMEOUT_MS', 24_000, 8_000, 40_000))
+      if (!response.ok) {
+        let detail = ''
+        try { detail = cloudflareFailureDetail(await response.json()) } catch { /* no readable body */ }
+        console.warn('[studio-image] vision gate request failed', {
+          status: response.status,
+          detail: detail || undefined,
+          attempt: attempt + 1,
+        })
+        if (attempt === 0 && (response.status === 429 || response.status >= 500)) continue
+        return null
+      }
+      const payload = await response.json()
+      const rawAnswer = payload?.result?.result?.answer
+        ?? payload?.result?.answer
+        ?? payload?.answer
+        ?? payload?.result?.result
+        ?? payload?.result
+      const parsed = parseLooseJsonObject(rawAnswer)
+      if (!parsed) {
+        console.warn('[studio-image] vision gate returned non-JSON', {
+          attempt: attempt + 1,
+          answer: boundedString(rawAnswer, 300),
+        })
+        if (attempt === 0) continue
+        return null
+      }
+      const criticBoolean = (value) => value === true || String(value).trim().toLowerCase() === 'true'
+      const caption = boundedString(parsed.caption, 1_500)
+      const reason = boundedString(parsed.reason, 500)
+      const declaredScore = typeof parsed.score === 'number'
+        ? parsed.score
+        : typeof parsed.score === 'string' && /^\d{1,3}$/.test(parsed.score.trim())
+          ? Number(parsed.score)
+          : Number.NaN
+      const hasAssessment = Number.isFinite(declaredScore)
+        && typeof parsed.topicMatch !== 'undefined'
+        && typeof parsed.hasTextOrGlyphs !== 'undefined'
+        && typeof parsed.interfaceContamination !== 'undefined'
+        && typeof parsed.textSafeZoneClean !== 'undefined'
+        && Boolean(caption || reason)
+      if (!hasAssessment) {
+        console.warn('[studio-image] vision gate returned an incomplete assessment', {
+          attempt: attempt + 1,
+          keys: Object.keys(parsed).slice(0, 20),
+          answer: boundedString(rawAnswer, 300),
+        })
+        if (attempt === 0) continue
+        return null
+      }
+      const hasTextOrGlyphs = criticBoolean(parsed.hasTextOrGlyphs)
+      const interfaceContamination = criticBoolean(parsed.interfaceContamination)
+      const textSafeZoneClean = criticBoolean(parsed.textSafeZoneClean)
+      const visualNoise = criticBoolean(parsed.visualNoise)
+      const semanticMatch = criticBoolean(parsed.topicMatch)
+      const topicMatch = semanticMatch
+        && !hasTextOrGlyphs
+        && !interfaceContamination
+        && textSafeZoneClean
+        && !visualNoise
+      /* Moondream ينجح أحيانًا في البوابات الست ثم يعيد score=0 بوصفه
+         «عدد المخالفات» لا درجة الجودة. البوابات الصريحة هي الحكم هنا؛
+         نعطي المرور النظيف درجة دلالية مشتقة، بينما لا نرفع أي صورة مرفوضة. */
+      const score = clamp(Math.trunc(
+        declaredScore === 0 && topicMatch ? 92 : declaredScore,
+      ), 0, 100)
+      console.info('[studio-image] vision gate', {
+        score,
+        topicMatch,
+        hasTextOrGlyphs,
+        interfaceContamination,
+        textSafeZoneClean,
+        visualNoise,
+        declaredScore,
+        captionLength: caption.length,
+        reason: reason.slice(0, 160),
+      })
+      return {
+        score,
+        topicMatch,
+        reason,
+        missingAnchor: boundedString(parsed.missingAnchor, 300),
+        correction: boundedString(parsed.correction, 500),
+        source: 'cloudflare-moondream-vision-gate',
+        caption,
+        hasTextOrGlyphs,
+        interfaceContamination,
+        textSafeZoneClean,
+        visualNoise,
+      }
+    } catch {
+      if (attempt === 0) continue
+      return null
     }
-  } catch { return null }
+  }
+  return null
 }
 
 async function assessStudioImageRelevance({ input, direction, image, imageMime = 'image/jpeg', accountId = '', apiToken = '' }, fetchImpl = fetch) {
-  const gemini = await assessStudioImageWithGemini({ input, direction, image, imageMime }, fetchImpl)
-  if (gemini) return gemini
-  const caption = await describeStudioImageWithCloudflare({ accountId, apiToken, image, imageMime }, fetchImpl)
-  return judgeStudioCaptionWithCloudflare({ accountId, apiToken, input, direction, caption }, fetchImpl)
+  /* بوابة واحدة من Cloudflare ترى الصورة نفسها: دلالة + كتابة وهمية + تلوث
+     واجهات + سلامة منطقة العنوان. لا Gemini ولا وصف وسيط قد يخفي العيب. */
+  return assessStudioImageWithCloudflareVision({
+    accountId,
+    apiToken,
+    input,
+    direction,
+    image,
+    imageMime,
+  }, fetchImpl)
+}
+
+async function assessStudioImagePixels({ image, targetWidth, targetHeight }) {
+  try {
+    const { default: sharp } = await import('sharp')
+    const bytes = Buffer.from(image, 'base64')
+    const pipeline = sharp(bytes, { failOn: 'error', limitInputPixels: 36_000_000 })
+    const metadata = await pipeline.metadata()
+    const width = Number(metadata.width || 0)
+    const height = Number(metadata.height || 0)
+    if (!width || !height) return null
+    const sampleWidth = 96
+    const sampleHeight = 96
+    const raw = await pipeline.clone()
+      .removeAlpha()
+      .resize(sampleWidth, sampleHeight, { fit: 'fill' })
+      .greyscale()
+      .raw()
+      .toBuffer()
+    let sum = 0
+    let sumSq = 0
+    for (const value of raw) {
+      const normalized = value / 255
+      sum += normalized
+      sumSq += normalized * normalized
+    }
+    const mean = sum / Math.max(1, raw.length)
+    const standardDeviation = Math.sqrt(Math.max(0, sumSq / Math.max(1, raw.length) - mean * mean))
+    const zones = { left: 0, right: 0, top: 0, bottom: 0 }
+    const counts = { left: 0, right: 0, top: 0, bottom: 0 }
+    let edges = 0
+    for (let y = 1; y < sampleHeight - 1; y += 1) {
+      for (let x = 1; x < sampleWidth - 1; x += 1) {
+        const index = y * sampleWidth + x
+        const horizontal = Math.abs(raw[index + 1] - raw[index - 1]) / 255
+        const vertical = Math.abs(raw[index + sampleWidth] - raw[index - sampleWidth]) / 255
+        const edge = Math.min(1, (horizontal + vertical) * 1.4)
+        edges += edge
+        if (x < sampleWidth * .42) { zones.left += edge; counts.left += 1 }
+        if (x > sampleWidth * .58) { zones.right += edge; counts.right += 1 }
+        if (y < sampleHeight * .36) { zones.top += edge; counts.top += 1 }
+        if (y > sampleHeight * .64) { zones.bottom += edge; counts.bottom += 1 }
+      }
+    }
+    const zoneScores = Object.fromEntries(Object.entries(zones).map(([key, value]) => [
+      key,
+      Math.round((value / Math.max(1, counts[key])) * 1000) / 10,
+    ]))
+    const rankedZones = Object.entries(zoneScores).sort((left, right) => left[1] - right[1])
+    const quiet = rankedZones[0]
+    const nextQuiet = rankedZones[1]
+    const safeTextZone = quiet && nextQuiet && quiet[1] < nextQuiet[1] * .94 ? quiet[0] : 'balanced'
+    const targetAspect = Number(targetWidth || width) / Math.max(1, Number(targetHeight || height))
+    const actualAspect = width / height
+    const aspectError = Math.abs(actualAspect - targetAspect) / Math.max(.01, targetAspect)
+    const edgeDensity = edges / Math.max(1, (sampleWidth - 2) * (sampleHeight - 2))
+    const aspectPoints = aspectError <= .018 ? 35 : aspectError <= .045 ? 24 : Math.max(0, 20 - aspectError * 100)
+    const resolutionPoints = Math.min(width, height) >= 768 ? 20 : Math.min(width, height) >= 512 ? 14 : 5
+    const contrastPoints = standardDeviation >= .09 && standardDeviation <= .34 ? 20 : standardDeviation >= .055 ? 12 : 2
+    const detailPoints = edgeDensity >= .025 && edgeDensity <= .34 ? 15 : edgeDensity >= .012 && edgeDensity <= .45 ? 9 : 2
+    const quietPoints = safeTextZone === 'balanced' ? 4 : 10
+    const score = clamp(Math.round(aspectPoints + resolutionPoints + contrastPoints + detailPoints + quietPoints), 0, 100)
+    const valid = aspectError <= .055
+      && Math.min(width, height) >= 512
+      && standardDeviation >= .045
+      && edgeDensity >= .008
+      && edgeDensity <= .52
+    const reasons = [
+      aspectError > .055 ? 'aspect-mismatch' : '',
+      Math.min(width, height) < 512 ? 'low-resolution' : '',
+      standardDeviation < .045 ? 'flat-or-blank' : '',
+      edgeDensity < .008 ? 'insufficient-detail' : '',
+      edgeDensity > .52 ? 'visually-overloaded' : '',
+    ].filter(Boolean)
+    return {
+      valid,
+      score,
+      width,
+      height,
+      targetWidth,
+      targetHeight,
+      aspectError: Math.round(aspectError * 10_000) / 10_000,
+      contrast: Math.round(standardDeviation * 1000) / 10,
+      edgeDensity: Math.round(edgeDensity * 1000) / 10,
+      luminance: Math.round(mean * 1000) / 10,
+      safeTextZone,
+      zoneScores,
+      reasons,
+    }
+  } catch {
+    return null
+  }
 }
 
 function detectStudioImageMime(bytes) {
@@ -1702,24 +1869,37 @@ async function decodeCloudflareStudioImageResponse(response) {
   throw new HttpError(502, `Image generation returned no usable image${detail ? `: ${detail}` : ''}`)
 }
 
-async function requestCloudflareImage({ accountId, apiToken, model, prompt, seed }, fetchImpl) {
+async function requestCloudflareImage({ accountId, apiToken, model, prompt, seed, width, height }, fetchImpl) {
   const steps = envNumber('CLOUDFLARE_IMAGE_STEPS', 8, 4, 8)
   const timeout = envNumber('CLOUDFLARE_IMAGE_TIMEOUT_MS', 45_000, 10_000, 55_000)
+  const nativeAspectModel = /\/flux-2-(?:klein|dev)/i.test(model)
   let lastError = null
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
     let response
     const attemptSeed = (Number(seed || 0) + attempt * 104_729) >>> 0
     try {
+      const headers = {
+        accept: 'application/json',
+        authorization: `Bearer ${apiToken}`,
+      }
+      let body
+      if (nativeAspectModel) {
+        const form = new FormData()
+        form.append('prompt', prompt)
+        form.append('width', String(width))
+        form.append('height', String(height))
+        form.append('seed', String(attemptSeed))
+        body = form
+      } else {
+        headers['content-type'] = 'application/json'
+        body = JSON.stringify({ prompt, seed: attemptSeed, steps })
+      }
       response = await fetchWithTimeout(fetchImpl,
         `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
           method: 'POST',
-          headers: {
-            accept: 'application/json',
-            authorization: `Bearer ${apiToken}`,
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({ prompt, seed: attemptSeed, steps }),
+          headers,
+          body,
         }, timeout)
     } catch (error) {
       if (error?.name === 'AbortError') lastError = new HttpError(504, 'Image generation timed out')
@@ -1743,7 +1923,14 @@ async function requestCloudflareImage({ accountId, apiToken, model, prompt, seed
 
     try {
       const decoded = await decodeCloudflareStudioImageResponse(response)
-      return { ...decoded, transportAttempts: attempt + 1, seed: attemptSeed }
+      return {
+        ...decoded,
+        transportAttempts: attempt + 1,
+        seed: attemptSeed,
+        requestedWidth: width,
+        requestedHeight: height,
+        nativeAspect: nativeAspectModel,
+      }
     } catch (error) {
       lastError = error
       const recoverablePayload = error instanceof HttpError
@@ -1760,7 +1947,7 @@ async function requestCloudflareImage({ accountId, apiToken, model, prompt, seed
 export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
   const accountId = String(process.env.CLOUDFLARE_ACCOUNT_ID || '').trim()
   const apiToken = String(process.env.CLOUDFLARE_API_TOKEN || '').trim()
-  const model = String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/black-forest-labs/flux-1-schnell').trim()
+  const model = String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/black-forest-labs/flux-2-klein-4b').trim()
   if (!accountId || !apiToken) throw new HttpError(503, 'Cloudflare Workers AI is not configured')
   if (!/^[a-f0-9]{32}$/i.test(accountId)) throw new HttpError(503, 'Cloudflare account is not configured correctly')
   if (!/^@cf\/[A-Za-z0-9._/-]+$/.test(model)) throw new HttpError(503, 'Cloudflare image model is not configured correctly')
@@ -1769,8 +1956,10 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
   const semanticBlueprint = await buildStudioSemanticBlueprint(input, accountId, apiToken, fetchImpl)
   const baseInput = { ...input, semanticBlueprint }
   const threshold = envNumber('STUDIO_IMAGE_RELEVANCE_THRESHOLD', 86, 74, 96)
+  const requireVisionCritic = !/^(?:0|false|no|off)$/i.test(String(process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC || 'true').trim())
   const candidates = []
   let rescueReason = ''
+  let visionCriticUnavailable = false
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const attemptInput = {
@@ -1787,30 +1976,68 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
     const direction = compileStudioVisualDirection(attemptInput)
     const prompt = buildEliteStudioImagePrompt(attemptInput)
     const seed = Number.parseInt(createHash('sha256').update(`${attemptInput.idea}|${attemptInput.regenerationId}|${attemptInput.variation}|${Date.now()}`).digest('hex').slice(0, 8), 16) >>> 0
-    const image = await requestCloudflareImage({ accountId, apiToken, model, prompt, seed }, fetchImpl)
-    const critic = await assessStudioImageRelevance({
-      input: attemptInput,
-      direction,
-      image: image.base64,
-      imageMime: image.mime,
+    const image = await requestCloudflareImage({
       accountId,
       apiToken,
+      model,
+      prompt,
+      seed,
+      width: attemptInput.generationWidth,
+      height: attemptInput.generationHeight,
     }, fetchImpl)
-    const candidate = { image, prompt, seed: image.seed ?? seed, direction, critic, attempts: attempt + 1 }
+    const visual = await assessStudioImagePixels({
+      image: image.base64,
+      targetWidth: attemptInput.generationWidth,
+      targetHeight: attemptInput.generationHeight,
+    })
+    const critic = requireVisionCritic
+      ? await assessStudioImageRelevance({
+          input: attemptInput,
+          direction,
+          image: image.base64,
+          imageMime: image.mime,
+          accountId,
+          apiToken,
+        }, fetchImpl)
+      : null
+    const candidate = { image, prompt, seed: image.seed ?? seed, direction, critic, visual, attempts: attempt + 1 }
     candidates.push(candidate)
-    /* بعض البيئات لا تملك ناقد رؤية مهيأ. في هذه الحالة لا نهدر ثلاث صور
-       متطابقة الاختبار؛ بوابة الرفض الصارمة تُفعّل متى عاد حكم دلالي فعلي. */
-    if (!critic) break
-    if (critic?.topicMatch && critic.score >= threshold) break
+    if (!critic && requireVisionCritic) {
+      visionCriticUnavailable = true
+      break
+    }
+    if (!critic && visual?.valid !== false) break
+    if (critic?.topicMatch && critic.score >= threshold && visual?.valid !== false) break
     rescueReason = critic
-      ? `Score ${critic.score}/100. ${critic.reason || ''} Missing: ${critic.missingAnchor || ''}. Correction: ${critic.correction || ''}`
-      : 'No semantic verification was available; use a more literal and concrete scene.'
+      ? [
+          `Score ${critic.score}/100.`,
+          critic.hasTextOrGlyphs ? 'The image contains forbidden text, fake writing or glyph-like marks.' : '',
+          critic.interfaceContamination ? 'The image contains a forbidden screen, hologram, dashboard or UI panel.' : '',
+          critic.textSafeZoneClean === false ? `The requested ${attemptInput.textZone} typography zone is not calm and empty.` : '',
+          critic.visualNoise ? 'The composition is visually noisy.' : '',
+          critic.reason || '',
+          `Missing: ${critic.missingAnchor || ''}.`,
+          `Correction: ${critic.correction || ''}`,
+        ].filter(Boolean).join(' ')
+      : visual?.valid === false
+        ? `The image failed the local composition gate: ${(visual.reasons || []).join(', ')}. Generate at the exact requested aspect with a clean typography-safe region.`
+        : 'No semantic verification was available; use a more literal and concrete scene.'
   }
 
-  const verified = candidates.filter((item) => item.critic?.topicMatch && item.critic.score >= threshold)
+  if (visionCriticUnavailable) {
+    throw new HttpError(503, 'تعذّر تشغيل فاحص الصورة الآن؛ لم يعتمد الاستوديو صورة غير مفحوصة. أعد المحاولة بعد لحظات.', { 'retry-after': '20' })
+  }
+  const verified = candidates.filter((item) => item.critic?.topicMatch && item.critic.score >= threshold && item.visual?.valid !== false)
   const chosen = (verified.length ? verified : candidates)
-    .sort((left, right) => (right.critic?.score ?? -1) - (left.critic?.score ?? -1))[0]
+    .sort((left, right) => {
+      const rightScore = (right.critic?.score ?? 0) * .72 + (right.visual?.score ?? 70) * .28
+      const leftScore = (left.critic?.score ?? 0) * .72 + (left.visual?.score ?? 70) * .28
+      return rightScore - leftScore
+    })[0]
   if (!chosen) throw new HttpError(502, 'Image generation produced no candidate')
+  if (chosen.visual?.valid === false) {
+    throw new HttpError(422, `تعذّر اعتماد الصورة بصريًا بعد ثلاث محاولات: ${(chosen.visual.reasons || []).join(', ') || 'المقاس أو الوضوح غير صالح'}`)
+  }
   if (chosen.critic && (!chosen.critic.topicMatch || chosen.critic.score < threshold)) {
     throw new HttpError(422, `تعذّر اعتماد الصورة دلاليًا بعد ثلاث محاولات: ${chosen.critic.reason || chosen.critic.missingAnchor || 'المشهد لا يعبّر عن العنوان المركب'}`)
   }
@@ -1819,7 +2046,9 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
     imageUrl: `data:${chosen.image.mime};base64,${chosen.image.base64}`,
     imageMime: chosen.image.mime,
     imageBytes: chosen.image.byteLength,
-    sourceUrl: 'https://developers.cloudflare.com/workers-ai/models/flux-1-schnell/',
+    sourceUrl: model.includes('flux-2-klein-4b')
+      ? 'https://developers.cloudflare.com/workers-ai/models/flux-2-klein-4b/'
+      : 'https://developers.cloudflare.com/workers-ai/models/flux-1-schnell/',
     owner: 'توليد أصلي داخل الاستوديو',
     license: 'نموذج FLUX عبر Cloudflare',
     description: chosen.direction.concept.scene,
@@ -1841,9 +2070,30 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
     relevanceScore: chosen.critic?.score ?? null,
     relevanceReason: chosen.critic?.reason || '',
     missingAnchor: chosen.critic?.missingAnchor || '',
-    semanticVerified: Boolean(chosen.critic?.topicMatch && chosen.critic.score >= threshold),
+    /* null تعني أن بوابة الوصف البصري الخارجية لم تكن متاحة، لا أن الصورة
+       خالفت الفكرة. الرفض الصريح وحده false؛ أمّا null فتظل وراءها بوابة
+       البكسلات المحلية والـprompt الحرفي، فلا تتحول مشكلة ناقد إلى كسر دائم. */
+    semanticVerified: chosen.critic
+      ? Boolean(chosen.critic.topicMatch && chosen.critic.score >= threshold)
+      : null,
     criticSource: chosen.critic?.source || '',
     imageCaption: chosen.critic?.caption || '',
+    hasTextOrGlyphs: chosen.critic?.hasTextOrGlyphs ?? null,
+    interfaceContamination: chosen.critic?.interfaceContamination ?? null,
+    textSafeZoneClean: chosen.critic?.textSafeZoneClean ?? null,
+    visualNoise: chosen.critic?.visualNoise ?? null,
+    visualScore: chosen.visual?.score ?? null,
+    visualReasons: chosen.visual?.reasons || [],
+    safeTextZone: chosen.critic?.textSafeZoneClean
+      ? input.textZone
+      : chosen.visual?.safeTextZone || input.textZone || 'balanced',
+    zoneScores: chosen.visual?.zoneScores || null,
+    imageWidth: chosen.visual?.width || chosen.image.requestedWidth || input.generationWidth,
+    imageHeight: chosen.visual?.height || chosen.image.requestedHeight || input.generationHeight,
+    targetWidth: input.targetWidth,
+    targetHeight: input.targetHeight,
+    nativeAspect: Boolean(chosen.image.nativeAspect),
+    formatId: input.formatId || '',
     generationAttempts: chosen.attempts + Math.max(0, Number(chosen.image.transportAttempts || 1) - 1),
   }
 }
@@ -3106,7 +3356,12 @@ export function createRequestHandler({
         aliases: studioImageAliases,
         configured,
         tokenStorage: String(process.env.CLOUDFLARE_TOKEN_STORAGE || (configured ? 'legacy-or-manual' : 'not-configured')),
-        model: String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/black-forest-labs/flux-1-schnell'),
+        model: String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/black-forest-labs/flux-2-klein-4b'),
+        nativeAspect: true,
+        visualCritic: 'local-pixels+cloudflare-moondream-vision',
+        visionCriticModel: String(process.env.CLOUDFLARE_VISION_CRITIC_MODEL || '@cf/moondream/moondream3.1-9B-A2B'),
+        rejectsGeneratedText: true,
+        requiresVisionCritic: !/^(?:0|false|no|off)$/i.test(String(process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC || 'true').trim()),
         revision: String(process.env.K_REVISION || 'local'),
       })
       return

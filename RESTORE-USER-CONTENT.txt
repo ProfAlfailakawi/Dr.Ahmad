@@ -1,0 +1,3 @@
+This patch restores author-owned content from the protected pre-terminology snapshot.
+It preserves the latest Cloudflare image payload fix in server.mjs, the studio UI/image decode fix, and its test.
+Global terminology rewriting has been disabled.

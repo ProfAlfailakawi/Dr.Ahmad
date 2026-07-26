@@ -897,45 +897,144 @@ export function serverArticleSimilarity(title, body, existing = []) {
   return { matches, highest, originality: Math.max(0, Math.round((1 - highest) * 100)), repeated: highest >= .52 }
 }
 
+const drAhmadGlossaryPath = resolve(process.cwd(), 'src/data/dr-ahmad-domain-glossary.json')
+const drAhmadDomainGlossary = (() => {
+  try {
+    const parsed = JSON.parse(readFileSync(drAhmadGlossaryPath, 'utf8'))
+    return Array.isArray(parsed) ? parsed.filter((item) => item && typeof item === 'object' && item.id && item.canonicalAr) : []
+  } catch (error) {
+    console.warn('[studio-image] Domain glossary unavailable', error instanceof Error ? error.message : error)
+    return []
+  }
+})()
+
+function normalizeStudioDomain(value = '') {
+  return String(value)
+    .toLowerCase()
+    .replace(/[ؐ-ًؚ-ٰٟۖ-ۭـ]/gu, '')
+    .replace(/[أإآٱ]/gu, 'ا')
+    .replace(/ى/gu, 'ي')
+    .replace(/ة/gu, 'ه')
+    .replace(/ؤ/gu, 'و')
+    .replace(/ئ/gu, 'ي')
+    .replace(/[^\p{L}\p{N}\s+-]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function glossaryAliasScore(input, alias) {
+  const source = normalizeStudioDomain(input)
+  const target = normalizeStudioDomain(alias)
+  if (!source || !target) return 0
+  if (source === target) return 140
+  if (target.startsWith(source) && source.length >= 3) return 118 - Math.min(20, target.length - source.length)
+  if (source.startsWith(target) && target.length >= 3) return 108
+  if (source.includes(target) && target.length >= 3) return 96
+  const inputTokens = source.split(/\s+/).filter((item) => item.length > 1)
+  const targetTokens = target.split(/\s+/).filter((item) => item.length > 1)
+  const overlap = targetTokens.filter((token) => inputTokens.some((candidate) => candidate === token || (candidate.length >= 3 && token.startsWith(candidate)) || (token.length >= 3 && candidate.startsWith(token)))).length
+  return overlap ? 55 + Math.round((overlap / Math.max(1, targetTokens.length)) * 35) : 0
+}
+
+function selectDrAhmadGlossaryEntry(input) {
+  const idea = [input.idea, input.issue, input.glossaryLabel, input.glossaryCanonicalEn].filter(Boolean).join(' ')
+  const context = [input.context, input.tension, input.visualReason].filter(Boolean).join(' ')
+  const explicit = input.glossaryConcept ? drAhmadDomainGlossary.find((entry) => entry.id === input.glossaryConcept) : null
+  if (explicit) return explicit
+  const ranked = drAhmadDomainGlossary.map((entry) => {
+    const aliases = [entry.canonicalAr, entry.canonicalEn, ...(Array.isArray(entry.aliases) ? entry.aliases : [])]
+    const direct = Math.max(...aliases.map((alias) => glossaryAliasScore(idea, alias)), 0)
+    const contextual = Math.max(...aliases.map((alias) => glossaryAliasScore(context, alias)), 0)
+    // كلمة المستخدم وسطر العنوان لهما السيادة؛ السياق يساعد ولا يطغى عليهما.
+    const score = direct >= 58 ? direct + 35 : direct + contextual * .42
+    return { entry, score, direct }
+  }).filter((item) => item.score >= 58).sort((left, right) => right.score - left.score || right.direct - left.direct)
+  return ranked[0]?.entry || null
+}
+
+function glossaryConceptProfile(entry, input) {
+  if (!entry) return null
+  const scenes = Array.isArray(input.glossaryScenes) && input.glossaryScenes.length ? input.glossaryScenes : Array.isArray(entry.visualScenes) ? entry.visualScenes : []
+  const avoid = [...new Set([...(Array.isArray(entry.avoid) ? entry.avoid : []), ...(Array.isArray(input.glossaryAvoid) ? input.glossaryAvoid : [])])]
+  const requestedWorlds = Array.isArray(input.preferredWorlds) ? input.preferredWorlds.filter(Boolean) : []
+  const preferredWorlds = requestedWorlds.length === 1
+    ? requestedWorlds
+    : [...new Set([...requestedWorlds, ...(Array.isArray(entry.preferredWorlds) ? entry.preferredWorlds : [])])]
+  const sceneSignature = createHash('sha256').update([input.idea, input.regenerationId, input.variation, entry.id].join('|')).digest()
+  const selectedScene = scenes.length ? scenes[(sceneSignature[2] + sceneSignature[5]) % scenes.length] : `A precise educational editorial scene representing ${entry.canonicalEn || entry.canonicalAr}`
+  return {
+    key: `glossary-${entry.id}`,
+    glossaryId: entry.id,
+    label: entry.canonicalAr,
+    interpretation: `${entry.canonicalEn || entry.canonicalAr}: ${entry.meaningAr || input.glossaryMeaning || ''}`,
+    scene: `Create an unmistakable, domain-accurate editorial scene about ${entry.canonicalEn || entry.canonicalAr}. Required interpretation: ${entry.meaningAr || input.glossaryMeaning || ''}. Visual route: ${selectedScene}.`,
+    anchors: scenes.slice(0, 4).join(' | ') || `${entry.canonicalEn || entry.canonicalAr}, educational context, clear human or systemic consequence`,
+    inference: `the image is specifically about ${entry.canonicalEn || entry.canonicalAr}, not a generic education or technology stock scene`,
+    avoid: avoid.join(', '),
+    preferredWorlds,
+    moods: Array.isArray(entry.moods) ? entry.moods : [],
+  }
+}
+
 const studioVisualWorlds = Object.freeze([
   {
-    id: 'forensic-still-life', label: 'المشهد البرهاني', treatment: 'editorial', layoutHint: 'evidence-ledger', paletteHint: 'brand-night',
-    direction: 'forensic editorial still life, precise object placement, subtle evidence, tactile surfaces, controlled studio light, no theatrical posing',
+    id: 'daylight-learning', label: 'التعلّم المضيء', mood: 'bright', treatment: 'documentary', layoutHint: 'editorial-axis', paletteHint: 'scholar-blue',
+    direction: 'bright premium educational editorial photography, generous daylight, optimistic spatial rhythm, clean contemporary materials, active learning energy, sophisticated rather than childish',
   },
   {
-    id: 'human-documentary', label: 'الوثائقي الإنساني', treatment: 'documentary', layoutHint: 'human-note', paletteHint: 'brand-night',
+    id: 'playful-systems', label: 'النظام اللعبي الراقي', mood: 'playful', treatment: 'editorial', layoutHint: 'modular-brief', paletteHint: 'signal-ivory',
+    direction: 'sophisticated gameful learning system expressed through tactile levels, progress markers, achievement tokens, modular paths, lively but disciplined color, no video-game cliché',
+  },
+  {
+    id: 'color-field-editorial', label: 'التحرير اللوني', mood: 'bright', treatment: 'editorial', layoutHint: 'quote-stage', paletteHint: 'signal-ivory',
+    direction: 'world-class editorial color-field photography, bold optimistic color relationships, one intelligent educational metaphor, clean daylight, art-magazine restraint, no gloom',
+  },
+  {
+    id: 'tactile-learning', label: 'مختبر التعلّم المادي', mood: 'creative', treatment: 'documentary', layoutHint: 'evidence-ledger', paletteHint: 'warm-parchment',
+    direction: 'tactile educational still life made from real learning materials, prototypes, cards, modules and hands-on objects, warm light, evidence of experimentation, refined and human',
+  },
+  {
+    id: 'optimistic-human', label: 'الإنسان المتفائل', mood: 'human', treatment: 'documentary', layoutHint: 'human-note', paletteHint: 'brand-paper',
+    direction: 'optimistic human documentary scene in education, authentic interaction, natural daylight, dignity, motion and possibility, emotionally warm without staged smiles',
+  },
+  {
+    id: 'forensic-still-life', label: 'المشهد البرهاني', mood: 'precise', treatment: 'editorial', layoutHint: 'evidence-ledger', paletteHint: 'quiet-stone',
+    direction: 'forensic editorial still life, precise object placement, subtle evidence, tactile surfaces, controlled neutral studio light, no theatrical posing',
+  },
+  {
+    id: 'human-documentary', label: 'الوثائقي الإنساني', mood: 'human', treatment: 'documentary', layoutHint: 'human-note', paletteHint: 'brand-paper',
     direction: 'poetic documentary realism, one authentic human trace, imperfect natural light, lived-in materials, restrained emotion, candid rather than staged',
   },
   {
-    id: 'architectural-silence', label: 'الصمت المعماري', treatment: 'cinematic', layoutHint: 'editorial-axis', paletteHint: 'graphite-gold',
-    direction: 'architectural minimalism, monumental negative space, disciplined geometry, one decisive interruption, premium cultural-institution photography',
+    id: 'architectural-silence', label: 'الصمت المعماري', mood: 'neutral', treatment: 'cinematic', layoutHint: 'editorial-axis', paletteHint: 'quiet-stone',
+    direction: 'architectural minimalism, monumental negative space, disciplined geometry, one decisive interruption, premium cultural-institution photography, neutral not mournful',
   },
   {
-    id: 'shadow-theatre', label: 'مسرح الظل', treatment: 'duotone', layoutHint: 'dual-thesis', paletteHint: 'graphite-gold',
+    id: 'shadow-theatre', label: 'مسرح الظل', mood: 'dramatic', treatment: 'duotone', layoutHint: 'dual-thesis', paletteHint: 'graphite-gold',
     direction: 'conceptual shadow theatre using believable objects and human silhouettes, one visual contradiction, elegant chiaroscuro, sophisticated rather than surreal for its own sake',
   },
   {
-    id: 'paper-sculpture', label: 'النحت الورقي', treatment: 'editorial', layoutHint: 'quote-stage', paletteHint: 'warm-parchment',
+    id: 'paper-sculpture', label: 'النحت الورقي', mood: 'creative', treatment: 'editorial', layoutHint: 'quote-stage', paletteHint: 'warm-parchment',
     direction: 'hand-built paper sculpture and physical editorial craft, folded planes, cut shadows, museum-display precision, no readable print or decorative craft clichés',
   },
   {
-    id: 'cinematic-interruption', label: 'اللحظة السينمائية', treatment: 'cinematic', layoutHint: 'cinematic-window', paletteHint: 'brand-night',
+    id: 'cinematic-interruption', label: 'اللحظة السينمائية', mood: 'dramatic', treatment: 'cinematic', layoutHint: 'cinematic-window', paletteHint: 'brand-night',
     direction: 'cinematic realism at the instant an ordinary system is quietly disrupted, daring crop, layered depth, one irreversible focal event, understated tension',
   },
   {
-    id: 'archival-future', label: 'الأرشيف المعاصر', treatment: 'documentary', layoutHint: 'chapter-stack', paletteHint: 'warm-parchment',
+    id: 'archival-future', label: 'الأرشيف المعاصر', mood: 'intellectual', treatment: 'documentary', layoutHint: 'chapter-stack', paletteHint: 'warm-parchment',
     direction: 'contemporary archival photography, numbered objects without readable text, patina meeting modern precision, intellectual memory, refined editorial grain',
   },
   {
-    id: 'visual-paradox', label: 'المفارقة البصرية', treatment: 'duotone', layoutHint: 'quiet-orbit', paletteHint: 'graphite-gold',
-    direction: 'a physically believable visual paradox, sparse composition, one impossible-looking but coherent relationship, quiet luxury, second-look meaning',
+    id: 'visual-paradox', label: 'المفارقة البصرية', mood: 'intellectual', treatment: 'duotone', layoutHint: 'quiet-orbit', paletteHint: 'signal-ivory',
+    direction: 'a physically believable visual paradox, sparse composition, one impossible-looking but coherent relationship, quiet luxury, second-look meaning, balanced tonal range',
   },
   {
-    id: 'kinetic-system', label: 'النظام المتحوّل', treatment: 'editorial', layoutHint: 'modular-brief', paletteHint: 'brand-night',
-    direction: 'a real-world system expressed through moving physical modules, calibrated rhythm, one module breaking the rule, editorial clarity, no digital interface imagery',
+    id: 'kinetic-system', label: 'النظام المتحوّل', mood: 'energetic', treatment: 'editorial', layoutHint: 'modular-brief', paletteHint: 'scholar-blue',
+    direction: 'a real-world system expressed through moving physical modules, calibrated rhythm, one module breaking the rule, editorial clarity, lively energy, no digital interface imagery',
   },
   {
-    id: 'monumental-human-scale', label: 'الإنسان أمام المنظومة', treatment: 'cinematic', layoutHint: 'hero-word', paletteHint: 'brand-night',
+    id: 'monumental-human-scale', label: 'الإنسان أمام المنظومة', mood: 'dramatic', treatment: 'cinematic', layoutHint: 'hero-word', paletteHint: 'brand-night',
     direction: 'a small but dignified human presence facing a vast institutional environment, emotional scale without melodrama, cinematic restraint, iconic silhouette',
   },
 ])
@@ -1077,16 +1176,26 @@ const fallbackStudioConcept = Object.freeze({
 })
 
 function selectStudioConcept(input) {
+  const glossaryEntry = selectDrAhmadGlossaryEntry(input)
+  const glossaryConcept = glossaryConceptProfile(glossaryEntry, input)
+  if (glossaryConcept) return glossaryConcept
   const source = [input.idea, input.context, input.issue, input.tension, input.visualReason].filter(Boolean).join(' ')
   return studioConceptProfiles.find((profile) => profile.test.test(source)) || fallbackStudioConcept
 }
 
 function compileStudioVisualDirection(input) {
-  const signature = createHash('sha256').update([input.idea, input.context, input.issue, input.regenerationId, input.variation].join('|')).digest()
+  const signature = createHash('sha256').update([input.idea, input.context, input.issue, input.regenerationId, input.variation, ...(input.recentVisualWorlds || [])].join('|')).digest()
   const concept = selectStudioConcept(input)
-  const compatibleIds = studioWorldCompatibility[concept.key] || studioVisualWorlds.map((item) => item.id)
+  const requestedWorlds = [...new Set([...(input.preferredWorlds || []), ...(concept.preferredWorlds || [])])]
+  const compatibleIds = requestedWorlds.length ? requestedWorlds : (studioWorldCompatibility[concept.key] || studioVisualWorlds.map((item) => item.id))
+  const recent = new Set(input.recentVisualWorlds || [])
   const compatibleWorlds = compatibleIds.map((id) => studioVisualWorlds.find((item) => item.id === id)).filter(Boolean)
-  const world = compatibleWorlds[(signature[1] + signature[4]) % compatibleWorlds.length] || studioVisualWorlds[0]
+  const freshWorlds = compatibleWorlds.filter((item) => !recent.has(item.id))
+  const moodSet = new Set([...(input.moods || []), ...(concept.moods || [])])
+  const positiveMood = ['bright', 'playful', 'energetic', 'optimistic', 'creative', 'warm', 'collaborative', 'curious'].some((mood) => moodSet.has(mood))
+  const moodWorlds = (freshWorlds.length ? freshWorlds : compatibleWorlds).filter((item) => !positiveMood || !['dramatic'].includes(item.mood))
+  const pool = moodWorlds.length ? moodWorlds : freshWorlds.length ? freshWorlds : compatibleWorlds.length ? compatibleWorlds : studioVisualWorlds
+  const world = pool[(signature[1] + signature[4] + signature[7]) % pool.length] || studioVisualWorlds[0]
   return { concept, world, signature }
 }
 
@@ -1107,9 +1216,18 @@ function studioImageInput(value) {
     lighting: boundedString(value.lighting, 120),
     negativeSpace: boundedString(value.negativeSpace, 120),
     orientation: ['portrait', 'landscape', 'square'].includes(value.orientation) ? value.orientation : 'portrait',
-    clientPrompt: boundedString(value.prompt, 2_048),
+    clientPrompt: boundedString(value.prompt, 3_500),
+    glossaryConcept: boundedString(value.glossaryConcept, 120),
+    glossaryLabel: boundedString(value.glossaryLabel, 220),
+    glossaryCanonicalEn: boundedString(value.glossaryCanonicalEn, 220),
+    glossaryMeaning: boundedString(value.glossaryMeaning, 1_200),
+    glossaryScenes: boundedArray(value.glossaryScenes, 8, (item) => boundedString(item, 500)),
+    glossaryAvoid: boundedArray(value.glossaryAvoid, 18, (item) => boundedString(item, 240)),
+    preferredWorlds: boundedArray(value.preferredWorlds, 14, (item) => boundedString(item, 80)),
+    moods: boundedArray(value.moods, 12, (item) => boundedString(item, 40)),
+    recentVisualWorlds: boundedArray(value.recentVisualWorlds, 12, (item) => boundedString(item, 80)),
     regenerationId: boundedString(value.regenerationId, 160),
-    variation: boundedString(value.variation, 700),
+    variation: boundedString(value.variation, 1_100),
   }
 }
 
@@ -1130,6 +1248,11 @@ export function buildEliteStudioImagePrompt(input) {
     : input.lighting === 'soft'
       ? 'soft directional light with tactile depth'
       : 'natural directional light with believable texture'
+  const moodSet = new Set([...(input.moods || []), ...(concept.moods || [])])
+  const positiveMood = ['bright', 'playful', 'energetic', 'optimistic', 'creative', 'warm', 'collaborative', 'curious'].some((mood) => moodSet.has(mood))
+  const moodDirection = positiveMood
+    ? 'Emotional valence: optimistic, intelligent and alive. Use daylight or luminous color. Do not make the scene sad, gloomy, lonely, ominous, or dominated by dark empty corridors.'
+    : moodSet.size ? `Emotional range: ${[...moodSet].join(', ')}. Do not force cinematic sadness unless the subject explicitly requires it.` : 'Let the subject determine the emotional tone; never default to gloom.'
   const forbidden = [
     input.avoid,
     concept.avoid,
@@ -1144,6 +1267,8 @@ export function buildEliteStudioImagePrompt(input) {
     `VISIBLE OBJECTS THAT MUST APPEAR: ${concept.anchors}.`,
     `The viewer must instantly understand that ${concept.inference}.`,
     `Art direction: ${world.direction}.`,
+    moodDirection,
+    input.clientPrompt ? `Client semantic lock: ${input.clientPrompt}` : '',
     `Composition: ${negativeSpace}, clear foreground and background, asymmetrical balance, no clutter.`,
     `Lighting: ${lighting}.`,
     input.variation ? `Fresh variation: ${input.variation}` : '',

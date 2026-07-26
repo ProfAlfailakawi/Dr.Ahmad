@@ -1,4 +1,5 @@
 import type { CreativeBrief, CreativeIdentity } from './creative-director'
+import { domainGlossaryPrompt, interpretDrAhmadDomain, type DrAhmadDomainUnderstanding } from './dr-ahmad-domain-glossary'
 
 export type FreeImageProviderId = 'wikimedia' | 'pexels' | 'openverse'
 export type VisualTone = 'documentary' | 'editorial' | 'data' | 'symbolic'
@@ -11,6 +12,13 @@ export type VisualSearchPlan = {
   generationPrompt: string
   rationale: string
   tone: VisualTone
+  understanding: DrAhmadDomainUnderstanding
+  glossaryConcept?: string
+  glossaryLabel?: string
+  glossaryMeaning?: string
+  visualScenes: string[]
+  preferredWorlds: string[]
+  moods: string[]
 }
 
 export type ExternalVisualResult = {
@@ -40,16 +48,6 @@ const truncate = (value: string, count: number) => {
   return words.length > count ? `${words.slice(0, count).join(' ')}…` : words.join(' ')
 }
 const normalize = (value = '') => clean(value).toLowerCase()
-
-async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = 6000) {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    return await fetch(input, { ...init, signal: controller.signal })
-  } finally {
-    clearTimeout(timer)
-  }
-}
 
 function unique(list: string[]) {
   return [...new Set(list.map((item) => clean(item)).filter(Boolean))]
@@ -91,50 +89,75 @@ function visualSeed(brief: CreativeBrief) {
 }
 
 export function buildVisualSearchPlan(text: string, context: string, brief: CreativeBrief, identity: CreativeIdentity): VisualSearchPlan {
+  const understanding = interpretDrAhmadDomain(text, context)
   const seeds = visualSeed(brief)
-  const headline = truncate(brief.issue || brief.hook || text || 'فكرة بصرية', 12)
+  const headline = truncate(brief.issue || understanding.primary?.canonicalAr || brief.hook || text || 'فكرة بصرية', 12)
+  const glossaryQueries = understanding.primary ? [
+    understanding.primary.canonicalAr,
+    understanding.primary.canonicalEn,
+    ...understanding.primary.aliases.slice(0, 4),
+    ...understanding.visualScenes.slice(0, 3),
+  ] : []
   const queries = unique([
+    ...glossaryQueries,
     headline,
     brief.hook,
     `${headline} ${brief.audience}`,
     `${headline} ${seeds.ar[0] || ''}`,
     `${truncate(text || '', 8)} ${seeds.ar[1] || ''}`,
     ...(seeds.ar || []),
-  ]).slice(0, 6)
+  ]).slice(0, 9)
   const englishQueries = unique([
+    understanding.primary?.canonicalEn || '',
+    ...(understanding.primary?.aliases.filter((alias) => /[a-z]/i.test(alias)) || []),
     `${headline} ${seeds.en[0] || ''}`,
     `${brief.visualNeed} ${seeds.en[1] || ''}`,
     `${identity.persona} ${seeds.en[2] || ''}`,
     ...seeds.en,
-  ]).slice(0, 6)
+  ]).slice(0, 9)
   const avoidTerms = unique([
     brief.avoid,
+    ...understanding.avoid,
     'روبوت يلمس يد إنسان',
     'دماغ مضيء',
     'شبكة رقمية على وجه',
     'طفل أمام شاشة زرقاء',
   ])
+  const semanticLock = domainGlossaryPrompt(understanding)
+  const visualRange = understanding.visualScenes.length
+    ? `Choose ONE clearly different visual route from this domain-specific range: ${understanding.visualScenes.slice(0, 6).join(' | ')}.`
+    : 'Choose one original visual route that is semantically precise and not a generic stock scene.'
+  const emotionalRange = understanding.moods.length
+    ? `Emotional direction may be ${understanding.moods.join(', ')}; do not default to sadness, darkness, empty corridors, or lonely classrooms unless the idea explicitly demands it.`
+    : 'Do not default to sadness or darkness; let the idea determine the emotional direction.'
   const generationPrompt = [
-    `Create an unforgettable, museum-grade editorial image for an internationally respected Arab academic and public intellectual.`,
-    `Core idea in Arabic: ${brief.issue}.`,
-    `Translate the Arabic idea into a semantically exact physical scene before applying style. The educational subject and the central conflict must remain unmistakable even without the headline.`,
-    `Emotional register: ${brief.emotion}; intellectually powerful, emotionally truthful, restrained, never sentimental or theatrical.`,
-    `Audience: ${brief.audience}. Visual argument: ${brief.visualReason}.`,
-    `Art direction must be selected anew for this idea rather than copying one template: choose among documentary realism, forensic still life, architectural minimalism, physical paper sculpture, shadow theatre, or a believable visual paradox. Use ${identity.lighting} directional light, tactile materials, layered depth, and one concept-specific focal event.`,
-    `Composition: ${identity.negativeSpace === 'generous' ? 'generous intentional negative space on the right for Arabic typography' : identity.negativeSpace === 'compact' ? 'controlled breathing room with a disciplined text-safe zone' : 'balanced asymmetrical negative space with a calm text-safe zone on the right'}, premium 4:5 portrait crop, meaningful foreground and background, no visual clutter.`,
-    `Palette: graphite, ink, warm ivory, muted mineral tones, with one subtle accent only when conceptually justified.`,
-    `Cultural sensitivity: globally sophisticated and Arab-aware, free of stereotypes, flags, costumes, decorative orientalism, or generic corporate staging.`,
-    `Avoid completely: ${brief.avoid}; glowing brains, robot hands, holograms, blue cyber grids, generic classroom stock photos, fake smiles, text, Arabic or Latin letters, logos, captions, watermarks, plastic skin, exaggerated HDR, oversaturation.`,
-    `Semantic gate: reject any beautiful image that could fit an unrelated title. The viewer must infer the central conflict before reading a single word.`,
-  ].join(' ').slice(0, 2048)
+    semanticLock,
+    `Create a ${identity.imageRealism === 'documentary' ? 'photorealistic documentary' : identity.imageRealism === 'abstract' ? 'elegant conceptual' : 'premium editorial'} image for: ${brief.issue}.`,
+    `Audience: ${brief.audience}. Intended emotional effect: ${brief.emotion}.`,
+    `Visual argument: ${brief.visualReason}.`,
+    visualRange,
+    emotionalRange,
+    `Lighting preference: ${identity.lighting}. Negative space: ${identity.negativeSpace}.`,
+    `Avoid: ${avoidTerms.join(', ')}.`,
+    'Leave a clean text-safe zone for later Arabic typography. Generate no text, letters, numbers, logos, watermarks, or UI screenshots.',
+  ].filter(Boolean).join(' ')
   return {
     headline,
     queries,
     englishQueries,
     avoidTerms,
     generationPrompt,
-    rationale: `الأولوية لصورة ${brief.visualNeed === 'data' ? 'تحمل الدليل' : brief.visualNeed === 'human' ? 'إنسانية غير مصطنعة' : 'تحريرية غير مباشرة'} وتترك مساحة للعنوان، مع الابتعاد عن الكليشيهات المستهلكة.`,
-    tone: seeds.tone,
+    rationale: understanding.primary
+      ? `فهم القاموس المصطلح بوصفه «${understanding.primary.canonicalAr}» في مجال ${understanding.primary.domain} بدرجة ${understanding.confidence}٪، ثم بنى البحث والمشهد على المعنى المتخصص لا على التشابه اللفظي.`
+      : `الأولوية لصورة ${brief.visualNeed === 'data' ? 'تحمل الدليل' : brief.visualNeed === 'human' ? 'إنسانية غير مصطنعة' : 'تحريرية غير مباشرة'} وتترك مساحة للعنوان، مع الابتعاد عن الكليشيهات المستهلكة.`,
+    tone: understanding.moods.includes('human') ? 'documentary' : understanding.moods.includes('data') || understanding.moods.includes('academic') ? 'data' : seeds.tone,
+    understanding,
+    glossaryConcept: understanding.primary?.id,
+    glossaryLabel: understanding.primary?.canonicalAr,
+    glossaryMeaning: understanding.primary?.meaningAr,
+    visualScenes: understanding.visualScenes,
+    preferredWorlds: understanding.preferredWorlds,
+    moods: understanding.moods,
   }
 }
 
@@ -157,14 +180,9 @@ function computeCandidateScore(item: Omit<ExternalVisualResult, 'score' | 'orien
   let score = 50 + matchBoost - avoidPenalty
   if (orientation === 'landscape') score += 12
   if (orientation === 'square') score += 8
-  // موثوقية التحميل جزء من الجودة: Pexels وWikimedia أكثر ثباتًا في الواجهة،
-  // بينما روابط Openverse قد تكون وسيطة أو تمنع العرض الخارجي.
-  if (item.provider === 'pexels') score += 12
-  if (item.provider === 'wikimedia') score += 8
-  if (item.provider === 'openverse') score -= 12
   if (plan.tone === 'documentary' && item.provider === 'pexels') score += 12
   if (plan.tone === 'data' && item.provider === 'wikimedia') score += 10
-  if (plan.tone === 'editorial' && item.provider === 'openverse') score += 3
+  if (plan.tone === 'editorial' && item.provider === 'openverse') score += 7
   if (item.provider === 'wikimedia' && /diagram|chart|research|education|teacher|school|university|library/i.test(haystack)) score += 7
   if (item.provider === 'pexels' && /teacher|student|classroom|library|study/i.test(haystack)) score += 7
   return {
@@ -186,7 +204,7 @@ async function searchWikimedia(query: string, plan: VisualSearchPlan, limit = 8)
   url.searchParams.set('iiprop', 'url|extmetadata|size')
   url.searchParams.set('iiurlwidth', '900')
   url.searchParams.set('inprop', 'url')
-  const response = await fetchWithTimeout(url.toString())
+  const response = await fetch(url.toString())
   if (!response.ok) throw new Error('wikimedia_search_failed')
   const payload = await response.json() as { query?: { pages?: Record<string, any> } }
   const pages = Object.values(payload.query?.pages || {})
@@ -221,7 +239,7 @@ async function searchPexels(query: string, plan: VisualSearchPlan, limit = 8): P
   url.searchParams.set('query', query)
   url.searchParams.set('per_page', String(Math.max(4, Math.min(limit, 15))))
   url.searchParams.set('orientation', plan.tone === 'documentary' ? 'landscape' : 'landscape')
-  const response = await fetchWithTimeout(url.toString(), { headers: { Authorization: apiKey } })
+  const response = await fetch(url.toString(), { headers: { Authorization: apiKey } })
   if (!response.ok) throw new Error('pexels_search_failed')
   const payload = await response.json() as { photos?: any[] }
   return (payload.photos || []).map((photo) => {
@@ -251,7 +269,7 @@ async function searchOpenverse(query: string, plan: VisualSearchPlan, limit = 8)
   url.searchParams.set('page_size', String(Math.max(4, Math.min(limit, 14))))
   url.searchParams.set('license_type', 'commercial')
   url.searchParams.set('mature', 'false')
-  const response = await fetchWithTimeout(url.toString())
+  const response = await fetch(url.toString())
   if (!response.ok) throw new Error('openverse_search_failed')
   const payload = await response.json() as { results?: any[] }
   return (payload.results || []).map((item) => {
@@ -262,7 +280,7 @@ async function searchOpenverse(query: string, plan: VisualSearchPlan, limit = 8)
       title: item.title || 'Openverse image',
       description: item.title || item.tags?.slice?.(0, 5)?.join(' · ') || 'صورة مجانية من Openverse.',
       thumbnailUrl: item.thumbnail || item.url || '',
-      imageUrl: item.url || item.thumbnail || '',
+      imageUrl: item.thumbnail || item.url || '',
       pageUrl: item.foreign_landing_url || item.detail_url || item.url || '',
       author: item.creator || 'Openverse',
       license: item.license ? `${String(item.license).toUpperCase()}${item.license_version ? ` ${item.license_version}` : ''}` : 'راجع صفحة المصدر',
@@ -272,26 +290,27 @@ async function searchOpenverse(query: string, plan: VisualSearchPlan, limit = 8)
       rationale: 'مصدر مجاني مفتوح يوسّع الخيارات التحريرية والرمزية عبر مواد مرخّصة.',
     }
     return { ...base, ...computeCandidateScore(base, plan) }
-  }).filter((item) => item.thumbnailUrl && item.imageUrl && /^https:\/\//i.test(item.thumbnailUrl) && /^https:\/\//i.test(item.imageUrl))
+  }).filter((item) => item.thumbnailUrl && item.imageUrl)
 }
 
 export async function searchExternalVisualSources(plan: VisualSearchPlan, limit = 10): Promise<ExternalVisualResult[]> {
-  // استعلامان كحد أقصى، وكل المصادر تعمل بالتوازي. الحد الزمني داخل كل طلب
-  // يمنع مصدرًا واحدًا من تعليق الاستوديو كاملًا على الهاتف.
-  const bundle = unique([...plan.queries.slice(0, 2), ...plan.englishQueries.slice(0, 1)]).slice(0, 2)
-  const tasks = bundle.flatMap((query) => [
-    searchWikimedia(query, plan, Math.ceil(limit / 2)),
-    searchPexels(query, plan, Math.ceil(limit / 2)),
-    searchOpenverse(query, plan, Math.ceil(limit / 3)),
-  ])
-  const settled = await Promise.allSettled(tasks)
-  const collected = settled.flatMap((result) => result.status === 'fulfilled' ? result.value : [])
+  const bundle = unique([...plan.queries.slice(0, 3), ...plan.englishQueries.slice(0, 2)]).slice(0, 4)
+  const collected: ExternalVisualResult[] = []
+  for (const query of bundle) {
+    const [wikimedia, pexels, openverse] = await Promise.allSettled([
+      searchWikimedia(query, plan, Math.ceil(limit / 2)),
+      searchPexels(query, plan, Math.ceil(limit / 2)),
+      searchOpenverse(query, plan, Math.ceil(limit / 2)),
+    ])
+    if (wikimedia.status === 'fulfilled') collected.push(...wikimedia.value)
+    if (pexels.status === 'fulfilled') collected.push(...pexels.value)
+    if (openverse.status === 'fulfilled') collected.push(...openverse.value)
+    if (collected.length >= limit * 3) break
+  }
   const deduped = new Map<string, ExternalVisualResult>()
   for (const item of collected) {
     const key = item.imageUrl || item.pageUrl || item.id
     if (!deduped.has(key) || (deduped.get(key)?.score || 0) < item.score) deduped.set(key, item)
   }
-  return [...deduped.values()]
-    .sort((a, b) => b.score - a.score || a.providerLabel.localeCompare(b.providerLabel))
-    .slice(0, limit)
+  return [...deduped.values()].sort((a, b) => b.score - a.score || a.providerLabel.localeCompare(b.providerLabel)).slice(0, limit)
 }

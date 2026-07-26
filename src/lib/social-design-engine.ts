@@ -1721,6 +1721,30 @@ const overrideAnalysis = (analysis: SocialContentAnalysis, request: SocialDesign
   return tone === analysis.primaryTone && density === analysis.density ? analysis : { ...analysis, primaryTone: tone, density }
 }
 
+const selectVisibleThemeDiversity = (ranked: readonly CompositionPlan[], count: number) => {
+  const pool = [...ranked]
+  const selected: CompositionPlan[] = []
+  const surface = (plan: CompositionPlan) => resolvePalette(plan).isDark ? 'dark' : 'light'
+  while (selected.length < count && pool.length) {
+    let bestIndex = 0
+    let bestScore = -Infinity
+    for (let index = 0; index < pool.length; index += 1) {
+      const candidate = pool[index]
+      const quality = candidate.quality?.score || 0
+      const newPalette = selected.every((item) => item.palette !== candidate.palette) ? 14 : 0
+      const newSurface = selected.length && selected.every((item) => surface(item) !== surface(candidate)) ? 12 : selected.some((item) => surface(item) !== surface(candidate)) ? 5 : 0
+      const newLayout = selected.every((item) => item.layout !== candidate.layout) ? 10 : 0
+      const distance = selected.length ? Math.min(...selected.map((item) => 1 - designSimilarity(item, candidate))) * 18 : 18
+      const score = quality + newPalette + newSurface + newLayout + distance
+      if (score > bestScore) { bestScore = score; bestIndex = index }
+    }
+    const [picked] = pool.splice(bestIndex, 1)
+    if (!picked) break
+    selected.push(picked)
+  }
+  return selected
+}
+
 export function generateSocialDesigns(request: SocialDesignRequest): SocialDesignResult {
   const analysis = overrideAnalysis(analyzeSocialContent(request.text, request.context, { author: request.author, source: request.source }), request)
   // لجنة الجودة تعمل دائمًا على ثمانية اتجاهات نهائية داخليًا، ولا تعرض إلا أقوى أربعة.
@@ -1754,10 +1778,10 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
   const strong = valid.filter((candidate) => (candidate.quality?.score || 0) >= 76 && (candidate.quality?.lineFit || 0) >= 76)
   const candidatePool = strong.length >= requestedCount ? strong : valid.length ? valid : critiqued
   const finalists = selectDiverse(candidatePool, requestedCount, history, noveltyThreshold, request.tasteProfile)
-  let plans = finalists
+  const rankedVisible = finalists
     .map((plan) => ({ ...plan, quality: critiqueCompositionPlan(plan, finalists), tasteAffinity: tasteAffinity(request.tasteProfile, plan) }))
     .sort((left, right) => ((right.quality?.score || 0) + (right.tasteAffinity || 0) * 8) - ((left.quality?.score || 0) + (left.tasteAffinity || 0) * 8))
-    .slice(0, visibleCount)
+  let plans = selectVisibleThemeDiversity(rankedVisible, visibleCount).slice(0, visibleCount)
   // وعد الزر يُنفَّذ حرفياً: إن طلب المستخدم عائلة بعينها ولم تصعد بجودتها،
   // نصعد أقوى مرشح منها إلى الصدارة بدل أن يضيع الطلب في فرز الجودة العام.
   if (request.preferLayout && !plans.some((plan) => plan.layout === request.preferLayout)) {

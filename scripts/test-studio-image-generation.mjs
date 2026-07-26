@@ -30,20 +30,31 @@ assert.match(prompt, /Fresh variation/i)
 assert.doesNotMatch(prompt, /watermark\s*$/i)
 
 
-const manipulationInput = {
+
+const gamificationInput = {
   ...input,
-  idea: 'التلاعب في التعليم',
-  issue: 'التلاعب في التعليم',
-  tension: 'التدخل الخفي في المعايير والنتائج',
-  visualReason: 'show how hidden influence bends educational standards',
-  regenerationId: 'manipulation-semantic-test',
+  idea: 'تلعيب',
+  issue: 'التلعيب في التعليم',
+  tension: 'تحفيز التعلّم من خلال التقدم والتحدي والإنجاز',
+  visualReason: 'show learning progress, badges, levels and meaningful challenges without childish clichés',
+  regenerationId: 'gamification-semantic-test',
+  recentVisualWorlds: [],
 }
-const manipulationPrompt = buildEliteStudioImagePrompt(manipulationInput)
-assert.match(manipulationPrompt, /contemporary classroom/i)
-assert.match(manipulationPrompt, /concealed hand/i)
-assert.match(manipulationPrompt, /balanced brass scale/i)
-assert.match(manipulationPrompt, /blank exam sheets/i)
-assert.match(manipulationPrompt, /Do not include:.*person hiding behind a book/i)
+const gamificationPrompt = buildEliteStudioImagePrompt(gamificationInput)
+assert.match(gamificationPrompt, /Gamification/i)
+assert.match(gamificationPrompt, /النقاط|المستويات|الشارات|التحديات|شريط تقدم|points|levels|badges|progress|challenges/i)
+assert.match(gamificationPrompt, /optimistic|daylight|luminous|alive/i)
+assert.doesNotMatch(gamificationPrompt, /concealed hand|bends educational standards|manipulation as deception/i)
+assert.match(gamificationPrompt, /ليس التلاعب|الخداع|not manipulation|not deception/i)
+
+const gamificationFreshPrompt = buildEliteStudioImagePrompt({
+  ...gamificationInput,
+  regenerationId: 'gamification-semantic-test-2',
+  recentVisualWorlds: ['playful-systems'],
+  variation: 'Choose a completely different visual world and structure.',
+})
+assert.notEqual(gamificationPrompt, gamificationFreshPrompt, 'Recent visual-world history must force a genuinely different gamification direction.')
+assert.match(gamificationFreshPrompt, /Do not make the scene sad, gloomy, lonely, ominous/i)
 
 const differentPrompt = buildEliteStudioImagePrompt({ ...input, regenerationId: 'self-test-fresh-2', variation: 'Use a quiet human trace inside monumental negative space.' })
 assert.notEqual(prompt, differentPrompt, 'Fresh regeneration must alter the art direction instead of replaying the same prompt.')

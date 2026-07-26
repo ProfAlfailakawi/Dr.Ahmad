@@ -6,6 +6,7 @@ ENV NODE_ENV=production
 COPY server.mjs ./server.mjs
 COPY scripts/daily-radar.mjs scripts/editorial-policy.mjs ./scripts/
 COPY src/data/editorial-policy.json ./src/data/editorial-policy.json
+COPY src/data/dr-ahmad-domain-glossary.json ./src/data/dr-ahmad-domain-glossary.json
 RUN mkdir -p dist
 EXPOSE 8080
 CMD ["node", "server.mjs"]

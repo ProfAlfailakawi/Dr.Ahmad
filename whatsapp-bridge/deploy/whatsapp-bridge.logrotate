@@ -1,0 +1,11 @@
+/var/log/whatsapp-bridge/bridge.log {
+  daily
+  rotate 14
+  size 20M
+  compress
+  delaycompress
+  missingok
+  notifempty
+  copytruncate
+  su whatsapp whatsapp
+}

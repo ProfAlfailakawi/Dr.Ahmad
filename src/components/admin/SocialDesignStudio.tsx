@@ -763,6 +763,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     if (/timed out|abort|504/i.test(message)) return 'انتهت مهلة توليد Cloudflare قبل وصول الصورة. لم ينتقل النظام إلى Pexels تلقائيًا.'
     if (/busy|429/i.test(message)) return 'خدمة التوليد مشغولة الآن. انتظر قليلًا ثم استخدم «أعد التوليد من الصفر».'
     if (/analysis_failed/i.test(message)) return 'وصلت الصورة المولدة، لكن الجهاز لم يتمكن من فتحها داخل المحرر. سيعيد النظام فكها بمسار آمن في المحاولة التالية.'
+    if (/semantic_rejected|تعذّر اعتماد الصورة دلاليًا|HTTP 422/i.test(message)) return 'رُفضت الصورة لأنها لم تمثّل المعنى الكامل أو أسقطت عنصرًا أساسيًا من الفكرة. لم تُركّب داخل التصميم؛ أعد التوليد ليُبنى مشهد مختلف فعليًا.'
     if (/no usable image|empty/i.test(message)) return 'خدمة التوليد لم ترسل بيانات صورة قابلة للفتح؛ سيعيد النظام الطلب ببذرة جديدة بدل استخدام صورة جاهزة.'
     return `تعذّر توليد الصورة الأصلية: ${message || 'فشل غير معروف في خدمة التوليد'}. لم يستخدم النظام صورة جاهزة بدلًا منها.`
   }
@@ -1105,6 +1106,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         throw new Error([payload.error, payload.detail, payload.code, `HTTP ${response.status}`].filter(Boolean).join(' · '))
       }
       const payload = await response.json() as { imageUrl?: string; image?: string; imageBase64?: string; result?: { image?: string; imageUrl?: string }; sourceUrl?: string; owner?: string; license?: string; description?: string; prompt?: string; model?: string; generatedAt?: string; requestId?: string; visualWorld?: string; visualWorldLabel?: string; imageTreatment?: NonNullable<PlanOverlay['imageTreatment']>; layoutHint?: LayoutFamilyId; paletteHint?: PaletteId; conceptKey?: string; conceptLabel?: string; semanticScene?: string; relevanceScore?: number | null; relevanceReason?: string; generationAttempts?: number; imageMime?: string; imageBytes?: number; semanticVerified?: boolean; criticSource?: string; imageCaption?: string; missingAnchor?: string; literalSubjects?: string[] }
+      const relevanceScore = typeof payload.relevanceScore === 'number' ? payload.relevanceScore : null
+      /* لا نعتمد صورة فشل الناقد الدلالي ثم نطلب من المستخدم مراجعتها يدويًا؛
+         هذا كان يسمح بمرور صورة جميلة لكنها لا تعبّر عن الفكرة. الحكم الصريح
+         من الخادم نهائي، وأي نتيجة دون الحد تُرفض قبل تركيبها داخل التصميم. */
+      if (payload.semanticVerified === false || (relevanceScore != null && relevanceScore < 86)) {
+        throw new Error(`semantic_rejected · ${payload.relevanceReason || payload.missingAnchor || `score ${relevanceScore ?? 0}`}`)
+      }
       const imageUrl = generatedImageDataUri(payload)
       if (!imageUrl) throw new Error('generator_empty')
       const passport = await analyzeGeneratedStudioImage(imageUrl, `dr-ahmad-ai-${Date.now()}`)
@@ -1124,7 +1132,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           conceptKey: payload.conceptKey,
           conceptLabel: payload.conceptLabel,
           semanticScene: payload.semanticScene,
-          relevanceScore: payload.relevanceScore,
+          relevanceScore,
           relevanceReason: payload.relevanceReason,
           generationAttempts: payload.generationAttempts,
           semanticVerified: payload.semanticVerified,
@@ -1218,9 +1226,16 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     styleOverride?: { treatment?: NonNullable<PlanOverlay['imageTreatment']>; layout?: LayoutFamilyId; palette?: PaletteId; ignoreServerStyle?: boolean },
   ) => {
     const roleId = `hero-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+    /* أصل المشكلة: اختيار منطقة النص كان يعود إلى «الوسط» تقريبًا في كل مرة
+       بسبب شرط يعيد center دائمًا، فكان الكلام والإطار يقعان فوق مركز الصورة
+       حتى عندما تظهر المساحة الهادئة بوضوح على اليمين أو اليسار. العلاج:
+       نعتمد أولًا على جواز الصورة (negative space / focal point)، ثم نلجأ إلى
+       هندسة الخطة القديمة فقط كمرشد احتياطي إن تعذّر ذلك. */
     const titleCenterX = plan.geometry.titleZone.x + plan.geometry.titleZone.width / 2
     const titleCenterY = plan.geometry.titleZone.y
-    const zone: NonNullable<PlanOverlay['textZone']> = titleCenterY < .25 ? 'top' : titleCenterY > .62 ? 'bottom' : titleCenterX < .43 ? 'left' : titleCenterX > .57 ? 'right' : cinematicTextZone(passport) === 'center' ? 'center' : 'center'
+    const passportZone = cinematicTextZone(passport)
+    const fallbackZone: NonNullable<PlanOverlay['textZone']> = titleCenterY < .24 ? 'top' : titleCenterY > .64 ? 'bottom' : titleCenterX < .46 ? 'left' : titleCenterX > .54 ? 'right' : 'right'
+    const zone: NonNullable<PlanOverlay['textZone']> = passportZone || fallbackZone
     const existing = (plan.overlays || []).filter((item) => item.imageRole !== 'background')
     const resolvedTreatment = styleOverride?.treatment
       || (styleOverride?.ignoreServerStyle ? treatment : metadata?.imageTreatment || treatment)
@@ -1232,16 +1247,20 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       cinematic: 'brand-night',
     }
     const fallbackLayout: Record<NonNullable<PlanOverlay['imageTreatment']>, LayoutFamilyId> = {
-      none: 'human-note',
-      documentary: 'editorial-axis',
-      editorial: 'quote-stage',
-      duotone: 'quiet-orbit',
+      none: 'cinematic-window',
+      documentary: 'cinematic-window',
+      editorial: 'cinematic-window',
+      duotone: 'cinematic-window',
       cinematic: 'cinematic-window',
     }
+    const serverLayoutHint = !styleOverride?.ignoreServerStyle && metadata?.layoutHint === 'cinematic-window'
+      ? metadata.layoutHint
+      : undefined
     const palette: PaletteId = styleOverride?.palette
       || (styleOverride?.ignoreServerStyle ? fallbackPalette[resolvedTreatment] : metadata?.paletteHint || fallbackPalette[resolvedTreatment])
     const layout: LayoutFamilyId = styleOverride?.layout
-      || (styleOverride?.ignoreServerStyle ? fallbackLayout[resolvedTreatment] : metadata?.layoutHint || fallbackLayout[resolvedTreatment])
+      || serverLayoutHint
+      || fallbackLayout[resolvedTreatment]
     const darkSurface = Boolean(PALETTES[palette]?.isDark)
     const vignette = resolvedTreatment === 'cinematic' ? .44 : resolvedTreatment === 'duotone' ? .32 : resolvedTreatment === 'editorial' ? .18 : .10
     const readabilityShade = darkSurface
@@ -1284,7 +1303,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       paletteOverride: undefined,
       density: resolvedTreatment === 'cinematic' || resolvedTreatment === 'duotone' ? 'minimal' : plan.density,
       content: { ...plan.content, source: /dr-?alfailakawi\.com/i.test(plan.content.source || '') ? '' : plan.content.source },
-      framing: resolvedTreatment === 'editorial' ? 'editorial-folio' : resolvedTreatment === 'documentary' ? 'open-canvas' : resolvedTreatment === 'none' ? 'open-canvas' : 'cinematic-crop',
+      framing: resolvedTreatment === 'cinematic' || resolvedTreatment === 'duotone' ? 'cinematic-crop' : 'open-canvas',
       overlays: [background, ...existing],
       rationale: [
         `الصورة أصبحت المسرح الأساسي بتوجه ${metadata?.visualWorldLabel || (resolvedTreatment === 'cinematic' ? 'سينمائي' : resolvedTreatment === 'documentary' ? 'وثائقي مضيء' : resolvedTreatment === 'duotone' ? 'مادي دافئ' : 'تحريري لوني')}.`,

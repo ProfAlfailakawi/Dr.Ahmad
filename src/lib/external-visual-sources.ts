@@ -190,8 +190,23 @@ function computeCandidateScore(item: Omit<ExternalVisualResult, 'score' | 'orien
   const qTerms = unique([...plan.queries, ...plan.englishQueries]).flatMap((entry) => normalize(entry).split(/\s+/)).filter((word) => word.length > 2)
   const matchBoost = qTerms.reduce((sum, term) => sum + (haystack.includes(term) ? 5 : 0), 0)
   const avoidPenalty = plan.avoidTerms.reduce((sum, term) => sum + (haystack.includes(normalize(term)) ? 12 : 0), 0)
+  const conceptTerms = unique([
+    plan.glossaryLabel || '',
+    plan.glossaryCanonicalEn || '',
+    ...plan.understanding.recognizedTerms.slice(0, 6).flatMap((item) => [item.canonicalAr, item.canonicalEn]),
+  ]).map(normalize).filter(Boolean)
+  const conceptHits = conceptTerms.filter((term) => {
+    const tokens = term.split(/\s+/).filter((word) => word.length > 2)
+    return tokens.length > 0 && tokens.some((token) => haystack.includes(token))
+  }).length
+  const primaryConceptMissing = conceptTerms.length > 0 && conceptHits === 0
+  const literalTokens = unique(plan.literalAnchors.flatMap((anchor) => normalize(anchor).split(/\s+/))).filter((word) => word.length > 2)
+  const literalHits = literalTokens.filter((token) => haystack.includes(token)).length
+  const literalCoverage = literalTokens.length ? literalHits / literalTokens.length : 1
   const orientation = deriveOrientation(item.width, item.height)
-  let score = 50 + matchBoost - avoidPenalty
+  let score = 44 + matchBoost + conceptHits * 12 + Math.round(literalCoverage * 18) - avoidPenalty
+  if (primaryConceptMissing) score -= 38
+  if (literalTokens.length >= 2 && literalCoverage < .34) score -= 22
   if (orientation === 'landscape') score += 12
   if (orientation === 'square') score += 8
   if (plan.tone === 'documentary' && item.provider === 'pexels') score += 12
@@ -326,5 +341,10 @@ export async function searchExternalVisualSources(plan: VisualSearchPlan, limit 
     const key = item.imageUrl || item.pageUrl || item.id
     if (!deduped.has(key) || (deduped.get(key)?.score || 0) < item.score) deduped.set(key, item)
   }
-  return [...deduped.values()].sort((a, b) => b.score - a.score || a.providerLabel.localeCompare(b.providerLabel)).slice(0, limit)
+  /* لا نعرض صورة جاهزة لمجرد أنها جميلة أو قريبة من كلمة عامة. المرشح الذي
+     لا يحمل المفهوم الأساسي في وصفه يُستبعد بدل أن يُركّب على التصميم خطأً. */
+  return [...deduped.values()]
+    .filter((item) => item.score >= 62)
+    .sort((a, b) => b.score - a.score || a.providerLabel.localeCompare(b.providerLabel))
+    .slice(0, limit)
 }

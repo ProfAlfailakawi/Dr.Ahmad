@@ -501,6 +501,11 @@ function backdrop(s: Scene, options: { glow?: 'top-left' | 'top-right' | 'bottom
 /** إطار المقاس المطلوب من الخطة (شعري/زوايا/قوس) بلمسة أرقى من نسخة القالب القديم. */
 function frameDecor(s: Scene) {
   const { plan, palette: p, w, h, min } = s
+  const heroImage = plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background' && item.src)
+  /* حين تكون الصورة هي المسرح الرئيسي، فالإطار الطباعي القديم يتحول إلى «قيد»
+     بصري فوقها، خصوصًا مع الخطط المعتمدة على صورة بطولية. لذلك نطفئ الإطار في
+     هذا السياق ونترك القراءة تعتمد على التعتيم الموجّه وتكوين المشهد نفسه. */
+  if (heroImage) return ''
   const frame = FRAMING_MODES[plan.framing]
   const parts: string[] = []
   if (plan.framing === 'hairline-inset' || plan.framing === 'editorial-folio') {
@@ -1669,7 +1674,12 @@ export function renderCompositionSvg(plan: CompositionPlan, options: RenderSvgOp
       : plan.layout === 'cinematic-window' ? 'none'
         : 'top-left'
   const bg = backdrop(s, { glow })
-  const painter = PAINTERS[plan.layout] || paintEditorialAxis
+  const heroImage = plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background' && item.src)
+  /* أصل المشكلة: الخلفية البطولية كانت تُحقن في الخطة، لكن كثيرًا من الرسامين
+     لا يقرأون منطق الصورة ولا منطقة النص الهادئة، فيبنون ورقة/إطارًا فوقها
+     فتبدو النتيجة خاطئة. الحل: أي خطة فيها صورة بطولية تُرسم عبر الرسام
+     السينمائي المخصص للصورة لأنه الوحيد الذي يحترم textZone والتدرج والقراءة. */
+  const painter = heroImage ? paintCinematicWindow : (PAINTERS[plan.layout] || paintEditorialAxis)
   const scenePaint = painter(s)
   const hero = imageUnderlayLayer(s)
   const accessible = esc(options.ariaLabel || `${plan.directionLabel}: ${plan.content.title}`)

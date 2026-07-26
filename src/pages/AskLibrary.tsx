@@ -867,7 +867,7 @@ export default function AskLibrary() {
                                   <li key={item.slug} className="relative">
                                     <span className="absolute right-[-25px] top-2 h-2 w-2 rounded-full bg-accent" />
                                     <span className="text-[.74rem] text-soft">
-                                      {item.iso.slice(0, 4)} · {categoryLabel(item.cat)}
+                                      {item.iso.slice(0, 4)} · {categoryLabel(item.cat || '')}
                                     </span>
                                     <Link
                                       to={`/articles/${item.slug}`}

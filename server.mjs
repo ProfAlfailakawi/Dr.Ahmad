@@ -924,11 +924,13 @@ function studioImageInput(value) {
     negativeSpace: boundedString(value.negativeSpace, 120),
     orientation: ['portrait', 'landscape', 'square'].includes(value.orientation) ? value.orientation : 'portrait',
     clientPrompt: boundedString(value.prompt, 2_048),
+    regenerationId: boundedString(value.regenerationId, 160),
+    variation: boundedString(value.variation, 700),
   }
 }
 
 export function buildEliteStudioImagePrompt(input) {
-  const signature = createHash('sha256').update([input.idea, input.context, input.issue].join('|')).digest()
+  const signature = createHash('sha256').update([input.idea, input.context, input.issue, input.regenerationId, input.variation].join('|')).digest()
   const metaphor = studioImageMetaphors[signature[0] % studioImageMetaphors.length]
   const orientation = input.orientation === 'landscape'
     ? 'cinematic 16:9 landscape composition'
@@ -973,6 +975,7 @@ export function buildEliteStudioImagePrompt(input) {
     `Light and color: ${lighting}; graphite, ink, warm ivory, muted mineral tones, and one subtle accent only when conceptually justified.`,
     `Cultural direction: globally sophisticated, Arab-sensitive, intellectually serious, free of stereotypes, costumes, flags, or decorative orientalism unless the idea explicitly requires them.`,
     `Image quality: believable anatomy, natural hands, authentic facial emotion when people appear, tactile surfaces, fine editorial grain, premium lens language, timeless rather than trendy.`,
+    input.variation ? `Fresh-generation mandate: ${input.variation}` : '',
     `Avoid completely: ${forbidden}.`,
     input.clientPrompt ? `Additional creative brief: ${input.clientPrompt}.` : '',
     `The final image must feel commissioned by the strongest editorial art director in the world and should make viewers pause before they read a single word.`,
@@ -988,7 +991,8 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
   if (!/^@cf\/[A-Za-z0-9._/-]+$/.test(model)) throw new HttpError(503, 'Cloudflare image model is not configured correctly')
 
   const prompt = buildEliteStudioImagePrompt(input)
-  const seed = Number.parseInt(createHash('sha256').update(`${input.idea}|${Date.now()}`).digest('hex').slice(0, 8), 16) >>> 0
+  const requestId = input.regenerationId || createHash('sha256').update(`${input.idea}|${Date.now()}|${Math.random()}`).digest('hex').slice(0, 20)
+  const seed = Number.parseInt(createHash('sha256').update(`${input.idea}|${requestId}|${input.variation}|${Date.now()}`).digest('hex').slice(0, 8), 16) >>> 0
   let response
   try {
     response = await fetchWithTimeout(fetchImpl,
@@ -1007,7 +1011,13 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
   }
   if (!response.ok) {
     if (response.status === 429) throw new HttpError(503, 'Image generation is busy', { 'retry-after': '30' })
-    throw new HttpError(502, 'Image generation failed')
+    let detail = ''
+    try {
+      const failure = await response.json()
+      const first = Array.isArray(failure?.errors) ? failure.errors[0] : null
+      detail = boundedString(first?.message || failure?.message || failure?.error, 240)
+    } catch { /* Cloudflare may return an empty error body */ }
+    throw new HttpError(502, detail ? `Image generation failed: ${detail}` : `Image generation failed with HTTP ${response.status}`)
   }
   let payload
   try { payload = await response.json() } catch { throw new HttpError(502, 'Image generation returned an invalid response') }
@@ -1021,6 +1031,8 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
     description: input.issue || input.idea,
     prompt,
     model,
+    seed,
+    requestId,
     generatedAt: new Date().toISOString(),
   }
 }

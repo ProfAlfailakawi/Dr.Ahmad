@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import AudienceStudio from './AudienceStudio'
 import { BroadcastStudio } from './BroadcastStudio'
+import { useAdminAuth } from '../../lib/admin-auth'
 
 type AgentStatus = {
   status?: string
@@ -128,11 +129,11 @@ function parseKeywords(value: string) {
 }
 
 export function WhatsAppAgentPanel() {
+  const { user } = useAdminAuth()
   const [status, setStatus] = useState<AgentStatus>({ status: 'unconfigured' })
   const [busy, setBusy] = useState(false)
   const [restarting, setRestarting] = useState(false)
   const [notice, setNotice] = useState('')
-  const [secret, setSecret] = useState(() => localStorage.getItem('whatsapp-agent-bridge-secret') || '')
   const [manualJid, setManualJid] = useState('')
   const [rules, setRules] = useState<ReplyRule[]>([])
   const [ruleForm, setRuleForm] = useState<typeof emptyRule>({ ...emptyRule })
@@ -147,20 +148,23 @@ export function WhatsAppAgentPanel() {
   const [trustedEvidence, setTrustedEvidence] = useState<TrustedEvidence[]>([])
   const [evidenceBusy, setEvidenceBusy] = useState(false)
   const [evidenceForm, setEvidenceForm] = useState({ domain: 'education', sourceName: '', sourceType: 'جامعة أو دورية محكّمة', title: '', claim: '', quote: '', url: '', publishedAt: '', authority: '' })
-  const localBridgeDefault = ['http:', '', '127.0.0.1:34321'].join('/')
-  const bridgeCandidate = String(import.meta.env.VITE_WHATSAPP_AGENT_BRIDGE_URL || localBridgeDefault).replace(/\/+$/, '')
-  const bridge = /^(https?:\/\/)(127\.0\.0\.1|localhost)(:\d+)?$/i.test(bridgeCandidate) ? bridgeCandidate : ''
-
-  const authHeaders = useMemo(() => ({
-    Accept: 'application/json',
-    'X-WhatsApp-Agent-Secret': secret,
-  }), [secret])
+  const bridge = '/api/admin/whatsapp'
 
   const request = async <T,>(path: string, init: RequestInit = {}): Promise<T> => {
-    if (!bridge) throw new Error('bridge-not-configured')
-    if (!secret.trim()) throw new Error('secret-missing')
-    const headers = { ...authHeaders, ...(init.body ? { 'Content-Type': 'application/json' } : {}), ...(init.headers || {}) }
-    const response = await fetch(`${bridge}${path}`, { ...init, headers })
+    if (!user) throw new Error('admin-session-missing')
+    const token = await user.getIdToken()
+    const mapped = path === '/status'
+      ? '/status'
+      : path.startsWith('/admin/')
+        ? path.slice('/admin'.length)
+        : path
+    const headers = {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+      ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(init.headers || {}),
+    }
+    const response = await fetch(`${bridge}${mapped}`, { ...init, headers })
     if (!response.ok) {
       const body = await response.json().catch(() => ({}))
       throw new Error(body?.error || 'request-failed')
@@ -169,8 +173,7 @@ export function WhatsAppAgentPanel() {
   }
 
   const refresh = async () => {
-    if (!bridge) { setNotice('لم أجد رابط الجسر المحلي. عرّف VITE_WHATSAPP_AGENT_BRIDGE_URL إلى 127.0.0.1 فقط.'); return }
-    if (!secret.trim()) { setNotice('أدخل سر الجسر المحلي أولًا. السر لا يُرفع للموقع؛ يُحفظ في هذا المتصفح فقط.'); return }
+    if (!user) { setNotice('يجب تسجيل الدخول بحساب المشرف لقراءة جهاز واتساب.'); return }
     setBusy(true)
     try {
       const [nextStatus, nextRules, nextLearning, nextKnowledge, nextEvidence] = await Promise.all([
@@ -187,22 +190,19 @@ export function WhatsAppAgentPanel() {
       setPersonality(nextKnowledge.personality || DEFAULT_PERSONALITY)
       setTrustedEvidence(nextEvidence)
       setNotice('تحدّثت حالة واتساب.')
-    } catch (error) {
-      setNotice(error instanceof Error && error.message === 'secret-missing' ? 'أدخل سر الجسر المحلي أولًا.' : 'تعذّر الوصول إلى جسر واتساب المحلي. تأكد أن الماك شغال والجسر متصل والسر صحيح.')
+    } catch {
+      setNotice('تعذّر الوصول إلى خدمة واتساب المركزية. افحص خدمة الجسر على السيرفر وحالة الخادم الرئيسي.')
     } finally {
       setBusy(false)
       setRestarting(false)
     }
   }
 
-  /* الجسر قد يكون حيّاً والسر ناقصاً فحسب — نميّز الحالتين بنبضة عامة، فلا تقول
-     اللوحة «غير مرتبط» بينما الوكيل يعمل على الماك فعلاً. */
   const [bridgeAlive, setBridgeAlive] = useState<boolean | null>(null)
   const pingBridge = async () => {
-    if (!bridge) { setBridgeAlive(false); return false }
     try {
-      const response = await fetch(`${bridge}/ping`, { cache: 'no-store' })
-      const alive = response.ok
+      const next = await request<AgentStatus>('/status', { cache: 'no-store' })
+      const alive = Boolean(next.bridgeOnline)
       setBridgeAlive(alive)
       return alive
     } catch {
@@ -212,20 +212,19 @@ export function WhatsAppAgentPanel() {
   }
 
   useEffect(() => {
+    if (!user) return
     void (async () => {
-      const alive = await pingBridge()
-      if (alive && secret.trim()) void refresh()
-      else if (alive) setNotice('الجسر يعمل على الماك ✓ — ألصق سر الجسر أدناه مرة واحدة لتتصل اللوحة به.')
-      else setNotice('لا أصل إلى الجسر المحلي. البوت يسكن الآن مستقلاً في نظام الماك ولا يتأثر بحذف مجلد الموقع أو استبداله، ويعالج أعطاله بنفسه — أعد تشغيل الماك وسيقوم وحده خلال دقيقة. إن استمر الانقطاع بعدها فهذا نادر ويستحق أن تخبرني به.')
+      await pingBridge()
+      void refresh()
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [user])
 
   /* تحديثٌ لحظيّ: نبضة البوت كل ثلاثين ثانية، فنفحص كل خمس عشرة كي لا يعلق
      المؤشر على «متوقف» بعد تعافيه حتى يُعيد الدكتور تحميل الصفحة. ونفحص فوراً
      عند العودة إلى التبويب — فأوّل ما يفعله الدكتور أن ينظر. */
   useEffect(() => {
-    if (!secret.trim()) return
+    if (!user) return
     const timer = window.setInterval(() => { void refresh() }, 15_000)
     const onVisible = () => { if (document.visibilityState === 'visible') void refresh() }
     document.addEventListener('visibilitychange', onVisible)
@@ -236,13 +235,7 @@ export function WhatsAppAgentPanel() {
       window.removeEventListener('focus', onVisible)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [secret])
-
-  const saveSecret = () => {
-    localStorage.setItem('whatsapp-agent-bridge-secret', secret.trim())
-    setNotice('حُفظ سر الجسر في هذا المتصفح فقط.')
-    void refresh()
-  }
+  }, [user])
 
   /* صمتُ البوت: كم محادثةً يصمت فيها الآن، وزرٌّ يُعيده في كلّها بضغطة.
      كان الدكتور يظنّ البوت معطوباً وهو صامتٌ عمداً، بلا سبيلٍ لمعرفة ذلك ولا
@@ -662,38 +655,27 @@ export function WhatsAppAgentPanel() {
         <div className="mt-5 grid gap-3 sm:grid-cols-4">
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">الحالة</p><p className="mt-1 font-semibold text-ink">{status.status && status.status !== 'unconfigured'
             ? (stateLabel[status.status] || status.status)
-            : bridgeAlive === null ? 'يفحص…' : bridgeAlive ? 'الجسر يعمل — ينتظر السر' : 'غير مرتبط'}</p></div>
-          <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">الجسر</p><p className="mt-1 font-semibold text-ink">{status.bridgeOnline ? 'متصل' : bridgeAlive ? 'يعمل — بانتظار السر' : 'غير متصل'}</p><p className="text-[.72rem] text-soft">آخر نبضة: {status.bridgeOnline ? ageLabel(status.heartbeatAgeMs) : bridgeAlive ? 'يستجيب الآن' : '–'}</p></div>
+            : bridgeAlive === null ? 'يفحص…' : bridgeAlive ? 'الجسر يعمل' : 'غير مرتبط'}</p></div>
+          <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">الجسر</p><p className="mt-1 font-semibold text-ink">{status.bridgeOnline ? 'متصل' : 'غير متصل'}</p><p className="text-[.72rem] text-soft">آخر نبضة: {status.bridgeOnline ? ageLabel(status.heartbeatAgeMs) : '–'}</p></div>
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">فهرس الموقع</p><p className="mt-1 font-display text-2xl text-accent">{status.indexed ?? '—'}</p></div>
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">المنطقة</p><p className="mt-1 font-semibold text-ink">{status.timeZone || 'Asia/Kuwait'}</p></div>
         </div>
         <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_auto]">
-          <div>
-            <input
-              dir="ltr"
-              type="password"
-              autoComplete="off"
-              spellCheck={false}
-              aria-label="سر الجسر المحلي"
-              className={input}
-              placeholder="Bridge secret — من npm run agent:bridge-secret"
-              value={secret}
-              onChange={(event) => setSecret(event.target.value)}
-            />
-            <p className="mt-2 text-[.72rem] leading-relaxed text-soft">
-              للحماية لا تقرأ اللوحة السر من الجسر تلقائيًا. أنشئه على الماك، والصقه هنا مرةً واحدة؛ ويبقى في هذا المتصفح فقط.
+          <div className="rounded-xl border border-hair bg-canvas px-4 py-3">
+            <p className="text-[.8rem] font-semibold text-ink">اتصال مركزي — لا يعتمد على هذا المتصفح</p>
+            <p className="mt-1 text-[.72rem] leading-relaxed text-soft">
+              السر محفوظ في بيئة الخادم، والجلسة الدائمة محفوظة داخل VM مستقلة. تستطيع فتح اللوحة من أي جهاز مخوّل.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => void toggleEmergencyPause()} disabled={!status.bridgeOnline} className={`rounded-full border px-4 py-2 text-[.8rem] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${status.runtimePaused ? 'border-accent bg-accent text-white' : 'border-red-300/70 bg-red-50 text-red-700 hover:border-red-500'}`}>{status.runtimePaused ? 'تشغيل الردود' : 'إيقاف الردود فورًا'}</button>
-            <button type="button" onClick={saveSecret} className={secondary}>حفظ السر محليًا</button>
             <button type="button" onClick={() => void restartBridge()} disabled={restarting || !status.bridgeOnline} className={secondary}>{restarting ? 'جارٍ إعادة التشغيل' : 'إعادة تشغيل واتساب'}</button>
             {/* يظهر دائماً لا عند الصمت وحده: حين يبدو البوت معطوباً يريد الدكتور
                 زراً حاضراً يضغطه، لا زراً يبحث عن شرطٍ لظهوره. */}
             <button
               type="button"
               onClick={() => void repairSession()}
-              disabled={repairing || !bridgeAlive}
+              disabled={repairing}
               className={`${secondary} disabled:opacity-40`}
               title="يمسح الجلسة ويطلب رمز QR جديداً"
             >

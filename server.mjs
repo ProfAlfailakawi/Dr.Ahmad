@@ -7,6 +7,7 @@ import { pipeline } from 'node:stream'
 import { pathToFileURL } from 'node:url'
 import { createGzip } from 'node:zlib'
 import { POLICY, evaluateCandidate } from './scripts/editorial-policy.mjs'
+import { createWhatsAppController } from './src/server/whatsapp-controller.mjs'
 
 // Node لا يقرأ .env تلقائياً. نحمّله محلياً فقط، من دون استبدال متغيرات بيئة النشر.
 const localEnvFile = resolve(process.cwd(), '.env')
@@ -2668,6 +2669,14 @@ export function createRequestHandler({
   const withinAiRateLimit = createRateLimiter()
   const withinJourneyRateLimit = createRateLimiter(120)
   const withinArchiveRateLimit = createRateLimiter(8)
+  const handleWhatsAppRequest = createWhatsAppController({
+    getFirestore: getAdminFirestore,
+    verifyAdminRequest: async (req) => {
+      const token = bearerToken(req.headers.authorization)
+      const claims = await verifyToken(token)
+      return claims?.admin === true
+    },
+  })
 
   return async (req, res) => {
     const method = req.method || 'GET'
@@ -2684,6 +2693,7 @@ export function createRequestHandler({
     }
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`)
 
+    if (await handleWhatsAppRequest(req, res, url, method)) return
 
     if (url.pathname === journeyPath) {
       if (method !== 'POST') { sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' }); return }

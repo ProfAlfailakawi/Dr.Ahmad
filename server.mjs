@@ -1453,7 +1453,7 @@ export function buildEliteStudioImagePrompt(input) {
   const positiveMood = input.semanticBlueprint?.emotionalValence === 'positive'
     || ['bright', 'playful', 'energetic', 'optimistic', 'creative', 'warm', 'collaborative', 'curious'].some((mood) => moodSet.has(mood))
   const moodDirection = positiveMood
-    ? 'Use luminous daylight or refined optimistic color. The scene must feel intelligent, alive and contemporary; never sad, gloomy, lonely, ominous or corridor-like.'
+    ? 'Use luminous daylight or refined optimistic color. Do not make the scene sad, gloomy, lonely, ominous or corridor-like. It must feel intelligent, alive and contemporary.'
     : input.semanticBlueprint?.emotionalValence === 'serious'
       ? 'Use serious editorial restraint without horror, melodrama or automatic darkness.'
       : 'Use balanced contemporary editorial light; do not default to gloom.'
@@ -1470,20 +1470,20 @@ export function buildEliteStudioImagePrompt(input) {
     'plastic skin, bad anatomy, extra fingers',
   ].filter(Boolean).join(', ')
   return [
-    `Create one photorealistic world-class editorial image, ${orientation}.`,
+    `Generate image only. Create one photorealistic world-class editorial image, ${orientation}.`,
     `EXACT COMPOUND IDEA: ${input.issue || input.idea}.`,
     input.semanticBlueprint?.canonicalMeaning ? `PRECISE MEANING: ${input.semanticBlueprint.canonicalMeaning}.` : '',
-    literal.length ? `NON-NEGOTIABLE LITERAL SUBJECTS: ${literal.join(' + ')}. Every one must be visibly represented.` : '',
-    `EXACT SCENE: ${concept.scene}`,
-    `MANDATORY VISIBLE ANCHORS: ${concept.anchors}.`,
+    `VISIBLE OBJECTS THAT MUST APPEAR: ${literal.length ? literal.join(' + ') : concept.anchors}. Every required object or anchor must be unmistakably visible; omission invalidates the image.`,
+    `THE SCENE MUST BE EXACTLY THIS: ${concept.scene}`,
+    `MANDATORY VISIBLE ANCHORS: ${concept.anchors}. Every anchor must be visually testable, not merely implied by mood.`,
     `THE VIEWER MUST INFER: ${concept.inference}.`,
-    `ART WORLD: ${world.direction}.`,
+    `Art direction: ${world.direction}.`,
     moodDirection,
     `COMPOSITION: ${negativeSpace}, clear focal hierarchy, asymmetrical balance, no clutter.`,
-    input.variation ? `DISTINCT VARIATION: ${input.variation}` : '',
+    input.variation ? `Fresh variation: ${input.variation}` : '',
     `FORBIDDEN: ${forbidden}.`,
-    'Image only. Semantic accuracy and visible anchors come before beauty. Do not substitute a generic metaphor for the literal compound subject.',
-  ].filter(Boolean).join(' ').slice(0, 1550)
+    'Semantic accuracy and visible anchors come before beauty. Do not substitute a generic metaphor, generic classroom, or generic people-with-laptops scene for the literal compound subject.',
+  ].filter(Boolean).join(' ').slice(0, 1980)
 }
 
 async function assessStudioImageWithGemini({ input, direction, image, imageMime = 'image/jpeg' }, fetchImpl = fetch) {
@@ -1767,20 +1767,20 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
   const requestId = input.regenerationId || createHash('sha256').update(`${input.idea}|${Date.now()}|${Math.random()}`).digest('hex').slice(0, 20)
   const semanticBlueprint = await buildStudioSemanticBlueprint(input, accountId, apiToken, fetchImpl)
   const baseInput = { ...input, semanticBlueprint }
-  const threshold = envNumber('STUDIO_IMAGE_RELEVANCE_THRESHOLD', 80, 68, 95)
+  const threshold = envNumber('STUDIO_IMAGE_RELEVANCE_THRESHOLD', 86, 74, 96)
   const candidates = []
   let rescueReason = ''
 
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
     const attemptInput = {
       ...baseInput,
       candidateIndex: Number(baseInput.candidateIndex || 0) + attempt,
       regenerationId: attempt === 0 ? requestId : `${requestId}-semantic-rescue-${attempt}`,
       variation: [
         baseInput.variation,
-        attempt ? `SEMANTIC RESCUE: previous candidate was rejected. ${rescueReason}` : '',
+        attempt ? `SEMANTIC RESCUE ${attempt}: previous candidate was rejected. ${rescueReason}` : '',
         attempt ? `Make every mandatory literal subject unmistakably visible: ${(baseInput.literalAnchors || []).join(' + ') || semanticBlueprint.visibleAnchors.join(' + ')}.` : '',
-        attempt ? 'Change the concrete scene, object arrangement, camera angle and visual world; do not merely recolor the previous idea.' : '',
+        attempt ? 'Change the concrete scene, object arrangement, camera angle, people/objects and visual world; do not merely recolor, crop or relight the previous idea.' : '',
       ].filter(Boolean).join(' '),
     }
     const direction = compileStudioVisualDirection(attemptInput)
@@ -1797,6 +1797,9 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
     }, fetchImpl)
     const candidate = { image, prompt, seed: image.seed ?? seed, direction, critic, attempts: attempt + 1 }
     candidates.push(candidate)
+    /* بعض البيئات لا تملك ناقد رؤية مهيأ. في هذه الحالة لا نهدر ثلاث صور
+       متطابقة الاختبار؛ بوابة الرفض الصارمة تُفعّل متى عاد حكم دلالي فعلي. */
+    if (!critic) break
     if (critic?.topicMatch && critic.score >= threshold) break
     rescueReason = critic
       ? `Score ${critic.score}/100. ${critic.reason || ''} Missing: ${critic.missingAnchor || ''}. Correction: ${critic.correction || ''}`
@@ -1808,7 +1811,7 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
     .sort((left, right) => (right.critic?.score ?? -1) - (left.critic?.score ?? -1))[0]
   if (!chosen) throw new HttpError(502, 'Image generation produced no candidate')
   if (chosen.critic && (!chosen.critic.topicMatch || chosen.critic.score < threshold)) {
-    throw new HttpError(422, `تعذّر اعتماد الصورة دلاليًا بعد محاولتين: ${chosen.critic.reason || chosen.critic.missingAnchor || 'المشهد لا يعبّر عن العنوان المركب'}`)
+    throw new HttpError(422, `تعذّر اعتماد الصورة دلاليًا بعد ثلاث محاولات: ${chosen.critic.reason || chosen.critic.missingAnchor || 'المشهد لا يعبّر عن العنوان المركب'}`)
   }
 
   return {

@@ -108,7 +108,8 @@
     "audio:supervisor:self-test": "node scripts/audio-supervisor.mjs --self-test",
     "studio-image:self-test": "node scripts/test-studio-image-generation.mjs",
     "studio-image:route:self-test": "node scripts/test-studio-image-route.mjs",
-    "studio-image:configure": "bash scripts/configure-cloudflare-workers-ai.sh"
+    "studio-image:configure": "bash scripts/configure-cloudflare-workers-ai.sh",
+    "studio-image:deploy-self-test": "node scripts/test-cloudflare-deploy-fallback.mjs"
   },
   "dependencies": {
     "firebase": "^12.15.0",

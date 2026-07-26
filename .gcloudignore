@@ -1,31 +1,14 @@
-# This file instructs gcloud directory uploads to ignore the following:
-.gcloudignore
-.git
-.gitignore
-
-# Node.js artifacts
-node_modules/
-dist/
-
-# Large local files
-audio/
-audio
-
-# Secrets — لا تصعد لسياق البناء أبداً
-sa.json
-.env
-.env.*
-*service-account*.json
-*firebase-adminsdk*.json
-.cron-secret.local
-
-# Large local files (الحاوية تحتاج server.mjs وسكربتَي الرادار فقط)
-covers/
-files/
-public/
-articles/
-src/assets/
-*.sqlite
-*.sqlite-shm
-*.sqlite-wal
-*.zip
+# Minimal Cloud Run source context for dr-api
+*
+!.gcloudignore
+!Dockerfile
+!server.mjs
+!scripts/
+scripts/*
+!scripts/daily-radar.mjs
+!scripts/editorial-policy.mjs
+!src/
+src/*
+!src/data/
+src/data/*
+!src/data/editorial-policy.json

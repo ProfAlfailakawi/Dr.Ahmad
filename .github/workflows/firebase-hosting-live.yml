@@ -80,6 +80,8 @@ jobs:
           node scripts/idea-life-sync.mjs --self-test
           node scripts/test-social-design-engine.mjs
           node scripts/test-social-templates.mjs
+          node scripts/test-studio-image-generation.mjs
+          node scripts/test-studio-image-route.mjs
 
       # حرّاسُ ما أُصلح مؤخّراً: لولاها لعاد كلُّ عطبٍ منها صامتاً كما عاد أوّل مرّة.
       - name: Content, audio and dialogue guards
@@ -182,6 +184,68 @@ jobs:
       - name: Verify official-domain build
         run: npm run verify:domain -- --dist
 
+      # كانت الاستضافة تُنشر وحدها بينما تبقى خدمة dr-api على مراجعة قديمة؛
+      # النتيجة: الواجهة الجديدة تطلب /api/ai/studio-image والخادم القديم يعيد 404.
+      # هذا النشر يحدّث Cloud Run من المصدر نفسه قبل تثبيت Firebase Hosting عليه.
+      - name: Authenticate Google Cloud for dr-api
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: gen-lang-client-0200723670
+
+      - name: Deploy and verify the current dr-api revision
+        env:
+          # Account ID is not a secret. A repository variable/secret overrides this project fallback.
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID || '6267458602007e25acb26f4fa71511c3' }}
+          # Rotate the token that appeared in chat, then store the replacement as this repository secret.
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "${CLOUDFLARE_API_TOKEN:-}" ]; then
+            # One guarded operation: live Cloudflare preflight, Secret Manager,
+            # current source deployment, environment binding, and route health test.
+            bash scripts/configure-cloudflare-workers-ai.sh
+          else
+            # Never leave the frontend pointing at an old container. Deploy the route even
+            # when the one-time Cloudflare repository secret has not been added yet.
+            gcloud run deploy dr-api \
+              --source . \
+              --project gen-lang-client-0200723670 \
+              --region europe-west1 \
+              --allow-unauthenticated \
+              --port 8080 \
+              --timeout 60 \
+              --memory 1Gi \
+              --max-instances 3 \
+              --quiet
+            echo "::warning::CLOUDFLARE_API_TOKEN is not stored in GitHub Secrets. The 404 is fixed, but image generation will remain unconfigured unless Cloud Run already has the secret."
+          fi
+
+          SERVICE_URL="$(gcloud run services describe dr-api \
+            --project gen-lang-client-0200723670 \
+            --region europe-west1 \
+            --format='value(status.url)')"
+          test -n "$SERVICE_URL"
+
+          for attempt in {1..12}; do
+            if HEALTH="$(curl --fail --silent --show-error --max-time 10 "$SERVICE_URL/api/ai/studio-image/health")"; then
+              printf '%s\n' "$HEALTH"
+              node -e 'const value=JSON.parse(process.argv[1]); if(!value.ok || value.route!=="/api/ai/studio-image") process.exit(1); if(!value.configured) console.log("::warning::dr-api route is live, but Cloudflare credentials are not configured on this revision.")' "$HEALTH"
+              echo "::notice::dr-api image route is live on the new Cloud Run revision."
+              break
+            fi
+            if [ "$attempt" -eq 12 ]; then
+              echo "::error::Cloud Run deployed, but the studio image health route did not become reachable."
+              exit 1
+            fi
+            sleep 5
+          done
+
       - name: Deploy Firestore and Storage rules to the data project
         run: |
           cleanup() {
@@ -228,3 +292,18 @@ jobs:
           rm -f "$RUNNER_TEMP/firebase-hosting-service-account.json"
         env:
           FIREBASE_HOSTING_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
+
+      - name: Verify Firebase-to-Cloud-Run image route
+        run: |
+          set -euo pipefail
+          for attempt in {1..12}; do
+            if HEALTH="$(curl --fail --silent --show-error --max-time 10 'https://dr-alfailakawi.com/api/ai/studio-image/health')"; then
+              printf '%s\n' "$HEALTH"
+              node -e 'const value=JSON.parse(process.argv[1]); if(!value.ok || value.service!=="dr-api") process.exit(1)' "$HEALTH"
+              echo "::notice::Firebase Hosting now reaches the current dr-api image route."
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Firebase Hosting still does not reach /api/ai/studio-image after deployment."
+          exit 1

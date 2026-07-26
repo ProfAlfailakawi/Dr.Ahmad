@@ -107,6 +107,7 @@
     "audio:supervisor": "node scripts/audio-supervisor.mjs --write",
     "audio:supervisor:self-test": "node scripts/audio-supervisor.mjs --self-test",
     "studio-image:self-test": "node scripts/test-studio-image-generation.mjs",
+    "studio-image:route:self-test": "node scripts/test-studio-image-route.mjs",
     "studio-image:configure": "bash scripts/configure-cloudflare-workers-ai.sh"
   },
   "dependencies": {

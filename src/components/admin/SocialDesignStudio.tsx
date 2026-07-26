@@ -601,13 +601,21 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const hasPexelsProvider = useMemo(() => externalVisuals.some((item) => item.provider === 'pexels'), [externalVisuals])
   const hasOpenverseProvider = useMemo(() => externalVisuals.some((item) => item.provider === 'openverse'), [externalVisuals])
   const bestExternalVisual = externalVisuals[0]
-  const imageGeneratorEndpoint = ((import.meta as any)?.env?.VITE_STUDIO_IMAGE_GENERATOR_ENDPOINT as string | undefined) || '/api/ai/studio-image'
+  const configuredImageGeneratorEndpoint = ((import.meta as any)?.env?.VITE_STUDIO_IMAGE_GENERATOR_ENDPOINT as string | undefined)?.trim()
+  const imageGeneratorEndpoints = useMemo(() => [...new Set([
+    configuredImageGeneratorEndpoint,
+    '/api/ai/studio-image',
+    '/api/studio-image',
+    '/api/generate-studio-image',
+  ].filter((item): item is string => Boolean(item)))], [configuredImageGeneratorEndpoint])
+  const imageGeneratorEndpoint = imageGeneratorEndpoints[0] || '/api/ai/studio-image'
 
   const describeGeneratorFailure = (error: unknown) => {
     const message = error instanceof Error ? error.message : String(error || '')
     if (/admin_auth_required|admin access required|403/i.test(message)) return 'جلسة الإدارة غير مخوّلة لتوليد الصور. أعد تسجيل الدخول إلى لوحة التحكم ثم جرّب مجددًا.'
     if (/firebase_unavailable/i.test(message)) return 'تعذّر الوصول إلى جلسة Firebase، لذلك لم يصل طلب التوليد إلى الخادم.'
-    if (/not configured|account is not configured|503/i.test(message)) return 'Cloudflare Workers AI غير مربوط فعليًا بخدمة dr-api بعد. لم أستبدل الصورة بصورة جاهزة كي يبقى الفرق واضحًا.'
+    if (/generator_backend_revision_missing|route_missing|HTTP 404|Not Found/i.test(message)) return 'نسخة الواجهة وصلت، لكن خدمة dr-api المنشورة ما زالت على إصدار قديم لا يحتوي مسار التوليد. سيُحدّثها نشر Cloud Run المضاف مع هذا الإصلاح، ولن ينتقل مسار التوليد إلى Pexels.'
+    if (/not configured|account is not configured|503/i.test(message)) return 'مسار dr-api يعمل، لكن بيانات Cloudflare Workers AI غير مربوطة في بيئة Cloud Run. لم أستبدل الصورة بصورة جاهزة كي يبقى الفرق واضحًا.'
     if (/timed out|abort|504/i.test(message)) return 'انتهت مهلة توليد Cloudflare قبل وصول الصورة. لم ينتقل النظام إلى Pexels تلقائيًا.'
     if (/busy|429/i.test(message)) return 'خدمة التوليد مشغولة الآن. انتظر قليلًا ثم استخدم «أعد التوليد من الصفر».'
     if (/no usable image|empty|analysis_failed/i.test(message)) return 'وصل رد من خدمة التوليد لكنه لم يتضمن صورة صالحة للاستخدام.'
@@ -905,28 +913,37 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     const controller = new AbortController()
     const timer = window.setTimeout(() => controller.abort(), 56_000)
     try {
-      const response = await fetch(imageGeneratorEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        signal: controller.signal,
-        body: JSON.stringify({
-          idea: text.trim(),
-          context: context.trim(),
-          issue: creativeBrief.issue,
-          tension: creativeBrief.tension,
-          emotion: creativeBrief.emotion,
-          audience: creativeBrief.audience,
-          visualReason: creativeBrief.visualReason,
-          avoid: creativeBrief.avoid,
-          persona: creativeIdentity.persona,
-          lighting: creativeIdentity.lighting,
-          negativeSpace: creativeIdentity.negativeSpace,
-          orientation: platform === 'presentation' || platform === 'linkedin' || platform === 'x' ? 'landscape' : 'portrait',
-          prompt: visualSearchPlan.generationPrompt,
-          regenerationId: options.regenerationId,
-          variation: options.variation,
-        }),
+      const requestBody = JSON.stringify({
+        idea: text.trim(),
+        context: context.trim(),
+        issue: creativeBrief.issue,
+        tension: creativeBrief.tension,
+        emotion: creativeBrief.emotion,
+        audience: creativeBrief.audience,
+        visualReason: creativeBrief.visualReason,
+        avoid: creativeBrief.avoid,
+        persona: creativeIdentity.persona,
+        lighting: creativeIdentity.lighting,
+        negativeSpace: creativeIdentity.negativeSpace,
+        orientation: platform === 'presentation' || platform === 'linkedin' || platform === 'x' ? 'landscape' : 'portrait',
+        prompt: visualSearchPlan.generationPrompt,
+        regenerationId: options.regenerationId,
+        variation: options.variation,
       })
+      let response: Response | null = null
+      let lastRouteError = ''
+      for (const endpoint of imageGeneratorEndpoints) {
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+          body: requestBody,
+        })
+        if (response.status !== 404) break
+        const missingPayload = await response.json().catch(() => ({})) as { error?: string; detail?: string; code?: string }
+        lastRouteError = [missingPayload.error, missingPayload.detail, missingPayload.code, `HTTP ${response.status}`, endpoint].filter(Boolean).join(' · ')
+      }
+      if (!response || response.status === 404) throw new Error(`generator_backend_revision_missing · ${lastRouteError || 'HTTP 404'}`)
       if (!response.ok) {
         const payload = await response.json().catch(() => ({})) as { error?: string; detail?: string; code?: string }
         throw new Error([payload.error, payload.detail, payload.code, `HTTP ${response.status}`].filter(Boolean).join(' · '))
@@ -1764,7 +1781,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         ? raw.slice('studio_visual_failure:'.length)
         : 'تعذر إكمال الدورة هذه المرة من دون خفض المستوى. بقيت النتيجة السابقة كما هي ولم يعتمد النظام نتيجة ضعيفة.'
       setVisualFailure(failure)
-      setNotice(failure)
+      setNotice('')
     } finally {
       setZeroDecisionBusy(false)
     }

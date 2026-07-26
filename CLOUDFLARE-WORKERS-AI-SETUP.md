@@ -16,6 +16,44 @@ Cloudflare Workers AI
 
 ملف `firebase.json` في المشروع يحتوي أصلًا على Rewrite يمرر `/api/**` إلى خدمة `dr-api`، لذلك لا يلزم وضع أي مفتاح في React أو متغير يبدأ بـ `VITE_`.
 
+
+## إصلاح HTTP 404 ونشر الخادم مع الموقع
+
+كان GitHub Actions ينشر ملفات Firebase Hosting فقط، بينما تبقى خدمة `dr-api` على مراجعة قديمة من `server.mjs`. لذلك كانت الواجهة الحديثة تصل إلى خدمة موجودة، لكن المسار `/api/ai/studio-image` غير موجود داخل مراجعتها القديمة فيرجع `HTTP 404`.
+
+الـworkflow الحالي أصبح ينفذ بالترتيب:
+
+1. فحوص TypeScript واختبارات مسار التوليد.
+2. نشر **المراجعة الحالية** من `server.mjs` إلى Cloud Run.
+3. فحص `/api/ai/studio-image/health` مباشرة على Cloud Run.
+4. نشر Firebase Hosting.
+5. فحص المسار مرة أخرى من النطاق الرسمي.
+
+كما أضيف مساران احتياطيان متكافئان داخل الخادم لمنع اختلاف أسماء المسارات:
+
+- `/api/studio-image`
+- `/api/generate-studio-image`
+
+جميع مسارات التوليد الفعلية تبقى محمية بتوثيق الإدارة؛ مسار الصحة فقط لا يولد صورة ولا يعرض أي سر.
+
+## الربط الآلي عبر GitHub Actions
+
+أضف التوكن الجديد بعد تدويره إلى **Repository secret** باسم:
+
+```text
+CLOUDFLARE_API_TOKEN
+```
+
+يمكن إضافة Account ID كـRepository variable باسم `CLOUDFLARE_ACCOUNT_ID`. المشروع يحتوي fallback خاصًا بحسابه الحالي لأن Account ID ليس مفتاحًا سريًا.
+
+يفضل إضافة حساب خدمة Google مخصص للنشر كسر اختياري باسم:
+
+```text
+GCP_CLOUD_RUN_SERVICE_ACCOUNT
+```
+
+وعند عدم وجوده يحاول الـworkflow استخدام حساب خدمة Firebase الموجود. يحتاج الحساب صلاحيات نشر Cloud Run والبناء من المصدر والتعامل مع Secret Manager.
+
 ## الأسرار المطلوبة في Cloud Run
 
 - `CLOUDFLARE_ACCOUNT_ID`
@@ -88,7 +126,7 @@ gcloud run services update dr-api \
 - ملفات React أو TypeScript الأمامية.
 - `firebase.json`.
 - أي متغير يبدأ بـ `VITE_`.
-- GitHub أو ZIP أو سجل الالتزامات.
+- ملفات GitHub أو ZIP أو سجل الالتزامات؛ داخل GitHub استخدم **Secrets** فقط.
 
 ## ربط آلي من الطرفية
 
@@ -100,7 +138,7 @@ export CLOUDFLARE_API_TOKEN='<NEW_ROTATED_TOKEN>'
 npm run studio-image:configure
 ```
 
-السكربت يجري أولًا **اختبار توليد حيًا صغيرًا** للتأكد من صحة Account ID والتوكن والصلاحيات والنموذج. لا يحفظ شيئًا في Google إذا فشل الاختبار. بعد نجاحه ينشئ السر أو يضيف نسخة جديدة، يمنح خدمة Cloud Run صلاحية القراءة، ثم يربط المتغيرات بخدمة `dr-api` في `europe-west1`.
+السكربت يجري أولًا **اختبار توليد حيًا صغيرًا** للتأكد من صحة Account ID والتوكن والصلاحيات والنموذج. لا يحفظ شيئًا في Google إذا فشل الاختبار. بعد نجاحه ينشئ السر أو يضيف نسخة جديدة، يكتشف حساب تشغيل `dr-api` ويمنحه صلاحية القراءة، **ينشر كود الخادم الحالي من الصفر**، ثم يربط المتغيرات ويختبر مسار الصحة في `europe-west1`.
 
 لتجاوز الاختبار الحي فقط عند الضرورة:
 

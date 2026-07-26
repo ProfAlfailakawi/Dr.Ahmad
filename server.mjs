@@ -62,6 +62,8 @@ const socialPackPath = '/api/ai/social-pack'
 const socialIdeasPath = '/api/ai/social-ideas'
 const currentContextPath = '/api/ai/current-context'
 const studioImagePath = '/api/ai/studio-image'
+const studioImageAliases = Object.freeze(['/api/studio-image', '/api/generate-studio-image'])
+const studioImageHealthPath = '/api/ai/studio-image/health'
 const archiveAnswerPath = '/api/ai/archive-answer'
 const journeyPath = '/api/journey'
 const adminNowPath = '/api/admin/site-now'
@@ -2273,6 +2275,24 @@ export function createRequestHandler({
       return
     }
 
+    if (url.pathname === studioImageHealthPath) {
+      if (method !== 'GET' && method !== 'HEAD') {
+        sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'GET, HEAD' })
+        return
+      }
+      const configured = Boolean(String(process.env.CLOUDFLARE_ACCOUNT_ID || '').trim() && String(process.env.CLOUDFLARE_API_TOKEN || '').trim())
+      sendJson(res, 200, {
+        ok: true,
+        service: 'dr-api',
+        route: studioImagePath,
+        aliases: studioImageAliases,
+        configured,
+        model: String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/black-forest-labs/flux-1-schnell'),
+        revision: String(process.env.K_REVISION || 'local'),
+      })
+      return
+    }
+
     if (url.pathname === archiveAnswerPath) {
       if (method !== 'POST') {
         sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' })
@@ -2289,7 +2309,7 @@ export function createRequestHandler({
       return
     }
 
-    if ([articleSuggestionPath, contentSuggestionPath, paperAnalysisPath, perfectArticlePath, socialPackPath, socialIdeasPath, currentContextPath, studioImagePath].includes(url.pathname)) {
+    if ([articleSuggestionPath, contentSuggestionPath, paperAnalysisPath, perfectArticlePath, socialPackPath, socialIdeasPath, currentContextPath, studioImagePath, ...studioImageAliases].includes(url.pathname)) {
       if (method !== 'POST') {
         sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' })
         return
@@ -2311,7 +2331,7 @@ export function createRequestHandler({
       }
       const body = await readJsonBody(req)
 
-      if (url.pathname === studioImagePath) {
+      if (url.pathname === studioImagePath || studioImageAliases.includes(url.pathname)) {
         const input = studioImageInput(body)
         sendJson(res, 200, await generateCloudflareStudioImage(input))
         return

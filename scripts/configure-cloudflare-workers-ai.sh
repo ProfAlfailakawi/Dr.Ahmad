@@ -42,17 +42,36 @@ else
   printf '%s' "$CLOUDFLARE_API_TOKEN" | gcloud secrets create "$SECRET_NAME" --data-file=- --replication-policy=automatic >/dev/null
 fi
 
-PROJECT_NUMBER="$(gcloud projects describe "$(gcloud config get-value project)" --format='value(projectNumber)')"
-SERVICE_ACCOUNT="${CLOUD_RUN_SERVICE_ACCOUNT:-${PROJECT_NUMBER}-compute@developer.gserviceaccount.com}"
+PROJECT_ID="$(gcloud config get-value project)"
+PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
+EXISTING_SERVICE_ACCOUNT="$(gcloud run services describe "$SERVICE_ID" --project="$PROJECT_ID" --region="$REGION" --format='value(spec.template.spec.serviceAccountName)' 2>/dev/null || true)"
+SERVICE_ACCOUNT="${CLOUD_RUN_SERVICE_ACCOUNT:-${EXISTING_SERVICE_ACCOUNT:-${PROJECT_NUMBER}-compute@developer.gserviceaccount.com}}"
 gcloud secrets add-iam-policy-binding "$SECRET_NAME" \
   --member="serviceAccount:${SERVICE_ACCOUNT}" \
   --role='roles/secretmanager.secretAccessor' >/dev/null
 
-gcloud run services update "$SERVICE_ID" \
+# انشر كود dr-api الحالي أولاً؛ كان السكربت سابقاً يربط السر بخدمة قديمة،
+# فتظل الواجهة ترى HTTP 404 رغم صحة Cloudflare.
+gcloud run deploy "$SERVICE_ID" \
+  --source=. \
+  --project="$PROJECT_ID" \
   --region="$REGION" \
-  --set-env-vars="CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID},CLOUDFLARE_IMAGE_MODEL=${MODEL},CLOUDFLARE_IMAGE_STEPS=${STEPS},CLOUDFLARE_IMAGE_TIMEOUT_MS=${TIMEOUT_MS}" \
-  --set-secrets="CLOUDFLARE_API_TOKEN=${SECRET_NAME}:latest"
+  --allow-unauthenticated \
+  --port=8080 \
+  --timeout=60 \
+  --memory=1Gi \
+  --max-instances=3 \
+  --quiet
 
-SERVICE_URL="$(gcloud run services describe "$SERVICE_ID" --region="$REGION" --format='value(status.url)')"
+gcloud run services update "$SERVICE_ID" \
+  --project="$PROJECT_ID" \
+  --region="$REGION" \
+  --update-env-vars="CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID},CLOUDFLARE_IMAGE_MODEL=${MODEL},CLOUDFLARE_IMAGE_STEPS=${STEPS},CLOUDFLARE_IMAGE_TIMEOUT_MS=${TIMEOUT_MS}" \
+  --update-secrets="CLOUDFLARE_API_TOKEN=${SECRET_NAME}:latest"
+
+SERVICE_URL="$(gcloud run services describe "$SERVICE_ID" --project="$PROJECT_ID" --region="$REGION" --format='value(status.url)')"
+HEALTH="$(curl --fail --silent --show-error --max-time 15 "${SERVICE_URL}/api/ai/studio-image/health")"
+node -e 'const value=JSON.parse(process.argv[1]); if(!value.ok || value.route!=="/api/ai/studio-image" || !value.configured) process.exit(1)' "$HEALTH"
 echo "Cloudflare Workers AI is securely connected to ${SERVICE_ID} in ${REGION}."
 echo "Cloud Run service: ${SERVICE_URL}"
+echo "Studio image route: live and configured."

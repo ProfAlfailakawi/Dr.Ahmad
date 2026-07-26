@@ -897,16 +897,198 @@ export function serverArticleSimilarity(title, body, existing = []) {
   return { matches, highest, originality: Math.max(0, Math.round((1 - highest) * 100)), repeated: highest >= .52 }
 }
 
-const studioImageMetaphors = Object.freeze([
-  'a threshold between shadow and light, suggesting a mind crossing into a new understanding',
-  'an empty chair carrying the emotional weight of an absent voice, without melodrama',
-  'a quiet human gesture reflected in glass, revealing two layers of meaning at once',
-  'a seam of warm light interrupting a disciplined architectural darkness',
-  'a suspended page, object, or silhouette that feels like a thought becoming visible',
-  'a restrained visual paradox: order on one side, human uncertainty on the other',
-  'an archive-like object treated as a contemporary symbol of memory and responsibility',
-  'a distant figure facing a vast, intelligent negative space, dignified rather than lonely',
+const studioVisualWorlds = Object.freeze([
+  {
+    id: 'forensic-still-life', label: 'المشهد البرهاني', treatment: 'editorial', layoutHint: 'evidence-ledger', paletteHint: 'brand-night',
+    direction: 'forensic editorial still life, precise object placement, subtle evidence, tactile surfaces, controlled studio light, no theatrical posing',
+  },
+  {
+    id: 'human-documentary', label: 'الوثائقي الإنساني', treatment: 'documentary', layoutHint: 'human-note', paletteHint: 'brand-night',
+    direction: 'poetic documentary realism, one authentic human trace, imperfect natural light, lived-in materials, restrained emotion, candid rather than staged',
+  },
+  {
+    id: 'architectural-silence', label: 'الصمت المعماري', treatment: 'cinematic', layoutHint: 'editorial-axis', paletteHint: 'graphite-gold',
+    direction: 'architectural minimalism, monumental negative space, disciplined geometry, one decisive interruption, premium cultural-institution photography',
+  },
+  {
+    id: 'shadow-theatre', label: 'مسرح الظل', treatment: 'duotone', layoutHint: 'dual-thesis', paletteHint: 'graphite-gold',
+    direction: 'conceptual shadow theatre using believable objects and human silhouettes, one visual contradiction, elegant chiaroscuro, sophisticated rather than surreal for its own sake',
+  },
+  {
+    id: 'paper-sculpture', label: 'النحت الورقي', treatment: 'editorial', layoutHint: 'quote-stage', paletteHint: 'warm-parchment',
+    direction: 'hand-built paper sculpture and physical editorial craft, folded planes, cut shadows, museum-display precision, no readable print or decorative craft clichés',
+  },
+  {
+    id: 'cinematic-interruption', label: 'اللحظة السينمائية', treatment: 'cinematic', layoutHint: 'cinematic-window', paletteHint: 'brand-night',
+    direction: 'cinematic realism at the instant an ordinary system is quietly disrupted, daring crop, layered depth, one irreversible focal event, understated tension',
+  },
+  {
+    id: 'archival-future', label: 'الأرشيف المعاصر', treatment: 'documentary', layoutHint: 'chapter-stack', paletteHint: 'warm-parchment',
+    direction: 'contemporary archival photography, numbered objects without readable text, patina meeting modern precision, intellectual memory, refined editorial grain',
+  },
+  {
+    id: 'visual-paradox', label: 'المفارقة البصرية', treatment: 'duotone', layoutHint: 'quiet-orbit', paletteHint: 'graphite-gold',
+    direction: 'a physically believable visual paradox, sparse composition, one impossible-looking but coherent relationship, quiet luxury, second-look meaning',
+  },
+  {
+    id: 'kinetic-system', label: 'النظام المتحوّل', treatment: 'editorial', layoutHint: 'modular-brief', paletteHint: 'brand-night',
+    direction: 'a real-world system expressed through moving physical modules, calibrated rhythm, one module breaking the rule, editorial clarity, no digital interface imagery',
+  },
+  {
+    id: 'monumental-human-scale', label: 'الإنسان أمام المنظومة', treatment: 'cinematic', layoutHint: 'hero-word', paletteHint: 'brand-night',
+    direction: 'a small but dignified human presence facing a vast institutional environment, emotional scale without melodrama, cinematic restraint, iconic silhouette',
+  },
 ])
+
+const studioConceptProfiles = Object.freeze([
+  {
+    key: 'education-manipulation',
+    test: /تلاعب|تحريف|تزوير|تزييف|غش|خداع|فساد|محاباة|واسطة|انحياز|manipulat|corrupt|fraud|cheat|bias/i,
+    label: 'التلاعب بالمعايير التعليمية',
+    interpretation: 'hidden influence distorts educational standards, assessment, or opportunity while the institution still appears orderly',
+    scene: 'Inside a contemporary classroom, a perfectly ordered row of empty student desks recedes into the background. On the nearest desk, a rigid transparent measuring straightedge used as a symbol of educational standards is visibly bent by one concealed hand emerging from beneath the desk. The manipulation is subtle but unmistakable; the setting is unmistakably educational.',
+    anchors: 'real classroom desks, one concealed hand, a visibly distorted measuring tool, orderly student chairs, institutional calm masking unethical interference',
+    inference: 'education is being quietly manipulated from inside the system',
+    avoid: 'a person hiding behind a book, hanging books, random reading scenes, generic students studying, legal courtroom imagery, puppets, readable exam text',
+  },
+  {
+    key: 'education-ai',
+    test: /ذكاء اصطناعي|الذكاء الاصطناعي|تقنية|رقمي|خوارزم|روبوت|chatgpt|artificial intelligence|algorithm|digital/i,
+    label: 'الإنسانية أمام التقنية',
+    interpretation: 'technology changes education, but the decisive question is what remains human, relational, and ethically accountable',
+    scene: 'A real teacher stands beside an empty student chair in a quiet classroom at dusk. A precise cold rectangle of machine light reaches the desk, while the teacher protects a small pool of warm natural light around the chair. No screens or robots are visible; the conflict is expressed through light, distance, and human presence.',
+    anchors: 'teacher, student chair, classroom, cold machine-like light versus warm human light, unmistakable educational relationship',
+    inference: 'education is choosing between efficient automation and irreplaceable human presence',
+    avoid: 'robots, glowing brains, holograms, code, blue cyber grids, laptops as the main subject, science-fiction interfaces',
+  },
+  {
+    key: 'grades-assessment',
+    test: /درجات|اختبار|امتحان|شهادة|تفوق|نجاح|رسوب|تقييم|grade|exam|certificate|assessment|success|failure/i,
+    label: 'الدرجات مقابل التعلم',
+    interpretation: 'measurement has become more visible than learning, and the student risks being reduced to a score',
+    scene: 'An empty classroom desk holds a pristine medal-shaped metal ring casting the shadow of a cage around a small ordinary pencil. The classroom context is clear, the image contains no writing, and the visual tension is between achievement symbols and the constrained act of learning.',
+    anchors: 'school desk, pencil, achievement object, cage-like shadow, empty student chair',
+    inference: 'the pursuit of grades can imprison genuine learning',
+    avoid: 'readable certificates, graduation stock photos, smiling students holding diplomas, trophy clichés, visible numbers or letters',
+  },
+  {
+    key: 'parenting-child',
+    test: /طفل|أبناء|ابن|ابنة|والد|والدة|أسرة|تربية|parent|child|family|parenting/i,
+    label: 'التربية والأثر الإنساني',
+    interpretation: 'adult choices shape a child’s inner world, autonomy, safety, and future long before outcomes become visible',
+    scene: 'At the threshold of a quiet home, a child’s small pair of shoes faces an open path while an adult hand holds a long protective shadow across the doorway. The hand is caring, not threatening; the tension is between protection and allowing growth.',
+    anchors: 'child-sized shoes, adult hand or shadow, home threshold, open path, tenderness with tension',
+    inference: 'care can either guide a child forward or quietly block independence',
+    avoid: 'posed family portraits, crying-child clichés, cartoon toys, sentimental embraces, visible text',
+  },
+  {
+    key: 'bullying-violence',
+    test: /تنمر|عنف|ضرب|صراخ|إيذاء|عدوان|خوف|bully|violence|abuse|aggression|fear/i,
+    label: 'الأذى داخل البيئة التعليمية',
+    interpretation: 'harm often persists in ordinary spaces while witnesses, systems, or adults fail to intervene',
+    scene: 'A damaged school backpack sits alone beneath a classroom coat hook while several out-of-focus human shadows pass by without stopping. One clean beam of light isolates the bag; no victim is shown and no violence is depicted directly.',
+    anchors: 'school backpack, classroom corridor or coat hooks, passing shadows, isolation, evidence of harm without spectacle',
+    inference: 'a student is being harmed while the environment looks away',
+    avoid: 'fights, bruises, crying faces, clenched fists, sensational violence, dark horror styling',
+  },
+  {
+    key: 'social-media-addiction',
+    test: /سوشيال|تواصل اجتماعي|هاتف|جوال|إدمان|شاشة|مؤثر|social media|phone|screen|addiction|influencer/i,
+    label: 'الانتباه المسلوب',
+    interpretation: 'attention and identity are being shaped by a device and an invisible audience',
+    scene: 'A darkened child or student study desk is illuminated by a phone-shaped rectangle of light whose shadow forms narrow bars across an open, blank notebook. No interface is visible; the phone itself is secondary to the trapped attention.',
+    anchors: 'study desk, phone-shaped light, blank notebook, bar-like shadow, human trace without staged posing',
+    inference: 'digital attention is quietly becoming a cage around learning and identity',
+    avoid: 'visible app logos, notification icons, floating hearts, influencer selfies, blue neon cyber imagery',
+  },
+  {
+    key: 'justice-equity',
+    test: /عدالة|مساواة|إنصاف|فرص|تمييز|فجوة|حق|justice|equality|equity|opportunity|discrimination|gap/i,
+    label: 'العدالة في الفرص',
+    interpretation: 'people are asked to meet the same standard while starting from unequal conditions',
+    scene: 'Two identical classroom desks face the same bright doorway, but one desk stands on a stable floor while the other is placed in a deep uneven recess. The desks are equal; the conditions are not. No people and no text.',
+    anchors: 'identical school desks, one shared destination, visibly unequal floor conditions, calm institutional space',
+    inference: 'equal expectations do not create fair opportunity when starting conditions differ',
+    avoid: 'courtroom scales, raised fists, protest posters, flags, generic diversity stock photos',
+  },
+  {
+    key: 'research-evidence',
+    test: /بحث|دراسة|علمي|دليل|بيانات|إحصاء|معلومة|research|study|evidence|data|statistics/i,
+    label: 'الدليل والمعرفة',
+    interpretation: 'reliable knowledge emerges from disciplined observation, uncertainty, and transparent evidence rather than assertion',
+    scene: 'A restrained academic worktable holds a magnifying lens, calibrated transparent blocks, and one anomalous object that changes the alignment of the whole arrangement. No writing, charts, screens, or laboratory clichés.',
+    anchors: 'academic worktable, calibrated objects, magnifying lens, one anomaly, visible process of verification',
+    inference: 'evidence can change the structure of what we think we know',
+    avoid: 'microscopes as clichés, glowing data, readable charts, lab coats posing, floating numbers',
+  },
+  {
+    key: 'identity-belonging',
+    test: /هوية|انتماء|ذات|اختلاف|جذور|identity|belonging|self|roots|different/i,
+    label: 'الهوية والانتماء',
+    interpretation: 'identity forms between inherited structure, personal choice, and the pressure to resemble others',
+    scene: 'A row of identical school lockers or archive drawers is interrupted by one open compartment containing a natural irregular object lit from within by daylight. The contrast is dignified, not rebellious or decorative.',
+    anchors: 'institutional row, one open compartment, organic unique object, natural light, belonging without conformity',
+    inference: 'a person can belong without erasing what makes them distinct',
+    avoid: 'mirrors with split faces, flags, costumes, fingerprints, identity-card imagery, rainbow clichés',
+  },
+  {
+    key: 'future-innovation',
+    test: /مستقبل|ابتكار|إبداع|تغيير|تحول|future|innovation|creative|transformation|change/i,
+    label: 'المستقبل والابتكار',
+    interpretation: 'the future begins when a familiar educational system permits a genuinely new path rather than decorating the old one',
+    scene: 'A disciplined grid of classroom chairs ends at one chair whose legs extend into a new architectural pathway made from the same material. The transformation is physical, elegant, and believable; no science-fiction devices.',
+    anchors: 'classroom chairs, disciplined grid, one chair becoming a path, material continuity, forward movement',
+    inference: 'innovation changes the structure of education instead of merely adding technology',
+    avoid: 'rockets, light bulbs, glowing portals, robots, futuristic cities, generic idea icons',
+  },
+  {
+    key: 'learning-education',
+    test: /تعليم|تعلم|مدرس|معلم|طالب|مدرسة|جامعة|فصل|education|learning|teacher|student|school|university|classroom/i,
+    label: 'جوهر التعليم',
+    interpretation: 'education is a human process of attention, relationship, responsibility, and transformation rather than content delivery alone',
+    scene: 'A quiet contemporary classroom after everyone has left. One chair is turned slightly toward another instead of facing the board, and a warm trace of daylight connects the two seats. The room is real, restrained, and unmistakably educational.',
+    anchors: 'contemporary classroom, two student or teacher chairs, relational orientation, warm natural light, authentic materials',
+    inference: 'learning begins through human attention and relationship, not furniture or information alone',
+    avoid: 'books covering faces, generic classroom stock photos, raised hands, blackboards with writing, staged smiles',
+  },
+])
+
+const studioWorldCompatibility = Object.freeze({
+  'education-manipulation': ['forensic-still-life', 'architectural-silence', 'shadow-theatre', 'cinematic-interruption', 'visual-paradox', 'kinetic-system'],
+  'education-ai': ['human-documentary', 'architectural-silence', 'shadow-theatre', 'cinematic-interruption', 'monumental-human-scale'],
+  'grades-assessment': ['forensic-still-life', 'shadow-theatre', 'paper-sculpture', 'visual-paradox', 'archival-future'],
+  'parenting-child': ['human-documentary', 'shadow-theatre', 'cinematic-interruption', 'monumental-human-scale'],
+  'bullying-violence': ['human-documentary', 'architectural-silence', 'shadow-theatre', 'cinematic-interruption'],
+  'social-media-addiction': ['forensic-still-life', 'shadow-theatre', 'cinematic-interruption', 'visual-paradox'],
+  'justice-equity': ['forensic-still-life', 'architectural-silence', 'visual-paradox', 'kinetic-system'],
+  'research-evidence': ['forensic-still-life', 'paper-sculpture', 'archival-future', 'kinetic-system'],
+  'identity-belonging': ['human-documentary', 'architectural-silence', 'archival-future', 'visual-paradox'],
+  'future-innovation': ['architectural-silence', 'paper-sculpture', 'cinematic-interruption', 'kinetic-system'],
+  'learning-education': ['human-documentary', 'architectural-silence', 'cinematic-interruption', 'archival-future'],
+})
+
+const fallbackStudioConcept = Object.freeze({
+  key: 'editorial-core', label: 'الفكرة المركزية',
+  interpretation: 'an important public idea creates a visible human consequence inside an ordinary real-world system',
+  scene: 'A disciplined everyday institutional space contains one subtle physical interruption that changes the meaning of the whole scene. The interruption must be emotionally legible, materially believable, and directly connected to responsibility, choice, or consequence.',
+  anchors: 'one real institutional environment, one human trace, one precise physical disruption, clear cause and consequence',
+  inference: 'an unseen decision inside a system is producing a human consequence',
+  avoid: 'random readers, books covering faces, generic contemplation, abstract smoke, floating objects without meaning, decorative symbolism',
+})
+
+function selectStudioConcept(input) {
+  const source = [input.idea, input.context, input.issue, input.tension, input.visualReason].filter(Boolean).join(' ')
+  return studioConceptProfiles.find((profile) => profile.test.test(source)) || fallbackStudioConcept
+}
+
+function compileStudioVisualDirection(input) {
+  const signature = createHash('sha256').update([input.idea, input.context, input.issue, input.regenerationId, input.variation].join('|')).digest()
+  const concept = selectStudioConcept(input)
+  const compatibleIds = studioWorldCompatibility[concept.key] || studioVisualWorlds.map((item) => item.id)
+  const compatibleWorlds = compatibleIds.map((id) => studioVisualWorlds.find((item) => item.id === id)).filter(Boolean)
+  const world = compatibleWorlds[(signature[1] + signature[4]) % compatibleWorlds.length] || studioVisualWorlds[0]
+  return { concept, world, signature }
+}
 
 function studioImageInput(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new HttpError(400, 'Expected a JSON object')
@@ -932,8 +1114,7 @@ function studioImageInput(value) {
 }
 
 export function buildEliteStudioImagePrompt(input) {
-  const signature = createHash('sha256').update([input.idea, input.context, input.issue, input.regenerationId, input.variation].join('|')).digest()
-  const metaphor = studioImageMetaphors[signature[0] % studioImageMetaphors.length]
+  const { concept, world } = compileStudioVisualDirection(input)
   const orientation = input.orientation === 'landscape'
     ? 'cinematic 16:9 landscape composition'
     : input.orientation === 'square'
@@ -942,59 +1123,100 @@ export function buildEliteStudioImagePrompt(input) {
   const negativeSpace = input.negativeSpace === 'compact'
     ? 'controlled breathing room without empty decorative areas'
     : input.negativeSpace === 'balanced'
-      ? 'balanced negative space with a calm text-safe zone on the right'
-      : 'generous, intentional negative space on the right for Arabic typography'
+      ? 'balanced negative space with a calm text-safe zone chosen from the actual subject placement'
+      : 'generous intentional negative space for later Arabic typography, without placing any text inside the image'
   const lighting = input.lighting === 'dramatic'
-    ? 'sculpted cinematic light, deep blacks, one precise luminous accent'
+    ? 'sculpted cinematic light, deep tonal separation, one precise luminous accent'
     : input.lighting === 'soft'
       ? 'soft directional light, refined tonal transitions, tactile depth'
       : 'natural directional light with cinematic discipline and believable texture'
   const subject = input.issue || input.idea
-  const emotionalGoal = input.emotion || 'quiet intellectual awe, human dignity, and emotional truth'
-  const visualArgument = input.visualReason || input.tension || 'show the human consequence of the idea rather than illustrating it literally'
+  const emotionalGoal = input.emotion || 'quiet intellectual force, human dignity, and emotional truth'
   const forbidden = [
     input.avoid,
+    concept.avoid,
     'generic stock-photo smiles',
+    'random person reading',
+    'book or paper covering a face',
     'glowing brains',
     'robot hands touching human hands',
     'floating UI holograms',
     'blue cyber grids',
     'literal icons',
-    'obvious classroom clichés',
-    'text, letters, captions, logos, watermarks, interface elements',
+    'text, Arabic letters, Latin letters, captions, logos, watermarks, interface elements',
     'plastic skin, exaggerated HDR, oversaturated colors, artificial corporate staging',
   ].filter(Boolean).join(', ')
   return [
-    `Create a world-class ${orientation} for an internationally respected Arab academic and public intellectual.`,
-    `Core idea (Arabic): ${subject}.`,
-    input.context ? `Context: ${input.context}.` : '',
+    `Generate the image only — no typography, no title, no logo, no caption. Create a world-class ${orientation} for an internationally respected Arab academic and public intellectual.`,
+    `Arabic title: ${subject}.`,
+    `Correct semantic interpretation in English: ${concept.interpretation}.`,
+    `REQUIRED VISIBLE SCENE: ${concept.scene}`,
+    `NON-NEGOTIABLE RELEVANCE ANCHORS: ${concept.anchors}.`,
+    `Meaning test: even without the title, an intelligent viewer should infer that ${concept.inference}. If that inference is not visually clear, the image is wrong.`,
+    input.context ? `Context to respect: ${input.context}.` : '',
     input.audience ? `Audience: ${input.audience}.` : '',
-    `Do not illustrate the sentence literally. Translate it into an emotionally intelligent visual metaphor: ${metaphor}.`,
-    `The visual argument must ${visualArgument}.`,
-    `Emotional register: ${emotionalGoal}; profound but never sentimental, powerful but never loud.`,
-    `Art direction: museum-grade editorial photography, contemporary cultural magazine cover, cinematic documentary realism, restrained luxury, authentic materials, nuanced human presence, one unforgettable focal event.`,
-    `Composition: ${negativeSpace}; strong hierarchy; meaningful foreground, middle ground, and background; asymmetrical balance; deliberate crop; no visual clutter.`,
-    `Light and color: ${lighting}; graphite, ink, warm ivory, muted mineral tones, and one subtle accent only when conceptually justified.`,
-    `Cultural direction: globally sophisticated, Arab-sensitive, intellectually serious, free of stereotypes, costumes, flags, or decorative orientalism unless the idea explicitly requires them.`,
-    `Image quality: believable anatomy, natural hands, authentic facial emotion when people appear, tactile surfaces, fine editorial grain, premium lens language, timeless rather than trendy.`,
+    input.visualReason ? `Human consequence to reveal: ${input.visualReason}.` : '',
+    `Distinct visual world for this generation — ${world.label}: ${world.direction}. This is one art family among many; do not imitate a previous template.`,
     input.variation ? `Fresh-generation mandate: ${input.variation}` : '',
-    `Avoid completely: ${forbidden}.`,
-    input.clientPrompt ? `Additional creative brief: ${input.clientPrompt}.` : '',
-    `The final image must feel commissioned by the strongest editorial art director in the world and should make viewers pause before they read a single word.`,
+    `Reject completely: ${forbidden}.`,
+    `Emotional register: ${emotionalGoal}; profound but never sentimental, powerful but never loud.`,
+    `Composition: ${negativeSpace}; clear foreground and background, asymmetrical balance, deliberate crop, no clutter.`,
+    `Light and color: ${lighting}; concept-led palette, never default cyber blue.`,
+    `Cultural direction: globally sophisticated and Arab-sensitive, without stereotypes or decorative orientalism.`,
+    `Image quality: believable anatomy, natural hands, authentic materials, coherent shadows, premium editorial detail.`,
+    `Do not produce a merely beautiful unrelated picture. Semantic accuracy is more important than atmosphere.`,
   ].filter(Boolean).join(' ').slice(0, 2048)
 }
 
-export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
-  const accountId = String(process.env.CLOUDFLARE_ACCOUNT_ID || '').trim()
-  const apiToken = String(process.env.CLOUDFLARE_API_TOKEN || '').trim()
-  const model = String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/black-forest-labs/flux-1-schnell').trim()
-  if (!accountId || !apiToken) throw new HttpError(503, 'Cloudflare Workers AI is not configured')
-  if (!/^[a-f0-9]{32}$/i.test(accountId)) throw new HttpError(503, 'Cloudflare account is not configured correctly')
-  if (!/^@cf\/[A-Za-z0-9._/-]+$/.test(model)) throw new HttpError(503, 'Cloudflare image model is not configured correctly')
+async function assessStudioImageRelevance({ input, direction, image }, fetchImpl = fetch) {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
+  if (!apiKey || !image || image.length > 12_000_000) return null
+  const configuredModel = process.env.STUDIO_VISION_CRITIC_MODEL || process.env.EDITORIAL_GEMINI_MODEL || 'gemini-2.5-flash-lite'
+  if (!/^[A-Za-z0-9._-]+$/.test(configuredModel)) return null
+  try {
+    const response = await fetchWithTimeout(fetchImpl,
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(configuredModel)}:generateContent`, {
+        method: 'POST',
+        headers: { accept: 'application/json', 'content-type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: 'You are a severe editorial image relevance judge. Judge semantic match before beauty. Return JSON only.' }] },
+          contents: [{ role: 'user', parts: [
+            { text: `Arabic title: ${input.issue || input.idea}\nIntended interpretation: ${direction.concept.interpretation}\nRequired anchors: ${direction.concept.anchors}\nViewer inference: ${direction.concept.inference}\nScore 0-100. Reject unrelated reading scenes, books covering faces, generic mood images, or missing educational anchors.` },
+            { inlineData: { mimeType: 'image/jpeg', data: image } },
+          ] }],
+          generationConfig: {
+            temperature: .1,
+            maxOutputTokens: 420,
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: 'OBJECT',
+              properties: {
+                score: { type: 'INTEGER' },
+                topicMatch: { type: 'BOOLEAN' },
+                reason: { type: 'STRING' },
+                missingAnchor: { type: 'STRING' },
+                correction: { type: 'STRING' },
+              },
+              required: ['score', 'topicMatch', 'reason', 'missingAnchor', 'correction'],
+            },
+          },
+        }),
+      }, envNumber('STUDIO_VISION_CRITIC_TIMEOUT_MS', 12_000, 5_000, 20_000))
+    if (!response.ok) return null
+    const payload = await response.json()
+    const raw = payload?.candidates?.[0]?.content?.parts?.map((part) => typeof part?.text === 'string' ? part.text : '').join('')
+    const parsed = JSON.parse(raw || '{}')
+    return {
+      score: clamp(Math.trunc(Number(parsed.score || 0)), 0, 100),
+      topicMatch: Boolean(parsed.topicMatch),
+      reason: boundedString(parsed.reason, 500),
+      missingAnchor: boundedString(parsed.missingAnchor, 300),
+      correction: boundedString(parsed.correction, 500),
+    }
+  } catch { return null }
+}
 
-  const prompt = buildEliteStudioImagePrompt(input)
-  const requestId = input.regenerationId || createHash('sha256').update(`${input.idea}|${Date.now()}|${Math.random()}`).digest('hex').slice(0, 20)
-  const seed = Number.parseInt(createHash('sha256').update(`${input.idea}|${requestId}|${input.variation}|${Date.now()}`).digest('hex').slice(0, 8), 16) >>> 0
+async function requestCloudflareImage({ accountId, apiToken, model, prompt, seed }, fetchImpl) {
   let response
   try {
     response = await fetchWithTimeout(fetchImpl,
@@ -1021,70 +1243,72 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
     } catch { /* Cloudflare may return an empty error body */ }
     throw new HttpError(502, detail ? `Image generation failed: ${detail}` : `Image generation failed with HTTP ${response.status}`)
   }
-  const responseType = String(response.headers.get('content-type') || '').toLowerCase()
-  let imageBase64 = ''
-  let mimeType = 'image/jpeg'
+  let payload
+  try { payload = await response.json() } catch { throw new HttpError(502, 'Image generation returned an invalid response') }
+  const image = payload?.result?.image || payload?.image
+  if (typeof image !== 'string' || image.length < 1_000 || image.length > 20_000_000) throw new HttpError(502, 'Image generation returned no usable image')
+  return image
+}
 
-  if (responseType.startsWith('image/')) {
-    const binary = Buffer.from(await response.arrayBuffer())
-    imageBase64 = binary.toString('base64')
-    mimeType = responseType.split(';', 1)[0].trim() || 'image/jpeg'
-  } else {
-    let payload
-    try {
-      const raw = await response.text()
-      payload = JSON.parse(raw)
-    } catch {
-      throw new HttpError(502, 'Image generation returned an invalid response')
+export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
+  const accountId = String(process.env.CLOUDFLARE_ACCOUNT_ID || '').trim()
+  const apiToken = String(process.env.CLOUDFLARE_API_TOKEN || '').trim()
+  const model = String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/black-forest-labs/flux-1-schnell').trim()
+  if (!accountId || !apiToken) throw new HttpError(503, 'Cloudflare Workers AI is not configured')
+  if (!/^[a-f0-9]{32}$/i.test(accountId)) throw new HttpError(503, 'Cloudflare account is not configured correctly')
+  if (!/^@cf\/[A-Za-z0-9._/-]+$/.test(model)) throw new HttpError(503, 'Cloudflare image model is not configured correctly')
+
+  const requestId = input.regenerationId || createHash('sha256').update(`${input.idea}|${Date.now()}|${Math.random()}`).digest('hex').slice(0, 20)
+  const firstDirection = compileStudioVisualDirection(input)
+  const firstPrompt = buildEliteStudioImagePrompt(input)
+  const firstSeed = Number.parseInt(createHash('sha256').update(`${input.idea}|${requestId}|${input.variation}|${Date.now()}`).digest('hex').slice(0, 8), 16) >>> 0
+  const firstImage = await requestCloudflareImage({ accountId, apiToken, model, prompt: firstPrompt, seed: firstSeed }, fetchImpl)
+  const firstCritic = await assessStudioImageRelevance({ input, direction: firstDirection, image: firstImage }, fetchImpl)
+
+  let chosen = { image: firstImage, prompt: firstPrompt, seed: firstSeed, direction: firstDirection, critic: firstCritic, attempts: 1 }
+  if (firstCritic && (!firstCritic.topicMatch || firstCritic.score < 72)) {
+    const retryInput = {
+      ...input,
+      regenerationId: `${requestId}-semantic-rescue`,
+      variation: [
+        input.variation,
+        `Semantic rescue: the previous image scored ${firstCritic.score}/100 because ${firstCritic.reason || firstCritic.missingAnchor}.`,
+        firstCritic.correction ? `Mandatory correction: ${firstCritic.correction}.` : '',
+        `Show these anchors clearly: ${firstDirection.concept.anchors}.`,
+      ].filter(Boolean).join(' '),
     }
-
-    const candidate = payload?.result?.image
-      ?? payload?.image
-      ?? payload?.result?.data?.image
-      ?? payload?.data?.image
-      ?? (typeof payload?.result === 'string' ? payload.result : '')
-
-    if (typeof candidate === 'string') {
-      const match = candidate.match(/^data:(image\/[a-z0-9.+-]+)(?:;charset=[^;,]+)?;base64,(.+)$/is)
-      if (match) {
-        mimeType = match[1].toLowerCase()
-        imageBase64 = match[2]
-      } else {
-        imageBase64 = candidate
-      }
-    } else if (Array.isArray(candidate)) {
-      imageBase64 = Buffer.from(candidate).toString('base64')
-    }
-  }
-
-  imageBase64 = imageBase64.replace(/\s+/g, '')
-  let imageBytes
-  try { imageBytes = Buffer.from(imageBase64, 'base64') } catch { imageBytes = Buffer.alloc(0) }
-
-  if (imageBytes.length < 512 || imageBytes.length > 15_000_000) {
-    throw new HttpError(502, 'Image generation returned no usable image')
-  }
-
-  if (imageBytes[0] === 0xff && imageBytes[1] === 0xd8 && imageBytes[2] === 0xff) mimeType = 'image/jpeg'
-  else if (imageBytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) mimeType = 'image/png'
-  else if (imageBytes.subarray(0, 4).toString('ascii') === 'RIFF' && imageBytes.subarray(8, 12).toString('ascii') === 'WEBP') mimeType = 'image/webp'
-  else if (!/^image\/(jpeg|png|webp)$/i.test(mimeType)) {
-    throw new HttpError(502, 'Image generation returned an unsupported image format')
+    const retryDirection = compileStudioVisualDirection(retryInput)
+    const retryPrompt = buildEliteStudioImagePrompt(retryInput)
+    const retrySeed = Number.parseInt(createHash('sha256').update(`${retryInput.idea}|${retryInput.regenerationId}|${Date.now()}`).digest('hex').slice(0, 8), 16) >>> 0
+    const retryImage = await requestCloudflareImage({ accountId, apiToken, model, prompt: retryPrompt, seed: retrySeed }, fetchImpl)
+    const retryCritic = await assessStudioImageRelevance({ input: retryInput, direction: retryDirection, image: retryImage }, fetchImpl)
+    const firstScore = firstCritic?.score ?? 0
+    const retryScore = retryCritic?.score ?? (firstScore + 1)
+    if (retryScore >= firstScore) chosen = { image: retryImage, prompt: retryPrompt, seed: retrySeed, direction: retryDirection, critic: retryCritic, attempts: 2 }
   }
 
   return {
-    imageBase64,
-    mimeType,
-    imageBytes: imageBytes.length,
+    imageUrl: `data:image/jpeg;base64,${chosen.image}`,
     sourceUrl: 'https://developers.cloudflare.com/workers-ai/models/flux-1-schnell/',
-    owner: 'Cloudflare Workers AI · FLUX.1 schnell',
-    license: 'AI-generated image — review model terms before external commercial use',
-    description: input.issue || input.idea,
-    prompt,
+    owner: 'توليد أصلي داخل الاستوديو',
+    license: 'نموذج FLUX عبر Cloudflare',
+    description: chosen.direction.concept.scene,
+    prompt: chosen.prompt,
     model,
-    seed,
+    seed: chosen.seed,
     requestId,
     generatedAt: new Date().toISOString(),
+    visualWorld: chosen.direction.world.id,
+    visualWorldLabel: chosen.direction.world.label,
+    imageTreatment: chosen.direction.world.treatment,
+    layoutHint: chosen.direction.world.layoutHint,
+    paletteHint: chosen.direction.world.paletteHint,
+    conceptKey: chosen.direction.concept.key,
+    conceptLabel: chosen.direction.concept.label,
+    semanticScene: chosen.direction.concept.scene,
+    relevanceScore: chosen.critic?.score ?? null,
+    relevanceReason: chosen.critic?.reason || '',
+    generationAttempts: chosen.attempts,
   }
 }
 

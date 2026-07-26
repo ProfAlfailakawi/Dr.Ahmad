@@ -1113,7 +1113,7 @@ const paintCinematicWindow: Painter = (s) => {
         body.lines.length ? textBlock({ lines: body.lines, x: titleX, y: bodyTop + body.size * .82, size: body.size, fill: 'rgba(247,245,239,.82)', weight: 400, anchor, family: s.bodyFamily, lineHeight: 1.64 }) : '',
         s.cta ? textBlock({ lines: [s.cta], x: titleX, y: ctaTop + min * .022, size: Math.max(13, min * .021), fill: p.accent, weight: 700, anchor, family: 'Tajawal' }) : '',
         s.slides > 1 ? textBlock({ lines: [`01/${String(s.slides).padStart(2, '0')}`], x: s.safeX, y: s.safeY * .72, size: Math.max(12, min * .019), fill: 'rgba(247,245,239,.74)', weight: 600, anchor: 'start', family: 'Tajawal' }) : '',
-        heroImage.owner || heroImage.license ? textBlock({ lines: [`المصدر البصري: ${heroImage.owner || 'غير محدد'} · ${heroImage.license || 'راجع الأصل'}`], x: w - s.safeX, y: h - s.safeY - min * .065, size: Math.max(10, min * .014), fill: 'rgba(247,245,239,.58)', weight: 400, anchor: 'end', family: 'Tajawal' }) : '',
+        // بيانات المصدر محفوظة في جواز التصميم ولوحة النشر، ولا تُطبع داخل العمل البصري.
         s.slides > 1 ? carouselItem(s, { gap: 0 }).draw(h - s.safeY - min * .1) : '',
         identityFooter(s, { mode: rightSide ? 'standard' : 'center' }),
       ].join(''),

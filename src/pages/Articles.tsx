@@ -161,7 +161,7 @@ export default function Articles() {
             </h2>
             <span className="text-[.75rem] text-soft">3 عدسات موضوعية متجددة</span>
           </div>
-          <div className="article-featured-rail -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0">
+          <div className="article-featured-rail mx-0 flex snap-x snap-mandatory gap-4 overflow-x-auto px-0 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:pb-0">
             {featured.map((e, i) => {
               // Card style variation 0: Highlight Hero Card
               if (i === 0) {

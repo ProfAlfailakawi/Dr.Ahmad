@@ -50,6 +50,7 @@ export type DrAhmadDomainUnderstanding = {
   avoid: string[]
   moods: DomainMood[]
   preferredWorlds: string[]
+  literalAnchors: string[]
   conceptCapacity: number
 }
 
@@ -285,6 +286,41 @@ function rankFacets(input: string, context: string) {
   }).slice(0, 12)
 }
 
+const ANCHOR_STOP = new Set([
+  ...STOP,
+  'تصميم', 'صوره', 'صورة', 'بوستر', 'منشور', 'فكره', 'فكرة', 'موضوع', 'عنوان', 'شرح', 'مفهوم',
+  'اثر', 'أثر', 'تاثير', 'تأثير', 'دور', 'استخدام', 'توظيف', 'تطبيق', 'مشكله', 'مشكلة', 'قضيه', 'قضية',
+  'الجديد', 'الجديده', 'الحديث', 'الحديثه', 'عبر', 'نحو', 'حول', 'داخل', 'خارج', 'لدي', 'عند', 'بين',
+])
+
+function stripLeadingConjunction(token: string) {
+  if (/^و[\p{Script=Arabic}]{2,}$/u.test(token)) return token.slice(1)
+  return token
+}
+
+function extractLiteralAnchors(input: string, recognizedTerms: RecognizedDomainTerm[]) {
+  let residual = ` ${normalizeDomainTerm(input)} `
+  const phrases = unique(recognizedTerms.flatMap((item) => [item.matchedAlias, item.canonicalAr, item.canonicalEn]))
+    .map((item) => normalizeDomainTerm(item))
+    .filter((item) => item.length >= 2)
+    .sort((left, right) => right.length - left.length)
+  for (const phrase of phrases) {
+    const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    residual = residual.replace(new RegExp(`(^|\\s)${escaped}(?=\\s|$)`, 'giu'), '  ')
+  }
+  const chunks = residual.split(/\s{2,}|[،,:;؛|]+/u)
+  const anchors: string[] = []
+  for (const chunk of chunks) {
+    const tokens = normalizeDomainTerm(chunk).split(/\s+/)
+      .map(stripLeadingConjunction)
+      .filter((token) => token.length > 1 && !ANCHOR_STOP.has(token))
+    if (!tokens.length) continue
+    const compact = tokens.slice(0, 7).join(' ')
+    if (compact.length >= 3 && !anchors.includes(compact)) anchors.push(compact)
+  }
+  return anchors.slice(0, 5)
+}
+
 function moodWorlds(moods: DomainMood[]) {
   const worlds: string[] = []
   if (moods.some((mood) => ['bright', 'optimistic'].includes(mood))) worlds.push('daylight-learning', 'sunlit-campus', 'color-field-editorial')
@@ -318,6 +354,7 @@ export function interpretDrAhmadDomain(input: string, context = ''): DrAhmadDoma
     avoid: [],
     moods: [],
     preferredWorlds: [],
+    literalAnchors: [],
     conceptCapacity: DR_AHMAD_GLOSSARY_CONCEPT_CAPACITY,
   }
   if (!cleanInput) return empty
@@ -333,6 +370,7 @@ export function interpretDrAhmadDomain(input: string, context = ''): DrAhmadDoma
     ...directConcepts.map((item) => ({ id: item.entry.id, kind: 'concept' as const, canonicalAr: item.entry.canonicalAr, canonicalEn: item.entry.canonicalEn, score: Math.round(item.score), matchedAlias: item.alias })),
     ...facets.map((item) => ({ id: item.facet.id, kind: item.facet.kind, canonicalAr: item.facet.canonicalAr, canonicalEn: item.facet.canonicalEn, score: Math.round(item.score), matchedAlias: item.alias })),
   ]
+  const literalAnchors = extractLiteralAnchors(input, recognizedTerms)
 
   if (!primary && !facets.length) return empty
 
@@ -350,6 +388,7 @@ export function interpretDrAhmadDomain(input: string, context = ''): DrAhmadDoma
     actions.length ? `العملية أو الغاية: ${actions.map((item) => item.canonicalAr).join('، ')}.` : '',
     outcomes.length ? `الناتج المراد فهمه أو تحسينه: ${outcomes.map((item) => item.canonicalAr).join('، ')}.` : '',
     methods.length ? `النموذج أو المنهج المرتبط: ${methods.map((item) => item.canonicalAr).join('، ')}.` : '',
+    literalAnchors.length ? `الموضوع الحرفي الذي لا يجوز إسقاطه من الصورة: ${literalAnchors.join('، ')}.` : '',
   ].filter(Boolean).join(' ')
 
   const recognizedFrom = recognizedTerms.slice(0, 8).map((item) => `${item.canonicalAr}${item.canonicalEn ? ` (${item.canonicalEn})` : ''}`).join(' · ')
@@ -357,6 +396,7 @@ export function interpretDrAhmadDomain(input: string, context = ''): DrAhmadDoma
     ...(primary?.visualScenes || []),
     ...matches.slice(1).flatMap((entry) => entry.visualScenes.slice(0, 1)),
     ...facets.map((item) => item.facet.visualHint || '').filter(Boolean),
+    ...(literalAnchors.length ? [`تقاطع بصري واضح بين ${primary?.canonicalAr || recognizedTerms[0]?.canonicalAr || 'المفهوم'} و${literalAnchors.join(' و')}`] : []),
   ]).slice(0, 14)
   const moods = unique([
     ...(primary?.moods || []),
@@ -368,6 +408,7 @@ export function interpretDrAhmadDomain(input: string, context = ''): DrAhmadDoma
     ...(primary?.avoid || []),
     ...matches.flatMap((entry) => entry.avoid),
     ...(positive ? ['الجو الحزين الافتراضي', 'الممرات المظلمة', 'الفصول الفارغة الكئيبة', 'العزلة غير المطلوبة', 'تكرار الثيم نفسه'] : []),
+    ...(literalAnchors.length ? [`إسقاط الموضوع الحرفي من الصورة: ${literalAnchors.join('، ')}`, 'اختزال العنوان في المصطلح الأساسي وحده'] : []),
     'كليشيه بصري عام لا يشرح المفهوم المتخصص',
     'نصوص أو شعارات مولدة داخل الصورة',
   ]).slice(0, 28)
@@ -383,6 +424,7 @@ export function interpretDrAhmadDomain(input: string, context = ''): DrAhmadDoma
     primary ? `المجال: ${primary.domain}.` : '',
     `الفهم المتخصص: ${compoundMeaning}`,
     matches.length > 1 ? `مفاهيم مرتبطة يجب تمييزها: ${matches.slice(1).map((entry) => entry.canonicalAr).join('، ')}.` : '',
+    literalAnchors.length ? `مرساة حرفية إلزامية: ${literalAnchors.join('، ')}.` : '',
   ].filter(Boolean).join(' ')
 
   return {
@@ -397,6 +439,7 @@ export function interpretDrAhmadDomain(input: string, context = ''): DrAhmadDoma
     avoid,
     moods,
     preferredWorlds,
+    literalAnchors,
     conceptCapacity: DR_AHMAD_GLOSSARY_CONCEPT_CAPACITY,
   }
 }
@@ -408,6 +451,7 @@ export function domainGlossaryPrompt(understanding: DrAhmadDomainUnderstanding) 
     `DR AHMAD KNOWLEDGE GRAPH LOCK: ${primary ? `${primary.canonicalEn} / ${primary.canonicalAr}` : understanding.recognizedFrom}.`,
     `Precise compound meaning: ${understanding.compoundMeaning || primary?.meaningAr || understanding.expandedContext}`,
     understanding.recognizedTerms.length ? `Recognized dimensions: ${understanding.recognizedTerms.slice(0, 10).map((item) => `${item.kind}:${item.canonicalEn || item.canonicalAr}`).join(' | ')}.` : '',
+    understanding.literalAnchors.length ? `MANDATORY LITERAL SUBJECTS: ${understanding.literalAnchors.join(' | ')}. They must be visually present and cannot be replaced by a generic metaphor.` : '',
     understanding.visualScenes.length ? `Valid visual interpretations: ${understanding.visualScenes.join(' | ')}.` : '',
     understanding.avoid.length ? `Forbidden semantic confusions and clichés: ${understanding.avoid.join(', ')}.` : '',
     understanding.moods.length ? `Preferred emotional range: ${understanding.moods.join(', ')}.` : '',

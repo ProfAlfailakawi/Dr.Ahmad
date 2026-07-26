@@ -35,19 +35,21 @@ jobs:
           sparse-checkout-cone-mode: false
           fetch-depth: 0
 
-      - name: حصانة الصوت — استعادة المانيفست من آخر التزام للقافلة قبل أي فحص
+      - name: حصانة الصوت — فحص غير متلف لنسخة الالتزام الحالية
         run: |
-          # العلاج الجذري: رفعةٌ بشرية من مجلدٍ قديم (GitHub Desktop) كانت تُرجِع
-          # audio-meta إلى حالةٍ قديمة فيسقط الفحص النووي ويتعطّل النشر. القافلة
-          # هي المصدر الأوثق لملفات الصوت الآلية؛ نستعيد نسختها دائماً قبل الفحص
-          # فلا يكسر الموقعَ رفعٌ بشريٌّ أبداً — والصوت في R2 سليمٌ في الحالين.
-          LAST=$(git log --format='%H' -n 150 --grep='auto-publish new audio to R2' -- src/data/audio-meta.json | head -1)
-          if [ -n "$LAST" ] && [ "$LAST" != "$(git rev-parse HEAD)" ]; then
-            git checkout "$LAST" -- src/data/audio-meta.json src/data/audio.json src/data/audio-supervisor.json 2>/dev/null || true
-            echo "::notice::استُعيدت ملفات الصوت الآلية من آخر التزام للقافلة ${LAST}"
-          else
-            echo "ملفات الصوت على أحدث التزام للقافلة — لا حاجة للاستعادة."
+          set -euo pipefail
+          # بوابة الاختبار يجب أن تفحص HEAD كما رُفع تماماً. الاستعادة القسرية من
+          # التزامٍ تاريخي كانت تُدخل ملفات صوت قديمة في مساحة العمل، وقد تعيد
+          # مداخل لمواد حُذفت عمداً؛ فتفشل اختبارات الفهرس رغم أن الكود سليم.
+          # الحماية الحقيقية تتم لاحقاً بمصالحة R2 الانتقائية، لا بـ git checkout.
+          node scripts/guard-audio-meta-regression.mjs --self-test
+          node scripts/reconcile-audio-meta.mjs --self-test
+          if ! git diff --quiet -- src/data/audio-meta.json src/data/audio.json src/data/audio-supervisor.json; then
+            echo "::error title=Audio gate mutated source::بوابة الفحص غيّرت ملفات الصوت، وهذا ممنوع."
+            git diff -- src/data/audio-meta.json src/data/audio.json src/data/audio-supervisor.json
+            exit 1
           fi
+          echo "✓ فُحصت ملفات الصوت الحالية دون استبدالها بنسخة تاريخية."
 
       - name: Setup Node
         uses: actions/setup-node@v5
@@ -68,35 +70,70 @@ jobs:
 
       - name: WhatsApp agent
         run: |
-          node whatsapp-agent/self-test.mjs
-          node whatsapp-agent/scholar.mjs --self-test
+          set -euo pipefail
+          check() {
+            local label="$1"; shift
+            echo "::group::${label}"
+            if ! "$@"; then
+              echo "::endgroup::"
+              echo "::error title=Gate failed::${label}"
+              exit 1
+            fi
+            echo "::endgroup::"
+          }
+          check "WhatsApp agent self-test" node whatsapp-agent/self-test.mjs
+          check "WhatsApp scholar self-test" node whatsapp-agent/scholar.mjs --self-test
 
       - name: Radar, FAQ and site content
         run: |
-          node scripts/daily-radar.mjs --self-test
-          node scripts/radar-repair.mjs --self-test
-          node scripts/faq-repair.mjs --self-test
-          node scripts/auto-site-content.mjs --self-test
-          node scripts/idea-life-sync.mjs --self-test
-          node scripts/test-social-design-engine.mjs
-          node scripts/test-social-templates.mjs
-          node scripts/test-studio-image-generation.mjs
-          node scripts/test-studio-image-route.mjs
-          node scripts/test-cloudflare-deploy-fallback.mjs
+          set -euo pipefail
+          check() {
+            local label="$1"; shift
+            echo "::group::${label}"
+            if ! "$@"; then
+              echo "::endgroup::"
+              echo "::error title=Gate failed::${label}"
+              exit 1
+            fi
+            echo "::endgroup::"
+          }
+          check "Daily radar self-test" node scripts/daily-radar.mjs --self-test
+          check "Radar repair self-test" node scripts/radar-repair.mjs --self-test
+          check "FAQ repair self-test" node scripts/faq-repair.mjs --self-test
+          check "Automatic site content self-test" node scripts/auto-site-content.mjs --self-test
+          check "Idea life self-test" node scripts/idea-life-sync.mjs --self-test
+          check "Social design engine self-test" node scripts/test-social-design-engine.mjs
+          check "Social templates self-test" node scripts/test-social-templates.mjs
 
       # حرّاسُ ما أُصلح مؤخّراً: لولاها لعاد كلُّ عطبٍ منها صامتاً كما عاد أوّل مرّة.
       - name: Content, audio and dialogue guards
         run: |
-          node scripts/purge-deleted-content.mjs --self-test
-          node scripts/guard-audio-meta-regression.mjs --self-test
-          node scripts/reconcile-audio-meta.mjs --self-test
-          node scripts/explain-failure.mjs --self-test
-          node scripts/stage-dialogues-local.mjs --self-test
-          node scripts/upload-dialogues.mjs --self-test
-          node scripts/audit-article-bodies.mjs --self-test
+          set -euo pipefail
+          check() {
+            local label="$1"; shift
+            echo "::group::${label}"
+            if ! "$@"; then
+              echo "::endgroup::"
+              echo "::error title=Gate failed::${label}"
+              exit 1
+            fi
+            echo "::endgroup::"
+          }
+          check "Deleted content purge self-test" node scripts/purge-deleted-content.mjs --self-test
+          check "Audio regression guard self-test" node scripts/guard-audio-meta-regression.mjs --self-test
+          check "Audio reconciliation self-test" node scripts/reconcile-audio-meta.mjs --self-test
+          check "Failure explainer self-test" node scripts/explain-failure.mjs --self-test
+          check "Dialogue staging self-test" node scripts/stage-dialogues-local.mjs --self-test
+          check "Dialogue upload self-test" node scripts/upload-dialogues.mjs --self-test
+          check "Article body audit self-test" node scripts/audit-article-bodies.mjs --self-test
 
       - name: TypeScript
-        run: npx tsc --noEmit
+        run: |
+          set -euo pipefail
+          if ! npx tsc --noEmit; then
+            echo "::error title=Gate failed::TypeScript validation failed"
+            exit 1
+          fi
 
   build-and-deploy:
     needs: gate
@@ -160,6 +197,21 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
 
+      - name: Repair audio manifests safely from live R2
+        run: |
+          set -euo pipefail
+          if [ -z "${AUDIO_PUBLIC_BASE_URL:-}" ]; then
+            echo "::warning::AUDIO_PUBLIC_BASE_URL غير مضبوط؛ تخطّي المصالحة الحية من دون إسقاط النشر."
+            exit 0
+          fi
+          # استعادة انتقائية فقط: الملف يُعاد إن كان موجوداً فعلاً على R2،
+          # والمحذوف عمداً (404) لا يُبعث. ثم تُصالح الأحجام والمدد مع الواقع.
+          node scripts/guard-audio-meta-regression.mjs --apply
+          node scripts/reconcile-audio-meta.mjs --apply
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+
       - name: Build static site
         run: npm run build
         env:
@@ -184,71 +236,6 @@ jobs:
 
       - name: Verify official-domain build
         run: npm run verify:domain -- --dist
-
-      # كانت الاستضافة تُنشر وحدها بينما تبقى خدمة dr-api على مراجعة قديمة؛
-      # النتيجة: الواجهة الجديدة تطلب /api/ai/studio-image والخادم القديم يعيد 404.
-      # هذا النشر يحدّث Cloud Run من المصدر نفسه قبل تثبيت Firebase Hosting عليه.
-      - name: Authenticate Google Cloud for dr-api
-        uses: google-github-actions/auth@v3
-        with:
-          credentials_json: ${{ secrets.GCP_CLOUD_RUN_SERVICE_ACCOUNT || secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
-
-      - name: Setup Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v3
-        with:
-          project_id: gen-lang-client-0200723670
-
-      - name: Deploy and verify the current dr-api revision
-        env:
-          # Account ID is not a secret. A repository variable/secret overrides this project fallback.
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID || '6267458602007e25acb26f4fa71511c3' }}
-          # Rotate the token that appeared in chat, then store the replacement as this repository secret.
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          # Keeps deployment operational when this Firebase service account lacks Secret Manager Admin.
-          # The script still prefers Secret Manager and migrates automatically when IAM is granted.
-          ALLOW_DIRECT_CLOUD_RUN_TOKEN_FALLBACK: 'true'
-        run: |
-          set -euo pipefail
-
-          if [ -n "${CLOUDFLARE_API_TOKEN:-}" ]; then
-            # One guarded operation: live Cloudflare preflight, Secret Manager,
-            # current source deployment, environment binding, and route health test.
-            bash scripts/configure-cloudflare-workers-ai.sh
-          else
-            # Never leave the frontend pointing at an old container. Deploy the route even
-            # when the one-time Cloudflare repository secret has not been added yet.
-            gcloud run deploy dr-api \
-              --source . \
-              --project gen-lang-client-0200723670 \
-              --region europe-west1 \
-              --allow-unauthenticated \
-              --port 8080 \
-              --timeout 60 \
-              --memory 1Gi \
-              --max-instances 3 \
-              --quiet
-            echo "::warning::CLOUDFLARE_API_TOKEN is not stored in GitHub Secrets. The 404 is fixed, but image generation will remain unconfigured unless Cloud Run already has the secret."
-          fi
-
-          SERVICE_URL="$(gcloud run services describe dr-api \
-            --project gen-lang-client-0200723670 \
-            --region europe-west1 \
-            --format='value(status.url)')"
-          test -n "$SERVICE_URL"
-
-          for attempt in {1..12}; do
-            if HEALTH="$(curl --fail --silent --show-error --max-time 10 "$SERVICE_URL/api/ai/studio-image/health")"; then
-              printf '%s\n' "$HEALTH"
-              node -e 'const value=JSON.parse(process.argv[1]); if(!value.ok || value.route!=="/api/ai/studio-image") process.exit(1); if(!value.configured) console.log("::warning::dr-api route is live, but Cloudflare credentials are not configured on this revision."); else console.log(`::notice::Cloudflare token storage: ${value.tokenStorage || "unknown"}`)' "$HEALTH"
-              echo "::notice::dr-api image route is live on the new Cloud Run revision."
-              break
-            fi
-            if [ "$attempt" -eq 12 ]; then
-              echo "::error::Cloud Run deployed, but the studio image health route did not become reachable."
-              exit 1
-            fi
-            sleep 5
-          done
 
       - name: Deploy Firestore and Storage rules to the data project
         run: |
@@ -296,18 +283,3 @@ jobs:
           rm -f "$RUNNER_TEMP/firebase-hosting-service-account.json"
         env:
           FIREBASE_HOSTING_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
-
-      - name: Verify Firebase-to-Cloud-Run image route
-        run: |
-          set -euo pipefail
-          for attempt in {1..12}; do
-            if HEALTH="$(curl --fail --silent --show-error --max-time 10 'https://dr-alfailakawi.com/api/ai/studio-image/health')"; then
-              printf '%s\n' "$HEALTH"
-              node -e 'const value=JSON.parse(process.argv[1]); if(!value.ok || value.service!=="dr-api") process.exit(1)' "$HEALTH"
-              echo "::notice::Firebase Hosting now reaches the current dr-api image route."
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "::error::Firebase Hosting still does not reach /api/ai/studio-image after deployment."
-          exit 1

@@ -1021,12 +1021,61 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
     } catch { /* Cloudflare may return an empty error body */ }
     throw new HttpError(502, detail ? `Image generation failed: ${detail}` : `Image generation failed with HTTP ${response.status}`)
   }
-  let payload
-  try { payload = await response.json() } catch { throw new HttpError(502, 'Image generation returned an invalid response') }
-  const image = payload?.result?.image || payload?.image
-  if (typeof image !== 'string' || image.length < 1_000 || image.length > 20_000_000) throw new HttpError(502, 'Image generation returned no usable image')
+  const responseType = String(response.headers.get('content-type') || '').toLowerCase()
+  let imageBase64 = ''
+  let mimeType = 'image/jpeg'
+
+  if (responseType.startsWith('image/')) {
+    const binary = Buffer.from(await response.arrayBuffer())
+    imageBase64 = binary.toString('base64')
+    mimeType = responseType.split(';', 1)[0].trim() || 'image/jpeg'
+  } else {
+    let payload
+    try {
+      const raw = await response.text()
+      payload = JSON.parse(raw)
+    } catch {
+      throw new HttpError(502, 'Image generation returned an invalid response')
+    }
+
+    const candidate = payload?.result?.image
+      ?? payload?.image
+      ?? payload?.result?.data?.image
+      ?? payload?.data?.image
+      ?? (typeof payload?.result === 'string' ? payload.result : '')
+
+    if (typeof candidate === 'string') {
+      const match = candidate.match(/^data:(image\/[a-z0-9.+-]+)(?:;charset=[^;,]+)?;base64,(.+)$/is)
+      if (match) {
+        mimeType = match[1].toLowerCase()
+        imageBase64 = match[2]
+      } else {
+        imageBase64 = candidate
+      }
+    } else if (Array.isArray(candidate)) {
+      imageBase64 = Buffer.from(candidate).toString('base64')
+    }
+  }
+
+  imageBase64 = imageBase64.replace(/\s+/g, '')
+  let imageBytes
+  try { imageBytes = Buffer.from(imageBase64, 'base64') } catch { imageBytes = Buffer.alloc(0) }
+
+  if (imageBytes.length < 512 || imageBytes.length > 15_000_000) {
+    throw new HttpError(502, 'Image generation returned no usable image')
+  }
+
+  if (imageBytes[0] === 0xff && imageBytes[1] === 0xd8 && imageBytes[2] === 0xff) mimeType = 'image/jpeg'
+  else if (imageBytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) mimeType = 'image/png'
+  else if (imageBytes.subarray(0, 4).toString('ascii') === 'RIFF' && imageBytes.subarray(8, 12).toString('ascii') === 'WEBP') mimeType = 'image/webp'
+  else if (!/^image\/(jpeg|png|webp)$/i.test(mimeType)) {
+    throw new HttpError(502, 'Image generation returned an unsupported image format')
+  }
+
   return {
-    imageUrl: `data:image/jpeg;base64,${image}`,
+    imageBase64,
+    mimeType,
+    imageBytes: imageBytes.length,
     sourceUrl: 'https://developers.cloudflare.com/workers-ai/models/flux-1-schnell/',
     owner: 'Cloudflare Workers AI · FLUX.1 schnell',
     license: 'AI-generated image — review model terms before external commercial use',

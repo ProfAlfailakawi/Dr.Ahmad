@@ -116,6 +116,53 @@ type GeneratedStudioImage = {
   requestId?: string
 }
 
+type GeneratedImagePayload = {
+  imageBase64?: string
+  mimeType?: string
+  imageBytes?: number
+  imageUrl?: string
+  sourceUrl?: string
+  owner?: string
+  license?: string
+  description?: string
+  prompt?: string
+  model?: string
+  generatedAt?: string
+  requestId?: string
+}
+
+function generatedImageFileFromPayload(payload: GeneratedImagePayload, fileName: string): File | null {
+  let encoded = String(payload.imageBase64 || '').trim()
+  let mimeType = String(payload.mimeType || 'image/jpeg').split(';', 1)[0].trim().toLowerCase()
+
+  if (!encoded && payload.imageUrl?.startsWith('data:image/')) {
+    const match = payload.imageUrl.match(/^data:(image\/[a-z0-9.+-]+)(?:;charset=[^;,]+)?;base64,(.+)$/is)
+    if (match) {
+      mimeType = match[1].toLowerCase()
+      encoded = match[2]
+    }
+  }
+
+  encoded = encoded.replace(/\s+/g, '')
+  if (!encoded || !/^image\/(jpeg|png|webp)$/i.test(mimeType)) return null
+
+  try {
+    const binary = window.atob(encoded)
+    if (binary.length < 512 || binary.length > 15_000_000) return null
+    const bytes = new Uint8Array(binary.length)
+    const chunk = 32_768
+    for (let start = 0; start < binary.length; start += chunk) {
+      const end = Math.min(binary.length, start + chunk)
+      for (let index = start; index < end; index += 1) bytes[index] = binary.charCodeAt(index)
+    }
+    const extension = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg'
+    const safeName = fileName.replace(/[^\p{L}\p{N}._-]+/gu, '-').replace(/^-+|-+$/g, '') || 'generated-image'
+    return new File([bytes], safeName.includes('.') ? safeName : `${safeName}.${extension}`, { type: mimeType })
+  } catch {
+    return null
+  }
+}
+
 type StudioVisualMode = 'generate' | 'ready'
 type StudioVisualOrigin = 'generated' | 'ready' | 'none'
 
@@ -618,7 +665,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     if (/not configured|account is not configured|503/i.test(message)) return 'مسار dr-api يعمل، لكن بيانات Cloudflare Workers AI غير مربوطة في بيئة Cloud Run. لم أستبدل الصورة بصورة جاهزة كي يبقى الفرق واضحًا.'
     if (/timed out|abort|504/i.test(message)) return 'انتهت مهلة توليد Cloudflare قبل وصول الصورة. لم ينتقل النظام إلى Pexels تلقائيًا.'
     if (/busy|429/i.test(message)) return 'خدمة التوليد مشغولة الآن. انتظر قليلًا ثم استخدم «أعد التوليد من الصفر».'
-    if (/no usable image|empty|analysis_failed/i.test(message)) return 'وصل رد من خدمة التوليد لكنه لم يتضمن صورة صالحة للاستخدام.'
+    if (/generator_image_analysis_failed|analysis_failed/i.test(message)) return 'وصلت الصورة الأصلية من Cloudflare، لكن المتصفح لم يفك ترميزها محليًا. تم إصلاح مسار Base64 المباشر لمنع هذه المشكلة.'
+    if (/no usable image|generator_empty|empty/i.test(message)) return 'ردّ Cloudflare لم يحمل بيانات صورة قابلة للاستخدام. يظهر هذا التنبيه بدل التحويل الخفي إلى Pexels.'
     return `تعذّر توليد الصورة الأصلية: ${message || 'فشل غير معروف في خدمة التوليد'}. لم يستخدم النظام صورة جاهزة بدلًا منها.`
   }
 
@@ -948,10 +996,11 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         const payload = await response.json().catch(() => ({})) as { error?: string; detail?: string; code?: string }
         throw new Error([payload.error, payload.detail, payload.code, `HTTP ${response.status}`].filter(Boolean).join(' · '))
       }
-      const payload = await response.json() as { imageUrl?: string; sourceUrl?: string; owner?: string; license?: string; description?: string; prompt?: string; model?: string; generatedAt?: string; requestId?: string }
-      if (!payload.imageUrl) throw new Error('generator_empty')
-      const passport = await analyzeStudioImageFromUrl(payload.imageUrl, `dr-ahmad-ai-${Date.now()}.jpg`)
-      if (!passport) throw new Error('generator_image_analysis_failed')
+      const payload = await response.json() as GeneratedImagePayload
+      const generatedFile = generatedImageFileFromPayload(payload, `dr-ahmad-ai-${Date.now()}`)
+      let passport = generatedFile ? await analyzeStudioImageFromFile(generatedFile) : null
+      if (!passport && payload.imageUrl) passport = await analyzeStudioImageFromUrl(payload.imageUrl, `dr-ahmad-ai-${Date.now()}.jpg`)
+      if (!passport) throw new Error(payload.imageBase64 || payload.imageUrl ? 'generator_image_analysis_failed' : 'generator_empty')
       return {
         passport,
         metadata: {

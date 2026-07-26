@@ -35,8 +35,14 @@ const previousToken = process.env.CLOUDFLARE_API_TOKEN
 process.env.CLOUDFLARE_ACCOUNT_ID = '0123456789abcdef0123456789abcdef'
 process.env.CLOUDFLARE_API_TOKEN = 'self-test-token-not-real'
 
-try {
-  const fakeImage = Buffer.alloc(1200, 1).toString('base64')
+const jpegBytes = Buffer.concat([
+  Buffer.from([0xff, 0xd8, 0xff, 0xe0]),
+  Buffer.alloc(1_500, 1),
+  Buffer.from([0xff, 0xd9]),
+])
+const fakeImage = jpegBytes.toString('base64')
+
+async function runCase(responseFactory) {
   let calledUrl = ''
   const result = await generateCloudflareStudioImage(input, async (url, options) => {
     calledUrl = String(url)
@@ -44,18 +50,34 @@ try {
     assert.equal(body.steps, 8)
     assert.ok(body.prompt.length <= 2048)
     assert.match(String(options.headers.authorization), /^Bearer /)
-    return new Response(JSON.stringify({ result: { image: fakeImage } }), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
-    })
+    return responseFactory()
   })
-
   assert.match(calledUrl, /\/ai\/run\/@cf\/black-forest-labs\/flux-1-schnell$/)
-  assert.match(result.imageUrl, /^data:image\/jpeg;base64,/)
+  assert.equal(result.imageBase64, fakeImage)
+  assert.equal(result.mimeType, 'image/jpeg')
+  assert.equal(result.imageBytes, jpegBytes.length)
   assert.equal(result.model, '@cf/black-forest-labs/flux-1-schnell')
   assert.equal(result.requestId, input.regenerationId)
   assert.ok(Number.isInteger(result.seed))
-  console.log('Studio image generation self-test passed.')
+}
+
+try {
+  await runCase(() => new Response(JSON.stringify({ result: { image: fakeImage } }), {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+  }))
+
+  await runCase(() => new Response(JSON.stringify({ result: { image: `data:image/jpeg;base64,${fakeImage}` } }), {
+    status: 200,
+    headers: { 'content-type': 'application/json; charset=utf-8' },
+  }))
+
+  await runCase(() => new Response(jpegBytes, {
+    status: 200,
+    headers: { 'content-type': 'image/jpeg' },
+  }))
+
+  console.log('Studio image generation response-normalization self-test passed.')
 } finally {
   if (previousAccount == null) delete process.env.CLOUDFLARE_ACCOUNT_ID
   else process.env.CLOUDFLARE_ACCOUNT_ID = previousAccount

@@ -773,9 +773,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     if (/admin_auth_required|admin access required|403/i.test(message)) return 'جلسة الإدارة غير مخوّلة لتوليد الصور. أعد تسجيل الدخول إلى لوحة التحكم ثم جرّب مجددًا.'
     if (/firebase_unavailable/i.test(message)) return 'تعذّر الوصول إلى جلسة Firebase، لذلك لم يصل طلب التوليد إلى الخادم.'
     if (/generator_backend_revision_missing|route_missing|HTTP 404|Not Found/i.test(message)) return 'نسخة الواجهة وصلت، لكن خدمة dr-api المنشورة ما زالت على إصدار قديم لا يحتوي مسار التوليد. سيُحدّثها نشر Cloud Run المضاف مع هذا الإصلاح، ولن ينتقل مسار التوليد إلى Pexels.'
-    if (/not configured|account is not configured|503/i.test(message)) return 'مسار dr-api يعمل، لكن بيانات Cloudflare Workers AI غير مربوطة في بيئة Cloud Run. لم أستبدل الصورة بصورة جاهزة كي يبقى الفرق واضحًا.'
+    if (/not configured|account is not configured/i.test(message)) return 'مسار dr-api يعمل، لكن بيانات Cloudflare Workers AI غير مربوطة في بيئة Cloud Run. لم أستبدل الصورة بصورة جاهزة كي يبقى الفرق واضحًا.'
+    if (/daily free allocation exhausted|10[,.]?000 neurons|free allocation/i.test(message)) return 'انتهت الحصة المجانية اليومية من Cloudflare بعد اختبارات اليوم. تعود تلقائيًا عند ٣:٠٠ صباحًا بتوقيت الكويت (00:00 UTC)، ولا توجد فاتورة أو صورة جاهزة استُبدلت بالصورة الأصلية.'
     if (/timed out|abort|504/i.test(message)) return 'انتهت مهلة توليد Cloudflare قبل وصول الصورة. لم ينتقل النظام إلى Pexels تلقائيًا.'
-    if (/busy|429/i.test(message)) return 'خدمة التوليد مشغولة الآن. انتظر قليلًا ثم استخدم «أعد التوليد من الصفر».'
+    if (/busy|temporar|rate.?limit|resource exhausted|429|503/i.test(message)) return 'خدمة التوليد مزدحمة مؤقتًا. حاول الاستوديو تلقائيًا بتأخير متدرج من دون استبدال الصورة بصورة جاهزة؛ أعد التوليد لاحقًا إذا استمر ضغط الخدمة.'
     if (/analysis_failed/i.test(message)) return 'وصلت الصورة المولدة، لكن الجهاز لم يتمكن من فتحها داخل المحرر. سيعيد النظام فكها بمسار آمن في المحاولة التالية.'
     if (/semantic_rejected|تعذّر اعتماد الصورة دلاليًا|HTTP 422/i.test(message)) return 'رُفضت الصورة لأنها لم تمثّل المعنى الكامل أو أسقطت عنصرًا أساسيًا من الفكرة. لم تُركّب داخل التصميم؛ أعد التوليد ليُبنى مشهد مختلف فعليًا.'
     if (/no usable image|empty/i.test(message)) return 'خدمة التوليد لم ترسل بيانات صورة قابلة للفتح؛ سيعيد النظام الطلب ببذرة جديدة بدل استخدام صورة جاهزة.'
@@ -1074,7 +1075,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     if (!user) throw new Error('admin_auth_required')
     const token = await user.getIdToken()
     const controller = new AbortController()
-    const timer = window.setTimeout(() => controller.abort(), 110_000)
+    /* قد يرفض ناقد الرؤية مرشحًا ويطلب من الخادم صناعة بديل كامل. نمنح
+       الدورة وقتها بدل قطعها من المتصفح قبل مهلة Cloud Run بقليل. */
+    const timer = window.setTimeout(() => controller.abort(), 285_000)
     try {
       const platformFormat: Record<SocialPlatform | 'auto', SocialFormatId> = {
         auto: 'instagram-portrait',
@@ -1214,6 +1217,28 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     } finally {
       window.clearTimeout(timer)
     }
+  }
+
+  const requestGeneratedStudioImageWithBackoff = async (
+    options: Parameters<typeof requestGeneratedStudioImage>[0],
+    maxAttempts = 3,
+  ): Promise<GeneratedStudioImage> => {
+    let lastError: unknown = null
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      try {
+        return await requestGeneratedStudioImage(options)
+      } catch (error) {
+        lastError = error
+        const message = error instanceof Error ? error.message : String(error || '')
+        const dailyQuotaExhausted = /daily free allocation exhausted|10[,.]?000 neurons|free allocation/i.test(message)
+        const transient = !dailyQuotaExhausted && /busy|temporar|rate.?limit|resource exhausted|HTTP 429|HTTP 503/i.test(message)
+        if (!transient || attempt === maxAttempts - 1) throw error
+        const delayMs = 7_000 * (attempt + 1)
+        setNotice(`خدمة الصور تحت ضغط لحظي؛ أحافظ على الفكرة وأعيد هذا المشهد تلقائيًا بعد ${Math.round(delayMs / 1_000)} ثوانٍ…`)
+        await new Promise<void>((resolve) => window.setTimeout(resolve, delayMs))
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error('generator_retry_exhausted')
   }
 
   const installGeneratedImage = (generated: GeneratedStudioImage) => {
@@ -1958,22 +1983,27 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           : [...targetWorlds, 'daylight-learning', 'color-field-editorial', 'tactile-learning'].filter((item, index, all) => all.indexOf(item) === index).slice(0, 3)
         const history = loadVisualWorldHistory()
         const batchStamp = Date.now()
-        setNotice('Cloudflare يصنع الآن ثلاثة مشاهد أصلية متباعدة بالتوازي: مضيء، تحريري، ومادي/إنساني — لن يعيد الصورة نفسها بخمسة فلاتر.')
-        const settled = await Promise.allSettled(visualWorldTargets.map((preferredWorld, index) => {
+        setNotice('Cloudflare يصنع الآن ثلاثة مشاهد أصلية متباعدة على دفعة آمنة: مضيء، تحريري، ومادي/إنساني — كل اتجاه يُبنى فعليًا ولا يعاد كفلتر.')
+        const generationErrors: unknown[] = []
+        for (const [index, preferredWorld] of visualWorldTargets.entries()) {
+          setNotice(`أصنع الاتجاه الأصلي ${index + 1} من ${visualWorldTargets.length}، ثم يراجعه ناقد بصري قبل إدخاله إلى التصميم…`)
           const serial = ++generationSerialRef.current
-          return requestGeneratedStudioImage({
-            regenerationId: `zero-ensemble-${batchStamp}-${serial}-${index}`,
-            variation: `${FRESH_GENERATION_VARIATIONS[(serial + index) % FRESH_GENERATION_VARIATIONS.length]} This image must be structurally and emotionally distinct from the other candidates in the same batch.`,
-            preferredWorld,
-            candidateIndex: index,
-            textZone: index === 0 ? 'right' : index === 1 ? 'bottom' : 'left',
-            recentVisualWorlds: [...history, ...visualWorldTargets.filter((_, worldIndex) => worldIndex < index)],
-          })
-        }))
-        generatedSet = settled.flatMap((result) => result.status === 'fulfilled' ? [result.value] : [])
+          try {
+            const generated = await requestGeneratedStudioImageWithBackoff({
+              regenerationId: `zero-ensemble-${batchStamp}-${serial}-${index}`,
+              variation: `${FRESH_GENERATION_VARIATIONS[(serial + index) % FRESH_GENERATION_VARIATIONS.length]} This image must be structurally and emotionally distinct from the other candidates in the same batch.`,
+              preferredWorld,
+              candidateIndex: index,
+              textZone: index === 0 ? 'right' : index === 1 ? 'bottom' : 'left',
+              recentVisualWorlds: [...history, ...generatedSet.map((item) => item.metadata.visualWorld).filter((item): item is string => Boolean(item))],
+            })
+            generatedSet.push(generated)
+          } catch (error) {
+            generationErrors.push(error)
+          }
+        }
         if (!generatedSet.length) {
-          const lastError = settled.find((result) => result.status === 'rejected')
-          const failure = describeGeneratorFailure(lastError && lastError.status === 'rejected' ? lastError.reason : null)
+          const failure = describeGeneratorFailure(generationErrors[generationErrors.length - 1])
           setVisualOrigin('none')
           setVisualFailure(failure)
           throw new Error(`studio_visual_failure:${failure}`)

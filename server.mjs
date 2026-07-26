@@ -1909,13 +1909,20 @@ async function requestCloudflareImage({ accountId, apiToken, model, prompt, seed
     }
 
     if (!response.ok) {
-      if (response.status === 429) throw new HttpError(503, 'Image generation is busy', { 'retry-after': '30' })
       let detail = ''
       try {
         const raw = Buffer.from(await response.arrayBuffer()).toString('utf8')
         const failure = JSON.parse(raw || '{}')
         detail = cloudflareFailureDetail(failure)
       } catch { /* Cloudflare may return an empty error body */ }
+      if (response.status === 429) {
+        const exhausted = /daily free allocation|10[,.]?000 neurons|used up your daily/i.test(detail)
+        throw new HttpError(
+          503,
+          exhausted ? 'Cloudflare daily free allocation exhausted' : 'Image generation is busy',
+          { 'retry-after': exhausted ? '3600' : '30' },
+        )
+      }
       lastError = new HttpError(502, detail ? `Image generation failed: ${detail}` : `Image generation failed with HTTP ${response.status}`)
       if (attempt === 0 && response.status >= 500) continue
       throw lastError

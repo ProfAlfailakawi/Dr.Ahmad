@@ -18,6 +18,10 @@ const COLLECTIONS = Object.freeze({
   commands: 'whatsapp_bridge_commands',
   events: 'whatsapp_attention_events',
   settings: 'whatsapp_settings',
+  audienceContacts: 'whatsapp_audience_contacts',
+  audienceLists: 'whatsapp_audience_lists',
+  audienceMembers: 'whatsapp_audience_members',
+  campaigns: 'whatsapp_broadcast_campaigns',
 })
 
 const GREETINGS = [
@@ -285,6 +289,105 @@ function serializeDoc(snapshot) {
   return snapshot?.exists ? { id: snapshot.id, ...(snapshot.data() || {}) } : null
 }
 
+function normalizeAudienceDigits(value) {
+  let digits = String(value || '')
+    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0))
+    .replace(/\D/g, '')
+    .replace(/^00+/, '')
+  if (digits.length === 8) digits = `965${digits}`
+  return /^\d{10,15}$/.test(digits) ? digits : ''
+}
+
+function audienceJid(value) {
+  const digits = normalizeAudienceDigits(String(value || '').split('@', 1)[0])
+  return digits ? `${digits}@c.us` : ''
+}
+
+function audienceContactId(jid) {
+  return hash(`audience:${audienceJid(jid)}`).slice(0, 32)
+}
+
+function normalizeAudienceSearch(value) {
+  return normalizeArabicMessage(value).replace(/\s+/g, ' ').trim()
+}
+
+function audienceDisplayName(row = {}) {
+  return bounded(row.nickname || row.waName || row.displayName, 120) || `••${bounded(row.tail, 4)}`
+}
+
+function audienceVocative(row = {}) {
+  const raw = audienceDisplayName(row).replace(/[‎‏]/g, '').replace(/\s+/g, ' ').trim()
+  if (!raw || /^••\d{4}$/.test(raw)) return ''
+  const title = raw.match(/^(?:(?:د|أ|ا|م)\s*\.|الدكتور(?:ة)?|دكتور(?:ة)?|الأستاذ(?:ة)?|استاذ(?:ة)?|الشيخ(?:ة)?)\s*/u)?.[0] || ''
+  const rest = raw.slice(title.length).trim()
+  const words = rest.split(/\s+/).filter(Boolean)
+  const compound = /^(?:عبد|عبدال|أبو|ابو|أبا|ابا|أم|ام|ابن|بن|ذو|أبي|ابي|بو)$/u.test(words[0] || '')
+  const first = compound && words[1] ? `${words[0]} ${words[1]}` : words[0] || ''
+  return [title.trim(), first].filter(Boolean).join(' ')
+}
+
+function personalizeAudienceText(text, contact, at = new Date()) {
+  const hour = Number(new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric', hour12: false, timeZone: 'Asia/Kuwait',
+  }).format(at))
+  const name = audienceVocative(contact)
+  return bounded(text, 4_000)
+    .replace(/\{تحية\}/g, hour < 12 ? 'صباح الخير' : 'مساء الخير')
+    .replace(/\{ترحيب\}/g, 'أهلاً')
+    .replace(/\{الاسم\}/g, name)
+    .replace(/[ \t]+([،,.؛:!?؟])/g, '$1')
+    .replace(/^[ \t]*[،,؛:]\s*$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+function parseAudienceImport(text) {
+  const source = String(text || '').slice(0, MAX_BODY_BYTES)
+    .replace(/\r\n[ \t]/g, '')
+    .replace(/\n[ \t]/g, '')
+    .replace(/^(PHOTO|LOGO|SOUND|KEY)[^:]*:.*$/gim, '')
+  const rows = []
+  if (/BEGIN:VCARD/i.test(source)) {
+    for (const card of source.split(/BEGIN:VCARD/i).slice(1)) {
+      const name = bounded(/^FN(?:;[^:]*)?:(.*)$/im.exec(card)?.[1], 120)
+      const numbers = [...card.matchAll(/^TEL(?:;[^:]*)?:(.*)$/gim)]
+      for (const match of numbers) rows.push({ name, phone: match[1] })
+    }
+  } else {
+    for (const line of source.split(/\r?\n/).filter((item) => item.trim())) {
+      const phoneMatch = line.match(/(?:\+|00)?[\d٠-٩۰-۹][\d٠-٩۰-۹\s().-]{6,}[\d٠-٩۰-۹]/)
+      if (!phoneMatch) {
+        rows.push({ name: '', phone: '' })
+        continue
+      }
+      const name = bounded(line.replace(phoneMatch[0], '').replace(/^[\s,،;:|\-–—]+|[\s,،;:|\-–—]+$/g, ''), 120)
+      rows.push({ name, phone: phoneMatch[0] })
+    }
+  }
+  return rows
+}
+
+async function getAudienceContactsByIds(db, ids) {
+  const unique = [...new Set(ids.filter(Boolean))]
+  const contacts = []
+  for (let offset = 0; offset < unique.length; offset += 250) {
+    const refs = unique.slice(offset, offset + 250)
+      .map((id) => db.collection(COLLECTIONS.audienceContacts).doc(id))
+    if (!refs.length) continue
+    const snapshots = await db.getAll(...refs)
+    contacts.push(...snapshots.map(serializeDoc).filter(Boolean))
+  }
+  return contacts
+}
+
+async function listAudienceMembers(db, listId) {
+  const memberships = await db.collection(COLLECTIONS.audienceMembers)
+    .where('listId', '==', bounded(listId, 100)).limit(5_000).get()
+  const contacts = await getAudienceContactsByIds(db, memberships.docs.map((doc) => doc.data()?.contactId))
+  return contacts.sort((left, right) => audienceDisplayName(left).localeCompare(audienceDisplayName(right), 'ar'))
+}
+
 function bridgeStatus(data = {}) {
   const heartbeatAt = bounded(data.lastHeartbeatAt || data.updatedAt, 80)
   const heartbeatAgeMs = heartbeatAt ? Math.max(0, Date.now() - Date.parse(heartbeatAt)) : null
@@ -331,13 +434,55 @@ async function listRules(db) {
     .sort((a, b) => Number(b.priority || 0) - Number(a.priority || 0) || String(a.name || '').localeCompare(String(b.name || ''), 'ar'))
 }
 
-async function enqueueCommand(db, type, payload = {}) {
+async function enqueueCommand(db, type, payload = {}, metadata = {}) {
   const id = randomUUID()
   const now = asIso()
   await db.collection(COLLECTIONS.commands).doc(id).set({
     id, type, payload, status: 'pending', attempts: 0, createdAt: now, updatedAt: now,
+    availableAt: bounded(metadata.availableAt, 80) || now,
+    campaignId: bounded(metadata.campaignId, 100) || null,
+    campaignIndex: Number.isFinite(Number(metadata.campaignIndex)) ? Number(metadata.campaignIndex) : null,
   })
   return { id, type }
+}
+
+async function queueNextCampaignMessage(db, campaignId, delayMs = 0) {
+  const ref = db.collection(COLLECTIONS.campaigns).doc(bounded(campaignId, 100))
+  const snapshot = await ref.get()
+  if (!snapshot.exists) return null
+  const campaign = snapshot.data() || {}
+  if (campaign.state !== 'sending' || campaign.pendingCommandId) return null
+  const targets = Array.isArray(campaign.targetIds) ? campaign.targetIds.slice(0, 5_000) : []
+  let cursor = Math.max(0, Number(campaign.cursor || 0))
+  let contact = null
+  while (cursor < targets.length && !contact) {
+    const candidate = await db.collection(COLLECTIONS.audienceContacts).doc(bounded(targets[cursor], 100)).get()
+    const data = serializeDoc(candidate)
+    if (data && !data.suppressed && audienceJid(data.jid)) contact = data
+    else cursor += 1
+  }
+  if (!contact) {
+    await ref.set({
+      state: 'completed',
+      cursor: targets.length,
+      pendingCommandId: null,
+      completedAt: asIso(),
+      updatedAt: asIso(),
+    }, { merge: true })
+    return null
+  }
+  const availableAt = asIso(Date.now() + Math.max(0, Number(delayMs || 0)))
+  const command = await enqueueCommand(db, 'send-message', {
+    jid: contact.jid,
+    text: personalizeAudienceText(campaign.message, contact),
+  }, { campaignId: ref.id, campaignIndex: cursor, availableAt })
+  await ref.set({
+    cursor: cursor + 1,
+    pendingCommandId: command.id,
+    nextAt: availableAt,
+    updatedAt: asIso(),
+  }, { merge: true })
+  return command
 }
 
 async function sweepExpiredManualStates(db) {
@@ -415,6 +560,44 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       await db.collection(COLLECTIONS.bridge).doc('primary').set(patch, { merge: true })
       if (event === 'heartbeat') await sweepExpiredManualStates(db)
       sendJson(res, 200, { ok: true })
+      return
+    }
+
+    if (event === 'contacts-sync') {
+      const contacts = Array.isArray(body.contacts) ? body.contacts.slice(0, 5_000) : []
+      let accepted = 0
+      let batch = db.batch()
+      let batchSize = 0
+      const flush = async () => {
+        if (!batchSize) return
+        await batch.commit()
+        batch = db.batch()
+        batchSize = 0
+      }
+      for (const item of contacts) {
+        const jid = audienceJid(item?.jid || item?.id)
+        if (!jid) continue
+        const id = audienceContactId(jid)
+        const digits = jid.split('@', 1)[0]
+        const ref = db.collection(COLLECTIONS.audienceContacts).doc(id)
+        const waName = bounded(item?.name || item?.pushname || item?.shortName, 120)
+        const displayName = bounded(item?.displayName, 120)
+        batch.set(ref, {
+          id,
+          jid,
+          tail: digits.slice(-4),
+          ...(waName ? { waName } : {}),
+          ...(displayName ? { displayName } : {}),
+          source: 'whatsapp-sync',
+          lastSeenAt: now,
+          updatedAt: now,
+        }, { merge: true })
+        accepted += 1
+        batchSize += 1
+        if (batchSize >= 400) await flush()
+      }
+      await flush()
+      sendJson(res, 200, { ok: true, accepted })
       return
     }
 
@@ -565,10 +748,11 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       const snapshot = await db.collection(COLLECTIONS.commands).limit(100).get()
       const now = Date.now()
       const pending = snapshot.docs.map(serializeDoc).filter((command) => {
-        if (command.status === 'pending') return true
+        const availableAt = Date.parse(command.availableAt || command.createdAt || '')
+        if (command.status === 'pending') return !Number.isFinite(availableAt) || availableAt <= now
         const lease = Date.parse(command.leasedAt || '')
         return command.status === 'leased' && Number.isFinite(lease) && now - lease > 90_000
-      }).sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))[0]
+      }).sort((a, b) => String(a.availableAt || a.createdAt || '').localeCompare(String(b.availableAt || b.createdAt || '')))[0]
       if (!pending) {
         sendJson(res, 200, { command: null })
         return
@@ -586,12 +770,31 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         sendJson(res, 400, { error: 'commandId is required' })
         return
       }
-      await db.collection(COLLECTIONS.commands).doc(id).set({
+      const commandRef = db.collection(COLLECTIONS.commands).doc(id)
+      const commandSnapshot = await commandRef.get()
+      const command = serializeDoc(commandSnapshot)
+      await commandRef.set({
         status: body.ok === false ? 'failed' : 'completed',
         error: bounded(body.error, 600) || null,
         completedAt: asIso(),
         updatedAt: asIso(),
       }, { merge: true })
+      if (command?.campaignId) {
+        const campaignRef = db.collection(COLLECTIONS.campaigns).doc(command.campaignId)
+        const campaignSnapshot = await campaignRef.get()
+        const campaign = campaignSnapshot.data() || {}
+        const succeeded = body.ok !== false
+        await campaignRef.set({
+          pendingCommandId: null,
+          sent: Number(campaign.sent || 0) + (succeeded ? 1 : 0),
+          failed: Number(campaign.failed || 0) + (succeeded ? 0 : 1),
+          lastError: succeeded ? null : bounded(body.error, 600),
+          lastDeliveredAt: succeeded ? asIso() : campaign.lastDeliveredAt || null,
+          updatedAt: asIso(),
+        }, { merge: true })
+        const intervalMs = Math.max(20_000, Math.min(15 * 60_000, Number(campaign.intervalSeconds || 45) * 1_000))
+        await queueNextCampaignMessage(db, command.campaignId, intervalMs)
+      }
       sendJson(res, 200, { ok: true })
       return
     }
@@ -754,6 +957,351 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       sendJson(res, 200, { returned: rows.length })
       return
     }
+
+    if (path === '/audience/contacts' && method === 'GET') {
+      const term = normalizeAudienceSearch(url.searchParams.get('q') || '')
+      const limit = Math.max(1, Math.min(500, Number(url.searchParams.get('limit') || 200)))
+      const offset = Math.max(0, Number(url.searchParams.get('offset') || 0))
+      const [contactSnapshot, membershipSnapshot] = await Promise.all([
+        db.collection(COLLECTIONS.audienceContacts).limit(5_000).get(),
+        db.collection(COLLECTIONS.audienceMembers).limit(10_000).get(),
+      ])
+      const listCounts = new Map()
+      for (const membership of membershipSnapshot.docs) {
+        const id = bounded(membership.data()?.contactId, 100)
+        if (id) listCounts.set(id, Number(listCounts.get(id) || 0) + 1)
+      }
+      const contacts = contactSnapshot.docs.map(serializeDoc).filter(Boolean)
+        .map((contact) => ({
+          id: contact.id,
+          name: audienceDisplayName(contact),
+          nickname: bounded(contact.nickname, 120),
+          waName: bounded(contact.waName || contact.displayName, 120),
+          tail: bounded(contact.tail, 4),
+          suppressed: Boolean(contact.suppressed),
+          lists: Number(listCounts.get(contact.id) || 0),
+        }))
+        .filter((contact) => !term
+          || normalizeAudienceSearch(contact.name).includes(term)
+          || contact.tail.includes(term))
+        .sort((left, right) => left.name.localeCompare(right.name, 'ar'))
+      sendJson(res, 200, {
+        contacts: contacts.slice(offset, offset + limit),
+        total: contacts.length,
+        offset,
+        limit,
+      })
+      return
+    }
+
+    if (path === '/audience/contacts' && method === 'POST') {
+      const body = await readJson(req)
+      const digits = normalizeAudienceDigits(body.phone)
+      if (!digits) {
+        sendJson(res, 400, { error: 'الرقم غير مكتمل.' })
+        return
+      }
+      const jid = `${digits}@c.us`
+      const id = audienceContactId(jid)
+      const nickname = bounded(body.nickname, 120)
+      await db.collection(COLLECTIONS.audienceContacts).doc(id).set({
+        id,
+        jid,
+        tail: digits.slice(-4),
+        ...(nickname ? { nickname, displayName: nickname } : {}),
+        source: 'manual',
+        updatedAt: asIso(),
+        createdAt: asIso(),
+      }, { merge: true })
+      sendJson(res, 200, { ok: true, id })
+      return
+    }
+
+    if (path === '/audience/import' && method === 'POST') {
+      const body = await readJson(req, MAX_BODY_BYTES)
+      const parsed = parseAudienceImport(body.text)
+      const normalized = new Map()
+      const skipped = []
+      for (const [index, item] of parsed.entries()) {
+        const digits = normalizeAudienceDigits(item.phone)
+        if (!digits) {
+          skipped.push(index)
+          continue
+        }
+        const jid = `${digits}@c.us`
+        const id = audienceContactId(jid)
+        if (!normalized.has(id)) normalized.set(id, {
+          id, jid, tail: digits.slice(-4), name: bounded(item.name, 120),
+        })
+      }
+      const rows = [...normalized.values()]
+      const knownSnapshots = await getAudienceContactsByIds(db, rows.map((row) => row.id))
+      const knownIds = new Set(knownSnapshots.map((row) => row.id))
+      const newcomers = []
+      let batch = db.batch()
+      let writes = 0
+      const commit = async () => {
+        if (!writes) return
+        await batch.commit()
+        batch = db.batch()
+        writes = 0
+      }
+      for (const row of rows) {
+        const isKnown = knownIds.has(row.id)
+        const ref = db.collection(COLLECTIONS.audienceContacts).doc(row.id)
+        batch.set(ref, {
+          id: row.id,
+          jid: row.jid,
+          tail: row.tail,
+          ...(row.name ? { displayName: row.name } : {}),
+          source: isKnown ? 'import-refresh' : 'import',
+          updatedAt: asIso(),
+          ...(!isKnown ? { createdAt: asIso() } : {}),
+        }, { merge: true })
+        writes += 1
+        if (!isKnown) newcomers.push({ id: row.id, name: row.name || `••${row.tail}`, tail: row.tail })
+        if (body.listId) {
+          const memberId = `${bounded(body.listId, 100)}:${row.id}`
+          batch.set(db.collection(COLLECTIONS.audienceMembers).doc(memberId), {
+            id: memberId, listId: bounded(body.listId, 100), contactId: row.id, createdAt: asIso(),
+          }, { merge: true })
+          writes += 1
+        }
+        if (writes >= 390) await commit()
+      }
+      await commit()
+      sendJson(res, 200, {
+        ok: true,
+        added: newcomers.length,
+        known: rows.length - newcomers.length,
+        skipped,
+        newcomers: newcomers.slice(0, 60),
+      })
+      return
+    }
+
+    if (path === '/audience/nickname' && method === 'POST') {
+      const body = await readJson(req)
+      const id = bounded(body.contactId, 100)
+      if (!id) {
+        sendJson(res, 400, { error: 'جهة الاتصال مطلوبة.' })
+        return
+      }
+      await db.collection(COLLECTIONS.audienceContacts).doc(id).set({
+        nickname: bounded(body.nickname, 120) || null,
+        updatedAt: asIso(),
+      }, { merge: true })
+      sendJson(res, 200, { ok: true })
+      return
+    }
+
+    if (path === '/audience/lists' && method === 'GET') {
+      const snapshot = await db.collection(COLLECTIONS.audienceLists).limit(500).get()
+      const lists = snapshot.docs.map(serializeDoc).filter(Boolean)
+        .map((list) => ({
+          id: list.id,
+          name: bounded(list.name, 120) || 'قائمة بلا اسم',
+          note: bounded(list.note, 300),
+          kind: bounded(list.kind, 40) || 'manual',
+          count: Number(list.count || 0),
+        }))
+        .sort((left, right) => left.name.localeCompare(right.name, 'ar'))
+      sendJson(res, 200, { lists })
+      return
+    }
+
+    if (path === '/audience/lists' && method === 'POST') {
+      const body = await readJson(req)
+      if (body.action === 'delete') {
+        const id = bounded(body.id, 100)
+        const members = await db.collection(COLLECTIONS.audienceMembers).where('listId', '==', id).limit(5_000).get()
+        let batch = db.batch()
+        let writes = 0
+        for (const member of members.docs) {
+          batch.delete(member.ref)
+          writes += 1
+          if (writes >= 400) {
+            await batch.commit()
+            batch = db.batch()
+            writes = 0
+          }
+        }
+        batch.delete(db.collection(COLLECTIONS.audienceLists).doc(id))
+        await batch.commit()
+        sendJson(res, 200, { ok: true })
+        return
+      }
+      const name = bounded(body.name, 120)
+      if (!name) {
+        sendJson(res, 400, { error: 'اسم القائمة مطلوب.' })
+        return
+      }
+      const id = body.action === 'rename' ? bounded(body.id, 100) : randomUUID()
+      await db.collection(COLLECTIONS.audienceLists).doc(id).set({
+        id,
+        name,
+        note: bounded(body.note, 300),
+        kind: 'manual',
+        ...(body.action === 'rename' ? {} : { count: 0, createdAt: asIso() }),
+        updatedAt: asIso(),
+      }, { merge: true })
+      sendJson(res, 200, { ok: true, id })
+      return
+    }
+
+    if (path === '/audience/members' && method === 'GET') {
+      const members = await listAudienceMembers(db, url.searchParams.get('list') || '')
+      sendJson(res, 200, {
+        members: members.map((contact) => ({
+          id: contact.id,
+          name: audienceDisplayName(contact),
+          vocative: audienceVocative(contact),
+          nickname: bounded(contact.nickname, 120),
+          tail: bounded(contact.tail, 4),
+          suppressed: Boolean(contact.suppressed),
+        })),
+      })
+      return
+    }
+
+    if (path === '/audience/members' && method === 'POST') {
+      const body = await readJson(req)
+      const listId = bounded(body.listId, 100)
+      if (!listId) {
+        sendJson(res, 400, { error: 'القائمة مطلوبة.' })
+        return
+      }
+      if (body.action === 'remove') {
+        const contactId = bounded(body.contactId, 100)
+        await db.collection(COLLECTIONS.audienceMembers).doc(`${listId}:${contactId}`).delete()
+      } else {
+        const contactIds = [...new Set((Array.isArray(body.contactIds) ? body.contactIds : [])
+          .map((id) => bounded(id, 100)).filter(Boolean))].slice(0, 5_000)
+        let batch = db.batch()
+        let writes = 0
+        for (const contactId of contactIds) {
+          const memberId = `${listId}:${contactId}`
+          batch.set(db.collection(COLLECTIONS.audienceMembers).doc(memberId), {
+            id: memberId, listId, contactId, createdAt: asIso(),
+          }, { merge: true })
+          writes += 1
+          if (writes >= 400) {
+            await batch.commit()
+            batch = db.batch()
+            writes = 0
+          }
+        }
+        if (writes) await batch.commit()
+      }
+      const countSnapshot = await db.collection(COLLECTIONS.audienceMembers).where('listId', '==', listId).count().get()
+      const count = Number(countSnapshot.data()?.count || 0)
+      await db.collection(COLLECTIONS.audienceLists).doc(listId).set({ count, updatedAt: asIso() }, { merge: true })
+      sendJson(res, 200, { ok: true, count })
+      return
+    }
+
+    if (path === '/audience/preview' && method === 'POST') {
+      const body = await readJson(req)
+      const members = await listAudienceMembers(db, bounded(body.listId, 100))
+      const send = members.filter((contact) => !contact.suppressed)
+      sendJson(res, 200, {
+        samples: send.slice(0, 3).map((contact) => ({
+          name: audienceDisplayName(contact),
+          body: personalizeAudienceText(body.text, contact),
+        })),
+        willSend: send.length,
+        suppressed: members.length - send.length,
+      })
+      return
+    }
+
+    if (path === '/send-self-preview' && method === 'POST') {
+      const body = await readJson(req)
+      const text = bounded(body.message || body.text, 4_000)
+      if (!text) {
+        sendJson(res, 400, { error: 'نص المعاينة مطلوب.' })
+        return
+      }
+      const command = await enqueueCommand(db, 'send-self-message', { text })
+      sendJson(res, 200, { ok: true, queued: true, messageId: command.id })
+      return
+    }
+
+    if (path === '/audience/draft' && method === 'POST') {
+      const body = await readJson(req)
+      const listId = bounded(body.listId, 100)
+      const message = bounded(body.message, 4_000)
+      if (!listId || !message) {
+        sendJson(res, 400, { error: 'القائمة والرسالة مطلوبتان.' })
+        return
+      }
+      const list = await db.collection(COLLECTIONS.audienceLists).doc(listId).get()
+      if (!list.exists) {
+        sendJson(res, 404, { error: 'القائمة غير موجودة.' })
+        return
+      }
+      const members = await listAudienceMembers(db, listId)
+      const targetIds = members.filter((contact) => !contact.suppressed).map((contact) => contact.id)
+      const id = randomUUID()
+      await db.collection(COLLECTIONS.campaigns).doc(id).set({
+        id,
+        listId,
+        name: bounded(body.name, 180) || bounded(list.data()?.name, 120) || 'بث واتساب',
+        message,
+        targetIds,
+        total: targetIds.length,
+        sent: 0,
+        failed: 0,
+        cursor: 0,
+        state: 'draft',
+        createdAt: asIso(),
+        updatedAt: asIso(),
+      })
+      sendJson(res, 200, { id, state: 'draft', total: targetIds.length })
+      return
+    }
+
+    const campaignApprove = /^\/campaigns\/([^/]+)\/approve$/.exec(path)
+    if (campaignApprove && method === 'POST') {
+      const body = await readJson(req)
+      if (body.confirm !== true) {
+        sendJson(res, 400, { error: 'التأكيد مطلوب.' })
+        return
+      }
+      const id = decodeURIComponent(campaignApprove[1])
+      await db.collection(COLLECTIONS.campaigns).doc(id).set({
+        state: 'approved', approvedAt: asIso(), updatedAt: asIso(),
+      }, { merge: true })
+      sendJson(res, 200, { id, state: 'approved' })
+      return
+    }
+
+    const campaignSend = /^\/campaigns\/([^/]+)\/send-quiet$/.exec(path)
+    if (campaignSend && method === 'POST') {
+      const body = await readJson(req)
+      if (body.confirm !== true || body.confirmAgain !== true) {
+        sendJson(res, 400, { error: 'يلزم التأكيد مرتين قبل البث.' })
+        return
+      }
+      const id = decodeURIComponent(campaignSend[1])
+      const ref = db.collection(COLLECTIONS.campaigns).doc(id)
+      const snapshot = await ref.get()
+      if (!snapshot.exists || !['approved', 'paused'].includes(snapshot.data()?.state)) {
+        sendJson(res, 409, { error: 'المسودة غير معتمدة أو بدأ إرسالها بالفعل.' })
+        return
+      }
+      const intervalSeconds = Math.max(20, Math.min(15 * 60, Number(body.intervalSeconds || 45)))
+      await ref.set({
+        state: 'sending',
+        intervalSeconds,
+        startedAt: snapshot.data()?.startedAt || asIso(),
+        updatedAt: asIso(),
+      }, { merge: true })
+      const command = await queueNextCampaignMessage(db, id, 0)
+      sendJson(res, 202, { id, state: command ? 'sending' : 'completed', total: Number(snapshot.data()?.total || 0) })
+      return
+    }
+
     if (path === '/simulate' && method === 'POST') {
       const body = await readJson(req)
       const rules = await listRules(db)

@@ -85,6 +85,7 @@
     "agent:install": "node scripts/whatsapp-agent.mjs install",
     "agent:uninstall": "node scripts/whatsapp-agent.mjs uninstall",
     "whatsapp:central:self-test": "node scripts/test-whatsapp-central.mjs && npm --prefix whatsapp-bridge run check",
+    "whatsapp:audience:migrate": "node scripts/migrate-whatsapp-audience.mjs",
     "agent:send-campaign": "node scripts/whatsapp-agent.mjs send-campaign",
     "agent:stop-campaign": "node scripts/whatsapp-agent.mjs stop-campaign",
     "podcast:manual-lock:self-test": "node scripts/test-manual-dialogue-lock.mjs",

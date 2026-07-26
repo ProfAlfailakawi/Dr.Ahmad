@@ -90,9 +90,11 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
   const previewToSelf = async () => {
     setBusy('self')
     try {
-      const result = await request('/admin/send-self-preview', { method: 'POST', body: JSON.stringify({ message: text }) }) as { ok?: boolean; messageId?: string }
+      const result = await request('/admin/send-self-preview', { method: 'POST', body: JSON.stringify({ message: text }) }) as { ok?: boolean; messageId?: string; queued?: boolean }
       if (!result?.ok || !result.messageId) throw new Error('لم يؤكد واتساب إرسال المعاينة')
-      say('✓ أرسل واتساب المعاينة إلى حسابك المرتبط. اقرأها كما سيقرأها الناس.')
+      say(result.queued
+        ? '✓ دخلت المعاينة طابور الجسر وستصل إلى حسابك المرتبط خلال لحظات.'
+        : '✓ أرسل واتساب المعاينة إلى حسابك المرتبط. اقرأها كما سيقرأها الناس.')
     } catch (error) {
       say(`تعذّرت المعاينة: ${error instanceof Error ? error.message : 'خطأ'}`)
     } finally { setBusy('') }

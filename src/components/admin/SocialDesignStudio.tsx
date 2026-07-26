@@ -125,6 +125,11 @@ type StudioImageMetadata = {
   relevanceScore?: number | null
   relevanceReason?: string
   generationAttempts?: number
+  semanticVerified?: boolean
+  criticSource?: string
+  imageCaption?: string
+  missingAnchor?: string
+  literalSubjects?: string[]
 }
 
 type GeneratedStudioImage = {
@@ -162,16 +167,34 @@ const AUTOPILOT_PRESETS: { id: AutoPilotModeId; label: string; note: string; ton
 
 function selectDistinctTriptych(plans: CompositionPlan[]) {
   const selected: CompositionPlan[] = []
+  const heroSource = (plan: CompositionPlan) => plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background')?.src || ''
+  const treatment = (plan: CompositionPlan) => plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background')?.imageTreatment || 'none'
   const surface = (plan: CompositionPlan) => PALETTES[plan.palette]?.isDark ? 'dark' : 'light'
-  for (const plan of plans) {
-    const structurallyNew = selected.every((item) => item.layout !== plan.layout && designSimilarity(item, plan) < .68)
-    const moodNew = selected.every((item) => item.palette !== plan.palette && surface(item) !== surface(plan))
-    if (structurallyNew || moodNew) selected.push(plan)
-    if (selected.length === 3) break
-  }
-  for (const plan of plans) {
-    if (selected.length === 3) break
-    if (!selected.some((item) => item.id === plan.id)) selected.push(plan)
+  const ranked = [...plans].sort((left, right) => (right.quality?.score || 0) - (left.quality?.score || 0))
+  while (selected.length < 3 && ranked.length) {
+    let bestIndex = 0
+    let bestScore = -Infinity
+    for (let index = 0; index < ranked.length; index += 1) {
+      const candidate = ranked[index]
+      const image = heroSource(candidate)
+      const imageNovel = !image || selected.every((item) => heroSource(item) !== image)
+      const layoutNovel = selected.every((item) => item.layout !== candidate.layout)
+      const paletteNovel = selected.every((item) => item.palette !== candidate.palette)
+      const treatmentNovel = selected.every((item) => treatment(item) !== treatment(candidate))
+      const surfaceNovel = selected.every((item) => surface(item) !== surface(candidate))
+      const similarity = selected.length ? Math.max(...selected.map((item) => designSimilarity(item, candidate))) : 0
+      const score = (candidate.quality?.score || 0)
+        + (imageNovel ? 42 : -36)
+        + (layoutNovel ? 22 : -12)
+        + (paletteNovel ? 14 : -8)
+        + (treatmentNovel ? 10 : -5)
+        + (surfaceNovel ? 5 : 0)
+        - similarity * 28
+      if (score > bestScore) { bestScore = score; bestIndex = index }
+    }
+    const [picked] = ranked.splice(bestIndex, 1)
+    if (!picked) break
+    selected.push(picked)
   }
   return selected
 }
@@ -1025,7 +1048,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       setNotice('تعذّر النسخ الآلي. انسخه يدويًا من الحقل الظاهر.')
     }
   }
-  const requestGeneratedStudioImage = async (options: { regenerationId?: string; variation?: string; preferredWorld?: string; recentVisualWorlds?: string[] } = {}): Promise<GeneratedStudioImage> => {
+  const requestGeneratedStudioImage = async (options: { regenerationId?: string; variation?: string; preferredWorld?: string; recentVisualWorlds?: string[]; candidateIndex?: number } = {}): Promise<GeneratedStudioImage> => {
     const app = await getFirebaseApp()
     if (!app) throw new Error('firebase_unavailable')
     const { getAuth } = await import('firebase/auth')
@@ -1057,6 +1080,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         glossaryAvoid: visualSearchPlan.avoidTerms,
         preferredWorlds: options.preferredWorld ? [options.preferredWorld] : visualSearchPlan.preferredWorlds,
         moods: visualSearchPlan.moods,
+        literalAnchors: visualSearchPlan.literalAnchors,
+        candidateIndex: options.candidateIndex || 0,
         recentVisualWorlds: options.recentVisualWorlds || loadVisualWorldHistory(),
         regenerationId: options.regenerationId,
         variation: options.variation,
@@ -1079,7 +1104,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         const payload = await response.json().catch(() => ({})) as { error?: string; detail?: string; code?: string }
         throw new Error([payload.error, payload.detail, payload.code, `HTTP ${response.status}`].filter(Boolean).join(' · '))
       }
-      const payload = await response.json() as { imageUrl?: string; image?: string; imageBase64?: string; result?: { image?: string; imageUrl?: string }; sourceUrl?: string; owner?: string; license?: string; description?: string; prompt?: string; model?: string; generatedAt?: string; requestId?: string; visualWorld?: string; visualWorldLabel?: string; imageTreatment?: NonNullable<PlanOverlay['imageTreatment']>; layoutHint?: LayoutFamilyId; paletteHint?: PaletteId; conceptKey?: string; conceptLabel?: string; semanticScene?: string; relevanceScore?: number | null; relevanceReason?: string; generationAttempts?: number; imageMime?: string; imageBytes?: number }
+      const payload = await response.json() as { imageUrl?: string; image?: string; imageBase64?: string; result?: { image?: string; imageUrl?: string }; sourceUrl?: string; owner?: string; license?: string; description?: string; prompt?: string; model?: string; generatedAt?: string; requestId?: string; visualWorld?: string; visualWorldLabel?: string; imageTreatment?: NonNullable<PlanOverlay['imageTreatment']>; layoutHint?: LayoutFamilyId; paletteHint?: PaletteId; conceptKey?: string; conceptLabel?: string; semanticScene?: string; relevanceScore?: number | null; relevanceReason?: string; generationAttempts?: number; imageMime?: string; imageBytes?: number; semanticVerified?: boolean; criticSource?: string; imageCaption?: string; missingAnchor?: string; literalSubjects?: string[] }
       const imageUrl = generatedImageDataUri(payload)
       if (!imageUrl) throw new Error('generator_empty')
       const passport = await analyzeGeneratedStudioImage(imageUrl, `dr-ahmad-ai-${Date.now()}`)
@@ -1102,6 +1127,11 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           relevanceScore: payload.relevanceScore,
           relevanceReason: payload.relevanceReason,
           generationAttempts: payload.generationAttempts,
+          semanticVerified: payload.semanticVerified,
+          criticSource: payload.criticSource,
+          imageCaption: payload.imageCaption,
+          missingAnchor: payload.missingAnchor,
+          literalSubjects: payload.literalSubjects,
         },
         prompt: payload.prompt || visualSearchPlan.generationPrompt,
         model: payload.model || '@cf/black-forest-labs/flux-1-schnell',
@@ -1138,9 +1168,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       const generated = await requestGeneratedStudioImage({
         regenerationId: `manual-${Date.now()}-${serial}`,
         variation: FRESH_GENERATION_VARIATIONS[serial % FRESH_GENERATION_VARIATIONS.length],
+        candidateIndex: serial % 3,
       })
       installGeneratedImage(generated)
-      setNotice('وُلّدت صورة أصلية من الفكرة، ثم حُللت محليًا وصار لها جواز قص وتركيز ومصدر واضح.')
+      setNotice(generated.metadata.semanticVerified ? `وُلّدت صورة أصلية واجتازت بوابة المطابقة الدلالية ${generated.metadata.relevanceScore || ''}٪، ثم أُعدّ جواز القص والتركيز.` : 'وُلّدت صورة أصلية، لكن بوابة الرؤية لم تُرجع حكمًا نهائيًا؛ راجع المعنى قبل الاعتماد.')
     } catch (error) {
       const message = describeGeneratorFailure(error)
       setVisualFailure(message)
@@ -1187,7 +1218,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     styleOverride?: { treatment?: NonNullable<PlanOverlay['imageTreatment']>; layout?: LayoutFamilyId; palette?: PaletteId; ignoreServerStyle?: boolean },
   ) => {
     const roleId = `hero-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
-    const zone = cinematicTextZone(passport)
+    const titleCenterX = plan.geometry.titleZone.x + plan.geometry.titleZone.width / 2
+    const titleCenterY = plan.geometry.titleZone.y
+    const zone: NonNullable<PlanOverlay['textZone']> = titleCenterY < .25 ? 'top' : titleCenterY > .62 ? 'bottom' : titleCenterX < .43 ? 'left' : titleCenterX > .57 ? 'right' : cinematicTextZone(passport) === 'center' ? 'center' : 'center'
     const existing = (plan.overlays || []).filter((item) => item.imageRole !== 'background')
     const resolvedTreatment = styleOverride?.treatment
       || (styleOverride?.ignoreServerStyle ? treatment : metadata?.imageTreatment || treatment)
@@ -1212,8 +1245,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     const darkSurface = Boolean(PALETTES[palette]?.isDark)
     const vignette = resolvedTreatment === 'cinematic' ? .44 : resolvedTreatment === 'duotone' ? .32 : resolvedTreatment === 'editorial' ? .18 : .10
     const readabilityShade = darkSurface
-      ? resolvedTreatment === 'cinematic' ? .74 : resolvedTreatment === 'duotone' ? .62 : .52
-      : resolvedTreatment === 'cinematic' ? .52 : resolvedTreatment === 'duotone' ? .34 : resolvedTreatment === 'editorial' ? .24 : .16
+      ? resolvedTreatment === 'cinematic' ? .78 : resolvedTreatment === 'duotone' ? .70 : .62
+      : resolvedTreatment === 'cinematic' ? .66 : resolvedTreatment === 'duotone' ? .58 : resolvedTreatment === 'editorial' ? .56 : .50
     const background: PlanOverlay = {
       id: roleId,
       kind: 'image',
@@ -1250,6 +1283,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       palette,
       paletteOverride: undefined,
       density: resolvedTreatment === 'cinematic' || resolvedTreatment === 'duotone' ? 'minimal' : plan.density,
+      content: { ...plan.content, source: /dr-?alfailakawi\.com/i.test(plan.content.source || '') ? '' : plan.content.source },
       framing: resolvedTreatment === 'editorial' ? 'editorial-folio' : resolvedTreatment === 'documentary' ? 'open-canvas' : resolvedTreatment === 'none' ? 'open-canvas' : 'cinematic-crop',
       overlays: [background, ...existing],
       rationale: [
@@ -1847,6 +1881,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             regenerationId: `zero-ensemble-${batchStamp}-${serial}-${index}`,
             variation: `${FRESH_GENERATION_VARIATIONS[(serial + index) % FRESH_GENERATION_VARIATIONS.length]} This image must be structurally and emotionally distinct from the other candidates in the same batch.`,
             preferredWorld,
+            candidateIndex: index,
             recentVisualWorlds: [...history, ...visualWorldTargets.filter((_, worldIndex) => worldIndex < index)],
           })
         }))
@@ -1863,7 +1898,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           const key = generated.metadata.visualWorld || generated.requestId || generated.passport.dataUrl.slice(0, 96)
           if (!uniqueGenerated.has(key)) uniqueGenerated.set(key, generated)
         }
-        generatedSet = [...uniqueGenerated.values()]
+        generatedSet = [...uniqueGenerated.values()].sort((left, right) => {
+          const verifiedGap = Number(Boolean(right.metadata.semanticVerified)) - Number(Boolean(left.metadata.semanticVerified))
+          if (verifiedGap) return verifiedGap
+          return Number(right.metadata.relevanceScore || 0) - Number(left.metadata.relevanceScore || 0)
+        })
+        const semanticallyApproved = generatedSet.filter((item) => item.metadata.semanticVerified !== false && (item.metadata.relevanceScore == null || item.metadata.relevanceScore >= 80))
+        if (semanticallyApproved.length) generatedSet = semanticallyApproved
         for (const generated of generatedSet) rememberVisualWorld(generated.metadata.visualWorld)
         installGeneratedImage(generatedSet[0])
         passport = generatedSet[0].passport
@@ -2023,12 +2064,17 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           } catch { /* يبقى الطيار الآلي يعمل حتى بلا صورة */ }
         }
       }
+      const positiveSemantic = visualSearchPlan.moods.some((mood) => ['bright', 'playful', 'energetic', 'optimistic', 'creative', 'warm', 'collaborative', 'curious', 'dynamic'].includes(mood))
+      const brightPalettes: PaletteId[] = ['scholar-blue', 'signal-ivory', 'warm-parchment', 'quiet-stone', 'brand-paper']
       const pool: AutoPilotCandidate[] = []
       const visualSet = (options.visualSet || []).filter((item) => item?.passport?.dataUrl)
       for (const [presetIndex, preset] of AUTOPILOT_PRESETS.entries()) {
         const visualCandidate = visualSet.length ? visualSet[presetIndex % visualSet.length] : null
         const presetPassport = visualCandidate?.passport || passport
         const presetMetadata = visualCandidate?.metadata || sourceMeta
+        const effectiveLayout = presetMetadata?.layoutHint || preset.preferLayout
+        const effectiveTreatment = presetMetadata?.imageTreatment || (positiveSemantic && preset.imageTreatment === 'cinematic' ? 'editorial' : preset.imageTreatment)
+        const effectivePalette = presetMetadata?.paletteHint || (positiveSemantic && PALETTES[preset.palette]?.isDark ? brightPalettes[presetIndex % brightPalettes.length] : preset.palette)
         let attempts = 0
         let winner: AutoPilotCandidate | null = null
         while (attempts < 2 && !winner) {
@@ -2044,10 +2090,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             history: localHistory,
             noveltyThreshold: .42,
             tasteProfile,
-            preferLayout: preset.preferLayout,
+            preferLayout: effectiveLayout,
           })
           const candidates = result.plans.map((plan) => {
-            const withImage = presetPassport && preset.imageTreatment ? buildImageLedPlan(plan, preset.imageTreatment, presetPassport, presetMetadata, { treatment: preset.imageTreatment, layout: preset.preferLayout, palette: preset.palette, ignoreServerStyle: true }) : { ...plan, layout: preset.preferLayout, palette: preset.palette }
+            const withImage = presetPassport && effectiveTreatment ? buildImageLedPlan(plan, effectiveTreatment, presetPassport, presetMetadata, { treatment: effectiveTreatment, layout: effectiveLayout, palette: effectivePalette, ignoreServerStyle: false }) : { ...plan, layout: effectiveLayout, palette: effectivePalette }
             const quality = critiqueCompositionPlan(withImage, result.plans.filter((peer) => peer.id !== plan.id))
             const enriched = { ...withImage, quality }
             const stop = predictEngagement(enriched)

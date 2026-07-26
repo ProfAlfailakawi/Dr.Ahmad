@@ -945,6 +945,7 @@ function requestGlossaryEntry(input) {
   const avoid = boundedArray(input.glossaryAvoid, 32, (item) => boundedString(item, 500))
   const preferredWorlds = boundedArray(input.preferredWorlds, 18, (item) => boundedString(item, 80))
   const moods = boundedArray(input.moods, 18, (item) => boundedString(item, 80))
+  const literalAnchors = boundedArray(input.literalAnchors, 12, (item) => boundedString(item, 220))
   if (!label && !canonicalEn && !meaning && !scenes.length) return null
   return {
     id: boundedString(input.glossaryConcept, 500) || `request-${createHash('sha256').update([label, canonicalEn, meaning].join('|')).digest('hex').slice(0, 16)}`,
@@ -957,6 +958,7 @@ function requestGlossaryEntry(input) {
     avoid,
     preferredWorlds,
     moods,
+    literalAnchors,
   }
 }
 
@@ -974,6 +976,7 @@ function selectDrAhmadGlossaryEntry(input) {
     avoid: [...new Set([...(explicit.avoid || []), ...requestEntry.avoid])],
     preferredWorlds: requestEntry.preferredWorlds.length ? requestEntry.preferredWorlds : explicit.preferredWorlds,
     moods: [...new Set([...(explicit.moods || []), ...requestEntry.moods])],
+    literalAnchors: [...new Set([...(explicit.literalAnchors || []), ...requestEntry.literalAnchors])],
   } : explicit
   if (requestEntry) return requestEntry
   const ranked = drAhmadDomainGlossary.map((entry) => {
@@ -995,6 +998,7 @@ function glossaryConceptProfile(entry, input) {
   const preferredWorlds = requestedWorlds.length === 1
     ? requestedWorlds
     : [...new Set([...requestedWorlds, ...(Array.isArray(entry.preferredWorlds) ? entry.preferredWorlds : [])])]
+  const literalAnchors = [...new Set([...(Array.isArray(input.literalAnchors) ? input.literalAnchors : []), ...(Array.isArray(entry.literalAnchors) ? entry.literalAnchors : [])])]
   const sceneSignature = createHash('sha256').update([input.idea, input.regenerationId, input.variation, entry.id].join('|')).digest()
   const selectedScene = scenes.length ? scenes[(sceneSignature[2] + sceneSignature[5]) % scenes.length] : `A precise educational editorial scene representing ${entry.canonicalEn || entry.canonicalAr}`
   return {
@@ -1002,10 +1006,11 @@ function glossaryConceptProfile(entry, input) {
     glossaryId: entry.id,
     label: entry.canonicalAr,
     interpretation: `${entry.canonicalEn || entry.canonicalAr}: ${entry.meaningAr || input.glossaryMeaning || ''}`,
-    scene: `Create an unmistakable, domain-accurate editorial scene about ${entry.canonicalEn || entry.canonicalAr}. Required interpretation: ${entry.meaningAr || input.glossaryMeaning || ''}. Visual route: ${selectedScene}.`,
-    anchors: scenes.slice(0, 4).join(' | ') || `${entry.canonicalEn || entry.canonicalAr}, educational context, clear human or systemic consequence`,
+    scene: `Create an unmistakable, domain-accurate editorial scene about ${entry.canonicalEn || entry.canonicalAr}. Required interpretation: ${entry.meaningAr || input.glossaryMeaning || ''}. ${literalAnchors.length ? `Mandatory literal subjects: ${literalAnchors.join(' + ')}. ` : ''}Visual route: ${selectedScene}.`,
+    anchors: [...literalAnchors, ...scenes.slice(0, 4)].join(' | ') || `${entry.canonicalEn || entry.canonicalAr}, educational context, clear human or systemic consequence`,
     inference: `the image is specifically about ${entry.canonicalEn || entry.canonicalAr}, not a generic education or technology stock scene`,
-    avoid: avoid.join(', '),
+    avoid: [...avoid, ...(literalAnchors.length ? [`omitting these literal subjects: ${literalAnchors.join(' + ')}`, 'generic unrelated stock photography'] : [])].join(', '),
+    literalAnchors,
     preferredWorlds,
     moods: Array.isArray(entry.moods) ? entry.moods : [],
   }
@@ -1242,11 +1247,142 @@ function selectStudioConcept(input) {
   return studioConceptProfiles.find((profile) => profile.test.test(source)) || fallbackStudioConcept
 }
 
+
+const studioSemanticBlueprintCache = new Map()
+
+function parseLooseJsonObject(value) {
+  if (!value) return null
+  if (typeof value === 'object' && !Array.isArray(value)) return value
+  const text = String(value).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '')
+  try { return JSON.parse(text) } catch {
+    const start = text.indexOf('{')
+    const end = text.lastIndexOf('}')
+    if (start >= 0 && end > start) {
+      try { return JSON.parse(text.slice(start, end + 1)) } catch { return null }
+    }
+    return null
+  }
+}
+
+function normalizeSemanticBlueprint(value, fallbackConcept, input) {
+  const routes = boundedArray(value?.sceneRoutes, 6, (route) => {
+    if (!route || typeof route !== 'object') return null
+    const scene = boundedString(route.scene, 1_300)
+    if (!scene) return null
+    const requestedWorld = boundedString(route.worldId, 80)
+    const validWorld = studioVisualWorlds.some((item) => item.id === requestedWorld) ? requestedWorld : ''
+    return {
+      worldId: validWorld,
+      scene,
+      mustShow: boundedArray(route.mustShow, 8, (item) => boundedString(item, 180)),
+      mood: boundedString(route.mood, 80),
+    }
+  })
+  const literalAnchors = [...new Set([
+    ...boundedArray(input.literalAnchors, 12, (item) => boundedString(item, 220)),
+    ...boundedArray(value?.literalSubjects, 12, (item) => boundedString(item, 220)),
+  ])]
+  const visibleAnchors = [...new Set([
+    ...literalAnchors,
+    ...boundedArray(value?.visibleAnchors, 12, (item) => boundedString(item, 220)),
+  ])]
+  const forbidden = [...new Set([
+    ...boundedArray(value?.forbidden, 16, (item) => boundedString(item, 220)),
+    'decorative flowers with no semantic role',
+    'generic people with laptops',
+    'unrelated office stock photography',
+    'generic classroom with no visible compound idea',
+  ])]
+  const fallbackScene = boundedString(fallbackConcept?.scene, 1_300)
+  return {
+    canonicalMeaning: boundedString(value?.canonicalMeaning, 1_000) || boundedString(fallbackConcept?.interpretation, 1_000) || boundedString(input.glossaryMeaning, 1_000) || boundedString(input.idea, 700),
+    viewerInference: boundedString(value?.viewerInference, 700) || boundedString(fallbackConcept?.inference, 700) || `the image expresses the exact compound idea of ${input.idea}`,
+    literalSubjects: literalAnchors,
+    visibleAnchors: visibleAnchors.length ? visibleAnchors : boundedString(fallbackConcept?.anchors, 900).split(/[|,]/).map((item) => item.trim()).filter(Boolean).slice(0, 8),
+    forbidden,
+    emotionalValence: ['positive', 'neutral', 'serious'].includes(value?.emotionalValence) ? value.emotionalValence : 'positive',
+    sceneRoutes: routes.length ? routes : [{ worldId: '', scene: fallbackScene, mustShow: visibleAnchors, mood: '' }].filter((route) => route.scene),
+  }
+}
+
+async function buildStudioSemanticBlueprint(input, accountId, apiToken, fetchImpl = fetch) {
+  const baseConcept = selectStudioConcept(input)
+  const cacheKey = createHash('sha256').update([
+    input.idea, input.context, input.issue, input.glossaryMeaning,
+    ...(input.literalAnchors || []), ...(input.glossaryScenes || []),
+  ].join('|')).digest('hex')
+  const cached = studioSemanticBlueprintCache.get(cacheKey)
+  if (cached && cached.expiresAt > Date.now()) return cached.value
+
+  const fallback = normalizeSemanticBlueprint(null, baseConcept, input)
+  const model = String(process.env.CLOUDFLARE_SEMANTIC_DIRECTOR_MODEL || '@cf/meta/llama-3.1-8b-instruct-fast').trim()
+  if (!/^@cf\/[A-Za-z0-9._/-]+$/.test(model)) return fallback
+  const allowedWorlds = studioVisualWorlds.map((item) => `${item.id}: ${item.direction}`).join('\n')
+  const prompt = [
+    'You are the semantic art director for an Arabic educational technology scholar.',
+    'Convert the exact compound title into three concrete, visually testable editorial scenes. Semantic accuracy is more important than beauty.',
+    `TITLE: ${input.issue || input.idea}`,
+    `CONTEXT: ${input.context || 'not supplied'}`,
+    `SPECIALIZED MEANING: ${input.glossaryMeaning || baseConcept.interpretation || input.visualReason || ''}`,
+    `MANDATORY LITERAL SUBJECTS: ${(input.literalAnchors || []).join(' + ') || 'none beyond the title'}`,
+    `VALID DOMAIN SCENES: ${(input.glossaryScenes || []).join(' | ') || baseConcept.scene}`,
+    `FORBIDDEN CONFUSIONS: ${(input.glossaryAvoid || []).join(', ')} ${baseConcept.avoid || ''}`,
+    'A compound title must show the intersection of all its subjects. Do not drop the second half of the title.',
+    'Never use decorative flowers, random laptop groups, generic classrooms, chess, corridors, or mood-only photography unless the title explicitly requires them.',
+    'Each route must use concrete visible objects and an unambiguous cause/effect relationship. No text or UI inside the generated image.',
+    `Choose worldId values only from:\n${allowedWorlds}`,
+    'Return JSON only with: canonicalMeaning, viewerInference, literalSubjects[], visibleAnchors[], forbidden[], emotionalValence (positive|neutral|serious), sceneRoutes[{worldId,scene,mustShow[],mood}].',
+  ].join('\n')
+  try {
+    const response = await fetchWithTimeout(fetchImpl,
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
+        method: 'POST',
+        headers: { accept: 'application/json', authorization: `Bearer ${apiToken}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ prompt, max_tokens: 1100, temperature: .08, top_p: .7 }),
+      }, envNumber('CLOUDFLARE_SEMANTIC_TIMEOUT_MS', 18_000, 6_000, 30_000))
+    if (!response.ok) return fallback
+    const payload = await response.json()
+    const raw = payload?.result?.response ?? payload?.result ?? payload?.response
+    const parsed = parseLooseJsonObject(raw)
+    const value = normalizeSemanticBlueprint(parsed, baseConcept, input)
+    studioSemanticBlueprintCache.set(cacheKey, { value, expiresAt: Date.now() + 15 * 60_000 })
+    if (studioSemanticBlueprintCache.size > 96) {
+      const first = studioSemanticBlueprintCache.keys().next().value
+      if (first) studioSemanticBlueprintCache.delete(first)
+    }
+    return value
+  } catch { return fallback }
+}
+
+function conceptWithSemanticBlueprint(baseConcept, input, signature) {
+  const blueprint = input.semanticBlueprint
+  if (!blueprint) return baseConcept
+  const preferred = new Set(input.preferredWorlds || [])
+  const routes = blueprint.sceneRoutes || []
+  const matching = routes.filter((route) => !route.worldId || preferred.has(route.worldId))
+  const pool = matching.length ? matching : routes
+  const route = pool.length ? pool[(Number(input.candidateIndex || 0) + signature[0] + signature[3]) % pool.length] : null
+  const anchors = [...new Set([...(blueprint.literalSubjects || []), ...(route?.mustShow || []), ...(blueprint.visibleAnchors || [])])]
+  const forbidden = [...new Set([baseConcept.avoid, ...(blueprint.forbidden || [])].filter(Boolean))]
+  return {
+    ...baseConcept,
+    interpretation: blueprint.canonicalMeaning || baseConcept.interpretation,
+    scene: route?.scene || baseConcept.scene,
+    anchors: anchors.join(' | ') || baseConcept.anchors,
+    inference: blueprint.viewerInference || baseConcept.inference,
+    avoid: forbidden.join(', '),
+    semanticRouteWorld: route?.worldId || '',
+    semanticRouteMood: route?.mood || '',
+    literalAnchors: blueprint.literalSubjects || baseConcept.literalAnchors || [],
+  }
+}
+
 function compileStudioVisualDirection(input) {
   const signature = createHash('sha256').update([input.idea, input.context, input.issue, input.regenerationId, input.variation, ...(input.recentVisualWorlds || [])].join('|')).digest()
-  const concept = selectStudioConcept(input)
-  const requestedWorlds = [...new Set([...(input.preferredWorlds || []), ...(concept.preferredWorlds || [])])]
-  const compatibleIds = requestedWorlds.length ? requestedWorlds : (studioWorldCompatibility[concept.key] || studioVisualWorlds.map((item) => item.id))
+  const baseConcept = selectStudioConcept(input)
+  const concept = conceptWithSemanticBlueprint(baseConcept, input, signature)
+  const requestedWorlds = [...new Set([concept.semanticRouteWorld, ...(input.preferredWorlds || []), ...(concept.preferredWorlds || [])].filter(Boolean))]
+  const compatibleIds = concept.semanticRouteWorld ? [concept.semanticRouteWorld] : requestedWorlds.length ? requestedWorlds : (studioWorldCompatibility[concept.key] || studioVisualWorlds.map((item) => item.id))
   const recent = new Set(input.recentVisualWorlds || [])
   const compatibleWorlds = compatibleIds.map((id) => studioVisualWorlds.find((item) => item.id === id)).filter(Boolean)
   const freshWorlds = compatibleWorlds.filter((item) => !recent.has(item.id))
@@ -1293,6 +1429,8 @@ function studioImageInput(value) {
     glossaryAvoid: boundedArray(value.glossaryAvoid, 18, (item) => boundedString(item, 240)),
     preferredWorlds: boundedArray(value.preferredWorlds, 14, (item) => boundedString(item, 80)),
     moods: boundedArray(value.moods, 12, (item) => boundedString(item, 40)),
+    literalAnchors: boundedArray(value.literalAnchors, 12, (item) => boundedString(item, 220)),
+    candidateIndex: clamp(Math.trunc(Number(value.candidateIndex || 0)), 0, 8),
     recentVisualWorlds: boundedArray(value.recentVisualWorlds, 12, (item) => boundedString(item, 80)),
     regenerationId: boundedString(value.regenerationId, 160),
     variation: boundedString(value.variation, 1_100),
@@ -1311,41 +1449,44 @@ export function buildEliteStudioImagePrompt(input) {
     : input.negativeSpace === 'balanced'
       ? 'balanced negative space with one calm text-safe zone'
       : 'generous intentional negative space for later Arabic typography'
-  const lighting = input.lighting === 'dramatic'
-    ? 'sculpted cinematic light with deep tonal separation'
-    : input.lighting === 'soft'
-      ? 'soft directional light with tactile depth'
-      : 'natural directional light with believable texture'
-  const moodSet = new Set([...(input.moods || []), ...(concept.moods || [])])
-  const positiveMood = ['bright', 'playful', 'energetic', 'optimistic', 'creative', 'warm', 'collaborative', 'curious'].some((mood) => moodSet.has(mood))
+  const moodSet = new Set([...(input.moods || []), ...(concept.moods || []), concept.semanticRouteMood].filter(Boolean))
+  const positiveMood = input.semanticBlueprint?.emotionalValence === 'positive'
+    || ['bright', 'playful', 'energetic', 'optimistic', 'creative', 'warm', 'collaborative', 'curious'].some((mood) => moodSet.has(mood))
   const moodDirection = positiveMood
-    ? 'Emotional valence: optimistic, intelligent and alive. Use daylight or luminous color. Do not make the scene sad, gloomy, lonely, ominous, or dominated by dark empty corridors.'
-    : moodSet.size ? `Emotional range: ${[...moodSet].join(', ')}. Do not force cinematic sadness unless the subject explicitly requires it.` : 'Let the subject determine the emotional tone; never default to gloom.'
+    ? 'Use luminous daylight or refined optimistic color. The scene must feel intelligent, alive and contemporary; never sad, gloomy, lonely, ominous or corridor-like.'
+    : input.semanticBlueprint?.emotionalValence === 'serious'
+      ? 'Use serious editorial restraint without horror, melodrama or automatic darkness.'
+      : 'Use balanced contemporary editorial light; do not default to gloom.'
+  const literal = [...new Set([...(input.literalAnchors || []), ...(concept.literalAnchors || [])])]
   const forbidden = [
     input.avoid,
     concept.avoid,
-    'text, letters, numbers, captions, logos, watermarks, UI elements',
-    'generic stock-photo smiles, random reading, books covering faces',
+    ...(input.semanticBlueprint?.forbidden || []),
+    'text, letters, numbers, captions, logos, watermarks, readable interfaces',
+    'decorative flowers with no conceptual function',
+    'generic laptop group or generic classroom',
+    'random stock-photo smiles, chess, books covering faces',
     'glowing brains, robot hands, holograms, cyber grids',
-    'plastic skin, bad anatomy, extra fingers, oversaturated colors',
+    'plastic skin, bad anatomy, extra fingers',
   ].filter(Boolean).join(', ')
   return [
-    `Photorealistic world-class editorial photograph, ${orientation}.`,
-    `THE SCENE MUST BE EXACTLY THIS: ${concept.scene}`,
-    `VISIBLE OBJECTS THAT MUST APPEAR: ${concept.anchors}.`,
-    `The viewer must instantly understand that ${concept.inference}.`,
-    `Art direction: ${world.direction}.`,
+    `Create one photorealistic world-class editorial image, ${orientation}.`,
+    `EXACT COMPOUND IDEA: ${input.issue || input.idea}.`,
+    input.semanticBlueprint?.canonicalMeaning ? `PRECISE MEANING: ${input.semanticBlueprint.canonicalMeaning}.` : '',
+    literal.length ? `NON-NEGOTIABLE LITERAL SUBJECTS: ${literal.join(' + ')}. Every one must be visibly represented.` : '',
+    `EXACT SCENE: ${concept.scene}`,
+    `MANDATORY VISIBLE ANCHORS: ${concept.anchors}.`,
+    `THE VIEWER MUST INFER: ${concept.inference}.`,
+    `ART WORLD: ${world.direction}.`,
     moodDirection,
-    input.clientPrompt ? `Client semantic lock: ${input.clientPrompt}` : '',
-    `Composition: ${negativeSpace}, clear foreground and background, asymmetrical balance, no clutter.`,
-    `Lighting: ${lighting}.`,
-    input.variation ? `Fresh variation: ${input.variation}` : '',
-    `Do not include: ${forbidden}.`,
-    `Generate image only. Semantic accuracy comes before beauty.`,
-  ].filter(Boolean).join(' ').slice(0, 1900)
+    `COMPOSITION: ${negativeSpace}, clear focal hierarchy, asymmetrical balance, no clutter.`,
+    input.variation ? `DISTINCT VARIATION: ${input.variation}` : '',
+    `FORBIDDEN: ${forbidden}.`,
+    'Image only. Semantic accuracy and visible anchors come before beauty. Do not substitute a generic metaphor for the literal compound subject.',
+  ].filter(Boolean).join(' ').slice(0, 1550)
 }
 
-async function assessStudioImageRelevance({ input, direction, image, imageMime = 'image/jpeg' }, fetchImpl = fetch) {
+async function assessStudioImageWithGemini({ input, direction, image, imageMime = 'image/jpeg' }, fetchImpl = fetch) {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
   if (!apiKey || !image || image.length > 12_000_000) return null
   const configuredModel = process.env.STUDIO_VISION_CRITIC_MODEL || process.env.EDITORIAL_GEMINI_MODEL || 'gemini-2.5-flash-lite'
@@ -1358,11 +1499,11 @@ async function assessStudioImageRelevance({ input, direction, image, imageMime =
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: 'You are a severe editorial image relevance judge. Judge semantic match before beauty. Return JSON only.' }] },
           contents: [{ role: 'user', parts: [
-            { text: `Arabic title: ${input.issue || input.idea}\nIntended interpretation: ${direction.concept.interpretation}\nRequired anchors: ${direction.concept.anchors}\nViewer inference: ${direction.concept.inference}\nScore 0-100. Reject unrelated reading scenes, books covering faces, generic mood images, or missing educational anchors.` },
+            { text: `Arabic title: ${input.issue || input.idea}\nIntended interpretation: ${direction.concept.interpretation}\nRequired anchors: ${direction.concept.anchors}\nMandatory literal subjects: ${(input.literalAnchors || []).join(' + ')}\nViewer inference: ${direction.concept.inference}\nScore 0-100. Reject flowers, generic laptop groups, generic classrooms, chess, mood-only imagery, or any image that drops a part of the compound title.` },
             { inlineData: { mimeType: imageMime, data: image } },
           ] }],
           generationConfig: {
-            temperature: .1,
+            temperature: .05,
             maxOutputTokens: 420,
             responseMimeType: 'application/json',
             responseSchema: {
@@ -1378,19 +1519,89 @@ async function assessStudioImageRelevance({ input, direction, image, imageMime =
             },
           },
         }),
-      }, envNumber('STUDIO_VISION_CRITIC_TIMEOUT_MS', 12_000, 5_000, 20_000))
+      }, envNumber('STUDIO_VISION_CRITIC_TIMEOUT_MS', 14_000, 5_000, 22_000))
     if (!response.ok) return null
     const payload = await response.json()
     const raw = payload?.candidates?.[0]?.content?.parts?.map((part) => typeof part?.text === 'string' ? part.text : '').join('')
-    const parsed = JSON.parse(raw || '{}')
+    const parsed = parseLooseJsonObject(raw)
+    if (!parsed) return null
     return {
       score: clamp(Math.trunc(Number(parsed.score || 0)), 0, 100),
       topicMatch: Boolean(parsed.topicMatch),
       reason: boundedString(parsed.reason, 500),
       missingAnchor: boundedString(parsed.missingAnchor, 300),
       correction: boundedString(parsed.correction, 500),
+      source: 'gemini-vision',
+      caption: '',
     }
   } catch { return null }
+}
+
+async function describeStudioImageWithCloudflare({ accountId, apiToken, image, imageMime }, fetchImpl = fetch) {
+  if (!accountId || !apiToken || !image || image.length > 16_000_000) return ''
+  try {
+    const bytes = Buffer.from(image, 'base64')
+    const form = new FormData()
+    const extension = imageMime === 'image/png' ? 'png' : imageMime === 'image/webp' ? 'webp' : 'jpg'
+    form.append('files', new Blob([bytes], { type: imageMime || 'image/jpeg' }), `studio-candidate.${extension}`)
+    form.append('conversionOptions', JSON.stringify({ output: { format: 'text' } }))
+    const response = await fetchWithTimeout(fetchImpl,
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/tomarkdown`, {
+        method: 'POST',
+        headers: { authorization: `Bearer ${apiToken}` },
+        body: form,
+      }, envNumber('CLOUDFLARE_IMAGE_CAPTION_TIMEOUT_MS', 18_000, 6_000, 28_000))
+    if (!response.ok) return ''
+    const payload = await response.json()
+    const result = Array.isArray(payload?.result) ? payload.result[0] : payload?.result
+    return boundedString(result?.data || result?.description || result?.text, 3_500)
+  } catch { return '' }
+}
+
+async function judgeStudioCaptionWithCloudflare({ accountId, apiToken, input, direction, caption }, fetchImpl = fetch) {
+  if (!caption) return null
+  const model = String(process.env.CLOUDFLARE_SEMANTIC_CRITIC_MODEL || process.env.CLOUDFLARE_SEMANTIC_DIRECTOR_MODEL || '@cf/meta/llama-3.1-8b-instruct-fast').trim()
+  if (!/^@cf\/[A-Za-z0-9._/-]+$/.test(model)) return null
+  const prompt = [
+    'You are a strict semantic gate for editorial images. Return JSON only.',
+    `TITLE: ${input.issue || input.idea}`,
+    `PRECISE MEANING: ${input.semanticBlueprint?.canonicalMeaning || direction.concept.interpretation}`,
+    `MANDATORY LITERAL SUBJECTS: ${(input.literalAnchors || []).join(' + ') || 'none'}`,
+    `REQUIRED VISIBLE ANCHORS: ${direction.concept.anchors}`,
+    `EXPECTED VIEWER INFERENCE: ${direction.concept.inference}`,
+    `ACTUAL IMAGE DESCRIPTION: ${caption}`,
+    'Reject if the image is decorative flowers, a generic laptop group, generic classroom, chess, unrelated office scene, mood-only photo, or if any half of a compound title is missing.',
+    'Score 0-100. topicMatch is true only when the exact compound meaning is visible without relying on the title text.',
+    'Return {"score":integer,"topicMatch":boolean,"reason":string,"missingAnchor":string,"correction":string}.',
+  ].join('\n')
+  try {
+    const response = await fetchWithTimeout(fetchImpl,
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
+        method: 'POST',
+        headers: { accept: 'application/json', authorization: `Bearer ${apiToken}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ prompt, max_tokens: 520, temperature: .03, top_p: .5 }),
+      }, envNumber('CLOUDFLARE_SEMANTIC_CRITIC_TIMEOUT_MS', 14_000, 5_000, 24_000))
+    if (!response.ok) return null
+    const payload = await response.json()
+    const parsed = parseLooseJsonObject(payload?.result?.response ?? payload?.result ?? payload?.response)
+    if (!parsed) return null
+    return {
+      score: clamp(Math.trunc(Number(parsed.score || 0)), 0, 100),
+      topicMatch: Boolean(parsed.topicMatch),
+      reason: boundedString(parsed.reason, 500),
+      missingAnchor: boundedString(parsed.missingAnchor, 300),
+      correction: boundedString(parsed.correction, 500),
+      source: 'cloudflare-caption-gate',
+      caption,
+    }
+  } catch { return null }
+}
+
+async function assessStudioImageRelevance({ input, direction, image, imageMime = 'image/jpeg', accountId = '', apiToken = '' }, fetchImpl = fetch) {
+  const gemini = await assessStudioImageWithGemini({ input, direction, image, imageMime }, fetchImpl)
+  if (gemini) return gemini
+  const caption = await describeStudioImageWithCloudflare({ accountId, apiToken, image, imageMime }, fetchImpl)
+  return judgeStudioCaptionWithCloudflare({ accountId, apiToken, input, direction, caption }, fetchImpl)
 }
 
 function detectStudioImageMime(bytes) {
@@ -1554,32 +1765,50 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
   if (!/^@cf\/[A-Za-z0-9._/-]+$/.test(model)) throw new HttpError(503, 'Cloudflare image model is not configured correctly')
 
   const requestId = input.regenerationId || createHash('sha256').update(`${input.idea}|${Date.now()}|${Math.random()}`).digest('hex').slice(0, 20)
-  const firstDirection = compileStudioVisualDirection(input)
-  const firstPrompt = buildEliteStudioImagePrompt(input)
-  const firstSeed = Number.parseInt(createHash('sha256').update(`${input.idea}|${requestId}|${input.variation}|${Date.now()}`).digest('hex').slice(0, 8), 16) >>> 0
-  const firstImage = await requestCloudflareImage({ accountId, apiToken, model, prompt: firstPrompt, seed: firstSeed }, fetchImpl)
-  const firstCritic = await assessStudioImageRelevance({ input, direction: firstDirection, image: firstImage.base64, imageMime: firstImage.mime }, fetchImpl)
+  const semanticBlueprint = await buildStudioSemanticBlueprint(input, accountId, apiToken, fetchImpl)
+  const baseInput = { ...input, semanticBlueprint }
+  const threshold = envNumber('STUDIO_IMAGE_RELEVANCE_THRESHOLD', 80, 68, 95)
+  const candidates = []
+  let rescueReason = ''
 
-  let chosen = { image: firstImage, prompt: firstPrompt, seed: firstImage.seed ?? firstSeed, direction: firstDirection, critic: firstCritic, attempts: 1 }
-  if (firstCritic && (!firstCritic.topicMatch || firstCritic.score < 72)) {
-    const retryInput = {
-      ...input,
-      regenerationId: `${requestId}-semantic-rescue`,
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const attemptInput = {
+      ...baseInput,
+      candidateIndex: Number(baseInput.candidateIndex || 0) + attempt,
+      regenerationId: attempt === 0 ? requestId : `${requestId}-semantic-rescue-${attempt}`,
       variation: [
-        input.variation,
-        `Semantic rescue: the previous image scored ${firstCritic.score}/100 because ${firstCritic.reason || firstCritic.missingAnchor}.`,
-        firstCritic.correction ? `Mandatory correction: ${firstCritic.correction}.` : '',
-        `Show these anchors clearly: ${firstDirection.concept.anchors}.`,
+        baseInput.variation,
+        attempt ? `SEMANTIC RESCUE: previous candidate was rejected. ${rescueReason}` : '',
+        attempt ? `Make every mandatory literal subject unmistakably visible: ${(baseInput.literalAnchors || []).join(' + ') || semanticBlueprint.visibleAnchors.join(' + ')}.` : '',
+        attempt ? 'Change the concrete scene, object arrangement, camera angle and visual world; do not merely recolor the previous idea.' : '',
       ].filter(Boolean).join(' '),
     }
-    const retryDirection = compileStudioVisualDirection(retryInput)
-    const retryPrompt = buildEliteStudioImagePrompt(retryInput)
-    const retrySeed = Number.parseInt(createHash('sha256').update(`${retryInput.idea}|${retryInput.regenerationId}|${Date.now()}`).digest('hex').slice(0, 8), 16) >>> 0
-    const retryImage = await requestCloudflareImage({ accountId, apiToken, model, prompt: retryPrompt, seed: retrySeed }, fetchImpl)
-    const retryCritic = await assessStudioImageRelevance({ input: retryInput, direction: retryDirection, image: retryImage.base64, imageMime: retryImage.mime }, fetchImpl)
-    const firstScore = firstCritic?.score ?? 0
-    const retryScore = retryCritic?.score ?? (firstScore + 1)
-    if (retryScore >= firstScore) chosen = { image: retryImage, prompt: retryPrompt, seed: retryImage.seed ?? retrySeed, direction: retryDirection, critic: retryCritic, attempts: 2 }
+    const direction = compileStudioVisualDirection(attemptInput)
+    const prompt = buildEliteStudioImagePrompt(attemptInput)
+    const seed = Number.parseInt(createHash('sha256').update(`${attemptInput.idea}|${attemptInput.regenerationId}|${attemptInput.variation}|${Date.now()}`).digest('hex').slice(0, 8), 16) >>> 0
+    const image = await requestCloudflareImage({ accountId, apiToken, model, prompt, seed }, fetchImpl)
+    const critic = await assessStudioImageRelevance({
+      input: attemptInput,
+      direction,
+      image: image.base64,
+      imageMime: image.mime,
+      accountId,
+      apiToken,
+    }, fetchImpl)
+    const candidate = { image, prompt, seed: image.seed ?? seed, direction, critic, attempts: attempt + 1 }
+    candidates.push(candidate)
+    if (critic?.topicMatch && critic.score >= threshold) break
+    rescueReason = critic
+      ? `Score ${critic.score}/100. ${critic.reason || ''} Missing: ${critic.missingAnchor || ''}. Correction: ${critic.correction || ''}`
+      : 'No semantic verification was available; use a more literal and concrete scene.'
+  }
+
+  const verified = candidates.filter((item) => item.critic?.topicMatch && item.critic.score >= threshold)
+  const chosen = (verified.length ? verified : candidates)
+    .sort((left, right) => (right.critic?.score ?? -1) - (left.critic?.score ?? -1))[0]
+  if (!chosen) throw new HttpError(502, 'Image generation produced no candidate')
+  if (chosen.critic && (!chosen.critic.topicMatch || chosen.critic.score < threshold)) {
+    throw new HttpError(422, `تعذّر اعتماد الصورة دلاليًا بعد محاولتين: ${chosen.critic.reason || chosen.critic.missingAnchor || 'المشهد لا يعبّر عن العنوان المركب'}`)
   }
 
   return {
@@ -1603,8 +1832,14 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
     conceptKey: chosen.direction.concept.key,
     conceptLabel: chosen.direction.concept.label,
     semanticScene: chosen.direction.concept.scene,
+    semanticMeaning: semanticBlueprint.canonicalMeaning,
+    literalSubjects: semanticBlueprint.literalSubjects,
     relevanceScore: chosen.critic?.score ?? null,
     relevanceReason: chosen.critic?.reason || '',
+    missingAnchor: chosen.critic?.missingAnchor || '',
+    semanticVerified: Boolean(chosen.critic?.topicMatch && chosen.critic.score >= threshold),
+    criticSource: chosen.critic?.source || '',
+    imageCaption: chosen.critic?.caption || '',
     generationAttempts: chosen.attempts + Math.max(0, Number(chosen.image.transportAttempts || 1) - 1),
   }
 }

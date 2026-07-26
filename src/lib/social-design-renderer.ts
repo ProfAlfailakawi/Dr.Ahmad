@@ -1113,7 +1113,7 @@ const paintCinematicWindow: Painter = (s) => {
         body.lines.length ? textBlock({ lines: body.lines, x: titleX, y: bodyTop + body.size * .82, size: body.size, fill: 'rgba(247,245,239,.82)', weight: 400, anchor, family: s.bodyFamily, lineHeight: 1.64 }) : '',
         s.cta ? textBlock({ lines: [s.cta], x: titleX, y: ctaTop + min * .022, size: Math.max(13, min * .021), fill: p.accent, weight: 700, anchor, family: 'Tajawal' }) : '',
         s.slides > 1 ? textBlock({ lines: [`01/${String(s.slides).padStart(2, '0')}`], x: s.safeX, y: s.safeY * .72, size: Math.max(12, min * .019), fill: 'rgba(247,245,239,.74)', weight: 600, anchor: 'start', family: 'Tajawal' }) : '',
-        // بيانات المصدر محفوظة في جواز التصميم ولوحة النشر، ولا تُطبع داخل العمل البصري.
+        heroImage.owner || heroImage.license ? textBlock({ lines: [`المصدر البصري: ${heroImage.owner || 'غير محدد'} · ${heroImage.license || 'راجع الأصل'}`], x: w - s.safeX, y: h - s.safeY - min * .065, size: Math.max(10, min * .014), fill: 'rgba(247,245,239,.58)', weight: 400, anchor: 'end', family: 'Tajawal' }) : '',
         s.slides > 1 ? carouselItem(s, { gap: 0 }).draw(h - s.safeY - min * .1) : '',
         identityFooter(s, { mode: rightSide ? 'standard' : 'center' }),
       ].join(''),
@@ -1601,14 +1601,16 @@ function imageUnderlayLayer(s: Scene) {
         ? `<linearGradient id="${gradientId}" x1="0%" y1="50%" x2="100%" y2="50%"><stop offset="0%" stop-color="${p.background}" stop-opacity="${round(shade)}"/><stop offset="58%" stop-color="${p.background}" stop-opacity="${round(shade * .42)}"/><stop offset="100%" stop-color="${p.background}" stop-opacity="0"/></linearGradient>`
         : textZone === 'top'
           ? `<linearGradient id="${gradientId}" x1="50%" y1="0%" x2="50%" y2="100%"><stop offset="0%" stop-color="${p.background}" stop-opacity="${round(shade)}"/><stop offset="58%" stop-color="${p.background}" stop-opacity="${round(shade * .35)}"/><stop offset="100%" stop-color="${p.background}" stop-opacity="0"/></linearGradient>`
-          : `<linearGradient id="${gradientId}" x1="50%" y1="100%" x2="50%" y2="0%"><stop offset="0%" stop-color="${p.background}" stop-opacity="${round(shade)}"/><stop offset="58%" stop-color="${p.background}" stop-opacity="${round(shade * .38)}"/><stop offset="100%" stop-color="${p.background}" stop-opacity="0"/></linearGradient>`
+          : textZone === 'center'
+            ? `<radialGradient id="${gradientId}" cx="52%" cy="48%" r="54%"><stop offset="0%" stop-color="${p.background}" stop-opacity="${round(shade)}"/><stop offset="48%" stop-color="${p.background}" stop-opacity="${round(shade * .62)}"/><stop offset="100%" stop-color="${p.background}" stop-opacity="${round(shade * .08)}"/></radialGradient>`
+            : `<linearGradient id="${gradientId}" x1="50%" y1="100%" x2="50%" y2="0%"><stop offset="0%" stop-color="${p.background}" stop-opacity="${round(shade)}"/><stop offset="58%" stop-color="${p.background}" stop-opacity="${round(shade * .38)}"/><stop offset="100%" stop-color="${p.background}" stop-opacity="0"/></linearGradient>`
     definitions.push(gradient)
     const vignette = clamp(overlay.vignette ?? .34, 0, .8)
     const vignetteId = `${id}-vignette`
     definitions.push(`<radialGradient id="${vignetteId}" cx="50%" cy="44%" r="72%"><stop offset="48%" stop-color="#000000" stop-opacity="0"/><stop offset="100%" stop-color="#000000" stop-opacity="${round(vignette)}"/></radialGradient>`)
     const opacity = clamp(overlay.opacity ?? 1, .1, 1)
     const tint = treatment === 'duotone' ? `<rect width="${w}" height="${h}" fill="${p.accent}" opacity=".22" style="mix-blend-mode:color"/>` : ''
-    return `<g data-hero-image="true" opacity="${round(opacity)}"><image href="${esc(overlay.src)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="${preserve}" filter="url(#${filterId})"/>${tint}<rect width="${w}" height="${h}" fill="url(#${gradientId})"/><rect width="${w}" height="${h}" fill="url(#${vignetteId})"/></g>`
+    return `<g data-hero-image="true" opacity="${round(opacity)}"><image href="${esc(overlay.src)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="${preserve}" filter="url(#${filterId})"/>${tint}<rect width="${w}" height="${h}" fill="${p.background}" opacity=".07"/><rect width="${w}" height="${h}" fill="url(#${gradientId})"/><rect width="${w}" height="${h}" fill="url(#${vignetteId})"/></g>`
   }).join('')
   return { defs: definitions.join(''), markup }
 }

@@ -20,6 +20,7 @@ export type VisualSearchPlan = {
   visualScenes: string[]
   preferredWorlds: string[]
   moods: string[]
+  literalAnchors: string[]
 }
 
 export type ExternalVisualResult = {
@@ -100,6 +101,8 @@ export function buildVisualSearchPlan(text: string, context: string, brief: Crea
     ...(understanding.primary?.aliases.slice(0, 4) || []),
     ...understanding.recognizedTerms.slice(0, 8).flatMap((item) => [item.canonicalAr, item.canonicalEn]),
     ...understanding.visualScenes.slice(0, 4),
+    ...understanding.literalAnchors,
+    ...(understanding.literalAnchors.length ? understanding.literalAnchors.map((anchor) => `${understanding.primary?.canonicalAr || firstRecognized?.canonicalAr || headline} ${anchor}`) : []),
   ] : []
   const queries = unique([
     ...glossaryQueries,
@@ -128,6 +131,9 @@ export function buildVisualSearchPlan(text: string, context: string, brief: Crea
     'طفل أمام شاشة زرقاء',
   ])
   const semanticLock = domainGlossaryPrompt(understanding)
+  const literalLock = understanding.literalAnchors.length
+    ? `MANDATORY VISIBLE SUBJECTS: ${understanding.literalAnchors.join(' + ')}. The image is invalid if any of these subjects disappears or is replaced by a generic classroom, flowers, people with laptops, or an unrelated mood photograph.`
+    : ''
   const visualRange = understanding.visualScenes.length
     ? `Choose ONE clearly different visual route from this domain-specific range: ${understanding.visualScenes.slice(0, 6).join(' | ')}.`
     : 'Choose one original visual route that is semantically precise and not a generic stock scene.'
@@ -135,6 +141,7 @@ export function buildVisualSearchPlan(text: string, context: string, brief: Crea
     ? `Emotional direction may be ${understanding.moods.join(', ')}; do not default to sadness, darkness, empty corridors, or lonely classrooms unless the idea explicitly demands it.`
     : 'Do not default to sadness or darkness; let the idea determine the emotional direction.'
   const generationPrompt = [
+    literalLock,
     semanticLock,
     `Create a ${identity.imageRealism === 'documentary' ? 'photorealistic documentary' : identity.imageRealism === 'abstract' ? 'elegant conceptual' : 'premium editorial'} image for: ${brief.issue}.`,
     `Audience: ${brief.audience}. Intended emotional effect: ${brief.emotion}.`,
@@ -143,6 +150,7 @@ export function buildVisualSearchPlan(text: string, context: string, brief: Crea
     emotionalRange,
     `Lighting preference: ${identity.lighting}. Negative space: ${identity.negativeSpace}.`,
     `Avoid: ${avoidTerms.join(', ')}.`,
+    'Every visible object must serve the exact compound meaning. Reject decorative flowers, generic office scenes, random laptop groups, chess, and unrelated stock imagery unless explicitly required by the idea.',
     'Leave a clean text-safe zone for later Arabic typography. Generate no text, letters, numbers, logos, watermarks, or UI screenshots.',
   ].filter(Boolean).join(' ')
   return {
@@ -163,6 +171,7 @@ export function buildVisualSearchPlan(text: string, context: string, brief: Crea
     visualScenes: understanding.visualScenes,
     preferredWorlds: understanding.preferredWorlds,
     moods: understanding.moods,
+    literalAnchors: understanding.literalAnchors,
   }
 }
 

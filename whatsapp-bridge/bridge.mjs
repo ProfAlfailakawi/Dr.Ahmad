@@ -41,6 +41,8 @@ const runtime = {
   lastWebhookAt: null,
   startedAt: new Date().toISOString(),
   qrAt: null,
+  qrGeneratedAt: null,
+  qrFingerprint: '',
   instanceId: randomUUID(),
   stateSeq: 0,
   stateAt: new Date().toISOString(),
@@ -69,6 +71,8 @@ function stateSnapshot(extra = {}) {
     stateSeq: runtime.stateSeq,
     stateAt: runtime.stateAt,
     syncPercent: runtime.syncPercent,
+    qrGeneratedAt: runtime.qrGeneratedAt,
+    qrFingerprint: runtime.qrFingerprint,
     ...extra,
   }
 }
@@ -170,6 +174,38 @@ async function safeEmit(event, payload = {}, options = {}) {
   }
 }
 
+function clearRuntimeQr() {
+  runtime.qrAt = null
+  runtime.qrGeneratedAt = null
+  runtime.qrFingerprint = ''
+}
+
+async function renderQrImage(qr) {
+  /* A WhatsApp QR is unusually dense. The previous image had a one-module
+     quiet zone and was then shrunk to a non-integer size in the dashboard,
+     which makes phone cameras intermittently see blurred/merged modules.
+     SVG keeps every module mathematically sharp at any display size, and the
+     four-module quiet zone follows the QR standard. */
+  try {
+    const svg = await qrcode.toString(qr, {
+      type: 'svg',
+      margin: 4,
+      errorCorrectionLevel: 'L',
+      color: { dark: '#000000', light: '#ffffff' },
+    })
+    return `data:image/svg+xml;base64,${Buffer.from(svg, 'utf8').toString('base64')}`
+  } catch (svgError) {
+    log('warn', 'qr_svg_render_failed', { error: String(svgError?.message || svgError) })
+    return qrcode.toDataURL(qr, {
+      type: 'image/png',
+      margin: 4,
+      scale: 10,
+      errorCorrectionLevel: 'L',
+      color: { dark: '#000000ff', light: '#ffffffff' },
+    })
+  }
+}
+
 const puppeteer = {
   headless: true,
   args: [
@@ -223,17 +259,37 @@ client.on('qr', async (qr) => {
     await safeEmit('status', stateSnapshot({ ignoredLateQr: true }), { retries: 0 })
     return
   }
-  runtime.qrAt = snapshot.stateAt
+
+  const qrGeneratedAt = snapshot.stateAt
+  const qrFingerprint = createHash('sha256').update(String(qr)).digest('hex').slice(0, 16)
+  runtime.qrAt = qrGeneratedAt
+  runtime.qrGeneratedAt = qrGeneratedAt
+  runtime.qrFingerprint = qrFingerprint
+
   try {
-    const qrImage = await qrcode.toDataURL(qr, { margin: 1, width: 520, errorCorrectionLevel: 'M' })
-    await safeEmit('qr', { ...snapshot, qr, qrImage })
-  } catch {
-    await safeEmit('qr', { ...snapshot, qr, qrImage: null })
+    const qrImage = await renderQrImage(qr)
+    await safeEmit('qr', {
+      ...snapshot,
+      qr,
+      qrImage,
+      qrGeneratedAt,
+      qrFingerprint,
+    })
+  } catch (error) {
+    log('error', 'qr_render_failed', { error: String(error?.message || error), stateSeq: snapshot.stateSeq })
+    await safeEmit('qr', {
+      ...snapshot,
+      qr,
+      qrImage: null,
+      qrGeneratedAt,
+      qrFingerprint,
+    })
   }
-  log('info', 'qr_generated', { stateSeq: snapshot.stateSeq })
+  log('info', 'qr_generated', { stateSeq: snapshot.stateSeq, qrFingerprint })
 })
 
 client.on('authenticated', () => {
+  clearRuntimeQr()
   if (authHandled) {
     log('info', 'duplicate_authenticated_ignored', { stateSeq: runtime.stateSeq })
     return
@@ -254,6 +310,7 @@ function markBridgeReady(source = 'ready_event') {
   }
   readyHandled = true
   authHandled = true
+  clearRuntimeQr()
   const snapshot = transitionState('connected', true, '')
   if (!snapshot.transitionApplied) return
   log('info', 'ready', { source, stateSeq: snapshot.stateSeq })

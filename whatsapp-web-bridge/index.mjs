@@ -164,10 +164,6 @@ const puppeteer = {
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: config.deviceId, dataPath: config.sessionDir }),
   puppeteer,
-  webVersionCache: {
-    type: 'remote',
-    remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1014587000-alpha.html',
-  },
   deviceName: config.deviceName,
   browserName: 'Dr Ahmad Assistant',
   takeoverOnConflict: true,

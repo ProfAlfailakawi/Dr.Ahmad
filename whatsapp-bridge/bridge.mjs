@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { createServer } from 'node:http'
 import { mkdirSync, rmSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -32,6 +32,30 @@ const runtime = {
   lastWebhookAt: null,
   startedAt: new Date().toISOString(),
   qrAt: null,
+  instanceId: randomUUID(),
+  stateSeq: 0,
+  stateAt: new Date().toISOString(),
+}
+
+function stateSnapshot(extra = {}) {
+  return {
+    status: runtime.status,
+    connected: runtime.connected,
+    error: runtime.lastError,
+    instanceId: runtime.instanceId,
+    stateSeq: runtime.stateSeq,
+    stateAt: runtime.stateAt,
+    ...extra,
+  }
+}
+
+function transitionState(status, connected, error = '') {
+  runtime.status = String(status || 'disconnected')
+  runtime.connected = Boolean(connected)
+  runtime.lastError = String(error || '').slice(0, 400)
+  runtime.stateSeq += 1
+  runtime.stateAt = new Date().toISOString()
+  return stateSnapshot()
 }
 
 const botFingerprints = new Map()
@@ -160,45 +184,55 @@ const client = new Client({
 })
 
 client.on('qr', async (qr) => {
-  runtime.status = 'pairing'
-  runtime.connected = false
-  runtime.qrAt = new Date().toISOString()
+  /* نلتقط ترتيب الحالة قبل تحويل QR إلى صورة. إذا تم المسح سريعًا ووصل
+     حدث الاتصال أولًا، يمنع هذا الرقم حدث QR المتأخر من إعادة اللوحة إلى
+     حالة انتظار الاقتران بعد نجاح الجلسة. */
+  const snapshot = transitionState('pairing', false, '')
+  runtime.qrAt = snapshot.stateAt
   const qrImage = await qrcode.toDataURL(qr, { margin: 1, width: 520, errorCorrectionLevel: 'M' })
-  await safeEmit('qr', { qr, qrImage, status: 'pairing' })
-  log('info', 'qr-ready')
+  await safeEmit('qr', { ...snapshot, qr, qrImage })
+  log('info', 'qr-ready', { stateSeq: snapshot.stateSeq })
 })
 
 client.on('authenticated', () => {
-  runtime.status = 'authenticated'
-  runtime.lastError = ''
-  void safeEmit('status', { status: 'authenticated' })
-  log('info', 'authenticated')
+  const snapshot = transitionState('authenticated', false, '')
+  void safeEmit('status', snapshot)
+  log('info', 'authenticated', { stateSeq: snapshot.stateSeq })
 })
 
 client.on('ready', () => {
-  runtime.status = 'connected'
-  runtime.connected = true
-  runtime.lastError = ''
-  void safeEmit('status', { status: 'connected' })
+  const snapshot = transitionState('connected', true, '')
+  void safeEmit('status', snapshot)
   void syncContactsToServer()
-  log('info', 'connected')
+  log('info', 'connected', { stateSeq: snapshot.stateSeq })
 })
 
 client.on('auth_failure', (message) => {
-  runtime.status = 'error'
-  runtime.connected = false
-  runtime.lastError = String(message || 'authentication-failed').slice(0, 400)
-  void safeEmit('status', { status: 'error', error: runtime.lastError })
-  log('error', 'authentication-failed', { error: runtime.lastError })
+  const snapshot = transitionState('error', false, String(message || 'authentication-failed'))
+  void safeEmit('status', snapshot)
+  log('error', 'authentication-failed', { error: runtime.lastError, stateSeq: snapshot.stateSeq })
 })
 
 client.on('disconnected', (reason) => {
-  runtime.status = 'disconnected'
-  runtime.connected = false
-  runtime.lastError = String(reason || 'disconnected').slice(0, 400)
-  void safeEmit('status', { status: 'disconnected', error: runtime.lastError })
-  log('warn', 'disconnected', { error: runtime.lastError })
+  const snapshot = transitionState('disconnected', false, String(reason || 'disconnected'))
+  void safeEmit('status', snapshot)
+  log('warn', 'disconnected', { error: runtime.lastError, stateSeq: snapshot.stateSeq })
   if (!shuttingDown) setTimeout(() => process.exit(72), 1_500)
+})
+
+client.on('change_state', (state) => {
+  const value = String(state || '').toUpperCase()
+  if (value === 'CONNECTED' && (!runtime.connected || runtime.status !== 'connected')) {
+    const snapshot = transitionState('connected', true, '')
+    void safeEmit('status', snapshot)
+    log('info', 'state-reconciled-connected', { stateSeq: snapshot.stateSeq })
+    return
+  }
+  if (runtime.connected && ['CONFLICT', 'UNPAIRED', 'UNPAIRED_IDLE', 'TIMEOUT'].includes(value)) {
+    const snapshot = transitionState('reconnecting', false, value.toLowerCase())
+    void safeEmit('status', snapshot)
+    log('warn', 'state-reconciled-reconnecting', { state: value, stateSeq: snapshot.stateSeq })
+  }
 })
 
 async function sendBotText(jid, text) {
@@ -326,12 +360,33 @@ async function pollCommands() {
   }
 }
 
+let stateProbeBusy = false
+async function reconcileClientState() {
+  if (stateProbeBusy || shuttingDown) return
+  stateProbeBusy = true
+  try {
+    const state = String(await client.getState() || '').toUpperCase()
+    if (state === 'CONNECTED' && (!runtime.connected || runtime.status !== 'connected')) {
+      const snapshot = transitionState('connected', true, '')
+      await safeEmit('status', snapshot, { retries: 0 })
+      log('info', 'watchdog-confirmed-connected', { stateSeq: snapshot.stateSeq })
+    } else if (runtime.connected && state && state !== 'CONNECTED') {
+      const snapshot = transitionState('reconnecting', false, state.toLowerCase())
+      await safeEmit('status', snapshot, { retries: 0 })
+      log('warn', 'watchdog-detected-state-change', { state, stateSeq: snapshot.stateSeq })
+    }
+  } catch {
+    /* أثناء بدء Chromium أو ظهور QR قد لا تتوفر حالة بعد؛ النبضة تستمر. */
+  } finally {
+    stateProbeBusy = false
+  }
+}
+
 setInterval(() => {
-  void safeEmit('heartbeat', {
-    status: runtime.status,
-    error: runtime.lastError,
-    connected: runtime.connected,
-  }, { retries: 0 })
+  void (async () => {
+    await reconcileClientState()
+    await safeEmit('heartbeat', stateSnapshot(), { retries: 0 })
+  })()
 }, config.heartbeatMs).unref()
 
 setInterval(() => void pollCommands(), config.pollMs).unref()
@@ -360,7 +415,7 @@ async function shutdown(signal) {
   if (shuttingDown) return
   shuttingDown = true
   log('info', 'shutdown', { signal })
-  await safeEmit('status', { status: 'disconnected', error: `service-${signal}` }, { retries: 0 })
+  await safeEmit('status', transitionState('disconnected', false, `service-${signal}`), { retries: 0 })
   try { await client.destroy() } catch { /* systemd سيُنهي المجموعة */ }
   healthServer.close(() => process.exit(0))
   setTimeout(() => process.exit(0), 5_000).unref()
@@ -377,6 +432,6 @@ process.on('unhandledRejection', (error) => {
   process.exit(71)
 })
 
-log('info', 'bridge-starting', { sessionDir: config.sessionDir, deviceName: config.deviceName })
-await safeEmit('status', { status: 'starting' }, { retries: 0 })
+log('info', 'bridge-starting', { sessionDir: config.sessionDir, deviceName: config.deviceName, instanceId: runtime.instanceId })
+await safeEmit('status', transitionState('starting', false, ''), { retries: 0 })
 await client.initialize()

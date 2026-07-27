@@ -263,7 +263,7 @@ function SinceLastVisit() {
       <div className="rail mx-auto flex max-w-shell snap-x snap-mandatory items-center gap-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-5 md:whitespace-nowrap">
         {continuation && (
           <Link to={`/articles/${continuation.article.slug}`} className="group flex min-h-12 w-[88vw] max-w-[32rem] shrink-0 snap-start items-center gap-2.5 rounded-xl border border-hair bg-canvas px-4 py-2.5 text-[.78rem] text-soft transition-colors hover:border-accent md:w-auto md:max-w-none md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
-            <span className="font-semibold text-accent">كنت تتتبع أثر {continuation.label}</span>
+            <span className="font-semibold text-accent">كنت تتبع أثر {continuation.label}</span>
             <span className="min-w-0 flex-1 truncate text-ink transition-colors group-hover:text-accent">أكمل من هنا: «{continuation.article.title}»</span>
             <span className="shrink-0 text-accent transition-transform group-hover:-translate-x-0.5">←</span>
           </Link>

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-27T02:09:31.212Z",
+  "generatedAt": "2026-07-25T02:01:05.995Z",
   "state": "repairing",
   "articles": {
     "total": 143,
@@ -8,8 +8,8 @@
   },
   "readings": {
     "expected": 286,
-    "ready": 122,
-    "missing": 164
+    "ready": 78,
+    "missing": 208
   },
   "dialogues": {
     "expected": 143,
@@ -17,129 +17,129 @@
     "missing": 143
   },
   "queue": {
-    "total": 307,
-    "failed": 164,
+    "total": 351,
+    "failed": 190,
     "next": {
-      "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
-      "title": "شهادة امتياز… لدمية بلا وعي!",
-      "kind": "dialogue",
-      "voice": "dialogue",
-      "stage": "generate",
-      "attempts": 0,
-      "lastError": ""
+      "slug": "a-society-that-fears-the-different-arabic",
+      "title": "المجتمع الذي يخاف من المختلف",
+      "kind": "reading",
+      "voice": "fahed",
+      "stage": "generate-reading",
+      "attempts": 11,
+      "lastError": "r016 فشل بعد 3 محاولات: STT 82٪، السرعة 126/129"
     },
     "sample": [
       {
-        "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
-        "title": "شهادة امتياز… لدمية بلا وعي!",
-        "kind": "dialogue",
-        "voice": "dialogue",
-        "stage": "generate",
-        "attempts": 0,
-        "lastError": ""
-      },
-      {
-        "slug": "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2",
-        "title": "خرّيج «كورونا»… وحسابه في التعليم لم يُغلق بعد!",
-        "kind": "dialogue",
-        "voice": "dialogue",
-        "stage": "generate",
-        "attempts": 0,
-        "lastError": ""
-      },
-      {
-        "slug": "a-generation-that-knows-everything-and-understands-nothing",
-        "title": "جيل يعرف كل شيء… ولا يفهم شيئاً",
-        "kind": "dialogue",
-        "voice": "dialogue",
-        "stage": "generate",
-        "attempts": 0,
-        "lastError": ""
-      },
-      {
-        "slug": "a-generation-without-rootsarabic",
-        "title": "جيلٌ بلا جذور",
-        "kind": "dialogue",
-        "voice": "dialogue",
-        "stage": "generate",
-        "attempts": 0,
-        "lastError": ""
-      },
-      {
-        "slug": "a-new-kind-of-fatigue-in-old-expressionsarabic",
-        "title": "تعبٌ جديد بعبارات قديمة",
-        "kind": "dialogue",
-        "voice": "dialogue",
-        "stage": "generate",
-        "attempts": 0,
-        "lastError": ""
+        "slug": "a-society-that-fears-the-different-arabic",
+        "title": "المجتمع الذي يخاف من المختلف",
+        "kind": "reading",
+        "voice": "fahed",
+        "stage": "generate-reading",
+        "attempts": 11,
+        "lastError": "r016 فشل بعد 3 محاولات: STT 82٪، السرعة 126/129"
       },
       {
         "slug": "a-society-that-fears-the-different-arabic",
         "title": "المجتمع الذي يخاف من المختلف",
-        "kind": "dialogue",
-        "voice": "dialogue",
-        "stage": "generate",
-        "attempts": 0,
-        "lastError": ""
+        "kind": "reading",
+        "voice": "noura",
+        "stage": "generate-reading",
+        "attempts": 11,
+        "lastError": "r011 فشل بعد 3 محاولات: STT 86٪، السرعة 133/137"
       },
       {
         "slug": "aggression-in-the-sky-and-steadfastness-withinarabic",
         "title": "العدوان في السماء… والثبات في الداخل",
-        "kind": "dialogue",
-        "voice": "dialogue",
-        "stage": "generate",
-        "attempts": 0,
-        "lastError": ""
+        "kind": "reading",
+        "voice": "fahed",
+        "stage": "generate-reading",
+        "attempts": 11,
+        "lastError": "r020 فشل بعد 3 محاولات: STT 77٪، السرعة 127/139"
       },
       {
-        "slug": "alternative-plans-for-distance-education",
-        "title": "الخطط البديلة للتعليم عن بعد",
-        "kind": "dialogue",
-        "voice": "dialogue",
-        "stage": "generate",
-        "attempts": 0,
-        "lastError": ""
+        "slug": "aggression-in-the-sky-and-steadfastness-withinarabic",
+        "title": "العدوان في السماء… والثبات في الداخل",
+        "kind": "reading",
+        "voice": "noura",
+        "stage": "generate-reading",
+        "attempts": 11,
+        "lastError": "r020 فشل بعد 3 محاولات: STT 77٪، السرعة 124/134"
       },
       {
         "slug": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
         "title": "الذكاء الاصطناعي يُدرّس… والعقل البشري يُقصى",
-        "kind": "dialogue",
-        "voice": "dialogue",
-        "stage": "generate",
-        "attempts": 0,
-        "lastError": ""
+        "kind": "reading",
+        "voice": "fahed",
+        "stage": "generate-reading",
+        "attempts": 11,
+        "lastError": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
+      },
+      {
+        "slug": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+        "title": "الذكاء الاصطناعي يُدرّس… والعقل البشري يُقصى",
+        "kind": "reading",
+        "voice": "noura",
+        "stage": "generate-reading",
+        "attempts": 11,
+        "lastError": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
       },
       {
         "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic",
         "title": "أبناءٌ يعرفون المطلوب… ويجهلون لماذا",
-        "kind": "dialogue",
-        "voice": "dialogue",
-        "stage": "generate",
-        "attempts": 0,
-        "lastError": ""
+        "kind": "reading",
+        "voice": "noura",
+        "stage": "generate-reading",
+        "attempts": 11,
+        "lastError": "r017 فشل بعد 3 محاولات: STT 71٪، السرعة 134/138"
       },
       {
         "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic-2",
         "title": "أبناءٌ يعرفون المطلوب… لكن من علّمهم المعنى؟",
-        "kind": "dialogue",
-        "voice": "dialogue",
-        "stage": "generate",
-        "attempts": 0,
-        "lastError": ""
+        "kind": "reading",
+        "voice": "fahed",
+        "stage": "generate-reading",
+        "attempts": 11,
+        "lastError": "r020 فشل بعد 3 محاولات: STT 88٪، السرعة 123/122"
       },
       {
-        "slug": "coming-soon-a-certificate-without-a-mind-2",
-        "title": "قريباً: شهادة بدون عقل!",
-        "kind": "dialogue",
-        "voice": "dialogue",
-        "stage": "generate",
-        "attempts": 0,
-        "lastError": ""
+        "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic-2",
+        "title": "أبناءٌ يعرفون المطلوب… لكن من علّمهم المعنى؟",
+        "kind": "reading",
+        "voice": "noura",
+        "stage": "generate-reading",
+        "attempts": 11,
+        "lastError": "r020 فشل بعد 3 محاولات: STT 88٪، السرعة 123/124"
+      },
+      {
+        "slug": "do-we-contain-or-raise-2",
+        "title": "هل نحتوي… أم نربّي؟",
+        "kind": "reading",
+        "voice": "fahed",
+        "stage": "generate-reading",
+        "attempts": 11,
+        "lastError": "r007 فشل بعد 3 محاولات: STT 91٪، السرعة 133/138"
+      },
+      {
+        "slug": "do-we-contain-or-raise-2",
+        "title": "هل نحتوي… أم نربّي؟",
+        "kind": "reading",
+        "voice": "noura",
+        "stage": "generate-reading",
+        "attempts": 11,
+        "lastError": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
+      },
+      {
+        "slug": "i-write-to-awaken-you-not-to-discourage-you-2",
+        "title": "أكتب لأوقظك… لا لأحبطك!",
+        "kind": "reading",
+        "voice": "noura",
+        "stage": "generate-reading",
+        "attempts": 11,
+        "lastError": "r025 فشل بعد 3 محاولات: STT 43٪، السرعة 136/142"
       }
     ]
   },
-  "progressPercent": 28.4,
+  "progressPercent": 18.2,
   "items": [
     {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
@@ -153,10 +153,10 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 2,
+            "attempts": 1,
             "firstFailedAt": "2026-07-23T09:10:12.164Z",
-            "lastFailedAt": "2026-07-27T01:37:06.943Z",
-            "message": "r002 فشل بعد 3 محاولات: STT 0٪، السرعة 78/145"
+            "lastFailedAt": "2026-07-23T09:10:12.164Z",
+            "message": "r002 فشل بعد 3 محاولات: STT 100٪، السرعة 79/145"
           }
         },
         "noura": {
@@ -167,10 +167,10 @@
             "voice": "noura",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 2,
+            "attempts": 1,
             "firstFailedAt": "2026-07-23T09:10:36.007Z",
-            "lastFailedAt": "2026-07-27T01:37:24.260Z",
-            "message": "r002 فشل بعد 3 محاولات: STT 0٪، السرعة 78/146"
+            "lastFailedAt": "2026-07-23T09:10:36.007Z",
+            "message": "r002 فشل بعد 3 محاولات: STT 100٪، السرعة 79/146"
           }
         }
       },
@@ -235,10 +235,10 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 2,
+            "attempts": 1,
             "firstFailedAt": "2026-07-23T09:22:53.507Z",
-            "lastFailedAt": "2026-07-27T01:49:58.408Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T09:22:53.507Z",
+            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
           }
         },
         "noura": {
@@ -249,10 +249,10 @@
             "voice": "noura",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 2,
+            "attempts": 1,
             "firstFailedAt": "2026-07-23T09:26:53.213Z",
-            "lastFailedAt": "2026-07-27T01:52:49.296Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T09:26:53.213Z",
+            "message": "r023 فشل بعد 3 محاولات: STT 75٪، السرعة 130/141"
           }
         }
       },
@@ -269,12 +269,12 @@
       "title": "جيلٌ بلا جذور",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "a-generation-without-rootsarabic.mp3",
           "failure": null
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "a-generation-without-rootsarabic.noura.mp3",
           "failure": {
             "slug": "a-generation-without-rootsarabic",
@@ -324,14 +324,32 @@
       "title": "المجتمع الذي يخاف من المختلف",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "a-society-that-fears-the-different-arabic.mp3",
-          "failure": null
+          "failure": {
+            "slug": "a-society-that-fears-the-different-arabic",
+            "voice": "fahed",
+            "kind": "original",
+            "stage": "generate-reading",
+            "attempts": 11,
+            "firstFailedAt": "2026-07-22T01:07:47.425Z",
+            "lastFailedAt": "2026-07-23T05:37:54.716Z",
+            "message": "r016 فشل بعد 3 محاولات: STT 82٪، السرعة 126/129"
+          }
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "a-society-that-fears-the-different-arabic.noura.mp3",
-          "failure": null
+          "failure": {
+            "slug": "a-society-that-fears-the-different-arabic",
+            "voice": "noura",
+            "kind": "original",
+            "stage": "generate-reading",
+            "attempts": 11,
+            "firstFailedAt": "2026-07-22T01:09:31.558Z",
+            "lastFailedAt": "2026-07-23T05:39:42.942Z",
+            "message": "r011 فشل بعد 3 محاولات: STT 86٪، السرعة 133/137"
+          }
         }
       },
       "dialogue": {
@@ -354,10 +372,10 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 12,
+            "attempts": 11,
             "firstFailedAt": "2026-07-22T00:40:49.709Z",
-            "lastFailedAt": "2026-07-26T23:36:57.445Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T05:09:46.301Z",
+            "message": "r020 فشل بعد 3 محاولات: STT 77٪، السرعة 127/139"
           }
         },
         "noura": {
@@ -368,10 +386,10 @@
             "voice": "noura",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 12,
+            "attempts": 11,
             "firstFailedAt": "2026-07-22T00:43:18.809Z",
-            "lastFailedAt": "2026-07-26T23:39:50.224Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T05:12:13.983Z",
+            "message": "r020 فشل بعد 3 محاولات: STT 77٪، السرعة 124/134"
           }
         }
       },
@@ -388,12 +406,12 @@
       "title": "الخطط البديلة للتعليم عن بعد",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "alternative-plans-for-distance-education.mp3",
           "failure": null
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "alternative-plans-for-distance-education.noura.mp3",
           "failure": null
         }
@@ -418,10 +436,10 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 12,
+            "attempts": 11,
             "firstFailedAt": "2026-07-22T02:26:19.941Z",
-            "lastFailedAt": "2026-07-27T01:05:30.622Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T07:00:45.814Z",
+            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
           }
         },
         "noura": {
@@ -432,10 +450,10 @@
             "voice": "noura",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 12,
+            "attempts": 11,
             "firstFailedAt": "2026-07-22T02:30:52.334Z",
-            "lastFailedAt": "2026-07-27T01:09:23.962Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T07:05:30.782Z",
+            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
           }
         }
       },
@@ -452,7 +470,7 @@
       "title": "أبناءٌ يعرفون المطلوب… ويجهلون لماذا",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "children-who-know-what-is-required-but-do-not-know-whyarabic.mp3",
           "failure": {
             "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic",
@@ -466,9 +484,18 @@
           }
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "children-who-know-what-is-required-but-do-not-know-whyarabic.noura.mp3",
-          "failure": null
+          "failure": {
+            "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic",
+            "voice": "noura",
+            "kind": "original",
+            "stage": "generate-reading",
+            "attempts": 11,
+            "firstFailedAt": "2026-07-22T00:54:58.835Z",
+            "lastFailedAt": "2026-07-23T05:24:39.746Z",
+            "message": "r017 فشل بعد 3 محاولات: STT 71٪، السرعة 134/138"
+          }
         }
       },
       "dialogue": {
@@ -491,10 +518,10 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 12,
+            "attempts": 11,
             "firstFailedAt": "2026-07-22T00:46:10.255Z",
-            "lastFailedAt": "2026-07-26T23:43:27.144Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T05:15:09.067Z",
+            "message": "r020 فشل بعد 3 محاولات: STT 88٪، السرعة 123/122"
           }
         },
         "noura": {
@@ -505,10 +532,10 @@
             "voice": "noura",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 12,
+            "attempts": 11,
             "firstFailedAt": "2026-07-22T00:49:02.361Z",
-            "lastFailedAt": "2026-07-27T00:17:37.647Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T05:18:18.789Z",
+            "message": "r020 فشل بعد 3 محاولات: STT 88٪، السرعة 123/124"
           }
         }
       },
@@ -557,9 +584,18 @@
       "title": "منهج الكفايات.. بطريقه إلى المهملات كسابقيه",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "competency-based-approach-to-the-trash.mp3",
-          "failure": null
+          "failure": {
+            "slug": "competency-based-approach-to-the-trash",
+            "voice": "fahed",
+            "kind": "original",
+            "stage": "generate-reading",
+            "attempts": 1,
+            "firstFailedAt": "2026-07-23T09:58:58.935Z",
+            "lastFailedAt": "2026-07-23T09:58:58.935Z",
+            "message": "بوابة الصوت رفضت القراءة: proxy=90/100، judge=undefined/100"
+          }
         },
         "noura": {
           "ready": true,
@@ -587,10 +623,10 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 12,
+            "attempts": 11,
             "firstFailedAt": "2026-07-22T02:16:38.283Z",
-            "lastFailedAt": "2026-07-27T00:57:39.292Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T06:50:39.484Z",
+            "message": "r007 فشل بعد 3 محاولات: STT 91٪، السرعة 133/138"
           }
         },
         "noura": {
@@ -601,10 +637,10 @@
             "voice": "noura",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 12,
+            "attempts": 11,
             "firstFailedAt": "2026-07-22T02:21:40.233Z",
-            "lastFailedAt": "2026-07-27T01:02:04.377Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T06:55:56.905Z",
+            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
           }
         }
       },
@@ -644,12 +680,12 @@
       "title": "ثقافة التعليم الإلكتروني",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "e-learning-culture-2.mp3",
           "failure": null
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "e-learning-culture-2.noura.mp3",
           "failure": null
         }
@@ -831,12 +867,12 @@
       "title": "التوقّعات التي تصنع طالباً",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "expectations-that-shape-a-studentarabic.mp3",
           "failure": null
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "expectations-that-shape-a-studentarabic.noura.mp3",
           "failure": null
         }
@@ -966,10 +1002,10 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 2,
+            "attempts": 1,
             "firstFailedAt": "2026-07-23T08:29:47.334Z",
-            "lastFailedAt": "2026-07-27T01:13:38.794Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T08:29:47.334Z",
+            "message": "r014 فشل بعد 3 محاولات: STT 88٪، السرعة 132/136"
           }
         },
         "noura": {
@@ -980,10 +1016,10 @@
             "voice": "noura",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 2,
+            "attempts": 1,
             "firstFailedAt": "2026-07-23T08:32:26.967Z",
-            "lastFailedAt": "2026-07-27T01:17:28.867Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T08:32:26.967Z",
+            "message": "r014 فشل بعد 3 محاولات: STT 92٪، السرعة 134/138"
           }
         }
       },
@@ -1012,10 +1048,10 @@
             "voice": "noura",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 12,
+            "attempts": 11,
             "firstFailedAt": "2026-07-22T02:37:53.598Z",
-            "lastFailedAt": "2026-07-27T01:09:32.243Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 84/134"
+            "lastFailedAt": "2026-07-23T07:12:55.288Z",
+            "message": "r025 فشل بعد 3 محاولات: STT 43٪، السرعة 136/142"
           }
         }
       },
@@ -1265,7 +1301,7 @@
       "title": "الدروس الخصوصية.. في زمن الذكاء التعليمي الرقمي",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "private-lesson-in-the-age-of-digital-educational-intelligence.mp3",
           "failure": {
             "slug": "private-lesson-in-the-age-of-digital-educational-intelligence",
@@ -1279,7 +1315,7 @@
           }
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "private-lesson-in-the-age-of-digital-educational-intelligence.noura.mp3",
           "failure": {
             "slug": "private-lesson-in-the-age-of-digital-educational-intelligence",
@@ -4038,7 +4074,7 @@
       "title": "وسائل الإعلام… بين المجاملة والتمثيل",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "qabas-201811-001.mp3",
           "failure": null
         },
@@ -4107,7 +4143,7 @@
           }
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "qabas-201909-001.noura.mp3",
           "failure": null
         }
@@ -4155,10 +4191,10 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 2,
+            "attempts": 1,
             "firstFailedAt": "2026-07-23T08:54:08.715Z",
-            "lastFailedAt": "2026-07-27T01:31:52.639Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T08:54:08.715Z",
+            "message": "r028 فشل بعد 3 محاولات: STT 46٪، السرعة 133/135"
           }
         },
         "noura": {
@@ -4169,10 +4205,10 @@
             "voice": "noura",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 2,
+            "attempts": 1,
             "firstFailedAt": "2026-07-23T08:59:27.810Z",
-            "lastFailedAt": "2026-07-27T01:36:42.120Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T08:59:27.810Z",
+            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
           }
         }
       },
@@ -4196,10 +4232,10 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 2,
+            "attempts": 1,
             "firstFailedAt": "2026-07-23T10:08:30.793Z",
-            "lastFailedAt": "2026-07-27T02:06:21.863Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T10:08:30.793Z",
+            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
           }
         },
         "noura": {
@@ -4237,10 +4273,10 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 12,
+            "attempts": 11,
             "firstFailedAt": "2026-07-22T01:33:32.610Z",
-            "lastFailedAt": "2026-07-27T00:49:18.213Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T06:04:58.866Z",
+            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
           }
         },
         "noura": {
@@ -4251,10 +4287,10 @@
             "voice": "noura",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 12,
+            "attempts": 11,
             "firstFailedAt": "2026-07-22T01:38:35.489Z",
-            "lastFailedAt": "2026-07-27T00:52:54.111Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T06:10:09.105Z",
+            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
           }
         }
       },
@@ -4308,7 +4344,7 @@
           }
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "the-blackboard-that-no-longer-sees-anyone-2.noura.mp3",
           "failure": null
         }
@@ -4326,9 +4362,18 @@
       "title": "الصفُّ الذي يخاف من الخطأ",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "the-classroom-that-fears-mistakesarabic.mp3",
-          "failure": null
+          "failure": {
+            "slug": "the-classroom-that-fears-mistakesarabic",
+            "voice": "fahed",
+            "kind": "original",
+            "stage": "generate-reading",
+            "attempts": 11,
+            "firstFailedAt": "2026-07-22T00:38:15.395Z",
+            "lastFailedAt": "2026-07-23T05:07:16.680Z",
+            "message": "r015 فشل بعد 3 محاولات: STT 4٪، السرعة 130/133"
+          }
         },
         "noura": {
           "ready": true,
@@ -4356,10 +4401,10 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 12,
+            "attempts": 11,
             "firstFailedAt": "2026-07-22T01:19:05.194Z",
-            "lastFailedAt": "2026-07-27T00:41:37.887Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T05:49:46.355Z",
+            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
           }
         },
         "noura": {
@@ -4370,10 +4415,10 @@
             "voice": "noura",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 12,
+            "attempts": 11,
             "firstFailedAt": "2026-07-22T01:23:58.726Z",
-            "lastFailedAt": "2026-07-27T00:45:41.176Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T05:54:55.844Z",
+            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
           }
         }
       },
@@ -4413,12 +4458,12 @@
       "title": "الإنسان الذي نسي نفسه",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "the-human-who-forgot-himselfarabic.mp3",
           "failure": null
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "the-human-who-forgot-himselfarabic.noura.mp3",
           "failure": null
         }
@@ -4436,14 +4481,32 @@
       "title": "الإعلام الشريك العضيد للعملية التعليمية",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "the-media-is-a-vital-partner-in-the-educational-process.mp3",
-          "failure": null
+          "failure": {
+            "slug": "the-media-is-a-vital-partner-in-the-educational-process",
+            "voice": "fahed",
+            "kind": "original",
+            "stage": "generate-reading",
+            "attempts": 1,
+            "firstFailedAt": "2026-07-23T09:50:03.940Z",
+            "lastFailedAt": "2026-07-23T09:50:03.940Z",
+            "message": "r015 فشل بعد 3 محاولات: STT 96٪، السرعة 102/141"
+          }
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "the-media-is-a-vital-partner-in-the-educational-process.noura.mp3",
-          "failure": null
+          "failure": {
+            "slug": "the-media-is-a-vital-partner-in-the-educational-process",
+            "voice": "noura",
+            "kind": "original",
+            "stage": "generate-reading",
+            "attempts": 1,
+            "firstFailedAt": "2026-07-23T09:54:20.184Z",
+            "lastFailedAt": "2026-07-23T09:54:20.184Z",
+            "message": "r015 فشل بعد 3 محاولات: STT 93٪، السرعة 101/142"
+          }
         }
       },
       "dialogue": {
@@ -4548,10 +4611,10 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 12,
+            "attempts": 11,
             "firstFailedAt": "2026-07-22T02:07:15.589Z",
-            "lastFailedAt": "2026-07-27T00:53:03.742Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 74/135"
+            "lastFailedAt": "2026-07-23T06:41:06.260Z",
+            "message": "r001 فشل بعد 3 محاولات: STT 100٪، السرعة 76/135"
           }
         },
         "noura": {
@@ -4562,10 +4625,10 @@
             "voice": "noura",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 12,
+            "attempts": 11,
             "firstFailedAt": "2026-07-22T02:07:22.790Z",
-            "lastFailedAt": "2026-07-27T00:53:10.215Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 78/137"
+            "lastFailedAt": "2026-07-23T06:41:12.969Z",
+            "message": "r001 فشل بعد 3 محاولات: STT 100٪، السرعة 82/137"
           }
         }
       },
@@ -4582,14 +4645,32 @@
       "title": "العودة التي لا تُصلِح ما قبلها",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "the-return-that-fails-to-fix-what-came-before-itarabic.mp3",
-          "failure": null
+          "failure": {
+            "slug": "the-return-that-fails-to-fix-what-came-before-itarabic",
+            "voice": "fahed",
+            "kind": "original",
+            "stage": "generate-reading",
+            "attempts": 11,
+            "firstFailedAt": "2026-07-22T00:58:30.467Z",
+            "lastFailedAt": "2026-07-23T05:28:04.114Z",
+            "message": "r016 فشل بعد 3 محاولات: STT 77٪، السرعة 134/137"
+          }
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "the-return-that-fails-to-fix-what-came-before-itarabic.noura.mp3",
-          "failure": null
+          "failure": {
+            "slug": "the-return-that-fails-to-fix-what-came-before-itarabic",
+            "voice": "noura",
+            "kind": "original",
+            "stage": "generate-reading",
+            "attempts": 11,
+            "firstFailedAt": "2026-07-22T01:01:00.988Z",
+            "lastFailedAt": "2026-07-23T05:30:40.636Z",
+            "message": "r016 فشل بعد 3 محاولات: STT 77٪، السرعة 129/132"
+          }
         }
       },
       "dialogue": {
@@ -4605,7 +4686,7 @@
       "title": "مستنقع «السوشيال ميديا» وإدمان عمليات التجميل",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "the-social-media-swamp-and-plastic-surgery-addiction-2.mp3",
           "failure": {
             "slug": "the-social-media-swamp-and-plastic-surgery-addiction-2",
@@ -4619,7 +4700,7 @@
           }
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "the-social-media-swamp-and-plastic-surgery-addiction-2.noura.mp3",
           "failure": {
             "slug": "the-social-media-swamp-and-plastic-surgery-addiction-2",
@@ -4646,12 +4727,12 @@
       "title": "النجاح الذي دمّرنا",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "the-success-that-destroyed-us-2.mp3",
           "failure": null
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "the-success-that-destroyed-us-2.noura.mp3",
           "failure": null
         }
@@ -4710,7 +4791,7 @@
       "title": "المعلم.. وما أدراك ما المعلم",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "the-teacher-what-do-you-know-about-the-teacher.mp3",
           "failure": {
             "slug": "the-teacher-what-do-you-know-about-the-teacher",
@@ -4724,7 +4805,7 @@
           }
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "the-teacher-what-do-you-know-about-the-teacher.noura.mp3",
           "failure": {
             "slug": "the-teacher-what-do-you-know-about-the-teacher",
@@ -4756,9 +4837,18 @@
           "failure": null
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "the-year-that-doesnt-begin-with-the-calendararabic.noura.mp3",
-          "failure": null
+          "failure": {
+            "slug": "the-year-that-doesnt-begin-with-the-calendararabic",
+            "voice": "noura",
+            "kind": "original",
+            "stage": "generate-reading",
+            "attempts": 11,
+            "firstFailedAt": "2026-07-22T01:01:33.354Z",
+            "lastFailedAt": "2026-07-23T05:31:14.008Z",
+            "message": "r005 فشل بعد 3 محاولات: STT 88٪، السرعة 138/141"
+          }
         }
       },
       "dialogue": {
@@ -4774,7 +4864,7 @@
       "title": "حيرة طفل اليوم.. ما بين التربية والرعاية",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "todays-childs-confusion-between-education-and-care.mp3",
           "failure": {
             "slug": "todays-childs-confusion-between-education-and-care",
@@ -4788,7 +4878,7 @@
           }
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "todays-childs-confusion-between-education-and-care.noura.mp3",
           "failure": {
             "slug": "todays-childs-confusion-between-education-and-care",
@@ -4815,7 +4905,7 @@
       "title": "تحويل هوس ألعاب الفيديو إلى تأمل خلاق",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "turning-video-game-obsession-into-creative-meditation-2.mp3",
           "failure": {
             "slug": "turning-video-game-obsession-into-creative-meditation-2",
@@ -4829,7 +4919,7 @@
           }
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "turning-video-game-obsession-into-creative-meditation-2.noura.mp3",
           "failure": {
             "slug": "turning-video-game-obsession-into-creative-meditation-2",
@@ -4863,10 +4953,10 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 5,
+            "attempts": 4,
             "firstFailedAt": "2026-07-22T05:45:02.086Z",
-            "lastFailedAt": "2026-07-27T01:09:45.240Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 76/140"
+            "lastFailedAt": "2026-07-22T23:51:59.898Z",
+            "message": "r001 فشل بعد 3 محاولات: STT 75٪، السرعة 80/140"
           }
         },
         "noura": {
@@ -4877,10 +4967,10 @@
             "voice": "noura",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 5,
+            "attempts": 4,
             "firstFailedAt": "2026-07-22T05:45:11.823Z",
-            "lastFailedAt": "2026-07-27T01:09:55.535Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 73/141"
+            "lastFailedAt": "2026-07-22T23:52:07.428Z",
+            "message": "r001 فشل بعد 3 محاولات: STT 100٪، السرعة 76/141"
           }
         }
       },
@@ -4897,14 +4987,32 @@
       "title": "تخرَّجنا بشهادة… لكن ضاعت اللغة!",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "we-graduated-with-a-degree-but-the-language-was-lost-2.mp3",
-          "failure": null
+          "failure": {
+            "slug": "we-graduated-with-a-degree-but-the-language-was-lost-2",
+            "voice": "fahed",
+            "kind": "original",
+            "stage": "generate-reading",
+            "attempts": 1,
+            "firstFailedAt": "2026-07-23T08:45:19.461Z",
+            "lastFailedAt": "2026-07-23T08:45:19.461Z",
+            "message": "r029 فشل بعد 3 محاولات: STT 86٪، السرعة 132/137"
+          }
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "we-graduated-with-a-degree-but-the-language-was-lost-2.noura.mp3",
-          "failure": null
+          "failure": {
+            "slug": "we-graduated-with-a-degree-but-the-language-was-lost-2",
+            "voice": "noura",
+            "kind": "original",
+            "stage": "generate-reading",
+            "attempts": 1,
+            "firstFailedAt": "2026-07-23T08:49:49.091Z",
+            "lastFailedAt": "2026-07-23T08:49:49.091Z",
+            "message": "r029 فشل بعد 3 محاولات: STT 86٪، السرعة 129/133"
+          }
         }
       },
       "dialogue": {
@@ -4959,10 +5067,10 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 2,
+            "attempts": 1,
             "firstFailedAt": "2026-07-23T09:18:22.210Z",
-            "lastFailedAt": "2026-07-27T01:46:53.649Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 79/142"
+            "lastFailedAt": "2026-07-23T09:18:22.210Z",
+            "message": "r001 فشل بعد 3 محاولات: STT 100٪، السرعة 81/142"
           }
         },
         "noura": {
@@ -4973,10 +5081,10 @@
             "voice": "noura",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 2,
+            "attempts": 1,
             "firstFailedAt": "2026-07-23T09:18:31.184Z",
-            "lastFailedAt": "2026-07-27T01:47:00.848Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 80/136"
+            "lastFailedAt": "2026-07-23T09:18:31.184Z",
+            "message": "r001 فشل بعد 3 محاولات: STT 80٪، السرعة 84/136"
           }
         }
       },
@@ -5041,10 +5149,10 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 2,
+            "attempts": 1,
             "firstFailedAt": "2026-07-23T09:12:16.099Z",
-            "lastFailedAt": "2026-07-27T01:41:53.451Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T09:12:16.099Z",
+            "message": "r011 فشل بعد 3 محاولات: STT 88٪، السرعة 115/130"
           }
         },
         "noura": {
@@ -5055,10 +5163,10 @@
             "voice": "noura",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 2,
+            "attempts": 1,
             "firstFailedAt": "2026-07-23T09:18:11.724Z",
-            "lastFailedAt": "2026-07-27T01:46:43.843Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+            "lastFailedAt": "2026-07-23T09:18:11.724Z",
+            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، judge=undefined/100"
           }
         }
       },
@@ -5075,7 +5183,7 @@
       "title": "حين أختبرُ مدرسةَ بناتي… قبل أن تختبرَهنّ",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m.mp3",
           "failure": null
         },
@@ -5107,14 +5215,32 @@
       "title": "حين تصبح الجدية قناعاً للهروب",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "when-seriousness-becomes-a-mask-for-escapearabic.mp3",
-          "failure": null
+          "failure": {
+            "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
+            "voice": "fahed",
+            "kind": "original",
+            "stage": "generate-reading",
+            "attempts": 11,
+            "firstFailedAt": "2026-07-22T00:55:39.911Z",
+            "lastFailedAt": "2026-07-23T05:25:06.894Z",
+            "message": "r003 فشل بعد 3 محاولات: STT 78٪، السرعة 142/137"
+          }
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "when-seriousness-becomes-a-mask-for-escapearabic.noura.mp3",
-          "failure": null
+          "failure": {
+            "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
+            "voice": "noura",
+            "kind": "original",
+            "stage": "generate-reading",
+            "attempts": 11,
+            "firstFailedAt": "2026-07-22T00:56:02.663Z",
+            "lastFailedAt": "2026-07-23T05:25:29.518Z",
+            "message": "r003 فشل بعد 3 محاولات: STT 78٪، السرعة 137/134"
+          }
         }
       },
       "dialogue": {
@@ -5130,12 +5256,12 @@
       "title": "حين يصبح الامتحان هو الهدف",
       "readings": {
         "fahed": {
-          "ready": true,
+          "ready": false,
           "fileName": "when-the-exam-becomes-the-goalarabic.mp3",
           "failure": null
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "when-the-exam-becomes-the-goalarabic.noura.mp3",
           "failure": null
         }
@@ -5181,7 +5307,7 @@
           "failure": null
         },
         "noura": {
-          "ready": true,
+          "ready": false,
           "fileName": "when-truth-died-and-the-narrative-survivedarabic.noura.mp3",
           "failure": null
         }
@@ -5195,5 +5321,5 @@
       "complete": false
     }
   ],
-  "fingerprint": "febed537423f260f1cba99973648a93961ad1d55c2f14f39d5d75038adf7ca65"
+  "fingerprint": "3de981666a09d5be79baf5c04ad69b6965e3c2ee5315b89aa58642d6d6954905"
 }

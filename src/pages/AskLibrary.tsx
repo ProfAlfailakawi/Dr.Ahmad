@@ -1,7 +1,7 @@
 /**
  * «العقل الحي» — /ask
  * يسأل الزائر سؤالاً حقيقياً، فيعيد الموقع ترتيب أرشيف الدكتور فقط:
- * اقتباسات حرفية، خط زمني، أحدث موقف منشور، وكتاب شخصي خفيف.
+ * اقتباسات حرفية، خط زمني، أحدث موقف منشور، ومسار قراءة قابل للطباعة.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -327,12 +327,6 @@ function localGroundedAnswer(result: Answer): TwinAnswer {
   };
 }
 
-const SUGGESTIONS = [
-  "هل الذكاء الاصطناعي يهدد المعلم؟",
-  "ما أثر الهاتف على الطفل؟",
-  "كيف صار الامتحان مصدر خوف؟",
-];
-
 
 const arDigits = (value: number | string) =>
   String(value).replace(/\d/g, (digit) => "٠١٢٣٤٥٦٧٨٩"[Number(digit)]);
@@ -383,7 +377,7 @@ function printPersonalBook(
   printWindow.document
     .write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>مسار قراءة — ${escapePrint(asked)}</title><style>
     @page{size:A4;margin:18mm 17mm 20mm}*{box-sizing:border-box}body{margin:0;color:#14202c;background:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif;line-height:1.75}header{border-top:5px solid #365a7a;border-bottom:1px solid #dfe4e8;padding:20px 0 24px}header small{color:#987b38;font-weight:700}h1{font-size:27px;line-height:1.5;margin:10px 0 8px}.intro{font-size:14px;color:#66717d;margin:0}.question{margin:24px 0 0;border-right:3px solid #987b38;background:#f7f8f7;padding:14px 18px;font-size:18px;font-weight:700}.chapter{display:grid;grid-template-columns:42px 1fr;gap:15px;padding:20px 0;border-bottom:1px solid #e4e7e9;break-inside:avoid}.number{width:38px;height:38px;border:1px solid #cdd5db;border-radius:50%;display:grid;place-items:center;color:#365a7a;font-size:12px;font-weight:700}.meta{margin:0;color:#365a7a;font-size:12px;font-weight:700}.chapter h2{font-size:17px;line-height:1.65;margin:3px 0}.note{font-size:13px;color:#65717c;margin:2px 0}.url{direction:ltr;text-align:right;font-size:10px;color:#8a9299;margin:5px 0 0;overflow-wrap:anywhere}footer{display:flex;justify-content:space-between;gap:20px;margin-top:26px;padding-top:12px;border-top:1px solid #cfd6db;color:#6a737c;font-size:10px}.screen{position:fixed;left:18px;top:18px;border:0;border-radius:999px;background:#365a7a;color:white;padding:10px 18px;font-weight:700;cursor:pointer}@media print{.screen{display:none}}
-  </style></head><body><button class="screen" onclick="window.print()">طباعة / حفظ PDF</button><header><small>كتاب شخصي من الأرشيف</small><h1>مسار قراءة من المواد المنشورة فقط</h1><p class="intro">مسار زمني واضح يبدأ من السؤال، ويتتبع تطور الفكرة في المواد المنشورة.</p><div class="question">«${escapePrint(asked)}»</div></header><main>${rows}</main><footer><span>أُعدّ في ${escapePrint(date)}</span><span>الموقع الرسمي للدكتور أحمد حسين الفيلكاوي · dr-alfailakawi.com</span></footer><script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));<\/script></body></html>`);
+  </style></head><body><button class="screen" onclick="window.print()">طباعة / حفظ PDF</button><header><small>تطور السؤال عبر الأرشيف</small><h1>مسار قراءة من المواد المنشورة فقط</h1><p class="intro">مسار زمني واضح يبدأ من السؤال، ويتتبع تطور الفكرة في المواد المنشورة.</p><div class="question">«${escapePrint(asked)}»</div></header><main>${rows}</main><footer><span>أُعدّ في ${escapePrint(date)}</span><span>الموقع الرسمي للدكتور أحمد حسين الفيلكاوي · dr-alfailakawi.com</span></footer><script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));<\/script></body></html>`);
   printWindow.document.close();
   return true;
 }
@@ -446,7 +440,7 @@ export default function AskLibrary() {
   const coverage = useMemo(() => {
     if (!result) return null;
     const evidence = result.hits.length + result.refs.length;
-    return { count: evidence, label: evidence ? 'موثّق' : 'محدود', note: evidence ? `${evidence} شواهد موثّقة` : 'لا توجد شواهد كافية حتى الآن' };
+    return { label: evidence ? 'موثّق' : 'دون شواهد كافية', note: evidence === 1 ? 'شاهد واحد موثّق' : `${evidence} شواهد موثّقة` };
   }, [result]);
 
   useEffect(() => {
@@ -604,7 +598,7 @@ export default function AskLibrary() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && ask(q)}
-                placeholder="هل سيستبدل الذكاء الاصطناعي المعلم؟"
+                placeholder="اكتب سؤالك هنا…"
                 aria-label="سؤالك"
                 className="min-h-12 flex-1 rounded-xl border border-hair bg-canvas px-5 py-3 text-[1rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
               />
@@ -616,22 +610,6 @@ export default function AskLibrary() {
               </button>
             </div>
           </FadeUp>
-
-          {!asked && (
-            <FadeUp delay={0.08}>
-              <div className="mt-6 flex flex-wrap gap-x-5 gap-y-1 border-b border-hair pb-2">
-                {SUGGESTIONS.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => ask(s)}
-                    className="shrink-0 border-b border-transparent py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-ink"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </FadeUp>
-          )}
 
           <div ref={resRef} className="scroll-mt-28">
             {asked && bodiesLoading && (

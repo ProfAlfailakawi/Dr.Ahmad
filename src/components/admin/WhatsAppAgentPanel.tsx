@@ -93,7 +93,9 @@ const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold 
 
 const stateLabel: Record<string, string> = {
   unconfigured: 'غير مرتبط',
-  pairing: 'بانتظار الاقتران',
+  starting: 'يجري تشغيل الخدمة',
+  pairing: 'بانتظار مسح الرمز',
+  authenticated: 'تم المسح — يجري إكمال الاتصال',
   connected: 'متصل',
   disconnected: 'غير متصل',
   reconnecting: 'يعيد الاتصال',
@@ -177,7 +179,7 @@ export function WhatsAppAgentPanel() {
     setBusy(true)
     try {
       const [nextStatus, nextRules, nextLearning, nextKnowledge, nextEvidence] = await Promise.all([
-        request<AgentStatus>('/status'),
+        request<AgentStatus>('/status', { cache: 'no-store' }),
         request<ReplyRule[]>('/admin/rules'),
         request<LearningState>('/admin/learning').catch(() => ({ total: 0, learned: 0, observing: 0, ignored: 0, policy: '', items: [] })),
         request<KnowledgeState>('/admin/knowledge').catch(() => EMPTY_KNOWLEDGE),
@@ -585,7 +587,7 @@ export function WhatsAppAgentPanel() {
                 {status.health?.label || stateLabel[String(status.status)] || 'غير مرتبط'}
               </span>
             </h2>
-            <p className="mt-2 max-w-2xl text-[.82rem] leading-relaxed text-soft">الاتصال والجلسة يعملان على الخادم المخصص، بعيدًا عن المتصفح وGitHub.</p>
+            <p className="mt-2 max-w-2xl text-[.82rem] leading-relaxed text-soft">تُدار خدمة الاتصال والجلسة على الخادم المخصص، بعيدًا عن المتصفح وGitHub.</p>
           </div>
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">＋</span>
         </summary>
@@ -623,10 +625,10 @@ export function WhatsAppAgentPanel() {
           )}
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">الحالة</p><p className="mt-1 font-semibold text-ink">{status.status && status.status !== 'unconfigured'
+          <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">الحالة</p><p className="mt-1 font-semibold text-ink">{status.health?.label || (status.status && status.status !== 'unconfigured'
             ? (stateLabel[status.status] || status.status)
-            : bridgeAlive === null ? 'يفحص…' : bridgeAlive ? 'الجسر يعمل' : 'غير مرتبط'}</p></div>
-          <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">الجسر</p><p className="mt-1 font-semibold text-ink">{status.bridgeOnline ? 'متصل' : 'غير متصل'}</p><p className="text-[.72rem] text-soft">آخر نبضة: {status.bridgeOnline ? ageLabel(status.heartbeatAgeMs) : '–'}</p></div>
+            : bridgeAlive === null ? 'يفحص…' : bridgeAlive ? 'الجسر يعمل' : 'غير مرتبط')}</p></div>
+          <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">خدمة الجسر</p><p className="mt-1 font-semibold text-ink">{status.bridgeOnline ? 'تعمل' : 'متوقفة'}</p><p className="text-[.72rem] text-soft">آخر نبضة: {status.bridgeOnline ? ageLabel(status.heartbeatAgeMs) : '–'}</p></div>
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">فهرس الموقع</p><p className="mt-1 font-display text-2xl text-accent">{status.indexed ?? '—'}</p></div>
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">المنطقة</p><p className="mt-1 font-semibold text-ink">{status.timeZone || 'Asia/Kuwait'}</p></div>
         </div>

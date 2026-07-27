@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-27T05:53:01.670Z",
+  "updatedAt": "2026-07-27T09:31:46.303Z",
   "items": [
     {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
@@ -443,404 +443,94 @@
       "message": "r010 فشل بعد 3 محاولات: STT 0٪، السرعة 84/136"
     },
     {
-      "slug": "qabas-201702-004",
-      "voice": "noura",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:31:10.251Z",
-      "lastFailedAt": "2026-07-23T18:31:10.251Z",
-      "message": "Azure TTS 401: "
-    },
-    {
       "slug": "qabas-201703-001",
       "voice": "fahed",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 1,
+      "attempts": 2,
       "firstFailedAt": "2026-07-23T18:31:18.921Z",
-      "lastFailedAt": "2026-07-23T18:31:18.921Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201703-001",
-      "voice": "noura",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:31:27.610Z",
-      "lastFailedAt": "2026-07-23T18:31:27.610Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201703-002",
-      "voice": "fahed",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:31:36.296Z",
-      "lastFailedAt": "2026-07-23T18:31:36.296Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201703-002",
-      "voice": "noura",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:31:44.986Z",
-      "lastFailedAt": "2026-07-23T18:31:44.986Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201703-003",
-      "voice": "fahed",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:31:53.667Z",
-      "lastFailedAt": "2026-07-23T18:31:53.667Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201703-003",
-      "voice": "noura",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:32:02.376Z",
-      "lastFailedAt": "2026-07-23T18:32:02.376Z",
-      "message": "Azure TTS 401: "
+      "lastFailedAt": "2026-07-27T07:56:42.356Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=88/100، الحكم السمعي غير متاح"
     },
     {
       "slug": "qabas-201703-004",
       "voice": "fahed",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 1,
+      "attempts": 2,
       "firstFailedAt": "2026-07-23T18:32:11.060Z",
-      "lastFailedAt": "2026-07-23T18:32:11.060Z",
-      "message": "Azure TTS 401: "
+      "lastFailedAt": "2026-07-27T08:11:56.100Z",
+      "message": "r015 فشل بعد 3 محاولات: STT 0٪، السرعة 78/128"
     },
     {
       "slug": "qabas-201703-004",
       "voice": "noura",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 1,
+      "attempts": 2,
       "firstFailedAt": "2026-07-23T18:32:19.739Z",
-      "lastFailedAt": "2026-07-23T18:32:19.739Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201704-001",
-      "voice": "fahed",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:32:28.434Z",
-      "lastFailedAt": "2026-07-23T18:32:28.434Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201704-001",
-      "voice": "noura",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:32:37.122Z",
-      "lastFailedAt": "2026-07-23T18:32:37.122Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201704-002",
-      "voice": "fahed",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:32:45.815Z",
-      "lastFailedAt": "2026-07-23T18:32:45.815Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201704-002",
-      "voice": "noura",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:32:54.496Z",
-      "lastFailedAt": "2026-07-23T18:32:54.496Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201704-003",
-      "voice": "fahed",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:33:03.199Z",
-      "lastFailedAt": "2026-07-23T18:33:03.199Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201704-003",
-      "voice": "noura",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:33:11.892Z",
-      "lastFailedAt": "2026-07-23T18:33:11.892Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201704-004",
-      "voice": "fahed",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:33:20.586Z",
-      "lastFailedAt": "2026-07-23T18:33:20.586Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201704-004",
-      "voice": "noura",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:33:30.194Z",
-      "lastFailedAt": "2026-07-23T18:33:30.194Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201706-001",
-      "voice": "fahed",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:33:38.880Z",
-      "lastFailedAt": "2026-07-23T18:33:38.880Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201706-001",
-      "voice": "noura",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:33:47.593Z",
-      "lastFailedAt": "2026-07-23T18:33:47.593Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201706-002",
-      "voice": "fahed",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:33:56.268Z",
-      "lastFailedAt": "2026-07-23T18:33:56.268Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201706-002",
-      "voice": "noura",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:34:04.950Z",
-      "lastFailedAt": "2026-07-23T18:34:04.950Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201706-003",
-      "voice": "fahed",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:34:13.644Z",
-      "lastFailedAt": "2026-07-23T18:34:13.644Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201706-003",
-      "voice": "noura",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:34:22.342Z",
-      "lastFailedAt": "2026-07-23T18:34:22.342Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201706-004",
-      "voice": "fahed",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:34:31.033Z",
-      "lastFailedAt": "2026-07-23T18:34:31.033Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201706-004",
-      "voice": "noura",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:34:39.723Z",
-      "lastFailedAt": "2026-07-23T18:34:39.723Z",
-      "message": "Azure TTS 401: "
+      "lastFailedAt": "2026-07-27T08:14:16.553Z",
+      "message": "r015 فشل بعد 3 محاولات: STT 0٪، السرعة 84/122"
     },
     {
       "slug": "qabas-201707-001",
       "voice": "fahed",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 1,
+      "attempts": 2,
       "firstFailedAt": "2026-07-23T18:34:48.500Z",
-      "lastFailedAt": "2026-07-23T18:34:48.500Z",
-      "message": "Azure TTS 401: "
+      "lastFailedAt": "2026-07-27T09:00:11.315Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
     },
     {
       "slug": "qabas-201707-001",
       "voice": "noura",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 1,
+      "attempts": 2,
       "firstFailedAt": "2026-07-23T18:34:57.237Z",
-      "lastFailedAt": "2026-07-23T18:34:57.237Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201707-002",
-      "voice": "fahed",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:35:05.927Z",
-      "lastFailedAt": "2026-07-23T18:35:05.927Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201707-002",
-      "voice": "noura",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T18:35:14.596Z",
-      "lastFailedAt": "2026-07-23T18:35:14.596Z",
-      "message": "Azure TTS 401: "
+      "lastFailedAt": "2026-07-27T09:02:54.147Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
     },
     {
       "slug": "qabas-201707-003",
       "voice": "fahed",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 1,
+      "attempts": 2,
       "firstFailedAt": "2026-07-23T18:35:23.340Z",
-      "lastFailedAt": "2026-07-23T18:35:23.340Z",
-      "message": "Azure TTS 401: "
+      "lastFailedAt": "2026-07-27T09:08:15.160Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 80/139"
     },
     {
       "slug": "qabas-201707-003",
       "voice": "noura",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 1,
+      "attempts": 2,
       "firstFailedAt": "2026-07-23T18:35:32.002Z",
-      "lastFailedAt": "2026-07-23T18:35:32.002Z",
-      "message": "Azure TTS 401: "
+      "lastFailedAt": "2026-07-27T09:08:23.556Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 81/135"
     },
     {
       "slug": "qabas-201707-004",
       "voice": "fahed",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 1,
+      "attempts": 2,
       "firstFailedAt": "2026-07-23T20:19:54.497Z",
-      "lastFailedAt": "2026-07-23T20:19:54.497Z",
-      "message": "Azure TTS 401: "
+      "lastFailedAt": "2026-07-27T09:10:10.441Z",
+      "message": "r013 فشل بعد 3 محاولات: STT 0٪، السرعة 77/133"
     },
     {
       "slug": "qabas-201707-004",
       "voice": "noura",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 1,
+      "attempts": 2,
       "firstFailedAt": "2026-07-23T20:20:03.301Z",
-      "lastFailedAt": "2026-07-23T20:20:03.301Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201708-001",
-      "voice": "fahed",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T20:20:11.978Z",
-      "lastFailedAt": "2026-07-23T20:20:11.978Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201708-001",
-      "voice": "noura",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T20:20:20.678Z",
-      "lastFailedAt": "2026-07-23T20:20:20.678Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201708-002",
-      "voice": "fahed",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T20:20:29.356Z",
-      "lastFailedAt": "2026-07-23T20:20:29.356Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201708-002",
-      "voice": "noura",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T20:20:38.032Z",
-      "lastFailedAt": "2026-07-23T20:20:38.032Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201708-003",
-      "voice": "fahed",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T20:20:46.706Z",
-      "lastFailedAt": "2026-07-23T20:20:46.706Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201708-003",
-      "voice": "noura",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T20:20:55.389Z",
-      "lastFailedAt": "2026-07-23T20:20:55.389Z",
-      "message": "Azure TTS 401: "
-    },
-    {
-      "slug": "qabas-201709-001",
-      "voice": "fahed",
-      "kind": "original",
-      "stage": "generate-reading",
-      "attempts": 1,
-      "firstFailedAt": "2026-07-23T20:21:04.064Z",
-      "lastFailedAt": "2026-07-23T20:21:04.064Z",
-      "message": "Azure TTS 401: "
+      "lastFailedAt": "2026-07-27T09:11:50.406Z",
+      "message": "r013 فشل بعد 3 محاولات: STT 0٪، السرعة 78/140"
     },
     {
       "slug": "qabas-201709-001",

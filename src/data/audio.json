@@ -199,11 +199,41 @@
     "fahed": true,
     "noura": true
   },
+  "qabas-201709-005": {
+    "noura": true
+  },
+  "qabas-201709-007": {
+    "fahed": true,
+    "noura": true
+  },
+  "qabas-201709-008": {
+    "fahed": true,
+    "noura": true
+  },
+  "qabas-201709-009": {
+    "fahed": true,
+    "noura": true
+  },
+  "qabas-201711-001": {
+    "fahed": true,
+    "noura": true
+  },
+  "qabas-201711-002": {
+    "noura": true
+  },
+  "qabas-201711-004": {
+    "fahed": true,
+    "noura": true
+  },
   "qabas-201712-004": {
     "fahed": true,
     "noura": true
   },
   "qabas-201802-001": {
+    "fahed": true,
+    "noura": true
+  },
+  "qabas-201802-002": {
     "fahed": true,
     "noura": true
   },

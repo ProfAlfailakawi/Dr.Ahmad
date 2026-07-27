@@ -398,7 +398,7 @@ function bridgeStatus(data = {}) {
   const savedQrImage = bounded(data.qrImage, 500_000) || null
   const hasQr = Boolean(savedQr || savedQrImage)
   const explicitConnected = data.connected === true || rawStatus === 'connected'
-  const inferredConnected = bridgeOnline && !hasQr && rawStatus === 'pairing' && !lastError
+  const inferredConnected = bridgeOnline && data.connected !== false && !hasQr && rawStatus === 'pairing' && !lastError
   const connected = Boolean(explicitConnected || inferredConnected)
   const normalizedStatus = !bridgeOnline
     ? 'disconnected'

@@ -24,6 +24,8 @@ cat <<EOF > "$PLIST_PATH"
   <string>com.dr-alfailakawi.whatsapp-bridge</string>
   <key>ProgramArguments</key>
   <array>
+    <string>/usr/bin/caffeinate</string>
+    <string>-ims</string>
     <string>$NODE_PATH</string>
     <string>$DIR/service-runner.mjs</string>
   </array>

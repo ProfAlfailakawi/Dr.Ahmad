@@ -23,4 +23,4 @@ echo "[i] Server URL: $WHATSAPP_MAIN_SERVER_URL"
 echo "[i] Device ID: $WHATSAPP_BRIDGE_DEVICE_ID"
 echo "[i] Session Dir: $WHATSAPP_SESSION_DIR"
 
-node service-runner.mjs
+caffeinate -ims node service-runner.mjs

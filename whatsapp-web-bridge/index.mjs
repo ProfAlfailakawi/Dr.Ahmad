@@ -152,6 +152,11 @@ const puppeteer = {
     '--disable-ipc-flooding-protection',
     '--no-zygote',
     '--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+    '--disable-features=CalculatePageVisibility',
+    '--disable-features=IntensiveWakeUpThrottling',
+    '--disable-features=TurnOffStreamingMediaWithBackgroundTab',
+    '--disable-features=LogLeastRecentlyUsedLimit',
+    '--disable-features=Prerender2',
   ],
   ...(config.chromePath ? { executablePath: config.chromePath } : {}),
 }

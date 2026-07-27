@@ -401,6 +401,14 @@ export function isStaleBridgeState(current = {}, incomingInstanceId = '', incomi
   )
 }
 
+export function isInvalidBridgeRegression(current = {}, incomingInstanceId = '', nextStatus = '') {
+  if (!incomingInstanceId || current?.instanceId !== incomingInstanceId) return false
+  const currentStatus = bounded(current?.status, 40)
+  const incomingStatus = bounded(nextStatus, 40)
+  const progressed = current?.connected === true || ['syncing', 'authenticated', 'connected'].includes(currentStatus)
+  return progressed && ['starting', 'pairing'].includes(incomingStatus)
+}
+
 function bridgeStatus(data = {}) {
   const heartbeatAt = bounded(data.lastHeartbeatAt || data.updatedAt, 80)
   const heartbeatTime = heartbeatAt ? Date.parse(heartbeatAt) : NaN
@@ -607,10 +615,12 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         const snapshot = await transaction.get(ref)
         const current = snapshot.exists ? snapshot.data() || {} : {}
         const staleState = isStaleBridgeState(current, incomingInstanceId, validIncomingSeq)
+        const invalidRegression = isInvalidBridgeRegression(current, incomingInstanceId, nextStatus)
 
         /* تبقى النبضة حديثة حتى لو وصل حدث حالة قديم، لكن لا نسمح لرمز QR
-           متأخر بأن يطغى على حدث authenticated/connected الأحدث. */
-        if (staleState) {
+           متأخر — حتى لو حمل رقماً تسلسلياً أحدث — بأن يطغى على جلسة قبلها
+           الهاتف بالفعل. بدء عملية جديدة له instanceId جديد فيُقبل طبيعيًا. */
+        if (staleState || invalidRegression) {
           transaction.set(ref, heartbeatPatch, { merge: true })
           return
         }

@@ -4,7 +4,7 @@
  "totalCount": 0,
  "pilotGate": {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-27T19:34:48.540Z",
+  "generatedAt": "2026-07-27T21:08:04.658Z",
   "pipelineHash": "a7e3c1026bee9d0a",
   "required": 3,
   "passed": 0,
@@ -35,16 +35,16 @@
  },
  "failures": {
   "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m": {
-   "attempts": 2,
-   "lastFailedAt": "2026-07-27T19:34:25.725Z"
+   "attempts": 3,
+   "lastFailedAt": "2026-07-27T21:07:43.099Z"
   },
   "the-return-that-fails-to-fix-what-came-before-itarabic": {
-   "attempts": 2,
-   "lastFailedAt": "2026-07-27T19:34:36.333Z"
+   "attempts": 3,
+   "lastFailedAt": "2026-07-27T21:07:52.771Z"
   },
   "when-the-teacher-knows-why-he-teachesarabic": {
-   "attempts": 2,
-   "lastFailedAt": "2026-07-27T19:34:48.539Z"
+   "attempts": 3,
+   "lastFailedAt": "2026-07-27T21:08:04.658Z"
   }
  }
 }

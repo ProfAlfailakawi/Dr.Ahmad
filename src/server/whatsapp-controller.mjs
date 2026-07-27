@@ -434,8 +434,10 @@ function bridgeStatus(data = {}) {
       : hasQr
         ? 'pairing'
         : rawStatus
-  const finishing = bridgeOnline && !connected && normalizedStatus === 'authenticated'
+  const syncing = bridgeOnline && !connected && normalizedStatus === 'syncing'
+  const finishing = bridgeOnline && !connected && ['authenticated', 'syncing'].includes(normalizedStatus)
   const failed = normalizedStatus === 'error'
+  const syncPercent = Number(data.syncPercent || 0)
   return {
     status: normalizedStatus,
     bridgeOnline,
@@ -454,32 +456,36 @@ function bridgeStatus(data = {}) {
     indexed: siteIndex().length,
     timeZone: 'Asia/Kuwait',
     health: {
-      code: connected ? 'ready' : hasQr ? 'scan-qr' : staleQr ? 'refreshing-qr' : finishing ? 'finishing' : failed ? 'error' : bridgeOnline ? 'connecting' : 'offline',
-      label: connected ? 'جاهز' : hasQr ? 'امسح رمز QR' : staleQr ? 'يجري إنشاء رمز جديد' : finishing ? 'تم المسح — يجري إكمال الاتصال' : failed ? 'يحتاج مراجعة' : bridgeOnline ? 'يجري الاتصال' : 'الجسر غير متصل',
+      code: connected ? 'ready' : hasQr ? 'scan-qr' : staleQr ? 'refreshing-qr' : syncing ? 'syncing' : finishing ? 'finishing' : failed ? 'error' : bridgeOnline ? 'connecting' : 'offline',
+      label: connected ? 'جاهز' : hasQr ? 'امسح رمز QR' : staleQr ? 'يجري إنشاء رمز جديد' : syncing ? `جاري مزامنة المحادثات${syncPercent > 0 ? ` (${syncPercent}%)` : ''}` : finishing ? 'تم المسح — يجري إكمال الاتصال' : failed ? 'يحتاج مراجعة' : bridgeOnline ? 'يجري الاتصال' : 'الجسر غير متصل',
       why: connected
         ? 'جلسة واتساب متصلة والجسر يرسل نبضاته بانتظام.'
         : hasQr
           ? 'هذا هو أحدث رمز وصل من الجسر، واللوحة تتابع تغيّره لحظيًا.'
           : staleQr
             ? 'أُخفي الرمز السابق لأنه لم يعد حديثًا؛ سيظهر الرمز الجديد تلقائيًا.'
-          : finishing
-            ? 'استلم واتساب عملية المسح، وينتظر اكتمال تهيئة الجلسة.'
-            : failed
-              ? (lastError || 'تعذر إكمال الاتصال بواتساب.')
-              : bridgeOnline
-                ? 'الجسر يعمل، لكن جلسة واتساب لم تصل إلى حالة الجاهزية بعد.'
-                : 'لم تصل نبضة حديثة من خدمة واتساب.',
+            : syncing
+              ? `تم ربط الهاتف بنجاح وجاري مزامنة سجل المحادثات (${syncPercent}%).`
+              : finishing
+                ? 'استلم واتساب عملية المسح، وينتظر اكتمال تهيئة الجلسة.'
+                : failed
+                  ? (lastError || 'تعذر إكمال الاتصال بواتساب.')
+                  : bridgeOnline
+                    ? 'الجسر يعمل، لكن جلسة واتساب لم تصل إلى حالة الجاهزية بعد.'
+                    : 'لم تصل نبضة حديثة من خدمة واتساب.',
       fix: hasQr
         ? 'ارفع سطوع الشاشة، وافتح من واتساب: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز، ثم امسح الرمز كاملًا داخل الإطار الأبيض.'
         : staleQr
           ? 'لا تمسح الرمز القديم. انتظر ثوانٍ قليلة حتى يظهر الرمز الجديد.'
-        : finishing
-          ? 'انتظر لحظات؛ تتحدث اللوحة تلقائيًا عند اكتمال الاتصال.'
-          : failed
-            ? 'راجع سجل خدمة whatsapp-bridge، ثم أعد تشغيلها بعد معالجة الخطأ.'
-            : bridgeOnline
-              ? 'انتظر التهيئة، أو أعد تشغيل خدمة واتساب إذا استمرت الحالة أكثر من دقيقتين.'
-              : 'شغّل خدمة whatsapp-bridge على الخادم وتحقق من اتصالها بالإنترنت.',
+          : syncing
+            ? 'لا تحتاج لمسح رمز QR جديد. انتظر اكتمال مزامنة المحادثات على الهاتف والجسر تلقائيًا.'
+            : finishing
+              ? 'انتظر لحظات؛ تتحدث اللوحة تلقائيًا عند اكتمال الاتصال.'
+              : failed
+                ? 'راجع سجل خدمة whatsapp-bridge، ثم أعد تشغيلها بعد معالجة الخطأ.'
+                : bridgeOnline
+                  ? 'انتظر التهيئة، أو أعد تشغيل خدمة واتساب إذا استمرت الحالة أكثر من دقيقتين.'
+                  : 'شغّل خدمة whatsapp-bridge على الخادم وتحقق من اتصالها بالإنترنت.',
       ready: connected,
       needsAuthScan: hasQr,
       connected,
@@ -656,11 +662,13 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
           patch.qrImage = bounded(body.qrImage, 500_000)
           patch.qrUpdatedAt = bounded(body.qrGeneratedAt, 80) || incomingStateAt
           patch.qrFingerprint = bounded(body.qrFingerprint, 80) || hash(body.qr).slice(0, 16)
-        } else if (['authenticated', 'connected'].includes(nextStatus) || body.connected === true) {
+        } else if (['authenticated', 'connected', 'syncing'].includes(nextStatus) || body.connected === true || event === 'loading_screen') {
           patch.qr = null
           patch.qrImage = null
           patch.qrUpdatedAt = null
           patch.qrFingerprint = null
+          if (body.percent != null) patch.syncPercent = Number(body.percent)
+          else if (body.syncPercent != null) patch.syncPercent = Number(body.syncPercent)
         }
         transaction.set(ref, patch, { merge: true })
       })

@@ -388,25 +388,39 @@ async function listAudienceMembers(db, listId) {
   return contacts.sort((left, right) => audienceDisplayName(left).localeCompare(audienceDisplayName(right), 'ar'))
 }
 
+export function isStaleBridgeState(current = {}, incomingInstanceId = '', incomingSeq = null) {
+  const currentSeq = Number(current?.stateSeq)
+  const nextSeq = Number(incomingSeq)
+  return Boolean(
+    incomingInstanceId
+    && current?.instanceId === incomingInstanceId
+    && Number.isSafeInteger(currentSeq)
+    && Number.isSafeInteger(nextSeq)
+    && nextSeq >= 0
+    && nextSeq < currentSeq
+  )
+}
+
 function bridgeStatus(data = {}) {
   const heartbeatAt = bounded(data.lastHeartbeatAt || data.updatedAt, 80)
-  const heartbeatAgeMs = heartbeatAt ? Math.max(0, Date.now() - Date.parse(heartbeatAt)) : null
+  const heartbeatTime = heartbeatAt ? Date.parse(heartbeatAt) : NaN
+  const heartbeatAgeMs = Number.isFinite(heartbeatTime) ? Math.max(0, Date.now() - heartbeatTime) : null
   const bridgeOnline = Number.isFinite(heartbeatAgeMs) && heartbeatAgeMs <= BRIDGE_ONLINE_MS
-  const rawStatus = bounded(data.status, 40)
+  const rawStatus = bounded(data.status, 40) || 'disconnected'
   const lastError = bounded(data.lastError, 600) || null
   const savedQr = bounded(data.qr, 8_000) || null
   const savedQrImage = bounded(data.qrImage, 500_000) || null
-  const hasQr = Boolean(savedQr || savedQrImage)
-  const explicitConnected = data.connected === true || rawStatus === 'connected'
-  const inferredConnected = bridgeOnline && data.connected !== false && !hasQr && rawStatus === 'pairing' && !lastError
-  const connected = Boolean(explicitConnected || inferredConnected)
+  const connected = bridgeOnline && (data.connected === true || rawStatus === 'connected')
+  const hasQr = bridgeOnline && !connected && rawStatus === 'pairing' && Boolean(savedQr || savedQrImage)
   const normalizedStatus = !bridgeOnline
     ? 'disconnected'
     : connected
       ? 'connected'
       : hasQr
         ? 'pairing'
-        : rawStatus || 'disconnected'
+        : rawStatus
+  const finishing = bridgeOnline && !connected && normalizedStatus === 'authenticated'
+  const failed = normalizedStatus === 'error'
   return {
     status: normalizedStatus,
     bridgeOnline,
@@ -415,19 +429,37 @@ function bridgeStatus(data = {}) {
     last_error: lastError,
     device_name: bounded(data.deviceName, 120) || 'جسر واتساب المركزي',
     updated_at: bounded(data.updatedAt, 80) || null,
-    qr: connected ? null : savedQr,
-    qrImage: connected ? null : savedQrImage,
+    qr: hasQr ? savedQr : null,
+    qrImage: hasQr ? savedQrImage : null,
     pairing_code: null,
     runtimePaused: Boolean(data.runtimePaused),
     indexed: siteIndex().length,
     timeZone: 'Asia/Kuwait',
     health: {
-      code: connected ? 'ready' : hasQr ? 'scan-qr' : bridgeOnline ? 'connecting' : 'offline',
-      label: connected ? 'جاهز' : hasQr ? 'امسح رمز QR' : bridgeOnline ? 'يتصل' : 'الجسر غير متصل',
-      why: connected ? 'الجلسة محفوظة والجسر يرسل نبضاته.' : 'الاتصال يحتاج إكمالًا أو تشغيل الخدمة.',
-      fix: hasQr ? 'امسح الرمز من واتساب ← الأجهزة المرتبطة.' : 'راجع خدمة whatsapp-bridge على السيرفر.',
+      code: connected ? 'ready' : hasQr ? 'scan-qr' : finishing ? 'finishing' : failed ? 'error' : bridgeOnline ? 'connecting' : 'offline',
+      label: connected ? 'جاهز' : hasQr ? 'امسح رمز QR' : finishing ? 'تم المسح — يجري إكمال الاتصال' : failed ? 'يحتاج مراجعة' : bridgeOnline ? 'يجري الاتصال' : 'الجسر غير متصل',
+      why: connected
+        ? 'جلسة واتساب متصلة والجسر يرسل نبضاته بانتظام.'
+        : hasQr
+          ? 'الجسر يعمل وينتظر مسح رمز الاقتران من الهاتف.'
+          : finishing
+            ? 'استلم واتساب عملية المسح، وينتظر اكتمال تهيئة الجلسة.'
+            : failed
+              ? (lastError || 'تعذر إكمال الاتصال بواتساب.')
+              : bridgeOnline
+                ? 'الجسر يعمل، لكن جلسة واتساب لم تصل إلى حالة الجاهزية بعد.'
+                : 'لم تصل نبضة حديثة من خدمة واتساب.',
+      fix: hasQr
+        ? 'من واتساب: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز، ثم امسح الرمز.'
+        : finishing
+          ? 'انتظر لحظات؛ تتحدث اللوحة تلقائيًا عند اكتمال الاتصال.'
+          : failed
+            ? 'راجع سجل خدمة whatsapp-bridge، ثم أعد تشغيلها بعد معالجة الخطأ.'
+            : bridgeOnline
+              ? 'انتظر التهيئة، أو أعد تشغيل خدمة واتساب إذا استمرت الحالة أكثر من دقيقتين.'
+              : 'شغّل خدمة whatsapp-bridge على الخادم وتحقق من اتصالها بالإنترنت.',
       ready: connected,
-      needsAuthScan: Boolean(hasQr && !connected),
+      needsAuthScan: hasQr,
       connected,
       quietNow: Boolean(data.runtimePaused),
       silenced: 0,
@@ -556,27 +588,55 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     const now = asIso()
 
     if (event === 'heartbeat' || event === 'status' || event === 'qr') {
-      const patch = {
+      const ref = db.collection(COLLECTIONS.bridge).doc('primary')
+      const incomingInstanceId = bounded(body.instanceId, 100)
+      const incomingSeq = Number(body.stateSeq)
+      const validIncomingSeq = Number.isSafeInteger(incomingSeq) && incomingSeq >= 0 ? incomingSeq : null
+      const incomingStateAt = bounded(body.stateAt, 80) || now
+      const nextStatus = event === 'qr'
+        ? 'pairing'
+        : bounded(body.status, 40) || (body.connected === true ? 'connected' : '')
+      const heartbeatPatch = {
         lastHeartbeatAt: now,
         updatedAt: now,
         deviceName: bounded(body.deviceName, 120),
         version: bounded(body.version, 80),
-        lastError: bounded(body.error, 600) || null,
       }
-      const nextStatus = event === 'qr'
-        ? 'pairing'
-        : bounded(body.status, 40) || (body.connected === true ? 'connected' : '')
-      if (nextStatus) patch.status = nextStatus
-      if (body.connected === true) patch.connected = true
-      else if (body.connected === false) patch.connected = false
-      if (event === 'qr') {
-        patch.qr = bounded(body.qr, 8_000)
-        patch.qrImage = bounded(body.qrImage, 500_000)
-      } else if (body.status === 'connected' || body.connected === true) {
-        patch.qr = null
-        patch.qrImage = null
-      }
-      await db.collection(COLLECTIONS.bridge).doc('primary').set(patch, { merge: true })
+
+      await db.runTransaction(async (transaction) => {
+        const snapshot = await transaction.get(ref)
+        const current = snapshot.exists ? snapshot.data() || {} : {}
+        const staleState = isStaleBridgeState(current, incomingInstanceId, validIncomingSeq)
+
+        /* تبقى النبضة حديثة حتى لو وصل حدث حالة قديم، لكن لا نسمح لرمز QR
+           متأخر بأن يطغى على حدث authenticated/connected الأحدث. */
+        if (staleState) {
+          transaction.set(ref, heartbeatPatch, { merge: true })
+          return
+        }
+
+        const patch = {
+          ...heartbeatPatch,
+          lastError: bounded(body.error, 600) || null,
+          ...(incomingInstanceId ? { instanceId: incomingInstanceId } : {}),
+          ...(validIncomingSeq != null ? { stateSeq: validIncomingSeq } : {}),
+          stateAt: incomingStateAt,
+        }
+        if (nextStatus) patch.status = nextStatus
+        if (event === 'qr') patch.connected = false
+        else if (body.connected === true || nextStatus === 'connected') patch.connected = true
+        else if (body.connected === false) patch.connected = false
+
+        if (event === 'qr') {
+          patch.qr = bounded(body.qr, 8_000)
+          patch.qrImage = bounded(body.qrImage, 500_000)
+        } else if (['authenticated', 'connected'].includes(nextStatus) || body.connected === true) {
+          patch.qr = null
+          patch.qrImage = null
+        }
+        transaction.set(ref, patch, { merge: true })
+      })
+
       if (event === 'heartbeat') await sweepExpiredManualStates(db)
       sendJson(res, 200, { ok: true })
       return
@@ -842,6 +902,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       }).length
       status.health.silenced = silenced
       status.health.quietNow = status.runtimePaused || silenced > 0
+      res.setHeader('Cache-Control', 'no-store, max-age=0')
       sendJson(res, 200, status)
       return
     }

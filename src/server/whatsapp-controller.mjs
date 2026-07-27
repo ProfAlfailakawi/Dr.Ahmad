@@ -8,6 +8,7 @@ const DUPLICATE_ACK = 'وصلتني الرسالة نفسها وهي عندي ب
 const WELCOME = `حياك الله في موقع د. أحمد حسين الفيلكاوي.\n\nالموقع هو المرجع المعتمد للمقالات والكتب والمواد المنشورة:\n${SITE_URL}`
 const MANUAL_MINUTES = Math.max(5, Math.min(240, Number(process.env.WHATSAPP_MANUAL_TAKEOVER_MINUTES || 30)))
 const BRIDGE_ONLINE_MS = Math.max(30_000, Number(process.env.WHATSAPP_BRIDGE_ONLINE_MS || 90_000))
+const QR_FRESH_MS = Math.max(30_000, Number(process.env.WHATSAPP_QR_FRESH_MS || 75_000))
 const MAX_BODY_BYTES = 2 * 1024 * 1024
 
 const COLLECTIONS = Object.freeze({
@@ -418,8 +419,14 @@ function bridgeStatus(data = {}) {
   const lastError = bounded(data.lastError, 600) || null
   const savedQr = bounded(data.qr, 8_000) || null
   const savedQrImage = bounded(data.qrImage, 500_000) || null
+  const qrUpdatedAt = bounded(data.qrUpdatedAt || data.stateAt, 80) || null
+  const qrUpdatedTime = qrUpdatedAt ? Date.parse(qrUpdatedAt) : NaN
+  const qrAgeMs = Number.isFinite(qrUpdatedTime) ? Math.max(0, Date.now() - qrUpdatedTime) : null
+  const qrFresh = qrAgeMs == null || qrAgeMs <= QR_FRESH_MS
   const connected = bridgeOnline && (data.connected === true || rawStatus === 'connected')
-  const hasQr = bridgeOnline && !connected && rawStatus === 'pairing' && Boolean(savedQr || savedQrImage)
+  const hasQrPayload = Boolean(savedQr || savedQrImage)
+  const hasQr = bridgeOnline && !connected && rawStatus === 'pairing' && hasQrPayload && qrFresh
+  const staleQr = bridgeOnline && !connected && rawStatus === 'pairing' && hasQrPayload && !qrFresh
   const normalizedStatus = !bridgeOnline
     ? 'disconnected'
     : connected
@@ -439,17 +446,22 @@ function bridgeStatus(data = {}) {
     updated_at: bounded(data.updatedAt, 80) || null,
     qr: hasQr ? savedQr : null,
     qrImage: hasQr ? savedQrImage : null,
+    qrUpdatedAt: hasQr ? qrUpdatedAt : null,
+    qrAgeMs: hasQr ? qrAgeMs : null,
+    qrFingerprint: hasQr ? (bounded(data.qrFingerprint, 80) || null) : null,
     pairing_code: null,
     runtimePaused: Boolean(data.runtimePaused),
     indexed: siteIndex().length,
     timeZone: 'Asia/Kuwait',
     health: {
-      code: connected ? 'ready' : hasQr ? 'scan-qr' : finishing ? 'finishing' : failed ? 'error' : bridgeOnline ? 'connecting' : 'offline',
-      label: connected ? 'جاهز' : hasQr ? 'امسح رمز QR' : finishing ? 'تم المسح — يجري إكمال الاتصال' : failed ? 'يحتاج مراجعة' : bridgeOnline ? 'يجري الاتصال' : 'الجسر غير متصل',
+      code: connected ? 'ready' : hasQr ? 'scan-qr' : staleQr ? 'refreshing-qr' : finishing ? 'finishing' : failed ? 'error' : bridgeOnline ? 'connecting' : 'offline',
+      label: connected ? 'جاهز' : hasQr ? 'امسح رمز QR' : staleQr ? 'يجري إنشاء رمز جديد' : finishing ? 'تم المسح — يجري إكمال الاتصال' : failed ? 'يحتاج مراجعة' : bridgeOnline ? 'يجري الاتصال' : 'الجسر غير متصل',
       why: connected
         ? 'جلسة واتساب متصلة والجسر يرسل نبضاته بانتظام.'
         : hasQr
-          ? 'الجسر يعمل وينتظر مسح رمز الاقتران من الهاتف.'
+          ? 'هذا هو أحدث رمز وصل من الجسر، واللوحة تتابع تغيّره لحظيًا.'
+          : staleQr
+            ? 'أُخفي الرمز السابق لأنه لم يعد حديثًا؛ سيظهر الرمز الجديد تلقائيًا.'
           : finishing
             ? 'استلم واتساب عملية المسح، وينتظر اكتمال تهيئة الجلسة.'
             : failed
@@ -458,7 +470,9 @@ function bridgeStatus(data = {}) {
                 ? 'الجسر يعمل، لكن جلسة واتساب لم تصل إلى حالة الجاهزية بعد.'
                 : 'لم تصل نبضة حديثة من خدمة واتساب.',
       fix: hasQr
-        ? 'من واتساب: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز، ثم امسح الرمز.'
+        ? 'ارفع سطوع الشاشة، وافتح من واتساب: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز، ثم امسح الرمز كاملًا داخل الإطار الأبيض.'
+        : staleQr
+          ? 'لا تمسح الرمز القديم. انتظر ثوانٍ قليلة حتى يظهر الرمز الجديد.'
         : finishing
           ? 'انتظر لحظات؛ تتحدث اللوحة تلقائيًا عند اكتمال الاتصال.'
           : failed
@@ -640,9 +654,13 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         if (event === 'qr') {
           patch.qr = bounded(body.qr, 8_000)
           patch.qrImage = bounded(body.qrImage, 500_000)
+          patch.qrUpdatedAt = bounded(body.qrGeneratedAt, 80) || incomingStateAt
+          patch.qrFingerprint = bounded(body.qrFingerprint, 80) || hash(body.qr).slice(0, 16)
         } else if (['authenticated', 'connected'].includes(nextStatus) || body.connected === true) {
           patch.qr = null
           patch.qrImage = null
+          patch.qrUpdatedAt = null
+          patch.qrFingerprint = null
         }
         transaction.set(ref, patch, { merge: true })
       })

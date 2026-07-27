@@ -19,6 +19,9 @@ type AgentStatus = {
   port?: number
   qr?: string | null
   qrImage?: string | null
+  qrUpdatedAt?: string | null
+  qrAgeMs?: number | null
+  qrFingerprint?: string | null
   health?: {
     code: string; label: string; why: string; fix: string
     ready: boolean; needsAuthScan: boolean; pollFailures: number
@@ -215,6 +218,16 @@ export function WhatsAppAgentPanel() {
     }
   }
 
+  const refreshLiveStatus = async () => {
+    try {
+      const next = await request<AgentStatus>('/status', { cache: 'no-store' })
+      setStatus(next)
+      setBridgeAlive(Boolean(next.bridgeOnline))
+    } catch {
+      setBridgeAlive(false)
+    }
+  }
+
   useEffect(() => {
     if (!user) return
     void (async () => {
@@ -224,13 +237,19 @@ export function WhatsAppAgentPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
-  /* تحديثٌ لحظيّ: نبضة البوت كل ثلاثين ثانية، فنفحص كل خمس عشرة كي لا يعلق
-     المؤشر على «متوقف» بعد تعافيه حتى يُعيد الدكتور تحميل الصفحة. ونفحص فوراً
-     عند العودة إلى التبويب — فأوّل ما يفعله الدكتور أن ينظر. */
+  /* أثناء الاقتران يتغير رمز واتساب بسرعة، لذلك نفحص الحالة وحدها كل
+     ثانيتين بدل تحديث اللوحة الثقيلة كاملة كل 15 ثانية. خارج الاقتران نعود
+     إلى الفحص الهادئ المعتاد. بهذه الطريقة لا يبقى رمز منتهي ظاهرًا للهاتف. */
+  const fastStatusPolling = Boolean(
+    status.health?.needsAuthScan
+    || ['pairing', 'authenticated', 'syncing'].includes(String(status.status || '')),
+  )
   useEffect(() => {
     if (!user) return
-    const timer = window.setInterval(() => { void refresh() }, 15_000)
-    const onVisible = () => { if (document.visibilityState === 'visible') void refresh() }
+    const intervalMs = fastStatusPolling ? 2_000 : 15_000
+    const tick = () => { if (document.visibilityState === 'visible') void refreshLiveStatus() }
+    const timer = window.setInterval(tick, intervalMs)
+    const onVisible = () => { if (document.visibilityState === 'visible') void refreshLiveStatus() }
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('focus', onVisible)
     return () => {
@@ -239,7 +258,7 @@ export function WhatsAppAgentPanel() {
       window.removeEventListener('focus', onVisible)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user])
+  }, [user, fastStatusPolling])
 
   /* صمتُ البوت: كم محادثةً يصمت فيها الآن، وزرٌّ يُعيده في كلّها بضغطة.
      كان الدكتور يظنّ البوت معطوباً وهو صامتٌ عمداً، بلا سبيلٍ لمعرفة ذلك ولا
@@ -611,12 +630,25 @@ export function WhatsAppAgentPanel() {
           )}
 
           {status.qrImage && !status.health?.ready && (
-            <div className="mt-4 rounded-2xl border border-accent/35 bg-canvas p-4">
+            <div className="mt-4 rounded-2xl border border-accent/35 bg-canvas p-4 sm:p-5">
               <p className="text-[.82rem] font-semibold text-ink">اربط واتساب</p>
-              <p className="mt-1 text-[.74rem] leading-relaxed text-soft">من الجوال: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز، ثم امسح الرمز.</p>
-              <div className="mt-3 flex justify-center rounded-xl bg-white p-3">
-                <img src={status.qrImage} alt="رمز اقتران واتساب" width={220} height={220} className="h-[220px] w-[220px] max-w-full" />
+              <p className="mt-1 text-[.74rem] leading-relaxed text-soft">من الجوال: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز، ثم اجعل الرمز كاملًا داخل إطار الكاميرا.</p>
+              <div className="mt-4 flex justify-center overflow-hidden rounded-2xl bg-white p-4 sm:p-6">
+                <img
+                  key={status.qrFingerprint || status.qrUpdatedAt || 'whatsapp-qr'}
+                  src={status.qrImage}
+                  alt="رمز اقتران واتساب"
+                  width={420}
+                  height={420}
+                  draggable={false}
+                  decoding="sync"
+                  className="block h-auto w-full max-w-[420px] select-none"
+                  style={{ imageRendering: 'pixelated' }}
+                />
               </div>
+              <p className="mt-3 text-center text-[.7rem] leading-relaxed text-soft">
+                الرمز يتحدّث تلقائيًا كل ثانيتين أثناء الربط{status.qrAgeMs != null ? ` · عمر الرمز ${ageLabel(status.qrAgeMs)}` : ''}.
+              </p>
             </div>
           )}
           {status.pairing_code && !status.health?.ready && (

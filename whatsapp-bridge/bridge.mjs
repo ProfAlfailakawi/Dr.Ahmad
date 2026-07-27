@@ -241,6 +241,7 @@ const client = new Client({
 })
 
 client.on('loading_screen', async (percent, message) => {
+  clearRuntimeQr();
   runtime.syncPercent = percent
   runtime.lastActivityAt = Date.now()
   const snapshot = transitionState('syncing', false, '', { percent, message })

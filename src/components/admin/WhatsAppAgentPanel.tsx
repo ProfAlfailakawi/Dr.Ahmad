@@ -95,6 +95,7 @@ const stateLabel: Record<string, string> = {
   unconfigured: 'غير مرتبط',
   starting: 'يجري تشغيل الخدمة',
   pairing: 'بانتظار مسح الرمز',
+  syncing: 'جاري مزامنة المحادثات',
   authenticated: 'تم المسح — يجري إكمال الاتصال',
   connected: 'متصل',
   disconnected: 'غير متصل',
@@ -102,6 +103,7 @@ const stateLabel: Record<string, string> = {
   restarting: 'جارٍ إعادة التشغيل',
   paused: 'متوقف مؤقتًا',
   sending: 'يرسل بعد الاعتماد',
+  auth_failure: 'فشل التوثيق — يتطلب مسح الرمز من جديد',
   error: 'يحتاج مراجعة',
 }
 

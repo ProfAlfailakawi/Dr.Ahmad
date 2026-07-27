@@ -206,7 +206,7 @@ export default function Inbox() {
       <PageHead
         label="رسائل على الهامش"
         title="رسالةٌ تفتح نافذة."
-        sub="رسائل وأسئلة تُنتقى وتُنشر تلقائياً من النظام الحي؛ لا نصوص مخبوزة ولا أرقام ثابتة."
+        sub="رسائل مختارة من الأرشيف الحي، وأسئلة تتجدد مع النشر من دون ضجيج أو تكرار."
       />
       <div className="border-b border-hair px-6 py-3 md:px-11">
         <p className="mx-auto flex max-w-shell items-center gap-2 text-[.72rem] text-soft">

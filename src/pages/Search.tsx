@@ -243,7 +243,7 @@ export default function Search() {
               </div>
 
               {!searchStarted && <div className="mt-7">
-                <p className="mb-3 text-[.82rem] font-medium text-soft">أو ابدأ بمحور</p>
+                <p className="mb-3 text-[.82rem] font-medium text-soft">أو ابدأ من هنا</p>
                 <div className="flex flex-wrap gap-x-5 gap-y-2">
                   {suggestedTopics.map((topic) => (
                     <button

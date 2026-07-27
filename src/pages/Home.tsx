@@ -254,7 +254,7 @@ function SinceLastVisit() {
   if (newArticles > 0) bits.push({ to: '/articles', t: newArticles === 1 ? 'مقال جديد' : `${newArticles} مقالات جديدة` })
   if (daysGone >= 1) bits.push({ to: '/curated', t: 'اختيارات تبدّلت' })
 
-  // «أكمل قراءتك» يظهر متى وُجد مقالٌ سابق (حتى دون غياب طويل)
+  // «تابع من حيث توقفت» يظهر متى وُجد مقالٌ سابق (حتى دون غياب طويل)
   const resume = lastRead && Date.now() - lastRead.at < 45 * 864e5 ? lastRead : null
   if (!bits.length && !resume && !continuation) return null
 
@@ -270,7 +270,7 @@ function SinceLastVisit() {
         )}
         {resume && (
           <Link to={`/articles/${resume.slug}`} className="group relative grid min-h-[8.25rem] w-[84vw] max-w-[27rem] shrink-0 snap-start content-center gap-1 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft transition-colors hover:border-accent md:min-h-0 md:w-auto md:max-w-none md:items-center md:gap-2.5 md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
-            <span className="font-semibold text-accent">أكمل قراءتك</span>
+            <span className="font-semibold text-accent">تابع من حيث توقفت</span>
             <span className="min-w-0 pe-7 leading-relaxed text-ink transition-colors group-hover:text-accent md:pe-0">«{resume.title}»</span>
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent md:static md:translate-y-0 md:opacity-0 md:transition-opacity md:duration-300 md:group-hover:opacity-100">←</span>
           </Link>

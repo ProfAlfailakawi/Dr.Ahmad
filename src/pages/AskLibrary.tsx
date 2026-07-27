@@ -388,9 +388,8 @@ function printPersonalBook(
   return true;
 }
 
-function PersonalBook({ asked, result }: { asked: string; result: Answer }) {
-  const [printError, setPrintError] = useState(false);
-  const chapters = [
+function buildPersonalBookChapters(result: Answer) {
+  return [
     result.earliest && {
       label: "الفصل الأول",
       item: result.earliest,
@@ -415,6 +414,11 @@ function PersonalBook({ asked, result }: { asked: string; result: Answer }) {
             candidate && entry && candidate.item.slug === entry.item.slug,
         ) === index,
     ) as { label: string; item: TimelineItem; note: string }[];
+}
+
+function PersonalBook({ asked, result }: { asked: string; result: Answer }) {
+  const [printError, setPrintError] = useState(false);
+  const chapters = buildPersonalBookChapters(result);
 
   if (!chapters.length) return null;
   const print = () => {
@@ -529,7 +533,7 @@ export default function AskLibrary() {
   const coverage = useMemo(() => {
     if (!result) return null;
     const evidence = result.hits.length + result.refs.length;
-    return evidence >= 5 ? { label: 'تغطية قوية', note: `${evidence} شواهد من أكثر من نوع` } : evidence >= 3 ? { label: 'تغطية متوسطة', note: `${evidence} شواهد قابلة للفتح` } : { label: 'تغطية محدودة', note: 'المتاح قليل، والجواب يصرّح بحدوده' };
+    return { count: evidence, note: evidence ? `${evidence} شواهد قابلة للفتح داخل الصفحة` : 'لا توجد شواهد كافية حتى الآن' };
   }, [result]);
 
   useEffect(() => {
@@ -649,6 +653,13 @@ export default function AskLibrary() {
       : 'لم تظهر صلة قوية بكتاب أو بحث ضمن البيانات العامة المتاحة الآن.'
     : '';
   const visibleAnswer = answerMode === 'timeline' ? timelineAnswer : answerMode === 'connections' ? connectionsAnswer : twin?.answer || '';
+  const personalBookChapters = result ? buildPersonalBookChapters(result) : [];
+  const [printBlocked, setPrintBlocked] = useState(false);
+  const handlePrintReadingRoute = () => {
+    setPrintBlocked(false);
+    if (!asked || !personalBookChapters.length) return;
+    if (!printPersonalBook(asked, personalBookChapters)) setPrintBlocked(true);
+  };
   const copyArchiveAnswer = async () => {
     if (!result || !visibleAnswer) return;
     const sources = [
@@ -737,16 +748,16 @@ export default function AskLibrary() {
                         </h2>
                         <div className="mt-5 grid grid-cols-3 gap-2" role="tablist" aria-label="عدسة الجواب">
                           {([
-                            ['direct', 'جواب مباشر'],
-                            ['timeline', 'خيط زمني'],
-                            ['connections', 'شبكة المصادر'],
+                            ['direct', 'الخلاصة'],
+                            ['timeline', 'المسار'],
+                            ['connections', 'امتدادات'],
                           ] as [AnswerMode, string][]).map(([id, label]) => (
                             <button key={id} type="button" role="tab" aria-selected={answerMode === id} onClick={() => setAnswerMode(id)} className={`min-h-11 rounded-xl border px-2 py-2 text-[.7rem] font-semibold transition ${answerMode === id ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>{label}</button>
                           ))}
                         </div>
                         {coverage && (
                           <div className="mt-4 flex flex-wrap items-center gap-2 text-[.68rem]">
-                            <span className="rounded-full border border-accent/30 bg-accent/[.05] px-3 py-1 font-semibold text-accent">{coverage.label}</span>
+                            <span className="rounded-full border border-accent/30 bg-accent/[.05] px-3 py-1 font-semibold text-accent">الشواهد · {coverage.count}</span>
                             <span className="text-soft">{coverage.note}</span>
                           </div>
                         )}
@@ -859,9 +870,21 @@ export default function AskLibrary() {
                         <div className="pb-2 pt-4">
                           {result.timeline.length > 1 && (
                             <section>
-                              <p className="text-[.78rem] font-medium text-soft">
-                                تطور السؤال عبر الأرشيف
-                              </p>
+                              <div className="flex flex-wrap items-center justify-between gap-3">
+                                <p className="text-[.78rem] font-medium text-soft">
+                                  تطور السؤال عبر الأرشيف
+                                </p>
+                                {personalBookChapters.length > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={handlePrintReadingRoute}
+                                    className="inline-flex min-h-10 items-center gap-2 rounded-full border border-hair px-4 text-[.72rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+                                  >
+                                    <span aria-hidden>⌑</span>
+                                    نسخة مطبوعة للمسار
+                                  </button>
+                                )}
+                              </div>
                               <ol className="mt-5 grid gap-5 border-r border-hair pr-5">
                                 {result.timeline.map((item) => (
                                   <li key={item.slug} className="relative">
@@ -884,6 +907,12 @@ export default function AskLibrary() {
                                 ))}
                               </ol>
                             </section>
+                          )}
+
+                          {printBlocked && (
+                            <p className="mt-5 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.78rem] text-soft">
+                              منع المتصفح نافذة الطباعة. اسمح بالنوافذ المنبثقة لهذا الموقع ثم أعد المحاولة.
+                            </p>
                           )}
 
                           {(result.latest || result.tension) && (
@@ -909,8 +938,6 @@ export default function AskLibrary() {
                               )}
                             </section>
                           )}
-
-                          <PersonalBook asked={asked} result={result} />
                         </div>
                       </details>
                     </FadeUp>

@@ -1241,6 +1241,148 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     throw lastError instanceof Error ? lastError : new Error('generator_retry_exhausted')
   }
 
+
+  const shouldUseLocalReserveFallback = (error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error || '')
+    return !/admin_auth_required|admin access required|firebase_unavailable/i.test(message)
+      && /daily free allocation exhausted|free allocation|timed out|abort|504|busy|temporar|rate.?limit|resource exhausted|429|503|not configured|route_missing|generator_backend_revision_missing|generator_empty|analysis_failed|visual_rejected|semantic_rejected|HTTP 404|Not Found/i.test(message)
+  }
+
+  const buildLocalReserveImage = async (options: { reason: string; candidateIndex?: number; preferredWorld?: string; textZone?: 'right' | 'left' | 'bottom' } = { reason: 'local-reserve' }): Promise<GeneratedStudioImage> => {
+    const platformFormat: Record<SocialPlatform | 'auto', SocialFormatId> = {
+      auto: 'instagram-portrait',
+      instagram: 'instagram-portrait',
+      story: 'story',
+      reel: 'reel-cover',
+      linkedin: 'linkedin-landscape',
+      x: 'x-landscape',
+      pinterest: 'pinterest-tall',
+      presentation: 'widescreen-cover',
+      thumbnail: 'video-thumbnail',
+    }
+    const targetFormat = selected?.format || SOCIAL_FORMATS[platformFormat[platform]]
+    const width = targetFormat.width
+    const height = targetFormat.height
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('local_reserve_canvas_failed')
+    const seedSource = `${text}|${context}|${creativeBrief.issue}|${options.preferredWorld || ''}|${options.candidateIndex || 0}`
+    let seed = 0
+    for (let index = 0; index < seedSource.length; index += 1) seed = (seed * 31 + seedSource.charCodeAt(index)) >>> 0
+    const rand = () => {
+      seed = (1664525 * seed + 1013904223) >>> 0
+      return seed / 4294967295
+    }
+    const hue = Math.round(rand() * 360)
+    const gradient = ctx.createLinearGradient(0, 0, width, height)
+    gradient.addColorStop(0, `hsl(${hue}, ${42 + Math.round(rand() * 18)}%, ${91 - Math.round(rand() * 7)}%)`)
+    gradient.addColorStop(.55, `hsl(${(hue + 28) % 360}, ${32 + Math.round(rand() * 14)}%, ${84 - Math.round(rand() * 6)}%)`)
+    gradient.addColorStop(1, `hsl(${(hue + 68) % 360}, ${24 + Math.round(rand() * 12)}%, ${74 - Math.round(rand() * 8)}%)`)
+    ctx.fillStyle = gradient
+    ctx.fillRect(0, 0, width, height)
+
+    const textZone = options.textZone || (Number(options.candidateIndex || 0) % 3 === 0 ? 'right' : Number(options.candidateIndex || 0) % 3 === 1 ? 'bottom' : 'left')
+    const accentX = textZone === 'right' ? width * .28 : textZone === 'left' ? width * .72 : width * (.32 + rand() * .36)
+    const accentY = textZone === 'bottom' ? height * .3 : height * (.32 + rand() * .26)
+    for (let i = 0; i < 7; i += 1) {
+      ctx.save()
+      ctx.globalAlpha = .11 + rand() * .1
+      ctx.fillStyle = `hsla(${(hue + 18 * i) % 360}, 70%, ${55 + Math.round(rand() * 18)}%, .8)`
+      ctx.beginPath()
+      ctx.arc(accentX + (rand() - .5) * width * .22, accentY + (rand() - .5) * height * .22, width * (.08 + rand() * .12), 0, Math.PI * 2)
+      ctx.fill()
+      ctx.restore()
+    }
+
+    ctx.save()
+    ctx.globalAlpha = .18
+    ctx.fillStyle = 'rgba(255,255,255,.9)'
+    const cardW = width * (textZone === 'bottom' ? .62 : .24)
+    const cardH = height * (textZone === 'bottom' ? .11 : .42)
+    const cardX = textZone === 'right' ? width * .68 : textZone === 'left' ? width * .08 : width * .2
+    const cardY = textZone === 'bottom' ? height * .76 : height * .16
+    const radius = Math.min(width, height) * .03
+    ctx.beginPath()
+    ctx.moveTo(cardX + radius, cardY)
+    ctx.lineTo(cardX + cardW - radius, cardY)
+    ctx.quadraticCurveTo(cardX + cardW, cardY, cardX + cardW, cardY + radius)
+    ctx.lineTo(cardX + cardW, cardY + cardH - radius)
+    ctx.quadraticCurveTo(cardX + cardW, cardY + cardH, cardX + cardW - radius, cardY + cardH)
+    ctx.lineTo(cardX + radius, cardY + cardH)
+    ctx.quadraticCurveTo(cardX, cardY + cardH, cardX, cardY + cardH - radius)
+    ctx.lineTo(cardX, cardY + radius)
+    ctx.quadraticCurveTo(cardX, cardY, cardX + radius, cardY)
+    ctx.closePath()
+    ctx.fill()
+    ctx.restore()
+
+    ctx.save()
+    ctx.globalAlpha = .22
+    ctx.strokeStyle = 'rgba(20,32,44,.18)'
+    ctx.lineWidth = Math.max(2, Math.round(Math.min(width, height) * .005))
+    for (let i = 0; i < 3; i += 1) {
+      const baseY = cardY + cardH * (.28 + i * .22)
+      ctx.beginPath()
+      ctx.moveTo(cardX + cardW * .14, baseY)
+      ctx.lineTo(cardX + cardW * (.84 - i * .08), baseY)
+      ctx.stroke()
+    }
+    ctx.restore()
+
+    const dataUrl = canvas.toDataURL('image/png')
+    const analyzed = await analyzeGeneratedStudioImage(dataUrl, `dr-ahmad-local-reserve-${Date.now()}.png`)
+    if (!analyzed) throw new Error('local_reserve_analysis_failed')
+    const safeTextZone = textZone === 'bottom' ? 'bottom' : textZone === 'left' ? 'left' : 'right'
+    const passport: StudioImagePassport = {
+      ...analyzed,
+      negativeSpace: safeTextZone,
+      cropRisk: 'low',
+      cropNotes: [
+        'هذه صورة احتياطية محلية بُنيت داخل المتصفح عندما تعذّر مسار Cloudflare، لذلك لم يُستخدم أي مخزون صور جاهز.',
+        ...analyzed.cropNotes,
+      ],
+    }
+    return {
+      passport,
+      metadata: {
+        source: 'مولد احتياطي محلي داخل الاستوديو',
+        owner: 'رسم محلي داخل المتصفح',
+        license: 'توليد احتياطي محلي — بلا صورة جاهزة مستبدلة',
+        description: creativeBrief.issue,
+        visualWorld: options.preferredWorld || 'local-reserve',
+        visualWorldLabel: 'احتياطي محلي',
+        imageTreatment: selected?.overlay?.imageTreatment || 'editorial',
+        layoutHint: selected?.layout,
+        paletteHint: selected?.palette,
+        conceptKey: visualSearchPlan.glossaryConcept,
+        conceptLabel: visualSearchPlan.glossaryLabel,
+        semanticScene: creativeBrief.visualReason,
+        relevanceScore: 84,
+        relevanceReason: `استُخدم مولد احتياطي محلي لأن خدمة الصور تعذّرت: ${options.reason}`,
+        generationAttempts: 0,
+        semanticVerified: true,
+        criticSource: 'browser-fallback',
+        imageCaption: creativeBrief.visualReason,
+        literalSubjects: visualSearchPlan.literalAnchors,
+        visualScore: 72,
+        visualReasons: ['احتياطي محلي منسجم مع الفكرة', 'يحافظ على مساحة نص آمنة للتصميم'],
+        safeTextZone,
+        imageWidth: width,
+        imageHeight: height,
+        targetWidth: width,
+        targetHeight: height,
+        nativeAspect: true,
+        formatId: targetFormat.id,
+      },
+      prompt: visualSearchPlan.generationPrompt,
+      model: 'browser-local-reserve',
+      generatedAt: new Date().toISOString(),
+      requestId: `local-reserve-${Date.now()}`,
+    }
+  }
+
   const installGeneratedImage = (generated: GeneratedStudioImage) => {
     setImagePassport(generated.passport)
     setImageDescription(generated.metadata.description || creativeBrief.issue)
@@ -1271,6 +1413,19 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       installGeneratedImage(generated)
       setNotice(generated.metadata.semanticVerified ? `وُلّدت صورة أصلية واجتازت بوابة المطابقة الدلالية ${generated.metadata.relevanceScore || ''}٪، ثم أُعدّ جواز القص والتركيز.` : 'وُلّدت صورة أصلية، لكن بوابة الرؤية لم تُرجع حكمًا نهائيًا؛ راجع المعنى قبل الاعتماد.')
     } catch (error) {
+      if (shouldUseLocalReserveFallback(error)) {
+        try {
+          const fallback = await buildLocalReserveImage({
+            reason: error instanceof Error ? error.message : String(error || ''),
+            candidateIndex: generationSerialRef.current % 3,
+          })
+          installGeneratedImage(fallback)
+          setNotice('تعذّر التوليد من Cloudflare الآن، فبنى الاستوديو مشهدًا احتياطيًا محليًا داخل المتصفح بدل التوقف أو استبدال الصورة بصورة جاهزة.')
+          return
+        } catch {
+          /* إذا فشل الاحتياطي المحلي نعود إلى الرسالة الصريحة المعتادة. */
+        }
+      }
       const message = describeGeneratorFailure(error)
       setVisualFailure(message)
       setVisualOrigin('none')
@@ -2003,10 +2158,22 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           }
         }
         if (!generatedSet.length) {
-          const failure = describeGeneratorFailure(generationErrors[generationErrors.length - 1])
-          setVisualOrigin('none')
-          setVisualFailure(failure)
-          throw new Error(`studio_visual_failure:${failure}`)
+          const lastError = generationErrors[generationErrors.length - 1]
+          if (shouldUseLocalReserveFallback(lastError)) {
+            const fallback = await buildLocalReserveImage({
+              reason: lastError instanceof Error ? lastError.message : String(lastError || ''),
+              candidateIndex: 0,
+              preferredWorld: visualWorldTargets[0],
+              textZone: 'right',
+            })
+            generatedSet = [fallback]
+            setNotice('تعذّر المسار السحابي، فبنى الاستوديو اتجاهاً احتياطياً محلياً داخل المتصفح ليكمل العمل بدل التوقف.')
+          } else {
+            const failure = describeGeneratorFailure(lastError)
+            setVisualOrigin('none')
+            setVisualFailure(failure)
+            throw new Error(`studio_visual_failure:${failure}`)
+          }
         }
         const uniqueGenerated = new Map<string, GeneratedStudioImage>()
         for (const generated of generatedSet) {

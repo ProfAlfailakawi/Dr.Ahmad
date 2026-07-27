@@ -392,28 +392,42 @@ function bridgeStatus(data = {}) {
   const heartbeatAt = bounded(data.lastHeartbeatAt || data.updatedAt, 80)
   const heartbeatAgeMs = heartbeatAt ? Math.max(0, Date.now() - Date.parse(heartbeatAt)) : null
   const bridgeOnline = Number.isFinite(heartbeatAgeMs) && heartbeatAgeMs <= BRIDGE_ONLINE_MS
-  const connected = bridgeOnline && data.status === 'connected'
+  const rawStatus = bounded(data.status, 40)
+  const lastError = bounded(data.lastError, 600) || null
+  const savedQr = bounded(data.qr, 8_000) || null
+  const savedQrImage = bounded(data.qrImage, 500_000) || null
+  const hasQr = Boolean(savedQr || savedQrImage)
+  const explicitConnected = data.connected === true || rawStatus === 'connected'
+  const inferredConnected = bridgeOnline && !hasQr && rawStatus === 'pairing' && !lastError
+  const connected = Boolean(explicitConnected || inferredConnected)
+  const normalizedStatus = !bridgeOnline
+    ? 'disconnected'
+    : connected
+      ? 'connected'
+      : hasQr
+        ? 'pairing'
+        : rawStatus || 'disconnected'
   return {
-    status: bridgeOnline ? (data.status || 'disconnected') : 'disconnected',
+    status: normalizedStatus,
     bridgeOnline,
     lastHeartbeatAt: heartbeatAt || null,
     heartbeatAgeMs,
-    last_error: bounded(data.lastError, 600) || null,
+    last_error: lastError,
     device_name: bounded(data.deviceName, 120) || 'جسر واتساب المركزي',
     updated_at: bounded(data.updatedAt, 80) || null,
-    qr: connected ? null : bounded(data.qr, 8_000) || null,
-    qrImage: connected ? null : bounded(data.qrImage, 500_000) || null,
+    qr: connected ? null : savedQr,
+    qrImage: connected ? null : savedQrImage,
     pairing_code: null,
     runtimePaused: Boolean(data.runtimePaused),
     indexed: siteIndex().length,
     timeZone: 'Asia/Kuwait',
     health: {
-      code: connected ? 'ready' : data.qr ? 'scan-qr' : bridgeOnline ? 'connecting' : 'offline',
-      label: connected ? 'جاهز' : data.qr ? 'امسح رمز QR' : bridgeOnline ? 'يتصل' : 'الجسر غير متصل',
+      code: connected ? 'ready' : hasQr ? 'scan-qr' : bridgeOnline ? 'connecting' : 'offline',
+      label: connected ? 'جاهز' : hasQr ? 'امسح رمز QR' : bridgeOnline ? 'يتصل' : 'الجسر غير متصل',
       why: connected ? 'الجلسة محفوظة والجسر يرسل نبضاته.' : 'الاتصال يحتاج إكمالًا أو تشغيل الخدمة.',
-      fix: data.qr ? 'امسح الرمز من واتساب ← الأجهزة المرتبطة.' : 'راجع خدمة whatsapp-bridge على السيرفر.',
+      fix: hasQr ? 'امسح الرمز من واتساب ← الأجهزة المرتبطة.' : 'راجع خدمة whatsapp-bridge على السيرفر.',
       ready: connected,
-      needsAuthScan: Boolean(data.qr && !connected),
+      needsAuthScan: Boolean(hasQr && !connected),
       connected,
       quietNow: Boolean(data.runtimePaused),
       silenced: 0,
@@ -543,17 +557,22 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
 
     if (event === 'heartbeat' || event === 'status' || event === 'qr') {
       const patch = {
-        status: event === 'qr' ? 'pairing' : bounded(body.status, 40) || 'disconnected',
         lastHeartbeatAt: now,
         updatedAt: now,
         deviceName: bounded(body.deviceName, 120),
         version: bounded(body.version, 80),
         lastError: bounded(body.error, 600) || null,
       }
+      const nextStatus = event === 'qr'
+        ? 'pairing'
+        : bounded(body.status, 40) || (body.connected === true ? 'connected' : '')
+      if (nextStatus) patch.status = nextStatus
+      if (body.connected === true) patch.connected = true
+      else if (body.connected === false) patch.connected = false
       if (event === 'qr') {
         patch.qr = bounded(body.qr, 8_000)
         patch.qrImage = bounded(body.qrImage, 500_000)
-      } else if (body.status === 'connected') {
+      } else if (body.status === 'connected' || body.connected === true) {
         patch.qr = null
         patch.qrImage = null
       }

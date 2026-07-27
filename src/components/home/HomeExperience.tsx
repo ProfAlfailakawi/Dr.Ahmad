@@ -42,7 +42,7 @@ function ReturningNote({ articles }: { articles: ArticleRecord[] }) {
   if (!newArticles && !resume) return null
   return (
     <div className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.82rem] text-soft">
-      {resume && <Link to={`/articles/${resume.slug}`} className="group"><span className="font-semibold text-accent">أكمل قراءتك</span> · <span className="text-ink group-hover:text-accent">«{resume.title}»</span></Link>}
+      {resume && <Link to={`/articles/${resume.slug}`} className="group"><span className="font-semibold text-accent">تابع من حيث توقفت</span> · <span className="text-ink group-hover:text-accent">«{resume.title}»</span></Link>}
       {newArticles > 0 && <Link to="/articles" className="transition-colors hover:text-accent"><span className="font-semibold text-accent">منذ زيارتك:</span> {newArticles === 1 ? 'مقال جديد' : `${newArticles} مقالات جديدة`}</Link>}
     </div>
   )

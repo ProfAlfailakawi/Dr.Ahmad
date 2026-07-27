@@ -1819,6 +1819,20 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:47.105Z"
   },
+  "qabas-201808-001.mp3": {
+    "bytes": 2881454,
+    "sha256": "89607cd9fd5c5b7539bf92e108c99cbf6ac7966555aeaebc6f5d5fb77af7634c",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-27T21:50:14.004Z",
+    "durationSeconds": 180,
+    "sourceHash": "4900e3c3b50e65f75934c0544323bcf95124b0883220894c1b91999352840147",
+    "pipelineHash": "6f694fc2ba2650c584f08d0f9d9e741f2b33909d3477311951abe74914b329d2",
+    "humanLikenessScore": 100,
+    "audioJudgeMinimum": null,
+    "acceptedAt": "2026-07-27T21:38:03.078Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-07-27T21:50:48.228Z"
+  },
   "qabas-201808-001.noura.mp3": {
     "sha256": "1fbb277f95e35e21e2a60cca670866123460a58eb6939def83c5cd65ce2775ff",
     "contentType": "audio/mpeg",
@@ -1923,6 +1937,20 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:51.385Z"
   },
+  "qabas-201811-001.noura.mp3": {
+    "bytes": 2918653,
+    "sha256": "ed488abe77c18e9fbc13817a6b3f9b5bf1859126187d32ef10e82c9b6a367e98",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-27T21:50:14.057Z",
+    "durationSeconds": 182,
+    "sourceHash": "3cf40cca7c310701f302fd1471e0e4d34d8208e9ff7c7d67ad6008979c3895e6",
+    "pipelineHash": "6f694fc2ba2650c584f08d0f9d9e741f2b33909d3477311951abe74914b329d2",
+    "humanLikenessScore": 100,
+    "audioJudgeMinimum": null,
+    "acceptedAt": "2026-07-27T21:46:20.873Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-07-27T21:50:50.428Z"
+  },
   "qabas-201811-002.mp3": {
     "bytes": 3217493,
     "sha256": "95bd6bf7f0e2ffdae7a1ee1dba7129fe51b0752b3303515d8a49ee63225893ca",
@@ -1950,6 +1978,20 @@
     "acceptedAt": "2026-07-25T01:16:07.394Z",
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:52.313Z"
+  },
+  "qabas-201909-001.mp3": {
+    "bytes": 3213314,
+    "sha256": "370a19e930d0b69eb269c32433c5322abc9cd3afc8d234e0002ac603437e4282",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-27T21:50:14.108Z",
+    "durationSeconds": 201,
+    "sourceHash": "45c8ab5d9550b929fe5cd181c35ad8ca0706056278e491d4e3f153ea123e9e40",
+    "pipelineHash": "6f694fc2ba2650c584f08d0f9d9e741f2b33909d3477311951abe74914b329d2",
+    "humanLikenessScore": 100,
+    "audioJudgeMinimum": null,
+    "acceptedAt": "2026-07-27T21:49:29.557Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-07-27T21:50:51.185Z"
   },
   "qabas-201909-001.noura.mp3": {
     "durationSeconds": 237,

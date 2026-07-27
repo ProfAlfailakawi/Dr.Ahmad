@@ -274,6 +274,7 @@
     "noura": true
   },
   "qabas-201808-001": {
+    "fahed": true,
     "noura": true
   },
   "qabas-201808-002": {
@@ -289,13 +290,15 @@
     "noura": true
   },
   "qabas-201811-001": {
-    "fahed": true
+    "fahed": true,
+    "noura": true
   },
   "qabas-201811-002": {
     "fahed": true,
     "noura": true
   },
   "qabas-201909-001": {
+    "fahed": true,
     "noura": true
   },
   "qabas-201911-001": {

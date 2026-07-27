@@ -158,6 +158,7 @@ const client = new Client({
   qrMaxRetries: 0,
 })
 
+// Event: loading_screen (WhatsApp Web loading chats and sync)
 client.on('loading_screen', async (percent, message) => {
   runtime.syncPercent = percent
   runtime.lastActivityAt = Date.now()
@@ -166,6 +167,7 @@ client.on('loading_screen', async (percent, message) => {
   await safeEmit('status', snapshot)
 })
 
+// Event: qr
 client.on('qr', async (qr) => {
   const snapshot = transitionState('pairing', false, '')
   runtime.qrAt = snapshot.stateAt
@@ -178,20 +180,25 @@ client.on('qr', async (qr) => {
   log('info', 'qr_generated', { stateSeq: snapshot.stateSeq })
 })
 
+// Event: authenticated
 client.on('authenticated', () => {
   const snapshot = transitionState('authenticated', false, '')
   log('info', 'authenticated', { stateSeq: snapshot.stateSeq })
   void safeEmit('status', snapshot)
   
+  // Immediately start heartbeat & polling so server knows auth succeeded!
   startHeartbeatAndPolling()
 })
 
+// Event: ready
 client.on('ready', () => {
   const snapshot = transitionState('connected', true, '')
   log('info', 'ready', { stateSeq: snapshot.stateSeq })
   void safeEmit('status', snapshot)
   
   startHeartbeatAndPolling()
+
+  // Run warmPhoneAliases and contact sync in the BACKGROUND with a non-blocking timeout
   void warmPhoneAliasesAndContactsInBackground()
 })
 
@@ -228,6 +235,7 @@ async function warmPhoneAliasesAndContactsInBackground() {
   }
 }
 
+// Event: change_state
 client.on('change_state', (state) => {
   const value = String(state || '').toUpperCase()
   log('info', 'change_state', { state: value })
@@ -243,6 +251,7 @@ client.on('change_state', (state) => {
   }
 })
 
+// Event: auth_failure
 client.on('auth_failure', async (message) => {
   const snapshot = transitionState('auth_failure', false, String(message || 'authentication_failed'))
   log('error', 'auth_failure', { error: runtime.lastError, stateSeq: snapshot.stateSeq })
@@ -255,6 +264,7 @@ client.on('auth_failure', async (message) => {
   }
 })
 
+// Event: disconnected
 client.on('disconnected', async (reason) => {
   const reasonStr = String(reason || 'disconnected').toUpperCase()
   log('warn', 'disconnected', { reason: reasonStr, stateSeq: runtime.stateSeq })
@@ -267,7 +277,7 @@ client.on('disconnected', async (reason) => {
     if (!shuttingDown) {
       shuttingDown = true
       await safeGracefulCloseClient()
-      process.exit(76)
+      process.exit(76) // Exit code 76 = clear session and re-pair
     }
   } else {
     const snapshot = transitionState('reconnecting', false, `temporary_disconnect:${reasonStr}`)
@@ -275,7 +285,7 @@ client.on('disconnected', async (reason) => {
     if (!shuttingDown) {
       shuttingDown = true
       await safeGracefulCloseClient()
-      process.exit(75)
+      process.exit(75) // Exit code 75 = soft restart without removing session
     }
   }
 })
@@ -284,11 +294,12 @@ async function safeGracefulCloseClient() {
   try {
     await client.destroy()
   } catch {
-    /* ignore */
+    /* ignore close errors */
   }
   await new Promise((r) => setTimeout(r, 1000))
 }
 
+// Inbound message handling
 client.on('message', async (message) => {
   runtime.lastActivityAt = Date.now()
   if (message.fromMe || message.from === 'status@broadcast' || !message.from?.endsWith('@c.us')) return
@@ -348,14 +359,14 @@ async function executeCommand(command) {
       await safeEmit('status', transitionState('restarting', false, 'command_restart'))
       await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 1 })
       await safeGracefulCloseClient()
-      process.exit(75)
+      process.exit(75) // Exit code 75 = soft restart
     } else if (command.type === 'repair-session' || command.type === 'repair') {
       shuttingDown = true
       await safeEmit('status', transitionState('pairing', false, 'command_repair'))
       await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 1 })
-      try { await client.logout() } catch { /* ignore */ }
+      try { await client.logout() } catch { /* ignore if disconnected */ }
       await safeGracefulCloseClient()
-      process.exit(76)
+      process.exit(76) // Exit code 76 = re-pair
     } else if (command.type === 'send-message') {
       const jid = command.payload?.jid
       const text = String(command.payload?.text || '').trim()

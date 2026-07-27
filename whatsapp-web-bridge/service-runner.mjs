@@ -5,7 +5,7 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)))
-const bridgeFile = existsSync(join(root, 'bridge.mjs')) ? join(root, 'bridge.mjs') : join(root, 'index.mjs')
+const bridgeFile = existsSync(join(root, 'index.mjs')) ? join(root, 'index.mjs') : join(root, 'bridge.mjs')
 
 const deviceId = String(process.env.WHATSAPP_BRIDGE_DEVICE_ID || process.env.WHATSAPP_CLIENT_ID || 'primary')
   .replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 48) || 'primary'
@@ -150,6 +150,7 @@ async function boot() {
       return
     }
 
+    // Any other exit (including exit 0 or crash): auto restart child with backoff
     failures = livedMs > 10 * 60_000 ? 0 : failures + 1
     const delayMs = Math.min(30_000, 1_000 * 2 ** Math.min(failures, 5))
     out('warn', 'auto_restarting_bridge', { code, signal, restartInMs: delayMs })

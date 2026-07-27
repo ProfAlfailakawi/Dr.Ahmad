@@ -46,7 +46,18 @@ const runtime = {
   stateAt: new Date().toISOString(),
   syncPercent: 0,
   lastActivityAt: Date.now(),
+  authAcceptedAt: null,
+  readyAt: null,
+  lastSocketState: null,
 }
+
+const PROGRESSIVE_STATES = Object.freeze({
+  starting: 0,
+  pairing: 1,
+  syncing: 2,
+  authenticated: 3,
+  connected: 4,
+})
 
 function stateSnapshot(extra = {}) {
   return {
@@ -63,13 +74,33 @@ function stateSnapshot(extra = {}) {
 }
 
 function transitionState(status, connected, error = '', extra = {}) {
-  runtime.status = String(status || 'disconnected')
+  const nextStatus = String(status || 'disconnected')
+  const currentProgress = PROGRESSIVE_STATES[runtime.status]
+  const nextProgress = PROGRESSIVE_STATES[nextStatus]
+
+  /* WhatsApp Web may emit a fresh QR after the phone has already accepted the
+     link while chat-history sync is paused. That late event is not a real
+     logout. Never let it push the same live process backwards to pairing. */
+  if (
+    Number.isInteger(currentProgress)
+    && Number.isInteger(nextProgress)
+    && currentProgress >= PROGRESSIVE_STATES.syncing
+    && nextProgress < currentProgress
+  ) {
+    return stateSnapshot({ ...extra, transitionApplied: false, rejectedStatus: nextStatus })
+  }
+
+  runtime.status = nextStatus
   runtime.connected = Boolean(connected)
   runtime.lastError = String(error || '').slice(0, 400)
+  if (nextStatus === 'authenticated' || nextStatus === 'connected') {
+    runtime.authAcceptedAt ||= new Date().toISOString()
+  }
+  if (nextStatus === 'connected') runtime.readyAt ||= new Date().toISOString()
   runtime.stateSeq += 1
   runtime.stateAt = new Date().toISOString()
   runtime.lastActivityAt = Date.now()
-  return stateSnapshot(extra)
+  return stateSnapshot({ ...extra, transitionApplied: true })
 }
 
 function log(level, message, fields = {}) {
@@ -89,6 +120,12 @@ let shuttingDown = false
 let commandBusy = false
 let heartbeatTimer = null
 let pollTimer = null
+let connectionWatchdogTimer = null
+let connectionProbeBusy = false
+let readyHandled = false
+let authHandled = false
+let forcedSyncRecoveryAt = 0
+let contactsWarmupStarted = false
 
 async function serverRequest(path, { method = 'POST', body, timeoutMs = 15_000, retries = 2 } = {}) {
   let lastError
@@ -171,12 +208,21 @@ client.on('loading_screen', async (percent, message) => {
   runtime.syncPercent = percent
   runtime.lastActivityAt = Date.now()
   const snapshot = transitionState('syncing', false, '', { percent, message })
+  if (!snapshot.transitionApplied) {
+    log('warn', 'late_loading_state_ignored', { percent, rejectedStatus: snapshot.rejectedStatus, stateSeq: snapshot.stateSeq })
+    return
+  }
   log('info', 'loading_screen', { percent, message, stateSeq: snapshot.stateSeq })
   await safeEmit('status', snapshot)
 })
 
 client.on('qr', async (qr) => {
   const snapshot = transitionState('pairing', false, '')
+  if (!snapshot.transitionApplied) {
+    log('warn', 'late_qr_ignored', { currentStatus: runtime.status, stateSeq: snapshot.stateSeq })
+    await safeEmit('status', stateSnapshot({ ignoredLateQr: true }), { retries: 0 })
+    return
+  }
   runtime.qrAt = snapshot.stateAt
   try {
     const qrImage = await qrcode.toDataURL(qr, { margin: 1, width: 520, errorCorrectionLevel: 'M' })
@@ -188,20 +234,40 @@ client.on('qr', async (qr) => {
 })
 
 client.on('authenticated', () => {
+  if (authHandled) {
+    log('info', 'duplicate_authenticated_ignored', { stateSeq: runtime.stateSeq })
+    return
+  }
+  authHandled = true
   const snapshot = transitionState('authenticated', false, '')
+  if (!snapshot.transitionApplied) return
   log('info', 'authenticated', { stateSeq: snapshot.stateSeq })
   void safeEmit('status', snapshot)
   
   startHeartbeatAndPolling()
 })
 
-client.on('ready', () => {
+function markBridgeReady(source = 'ready_event') {
+  if (readyHandled) {
+    log('info', 'duplicate_ready_ignored', { source, stateSeq: runtime.stateSeq })
+    return
+  }
+  readyHandled = true
+  authHandled = true
   const snapshot = transitionState('connected', true, '')
-  log('info', 'ready', { stateSeq: snapshot.stateSeq })
+  if (!snapshot.transitionApplied) return
+  log('info', 'ready', { source, stateSeq: snapshot.stateSeq })
   void safeEmit('status', snapshot)
   
   startHeartbeatAndPolling()
-  void warmPhoneAliasesAndContactsInBackground()
+  if (!contactsWarmupStarted) {
+    contactsWarmupStarted = true
+    void warmPhoneAliasesAndContactsInBackground()
+  }
+}
+
+client.on('ready', () => {
+  markBridgeReady('ready_event')
 })
 
 async function warmPhoneAliasesAndContactsInBackground() {
@@ -242,13 +308,12 @@ client.on('change_state', (state) => {
   log('info', 'change_state', { state: value })
   
   if (value === 'CONNECTED' && (!runtime.connected || runtime.status !== 'connected')) {
-    const snapshot = transitionState('connected', true, '')
-    void safeEmit('status', snapshot)
+    markBridgeReady('change_state')
     return
   }
   if (runtime.connected && ['CONFLICT', 'UNPAIRED_IDLE', 'TIMEOUT'].includes(value)) {
     const snapshot = transitionState('reconnecting', false, value.toLowerCase())
-    void safeEmit('status', snapshot)
+    if (snapshot.transitionApplied) void safeEmit('status', snapshot)
   }
 })
 
@@ -332,6 +397,109 @@ function startHeartbeatAndPolling() {
     pollTimer = setInterval(() => void pollCommands(), config.pollMs)
     pollTimer.unref()
   }
+}
+
+function withTimeout(promise, timeoutMs, label) {
+  let timer
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(label)), timeoutMs)
+      timer.unref?.()
+    }),
+  ]).finally(() => clearTimeout(timer))
+}
+
+async function readBrowserConnectionState() {
+  if (!client.pupPage || client.pupPage.isClosed()) return null
+  return withTimeout(client.pupPage.evaluate(() => {
+    try {
+      const Socket = window.require('WAWebSocketModel').Socket
+      return {
+        state: String(Socket?.state || ''),
+        hasSynced: Boolean(Socket?.hasSynced),
+        recoveryCallbackReady: typeof window.onAppStateHasSyncedEvent === 'function',
+        wwebjsInjected: typeof window.WWebJS !== 'undefined',
+      }
+    } catch (error) {
+      return { state: '', hasSynced: false, recoveryCallbackReady: false, wwebjsInjected: false, error: String(error?.message || error) }
+    }
+  }), 5_000, 'browser-state-timeout')
+}
+
+async function forceReadyRecovery() {
+  if (!client.pupPage || client.pupPage.isClosed()) return false
+  return withTimeout(client.pupPage.evaluate(() => {
+    if (typeof window.onAppStateHasSyncedEvent !== 'function') return false
+    /* Do not await the exposed callback here. Its Node handler evaluates the
+       same page while completing WWebJS injection; awaiting it would create a
+       page/Node circular wait. */
+    Promise.resolve(window.onAppStateHasSyncedEvent()).catch(() => {})
+    return true
+  }), 5_000, 'ready-recovery-trigger-timeout')
+}
+
+async function probeConnectionState() {
+  if (connectionProbeBusy || shuttingDown) return
+  connectionProbeBusy = true
+  try {
+    const browserState = await readBrowserConnectionState()
+    if (!browserState) return
+    const socketState = String(browserState.state || '').toUpperCase()
+    runtime.lastSocketState = socketState || null
+
+    if (socketState === 'CONNECTED') {
+      if (!authHandled) {
+        authHandled = true
+        const snapshot = transitionState('authenticated', false, '', { recovery: 'socket-connected' })
+        if (snapshot.transitionApplied) {
+          log('info', 'authenticated_recovered_from_socket', { stateSeq: snapshot.stateSeq })
+          await safeEmit('status', snapshot, { retries: 0 })
+        }
+        startHeartbeatAndPolling()
+      }
+
+      if (!readyHandled && browserState.recoveryCallbackReady) {
+        const authAt = Date.parse(runtime.authAcceptedAt || '')
+        const authenticatedForMs = Number.isFinite(authAt) ? Date.now() - authAt : 0
+        const retryDue = Date.now() - forcedSyncRecoveryAt >= 30_000
+        if (authenticatedForMs >= 5_000 && retryDue) {
+          forcedSyncRecoveryAt = Date.now()
+          log('warn', 'ready_event_recovery_started', {
+            hasSynced: browserState.hasSynced,
+            wwebjsInjected: browserState.wwebjsInjected,
+          })
+          const triggered = await forceReadyRecovery()
+          if (!triggered) log('warn', 'ready_event_recovery_callback_missing')
+        }
+      }
+
+      /* If the recovery callback completed the library injection but the
+         public ready event itself was lost, client.info is populated and the
+         message listeners have already been attached. Promote that proven
+         state rather than leaving the dashboard stuck forever. */
+      if (!readyHandled && browserState.wwebjsInjected && client.info?.wid) {
+        markBridgeReady('watchdog_verified_injection')
+      }
+      return
+    }
+
+    if (runtime.connected && ['CONFLICT', 'UNPAIRED_IDLE', 'TIMEOUT'].includes(socketState)) {
+      const snapshot = transitionState('reconnecting', false, socketState.toLowerCase())
+      if (snapshot.transitionApplied) await safeEmit('status', snapshot, { retries: 0 })
+    }
+  } catch (error) {
+    log('warn', 'connection_watchdog_probe_failed', { error: String(error?.message || error) })
+  } finally {
+    connectionProbeBusy = false
+  }
+}
+
+function startConnectionWatchdog() {
+  if (connectionWatchdogTimer) return
+  connectionWatchdogTimer = setInterval(() => { void probeConnectionState() }, 5_000)
+  connectionWatchdogTimer.unref()
+  void probeConnectionState()
 }
 
 async function pollCommands() {
@@ -424,3 +592,5 @@ process.on('unhandledRejection', (error) => {
 log('info', 'bridge_starting', { deviceId: config.deviceId, sessionDir: config.sessionDir, instanceId: runtime.instanceId })
 await safeEmit('status', transitionState('starting', false, ''), { retries: 0 })
 await client.initialize()
+startHeartbeatAndPolling()
+startConnectionWatchdog()

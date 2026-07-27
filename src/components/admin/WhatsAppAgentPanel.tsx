@@ -633,17 +633,16 @@ export function WhatsAppAgentPanel() {
             <div className="mt-4 rounded-2xl border border-accent/35 bg-canvas p-4 sm:p-5">
               <p className="text-[.82rem] font-semibold text-ink">اربط واتساب</p>
               <p className="mt-1 text-[.74rem] leading-relaxed text-soft">من الجوال: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز، ثم اجعل الرمز كاملًا داخل إطار الكاميرا.</p>
-              <div className="mt-4 flex justify-center overflow-hidden rounded-2xl bg-white p-4 sm:p-6">
+              <div className="mx-auto mt-4 flex w-fit max-w-full justify-center overflow-hidden rounded-2xl bg-white p-3 sm:p-4">
                 <img
                   key={status.qrFingerprint || status.qrUpdatedAt || 'whatsapp-qr'}
                   src={status.qrImage}
                   alt="رمز اقتران واتساب"
-                  width={420}
-                  height={420}
+                  width={280}
+                  height={280}
                   draggable={false}
                   decoding="sync"
-                  className="block h-auto w-full max-w-[420px] select-none"
-                  style={{ imageRendering: 'pixelated' }}
+                  className="block h-auto w-[280px] max-w-[70vw] select-none object-contain"
                 />
               </div>
               <p className="mt-3 text-center text-[.7rem] leading-relaxed text-soft">

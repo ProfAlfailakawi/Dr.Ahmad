@@ -320,7 +320,7 @@ function localGroundedAnswer(result: Answer): TwinAnswer {
       ? ` ويتكرر الخيط في نصوص منشورة بين ${years[years.length - 1]} و${years[0]}.`
       : "";
   return {
-    answer: `أقرب جواب منشور في أرشيفي يظهر في النص${citations.length > 1 ? "وص" : ""} الموثّق${citations.length > 1 ? "ة" : ""} أدناه.${span} لا أضيف هنا رأياً جديداً؛ الاقتباسات الحرفية هي حدود الإجابة المتاحة الآن ${citations.map((item) => `[${item.index}]`).join(" ")}.`,
+    answer: `لم أجد جوابًا مباشرًا مطابقًا، وهذه أقرب مادة موثّقة من الأرشيف.${span} ${citations.map((item) => `[${item.index}]`).join(" ")}`.trim(),
     citations,
     grounded: true,
     source: "local",
@@ -416,93 +416,6 @@ function buildPersonalBookChapters(result: Answer) {
     ) as { label: string; item: TimelineItem; note: string }[];
 }
 
-function PersonalBook({ asked, result }: { asked: string; result: Answer }) {
-  const [printError, setPrintError] = useState(false);
-  const chapters = buildPersonalBookChapters(result);
-
-  if (!chapters.length) return null;
-  const print = () => {
-    setPrintError(false);
-    if (!printPersonalBook(asked, chapters)) setPrintError(true);
-  };
-
-  return (
-    <section className="personal-book mt-12 overflow-hidden rounded-[1.75rem] border border-hair bg-wash/45 shadow-[0_24px_70px_-48px_rgba(21,32,44,.45)]">
-      <div className="grid gap-6 border-b border-hair bg-canvas px-6 py-7 md:grid-cols-[1fr_auto] md:items-center md:px-8">
-        <div>
-          <div className="flex items-center gap-3">
-            <span
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-accent/25 text-accent"
-              aria-hidden="true"
-            >
-              ◫
-            </span>
-            <div>
-              <p className="text-[.7rem] font-semibold text-accent">
-                كتاب شخصي من الأرشيف
-              </p>
-              <h3 className="mt-1 font-display text-[1.22rem] font-semibold leading-relaxed text-ink">
-                مسار قراءة يتشكل من المواد المنشورة فقط.
-              </h3>
-            </div>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={print}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-hair bg-canvas px-5 text-[.78rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
-        >
-          <span aria-hidden="true">⌑</span> تجهيز نسخة مطبوعة
-        </button>
-      </div>
-
-      <div className="px-6 py-7 md:px-8 md:py-8">
-        <div className="grid gap-6 md:grid-cols-[minmax(0,.72fr)_minmax(0,1.28fr)] md:items-start">
-          <div className="rounded-2xl border border-hair bg-canvas p-5">
-            <p className="text-[.7rem] font-semibold text-accent">سؤال المسار</p>
-            <p className="mt-3 font-display text-[1.04rem] font-semibold leading-[1.9] text-ink">«{asked}»</p>
-            <p className="mt-4 border-r-2 border-accent pr-4 text-[.82rem] font-light leading-[1.9] text-soft">
-              يبدأ المسار من أقدم موضع يلامس السؤال، ثم ينتقل عبر محطات تطور الفكرة حتى أحدث موقف منشور.
-            </p>
-          </div>
-          <ol className="relative space-y-3 before:absolute before:bottom-5 before:right-[1.18rem] before:top-5 before:w-px before:bg-hair">
-            {chapters.map(({ label, item, note }, index) => (
-              <li
-                key={`${label}-${item.slug}`}
-                className="relative grid grid-cols-[2.45rem_1fr] gap-3 rounded-2xl border border-hair bg-canvas p-4 transition-colors hover:border-accent/50"
-              >
-                <span className="relative z-[1] flex h-9 w-9 items-center justify-center rounded-full border border-accent/30 bg-canvas text-[.68rem] font-semibold text-accent">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <div className="min-w-0">
-                  <span className="text-[.68rem] font-medium text-soft">
-                    {label} · {item.iso.slice(0, 4)}
-                  </span>
-                  <Link
-                    to={`/articles/${item.slug}`}
-                    className="mt-1 block font-display text-[.96rem] font-semibold leading-[1.7] text-ink transition-colors hover:text-accent"
-                  >
-                    {item.title}
-                  </Link>
-                  <p className="mt-1 text-[.76rem] leading-relaxed text-soft">
-                    {note}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-        {printError && (
-          <p className="mt-5 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.78rem] text-soft">
-            منع المتصفح نافذة الطباعة. اسمح بالنوافذ المنبثقة لهذا الموقع ثم أعد
-            المحاولة.
-          </p>
-        )}
-      </div>
-    </section>
-  );
-}
-
 export default function AskLibrary() {
   const { articles, books, papers } = useCmsContent();
   const [searchParams] = useSearchParams();
@@ -533,7 +446,7 @@ export default function AskLibrary() {
   const coverage = useMemo(() => {
     if (!result) return null;
     const evidence = result.hits.length + result.refs.length;
-    return { count: evidence, note: evidence ? `${evidence} شواهد قابلة للفتح داخل الصفحة` : 'لا توجد شواهد كافية حتى الآن' };
+    return { count: evidence, label: evidence ? 'موثّق' : 'محدود', note: evidence ? `${evidence} شواهد موثّقة` : 'لا توجد شواهد كافية حتى الآن' };
   }, [result]);
 
   useEffect(() => {
@@ -757,7 +670,7 @@ export default function AskLibrary() {
                         </div>
                         {coverage && (
                           <div className="mt-4 flex flex-wrap items-center gap-2 text-[.68rem]">
-                            <span className="rounded-full border border-accent/30 bg-accent/[.05] px-3 py-1 font-semibold text-accent">الشواهد · {coverage.count}</span>
+                            <span className="rounded-full border border-accent/30 bg-accent/[.05] px-3 py-1 font-semibold text-accent">{coverage.label}</span>
                             <span className="text-soft">{coverage.note}</span>
                           </div>
                         )}
@@ -766,13 +679,11 @@ export default function AskLibrary() {
                         ) : visibleAnswer ? (
                           <>
                             <p className="mt-5 whitespace-pre-line text-[.96rem] font-light leading-[2.05] text-ink/90">{visibleAnswer}</p>
-                            <p className="mt-4 text-[.68rem] leading-relaxed text-soft">
-                              {answerMode === 'direct'
-                                ? twin?.source === 'ai' ? 'الخلاصة محصورة في الشواهد الظاهرة أدناه.' : 'عُرض بديل محلي محافظ لا يتجاوز الشواهد.'
-                                : 'هذه عدسة تنظيمية مبنية على تواريخ وروابط المواد الظاهرة، وليست اقتباساً جديداً.'}
-                            </p>
+                            {answerMode !== 'direct' && (
+                              <p className="mt-4 text-[.68rem] leading-relaxed text-soft">هذا تنظيم للمواد المنشورة بحسب الزمن والروابط، وليس اقتباسًا جديدًا.</p>
+                            )}
                             <p className="mt-3 border-t border-hair pt-3 text-[.68rem] leading-relaxed text-soft/85">
-                              الإجابة مبنية على مواد منشورة في هذا الموقع، وليست فتوى ولا تشخيصاً شخصياً. سؤالك يُعالج للإجابة فقط ولا يُنشر.
+                              الإجابة مستندة إلى مواد منشورة وموثّقة. سؤالك خاص ولا يُنشر.
                             </p>
                             <div className="mt-5 flex flex-wrap gap-2">
                               <button type="button" onClick={() => void copyArchiveAnswer()} className="inline-flex min-h-11 items-center rounded-full border border-hair px-5 text-[.76rem] font-semibold text-ink transition hover:border-accent hover:text-accent">{answerCopied ? '✓ نُسخ الجواب بمصادره' : 'نسخ الجواب بمصادره'}</button>

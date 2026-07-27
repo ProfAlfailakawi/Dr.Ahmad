@@ -772,10 +772,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     const message = error instanceof Error ? error.message : String(error || '')
     if (/admin_auth_required|admin access required|403/i.test(message)) return 'جلسة الإدارة غير مخوّلة لتوليد الصور. أعد تسجيل الدخول إلى لوحة التحكم ثم جرّب مجددًا.'
     if (/firebase_unavailable/i.test(message)) return 'تعذّر الوصول إلى جلسة Firebase، لذلك لم يصل طلب التوليد إلى الخادم.'
-    if (/generator_backend_revision_missing|route_missing|HTTP 404|Not Found/i.test(message)) return 'نسخة الواجهة وصلت، لكن خدمة dr-api المنشورة ما زالت على إصدار قديم لا يحتوي مسار التوليد. سيُحدّثها نشر Cloud Run المضاف مع هذا الإصلاح، ولن ينتقل مسار التوليد إلى Pexels.'
+    if (/generator_backend_revision_missing|route_missing|HTTP 404|Not Found/i.test(message)) return 'خدمة dr-api المنشورة لا تتضمن مسار التوليد الحالي. حدّث الخدمة ثم أعد المحاولة.'
     if (/not configured|account is not configured/i.test(message)) return 'مسار dr-api يعمل، لكن بيانات Cloudflare Workers AI غير مربوطة في بيئة Cloud Run. لم أستبدل الصورة بصورة جاهزة كي يبقى الفرق واضحًا.'
     if (/daily free allocation exhausted|10[,.]?000 neurons|free allocation/i.test(message)) return 'انتهت الحصة المجانية اليومية من Cloudflare بعد اختبارات اليوم. تعود تلقائيًا عند ٣:٠٠ صباحًا بتوقيت الكويت (00:00 UTC)، ولا توجد فاتورة أو صورة جاهزة استُبدلت بالصورة الأصلية.'
-    if (/timed out|abort|504/i.test(message)) return 'انتهت مهلة توليد Cloudflare قبل وصول الصورة. لم ينتقل النظام إلى Pexels تلقائيًا.'
+    if (/timed out|abort|504/i.test(message)) return 'انتهت مهلة التوليد قبل وصول الصورة. سيحاول الاستوديو بالمسار المحلي الاحتياطي.'
     if (/busy|temporar|rate.?limit|resource exhausted|429|503/i.test(message)) return 'خدمة التوليد مزدحمة مؤقتًا. حاول الاستوديو تلقائيًا بتأخير متدرج من دون استبدال الصورة بصورة جاهزة؛ أعد التوليد لاحقًا إذا استمر ضغط الخدمة.'
     if (/analysis_failed/i.test(message)) return 'وصلت الصورة المولدة، لكن الجهاز لم يتمكن من فتحها داخل المحرر. سيعيد النظام فكها بمسار آمن في المحاولة التالية.'
     if (/semantic_rejected|تعذّر اعتماد الصورة دلاليًا|HTTP 422/i.test(message)) return 'رُفضت الصورة لأنها لم تمثّل المعنى الكامل أو أسقطت عنصرًا أساسيًا من الفكرة. لم تُركّب داخل التصميم؛ أعد التوليد ليُبنى مشهد مختلف فعليًا.'
@@ -1049,7 +1049,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       setExternalQuery(query)
       setLastVisualSearchSignature(signature)
       if (results.length) setNotice(`تم التحقق من ${results.length} صور قابلة للعرض من المصادر المجانية؛ أُزيلت الروابط المكسورة تلقائيًا.`)
-      else setNotice('لم أجد صورة قابلة للتحميل بهذه العبارة. جرّب عبارة أقصر أو استخدم Pexels/Wikimedia بدل الاستعلام العام.')
+      else setNotice('لم أجد صورة قابلة للتحميل بهذه العبارة. جرّب عبارة أقصر أو اختر مصدرًا موثّقًا آخر.')
     } catch {
       if (sequence !== externalSearchSequenceRef.current) return
       setExternalVisuals([])
@@ -1353,7 +1353,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         description: creativeBrief.issue,
         visualWorld: options.preferredWorld || 'local-reserve',
         visualWorldLabel: 'احتياطي محلي',
-        imageTreatment: selected?.overlay?.imageTreatment || 'editorial',
+        imageTreatment: selected?.overlays?.find((item) => item.kind === 'image')?.imageTreatment || 'editorial',
         layoutHint: selected?.layout,
         paletteHint: selected?.palette,
         conceptKey: visualSearchPlan.glossaryConcept,
@@ -1420,7 +1420,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             candidateIndex: generationSerialRef.current % 3,
           })
           installGeneratedImage(fallback)
-          setNotice('تعذّر التوليد من Cloudflare الآن، فبنى الاستوديو مشهدًا احتياطيًا محليًا داخل المتصفح بدل التوقف أو استبدال الصورة بصورة جاهزة.')
+          setNotice('تعذّر التوليد السحابي مؤقتًا، فأنشأ الاستوديو مشهدًا محليًا أصليًا وأكمل العمل دون استخدام صورة جاهزة.')
           return
         } catch {
           /* إذا فشل الاحتياطي المحلي نعود إلى الرسالة الصريحة المعتادة. */
@@ -2127,7 +2127,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
 
       setZeroDecisionPhase('prompt')
       setNotice(requestedMode === 'generate'
-        ? 'أكتب توجيهًا بصريًا أصليًا ثم أرسله إلى Cloudflare لصناعة مشهد جديد من الصفر — بلا أي انتقال خفي إلى Pexels.'
+        ? 'أبني توجيهًا بصريًا أصليًا، ثم أصنع مشهدًا جديدًا من الصفر.'
         : 'أحوّل الفكرة إلى عبارات بحث تحريرية، ثم أفحص الصور الجاهزة وأختار الأقوى من المصادر الموثقة.')
       setZeroDecisionPhase('image')
 
@@ -2138,7 +2138,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           : [...targetWorlds, 'daylight-learning', 'color-field-editorial', 'tactile-learning'].filter((item, index, all) => all.indexOf(item) === index).slice(0, 3)
         const history = loadVisualWorldHistory()
         const batchStamp = Date.now()
-        setNotice('Cloudflare يصنع الآن ثلاثة مشاهد أصلية متباعدة على دفعة آمنة: مضيء، تحريري، ومادي/إنساني — كل اتجاه يُبنى فعليًا ولا يعاد كفلتر.')
+        setNotice('أصنع الآن ثلاثة اتجاهات أصلية متباعدة: مضيء، تحريري، ومادي/إنساني.')
         const generationErrors: unknown[] = []
         for (const [index, preferredWorld] of visualWorldTargets.entries()) {
           setNotice(`أصنع الاتجاه الأصلي ${index + 1} من ${visualWorldTargets.length}، ثم يراجعه ناقد بصري قبل إدخاله إلى التصميم…`)
@@ -2160,14 +2160,17 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         if (!generatedSet.length) {
           const lastError = generationErrors[generationErrors.length - 1]
           if (shouldUseLocalReserveFallback(lastError)) {
-            const fallback = await buildLocalReserveImage({
-              reason: lastError instanceof Error ? lastError.message : String(lastError || ''),
-              candidateIndex: 0,
-              preferredWorld: visualWorldTargets[0],
-              textZone: 'right',
-            })
-            generatedSet = [fallback]
-            setNotice('تعذّر المسار السحابي، فبنى الاستوديو اتجاهاً احتياطياً محلياً داخل المتصفح ليكمل العمل بدل التوقف.')
+            const reason = lastError instanceof Error ? lastError.message : String(lastError || '')
+            generatedSet = []
+            for (const [index, preferredWorld] of visualWorldTargets.entries()) {
+              generatedSet.push(await buildLocalReserveImage({
+                reason,
+                candidateIndex: index,
+                preferredWorld,
+                textZone: index === 0 ? 'right' : index === 1 ? 'bottom' : 'left',
+              }))
+            }
+            setNotice('تعذّر التوليد السحابي مؤقتًا، فأنشأ الاستوديو ثلاثة اتجاهات محلية أصلية وأكمل التصميم دون استخدام صور جاهزة.')
           } else {
             const failure = describeGeneratorFailure(lastError)
             setVisualOrigin('none')
@@ -2286,7 +2289,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       setZeroDecisionPhase('done')
       teachTaste(approved.plan, 1)
       setNotice(requestedMode === 'generate'
-        ? `اكتمل التوليد الحقيقي من الصفر عبر ${generatedSet.length} مشاهد مستقلة، ثم حُسم أفضل إخراج. النتائج لا تعتمد على Pexels ولا على ثيم واحد.`
+        ? `اكتمل إنشاء ${generatedSet.length} مشاهد مستقلة، ثم اختير الإخراج الأقوى وفق المعنى والجودة.`
         : 'اكتمل مسار الصورة الجاهزة، ثم حُسم أفضل إخراج. المصدر والترخيص ظاهران بوضوح.')
     } catch (error) {
       setZeroDecisionPhase('idle')
@@ -2471,7 +2474,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const zeroDecisionSteps: { id: ZeroDecisionPhase; label: string; note: string }[] = [
     { id: 'understand', label: 'فهم المعنى', note: domainUnderstanding.recognizedTerms.length ? `${domainUnderstanding.recognizedTerms.slice(0, 3).map((item) => item.canonicalAr).join(' + ')} · ${domainUnderstanding.confidence}٪` : 'القضية والجمهور والأثر' },
     { id: 'prompt', label: 'إخراج الفكرة', note: visualMode === 'generate' ? 'برومبت فني أصلي ومختلف' : 'عبارات بحث تحريرية ذكية' },
-    { id: 'image', label: visualMode === 'generate' ? 'توليد الصورة' : 'انتقاء الصورة', note: visualMode === 'generate' ? 'Cloudflare فقط · بلا بديل خفي' : 'مصدر جاهز وموثق فقط' },
+    { id: 'image', label: visualMode === 'generate' ? 'توليد الصورة' : 'انتقاء الصورة', note: visualMode === 'generate' ? 'توليد أصلي · احتياطي محلي' : 'مصدر جاهز وموثق فقط' },
     { id: 'compose', label: 'بناء التكوين', note: 'عشرات الاحتمالات في الخلفية' },
     { id: 'critic', label: 'النقد العالمي', note: 'قراءة وهيبة وأصالة' },
     { id: 'campaign', label: 'الحملة', note: 'مقاسات وسرد متكامل' },
@@ -2500,10 +2503,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-white/70 px-3 py-1.5 text-[.62rem] font-black uppercase tracking-[.18em] text-accent shadow-sm backdrop-blur">Zero-Decision Creative Director</div>
               <h2 className="mt-4 font-display text-3xl font-bold leading-tight text-ink md:text-5xl">اكتب الفكرة… وأنا أتولى الباقي.</h2>
-              <p className="mt-4 max-w-2xl text-[.88rem] leading-loose text-soft md:text-[.95rem]">اختر مسار الصورة بوضوح: <strong className="text-ink">توليد أصلي</strong> من Cloudflare أو <strong className="text-ink">صورة جاهزة موثقة</strong>. لا خلط ولا انتقال خفي بينهما؛ بعدها يتولى المخرج كل شيء ويعرض نتيجة واحدة معتمدة.</p>
+              <p className="mt-4 max-w-2xl text-[.88rem] leading-loose text-soft md:text-[.95rem]">اختر بين <strong className="text-ink">توليد أصلي</strong> أو <strong className="text-ink">صورة جاهزة موثقة</strong>، ثم يتولى المخرج بناء النتيجة واعتمادها.</p>
             </div>
             <div className="grid min-w-[230px] gap-2 sm:grid-cols-2 md:min-w-[340px]">
-              <span className="rounded-2xl border border-hair bg-white/75 px-4 py-3 text-[.68rem] text-soft shadow-sm backdrop-blur"><strong className="block text-[.76rem] text-ink">مسار التوليد</strong>Cloudflare فقط · صورة جديدة من الصفر</span>
+              <span className="rounded-2xl border border-hair bg-white/75 px-4 py-3 text-[.68rem] text-soft shadow-sm backdrop-blur"><strong className="block text-[.76rem] text-ink">مسار التوليد</strong>صورة جديدة من الصفر</span>
               <span className="rounded-2xl border border-hair bg-white/75 px-4 py-3 text-[.68rem] text-soft shadow-sm backdrop-blur"><strong className="block text-[.76rem] text-ink">قرار صفري</strong>أفضل نتيجة واحدة فقط</span>
               <span className="rounded-2xl border border-hair bg-white/75 px-4 py-3 text-[.68rem] text-soft shadow-sm backdrop-blur"><strong className="block text-[.76rem] text-ink">مسار الجاهز</strong>Pexels · Wikimedia · Openverse</span>
               <span className="rounded-2xl border border-hair bg-white/75 px-4 py-3 text-[.68rem] text-soft shadow-sm backdrop-blur"><strong className="block text-[.76rem] text-ink">محركات مخفية</strong>الناقد · الحملة · عدم التكرار</span>
@@ -2531,10 +2534,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 </details>
                 <div className="mt-5 rounded-[1.45rem] border border-hair bg-paper/80 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,.7)]" role="tablist" aria-label="مصدر الصورة">
                   <div className="grid gap-2 sm:grid-cols-2">
-                    <button type="button" role="tab" aria-selected={visualMode === 'generate'} disabled={zeroDecisionBusy} onClick={() => { setVisualMode('generate'); setVisualFailure(''); setNotice('مسار التوليد لا يستخدم Pexels عند الفشل؛ إمّا صورة أصلية حقيقية أو رسالة واضحة بالمشكلة.') }} className={`relative overflow-hidden rounded-[1.15rem] border px-4 py-4 text-right transition ${visualMode === 'generate' ? 'border-ink bg-ink text-white shadow-[0_14px_32px_rgba(15,23,42,.16)]' : 'border-transparent bg-canvas text-ink hover:border-accent/30'}`}>
+                    <button type="button" role="tab" aria-selected={visualMode === 'generate'} disabled={zeroDecisionBusy} onClick={() => { setVisualMode('generate'); setVisualFailure(''); setNotice('مسار التوليد يصنع صورة أصلية، ويستخدم احتياطيًا محليًا عند تعذّر الخدمة السحابية.') }} className={`relative overflow-hidden rounded-[1.15rem] border px-4 py-4 text-right transition ${visualMode === 'generate' ? 'border-ink bg-ink text-white shadow-[0_14px_32px_rgba(15,23,42,.16)]' : 'border-transparent bg-canvas text-ink hover:border-accent/30'}`}>
                       <span className={`inline-flex rounded-full px-2.5 py-1 text-[.56rem] font-black uppercase tracking-[.1em] ${visualMode === 'generate' ? 'bg-white/12 text-white' : 'bg-accent/10 text-accent'}`}>AI Original</span>
                       <strong className="mt-3 block text-[.88rem]">توليد من الصفر</strong>
-                      <span className={`mt-1.5 block text-[.64rem] leading-relaxed ${visualMode === 'generate' ? 'text-white/65' : 'text-soft'}`}>Cloudflare يصنع مشهدًا جديدًا. لا انتقال خفي إلى الصور الجاهزة.</span>
+                      <span className={`mt-1.5 block text-[.64rem] leading-relaxed ${visualMode === 'generate' ? 'text-white/65' : 'text-soft'}`}>مشهد جديد من الصفر، مع احتياطي محلي عند الحاجة.</span>
                     </button>
                     <button type="button" role="tab" aria-selected={visualMode === 'ready'} disabled={zeroDecisionBusy} onClick={() => { setVisualMode('ready'); setVisualFailure(''); setNotice('مسار الجاهز يبحث فقط في المصادر المفتوحة، ويفصح عن المصدر والترخيص بوضوح.') }} className={`relative overflow-hidden rounded-[1.15rem] border px-4 py-4 text-right transition ${visualMode === 'ready' ? 'border-accent bg-accent text-white shadow-[0_14px_32px_rgba(62,92,120,.18)]' : 'border-transparent bg-canvas text-ink hover:border-accent/30'}`}>
                       <span className={`inline-flex rounded-full px-2.5 py-1 text-[.56rem] font-black uppercase tracking-[.1em] ${visualMode === 'ready' ? 'bg-white/14 text-white' : 'bg-paper text-soft'}`}>Curated Source</span>
@@ -2545,9 +2548,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 </div>
                 <button type="button" onClick={() => void runZeroDecisionMode(visualMode)} disabled={zeroDecisionBusy || text.trim().length < 2} className="group relative mt-3 w-full overflow-hidden rounded-[1.45rem] bg-ink px-6 py-5 text-right text-white shadow-[0_22px_50px_rgba(15,23,42,.22)] transition hover:-translate-y-0.5 hover:shadow-[0_28px_70px_rgba(15,23,42,.28)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0">
                   <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_0%,rgba(255,255,255,.22),transparent_36%)] opacity-80" />
-                  <span className="relative flex items-center justify-between gap-4"><span><strong className="block text-[1rem] md:text-[1.08rem]">{zeroDecisionBusy ? (visualMode === 'generate' ? 'أولّد المشهد وأصنع النتيجة…' : 'أنتقي الصورة وأصنع النتيجة…') : visualMode === 'generate' ? 'ولّد من الصفر — وصمّم لي' : 'اختر الأقوى الجاهز — وصمّم لي'}</strong><span className="mt-1 block text-[.68rem] leading-relaxed text-white/62">{visualMode === 'generate' ? 'Cloudflare فقط · صورة أصلية · لا Pexels عند الفشل' : 'مصدر موثق · فحص تلقائي · أفضل صورة جاهزة فقط'}</span></span><span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/15 bg-white/10 text-xl transition group-hover:translate-x-[-3px]">←</span></span>
+                  <span className="relative flex items-center justify-between gap-4"><span><strong className="block text-[1rem] md:text-[1.08rem]">{zeroDecisionBusy ? (visualMode === 'generate' ? 'أولّد المشهد وأصنع النتيجة…' : 'أنتقي الصورة وأصنع النتيجة…') : visualMode === 'generate' ? 'ولّد من الصفر — وصمّم لي' : 'اختر الأقوى الجاهز — وصمّم لي'}</strong><span className="mt-1 block text-[.68rem] leading-relaxed text-white/62">{visualMode === 'generate' ? 'صورة أصلية · لا صور مخزنة عند الفشل' : 'مصدر موثق · فحص تلقائي · أفضل صورة جاهزة فقط'}</span></span><span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/15 bg-white/10 text-xl transition group-hover:translate-x-[-3px]">←</span></span>
                 </button>
-                {visualFailure && <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[.72rem] leading-relaxed text-rose-800"><strong className="block">المسار لم يبدّل المصدر من وراءك</strong><span className="mt-1 block">{visualFailure}</span></div>}
+                {visualFailure && <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[.72rem] leading-relaxed text-rose-800"><strong className="block">تعذّر مسار الصورة</strong><span className="mt-1 block">{visualFailure}</span></div>}
                 {notice && <p className="mt-4 rounded-2xl border border-accent/20 bg-accent/[.045] px-4 py-3 text-[.76rem] leading-relaxed text-accent">{notice}</p>}
               </div>
               <div className="border-t border-hair bg-[linear-gradient(180deg,rgba(62,92,120,.055),rgba(255,255,255,.3))] p-5 md:p-7 xl:border-r xl:border-t-0">

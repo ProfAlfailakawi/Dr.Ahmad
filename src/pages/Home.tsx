@@ -259,24 +259,24 @@ function SinceLastVisit() {
   if (!bits.length && !resume && !continuation) return null
 
   return (
-    <div className="border-t border-hair bg-wash px-4 py-3.5 sm:px-6 md:px-11">
-      <div className="rail mx-auto flex max-w-shell snap-x snap-mandatory items-stretch gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:items-center md:gap-5 md:whitespace-nowrap">
+    <div className="border-t border-hair bg-wash px-4 py-2.5 sm:px-6 md:px-11">
+      <div className="rail mx-auto flex max-w-shell snap-x snap-mandatory items-center gap-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-5 md:whitespace-nowrap">
         {continuation && (
-          <Link to={`/articles/${continuation.article.slug}`} className="group relative grid min-h-[8.25rem] w-[84vw] max-w-[27rem] shrink-0 snap-start content-center gap-1 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft transition-colors hover:border-accent md:min-h-0 md:w-auto md:max-w-none md:items-center md:gap-2.5 md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
+          <Link to={`/articles/${continuation.article.slug}`} className="group flex min-h-12 w-[88vw] max-w-[32rem] shrink-0 snap-start items-center gap-2.5 rounded-xl border border-hair bg-canvas px-4 py-2.5 text-[.78rem] text-soft transition-colors hover:border-accent md:w-auto md:max-w-none md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
             <span className="font-semibold text-accent">كنت تتتبع أثر {continuation.label}</span>
-            <span className="min-w-0 pe-7 leading-relaxed text-ink transition-colors group-hover:text-accent md:pe-0">أكمل من هنا: «{continuation.article.title}»</span>
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent md:static md:translate-y-0 md:opacity-0 md:transition-opacity md:duration-300 md:group-hover:opacity-100">←</span>
+            <span className="min-w-0 flex-1 truncate text-ink transition-colors group-hover:text-accent">أكمل من هنا: «{continuation.article.title}»</span>
+            <span className="shrink-0 text-accent transition-transform group-hover:-translate-x-0.5">←</span>
           </Link>
         )}
         {resume && (
-          <Link to={`/articles/${resume.slug}`} className="group relative grid min-h-[8.25rem] w-[84vw] max-w-[27rem] shrink-0 snap-start content-center gap-1 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft transition-colors hover:border-accent md:min-h-0 md:w-auto md:max-w-none md:items-center md:gap-2.5 md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
+          <Link to={`/articles/${resume.slug}`} className="group flex min-h-12 w-[88vw] max-w-[32rem] shrink-0 snap-start items-center gap-2.5 rounded-xl border border-hair bg-canvas px-4 py-2.5 text-[.78rem] text-soft transition-colors hover:border-accent md:w-auto md:max-w-none md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
             <span className="font-semibold text-accent">تابع من حيث توقفت</span>
-            <span className="min-w-0 pe-7 leading-relaxed text-ink transition-colors group-hover:text-accent md:pe-0">«{resume.title}»</span>
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent md:static md:translate-y-0 md:opacity-0 md:transition-opacity md:duration-300 md:group-hover:opacity-100">←</span>
+            <span className="min-w-0 flex-1 truncate text-ink transition-colors group-hover:text-accent">«{resume.title}»</span>
+            <span className="shrink-0 text-accent transition-transform group-hover:-translate-x-0.5">←</span>
           </Link>
         )}
         {bits.length > 0 && (
-          <div className="flex min-h-[8.25rem] w-[84vw] max-w-[27rem] shrink-0 snap-start flex-wrap content-center items-center gap-x-3 gap-y-1 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft md:min-h-0 md:w-auto md:max-w-none md:flex-nowrap md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
+          <div className="flex min-h-12 w-[88vw] max-w-[32rem] shrink-0 snap-start flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-hair bg-canvas px-4 py-2.5 text-[.78rem] text-soft md:w-auto md:max-w-none md:flex-nowrap md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
             <span className="w-full font-semibold text-accent md:w-auto">منذ زيارتك الأخيرة</span>
             {bits.map((b, i) => (
               <Link key={b.to} to={b.to} className="transition-colors hover:text-accent">

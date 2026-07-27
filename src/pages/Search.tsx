@@ -12,14 +12,6 @@ import { staticQuestions } from '../questions-data'
 
 const ar = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 
-const suggestedTopics = [
-  'الذكاء الاصطناعي',
-  'التعليم',
-  'الأسرة',
-  'الهوية',
-  'التكنولوجيا',
-  'المستقبل',
-]
 
 /* ═══ محرك المعرفة الموحد (مقترح معتمد — الأولوية الأولى) ═══
    البحث لم يعد جزيرة مقالات: تبويب واحد يفتح الأرشيف كله — مقالات وأبحاث
@@ -212,12 +204,6 @@ export default function Search() {
     return best && best !== lastWord ? normalizedQuery.replace(/\S+\s*$/u, best) : ''
   }, [counts.all, knowledgeGraph, normalizedQuery, searchStarted])
 
-  const chooseTopic = (topic: string) => {
-    setQuery(topic)
-    setTab('all')
-    setCat('الكل')
-    setYear('الكل')
-  }
 
   return (
     <Page className="content-search page-journey">
@@ -241,25 +227,6 @@ export default function Search() {
                 />
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[1.4rem] text-accent">⌕</span>
               </div>
-
-              {!searchStarted && <div className="mt-7">
-                <p className="mb-3 text-[.82rem] font-medium text-soft">أو ابدأ من هنا</p>
-                <div className="flex flex-wrap gap-x-5 gap-y-2">
-                  {suggestedTopics.map((topic) => (
-                    <button
-                      key={topic}
-                      onClick={() => chooseTopic(topic)}
-                      className={`min-h-11 border-b px-1 py-2 text-[.84rem] font-medium transition-colors ${
-                        normalizedQuery === topic
-                          ? 'border-accent text-accent'
-                          : 'border-transparent text-soft hover:border-accent hover:text-accent'
-                      }`}
-                    >
-                      {topic}
-                    </button>
-                  ))}
-                </div>
-              </div>}
 
               {searchStarted && (
                 <div className="mt-7 border-t border-hair pt-5">

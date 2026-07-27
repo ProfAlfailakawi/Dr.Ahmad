@@ -270,21 +270,6 @@ export function WhatsAppAgentPanel() {
     } finally { setReturning(false) }
   }
 
-  /* إعادة ربط: تمسح الجلسة فيظهر QR جديد. تأكيدٌ صريح لأنها تقطع الاتصال
-     حتى يمسح الدكتور الرمز بجواله — ولا تُنفَّذ بضغطةٍ ساهية. */
-  const [repairing, setRepairing] = useState(false)
-  const repairSession = async () => {
-    if (!window.confirm('سيُمسح ارتباط واتساب، ويظهر رمز QR جديد تمسحه بجوالك.\nجهاتك وقوائمك تبقى سليمة.\n\nهل تتابع؟')) return
-    setRepairing(true)
-    try {
-      const out = await request<{ message?: string }>('/admin/repair', { method: 'POST', body: JSON.stringify({ confirm: true }) })
-      setNotice(out.message || 'مُسحت الجلسة — انتظر ظهور رمز QR أدناه.')
-      setTimeout(() => void refresh(), 20_000)
-    } catch {
-      setNotice('تعذّر إرسال طلب إعادة الربط للجسر.')
-    } finally { setRepairing(false) }
-  }
-
   const restartBridge = async () => {
     if (!status.bridgeOnline) return setNotice('زر إعادة التشغيل لا يصل للجسر إذا كان الماك مطفأ أو الإنترنت/الجسر متوقفًا.')
     setRestarting(true)
@@ -426,7 +411,7 @@ export function WhatsAppAgentPanel() {
         <section className={card}>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-[.7rem] font-bold uppercase tracking-[.14em] text-accent">Knowledge system</p>
+              <p className="text-[.7rem] font-bold uppercase tracking-[.14em] text-accent">نظام المعرفة</p>
               <h2 className="mt-1 font-display text-2xl font-semibold text-ink">معرفةٌ تعرف حدودها.</h2>
               <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">خمسة أوضاع داخل تجربة واحدة؛ كل وضع يصرّح بما يستطيع فعله، ويفصل أرشيف الدكتور عن البحث الخارجي والتدخل الإنساني.</p>
             </div>
@@ -471,7 +456,7 @@ export function WhatsAppAgentPanel() {
 
       {screen === 'conversations' && (
         <section className={card}>
-          <p className="text-[.7rem] font-bold uppercase tracking-[.14em] text-accent">Privacy-safe signals</p>
+          <p className="text-[.7rem] font-bold uppercase tracking-[.14em] text-accent">مؤشرات آمنة</p>
           <h2 className="mt-1 font-display text-2xl font-semibold text-ink">المحادثات بوصفها مؤشرات، لا صندوق تجسس.</h2>
           <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">تعرض اللوحة النية ودرجة الفهم ومكان انقطاع الحوار فقط، من دون الرسائل أو الأرقام أو الأسماء.</p>
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
@@ -505,7 +490,7 @@ export function WhatsAppAgentPanel() {
 
       {screen === 'personality' && (
         <section className={card}>
-          <p className="text-[.7rem] font-bold uppercase tracking-[.14em] text-accent">Conversation character</p>
+          <p className="text-[.7rem] font-bold uppercase tracking-[.14em] text-accent">شخصية الحوار</p>
           <h2 className="mt-1 font-display text-2xl font-semibold text-ink">شخصية دافئة بلا تمثيل.</h2>
           <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">الإعدادات تضبط الإيقاع، ولا تسمح للبوت بادعاء أنه الدكتور أو بتذكر تفضيل من دون موافقة صريحة.</p>
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -540,7 +525,7 @@ export function WhatsAppAgentPanel() {
 
       {screen === 'protection' && (
         <section className={card}>
-          <p className="text-[.7rem] font-bold uppercase tracking-[.14em] text-accent">Evidence firewall</p>
+          <p className="text-[.7rem] font-bold uppercase tracking-[.14em] text-accent">حماية المصادر</p>
           <h2 className="mt-1 font-display text-2xl font-semibold text-ink">المصدر قبل الجواب.</h2>
           <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">أي رابط خارجي يظل ممنوعًا حتى يُسجل هنا بدليله، ثم يطابق الحارس المعرّف والرابط والاقتباس والادعاء حرفيًا قبل الإرسال.</p>
           <div className="mt-5 grid gap-3 lg:grid-cols-4">
@@ -590,67 +575,52 @@ export function WhatsAppAgentPanel() {
         <>
       {/* حتى قسم الحالة يُطوى بأمر الدكتور. لكن الحالة نفسها (متصل/غير متصل)
           تبقى في العنوان — فما فائدة كرتٍ يخفي الخبر الوحيد الذي تريده بنظرة؟ */}
-      <details className={card}>
-        <summary className="flex cursor-pointer list-none flex-wrap items-start justify-between gap-4">
-          <div>
+      <details className={`${card} group`}>
+        <summary className="flex cursor-pointer list-none items-start justify-between gap-4">
+          <div className="min-w-0">
             <p className="text-[.75rem] font-semibold uppercase text-accent">مساعد د. أحمد داخل واتساب</p>
             <h2 className="mt-1 flex flex-wrap items-center gap-3 font-display text-2xl font-semibold text-ink">
               وكيل خاص بموافقة الدكتور.
-              <span className={`rounded-full px-3 py-1 text-[.72rem] font-semibold ${status.status === 'connected' ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>
+              <span className={`rounded-full px-3 py-1 text-[.72rem] font-semibold ${status.health?.ready ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>
                 {status.health?.label || stateLabel[String(status.status)] || 'غير مرتبط'}
               </span>
             </h2>
-            <p className="mt-2 max-w-2xl text-[.86rem] leading-relaxed text-soft">الجسر يعمل على سيرفره المخصص طوال اليوم؛ لا يحتاج Chrome مفتوحًا على جهازك. الجلسة مشفّرة خارج GitHub، والبوت يصمت فور تدخلك من الهاتف.</p>
-
-            {/* بطاقة التشخيص: الحالة الحقيقية وسببها وعلاجها. كانت اللوحة تقول
-                «متصل ✅» والبوت لا يردّ — لأنها تفحص «هل العملية حيّة» لا «هل
-                يعمل فعلاً». هنا يرى الدكتور السبب والحلّ بلا أن يسأل أحداً. */}
-            {status.health && status.health.code !== 'working' && (
-              <div className="mt-4 rounded-2xl border border-accent/40 bg-canvas p-4">
-                <p className="text-[.82rem] font-semibold text-accent">{status.health.label}</p>
-                {status.health.why && <p className="mt-1 text-[.8rem] leading-relaxed text-ink">{status.health.why}</p>}
-                {status.health.fix && <p className="mt-1 text-[.8rem] leading-relaxed text-soft">الحل: {status.health.fix}</p>}
-              </div>
-            )}
-            {status.health?.code === 'working' && (
-              <p className="mt-3 text-[.78rem] text-soft">
-                ✓ جاهز ويردّ · الطابور سليم{status.health.silenced ? ` · صامتٌ في ${status.health.silenced} محادثة` : ''}
-              </p>
-            )}
-
-            {/* رمز الاقتران: كان يُطبع في سجلّ الطرفية وحده، فلا يراه الدكتور
-                إلا بفتح السجل أو بالرجوع إليّ. يظهر هنا الآن ويتجدّد وحده. */}
-            {status.qrImage && status.status !== 'connected' && (
-              <div className="mt-4 rounded-2xl border border-accent/40 bg-canvas p-4">
-                <p className="text-[.8rem] font-semibold text-ink">اربط جهازك — امسح هذا الرمز</p>
-                <p className="mt-1 text-[.75rem] leading-relaxed text-soft">
-                  واتساب في جوالك ← الإعدادات ← الأجهزة المرتبطة ← ربط جهاز. الرمز يتجدّد وحده كل عشرين ثانية.
-                </p>
-                <div className="mt-3 flex justify-center rounded-xl bg-white p-4">
-                  {/* الصورة تُرسم على ماك الدكتور ثم تصل كـ data URI. ولا تُرسل
-                      إلى خدمةٍ خارجية أبداً: نصّ الرمز اعتمادُ اقترانٍ حيّ، ومن
-                      ملكه ربط جهازه بحساب الدكتور. */}
-                  <img
-                    src={status.qrImage}
-                    alt="رمز اقتران واتساب"
-                    width={260}
-                    height={260}
-                    className="h-[260px] w-[260px]"
-                  />
-                </div>
-              </div>
-            )}
-            {status.pairing_code && status.status !== 'connected' && (
-              <div className="mt-4 rounded-2xl border border-accent/40 bg-canvas p-4">
-                <p className="text-[.8rem] font-semibold text-ink">رمز الاقتران بالرقم</p>
-                <p className="mt-2 font-mono text-2xl tracking-[.3em] text-accent">{status.pairing_code}</p>
-              </div>
-            )}
+            <p className="mt-2 max-w-2xl text-[.82rem] leading-relaxed text-soft">الاتصال والجلسة يعملان على الخادم المخصص، بعيدًا عن المتصفح وGitHub.</p>
           </div>
-          <span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent">＋</span>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">＋</span>
         </summary>
-        <div className="mt-3 flex justify-end">
-          <button type="button" onClick={() => void refresh()} disabled={busy} className={secondary}>{busy ? '…' : 'تحديث الحالة'}</button>
+
+        <div className="mt-5 border-t border-hair pt-5">
+          <div className="flex justify-end">
+            <button type="button" onClick={() => void refresh()} disabled={busy} className={secondary}>{busy ? '…' : 'تحديث الحالة'}</button>
+          </div>
+
+          {status.health && !status.health.ready && (
+            <div className="mt-4 rounded-2xl border border-accent/35 bg-canvas p-4">
+              <p className="text-[.82rem] font-semibold text-accent">{status.health.label}</p>
+              {status.health.why && <p className="mt-1 text-[.78rem] leading-relaxed text-ink">{status.health.why}</p>}
+              {status.health.fix && <p className="mt-1 text-[.76rem] leading-relaxed text-soft">{status.health.fix}</p>}
+            </div>
+          )}
+          {status.health?.ready && (
+            <p className="mt-4 text-[.78rem] text-soft">جاهز للعمل{status.health.silenced ? ` · صامت في ${status.health.silenced} محادثة بعد تدخل يدوي` : ''}</p>
+          )}
+
+          {status.qrImage && !status.health?.ready && (
+            <div className="mt-4 rounded-2xl border border-accent/35 bg-canvas p-4">
+              <p className="text-[.82rem] font-semibold text-ink">اربط واتساب</p>
+              <p className="mt-1 text-[.74rem] leading-relaxed text-soft">من الجوال: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز، ثم امسح الرمز.</p>
+              <div className="mt-3 flex justify-center rounded-xl bg-white p-3">
+                <img src={status.qrImage} alt="رمز اقتران واتساب" width={220} height={220} className="h-[220px] w-[220px] max-w-full" />
+              </div>
+            </div>
+          )}
+          {status.pairing_code && !status.health?.ready && (
+            <div className="mt-4 rounded-2xl border border-accent/35 bg-canvas p-4">
+              <p className="text-[.8rem] font-semibold text-ink">رمز الاقتران</p>
+              <p className="mt-2 font-mono text-2xl tracking-[.3em] text-accent">{status.pairing_code}</p>
+            </div>
+          )}
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-4">
           <div className="rounded-xl border border-hair bg-canvas p-4"><p className="text-[.74rem] text-soft">الحالة</p><p className="mt-1 font-semibold text-ink">{status.status && status.status !== 'unconfigured'
@@ -670,17 +640,6 @@ export function WhatsAppAgentPanel() {
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => void toggleEmergencyPause()} disabled={!status.bridgeOnline} className={`rounded-full border px-4 py-2 text-[.8rem] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${status.runtimePaused ? 'border-accent bg-accent text-white' : 'border-red-300/70 bg-red-50 text-red-700 hover:border-red-500'}`}>{status.runtimePaused ? 'تشغيل الردود' : 'إيقاف الردود فورًا'}</button>
             <button type="button" onClick={() => void restartBridge()} disabled={restarting || !status.bridgeOnline} className={secondary}>{restarting ? 'جارٍ إعادة التشغيل' : 'إعادة تشغيل واتساب'}</button>
-            {/* يظهر دائماً لا عند الصمت وحده: حين يبدو البوت معطوباً يريد الدكتور
-                زراً حاضراً يضغطه، لا زراً يبحث عن شرطٍ لظهوره. */}
-            <button
-              type="button"
-              onClick={() => void repairSession()}
-              disabled={repairing}
-              className={`${secondary} disabled:opacity-40`}
-              title="يمسح الجلسة ويطلب رمز QR جديداً"
-            >
-              {repairing ? 'يُعيد الربط…' : 'إعادة ربط واتساب (QR جديد)'}
-            </button>
             <button
               type="button"
               onClick={() => void returnBotNow()}
@@ -753,7 +712,7 @@ export function WhatsAppAgentPanel() {
         <details className={card}>
           <summary className="flex cursor-pointer list-none flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-[.7rem] font-bold uppercase tracking-[.16em] text-accent">Dialect memory · Controlled</p>
+              <p className="text-[.7rem] font-bold uppercase tracking-[.16em] text-accent">ذاكرة اللهجة · منضبطة</p>
               <h3 className="mt-1 font-display text-xl font-semibold text-ink">ذاكرة اللهجة الحيّة</h3>
               <p className="mt-1 max-w-2xl text-[.78rem] leading-relaxed text-soft">يتعلم من الصياغات الكويتية والعربية التي لم يفهمها، لكن لا يخترع جوابًا: يحفظ النية فقط بعد تكرار مؤكد، ثم يجيب من فهرس الموقع كالمعتاد.</p>
             </div>

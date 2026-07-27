@@ -133,6 +133,10 @@ async function safeEmit(event, payload = {}, options = {}) {
   }
 }
 
+// Optimization for WhatsApp Web Multi-Device sync:
+// 1. DO NOT use --disable-background-networking (it blocks background message syncing and IndexedDB updates!)
+// 2. Disable background timer & tab throttling so Chrome doesn't pause sync when headless
+// 3. Set realistic macOS User-Agent so WhatsApp MD doesn't flag or pause the headless client
 const puppeteer = {
   headless: true,
   args: [
@@ -142,8 +146,12 @@ const puppeteer = {
     '--disable-gpu',
     '--no-first-run',
     '--no-default-browser-check',
-    '--disable-background-networking',
-    '--disable-features=Translate,BackForwardCache,MediaRouter',
+    '--disable-background-timer-throttling',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-renderer-backgrounding',
+    '--disable-ipc-flooding-protection',
+    '--no-zygote',
+    '--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
   ],
   ...(config.chromePath ? { executablePath: config.chromePath } : {}),
 }
@@ -151,10 +159,14 @@ const puppeteer = {
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: config.deviceId, dataPath: config.sessionDir }),
   puppeteer,
+  webVersionCache: {
+    type: 'remote',
+    remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1014587000-alpha.html',
+  },
   deviceName: config.deviceName,
   browserName: 'Dr Ahmad Assistant',
-  takeoverOnConflict: false,
-  authTimeoutMs: 180_000,
+  takeoverOnConflict: true,
+  authTimeoutMs: 0, // 0 disables auth timeout during long initial message syncs
   qrMaxRetries: 0,
 })
 

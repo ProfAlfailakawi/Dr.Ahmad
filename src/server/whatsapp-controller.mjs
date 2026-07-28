@@ -11,6 +11,7 @@ const BRIDGE_ONLINE_MS = Math.max(30_000, Number(process.env.WHATSAPP_BRIDGE_ONL
 const QR_FRESH_MS = Math.max(30_000, Number(process.env.WHATSAPP_QR_FRESH_MS || 75_000))
 const REPAIR_COOLDOWN_MS = Math.max(15 * 60_000, Number(process.env.WHATSAPP_REPAIR_COOLDOWN_MS || 60 * 60_000))
 const MAX_BODY_BYTES = 2 * 1024 * 1024
+const WAKE_PHRASES = new Set(['موقع د احمد', 'موقع د الفيلكاوي'])
 
 const COLLECTIONS = Object.freeze({
   bridge: 'whatsapp_bridge_state',
@@ -119,6 +120,10 @@ export function stripArabicGreetings(value) {
     }
   }
   return text
+}
+
+export function isWhatsAppWakePhrase(value) {
+  return WAKE_PHRASES.has(normalizeArabicMessage(value))
 }
 
 function sharedPrefix(left, right) {
@@ -792,19 +797,20 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     const { ref, data } = await getConversation(db, jid)
 
     if (event === 'manual') {
-      const until = asIso(Date.now() + MANUAL_MINUTES * 60_000)
       await ref.set({
         jid,
         masked: maskJid(jid),
-        mode: 'human',
+        mode: 'silent',
+        wakeActive: false,
+        wakeVersion: 1,
         needsHuman: false,
-        manualUntil: until,
-        autoResumeAt: until,
-        notificationMutedUntil: until,
+        manualUntil: null,
+        autoResumeAt: null,
+        notificationMutedUntil: null,
         lastManualAt: now,
         updatedAt: now,
       }, { merge: true })
-      sendJson(res, 200, { ok: true, mutedUntil: until })
+      sendJson(res, 200, { ok: true, wakeActive: false })
       return
     }
 
@@ -840,6 +846,34 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     if (manualActive) {
       await ref.set(basePatch, { merge: true })
       sendJson(res, 200, { ok: true, action: 'none', reason: 'human-takeover' })
+      return
+    }
+
+    /* الرقم شخصي: الصمت هو الأصل. لا قاعدة، ولا تحية، ولا بحث في الموقع
+       يفتح الباب. وحدها الجملة المنشورة «موقع د. أحمد/الفيلكاوي» تفتح جلسة
+       هذه المحادثة. وعندما يكتب الدكتور بيده يرسل الجسر event=manual فيغلقها
+       فوراً، ولا يوجد مؤقت يعيد البوت من تلقاء نفسه. */
+    const wakePhrase = isWhatsAppWakePhrase(text)
+    const wakeActive = data.wakeActive === true && Number(data.wakeVersion || 0) >= 1
+    if (!wakePhrase && !wakeActive) {
+      await ref.set({ ...basePatch, mode: 'silent', wakeActive: false, wakeVersion: 1 }, { merge: true })
+      sendJson(res, 200, { ok: true, action: 'none', reason: 'awaiting-wake-phrase' })
+      return
+    }
+    if (wakePhrase) {
+      await ref.set({
+        ...basePatch,
+        mode: 'bot',
+        wakeActive: true,
+        wakeVersion: 1,
+        wakeOpenedAt: now,
+        needsHuman: false,
+        manualUntil: null,
+        autoResumeAt: null,
+        lastReplyHash: hash(WELCOME),
+        lastReplyAt: now,
+      }, { merge: true })
+      sendJson(res, 200, { ok: true, action: 'reply', reason: 'wake-phrase', reply: { text: WELCOME } })
       return
     }
 

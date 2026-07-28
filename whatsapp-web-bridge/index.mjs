@@ -109,6 +109,36 @@ let commandBusy = false
 let heartbeatTimer = null
 let pollTimer = null
 let reinjectionPromise = null
+const recentAutomatedSends = new Map()
+const recentAutomatedBodies = new Map()
+
+function automatedSendKey(jid, text) {
+  return `${String(jid || '').trim()}\n${String(text || '').replace(/\s+/g, ' ').trim()}`
+}
+
+function rememberAutomatedSend(jid, text) {
+  const key = automatedSendKey(jid, text)
+  const expiresAt = Date.now() + 45_000
+  const bodyKey = String(text || '').replace(/\s+/g, ' ').trim()
+  recentAutomatedSends.set(key, expiresAt)
+  recentAutomatedBodies.set(bodyKey, expiresAt)
+  for (const [candidate, expiresAt] of recentAutomatedSends) {
+    if (expiresAt <= Date.now()) recentAutomatedSends.delete(candidate)
+  }
+  for (const [candidate, bodyExpiresAt] of recentAutomatedBodies) {
+    if (bodyExpiresAt <= Date.now()) recentAutomatedBodies.delete(candidate)
+  }
+  return key
+}
+
+function consumeAutomatedSend(jid, text) {
+  const key = automatedSendKey(jid, text)
+  const expiresAt = recentAutomatedSends.get(key) || 0
+  const bodyKey = String(text || '').replace(/\s+/g, ' ').trim()
+  const bodyExpiresAt = recentAutomatedBodies.get(bodyKey) || 0
+  recentAutomatedSends.delete(key)
+  return expiresAt > Date.now() || bodyExpiresAt > Date.now()
+}
 
 async function serverRequest(path, { method = 'POST', body, timeoutMs = 15_000, retries = 2 } = {}) {
   let lastError
@@ -300,6 +330,7 @@ async function sendTextWithRecovery(rawJid, rawText) {
   const text = String(rawText || '').trim()
   if (!text) throw new Error('empty-message')
   const jid = await resolveSendJid(rawJid)
+  rememberAutomatedSend(jid, text)
   let lastError = null
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
@@ -451,6 +482,27 @@ client.on('message', async (message) => {
   } catch (error) {
     runtime.lastError = error instanceof Error ? error.message : String(error)
     log('error', 'incoming_message_failed', { from: message.from, error: runtime.lastError })
+  }
+})
+
+/* أي رسالة يكتبها الدكتور بيده تغلق جلسة البوت في تلك المحادثة. رسائل
+   البوت والحملات تمر من sendTextWithRecovery فتُعلَّم محلياً قبل أن يطلق
+   WhatsApp حدث message_create، فلا تُحسب تدخلاً يدوياً ولا تعيد فتح إرسال. */
+client.on('message_create', async (message) => {
+  if (!message.fromMe) return
+  const jid = String(message.to || '').trim()
+  const text = String(message.body || '')
+  if (!isIndividualJid(jid) || consumeAutomatedSend(jid, text)) return
+  try {
+    await emit('manual', {
+      jid,
+      messageId: String(message.id?._serialized || '').slice(0, 240),
+      timestamp: Number(message.timestamp || 0),
+    })
+    log('info', 'manual_message_closed_bot_session', { jid })
+  } catch (error) {
+    runtime.lastError = error instanceof Error ? error.message : String(error)
+    log('error', 'manual_takeover_signal_failed', { jid, error: runtime.lastError })
   }
 })
 

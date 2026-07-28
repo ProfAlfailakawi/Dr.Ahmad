@@ -729,9 +729,8 @@ export async function runNuclearSelfTest(root = process.cwd()) {
     }
     const audioManifest = readOptionalJsonObject(path.join(root, 'src', 'data', 'audio.json'))
     const audioMeta = readOptionalJsonObject(path.join(root, 'src', 'data', 'audio-meta.json'))
-    /* ملفات الإنتاج القديمة تبقى مفهرسة داخلياً للتوافق، لكن الواجهة العامة
-       لا تكشف أسماء الأصوات ولا اسم ملف القراءة الموروث. للمستخدم مساران فقط:
-       «قراءة المقال» و«الحوار». */
+    /* صفحة المقال وحدها تخفي اسم المؤدي. أمّا واتساب ولوحات التشغيل فتُظهر
+       المسارات الحقيقية كي يرى الدكتور بوضوح ما تم توليده: فهد، نورة، والحوار. */
     const internalVoiceCases = [
       ['fahed', '.mp3'],
       ['noura', '.noura.mp3'],
@@ -754,21 +753,39 @@ export async function runNuclearSelfTest(root = process.cwd()) {
         })
       }
 
-      const hasReading = Boolean(declaration?.fahed || declaration?.noura)
-      if (hasReading) {
-        check('audio-public-privacy', `${slug} / قراءة المقال`, () => {
-          const phrase = 'قراءة المقال'
+      if (declaration?.noura) {
+        check('audio-voice-visibility', `${slug} / صوت نورة`, () => {
+          const phrase = 'اسمعها بصوت نورة'
+          const expectedUrl = `${AUDIO_PUBLIC_BASE_URL}/${slug}.noura.mp3`
           const response = handleIntent({
             db,
-            jid: `audio-reading-${hashOpaque(slug)}@s.whatsapp.net`,
+            jid: `audio-noura-${hashOpaque(slug)}@s.whatsapp.net`,
+            input: phrase,
+            session: { content_id: item.id },
+            classification: { intent: INTENTS.LISTEN_NOURA, confidence: 0.99, normalized: normalizeArabic(phrase) },
+          })
+          const rendered = `${response.text || ''}
+${(response.actions || []).join('\n')}`
+          assert.ok(rendered.includes(expectedUrl))
+          assert.match(rendered, /صوت نورة/u)
+        })
+      }
+
+      if (declaration?.fahed) {
+        check('audio-voice-visibility', `${slug} / صوت فهد`, () => {
+          const phrase = 'اسمعها بصوت فهد'
+          const expectedUrl = `${AUDIO_PUBLIC_BASE_URL}/${slug}.mp3`
+          const response = handleIntent({
+            db,
+            jid: `audio-fahed-${hashOpaque(slug)}@s.whatsapp.net`,
             input: phrase,
             session: { content_id: item.id },
             classification: { intent: INTENTS.LISTEN_FAHED, confidence: 0.99, normalized: normalizeArabic(phrase) },
           })
-          const expectedUrl = declaration?.fahed ? `${AUDIO_PUBLIC_BASE_URL}/${slug}.mp3` : item.url
-          assert.ok((response.text || '').includes(expectedUrl))
-          assert.ok((response.actions || []).some((line) => line.startsWith('قراءة المقال:') && line.includes(expectedUrl)))
-          assert.equal(/فهد|نوره|نورة|نورا|\.noura\.mp3/u.test(`${response.text || ''}\n${(response.actions || []).join('\n')}`), false)
+          const rendered = `${response.text || ''}
+${(response.actions || []).join('\n')}`
+          assert.ok(rendered.includes(expectedUrl))
+          assert.match(rendered, /صوت فهد/u)
         })
       }
 
@@ -837,24 +854,26 @@ export async function runNuclearSelfTest(root = process.cwd()) {
       })
     }
 
-    check('audio-public-privacy', 'طلبات الأسماء القديمة تُفهم ولا تكشف أسماء الإنتاج', () => {
-      const withReading = db.all('SELECT * FROM content_items WHERE audio_json IS NOT NULL LIMIT 80')
-        .find((row) => {
-          const audio = JSON.parse(row.audio_json || 'null')
-          return Boolean(audio?.fahed || audio?.noura)
-        })
-      if (!withReading) return
-      for (const [intent, phrase] of [[INTENTS.LISTEN_FAHED, 'اسمعها بصوت فهد'], [INTENTS.LISTEN_NOURA, 'اسمعها بصوت نورة']]) {
+    check('audio-voice-visibility', 'طلبات أسماء الأصوات تعرض المسار الحقيقي خارج صفحة المقال', () => {
+      const rows = db.all('SELECT * FROM content_items WHERE audio_json IS NOT NULL LIMIT 120')
+      const byVoice = (voice) => rows.find((row) => Boolean(JSON.parse(row.audio_json || 'null')?.[voice]))
+      for (const [intent, phrase, voice, label, suffix] of [
+        [INTENTS.LISTEN_FAHED, 'اسمعها بصوت فهد', 'fahed', 'صوت فهد', '.mp3'],
+        [INTENTS.LISTEN_NOURA, 'اسمعها بصوت نورة', 'noura', 'صوت نورة', '.noura.mp3'],
+      ]) {
+        const item = byVoice(voice)
+        if (!item) continue
         const response = handleIntent({
           db,
-          jid: `legacy-name-${intent}@s.whatsapp.net`,
+          jid: `voice-name-${intent}@s.whatsapp.net`,
           input: phrase,
-          session: { content_id: withReading.id },
+          session: { content_id: item.id },
           classification: { intent, confidence: 0.99, normalized: normalizeArabic(phrase) },
         })
-        const rendered = `${response.text || ''}\n${(response.actions || []).join('\n')}`
-        assert.equal(/فهد|نوره|نورة|نورا|\.noura\.mp3/u.test(rendered), false)
-        assert.match(rendered, /قراءة المقال/u)
+        const rendered = `${response.text || ''}
+${(response.actions || []).join('\n')}`
+        assert.ok(rendered.includes(label))
+        assert.ok(rendered.includes(`${AUDIO_PUBLIC_BASE_URL}/${item.slug}${suffix}`))
       }
     })
 

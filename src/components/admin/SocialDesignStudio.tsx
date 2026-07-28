@@ -71,6 +71,7 @@ const BG_PATTERNS: { id: BackgroundPattern; label: string }[] = [
 ]
 const CAMPAIGN_SEED_KEY = 'studio-campaign-seed'
 const VISUAL_WORLD_HISTORY_KEY = 'dr-ahmad-studio-visual-world-history-v2'
+const GENERATION_LIBRARY_BACKFILL_KEY = 'dr-ahmad-generation-library-backfill-v1'
 const SIMPLIFIED_STUDIO = true
 
 const STUDIO_STAGES = [
@@ -791,6 +792,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [generatedDesignLibraryBusy, setGeneratedDesignLibraryBusy] = useState(false)
   const [generatedDesignLibraryError, setGeneratedDesignLibraryError] = useState('')
   const [generatedDesignLibraryHasMore, setGeneratedDesignLibraryHasMore] = useState(false)
+  const [generationStorageStatus, setGenerationStorageStatus] = useState<'idle' | 'checking' | 'ready' | 'failed'>('idle')
+  const [generationStorageMessage, setGenerationStorageMessage] = useState('')
+  const [generationBackfillBusy, setGenerationBackfillBusy] = useState(false)
+  const [generationBackfillSummary, setGenerationBackfillSummary] = useState('')
   const [generationMode, setGenerationMode] = useState<'daily' | 'masterpiece'>(() => {
     try { return localStorage.getItem('dr-ahmad-image-generation-mode') === 'masterpiece' ? 'masterpiece' : 'daily' } catch { return 'daily' }
   })
@@ -1271,6 +1276,163 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     } catch { setNotice('تعذّر حذف الصورة الآن.') }
     finally { setGeneratedLibraryBusy(false) }
   }
+
+  const verifyGenerationLibraryStorage = async () => {
+    setGenerationStorageStatus('checking')
+    setGenerationStorageMessage('أتحقق من الحاوية والقواعد بصلاحية المشرف…')
+    let cleanup: (() => Promise<void>) | null = null
+    try {
+      const app = await getFirebaseApp()
+      if (!app) throw new Error('Firebase غير متاح')
+      const [{ getAuth, getIdTokenResult }, storageModule] = await Promise.all([import('firebase/auth'), import('firebase/storage')])
+      const user = getAuth(app).currentUser
+      if (!user) throw new Error('سجّل الدخول إلى لوحة التحكم أولاً.')
+      const token = await getIdTokenResult(user, true)
+      if (token.claims.admin !== true) throw new Error('الحساب الحالي لا يحمل صلاحية admin.')
+      const storage = storageModule.getStorage(app)
+      const sentinelName = `health-${user.uid.replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 48)}-${Date.now()}.json`
+      const target = storageModule.ref(storage, `admin-generated-designs/${sentinelName}`)
+      cleanup = async () => { try { await storageModule.deleteObject(target) } catch { /* ملف الفحص قد يكون حُذف بالفعل */ } }
+      const payload = JSON.stringify({ ok: true, scope: 'generation-library', at: new Date().toISOString() })
+      await storageModule.uploadBytes(target, new Blob([payload], { type: 'application/json' }), {
+        contentType: 'application/json',
+        customMetadata: { source: 'generation-library-health-check' },
+      })
+      const downloaded = await storageModule.getBlob(target, 4096)
+      const parsed = JSON.parse(await downloaded.text()) as { ok?: boolean; scope?: string }
+      if (parsed.ok !== true || parsed.scope !== 'generation-library') throw new Error('فشل التحقق من قراءة الملف بعد رفعه.')
+      await cleanup()
+      cleanup = null
+      setGenerationStorageStatus('ready')
+      setGenerationStorageMessage('Firebase Storage جاهز: نجح الرفع والقراءة والحذف داخل مكتبة التوليد.')
+      return true
+    } catch (reason) {
+      if (cleanup) await cleanup()
+      const value = reason as { code?: string; message?: string }
+      const code = String(value?.code || '')
+      const detail = code === 'storage/unauthorized'
+        ? 'قواعد Storage لم تسمح لمسار مكتبة التوليد. أعد نشر storage.rules ثم جرّب الفحص.'
+        : code === 'storage/bucket-not-found'
+          ? 'حاوية Firebase Storage غير مفعّلة أو اسمها غير صحيح في drahmad-8e9e2.'
+          : code === 'storage/quota-exceeded'
+            ? 'حصة Firebase Storage أو خطة المشروع تمنع الكتابة حالياً.'
+            : value?.message || 'تعذّر اختبار Firebase Storage.'
+      setGenerationStorageStatus('failed')
+      setGenerationStorageMessage(detail)
+      return false
+    }
+  }
+
+  const backfillGenerationLibrary = async () => {
+    if (generationBackfillBusy) return
+    const candidates = savedPlans.filter((plan) => plan?.id && plan?.format && plan?.content)
+    if (!candidates.length) {
+      setGenerationBackfillSummary('لا توجد تصاميم كاملة قديمة قابلة للاستعادة في هذا المتصفح.')
+      return
+    }
+    setGenerationBackfillBusy(true)
+    setGenerationBackfillSummary('أفحص المحفوظات المحلية وأستعيد ما يمكن إثباته فقط…')
+    try {
+      const storageReady = generationStorageStatus === 'ready' || await verifyGenerationLibraryStorage()
+      if (!storageReady) throw new Error('storage_not_ready')
+      const [app, db] = await Promise.all([getFirebaseApp(), getDb()])
+      if (!app || !db) throw new Error('firebase_unavailable')
+      const [storageModule, firestoreModule] = await Promise.all([import('firebase/storage'), import('firebase/firestore')])
+      const storage = storageModule.getStorage(app)
+      const archivedDesigns: GeneratedDesignLibraryAsset[] = []
+      const archivedImages: GeneratedLibraryAsset[] = []
+      let imageCount = 0
+      for (const [index, plan] of candidates.entries()) {
+        const fingerprint = (plan.fingerprint || plan.id || `saved-${index}`).replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 84) || `saved-${index}`
+        const id = `legacy-design-${fingerprint}`.slice(0, 120)
+        const storagePath = `admin-generated-designs/${id}.json`
+        const cleanPlan = JSON.parse(JSON.stringify(plan)) as CompositionPlan
+        const createdAtMs = Date.now() - index
+        const generationKind = 'استعادة من المحفوظات المحلية'
+        const payload = JSON.stringify({ version: 1, plan: cleanPlan, generationKind, archivedAt: new Date(createdAtMs).toISOString(), backfilled: true })
+        if (payload.length <= 15 * 1024 * 1024) {
+          await storageModule.uploadBytes(storageModule.ref(storage, storagePath), new Blob([payload], { type: 'application/json' }), {
+            contentType: 'application/json', customMetadata: { source: 'social-design-studio-backfill', generationKind },
+          })
+          const thumbnail = await generatedDesignThumbnailDataUri(cleanPlan)
+          const asset: GeneratedDesignLibraryAsset = {
+            id, storagePath,
+            title: (cleanPlan.content?.title || cleanPlan.directionLabel || 'تصميم محفوظ').replace(/\s+/g, ' ').trim().slice(0, 140),
+            note: (cleanPlan.rationale?.[0] || cleanPlan.directionLabel || generationKind).replace(/\s+/g, ' ').trim().slice(0, 180),
+            thumbnail, formatId: cleanPlan.format?.id || '', formatLabel: cleanPlan.format?.label || '',
+            width: cleanPlan.format?.width || 0, height: cleanPlan.format?.height || 0,
+            quality: cleanPlan.quality?.score || 0, directionLabel: cleanPlan.directionLabel || '', generationKind, createdAtMs,
+          }
+          await firestoreModule.setDoc(firestoreModule.doc(db, 'admin_generated_designs', id), { ...asset, backfilled: true, createdAt: firestoreModule.serverTimestamp() }, { merge: true })
+          archivedDesigns.push(asset)
+        }
+
+        const hero = cleanPlan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background' && typeof item.src === 'string' && item.src.startsWith('data:image/'))
+        if (!hero?.src) continue
+        const legacyFile = generatedImageFileFromDataUri(hero.src, `legacy-${fingerprint}`)
+        if (!legacyFile) continue
+        const imageId = `legacy-image-${fingerprint}`.slice(0, 120)
+        const ext = legacyFile.type === 'image/png' ? 'png' : legacyFile.type === 'image/webp' ? 'webp' : legacyFile.type === 'image/gif' ? 'gif' : legacyFile.type === 'image/avif' ? 'avif' : 'jpg'
+        const imageStoragePath = `admin-generated/${imageId}.${ext}`
+        await storageModule.uploadBytes(storageModule.ref(storage, imageStoragePath), legacyFile, {
+          contentType: legacyFile.type, customMetadata: { source: 'social-design-studio-backfill', fingerprint },
+        })
+        const passport = await analyzeGeneratedStudioImage(hero.src, legacyFile.name)
+        const imageAsset: GeneratedLibraryAsset = {
+          id: imageId, storagePath: imageStoragePath,
+          title: (cleanPlan.content?.title || cleanPlan.directionLabel || 'أصل بصري محفوظ').replace(/\s+/g, ' ').trim().slice(0, 120),
+          note: 'أصل بصري استُعيد من تصميم محفوظ محلياً قبل إنشاء مكتبة التوليد.',
+          thumbnail: await generatedThumbnailDataUri(hero.src), mime: legacyFile.type,
+          width: passport?.width || cleanPlan.format?.width || 0, height: passport?.height || cleanPlan.format?.height || 0,
+          prompt: '', model: 'legacy-local-backfill', generatedAt: new Date(createdAtMs).toISOString(),
+          visualWorld: cleanPlan.directionLabel || '', description: hero.semanticDescription || cleanPlan.content?.title || '', createdAtMs,
+        }
+        await firestoreModule.setDoc(firestoreModule.doc(db, 'admin_generated_assets', imageId), { ...imageAsset, backfilled: true, createdAt: firestoreModule.serverTimestamp() }, { merge: true })
+        archivedImages.push(imageAsset)
+        imageCount += 1
+      }
+      setGeneratedDesignLibraryAssets((previous) => {
+        const map = new Map(previous.map((item) => [item.id, item]))
+        for (const item of archivedDesigns) map.set(item.id, item)
+        return [...map.values()].sort((a, b) => b.createdAtMs - a.createdAtMs)
+      })
+      setGeneratedLibraryAssets((previous) => {
+        const map = new Map(previous.map((item) => [item.id, item]))
+        for (const item of archivedImages) map.set(item.id, item)
+        return [...map.values()].sort((a, b) => b.createdAtMs - a.createdAtMs)
+      })
+      const summary = `استُعيد ${archivedDesigns.length} تصميم${archivedDesigns.length === 1 ? '' : 'اً'} و${imageCount} أصل بصري قديم قابل للإثبات.`
+      setGenerationBackfillSummary(summary)
+      try { localStorage.setItem(GENERATION_LIBRARY_BACKFILL_KEY, JSON.stringify({ at: new Date().toISOString(), designs: archivedDesigns.length, images: imageCount })) } catch { /* لا نعطل الاستعادة */ }
+    } catch (reason) {
+      setGenerationBackfillSummary(reason instanceof Error && reason.message === 'storage_not_ready'
+        ? 'توقفت الاستعادة لأن Firebase Storage لم يجتز الفحص الفعلي.'
+        : 'تعذّرت استعادة المحفوظات القديمة الآن؛ لم يُحذف أي شيء محلي.')
+    } finally {
+      setGenerationBackfillBusy(false)
+    }
+  }
+
+  const storageHealthAutoCheckedRef = useRef(false)
+  useEffect(() => {
+    if (storageHealthAutoCheckedRef.current) return
+    storageHealthAutoCheckedRef.current = true
+    let unsubscribe: (() => void) | undefined
+    void (async () => {
+      try {
+        const app = await getFirebaseApp()
+        if (!app) return
+        const { getAuth, onAuthStateChanged } = await import('firebase/auth')
+        unsubscribe = onAuthStateChanged(getAuth(app), (user) => {
+          if (!user || generationStorageStatus !== 'idle') return
+          void verifyGenerationLibraryStorage()
+        })
+      } catch { /* يبقى زر إعادة الفحص متاحاً داخل المكتبة */ }
+    })()
+    return () => unsubscribe?.()
+    // الفحص مرة واحدة عند دخول الاستوديو؛ زر إعادة الفحص يغطي أي تغيير لاحق.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [resonance, setResonance] = useState<{ quote: string; title: string; count: number }[] | null>(null)
   const [resonanceBusy, setResonanceBusy] = useState(false)
@@ -3004,6 +3166,71 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         </div>
         <div className="relative mt-5"><StageRail stage={stage} onChange={handleStageChange} /></div>
 
+        <details data-generation-library="true" className="mt-4 overflow-hidden rounded-2xl border border-accent/20 bg-accent/[.025]">
+                      <summary className="group flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[.7rem] font-semibold text-ink">
+                        <span>مكتبة التوليد <span className="ms-2 font-normal text-soft">أرشيف خاص للتصاميم الكاملة والأصول المولّدة</span></span>
+                        <span className="shrink-0 rounded-full border border-accent/15 bg-paper px-2.5 py-1 text-[.58rem] font-semibold text-accent">{generatedDesignLibraryAssets.length} تصميم · {generatedLibraryAssets.length} أصل</span>
+                      </summary>
+                      <div className="grid gap-5 border-t border-hair p-3 md:p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hair bg-paper/70 px-3 py-2.5">
+                          <div className="min-w-0">
+                            <p className="text-[.62rem] font-semibold text-ink">حالة التخزين السحابي</p>
+                            <p className={`mt-1 text-[.58rem] leading-relaxed ${generationStorageStatus === 'ready' ? 'text-emerald-700' : generationStorageStatus === 'failed' ? 'text-amber-800' : 'text-soft'}`}>{generationStorageMessage || 'سيُفحص Firebase Storage تلقائياً عند دخول المشرف.'}</p>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`rounded-full px-2.5 py-1 text-[.56rem] font-bold ${generationStorageStatus === 'ready' ? 'bg-emerald-100 text-emerald-700' : generationStorageStatus === 'failed' ? 'bg-amber-100 text-amber-800' : 'bg-wash text-soft'}`}>{generationStorageStatus === 'ready' ? 'Storage جاهز' : generationStorageStatus === 'checking' ? 'أفحص…' : generationStorageStatus === 'failed' ? 'يحتاج مراجعة' : 'غير مفحوص'}</span>
+                            <button type="button" className={ghost} disabled={generationStorageStatus === 'checking'} onClick={() => void verifyGenerationLibraryStorage()}>إعادة الفحص</button>
+                            <button type="button" className={ghost} disabled={generationBackfillBusy || generationStorageStatus === 'checking' || !savedPlans.length} onClick={() => void backfillGenerationLibrary()}>{generationBackfillBusy ? 'أستعيد…' : `استعادة المحفوظات القديمة (${savedPlans.length})`}</button>
+                          </div>
+                        </div>
+                        {generationBackfillSummary && <p className="rounded-xl border border-accent/15 bg-accent/[.035] px-3 py-2 text-[.6rem] leading-relaxed text-soft">{generationBackfillSummary}</p>}
+                        {(generatedDesignLibraryError || generatedLibraryError) && <div className="grid gap-2">
+                          {generatedDesignLibraryError && <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[.62rem] leading-relaxed text-amber-900">{generatedDesignLibraryError}</p>}
+                          {generatedLibraryError && <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[.62rem] leading-relaxed text-amber-900">{generatedLibraryError}</p>}
+                        </div>}
+        
+                        <section aria-labelledby="generated-design-library-title">
+                          <div className="mb-3 flex flex-wrap items-end justify-between gap-2 px-1">
+                            <div><h4 id="generated-design-library-title" className="text-[.72rem] font-bold text-ink">التصاميم الكاملة</h4><p className="mt-1 text-[.6rem] leading-relaxed text-soft">كل اتجاه أو حملة أو نسخة نهائية تُحفظ بطبقاتها وتكوينها لتفتحها لاحقاً وتكمل التحرير من حيث توقفت.</p></div>
+                            <span className="text-[.58rem] text-soft">خاص بلوحة التحكم · غير منشور للعامة</span>
+                          </div>
+                          {generatedDesignLibraryBusy && !generatedDesignLibraryAssets.length ? <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">أحمّل أرشيف التصاميم الخاصة…</p> : generatedDesignLibraryAssets.length ? (
+                            <div className="mobile-card-rail flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                              {generatedDesignLibraryAssets.map((asset) => <article key={asset.id} className="w-[210px] shrink-0 snap-start overflow-hidden rounded-2xl border border-hair bg-canvas shadow-[0_12px_32px_rgba(17,41,75,.045)]">
+                                {asset.thumbnail ? <img src={asset.thumbnail} alt="" className="aspect-[4/3] w-full object-cover" loading="lazy" /> : <div className="relative grid aspect-[4/3] w-full place-items-center overflow-hidden bg-[radial-gradient(circle_at_22%_18%,rgba(47,111,142,.16),transparent_34%),linear-gradient(145deg,var(--paper),var(--canvas))]"><span className="absolute inset-x-5 top-5 h-px bg-accent/15" /><span className="font-display text-3xl font-black text-accent/25">A</span><span className="absolute bottom-4 end-4 text-[.5rem] font-bold tracking-[.18em] text-soft/65">ARCHIVE</span></div>}
+                                <div className="grid gap-2 p-3 text-right">
+                                  <div className="flex items-center justify-between gap-2"><span className="rounded-full border border-accent/15 bg-accent/[.045] px-2 py-1 text-[.53rem] font-semibold text-accent">{asset.generationKind}</span>{asset.quality > 0 && <span className="text-[.54rem] font-semibold text-soft">{Math.round(asset.quality)}٪</span>}</div>
+                                  <strong className="line-clamp-2 min-h-[2.5rem] text-[.69rem] leading-relaxed text-ink">{asset.title}</strong>
+                                  <span className="line-clamp-1 text-[.56rem] text-soft">{asset.directionLabel || asset.note || 'نسخة محفوظة'}</span>
+                                  <span className="text-[.53rem] text-soft" dir="ltr">{asset.width}×{asset.height}{asset.formatLabel ? ` · ${asset.formatLabel}` : ''} · {asset.createdAtMs ? new Date(asset.createdAtMs).toLocaleDateString('ar-KW-u-nu-latn') : ''}</span>
+                                  <div className="flex gap-2"><button type="button" className={`${primary} flex-1 px-3 py-2 text-[.62rem]`} disabled={generatedDesignLibraryBusy} onClick={() => void useGeneratedDesignLibraryAsset(asset)}>فتح للتعديل</button><button type="button" className={`${ghost} px-3 py-2 text-[.62rem]`} disabled={generatedDesignLibraryBusy} onClick={() => void deleteGeneratedDesignLibraryAsset(asset)}>حذف</button></div>
+                                </div>
+                              </article>)}
+                            </div>
+                          ) : <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">لا توجد تصاميم مؤرشفة بعد. أول توليد جديد سيُحفظ هنا تلقائياً بكامل تكوينه.</p>}
+                          {generatedDesignLibraryAssets.length > 0 && generatedDesignLibraryHasMore && <div className="mt-3 text-center"><button type="button" className={ghost} disabled={generatedDesignLibraryBusy} onClick={() => void loadOlderGeneratedDesigns()}>{generatedDesignLibraryBusy ? 'أحمّل…' : 'تحميل تصاميم أقدم'}</button></div>}
+                        </section>
+        
+                        <section aria-labelledby="generated-image-library-title" className="border-t border-hair pt-4">
+                          <div className="mb-3 flex flex-wrap items-end justify-between gap-2 px-1"><div><h4 id="generated-image-library-title" className="text-[.72rem] font-bold text-ink">الأصول البصرية المولّدة</h4><p className="mt-1 text-[.6rem] leading-relaxed text-soft">الصور الأصلية التي أنشأها الاستوديو تبقى مستقلة أيضاً، لتعيد استخدامها داخل أي تصميم جديد.</p></div><span className="text-[.58rem] text-soft">الأصل الكامل محفوظ في Storage الخاص</span></div>
+                          {generatedLibraryBusy && !generatedLibraryAssets.length ? <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">أحمّل الأصول البصرية الخاصة…</p> : generatedLibraryAssets.length ? (
+                            <div className="mobile-card-rail flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                              {generatedLibraryAssets.map((asset) => <article key={asset.id} className="w-[190px] shrink-0 snap-start overflow-hidden rounded-2xl border border-hair bg-canvas">
+                                <img src={asset.thumbnail} alt="" className="aspect-[4/3] w-full object-cover" loading="lazy" />
+                                <div className="grid gap-2 p-3 text-right">
+                                  <strong className="line-clamp-2 text-[.7rem] text-ink">{asset.title}</strong>
+                                  <span className="line-clamp-1 text-[.58rem] text-soft">{asset.visualWorld || asset.model || 'توليد أصلي'}</span>
+                                  <span className="text-[.55rem] text-soft" dir="ltr">{asset.width}×{asset.height} · {asset.generatedAt ? new Date(asset.generatedAt).toLocaleDateString('ar-KW-u-nu-latn') : ''}</span>
+                                  <div className="flex gap-2"><button type="button" className={`${primary} flex-1 px-3 py-2 text-[.62rem]`} disabled={generatedLibraryBusy} onClick={() => void useGeneratedLibraryAsset(asset)}>استخدم/عدّل</button><button type="button" className={`${ghost} px-3 py-2 text-[.62rem]`} disabled={generatedLibraryBusy} onClick={() => void deleteGeneratedLibraryAsset(asset)}>حذف</button></div>
+                                </div>
+                              </article>)}
+                            </div>
+                          ) : <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">لا توجد أصول مولّدة بعد. أول صورة تُنشأ من الصفر ستدخل هنا تلقائياً من دون أن تختلط بمكتبة الموقع العامة.</p>}
+                          {generatedLibraryAssets.length > 0 && generatedLibraryHasMore && <div className="mt-3 text-center"><button type="button" className={ghost} disabled={generatedLibraryBusy} onClick={() => void loadOlderGeneratedImages()}>{generatedLibraryBusy ? 'أحمّل…' : 'تحميل أصول أقدم'}</button></div>}
+                        </section>
+                      </div>
+                    </details>
+
         {SIMPLIFIED_STUDIO && stage === 'idea' && (
           <section className="mt-6 overflow-hidden rounded-[1.8rem] border border-hair bg-canvas shadow-[0_24px_70px_rgba(15,23,42,.06)]">
             <div className="grid gap-0 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,.8fr)]">
@@ -3146,58 +3373,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           </label>
         </div>
 
-<details data-generation-library="true" className="mt-4 overflow-hidden rounded-2xl border border-accent/20 bg-accent/[.025]">
-              <summary className="group flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[.7rem] font-semibold text-ink">
-                <span>مكتبة التوليد <span className="ms-2 font-normal text-soft">أرشيف خاص للتصاميم الكاملة والأصول المولّدة</span></span>
-                <span className="shrink-0 rounded-full border border-accent/15 bg-paper px-2.5 py-1 text-[.58rem] font-semibold text-accent">{generatedDesignLibraryAssets.length} تصميم · {generatedLibraryAssets.length} أصل</span>
-              </summary>
-              <div className="grid gap-5 border-t border-hair p-3 md:p-4">
-                {(generatedDesignLibraryError || generatedLibraryError) && <div className="grid gap-2">
-                  {generatedDesignLibraryError && <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[.62rem] leading-relaxed text-amber-900">{generatedDesignLibraryError}</p>}
-                  {generatedLibraryError && <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[.62rem] leading-relaxed text-amber-900">{generatedLibraryError}</p>}
-                </div>}
 
-                <section aria-labelledby="generated-design-library-title">
-                  <div className="mb-3 flex flex-wrap items-end justify-between gap-2 px-1">
-                    <div><h4 id="generated-design-library-title" className="text-[.72rem] font-bold text-ink">التصاميم الكاملة</h4><p className="mt-1 text-[.6rem] leading-relaxed text-soft">كل اتجاه أو حملة أو نسخة نهائية تُحفظ بطبقاتها وتكوينها لتفتحها لاحقاً وتكمل التحرير من حيث توقفت.</p></div>
-                    <span className="text-[.58rem] text-soft">خاص بلوحة التحكم · غير منشور للعامة</span>
-                  </div>
-                  {generatedDesignLibraryBusy && !generatedDesignLibraryAssets.length ? <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">أحمّل أرشيف التصاميم الخاصة…</p> : generatedDesignLibraryAssets.length ? (
-                    <div className="mobile-card-rail flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                      {generatedDesignLibraryAssets.map((asset) => <article key={asset.id} className="w-[210px] shrink-0 snap-start overflow-hidden rounded-2xl border border-hair bg-canvas shadow-[0_12px_32px_rgba(17,41,75,.045)]">
-                        {asset.thumbnail ? <img src={asset.thumbnail} alt="" className="aspect-[4/3] w-full object-cover" loading="lazy" /> : <div className="relative grid aspect-[4/3] w-full place-items-center overflow-hidden bg-[radial-gradient(circle_at_22%_18%,rgba(47,111,142,.16),transparent_34%),linear-gradient(145deg,var(--paper),var(--canvas))]"><span className="absolute inset-x-5 top-5 h-px bg-accent/15" /><span className="font-display text-3xl font-black text-accent/25">A</span><span className="absolute bottom-4 end-4 text-[.5rem] font-bold tracking-[.18em] text-soft/65">ARCHIVE</span></div>}
-                        <div className="grid gap-2 p-3 text-right">
-                          <div className="flex items-center justify-between gap-2"><span className="rounded-full border border-accent/15 bg-accent/[.045] px-2 py-1 text-[.53rem] font-semibold text-accent">{asset.generationKind}</span>{asset.quality > 0 && <span className="text-[.54rem] font-semibold text-soft">{Math.round(asset.quality)}٪</span>}</div>
-                          <strong className="line-clamp-2 min-h-[2.5rem] text-[.69rem] leading-relaxed text-ink">{asset.title}</strong>
-                          <span className="line-clamp-1 text-[.56rem] text-soft">{asset.directionLabel || asset.note || 'نسخة محفوظة'}</span>
-                          <span className="text-[.53rem] text-soft" dir="ltr">{asset.width}×{asset.height}{asset.formatLabel ? ` · ${asset.formatLabel}` : ''} · {asset.createdAtMs ? new Date(asset.createdAtMs).toLocaleDateString('ar-KW-u-nu-latn') : ''}</span>
-                          <div className="flex gap-2"><button type="button" className={`${primary} flex-1 px-3 py-2 text-[.62rem]`} disabled={generatedDesignLibraryBusy} onClick={() => void useGeneratedDesignLibraryAsset(asset)}>فتح للتعديل</button><button type="button" className={`${ghost} px-3 py-2 text-[.62rem]`} disabled={generatedDesignLibraryBusy} onClick={() => void deleteGeneratedDesignLibraryAsset(asset)}>حذف</button></div>
-                        </div>
-                      </article>)}
-                    </div>
-                  ) : <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">لا توجد تصاميم مؤرشفة بعد. أول توليد جديد سيُحفظ هنا تلقائياً بكامل تكوينه.</p>}
-                  {generatedDesignLibraryAssets.length > 0 && generatedDesignLibraryHasMore && <div className="mt-3 text-center"><button type="button" className={ghost} disabled={generatedDesignLibraryBusy} onClick={() => void loadOlderGeneratedDesigns()}>{generatedDesignLibraryBusy ? 'أحمّل…' : 'تحميل تصاميم أقدم'}</button></div>}
-                </section>
-
-                <section aria-labelledby="generated-image-library-title" className="border-t border-hair pt-4">
-                  <div className="mb-3 flex flex-wrap items-end justify-between gap-2 px-1"><div><h4 id="generated-image-library-title" className="text-[.72rem] font-bold text-ink">الأصول البصرية المولّدة</h4><p className="mt-1 text-[.6rem] leading-relaxed text-soft">الصور الأصلية التي أنشأها الاستوديو تبقى مستقلة أيضاً، لتعيد استخدامها داخل أي تصميم جديد.</p></div><span className="text-[.58rem] text-soft">الأصل الكامل محفوظ في Storage الخاص</span></div>
-                  {generatedLibraryBusy && !generatedLibraryAssets.length ? <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">أحمّل الأصول البصرية الخاصة…</p> : generatedLibraryAssets.length ? (
-                    <div className="mobile-card-rail flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                      {generatedLibraryAssets.map((asset) => <article key={asset.id} className="w-[190px] shrink-0 snap-start overflow-hidden rounded-2xl border border-hair bg-canvas">
-                        <img src={asset.thumbnail} alt="" className="aspect-[4/3] w-full object-cover" loading="lazy" />
-                        <div className="grid gap-2 p-3 text-right">
-                          <strong className="line-clamp-2 text-[.7rem] text-ink">{asset.title}</strong>
-                          <span className="line-clamp-1 text-[.58rem] text-soft">{asset.visualWorld || asset.model || 'توليد أصلي'}</span>
-                          <span className="text-[.55rem] text-soft" dir="ltr">{asset.width}×{asset.height} · {asset.generatedAt ? new Date(asset.generatedAt).toLocaleDateString('ar-KW-u-nu-latn') : ''}</span>
-                          <div className="flex gap-2"><button type="button" className={`${primary} flex-1 px-3 py-2 text-[.62rem]`} disabled={generatedLibraryBusy} onClick={() => void useGeneratedLibraryAsset(asset)}>استخدم/عدّل</button><button type="button" className={`${ghost} px-3 py-2 text-[.62rem]`} disabled={generatedLibraryBusy} onClick={() => void deleteGeneratedLibraryAsset(asset)}>حذف</button></div>
-                        </div>
-                      </article>)}
-                    </div>
-                  ) : <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">لا توجد أصول مولّدة بعد. أول صورة تُنشأ من الصفر ستدخل هنا تلقائياً من دون أن تختلط بمكتبة الموقع العامة.</p>}
-                  {generatedLibraryAssets.length > 0 && generatedLibraryHasMore && <div className="mt-3 text-center"><button type="button" className={ghost} disabled={generatedLibraryBusy} onClick={() => void loadOlderGeneratedImages()}>{generatedLibraryBusy ? 'أحمّل…' : 'تحميل أصول أقدم'}</button></div>}
-                </section>
-              </div>
-            </details>
 
         {hasInput && <div className="mt-4 grid gap-3 rounded-2xl border border-hair bg-canvas p-4 sm:grid-cols-2 xl:grid-cols-5">
           <div><span className="block text-[.66rem] text-soft">فهم المحتوى</span><strong className="mt-1 block text-[.82rem] text-ink">{kindArabic[analysis.primaryKind] || analysis.primaryKind}</strong></div>

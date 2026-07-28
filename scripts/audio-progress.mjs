@@ -3,8 +3,8 @@
  * تقرير التوليد — «تأكّد من توليد كل شيء بالتفصيل الممل».
  *
  * لا يثق بسجلٍّ ولا بلوحة: يسأل R2 نفسه عن كل ملفٍ متوقَّع. فالملفُّ الموجود
- * على الخادم هو ما يسمعه الناس، وما عداه دعوى. ويقيس ثلاثة أشياء لكل مقال:
- * قراءةُ المقال وحلقةُ الحوار — ويقول ما تمّ وما بقي وكم يلزم.
+ * على الخادم هو ما يسمعه الناس، وما عداه دعوى. ويقيس ثلاثة مسارات لكل مقال:
+ * صوت فهد وصوت نورة وحلقة الحوار — ويقول ما تمّ وما بقي وكم يلزم.
  *
  * الاستعمال:
  *   node scripts/audio-progress.mjs              ملخّصٌ وأرقام
@@ -19,9 +19,9 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SELF_TEST = process.argv.includes('--self-test')
 const SHOW_MISSING = process.argv.includes('--missing')
 
-/** قراءة المقال، والحوار عند طلبه */
+/** صوت فهد وصوت نورة، ثم الحوار عند طلبه. */
 export function expectedFiles(slug, { withDialogue = true } = {}) {
-  const files = [`${slug}.mp3`]
+  const files = [`${slug}.mp3`, `${slug}.noura.mp3`]
   if (withDialogue) files.push(`${slug}.dialogue.mp3`)
   return files
 }
@@ -29,12 +29,18 @@ export function expectedFiles(slug, { withDialogue = true } = {}) {
 /** حالةُ مقالٍ واحد من نتائج الفحص */
 export function articleState(found) {
   const fahed = Boolean(found[0])
-  const dialogue = Boolean(found[1])
-  const reading = fahed
+  const noura = Boolean(found[1])
+  const dialogue = Boolean(found[2])
+  const reading = fahed || noura
+  const done = fahed && noura && dialogue
   return {
-    reading, dialogue, fahed,
-    done: reading && dialogue,
-    label: reading && dialogue ? 'مكتمل' : reading ? 'قراءةٌ بلا حوار' : dialogue ? 'حوارٌ بلا قراءة' : 'لم يبدأ',
+    reading, dialogue, fahed, noura, done,
+    label: done ? 'مكتمل'
+      : !fahed && !noura && !dialogue ? 'لم يبدأ'
+        : !noura && fahed && dialogue ? 'ينقص صوت نورة'
+          : !fahed && noura && dialogue ? 'ينقص صوت فهد'
+            : fahed && noura && !dialogue ? 'الصوتان بلا حوار'
+              : 'قيد الاكتمال',
   }
 }
 
@@ -51,15 +57,16 @@ if (SELF_TEST) {
   let pass = 0
   const t = (m, c) => { assert(c, m); pass++ }
 
-  t('ملفان لكل مقال مع الحوار', expectedFiles('x').length === 2)
-  t('وملف القراءة وحده بلا حوار', expectedFiles('x', { withDialogue: false }).length === 1)
-  t('وأسماؤها بالصيغة التي يرفعها المحرّك', expectedFiles('x').join() === 'x.mp3,x.dialogue.mp3')
+  t('ثلاثة ملفات لكل مقال مع الحوار', expectedFiles('x').length === 3)
+  t('وصوتا فهد ونورة بلا حوار', expectedFiles('x', { withDialogue: false }).length === 2)
+  t('وأسماؤها بالصيغة التي يرفعها المحرّك', expectedFiles('x').join() === 'x.mp3,x.noura.mp3,x.dialogue.mp3')
 
-  t('★ المكتمل يحتاج القراءة والحوار', articleState([1, 1]).done === true)
-  t('★ ملف القراءة المنشور هو قراءة المقال المعتمدة', articleState([1, 0]).reading === true)
-  t('والقراءة بلا حوار تُسمّى باسمها', articleState([1, 0]).label === 'قراءةٌ بلا حوار')
+  t('★ المكتمل يحتاج فهد ونورة والحوار', articleState([1, 1, 1]).done === true)
+  t('★ نورة وحدها تُعد قراءةً منشورة أيضاً', articleState([0, 1, 0]).reading === true)
+  t('★ فهد وحده يُعد قراءةً منشورة أيضاً', articleState([1, 0, 0]).reading === true)
+  t('غياب نورة يظهر صراحةً في تقرير الإدارة', articleState([1, 0, 1]).label === 'ينقص صوت نورة')
   t('ولم يبدأ يُقال صراحةً', articleState([0, 0, 0]).label === 'لم يبدأ')
-  t('والناقص ليس مكتملاً', articleState([1, 0]).done === false)
+  t('والناقص ليس مكتملاً', articleState([1, 0, 1]).done === false)
 
   t('★ المدّة تُقرَّب لأعلى فلا نَعِد بأقلّ من الواقع', etaHours(261, 10) === 27)
   t('ولا مدّة لما اكتمل', etaHours(0) === 0)
@@ -102,11 +109,12 @@ for (let i = 0; i < slugs.length; i += 6) {
 process.stdout.write('\r' + ' '.repeat(40) + '\r')
 
 const done = rows.filter((r) => r.done)
-const readingOnly = rows.filter((r) => r.reading && !r.dialogue)
-const dialogueOnly = rows.filter((r) => r.dialogue && !r.reading)
-const none = rows.filter((r) => !r.fahed && !r.dialogue)
+const bothVoicesNoDialogue = rows.filter((r) => r.fahed && r.noura && !r.dialogue)
+const dialogueWithoutBothVoices = rows.filter((r) => r.dialogue && (!r.fahed || !r.noura))
+const none = rows.filter((r) => !r.fahed && !r.noura && !r.dialogue)
 
-const missingReadings = rows.reduce((sum, r) => sum + (r.fahed ? 0 : 1), 0)
+const missingFahed = rows.filter((r) => !r.fahed).length
+const missingNoura = rows.filter((r) => !r.noura).length
 const missingDialogues = rows.filter((r) => !r.dialogue).length
 
 const bar = (n) => '█'.repeat(Math.round((n / rows.length) * 28)).padEnd(28, '·')
@@ -133,8 +141,10 @@ if (SHOW_MISSING) {
     console.log()
   }
   show('لم يبدأ', none)
-  show('قراءةٌ بلا حوار', readingOnly)
-  show('حوارٌ بلا قراءة', dialogueOnly)
+  show('الصوتان بلا حوار', bothVoicesNoDialogue)
+  show('حوار مع صوت ناقص', dialogueWithoutBothVoices)
+  show('ينقص صوت نورة', rows.filter((r) => !r.noura))
+  show('ينقص صوت فهد', rows.filter((r) => !r.fahed))
 }
 
 console.log(done.length === rows.length ? '✔ اكتمل كل شيء.' : `ⓘ للتفصيل الكامل: node scripts/audio-progress.mjs --missing`)

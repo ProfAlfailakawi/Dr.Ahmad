@@ -687,14 +687,10 @@ const audioLinks = (item) => {
   if (!item?.audio) return []
   const links = []
   const base = AUDIO_PUBLIC_BASE_URL
-  const hasReading = Boolean(item.audio.fahed || item.audio.noura)
-  if (hasReading) {
-    /* القراءة الحديثة لها رابط بلا اسم داخلي. أما الملف الموروث فنعيد القارئ
-       إلى صفحة المقال حيث يشغله المشغل العام باسم «قراءة المقال»، فلا يظهر
-       اسم ملف الإنتاج القديم في رسالة واتساب. */
-    const readingUrl = item.audio.fahed && base ? `${base}/${item.slug}.mp3` : item.url
-    links.push(`قراءة المقال: ${readingUrl}`)
-  }
+  /* خارج صفحة المقال نُظهر هوية المسارات الصوتية صراحةً للإدارة وواتساب.
+     الاستثناء الوحيد هو مشغّل المقال العام نفسه، حيث تبقى التسمية «قراءة المقال». */
+  if (item.audio.noura) links.push(`صوت نورة: ${base ? `${base}/${item.slug}.noura.mp3` : item.url}`)
+  if (item.audio.fahed) links.push(`صوت فهد: ${base ? `${base}/${item.slug}.mp3` : item.url}`)
   if (item.audio.dialogue) links.push(`الحوار: ${base ? `${base}/${item.slug}.dialogue.mp3` : item.url}`)
   return links
 }
@@ -988,9 +984,15 @@ ${item.url}`,
 }
 
 function listenReply(item, voice = null) {
-  if (!item) return { text: 'اختر مادة أولاً، ثم قل: قراءة المقال أو الحوار.' }
+  if (!item) return { text: 'اختر مادة أولاً، ثم قل: صوت نورة، صوت فهد، أو الحوار.' }
   const available = audioLinks(item)
-  const prefix = voice === 'dialogue' ? 'الحوار:' : voice ? 'قراءة المقال:' : ''
+  const prefix = voice === 'dialogue'
+    ? 'الحوار:'
+    : voice === 'noura'
+      ? 'صوت نورة:'
+      : voice === 'fahed'
+        ? 'صوت فهد:'
+        : ''
   const chosen = prefix ? available.find((line) => line.startsWith(prefix)) : available[0]
   if (!chosen) {
     return { text: `لا توجد النسخة الصوتية المطلوبة لهذه المادة في فهرس الموقع الآن.

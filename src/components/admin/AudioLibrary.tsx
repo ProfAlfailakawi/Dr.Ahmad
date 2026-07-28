@@ -29,11 +29,11 @@ const voices: VoiceDefinition[] = [
 const audioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const audioUrl = (article: ArticleRecord, voice: ArticleAudioMode) => {
   if (voice === 'reading') {
-    const preferred = article.audio?.fahed
-    const legacy = article.audio?.noura
-    if (typeof preferred === 'string' && preferred.trim()) return preferred.trim()
-    if (typeof legacy === 'string' && legacy.trim()) return legacy.trim()
-    const suffix = exists(preferred) ? '.mp3' : exists(legacy) ? '.noura.mp3' : '.mp3'
+    const noura = article.audio?.noura
+    const fahed = article.audio?.fahed
+    if (typeof noura === 'string' && noura.trim()) return noura.trim()
+    if (typeof fahed === 'string' && fahed.trim()) return fahed.trim()
+    const suffix = exists(noura) ? '.noura.mp3' : '.mp3'
     return audioBase ? `${audioBase}/${article.slug}${suffix}` : `/audio/${article.slug}${suffix}`
   }
   const stored = article.audio?.dialogue
@@ -190,6 +190,8 @@ export function AudioLibrary({ articles, onChanged }: Props) {
      الآن، لا من لقطة JSON قديمة قد تتأخر عن R2 عدة تشغيلات. */
   // قراءة المقال تُحسب مرة واحدة: أي ملف قراءة متوافق يكفي. الحوار مسار مستقل.
   const liveExpectedVoices = allArticles.length
+  const liveNouraVoices = allArticles.reduce((sum, article) => sum + Number(exists(article.audio?.noura)), 0)
+  const liveFahedVoices = allArticles.reduce((sum, article) => sum + Number(exists(article.audio?.fahed)), 0)
   const liveReadyVoices = allArticles.reduce((sum, article) => sum + Number(exists(article.audio?.fahed) || exists(article.audio?.noura)), 0)
   const liveRemainingVoices = Math.max(0, liveExpectedVoices - liveReadyVoices)
   const liveProgressPercent = Math.round((liveReadyVoices / Math.max(1, liveExpectedVoices)) * 1000) / 10
@@ -271,6 +273,10 @@ export function AudioLibrary({ articles, onChanged }: Props) {
           <div>
             <p className="text-[.78rem] font-semibold text-ink">{definition.title}</p>
             <p className="mt-0.5 text-[.66rem] text-soft">{definition.description}</p>
+            {definition.key === 'reading' && <div className="mt-2 flex flex-wrap gap-1.5 text-[.58rem] font-semibold">
+              <span className={`rounded-full px-2 py-1 ${exists(article.audio?.noura) ? 'bg-violet-100 text-violet-800' : 'bg-wash text-soft'}`}>نورة {exists(article.audio?.noura) ? 'جاهزة' : 'غير مولّدة'}</span>
+              <span className={`rounded-full px-2 py-1 ${exists(article.audio?.fahed) ? 'bg-cyan-100 text-cyan-800' : 'bg-wash text-soft'}`}>فهد {exists(article.audio?.fahed) ? 'جاهز' : 'غير مولّد'}</span>
+            </div>}
           </div>
           <span className={`text-[.68rem] ${statusClass(state.status, state.disabled, state.available)}`}>
             {statusLabel(state.status, state.disabled, state.available)}
@@ -339,10 +345,12 @@ export function AudioLibrary({ articles, onChanged }: Props) {
           <p className="text-[.76rem] font-semibold text-accent">الصوت والبودكاست</p>
           <h2 id="audio-library-title" className="mt-1 font-display text-3xl font-bold text-ink">مكتبة الصوت</h2>
           <p className="mt-3 max-w-3xl text-[.84rem] leading-loose text-soft">
-            كل مقال يظهر بمسارين فقط: قراءة المقال والحوار. أي قراءة منشورة تُحسب مرةً واحدة، والحوار يرتفع فور مزامنته من R2.
+            كل مقال يحتفظ بقراءات فهد ونورة وبالحوار. في واجهة المقال العامة يظهر الاسم المحايد «قراءة المقال»، أما هنا فتظهر الأصوات الحقيقية وحالتها بالتفصيل.
           </p>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[.7rem] text-soft">
-            <span>قراءة جاهزة: {liveReadyVoices}</span>
+            <span>نورة جاهزة: {liveNouraVoices}</span>
+            <span>فهد جاهز: {liveFahedVoices}</span>
+            <span>مقال لديه قراءة: {liveReadyVoices}</span>
             <span>حوار جاهز: {totals.voices.dialogue}</span>
           </div>
         </div>
@@ -403,7 +411,7 @@ export function AudioLibrary({ articles, onChanged }: Props) {
       )}
 
       <div className="hidden border-b border-hair px-3 pb-2 text-[.7rem] font-semibold text-soft lg:grid lg:grid-cols-[minmax(230px,1.25fr)_repeat(2,minmax(215px,1fr))] lg:gap-5">
-        <span>المقال</span><span>قراءة المقال</span><span>الحوار</span>
+        <span>المقال</span><span>القراءات · نورة / فهد</span><span>الحوار</span>
       </div>
 
       <div id="audio-library-list" className="scroll-mt-28 divide-y divide-hair border-b border-hair">

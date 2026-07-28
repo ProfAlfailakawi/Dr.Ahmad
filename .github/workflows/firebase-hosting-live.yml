@@ -272,16 +272,21 @@ jobs:
             echo "::error::Firestore rules deploy failed — CV uploads and CMS writes will stay broken until this succeeds."
             exit 1
           fi
-          # مكتبة التوليد ميزة إدارية وليست شرطاً لتشغيل الموقع العام. إذا لم تكن
-          # خدمة Storage مفعّلة بعد، نحذّر بوضوح لكن لا نسقط نشر Hosting كله.
-          # القواعد تُنشر تلقائياً فور توافر Storage في تشغيل لاحق.
+          # مكتبة التوليد أصبحت جزءاً معتمداً من الاستوديو، لذلك لا نسمح بنشر
+          # نسخة تقول إن المكتبة جاهزة بينما قواعد Storage لم تصل إلى مشروع البيانات.
+          # إذا تعطلت الخدمة أو الصلاحية يتوقف النشر هنا برسالة صريحة، ثم يُعاد بعد الإصلاح.
           if ! npx --yes firebase-tools@latest deploy \
             --config firebase.data.json \
             --only storage \
             --project drahmad-8e9e2 \
             --non-interactive; then
-            echo "::warning title=Storage rules not deployed::Generation Library private Storage rules could not be deployed. Public Hosting will continue; enable Storage for drahmad-8e9e2, then rerun to activate persistent generated-asset archiving."
+            echo "::error title=Generation Library Storage unavailable::تعذّر نشر قواعد Firebase Storage لمكتبة التوليد. فعّل Storage في drahmad-8e9e2 أو صحح الصلاحيات ثم أعد النشر؛ لن أنشر واجهة مكتبة لا تستطيع الحفظ."
+            exit 1
           fi
+          echo "✓ Generation Library Storage rules deployed successfully."
+          FIREBASE_PROJECT_ID=drahmad-8e9e2 \
+          FIREBASE_STORAGE_BUCKET=drahmad-8e9e2.firebasestorage.app \
+            node scripts/verify-generation-library-storage.mjs
         env:
           FIREBASE_DATA_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
 

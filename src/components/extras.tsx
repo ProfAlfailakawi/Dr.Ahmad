@@ -541,10 +541,11 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
 
   // قراءة واحدة فقط في الواجهة: نفضّل الملف الحالي، ونستخدم الملف الموروث
   // كبديل صامت عند الحاجة. لا نعرض أسماء الأصوات الداخلية ولا نكرر «قراءة المقال».
-  const readingSource = voices.fahed
-    ? { key: 'reading', label: 'قراءة المقال', avatar: 'man' as const, src: versionedAudioUrl(typeof voices.fahed === 'string' ? voices.fahed : `/audio/${slug}.mp3`) }
-    : voices.noura
-      ? { key: 'reading', label: 'قراءة المقال', avatar: 'woman' as const, src: versionedAudioUrl(typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3`) }
+  // واجهة المقال تخفي اسم المؤدية عمداً، لكنها تفضّل ملف نورة المعتمد عند توافره.
+  const readingSource = voices.noura
+    ? { key: 'reading', label: 'قراءة المقال', avatar: 'woman' as const, src: versionedAudioUrl(typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3`) }
+    : voices.fahed
+      ? { key: 'reading', label: 'قراءة المقال', avatar: 'man' as const, src: versionedAudioUrl(typeof voices.fahed === 'string' ? voices.fahed : `/audio/${slug}.mp3`) }
       : null
   const sources = [
     ...(readingSource ? [readingSource] : []),

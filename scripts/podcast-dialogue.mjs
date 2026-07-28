@@ -496,7 +496,7 @@ async function loadArticles() {
     })
     const added = siteSnapshot.docs.flatMap((document) => {
       const data = document.data()
-      if (data.hidden === true) return []
+      if (data.hidden === true || data.deleted === true || data.status === 'draft' || data.status === 'hidden' || data.published === false) return []
       const body = data.body || data.text || data.content
       if (typeof body !== 'string' || body.trim().split(/\s+/).length < 120) return []
       return [{ slug: String(data.slug || document.id), title: String(data.title || data.slug || document.id),

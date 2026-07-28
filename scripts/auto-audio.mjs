@@ -66,9 +66,9 @@ const MIN_MP3_BYTES = 5_000
 // مسار قراءة واحداً، ولا تُعرض أسماء محركات الصوت في الواجهة أو السجلات.
 const AVAILABLE_VOICES = [
   { key: 'fahed', azure: READING_VOICES.fahed.azure, suffix: '', label: 'قراءة المقال' },
-  { key: 'noura', azure: READING_VOICES.noura.azure, suffix: '.noura', label: 'قراءة موروثة' },
+  { key: 'noura', azure: READING_VOICES.noura.azure, suffix: '.noura', label: 'صوت نورة' },
 ]
-const ALL_VOICES = AVAILABLE_VOICES.filter((voice) => voice.key === 'fahed')
+const ALL_VOICES = AVAILABLE_VOICES.filter((voice) => voice.key === 'fahed' || voice.key === 'noura')
 const VOICES = ONLY_VOICE ? AVAILABLE_VOICES.filter((voice) => voice.key === ONLY_VOICE) : ALL_VOICES
 
 if (!(JOB_LIMIT > 0)) throw new Error('--limit يجب أن يكون رقماً موجباً')
@@ -496,8 +496,8 @@ async function loadRemoteContent(originals) {
   })
   const siteArticles = siteDocuments.flatMap((document) => {
     const fields = firestoreFields(document.fields)
-    if (fields.hidden === true) return []
-    if (['draft', 'generated', 'failed', 'under_review'].includes(String(fields.status || '').toLowerCase())) return []
+    if (fields.hidden === true || fields.deleted === true || fields.published === false) return []
+    if (['draft', 'hidden', 'generated', 'failed', 'under_review'].includes(String(fields.status || '').toLowerCase())) return []
     const body = fields.body || fields.text || fields.content
     if (typeof body !== 'string' || !body.trim()) return []
     return [{

@@ -2626,8 +2626,61 @@ function assemble(segments, outMp3, music, { raw = false } = {}) {
   return { total, timeline }
 }
 
+/*
+ * الصمت الطويل لا يُقبل بالعدّ («اسمح بأول وقفتين») لأن ذلك قد يُخفي صمتاً
+ * داخلياً معيباً ويعزل في الوقت نفسه وقفةً ثالثة مقصودة. مصدر الحقيقة هو
+ * الـTimeline: انتقالٌ مخطط طويل أو خفوت جسر موسيقي له نافذة زمنية معلومة،
+ * وما يقع خارج هذه النوافذ يبقى عيباً تقنياً.
+ */
+function plannedLongSilenceWindows(timeline = []) {
+  const windows = []
+  for (let index = 0; index < timeline.length; index++) {
+    const current = timeline[index]
+    if (current?.isMusicBridge) {
+      windows.push({
+        start: Math.max(0, Number(current.start || 0) - 0.25),
+        end: Number(current.start || 0) + Number(current.dur || 0) + 0.25,
+        reason: 'semantic_music_bridge',
+      })
+    }
+    if (index === 0) continue
+    const previous = timeline[index - 1]
+    const previousEnd = Number(previous.start || 0) + Number(previous.dur || 0)
+    const gapSec = Number(current.start || 0) - previousEnd
+    if (gapSec < 0.5) continue
+    windows.push({
+      start: Math.max(0, previousEnd - 0.25),
+      end: Number(current.start || 0) + 0.25,
+      reason: 'planned_dialogue_transition',
+    })
+  }
+  return windows
+}
+
+function classifyLongSilenceEvents(events = [], allowedWindows = [], legacyAllowance = 0) {
+  const positionalAllowed = []
+  const unmatched = []
+  for (const event of events) {
+    const window = allowedWindows.find((candidate) =>
+      Number(event.start) <= Number(candidate.end) && Number(event.end) >= Number(candidate.start))
+    if (window) positionalAllowed.push({ ...event, reason: window.reason })
+    else unmatched.push(event)
+  }
+  const countAllowed = unmatched.slice(0, Math.max(0, Number(legacyAllowance || 0)))
+    .map((event) => ({ ...event, reason: 'legacy_count_allowance' }))
+  return {
+    allowed: [...positionalAllowed, ...countAllowed],
+    unexpected: unmatched.slice(countAllowed.length),
+  }
+}
+
 /* ═══════════ فحص الصوت النهائي للحلقة ═══════════ */
-function auditAudio(mp3, { minSec = 1, maxSec = 300, maxLongSilences = 0 } = {}) {
+function auditAudio(mp3, {
+  minSec = 1,
+  maxSec = 300,
+  maxLongSilences = 0,
+  allowedLongSilenceWindows = [],
+} = {}) {
   const dur = probeDur(mp3)
   const size = statSync(mp3).size
   const issues = []
@@ -2635,17 +2688,32 @@ function auditAudio(mp3, { minSec = 1, maxSec = 300, maxLongSilences = 0 } = {})
   if (dur > maxSec) issues.push(`المدة ${dur.toFixed(1)}ث أطول من ${maxSec}ث`)
   if (size < 200_000) issues.push('حجم الملف مريب')
   const det = spawnSync(FFMPEG, ['-hide_banner', '-i', mp3, '-af', 'silencedetect=noise=-40dB:d=0.8', '-f', 'null', '-'], { encoding: 'utf8' })
-  const longSilences = [...(det.stderr || '').matchAll(/silence_duration:\s*([0-9.]+)/g)]
-    .map((match) => Number(match[1])).filter((seconds) => seconds > 0.8)
-  const unexpectedLongSilences = longSilences.slice(Math.max(0, maxLongSilences))
+  const longSilenceEvents = [...(det.stderr || '').matchAll(
+    /silence_end:\s*([0-9.]+)\s*\|\s*silence_duration:\s*([0-9.]+)/g)]
+    .map((match) => {
+      const end = Number(match[1])
+      const duration = Number(match[2])
+      return { start: Math.max(0, end - duration), end, duration }
+    })
+    .filter((event) => event.duration > 0.8)
+  const classified = classifyLongSilenceEvents(
+    longSilenceEvents,
+    allowedLongSilenceWindows,
+    maxLongSilences,
+  )
+  const longSilences = longSilenceEvents.map((event) => event.duration)
+  const unexpectedLongSilences = classified.unexpected.map((event) => event.duration)
   if (unexpectedLongSilences.length)
     issues.push(`${unexpectedLongSilences.length} فترات صمت طويلة غير مقصودة`)
   const volume = spawnSync(FFMPEG, ['-hide_banner', '-i', mp3, '-af', 'volumedetect', '-f', 'null', '-'], { encoding: 'utf8' }).stderr || ''
   const peak = Number((volume.match(/max_volume:\s*(-?[0-9.]+) dB/) || [])[1])
   const mean = Number((volume.match(/mean_volume:\s*(-?[0-9.]+) dB/) || [])[1])
   if (Number.isFinite(peak) && peak > -1) issues.push(`ذروة ${peak}dB أعلى من هامش الأمان -1dB`)
-  return { dur, size, longSilences, allowedLongSilences: maxLongSilences,
-    unexpectedLongSilences, peakDb: Number.isFinite(peak) ? peak : null,
+  return { dur, size, longSilences, longSilenceEvents,
+    allowedLongSilences: classified.allowed.map((event) => event.duration),
+    allowedLongSilenceEvents: classified.allowed,
+    unexpectedLongSilences, unexpectedLongSilenceEvents: classified.unexpected,
+    peakDb: Number.isFinite(peak) ? peak : null,
     meanDb: Number.isFinite(mean) ? mean : null, issues }
 }
 
@@ -3441,7 +3509,8 @@ async function produce(article, lang) {
     const expectedDurationSec = dialogueWords / Math.max(122, weightedTargetWpm) * 60
       + plannedPauseSec + bridgeSec + 0.7
     const durationRange = { minSec: Math.max(165, expectedDurationSec * 0.84),
-      maxSec: Math.min(310, expectedDurationSec * 1.18), maxLongSilences: 2 }
+      maxSec: Math.min(310, expectedDurationSec * 1.18), maxLongSilences: 0,
+      allowedLongSilenceWindows: plannedLongSilenceWindows(assembled.timeline) }
     // الوضع المجاني: الوقفات التأملية المقصودة (حتى 700ms) مع حدود المقاطع قد تتجاوز 800ms طبيعياً؛
     // عتبة «صفر» موجّهة لكشف عطل التركيب لا للوقفات المقصودة. وحدود المدة الضيقة (225–285ث) مضبوطة
     // للمسار المدفوع؛ في المجاني نقبل المدى الطبيعي (بضع ثوانٍ فرق لا يُعزل حلقةً سليمة).
@@ -3539,6 +3608,7 @@ async function produce(article, lang) {
         bridged = insertSemanticMusicBridges(segments.map((segment) => ({ ...segment })), transcript, music, TMP)
         auditRecord.musicBridges = bridged.bridges
         assembled = assemble(bridged.segments, candidateMp3, music)
+        durationRange.allowedLongSilenceWindows = plannedLongSilenceWindows(assembled.timeline)
         technicalAudit = auditAudio(candidateMp3, durationRange)
         if (technicalAudit.issues.length) return quarantine(`الفحص التقني بعد الإصلاح الموجّه: ${technicalAudit.issues.join(' · ')}`)
         const repairedIntended = pronunciation.map((item) => item.intendedText.replace(/\|/g, ' ')).join(' ')
@@ -3860,6 +3930,20 @@ if (SELF_TEST) {
       delivery: 'question' }, 0, 'ar', 'ar-AE-FatimaNeural').rate,
   'نورة تحتاج إبطاءً أدائياً أكبر من فاطمة وفق الاختبار السمعي')
   assert(selectMusicBridgeIndexes(normalizedSample.utterances).length <= 1, 'العينة القصيرة لا تحتمل أكثر من جسر موسيقي واحد')
+  const silenceTimelineFixture = [
+    { start: 0, dur: 4, pauseAfterMs: 700 },
+    { start: 4.7, dur: 1.7, isMusicBridge: true },
+    { start: 5.97, dur: 5 },
+  ]
+  const silenceWindowsFixture = plannedLongSilenceWindows(silenceTimelineFixture)
+  const classifiedSilenceFixture = classifyLongSilenceEvents([
+    { start: 3.92, end: 4.75, duration: 0.83 },
+    { start: 12, end: 12.92, duration: 0.92 },
+  ], silenceWindowsFixture, 0)
+  assert.equal(classifiedSilenceFixture.allowed.length, 1,
+    'الوقفة المخططة تُقبل لأنها في موضعها الزمني لا لأنها الأولى')
+  assert.equal(classifiedSilenceFixture.unexpected.length, 1,
+    'الصمت الداخلي خارج الانتقال والجسر يبقى مرفوضاً')
 
   /* ═══ اختبارات الإصلاح الجذري: التقسيم المدّي-الدلالي + الاستئناف (fixture u001 الفاشلة فعلياً) ═══ */
   const U001 = 'تخيل تلك اللحظة التي ترتفع فيها الزغاريد وتنهال التهاني، ويبتسم الطالب كما يتوقع منه الجميع؛ لكن شيئا في داخله لا يتحرك، ولا يشعر بأي فرح حقيقي.'

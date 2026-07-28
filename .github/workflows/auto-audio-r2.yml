@@ -62,17 +62,17 @@ jobs:
         run: echo "لا توجد قراءة أو حلقة ناقصة؛ تنتهي الجولة بلا تثبيت أو بناء أو استهلاك إضافي."
 
       - name: Force public npm registry
-        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: |
           npm config set registry https://registry.npmjs.org/
           node scripts/normalize-npm-registry.mjs
 
       - name: Install dependencies
-        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 
       - name: Install media and R2 tools
-        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
@@ -80,7 +80,7 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Rebuild the ledger from live R2 before spending on Azure
-        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: |
           set -euo pipefail
           node scripts/guard-audio-meta-regression.mjs --apply
@@ -91,11 +91,11 @@ jobs:
 
       - name: Re-plan from the reconciled live truth
         id: supervisor_live
-        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: node scripts/audio-supervisor.mjs --write --github-output --summary
 
       - name: Restore private pronunciation memory
-        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         uses: actions/cache/restore@v4
         with:
           path: ArabicPronunciationMemory.sqlite*
@@ -104,7 +104,7 @@ jobs:
             pronunciation-memory-v1-
 
       - name: Restore resumable audio checkpoints
-        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -118,14 +118,14 @@ jobs:
             audio-production-v2-
 
       - name: Verify podcast safety engines
-        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: |
           npm run podcast:ar:self-test
           npm run podcast:release:self-test
           npm run audio:r2:self-test
 
       - name: Write Firebase service account
-        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: |
           if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
             if [ "${{ github.event.inputs.force }}" = "true" ]; then
@@ -140,8 +140,23 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
 
-      - name: Generate article readings and publish to R2
-        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+      - name: Refresh external idea-life evidence for new published articles
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+        run: |
+          if [ -f sa.missing ]; then
+            echo "Firebase service account is missing; skipping idea-life refresh."
+            exit 0
+          fi
+          node scripts/idea-life-sync.mjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          IDEA_LIFE_MAX_ARTICLES: '12'
+          IDEA_LIFE_MAX_PAPERS: '1'
+          IDEA_LIFE_STALE_DAYS: '7'
+
+      - name: Generate article readings — Noura and Fahd — and publish to R2
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: |
           if [ -f sa.missing ]; then
             if [ "${{ github.event.inputs.force }}" = "true" ]; then
@@ -168,7 +183,7 @@ jobs:
           ARGS="--limit=${LIMIT:-40} --technical-only"
           if [ -n "$SLUG" ]; then ARGS="$ARGS --slug=$SLUG"; fi
           if [ "${{ github.event.inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
-          # لا نمرر اسم محرك الصوت في واجهة GitHub؛ المحرك يختار قراءة المقال المعتمدة داخلياً.
+          # المحرك يولّد المسارين المعتمدين: صوت نورة وصوت فهد؛ صفحة المقال وحدها تعرضهما باسم «قراءة المقال».
           echo "audio args: $ARGS"
           npm run audio -- $ARGS
         env:
@@ -185,18 +200,16 @@ jobs:
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
 
       - name: Generate approved dialogue podcast if gate is ready
-        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         continue-on-error: true
         run: |
           if [ -f sa.missing ]; then
             echo "Firebase service account is missing; skipping dialogue podcast generation."
             exit 0
           fi
-          # الحوار يكتبه الدكتور بنفسه، فلا حاجة لكاتبٍ آليّ — ولا لرصيد Gemini.
-          # كانت بوابة الفوترة تُستدعى بلا شرط فتقتل التوليد قبل أن يبدأ
-          # («credits are depleted»)، رغم أن وضع بلا-Gemini مبنيٌّ في المحرك
-          # وأشدّ من غيره: عتبات STT ترتفع إلى 0.92/0.88 للمقطع و0.97/0.93
-          # للحلقة، وكل البوابات التقنية باقية. الآن يُفعَّل صراحةً.
+          # كل مقال منشور يدخل مسار الحوار تلقائياً. إذا كان للدكتور حوارٌ يدوي
+          # مقفول فهو المصدر الأعلى أولوية ولا يغيّره Gemini؛ وإلا يكتب المحرك
+          # حواراً من المقال نفسه ثم تمر النتيجة عبر بوابات الإسناد والنطق والجودة.
           if [ -z "$AZURE_SPEECH_KEY" ]; then
             echo "Azure secret is missing; skipping dialogue podcast generation."
             exit 0
@@ -208,7 +221,12 @@ jobs:
           # ينطق حرفاً، وإلا وُلِّدت الحلقة بالنطق القديم ثم احتاجت إعادة توليد.
           node scripts/fetch-lexicon.mjs || echo "::warning::تعذّر سحب قاموس اللوحة؛ نمضي بالقاموس الدائم."
           node scripts/fetch-queued-dialogues.mjs || echo "::warning::تعذّر سحب الحوارات المنتظرة؛ نمضي بما هو موجود."
-          npm run podcast:ar:nightly
+          if [ -n "$GEMINI_API_KEY" ] || [ -n "$GOOGLE_API_KEY" ]; then
+            npm run podcast:ar:nightly
+          else
+            echo "::warning::GEMINI_API_KEY/GOOGLE_API_KEY مفقود؛ سأنتج فقط الحوارات اليدوية المقفلة ولن أختلق حواراً آلياً."
+            PODCAST_NO_GEMINI=1 npm run podcast:ar:nightly
+          fi
           # الحلقة تُولَّد وتُرفع وتُسجَّل… ثم تبقى لوحةُ الدكتور تقول «مسودة» و«غير
           # مولَّد» إلى الأبد، لأن أحداً لا يُبلّغ Firestore بما جرى: fetch-manual-
           # dialogues يكتب «generating» ولا كاتبَ للنجاح. فيظنّ الدكتور أن التوليد
@@ -219,7 +237,9 @@ jobs:
           [ -n "$SLUGS" ] && (node scripts/report-unknown-words.mjs --slugs="$SLUGS" || echo "::warning::تعذّر الإبلاغ عن الألفاظ المجهولة.")
           node scripts/report-dialogue-status.mjs || echo "::warning::تعذّر تحديث حالة الإنتاج في اللوحة."
         env:
-          PODCAST_NO_GEMINI: '1'
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
           # حلقاتُ الحوار كانت واحدةً في التشغيلة (افتراض المحرّك حين لا يُضبط
           # المتغيّر)، فالـ١٤٣ تحتاج ١٤٣ ساعة. ٥ هو أقصى ما يقبله المحرّك
           # (Math.min(5,…) في podcast-dialogue.mjs) — فيصير المدى ٢٩ تشغيلة.
@@ -232,7 +252,7 @@ jobs:
           VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
 
       - name: Strict local podcast release gate
-        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: |
           set -o pipefail
           npm run podcast:release:local -- --allow-empty 2>&1 | tee -a ci-log.txt
@@ -240,7 +260,7 @@ jobs:
           PODCAST_RELEASE_MIN_SCORE: '94'
 
       - name: Publish generated local audio/transcripts to R2 atomically
-        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: |
           set -o pipefail
           npm run audio:r2:publish 2>&1 | tee -a ci-log.txt
@@ -257,7 +277,7 @@ jobs:
       # يستردّ ما شهد له البوت ثم أسقطته دفعةٌ بشرية وملفُّه ما زال حيّاً على
       # R2. يسبق المصالح لأن المصالح لا يرى إلا ما في السجلّ، ولا يضيف مدخلاً.
       - name: Guard the audio manifest against regression
-        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: |
           set -o pipefail
           node scripts/guard-audio-meta-regression.mjs --apply 2>&1 | tee -a ci-log.txt
@@ -265,7 +285,7 @@ jobs:
           AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
 
       - name: Reconcile audio manifest with R2
-        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: |
           set -o pipefail
           node scripts/reconcile-audio-meta.mjs --apply 2>&1 | tee -a ci-log.txt
@@ -275,7 +295,7 @@ jobs:
       # المخرجات تُنسخ إلى ci-log.txt ليقرأها مُفسِّر التعثُّر عند الفشل.
       # pipefail ضروريٌّ وإلّا ابتلع الأنبوبُ رمزَ الخروج ومرّ الفشل صامتاً.
       - name: Verify manifests and build
-        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: |
           set -o pipefail
           npm run audio:external:verify 2>&1 | tee -a ci-log.txt
@@ -286,14 +306,14 @@ jobs:
           VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
 
       - name: Validate final podcast RSS and public audio ranges
-        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: npm run podcast:release:dist
         env:
           PODCAST_RELEASE_MIN_SCORE: '94'
           PODCAST_VERIFY_REMOTE_AUDIO: 'true'
 
       - name: Finalize R2 transaction after successful gates
-        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: npm run audio:r2:commit
         env:
           CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
@@ -302,7 +322,7 @@ jobs:
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
 
       - name: Attach verified site article audio in Firestore
-        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: npm run audio:site:finalize
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
@@ -311,7 +331,7 @@ jobs:
           VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
 
       - name: Sync verified audio to realtime CMS
-        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: |
           if [ ! -f sa.json ]; then
             echo "Firebase service account unavailable; skipping realtime audio ledger sync."
@@ -339,14 +359,14 @@ jobs:
           key: audio-production-v2-${{ github.run_id }}
 
       - name: Save accepted pronunciation memory privately
-        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         uses: actions/cache/save@v4
         with:
           path: ArabicPronunciationMemory.sqlite*
           key: pronunciation-memory-v1-${{ github.run_id }}
 
       - name: Commit generated manifests only after R2 is durable
-        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: |
           set -euo pipefail
           npm run audio:guard
@@ -426,7 +446,7 @@ jobs:
         shell: bash
         run: |
           MODE="reading"
-          node scripts/audio-control-status.mjs --slug="${{ github.event.inputs.slug }}" --mode="$MODE" --status=published --disabled=false --message="اكتملت إعادة توليد الصوت المحدد واجتاز بوابات الجودة."
+          node scripts/audio-control-status.mjs --slug="${{ github.event.inputs.slug }}" --mode="$MODE" --status=published --disabled=false --message="اكتملت إعادة توليد صوتي نورة وفهد واجتازا بوابات الجودة."
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
           FIREBASE_PROJECT_ID: drahmad-8e9e2
@@ -437,7 +457,7 @@ jobs:
         shell: bash
         run: |
           MODE="reading"
-          node scripts/audio-control-status.mjs --slug="${{ github.event.inputs.slug }}" --mode="$MODE" --status=failed --disabled=true --message="تعذّرت إعادة التوليد؛ بقي الصوت المحدد ملغى ولم يعد للظهور."
+          node scripts/audio-control-status.mjs --slug="${{ github.event.inputs.slug }}" --mode="$MODE" --status=failed --disabled=true --message="تعذّرت إعادة التوليد؛ بقي مسار القراءة (نورة وفهد) ملغى ولم يعد للظهور."
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
           FIREBASE_PROJECT_ID: drahmad-8e9e2

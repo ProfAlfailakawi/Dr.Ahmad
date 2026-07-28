@@ -7,7 +7,7 @@ on:
         description: 'الرابط المختصر للمقال'
         required: true
       mode:
-        description: 'reading = قراءة المقال، dialogue = الحوار'
+        description: 'reading = صوتا نورة وفهد، dialogue = الحوار'
         required: true
         type: choice
         options:

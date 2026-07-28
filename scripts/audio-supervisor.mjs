@@ -58,15 +58,6 @@ function buildSnapshot(root = ROOT, now = new Date()) {
   const meta = readJson(path.join(root, 'src/data/audio-meta.json'), {})
   const failuresDoc = readJson(path.join(root, '.audio-failures.json'), { items: [] })
   const titles = titleMap(root)
-  const dialogueDir = path.join(root, 'podcast-audits/dialogues')
-  const auditedDialogueSlugs = fs.existsSync(dialogueDir)
-    ? new Set(fs.readdirSync(dialogueDir).filter((name) => name.endsWith('.txt')).map((name) => name.slice(0, -4)))
-    : new Set()
-  const manualDialogueDir = path.join(root, 'manual-dialogues')
-  const manualDialogueSlugs = fs.existsSync(manualDialogueDir)
-    ? fs.readdirSync(manualDialogueDir).filter((name) => name.endsWith('.json')).map((name) => name.slice(0, -5))
-    : []
-  const dialogueSlugs = new Set([...auditedDialogueSlugs, ...manualDialogueSlugs])
   const slugs = Object.keys(bodies).sort()
   const items = []
   const queue = []
@@ -74,30 +65,40 @@ function buildSnapshot(root = ROOT, now = new Date()) {
 
   for (const slug of slugs) {
     const declaration = manifest[slug] || {}
-    const fileName = `${slug}.mp3`
-    const ready = Boolean(declaration.fahed) && validMeta(meta[fileName])
-    const failure = failedByKey.get(`${slug}:fahed`) || null
-    const voices = { fahed: { ready, fileName, failure } }
-    if (!ready) queue.push({ slug, title: titles[slug] || slug, kind: 'reading', voice: 'fahed', stage: failure?.stage || 'generate', attempts: Number(failure?.attempts || 0), lastError: failure?.message || '' })
-    const dialogueEligible = dialogueSlugs.has(slug)
+    const fahedFile = `${slug}.mp3`
+    const nouraFile = `${slug}.noura.mp3`
+    const fahedReady = Boolean(declaration.fahed) && validMeta(meta[fahedFile])
+    const nouraReady = Boolean(declaration.noura) && validMeta(meta[nouraFile])
+    const fahedFailure = failedByKey.get(`${slug}:fahed`) || null
+    const nouraFailure = failedByKey.get(`${slug}:noura`) || null
+    const voices = {
+      fahed: { ready: fahedReady, fileName: fahedFile, failure: fahedFailure },
+      noura: { ready: nouraReady, fileName: nouraFile, failure: nouraFailure },
+    }
+    if (!fahedReady) queue.push({ slug, title: titles[slug] || slug, kind: 'reading', voice: 'fahed', stage: fahedFailure?.stage || 'generate', attempts: Number(fahedFailure?.attempts || 0), lastError: fahedFailure?.message || '' })
+    if (!nouraReady) queue.push({ slug, title: titles[slug] || slug, kind: 'reading', voice: 'noura', stage: nouraFailure?.stage || 'generate', attempts: Number(nouraFailure?.attempts || 0), lastError: nouraFailure?.message || '' })
+    // كل مقال منشور له مسار حوار تلقائي؛ الحوار اليدوي إن وُجد يبقى المصدر الأعلى أولوية.
+    const dialogueEligible = true
     const dialogueFile = `${slug}.dialogue.mp3`
-    const dialogueReady = dialogueEligible && Boolean(declaration.dialogue) && validMeta(meta[dialogueFile])
+    const dialogueReady = Boolean(declaration.dialogue) && validMeta(meta[dialogueFile])
     const dialogueFailure = failedByKey.get(`${slug}:dialogue`) || failedByKey.get(`${slug}:podcast`) || null
-    if (dialogueEligible && !dialogueReady) queue.push({ slug, title: titles[slug] || slug, kind: 'dialogue', voice: 'dialogue', stage: dialogueFailure?.stage || 'generate', attempts: Number(dialogueFailure?.attempts || 0), lastError: dialogueFailure?.message || '' })
+    if (!dialogueReady) queue.push({ slug, title: titles[slug] || slug, kind: 'dialogue', voice: 'dialogue', stage: dialogueFailure?.stage || 'generate', attempts: Number(dialogueFailure?.attempts || 0), lastError: dialogueFailure?.message || '' })
     items.push({
       slug,
       title: titles[slug] || slug,
       readings: voices,
       dialogue: { eligible: dialogueEligible, ready: dialogueReady, fileName: dialogueFile, failure: dialogueFailure },
-      complete: voices.fahed.ready && (!dialogueEligible || dialogueReady),
+      complete: voices.fahed.ready && voices.noura.ready && dialogueReady,
     })
   }
 
   /* الجديد والسليم أولاً؛ المتعثر ذو المحاولات الكثيرة لا يأكل كل دفعة. */
   queue.sort((left, right) => (left.attempts - right.attempts) || left.slug.localeCompare(right.slug) || left.voice.localeCompare(right.voice))
-  const readingExpected = slugs.length
-  const readingReady = items.reduce((sum, item) => sum + Number(item.readings.fahed.ready), 0)
-  const dialogueExpected = items.filter((item) => item.dialogue.eligible).length
+  const readingExpected = slugs.length * 2
+  const fahedReady = items.filter((item) => item.readings.fahed.ready).length
+  const nouraReady = items.filter((item) => item.readings.noura.ready).length
+  const readingReady = fahedReady + nouraReady
+  const dialogueExpected = slugs.length
   const dialogueReady = items.filter((item) => item.dialogue.ready).length
   const failed = queue.filter((item) => item.lastError)
   const generatedAt = now.toISOString()
@@ -106,7 +107,7 @@ function buildSnapshot(root = ROOT, now = new Date()) {
     generatedAt,
     state: queue.length ? (failed.length ? 'repairing' : 'producing') : 'complete',
     articles: { total: slugs.length, complete: items.filter((item) => item.complete).length },
-    readings: { expected: readingExpected, ready: readingReady, missing: readingExpected - readingReady },
+    readings: { expected: readingExpected, ready: readingReady, missing: readingExpected - readingReady, fahedReady, nouraReady },
     dialogues: { expected: dialogueExpected, ready: dialogueReady, missing: dialogueExpected - dialogueReady },
     queue: {
       total: queue.length,
@@ -138,7 +139,7 @@ function writeSummary(snapshot) {
   const target = process.env.GITHUB_STEP_SUMMARY
   if (!target) return
   const next = snapshot.queue.next
-  fs.appendFileSync(target, `\n## المشرف الحي للصوت\n\n- الإنجاز: **${snapshot.progressPercent}%**\n- قراءات جاهزة: **${snapshot.readings.ready}/${snapshot.readings.expected}**\n- حوارات جاهزة: **${snapshot.dialogues.ready}/${snapshot.dialogues.expected}**\n- عناصر باقية: **${snapshot.queue.total}**\n- تعثرات مسجلة: **${snapshot.queue.failed}**\n${next ? `- التالي: **${next.title} — ${next.voice}**\n` : '- لا يوجد عمل متبقٍ.\n'}\n`)
+  fs.appendFileSync(target, `\n## المشرف الحي للصوت\n\n- الإنجاز: **${snapshot.progressPercent}%**\n- صوت فهد: **${snapshot.readings.fahedReady}/${snapshot.articles.total}**\n- صوت نورة: **${snapshot.readings.nouraReady}/${snapshot.articles.total}**\n- حوارات جاهزة: **${snapshot.dialogues.ready}/${snapshot.dialogues.expected}**\n- عناصر باقية: **${snapshot.queue.total}**\n- تعثرات مسجلة: **${snapshot.queue.failed}**\n${next ? `- التالي: **${next.title} — ${next.voice}**\n` : '- لا يوجد عمل متبقٍ.\n'}\n`)
 }
 
 function selfTest() {
@@ -148,18 +149,20 @@ function selfTest() {
   fs.mkdirSync(path.join(temp, 'manual-dialogues'), { recursive: true })
   fs.writeFileSync(path.join(temp, 'src/data.ts'), "export const articles = [\n{ slug: 'a', title: 'أ' },\n{ slug: 'b', title: 'ب' },\n]\n")
   atomicJson(path.join(temp, 'src/data/bodies.json'), { a: 'نص', b: 'نص' })
-  atomicJson(path.join(temp, 'src/data/audio.json'), { a: { fahed: true, dialogue: true }, b: { fahed: true } })
+  atomicJson(path.join(temp, 'src/data/audio.json'), { a: { fahed: true, noura: true, dialogue: true }, b: { fahed: true, noura: true } })
   atomicJson(path.join(temp, 'src/data/audio-meta.json'), {
     'a.mp3': { bytes: 6000, durationSeconds: 10, sha256: 'x' },
+    'a.noura.mp3': { bytes: 6000, durationSeconds: 10, sha256: 'x' },
     'a.dialogue.mp3': { bytes: 6000, durationSeconds: 12, sha256: 'x' },
     'b.mp3': { bytes: 6000, durationSeconds: 10, sha256: 'x' },
+    'b.noura.mp3': { bytes: 6000, durationSeconds: 10, sha256: 'x' },
   })
-  fs.writeFileSync(path.join(temp, 'podcast-audits/dialogues/a.txt'), 'حوار')
-  fs.writeFileSync(path.join(temp, 'manual-dialogues/b.json'), '[]')
   atomicJson(path.join(temp, '.audio-failures.json'), { items: [{ slug: 'b', voice: 'dialogue', stage: 'generate', attempts: 2, message: 'temporary' }] })
   const snapshot = buildSnapshot(temp, new Date('2026-07-22T00:00:00Z'))
-  assert.equal(snapshot.readings.expected, 2)
-  assert.equal(snapshot.readings.ready, 2)
+  assert.equal(snapshot.readings.expected, 4)
+  assert.equal(snapshot.readings.ready, 4)
+  assert.equal(snapshot.readings.fahedReady, 2)
+  assert.equal(snapshot.readings.nouraReady, 2)
   assert.equal(snapshot.dialogues.expected, 2)
   assert.equal(snapshot.dialogues.ready, 1)
   assert.equal(snapshot.queue.total, 1)

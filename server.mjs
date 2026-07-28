@@ -3337,7 +3337,7 @@ export function createRequestHandler({
 
       const { db, FieldValue } = await getAdminFirestore()
       const requestId = `audio-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`
-      const title = mode === 'dialogue' ? 'الحوار' : 'قراءة المقال'
+      const title = mode === 'dialogue' ? 'الحوار' : 'صوتا نورة وفهد'
       await setArticleAudioControl({
         db, FieldValue, slug, mode,
         status: action === 'clear' ? 'clearing' : 'requested',

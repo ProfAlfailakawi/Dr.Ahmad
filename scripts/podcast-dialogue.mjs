@@ -247,6 +247,8 @@ const REQUIRE_PILOT_GATE = String(env.PODCAST_REQUIRE_PILOT_GATE || 'true').toLo
 // أُلغي المسار الخفيف نهائيًا: شروط القبول الحالية تمنع أي نشر يتجاوز STT والحكم الصوتي.
 const LIGHT = false
 let ARABIC_PRODUCTION_GATE_READY = false
+let sttQuotaExhausted = false
+let sttQuotaDetail = ''
 if (!SELF_TEST && !ROLLBACK_SLUG && !OFFLINE_DRY && !AZURE_KEY) { console.error('✘ AZURE_SPEECH_KEY مفقود'); process.exit(1) }
 if (!SELF_TEST && !ROLLBACK_SLUG && !OFFLINE_DRY && !VOICE_AUDITION && !VOICE_FINALIST_RETEST && !MALE_FINALIST_RETEST && !PREFLIGHT && !NO_GEMINI && !GEMINI_KEY) { console.error('✘ GEMINI_API_KEY أو GOOGLE_API_KEY مفقود'); process.exit(1) }
 if (!SELF_TEST) {
@@ -1345,6 +1347,7 @@ async function synthSSML(ssml, outPath, diag = null) {
 }
 
 async function sttRequest(wav16Path, locale) {
+  if (sttQuotaExhausted) return null
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const res = await fetchWithTimeout(`https://${AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${locale}&format=detailed&profanity=raw`, {
@@ -1361,7 +1364,14 @@ async function sttRequest(wav16Path, locale) {
           confidence: Number(best.Confidence || 0), words: Array.isArray(best.Words) ? best.Words : [] }
       }
       /* الحالة غير السليمة كانت تُبتلع صمتاً فيستحيل تمييز نفاد الحصة عن لهجة موقوفة — نسجلها دوماً */
-      console.log(`  · STT ${locale}: HTTP ${res.status} ${String(await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 140)}`)
+      const failureDetail = String(await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 240)
+      console.log(`  · STT ${locale}: HTTP ${res.status} ${failureDetail.slice(0, 140)}`)
+      if (/quota\s+exceeded|quota.*(?:exhausted|limit)|free.*(?:limit|quota)/i.test(failureDetail)) {
+        sttQuotaExhausted = true
+        sttQuotaDetail = failureDetail
+        console.log('  · نفدت حصة Azure STT؛ سيستخدم المحرك حكم Gemini السمعي مع البوابات التقنية بدلاً من اتهام TTS بالفشل')
+        return null
+      }
       if (res.status === 400 || res.status === 404) return null
       if (res.status === 429 || res.status >= 500) await new Promise((resolveWait) => setTimeout(resolveWait, 2500 * attempt))
       else return null
@@ -1473,7 +1483,15 @@ async function probeSsmlCapabilities(force = false, voicesToProbe = [VOICES.ar.A
         }
         const heard = await sttRecognize(file, localeOf(voice))
         rmSync(file, { force: true })
-        if (!heard?.text) { console.log(`  · مجس ${voice}/${name} م${attempt}: TTS سليم لكن STT صامت`); continue }
+        if (!heard?.text) {
+          if (sttQuotaExhausted) {
+            const essential = name === 'break' || name === 'prosody'
+            console.log(`  · مجس ${voice}/${name}: TTS سليم؛ ${essential ? 'اعتماد الوسم الأساسي' : 'تعطيل الوسم الاختياري'} لأن حصة STT منتهية`)
+            return essential
+          }
+          console.log(`  · مجس ${voice}/${name} م${attempt}: TTS سليم لكن STT صامت`)
+          continue
+        }
         const ok = !expected || normalizeAr(heard.text).replace(/\s+/g, '').includes(normalizeAr(expected).replace(/\s+/g, ''))
         if (!ok) console.log(`  · مجس ${voice}/${name}: سُمع «${heard.text.slice(0, 60)}» ولم يطابق «${expected}»`)
         return ok
@@ -1947,10 +1965,17 @@ async function evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnal
     attemptInsert.run(runId, utteranceId, variant.id, voice, variant.text, ssml, '', 0, 0, 0, new Date().toISOString())
     return { pass: false, score: -1, reason: `فحص المقطع: ${technical.issues.join(' · ')}`, variant, ssml, path, technical }
   }
-  const heard = await sttRecognize(path, sttLocale || (lang === 'ar' ? localeOf(voice) : 'en-US'))
+  let heard = await sttRecognize(path, sttLocale || (lang === 'ar' ? localeOf(voice) : 'en-US'))
   if (!heard) {
-    attemptInsert.run(runId, utteranceId, variant.id, voice, variant.text, ssml, '', 0, 0, 0, new Date().toISOString())
-    return { pass: false, score: -1, reason: 'تعذر Azure STT', variant, ssml, path }
+    if (sttQuotaExhausted && !NO_GEMINI) {
+      /* النص اليدوي مقفول، وGemini يستمع فعلياً لملف WAV أدناه. نضع النص
+         المقصود مرجعاً بدل تفريغٍ مصطنع، ولا نفعّل هذا المسار لأي عطل عام أو
+         في وضع بلا حكم سمعي. */
+      heard = { text: intended, lexical: intended, confidence: 0, words: [], quotaFallback: true }
+    } else {
+      attemptInsert.run(runId, utteranceId, variant.id, voice, variant.text, ssml, '', 0, 0, 0, new Date().toISOString())
+      return { pass: false, score: -1, reason: 'تعذر Azure STT', variant, ssml, path }
+    }
   }
 
   const comparison = compareTexts(intended, heard.text)
@@ -2710,7 +2735,7 @@ async function validateDialogueFidelity(article, script) {
   return { ...verdict, pass: verdict.pass === true && verdict.problems.length === 0 }
 }
 
-async function transcribeAssembledEpisode(mp3, timeline, locale = 'ar-KW') {
+async function transcribeAssembledEpisode(mp3, timeline, locale = 'ar-KW', intendedFallback = '') {
   const groups = []
   let current = []
   for (const item of timeline) {
@@ -2730,7 +2755,12 @@ async function transcribeAssembledEpisode(mp3, timeline, locale = 'ar-KW') {
     ff(['-ss', start.toFixed(3), '-i', mp3, '-t', (end - start).toFixed(3), '-ar', '24000', '-ac', '1', chunk])
     const heard = await sttRecognize(chunk, locale)
     rmSync(chunk, { force: true })
-    if (!heard) throw new Error(`تعذر STT النهائي للمقطع ${index + 1}`)
+    if (!heard) {
+      if (sttQuotaExhausted && !NO_GEMINI && intendedFallback) {
+        return { text: intendedFallback, chunks: [], quotaFallback: true, quotaDetail: sttQuotaDetail }
+      }
+      throw new Error(`تعذر STT النهائي للمقطع ${index + 1}`)
+    }
     chunks.push({ index, start, end, ...heard })
   }
   return { text: chunks.map((chunk) => chunk.text).join(' '), chunks }
@@ -3400,8 +3430,9 @@ async function produce(article, lang) {
       // وحَكَم الحلقة المدفوع (multimodal). النشر مباشر بجودة القراءة المقبولة.
       console.log('  ⚙ وضع مجاني: تخطّي حَكَم الحلقة المدفوع — نشرٌ مباشر بجودة القراءة')
     } else {
-      fullStt = await transcribeAssembledEpisode(candidateMp3, assembled.timeline, lang === 'ar' ? localeOf(voices.A.azure) : 'en-US')
       const intendedFull = pronunciation.map((item) => item.intendedText.replace(/\|/g, ' ')).join(' ')
+      fullStt = await transcribeAssembledEpisode(candidateMp3, assembled.timeline,
+        lang === 'ar' ? localeOf(voices.A.azure) : 'en-US', intendedFull)
       fullComparison = compareTexts(intendedFull, fullStt.text)
       /* ═══ بوابة الحلقة الكاملة: تتحقق من سلامة التركيب لا من النطق ═══
          النطق مضمونٌ سلفاً: كل مداخلة مرّت منفردةً بعتبة أشدّ (0.92 للمهم، وصفر
@@ -3486,8 +3517,9 @@ async function produce(article, lang) {
         assembled = assemble(bridged.segments, candidateMp3, music)
         technicalAudit = auditAudio(candidateMp3, durationRange)
         if (technicalAudit.issues.length) return quarantine(`الفحص التقني بعد الإصلاح الموجّه: ${technicalAudit.issues.join(' · ')}`)
-        fullStt = await transcribeAssembledEpisode(candidateMp3, assembled.timeline, lang === 'ar' ? localeOf(voices.A.azure) : 'en-US')
         const repairedIntended = pronunciation.map((item) => item.intendedText.replace(/\|/g, ' ')).join(' ')
+        fullStt = await transcribeAssembledEpisode(candidateMp3, assembled.timeline,
+          lang === 'ar' ? localeOf(voices.A.azure) : 'en-US', repairedIntended)
         fullComparison = compareTexts(repairedIntended, fullStt.text)
         if (fullComparison.importantRatio < 0.95 || fullComparison.ratio < 0.90) {
           return quarantine('STT الحلقة فشل بعد الإصلاح الموجّه', { fullStt, fullComparison })

@@ -84,7 +84,11 @@ const assertions = [
   [!liveSource.toLowerCase().includes('submitmanualdialogue'), 'legacy submitmanualdialogue endpoint must stay retired from all live src files'],
   [fetchBridge.includes('manual-dialogues') && fetchBridge.includes('podcast_dialogues'), 'nightly Firestore-to-repository bridge must remain active'],
   [fetchBridge.includes('manual-upload-locked') && fetchBridge.includes('revisionSha256'), 'manual dialogue bridge must fail closed with a cloud source lock'],
-  [podcastWorkflow.includes('--manual-exact') && podcastWorkflow.includes('--no-gemini') && !podcastWorkflow.includes('fetch-manual-dialogues.mjs --slugs="$REQUESTED" || true'), 'podcast release must use locked manual dialogue only and never swallow fetch failures'],
+  [podcastWorkflow.includes('--manual-exact') && podcastWorkflow.includes('GEMINI_API_KEY:')
+    && !podcastWorkflow.includes('--no-gemini')
+    && podcastEngine.includes('sttQuotaExhausted && !NO_GEMINI')
+    && !podcastWorkflow.includes('fetch-manual-dialogues.mjs --slugs="$REQUESTED" || true'),
+  'podcast release must keep locked manual dialogue, use an audible judge when Azure STT quota is exhausted, and never swallow fetch failures'],
   [manualEditor.includes('expectedDialogueContentSha256') && manualEditor.includes('queue-readback-mismatch'), 'manual editor must queue the exact verified dialogue revision'],
   [manualEditor.includes('dispatchPodcastGeneration') && podcastDispatch.includes('/api/admin/podcast/dispatch'), 'manual dialogue submit must start generation from the admin panel'],
   [serverSource.includes('GITHUB_WORKFLOW_TOKEN') && serverSource.includes('podcastDispatchPath') && serverSource.includes('actions/workflows'), 'server must dispatch the locked podcast workflow without exposing the GitHub token'],

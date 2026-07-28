@@ -50,9 +50,9 @@ function AudioWave({ dialogue = false, size = 22 }: { dialogue?: boolean; size?:
   )
 }
 
-export const openAudioPlayer = (controlId: string) => {
+export const openAudioPlayer = (controlId: string, sourceKey?: string) => {
   if (typeof window === 'undefined') return
-  window.dispatchEvent(new CustomEvent('audio-player:open', { detail: { controlId } }))
+  window.dispatchEvent(new CustomEvent('audio-player:open', { detail: { controlId, sourceKey } }))
 }
 
 export function AudioPlayer({ sources, title, compact = false, controlId }: { sources: AudioSource[]; title: string; compact?: boolean; controlId?: string }) {
@@ -104,14 +104,16 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
 
   useEffect(() => {
     const openRequested = (event: Event) => {
-      const requested = (event as CustomEvent<{ controlId?: string }>).detail?.controlId
+      const detail = (event as CustomEvent<{ controlId?: string; sourceKey?: string }>).detail
+      const requested = detail?.controlId
       if (controlId && requested && requested !== controlId) return
+      if (detail?.sourceKey && sources.some((item) => item.key === detail.sourceKey)) setSelectedKey(detail.sourceKey)
       setExpanded(true)
       window.requestAnimationFrame(() => window.requestAnimationFrame(() => rootRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })))
     }
     window.addEventListener('audio-player:open', openRequested)
     return () => window.removeEventListener('audio-player:open', openRequested)
-  }, [controlId])
+  }, [controlId, sources])
 
   useEffect(() => {
     const syncFollow = (event: Event) => {
@@ -128,7 +130,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
   const current = active ? player.current : 0
   const duration = active ? player.duration : 0
   const percent = duration ? Math.min((current / duration) * 100, 100) : 0
-  const isDialogue = source.key === 'dialogue'
+  const isDialogue = source.key === 'dialogue' || source.avatar === 'dialogue'
   const canFollowArticle = typeof window !== 'undefined' && window.location.pathname.startsWith('/articles/') && !isDialogue
 
   const jumpSentence = (direction: 'next' | 'prev') => {

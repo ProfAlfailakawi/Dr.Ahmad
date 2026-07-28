@@ -137,7 +137,7 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
     }
   }, [body])
 
-  const activeAudio = Boolean(audio.track?.path === `/articles/${slug}` && !audio.track?.label.includes('الحوار') && audio.duration > 0)
+  const activeAudio = Boolean(audio.track?.path === `/articles/${slug}` && !audio.track?.src.includes('.dialogue.') && audio.duration > 0)
 
   // Determine active paragraph and sentence
   const { activeParagraph, activeSentence, currentFlatIndex } = useMemo(() => {

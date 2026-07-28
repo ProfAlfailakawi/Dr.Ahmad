@@ -6,7 +6,7 @@ import { SocialIcon } from './icons'
 import { ALLOW_BROWSER_TTS, NEWSLETTER_ENDPOINT, site } from '../data'
 import audioManifest from '../data/audio.json'
 import audioMeta from '../data/audio-meta.json'
-import { AudioPlayer } from './AudioPlayer'
+import { AudioPlayer, openAudioPlayer } from './AudioPlayer'
 import { firebaseEnabled, getDb } from '../lib/firebase'
 import { trackShare } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
@@ -546,18 +546,40 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
     ...(voices.noura ? [{ key: 'reading-woman', label: 'قراءة المقال', avatar: 'woman' as const, src: versionedAudioUrl(typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3`) }] : []),
     ...(voices.fahed ? [{ key: 'reading-man', label: 'قراءة المقال', avatar: 'man' as const, src: versionedAudioUrl(typeof voices.fahed === 'string' ? voices.fahed : `/audio/${slug}.mp3`) }] : []),
   ]
+  const dialogueLabel = 'بين صوتين'
+  const audioControlId = `article-audio-${slug}`
   const sources = [
     ...readingSources,
-    ...(dialogueOk ? [{ key: 'dialogue', label: 'الحوار', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`) }] : []),
+    ...(dialogueOk ? [{ key: 'dialogue', label: dialogueLabel, avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`) }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)
 
   if (sources.length) return (
     <div className={compact ? 'min-w-0 flex-1' : ''}>
-      <AudioPlayer sources={sources} title={title} compact={compact} controlId={`article-audio-${slug}`} />
+      <AudioPlayer sources={sources} title={title} compact={compact} controlId={audioControlId} />
       {dialogueOk && (
-        <details className="mt-3 rounded-xl border border-hair bg-canvas px-5 py-4">
-          <summary className="cursor-pointer text-[.86rem] font-semibold text-accent">نص الحلقة الحوارية</summary>
+        <button
+          type="button"
+          onClick={() => openAudioPlayer(audioControlId, 'dialogue')}
+          className="group mt-2.5 flex w-full items-center gap-3 rounded-xl border border-hair/80 bg-canvas/70 px-3.5 py-3 text-start transition-all hover:border-accent/45 hover:bg-wash/45"
+          aria-label="فتح بين صوتين"
+        >
+          <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent/20 text-accent" aria-hidden="true">
+            <span className="absolute h-2.5 w-2.5 -translate-x-[5px] rounded-full border border-current" />
+            <span className="absolute h-2.5 w-2.5 translate-x-[5px] rounded-full border border-current" />
+            <span className="absolute bottom-[7px] h-px w-4 bg-current opacity-55" />
+            <span className="absolute -top-1 end-0 text-[.7rem] leading-none opacity-80">♪</span>
+          </span>
+          <span className="min-w-0 flex-1">
+            <strong className="block text-[.78rem] font-semibold text-ink transition-colors group-hover:text-accent">بين صوتين</strong>
+            <span className="mt-0.5 block text-[.68rem] leading-relaxed text-soft">امتداد مسموع يفتح للفكرة مساحة أوسع، من دون أن يزاحم القراءة.</span>
+          </span>
+          <span className="shrink-0 text-[.7rem] font-semibold text-accent">استمع ↗</span>
+        </button>
+      )}
+      {dialogueOk && (
+        <details className="mt-2.5 rounded-xl border border-hair bg-canvas px-5 py-4">
+          <summary className="cursor-pointer text-[.82rem] font-semibold text-accent">نص «بين صوتين»</summary>
           {transcript ? (
             <div className="mt-5 space-y-4 border-t border-hair pt-5">
               {transcript.utterances.map((utterance, index) => (
@@ -569,7 +591,7 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
             </div>
           ) : (
             <p className="mt-4 border-t border-hair pt-4 text-[.86rem] leading-relaxed text-soft">
-              الحلقة الحوارية متاحة للاستماع. نص الحوار سيظهر هنا فور اعتماد ملف الـTranscript لهذه الحلقة.
+              النسخة الصوتية متاحة للاستماع. يظهر نص «بين صوتين» هنا فور اعتماد ملف الـTranscript.
             </p>
           )}
         </details>

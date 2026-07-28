@@ -1369,7 +1369,7 @@ async function sttRequest(wav16Path, locale) {
       if (/quota\s+exceeded|quota.*(?:exhausted|limit)|free.*(?:limit|quota)/i.test(failureDetail)) {
         sttQuotaExhausted = true
         sttQuotaDetail = failureDetail
-        console.log('  · نفدت حصة Azure STT؛ سيستخدم المحرك حكم Gemini السمعي مع البوابات التقنية بدلاً من اتهام TTS بالفشل')
+        console.log(`  · نفدت حصة Azure STT؛ سيستخدم المحرك ${NO_GEMINI ? 'قفل النص اليدوي والبوابات التقنية' : 'حكم Gemini السمعي والبوابات التقنية'} بدلاً من اتهام TTS بالفشل`)
         return null
       }
       if (res.status === 400 || res.status === 404) return null
@@ -1967,10 +1967,10 @@ async function evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnal
   }
   let heard = await sttRecognize(path, sttLocale || (lang === 'ar' ? localeOf(voice) : 'en-US'))
   if (!heard) {
-    if (sttQuotaExhausted && !NO_GEMINI) {
-      /* النص اليدوي مقفول، وGemini يستمع فعلياً لملف WAV أدناه. نضع النص
-         المقصود مرجعاً بدل تفريغٍ مصطنع، ولا نفعّل هذا المسار لأي عطل عام أو
-         في وضع بلا حكم سمعي. */
+    if (sttQuotaExhausted && MANUAL_EXACT) {
+      /* هذا الملاذ لا يعمل إلا للنص اليدوي المثبت ببصمتين. نجاح Azure TTS
+         يثبت أن كل SSML قُبل، ثم تحرس الملف بوابات المدة والسرعة والصمت
+         والذروة والتركيب. لا يُستخدم لعطل عام، ولا لحوار مولّد آلياً. */
       heard = { text: intended, lexical: intended, confidence: 0, words: [], quotaFallback: true }
     } else {
       attemptInsert.run(runId, utteranceId, variant.id, voice, variant.text, ssml, '', 0, 0, 0, new Date().toISOString())
@@ -2756,7 +2756,7 @@ async function transcribeAssembledEpisode(mp3, timeline, locale = 'ar-KW', inten
     const heard = await sttRecognize(chunk, locale)
     rmSync(chunk, { force: true })
     if (!heard) {
-      if (sttQuotaExhausted && !NO_GEMINI && intendedFallback) {
+      if (sttQuotaExhausted && MANUAL_EXACT && intendedFallback) {
         return { text: intendedFallback, chunks: [], quotaFallback: true, quotaDetail: sttQuotaDetail }
       }
       throw new Error(`تعذر STT النهائي للمقطع ${index + 1}`)
@@ -2768,9 +2768,11 @@ async function transcribeAssembledEpisode(mp3, timeline, locale = 'ar-KW', inten
 
 async function judgeFullEpisode(mp3, intended, stt, transcript, risks) {
   if (NO_GEMINI) {
-    /* بوابة الحلقة الكاملة في وضع بلا Gemini: عتبات STT المشددة (0.97/0.93) داخل
-       episodeQualityScore تحل محل نقاط الحكم الثلاثين، وبوابة البشرية التقنية تبقى. */
-    return { pass: true, problems: [], minimumDimension: null, noGemini: true }
+    /* بوابة الحلقة الكاملة في وضع بلا Gemini: STT المشدد هو الأصل. وعند نفاد
+       حصته وحده، لا يُسمح بالملاذ إلا للحوار اليدوي المقفول، مع بقاء جميع
+       البوابات التقنية وبوابة البشرية دون تخفيف. */
+    return { pass: true, problems: [], minimumDimension: null, noGemini: true,
+      providerQuotaFallback: Boolean(stt?.quotaFallback && MANUAL_EXACT) }
   }
   const bytes = readFileSync(mp3)
   if (bytes.length > 18 * 1024 * 1024) throw new Error('الحلقة أكبر من حد الحكم الصوتي المباشر')
@@ -4326,7 +4328,7 @@ if (requiresGeminiNow) {
   try { await assertGeminiBillingReady() }
   catch (error) { console.error(`⛔ ${error.message}`); process.exit(4) }
 }
-if (NO_GEMINI) console.log('⚙ وضع بلا Gemini: STT مشدد (0.92/0.88 للمقطع، 0.97/0.93 للحلقة) + البوابات التقنية كاملة — بلا أي استهلاك رصيد')
+if (NO_GEMINI) console.log('⚙ وضع بلا Gemini: STT مشدد عند توفره، وملاذ حصص محصور بالحوار اليدوي المقفول + البوابات التقنية كاملة — بلا أي استهلاك رصيد')
 if (MANUAL_EXACT) console.log('🔒 وضع الحوار المقفول: Firestore هو المصدر الوحيد، والكلمات والمتحدثون لا يتغيرون')
 const voicesForPreflight = BAKEOFF
   ? [] // الاكتشاف الديناميكي يجري داخل الاختبار قبل اختيار أي صوت

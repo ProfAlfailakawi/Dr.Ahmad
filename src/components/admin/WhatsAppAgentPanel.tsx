@@ -666,7 +666,7 @@ export function WhatsAppAgentPanel() {
             </div>
           )}
           {status.health?.ready && (
-            <p className="mt-4 text-[.78rem] text-soft">جاهز للعمل{status.health.silenced ? ` · صامت في ${status.health.silenced} محادثة بعد تدخل يدوي` : ''}</p>
+            <p className="mt-4 text-[.78rem] text-soft">متصل وصامت افتراضيًا · لا يبدأ إلا بعد كلمة الإيقاظ{status.health.silenced ? ` · أُغلق في ${status.health.silenced} محادثة بعد تدخل يدوي` : ''}</p>
           )}
 
           {status.qrImage && !status.health?.ready && (
@@ -741,9 +741,9 @@ export function WhatsAppAgentPanel() {
           )}
         </div>
         <div className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-soft">
-          الرد الآلي يعمل تلقائيًا في المحادثات الفردية فقط، ويجيب من فهرس الموقع والقواعد المعتمدة بلا تأليف.
+          البوت صامت افتراضيًا حتى يكتب الشخص «موقع د. أحمد» أو «موقع د. الفيلكاوي». بعدها فقط يجيب في تلك المحادثة من فهرس الموقع والقواعد المعتمدة بلا تأليف، وأي رسالة تكتبها أنت بيدك تغلق جلسته فورًا بلا عودة تلقائية.
           القوائم ودفتر الأرقام والبث اليدوي مستقلة تمامًا: لا تُرسل شيئًا إلا بأمرك، وبعد معاينة على رقمك وتأكيدين صريحين وفاصل هادئ بين الرسائل.
-          تدخلك اليدوي يوقف الرد الآلي في المحادثة مؤقتًا، ثم يعيده النظام تلقائيًا بعد فترة الحماية.
+          لا تحية ولا سؤال ولا قاعدة محفوظة تتجاوز كلمة الإيقاظ، ولا يعمل البوت في مجموعة أو حالة أو قناة.
         </div>
         <details className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3">
           <summary className="cursor-pointer list-none text-[.82rem] font-semibold text-ink">اشتريت هاتفًا جديدًا؟ طريقة النقل الآمنة</summary>

@@ -3,6 +3,7 @@ import {
   decideGroundedResponse,
   findRuleMatch,
   normalizeArabicMessage,
+  isWhatsAppWakePhrase,
   stripArabicGreetings,
   whatsappPolicy,
 } from '../src/server/whatsapp-controller.mjs'
@@ -12,10 +13,16 @@ assert.equal(stripArabicGreetings('السلام عليكم ورحمة الله �
 assert.equal(whatsappPolicy.manualTakeoverMinutes, 30)
 assert.equal(whatsappPolicy.zeroHallucination, true)
 assert.equal(whatsappPolicy.paidAiApis, false)
+assert.equal(isWhatsAppWakePhrase('موقع د. أحمد'), true)
+assert.equal(isWhatsAppWakePhrase('مَوْقِع د. الفيلكاوي؟'), true)
+for (const phrase of ['السلام عليكم', 'آخر مقالة', 'اسأل الدكتور', 'موقع أحمد', 'لا تفتح موقع د أحمد']) {
+  assert.equal(isWhatsAppWakePhrase(phrase), false, `${phrase} must not wake the bot`)
+}
 
 const controllerSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../src/server/whatsapp-controller.mjs', import.meta.url), 'utf8'))
 assert.match(controllerSource, /runtime-resume/)
 assert.match(controllerSource, /\\d\{5,30\}.*s\\\.whatsapp\\\.net/)
+assert.match(controllerSource, /awaiting-wake-phrase/)
 
 const rules = [{
   id: 'hours',

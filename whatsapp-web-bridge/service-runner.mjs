@@ -1,5 +1,5 @@
 import { spawn, execFileSync } from 'node:child_process'
-import { existsSync, rmSync, writeFileSync, readFileSync, mkdirSync, readdirSync } from 'node:fs'
+import { existsSync, rmSync, writeFileSync, readFileSync, mkdirSync, readdirSync, renameSync } from 'node:fs'
 import { basename, join, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -13,6 +13,9 @@ const deviceId = String(process.env.WHATSAPP_BRIDGE_DEVICE_ID || process.env.WHA
 const sessionDir = resolve(String(process.env.WHATSAPP_SESSION_DIR || './session'))
 const targetSessionFolder = join(sessionDir, `session-${deviceId}`)
 const pidFile = join(sessionDir, `bridge-${deviceId}.pid`)
+const dependencyMarker = join(root, 'node_modules', 'whatsapp-web.js', 'package.json')
+const secretProject = String(process.env.WHATSAPP_SECRET_PROJECT || 'gen-lang-client-0200723670').trim()
+const secretName = String(process.env.WHATSAPP_SECRET_NAME || 'whatsapp-bridge-secret').trim()
 
 let child = null
 let stopping = false
@@ -20,6 +23,53 @@ let failures = 0
 
 function out(level, message, fields = {}) {
   process.stdout.write(`${JSON.stringify({ at: new Date().toISOString(), level, runner: true, deviceId, message, ...fields })}\n`)
+}
+
+function findExecutable(explicit, candidates) {
+  if (explicit && existsSync(explicit)) return explicit
+  return candidates.find((candidate) => existsSync(candidate)) || ''
+}
+
+/*
+ * الخدمة المقيمة لا تعتمد على ملف .env داخل مجلد مشروع قابل للاستبدال.
+ * السر يُقرأ لحظة الإقلاع من Secret Manager ولا يُطبع ولا يُحفظ على القرص.
+ * هذه النقطة بالذات تمنع أن يؤدي فك ZIP أو تحديث المشروع إلى قتل الجسر.
+ */
+function loadBridgeSecret() {
+  const existing = String(process.env.WHATSAPP_BRIDGE_SECRET || '').trim()
+  if (existing.length >= 24) return existing
+  const gcloud = findExecutable(process.env.GCLOUD_BIN, [
+    '/opt/homebrew/share/google-cloud-sdk/bin/gcloud',
+    '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/bin/gcloud',
+    '/usr/local/bin/gcloud',
+  ])
+  if (!gcloud) throw new Error('gcloud-not-found')
+  const secret = execFileSync(gcloud, [
+    'secrets', 'versions', 'access', 'latest',
+    `--secret=${secretName}`,
+    `--project=${secretProject}`,
+  ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 30_000 }).trim()
+  if (secret.length < 24) throw new Error('bridge-secret-missing')
+  process.env.WHATSAPP_BRIDGE_SECRET = secret
+  return secret
+}
+
+/*
+ * تحديث مجلد المصدر كان يمحو node_modules، فينهار launchd كل عشر ثوانٍ.
+ * المقيم يفحص اعتمادياته ويعيدها من package-lock ذاتياً قبل تشغيل Chrome.
+ */
+function ensureDependencies() {
+  if (existsSync(dependencyMarker)) return
+  const npm = findExecutable(process.env.NPM_BIN, ['/usr/local/bin/npm', '/opt/homebrew/bin/npm'])
+  if (!npm) throw new Error('npm-not-found')
+  out('warn', 'dependencies_missing_self_heal')
+  execFileSync(npm, ['ci', '--omit=dev', '--no-audit', '--no-fund'], {
+    cwd: root,
+    stdio: 'ignore',
+    timeout: 10 * 60_000,
+  })
+  if (!existsSync(dependencyMarker)) throw new Error('dependency-self-heal-incomplete')
+  out('info', 'dependencies_restored')
 }
 
 function checkAndAcquireLock() {
@@ -104,22 +154,43 @@ async function wipeSessionForRepair() {
   await killOrphanChrome()
   if (existsSync(targetSessionFolder)) {
     try {
-      rmSync(targetSessionFolder, { recursive: true, force: true })
-      out('info', 'session_directory_wiped', { targetSessionFolder })
+      const quarantineDir = join(sessionDir, 'quarantine')
+      mkdirSync(quarantineDir, { recursive: true, mode: 0o700 })
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+      const quarantined = join(quarantineDir, `${basename(targetSessionFolder)}-${stamp}`)
+      renameSync(targetSessionFolder, quarantined)
+      out('info', 'session_quarantined_for_repair', { quarantined })
     } catch (e) {
-      out('error', 'session_wipe_failed', { error: String(e?.message || e) })
+      out('error', 'session_quarantine_failed', { error: String(e?.message || e) })
     }
   }
 }
 
 async function boot() {
+  try {
+    loadBridgeSecret()
+    ensureDependencies()
+  } catch (error) {
+    failures += 1
+    const delayMs = Math.min(5 * 60_000, 30_000 * Math.max(1, failures))
+    out('error', 'resident_prerequisite_unavailable', {
+      error: String(error?.message || error),
+      retryInMs: delayMs,
+    })
+    setTimeout(() => void boot(), delayMs)
+    return
+  }
   await killOrphanChrome()
   cleanSingletonFiles(sessionDir)
 
   const startedAt = Date.now()
   child = spawn(process.execPath, [bridgeFile], {
     cwd: root,
-    env: { ...process.env, WHATSAPP_BRIDGE_DEVICE_ID: deviceId },
+    env: {
+      ...process.env,
+      WHATSAPP_BRIDGE_DEVICE_ID: deviceId,
+      WHATSAPP_SESSION_DIR: sessionDir,
+    },
     stdio: 'inherit',
   })
   

@@ -23,6 +23,8 @@ const requiredFiles = [
   'src/components/admin/WhatsAppAgentPanel.tsx',
   'src/components/admin/SocialDesignStudio.tsx',
   'whatsapp-bridge/bridge.mjs',
+  'whatsapp-web-bridge/service-runner.mjs',
+  'whatsapp-web-bridge/install-autostart-mac.command',
 ]
 
 for (const file of requiredFiles) {
@@ -68,6 +70,9 @@ const uiSource = await readFile(resolve(root, 'src/components/ui.tsx'), 'utf8')
 const cvSource = await readFile(resolve(root, 'src/pages/CV.tsx'), 'utf8')
 const whatsappPanel = await readFile(resolve(root, 'src/components/admin/WhatsAppAgentPanel.tsx'), 'utf8')
 const whatsappBridge = await readFile(resolve(root, 'whatsapp-bridge/bridge.mjs'), 'utf8')
+const whatsappResidentRunner = await readFile(resolve(root, 'whatsapp-web-bridge/service-runner.mjs'), 'utf8')
+const whatsappResidentInstaller = await readFile(resolve(root, 'whatsapp-web-bridge/install-autostart-mac.command'), 'utf8')
+const whatsappController = await readFile(resolve(root, 'src/server/whatsapp-controller.mjs'), 'utf8')
 const designStudio = await readFile(resolve(root, 'src/components/admin/SocialDesignStudio.tsx'), 'utf8')
 const liveSource = (await Promise.all((await textFiles(resolve(root, 'src'))).map((file) => readFile(file, 'utf8')))).join('\n')
 
@@ -101,7 +106,10 @@ const assertions = [
   [hostingWorkflow.includes('workflow_run:') && hostingWorkflow.includes('توليد الصوت تلقائياً إلى R2'), 'successful audio ledger workflows must trigger a fresh site deployment'],
   [whatsappPanel.includes('إصلاح الاتصال تلقائيًا') && whatsappPanel.includes('/admin/repair') && whatsappPanel.includes('window.confirm'), 'WhatsApp admin must expose safe recovery and explicit destructive re-pairing'],
   [whatsappBridge.includes('watchdog_restart_stuck_authenticated') && whatsappBridge.includes("process.exit(75)") && whatsappBridge.includes("WHATSAPP_BRIDGE_SECRET || ''"), 'WhatsApp bridge must self-restart when stuck and must never ship a fallback secret'],
-  [designStudio.includes('BufferedIdeaTextarea') && designStudio.includes("'generate' | 'library' | 'ready'") && designStudio.includes('resolveLibraryImagePassport'), 'design studio must keep buffered typing and a working site-library mode'],
+  [whatsappController.includes('REPAIR_COOLDOWN_MS') && whatsappController.includes('repairAllowed') && whatsappController.includes('رفضت اللوحة مسحها'), 'WhatsApp destructive recovery must keep its connected-session lock and scan-rate cooldown'],
+  [whatsappResidentRunner.includes('loadBridgeSecret') && whatsappResidentRunner.includes('ensureDependencies') && whatsappResidentRunner.includes('session_quarantined_for_repair'), 'resident WhatsApp service must self-heal dependencies, fetch its secret, and quarantine repaired sessions'],
+  [whatsappResidentInstaller.includes('DrAhmadWhatsAppBridge') && whatsappResidentInstaller.includes('com.alturath.whatsapp-bridge') && whatsappResidentInstaller.includes('legacy-launch-agents'), 'WhatsApp installer must keep one resident launch service and retire conflicting legacy services'],
+  [designStudio.includes('BufferedIdeaTextarea') && designStudio.includes('data-performance-island="studio-idea"') && designStudio.includes("'generate' | 'library' | 'ready'") && designStudio.includes('resolveLibraryImagePassport'), 'design studio must keep zero-render typing and a working site-library mode'],
   [cvFile.includes("'site_cv_files'") && cvFile.includes('cv-files-v1'), 'public CV reconstruction and local cache must remain active'],
   [firestoreRules.includes('match /site_cv_files/{kind}') && firestoreRules.includes('match /chunks/{chunkId}'), 'Firestore CV file rules must remain deployed'],
   [publishingStudio.includes('مكتبة القوالب كاملة — 24 تكويناً') && publishingStudio.includes("key: 'iqtibas'") && publishingStudio.includes("key: 'masfufa'") && publishingStudio.includes("key: 'mizan'"), 'all 24 standalone social layouts must remain visible in the publishing studio'],

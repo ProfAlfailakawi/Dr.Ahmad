@@ -22,6 +22,10 @@ type AgentStatus = {
   qrUpdatedAt?: string | null
   qrAgeMs?: number | null
   qrFingerprint?: string | null
+  lastRepairRequestedAt?: string | null
+  repairBlockedUntil?: string | null
+  repairCooldownMs?: number
+  repairAllowed?: boolean
   health?: {
     code: string; label: string; why: string; fix: string
     ready: boolean; needsAuthScan: boolean; pollFailures: number
@@ -330,8 +334,10 @@ export function WhatsAppAgentPanel() {
       await request('/admin/repair', { method: 'POST', body: JSON.stringify({ confirm: true }) })
       setNotice('بدأت إعادة الربط من الصفر. سيظهر QR جديد هنا تلقائيًا؛ امسحه من الهاتف.')
       window.setTimeout(() => void refresh(), 4500)
-    } catch {
-      setNotice('تعذّر إرسال طلب إعادة الربط. جرّب الإصلاح الآمن أولًا ثم حدّث الحالة.')
+    } catch (error) {
+      setNotice(error instanceof Error && error.message
+        ? error.message
+        : 'تعذّر إرسال طلب إعادة الربط. جرّب الإصلاح الآمن أولًا ثم حدّث الحالة.')
     } finally {
       setRepairing(false)
     }
@@ -666,7 +672,7 @@ export function WhatsAppAgentPanel() {
           {status.qrImage && !status.health?.ready && (
             <div className="mt-4 rounded-2xl border border-accent/35 bg-canvas p-4 sm:p-5">
               <p className="text-[.82rem] font-semibold text-ink">اربط واتساب</p>
-              <p className="mt-1 text-[.74rem] leading-relaxed text-soft">من الجوال: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز، ثم اجعل الرمز كاملًا داخل إطار الكاميرا.</p>
+              <p className="mt-1 text-[.74rem] leading-relaxed text-soft">من الجوال: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز، ثم اجعل الرمز كاملًا داخل إطار الكاميرا. امسحه مرة واحدة فقط؛ إذا رفض الهاتف الربط فاتركه حتى تنتهي مهلة الحماية ولا تكرر المسح.</p>
               <div className="mx-auto mt-4 flex w-fit max-w-full justify-center overflow-hidden rounded-2xl bg-white p-3 sm:p-4">
                 <img
                   key={status.qrFingerprint || status.qrUpdatedAt || 'whatsapp-qr'}
@@ -703,13 +709,19 @@ export function WhatsAppAgentPanel() {
           <div className="rounded-xl border border-hair bg-canvas px-4 py-3">
             <p className="text-[.8rem] font-semibold text-ink">اتصال مركزي — لا يعتمد على هذا المتصفح</p>
             <p className="mt-1 text-[.72rem] leading-relaxed text-soft">
-              السر محفوظ في بيئة الخادم، والجلسة الدائمة محفوظة داخل VM مستقلة. تستطيع فتح اللوحة من أي جهاز مخوّل.
+              الجسر نسخة مقيمة مستقلة عن مجلد المشروع، والجلسة في مخزن دائم على الماك. تحديث الموقع أو فك ZIP لا يمسحها، وLaunchAgent يعيدها تلقائيًا بعد الانهيار أو إعادة التشغيل.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => void toggleEmergencyPause()} disabled={!status.bridgeOnline} className={`rounded-full border px-4 py-2 text-[.8rem] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${status.runtimePaused ? 'border-accent bg-accent text-white' : 'border-red-300/70 bg-red-50 text-red-700 hover:border-red-500'}`}>{status.runtimePaused ? 'تشغيل الردود' : 'إيقاف الردود فورًا'}</button>
             <button type="button" onClick={() => void recoverBridge()} disabled={restarting || repairing} className={status.health?.ready ? secondary : primary}>{restarting ? 'جارٍ الإصلاح' : 'إصلاح الاتصال تلقائيًا'}</button>
-            <button type="button" onClick={() => void repairSession()} disabled={repairing || restarting || !status.bridgeOnline} className={secondary}>{repairing ? 'يجهّز QR جديدًا…' : 'إعادة ربط من الصفر'}</button>
+            <button type="button" onClick={() => void repairSession()} disabled={repairing || restarting || !status.bridgeOnline || status.repairAllowed === false} className={secondary}>
+              {repairing
+                ? 'يجهّز QR جديدًا…'
+                : status.repairCooldownMs && status.repairCooldownMs > 0
+                  ? `حماية إعادة الربط · ${ageLabel(status.repairCooldownMs)}`
+                  : 'إعادة ربط من الصفر'}
+            </button>
             <button
               type="button"
               onClick={() => void returnBotNow()}

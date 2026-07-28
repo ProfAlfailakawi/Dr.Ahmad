@@ -38,10 +38,28 @@ for (const required of [
   '/wp-content/uploads/2025/08/Resume-Prof.-Ahmad-Arabic-1.pdf -> /files/cv.pdf',
   '/wp-content/uploads/2025/07/01-Digital-education-Inside.pdf -> /files/digital-education.pdf',
   '/signature_articles/:slug -> /articles/:slug',
+  '/en/signature_articles/we-prepare-our-children-for-success-and-leave-them-empty-handed -> /articles/we-prepare-our-children-for-success-and-leave-them-empty-handed-2',
+  '/signature_articles/عقول-الطلاب-في-إجازةوchatgpt-يشتغل-بدوام-ك -> /articles/students-minds-are-on-vacation-while-chatgpt-works-full-time-2',
   '/books/:slug -> /publications/:slug',
+  '/ai_summary_corner{,/**} -> /curated',
+  '/events/calendar{,/**} -> /upcoming',
+  '/en/category{,/**} -> /articles',
+  '/en/tag{,/**} -> /search',
   '/wp-sitemap.xml -> /sitemap.xml',
   '/sitemap_index.xml -> /sitemap.xml',
 ]) expect(pairs.includes(required), `تحويل 301 مفقود: ${required}`)
+
+const redirectIndex = (source) => redirects.findIndex((x) => x.source === source)
+expect(
+  redirectIndex('/en/category/tool_of_the_week{,/**}') >= 0
+    && redirectIndex('/en/category/tool_of_the_week{,/**}') < redirectIndex('/en/category{,/**}'),
+  'تحويل أداة الأسبوع يجب أن يسبق تحويل التصنيفات الإنجليزية العام',
+)
+expect(
+  redirectIndex('/en/signature_articles/we-prepare-our-children-for-success-and-leave-them-empty-handed') >= 0
+    && redirectIndex('/en/signature_articles/we-prepare-our-children-for-success-and-leave-them-empty-handed') < redirectIndex('/en/signature_articles/:slug'),
+  'تحويل slug المقال الإنجليزي القديم يجب أن يسبق التحويل العام',
+)
 
 const regexPairs = redirects.map((x) => `${x.regex || ''} -> ${x.destination}`)
 const rewrites = hosting.hosting?.rewrites || []

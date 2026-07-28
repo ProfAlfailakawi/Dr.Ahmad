@@ -2534,5 +2534,11 @@
     "bytes": 2973823,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:14:02.350Z"
+  },
+  "qabas-201709-001.mp3": {
+    "durationSeconds": 218,
+    "bytes": 3493764,
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-07-28T07:42:33.266Z"
   }
 }

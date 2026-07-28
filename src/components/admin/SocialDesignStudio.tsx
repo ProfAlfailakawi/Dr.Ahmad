@@ -542,8 +542,10 @@ function EditableText({ label, value, onCommit, multiline = false }: { label: st
   )
 }
 
-/* يحتفظ بالكتابة داخل الحقل نفسه، ثم يحدّث الاستوديو بعد هدوء قصير أو عند
-   المغادرة. بهذا لا نعيد حساب محرك التصميم وآلاف عقد الواجهة مع كل حرف. */
+/* جزيرة إدخال حقيقية: المتصفح يكتب مباشرةً في DOM من دون setState إطلاقاً.
+   النسخة السابقة أبقت draft في React؛ فكان الحقل نفسه يعاد رسمه مع كل حرف،
+   ثم يعيد الاستوديو الثقيل كله بعد 320ms. هنا لا نرسل النص للمحرك إلا بعد
+   هدوءٍ واضح أو عند مغادرة الحقل، لذلك تظل الكتابة بسرعة لوحة المفاتيح. */
 function BufferedIdeaTextarea({
   value,
   onCommit,
@@ -557,20 +559,39 @@ function BufferedIdeaTextarea({
   className: string
   placeholder: string
 }) {
-  const [draft, setDraft] = useState(value)
-  useEffect(() => { setDraft(value) }, [value])
+  const localRef = useRef<HTMLTextAreaElement | null>(null)
+  const idleTimerRef = useRef<number | null>(null)
+  const assignRef = (node: HTMLTextAreaElement | null) => {
+    localRef.current = node
+    if (typeof textareaRef === 'function') textareaRef(node)
+    else if (textareaRef && 'current' in textareaRef) {
+      (textareaRef as { current: HTMLTextAreaElement | null }).current = node
+    }
+  }
   useEffect(() => {
-    if (draft === value) return
-    const timer = window.setTimeout(() => onCommit(draft), 320)
-    return () => window.clearTimeout(timer)
-  }, [draft, onCommit, value])
+    const field = localRef.current
+    if (field && document.activeElement !== field && field.value !== value) field.value = value
+  }, [value])
+  useEffect(() => () => {
+    if (idleTimerRef.current != null) window.clearTimeout(idleTimerRef.current)
+  }, [])
+  const commit = (next: string) => {
+    if (idleTimerRef.current != null) window.clearTimeout(idleTimerRef.current)
+    idleTimerRef.current = null
+    if (next !== value) onCommit(next)
+  }
   return (
     <textarea
-      ref={textareaRef}
+      ref={assignRef}
       className={className}
-      value={draft}
-      onChange={(event) => setDraft(event.target.value)}
-      onBlur={() => { if (draft !== value) onCommit(draft) }}
+      defaultValue={value}
+      data-performance-island="studio-idea"
+      onInput={(event) => {
+        const next = event.currentTarget.value
+        if (idleTimerRef.current != null) window.clearTimeout(idleTimerRef.current)
+        idleTimerRef.current = window.setTimeout(() => commit(next), 1_000)
+      }}
+      onBlur={(event) => commit(event.currentTarget.value)}
       placeholder={placeholder}
     />
   )
@@ -689,6 +710,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [dna, setDna] = useState<VisualDna | null>(null)
   const [dnaBusy, setDnaBusy] = useState(false)
   const textRef = useRef<HTMLTextAreaElement | null>(null)
+  const commitIdeaNow = () => {
+    const latest = textRef.current?.value ?? text
+    if (latest !== text) setText(latest)
+  }
 
   /* ختم الهوية ولمسة الموسم: تفضيلان يسريان على المعاينة والتصدير معاً،
      ويبقيان محفوظين في هذا المتصفح. */
@@ -2666,7 +2691,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                     </div>
                   )}
                 </div>
-                <button type="button" onClick={() => void runZeroDecisionMode(visualMode)} disabled={zeroDecisionBusy || text.trim().length < 2} className="group relative mt-3 w-full overflow-hidden rounded-[1.45rem] bg-ink px-6 py-5 text-right text-white shadow-[0_22px_50px_rgba(15,23,42,.22)] transition hover:-translate-y-0.5 hover:shadow-[0_28px_70px_rgba(15,23,42,.28)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0">
+                <button type="button" onPointerDown={commitIdeaNow} onClick={() => void runZeroDecisionMode(visualMode)} disabled={zeroDecisionBusy} className="group relative mt-3 w-full overflow-hidden rounded-[1.45rem] bg-ink px-6 py-5 text-right text-white shadow-[0_22px_50px_rgba(15,23,42,.22)] transition hover:-translate-y-0.5 hover:shadow-[0_28px_70px_rgba(15,23,42,.28)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0">
                   <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_0%,rgba(255,255,255,.22),transparent_36%)] opacity-80" />
                   <span className="relative flex items-center justify-between gap-4"><span><strong className="block text-[1rem] md:text-[1.08rem]">{zeroDecisionBusy ? (visualMode === 'generate' ? 'أولّد المشهد وأصنع النتيجة…' : visualMode === 'library' ? 'أحلل الصورة المختارة وأصنع النتيجة…' : 'أنتقي الصورة وأصنع النتيجة…') : visualMode === 'generate' ? 'ولّد من الصفر — وصمّم لي' : visualMode === 'library' ? 'استخدم المختار من المكتبة — وصمّم لي' : 'اختر الأقوى الجاهز — وصمّم لي'}</strong><span className="mt-1 block text-[.68rem] leading-relaxed text-white/62">{visualMode === 'generate' ? 'صورة أصلية · فحص دلالي · بلا بديل شكلي' : visualMode === 'library' ? 'أصل داخلي · تحليل قصّ · تصميم متكامل' : 'مصدر موثق · فحص تلقائي · أفضل صورة جاهزة فقط'}</span></span><span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/15 bg-white/10 text-xl transition group-hover:translate-x-[-3px]">←</span></span>
                 </button>

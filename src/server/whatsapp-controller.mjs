@@ -9,6 +9,7 @@ const WELCOME = `حياك الله في موقع د. أحمد حسين الفي�
 const MANUAL_MINUTES = Math.max(5, Math.min(240, Number(process.env.WHATSAPP_MANUAL_TAKEOVER_MINUTES || 30)))
 const BRIDGE_ONLINE_MS = Math.max(30_000, Number(process.env.WHATSAPP_BRIDGE_ONLINE_MS || 90_000))
 const QR_FRESH_MS = Math.max(30_000, Number(process.env.WHATSAPP_QR_FRESH_MS || 75_000))
+const REPAIR_COOLDOWN_MS = Math.max(15 * 60_000, Number(process.env.WHATSAPP_REPAIR_COOLDOWN_MS || 60 * 60_000))
 const MAX_BODY_BYTES = 2 * 1024 * 1024
 
 const COLLECTIONS = Object.freeze({
@@ -438,6 +439,14 @@ function bridgeStatus(data = {}) {
   const finishing = bridgeOnline && !connected && ['authenticated', 'syncing'].includes(normalizedStatus)
   const failed = normalizedStatus === 'error'
   const syncPercent = Number(data.syncPercent || 0)
+  const lastRepairRequestedAt = bounded(data.lastRepairRequestedAt, 80) || null
+  const lastRepairTime = lastRepairRequestedAt ? Date.parse(lastRepairRequestedAt) : NaN
+  const repairBlockedUntil = Number.isFinite(lastRepairTime)
+    ? asIso(lastRepairTime + REPAIR_COOLDOWN_MS)
+    : null
+  const repairCooldownMs = repairBlockedUntil
+    ? Math.max(0, Date.parse(repairBlockedUntil) - Date.now())
+    : 0
   return {
     status: normalizedStatus,
     bridgeOnline,
@@ -451,6 +460,10 @@ function bridgeStatus(data = {}) {
     qrUpdatedAt: hasQr ? qrUpdatedAt : null,
     qrAgeMs: hasQr ? qrAgeMs : null,
     qrFingerprint: hasQr ? (bounded(data.qrFingerprint, 80) || null) : null,
+    lastRepairRequestedAt,
+    repairBlockedUntil: repairCooldownMs > 0 ? repairBlockedUntil : null,
+    repairCooldownMs,
+    repairAllowed: !connected && repairCooldownMs <= 0,
     pairing_code: null,
     runtimePaused: Boolean(data.runtimePaused),
     indexed: siteIndex().length,
@@ -1036,6 +1049,23 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       return
     }
     if (path === '/repair' && method === 'POST') {
+      const bridgeRef = db.collection(COLLECTIONS.bridge).doc('primary')
+      const bridgeSnapshot = await bridgeRef.get()
+      const bridgeData = bridgeSnapshot.exists ? bridgeSnapshot.data() || {} : {}
+      const current = bridgeStatus(bridgeData)
+      if (current.health?.ready) {
+        sendJson(res, 409, { error: 'الجلسة متصلة وسليمة؛ رفضت اللوحة مسحها.' })
+        return
+      }
+      if (current.repairCooldownMs > 0) {
+        sendJson(res, 429, {
+          error: 'أوقفت اللوحة تكرار إعادة الربط حتى لا يفرض واتساب حظرًا مؤقتًا جديدًا.',
+          retryAfterMs: current.repairCooldownMs,
+          retryAt: current.repairBlockedUntil,
+        })
+        return
+      }
+      await bridgeRef.set({ lastRepairRequestedAt: asIso(), updatedAt: asIso() }, { merge: true })
       sendJson(res, 200, { ok: true, command: await enqueueCommand(db, 'repair-session'), message: 'أُرسل طلب إعادة الربط إلى الجسر المركزي.' })
       return
     }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-28T06:44:13.580Z",
+  "generatedAt": "2026-07-28T07:42:42.534Z",
   "state": "repairing",
   "articles": {
     "total": 143,
@@ -8,8 +8,8 @@
   },
   "readings": {
     "expected": 143,
-    "ready": 97,
-    "missing": 46
+    "ready": 98,
+    "missing": 45
   },
   "dialogues": {
     "expected": 143,
@@ -17,8 +17,8 @@
     "missing": 143
   },
   "queue": {
-    "total": 189,
-    "failed": 46,
+    "total": 188,
+    "failed": 45,
     "next": {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
       "title": "شهادة امتياز… لدمية بلا وعي!",
@@ -139,7 +139,7 @@
       }
     ]
   },
-  "progressPercent": 33.9,
+  "progressPercent": 34.3,
   "items": [
     {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
@@ -1568,7 +1568,7 @@
       "title": "السوشل ميديا… محك للأزمات",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201709-001.mp3",
           "failure": {
             "slug": "qabas-201709-001",
@@ -3274,5 +3274,5 @@
       "complete": false
     }
   ],
-  "fingerprint": "d95d885f7ea567b7e33e6128fdc0cfc950d6d867341547acb99293adf8d74c2c"
+  "fingerprint": "37b7bee063ea08b93703401205acb8ffa54af12f002c653eaea759b932f0496f"
 }

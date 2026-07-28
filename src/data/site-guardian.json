@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "checkedAt": "2026-07-28T06:30:36.959Z",
+  "checkedAt": "2026-07-28T07:42:42.714Z",
   "status": "attention",
   "counts": {
     "articles": 143,
-    "missingAudio": 46,
+    "missingAudio": 45,
     "missingImages": 0,
     "brokenInternal": 0,
     "orphans": 0,
@@ -254,13 +254,6 @@
       "severity": "info",
       "slug": "qabas-201709-005",
       "title": "كثرة التطبيقات التعليمية… وعدم الجدوى في الواقع التربوي",
-      "note": "لا يوجد صوت منشور بعد"
-    },
-    {
-      "kind": "audio",
-      "severity": "info",
-      "slug": "qabas-201709-001",
-      "title": "السوشل ميديا… محك للأزمات",
       "note": "لا يوجد صوت منشور بعد"
     },
     {

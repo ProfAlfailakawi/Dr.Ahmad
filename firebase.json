@@ -185,6 +185,16 @@
         "type": 301
       },
       {
+        "source": "/en/signature_articles/we-prepare-our-children-for-success-and-leave-them-empty-handed",
+        "destination": "/articles/we-prepare-our-children-for-success-and-leave-them-empty-handed-2",
+        "type": 301
+      },
+      {
+        "source": "/signature_articles/عقول-الطلاب-في-إجازةوchatgpt-يشتغل-بدوام-ك",
+        "destination": "/articles/students-minds-are-on-vacation-while-chatgpt-works-full-time-2",
+        "type": 301
+      },
+      {
         "source": "/en/signature_articles/:slug",
         "destination": "/articles/:slug",
         "type": 301
@@ -237,6 +247,41 @@
       {
         "source": "/books/:slug",
         "destination": "/publications/:slug",
+        "type": 301
+      },
+      {
+        "source": "/ai_summary_corner{,/**}",
+        "destination": "/curated",
+        "type": 301
+      },
+      {
+        "source": "/events/calendar{,/**}",
+        "destination": "/upcoming",
+        "type": 301
+      },
+      {
+        "source": "/en/category/tool_of_the_week{,/**}",
+        "destination": "/curated",
+        "type": 301
+      },
+      {
+        "source": "/en/category{,/**}",
+        "destination": "/articles",
+        "type": 301
+      },
+      {
+        "source": "/en/tag{,/**}",
+        "destination": "/search",
+        "type": 301
+      },
+      {
+        "source": "/ar/category{,/**}",
+        "destination": "/articles",
+        "type": 301
+      },
+      {
+        "source": "/ar/tag{,/**}",
+        "destination": "/search",
         "type": 301
       },
       {

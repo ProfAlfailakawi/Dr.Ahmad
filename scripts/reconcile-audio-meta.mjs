@@ -39,6 +39,14 @@ export function decideEntry({ name, recordedBytes, status, remoteBytes }) {
   return { action: 'refresh', why: `${recordedBytes} ← ${remoteBytes}`, bytes: remoteBytes }
 }
 
+/** الحقيقة المرشّحة: نحافظ على كل ما في السجل (ومن ضمنه نورة للمستقبل)،
+ * لكن الاكتشاف الجديد لقراءة المقالات يسأل عن فهد فقط. */
+export function discoveryCandidates(knownNames = [], slugs = []) {
+  const candidates = new Set(knownNames.filter((name) => name.endsWith('.mp3')))
+  for (const slug of slugs.filter(Boolean)) candidates.add(`${slug}.mp3`)
+  return [...candidates]
+}
+
 /* ═══ الاختبارات ═══ */
 
 if (SELF_TEST) {
@@ -52,8 +60,12 @@ if (SELF_TEST) {
   assert(decideEntry({ status: 429, recordedBytes: 100 }).action === 'keep', '★ الحدّ العابر لا يُسقط مدخلاً سليماً')
   assert(decideEntry({ status: 503 }).action === 'keep', 'ولا عطلُ الخادم')
   assert(decideEntry({ status: 200, recordedBytes: 0, remoteBytes: 0 }).action === 'keep', 'وبلا حجمٍ لا حكم')
+  const candidates = discoveryCandidates(['a.noura.mp3', 'legacy.dialogue.mp3'], ['a', 'b'])
+  assert(candidates.includes('a.noura.mp3'), 'نورة المحفوظة لا تُحذف من السجل')
+  assert(candidates.includes('a.mp3') && candidates.includes('b.mp3'), 'كل مقالات المصدر تدخل اكتشاف فهد')
+  assert(!candidates.includes('b.noura.mp3'), 'لا يُنشأ اكتشاف جديد لنورة في قراءة المقالات')
 
-  console.log('✓ اختبارات مصالحة سجلّ الصوت: 6/6')
+  console.log('✓ اختبارات مصالحة سجلّ الصوت: 9/9')
   process.exit(0)
 }
 
@@ -102,13 +114,11 @@ async function probeSeconds(url) {
    (شوهد: ١٠٤→٢٥، والخلاصة نزلت ٥٦→١٣). الآن نسأل R2 عن كل ملفٍ ممكن (مقال × صوت)
    ونضيف ما وُجِد وغاب عن السجلّ. فيصير السجلّ دائماً ⩾ ما في R2 ولا يُحذف إلا ما
    غاب فعلاً (404) — فالدهس يصير غير مؤذٍ: أيّ تشغيلةٍ تعيد بناءه من الحقيقة. */
-const feedPath = resolve(ROOT, 'src/data/site-articles-feed.json')
+const bodiesPath = resolve(ROOT, 'src/data/bodies.json')
 let slugs = []
-try { slugs = JSON.parse(readFileSync(feedPath, 'utf8')).map((article) => article?.slug).filter(Boolean) }
-catch { console.warn('  ⚠ تعذّر قراءة قائمة المقالات — نكتفي بمداخل السجلّ.') }
-const READING_SUFFIXES = ['.mp3', '.noura.mp3']
-const candidates = new Set(Object.keys(meta).filter((name) => name.endsWith('.mp3')))
-for (const slug of slugs) for (const suffix of READING_SUFFIXES) candidates.add(`${slug}${suffix}`)
+try { slugs = Object.keys(JSON.parse(readFileSync(bodiesPath, 'utf8'))) }
+catch { console.warn('  ⚠ تعذّر قراءة نصوص المقالات — نكتفي بمداخل السجلّ.') }
+const candidates = new Set(discoveryCandidates(Object.keys(meta), slugs))
 console.log(`═══ مصالحة ${candidates.size} ملفاً محتملاً مع R2 (السجلّ يحمل ${Object.keys(meta).length}) ═══\n`)
 
 const dropped = []

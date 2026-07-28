@@ -1372,6 +1372,59 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       sendJson(res, 200, { ok: true, queued: true, messageId: command.id })
       return
     }
+    if (path === '/emergency-stop' && method === 'POST') {
+      const body = await readJson(req)
+      if (body.confirm !== true) {
+        sendJson(res, 400, { error: 'يلزم تأكيد إيقاف الإرسال.' })
+        return
+      }
+      const [commands, campaigns] = await Promise.all([
+        db.collection(COLLECTIONS.commands).limit(500).get(),
+        db.collection(COLLECTIONS.campaigns).limit(500).get(),
+      ])
+      const activeCommands = commands.docs.filter((doc) => {
+        const value = doc.data() || {}
+        return ['pending', 'leased'].includes(value.status)
+          && ['send-message', 'send-self-message'].includes(value.type)
+      })
+      const activeCampaigns = campaigns.docs.filter((doc) =>
+        ['approved', 'paused', 'sending'].includes(doc.data()?.state))
+      let batch = db.batch()
+      let writes = 0
+      const commitIfNeeded = async (force = false) => {
+        if (!writes || (!force && writes < 400)) return
+        await batch.commit()
+        batch = db.batch()
+        writes = 0
+      }
+      for (const command of activeCommands) {
+        batch.set(command.ref, {
+          status: 'cancelled',
+          error: 'أوقفها الدكتور من زر الطوارئ قبل التسليم.',
+          cancelledAt: asIso(),
+          updatedAt: asIso(),
+        }, { merge: true })
+        writes += 1
+        await commitIfNeeded()
+      }
+      for (const campaign of activeCampaigns) {
+        batch.set(campaign.ref, {
+          state: 'stopped',
+          pendingCommandId: null,
+          stoppedAt: asIso(),
+          updatedAt: asIso(),
+        }, { merge: true })
+        writes += 1
+        await commitIfNeeded()
+      }
+      await commitIfNeeded(true)
+      sendJson(res, 200, {
+        ok: true,
+        commandsStopped: activeCommands.length,
+        campaignsStopped: activeCampaigns.length,
+      })
+      return
+    }
     const commandStatus = /^\/commands\/([^/]+)$/.exec(path)
     if (commandStatus && method === 'GET') {
       const id = bounded(decodeURIComponent(commandStatus[1]), 80)

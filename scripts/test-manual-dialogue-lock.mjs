@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { dialogueHashes, normalizeManualDialogueTurns, validateCloudDialogueLock } from './lib/manual-dialogue-source.mjs'
 
 const fixture = [
@@ -51,5 +53,10 @@ assert.throws(() => normalizeManualDialogueTurns([
   { speaker: 'male', text: 'الأولى' },
   { speaker: 'male', text: 'الثانية' },
 ]), /الرجل والمرأة/)
+
+const fetchSource = readFileSync(resolve('scripts/fetch-manual-dialogues.mjs'), 'utf8')
+assert.match(fetchSource, /requeueLocked/)
+assert.match(fetchSource, /requireQueued: false/)
+assert.match(fetchSource, /retryRequestedAt/)
 
 console.log('✓ manual dialogue source-lock self-test passed')

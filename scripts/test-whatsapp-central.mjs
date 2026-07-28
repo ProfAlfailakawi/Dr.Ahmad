@@ -11,7 +11,9 @@ import {
 
 assert.equal(normalizeArabicMessage('إلى مدرسةٍ ١٢ — جميلة'), 'الي مدرسه 12 جميله')
 assert.equal(stripArabicGreetings('السلام عليكم ورحمة الله وبركاته، أبي الذكاء الاصطناعي'), 'ابي الذكاء الاصطناعي')
-assert.equal(whatsappPolicy.manualTakeoverMinutes, 30)
+assert.equal(whatsappPolicy.manualTakeoverMinutes, null)
+assert.equal(whatsappPolicy.manualTakeoverAutoResume, false)
+assert.equal(whatsappPolicy.resumeMode, 'wake-phrase-only')
 assert.equal(whatsappPolicy.zeroHallucination, true)
 assert.equal(whatsappPolicy.paidAiApis, false)
 assert.equal(isWhatsAppWakePhrase('موقع د. أحمد'), true)
@@ -26,6 +28,9 @@ const controllerSource = await import('node:fs').then(({ readFileSync }) => read
 assert.match(controllerSource, /runtime-resume/)
 assert.match(controllerSource, /\\d\{5,30\}.*s\\\.whatsapp\\\.net/)
 assert.match(controllerSource, /awaiting-wake-phrase/)
+assert.doesNotMatch(controllerSource, /resumedAutomaticallyAt/)
+assert.match(controllerSource, /mode: 'silent', wakeActive: false, wakeVersion: 1/)
+assert.match(controllerSource, /resumes: 'wake-phrase-only'/)
 
 const rules = [{
   id: 'hours',

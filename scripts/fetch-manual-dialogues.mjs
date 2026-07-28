@@ -16,6 +16,7 @@ const readArg = (name, fallback = '') => {
 }
 const slugs = readArg('slugs', process.env.RELEASED_SLUGS || '')
   .split(',').map((item) => item.trim()).filter((item) => /^[a-z0-9-]+$/.test(item))
+const requeueLocked = ['1', 'true', 'yes'].includes(readArg('requeue', process.env.PODCAST_REQUEUE_LOCKED || '').toLowerCase())
 if (!slugs.length) throw new Error('لا توجد slugs صالحة لسحب الحوار اليدوي')
 
 const saPath = resolve(ROOT, process.env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')
@@ -38,7 +39,22 @@ for (const slug of slugs) {
   if (!productionSnapshot.exists) throw new Error(`${slug}: لا يوجد قرار إرسال للتوليد`)
 
   const dialogue = dialogueSnapshot.data() || {}
-  const production = productionSnapshot.data() || {}
+  let production = productionSnapshot.data() || {}
+  if (requeueLocked && production.status !== 'queued') {
+    /* إعادة التوليد الصريحة تستعيد الصف الفاشل/المعلّق، لكن لا تفعل ذلك
+       إلا إذا كانت بصمات النص والنسخة والعدد ما زالت تطابق الحوار السحابي
+       حرفياً. بهذا لا يمكن لإعادة المحاولة أن تولّد مسودة قديمة. */
+    validateCloudDialogueLock({ slug, dialogue, production, requireQueued: false })
+    await productionSnapshot.ref.set({
+      status: 'queued',
+      dispatchState: 'retrying',
+      retryRequestedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      note: 'أعاد أمر إعادة التوليد الحوار المقفول نفسه إلى القائمة بعد مطابقة بصمتيه.',
+    }, { merge: true })
+    production = { ...production, status: 'queued' }
+    console.log(`↻ ${slug}: أُعيد الحوار المقفول نفسه إلى قائمة التوليد`)
+  }
   const source = validateCloudDialogueLock({ slug, dialogue, production, requireQueued: true })
 
   const manualPath = resolve(manualDir, `${slug}.json`)

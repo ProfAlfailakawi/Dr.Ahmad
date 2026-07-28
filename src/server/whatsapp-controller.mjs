@@ -6,7 +6,6 @@ const OWNER_ALERT_FALLBACK = 'وصلت رسالة تحتاج تدخلك البش
 const HUMAN_ACK = 'وصلتني رسالتك، وتحتاج تأكيدًا بشريًا. سيكمل معك الدكتور أو أحد الفريق بأقرب وقت.'
 const DUPLICATE_ACK = 'وصلتني الرسالة نفسها وهي عندي بالفعل. إذا احتاجت متابعة بشرية سيكمل معك الفريق.'
 const WELCOME = `حياك الله في موقع د. أحمد حسين الفيلكاوي.\n\nالموقع هو المرجع المعتمد للمقالات والكتب والمواد المنشورة:\n${SITE_URL}`
-const MANUAL_MINUTES = Math.max(5, Math.min(240, Number(process.env.WHATSAPP_MANUAL_TAKEOVER_MINUTES || 30)))
 const BRIDGE_ONLINE_MS = Math.max(30_000, Number(process.env.WHATSAPP_BRIDGE_ONLINE_MS || 90_000))
 const QR_FRESH_MS = Math.max(30_000, Number(process.env.WHATSAPP_QR_FRESH_MS || 75_000))
 const REPAIR_COOLDOWN_MS = Math.max(15 * 60_000, Number(process.env.WHATSAPP_REPAIR_COOLDOWN_MS || 60 * 60_000))
@@ -587,16 +586,23 @@ async function queueNextCampaignMessage(db, campaignId, delayMs = 0) {
 }
 
 async function sweepExpiredManualStates(db) {
-  const now = Date.now()
+  /* ترقيةٌ آمنة لحالات النسخ القديمة فقط: انتهاء مؤقت الاستلام اليدوي لا
+     يعيد البوت. يحوّل المحادثة إلى الصمت الأساسي، ولا يفتحها بعد ذلك إلا
+     أن يكتب الطرف الآخر جملة الإيقاظ الدقيقة. */
   const snapshot = await db.collection(COLLECTIONS.conversations).limit(250).get()
   const writes = []
   for (const doc of snapshot.docs) {
     const data = doc.data() || {}
-    const until = Date.parse(data.manualUntil || data.autoResumeAt || '')
-    if (data.mode === 'human' && data.needsHuman !== true && Number.isFinite(until) && until <= now) {
+    if (data.mode === 'human' && data.needsHuman !== true && (data.manualUntil || data.autoResumeAt)) {
       writes.push(doc.ref.set({
-        mode: 'bot', manualUntil: null, autoResumeAt: null, notificationMutedUntil: null,
-        updatedAt: asIso(), resumedAutomaticallyAt: asIso(),
+        mode: 'human',
+        wakeActive: false,
+        wakeVersion: 1,
+        manualUntil: null,
+        autoResumeAt: null,
+        notificationMutedUntil: null,
+        updatedAt: asIso(),
+        automaticResumeDisabledAt: asIso(),
       }, { merge: true }))
     }
   }
@@ -830,10 +836,8 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     const incomingHash = hash(normalizeArabicMessage(text) || `media:${bounded(body.mediaType, 80)}`)
     const lastInboundAt = Date.parse(data.lastInboundAt || '')
     const duplicate = data.lastIncomingHash === incomingHash && Number.isFinite(lastInboundAt) && Date.now() - lastInboundAt < 10 * 60_000
-    const manualUntil = Date.parse(data.manualUntil || data.autoResumeAt || '')
-    const timedManualActive = data.mode === 'human' && Number.isFinite(manualUntil) && manualUntil > Date.now()
     const wakePhrase = isWhatsAppWakePhrase(text)
-    const legacyNeedsHuman = data.mode === 'human' && data.needsHuman === true
+    const manualTakeoverActive = data.mode === 'human'
 
     const basePatch = {
       jid,
@@ -844,7 +848,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       updatedAt: now,
     }
 
-    if (timedManualActive || (legacyNeedsHuman && !wakePhrase)) {
+    if (manualTakeoverActive && !wakePhrase) {
       await ref.set(basePatch, { merge: true })
       sendJson(res, 200, { ok: true, action: 'none', reason: 'human-takeover' })
       return
@@ -1073,11 +1077,9 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       ])
       const data = bridgeSnapshot.exists ? bridgeSnapshot.data() || {} : {}
       const status = bridgeStatus({ ...data, runtimePaused: Boolean(runtimeSnapshot.data()?.paused) })
-      const now = Date.now()
       const silenced = conversations.docs.filter((doc) => {
         const row = doc.data() || {}
-        const until = Date.parse(row.manualUntil || row.autoResumeAt || '')
-        return row.mode === 'human' && (row.needsHuman === true || (Number.isFinite(until) && until > now))
+        return row.mode === 'human'
       }).length
       status.health.silenced = silenced
       status.health.quietNow = status.runtimePaused || silenced > 0
@@ -1088,12 +1090,8 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
 
     if (path === '/silence' && method === 'GET') {
       const snapshot = await db.collection(COLLECTIONS.conversations).limit(250).get()
-      const active = snapshot.docs.map((doc) => doc.data() || {}).filter((row) => {
-        const until = Date.parse(row.manualUntil || row.autoResumeAt || '')
-        return row.mode === 'human' && (row.needsHuman === true || (Number.isFinite(until) && until > Date.now()))
-      })
-      const timestamps = active.map((row) => Date.parse(row.manualUntil || row.autoResumeAt || '')).filter(Number.isFinite)
-      sendJson(res, 200, { silenced: active.length, until: timestamps.length ? asIso(Math.max(...timestamps)) : null })
+      const active = snapshot.docs.map((doc) => doc.data() || {}).filter((row) => row.mode === 'human')
+      sendJson(res, 200, { silenced: active.length, until: null })
       return
     }
 
@@ -1212,24 +1210,34 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     if (path === '/manual-takeover' && method === 'POST') {
       const body = await readJson(req)
       const jid = bounded(body.jid, 180)
-      const minutes = Math.max(5, Math.min(240, Number(body.minutes || MANUAL_MINUTES)))
-      const until = asIso(Date.now() + minutes * 60_000)
       const { ref } = await getConversation(db, jid)
-      await ref.set({ jid, masked: maskJid(jid), mode: 'human', needsHuman: false, manualUntil: until, autoResumeAt: until, notificationMutedUntil: until, updatedAt: asIso() }, { merge: true })
-      sendJson(res, 200, { ok: true, until })
+      await ref.set({
+        jid,
+        masked: maskJid(jid),
+        mode: 'human',
+        wakeActive: false,
+        wakeVersion: 1,
+        needsHuman: false,
+        manualUntil: null,
+        autoResumeAt: null,
+        notificationMutedUntil: null,
+        lastManualAt: asIso(),
+        updatedAt: asIso(),
+      }, { merge: true })
+      sendJson(res, 200, { ok: true, until: null, resumes: 'wake-phrase-only' })
       return
     }
     if (path === '/bot-return' && method === 'POST') {
       const body = await readJson(req)
       const { ref } = await getConversation(db, bounded(body.jid, 180))
-      await ref.set({ mode: 'bot', needsHuman: false, manualUntil: null, autoResumeAt: null, notificationMutedUntil: null, updatedAt: asIso() }, { merge: true })
-      sendJson(res, 200, { ok: true })
+      await ref.set({ mode: 'silent', wakeActive: false, wakeVersion: 1, needsHuman: false, manualUntil: null, autoResumeAt: null, notificationMutedUntil: null, updatedAt: asIso() }, { merge: true })
+      sendJson(res, 200, { ok: true, resumes: 'wake-phrase-only' })
       return
     }
     if (path === '/bot-return-all' && method === 'POST') {
       const snapshot = await db.collection(COLLECTIONS.conversations).limit(500).get()
       const rows = snapshot.docs.filter((doc) => doc.data()?.mode === 'human')
-      await Promise.all(rows.map((doc) => doc.ref.set({ mode: 'bot', needsHuman: false, manualUntil: null, autoResumeAt: null, notificationMutedUntil: null, updatedAt: asIso() }, { merge: true })))
+      await Promise.all(rows.map((doc) => doc.ref.set({ mode: 'silent', wakeActive: false, wakeVersion: 1, needsHuman: false, manualUntil: null, autoResumeAt: null, notificationMutedUntil: null, updatedAt: asIso() }, { merge: true })))
       sendJson(res, 200, { returned: rows.length })
       return
     }
@@ -1680,7 +1688,9 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
 
 export const whatsappPolicy = Object.freeze({
   siteUrl: SITE_URL,
-  manualTakeoverMinutes: MANUAL_MINUTES,
+  manualTakeoverMinutes: null,
+  manualTakeoverAutoResume: false,
+  resumeMode: 'wake-phrase-only',
   zeroHallucination: true,
   paidAiApis: false,
 })

@@ -58,5 +58,8 @@ const fetchSource = readFileSync(resolve('scripts/fetch-manual-dialogues.mjs'), 
 assert.match(fetchSource, /requeueLocked/)
 assert.match(fetchSource, /requireQueued: false/)
 assert.match(fetchSource, /retryRequestedAt/)
+const engineSource = readFileSync(resolve('scripts/podcast-dialogue.mjs'), 'utf8')
+assert.match(engineSource, /sttQuotaExhausted && MANUAL_EXACT/)
+assert.match(engineSource, /providerQuotaFallback/)
 
 console.log('✓ manual dialogue source-lock self-test passed')

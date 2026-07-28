@@ -1304,15 +1304,29 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     let lastError: unknown = null
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
       try {
-        return await requestGeneratedStudioImage(options)
+        const attemptOptions = attempt === 0
+          ? options
+          : {
+              ...options,
+              regenerationId: `${options.regenerationId || 'studio'}-rescue-${attempt}`,
+              candidateIndex: Number(options.candidateIndex || 0) + attempt,
+              variation: [
+                options.variation,
+                'SEMANTIC RESCUE: build a materially different scene with every literal subject clearly visible.',
+              ].filter(Boolean).join(' '),
+            }
+        return await requestGeneratedStudioImage(attemptOptions)
       } catch (error) {
         lastError = error
         const message = error instanceof Error ? error.message : String(error || '')
         const dailyQuotaExhausted = /daily free allocation exhausted|10[,.]?000 neurons|free allocation/i.test(message)
-        const transient = !dailyQuotaExhausted && /busy|temporar|rate.?limit|resource exhausted|HTTP 429|HTTP 503/i.test(message)
-        if (!transient || attempt === maxAttempts - 1) throw error
-        const delayMs = 4_000 * (attempt + 1)
-        setNotice(`خدمة الصور تحت ضغط لحظي؛ أحافظ على الفكرة وأعيد هذا المشهد تلقائيًا بعد ${Math.round(delayMs / 1_000)} ثوانٍ…`)
+        const semanticRetry = /semantic_rejected|visual_rejected|تعذّر اعتماد الصورة (?:دلاليًا|بصريًا)|HTTP 422/i.test(message)
+        const transient = !dailyQuotaExhausted && /timed out|abort|busy|temporar|rate.?limit|resource exhausted|HTTP 429|HTTP 502|HTTP 503|HTTP 504/i.test(message)
+        if ((!transient && !semanticRetry) || attempt === maxAttempts - 1) throw error
+        const delayMs = semanticRetry ? 750 : 2_000 * (attempt + 1)
+        setNotice(semanticRetry
+          ? 'رفض فاحص الجودة المرشح الأول؛ أصنع الآن مشهدًا مختلفًا وأفحصه من جديد…'
+          : `خدمة الصور تحت ضغط لحظي؛ أحافظ على الفكرة وأعيد هذا المشهد تلقائيًا بعد ${Math.round(delayMs / 1_000)} ثوانٍ…`)
         await new Promise<void>((resolve) => window.setTimeout(resolve, delayMs))
       }
     }
@@ -2201,7 +2215,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       if (requestedMode === 'generate') {
         const preferredWorld = [...new Set(visualSearchPlan.preferredWorlds)][0] || 'daylight-learning'
         const history = loadVisualWorldHistory()
-        setNotice('أصنع صورة أصلية واحدة دقيقة، ويختبر الخادم عدة مرشحين داخليًا حتى يجتاز المعنى والجودة.')
+        setNotice('أصنع صورة أصلية دقيقة وأفحص معناها وجودتها؛ وإذا رُفضت أنشئ مرشحًا جديدًا تلقائيًا ضمن طلب مستقل وسريع.')
         try {
           const serial = ++generationSerialRef.current
           const generated = await requestGeneratedStudioImageWithBackoff({

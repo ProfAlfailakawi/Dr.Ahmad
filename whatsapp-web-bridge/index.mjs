@@ -126,7 +126,17 @@ async function serverRequest(path, { method = 'POST', body, timeoutMs = 15_000, 
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       })
-      if (!response.ok) throw new Error(`server-${response.status}`)
+      if (!response.ok) {
+        // Keep the HTTP status and the server's short diagnostic. The bridge
+        // logs mask phone addresses, and this detail is what lets the control
+        // panel distinguish an invalid modern JID from a paused bot or outage.
+        let detail = ''
+        try {
+          const payload = await response.json()
+          detail = String(payload?.error || '').replace(/\s+/g, ' ').slice(0, 240)
+        } catch { /* response may not be JSON */ }
+        throw new Error(`server-${response.status}${detail ? `:${detail}` : ''}`)
+      }
       runtime.lastWebhookAt = new Date().toISOString()
       return await response.json()
     } catch (error) {
@@ -434,6 +444,9 @@ client.on('message', async (message) => {
     })
     if (result?.reply?.text && ['reply', 'reply-and-escalate'].includes(result.action)) {
       await sendTextWithRecovery(message.from, result.reply.text)
+      log('info', 'incoming_reply_sent', { from: message.from, action: result.action, reason: result.reason || '' })
+    } else {
+      log('info', 'incoming_processed_without_reply', { from: message.from, action: result?.action || 'none', reason: result?.reason || '' })
     }
   } catch (error) {
     runtime.lastError = error instanceof Error ? error.message : String(error)

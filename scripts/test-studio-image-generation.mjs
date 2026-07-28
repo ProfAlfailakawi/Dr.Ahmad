@@ -31,6 +31,8 @@ assert.ok(prompt.length <= 2048, 'The prompt must respect the Cloudflare model l
 assert.match(prompt, /THE SCENE MUST BE EXACTLY THIS/i)
 assert.match(prompt, /VISIBLE OBJECTS THAT MUST APPEAR/i)
 assert.match(prompt, /Generate image only/i)
+assert.match(prompt, /ZERO writing in the pixels/i)
+assert.match(prompt, /no Arabic, no English/i)
 assert.match(prompt, /Art direction/i)
 assert.match(prompt, /Fresh variation/i)
 assert.doesNotMatch(prompt, /watermark\s*$/i)
@@ -84,6 +86,7 @@ const previousToken = process.env.CLOUDFLARE_API_TOKEN
 const previousModel = process.env.CLOUDFLARE_IMAGE_MODEL
 const previousDailyModel = process.env.CLOUDFLARE_IMAGE_MODEL_DAILY
 const previousVisionRequirement = process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC
+const previousTextInspection = process.env.STUDIO_IMAGE_INSPECT_TEXT
 const previousCandidateAttempts = process.env.STUDIO_IMAGE_CANDIDATE_ATTEMPTS
 const previousTransportAttempts = process.env.CLOUDFLARE_IMAGE_TRANSPORT_ATTEMPTS
 process.env.CLOUDFLARE_ACCOUNT_ID = '0123456789abcdef0123456789abcdef'
@@ -91,6 +94,7 @@ process.env.CLOUDFLARE_API_TOKEN = 'self-test-token-not-real'
 process.env.CLOUDFLARE_IMAGE_MODEL = '@cf/black-forest-labs/flux-2-klein-4b'
 process.env.CLOUDFLARE_IMAGE_MODEL_DAILY = '@cf/black-forest-labs/flux-2-klein-4b'
 process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC = 'false'
+process.env.STUDIO_IMAGE_INSPECT_TEXT = 'false'
 process.env.STUDIO_IMAGE_CANDIDATE_ATTEMPTS = '1'
 process.env.CLOUDFLARE_IMAGE_TRANSPORT_ATTEMPTS = '1'
 
@@ -208,6 +212,7 @@ try {
   process.env.CLOUDFLARE_IMAGE_TRANSPORT_ATTEMPTS = '1'
 
   process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC = 'true'
+  process.env.STUDIO_IMAGE_INSPECT_TEXT = 'true'
   process.env.STUDIO_IMAGE_CANDIDATE_ATTEMPTS = '2'
   let imageCalls = 0
   let visionCalls = 0
@@ -281,6 +286,8 @@ try {
   else process.env.CLOUDFLARE_IMAGE_MODEL_DAILY = previousDailyModel
   if (previousVisionRequirement == null) delete process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC
   else process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC = previousVisionRequirement
+  if (previousTextInspection == null) delete process.env.STUDIO_IMAGE_INSPECT_TEXT
+  else process.env.STUDIO_IMAGE_INSPECT_TEXT = previousTextInspection
   if (previousCandidateAttempts == null) delete process.env.STUDIO_IMAGE_CANDIDATE_ATTEMPTS
   else process.env.STUDIO_IMAGE_CANDIDATE_ATTEMPTS = previousCandidateAttempts
   if (previousTransportAttempts == null) delete process.env.CLOUDFLARE_IMAGE_TRANSPORT_ATTEMPTS

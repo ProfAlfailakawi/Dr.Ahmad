@@ -78,6 +78,14 @@ function maskJid(jid) {
   return number.length > 4 ? `${'*'.repeat(Math.max(4, number.length - 4))}${number.slice(-4)}` : '****'
 }
 
+function normalizeConversationJid(value) {
+  /* إصدارات Multi-Device الحديثة قد تضيف رقم الجهاز قبل @c.us/@lid،
+     أو تستخدم s.whatsapp.net. لا نحوّل LID إلى رقم هاتف؛ نحفظ العنوان الحي
+     نفسه، لكن نرفض المجموعات والنشرات وأي محارف غير متوقعة. */
+  const jid = bounded(value, 180).toLowerCase()
+  return /^\d{5,30}(?::\d{1,8})?@(?:c\.us|lid|s\.whatsapp\.net)$/.test(jid) ? jid : ''
+}
+
 function normalizeWhitespace(value) {
   return String(value || '').replace(/\s+/g, ' ').trim()
 }
@@ -776,8 +784,8 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       return
     }
 
-    const jid = bounded(body.jid, 180)
-    if (!jid || !/@(?:c\.us|lid|s\.us|s\.whatsapp\.net)$/.test(jid)) {
+    const jid = normalizeConversationJid(body.jid)
+    if (!jid) {
       sendJson(res, 400, { error: 'Invalid conversation id' })
       return
     }
@@ -922,6 +930,15 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     if (bridgePath(url) === '/emergency-stop' && method === 'POST') {
       const result = await stopAllSending(db)
       sendJson(res, 200, { ok: true, ...result })
+      return
+    }
+    if (bridgePath(url) === '/runtime-resume' && method === 'POST') {
+      await db.collection(COLLECTIONS.settings).doc('runtime').set({
+        paused: false,
+        resumedAt: asIso(),
+        updatedAt: asIso(),
+      }, { merge: true })
+      sendJson(res, 200, { ok: true, paused: false })
       return
     }
     if (method === 'GET') {
@@ -1582,7 +1599,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       if (url.pathname.startsWith('/api/whatsapp/')) {
         const path = bridgePath(url)
         if (path === '/webhook' && method === 'POST') await handleWebhook(req, res)
-        else if (path === '/commands' || path === '/emergency-stop') await handleBridgeCommand(req, res, url, method)
+        else if (path === '/commands' || path === '/emergency-stop' || path === '/runtime-resume') await handleBridgeCommand(req, res, url, method)
         else sendJson(res, 404, { error: 'WhatsApp bridge endpoint not found' })
         return true
       }

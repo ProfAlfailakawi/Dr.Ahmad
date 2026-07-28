@@ -1517,7 +1517,9 @@ export function buildEliteStudioImagePrompt(input) {
   ].filter(Boolean).join(', ')
   return [
     `Generate image only. Create one photorealistic world-class editorial image, ${orientation}.`,
+    'ABSOLUTE OUTPUT RULE: ZERO writing in the pixels — no Arabic, no English, letters, words, digits, pseudo-writing or typographic symbols. Copy is added later in a separate editable layer.',
     `EXACT COMPOUND IDEA — USER WORDING HAS HIGHEST AUTHORITY: ${input.idea || input.issue}.`,
+    input.variation ? `Fresh variation: ${input.variation}` : '',
     input.semanticBlueprint?.canonicalMeaning ? `PRECISE MEANING: ${input.semanticBlueprint.canonicalMeaning}.` : '',
     `VISIBLE OBJECTS THAT MUST APPEAR: ${literal.length ? literal.join(' + ') : concept.anchors}. Every required object or anchor must be unmistakably visible; omission invalidates the image.`,
     `THE SCENE MUST BE EXACTLY THIS: ${concept.scene}`,
@@ -1526,7 +1528,6 @@ export function buildEliteStudioImagePrompt(input) {
     `Art direction: ${world.direction}.`,
     moodDirection,
     `COMPOSITION: ${negativeSpace}, clear focal hierarchy, asymmetrical balance, no clutter. ${textSafeZone}`,
-    input.variation ? `Fresh variation: ${input.variation}` : '',
     `FORBIDDEN: ${forbidden}.`,
     'Semantic accuracy and visible anchors come before beauty. Do not substitute a generic metaphor, generic classroom, or generic people-with-laptops scene for the literal compound subject.',
   ].filter(Boolean).join(' ').slice(0, 1980)
@@ -2174,6 +2175,7 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
   const candidateAttempts = envNumber('STUDIO_IMAGE_CANDIDATE_ATTEMPTS', 1, 1, 2)
   const requireVisionCritic = generationMode === 'masterpiece'
     && !/^(?:0|false|no|off)$/i.test(String(process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC || 'true').trim())
+  const inspectForAccidentalText = !/^(?:0|false|no|off)$/i.test(String(process.env.STUDIO_IMAGE_INSPECT_TEXT || 'true').trim())
   const candidates = []
   let rescueReason = ''
   let visionCriticUnavailable = false
@@ -2207,7 +2209,7 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
       targetWidth: attemptInput.generationWidth,
       targetHeight: attemptInput.generationHeight,
     })
-    const critic = requireVisionCritic
+    const critic = (requireVisionCritic || inspectForAccidentalText)
       ? await assessStudioImageRelevance({
           input: attemptInput,
           direction,
@@ -2224,7 +2226,7 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
       break
     }
     if (!critic && visual?.valid !== false) break
-    if (critic?.topicMatch && critic.score >= threshold && visual?.valid !== false) break
+    if (critic?.topicMatch && !critic.hasTextOrGlyphs && !critic.interfaceContamination && critic.score >= threshold && visual?.valid !== false) break
     rescueReason = critic
       ? [
           `Score ${critic.score}/100.`,
@@ -2244,7 +2246,11 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
   if (visionCriticUnavailable) {
     throw new HttpError(503, 'تعذّر تشغيل فاحص الصورة الآن؛ لم يعتمد الاستوديو صورة غير مفحوصة. أعد المحاولة بعد لحظات.', { 'retry-after': '20' })
   }
-  const verified = candidates.filter((item) => item.critic?.topicMatch && item.critic.score >= threshold && item.visual?.valid !== false)
+  const verified = candidates.filter((item) => item.critic?.topicMatch
+    && !item.critic.hasTextOrGlyphs
+    && !item.critic.interfaceContamination
+    && item.critic.score >= threshold
+    && item.visual?.valid !== false)
   const chosen = (verified.length ? verified : candidates)
     .sort((left, right) => {
       const rightScore = (right.critic?.score ?? 0) * .72 + (right.visual?.score ?? 70) * .28
@@ -2257,6 +2263,12 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
   }
   if (chosen.critic && (!chosen.critic.topicMatch || chosen.critic.score < threshold)) {
     throw new HttpError(422, `تعذّر اعتماد الصورة دلاليًا بعد فحص المرشح: ${chosen.critic.reason || chosen.critic.missingAnchor || 'المشهد لا يعبّر عن العنوان المركب'}`)
+  }
+  if (chosen.critic?.hasTextOrGlyphs) {
+    throw new HttpError(422, 'رفض الاستوديو الصورة لأنها تحتوي كتابة أو حروفًا مولّدة. أعد المحاولة وسيُنشئ مشهدًا بصريًا بلا نص.')
+  }
+  if (chosen.critic?.interfaceContamination) {
+    throw new HttpError(422, 'رفض الاستوديو الصورة لأنها تحتوي واجهة أو رموزًا تشبه الكتابة. أعد المحاولة لمشهد بصري نظيف.')
   }
 
   return {

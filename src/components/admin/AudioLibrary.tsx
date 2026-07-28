@@ -6,7 +6,7 @@ import supervisorSnapshot from '../../data/audio-supervisor.json'
 import { Pagination, usePagedList } from '../Pagination'
 import { categoryLabel } from '../../lib/content-taxonomy'
 
-type Filter = 'all' | 'ready' | 'working' | 'missing'
+type Filter = 'all' | 'ready' | 'dialogue' | 'working' | 'missing'
 type PlayerState = { slug: string; voice: ArticleAudioMode } | null
 
 type Props = {
@@ -159,6 +159,7 @@ export function AudioLibrary({ articles, onChanged }: Props) {
       const matchesQuery = !q || normalized(`${article.title} ${article.cat || ''} ${article.slug}`).includes(q)
       if (!matchesQuery) return false
       if (filter === 'ready') return state.ready
+      if (filter === 'dialogue') return voiceState(article, 'dialogue').available
       if (filter === 'working') return state.working
       if (filter === 'missing') return state.missing
       return true
@@ -395,6 +396,7 @@ export function AudioLibrary({ articles, onChanged }: Props) {
           {([
             ['all', `الكل ${allArticles.length}`],
             ['ready', `لديه صوت ${totals.ready}`],
+            ['dialogue', `الحوار ${totals.voices.dialogue}`],
             ['working', `قيد التنفيذ ${totals.working}`],
             ['missing', `بلا أي صوت ${totals.missing}`],
           ] as [Filter, string][]).map(([key, label]) => (

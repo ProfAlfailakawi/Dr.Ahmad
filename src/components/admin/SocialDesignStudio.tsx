@@ -1298,7 +1298,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   }
 
   const requestGeneratedStudioImageWithBackoff = async (
-    options: Parameters<typeof requestGeneratedStudioImage>[0],
+    options: NonNullable<Parameters<typeof requestGeneratedStudioImage>[0]> = {},
     maxAttempts = 2,
   ): Promise<GeneratedStudioImage> => {
     let lastError: unknown = null

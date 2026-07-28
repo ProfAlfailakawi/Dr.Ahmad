@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { createServer } from 'node:http'
-import { mkdirSync, existsSync, rmSync } from 'node:fs'
+import { mkdirSync, existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import process from 'node:process'
 import qrcode from 'qrcode'
@@ -33,6 +33,25 @@ if (config.secret.length < 24) {
 }
 
 mkdirSync(config.sessionDir, { recursive: true, mode: 0o700 })
+const deliveredCommandsPath = join(config.sessionDir, 'delivered-command-ids.json')
+const deliveredCommandIds = new Set((() => {
+  try {
+    const value = JSON.parse(readFileSync(deliveredCommandsPath, 'utf8'))
+    return Array.isArray(value) ? value.filter((id) => typeof id === 'string').slice(-500) : []
+  } catch {
+    return []
+  }
+})())
+
+function rememberDeliveredCommand(id) {
+  deliveredCommandIds.add(String(id))
+  const recent = [...deliveredCommandIds].slice(-500)
+  deliveredCommandIds.clear()
+  recent.forEach((value) => deliveredCommandIds.add(value))
+  const temp = `${deliveredCommandsPath}.tmp-${process.pid}`
+  writeFileSync(temp, `${JSON.stringify(recent)}\n`, { mode: 0o600 })
+  renameSync(temp, deliveredCommandsPath)
+}
 
 const runtime = {
   status: 'starting',
@@ -260,15 +279,11 @@ async function ensureBridgeFunctions() {
 async function resolveSendJid(rawJid) {
   const jid = String(rawJid || '').trim()
   if (!isIndividualJid(jid)) throw new Error('invalid-individual-jid')
-  if (jid.endsWith('@lid')) return jid
-  const digits = jid.split('@', 1)[0].replace(/\D/g, '')
-  if (!digits) return jid
-  try {
-    const registered = await client.getNumberId(digits)
-    return String(registered?._serialized || jid)
-  } catch {
-    return jid
-  }
+  // Do not translate a known @c.us chat through getNumberId(). Current
+  // WhatsApp Web may return its private @lid alias; sending to that alias can
+  // resolve locally without reaching the phone. Incoming @lid chats already
+  // carry the correct live address and are kept as-is.
+  return jid
 }
 
 async function sendTextWithRecovery(rawJid, rawText) {
@@ -457,6 +472,11 @@ async function pollCommands() {
 async function executeCommand(command) {
   if (!command?.id || !command.type) return
   try {
+    if (deliveredCommandIds.has(String(command.id)) && ['send-message', 'send-self-message'].includes(command.type)) {
+      await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 2 })
+      log('info', 'duplicate_command_acknowledged_without_resend', { commandId: command.id, commandType: command.type })
+      return
+    }
     if (command.type === 'restart') {
       shuttingDown = true
       await safeEmit('status', transitionState('restarting', false, 'command_restart'))
@@ -475,6 +495,7 @@ async function executeCommand(command) {
       const text = String(command.payload?.text || '').trim()
       if (!jid || !text) throw new Error('invalid-send-message-command')
       await sendTextWithRecovery(jid, text)
+      rememberDeliveredCommand(command.id)
       await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 1 })
       log('info', 'command_message_sent', { jid, commandId: command.id })
     } else if (command.type === 'send-self-message') {
@@ -483,6 +504,7 @@ async function executeCommand(command) {
       if (!jid) throw new Error('self-chat-unavailable')
       if (!text) throw new Error('invalid-self-message-command')
       await sendTextWithRecovery(jid, text)
+      rememberDeliveredCommand(command.id)
       await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 1 })
       log('info', 'command_self_message_sent', { jid, commandId: command.id })
     } else {

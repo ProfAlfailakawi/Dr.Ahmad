@@ -52,6 +52,7 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
   const [notice, setNotice] = useState('')
   const [interval, setIntervalSeconds] = useState(45)
   const [confirmOnce, setConfirmOnce] = useState(false)
+  const [emergencyBusy, setEmergencyBusy] = useState(false)
 
   const say = (message: string) => { setNotice(message); onNotice?.(message) }
 
@@ -96,9 +97,9 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
       for (let attempt = 0; attempt < 12; attempt += 1) {
         await new Promise<void>((resolve) => window.setTimeout(resolve, 1_250))
         terminal = await request(`/admin/commands/${encodeURIComponent(result.messageId)}`) as { status?: string; error?: string | null }
-        if (terminal.status === 'completed' || terminal.status === 'failed') break
+        if (['completed', 'failed', 'cancelled'].includes(String(terminal.status || ''))) break
       }
-      if (terminal?.status === 'failed') throw new Error(terminal.error || 'رفض واتساب تسليم المعاينة')
+      if (terminal?.status === 'failed' || terminal?.status === 'cancelled') throw new Error(terminal.error || 'لم يسلّم واتساب المعاينة')
       say(terminal?.status === 'completed'
         ? '✓ سلّم جسر واتساب المعاينة فعليًا إلى محادثتك. اقرأها كما سيقرأها الناس.'
         : 'المعاينة ما زالت في طابور الجسر؛ لم أعرض نجاحًا وهميًا. حدّث الحالة بعد لحظات.')
@@ -129,6 +130,23 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
       say(`تعذّر الإرسال: ${error instanceof Error ? error.message : 'خطأ'}`)
       setConfirmOnce(false)
     } finally { setBusy('') }
+  }
+
+  const emergencyStop = async () => {
+    if (!window.confirm('سيُوقف هذا كل معاينة أو حملة واتساب ما زالت في الطابور. الرسائل التي سُلّمت بالفعل لا يمكن سحبها. هل تتابع؟')) return
+    setEmergencyBusy(true)
+    try {
+      const result = await request('/admin/emergency-stop', {
+        method: 'POST',
+        body: JSON.stringify({ confirm: true }),
+      }) as { commandsStopped?: number; campaignsStopped?: number }
+      say(`توقف الإرسال الآن: أُلغيت ${Number(result.commandsStopped || 0)} رسالة معلّقة وأُوقفت ${Number(result.campaignsStopped || 0)} حملة.`)
+      setConfirmOnce(false)
+    } catch (error) {
+      say(`تعذّر إيقاف الإرسال: ${error instanceof Error ? error.message : 'خطأ'}`)
+    } finally {
+      setEmergencyBusy(false)
+    }
   }
 
   const field = 'w-full rounded-xl border border-hair bg-canvas px-3 py-2.5 text-[.85rem] text-ink outline-none focus:border-accent'
@@ -217,6 +235,14 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
         {/* ٤ · أرسل */}
         <div className={step}>
           <p className="text-[.75rem] font-semibold text-accent">٤ · الإرسال الهادئ</p>
+          <button
+            type="button"
+            onClick={() => void emergencyStop()}
+            disabled={emergencyBusy}
+            className="mt-2 rounded-full border border-red-500/45 px-4 py-2 text-[.76rem] font-semibold text-red-700 transition-colors hover:border-red-600 hover:bg-red-50 disabled:opacity-45 dark:text-red-300 dark:hover:bg-red-950/20"
+          >
+            {emergencyBusy ? 'يوقف الآن…' : 'إيقاف أي إرسال معلّق الآن'}
+          </button>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <label className="text-[.78rem] text-soft">
               فاصل بين الرسائل:

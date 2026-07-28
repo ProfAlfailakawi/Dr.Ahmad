@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-28T06:41:47.977Z",
+  "updatedAt": "2026-07-28T15:39:39.635Z",
   "items": [
     {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
@@ -557,9 +557,9 @@
       "voice": "fahed",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 2,
+      "attempts": 3,
       "firstFailedAt": "2026-07-23T20:21:21.408Z",
-      "lastFailedAt": "2026-07-27T19:17:43.488Z",
+      "lastFailedAt": "2026-07-28T15:37:33.561Z",
       "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
     },
     {
@@ -577,9 +577,9 @@
       "voice": "fahed",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 2,
+      "attempts": 3,
       "firstFailedAt": "2026-07-23T20:22:13.472Z",
-      "lastFailedAt": "2026-07-27T19:34:12.570Z",
+      "lastFailedAt": "2026-07-28T15:39:39.635Z",
       "message": "بوابة الصوت رفضت القراءة: proxy=88/100، الحكم السمعي غير متاح"
     },
     {

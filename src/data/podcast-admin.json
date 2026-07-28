@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-28T15:29:18.611Z",
+  "generatedAt": "2026-07-28T15:41:05.714Z",
   "episodes": [
     {
       "slug": "a-generation-without-rootsarabic",
@@ -13,26 +13,29 @@
       "bytes": 3261379,
       "audioHash": "fc1ff7486df160c6",
       "hasTranscript": true,
-      "utterances": 38,
+      "utterances": 0,
       "quality": {
-        "score": 98,
+        "score": 50,
         "pass": false,
         "metrics": {
           "durationSeconds": 204,
           "bytes": 3261379,
-          "sttRatio": 97,
-          "importantRatio": 97,
-          "longSilences": 2,
-          "unexpectedLongSilences": 0,
-          "peakDb": -1.8,
-          "judgePass": true,
-          "humanLikeness": 0,
-          "humanProxy": 100
+          "sttRatio": null,
+          "importantRatio": null,
+          "longSilences": null,
+          "unexpectedLongSilences": null,
+          "peakDb": null,
+          "judgePass": false,
+          "humanLikeness": null,
+          "humanProxy": null
         },
-        "pronunciation": "مقبول",
+        "pronunciation": "ينتظر فحص النطق والمعنى",
         "pace": "مقبول",
-        "pauses": "مقبول",
+        "pauses": "يحتاج تقليل الوقفات",
         "issues": [
+          "لا يوجد تقرير جودة نهائي مجتاز للحلقة.",
+          "تطابق STT مع النص المقصود أقل من الحد الصارم.",
+          "توجد وقفات طويلة تتجاوز الحد المقبول.",
           "بوابة البشرية أقل من 95/100."
         ]
       }
@@ -49,26 +52,29 @@
       "bytes": 3256782,
       "audioHash": "8a9939c4e07cea98",
       "hasTranscript": true,
-      "utterances": 40,
+      "utterances": 0,
       "quality": {
-        "score": 98,
+        "score": 50,
         "pass": false,
         "metrics": {
           "durationSeconds": 204,
           "bytes": 3256782,
-          "sttRatio": 97,
-          "importantRatio": 96,
-          "longSilences": 4,
-          "unexpectedLongSilences": 0,
-          "peakDb": -1.8,
-          "judgePass": true,
-          "humanLikeness": 0,
-          "humanProxy": 100
+          "sttRatio": null,
+          "importantRatio": null,
+          "longSilences": null,
+          "unexpectedLongSilences": null,
+          "peakDb": null,
+          "judgePass": false,
+          "humanLikeness": null,
+          "humanProxy": null
         },
-        "pronunciation": "مقبول",
+        "pronunciation": "ينتظر فحص النطق والمعنى",
         "pace": "مقبول",
-        "pauses": "مقبول",
+        "pauses": "يحتاج تقليل الوقفات",
         "issues": [
+          "لا يوجد تقرير جودة نهائي مجتاز للحلقة.",
+          "تطابق STT مع النص المقصود أقل من الحد الصارم.",
+          "توجد وقفات طويلة تتجاوز الحد المقبول.",
           "بوابة البشرية أقل من 95/100."
         ]
       }
@@ -90,26 +96,29 @@
           "bytes": 3256782,
           "audioHash": "8a9939c4e07cea98",
           "hasTranscript": true,
-          "utterances": 40,
+          "utterances": 0,
           "quality": {
-            "score": 98,
+            "score": 50,
             "pass": false,
             "metrics": {
               "durationSeconds": 204,
               "bytes": 3256782,
-              "sttRatio": 97,
-              "importantRatio": 96,
-              "longSilences": 4,
-              "unexpectedLongSilences": 0,
-              "peakDb": -1.8,
-              "judgePass": true,
-              "humanLikeness": 0,
-              "humanProxy": 100
+              "sttRatio": null,
+              "importantRatio": null,
+              "longSilences": null,
+              "unexpectedLongSilences": null,
+              "peakDb": null,
+              "judgePass": false,
+              "humanLikeness": null,
+              "humanProxy": null
             },
-            "pronunciation": "مقبول",
+            "pronunciation": "ينتظر فحص النطق والمعنى",
             "pace": "مقبول",
-            "pauses": "مقبول",
+            "pauses": "يحتاج تقليل الوقفات",
             "issues": [
+              "لا يوجد تقرير جودة نهائي مجتاز للحلقة.",
+              "تطابق STT مع النص المقصود أقل من الحد الصارم.",
+              "توجد وقفات طويلة تتجاوز الحد المقبول.",
               "بوابة البشرية أقل من 95/100."
             ]
           }

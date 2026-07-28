@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-28T12:16:51.501Z",
+  "generatedAt": "2026-07-28T15:41:51.221Z",
   "state": "repairing",
   "articles": {
     "total": 143,
-    "complete": 0
+    "complete": 2
   },
   "readings": {
     "expected": 143,
@@ -13,11 +13,11 @@
   },
   "dialogues": {
     "expected": 143,
-    "ready": 0,
-    "missing": 143
+    "ready": 2,
+    "missing": 141
   },
   "queue": {
-    "total": 188,
+    "total": 186,
     "failed": 45,
     "next": {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
@@ -57,15 +57,6 @@
         "lastError": ""
       },
       {
-        "slug": "a-generation-without-rootsarabic",
-        "title": "جيلٌ بلا جذور",
-        "kind": "dialogue",
-        "voice": "dialogue",
-        "stage": "generate",
-        "attempts": 0,
-        "lastError": ""
-      },
-      {
         "slug": "a-new-kind-of-fatigue-in-old-expressionsarabic",
         "title": "تعبٌ جديد بعبارات قديمة",
         "kind": "dialogue",
@@ -86,15 +77,6 @@
       {
         "slug": "aggression-in-the-sky-and-steadfastness-withinarabic",
         "title": "العدوان في السماء… والثبات في الداخل",
-        "kind": "dialogue",
-        "voice": "dialogue",
-        "stage": "generate",
-        "attempts": 0,
-        "lastError": ""
-      },
-      {
-        "slug": "alternative-plans-for-distance-education",
-        "title": "الخطط البديلة للتعليم عن بعد",
         "kind": "dialogue",
         "voice": "dialogue",
         "stage": "generate",
@@ -136,10 +118,28 @@
         "stage": "generate",
         "attempts": 0,
         "lastError": ""
+      },
+      {
+        "slug": "competency-based-approach-to-the-trash",
+        "title": "منهج الكفايات.. بطريقه إلى المهملات كسابقيه",
+        "kind": "dialogue",
+        "voice": "dialogue",
+        "stage": "generate",
+        "attempts": 0,
+        "lastError": ""
+      },
+      {
+        "slug": "do-we-contain-or-raise-2",
+        "title": "هل نحتوي… أم نربّي؟",
+        "kind": "dialogue",
+        "voice": "dialogue",
+        "stage": "generate",
+        "attempts": 0,
+        "lastError": ""
       }
     ]
   },
-  "progressPercent": 34.3,
+  "progressPercent": 35,
   "items": [
     {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
@@ -225,11 +225,11 @@
       },
       "dialogue": {
         "eligible": true,
-        "ready": false,
+        "ready": true,
         "fileName": "a-generation-without-rootsarabic.dialogue.mp3",
         "failure": null
       },
-      "complete": false
+      "complete": true
     },
     {
       "slug": "a-new-kind-of-fatigue-in-old-expressionsarabic",
@@ -306,11 +306,11 @@
       },
       "dialogue": {
         "eligible": true,
-        "ready": false,
+        "ready": true,
         "fileName": "alternative-plans-for-distance-education.dialogue.mp3",
         "failure": null
       },
-      "complete": false
+      "complete": true
     },
     {
       "slug": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
@@ -1602,9 +1602,9 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 2,
+            "attempts": 3,
             "firstFailedAt": "2026-07-23T20:21:21.408Z",
-            "lastFailedAt": "2026-07-27T19:17:43.488Z",
+            "lastFailedAt": "2026-07-28T15:37:33.561Z",
             "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
           }
         }
@@ -1665,9 +1665,9 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 2,
+            "attempts": 3,
             "firstFailedAt": "2026-07-23T20:22:13.472Z",
-            "lastFailedAt": "2026-07-27T19:34:12.570Z",
+            "lastFailedAt": "2026-07-28T15:39:39.635Z",
             "message": "بوابة الصوت رفضت القراءة: proxy=88/100، الحكم السمعي غير متاح"
           }
         }
@@ -3274,5 +3274,5 @@
       "complete": false
     }
   ],
-  "fingerprint": "37b7bee063ea08b93703401205acb8ffa54af12f002c653eaea759b932f0496f"
+  "fingerprint": "14854c92179b33d808c8167a9031c48bae6dd46e2b7c3557daa3b0edf045e333"
 }

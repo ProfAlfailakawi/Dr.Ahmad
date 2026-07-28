@@ -45,6 +45,30 @@ function stripCanonicalRedirect(html) {
   return html.replace(/<script id="canonical-host-redirect">[\s\S]*?<\/script>/gi, '')
 }
 
+function stripBootLegacyRedirect(js, rel) {
+  if (rel !== 'dist/boot.js') return js
+
+  // public/boot.js is the one sanctioned place where legacy hosts must remain:
+  // they are inputs to the earliest possible redirect into the canonical host.
+  // Validate the redirect shape first, then remove only those literal host keys
+  // from the scan so any legacy hostname elsewhere in boot.js still fails.
+  const expected = [
+    "var canonicalHost = 'dr-alfailakawi.com';",
+    "'www.dr-alfailakawi.com': true",
+    "'dr-alfailakawi.web.app': true",
+    "'dr-alfailakawi.firebaseapp.com': true",
+    "window.location.replace('https://' + canonicalHost + window.location.pathname + window.location.search + window.location.hash);",
+  ]
+  for (const token of expected) {
+    expect(js.includes(token), `${rel}: كود التحويل المبكر للدومين ناقص أو تغيّر`)
+  }
+
+  return js
+    .replace("'www.dr-alfailakawi.com': true", "'__legacy_www__': true")
+    .replace("'dr-alfailakawi.web.app': true", "'__legacy_webapp__': true")
+    .replace("'dr-alfailakawi.firebaseapp.com': true", "'__legacy_firebaseapp__': true")
+}
+
 function isOfficialUrl(value) {
   try {
     const parsed = new URL(String(value))
@@ -122,6 +146,7 @@ function checkRepository() {
 
   const allowedLegacyFiles = new Set([
     'index.html',
+    'public/boot.js',
     'server.mjs',
     'scripts/verify-domain-migration.mjs',
     'scripts/verify-legacy-retirement.mjs',
@@ -201,6 +226,8 @@ function checkDist() {
       }
       content = stripCanonicalRedirect(content)
     }
+    content = stripBootLegacyRedirect(content, rel)
+    legacy.lastIndex = 0
     if (legacy.test(content)) fail(`${rel}: يحتوي أثراً قديماً خارج كود التحويل المبكر`)
     const thirdPartyVendorBundle = /^dist\/assets\/vendor-[^/]+\.js$/i.test(rel)
     if (!thirdPartyVendorBundle && unsafeHttp.test(content)) fail(`${rel}: يحتوي رابط HTTP قابل للتحميل وقد يسبب Mixed Content`)

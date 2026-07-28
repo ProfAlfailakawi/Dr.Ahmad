@@ -174,12 +174,14 @@ export default function Inbox() {
   const { articles, books, papers } = useCmsContent();
   const archiveDialogues = useMemo(() => buildArchiveDialogues(articles, books, papers), [articles, books, papers]);
   const [activeView, setActiveView] = useState<InboxView>("letters");
-  const inboxTabs: { id: InboxView; label: string }[] = [
+  const inboxTabs: Array<{ id: InboxView; label: string }> = [
     { id: "letters", label: "الرسائل" },
-    ...(archiveDialogues.length > 0 ? [{ id: "threads" as const, label: "خيوط الأرشيف" }] : []),
     { id: "echoes", label: publicTestimonials.length ? "ماذا قالوا" : "أصداء من المتون" },
     { id: "questions", label: "الأسئلة" },
   ];
+  if (archiveDialogues.length > 0) {
+    inboxTabs.splice(1, 0, { id: "threads", label: "خيوط الأرشيف" });
+  }
   useEffect(() => {
     if (activeView === "threads" && archiveDialogues.length === 0) setActiveView("letters");
   }, [activeView, archiveDialogues.length]);

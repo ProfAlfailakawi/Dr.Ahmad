@@ -3423,26 +3423,3 @@ body.selection-active .floating-actions {
   color: rgb(var(--c-soft) / .75);
 }
 
-/* نهاية تشبه آخر جدار في معرض: فكرة واحدة، بلا أزرار مكررة. */
-.quiet-ending { position: relative; overflow: hidden; }
-.quiet-ending::before {
-  content: '';
-  pointer-events: none;
-  position: absolute;
-  width: 24rem;
-  height: 24rem;
-  left: 50%;
-  top: 50%;
-  border: 1px solid rgb(var(--c-accent) / .055);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-}
-.quiet-ending-inner { position: relative; z-index: 1; }
-.quiet-ending-mark {
-  display: block;
-  width: 7px;
-  height: 7px;
-  margin: 0 auto 1rem;
-  border: 1px solid rgb(var(--c-accent) / .62);
-  transform: rotate(45deg);
-}

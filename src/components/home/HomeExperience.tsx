@@ -229,9 +229,9 @@ export function ClosingStation({ upcoming, aboutHeading, about }: { upcoming: Si
           <FadeUp><Label>الرؤية</Label><h2 className="font-display text-[clamp(1.8rem,4.2vw,2.8rem)] font-semibold leading-[1.35] text-ink">{aboutHeading.replace('\n', ' ')}</h2><p className="mt-5 text-[1rem] font-light leading-[1.95] text-soft">{about}</p><Link to="/cv" className="mt-6 inline-block font-semibold text-accent">السيرة الكاملة ←</Link></FadeUp>
           <FadeUp delay={.08}><Newsletter /></FadeUp>
         </div>
-        <div className="mt-10 grid gap-8 md:grid-cols-[1.1fr_.9fr]">
+        <div className="mt-10 grid gap-8">
           <FadeUp><div className="mb-5 flex items-end justify-between gap-4"><div><p className="text-[.76rem] font-semibold text-accent">اللقاءات القادمة</p><h2 className="mt-1 font-display text-[1.55rem] font-semibold text-ink">أين ألتقيك؟</h2></div><Link to="/upcoming" className="text-[.82rem] font-semibold text-accent">الجدول ←</Link></div>{upcoming.length ? <ul className="space-y-2.5">{upcoming.slice(0, 2).map((event) => <li key={`${event.iso}-${event.title}`} className="flex flex-wrap items-center gap-3 rounded-xl border border-hair px-4 py-3"><time className="text-[.76rem] font-semibold text-accent">{event.date}</time><span className="min-w-0 flex-1"><span className="block font-display text-[.95rem] font-medium text-ink">{event.title}</span><span className="block text-[.72rem] text-soft">{event.org} · {event.place}</span></span>{event.url && <a href={event.url} target="_blank" rel="noreferrer" className="text-[.76rem] font-semibold text-accent">التسجيل ←</a>}</li>)}</ul> : <div className="rounded-xl border border-hair bg-wash px-4 py-4 text-[.86rem] text-soft">لا لقاءات معلنة حالياً. <Link to="/contact#booking-form" className="font-semibold text-accent">احجز موعداً ←</Link></div>}</FadeUp>
-          <FadeUp delay={.08}><div className="rounded-2xl border border-hair bg-wash p-6"><p className="text-[.75rem] font-semibold text-accent">الخاتمة الهادئة</p><p className="mt-3 font-display text-[1.25rem] font-semibold leading-[1.75] text-ink">هذا الموقع لا يعرض أرشيفاً فقط؛ إنه يفتح طريقاً إلى الفكرة.</p></div></FadeUp>
+
         </div>
       </div>
     </section>

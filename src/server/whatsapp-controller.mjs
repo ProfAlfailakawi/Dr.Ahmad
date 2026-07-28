@@ -730,7 +730,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     }
 
     const jid = bounded(body.jid, 180)
-    if (!jid || !/@(?:c|s)\.us$|@s\.whatsapp\.net$/.test(jid)) {
+    if (!jid || !/@(?:c\.us|lid|s\.us|s\.whatsapp\.net)$/.test(jid)) {
       sendJson(res, 400, { error: 'Invalid conversation id' })
       return
     }
@@ -1370,6 +1370,24 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       }
       const command = await enqueueCommand(db, 'send-self-message', { text })
       sendJson(res, 200, { ok: true, queued: true, messageId: command.id })
+      return
+    }
+    const commandStatus = /^\/commands\/([^/]+)$/.exec(path)
+    if (commandStatus && method === 'GET') {
+      const id = bounded(decodeURIComponent(commandStatus[1]), 80)
+      const snapshot = await db.collection(COLLECTIONS.commands).doc(id).get()
+      if (!snapshot.exists) {
+        sendJson(res, 404, { error: 'أمر الإرسال غير موجود.' })
+        return
+      }
+      const command = snapshot.data() || {}
+      sendJson(res, 200, {
+        id,
+        type: bounded(command.type, 80),
+        status: bounded(command.status, 40) || 'pending',
+        error: bounded(command.error, 300) || null,
+        updatedAt: bounded(command.updatedAt, 80) || null,
+      })
       return
     }
 

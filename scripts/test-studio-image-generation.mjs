@@ -82,12 +82,14 @@ assert.notEqual(prompt, differentPrompt, 'Fresh regeneration must alter the art 
 const previousAccount = process.env.CLOUDFLARE_ACCOUNT_ID
 const previousToken = process.env.CLOUDFLARE_API_TOKEN
 const previousModel = process.env.CLOUDFLARE_IMAGE_MODEL
+const previousDailyModel = process.env.CLOUDFLARE_IMAGE_MODEL_DAILY
 const previousVisionRequirement = process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC
 const previousCandidateAttempts = process.env.STUDIO_IMAGE_CANDIDATE_ATTEMPTS
 const previousTransportAttempts = process.env.CLOUDFLARE_IMAGE_TRANSPORT_ATTEMPTS
 process.env.CLOUDFLARE_ACCOUNT_ID = '0123456789abcdef0123456789abcdef'
 process.env.CLOUDFLARE_API_TOKEN = 'self-test-token-not-real'
 process.env.CLOUDFLARE_IMAGE_MODEL = '@cf/black-forest-labs/flux-2-klein-4b'
+process.env.CLOUDFLARE_IMAGE_MODEL_DAILY = '@cf/black-forest-labs/flux-2-klein-4b'
 process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC = 'false'
 process.env.STUDIO_IMAGE_CANDIDATE_ATTEMPTS = '1'
 process.env.CLOUDFLARE_IMAGE_TRANSPORT_ATTEMPTS = '1'
@@ -126,6 +128,7 @@ try {
   assert.equal(result.imageMime, 'image/jpeg')
   assert.equal(result.imageBytes, fakeJpegBytes.length)
   assert.equal(result.model, '@cf/black-forest-labs/flux-2-klein-4b')
+  assert.equal(result.generationMode, 'daily')
   assert.equal(result.nativeAspect, true)
   assert.equal(result.targetWidth, 1080)
   assert.equal(result.targetHeight, 1350)
@@ -137,7 +140,7 @@ try {
   assert.equal(result.generationAttempts, 1)
 
   process.env.CLOUDFLARE_IMAGE_MODEL = '@cf/leonardo/phoenix-1.0'
-  const phoenixResult = await generateCloudflareStudioImage({ ...input, regenerationId: 'phoenix-native-shape' }, async (url, options) => {
+  const phoenixResult = await generateCloudflareStudioImage({ ...input, regenerationId: 'phoenix-native-shape', generationMode: 'masterpiece' }, async (url, options) => {
     if (!String(url).includes('/leonardo/phoenix-1.0')) {
       return new Response(JSON.stringify({ success: false }), { status: 503, headers: { 'content-type': 'application/json' } })
     }
@@ -151,6 +154,7 @@ try {
     return new Response(fakeJpegBytes, { status: 200, headers: { 'content-type': 'image/jpeg' } })
   })
   assert.equal(phoenixResult.model, '@cf/leonardo/phoenix-1.0')
+  assert.equal(phoenixResult.generationMode, 'masterpiece')
   assert.equal(phoenixResult.nativeAspect, true)
   assert.match(phoenixResult.sourceUrl, /phoenix-1\.0/)
   assert.match(phoenixResult.license, /Leonardo/)
@@ -208,7 +212,7 @@ try {
   let imageCalls = 0
   let visionCalls = 0
   let judgeCalls = 0
-  const visionGatedResult = await generateCloudflareStudioImage({ ...input, regenerationId: 'vision-gate-rescue' }, async (url, options) => {
+  const visionGatedResult = await generateCloudflareStudioImage({ ...input, regenerationId: 'vision-gate-rescue', generationMode: 'masterpiece' }, async (url, options) => {
     if (String(url).includes('/black-forest-labs/')) {
       imageCalls += 1
       return new Response(JSON.stringify({ result: { image: fakeImage } }), {
@@ -273,6 +277,8 @@ try {
   else process.env.CLOUDFLARE_API_TOKEN = previousToken
   if (previousModel == null) delete process.env.CLOUDFLARE_IMAGE_MODEL
   else process.env.CLOUDFLARE_IMAGE_MODEL = previousModel
+  if (previousDailyModel == null) delete process.env.CLOUDFLARE_IMAGE_MODEL_DAILY
+  else process.env.CLOUDFLARE_IMAGE_MODEL_DAILY = previousDailyModel
   if (previousVisionRequirement == null) delete process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC
   else process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC = previousVisionRequirement
   if (previousCandidateAttempts == null) delete process.env.STUDIO_IMAGE_CANDIDATE_ATTEMPTS

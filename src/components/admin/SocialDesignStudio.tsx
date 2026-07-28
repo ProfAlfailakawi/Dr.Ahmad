@@ -703,6 +703,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [generatedVisualWorld, setGeneratedVisualWorld] = useState('')
   const [generatedRelevanceScore, setGeneratedRelevanceScore] = useState<number | null>(null)
   const [generatedRelevanceReason, setGeneratedRelevanceReason] = useState('')
+  const [generationMode, setGenerationMode] = useState<'daily' | 'masterpiece'>(() => {
+    try { return localStorage.getItem('dr-ahmad-image-generation-mode') === 'masterpiece' ? 'masterpiece' : 'daily' } catch { return 'daily' }
+  })
   const generationSerialRef = useRef(0)
   const [qualityThreshold, setQualityThreshold] = useState(() => Number(localStorage.getItem(QUALITY_THRESHOLD_KEY) || 82))
   /* البصمة البصرية: لوحةٌ مستخرجةٌ من صورةٍ محلية تكسو كل الاتجاهات الحالية
@@ -835,7 +838,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     if (/firebase_unavailable/i.test(message)) return 'تعذّر الوصول إلى جلسة Firebase، لذلك لم يصل طلب التوليد إلى الخادم.'
     if (/generator_backend_revision_missing|route_missing|HTTP 404|Not Found/i.test(message)) return 'خدمة dr-api المنشورة لا تتضمن مسار التوليد الحالي. حدّث الخدمة ثم أعد المحاولة.'
     if (/not configured|account is not configured/i.test(message)) return 'مسار dr-api يعمل، لكن بيانات Cloudflare Workers AI غير مربوطة في بيئة Cloud Run. لم أستبدل الصورة بصورة جاهزة كي يبقى الفرق واضحًا.'
-    if (/daily free allocation exhausted|10[,.]?000 neurons|free allocation/i.test(message)) return 'انتهت الحصة المجانية اليومية من Cloudflare بعد اختبارات اليوم. تعود تلقائيًا عند ٣:٠٠ صباحًا بتوقيت الكويت (00:00 UTC)، ولا توجد فاتورة أو صورة جاهزة استُبدلت بالصورة الأصلية.'
+    if (/daily free allocation exhausted|10[,.]?000 neurons|free allocation/i.test(message)) return 'لا يضع الاستوديو أي حد داخلي. الذي انتهى هو رصيد Cloudflare المجاني الخارجي (10,000 Neurons يوميًا)، ويعود ٣:٠٠ صباحًا بتوقيت الكويت. استخدم «اليومي الاقتصادي» افتراضيًا لأنه يوسّع عدد الصور عشرات المرات بلا فاتورة.'
     if (/timed out|abort|504/i.test(message)) return 'انتهت مهلة التوليد قبل وصول الصورة. سيحاول الاستوديو بالمسار المحلي الاحتياطي.'
     if (/busy|temporar|rate.?limit|resource exhausted|429|503/i.test(message)) return 'خدمة التوليد مزدحمة مؤقتًا. حاول الاستوديو تلقائيًا بتأخير متدرج من دون استبدال الصورة بصورة جاهزة؛ أعد التوليد لاحقًا إذا استمر ضغط الخدمة.'
     if (/analysis_failed/i.test(message)) return 'وصلت الصورة المولدة، لكن الجهاز لم يتمكن من فتحها داخل المحرر. سيعيد النظام فكها بمسار آمن في المحاولة التالية.'
@@ -1229,6 +1232,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         recentVisualWorlds: options.recentVisualWorlds || loadVisualWorldHistory(),
         regenerationId: options.regenerationId,
         variation: options.variation,
+        generationMode,
       })
       let response: Response | null = null
       let lastRouteError = ''
@@ -2688,6 +2692,36 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                           )
                         })}
                       </div>
+                    </div>
+                  )}
+                  {visualMode === 'generate' && (
+                    <div className="mt-3 grid gap-2 rounded-[1.25rem] border border-hair bg-canvas p-3 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        aria-pressed={generationMode === 'daily'}
+                        onClick={() => {
+                          setGenerationMode('daily')
+                          try { localStorage.setItem('dr-ahmad-image-generation-mode', 'daily') } catch { /* noop */ }
+                          setNotice('الوضع اليومي لا يضع حدًا داخليًا ويستخدم FLUX.2 الاقتصادي لتكبير الحصة المجانية عشرات المرات.')
+                        }}
+                        className={`rounded-xl border px-4 py-3 text-right transition ${generationMode === 'daily' ? 'border-emerald-400 bg-emerald-50 text-emerald-900' : 'border-hair bg-paper text-ink'}`}
+                      >
+                        <strong className="block text-[.76rem]">اليومي الاقتصادي · الافتراضي</strong>
+                        <span className="mt-1 block text-[.61rem] leading-relaxed opacity-75">FLUX.2 سريع وقليل الاستهلاك · بلا عدّاد داخل الموقع.</span>
+                      </button>
+                      <button
+                        type="button"
+                        aria-pressed={generationMode === 'masterpiece'}
+                        onClick={() => {
+                          setGenerationMode('masterpiece')
+                          try { localStorage.setItem('dr-ahmad-image-generation-mode', 'masterpiece') } catch { /* noop */ }
+                          setNotice('الدقة القصوى تستخدم Phoenix وفاحصًا سحابيًا إضافيًا؛ خصصها للنسخة النهائية لأنها تستهلك من رصيد Cloudflare أكثر.')
+                        }}
+                        className={`rounded-xl border px-4 py-3 text-right transition ${generationMode === 'masterpiece' ? 'border-violet-400 bg-violet-50 text-violet-900' : 'border-hair bg-paper text-ink'}`}
+                      >
+                        <strong className="block text-[.76rem]">الدقة القصوى · للنهائي</strong>
+                        <span className="mt-1 block text-[.61rem] leading-relaxed opacity-75">Phoenix + فحص دلالي سحابي · استهلاك أعلى للحصة الخارجية.</span>
+                      </button>
                     </div>
                   )}
                 </div>

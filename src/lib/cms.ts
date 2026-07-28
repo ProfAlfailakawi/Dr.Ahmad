@@ -186,10 +186,9 @@ function audioVoices(value: unknown): ArticleAudio | undefined {
   if (!isObject(value)) return undefined
   const valid = (entry: unknown): AudioValue | undefined =>
     typeof entry === 'boolean' || typeof entry === 'string' ? entry : undefined
-  // نحتفظ بنورة في النوع للتوافق مع السجلات القديمة فقط، لكن لا نُدخلها إلى
-  // حالة المقال الفعلية. صوت نورة معتمد في البودكاست الحواري وحده.
-  const result = { fahed: valid(value.fahed), dialogue: valid(value.dialogue) }
-  return result.fahed || result.dialogue ? result : undefined
+  // نعرض مكتبة نورة الموجودة فعلياً، بينما يظل توليد القراءات الجديدة لفهد.
+  const result = { fahed: valid(value.fahed), noura: valid(value.noura), dialogue: valid(value.dialogue) }
+  return result.fahed || result.noura || result.dialogue ? result : undefined
 }
 
 function audioControlValue(value: unknown): ArticleAudioControl | undefined {

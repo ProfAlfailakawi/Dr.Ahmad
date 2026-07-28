@@ -498,13 +498,13 @@ async function hasDialogueAudio(slug: string, disabled = false) {
 }
 
 export function Listen({ slug, title, text, audio, audioControl, compact = false }: { slug: string; title: string; text: string; audio?: ArticleAudio; audioControl?: ArticleAudioControl; compact?: boolean }) {
-  // قراءة المقال المعتمدة هي فهد فقط. تبقى نورة داخل الحلقة الحوارية ولا تظهر
-  // كقراءة مستقلة حتى لو احتوى سجل قديم على ملف noura.
+  // التوليد الجديد للقراءات معتمد على فهد، لكن مكتبة نورة الحالية تبقى ظاهرة
+  // للزائر ما دام ملفها موثقاً، إلى أن يُستكمل المتبقي لاحقاً.
   // مقالات لوحة التحكم تمرر audio من وثيقتها (يولّده سكربت الصوت الليلي)
   const entry = (audioManifest as Record<string, boolean | ArticleAudio>)[slug]
   const resolvedVoices: ArticleAudio = { ...(audio ?? (entry === true ? { fahed: true } : entry || {})) }
   if (audioControl?.fahedDisabled ?? audioControl?.readingDisabled ?? false) delete resolvedVoices.fahed
-  delete resolvedVoices.noura
+  if (audioControl?.nouraDisabled) delete resolvedVoices.noura
   if (audioControl?.dialogueDisabled) delete resolvedVoices.dialogue
   const voices = resolvedVoices
   // الحلقة الحوارية (فهد ونورة يتحاوران) تنضم كخيار ثالث فور توفر ملفها —
@@ -526,6 +526,7 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
 
   const sources = [
     ...(voices.fahed ? [{ key: 'fahed', label: 'قراءة المقال', avatar: 'man' as const, src: versionedAudioUrl(typeof voices.fahed === 'string' ? voices.fahed : `/audio/${slug}.mp3`) }] : []),
+    ...(voices.noura ? [{ key: 'noura', label: 'قراءة نورة', avatar: 'woman' as const, src: versionedAudioUrl(typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3`) }] : []),
     ...(dialogueOk ? [{ key: 'dialogue', label: 'الحلقة الحوارية', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`) }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)

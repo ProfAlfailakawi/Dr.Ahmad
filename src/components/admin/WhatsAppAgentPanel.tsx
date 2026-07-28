@@ -291,7 +291,7 @@ export function WhatsAppAgentPanel() {
     setReturning(true)
     try {
       const out = await request<{ returned: number }>('/admin/bot-return-all', { method: 'POST' })
-      setNotice(out.returned ? `✓ أصبح الإيقاظ متاحًا في ${out.returned} محادثة. لن يبدأ الرد إلا بعد جملة الإيقاظ.` : 'لا توجد محادثة داخل فترة الحماية الآن.')
+      setNotice(out.returned ? `✓ عاد البوت الآن في ${out.returned} محادثة.` : 'لا توجد محادثة داخل فترة الحماية الآن.')
       await loadSilence()
     } catch {
       setNotice('تعذّر إرجاع البوت — تأكّد أن الجسر يعمل على السيرفر المخصص.')
@@ -345,12 +345,12 @@ export function WhatsAppAgentPanel() {
 
   const manualTakeover = async () => {
     if (!manualJid.trim()) return setNotice('اكتب JID المحادثة من واتساب، مثال: 965XXXXXXXX@s.whatsapp.net')
-    try { await request('/admin/manual-takeover', { method: 'POST', body: JSON.stringify({ jid: manualJid, minutes: 30 }) }); setNotice('تم استلام المحادثة يدويًا. توقف البوت فورًا، وبعد فترة الحماية لن يعود إلا بجملة الإيقاظ.'); await refresh() } catch { setNotice('تعذّر تفعيل الاستلام اليدوي.') }
+    try { await request('/admin/manual-takeover', { method: 'POST', body: JSON.stringify({ jid: manualJid, minutes: 30 }) }); setNotice('تم استلام المحادثة يدويًا. توقف البوت فيها فورًا وسيعود تلقائيًا بعد فترة الحماية.'); await refresh() } catch { setNotice('تعذّر تفعيل الاستلام اليدوي.') }
   }
 
   const returnBot = async () => {
     if (!manualJid.trim()) return setNotice('اكتب JID المحادثة أولًا.')
-    try { await request('/admin/bot-return', { method: 'POST', body: JSON.stringify({ jid: manualJid }) }); setNotice('أصبح الإيقاظ متاحًا لهذه المحادثة. لن يرد البوت حتى تُكتب جملة الإيقاظ.'); await refresh() } catch { setNotice('تعذّر إتاحة الإيقاظ لهذه المحادثة.') }
+    try { await request('/admin/bot-return', { method: 'POST', body: JSON.stringify({ jid: manualJid }) }); setNotice('عاد البوت لهذه المحادثة الآن.'); await refresh() } catch { setNotice('تعذّر إعادة البوت لهذه المحادثة.') }
   }
 
   const editRule = (rule: ReplyRule) => setRuleForm({ ...rule })
@@ -727,24 +727,34 @@ export function WhatsAppAgentPanel() {
               onClick={() => void returnBotNow()}
               disabled={returning || !status.bridgeOnline}
               className={silence.silenced > 0 ? primary : secondary}
-              title="ينهي فترة الحماية ويجعل جملة الإيقاظ متاحة فوراً"
+              title="ينهي فترة الحماية ويعيد الرد الآلي فورًا"
             >
-              {returning ? 'يتيح الإيقاظ…' : silence.silenced > 0 ? `اسمح بالإيقاظ الآن (${silence.silenced})` : 'اسمح بالإيقاظ الآن'}
+              {returning ? 'يعيد البوت…' : silence.silenced > 0 ? `أعد البوت الآن (${silence.silenced})` : 'أعد البوت الآن'}
             </button>
           </div>
           {silence.silenced > 0 && (
             <p className="mt-2 text-[.76rem] leading-relaxed text-accent">
               البوت صامتٌ الآن في {silence.silenced === 1 ? 'محادثة واحدة' : `${silence.silenced} محادثات`}
               {silence.until ? ` حتى ${new Date(silence.until).toLocaleTimeString('ar-KW', { hour: '2-digit', minute: '2-digit' })}` : ''} —
-              لأنك رددتَ فيها بيدك. بعد انتهاء الحماية لن يعود تلقائيًا؛ يلزم أن يكتب المرسل جملة الإيقاظ. ويمكنك إتاحة الإيقاظ الآن من الزر.
+              لأنك رددتَ فيها بيدك. يمكنك إعادته الآن من الزر، وإلا فسيعود تلقائيًا بعد انتهاء فترة الحماية.
             </p>
           )}
         </div>
         <div className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-soft">
-          الرد الآلي يعمل في المحادثات الفردية فقط: صامت قبل جملة الإيقاظ، وبعدها يتفاعل من فهرس الموقع بلا تأليف.
+          الرد الآلي يعمل تلقائيًا في المحادثات الفردية فقط، ويجيب من فهرس الموقع والقواعد المعتمدة بلا تأليف.
           القوائم ودفتر الأرقام والبث اليدوي مستقلة تمامًا: لا تُرسل شيئًا إلا بأمرك، وبعد معاينة على رقمك وتأكيدين صريحين وفاصل هادئ بين الرسائل.
-          تدخلك اليدوي يوقف الرد الآلي فورًا؛ وبعد فترة الحماية لا يعود إلا بجملة الإيقاظ من جديد.
+          تدخلك اليدوي يوقف الرد الآلي في المحادثة مؤقتًا، ثم يعيده النظام تلقائيًا بعد فترة الحماية.
         </div>
+        <details className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3">
+          <summary className="cursor-pointer list-none text-[.82rem] font-semibold text-ink">اشتريت هاتفًا جديدًا؟ طريقة النقل الآمنة</summary>
+          <ol className="mt-3 grid list-decimal gap-2 pr-5 text-[.76rem] leading-relaxed text-soft">
+            <li>انقل حساب واتساب إلى الهاتف الجديد بنفس الرقم، وأكمل استعادة المحادثات داخل تطبيق واتساب أولًا.</li>
+            <li>افتح في الهاتف الجديد: الإعدادات ← الأجهزة المرتبطة. إذا بقي «Google Chrome (macOS)» ظاهرًا فلا تفعل شيئًا؛ الجسر يستمر تلقائيًا.</li>
+            <li>إذا اختفى الجهاز فقط، افتح هذه اللوحة واضغط «إصلاح الاتصال تلقائيًا». لا تمسح الجلسة ولا تكرر QR.</li>
+            <li>إذا ظهر QR في اللوحة، امسحه مرة واحدة من الهاتف الجديد وانتظر حتى تصبح الحالة «جاهز».</li>
+            <li>استخدم «إعادة ربط من الصفر» فقط إذا كتبت اللوحة «فشل التوثيق»؛ فهذا الخيار يمسح الجلسة القديمة عمدًا.</li>
+          </ol>
+        </details>
         {status.last_error && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.8rem] text-soft">{status.last_error}</p>}
         {notice && <p role="status" className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{notice}</p>}
       </details>

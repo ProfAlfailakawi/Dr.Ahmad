@@ -179,8 +179,11 @@ export function SoundCaravanBoard({ articles }: { articles: Article[] }) {
 
   const detailRows = useMemo(() => {
     if (!detail) return []
-    if (detail.voice === 'all') return rows
-    return rows.filter((row) => detail.state === 'ready' ? row[detail.voice] : !row[detail.voice])
+    const voice = detail.voice
+    if (voice === 'all') return rows
+    // ثبّت النوع قبل الدخول إلى callback حتى لا يعود TypeScript ليوسّعه إلى 'all' | VoiceKey.
+    const voiceKey: VoiceKey = voice
+    return rows.filter((row) => detail.state === 'ready' ? row[voiceKey] : !row[voiceKey])
   }, [detail, rows])
 
   return (

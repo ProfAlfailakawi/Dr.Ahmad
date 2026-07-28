@@ -145,6 +145,7 @@ ok(audioLibrary.includes('نورة جاهزة') && audioLibrary.includes('فهد
 ok(audioLibrary.includes("filter === 'dialogue'") && audioLibrary.includes("['dialogue', `الحوار ${totals.voices.dialogue}`]"), 'مكتبة الصوت تملك فلتر حوار مستقلاً بعدده الحي')
 ok(soundCaravan.includes('صوت نورة') && soundCaravan.includes('صوت فهد') && soundCaravan.includes('الحوار') && soundCaravan.includes('بلا صوت نورة بعد'), 'قافلة الصوت تعرض نورة وفهد والحوار كلٌّ على حدة')
 ok(soundCaravan.includes('DetailPanel') && soundCaravan.includes('ArticlePreview') && soundCaravan.includes('data-caravan-number={row.n}') && soundCaravan.includes('data-caravan-open-article="true"') && soundCaravan.includes('اضغط الرقم لمعرفة المقال أولاً'), 'رقم قافلة الصوت يفتح بطاقة تعريف بالمقال أولاً، والانتقال للمقال يتم من زر واضح داخل البطاقة')
+ok(soundCaravan.includes('const voiceKey: VoiceKey = voice') && !soundCaravan.includes('row[detail.voice]'), 'تصفية قافلة الصوت تثبّت VoiceKey قبل callback حتى لا يفشل TypeScript عند اتحاد all | VoiceKey')
 ok(server.includes("const title = mode === 'dialogue' ? 'الحوار' : 'صوتا نورة وفهد'"), 'رسائل حالة الإدارة تذكر نورة وفهد صراحةً؛ الإخفاء محصور في صفحة المقال')
 const audioClearWorkflow = read('.github/workflows/admin-audio-clear.yml')
 ok(audioClearWorkflow.includes('reading) FILES=') && audioClearWorkflow.includes('.noura.mp3'), 'إدارة القراءة تتعامل مع ملفي فهد ونورة معاً فلا يبقى صوت نورة خارج المزامنة')

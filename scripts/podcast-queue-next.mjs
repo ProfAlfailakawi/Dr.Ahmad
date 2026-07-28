@@ -32,6 +32,17 @@ for (const productionDoc of snap.docs) {
     candidates.push(productionDoc)
     continue
   }
+  if (production.status === 'needs_review' && String(production.note || '').includes('الحالة ليست queued')) {
+    await productionDoc.ref.set({
+      status: 'queued',
+      note: 'صحح حارس الطابور مراجعةً كاذبة نتجت عن لقطة الحالة القديمة.',
+      recoveredAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true })
+    candidates.push(productionDoc)
+    console.error(`↻ ${productionDoc.id}: صُححت مراجعة الطابور الكاذبة`)
+    continue
+  }
   if (production.status !== 'generating') continue
   const startedAt = timestampMs(production.generationStartedAt) || timestampMs(production.updatedAt)
   if (startedAt && Date.now() - startedAt <= STALE_GENERATING_MS) continue
@@ -49,7 +60,10 @@ for (const productionDoc of candidates.slice(0, 8)) {
   const slug = productionDoc.id
   if (!/^[a-z0-9-]+$/.test(slug)) continue
   try {
-    const production = productionDoc.data() || {}
+    const storedProduction = productionDoc.data() || {}
+    const production = candidates.includes(productionDoc) && storedProduction.status !== 'queued'
+      ? { ...storedProduction, status: 'queued' }
+      : storedProduction
     const dialogueSnapshot = await db.doc(`podcast_dialogues/${slug}`).get()
     if (!dialogueSnapshot.exists) throw new Error('الحوار المرفوع غير موجود')
     const dialogue = dialogueSnapshot.data() || {}

@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "checkedAt": "2026-07-28T07:42:42.714Z",
+  "checkedAt": "2026-07-26T23:11:29.860Z",
   "status": "attention",
   "counts": {
     "articles": 143,
-    "missingAudio": 45,
+    "missingAudio": 87,
     "missingImages": 0,
     "brokenInternal": 0,
     "orphans": 0,
@@ -23,6 +23,27 @@
       "severity": "info",
       "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic-2",
       "title": "أبناءٌ يعرفون المطلوب… لكن من علّمهم المعنى؟",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
+      "title": "حين تصبح الجدية قناعاً للهروب",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "the-return-that-fails-to-fix-what-came-before-itarabic",
+      "title": "العودة التي لا تُصلِح ما قبلها",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "a-society-that-fears-the-different-arabic",
+      "title": "المجتمع الذي يخاف من المختلف",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -77,6 +98,20 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "we-graduated-with-a-degree-but-the-language-was-lost-2",
+      "title": "تخرَّجنا بشهادة… لكن ضاعت اللغة!",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2",
+      "title": "خرّيج «كورونا»… وحسابه في التعليم لم يُغلق بعد!",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
       "title": "الراحة تُدرّس… والفكر في إجازة دائمة!",
       "note": "لا يوجد صوت منشور بعد"
@@ -112,6 +147,27 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "the-media-is-a-vital-partner-in-the-educational-process",
+      "title": "الإعلام الشريك العضيد للعملية التعليمية",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "e-learning-culture-2",
+      "title": "ثقافة التعليم الإلكتروني",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "lets-work-towards-scientific-research",
+      "title": "لنعمل من أجل بحث علمي",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "e-learning-initiatives-and-solutions-2",
       "title": "مبادرات وحلول للتعليم الإلكتروني",
       "note": "لا يوجد صوت منشور بعد"
@@ -119,8 +175,29 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "alternative-plans-for-distance-education",
+      "title": "الخطط البديلة للتعليم عن بعد",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "eliminating-the-education-epidemic",
+      "title": "القضاء على وباء التعليم.. بالحزم والعزم",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "smartphone-child-a-creative-mind-or-a-child-being-driven",
       "title": "طفل الهواتف الذكية.. عقل خلاق أم طفل يساق؟!",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "lets-achieve-a-higher-level-of-quality-education",
+      "title": "لنصل إلى مستوى جودة تعليم عالٍ!",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -203,6 +280,13 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "qabas-201802-002",
+      "title": "المخدرات الرقمية… إدمان جديد… حقيقة أم وهم…",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "qabas-201712-001",
       "title": "مجلس علم… للشيخ جوجل",
       "note": "لا يوجد صوت منشور بعد"
@@ -219,6 +303,20 @@
       "severity": "info",
       "slug": "qabas-201712-003",
       "title": "هل وظيفتك مهددة بالانقراض؟",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201711-004",
+      "title": "أحدث صيحات الموضة التكنولوجية",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201711-001",
+      "title": "معوقات نقل التكنولوجيا…",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -245,8 +343,43 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "qabas-201709-007",
+      "title": "انهيار قيم … أم استنفاذ همم…",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201709-008",
+      "title": "وعي المواطن الخليجي … والحرب الافتراضية",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201709-009",
+      "title": "لا للإملاءات الخارجية… وتصعيد الخطاب السياسي",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "qabas-201709-002",
       "title": "أدخل إلى عالم التعليم الالكتروني من أبسط تطبيقات جوالك…",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201709-003",
+      "title": "حوار الحكمة… في وجه الحصار",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201709-004",
+      "title": "شبكات التواصل الاجتماعي تجمعنا… خط الدفاع",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -259,8 +392,43 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "qabas-201709-001",
+      "title": "السوشل ميديا… محك للأزمات",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201708-001",
+      "title": "السعادة قبل أن تسرقها التكنولوجيا",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201708-002",
+      "title": "طوفان قيم الواقع الافتراضي",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201708-003",
+      "title": "الأجهزة اللوحية تتصدر لائحة مسببي التوحد",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "qabas-201707-001",
       "title": "تقنية النظارات3D تغزو التعليم الجامعي",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201707-002",
+      "title": "العالم إلى أين… نظرة مستقبلية",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -280,8 +448,78 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "qabas-201706-001",
+      "title": "الواقع الافتراضي يميط اللثام عن الوجه الحقيقي للبشر",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201706-002",
+      "title": "هذه المرة نقف مع التلفاز…",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201706-003",
+      "title": "هل وضعت البشرية بيضها في سلة واحدة عندما رهنت التكنولوجيا بالكهرباء",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201706-004",
+      "title": "وداوني بالتي كانت هي الداء…",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201704-001",
+      "title": "الترجمة بين التكنولوجيا ومجالات الحياة …",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201704-002",
+      "title": "الذوق التكنولوجي يفسد الذوق الطبيعي…",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201704-003",
+      "title": "العصر السبراني حقيقة أم مجرد خيال…",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201704-004",
+      "title": "توظيف التقنيات التكنولوجية في الخطاب الديني…",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "qabas-201703-001",
       "title": "أما آن لنا أن نعيد توجيه التقدم التكنولوجي نحو الأولويات الحقيقة",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201703-002",
+      "title": "التكنولوجيا تسهل دس السم في الدسم",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201703-003",
+      "title": "تكنولوجيا عالمية تحتاج تشريعات عالمية",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -301,8 +539,22 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "qabas-201702-002",
+      "title": "إدمان الهاتف … أم غربة",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "qabas-201702-003",
       "title": "قصور التشريعات المحلية عن مواكبة التكنولوجيا",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201702-004",
+      "title": "هل التقدم التكنولوجي سيوفر لك الإحساس بالأمان",
       "note": "لا يوجد صوت منشور بعد"
     },
     {
@@ -322,8 +574,50 @@
     {
       "kind": "audio",
       "severity": "info",
+      "slug": "qabas-201612-003",
+      "title": "زخم المعلومات يفقد الدماغ صوابه",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201612-004",
+      "title": "توليد الثقافة –ما بين الأمس والحاضر",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201611-002",
+      "title": "سياسة الصانع تحدد ثقافة المنتج",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
       "slug": "qabas-201611-003",
       "title": "التناظر بين الواقع الحقيقي والواقع الافتراضي في الفيس بوك ٢",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201611-004",
+      "title": "التناظر بين الواقع الحقيقي والواقع الافتراضي في الفيس بوك",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201611-005",
+      "title": "أصدقاء العالم الافتراضي… نعمة أم نقمة",
+      "note": "لا يوجد صوت منشور بعد"
+    },
+    {
+      "kind": "audio",
+      "severity": "info",
+      "slug": "qabas-201611-001",
+      "title": "ثقافة تغزو التكنولوجيا أم تكنولوجيا تغزو الثقافة",
       "note": "لا يوجد صوت منشور بعد"
     }
   ],

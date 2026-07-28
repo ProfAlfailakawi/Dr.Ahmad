@@ -291,10 +291,10 @@ export function WhatsAppAgentPanel() {
     setReturning(true)
     try {
       const out = await request<{ returned: number }>('/admin/bot-return-all', { method: 'POST' })
-      setNotice(out.returned ? `✓ عاد البوت الآن في ${out.returned} محادثة.` : 'لا توجد محادثة داخل فترة الحماية الآن.')
+      setNotice(out.returned ? `✓ أصبح الإيقاظ متاحًا في ${out.returned} محادثة. لن يبدأ الرد إلا بعد جملة الإيقاظ.` : 'لا توجد محادثة مستلمة يدويًا الآن.')
       await loadSilence()
     } catch {
-      setNotice('تعذّر إرجاع البوت — تأكّد أن الجسر يعمل على السيرفر المخصص.')
+      setNotice('تعذّر إتاحة الإيقاظ — تأكّد أن الجسر يعمل على السيرفر المخصص.')
     } finally { setReturning(false) }
   }
 
@@ -345,12 +345,12 @@ export function WhatsAppAgentPanel() {
 
   const manualTakeover = async () => {
     if (!manualJid.trim()) return setNotice('اكتب JID المحادثة من واتساب، مثال: 965XXXXXXXX@s.whatsapp.net')
-    try { await request('/admin/manual-takeover', { method: 'POST', body: JSON.stringify({ jid: manualJid, minutes: 30 }) }); setNotice('تم استلام المحادثة يدويًا. توقف البوت فيها فورًا وسيعود تلقائيًا بعد فترة الحماية.'); await refresh() } catch { setNotice('تعذّر تفعيل الاستلام اليدوي.') }
+    try { await request('/admin/manual-takeover', { method: 'POST', body: JSON.stringify({ jid: manualJid }) }); setNotice('تم استلام المحادثة يدويًا. توقف البوت فورًا ولن يعود إلا بجملة الإيقاظ.'); await refresh() } catch { setNotice('تعذّر تفعيل الاستلام اليدوي.') }
   }
 
   const returnBot = async () => {
     if (!manualJid.trim()) return setNotice('اكتب JID المحادثة أولًا.')
-    try { await request('/admin/bot-return', { method: 'POST', body: JSON.stringify({ jid: manualJid }) }); setNotice('عاد البوت لهذه المحادثة الآن.'); await refresh() } catch { setNotice('تعذّر إعادة البوت لهذه المحادثة.') }
+    try { await request('/admin/bot-return', { method: 'POST', body: JSON.stringify({ jid: manualJid }) }); setNotice('أصبح الإيقاظ متاحًا لهذه المحادثة. لن يرد البوت حتى تُكتب جملة الإيقاظ.'); await refresh() } catch { setNotice('تعذّر إتاحة الإيقاظ لهذه المحادثة.') }
   }
 
   const editRule = (rule: ReplyRule) => setRuleForm({ ...rule })
@@ -727,16 +727,15 @@ export function WhatsAppAgentPanel() {
               onClick={() => void returnBotNow()}
               disabled={returning || !status.bridgeOnline}
               className={silence.silenced > 0 ? primary : secondary}
-              title="ينهي فترة الحماية ويعيد الرد الآلي فورًا"
+              title="ينهي الاستلام اليدوي؛ ولا يبدأ الرد إلا بجملة الإيقاظ"
             >
-              {returning ? 'يعيد البوت…' : silence.silenced > 0 ? `أعد البوت الآن (${silence.silenced})` : 'أعد البوت الآن'}
+              {returning ? 'يتيح الإيقاظ…' : silence.silenced > 0 ? `اسمح بالإيقاظ (${silence.silenced})` : 'اسمح بالإيقاظ'}
             </button>
           </div>
           {silence.silenced > 0 && (
             <p className="mt-2 text-[.76rem] leading-relaxed text-accent">
               البوت صامتٌ الآن في {silence.silenced === 1 ? 'محادثة واحدة' : `${silence.silenced} محادثات`}
-              {silence.until ? ` حتى ${new Date(silence.until).toLocaleTimeString('ar-KW', { hour: '2-digit', minute: '2-digit' })}` : ''} —
-              لأنك رددتَ فيها بيدك. يمكنك إعادته الآن من الزر، وإلا فسيعود تلقائيًا بعد انتهاء فترة الحماية.
+              لأنك رددتَ فيها بيدك. لن يعود تلقائيًا؛ زر «اسمح بالإيقاظ» ينهي الاستلام اليدوي فقط، وبعده يظل صامتًا حتى يكتب الشخص جملة الإيقاظ.
             </p>
           )}
         </div>

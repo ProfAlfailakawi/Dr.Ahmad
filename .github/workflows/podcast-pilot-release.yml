@@ -98,7 +98,9 @@ jobs:
           echo "HAS_RELEASE_WORK=true" >> "$GITHUB_ENV"
           echo "RELEASED_SLUGS=$REQUESTED" >> "$GITHUB_ENV"
           mkdir -p podcast-audits/source-locks
-          node scripts/fetch-manual-dialogues.mjs --slugs="$REQUESTED"
+          node scripts/fetch-manual-dialogues.mjs \
+            --slugs="$REQUESTED" \
+            --requeue="${{ inputs.regenerate }}"
           node scripts/verify-manual-dialogue-lock.mjs --phase=source --slugs="$REQUESTED"
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json

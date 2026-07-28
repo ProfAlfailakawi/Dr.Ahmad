@@ -1,5 +1,120 @@
 {
-  "generatedAt": null,
-  "episodes": [],
-  "playlists": []
+  "generatedAt": "2026-07-28T15:29:18.611Z",
+  "episodes": [
+    {
+      "slug": "a-generation-without-rootsarabic",
+      "title": "جيلٌ بلا جذور",
+      "category": "هوية",
+      "date": "19 ديسمبر 2025",
+      "iso": "2025-12-19",
+      "status": "under_review",
+      "listen": "https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev/a-generation-without-rootsarabic.dialogue.mp3",
+      "audio": "/audio/a-generation-without-rootsarabic.dialogue.mp3",
+      "bytes": 3261379,
+      "audioHash": "fc1ff7486df160c6",
+      "hasTranscript": true,
+      "utterances": 38,
+      "quality": {
+        "score": 98,
+        "pass": false,
+        "metrics": {
+          "durationSeconds": 204,
+          "bytes": 3261379,
+          "sttRatio": 97,
+          "importantRatio": 97,
+          "longSilences": 2,
+          "unexpectedLongSilences": 0,
+          "peakDb": -1.8,
+          "judgePass": true,
+          "humanLikeness": 0,
+          "humanProxy": 100
+        },
+        "pronunciation": "مقبول",
+        "pace": "مقبول",
+        "pauses": "مقبول",
+        "issues": [
+          "بوابة البشرية أقل من 95/100."
+        ]
+      }
+    },
+    {
+      "slug": "alternative-plans-for-distance-education",
+      "title": "الخطط البديلة للتعليم عن بعد",
+      "category": "التعليم",
+      "date": "24 مارس 2020",
+      "iso": "2020-03-24",
+      "status": "under_review",
+      "listen": "https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev/alternative-plans-for-distance-education.dialogue.mp3",
+      "audio": "/audio/alternative-plans-for-distance-education.dialogue.mp3",
+      "bytes": 3256782,
+      "audioHash": "8a9939c4e07cea98",
+      "hasTranscript": true,
+      "utterances": 40,
+      "quality": {
+        "score": 98,
+        "pass": false,
+        "metrics": {
+          "durationSeconds": 204,
+          "bytes": 3256782,
+          "sttRatio": 97,
+          "importantRatio": 96,
+          "longSilences": 4,
+          "unexpectedLongSilences": 0,
+          "peakDb": -1.8,
+          "judgePass": true,
+          "humanLikeness": 0,
+          "humanProxy": 100
+        },
+        "pronunciation": "مقبول",
+        "pace": "مقبول",
+        "pauses": "مقبول",
+        "issues": [
+          "بوابة البشرية أقل من 95/100."
+        ]
+      }
+    }
+  ],
+  "playlists": [
+    {
+      "title": "مستقبل المعلم",
+      "episodes": [
+        {
+          "slug": "alternative-plans-for-distance-education",
+          "title": "الخطط البديلة للتعليم عن بعد",
+          "category": "التعليم",
+          "date": "24 مارس 2020",
+          "iso": "2020-03-24",
+          "status": "under_review",
+          "listen": "https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev/alternative-plans-for-distance-education.dialogue.mp3",
+          "audio": "/audio/alternative-plans-for-distance-education.dialogue.mp3",
+          "bytes": 3256782,
+          "audioHash": "8a9939c4e07cea98",
+          "hasTranscript": true,
+          "utterances": 40,
+          "quality": {
+            "score": 98,
+            "pass": false,
+            "metrics": {
+              "durationSeconds": 204,
+              "bytes": 3256782,
+              "sttRatio": 97,
+              "importantRatio": 96,
+              "longSilences": 4,
+              "unexpectedLongSilences": 0,
+              "peakDb": -1.8,
+              "judgePass": true,
+              "humanLikeness": 0,
+              "humanProxy": 100
+            },
+            "pronunciation": "مقبول",
+            "pace": "مقبول",
+            "pauses": "مقبول",
+            "issues": [
+              "بوابة البشرية أقل من 95/100."
+            ]
+          }
+        }
+      ]
+    }
+  ]
 }

@@ -27,6 +27,19 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T17:09:26.956Z"
   },
+  "a-generation-without-rootsarabic.dialogue.json": {
+    "bytes": 6574,
+    "sha256": "6dd6218c94768cf60bc7165fa7c3b12c67250f5b6d0aa866e727be7ba43b7d5b",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-07-28T15:28:56.413Z"
+  },
+  "a-generation-without-rootsarabic.dialogue.mp3": {
+    "bytes": 3261379,
+    "sha256": "fc1ff7486df160c66eac516470d53e82ea39e410673070040a3658c0ca622a05",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-28T15:28:56.413Z",
+    "durationSeconds": 204
+  },
   "a-generation-without-rootsarabic.mp3": {
     "durationSeconds": 235,
     "bytes": 3369213,
@@ -94,6 +107,19 @@
     "acceptedAt": "2026-07-27T15:33:25.219Z",
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T17:09:28.388Z"
+  },
+  "alternative-plans-for-distance-education.dialogue.json": {
+    "bytes": 6844,
+    "sha256": "c1a4361987186730c20881b4b2a3820638f8a4378b1808d19505274931b4341d",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-07-28T15:28:56.466Z"
+  },
+  "alternative-plans-for-distance-education.dialogue.mp3": {
+    "bytes": 3256782,
+    "sha256": "8a9939c4e07cea989b3c7379abc91a010b0a58139cc71d27c62fb2e24e8c8cf2",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-28T15:28:56.466Z",
+    "durationSeconds": 204
   },
   "alternative-plans-for-distance-education.mp3": {
     "bytes": 2937461,
@@ -1258,6 +1284,12 @@
     "acceptedAt": "2026-07-27T18:52:49.976Z",
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T19:38:05.280Z"
+  },
+  "qabas-201709-001.mp3": {
+    "durationSeconds": 218,
+    "bytes": 3493764,
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-07-28T07:42:33.266Z"
   },
   "qabas-201709-003.mp3": {
     "bytes": 3375064,
@@ -2534,11 +2566,5 @@
     "bytes": 2973823,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:14:02.350Z"
-  },
-  "qabas-201709-001.mp3": {
-    "durationSeconds": 218,
-    "bytes": 3493764,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-07-28T07:42:33.266Z"
   }
 }

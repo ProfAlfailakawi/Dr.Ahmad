@@ -69,10 +69,14 @@ const previousAccount = process.env.CLOUDFLARE_ACCOUNT_ID
 const previousToken = process.env.CLOUDFLARE_API_TOKEN
 const previousModel = process.env.CLOUDFLARE_IMAGE_MODEL
 const previousVisionRequirement = process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC
+const previousCandidateAttempts = process.env.STUDIO_IMAGE_CANDIDATE_ATTEMPTS
+const previousTransportAttempts = process.env.CLOUDFLARE_IMAGE_TRANSPORT_ATTEMPTS
 process.env.CLOUDFLARE_ACCOUNT_ID = '0123456789abcdef0123456789abcdef'
 process.env.CLOUDFLARE_API_TOKEN = 'self-test-token-not-real'
 process.env.CLOUDFLARE_IMAGE_MODEL = '@cf/black-forest-labs/flux-2-klein-4b'
 process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC = 'false'
+process.env.STUDIO_IMAGE_CANDIDATE_ATTEMPTS = '1'
+process.env.CLOUDFLARE_IMAGE_TRANSPORT_ATTEMPTS = '1'
 
 try {
   const fakeJpegBytes = Buffer.concat([
@@ -144,6 +148,7 @@ try {
 
   let recoveryCalls = 0
   const recoverySeeds = []
+  process.env.CLOUDFLARE_IMAGE_TRANSPORT_ATTEMPTS = '2'
   const recoveredResult = await generateCloudflareStudioImage({ ...input, regenerationId: 'empty-payload-recovery' }, imageOnlyMock(async (_url, options) => {
     recoveryCalls += 1
     recoverySeeds.push(options.body.get('seed'))
@@ -162,8 +167,10 @@ try {
   assert.notEqual(recoverySeeds[0], recoverySeeds[1], 'The recovery attempt must use a fresh seed.')
   assert.match(recoveredResult.imageUrl, /^data:image\/jpeg;base64,/)
   assert.equal(recoveredResult.generationAttempts, 2)
+  process.env.CLOUDFLARE_IMAGE_TRANSPORT_ATTEMPTS = '1'
 
   process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC = 'true'
+  process.env.STUDIO_IMAGE_CANDIDATE_ATTEMPTS = '2'
   let imageCalls = 0
   let visionCalls = 0
   const visionGatedResult = await generateCloudflareStudioImage({ ...input, regenerationId: 'vision-gate-rescue' }, async (url, options) => {
@@ -214,4 +221,8 @@ try {
   else process.env.CLOUDFLARE_IMAGE_MODEL = previousModel
   if (previousVisionRequirement == null) delete process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC
   else process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC = previousVisionRequirement
+  if (previousCandidateAttempts == null) delete process.env.STUDIO_IMAGE_CANDIDATE_ATTEMPTS
+  else process.env.STUDIO_IMAGE_CANDIDATE_ATTEMPTS = previousCandidateAttempts
+  if (previousTransportAttempts == null) delete process.env.CLOUDFLARE_IMAGE_TRANSPORT_ATTEMPTS
+  else process.env.CLOUDFLARE_IMAGE_TRANSPORT_ATTEMPTS = previousTransportAttempts
 }

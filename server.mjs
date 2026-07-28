@@ -1872,10 +1872,11 @@ async function decodeCloudflareStudioImageResponse(response) {
 async function requestCloudflareImage({ accountId, apiToken, model, prompt, seed, width, height }, fetchImpl) {
   const steps = envNumber('CLOUDFLARE_IMAGE_STEPS', 8, 4, 8)
   const timeout = envNumber('CLOUDFLARE_IMAGE_TIMEOUT_MS', 45_000, 10_000, 55_000)
+  const maxAttempts = envNumber('CLOUDFLARE_IMAGE_TRANSPORT_ATTEMPTS', 1, 1, 2)
   const nativeAspectModel = /\/flux-2-(?:klein|dev)/i.test(model)
   let lastError = null
 
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     let response
     const attemptSeed = (Number(seed || 0) + attempt * 104_729) >>> 0
     try {
@@ -1904,7 +1905,7 @@ async function requestCloudflareImage({ accountId, apiToken, model, prompt, seed
     } catch (error) {
       if (error?.name === 'AbortError') lastError = new HttpError(504, 'Image generation timed out')
       else lastError = new HttpError(502, 'Image generation service unavailable')
-      if (attempt === 0) continue
+      if (attempt + 1 < maxAttempts) continue
       throw lastError
     }
 
@@ -1924,7 +1925,7 @@ async function requestCloudflareImage({ accountId, apiToken, model, prompt, seed
         )
       }
       lastError = new HttpError(502, detail ? `Image generation failed: ${detail}` : `Image generation failed with HTTP ${response.status}`)
-      if (attempt === 0 && response.status >= 500) continue
+      if (attempt + 1 < maxAttempts && response.status >= 500) continue
       throw lastError
     }
 
@@ -1943,7 +1944,7 @@ async function requestCloudflareImage({ accountId, apiToken, model, prompt, seed
       const recoverablePayload = error instanceof HttpError
         && error.status === 502
         && /no usable image|unreadable response/i.test(error.message)
-      if (attempt === 0 && recoverablePayload) continue
+      if (attempt + 1 < maxAttempts && recoverablePayload) continue
       throw error
     }
   }
@@ -1963,12 +1964,16 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
   const semanticBlueprint = await buildStudioSemanticBlueprint(input, accountId, apiToken, fetchImpl)
   const baseInput = { ...input, semanticBlueprint }
   const threshold = envNumber('STUDIO_IMAGE_RELEVANCE_THRESHOLD', 86, 74, 96)
+  /* Firebase Hosting ينهي أي rewrite ديناميكي عند نحو 60 ثانية. لذلك لا
+     نجمع محاولات FLUX المتسلسلة داخل HTTP واحد؛ الواجهة تعيد طلبًا مستقلًا
+     ببذرة ومشهد جديدين عندما يرفض الناقد المرشح الأول. */
+  const candidateAttempts = envNumber('STUDIO_IMAGE_CANDIDATE_ATTEMPTS', 1, 1, 2)
   const requireVisionCritic = !/^(?:0|false|no|off)$/i.test(String(process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC || 'true').trim())
   const candidates = []
   let rescueReason = ''
   let visionCriticUnavailable = false
 
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  for (let attempt = 0; attempt < candidateAttempts; attempt += 1) {
     const attemptInput = {
       ...baseInput,
       candidateIndex: Number(baseInput.candidateIndex || 0) + attempt,
@@ -2043,10 +2048,10 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
     })[0]
   if (!chosen) throw new HttpError(502, 'Image generation produced no candidate')
   if (chosen.visual?.valid === false) {
-    throw new HttpError(422, `تعذّر اعتماد الصورة بصريًا بعد ثلاث محاولات: ${(chosen.visual.reasons || []).join(', ') || 'المقاس أو الوضوح غير صالح'}`)
+    throw new HttpError(422, `تعذّر اعتماد الصورة بصريًا بعد فحص المرشح: ${(chosen.visual.reasons || []).join(', ') || 'المقاس أو الوضوح غير صالح'}`)
   }
   if (chosen.critic && (!chosen.critic.topicMatch || chosen.critic.score < threshold)) {
-    throw new HttpError(422, `تعذّر اعتماد الصورة دلاليًا بعد ثلاث محاولات: ${chosen.critic.reason || chosen.critic.missingAnchor || 'المشهد لا يعبّر عن العنوان المركب'}`)
+    throw new HttpError(422, `تعذّر اعتماد الصورة دلاليًا بعد فحص المرشح: ${chosen.critic.reason || chosen.critic.missingAnchor || 'المشهد لا يعبّر عن العنوان المركب'}`)
   }
 
   return {

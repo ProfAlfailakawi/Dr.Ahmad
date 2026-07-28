@@ -172,17 +172,27 @@ if (USE_AUDIO_META) {
     const slug = dialogue ? name.slice(0, -'.dialogue.mp3'.length) : noura ? name.slice(0, -'.noura.mp3'.length) : name.slice(0, -'.mp3'.length)
     const voice = dialogue ? 'dialogue' : noura ? 'noura' : 'fahed'
     if (dialogue) {
+      const transcriptMeta = meta[`${slug}.dialogue.json`]
       if (HAS_PODCAST_STATE) {
         const accepted = podcastState?.done?.[`${slug}:ar`]
         if (accepted?.status !== 'accepted_automated' || !info?.sha256 || info.sha256 !== accepted.audioHash) {
           continue // لا تظهر الحلقة في الموقع أو RSS حتى تصبح معتمدة وتطابق بصمتها
         }
-        const transcriptMeta = meta[`${slug}.dialogue.json`]
         if (!accepted.transcriptHash || !transcriptMeta?.sha256 || transcriptMeta.sha256 !== accepted.transcriptHash) {
           continue
         }
-      } else if (committedManifest?.[slug]?.dialogue !== true) {
-        continue // بلا سجلٍّ وبلا اعتمادٍ سابق في المانيفست: لا تظهر
+      } else {
+        /* رانر النشر لا يملك ملف .podcast-state لأنه خاص بالتوليد. كان سقوط
+           سطر الحوار من audio.json أو metadata يجعل الحوار المرفوع فعلياً إلى
+           R2 يختفي من الموقع واللوحة إلى الأبد. نحفظ الاعتماد السابق إن وجد،
+           أو نستعيد زوجاً تحققنا من وجوده على R2: MP3 كبير + transcript حاضر. */
+        const verifiedR2Pair = info?.validationStatus === 'verified-r2'
+          && Number(info?.bytes || 0) >= 200_000
+          && transcriptMeta?.validationStatus === 'verified-r2'
+          && Number(transcriptMeta?.bytes || 0) >= 100
+        if (committedManifest?.[slug]?.dialogue !== true && !verifiedR2Pair) {
+          continue
+        }
       }
     }
     if (!slug || !knownSlugs.has(slug)) {

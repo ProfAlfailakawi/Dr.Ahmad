@@ -431,7 +431,7 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                   className={`${input} min-h-[7rem] leading-relaxed`}
                   dir="auto"
                   value={bulk}
-                  placeholder={'أو ألصق هنا:\nأبو خالد, 99001122\nد. عبد الرزاق العلي - 99334455\nالأستاذة نورة  +965 9955 6677'}
+                  placeholder={'أو ألصق هنا:\nأبو خالد, 99001122\nد. عبد الرزاق العلي - 99334455\nالأستاذة سارة  +965 9955 6677'}
                   onChange={(e) => setBulk(e.target.value)}
                 />
                 <p className="text-[.72rem] leading-relaxed text-soft">

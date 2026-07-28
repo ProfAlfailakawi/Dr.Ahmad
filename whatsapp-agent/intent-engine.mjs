@@ -111,10 +111,11 @@ const patterns = [
   [INTENTS.LIST_SAVED, [/^(?:محفوظاتي|رفي|شنو حفظت|اعرض(?: لي)? المحفوظات|ورني رفي)$/, 0.97]],
   [INTENTS.REMOVE_SAVED, [/^(?:(?:ممكن|ابي)\s+)?(?:شيله|شيلها|احذفه|احذفها)\s+(?:من\s+)?(?:محفوظاتي|رفي)(?:\s+لو سمحت)?$/, 0.97]],
   [INTENTS.SUMMARY, [/(لخص|ملخص|نبذه|الخلاصه)/, 0.84]],
-  /* «فهد» و«نورة» و«حوار» و«كمّل» كلامٌ كويتيٌّ يوميّ وأسماءُ ناس — لا تكفي
-     وحدها أبداً، وإلا ردّ البوت على صديقٍ يسأل عن فهد. تطلب الآن طلباً صريحاً. */
+  /* الواجهة العامة لا تعرض أسماء الأصوات الداخلية: للمستخدم مساران فقط،
+     «قراءة المقال» و«الحوار». الأنماط القديمة تبقى مفهومة للتوافق، بلا أن
+     يقترحها البوت أو يعيد أسماءها في الرد. */
   [INTENTS.LISTEN_DIALOGUE, [/(استمع|شغل|سمعني|بصوت)\s*\S*\s*(الحوار|حوار)|^الحوار$/, 0.92]],
-  [INTENTS.LISTEN_FAHED, [/(?:اسمع|شغل|سمعني|اقراها لي|اقراه لي|صوت|بصوت|قراءه)\s*(?:لي\s*)?(?:فهد|الرجل|رجل|رجال)|صوت الرجل/, 0.95]],
+  [INTENTS.LISTEN_FAHED, [/(?:اسمع|شغل|سمعني|اقراها لي|اقراه لي|قراءه المقال|قراءة المقال|القراءه الصوتيه|القراءة الصوتية|اسمع المقال)(?:\s+لي)?$|(?:اسمع|شغل|سمعني|اقراها لي|اقراه لي|صوت|بصوت|قراءه)\s*(?:لي\s*)?(?:فهد|الرجل|رجل|رجال)|صوت الرجل/, 0.95]],
   [INTENTS.LISTEN_NOURA, [/(?:اسمع|شغل|سمعني|اقراها لي|اقراه لي|صوت|بصوت|قراءه)\s*(?:لي\s*)?(?:نوره|نورا|المراه|امراه)|صوت المراه/, 0.95]],
   [INTENTS.QUOTE_CARD, [/(بطاقه اقتباس|صوره اقتباس)/, 0.92]],
   [INTENTS.QUOTE, [/(اقتباس|جمله جميله|عطني اقتباس)/, 0.90]],
@@ -686,9 +687,15 @@ const audioLinks = (item) => {
   if (!item?.audio) return []
   const links = []
   const base = AUDIO_PUBLIC_BASE_URL
-  if (item.audio.fahed) links.push(`فهد: ${base}/${item.slug}.mp3`)
-  if (item.audio.noura) links.push(`نورة: ${base}/${item.slug}.noura.mp3`)
-  if (item.audio.dialogue) links.push(`الحوار: ${base}/${item.slug}.dialogue.mp3`)
+  const hasReading = Boolean(item.audio.fahed || item.audio.noura)
+  if (hasReading) {
+    /* القراءة الحديثة لها رابط بلا اسم داخلي. أما الملف الموروث فنعيد القارئ
+       إلى صفحة المقال حيث يشغله المشغل العام باسم «قراءة المقال»، فلا يظهر
+       اسم ملف الإنتاج القديم في رسالة واتساب. */
+    const readingUrl = item.audio.fahed && base ? `${base}/${item.slug}.mp3` : item.url
+    links.push(`قراءة المقال: ${readingUrl}`)
+  }
+  if (item.audio.dialogue) links.push(`الحوار: ${base ? `${base}/${item.slug}.dialogue.mp3` : item.url}`)
   return links
 }
 
@@ -981,9 +988,9 @@ ${item.url}`,
 }
 
 function listenReply(item, voice = null) {
-  if (!item) return { text: 'اختر مادة أولاً، ثم قل: اسمعها بصوت نورة أو فهد أو الحوار.' }
+  if (!item) return { text: 'اختر مادة أولاً، ثم قل: قراءة المقال أو الحوار.' }
   const available = audioLinks(item)
-  const prefix = voice === 'fahed' ? 'فهد:' : voice === 'noura' ? 'نورة:' : voice === 'dialogue' ? 'الحوار:' : ''
+  const prefix = voice === 'dialogue' ? 'الحوار:' : voice ? 'قراءة المقال:' : ''
   const chosen = prefix ? available.find((line) => line.startsWith(prefix)) : available[0]
   if (!chosen) {
     return { text: `لا توجد النسخة الصوتية المطلوبة لهذه المادة في فهرس الموقع الآن.
@@ -1660,7 +1667,7 @@ ${SITE_URL}/research` }
     }
     case INTENTS.HELP:
     case INTENTS.SHOW_OPTIONS:
-      return { ...classification, text: 'اسألني بطريقتك الطبيعية داخل محتوى الموقع فقط:\n• بوابة اليوم · اختبرني\n• آخر مقالاته أو أبحاثه أو كتبه\n• عندك شيء عن أي موضوع؟\n• ٣٠ ثانية · دقيقتان · تعمّق\n• بصوت نورة أو فهد أو الحوار\n• شبكة الأفكار · المصدر · احفظها · محفوظاتي\n\nولا تحتاج حفظ صيغة ثابتة.' }
+      return { ...classification, text: 'اسألني بطريقتك الطبيعية داخل محتوى الموقع فقط:\n• بوابة اليوم · اختبرني\n• آخر مقالاته أو أبحاثه أو كتبه\n• عندك شيء عن أي موضوع؟\n• ٣٠ ثانية · دقيقتان · تعمّق\n• قراءة المقال أو الحوار\n• شبكة الأفكار · المصدر · احفظها · محفوظاتي\n\nولا تحتاج حفظ صيغة ثابتة.' }
     case INTENTS.HUMAN_RESPONSE_REQUIRED: return { ...classification, ...humanSafeReply(input) }
     case INTENTS.REMIND_ME: {
       const parsed = parseReminderTime(input)

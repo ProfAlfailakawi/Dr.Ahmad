@@ -39,11 +39,15 @@ export function decideEntry({ name, recordedBytes, status, remoteBytes }) {
   return { action: 'refresh', why: `${recordedBytes} ← ${remoteBytes}`, bytes: remoteBytes }
 }
 
-/** الحقيقة المرشّحة: نحافظ على كل ما في السجل (ومن ضمنه نورة للمستقبل)،
- * لكن الاكتشاف الجديد لقراءة المقالات يسأل عن فهد فقط. */
+/** الحقيقة المرشّحة: نحافظ على كل ما في السجل، ونستعيد من R2 كل ما يمكن
+ * أن يكون قد ضاع من metadata بعد تشغيلةٍ منقطعة: قراءة المقال + الحوار + نص الحوار. */
 export function discoveryCandidates(knownNames = [], slugs = []) {
-  const candidates = new Set(knownNames.filter((name) => name.endsWith('.mp3')))
-  for (const slug of slugs.filter(Boolean)) candidates.add(`${slug}.mp3`)
+  const candidates = new Set(knownNames.filter((name) => name.endsWith('.mp3') || name.endsWith('.dialogue.json')))
+  for (const slug of slugs.filter(Boolean)) {
+    candidates.add(`${slug}.mp3`)
+    candidates.add(`${slug}.dialogue.mp3`)
+    candidates.add(`${slug}.dialogue.json`)
+  }
   return [...candidates]
 }
 
@@ -61,11 +65,13 @@ if (SELF_TEST) {
   assert(decideEntry({ status: 503 }).action === 'keep', 'ولا عطلُ الخادم')
   assert(decideEntry({ status: 200, recordedBytes: 0, remoteBytes: 0 }).action === 'keep', 'وبلا حجمٍ لا حكم')
   const candidates = discoveryCandidates(['a.noura.mp3', 'legacy.dialogue.mp3'], ['a', 'b'])
-  assert(candidates.includes('a.noura.mp3'), 'نورة المحفوظة لا تُحذف من السجل')
-  assert(candidates.includes('a.mp3') && candidates.includes('b.mp3'), 'كل مقالات المصدر تدخل اكتشاف فهد')
-  assert(!candidates.includes('b.noura.mp3'), 'لا يُنشأ اكتشاف جديد لنورة في قراءة المقالات')
+  assert(candidates.includes('a.noura.mp3'), 'الملف القديم المحفوظ لا يُحذف من السجل')
+  assert(candidates.includes('a.mp3') && candidates.includes('b.mp3'), 'كل مقالات المصدر تدخل اكتشاف قراءة المقال')
+  assert(candidates.includes('a.dialogue.mp3') && candidates.includes('b.dialogue.mp3'), '★ كل مقال يدخل اكتشاف ملف الحوار حتى لو ضاع من metadata')
+  assert(candidates.includes('a.dialogue.json') && candidates.includes('b.dialogue.json'), '★ نص الحوار يُستعاد من R2 أيضاً كي لا يختفي الحوار من اللوحة')
+  assert(!candidates.includes('b.noura.mp3'), 'لا يُنشأ اسم قراءة قديم جديد')
 
-  console.log('✓ اختبارات مصالحة سجلّ الصوت: 9/9')
+  console.log('✓ اختبارات مصالحة سجلّ الصوت: 11/11')
   process.exit(0)
 }
 
@@ -130,10 +136,13 @@ for (const name of candidates) {
   const { status, bytes } = await head(`${base}/${encodeURIComponent(name)}`)
   if (status === 200 || status === 206) {
     if (!entry) {
-      /* ملفٌ حيٌّ على R2 غائبٌ عن السجلّ ⇐ يُضاف. عتبة 200KB تحمي من إضافة ردٍّ
-         خاطئٍ صغير. المدّة تُقاس من الملف نفسه؛ فإن تعذّرت يُضاف بالحجم وحده. */
-      if (bytes > 200_000) {
-        const seconds = await probeSeconds(`${base}/${encodeURIComponent(name)}`)
+      /* ملفٌ حيٌّ على R2 غائبٌ عن السجلّ ⇐ يُضاف. للصوت عتبة كبيرة، ولـJSON
+         عتبة صغيرة معقولة. بهذا تستعيد المصالحة الحوار ونصه معاً ولا يبقى
+         R2 صحيحاً بينما لوحة التحكم ترى عدداً قديماً. */
+      const isDialogueJson = name.endsWith('.dialogue.json')
+      const minimumBytes = isDialogueJson ? 100 : 200_000
+      if (bytes > minimumBytes) {
+        const seconds = isDialogueJson ? 0 : await probeSeconds(`${base}/${encodeURIComponent(name)}`)
         meta[name] = {
           ...(seconds ? { durationSeconds: seconds } : {}),
           bytes,
@@ -147,7 +156,7 @@ for (const name of candidates) {
       const verdict = decideEntry({ name, recordedBytes: Number(entry?.bytes || 0), status, remoteBytes: bytes })
       if (verdict.action === 'refresh') {
         refreshed.push(name)
-        const seconds = await probeSeconds(`${base}/${encodeURIComponent(name)}`)
+        const seconds = name.endsWith('.json') ? 0 : await probeSeconds(`${base}/${encodeURIComponent(name)}`)
         meta[name] = {
           ...entry,
           bytes: verdict.bytes,
@@ -158,9 +167,11 @@ for (const name of candidates) {
         console.log(`  ↻ يُحدَّث · ${name} · ${verdict.why} بايت`)
       } else if (verdict.action === 'verify' && (entry.validationStatus !== 'verified-r2' || !entry.verifiedAt)) {
         verified.push(name)
-        const seconds = Number(entry.durationSeconds || 0) > 0
-          ? Number(entry.durationSeconds)
-          : await probeSeconds(`${base}/${encodeURIComponent(name)}`)
+        const seconds = name.endsWith('.json')
+          ? 0
+          : Number(entry.durationSeconds || 0) > 0
+            ? Number(entry.durationSeconds)
+            : await probeSeconds(`${base}/${encodeURIComponent(name)}`)
         meta[name] = {
           ...entry,
           ...(seconds ? { durationSeconds: seconds } : {}),

@@ -12,7 +12,7 @@ export type ContentOrigin = 'base' | 'added'
 export type AudioValue = boolean | string
 export type ArticleAudio = { fahed?: AudioValue; noura?: AudioValue; dialogue?: AudioValue }
 export type ArticleAudioControl = {
-  /** حقول القراءة القديمة تبقى للتوافق مع البيانات السابقة فقط. */
+  /** حالة القراءة العامة هي المصدر الحالي؛ حقول الأسماء القديمة للتوافق فقط. */
   readingDisabled?: boolean
   readingStatus?: string
   readingUpdatedAt?: string
@@ -240,7 +240,7 @@ function buildArticle(value: Record<string, unknown>, cms: CmsMeta): ArticleReco
     words: wordCount(body || stringValue(value.excerpt)),
     year: stringValue(value.iso).slice(0, 4),
     hasAudio: Boolean(
-      (!(audioControl?.fahedDisabled ?? audioControl?.readingDisabled ?? false) && audio?.fahed)
+      (!(audioControl?.readingDisabled ?? audioControl?.fahedDisabled ?? audioControl?.nouraDisabled ?? false) && (audio?.fahed || audio?.noura))
       || (!audioControl?.dialogueDisabled && audio?.dialogue)
     ),
     missing: !body,

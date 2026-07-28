@@ -390,7 +390,7 @@ export default function Decade() {
             <div className="mx-auto max-w-shell">
               <FadeUp>
                 <p className="max-w-3xl font-display text-[clamp(1.35rem,3vw,2rem)] font-medium leading-[1.8] text-ink">
-                  من {document.firstYear} إلى {document.latestYear}: {document.span === 10 ? 'عشر سنوات' : `${number.format(document.span)} سنة`} تقرأ نفسها من خلال {number.format(document.articles.length)} مقالاً، لا لتختصر الفكرة في رقم، بل لتكشف حركتها.
+                  من {document.firstYear} إلى {document.latestYear}: {document.span >= 10 ? 'أكثر من عشر سنوات' : `${number.format(document.span)} سنة`} تقرأ نفسها من خلال {number.format(document.articles.length)} مقالاً، لا لتختصر الفكرة في رقم، بل لتكشف حركتها.
                 </p>
               </FadeUp>
             </div>

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * يولّد صوتي فهد ونورة لكل مقال ينقصه صوت.
+ * يولّد قراءة المقال المعتمدة لكل مادة ينقصها صوت.
  *
  * الاستراتيجية الهجينة مقصودة:
  * - المقالات الأصلية (مع تعديلات content_overrides) تحفظ في ./audio وpublic/audio
@@ -62,18 +62,17 @@ const JOB_LIMIT = limitArg ? Number(limitArg.slice('--limit='.length)) : Number.
 const voiceArg = process.argv.find((arg) => arg.startsWith('--voice='))
 const ONLY_VOICE = voiceArg ? voiceArg.slice('--voice='.length).trim() : ''
 const MIN_MP3_BYTES = 5_000
-// نورة ليست محذوفة: تعريفها وملفاتها القديمة محفوظة لإعادة تفعيلها مستقبلاً.
-// التشغيل اليومي يستخدم فهد فقط؛ ويمكن تشغيل نورة يدوياً لاحقاً من المحرك
-// نفسه من دون إعادة بناء Azure أو مسار R2.
+// تعريفات الملفات الموروثة تبقى للتوافق التقني فقط. التشغيل اليومي يستخدم
+// مسار قراءة واحداً، ولا تُعرض أسماء محركات الصوت في الواجهة أو السجلات.
 const AVAILABLE_VOICES = [
-  { key: 'fahed', azure: READING_VOICES.fahed.azure, suffix: '', label: 'فهد' },
-  { key: 'noura', azure: READING_VOICES.noura.azure, suffix: '.noura', label: 'نورة' },
+  { key: 'fahed', azure: READING_VOICES.fahed.azure, suffix: '', label: 'قراءة المقال' },
+  { key: 'noura', azure: READING_VOICES.noura.azure, suffix: '.noura', label: 'قراءة موروثة' },
 ]
 const ALL_VOICES = AVAILABLE_VOICES.filter((voice) => voice.key === 'fahed')
 const VOICES = ONLY_VOICE ? AVAILABLE_VOICES.filter((voice) => voice.key === ONLY_VOICE) : ALL_VOICES
 
 if (!(JOB_LIMIT > 0)) throw new Error('--limit يجب أن يكون رقماً موجباً')
-if (ONLY_VOICE && !AVAILABLE_VOICES.some((voice) => voice.key === ONLY_VOICE)) throw new Error('--voice يجب أن يكون fahed أو noura')
+if (ONLY_VOICE && !AVAILABLE_VOICES.some((voice) => voice.key === ONLY_VOICE)) throw new Error('--voice غير صالح')
 if (FORCE_REGENERATE && !ONLY_SLUG) throw new Error('--force يتطلب --slug حتى لا يعيد توليد الأرشيف كله')
 
 function loadEnvironment() {

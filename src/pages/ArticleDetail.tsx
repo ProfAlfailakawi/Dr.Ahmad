@@ -837,7 +837,7 @@ export default function ArticleDetail() {
               <Share compact title={a.title} path={`/articles/${a.slug}`} />
               <div className="article-source-tools" aria-label="المصدر والاستشهاد">
                 {liveLink(article.source) && <a href={liveLink(article.source)} target="_blank" rel="noreferrer" className="article-tool-icon" aria-label="فتح المصدر الأصلي" title="المصدر الأصلي"><span aria-hidden className="text-[1.05rem]">↗</span></a>}
-                <CiteButton compact title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} contextUrl={liveLink(article.source) || `${SITE_URL}/articles/${a.slug}`} />
+                <CiteButton compact title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} contextUrl={liveLink(article.source) || ''} />
               </div>
             </section>
           </FadeUp>

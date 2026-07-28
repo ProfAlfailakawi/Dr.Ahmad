@@ -242,7 +242,7 @@ export function CiteButton({
   const [style, setStyle] = useState<CitationStyle>('apa')
   const [exportState, setExportState] = useState<'idle' | 'done' | 'error'>('idle')
   const citationUrl = safeLink(url)
-  const contextSourceUrl = safeLink(contextUrl || '') || citationUrl
+  const contextSourceUrl = contextUrl === undefined ? citationUrl : safeLink(contextUrl)
   const sourceSuffix = citationUrl ? ` ${citationUrl}` : ''
   const citations: Record<CitationStyle, string> = {
     apa: `${authors}. (${year}). ${title}. ${container}.${sourceSuffix}`,
@@ -507,17 +507,23 @@ async function hasDialogueAudio(slug: string, disabled = false) {
 }
 
 export function Listen({ slug, title, text, audio, audioControl, compact = false }: { slug: string; title: string; text: string; audio?: ArticleAudio; audioControl?: ArticleAudioControl; compact?: boolean }) {
-  // التوليد الجديد للقراءات معتمد على فهد، لكن مكتبة نورة الحالية تبقى ظاهرة
-  // للزائر ما دام ملفها موثقاً، إلى أن يُستكمل المتبقي لاحقاً.
+  // للزائر مسار واحد فقط باسم «قراءة المقال». قد يكون الملف حديثاً أو موروثاً،
+  // لكن أسماء الإنتاج الداخلية لا تظهر ولا تغيّر تجربة الاستماع.
   // مقالات لوحة التحكم تمرر audio من وثيقتها (يولّده سكربت الصوت الليلي)
   const entry = (audioManifest as Record<string, boolean | ArticleAudio>)[slug]
   const resolvedVoices: ArticleAudio = { ...(audio ?? (entry === true ? { fahed: true } : entry || {})) }
-  if (audioControl?.fahedDisabled ?? audioControl?.readingDisabled ?? false) delete resolvedVoices.fahed
-  if (audioControl?.nouraDisabled) delete resolvedVoices.noura
+  const readingDisabled = audioControl?.readingDisabled ?? false
+  if (readingDisabled) {
+    delete resolvedVoices.fahed
+    delete resolvedVoices.noura
+  } else {
+    if (audioControl?.fahedDisabled) delete resolvedVoices.fahed
+    if (audioControl?.nouraDisabled) delete resolvedVoices.noura
+  }
   if (audioControl?.dialogueDisabled) delete resolvedVoices.dialogue
   const voices = resolvedVoices
-  // الحلقة الحوارية (فهد ونورة يتحاوران) تنضم كخيار ثالث فور توفر ملفها —
-  // القراءة الأمينة تبقى الأصل، والحوار إضاءة تفسيرية بجانبها لا بديلاً عنها.
+  // الحلقة الحوارية تنضم كمسار ثانٍ فور توفرها؛ القراءة الأمينة تبقى الأصل،
+  // والحوار إضاءة تفسيرية بجانبها لا بديلاً عنها.
   const dialogueListed = !audioControl?.dialogueDisabled && Boolean(voices.dialogue)
   const [dialogueOk, setDialogueOk] = useState(dialogueListed)
   const [transcript, setTranscript] = useState<DialogueTranscript | null>(null)
@@ -533,10 +539,16 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
     return () => { on = false }
   }, [audioControl?.dialogueDisabled, dialogueListed, slug])
 
+  // قراءة واحدة فقط في الواجهة: نفضّل الملف الحالي، ونستخدم الملف الموروث
+  // كبديل صامت عند الحاجة. لا نعرض أسماء الأصوات الداخلية ولا نكرر «قراءة المقال».
+  const readingSource = voices.fahed
+    ? { key: 'reading', label: 'قراءة المقال', avatar: 'man' as const, src: versionedAudioUrl(typeof voices.fahed === 'string' ? voices.fahed : `/audio/${slug}.mp3`) }
+    : voices.noura
+      ? { key: 'reading', label: 'قراءة المقال', avatar: 'woman' as const, src: versionedAudioUrl(typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3`) }
+      : null
   const sources = [
-    ...(voices.fahed ? [{ key: 'fahed', label: 'قراءة المقال', avatar: 'man' as const, src: versionedAudioUrl(typeof voices.fahed === 'string' ? voices.fahed : `/audio/${slug}.mp3`) }] : []),
-    ...(voices.noura ? [{ key: 'noura', label: 'قراءة المقال', avatar: 'woman' as const, src: versionedAudioUrl(typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3`) }] : []),
-    ...(dialogueOk ? [{ key: 'dialogue', label: 'الحلقة الحوارية', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`) }] : []),
+    ...(readingSource ? [readingSource] : []),
+    ...(dialogueOk ? [{ key: 'dialogue', label: 'الحوار', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`) }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)
 

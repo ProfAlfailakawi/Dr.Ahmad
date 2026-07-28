@@ -29,15 +29,19 @@ const normalizeAudio = (value) => {
 const mergePublishedControl = (currentValue, audio, now) => {
   const current = { ...objectMap(currentValue) }
   const next = { ...current }
-  if (audio.fahed) {
+  if (audio.fahed || audio.noura) {
     Object.assign(next, {
       readingDisabled: false,
-      fahedDisabled: false,
       readingStatus: 'published',
-      fahedStatus: 'published',
       readingUpdatedAt: current.readingStatus === 'published' && current.readingDisabled !== true ? current.readingUpdatedAt || now : now,
-      fahedUpdatedAt: current.fahedStatus === 'published' && current.fahedDisabled !== true ? current.fahedUpdatedAt || now : now,
       readingMessage: '',
+    })
+  }
+  if (audio.fahed) {
+    Object.assign(next, {
+      fahedDisabled: false,
+      fahedStatus: 'published',
+      fahedUpdatedAt: current.fahedStatus === 'published' && current.fahedDisabled !== true ? current.fahedUpdatedAt || now : now,
       fahedMessage: '',
     })
   }

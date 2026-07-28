@@ -13,7 +13,7 @@ const message = arg('message').trim().slice(0, 700)
 const clearAudio = process.argv.includes('--clear-audio')
 
 if (!/^[a-z0-9-]+$/.test(slug)) throw new Error('slug غير صالح')
-if (!['fahed', 'noura', 'dialogue', 'reading'].includes(mode)) throw new Error('mode يجب أن يكون fahed أو noura أو dialogue')
+if (!['fahed', 'noura', 'dialogue', 'reading'].includes(mode)) throw new Error('mode غير صالح')
 if (!/^[a-z_]{2,30}$/.test(status)) throw new Error('status غير صالح')
 
 const serviceAccountPath = resolve(process.cwd(), process.env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')

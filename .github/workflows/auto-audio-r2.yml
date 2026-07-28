@@ -19,13 +19,6 @@ on:
         description: 'إعادة توليد المقال المحدد حتى لو كان صوته موجوداً'
         required: false
         default: 'false'
-      voice:
-        description: 'صوت قراءة المقالات المعتمد: فهد'
-        required: false
-        default: 'fahed'
-        type: choice
-        options:
-          - fahed
 
 permissions:
   contents: write
@@ -175,8 +168,7 @@ jobs:
           ARGS="--limit=${LIMIT:-40} --technical-only"
           if [ -n "$SLUG" ]; then ARGS="$ARGS --slug=$SLUG"; fi
           if [ "${{ github.event.inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
-          VOICE="${{ github.event.inputs.voice }}"
-          if [ -n "$VOICE" ] && [ "$VOICE" != "all" ]; then ARGS="$ARGS --voice=$VOICE"; fi
+          # لا نمرر اسم محرك الصوت في واجهة GitHub؛ المحرك يختار قراءة المقال المعتمدة داخلياً.
           echo "audio args: $ARGS"
           npm run audio -- $ARGS
         env:
@@ -429,24 +421,22 @@ jobs:
             echo "::error::تعذّر تثبيت سجل الصوت بعد خمس محاولات آمنة. الملفات في R2 لم تُحذف."
             exit 1
           fi
-      - name: Re-enable the manually regenerated voice
+      - name: Re-enable the manually regenerated reading
         if: success() && github.event_name == 'workflow_dispatch' && github.event.inputs.force == 'true' && github.event.inputs.slug != ''
         shell: bash
         run: |
-          MODE="${{ github.event.inputs.voice }}"
-          if [ "$MODE" != "fahed" ]; then MODE="fahed"; fi
+          MODE="reading"
           node scripts/audio-control-status.mjs --slug="${{ github.event.inputs.slug }}" --mode="$MODE" --status=published --disabled=false --message="اكتملت إعادة توليد الصوت المحدد واجتاز بوابات الجودة."
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
           FIREBASE_PROJECT_ID: drahmad-8e9e2
 
-      - name: Keep the failed manually regenerated voice hidden
+      - name: Keep the failed manually regenerated reading hidden
         continue-on-error: true
         if: failure() && github.event_name == 'workflow_dispatch' && github.event.inputs.force == 'true' && github.event.inputs.slug != ''
         shell: bash
         run: |
-          MODE="${{ github.event.inputs.voice }}"
-          if [ "$MODE" != "fahed" ]; then MODE="fahed"; fi
+          MODE="reading"
           node scripts/audio-control-status.mjs --slug="${{ github.event.inputs.slug }}" --mode="$MODE" --status=failed --disabled=true --message="تعذّرت إعادة التوليد؛ بقي الصوت المحدد ملغى ولم يعد للظهور."
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json

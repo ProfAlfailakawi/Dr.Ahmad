@@ -548,7 +548,7 @@ function ArticleForm() {
           <button className={btn} onClick={publish} disabled={busy || f.title.trim().length < 3 || f.body.trim().length < 50}>نشر المقال</button>
           {msg && <span className="text-[.85rem] text-accent">{msg}</span>}
         </div>
-        <p className="text-[.78rem] leading-relaxed text-soft">ملاحظة: قراءة فهد تُولَّد للمقالات الجديدة في دورة التحديث التالية. قراءات نورة الحالية تبقى منشورة، واستكمال المتبقي مؤجل.</p>
+        <p className="text-[.78rem] leading-relaxed text-soft">ملاحظة: قراءة المقال تُولَّد للمقالات الجديدة في دورة التحديث التالية، والحوار الصوتي يظهر فور اكتمال نشره واعتماده.</p>
       </div>
       <Existing items={items} remove={remove} label="المقالات" />
     </div>

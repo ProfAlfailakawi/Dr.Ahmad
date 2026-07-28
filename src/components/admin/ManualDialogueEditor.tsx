@@ -597,7 +597,7 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
             <p className="text-[.76rem] font-semibold uppercase text-accent">الحوار اليدوي للحلقة</p>
-            <h2 className="mt-1 font-display text-2xl font-semibold text-ink">اكتب فهد ونورة مداخلةً مداخلة.</h2>
+            <h2 className="mt-1 font-display text-2xl font-semibold text-ink">اكتب الحوار مداخلةً مداخلة.</h2>
             <p className="mt-2 text-[.84rem] leading-relaxed text-soft">اختر المقال ثم ارفع ملف Word (أو TXT) بالحوار كاملاً: سطر لكل مداخلة يبدأ بـ«الرجل:» أو «المرأة:»، ووسوم اختيارية داخل النص مثل [موسيقى] و[وقفة 800] و[تداخل 90] — يُحوَّل تلقائياً إلى مداخلات جاهزة تراجعها هنا ثم تحفظها، وثم تضغط «حفظ وإرسال الحوار نفسه للتوليد». يقبل أيضاً JSON جاهزاً.</p>
             <p className="mt-2 rounded-xl border border-accent/25 bg-canvas px-4 py-3 text-[.78rem] font-semibold leading-relaxed text-accent">حل جذري لمشكلة 413: ملف Word يُقرأ داخل متصفحك ولا يُرسل كملف إلى أي Cloud Function. بعد القراءة يُحفظ النص المنظّم فقط في Firestore، لذلك لا يوجد طلب رفع ضخم يمكن أن يرفضه الخادم.</p>
           </div>
@@ -652,8 +652,8 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
         <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.76rem] text-soft">
           <span><strong className="text-ink">{turns.length}</strong> مداخلة</span>
           <span><strong className="text-ink">{wordCount}</strong> كلمة</span>
-          <span><strong className="text-ink">{turns.filter((item) => item.speaker === 'male').length}</strong> لفهد</span>
-          <span><strong className="text-ink">{turns.filter((item) => item.speaker === 'female').length}</strong> لنورة</span>
+          <span><strong className="text-ink">{turns.filter((item) => item.speaker === 'male').length}</strong> للمتحدث</span>
+          <span><strong className="text-ink">{turns.filter((item) => item.speaker === 'female').length}</strong> للمتحدثة</span>
           {article && <span className="min-w-0 truncate">الحلقة: <span dir="ltr">{article.slug}</span></span>}
         </div>
 
@@ -707,8 +707,8 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
               <div className="flex items-center gap-2">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-wash font-display text-[.82rem] font-semibold text-accent">{index + 1}</span>
                 <select className="rounded-full border border-hair bg-wash px-3 py-1.5 text-[.76rem] font-semibold text-ink outline-none focus:border-accent" value={turn.speaker} onChange={(event) => update(index, { speaker: event.target.value as Speaker })}>
-                  <option value="male">فهد</option>
-                  <option value="female">نورة</option>
+                  <option value="male">المتحدث</option>
+                  <option value="female">المتحدثة</option>
                 </select>
                 <select className="rounded-full border border-hair bg-wash px-3 py-1.5 text-[.76rem] text-soft outline-none focus:border-accent" value={turn.deliveryType} onChange={(event) => update(index, { deliveryType: event.target.value })}>
                   {deliveryTypes.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
@@ -725,7 +725,7 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
               className={`${input} mt-3 min-h-24 resize-y leading-[1.9]`}
               dir="rtl"
               value={turn.text}
-              placeholder={turn.speaker === 'male' ? 'مداخلة فهد…' : 'مداخلة نورة…'}
+              placeholder={turn.speaker === 'male' ? 'مداخلة المتحدث…' : 'مداخلة المتحدثة…'}
               onChange={(event) => update(index, { text: event.target.value })}
             />
 

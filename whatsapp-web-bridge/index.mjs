@@ -13,7 +13,7 @@ const deviceId = String(process.env.WHATSAPP_BRIDGE_DEVICE_ID || process.env.WHA
 
 const config = Object.freeze({
   serverUrl: String(process.env.WHATSAPP_MAIN_SERVER_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, ''),
-  secret: String(process.env.WHATSAPP_BRIDGE_SECRET || 'dr_alfailakawi_whatsapp_bridge_secret_key_2026_super_secure'),
+  secret: String(process.env.WHATSAPP_BRIDGE_SECRET || ''),
   sessionDir: resolve(String(process.env.WHATSAPP_SESSION_DIR || './session')),
   deviceId,
   clientId: deviceId,

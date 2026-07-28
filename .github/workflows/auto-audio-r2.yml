@@ -20,14 +20,12 @@ on:
         required: false
         default: 'false'
       voice:
-        description: 'الصوت المطلوب: فهد أو نورة؛ all للتشغيل المعتاد'
+        description: 'صوت قراءة المقالات المعتمد: فهد'
         required: false
-        default: 'all'
+        default: 'fahed'
         type: choice
         options:
-          - all
           - fahed
-          - noura
 
 permissions:
   contents: write
@@ -424,7 +422,7 @@ jobs:
         shell: bash
         run: |
           MODE="${{ github.event.inputs.voice }}"
-          if [ "$MODE" != "fahed" ] && [ "$MODE" != "noura" ]; then MODE="reading"; fi
+          if [ "$MODE" != "fahed" ]; then MODE="fahed"; fi
           node scripts/audio-control-status.mjs --slug="${{ github.event.inputs.slug }}" --mode="$MODE" --status=published --disabled=false --message="اكتملت إعادة توليد الصوت المحدد واجتاز بوابات الجودة."
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
@@ -436,7 +434,7 @@ jobs:
         shell: bash
         run: |
           MODE="${{ github.event.inputs.voice }}"
-          if [ "$MODE" != "fahed" ] && [ "$MODE" != "noura" ]; then MODE="reading"; fi
+          if [ "$MODE" != "fahed" ]; then MODE="fahed"; fi
           node scripts/audio-control-status.mjs --slug="${{ github.event.inputs.slug }}" --mode="$MODE" --status=failed --disabled=true --message="تعذّرت إعادة التوليد؛ بقي الصوت المحدد ملغى ولم يعد للظهور."
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json

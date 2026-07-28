@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # التزام GitHub الذي يصنعه Workflow الصوت لا يطلق حدث push جديدًا لأسباب
+  # أمنية في GitHub. لذلك كان R2 وmain يتقدمان بينما يبقى الموقع عند 56.
+  workflow_run:
+    workflows: ["توليد الصوت تلقائياً إلى R2"]
+    types: [completed]
 
 permissions:
   contents: read
@@ -18,6 +23,7 @@ jobs:
   # فوجودُ الاختبار بلا مُشغِّلٍ كعدمه. تُشغَّل هنا كلُّها، وإن احمرّ واحدٌ
   # منها لم تبدأ خطوةُ النشر أصلاً (needs) — لا نشرَ فوق فحصٍ أحمر.
   gate:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -104,6 +110,8 @@ jobs:
           check "Idea life self-test" node scripts/idea-life-sync.mjs --self-test
           check "Social design engine self-test" node scripts/test-social-design-engine.mjs
           check "Social templates self-test" node scripts/test-social-templates.mjs
+          check "Studio image backend self-test" node scripts/test-studio-image-generation.mjs
+          check "Studio UI contract" node scripts/test-studio-ui-contract.mjs
 
       # حرّاسُ ما أُصلح مؤخّراً: لولاها لعاد كلُّ عطبٍ منها صامتاً كما عاد أوّل مرّة.
       - name: Content, audio and dialogue guards

@@ -20,6 +20,9 @@ const requiredFiles = [
   'firestore.rules',
   'src/pages/CvFile.tsx',
   '.github/workflows/firebase-hosting-live.yml',
+  'src/components/admin/WhatsAppAgentPanel.tsx',
+  'src/components/admin/SocialDesignStudio.tsx',
+  'whatsapp-bridge/bridge.mjs',
 ]
 
 for (const file of requiredFiles) {
@@ -63,6 +66,9 @@ const articleDetail = await readFile(resolve(root, 'src/pages/ArticleDetail.tsx'
 const homePage = await readFile(resolve(root, 'src/pages/Home.tsx'), 'utf8')
 const uiSource = await readFile(resolve(root, 'src/components/ui.tsx'), 'utf8')
 const cvSource = await readFile(resolve(root, 'src/pages/CV.tsx'), 'utf8')
+const whatsappPanel = await readFile(resolve(root, 'src/components/admin/WhatsAppAgentPanel.tsx'), 'utf8')
+const whatsappBridge = await readFile(resolve(root, 'whatsapp-bridge/bridge.mjs'), 'utf8')
+const designStudio = await readFile(resolve(root, 'src/components/admin/SocialDesignStudio.tsx'), 'utf8')
 const liveSource = (await Promise.all((await textFiles(resolve(root, 'src'))).map((file) => readFile(file, 'utf8')))).join('\n')
 
 const assertions = [
@@ -86,12 +92,16 @@ const assertions = [
   [ideaFeatures.includes('window.visualViewport') && ideaFeatures.includes('firstPress'), 'PWA selection toolbar and first-tap quote controls must remain protected'],
   [contentManager.includes('uploadCvPdfToFirestore') && contentManager.includes("'site_cv_files'"), 'CV upload must keep its Storage-independent Firestore bridge'],
   [contentManager.includes('النص المُشكَّل لتوليد الصوت') && contentManager.includes("'bodyVocalized'") && autoAudio.includes('fields.bodyVocalized'), 'vocalized article text must remain visible in admin and connected to audio generation'],
-  [audioLibrary.includes('مكتبة الصوت') && audioLibrary.includes('صوت فهد') && audioLibrary.includes('صوت نورة') && audioLibrary.includes('الحوار') && audioLibrary.includes("'clear'") && audioManagement.includes("'fahed' | 'noura' | 'dialogue'"), 'central audio library must keep independent Fahed, Noura, and dialogue lifecycle controls'],
-  [audioLibrary.includes('<audio') && audioLibrary.includes('سماع') && audioLibrary.includes('ثلاثة ملفات مستقلة تماماً') && audioLibrary.includes('12_000'), 'central audio library must preview each independent voice and refresh generation status'],
+  [audioLibrary.includes('مكتبة الصوت') && audioLibrary.includes('صوت فهد') && audioLibrary.includes('الحوار') && !audioLibrary.includes('صوت نورة') && audioLibrary.includes("'clear'") && audioManagement.includes("'fahed' | 'dialogue'"), 'article audio library must keep Fahed reading and two-voice dialogue as the only active modes'],
+  [audioLibrary.includes('<audio') && audioLibrary.includes('سماع') && audioLibrary.includes('فهد هو صوت قراءة المقالات') && audioLibrary.includes('12_000'), 'central audio library must preview Fahed/dialogue and refresh generation status'],
   [adminPage.includes("tab === 'audio-library'") && adminArchitecture.includes("tab: 'audio-library'") && adminArchitecture.includes('سماع وإعادة توليد وحذف'), 'audio lifecycle must remain a dedicated visible admin tab'],
   [!contentManager.includes('<ArticleAudioManager') && !contentManager.includes('إدارة صوت المقال'), 'audio controls must stay out of the article editor and inside the dedicated library'],
-  [serverSource.includes('audioManagePath') && serverSource.includes('admin-audio-clear.yml') && serverSource.includes("voice: mode === 'reading' ? 'all' : mode") && autoAudio.includes("--voice=") && autoAudio.includes('ALL_VOICES'), 'server must dispatch protected per-voice clear/regenerate workflows without touching sibling voices'],
-  [audioClearWorkflow.includes('fahed) FILES=') && audioClearWorkflow.includes('noura) FILES=') && audioClearWorkflow.includes('clear-audio-assets.mjs') && autoAudioWorkflow.includes('github.event.inputs.voice') && autoAudioWorkflow.includes('--voice=$VOICE'), 'audio cancellation and regeneration must remain isolated per voice'],
+  [serverSource.includes('audioManagePath') && serverSource.includes('admin-audio-clear.yml') && autoAudio.includes("--voice=") && autoAudio.includes('ALL_VOICES'), 'server must dispatch protected Fahed/dialogue lifecycle workflows'],
+  [audioClearWorkflow.includes('fahed) FILES=') && audioClearWorkflow.includes('clear-audio-assets.mjs') && autoAudioWorkflow.includes('github.event.inputs.voice') && autoAudioWorkflow.includes('--voice=$VOICE'), 'audio cancellation and regeneration must keep Fahed reading isolated from dialogue'],
+  [hostingWorkflow.includes('workflow_run:') && hostingWorkflow.includes('توليد الصوت تلقائياً إلى R2'), 'successful audio ledger workflows must trigger a fresh site deployment'],
+  [whatsappPanel.includes('إصلاح الاتصال تلقائيًا') && whatsappPanel.includes('/admin/repair') && whatsappPanel.includes('window.confirm'), 'WhatsApp admin must expose safe recovery and explicit destructive re-pairing'],
+  [whatsappBridge.includes('watchdog_restart_stuck_authenticated') && whatsappBridge.includes("process.exit(75)") && whatsappBridge.includes("WHATSAPP_BRIDGE_SECRET || ''"), 'WhatsApp bridge must self-restart when stuck and must never ship a fallback secret'],
+  [designStudio.includes('BufferedIdeaTextarea') && designStudio.includes("'generate' | 'library' | 'ready'") && designStudio.includes('resolveLibraryImagePassport'), 'design studio must keep buffered typing and a working site-library mode'],
   [cvFile.includes("'site_cv_files'") && cvFile.includes('cv-files-v1'), 'public CV reconstruction and local cache must remain active'],
   [firestoreRules.includes('match /site_cv_files/{kind}') && firestoreRules.includes('match /chunks/{chunkId}'), 'Firestore CV file rules must remain deployed'],
   [publishingStudio.includes('مكتبة القوالب كاملة — 24 تكويناً') && publishingStudio.includes("key: 'iqtibas'") && publishingStudio.includes("key: 'masfufa'") && publishingStudio.includes("key: 'mizan'"), 'all 24 standalone social layouts must remain visible in the publishing studio'],

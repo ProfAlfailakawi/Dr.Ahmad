@@ -23,7 +23,6 @@ type VoiceDefinition = {
 
 const voices: VoiceDefinition[] = [
   { key: 'fahed', title: 'صوت فهد', shortTitle: 'فهد', description: 'القراءة الرجالية للمقال' },
-  { key: 'noura', title: 'صوت نورة', shortTitle: 'نورة', description: 'القراءة النسائية للمقال' },
   { key: 'dialogue', title: 'الحوار', shortTitle: 'الحوار', description: 'الحلقة الحوارية الكاملة' },
 ]
 
@@ -31,7 +30,7 @@ const audioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, ''
 const audioUrl = (article: ArticleRecord, voice: ArticleAudioMode) => {
   const stored = article.audio?.[voice]
   if (typeof stored === 'string' && stored.trim()) return stored.trim()
-  const suffix = voice === 'fahed' ? '.mp3' : voice === 'noura' ? '.noura.mp3' : '.dialogue.mp3'
+  const suffix = voice === 'fahed' ? '.mp3' : '.dialogue.mp3'
   return audioBase ? `${audioBase}/${article.slug}${suffix}` : `/audio/${article.slug}${suffix}`
 }
 
@@ -82,26 +81,22 @@ const normalized = (value = '') => value
 
 const disabledFor = (control: ArticleAudioControl, voice: ArticleAudioMode) => {
   if (voice === 'dialogue') return Boolean(control.dialogueDisabled)
-  const specific = voice === 'fahed' ? control.fahedDisabled : control.nouraDisabled
-  return typeof specific === 'boolean' ? specific : Boolean(control.readingDisabled)
+  return typeof control.fahedDisabled === 'boolean' ? control.fahedDisabled : Boolean(control.readingDisabled)
 }
 
 const statusFor = (control: ArticleAudioControl, voice: ArticleAudioMode) => {
   if (voice === 'dialogue') return control.dialogueStatus || ''
-  const specific = voice === 'fahed' ? control.fahedStatus : control.nouraStatus
-  return specific || control.readingStatus || ''
+  return control.fahedStatus || control.readingStatus || ''
 }
 
 const updatedFor = (control: ArticleAudioControl, voice: ArticleAudioMode) => {
   if (voice === 'dialogue') return control.dialogueUpdatedAt
-  const specific = voice === 'fahed' ? control.fahedUpdatedAt : control.nouraUpdatedAt
-  return specific || control.readingUpdatedAt
+  return control.fahedUpdatedAt || control.readingUpdatedAt
 }
 
 const messageFor = (control: ArticleAudioControl, voice: ArticleAudioMode) => {
   if (voice === 'dialogue') return control.dialogueMessage || ''
-  const specific = voice === 'fahed' ? control.fahedMessage : control.nouraMessage
-  return specific || control.readingMessage || ''
+  return control.fahedMessage || control.readingMessage || ''
 }
 
 export function AudioLibrary({ articles, onChanged }: Props) {
@@ -169,7 +164,7 @@ export function AudioLibrary({ articles, onChanged }: Props) {
       ready: 0,
       working: 0,
       missing: 0,
-      voices: { fahed: 0, noura: 0, dialogue: 0 } as Record<ArticleAudioMode, number>,
+      voices: { fahed: 0, dialogue: 0 } as Record<ArticleAudioMode, number>,
     }
     for (const article of allArticles) {
       const state = articleState(article)
@@ -183,10 +178,13 @@ export function AudioLibrary({ articles, onChanged }: Props) {
   }, [allArticles, localControls])
   /* أرقام الواجهة تُشتق من ملفات الصوت المرتبطة بالمقالات التي يراها الدكتور
      الآن، لا من لقطة JSON قديمة قد تتأخر عن R2 عدة تشغيلات. */
-  const liveExpectedVoices = allArticles.length * voices.length
-  const liveReadyVoices = totals.voices.fahed + totals.voices.noura + totals.voices.dialogue
+  // رقم التغطية الذي يهم قراءة المقالات هو فهد وحده. الحوار مسار بودكاست
+  // مستقل ولا ينبغي أن يُنقص نسبة قراءة المقالات أو يعيدها إلى رقم مضلل.
+  const liveExpectedVoices = allArticles.length
+  const liveReadyVoices = totals.voices.fahed
   const liveRemainingVoices = Math.max(0, liveExpectedVoices - liveReadyVoices)
   const liveProgressPercent = Math.round((liveReadyVoices / Math.max(1, liveExpectedVoices)) * 1000) / 10
+  const nextReadingTitle = supervisorSnapshot.items.find((item) => !item.readings.fahed.ready)?.title
 
   useEffect(() => {
     if (!totals.working) return
@@ -207,7 +205,7 @@ export function AudioLibrary({ articles, onChanged }: Props) {
     const definition = voices.find((item) => item.key === voice)!
     const detail = voice === 'dialogue'
       ? 'ستبقى مسودة الحوار محفوظة لإعادة التوليد لاحقاً.'
-      : `لن يتأثر ${voice === 'fahed' ? 'صوت نورة ولا الحوار' : 'صوت فهد ولا الحوار'}.`
+      : 'لن تتأثر الحلقة الحوارية.'
     const confirmation = action === 'clear'
       ? `سيُحذف ${definition.title} فقط من مقال «${article.title}». ${detail}\n\nهل تتابع؟`
       : `سيُلغى ${definition.title} الحالي فقط، ثم يبدأ توليد نسخة جديدة للمقال «${article.title}». ${detail}\n\nهل تتابع؟`
@@ -219,9 +217,9 @@ export function AudioLibrary({ articles, onChanged }: Props) {
     setPlayer((current) => current?.slug === article.slug && current.voice === voice ? null : current)
     try {
       const result = await manageArticleAudio({ user, slug: article.slug, mode: voice, action })
-      const disabledKey = `${voice}Disabled` as 'fahedDisabled' | 'nouraDisabled' | 'dialogueDisabled'
-      const statusKey = `${voice}Status` as 'fahedStatus' | 'nouraStatus' | 'dialogueStatus'
-      const updatedKey = `${voice}UpdatedAt` as 'fahedUpdatedAt' | 'nouraUpdatedAt' | 'dialogueUpdatedAt'
+      const disabledKey = `${voice}Disabled` as 'fahedDisabled' | 'dialogueDisabled'
+      const statusKey = `${voice}Status` as 'fahedStatus' | 'dialogueStatus'
+      const updatedKey = `${voice}UpdatedAt` as 'fahedUpdatedAt' | 'dialogueUpdatedAt'
       setLocalControls((current) => ({
         ...current,
         [article.slug]: {
@@ -332,11 +330,10 @@ export function AudioLibrary({ articles, onChanged }: Props) {
           <p className="text-[.76rem] font-semibold text-accent">الصوت والبودكاست</p>
           <h2 id="audio-library-title" className="mt-1 font-display text-3xl font-bold text-ink">مكتبة الصوت</h2>
           <p className="mt-3 max-w-3xl text-[.84rem] leading-loose text-soft">
-            فهد ونورة والحوار ثلاثة ملفات مستقلة تماماً. اسمع أي نسخة أولاً، ثم احذفها أو أعد توليدها من دون أن يتأثر الملفان الآخران.
+            فهد هو صوت قراءة المقالات. الحلقة الحوارية تبقى بصوتَي فهد ونورة، ويمكن إدارتها بصورة مستقلة.
           </p>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[.7rem] text-soft">
             <span>فهد جاهز: {totals.voices.fahed}</span>
-            <span>نورة جاهزة: {totals.voices.noura}</span>
             <span>حوار جاهز: {totals.voices.dialogue}</span>
           </div>
         </div>
@@ -353,12 +350,12 @@ export function AudioLibrary({ articles, onChanged }: Props) {
             </div>
             <p className="mt-2 line-clamp-2 text-[.78rem] leading-relaxed text-soft">
               {liveRemainingVoices
-                ? <>يستأنف من آخر نقطة تلقائياً. التالي: <strong className="font-semibold text-ink">{supervisorSnapshot.queue.next?.title || 'أول ملف غير مكتمل في الطابور'}</strong></>
-                : 'اكتمل الطابور الموثق، وأي مقال أو حوار جديد سيدخل تلقائياً.'}
+                ? <>قراءة فهد تستأنف من آخر نقطة تلقائياً. التالي: <strong className="font-semibold text-ink">{nextReadingTitle || 'أول مقال غير مكتمل في الطابور'}</strong></>
+                : 'اكتملت قراءات فهد الموثقة، وأي مقال جديد سيدخل تلقائياً. الحوار يبقى مسار بودكاست مستقلًا.'}
             </p>
           </div>
           <div className="flex items-center gap-4 sm:justify-end">
-            <div className="text-center"><p className="font-display text-2xl font-bold text-ink">{liveProgressPercent}%</p><p className="text-[.62rem] text-soft">مرتبط فعليًا</p></div>
+            <div className="text-center"><p className="font-display text-2xl font-bold text-ink">{liveProgressPercent}%</p><p className="text-[.62rem] text-soft">قراءات فهد</p></div>
             <div className="h-9 w-px bg-hair" aria-hidden="true" />
             <div className="text-center"><p className="font-display text-2xl font-bold text-ink">{liveRemainingVoices}</p><p className="text-[.62rem] text-soft">متبقٍ</p></div>
             {supervisorSnapshot.queue.failed > 0 && <><div className="h-9 w-px bg-hair" aria-hidden="true" /><div className="text-center"><p className="font-display text-2xl font-bold text-red-700 dark:text-red-300">{supervisorSnapshot.queue.failed}</p><p className="text-[.62rem] text-soft">يعاد إصلاحه</p></div></>}
@@ -396,13 +393,13 @@ export function AudioLibrary({ articles, onChanged }: Props) {
         </div>
       )}
 
-      <div className="hidden border-b border-hair px-3 pb-2 text-[.7rem] font-semibold text-soft lg:grid lg:grid-cols-[minmax(230px,1.25fr)_repeat(3,minmax(215px,1fr))] lg:gap-5">
-        <span>المقال</span><span>صوت فهد</span><span>صوت نورة</span><span>الحوار</span>
+      <div className="hidden border-b border-hair px-3 pb-2 text-[.7rem] font-semibold text-soft lg:grid lg:grid-cols-[minmax(230px,1.25fr)_repeat(2,minmax(215px,1fr))] lg:gap-5">
+        <span>المقال</span><span>صوت فهد</span><span>الحوار</span>
       </div>
 
       <div id="audio-library-list" className="scroll-mt-28 divide-y divide-hair border-b border-hair">
         {paged.pageItems.map((article) => (
-          <article key={article.slug} className="grid min-w-0 gap-5 px-1 py-5 sm:px-3 lg:grid-cols-[minmax(230px,1.25fr)_repeat(3,minmax(215px,1fr))] lg:gap-5">
+          <article key={article.slug} className="grid min-w-0 gap-5 px-1 py-5 sm:px-3 lg:grid-cols-[minmax(230px,1.25fr)_repeat(2,minmax(215px,1fr))] lg:gap-5">
             <div className="min-w-0">
               <p className="line-clamp-2 text-[.9rem] font-semibold leading-relaxed text-ink">{article.title}</p>
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[.7rem] text-soft">

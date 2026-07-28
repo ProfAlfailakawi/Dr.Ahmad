@@ -729,17 +729,21 @@ export async function runNuclearSelfTest(root = process.cwd()) {
     }
     const audioManifest = readOptionalJsonObject(path.join(root, 'src', 'data', 'audio.json'))
     const audioMeta = readOptionalJsonObject(path.join(root, 'src', 'data', 'audio-meta.json'))
-    const voiceCases = [
-      ['fahed', INTENTS.LISTEN_FAHED, 'اسمعها بصوت فهد', '.mp3'],
-      ['noura', INTENTS.LISTEN_NOURA, 'اسمعها بصوت نورة', '.noura.mp3'],
-      ['dialogue', INTENTS.LISTEN_DIALOGUE, 'شغل الحوار', '.dialogue.mp3'],
+    /* ملفات الإنتاج القديمة تبقى مفهرسة داخلياً للتوافق، لكن الواجهة العامة
+       لا تكشف أسماء الأصوات ولا اسم ملف القراءة الموروث. للمستخدم مساران فقط:
+       «قراءة المقال» و«الحوار». */
+    const internalVoiceCases = [
+      ['fahed', '.mp3'],
+      ['noura', '.noura.mp3'],
+      ['dialogue', '.dialogue.mp3'],
     ]
     for (const [slug, declaration] of Object.entries(audioManifest)) {
       const item = db.get('SELECT * FROM content_items WHERE slug=?', slug)
       assert.ok(item, `بيان الصوت يشير إلى slug غير موجود: ${slug}`)
       const audio = JSON.parse(item.audio_json || 'null')
       assert.ok(audio, `المادة المنشورة بلا audio_json: ${slug}`)
-      for (const [voice, intent, phrase, suffix] of voiceCases) {
+
+      for (const [voice, suffix] of internalVoiceCases) {
         check('audio-manifest', `${slug} / ${voice}`, () => {
           assert.equal(Boolean(audio[voice]), Boolean(declaration?.[voice]))
           if (!declaration?.[voice]) return
@@ -747,21 +751,45 @@ export async function runNuclearSelfTest(root = process.cwd()) {
           const duration = Number(audioMeta[key]?.durationSeconds || audioMeta[key]?.duration || 0)
           assert.ok(duration > 0, `لا مدة موثقة للملف ${key}`)
           assert.equal(Number(audio.durations?.[voice]), duration)
+        })
+      }
+
+      const hasReading = Boolean(declaration?.fahed || declaration?.noura)
+      if (hasReading) {
+        check('audio-public-privacy', `${slug} / قراءة المقال`, () => {
+          const phrase = 'قراءة المقال'
           const response = handleIntent({
             db,
-            jid: `audio-${voice}-${hashOpaque(slug)}@s.whatsapp.net`,
+            jid: `audio-reading-${hashOpaque(slug)}@s.whatsapp.net`,
             input: phrase,
             session: { content_id: item.id },
-            classification: { intent, confidence: 0.99, normalized: normalizeArabic(phrase) },
+            classification: { intent: INTENTS.LISTEN_FAHED, confidence: 0.99, normalized: normalizeArabic(phrase) },
           })
-          const expectedUrl = `${AUDIO_PUBLIC_BASE_URL}/${key}`
+          const expectedUrl = declaration?.fahed ? `${AUDIO_PUBLIC_BASE_URL}/${slug}.mp3` : item.url
           assert.ok((response.text || '').includes(expectedUrl))
-          assert.equal((response.text || '').includes(`${SITE_URL}/audio/`), false)
-          assert.ok((response.actions || []).some((line) => line.includes(expectedUrl)))
+          assert.ok((response.actions || []).some((line) => line.startsWith('قراءة المقال:') && line.includes(expectedUrl)))
+          assert.equal(/فهد|نوره|نورة|نورا|\.noura\.mp3/u.test(`${response.text || ''}\n${(response.actions || []).join('\n')}`), false)
+        })
+      }
+
+      if (declaration?.dialogue) {
+        check('audio-public-privacy', `${slug} / الحوار`, () => {
+          const phrase = 'شغل الحوار'
+          const expectedUrl = `${AUDIO_PUBLIC_BASE_URL}/${slug}.dialogue.mp3`
+          const response = handleIntent({
+            db,
+            jid: `audio-dialogue-${hashOpaque(slug)}@s.whatsapp.net`,
+            input: phrase,
+            session: { content_id: item.id },
+            classification: { intent: INTENTS.LISTEN_DIALOGUE, confidence: 0.99, normalized: normalizeArabic(phrase) },
+          })
+          assert.ok((response.text || '').includes(expectedUrl))
+          assert.ok((response.actions || []).some((line) => line.startsWith('الحوار:') && line.includes(expectedUrl)))
         })
       }
     }
-    for (const [voice] of voiceCases) {
+
+    for (const [voice] of internalVoiceCases) {
       check('audio-availability', `${voice}: الفهرس لا يخترع ملفات`, () => {
         const expected = Object.values(audioManifest).filter((entry) => Boolean(entry?.[voice])).length
         const actual = db.all('SELECT audio_json FROM content_items WHERE audio_json IS NOT NULL')
@@ -770,22 +798,65 @@ export async function runNuclearSelfTest(root = process.cwd()) {
         assert.equal(latestAudioContent(db, voice, 10).every((item) => item.audio?.[voice]), true)
       })
     }
-    for (const [voice, intent, phrase, suffix] of voiceCases) {
-      const unavailable = db.all('SELECT * FROM content_items WHERE audio_json IS NOT NULL LIMIT 80')
-        .find((row) => !JSON.parse(row.audio_json || 'null')?.[voice])
-      if (!unavailable) continue
-      check('audio-availability', `${voice}: الطلب غير المنشور يرفض الرابط`, () => {
+
+    const unavailableReading = db.all('SELECT * FROM content_items WHERE audio_json IS NOT NULL LIMIT 80')
+      .find((row) => {
+        const audio = JSON.parse(row.audio_json || 'null')
+        return !audio?.fahed && !audio?.noura
+      })
+    if (unavailableReading) {
+      check('audio-availability', 'قراءة المقال: الطلب غير المنشور يرفض الرابط', () => {
+        const phrase = 'قراءة المقال'
         const response = handleIntent({
           db,
-          jid: `no-audio-${voice}@s.whatsapp.net`,
+          jid: 'no-audio-reading@s.whatsapp.net',
           input: phrase,
-          session: { content_id: unavailable.id },
-          classification: { intent, confidence: 0.99, normalized: normalizeArabic(phrase) },
+          session: { content_id: unavailableReading.id },
+          classification: { intent: INTENTS.LISTEN_FAHED, confidence: 0.99, normalized: normalizeArabic(phrase) },
         })
-        assert.equal((response.text || '').includes(`${AUDIO_PUBLIC_BASE_URL}/${unavailable.slug}${suffix}`), false)
+        assert.equal((response.text || '').includes(`${AUDIO_PUBLIC_BASE_URL}/${unavailableReading.slug}.mp3`), false)
+        assert.equal((response.text || '').includes(`${AUDIO_PUBLIC_BASE_URL}/${unavailableReading.slug}.noura.mp3`), false)
         assert.match(normalizeArabic(response.text || ''), /لا توجد النسخه الصوتيه المطلوبه|غير متوفر/u)
       })
     }
+
+    const unavailableDialogue = db.all('SELECT * FROM content_items WHERE audio_json IS NOT NULL LIMIT 80')
+      .find((row) => !JSON.parse(row.audio_json || 'null')?.dialogue)
+    if (unavailableDialogue) {
+      check('audio-availability', 'الحوار: الطلب غير المنشور يرفض الرابط', () => {
+        const phrase = 'شغل الحوار'
+        const response = handleIntent({
+          db,
+          jid: 'no-audio-dialogue@s.whatsapp.net',
+          input: phrase,
+          session: { content_id: unavailableDialogue.id },
+          classification: { intent: INTENTS.LISTEN_DIALOGUE, confidence: 0.99, normalized: normalizeArabic(phrase) },
+        })
+        assert.equal((response.text || '').includes(`${AUDIO_PUBLIC_BASE_URL}/${unavailableDialogue.slug}.dialogue.mp3`), false)
+        assert.match(normalizeArabic(response.text || ''), /لا توجد النسخه الصوتيه المطلوبه|غير متوفر/u)
+      })
+    }
+
+    check('audio-public-privacy', 'طلبات الأسماء القديمة تُفهم ولا تكشف أسماء الإنتاج', () => {
+      const withReading = db.all('SELECT * FROM content_items WHERE audio_json IS NOT NULL LIMIT 80')
+        .find((row) => {
+          const audio = JSON.parse(row.audio_json || 'null')
+          return Boolean(audio?.fahed || audio?.noura)
+        })
+      if (!withReading) return
+      for (const [intent, phrase] of [[INTENTS.LISTEN_FAHED, 'اسمعها بصوت فهد'], [INTENTS.LISTEN_NOURA, 'اسمعها بصوت نورة']]) {
+        const response = handleIntent({
+          db,
+          jid: `legacy-name-${intent}@s.whatsapp.net`,
+          input: phrase,
+          session: { content_id: withReading.id },
+          classification: { intent, confidence: 0.99, normalized: normalizeArabic(phrase) },
+        })
+        const rendered = `${response.text || ''}\n${(response.actions || []).join('\n')}`
+        assert.equal(/فهد|نوره|نورة|نورا|\.noura\.mp3/u.test(rendered), false)
+        assert.match(rendered, /قراءة المقال/u)
+      }
+    })
 
     check('verified-analytics', 'غياب لقطة Firestore لا يُستبدل بترتيب مصنوع', () => {
       db.setSetting('analytics.articleViews', null)

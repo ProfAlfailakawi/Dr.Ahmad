@@ -114,7 +114,7 @@ export default function Radar() {
   const years = Array.from(new Set(weeks.map((week) => week.year))).sort((a, b) => b - a);
   const [year, setYear] = useState<number | "latest">("latest");
   const visibleWeeks = year === "latest" ? weeks : weeks.filter((week) => week.year === year);
-  const paged = usePagedList(visibleWeeks, 2, `${year}:${visibleWeeks.length}`);
+  const paged = usePagedList(visibleWeeks, 1, `${year}:${visibleWeeks.length}`);
 
   return (
     <Page>
@@ -191,7 +191,7 @@ export default function Radar() {
                       </span>
                     </h3>
                   </FadeUp>
-                  <div className="mobile-card-rail grid gap-5 md:grid-cols-2">
+                  <div className="mx-auto max-w-4xl space-y-4">
                     {w.items.slice(0, 2).map((item, index) => (
                       <RadarCard key={`${item.url || item.ar || item.day}-${index}`} item={item} index={index} />
                     ))}
@@ -202,7 +202,7 @@ export default function Radar() {
                         <span>بقية مواد هذا الأسبوع</span>
                         <span className="text-soft transition-transform group-open:rotate-45" aria-hidden="true">＋</span>
                       </summary>
-                      <div className="mt-4 grid gap-5 border-t border-hair pt-5 md:grid-cols-2">
+                      <div className="mx-auto mt-4 max-w-4xl space-y-4 border-t border-hair pt-5">
                         {w.items.slice(2).map((item, index) => (
                           <RadarCard key={`${item.url || item.ar || item.day}-more-${index}`} item={item} index={index} />
                         ))}

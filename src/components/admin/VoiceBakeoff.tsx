@@ -121,15 +121,15 @@ export function VoiceBakeoffCard() {
         <h2 className="mt-1 font-display text-xl font-semibold text-ink">الأصوات المعتمدة تعمل.</h2>
         <p className="mt-2 max-w-2xl text-[.85rem] font-light leading-relaxed text-soft">
           لا يوجد اختبار أصوات أعمى جارٍ الآن — وهذا وضعٌ سليم لا خلل. تُولَّد الحلقات
-          بالصوتين المعتمدين <span className="text-ink">فهد</span> و<span className="text-ink">نورة</span>.
+          بالصوتين المعتمدين <span className="text-ink">المتحدث</span> و<span className="text-ink">المتحدثة</span>.
           حين يجهّز النظام عينات مرشّحة جديدة، تظهر هنا تلقائياً لتستمع وتعتمد الأنسب.
         </p>
         <div className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.82rem] leading-relaxed text-soft">
           {approved?.status === 'approved'
             ? <>الاختيار المسجّل حالياً: <span className="text-accent">{approved.optionKey}</span>.</>
             : approved?.status === 'none_acceptable'
-              ? <>الحالة المسجّلة: لا زوج جاهز مقبول — يبقى فهد ونورة افتراضاً حتى يتوفّر صوتٌ مخصّص بالجودة المطلوبة.</>
-              : <>الوضع الافتراضي: فهد ونورة. لم يُسجَّل أي قرار أصوات بعد.</>}
+              ? <>الحالة المسجّلة: لا زوج جاهز مقبول — يبقى الزوج الصوتي الحالي افتراضياً حتى يتوفّر صوتٌ مخصّص بالجودة المطلوبة.</>
+              : <>الوضع الافتراضي: الزوج الصوتي الحالي. لم يُسجَّل أي قرار أصوات بعد.</>}
         </div>
       </div>
     )
@@ -207,7 +207,7 @@ export function VoiceBakeoffCard() {
       {saved && <p className="mt-3 text-[.82rem] font-medium text-accent">{saved}</p>}
       {approved?.status === 'none_acceptable' && (
         <p className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.82rem] leading-relaxed text-soft">
-          الحالة الحالية: لا زوج جاهز مقبول. النظام مُهيّأ لدعم <span className="text-ink">Azure Custom Voice</span> لاحقاً — يبقى فهد ونورة افتراضاً مؤقتاً حتى يتوفّر صوت مخصّص بالجودة المطلوبة.
+          الحالة الحالية: لا زوج جاهز مقبول. النظام مُهيّأ لدعم <span className="text-ink">Azure Custom Voice</span> لاحقاً — يبقى الزوج الصوتي الحالي افتراضياً مؤقتاً حتى يتوفّر صوت مخصّص بالجودة المطلوبة.
         </p>
       )}
     </div>

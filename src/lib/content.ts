@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react'
 import { firebaseEnabled, fetchExtras, getDb } from './firebase'
+import { normalizeArabicTypography } from './arabic-typography'
 import {
   baseCmsSnapshot,
   mergeCmsContent,
@@ -19,7 +20,7 @@ import {
 } from './cms'
 
 const normalizeArabicTanween = <T,>(value: T): T => {
-  if (typeof value === 'string') return value.replace(/\u064B\u0627/g, 'اً') as T
+  if (typeof value === 'string') return normalizeArabicTypography(value) as T
   if (Array.isArray(value)) return value.map((item) => normalizeArabicTanween(item)) as T
   if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
     return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, normalizeArabicTanween(item)])) as T

@@ -4,7 +4,7 @@
  *
  * لا يثق بسجلٍّ ولا بلوحة: يسأل R2 نفسه عن كل ملفٍ متوقَّع. فالملفُّ الموجود
  * على الخادم هو ما يسمعه الناس، وما عداه دعوى. ويقيس ثلاثة أشياء لكل مقال:
- * قراءةُ فهد وحلقةُ الحوار — ويقول ما تمّ وما بقي وكم يلزم.
+ * قراءةُ المقال وحلقةُ الحوار — ويقول ما تمّ وما بقي وكم يلزم.
  *
  * الاستعمال:
  *   node scripts/audio-progress.mjs              ملخّصٌ وأرقام
@@ -19,7 +19,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SELF_TEST = process.argv.includes('--self-test')
 const SHOW_MISSING = process.argv.includes('--missing')
 
-/** قراءة فهد، والحوار عند طلبه */
+/** قراءة المقال، والحوار عند طلبه */
 export function expectedFiles(slug, { withDialogue = true } = {}) {
   const files = [`${slug}.mp3`]
   if (withDialogue) files.push(`${slug}.dialogue.mp3`)
@@ -52,11 +52,11 @@ if (SELF_TEST) {
   const t = (m, c) => { assert(c, m); pass++ }
 
   t('ملفان لكل مقال مع الحوار', expectedFiles('x').length === 2)
-  t('وملف فهد وحده بلا حوار', expectedFiles('x', { withDialogue: false }).length === 1)
+  t('وملف القراءة وحده بلا حوار', expectedFiles('x', { withDialogue: false }).length === 1)
   t('وأسماؤها بالصيغة التي يرفعها المحرّك', expectedFiles('x').join() === 'x.mp3,x.dialogue.mp3')
 
-  t('★ المكتمل يحتاج فهد والحوار', articleState([1, 1]).done === true)
-  t('★ فهد وحده هو قراءة المقال المعتمدة', articleState([1, 0]).reading === true)
+  t('★ المكتمل يحتاج القراءة والحوار', articleState([1, 1]).done === true)
+  t('★ ملف القراءة المنشور هو قراءة المقال المعتمدة', articleState([1, 0]).reading === true)
   t('والقراءة بلا حوار تُسمّى باسمها', articleState([1, 0]).label === 'قراءةٌ بلا حوار')
   t('ولم يبدأ يُقال صراحةً', articleState([0, 0, 0]).label === 'لم يبدأ')
   t('والناقص ليس مكتملاً', articleState([1, 0]).done === false)
@@ -116,7 +116,7 @@ console.log(`  القراءات   ${bar(rows.filter((r) => r.reading).length)}  
 console.log(`  الحوارات   ${bar(rows.filter((r) => r.dialogue).length)}  ${rows.filter((r) => r.dialogue).length}/${rows.length}  ${pct(rows.filter((r) => r.dialogue).length)}`)
 console.log(`  المكتمل    ${bar(done.length)}  ${done.length}/${rows.length}  ${pct(done.length)}\n`)
 
-console.log(`  ✔ مكتمل (فهد وحوار)        ${done.length}`)
+console.log(`  ✔ مكتمل (قراءة وحوار)      ${done.length}`)
 console.log(`  ◐ قراءةٌ بلا حوار          ${readingOnly.length}`)
 console.log(`  ◑ حوارٌ بلا قراءة          ${dialogueOnly.length}`)
 console.log(`  ○ لم يبدأ                  ${none.length}\n`)

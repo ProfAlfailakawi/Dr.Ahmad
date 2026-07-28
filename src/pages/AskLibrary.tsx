@@ -658,7 +658,7 @@ export default function AskLibrary() {
                           <>
                             <p className="mt-5 whitespace-pre-line text-[.96rem] font-light leading-[2.05] text-ink/90">{visibleAnswer}</p>
                             {answerMode !== 'direct' && (
-                              <p className="mt-4 text-[.68rem] leading-relaxed text-soft">هذا تنظيم للمواد المنشورة بحسب الزمن والروابط، وليس اقتباساً جديداً.</p>
+                              <p className="mt-4 text-[.68rem] leading-relaxed text-soft">رتّبت لك المواد الأقرب عبر الزمن لتتبع الفكرة خطوةً بعد خطوة.</p>
                             )}
                             <p className="mt-3 border-t border-hair pt-3 text-[.68rem] leading-relaxed text-soft/85">
                               الإجابة مستندة إلى مواد منشورة وموثّقة. سؤالك خاص ولا يُنشر.

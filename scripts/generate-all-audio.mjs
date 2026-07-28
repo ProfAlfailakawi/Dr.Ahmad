@@ -5,7 +5,7 @@
  * التشغيلة الواحدة في GitHub تُولّد دفعةً محدودة ثم تتوقف (وهو صحيح: مهلة
  * الوظيفة ست ساعات، والدفعة الكبيرة تُقطع في منتصفها فتضيع). فكان على الدكتور
  * أن يضغط «شغّل» مرّةً كل ساعة، مئةَ مرّة، ليُنجز مئةً وثلاثاً وأربعين مقالة
- * بصوتين — وهذا ما لا يفعله إنسان.
+ * بقراءة صوتية — وهذا ما لا يفعله إنسان.
  *
  * فهذا يفعله عنه: يقيس ما بقي، ثم يُطلق دفعةً، وينتظرها، ويقيس ما بقي، ويُطلق
  * التالية… حتى لا يبقى شيء. ويتوقف بأمانٍ عند أول عطبٍ حقيقيّ بدل أن يُحرق
@@ -26,18 +26,18 @@ export const REPO = 'ProfAlfailakawi/Dr.Ahmad'
 export const WORKFLOW = 'auto-audio-r2.yml'
 
 /**
- * ما الذي بقي؟ المقال يحتاج صوتين (فهد ونورة)؛ فما لم يكتمل صوتاه فهو ناقص.
- * ولا نعتمد على تخمين: نقرأ سجلّ الصوت نفسه الذي يقرؤه المحرك.
+ * ما الذي بقي؟ للمقال مسار قراءة واحد في الواجهة. الملف الحديث هو الأصل،
+ * والملف الموروث يُعد قراءة منشورة أيضاً حتى لا نعيد توليد المادة بلا داعٍ.
  */
 export function remainingWork({ published, meta }) {
   const missing = []
   for (const slug of published) {
-    const fahed = Boolean(meta[`${slug}.mp3`])
-    const noura = Boolean(meta[`${slug}.noura.mp3`])
-    if (!fahed || !noura) missing.push({ slug, fahed, noura })
+    const modern = Boolean(meta[`${slug}.mp3`])
+    const legacy = Boolean(meta[`${slug}.noura.mp3`])
+    const reading = modern || legacy
+    if (!reading) missing.push({ slug, reading })
   }
-  const files = missing.reduce((sum, item) => sum + (item.fahed ? 0 : 1) + (item.noura ? 0 : 1), 0)
-  return { articles: missing.length, files, missing }
+  return { articles: missing.length, files: missing.length, missing }
 }
 
 /** كم دفعةً نحتاج؟ يُعرض للدكتور قبل أن يُنفق شيئاً */
@@ -50,14 +50,14 @@ if (SELF_TEST) {
 
   const work = remainingWork({
     published: ['a', 'b', 'c'],
-    meta: { 'a.mp3': {}, 'a.noura.mp3': {}, 'b.mp3': {} },
+    meta: { 'a.mp3': {}, 'b.noura.mp3': {} },
   })
-  assert(work.articles === 2, '★ المقال المكتمل صوتاه لا يُعاد توليده')
-  assert(work.files === 3, '★ ويُحصى الناقص ملفاً ملفاً لا مقالاً: نورةُ «ب» وصوتا «ج»')
-  assert(work.missing[0].slug === 'b' && work.missing[0].fahed === true, 'ويُبيَّن أيّ صوتٍ ينقص')
+  assert(work.articles === 1, '★ أي قراءة منشورة تمنع إعادة توليد المقال بلا داعٍ')
+  assert(work.files === 1, '★ ويُحصى الناقص قراءةً واحدة لكل مقال')
+  assert(work.missing[0].slug === 'c' && work.missing[0].reading === false, 'ويُبيَّن المقال الذي تنقصه القراءة')
 
-  const done = remainingWork({ published: ['a'], meta: { 'a.mp3': {}, 'a.noura.mp3': {} } })
-  assert(done.files === 0, 'وحين يكتمل كل شيء لا يبقى عمل')
+  const done = remainingWork({ published: ['a'], meta: { 'a.noura.mp3': {} } })
+  assert(done.files === 0, 'وحين توجد قراءة متوافقة لا يبقى عمل')
 
   assert(batchesNeeded(0, 40) === 0, 'ولا دفعة لعملٍ منتهٍ')
   assert(batchesNeeded(41, 40) === 2, '★ والكسر يُجبر لدفعةٍ كاملة — وإلا بقي ملفٌ يتيم')
@@ -92,18 +92,18 @@ const published = Object.keys(bodies).filter((slug) => !excluded.includes(slug))
 const work = remainingWork({ published, meta })
 console.log('═══ قافلة الصوت ═══\n')
 console.log(`  منشور            : ${published.length} مقالة`)
-console.log(`  مكتملُ الصوتين    : ${published.length - work.articles}`)
-console.log(`  ينقصه صوت أو صوتان: ${work.articles} مقالة · ${work.files} ملفاً`)
+console.log(`  مكتمل القراءة      : ${published.length - work.articles}`)
+console.log(`  بلا قراءة بعد      : ${work.articles} مقالة · ${work.files} ملفاً`)
 console.log(`  دفعاتٌ لازمة      : ${batchesNeeded(work.files, perBatch)} (كلٌّ ${perBatch} ملفاً)`)
 
-if (!work.files) { console.log('\n✓ لا عمل — كل المقالات لها صوتاها.'); process.exit(0) }
+if (!work.files) { console.log('\n✓ لا عمل — كل المقالات لها قراءة منشورة.'); process.exit(0) }
 if (!run) { console.log('\nⓘ عرضٌ فقط. أضف --run لقيادة القافلة حتى تكتمل.'); process.exit(0) }
 
 console.log('\n── تنطلق القافلة ──\n')
 let launched = 0
 for (let batch = 1; batch <= batchesNeeded(work.files, perBatch); batch += 1) {
   const dispatch = gh(['api', '-X', 'POST', `repos/${REPO}/actions/workflows/${WORKFLOW}/dispatches`,
-    '-f', 'ref=main', '-f', `inputs[limit]=${perBatch}`, '-f', 'inputs[voice]=all'])
+    '-f', 'ref=main', '-f', `inputs[limit]=${perBatch}`])
   if (!dispatch.ok) { console.log(`✘ تعذّر إطلاق الدفعة ${batch}: ${dispatch.output.slice(0, 120)}`); break }
   launched += 1
   console.log(`✓ أُطلقت الدفعة ${batch}`)

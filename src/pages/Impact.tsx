@@ -203,7 +203,7 @@ export default function Impact() {
                             <h2 className="font-display text-[1.23rem] font-semibold leading-[1.65] text-ink transition-colors group-hover:text-accent">{chain.title}</h2>
                           </Link>
                         ) : <h2 className="mt-2 font-display text-[1.23rem] font-semibold leading-[1.65] text-ink">{chain.title}</h2>}
-                        <p className="mt-3 text-[.76rem] font-light leading-[1.8] text-soft">الدائرة المجوّفة تعني صلة أرشيفية قوية يمكن فتح مصدرها. الدائرة الممتلئة محفوظة للأثر الخارجي الذي يثبت المصدر علاقته بالعمل صراحةً.</p>
+                        <p className="mt-3 text-[.76rem] font-light leading-[1.8] text-soft">كل دائرة تفتح مادتها المرتبطة؛ وتبرز الدائرة الممتلئة الأثر الموثّق خارج الأرشيف.</p>
                       </header>
                       <ol className="relative space-y-7 before:absolute before:bottom-3 before:right-[7px] before:top-3 before:w-px before:bg-hair">
                         {nodes.map((node, index) => (
@@ -212,7 +212,7 @@ export default function Impact() {
                               {node.confidence === 'موثق' && <span className="h-1.5 w-1.5 rounded-full bg-canvas" />}
                             </span>
                             <EvidenceLink node={node} />
-                            {node.kind !== 'origin' && <span className="mt-2 inline-block rounded-full border border-hair px-2.5 py-1 text-[.64rem] font-semibold text-soft">{node.confidence === 'موثق' ? 'أثر مثبت' : 'صلة أرشيفية'}</span>}
+                            {node.kind !== 'origin' && <span className="mt-2 inline-block rounded-full border border-hair px-2.5 py-1 text-[.64rem] font-semibold text-soft">{node.confidence === 'موثق' ? 'أثر موثّق' : 'امتداد في الأرشيف'}</span>}
                           </li>
                         ))}
                       </ol>

@@ -205,56 +205,26 @@ function SourceLine({ c }: { c: Curio }) {
   );
 }
 
-function RadarSection({ items }: { items: Curio[] }) {
-  if (!items.length) return null;
+function RadarPanel({ items }: { items: Curio[] }) {
+  if (!items.length) return <p className="rounded-2xl border border-hair bg-wash/35 px-6 py-10 text-center text-[.84rem] text-soft">سيظهر هنا أحدث ما يلتقطه الرادار.</p>;
   return (
-    <section className="border-b border-hair px-6 py-14 md:px-11 md:py-16">
-      <div className="mx-auto max-w-shell">
-        <FadeUp>
-          <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <div className="flex flex-wrap items-baseline gap-3">
-              <h2 className="font-display text-xl font-bold text-ink">
-                رادار الشبكة
-              </h2>
-              <span className="text-[.8rem] text-soft">
-                التقاط حديث من مصادر موثوقة خارج الموقع
-              </span>
-            </div>
-            <Link
-              to="/radar"
-              data-hover
-              className="text-[.85rem] text-accent transition-colors hover:text-accent-deep"
-            >
-              الأرشيف الكامل ←
-            </Link>
-          </div>
-        </FadeUp>
-        <div className="mx-auto mt-8 max-w-4xl space-y-4">
-          {items.slice(0, 2).map((item, index) => (
-            <FadeUp
-              key={`${item.url || item.ar}-${index}`}
-              delay={Math.min(index * 0.06, 0.2)}
-            >
-              <CardWrap
-                c={item}
-                className="flex min-h-[12rem] flex-col rounded-2xl border border-hair p-6 transition-colors hover:border-accent md:p-8"
-              >
-                <span className="text-[.72rem] text-soft">
-                  {item.added ? fmtAdded(item.added) : "حديث"} ·{" "}
-                  {radarSourceArabic(item.source)}
-                </span>
-                <div className="mt-2.5 flex-1">
-                  <CurioBody c={item} />
-                </div>
-                <span className="mt-auto pt-4 text-[.82rem] text-soft transition-colors group-hover:text-accent">
-                  اقرأ المادة في مصدرها ←
-                </span>
-              </CardWrap>
-            </FadeUp>
-          ))}
-        </div>
+    <div>
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <p className="text-[.78rem] font-semibold text-accent">الأحدث من رادار الشبكة</p>
+        <Link to="/radar" data-hover className="text-[.8rem] text-accent transition-colors hover:text-accent-deep">الأرشيف الكامل ←</Link>
       </div>
-    </section>
+      <div className="mt-5 space-y-4">
+        {items.slice(0, 2).map((item, index) => (
+          <FadeUp key={`${item.url || item.ar}-${index}`} delay={Math.min(index * 0.05, 0.12)}>
+            <CardWrap c={item} className="flex min-h-[11rem] flex-col rounded-2xl border border-hair bg-canvas p-6 transition-colors hover:border-accent md:p-7">
+              <span className="text-[.72rem] text-soft">{item.added ? fmtAdded(item.added) : "حديث"} · {radarSourceArabic(item.source)}</span>
+              <div className="mt-2.5 flex-1"><CurioBody c={item} /></div>
+              <span className="mt-auto pt-4 text-[.8rem] text-soft transition-colors group-hover:text-accent">اقرأ المادة في مصدرها ←</span>
+            </CardWrap>
+          </FadeUp>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -267,6 +237,7 @@ export default function Curated() {
   });
   const reduce = useReducedMotion();
   const [kind, setKind] = useState<"الكل" | string>("الكل");
+  const [feature, setFeature] = useState<"today" | "book" | "question" | "radar">("today");
   const [today, setToday] = useState("");
 
   useEffect(() => {
@@ -325,79 +296,65 @@ export default function Curated() {
         sub="قراءاتٌ وأدواتٌ وأحداثٌ أختارها بعد التحقق من قيمتها؛ لكل مادة سياقٌ يوضح سبب الاختيار، وطريقٌ مباشر إلى مصدرها الأول."
       />
 
-      <section className="border-b border-hair px-6 py-14 md:px-11 md:py-20">
+      <section className="border-b border-hair px-6 py-12 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-2.5 text-[.82rem] font-semibold text-accent">
-                <span className={`relative h-2 w-2 rounded-full bg-accent ${radarLive ? "pulse" : ""}`} />
-                {radarLive ? "الأحدث من الإنترنت" : "من مختاراتٍ موثوقة"}
-              </span>
-              <span className="text-[.85rem] text-soft">
-                {radarLive
-                  ? `· ${today} · أحدث ما أضيف إلى المختارات`
-                  : latestAdded
-                    ? `· آخر إضافة: ${latestAdded}`
-                    : "· مختارات محفوظة من الأرشيف"}
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <span className="inline-flex items-center gap-2.5 text-[.78rem] font-semibold text-accent">
+                  <span className={`relative h-2 w-2 rounded-full bg-accent ${radarLive ? "pulse" : ""}`} />
+                  {radarLive ? "يتجدد من الشبكة" : "مختارات محفوظة"}
+                </span>
+                <p className="mt-1 text-[.74rem] text-soft">{radarLive ? today : latestAdded ? `آخر إضافة: ${latestAdded}` : "مسارات مختارة للقراءة"}</p>
+              </div>
+              <div className="max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="flex min-w-max gap-1" role="tablist" aria-label="واجهة مختارات د. أحمد">
+                  {[
+                    ["today", "اختيار اليوم"],
+                    ["book", "كتاب الشهر"],
+                    ["question", "سؤال"],
+                    ["radar", "الرادار"],
+                  ].map(([key, label]) => (
+                    <button key={key} type="button" role="tab" aria-selected={feature === key} onClick={() => setFeature(key as typeof feature)} className={`min-h-11 rounded-full px-4 text-[.78rem] font-semibold transition-colors ${feature === key ? "bg-accent text-white" : "text-soft hover:bg-wash hover:text-ink"}`}>{label}</button>
+                  ))}
+                </div>
+              </div>
             </div>
           </FadeUp>
-          <FadeUp delay={0.08}>
-            <CardWrap
-              c={daily}
-              className="mt-7 block max-w-3xl rounded-2xl border border-accent/40 bg-wash p-7 md:p-9"
-            >
-              <span className="text-[.74rem] font-semibold text-accent">
-                {daily.kind}
-              </span>
-              <div className="mt-3">
-                <CurioBody c={daily} />
-              </div>
-              <SourceLine c={daily} />
-            </CardWrap>
-          </FadeUp>
 
-          <div className="mobile-card-rail mt-8 grid gap-6 md:grid-cols-2">
-            <FadeUp delay={0.14}>
-              <CardWrap
-                c={book}
-                className="flex h-full flex-col rounded-2xl border border-hair p-7"
-              >
-                <span className="text-[.74rem] font-semibold text-accent">
-                  كتاب الشهر
-                </span>
-                <div className="mt-3 flex-1">
-                  <CurioBody c={book} />
-                </div>
-                <SourceLine c={book} />
-              </CardWrap>
-            </FadeUp>
-            <FadeUp delay={0.2}>
-              <Link
-                to="/questions"
-                data-hover
-                className="group flex h-full flex-col rounded-2xl border border-hair p-7 transition-colors hover:border-accent"
-              >
-                <span className="text-[.74rem] font-semibold text-accent">
-                  سؤال متجدد
-                </span>
-                <h3 className="mt-3 font-display text-[1.2rem] font-semibold leading-[1.7] text-ink">
-                  سؤال يُقلق التعليم
-                </h3>
-                <p className="mt-2 text-[.9rem] font-light text-soft">
-                  سؤال جديد كل يومين؛ قصير في صياغته، واسع في أثره.
-                </p>
-                <span className="mt-auto pt-5 text-[.85rem] text-soft transition-colors group-hover:text-accent">
-                  إلى الزاوية ←
-                </span>
-              </Link>
-            </FadeUp>
+          <div className="mx-auto mt-7 max-w-4xl" role="tabpanel">
+            {feature === "today" && (
+              <FadeUp key="today">
+                <CardWrap c={daily} className="block rounded-2xl border border-accent/35 bg-wash/55 p-7 md:p-9">
+                  <span className="text-[.74rem] font-semibold text-accent">{daily.kind}</span>
+                  <div className="mt-3"><CurioBody c={daily} /></div>
+                  <SourceLine c={daily} />
+                </CardWrap>
+              </FadeUp>
+            )}
+            {feature === "book" && (
+              <FadeUp key="book">
+                <CardWrap c={book} className="flex min-h-[12rem] flex-col rounded-2xl border border-hair bg-canvas p-7 md:p-9">
+                  <span className="text-[.74rem] font-semibold text-accent">كتاب الشهر</span>
+                  <div className="mt-3 flex-1"><CurioBody c={book} /></div>
+                  <SourceLine c={book} />
+                </CardWrap>
+              </FadeUp>
+            )}
+            {feature === "question" && (
+              <FadeUp key="question">
+                <Link to="/questions" data-hover className="group flex min-h-[12rem] flex-col rounded-2xl border border-hair bg-canvas p-7 transition-colors hover:border-accent md:p-9">
+                  <span className="text-[.74rem] font-semibold text-accent">سؤال متجدد</span>
+                  <h3 className="mt-3 font-display text-[1.3rem] font-semibold leading-[1.7] text-ink">سؤال يُقلق التعليم</h3>
+                  <p className="mt-2 text-[.9rem] font-light leading-relaxed text-soft">سؤال قصير في صياغته، واسع في أثره؛ يفتح زاوية جديدة كل مرة.</p>
+                  <span className="mt-auto pt-5 text-[.82rem] text-soft transition-colors group-hover:text-accent">إلى الزاوية ←</span>
+                </Link>
+              </FadeUp>
+            )}
+            {feature === "radar" && <RadarPanel items={radarHighlights} />}
           </div>
         </div>
       </section>
-
-      {/* الرادار يعرض ما بعد المادة الرئيسية — لا تكرار فوق بعضه */}
-      <RadarSection items={radarHighlights} />
 
       <section className="px-6 py-14 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">

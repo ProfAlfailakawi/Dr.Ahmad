@@ -174,12 +174,12 @@ export default function Inbox() {
   const { articles, books, papers } = useCmsContent();
   const archiveDialogues = useMemo(() => buildArchiveDialogues(articles, books, papers), [articles, books, papers]);
   const [activeView, setActiveView] = useState<InboxView>("letters");
-  const inboxTabs: { id: InboxView; label: string; hidden?: boolean }[] = [
+  const inboxTabs: { id: InboxView; label: string }[] = [
     { id: "letters", label: "الرسائل" },
-    { id: "threads", label: "خيوط الأرشيف", hidden: archiveDialogues.length === 0 },
+    ...(archiveDialogues.length > 0 ? [{ id: "threads" as const, label: "خيوط الأرشيف" }] : []),
     { id: "echoes", label: publicTestimonials.length ? "ماذا قالوا" : "أصداء من المتون" },
     { id: "questions", label: "الأسئلة" },
-  ].filter((tab) => !tab.hidden);
+  ];
   useEffect(() => {
     if (activeView === "threads" && archiveDialogues.length === 0) setActiveView("letters");
   }, [activeView, archiveDialogues.length]);
@@ -218,7 +218,7 @@ export default function Inbox() {
       <PageHead
         label="رسائل على الهامش"
         title="رسالةٌ تفتح نافذة."
-        sub="مساحةٌ لرسائل قصيرة وأسئلة تفتح زوايا جديدة على ما يُنشر هنا."
+        sub="رسائل وأسئلة تلتقي بما يُنشر هنا، وتفتح أبواباً جديدة للقراءة والتفكير."
       />
       <div className="border-b border-hair px-6 py-3 md:px-11">
         <p className="mx-auto flex max-w-shell items-center gap-2 text-[.72rem] text-soft">

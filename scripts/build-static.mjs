@@ -115,8 +115,13 @@ const researchRuntime = ts.transpileModule(researchSource, {
    Firestore قبل بناء أي شيء، فيصير مصدر الحقيقة واحداً.
    وإن تعذّر الوصول (بناء محلي بلا مفاتيح) نبني بالملفات كما كان — لا نُسقط
    البناء، لكن نُعلن ذلك بوضوح كي لا يُنشر بناءٌ أعمى دون أن ندري. */
+const normalizeArabicTypographyStatic = (input = '') => String(input)
+  .normalize('NFC')
+  .replace(/\u064B\u0627/g, '\u0627\u064B')
+  .replace(/([\u0621-\u064A\u0671-\u06D3])[ \t]+([\u064B-\u064D])/g, '$1$2')
+  .replace(/([\u064B-\u064D])\1+/g, '$1')
 const normalizeArabicTanweenDeep = (value) => {
-  if (typeof value === 'string') return value.replace(/\u064B\u0627/g, 'اً')
+  if (typeof value === 'string') return normalizeArabicTypographyStatic(value)
   if (Array.isArray(value)) return value.map(normalizeArabicTanweenDeep)
   if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, normalizeArabicTanweenDeep(item)]))

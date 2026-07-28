@@ -6,7 +6,7 @@ const arg = (name) => process.argv.find((item) => item.startsWith(`--${name}=`))
 const slug = arg('slug').trim()
 const mode = arg('mode').trim()
 if (!/^[a-z0-9-]+$/.test(slug)) throw new Error('slug غير صالح')
-if (!['fahed', 'noura', 'dialogue', 'reading'].includes(mode)) throw new Error('mode يجب أن يكون fahed أو noura أو dialogue')
+if (!['fahed', 'noura', 'dialogue', 'reading'].includes(mode)) throw new Error('mode غير صالح')
 
 const ROOT = process.cwd()
 const atomicJson = (path, value) => {
@@ -76,5 +76,5 @@ if (mode === 'dialogue') {
   removeFile(resolve(ROOT, 'podcast-audits', `${slug}.json`))
 }
 
-const label = mode === 'fahed' ? 'صوت فهد' : mode === 'noura' ? 'صوت نورة' : mode === 'dialogue' ? 'الحوار' : 'القراءتين'
+const label = mode === 'dialogue' ? 'الحوار' : 'قراءة المقال'
 console.log(`✓ أزيلت آثار ${label} للمقال ${slug} من الفهارس المحلية من دون المساس بالأصوات الأخرى.`)

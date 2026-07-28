@@ -1035,21 +1035,28 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       const commandRef = db.collection(COLLECTIONS.commands).doc(id)
       const commandSnapshot = await commandRef.get()
       const command = serializeDoc(commandSnapshot)
-      if (body.retry === true) {
+      const rawBridgeError = bounded(body.error, 600)
+      const transientBridgeError = /detached\s+frame|execution context (?:was )?destroyed|target closed|session closed|most likely because of a navigation/i.test(rawBridgeError)
+      const retryableBridgeFailure = body.retry === true
+        || (body.ok === false && transientBridgeError && Number(command?.attempts || 0) < 4)
+      if (retryableBridgeFailure) {
         await commandRef.set({
           status: 'pending',
           leasedAt: null,
           completedAt: null,
           availableAt: new Date(Date.now() + 3_500).toISOString(),
-          error: bounded(body.error, 600) || 'bridge-session-refresh',
+          error: 'bridge-session-refresh',
           updatedAt: asIso(),
         }, { merge: true })
         sendJson(res, 200, { ok: true, requeued: true })
         return
       }
+      const safeBridgeError = transientBridgeError
+        ? 'أعاد واتساب تهيئة الجلسة ولم يكتمل التسليم بعد عدة محاولات.'
+        : rawBridgeError
       await commandRef.set({
         status: body.ok === false ? 'failed' : 'completed',
-        error: bounded(body.error, 600) || null,
+        error: safeBridgeError || null,
         completedAt: asIso(),
         updatedAt: asIso(),
       }, { merge: true })

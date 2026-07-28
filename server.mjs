@@ -964,11 +964,17 @@ function requestGlossaryEntry(input) {
 }
 
 function selectDrAhmadGlossaryEntry(input) {
-  const idea = [input.idea, input.issue, input.glossaryLabel, input.glossaryCanonicalEn].filter(Boolean).join(' ')
+  const idea = boundedString(input.idea, 1_200)
   const context = [input.context, input.tension, input.visualReason].filter(Boolean).join(' ')
   const requestEntry = requestGlossaryEntry(input)
   const explicit = input.glossaryConcept ? drAhmadDomainGlossary.find((entry) => entry.id === input.glossaryConcept) : null
-  if (explicit) return requestEntry ? {
+  const requestAliases = requestEntry ? [requestEntry.canonicalAr, requestEntry.canonicalEn, ...(requestEntry.aliases || [])] : []
+  const requestDirect = Math.max(...requestAliases.map((alias) => glossaryAliasScore(idea, alias)), 0)
+  const explicitAliases = explicit ? [explicit.canonicalAr, explicit.canonicalEn, ...(explicit.aliases || [])] : []
+  const explicitDirect = Math.max(...explicitAliases.map((alias) => glossaryAliasScore(idea, alias)), 0)
+  /* تصنيف الواجهة مجرد اقتراح. لا نسمح له بتغيير عبارة المستخدم إلى مفهوم
+     آخر (مثل معلم وطالب ← نظم تدريس ذكية، أو تنمر مدرسي ← إلكتروني). */
+  if (explicit && explicitDirect >= 78) return requestEntry && requestDirect >= 78 ? {
     ...explicit,
     canonicalAr: requestEntry.canonicalAr || explicit.canonicalAr,
     canonicalEn: requestEntry.canonicalEn || explicit.canonicalEn,
@@ -979,7 +985,7 @@ function selectDrAhmadGlossaryEntry(input) {
     moods: [...new Set([...(explicit.moods || []), ...requestEntry.moods])],
     literalAnchors: [...new Set([...(explicit.literalAnchors || []), ...requestEntry.literalAnchors])],
   } : explicit
-  if (requestEntry) return requestEntry
+  if (requestEntry && requestDirect >= 78) return requestEntry
   const ranked = drAhmadDomainGlossary.map((entry) => {
     const aliases = [entry.canonicalAr, entry.canonicalEn, ...(Array.isArray(entry.aliases) ? entry.aliases : [])]
     const direct = Math.max(...aliases.map((alias) => glossaryAliasScore(idea, alias)), 0)
@@ -987,7 +993,7 @@ function selectDrAhmadGlossaryEntry(input) {
     // كلمة المستخدم وسطر العنوان لهما السيادة؛ السياق يساعد ولا يطغى عليهما.
     const score = direct >= 58 ? direct + 35 : direct + contextual * .42
     return { entry, score, direct }
-  }).filter((item) => item.score >= 58).sort((left, right) => right.score - left.score || right.direct - left.direct)
+  }).filter((item) => item.direct >= 78).sort((left, right) => right.score - left.score || right.direct - left.direct)
   return ranked[0]?.entry || null
 }
 
@@ -1279,10 +1285,10 @@ function normalizeSemanticBlueprint(value, fallbackConcept, input) {
       mood: boundedString(route.mood, 80),
     }
   })
-  const literalAnchors = [...new Set([
-    ...boundedArray(input.literalAnchors, 12, (item) => boundedString(item, 220)),
-    ...boundedArray(value?.literalSubjects, 12, (item) => boundedString(item, 220)),
-  ])]
+  const directedLiteralAnchors = boundedArray(value?.literalSubjects, 12, (item) => boundedString(item, 220))
+  const literalAnchors = [...new Set(directedLiteralAnchors.length
+    ? directedLiteralAnchors
+    : boundedArray(input.literalAnchors, 12, (item) => boundedString(item, 220)))]
   const visibleAnchors = [...new Set([
     ...literalAnchors,
     ...boundedArray(value?.visibleAnchors, 12, (item) => boundedString(item, 220)),
@@ -1322,12 +1328,13 @@ async function buildStudioSemanticBlueprint(input, accountId, apiToken, fetchImp
   const prompt = [
     'You are the semantic art director for an Arabic educational technology scholar.',
     'Convert the exact compound title into three concrete, visually testable editorial scenes. Semantic accuracy is more important than beauty.',
-    `TITLE: ${input.issue || input.idea}`,
+    `EXACT USER TITLE — HIGHEST AUTHORITY: ${input.idea || input.issue}`,
     `CONTEXT: ${input.context || 'not supplied'}`,
     `SPECIALIZED MEANING: ${input.glossaryMeaning || baseConcept.interpretation || input.visualReason || ''}`,
-    `MANDATORY LITERAL SUBJECTS: ${(input.literalAnchors || []).join(' + ') || 'none beyond the title'}`,
+    `CLIENT-DETECTED SUBJECT HINTS — USE ONLY IF CONSISTENT WITH THE TITLE: ${(input.literalAnchors || []).join(' + ') || 'none'}`,
     `VALID DOMAIN SCENES: ${(input.glossaryScenes || []).join(' | ') || baseConcept.scene}`,
     `FORBIDDEN CONFUSIONS: ${(input.glossaryAvoid || []).join(', ')} ${baseConcept.avoid || ''}`,
+    'The exact user title is absolute. Discard any specialized meaning, detected concept, hint, or domain scene that conflicts with its literal wording.',
     'A compound title must show the intersection of all its subjects. Do not drop the second half of the title.',
     'Never use decorative flowers, random laptop groups, generic classrooms, chess, corridors, or mood-only photography unless the title explicitly requires them.',
     'Each route must use concrete visible objects and an unambiguous cause/effect relationship. No text or UI inside the generated image.',
@@ -1510,7 +1517,7 @@ export function buildEliteStudioImagePrompt(input) {
   ].filter(Boolean).join(', ')
   return [
     `Generate image only. Create one photorealistic world-class editorial image, ${orientation}.`,
-    `EXACT COMPOUND IDEA: ${input.issue || input.idea}.`,
+    `EXACT COMPOUND IDEA — USER WORDING HAS HIGHEST AUTHORITY: ${input.idea || input.issue}.`,
     input.semanticBlueprint?.canonicalMeaning ? `PRECISE MEANING: ${input.semanticBlueprint.canonicalMeaning}.` : '',
     `VISIBLE OBJECTS THAT MUST APPEAR: ${literal.length ? literal.join(' + ') : concept.anchors}. Every required object or anchor must be unmistakably visible; omission invalidates the image.`,
     `THE SCENE MUST BE EXACTLY THIS: ${concept.scene}`,
@@ -1523,6 +1530,185 @@ export function buildEliteStudioImagePrompt(input) {
     `FORBIDDEN: ${forbidden}.`,
     'Semantic accuracy and visible anchors come before beauty. Do not substitute a generic metaphor, generic classroom, or generic people-with-laptops scene for the literal compound subject.',
   ].filter(Boolean).join(' ').slice(0, 1980)
+}
+
+async function assessStudioImageWithCloudflareCaptionJudge({ accountId, apiToken, input, direction, image, imageMime }, fetchImpl = fetch) {
+  if (!accountId || !apiToken || !image || image.length > 16_000_000) return null
+  const visionModel = String(process.env.CLOUDFLARE_VISION_CRITIC_MODEL || '@cf/moondream/moondream3.1-9B-A2B').trim()
+  const judgeModel = String(process.env.CLOUDFLARE_SEMANTIC_DIRECTOR_MODEL || '@cf/meta/llama-3.1-8b-instruct-fast').trim()
+  if (!/^@cf\/[A-Za-z0-9._/-]+$/.test(visionModel) || !/^@cf\/[A-Za-z0-9._/-]+$/.test(judgeModel)) return null
+  const textZone = input.textZone === 'right'
+    ? 'right 42%'
+    : input.textZone === 'left'
+      ? 'left 42%'
+      : input.textZone === 'top'
+        ? 'upper 34%'
+        : input.textZone === 'bottom'
+          ? 'lower 36%'
+          : 'clearest calm region'
+  const maxAttempts = envNumber('CLOUDFLARE_VISION_CRITIC_ATTEMPTS', 1, 1, 2)
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      /* نفصل رؤية البكسلات عن الحكم الدلالي. Moondream يصف الصورة بوضع
+         caption المخصص، ثم Llama يقارن الوصف بعقد الفكرة. هذا يمنع خلط
+         score الدلالي بعدد مخالفات النص والواجهات. */
+      const captionResponse = await fetchWithTimeout(fetchImpl,
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${visionModel}`, {
+          method: 'POST',
+          headers: { accept: 'application/json', authorization: `Bearer ${apiToken}`, 'content-type': 'application/json' },
+          body: JSON.stringify({
+            task: 'caption',
+            image: `data:${imageMime || 'image/jpeg'};base64,${image}`,
+            caption_length: 'long',
+            stream: false,
+            max_tokens: 1_200,
+            temperature: 0,
+            top_p: .3,
+          }),
+        }, envNumber('CLOUDFLARE_VISION_CRITIC_TIMEOUT_MS', 24_000, 8_000, 40_000))
+      if (!captionResponse.ok) {
+        console.warn('[studio-image] vision caption request failed', { status: captionResponse.status, attempt: attempt + 1 })
+        if (attempt + 1 < maxAttempts && (captionResponse.status === 429 || captionResponse.status >= 500)) continue
+        return null
+      }
+      const captionPayload = await captionResponse.json()
+      const caption = boundedString(
+        captionPayload?.result?.result?.caption
+        ?? captionPayload?.result?.caption
+        ?? captionPayload?.caption
+        ?? captionPayload?.result?.result
+        ?? captionPayload?.result,
+        2_400,
+      )
+      if (caption.length < 24) {
+        console.warn('[studio-image] vision caption was incomplete', { attempt: attempt + 1, captionLength: caption.length })
+        if (attempt + 1 < maxAttempts) continue
+        return null
+      }
+
+      const judgePrompt = [
+        'You are the final semantic and safety gate for a premium Arabic editorial image.',
+        'The PIXEL CAPTION below was produced directly from the image. Judge only that evidence; never assume an object that the caption does not show.',
+        `TITLE — USER WORDING HAS HIGHEST AUTHORITY: ${input.idea || input.issue}`,
+        `PRECISE MEANING: ${input.semanticBlueprint?.canonicalMeaning || direction.concept.interpretation}`,
+        `MANDATORY LITERAL SUBJECTS: ${(input.literalAnchors || []).join(' + ') || 'none beyond the title'}`,
+        `REQUIRED VISIBLE ANCHORS: ${direction.concept.anchors}`,
+        `EXPECTED VIEWER INFERENCE: ${direction.concept.inference}`,
+        `REQUESTED TYPOGRAPHY SAFE ZONE: ${textZone}`,
+        `PIXEL CAPTION: ${caption}`,
+        'topicMatch is true only when the exact compound idea and all mandatory subjects are visibly inferable without reading the title.',
+        'hasTextOrGlyphs is true for any visible writing, letters, numbers, logo, watermark or fake glyphs.',
+        'interfaceContamination is true for any screen, dashboard, hologram, projected UI, chart or floating panel.',
+        'textSafeZoneClean is false only when the caption explicitly places a person, face, hand, focal object, hard edge or dense detail in the requested zone; otherwise true because a local pixel gate also verifies composition.',
+        'visualNoise is true for clutter, competing focal points or chaotic detail.',
+        'Return exactly one JSON object with score (0-100), topicMatch, hasTextOrGlyphs, interfaceContamination, textSafeZoneClean, visualNoise, reason, missingAnchor and correction.',
+      ].join('\n')
+      const judgeResponse = await fetchWithTimeout(fetchImpl,
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${judgeModel}`, {
+          method: 'POST',
+          headers: { accept: 'application/json', authorization: `Bearer ${apiToken}`, 'content-type': 'application/json' },
+          body: JSON.stringify({
+            prompt: judgePrompt,
+            max_tokens: 700,
+            temperature: 0,
+            top_p: .2,
+            response_format: {
+              type: 'json_schema',
+              json_schema: {
+                type: 'object',
+                properties: {
+                  score: { type: 'integer', minimum: 0, maximum: 100 },
+                  topicMatch: { type: 'boolean' },
+                  hasTextOrGlyphs: { type: 'boolean' },
+                  interfaceContamination: { type: 'boolean' },
+                  textSafeZoneClean: { type: 'boolean' },
+                  visualNoise: { type: 'boolean' },
+                  reason: { type: 'string' },
+                  missingAnchor: { type: 'string' },
+                  correction: { type: 'string' },
+                },
+                required: ['score', 'topicMatch', 'hasTextOrGlyphs', 'interfaceContamination', 'textSafeZoneClean', 'visualNoise', 'reason', 'missingAnchor', 'correction'],
+              },
+            },
+          }),
+        }, envNumber('CLOUDFLARE_SEMANTIC_JUDGE_TIMEOUT_MS', 10_000, 4_000, 18_000))
+      if (!judgeResponse.ok) {
+        console.warn('[studio-image] semantic judge request failed', { status: judgeResponse.status, attempt: attempt + 1 })
+        if (attempt + 1 < maxAttempts && (judgeResponse.status === 429 || judgeResponse.status >= 500)) continue
+        return null
+      }
+      const judgePayload = await judgeResponse.json()
+      const rawJudge = judgePayload?.result?.response ?? judgePayload?.response ?? judgePayload?.result
+      const parsed = parseLooseJsonObject(rawJudge)
+      if (!parsed) {
+        console.warn('[studio-image] semantic judge returned non-JSON', { attempt: attempt + 1, answer: boundedString(rawJudge, 300) })
+        if (attempt + 1 < maxAttempts) continue
+        return null
+      }
+
+      const criticBoolean = (value) => value === true || String(value).trim().toLowerCase() === 'true'
+      const reason = boundedString(parsed.reason, 500)
+      const declaredScore = typeof parsed.score === 'number'
+        ? parsed.score
+        : typeof parsed.score === 'string' && /^\d{1,3}$/.test(parsed.score.trim())
+          ? Number(parsed.score)
+          : Number.NaN
+      const hasAssessment = Number.isFinite(declaredScore)
+        && typeof parsed.topicMatch !== 'undefined'
+        && typeof parsed.hasTextOrGlyphs !== 'undefined'
+        && typeof parsed.interfaceContamination !== 'undefined'
+        && typeof parsed.textSafeZoneClean !== 'undefined'
+        && Boolean(reason)
+      if (!hasAssessment) {
+        console.warn('[studio-image] semantic judge returned an incomplete assessment', {
+          attempt: attempt + 1,
+          keys: Object.keys(parsed).slice(0, 20),
+          answer: boundedString(rawJudge, 300),
+        })
+        if (attempt + 1 < maxAttempts) continue
+        return null
+      }
+
+      const hasTextOrGlyphs = criticBoolean(parsed.hasTextOrGlyphs)
+      const interfaceContamination = criticBoolean(parsed.interfaceContamination)
+      const textSafeZoneClean = criticBoolean(parsed.textSafeZoneClean)
+      const visualNoise = criticBoolean(parsed.visualNoise)
+      const topicMatch = criticBoolean(parsed.topicMatch)
+        && !hasTextOrGlyphs
+        && !interfaceContamination
+        && textSafeZoneClean
+        && !visualNoise
+      const score = clamp(Math.trunc(declaredScore === 0 && topicMatch ? 92 : declaredScore), 0, 100)
+      console.info('[studio-image] caption semantic gate', {
+        score,
+        topicMatch,
+        hasTextOrGlyphs,
+        interfaceContamination,
+        textSafeZoneClean,
+        visualNoise,
+        captionLength: caption.length,
+        reason: reason.slice(0, 160),
+      })
+      return {
+        score,
+        topicMatch,
+        reason,
+        missingAnchor: boundedString(parsed.missingAnchor, 300),
+        correction: boundedString(parsed.correction, 500),
+        source: 'cloudflare-moondream-caption+llama-semantic-gate',
+        caption,
+        hasTextOrGlyphs,
+        interfaceContamination,
+        textSafeZoneClean,
+        visualNoise,
+      }
+    } catch {
+      if (attempt + 1 < maxAttempts) continue
+      return null
+    }
+  }
+  return null
 }
 
 async function assessStudioImageWithCloudflareVision({ accountId, apiToken, input, direction, image, imageMime }, fetchImpl = fetch) {
@@ -1541,7 +1727,7 @@ async function assessStudioImageWithCloudflareVision({ accountId, apiToken, inpu
   const question = [
     'Act as an unforgiving visual-quality gate for a premium Arabic editorial design studio.',
     'Inspect the actual pixels. The image is still raw: the studio has NOT overlaid any title yet.',
-    `TITLE: ${input.issue || input.idea}`,
+    `TITLE — USER WORDING HAS HIGHEST AUTHORITY: ${input.idea || input.issue}`,
     `PRECISE MEANING: ${input.semanticBlueprint?.canonicalMeaning || direction.concept.interpretation}`,
     `MANDATORY LITERAL SUBJECTS: ${(input.literalAnchors || []).join(' + ') || 'none'}`,
     `REQUIRED VISIBLE ANCHORS: ${direction.concept.anchors}`,
@@ -1668,9 +1854,7 @@ async function assessStudioImageWithCloudflareVision({ accountId, apiToken, inpu
 }
 
 async function assessStudioImageRelevance({ input, direction, image, imageMime = 'image/jpeg', accountId = '', apiToken = '' }, fetchImpl = fetch) {
-  /* بوابة واحدة من Cloudflare ترى الصورة نفسها: دلالة + كتابة وهمية + تلوث
-     واجهات + سلامة منطقة العنوان. لا Gemini ولا وصف وسيط قد يخفي العيب. */
-  return assessStudioImageWithCloudflareVision({
+  return assessStudioImageWithCloudflareCaptionJudge({
     accountId,
     apiToken,
     input,
@@ -1871,9 +2055,10 @@ async function decodeCloudflareStudioImageResponse(response) {
 
 async function requestCloudflareImage({ accountId, apiToken, model, prompt, seed, width, height }, fetchImpl) {
   const steps = envNumber('CLOUDFLARE_IMAGE_STEPS', 8, 4, 8)
-  const timeout = envNumber('CLOUDFLARE_IMAGE_TIMEOUT_MS', 45_000, 10_000, 55_000)
+  const timeout = envNumber('CLOUDFLARE_IMAGE_TIMEOUT_MS', 30_000, 10_000, 55_000)
   const maxAttempts = envNumber('CLOUDFLARE_IMAGE_TRANSPORT_ATTEMPTS', 1, 1, 2)
   const nativeAspectModel = /\/flux-2-(?:klein|dev)/i.test(model)
+  const leonardoImageModel = /\/leonardo\/(?:phoenix-1\.0|lucid-origin)/i.test(model)
   let lastError = null
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
@@ -1892,6 +2077,17 @@ async function requestCloudflareImage({ accountId, apiToken, model, prompt, seed
         form.append('height', String(height))
         form.append('seed', String(attemptSeed))
         body = form
+      } else if (leonardoImageModel) {
+        headers['content-type'] = 'application/json'
+        body = JSON.stringify({
+          prompt,
+          negative_prompt: 'text, letters, numbers, captions, logos, watermarks, fake glyphs, screens, dashboards, user interfaces, holograms, charts, clutter, bad anatomy',
+          seed: attemptSeed,
+          width,
+          height,
+          num_steps: steps,
+          guidance: envNumber('CLOUDFLARE_IMAGE_GUIDANCE', 7, 2, 10),
+        })
       } else {
         headers['content-type'] = 'application/json'
         body = JSON.stringify({ prompt, seed: attemptSeed, steps })
@@ -1937,7 +2133,7 @@ async function requestCloudflareImage({ accountId, apiToken, model, prompt, seed
         seed: attemptSeed,
         requestedWidth: width,
         requestedHeight: height,
-        nativeAspect: nativeAspectModel,
+        nativeAspect: nativeAspectModel || leonardoImageModel,
       }
     } catch (error) {
       lastError = error
@@ -1955,7 +2151,7 @@ async function requestCloudflareImage({ accountId, apiToken, model, prompt, seed
 export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
   const accountId = String(process.env.CLOUDFLARE_ACCOUNT_ID || '').trim()
   const apiToken = String(process.env.CLOUDFLARE_API_TOKEN || '').trim()
-  const model = String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/black-forest-labs/flux-2-klein-4b').trim()
+  const model = String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/leonardo/phoenix-1.0').trim()
   if (!accountId || !apiToken) throw new HttpError(503, 'Cloudflare Workers AI is not configured')
   if (!/^[a-f0-9]{32}$/i.test(accountId)) throw new HttpError(503, 'Cloudflare account is not configured correctly')
   if (!/^@cf\/[A-Za-z0-9._/-]+$/.test(model)) throw new HttpError(503, 'Cloudflare image model is not configured correctly')
@@ -1965,7 +2161,7 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
   const baseInput = { ...input, semanticBlueprint }
   const threshold = envNumber('STUDIO_IMAGE_RELEVANCE_THRESHOLD', 86, 74, 96)
   /* Firebase Hosting ينهي أي rewrite ديناميكي عند نحو 60 ثانية. لذلك لا
-     نجمع محاولات FLUX المتسلسلة داخل HTTP واحد؛ الواجهة تعيد طلبًا مستقلًا
+     نجمع محاولات الصور المتسلسلة داخل HTTP واحد؛ الواجهة تعيد طلبًا مستقلًا
      ببذرة ومشهد جديدين عندما يرفض الناقد المرشح الأول. */
   const candidateAttempts = envNumber('STUDIO_IMAGE_CANDIDATE_ATTEMPTS', 1, 1, 2)
   const requireVisionCritic = !/^(?:0|false|no|off)$/i.test(String(process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC || 'true').trim())
@@ -2058,11 +2254,13 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
     imageUrl: `data:${chosen.image.mime};base64,${chosen.image.base64}`,
     imageMime: chosen.image.mime,
     imageBytes: chosen.image.byteLength,
-    sourceUrl: model.includes('flux-2-klein-4b')
-      ? 'https://developers.cloudflare.com/workers-ai/models/flux-2-klein-4b/'
-      : 'https://developers.cloudflare.com/workers-ai/models/flux-1-schnell/',
+    sourceUrl: model.includes('/leonardo/phoenix-1.0')
+      ? 'https://developers.cloudflare.com/workers-ai/models/phoenix-1.0/'
+      : model.includes('flux-2-klein-4b')
+        ? 'https://developers.cloudflare.com/workers-ai/models/flux-2-klein-4b/'
+        : 'https://developers.cloudflare.com/workers-ai/models/',
     owner: 'توليد أصلي داخل الاستوديو',
-    license: 'نموذج FLUX عبر Cloudflare',
+    license: model.includes('/leonardo/') ? 'نموذج Leonardo عبر Cloudflare' : 'نموذج FLUX عبر Cloudflare',
     description: chosen.direction.concept.scene,
     prompt: chosen.prompt,
     model,
@@ -3368,7 +3566,7 @@ export function createRequestHandler({
         aliases: studioImageAliases,
         configured,
         tokenStorage: String(process.env.CLOUDFLARE_TOKEN_STORAGE || (configured ? 'legacy-or-manual' : 'not-configured')),
-        model: String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/black-forest-labs/flux-2-klein-4b'),
+        model: String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/leonardo/phoenix-1.0'),
         nativeAspect: true,
         visualCritic: 'local-pixels+cloudflare-moondream-vision',
         visionCriticModel: String(process.env.CLOUDFLARE_VISION_CRITIC_MODEL || '@cf/moondream/moondream3.1-9B-A2B'),

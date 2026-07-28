@@ -35,6 +35,20 @@ assert.match(prompt, /Art direction/i)
 assert.match(prompt, /Fresh variation/i)
 assert.doesNotMatch(prompt, /watermark\s*$/i)
 
+const userSovereigntyPrompt = buildEliteStudioImagePrompt({
+  ...input,
+  idea: 'معلم وطالب يتحاوران في فصل دراسي مضيء',
+  issue: 'نظم التدريس الذكية',
+  glossaryConcept: 'intelligent-tutoring-systems',
+  glossaryLabel: 'نظم التدريس الذكية',
+  glossaryCanonicalEn: 'Intelligent Tutoring Systems',
+  glossaryMeaning: 'أنظمة تقدم دعمًا وتكييفًا يشبه وظائف المعلم الخصوصي.',
+  literalAnchors: ['طالب يتحاوران', 'دراسي مضيء'],
+  regenerationId: 'user-wording-sovereignty',
+})
+assert.match(userSovereigntyPrompt, /معلم وطالب يتحاوران في فصل دراسي مضيء/)
+assert.doesNotMatch(userSovereigntyPrompt, /Intelligent Tutoring Systems|أنظمة تقدم دعمًا وتكييفًا/i)
+
 
 
 const gamificationInput = {
@@ -122,6 +136,26 @@ try {
   assert.ok(result.imageTreatment)
   assert.equal(result.generationAttempts, 1)
 
+  process.env.CLOUDFLARE_IMAGE_MODEL = '@cf/leonardo/phoenix-1.0'
+  const phoenixResult = await generateCloudflareStudioImage({ ...input, regenerationId: 'phoenix-native-shape' }, async (url, options) => {
+    if (!String(url).includes('/leonardo/phoenix-1.0')) {
+      return new Response(JSON.stringify({ success: false }), { status: 503, headers: { 'content-type': 'application/json' } })
+    }
+    const request = JSON.parse(String(options.body))
+    assert.equal(options.headers['content-type'], 'application/json')
+    assert.equal(request.width, 1024)
+    assert.equal(request.height, 1280)
+    assert.equal(request.num_steps, 8)
+    assert.equal(request.guidance, 7)
+    assert.match(request.negative_prompt, /text/)
+    return new Response(fakeJpegBytes, { status: 200, headers: { 'content-type': 'image/jpeg' } })
+  })
+  assert.equal(phoenixResult.model, '@cf/leonardo/phoenix-1.0')
+  assert.equal(phoenixResult.nativeAspect, true)
+  assert.match(phoenixResult.sourceUrl, /phoenix-1\.0/)
+  assert.match(phoenixResult.license, /Leonardo/)
+  process.env.CLOUDFLARE_IMAGE_MODEL = '@cf/black-forest-labs/flux-2-klein-4b'
+
   const dataUriResult = await generateCloudflareStudioImage({ ...input, regenerationId: 'data-uri-shape' }, imageOnlyMock(async () => new Response(JSON.stringify({ image: `data:image/jpeg;charset=utf-8;base64,${fakeImage}` }), {
     status: 200,
     headers: { 'content-type': 'application/json' },
@@ -173,6 +207,7 @@ try {
   process.env.STUDIO_IMAGE_CANDIDATE_ATTEMPTS = '2'
   let imageCalls = 0
   let visionCalls = 0
+  let judgeCalls = 0
   const visionGatedResult = await generateCloudflareStudioImage({ ...input, regenerationId: 'vision-gate-rescue' }, async (url, options) => {
     if (String(url).includes('/black-forest-labs/')) {
       imageCalls += 1
@@ -184,13 +219,31 @@ try {
     if (String(url).includes('/moondream/')) {
       visionCalls += 1
       const request = JSON.parse(String(options.body))
-      assert.equal(request.task, 'query')
+      assert.equal(request.task, 'caption')
+      assert.equal(request.caption_length, 'long')
       assert.equal(request.stream, false)
       assert.match(request.image, /^data:image\/jpeg;base64,/)
-      const answer = visionCalls === 1
-        ? { score: 82, topicMatch: true, hasTextOrGlyphs: true, interfaceContamination: true, textSafeZoneClean: false, visualNoise: false, reason: 'A fake dashboard pollutes the image.', missingAnchor: '', correction: 'Remove all screens and writing.', caption: 'A teacher beside a fake dashboard.' }
-        : { score: 0, topicMatch: true, hasTextOrGlyphs: false, interfaceContamination: false, textSafeZoneClean: true, visualNoise: false, reason: 'The human and machine-light tension is clear.', missingAnchor: '', correction: '', caption: 'A teacher protects warm light around an empty student chair.' }
-      return new Response(JSON.stringify({ result: { answer: JSON.stringify(answer) } }), {
+      const caption = visionCalls === 1
+        ? 'A teacher stands beside an empty student chair and a fake dashboard covered with interface writing.'
+        : 'A teacher protects warm natural light around an empty student chair while cold machine-like light reaches the classroom desk.'
+      return new Response(JSON.stringify({ result: { caption } }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    }
+    if (String(url).includes('/meta/llama-3.1-8b-instruct-fast')) {
+      const request = JSON.parse(String(options.body))
+      if (!String(request.prompt).includes('PIXEL CAPTION:')) {
+        return new Response(JSON.stringify({ success: false }), {
+          status: 503,
+          headers: { 'content-type': 'application/json' },
+        })
+      }
+      judgeCalls += 1
+      const answer = judgeCalls === 1
+        ? { score: 82, topicMatch: true, hasTextOrGlyphs: true, interfaceContamination: true, textSafeZoneClean: false, visualNoise: false, reason: 'A fake dashboard pollutes the image.', missingAnchor: '', correction: 'Remove all screens and writing.' }
+        : { score: 0, topicMatch: true, hasTextOrGlyphs: false, interfaceContamination: false, textSafeZoneClean: true, visualNoise: false, reason: 'The human and machine-light tension is clear.', missingAnchor: '', correction: '' }
+      return new Response(JSON.stringify({ result: { response: JSON.stringify(answer) } }), {
         status: 200,
         headers: { 'content-type': 'application/json' },
       })
@@ -202,12 +255,13 @@ try {
   })
   assert.equal(imageCalls, 2, 'A contaminated image must be discarded and regenerated.')
   assert.equal(visionCalls, 2)
+  assert.equal(judgeCalls, 2)
   assert.equal(visionGatedResult.semanticVerified, true)
   assert.equal(visionGatedResult.relevanceScore, 92, 'A clean pass must not be rejected when Moondream reports zero policy violations as score=0.')
   assert.equal(visionGatedResult.hasTextOrGlyphs, false)
   assert.equal(visionGatedResult.interfaceContamination, false)
   assert.equal(visionGatedResult.textSafeZoneClean, true)
-  assert.equal(visionGatedResult.criticSource, 'cloudflare-moondream-vision-gate')
+  assert.equal(visionGatedResult.criticSource, 'cloudflare-moondream-caption+llama-semantic-gate')
   assert.equal(visionGatedResult.generationAttempts, 2)
 
   console.log('Studio image generation self-test passed for transport recovery, native aspect output, and strict visual contamination rescue.')

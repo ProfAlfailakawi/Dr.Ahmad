@@ -1288,7 +1288,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           formatId: payload.formatId,
         },
         prompt: payload.prompt || visualSearchPlan.generationPrompt,
-        model: payload.model || '@cf/black-forest-labs/flux-2-klein-4b',
+        model: payload.model || '@cf/leonardo/phoenix-1.0',
         generatedAt: payload.generatedAt,
         requestId: payload.requestId,
       }

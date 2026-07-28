@@ -4,9 +4,9 @@ set -euo pipefail
 SERVICE_ID="${CLOUD_RUN_SERVICE_ID:-dr-api}"
 REGION="${CLOUD_RUN_REGION:-europe-west1}"
 SECRET_NAME="${CLOUDFLARE_TOKEN_SECRET_NAME:-cloudflare-workers-ai-token}"
-MODEL="${CLOUDFLARE_IMAGE_MODEL:-@cf/black-forest-labs/flux-2-klein-4b}"
-STEPS="${CLOUDFLARE_IMAGE_STEPS:-4}"
-TIMEOUT_MS="${CLOUDFLARE_IMAGE_TIMEOUT_MS:-45000}"
+MODEL="${CLOUDFLARE_IMAGE_MODEL:-@cf/leonardo/phoenix-1.0}"
+STEPS="${CLOUDFLARE_IMAGE_STEPS:-8}"
+TIMEOUT_MS="${CLOUDFLARE_IMAGE_TIMEOUT_MS:-30000}"
 REQUEST_TIMEOUT_SECONDS="${CLOUD_RUN_REQUEST_TIMEOUT_SECONDS:-300}"
 IMAGE_TRANSPORT_ATTEMPTS="${CLOUDFLARE_IMAGE_TRANSPORT_ATTEMPTS:-1}"
 IMAGE_CANDIDATE_ATTEMPTS="${STUDIO_IMAGE_CANDIDATE_ATTEMPTS:-1}"
@@ -30,16 +30,33 @@ if [[ "${CLOUDFLARE_PREFLIGHT:-true}" != "false" ]]; then
   node --input-type=module <<'NODE'
 const accountId = String(process.env.CLOUDFLARE_ACCOUNT_ID || '').trim()
 const token = String(process.env.CLOUDFLARE_API_TOKEN || '').trim()
-const model = String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/black-forest-labs/flux-2-klein-4b').trim()
+const model = String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/leonardo/phoenix-1.0').trim()
+const isFlux2 = /\/flux-2-(?:klein|dev)/i.test(model)
 const form = new FormData()
-form.append('prompt', 'A restrained charcoal circle on warm ivory paper, museum-grade editorial still life, no text')
-form.append('width', '512')
-form.append('height', '640')
-form.append('seed', '142857')
+if (isFlux2) {
+  form.append('prompt', 'A restrained charcoal circle on warm ivory paper, museum-grade editorial still life, no text')
+  form.append('width', '512')
+  form.append('height', '640')
+  form.append('seed', '142857')
+}
 const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
   method: 'POST',
-  headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
-  body: form,
+  headers: {
+    authorization: `Bearer ${token}`,
+    accept: 'application/json',
+    ...(isFlux2 ? {} : { 'content-type': 'application/json' }),
+  },
+  body: isFlux2
+    ? form
+    : JSON.stringify({
+        prompt: 'A restrained charcoal circle on warm ivory paper, museum-grade editorial still life, no text',
+        negative_prompt: 'text, letters, numbers, logo, watermark',
+        width: 512,
+        height: 640,
+        seed: 142857,
+        num_steps: 8,
+        guidance: 7,
+      }),
 })
 const bytes = Buffer.from(await response.arrayBuffer())
 let payload = null

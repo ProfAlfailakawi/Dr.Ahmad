@@ -539,16 +539,15 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
     return () => { on = false }
   }, [audioControl?.dialogueDisabled, dialogueListed, slug])
 
-  // قراءة واحدة فقط في الواجهة: نفضّل الملف الحالي، ونستخدم الملف الموروث
-  // كبديل صامت عند الحاجة. لا نعرض أسماء الأصوات الداخلية ولا نكرر «قراءة المقال».
-  // واجهة المقال تخفي اسم المؤدية عمداً، لكنها تفضّل ملف نورة المعتمد عند توافره.
-  const readingSource = voices.noura
-    ? { key: 'reading', label: 'قراءة المقال', avatar: 'woman' as const, src: versionedAudioUrl(typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3`) }
-    : voices.fahed
-      ? { key: 'reading', label: 'قراءة المقال', avatar: 'man' as const, src: versionedAudioUrl(typeof voices.fahed === 'string' ? voices.fahed : `/audio/${slug}.mp3`) }
-      : null
+  // داخل المقال نخفي أسماء محركات القراءة عن الزائر، لكننا لا ندمج الصوتين:
+  // إذا كان صوتا نورة وفهد موجودين تظهر أيقونتا امرأة ورجل كما في الواجهة الأصلية،
+  // وكل زر يحمل تسمية عامة «قراءة المقال». إذا توفر صوت واحد فقط يظهر زر واحد بلا اسم.
+  const readingSources = [
+    ...(voices.noura ? [{ key: 'reading-woman', label: 'قراءة المقال', avatar: 'woman' as const, src: versionedAudioUrl(typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3`) }] : []),
+    ...(voices.fahed ? [{ key: 'reading-man', label: 'قراءة المقال', avatar: 'man' as const, src: versionedAudioUrl(typeof voices.fahed === 'string' ? voices.fahed : `/audio/${slug}.mp3`) }] : []),
+  ]
   const sources = [
-    ...(readingSource ? [readingSource] : []),
+    ...readingSources,
     ...(dialogueOk ? [{ key: 'dialogue', label: 'الحوار', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`) }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)

@@ -272,21 +272,29 @@ jobs:
             echo "::error::Firestore rules deploy failed — CV uploads and CMS writes will stay broken until this succeeds."
             exit 1
           fi
-          # مكتبة التوليد أصبحت جزءاً معتمداً من الاستوديو، لذلك لا نسمح بنشر
-          # نسخة تقول إن المكتبة جاهزة بينما قواعد Storage لم تصل إلى مشروع البيانات.
-          # إذا تعطلت الخدمة أو الصلاحية يتوقف النشر هنا برسالة صريحة، ثم يُعاد بعد الإصلاح.
-          if ! npx --yes firebase-tools@latest deploy \
+          # Storage يخدم مكتبة التوليد، لكنه ليس شرطاً لإتاحة الموقع العام.
+          # إذا كانت الخدمة غير مفعلة أو حساب النشر لا يستطيع تفعيلها، نُبقي Hosting يعمل
+          # ونُظهر تحذيراً واضحاً؛ الاستوديو نفسه يعرض حالة Storage ولا يدّعي نجاح الحفظ.
+          STORAGE_READY=0
+          if npx --yes firebase-tools@latest deploy \
             --config firebase.data.json \
             --only storage \
             --project drahmad-8e9e2 \
             --non-interactive; then
-            echo "::error title=Generation Library Storage unavailable::تعذّر نشر قواعد Firebase Storage لمكتبة التوليد. فعّل Storage في drahmad-8e9e2 أو صحح الصلاحيات ثم أعد النشر؛ لن أنشر واجهة مكتبة لا تستطيع الحفظ."
-            exit 1
+            echo "✓ Generation Library Storage rules deployed successfully."
+            if FIREBASE_PROJECT_ID=drahmad-8e9e2 \
+              FIREBASE_STORAGE_BUCKET=drahmad-8e9e2.firebasestorage.app \
+              node scripts/verify-generation-library-storage.mjs; then
+              STORAGE_READY=1
+            else
+              echo "::warning title=Generation Library Storage verification failed::نُشرت قواعد Storage لكن فشل اختبار الكتابة/القراءة/الحذف. سيستمر نشر الموقع، وستظهر المكتبة حالتها الفعلية داخل الاستوديو."
+            fi
+          else
+            echo "::warning title=Generation Library Storage unavailable::Firebase Storage غير مفعّل أو أن حساب GitHub لا يملك صلاحية تفعيله في drahmad-8e9e2. سيستمر نشر الموقع العام؛ مكتبة التوليد لن تحفظ أصولاً جديدة إلى أن تُفعّل Storage مرة واحدة بحساب مالك المشروع."
           fi
-          echo "✓ Generation Library Storage rules deployed successfully."
-          FIREBASE_PROJECT_ID=drahmad-8e9e2 \
-          FIREBASE_STORAGE_BUCKET=drahmad-8e9e2.firebasestorage.app \
-            node scripts/verify-generation-library-storage.mjs
+          if [ "$STORAGE_READY" != "1" ]; then
+            echo "::notice title=Hosting deployment will continue::تعطل Storage الإداري لا يمنع نشر الموقع أو Firestore."
+          fi
         env:
           FIREBASE_DATA_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
 

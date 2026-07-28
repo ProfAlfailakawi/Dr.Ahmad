@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-28T04:00:26.267Z",
+  "updatedAt": "2026-07-28T06:41:47.977Z",
   "items": [
     {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
@@ -457,9 +457,9 @@
       "voice": "fahed",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 2,
+      "attempts": 3,
       "firstFailedAt": "2026-07-23T18:32:11.060Z",
-      "lastFailedAt": "2026-07-27T08:11:56.100Z",
+      "lastFailedAt": "2026-07-28T06:41:22.264Z",
       "message": "r015 فشل بعد 3 محاولات: STT 0٪، السرعة 78/128"
     },
     {
@@ -477,9 +477,9 @@
       "voice": "fahed",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 2,
+      "attempts": 3,
       "firstFailedAt": "2026-07-23T18:34:48.500Z",
-      "lastFailedAt": "2026-07-27T09:00:11.315Z",
+      "lastFailedAt": "2026-07-28T06:41:32.844Z",
       "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
     },
     {
@@ -497,9 +497,9 @@
       "voice": "fahed",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 2,
+      "attempts": 3,
       "firstFailedAt": "2026-07-23T18:35:23.340Z",
-      "lastFailedAt": "2026-07-27T09:08:15.160Z",
+      "lastFailedAt": "2026-07-28T06:41:42.702Z",
       "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 80/139"
     },
     {
@@ -517,9 +517,9 @@
       "voice": "fahed",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 2,
+      "attempts": 3,
       "firstFailedAt": "2026-07-23T20:19:54.497Z",
-      "lastFailedAt": "2026-07-27T09:10:10.441Z",
+      "lastFailedAt": "2026-07-28T06:41:47.977Z",
       "message": "r013 فشل بعد 3 محاولات: STT 0٪، السرعة 77/133"
     },
     {

@@ -104,7 +104,7 @@ function IdeaTrace({ article, model }: { article: ArticleRecord; model: ReturnTy
           return <li key={`${point.label}-${point.title}-${index}`} className="contents">{point.to ? <Link to={point.to} className={cls}>{body}</Link> : point.href ? <a href={point.href} target="_blank" rel="noreferrer" className={cls}>{body}</a> : <div className={cls}>{body}</div>}</li>
         })}
       </ol>
-      <p className="mt-3 text-[.68rem] font-light leading-[1.75] text-soft">يُبنى هذا المسار من الصلات الظاهرة في الأرشيف. وهو يصف تطور الموضوع، لا يدّعي اقتباساً أو علاقة سببية من دون مصدر صريح.</p>
+      <p className="mt-3 text-[.68rem] font-light leading-[1.75] text-soft">يمتد هذا المسار بين محطات الفكرة كما ظهرت في الأرشيف عبر الزمن.</p>
     </section>
   )
 }
@@ -124,7 +124,7 @@ function SectionTitle({ index, title, sub }: { index: string; title: string; sub
 function ThreadPanel({ nodes, close }: { nodes: ThreadNode[]; close: () => void }) {
   return (
     <div>
-      <SectionTitle index="01" title="الفكرة لا تعيش في صفحة واحدة." sub="مسار منتقى تلقائياً يصل المقال بأقرب كتاب وبحث ولقاء وسؤال من الأرشيف نفسه." />
+      <SectionTitle index="01" title="الفكرة لا تعيش في صفحة واحدة." sub="مسار يصل المقال بأقرب كتاب وبحث ولقاء وسؤال من الأرشيف نفسه." />
       <ol className="relative mt-7 grid gap-4 md:grid-cols-4 md:gap-5 before:absolute before:bottom-6 before:right-[.7rem] before:top-6 before:w-px before:bg-hair md:before:bottom-auto md:before:left-4 md:before:right-4 md:before:top-[1.05rem] md:before:h-px md:before:w-auto">
         {nodes.map((node, index) => {
           const content = (
@@ -143,7 +143,7 @@ function ThreadPanel({ nodes, close }: { nodes: ThreadNode[]; close: () => void 
           )
         })}
       </ol>
-      <p className="mt-6 border-t border-hair pt-4 text-[.72rem] font-light leading-[1.8] text-soft">لا يدّعي هذا الخيط علاقة سببية؛ إنه أقصر طريق معرفي إلى المواد الأقرب في المعنى داخل الموقع.</p>
+      <p className="mt-6 border-t border-hair pt-4 text-[.72rem] font-light leading-[1.8] text-soft">خيطٌ يقرّب المواد المتجاورة في المعنى، لتستكمل قراءة الفكرة من أكثر من زاوية.</p>
     </div>
   )
 }
@@ -256,7 +256,7 @@ function IdeaUpdatesPanel({ updates }: { updates: RemoteIdeaUpdate[] }) {
           })}
         </div>
       )}
-      <p className="relative mt-4 border-t border-hair pt-4 text-[.68rem] font-light leading-[1.8] text-soft">تُنتقى المستجدات من مصادر مفتوحة وموثوقة، ويُمنع تكرار الرابط أو العنوان. إذا تعطل المصدر ولم يوجد بديل مؤكد، يختفي المستجد وحده.</p>
+      <p className="relative mt-4 border-t border-hair pt-4 text-[.68rem] font-light leading-[1.8] text-soft">مستجدات منتقاة توسّع سياق الفكرة وتفتح باباً لقراءتها في الحاضر.</p>
     </section>
   )
 }
@@ -311,7 +311,7 @@ function TimePanel({ article, model, close }: { article: ArticleRecord; model: R
 
       {model.timeLinks.length > 0 && (
         <section>
-          <SectionTitle index={archiveIndex} title="الفكرة داخل أرشيفها" sub="الجذر والتطور يُستخرجان تلقائياً من تشابه المعنى والفاصل الزمني." />
+          <SectionTitle index={archiveIndex} title="الفكرة داخل أرشيفها" sub="من البدايات الأولى للفكرة إلى امتداداتها عبر الزمن." />
           <ol className="relative mt-6 space-y-6 before:absolute before:bottom-2 before:right-[7px] before:top-2 before:w-px before:bg-hair">
             {model.timeLinks.map((link) => (
               <li key={link.article.slug} className="relative ps-7">
@@ -357,7 +357,7 @@ function ImpactLink({ node, close }: { node: ImpactNode; close: () => void }) {
 function ImpactPanel({ model, close }: { model: ReturnType<typeof buildIdeaLife>; close: () => void }) {
   return (
     <div>
-      <SectionTitle index="01" title="كيف امتدت الفكرة، وما الذي ثبت من أثرها؟" sub="امتدادات الأرشيف تُسمّى صلة قوية؛ والأثر لا يُسمّى موثقاً إلا عندما يثبت المصدر العلاقة صراحةً." />
+      <SectionTitle index="01" title="كيف امتدت الفكرة، وما الذي ثبت من أثرها؟" sub="محطات تكشف أين عادت الفكرة للظهور، وأين أصبح لها أثر موثق." />
       <ol className="relative mt-7 space-y-7 before:absolute before:bottom-3 before:right-[7px] before:top-3 before:w-px before:bg-hair">
         {model.impact.map((node, index) => (
           <li key={`${node.label}-${node.title}-${index}`} className="relative ps-8">
@@ -369,7 +369,7 @@ function ImpactPanel({ model, close }: { model: ReturnType<typeof buildIdeaLife>
         ))}
       </ol>
       <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-5">
-        <p className="max-w-[34rem] text-[.72rem] font-light leading-[1.8] text-soft">«صلة قوية» تعني امتداداً موضوعياً موثق الرابط، لا ادعاء استشهاد أو تطبيق. الأثر المباشر لا يُسمّى كذلك إلا عندما يثبت المصدر العلاقة صراحةً.</p>
+        <p className="max-w-[34rem] text-[.72rem] font-light leading-[1.8] text-soft">كل محطة تعيدك إلى مادتها أو مصدرها، لتقرأ امتداد الفكرة في سياقه.</p>
         <Link to="/impact" reloadDocument onClick={close} className="inline-flex shrink-0 items-center gap-2 text-[.78rem] font-semibold text-accent">سجل الأثر الكامل <ArrowIcon /></Link>
       </div>
     </div>

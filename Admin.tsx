@@ -381,7 +381,7 @@ function InboxPanel() {
     const id = await testimonialDocId(m.id)
     if (approved) {
       if (quote.length < 35) {
-        window.alert('النص قصير جدًا ليظهر كشهادة عامة.')
+        window.alert('النص قصير جداً ليظهر كشهادة عامة.')
         return
       }
       await updateDoc(doc(db, 'messages', m.id), {
@@ -419,7 +419,7 @@ function InboxPanel() {
     try { return new Date(m.createdAt.seconds * 1000).toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }) } catch { return '' }
   }
 
-  if (loading) return <div className={card}>لحظة… أجلب رسائلك وأراقب الجديد لحظيًا.</div>
+  if (loading) return <div className={card}>لحظة… أجلب رسائلك وأراقب الجديد لحظياً.</div>
   if (!items.length) return (
     <div className={`${card} text-center`}>
       <p className="text-[1.05rem] text-ink">صندوقك فارغ حالياً.</p>

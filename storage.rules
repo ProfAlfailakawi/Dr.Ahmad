@@ -33,13 +33,36 @@ service firebase.storage {
       allow delete: if isAdmin();
     }
 
+
+    // مكتبة التوليد الخاصة بالاستوديو: لا يقرأها ولا يكتبها إلا المشرف.
+    // تحفظ المخرجات الأصلية لإعادة الاستخدام والتحرير مستقبلاً، من دون نشرها للعامة.
+    match /admin-generated/{fileName} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && isValidFileName(fileName)
+        && request.resource.size > 0
+        && request.resource.size <= 16 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp|gif|avif)');
+      allow delete: if isAdmin();
+    }
+
+    // التصاميم الكاملة المولدة: JSON خاص يحفظ التكوين والطبقات لإعادة الفتح والتحرير لاحقًا.
+    match /admin-generated-designs/{fileName} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && isValidFileName(fileName)
+        && fileName.matches('^.+[.]json$')
+        && request.resource.size > 0
+        && request.resource.size <= 18 * 1024 * 1024
+        && request.resource.contentType == 'application/json';
+      allow delete: if isAdmin();
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }
   }
 
   function isAdmin() {
-    return request.auth != null && (request.auth.token.admin == true || request.auth.token.email == 'ah_f@hotmail.com');
+    return request.auth != null && request.auth.token.admin == true;
   }
 
   function isValidFileName(fileName) {

@@ -211,7 +211,7 @@ export const curatedBank: Curio[] = [
     source: 'OECD',
     url: 'https://www.oecd.org/education/education-at-a-glance/' },
   { kind: 'رؤية عميقة',
-    ar: 'إديوتوبيا — ما الذي ينجح فعلًا داخل الصف؟',
+    ar: 'إديوتوبيا — ما الذي ينجح فعلاً داخل الصف؟',
     arNote: 'من مؤسسة جورج لوكاس التعليمية: ممارسات مبنية على البحث لا على الموضة.',
     en: 'Edutopia — what actually works in classrooms',
     enNote: 'By the George Lucas Educational Foundation: research-based practice, not fashion.',

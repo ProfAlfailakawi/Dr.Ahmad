@@ -112,7 +112,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
       ])
       if (!snapshot) {
         setRows([])
-        throw new Error('تعذّر جلب عدادات المشاهدة. غالبًا تحتاج تحديث صلاحية المشرف أو نشر قواعد Firestore الأخيرة.')
+        throw new Error('تعذّر جلب عدادات المشاهدة. غالباً تحتاج تحديث صلاحية المشرف أو نشر قواعد Firestore الأخيرة.')
       }
       setSubscribers(subscribersSnapshot?.size || 0)
       const directJourneys = journeysSnapshot?.docs.map((item) => {

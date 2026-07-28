@@ -220,7 +220,7 @@ export async function createWhatsAppTransport({ db, onMessage, onContacts, onQr,
            عشرين ثانية فيُستبدل بأحدثه تلقائياً. */
         db.setState({ status: 'pairing', qr: update.qr, pairing_code: null })
         if (qrcodeTerminal?.generate) qrcodeTerminal.generate(update.qr, { small: true })
-        else console.log('ظهر QR للاقتران. استخدم --phone=965XXXXXXXX للحصول على رمز اقتران بدلًا من QR.')
+        else console.log('ظهر QR للاقتران. استخدم --phone=965XXXXXXXX للحصول على رمز اقتران بدلاً من QR.')
         onQr?.(update.qr); events.emit('qr', update.qr)
       }
       if (update.connection === 'open') {

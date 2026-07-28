@@ -298,6 +298,276 @@
         "source": "/author{,/**}",
         "destination": "/about",
         "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/faculty-attitudes-edtech",
+        "destination": "/research/faculty-attitudes-edtech",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/faculty-attitudes-edtech",
+        "destination": "/research/faculty-attitudes-edtech",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/faculty-attitudes-edtech",
+        "destination": "/research/faculty-attitudes-edtech",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/multimedia-higher-education",
+        "destination": "/research/multimedia-higher-education",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/multimedia-higher-education",
+        "destination": "/research/multimedia-higher-education",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/multimedia-higher-education",
+        "destination": "/research/multimedia-higher-education",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/web-navigation-learning-skills",
+        "destination": "/research/web-navigation-learning-skills",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/web-navigation-learning-skills",
+        "destination": "/research/web-navigation-learning-skills",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/web-navigation-learning-skills",
+        "destination": "/research/web-navigation-learning-skills",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/elearning-research-skills",
+        "destination": "/research/elearning-research-skills",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/elearning-research-skills",
+        "destination": "/research/elearning-research-skills",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/elearning-research-skills",
+        "destination": "/research/elearning-research-skills",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/faculty-members-degree-of-awareness-of-augmented-reality-concept-in-the-college-of-basic-education-public-authority-for-applied-education-and-training-in-kuwait-2",
+        "destination": "/research/faculty-members-degree-of-awareness-of-augmented-reality-concept-in-the-college-of-basic-education-public-authority-for-applied-education-and-training-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/faculty-members-degree-of-awareness-of-augmented-reality-concept-in-the-college-of-basic-education-public-authority-for-applied-education-and-training-in-kuwait-2",
+        "destination": "/research/faculty-members-degree-of-awareness-of-augmented-reality-concept-in-the-college-of-basic-education-public-authority-for-applied-education-and-training-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/faculty-members-degree-of-awareness-of-augmented-reality-concept-in-the-college-of-basic-education-public-authority-for-applied-education-and-training-in-kuwait-2",
+        "destination": "/research/faculty-members-degree-of-awareness-of-augmented-reality-concept-in-the-college-of-basic-education-public-authority-for-applied-education-and-training-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/obstacles-to-the-employment-of-education-technology-and-means-for-students-with-special-needs-from-the-point-of-view-of-faculty-members-at-the-public-authority-for-applied-2",
+        "destination": "/research/obstacles-to-the-employment-of-education-technology-and-means-for-students-with-special-needs-from-the-point-of-view-of-faculty-members-at-the-public-authority-for-applied-2",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/obstacles-to-the-employment-of-education-technology-and-means-for-students-with-special-needs-from-the-point-of-view-of-faculty-members-at-the-public-authority-for-applied-2",
+        "destination": "/research/obstacles-to-the-employment-of-education-technology-and-means-for-students-with-special-needs-from-the-point-of-view-of-faculty-members-at-the-public-authority-for-applied-2",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/obstacles-to-the-employment-of-education-technology-and-means-for-students-with-special-needs-from-the-point-of-view-of-faculty-members-at-the-public-authority-for-applied-2",
+        "destination": "/research/obstacles-to-the-employment-of-education-technology-and-means-for-students-with-special-needs-from-the-point-of-view-of-faculty-members-at-the-public-authority-for-applied-2",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/the-availability-of-e-learning-qualifications-among-faculty-members-at-the-faculty-of-basic-education-in-kuwait-2",
+        "destination": "/research/the-availability-of-e-learning-qualifications-among-faculty-members-at-the-faculty-of-basic-education-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/the-availability-of-e-learning-qualifications-among-faculty-members-at-the-faculty-of-basic-education-in-kuwait-2",
+        "destination": "/research/the-availability-of-e-learning-qualifications-among-faculty-members-at-the-faculty-of-basic-education-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/the-availability-of-e-learning-qualifications-among-faculty-members-at-the-faculty-of-basic-education-in-kuwait-2",
+        "destination": "/research/the-availability-of-e-learning-qualifications-among-faculty-members-at-the-faculty-of-basic-education-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+        "destination": "/research/the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+        "destination": "/research/the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+        "destination": "/research/the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/how-important-is-the-use-of-e-learning-management-systems-in-building-a-smart-university-in-kuwait-2",
+        "destination": "/research/how-important-is-the-use-of-e-learning-management-systems-in-building-a-smart-university-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/how-important-is-the-use-of-e-learning-management-systems-in-building-a-smart-university-in-kuwait-2",
+        "destination": "/research/how-important-is-the-use-of-e-learning-management-systems-in-building-a-smart-university-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/how-important-is-the-use-of-e-learning-management-systems-in-building-a-smart-university-in-kuwait-2",
+        "destination": "/research/how-important-is-the-use-of-e-learning-management-systems-in-building-a-smart-university-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/investigating-the-role-of-e-learning-management-systems-in-the-learning-process-from-the-point-of-view-of-the-faculty-at-the-faculty-of-basic-education-in-kuwait-2",
+        "destination": "/research/investigating-the-role-of-e-learning-management-systems-in-the-learning-process-from-the-point-of-view-of-the-faculty-at-the-faculty-of-basic-education-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/investigating-the-role-of-e-learning-management-systems-in-the-learning-process-from-the-point-of-view-of-the-faculty-at-the-faculty-of-basic-education-in-kuwait-2",
+        "destination": "/research/investigating-the-role-of-e-learning-management-systems-in-the-learning-process-from-the-point-of-view-of-the-faculty-at-the-faculty-of-basic-education-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/investigating-the-role-of-e-learning-management-systems-in-the-learning-process-from-the-point-of-view-of-the-faculty-at-the-faculty-of-basic-education-in-kuwait-2",
+        "destination": "/research/investigating-the-role-of-e-learning-management-systems-in-the-learning-process-from-the-point-of-view-of-the-faculty-at-the-faculty-of-basic-education-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/the-impact-of-the-working-environment-and-learning-science-in-the-electronic-learning-systems-used-in-education-2",
+        "destination": "/research/the-impact-of-the-working-environment-and-learning-science-in-the-electronic-learning-systems-used-in-education-2",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/the-impact-of-the-working-environment-and-learning-science-in-the-electronic-learning-systems-used-in-education-2",
+        "destination": "/research/the-impact-of-the-working-environment-and-learning-science-in-the-electronic-learning-systems-used-in-education-2",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/the-impact-of-the-working-environment-and-learning-science-in-the-electronic-learning-systems-used-in-education-2",
+        "destination": "/research/the-impact-of-the-working-environment-and-learning-science-in-the-electronic-learning-systems-used-in-education-2",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/perceptions-of-university-students-at-the-college-of-basic-education-toward-implementing-moodle-in-managing-e-courses-to-enhance-learning-in-kuwait-2",
+        "destination": "/research/perceptions-of-university-students-at-the-college-of-basic-education-toward-implementing-moodle-in-managing-e-courses-to-enhance-learning-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/perceptions-of-university-students-at-the-college-of-basic-education-toward-implementing-moodle-in-managing-e-courses-to-enhance-learning-in-kuwait-2",
+        "destination": "/research/perceptions-of-university-students-at-the-college-of-basic-education-toward-implementing-moodle-in-managing-e-courses-to-enhance-learning-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/perceptions-of-university-students-at-the-college-of-basic-education-toward-implementing-moodle-in-managing-e-courses-to-enhance-learning-in-kuwait-2",
+        "destination": "/research/perceptions-of-university-students-at-the-college-of-basic-education-toward-implementing-moodle-in-managing-e-courses-to-enhance-learning-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/university-students-perceptions-at-the-college-of-basic-education-regarding-the-use-of-interactive-blackboard-technology-in-education-in-kuwait-for-the-academic-year-2020-2021-2",
+        "destination": "/research/university-students-perceptions-at-the-college-of-basic-education-regarding-the-use-of-interactive-blackboard-technology-in-education-in-kuwait-for-the-academic-year-2020-2021-2",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/university-students-perceptions-at-the-college-of-basic-education-regarding-the-use-of-interactive-blackboard-technology-in-education-in-kuwait-for-the-academic-year-2020-2021-2",
+        "destination": "/research/university-students-perceptions-at-the-college-of-basic-education-regarding-the-use-of-interactive-blackboard-technology-in-education-in-kuwait-for-the-academic-year-2020-2021-2",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/university-students-perceptions-at-the-college-of-basic-education-regarding-the-use-of-interactive-blackboard-technology-in-education-in-kuwait-for-the-academic-year-2020-2021-2",
+        "destination": "/research/university-students-perceptions-at-the-college-of-basic-education-regarding-the-use-of-interactive-blackboard-technology-in-education-in-kuwait-for-the-academic-year-2020-2021-2",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/the-role-of-technological-creative-photography-in-contemporary-education-frameworks-in-developing-the-knowledge-skills-and-abilities-of-university-professors-at-the-college-of-basic-education-in-kuw-2",
+        "destination": "/research/the-role-of-technological-creative-photography-in-contemporary-education-frameworks-in-developing-the-knowledge-skills-and-abilities-of-university-professors-at-the-college-of-basic-education-in-kuw-2",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/the-role-of-technological-creative-photography-in-contemporary-education-frameworks-in-developing-the-knowledge-skills-and-abilities-of-university-professors-at-the-college-of-basic-education-in-kuw-2",
+        "destination": "/research/the-role-of-technological-creative-photography-in-contemporary-education-frameworks-in-developing-the-knowledge-skills-and-abilities-of-university-professors-at-the-college-of-basic-education-in-kuw-2",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/the-role-of-technological-creative-photography-in-contemporary-education-frameworks-in-developing-the-knowledge-skills-and-abilities-of-university-professors-at-the-college-of-basic-education-in-kuw-2",
+        "destination": "/research/the-role-of-technological-creative-photography-in-contemporary-education-frameworks-in-developing-the-knowledge-skills-and-abilities-of-university-professors-at-the-college-of-basic-education-in-kuw-2",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/the-importance-of-adopting-learning-management-systems-lms-to-enhance-the-quality-of-teaching-among-university-professors-in-kuwait-2",
+        "destination": "/research/the-importance-of-adopting-learning-management-systems-lms-to-enhance-the-quality-of-teaching-among-university-professors-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/the-importance-of-adopting-learning-management-systems-lms-to-enhance-the-quality-of-teaching-among-university-professors-in-kuwait-2",
+        "destination": "/research/the-importance-of-adopting-learning-management-systems-lms-to-enhance-the-quality-of-teaching-among-university-professors-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/the-importance-of-adopting-learning-management-systems-lms-to-enhance-the-quality-of-teaching-among-university-professors-in-kuwait-2",
+        "destination": "/research/the-importance-of-adopting-learning-management-systems-lms-to-enhance-the-quality-of-teaching-among-university-professors-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/trends-of-college-of-basic-education-students-towards-the-use-of-photography-to-develop-learning-skills-in-kuwait-2",
+        "destination": "/research/trends-of-college-of-basic-education-students-towards-the-use-of-photography-to-develop-learning-skills-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/trends-of-college-of-basic-education-students-towards-the-use-of-photography-to-develop-learning-skills-in-kuwait-2",
+        "destination": "/research/trends-of-college-of-basic-education-students-towards-the-use-of-photography-to-develop-learning-skills-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/trends-of-college-of-basic-education-students-towards-the-use-of-photography-to-develop-learning-skills-in-kuwait-2",
+        "destination": "/research/trends-of-college-of-basic-education-students-towards-the-use-of-photography-to-develop-learning-skills-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/the-reality-of-using-smart-device-applications-in-learning-applications-by-university-students-at-the-college-of-basic-education-in-kuwait-2",
+        "destination": "/research/the-reality-of-using-smart-device-applications-in-learning-applications-by-university-students-at-the-college-of-basic-education-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/the-reality-of-using-smart-device-applications-in-learning-applications-by-university-students-at-the-college-of-basic-education-in-kuwait-2",
+        "destination": "/research/the-reality-of-using-smart-device-applications-in-learning-applications-by-university-students-at-the-college-of-basic-education-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/the-reality-of-using-smart-device-applications-in-learning-applications-by-university-students-at-the-college-of-basic-education-in-kuwait-2",
+        "destination": "/research/the-reality-of-using-smart-device-applications-in-learning-applications-by-university-students-at-the-college-of-basic-education-in-kuwait-2",
+        "type": 301
+      },
+      {
+        "source": "/scholarly_contributi/اتجاهات-الهيئة-التدريسية-نحو-استخدام-2",
+        "destination": "/research/faculty-attitudes-edtech",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly_contributi/اتجاهات-الهيئة-التدريسية-نحو-استخدام-2",
+        "destination": "/research/faculty-attitudes-edtech",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly_contributi/اتجاهات-الهيئة-التدريسية-نحو-استخدام-2",
+        "destination": "/research/faculty-attitudes-edtech",
+        "type": 301
       }
     ],
     "rewrites": [
@@ -351,7 +621,7 @@
           },
           {
             "key": "Content-Security-Policy",
-            "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://plausible.io; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; media-src 'self' https:; connect-src 'self' http://127.0.0.1:34321 http://localhost:34321 https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://firebasestorage.googleapis.com https://*.firebasestorage.app https://www.google.com https://plausible.io https://api.pexels.com https://images.pexels.com https://api.openverse.org https://commons.wikimedia.org https://upload.wikimedia.org wss://*.firebaseio.com; frame-src https://www.google.com https://maps.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests"
+            "value": "default-src 'self'; script-src 'self' https://www.google.com https://www.gstatic.com https://plausible.io; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; media-src 'self' https:; connect-src 'self' http://127.0.0.1:34321 http://localhost:34321 https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://firebasestorage.googleapis.com https://*.firebasestorage.app https://www.google.com https://plausible.io https://api.pexels.com https://images.pexels.com https://api.openverse.org https://commons.wikimedia.org https://upload.wikimedia.org wss://*.firebaseio.com; frame-src https://www.google.com https://maps.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests"
           }
         ]
       },

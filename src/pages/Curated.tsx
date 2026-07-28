@@ -229,15 +229,15 @@ function RadarSection({ items }: { items: Curio[] }) {
             </Link>
           </div>
         </FadeUp>
-        <div className="mobile-card-rail mt-8 grid gap-6 md:grid-cols-2">
-          {items.slice(0, 4).map((item, index) => (
+        <div className="mx-auto mt-8 max-w-4xl space-y-4">
+          {items.slice(0, 2).map((item, index) => (
             <FadeUp
               key={`${item.url || item.ar}-${index}`}
               delay={Math.min(index * 0.06, 0.2)}
             >
               <CardWrap
                 c={item}
-                className="flex h-full flex-col rounded-2xl border border-hair p-6"
+                className="flex min-h-[12rem] flex-col rounded-2xl border border-hair p-6 transition-colors hover:border-accent md:p-8"
               >
                 <span className="text-[.72rem] text-soft">
                   {item.added ? fmtAdded(item.added) : "حديث"} ·{" "}
@@ -263,7 +263,7 @@ export default function Curated() {
     title: "المختارات",
     path: "/curated",
     description:
-      "مواد حديثة وأدوات وأبحاث من الإنترنت، منتقاة آليًا من مصادر موثوقة وروابط أصلية.",
+      "مواد حديثة وأدوات وأبحاث من الإنترنت، منتقاة بعناية من مصادر موثوقة وروابط أصلية.",
   });
   const reduce = useReducedMotion();
   const [kind, setKind] = useState<"الكل" | string>("الكل");
@@ -283,7 +283,7 @@ export default function Curated() {
     }
   }, []);
 
-  /* المصدر الحي الوحيد: رادار الإنترنت. site_picks المحلي متروك عمدًا ولا يُقرأ هنا. */
+  /* المصدر الحي الوحيد: رادار الإنترنت. site_picks المحلي متروك عمداً ولا يُقرأ هنا. */
   const radarItems = useExtras<RadarItem>("site_radar", {
     realtime: true,
   }).filter((item) => !item.status || item.status === "published");
@@ -306,13 +306,13 @@ export default function Curated() {
   /* عدالة العرض (مقترح معتمد): المادة الرئيسية لا تتكرر في الرادار،
      والمعروض أعلى الصفحة كله لا يعود في الشبكة أسفلها — التكرار يوحي
      بغباءٍ حتى لو كان التصميم جميلاً. */
-  const radarFour = dynamic.slice(1, 5);
+  const radarHighlights = dynamic.slice(1, 3);
   const curioKey = (item: Curio) => resolvedCurioUrl(item.url) || item.ar;
-  const highlightedKeys = new Set([daily, book, ...radarFour].filter(Boolean).map((item) => curioKey(item as Curio)));
+  const highlightedKeys = new Set([daily, book, ...radarHighlights].filter(Boolean).map((item) => curioKey(item as Curio)));
   const all = dedupe([...dynamic, ...curatedBank]).filter((item) => !highlightedKeys.has(curioKey(item)));
   const shown =
     kind === "الكل" ? all : all.filter((item) => item.kind === kind);
-  const paged = usePagedList(shown, 12, kind);
+  const paged = usePagedList(shown, 2, kind);
   /* صدق الوسم: «الأحدث من الإنترنت» لا تُقال حين نعمل على الاحتياطي */
   const radarLive = radarItems.length > 0;
   const latestAdded = dynamic[0]?.added ? fmtAdded(dynamic[0].added) : "";
@@ -335,10 +335,10 @@ export default function Curated() {
               </span>
               <span className="text-[.85rem] text-soft">
                 {radarLive
-                  ? `· ${today} · يتحدّث تلقائيًا عند وصول مادةٍ موثوقة جديدة`
+                  ? `· ${today} · أحدث ما أضيف إلى المختارات`
                   : latestAdded
-                    ? `· آخر تحديث فعلي: ${latestAdded}`
-                    : "· يعود التحديث التلقائي فور توفر المصدر الحي"}
+                    ? `· آخر إضافة: ${latestAdded}`
+                    : "· مختارات محفوظة من الأرشيف"}
               </span>
             </div>
           </FadeUp>
@@ -397,25 +397,30 @@ export default function Curated() {
       </section>
 
       {/* الرادار يعرض ما بعد المادة الرئيسية — لا تكرار فوق بعضه */}
-      <RadarSection items={radarFour} />
+      <RadarSection items={radarHighlights} />
 
       <section className="px-6 py-14 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <div className="flex flex-wrap gap-2">
-              {["الكل", ...curioKinds].map((itemKind) => (
-                <button
-                  key={itemKind}
-                  onClick={() => setKind(itemKind)}
-                  className={`rounded-full border px-4 py-1.5 text-[.85rem] font-medium transition-colors duration-300 ${kind === itemKind ? "border-accent bg-accent text-white" : "border-hair text-soft hover:border-accent hover:text-accent"}`}
-                >
-                  {itemKind}
-                </button>
-              ))}
+            <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex min-w-max gap-1.5" role="tablist" aria-label="تصفية مختارات د. أحمد">
+                {["الكل", ...curioKinds].map((itemKind) => (
+                  <button
+                    key={itemKind}
+                    type="button"
+                    role="tab"
+                    aria-selected={kind === itemKind}
+                    onClick={() => setKind(itemKind)}
+                    className={`min-h-11 rounded-full border px-5 text-[.85rem] font-medium transition-colors duration-300 ${kind === itemKind ? "border-accent bg-accent text-white" : "border-hair text-soft hover:border-accent hover:text-accent"}`}
+                  >
+                    {itemKind}
+                  </button>
+                ))}
+              </div>
             </div>
           </FadeUp>
 
-          <div id="curated-grid" className="mobile-card-rail mt-10 scroll-mt-28 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div id="curated-grid" className="mx-auto mt-10 max-w-4xl scroll-mt-28 space-y-4">
             {paged.pageItems.map((item, index) => (
               <motion.div
                 key={item.url || item.ar}
@@ -427,11 +432,11 @@ export default function Curated() {
                   delay: Math.min((index % 6) * 0.06, 0.3),
                   ease: EASE,
                 }}
-                className="h-full"
+                className="w-full"
               >
                 <CardWrap
                   c={item}
-                  className="flex h-full flex-col rounded-2xl border border-hair bg-canvas p-7"
+                  className="flex min-h-[13rem] flex-col rounded-2xl border border-hair bg-canvas p-7 transition-colors hover:border-accent md:p-9"
                 >
                   <span className="text-[.74rem] font-semibold text-accent">
                     {item.kind}
@@ -460,8 +465,7 @@ export default function Curated() {
 
           <FadeUp delay={0.1}>
             <p className="mt-14 border-t border-hair pt-8 text-[.85rem] leading-relaxed text-soft">
-              كل مادة حديثة هنا تأتي من خارج الموقع، ويقود الكرت إلى رابطها
-              الأصلي مباشرة. لا تُستخدم مقالات الدكتور أو كتبه كمصدر للمختارات.
+              مختارات تُقرأ من مصادرها الأصلية، وتبقى هنا بقدر ما تضيف إلى المشهد.
             </p>
           </FadeUp>
         </div>

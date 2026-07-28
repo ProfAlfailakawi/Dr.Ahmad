@@ -40,7 +40,7 @@ async function main() {
   if (command === 'uninstall') { await agent.stop(); console.log(`تمت الإزالة: ${uninstall()}`); return }
   if (command === 'start') {
     rotateLocalLogs()
-    if (!ensureLock(lockPath)) throw new Error('الوكيل يعمل مسبقًا أو يوجد ملف قفل قديم.')
+    if (!ensureLock(lockPath)) throw new Error('الوكيل يعمل مسبقاً أو يوجد ملف قفل قديم.')
     const phoneNumber = process.argv.find((arg) => arg.startsWith('--phone='))?.slice('--phone='.length)
     process.on('SIGINT', async () => { await agent.stop(); removeLock(lockPath); process.exit(0) })
     process.on('SIGTERM', async () => { await agent.stop(); removeLock(lockPath); process.exit(0) })

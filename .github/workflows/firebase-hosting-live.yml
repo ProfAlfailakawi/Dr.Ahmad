@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-  # التزام GitHub الذي يصنعه Workflow الصوت لا يطلق حدث push جديدًا لأسباب
+  # التزام GitHub الذي يصنعه Workflow الصوت لا يطلق حدث push جديداً لأسباب
   # أمنية في GitHub. لذلك كان R2 وmain يتقدمان بينما يبقى الموقع عند 56.
   workflow_run:
     workflows: ["توليد الصوت تلقائياً إلى R2"]
@@ -112,6 +112,9 @@ jobs:
           check "Social templates self-test" node scripts/test-social-templates.mjs
           check "Studio image backend self-test" node scripts/test-studio-image-generation.mjs
           check "Studio UI contract" node scripts/test-studio-ui-contract.mjs
+          check "Site polish 2026 regression" node scripts/test-site-polish-2026.mjs
+          check "Arabic tanween policy" node scripts/guard-arabic-tanween.mjs
+          check "Realtime audio sync self-test" node scripts/sync-audio-firestore.mjs --self-test
 
       # حرّاسُ ما أُصلح مؤخّراً: لولاها لعاد كلُّ عطبٍ منها صامتاً كما عاد أوّل مرّة.
       - name: Content, audio and dialogue guards
@@ -269,13 +272,15 @@ jobs:
             echo "::error::Firestore rules deploy failed — CV uploads and CMS writes will stay broken until this succeeds."
             exit 1
           fi
-          # قواعد Storage اختيارية (نظام السيرة يتعمد عدم الاعتماد على Storage أصلاً)
+          # مكتبة التوليد تحفظ الأصول والتصاميم الكاملة في Storage الخاص، لذلك
+          # لا نسمح بنشر نسخة توحي بأن الأرشفة تعمل بينما قواعد التخزين لم تُنشر.
           if ! npx --yes firebase-tools@latest deploy \
             --config firebase.data.json \
             --only storage \
             --project drahmad-8e9e2 \
             --non-interactive; then
-            echo "::warning::Storage rules deploy failed (Storage API likely not enabled). CV uploads do not need it; enable the API later if Storage becomes required."
+            echo "::error::Storage rules deploy failed — Generation Library needs private Firebase Storage. Enable Storage for drahmad-8e9e2 and rerun deployment."
+            exit 1
           fi
         env:
           FIREBASE_DATA_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}

@@ -94,15 +94,15 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
       const result = await request('/admin/send-self-preview', { method: 'POST', body: JSON.stringify({ message: text }) }) as { ok?: boolean; messageId?: string; queued?: boolean }
       if (!result?.ok || !result.messageId) throw new Error('لم يؤكد واتساب إرسال المعاينة')
       let terminal: { status?: string; error?: string | null } | null = null
-      for (let attempt = 0; attempt < 12; attempt += 1) {
+      for (let attempt = 0; attempt < 30; attempt += 1) {
         await new Promise<void>((resolve) => window.setTimeout(resolve, 1_250))
         terminal = await request(`/admin/commands/${encodeURIComponent(result.messageId)}`) as { status?: string; error?: string | null }
         if (['completed', 'failed', 'cancelled'].includes(String(terminal.status || ''))) break
       }
       if (terminal?.status === 'failed' || terminal?.status === 'cancelled') throw new Error(terminal.error || 'لم يسلّم واتساب المعاينة')
       say(terminal?.status === 'completed'
-        ? '✓ سلّم جسر واتساب المعاينة فعليًا إلى محادثتك. اقرأها كما سيقرأها الناس.'
-        : 'المعاينة ما زالت في طابور الجسر؛ لم أعرض نجاحًا وهميًا. حدّث الحالة بعد لحظات.')
+        ? '✓ سلّم جسر واتساب المعاينة فعلياً إلى محادثتك. اقرأها كما سيقرأها الناس.'
+        : 'المعاينة قيد التسليم؛ إذا أعاد واتساب تهيئة جلسته فسيكملها الجسر تلقائياً من دون تكرار الإرسال.')
     } catch (error) {
       say(`تعذّرت المعاينة: ${error instanceof Error ? error.message : 'خطأ'}`)
     } finally { setBusy('') }

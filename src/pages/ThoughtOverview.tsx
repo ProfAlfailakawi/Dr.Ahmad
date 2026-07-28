@@ -189,7 +189,7 @@ export default function ThoughtOverview() {
                   {model.strongest.paper ? <Link to={`/research/${model.strongest.paper.slug}`} className="rounded-2xl border border-hair bg-paper p-5 transition-colors hover:border-accent"><span className="text-[.67rem] font-semibold text-accent">بحث</span><strong className="mt-2 block font-display text-[1rem] leading-[1.6] text-ink">{model.strongest.paper.titleAr || model.strongest.paper.title}</strong></Link> : <div className="rounded-2xl border border-dashed border-hair p-5 text-[.78rem] text-soft">لا صلة بحثية قوية بما يكفي للعرض.</div>}
                   {model.strongest.book ? <Link to={`/publications/${model.strongest.book.slug}`} className="rounded-2xl border border-hair bg-paper p-5 transition-colors hover:border-accent"><span className="text-[.67rem] font-semibold text-accent">كتاب</span><strong className="mt-2 block font-display text-[1rem] leading-[1.6] text-ink">{model.strongest.book.title}</strong></Link> : <div className="rounded-2xl border border-dashed border-hair p-5 text-[.78rem] text-soft">لا صلة كتابية قوية بما يكفي للعرض.</div>}
                 </div>
-                <p className="mt-5 text-[.72rem] font-light leading-relaxed text-soft">هذه علاقات دلالية محسوبة من عناوين المواد وملخصاتها، وليست ادعاءً بأن عملاً اقتبس من آخر. يفتح كل عنصر مادته الأصلية للتحقق.</p>
+                <p className="mt-5 text-[.72rem] font-light leading-relaxed text-soft">هنا تتجاور المواد التي تدور حول فكرةٍ واحدة، لتكشف امتدادها بين المقال والبحث والكتاب.</p>
               </section>
             </FadeUp>
           )}

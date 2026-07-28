@@ -1,6 +1,6 @@
 /**
- * ذاكرة الفكرة — تعمل محليًا داخل جهاز الزائر فقط.
- * لا ترسل أي سجل قراءة إلى الخادم ولا تنشئ ملفًا شخصيًا للزائر.
+ * ذاكرة الفكرة — تعمل محلياً داخل جهاز الزائر فقط.
+ * لا ترسل أي سجل قراءة إلى الخادم ولا تنشئ ملفاً شخصياً للزائر.
  */
 export type IdeaMemoryArticle = {
   slug: string
@@ -74,7 +74,7 @@ export function rememberIdeaVisit(article: IdeaMemoryArticle) {
       lastTitle: article.title,
     }
   })
-  try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(memory)) } catch { /* التخزين المحلي قد يكون محجوبًا */ }
+  try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(memory)) } catch { /* التخزين المحلي قد يكون محجوباً */ }
 }
 
 export function ideaContinuation(articles: IdeaMemoryArticle[]) {

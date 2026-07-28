@@ -46,7 +46,7 @@ export default function PwaLaunch() {
       <div className="pwa-launch__content">
         <img src="/logo.png" alt="د. أحمد حسين الفيلكاوي" className="pwa-launch__logo dark:invert" />
         <p className="pwa-launch__eyebrow">مكتبة د. أحمد الفيلكاوي</p>
-        <h1>أهلًا بعودتك.</h1>
+        <h1>أهلاً بعودتك.</h1>
         <p>أفتح لك آخر مكان توقفت عنده.</p>
         <div className="pwa-launch__line" aria-hidden="true"><span /></div>
       </div>

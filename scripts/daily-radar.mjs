@@ -7,7 +7,7 @@
  * - يترجم العنوان والخلاصة إلى العربية تلقائياً ترجمة أمينة، ويحتفظ بالرابط الأصلي كما هو.
  * - إن تعذرت خدمة الترجمة لا يظهر نص إنجليزي في الموقع؛ يُستخدم وصف عربي آمن مؤقتاً وتُعاد المحاولة لاحقاً.
  * - التنويع مفروضٌ في الاختيار: مصدرٌ ظهر حديثاً يتأخّر عن مصدرٍ لم يظهر.
- * - وثيقة واحدة كحد أقصى يوميًا في site_radar، والرابط الأصلي لا يكتبه النموذج.
+ * - وثيقة واحدة كحد أقصى يومياً في site_radar، والرابط الأصلي لا يكتبه النموذج.
  */
 import { readFileSync, existsSync } from 'node:fs'
 import { createSign } from 'node:crypto'
@@ -416,7 +416,7 @@ const token = await firestoreToken()
 const recentState = await recentRadar(token)
 await repairMissingArabic(token, recentState.documents)
 if (await todayAlreadyPublished(token, day)) {
-  console.log(`✔ مختارة اليوم (${day}) منشورة أصلًا، وتمت مراجعة التعريب القديم.`)
+  console.log(`✔ مختارة اليوم (${day}) منشورة أصلاً، وتمت مراجعة التعريب القديم.`)
   process.exit(0)
 }
 
@@ -437,7 +437,7 @@ const pool = raw.filter((item) => {
 
 console.log(`نجا من التحقق: ${pool.length} مادة`)
 if (!pool.length) {
-  console.log('⊘ لا توجد مادة حديثة وآمنة من القائمة الموثوقة الآن؛ سيعيد المجدول المحاولة لاحقًا اليوم.')
+  console.log('⊘ لا توجد مادة حديثة وآمنة من القائمة الموثوقة الآن؛ سيعيد المجدول المحاولة لاحقاً اليوم.')
   process.exit(0)
 }
 
@@ -454,4 +454,4 @@ if (translation.translationStatus !== 'translated') {
 const summary = sourceSummary(chosen, translation)
 console.log(`اختار: ${chosen.title}\nالمصدر: ${chosen.source}\nالباب: ${summary.arNote}\nالرابط: ${chosen.link}`)
 await publish(summary, token, day)
-console.log('\n✔ نُشرت مختارة الإنترنت في site_radar وتظهر فورًا في /curated')
+console.log('\n✔ نُشرت مختارة الإنترنت في site_radar وتظهر فوراً في /curated')

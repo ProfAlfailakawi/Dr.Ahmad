@@ -33,7 +33,7 @@ export default function Publications() {
           itemListElement: books.map((book, index) => ({ '@type': 'ListItem', position: index + 1, url: `${SITE_URL}/publications/${book.slug}`, name: book.title })),
         },
       }} />
-      <PageHead label="المؤلفات العلمية والفكرية" title="كتبٌ تبني مشروعًا واحدًا." sub={`${count} ترسم مسارًا بدأ عام 2015؛ من التعليم والتكنولوجيا إلى أسئلة التحول المجتمعي ومكان الإنسان في العصر الرقمي.`} />
+      <PageHead label="المؤلفات العلمية والفكرية" title="كتبٌ تبني مشروعاً واحداً." sub={`${count} ترسم مساراً بدأ عام 2015؛ من التعليم والتكنولوجيا إلى أسئلة التحول المجتمعي ومكان الإنسان في العصر الرقمي.`} />
       <section className="overflow-hidden px-6 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-20 md:px-11 md:py-24">
         <div id="books-grid" className="mobile-card-rail scroll-mt-28 mx-auto grid w-full max-w-shell min-w-0 grid-cols-2 gap-x-4 gap-y-8 sm:gap-8 lg:grid-cols-3 lg:gap-10">
           {paged.pageItems.map((b, i) => (

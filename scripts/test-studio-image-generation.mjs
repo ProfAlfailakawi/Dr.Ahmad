@@ -44,12 +44,12 @@ const userSovereigntyPrompt = buildEliteStudioImagePrompt({
   glossaryConcept: 'intelligent-tutoring-systems',
   glossaryLabel: 'نظم التدريس الذكية',
   glossaryCanonicalEn: 'Intelligent Tutoring Systems',
-  glossaryMeaning: 'أنظمة تقدم دعمًا وتكييفًا يشبه وظائف المعلم الخصوصي.',
+  glossaryMeaning: 'أنظمة تقدم دعماً وتكييفاً يشبه وظائف المعلم الخصوصي.',
   literalAnchors: ['طالب يتحاوران', 'دراسي مضيء'],
   regenerationId: 'user-wording-sovereignty',
 })
 assert.match(userSovereigntyPrompt, /معلم وطالب يتحاوران في فصل دراسي مضيء/)
-assert.doesNotMatch(userSovereigntyPrompt, /Intelligent Tutoring Systems|أنظمة تقدم دعمًا وتكييفًا/i)
+assert.doesNotMatch(userSovereigntyPrompt, /Intelligent Tutoring Systems|أنظمة تقدم دعماً وتكييفاً/i)
 
 
 

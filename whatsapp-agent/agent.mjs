@@ -617,7 +617,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     state.bridge = null
   }
   const sendSelf = async (text) => {
-    if (!flags.send) throw new Error('الإرسال معطل افتراضيًا. فعّل WHATSAPP_SEND_ENABLED بعد اختبار Mock واعتمادك الصريح.')
+    if (!flags.send) throw new Error('الإرسال معطل افتراضياً. فعّل WHATSAPP_SEND_ENABLED بعد اختبار Mock واعتمادك الصريح.')
     if (!state.transport) throw new Error('الوكيل غير مشغّل')
     const clean = safeText(text); if (!clean) throw new Error('النص فارغ')
     if (!state.transport.sendSelf) throw new Error('الناقل الحالي لا يدعم إرسال المعاينة إلى الحساب المرتبط.')
@@ -630,7 +630,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
   const queueCampaign = ({ name, message, targets = [], scheduledAt = null }) => {
     if (!name || !message) throw new Error('اسم الحملة ورسالتها مطلوبان')
     if (Number.isFinite(MAX_CAMPAIGN_TARGETS) && targets.length > MAX_CAMPAIGN_TARGETS) throw new Error(`الحد المضبوط للحملة ${MAX_CAMPAIGN_TARGETS} جهة.`)
-    for (const target of targets) if (typeof target === 'string' && !target.includes('@') && target !== 'self') throw new Error('لا تحفظ رقمًا خامًا؛ استخدم الذات أو جهة معروفة بصيغة jid محليًا.')
+    for (const target of targets) if (typeof target === 'string' && !target.includes('@') && target !== 'self') throw new Error('لا تحفظ رقماً خاماً؛ استخدم الذات أو جهة معروفة بصيغة jid محلياً.')
     const id = randomToken(10); const now = new Date().toISOString()
     db.run('INSERT INTO campaigns(id,name,state,message,created_at,scheduled_at,updated_at) VALUES(?,?,?,?,?,?,?)', id, name, 'draft', safeText(message), now, scheduledAt, now)
     for (const target of targets) {
@@ -949,8 +949,8 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
   }
   const sendCampaign = async (id, { confirm = false, confirmAgain = false } = {}) => {
     if (!confirm || !confirmAgain) throw new Error('إرسال الحملة يحتاج تأكيدين صريحين.')
-    if (!flags.send) throw new Error('الإرسال معطّل افتراضيًا. فعّل WHATSAPP_SEND_ENABLED محليًا بعد الاختبار.')
-    if (!state.transport || state.transport.getConnectionStatus?.() !== 'connected') throw new Error('اربط واتساب أولًا وتأكد أن الحالة متصل.')
+    if (!flags.send) throw new Error('الإرسال معطّل افتراضياً. فعّل WHATSAPP_SEND_ENABLED محلياً بعد الاختبار.')
+    if (!state.transport || state.transport.getConnectionStatus?.() !== 'connected') throw new Error('اربط واتساب أولاً وتأكد أن الحالة متصل.')
     const campaign = db.get('SELECT * FROM campaigns WHERE id=?', id); if (!campaign) throw new Error('الحملة غير موجودة')
     if (campaign.state !== 'approved' && campaign.state !== 'queued') throw new Error('الحملة يجب أن تكون معتمدة قبل الإرسال.')
     const targets = campaignTargets(id)
@@ -1036,8 +1036,8 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
   }
   const sendQuietCampaign = (id, { confirm = false, confirmAgain = false, intervalSeconds = BROADCAST_DEFAULT_INTERVAL_SECONDS } = {}) => {
     if (!confirm || !confirmAgain) throw new Error('الإرسال الهادئ يحتاج تأكيدين صريحين.')
-    if (!flags.send) throw new Error('الإرسال معطّل افتراضيًا. فعّل WHATSAPP_SEND_ENABLED محليًا بعد الاختبار.')
-    if (!state.transport || state.transport.getConnectionStatus?.() !== 'connected') throw new Error('اربط واتساب أولًا وتأكد أن الحالة متصل.')
+    if (!flags.send) throw new Error('الإرسال معطّل افتراضياً. فعّل WHATSAPP_SEND_ENABLED محلياً بعد الاختبار.')
+    if (!state.transport || state.transport.getConnectionStatus?.() !== 'connected') throw new Error('اربط واتساب أولاً وتأكد أن الحالة متصل.')
     const campaign = db.get('SELECT * FROM campaigns WHERE id=?', id); if (!campaign) throw new Error('الحملة غير موجودة')
     if (!['approved', 'queued'].includes(campaign.state)) throw new Error('الحملة يجب أن تكون معتمدة قبل الإرسال.')
     const targets = campaignTargets(id)

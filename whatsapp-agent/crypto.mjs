@@ -34,7 +34,7 @@ export function getEncryptionKey({ allowEphemeral = false } = {}) {
   if (cachedKey) return cachedKey
   cachedKey = keyFromEnvironment() || keyFromMacKeychain() || createMacKeychainKey()
   if (!cachedKey && allowEphemeral) cachedKey = crypto.createHash('sha256').update(`self-test:${DATA_DIR}`).digest()
-  if (!cachedKey) throw new Error('لا يوجد مفتاح تشفير آمن. شغّل الوكيل على macOS أو عرّف WHATSAPP_AGENT_KEY محليًا.')
+  if (!cachedKey) throw new Error('لا يوجد مفتاح تشفير آمن. شغّل الوكيل على macOS أو عرّف WHATSAPP_AGENT_KEY محلياً.')
   return cachedKey
 }
 

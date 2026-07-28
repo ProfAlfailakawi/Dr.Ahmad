@@ -195,7 +195,7 @@ export function articleSystem(article: ArticleLike, articles: ArticleLike[], boo
       ? `ناقش: يقول المقال «${quote.length > 110 ? `${quote.slice(0, 107)}…` : quote}» — إلى أي مدى يصحّ هذا في تجربتك، ومتى يحتاج إلى قيد؟`
       : `ناقش: ما أقوى حجة مع فكرة «${article.title}»، وما أقوى حجة عليها؟`,
     slide: `العنوان: ${article.title}\nالفكرة المركزية: ${article.excerpt || first}\nسؤال ختامي: ماذا يحدث عندما يغيب الإنسان عن القرار؟`,
-    podcast: `فهد: «قد تبدو الفكرة واضحة من العنوان.»\nنورة: «لكن أثرها الحقيقي يظهر عندما نربطها بحياة الطالب والمعلم.»`,
+    podcast: `المتحدث: «قد تبدو الفكرة واضحة من العنوان.»\nالمتحدثة: «لكن أثرها الحقيقي يظهر عندما نربطها بحياة الطالب والمعلم.»`,
     quotes: [quote, ...body.replace(/\s+/g, ' ').split(/(?<=[.!؟])\s+/).filter((s) => s.length > 55 && s.length < 150).slice(0, 3)].slice(0, 4),
     relatedArticles,
     relatedBooks,

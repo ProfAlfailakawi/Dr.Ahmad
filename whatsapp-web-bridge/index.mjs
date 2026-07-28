@@ -582,6 +582,21 @@ async function executeCommand(command) {
     }
   } catch (caught) {
     const error = caught instanceof Error ? caught.message : String(caught)
+    const sendCommand = ['send-message', 'send-self-message'].includes(command.type)
+    const detachedContext = /detached\s*Frame|Execution context.*destroyed|Target closed|webjs-reinjection-timeout|Cannot find context with specified id/i.test(error)
+    const attempts = Number(command.attempts || 0)
+    if (sendCommand && detachedContext && attempts < 3) {
+      await serverRequest('/api/whatsapp/commands', {
+        body: { commandId: command.id, retry: true, error: 'bridge-session-refresh' },
+        retries: 2,
+      })
+      log('warn', 'command_requeued_after_detached_frame', { commandId: command.id, commandType: command.type, attempts })
+      shuttingDown = true
+      await safeEmit('status', transitionState('restarting', false, 'detached_frame_refresh'))
+      await safeGracefulCloseClient()
+      process.exit(75)
+      return
+    }
     await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: false, error }, retries: 1 })
     log('error', 'command_failed', { commandId: command.id, commandType: command.type, error })
   }

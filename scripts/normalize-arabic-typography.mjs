@@ -7,6 +7,7 @@ const data = JSON.parse(fs.readFileSync(file, 'utf8'))
 
 function normalize(input = '') {
   return input
+    .replace(/اً/g, 'اً')
     .replace(/\.\.\.+/g, '…')
     .replace(/\.\./g, '…')
     .replace(/[“”](.*?)[“”]/g, '«$1»')

@@ -313,8 +313,8 @@ function imagePassport(source: HTMLImageElement, file: File): StudioImagePasspor
       : 'low'
   const cropNotes = [
     negativeSpace === 'balanced' ? 'المساحات متوازنة؛ ضع النص في طبقة مستقلة واختبر التباين.' : `أهدأ مساحة للنص تبدو في جهة ${negativeSpace === 'right' ? 'اليمين' : negativeSpace === 'left' ? 'اليسار' : negativeSpace === 'top' ? 'الأعلى' : 'الأسفل'}.`,
-    `نقطة التركيز التكنولوجية قرب ${Math.round(focalX * 100)}٪ أفقيًا و${Math.round(focalY * 100)}٪ عموديًا.`,
-    aspectRatio > 1.7 ? 'الصورة عريضة؛ ستحتاج قصًا واعيًا للمربع والستوري.' : aspectRatio < .7 ? 'الصورة طولية؛ راقب فقدان الأطراف في النسخ العريضة.' : 'نسبة الصورة مرنة نسبيًا عبر أكثر من منصة.',
+    `نقطة التركيز التكنولوجية قرب ${Math.round(focalX * 100)}٪ أفقياً و${Math.round(focalY * 100)}٪ عمودياً.`,
+    aspectRatio > 1.7 ? 'الصورة عريضة؛ ستحتاج قصاً واعياً للمربع والستوري.' : aspectRatio < .7 ? 'الصورة طولية؛ راقب فقدان الأطراف في النسخ العريضة.' : 'نسبة الصورة مرنة نسبياً عبر أكثر من منصة.',
   ]
   return {
     dataUrl,

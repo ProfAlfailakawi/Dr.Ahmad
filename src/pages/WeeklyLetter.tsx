@@ -9,7 +9,7 @@ import { PROJECT_START_ISO } from '../lib/project-meta'
 
 const arDigits = (value: number | string) => String(value).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])
 
-/* رقم الأسبوع منذ أول مقال — يمنح كل رسالة ترتيبًا ثابتًا («الرسالة رقم ٨٤») */
+/* رقم الأسبوع منذ أول مقال — يمنح كل رسالة ترتيباً ثابتاً («الرسالة رقم ٨٤») */
 function weekOrdinal(iso: string, earliestIso: string) {
   const ms = new Date(iso).getTime() - new Date(earliestIso).getTime()
   return Math.max(1, Math.floor(ms / (7 * 24 * 60 * 60 * 1000)) + 1)
@@ -37,7 +37,7 @@ export default function WeeklyLetter() {
   if (!latest) {
     return (
       <Page>
-        <PageHead label="رسالة الأسبوع" title="قريبًا." sub="مقالٌ جديد كل أسبوع." />
+        <PageHead label="رسالة الأسبوع" title="قريباً." sub="مقالٌ جديد كل أسبوع." />
       </Page>
     )
   }

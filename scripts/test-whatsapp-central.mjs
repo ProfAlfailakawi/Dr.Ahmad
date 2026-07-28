@@ -59,7 +59,7 @@ assert.equal(price.kind, 'reply')
 assert.match(price.reply, /dr-alfailakawi\.com/)
 assert.doesNotMatch(price.reply, /\d+\s*(?:د\.ك|دينار)/)
 
-const unknown = decideGroundedResponse({ text: 'كم يبلغ مخزون منتج غير موجود إطلاقًا؟' })
+const unknown = decideGroundedResponse({ text: 'كم يبلغ مخزون منتج غير موجود إطلاقاً؟' })
 assert.equal(unknown.kind, 'silent')
 assert.equal(unknown.reason, 'no-grounded-answer')
 

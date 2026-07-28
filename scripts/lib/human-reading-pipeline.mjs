@@ -282,7 +282,7 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
     attempts.push({ attempt, ratePct: working.ratePct, targetWpm: target, measuredWpm, pacePass, padding,
       stt: heard, comparison, missingRisks: missingRisks.map((risk) => risk.word), negationMissing })
     /* تعطّل STT لا يجوز أن يضاعف فاتورة TTS ثلاث مرات للوحدة نفسها. إذا كان
-       الملف الأول صالحًا تقنيًا وإيقاعه ضمن المجال، نثبّته فورًا ونترك بوابات
+       الملف الأول صالحاً تقنياً وإيقاعه ضمن المجال، نثبّته فوراً ونترك بوابات
        التجميع/الصمت/الجهارة تحكم على القراءة كاملة. */
     if (!heard) {
       const probe = probeAudio(trimmed)
@@ -309,7 +309,7 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
       return { file: trimmed, unit: working, attempts, comparison, heard, measuredWpm }
     }
     /* أفضل محاولة تُحفظ (لا تُحذف): إن استُنفدت المحاولات دون اجتياز صارم، نتجاوز
-       الوحدة العنيدة بذكاء ونقبل أفضل صوتٍ سليمٍ فعليًا بدل إسقاط المقالة كلها. */
+       الوحدة العنيدة بذكاء ونقبل أفضل صوتٍ سليمٍ فعلياً بدل إسقاط المقالة كلها. */
     const bestSoFar = bestEffort?.comparison?.importantRatio ?? -1
     if ((comparison.importantRatio ?? 0) >= bestSoFar) {
       if (bestEffort && bestEffort.file !== trimmed) rmSync(bestEffort.file, { force: true })
@@ -490,8 +490,8 @@ export async function renderHumanReading({
       technical = { probe: probeAudio(candidate), silence: analyzeSilence(candidate), loudness: analyzeLoudness(candidate) }
       /* بوابة البشرية تُقيّم STT فقط على الوحدات القابلة للتحقق فعلاً: نستبعد الوحدات
          المتجاوَزة بذكاء والوحدات التي تعطّل فيها STT. إن لم تبقَ وحدةٌ قابلة للتحقق
-         (تعطّل STT كليًا أو تُجوِّزت كلها) نتنزّل إلى البوابات الصوتية الحتمية بدل
-         تجميد المقال؛ وتعود الصرامة تلقائيًا لحظة توفّر وحدةٍ واحدة قابلة للتحقق. */
+         (تعطّل STT كلياً أو تُجوِّزت كلها) نتنزّل إلى البوابات الصوتية الحتمية بدل
+         تجميد المقال؛ وتعود الصرامة تلقائياً لحظة توفّر وحدةٍ واحدة قابلة للتحقق. */
       const verifiedComparisons = unitResults
         .filter((result) => !result.bestEffort && !result.comparison?.sttUnavailable)
         .map((result) => result.comparison)
@@ -502,7 +502,7 @@ export async function renderHumanReading({
       audioJudge = requireAudioJudge
         ? await geminiAudioJudge({ file: candidate, plan, key: geminiKey })
         : null
-      /* judge غائب (لا مفتاح) → يُحترم requireAudioJudge. judge غير متاح وقتيًا
+      /* judge غائب (لا مفتاح) → يُحترم requireAudioJudge. judge غير متاح وقتياً
          (نفاد رصيد/شبكة) → نتنزّل إلى البوابة الحتمية فلا يحرم عطلُ Gemini المقالَ. */
       const judgePass = audioJudge == null ? !requireAudioJudge : (audioJudge.unavailable ? true : audioJudge.pass)
       pass = proxyGate.pass && judgePass
@@ -578,7 +578,7 @@ export function readingNeedsGeneration({ article, voiceKey, output, auditFile, e
     const expectedSourceHash = sourceHash({ title: article.title, text: `${article.body}\0${article.bodyVocalized || ''}`, voice: READING_VOICES[voiceKey].azure })
     if (audit.status !== 'accepted') return { needed: true, reason: 'previous_not_accepted' }
     if (audit.sourceHash !== expectedSourceHash) return { needed: true, reason: 'source_changed' }
-    /* نسخة المحرك ليست سببًا لإعادة شراء ملفٍ صالح ولم يتغير نصه. من يريد
+    /* نسخة المحرك ليست سبباً لإعادة شراء ملفٍ صالح ولم يتغير نصه. من يريد
        ترقية صوتٍ قديم يطلبها صراحةً عبر --upgrade-existing. */
     return { needed: false, reason: 'content_hash_match' }
   } catch {

@@ -261,7 +261,7 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
     turns.forEach((turn, index) => {
       if (!turn.text.trim()) result.push(`المداخلة ${index + 1} بلا نص.`)
       if (turn.text.length > 220) result.push(`المداخلة ${index + 1} طويلة؛ اختصرها لتبقى منطوقة وطبيعية.`)
-      if (dialect.test(turn.text)) result.push(`المداخلة ${index + 1} تحتوي تعبيرًا عاميًا يحتاج مراجعة.`)
+      if (dialect.test(turn.text)) result.push(`المداخلة ${index + 1} تحتوي تعبيراً عامياً يحتاج مراجعة.`)
       if (index > 0 && turns[index - 1].speaker === turn.speaker) result.push(`المداخلتان ${index} و${index + 1} للصوت نفسه متتاليتان.`)
     })
     if (turns.length < 2) result.push('الحوار يحتاج مداخلتين على الأقل.')

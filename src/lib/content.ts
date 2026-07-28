@@ -18,6 +18,15 @@ import {
   type RemoteDocument,
 } from './cms'
 
+const normalizeArabicTanween = <T,>(value: T): T => {
+  if (typeof value === 'string') return value.replace(/\u064B\u0627/g, 'اً') as T
+  if (Array.isArray(value)) return value.map((item) => normalizeArabicTanween(item)) as T
+  if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
+    return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, normalizeArabicTanween(item)])) as T
+  }
+  return value
+}
+
 export interface ExtraArticle {
   id: string
   slug: string
@@ -45,7 +54,7 @@ export function useExtras<T>(collectionName: string, options: { realtime?: boole
 
     if (!realtime) {
       fetchExtras<T>(collectionName).then((items) => {
-        if (active) startTransition(() => setData(items as T[]))
+        if (active) startTransition(() => setData(normalizeArabicTanween(items) as T[]))
       })
       return () => { active = false }
     }
@@ -59,14 +68,14 @@ export function useExtras<T>(collectionName: string, options: { realtime?: boole
           query(collection(db, collectionName), orderBy('createdAt', 'desc')),
           (snapshot) => {
             if (!active) return
-            startTransition(() => setData(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })) as T[]))
+            startTransition(() => setData(normalizeArabicTanween(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))) as T[]))
           },
           () => {
-            fetchExtras<T>(collectionName).then((items) => { if (active) startTransition(() => setData(items as T[])) })
+            fetchExtras<T>(collectionName).then((items) => { if (active) startTransition(() => setData(normalizeArabicTanween(items) as T[])) })
           },
         )
       } catch {
-        fetchExtras<T>(collectionName).then((items) => { if (active) startTransition(() => setData(items as T[])) })
+        fetchExtras<T>(collectionName).then((items) => { if (active) startTransition(() => setData(normalizeArabicTanween(items) as T[])) })
       }
     })()
 
@@ -100,7 +109,7 @@ const errorMessage = (error: unknown) =>
   error instanceof Error && error.message ? error.message : 'تعذّر تحميل المحتوى الحي.'
 
 const documents = (snapshot: { docs: { id: string; data: () => Record<string, unknown> }[] }): RemoteDocument[] =>
-  snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))
+  normalizeArabicTanween(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })))
 
 const isAdminRoute = () =>
   typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')

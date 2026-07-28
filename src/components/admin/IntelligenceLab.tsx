@@ -247,7 +247,7 @@ function AudioControlCard({ articles }: { articles: ArticleRecord[] }) {
         <span className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{withAudio.length}</strong><small className="text-soft">مقالات بصوت</small></span>
         <span className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-ink">{noAudio.length}</strong><small className="text-soft">تحتاج صوت</small></span>
       </div>
-      <p className="mt-4 text-[.84rem] leading-relaxed text-soft">الحلقات الحوارية المعتمدة تبقى في خلاصة البودكاست فقط بعد اجتياز بوابة الجودة. إعادة التوليد تتم من سكربت الصوت حتى لا نضيف زرًا خطيرًا داخل المتصفح.</p>
+      <p className="mt-4 text-[.84rem] leading-relaxed text-soft">الحلقات الحوارية المعتمدة تبقى في خلاصة البودكاست فقط بعد اجتياز بوابة الجودة. إعادة التوليد تتم من سكربت الصوت حتى لا نضيف زراً خطيراً داخل المتصفح.</p>
       <div id="intelligence-podcast-episodes" className="mt-5 grid scroll-mt-28 gap-3">
         <p className="text-[.78rem] font-semibold text-accent">الحلقات الحوارية المنشورة</p>
         {podcast.episodes.length ? episodePages.pageItems.map((episode) => (
@@ -287,14 +287,14 @@ function AudioControlCard({ articles }: { articles: ArticleRecord[] }) {
             </ul>
           </div>
         )) : (
-          <p className="rounded-xl border border-hair bg-canvas p-4 text-[.84rem] text-soft">ستُبنى القوائم تلقائيًا مع زيادة الحلقات الحوارية.</p>
+          <p className="rounded-xl border border-hair bg-canvas p-4 text-[.84rem] text-soft">ستُبنى القوائم تلقائياً مع زيادة الحلقات الحوارية.</p>
         )}
         <Pagination page={playlistPages.page} pageCount={playlistPages.pageCount} onChange={playlistPages.setPage} totalItems={podcast.playlists.length} firstItem={playlistPages.firstItem} lastItem={playlistPages.lastItem} scrollTargetId="intelligence-podcast-playlists" label="صفحات قوائم الاستماع" className="mt-2" />
       </div>
       <div className="mt-5 rounded-xl border border-hair bg-canvas p-4">
         <p className="font-semibold text-ink">اعتماد الصوت قبل النشر</p>
         <p className="mt-2 text-[.84rem] leading-relaxed text-soft">
-          المقارنة العمياء للأصوات موجودة في بطاقة «اختبار الأصوات» أعلى لوحة المؤشرات. بعد اعتماد زوج صوتي، يستخدمه سكربت الحوار الليلي للحلقات التالية. هذه الغرفة تعرض ما نُشر فقط ولا تعتمد صوتًا جديدًا من المتصفح.
+          المقارنة العمياء للأصوات موجودة في بطاقة «اختبار الأصوات» أعلى لوحة المؤشرات. بعد اعتماد زوج صوتي، يستخدمه سكربت الحوار الليلي للحلقات التالية. هذه الغرفة تعرض ما نُشر فقط ولا تعتمد صوتاً جديداً من المتصفح.
         </p>
       </div>
     </ToolDetails>
@@ -307,7 +307,7 @@ function MonthlyPlanDetails({ articles }: { articles: ArticleRecord[] }) {
   const monthLabel = new Intl.DateTimeFormat('ar-KW-u-nu-latn', { month: 'long', year: 'numeric' }).format(now)
   const plan = useMemo(() => monthlyPlan(articles, books, papers, now), [articles, period])
   return (
-    <ToolDetails title={`خطة ${monthLabel}`} note="تتبدّل تلقائيًا مع بداية كل شهر، وتنوّع بين التصنيفات والأرشيف والزوايا الجديدة.">
+    <ToolDetails title={`خطة ${monthLabel}`} note="تتبدّل تلقائياً مع بداية كل شهر، وتنوّع بين التصنيفات والأرشيف والزوايا الجديدة.">
       <ol className="grid gap-2 md:grid-cols-2">
         {plan.map((week) => (
           <li key={`${week.period}-${week.week}`} className="rounded-xl border border-hair bg-canvas p-4 text-[.84rem] leading-relaxed">
@@ -325,7 +325,7 @@ function MonthlyPlanDetails({ articles }: { articles: ArticleRecord[] }) {
 function SeriesDetails({ articles }: { articles: ArticleRecord[] }) {
   const series = useMemo(() => automaticSeries(articles), [articles])
   return (
-    <ToolDetails title="سلاسل فكرية تلقائية" note="ترتيب داخلي يساعدك على رؤية المسارات. لا يظهر للناس إلا إذا حوّلناه لاحقًا إلى صفحة عامة.">
+    <ToolDetails title="سلاسل فكرية تلقائية" note="ترتيب داخلي يساعدك على رؤية المسارات. لا يظهر للناس إلا إذا حوّلناه لاحقاً إلى صفحة عامة.">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {series.map((group) => (
           <div key={group.title} className="rounded-xl border border-hair bg-canvas p-4">
@@ -453,7 +453,7 @@ export function IntelligenceLab({ articles }: { articles: ArticleRecord[] }) {
         </div>
       </section>
 
-      {view === 'before' && <LabLayer title="قبل النشر" note="فحص الجاهزية وخطة نشر تتغير تلقائيًا كل شهر."><ReadinessCard articles={richArticles} /><MonthlyPlanDetails articles={richArticles} /></LabLayer>}
+      {view === 'before' && <LabLayer title="قبل النشر" note="فحص الجاهزية وخطة نشر تتغير تلقائياً كل شهر."><ReadinessCard articles={richArticles} /><MonthlyPlanDetails articles={richArticles} /></LabLayer>}
 
       {view === 'develop' && <LabLayer title="تطوير الفكرة" note="مساحة هادئة لتطوير سؤال أو خبر أو ملاحظة، وربطه بتاريخك الفكري."><IdeaLabCard articles={richArticles} /><DoctorRadarCard articles={richArticles} /><SeriesDetails articles={richArticles} /></LabLayer>}
 

@@ -86,7 +86,7 @@ const arabicIndex = (value: number) => value < 10 ? `0${value}` : String(value)
 
 /* قياس حقيقي للنص العربي في المتصفح، مع بديل حتمي أثناء البناء الثابت.
    نطبّع القياس على خط 100px، لذلك تبقى دوال التخطيط القديمة متوافقة بينما
-   يصير كسر السطر مبنيًا على الخط المحمّل نفسه لا على عدّ الحروف. */
+   يصير كسر السطر مبنياً على الخط المحمّل نفسه لا على عدّ الحروف. */
 let measureContext: CanvasRenderingContext2D | null | undefined
 const measureCache = new Map<string, number>()
 function measuredUnits(value: string, family = 'Tajawal') {
@@ -119,7 +119,7 @@ function measuredUnits(value: string, family = 'Tajawal') {
 
 function textUnits(value: string) { return measuredUnits(value) }
 
-/** عرض بالبكسل وفق القياس الفعلي حين يكون Canvas متاحًا. */
+/** عرض بالبكسل وفق القياس الفعلي حين يكون Canvas متاحاً. */
 const lineWidthPx = (line: string, size: number) => measuredUnits(line) * size * .555
 
 /** موازنة ديناميكية: تفحص نقاط القطع الممكنة وتختار أقل تفاوت بين الأسطر،
@@ -503,7 +503,7 @@ function frameDecor(s: Scene) {
   const { plan, palette: p, w, h, min } = s
   const heroImage = plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background' && item.src)
   /* حين تكون الصورة هي المسرح الرئيسي، فالإطار الطباعي القديم يتحول إلى «قيد»
-     بصري فوقها، خصوصًا مع الخطط المعتمدة على صورة بطولية. لذلك نطفئ الإطار في
+     بصري فوقها، خصوصاً مع الخطط المعتمدة على صورة بطولية. لذلك نطفئ الإطار في
      هذا السياق ونترك القراءة تعتمد على التعتيم الموجّه وتكوين المشهد نفسه. */
   if (heroImage) return ''
   const frame = FRAMING_MODES[plan.framing]
@@ -1636,7 +1636,7 @@ function identityLayer(s: Scene, options: RenderSvgOptions) {
 }
 
 /** الصور البطولية تُرسم تحت التكوين لا فوقه، كي تصبح الصورة هي المسرح ويظل النص
-    جزءًا من الإخراج لا ملصقًا موضوعًا فوق صورة. كل معالجة هنا حتمية وتظهر في
+    جزءاً من الإخراج لا ملصقاً موضوعاً فوق صورة. كل معالجة هنا حتمية وتظهر في
     المعاينة والتصدير بالطريقة نفسها. */
 function imageUnderlayLayer(s: Scene) {
   const images = [...(s.plan.overlays || [])]

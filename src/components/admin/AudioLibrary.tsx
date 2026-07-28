@@ -353,7 +353,7 @@ export function AudioLibrary({ articles, onChanged }: Props) {
             <p className="mt-2 line-clamp-2 text-[.78rem] leading-relaxed text-soft">
               {liveRemainingVoices
                 ? <>قراءة فهد تستأنف من آخر نقطة تلقائياً. التالي: <strong className="font-semibold text-ink">{nextReadingTitle || 'أول مقال غير مكتمل في الطابور'}</strong></>
-                : 'اكتملت قراءات فهد الموثقة، وأي مقال جديد سيدخل تلقائياً. الحوار يبقى مسار بودكاست مستقلًا.'}
+                : 'اكتملت قراءات فهد الموثقة، وأي مقال جديد سيدخل تلقائياً. الحوار يبقى مسار بودكاست مستقلاً.'}
             </p>
           </div>
           <div className="flex items-center gap-4 sm:justify-end">

@@ -23,6 +23,7 @@ const requiredFiles = [
   'src/components/admin/WhatsAppAgentPanel.tsx',
   'src/components/admin/SocialDesignStudio.tsx',
   'whatsapp-bridge/bridge.mjs',
+  'whatsapp-web-bridge/index.mjs',
   'whatsapp-web-bridge/service-runner.mjs',
   'whatsapp-web-bridge/install-autostart-mac.command',
 ]
@@ -70,6 +71,7 @@ const uiSource = await readFile(resolve(root, 'src/components/ui.tsx'), 'utf8')
 const cvSource = await readFile(resolve(root, 'src/pages/CV.tsx'), 'utf8')
 const whatsappPanel = await readFile(resolve(root, 'src/components/admin/WhatsAppAgentPanel.tsx'), 'utf8')
 const whatsappBridge = await readFile(resolve(root, 'whatsapp-bridge/bridge.mjs'), 'utf8')
+const whatsappWebBridge = await readFile(resolve(root, 'whatsapp-web-bridge/index.mjs'), 'utf8')
 const whatsappResidentRunner = await readFile(resolve(root, 'whatsapp-web-bridge/service-runner.mjs'), 'utf8')
 const whatsappResidentInstaller = await readFile(resolve(root, 'whatsapp-web-bridge/install-autostart-mac.command'), 'utf8')
 const whatsappController = await readFile(resolve(root, 'src/server/whatsapp-controller.mjs'), 'utf8')
@@ -98,14 +100,14 @@ const assertions = [
   [contentManager.includes('uploadCvPdfToFirestore') && contentManager.includes("'site_cv_files'"), 'CV upload must keep its Storage-independent Firestore bridge'],
   [contentManager.includes('النص المُشكَّل لتوليد الصوت') && contentManager.includes("'bodyVocalized'") && autoAudio.includes('fields.bodyVocalized'), 'vocalized article text must remain visible in admin and connected to audio generation'],
   [audioLibrary.includes('مكتبة الصوت') && audioLibrary.includes('صوت فهد') && audioLibrary.includes('الحوار') && !audioLibrary.includes('صوت نورة') && audioLibrary.includes("'clear'") && audioManagement.includes("'fahed' | 'dialogue'"), 'article audio library must keep Fahed reading and two-voice dialogue as the only active modes'],
-  [audioLibrary.includes('<audio') && audioLibrary.includes('سماع') && audioLibrary.includes('فهد هو صوت قراءة المقالات') && audioLibrary.includes('12_000'), 'central audio library must preview Fahed/dialogue and refresh generation status'],
+  [audioLibrary.includes('<audio') && audioLibrary.includes('سماع') && audioLibrary.includes('فهد هو صوت التوليد الجديد لقراءة المقالات') && audioLibrary.includes('نورة جاهزة') && audioLibrary.includes('12_000'), 'central audio library must preview current Noura/Fahed/dialogue files and refresh generation status'],
   [adminPage.includes("tab === 'audio-library'") && adminArchitecture.includes("tab: 'audio-library'") && adminArchitecture.includes('سماع وإعادة توليد وحذف'), 'audio lifecycle must remain a dedicated visible admin tab'],
   [!contentManager.includes('<ArticleAudioManager') && !contentManager.includes('إدارة صوت المقال'), 'audio controls must stay out of the article editor and inside the dedicated library'],
   [serverSource.includes('audioManagePath') && serverSource.includes('admin-audio-clear.yml') && autoAudio.includes("--voice=") && autoAudio.includes('ALL_VOICES'), 'server must dispatch protected Fahed/dialogue lifecycle workflows'],
   [audioClearWorkflow.includes('fahed) FILES=') && audioClearWorkflow.includes('clear-audio-assets.mjs') && autoAudioWorkflow.includes('github.event.inputs.voice') && autoAudioWorkflow.includes('--voice=$VOICE'), 'audio cancellation and regeneration must keep Fahed reading isolated from dialogue'],
   [hostingWorkflow.includes('workflow_run:') && hostingWorkflow.includes('توليد الصوت تلقائياً إلى R2'), 'successful audio ledger workflows must trigger a fresh site deployment'],
   [whatsappPanel.includes('إصلاح الاتصال تلقائيًا') && whatsappPanel.includes('/admin/repair') && whatsappPanel.includes('window.confirm'), 'WhatsApp admin must expose safe recovery and explicit destructive re-pairing'],
-  [whatsappBridge.includes('watchdog_restart_stuck_authenticated') && whatsappBridge.includes("process.exit(75)") && whatsappBridge.includes("WHATSAPP_BRIDGE_SECRET || ''"), 'WhatsApp bridge must self-restart when stuck and must never ship a fallback secret'],
+  [whatsappBridge.includes('watchdog_restart_stuck_authenticated') && whatsappBridge.includes("process.exit(75)") && whatsappBridge.includes("WHATSAPP_BRIDGE_SECRET || ''") && whatsappWebBridge.includes('sendTextWithRecovery') && whatsappWebBridge.includes("'send-self-message'") && whatsappWebBridge.includes('waitUntilMsgSent: true'), 'WhatsApp bridge must self-restart when stuck, recover modern delivery, acknowledge self previews, and never ship a fallback secret'],
   [whatsappController.includes('REPAIR_COOLDOWN_MS') && whatsappController.includes('repairAllowed') && whatsappController.includes('رفضت اللوحة مسحها'), 'WhatsApp destructive recovery must keep its connected-session lock and scan-rate cooldown'],
   [whatsappResidentRunner.includes('loadBridgeSecret') && whatsappResidentRunner.includes('ensureDependencies') && whatsappResidentRunner.includes('session_quarantined_for_repair'), 'resident WhatsApp service must self-heal dependencies, fetch its secret, and quarantine repaired sessions'],
   [whatsappResidentInstaller.includes('DrAhmadWhatsAppBridge') && whatsappResidentInstaller.includes('com.alturath.whatsapp-bridge') && whatsappResidentInstaller.includes('legacy-launch-agents'), 'WhatsApp installer must keep one resident launch service and retire conflicting legacy services'],

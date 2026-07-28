@@ -2151,7 +2151,15 @@ async function requestCloudflareImage({ accountId, apiToken, model, prompt, seed
 export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
   const accountId = String(process.env.CLOUDFLARE_ACCOUNT_ID || '').trim()
   const apiToken = String(process.env.CLOUDFLARE_API_TOKEN || '').trim()
-  const model = String(process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/leonardo/phoenix-1.0').trim()
+  const generationMode = input.generationMode === 'masterpiece' ? 'masterpiece' : 'daily'
+  /*
+   * لا يوجد عدّاد داخلي. الوضع اليومي يستخدم FLUX.2 Klein لأن تكلفة
+   * Cloudflare العصبية للصورة جزء صغير من Phoenix، بينما يبقى Phoenix
+   * متاحًا يدويًا للنسخة النهائية التي تستحق استهلاك الحصة الأعلى.
+   */
+  const model = String(generationMode === 'masterpiece'
+    ? process.env.CLOUDFLARE_IMAGE_MODEL_MASTERPIECE || process.env.CLOUDFLARE_IMAGE_MODEL || '@cf/leonardo/phoenix-1.0'
+    : process.env.CLOUDFLARE_IMAGE_MODEL_DAILY || '@cf/black-forest-labs/flux-2-klein-4b').trim()
   if (!accountId || !apiToken) throw new HttpError(503, 'Cloudflare Workers AI is not configured')
   if (!/^[a-f0-9]{32}$/i.test(accountId)) throw new HttpError(503, 'Cloudflare account is not configured correctly')
   if (!/^@cf\/[A-Za-z0-9._/-]+$/.test(model)) throw new HttpError(503, 'Cloudflare image model is not configured correctly')
@@ -2164,7 +2172,8 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
      نجمع محاولات الصور المتسلسلة داخل HTTP واحد؛ الواجهة تعيد طلبًا مستقلًا
      ببذرة ومشهد جديدين عندما يرفض الناقد المرشح الأول. */
   const candidateAttempts = envNumber('STUDIO_IMAGE_CANDIDATE_ATTEMPTS', 1, 1, 2)
-  const requireVisionCritic = !/^(?:0|false|no|off)$/i.test(String(process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC || 'true').trim())
+  const requireVisionCritic = generationMode === 'masterpiece'
+    && !/^(?:0|false|no|off)$/i.test(String(process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC || 'true').trim())
   const candidates = []
   let rescueReason = ''
   let visionCriticUnavailable = false
@@ -2264,6 +2273,7 @@ export async function generateCloudflareStudioImage(input, fetchImpl = fetch) {
     description: chosen.direction.concept.scene,
     prompt: chosen.prompt,
     model,
+    generationMode,
     seed: chosen.seed,
     requestId,
     generatedAt: new Date().toISOString(),

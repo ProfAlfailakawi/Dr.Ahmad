@@ -182,6 +182,7 @@ export function AudioLibrary({ articles, onChanged }: Props) {
   // مستقل ولا ينبغي أن يُنقص نسبة قراءة المقالات أو يعيدها إلى رقم مضلل.
   const liveExpectedVoices = allArticles.length
   const liveReadyVoices = totals.voices.fahed
+  const liveNouraVoices = allArticles.reduce((sum, article) => sum + Number(exists(article.audio?.noura)), 0)
   const liveRemainingVoices = Math.max(0, liveExpectedVoices - liveReadyVoices)
   const liveProgressPercent = Math.round((liveReadyVoices / Math.max(1, liveExpectedVoices)) * 1000) / 10
   const nextReadingTitle = supervisorSnapshot.items.find((item) => !item.readings.fahed.ready)?.title
@@ -330,10 +331,11 @@ export function AudioLibrary({ articles, onChanged }: Props) {
           <p className="text-[.76rem] font-semibold text-accent">الصوت والبودكاست</p>
           <h2 id="audio-library-title" className="mt-1 font-display text-3xl font-bold text-ink">مكتبة الصوت</h2>
           <p className="mt-3 max-w-3xl text-[.84rem] leading-loose text-soft">
-            فهد هو صوت قراءة المقالات. الحلقة الحوارية تبقى بصوتَي فهد ونورة، ويمكن إدارتها بصورة مستقلة.
+            فهد هو صوت التوليد الجديد لقراءة المقالات. مكتبة نورة الحالية تبقى متاحة، واستكمال المتبقي مؤجل. الحلقة الحوارية تبقى بصوتَي فهد ونورة.
           </p>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[.7rem] text-soft">
             <span>فهد جاهز: {totals.voices.fahed}</span>
+            <span>نورة جاهزة: {liveNouraVoices}</span>
             <span>حوار جاهز: {totals.voices.dialogue}</span>
           </div>
         </div>

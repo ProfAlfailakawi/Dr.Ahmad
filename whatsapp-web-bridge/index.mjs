@@ -89,6 +89,7 @@ let shuttingDown = false
 let commandBusy = false
 let heartbeatTimer = null
 let pollTimer = null
+let reinjectionPromise = null
 
 async function serverRequest(path, { method = 'POST', body, timeoutMs = 15_000, retries = 2 } = {}) {
   let lastError
@@ -215,6 +216,97 @@ client.on('ready', () => {
   void warmPhoneAliasesAndContactsInBackground()
 })
 
+function isIndividualJid(value) {
+  return /@(?:c\.us|lid)$/.test(String(value || ''))
+}
+
+async function bridgeFunctionsReady() {
+  if (!client.pupPage || client.pupPage.isClosed()) return false
+  try {
+    return await client.pupPage.evaluate(() => Boolean(
+      window.WWebJS
+      && typeof window.WWebJS.getChat === 'function'
+      && typeof window.WWebJS.sendMessage === 'function',
+    ))
+  } catch {
+    return false
+  }
+}
+
+/*
+ * WhatsApp Web may reload its main frame after the QR has already reached
+ * "ready". During that narrow window whatsapp-web.js keeps the session green
+ * but loses window.WWebJS, so every send fails at getChat and inbound events
+ * stop. Re-inject once, serialize concurrent repairs, then prove the helpers
+ * are present before allowing a delivery.
+ */
+async function ensureBridgeFunctions() {
+  if (await bridgeFunctionsReady()) return
+  if (!reinjectionPromise) {
+    reinjectionPromise = (async () => {
+      log('warn', 'webjs_helpers_missing_reinjecting')
+      await client.inject()
+      const deadline = Date.now() + 30_000
+      while (Date.now() < deadline) {
+        if (await bridgeFunctionsReady()) return
+        await new Promise((resolveWait) => setTimeout(resolveWait, 400))
+      }
+      throw new Error('webjs-reinjection-timeout')
+    })().finally(() => { reinjectionPromise = null })
+  }
+  await reinjectionPromise
+}
+
+async function resolveSendJid(rawJid) {
+  const jid = String(rawJid || '').trim()
+  if (!isIndividualJid(jid)) throw new Error('invalid-individual-jid')
+  if (jid.endsWith('@lid')) return jid
+  const digits = jid.split('@', 1)[0].replace(/\D/g, '')
+  if (!digits) return jid
+  try {
+    const registered = await client.getNumberId(digits)
+    return String(registered?._serialized || jid)
+  } catch {
+    return jid
+  }
+}
+
+async function sendTextWithRecovery(rawJid, rawText) {
+  const text = String(rawText || '').trim()
+  if (!text) throw new Error('empty-message')
+  const jid = await resolveSendJid(rawJid)
+  let lastError = null
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      await ensureBridgeFunctions()
+      // New WhatsApp Web builds can complete the underlying send but fail to
+      // serialize the resulting message model back to whatsapp-web.js. Waiting
+      // for the page send action is authoritative; an empty wrapper result is
+      // then a compatibility notice, not a false delivery failure.
+      const sent = await client.sendMessage(jid, text, {
+        sendSeen: false,
+        waitUntilMsgSent: true,
+      })
+      if (!sent) log('warn', 'send_completed_without_serialized_message', { jid })
+      return sent
+    } catch (error) {
+      lastError = error
+      const message = String(error?.message || error)
+      if (attempt > 0 || !/getChat|Execution context|detached|WWebJS|evaluate|reinjection/i.test(message)) break
+      log('warn', 'send_recovering_webjs_helpers', { jid, error: message })
+      try { await client.inject() } catch { /* the serialized preflight retries below */ }
+      await new Promise((resolveWait) => setTimeout(resolveWait, 900))
+    }
+  }
+  throw lastError || new Error('whatsapp-send-failed')
+}
+
+function selfChatJid() {
+  const configured = String(config.ownerChatId || '').trim()
+  if (configured) return configured
+  return String(client.info?.wid?._serialized || '').trim()
+}
+
 async function warmPhoneAliasesAndContactsInBackground() {
   try {
     const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('warmup-timeout')), 15_000))
@@ -315,7 +407,7 @@ async function safeGracefulCloseClient() {
 // Inbound message handling
 client.on('message', async (message) => {
   runtime.lastActivityAt = Date.now()
-  if (message.fromMe || message.from === 'status@broadcast' || !message.from?.endsWith('@c.us')) return
+  if (message.fromMe || message.from === 'status@broadcast' || !isIndividualJid(message.from)) return
   try {
     const result = await emit('incoming', {
       jid: message.from,
@@ -326,7 +418,7 @@ client.on('message', async (message) => {
       timestamp: Number(message.timestamp || 0),
     })
     if (result?.reply?.text && ['reply', 'reply-and-escalate'].includes(result.action)) {
-      await client.sendMessage(message.from, String(result.reply.text))
+      await sendTextWithRecovery(message.from, result.reply.text)
     }
   } catch (error) {
     runtime.lastError = error instanceof Error ? error.message : String(error)
@@ -364,8 +456,6 @@ async function pollCommands() {
 
 async function executeCommand(command) {
   if (!command?.id || !command.type) return
-  let ok = true
-  let error = ''
   try {
     if (command.type === 'restart') {
       shuttingDown = true
@@ -383,12 +473,25 @@ async function executeCommand(command) {
     } else if (command.type === 'send-message') {
       const jid = command.payload?.jid
       const text = String(command.payload?.text || '').trim()
-      if (jid && text) await client.sendMessage(jid, text)
+      if (!jid || !text) throw new Error('invalid-send-message-command')
+      await sendTextWithRecovery(jid, text)
+      await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 1 })
+      log('info', 'command_message_sent', { jid, commandId: command.id })
+    } else if (command.type === 'send-self-message') {
+      const jid = selfChatJid()
+      const text = String(command.payload?.text || '').trim()
+      if (!jid) throw new Error('self-chat-unavailable')
+      if (!text) throw new Error('invalid-self-message-command')
+      await sendTextWithRecovery(jid, text)
+      await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 1 })
+      log('info', 'command_self_message_sent', { jid, commandId: command.id })
+    } else {
+      throw new Error(`unsupported-command:${String(command.type).slice(0, 80)}`)
     }
   } catch (caught) {
-    ok = false
-    error = caught instanceof Error ? caught.message : String(caught)
+    const error = caught instanceof Error ? caught.message : String(caught)
     await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: false, error }, retries: 1 })
+    log('error', 'command_failed', { commandId: command.id, commandType: command.type, error })
   }
 }
 

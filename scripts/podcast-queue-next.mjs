@@ -16,9 +16,36 @@ const { initializeApp, cert, getApps } = await import('firebase-admin/app')
 const { getFirestore, FieldValue } = await import('firebase-admin/firestore')
 const app = getApps()[0] || initializeApp({ credential: cert(JSON.parse(readFileSync(saPath, 'utf8'))) })
 const db = getFirestore(app)
-const snap = await db.collection('podcast_production').where('status', '==', 'queued').limit(8).get()
-const valid = []
+const STALE_GENERATING_MS = 3 * 60 * 60 * 1000
+const timestampMs = (value) => {
+  if (!value) return 0
+  if (typeof value.toMillis === 'function') return value.toMillis()
+  const parsed = new Date(value).getTime()
+  return Number.isFinite(parsed) ? parsed : 0
+}
+const queue = db.collection('podcast_production')
+const snap = await queue.get()
+const candidates = []
 for (const productionDoc of snap.docs) {
+  const production = productionDoc.data() || {}
+  if (production.status === 'queued') {
+    candidates.push(productionDoc)
+    continue
+  }
+  if (production.status !== 'generating') continue
+  const startedAt = timestampMs(production.generationStartedAt) || timestampMs(production.updatedAt)
+  if (startedAt && Date.now() - startedAt <= STALE_GENERATING_MS) continue
+  await productionDoc.ref.set({
+    status: 'queued',
+    note: 'استعاد حارس الطابور توليداً عالقاً بعد انقضاء مهلة الأمان.',
+    recoveredAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true })
+  candidates.push(productionDoc)
+  console.error(`↻ ${productionDoc.id}: أُعيد التوليد العالق إلى الطابور`)
+}
+const valid = []
+for (const productionDoc of candidates.slice(0, 8)) {
   const slug = productionDoc.id
   if (!/^[a-z0-9-]+$/.test(slug)) continue
   try {

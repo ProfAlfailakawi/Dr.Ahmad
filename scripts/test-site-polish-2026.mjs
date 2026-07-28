@@ -67,12 +67,8 @@ console.log('\nHomepage polish')
 ok(home.includes('من الأرشيف اليوم') && home.includes('أربعة مداخل، تتغيّر مع كل زيارة.'), 'قسم الأعمال أصبح «من الأرشيف اليوم» مع بقاء الاكتشاف المتجدد')
 ok(home.includes('archive-editorial-cover') && home.includes("item.kind === 'paper' ? 'RESEARCH'") && home.includes("item.kind === 'media' ? 'MEDIA' : 'ESSAY'"), 'المقال والبحث يحصلان على أغلفة تحريرية أصلية، مع هوية احتياطية صحيحة لكل نوع بلا صور stock')
 ok(home.includes('home-idea-thread-line') && home.includes('<i /><i /><i /><i />'), 'خيط الفكرة موجود كصلة بصرية هادئة بين المحطات')
-const quietStart = home.indexOf('function QuietEnding()')
-const quietEnd = home.indexOf('\nfunction ', quietStart + 10)
-const quiet = home.slice(quietStart, quietEnd > quietStart ? quietEnd : quietStart + 2500)
-ok(quiet.includes('الخاتمة الهادئة') && quiet.includes('يفتح طريقاً إلى الفكرة'), 'الخاتمة الهادئة مدمجة في الرئيسية')
-ok(!quiet.includes('/contact') && !quiet.includes('/about'), 'الخاتمة الهادئة بلا CTA مكرر للتعاون أو About')
-ok(!/الخاتمة الهادئة[\s\S]{0,1000}\/about/.test(homeExperience), 'المكوّن القديم غير المستخدم لا يعيد رابط About داخل الخاتمة')
+ok(!home.includes('function QuietEnding()') && !home.includes('الخاتمة الهادئة') && !home.includes('يفتح طريقاً إلى الفكرة'), 'الخاتمة الهادئة محذوفة بالكامل من الرئيسية')
+ok(!homeExperience.includes('الخاتمة الهادئة') && !homeExperience.includes('يفتح طريقاً إلى الفكرة'), 'لا توجد نسخة قديمة مخفية من الخاتمة الهادئة')
 
 console.log('\nStudio generation library')
 ok(firestore.includes('match /admin_generated_assets/{id}') && firestore.includes('match /admin_generated_designs/{id}'), 'Firestore يفهرس الصور والتصاميم المولدة للمشرف فقط')
@@ -84,6 +80,7 @@ for (const kind of ['توليد اتجاهات', 'إعادة توليد', 'تح�
   ok(studio.includes(`archiveGeneratedDesigns`) && studio.includes(`'${kind}'`), `أرشفة تلقائية لمسار: ${kind}`)
 }
 ok(studio.includes('التصاميم الكاملة') && studio.includes('الأصول البصرية المولّدة') && studio.includes('فتح للتعديل'), 'مكتبة التوليد تفصل التصاميم الكاملة عن الأصول وتعيد فتحها للتحرير')
+ok(studio.includes('data-generation-library="true"'), 'مكتبة التوليد لها مدخل دائم الظهور حتى قبل كتابة فكرة جديدة')
 ok(studio.includes('loadOlderGeneratedDesigns') && studio.includes('loadOlderGeneratedImages'), 'المكتبة تستطيع تحميل الأرشيف الأقدم ولا تقتصر على أول دفعة')
 
 console.log('\nVisitor-facing refinement')

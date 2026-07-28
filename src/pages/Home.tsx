@@ -757,24 +757,6 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
 
 
 
-function QuietEnding() {
-  return (
-    <section className="quiet-ending border-t border-hair px-6 py-[54px] md:px-11 md:py-[78px]" aria-labelledby="quiet-ending-title">
-      <div className="mx-auto max-w-shell">
-        <FadeUp>
-          <div className="quiet-ending-inner mx-auto max-w-[760px] text-center">
-            <span className="quiet-ending-mark" aria-hidden="true" />
-            <p className="text-[.72rem] font-semibold tracking-[.08em] text-accent">الخاتمة الهادئة</p>
-            <h2 id="quiet-ending-title" className="mt-4 font-display text-[clamp(1.45rem,3.2vw,2.2rem)] font-semibold leading-[1.72] text-ink">
-              هذا الموقع لا يعرض أرشيفاً فقط؛ إنه يفتح طريقاً إلى الفكرة.
-            </h2>
-          </div>
-        </FadeUp>
-      </div>
-    </section>
-  )
-}
-
 function ProfileAndBooksLayer({ books }: { books: BookRecord[] }) {
   return (
     <>
@@ -1015,7 +997,6 @@ export default function Home() {
         )}
       </div>
 
-      <QuietEnding />
 
       <HomeSocialFooter />
     </Page>

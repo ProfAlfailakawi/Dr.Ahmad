@@ -521,9 +521,9 @@ export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUna
     loudnessSafe: Number(technical?.loudness?.integratedLufs) >= -17.2 && Number(technical?.loudness?.integratedLufs) <= -14.8
       && Number(technical?.loudness?.truePeakDbtp) <= -1,
     formatSafe: Number(technical?.probe?.sampleRate) === 44100 && Number(technical?.probe?.channels) === 1,
-    /* عند تعطّل مُتحقق STT كليًا (لا وحدة قابلة للتحقق) يتنزّل الفحص إلى البوابات
+    /* عند تعطّل مُتحقق STT كلياً (لا وحدة قابلة للتحقق) يتنزّل الفحص إلى البوابات
        الصوتية الحتمية (الصمت/الجهارة/الصيغة/الإيقاع) بدل تجميد كل مقال؛ ويعود
-       صارمًا تلقائيًا لحظة عودة STT. أمر الدكتور: «حل المشاكل كلها … تجاوزها بذكاء». */
+       صارماً تلقائياً لحظة عودة STT. أمر الدكتور: «حل المشاكل كلها … تجاوزها بذكاء». */
     /* العتبة تُمرَّر من الخارج كي تحكم الحلقةَ الكاملة بالقانون نفسه الذي
        تحكم به بوابةُ التركيب: تفريغ ست دقائق بنداءٍ واحد أداةٌ خشنة تفقد أدوات
        الربط بطبعها، ومقاطعُها مثبَّتةٌ سلفاً بعتبةٍ أشدّ على ملفاتٍ قصيرة.
@@ -547,7 +547,7 @@ export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUna
   return { score, minimumScore, pass: score >= minimumScore && criticalFailed.length === 0,
     measures, failed, criticalFailed, sttDegraded: Boolean(sttUnavailable),
     note: sttUnavailable
-      ? 'فحص STT كان متعطّلًا؛ اعتُمدت البوابات الصوتية الحتمية وحدها (يعود STT صارمًا تلقائيًا عند توفّره). الاعتماد النهائي Blind A/B بشري.'
+      ? 'فحص STT كان متعطّلاً؛ اعتُمدت البوابات الصوتية الحتمية وحدها (يعود STT صارماً تلقائياً عند توفّره). الاعتماد النهائي Blind A/B بشري.'
       : 'الدرجة وكيل تقني قابل للقياس وليست ادعاءً بأن الصوت بشري فعلاً؛ الاعتماد النهائي يتطلب Blind A/B بشرياً.' }
 }
 

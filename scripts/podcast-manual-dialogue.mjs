@@ -90,7 +90,7 @@ function parseDialogue() {
   try {
     parsed = JSON.parse(raw)
   } catch (error) {
-    console.error(`✘ الحوار ليس JSON صالحًا بعد التنظيف: ${error.message}`)
+    console.error(`✘ الحوار ليس JSON صالحاً بعد التنظيف: ${error.message}`)
     process.exit(1)
   }
   if (!Array.isArray(parsed) || parsed.length < 2) {

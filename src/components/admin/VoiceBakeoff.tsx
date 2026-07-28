@@ -144,7 +144,7 @@ export function VoiceBakeoffCard() {
         )}
       </div>
       <p className="mt-1 text-[.85rem] font-light leading-relaxed text-soft">
-        اكتُشفت الأصوات العربية حيًا، واختُبرت النساء أولًا ثم الأزواج. هذه أفضل ثلاث عينات خام بلا موسيقى أو EQ، ولا يحمل الملف العام أسماءً أو دولًا؛ استمع ثم اعتمد الأنسب.
+        اكتُشفت الأصوات العربية حياً، واختُبرت النساء أولاً ثم الأزواج. هذه أفضل ثلاث عينات خام بلا موسيقى أو EQ، ولا يحمل الملف العام أسماءً أو دولاً؛ استمع ثم اعتمد الأنسب.
       </p>
       {!manifest.sampleGate.pass && (
         <p className="mt-3 rounded-xl border border-red-400/40 bg-red-500/5 px-4 py-3 text-[.8rem] leading-relaxed text-red-700 dark:text-red-300">

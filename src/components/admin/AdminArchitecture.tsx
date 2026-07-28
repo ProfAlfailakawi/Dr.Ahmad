@@ -356,12 +356,12 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
           <div>
             <p className="text-[.76rem] font-semibold text-white/60">غرفة القيادة الصامتة</p>
             <h2 className="mt-3 font-display text-[clamp(1.8rem,4vw,3rem)] font-bold leading-[1.35]">{tasks.length ? `اليوم لديك ${tasks.length} قرارات فقط.` : 'لا توجد مشكلات عاجلة.'}</h2>
-            <p className="mt-3 max-w-2xl text-[.9rem] font-light leading-[1.9] text-white/65">هذا الصندوق يعرض القرارات لا كل النواقص. نقص التغطية الصوتية يبقى مسار تطوير مستقلًا، لا إنذارًا أحمر.</p>
+            <p className="mt-3 max-w-2xl text-[.9rem] font-light leading-[1.9] text-white/65">هذا الصندوق يعرض القرارات لا كل النواقص. نقص التغطية الصوتية يبقى مسار تطوير مستقلاً، لا إنذاراً أحمر.</p>
           </div>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1.5 text-[.72rem] text-white/65"><span className="pulse relative h-1.5 w-1.5 rounded-full bg-white/70" />{loading ? 'يتصل بالنظام…' : 'يتحدّث تلقائياً'}</span>
         </div>
         {tasks.length ? <ol className="relative mt-8 grid gap-2.5 md:grid-cols-2">{tasks.map((task, index) => <li key={task.label}><button onClick={() => onOpen(task.tab)} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[.05] px-4 py-3 text-right transition-colors hover:bg-white/[.1]"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-[.75rem]">{index + 1}</span><span className="min-w-0 flex-1"><span className="block text-[.86rem] font-medium">{task.label}</span><span className="mt-0.5 block text-[.72rem] text-white/55">{task.note}</span></span><span className="ms-auto">←</span></button></li>)}</ol> : <p className="relative mt-7 text-[.88rem] text-white/70">يمكنك الآن الكتابة أو المغادرة. النظام لا يطلب تدخلك العاجل.</p>}
-        {missingAudio > 0 && <p className="relative mt-4 rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-[.78rem] leading-relaxed text-white/62">تغطية الصوت: {missingAudio} مادة تنتظر صوتًا. تظهر كمؤشر تطوير، لا كخلل عاجل.</p>}
+        {missingAudio > 0 && <p className="relative mt-4 rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-[.78rem] leading-relaxed text-white/62">تغطية الصوت: {missingAudio} مادة تنتظر صوتاً. تظهر كمؤشر تطوير، لا كخلل عاجل.</p>}
       </section>
 
       <section className="overflow-hidden rounded-3xl border border-hair bg-wash px-5 py-6 sm:px-7 md:px-8" aria-label="نبض الموقع">
@@ -377,7 +377,7 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
             <strong className="mt-1.5 line-clamp-2 block text-[.86rem] font-medium leading-relaxed text-ink transition-colors group-hover:text-accent">{pulse.stop}</strong>
           </button>
           <button type="button" onClick={() => onOpen(pulse.update.tab)} className="group border-t border-hair py-4 text-right md:border-t-0 md:px-5 md:last:ps-0">
-            <span className="block text-[.7rem] font-semibold text-accent">ما الذي يحتاج تحديثًا؟</span>
+            <span className="block text-[.7rem] font-semibold text-accent">ما الذي يحتاج تحديثاً؟</span>
             <strong className="mt-1.5 line-clamp-2 block text-[.86rem] font-medium leading-relaxed text-ink transition-colors group-hover:text-accent">{pulse.update.text}</strong>
           </button>
         </div>
@@ -487,7 +487,7 @@ export function AdminCommandPalette({ open, close, onSelect }: { open: boolean; 
     <motion.div role="dialog" aria-modal="true" aria-label="لوحة أوامر الإدارة" className="fixed inset-0 z-[310] bg-ink/30 px-4 pt-[calc(5.5rem+env(safe-area-inset-top))] backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && close()}>
       <motion.div className="mx-auto max-w-2xl overflow-hidden rounded-3xl border border-hair bg-canvas shadow-2xl" initial={reduce ? false : { y: -12, scale: .98 }} animate={{ y: 0, scale: 1 }} exit={reduce ? undefined : { y: -8, scale: .98 }} transition={{ duration: .25, ease: EASE }}>
         <div className="flex items-center gap-3 border-b border-hair px-5 py-4"><span className="text-accent">⌘</span><input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && results[0] && choose(results[0].tab)} placeholder="اكتب: مقال جديد، الرسائل، اختبار الصوت…" className="min-w-0 flex-1 bg-transparent text-[.95rem] text-ink outline-none placeholder:text-soft/70" /><button onClick={close} className="rounded-full border border-hair px-3 py-1 text-[.72rem] text-soft">Esc</button></div>
-        <div className="max-h-[65vh] overflow-y-auto p-2">{results.length ? results.map((command) => <button key={command.tab} onClick={() => choose(command.tab)} className="group block w-full rounded-2xl px-4 py-3 text-right transition-colors hover:bg-wash"><span className="block font-display text-[1rem] font-semibold text-ink group-hover:text-accent">{command.label}</span><span className="mt-1 block text-[.72rem] text-soft">{command.hint}</span></button>) : query.trim() ? <p className="px-5 py-10 text-center text-soft">لا يوجد أمر مطابق.</p> : <div className="px-6 py-12 text-center"><p className="font-display text-[1.05rem] font-semibold text-ink">اكتب ما تريد الوصول إليه</p><p className="mx-auto mt-2 max-w-sm text-[.78rem] leading-relaxed text-soft">تظهر النتائج فورًا من دون أزرار سريعة أو ازدحام.</p></div>}</div>
+        <div className="max-h-[65vh] overflow-y-auto p-2">{results.length ? results.map((command) => <button key={command.tab} onClick={() => choose(command.tab)} className="group block w-full rounded-2xl px-4 py-3 text-right transition-colors hover:bg-wash"><span className="block font-display text-[1rem] font-semibold text-ink group-hover:text-accent">{command.label}</span><span className="mt-1 block text-[.72rem] text-soft">{command.hint}</span></button>) : query.trim() ? <p className="px-5 py-10 text-center text-soft">لا يوجد أمر مطابق.</p> : <div className="px-6 py-12 text-center"><p className="font-display text-[1.05rem] font-semibold text-ink">اكتب ما تريد الوصول إليه</p><p className="mx-auto mt-2 max-w-sm text-[.78rem] leading-relaxed text-soft">تظهر النتائج فوراً من دون أزرار سريعة أو ازدحام.</p></div>}</div>
       </motion.div>
     </motion.div>
   )

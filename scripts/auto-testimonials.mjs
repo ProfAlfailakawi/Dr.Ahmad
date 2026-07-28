@@ -4,7 +4,7 @@
  *
  * لا يستخدم AI، ولا ينشر الأسماء أو البريد. يقرأ من messages حيث:
  *   approvedForTestimonial === true
- * ثم ينسخ نصًا مجهول الهوية إلى site_testimonials.
+ * ثم ينسخ نصاً مجهول الهوية إلى site_testimonials.
  */
 import process from 'node:process'
 import { createHash } from 'node:crypto'
@@ -54,7 +54,7 @@ async function firebaseContext() {
 
 async function run() {
   if (SELF_TEST) {
-    const quote = sanitizeQuote('أعجبني المقال كثيرًا، وهذا بريدي test@example.com ورقمي +965 5555 5555')
+    const quote = sanitizeQuote('أعجبني المقال كثيراً، وهذا بريدي test@example.com ورقمي +965 5555 5555')
     if (/example|555/.test(quote)) throw new Error('فشل إخفاء بيانات التواصل')
     if (!validPublishedQuote('هذه شهادة طويلة بما يكفي لتظهر للناس بعد اعتمادها، من دون اسم أو بريد أو رقم.')) throw new Error('فشل اختبار طول الشهادة')
     console.log('✓ اختبار مزامنة الشهادات: الخصوصية والطول سليمان')

@@ -1346,7 +1346,7 @@ html.dark .human-core__scan { mix-blend-mode: screen; }
   box-shadow: none;
 }
 
-/* مشهد الإطلاق الداكن: الهيدر يبقى واضحًا فوق الطبقة الفنية، من دون لمس الوضع العادي. */
+/* مشهد الإطلاق الداكن: الهيدر يبقى واضحاً فوق الطبقة الفنية، من دون لمس الوضع العادي. */
 body.launch-spotlight-active .site-nav:not(.is-solid) {
   color: rgba(255,255,255,.92);
   border-color: rgba(255,255,255,.14);
@@ -1405,7 +1405,7 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
   overflow: hidden;
 }
 
-/* خيط الفكرة: منع أعمدة الكلمات والفراغات الحادة، خصوصًا عند العناوين الإنجليزية الطويلة. */
+/* خيط الفكرة: منع أعمدة الكلمات والفراغات الحادة، خصوصاً عند العناوين الإنجليزية الطويلة. */
 .reader-layers,
 .idea-evolution,
 .article-closing-note {
@@ -1544,7 +1544,7 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
 }
 
 
-/* خريطة المقالات على الأجهزة اللمسية: تُستخدم النسخة المتكيفة دائمًا،
+/* خريطة المقالات على الأجهزة اللمسية: تُستخدم النسخة المتكيفة دائماً،
    ويظهر الكرت الكامل أسفل الخريطة بدل بطاقة SVG قد تُقص في الوضع الأفقي. */
 @media (hover: none), (pointer: coarse) {
   .atlas-map-desktop { display: none !important; }
@@ -3327,4 +3327,122 @@ body.selection-active .floating-actions {
     max-width: min(100%, calc((100dvh - 218px) * var(--preview-ratio, 1)));
     max-height: calc(100dvh - 218px);
   }
+}
+
+/* ═══ خيط الفكرة — رابط بصري هادئ بين محطات الرئيسية، بلا ضوضاء حركية ═══ */
+.home-idea-thread { isolation: isolate; }
+.home-idea-thread-line { display: none; }
+@media (min-width: 1180px) {
+  .home-idea-thread-line {
+    pointer-events: none;
+    position: absolute;
+    z-index: 3;
+    top: 4.5rem;
+    bottom: 4.5rem;
+    right: max(1.15rem, calc((100vw - 1260px) / 2));
+    display: block;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, rgb(var(--c-accent) / .22) 9%, rgb(var(--c-accent) / .14) 88%, transparent);
+  }
+  .home-idea-thread-line i {
+    position: absolute;
+    right: 50%;
+    width: 7px;
+    height: 7px;
+    border: 1px solid rgb(var(--c-accent) / .46);
+    border-radius: 999px;
+    background: rgb(var(--c-canvas));
+    transform: translate(50%, -50%);
+    box-shadow: 0 0 0 5px rgb(var(--c-canvas) / .72);
+  }
+  .home-idea-thread-line i:nth-child(1) { top: 13%; }
+  .home-idea-thread-line i:nth-child(2) { top: 38%; }
+  .home-idea-thread-line i:nth-child(3) { top: 63%; }
+  .home-idea-thread-line i:nth-child(4) { top: 87%; }
+}
+
+/* أغلفة تحريرية للمقال والبحث في «من الأرشيف اليوم» — لا صور مخزنية ولا ثقل إضافي. */
+.archive-editorial-cover {
+  position: relative;
+  height: 7rem;
+  overflow: hidden;
+  border-bottom: 1px solid var(--c-hair);
+  background:
+    radial-gradient(circle at 18% 20%, rgb(var(--c-accent) / .14), transparent 34%),
+    linear-gradient(135deg, rgb(var(--c-accent) / .055), transparent 58%),
+    rgb(var(--c-wash));
+}
+@media (min-width: 768px) { .archive-editorial-cover { height: 8rem; } }
+.archive-editorial-cover--paper { background:
+  radial-gradient(circle at 78% 20%, rgb(var(--c-accent) / .13), transparent 34%),
+  linear-gradient(45deg, rgb(var(--c-accent) / .06), transparent 62%),
+  rgb(var(--c-wash));
+}
+.archive-editorial-orbit {
+  position: absolute;
+  width: 8.2rem;
+  height: 8.2rem;
+  top: -3.7rem;
+  left: -1.2rem;
+  border: 1px solid rgb(var(--c-accent) / .18);
+  border-radius: 50%;
+}
+.archive-editorial-orbit::after {
+  content: '';
+  position: absolute;
+  width: 4.9rem;
+  height: 4.9rem;
+  inset: 1.6rem;
+  border: 1px solid rgb(var(--c-accent) / .11);
+  border-radius: 50%;
+}
+.archive-editorial-kicker {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: .54rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+  color: rgb(var(--c-accent) / .72);
+}
+.archive-editorial-mark {
+  position: absolute;
+  left: 1rem;
+  bottom: .5rem;
+  font-family: 'El Messiri', serif;
+  font-size: 3rem;
+  line-height: 1;
+  color: rgb(var(--c-accent) / .12);
+}
+.archive-editorial-year {
+  position: absolute;
+  right: 1rem;
+  bottom: .9rem;
+  font-size: .6rem;
+  letter-spacing: .08em;
+  color: rgb(var(--c-soft) / .75);
+}
+
+/* نهاية تشبه آخر جدار في معرض: فكرة واحدة، بلا أزرار مكررة. */
+.quiet-ending { position: relative; overflow: hidden; }
+.quiet-ending::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  width: 24rem;
+  height: 24rem;
+  left: 50%;
+  top: 50%;
+  border: 1px solid rgb(var(--c-accent) / .055);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.quiet-ending-inner { position: relative; z-index: 1; }
+.quiet-ending-mark {
+  display: block;
+  width: 7px;
+  height: 7px;
+  margin: 0 auto 1rem;
+  border: 1px solid rgb(var(--c-accent) / .62);
+  transform: rotate(45deg);
 }

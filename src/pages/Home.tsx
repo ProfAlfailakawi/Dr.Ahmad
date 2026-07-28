@@ -703,11 +703,11 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
     }
     try { if (typeof window !== 'undefined') window.localStorage.setItem(historyKey, JSON.stringify(nextHistory)) } catch { /* لا يؤثر في التنويع الحالي */ }
     const selected = [
-      article && { type: 'مقال مختار', title: article.title, note: article.excerpt, to: `/articles/${article.slug}`, image: '' },
-      book && { type: 'كتاب مختار', title: book.title, note: book.desc, to: `/publications/${book.slug}`, image: book.cover },
-      paper && { type: 'بحث محكّم', title: paper.title, note: paper.meta, to: `/research/${paper.slug}`, image: '' },
-      mediaItem && { type: 'ظهور إعلامي', title: mediaItem.title, note: mediaItem.outlet, to: mediaItem.url, image: ytId(mediaItem.url) ? `https://i.ytimg.com/vi/${ytId(mediaItem.url)}/hqdefault.jpg` : '', external: true },
-    ].filter(Boolean) as { type: string; title: string; note?: string; to: string; image?: string; external?: boolean }[]
+      article && { type: 'مقال', kind: 'article', title: article.title, note: article.excerpt, to: `/articles/${article.slug}`, image: '', year: article.iso?.slice(0, 4) },
+      book && { type: 'كتاب', kind: 'book', title: book.title, note: book.desc, to: `/publications/${book.slug}`, image: book.cover, year: '' },
+      paper && { type: 'بحث محكّم', kind: 'paper', title: paper.titleAr || paper.title, note: paper.meta, to: `/research/${paper.slug}`, image: '', year: paper.iso?.slice(0, 4) },
+      mediaItem && { type: 'ظهور إعلامي', kind: 'media', title: mediaItem.title, note: mediaItem.outlet, to: mediaItem.url, image: ytId(mediaItem.url) ? `https://i.ytimg.com/vi/${ytId(mediaItem.url)}/hqdefault.jpg` : '', external: true, year: '' },
+    ].filter(Boolean) as { type: string; kind: 'article' | 'book' | 'paper' | 'media'; title: string; note?: string; to: string; image?: string; external?: boolean; year?: string }[]
     // لا يثبت ترتيب الأنواع أيضاً؛ كل زيارة مدخل جديد فعلياً إلى الأرشيف.
     return selected
       .map((item) => ({ item, order: random(1_000_000) }))
@@ -718,15 +718,22 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
   return (
     <section className="border-t border-hair bg-wash px-6 py-[52px] md:px-11 md:py-[84px]">
       <div className="mx-auto max-w-shell">
-        <SectionHead label="أعمال مختارة" title="مدخل يختصر الرحلة." />
+        <SectionHead label="من الأرشيف اليوم" title="أربعة مداخل، تتغيّر مع كل زيارة." />
         <div className="mobile-card-rail grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
           {items.map((item, index) => {
-            const isBook = item.type === 'كتاب مختار'
+            const isBook = item.kind === 'book'
             const inner = (
               <div className="group flex h-full min-h-[220px] flex-col overflow-hidden rounded-xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent/45 md:min-h-[270px]">
-                {item.image && (
-                  <div className={`flex w-full items-center justify-center ${isBook ? 'h-28 bg-wash p-3' : item.external ? 'selected-media-frame h-24 overflow-hidden md:h-32' : 'h-24 overflow-hidden md:h-32'}`} style={item.external ? ({ '--media-thumb': `url(${item.image})` } as CSSProperties) : undefined}>
+                {item.image ? (
+                  <div className={`flex w-full items-center justify-center ${isBook ? 'h-28 bg-wash p-3 md:h-32' : item.external ? 'selected-media-frame h-28 overflow-hidden md:h-32' : 'h-28 overflow-hidden md:h-32'}`} style={item.external ? ({ '--media-thumb': `url(${item.image})` } as CSSProperties) : undefined}>
                     <img src={item.image} alt="" loading="lazy" className={`${isBook ? 'h-full w-full object-contain' : item.external ? 'selected-media-thumb h-full w-full opacity-95' : 'h-full w-full object-cover opacity-90'}`} />
+                  </div>
+                ) : (
+                  <div className={`archive-editorial-cover archive-editorial-cover--${item.kind}`} aria-hidden="true">
+                    <span className="archive-editorial-orbit" />
+                    <span className="archive-editorial-kicker">{item.kind === 'paper' ? 'RESEARCH' : item.kind === 'book' ? 'BOOK' : item.kind === 'media' ? 'MEDIA' : 'ESSAY'}</span>
+                    <span className="archive-editorial-mark">{item.kind === 'paper' ? 'R' : item.kind === 'book' ? 'B' : item.kind === 'media' ? 'M' : 'A'}</span>
+                    <span className="archive-editorial-year">{item.year || 'ARCHIVE'}</span>
                   </div>
                 )}
                 <div className="flex flex-1 flex-col p-4 md:p-7">
@@ -749,6 +756,24 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
 }
 
 
+
+function QuietEnding() {
+  return (
+    <section className="quiet-ending border-t border-hair px-6 py-[54px] md:px-11 md:py-[78px]" aria-labelledby="quiet-ending-title">
+      <div className="mx-auto max-w-shell">
+        <FadeUp>
+          <div className="quiet-ending-inner mx-auto max-w-[760px] text-center">
+            <span className="quiet-ending-mark" aria-hidden="true" />
+            <p className="text-[.72rem] font-semibold tracking-[.08em] text-accent">الخاتمة الهادئة</p>
+            <h2 id="quiet-ending-title" className="mt-4 font-display text-[clamp(1.45rem,3.2vw,2.2rem)] font-semibold leading-[1.72] text-ink">
+              هذا الموقع لا يعرض أرشيفاً فقط؛ إنه يفتح طريقاً إلى الفكرة.
+            </h2>
+          </div>
+        </FadeUp>
+      </div>
+    </section>
+  )
+}
 
 function ProfileAndBooksLayer({ books }: { books: BookRecord[] }) {
   return (
@@ -958,33 +983,39 @@ export default function Home() {
 
       <HumanCoreHero />
 
-      <SinceLastVisit />
+      <div className="home-idea-thread relative">
+        <div className="home-idea-thread-line" aria-hidden="true"><i /><i /><i /><i /></div>
 
-      <NowHub />
+        <SinceLastVisit />
 
-      <ThoughtCompass />
+        <NowHub />
 
-      <SelectedWorks articles={articles} books={books} papers={papers} media={media} />
+        <ThoughtCompass />
 
-      <HomeDepth articles={articles} books={books} papers={papers} media={media} />
+        <SelectedWorks articles={articles} books={books} papers={papers} media={media} />
 
-      {/* لا يظهر شريط اللقاء إلا عند وجود موعد معلن فعلياً. */}
-      {upcomingItems[0] && (
-        <section className="border-t border-hair py-5 md:py-6">
-          <div className="mx-auto max-w-shell px-6 md:px-11">
-            <FadeUp>
-              <div className="flex min-h-[72px] items-center gap-4 rounded-xl border border-hair bg-wash px-4 py-3 md:px-5">
-                <span className="shrink-0 text-[.72rem] font-semibold text-accent">اللقاء القادم</span>
-                <Link to="/upcoming" className="group min-w-0 flex-1">
-                  <span className="block truncate font-display text-[.95rem] font-semibold text-ink transition-colors group-hover:text-accent">{upcomingItems[0].title}</span>
-                  <span className="mt-0.5 block truncate text-[.7rem] text-soft">{upcomingItems[0].date} · {upcomingItems[0].place}</span>
-                </Link>
-                <Link to="/upcoming" aria-label="كل اللقاءات" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent">↗</Link>
-              </div>
-            </FadeUp>
-          </div>
-        </section>
-      )}
+        <HomeDepth articles={articles} books={books} papers={papers} media={media} />
+
+        {/* لا يظهر شريط اللقاء إلا عند وجود موعد معلن فعلياً. */}
+        {upcomingItems[0] && (
+          <section className="border-t border-hair py-5 md:py-6">
+            <div className="mx-auto max-w-shell px-6 md:px-11">
+              <FadeUp>
+                <div className="flex min-h-[72px] items-center gap-4 rounded-xl border border-hair bg-wash px-4 py-3 md:px-5">
+                  <span className="shrink-0 text-[.72rem] font-semibold text-accent">اللقاء القادم</span>
+                  <Link to="/upcoming" className="group min-w-0 flex-1">
+                    <span className="block truncate font-display text-[.95rem] font-semibold text-ink transition-colors group-hover:text-accent">{upcomingItems[0].title}</span>
+                    <span className="mt-0.5 block truncate text-[.7rem] text-soft">{upcomingItems[0].date} · {upcomingItems[0].place}</span>
+                  </Link>
+                  <Link to="/upcoming" aria-label="كل اللقاءات" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent">↗</Link>
+                </div>
+              </FadeUp>
+            </div>
+          </section>
+        )}
+      </div>
+
+      <QuietEnding />
 
       <HomeSocialFooter />
     </Page>

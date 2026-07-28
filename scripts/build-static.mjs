@@ -115,14 +115,36 @@ const researchRuntime = ts.transpileModule(researchSource, {
    Firestore قبل بناء أي شيء، فيصير مصدر الحقيقة واحداً.
    وإن تعذّر الوصول (بناء محلي بلا مفاتيح) نبني بالملفات كما كان — لا نُسقط
    البناء، لكن نُعلن ذلك بوضوح كي لا يُنشر بناءٌ أعمى دون أن ندري. */
+const normalizeArabicTanweenDeep = (value) => {
+  if (typeof value === 'string') return value.replace(/\u064B\u0627/g, 'اً')
+  if (Array.isArray(value)) return value.map(normalizeArabicTanweenDeep)
+  if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, normalizeArabicTanweenDeep(item)]))
+  }
+  return value
+}
 const deletedKeys = new Set()
+const overridePatches = new Map()
+const cloudCms = { articles: [], books: [], papers: [], media: [] }
 try {
   const saPath = resolve(ROOT, process.env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')
   if (existsSync(saPath) && process.env.FIREBASE_PROJECT_ID) {
     const { initializeApp, cert, getApps } = await import('firebase-admin/app')
     const { getFirestore } = await import('firebase-admin/firestore')
     const app = getApps()[0] || initializeApp({ credential: cert(JSON.parse(readFileSync(saPath, 'utf8'))) })
-    const snapshot = await getFirestore(app).collection('content_overrides').get()
+    const db = getFirestore(app)
+    const [snapshot, articlesSnapshot, booksSnapshot, papersSnapshot, mediaSnapshot] = await Promise.all([
+      db.collection('content_overrides').get(),
+      db.collection('site_articles').get(),
+      db.collection('site_books').get(),
+      db.collection('site_papers').get(),
+      db.collection('site_media').get(),
+    ])
+    const snapshotRows = (value) => normalizeArabicTanweenDeep(value.docs.map((document) => ({ id: document.id, ...document.data() })))
+    cloudCms.articles = snapshotRows(articlesSnapshot)
+    cloudCms.books = snapshotRows(booksSnapshot)
+    cloudCms.papers = snapshotRows(papersSnapshot)
+    cloudCms.media = snapshotRows(mediaSnapshot)
     /* قاعدة الإسقاط هنا يجب أن تطابق قاعدة اللوحة حرفاً بحرف (src/lib/cms.ts)،
        وإلا اختلف عدّان لمكتبةٍ واحدة — وهذا ما حدث: اللوحة تعدّ ١٤٣ والموقع
        يعلن ١٦٤، لأن البناء كان يعرف «محذوف» وحده ويجهل «مخفيّ» و«مسودة»
@@ -143,6 +165,7 @@ try {
     const reasons = { deleted: 0, hidden: 0, unpublished: 0 }
     snapshot.forEach((document) => {
       const data = document.data()
+      if (data?.patch && typeof data.patch === 'object' && !Array.isArray(data.patch)) overridePatches.set(document.id, normalizeArabicTanweenDeep(data.patch))
       if (data?.deleted === true) { deletedKeys.add(document.id); reasons.deleted += 1; return }
       if (data?.hidden === true) { deletedKeys.add(document.id); reasons.hidden += 1; return }
       if (document.id.startsWith('article:') && !isPublic(data)) { deletedKeys.add(document.id); reasons.unpublished += 1 }
@@ -187,23 +210,61 @@ const grabObject = (source, name) => (source.match(new RegExp(`export const ${na
 const paperTitlesEn = Object.fromEntries([...grabObject(srcEn, 'paperTitlesEn').matchAll(/'([^']+)':\s*\n?\s*'([^']+)'/g)]
   .map((m) => [m[1], m[2].replace(/\\'/g, "'")]))
 
-const articles = [...grab('articles').matchAll(
+const localArticles = [...grab('articles').matchAll(
   /\{ slug: '([^']+)', title: '([^']+)', date: '([^']*)', iso: '([^']*)', cat: '([^']*)',\s*excerpt: '([^']*)'/g
 )].map((m) => ({ slug: m[1], title: m[2].replace(/\\'/g, "'"), date: m[3], iso: m[4], cat: m[5], excerpt: m[6].replace(/\\'/g, "'") }))
   .filter(keepAlive('article'))
 
-const books = [...grab('books').matchAll(/\{ slug: '([^']+)'[\s\S]*?title: '([^']+)'[\s\S]*?isbn: '([^']*)'[\s\S]*?cover: '([^']*)'[\s\S]*?pdf: '([^']*)'[\s\S]*?desc: '([^']*)'/g)]
+const localBooks = [...grab('books').matchAll(/\{ slug: '([^']+)'[\s\S]*?title: '([^']+)'[\s\S]*?isbn: '([^']*)'[\s\S]*?cover: '([^']*)'[\s\S]*?pdf: '([^']*)'[\s\S]*?desc: '([^']*)'/g)]
   .map((m) => ({ slug: m[1], title: m[2], isbn: m[3], cover: m[4], pdf: m[5], desc: m[6] }))
   .filter(keepAlive('book'))
 
-const media = [...grab('media').matchAll(/\{ title: '([^']+)', outlet: '([^']*)', url: '([^']*)'/g)]
+const localMedia = [...grab('media').matchAll(/\{ title: '([^']+)', outlet: '([^']*)', url: '([^']*)'/g)]
   .map((m, index) => {
     const id = (m[3].match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || String(index + 1)
     return { slug: `media-${id}`, title: m[1], outlet: m[2], url: m[3] }
   })
   .filter(keepAlive('media'))
 
-const papers = papersAll.filter(keepAlive('paper'))
+const localPapers = papersAll.filter(keepAlive('paper'))
+
+const cloudSlug = (document) => String(document?.slug || document?.id || '').trim()
+const visibleCloud = (kind, document) => {
+  if (!document || document.hidden === true || document.deleted === true) return false
+  const slug = cloudSlug(document)
+  if (!slug || isDeleted(kind, slug)) return false
+  if (kind !== 'article') return true
+  const status = String(document.status || 'published')
+  const scheduledAt = document.scheduledAt ? Date.parse(String(document.scheduledAt)) || 0 : 0
+  if (status === 'draft') return false
+  if (status === 'scheduled') return scheduledAt > 0 && scheduledAt <= Date.now()
+  if (scheduledAt > Date.now()) return false
+  return status === 'published' || !status
+}
+const patchOriginals = (kind, source) => source.map((item) => {
+  const patch = overridePatches.get(`${kind}:${item.slug}`)
+  return patch && typeof patch === 'object' ? { ...item, ...patch, slug: item.slug } : item
+}).filter(keepAlive(kind))
+const mergeCloudAdditions = (kind, base, additions) => {
+  const map = new Map(patchOriginals(kind, base).map((item) => [item.slug, item]))
+  for (const document of additions || []) {
+    const slug = cloudSlug(document)
+    // سجلات الأساس تُعدل عبر content_overrides؛ مجموعة site_* مخصصة للإضافات الجديدة.
+    if (!visibleCloud(kind, document) || map.has(slug)) continue
+    map.set(slug, { ...document, slug })
+  }
+  return [...map.values()]
+}
+
+const articles = mergeCloudAdditions('article', localArticles, cloudCms.articles)
+  .filter((item) => item.title && item.slug)
+  .sort((a, b) => String(b.iso || '').localeCompare(String(a.iso || '')))
+const books = mergeCloudAdditions('book', localBooks, cloudCms.books)
+  .filter((item) => item.title && item.slug)
+const media = mergeCloudAdditions('media', localMedia, cloudCms.media)
+  .filter((item) => item.title && item.slug && item.url)
+const papers = mergeCloudAdditions('paper', localPapers, cloudCms.papers)
+  .filter((item) => item.title && item.slug)
 
 const siteArticlesFeedPath = resolve(ROOT, 'src/data/site-articles-feed.json')
 const siteArticlesFeed = existsSync(siteArticlesFeedPath)
@@ -211,7 +272,7 @@ const siteArticlesFeed = existsSync(siteArticlesFeedPath)
   : []
 
 /* أعداد وسنوات تُحسب من المحتوى — تتجدّد أوصاف SEO تلقائياً مع أي إضافة */
-const artYears = articles.map((a) => Number(a.iso.slice(0, 4))).filter((y) => y >= 1990)
+const artYears = articles.map((a) => Number(String(a.iso || '').slice(0, 4))).filter((y) => y >= 1990)
 const firstYear = artYears.length ? Math.min(...artYears) : new Date().getFullYear()
 const nArticles = Math.floor(articles.length / 10) * 10   // «أكثر من ١٦٠»
 const nBooks = books.length
@@ -225,10 +286,10 @@ const STATIC = [
   { path: '/atlas', title: 'سماء المقالات', desc: `خريطة بصرية لأكثر من ${nArticles} مقالاً عبر السنوات.` },
   { path: '/media', title: 'الظهور الإعلامي', desc: 'لقاءات تلفزيونية وإذاعية.' },
   { path: '/questions', title: 'سؤال يُقلق التعليم', desc: 'زاوية متجددة: سؤال جديد كل يومين يوقظ التفكير في التعليم، بصياغة عربية واضحة.' },
-  { path: '/radar', title: 'أرشيف الرادار', desc: 'كل ما التقطه الرادار من مصادر موثوقة — حصاد أسبوعي مؤرشف بعناوين عربية وروابط إلى المواد الأصلية.' },
+  { path: '/radar', title: 'أرشيف الرادار', desc: 'نافذة أسبوعية على أفكار ودراسات ومستجدات تستحق المتابعة، محفوظة في أرشيف زمني واضح.' },
   { path: '/upcoming', title: 'اللقاءات القادمة', desc: 'محاضرات وورش عمل ومؤتمرات قادمة.' },
   { path: '/curated', title: 'من اختياراتي', desc: 'كتاب، ومقالة، وأداة، واقتباس — مساحة تتجدّد.' },
-  { path: '/inbox', title: 'رسائل على الهامش', desc: 'رسائل قصيرة تفتح زاوية جديدة، ومختارات وأسئلة من التعليم والتربية والتقنية.' },
+  { path: '/inbox', title: 'رسائل على الهامش', desc: 'رسائل قصيرة وأسئلة تفتح زوايا جديدة على التعليم والتربية والتقنية.' },
   { path: '/cv', title: 'السيرة الأكاديمية', desc: 'التعليم والخبرات والعضويات والمؤتمرات.' },
   { path: '/cv-file/ar', title: 'السيرة الذاتية PDF', desc: 'تجهيز النسخة العربية من السيرة الذاتية.', robots: 'noindex, nofollow' },
   { path: '/cv-file/en', title: 'Curriculum Vitae PDF', desc: 'Preparing the English curriculum vitae PDF.', robots: 'noindex, nofollow', lang: 'en' },
@@ -238,16 +299,16 @@ const STATIC = [
   { path: '/terms', title: 'شروط الاستخدام', desc: 'شروط استخدام الموقع وأداة إدارة المحتوى والنشر على المنصات المرتبطة.', robots: 'noindex, nofollow' },
   { path: '/data-deletion', title: 'تعليمات حذف البيانات', desc: 'تعليمات إلغاء الربط وطلب حذف بيانات Facebook وInstagram وLinkedIn.', robots: 'noindex, nofollow' },
   { path: '/ask', title: 'العقل الحي', desc: 'اسأل سؤالاً حقيقياً، فيبني الموقع إجابة موثقة من أرشيف د. أحمد حسين الفيلكاوي فقط: مقالات، تطور زمني، ومصادر.' },
-  { path: '/decade', title: 'وثيقة العقد', desc: 'سيرة فكرية حيّة تقرأ عشر سنوات من الكتابة وتكشف تحولات الأسئلة والموضوعات الأكثر إلحاحاً.' },
+  { path: '/decade', title: 'وثيقة العقد', desc: 'سيرة فكرية حيّة تقرأ أكثر من عشر سنوات من الكتابة وتكشف تحولات الأسئلة والموضوعات الأكثر إلحاحاً.' },
   { path: '/impact', title: 'سجل الأثر الموثق', desc: 'رحلات موثقة تُظهر انتقال الأفكار من المقال والبحث إلى الحوار العام والمؤلفات والتطبيق، مع رابط لكل محطة ظاهرة.' },
   { path: '/cv/impact', title: 'سجل الأثر الموثق', desc: 'مسار توافق قديم ينقلك إلى سجل الأثر الموثق.', robots: 'noindex, follow' },
   { path: '/thought-paths', title: 'مسار الفكرة', desc: 'رحلات تربط المقال بالسؤال والبحث والكتاب واللقاء لتكشف كيف تطورت الفكرة عبر السنوات.' },
   { path: '/search', title: 'البحث العميق', desc: 'بحث متقدم في عناوين المقالات ونصوصها وتصنيفاتها وسنواتها.' },
   { path: '/admin', title: 'لوحة التحكم', desc: 'لوحة إدارة خاصة.', robots: 'noindex, nofollow' },
   /* المرآة الإنجليزية */
-  { path: '/en', title: 'Dr. Ahmad H. Alfailakawi — Professor of Educational Technology & AI', desc: 'Official website of Dr. Ahmad H. Alfailakawi, Professor of Educational Technology and Artificial Intelligence in Kuwait. Nine books, nineteen peer-reviewed papers, and over 160 essays since 2016.', lang: 'en' },
+  { path: '/en', title: 'Dr. Ahmad H. Alfailakawi — Professor of Educational Technology & AI', desc: `Official website of Dr. Ahmad H. Alfailakawi, Professor of Educational Technology and Artificial Intelligence in Kuwait. ${nBooks} books, ${nPapers} peer-reviewed papers, and over ${nArticles} essays since ${firstYear}.`, lang: 'en' },
   { path: '/en/cv', title: 'Curriculum Vitae', desc: 'Education, academic appointments, advisory roles and international memberships of Dr. Ahmad H. Alfailakawi.', lang: 'en' },
-  { path: '/en/research', title: 'Research', desc: 'Eighteen peer-reviewed papers on educational technology, e-learning systems and emerging technologies in higher education.', lang: 'en' },
+  { path: '/en/research', title: 'Research', desc: `${nPapers} peer-reviewed papers on educational technology, e-learning systems and emerging technologies in higher education.`, lang: 'en' },
 ]
 
 const routes = [
@@ -391,6 +452,100 @@ function legalStaticHtml(path) {
     </main>`
 }
 
+
+function richStaticHtml(path) {
+  const shell = (title, lead, sections, links = []) => `
+    <main style="max-width:860px;margin:4rem auto;padding:0 1rem;" dir="rtl">
+      <header style="margin-bottom:2.8rem;text-align:right;">
+        <h1 style="font-size:2.55rem;font-family:'El Messiri',serif;font-weight:700;margin:0 0 .9rem;color:#15161A;line-height:1.35;">${esc(title)}</h1>
+        <p style="font-size:1.12rem;color:#626A76;line-height:1.9;margin:0;font-family:'Tajawal',sans-serif;">${esc(lead)}</p>
+      </header>
+      ${sections.map(([heading, body]) => `<section style="padding:1.55rem 0;border-top:1px solid rgba(62,92,120,.11);text-align:right;"><h2 style="font-size:1.35rem;font-family:'El Messiri',serif;margin:0 0 .6rem;color:#15161A;">${esc(heading)}</h2><p style="margin:0;color:#3D4650;line-height:1.95;font-size:1rem;font-family:'Tajawal',sans-serif;">${body}</p></section>`).join('')}
+      ${links.length ? `<nav aria-label="مسارات مرتبطة" style="display:flex;flex-wrap:wrap;gap:.7rem;padding-top:1.6rem;border-top:1px solid rgba(62,92,120,.11);font-family:'Tajawal',sans-serif;">${links.map(([href,label]) => `<a href="${attr(href)}" style="border:1px solid rgba(62,92,120,.18);border-radius:999px;padding:.6rem .9rem;color:#3E5C78;text-decoration:none;font-weight:600;">${esc(label)}</a>`).join('')}</nav>` : ''}
+    </main>`
+
+  if (path === '/about') return shell(
+    'حول الموقع — فضاءٌ مُنتقى',
+    'مرحباً بك في فضاءٍ مُنتقى بعناية… حيث لكل قسم غاية، ولكل اختيار فلسفة.',
+    [
+      ['الرؤية والهدف', 'هذا الموقع ليس مجرد سيرة ذاتية؛ بل تجربة فكرية ومختبر تربوي مفتوح يصل بين البحث والكلمة والممارسة.'],
+      ['لماذا هذا الموقع؟', 'لأن الكلمة يجب أن تتحرر من أرشيف المجلات والمؤتمرات وتصل إلى من يحتاجها، ولأن التعليم يحتاج إلى صوت يثير السؤال ولا يكتفي بتكرار المألوف.'],
+      ['ما الذي يميّزه؟', 'يجمع المشروع الأكاديمي والفكري، والمقالات المنشورة، والأبحاث المحكّمة، والمؤلفات، واللقاءات، ومسارات تربط الفكرة بمصادرها وتطورها.'],
+      ['لمن؟', 'للطالب والمعلم والباحث والمهتم بالتعليم وصاحب القرار الذي يبحث عن معنى موثق يتجاوز عرض الأرقام وحدها.'],
+    ],
+    [['/decade','وثيقة العقد'], ['/impact','سجل الأثر'], ['/cv','السيرة الأكاديمية']]
+  )
+
+  if (path === '/contact') return shell(
+    'للاستشارة أو التعاون',
+    'استشارات في تكنولوجيا التعليم، محاضرات وورش عمل، ومشاريع تحول رقمي في المؤسسات التعليمية.',
+    [
+      ['استشارة', 'رأي خبير في مشروع أو تحدٍّ تعليمي أو تكنولوجي، مع مساحة لشرح السياق والجهة والنتيجة المطلوبة.'],
+      ['محاضرة أو ورشة', 'طلبات الجهات والمؤتمرات للحضور المباشر أو عن بُعد، مع تحديد الموضوع والتوقيت والمكان التقريبي.'],
+      ['لقاء إعلامي', 'للتلفزيون والإذاعة والبودكاست والصحافة، مع محور اللقاء وموعد التسجيل أو البث.'],
+      ['نموذج مباشر', 'النموذج التفاعلي في هذه الصفحة يبدأ بنوع الطلب ثم يُظهر الحقول الضرورية فقط، ويمنح كل رسالة مرجعاً للمتابعة بعد الإرسال.'],
+    ],
+    [['/files/Dr-Ahmad-Training-Profile.pdf','ملف الاستشارات والبرامج'], ['/files/Dr-Ahmad-Media-Kit.pdf','الملف الإعلامي']]
+  )
+
+  if (path === '/impact' || path === '/cv/impact') return shell(
+    'سجل الأثر الموثق',
+    'مسارات قابلة للتحقق تتبع انتقال الفكرة بين المقال والبحث والكتاب والحوار العام، مع فصل واضح بين القرابة الموضوعية والأثر المثبت.',
+    [
+      ['من الفكرة إلى الميدان', 'لا يكتفي السجل بعرض مادة منشورة؛ بل يجمع المحطات التي يمكن توثيق صلتها بالفكرة ويُبقي رابط المصدر ظاهراً كلما كان متاحاً.'],
+      ['أثر علمي وإعلامي وأرشيفي', `يمتد السجل عبر ${nPapers} بحثاً محكّماً و${nBooks} كتب وأرشيف المقالات والظهور الإعلامي، مع تصفية المسارات بحسب نوع الدليل.`],
+      ['درجة الثقة', 'تُفصل الإشارات المباشرة الموثقة عن القرابة الموضوعية حتى لا تتحول الخريطة إلى ادعاء أثر بلا دليل.'],
+    ],
+    [['/research','الأبحاث المحكمة'], ['/media','الظهور الإعلامي'], ['/thought-paths','مسار الفكرة']]
+  )
+
+  if (path === '/thought-paths') return shell(
+    'مسار الفكرة',
+    'رحلات فكرية تربط المقال بالسؤال والبحث والكتاب واللقاء لتكشف كيف تطورت الفكرة عبر الأرشيف.',
+    [
+      ['قراءة عابرة للأنواع', 'المسار لا يعامل المقال والبحث والكتاب كجزر منفصلة؛ بل يعرض المحطات الأقرب إلى السؤال نفسه بترتيب يوضح الحركة الفكرية.'],
+      ['بداية وتحول وموقف أحدث', 'كل رحلة تبحث عن البدايات والمواد العلمية أو المؤلفات واللقاءات ذات الصلة ثم تقارنها بما نُشر لاحقاً.'],
+      ['مسار قابل للاستكشاف', 'يمكن للزائر الانتقال من كل محطة إلى مادتها الأصلية ومتابعة الفكرة داخل الأرشيف بدلاً من الاكتفاء بملخص مغلق.'],
+    ],
+    [['/atlas','سماء المقالات'], ['/ask','العقل الحي'], ['/impact','سجل الأثر الموثق']]
+  )
+
+  if (path === '/atlas') return shell(
+    'سماء المقالات',
+    `خريطة بصرية لأرشيف المقالات؛ كل نجمة تمثل مقالاً، وتسمح برؤية السنوات والموضوعات والصلات بين الأفكار في مشهد واحد.`,
+    [
+      ['خريطة لا قائمة', `تضع الخريطة أرشيفاً يتجاوز ${nArticles} مقالاً في مساحة قابلة للاستكشاف بدلاً من تحويله إلى قائمة طويلة فقط.`],
+      ['زمن وموضوع وصلات', 'يمكن قراءة المقالات كتسلسل زمني أو كشبكة أفكار؛ اللون والموقع والحجم أدوات مساعدة لفهم المشهد وليست بديلاً عن النص الأصلي.'],
+      ['بحث داخل الخريطة', 'يوفر العرض بحثاً عن الفكرة ثم يضيء المواد المرتبطة بها، مع انتقال مباشر إلى صفحة كل مقال.'],
+    ],
+    [['/articles','كل المقالات'], ['/thought-paths','مسار الفكرة'], ['/search','البحث العميق']]
+  )
+
+  if (path === '/ask') return shell(
+    'العقل الحي — اسأل الأرشيف سؤالاً حقيقياً',
+    'يعيد الموقع ترتيب مواد د. أحمد حسين الفيلكاوي المنشورة للإجابة من الأرشيف نفسه: مقالات، تطور زمني، كتب وأبحاث مرتبطة، ومصادر قابلة للفتح.',
+    [
+      ['إجابة مؤسَّسة على الأرشيف', 'لا يبدأ المسار من إجابة عامة على الإنترنت؛ بل يبحث أولاً في المواد المنشورة ويُظهر الاقتباسات والعناوين التي بُنيت عليها النتيجة.'],
+      ['تطور السؤال عبر الزمن', 'عندما تمتد الفكرة إلى أكثر من سنة، تظهر المواد الأقدم والأحدث حتى يستطيع القارئ رؤية ما استمر وما تغير.'],
+      ['اتصالات أوسع', `يربط السؤال عند الحاجة بين المقالات و${nBooks} كتب و${nPapers} بحثاً محكّماً، مع إبقاء الرابط إلى المادة الأصلية.`],
+    ],
+    [['/articles','أرشيف المقالات'], ['/research','الأبحاث المحكمة'], ['/publications','المؤلفات']]
+  )
+
+  if (path === '/decade') return shell(
+    'وثيقة العقد',
+    'سيرة فكرية حيّة تقرأ أكثر من عشر سنوات من الكتابة وتكشف تحولات الأسئلة والموضوعات الأكثر إلحاحاً.',
+    [
+      ['العقد بوصفه مساراً', `تقرأ الوثيقة أرشيف المقالات منذ ${firstYear} باعتباره مساراً زمنياً للأفكار لا مجرد عدّاد للمنشورات.`],
+      ['تحولات الأسئلة', 'تُبرز الموضوعات التي استمرت، والمفاهيم التي ظهرت لاحقاً، والانتقال بين التعليم والتقنية والمجتمع والهوية.'],
+      ['بوابة لفهم المشروع', 'من يريد صورة واسعة عن المسار الفكري يمكنه البدء من هذه الوثيقة ثم الانتقال إلى المقالات والأبحاث والكتب ذاتها.'],
+    ],
+    [['/articles','المقالات'], ['/research','الأبحاث'], ['/publications','الكتب'], ['/impact','سجل الأثر']]
+  )
+
+  return ''
+}
+
 function generateBodyHtml(path, lang = 'ar') {
   if (path === '/admin') {
     return `
@@ -427,7 +582,7 @@ function generateBodyHtml(path, lang = 'ar') {
           <a href="/publications" style="color: #3E5C78; text-decoration: none; font-weight: 500;">الكتب</a>
           <a href="/research" style="color: #3E5C78; text-decoration: none; font-weight: 500;">الأبحاث</a>
           <a href="/cv" style="color: #3E5C78; text-decoration: none; font-weight: 500;">السيرة</a>
-          <a href="/about" style="color: #3E5C78; text-decoration: none; font-weight: 500;">حول</a>
+          <a href="/decade" style="color: #3E5C78; text-decoration: none; font-weight: 500;">وثيقة العقد</a>
           <a href="/contact" style="color: #3E5C78; text-decoration: none; font-weight: 500;">اتصل بي</a>
         </nav>
       </div>
@@ -567,7 +722,7 @@ function generateBodyHtml(path, lang = 'ar') {
     const a = articles.find(x => x.slug === slug)
     if (a) {
       const bodyKey = a.slug + 'arabic'
-      const fullText = bodies[bodyKey] || bodies[a.slug] || a.excerpt
+      const fullText = a.body || bodies[bodyKey] || bodies[a.slug] || a.excerpt
       const paragraphs = fullText.split(/\n+/).filter(Boolean).map(p => `
         <p style="line-height: 1.8; margin-bottom: 1.5rem; font-size: 1.15rem; color: #15161A; text-align: justify; font-family: 'Tajawal', sans-serif;">${esc(p)}</p>
       `).join('')
@@ -725,6 +880,8 @@ function generateBodyHtml(path, lang = 'ar') {
         ${mediaHtml}
       </main>
     `
+  } else if (richStaticHtml(path)) {
+    contentHtml = richStaticHtml(path)
   } else if (['/about', '/contact', '/ask', '/decade', '/impact', '/cv/impact', '/thought-paths', '/search', '/atlas', '/questions', '/radar', '/curated', '/upcoming', '/inbox'].includes(path)) {
     const current = STATIC.find((item) => item.path === path)
     const links = [

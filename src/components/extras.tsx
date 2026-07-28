@@ -223,6 +223,7 @@ export function CiteButton({
   year,
   container,
   url,
+  contextUrl,
   authors = 'الفيلكاوي، أحمد حسين',
   compact = false,
   contextLabel = 'فتح المصدر الأصلي',
@@ -231,6 +232,7 @@ export function CiteButton({
   year: string
   container: string
   url: string
+  contextUrl?: string
   authors?: string
   compact?: boolean
   contextLabel?: string
@@ -239,8 +241,9 @@ export function CiteButton({
   const [copied, setCopied] = useState(false)
   const [style, setStyle] = useState<CitationStyle>('apa')
   const [exportState, setExportState] = useState<'idle' | 'done' | 'error'>('idle')
-  const sourceUrl = safeLink(url)
-  const sourceSuffix = sourceUrl ? ` ${sourceUrl}` : ''
+  const citationUrl = safeLink(url)
+  const contextSourceUrl = safeLink(contextUrl || '') || citationUrl
+  const sourceSuffix = citationUrl ? ` ${citationUrl}` : ''
   const citations: Record<CitationStyle, string> = {
     apa: `${authors}. (${year}). ${title}. ${container}.${sourceSuffix}`,
     mla: `${authors}. «${title}». ${container}، ${year}.${sourceSuffix}`,
@@ -290,7 +293,7 @@ export function CiteButton({
   const exportRis = () => {
     setExportState('idle')
     const normalizedYear = String(year || '').match(/\d{4}/)?.[0] || ''
-    const doi = String(sourceUrl || url || '').match(/10\.\d{4,9}\/[^\s?#]+/i)?.[0]?.replace(/[.,;]+$/, '')
+    const doi = String(citationUrl || url || '').match(/10\.\d{4,9}\/[^\s?#]+/i)?.[0]?.replace(/[.,;]+$/, '')
     const lines = [
       'TY  - JOUR',
       `TI  - ${title}`,
@@ -298,7 +301,7 @@ export function CiteButton({
       normalizedYear ? `PY  - ${normalizedYear}` : '',
       container ? `JO  - ${container}` : '',
       doi ? `DO  - ${doi}` : '',
-      sourceUrl ? `UR  - ${sourceUrl}` : '',
+      citationUrl ? `UR  - ${citationUrl}` : '',
       'LA  - ar',
       'ER  - ',
     ].filter(Boolean)
@@ -374,8 +377,8 @@ export function CiteButton({
                 <button type="button" onClick={exportRis} className="citation-export-v2" aria-live="polite">
                   {exportState === 'done' ? '✓ نُزّل ملف RIS' : exportState === 'error' ? 'تعذّر التنزيل — جرّب النسخ' : 'تصدير RIS لبرامج المراجع ↓'}
                 </button>
-              ) : sourceUrl ? (
-                <a href={sourceUrl} target="_blank" rel="noreferrer" className="citation-source-v2">{contextLabel} ↗</a>
+              ) : contextSourceUrl ? (
+                <a href={contextSourceUrl} target="_blank" rel="noreferrer" className="citation-source-v2">{contextLabel} ↗</a>
               ) : <span />}
               <button type="button" onClick={copy} className="citation-copy-v2">{copied ? '✓ نُسخ الاستشهاد' : `نسخ ${styles.find((item) => item.id === style)?.label}`}</button>
             </footer>
@@ -469,6 +472,12 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
 type ArticleAudio = { fahed?: boolean | string; noura?: boolean | string; dialogue?: boolean | string }
 type ArticleAudioControl = { readingDisabled?: boolean; fahedDisabled?: boolean; nouraDisabled?: boolean; dialogueDisabled?: boolean }
 type DialogueTranscript = { title: string; utterances: { speaker: string; text: string }[] }
+const publicSpeakerLabel = (speaker = '') => {
+  const normalized = String(speaker).trim().toLowerCase()
+  if (/فهد|fahed/.test(normalized)) return 'المتحدث'
+  if (/نورة|نوره|noura/.test(normalized)) return 'المتحدثة'
+  return speaker
+}
 const audioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const audioUrl = (path: string) => audioBase ? `${audioBase}/${path.replace(/^\/?audio\//, '')}` : path
 const audioMetaMap = audioMeta as Record<string, { sha256?: string }>
@@ -526,7 +535,7 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
 
   const sources = [
     ...(voices.fahed ? [{ key: 'fahed', label: 'قراءة المقال', avatar: 'man' as const, src: versionedAudioUrl(typeof voices.fahed === 'string' ? voices.fahed : `/audio/${slug}.mp3`) }] : []),
-    ...(voices.noura ? [{ key: 'noura', label: 'قراءة نورة', avatar: 'woman' as const, src: versionedAudioUrl(typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3`) }] : []),
+    ...(voices.noura ? [{ key: 'noura', label: 'قراءة المقال', avatar: 'woman' as const, src: versionedAudioUrl(typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3`) }] : []),
     ...(dialogueOk ? [{ key: 'dialogue', label: 'الحلقة الحوارية', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`) }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)
@@ -541,7 +550,7 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
             <div className="mt-5 space-y-4 border-t border-hair pt-5">
               {transcript.utterances.map((utterance, index) => (
                 <p key={`${utterance.speaker}-${index}`} className="text-[.96rem] leading-[1.9] text-ink/85">
-                  <strong className="me-2 font-semibold text-accent">{utterance.speaker}:</strong>
+                  <strong className="me-2 font-semibold text-accent">{publicSpeakerLabel(utterance.speaker)}:</strong>
                   {utterance.text}
                 </p>
               ))}

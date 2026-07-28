@@ -31,7 +31,7 @@ if (forbidden.length) {
   console.error('✘ حارس الصوت أوقف العملية: يوجد صوت مولّد داخل Git.')
   console.error('انقل الصوت إلى R2 ولا تلتزم إلا بملفات البيانات الخفيفة مثل audio-meta/audio.json.')
   for (const file of forbidden.slice(0, 30)) console.error(`- ${file}`)
-  if (forbidden.length > 30) console.error(`… و${forbidden.length - 30} ملفًا إضافيًا`)
+  if (forbidden.length > 30) console.error(`… و${forbidden.length - 30} ملفاً إضافياً`)
   process.exit(1)
 }
 

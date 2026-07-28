@@ -1656,7 +1656,7 @@ ${SITE_URL}/research` }
     case INTENTS.QUOTE_CARD: {
       const item = selection.item || latestContent(db, 'article', 1)[0]
       const quote = String(item?.body || item?.excerpt || '').split(/(?<=[.!؟])/u).map((part) => part.trim()).find((part) => part.length >= 25 && part.length <= 180) || item?.excerpt
-      return item && quote ? { ...classification, text: `«${quote}»\n— ${item.title}\n${item.url}`, contentId: item.id, contextItems: [item.id], seenContentIds: [item.id], evidenceQuotes: [quote], quote, preserveContextList: Boolean(selection.item) } : { ...classification, text: 'لا أملك اقتباسًا موثقًا مناسبًا بعد.' }
+      return item && quote ? { ...classification, text: `«${quote}»\n— ${item.title}\n${item.url}`, contentId: item.id, contextItems: [item.id], seenContentIds: [item.id], evidenceQuotes: [quote], quote, preserveContextList: Boolean(selection.item) } : { ...classification, text: 'لا أملك اقتباساً موثقاً مناسباً بعد.' }
     }
     case INTENTS.HELP:
     case INTENTS.SHOW_OPTIONS:
@@ -1664,7 +1664,7 @@ ${SITE_URL}/research` }
     case INTENTS.HUMAN_RESPONSE_REQUIRED: return { ...classification, ...humanSafeReply(input) }
     case INTENTS.REMIND_ME: {
       const parsed = parseReminderTime(input)
-      if (parsed.ambiguous) return { ...classification, needsHuman: true, text: 'أقدر أذكّرك محليًا، لكن أحتاج وقتًا واضحًا مثل: الجمعة الساعة 7 مساءً.' }
+      if (parsed.ambiguous) return { ...classification, needsHuman: true, text: 'أقدر أذكّرك محلياً، لكن أحتاج وقتاً واضحاً مثل: الجمعة الساعة 7 مساءً.' }
       const reminderItem = selection.item
       if (!reminderItem) return { ...classification, text: 'اختر مادةً من الموقع أولاً، ثم اكتب مثلاً: ذكرني بها باجر.' }
       /* المجدول القديم يعرض original_text عند حلول الموعد؛ لذلك لا نخزّن
@@ -1847,7 +1847,7 @@ export function handleIncoming({ db, jid, text, isReplyToAgent = false, explicit
   const sensitive = sensitiveDomain(text)
   const normalizedInput = clean(text)
   const personalSensitive = Boolean(sensitive && /(?:انا|اني|لي|عندي|حالتي|مرضي|صحتي|ابني|بنتي|زوجي|زوجتي|والدي|والدتي|شنو اسوي|ماذا افعل|ساعدني)/.test(normalizedInput))
-  /* طلب البحث العام في الصحة أو القانون يبقى ممكنًا من سجل أدلة رسمي، لكن
+  /* طلب البحث العام في الصحة أو القانون يبقى ممكناً من سجل أدلة رسمي، لكن
      الحالة الشخصية تُحوّل دائماً إلى الإنسان حتى لو احتوت عبارة «بحث موثق»؛
      فرق الثقة بين النيتين لا يجوز أن يحوّل سؤال علاجٍ فردي إلى جواب آلي. */
   if (sensitive && (personalSensitive || classification.intent === INTENTS.UNKNOWN || classification.fallback)) {

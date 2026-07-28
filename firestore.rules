@@ -126,6 +126,16 @@ service cloud.firestore {
       }
     }
 
+    // مكتبة صور التوليد داخل استوديو التصاميم — خاصة بالمشرف وحده.
+    match /admin_generated_assets/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    // فهرس خاص بالتصاميم الكاملة المولدة؛ لا يظهر للعامة ولا يملكه إلا المشرف.
+    match /admin_generated_designs/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
     // تقرير حارس الجودة الأسبوعي — يكتبه السكربت المجدول بحساب الخدمة، للمشرف قراءةً.
     match /site_health/{date} {
       allow read: if isAdmin();
@@ -212,7 +222,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return request.auth != null && (request.auth.token.admin == true || request.auth.token.email == 'ah_f@hotmail.com');
+      return request.auth != null && request.auth.token.admin == true;
     }
 
     function isAnonymous() {
@@ -396,12 +406,13 @@ service cloud.firestore {
 
     function isValidMessage() {
       let d = request.resource.data;
-      return d.keys().hasOnly(['name', 'email', 'topic', 'message', 'intent', 'quality', 'createdAt'])
+      return d.keys().hasOnly(['name', 'email', 'topic', 'message', 'intent', 'quality', 'reference', 'createdAt'])
         && d.name is string && d.name.size() > 1 && d.name.size() <= 80
         && isValidEmail(d.email)
         && d.topic in ['استشارة', 'محاضرة أو ورشة', 'لقاء إعلامي', 'أخرى']
         && (!('intent' in d) || (d.intent is string && d.intent.size() <= 80))
         && (!('quality' in d) || (d.quality is string && d.quality.size() <= 80))
+        && d.reference is string && d.reference.matches('^AH-[0-9]{6}-[0-9]{4}$')
         && d.message is string && d.message.size() > 10 && d.message.size() <= 3000
         && d.createdAt == request.time;
     }

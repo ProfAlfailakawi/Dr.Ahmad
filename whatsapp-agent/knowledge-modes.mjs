@@ -55,7 +55,7 @@ function followupLine(db, { kind = 'general' } = {}) {
   }
   if (kind === 'research') return kuwaiti ? 'أي زاوية أهم لك الآن: قوة الدليل أم تطبيقه؟' : 'ما الزاوية الأهم الآن: قوة الدليل أم تطبيقه؟'
   if (kind === 'explain') return kuwaiti ? 'أي جزء تبي أفتحه أكثر: الدليل أم التطبيق؟' : 'أي جزء تريد فتحه أكثر: الدليل أم التطبيق؟'
-  return kuwaiti ? 'أي جزء تبي نختبره أولًا؟' : 'أي جزء تريد اختباره أولًا؟'
+  return kuwaiti ? 'أي جزء تبي نختبره أولاً؟' : 'أي جزء تريد اختباره أولاً؟'
 }
 
 const SENSITIVE = [
@@ -86,9 +86,9 @@ export function humanSafeReply(text = '') {
     health: 'صحي أو نفسي', law: 'قانوني', appointment: 'موعد أو تواصل مباشر', personal: 'شخصي',
   }
   const guidance = domain === 'health'
-    ? 'أستطيع عرض معلومات عامة موثقة فقط، ولا أشخّص حالة ولا أقترح علاجًا شخصيًا.'
+    ? 'أستطيع عرض معلومات عامة موثقة فقط، ولا أشخّص حالة ولا أقترح علاجاً شخصياً.'
     : domain === 'law'
-      ? 'أستطيع عرض النصوص الرسمية العامة بعد تحديد الدولة وتاريخ النفاذ، ولا أقدّم رأيًا قانونيًا شخصيًا.'
+      ? 'أستطيع عرض النصوص الرسمية العامة بعد تحديد الدولة وتاريخ النفاذ، ولا أقدّم رأياً قانونياً شخصياً.'
       : domain === 'appointment'
         ? 'سأترك الطلب في مسار المتابعة البشرية، من دون أن أعدك بموعد أو رد باسم الدكتور.'
         : 'لن أجيب باسم الدكتور عن موقف شخصي، لكنني أستطيع مساعدتك في مادة منشورة أو معلومة عامة موثقة.'
@@ -96,7 +96,7 @@ export function humanSafeReply(text = '') {
     mode: KNOWLEDGE_MODES.HUMAN,
     needsHuman: true,
     sourcePolicy: domain,
-    text: `فهمت أن رسالتك ذات طابع ${labels[domain] || 'شخصي'}، ولذلك لن أختلق جوابًا أو أنسب رأيًا للدكتور.\n${guidance}\nوصلت الرسالة إلى مسار المتابعة، ويمكنك في الوقت نفسه أن تطلب مادة من أرشيف الموقع أو بحثًا موثقًا ضمن الحدود الآمنة.`,
+    text: `فهمت أن رسالتك ذات طابع ${labels[domain] || 'شخصي'}، ولذلك لن أختلق جواباً أو أنسب رأياً للدكتور.\n${guidance}\nوصلت الرسالة إلى مسار المتابعة، ويمكنك في الوقت نفسه أن تطلب مادة من أرشيف الموقع أو بحثاً موثقاً ضمن الحدود الآمنة.`,
   }
 }
 
@@ -179,13 +179,13 @@ function exactPassage(item) { return exactPassages(item, 1)[0] || '' }
 
 export function explainModeReply(db, session, input = '') {
   const item = selectedOrSearch(db, session, input)
-  if (!item) return { mode: KNOWLEDGE_MODES.EXPLAIN, needsHuman: true, text: 'حدد المادة أو الموضوع أولًا، وسأشرح الموجود في المصدر من دون إضافة معلومة غير موثقة.' }
+  if (!item) return { mode: KNOWLEDGE_MODES.EXPLAIN, needsHuman: true, text: 'حدد المادة أو الموضوع أولاً، وسأشرح الموجود في المصدر من دون إضافة معلومة غير موثقة.' }
   const personality = personalityOf(db)
   const passageLimit = personality.verbosity === 'detailed' ? 2 : 1
   const passages = exactPassages(item, passageLimit)
   const level = /لباحث/.test(clean(input)) ? 'للباحث' : /لمعلم/.test(clean(input)) ? 'للمعلم' : /لولي امر/.test(clean(input)) ? 'لولي الأمر' : /لطالب/.test(clean(input)) ? 'للطالب' : /في سطرين/.test(clean(input)) ? 'في سطرين' : /في دقيقه/.test(clean(input)) ? 'في دقيقة' : 'بوضوح'
   const framing = level === 'للباحث' ? 'السؤال البحثي هنا هو ما الذي يقوله النص، وما الذي لا يدّعيه.'
-    : level === 'للمعلم' ? 'اقرأ الفكرة بوصفها قرارًا في الممارسة: ما الذي يتغير داخل الصف؟'
+    : level === 'للمعلم' ? 'اقرأ الفكرة بوصفها قراراً في الممارسة: ما الذي يتغير داخل الصف؟'
       : level === 'لولي الأمر' ? 'المعنى العملي: افصل بين الفكرة العامة وبين الحكم على حالة ابنك أو ابنتك.'
         : level === 'لطالب' ? 'الفكرة ببساطة: ابدأ بالمعنى المركزي ثم ارجع إلى المثال في المادة.'
           : 'هذه خلاصة تفسيرية محافظة، والمقاطع بين علامتي الاقتباس من المصدر نفسه.'
@@ -204,7 +204,7 @@ export function explainModeReply(db, session, input = '') {
 
 export function dialogueModeReply(db, session, input = '') {
   const item = selectedOrSearch(db, session, input)
-  if (!item) return { mode: KNOWLEDGE_MODES.DIALOGUE, needsHuman: true, text: 'اختر مادة أو اذكر موضوعًا أولًا، ثم قل: اختبر الفكرة، عارضني، أو رحلة خمس دقائق.' }
+  if (!item) return { mode: KNOWLEDGE_MODES.DIALOGUE, needsHuman: true, text: 'اختر مادة أو اذكر موضوعاً أولاً، ثم قل: اختبر الفكرة، عارضني، أو رحلة خمس دقائق.' }
   const passage = exactPassage(item)
   const value = clean(input)
   const followup = followupLine(db, { kind: 'dialogue' })

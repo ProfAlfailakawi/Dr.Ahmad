@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       slug:
-        description: 'توليد مقال واحد فقط (slug) — اتركه فارغًا للقافلة المعتادة'
+        description: 'توليد مقال واحد فقط (slug) — اتركه فارغاً للقافلة المعتادة'
         required: false
         default: ''
       limit:
@@ -317,6 +317,18 @@ jobs:
           FIREBASE_PROJECT_ID: drahmad-8e9e2
           AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
           VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+
+      - name: Sync verified audio to realtime CMS
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          if [ ! -f sa.json ]; then
+            echo "Firebase service account unavailable; skipping realtime audio ledger sync."
+            exit 0
+          fi
+          npm run audio:firestore:sync
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
 
       - name: Refresh the living production ledger
         if: always()

@@ -8,7 +8,7 @@
     "lint": "tsc --noEmit",
     "guard:critical": "node scripts/guard-critical-bridges.mjs",
     "clean:obsolete": "node scripts/clean-obsolete-root-files.mjs",
-    "build": "node scripts/clean-obsolete-root-files.mjs && node scripts/guard-critical-bridges.mjs && node scripts/site-guardian.mjs --write && node scripts/build-knowledge-graph.mjs && npm run audio:quality:self-test && node scripts/guard-no-generated-audio-in-git.mjs && node scripts/sync-scholar-citations.mjs && node scripts/optimize-images.mjs && node scripts/prune-orphan-audio.mjs && node scripts/prune-missing-audio.mjs && (node scripts/audit-pronunciation.mjs --guard || echo '::warning::ألفاظ دخيلة خارج قاموس النطق — راجع لوحة التحكم') && node scripts/sync-audio.mjs && node scripts/build-podcast-admin.mjs && vite build && node scripts/guard-private-books.mjs && node scripts/build-static.mjs && node scripts/smoke-static.mjs && node scripts/performance-budget.mjs && node scripts/verify-domain-migration.mjs --dist && node scripts/verify-legacy-retirement.mjs",
+    "build": "node scripts/clean-obsolete-root-files.mjs && node scripts/guard-critical-bridges.mjs && node scripts/guard-arabic-tanween.mjs && node scripts/site-guardian.mjs --write && node scripts/build-knowledge-graph.mjs && npm run audio:quality:self-test && node scripts/guard-no-generated-audio-in-git.mjs && node scripts/sync-scholar-citations.mjs && node scripts/optimize-images.mjs && node scripts/prune-orphan-audio.mjs && node scripts/prune-missing-audio.mjs && (node scripts/audit-pronunciation.mjs --guard || echo '::warning::ألفاظ دخيلة خارج قاموس النطق — راجع لوحة التحكم') && node scripts/sync-audio.mjs && node scripts/build-podcast-admin.mjs && vite build && node scripts/guard-private-books.mjs && node scripts/build-static.mjs && node scripts/smoke-static.mjs && node scripts/performance-budget.mjs && node scripts/verify-domain-migration.mjs --dist && node scripts/verify-legacy-retirement.mjs",
     "gcp-build": "npm run build",
     "start": "node server.mjs",
     "preview": "vite preview",
@@ -109,9 +109,12 @@
     "audio:supervisor": "node scripts/audio-supervisor.mjs --write",
     "audio:supervisor:self-test": "node scripts/audio-supervisor.mjs --self-test",
     "studio-image:self-test": "node scripts/test-studio-image-generation.mjs && node scripts/test-studio-ui-contract.mjs",
+    "site-polish:self-test": "node scripts/test-site-polish-2026.mjs",
     "studio-image:route:self-test": "node scripts/test-studio-image-route.mjs",
     "studio-image:configure": "bash scripts/configure-cloudflare-workers-ai.sh",
-    "studio-image:deploy-self-test": "node scripts/test-cloudflare-deploy-fallback.mjs"
+    "studio-image:deploy-self-test": "node scripts/test-cloudflare-deploy-fallback.mjs",
+    "audio:firestore:sync": "node scripts/sync-audio-firestore.mjs",
+    "typography:tanween:guard": "node scripts/guard-arabic-tanween.mjs"
   },
   "dependencies": {
     "firebase": "^12.15.0",

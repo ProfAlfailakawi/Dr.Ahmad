@@ -46,7 +46,7 @@ export async function runSelfTest(root) {
      الثقة من مصدرين مستقلين على الأقل. */
   const dialectPhrase = 'يمعود شنو توه طالع من جيسه؟'
   const dialectJids = ['96550000001@s.whatsapp.net', '96550000002@s.whatsapp.net', '96550000003@s.whatsapp.net']
-  assert.equal(classifyIntentWithLearning(db, dialectPhrase).learned, undefined, 'الصياغة الجديدة غير متعلمة أولًا')
+  assert.equal(classifyIntentWithLearning(db, dialectPhrase).learned, undefined, 'الصياغة الجديدة غير متعلمة أولاً')
 
   recordUnresolvedLearning(db, dialectJids[0], dialectPhrase)
   const firstEvidence = confirmPendingLearning(db, dialectJids[0], 'LATEST_CONTENT', new Date(daytime.getTime() + 1000), .97)
@@ -233,7 +233,7 @@ export async function runSelfTest(root) {
    *
    * داخل جلسةٍ مفتوحة يصل إلى محرك البحث كلُّ ما يُكتب — ومنه ما ليس سؤالاً.
    * كتب رجلٌ بالإنجليزية أنه رُفض توظيفه لهويّته وأنه يعيش في فقر، فردّ عليه
-   * البوت: «ما لقيت تطابقًا دقيقًا في أرشيف الموقع». والصمتُ خيرٌ من هذا.
+   * البوت: «ما لقيت تطابقاً دقيقاً في أرشيف الموقع». والصمتُ خيرٌ من هذا.
    */
   const griever = '97007@s.whatsapp.net'
   onMessage({ jid: griever, text: 'موقع د. أحمد', message: {} })   // جلسة مفتوحة

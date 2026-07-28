@@ -75,7 +75,7 @@ const GEMINI_KEY = env.GEMINI_API_KEY || env.GOOGLE_API_KEY
 const AZURE_KEY = env.AZURE_SPEECH_KEY
 const AZURE_REGION = (env.AZURE_SPEECH_REGION && /^[a-z0-9-]+$/i.test(env.AZURE_SPEECH_REGION) && env.AZURE_SPEECH_REGION.length < 30) ? env.AZURE_SPEECH_REGION : 'uaenorth'
 
-/* كل طلب خارجي له مهلة صريحة؛ حتى لا يبقى تشغيل GitHub معلقًا إذا علقت
+/* كل طلب خارجي له مهلة صريحة؛ حتى لا يبقى تشغيل GitHub معلقاً إذا علقت
    شبكة Azure/Gemini. تُعاد المحاولة في الطبقة الخاصة بكل مزود. */
 const networkTimeoutSignal = (ms) => {
   if (typeof AbortSignal?.timeout === 'function') return AbortSignal.timeout(ms)
@@ -134,7 +134,7 @@ function derivePieceAnalysis(analysis, pieceText, pieceStartWord, pieceWordCount
   return { pronunciationText, risks }
 }
 
-/* ═══ كاش مقاطع الاستئناف — محليًا وعبر R2 staging (لا WAV داخل GitHub) ═══ */
+/* ═══ كاش مقاطع الاستئناف — محلياً وعبر R2 staging (لا WAV داخل GitHub) ═══ */
 const RESUME = !process.argv.includes('--no-resume')
 const SEGMENT_CACHE_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', '.podcast-segment-cache')
 const R2_CONF = {
@@ -244,7 +244,7 @@ let PILOT_COUNT = Math.min(3, Math.max(1, Number(opt('pilot') || env.PODCAST_PIL
 const ROLLBACK_SLUG = opt('rollback')
 const AUTO_PROMOTE_PILOT = String(env.PODCAST_AUTO_PROMOTE_PILOT || 'true').toLowerCase() !== 'false'
 const REQUIRE_PILOT_GATE = String(env.PODCAST_REQUIRE_PILOT_GATE || 'true').toLowerCase() !== 'false'
-// أُلغي المسار الخفيف نهائيًا: شروط القبول الحالية تمنع أي نشر يتجاوز STT والحكم الصوتي.
+// أُلغي المسار الخفيف نهائياً: شروط القبول الحالية تمنع أي نشر يتجاوز STT والحكم الصوتي.
 const LIGHT = false
 let ARABIC_PRODUCTION_GATE_READY = false
 let sttQuotaExhausted = false
@@ -2060,7 +2060,7 @@ async function evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnal
 }
 
 async function calibrateAndEvaluateAudition({ runId, utteranceId, utterance, voice, path, risks }) {
-  /* علامة الترقيم تصنع وقفتها بنفسها في Azure؛ جمعها مع | يخلق صمتًا مزدوجًا
+  /* علامة الترقيم تصنع وقفتها بنفسها في Azure؛ جمعها مع | يخلق صمتاً مزدوجاً
      قد يقترب من ثانية. نحذف فقط break الزائد بعد وقفٍ مكتمل، لا الصمت الدرامي. */
   const optimizedPronunciation = utterance.pronunciationText.replace(/([.!؟؛])\s*\|/g, '$1')
   const variant = { id: 'audition-frozen', method: 'selective_diacritics',
@@ -2558,7 +2558,7 @@ function insertSemanticMusicBridges(segments, utterances, music, workDir) {
 function planTimeline(segments) {
   const timeline = []
   // الجسور الموسيقية وحدات داخل الـTimeline نفسه. لا نحجب بداية الحلقة بمقدمة
-  // طويلة، ولا نضيف سريرًا موسيقيًا مستمرًا تحت الكلام.
+  // طويلة، ولا نضيف سريراً موسيقياً مستمراً تحت الكلام.
   const firstStart = 0.25
   for (const segment of segments) {
     const dur = probeDur(segment.file)
@@ -3875,7 +3875,7 @@ if (SELF_TEST) {
   dialect.utterances[0].text = 'المشكلة مو في القياس نفسه، بل في الطريقة.'
   assert(lintScript(dialect, 'ar').some((issue) => issue.includes('مو')), 'العامية يجب أن تُرفض')
   const fullDiacritics = structuredClone(clean)
-  fullDiacritics.utterances = fullDiacritics.utterances.map((utterance) => ({ ...utterance, text: 'هَذَا نَصٌّ مُشَكَّلٌ كَامِلًا لا يَجِبُ أَنْ يَمُرَّ فِي الحِوَارِ المَنْشُورِ.' }))
+  fullDiacritics.utterances = fullDiacritics.utterances.map((utterance) => ({ ...utterance, text: 'هَذَا نَصٌّ مُشَكَّلٌ كَامِلاً لا يَجِبُ أَنْ يَمُرَّ فِي الحِوَارِ المَنْشُورِ.' }))
   assert(lintScript(fullDiacritics, 'ar').some((issue) => issue.includes('مشكول')), 'التشكيل الكامل يجب أن يُرفض')
   const deterministic = deterministicRisks('ذكر John Hattie نتيجة في 2009 عن القياس')
   assert(deterministic.some((risk) => risk.word.includes('John Hattie') && risk.riskLevel === 'high'), 'الاسم اللاتيني عالي الخطورة')
@@ -4091,7 +4091,7 @@ if (SELF_TEST) {
 /* ═══════════ اختبار الصوت الرجالي مع Sample D الثابتة ═══════════
    لا يفعّل النشر الشامل، ولا يغيّر صوت المرأة أو سرعة الحلقة النهائية. الهدف:
    ثلاث عينات عمياء، المتغيّر الوحيد فيها هو الصوت الرجالي، حتى يختار الدكتور
-   المحاور الأكثر دفئًا وطبيعية وانسجامًا مع Sample D. */
+   المحاور الأكثر دفئاً وطبيعية وانسجاماً مع Sample D. */
 if (MALE_FINALIST_RETEST) {
   const sample = JSON.parse(readFileSync(resolve(ROOT, 'scripts/male-audition-sample.json'), 'utf8'))
   const female = opt('female') || env.PODCAST_AR_FEMALE || 'ar-KW-NouraNeural'
@@ -4519,7 +4519,7 @@ if (BAKEOFF && !flag('legacy-fixed-bakeoff')) {
     console.error(`✘ الأصوات المتاحة غير كافية: نساء ${discovered.female.length}، رجال ${discovered.male.length}`)
     process.exit(2)
   }
-  console.log(`▶ اكتشاف حي: ${discovered.female.length} صوتًا نسائيًا + ${discovered.male.length} صوتًا رجاليًا`)
+  console.log(`▶ اكتشاف حي: ${discovered.female.length} صوتاً نسائياً + ${discovered.male.length} صوتاً رجالياً`)
 
   const diverseShortlist = (voices, limit, requiredVoice = '') => {
     const ordered = [...voices].sort((left, right) => Math.abs((left.wordsPerMinute || 0) - 140)

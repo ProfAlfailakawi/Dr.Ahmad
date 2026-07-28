@@ -74,7 +74,7 @@ const normalize = (value = '') => value
   .replace(/\s+/g, ' ')
   .trim()
 
-const stop = new Set('في من على إلى عن أن إن كان كانت هذا هذه ذلك تلك وهو وهي مع كما أو ثم لقد دون عند بين بعد قبل كل غير أكثر أقل حيث وقد حتى التي الذي الذين حيث خلال بشكل يمكن يوجد تكون يكون أيضًا ايضا وهناك لدى عبر ضمن أجل ndd indd the and for with from into inside digital education ahmed book'.split(/\s+/))
+const stop = new Set('في من على إلى عن أن إن كان كانت هذا هذه ذلك تلك وهو وهي مع كما أو ثم لقد دون عند بين بعد قبل كل غير أكثر أقل حيث وقد حتى التي الذي الذين حيث خلال بشكل يمكن يوجد تكون يكون أيضاً ايضا وهناك لدى عبر ضمن أجل ndd indd the and for with from into inside digital education ahmed book'.split(/\s+/))
 const tokenize = (value = '') => normalize(value).split(/\s+/).filter((word) => word.length > 2 && !stop.has(word))
 
 function pageLimitFor(file, overrideLimit = null) {
@@ -182,7 +182,7 @@ function sectionHints(bookSnippets, importantTerms) {
       label: `محور خاص ${index + 1}`,
       /* رقم الصفحة معلومة خاصة — يبقى في ذاكرة الجهاز ولا يدخل الملف العام */
       keywords: textTerms.length ? textTerms : fallbackTerms.slice(index, index + 4),
-      note: 'إشارة مشتقة آمنة من الكتاب الخاص؛ لا تحتوي نصًا من PDF ولا تظهر للزوار.',
+      note: 'إشارة مشتقة آمنة من الكتاب الخاص؛ لا تحتوي نصاً من PDF ولا تظهر للزوار.',
     }
   })
 }
@@ -236,7 +236,7 @@ for (const file of files) {
     relatedPublicArticles: articleLinks,
     privateUses: [
       'اقتراح روابط داخلية دقيقة من المقالات إلى هذا الكتاب من دون كشف PDF.',
-      'اقتراح مادة داعمة للمحاضرات والورش اعتمادًا على مفاهيم الكتاب.',
+      'اقتراح مادة داعمة للمحاضرات والورش اعتماداً على مفاهيم الكتاب.',
       'تقوية اسأل مكتبتي بإجابة موثقة من إنتاج الدكتور فقط، مع إظهار المصدر العام لا الملف الخاص.',
       'اقتراح حلقات بودكاست أو قوائم استماع مرتبطة بمحاور الكتاب.',
     ],

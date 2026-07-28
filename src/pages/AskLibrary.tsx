@@ -320,7 +320,7 @@ function localGroundedAnswer(result: Answer): TwinAnswer {
       ? ` ويتكرر الخيط في نصوص منشورة بين ${years[years.length - 1]} و${years[0]}.`
       : "";
   return {
-    answer: `لم أجد جوابًا مباشرًا مطابقًا، وهذه أقرب مادة موثّقة من الأرشيف.${span} ${citations.map((item) => `[${item.index}]`).join(" ")}`.trim(),
+    answer: `لم أجد جواباً مباشراً مطابقاً، وهذه أقرب مادة موثّقة من الأرشيف.${span} ${citations.map((item) => `[${item.index}]`).join(" ")}`.trim(),
     citations,
     grounded: true,
     source: "local",
@@ -552,12 +552,12 @@ export default function AskLibrary() {
   };
 
   const timelineAnswer = result?.earliest && result?.latest
-    ? `يبدأ الخيط في «${result.earliest.title}» سنة ${result.earliest.iso.slice(0, 4)}، ويصل إلى «${result.latest.title}» سنة ${result.latest.iso.slice(0, 4)}. هذا عرض لمسار النشر، لا ادعاء بأن الموقف لم يتغير إلا بهذه المواد.`
+    ? `يمتد الخيط من «${result.earliest.title}» سنة ${result.earliest.iso.slice(0, 4)} إلى «${result.latest.title}» سنة ${result.latest.iso.slice(0, 4)}، ويضع تحولات الفكرة المنشورة على خط زمني واحد.`
     : 'لا يكفي الأرشيف المتاح لبناء خط زمني موثوق لهذا السؤال.';
   const connectionsAnswer = result
     ? result.refs.length
-      ? `يرتبط السؤال بـ${result.refs.length === 1 ? 'مصدر إضافي' : `${result.refs.length} مصادر إضافية`} من الكتب والأبحاث. تظهر الروابط أدناه بوصفها امتدادات موضوعية، لا اقتباسات ولا إثباتاً تلقائياً لاتفاقها الكامل.`
-      : 'لم تظهر صلة قوية بكتاب أو بحث ضمن البيانات العامة المتاحة الآن.'
+      ? `يرتبط السؤال بـ${result.refs.length === 1 ? 'مصدر إضافي' : `${result.refs.length} مصادر إضافية`} من الكتب والأبحاث؛ افتحها لتوسيع القراءة من زوايا متجاورة.`
+      : 'لا يظهر في الأرشيف الآن كتاب أو بحث قريب بما يكفي من هذا السؤال.'
     : '';
   const visibleAnswer = answerMode === 'timeline' ? timelineAnswer : answerMode === 'connections' ? connectionsAnswer : twin?.answer || '';
   const personalBookChapters = result ? buildPersonalBookChapters(result) : [];
@@ -658,7 +658,7 @@ export default function AskLibrary() {
                           <>
                             <p className="mt-5 whitespace-pre-line text-[.96rem] font-light leading-[2.05] text-ink/90">{visibleAnswer}</p>
                             {answerMode !== 'direct' && (
-                              <p className="mt-4 text-[.68rem] leading-relaxed text-soft">هذا تنظيم للمواد المنشورة بحسب الزمن والروابط، وليس اقتباسًا جديدًا.</p>
+                              <p className="mt-4 text-[.68rem] leading-relaxed text-soft">هذا تنظيم للمواد المنشورة بحسب الزمن والروابط، وليس اقتباساً جديداً.</p>
                             )}
                             <p className="mt-3 border-t border-hair pt-3 text-[.68rem] leading-relaxed text-soft/85">
                               الإجابة مستندة إلى مواد منشورة وموثّقة. سؤالك خاص ولا يُنشر.

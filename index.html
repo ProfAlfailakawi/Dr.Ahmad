@@ -35,33 +35,13 @@
     <link rel="preload" href="/fonts/tajawal-Iura6YBj_oCad4k1nzSBC5xLhLFw4Q.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/elmessiri-K2F0fZBRmr9vQ1pHEey6MoiAAgDwbWu1jw.woff2" as="font" type="font/woff2" crossorigin />
     <link href="/fonts/fonts.css" rel="stylesheet" />
+    <link href="/boot.css" rel="stylesheet" />
+    <script src="/boot.js"></script>
     <!-- صورة LCP (البورتريه) — تحميل مبكّر لتسريع أكبر عنصر مرئي -->
     <link rel="preload" href="/portrait.webp" as="image" fetchpriority="high" />
     <!-- المحتوى الحي يُجلب بعد أول رسمة من Firestore؛ فتح القناة مبكراً يختصر جولة الشبكة -->
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
     <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
-    <script id="canonical-host-redirect">
-      (function () {
-        var canonicalHost = 'dr-alfailakawi.com';
-        var legacyHosts = {
-          'www.dr-alfailakawi.com': true,
-          'dr-alfailakawi.web.app': true,
-          'dr-alfailakawi.firebaseapp.com': true,
-        };
-        var host = window.location.hostname.toLowerCase();
-        if (legacyHosts[host] || (host === canonicalHost && window.location.protocol !== 'https:')) {
-          window.location.replace('https://' + canonicalHost + window.location.pathname + window.location.search + window.location.hash);
-        }
-      })();
-    </script>
-    <script id="theme-init">
-      (function () {
-        try {
-          // الوضع النهاري هو الأصل دائماً — الليلي فقط إذا اختاره الزائر بنفسه
-          if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
-        } catch (e) {}
-      })();
-    </script>
     <!--
       نسخة الـSEO الثابتة تُحفظ خارج جذر React كي تفهمها محركات البحث، ولا تُعرض
       لزائرٍ يعمل عنده JavaScript أبداً — كانت مهلة الأمان تكشفها بعد ثماني ثوانٍ
@@ -70,69 +50,12 @@
       بعد مهلة أطول — فالصفحة الثابتة خيرٌ من فراغٍ دائم، لا من موقعٍ يتحمّل قليلاً.
       ومن يعطّل JavaScript يراها فوراً عبر <noscript> أدناه.
     -->
-    <script id="app-boot-state">
-      (function () {
-        var html = document.documentElement;
-        html.classList.add('js');
-        window.__appBootFallbackTimer = window.setTimeout(function () {
-          var root = document.getElementById('root');
-          var appRendered = html.hasAttribute('data-app-ready') || (root && root.childElementCount > 0);
-          if (!appRendered) html.classList.remove('js');
-        }, 20000);
-      })();
-    </script>
     <noscript><style>#seo-fallback { display: block !important; }</style></noscript>
-    <style id="app-boot-style">
-      html, body { background: #FCFCFA; }
-      html.dark, html.dark body { background: #111215; }
-      html.js #seo-fallback { display: none !important; }
-      #root:empty { min-height: 100svh; }
-    </style>
     <script type="module" src="/src/main.tsx"></script>
     <title>د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم والذكاء الاصطناعي</title>
     <meta name="description" content="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، ويضم مؤلفاته وأبحاثه ومقالاته الفكرية في التعليم والتقنية والمجتمع." />
   </head>
   <body>
     <div id="root"></div>
-    <script>
-      if ('serviceWorker' in navigator) {
-        if (location.hostname.includes('ais-dev-') || location.hostname.includes('localhost') || location.hostname.includes('127.0.0.1')) {
-          navigator.serviceWorker.getRegistrations().then(function (registrations) {
-            for (var registration of registrations) {
-              registration.unregister();
-            }
-          });
-          if ('caches' in window) {
-            caches.keys().then(function (keys) {
-              keys.forEach(function (key) {
-                caches.delete(key);
-              });
-            });
-          }
-        } else if (location.protocol === 'https:') {
-          var isAdmin = location.pathname === '/admin' || location.pathname.startsWith('/admin/');
-          // لوحة التحكم: إن تولّى عامل خدمة جديد التحكّم (بعد نشر جديد) نُعيد التحميل مرة
-          // واحدة فوراً لتُخدَم أحدث نسخة — فلا يعلق الدكتور على لوحة قديمة معطوبة.
-          // (الحارس controller يمنع إعادة التحميل عند أول تثبيت، والعلم يمنع أي حلقة.)
-          if (isAdmin && navigator.serviceWorker.controller) {
-            var swReloaded = false;
-            navigator.serviceWorker.addEventListener('controllerchange', function () {
-              if (swReloaded) return;
-              swReloaded = true;
-              location.reload();
-            });
-          }
-          window.addEventListener('load', function () {
-            navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(function (registration) {
-              // لوحة التحكم تطلب أحدث عامل خدمة فوراً حتى لا تبقى نسخة قديمة تستدعي مسار رفع 413 الملغى.
-              if (isAdmin) {
-                registration.update().catch(function () {});
-              }
-            }).catch(function () {});
-          });
-          // الصفحات العامة: التحديث الجديد يُستخدم في الزيارة التالية بلا إعادة تحميل مفاجئة.
-        }
-      }
-    </script>
   </body>
 </html>

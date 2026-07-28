@@ -154,12 +154,12 @@ function fitExactWords(value: string, target: number) {
   const clean = value.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()
   let words = clean.split(/\s+/).filter(Boolean)
   const additions = [
-    'والفكرة هنا ليست في مقاومة الجديد، بل في أن نمنحه معنى تربويًا يحفظ الإنسان قبل أن يحتفل بالأداة.',
-    'حين يتقدم الإجراء على الغاية، يصبح التطوير أسرع، لكنه لا يصبح بالضرورة أعدل أو أعمق أو أكثر أثرًا.',
-    'لهذا يحتاج القرار التعليمي إلى سؤال بسيط: ما الذي سيتغير فعليًا في وعي الطالب وفي حضور المعلم؟',
-    'التكنولوجيا الجيدة لا تلغي العلاقة الإنسانية، بل تمنحها وقتًا أوسع للفهم والحوار والتأمل والمراجعة الصادقة.',
+    'والفكرة هنا ليست في مقاومة الجديد، بل في أن نمنحه معنى تربوياً يحفظ الإنسان قبل أن يحتفل بالأداة.',
+    'حين يتقدم الإجراء على الغاية، يصبح التطوير أسرع، لكنه لا يصبح بالضرورة أعدل أو أعمق أو أكثر أثراً.',
+    'لهذا يحتاج القرار التعليمي إلى سؤال بسيط: ما الذي سيتغير فعلياً في وعي الطالب وفي حضور المعلم؟',
+    'التكنولوجيا الجيدة لا تلغي العلاقة الإنسانية، بل تمنحها وقتاً أوسع للفهم والحوار والتأمل والمراجعة الصادقة.',
     'وكلما ازدادت قدرة النظام، ازدادت مسؤوليتنا عن الحدود والقيم واللغة التي تشرح للناس لماذا نستخدمه.',
-    'لا نحتاج حماسًا أقل، بل نحتاج بصيرة أكبر توازن بين الإمكان والمصلحة وبين السرعة وكرامة المتعلم.',
+    'لا نحتاج حماساً أقل، بل نحتاج بصيرة أكبر توازن بين الإمكان والمصلحة وبين السرعة وكرامة المتعلم.',
     'المعيار ليس حجم الانبهار، وإنما جودة الأثر الذي يبقى بعد أن تهدأ الضجة وتتحول الفكرة إلى ممارسة يومية.',
     'ومن هنا يبدأ النقاش الحقيقي: تطوير يضيف للإنسان، لا تطوير يطلب من الإنسان أن يتكيف بصمت مع كل جديد.',
   ]
@@ -182,7 +182,7 @@ function buildExactLocalArticle(idea: string, audience: string, angle: string, r
   const nearest = related.slice(0, 2).map((article) => article.title).join('، ')
   const extension = [
     `وإذا كانت هذه الفكرة قريبة من موضوعات سابقة مثل ${nearest || 'الإنسان والتعليم والتكنولوجيا'}، فإن زاويتها الجديدة ينبغي أن تبدأ من اللحظة الراهنة لا من تكرار الإجابات القديمة.`,
-    `المطلوب ليس مقالًا يصف الظاهرة فقط، بل نصًا يختبر افتراضاتها، ويقارن بين الوعد الذي تعلنه والنتيجة التي يلمسها الناس في الواقع.`,
+    `المطلوب ليس مقالاً يصف الظاهرة فقط، بل نصاً يختبر افتراضاتها، ويقارن بين الوعد الذي تعلنه والنتيجة التي يلمسها الناس في الواقع.`,
     `بالنسبة إلى ${audience}، تصبح المسؤولية أوضح: ترجمة الفكرة إلى قرار يمكن شرحه، وقياس أثره، والتراجع عنه حين يثبت أنه يختصر الإنسان بدل أن يخدمه.`,
     `وهنا تظهر قيمة ${angle}: فهي لا تضع التكنولوجيا في مواجهة التربية، بل تضع كلتيهما أمام معيار واحد هو المعنى الإنساني الذي نريد حمايته.`,
   ].join('\n\n')
@@ -252,7 +252,7 @@ function distinctEditorialTitle(candidate: string, requestedIdea: string, previo
     .join(' ')
     .slice(0, 92) || 'الفكرة الجديدة'
   const alternatives = [
-    `حين تصبح «${core}» سؤالًا تربويًا`,
+    `حين تصبح «${core}» سؤالاً تربوياً`,
     `ما الذي لا تقوله لنا «${core}»؟`,
     `بين بريق «${core}» وأثره في الإنسان`,
     `قبل أن نحتفل بـ«${core}»`,
@@ -294,19 +294,19 @@ function buildArticleDraft(idea: string, audience: string, angle: string, relate
   const seed = related[0]
   const second = related[1]
   const topic = idea.trim() || 'السؤال التربوي الجديد'
-  const p1 = `ليست قيمة ${topic} في أنه موضوع جديد يملأ العناوين، بل في أنه يكشف طريقة نظرنا إلى الإنسان داخل التعليم. كل أداة أو فكرة تبدأ جذابة حين نراها من بعيد، لكنها تصبح أكثر تعقيدًا عندما تقترب من الطالب والمعلم والأسرة والقرار اليومي داخل الصف. هنا لا يكفي أن نسأل: ما الذي تغيّر؟ بل ينبغي أن نسأل: ماذا فعل هذا التغيّر في المعنى؟`
+  const p1 = `ليست قيمة ${topic} في أنه موضوع جديد يملأ العناوين، بل في أنه يكشف طريقة نظرنا إلى الإنسان داخل التعليم. كل أداة أو فكرة تبدأ جذابة حين نراها من بعيد، لكنها تصبح أكثر تعقيداً عندما تقترب من الطالب والمعلم والأسرة والقرار اليومي داخل الصف. هنا لا يكفي أن نسأل: ما الذي تغيّر؟ بل ينبغي أن نسأل: ماذا فعل هذا التغيّر في المعنى؟`
   const p2 = `بالنسبة إلى ${audience}، تبدو الزاوية الأهم في ${angle}. فالتعليم لا يتحرك بالأدوات وحدها، ولا يعيش بالشعارات وحدها. يعيش حين تتحول الفكرة إلى ممارسة عادلة، وإلى سؤال يحفظ كرامة المتعلم، وإلى قرار لا يختصر الإنسان في رقم أو سرعة أو نتيجة عابرة. ولذلك فإن أي نقاش جاد يجب أن يبدأ من أثر الفكرة لا من بريقها.`
   const p3 = seed
-    ? `وقد كتبت من قبل في «${seed.title}» ما يقترب من هذا المعنى؛ فهناك خيط واضح بين السؤال القديم والسؤال الحالي: كيف نحافظ على حضور الإنسان بينما تتبدل اللغة والأدوات؟ وإذا كان المقال القديم قد فتح الباب، فإن اللحظة الحالية تطلب خطوة أهدأ وأكثر دقة: أن نميّز بين التطوير الذي يخدم التعلم، والتطوير الذي يجعل الإنسان تابعًا للإجراء.`
-    : `هذه الفكرة تحتاج إلى أن تُقرأ من الداخل لا من الحافة. فكل تغيير تعليمي يحمل وعدًا وخطرًا في الوقت نفسه؛ الوعد أن يساعدنا على الفهم، والخطر أن يجعلنا ننسى لماذا نتعلم أصلًا.`
+    ? `وقد كتبت من قبل في «${seed.title}» ما يقترب من هذا المعنى؛ فهناك خيط واضح بين السؤال القديم والسؤال الحالي: كيف نحافظ على حضور الإنسان بينما تتبدل اللغة والأدوات؟ وإذا كان المقال القديم قد فتح الباب، فإن اللحظة الحالية تطلب خطوة أهدأ وأكثر دقة: أن نميّز بين التطوير الذي يخدم التعلم، والتطوير الذي يجعل الإنسان تابعاً للإجراء.`
+    : `هذه الفكرة تحتاج إلى أن تُقرأ من الداخل لا من الحافة. فكل تغيير تعليمي يحمل وعداً وخطراً في الوقت نفسه؛ الوعد أن يساعدنا على الفهم، والخطر أن يجعلنا ننسى لماذا نتعلم أصلاً.`
   const p4 = second
-    ? `واللافت أن هذا الخيط يظهر أيضًا في «${second.title}». هذا لا يعني تكرار الفكرة، بل يعني أن المسألة عادت إلينا بوجه جديد. فالأفكار الحقيقية لا تنتهي بعد مقال واحد؛ إنها تتطور، وتراجع نفسها، وتطلب منا لغة أكثر إنصافًا كلما تغيّر الزمن.`
-    : `المسألة إذن ليست رفضًا ولا اندفاعًا. هي دعوة إلى بطء عاقل داخل زمن سريع؛ بطء لا يعطل التطوير، لكنه يمنحه ضميرًا واتجاهًا.`
-  const p5 = `لهذا أرى أن السؤال العملي ليس: هل نقبل ${topic} أو نرفضه؟ السؤال الأقرب إلى التعليم هو: كيف نجعله أداة تخدم الإنسان ولا تختصره؟ عندما نبدأ من هذا السؤال، يصبح التطوير أكثر تواضعًا، وأكثر صدقًا، وأقرب إلى روح التربية.`
+    ? `واللافت أن هذا الخيط يظهر أيضاً في «${second.title}». هذا لا يعني تكرار الفكرة، بل يعني أن المسألة عادت إلينا بوجه جديد. فالأفكار الحقيقية لا تنتهي بعد مقال واحد؛ إنها تتطور، وتراجع نفسها، وتطلب منا لغة أكثر إنصافاً كلما تغيّر الزمن.`
+    : `المسألة إذن ليست رفضاً ولا اندفاعاً. هي دعوة إلى بطء عاقل داخل زمن سريع؛ بطء لا يعطل التطوير، لكنه يمنحه ضميراً واتجاهاً.`
+  const p5 = `لهذا أرى أن السؤال العملي ليس: هل نقبل ${topic} أو نرفضه؟ السؤال الأقرب إلى التعليم هو: كيف نجعله أداة تخدم الإنسان ولا تختصره؟ عندما نبدأ من هذا السؤال، يصبح التطوير أكثر تواضعاً، وأكثر صدقاً، وأقرب إلى روح التربية.`
   let draft = [p1, p2, p3, p4, p5].join('\n\n')
   const words = wordCount(draft)
   if (words > 450) draft = draft.split(/\s+/).slice(0, 445).join(' ') + '.'
-  if (words < 350) draft += '\n\nوالأهم أن يبقى السؤال مفتوحًا: ما الأثر الإنساني الذي لا نريد أن نخسره ونحن نطارد الحلول السريعة؟'
+  if (words < 350) draft += '\n\nوالأهم أن يبقى السؤال مفتوحاً: ما الأثر الإنساني الذي لا نريد أن نخسره ونحن نطارد الحلول السريعة؟'
   return draft
 }
 
@@ -320,7 +320,7 @@ function buildSocial(bundle: Pick<Bundle, 'title' | 'excerpt' | 'body'>, audienc
     x: `${quote}\n\n${bundle.title}`,
     linkedin: `${bundle.title}\n\n${bundle.excerpt}\n\nالسؤال الذي يستحق النقاش: كيف نحافظ على الإنسان في قلب التطوير؟`,
     instagram: `${bundle.title}\n\n${quote}\n\n#التعليم #الذكاء_الاصطناعي #د_أحمد_الفيلكاوي`,
-    threads: `${bundle.excerpt}\n\nأحيانًا لا نحتاج إجابة أسرع، بل سؤالًا أعدل.`,
+    threads: `${bundle.excerpt}\n\nأحياناً لا نحتاج إجابة أسرع، بل سؤالاً أعدل.`,
     whatsapp: `مقال جديد: ${bundle.title}\n${bundle.excerpt}`,
     newsletter: `اقتراح للنشرة: ${bundle.title}\n\nلماذا يهم هذا الموضوع ${audience}؟\n${bundle.excerpt}`,
   }
@@ -343,7 +343,7 @@ function topicLanguage(topic: VisualTopic) {
       hashtags: ['#الذكاء_الاصطناعي', '#تكنولوجيا_التعليم', '#الإنسان'],
       directions: [
         { layout: 'circuit', tone: 'الإنسان داخل التكنولوجيا', headline: 'الأداة ذكية… فهل التجربة إنسانية؟', subline: 'اقرأ أثر التكنولوجيا في التفكير والعلاقة والقرار.' },
-        { layout: 'signal', tone: 'إشارة رقمية', headline: 'الإجابة الأسرع ليست دائمًا الأذكى.', subline: 'المعيار: ماذا بقي للمتعلم كي يكتشفه بنفسه؟' },
+        { layout: 'signal', tone: 'إشارة رقمية', headline: 'الإجابة الأسرع ليست دائماً الأذكى.', subline: 'المعيار: ماذا بقي للمتعلم كي يكتشفه بنفسه؟' },
         { layout: 'orbit', tone: 'مدار القرار', headline: 'ضع الإنسان في المركز.', subline: 'ثم اجعل التكنولوجيا تدور حول حاجته، لا العكس.' },
         { layout: 'dark', tone: 'ما خلف الشاشة', headline: 'حين تختفي الأداة… ماذا بقي من الفهم؟', subline: 'هذا هو الاختبار الحقيقي.' },
       ],
@@ -358,7 +358,7 @@ function topicLanguage(topic: VisualTopic) {
         { layout: 'notebook', tone: 'من دفتر التعلّم', headline: 'ما الذي سيستطيع الطالب فعله؟', subline: 'ابدأ من الأثر، ثم صمّم الدرس.' },
         { layout: 'window', tone: 'نافذة الصف', headline: 'المحتوى ليس التجربة.', subline: 'التعلّم يحدث حين يشارك الطالب في بناء المعنى.' },
         { layout: 'question', tone: 'سؤال تربوي', headline: 'هل قسنا الحفظ أم الفهم؟', subline: 'الإجابة تظهر في التطبيق والتفسير والاختيار.' },
-        { layout: 'timeline', tone: 'رحلة التعلّم', headline: 'قبل الدرس · أثناءه · بعده', subline: 'كل مرحلة تحتاج قرارًا مختلفًا من المعلم.' },
+        { layout: 'timeline', tone: 'رحلة التعلّم', headline: 'قبل الدرس · أثناءه · بعده', subline: 'كل مرحلة تحتاج قراراً مختلفاً من المعلم.' },
       ],
     },
     family: {
@@ -376,15 +376,15 @@ function topicLanguage(topic: VisualTopic) {
     },
     research: {
       insight: 'الدليل لا يلغي الخبرة، لكنه يحميها من أن تتحول إلى حكم عام.',
-      tension: 'الرقم قد يبدو حاسمًا وهو لا يجيب أصلًا عن السؤال الذي نطرحه.',
+      tension: 'الرقم قد يبدو حاسماً وهو لا يجيب أصلاً عن السؤال الذي نطرحه.',
       standard: 'ابحث عن السؤال والمنهج والسياق قبل أن تنبهر بالنتيجة.',
-      question: 'هل تقول الدراسة ما نعتقد أنها تقوله فعلًا؟',
+      question: 'هل تقول الدراسة ما نعتقد أنها تقوله فعلاً؟',
       hashtags: ['#البحث_العلمي', '#المعرفة', '#التعليم'],
       directions: [
-        { layout: 'research', tone: 'الدليل أولًا', headline: 'لا تبدأ بالنتيجة.', subline: 'ابدأ بالسؤال والمنهج والسياق.' },
+        { layout: 'research', tone: 'الدليل أولاً', headline: 'لا تبدأ بالنتيجة.', subline: 'ابدأ بالسؤال والمنهج والسياق.' },
         { layout: 'timeline', tone: 'مسار البحث', headline: 'سؤال · منهج · دليل · معنى', subline: 'القفز فوق أي حلقة يضعف الاستنتاج.' },
-        { layout: 'split', tone: 'بين الرقم والتفسير', headline: 'البيانات لا تتكلم وحدها.', subline: 'نحن من يمنحها سياقًا وحدودًا.' },
-        { layout: 'manifesto', tone: 'قاعدة بحثية', headline: 'الادعاء الكبير يحتاج دليلًا أكبر.', subline: 'والدليل الجيد يحتاج قراءة عادلة.' },
+        { layout: 'split', tone: 'بين الرقم والتفسير', headline: 'البيانات لا تتكلم وحدها.', subline: 'نحن من يمنحها سياقاً وحدوداً.' },
+        { layout: 'manifesto', tone: 'قاعدة بحثية', headline: 'الادعاء الكبير يحتاج دليلاً أكبر.', subline: 'والدليل الجيد يحتاج قراءة عادلة.' },
       ],
     },
     media: {
@@ -395,22 +395,22 @@ function topicLanguage(topic: VisualTopic) {
       hashtags: ['#الإعلام', '#الوعي_الرقمي', '#المحتوى'],
       directions: [
         { layout: 'dialogue', tone: 'خلف الحوار', headline: 'من يحدد السؤال… يحدد نصف الإجابة.', subline: 'انتبه إلى إطار القصة قبل تفاصيلها.' },
-        { layout: 'signal', tone: 'إشارة وسط الضجيج', headline: 'الانتشار ليس دليلًا.', subline: 'قد يكون مجرد مكافأة لخوارزمية تعرف ما يثيرنا.' },
+        { layout: 'signal', tone: 'إشارة وسط الضجيج', headline: 'الانتشار ليس دليلاً.', subline: 'قد يكون مجرد مكافأة لخوارزمية تعرف ما يثيرنا.' },
         { layout: 'event', tone: 'قراءة الحدث', headline: 'ماذا حدث؟ وماذا يعني؟', subline: 'الخبر بداية الفهم، لا نهايته.' },
-        { layout: 'split', tone: 'المشهد وما وراءه', headline: 'ما نراه / ما لا نراه', subline: 'كل لقطة تستبعد شيئًا من الإطار.' },
+        { layout: 'split', tone: 'المشهد وما وراءه', headline: 'ما نراه / ما لا نراه', subline: 'كل لقطة تستبعد شيئاً من الإطار.' },
       ],
     },
     future: {
-      insight: 'المستقبل لا يأتي جاهزًا؛ يتشكل من القرارات الصغيرة التي نكررها اليوم.',
-      tension: 'قد نلاحق الجديد وننسى أن نسأل أي مستقبل نريد أصلًا.',
+      insight: 'المستقبل لا يأتي جاهزاً؛ يتشكل من القرارات الصغيرة التي نكررها اليوم.',
+      tension: 'قد نلاحق الجديد وننسى أن نسأل أي مستقبل نريد أصلاً.',
       standard: 'الابتكار الحقيقي يوسع الخيارات ولا يضيق معنى الإنسان.',
       question: 'هل نصمم المستقبل… أم نتكيف فقط مع ما صممه غيرنا؟',
       hashtags: ['#المستقبل', '#الابتكار', '#القيادة'],
       directions: [
-        { layout: 'horizon', tone: 'أفق القرار', headline: 'المستقبل يبدأ من قرار اليوم.', subline: 'ليس كل جديد اتجاهًا يستحق الاتباع.' },
+        { layout: 'horizon', tone: 'أفق القرار', headline: 'المستقبل يبدأ من قرار اليوم.', subline: 'ليس كل جديد اتجاهاً يستحق الاتباع.' },
         { layout: 'orbit', tone: 'خريطة الاحتمالات', headline: 'لا تتنبأ فقط… صمّم البدائل.', subline: 'الاستشراف الجيد يوسّع مساحة القرار.' },
         { layout: 'manifesto', tone: 'بيان للمستقبل', headline: 'ما لا نصممه بوعي… قد يُفرض علينا.', subline: 'ابدأ بالقيم قبل الأدوات.' },
-        { layout: 'circuit', tone: 'بنية الغد', headline: 'التكنولوجيا تبني الممكن.', subline: 'والإنسان يقرر ما يستحق أن يصبح واقعًا.' },
+        { layout: 'circuit', tone: 'بنية الغد', headline: 'التكنولوجيا تبني الممكن.', subline: 'والإنسان يقرر ما يستحق أن يصبح واقعاً.' },
       ],
     },
     human: {
@@ -420,22 +420,22 @@ function topicLanguage(topic: VisualTopic) {
       question: 'ماذا بقي من الإنسان بعد أن أصبح كل شيء أكثر كفاءة؟',
       hashtags: ['#الإنسان', '#المعنى', '#الوعي'],
       directions: [
-        { layout: 'human', tone: 'الإنسان أولًا', headline: 'لا تجعل الكفاءة تمحو المعنى.', subline: 'اسأل دائمًا: من يخدم من؟' },
+        { layout: 'human', tone: 'الإنسان أولاً', headline: 'لا تجعل الكفاءة تمحو المعنى.', subline: 'اسأل دائماً: من يخدم من؟' },
         { layout: 'signature', tone: 'أثر شخصي', headline: 'الفكرة تُقاس بما تتركه في الإنسان.', subline: 'لا بما تعد به على الورق.' },
         { layout: 'quote', tone: 'وقفة إنسانية', headline: 'نحتاج ما يقرّبنا… لا ما ينجز عنا فقط.', subline: 'التقدم بلا علاقة قد يكون عزلة أسرع.' },
-        { layout: 'window', tone: 'نافذة المعنى', headline: 'انظر إلى الشخص لا إلى المؤشر.', subline: 'الأرقام تصف جزءًا من التجربة.' },
+        { layout: 'window', tone: 'نافذة المعنى', headline: 'انظر إلى الشخص لا إلى المؤشر.', subline: 'الأرقام تصف جزءاً من التجربة.' },
       ],
     },
     general: {
-      insight: 'الفكرة الجيدة لا تضيف ضجيجًا جديدًا؛ تمنحنا زاوية أوضح لما نعيشه.',
-      tension: 'قد يبدو الأمر بسيطًا حتى نرى ما يغيّره في القرار اليومي.',
+      insight: 'الفكرة الجيدة لا تضيف ضجيجاً جديداً؛ تمنحنا زاوية أوضح لما نعيشه.',
+      tension: 'قد يبدو الأمر بسيطاً حتى نرى ما يغيّره في القرار اليومي.',
       standard: 'الأثر قبل الانبهار، والوضوح قبل كثرة الكلام.',
-      question: 'ما الذي سيتغير فعلًا إذا أخذنا هذه الفكرة بجدية؟',
+      question: 'ما الذي سيتغير فعلاً إذا أخذنا هذه الفكرة بجدية؟',
       hashtags: ['#فكرة', '#تعليم', '#وعي'],
       directions: [
         { layout: 'editorial', tone: 'زاوية تحريرية', headline: 'فكرة تستحق الوقوف.', subline: 'ليس لأنها جديدة فقط؛ بل لأنها تغيّر زاوية النظر.' },
         { layout: 'orbit', tone: 'مدار الفكرة', headline: 'ماذا يدور حول هذا المعنى؟', subline: 'انظر إلى السبب والأثر والقرار.' },
-        { layout: 'question', tone: 'سؤال مفتوح', headline: 'ماذا لو نظرنا من جهة أخرى؟', subline: 'أحيانًا يبدأ التغيير من إعادة صياغة السؤال.' },
+        { layout: 'question', tone: 'سؤال مفتوح', headline: 'ماذا لو نظرنا من جهة أخرى؟', subline: 'أحياناً يبدأ التغيير من إعادة صياغة السؤال.' },
         { layout: 'signature', tone: 'توقيع الفكرة', headline: 'جملة قصيرة… وأثر أطول.', subline: 'احتفظ بما يغيّر القرار، واترك الباقي.' },
       ],
     },
@@ -466,7 +466,7 @@ function buildStandaloneSocialPack(idea: string, purpose: string, audience: stri
   const carouselPool = [
     { kicker: visualTopicLabel(topic), title: thought, body: goal },
     { kicker: 'المعنى', title: language.insight, body: `بالنسبة إلى ${audience}، لا يكفي أن تكون الفكرة جذابة؛ يجب أن تغيّر طريقة الفهم أو القرار.` },
-    { kicker: 'المفارقة', title: language.tension, body: 'هنا تبدأ المسافة بين ما يبدو ناجحًا وما يصنع أثرًا حقيقيًا.' },
+    { kicker: 'المفارقة', title: language.tension, body: 'هنا تبدأ المسافة بين ما يبدو ناجحاً وما يصنع أثراً حقيقياً.' },
     { kicker: 'المعيار', title: language.standard, body: 'استخدم هذا المعيار عند تقييم الفكرة في الواقع.' },
     { kicker: 'زاوية تطبيقية', title: 'حوّل الفكرة إلى قرار صغير يمكن ملاحظته.', body: `اسأل ${audience}: ما السلوك أو الاختيار الذي سيتغير بعد قراءة هذه الفكرة؟` },
     { kicker: 'سؤال مفتوح', title: language.question, body: 'لا تبحث عن إجابة سريعة؛ ابحث عن إجابة تستطيع الدفاع عنها في الواقع.' },
@@ -520,7 +520,7 @@ ${language.insight}`,
 ${language.standard}`,
     `${language.tension}
 
-وهنا تحديدًا تستحق الفكرة أن تُناقش.`,
+وهنا تحديداً تستحق الفكرة أن تُناقش.`,
   ], variation).slice(0, 3)
   const instagramCaptions = rotateBy([
     `${thought}
@@ -566,7 +566,7 @@ ${language.insight}
 ${language.question}`,
     hashtags: language.hashtags,
     event: event || null,
-    eventHook: event ? 'الربط بالحدث هنا يكشف معنى مرتبطًا بالفكرة، ولا يستخدم الحدث لمجرد اللحاق بالترند.' : '',
+    eventHook: event ? 'الربط بالحدث هنا يكشف معنى مرتبطاً بالفكرة، ولا يستخدم الحدث لمجرد اللحاق بالترند.' : '',
     visualDirections,
     generatedAt,
     visualSeed: `${topic}:${variation}:${normalize(`${thought} ${goal}`).slice(0, 72)}`,
@@ -590,7 +590,7 @@ function buildArticleSocialPack(articleBundle: Bundle, audience: string, event?:
       title: sentence,
       body: index === selected.length - 1 ? language.standard : '',
     })),
-    { kicker: 'السؤال', title: language.question, body: 'اقرأ المقال كاملًا لتتبع الفكرة من بدايتها إلى أثرها.' },
+    { kicker: 'السؤال', title: language.question, body: 'اقرأ المقال كاملاً لتتبع الفكرة من بدايتها إلى أثرها.' },
   ]
   return {
     ...base,
@@ -648,7 +648,7 @@ ${base.hashtags.join(' ')}`,
 ${articleBundle.excerpt}`,
       `${language.question}
 
-اقرأ المقال كاملًا في الموقع.`,
+اقرأ المقال كاملاً في الموقع.`,
       `${selected[1] || language.insight}
 
 ${language.standard}
@@ -726,7 +726,7 @@ function qualityGate(bundle: Bundle, articles: ArticleRecord[], targetWords: num
     { key: 'words', label: `الحد الأدنى: ${MIN_ARTICLE_WORDS} كلمة (الحالي ${words})`, ok: words >= MIN_ARTICLE_WORDS },
     { key: 'voice', label: 'قابلية صوتية', ok: words >= MIN_ARTICLE_WORDS && hasQuestion },
     { key: 'style-ai', label: 'مبني من بصمة أرشيفك', ok: Boolean(bundle.generatedBy) },
-    { key: 'social', label: 'قابل للتحويل إلى حزمة سوشيال لاحقًا', ok: socialOk },
+    { key: 'social', label: 'قابل للتحويل إلى حزمة سوشيال لاحقاً', ok: socialOk },
   ]
   return {
     checks,
@@ -758,7 +758,7 @@ function styleReview(bundle: Bundle, style: ReturnType<typeof editorialStyleProf
     'مما لا شك فيه',
     'في الختام',
     'من الجدير بالذكر',
-    'يلعب دورًا حيويًا',
+    'يلعب دوراً حيوياً',
     'ثورة غير مسبوقة',
   ].filter((phrase) => body.includes(phrase))
   const hasHumanOpening = /^(قد يبدو|حين|عندما|ليست|ليس|في|أمام|داخل|هل|كيف|لماذا|ماذا)/.test(body.trim())
@@ -774,7 +774,7 @@ function styleReview(bundle: Bundle, style: ReturnType<typeof editorialStyleProf
   const score = Math.round((checks.filter((check) => check.ok).length / checks.length) * 100)
   return {
     score,
-    label: score >= 86 ? 'قريب جدًا من بصمتك' : score >= 70 ? 'قريب… يحتاج تهذيبًا بسيطًا' : 'بعيد عن روحك ويحتاج مراجعة',
+    label: score >= 86 ? 'قريب جداً من بصمتك' : score >= 70 ? 'قريب… يحتاج تهذيباً بسيطاً' : 'بعيد عن روحك ويحتاج مراجعة',
     checks,
   }
 }
@@ -838,7 +838,7 @@ function buildEditorialDecisionSuite({
     {
       label: 'خطر التكرار',
       status: repeatedRisk ? 'hold' : similarity.originality < 78 ? 'watch' : 'pass',
-      detail: repeatedRisk ? `قريب جدًا من «${similarity.matches[0]?.title || 'مقال سابق'}».` : `الأصالة التحريرية ${similarity.originality}٪.`,
+      detail: repeatedRisk ? `قريب جداً من «${similarity.matches[0]?.title || 'مقال سابق'}».` : `الأصالة التحريرية ${similarity.originality}٪.`,
     },
     {
       label: 'جاهزية التحويل',
@@ -860,8 +860,8 @@ function buildEditorialDecisionSuite({
     { label: 'صوت الطالب', words: ['طالب', 'متعلم', 'طفل'], prompt: 'هل يظهر أثر الفكرة على الطالب لا على النظام فقط؟' },
     { label: 'صوت المعلم', words: ['معلم', 'مدرس', 'تدريس'], prompt: 'هل توضّح العبء أو القرار الذي سيواجهه المعلم؟' },
     { label: 'الأسرة والمجتمع', words: ['أسرة', 'اسره', 'ولي', 'بيت', 'مجتمع'], prompt: 'هل توجد زاوية اجتماعية حين يحتاج الموضوع ذلك؟' },
-    { label: 'الدليل أو المثال', words: ['دراسة', 'بحث', 'مثال', 'حالة', 'تجربة', 'رقم', 'نسبة'], prompt: 'هل يوجد مثال أو دليل يمنع النص من أن يبقى تأملًا عامًا؟' },
-    { label: 'الحد الأخلاقي', words: ['أخلاق', 'قيمة', 'كرامة', 'خصوصية', 'تحيز', 'مسؤولية'], prompt: 'هل يضع المقال حدًا واضحًا لما لا ينبغي تجاوزه؟' },
+    { label: 'الدليل أو المثال', words: ['دراسة', 'بحث', 'مثال', 'حالة', 'تجربة', 'رقم', 'نسبة'], prompt: 'هل يوجد مثال أو دليل يمنع النص من أن يبقى تأملاً عاماً؟' },
+    { label: 'الحد الأخلاقي', words: ['أخلاق', 'قيمة', 'كرامة', 'خصوصية', 'تحيز', 'مسؤولية'], prompt: 'هل يضع المقال حداً واضحاً لما لا ينبغي تجاوزه؟' },
     { label: 'الخطوة العملية', words: ['خطوة', 'قرار', 'تطبيق', 'ممارسة', 'كيف', 'نبدأ'], prompt: 'هل يعرف القارئ ماذا يفعل بالفكرة بعد قراءتها؟' },
   ].map((dimension) => ({
     ...dimension,
@@ -884,7 +884,7 @@ function buildEditorialDecisionSuite({
     {
       label: 'الحدث الراهن',
       status: bundle.event ? 'pass' : 'watch',
-      detail: bundle.event ? `مرتبط بمصدر: ${bundle.event.source}.` : 'لا يوجد حدث مثبت؛ لا مشكلة إذا كان المقال فكريًا لا خبريًا.',
+      detail: bundle.event ? `مرتبط بمصدر: ${bundle.event.source}.` : 'لا يوجد حدث مثبت؛ لا مشكلة إذا كان المقال فكرياً لا خبرياً.',
     },
     {
       label: 'قابلية الصورة والاقتباس',
@@ -896,14 +896,14 @@ function buildEditorialDecisionSuite({
 
   const ethicalSignals: EditorialSignal[] = [
     {
-      label: 'لا يخترع يقينًا باسم الدكتور',
-      status: /أثبتت كل الدراسات|بلا شك|حتميًا|حتما|مستحيل/.test(rawText) && !hasEvidence ? 'watch' : 'pass',
+      label: 'لا يخترع يقيناً باسم الدكتور',
+      status: /أثبتت كل الدراسات|بلا شك|حتمياً|حتما|مستحيل/.test(rawText) && !hasEvidence ? 'watch' : 'pass',
       detail: hasEvidence ? 'الادعاءات الحساسة لها إشارة بحثية أو رقمية.' : 'لا توجد ادعاءات علمية حاسمة بلا سند واضح.',
     },
     {
       label: 'كرامة الإنسان قبل الأداة',
       status: hasHumanAnchor ? 'pass' : 'watch',
-      detail: hasHumanAnchor ? 'الأثر الإنساني حاضر في النص.' : 'أضف أثرًا مباشرًا على الإنسان/الطالب/المعلم.',
+      detail: hasHumanAnchor ? 'الأثر الإنساني حاضر في النص.' : 'أضف أثراً مباشراً على الإنسان/الطالب/المعلم.',
     },
     {
       label: 'لا يكشف خصوصيات',
@@ -913,7 +913,7 @@ function buildEditorialDecisionSuite({
     {
       label: 'قابل للمراجعة لا للتفويض الأعمى',
       status: hasAction || hasEvidence ? 'pass' : 'watch',
-      detail: 'يفضّل أن يترك النص معيارًا أو خطوة قابلة للمراجعة.',
+      detail: 'يفضّل أن يترك النص معياراً أو خطوة قابلة للمراجعة.',
     },
   ]
   const ethicalHolds = ethicalSignals.filter((signal) => signal.status === 'hold').length
@@ -933,8 +933,8 @@ function buildEditorialDecisionSuite({
     digitalDecision: digitalScore >= 86 ? 'اعتمد الحضور الرقمي.' : digitalScore >= 70 ? 'اعتمد بعد تهذيب بسيط.' : 'أعد ضبط الحملة قبل النشر.',
     ethicalScore,
     ethicalSignals,
-    ethicalDecision: ethicalHolds ? 'أوقف حتى تُزال المخالفة.' : ethicalScore >= 86 ? 'منسجم أخلاقيًا.' : 'يحتاج تدقيقًا أخلاقيًا خفيفًا.',
-    privateMemory: privateMatches[0]?.title ? `قريب داخليًا من «${privateMatches[0].title}».` : 'لا يوجد ربط خاص واثق حتى الآن.',
+    ethicalDecision: ethicalHolds ? 'أوقف حتى تُزال المخالفة.' : ethicalScore >= 86 ? 'منسجم أخلاقياً.' : 'يحتاج تدقيقاً أخلاقياً خفيفاً.',
+    privateMemory: privateMatches[0]?.title ? `قريب داخلياً من «${privateMatches[0].title}».` : 'لا يوجد ربط خاص واثق حتى الآن.',
     words,
   }
 }
@@ -957,7 +957,7 @@ function buildSevenDayCampaign(bundle: Bundle, pack: WeeklyPack): SevenDayCampai
     {
       day: 'اليوم ٣',
       platform: 'Instagram Carousel',
-      goal: 'تبسيط الفكرة بصريًا',
+      goal: 'تبسيط الفكرة بصرياً',
       copy: `${bundle.title}\n\n١. الفكرة ليست في الأداة.\n٢. الأثر الحقيقي في الإنسان.\n٣. التعليم علاقة قبل أن يكون إجراء.\n٤. السؤال: ماذا يبقى في الطالب بعد التجربة؟`,
     },
     {
@@ -976,13 +976,13 @@ function buildSevenDayCampaign(bundle: Bundle, pack: WeeklyPack): SevenDayCampai
       day: 'اليوم ٦',
       platform: 'Instagram Story',
       goal: 'تصويت أو تفاعل سريع',
-      copy: `هل ترى أن «${bundle.title}» قضية تكنولوجية أم إنسانية أولًا؟\n\n[تكنولوجيا]\n[إنسانية]\n[الاثنان معًا]`,
+      copy: `هل ترى أن «${bundle.title}» قضية تكنولوجية أم إنسانية أولاً؟\n\n[تكنولوجيا]\n[إنسانية]\n[الاثنان معاً]`,
     },
     {
       day: 'اليوم ٧',
       platform: 'Newsletter / WhatsApp',
       goal: 'إغلاق الحملة ودعوة للقراءة',
-      copy: `لمن فاته النقاش هذا الأسبوع:\n${bundle.title}\n\n${bundle.excerpt}\n\nاقرأ المقال كاملًا، ثم اسأل: ما القرار الصغير الذي يمكن أن يتغير غدًا؟`,
+      copy: `لمن فاته النقاش هذا الأسبوع:\n${bundle.title}\n\n${bundle.excerpt}\n\nاقرأ المقال كاملاً، ثم اسأل: ما القرار الصغير الذي يمكن أن يتغير غداً؟`,
     },
   ]
 }
@@ -1024,21 +1024,21 @@ function buildWeeklyPack(bundle: Bundle, articles: ArticleRecord[], radar: Radar
   const quote = strongestQuote(pool.map((article) => `${article.excerpt || ''} ${article.body || ''}`).join(' ') || bundle.body)
   const radarTop = radar[0]
   const radarComment = radarTop
-    ? `${radarTop.ar}\n\nاللافت في هذا الحدث أنه لا يخص التكنولوجيا وحدها؛ بل يفتح سؤالًا تربويًا أعمق: كيف نحافظ على الإنسان داخل موجة التغيير؟\n\nيرتبط ذلك بما كتبته في «${bundle.related[0]?.title || bundle.title}».`
-    : `لا توجد مادة رادار منشورة اليوم. التعليق الجاهز:\n\n${bundle.title}\n\nقد يبدو الموضوع تكنولوجيًا، لكنه في التعليم سؤال إنساني أولًا: ماذا يتغير في الطالب والمعلم حين تتغير الأداة؟`
+    ? `${radarTop.ar}\n\nاللافت في هذا الحدث أنه لا يخص التكنولوجيا وحدها؛ بل يفتح سؤالاً تربوياً أعمق: كيف نحافظ على الإنسان داخل موجة التغيير؟\n\nيرتبط ذلك بما كتبته في «${bundle.related[0]?.title || bundle.title}».`
+    : `لا توجد مادة رادار منشورة اليوم. التعليق الجاهز:\n\n${bundle.title}\n\nقد يبدو الموضوع تكنولوجياً، لكنه في التعليم سؤال إنساني أولاً: ماذا يتغير في الطالب والمعلم حين تتغير الأداة؟`
   return {
     linkedin: [
       `${bundle.title}\n\n${bundle.excerpt}\n\nالفكرة ليست في سرعة التغيير، بل في المعنى الذي نحافظ عليه ونحن نتغير.`,
-      `حين نناقش ${bundle.title}، لا أبدأ من الأداة، بل من أثرها في الإنسان.\n\nالتعليم لا يحتاج انبهارًا إضافيًا؛ يحتاج سؤالًا أعدل: ماذا يحدث للطالب والمعلم عندما تتحول الفكرة إلى ممارسة؟`,
+      `حين نناقش ${bundle.title}، لا أبدأ من الأداة، بل من أثرها في الإنسان.\n\nالتعليم لا يحتاج انبهاراً إضافياً؛ يحتاج سؤالاً أعدل: ماذا يحدث للطالب والمعلم عندما تتحول الفكرة إلى ممارسة؟`,
       `${quote}\n\nهذه الجملة تصلح كبداية نقاش طويل مع المعلمين والباحثين: هل نطوّر التعليم أم نسرّع إجراءاته فقط؟`,
     ],
     x: [
       `${quote}\n\n${bundle.title}`,
       `السؤال ليس: ما الأداة؟\nالسؤال: ماذا تفعل الأداة في وعي الطالب والمعلم؟`,
-      `كل تطوير تعليمي لا يبدأ من الإنسان، ينتهي غالبًا إلى إجراء جميل… ومعنى ناقص.`,
+      `كل تطوير تعليمي لا يبدأ من الإنسان، ينتهي غالباً إلى إجراء جميل… ومعنى ناقص.`,
     ],
     generalX: [
-      `ليست المشكلة أن التكنولوجيا تتقدم بسرعة.\nالمشكلة أن أسئلتنا التربوية أحيانًا تتأخر عنها.`,
+      `ليست المشكلة أن التكنولوجيا تتقدم بسرعة.\nالمشكلة أن أسئلتنا التربوية أحياناً تتأخر عنها.`,
       `في التعليم، لا يكفي أن نعرف ماذا يستطيع الذكاء الاصطناعي أن يفعل.\nالأهم: ماذا يجب ألا نسمح له أن يختصر؟`,
       `المعلم لا يفقد قيمته حين تظهر أداة جديدة.\nيفقدها فقط إذا اختزلنا التعليم في نقل المعلومة، ونسينا بناء الإنسان.`,
     ],
@@ -1051,10 +1051,10 @@ function buildWeeklyPack(bundle: Bundle, articles: ArticleRecord[], radar: Radar
 
 function suggestArticleIdeas(articles: ArticleRecord[], radar: RadarItem[], privateLinks: PrivateBookLink[]) {
   const strategic = [
-    { title: 'المعلم حين يصبح الذكاء الاصطناعي زميلًا لا بديلًا', idea: 'زاوية عن العلاقة العملية بين المعلم والأدوات الذكية داخل الصف.' },
+    { title: 'المعلم حين يصبح الذكاء الاصطناعي زميلاً لا بديلاً', idea: 'زاوية عن العلاقة العملية بين المعلم والأدوات الذكية داخل الصف.' },
     { title: 'الطالب الذي يعرف الإجابة ولا يعرف الطريق إليها', idea: 'عن أثر الإجابات الفورية في بناء التفكير والصبر المعرفي.' },
     { title: 'من يربّي الخوارزمية؟', idea: 'سؤال أخلاقي حول البيانات والقيم والتحيز في التعليم.' },
-    { title: 'الأسرة أمام واجب رقمي جديد', idea: 'كيف يتغير دور ولي الأمر حين تصبح التكنولوجيا جزءًا من التعلم اليومي؟' },
+    { title: 'الأسرة أمام واجب رقمي جديد', idea: 'كيف يتغير دور ولي الأمر حين تصبح التكنولوجيا جزءاً من التعلم اليومي؟' },
     { title: 'الجامعة في زمن المحتوى المتولد', idea: 'ما الذي يبقى من البحث والكتابة الأكاديمية حين تتغير أدوات الإنتاج؟' },
   ]
   const radarIdeas = radar.slice(0, 3).map((item) => ({
@@ -1084,12 +1084,12 @@ function buildBundle(idea: string, audience: string, angle: string, articles: Ar
   const excerpt = clampExcerpt(body.split('\n\n')[0])
   const partial = { title, excerpt, body }
   const quality = [
-    wordCount(body) >= 350 && wordCount(body) <= 450 ? `عدد الكلمات مناسب: ${wordCount(body)} كلمة.` : `عدد الكلمات يحتاج ضبطًا: ${wordCount(body)} كلمة.`,
-    related.length ? `مرتبط بـ ${related.length} مقالات من أرشيفك.` : 'لم أجد ربطًا قويًا؛ أضف كلمات من قاموسك الفكري.',
+    wordCount(body) >= 350 && wordCount(body) <= 450 ? `عدد الكلمات مناسب: ${wordCount(body)} كلمة.` : `عدد الكلمات يحتاج ضبطاً: ${wordCount(body)} كلمة.`,
+    related.length ? `مرتبط بـ ${related.length} مقالات من أرشيفك.` : 'لم أجد ربطاً قوياً؛ أضف كلمات من قاموسك الفكري.',
     relatedBooks.length || relatedPapers.length ? 'يوجد امتداد أكاديمي/كتابي مناسب.' : 'لا يوجد امتداد كتابي أو بحثي واضح بعد.',
     'صورة المشاركة الافتراضية جاهزة إذا لم ترفع صورة خاصة.',
     'الحزمة الاجتماعية تولّدت للمقال، ويمكن حفظها في طابور الموافقة.',
-    'التصنيف والمقتطف والـslug جاهزة مبدئيًا.',
+    'التصنيف والمقتطف والـslug جاهزة مبدئياً.',
     'بعد النشر: الصوت الآلي وR2 ينتظران مفاتيح Azure/Gemini ليصبحا تلقائيين بالكامل.',
   ]
   return {
@@ -1169,7 +1169,7 @@ function IdeaSuggestionsCard({
             <span className="block font-display text-lg font-semibold leading-relaxed text-ink">{item.title}</span>
             <span className="mt-2 block text-[.84rem] leading-relaxed text-soft">{item.idea}</span>
             <span className="mt-3 block text-[.74rem] text-accent">
-              {item.coverage.length ? `الأرشيف يغطيها جزئيًا: ${item.coverage.length} روابط` : 'فجوة شبه جديدة — مناسبة لمقال'}
+              {item.coverage.length ? `الأرشيف يغطيها جزئياً: ${item.coverage.length} روابط` : 'فجوة شبه جديدة — مناسبة لمقال'}
             </span>
           </button>
         ))}
@@ -1377,14 +1377,14 @@ function PrivateBookMemoryCard({ matches }: { matches: ReturnType<typeof private
                 {book.section?.keywords?.length ? ` · ${book.section.keywords.slice(0, 4).join('، ')}` : ''}
               </p>
               {book.linkedPublicBook && (
-                <p className="mt-1 text-[.74rem] text-soft">يرتبط أيضًا بالكتاب المنشور: {book.linkedPublicBook.title}</p>
+                <p className="mt-1 text-[.74rem] text-soft">يرتبط أيضاً بالكتاب المنشور: {book.linkedPublicBook.title}</p>
               )}
             </div>
           ))}
         </div>
       ) : (
         <p className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.82rem] leading-relaxed text-soft">
-          لم أجد رابطًا واثقًا مع الكتب الخاصة لهذه المسودة بعد. زِد وضوح الفكرة أو شغّل ذاكرة الكتب بعد إضافة PDFs جديدة.
+          لم أجد رابطاً واثقاً مع الكتب الخاصة لهذه المسودة بعد. زِد وضوح الفكرة أو شغّل ذاكرة الكتب بعد إضافة PDFs جديدة.
         </p>
       )}
     </section>
@@ -1418,7 +1418,7 @@ function WeeklyPackCard({
         <div>
           <p className="text-[.76rem] font-semibold uppercase text-accent">حزمة الأسبوع</p>
           <h2 className="mt-1 font-display text-2xl font-semibold text-ink">محتوى أسبوع كامل ينتظر موافقتك.</h2>
-          <p className="mt-2 max-w-2xl text-[.82rem] leading-relaxed text-soft">غرفة حملات هادئة: لا تنشر شيئًا وحدها، لكنها ترتّب المقال على سبعة أيام حتى توافق.</p>
+          <p className="mt-2 max-w-2xl text-[.82rem] leading-relaxed text-soft">غرفة حملات هادئة: لا تنشر شيئاً وحدها، لكنها ترتّب المقال على سبعة أيام حتى توافق.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <CopyButton value={all} label="نسخ الكل" />
@@ -1474,7 +1474,7 @@ function CurrentEventsCard({
         <div>
           <p className="text-[.76rem] font-semibold uppercase text-accent">أحداث الساعة</p>
           <h2 className="mt-1 font-display text-xl font-semibold text-ink">يربط الحدث فقط عندما يخدم الفكرة.</h2>
-          <p className="mt-2 text-[.8rem] leading-relaxed text-soft">رادار الكويت يظهر أولًا عند وجود مادة محلية موثوقة، ثم تأتي المصادر العالمية.</p>
+          <p className="mt-2 text-[.8rem] leading-relaxed text-soft">رادار الكويت يظهر أولاً عند وجود مادة محلية موثوقة، ثم تأتي المصادر العالمية.</p>
         </div>
         <span className="rounded-full border border-hair px-3 py-1.5 text-[.72rem] text-soft">{loading ? 'أحدّث المصادر…' : selected.length ? `${selected.length} محدد` : 'اختيار ذكي'}</span>
       </div>
@@ -1637,7 +1637,7 @@ function PerfectSocialPackCard({
           <div>
             <p className="text-[.76rem] font-semibold uppercase text-accent">منظومة السوشيال · {visuals.topicLabel}</p>
             <h2 className="mt-1 font-display text-2xl font-semibold text-ink">كل موضوع يتعرّف على لغته البصرية.</h2>
-            <p className="mt-2 text-[.82rem] leading-relaxed text-soft">يقرأ النظام الفكرة أولًا، ثم يختار تكوينات تناسب التعليم أو التكنولوجيا أو الأسرة أو البحث أو الإعلام أو المستقبل — مع تنويع جديد في كل مرة.</p>
+            <p className="mt-2 text-[.82rem] leading-relaxed text-soft">يقرأ النظام الفكرة أولاً، ثم يختار تكوينات تناسب التعليم أو التكنولوجيا أو الأسرة أو البحث أو الإعلام أو المستقبل — مع تنويع جديد في كل مرة.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" disabled={busy} onClick={onRegenerate} className={ghost}>{busy ? 'أعيد البناء…' : 'تنويع جديد'}</button>
@@ -1857,7 +1857,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
       setTargetWordsInput(String(requestedTarget))
       generationRun.current += 1
       const ok = isAdmin || await refresh()
-      if (!ok || !user) throw new Error('جلسة المشرف تحتاج تحديثًا. سجّل خروجك وادخل من جديد.')
+      if (!ok || !user) throw new Error('جلسة المشرف تحتاج تحديثاً. سجّل خروجك وادخل من جديد.')
       const token = await user.getIdToken()
       const requestedIdea = override?.title ? `${override.title}. ${override.angle || ''}` : idea
       const rawAngle = override?.angle || angle
@@ -1902,7 +1902,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
           angle: requestedAngle,
           event: selectedEventIds.length ? currentEvents.find((item) => item.id === selectedEventIds[0]) || null : null,
           eventConnection: selectedEventIds.length ? 'استُخدم الحدث كمدخل راهن من دون أن يطغى على الفكرة الأصلية.' : '',
-          originalityNote: 'بُني محليًا من بصمة الأرشيف بعد فحص أقرب الزوايا السابقة.',
+          originalityNote: 'بُني محلياً من بصمة الأرشيف بعد فحص أقرب الزوايا السابقة.',
           exactWords: requestedTarget,
           originality: finalReport.originality,
           similarity: finalReport.matches.slice(0, 5),
@@ -1934,7 +1934,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
         quality: [
           `الحد الأدنى 350 كلمة؛ النسخة المولّدة الآن ${generated.exactWords} كلمة ويمكنك زيادتها بحرية.`,
           `درجة الأصالة مقابل الأرشيف: ${generated.originality}٪.`,
-          `تعلّم من ${style.articleCount} مقالًا ومن ${styleSamples.length} عينات أسلوب متنوعة.`,
+          `تعلّم من ${style.articleCount} مقالاً ومن ${styleSamples.length} عينات أسلوب متنوعة.`,
           generated.event ? `ربط راهن موثّق: ${generated.event.source} — ${generated.event.title}` : 'لم يُفرض حدث راهن لأن الصلة لم تكن عضوية.',
           skipOriginality ? 'استُثني فحص الأصالة بإقرار الكاتب لأن النص أو فكرته أصلية له.' : (generated.originalityNote || 'اجتاز فحص عدم تكرار الزاوية والحجة.'),
           'قوالب السوشيال تُبنى منفصلة لكل منصة لمنع النسخ المتكرر.',
@@ -1951,7 +1951,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
       setBundle(nextBundle)
       setIdea(override?.title || idea)
       if (override?.angle) setAngle(override.angle)
-      setNotice(`بُني المقال بطول مبدئي ${generated.exactWords} كلمة. الحد الأدنى 350، ويمكنك الكتابة حتى 4000 كلمة وأكثر يدويًا${skipOriginality ? '، مع تسجيل استثناء الأصالة بإقرارك' : ''} ✓`)
+      setNotice(`بُني المقال بطول مبدئي ${generated.exactWords} كلمة. الحد الأدنى 350، ويمكنك الكتابة حتى 4000 كلمة وأكثر يدوياً${skipOriginality ? '، مع تسجيل استثناء الأصالة بإقرارك' : ''} ✓`)
       setView('write')
       task.needsInput('المقال جاهز للمراجعة')
       void requestSocialPack(nextBundle, false).catch(() => undefined)
@@ -1989,10 +1989,10 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
     setBusy(true)
     try {
       const ok = isAdmin || await refresh()
-      if (!ok) throw new Error('جلسة المشرف تحتاج تحديثًا. سجّل خروجك وادخل من جديد.')
+      if (!ok) throw new Error('جلسة المشرف تحتاج تحديثاً. سجّل خروجك وادخل من جديد.')
       if (wordCount(bundle.body) < MIN_ARTICLE_WORDS) throw new Error(`المقال يجب ألا يقل عن ${MIN_ARTICLE_WORDS} كلمة. العدد الحالي: ${wordCount(bundle.body)}.`)
       if (!gate.ready) throw new Error(`بوابة الجودة لم تجتز بعد: ${gate.blocking.join('، ')}`)
-      if (richArticles.some((article) => article.slug === bundle.slug)) throw new Error('هذا الرابط مستخدم سابقًا. عدّل العنوان أو الرابط.')
+      if (richArticles.some((article) => article.slug === bundle.slug)) throw new Error('هذا الرابط مستخدم سابقاً. عدّل العنوان أو الرابط.')
       const db = await getDb()
       if (!db) throw new Error('Firebase غير متاح الآن.')
       const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
@@ -2043,7 +2043,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       })
-      setNotice('نُقل المقال كاملًا إلى «المقالات» كمسودة. من هناك تستطيع مراجعته أو جدولته أو نشره ✓')
+      setNotice('نُقل المقال كاملاً إلى «المقالات» كمسودة. من هناك تستطيع مراجعته أو جدولته أو نشره ✓')
       await onTransferToArticles?.(bundle.slug)
       task.complete('تم نقل المقال')
     } catch (reason) {
@@ -2061,7 +2061,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
     setQueueBusy(true)
     try {
       const ok = isAdmin || await refresh()
-      if (!ok) throw new Error('جلسة المشرف تحتاج تحديثًا. سجّل خروجك وادخل من جديد.')
+      if (!ok) throw new Error('جلسة المشرف تحتاج تحديثاً. سجّل خروجك وادخل من جديد.')
       const db = await getDb()
       if (!db) throw new Error('Firebase غير متاح الآن.')
       const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
@@ -2152,7 +2152,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const generatePulse = async () => {
     setError('')
     setNotice('')
-    if (pulseIdea.trim().length < 3) { setError('اكتب الفكرة التي تريد نشرها أولًا.'); setAdminTaskState('needs-input', 'اكتب فكرة المنشور أولًا'); return }
+    if (pulseIdea.trim().length < 3) { setError('اكتب الفكرة التي تريد نشرها أولاً.'); setAdminTaskState('needs-input', 'اكتب فكرة المنشور أولاً'); return }
     const task = beginAdminTask('بناء المنشور المستقل')
     setPulseBusy(true)
     pulseVariation.current += 1
@@ -2204,7 +2204,7 @@ ${pulsePurpose.trim()}`,
     setError('')
     try {
       const ok = isAdmin || await refresh()
-      if (!ok) throw new Error('جلسة المشرف تحتاج تحديثًا.')
+      if (!ok) throw new Error('جلسة المشرف تحتاج تحديثاً.')
       const db = await getDb()
       if (!db) throw new Error('Firebase غير متاح الآن.')
       const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
@@ -2260,10 +2260,10 @@ ${pulsePurpose.trim()}`,
               <div className="flex items-end"><button type="button" disabled={generating} className={`${primary} w-full`} onClick={() => void rebuild()}>{generating ? 'أكتب وأراجع…' : 'ابنِ المقال الكامل'}</button></div>
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.articleCount}</strong><span className="text-[.76rem] text-soft">مقالًا يحلل أسلوبها</span></div>
+              <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.articleCount}</strong><span className="text-[.76rem] text-soft">مقالاً يحلل أسلوبها</span></div>
               <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.avgSentenceWords || '—'}</strong><span className="text-[.76rem] text-soft">متوسط الجملة</span></div>
               <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.avgParagraphs || '—'}</strong><span className="text-[.76rem] text-soft">متوسط الفقرات</span></div>
-              <div className="rounded-xl border border-accent/40 bg-accent/[.05] p-4"><strong className="block font-display text-2xl text-accent">{targetWordsInput || '—'}</strong><span className="text-[.76rem] text-soft">للتوليد الأول فقط — ليس سقفًا للتحرير</span></div>
+              <div className="rounded-xl border border-accent/40 bg-accent/[.05] p-4"><strong className="block font-display text-2xl text-accent">{targetWordsInput || '—'}</strong><span className="text-[.76rem] text-soft">للتوليد الأول فقط — ليس سقفاً للتحرير</span></div>
             </div>
             {notice && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.84rem] text-accent">{notice}</p>}
             {error && <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.84rem] text-soft">{error}</p>}
@@ -2294,7 +2294,7 @@ ${pulsePurpose.trim()}`,
                 <div className={`rounded-xl border p-4 ${wordCount(bundle.body) >= MIN_ARTICLE_WORDS ? 'border-accent/40 bg-accent/[.05]' : 'border-hair bg-canvas'}`}><strong className="block font-display text-2xl text-accent">{wordCount(bundle.body)}</strong><span className="text-[.72rem] text-soft">الحد الأدنى {MIN_ARTICLE_WORDS} — بلا سقف مقفول</span></div>
                 <div className={`rounded-xl border p-4 ${skipOriginality || !similarity.repeated ? 'border-accent/40 bg-accent/[.05]' : 'border-hair bg-canvas'}`}><strong className="block font-display text-2xl text-accent">{similarity.originality}٪</strong><span className="text-[.72rem] text-soft">{skipOriginality ? 'مستثناة بإقرار الكاتب' : 'أصالة مقابل الأرشيف'}</span></div>
               </div>
-              {similarity.matches[0] && <p className="mt-3 text-[.78rem] leading-relaxed text-soft">الأقرب موضوعيًا: «{similarity.matches[0].title}» — التشابه {Math.round(similarity.matches[0].score * 100)}٪.</p>}
+              {similarity.matches[0] && <p className="mt-3 text-[.78rem] leading-relaxed text-soft">الأقرب موضوعياً: «{similarity.matches[0].title}» — التشابه {Math.round(similarity.matches[0].score * 100)}٪.</p>}
               <button type="button" aria-pressed={skipOriginality} onClick={() => setSkipOriginality((value) => !value)} className={`mt-4 w-full rounded-xl border px-4 py-3 text-start transition-colors ${skipOriginality ? 'border-accent bg-accent/[.07] text-accent' : 'border-hair bg-canvas text-soft hover:border-accent'}`}><strong className="block text-[.84rem]">أنا الكاتب — استثناء فحص الأصالة {skipOriginality ? '✓' : ''}</strong><span className="mt-1 block text-[.74rem] leading-relaxed">يُعطّل منع التشابه لهذه النسخة فقط، ويُسجّل داخل بيانات المقال للمراجعة. لا يعطّل بقية بوابة الجودة.</span></button>
               {(wordCount(bundle.body) < MIN_ARTICLE_WORDS || (similarity.repeated && !skipOriginality)) && <button type="button" disabled={generating} onClick={() => void rebuild()} className={`${ghost} mt-4 w-full`}>{generating ? 'أعيد التحرير…' : 'إعادة بناء واستكمال الحد الأدنى'}</button>}
             </section>
@@ -2318,8 +2318,8 @@ ${pulsePurpose.trim()}`,
                 <p className="text-[.76rem] font-semibold uppercase text-accent">إلى مكتبة المقالات</p>
                 <h2 className="mt-1 font-display text-2xl font-semibold text-ink">القرار النهائي يتم من صفحة المقالات.</h2>
                 <p className="mt-3 text-[.86rem] leading-relaxed text-soft">هذا الاستوديو يبني النص ويفحصه فقط. الزر التالي ينقل العنوان والمقتطف والنص والتصنيف والروابط والحزمة كاملة إلى «المقالات» كمسودة؛ وهناك تختار الجدولة أو النشر.</p>
-                <button type="button" disabled={busy || !gate.ready} className={`${primary} mt-6 w-full`} onClick={() => void transferToArticles()}>{busy ? 'أنقل المقال…' : 'نقل المقال كاملًا إلى المقالات'}</button>
-                {!gate.ready && <p className="mt-3 text-[.78rem] leading-relaxed text-soft">أكمل البنود غير المجتازة في بوابة الجودة أولًا.</p>}
+                <button type="button" disabled={busy || !gate.ready} className={`${primary} mt-6 w-full`} onClick={() => void transferToArticles()}>{busy ? 'أنقل المقال…' : 'نقل المقال كاملاً إلى المقالات'}</button>
+                {!gate.ready && <p className="mt-3 text-[.78rem] leading-relaxed text-soft">أكمل البنود غير المجتازة في بوابة الجودة أولاً.</p>}
                 {notice && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-accent">{notice}</p>}
                 {error && <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-soft">{error}</p>}
               </section>
@@ -2333,8 +2333,8 @@ ${pulsePurpose.trim()}`,
 
           <section id="standalone-compose" className={card}>
             <p className="text-[.76rem] font-semibold uppercase text-accent">منشور مستقل</p>
-            <h2 className="mt-1 font-display text-2xl font-semibold text-ink">غرّد أو انشر فكرة… من دون أن تكتب مقالًا.</h2>
-            <p className="mt-2 max-w-3xl text-[.84rem] leading-relaxed text-soft">اكتب خاطرًا، موقفًا، سؤالًا أو تعليقًا على حدث. الاستوديو يصنع لكل منصة صياغتها وقالبها البصري، ويغيّر الشكل والنبرة في كل مرة.</p>
+            <h2 className="mt-1 font-display text-2xl font-semibold text-ink">غرّد أو انشر فكرة… من دون أن تكتب مقالاً.</h2>
+            <p className="mt-2 max-w-3xl text-[.84rem] leading-relaxed text-soft">اكتب خاطراً، موقفاً، سؤالاً أو تعليقاً على حدث. الاستوديو يصنع لكل منصة صياغتها وقالبها البصري، ويغيّر الشكل والنبرة في كل مرة.</p>
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_13rem_auto]">
               <Field label="الفكرة أو الجملة"><textarea className={`${input} min-h-28`} value={pulseIdea} onChange={(event) => { setPulseIdea(event.target.value); setPulsePack(null) }} placeholder="مثال: ليست المشكلة أن التكنولوجيا تتقدم… بل أن أسئلتنا التربوية تتأخر." /></Field>
               <Field label="الهدف أو الزاوية"><textarea className={`${input} min-h-28`} value={pulsePurpose} onChange={(event) => { setPulsePurpose(event.target.value); setPulsePack(null) }} placeholder="ماذا تريد أن يبقى في ذهن القارئ؟" /></Field>
@@ -2342,8 +2342,8 @@ ${pulsePurpose.trim()}`,
               <div className="flex items-end"><button type="button" disabled={pulseBusy} className={`${primary} w-full`} onClick={() => void generatePulse()}>{pulseBusy ? 'أبني الحزمة…' : 'ابنِ المنشور'}</button></div>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => void loadPulseContext()} disabled={pulseEventsLoading || !pulseIdea.trim()} className={ghost}>{pulseEventsLoading ? 'أحدّث الأحداث…' : 'اقترح حدثًا راهنًا'}</button>
-              <span className="text-[.76rem] text-soft">الربط اختياري؛ لا يُستخدم إلا إذا كان طبيعيًا ومفيدًا.</span>
+              <button type="button" onClick={() => void loadPulseContext()} disabled={pulseEventsLoading || !pulseIdea.trim()} className={ghost}>{pulseEventsLoading ? 'أحدّث الأحداث…' : 'اقترح حدثاً راهناً'}</button>
+              <span className="text-[.76rem] text-soft">الربط اختياري؛ لا يُستخدم إلا إذا كان طبيعياً ومفيداً.</span>
             </div>
           </section>
 

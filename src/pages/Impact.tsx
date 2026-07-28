@@ -187,7 +187,7 @@ export default function Impact() {
           {loading && !chains.length ? (
             <p className="py-20 text-center text-soft">تُراجع الأدلة والروابط…</p>
           ) : visible.length === 0 ? (
-            <p className="py-20 text-center text-soft">لا توجد صلة قابلة للتحقق ضمن هذا النوع بعد؛ ولن يظهر ادعاء بلا رابط أو سياق واضح.</p>
+            <p className="py-20 text-center text-soft">لا توجد رحلة أثر ضمن هذا النوع حتى الآن.</p>
           ) : (
             <>
             <div className="divide-y divide-hair border-y border-hair">

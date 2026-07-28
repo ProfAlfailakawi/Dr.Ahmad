@@ -5,7 +5,7 @@ import { firebaseEnabled, getDb } from '../lib/firebase'
 
 /* «مساعد اختيار» لا نموذج طويل (فكرة نووية ٩ للصديق):
    يبدأ بسؤال واحد، وبعد الاختيار تظهر الحقول الضرورية فقط بإرشادٍ يناسب نوع الطلب.
-   حقول فايرستور نفسها (name/email/topic/message) — القواعد الأمنية بلا تغيير. */
+   حقول Firestore محددة صراحة في القواعد الأمنية، بما فيها رقم المرجع الذي يُنشأ لكل رسالة. */
 const TOPICS = [
   { key: 'استشارة', d: 'رأي خبير في مشروع أو تحدٍّ تعليمي/تكنولوجي', hint: 'صف التحدي أو المشروع باختصار: المجال، والجهة إن وُجدت، وما تطمح إليه.' },
   { key: 'محاضرة أو ورشة', d: 'حضورياً أو عن بُعد — للجهات والمؤتمرات', hint: 'الجهة، الموضوع المقترح، التاريخ التقريبي، والمكان (أو عن بُعد).' },
@@ -119,6 +119,8 @@ export function ContactForm() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: EASE }}
         className="rounded-2xl border border-hair bg-wash p-10 text-center"
+        role="status"
+        aria-live="polite"
       >
         <span className="font-display text-[1.6rem] font-semibold text-accent">وصلتني رسالتك.</span>
         {reference && (
@@ -147,6 +149,7 @@ export function ContactForm() {
           {TOPICS.map((t) => (
             <button
               key={t.key}
+              type="button"
               onClick={() => setTopic(t.key)}
               className="group rounded-xl border border-hair bg-canvas p-5 text-right transition-colors duration-300 hover:border-accent"
             >
@@ -157,10 +160,16 @@ export function ContactForm() {
         </div>
       ) : (
         /* ── الخطوة الثانية: الحقول الضرورية فقط، بإرشاد يناسب الطلب ── */
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: EASE }}>
+        <motion.form
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: EASE }}
+          onSubmit={(event) => { event.preventDefault(); void submit() }}
+          noValidate
+        >
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <span className="rounded-full bg-accent px-4 py-1.5 text-[.84rem] font-medium text-canvas">{active.key}</span>
-            <button onClick={() => { setTopic(null); setState('idle') }} className="text-[.8rem] text-soft transition-colors hover:text-accent">
+            <button type="button" onClick={() => { setTopic(null); setState('idle') }} className="text-[.8rem] text-soft transition-colors hover:text-accent">
               غيّر نوع الطلب
             </button>
           </div>
@@ -176,10 +185,15 @@ export function ContactForm() {
           )}
 
           <div className="mt-5 grid gap-3.5 sm:grid-cols-2">
-            <input value={name} onChange={(e) => { setName(e.target.value); setState('idle') }} placeholder="الاسم" aria-label="الاسم" className={field} />
-            <input value={email} onChange={(e) => { setEmail(e.target.value); setState('idle') }} placeholder="البريد الإلكتروني" aria-label="البريد" dir="ltr" className={`${field} text-right`} />
+            <label className="sr-only" htmlFor="contact-name">الاسم</label>
+            <input id="contact-name" name="name" autoComplete="name" maxLength={80} value={name} onChange={(e) => { setName(e.target.value); setState('idle') }} placeholder="الاسم" aria-label="الاسم" className={field} />
+            <label className="sr-only" htmlFor="contact-email">البريد الإلكتروني</label>
+            <input id="contact-email" name="email" type="email" inputMode="email" autoComplete="email" maxLength={200} value={email} onChange={(e) => { setEmail(e.target.value); setState('idle') }} placeholder="البريد الإلكتروني" aria-label="البريد الإلكتروني" dir="ltr" className={`${field} text-right`} />
           </div>
+          <label className="sr-only" htmlFor="contact-website">اترك هذا الحقل فارغاً</label>
           <input
+            id="contact-website"
+            name="website"
             value={website}
             onChange={(e) => setWebsite(e.target.value)}
             tabIndex={-1}
@@ -189,7 +203,11 @@ export function ContactForm() {
             placeholder="Website"
           />
 
+          <label className="sr-only" htmlFor="contact-message">الرسالة</label>
           <textarea
+            id="contact-message"
+            name="message"
+            maxLength={3000}
             value={message}
             onChange={(e) => { setMessage(e.target.value); setState('idle') }}
             placeholder={active.hint}
@@ -200,15 +218,17 @@ export function ContactForm() {
 
           <div className="mt-5 flex flex-wrap items-center gap-4">
             <button
-              onClick={submit}
+              type="submit"
               disabled={state === 'sending'}
               className="rounded-full bg-accent px-8 py-3.5 font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep disabled:opacity-60"
             >
               {state === 'sending' ? 'جارٍ الإرسال…' : 'إرسال'}
             </button>
-            {state === 'error' && <span className="text-[.86rem] text-soft">{err}</span>}
+            <span className="text-[.86rem] text-soft" role="status" aria-live="polite" aria-atomic="true">
+              {state === 'error' ? err : state === 'sending' ? 'جارٍ إرسال رسالتك بأمان…' : ''}
+            </span>
           </div>
-        </motion.div>
+        </motion.form>
       )}
     </div>
   )

@@ -612,7 +612,7 @@ function ArticleClosingNote({ next, related }: { next?: ArticleRecord; related: 
   return (
     <FadeUp>
       <aside className="article-closing-note mt-16 rounded-[2rem] border border-hair bg-wash/45 px-6 py-6 text-center md:px-8">
-        <p className="font-display text-[1.2rem] font-semibold leading-[1.7] text-ink">إن بقي السؤال مفتوحًا، فهذا جزء من قيمة الفكرة.</p>
+        <p className="font-display text-[1.2rem] font-semibold leading-[1.7] text-ink">إن بقي السؤال مفتوحاً، فهذا جزء من قيمة الفكرة.</p>
         <p className="mx-auto mt-2 max-w-[520px] text-[.86rem] leading-[1.9] text-soft">
           تستطيع أن تتابع خيطها عبر الزمن، أو تنتقل إلى نص قريب يكمل المعنى من زاوية أخرى.
         </p>
@@ -685,7 +685,7 @@ export default function ArticleDetail() {
     return () => { active = false }
   }, [a?.slug, preferences.vocalized])
 
-  // يتذكّر جهازُك المقال والفكرة محليًا — بلا حساب ولا ملف شخصي ولا إرسال للخادم.
+  // يتذكّر جهازُك المقال والفكرة محلياً — بلا حساب ولا ملف شخصي ولا إرسال للخادم.
   useEffect(() => {
     if (!a) return
     recordArticleVisit(a)
@@ -837,7 +837,7 @@ export default function ArticleDetail() {
               <Share compact title={a.title} path={`/articles/${a.slug}`} />
               <div className="article-source-tools" aria-label="المصدر والاستشهاد">
                 {liveLink(article.source) && <a href={liveLink(article.source)} target="_blank" rel="noreferrer" className="article-tool-icon" aria-label="فتح المصدر الأصلي" title="المصدر الأصلي"><span aria-hidden className="text-[1.05rem]">↗</span></a>}
-                <CiteButton compact title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} />
+                <CiteButton compact title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} contextUrl={liveLink(article.source) || `${SITE_URL}/articles/${a.slug}`} />
               </div>
             </section>
           </FadeUp>

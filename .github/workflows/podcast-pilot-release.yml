@@ -203,6 +203,13 @@ jobs:
           CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
 
+      - name: Sync published dialogue to realtime CMS
+        if: steps.prepare.outputs.has_work == 'true'
+        run: npm run audio:firestore:sync
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+
       - name: Mark episodes published
         if: steps.prepare.outputs.has_work == 'true'
         run: node scripts/podcast-production-status.mjs --status=published --slugs="$RELEASED_SLUGS" --note="نُشر الحوار المرفوع نفسه بعد إثبات التطابق الحرفي."

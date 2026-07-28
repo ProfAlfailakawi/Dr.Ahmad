@@ -821,7 +821,7 @@ function Editor({
                 </div>
                 {form.status === 'scheduled' && (
                   <div className="mt-4 max-w-sm">
-                    <Field label="موعد النشر" hint="لن يظهر المقال للزوار إلا بعد هذا الوقت، وسيبقى ظاهرًا لك داخل اللوحة.">
+                    <Field label="موعد النشر" hint="لن يظهر المقال للزوار إلا بعد هذا الوقت، وسيبقى ظاهراً لك داخل اللوحة.">
                       <input className={input} dir="ltr" type="datetime-local" value={form.scheduledAt || ''} onChange={(event) => set('scheduledAt', event.target.value)} />
                     </Field>
                   </div>
@@ -931,7 +931,7 @@ function Editor({
                 <h3 className="mt-1 text-lg font-bold text-ink">أدخل الأساسيات وارفع PDF فقط</h3>
                 <p className="mt-2 max-w-2xl text-[.8rem] leading-relaxed text-soft">عند الحفظ يقرأ النظام ملف PDF كاملاً وصفحة المجلة وDOI والبيانات الوصفية، ثم يضع العينة والمنهج والنتائج والكلمات المفتاحية والروابط في مواضعها تلقائياً. لا تحتاج إلى تعبئة الحقول العلمية يدوياً.</p>
                 <div className="mt-5 grid gap-5">
-                  <Field label="الترجمة العربية للعنوان (للأبحاث الإنجليزية)" hint="اتركها فارغة إذا كان العنوان عربيًا.">
+                  <Field label="الترجمة العربية للعنوان (للأبحاث الإنجليزية)" hint="اتركها فارغة إذا كان العنوان عربياً.">
                     <input dir="rtl" className={input} value={form.titleAr || ''} onChange={(event) => set('titleAr', event.target.value)} />
                   </Field>
                   <div className="grid gap-5 sm:grid-cols-2">
@@ -976,7 +976,7 @@ function Editor({
                       </div>
                       {researchAnalysis.conflicts.length > 0 && (
                         <div className="mt-3 rounded-xl border border-accent/25 bg-accent/5 px-3 py-3">
-                          <strong className="text-[.76rem] text-ink">تعارضات تحتاج حسمًا قبل النشر</strong>
+                          <strong className="text-[.76rem] text-ink">تعارضات تحتاج حسماً قبل النشر</strong>
                           {researchAnalysis.conflicts.map((conflict, index) => <p key={`${conflict.field}-${index}`} className="mt-1 text-[.7rem] leading-relaxed text-soft">{conflict.label}: {conflict.detail}</p>)}
                         </div>
                       )}

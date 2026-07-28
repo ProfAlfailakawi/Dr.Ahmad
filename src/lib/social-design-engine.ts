@@ -435,7 +435,7 @@ export interface PlanOverlay {
   width: number
   height: number
   text?: string
-  /** Data URL محلي فقط؛ لا يُرفع تلقائيًا ولا يدخل في فهرس المحتوى. */
+  /** Data URL محلي فقط؛ لا يُرفع تلقائياً ولا يدخل في فهرس المحتوى. */
   src?: string
   name?: string
   /** جواز الصورة: بيانات منشأ وترخيص محلية تبقى مع الطبقة والتصدير. */
@@ -1753,7 +1753,7 @@ const selectVisibleThemeDiversity = (ranked: readonly CompositionPlan[], count: 
 
 export function generateSocialDesigns(request: SocialDesignRequest): SocialDesignResult {
   const analysis = overrideAnalysis(analyzeSocialContent(request.text, request.context, { author: request.author, source: request.source }), request)
-  // لجنة الجودة تعمل دائمًا على ثمانية اتجاهات نهائية داخليًا، ولا تعرض إلا أقوى أربعة.
+  // لجنة الجودة تعمل دائماً على ثمانية اتجاهات نهائية داخلياً، ولا تعرض إلا أقوى أربعة.
   const requestedCount = 8
   const visibleCount = 4
   const seed = String(request.seed ?? `${normalizeArabicForDesign(request.text)}:${analysis.primaryKind}:${analysis.primaryTone}`)

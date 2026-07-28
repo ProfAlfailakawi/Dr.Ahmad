@@ -44,6 +44,8 @@ type LiveTestimonial = {
   createdAt?: { seconds?: number };
 };
 
+type InboxView = "letters" | "threads" | "echoes" | "questions";
+
 type WeeklyQuestion = {
   id: string;
   ar?: string;
@@ -75,7 +77,7 @@ export default function Inbox() {
     title: "رسائل على الهامش",
     path: "/inbox",
     description:
-      "رسائل وأسئلة تتولد تلقائياً من الأرشيف المنشور وتصل إلى الصفحة من النظام الحي.",
+      "رسائل قصيرة وأسئلة تفتح زوايا جديدة على المقالات والأفكار المنشورة.",
   });
   const reduce = useReducedMotion();
   const liveInbox = useExtras<LiveInboxItem>("site_inbox", { realtime: true });
@@ -171,6 +173,16 @@ export default function Inbox() {
      جملُ الدكتور بحرفها من مقالاتها، تمرّ ببوّابة تحققٍ قبل العرض. */
   const { articles, books, papers } = useCmsContent();
   const archiveDialogues = useMemo(() => buildArchiveDialogues(articles, books, papers), [articles, books, papers]);
+  const [activeView, setActiveView] = useState<InboxView>("letters");
+  const inboxTabs: { id: InboxView; label: string; hidden?: boolean }[] = [
+    { id: "letters", label: "الرسائل" },
+    { id: "threads", label: "خيوط الأرشيف", hidden: archiveDialogues.length === 0 },
+    { id: "echoes", label: publicTestimonials.length ? "ماذا قالوا" : "أصداء من المتون" },
+    { id: "questions", label: "الأسئلة" },
+  ].filter((tab) => !tab.hidden);
+  useEffect(() => {
+    if (activeView === "threads" && archiveDialogues.length === 0) setActiveView("letters");
+  }, [activeView, archiveDialogues.length]);
   const [echoes, setEchoes] = useState<VoiceEcho[]>([]);
   useEffect(() => {
     if (publicTestimonials.length || !articles.length) return;
@@ -206,16 +218,35 @@ export default function Inbox() {
       <PageHead
         label="رسائل على الهامش"
         title="رسالةٌ تفتح نافذة."
-        sub="رسائل وأسئلة تتجدد تلقائيًا من الأرشيف والتفاعل المباشر، مع حفظ خصوصية أصحابها."
+        sub="مساحةٌ لرسائل قصيرة وأسئلة تفتح زوايا جديدة على ما يُنشر هنا."
       />
       <div className="border-b border-hair px-6 py-3 md:px-11">
         <p className="mx-auto flex max-w-shell items-center gap-2 text-[.72rem] text-soft">
           <span className="h-2 w-2 rounded-full bg-accent" aria-hidden="true" />{" "}
-          تحديث تلقائي · آخر مزامنة: {updateLabel}
+          آخر إضافة: {updateLabel}
         </p>
       </div>
 
-      {archiveDialogues.length > 0 && (
+      <nav className="border-b border-hair px-6 md:px-11" aria-label="أقسام رسائل على الهامش">
+        <div className="mx-auto max-w-shell overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-w-max items-center gap-1 py-4" role="tablist" aria-label="اختر القسم">
+            {inboxTabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={activeView === tab.id}
+                onClick={() => setActiveView(tab.id)}
+                className={`min-h-11 rounded-full px-5 text-[.82rem] font-semibold transition-colors ${activeView === tab.id ? "bg-accent text-white" : "text-soft hover:bg-wash hover:text-ink"}`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      {activeView === "threads" && archiveDialogues.length > 0 && (
         <section className="border-b border-hair bg-wash/35 px-6 py-14 md:px-11 md:py-20" aria-labelledby="archive-dialogue-title">
           <div className="mx-auto max-w-shell">
             <FadeUp>
@@ -224,7 +255,7 @@ export default function Inbox() {
                   <span className="text-[.72rem] font-bold text-accent">خيوط من الأرشيف</span>
                   <h2 id="archive-dialogue-title" className="mt-2 font-display text-[clamp(1.45rem,3vw,2.25rem)] font-semibold leading-[1.55] text-ink">حين تتجاور المواد، تظهر فكرة جديدة.</h2>
                 </div>
-                <p className="text-[.84rem] font-light leading-[1.9] text-soft">تقرأ هذه البطاقات الصلات بين المواد المنشورة، وتوضح الفرق بين فكرةٍ تُستخلص من مصدر واحد وخلاصةٍ تُبنى من أكثر من مصدر. كل مسار يعيدك إلى أصله العام القابل للفتح، ولا تُقدَّم صياغةٌ مركّبة على أنها قولٌ حرفي للدكتور.</p>
+                <p className="text-[.84rem] font-light leading-[1.9] text-soft">تجمع هذه البطاقات مواد متباعدة حول خيطٍ واحد، لتكشف زاوية جديدة بين المقال والبحث والكتاب.</p>
               </div>
             </FadeUp>
             <div className="archive-dialogue-rail mobile-card-rail mt-8 grid items-stretch gap-5 md:grid-cols-2">
@@ -233,7 +264,7 @@ export default function Inbox() {
                   <article className="flex h-full min-w-0 flex-col overflow-hidden rounded-[1.5rem] border border-hair bg-canvas p-6 shadow-[0_18px_55px_-48px_rgba(21,32,44,.55)] transition hover:border-accent/55">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="rounded-full bg-accent/[.08] px-3 py-1 text-[.66rem] font-bold text-accent">{item.label}</span>
-                      <span className="text-[.63rem] font-semibold text-soft">{item.mode} · ليست اقتباساً حرفياً</span>
+                      <span className="text-[.63rem] font-semibold text-soft">{item.mode}</span>
                     </div>
                     <h3 className="mt-5 font-display text-[1.12rem] font-semibold leading-[1.65] text-ink">{item.title}</h3>
                     <p className="mt-3 flex-1 text-[.86rem] font-light leading-[1.95] text-ink/78">{item.body}</p>
@@ -256,6 +287,7 @@ export default function Inbox() {
       )}
 
       {/* الرسالة الأحدث */}
+      {activeView === "letters" && (
       <section className="border-b border-hair px-6 py-16 md:px-11 md:py-24">
         <div className="mx-auto max-w-shell">
           <FadeUp>
@@ -297,7 +329,7 @@ export default function Inbox() {
           ) : (
             <FadeUp delay={0.06}>
               <div className="mt-8 rounded-[2rem] border border-hair bg-wash p-8 text-soft">
-                لا توجد رسالة حيّة معتمدة الآن. في الأعلى يواصل «خيوط من الأرشيف» كشف صلات موثقة من المواد العامة.
+                لا توجد رسالة معروضة الآن. يمكنك الانتقال إلى خيوط الأرشيف أو الأسئلة من التبويبات أعلاه.
               </div>
             </FadeUp>
           )}
@@ -317,8 +349,10 @@ export default function Inbox() {
           <Pagination page={letterPages.page} pageCount={letterPages.pageCount} onChange={letterPages.setPage} totalItems={letterArchive.length} firstItem={letterPages.firstItem} lastItem={letterPages.lastItem} scrollTargetId="inbox-letters" label="صفحات الرسائل" className="mt-9" />
         </div>
       </section>
+      )}
 
       {/* شهادات حقيقية معتمَدة — أو أصداء من متون الدكتور حين لا توجد */}
+      {activeView === "echoes" && (
       <section className="border-b border-hair px-6 py-16 md:px-11 md:py-20">
         <div className="mx-auto max-w-shell">
           <FadeUp>
@@ -369,8 +403,7 @@ export default function Inbox() {
 
           {!publicTestimonials.length && echoes.length === 0 && (
             <p className="mt-8 rounded-2xl border border-hair bg-wash px-6 py-5 text-[.88rem] font-light text-soft">
-              يختار النظام تلقائيًا أصداءً موثقة من المقالات المنشورة، وتظهر هنا
-              فور اكتمال المزامنة.
+              تظهر هنا أصداءٌ مقتبسة من المقالات المنشورة، بنصّها ومصدرها.
             </p>
           )}
 
@@ -397,8 +430,10 @@ export default function Inbox() {
           </div>
         </div>
       </section>
+      )}
 
       {/* أسئلة تصلني */}
+      {activeView === "questions" && (
       <section className="px-6 py-16 md:px-11 md:py-20">
         <div className="mx-auto max-w-shell">
           <FadeUp>
@@ -424,8 +459,7 @@ export default function Inbox() {
 
           {questions.length === 0 && (
             <p className="mt-9 rounded-2xl border border-hair bg-wash px-6 py-5 text-[.88rem] font-light text-soft">
-              لا يوجد سؤال منشور الآن؛ تُضاف الأسئلة والإجابات تلقائيًا من
-              النظام الحي بعد اعتمادها.
+              لا توجد أسئلة معروضة الآن.
             </p>
           )}
 
@@ -436,6 +470,7 @@ export default function Inbox() {
           </FadeUp>
         </div>
       </section>
+      )}
       {openCard && typeof document !== "undefined" ? createPortal(
         <div className="reader-modal-overlay fixed inset-0 z-[320] flex items-end justify-center bg-ink/35 p-0 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-label={openCard.title} onMouseDown={(event) => { if (event.target === event.currentTarget) setOpenCard(null) }}>
           <article className="max-h-[88dvh] w-full max-w-2xl overflow-y-auto rounded-t-[1.75rem] border border-hair bg-canvas p-6 shadow-2xl sm:rounded-[1.75rem] sm:p-9" tabIndex={-1}>

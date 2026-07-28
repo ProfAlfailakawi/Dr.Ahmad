@@ -115,7 +115,7 @@ export default function CitationImpact() {
             <strong className="font-display text-[clamp(2rem,5vw,3.2rem)] leading-none text-accent">
               {ar(total)}
             </strong>
-            <span className="text-[.85rem] text-soft">استشهادًا موثّقًا</span>
+            <span className="text-[.85rem] text-soft">استشهاداً موثّقاً</span>
             {annualDelta !== null && annualDelta > 0 && (
               <span className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.7rem] text-soft">
                 +{ar(annualDelta)} في أحدث سنة
@@ -124,13 +124,13 @@ export default function CitationImpact() {
           </div>
           <Sparkline points={recentHistory} />
           <p className="mt-3 text-[.68rem] leading-relaxed text-soft">
-            يُحدَّث الرقم تلقائيًا من الملف العام، ويُحفظ تاريخ النمو من دون أي
+            يُحدَّث الرقم تلقائياً من الملف العام، ويُحفظ تاريخ النمو من دون أي
             إدخال يدوي{updated ? ` · آخر تحديث ${updated}` : ""}.
           </p>
         </>
       ) : (
         <p className="mt-5 text-[.8rem] leading-[1.8] text-soft">
-          أُعدّت اللوحة لتُحدَّث تلقائيًا من Google Scholar عند البناء. لا يُعرض
+          أُعدّت اللوحة لتُحدَّث تلقائياً من Google Scholar عند البناء. لا يُعرض
           أي رقم قبل التحقق منه من المصدر.
         </p>
       )}

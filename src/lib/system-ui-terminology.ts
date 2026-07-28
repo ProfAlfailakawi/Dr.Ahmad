@@ -10,7 +10,7 @@ export function systemUiTerminology(value: string) {
     .replace(/بالتقنية/g, 'بالتكنولوجيا')
     .replace(/والتقنية/g, 'والتكنولوجيا')
     .replace(/التقنية/g, 'التكنولوجيا')
-    .replace(/تقني(?:اً|ًا)/g, 'تكنولوجيًا')
+    .replace(/تقني(?:اً|اً)/g, 'تكنولوجياً')
     .replace(/تقنية/g, 'تكنولوجيا')
     .replace(/تقنيّة/g, 'تكنولوجيا')
     .replace(/تقني/g, 'تكنولوجي')

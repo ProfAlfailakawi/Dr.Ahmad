@@ -6,6 +6,7 @@
  *   · كل بطاقة تقود للمصدر الأصلي مباشرة
  * يقرأ من site_radar (المنشور فقط) — يُحدَّث تلقائياً بلا أي رفع.
  */
+import { useState } from "react";
 import { useSeo } from "../components/seo";
 import { FadeUp, Page, PageHead } from "../components/ui";
 import { useExtras } from "../lib/content";
@@ -53,6 +54,35 @@ function weekOf(dayIso: string) {
   };
 }
 
+function RadarCard({ item, index = 0 }: { item: RadarItem; index?: number }) {
+  return (
+    <FadeUp delay={Math.min(index * 0.05, 0.2)}>
+      <a
+        href={item.url}
+        target="_blank"
+        rel="noreferrer"
+        data-hover
+        className="group flex h-full flex-col rounded-2xl border border-hair p-6 transition-colors hover:border-accent"
+      >
+        <span className="text-[.72rem] text-soft">
+          {radarDateArabic(item.day)} · {radarSourceArabic(item.source)}
+        </span>
+        <h4 className="mt-2.5 font-display text-[1.08rem] font-semibold leading-[1.7] text-ink">
+          {item.ar}
+        </h4>
+        {item.arNote && (
+          <p className="mt-1.5 text-[.87rem] font-light leading-[1.85] text-soft">
+            {item.arNote}
+          </p>
+        )}
+        <span className="mt-auto pt-4 text-[.8rem] text-soft transition-colors group-hover:text-accent">
+          اقرأ المادة في مصدرها ←
+        </span>
+      </a>
+    </FadeUp>
+  );
+}
+
 export default function Radar() {
   useSeo({
     title: "أرشيف الرادار",
@@ -81,14 +111,17 @@ export default function Radar() {
   }
 
   const sources = new Set(items.map((i) => i.source));
-  const paged = usePagedList(weeks, 4, String(weeks.length));
+  const years = Array.from(new Set(weeks.map((week) => week.year))).sort((a, b) => b - a);
+  const [year, setYear] = useState<number | "latest">("latest");
+  const visibleWeeks = year === "latest" ? weeks : weeks.filter((week) => week.year === year);
+  const paged = usePagedList(visibleWeeks, 2, `${year}:${visibleWeeks.length}`);
 
   return (
     <Page>
       <PageHead
         label="رادار الشبكة"
         title="أرشيف الرادار."
-        sub="قراءةٌ أسبوعية لما يتغيّر على الشبكة: مواد منتقاة، وعناوين عربية واضحة، ورابط مباشر إلى المصدر الأول لكل مادة."
+        sub="نافذةٌ أسبوعية على أفكار ودراسات ومستجدات تستحق المتابعة."
       />
 
       <section className="px-6 py-14 md:px-11 md:py-16">
@@ -97,7 +130,7 @@ export default function Radar() {
             <FadeUp>
               <div className="rounded-2xl border border-hair bg-wash py-20 text-center">
                 <p className="text-[1.05rem] font-light text-soft">
-                  الرادار يبدأ الالتقاط قريباً — أول التقاطة تظهر هنا تلقائياً.
+                  لا توجد مواد في أرشيف الرادار الآن.
                 </p>
               </div>
             </FadeUp>
@@ -105,9 +138,36 @@ export default function Radar() {
             <>
               <FadeUp>
                 <p className="mb-12 text-[.9rem] text-soft">
-                  {arNum(items.length)} التقاطة · {arNum(sources.size)} مصادر
-                  موثوقة · يُحدَّث تلقائياً كل يوم
+                  {arNum(items.length)} مادة · {arNum(sources.size)} مصادر · الأحدث أولاً
                 </p>
+              </FadeUp>
+
+              <FadeUp delay={0.05}>
+                <div className="mb-10 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="flex min-w-max items-center gap-1.5" role="tablist" aria-label="تصفية أرشيف الرادار حسب السنة">
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={year === "latest"}
+                      onClick={() => setYear("latest")}
+                      className={`min-h-11 rounded-full px-5 text-[.82rem] font-semibold transition-colors ${year === "latest" ? "bg-accent text-white" : "border border-hair text-soft hover:border-accent hover:text-accent"}`}
+                    >
+                      الأحدث
+                    </button>
+                    {years.map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        role="tab"
+                        aria-selected={year === value}
+                        onClick={() => setYear(value)}
+                        className={`min-h-11 rounded-full px-5 text-[.82rem] font-semibold transition-colors ${year === value ? "bg-accent text-white" : "border border-hair text-soft hover:border-accent hover:text-accent"}`}
+                      >
+                        {arNum(value)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </FadeUp>
 
               <div id="radar-weeks" className="scroll-mt-28">
@@ -132,41 +192,27 @@ export default function Radar() {
                     </h3>
                   </FadeUp>
                   <div className="mobile-card-rail grid gap-5 md:grid-cols-2">
-                    {w.items.map((r, i) => (
-                      <FadeUp
-                        key={`${r.url || r.ar || r.day}-${i}`}
-                        delay={Math.min(i * 0.05, 0.2)}
-                      >
-                        <a
-                          href={r.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          data-hover
-                          className="group flex h-full flex-col rounded-2xl border border-hair p-6 transition-colors hover:border-accent"
-                        >
-                          <span className="text-[.72rem] text-soft">
-                            {radarDateArabic(r.day)} ·{" "}
-                            {radarSourceArabic(r.source)}
-                          </span>
-                          <h4 className="mt-2.5 font-display text-[1.08rem] font-semibold leading-[1.7] text-ink">
-                            {r.ar}
-                          </h4>
-                          {r.arNote && (
-                            <p className="mt-1.5 text-[.87rem] font-light leading-[1.85] text-soft">
-                              {r.arNote}
-                            </p>
-                          )}
-                          <span className="mt-auto pt-4 text-[.8rem] text-soft transition-colors group-hover:text-accent">
-                            اقرأ المادة في مصدرها ←
-                          </span>
-                        </a>
-                      </FadeUp>
+                    {w.items.slice(0, 2).map((item, index) => (
+                      <RadarCard key={`${item.url || item.ar || item.day}-${index}`} item={item} index={index} />
                     ))}
                   </div>
+                  {w.items.length > 2 && (
+                    <details className="group mt-5 rounded-2xl border border-hair bg-wash/35 px-5 py-4">
+                      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 text-[.82rem] font-semibold text-accent marker:hidden">
+                        <span>بقية مواد هذا الأسبوع</span>
+                        <span className="text-soft transition-transform group-open:rotate-45" aria-hidden="true">＋</span>
+                      </summary>
+                      <div className="mt-4 grid gap-5 border-t border-hair pt-5 md:grid-cols-2">
+                        {w.items.slice(2).map((item, index) => (
+                          <RadarCard key={`${item.url || item.ar || item.day}-more-${index}`} item={item} index={index} />
+                        ))}
+                      </div>
+                    </details>
+                  )}
                 </div>
               ))}
               </div>
-              <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={weeks.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="radar-weeks" label="صفحات أرشيف الرادار" />
+              <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={visibleWeeks.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="radar-weeks" label="صفحات أرشيف الرادار" />
             </>
           )}
         </div>

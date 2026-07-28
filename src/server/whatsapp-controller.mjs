@@ -3,7 +3,7 @@ import { buildContentIndex } from '../../whatsapp-agent/content-index.mjs'
 
 const SITE_URL = String(process.env.WHATSAPP_SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
 const OWNER_ALERT_FALLBACK = 'وصلت رسالة تحتاج تدخلك البشري. افتح محادثات واتساب من جهازك المرتبط.'
-const HUMAN_ACK = 'وصلتني رسالتك، وتحتاج تأكيدًا بشريًا. سيكمل معك الدكتور أو أحد الفريق بأقرب وقت.'
+const HUMAN_ACK = 'وصلتني رسالتك، وتحتاج تأكيداً بشرياً. سيكمل معك الدكتور أو أحد الفريق بأقرب وقت.'
 const DUPLICATE_ACK = 'وصلتني الرسالة نفسها وهي عندي بالفعل. إذا احتاجت متابعة بشرية سيكمل معك الفريق.'
 const WELCOME = `حياك الله في موقع د. أحمد حسين الفيلكاوي.\n\nالموقع هو المرجع المعتمد للمقالات والكتب والمواد المنشورة:\n${SITE_URL}`
 const BRIDGE_ONLINE_MS = Math.max(30_000, Number(process.env.WHATSAPP_BRIDGE_ONLINE_MS || 90_000))
@@ -487,9 +487,9 @@ function bridgeStatus(data = {}) {
       why: connected
         ? 'جلسة واتساب متصلة والجسر يرسل نبضاته بانتظام.'
         : hasQr
-          ? 'هذا هو أحدث رمز وصل من الجسر، واللوحة تتابع تغيّره لحظيًا.'
+          ? 'هذا هو أحدث رمز وصل من الجسر، واللوحة تتابع تغيّره لحظياً.'
           : staleQr
-            ? 'أُخفي الرمز السابق لأنه لم يعد حديثًا؛ سيظهر الرمز الجديد تلقائيًا.'
+            ? 'أُخفي الرمز السابق لأنه لم يعد حديثاً؛ سيظهر الرمز الجديد تلقائياً.'
             : syncing
               ? `تم ربط الهاتف بنجاح وجاري مزامنة سجل المحادثات (${syncPercent}%).`
               : finishing
@@ -500,13 +500,13 @@ function bridgeStatus(data = {}) {
                     ? 'الجسر يعمل، لكن جلسة واتساب لم تصل إلى حالة الجاهزية بعد.'
                     : 'لم تصل نبضة حديثة من خدمة واتساب.',
       fix: hasQr
-        ? 'ارفع سطوع الشاشة، وافتح من واتساب: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز، ثم امسح الرمز كاملًا داخل الإطار الأبيض.'
+        ? 'ارفع سطوع الشاشة، وافتح من واتساب: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز، ثم امسح الرمز كاملاً داخل الإطار الأبيض.'
         : staleQr
           ? 'لا تمسح الرمز القديم. انتظر ثوانٍ قليلة حتى يظهر الرمز الجديد.'
           : syncing
-            ? 'لا تحتاج لمسح رمز QR جديد. انتظر اكتمال مزامنة المحادثات على الهاتف والجسر تلقائيًا.'
+            ? 'لا تحتاج لمسح رمز QR جديد. انتظر اكتمال مزامنة المحادثات على الهاتف والجسر تلقائياً.'
             : finishing
-              ? 'انتظر لحظات؛ تتحدث اللوحة تلقائيًا عند اكتمال الاتصال.'
+              ? 'انتظر لحظات؛ تتحدث اللوحة تلقائياً عند اكتمال الاتصال.'
               : failed
                 ? 'راجع سجل خدمة whatsapp-bridge، ثم أعد تشغيلها بعد معالجة الخطأ.'
                 : bridgeOnline
@@ -719,7 +719,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
 
         /* تبقى النبضة حديثة حتى لو وصل حدث حالة قديم، لكن لا نسمح لرمز QR
            متأخر — حتى لو حمل رقماً تسلسلياً أحدث — بأن يطغى على جلسة قبلها
-           الهاتف بالفعل. بدء عملية جديدة له instanceId جديد فيُقبل طبيعيًا. */
+           الهاتف بالفعل. بدء عملية جديدة له instanceId جديد فيُقبل طبيعياً. */
         if (staleState || invalidRegression) {
           transaction.set(ref, heartbeatPatch, { merge: true })
           return
@@ -907,7 +907,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     const replyText = bounded(decision.reply, 2_000)
     const replyHash = hash(replyText)
     const safeReply = data.lastReplyHash === replyHash
-      ? 'وصلت فكرتك. حتى لا أكرر الرد، سأترك المتابعة للدكتور إذا احتاج السؤال تأكيدًا.'
+      ? 'وصلت فكرتك. حتى لا أكرر الرد، سأترك المتابعة للدكتور إذا احتاج السؤال تأكيداً.'
       : replyText
 
     if (decision.kind === 'silent') {
@@ -1035,6 +1035,18 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       const commandRef = db.collection(COLLECTIONS.commands).doc(id)
       const commandSnapshot = await commandRef.get()
       const command = serializeDoc(commandSnapshot)
+      if (body.retry === true) {
+        await commandRef.set({
+          status: 'pending',
+          leasedAt: null,
+          completedAt: null,
+          availableAt: new Date(Date.now() + 3_500).toISOString(),
+          error: bounded(body.error, 600) || 'bridge-session-refresh',
+          updatedAt: asIso(),
+        }, { merge: true })
+        sendJson(res, 200, { ok: true, requeued: true })
+        return
+      }
       await commandRef.set({
         status: body.ok === false ? 'failed' : 'completed',
         error: bounded(body.error, 600) || null,
@@ -1187,7 +1199,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       }
       if (current.repairCooldownMs > 0) {
         sendJson(res, 429, {
-          error: 'أوقفت اللوحة تكرار إعادة الربط حتى لا يفرض واتساب حظرًا مؤقتًا جديدًا.',
+          error: 'أوقفت اللوحة تكرار إعادة الربط حتى لا يفرض واتساب حظراً مؤقتاً جديداً.',
           retryAfterMs: current.repairCooldownMs,
           retryAt: current.repairBlockedUntil,
         })
@@ -1637,7 +1649,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     }
 
     if (path === '/learning' && method === 'GET') {
-      sendJson(res, 200, { total: 0, learned: 0, observing: 0, ignored: 0, policy: 'لا يتعلم النظام من محادثات الناس تلقائيًا؛ كل قاعدة تعتمدها أنت صراحة.', items: [] })
+      sendJson(res, 200, { total: 0, learned: 0, observing: 0, ignored: 0, policy: 'لا يتعلم النظام من محادثات الناس تلقائياً؛ كل قاعدة تعتمدها أنت صراحة.', items: [] })
       return
     }
     if (path === '/knowledge' && method === 'GET') {
@@ -1651,7 +1663,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         evidence: { total: index.length, enabled: index.length, lastUpdatedAt: asIso(), domains: [{ domain: new URL(SITE_URL).hostname, total: index.length, enabled: index.length }] },
         conversations: { active: 0, human: 0, intents: [], gaps: [], answers: [] },
         personality: { verbosity: 'brief', dialect: 'kuwaiti-light', initiative: 'none', signature: 'always', memoryConsent: 'explicit' },
-        privacy: 'تُقنّع الأرقام في السجلات، ولا يتعلم البوت من كلام الناس تلقائيًا.',
+        privacy: 'تُقنّع الأرقام في السجلات، ولا يتعلم البوت من كلام الناس تلقائياً.',
       })
       return
     }

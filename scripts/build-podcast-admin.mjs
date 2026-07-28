@@ -80,7 +80,7 @@ function scoreAudioGate({ approved, hasTranscript, byteSize, meta, audit }) {
   const humanOk = metrics.humanLikeness === null ? auditOk
     : metrics.humanLikeness >= 95 && Number(metrics.humanProxy || 0) >= 95
 
-  if (!approved) issues.push('الحلقة ليست معتمدة آليًا في حالة البودكاست.')
+  if (!approved) issues.push('الحلقة ليست معتمدة آلياً في حالة البودكاست.')
   if (!transcriptOk) issues.push('لا يوجد Transcript منشور لهذه الحلقة.')
   if (!auditOk) issues.push('لا يوجد تقرير جودة نهائي مجتاز للحلقة.')
   if (!sttOk) issues.push('تطابق STT مع النص المقصود أقل من الحد الصارم.')

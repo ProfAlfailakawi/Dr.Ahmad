@@ -62,8 +62,8 @@ const JOB_LIMIT = limitArg ? Number(limitArg.slice('--limit='.length)) : Number.
 const voiceArg = process.argv.find((arg) => arg.startsWith('--voice='))
 const ONLY_VOICE = voiceArg ? voiceArg.slice('--voice='.length).trim() : ''
 const MIN_MP3_BYTES = 5_000
-// نورة ليست محذوفة: تعريفها وملفاتها القديمة محفوظة لإعادة تفعيلها مستقبلًا.
-// التشغيل اليومي يستخدم فهد فقط؛ ويمكن تشغيل نورة يدويًا لاحقًا من المحرك
+// نورة ليست محذوفة: تعريفها وملفاتها القديمة محفوظة لإعادة تفعيلها مستقبلاً.
+// التشغيل اليومي يستخدم فهد فقط؛ ويمكن تشغيل نورة يدوياً لاحقاً من المحرك
 // نفسه من دون إعادة بناء Azure أو مسار R2.
 const AVAILABLE_VOICES = [
   { key: 'fahed', azure: READING_VOICES.fahed.azure, suffix: '', label: 'فهد' },

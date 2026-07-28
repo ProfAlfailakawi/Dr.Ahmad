@@ -83,7 +83,7 @@ const EMPTY_KNOWLEDGE: KnowledgeState = {
   modes: [], sourcePolicies: {}, evidence: { total: 0, enabled: 0, lastUpdatedAt: null, domains: [] },
   conversations: { active: 0, human: 0, intents: [], gaps: [], answers: [] },
   personality: DEFAULT_PERSONALITY,
-  privacy: 'تعرض اللوحة أعدادًا مجمعة فقط، من دون نصوص الناس أو أرقامهم.',
+  privacy: 'تعرض اللوحة أعداداً مجمعة فقط، من دون نصوص الناس أو أرقامهم.',
 }
 const AGENT_SCREENS: { id: AgentScreen; label: string; hint: string }[] = [
   { id: 'live', label: 'حي الآن', hint: 'الحالة والتشغيل' },
@@ -108,7 +108,7 @@ const stateLabel: Record<string, string> = {
   disconnected: 'غير متصل',
   reconnecting: 'يعيد الاتصال',
   restarting: 'جارٍ إعادة التشغيل',
-  paused: 'متوقف مؤقتًا',
+  paused: 'متوقف مؤقتاً',
   sending: 'يرسل بعد الاعتماد',
   auth_failure: 'فشل التوثيق — يتطلب مسح الرمز من جديد',
   error: 'يحتاج مراجعة',
@@ -244,7 +244,7 @@ export function WhatsAppAgentPanel() {
 
   /* أثناء الاقتران يتغير رمز واتساب بسرعة، لذلك نفحص الحالة وحدها كل
      ثانيتين بدل تحديث اللوحة الثقيلة كاملة كل 15 ثانية. خارج الاقتران نعود
-     إلى الفحص الهادئ المعتاد. بهذه الطريقة لا يبقى رمز منتهي ظاهرًا للهاتف. */
+     إلى الفحص الهادئ المعتاد. بهذه الطريقة لا يبقى رمز منتهي ظاهراً للهاتف. */
   const fastStatusPolling = Boolean(
     status.health?.needsAuthScan
     || ['pairing', 'authenticated', 'syncing'].includes(String(status.status || '')),
@@ -280,7 +280,7 @@ export function WhatsAppAgentPanel() {
     try {
       const path = status.runtimePaused ? '/admin/agent/resume' : '/admin/agent/pause'
       await request(path, { method: 'POST' })
-      setNotice(status.runtimePaused ? 'عادت الردود الآلية وفق قواعد الأمان.' : 'توقفت كل الردود الآلية فورًا. الاتصال والفهرس مستمران فقط.')
+      setNotice(status.runtimePaused ? 'عادت الردود الآلية وفق قواعد الأمان.' : 'توقفت كل الردود الآلية فوراً. الاتصال والفهرس مستمران فقط.')
       await refresh()
     } catch {
       setNotice('تعذّر تغيير حالة الإيقاف الفوري.')
@@ -291,7 +291,7 @@ export function WhatsAppAgentPanel() {
     setReturning(true)
     try {
       const out = await request<{ returned: number }>('/admin/bot-return-all', { method: 'POST' })
-      setNotice(out.returned ? `✓ أصبح الإيقاظ متاحًا في ${out.returned} محادثة. لن يبدأ الرد إلا بعد جملة الإيقاظ.` : 'لا توجد محادثة مستلمة يدويًا الآن.')
+      setNotice(out.returned ? `✓ أصبح الإيقاظ متاحاً في ${out.returned} محادثة. لن يبدأ الرد إلا بعد جملة الإيقاظ.` : 'لا توجد محادثة مستلمة يدوياً الآن.')
       await loadSilence()
     } catch {
       setNotice('تعذّر إتاحة الإيقاظ — تأكّد أن الجسر يعمل على السيرفر المخصص.')
@@ -299,7 +299,7 @@ export function WhatsAppAgentPanel() {
   }
 
   const restartBridge = async () => {
-    if (!status.bridgeOnline) return setNotice('خدمة الحراسة لا تصل إلى الجسر الآن. ستعيده تلقائيًا عند عودة الخادم أو الإنترنت؛ لا تحذف الجلسة.')
+    if (!status.bridgeOnline) return setNotice('خدمة الحراسة لا تصل إلى الجسر الآن. ستعيده تلقائياً عند عودة الخادم أو الإنترنت؛ لا تحذف الجلسة.')
     setRestarting(true)
     try {
       await request('/admin/restart', { method: 'POST', body: JSON.stringify({ confirm: true }) })
@@ -328,16 +328,16 @@ export function WhatsAppAgentPanel() {
       setNotice('لا يمكن إعادة الربط والجسر متوقف. انتظر عودة خدمة الحراسة ثم حدّث الحالة.')
       return
     }
-    if (!window.confirm('هذا الإجراء يمسح جلسة واتساب المحفوظة ويولّد QR جديدًا. استخدمه فقط إذا فشل الإصلاح الآمن أو ظهرت حالة «فشل التوثيق». هل تتابع؟')) return
+    if (!window.confirm('هذا الإجراء يمسح جلسة واتساب المحفوظة ويولّد QR جديداً. استخدمه فقط إذا فشل الإصلاح الآمن أو ظهرت حالة «فشل التوثيق». هل تتابع؟')) return
     setRepairing(true)
     try {
       await request('/admin/repair', { method: 'POST', body: JSON.stringify({ confirm: true }) })
-      setNotice('بدأت إعادة الربط من الصفر. سيظهر QR جديد هنا تلقائيًا؛ امسحه من الهاتف.')
+      setNotice('بدأت إعادة الربط من الصفر. سيظهر QR جديد هنا تلقائياً؛ امسحه من الهاتف.')
       window.setTimeout(() => void refresh(), 4500)
     } catch (error) {
       setNotice(error instanceof Error && error.message
         ? error.message
-        : 'تعذّر إرسال طلب إعادة الربط. جرّب الإصلاح الآمن أولًا ثم حدّث الحالة.')
+        : 'تعذّر إرسال طلب إعادة الربط. جرّب الإصلاح الآمن أولاً ثم حدّث الحالة.')
     } finally {
       setRepairing(false)
     }
@@ -345,12 +345,12 @@ export function WhatsAppAgentPanel() {
 
   const manualTakeover = async () => {
     if (!manualJid.trim()) return setNotice('اكتب JID المحادثة من واتساب، مثال: 965XXXXXXXX@s.whatsapp.net')
-    try { await request('/admin/manual-takeover', { method: 'POST', body: JSON.stringify({ jid: manualJid }) }); setNotice('تم استلام المحادثة يدويًا. توقف البوت فورًا ولن يعود إلا بجملة الإيقاظ.'); await refresh() } catch { setNotice('تعذّر تفعيل الاستلام اليدوي.') }
+    try { await request('/admin/manual-takeover', { method: 'POST', body: JSON.stringify({ jid: manualJid }) }); setNotice('تم استلام المحادثة يدوياً. توقف البوت فوراً ولن يعود إلا بجملة الإيقاظ.'); await refresh() } catch { setNotice('تعذّر تفعيل الاستلام اليدوي.') }
   }
 
   const returnBot = async () => {
-    if (!manualJid.trim()) return setNotice('اكتب JID المحادثة أولًا.')
-    try { await request('/admin/bot-return', { method: 'POST', body: JSON.stringify({ jid: manualJid }) }); setNotice('أصبح الإيقاظ متاحًا لهذه المحادثة. لن يرد البوت حتى تُكتب جملة الإيقاظ.'); await refresh() } catch { setNotice('تعذّر إتاحة الإيقاظ لهذه المحادثة.') }
+    if (!manualJid.trim()) return setNotice('اكتب JID المحادثة أولاً.')
+    try { await request('/admin/bot-return', { method: 'POST', body: JSON.stringify({ jid: manualJid }) }); setNotice('أصبح الإيقاظ متاحاً لهذه المحادثة. لن يرد البوت حتى تُكتب جملة الإيقاظ.'); await refresh() } catch { setNotice('تعذّر إتاحة الإيقاظ لهذه المحادثة.') }
   }
 
   const editRule = (rule: ReplyRule) => setRuleForm({ ...rule })
@@ -480,7 +480,7 @@ export function WhatsAppAgentPanel() {
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">الأدلة المعتمدة</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.evidence.enabled}</p><p className="text-[.7rem] text-soft">من أصل {knowledge.evidence.total}</p></article>
             <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">جلسات محمية</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.conversations.active}</p><p className="text-[.7rem] text-soft">من دون عرض نصوصها</p></article>
-            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">فجوات تحتاج مادة</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.conversations.gaps.reduce((sum, item) => sum + item.total, 0)}</p><p className="text-[.7rem] text-soft">مصنّفة موضوعيًا بلا نصوص شخصية</p></article>
+            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">فجوات تحتاج مادة</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.conversations.gaps.reduce((sum, item) => sum + item.total, 0)}</p><p className="text-[.7rem] text-soft">مصنّفة موضوعياً بلا نصوص شخصية</p></article>
           </div>
           <div className="mt-5 grid gap-3 lg:grid-cols-5">
             {knowledge.modes.map((mode, index) => (
@@ -521,7 +521,7 @@ export function WhatsAppAgentPanel() {
           <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">تعرض اللوحة النية ودرجة الفهم ومكان انقطاع الحوار فقط، من دون الرسائل أو الأرقام أو الأسماء.</p>
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
             <div className="rounded-2xl border border-hair bg-canvas p-4">
-              <h3 className="text-[.86rem] font-semibold text-ink">أكثر النيات ورودًا</h3>
+              <h3 className="text-[.86rem] font-semibold text-ink">أكثر النيات وروداً</h3>
               <div className="mt-3 grid gap-2">
                 {!knowledge.conversations.intents.length && <p className="text-[.74rem] text-soft">لا توجد بيانات بعد.</p>}
                 {knowledge.conversations.intents.slice(0, 12).map((item) => (
@@ -571,7 +571,7 @@ export function WhatsAppAgentPanel() {
             </label>
             <label className="grid gap-2 text-[.76rem] font-semibold text-ink">التوقيع الآلي
               <select className={`${input} cursor-not-allowed opacity-80`} value="always" disabled aria-describedby="bot-signature-safety">
-                <option value="always">دائمًا — حماية ثابتة</option>
+                <option value="always">دائماً — حماية ثابتة</option>
               </select>
               <span id="bot-signature-safety" className="text-[.64rem] font-normal leading-relaxed text-soft">لا يمكن تعطيله حتى لا يُفهم الرد الآلي على أنه صادر من الدكتور.</span>
             </label>
@@ -587,7 +587,7 @@ export function WhatsAppAgentPanel() {
         <section className={card}>
           <p className="text-[.7rem] font-bold uppercase tracking-[.14em] text-accent">حماية المصادر</p>
           <h2 className="mt-1 font-display text-2xl font-semibold text-ink">المصدر قبل الجواب.</h2>
-          <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">أي رابط خارجي يظل ممنوعًا حتى يُسجل هنا بدليله، ثم يطابق الحارس المعرّف والرابط والاقتباس والادعاء حرفيًا قبل الإرسال.</p>
+          <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">أي رابط خارجي يظل ممنوعاً حتى يُسجل هنا بدليله، ثم يطابق الحارس المعرّف والرابط والاقتباس والادعاء حرفياً قبل الإرسال.</p>
           <div className="mt-5 grid gap-3 lg:grid-cols-4">
             {Object.entries(knowledge.sourcePolicies).map(([domain, policies]) => (
               <article key={domain} className="rounded-2xl border border-hair bg-canvas p-4">
@@ -599,7 +599,7 @@ export function WhatsAppAgentPanel() {
           <div className="mt-5 grid gap-4 xl:grid-cols-[.9fr_1.1fr]">
             <div className="rounded-2xl border border-hair bg-canvas p-4">
               <h3 className="text-[.88rem] font-semibold text-ink">اعتماد دليل خارجي</h3>
-              <p className="mt-1 text-[.7rem] leading-relaxed text-soft">لا يجلب النظام مصدرًا بنفسه ولا يفترض ترخيصه؛ أنت تعتمد السجل، والحارس يقيّد استخدامه بالصياغة المحفوظة.</p>
+              <p className="mt-1 text-[.7rem] leading-relaxed text-soft">لا يجلب النظام مصدراً بنفسه ولا يفترض ترخيصه؛ أنت تعتمد السجل، والحارس يقيّد استخدامه بالصياغة المحفوظة.</p>
               <div className="mt-4 grid gap-3">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <select className={input} value={evidenceForm.domain} onChange={(event) => setEvidenceForm((current) => ({ ...current, domain: event.target.value }))}><option value="education">التعليم</option><option value="health">الصحة</option><option value="law">القانون</option><option value="current">حديث ومتغير</option></select>
@@ -617,7 +617,7 @@ export function WhatsAppAgentPanel() {
             <div className="rounded-2xl border border-hair bg-canvas p-4">
               <div className="flex items-center justify-between gap-3"><h3 className="text-[.88rem] font-semibold text-ink">سجل الأدلة</h3><span className="rounded-full border border-hair px-3 py-1 text-[.68rem] text-soft">{knowledge.evidence.enabled} معتمد</span></div>
               <div className="mt-4 grid max-h-[38rem] gap-2 overflow-y-auto pl-1">
-                {!trustedEvidence.length && <p className="rounded-xl border border-dashed border-hair p-5 text-center text-[.74rem] text-soft">لا توجد أدلة خارجية بعد؛ لذلك يرفض وضع البحث الموثق التخمين تلقائيًا.</p>}
+                {!trustedEvidence.length && <p className="rounded-xl border border-dashed border-hair p-5 text-center text-[.74rem] text-soft">لا توجد أدلة خارجية بعد؛ لذلك يرفض وضع البحث الموثق التخمين تلقائياً.</p>}
                 {trustedEvidence.map((item) => (
                   <article key={item.id} className="rounded-xl border border-hair p-3">
                     <div className="flex items-start justify-between gap-3"><div><p className="text-[.78rem] font-semibold text-ink">{item.title}</p><p className="mt-1 text-[.66rem] text-soft">{item.sourceName} · {item.domain}</p></div><span className={`rounded-full px-2 py-1 text-[.62rem] ${item.enabled ? 'bg-accent/10 text-accent' : 'border border-hair text-soft'}`}>{item.enabled ? 'معتمد' : 'موقوف'}</span></div>
@@ -645,7 +645,7 @@ export function WhatsAppAgentPanel() {
                 {status.health?.label || stateLabel[String(status.status)] || 'غير مرتبط'}
               </span>
             </h2>
-            <p className="mt-2 max-w-2xl text-[.82rem] leading-relaxed text-soft">تُدار خدمة الاتصال والجلسة على الخادم المخصص، بعيدًا عن المتصفح وGitHub.</p>
+            <p className="mt-2 max-w-2xl text-[.82rem] leading-relaxed text-soft">تُدار خدمة الاتصال والجلسة على الخادم المخصص، بعيداً عن المتصفح وGitHub.</p>
           </div>
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">＋</span>
         </summary>
@@ -653,7 +653,7 @@ export function WhatsAppAgentPanel() {
         <div className="mt-5 border-t border-hair pt-5">
           <div className="flex flex-wrap justify-end gap-2">
             <button type="button" onClick={() => void recoverBridge()} disabled={restarting || repairing} className={primary}>
-              {restarting ? 'جارٍ الإصلاح…' : status.health?.needsAuthScan ? 'QR جاهز للمسح' : status.health?.ready ? 'الاتصال سليم' : 'إصلاح الاتصال تلقائيًا'}
+              {restarting ? 'جارٍ الإصلاح…' : status.health?.needsAuthScan ? 'QR جاهز للمسح' : status.health?.ready ? 'الاتصال سليم' : 'إصلاح الاتصال تلقائياً'}
             </button>
             <button type="button" onClick={() => void refresh()} disabled={busy} className={secondary}>{busy ? '…' : 'تحديث الحالة'}</button>
           </div>
@@ -666,13 +666,13 @@ export function WhatsAppAgentPanel() {
             </div>
           )}
           {status.health?.ready && (
-            <p className="mt-4 text-[.78rem] text-soft">متصل وصامت افتراضيًا · لا يبدأ إلا بعد كلمة الإيقاظ{status.health.silenced ? ` · أُغلق في ${status.health.silenced} محادثة بعد تدخل يدوي` : ''}</p>
+            <p className="mt-4 text-[.78rem] text-soft">متصل وصامت افتراضياً · لا يبدأ إلا بعد كلمة الإيقاظ{status.health.silenced ? ` · أُغلق في ${status.health.silenced} محادثة بعد تدخل يدوي` : ''}</p>
           )}
 
           {status.qrImage && !status.health?.ready && (
             <div className="mt-4 rounded-2xl border border-accent/35 bg-canvas p-4 sm:p-5">
               <p className="text-[.82rem] font-semibold text-ink">اربط واتساب</p>
-              <p className="mt-1 text-[.74rem] leading-relaxed text-soft">من الجوال: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز، ثم اجعل الرمز كاملًا داخل إطار الكاميرا. امسحه مرة واحدة فقط؛ إذا رفض الهاتف الربط فاتركه حتى تنتهي مهلة الحماية ولا تكرر المسح.</p>
+              <p className="mt-1 text-[.74rem] leading-relaxed text-soft">من الجوال: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز، ثم اجعل الرمز كاملاً داخل إطار الكاميرا. امسحه مرة واحدة فقط؛ إذا رفض الهاتف الربط فاتركه حتى تنتهي مهلة الحماية ولا تكرر المسح.</p>
               <div className="mx-auto mt-4 flex w-fit max-w-full justify-center overflow-hidden rounded-2xl bg-white p-3 sm:p-4">
                 <img
                   key={status.qrFingerprint || status.qrUpdatedAt || 'whatsapp-qr'}
@@ -686,7 +686,7 @@ export function WhatsAppAgentPanel() {
                 />
               </div>
               <p className="mt-3 text-center text-[.7rem] leading-relaxed text-soft">
-                الرمز يتحدّث تلقائيًا كل ثانيتين أثناء الربط{status.qrAgeMs != null ? ` · عمر الرمز ${ageLabel(status.qrAgeMs)}` : ''}.
+                الرمز يتحدّث تلقائياً كل ثانيتين أثناء الربط{status.qrAgeMs != null ? ` · عمر الرمز ${ageLabel(status.qrAgeMs)}` : ''}.
               </p>
             </div>
           )}
@@ -709,15 +709,15 @@ export function WhatsAppAgentPanel() {
           <div className="rounded-xl border border-hair bg-canvas px-4 py-3">
             <p className="text-[.8rem] font-semibold text-ink">اتصال مركزي — لا يعتمد على هذا المتصفح</p>
             <p className="mt-1 text-[.72rem] leading-relaxed text-soft">
-              الجسر نسخة مقيمة مستقلة عن مجلد المشروع، والجلسة في مخزن دائم على الماك. تحديث الموقع أو فك ZIP لا يمسحها، وLaunchAgent يعيدها تلقائيًا بعد الانهيار أو إعادة التشغيل.
+              الجسر نسخة مقيمة مستقلة عن مجلد المشروع، والجلسة في مخزن دائم على الماك. تحديث الموقع أو فك ZIP لا يمسحها، وLaunchAgent يعيدها تلقائياً بعد الانهيار أو إعادة التشغيل.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => void toggleEmergencyPause()} disabled={!status.bridgeOnline} className={`rounded-full border px-4 py-2 text-[.8rem] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${status.runtimePaused ? 'border-accent bg-accent text-white' : 'border-red-300/70 bg-red-50 text-red-700 hover:border-red-500'}`}>{status.runtimePaused ? 'تشغيل الردود' : 'إيقاف الردود فورًا'}</button>
-            <button type="button" onClick={() => void recoverBridge()} disabled={restarting || repairing} className={status.health?.ready ? secondary : primary}>{restarting ? 'جارٍ الإصلاح' : 'إصلاح الاتصال تلقائيًا'}</button>
+            <button type="button" onClick={() => void toggleEmergencyPause()} disabled={!status.bridgeOnline} className={`rounded-full border px-4 py-2 text-[.8rem] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${status.runtimePaused ? 'border-accent bg-accent text-white' : 'border-red-300/70 bg-red-50 text-red-700 hover:border-red-500'}`}>{status.runtimePaused ? 'تشغيل الردود' : 'إيقاف الردود فوراً'}</button>
+            <button type="button" onClick={() => void recoverBridge()} disabled={restarting || repairing} className={status.health?.ready ? secondary : primary}>{restarting ? 'جارٍ الإصلاح' : 'إصلاح الاتصال تلقائياً'}</button>
             <button type="button" onClick={() => void repairSession()} disabled={repairing || restarting || !status.bridgeOnline || status.repairAllowed === false} className={secondary}>
               {repairing
-                ? 'يجهّز QR جديدًا…'
+                ? 'يجهّز QR جديداً…'
                 : status.repairCooldownMs && status.repairCooldownMs > 0
                   ? `حماية إعادة الربط · ${ageLabel(status.repairCooldownMs)}`
                   : 'إعادة ربط من الصفر'}
@@ -735,23 +735,23 @@ export function WhatsAppAgentPanel() {
           {silence.silenced > 0 && (
             <p className="mt-2 text-[.76rem] leading-relaxed text-accent">
               البوت صامتٌ الآن في {silence.silenced === 1 ? 'محادثة واحدة' : `${silence.silenced} محادثات`}
-              لأنك رددتَ فيها بيدك. لن يعود تلقائيًا؛ زر «اسمح بالإيقاظ» ينهي الاستلام اليدوي فقط، وبعده يظل صامتًا حتى يكتب الشخص جملة الإيقاظ.
+              لأنك رددتَ فيها بيدك. لن يعود تلقائياً؛ زر «اسمح بالإيقاظ» ينهي الاستلام اليدوي فقط، وبعده يظل صامتاً حتى يكتب الشخص جملة الإيقاظ.
             </p>
           )}
         </div>
         <div className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-soft">
-          البوت صامت افتراضيًا حتى يكتب الشخص «موقع د. أحمد» أو «موقع د. الفيلكاوي». بعدها فقط يجيب في تلك المحادثة من فهرس الموقع والقواعد المعتمدة بلا تأليف، وأي رسالة تكتبها أنت بيدك تغلق جلسته فورًا بلا عودة تلقائية.
-          القوائم ودفتر الأرقام والبث اليدوي مستقلة تمامًا: لا تُرسل شيئًا إلا بأمرك، وبعد معاينة على رقمك وتأكيدين صريحين وفاصل هادئ بين الرسائل.
+          البوت صامت افتراضياً حتى يكتب الشخص «موقع د. أحمد» أو «موقع د. الفيلكاوي». بعدها فقط يجيب في تلك المحادثة من فهرس الموقع والقواعد المعتمدة بلا تأليف، وأي رسالة تكتبها أنت بيدك تغلق جلسته فوراً بلا عودة تلقائية.
+          القوائم ودفتر الأرقام والبث اليدوي مستقلة تماماً: لا تُرسل شيئاً إلا بأمرك، وبعد معاينة على رقمك وتأكيدين صريحين وفاصل هادئ بين الرسائل.
           لا تحية ولا سؤال ولا قاعدة محفوظة تتجاوز كلمة الإيقاظ، ولا يعمل البوت في مجموعة أو حالة أو قناة.
         </div>
         <details className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3">
-          <summary className="cursor-pointer list-none text-[.82rem] font-semibold text-ink">اشتريت هاتفًا جديدًا؟ طريقة النقل الآمنة</summary>
+          <summary className="cursor-pointer list-none text-[.82rem] font-semibold text-ink">اشتريت هاتفاً جديداً؟ طريقة النقل الآمنة</summary>
           <ol className="mt-3 grid list-decimal gap-2 pr-5 text-[.76rem] leading-relaxed text-soft">
-            <li>انقل حساب واتساب إلى الهاتف الجديد بنفس الرقم، وأكمل استعادة المحادثات داخل تطبيق واتساب أولًا.</li>
-            <li>افتح في الهاتف الجديد: الإعدادات ← الأجهزة المرتبطة. إذا بقي «Google Chrome (macOS)» ظاهرًا فلا تفعل شيئًا؛ الجسر يستمر تلقائيًا.</li>
-            <li>إذا اختفى الجهاز فقط، افتح هذه اللوحة واضغط «إصلاح الاتصال تلقائيًا». لا تمسح الجلسة ولا تكرر QR.</li>
+            <li>انقل حساب واتساب إلى الهاتف الجديد بنفس الرقم، وأكمل استعادة المحادثات داخل تطبيق واتساب أولاً.</li>
+            <li>افتح في الهاتف الجديد: الإعدادات ← الأجهزة المرتبطة. إذا بقي «Google Chrome (macOS)» ظاهراً فلا تفعل شيئاً؛ الجسر يستمر تلقائياً.</li>
+            <li>إذا اختفى الجهاز فقط، افتح هذه اللوحة واضغط «إصلاح الاتصال تلقائياً». لا تمسح الجلسة ولا تكرر QR.</li>
             <li>إذا ظهر QR في اللوحة، امسحه مرة واحدة من الهاتف الجديد وانتظر حتى تصبح الحالة «جاهز».</li>
-            <li>استخدم «إعادة ربط من الصفر» فقط إذا كتبت اللوحة «فشل التوثيق»؛ فهذا الخيار يمسح الجلسة القديمة عمدًا.</li>
+            <li>استخدم «إعادة ربط من الصفر» فقط إذا كتبت اللوحة «فشل التوثيق»؛ فهذا الخيار يمسح الجلسة القديمة عمداً.</li>
           </ol>
         </details>
         {status.last_error && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.8rem] text-soft">{status.last_error}</p>}
@@ -805,7 +805,7 @@ export function WhatsAppAgentPanel() {
             <div>
               <p className="text-[.7rem] font-bold uppercase tracking-[.16em] text-accent">ذاكرة اللهجة · منضبطة</p>
               <h3 className="mt-1 font-display text-xl font-semibold text-ink">ذاكرة اللهجة الحيّة</h3>
-              <p className="mt-1 max-w-2xl text-[.78rem] leading-relaxed text-soft">يتعلم من الصياغات الكويتية والعربية التي لم يفهمها، لكن لا يخترع جوابًا: يحفظ النية فقط بعد تكرار مؤكد، ثم يجيب من فهرس الموقع كالمعتاد.</p>
+              <p className="mt-1 max-w-2xl text-[.78rem] leading-relaxed text-soft">يتعلم من الصياغات الكويتية والعربية التي لم يفهمها، لكن لا يخترع جواباً: يحفظ النية فقط بعد تكرار مؤكد، ثم يجيب من فهرس الموقع كالمعتاد.</p>
             </div>
             <div className="flex items-center gap-2">
               <span className="rounded-full border border-hair px-3 py-1 text-[.7rem] text-soft">{learning.learned} تعلّمها</span>

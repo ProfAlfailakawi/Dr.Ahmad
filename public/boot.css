@@ -1,0 +1,4 @@
+html, body { background: #FCFCFA; }
+html.dark, html.dark body { background: #111215; }
+html.js #seo-fallback { display: none !important; }
+#root:empty { min-height: 100svh; }

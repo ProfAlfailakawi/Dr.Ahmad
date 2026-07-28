@@ -10,18 +10,8 @@ export type AdminAuthState = {
 }
 
 
-const DEFAULT_OWNER_EMAILS = ['ah_f@hotmail.com']
-const OWNER_EMAILS = new Set(
-  [...DEFAULT_OWNER_EMAILS, ...String(import.meta.env.VITE_OWNER_EMAILS || '').split(',')]
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean),
-)
-
 export function isOwnerIdentity(user: User | null, claims: Record<string, unknown> = {}) {
-  if (!user) return false
-  if (claims.admin === true) return true
-  const email = String(user.email || claims.email || '').trim().toLowerCase()
-  return Boolean(email && OWNER_EMAILS.has(email))
+  return Boolean(user && claims.admin === true)
 }
 
 const initialState: AdminAuthState = {
@@ -69,12 +59,8 @@ async function startAdminAuth() {
           return
         }
 
-        const ownerByEmail = isOwnerIdentity(user)
-        emit({ user, isAdmin: ownerByEmail, loading: !ownerByEmail, error: null })
-        if (ownerByEmail) {
-          try { localStorage.setItem('pwa:owner-device', '1') } catch { /* private mode */ }
-          return
-        }
+        // الحساب الإداري الوحيد لا يُقبل بالعنوان البريدي؛ الصلاحية تأتي من custom claim موثّق فقط.
+        emit({ user, isAdmin: false, loading: true, error: null })
         try {
           const token = await getIdTokenResult(user)
           if (version !== authVersion) return
@@ -117,11 +103,6 @@ export function useAdminAuth() {
     if (!user) return false
 
     const version = ++authVersion
-    if (isOwnerIdentity(user)) {
-      try { localStorage.setItem('pwa:owner-device', '1') } catch { /* private mode */ }
-      emit({ user, isAdmin: true, loading: false, error: null })
-      return true
-    }
     emit({ ...state, loading: true, error: null })
     try {
       const { getIdTokenResult } = await import('firebase/auth')

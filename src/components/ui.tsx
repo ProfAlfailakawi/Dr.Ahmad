@@ -260,7 +260,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { to: '/cv', label: 'السيرة الأكاديمية' },
       { to: '/media', label: 'الظهور الإعلامي' },
-      { to: '/decade', label: 'وثيقة العقد', description: 'حصاد عشر سنوات' },
+      { to: '/decade', label: 'وثيقة العقد', description: 'أكثر من عشر سنوات' },
     ],
   },
 ]

@@ -470,6 +470,11 @@ export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUna
   const mean = pauses.length ? pauses.reduce((sum, value) => sum + value, 0) / pauses.length : 0
   const pauseVariance = pauses.length ? pauses.reduce((sum, value) => sum + (value - mean) ** 2, 0) / pauses.length : 0
   const sttRatio = sttComparisons.length ? Math.min(...sttComparisons.map((item) => Number(item.importantRatio || 0))) : 0
+  const nonQuestionUnits = units.filter((unit) => {
+    const raw = String(unit.sourceText || unit.text || '')
+    return !raw.includes('؟') && (unit.type || unit.delivery || unit.deliveryType) !== 'question'
+  }).length
+  const achievableEndingKinds = nonQuestionUnits === 0 ? 1 : nonQuestionUnits === 1 ? 2 : 3
   /* كم فئةَ وقفةٍ تسمح بها أنواع الإلقاء الحاضرة؟ (الفئة ٤٠ مللي) */
   const PAUSE_BANDS = { statement: [200, 320], question: [500, 750], briefReaction: [150, 240],
     gentleObjection: [180, 280], clarification: [200, 320], reflection: [650, 900],
@@ -500,7 +505,9 @@ export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUna
       Math.min(6, Math.max(3, Math.floor(units.length / 5))),
       Math.max(2, achievablePauseBuckets - 1),   // لا نطلب كل فئةٍ ممكنة: التوزيع الطبيعي لا يبلغ الكمال
     ) && Math.sqrt(pauseVariance) >= Math.min(55, achievablePauseSd),
-    endingVariation: endings.size >= (dialogue ? 3 : 2),
+    endingVariation: endings.size >= (manualText
+      ? Math.min(dialogue ? 3 : 2, achievableEndingKinds)
+      : (dialogue ? 3 : 2)),
     /* السؤال المقتبس ليس سؤالاً يُطرح: «ليس ﴿كم حصلت؟﴾ فقط، بل ﴿ماذا تعلمت
        عن نفسك؟﴾» جملةٌ خبرية تنقل سؤالاً، ونبرتُها خبرية لا استفهامية. كانت
        البوابة تُلزمها بنبرة السؤال فتُعزل الحلقة كلها — وتصنيفُ الكاتب أصحّ

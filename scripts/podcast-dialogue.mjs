@@ -933,6 +933,28 @@ function normalizeManualMechanicsExact(sc) {
       musicBridgeAfter: Boolean(utterance.musicBridgeAfter),
     }
   })
+  /* حقول النهاية أداءٌ صوتي وليست من نص الدكتور. كان الحوار المقفول يصل
+     سليماً إلى آخر 38/38 مداخلة ثم يُعزل لأن كل الأخبار بقيت neutral.
+     نضمن النهايات الثلاث الممكنة بلا تغيير حرف أو متحدث أو ترتيب: سؤال
+     مفتوح، مداخلة وسطية تدعو للدخول، وخاتمة مغلقة. */
+  if (sc.utterances.length >= 3) {
+    const nonQuestions = sc.utterances
+      .map((utterance, index) => ({ utterance, index }))
+      .filter(({ utterance }) => !String(utterance.text || '').includes('؟'))
+    const endingKinds = () => new Set(sc.utterances.map((utterance) => utterance.ending).filter(Boolean))
+    const finalEntry = nonQuestions.at(-1)
+    if (finalEntry) finalEntry.utterance.ending = 'final'
+    if (!endingKinds().has('open')) {
+      const openEntry = nonQuestions.find(({ index }) => index > 0 && index < sc.utterances.length - 1)
+        || nonQuestions.find(({ utterance }) => utterance !== finalEntry?.utterance)
+      if (openEntry) openEntry.utterance.ending = 'open'
+    }
+    if (!endingKinds().has('neutral')) {
+      const neutralEntry = nonQuestions.find(({ utterance }) => !['open', 'final'].includes(utterance.ending))
+        || nonQuestions.find(({ utterance }) => utterance !== finalEntry?.utterance && utterance.ending !== 'open')
+      if (neutralEntry) neutralEntry.utterance.ending = 'neutral'
+    }
+  }
   return sc
 }
 
@@ -3810,6 +3832,18 @@ if (SELF_TEST) {
     'الوضع اليدوي المقفول ممنوع أن يدمج أو يضيف أو يحذف مداخلة')
   assert.deepEqual(exactNormalized.utterances.map((utterance) => utterance.speaker), ['A', 'B'],
     'الوضع اليدوي المقفول يحافظ على المتحدثين والترتيب')
+  const exactEndingFixture = { utterances: [
+    { speaker: 'A', text: 'هذه بداية هادئة.', delivery: 'statement' },
+    { speaker: 'B', text: 'وهذه متابعة للفكرة.', delivery: 'statement' },
+    { speaker: 'A', text: 'فكيف نقرأ أثرها؟', delivery: 'question' },
+    { speaker: 'B', text: 'وهذه خاتمة الحوار.', delivery: 'conclusion' },
+  ] }
+  const exactEndingTexts = exactEndingFixture.utterances.map((utterance) => utterance.text)
+  const exactEndingNormalized = normalizeManualMechanicsExact(structuredClone(exactEndingFixture))
+  assert.deepEqual(exactEndingNormalized.utterances.map((utterance) => utterance.text), exactEndingTexts,
+    'تنويع النهاية الأدائية لا يغيّر نص الحوار المقفول')
+  assert.equal(new Set(exactEndingNormalized.utterances.map((utterance) => utterance.ending)).size, 3,
+    'الحوار اليدوي يضمن النهايات الأدائية الثلاث الممكنة قبل TTS')
   const normalizedSample = normalizeMechanics(structuredClone(sampleFixture))
   const speechPolish = normalizeMechanics({ utterances: [{ speaker: 'A', delivery: 'reflection',
     text: 'إن علمناه أن هذا الرقم هو الحقيقة الكاملة، سيقرأ الورقة كحكم نهائي على قيمته.' },

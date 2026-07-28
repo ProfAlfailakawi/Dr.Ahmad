@@ -38,7 +38,9 @@
     "sha256": "fc1ff7486df160c66eac516470d53e82ea39e410673070040a3658c0ca622a05",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-28T15:28:56.413Z",
-    "durationSeconds": 204
+    "durationSeconds": 204,
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-07-28T15:34:28.976Z"
   },
   "a-generation-without-rootsarabic.mp3": {
     "durationSeconds": 235,
@@ -119,7 +121,9 @@
     "sha256": "8a9939c4e07cea989b3c7379abc91a010b0a58139cc71d27c62fb2e24e8c8cf2",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-28T15:28:56.466Z",
-    "durationSeconds": 204
+    "durationSeconds": 204,
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-07-28T15:34:30.383Z"
   },
   "alternative-plans-for-distance-education.mp3": {
     "bytes": 2937461,

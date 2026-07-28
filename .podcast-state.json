@@ -39,8 +39,8 @@
  "totalCount": 2,
  "pilotGate": {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-28T12:14:56.556Z",
-  "pipelineHash": "4256af407517034e",
+  "generatedAt": "2026-07-28T15:39:59.978Z",
+  "pipelineHash": "f2602c5220522d6e",
   "required": 3,
   "passed": 0,
   "failed": 3,
@@ -70,16 +70,16 @@
  },
  "failures": {
   "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m": {
-   "attempts": 1,
-   "lastFailedAt": "2026-07-28T12:14:44.279Z"
+   "attempts": 2,
+   "lastFailedAt": "2026-07-28T15:39:48.090Z"
   },
   "the-return-that-fails-to-fix-what-came-before-itarabic": {
-   "attempts": 1,
-   "lastFailedAt": "2026-07-28T12:14:51.381Z"
+   "attempts": 2,
+   "lastFailedAt": "2026-07-28T15:39:54.410Z"
   },
   "when-the-teacher-knows-why-he-teachesarabic": {
-   "attempts": 1,
-   "lastFailedAt": "2026-07-28T12:14:56.556Z"
+   "attempts": 2,
+   "lastFailedAt": "2026-07-28T15:39:59.978Z"
   }
  }
 }

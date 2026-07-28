@@ -236,10 +236,10 @@ function siteResultReply(items) {
 
 export function decideGroundedResponse({ text, hasMedia = false, rules = [], priorReplyHash = '' } = {}) {
   const clean = normalizeArabicMessage(text)
-  if (hasMedia) return { kind: 'escalate', reason: 'media', reply: HUMAN_ACK }
-  if (!clean) return { kind: 'escalate', reason: 'empty-after-normalization', reply: HUMAN_ACK }
+  if (hasMedia) return { kind: 'silent', reason: 'media' }
+  if (!clean) return { kind: 'silent', reason: 'empty-after-normalization' }
   if (HUMAN_PATTERNS.some((pattern) => pattern.test(clean))) {
-    return { kind: 'escalate', reason: 'human-request', reply: HUMAN_ACK }
+    return { kind: 'silent', reason: 'human-request' }
   }
 
   const rule = findRuleMatch(text, rules)
@@ -247,7 +247,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     if (rule.actionType === 'transfer') return { kind: 'escalate', reason: `rule:${rule.id}`, reply: bounded(rule.responseText, 1_500) || HUMAN_ACK, rule }
     if (rule.actionType === 'site-content') {
       const found = exactSiteResults(text, rule.contentQuery)
-      if (!found.length) return { kind: 'escalate', reason: `rule-no-grounding:${rule.id}`, reply: HUMAN_ACK, rule }
+      if (!found.length) return { kind: 'silent', reason: `rule-no-grounding:${rule.id}`, rule }
       return { kind: 'reply', reason: `rule:${rule.id}`, reply: siteResultReply(found), rule, evidence: found.map((item) => item.id) }
     }
     const response = bounded(rule.responseText, 2_000)
@@ -261,9 +261,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
   const found = exactSiteResults(text)
   if (found.length) return { kind: 'reply', reason: 'site-index', reply: siteResultReply(found), evidence: found.map((item) => item.id) }
 
-  const fallback = { kind: 'escalate', reason: 'no-grounded-answer', reply: HUMAN_ACK }
-  if (priorReplyHash && hash(fallback.reply) === priorReplyHash) fallback.reply = 'سؤالك يحتاج تأكيدًا من الدكتور. تم تحويل المحادثة له ولن أضيف جوابًا غير موثّق.'
-  return fallback
+  return { kind: 'silent', reason: 'no-grounded-answer', priorReplyHash }
 }
 
 function safeEqualSecret(actual, expected) {
@@ -421,7 +419,10 @@ export function isInvalidBridgeRegression(current = {}, incomingInstanceId = '',
   const currentStatus = bounded(current?.status, 40)
   const incomingStatus = bounded(nextStatus, 40)
   const progressed = current?.connected === true || ['syncing', 'authenticated', 'connected'].includes(currentStatus)
-  return progressed && ['starting', 'pairing'].includes(incomingStatus)
+  return progressed && (
+    ['starting', 'pairing'].includes(incomingStatus)
+    || (current?.connected === true && ['authenticated', 'syncing'].includes(incomingStatus))
+  )
 }
 
 function bridgeStatus(data = {}) {
@@ -830,9 +831,9 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     const lastInboundAt = Date.parse(data.lastInboundAt || '')
     const duplicate = data.lastIncomingHash === incomingHash && Number.isFinite(lastInboundAt) && Date.now() - lastInboundAt < 10 * 60_000
     const manualUntil = Date.parse(data.manualUntil || data.autoResumeAt || '')
-    const manualActive = data.mode === 'human' && (
-      data.needsHuman === true || (Number.isFinite(manualUntil) && manualUntil > Date.now())
-    )
+    const timedManualActive = data.mode === 'human' && Number.isFinite(manualUntil) && manualUntil > Date.now()
+    const wakePhrase = isWhatsAppWakePhrase(text)
+    const legacyNeedsHuman = data.mode === 'human' && data.needsHuman === true
 
     const basePatch = {
       jid,
@@ -843,7 +844,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       updatedAt: now,
     }
 
-    if (manualActive) {
+    if (timedManualActive || (legacyNeedsHuman && !wakePhrase)) {
       await ref.set(basePatch, { merge: true })
       sendJson(res, 200, { ok: true, action: 'none', reason: 'human-takeover' })
       return
@@ -853,7 +854,6 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
        يفتح الباب. وحدها الجملة المنشورة «موقع د. أحمد/الفيلكاوي» تفتح جلسة
        هذه المحادثة. وعندما يكتب الدكتور بيده يرسل الجسر event=manual فيغلقها
        فوراً، ولا يوجد مؤقت يعيد البوت من تلقاء نفسه. */
-    const wakePhrase = isWhatsAppWakePhrase(text)
     const wakeActive = data.wakeActive === true && Number(data.wakeVersion || 0) >= 1
     if (!wakePhrase && !wakeActive) {
       await ref.set({ ...basePatch, mode: 'silent', wakeActive: false, wakeVersion: 1 }, { merge: true })
@@ -905,6 +905,33 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     const safeReply = data.lastReplyHash === replyHash
       ? 'وصلت فكرتك. حتى لا أكرر الرد، سأترك المتابعة للدكتور إذا احتاج السؤال تأكيدًا.'
       : replyText
+
+    if (decision.kind === 'silent') {
+      const eventId = randomUUID()
+      await Promise.all([
+        ref.set({
+          ...basePatch,
+          mode: 'bot',
+          wakeActive: true,
+          wakeVersion: 1,
+          needsHuman: true,
+          escalationReason: decision.reason,
+          escalatedAt: now,
+        }, { merge: true }),
+        db.collection(COLLECTIONS.events).doc(eventId).set({
+          id: eventId,
+          conversationId: ref.id,
+          masked: maskJid(jid),
+          reason: decision.reason,
+          status: 'open',
+          silent: true,
+          createdAt: now,
+          updatedAt: now,
+        }),
+      ])
+      sendJson(res, 200, { ok: true, action: 'none', reason: decision.reason, needsHuman: true })
+      return
+    }
 
     if (decision.kind === 'escalate') {
       const eventId = randomUUID()

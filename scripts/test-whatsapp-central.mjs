@@ -4,6 +4,7 @@ import {
   findRuleMatch,
   normalizeArabicMessage,
   isWhatsAppWakePhrase,
+  isInvalidBridgeRegression,
   stripArabicGreetings,
   whatsappPolicy,
 } from '../src/server/whatsapp-controller.mjs'
@@ -18,6 +19,8 @@ assert.equal(isWhatsAppWakePhrase('مَوْقِع د. الفيلكاوي؟'), tr
 for (const phrase of ['السلام عليكم', 'آخر مقالة', 'اسأل الدكتور', 'موقع أحمد', 'لا تفتح موقع د أحمد']) {
   assert.equal(isWhatsAppWakePhrase(phrase), false, `${phrase} must not wake the bot`)
 }
+assert.equal(isInvalidBridgeRegression({ instanceId: 'one', connected: true, status: 'connected' }, 'one', 'syncing'), true)
+assert.equal(isInvalidBridgeRegression({ instanceId: 'one', connected: true, status: 'connected' }, 'two', 'syncing'), false)
 
 const controllerSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../src/server/whatsapp-controller.mjs', import.meta.url), 'utf8'))
 assert.match(controllerSource, /runtime-resume/)
@@ -39,11 +42,11 @@ assert.equal(findRuleMatch('هلا، مواعيد الدوم شنو؟', rules)?.
 assert.equal(decideGroundedResponse({ text: 'مواعيد الدوام', rules }).reply, rules[0].responseText)
 
 const media = decideGroundedResponse({ text: 'شوف الملف', hasMedia: true })
-assert.equal(media.kind, 'escalate')
+assert.equal(media.kind, 'silent')
 assert.equal(media.reason, 'media')
 
 const human = decideGroundedResponse({ text: 'أبي أكلم موظف' })
-assert.equal(human.kind, 'escalate')
+assert.equal(human.kind, 'silent')
 assert.equal(human.reason, 'human-request')
 
 const price = decideGroundedResponse({ text: 'أبي قائمة الأسعار' })
@@ -52,7 +55,7 @@ assert.match(price.reply, /dr-alfailakawi\.com/)
 assert.doesNotMatch(price.reply, /\d+\s*(?:د\.ك|دينار)/)
 
 const unknown = decideGroundedResponse({ text: 'كم يبلغ مخزون منتج غير موجود إطلاقًا؟' })
-assert.equal(unknown.kind, 'escalate')
+assert.equal(unknown.kind, 'silent')
 assert.equal(unknown.reason, 'no-grounded-answer')
 
 const archive = decideGroundedResponse({ text: 'الذكاء الاصطناعي في التعليم' })

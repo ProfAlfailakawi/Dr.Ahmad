@@ -235,8 +235,13 @@ const client = new Client({
 client.on('loading_screen', async (percent, message) => {
   runtime.syncPercent = percent
   runtime.lastActivityAt = Date.now()
-  const snapshot = transitionState('syncing', false, '', { percent, message })
-  log('info', 'loading_screen', { percent, message, stateSeq: snapshot.stateSeq })
+  /* WhatsApp Web 2026 may emit loading_screen(99) after ready. Downgrading the
+     already-ready client to syncing=false made the panel show a false outage
+     and encouraged destructive re-pairing. Preserve connected once ready. */
+  const snapshot = runtime.connected
+    ? stateSnapshot({ percent, message })
+    : transitionState('syncing', false, '', { percent, message })
+  log('info', runtime.connected ? 'late_loading_screen_ignored' : 'loading_screen', { percent, message, stateSeq: snapshot.stateSeq })
   await safeEmit('status', snapshot)
 })
 

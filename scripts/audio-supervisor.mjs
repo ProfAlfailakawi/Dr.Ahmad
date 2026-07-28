@@ -74,14 +74,11 @@ function buildSnapshot(root = ROOT, now = new Date()) {
 
   for (const slug of slugs) {
     const declaration = manifest[slug] || {}
-    const voices = {}
-    for (const voice of ['fahed', 'noura']) {
-      const fileName = voice === 'fahed' ? `${slug}.mp3` : `${slug}.noura.mp3`
-      const ready = Boolean(declaration[voice]) && validMeta(meta[fileName])
-      const failure = failedByKey.get(`${slug}:${voice}`) || null
-      voices[voice] = { ready, fileName, failure }
-      if (!ready) queue.push({ slug, title: titles[slug] || slug, kind: 'reading', voice, stage: failure?.stage || 'generate', attempts: Number(failure?.attempts || 0), lastError: failure?.message || '' })
-    }
+    const fileName = `${slug}.mp3`
+    const ready = Boolean(declaration.fahed) && validMeta(meta[fileName])
+    const failure = failedByKey.get(`${slug}:fahed`) || null
+    const voices = { fahed: { ready, fileName, failure } }
+    if (!ready) queue.push({ slug, title: titles[slug] || slug, kind: 'reading', voice: 'fahed', stage: failure?.stage || 'generate', attempts: Number(failure?.attempts || 0), lastError: failure?.message || '' })
     const dialogueEligible = dialogueSlugs.has(slug)
     const dialogueFile = `${slug}.dialogue.mp3`
     const dialogueReady = dialogueEligible && Boolean(declaration.dialogue) && validMeta(meta[dialogueFile])
@@ -92,14 +89,14 @@ function buildSnapshot(root = ROOT, now = new Date()) {
       title: titles[slug] || slug,
       readings: voices,
       dialogue: { eligible: dialogueEligible, ready: dialogueReady, fileName: dialogueFile, failure: dialogueFailure },
-      complete: voices.fahed.ready && voices.noura.ready && (!dialogueEligible || dialogueReady),
+      complete: voices.fahed.ready && (!dialogueEligible || dialogueReady),
     })
   }
 
   /* الجديد والسليم أولاً؛ المتعثر ذو المحاولات الكثيرة لا يأكل كل دفعة. */
   queue.sort((left, right) => (left.attempts - right.attempts) || left.slug.localeCompare(right.slug) || left.voice.localeCompare(right.voice))
-  const readingExpected = slugs.length * 2
-  const readingReady = items.reduce((sum, item) => sum + Number(item.readings.fahed.ready) + Number(item.readings.noura.ready), 0)
+  const readingExpected = slugs.length
+  const readingReady = items.reduce((sum, item) => sum + Number(item.readings.fahed.ready), 0)
   const dialogueExpected = items.filter((item) => item.dialogue.eligible).length
   const dialogueReady = items.filter((item) => item.dialogue.ready).length
   const failed = queue.filter((item) => item.lastError)
@@ -151,22 +148,21 @@ function selfTest() {
   fs.mkdirSync(path.join(temp, 'manual-dialogues'), { recursive: true })
   fs.writeFileSync(path.join(temp, 'src/data.ts'), "export const articles = [\n{ slug: 'a', title: 'أ' },\n{ slug: 'b', title: 'ب' },\n]\n")
   atomicJson(path.join(temp, 'src/data/bodies.json'), { a: 'نص', b: 'نص' })
-  atomicJson(path.join(temp, 'src/data/audio.json'), { a: { fahed: true, noura: true, dialogue: true }, b: { fahed: true } })
+  atomicJson(path.join(temp, 'src/data/audio.json'), { a: { fahed: true, dialogue: true }, b: { fahed: true } })
   atomicJson(path.join(temp, 'src/data/audio-meta.json'), {
     'a.mp3': { bytes: 6000, durationSeconds: 10, sha256: 'x' },
-    'a.noura.mp3': { bytes: 6000, durationSeconds: 10, sha256: 'x' },
     'a.dialogue.mp3': { bytes: 6000, durationSeconds: 12, sha256: 'x' },
     'b.mp3': { bytes: 6000, durationSeconds: 10, sha256: 'x' },
   })
   fs.writeFileSync(path.join(temp, 'podcast-audits/dialogues/a.txt'), 'حوار')
   fs.writeFileSync(path.join(temp, 'manual-dialogues/b.json'), '[]')
-  atomicJson(path.join(temp, '.audio-failures.json'), { items: [{ slug: 'b', voice: 'noura', stage: 'generate', attempts: 2, message: 'temporary' }] })
+  atomicJson(path.join(temp, '.audio-failures.json'), { items: [{ slug: 'b', voice: 'dialogue', stage: 'generate', attempts: 2, message: 'temporary' }] })
   const snapshot = buildSnapshot(temp, new Date('2026-07-22T00:00:00Z'))
-  assert.equal(snapshot.readings.expected, 4)
-  assert.equal(snapshot.readings.ready, 3)
+  assert.equal(snapshot.readings.expected, 2)
+  assert.equal(snapshot.readings.ready, 2)
   assert.equal(snapshot.dialogues.expected, 2)
   assert.equal(snapshot.dialogues.ready, 1)
-  assert.equal(snapshot.queue.total, 2)
+  assert.equal(snapshot.queue.total, 1)
   assert.equal(snapshot.queue.failed, 1)
   assert.equal(snapshot.articles.complete, 1)
   assert.match(snapshot.fingerprint, /^[a-f0-9]{64}$/)

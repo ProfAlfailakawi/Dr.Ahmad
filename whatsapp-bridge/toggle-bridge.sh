@@ -13,7 +13,11 @@ if [ -f "$DIR/.env" ]; then
 fi
 
 export WHATSAPP_MAIN_SERVER_URL="${WHATSAPP_MAIN_SERVER_URL:-https://dr-alfailakawi.com}"
-export WHATSAPP_BRIDGE_SECRET="${WHATSAPP_BRIDGE_SECRET:-REDACTED}"
+if [ -z "${WHATSAPP_BRIDGE_SECRET:-}" ] || [ "${#WHATSAPP_BRIDGE_SECRET}" -lt 24 ]; then
+  echo "WHATSAPP_BRIDGE_SECRET is required in whatsapp-bridge/.env (at least 24 characters)." >&2
+  exit 1
+fi
+export WHATSAPP_BRIDGE_SECRET
 export WHATSAPP_BRIDGE_DEVICE_ID="${WHATSAPP_BRIDGE_DEVICE_ID:-primary}"
 
 # Keep LocalAuth outside the downloaded project. Replacing, renaming or moving

@@ -13,7 +13,7 @@ const deviceId = String(process.env.WHATSAPP_BRIDGE_DEVICE_ID || process.env.WHA
 
 const config = Object.freeze({
   serverUrl: String(process.env.WHATSAPP_MAIN_SERVER_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, ''),
-  secret: String(process.env.WHATSAPP_BRIDGE_SECRET || 'REDACTED'),
+  secret: String(process.env.WHATSAPP_BRIDGE_SECRET || ''),
   sessionDir: resolve(String(process.env.WHATSAPP_SESSION_DIR || './session')),
   deviceId,
   clientId: deviceId,
@@ -51,6 +51,7 @@ const runtime = {
   authAcceptedAt: null,
   readyAt: null,
   lastSocketState: null,
+  selfRecoveryRequested: false,
 }
 
 const PROGRESSIVE_STATES = Object.freeze({
@@ -539,12 +540,36 @@ async function probeConnectionState() {
       if (!readyHandled && browserState.wwebjsInjected && client.info?.wid) {
         markBridgeReady('watchdog_verified_injection')
       }
+      const authenticatedAt = Date.parse(runtime.authAcceptedAt || runtime.stateAt || '')
+      const stuckAuthenticatedMs = Number.isFinite(authenticatedAt) ? Date.now() - authenticatedAt : 0
+      if (!readyHandled && stuckAuthenticatedMs >= 4 * 60_000 && !runtime.selfRecoveryRequested) {
+        runtime.selfRecoveryRequested = true
+        shuttingDown = true
+        log('warn', 'watchdog_restart_stuck_authenticated', { stuckAuthenticatedMs, socketState })
+        await safeEmit('status', transitionState('restarting', false, 'watchdog_stuck_authenticated'), { retries: 0 })
+        await safeGracefulCloseClient()
+        process.exit(75)
+      }
       return
     }
 
     if (runtime.connected && ['CONFLICT', 'UNPAIRED_IDLE', 'TIMEOUT'].includes(socketState)) {
       const snapshot = transitionState('reconnecting', false, socketState.toLowerCase())
       if (snapshot.transitionApplied) await safeEmit('status', snapshot, { retries: 0 })
+    }
+    const stalledAt = Date.parse(runtime.stateAt || '')
+    const stalledMs = Number.isFinite(stalledAt) ? Date.now() - stalledAt : 0
+    if (
+      ['reconnecting', 'syncing', 'authenticated'].includes(runtime.status)
+      && stalledMs >= 4 * 60_000
+      && !runtime.selfRecoveryRequested
+    ) {
+      runtime.selfRecoveryRequested = true
+      shuttingDown = true
+      log('warn', 'watchdog_restart_stalled_connection', { stalledMs, socketState, status: runtime.status })
+      await safeEmit('status', transitionState('restarting', false, 'watchdog_stalled_connection'), { retries: 0 })
+      await safeGracefulCloseClient()
+      process.exit(75)
     }
   } catch (error) {
     log('warn', 'connection_watchdog_probe_failed', { error: String(error?.message || error) })

@@ -140,6 +140,7 @@ export function WhatsAppAgentPanel() {
   const [status, setStatus] = useState<AgentStatus>({ status: 'unconfigured' })
   const [busy, setBusy] = useState(false)
   const [restarting, setRestarting] = useState(false)
+  const [repairing, setRepairing] = useState(false)
   const [notice, setNotice] = useState('')
   const [manualJid, setManualJid] = useState('')
   const [rules, setRules] = useState<ReplyRule[]>([])
@@ -294,15 +295,45 @@ export function WhatsAppAgentPanel() {
   }
 
   const restartBridge = async () => {
-    if (!status.bridgeOnline) return setNotice('زر إعادة التشغيل لا يصل للجسر إذا كان الماك مطفأ أو الإنترنت/الجسر متوقفًا.')
+    if (!status.bridgeOnline) return setNotice('خدمة الحراسة لا تصل إلى الجسر الآن. ستعيده تلقائيًا عند عودة الخادم أو الإنترنت؛ لا تحذف الجلسة.')
     setRestarting(true)
     try {
       await request('/admin/restart', { method: 'POST', body: JSON.stringify({ confirm: true }) })
-      setNotice('أرسلت طلب إعادة التشغيل. launchd سيعيد الوكيل تلقائيًا بلا QR إذا الجلسة محفوظة.')
+      setNotice('أُرسل الإصلاح الآمن. ستعيد خدمة الحراسة تشغيل واتساب مع إبقاء الجلسة المحفوظة.')
       setTimeout(() => void refresh(), 4500)
     } catch {
       setRestarting(false)
       setNotice('تعذّر إرسال طلب إعادة التشغيل للجسر.')
+    }
+  }
+
+  const recoverBridge = async () => {
+    if (status.health?.ready) {
+      setNotice('الاتصال سليم الآن والبوت جاهز. لا حاجة إلى إصلاح.')
+      return
+    }
+    if (status.health?.needsAuthScan || status.qrImage) {
+      setNotice('الخدمة سليمة وتنتظر مصادقة الهاتف فقط: امسح رمز QR الظاهر أعلاه مرة واحدة، ولا تستخدم إعادة الربط.')
+      return
+    }
+    await restartBridge()
+  }
+
+  const repairSession = async () => {
+    if (!status.bridgeOnline) {
+      setNotice('لا يمكن إعادة الربط والجسر متوقف. انتظر عودة خدمة الحراسة ثم حدّث الحالة.')
+      return
+    }
+    if (!window.confirm('هذا الإجراء يمسح جلسة واتساب المحفوظة ويولّد QR جديدًا. استخدمه فقط إذا فشل الإصلاح الآمن أو ظهرت حالة «فشل التوثيق». هل تتابع؟')) return
+    setRepairing(true)
+    try {
+      await request('/admin/repair', { method: 'POST', body: JSON.stringify({ confirm: true }) })
+      setNotice('بدأت إعادة الربط من الصفر. سيظهر QR جديد هنا تلقائيًا؛ امسحه من الهاتف.')
+      window.setTimeout(() => void refresh(), 4500)
+    } catch {
+      setNotice('تعذّر إرسال طلب إعادة الربط. جرّب الإصلاح الآمن أولًا ثم حدّث الحالة.')
+    } finally {
+      setRepairing(false)
     }
   }
 
@@ -614,7 +645,10 @@ export function WhatsAppAgentPanel() {
         </summary>
 
         <div className="mt-5 border-t border-hair pt-5">
-          <div className="flex justify-end">
+          <div className="flex flex-wrap justify-end gap-2">
+            <button type="button" onClick={() => void recoverBridge()} disabled={restarting || repairing} className={primary}>
+              {restarting ? 'جارٍ الإصلاح…' : status.health?.needsAuthScan ? 'QR جاهز للمسح' : status.health?.ready ? 'الاتصال سليم' : 'إصلاح الاتصال تلقائيًا'}
+            </button>
             <button type="button" onClick={() => void refresh()} disabled={busy} className={secondary}>{busy ? '…' : 'تحديث الحالة'}</button>
           </div>
 
@@ -674,7 +708,8 @@ export function WhatsAppAgentPanel() {
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => void toggleEmergencyPause()} disabled={!status.bridgeOnline} className={`rounded-full border px-4 py-2 text-[.8rem] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${status.runtimePaused ? 'border-accent bg-accent text-white' : 'border-red-300/70 bg-red-50 text-red-700 hover:border-red-500'}`}>{status.runtimePaused ? 'تشغيل الردود' : 'إيقاف الردود فورًا'}</button>
-            <button type="button" onClick={() => void restartBridge()} disabled={restarting || !status.bridgeOnline} className={secondary}>{restarting ? 'جارٍ إعادة التشغيل' : 'إعادة تشغيل واتساب'}</button>
+            <button type="button" onClick={() => void recoverBridge()} disabled={restarting || repairing} className={status.health?.ready ? secondary : primary}>{restarting ? 'جارٍ الإصلاح' : 'إصلاح الاتصال تلقائيًا'}</button>
+            <button type="button" onClick={() => void repairSession()} disabled={repairing || restarting || !status.bridgeOnline} className={secondary}>{repairing ? 'يجهّز QR جديدًا…' : 'إعادة ربط من الصفر'}</button>
             <button
               type="button"
               onClick={() => void returnBotNow()}

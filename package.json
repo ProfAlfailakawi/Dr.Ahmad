@@ -108,7 +108,7 @@
     "idea-life:self-test": "node scripts/idea-life-sync.mjs --self-test",
     "audio:supervisor": "node scripts/audio-supervisor.mjs --write",
     "audio:supervisor:self-test": "node scripts/audio-supervisor.mjs --self-test",
-    "studio-image:self-test": "node scripts/test-studio-image-generation.mjs",
+    "studio-image:self-test": "node scripts/test-studio-image-generation.mjs && node scripts/test-studio-ui-contract.mjs",
     "studio-image:route:self-test": "node scripts/test-studio-image-route.mjs",
     "studio-image:configure": "bash scripts/configure-cloudflare-workers-ai.sh",
     "studio-image:deploy-self-test": "node scripts/test-cloudflare-deploy-fallback.mjs"

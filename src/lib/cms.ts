@@ -186,8 +186,10 @@ function audioVoices(value: unknown): ArticleAudio | undefined {
   if (!isObject(value)) return undefined
   const valid = (entry: unknown): AudioValue | undefined =>
     typeof entry === 'boolean' || typeof entry === 'string' ? entry : undefined
-  const result = { fahed: valid(value.fahed), noura: valid(value.noura), dialogue: valid(value.dialogue) }
-  return result.fahed || result.noura || result.dialogue ? result : undefined
+  // نحتفظ بنورة في النوع للتوافق مع السجلات القديمة فقط، لكن لا نُدخلها إلى
+  // حالة المقال الفعلية. صوت نورة معتمد في البودكاست الحواري وحده.
+  const result = { fahed: valid(value.fahed), dialogue: valid(value.dialogue) }
+  return result.fahed || result.dialogue ? result : undefined
 }
 
 function audioControlValue(value: unknown): ArticleAudioControl | undefined {
@@ -240,7 +242,6 @@ function buildArticle(value: Record<string, unknown>, cms: CmsMeta): ArticleReco
     year: stringValue(value.iso).slice(0, 4),
     hasAudio: Boolean(
       (!(audioControl?.fahedDisabled ?? audioControl?.readingDisabled ?? false) && audio?.fahed)
-      || (!(audioControl?.nouraDisabled ?? audioControl?.readingDisabled ?? false) && audio?.noura)
       || (!audioControl?.dialogueDisabled && audio?.dialogue)
     ),
     missing: !body,

@@ -3106,12 +3106,12 @@ export function createRequestHandler({
       const mode = boundedString(body?.mode, 20)
       const action = boundedString(body?.action, 20)
       if (!/^[a-z0-9-]+$/.test(slug)) throw new HttpError(400, 'slug غير صالح')
-      if (!['fahed', 'noura', 'dialogue', 'reading'].includes(mode)) throw new HttpError(400, 'نوع الصوت غير صالح')
+      if (!['fahed', 'dialogue', 'reading'].includes(mode)) throw new HttpError(400, 'نوع الصوت غير صالح')
       if (!['clear', 'regenerate'].includes(action)) throw new HttpError(400, 'أمر الصوت غير صالح')
 
       const { db, FieldValue } = await getAdminFirestore()
       const requestId = `audio-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`
-      const title = mode === 'fahed' ? 'صوت فهد' : mode === 'noura' ? 'صوت نورة' : mode === 'dialogue' ? 'الحوار' : 'القراءتين'
+      const title = mode === 'dialogue' ? 'الحوار' : 'صوت فهد'
       await setArticleAudioControl({
         db, FieldValue, slug, mode,
         status: action === 'clear' ? 'clearing' : 'requested',
@@ -3125,15 +3125,15 @@ export function createRequestHandler({
         if (action === 'clear') {
           workflow = String(process.env.AUDIO_CLEAR_GITHUB_WORKFLOW || 'admin-audio-clear.yml').trim()
           await dispatchAdminWorkflow({ workflow, inputs: { slug, mode } })
-        } else if (mode === 'fahed' || mode === 'noura' || mode === 'reading') {
+        } else if (mode === 'fahed' || mode === 'reading') {
           workflow = String(process.env.AUDIO_READING_GITHUB_WORKFLOW || 'auto-audio-r2.yml').trim()
           await dispatchAdminWorkflow({
             workflow,
             inputs: {
               slug,
-              limit: mode === 'reading' ? '2' : '1',
+              limit: '1',
               force: 'true',
-              voice: mode === 'reading' ? 'all' : mode,
+              voice: 'fahed',
             },
           })
         } else {

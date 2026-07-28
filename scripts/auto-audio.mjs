@@ -64,12 +64,11 @@ const ONLY_VOICE = voiceArg ? voiceArg.slice('--voice='.length).trim() : ''
 const MIN_MP3_BYTES = 5_000
 const ALL_VOICES = [
   { key: 'fahed', azure: READING_VOICES.fahed.azure, suffix: '', label: 'فهد' },
-  { key: 'noura', azure: READING_VOICES.noura.azure, suffix: '.noura', label: 'نورة' },
 ]
 const VOICES = ONLY_VOICE ? ALL_VOICES.filter((voice) => voice.key === ONLY_VOICE) : ALL_VOICES
 
 if (!(JOB_LIMIT > 0)) throw new Error('--limit يجب أن يكون رقماً موجباً')
-if (ONLY_VOICE && !['fahed', 'noura'].includes(ONLY_VOICE)) throw new Error('--voice يجب أن يكون fahed أو noura')
+if (ONLY_VOICE && ONLY_VOICE !== 'fahed') throw new Error('--voice يجب أن يكون fahed لقراءة المقالات')
 if (FORCE_REGENERATE && !ONLY_SLUG) throw new Error('--force يتطلب --slug حتى لا يعيد توليد الأرشيف كله')
 
 function loadEnvironment() {
@@ -644,7 +643,7 @@ async function processSiteArticles(articles, budget) {
       if (exists) audio[voice.key] = USE_R2 ? publicAudioUrl(fileName) : storageObjectUrl(objectName)
     }
     if (!DRY_RUN && Object.keys(audio).length
-      && (audio.fahed !== article.currentAudio.fahed || audio.noura !== article.currentAudio.noura)) {
+      && audio.fahed !== article.currentAudio.fahed) {
       if (USE_R2) pendingByDocument.set(article.documentName, {
         documentName: article.documentName,
         slug: article.slug,

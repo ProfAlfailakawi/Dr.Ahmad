@@ -22,7 +22,8 @@ const FORCE = args.has('--force')
 const MAX_ARTICLES = Number(process.env.IDEA_LIFE_MAX_ARTICLES || 14)
 const MAX_PAPERS = Number(process.env.IDEA_LIFE_MAX_PAPERS || 10)
 const STALE_DAYS = Number(process.env.IDEA_LIFE_STALE_DAYS || 14)
-const SITE_HOSTS = new Set(['dr-alfailakawi.com', 'www.dr-alfailakawi.com'])
+const OFFICIAL_SITE_HOST = 'dr-alfailakawi.com'
+const SITE_HOSTS = new Set([OFFICIAL_SITE_HOST, `www.${OFFICIAL_SITE_HOST}`])
 
 try { process.loadEnvFile(resolve(ROOT, '.env')) } catch { /* optional */ }
 

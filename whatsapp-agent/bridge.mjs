@@ -49,7 +49,9 @@ function route(method, pathname, pattern) {
 
 export function startLocalBridge(agent, { port = BRIDGE_PORT } = {}) {
   const configuredOrigins = String(process.env.WHATSAPP_AGENT_ALLOWED_ORIGIN || '').split(',').map((item) => item.trim()).filter(Boolean)
-  const allowedOrigins = new Set(configuredOrigins.length ? configuredOrigins : ['http://127.0.0.1:5173', 'http://localhost:5173', 'https://dr-alfailakawi.com', 'https://www.dr-alfailakawi.com'])
+  const officialOrigin = 'https://dr-alfailakawi.com'
+  const officialHost = new URL(officialOrigin).hostname
+  const allowedOrigins = new Set(configuredOrigins.length ? configuredOrigins : ['http://127.0.0.1:5173', 'http://localhost:5173', officialOrigin, `https://www.${officialHost}`])
   const secret = agent.bridgeSecret()
   const pairingBootstrapSecret = String(process.env.WHATSAPP_AGENT_PAIRING_SECRET || '').trim()
   if (pairingBootstrapSecret && pairingBootstrapSecret.length < PAIRING_SECRET_MIN_LENGTH) {

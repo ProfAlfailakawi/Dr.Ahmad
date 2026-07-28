@@ -13,6 +13,10 @@ assert.equal(whatsappPolicy.manualTakeoverMinutes, 30)
 assert.equal(whatsappPolicy.zeroHallucination, true)
 assert.equal(whatsappPolicy.paidAiApis, false)
 
+const controllerSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../src/server/whatsapp-controller.mjs', import.meta.url), 'utf8'))
+assert.match(controllerSource, /runtime-resume/)
+assert.match(controllerSource, /\\d\{5,30\}.*s\\\.whatsapp\\\.net/)
+
 const rules = [{
   id: 'hours',
   name: 'الدوام',

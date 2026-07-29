@@ -14,11 +14,33 @@
  * والبطاقة تظهر من أول لحظة لا بعد «الاعتماد» — فالاعتماد خطوةٌ في الطريق،
  * لا بابٌ يُخفي الطريق كلّه حتى تعبره.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 type List = { id: string; name: string; note?: string; kind?: string; count?: number }
 type Preview = { samples: { name: string; body: string }[]; willSend: number; suppressed: number }
 type Episode = { slug: string; title: string; url?: string }
+type Campaign = {
+  id: string
+  name: string
+  state: string
+  total: number
+  sent: number
+  failed: number
+  completed: number
+  remaining: number
+  cursor: number
+  intervalSeconds: number
+  nextAt?: string | null
+  lastError?: string | null
+  messagePreview?: string
+  createdAt?: string | null
+  startedAt?: string | null
+  pausedAt?: string | null
+  completedAt?: string | null
+  updatedAt?: string | null
+}
+type CampaignFailure = { index: number; recipient: string; reason: string }
+type CampaignDetail = Campaign & { failures?: CampaignFailure[] }
 
 type Props = {
   request: (path: string, init?: RequestInit) => Promise<unknown>
@@ -43,6 +65,20 @@ export function blockingReason(listId: string, text: string, willSend: number): 
   return ''
 }
 
+const campaignStateLabel: Record<string, string> = {
+  draft: 'مسودة', approved: 'معتمدة', sending: 'قيد الإرسال', paused: 'متوقفة مؤقتاً',
+  retrying: 'تعيد الفاشل', completed: 'مكتملة', partial: 'اكتملت مع تعثرات', stopped: 'موقوفة',
+}
+
+function campaignDate(value?: string | null, withTime = true) {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) return '—'
+  return withTime
+    ? date.toLocaleString('ar-KW-u-nu-latn', { dateStyle: 'short', timeStyle: 'short' })
+    : date.toLocaleDateString('ar-KW-u-nu-latn')
+}
+
 export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
   const [lists, setLists] = useState<List[]>([])
   const [listId, setListId] = useState('')
@@ -53,8 +89,53 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
   const [interval, setIntervalSeconds] = useState(45)
   const [confirmOnce, setConfirmOnce] = useState(false)
   const [emergencyBusy, setEmergencyBusy] = useState(false)
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [activeCampaignId, setActiveCampaignId] = useState('')
+  const [activeCampaign, setActiveCampaign] = useState<CampaignDetail | null>(null)
+  const [campaignActionBusy, setCampaignActionBusy] = useState('')
+  const [campaignsBusy, setCampaignsBusy] = useState(false)
+  const requestRef = useRef(request)
+  useEffect(() => { requestRef.current = request }, [request])
 
   const say = (message: string) => { setNotice(message); onNotice?.(message) }
+
+  const loadCampaignDetail = async (id: string) => {
+    if (!id) { setActiveCampaign(null); return }
+    try {
+      const detail = await requestRef.current(`/campaigns/${encodeURIComponent(id)}`) as CampaignDetail
+      setActiveCampaign(detail)
+    } catch {
+      setActiveCampaign((current) => current?.id === id ? current : null)
+    }
+  }
+
+  const refreshCampaigns = async (preferredId = '', silent = true) => {
+    if (!silent) setCampaignsBusy(true)
+    try {
+      const data = await requestRef.current('/campaigns', { cache: 'no-store' }) as { campaigns?: Campaign[] }
+      const rows = data?.campaigns || []
+      setCampaigns(rows)
+      const preferred = preferredId || activeCampaignId
+      const exists = preferred && rows.some((item) => item.id === preferred)
+      const nextId = exists
+        ? preferred
+        : rows.find((item) => ['sending', 'retrying', 'paused'].includes(item.state))?.id || rows[0]?.id || ''
+      if (nextId !== activeCampaignId) setActiveCampaignId(nextId)
+      await loadCampaignDetail(nextId)
+    } catch {
+      // المتابعة الحية إضافة تشغيلية؛ تعطل القراءة لا يوقف إنشاء الحملات أو إرسالها.
+    } finally {
+      if (!silent) setCampaignsBusy(false)
+    }
+  }
+
+  useEffect(() => { void refreshCampaigns('', true) }, [])
+  useEffect(() => {
+    if (!activeCampaignId) return
+    void loadCampaignDetail(activeCampaignId)
+    const timer = window.setInterval(() => { void refreshCampaigns(activeCampaignId, true) }, 3_000)
+    return () => window.clearInterval(timer)
+  }, [activeCampaignId])
 
   useEffect(() => {
     void (async () => {
@@ -123,7 +204,9 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
         method: 'POST',
         body: JSON.stringify({ confirm: true, confirmAgain: true, intervalSeconds: interval }),
       })
-      say(`✓ بدأ الإرسال الهادئ إلى ${willSend} جهة، بفاصل ${interval} ثانية.`)
+      setActiveCampaignId(id)
+      await refreshCampaigns(id, true)
+      say(`✓ بدأ الإرسال الهادئ إلى ${willSend} جهة، بفاصل ${interval} ثانية. المتابعة الحية ظهرت أسفل الإرسال.`)
       setConfirmOnce(false)
       setText('')
     } catch (error) {
@@ -142,10 +225,29 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
       }) as { commandsStopped?: number; campaignsStopped?: number }
       say(`توقف الإرسال الآن: أُلغيت ${Number(result.commandsStopped || 0)} رسالة معلّقة وأُوقفت ${Number(result.campaignsStopped || 0)} حملة.`)
       setConfirmOnce(false)
+      await refreshCampaigns(activeCampaignId, true)
     } catch (error) {
       say(`تعذّر إيقاف الإرسال: ${error instanceof Error ? error.message : 'خطأ'}`)
     } finally {
       setEmergencyBusy(false)
+    }
+  }
+
+  const campaignAction = async (action: 'pause' | 'resume' | 'retry-failed') => {
+    if (!activeCampaignId) return
+    if (action === 'retry-failed' && !window.confirm('إعادة محاولة الأرقام التي فشل تسليمها فقط؟ لن تُعاد الرسائل الناجحة.')) return
+    setCampaignActionBusy(action)
+    try {
+      await requestRef.current(`/campaigns/${encodeURIComponent(activeCampaignId)}/${action}`, {
+        method: 'POST',
+        body: action === 'retry-failed' ? JSON.stringify({ confirm: true, intervalSeconds: interval }) : JSON.stringify({}),
+      })
+      await refreshCampaigns(activeCampaignId, true)
+      say(action === 'pause' ? 'أوقفت الحملة مؤقتاً. الرسائل التي سُلّمت بقيت كما هي.' : action === 'resume' ? 'استؤنفت الحملة من موضعها من دون إعادة ما نجح.' : 'بدأت إعادة محاولة الرسائل الفاشلة فقط.')
+    } catch (error) {
+      say(`تعذّر تنفيذ الإجراء: ${error instanceof Error ? error.message : 'خطأ'}`)
+    } finally {
+      setCampaignActionBusy('')
     }
   }
 
@@ -273,6 +375,64 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
             </button>
           )}
         </div>
+
+        <section className={`${step} overflow-hidden`} aria-labelledby="campaign-live-title">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-[.75rem] font-semibold text-accent">متابعة الحملات</p>
+              <h3 id="campaign-live-title" className="mt-1 font-display text-xl font-semibold text-ink">دورة الحياة أمامك، من دون شاشة جديدة.</h3>
+              <p className="mt-1 text-[.72rem] leading-relaxed text-soft">تُحدّث الأرقام تلقائياً كل بضع ثوانٍ، ولا يظهر هنا اسم أو رقم أي مستلم.</p>
+            </div>
+            <button type="button" className="rounded-full border border-hair px-3 py-1.5 text-[.72rem] font-semibold text-soft hover:border-accent hover:text-accent disabled:opacity-45" disabled={campaignsBusy} onClick={() => void refreshCampaigns(activeCampaignId, false)}>{campaignsBusy ? 'يحدّث…' : 'تحديث الآن'}</button>
+          </div>
+
+          {activeCampaign ? (
+            <div className="mt-4 grid gap-4">
+              <div className="rounded-2xl border border-hair bg-wash p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0"><p className="truncate text-[.84rem] font-semibold text-ink">{activeCampaign.name}</p><p className="mt-1 text-[.68rem] text-soft">{campaignStateLabel[activeCampaign.state] || activeCampaign.state} · بدأت {campaignDate(activeCampaign.startedAt)}</p></div>
+                  <span className="rounded-full border border-accent/25 bg-accent/[.06] px-3 py-1 text-[.7rem] font-semibold text-accent">{activeCampaign.completed} من {activeCampaign.total}</span>
+                </div>
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-hair/55"><div className="h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${activeCampaign.total ? Math.min(100, Math.round((activeCampaign.completed / activeCampaign.total) * 100)) : 0}%` }} /></div>
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  <div className="rounded-xl border border-hair bg-canvas px-3 py-2"><span className="block text-[.64rem] text-soft">الناجح</span><strong className="font-display text-xl text-ink">{activeCampaign.sent}</strong></div>
+                  <div className="rounded-xl border border-hair bg-canvas px-3 py-2"><span className="block text-[.64rem] text-soft">الفاشل</span><strong className="font-display text-xl text-ink">{activeCampaign.failed}</strong></div>
+                  <div className="rounded-xl border border-hair bg-canvas px-3 py-2"><span className="block text-[.64rem] text-soft">المتبقي</span><strong className="font-display text-xl text-ink">{activeCampaign.remaining}</strong></div>
+                </div>
+                <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_auto]">
+                  <div className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.64rem] text-soft">الرسالة التالية</span><p className="mt-1 line-clamp-3 whitespace-pre-line text-[.75rem] leading-relaxed text-ink">{activeCampaign.messagePreview || '—'}</p><p className="mt-2 text-[.66rem] text-accent">موعدها: {activeCampaign.nextAt ? campaignDate(activeCampaign.nextAt) : activeCampaign.remaining ? 'بانتظار الجدولة' : 'لا توجد رسالة تالية'}</p></div>
+                  <div className="flex flex-wrap content-start gap-2 lg:max-w-[240px]">
+                    {['sending', 'retrying'].includes(activeCampaign.state) && <button type="button" disabled={Boolean(campaignActionBusy)} onClick={() => void campaignAction('pause')} className="rounded-full border border-hair px-3 py-2 text-[.72rem] font-semibold text-ink hover:border-accent hover:text-accent disabled:opacity-40">{campaignActionBusy === 'pause' ? 'يوقف…' : 'إيقاف مؤقت'}</button>}
+                    {activeCampaign.state === 'paused' && <button type="button" disabled={Boolean(campaignActionBusy)} onClick={() => void campaignAction('resume')} className="rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold text-white disabled:opacity-40">{campaignActionBusy === 'resume' ? 'يستأنف…' : 'استئناف'}</button>}
+                    {activeCampaign.failed > 0 && !['sending', 'retrying', 'paused'].includes(activeCampaign.state) && <button type="button" disabled={Boolean(campaignActionBusy)} onClick={() => void campaignAction('retry-failed')} className="rounded-full border border-accent px-3 py-2 text-[.72rem] font-semibold text-accent disabled:opacity-40">{campaignActionBusy === 'retry-failed' ? 'يعيد…' : 'إعادة الفاشل فقط'}</button>}
+                  </div>
+                </div>
+                {activeCampaign.lastError && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[.7rem] leading-relaxed text-amber-900">آخر تعثر: {activeCampaign.lastError}</p>}
+              </div>
+
+              {Boolean(activeCampaign.failures?.length) && (
+                <details className="rounded-2xl border border-hair bg-canvas p-3">
+                  <summary className="cursor-pointer text-[.76rem] font-semibold text-ink">أسباب الفشل ({activeCampaign.failures?.length || 0}) — بلا أسماء أو أرقام</summary>
+                  <div className="mt-3 grid max-h-56 gap-2 overflow-y-auto">{activeCampaign.failures?.map((failure) => <div key={`${failure.index}-${failure.reason}`} className="grid gap-1 rounded-xl border border-hair px-3 py-2 sm:grid-cols-[auto_1fr]"><strong className="text-[.7rem] text-ink">{failure.recipient}</strong><span className="text-[.68rem] leading-relaxed text-soft">{failure.reason}</span></div>)}</div>
+                </details>
+              )}
+            </div>
+          ) : <p className="mt-4 rounded-xl border border-dashed border-hair p-4 text-[.76rem] text-soft">لا توجد حملة سابقة بعد. عند أول إرسال ستظهر المتابعة هنا تلقائياً.</p>}
+
+          {campaigns.length > 0 && (
+            <details className="mt-4 rounded-2xl border border-hair bg-canvas p-3">
+              <summary className="cursor-pointer text-[.76rem] font-semibold text-ink">سجل الحملات السابقة · {campaigns.length}</summary>
+              <div className="mt-3 grid max-h-72 gap-2 overflow-y-auto">
+                {campaigns.map((campaign) => (
+                  <button key={campaign.id} type="button" onClick={() => { setActiveCampaignId(campaign.id); void loadCampaignDetail(campaign.id) }} className={`grid gap-2 rounded-xl border px-3 py-2.5 text-right transition-colors sm:grid-cols-[1fr_auto] ${campaign.id === activeCampaignId ? 'border-accent bg-accent/[.045]' : 'border-hair hover:border-accent/50'}`}>
+                    <span className="min-w-0"><strong className="block truncate text-[.74rem] text-ink">{campaign.name}</strong><span className="mt-1 block text-[.64rem] text-soft">{campaignDate(campaign.createdAt, false)} · {campaignStateLabel[campaign.state] || campaign.state}</span></span>
+                    <span className="text-[.68rem] font-semibold text-accent">{campaign.sent} ناجح · {campaign.failed} فاشل · {campaign.remaining} متبقٍ</span>
+                  </button>
+                ))}
+              </div>
+            </details>
+          )}
+        </section>
 
         {notice && <p role="status" className="rounded-xl border border-accent/25 bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-accent">{notice}</p>}
 

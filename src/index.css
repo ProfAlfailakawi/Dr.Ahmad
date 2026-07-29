@@ -1369,11 +1369,8 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
   background: rgba(255,255,255,.9);
 }
 
-/* رابط تبيان: اكتشاف هادئ لمشروع مستقل، لا إعلان ولا زر بارز. */
-.tebyan-link {
-  min-height: 2.5rem;
-  border-color: rgb(var(--c-hair) / .86);
-}
+/* رابط تبيان: أيقونة فقط ضمن شريط أدوات الموقع؛ الاسم يبقى لقارئ الشاشة والتلميح. */
+.tebyan-link { min-height: 2.5rem; border-color: rgb(var(--c-hair) / .86); }
 .tebyan-link:hover {
   border-color: rgb(var(--c-accent) / .42);
 }
@@ -1384,22 +1381,6 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
 .schedule-link:hover {
   border-color: rgb(var(--c-accent) / .34);
 }
-@media (min-width: 768px) {
-  .tebyan-link {
-    max-width: 2.75rem;
-    overflow: hidden;
-    white-space: nowrap;
-    transition:
-      max-width .34s cubic-bezier(.22,1,.36,1),
-      color .28s ease,
-      border-color .28s ease;
-  }
-  .tebyan-link:hover,
-  .tebyan-link:focus-visible {
-    max-width: 9rem;
-  }
-}
-
 .schedule-link {
   max-width: 2.5rem;
   overflow: hidden;
@@ -2370,8 +2351,11 @@ html.site-silent .human-core__title-line::after { animation: none !important; op
 .selected-media-frame::before { content: ""; position: absolute; inset: -10%; z-index: -1; background-image: var(--media-thumb); background-size: cover; background-position: center 22%; filter: blur(18px) saturate(.72); opacity: .22; }
 .selected-media-thumb { object-fit: contain !important; object-position: center top !important; transform: none !important; }
 .article-source-tools { display: inline-flex; align-items: center; gap: .55rem; padding: .28rem; border: 1px solid rgb(var(--c-hair)); border-radius: 999px; background: rgb(var(--c-canvas) / .82); backdrop-filter: blur(12px); }
-.article-tool-icon { display: inline-flex; width: 2.75rem; height: 2.75rem; align-items: center; justify-content: center; border-radius: 999px; color: rgb(var(--c-soft)); transition: color .25s var(--E), background-color .25s var(--E), transform .25s var(--E); }
-.article-tool-icon:hover { color: rgb(var(--c-accent)); background: rgb(var(--c-accent) / .07); transform: translateY(-1px); }
+.article-tool-icon { display: inline-flex; width: 2.75rem; height: 2.75rem; flex: 0 0 2.75rem; align-items: center; justify-content: center; border: 1px solid rgb(var(--c-hair)); border-radius: 999px; background: rgb(var(--c-canvas)); color: rgb(var(--c-soft)); transition: border-color .25s var(--E), color .25s var(--E), background-color .25s var(--E), transform .25s var(--E); }
+.article-tool-icon:hover { border-color: rgb(var(--c-accent)); color: rgb(var(--c-accent)); background: rgb(var(--c-accent) / .07); transform: translateY(-1px); }
+
+/* أي نافذة «خرائط الفكر والأثر» تُنشأ مباشرة في body؛ لا تسمح لأزرار الصفحة العائمة بالظهور فوقها. */
+body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility: hidden; pointer-events: none; }
 .citation-sheet { max-height: min(76svh, 620px); overflow: auto; }
 @media (max-width: 639px) { .citation-sheet { width: calc(100vw - 1.5rem); border-radius: 1.35rem 1.35rem .9rem .9rem; } }
 

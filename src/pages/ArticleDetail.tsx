@@ -841,23 +841,23 @@ export default function ArticleDetail() {
 
           <FadeUp className="serenity-hide">
             <section className="mt-8 border-y border-hair py-5" aria-label="مشاركة المقال والاستشهاد به">
-              <div className="flex flex-wrap items-center justify-between gap-5">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <Share compact title={a.title} path={`/articles/${a.slug}`} />
-                <div className="flex flex-wrap items-center gap-2" aria-label="المصدر والاستشهاد">
-                  {liveLink(article.source) && (
-                    <a
-                      href={liveLink(article.source)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex min-h-11 items-center gap-2 rounded-full border border-hair bg-canvas px-4 text-[.78rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent"
-                      aria-label="فتح المصدر الأصلي"
-                    >
-                      <span>المصدر الأصلي</span>
-                      <span aria-hidden>↗</span>
-                    </a>
-                  )}
-                  <CiteButton compact compactLabel="استشهاد" title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} contextUrl={liveLink(article.source) || ''} />
-                </div>
+                {liveLink(article.source) && (
+                  <a
+                    href={liveLink(article.source)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="article-tool-icon"
+                    aria-label="فتح المصدر الأصلي"
+                    title="المصدر الأصلي"
+                  >
+                    <svg aria-hidden viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 3h7v7" /><path d="M21 3l-9 9" /><path d="M18 13v5a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3h5" />
+                    </svg>
+                  </a>
+                )}
+                <CiteButton compact title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} contextUrl={liveLink(article.source) || ''} />
               </div>
             </section>
           </FadeUp>

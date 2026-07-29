@@ -542,6 +542,7 @@ async function enqueueCommand(db, type, payload = {}, metadata = {}) {
     availableAt: bounded(metadata.availableAt, 80) || now,
     campaignId: bounded(metadata.campaignId, 100) || null,
     campaignIndex: Number.isFinite(Number(metadata.campaignIndex)) ? Number(metadata.campaignIndex) : null,
+    retryFailure: metadata.retryFailure === true,
   })
   return { id, type }
 }
@@ -563,9 +564,10 @@ async function queueNextCampaignMessage(db, campaignId, delayMs = 0) {
   }
   if (!contact) {
     await ref.set({
-      state: 'completed',
+      state: Number(campaign.failed || 0) > 0 ? 'partial' : 'completed',
       cursor: targets.length,
       pendingCommandId: null,
+      nextAt: null,
       completedAt: asIso(),
       updatedAt: asIso(),
     }, { merge: true })
@@ -583,6 +585,69 @@ async function queueNextCampaignMessage(db, campaignId, delayMs = 0) {
     updatedAt: asIso(),
   }, { merge: true })
   return command
+}
+
+function campaignPublicState(snapshot) {
+  const row = snapshot?.exists ? (snapshot.data() || {}) : (snapshot || {})
+  const id = snapshot?.id || bounded(row.id, 100)
+  const total = Math.max(0, Number(row.total || 0))
+  const sent = Math.max(0, Number(row.sent || 0))
+  const failed = Math.max(0, Number(row.failed || 0))
+  const completed = Math.min(total, sent + failed)
+  return {
+    id,
+    name: bounded(row.name, 180) || 'حملة واتساب',
+    state: bounded(row.state, 40) || 'draft',
+    total,
+    sent,
+    failed,
+    completed,
+    remaining: Math.max(0, total - completed),
+    cursor: Math.max(0, Number(row.cursor || 0)),
+    intervalSeconds: Math.max(0, Number(row.intervalSeconds || 0)),
+    nextAt: bounded(row.nextAt, 80) || null,
+    lastError: bounded(row.lastError, 260) || null,
+    messagePreview: bounded(row.message, 500),
+    createdAt: bounded(row.createdAt, 80) || null,
+    approvedAt: bounded(row.approvedAt, 80) || null,
+    startedAt: bounded(row.startedAt, 80) || null,
+    pausedAt: bounded(row.pausedAt, 80) || null,
+    completedAt: bounded(row.completedAt, 80) || null,
+    updatedAt: bounded(row.updatedAt, 80) || null,
+  }
+}
+
+function decisionLabel(reason = '') {
+  const value = bounded(reason, 180)
+  if (!value) return 'غير مصنّف'
+  if (value.startsWith('rule-no-grounding:')) return 'قاعدة لم تجد مادة موثقة'
+  if (value.startsWith('rule:')) return 'قاعدة معتمدة'
+  const labels = {
+    'site-index': 'مادة موثقة من الموقع',
+    'site-is-source': 'سؤال عن معلومات الموقع',
+    greeting: 'تحية',
+    'wake-phrase': 'تفعيل المساعد',
+    duplicate: 'رسالة مكررة',
+    'human-request': 'طلب تدخل بشري',
+    'no-grounded-answer': 'لا توجد إجابة موثقة',
+    media: 'وسائط تحتاج مراجعة',
+    'empty-after-normalization': 'رسالة بلا محتوى قابل للمعالجة',
+    'awaiting-wake-phrase': 'بانتظار جملة الإيقاظ',
+    'runtime-paused': 'التشغيل متوقف مؤقتاً',
+  }
+  return labels[value] || value.replace(/[-_:]+/g, ' ')
+}
+
+function aggregateCounts(rows, keyOf, valueOf = (key) => key) {
+  const counts = new Map()
+  for (const row of rows) {
+    const key = keyOf(row)
+    if (!key) continue
+    counts.set(key, (counts.get(key) || 0) + 1)
+  }
+  return [...counts.entries()]
+    .map(([key, total]) => ({ key, label: valueOf(key), total }))
+    .sort((left, right) => right.total - left.total || String(left.label).localeCompare(String(right.label), 'ar'))
 }
 
 async function sweepExpiredManualStates(db) {
@@ -648,11 +713,11 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     ])
     const activeCommands = commands.docs.filter((doc) => {
       const value = doc.data() || {}
-      return ['pending', 'leased'].includes(value.status)
+      return ['pending', 'leased', 'held'].includes(value.status)
         && ['send-message', 'send-self-message'].includes(value.type)
     })
     const activeCampaigns = campaigns.docs.filter((doc) =>
-      ['approved', 'paused', 'sending'].includes(doc.data()?.state))
+      ['approved', 'paused', 'sending', 'retrying'].includes(doc.data()?.state))
     let batch = db.batch()
     let writes = 0
     const commitIfNeeded = async (force = false) => {
@@ -1065,16 +1130,43 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         const campaignSnapshot = await campaignRef.get()
         const campaign = campaignSnapshot.data() || {}
         const succeeded = body.ok !== false
+        const retryFailure = command.retryFailure === true
+        const nextSent = Number(campaign.sent || 0) + (succeeded ? 1 : 0)
+        const nextFailed = retryFailure
+          ? Math.max(0, Number(campaign.failed || 0) - (succeeded ? 1 : 0))
+          : Number(campaign.failed || 0) + (succeeded ? 0 : 1)
         await campaignRef.set({
-          pendingCommandId: null,
-          sent: Number(campaign.sent || 0) + (succeeded ? 1 : 0),
-          failed: Number(campaign.failed || 0) + (succeeded ? 0 : 1),
-          lastError: succeeded ? null : bounded(body.error, 600),
+          ...(retryFailure ? {} : { pendingCommandId: null }),
+          sent: nextSent,
+          failed: nextFailed,
+          lastError: succeeded ? null : safeBridgeError || 'تعذّر تسليم الرسالة.',
           lastDeliveredAt: succeeded ? asIso() : campaign.lastDeliveredAt || null,
           updatedAt: asIso(),
         }, { merge: true })
-        const intervalMs = Math.max(20_000, Math.min(15 * 60_000, Number(campaign.intervalSeconds || 45) * 1_000))
-        await queueNextCampaignMessage(db, command.campaignId, intervalMs)
+
+        if (retryFailure) {
+          const commandRows = await db.collection(COLLECTIONS.commands).where('campaignId', '==', command.campaignId).limit(5000).get()
+          const pendingRetries = commandRows.docs.map(serializeDoc).filter((item) =>
+            item?.retryFailure === true && ['pending', 'leased', 'held'].includes(item.status))
+          const nextAt = pendingRetries
+            .filter((item) => item.status === 'pending')
+            .map((item) => bounded(item.availableAt, 80))
+            .filter(Boolean)
+            .sort()[0] || null
+          if (!pendingRetries.length) {
+            await campaignRef.set({
+              state: nextFailed > 0 ? 'partial' : 'completed',
+              nextAt: null,
+              retryCompletedAt: asIso(),
+              updatedAt: asIso(),
+            }, { merge: true })
+          } else {
+            await campaignRef.set({ nextAt, updatedAt: asIso() }, { merge: true })
+          }
+        } else {
+          const intervalMs = Math.max(20_000, Math.min(15 * 60_000, Number(campaign.intervalSeconds || 45) * 1_000))
+          await queueNextCampaignMessage(db, command.campaignId, intervalMs)
+        }
       }
       sendJson(res, 200, { ok: true })
       return
@@ -1595,6 +1687,143 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       return
     }
 
+    if (path === '/campaigns' && method === 'GET') {
+      const snapshot = await db.collection(COLLECTIONS.campaigns).limit(100).get()
+      const campaigns = snapshot.docs
+        .map((doc) => campaignPublicState(doc))
+        .sort((left, right) => String(right.createdAt || '').localeCompare(String(left.createdAt || '')))
+      sendJson(res, 200, { campaigns })
+      return
+    }
+
+    const campaignDetail = /^\/campaigns\/([^/]+)$/.exec(path)
+    if (campaignDetail && method === 'GET') {
+      const id = bounded(decodeURIComponent(campaignDetail[1]), 100)
+      const snapshot = await db.collection(COLLECTIONS.campaigns).doc(id).get()
+      if (!snapshot.exists) {
+        sendJson(res, 404, { error: 'الحملة غير موجودة.' })
+        return
+      }
+      const commands = await db.collection(COLLECTIONS.commands).where('campaignId', '==', id).limit(5000).get()
+      const failures = commands.docs.map(serializeDoc)
+        .filter((item) => item?.status === 'failed' && Number.isFinite(Number(item.campaignIndex)))
+        .sort((left, right) => Number(left.campaignIndex) - Number(right.campaignIndex))
+        .map((item) => ({
+          index: Number(item.campaignIndex),
+          recipient: `الجهة ${Number(item.campaignIndex) + 1}`,
+          reason: bounded(item.error, 240) || 'تعذّر التسليم من واتساب.',
+        }))
+      sendJson(res, 200, { ...campaignPublicState(snapshot), failures })
+      return
+    }
+
+    const campaignPause = /^\/campaigns\/([^/]+)\/pause$/.exec(path)
+    if (campaignPause && method === 'POST') {
+      const id = bounded(decodeURIComponent(campaignPause[1]), 100)
+      const ref = db.collection(COLLECTIONS.campaigns).doc(id)
+      const snapshot = await ref.get()
+      if (!snapshot.exists) {
+        sendJson(res, 404, { error: 'الحملة غير موجودة.' })
+        return
+      }
+      const campaign = snapshot.data() || {}
+      if (!['sending', 'retrying', 'approved'].includes(campaign.state)) {
+        sendJson(res, 409, { error: 'هذه الحملة ليست في حالة إرسال قابلة للإيقاف المؤقت.' })
+        return
+      }
+      const commands = await db.collection(COLLECTIONS.commands).where('campaignId', '==', id).limit(5000).get()
+      const pending = commands.docs.filter((doc) => (doc.data() || {}).status === 'pending')
+      let batch = db.batch()
+      let writes = 0
+      for (const doc of pending) {
+        batch.set(doc.ref, { status: 'held', heldAt: asIso(), updatedAt: asIso() }, { merge: true })
+        writes += 1
+        if (writes >= 400) { await batch.commit(); batch = db.batch(); writes = 0 }
+      }
+      if (writes) await batch.commit()
+      await ref.set({ state: 'paused', pausedFromState: campaign.state, pausedAt: asIso(), nextAt: null, updatedAt: asIso() }, { merge: true })
+      sendJson(res, 200, { id, state: 'paused' })
+      return
+    }
+
+    const campaignResume = /^\/campaigns\/([^/]+)\/resume$/.exec(path)
+    if (campaignResume && method === 'POST') {
+      const id = bounded(decodeURIComponent(campaignResume[1]), 100)
+      const ref = db.collection(COLLECTIONS.campaigns).doc(id)
+      const snapshot = await ref.get()
+      if (!snapshot.exists || snapshot.data()?.state !== 'paused') {
+        sendJson(res, 409, { error: 'الحملة ليست متوقفة مؤقتاً.' })
+        return
+      }
+      const campaign = snapshot.data() || {}
+      const previous = campaign.pausedFromState === 'retrying' ? 'retrying' : 'sending'
+      const commands = await db.collection(COLLECTIONS.commands).where('campaignId', '==', id).limit(5000).get()
+      const held = commands.docs.filter((doc) => (doc.data() || {}).status === 'held')
+      const intervalMs = Math.max(20_000, Math.min(15 * 60_000, Number(campaign.intervalSeconds || 45) * 1_000))
+      let batch = db.batch()
+      let writes = 0
+      for (let index = 0; index < held.length; index += 1) {
+        const doc = held[index]
+        batch.set(doc.ref, { status: 'pending', heldAt: null, availableAt: asIso(Date.now() + index * intervalMs), updatedAt: asIso() }, { merge: true })
+        writes += 1
+        if (writes >= 400) { await batch.commit(); batch = db.batch(); writes = 0 }
+      }
+      if (writes) await batch.commit()
+      await ref.set({ state: previous, resumedAt: asIso(), nextAt: held.length ? asIso() : null, updatedAt: asIso() }, { merge: true })
+      if (previous === 'sending' && !campaign.pendingCommandId) await queueNextCampaignMessage(db, id, 0)
+      sendJson(res, 200, { id, state: previous })
+      return
+    }
+
+    const campaignRetryFailed = /^\/campaigns\/([^/]+)\/retry-failed$/.exec(path)
+    if (campaignRetryFailed && method === 'POST') {
+      const body = await readJson(req)
+      if (body.confirm !== true) {
+        sendJson(res, 400, { error: 'يلزم تأكيد إعادة محاولة الفاشل فقط.' })
+        return
+      }
+      const id = bounded(decodeURIComponent(campaignRetryFailed[1]), 100)
+      const ref = db.collection(COLLECTIONS.campaigns).doc(id)
+      const snapshot = await ref.get()
+      if (!snapshot.exists) {
+        sendJson(res, 404, { error: 'الحملة غير موجودة.' })
+        return
+      }
+      const campaign = snapshot.data() || {}
+      if (['sending', 'retrying', 'paused'].includes(campaign.state)) {
+        sendJson(res, 409, { error: 'أوقف الحملة أو انتظر اكتمال الإرسال الحالي أولاً.' })
+        return
+      }
+      const commands = await db.collection(COLLECTIONS.commands).where('campaignId', '==', id).limit(5000).get()
+      const failed = commands.docs.filter((doc) => {
+        const item = doc.data() || {}
+        return item.status === 'failed' && Number.isFinite(Number(item.campaignIndex))
+      }).sort((left, right) => Number(left.data()?.campaignIndex || 0) - Number(right.data()?.campaignIndex || 0))
+      if (!failed.length) {
+        sendJson(res, 409, { error: 'لا توجد رسائل فاشلة لإعادة المحاولة.' })
+        return
+      }
+      const intervalSeconds = Math.max(20, Math.min(15 * 60, Number(campaign.intervalSeconds || body.intervalSeconds || 45)))
+      const intervalMs = intervalSeconds * 1000
+      let batch = db.batch()
+      let writes = 0
+      for (let index = 0; index < failed.length; index += 1) {
+        const doc = failed[index]
+        batch.set(doc.ref, {
+          status: 'pending', attempts: 0, retryFailure: true, leasedAt: null, completedAt: null,
+          error: null, availableAt: asIso(Date.now() + index * intervalMs), updatedAt: asIso(),
+        }, { merge: true })
+        writes += 1
+        if (writes >= 400) { await batch.commit(); batch = db.batch(); writes = 0 }
+      }
+      if (writes) await batch.commit()
+      await ref.set({
+        state: 'retrying', intervalSeconds, retryStartedAt: asIso(), nextAt: asIso(), lastError: null, updatedAt: asIso(),
+      }, { merge: true })
+      sendJson(res, 202, { id, state: 'retrying', retrying: failed.length })
+      return
+    }
+
     const campaignApprove = /^\/campaigns\/([^/]+)\/approve$/.exec(path)
     if (campaignApprove && method === 'POST') {
       const body = await readJson(req)
@@ -1661,6 +1890,17 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     }
     if (path === '/knowledge' && method === 'GET') {
       const index = siteIndex()
+      const [conversationSnapshot, eventSnapshot] = await Promise.all([
+        db.collection(COLLECTIONS.conversations).limit(1000).get(),
+        db.collection(COLLECTIONS.events).limit(1000).get(),
+      ])
+      const conversations = conversationSnapshot.docs.map(serializeDoc).filter(Boolean)
+      const events = eventSnapshot.docs.map(serializeDoc).filter(Boolean)
+      const active = conversations.filter((row) => row.wakeActive === true || row.needsHuman === true || row.mode === 'human').length
+      const human = conversations.filter((row) => row.mode === 'human' || row.needsHuman === true).length
+      const intentRows = aggregateCounts(conversations, (row) => bounded(row.lastDecisionReason || row.escalationReason, 180), decisionLabel)
+      const answerRows = aggregateCounts(conversations.filter((row) => row.lastReplyAt), (row) => bounded(row.lastDecisionReason || 'reply', 180), decisionLabel)
+      const gapRows = aggregateCounts(events.filter((row) => row.status === 'open'), (row) => bounded(row.reason, 180), decisionLabel)
       sendJson(res, 200, {
         modes: [
           { id: 'site-only', label: 'الموقع فقط', boundary: 'لا إجابة بلا رابط أو قاعدة معتمدة.' },
@@ -1668,9 +1908,15 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         ],
         sourcePolicies: { site: ['المقالات', 'الكتب', 'الأبحاث', 'المواد المنشورة'], customRules: ['قواعد تعتمدها من اللوحة'] },
         evidence: { total: index.length, enabled: index.length, lastUpdatedAt: asIso(), domains: [{ domain: new URL(SITE_URL).hostname, total: index.length, enabled: index.length }] },
-        conversations: { active: 0, human: 0, intents: [], gaps: [], answers: [] },
+        conversations: {
+          active,
+          human,
+          intents: intentRows.slice(0, 20).map((item) => ({ intent: item.label, total: item.total })),
+          gaps: gapRows.slice(0, 20).map((item) => ({ topic: item.label, reason: item.label, total: item.total })),
+          answers: answerRows.slice(0, 20).map((item) => ({ intent: item.label, total: item.total })),
+        },
         personality: { verbosity: 'brief', dialect: 'kuwaiti-light', initiative: 'none', signature: 'always', memoryConsent: 'explicit' },
-        privacy: 'تُقنّع الأرقام في السجلات، ولا يتعلم البوت من كلام الناس تلقائياً.',
+        privacy: 'هذه المؤشرات مجاميع فعلية من سجلات التشغيل الحالية فقط؛ لا تعرض نصوص الناس أو أرقامهم، ولا يتعلم البوت من كلامهم تلقائياً.',
       })
       return
     }

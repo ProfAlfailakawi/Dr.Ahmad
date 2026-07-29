@@ -73,6 +73,11 @@ const BG_PATTERNS: { id: BackgroundPattern; label: string }[] = [
 const CAMPAIGN_SEED_KEY = 'studio-campaign-seed'
 const VISUAL_WORLD_HISTORY_KEY = 'dr-ahmad-studio-visual-world-history-v2'
 const GENERATION_LIBRARY_BACKFILL_KEY = 'dr-ahmad-generation-library-backfill-v1'
+const STUDIO_DRAFT_DB = 'dr-ahmad-studio-drafts-v1'
+const STUDIO_DRAFT_STORE = 'drafts'
+const STUDIO_DRAFT_ID = 'current'
+const STUDIO_DRAFT_FALLBACK_KEY = 'dr-ahmad-social-design-live-draft-v1'
+const STUDIO_DRAFT_HINT_KEY = 'dr-ahmad-social-design-live-draft-hint-v1'
 const SIMPLIFIED_STUDIO = true
 
 const STUDIO_STAGES = [
@@ -158,6 +163,146 @@ type StudioVisualMode = 'generate' | 'library' | 'ready'
 type StudioVisualOrigin = 'generated' | 'ready' | 'none'
 type StudioLibraryImage = { id: string; title: string; note: string; url: string }
 type ZeroDecisionPhase = 'idle' | 'understand' | 'prompt' | 'image' | 'compose' | 'critic' | 'campaign' | 'done'
+
+type StudioLiveDraft = {
+  version: 1
+  updatedAt: number
+  text: string
+  context: string
+  tone: ContentTone | 'auto'
+  density: DesignDensity | 'auto'
+  platform: SocialPlatform | 'auto'
+  stage: StudioStage
+  plans: CompositionPlan[]
+  reservePlans: CompositionPlan[]
+  selected: CompositionPlan | null
+  editUndo: CompositionPlan[]
+  editRedo: CompositionPlan[]
+  generation: number
+  locks: { content: boolean; style: boolean; color: boolean; format: boolean }
+  campaign: SocialCampaign | null
+  imagePassport: StudioImagePassport | null
+  imageDescription: string
+  imageSource: string
+  imageOwner: string
+  imageLicense: string
+  externalVisuals: ExternalVisualResult[]
+  externalQuery: string
+  generatedPrompt: string
+  visualMode: StudioVisualMode
+  selectedLibraryImageId: string
+  visualOrigin: StudioVisualOrigin
+  generatedModel: string
+  generatedAt: string
+  generatedVisualWorld: string
+  generatedRelevanceScore: number | null
+  generatedRelevanceReason: string
+  generationMode: 'daily' | 'masterpiece'
+  dna: VisualDna | null
+  sealOn: boolean
+  seasonalOn: boolean
+  bgPattern: BackgroundPattern
+  autopilotPack: AutoPilotCandidate[]
+  releasePack: ReleaseVariant[]
+  zeroDecision: ZeroDecisionSummary | null
+  zeroDecisionPhase: ZeroDecisionPhase
+}
+
+function studioDraftHasWork(draft: StudioLiveDraft | null | undefined) {
+  return Boolean(draft && (
+    draft.text.trim()
+    || draft.context.trim()
+    || draft.plans.length
+    || draft.reservePlans.length
+    || draft.selected
+    || draft.imagePassport
+    || draft.campaign
+    || draft.autopilotPack.length
+    || draft.releasePack.length
+    || draft.zeroDecision
+  ))
+}
+
+function openStudioDraftDb(): Promise<IDBDatabase | null> {
+  if (typeof window === 'undefined' || !('indexedDB' in window)) return Promise.resolve(null)
+  return new Promise((resolve) => {
+    try {
+      const request = window.indexedDB.open(STUDIO_DRAFT_DB, 1)
+      request.onupgradeneeded = () => {
+        const db = request.result
+        if (!db.objectStoreNames.contains(STUDIO_DRAFT_STORE)) db.createObjectStore(STUDIO_DRAFT_STORE)
+      }
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => resolve(null)
+      request.onblocked = () => resolve(null)
+    } catch { resolve(null) }
+  })
+}
+
+async function readStudioLiveDraft(): Promise<StudioLiveDraft | null> {
+  if (typeof window === 'undefined') return null
+  const db = await openStudioDraftDb()
+  if (db) {
+    try {
+      const draft = await new Promise<StudioLiveDraft | null>((resolve) => {
+        const tx = db.transaction(STUDIO_DRAFT_STORE, 'readonly')
+        const request = tx.objectStore(STUDIO_DRAFT_STORE).get(STUDIO_DRAFT_ID)
+        request.onsuccess = () => resolve((request.result as StudioLiveDraft | undefined) || null)
+        request.onerror = () => resolve(null)
+      })
+      db.close()
+      if (draft?.version === 1) return draft
+    } catch { db.close() }
+  }
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(STUDIO_DRAFT_FALLBACK_KEY) || 'null') as StudioLiveDraft | null
+    return parsed?.version === 1 ? parsed : null
+  } catch { return null }
+}
+
+async function writeStudioLiveDraft(draft: StudioLiveDraft) {
+  if (typeof window === 'undefined') return
+  try { window.localStorage.setItem(STUDIO_DRAFT_HINT_KEY, String(draft.updatedAt)) } catch { /* hint only */ }
+  const db = await openStudioDraftDb()
+  if (db) {
+    try {
+      await new Promise<void>((resolve) => {
+        const tx = db.transaction(STUDIO_DRAFT_STORE, 'readwrite')
+        tx.objectStore(STUDIO_DRAFT_STORE).put(draft, STUDIO_DRAFT_ID)
+        tx.oncomplete = () => resolve()
+        tx.onerror = () => resolve()
+        tx.onabort = () => resolve()
+      })
+      db.close()
+      return
+    } catch { db.close() }
+  }
+  // احتياطٌ فقط للمتصفحات التي تمنع IndexedDB؛ لا نخاطر بملء localStorage بصورة ضخمة.
+  try {
+    const serialized = JSON.stringify(draft)
+    if (serialized.length <= 3_500_000) window.localStorage.setItem(STUDIO_DRAFT_FALLBACK_KEY, serialized)
+  } catch { /* الحفظ الصامت لا يعطل الاستوديو */ }
+}
+
+async function clearStudioLiveDraft() {
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.removeItem(STUDIO_DRAFT_FALLBACK_KEY)
+      window.localStorage.removeItem(STUDIO_DRAFT_HINT_KEY)
+    } catch { /* noop */ }
+  }
+  const db = await openStudioDraftDb()
+  if (!db) return
+  try {
+    await new Promise<void>((resolve) => {
+      const tx = db.transaction(STUDIO_DRAFT_STORE, 'readwrite')
+      tx.objectStore(STUDIO_DRAFT_STORE).delete(STUDIO_DRAFT_ID)
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => resolve()
+      tx.onabort = () => resolve()
+    })
+  } finally { db.close() }
+}
 
 const FRESH_GENERATION_VARIATIONS = [
   'Use luminous natural daylight, optimistic educational energy, clean spatial rhythm, and an active learning moment; avoid dark corridors and lonely empty classrooms.',
@@ -594,7 +739,8 @@ function EditableText({ label, value, onCommit, multiline = false }: { label: st
 /* جزيرة إدخال حقيقية: المتصفح يكتب مباشرةً في DOM من دون setState إطلاقاً.
    النسخة السابقة أبقت draft في React؛ فكان الحقل نفسه يعاد رسمه مع كل حرف،
    ثم يعيد الاستوديو الثقيل كله بعد 320ms. هنا لا نرسل النص للمحرك إلا بعد
-   هدوءٍ واضح أو عند مغادرة الحقل، لذلك تظل الكتابة بسرعة لوحة المفاتيح. */
+   هدوءٍ قصير أو عند مغادرة الحقل، لذلك تظل الكتابة بسرعة لوحة المفاتيح
+   وتصل المسودة الحية إلى الحفظ الصامت من دون انتظار طويل. */
 function BufferedIdeaTextarea({
   value,
   onCommit,
@@ -638,7 +784,7 @@ function BufferedIdeaTextarea({
       onInput={(event) => {
         const next = event.currentTarget.value
         if (idleTimerRef.current != null) window.clearTimeout(idleTimerRef.current)
-        idleTimerRef.current = window.setTimeout(() => commit(next), 1_000)
+        idleTimerRef.current = window.setTimeout(() => commit(next), 280)
       }}
       onBlur={(event) => commit(event.currentTarget.value)}
       placeholder={placeholder}
@@ -788,6 +934,158 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [phoneView, setPhoneView] = useState(false)
   const [mobileEditorPanel, setMobileEditorPanel] = useState<MobileEditorPanel>('preview')
   const [attentionOn, setAttentionOn] = useState(false)
+
+  // المسودة الحية: تحفظ الجلسة غير المكتملة محلياً بصمت، ولا تستعيدها إلا بإذن المستخدم.
+  const [interruptedDraft, setInterruptedDraft] = useState<StudioLiveDraft | null>(null)
+  const [draftReady, setDraftReady] = useState(false)
+  const suppressAutosaveRef = useRef(false)
+
+  const liveDraft = useMemo<StudioLiveDraft>(() => ({
+    version: 1,
+    updatedAt: Date.now(),
+    text,
+    context,
+    tone,
+    density,
+    platform,
+    stage,
+    plans,
+    reservePlans,
+    selected,
+    editUndo,
+    editRedo,
+    generation,
+    locks,
+    campaign,
+    imagePassport,
+    imageDescription,
+    imageSource,
+    imageOwner,
+    imageLicense,
+    externalVisuals,
+    externalQuery,
+    generatedPrompt,
+    visualMode,
+    selectedLibraryImageId,
+    visualOrigin,
+    generatedModel,
+    generatedAt,
+    generatedVisualWorld,
+    generatedRelevanceScore,
+    generatedRelevanceReason,
+    generationMode,
+    dna,
+    sealOn,
+    seasonalOn,
+    bgPattern,
+    autopilotPack,
+    releasePack,
+    zeroDecision,
+    zeroDecisionPhase,
+  }), [
+    text, context, tone, density, platform, stage, plans, reservePlans, selected, editUndo, editRedo, generation, locks,
+    campaign, imagePassport, imageDescription, imageSource, imageOwner, imageLicense, externalVisuals, externalQuery,
+    generatedPrompt, visualMode, selectedLibraryImageId, visualOrigin, generatedModel, generatedAt, generatedVisualWorld,
+    generatedRelevanceScore, generatedRelevanceReason, generationMode, dna, sealOn, seasonalOn, bgPattern, autopilotPack,
+    releasePack, zeroDecision, zeroDecisionPhase,
+  ])
+  const latestDraftRef = useRef(liveDraft)
+  useEffect(() => { latestDraftRef.current = liveDraft }, [liveDraft])
+
+  useEffect(() => {
+    let alive = true
+    void readStudioLiveDraft().then((draft) => {
+      if (!alive) return
+      const maxAge = 1000 * 60 * 60 * 24 * 30
+      const usable = draft && draft.version === 1 && Date.now() - Number(draft.updatedAt || 0) <= maxAge && studioDraftHasWork(draft) ? draft : null
+      setInterruptedDraft(usable)
+      setDraftReady(true)
+      if (draft && !usable) void clearStudioLiveDraft()
+    })
+    return () => { alive = false }
+  }, [])
+
+  useEffect(() => {
+    if (!draftReady || interruptedDraft) return
+    // بعد حفظ نهائي نتجاهل أي مؤقت قديم؛ أول تعديل حقيقي لاحق يبدأ مسودة جديدة.
+    if (suppressAutosaveRef.current) suppressAutosaveRef.current = false
+    const timer = window.setTimeout(() => {
+      if (suppressAutosaveRef.current) return
+      const snapshot = { ...liveDraft, updatedAt: Date.now() }
+      if (studioDraftHasWork(snapshot)) void writeStudioLiveDraft(snapshot)
+      else void clearStudioLiveDraft()
+    }, 260)
+    return () => window.clearTimeout(timer)
+  }, [draftReady, interruptedDraft, liveDraft])
+
+  useEffect(() => {
+    const persistBeforeLeave = () => {
+      if (!draftReady || interruptedDraft || suppressAutosaveRef.current) return
+      const snapshot: StudioLiveDraft = {
+        ...latestDraftRef.current,
+        text: textRef.current?.value ?? latestDraftRef.current.text,
+        updatedAt: Date.now(),
+      }
+      if (studioDraftHasWork(snapshot)) void writeStudioLiveDraft(snapshot)
+    }
+    window.addEventListener('pagehide', persistBeforeLeave)
+    return () => window.removeEventListener('pagehide', persistBeforeLeave)
+  }, [draftReady, interruptedDraft])
+
+  const restoreInterruptedDraft = () => {
+    const draft = interruptedDraft
+    if (!draft) return
+    suppressAutosaveRef.current = true
+    setText(draft.text)
+    setContext(draft.context)
+    setTone(draft.tone)
+    setDensity(draft.density)
+    setPlatform(draft.platform)
+    setStage(draft.stage)
+    setPlans(draft.plans)
+    setReservePlans(draft.reservePlans)
+    setSelected(draft.selected)
+    setEditUndo(draft.editUndo)
+    setEditRedo(draft.editRedo)
+    setGeneration(draft.generation)
+    setLocks(draft.locks)
+    setCampaign(draft.campaign)
+    setImagePassport(draft.imagePassport)
+    setImageDescription(draft.imageDescription)
+    setImageSource(draft.imageSource)
+    setImageOwner(draft.imageOwner)
+    setImageLicense(draft.imageLicense)
+    setExternalVisuals(draft.externalVisuals)
+    setExternalQuery(draft.externalQuery)
+    setGeneratedPrompt(draft.generatedPrompt)
+    setVisualMode(draft.visualMode)
+    setSelectedLibraryImageId(draft.selectedLibraryImageId)
+    setVisualOrigin(draft.visualOrigin)
+    setGeneratedModel(draft.generatedModel)
+    setGeneratedAt(draft.generatedAt)
+    setGeneratedVisualWorld(draft.generatedVisualWorld)
+    setGeneratedRelevanceScore(draft.generatedRelevanceScore)
+    setGeneratedRelevanceReason(draft.generatedRelevanceReason)
+    setGenerationMode(draft.generationMode)
+    setDna(draft.dna)
+    setSealOn(draft.sealOn)
+    setSeasonalOn(draft.seasonalOn)
+    setBgPattern(draft.bgPattern)
+    setAutopilotPack(draft.autopilotPack)
+    setReleasePack(draft.releasePack)
+    setZeroDecision(draft.zeroDecision)
+    setZeroDecisionPhase(draft.zeroDecisionPhase)
+    setInterruptedDraft(null)
+    setNotice('استُعيد التصميم غير المكتمل كما تركته — ويمكنك متابعة العمل من النقطة نفسها.')
+  }
+
+  const dismissInterruptedDraft = () => {
+    suppressAutosaveRef.current = true
+    setInterruptedDraft(null)
+    void clearStudioLiveDraft()
+    setNotice('تم تجاهل المسودة المنقطعة. لم تُمس تصاميمك المحفوظة أو مكتبة التوليد.')
+  }
+
   const activeSeason = useMemo(() => currentSeason(), [])
   // مختبر الأداء: تنبّؤ التفاعل للتصميم المختار — يُحسب محلياً عند كل تغيير.
   const forecast = useMemo(() => (selected ? predictEngagement(selected) : null), [selected])
@@ -942,6 +1240,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           quality: cleanPlan.quality?.score || 0,
           directionLabel: cleanPlan.directionLabel || '',
           generationKind,
+          topic: (creativeBrief.issue || text || cleanPlan.content?.title || '').replace(/\s+/g, ' ').trim().slice(0, 160),
+          visualWorld: cleanPlan.directionLabel || '',
+          campaign: /(?:حملة|campaign)/i.test(generationKind) ? generationKind : '',
           createdAtMs: createdAtMs + index,
         }
         await setDoc(doc(db, 'admin_generated_designs', id), { ...asset, createdAt: serverTimestamp() })
@@ -1329,7 +1630,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             note: (cleanPlan.rationale?.[0] || cleanPlan.directionLabel || generationKind).replace(/\s+/g, ' ').trim().slice(0, 180),
             thumbnail, formatId: cleanPlan.format?.id || '', formatLabel: cleanPlan.format?.label || '',
             width: cleanPlan.format?.width || 0, height: cleanPlan.format?.height || 0,
-            quality: cleanPlan.quality?.score || 0, directionLabel: cleanPlan.directionLabel || '', generationKind, createdAtMs,
+            quality: cleanPlan.quality?.score || 0, directionLabel: cleanPlan.directionLabel || '', generationKind,
+            topic: (cleanPlan.content?.title || cleanPlan.directionLabel || '').replace(/\s+/g, ' ').trim().slice(0, 160),
+            visualWorld: cleanPlan.directionLabel || '', campaign: /(?:حملة|campaign)/i.test(generationKind) ? generationKind : '', createdAtMs,
           }
           await firestoreModule.setDoc(firestoreModule.doc(db, 'admin_generated_designs', id), { ...asset, backfilled: true, createdAt: firestoreModule.serverTimestamp() }, { merge: true })
           archivedDesigns.push(asset)
@@ -2497,6 +2800,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   }
 
   const saveSelectedToLibrary = (plan: CompositionPlan) => {
+    // هذا هو الحفظ النهائي؛ بعده لا تبقى مسودة منقطعة تتنافس مع النسخة المعتمدة.
+    suppressAutosaveRef.current = true
+    setInterruptedDraft(null)
+    void clearStudioLiveDraft()
     teachTaste(plan, 1)
     const next = savePlan(plan)
     setSavedPlans(next)
@@ -3133,6 +3440,16 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           </div>
         </div>
         <div className="relative mt-5"><StageRail stage={stage} onChange={handleStageChange} /></div>
+
+        {interruptedDraft && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/20 bg-accent/[.045] px-4 py-3 text-[.68rem] shadow-sm" role="status" aria-live="polite">
+            <span className="font-semibold text-ink">عُثر على تصميم غير مكتمل</span>
+            <span className="flex items-center gap-2">
+              <button type="button" className={`${primary} px-4 py-2 text-[.64rem]`} onClick={restoreInterruptedDraft}>استئناف</button>
+              <button type="button" className={`${ghost} px-4 py-2 text-[.64rem]`} onClick={dismissInterruptedDraft}>تجاهل</button>
+            </span>
+          </div>
+        )}
 
         <GenerationLibraryPanel
           designs={generatedDesignLibraryAssets}

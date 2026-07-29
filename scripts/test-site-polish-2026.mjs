@@ -65,7 +65,7 @@ for (const slug of slugs) {
 ok(redirectMap.get('/scholarly_contributi/اتجاهات-الهيئة-التدريسية-نحو-استخدام-2')?.destination === '/research/faculty-attitudes-edtech', 'المسار العربي القديم المفهرس يتحول مباشرة إلى البحث الصحيح')
 
 console.log('\nHomepage polish')
-ok(home.includes('من الأرشيف اليوم') && home.includes('أربعة مداخل، تتغيّر مع كل زيارة.'), 'قسم الأعمال أصبح «من الأرشيف اليوم» مع بقاء الاكتشاف المتجدد')
+ok(home.includes('من الأرشيف اليوم') && home.includes('أربع زوايا، ورؤية تتجدّد.'), 'قسم الأعمال أصبح «من الأرشيف اليوم» مع بقاء الاكتشاف المتجدد')
 ok(home.includes('archive-editorial-cover') && home.includes("item.kind === 'paper' ? 'RESEARCH'") && home.includes("item.kind === 'media' ? 'MEDIA' : 'ESSAY'"), 'المقال والبحث يحصلان على أغلفة تحريرية أصلية، مع هوية احتياطية صحيحة لكل نوع بلا صور stock')
 ok(home.includes('home-idea-thread-line') && home.includes('<i /><i /><i /><i />'), 'خيط الفكرة موجود كصلة بصرية هادئة بين المحطات')
 ok(!home.includes('function QuietEnding()') && !home.includes('الخاتمة الهادئة') && !home.includes('يفتح طريقاً إلى الفكرة'), 'الخاتمة الهادئة محذوفة بالكامل من الرئيسية')
@@ -205,7 +205,7 @@ ok(instructions.includes('مشروعاً') && instructions.includes('ممدوح�
   const studentAt = articleDetail.indexOf('<ArticleExtensions article={article}')
   const shareAt = articleDetail.indexOf('<Share compact title={a.title}')
   ok(lifeAt >= 0 && studentAt > lifeAt && shareAt > studentAt, 'ترتيب نهاية المقال: حياة الفكرة ← للطلاب والباحثين ← المشاركة')
-  ok(articleDetail.includes('compactLabel="استشهاد"') && articleDetail.includes('المصدر الأصلي'), 'أدوات المصدر والاستشهاد مسماة بوضوح وليست أيقونات يتيمة')
+  ok(!articleDetail.includes('compactLabel="استشهاد"') && articleDetail.includes('aria-label="فتح المصدر الأصلي"') && articleDetail.includes('<CiteButton compact'), 'أدوات المصدر والاستشهاد أيقونات فقط مع أسماء وصول واضحة كما اعتمدت الواجهة الجديدة')
 }
 
 console.log('\nAll requested polish guards passed.')

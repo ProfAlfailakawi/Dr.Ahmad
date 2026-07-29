@@ -75,7 +75,6 @@ export const ADMIN_GROUPS: AdminNavGroup[] = [
         items: [
           { tab: 'studio', label: 'استوديو النشر', note: 'من الفكرة إلى الحزمة التحريرية' },
           { tab: 'design', label: 'استوديو التصاميم', note: 'التصميم والتوليد ومكتبة الأصول' },
-          { tab: 'image-lab', label: 'مختبر الصور', note: 'تحرير الصور وبصمتها البصرية' },
         ],
       },
       {
@@ -142,7 +141,9 @@ export const ADMIN_GROUPS: AdminNavGroup[] = [
 export const itemsOfGroup = (group: AdminNavGroup): AdminNavItem[] =>
   group.sections.flatMap((section) => section.items)
 
-export const ADMIN_TABS: AdminTab[] = ADMIN_GROUPS.flatMap((group) => itemsOfGroup(group).map((item) => item.tab))
+// تبويبات محفوظة للمستقبل: تعمل عبر الرابط المباشر إن احتجناها، لكنها لا تظهر في الواجهة الآن.
+const HIDDEN_ADMIN_TABS: AdminTab[] = ['image-lab']
+export const ADMIN_TABS: AdminTab[] = [...ADMIN_GROUPS.flatMap((group) => itemsOfGroup(group).map((item) => item.tab)), ...HIDDEN_ADMIN_TABS]
 
 export const adminItem = (tab: AdminTab): AdminNavItem | undefined =>
   ADMIN_GROUPS.flatMap(itemsOfGroup).find((item) => item.tab === tab)

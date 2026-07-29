@@ -1,5 +1,6 @@
 import { JsonLd, useSeo } from '../components/seo'
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, FadeUp, Label, Magnetic, Page, Reveal, ScheduleProjectLink, SectionHead, SocialIcon, TebyanProjectLink } from '../components/ui'
@@ -718,7 +719,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
   return (
     <section className="border-t border-hair bg-wash px-6 py-[52px] md:px-11 md:py-[84px]">
       <div className="mx-auto max-w-shell">
-        <SectionHead label="من الأرشيف اليوم" title="أربعة مداخل، تتغيّر مع كل زيارة." />
+        <SectionHead label="من الأرشيف اليوم" title="أربع زوايا، ورؤية تتجدّد." />
         <div className="mobile-card-rail grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
           {items.map((item, index) => {
             const isBook = item.kind === 'book'
@@ -874,6 +875,24 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
     }
   }, [active])
 
+  const modal = (
+    <AnimatePresence>
+      {active && (
+        <motion.div className="home-thought-maps-overlay fixed inset-0 z-[1000] bg-ink/35 p-3 pt-[calc(4.75rem+env(safe-area-inset-top))] backdrop-blur-sm md:p-8 md:pt-24" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && setActive(null)}>
+          <motion.div ref={dialogRef} id="home-thought-maps-dialog" role="dialog" aria-modal="true" aria-labelledby="home-thought-maps-title" tabIndex={-1} className="mx-auto h-full max-w-6xl overflow-y-auto rounded-3xl border border-hair bg-canvas shadow-2xl outline-none" initial={{ y: 18, scale: .985 }} animate={{ y: 0, scale: 1 }} exit={{ y: 12, scale: .99 }} transition={{ duration: .28, ease: EASE }}>
+            <div className="sticky top-0 z-20 flex items-center justify-between border-b border-hair bg-canvas/90 px-5 py-3 backdrop-blur md:px-7">
+              <h2 id="home-thought-maps-title" className="font-display text-[1rem] font-semibold text-ink">خرائط الفكر والأثر</h2>
+              <button onClick={() => setActive(null)} className="rounded-full border border-hair px-4 py-1.5 text-[.76rem] text-soft transition-colors hover:border-accent hover:text-accent">إغلاق</button>
+            </div>
+            <MiniAtlas />
+            <ImpactTimeline />
+            <Signatures />
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+
   return (
     <>
       <section className="border-t border-hair px-6 py-8 md:px-11 md:py-10">
@@ -890,21 +909,7 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
         </div>
       </section>
 
-      <AnimatePresence>
-        {active && (
-          <motion.div className="fixed inset-0 z-[290] bg-ink/35 p-3 pt-[calc(4.75rem+env(safe-area-inset-top))] backdrop-blur-sm md:p-8 md:pt-24" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && setActive(null)}>
-            <motion.div ref={dialogRef} id="home-thought-maps-dialog" role="dialog" aria-modal="true" aria-labelledby="home-thought-maps-title" tabIndex={-1} className="mx-auto h-full max-w-6xl overflow-y-auto rounded-3xl border border-hair bg-canvas shadow-2xl outline-none" initial={{ y: 18, scale: .985 }} animate={{ y: 0, scale: 1 }} exit={{ y: 12, scale: .99 }} transition={{ duration: .28, ease: EASE }}>
-              <div className="sticky top-0 z-20 flex items-center justify-between border-b border-hair bg-canvas/90 px-5 py-3 backdrop-blur md:px-7">
-                <h2 id="home-thought-maps-title" className="font-display text-[1rem] font-semibold text-ink">خرائط الفكر والأثر</h2>
-                <button onClick={() => setActive(null)} className="rounded-full border border-hair px-4 py-1.5 text-[.76rem] text-soft transition-colors hover:border-accent hover:text-accent">إغلاق</button>
-              </div>
-              <MiniAtlas />
-              <ImpactTimeline />
-              <Signatures />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {typeof document !== 'undefined' ? createPortal(modal, document.body) : modal}
     </>
   )
 }
@@ -914,25 +919,28 @@ function HomeSocialFooter() {
   return (
     <section className="border-t border-hair px-6 py-7 md:px-11 md:py-9">
       <div className="mx-auto max-w-shell">
-        <div className="flex flex-wrap items-center justify-center gap-2.5">
-          {socials.map((s) => (
-            <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className="flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent">
-              <SocialIcon name={s.label} size={16} />
-            </a>
-          ))}
-          <span aria-hidden className="mx-0.5 h-5 w-px bg-hair" />
-          {academicProfiles.map((profileLink) => (
-            <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className="flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent">
-              <SocialIcon name={profileLink.label} size={17} />
-            </a>
-          ))}
-          <button type="button" onClick={() => setNewsletterOpen((value) => !value)} aria-expanded={newsletterOpen} aria-label="النشرة البريدية" title="النشرة البريدية" className={`flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${newsletterOpen ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
-            <SocialIcon name="Mail" size={16} />
-          </button>
-          <span className="inline-flex items-center gap-2">
-            <TebyanProjectLink />
-            <ScheduleProjectLink />
-          </span>
+        <div className="-mx-6 overflow-x-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:px-0">
+          <div className="mx-auto flex min-w-max items-center justify-start gap-2.5 md:justify-center">
+            <span className="inline-flex items-center gap-2.5">
+              {socials.map((s) => (
+                <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent">
+                  <SocialIcon name={s.label} size={16} />
+                </a>
+              ))}
+              {academicProfiles.map((profileLink) => (
+                <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent">
+                  <SocialIcon name={profileLink.label} size={17} />
+                </a>
+              ))}
+            </span>
+            <span className="ms-4 inline-flex items-center gap-2.5" aria-label="أدوات الموقع">
+              <button type="button" onClick={() => setNewsletterOpen((value) => !value)} aria-expanded={newsletterOpen} aria-label="النشرة البريدية" title="النشرة البريدية" className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors ${newsletterOpen ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
+                <SocialIcon name="Mail" size={16} />
+              </button>
+              <TebyanProjectLink />
+              <ScheduleProjectLink />
+            </span>
+          </div>
         </div>
         <AnimatePresence initial={false}>
           {newsletterOpen && (

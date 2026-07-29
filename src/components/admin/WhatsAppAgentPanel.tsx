@@ -63,7 +63,7 @@ type KnowledgeState = {
   evidence: { total: number; enabled: number; lastUpdatedAt: string | null; domains: { domain: string; total: number; enabled: number }[] }
   conversations: {
     active: number; human: number
-    intents: { intent: string; total: number; confidence: number }[]
+    intents: { intent: string; total: number; confidence?: number }[]
     gaps: { topic?: string; reason: string; total: number }[]
     answers: { intent: string; total: number }[]
   }
@@ -478,10 +478,13 @@ export function WhatsAppAgentPanel() {
             </div>
             <button type="button" className={secondary} onClick={() => void refresh()} disabled={busy}>{busy ? 'يحدّث…' : 'تحديث المؤشرات'}</button>
           </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">الأدلة المعتمدة</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.evidence.enabled}</p><p className="text-[.7rem] text-soft">من أصل {knowledge.evidence.total}</p></article>
-            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">جلسات محمية</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.conversations.active}</p><p className="text-[.7rem] text-soft">من دون عرض نصوصها</p></article>
-            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">فجوات تحتاج مادة</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.conversations.gaps.reduce((sum, item) => sum + item.total, 0)}</p><p className="text-[.7rem] text-soft">مصنّفة موضوعياً بلا نصوص شخصية</p></article>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">الأدلة المعتمدة</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.evidence.enabled}</p><p className="text-[.68rem] text-soft">من أصل {knowledge.evidence.total}</p></article>
+            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">المحادثات النشطة</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.conversations.active}</p><p className="text-[.68rem] text-soft">مجاميع تشغيل فعلية</p></article>
+            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">التدخلات البشرية</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.conversations.human}</p><p className="text-[.68rem] text-soft">من دون كشف المحادثة</p></article>
+            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">النوايا المسجلة</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.conversations.intents.reduce((sum, item) => sum + item.total, 0)}</p><p className="text-[.68rem] text-soft">من آخر قرارات المحرك</p></article>
+            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">الفجوات المفتوحة</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.conversations.gaps.reduce((sum, item) => sum + item.total, 0)}</p><p className="text-[.68rem] text-soft">حالات Attention الفعلية</p></article>
+            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.72rem] text-soft">الإجابات المسجلة</p><p className="mt-1 font-display text-3xl text-accent">{knowledge.conversations.answers.reduce((sum, item) => sum + item.total, 0)}</p><p className="text-[.68rem] text-soft">ردود موثقة في التشغيل</p></article>
           </div>
           <div className="mt-5 grid gap-3 lg:grid-cols-5">
             {knowledge.modes.map((mode, index) => (
@@ -520,14 +523,21 @@ export function WhatsAppAgentPanel() {
           <p className="text-[.7rem] font-bold uppercase tracking-[.14em] text-accent">مؤشرات آمنة</p>
           <h2 className="mt-1 font-display text-2xl font-semibold text-ink">المحادثات بوصفها مؤشرات، لا صندوق تجسس.</h2>
           <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">تعرض اللوحة النية ودرجة الفهم ومكان انقطاع الحوار فقط، من دون الرسائل أو الأرقام أو الأسماء.</p>
-          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] text-soft">النشطة</p><strong className="mt-1 block font-display text-2xl text-accent">{knowledge.conversations.active}</strong></article>
+            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] text-soft">تدخل بشري</p><strong className="mt-1 block font-display text-2xl text-accent">{knowledge.conversations.human}</strong></article>
+            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] text-soft">نوايا</p><strong className="mt-1 block font-display text-2xl text-accent">{knowledge.conversations.intents.reduce((sum, item) => sum + item.total, 0)}</strong></article>
+            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] text-soft">فجوات</p><strong className="mt-1 block font-display text-2xl text-accent">{knowledge.conversations.gaps.reduce((sum, item) => sum + item.total, 0)}</strong></article>
+            <article className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] text-soft">إجابات</p><strong className="mt-1 block font-display text-2xl text-accent">{knowledge.conversations.answers.reduce((sum, item) => sum + item.total, 0)}</strong></article>
+          </div>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
             <div className="rounded-2xl border border-hair bg-canvas p-4">
               <h3 className="text-[.86rem] font-semibold text-ink">أكثر النيات وروداً</h3>
               <div className="mt-3 grid gap-2">
                 {!knowledge.conversations.intents.length && <p className="text-[.74rem] text-soft">لا توجد بيانات بعد.</p>}
                 {knowledge.conversations.intents.slice(0, 12).map((item) => (
                   <div key={item.intent} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-hair px-3 py-2.5">
-                    <div><p className="text-[.78rem] font-semibold text-ink">{item.intent}</p><p className="text-[.66rem] text-soft">ثقة وسطية {Math.round(item.confidence * 100)}٪</p></div>
+                    <div><p className="text-[.78rem] font-semibold text-ink">{item.intent}</p><p className="text-[.66rem] text-soft">{item.confidence == null ? 'مجمّع من آخر قرار فعلي للمحرك' : `ثقة وسطية ${Math.round(item.confidence * 100)}٪`}</p></div>
                     <span className="font-display text-xl text-accent">{item.total}</span>
                   </div>
                 ))}

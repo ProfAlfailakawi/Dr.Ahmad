@@ -517,7 +517,7 @@ const DIALOGUE_MODEL = env.PODCAST_DIALOGUE_MODEL || env.GEMINI_MODEL || 'gemini
 const ANALYSIS_MODEL = env.PODCAST_ANALYSIS_MODEL || DIALOGUE_MODEL
 const JUDGE_MODEL = env.PODCAST_JUDGE_MODEL || DIALOGUE_MODEL
 const PIPELINE_HASH = createHash('sha256').update(JSON.stringify({
-  version: 'arabic-podcast-v7-semantic-pacing',
+  version: 'arabic-podcast-v8-audible-music-identity',
   dialoguePrompt: AR_SYSTEM,
   pronunciationPrompt: PRONOUNCE_SYSTEM,
   judgePrompt: JUDGE_SYSTEM,
@@ -1589,8 +1589,15 @@ function selectLicensedMusic(mood) {
   const track = (library.tracks || []).find((item) => item.licensed && (item.moods || []).includes(mood))
     || (library.tracks || []).find((item) => item.licensed)
   if (!track || !existsSync(resolve(ROOT, track.path))) return null
-  return { file: resolve(ROOT, track.path), bedVol: Math.min(0.004, track.bedVolume ?? 0.003),
-    introVol: 0.10, outroVol: 0.08, introSec: 5, outroSec: 4 }
+  return {
+    file: resolve(ROOT, track.path),
+    bedVol: Math.min(0.02, track.bedVolume ?? 0.012),
+    introVol: 0.16,
+    outroVol: 0.12,
+    bridgeVol: 0.11,
+    introSec: 4.8,
+    outroSec: 5.5,
+  }
 }
 
 function computeSampleContentHashes(sample, sourceArticle, music) {
@@ -1613,7 +1620,7 @@ function computeSampleContentHashes(sample, sourceArticle, music) {
   })))).digest('hex')
   const musicHash = music ? createHash('sha256').update(readFileSync(music.file))
     .update(JSON.stringify({ bedVol: music.bedVol, introVol: music.introVol, outroVol: music.outroVol,
-      introSec: music.introSec, outroSec: music.outroSec })).digest('hex') : 'none'
+      introSec: music.introSec, outroSec: music.outroSec, bridgeVol: music.bridgeVol })).digest('hex') : 'none'
   const sourceHash = createHash('sha256').update(sourceArticle.body).digest('hex')
   const sampleHash = createHash('sha256').update([sourceHash, femaleTestHash, dialogueHash, pronunciationHash,
     timelineHash, musicHash, PIPELINE_HASH].join('|')).digest('hex')
@@ -2501,36 +2508,49 @@ function trimGeneratedBoundaryPadding(file, intendedText) {
 
 function selectMusicBridgeIndexes(utterances) {
   const total = utterances.length
-  if (total < 14) return []
+  if (total < 8) return []
   const explicit = utterances.map((utterance, index) => ({ utterance, index }))
     .filter(({ utterance, index }) => utterance.musicBridgeAfter === true
-      && index < total - 2 && !utterance.allowOverlap)
-    .slice(0, total >= 26 ? 2 : 1)
+      && index >= 2 && index < total - 2 && !utterance.allowOverlap)
+    .slice(0, total >= 22 ? 2 : 1)
     .map((item) => item.index)
   if (explicit.length) return explicit
-  const candidates = utterances.map((utterance, index) => ({ utterance, index }))
-    .filter(({ utterance, index }) => index >= Math.floor(total * 0.28) && index <= Math.floor(total * 0.82)
-      && ['question', 'reflection', 'gentleObjection', 'clarification'].includes(utterance.delivery)
+
+  const usable = utterances.map((utterance, index) => ({ utterance, index }))
+    .filter(({ utterance, index }) => index >= Math.max(2, Math.floor(total * 0.28))
+      && index <= Math.min(total - 3, Math.floor(total * 0.82))
       && !utterance.allowOverlap)
+  const semantic = usable.filter(({ utterance }) =>
+    ['question', 'reflection', 'reflective', 'gentleObjection', 'clarification', 'conclusion'].includes(utterance.delivery))
+  const candidates = semantic.length ? semantic : usable
   const primaryTarget = total * 0.52
   const primary = [...candidates].sort((left, right) =>
     Math.abs(left.index - primaryTarget) - Math.abs(right.index - primaryTarget))[0]
   if (!primary) return []
   const result = [primary.index]
-  if (total >= 26) {
+  if (total >= 22) {
     const secondaryTarget = total * 0.78
-    const secondary = candidates.filter((item) => Math.abs(item.index - primary.index) >= 6)
+    const secondary = candidates.filter((item) => Math.abs(item.index - primary.index) >= 5)
       .sort((left, right) => Math.abs(left.index - secondaryTarget) - Math.abs(right.index - secondaryTarget))[0]
     if (secondary) result.push(secondary.index)
   }
   return result.sort((a, b) => a - b)
 }
 
-function createMusicBridge(track, outPath, durationSec = 1.8, volume = 0.085) {
-  ff(['-i', track.file, '-t', durationSec.toFixed(2), '-af',
-    `afade=t=in:d=0.35,afade=t=out:st=${Math.max(0.55, durationSec - 0.65).toFixed(2)}:d=0.65,volume=${volume}`,
-    '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', outPath])
+function createMusicClip(track, outPath, durationSec, volume, { fadeInSec = 0.4, fadeOutSec = 0.8, startSec = 0 } = {}) {
+  const fadeOutStart = Math.max(fadeInSec + 0.15, durationSec - fadeOutSec)
+  ff([
+    ...(startSec > 0 ? ['-ss', Number(startSec).toFixed(2)] : []),
+    '-i', track.file,
+    '-t', Number(durationSec).toFixed(2),
+    '-af', `afade=t=in:d=${Number(fadeInSec).toFixed(2)},afade=t=out:st=${fadeOutStart.toFixed(2)}:d=${Number(fadeOutSec).toFixed(2)},volume=${Number(volume).toFixed(3)}`,
+    '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', outPath,
+  ])
   return outPath
+}
+
+function createMusicBridge(track, outPath, durationSec = 2.05, volume = 0.11) {
+  return createMusicClip(track, outPath, durationSec, volume, { fadeInSec: 0.35, fadeOutSec: 0.72 })
 }
 
 function insertSemanticMusicBridges(segments, utterances, music, workDir) {
@@ -2543,30 +2563,57 @@ function insertSemanticMusicBridges(segments, utterances, music, workDir) {
     const segment = { ...segments[index] }
     expanded.push(segment)
     if (!indexes.includes(index)) continue
-    const durationSec = bridges.length === 0 ? 1.7 : 1.35
+    const durationSec = bridges.length === 0 ? 2.05 : 1.65
     const bridgeFile = resolve(workDir, `semantic-bridge-${bridges.length + 1}.wav`)
-    createMusicBridge(music, bridgeFile, durationSec, bridges.length === 0 ? 0.085 : 0.07)
-    segment.pauseAfterMs = Math.min(Number(segment.pauseAfterMs || 300), 140)
-    expanded.push({ file: bridgeFile, pauseAfterMs: 0, overlapMs: 430,
+    createMusicBridge(music, bridgeFile, durationSec, bridges.length === 0 ? Number(music.bridgeVol || 0.11) : Math.max(0.075, Number(music.bridgeVol || 0.11) * 0.82))
+    segment.pauseAfterMs = Math.min(Number(segment.pauseAfterMs || 300), 120)
+    expanded.push({ file: bridgeFile, pauseAfterMs: 0, overlapMs: 470,
       hasHighRisk: false, isMusicBridge: true, bridgeDurationSec: durationSec })
-    if (segments[index + 1]) segments[index + 1].overlapMs = Math.max(Number(segments[index + 1].overlapMs || 0), 680)
+    if (segments[index + 1]) segments[index + 1].overlapMs = Math.max(Number(segments[index + 1].overlapMs || 0), 720)
     bridges.push({ afterUtterance: index + 1, durationSec })
   }
   return { segments: expanded, bridges }
 }
 
+function addEpisodeMusicIdentity(segments, music, outMp3, raw = false) {
+  if (!music || raw || !segments.length) return { segments, intro: null, outro: null }
+  const stem = outMp3.replace(/\.mp3$/i, '')
+  const introSec = Number(music.introSec || 4.8)
+  const outroSec = Number(music.outroSec || 5.5)
+  const introFile = `${stem}.music-intro.wav`
+  const outroFile = `${stem}.music-outro.wav`
+  createMusicClip(music, introFile, introSec, Number(music.introVol || 0.16), { fadeInSec: 0.55, fadeOutSec: 1.15 })
+  createMusicClip(music, outroFile, outroSec, Number(music.outroVol || 0.12), { fadeInSec: 0.65, fadeOutSec: 1.45, startSec: Math.max(0, introSec + 1.2) })
+  const spoken = segments.map((segment, index) => index === 0
+    ? { ...segment, overlapMs: Math.max(Number(segment.overlapMs || 0), 1150) }
+    : { ...segment })
+  return {
+    segments: [
+      { file: introFile, pauseAfterMs: 0, overlapMs: 0, hasHighRisk: false, isMusicIntro: true },
+      ...spoken,
+      { file: outroFile, pauseAfterMs: 0, overlapMs: 760, hasHighRisk: false, isMusicOutro: true },
+    ],
+    intro: { durationSec: introSec, volume: Number(music.introVol || 0.16), overlapWithSpeechMs: 1150 },
+    outro: { durationSec: outroSec, volume: Number(music.outroVol || 0.12), overlapWithSpeechMs: 760 },
+  }
+}
+
 function planTimeline(segments) {
   const timeline = []
-  // الجسور الموسيقية وحدات داخل الـTimeline نفسه. لا نحجب بداية الحلقة بمقدمة
-  // طويلة، ولا نضيف سريراً موسيقياً مستمراً تحت الكلام.
-  const firstStart = 0.25
+  // الهوية الموسيقية جزء من الـTimeline نفسه: مقدمة قصيرة مسموعة تتلاشى تحت
+  // أول صوت، جسور دلالية محدودة، وخاتمة مستقلة. لا يوجد سرير موسيقي مستمر تحت الكلام.
+  const firstStart = 0
   for (const segment of segments) {
     const dur = probeDur(segment.file)
     const previous = timeline.at(-1)
     let start = firstStart
     let overlapMs = 0
     if (previous) {
-      const maxOverlapMs = segment.isMusicBridge ? 500 : previous.isMusicBridge ? 900 : 150
+      const maxOverlapMs = segment.isMusicBridge ? 560
+        : previous.isMusicBridge ? 920
+          : previous.isMusicIntro ? 1450
+            : segment.isMusicOutro ? 920
+              : 150
       const requestedOverlap = Math.min(maxOverlapMs, Math.max(50, Number(segment.overlapMs || 0)))
       const canOverlap = Number(segment.overlapMs) > 0 && !segment.hasHighRisk && !previous.hasHighRisk
       overlapMs = canOverlap ? requestedOverlap : 0
@@ -2607,7 +2654,8 @@ function buildSilenceReport(timeline, utteranceAudits, totalSec, utterances) {
 }
 
 function assemble(segments, outMp3, music, { raw = false } = {}) {
-  const { timeline, total } = planTimeline(segments)
+  const musicIdentity = addEpisodeMusicIdentity(segments, music, outMp3, raw)
+  const { timeline, total } = planTimeline(musicIdentity.segments)
 
   const inputs = []
   const filters = []
@@ -2623,7 +2671,7 @@ function assemble(segments, outMp3, music, { raw = false } = {}) {
   filters.push(`${mixInputs}amix=inputs=${n}:normalize=0[mix]`)
   filters.push(raw ? '[mix]anull[out]' : '[mix]loudnorm=I=-16:TP=-1.5:LRA=11[out]')
   ff([...inputs, '-filter_complex', filters.join(';'), '-map', '[out]', '-t', total.toFixed(2), '-codec:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100', outMp3])
-  return { total, timeline }
+  return { total, timeline, musicIdentity: { intro: musicIdentity.intro, outro: musicIdentity.outro } }
 }
 
 /*
@@ -3499,6 +3547,7 @@ async function produce(article, lang) {
     auditRecord.musicBridges = bridged.bridges
     const candidateMp3 = resolve(TMP, `${article.slug}.accepted-candidate.mp3`)
     let assembled = assemble(bridged.segments, candidateMp3, music)
+    auditRecord.musicIdentity = assembled.musicIdentity
     const dialogueWords = transcript.reduce((total, item) => total + String(item.text).split(/\s+/).filter(Boolean).length, 0)
     const weightedTargetWpm = transcript.reduce((total, item) => total
       + Number(item.targetWordsPerMinute || 140) * String(item.text).split(/\s+/).filter(Boolean).length, 0)
@@ -3608,6 +3657,7 @@ async function produce(article, lang) {
         bridged = insertSemanticMusicBridges(segments.map((segment) => ({ ...segment })), transcript, music, TMP)
         auditRecord.musicBridges = bridged.bridges
         assembled = assemble(bridged.segments, candidateMp3, music)
+        auditRecord.musicIdentity = assembled.musicIdentity
         durationRange.allowedLongSilenceWindows = plannedLongSilenceWindows(assembled.timeline)
         technicalAudit = auditAudio(candidateMp3, durationRange)
         if (technicalAudit.issues.length) return quarantine(`الفحص التقني بعد الإصلاح الموجّه: ${technicalAudit.issues.join(' · ')}`)
@@ -3646,6 +3696,11 @@ async function produce(article, lang) {
         revisionId: auditRecord.manualSource?.revisionId,
         turnCount: auditRecord.manualSource?.turnCount,
       } : undefined,
+      audioIdentity: {
+        intro: auditRecord.musicIdentity?.intro || null,
+        bridges: auditRecord.musicBridges || [],
+        outro: auditRecord.musicIdentity?.outro || null,
+      },
       utterances: transcript.map(({ speaker, text }) => ({ speaker, text })) }
     const tempTranscript = resolve(TMP, `${article.slug}.dialogue.json`)
     if (lang === 'ar') writeFileSync(tempTranscript, JSON.stringify(publicTranscript, null, 2))
@@ -3930,6 +3985,10 @@ if (SELF_TEST) {
       delivery: 'question' }, 0, 'ar', 'ar-AE-FatimaNeural').rate,
   'نورة تحتاج إبطاءً أدائياً أكبر من فاطمة وفق الاختبار السمعي')
   assert(selectMusicBridgeIndexes(normalizedSample.utterances).length <= 1, 'العينة القصيرة لا تحتمل أكثر من جسر موسيقي واحد')
+  const compactMusicFixture = Array.from({ length: 10 }, (_, index) => ({ speaker: index % 2 ? 'A' : 'B', delivery: index === 5 ? 'question' : 'statement', allowOverlap: false }))
+  assert.equal(selectMusicBridgeIndexes(compactMusicFixture).length, 1, 'كل حوار مكتمل من عشر مداخلات يحصل على جسر موسيقي مسموع واحد')
+  const musicConfigFixture = selectLicensedMusic('تأملي')
+  assert(!musicConfigFixture || (musicConfigFixture.introSec >= 4.5 && musicConfigFixture.outroSec >= 5 && musicConfigFixture.bridgeVol >= 0.1), 'الهوية الموسيقية تضمن مقدمة وجسراً وخاتمة بمستوى مسموع')
   const silenceTimelineFixture = [
     { start: 0, dur: 4, pauseAfterMs: 700 },
     { start: 4.7, dur: 1.7, isMusicBridge: true },

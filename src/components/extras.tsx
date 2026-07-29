@@ -6,7 +6,7 @@ import { SocialIcon } from './icons'
 import { ALLOW_BROWSER_TTS, NEWSLETTER_ENDPOINT, site } from '../data'
 import audioManifest from '../data/audio.json'
 import audioMeta from '../data/audio-meta.json'
-import { AudioPlayer, openAudioPlayer } from './AudioPlayer'
+import { AudioPlayer } from './AudioPlayer'
 import { firebaseEnabled, getDb } from '../lib/firebase'
 import { trackShare } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
@@ -471,13 +471,6 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       عبر ALLOW_BROWSER_TTS في data.ts. */
 type ArticleAudio = { fahed?: boolean | string; noura?: boolean | string; dialogue?: boolean | string }
 type ArticleAudioControl = { readingDisabled?: boolean; fahedDisabled?: boolean; nouraDisabled?: boolean; dialogueDisabled?: boolean }
-type DialogueTranscript = { title: string; utterances: { speaker: string; text: string }[] }
-const publicSpeakerLabel = (speaker = '') => {
-  const normalized = String(speaker).trim().toLowerCase()
-  if (/فهد|fahed/.test(normalized)) return 'المتحدث'
-  if (/نورة|نوره|noura/.test(normalized)) return 'المتحدثة'
-  return speaker
-}
 const audioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const audioUrl = (path: string) => audioBase ? `${audioBase}/${path.replace(/^\/?audio\//, '')}` : path
 const audioMetaMap = audioMeta as Record<string, { sha256?: string }>
@@ -526,16 +519,10 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
   // والحوار إضاءة تفسيرية بجانبها لا بديلاً عنها.
   const dialogueListed = !audioControl?.dialogueDisabled && Boolean(voices.dialogue)
   const [dialogueOk, setDialogueOk] = useState(dialogueListed)
-  const [transcript, setTranscript] = useState<DialogueTranscript | null>(null)
   useEffect(() => {
     let on = true
     setDialogueOk(dialogueListed)
     if (!dialogueListed && !audioControl?.dialogueDisabled) hasDialogueAudio(slug).then((ok) => { if (on) setDialogueOk(ok) })
-    if (audioControl?.dialogueDisabled) { setTranscript(null); return () => { on = false } }
-    fetch(versionedAudioUrl(`/audio/${slug}.dialogue.json`))
-      .then((response) => response.ok ? response.json() : null)
-      .then((value) => { if (on && value?.utterances?.length) setTranscript(value) })
-      .catch(() => { /* لا Transcript للحلقات القديمة */ })
     return () => { on = false }
   }, [audioControl?.dialogueDisabled, dialogueListed, slug])
 
@@ -546,56 +533,21 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
     ...(voices.noura ? [{ key: 'reading-woman', label: 'قراءة المقال', avatar: 'woman' as const, src: versionedAudioUrl(typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3`) }] : []),
     ...(voices.fahed ? [{ key: 'reading-man', label: 'قراءة المقال', avatar: 'man' as const, src: versionedAudioUrl(typeof voices.fahed === 'string' ? voices.fahed : `/audio/${slug}.mp3`) }] : []),
   ]
-  const dialogueLabel = 'بين صوتين'
   const audioControlId = `article-audio-${slug}`
   const sources = [
     ...readingSources,
-    ...(dialogueOk ? [{ key: 'dialogue', label: dialogueLabel, avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`) }] : []),
+    ...(dialogueOk ? [{ key: 'dialogue', label: 'استمع', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`) }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)
 
   if (sources.length) return (
     <div className={compact ? 'min-w-0 flex-1' : ''}>
-      <AudioPlayer sources={sources} title={title} compact={compact} controlId={audioControlId} />
-      {dialogueOk && (
-        <button
-          type="button"
-          onClick={() => openAudioPlayer(audioControlId, 'dialogue')}
-          className="group mt-2.5 flex w-full items-center gap-3 rounded-xl border border-hair/80 bg-canvas/70 px-3.5 py-3 text-start transition-all hover:border-accent/45 hover:bg-wash/45"
-          aria-label="فتح بين صوتين"
-        >
-          <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent/20 text-accent" aria-hidden="true">
-            <span className="absolute h-2.5 w-2.5 -translate-x-[5px] rounded-full border border-current" />
-            <span className="absolute h-2.5 w-2.5 translate-x-[5px] rounded-full border border-current" />
-            <span className="absolute bottom-[7px] h-px w-4 bg-current opacity-55" />
-            <span className="absolute -top-1 end-0 text-[.7rem] leading-none opacity-80">♪</span>
-          </span>
-          <span className="min-w-0 flex-1">
-            <strong className="block text-[.78rem] font-semibold text-ink transition-colors group-hover:text-accent">بين صوتين</strong>
-            <span className="mt-0.5 block text-[.68rem] leading-relaxed text-soft">امتداد مسموع يفتح للفكرة مساحة أوسع، من دون أن يزاحم القراءة.</span>
-          </span>
-          <span className="shrink-0 text-[.7rem] font-semibold text-accent">استمع ↗</span>
-        </button>
-      )}
-      {dialogueOk && (
-        <details className="mt-2.5 rounded-xl border border-hair bg-canvas px-5 py-4">
-          <summary className="cursor-pointer text-[.82rem] font-semibold text-accent">نص «بين صوتين»</summary>
-          {transcript ? (
-            <div className="mt-5 space-y-4 border-t border-hair pt-5">
-              {transcript.utterances.map((utterance, index) => (
-                <p key={`${utterance.speaker}-${index}`} className="text-[.96rem] leading-[1.9] text-ink/85">
-                  <strong className="me-2 font-semibold text-accent">{publicSpeakerLabel(utterance.speaker)}:</strong>
-                  {utterance.text}
-                </p>
-              ))}
-            </div>
-          ) : (
-            <p className="mt-4 border-t border-hair pt-4 text-[.86rem] leading-relaxed text-soft">
-              النسخة الصوتية متاحة للاستماع. يظهر نص «بين صوتين» هنا فور اعتماد ملف الـTranscript.
-            </p>
-          )}
-        </details>
-      )}
+      <AudioPlayer
+        sources={sources}
+        title={title}
+        compact={compact}
+        controlId={audioControlId}
+      />
     </div>
   )
   if (!ALLOW_BROWSER_TTS) return null

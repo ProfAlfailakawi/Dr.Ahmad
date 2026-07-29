@@ -55,9 +55,8 @@ export function WriterResearcherBridge({ articleTitle, paper }: { articleTitle: 
 }
 
 /* ═══════════════ ٢) نبض المقال ═══════════════ */
-export function ArticlePulse({ slug }: { slug: string }) {
-  const [count, setCount] = useState(0)
-  const [readers, setReaders] = useState(0)
+export function ArticlePulse({ slug, body }: { slug: string; body: string }) {
+  const [quote, setQuote] = useState('')
   useEffect(() => {
     let alive = true
     ;(async () => {
@@ -66,24 +65,36 @@ export function ArticlePulse({ slug }: { slug: string }) {
         if (!db) return
         const { collection, getDocs, query, where } = await import('firebase/firestore')
         const snap = await getDocs(query(collection(db, 'article_highlights'), where('slug', '==', slug)))
-        let top = 0
-        let sum = 0
-        snap.forEach((d) => { const c = Number(d.data().count || 0); sum += c; if (c > top) top = c })
-        if (alive) { setCount(top); setReaders(sum) }
+        const paragraphs = body.split(/\n\s*\n/)
+        const candidates = snap.docs
+          .map((document) => document.data() as { count?: number; paragraph?: number; startOffset?: number; endOffset?: number })
+          .filter((item) => Number(item.count || 0) >= 3 && Number.isInteger(Number(item.paragraph)) && Number.isInteger(Number(item.startOffset)) && Number.isInteger(Number(item.endOffset)))
+          .sort((left, right) => Number(right.count || 0) - Number(left.count || 0))
+        let resolved = ''
+        for (const item of candidates) {
+          const paragraph = paragraphs[Number(item.paragraph)] || ''
+          const startOffset = Number(item.startOffset)
+          const endOffset = Number(item.endOffset)
+          if (!paragraph || startOffset < 0 || endOffset <= startOffset || endOffset > paragraph.length) continue
+          const selected = paragraph.slice(startOffset, endOffset).replace(/\s+/g, ' ').trim()
+          if (selected.length < 12) continue
+          resolved = selected.length > 150 ? `${selected.slice(0, 147).trim()}…` : selected
+          break
+        }
+        if (alive) setQuote(resolved)
       } catch { /* الصمت أفضل من بطاقة خطأ */ }
     })()
     return () => { alive = false }
-  }, [slug])
+  }, [body, slug])
 
-  // الأثر الصامت (أمر الدكتور): لا أرقام ولا عدّادات — حضورٌ لا مقياس. النبضة وحدها
-  // تقول إن جملةً هنا لامست كثيرين، والقارئ يكتشفها بنفسه. الرنين يظهر فقط حين يكون حقيقياً.
-  void readers
-  if (count < 3) return null
+  // لا يظهر «نبض المقال» لمجرد وجود عدّاد؛ لا بد من جملة محددة صالحة
+  // يمكن استخراجها من المقال نفسه، وإلا تبقى نهاية المقال نظيفة تماماً.
+  if (!quote) return null
   return (
     <a
       href="#article-body"
       className="group mt-10 flex items-center gap-4 rounded-2xl border border-hair bg-wash/40 px-5 py-4 transition-colors hover:border-accent/40"
-      aria-label="نبض المقال — جملةٌ لامست كثيرين"
+      aria-label={`نبض المقال — ${quote}`}
     >
       <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden>
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent/30" />
@@ -91,7 +102,7 @@ export function ArticlePulse({ slug }: { slug: string }) {
       </span>
       <span className="text-[.85rem] font-light leading-relaxed text-soft">
         <span className="font-semibold text-accent">نبض المقال —</span>{' '}
-        جملةٌ في هذا النص توقّف عندها كثيرون. اقرأه على مهل، وستعرفها حين تمرّ بها.
+        «{quote}»
       </span>
     </a>
   )

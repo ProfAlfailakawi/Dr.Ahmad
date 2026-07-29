@@ -206,7 +206,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-1.5 truncate text-[.78rem] font-semibold text-ink">
                 {source.key !== 'dialogue' && <VoiceFigure kind={(source as { avatar?: 'man' | 'woman' }).avatar === 'woman' ? 'woman' : 'man'} size={15} />}
-                {source.label}
+                {source.key === 'dialogue' ? 'استمع' : source.label}
               </p>
               <p className="mt-0.5 text-[.68rem] text-soft">{active ? `${clock(current)} / ${clock(duration)}` : 'جاهز للاستماع'}</p>
             </div>
@@ -260,7 +260,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
               >
                 <AudioWave dialogue={item.key === 'dialogue'} size={16} />
                 {item.key === 'dialogue'
-                  ? item.label
+                  ? null
                   : <VoiceFigure kind={(item as { avatar?: 'man' | 'woman' }).avatar === 'woman' ? 'woman' : 'man'} size={17} />}
               </button>
             ))}
@@ -275,6 +275,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
               <button type="button" onClick={() => player.jump(15)} disabled={!active} className="rounded-full border border-hair px-2.5 py-1.5 text-[.68rem] text-soft disabled:opacity-35">15+</button>
             </span>
           </div>
+
 
           {active && player.error && <p className="mt-3 text-[.7rem] leading-relaxed text-soft">{player.error}</p>}
         </section>

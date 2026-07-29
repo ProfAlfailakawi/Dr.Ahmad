@@ -73,20 +73,9 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
     if (typeof window === 'undefined') return true
     return localStorage.getItem('article-audio-follow') !== 'off'
   })
-  const [activeSentenceText, setActiveSentenceText] = useState('')
   const source = useMemo(() => sources.find((item) => item.key === selectedKey) ?? sources[0], [selectedKey, sources])
   const anyActive = sources.some((item) => player.isActive(item.src))
 
-  useEffect(() => {
-    const onSentence = (event: Event) => {
-      const detail = (event as CustomEvent<{ text?: string }>).detail
-      if (detail && typeof detail.text === 'string') {
-        setActiveSentenceText(detail.text)
-      }
-    }
-    window.addEventListener('article-audio-active-sentence', onSentence)
-    return () => window.removeEventListener('article-audio-active-sentence', onSentence)
-  }, [])
 
   useEffect(() => {
     if (sources.some((item) => item.key === selectedKey)) return
@@ -246,16 +235,6 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
             <span className="block h-full rounded-full bg-accent transition-[width]" style={{ width: `${percent}%` }} />
           </button>
 
-          {active && canFollowArticle && articleFollow && activeSentenceText && (
-            <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-hair/70 bg-canvas/80 px-3.5 py-2.5 text-[.75rem] text-ink shadow-sm">
-              <span className="sentence-equalizer shrink-0" aria-hidden="true">
-                <span /><span /><span />
-              </span>
-              <p className="min-w-0 flex-1 truncate font-normal text-soft">
-                «{activeSentenceText}»
-              </p>
-            </div>
-          )}
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
             {canFollowArticle && (

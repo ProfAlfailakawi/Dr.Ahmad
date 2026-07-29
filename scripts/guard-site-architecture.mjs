@@ -33,7 +33,7 @@ assert(architecture.includes('AdminSidebar') && architecture.includes('AdminMobi
 assert(home.includes('role="dialog"') && home.includes('aria-modal="true"') && home.includes('home-thought-maps-dialog') && home.includes("event.key !== 'Tab'"), 'home thought maps modal is accessible')
 assert(app.includes('path="/en/contact"') && staticBuild.includes("path: '/en/contact'"), 'English journey has live and static contact endpoints')
 assert(cv.includes('<CvDownloadCards'), 'CV files are near the top through a dedicated component')
-assert(thought.includes('<ThoughtHub') && staticBuild.includes("path: '/thought'"), 'thought overview is the public system hub')
+assert(!thought.includes('<ThoughtHub') && staticBuild.includes("path: '/thought'"), 'thought overview remains public without the duplicated ThoughtHub cards')
 assert(!health.includes('اقتراح يتكوّن من رحلة كل زائر') && analytics.includes('اقتراح'), 'visitor journey belongs to analytics')
 assert(whatsapp.includes("id: 'campaigns'") && whatsapp.includes("screen === 'campaigns'"), 'WhatsApp campaigns have their own screen')
 assert(publishing.includes('<PublishingStudioNavigation') && publishingNavigation.includes('مسار المقال') && publishingNavigation.includes('منشور مستقل'), 'publishing separates the article journey from the standalone path')

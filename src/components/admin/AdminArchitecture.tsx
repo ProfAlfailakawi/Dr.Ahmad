@@ -8,7 +8,7 @@ import { EASE } from '../motion'
 
 export type { AdminArea, AdminTab } from './admin-navigation'
 export { ADMIN_GROUPS, areaOfTab, defaultTabForArea } from './admin-navigation'
-import { ADMIN_GROUPS, areaOfTab, defaultTabForArea, itemsOfGroup, adminItem, type AdminTab } from './admin-navigation'
+import { ADMIN_GROUPS, areaOfTab, defaultTabForArea, itemsOfGroup, adminItem, type AdminArea, type AdminTab } from './admin-navigation'
 
 export function AdminAreaTabs({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
   const activeArea = areaOfTab(tab)
@@ -38,43 +38,107 @@ export function AdminSectionTabs({ tab, onSelect }: { tab: AdminTab; onSelect: (
 }
 
 export function AdminSidebar({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
+  const activeArea = areaOfTab(tab)
+  const activeSection = useMemo(() => (
+    ADMIN_GROUPS.flatMap((group) => group.sections)
+      .find((section) => section.items.some((item) => item.tab === tab))?.id || null
+  ), [tab])
+  const [openArea, setOpenArea] = useState<AdminArea | null>(activeArea)
+  const [openSection, setOpenSection] = useState<string | null>(activeSection)
+
+  useEffect(() => {
+    setOpenArea(activeArea)
+    setOpenSection(activeSection)
+  }, [activeArea, activeSection])
+
   return (
     <aside className="hidden min-w-0 lg:block" aria-label="أقسام لوحة التحكم">
-      <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-[1.65rem] border border-hair bg-wash/80 p-3 shadow-[0_24px_70px_-55px_rgba(21,22,26,.45)] backdrop-blur">
-        {ADMIN_GROUPS.map((group, groupIndex) => (
-          <div key={group.area} className={groupIndex ? 'mt-4 border-t border-hair pt-4' : ''}>
-            <p className="flex items-center gap-2 px-3 pb-2 text-[.7rem] font-bold text-accent">
-              <span aria-hidden className="w-4 text-center">{group.icon}</span>
-              {group.label}
-            </p>
-            <div className="grid gap-3">
-              {group.sections.map((section) => (
-                <section key={section.id} aria-label={section.label || group.label}>
-                  {section.label && (
-                    <div className="mb-1.5 px-3">
-                      <span className="block text-[.65rem] font-bold text-soft">{section.label}</span>
-                      {section.note && <span className="mt-0.5 block text-[.58rem] leading-relaxed text-soft/70">{section.note}</span>}
-                    </div>
-                  )}
-                  <div className="grid gap-1">
-                    {section.items.map((item) => (
-                      <button
-                        key={item.tab}
-                        type="button"
-                        onClick={() => onSelect(item.tab)}
-                        aria-current={tab === item.tab ? 'page' : undefined}
-                        className={`rounded-2xl px-3 py-2.5 text-right transition-colors ${tab === item.tab ? 'bg-accent text-white shadow-sm' : 'text-ink hover:bg-canvas hover:text-accent'}`}
-                      >
-                        <span className="block text-[.82rem] font-semibold">{item.label}</span>
-                        <span className={`mt-0.5 block text-[.62rem] font-light leading-relaxed ${tab === item.tab ? 'text-white/72' : 'text-soft'}`}>{item.note}</span>
-                      </button>
-                    ))}
+      <div data-admin-desktop-accordion="true" className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-[1.65rem] border border-hair bg-wash/80 p-2.5 shadow-[0_24px_70px_-55px_rgba(21,22,26,.45)] backdrop-blur">
+        <div className="grid gap-1.5">
+          {ADMIN_GROUPS.map((group) => {
+            const expanded = openArea === group.area
+            const groupActive = activeArea === group.area
+            const current = groupActive ? adminItem(tab) : null
+            const regionId = `admin-desktop-group-${group.area}`
+            return (
+              <section key={group.area} className={`overflow-hidden rounded-2xl border transition-colors ${expanded ? 'border-accent/20 bg-canvas' : 'border-transparent hover:border-hair hover:bg-canvas/65'}`}>
+                <button
+                  type="button"
+                  aria-expanded={expanded}
+                  aria-controls={regionId}
+                  onClick={() => {
+                    setOpenArea((value) => value === group.area ? null : group.area)
+                    if (!expanded) {
+                      const nextSection = groupActive ? activeSection : group.sections[0]?.id
+                      setOpenSection(nextSection || null)
+                    }
+                  }}
+                  className="flex w-full items-center gap-3 px-3 py-3 text-right"
+                >
+                  <span aria-hidden className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border text-[.78rem] ${groupActive ? 'border-accent bg-accent text-white' : 'border-hair bg-wash text-accent'}`}>{group.icon}</span>
+                  <span className="min-w-0 flex-1">
+                    <strong className={`block text-[.8rem] ${groupActive ? 'text-accent' : 'text-ink'}`}>{group.label}</strong>
+                    <span className="mt-0.5 block truncate text-[.59rem] text-soft">{current?.label || `${itemsOfGroup(group).length} أدوات`}</span>
+                  </span>
+                  <span aria-hidden className={`text-[.75rem] text-soft transition-transform ${expanded ? 'rotate-180' : ''}`}>⌄</span>
+                </button>
+
+                {expanded && (
+                  <div id={regionId} className="border-t border-hair px-2 pb-2 pt-1.5">
+                    {group.sections.map((section) => {
+                      const multiSection = group.sections.length > 1
+                      const sectionExpanded = !multiSection || openSection === section.id
+                      const sectionActive = section.items.some((item) => item.tab === tab)
+                      const sectionRegionId = `admin-desktop-section-${section.id}`
+                      return (
+                        <div key={section.id} className="mt-1">
+                          {multiSection && (
+                            <button
+                              type="button"
+                              aria-expanded={sectionExpanded}
+                              aria-controls={sectionRegionId}
+                              onClick={() => setOpenSection((value) => value === section.id ? null : section.id)}
+                              className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-right transition-colors ${sectionActive ? 'bg-accent/[.06] text-accent' : 'text-soft hover:bg-wash hover:text-ink'}`}
+                            >
+                              <span className="min-w-0">
+                                <strong className="block text-[.69rem]">{section.label || group.label}</strong>
+                                {section.note && sectionActive && <span className="mt-0.5 block truncate text-[.56rem] font-normal opacity-70">{section.note}</span>}
+                              </span>
+                              <span aria-hidden className={`text-[.68rem] transition-transform ${sectionExpanded ? 'rotate-180' : ''}`}>⌄</span>
+                            </button>
+                          )}
+                          {sectionExpanded && (
+                            <div id={sectionRegionId} className="mt-1 grid gap-1">
+                              {section.items.map((item) => {
+                                const active = tab === item.tab
+                                return (
+                                  <button
+                                    key={item.tab}
+                                    type="button"
+                                    onClick={() => {
+                                      setOpenArea(group.area)
+                                      setOpenSection(section.id)
+                                      onSelect(item.tab)
+                                    }}
+                                    aria-current={active ? 'page' : undefined}
+                                    className={`rounded-xl px-3 py-2 text-right transition-colors ${active ? 'bg-accent text-white shadow-sm' : 'text-ink hover:bg-wash hover:text-accent'}`}
+                                  >
+                                    <span className="block text-[.78rem] font-semibold">{item.label}</span>
+                                    {active && <span className="mt-0.5 block text-[.59rem] font-light leading-relaxed text-white/72">{item.note}</span>}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
-                </section>
-              ))}
-            </div>
-          </div>
-        ))}
+                )}
+              </section>
+            )
+          })}
+        </div>
       </div>
     </aside>
   )

@@ -14,6 +14,8 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const AUDIO_FILE = resolve(ROOT, 'src/data/audio.json')
 const BODIES_FILE = resolve(ROOT, 'src/data/bodies.json')
+const FROM_R2 = process.argv.includes('--from-r2')
+const PUBLIC_BASE = String(process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 
 const objectMap = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : {}
 const normalizeAudio = (value) => {
@@ -66,11 +68,52 @@ const mergePublishedControl = (currentValue, audio, now) => {
 
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right)
 
+const r2Candidates = (slug) => ({
+  fahed: `${slug}.mp3`,
+  noura: `${slug}.noura.mp3`,
+  dialogue: `${slug}.dialogue.mp3`,
+})
+
+const TRANSIENT_HTTP = new Set([408, 425, 429, 500, 502, 503, 504])
+const sleep = (ms) => new Promise((resolveSleep) => setTimeout(resolveSleep, ms))
+const remoteExists = async (name, attempts = 3) => {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const response = await fetch(`${PUBLIC_BASE}/${encodeURIComponent(name)}`, {
+        method: 'HEAD',
+        cache: 'no-store',
+      })
+      if (response.status === 200 || response.status === 206) return true
+      if (response.status === 404) return false
+      if (!TRANSIENT_HTTP.has(response.status)) return null
+    } catch { /* إعادة قصيرة؛ الانقطاع لا يُفسَّر على أنه حذف */ }
+    if (attempt < attempts) await sleep(250 * attempt * attempt)
+  }
+  return null
+}
+
+async function discoverLiveR2(slugs, concurrency = 18) {
+  const jobs = slugs.flatMap((slug) => Object.entries(r2Candidates(slug)).map(([voice, name]) => ({ slug, voice, name })))
+  const found = new Map()
+  let cursor = 0
+  const worker = async () => {
+    while (cursor < jobs.length) {
+      const job = jobs[cursor++]
+      if (await remoteExists(job.name) !== true) continue
+      found.set(job.slug, { ...(found.get(job.slug) || {}), [job.voice]: true })
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, Math.max(1, jobs.length)) }, () => worker()))
+  return found
+}
+
 if (process.argv.includes('--self-test')) {
   const audio = normalizeAudio({ fahed: true, dialogue: true, ignored: true })
   if (!audio.fahed || !audio.dialogue || 'ignored' in audio) throw new Error('normalizeAudio self-test failed')
   const control = mergePublishedControl({ dialogueDisabled: true, dialogueStatus: 'cleared' }, audio, '2026-01-01T00:00:00.000Z')
   if (control.dialogueDisabled !== false || control.dialogueStatus !== 'published' || control.fahedStatus !== 'published') throw new Error('control self-test failed')
+  const candidates = r2Candidates('article-slug')
+  if (candidates.fahed !== 'article-slug.mp3' || candidates.noura !== 'article-slug.noura.mp3' || candidates.dialogue !== 'article-slug.dialogue.mp3') throw new Error('R2 candidates self-test failed')
   console.log('✓ Audio Firestore sync self-test passed')
   process.exit(0)
 }
@@ -84,6 +127,12 @@ const manifestRaw = JSON.parse(readFileSync(AUDIO_FILE, 'utf8'))
 const bodies = JSON.parse(readFileSync(BODIES_FILE, 'utf8'))
 const manifest = new Map(Object.entries(objectMap(manifestRaw)).map(([slug, value]) => [slug, normalizeAudio(value)]).filter(([, audio]) => Object.keys(audio).length))
 const baseSlugs = new Set(Object.keys(objectMap(bodies)))
+if (FROM_R2) {
+  if (!PUBLIC_BASE) throw new Error('AUDIO_PUBLIC_BASE_URL مفقود لمسح R2 الحي')
+  const discovered = await discoverLiveR2([...baseSlugs])
+  for (const [slug, audio] of discovered) manifest.set(slug, { ...objectMap(manifest.get(slug)), ...audio })
+  console.log(`✓ مسح R2 الحي: اكتُشف صوتٌ لـ${discovered.size} مقالاً قبل تحديث اللوحة.`)
+}
 const account = JSON.parse(readFileSync(serviceAccountPath, 'utf8'))
 if (!account.project_id || !account.client_email || !account.private_key) throw new Error('حساب خدمة Firebase غير صالح')
 if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PROJECT_ID !== account.project_id) throw new Error('FIREBASE_PROJECT_ID لا يطابق حساب الخدمة')
@@ -136,4 +185,18 @@ for (const [slug, manifestAudio] of manifest) {
   baseUpdated += 1
 }
 
-console.log(`✓ مزامنة الصوت الحي: ${baseUpdated} مقالاً أصلياً + ${liveUpdated} مقالاً حياً؛ ${unchanged} بلا تغيير.`)
+const inventory = [...manifest.values()].reduce((summary, audio) => ({
+  fahed: summary.fahed + Number(Boolean(audio.fahed)),
+  noura: summary.noura + Number(Boolean(audio.noura)),
+  dialogue: summary.dialogue + Number(Boolean(audio.dialogue)),
+  readingArticles: summary.readingArticles + Number(Boolean(audio.fahed || audio.noura)),
+}), { fahed: 0, noura: 0, dialogue: 0, readingArticles: 0 })
+await db.collection('site_settings').doc('audio_inventory').set({
+  ...inventory,
+  totalAudioFiles: inventory.fahed + inventory.noura + inventory.dialogue,
+  source: FROM_R2 ? 'r2-live-scan' : 'verified-audio-manifest',
+  articleCount: manifest.size,
+  lastSyncAt: FieldValue.serverTimestamp(),
+}, { merge: true })
+
+console.log(`✓ مزامنة الصوت الحي: ${baseUpdated} مقالاً أصلياً + ${liveUpdated} مقالاً حياً؛ ${unchanged} بلا تغيير. R2: فهد ${inventory.fahed} · نورة ${inventory.noura} · حوار ${inventory.dialogue}.`)

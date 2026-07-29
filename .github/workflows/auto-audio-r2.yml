@@ -334,11 +334,13 @@ jobs:
         if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: |
           if [ ! -f sa.json ]; then
-            echo "Firebase service account unavailable; skipping realtime audio ledger sync."
-            exit 0
+            echo "::error::ملفات الصوت موجودة في R2 لكن حساب Firebase غير متاح؛ نرفض نجاحاً وهمياً لأن عدّاد اللوحة لن يتحدّث."
+            exit 1
           fi
-          npm run audio:firestore:sync
+          npm run audio:firestore:sync -- --from-r2
         env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
           FIREBASE_SERVICE_ACCOUNT: sa.json
           FIREBASE_PROJECT_ID: drahmad-8e9e2
 

@@ -1,11 +1,11 @@
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto'
 import { buildContentIndex } from '../../whatsapp-agent/content-index.mjs'
-import { personalize as audiencePersonalize, vocativeOf as agreedVocativeOf } from '../../whatsapp-agent/audience.mjs'
 
 const SITE_URL = String(process.env.WHATSAPP_SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
 const OWNER_ALERT_FALLBACK = 'وصلت رسالة تحتاج تدخلك البشري. افتح محادثات واتساب من جهازك المرتبط.'
 const HUMAN_ACK = 'وصلتني رسالتك، وتحتاج تأكيداً بشرياً. سيكمل معك الدكتور أو أحد الفريق بأقرب وقت.'
 const DUPLICATE_ACK = 'وصلتني الرسالة نفسها وهي عندي بالفعل. إذا احتاجت متابعة بشرية سيكمل معك الفريق.'
+const WELCOME = `حياك الله في موقع د. أحمد حسين الفيلكاوي.\n\nالموقع هو المرجع المعتمد للمقالات والكتب والمواد المنشورة:\n${SITE_URL}`
 const BRIDGE_ONLINE_MS = Math.max(30_000, Number(process.env.WHATSAPP_BRIDGE_ONLINE_MS || 90_000))
 const QR_FRESH_MS = Math.max(30_000, Number(process.env.WHATSAPP_QR_FRESH_MS || 75_000))
 const REPAIR_COOLDOWN_MS = Math.max(15 * 60_000, Number(process.env.WHATSAPP_REPAIR_COOLDOWN_MS || 60 * 60_000))
@@ -233,44 +233,6 @@ function siteResultReply(items) {
   return `وجدت في موقع الدكتور مواد منشورة مرتبطة بسؤالك:\n\n${lines.join('\n\n')}\n\nهذه روابط الموقع كما هي، من دون إضافة معلومات من خارجها.`
 }
 
-function timeGreeting(at = new Date()) {
-  const hour = Number(new Intl.DateTimeFormat('en-US', {
-    hour: 'numeric', hour12: false, timeZone: 'Asia/Kuwait',
-  }).format(at))
-  return hour < 12 ? 'صباح الخير' : 'مساء الخير'
-}
-
-/* بوابة اليوم: مادةٌ حتميّة بحسب تاريخ الكويت — نفسها للجميع في اليوم الواحد،
-   وتتغيّر كل يوم عبر فهرس الموقع الحقيقي. */
-function dailyGateItem(at = new Date()) {
-  const index = siteIndex()
-  if (!index.length) return null
-  const stamp = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Kuwait', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(at)
-  const seed = Number(String(stamp).replace(/-/g, '')) || 0
-  return index[seed % index.length] || null
-}
-
-/* رسالة الإيقاظ المعتمدة (نفس الاتفاق من لوحة الدكتور): تحيّةُ الوقت · حيّاك الله ·
-   بوابة اليوم بمادةٍ حقيقية واقتباسها ورابطها · خيارات الوقت · تذكير الإيقاف. */
-function buildWelcome(at = new Date()) {
-  const head = `${timeGreeting(at)} · حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي.`
-  const options = 'شنو يناسب وقتك؟ 30 ثانية · دقيقتان · تعمّق · اختبرني'
-  const stop = 'ولإيقاف الرسائل اكتب: أوقف الرسائل.'
-  const item = dailyGateItem(at)
-  if (!item) return `${head}\n\n${options}\n${stop}`
-  const year = String(item.date || '').match(/\d{4}/)?.[0] || ''
-  const quote = bounded(item.excerpt, 220).replace(/\s+/g, ' ').trim()
-  const gate = [
-    'بوابة اليوم:',
-    `${item.title}${year ? ` · ${year}` : ''}`,
-    quote ? `«${quote}»` : '',
-    item.url,
-  ].filter(Boolean).join('\n')
-  return `${head}\n\n${gate}\n\n${options}\n${stop}`
-}
-
 export function decideGroundedResponse({ text, hasMedia = false, rules = [], priorReplyHash = '' } = {}) {
   const clean = normalizeArabicMessage(text)
   if (hasMedia) return { kind: 'silent', reason: 'media' }
@@ -292,7 +254,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
   }
 
   if (PRICE_PATTERNS.some((pattern) => pattern.test(clean)) || isGreetingOnly(text)) {
-    return { kind: 'reply', reason: isGreetingOnly(text) ? 'greeting' : 'site-is-source', reply: buildWelcome() }
+    return { kind: 'reply', reason: isGreetingOnly(text) ? 'greeting' : 'site-is-source', reply: WELCOME }
   }
 
   const found = exactSiteResults(text)
@@ -377,23 +339,19 @@ function audienceVocative(row = {}) {
   return [title.trim(), first].filter(Boolean).join(' ')
 }
 
-/* يحوّل جهة الخادم الجديد (nickname/waName/displayName) إلى صفّ القديم
-   (nickname/wa_name/display_name) الذي يفهمه محرّك التصريف المتّفق عليه. */
-function personalizeAudienceRow(contact = {}) {
-  return {
-    nickname: contact.nickname || '',
-    wa_name: contact.waName || contact.wa_name || '',
-    display_name: contact.displayName || contact.display_name || '',
-  }
-}
-
-/* التصريف المعتمد بالكامل — منقولٌ حرفياً من whatsapp-agent/audience.mjs
-   (نفس الاتفاق): {الأخ}/{عزيزي} بمعجم النوع وصياغة الجهات، {الاسم} بالإسقاط
-   اللطيف عند جهل الاسم، {تحية} و{ترحيب} المصرَّفان. */
 function personalizeAudienceText(text, contact, at = new Date()) {
-  const row = personalizeAudienceRow(contact)
-  const member = { ...row, vocative: agreedVocativeOf(row) }
-  return audiencePersonalize(bounded(text, 4_000), member, at)
+  const hour = Number(new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric', hour12: false, timeZone: 'Asia/Kuwait',
+  }).format(at))
+  const name = audienceVocative(contact)
+  return bounded(text, 4_000)
+    .replace(/\{تحية\}/g, hour < 12 ? 'صباح الخير' : 'مساء الخير')
+    .replace(/\{ترحيب\}/g, 'أهلاً')
+    .replace(/\{الاسم\}/g, name)
+    .replace(/[ \t]+([،,.؛:!?؟])/g, '$1')
+    .replace(/^[ \t]*[،,؛:]\s*$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 function parseAudienceImport(text) {
@@ -907,7 +865,6 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       return
     }
     if (wakePhrase) {
-      const welcome = buildWelcome(new Date())
       await ref.set({
         ...basePatch,
         mode: 'bot',
@@ -917,10 +874,10 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         needsHuman: false,
         manualUntil: null,
         autoResumeAt: null,
-        lastReplyHash: hash(welcome),
+        lastReplyHash: hash(WELCOME),
         lastReplyAt: now,
       }, { merge: true })
-      sendJson(res, 200, { ok: true, action: 'reply', reason: 'wake-phrase', reply: { text: welcome } })
+      sendJson(res, 200, { ok: true, action: 'reply', reason: 'wake-phrase', reply: { text: WELCOME } })
       return
     }
 
@@ -1568,10 +1525,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         sendJson(res, 400, { error: 'نص المعاينة مطلوب.' })
         return
       }
-      /* المعاينة تُصرَّف بنفس المحرّك المعتمد كي يراها الدكتور «كما يصل الناس تماماً»
-         لا رموزاً حرفية. العيّنة اسمُ الدكتور نفسه لأنها تصل إليه هو. */
-      const previewText = personalizeAudienceText(text, { nickname: 'الدكتور أحمد الفيلكاوي' })
-      const command = await enqueueCommand(db, 'send-self-message', { text: previewText })
+      const command = await enqueueCommand(db, 'send-self-message', { text })
       sendJson(res, 200, { ok: true, queued: true, messageId: command.id })
       return
     }

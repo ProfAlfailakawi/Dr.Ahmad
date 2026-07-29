@@ -11,6 +11,7 @@ const requiredFiles = [
   'src/lib/podcast-generation.ts',
   'src/lib/audio-management.ts',
   'src/components/admin/AudioLibrary.tsx',
+  'src/components/admin/ProductionMonitor.tsx',
   'src/components/admin/admin-navigation.ts',
   'scripts/audio-control-status.mjs',
   'scripts/clear-audio-assets.mjs',
@@ -56,6 +57,7 @@ const podcastEngine = await readFile(resolve(root, 'scripts/podcast-dialogue.mjs
 const ideaFeatures = await readFile(resolve(root, 'src/components/IdeaFeatures.tsx'), 'utf8')
 const contentManager = await readFile(resolve(root, 'src/components/admin/ContentManager.tsx'), 'utf8')
 const audioLibrary = await readFile(resolve(root, 'src/components/admin/AudioLibrary.tsx'), 'utf8')
+const productionMonitor = await readFile(resolve(root, 'src/components/admin/ProductionMonitor.tsx'), 'utf8')
 const adminPage = await readFile(resolve(root, 'src/pages/Admin.tsx'), 'utf8')
 const adminArchitecture = await readFile(resolve(root, 'src/components/admin/AdminArchitecture.tsx'), 'utf8')
 const adminNavigation = await readFile(resolve(root, 'src/components/admin/admin-navigation.ts'), 'utf8')
@@ -116,6 +118,16 @@ const assertions = [
   [audioClearWorkflow.includes('reading) FILES=') && audioClearWorkflow.includes('.noura.mp3') && audioClearWorkflow.includes('clear-audio-assets.mjs') && !audioClearWorkflow.includes("description: 'fahed") && !autoAudioWorkflow.includes('github.event.inputs.voice') && autoAudioWorkflow.includes('MODE="reading"'), 'audio cancellation and regeneration must use generic reading/dialogue modes, clear both compatible reading files, and expose no internal voice selector'],
   [hostingWorkflow.includes('workflow_run:') && hostingWorkflow.includes('توليد الصوت تلقائياً إلى R2'), 'successful audio ledger workflows must trigger a fresh site deployment'],
   [audioDashboardWorkflow.includes("'*/15 * * * *'") && audioDashboardWorkflow.includes('--from-r2') && audioDashboardWorkflow.includes('audio:firestore:sync'), 'audio dashboard must independently rescan live R2 every 15 minutes without waiting for a long generation run'],
+  [productionMonitor.includes('data-autopilot-control-center="true"')
+    && productionMonitor.includes('data-safe-repair-all="true"')
+    && productionMonitor.includes('/api/admin/control-center')
+    && productionMonitor.includes('/api/admin/whatsapp/recover')
+    && productionMonitor.includes('لا يحذف محتوى، ولا يمس جلسة واتساب')
+    && serverSource.includes("const controlCenterPath = '/api/admin/control-center'")
+    && serverSource.includes("'repair-safe'")
+    && serverSource.includes("'audio-dashboard-sync.yml'")
+    && serverSource.includes("'site-guardian.yml'"),
+  'admin control center must keep live diagnosis and one non-destructive repair action for WhatsApp, audio and content'],
   [whatsappPanel.includes('إصلاح الاتصال تلقائياً') && whatsappPanel.includes('/admin/repair') && whatsappPanel.includes('window.confirm'), 'WhatsApp admin must expose safe recovery and explicit destructive re-pairing'],
   [whatsappPanel.includes('data-whatsapp-recovery-center="true"') && whatsappPanel.includes('/admin/recover') && whatsappPanel.includes('مركز التشخيص والإحياء') && whatsappController.includes('buildWhatsAppDiagnostics') && whatsappController.includes("path === '/recover'"), 'WhatsApp admin must diagnose every operating layer and expose one safe non-destructive recovery action without code access'],
   [whatsappBridge.includes('watchdog_restart_stuck_authenticated') && whatsappBridge.includes("process.exit(75)") && whatsappBridge.includes("WHATSAPP_BRIDGE_SECRET || ''") && whatsappWebBridge.includes('sendTextWithRecovery') && whatsappWebBridge.includes("'send-self-message'") && whatsappWebBridge.includes('waitUntilMsgSent: true') && whatsappWebBridge.includes('duplicate_command_acknowledged_without_resend') && whatsappWebBridge.includes('manual_message_closed_bot_session') && whatsappWebBridge.includes('owner_private_chat_ignored') && whatsappWebBridge.includes('late_loading_screen_ignored') && whatsappController.includes("path === '/emergency-stop'") && whatsappController.includes("defaultReplyMode: 'always-on'") && whatsappController.includes("reason: 'duplicate-delivery'") && whatsappController.includes('WAKE_PHRASES'), 'WhatsApp bridge must self-restart when stuck, reply from the first public message, stay silent after a manual owner reply until the exact wake phrase, ignore the owner private chat and duplicate deliveries, stop queued sends, deduplicate commands, and never ship a fallback secret'],

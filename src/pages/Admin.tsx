@@ -65,7 +65,11 @@ const today = () => {
 export default function Admin() {
   useSeo({ title: 'لوحة التحكم', path: '/admin', robots: 'noindex, nofollow' })
   const { user, isAdmin: allowed, loading: checking } = useAdminAuth()
+  const operationsPreview = import.meta.env.DEV
+    && typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).get('__ops_preview') === '1'
 
+  if (operationsPreview) return <Page><div className="mx-auto w-full max-w-[1220px] px-4 pb-24 pt-28 sm:px-6 md:px-10 md:pt-32"><ProductionMonitor articles={[]} onOpen={() => undefined} /></div></Page>
   if (!firebaseEnabled) return <SetupGuide />
   if (checking) return <Page><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
   if (!user) return <Login />

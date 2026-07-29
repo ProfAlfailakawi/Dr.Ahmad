@@ -72,7 +72,7 @@ function OrbitMark() {
 
 type TracePoint = { label: string; title: string; year?: string; to?: string; href?: string; current?: boolean }
 
-function IdeaTrace({ article, model }: { article: ArticleRecord; model: ReturnType<typeof buildIdeaLife> }) {
+function IdeaTrace({ article, model, embedded = false }: { article: ArticleRecord; model: ReturnType<typeof buildIdeaLife>; embedded?: boolean }) {
   const older = model.timeLinks.find((item) => item.role === 'جذر')
   const newer = model.timeLinks.find((item) => item.role === 'تطور')
   const extension = model.impact.find((item) => item.kind === 'paper' || item.kind === 'book')
@@ -85,7 +85,7 @@ function IdeaTrace({ article, model }: { article: ArticleRecord; model: ReturnTy
 
   if (points.length < 2) return null
   return (
-    <section className="mt-10 rounded-[1.4rem] border border-hair bg-wash/35 px-4 py-5 md:px-6" aria-labelledby="idea-trace-title">
+    <section className={`${embedded ? 'mb-9' : 'mt-10'} rounded-[1.4rem] border border-hair bg-wash/35 px-4 py-5 md:px-6`} aria-labelledby="idea-trace-title">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-[.66rem] font-semibold text-accent">أثر الفكرة</p>
@@ -354,21 +354,28 @@ function ImpactLink({ node, close }: { node: ImpactNode; close: () => void }) {
   return null
 }
 
-function ImpactPanel({ model, close }: { model: ReturnType<typeof buildIdeaLife>; close: () => void }) {
+function ImpactPanel({ article, model, close }: { article: ArticleRecord; model: ReturnType<typeof buildIdeaLife>; close: () => void }) {
+  const detailedImpact = model.impact.length > 1
   return (
     <div>
-      <SectionTitle index="01" title="كيف امتدت الفكرة، وما الذي ثبت من أثرها؟" sub="محطات تكشف أين عادت الفكرة للظهور، وأين أصبح لها أثر موثق." />
-      <ol className="relative mt-7 space-y-7 before:absolute before:bottom-3 before:right-[7px] before:top-3 before:w-px before:bg-hair">
-        {model.impact.map((node, index) => (
-          <li key={`${node.label}-${node.title}-${index}`} className="relative ps-8">
-            <span className={`absolute right-0 top-[.35rem] flex h-4 w-4 items-center justify-center rounded-full border ${node.confidence === 'موثق' ? 'border-accent bg-accent' : 'border-accent/45 bg-canvas'}`}>
-              {node.confidence === 'موثق' && <span className="h-1.5 w-1.5 rounded-full bg-canvas" />}
-            </span>
-            <ImpactLink node={node} close={close} />
-          </li>
-        ))}
-      </ol>
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-5">
+      {/* نُقل المسار الموجز إلى داخل «حياة الفكرة»: الميزة كاملة، لكن نهاية المقال أنظف. */}
+      <IdeaTrace article={article} model={model} embedded />
+      {detailedImpact && (
+        <>
+          <SectionTitle index="01" title="كيف امتدت الفكرة، وما الذي ثبت من أثرها؟" sub="محطات تكشف أين عادت الفكرة للظهور، وأين أصبح لها أثر موثق." />
+          <ol className="relative mt-7 space-y-7 before:absolute before:bottom-3 before:right-[7px] before:top-3 before:w-px before:bg-hair">
+            {model.impact.map((node, index) => (
+              <li key={`${node.label}-${node.title}-${index}`} className="relative ps-8">
+                <span className={`absolute right-0 top-[.35rem] flex h-4 w-4 items-center justify-center rounded-full border ${node.confidence === 'موثق' ? 'border-accent bg-accent' : 'border-accent/45 bg-canvas'}`}>
+                  {node.confidence === 'موثق' && <span className="h-1.5 w-1.5 rounded-full bg-canvas" />}
+                </span>
+                <ImpactLink node={node} close={close} />
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
+      <div className={`${detailedImpact ? 'mt-8' : 'mt-2'} flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-5`}>
         <p className="max-w-[34rem] text-[.72rem] font-light leading-[1.8] text-soft">كل محطة تعيدك إلى مادتها أو مصدرها، لتقرأ امتداد الفكرة في سياقه.</p>
         <Link to="/impact" reloadDocument onClick={close} className="inline-flex shrink-0 items-center gap-2 text-[.78rem] font-semibold text-accent">سجل الأثر الكامل <ArrowIcon /></Link>
       </div>
@@ -382,13 +389,14 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
   const remote = remoteRecords.find((record) => record.slug === article.slug && (!record.kind || record.kind === 'article'))
   const model = useMemo(() => buildIdeaLife(article, articles, books, papers, media, remote, radar), [article, articles, books, papers, media, remote, radar])
   const threadNodes = useMemo(() => ideaThreadFor(article, books, papers, media), [article, books, papers, media])
+  const hasImpactExperience = model.impact.length > 1 || model.timeLinks.length > 0
   const experienceSignature = useMemo(() => `${model.signature}:${threadNodes.map((node) => `${node.kind}:${node.title}`).join('|')}`, [model.signature, threadNodes])
   const availableTabs = useMemo(() => [
     { key: 'test' as const, label: 'اختبار الفكرة', visible: true },
     { key: 'thread' as const, label: 'خيط الفكرة', visible: threadNodes.length > 0 },
     { key: 'time' as const, label: 'عبر الزمن', visible: model.updates.length > 0 || model.predictions.length > 0 || model.timeLinks.length > 0 },
-    { key: 'impact' as const, label: 'امتدادها وأثرها', visible: model.impact.length > 1 },
-  ].filter((tab) => tab.visible), [model, threadNodes])
+    { key: 'impact' as const, label: 'أثر الفكرة', visible: hasImpactExperience },
+  ].filter((tab) => tab.visible), [hasImpactExperience, model, threadNodes])
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState<TabKey>('test')
   const [isNew, setIsNew] = useState(false)
@@ -476,7 +484,7 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
                   {tab === 'test' && <TestPanel model={model} />}
                   {tab === 'thread' && <ThreadPanel nodes={threadNodes} close={() => setOpen(false)} />}
                   {tab === 'time' && <TimePanel article={article} model={model} close={() => setOpen(false)} />}
-                  {tab === 'impact' && <ImpactPanel model={model} close={() => setOpen(false)} />}
+                  {tab === 'impact' && <ImpactPanel article={article} model={model} close={() => setOpen(false)} />}
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -486,7 +494,6 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
 
   return (
     <>
-      <IdeaTrace article={article} model={model} />
       <section className="idea-life-entry mt-5 border-y border-hair py-4" aria-label="حياة الفكرة">
         <button ref={triggerButton} type="button" onClick={() => { if (isNew && model.updates.length) setTab('time'); setOpen(true) }} className="group flex w-full items-center justify-between gap-5 text-start">
           <span className="flex min-w-0 items-center gap-3.5">
@@ -497,7 +504,7 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
                 {isNew && <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[.64rem] font-semibold text-accent">جديد منذ قراءتك</span>}
               </span>
               <span className="mt-0.5 block text-[.74rem] leading-[1.7] text-soft">
-                اختبار فكري{threadNodes.length ? ' · خيط معرفي' : ''}{model.updates.length ? ' · مستجدات موثقة' : model.predictions.length ? ' · مراجعة زمنية' : ''}{model.impact.length > 1 ? ' · امتداد وأثر' : ''}
+                اختبار فكري{threadNodes.length ? ' · خيط معرفي' : ''}{model.updates.length ? ' · مستجدات موثقة' : model.predictions.length ? ' · مراجعة زمنية' : ''}{hasImpactExperience ? ' · أثر الفكرة' : ''}
               </span>
             </span>
           </span>

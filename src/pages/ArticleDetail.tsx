@@ -235,7 +235,7 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
 
   return (
     <>
-      <ArticlePulse slug={slug} />
+      <ArticlePulse slug={slug} body={body} />
       <div id="article-body" className={`article-body mt-7 ${activeAudio ? 'article-body-synced' : ''}`}>
         {paragraphs.map((paragraph, pIdx) => {
           const paragraphQuotes = popularQuotes.filter((quote) => quote.paragraph === pIdx)

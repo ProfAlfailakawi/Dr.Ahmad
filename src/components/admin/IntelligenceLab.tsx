@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { books, papers } from '../../data'
-import podcastAdmin from '../../data/podcast-admin.json'
 import type { ArticleRecord } from '../../lib/cms'
 import { loadArticleBodies } from '../../lib/article-bodies'
 import { fetchPublishedExtras } from '../../lib/firebase'
 import { beginAdminTask } from '../../lib/admin-task-state'
-import { Pagination, usePagedList } from '../Pagination'
+import type { AdminTab } from './admin-navigation'
 import {
   articleSystem,
   automaticSeries,
@@ -18,8 +17,6 @@ const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
 const softBtn = 'rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent'
 const primaryBtn = 'rounded-full bg-accent px-5 py-2 text-[.84rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
-const adminAudioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
-const adminAudioUrl = (path: string) => adminAudioBase ? `${adminAudioBase}/${path.replace(/^\/?audio\//, '')}` : path
 
 type RadarItem = { id: string; ar?: string; arNote?: string; en?: string; source?: string; url?: string }
 
@@ -232,75 +229,6 @@ function ArticleSystemCard({ articles }: { articles: ArticleRecord[] }) {
   )
 }
 
-function AudioControlCard({ articles }: { articles: ArticleRecord[] }) {
-  const noAudio = articles.filter((article) => !article.hasAudio)
-  const withAudio = articles.filter((article) => article.hasAudio)
-  const podcast = podcastAdmin as {
-    episodes: { slug: string; title: string; status: string; audio: string; hasTranscript: boolean; utterances: number; quality?: { score?: number; pass?: boolean; pronunciation?: string; pace?: string; pauses?: string; issues?: string[]; metrics?: { durationSeconds?: number; importantRatio?: number | null; longSilences?: number | null } } }[]
-    playlists: { title: string; episodes: { slug: string; title: string }[] }[]
-  }
-  const episodePages = usePagedList(podcast.episodes, 8, String(podcast.episodes.length))
-  const playlistPages = usePagedList(podcast.playlists, 6, String(podcast.playlists.length))
-  return (
-    <ToolDetails title="غرفة التحكم الصوتية" note="خاصة لك فقط: تلخص حالة الصوت، ولا تنشر حلقة جديدة من المتصفح." defaultOpen>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <span className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{withAudio.length}</strong><small className="text-soft">مقالات بصوت</small></span>
-        <span className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-ink">{noAudio.length}</strong><small className="text-soft">تحتاج صوت</small></span>
-      </div>
-      <p className="mt-4 text-[.84rem] leading-relaxed text-soft">الحلقات الحوارية المعتمدة تبقى في خلاصة البودكاست فقط بعد اجتياز بوابة الجودة. إعادة التوليد تتم من سكربت الصوت حتى لا نضيف زراً خطيراً داخل المتصفح.</p>
-      <div id="intelligence-podcast-episodes" className="mt-5 grid scroll-mt-28 gap-3">
-        <p className="text-[.78rem] font-semibold text-accent">الحلقات الحوارية المنشورة</p>
-        {podcast.episodes.length ? episodePages.pageItems.map((episode) => (
-          <div key={episode.slug} className="rounded-xl border border-hair bg-canvas p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-ink">{episode.title}</p>
-                <p className="mt-1 text-[.78rem] text-soft">
-                  الحالة: {episode.status === 'published' ? 'منشورة' : episode.status}
-                  {' · '}Transcript: {episode.hasTranscript ? `${episode.utterances} مداخلة` : 'غير موجود'}
-                  {' · '}Score: {episode.quality?.score ?? 0}/100
-                </p>
-                {episode.quality?.metrics && (
-                  <p className="mt-1 text-[.74rem] text-soft">
-                    مدة: {episode.quality.metrics.durationSeconds || '—'}ث
-                    {' · '}تطابق مهم: {episode.quality.metrics.importantRatio ?? '—'}٪
-                    {' · '}وقفات طويلة: {episode.quality.metrics.longSilences ?? '—'}
-                  </p>
-                )}
-                {episode.quality?.issues?.length ? <p className="mt-1 text-[.78rem] text-soft">{episode.quality.issues[0]}</p> : null}
-              </div>
-              <a href={adminAudioUrl(episode.audio)} target="_blank" rel="noreferrer" className={softBtn}>استماع</a>
-            </div>
-          </div>
-        )) : (
-          <p className="rounded-xl border border-hair bg-canvas p-4 text-[.84rem] text-soft">لا توجد حلقات حوارية منشورة بعد.</p>
-        )}
-        <Pagination page={episodePages.page} pageCount={episodePages.pageCount} onChange={episodePages.setPage} totalItems={podcast.episodes.length} firstItem={episodePages.firstItem} lastItem={episodePages.lastItem} scrollTargetId="intelligence-podcast-episodes" label="صفحات الحلقات الحوارية" className="mt-2" />
-      </div>
-      <div id="intelligence-podcast-playlists" className="mt-5 grid scroll-mt-28 gap-3">
-        <p className="text-[.78rem] font-semibold text-accent">قوائم استماع فكرية</p>
-        {podcast.playlists.length ? playlistPages.pageItems.map((playlist) => (
-          <div key={playlist.title} className="rounded-xl border border-hair bg-canvas p-4">
-            <p className="font-semibold text-ink">{playlist.title}</p>
-            <ul className="mt-2 grid gap-1 text-[.82rem] text-soft">
-              {playlist.episodes.map((episode) => <li key={episode.slug}>• {episode.title}</li>)}
-            </ul>
-          </div>
-        )) : (
-          <p className="rounded-xl border border-hair bg-canvas p-4 text-[.84rem] text-soft">ستُبنى القوائم تلقائياً مع زيادة الحلقات الحوارية.</p>
-        )}
-        <Pagination page={playlistPages.page} pageCount={playlistPages.pageCount} onChange={playlistPages.setPage} totalItems={podcast.playlists.length} firstItem={playlistPages.firstItem} lastItem={playlistPages.lastItem} scrollTargetId="intelligence-podcast-playlists" label="صفحات قوائم الاستماع" className="mt-2" />
-      </div>
-      <div className="mt-5 rounded-xl border border-hair bg-canvas p-4">
-        <p className="font-semibold text-ink">اعتماد الصوت قبل النشر</p>
-        <p className="mt-2 text-[.84rem] leading-relaxed text-soft">
-          المقارنة العمياء للأصوات موجودة في بطاقة «اختبار الأصوات» أعلى لوحة المؤشرات. بعد اعتماد زوج صوتي، يستخدمه سكربت الحوار الليلي للحلقات التالية. هذه الغرفة تعرض ما نُشر فقط ولا تعتمد صوتاً جديداً من المتصفح.
-        </p>
-      </div>
-    </ToolDetails>
-  )
-}
-
 function MonthlyPlanDetails({ articles }: { articles: ArticleRecord[] }) {
   const now = new Date()
   const period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -377,55 +305,23 @@ function DoctorRadarCard({ articles }: { articles: ArticleRecord[] }) {
   )
 }
 
-function AudioQualityGateCard() {
-  const episodes = (podcastAdmin as { episodes?: { slug: string; title: string; status: string; hasTranscript?: boolean; bytes?: number; quality?: { score?: number; pass?: boolean; pronunciation?: string; pace?: string; pauses?: string; issues?: string[]; metrics?: { durationSeconds?: number; sttRatio?: number | null; importantRatio?: number | null; longSilences?: number | null; peakDb?: number | null } } }[] }).episodes || []
-  const blocked = episodes.filter((episode) => episode.status !== 'published')
-  const averageScore = episodes.length ? Math.round(episodes.reduce((sum, episode) => sum + Number(episode.quality?.score || 0), 0) / episodes.length) : 0
+
+function AudioWorkspaceBridge({ onOpen }: { onOpen: (tab: AdminTab) => void }) {
   return (
-    <section className={card}>
-      <p className="text-[.76rem] font-semibold uppercase text-accent">بوابة صوت</p>
-      <h2 className="mt-1 font-display text-xl font-semibold text-ink">لا تعتمد أي حلقة إلا بعد Score واضح.</h2>
-      <div className="mt-4 grid gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-hair bg-canvas p-4"><span className="block font-display text-2xl text-accent">{episodes.length}</span><span className="text-[.78rem] text-soft">حلقات حوارية</span></div>
-        <div className="rounded-xl border border-hair bg-canvas p-4"><span className="block font-display text-2xl text-accent">{episodes.length - blocked.length}</span><span className="text-[.78rem] text-soft">منشورة</span></div>
-        <div className="rounded-xl border border-hair bg-canvas p-4"><span className="block font-display text-2xl text-accent">{blocked.length}</span><span className="text-[.78rem] text-soft">تحت المراجعة</span></div>
-        <div className="rounded-xl border border-hair bg-canvas p-4"><span className="block font-display text-2xl text-accent">{averageScore}</span><span className="text-[.78rem] text-soft">متوسط الجودة</span></div>
+    <section className={`${card} border-accent/25 bg-accent/[.035]`}>
+      <p className="text-[.76rem] font-semibold uppercase text-accent">الامتداد الصوتي</p>
+      <h3 className="mt-1 font-display text-xl font-semibold text-ink">الفكرة تُطوَّر هنا، وإنتاج صوتها يعيش في منظومته الرسمية.</h3>
+      <p className="mt-2 max-w-2xl text-[.84rem] leading-relaxed text-soft">لا نكرر غرفة التحكم أو بوابة الجودة داخل المختبر. انتقل إلى قافلة الصوت لمعرفة الحالة، أو غرفة الإنتاج لاتخاذ القرار، أو المكتبة للسماع والإدارة.</p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button type="button" onClick={() => onOpen('sound-caravan')} className={softBtn}>قافلة الصوت</button>
+        <button type="button" onClick={() => onOpen('production')} className={softBtn}>غرفة الإنتاج</button>
+        <button type="button" onClick={() => onOpen('audio-library')} className={softBtn}>مكتبة الصوت</button>
       </div>
-      <p className="mt-4 text-[.86rem] leading-relaxed text-soft">
-        البوابة تفحص النطق والمعنى، سرعة الحلقة، الوقفات، Transcript، حجم الملف، والرابط الدائم. أي حلقة أقل من 92/100 أو بلا تقرير جودة تبقى تحت المراجعة ولا تدخل RSS.
-      </p>
-      {blocked.length ? (
-        <ol className="mt-4 grid gap-2">
-          {blocked.slice(0, 5).map((episode) => (
-            <li key={episode.slug} className="rounded-xl border border-hair bg-canvas p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-ink">{episode.title}</p>
-                  <p className="mt-1 text-[.76rem] text-soft">
-                    النطق: {episode.quality?.pronunciation || '—'}
-                    {' · '}السرعة: {episode.quality?.pace || '—'}
-                    {' · '}الوقفات: {episode.quality?.pauses || '—'}
-                  </p>
-                  {episode.quality?.metrics && (
-                    <p className="mt-1 text-[.74rem] text-soft">
-                      مدة: {episode.quality.metrics.durationSeconds || '—'}ث
-                      {' · '}STT مهم: {episode.quality.metrics.importantRatio ?? '—'}٪
-                      {' · '}وقفات طويلة: {episode.quality.metrics.longSilences ?? '—'}
-                    </p>
-                  )}
-                  <p className="mt-1 text-[.78rem] text-soft">{episode.quality?.issues?.join(' · ') || 'تحتاج اعتماد الجودة قبل النشر.'}</p>
-                </div>
-                <span className="rounded-full border border-hair px-3 py-1.5 font-display text-lg text-accent">{episode.quality?.score ?? 0}</span>
-              </div>
-            </li>
-          ))}
-        </ol>
-      ) : <p className="mt-4 rounded-xl border border-hair bg-canvas p-4 text-[.84rem] text-soft">كل الحلقات الحوارية المنشورة اجتازت البوابة.</p>}
     </section>
   )
 }
 
-export function IntelligenceLab({ articles }: { articles: ArticleRecord[] }) {
+export function IntelligenceLab({ articles, onOpen }: { articles: ArticleRecord[]; onOpen: (tab: AdminTab) => void }) {
   const [richArticles, setRichArticles] = useState<ArticleRecord[]>(articles)
   const [view, setView] = useState<'before' | 'develop' | 'system'>('before')
 
@@ -457,7 +353,7 @@ export function IntelligenceLab({ articles }: { articles: ArticleRecord[] }) {
 
       {view === 'develop' && <LabLayer title="تطوير الفكرة" note="مساحة هادئة لتطوير سؤال أو خبر أو ملاحظة، وربطه بتاريخك الفكري."><IdeaLabCard articles={richArticles} /><DoctorRadarCard articles={richArticles} /><SeriesDetails articles={richArticles} /></LabLayer>}
 
-      {view === 'system' && <LabLayer title="تحويل المقال إلى منظومة" note="تحويل المقال الواحد إلى محاضرة، منشورات، سؤال طلاب، وبودكاست — من دون نشر تلقائي."><ArticleSystemCard articles={richArticles} /><AudioQualityGateCard /><AudioControlCard articles={richArticles} /></LabLayer>}
+      {view === 'system' && <LabLayer title="تحويل المقال إلى منظومة" note="تحويل المقال الواحد إلى محاضرة، منشورات، سؤال طلاب، وبودكاست — من دون نشر تلقائي."><ArticleSystemCard articles={richArticles} /><AudioWorkspaceBridge onOpen={onOpen} /></LabLayer>}
     </div>
   )
 }

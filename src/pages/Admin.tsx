@@ -8,7 +8,7 @@
  * ٣) ثلاث بطاقات: مقال جديد · سؤال الأسبوع · لقاء قادم.
  *    كل ما يُنشر هنا يظهر في الموقع فوراً — بلا رفع ملفات.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Page } from '../components/ui'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { firebaseEnabled, getDb, getFirebaseApp } from '../lib/firebase'
@@ -35,17 +35,19 @@ import { UploadField } from '../components/admin/ContentManager'
 import { WhatsAppAgentPanel } from '../components/admin/WhatsAppAgentPanel'
 import { BotMessagesPanel } from '../components/admin/BotMessagesPanel'
 import { ProductionMonitor } from '../components/admin/ProductionMonitor'
+import { VisitorJourneySuggestion } from '../components/admin/VisitorJourneySuggestion'
 import { SoundCaravanBoard } from '../components/admin/SoundCaravanBoard'
 import { useSeo } from '../components/seo'
 import {
-  AdminAreaTabs,
   AdminCommandPalette,
   AdminMobileNav,
-  AdminSectionTabs,
+  AdminMobileSubnav,
+  AdminSidebar,
   LaunchModeCard,
   TodayDashboard,
   type AdminTab,
 } from '../components/admin/AdminArchitecture'
+import { ADMIN_TABS } from '../components/admin/admin-navigation'
 
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.95rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
 const btn = 'rounded-full bg-accent px-7 py-2.5 font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
@@ -195,8 +197,7 @@ function CvPdfCard() {
 function Panel({ email }: { email: string }) {
   const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const requestedTab = params.get('tab') as AdminTab | null
-  const allowedTabs: AdminTab[] = ['dashboard','monitor','content-health','production','analytics','studio','design','image-lab','launch','event','articles','books','papers','media','inbox','lab','whatsapp','bot-messages','voice','manual-dialogue','audio-library','pronunciation','cv']
-  const initialTab = requestedTab && allowedTabs.includes(requestedTab) ? requestedTab : 'dashboard'
+  const initialTab = requestedTab && ADMIN_TABS.includes(requestedTab) ? requestedTab : 'dashboard'
   const editSlug = params.get('edit') || undefined
   const [tab, setTab] = useState<AdminTab>(initialTab)
   const [commandsOpen, setCommandsOpen] = useState(false)
@@ -248,6 +249,35 @@ function Panel({ email }: { email: string }) {
     await so(getAuth(app!))
   }
 
+  /* سجل الـrender مطابق لسجل التنقل: إضافة أي تبويب جديد تصبح خطأ TypeScript
+     ما لم يحصل على شاشة فعلية، فلا تتكرر مشكلة رابط موجود بلا محتوى أو العكس. */
+  const tabContent: Record<AdminTab, ReactNode> = {
+    dashboard: <TodayDashboard articles={cms.articles} onOpen={chooseTab} />,
+    monitor: <ProductionMonitor articles={cms.articles} onOpen={chooseTab} />,
+    'content-health': <ProductionHealthCenter view="health" articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />,
+    production: <ProductionHealthCenter view="production" articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />,
+    analytics: <div className="grid gap-4"><ReaderPulse /><VisitorJourneySuggestion articles={cms.articles} /><Indicators articles={cms.articles} /></div>,
+    studio: <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} />,
+    design: <SocialDesignStudio />,
+    'image-lab': <ImageLab />,
+    launch: <LaunchModeCard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} />,
+    lab: <IntelligenceLab articles={cms.articles} onOpen={chooseTab} />,
+    whatsapp: <WhatsAppAgentPanel />,
+    'bot-messages': <BotMessagesPanel />,
+    voice: <VoiceBakeoffCard />,
+    'manual-dialogue': <ManualDialogueEditor articles={cms.articles} onQueued={() => chooseTab('production')} />,
+    'audio-library': <AudioLibrary articles={cms.articles} onChanged={cms.reload} />,
+    'sound-caravan': <SoundCaravanBoard articles={cms.articles} />,
+    pronunciation: <PronunciationLexicon />,
+    cv: <CvPdfCard />,
+    articles: <ContentManager openSlug={editSlug} kind="article" items={cms.articles as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />,
+    books: <ContentManager openSlug={editSlug} kind="book" items={cms.books as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />,
+    papers: <ContentManager openSlug={editSlug} kind="paper" items={cms.papers as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />,
+    media: <ContentManager openSlug={editSlug} kind="media" items={cms.media as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />,
+    inbox: <InboxPanel />,
+    event: <EventForm />,
+  }
+
   return (
     <Page>
       <AdminTaskFavicon />
@@ -280,34 +310,13 @@ function Panel({ email }: { email: string }) {
         {cms.error && <p className="mb-5 rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.85rem] text-soft">تعذّر تحديث المحتوى الحي: {cms.error}</p>}
         {cms.loading && <p className="mb-5 text-[.84rem] text-soft">أحمّل آخر تعديلات المحتوى…</p>}
 
-        <section className="min-w-0">
-          <AdminAreaTabs tab={tab} onSelect={chooseTab} />
-          <AdminSectionTabs tab={tab} onSelect={chooseTab} />
-            {tab === 'dashboard' && <TodayDashboard articles={cms.articles} onOpen={chooseTab} />}
-            {tab === 'monitor' && <ProductionMonitor articles={cms.articles} onOpen={chooseTab} />}
-            {tab === 'content-health' && <ProductionHealthCenter view="health" articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />}
-            {tab === 'production' && <ProductionHealthCenter view="production" articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />}
-            {tab === 'analytics' && <div className="grid gap-4"><ReaderPulse /><Indicators articles={cms.articles} /></div>}
-            {tab === 'studio' && <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} />}
-            {tab === 'design' && <SocialDesignStudio />}
-            {tab === 'image-lab' && <ImageLab />}
-            {tab === 'launch' && <LaunchModeCard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} />}
-            {tab === 'lab' && <IntelligenceLab articles={cms.articles} />}
-            {tab === 'whatsapp' && <WhatsAppAgentPanel />}
-            {tab === 'bot-messages' && <BotMessagesPanel />}
-            {tab === 'voice' && <VoiceBakeoffCard />}
-            {tab === 'manual-dialogue' && <ManualDialogueEditor articles={cms.articles} onQueued={() => chooseTab('production')} />}
-            {tab === 'audio-library' && <AudioLibrary articles={cms.articles} onChanged={cms.reload} />}
-            {tab === 'sound-caravan' && <SoundCaravanBoard articles={cms.articles} />}
-            {tab === 'pronunciation' && <PronunciationLexicon />}
-            {tab === 'cv' && <CvPdfCard />}
-            {tab === 'articles' && <ContentManager openSlug={editSlug} kind="article" items={cms.articles as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
-            {tab === 'books' && <ContentManager openSlug={editSlug} kind="book" items={cms.books as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
-            {tab === 'papers' && <ContentManager openSlug={editSlug} kind="paper" items={cms.papers as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
-            {tab === 'media' && <ContentManager openSlug={editSlug} kind="media" items={cms.media as unknown as ManagedRecord[]} getBaseRecord={getBaseRecord as (kind: ManagedKind, slug: string) => Record<string, unknown> | undefined} onChanged={cms.reload} />}
-            {tab === 'inbox' && <InboxPanel />}
-            {tab === 'event' && <EventForm />}
-        </section>
+        <div className="grid min-w-0 gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
+          <AdminSidebar tab={tab} onSelect={chooseTab} />
+          <section className="min-w-0">
+            <AdminMobileSubnav tab={tab} onSelect={chooseTab} />
+            {tabContent[tab]}
+          </section>
+        </div>
       </div>
       <AdminMobileNav tab={tab} onSelect={chooseTab} />
       <AdminCommandPalette open={commandsOpen} close={() => setCommandsOpen(false)} onSelect={chooseTab} />

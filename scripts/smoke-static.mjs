@@ -25,7 +25,7 @@ const deleted = new Set(existsSync(deletedPath) ? JSON.parse(readFileSync(delete
 const alive = (kind) => (slug) => !deleted.has(`${kind}:${slug}`)
 
 const expected = [
-  '/', '/articles', '/publications', '/research', '/ask', '/atlas', '/cv', '/cv-file/ar', '/cv-file/en', '/upcoming',
+  '/', '/articles', '/publications', '/research', '/ask', '/atlas', '/cv', '/cv-file/ar', '/cv-file/en', '/upcoming', '/en/contact', '/thought',
   ...articles.filter(alive('article')).map((slug) => `/articles/${slug}`),
   ...books.filter(alive('book')).map((slug) => `/publications/${slug}`),
   ...papers.filter(alive('paper')).map((slug) => `/research/${slug}`),
@@ -41,7 +41,7 @@ for (const route of expected) {
 }
 
 const sitemap = readFileSync(resolve(DIST, 'sitemap.xml'), 'utf8')
-for (const route of ['/articles', '/publications', '/research', '/ask', '/atlas']) {
+for (const route of ['/articles', '/publications', '/research', '/ask', '/thought', '/atlas']) {
   if (!sitemap.includes(`https://dr-alfailakawi.com${route}`)) fail(`sitemap لا يحتوي ${route}`)
 }
 

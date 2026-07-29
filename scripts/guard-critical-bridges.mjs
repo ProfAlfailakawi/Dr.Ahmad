@@ -11,6 +11,7 @@ const requiredFiles = [
   'src/lib/podcast-generation.ts',
   'src/lib/audio-management.ts',
   'src/components/admin/AudioLibrary.tsx',
+  'src/components/admin/admin-navigation.ts',
   'scripts/audio-control-status.mjs',
   'scripts/clear-audio-assets.mjs',
   '.github/workflows/admin-audio-clear.yml',
@@ -56,6 +57,7 @@ const contentManager = await readFile(resolve(root, 'src/components/admin/Conten
 const audioLibrary = await readFile(resolve(root, 'src/components/admin/AudioLibrary.tsx'), 'utf8')
 const adminPage = await readFile(resolve(root, 'src/pages/Admin.tsx'), 'utf8')
 const adminArchitecture = await readFile(resolve(root, 'src/components/admin/AdminArchitecture.tsx'), 'utf8')
+const adminNavigation = await readFile(resolve(root, 'src/components/admin/admin-navigation.ts'), 'utf8')
 const cvFile = await readFile(resolve(root, 'src/pages/CvFile.tsx'), 'utf8')
 const firestoreRules = await readFile(resolve(root, 'firestore.rules'), 'utf8')
 const serverSource = await readFile(resolve(root, 'server.mjs'), 'utf8')
@@ -103,9 +105,9 @@ const assertions = [
   [ideaFeatures.includes('window.visualViewport') && ideaFeatures.includes('firstPress'), 'PWA selection toolbar and first-tap quote controls must remain protected'],
   [contentManager.includes('uploadCvPdfToFirestore') && contentManager.includes("'site_cv_files'"), 'CV upload must keep its Storage-independent Firestore bridge'],
   [contentManager.includes('النص المُشكَّل لتوليد الصوت') && contentManager.includes("'bodyVocalized'") && autoAudio.includes('fields.bodyVocalized'), 'vocalized article text must remain visible in admin and connected to audio generation'],
-  [audioLibrary.includes('مكتبة الصوت') && audioLibrary.includes('قراءة المقال') && audioLibrary.includes('الحوار') && !audioLibrary.includes('صوت فهد') && !audioLibrary.includes('صوت نورة') && audioLibrary.includes("'clear'") && audioManagement.includes("'reading' | 'dialogue'"), 'article audio library must expose only generic reading and dialogue labels while keeping internal compatibility modes'],
+  [audioLibrary.includes('مكتبة الصوت') && audioLibrary.includes('نورة') && audioLibrary.includes('فهد') && audioLibrary.includes('الحوار') && audioLibrary.includes("'clear'") && audioManagement.includes("'reading' | 'dialogue'"), 'admin audio library must expose Noura, Fahed and dialogue while keeping article-facing labels generic'],
   [audioLibrary.includes('<audio') && audioLibrary.includes('سماع') && audioLibrary.includes('قراءة المقال') && audioLibrary.includes('الحوار') && audioLibrary.includes('12_000'), 'central audio library must preview reading/dialogue files with generic labels and refresh generation status'],
-  [adminPage.includes("tab === 'audio-library'") && adminArchitecture.includes("tab: 'audio-library'") && adminArchitecture.includes('سماع وإعادة توليد وحذف'), 'audio lifecycle must remain a dedicated visible admin tab'],
+  [adminPage.includes("'audio-library': <AudioLibrary") && adminNavigation.includes("tab: 'audio-library'") && adminNavigation.includes('السماع وإعادة التوليد والحذف'), 'audio lifecycle must remain a dedicated visible admin tab generated from the official registry'],
   [!contentManager.includes('<ArticleAudioManager') && !contentManager.includes('إدارة صوت المقال'), 'audio controls must stay out of the article editor and inside the dedicated library'],
   [serverSource.includes('audioManagePath') && serverSource.includes('admin-audio-clear.yml') && autoAudio.includes('ALL_VOICES') && serverSource.includes("requestedMode === 'fahed' ? 'reading'"), 'server must dispatch protected generic reading/dialogue lifecycle workflows while accepting the legacy alias'],
   [audioClearWorkflow.includes('reading) FILES=') && audioClearWorkflow.includes('.noura.mp3') && audioClearWorkflow.includes('clear-audio-assets.mjs') && !audioClearWorkflow.includes("description: 'fahed") && !autoAudioWorkflow.includes('github.event.inputs.voice') && autoAudioWorkflow.includes('MODE="reading"'), 'audio cancellation and regeneration must use generic reading/dialogue modes, clear both compatible reading files, and expose no internal voice selector'],

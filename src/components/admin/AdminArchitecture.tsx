@@ -6,89 +6,9 @@ import { createAnalyticsNamer, decodeAnalyticsPath } from '../../lib/analytics-l
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../../lib/cms'
 import { EASE } from '../motion'
 
-export type AdminTab =
-  | 'dashboard'
-  | 'content-health'
-  | 'production'
-  | 'analytics'
-  | 'studio'
-  | 'design'
-  | 'image-lab'
-  | 'launch'
-  | 'event'
-  | 'articles'
-  | 'books'
-  | 'papers'
-  | 'media'
-  | 'inbox'
-  | 'lab'
-  | 'voice'
-  | 'manual-dialogue'
-  | 'audio-library'
-  | 'sound-caravan'
-  | 'pronunciation'
-  | 'cv'
-  | 'whatsapp'
-  | 'bot-messages'
-  | 'monitor'
-
-export type AdminArea = 'system' | 'publishing' | 'library' | 'audience'
-
-type NavItem = { tab: AdminTab; label: string; note: string }
-type NavGroup = { area: AdminArea; label: string; icon: string; items: NavItem[] }
-
-/* الترتيب المنطقي (بأمر الدكتور ٢٠٢٦-٠٧-٢٣):
-   النظام = العين والقرار · الإنتاج والنشر = خط السير من النص إلى الإطلاق
-   المكتبة = محفوظة كما هي حرفاً حرفاً («مضبوطة ١٠٠٠٠٪») · الجمهور = كل من يخاطب الناس */
-export const ADMIN_GROUPS: NavGroup[] = [
-  {
-    area: 'system', label: 'النظام', icon: '◉', items: [
-      { tab: 'dashboard', label: 'غرفة القيادة', note: 'القرارات والتنبيهات الأهم' },
-      { tab: 'monitor', label: 'مراقب الإنتاج', note: 'التصميم والصوت والروابط والحملات' },
-      { tab: 'content-health', label: 'صحة المحتوى', note: 'المصادر والنواقص ومسارات القراءة' },
-      { tab: 'lab', label: 'المختبر المتقدم', note: 'الفحص والذاكرة والأتمتة' },
-    ],
-  },
-  {
-    /* خط سير حقيقي: النص → التصميم → الصوت وضبطه → الإبراز */
-    area: 'publishing', label: 'الإنتاج والنشر', icon: '↗', items: [
-      { tab: 'studio', label: 'استوديو النشر', note: 'من الفكرة إلى الحزمة' },
-      { tab: 'design', label: 'استوديو التصاميم', note: 'المشاهد الفنية الاثنا عشر بنقرة' },
-      { tab: 'image-lab', label: 'مختبر الصور', note: 'تحرير احترافي للصور بلا تكلفة' },
-      { tab: 'production', label: 'غرفة الإنتاج', note: 'طابور البودكاست من المسودة للنشر' },
-      { tab: 'manual-dialogue', label: 'الحوار اليدوي', note: 'تحرير الحلقة مداخلةً مداخلة' },
-      { tab: 'audio-library', label: 'مكتبة الصوت', note: 'سماع وإعادة توليد وحذف' },
-      { tab: 'sound-caravan', label: 'قافلة الصوت', note: 'تقدّم تصويت المقالات الـ143 بالأصوات الثلاثة' },
-      { tab: 'pronunciation', label: 'قاموس النطق', note: 'اضبط نطق أي كلمة' },
-      { tab: 'voice', label: 'اختيار الأصوات', note: 'تجارب الأصوات وضبط الجودة' },
-      { tab: 'launch', label: 'وضع الإطلاق', note: 'إبراز عمل في الواجهة' },
-    ],
-  },
-  {
-    area: 'library', label: 'المكتبة', icon: '▦', items: [
-      { tab: 'articles', label: 'المقالات', note: 'إنشاء وتحرير وجدولة' },
-      { tab: 'books', label: 'الكتب', note: 'المؤلفات والملفات' },
-      { tab: 'papers', label: 'الأبحاث', note: 'المساهمات العلمية' },
-      { tab: 'media', label: 'الإعلام', note: 'الظهور واللقاءات المنشورة' },
-      { tab: 'event', label: 'اللقاءات القادمة', note: 'إضافة المواعيد وإدارتها' },
-      { tab: 'cv', label: 'السيرة والهوية', note: 'ملفات السيرة والبيانات العامة' },
-    ],
-  },
-  {
-    area: 'audience', label: 'الجمهور', icon: '◎', items: [
-      { tab: 'inbox', label: 'الرسائل', note: 'طلبات التواصل والتعاون' },
-      { tab: 'whatsapp', label: 'مساعد واتساب', note: 'البوت الذي يخاطب جمهورك' },
-      { tab: 'bot-messages', label: 'رسائل البوت', note: 'حرّر ما يقوله البوت بلا كود' },
-      { tab: 'analytics', label: 'التحليلات', note: 'المشاهدات ورحلة الزائر' },
-    ],
-  },
-]
-
-export const areaOfTab = (tab: AdminTab): AdminArea =>
-  ADMIN_GROUPS.find((group) => group.items.some((item) => item.tab === tab))?.area || 'system'
-
-export const defaultTabForArea = (area: AdminArea): AdminTab =>
-  ADMIN_GROUPS.find((group) => group.area === area)?.items[0].tab || 'dashboard'
+export type { AdminArea, AdminTab } from './admin-navigation'
+export { ADMIN_GROUPS, areaOfTab, defaultTabForArea } from './admin-navigation'
+import { ADMIN_GROUPS, areaOfTab, defaultTabForArea, itemsOfGroup, adminItem, type AdminTab } from './admin-navigation'
 
 export function AdminAreaTabs({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
   const activeArea = areaOfTab(tab)
@@ -97,12 +17,7 @@ export function AdminAreaTabs({ tab, onSelect }: { tab: AdminTab; onSelect: (tab
       {ADMIN_GROUPS.map((group) => {
         const active = activeArea === group.area
         return (
-          <button
-            key={group.area}
-            type="button"
-            onClick={() => onSelect(defaultTabForArea(group.area))}
-            className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-[.82rem] font-semibold transition-colors ${active ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
-          >
+          <button key={group.area} type="button" onClick={() => onSelect(defaultTabForArea(group.area))} className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-[.82rem] font-semibold transition-colors ${active ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>
             {group.label}
           </button>
         )
@@ -111,43 +26,51 @@ export function AdminAreaTabs({ tab, onSelect }: { tab: AdminTab; onSelect: (tab
   )
 }
 
+/* احتياطي للمكونات القديمة؛ الواجهة الرسمية الآن Sidebar على الكمبيوتر وقائمة واحدة على الهاتف. */
 export function AdminSectionTabs({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
-  const area = areaOfTab(tab)
-  const group = ADMIN_GROUPS.find((item) => item.area === area)
+  const group = ADMIN_GROUPS.find((item) => item.area === areaOfTab(tab))
   if (!group) return null
   return (
-    <div className="mb-6 flex min-w-0 flex-wrap gap-2 pb-1 md:flex-nowrap md:overflow-x-auto">
-      {group.items.map((item) => (
-        <button key={item.tab} type="button" onClick={() => onSelect(item.tab)} className={`min-h-11 min-w-0 rounded-full px-3 py-2 text-[.76rem] font-semibold leading-tight transition-colors sm:shrink-0 sm:px-4 sm:text-[.8rem] ${tab === item.tab ? 'bg-ink text-white' : 'border border-hair bg-wash text-soft hover:border-accent hover:text-accent'}`}>
-          {item.label}
-        </button>
-      ))}
+    <div className="mb-6 hidden min-w-0 flex-wrap gap-2 pb-1">
+      {itemsOfGroup(group).map((item) => <button key={item.tab} type="button" onClick={() => onSelect(item.tab)}>{item.label}</button>)}
     </div>
   )
 }
 
-
 export function AdminSidebar({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
   return (
-    <aside className="hidden md:block">
-      <div className="sticky top-24 rounded-3xl border border-hair bg-wash p-3">
+    <aside className="hidden min-w-0 lg:block" aria-label="أقسام لوحة التحكم">
+      <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-[1.65rem] border border-hair bg-wash/80 p-3 shadow-[0_24px_70px_-55px_rgba(21,22,26,.45)] backdrop-blur">
         {ADMIN_GROUPS.map((group, groupIndex) => (
-          <div key={group.area} className={groupIndex ? 'mt-3 border-t border-hair pt-3' : ''}>
-            <p className="flex items-center gap-2 px-3 pb-1 text-[.72rem] font-semibold text-accent">
+          <div key={group.area} className={groupIndex ? 'mt-4 border-t border-hair pt-4' : ''}>
+            <p className="flex items-center gap-2 px-3 pb-2 text-[.7rem] font-bold text-accent">
               <span aria-hidden className="w-4 text-center">{group.icon}</span>
               {group.label}
             </p>
-            <div className="grid gap-1">
-              {group.items.map((item) => (
-                <button
-                  key={item.tab}
-                  type="button"
-                  onClick={() => onSelect(item.tab)}
-                  className={`rounded-2xl px-3 py-2.5 text-right transition-colors ${tab === item.tab ? 'bg-accent text-white' : 'text-ink hover:bg-canvas hover:text-accent'}`}
-                >
-                  <span className="block text-[.88rem] font-semibold">{item.label}</span>
-                  <span className={`mt-0.5 block text-[.68rem] font-light ${tab === item.tab ? 'text-white/70' : 'text-soft'}`}>{item.note}</span>
-                </button>
+            <div className="grid gap-3">
+              {group.sections.map((section) => (
+                <section key={section.id} aria-label={section.label || group.label}>
+                  {section.label && (
+                    <div className="mb-1.5 px-3">
+                      <span className="block text-[.65rem] font-bold text-soft">{section.label}</span>
+                      {section.note && <span className="mt-0.5 block text-[.58rem] leading-relaxed text-soft/70">{section.note}</span>}
+                    </div>
+                  )}
+                  <div className="grid gap-1">
+                    {section.items.map((item) => (
+                      <button
+                        key={item.tab}
+                        type="button"
+                        onClick={() => onSelect(item.tab)}
+                        aria-current={tab === item.tab ? 'page' : undefined}
+                        className={`rounded-2xl px-3 py-2.5 text-right transition-colors ${tab === item.tab ? 'bg-accent text-white shadow-sm' : 'text-ink hover:bg-canvas hover:text-accent'}`}
+                      >
+                        <span className="block text-[.82rem] font-semibold">{item.label}</span>
+                        <span className={`mt-0.5 block text-[.62rem] font-light leading-relaxed ${tab === item.tab ? 'text-white/72' : 'text-soft'}`}>{item.note}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
               ))}
             </div>
           </div>
@@ -158,24 +81,40 @@ export function AdminSidebar({ tab, onSelect }: { tab: AdminTab; onSelect: (tab:
 }
 
 export function AdminMobileSubnav({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
-  const area = areaOfTab(tab)
-  const group = ADMIN_GROUPS.find((item) => item.area === area)
-  if (!group || group.items.length < 2) return null
+  const group = ADMIN_GROUPS.find((item) => item.area === areaOfTab(tab))
+  const current = adminItem(tab)
+  if (!group || !current) return null
   return (
-    <div className="mb-5 grid min-w-0 grid-cols-2 gap-2 md:hidden">
-      {group.items.map((item) => (
-        <button key={item.tab} type="button" onClick={() => onSelect(item.tab)} className={`flex min-h-11 min-w-0 items-center justify-center rounded-full px-3 py-2 text-[.76rem] font-semibold leading-tight ${tab === item.tab ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>
-          {item.label}
-        </button>
-      ))}
-    </div>
+    <details className="group mb-5 overflow-hidden rounded-2xl border border-hair bg-canvas lg:hidden">
+      <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 marker:hidden">
+        <span className="min-w-0">
+          <span className="block text-[.65rem] font-semibold text-accent">{group.label}</span>
+          <strong className="mt-0.5 block truncate text-[.88rem] text-ink">{current.label}</strong>
+        </span>
+        <span aria-hidden className="text-soft transition-transform group-open:rotate-180">⌄</span>
+      </summary>
+      <div className="border-t border-hair p-2">
+        {group.sections.map((section) => (
+          <section key={section.id} className="py-1" aria-label={section.label || group.label}>
+            {section.label && <p className="px-3 pb-1 pt-2 text-[.64rem] font-bold text-soft">{section.label}</p>}
+            <div className="grid gap-1">
+              {section.items.map((item) => (
+                <button key={item.tab} type="button" onClick={(event) => { onSelect(item.tab); event.currentTarget.closest('details')?.removeAttribute('open') }} className={`min-h-11 rounded-xl px-3 py-2 text-right text-[.78rem] font-semibold ${tab === item.tab ? 'bg-accent text-white' : 'text-ink hover:bg-wash hover:text-accent'}`}>
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </details>
   )
 }
 
 export function AdminMobileNav({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
   const area = areaOfTab(tab)
   return (
-    <nav aria-label="تنقل لوحة التحكم" className="fixed inset-x-3 bottom-[calc(.75rem+env(safe-area-inset-bottom))] z-[280] rounded-2xl border border-hair bg-canvas/95 p-2 shadow-[0_24px_70px_-34px_rgba(21,22,26,.65)] backdrop-blur md:hidden">
+    <nav aria-label="تنقل مجالات لوحة التحكم" className="fixed inset-x-3 bottom-[calc(.75rem+env(safe-area-inset-bottom))] z-[280] rounded-2xl border border-hair bg-canvas/95 p-2 shadow-[0_24px_70px_-34px_rgba(21,22,26,.65)] backdrop-blur lg:hidden">
       <div className="grid min-w-0 grid-cols-4 gap-1.5">
         {ADMIN_GROUPS.map((group) => {
           const active = area === group.area
@@ -463,7 +402,7 @@ export function LaunchModeCard({ articles, books, papers, media }: { articles: A
 }
 
 type Command = { tab: AdminTab; label: string; hint: string; keys: string }
-const COMMANDS: Command[] = ADMIN_GROUPS.flatMap((group) => group.items.map((item) => ({ tab: item.tab, label: item.label, hint: `${group.label} · ${item.note}`, keys: `${item.label} ${group.label} ${item.note}` })))
+const COMMANDS: Command[] = ADMIN_GROUPS.flatMap((group) => group.sections.flatMap((section) => section.items.map((item) => ({ tab: item.tab, label: item.label, hint: `${group.label}${section.label ? ` · ${section.label}` : ''} · ${item.note}`, keys: `${item.label} ${group.label} ${section.label || ''} ${item.note}` }))))
 
 export function AdminCommandPalette({ open, close, onSelect }: { open: boolean; close: () => void; onSelect: (tab: AdminTab) => void }) {
   const [query, setQuery] = useState('')

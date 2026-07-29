@@ -239,7 +239,16 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
         { to: '/atlas', label: 'سماء المقالات', description: 'خريطة الأرشيف' },
         { to: '/thought-paths', label: 'مسارات الفكرة', description: 'تطوّر الموضوعات' },
       ] },
-      { to: '/search', label: 'البحث', description: 'ابحث في كل شيء', action: 'search' },
+      { to: '/search', label: 'البحث في المعرفة', description: 'مادة منشورة أو سؤال موثّق', showAllLink: false, sub: [
+        { to: '/search', label: 'أبحث عن مادة', description: 'في المقالات والكتب والأبحاث والإعلام' },
+        { to: '/ask', label: 'أسأل الأرشيف', description: 'جواب من مواد الموقع فقط' },
+      ] },
+      { to: '/thought', label: 'الخريطة الفكرية', allLabel: 'افتح الخريطة الفكرية', sub: [
+        { to: '/atlas', label: 'سماء المقالات', description: 'المشهد البصري للأرشيف' },
+        { to: '/thought-paths', label: 'مسارات الفكرة', description: 'كيف تطوّرت الموضوعات' },
+        { to: '/decade', label: 'وثيقة العقد', description: 'الرحلة عبر الزمن' },
+        { to: '/impact', label: 'سجل الأثر', description: 'الامتدادات الموثقة' },
+      ] },
     ],
   },
   {
@@ -398,13 +407,15 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
                               <span className="mt-1 text-[.58rem] font-normal leading-none">{expanded ? 'إغلاق' : 'فروع'}</span>
                             </span>
                           </button>
-                          <Link
-                            to={it.to}
-                            onClick={close}
-                            className="site-menu-control mt-0.5 inline-flex min-h-11 items-center py-2 text-[.72rem] font-medium text-soft transition-colors hover:text-accent"
-                          >
-                            {it.allLabel} <span aria-hidden className="ms-1">←</span>
-                          </Link>
+                          {it.showAllLink !== false && (
+                            <Link
+                              to={it.to}
+                              onClick={close}
+                              className="site-menu-control mt-0.5 inline-flex min-h-11 items-center py-2 text-[.72rem] font-medium text-soft transition-colors hover:text-accent"
+                            >
+                              {it.allLabel} <span aria-hidden className="ms-1">←</span>
+                            </Link>
+                          )}
                         </div>
                       ) : it.action === 'search' ? (
                         <button
@@ -517,6 +528,7 @@ function EnglishOverlay({ close, openSearch }: { close: () => void; openSearch: 
     { to: '/en', label: 'Home', description: 'Overview' },
     { to: '/en/cv', label: 'Academic CV', description: 'Experience and education' },
     { to: '/en/research', label: 'Research', description: 'Peer-reviewed work' },
+    { to: '/en/contact', label: 'Contact', description: 'Consulting, keynotes and media' },
   ]
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') close() }
@@ -553,7 +565,7 @@ function EnglishOverlay({ close, openSearch }: { close: () => void; openSearch: 
       <div className="border-t border-hair px-6 py-4 md:px-11 md:py-6">
         <div className="mx-auto flex max-w-shell items-center justify-between gap-4">
           <div className="flex items-center gap-2"><ThemeToggle className="h-11 w-11" /><Link to={AR_OF[loc.pathname] || '/'} onClick={close} className="flex h-11 min-w-11 items-center justify-center rounded-full border border-hair px-3 text-[.76rem] font-semibold text-soft">العربية</Link></div>
-          <Link to="/contact#booking-form" onClick={close} className="rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-white">Book a meeting</Link>
+          <Link to="/en/contact#booking-form" onClick={close} className="rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-white">Book a meeting</Link>
         </div>
       </div>
     </motion.div>
@@ -561,8 +573,8 @@ function EnglishOverlay({ close, openSearch }: { close: () => void; openSearch: 
 }
 
 /* خريطة التبديل بين المرآتين — الصفحات الثلاث تتقابل، وما عداها يذهب لرئيسية اللغة الأخرى */
-const EN_OF: Record<string, string> = { '/': '/en', '/cv': '/en/cv', '/research': '/en/research' }
-const AR_OF: Record<string, string> = { '/en': '/', '/en/cv': '/cv', '/en/research': '/research' }
+const EN_OF: Record<string, string> = { '/': '/en', '/cv': '/en/cv', '/research': '/en/research', '/contact': '/en/contact' }
+const AR_OF: Record<string, string> = { '/en': '/', '/en/cv': '/cv', '/en/research': '/research', '/en/contact': '/contact' }
 
 const normalizeSearch = (value: string) => value
   .replace(/[\u064B-\u0652\u0670]/g, '')

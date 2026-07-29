@@ -8,6 +8,7 @@ import { loadArticleBodies } from '../../lib/article-bodies'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { fetchPublishedExtras, getDb } from '../../lib/firebase'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
+import { PublishingStudioNavigation, type PublishingStudioView } from './PublishingStudioNavigation'
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
 import { buildSocialVisuals, compositionNameOf, analyzeSocialCopy,
   detectVisualTopic, downloadSocialPng, renderSocialPng, visualTopicLabel, type SocialVisualTemplate, type VisualTopic } from '../../lib/social-templates'
@@ -1708,7 +1709,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const [currentEvents, setCurrentEvents] = useState<CurrentEvent[]>([])
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([])
   const [eventsLoading, setEventsLoading] = useState(false)
-  const [view, setView] = useState<'idea' | 'write' | 'review' | 'distribution' | 'pulse' | 'design'>('idea')
+  const [view, setView] = useState<PublishingStudioView>('idea')
 
   // بذرة «حملة من مقال»: عند وصولها نفتح استوديو التصاميم فوراً، وعند وجودها
   // مخزنة (وصل الحدث قبل تركيب هذا المكوّن) نلتقطها في أول تركيب.
@@ -2236,17 +2237,7 @@ ${pulsePurpose.trim()}`,
         <p className="text-[.76rem] font-semibold uppercase text-accent">استوديو النشر الذكي</p>
         <h1 className="mt-1 font-display text-2xl font-bold text-ink md:text-3xl">من فكرة واحدة إلى مقال ومنظومة نشر.</h1>
         <p className="mt-3 max-w-4xl text-[.88rem] leading-loose text-soft">المقال له مساره الكامل، والمنشور المستقل له مساره الخاص؛ بلا خلط أو زحمة.</p>
-        <div className="mt-5 flex min-w-0 flex-wrap gap-2 pb-1 md:flex-nowrap md:overflow-x-auto">
-          {([
-            ['idea', 'الفكرة'],
-            ['write', 'الكتابة'],
-            ['review', 'بوابة الجودة'],
-            ['distribution', 'التوزيع'],
-            ['pulse', 'منشور مستقل'],
-          ] as const).map(([key, label]) => (
-            <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold transition-colors ${view === key ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{label}</button>
-          ))}
-        </div>
+        <PublishingStudioNavigation view={view} onSelect={setView} />
       </section>
 
       {view === 'idea' && (

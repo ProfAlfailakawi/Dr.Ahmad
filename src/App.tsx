@@ -44,6 +44,7 @@ const NotFound = lazy(() => import('./pages/NotFound'))
 const EnglishHome = lazy(() => import('./pages/English').then((m) => ({ default: m.EnglishHome })))
 const EnglishCV = lazy(() => import('./pages/English').then((m) => ({ default: m.EnglishCV })))
 const EnglishResearch = lazy(() => import('./pages/English').then((m) => ({ default: m.EnglishResearch })))
+const EnglishContact = lazy(() => import('./pages/EnglishContact'))
 const LegacyArticle = lazy(() => import('./pages/Legacy').then((m) => ({ default: m.LegacyArticle })))
 const LegacyBook = lazy(() => import('./pages/Legacy').then((m) => ({ default: m.LegacyBook })))
 const LegacyLang = lazy(() => import('./pages/Legacy').then((m) => ({ default: m.LegacyLang })))
@@ -200,6 +201,7 @@ function AnimatedRoutes() {
         <Route path="/en" element={<EnglishHome />} />
         <Route path="/en/cv" element={<EnglishCV />} />
         <Route path="/en/research" element={<EnglishResearch />} />
+        <Route path="/en/contact" element={<EnglishContact />} />
         {/* جسر الروابط القديمة */}
         <Route path="/ar/*" element={<LegacyLang />} />
         <Route path="/en/*" element={<LegacyLang />} />

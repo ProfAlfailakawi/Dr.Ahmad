@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { FadeUp, Page, PageHead } from '../components/ui'
+import { KnowledgeEntry } from '../components/KnowledgeEntry'
 import { useSeo } from '../components/seo'
 import { searchArticles, topKeywordsFor } from '../lib/cms'
 import { books, papers, media } from '../data'
@@ -212,6 +213,8 @@ export default function Search() {
         title="البحث العميق."
         sub="محرك معرفة واحد يفتح الأرشيف كله: المقالات والأبحاث والكتب والإعلام والأسئلة."
       />
+
+      <div className="px-6 pt-8 md:px-11"><div className="mx-auto max-w-3xl"><KnowledgeEntry /></div></div>
 
       <section className="px-6 py-14 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">

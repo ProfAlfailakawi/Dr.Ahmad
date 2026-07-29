@@ -8,6 +8,7 @@ import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { normalizeArabicTypography } from '../../lib/arabic-typography'
 import { analyzeResearch, DEFAULT_RESEARCH_ORCID, evaluateResearchQuality } from '../../lib/research-intelligence'
 import { Pagination, usePagedList } from '../Pagination'
+import { ContentManagerHeader } from './ContentManagerHeader'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
 
@@ -1393,19 +1394,18 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
 
   return (
     <section id={`admin-content-${kind}`} className="grid min-w-0 max-w-full gap-5">
-      <div className="grid min-w-0 gap-4 sm:flex sm:flex-wrap sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-[.76rem] font-semibold uppercase text-accent">إدارة المحتوى</p>
-          <h2 className="mt-1 font-display text-2xl font-bold text-ink">{labels[kind].plural}</h2>
-          <p className="mt-1 text-[.82rem] text-soft">{items.length} عنصراً — الأصل والإضافات في قائمة واحدة.</p>
-        </div>
-        <button type="button" onClick={openNew} className={`${primary} w-full sm:w-auto`}>+ إضافة {labels[kind].singular}</button>
-      </div>
-
-      <div className="grid gap-3 rounded-2xl border border-hair bg-wash p-4 sm:grid-cols-[minmax(0,1fr)_auto]">
-        <input className={input} type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`ابحث في ${labels[kind].plural}…`} aria-label={`بحث في ${labels[kind].plural}`} />
-        <button type="button" onClick={() => setDescending((value) => !value)} className={secondary}>{descending ? 'الأحدث أولاً ↓' : 'الأقدم أولاً ↑'}</button>
-      </div>
+      <ContentManagerHeader
+        kind={kind}
+        total={items.length}
+        query={query}
+        descending={descending}
+        onQuery={setQuery}
+        onSort={() => setDescending((value) => !value)}
+        onNew={openNew}
+        inputClass={input}
+        primaryClass={primary}
+        secondaryClass={secondary}
+      />
 
       {notice && <p className="rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.84rem] text-accent">{notice}</p>}
 

@@ -6,10 +6,10 @@ export function CvDownloadCards({ academicHref }: { academicHref: string }) {
       <section className="mb-14" aria-labelledby="cv-downloads-title">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-[.72rem] font-semibold text-accent">ملفات جاهزة</p>
-            <h2 id="cv-downloads-title" className="mt-1 font-display text-xl font-semibold text-ink">اختر السيرة المناسبة لغرضك.</h2>
+            <p className="text-[.72rem] font-semibold text-accent">السير الذاتية</p>
+            <h2 id="cv-downloads-title" className="mt-1 font-display text-xl font-semibold text-ink">نسخ مخصصة لكل سياق.</h2>
           </div>
-          <span className="text-[.7rem] text-soft">ثلاثة أبواب، وسجل واحد.</span>
+          <span className="text-[.7rem] text-soft">أكاديمية · تدريبية · إعلامية</span>
         </div>
         <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <a href={academicHref} target="_blank" rel="noreferrer" aria-label="السيرة الذاتية الأكاديمية PDF" className="group rounded-2xl border border-accent/30 bg-accent/[.05] p-3 text-center transition-all duration-300 hover:border-accent hover:bg-accent/10 hover:shadow-md sm:p-6">

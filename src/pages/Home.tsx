@@ -916,30 +916,31 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
 
 function HomeSocialFooter() {
   const [newsletterOpen, setNewsletterOpen] = useState(false)
+  const iconButton = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-[border-color,color,background-color,transform] duration-300 hover:-translate-y-0.5 hover:border-accent hover:text-accent'
   return (
     <section className="border-t border-hair px-6 py-7 md:px-11 md:py-9">
       <div className="mx-auto max-w-shell">
-        <div className="-mx-6 overflow-x-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:px-0">
-          <div className="mx-auto flex min-w-max items-center justify-start gap-2.5 md:justify-center">
-            <span className="inline-flex items-center gap-2.5">
+        <div className="grid justify-items-center gap-3.5">
+          <div className="max-w-full overflow-x-auto px-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="منصات الدكتور">
+            <div className="mx-auto flex min-w-max items-center justify-center gap-2.5">
               {socials.map((s) => (
-                <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent">
+                <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className={iconButton}>
                   <SocialIcon name={s.label} size={16} />
                 </a>
               ))}
               {academicProfiles.map((profileLink) => (
-                <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent">
+                <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className={iconButton}>
                   <SocialIcon name={profileLink.label} size={17} />
                 </a>
               ))}
-            </span>
-            <span className="ms-4 inline-flex items-center gap-2.5" aria-label="أدوات الموقع">
-              <button type="button" onClick={() => setNewsletterOpen((value) => !value)} aria-expanded={newsletterOpen} aria-label="النشرة البريدية" title="النشرة البريدية" className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors ${newsletterOpen ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
-                <SocialIcon name="Mail" size={16} />
-              </button>
-              <TebyanProjectLink />
-              <ScheduleProjectLink />
-            </span>
+            </div>
+          </div>
+          <div className="flex items-center justify-center gap-2.5" aria-label="أدوات الموقع">
+            <button type="button" onClick={() => setNewsletterOpen((value) => !value)} aria-expanded={newsletterOpen} aria-label="النشرة البريدية" title="النشرة البريدية" className={`${iconButton} ${newsletterOpen ? 'border-accent bg-accent text-white hover:text-white' : ''}`}>
+              <SocialIcon name="Mail" size={16} />
+            </button>
+            <TebyanProjectLink />
+            <ScheduleProjectLink />
           </div>
         </div>
         <AnimatePresence initial={false}>

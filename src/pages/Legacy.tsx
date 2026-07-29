@@ -124,7 +124,8 @@ export function LegacyLang() {
     return <Navigate to={'/en/research' + search} replace />
   }
 
-  const leaf = rest.split('/').filter(Boolean).at(-1) || ''
+  const legacyParts = rest.split('/').filter(Boolean)
+  const leaf = legacyParts[legacyParts.length - 1] || ''
   const page = LEGACY_PAGES[rest] || LEGACY_PAGES[leaf]
   if (page) return <Navigate to={page + search} replace />
 

@@ -6,6 +6,7 @@ import { useCmsContent } from '../lib/content'
 import { ideaWords } from '../lib/idea-life'
 import { PROJECT_START_YEAR, getMinimumCompletedJourneyYears } from '../lib/project-meta'
 import { categoryLabel } from '../lib/content-taxonomy'
+import { ThoughtHub } from '../components/ThoughtHub'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
@@ -114,6 +115,8 @@ export default function ThoughtOverview() {
               ))}
             </div>
           </FadeUp>
+
+          <ThoughtHub />
 
           <div className="mt-8 grid gap-6 lg:grid-cols-[1.12fr_.88fr]">
             <FadeUp delay={0.04}>

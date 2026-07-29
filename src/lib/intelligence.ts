@@ -350,7 +350,7 @@ export function representativeStyleSamples(articles: ArticleLike[], limit = 6): 
         words,
         opening: cleanSegment(paragraphs[0] || body, 700),
         middle: cleanSegment(paragraphs[middleIndex] || body, 700),
-        closing: cleanSegment(paragraphs.at(-1) || body, 700),
+        closing: cleanSegment(paragraphs[paragraphs.length - 1] || body, 700),
       }
     })
 

@@ -304,6 +304,7 @@ const STATIC = [
   { path: '/terms', title: 'شروط الاستخدام', desc: 'شروط استخدام الموقع وأداة إدارة المحتوى والنشر على المنصات المرتبطة.', robots: 'noindex, nofollow' },
   { path: '/data-deletion', title: 'تعليمات حذف البيانات', desc: 'تعليمات إلغاء الربط وطلب حذف بيانات Facebook وInstagram وLinkedIn.', robots: 'noindex, nofollow' },
   { path: '/ask', title: 'العقل الحي', desc: 'اسأل سؤالاً حقيقياً، فيبني الموقع إجابة موثقة من أرشيف د. أحمد حسين الفيلكاوي فقط: مقالات، تطور زمني، ومصادر.' },
+  { path: '/thought', title: 'الخريطة الفكرية', desc: 'الباب الجامع لسماء المقالات ومسارات الفكرة ووثيقة العقد وسجل الأثر.' },
   { path: '/decade', title: 'وثيقة العقد', desc: 'سيرة فكرية حيّة تقرأ أكثر من عشر سنوات من الكتابة وتكشف تحولات الأسئلة والموضوعات الأكثر إلحاحاً.' },
   { path: '/impact', title: 'سجل الأثر الموثق', desc: 'رحلات موثقة تُظهر انتقال الأفكار من المقال والبحث إلى الحوار العام والمؤلفات والتطبيق، مع رابط لكل محطة ظاهرة.' },
   { path: '/cv/impact', title: 'سجل الأثر الموثق', desc: 'مسار توافق قديم ينقلك إلى سجل الأثر الموثق.', robots: 'noindex, follow' },
@@ -314,6 +315,7 @@ const STATIC = [
   { path: '/en', title: 'Dr. Ahmad H. Alfailakawi — Professor of Educational Technology & AI', desc: `Official website of Dr. Ahmad H. Alfailakawi, Professor of Educational Technology and Artificial Intelligence in Kuwait. ${nBooks} books, ${nPapers} peer-reviewed papers, and over ${nArticles} essays since ${firstYear}.`, lang: 'en' },
   { path: '/en/cv', title: 'Curriculum Vitae', desc: 'Education, academic appointments, advisory roles and international memberships of Dr. Ahmad H. Alfailakawi.', lang: 'en' },
   { path: '/en/research', title: 'Research', desc: `${nPapers} peer-reviewed papers on educational technology, e-learning systems and emerging technologies in higher education.`, lang: 'en' },
+  { path: '/en/contact', title: 'Book a meeting', desc: 'Consulting, keynotes, workshops, media interviews and research collaboration with Dr. Ahmad H. Alfailakawi.', lang: 'en' },
 ]
 
 const routes = [
@@ -363,7 +365,7 @@ function stripManagedHead(html) {
 /* المرآة الإنجليزية — أزواج hreflang بين اللغتين.
    ما دام زرّها مخفياً (SHOW_EN_TOGGLE=false) تبقى صفحاتها noindex وبلا hreflang وخارج sitemap. */
 const SHOW_EN = /export const SHOW_EN_TOGGLE = true/.test(src)
-const LANG_PAIRS = SHOW_EN ? { '/': '/en', '/cv': '/en/cv', '/research': '/en/research' } : {}
+const LANG_PAIRS = SHOW_EN ? { '/': '/en', '/cv': '/en/cv', '/research': '/en/research', '/contact': '/en/contact' } : {}
 
 const bodiesPath = resolve(ROOT, 'src/data/bodies.json')
 const bodies = existsSync(bodiesPath) ? JSON.parse(readFileSync(bodiesPath, 'utf8')) : {}
@@ -574,6 +576,7 @@ function generateBodyHtml(path, lang = 'ar') {
           <a href="/en" style="color: #3E5C78; text-decoration: none; font-weight: 500;">Home</a>
           <a href="/en/cv" style="color: #3E5C78; text-decoration: none; font-weight: 500;">CV</a>
           <a href="/en/research" style="color: #3E5C78; text-decoration: none; font-weight: 500;">Research</a>
+          <a href="/en/contact" style="color: #3E5C78; text-decoration: none; font-weight: 500;">Contact</a>
         </nav>
       </div>
     </header>
@@ -587,6 +590,7 @@ function generateBodyHtml(path, lang = 'ar') {
           <a href="/publications" style="color: #3E5C78; text-decoration: none; font-weight: 500;">الكتب</a>
           <a href="/research" style="color: #3E5C78; text-decoration: none; font-weight: 500;">الأبحاث</a>
           <a href="/cv" style="color: #3E5C78; text-decoration: none; font-weight: 500;">السيرة</a>
+          <a href="/thought" style="color: #3E5C78; text-decoration: none; font-weight: 500;">الخريطة الفكرية</a>
           <a href="/decade" style="color: #3E5C78; text-decoration: none; font-weight: 500;">وثيقة العقد</a>
           <a href="/contact" style="color: #3E5C78; text-decoration: none; font-weight: 500;">اتصل بي</a>
         </nav>
@@ -797,6 +801,18 @@ function generateBodyHtml(path, lang = 'ar') {
         </main>
       `
     }
+  } else if (path === '/en/contact') {
+    contentHtml = `
+      <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem; text-align:left;">
+        <p style="color:#3E5C78;font-size:.8rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">Contact</p>
+        <h1 style="font-size:2.5rem;font-weight:700;line-height:1.2;color:#15161A;margin:1rem 0;">Start with the purpose, not a long form.</h1>
+        <p style="font-size:1.08rem;color:#626A76;line-height:1.75;max-width:42rem;">Consulting, keynotes, workshops, media interviews and research collaboration with Dr. Ahmad H. Alfailakawi.</p>
+        <div style="margin-top:2.25rem;display:grid;gap:.75rem;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));">
+          ${['Consultation','Keynote or workshop','Media interview','Research collaboration'].map((label) => `<div style="border:1px solid rgba(62,92,120,.14);border-radius:18px;padding:1.15rem;background:#FCFCFA;color:#15161A;font-weight:600;">${label}</div>`).join('')}
+        </div>
+        <p style="margin-top:2rem;color:#626A76;line-height:1.7;">The secure enquiry form opens when the page loads. You can also use the English navigation above to review the CV and research record before getting in touch.</p>
+      </main>
+    `
   } else if (path === '/research' || path === '/en/research') {
     if (en) {
       const papersHtml = papers.map(p => `
@@ -887,7 +903,7 @@ function generateBodyHtml(path, lang = 'ar') {
     `
   } else if (richStaticHtml(path)) {
     contentHtml = richStaticHtml(path)
-  } else if (['/about', '/contact', '/ask', '/decade', '/impact', '/cv/impact', '/thought-paths', '/search', '/atlas', '/questions', '/radar', '/curated', '/upcoming', '/inbox'].includes(path)) {
+  } else if (['/about', '/contact', '/ask', '/thought', '/decade', '/impact', '/cv/impact', '/thought-paths', '/search', '/atlas', '/questions', '/radar', '/curated', '/upcoming', '/inbox'].includes(path)) {
     const current = STATIC.find((item) => item.path === path)
     const links = [
       ['/', 'الرئيسية'],

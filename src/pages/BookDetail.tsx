@@ -1,9 +1,11 @@
+import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { JsonLd, useSeo } from '../components/seo'
 import { OwnerEdit } from '../components/extras'
 import { useCmsContent } from '../lib/content'
 import { SITE_URL } from '../data'
+import { ideaWords } from '../lib/idea-life'
 
 type BookGuide = { idea: string; audience: string; entry: string }
 
@@ -65,9 +67,21 @@ function bookGuide(slug: string, fallback?: string): BookGuide {
 
 export default function BookDetail() {
   const { slug } = useParams()
-  const { books, loading } = useCmsContent()
+  const { books, articles, papers, loading } = useCmsContent()
   const book = books.find((b) => b.slug === slug)
   const guide = book ? bookGuide(book.slug, book.desc) : null
+  const related = useMemo(() => {
+    if (!book) return { article: null, paper: null }
+    const source = new Set(ideaWords(`${book.title} ${book.desc || ''} ${guide?.idea || ''}`))
+    const score = (value: string) => ideaWords(value).reduce((total, word) => total + (source.has(word) ? 1 : 0), 0)
+    const article = articles
+      .map((item) => ({ item, score: score(`${item.title} ${item.excerpt || ''} ${item.cat || ''}`) }))
+      .sort((a, b) => b.score - a.score || b.item.iso.localeCompare(a.item.iso))[0]
+    const paper = papers
+      .map((item) => ({ item, score: score(`${item.title} ${item.titleAr || ''} ${item.abstractAr || ''} ${item.meta || ''}`) }))
+      .sort((a, b) => b.score - a.score)[0]
+    return { article: article?.score ? article.item : null, paper: paper?.score ? paper.item : null }
+  }, [articles, book, guide?.idea, papers])
   useSeo({ title: book?.title ?? 'كتاب', description: book?.desc, path: `/publications/${slug}` })
   if (!book && loading) return <Page className="content-books"><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
   if (!book) return <Page><div className="px-6 pt-44 text-center text-soft">لم يُعثر على الكتاب.</div></Page>
@@ -153,6 +167,36 @@ export default function BookDetail() {
               )}
             </FadeUp>
           </div>
+        </div>
+      </section>
+
+      <section className="border-t border-hair bg-wash px-6 py-14 md:px-11 md:py-16" aria-labelledby="book-continue-title">
+        <div className="mx-auto max-w-shell">
+          <FadeUp>
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <span className="text-[.72rem] font-semibold text-accent">واصل الفكرة</span>
+                <h2 id="book-continue-title" className="mt-1 font-display text-2xl font-semibold text-ink">الكتاب داخل أرشيفٍ أوسع.</h2>
+              </div>
+              <Link to={`/thought-paths?idea=${encodeURIComponent(book.title)}`} className="text-[.78rem] font-semibold text-accent transition-opacity hover:opacity-70">افتح مساراً فكرياً ←</Link>
+            </div>
+            <div className="mt-6 grid gap-3 md:grid-cols-2">
+              {related.article && (
+                <Link to={`/articles/${related.article.slug}`} className="group rounded-2xl border border-hair bg-canvas p-5 transition-colors hover:border-accent">
+                  <span className="text-[.68rem] font-semibold text-accent">مقال قريب</span>
+                  <strong className="mt-2 block font-display text-[1.05rem] font-semibold leading-[1.55] text-ink transition-colors group-hover:text-accent">{related.article.title}</strong>
+                  <span className="mt-2 block text-[.72rem] text-soft">{related.article.date}</span>
+                </Link>
+              )}
+              {related.paper && (
+                <Link to={`/research/${related.paper.slug}`} className="group rounded-2xl border border-hair bg-canvas p-5 transition-colors hover:border-accent">
+                  <span className="text-[.68rem] font-semibold text-accent">بحث قريب</span>
+                  <strong className="mt-2 block text-[.96rem] font-semibold leading-[1.65] text-ink transition-colors group-hover:text-accent">{related.paper.titleAr || related.paper.title}</strong>
+                  {related.paper.meta && <span className="mt-2 block text-[.72rem] text-soft">{related.paper.meta}</span>}
+                </Link>
+              )}
+            </div>
+          </FadeUp>
         </div>
       </section>
     </Page>

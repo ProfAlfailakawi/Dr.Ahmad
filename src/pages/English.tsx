@@ -1,5 +1,5 @@
 /* ============================================================
-   المرآة الإنجليزية — ثلاث صفحات: /en · /en/cv · /en/research
+   المرآة الإنجليزية — أربع صفحات: /en · /en/cv · /en/research
    نفس الجماليات (أحادية اللون + لون واحد)، اتجاه LTR كامل.
    المحتوى من data-en.ts (صياغة تحريرية، لا ترجمة حرفية).
    ============================================================ */
@@ -9,7 +9,7 @@ import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { SocialIcon } from '../components/icons'
 import { Pagination, usePagedList } from '../components/Pagination'
-import { academicProfiles, links, socials } from '../data'
+import { academicProfiles, socials } from '../data'
 import { useCmsContent } from '../lib/content'
 import {
   advisoryEn, appointmentsEn, doctorateEn, educationEn,
@@ -179,9 +179,9 @@ export function EnglishHome() {
                 <p className="font-display text-[1.3rem] font-semibold leading-[1.5] text-ink">Working with institutions on education, media and AI.</p>
                 <p className="mt-3 text-[.92rem] font-light leading-[1.8] text-soft">Consulting, keynotes and digital-transformation projects — in Kuwait and beyond.</p>
                 <div className="mt-6 flex flex-wrap gap-3.5">
-                  <a href={links.booking} target="_blank" rel="noreferrer" className="rounded-full bg-accent px-6 py-2.5 text-[.88rem] font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
+                  <Link to="/en/contact#booking-form" className="rounded-full bg-accent px-6 py-2.5 text-[.88rem] font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
                     Book a meeting
-                  </a>
+                  </Link>
                   <a href="https://www.linkedin.com/in/prof-ahmad-alfailakawi-5922251a5" target="_blank" rel="noreferrer" className="rounded-full border border-hair px-6 py-2.5 text-[.88rem] font-medium text-ink transition-colors hover:border-accent hover:text-accent">
                     LinkedIn
                   </a>

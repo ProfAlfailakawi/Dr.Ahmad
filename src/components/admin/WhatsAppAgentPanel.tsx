@@ -49,7 +49,7 @@ type RuleVersion = { id: number; createdAt: string }
 type Simulation = { willReply?: boolean; why?: string; quietNow?: boolean; intent?: string; mode?: string; confidence?: number; needsHuman?: boolean; ruleId?: string | null; ruleName?: string | null; preview?: string }
 type LearningPattern = { id: number; phrase: string; hits: number; intent: string; confirmations: number; evidenceSources?: number; evidenceDays?: number; status: 'learned' | 'observing' | 'ignored'; firstSeenAt?: string; lastSeenAt?: string; learnedAt?: string | null }
 type LearningState = { total: number; learned: number; observing: number; ignored: number; policy: string; items: LearningPattern[] }
-type AgentScreen = 'live' | 'knowledge' | 'conversations' | 'personality' | 'protection'
+type AgentScreen = 'live' | 'campaigns' | 'knowledge' | 'conversations' | 'personality' | 'protection'
 type KnowledgePersonality = {
   verbosity: 'brief' | 'layered' | 'detailed'
   dialect: 'formal-arabic' | 'kuwaiti-light' | 'neutral-arabic'
@@ -87,6 +87,7 @@ const EMPTY_KNOWLEDGE: KnowledgeState = {
 }
 const AGENT_SCREENS: { id: AgentScreen; label: string; hint: string }[] = [
   { id: 'live', label: 'حي الآن', hint: 'الحالة والتشغيل' },
+  { id: 'campaigns', label: 'الحملات والجمهور', hint: 'قوائم، بث، واستهداف' },
   { id: 'knowledge', label: 'المعرفة', hint: 'المصادر والفجوات' },
   { id: 'conversations', label: 'المحادثات', hint: 'مؤشرات بلا كشف النصوص' },
   { id: 'personality', label: 'الشخصية', hint: 'النبرة والإيقاع' },
@@ -631,6 +632,18 @@ export function WhatsAppAgentPanel() {
         </section>
       )}
 
+      {screen === 'campaigns' && (
+        <section className="grid gap-4" aria-labelledby="whatsapp-campaigns-title">
+          <div className="rounded-2xl border border-hair bg-wash p-5 md:p-6">
+            <p className="text-[.7rem] font-bold uppercase tracking-[.16em] text-accent">مسار مستقل عن الردود الآلية</p>
+            <h2 id="whatsapp-campaigns-title" className="mt-1 font-display text-2xl font-semibold text-ink">من القائمة إلى الإرسال، من مكان واحد.</h2>
+            <p className="mt-2 max-w-2xl text-[.8rem] leading-relaxed text-soft">الحملات لا تتجاوز كلمة الإيقاظ ولا قواعد المحادثة؛ تختار الجمهور، تراجع العدد، تختبر الرسالة على رقمك، ثم تؤكد الإرسال.</p>
+          </div>
+          <BroadcastStudio request={request} onNotice={setNotice} />
+          {bridge && <AudienceStudio request={request} onNotice={setNotice} />}
+        </section>
+      )}
+
       {screen === 'live' && (
         <>
       {/* حتى قسم الحالة يُطوى بأمر الدكتور. لكن الحالة نفسها (متصل/غير متصل)
@@ -764,7 +777,6 @@ export function WhatsAppAgentPanel() {
           سطراً ولا تعرف قوائم الدكتور، فتقول «الجهات الجاهزة: 0» وهو يملك ألفين.
           خلفتها BroadcastStudio: قائمةٌ تُختار، ومعاينةٌ تقول كم سيصل، وتجربةٌ على
           النفس قبل الناس. ولا مكانان لوظيفةٍ واحدة. */}
-      <BroadcastStudio request={request} onNotice={setNotice} />
 
       {/* حُذف «مركز إدارة الردود» بأمر الدكتور — إزعاجٌ بصريّ بلا فائدة. */}
 
@@ -846,7 +858,6 @@ export function WhatsAppAgentPanel() {
       {/* حُذفت بطاقة «الحملات المحلية»: كانت تُخفي مسودتك حتى تضغط «اعتماد»، فتظهر
           خطوةٌ ناقصة بلا سياق وتغيب البقية. وغرفة البثّ أعلاه تُري المسار كاملاً
           من أوله — والاعتماد صار داخلها خطوةً لا باباً. */}
-      {bridge && <AudienceStudio request={request} onNotice={setNotice} />}
 
 
       {/* حُذف «التشغيل المحلي» بأمر الدكتور — إزعاجٌ بصريّ بلا فائدة. */}

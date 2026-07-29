@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toRoot } from "../lib/dialect-lexicon";
 import { FadeUp, Page, PageHead } from "../components/ui";
+import { KnowledgeEntry } from '../components/KnowledgeEntry'
 import { useCmsContent } from "../lib/content";
 import type { ArticleRecord, BookRecord, PaperRecord } from "../lib/cms";
 import { useSeo } from "../components/seo";
@@ -588,6 +589,8 @@ export default function AskLibrary() {
         title="اسأل الأرشيف سؤالاً حقيقياً."
         sub="محادثة موثّقة مع الأرشيف: يركّب الجواب من مقالاتي وأبحاثي وكتبي فقط، ويعيدك إلى النص الحرفي الذي استند إليه. إن لم يجد دليلاً يقول ذلك بوضوح."
       />
+
+      <div className="px-6 pt-8 md:px-11"><div className="mx-auto max-w-3xl"><KnowledgeEntry /></div></div>
 
       <section className="px-6 py-14 md:px-11 md:py-16">
         <div className="mx-auto max-w-3xl">

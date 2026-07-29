@@ -8,6 +8,7 @@ import { useCmsContent } from '../lib/content'
 import { analyzeResearch, type ResearchEvidence } from '../lib/research-intelligence'
 import { useAdminAuth } from '../lib/admin-auth'
 import { safeLink } from '../lib/dead-links'
+import { ResearchSectionNavigator, type ResearchLayer } from '../components/ResearchSectionNavigator'
 
 const cleanText = (value = '') => value.replace(/^ملخص عربي:\s*/, '').replace(/\s+/g, ' ').trim()
 const arabicScientific = (value = '') => {
@@ -133,7 +134,7 @@ export default function PaperDetail() {
   }
 
   const { isAdmin } = useAdminAuth()
-  const [passportLayer, setPassportLayer] = useState<'layer1' | 'layer2' | 'layer3'>('layer2')
+  const [passportLayer, setPassportLayer] = useState<ResearchLayer>('layer2')
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
 
   const toggleCard = (key: string) => {
@@ -190,33 +191,18 @@ export default function PaperDetail() {
                 {p.titleAr && p.titleAr !== p.title && <p dir="rtl" className="mt-3 text-[1.05rem] font-light leading-[1.85] text-soft">{p.titleAr}</p>}
                 <OwnerEdit tab="papers" slug={p.slug} className="mt-3" />
 
-                {/* Passport Navigation Bar (Level Selector) */}
-                <div className="mt-8 grid gap-2 rounded-2xl border border-hair bg-canvas p-2 sm:grid-cols-3">
-                  <button
-                    type="button"
-                    onClick={() => { setPassportLayer('layer1'); revealSection('metadata', 'research-passport-layer1') }}
-                    className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[.82rem] font-bold transition ${passportLayer === 'layer1' ? 'bg-accent text-white shadow-md' : 'text-soft hover:bg-paper hover:text-ink'}`}
-                  >
-                    <span>المستوى 1: الهوية والتوثيق</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setPassportLayer('layer2'); revealSection('science', 'research-passport-layer2') }}
-                    className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[.82rem] font-bold transition ${passportLayer === 'layer2' ? 'bg-accent text-white shadow-md' : 'text-soft hover:bg-paper hover:text-ink'}`}
-                  >
-                    <span>المستوى 2: الأبعاد المنهجية</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setPassportLayer('layer3'); revealSection('sources', 'research-passport-layer3') }}
-                    className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[.82rem] font-bold transition ${passportLayer === 'layer3' ? 'bg-accent text-white shadow-md' : 'text-soft hover:bg-paper hover:text-ink'}`}
-                  >
-                    <span>المستوى 3: شبكة الأدلة والمصادر</span>
-                  </button>
-                </div>
               </div>
             </header>
           </FadeUp>
+
+          <ResearchSectionNavigator
+            active={passportLayer}
+            onSelect={(layer) => {
+              setPassportLayer(layer)
+              const target = layer === 'layer1' ? ['metadata', 'research-passport-layer1'] : layer === 'layer2' ? ['science', 'research-passport-layer2'] : ['sources', 'research-passport-layer3']
+              revealSection(target[0] as ResearchSection, target[1])
+            }}
+          />
 
           {/* Layer 1: Visual Identity & Passport Stamp */}
           <div className="mt-7 grid gap-6">

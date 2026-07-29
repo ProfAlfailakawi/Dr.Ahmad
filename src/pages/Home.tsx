@@ -1,5 +1,5 @@
 import { JsonLd, useSeo } from '../components/seo'
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { EASE, FadeUp, Label, Magnetic, Page, Reveal, ScheduleProjectLink, SectionHead, SocialIcon, TebyanProjectLink } from '../components/ui'
@@ -845,14 +845,33 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
 
 function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[]; media: MediaRecord[] }) {
   const [active, setActive] = useState<'maps' | null>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!active) return
-    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setActive(null) }
-    document.addEventListener('keydown', close)
     const previous = document.body.style.overflow
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : triggerRef.current
     document.body.style.overflow = 'hidden'
-    return () => { document.removeEventListener('keydown', close); document.body.style.overflow = previous }
+    const focusable = () => Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])') || [])
+    const frame = window.requestAnimationFrame(() => (focusable()[0] || dialogRef.current)?.focus())
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); setActive(null); return }
+      if (event.key !== 'Tab' || !dialogRef.current) return
+      const items = focusable()
+      if (!items.length) { event.preventDefault(); dialogRef.current.focus(); return }
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (event.shiftKey && (document.activeElement === first || !dialogRef.current.contains(document.activeElement))) { event.preventDefault(); last.focus() }
+      else if (!event.shiftKey && (document.activeElement === last || !dialogRef.current.contains(document.activeElement))) { event.preventDefault(); first.focus() }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = previous
+      window.requestAnimationFrame(() => previouslyFocused?.focus())
+    }
   }, [active])
 
   return (
@@ -860,7 +879,7 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
       <section className="border-t border-hair px-6 py-8 md:px-11 md:py-10">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <button type="button" onClick={() => setActive('maps')} className="group flex w-full items-center justify-between gap-5 rounded-3xl border border-hair bg-wash px-5 py-5 text-right transition-colors hover:border-accent md:px-7 md:py-6">
+            <button ref={triggerRef} type="button" onClick={() => setActive('maps')} aria-haspopup="dialog" aria-expanded={Boolean(active)} aria-controls="home-thought-maps-dialog" className="group flex w-full items-center justify-between gap-5 rounded-3xl border border-hair bg-wash px-5 py-5 text-right transition-colors hover:border-accent md:px-7 md:py-6">
               <span className="min-w-0">
                 <span className="block text-[.74rem] font-semibold text-accent">خرائط الفكر</span>
                 <span className="mt-1.5 block font-display text-[1.12rem] font-semibold leading-[1.5] text-ink md:text-[1.35rem]">سماء المقالات، رحلة الأثر، وتوقيعات الموقع.</span>
@@ -874,9 +893,9 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
       <AnimatePresence>
         {active && (
           <motion.div className="fixed inset-0 z-[290] bg-ink/35 p-3 pt-[calc(4.75rem+env(safe-area-inset-top))] backdrop-blur-sm md:p-8 md:pt-24" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && setActive(null)}>
-            <motion.div className="mx-auto h-full max-w-6xl overflow-y-auto rounded-3xl border border-hair bg-canvas shadow-2xl" initial={{ y: 18, scale: .985 }} animate={{ y: 0, scale: 1 }} exit={{ y: 12, scale: .99 }} transition={{ duration: .28, ease: EASE }}>
+            <motion.div ref={dialogRef} id="home-thought-maps-dialog" role="dialog" aria-modal="true" aria-labelledby="home-thought-maps-title" tabIndex={-1} className="mx-auto h-full max-w-6xl overflow-y-auto rounded-3xl border border-hair bg-canvas shadow-2xl outline-none" initial={{ y: 18, scale: .985 }} animate={{ y: 0, scale: 1 }} exit={{ y: 12, scale: .99 }} transition={{ duration: .28, ease: EASE }}>
               <div className="sticky top-0 z-20 flex items-center justify-between border-b border-hair bg-canvas/90 px-5 py-3 backdrop-blur md:px-7">
-                <span className="font-display text-[1rem] font-semibold text-ink">خرائط الفكر والأثر</span>
+                <h2 id="home-thought-maps-title" className="font-display text-[1rem] font-semibold text-ink">خرائط الفكر والأثر</h2>
                 <button onClick={() => setActive(null)} className="rounded-full border border-hair px-4 py-1.5 text-[.76rem] text-soft transition-colors hover:border-accent hover:text-accent">إغلاق</button>
               </div>
               <MiniAtlas />

@@ -13,7 +13,8 @@ assert.equal(normalizeArabicMessage('إلى مدرسةٍ ١٢ — جميلة'), 
 assert.equal(stripArabicGreetings('السلام عليكم ورحمة الله وبركاته، أبي الذكاء الاصطناعي'), 'ابي الذكاء الاصطناعي')
 assert.equal(whatsappPolicy.manualTakeoverMinutes, null)
 assert.equal(whatsappPolicy.manualTakeoverAutoResume, false)
-assert.equal(whatsappPolicy.resumeMode, 'wake-phrase-only')
+assert.equal(whatsappPolicy.defaultReplyMode, 'always-on')
+assert.equal(whatsappPolicy.resumeMode, 'manual-takeover-wake-only')
 assert.equal(whatsappPolicy.zeroHallucination, true)
 assert.equal(whatsappPolicy.paidAiApis, false)
 assert.equal(isWhatsAppWakePhrase('موقع د. أحمد'), true)
@@ -27,10 +28,11 @@ assert.equal(isInvalidBridgeRegression({ instanceId: 'one', connected: true, sta
 const controllerSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../src/server/whatsapp-controller.mjs', import.meta.url), 'utf8'))
 assert.match(controllerSource, /runtime-resume/)
 assert.match(controllerSource, /\\d\{5,30\}.*s\\\.whatsapp\\\.net/)
-assert.match(controllerSource, /awaiting-wake-phrase/)
 assert.doesNotMatch(controllerSource, /resumedAutomaticallyAt/)
 assert.match(controllerSource, /mode: 'silent', wakeActive: false, wakeVersion: 1/)
 assert.match(controllerSource, /resumes: 'wake-phrase-only'/)
+assert.match(controllerSource, /reason: 'owner-private-chat'/)
+assert.match(controllerSource, /reason: 'duplicate-delivery'/)
 
 const rules = [{
   id: 'hours',
@@ -44,14 +46,16 @@ const rules = [{
 }]
 
 assert.equal(findRuleMatch('هلا، مواعيد الدوم شنو؟', rules)?.id, 'hours')
-assert.equal(decideGroundedResponse({ text: 'مواعيد الدوام', rules }).reply, rules[0].responseText)
+assert.match(decideGroundedResponse({ text: 'مواعيد الدوام', rules }).reply, /المواعيد المعتمدة هي: الأحد إلى الخميس/)
+assert.match(decideGroundedResponse({ text: 'مواعيد الدوام', rules }).reply, /رد آلي من موقع/)
 
 const media = decideGroundedResponse({ text: 'شوف الملف', hasMedia: true })
-assert.equal(media.kind, 'silent')
+assert.equal(media.kind, 'escalate')
 assert.equal(media.reason, 'media')
+assert.match(media.reply, /تأكيداً بشرياً/)
 
 const human = decideGroundedResponse({ text: 'أبي أكلم موظف' })
-assert.equal(human.kind, 'silent')
+assert.equal(human.kind, 'escalate')
 assert.equal(human.reason, 'human-request')
 
 const price = decideGroundedResponse({ text: 'أبي قائمة الأسعار' })
@@ -59,13 +63,15 @@ assert.equal(price.kind, 'reply')
 assert.match(price.reply, /dr-alfailakawi\.com/)
 assert.doesNotMatch(price.reply, /\d+\s*(?:د\.ك|دينار)/)
 
-const unknown = decideGroundedResponse({ text: 'كم يبلغ مخزون منتج غير موجود إطلاقاً؟' })
-assert.equal(unknown.kind, 'silent')
-assert.equal(unknown.reason, 'no-grounded-answer')
+const unknown = decideGroundedResponse({ text: 'شنو طقس كوكب نبتون باچر؟' })
+assert.equal(unknown.kind, 'reply')
+assert.ok(['active-clarify', 'no-grounded-answer'].includes(unknown.reason))
+assert.match(unknown.reply, /اكتب الفكرة|كلمة أقرب/)
 
 const archive = decideGroundedResponse({ text: 'الذكاء الاصطناعي في التعليم' })
 assert.equal(archive.kind, 'reply')
 assert.match(archive.reply, /https:\/\/dr-alfailakawi\.com\//)
-assert.match(archive.reply, /من دون إضافة معلومات من خارجها/)
+assert.match(archive.reply, /لخّص الأولى|عطني غيرها/)
+assert.match(archive.reply, /رد آلي من موقع/)
 
 console.log('WhatsApp central policy: passed')

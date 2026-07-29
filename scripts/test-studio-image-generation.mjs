@@ -36,6 +36,7 @@ assert.match(prompt, /no Arabic, no English/i)
 assert.match(prompt, /Art direction/i)
 assert.match(prompt, /Fresh variation/i)
 assert.doesNotMatch(prompt, /watermark\s*$/i)
+assert.doesNotMatch(prompt, /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff]/u, 'The image-model prompt must be English-only so it does not paint Arabic glyphs.')
 
 const userSovereigntyPrompt = buildEliteStudioImagePrompt({
   ...input,
@@ -46,10 +47,20 @@ const userSovereigntyPrompt = buildEliteStudioImagePrompt({
   glossaryCanonicalEn: 'Intelligent Tutoring Systems',
   glossaryMeaning: 'أنظمة تقدم دعماً وتكييفاً يشبه وظائف المعلم الخصوصي.',
   literalAnchors: ['طالب يتحاوران', 'دراسي مضيء'],
+  semanticBlueprint: {
+    canonicalMeaning: 'A teacher and student hold a warm face-to-face discussion in a bright real classroom.',
+    viewerInference: 'Human dialogue remains central to learning.',
+    literalSubjects: ['teacher', 'student', 'bright classroom'],
+    visibleAnchors: ['face-to-face discussion', 'natural daylight'],
+    forbidden: ['screens', 'robots'],
+    emotionalValence: 'positive',
+    sceneRoutes: [{ worldId: 'human-documentary', scene: 'A teacher and student converse naturally at equal eye level in a bright contemporary classroom.', mustShow: ['teacher', 'student', 'natural classroom daylight'], mood: 'warm' }],
+  },
   regenerationId: 'user-wording-sovereignty',
 })
-assert.match(userSovereigntyPrompt, /معلم وطالب يتحاوران في فصل دراسي مضيء/)
-assert.doesNotMatch(userSovereigntyPrompt, /Intelligent Tutoring Systems|أنظمة تقدم دعماً وتكييفاً/i)
+assert.match(userSovereigntyPrompt, /teacher and student hold a warm face-to-face discussion/i)
+assert.doesNotMatch(userSovereigntyPrompt, /Intelligent Tutoring Systems/)
+assert.doesNotMatch(userSovereigntyPrompt, /[\u0600-\u06ff]/u)
 
 
 
@@ -59,15 +70,19 @@ const gamificationInput = {
   issue: 'التلعيب في التعليم',
   tension: 'تحفيز التعلّم من خلال التقدم والتحدي والإنجاز',
   visualReason: 'show learning progress, badges, levels and meaningful challenges without childish clichés',
+  glossaryConcept: 'gamification',
+  glossaryLabel: 'التلعيب',
+  glossaryCanonicalEn: 'Gamification',
+  preferredWorlds: ['playful-systems'],
   regenerationId: 'gamification-semantic-test',
   recentVisualWorlds: [],
 }
 const gamificationPrompt = buildEliteStudioImagePrompt(gamificationInput)
 assert.match(gamificationPrompt, /Gamification/i)
-assert.match(gamificationPrompt, /النقاط|المستويات|الشارات|التحديات|شريط تقدم|points|levels|badges|progress|challenges/i)
+assert.match(gamificationPrompt, /points|levels|badges|progress|challenges|achievement tokens|progress markers/i)
 assert.match(gamificationPrompt, /optimistic|daylight|luminous|alive/i)
 assert.doesNotMatch(gamificationPrompt, /concealed hand|bends educational standards|manipulation as deception/i)
-assert.match(gamificationPrompt, /ليس التلاعب|الخداع|not manipulation|not deception/i)
+assert.doesNotMatch(gamificationPrompt, /[\u0600-\u06ff]/u)
 
 const gamificationFreshPrompt = buildEliteStudioImagePrompt({
   ...gamificationInput,
@@ -112,6 +127,19 @@ try {
     }
     return imageHandler(url, options)
   }
+  await assert.rejects(
+    generateCloudflareStudioImage({ ...input, regenerationId: 'daily-quota-reset-contract' }, imageOnlyMock(async () => new Response(JSON.stringify({
+      success: false,
+      errors: [{ code: 3036, message: 'You have used up your daily free allocation of 10,000 Neurons.' }],
+    }), { status: 429, headers: { 'content-type': 'application/json' } }))),
+    (error) => {
+      assert.equal(error.status, 503)
+      assert.match(error.message, /errorCode=3036/)
+      assert.match(error.message, /resetAt=\d{4}-\d{2}-\d{2}T/)
+      assert.ok(Number(error.headers?.['retry-after']) >= 60)
+      return true
+    },
+  )
   const result = await generateCloudflareStudioImage(input, imageOnlyMock(async (url, options) => {
     calledUrl = String(url)
     assert.ok(options.body instanceof FormData)

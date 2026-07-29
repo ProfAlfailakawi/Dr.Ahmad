@@ -121,7 +121,7 @@ export function GenerationLibraryPanel(props: Props) {
     return next
   })
 
-  const filteredDesigns = useMemo(() => designs.filter((item) => {
+  const filteredDesigns = useMemo(() => designs.slice(0, 1).filter((item) => {
     if (kind === 'asset') return false
     if (kind === 'campaign' && !/(?:حملة|campaign)/i.test(item.campaign || item.generationKind)) return false
     if (generationKind !== 'all' && item.generationKind !== generationKind) return false
@@ -151,8 +151,8 @@ export function GenerationLibraryPanel(props: Props) {
   return (
     <details data-generation-library="true" className="mt-4 overflow-hidden rounded-2xl border border-accent/20 bg-accent/[.025]">
       <summary className="group flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[.7rem] font-semibold text-ink">
-        <span>مكتبة التوليد <span className="ms-2 font-normal text-soft">أرشيف خاص للتصاميم الكاملة والأصول المولّدة</span></span>
-        <span className="shrink-0 rounded-full border border-accent/15 bg-paper px-2.5 py-1 text-[.58rem] font-semibold text-accent">{designs.length} تصميم · {assets.length} أصل</span>
+        <span>مكتبة التوليد <span className="ms-2 font-normal text-soft">آخر تصميم معتمد + كل الأصول المولّدة</span></span>
+        <span className="shrink-0 rounded-full border border-accent/15 bg-paper px-2.5 py-1 text-[.58rem] font-semibold text-accent">{designs.length ? 'تصميم معتمد' : 'لا تصميم معتمد'} · {assets.length} أصل</span>
       </summary>
       <div className="grid gap-5 border-t border-hair p-3 md:p-4">
         <div className="rounded-2xl border border-hair bg-paper/70 p-3">
@@ -188,8 +188,8 @@ export function GenerationLibraryPanel(props: Props) {
         {(designError || assetError) && <div className="grid gap-2">{designError && <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[.62rem] leading-relaxed text-amber-900">{designError}</p>}{assetError && <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[.62rem] leading-relaxed text-amber-900">{assetError}</p>}</div>}
 
         {kind !== 'asset' && <section aria-labelledby="generated-design-library-title">
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-2 px-1"><div><h4 id="generated-design-library-title" className="text-[.72rem] font-bold text-ink">التصاميم الكاملة</h4><p className="mt-1 text-[.6rem] leading-relaxed text-soft">كل اتجاه أو حملة أو نسخة نهائية تُحفظ بطبقاتها وتكوينها لتفتحها لاحقاً وتكمل التحرير من حيث توقفت.</p></div><span className="text-[.58rem] text-soft">خاص بلوحة التحكم · غير منشور للعامة</span></div>
-          {designBusy && !designs.length ? <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">أحمّل أرشيف التصاميم الخاصة…</p> : filteredDesigns.length ? (
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-2 px-1"><div><h4 id="generated-design-library-title" className="text-[.72rem] font-bold text-ink">آخر تصميم معتمد</h4><p className="mt-1 text-[.6rem] leading-relaxed text-soft">يبقى تصميم كامل واحد بطبقاته وتكوينه؛ اعتماد نسخة جديدة يستبدله من دون تكديس مرشحي التوليد.</p></div><span className="text-[.58rem] text-soft">خاص بلوحة التحكم · غير منشور للعامة</span></div>
+          {designBusy && !designs.length ? <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">أحمّل آخر تصميم معتمد…</p> : filteredDesigns.length ? (
             <div className="mobile-card-rail flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {filteredDesigns.map((asset) => <article key={asset.id} className="relative w-[210px] shrink-0 snap-start overflow-hidden rounded-2xl border border-hair bg-canvas shadow-[0_12px_32px_rgba(17,41,75,.045)]">
                 <button type="button" onClick={() => toggleFavorite(asset.id)} aria-pressed={favorites.has(asset.id)} aria-label={favorites.has(asset.id) ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'} title={favorites.has(asset.id) ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'} className={`absolute end-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border bg-canvas/90 text-sm shadow-sm backdrop-blur ${favorites.has(asset.id) ? 'border-accent text-accent' : 'border-hair text-soft'}`}>{favorites.has(asset.id) ? '★' : '☆'}</button>
@@ -197,7 +197,7 @@ export function GenerationLibraryPanel(props: Props) {
                 <div className="grid gap-2 p-3 text-right"><div className="flex items-center justify-between gap-2"><span className="rounded-full border border-accent/15 bg-accent/[.045] px-2 py-1 text-[.53rem] font-semibold text-accent">{asset.generationKind}</span>{asset.quality > 0 && <span className="text-[.54rem] font-semibold text-soft">{Math.round(asset.quality)}٪</span>}</div><strong className="line-clamp-2 min-h-[2.5rem] text-[.69rem] leading-relaxed text-ink">{asset.title}</strong><span className="line-clamp-1 text-[.56rem] text-soft">{asset.visualWorld || asset.directionLabel || asset.note || 'نسخة محفوظة'}</span><span className="text-[.53rem] text-soft" dir="ltr">{asset.width}×{asset.height}{asset.formatLabel ? ` · ${asset.formatLabel}` : ''} · {asset.createdAtMs ? new Date(asset.createdAtMs).toLocaleDateString('ar-KW-u-nu-latn') : ''}</span><div className="flex gap-2"><button type="button" className={`${primaryClass} flex-1 px-3 py-2 text-[.62rem]`} disabled={designBusy} onClick={() => onUseDesign(asset)}>فتح للتعديل</button><button type="button" className={`${ghostClass} px-3 py-2 text-[.62rem]`} disabled={designBusy} onClick={() => onDeleteDesign(asset)}>حذف</button></div></div>
               </article>)}
             </div>
-          ) : <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">{filtersActive ? 'لا توجد تصاميم تطابق البحث أو الفلاتر الحالية.' : 'لا توجد تصاميم مؤرشفة بعد. أول توليد جديد سيُحفظ هنا تلقائياً بكامل تكوينه.'}</p>}
+          ) : <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">{filtersActive ? 'التصميم المعتمد لا يطابق البحث أو الفلاتر الحالية.' : 'لا يوجد تصميم معتمد بعد. سيظهر هنا بعد اعتماد النتيجة أو حفظ التحرير.'}</p>}
           {designs.length > 0 && designHasMore && <div className="mt-3 text-center"><button type="button" className={ghostClass} disabled={designBusy} onClick={onOlderDesigns}>{designBusy ? 'أحمّل…' : 'تحميل تصاميم أقدم'}</button></div>}
         </section>}
 

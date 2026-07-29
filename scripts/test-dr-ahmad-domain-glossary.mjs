@@ -49,6 +49,7 @@ for (const [idea, canonical] of cases) {
     recentVisualWorlds: [],
   })
   assert.match(prompt, new RegExp(canonical.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), `The first word “${idea}” must resolve to ${canonical}.`)
+  assert.doesNotMatch(prompt, /[\u0600-\u06ff]/u, 'Image prompts must not pass Arabic glyphs to the pixel generator.')
 }
 
 // Cloud Run no longer needs to COPY the large glossary file: the browser sends a
@@ -70,7 +71,7 @@ const syntheticPrompt = buildEliteStudioImagePrompt({
 })
 assert.match(syntheticPrompt, /Dr Ahmad Compound Concept/i)
 assert.match(syntheticPrompt, /sunlit contemporary campus/i)
-assert.match(syntheticPrompt, /معنى تخصصي مركب/i)
+assert.doesNotMatch(syntheticPrompt, /[\u0600-\u06ff]/u)
 
 const positivePrompt = buildEliteStudioImagePrompt({
   idea: 'تلعيب',
@@ -100,6 +101,7 @@ const forcedWorldPrompts = forcedWorlds.map(([world, expected], index) => {
     preferredWorlds: [world], moods: ['bright', 'playful', 'energetic'], regenerationId: `world-${index}`,
   })
   assert.match(prompt, expected)
+  assert.doesNotMatch(prompt, /[\u0600-\u06ff]/u)
   return prompt
 })
 assert.equal(new Set(forcedWorldPrompts).size, forcedWorlds.length, 'The generated batch must contain genuinely distinct visual worlds.')

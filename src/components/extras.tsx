@@ -184,8 +184,8 @@ export function Share({ title, path, compact = false }: { title: string; path: s
   // أيقونات فقط — صغيرة نحيفة بلا كلام
   const btn = `flex items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent ${compact ? 'h-11 w-11' : 'h-8 w-8'}`
   return (
-    <div className={compact ? 'flex flex-wrap items-center gap-2.5' : 'mt-12 flex flex-wrap items-center gap-2.5 border-t border-hair pt-6'}>
-      <span className="me-1 text-[.8rem] text-soft">شارك المقال</span>
+    <div className={compact ? 'flex shrink-0 flex-nowrap items-center gap-2.5' : 'mt-12 flex flex-wrap items-center gap-2.5 border-t border-hair pt-6'}>
+      {!compact && <span className="me-1 text-[.8rem] text-soft">شارك المقال</span>}
       {items.map((i) => (
         <a key={i.label} href={i.href} target="_blank" rel="noreferrer" aria-label={i.label} title={i.label} className={btn} onClick={() => trackShare(path, title)}>
           <SocialIcon name={i.icon} size={15} />
@@ -546,8 +546,8 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
   // إذا كان صوتا نورة وفهد موجودين تظهر أيقونتا امرأة ورجل كما في الواجهة الأصلية،
   // وكل زر يحمل تسمية عامة «قراءة المقال». إذا توفر صوت واحد فقط يظهر زر واحد بلا اسم.
   const readingSources = [
-    ...(voices.noura ? [{ key: 'reading-woman', label: 'قراءة المقال', avatar: 'woman' as const, src: versionedAudioUrl(typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3`) }] : []),
     ...(voices.fahed ? [{ key: 'reading-man', label: 'قراءة المقال', avatar: 'man' as const, src: versionedAudioUrl(typeof voices.fahed === 'string' ? voices.fahed : `/audio/${slug}.mp3`) }] : []),
+    ...(voices.noura ? [{ key: 'reading-woman', label: 'قراءة المقال', avatar: 'woman' as const, src: versionedAudioUrl(typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3`) }] : []),
   ]
   const audioControlId = `article-audio-${slug}`
   const sources = [

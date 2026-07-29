@@ -841,7 +841,8 @@ export default function ArticleDetail() {
 
           <FadeUp className="serenity-hide">
             <section className="mt-8 border-y border-hair py-5" aria-label="مشاركة المقال والاستشهاد به">
-              <div className="flex flex-wrap items-center gap-2.5">
+              <p className="mb-3 text-[.78rem] font-medium text-soft">شارك المقال</p>
+              <div className="flex flex-nowrap items-center gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <Share compact title={a.title} path={`/articles/${a.slug}`} />
                 {liveLink(article.source) && (
                   <a

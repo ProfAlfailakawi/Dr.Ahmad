@@ -217,6 +217,11 @@ export function PersistentAudioDock() {
 
   if (!audio.track) return null
   const percent = audio.duration ? Math.min((audio.current / audio.duration) * 100, 100) : 0
+  const canJumpArticleSentence = audio.track.path.startsWith('/articles/') && audio.track.label === 'قراءة المقال'
+  const jumpArticleSentence = (direction: 'next' | 'prev') => {
+    if (typeof window === 'undefined') return
+    window.dispatchEvent(new CustomEvent('article-audio-jump-sentence', { detail: { direction } }))
+  }
 
   if (isAdmin) {
     return (
@@ -277,6 +282,12 @@ export function PersistentAudioDock() {
         </div>
         <button onClick={() => audio.jump(-15)} className="hidden rounded-full border border-hair px-2.5 py-1 text-[.75rem] text-soft sm:inline-flex">١٥-</button>
         <button onClick={() => audio.jump(15)} className="hidden rounded-full border border-hair px-2.5 py-1 text-[.75rem] text-soft sm:inline-flex">١٥+</button>
+        {canJumpArticleSentence && (
+          <span className="flex shrink-0 items-center gap-1.5" aria-label="التنقل بين الجمل">
+            <button type="button" onClick={() => jumpArticleSentence('prev')} className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-[.78rem] text-soft transition-colors hover:border-accent hover:text-accent" aria-label="السابق" title="السابق">◀</button>
+            <button type="button" onClick={() => jumpArticleSentence('next')} className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-[.78rem] text-soft transition-colors hover:border-accent hover:text-accent" aria-label="التالي" title="التالي">▶</button>
+          </span>
+        )}
         <button onClick={audio.cycleSpeed} className="rounded-full border border-hair px-2.5 py-1 text-[.75rem] text-soft">{ar(audio.speed)}x</button>
         <button onClick={audio.close} className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-soft" aria-label="إغلاق المشغل">×</button>
       </div>

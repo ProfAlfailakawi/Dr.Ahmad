@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AUDIO_SPEEDS, usePersistentAudio } from '../lib/persistent-audio'
 
 const ar = (n: number) => String(n).replace(/[0-9]/g, (digit) => '0123456789'[+digit])
+const ARTICLE_VOICE_PREFERENCE_KEY = 'article-audio-reading-voice-v1'
 const clock = (seconds: number) => {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
   const minutes = Math.floor(seconds / 60)
@@ -58,7 +59,15 @@ export const openAudioPlayer = (controlId: string, sourceKey?: string) => {
 export function AudioPlayer({ sources, title, compact = false, controlId }: { sources: AudioSource[]; title: string; compact?: boolean; controlId?: string }) {
   const player = usePersistentAudio()
   const rootRef = useRef<HTMLDivElement>(null)
-  const [selectedKey, setSelectedKey] = useState(sources[0]?.key ?? '')
+  const [selectedKey, setSelectedKey] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const remembered = window.localStorage.getItem(ARTICLE_VOICE_PREFERENCE_KEY)
+        if (remembered && sources.some((item) => item.key === remembered)) return remembered
+      } catch { /* التخزين اختياري */ }
+    }
+    return sources.find((item) => item.avatar === 'man')?.key ?? sources[0]?.key ?? ''
+  })
   const [expanded, setExpanded] = useState(false)
   const [articleFollow, setArticleFollow] = useState(() => {
     if (typeof window === 'undefined') return true
@@ -80,7 +89,15 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
   }, [])
 
   useEffect(() => {
-    if (!sources.some((item) => item.key === selectedKey)) setSelectedKey(sources[0]?.key ?? '')
+    if (sources.some((item) => item.key === selectedKey)) return
+    let remembered = ''
+    if (typeof window !== 'undefined') {
+      try { remembered = window.localStorage.getItem(ARTICLE_VOICE_PREFERENCE_KEY) || '' } catch { /* noop */ }
+    }
+    const fallback = sources.find((item) => item.key === remembered)
+      ?? sources.find((item) => item.avatar === 'man')
+      ?? sources[0]
+    setSelectedKey(fallback?.key ?? '')
   }, [selectedKey, sources])
 
   useEffect(() => {
@@ -150,6 +167,9 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
   const choose = (key: string) => {
     setSelectedKey(key)
     const next = sources.find((item) => item.key === key)
+    if (next?.avatar === 'man' || next?.avatar === 'woman') {
+      try { window.localStorage.setItem(ARTICLE_VOICE_PREFERENCE_KEY, key) } catch { /* يبقى الاختيار في الجلسة */ }
+    }
     if (next && anyActive) {
       void player.playTrack({
         id: next.src,
@@ -267,8 +287,8 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
             <span className="ms-auto flex items-center gap-1.5">
               {canFollowArticle && articleFollow && active && (
                 <>
-                  <button type="button" onClick={() => jumpSentence('prev')} title="العبارة السابقة" className="rounded-full border border-hair px-2.5 py-1.5 text-[.68rem] text-soft hover:border-accent hover:text-accent">◀ العبارة</button>
-                  <button type="button" onClick={() => jumpSentence('next')} title="العبارة التالية" className="rounded-full border border-hair px-2.5 py-1.5 text-[.68rem] text-soft hover:border-accent hover:text-accent">العبارة ▶</button>
+                  <button type="button" onClick={() => jumpSentence('prev')} title="السابق" aria-label="السابق" className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-[.78rem] text-soft hover:border-accent hover:text-accent">◀</button>
+                  <button type="button" onClick={() => jumpSentence('next')} title="التالي" aria-label="التالي" className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-[.78rem] text-soft hover:border-accent hover:text-accent">▶</button>
                 </>
               )}
               <button type="button" onClick={() => player.jump(-15)} disabled={!active} className="rounded-full border border-hair px-2.5 py-1.5 text-[.68rem] text-soft disabled:opacity-35">15−</button>

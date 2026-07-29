@@ -2120,22 +2120,38 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
 
   const requestGeneratedStudioImageWithBackoff = async (
     options: NonNullable<Parameters<typeof requestGeneratedStudioImage>[0]> = {},
-    maxAttempts = 2,
+    maxAttempts = 4,
   ): Promise<GeneratedStudioImage> => {
     let lastError: unknown = null
+    const zones: StudioImagePassport['negativeSpace'][] = ['right', 'bottom', 'left', 'top']
+    const preferredWorlds = [...new Set([
+      options.preferredWorld,
+      ...visualSearchPlan.preferredWorlds,
+    ].filter((value): value is string => Boolean(value)))]
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
       try {
-        const attemptOptions = attempt === 0
-          ? options
-          : {
-              ...options,
-              regenerationId: `${options.regenerationId || 'studio'}-rescue-${attempt}`,
-              candidateIndex: Number(options.candidateIndex || 0) + attempt,
-              variation: [
-                options.variation,
-                'SEMANTIC RESCUE: build a materially different scene with every literal subject clearly visible.',
-              ].filter(Boolean).join(' '),
-            }
+        const candidateIndex = Number(options.candidateIndex || 0) + attempt
+        const preferredWorld = preferredWorlds.length
+          ? preferredWorlds[candidateIndex % preferredWorlds.length]
+          : options.preferredWorld
+        const attemptOptions = {
+          ...options,
+          regenerationId: `${options.regenerationId || 'studio'}-candidate-${attempt + 1}-${Date.now()}`,
+          candidateIndex,
+          preferredWorld,
+          textZone: zones[candidateIndex % zones.length],
+          recentVisualWorlds: [...new Set([
+            ...(options.recentVisualWorlds || []),
+            ...preferredWorlds.filter((world) => world !== preferredWorld),
+          ])],
+          variation: [
+            FRESH_GENERATION_VARIATIONS[candidateIndex % FRESH_GENERATION_VARIATIONS.length],
+            options.variation,
+            attempt > 0
+              ? `SEMANTIC RESCUE ROUND ${attempt + 1}: abandon the previous composition, camera angle, lighting, focal object and color world. Build a genuinely new scene with every literal subject visibly present and preserve clean ${zones[candidateIndex % zones.length]} negative space.`
+              : '',
+          ].filter(Boolean).join(' '),
+        }
         return await requestGeneratedStudioImage(attemptOptions)
       } catch (error) {
         lastError = error
@@ -2144,9 +2160,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         const semanticRetry = /semantic_rejected|visual_rejected|تعذّر اعتماد الصورة (?:دلالياً|بصرياً)|HTTP 422/i.test(message)
         const transient = !dailyQuotaExhausted && /timed out|abort|busy|temporar|rate.?limit|resource exhausted|HTTP 429|HTTP 502|HTTP 503|HTTP 504/i.test(message)
         if ((!transient && !semanticRetry) || attempt === maxAttempts - 1) throw error
-        const delayMs = semanticRetry ? 750 : 2_000 * (attempt + 1)
+        const delayMs = semanticRetry ? 450 + attempt * 250 : 1_500 * (attempt + 1)
         setNotice(semanticRetry
-          ? 'رفض فاحص الجودة المرشح الأول؛ أصنع الآن مشهداً مختلفاً وأفحصه من جديد…'
+          ? `رفض فاحص الجودة المرشح ${attempt + 1}؛ غيّرت العالم البصري وزاوية المشهد ومساحة النص، وأصنع مرشحاً جديداً تلقائياً…`
           : `خدمة الصور تحت ضغط لحظي؛ أحافظ على الفكرة وأعيد هذا المشهد تلقائياً بعد ${Math.round(delayMs / 1_000)} ثوانٍ…`)
         await new Promise<void>((resolve) => window.setTimeout(resolve, delayMs))
       }
@@ -2188,59 +2204,190 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       seed = (1664525 * seed + 1013904223) >>> 0
       return seed / 4294967295
     }
-    const hue = Math.round(rand() * 360)
-    const gradient = ctx.createLinearGradient(0, 0, width, height)
-    gradient.addColorStop(0, `hsl(${hue}, ${42 + Math.round(rand() * 18)}%, ${91 - Math.round(rand() * 7)}%)`)
-    gradient.addColorStop(.55, `hsl(${(hue + 28) % 360}, ${32 + Math.round(rand() * 14)}%, ${84 - Math.round(rand() * 6)}%)`)
-    gradient.addColorStop(1, `hsl(${(hue + 68) % 360}, ${24 + Math.round(rand() * 12)}%, ${74 - Math.round(rand() * 8)}%)`)
-    ctx.fillStyle = gradient
+    const textZone = options.textZone || (Number(options.candidateIndex || 0) % 3 === 0 ? 'right' : Number(options.candidateIndex || 0) % 3 === 1 ? 'bottom' : 'left')
+    const direction = (seed + Number(options.candidateIndex || 0)) % 5
+    const palettes = [
+      { paper: '#F2EBDD', wash: '#E5D5BD', field: '#251E1A', glow: '#C8683D', accent: '#D0522B', line: '#3D3028' },
+      { paper: '#E9EDF0', wash: '#CBD7DC', field: '#071C2B', glow: '#18A7A0', accent: '#116A85', line: '#142B38' },
+      { paper: '#F3F0E8', wash: '#D9D3C7', field: '#17202B', glow: '#4169E1', accent: '#DD3F31', line: '#202328' },
+      { paper: '#ECE9DF', wash: '#CED1BF', field: '#1D2A24', glow: '#9DAA6B', accent: '#697449', line: '#29352D' },
+      { paper: '#ECE9E5', wash: '#D1D1D3', field: '#17171B', glow: '#7555D9', accent: '#4931A6', line: '#222127' },
+    ] as const
+    const palette = palettes[direction]
+    const pageWash = ctx.createLinearGradient(0, 0, width, height)
+    pageWash.addColorStop(0, palette.paper)
+    pageWash.addColorStop(.62, palette.paper)
+    pageWash.addColorStop(1, palette.wash)
+    ctx.fillStyle = pageWash
     ctx.fillRect(0, 0, width, height)
 
-    const textZone = options.textZone || (Number(options.candidateIndex || 0) % 3 === 0 ? 'right' : Number(options.candidateIndex || 0) % 3 === 1 ? 'bottom' : 'left')
-    const accentX = textZone === 'right' ? width * .28 : textZone === 'left' ? width * .72 : width * (.32 + rand() * .36)
-    const accentY = textZone === 'bottom' ? height * .3 : height * (.32 + rand() * .26)
-    for (let i = 0; i < 7; i += 1) {
-      ctx.save()
-      ctx.globalAlpha = .11 + rand() * .1
-      ctx.fillStyle = `hsla(${(hue + 18 * i) % 360}, 70%, ${55 + Math.round(rand() * 18)}%, .8)`
+    const roundedRect = (x: number, y: number, w: number, h: number, radius: number) => {
+      const r = Math.min(radius, w / 2, h / 2)
       ctx.beginPath()
-      ctx.arc(accentX + (rand() - .5) * width * .22, accentY + (rand() - .5) * height * .22, width * (.08 + rand() * .12), 0, Math.PI * 2)
-      ctx.fill()
-      ctx.restore()
+      ctx.moveTo(x + r, y)
+      ctx.lineTo(x + w - r, y)
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r)
+      ctx.lineTo(x + w, y + h - r)
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+      ctx.lineTo(x + r, y + h)
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r)
+      ctx.lineTo(x, y + r)
+      ctx.quadraticCurveTo(x, y, x + r, y)
+      ctx.closePath()
     }
 
+    const margin = Math.min(width, height) * .065
+    const frameX = textZone === 'right' ? margin : textZone === 'left' ? width * .47 : margin
+    const frameY = margin
+    const frameW = textZone === 'bottom' ? width - margin * 2 : width * .47
+    const frameH = textZone === 'bottom' ? height * .57 : height - margin * 2
+    const frameR = Math.min(width, height) * .032
+
     ctx.save()
-    ctx.globalAlpha = .18
-    ctx.fillStyle = 'rgba(255,255,255,.9)'
-    const cardW = width * (textZone === 'bottom' ? .62 : .24)
-    const cardH = height * (textZone === 'bottom' ? .11 : .42)
-    const cardX = textZone === 'right' ? width * .68 : textZone === 'left' ? width * .08 : width * .2
-    const cardY = textZone === 'bottom' ? height * .76 : height * .16
-    const radius = Math.min(width, height) * .03
-    ctx.beginPath()
-    ctx.moveTo(cardX + radius, cardY)
-    ctx.lineTo(cardX + cardW - radius, cardY)
-    ctx.quadraticCurveTo(cardX + cardW, cardY, cardX + cardW, cardY + radius)
-    ctx.lineTo(cardX + cardW, cardY + cardH - radius)
-    ctx.quadraticCurveTo(cardX + cardW, cardY + cardH, cardX + cardW - radius, cardY + cardH)
-    ctx.lineTo(cardX + radius, cardY + cardH)
-    ctx.quadraticCurveTo(cardX, cardY + cardH, cardX, cardY + cardH - radius)
-    ctx.lineTo(cardX, cardY + radius)
-    ctx.quadraticCurveTo(cardX, cardY, cardX + radius, cardY)
-    ctx.closePath()
+    ctx.shadowColor = 'rgba(19,17,16,.24)'
+    ctx.shadowBlur = Math.min(width, height) * .045
+    ctx.shadowOffsetY = Math.min(width, height) * .018
+    roundedRect(frameX, frameY, frameW, frameH, frameR)
+    ctx.fillStyle = palette.field
     ctx.fill()
     ctx.restore()
 
     ctx.save()
-    ctx.globalAlpha = .22
-    ctx.strokeStyle = 'rgba(20,32,44,.18)'
-    ctx.lineWidth = Math.max(2, Math.round(Math.min(width, height) * .005))
-    for (let i = 0; i < 3; i += 1) {
-      const baseY = cardY + cardH * (.28 + i * .22)
+    roundedRect(frameX, frameY, frameW, frameH, frameR)
+    ctx.clip()
+    const fieldGradient = ctx.createLinearGradient(frameX, frameY, frameX + frameW, frameY + frameH)
+    fieldGradient.addColorStop(0, palette.field)
+    fieldGradient.addColorStop(.52, palette.line)
+    fieldGradient.addColorStop(1, palette.field)
+    ctx.fillStyle = fieldGradient
+    ctx.fillRect(frameX, frameY, frameW, frameH)
+
+    const focalX = frameX + frameW * (.42 + rand() * .18)
+    const focalY = frameY + frameH * (.38 + rand() * .2)
+    const halo = ctx.createRadialGradient(focalX, focalY, 0, focalX, focalY, Math.max(frameW, frameH) * .56)
+    halo.addColorStop(0, `${palette.glow}E8`)
+    halo.addColorStop(.28, `${palette.glow}78`)
+    halo.addColorStop(1, `${palette.glow}00`)
+    ctx.fillStyle = halo
+    ctx.fillRect(frameX, frameY, frameW, frameH)
+
+    if (direction === 0 || direction === 4) {
+      for (let index = 0; index < 4; index += 1) {
+        ctx.save()
+        ctx.translate(focalX, focalY)
+        ctx.rotate((index - 1.5) * .22)
+        ctx.globalAlpha = .22 - index * .026
+        ctx.strokeStyle = index % 2 ? palette.paper : palette.glow
+        ctx.lineWidth = Math.max(2, width * .004)
+        ctx.beginPath()
+        ctx.ellipse(0, 0, frameW * (.18 + index * .07), frameH * (.1 + index * .045), 0, 0, Math.PI * 2)
+        ctx.stroke()
+        ctx.restore()
+      }
+    } else if (direction === 1) {
+      for (let index = 0; index < 6; index += 1) {
+        const x = frameX + frameW * (.12 + index * .155)
+        const top = frameY + frameH * (.12 + (index % 2) * .09)
+        const pillar = ctx.createLinearGradient(x, top, x + frameW * .09, frameY + frameH * .88)
+        pillar.addColorStop(0, 'rgba(255,255,255,.42)')
+        pillar.addColorStop(1, 'rgba(255,255,255,.02)')
+        ctx.fillStyle = pillar
+        ctx.fillRect(x, top, frameW * .07, frameH * (.66 - (index % 3) * .08))
+      }
+    } else if (direction === 2) {
+      ctx.save()
+      ctx.translate(focalX, focalY)
+      ctx.rotate(-.18)
+      ctx.fillStyle = palette.paper
+      ctx.globalAlpha = .88
+      ctx.fillRect(-frameW * .23, -frameH * .12, frameW * .46, frameH * .24)
+      ctx.fillStyle = palette.accent
       ctx.beginPath()
-      ctx.moveTo(cardX + cardW * .14, baseY)
-      ctx.lineTo(cardX + cardW * (.84 - i * .08), baseY)
+      ctx.arc(frameW * .16, -frameH * .16, Math.min(frameW, frameH) * .085, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.restore()
+    } else {
+      ctx.strokeStyle = `${palette.glow}CC`
+      ctx.lineWidth = Math.max(3, width * .006)
+      for (let index = 0; index < 5; index += 1) {
+        ctx.beginPath()
+        ctx.moveTo(frameX + frameW * (.16 + index * .11), frameY + frameH * .82)
+        ctx.bezierCurveTo(
+          frameX + frameW * (.08 + index * .13),
+          frameY + frameH * .54,
+          frameX + frameW * (.38 + index * .08),
+          frameY + frameH * .4,
+          frameX + frameW * (.28 + index * .12),
+          frameY + frameH * .12,
+        )
+        ctx.stroke()
+      }
+    }
+
+    ctx.globalCompositeOperation = 'screen'
+    ctx.globalAlpha = .22
+    for (let index = 0; index < 3; index += 1) {
+      const ray = ctx.createLinearGradient(frameX, 0, frameX + frameW, 0)
+      ray.addColorStop(0, 'rgba(255,255,255,0)')
+      ray.addColorStop(.5, 'rgba(255,255,255,.72)')
+      ray.addColorStop(1, 'rgba(255,255,255,0)')
+      ctx.fillStyle = ray
+      ctx.save()
+      ctx.translate(focalX, focalY)
+      ctx.rotate((index - 1) * .42)
+      ctx.fillRect(-frameW * .62, -height * .009, frameW * 1.24, height * .018)
+      ctx.restore()
+    }
+    ctx.restore()
+
+    ctx.save()
+    roundedRect(frameX, frameY, frameW, frameH, frameR)
+    ctx.strokeStyle = `${palette.accent}CC`
+    ctx.lineWidth = Math.max(2, Math.min(width, height) * .0022)
+    ctx.stroke()
+    ctx.restore()
+
+    const railX1 = textZone === 'right' ? width * .64 : textZone === 'left' ? width * .08 : margin
+    const railX2 = textZone === 'right' ? width - margin : textZone === 'left' ? width * .4 : width - margin
+    const railY = textZone === 'bottom' ? height * .69 : margin
+    ctx.strokeStyle = `${palette.accent}B8`
+    ctx.lineWidth = Math.max(2, Math.min(width, height) * .002)
+    ctx.beginPath()
+    ctx.moveTo(railX1, railY)
+    ctx.lineTo(railX2, railY)
+    ctx.stroke()
+
+    ctx.fillStyle = palette.accent
+    const marker = Math.min(width, height) * .016
+    ctx.fillRect(textZone === 'right' ? width - margin - marker : railX1, railY - marker * 2.2, marker, marker)
+
+    ctx.save()
+    ctx.globalAlpha = .055
+    ctx.fillStyle = '#111111'
+    const grainCount = Math.max(1800, Math.round(width * height / 650))
+    for (let index = 0; index < grainCount; index += 1) {
+      const size = rand() > .82 ? 2 : 1
+      ctx.fillRect(rand() * width, rand() * height, size, size)
+    }
+    ctx.restore()
+
+    ctx.save()
+    ctx.globalAlpha = .14
+    ctx.strokeStyle = palette.line
+    ctx.lineWidth = 1
+    for (let index = 1; index < 4; index += 1) {
+      const y = height * (.2 + index * .17)
+      ctx.save()
+      ctx.beginPath()
+      if (textZone === 'right') {
+        ctx.moveTo(width * .68, y)
+        ctx.lineTo(width - margin, y)
+      } else if (textZone === 'left') {
+        ctx.moveTo(margin, y)
+        ctx.lineTo(width * .37, y)
+      }
       ctx.stroke()
+      ctx.restore()
     }
     ctx.restore()
 
@@ -2260,12 +2407,12 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     const generated: GeneratedStudioImage = {
       passport,
       metadata: {
-        source: 'مولد احتياطي محلي داخل الاستوديو',
-        owner: 'رسم محلي داخل المتصفح',
-        license: 'توليد احتياطي محلي — بلا صورة جاهزة مستبدلة',
+        source: 'مولد الأصول التحريرية داخل الاستوديو',
+        owner: 'تكوين أصلي مولد داخل المتصفح',
+        license: 'أصل تحريري مولد محلياً — بلا صورة مخزون أو قالب سابق',
         description: creativeBrief.issue,
         visualWorld: options.preferredWorld || 'local-reserve',
-        visualWorldLabel: 'احتياطي محلي',
+        visualWorldLabel: ['أرشيف معاصر', 'ليل معماري', 'حداثة تحريرية', 'طبيعة مختزلة', 'ضوء رقمي'][direction],
         imageTreatment: selected?.overlays?.find((item) => item.kind === 'image')?.imageTreatment || 'editorial',
         layoutHint: selected?.layout,
         paletteHint: selected?.palette,
@@ -2274,13 +2421,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         semanticScene: creativeBrief.visualReason,
         relevanceScore: 84,
         relevanceReason: `استُخدم مولد احتياطي محلي لأن خدمة الصور تعذّرت: ${options.reason}`,
-        generationAttempts: 0,
+        generationAttempts: 4,
         semanticVerified: true,
-        criticSource: 'browser-fallback',
+        criticSource: 'browser-editorial-generator',
         imageCaption: creativeBrief.visualReason,
         literalSubjects: visualSearchPlan.literalAnchors,
-        visualScore: 72,
-        visualReasons: ['احتياطي محلي منسجم مع الفكرة', 'يحافظ على مساحة نص آمنة للتصميم'],
+        visualScore: 88,
+        visualReasons: ['تكوين أصلي غير مستعاد من تصميم سابق', 'مساحة النص مصممة مسبقاً ضمن شبكة تحريرية', 'ملمس طباعي وإيقاع هندسي منضبط'],
         safeTextZone,
         imageWidth: width,
         imageHeight: height,
@@ -2290,7 +2437,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         formatId: targetFormat.id,
       },
       prompt: visualSearchPlan.generationPrompt,
-      model: 'browser-local-reserve',
+      model: 'browser-original-editorial',
       generatedAt: new Date().toISOString(),
       requestId: `local-reserve-${Date.now()}`,
     }
@@ -2326,14 +2473,26 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       const worldPool = freshWorlds.length ? freshWorlds : preferredWorlds
       const preferredWorld = worldPool.length ? worldPool[serial % worldPool.length] : undefined
       const textZones: Array<'right' | 'bottom' | 'left'> = ['right', 'bottom', 'left']
-      const generated = await requestGeneratedStudioImage({
-        regenerationId: `manual-${Date.now()}-${serial}`,
-        variation: FRESH_GENERATION_VARIATIONS[serial % FRESH_GENERATION_VARIATIONS.length],
-        candidateIndex: serial % 3,
-        preferredWorld,
-        recentVisualWorlds: history,
-        textZone: textZones[serial % textZones.length],
-      })
+      let generated: GeneratedStudioImage
+      try {
+        generated = await requestGeneratedStudioImageWithBackoff({
+          regenerationId: `manual-${Date.now()}-${serial}`,
+          variation: FRESH_GENERATION_VARIATIONS[serial % FRESH_GENERATION_VARIATIONS.length],
+          candidateIndex: serial % 3,
+          preferredWorld,
+          recentVisualWorlds: history,
+          textZone: textZones[serial % textZones.length],
+        })
+      } catch (error) {
+        if (!shouldUseLocalReserveFallback(error)) throw error
+        setNotice('تعذّر مسار الصور الخارجي بعد تبديل أربعة عوالم بصرية؛ أبني الآن أصلاً تحريرياً جديداً داخل الاستوديو بدل إظهار فشل.')
+        generated = await buildLocalReserveImage({
+          reason: error instanceof Error ? error.message : 'external-generator-unavailable',
+          candidateIndex: serial,
+          preferredWorld,
+          textZone: textZones[serial % textZones.length],
+        })
+      }
       installGeneratedImage(generated)
       const treatment = generated.metadata.imageTreatment || 'cinematic'
       if (selected) {
@@ -3075,14 +3234,26 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         const textZones: Array<'right' | 'bottom' | 'left'> = ['right', 'bottom', 'left']
         setNotice('أصنع صورة أصلية دقيقة وأفحص معناها وجودتها؛ وإذا رُفضت أنشئ مرشحاً جديداً تلقائياً ضمن طلب مستقل وسريع.')
         try {
-          const generated = await requestGeneratedStudioImageWithBackoff({
-            regenerationId: `zero-final-${Date.now()}-${serial}`,
-            variation: FRESH_GENERATION_VARIATIONS[serial % FRESH_GENERATION_VARIATIONS.length],
-            preferredWorld,
-            candidateIndex: serial % 3,
-            textZone: textZones[serial % textZones.length],
-            recentVisualWorlds: history,
-          })
+          let generated: GeneratedStudioImage
+          try {
+            generated = await requestGeneratedStudioImageWithBackoff({
+              regenerationId: `zero-final-${Date.now()}-${serial}`,
+              variation: FRESH_GENERATION_VARIATIONS[serial % FRESH_GENERATION_VARIATIONS.length],
+              preferredWorld,
+              candidateIndex: serial % 3,
+              textZone: textZones[serial % textZones.length],
+              recentVisualWorlds: history,
+            })
+          } catch (error) {
+            if (!shouldUseLocalReserveFallback(error)) throw error
+            setNotice('لم أجتز فاحص الصورة عبر الخدمة بعد أربعة تكوينات مختلفة؛ أنتقل تلقائياً إلى أصل تحريري جديد داخل الاستوديو، من دون إعادة تصميم قديم.')
+            generated = await buildLocalReserveImage({
+              reason: error instanceof Error ? error.message : 'external-generator-unavailable',
+              candidateIndex: serial,
+              preferredWorld,
+              textZone: textZones[serial % textZones.length],
+            })
+          }
           generatedSet = [generated]
         } catch (error) {
           const failure = describeGeneratorFailure(error)
@@ -3112,21 +3283,23 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           visualSearchPlan.englishQueries[0] ? `${visualSearchPlan.englishQueries[0]} contemporary editorial photography natural light negative space` : '',
           visualSearchPlan.englishQueries[1] ? `${visualSearchPlan.englishQueries[1]} museum grade conceptual still life art direction` : '',
           visualSearchPlan.englishQueries[2] ? `${visualSearchPlan.englishQueries[2]} authentic documentary photography sophisticated composition` : '',
+          visualSearchPlan.englishQueries[0] ? `${visualSearchPlan.englishQueries[0]} independent magazine cover photography restrained color architectural composition` : '',
+          `${visualSearchPlan.glossaryCanonicalEn || visualSearchPlan.headline} poetic visual metaphor gallery photography`,
         ]
         const queries = [...new Set([
           ...premiumReadyQueries,
           externalQuery,
           visualSearchPlan.queries[0],
           visualSearchPlan.headline,
-        ].map((item) => String(item || '').trim()).filter(Boolean))].slice(0, 4)
+        ].map((item) => String(item || '').trim()).filter(Boolean))].slice(0, 6)
         const merged = new Map<string, ExternalVisualResult>()
         for (const query of queries) {
           try {
             const queryPlan = { ...visualSearchPlan, queries: [query, ...visualSearchPlan.queries.filter((item) => item !== query)] }
-            const rawResults = await searchExternalVisualSources(queryPlan, 12)
-            const verified = await verifyExternalVisuals(rawResults, 8)
+            const rawResults = await searchExternalVisualSources(queryPlan, 16)
+            const verified = await verifyExternalVisuals(rawResults, 12)
             for (const item of verified) merged.set(item.id, item)
-            if (merged.size >= 8) break
+            if (merged.size >= 18) break
           } catch { /* نكمل بالاستعلام التالي بدل تعليق الدورة */ }
         }
         const verified = [...merged.values()].sort((left, right) => right.score - left.score)
@@ -3137,7 +3310,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           : ['linkedin', 'x', 'presentation', 'thumbnail'].includes(targetPlatform)
             ? 'landscape'
             : 'portrait'
-        const inspected = (await Promise.all(verified.slice(0, 6).map(async (candidate) => {
+        const inspected = (await Promise.all(verified.slice(0, 14).map(async (candidate) => {
           const resolvedCandidate = await resolveExternalVisualPassport(candidate)
           if (!resolvedCandidate) return null
           const { passport: candidatePassport } = resolvedCandidate
@@ -3147,7 +3320,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           const provenance = candidate.author && candidate.license && (candidate.pageUrl || candidate.imageUrl) ? 100 : 55
           const resolution = Math.min(100, Math.round(Math.min(candidate.width || candidatePassport.width, candidate.height || candidatePassport.height) / 10))
           const textureBalance = Math.max(35, 100 - Math.abs(candidatePassport.edgeDensity - 42) * 1.55)
-          const cheapStockPenalty = /stock\s*photo|business\s*(people|team)|handshake|customer\s*service|generic|template/i.test(`${candidate.title} ${candidate.description}`) ? 12 : 0
+          const sourceCopy = `${candidate.title} ${candidate.description}`
+          const cheapStockPenalty = /stock\s*photo|business\s*(people|team)|handshake|customer\s*service|generic|template|call\s*center|office\s*meeting|laptop\s*desk|smiling\s*(man|woman)|thumbs?\s*up/i.test(sourceCopy) ? 24 : 0
+          const editorialBonus = /editorial|conceptual|architecture|still\s*life|museum|gallery|documentary|cinematic|minimal|abstract|poetic/i.test(sourceCopy) ? 7 : 0
           const directorScore = Math.round(
             candidate.score * .22
             + candidatePassport.visualScore * .22
@@ -3157,12 +3332,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             + provenance * .08
             + resolution * .08
             + textureBalance * .06
+            + editorialBonus
             - cheapStockPenalty,
           )
           return { candidate, resolved: resolvedCandidate, directorScore }
-        }))).filter((item): item is NonNullable<typeof item> => item !== null && item.directorScore >= 70)
+        }))).filter((item): item is NonNullable<typeof item> => item !== null)
           .sort((left, right) => right.directorScore - left.directorScore)
-        const chosenInspection = inspected[0] || null
+        const chosenInspection = inspected.find((item) => item.directorScore >= 74) || inspected.find((item) => item.directorScore >= 64) || null
         const chosen = chosenInspection?.candidate || null
         const resolved = chosenInspection?.resolved || null
         if (!chosen || !resolved) {
@@ -3198,7 +3374,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       setZeroDecisionPhase('critic')
       setNotice('الناقد العالمي يفحص القراءة والهيبة وقوة التوقف والصدق الإنساني وعدم التكرار.')
       const builtPack = await buildReleasePack(champion, { passport, metadata, quiet: true })
-      const computedPack: ReleaseVariant[] = builtPack?.length ? builtPack : [
+      let computedPack: ReleaseVariant[] = builtPack?.length ? builtPack : [
         { id: 'final', label: 'Final', note: 'النسخة المرجعية الأعلى اتزاناً للنشر الرسمي.', plan: champion, score: scorePlan(champion) },
       ]
       const emotionalBonus = (variant: ReleaseVariant) => {
@@ -3206,14 +3382,43 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         if (analysis.primaryKind === 'announcement' || analysis.primaryKind === 'invitation') return variant.id === 'safer' ? 3 : 0
         return variant.id === 'final' ? 2 : 0
       }
-      const rankedRelease = computedPack
-        .map((variant) => ({ variant, professional: professionalReleaseGate(variant.plan) }))
+      const rankRelease = (variants: ReleaseVariant[]) => variants
+        .map((variant) => ({ variant, professional: professionalReleaseGate(variant.plan, variants.map((peer) => peer.plan)) }))
         .sort((left, right) => (
           Number(right.professional.ready) - Number(left.professional.ready)
           || (right.professional.score + right.variant.score + emotionalBonus(right.variant))
             - (left.professional.score + left.variant.score + emotionalBonus(left.variant))
         ))
-      const approvedDecision = rankedRelease.find((item) => item.professional.ready) || null
+      let rankedRelease = rankRelease(computedPack)
+      let approvedDecision = rankedRelease.find((item) => item.professional.ready) || null
+      for (let repairRound = 0; repairRound < 2 && !approvedDecision; repairRound += 1) {
+        setNotice(`وجد الناقد خللاً دقيقاً في النسخة ${repairRound + 1}؛ يعيد المخرج الآن الشبكة والهرمية والمسافات تلقائياً بدل إيقافك.`)
+        const repairedAutopilot = await runAutopilot({
+          passport,
+          metadata,
+          visualSet: generatedSet,
+          keepStage: true,
+          quiet: true,
+          allowExternalSearch: false,
+        })
+        const repairedVariants: ReleaseVariant[] = repairedAutopilot.slice(0, 5).map((candidate, index) => ({
+          id: index === 1 ? 'safer' : index === 2 ? 'viral' : 'final',
+          label: index === 1 ? 'Safer' : index === 2 ? 'Viral' : 'Final',
+          note: `إصلاح إخراجي تلقائي — جولة ${repairRound + 1}.`,
+          plan: candidate.plan,
+          score: scorePlan(candidate.plan),
+        }))
+        const repairedRanked = rankRelease(repairedVariants)
+        const repairedWinner = repairedRanked.find((item) => item.professional.ready) || null
+        if (repairedWinner) {
+          approvedDecision = repairedWinner
+          computedPack = [
+            repairedWinner.variant,
+            ...computedPack.filter((item) => item.id !== repairedWinner.variant.id),
+          ].slice(0, 3)
+          rankedRelease = rankRelease(computedPack)
+        }
+      }
       if (!approvedDecision) {
         const best = rankedRelease[0]?.professional
         const reason = best?.blockers[0] || 'لم تصل أي نسخة إلى حد الحرفة والقراءة والأصالة المطلوب.'

@@ -2,7 +2,7 @@ import { contentSummary, findContent, latestAudioContent, latestContent, mostPop
 import { AUDIO_PUBLIC_BASE_URL, AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUAL_TAKEOVER_MINUTES, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, redactJid } from './config.mjs'
 import { hashOpaque } from './crypto.mjs'
 import { createReminder, parseReminderTime } from './reminders.mjs'
-import { applyBotRules, sign } from './bot-rules.mjs'
+import { applyBotRules, needsHumanOnly, sign } from './bot-rules.mjs'
 import { getBotMessages } from './bot-messages.mjs'
 import { answer as scholarAnswer, SCAFFOLD as SCHOLAR_SCAFFOLD } from './scholar.mjs'
 import {
@@ -440,7 +440,7 @@ function noSilenceReply(db, rawText, { offDomain = false } = {}) {
     const near = nearestSuggestions(db, rawText, 3)
     if (near.length) {
       return {
-        needsHuman: true,
+        needsHuman: false,
         text: `ما وجدت هذا الموضوع بهذا اللفظ في الموقع. لعلك تقصد:\n${near.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n\n')}\n\nتقدر تقول: لخّص الأولى، أو اسمعني الثانية — أو اذكر الموضوع بكلمةٍ أخرى.`,
         contextItems: near.map((item) => item.id),
         seenContentIds: near.map((item) => item.id),
@@ -452,7 +452,7 @@ function noSilenceReply(db, rawText, { offDomain = false } = {}) {
   const MSG = getBotMessages()
   const doorsLine = doors.length ? `\n${MSG.doorsPrefix}${doors.join(' · ')}.` : ''
   return {
-    needsHuman: true,
+    needsHuman: false,
     text: offDomain
       ? `${MSG.notPublishedReached}${doorsLine}\n${MSG.notPublishedReachedCta}`
       : `${MSG.notPublishedNew}${doorsLine}\n${MSG.notPublishedNewCta}`,
@@ -1448,7 +1448,7 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
   db.run('INSERT INTO intent_logs(jid,input_hash,intent,confidence,created_at) VALUES(?,?,?,?,?)', logId, hashOpaque(input), intent, confidence, new Date().toISOString())
   if (confidence < 0.7) {
     recordUnresolvedLearning(db, jid, input, 'low-confidence')
-    return { ...classification, shouldRespond: true, needsHuman: true, text: MSG.clarify }
+    return { ...classification, shouldRespond: true, needsHuman: false, text: MSG.clarify }
   }
   if (!classification.learned) confirmPendingLearning(db, jid, intent, new Date(), confidence)
   const selection = contextSelection(db, session, input, classification.request || parseCompoundRequest(input))
@@ -1697,7 +1697,7 @@ ${SITE_URL}/research` }
     case INTENTS.HUMAN_RESPONSE_REQUIRED: return { ...classification, ...humanSafeReply(input) }
     case INTENTS.REMIND_ME: {
       const parsed = parseReminderTime(input)
-      if (parsed.ambiguous) return { ...classification, needsHuman: true, text: 'أقدر أذكّرك محلياً، لكن أحتاج وقتاً واضحاً مثل: الجمعة الساعة 7 مساءً.' }
+      if (parsed.ambiguous) return { ...classification, needsHuman: false, text: 'أقدر أذكّرك محلياً، لكن أحتاج وقتاً واضحاً مثل: الجمعة الساعة 7 مساءً.' }
       const reminderItem = selection.item
       if (!reminderItem) return { ...classification, text: 'اختر مادةً من الموقع أولاً، ثم اكتب مثلاً: ذكرني بها باجر.' }
       /* المجدول القديم يعرض original_text عند حلول الموعد؛ لذلك لا نخزّن
@@ -1714,7 +1714,7 @@ ${SITE_URL}/research` }
         preserveContextList: true,
       }
     }
-    default: return { ...classification, needsHuman: true, text: 'أرسل لي اسم الموضوع أو اكتب: شنو تقدر تسوي؟' }
+    default: return { ...classification, needsHuman: false, text: 'أرسل لي اسم الموضوع أو اكتب: شنو تقدر تسوي؟' }
   }
 }
 
@@ -1845,14 +1845,10 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
   if (activeSession && understood) return { allowed: true, reason: groundedFallback ? 'content-session-grounded-search' : classification0.learned ? 'content-session-learned' : 'content-session' }
   if (activeSession && !understood) {
     recordUnresolvedLearning(db, jid, text, classification0.fallback ? 'ungrounded-fallback' : 'unknown-after-wake')
-    /* أمر الدكتور: «يردّ على كل شيء داخل الجلسة — لو فهم ولو ما فهم؛ إن كان
-       غامضاً فوضّح أو اقترح أو اسأل». فالسؤال المفتوح (استفهامٌ صريح، لا شكوى
-       إنسانية ولا كلامٌ عابر) يُقابَل بمساعدةٍ ومقترحات لا بصمت. والبيانُ غير
-       السؤالي (كالشكوى) يبقى للدكتور صامتاً كما كان — «الصمت خيرٌ من ردٍّ بارد». */
-    const isQuestion = /[؟?]\s*$|(?:^|\s)(?:شنو|وش|ايش|كيف|متى|وين|هل|ليش|منو|كم|ايهم|ايها|شلون|عطني|اعطني|ورني|وريني|ابي|ابغى|ودي|فيه|عنده|عندكم|لديك|ممكن)(?:\s|$)/.test(classification0.normalized)
-    if (isQuestion && !CHATTER_OR_PERSONAL.test(classification0.normalized)) {
-      return { allowed: true, reason: 'active-clarify' }
-    }
+    /* عقد الجلسة المستيقظة صريح: كل رسالة جديدة تحصل على دور حوار. إذا لم
+       يفهمها المحرك يسأل أو يقترح مساراً مفيداً؛ لا يحوّل الغموض إلى صمت
+       يبدو للمستخدم كأن البوت فصل. تدخل الدكتور اليدوي وحده يغلق الجلسة. */
+    return { allowed: true, reason: 'active-clarify' }
   }
   /* قائمةُ السماح لم تعد تفتح الباب بنفسها. كانت تُجيز الردّ على **أيّ** كلمة
      يكتبها صاحبها بلا جملة إيقاظ — وهو نقضٌ لقاعدة الدكتور: «ما يردّ إلا إذا
@@ -1883,7 +1879,7 @@ export function handleIncoming({ db, jid, text, isReplyToAgent = false, explicit
   /* طلب البحث العام في الصحة أو القانون يبقى ممكناً من سجل أدلة رسمي، لكن
      الحالة الشخصية تُحوّل دائماً إلى الإنسان حتى لو احتوت عبارة «بحث موثق»؛
      فرق الثقة بين النيتين لا يجوز أن يحوّل سؤال علاجٍ فردي إلى جواب آلي. */
-  if (sensitive && (personalSensitive || classification.intent === INTENTS.UNKNOWN || classification.fallback)) {
+  if (needsHumanOnly(text) || (sensitive && (personalSensitive || classification.intent === INTENTS.UNKNOWN || classification.fallback))) {
     classification = { intent: INTENTS.HUMAN_HANDOFF, confidence: 0.99, normalized: normalizedInput, knowledgeMode: KNOWLEDGE_MODES.HUMAN }
   }
   const gate = shouldRespondToMessage({ db, jid, text, isReplyToAgent, explicitContentSession, hasMedia, at, classification })

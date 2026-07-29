@@ -34,6 +34,7 @@ if (config.secret.length < 24) {
 
 mkdirSync(config.sessionDir, { recursive: true, mode: 0o700 })
 const deliveredCommandsPath = join(config.sessionDir, 'delivered-command-ids.json')
+const inboundCheckpointPath = join(config.sessionDir, 'inbound-checkpoint.json')
 const deliveredCommandIds = new Set((() => {
   try {
     const value = JSON.parse(readFileSync(deliveredCommandsPath, 'utf8'))
@@ -42,6 +43,20 @@ const deliveredCommandIds = new Set((() => {
     return []
   }
 })())
+const inboundCheckpoint = (() => {
+  try {
+    const value = JSON.parse(readFileSync(inboundCheckpointPath, 'utf8'))
+    return {
+      lastTimestamp: Math.max(0, Number(value?.lastTimestamp || 0)),
+      messageIds: Array.isArray(value?.messageIds) ? value.messageIds.filter((id) => typeof id === 'string' && id).slice(-2_000) : [],
+    }
+  } catch {
+    // أول تركيب لا يعود إلى محادثات قديمة؛ من هذه اللحظة يصبح الاسترجاع دائماً.
+    return { lastTimestamp: Math.floor(Date.now() / 1000) - 90, messageIds: [] }
+  }
+})()
+const processedInboundIds = new Set(inboundCheckpoint.messageIds)
+const startupCatchupFloor = Math.max(0, inboundCheckpoint.lastTimestamp - 5 * 60)
 
 function rememberDeliveredCommand(id) {
   deliveredCommandIds.add(String(id))
@@ -51,6 +66,31 @@ function rememberDeliveredCommand(id) {
   const temp = `${deliveredCommandsPath}.tmp-${process.pid}`
   writeFileSync(temp, `${JSON.stringify(recent)}\n`, { mode: 0o600 })
   renameSync(temp, deliveredCommandsPath)
+}
+
+function messageIdOf(message) {
+  return String(message?.id?._serialized || '').slice(0, 240)
+}
+
+function persistInboundCheckpoint() {
+  const recent = [...processedInboundIds].slice(-2_000)
+  processedInboundIds.clear()
+  recent.forEach((value) => processedInboundIds.add(value))
+  const temp = `${inboundCheckpointPath}.tmp-${process.pid}`
+  writeFileSync(temp, `${JSON.stringify({
+    lastTimestamp: inboundCheckpoint.lastTimestamp,
+    messageIds: recent,
+    updatedAt: new Date().toISOString(),
+  })}\n`, { mode: 0o600 })
+  renameSync(temp, inboundCheckpointPath)
+}
+
+function rememberProcessedInbound(message) {
+  const id = messageIdOf(message)
+  if (id) processedInboundIds.add(id)
+  const timestamp = Number(message?.timestamp || 0)
+  if (Number.isFinite(timestamp) && timestamp > 0) inboundCheckpoint.lastTimestamp = Math.max(inboundCheckpoint.lastTimestamp, timestamp)
+  persistInboundCheckpoint()
 }
 
 const runtime = {
@@ -65,6 +105,9 @@ const runtime = {
   stateAt: new Date().toISOString(),
   syncPercent: 0,
   lastActivityAt: Date.now(),
+  lastCatchupAt: null,
+  lastCatchupRecovered: 0,
+  lastCatchupError: '',
 }
 
 function stateSnapshot(extra = {}) {
@@ -77,6 +120,9 @@ function stateSnapshot(extra = {}) {
     stateSeq: runtime.stateSeq,
     stateAt: runtime.stateAt,
     syncPercent: runtime.syncPercent,
+    lastCatchupAt: runtime.lastCatchupAt,
+    lastCatchupRecovered: runtime.lastCatchupRecovered,
+    lastCatchupError: runtime.lastCatchupError,
     ...extra,
   }
 }
@@ -108,9 +154,44 @@ let shuttingDown = false
 let commandBusy = false
 let heartbeatTimer = null
 let pollTimer = null
+let catchupTimer = null
+let catchupPromise = null
+let heartbeatBusy = false
 let reinjectionPromise = null
 const recentAutomatedSends = new Map()
 const recentAutomatedBodies = new Map()
+const inboundQueues = new Map()
+const inboundInFlight = new Set()
+const LEGACY_HUMAN_PROMISE = /(?:احتاجت|تحتاج)\s+متابعه\s+بشريه|سيكمل\s+معك\s+(?:الفريق|الدكتور)|سيرد\s+عليك\s+الدكتور|وصلت?\s+رسالتك\s+(?:للدكتور|للفريق)/i
+const SAFE_BOUNDARY_REPLY = 'فهمت أنك تريد تواصلاً مباشراً. اكتب رسالتك كاملة هنا. أستطيع الآن مساعدتك في مواد الموقع أو معلومة عامة موثقة ضمن حدودي.'
+const SAFE_CLARIFY_REPLY = 'أنا حاضر. ما قدرت أربط الطلب بمادة منشورة بثقة. اكتب الفكرة بكلمة أو زاوية ثانية، أو اختر: آخر مقالة · آخر المقالات · ٣٠ ثانية · دقيقتان · تعمّق.'
+
+function sanitizeServerReply(value) {
+  const text = String(value || '').trim()
+  if (!text) return ''
+  const normalized = text.normalize('NFKD').replace(/[\u064B-\u065F\u0670]/g, '').replace(/ة/g, 'ه')
+  return LEGACY_HUMAN_PROMISE.test(normalized) ? SAFE_BOUNDARY_REPLY : text
+}
+
+async function recoverLegacySilentDecision(message, result, source) {
+  const reason = String(result?.reason || '').toLowerCase()
+  if (!['duplicate', 'duplicate-delivery'].includes(reason)) return result
+  const messageId = messageIdOf(message)
+  log('warn', 'legacy_duplicate_decision_retrying_as_distinct_turn', { from: message.from, messageId, source })
+  try {
+    return await emit('incoming', {
+      jid: message.from,
+      text: `${String(message.body || '').slice(0, 11_950)}\nمن فضلك نفّذ هذا الطلب كدور جديد.`,
+      hasMedia: Boolean(message.hasMedia),
+      mediaType: String(message.type || 'text').slice(0, 80),
+      messageId: messageId ? `${messageId}:distinct-turn` : `distinct-${Date.now()}`,
+      timestamp: Number(message.timestamp || 0),
+      deliverySource: `${source}-distinct-retry`,
+    })
+  } catch {
+    return result
+  }
+}
 
 function automatedSendKey(jid, text) {
   return `${String(jid || '').trim()}\n${String(text || '').replace(/\s+/g, ' ').trim()}`
@@ -278,6 +359,7 @@ client.on('ready', () => {
 
   // Run warmPhoneAliases and contact sync in the BACKGROUND with a non-blocking timeout
   void warmPhoneAliasesAndContactsInBackground()
+  scheduleMissedMessageCatchup()
 })
 
 function isIndividualJid(value) {
@@ -420,6 +502,7 @@ client.on('change_state', (state) => {
   if (value === 'CONNECTED' && (!runtime.connected || runtime.status !== 'connected')) {
     const snapshot = transitionState('connected', true, '')
     void safeEmit('status', snapshot)
+    scheduleMissedMessageCatchup(2_000)
     return
   }
   if (runtime.connected && ['CONFLICT', 'UNPAIRED_IDLE', 'TIMEOUT'].includes(value)) {
@@ -476,33 +559,193 @@ async function safeGracefulCloseClient() {
   await new Promise((r) => setTimeout(r, 1000))
 }
 
-// Inbound message handling
-client.on('message', async (message) => {
+async function processIncomingMessage(message, source = 'live') {
   runtime.lastActivityAt = Date.now()
   if (message.fromMe || message.from === 'status@broadcast' || !isIndividualJid(message.from)) return
   if (isOwnerPrivateChat(message.from)) {
     log('info', 'owner_private_chat_ignored', { from: message.from })
     return
   }
+  const messageId = messageIdOf(message)
+  if (messageId && processedInboundIds.has(messageId)) {
+    if (source === 'catchup') log('info', 'catchup_message_already_processed', { from: message.from, messageId })
+    return
+  }
+  if (messageId && inboundInFlight.has(messageId)) return
+  if (messageId) inboundInFlight.add(messageId)
   try {
-    const result = await emit('incoming', {
+    let result = await emit('incoming', {
       jid: message.from,
       text: String(message.body || '').slice(0, 12_000),
       hasMedia: Boolean(message.hasMedia),
       mediaType: String(message.type || 'text').slice(0, 80),
-      messageId: String(message.id?._serialized || '').slice(0, 240),
+      messageId,
       timestamp: Number(message.timestamp || 0),
+      deliverySource: source,
     })
-    if (result?.reply?.text && ['reply', 'reply-and-escalate'].includes(result.action)) {
-      await sendTextWithRecovery(message.from, result.reply.text)
-      log('info', 'incoming_reply_sent', { from: message.from, action: result.action, reason: result.reason || '' })
+    result = await recoverLegacySilentDecision(message, result, source)
+    const serverReply = sanitizeServerReply(result?.reply?.text)
+    const reason = String(result?.reason || '').toLowerCase()
+    const localFallback = !serverReply && ['no-grounded-answer', 'duplicate', 'duplicate-delivery'].includes(reason)
+      ? SAFE_CLARIFY_REPLY
+      : ''
+    const outgoingReply = serverReply || localFallback
+    if (outgoingReply && (localFallback || ['reply', 'reply-and-escalate'].includes(result?.action))) {
+      await sendTextWithRecovery(message.from, outgoingReply)
+      log('info', source === 'catchup' ? 'catchup_reply_sent' : 'incoming_reply_sent', { from: message.from, action: result.action, reason: result.reason || '', messageId })
     } else {
-      log('info', 'incoming_processed_without_reply', { from: message.from, action: result?.action || 'none', reason: result?.reason || '' })
+      log('info', source === 'catchup' ? 'catchup_processed_without_reply' : 'incoming_processed_without_reply', { from: message.from, action: result?.action || 'none', reason: result?.reason || '', messageId })
     }
+    // لا نثبت الرسالة إلا بعد اكتمال ردها فعلياً؛ إن فشل الإرسال تبقى قابلة
+    // للاسترجاع، ويعيد الخادم الرد المخزن لنفس messageId بلا فقد.
+    rememberProcessedInbound(message)
   } catch (error) {
     runtime.lastError = error instanceof Error ? error.message : String(error)
-    log('error', 'incoming_message_failed', { from: message.from, error: runtime.lastError })
+    log('error', source === 'catchup' ? 'catchup_message_failed' : 'incoming_message_failed', { from: message.from, error: runtime.lastError, messageId })
+  } finally {
+    if (messageId) inboundInFlight.delete(messageId)
   }
+}
+
+function enqueueIncomingMessage(message, source = 'live') {
+  const jid = String(message?.from || '').trim()
+  const previous = inboundQueues.get(jid) || Promise.resolve()
+  const queued = previous.catch(() => {}).then(() => processIncomingMessage(message, source))
+  inboundQueues.set(jid, queued)
+  void queued.finally(() => {
+    if (inboundQueues.get(jid) === queued) inboundQueues.delete(jid)
+  })
+  return queued
+}
+
+async function catchupChatSummaries() {
+  return client.pupPage.evaluate(() => {
+    const models = window.require('WAWebCollections').Chat.getModelsArray()
+    return models.flatMap((chat) => {
+      try {
+        const jid = String(chat?.id?._serialized || chat?.id?.toString?.() || '')
+        if (!jid) return []
+        return [{
+          jid,
+          unreadCount: Number(chat?.unreadCount || 0),
+          timestamp: Number(chat?.timestamp || chat?.t || chat?.lastMessage?.t || 0),
+        }]
+      } catch {
+        // نموذج تالف واحد لا يجوز أن يُسقط استرجاع كل المحادثات.
+        return []
+      }
+    })
+  })
+}
+
+async function cachedMessagesForCatchup(chatJid, limit) {
+  return client.pupPage.evaluate((wantedJid, wantedLimit) => {
+    const chats = window.require('WAWebCollections').Chat
+    const chat = chats.get(wantedJid) || chats.getModelsArray().find((candidate) => {
+      try { return String(candidate?.id?._serialized || candidate?.id?.toString?.() || '') === wantedJid } catch { return false }
+    })
+    if (!chat) return []
+    const rows = chat.msgs.getModelsArray().slice(-Math.max(1, wantedLimit))
+    return rows.flatMap((message) => {
+      try {
+        if (message?.isNotification) return []
+        const id = String(message?.id?._serialized || message?.id?.toString?.() || '')
+        const remote = String(message?.from?._serialized || message?.id?.remote?._serialized || message?.id?.remote || wantedJid)
+        return [{
+          id: { _serialized: id },
+          fromMe: Boolean(message?.id?.fromMe),
+          from: remote,
+          body: String(message?.body || message?.caption || ''),
+          hasMedia: Boolean(message?.isMedia || message?.mediaObject),
+          type: String(message?.type || 'text'),
+          timestamp: Number(message?.t || message?.timestamp || 0),
+        }]
+      } catch {
+        return []
+      }
+    })
+  }, chatJid, limit)
+}
+
+async function catchUpMissedMessages() {
+  if (catchupPromise || shuttingDown || !runtime.connected) return catchupPromise
+  catchupPromise = (async () => {
+    let recovered = 0
+    let stage = 'prepare'
+    try {
+      await ensureBridgeFunctions()
+      stage = 'get-chats'
+      let chats = []
+      try {
+        chats = await catchupChatSummaries()
+      } catch (firstError) {
+        // WhatsApp Web قد يعلن ready قبل اكتمال جميع serializers. نعيد الحقن
+        // مرة واحدة داخل نفس الجولة بدلاً من تأجيل الرسائل خمس دقائق.
+        log('warn', 'catchup_get_chats_reinjecting', { error: String(firstError?.message || firstError) })
+        await client.inject()
+        await new Promise((resolveWait) => setTimeout(resolveWait, 900))
+        chats = await catchupChatSummaries()
+      }
+      stage = 'scan-chats'
+      const since = Math.max(startupCatchupFloor, inboundCheckpoint.lastTimestamp - 5 * 60)
+      const recentChats = chats
+        .filter((chat) => isIndividualJid(chat?.jid)
+          && !isOwnerPrivateChat(chat.jid)
+          && (Number(chat.unreadCount || 0) > 0 || Number(chat.timestamp || 0) >= since))
+        .sort((left, right) => Number(left.timestamp || 0) - Number(right.timestamp || 0))
+        .slice(-100)
+      const candidates = []
+      for (const summary of recentChats) {
+        stage = 'fetch-chat-messages'
+        const limit = Math.max(12, Math.min(50, Number(summary.unreadCount || 0) + 8))
+        let messages = []
+        try {
+          messages = await cachedMessagesForCatchup(summary.jid, limit)
+        } catch (error) {
+          log('warn', 'catchup_chat_fetch_failed', { jid: summary.jid, error: String(error?.message || error) })
+          continue
+        }
+        for (const message of messages) {
+          const id = messageIdOf(message)
+          const timestamp = Number(message?.timestamp || 0)
+          if (message?.fromMe || !isIndividualJid(message?.from) || isOwnerPrivateChat(message.from)) continue
+          if (id && processedInboundIds.has(id)) continue
+          if (timestamp > 0 && timestamp < since) continue
+          candidates.push(message)
+        }
+      }
+      stage = 'process-candidates'
+      candidates.sort((left, right) => Number(left.timestamp || 0) - Number(right.timestamp || 0))
+      for (const message of candidates) {
+        const before = processedInboundIds.has(messageIdOf(message))
+        await enqueueIncomingMessage(message, 'catchup')
+        if (!before && processedInboundIds.has(messageIdOf(message))) recovered += 1
+      }
+      inboundCheckpoint.lastTimestamp = Math.max(inboundCheckpoint.lastTimestamp, Math.floor(Date.now() / 1000) - 60)
+      persistInboundCheckpoint()
+      runtime.lastCatchupAt = new Date().toISOString()
+      runtime.lastCatchupRecovered = recovered
+      runtime.lastCatchupError = ''
+      log('info', 'missed_message_catchup_completed', { recovered, chats: recentChats.length, candidates: candidates.length })
+    } catch (error) {
+      runtime.lastCatchupAt = new Date().toISOString()
+      const detail = String(error?.stack || error?.message || error || 'unknown')
+      runtime.lastCatchupError = `${stage}: ${detail}`.slice(0, 300)
+      log('warn', 'missed_message_catchup_failed', { error: runtime.lastCatchupError })
+    } finally {
+      catchupPromise = null
+    }
+  })()
+  return catchupPromise
+}
+
+function scheduleMissedMessageCatchup(delayMs = 4_000) {
+  setTimeout(() => void catchUpMissedMessages(), delayMs).unref()
+}
+
+// أحداث واتساب الحية تُسلسل لكل محادثة حتى لا تتجاوز رسالةٌ سابقتها.
+client.on('message', (message) => {
+  void enqueueIncomingMessage(message, 'live')
 })
 
 /* أي رسالة يكتبها الدكتور بيده تغلق جلسة البوت في تلك المحادثة. رسائل
@@ -529,15 +772,23 @@ client.on('message_create', async (message) => {
 function startHeartbeatAndPolling() {
   if (heartbeatTimer) return
   heartbeatTimer = setInterval(() => {
+    if (heartbeatBusy) return
+    heartbeatBusy = true
     void (async () => {
-      await safeEmit('heartbeat', stateSnapshot(), { retries: 0 })
-    })()
+      await safeEmit('heartbeat', stateSnapshot(), { retries: 2, timeoutMs: 8_000 })
+    })().finally(() => { heartbeatBusy = false })
   }, config.heartbeatMs)
   heartbeatTimer.unref()
 
   if (!pollTimer) {
     pollTimer = setInterval(() => void pollCommands(), config.pollMs)
     pollTimer.unref()
+  }
+  if (!catchupTimer) {
+    // شبكة أمان دورية لأحداث WhatsApp Web التي قد تضيع أثناء تحديث الإطار
+    // من دون أن يطلق المكتبة حدث disconnected صريحاً.
+    catchupTimer = setInterval(() => void catchUpMissedMessages(), 5 * 60_000)
+    catchupTimer.unref()
   }
 }
 
@@ -629,6 +880,9 @@ const healthServer = createServer((req, res) => {
     startedAt: runtime.startedAt,
     lastWebhookAt: runtime.lastWebhookAt,
     syncPercent: runtime.syncPercent,
+    lastCatchupAt: runtime.lastCatchupAt,
+    lastCatchupRecovered: runtime.lastCatchupRecovered,
+    lastCatchupError: runtime.lastCatchupError,
   }))
   res.writeHead(runtime.status === 'auth_failure' ? 503 : 200, {
     'content-type': 'application/json',

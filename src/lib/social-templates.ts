@@ -446,7 +446,7 @@ function drawWrapped(ctx: CanvasRenderingContext2D, text: string, x: number, y: 
 function fittedTitleSize(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maximumLines: number, preferred: number, minimum: number) {
   let size = preferred
   while (size > minimum) {
-    ctx.font = `700 ${Math.round(size)}px "El Messiri", serif`
+    ctx.font = `700 ${Math.round(size)}px "Alexandria Variable", "Tajawal", sans-serif`
     if (wrapLines(ctx, text, maxWidth).length <= maximumLines) return Math.round(size)
     size -= 2
   }
@@ -604,7 +604,7 @@ const sealStamp = (ctx: CanvasRenderingContext2D, cx: number, cy: number, radius
     ctx.restore()
   }
   ctx.globalAlpha = 0.95
-  ctx.font = `700 ${Math.round(radius * 0.95)}px "El Messiri", serif`
+  ctx.font = `700 ${Math.round(radius * 0.95)}px "Alexandria Variable", "Tajawal", sans-serif`
   ctx.textAlign = 'center'
   ctx.fillText(monogram, cx, cy + radius * 0.34)
   ctx.restore()
@@ -667,7 +667,7 @@ export async function renderSocialPng(inputTemplate: SocialVisualTemplate) {
   const ink = INKS[comp]
   const seed = hashSeed(template.id + template.title)
   const pad = Math.round(W * 0.09)
-  const display = (weight: number, size: number) => `${weight} ${Math.round(size)}px "El Messiri", serif`
+  const display = (weight: number, size: number) => `${weight} ${Math.round(size)}px "Alexandria Variable", "Tajawal", sans-serif`
   const sans = (weight: number, size: number) => `${weight} ${Math.round(size)}px Tajawal, sans-serif`
   const hairline = (x1: number, y1: number, x2: number, y2: number, color: string, widthPx: number, alpha = 1) => {
     ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = widthPx; ctx.globalAlpha = alpha

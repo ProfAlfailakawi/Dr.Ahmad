@@ -25,6 +25,10 @@ assert.equal(question.primaryKind, 'provocative-question')
 assert.equal(question.topic, 'education')
 assert.ok(question.structure.heroWord)
 
+const questionWithExplanation = engine.analyzeSocialContent('هل أحتاجه فعلاً؟ ليست كل رغبة حاجة، ولا كل قدرة على الشراء سبباً للشراء.')
+assert.equal(questionWithExplanation.structure.title, 'هل أحتاجه فعلاً؟')
+assert.match(questionWithExplanation.structure.subtitle, /ليست كل رغبة/)
+
 const lecture = engine.analyzeSocialContent('محاضرة: الذكاء الاصطناعي في التعليم بين الفرص والمخاطر. الأربعاء الساعة 7 مساءً. سجّل الآن.')
 assert.equal(lecture.primaryKind, 'lecture')
 assert.ok(lecture.recommendedFormats.some((item) => item.format === 'story'))

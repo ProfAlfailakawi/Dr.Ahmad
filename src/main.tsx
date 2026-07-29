@@ -1,5 +1,6 @@
 import React, { useLayoutEffect } from 'react'
 import ReactDOM from 'react-dom/client'
+import '@fontsource-variable/alexandria'
 import App from './App'
 import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'

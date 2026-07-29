@@ -21,6 +21,8 @@ import {
   type SocialCampaign,
 } from './social-design-engine'
 import { currentSeason, seasonStrokePath } from './seasons'
+import alexandriaArabicFontUrl from '@fontsource-variable/alexandria/files/alexandria-arabic-wght-normal.woff2?url'
+import alexandriaLatinFontUrl from '@fontsource-variable/alexandria/files/alexandria-latin-wght-normal.woff2?url'
 
 /* ------------------------------------------------------------------ */
 /*     تفضيلات الإخراج: ختم الهوية ولمسة الموسم — للمعاينة والتصدير معاً    */
@@ -364,6 +366,8 @@ function sceneOf(plan: CompositionPlan): Scene {
   const h = plan.format.height
   const min = Math.min(w, h)
   const bodyText = distinctBody(plan)
+  const subtitleKey = normalizeForCompare(plan.content.subtitle)
+  const bodyKey = normalizeForCompare(bodyText)
   /* الدعوة تظهر متى ملأها الدكتور مهما كان تخطيط الوضع — «الدعوة ما تطلع»
      كان سببها إخفاؤها في تكوينات ctaPlacement='none' رغم كتابتها. */
   const cta = plan.content.cta || ''
@@ -378,7 +382,7 @@ function sceneOf(plan: CompositionPlan): Scene {
     safeX: Math.max(plan.format.safeInset * w, w * .055),
     safeY: Math.max(plan.format.safeInset * min, h * .045),
     uid: `n-${plan.fingerprint.replace(/[^a-z0-9_-]/gi, '').slice(0, 16) || 'plan'}`,
-    kicker: plan.content.subtitle || plan.content.kicker || plan.directionLabel,
+    kicker: subtitleKey && subtitleKey !== bodyKey ? plan.content.subtitle : plan.content.kicker || plan.directionLabel,
     titleText: plan.content.title,
     bodyText,
     hero: plan.content.heroWord || '',
@@ -812,7 +816,7 @@ const paintHeroWord: Painter = (s) => {
   const heroSize = Math.min(min * .3, (w * .92) / Math.max(1, textUnits(hero) * .555))
   const title = fitTitle(s, w * .78, { base: min * .064 })
   const body = fitBody(s, w * .62, { maxLines: 2 })
-  const engraved = textBlock({ lines: [hero], x: w / 2, y: h * (s.isTall ? .3 : .32), size: heroSize, fill: 'none', anchor: 'middle', family: 'El Messiri', weight: 700 })
+  const engraved = textBlock({ lines: [hero], x: w / 2, y: h * (s.isTall ? .3 : .32), size: heroSize, fill: 'none', anchor: 'middle', family: 'Alexandria Variable', weight: 700 })
     .replace('<text ', `<text stroke="${p.accent}" stroke-width="1.5" stroke-opacity=".2" `)
   const stack = drawStack([
     kickerItem(s, { x: w / 2, anchor: 'middle' }),
@@ -840,8 +844,8 @@ const paintQuoteStage: Painter = (s) => {
     h: blockHeight(lines, size, 1.66),
     gap: min * .06,
     draw: (top) => [
-      `<text x="${round(w - s.safeX * .82)}" y="${round(top - min * .01)}" fill="${p.accent}" opacity=".16" font-family="El Messiri" font-weight="700" font-size="${round(markSize)}" text-anchor="end">”</text>`,
-      textBlock({ lines, x: w - s.safeX, y: top + size * .82, size, fill: p.ink, weight: 500, family: 'El Messiri', lineHeight: 1.66 }),
+      `<text x="${round(w - s.safeX * .82)}" y="${round(top - min * .01)}" fill="${p.accent}" opacity=".16" font-family="Alexandria Variable" font-weight="700" font-size="${round(markSize)}" text-anchor="end">”</text>`,
+      textBlock({ lines, x: w - s.safeX, y: top + size * .82, size, fill: p.ink, weight: 500, family: 'Alexandria Variable', lineHeight: 1.58 }),
     ].join(''),
   }
   const signature: StackItem = {
@@ -1016,7 +1020,7 @@ const paintKnowledgeMap: Painter = (s) => {
       showTitleHeading ? textBlock({ lines: title.lines, x: w - s.safeX, y: titleTop + title.size * .82, size: title.size, fill: p.ink, weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight }) : '',
       `<circle cx="${round(centerX)}" cy="${round(centerY)}" r="${round(orbitR)}" fill="none" stroke="${p.rule}" stroke-width="1.1" opacity=".55"/>`,
       `<g filter="url(#${s.uid}-shadow)"><circle cx="${round(centerX)}" cy="${round(centerY)}" r="${round(coreR)}" fill="${p.accent}"/></g>`,
-      textBlock({ lines: [hero], x: centerX, y: centerY + min * .013, size: clamp((coreR * 1.55) / Math.max(1, textUnits(hero) * .555), min * .022, min * .04), fill: '#FFFFFF', weight: 700, anchor: 'middle', family: 'El Messiri' }),
+      textBlock({ lines: [hero], x: centerX, y: centerY + min * .013, size: clamp((coreR * 1.55) / Math.max(1, textUnits(hero) * .555), min * .022, min * .04), fill: '#FFFFFF', weight: 700, anchor: 'middle', family: 'Alexandria Variable' }),
       satellites,
       identityFooter(s),
     ].join(''),
@@ -1233,9 +1237,9 @@ const paintHumanNote: Painter = (s) => {
   const innerItems: StackItem[] = [
     kickerItem(s, { x: w - sheetX - pad }),
     {
-      ...textItem({ lines: title.lines, x: w - sheetX - pad, size: title.size, fill: p.ink, weight: 500, family: 'El Messiri', lineHeight: 1.62, gap: min * .035 }),
+      ...textItem({ lines: title.lines, x: w - sheetX - pad, size: title.size, fill: p.ink, weight: 500, family: 'Alexandria Variable', lineHeight: 1.55, gap: min * .035 }),
       draw: (top) => [
-        textBlock({ lines: title.lines, x: w - sheetX - pad, y: top + title.size * .82, size: title.size, fill: p.ink, weight: 500, family: 'El Messiri', lineHeight: 1.62 }),
+        textBlock({ lines: title.lines, x: w - sheetX - pad, y: top + title.size * .82, size: title.size, fill: p.ink, weight: 500, family: 'Alexandria Variable', lineHeight: 1.55 }),
         `<path d="M ${round(w - sheetX - pad)} ${round(top + blockHeight(title.lines, title.size, 1.62) + min * .018)} q ${round(-underlineW * .34)} ${round(min * .012)} ${round(-underlineW)} ${round(min * .004)}" fill="none" stroke="${p.accent}" stroke-width="3" stroke-linecap="round" opacity=".55"/>`,
       ].join(''),
     },
@@ -1254,7 +1258,7 @@ const paintHumanNote: Painter = (s) => {
       </g>`,
       `<rect x="${round(w / 2 - min * .075)}" y="${round(sheetTop - min * .022)}" width="${round(min * .15)}" height="${round(min * .045)}" rx="${round(min * .006)}" fill="${p.accentSoft}" opacity=".92" transform="rotate(-2.4 ${w / 2} ${sheetTop})"/>`,
       drawStack(innerItems, { top: sheetTop + pad, bottom: sheetTop + sheetH - pad - signatureH }, .4),
-      textBlock({ lines: [s.author], x: sheetX + pad, y: sheetTop + sheetH - pad * .75, size: Math.max(15, min * .024), fill: p.accent, weight: 700, anchor: 'start', family: 'El Messiri' }),
+      textBlock({ lines: [s.author], x: sheetX + pad, y: sheetTop + sheetH - pad * .75, size: Math.max(15, min * .024), fill: p.accent, weight: 700, anchor: 'start', family: 'Alexandria Variable' }),
       carouselItem(s, { gap: 0 }).draw(sheetTop + sheetH + min * .025),
       identityFooter(s, { mode: 'center', nameless: true }),
     ].join(''),
@@ -1493,7 +1497,7 @@ const paintInfographic: Painter = (s) => {
         draw: (top) => {
           const cy = top + rowH / 2
           return [
-            `<text x="${round(w - s.safeX)}" y="${round(cy + ordSize * .35)}" fill="none" stroke="${p.accent}" stroke-width="1.4" font-family="El Messiri" font-weight="700" font-size="${round(ordSize)}" text-anchor="end" direction="ltr" opacity=".92">${esc(arabicIndex(index + 1))}</text>`,
+            `<text x="${round(w - s.safeX)}" y="${round(cy + ordSize * .35)}" fill="none" stroke="${p.accent}" stroke-width="1.4" font-family="Alexandria Variable" font-weight="700" font-size="${round(ordSize)}" text-anchor="end" direction="ltr" opacity=".92">${esc(arabicIndex(index + 1))}</text>`,
             textBlock({ lines, x: w - s.safeX - ordCol, y: top + (rowH - textH) / 2 + rowSize * .82, size: rowSize, fill: p.ink, weight: 500, family: s.bodyFamily, lineHeight: 1.44 }),
           ].join('')
         },
@@ -1798,7 +1802,7 @@ function renderCarouselSlideSvg(plan: CompositionPlan, slideIndex: number, optio
   }
 
   const roleDecor = slide.role === 'question'
-    ? `<text x="${round(s.safeX + min * .02)}" y="${round(h * .34)}" fill="${p.accent}" opacity=".12" font-family="El Messiri" font-weight="700" font-size="${round(min * .3)}" text-anchor="start">؟</text>`
+    ? `<text x="${round(s.safeX + min * .02)}" y="${round(h * .34)}" fill="${p.accent}" opacity=".12" font-family="Alexandria Variable" font-weight="700" font-size="${round(min * .3)}" text-anchor="start">؟</text>`
     : slide.role === 'evidence'
       ? `<rect x="${round(w - s.safeX + min * .02)}" y="${round(h * .3)}" width="${round(min * .006)}" height="${round(h * .16)}" rx="3" fill="${p.accent}" opacity=".85" transform="translate(${round(-min * .01)} 0)"/>`
       : ''
@@ -1864,7 +1868,7 @@ const toBase64 = (buffer: ArrayBuffer) => {
 /**
  * ملف PNG المُصدَّر يُرسم داخل صورة SVG معزولة لا تصل إلى خطوط الصفحة،
  * فكانت التنزيلات تخرج بخط النظام لا بخط الهوية. الحل: نضمّن وجهي الهوية
- * (El Messiri وTajawal) كبيانات Base64 داخل ملف التصدير نفسه — مرة واحدة ثم تُخزَّن.
+ * (Alexandria وTajawal) كبيانات Base64 داخل ملف التصدير نفسه — مرة واحدة ثم تُخزَّن.
  */
 async function embeddedFontCss(): Promise<string> {
   if (embeddedFontCssPromise) return embeddedFontCssPromise
@@ -1884,12 +1888,22 @@ async function embeddedFontCss(): Promise<string> {
           dataUris.set(url, `data:font/woff2;base64,${toBase64(await response.arrayBuffer())}`)
         } catch { /* خط واحد غير متاح لا يوقف التصدير */ }
       }))
-      return wanted
+      const legacyCss = wanted
         .map((block) => block.replace(/url\(([^)]+)\)/g, (whole, raw: string) => {
           const clean = raw.replace(/["']/g, '')
           return dataUris.has(clean) ? `url(${dataUris.get(clean)})` : whole
         }))
         .join('\n')
+      const alexandriaData = await Promise.all([
+        [alexandriaArabicFontUrl, 'U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC'],
+        [alexandriaLatinFontUrl, 'U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD'],
+      ].map(async ([url, range]) => {
+        const response = await fetch(url)
+        if (!response.ok) return ''
+        const data = `data:font/woff2;base64,${toBase64(await response.arrayBuffer())}`
+        return `@font-face{font-family:'Alexandria Variable';font-style:normal;font-display:swap;font-weight:100 900;src:url(${data}) format('woff2-variations');unicode-range:${range};}`
+      }))
+      return [legacyCss, ...alexandriaData].filter(Boolean).join('\n')
     } catch {
       return ''
     }

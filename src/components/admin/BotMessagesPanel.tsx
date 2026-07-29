@@ -19,13 +19,13 @@ const FIELDS: Field[] = [
   { key: 'stopHint', label: 'تذكير إيقاف الرسائل', hint: 'سطرٌ يذكّر الزائر كيف يوقف الرسائل.', multiline: false, group: 'welcome', fallback: 'ولإيقاف الرسائل اكتب: أوقف الرسائل.' },
   { key: 'signature', label: 'توقيع الردّ الآلي', hint: 'يُلحق بكل ردٍّ آليّ (عدا ردود الخصوصية).', multiline: false, group: 'reply', fallback: 'رد آلي من موقع د. أحمد حسين الفيلكاوي' },
   { key: 'doorsPrefix', label: 'تمهيد أبواب الأرشيف', hint: 'يسبق قائمة الأبواب في رسالة «لم يُنشر عنه». احتفظ بالمسافة في آخره.', multiline: false, group: 'reply', fallback: 'أبواب الأرشيف الحاضرة: ' },
-  { key: 'notPublishedReached', label: 'خارج المنشور — وقد وصلَته رسالتك', hint: 'حين يكون الموضوع خارج المحتوى المنشور وقد سبق وصول رسالة الزائر للدكتور.', multiline: true, group: 'reply', fallback: 'سؤالك خارج المحتوى المنشور في الموقع، وقد وصل للدكتور يجيبك بنفسه.' },
-  { key: 'notPublishedReachedCta', label: 'دعوة تالية (خارج المنشور)', hint: 'سطرٌ يقترح بوابة اليوم أو موضوعاً من المقالات.', multiline: true, group: 'reply', fallback: 'وإن أحببت الآن: اكتب «بوابة اليوم» أو اسأل عن أي موضوعٍ من مقالاته.' },
-  { key: 'notPublishedNew', label: 'لم يُنشر عنه بعد', hint: 'حين لا يوجد محتوى منشور عن الموضوع أصلاً.', multiline: true, group: 'reply', fallback: 'هذا الموضوع لم يُنشر عنه في الموقع بعد، ووصلت رسالتك للدكتور نفسه.' },
+  { key: 'notPublishedReached', label: 'خارج المحتوى المنشور', hint: 'حين يكون الموضوع خارج المحتوى المنشور؛ يطلب زاوية أدق ولا يدّعي وصول الرسالة إلى شخص.', multiline: true, group: 'reply', fallback: 'سؤالك خارج المحتوى المنشور في الموقع. أعطني زاوية أو كلمة أدق، وسأحاول معك من جديد من دون اختلاق جواب.' },
+  { key: 'notPublishedReachedCta', label: 'دعوة تالية (خارج المنشور)', hint: 'سطرٌ يقترح بوابة اليوم أو موضوعاً من المقالات.', multiline: true, group: 'reply', fallback: 'تقدر أيضاً تكتب «بوابة اليوم» أو تسأل عن أي موضوعٍ من مقالاته.' },
+  { key: 'notPublishedNew', label: 'لم يُنشر عنه بعد', hint: 'حين لا يوجد محتوى منشور عن الموضوع أصلاً.', multiline: true, group: 'reply', fallback: 'هذا الموضوع لم يُنشر عنه في الموقع بعد. أقدر أبحث لك عن أقرب فكرة منشورة أو أوضح حدود ما هو متاح.' },
   { key: 'notPublishedNewCta', label: 'دعوة تالية (لم يُنشر)', hint: 'سطرٌ يقترح باباً من الأرشيف أو «آخر مقالاته».', multiline: true, group: 'reply', fallback: 'اسأل داخل أي بابٍ منها، أو اكتب «آخر مقالاته».' },
   { key: 'noMatch', label: 'لا مادة مطابقة', hint: 'حين لا يجد بحثُ الأرشيف مادةً منشورةً مطابقة.', multiline: true, group: 'reply', fallback: 'ما لقيت مادة منشورة مطابقة الآن. اكتب لي الموضوع أو النوع الذي تريده، وأبحث لك من جديد.' },
   { key: 'clarify', label: 'لم أفهم الطلب', hint: 'حين لا يفهم البوت الطلب بثقة كافية، يسأل عن المقصود.', multiline: true, group: 'reply', fallback: 'ما فهمت الطلب بدقة. هل تبحث في المقالات، الكتب، الأبحاث، أم البودكاست؟' },
-  { key: 'humanHandoff', label: 'وصلت رسالتك للدكتور', hint: 'ردّ التحويل حين تُطابق رسالةٌ قاعدةً تحيلها للدكتور نفسه.', multiline: false, group: 'reply', fallback: 'وصلت رسالتك، وسيردّ عليك الدكتور بنفسه.' },
+  { key: 'humanHandoff', label: 'طلب التواصل المباشر', hint: 'ردّ صادق بلا وعد بموعد أو ادعاء أن فريقاً سيتابع تلقائياً.', multiline: false, group: 'reply', fallback: 'أفهم أنك تريد التواصل مع الدكتور مباشرة. اكتب رسالتك كاملة هنا؛ لا أستطيع أن أعدك بموعد رد.' },
   { key: 'stopConfirm', label: 'تأكيد إيقاف الرسائل', hint: 'يُعرض حين يطلب الزائر إيقاف رسائل المحتوى.', multiline: true, group: 'control', fallback: 'تم، لن تصلك رسائل محتوى جديدة. إذا رغبت بالعودة اكتب: رجع الرسائل.' },
   { key: 'resumeConfirm', label: 'تأكيد عودة الرسائل', hint: 'يُعرض حين يعيد الزائر تفعيل الرسائل.', multiline: false, group: 'control', fallback: 'عاد الاشتراك في رسائل المحتوى.' },
 ]
@@ -37,6 +37,17 @@ const GROUPS: { id: Field['group']; label: string }[] = [
 ]
 
 const DEFAULTS: Record<string, string> = Object.fromEntries(FIELDS.map((field) => [field.key, field.fallback]))
+const LEGACY_HUMAN_PROMISE = /(?:احتاجت|تحتاج)\s+متابعه\s+بشريه|سيكمل\s+معك\s+(?:الفريق|الدكتور)|سيرد\s+عليك\s+الدكتور|وصلت?\s+رسالتك\s+(?:للدكتور|للفريق)|وصل(?:ت)?\s+للدكتور|يجيبك\s+بنفسه/i
+
+function normalizeArabic(value: string) {
+  return value.normalize('NFKD').replace(/[\u064B-\u065F\u0670]/g, '').replace(/ة/g, 'ه')
+}
+
+function safeTemplateValue(field: Field, value: unknown) {
+  const candidate = typeof value === 'string' ? value.trim() : ''
+  if (!candidate || LEGACY_HUMAN_PROMISE.test(normalizeArabic(candidate))) return field.fallback
+  return candidate
+}
 
 export function BotMessagesPanel() {
   const [values, setValues] = useState<Record<string, string>>(() => ({ ...DEFAULTS }))
@@ -55,11 +66,18 @@ export function BotMessagesPanel() {
         const snapshot = await getDoc(doc(db, 'bot_messages', 'templates'))
         if (alive && snapshot.exists()) {
           const data = snapshot.data() as Record<string, unknown>
-          setValues((prev) => {
-            const next = { ...prev }
-            for (const field of FIELDS) if (typeof data[field.key] === 'string' && (data[field.key] as string).trim()) next[field.key] = data[field.key] as string
-            return next
-          })
+          let repairedLegacyPromise = false
+          const next = { ...DEFAULTS }
+          for (const field of FIELDS) {
+            const original = typeof data[field.key] === 'string' ? (data[field.key] as string).trim() : ''
+            next[field.key] = safeTemplateValue(field, original)
+            if (original && next[field.key] !== original) repairedLegacyPromise = true
+          }
+          setValues(next)
+          if (repairedLegacyPromise) {
+            setDirty(true)
+            setNotice('عُزلت تلقائياً عبارات قديمة كانت تعد بمتابعة بشرية. اضغط «احفظ القوالب» لتنظيف النسخة السحابية نهائياً.')
+          }
         }
       } catch { if (alive) setNotice('تعذّر جلب القوالب — تُعرض النصوص الافتراضية.') }
       finally { if (alive) setLoading(false) }
@@ -88,10 +106,21 @@ export function BotMessagesPanel() {
       if (!db) throw new Error('Firebase غير متاح')
       const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
       const payload: Record<string, unknown> = { updatedAt: serverTimestamp() }
-      for (const field of FIELDS) payload[field.key] = (values[field.key] || '').trim() || field.fallback
+      const safeValues = { ...values }
+      let repairedLegacyPromise = false
+      for (const field of FIELDS) {
+        const original = (values[field.key] || '').trim()
+        const safeValue = safeTemplateValue(field, original)
+        payload[field.key] = safeValue
+        safeValues[field.key] = safeValue
+        if (original && safeValue !== original) repairedLegacyPromise = true
+      }
       await setDoc(doc(db, 'bot_messages', 'templates'), payload, { merge: true })
+      setValues(safeValues)
       setDirty(false)
-      setNotice('حُفظت القوالب ✓ — يلتقطها البوت خلال خمس دقائق. ولو غاب Firestore تعمل البدائل المضمّنة فلا يصمت.')
+      setNotice(repairedLegacyPromise
+        ? 'حُفظت القوالب ✓ ونُظّفت تلقائياً أي عبارة تعد بمتابعة بشرية. يلتقطها البوت خلال خمس دقائق.'
+        : 'حُفظت القوالب ✓ — يلتقطها البوت خلال خمس دقائق. ولو غاب Firestore تعمل البدائل المضمّنة فلا يصمت.')
     } catch (error) { setNotice(`تعذّر الحفظ: ${error instanceof Error ? error.message : 'خطأ'}`) }
     finally { setSaving(false) }
   }

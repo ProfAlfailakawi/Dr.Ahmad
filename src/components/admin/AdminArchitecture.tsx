@@ -39,105 +39,115 @@ export function AdminSectionTabs({ tab, onSelect }: { tab: AdminTab; onSelect: (
 
 export function AdminSidebar({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
   const activeArea = areaOfTab(tab)
-  const activeSection = useMemo(() => (
-    ADMIN_GROUPS.flatMap((group) => group.sections)
-      .find((section) => section.items.some((item) => item.tab === tab))?.id || null
-  ), [tab])
-  const [openArea, setOpenArea] = useState<AdminArea | null>(activeArea)
-  const [openSection, setOpenSection] = useState<string | null>(activeSection)
+  const [openArea, setOpenArea] = useState<AdminArea | null>(null)
+  const railRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    setOpenArea(activeArea)
-    setOpenSection(activeSection)
-  }, [activeArea, activeSection])
+    if (!openArea) return
+    const closeOutside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !railRef.current?.contains(event.target)) setOpenArea(null)
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpenArea(null)
+    }
+    document.addEventListener('pointerdown', closeOutside)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [openArea])
 
   return (
-    <aside className="hidden min-w-0 lg:block" aria-label="أقسام لوحة التحكم">
-      <div data-admin-desktop-accordion="true" className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-[1.65rem] border border-hair bg-wash/80 p-2.5 shadow-[0_24px_70px_-55px_rgba(21,22,26,.45)] backdrop-blur">
-        <div className="grid gap-1.5">
+    <aside className="hidden w-[76px] lg:block" aria-label="أقسام لوحة التحكم">
+      <div ref={railRef} data-admin-desktop-rail="true" className="sticky top-24 z-[310]">
+        <div className="relative rounded-[1.5rem] border border-hair bg-canvas/92 p-2 shadow-[0_24px_70px_-48px_rgba(21,22,26,.48)] backdrop-blur-xl">
+          <div className="grid gap-2">
           {ADMIN_GROUPS.map((group) => {
-            const expanded = openArea === group.area
+            const expanded = group.area === openArea
             const groupActive = activeArea === group.area
-            const current = groupActive ? adminItem(tab) : null
             const regionId = `admin-desktop-group-${group.area}`
             return (
-              <section key={group.area} className={`overflow-hidden rounded-2xl border transition-colors ${expanded ? 'border-accent/20 bg-canvas' : 'border-transparent hover:border-hair hover:bg-canvas/65'}`}>
+              <div key={group.area} className="relative">
                 <button
                   type="button"
                   aria-expanded={expanded}
                   aria-controls={regionId}
-                  onClick={() => {
-                    setOpenArea((value) => value === group.area ? null : group.area)
-                    if (!expanded) {
-                      const nextSection = groupActive ? activeSection : group.sections[0]?.id
-                      setOpenSection(nextSection || null)
-                    }
-                  }}
-                  className="flex w-full items-center gap-3 px-3 py-3 text-right"
+                  aria-label={`${group.label}${groupActive ? ' — القسم الحالي' : ''}`}
+                  title={group.label}
+                  onClick={() => setOpenArea((value) => value === group.area ? null : group.area)}
+                  className={`group relative flex h-14 w-full items-center justify-center rounded-[1.05rem] border transition-all duration-200 ${expanded || groupActive ? 'border-accent bg-accent text-white shadow-[0_12px_28px_-18px_rgba(45,76,105,.85)]' : 'border-transparent bg-wash/55 text-accent hover:-translate-y-0.5 hover:border-hair hover:bg-wash'}`}
                 >
-                  <span aria-hidden className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border text-[.78rem] ${groupActive ? 'border-accent bg-accent text-white' : 'border-hair bg-wash text-accent'}`}>{group.icon}</span>
-                  <span className="min-w-0 flex-1">
-                    <strong className={`block text-[.8rem] ${groupActive ? 'text-accent' : 'text-ink'}`}>{group.label}</strong>
-                    <span className="mt-0.5 block truncate text-[.59rem] text-soft">{current?.label || `${itemsOfGroup(group).length} أدوات`}</span>
-                  </span>
-                  <span aria-hidden className={`text-[.75rem] text-soft transition-transform ${expanded ? 'rotate-180' : ''}`}>⌄</span>
+                  <span aria-hidden className="text-[1.05rem] font-semibold leading-none">{group.icon}</span>
+                  {groupActive && !expanded && <span aria-hidden className="absolute -left-[5px] top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-full bg-accent" />}
                 </button>
-
-                {expanded && (
-                  <div id={regionId} className="border-t border-hair px-2 pb-2 pt-1.5">
-                    {group.sections.map((section) => {
-                      const multiSection = group.sections.length > 1
-                      const sectionExpanded = !multiSection || openSection === section.id
-                      const sectionActive = section.items.some((item) => item.tab === tab)
-                      const sectionRegionId = `admin-desktop-section-${section.id}`
-                      return (
-                        <div key={section.id} className="mt-1">
-                          {multiSection && (
-                            <button
-                              type="button"
-                              aria-expanded={sectionExpanded}
-                              aria-controls={sectionRegionId}
-                              onClick={() => setOpenSection((value) => value === section.id ? null : section.id)}
-                              className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-right transition-colors ${sectionActive ? 'bg-accent/[.06] text-accent' : 'text-soft hover:bg-wash hover:text-ink'}`}
-                            >
-                              <span className="min-w-0">
-                                <strong className="block text-[.69rem]">{section.label || group.label}</strong>
-                                {section.note && sectionActive && <span className="mt-0.5 block truncate text-[.56rem] font-normal opacity-70">{section.note}</span>}
-                              </span>
-                              <span aria-hidden className={`text-[.68rem] transition-transform ${sectionExpanded ? 'rotate-180' : ''}`}>⌄</span>
-                            </button>
-                          )}
-                          {sectionExpanded && (
-                            <div id={sectionRegionId} className="mt-1 grid gap-1">
-                              {section.items.map((item) => {
-                                const active = tab === item.tab
-                                return (
-                                  <button
-                                    key={item.tab}
-                                    type="button"
-                                    onClick={() => {
-                                      setOpenArea(group.area)
-                                      setOpenSection(section.id)
-                                      onSelect(item.tab)
-                                    }}
-                                    aria-current={active ? 'page' : undefined}
-                                    className={`rounded-xl px-3 py-2 text-right transition-colors ${active ? 'bg-accent text-white shadow-sm' : 'text-ink hover:bg-wash hover:text-accent'}`}
-                                  >
-                                    <span className="block text-[.78rem] font-semibold">{item.label}</span>
-                                    {active && <span className="mt-0.5 block text-[.59rem] font-light leading-relaxed text-white/72">{item.note}</span>}
-                                  </button>
-                                )
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </section>
+              </div>
             )
           })}
+          </div>
+          <div className="mx-auto mt-2 h-px w-7 bg-hair" />
+          <p className="mt-2 truncate text-center text-[.55rem] font-semibold text-soft">{adminItem(tab)?.label || 'الحالية'}</p>
+
+          <AnimatePresence>
+            {openArea && (() => {
+              const group = ADMIN_GROUPS.find((item) => item.area === openArea)
+              if (!group) return null
+              const regionId = `admin-desktop-group-${group.area}`
+              return (
+                <motion.div
+                  id={regionId}
+                  data-admin-desktop-flyout="true"
+                  role="dialog"
+                  aria-label={`قائمة ${group.label}`}
+                  initial={{ opacity: 0, x: 12, scale: .985 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  exit={{ opacity: 0, x: 8, scale: .99 }}
+                  transition={{ duration: .18, ease: EASE }}
+                  className="absolute right-[calc(100%+0.8rem)] top-0 z-[320] max-h-[calc(100vh-7rem)] w-[min(340px,calc(100vw-8rem))] overflow-y-auto rounded-[1.6rem] border border-hair bg-canvas/98 p-3 shadow-[0_34px_90px_-34px_rgba(21,22,26,.58)] backdrop-blur-xl"
+                >
+                  <div className="mb-2 flex items-center justify-between gap-4 px-2 py-1">
+                    <div className="min-w-0">
+                      <p className="text-[.62rem] font-semibold text-accent">لوحة التحكم</p>
+                      <h2 className="mt-0.5 font-display text-lg font-bold text-ink">{group.label}</h2>
+                    </div>
+                    <button type="button" onClick={() => setOpenArea(null)} aria-label="إغلاق القائمة" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition hover:border-accent hover:text-accent">×</button>
+                  </div>
+                  <div className="grid gap-2">
+                    {group.sections.map((section) => (
+                      <section key={section.id} className="rounded-2xl border border-hair bg-wash/55 p-2" aria-label={section.label || group.label}>
+                        {section.label && (
+                          <div className="px-2 pb-2 pt-1">
+                            <strong className="block text-[.7rem] text-ink">{section.label}</strong>
+                            {section.note && <span className="mt-0.5 block text-[.58rem] leading-relaxed text-soft">{section.note}</span>}
+                          </div>
+                        )}
+                        <div className="grid gap-1">
+                          {section.items.map((item) => {
+                            const active = tab === item.tab
+                            return (
+                              <button
+                                key={item.tab}
+                                type="button"
+                                onClick={() => {
+                                  onSelect(item.tab)
+                                  setOpenArea(null)
+                                }}
+                                aria-current={active ? 'page' : undefined}
+                                className={`rounded-xl px-3 py-2.5 text-right transition-all ${active ? 'bg-accent text-white shadow-sm' : 'bg-canvas text-ink hover:-translate-y-px hover:bg-wash hover:text-accent'}`}
+                              >
+                                <span className="block text-[.78rem] font-semibold">{item.label}</span>
+                                <span className={`mt-0.5 block text-[.59rem] font-light leading-relaxed ${active ? 'text-white/75' : 'text-soft'}`}>{item.note}</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </section>
+                    ))}
+                  </div>
+                </motion.div>
+              )
+            })()}
+          </AnimatePresence>
         </div>
       </div>
     </aside>

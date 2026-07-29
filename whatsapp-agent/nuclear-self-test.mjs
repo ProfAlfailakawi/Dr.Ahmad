@@ -184,7 +184,7 @@ export async function runNuclearSelfTest(root = process.cwd()) {
       })
     }
 
-    /* ═══ 2) ما يحتاج إنساناً يبقى للدكتور، حتى والجلسة مفتوحة ═══ */
+    /* ═══ 2) ما يحتاج إنساناً يأخذ رد حدودٍ آمناً بعد الإيقاظ، بلا وعد متابعة ═══ */
     const humanOnlyPhrases = [
       'أبي استشارة', 'محتاج موعد', 'أبي أقابلك', 'رسالة ماجستير', 'أبي إشراف',
       'ساعدني', 'محتاج مساعدة', 'عندي مشكلة', 'أنا ضايج', 'أنا زعلان',
@@ -205,14 +205,19 @@ export async function runNuclearSelfTest(root = process.cwd()) {
       check('human-only-detection', phrase, () => {
         assert.equal(needsHumanOnly(normalizeArabic(phrase)), true)
       })
-      check('human-only-silence', phrase, () => {
+      check('human-only-safe-reply', phrase, () => {
+        const jid = `730${index}@s.whatsapp.net`
         const result = gate({
-          jid: `730${index}@s.whatsapp.net`,
+          jid,
           text: phrase,
           explicitContentSession: true,
         })
-        assert.equal(result.allowed, false)
-        assert.match(result.reason, /إنساني/u)
+        assert.equal(result.allowed, true)
+        const response = incoming({ jid, text: phrase, explicitContentSession: true })
+        assert.equal(response.shouldRespond, true)
+        assert.ok(String(response.text || '').length > 20)
+        assert.equal(response.needsHuman, false)
+        assert.doesNotMatch(response.text || '', /متابعه بشريه|سيكمل معك الفريق|سيرد عليك الدكتور/u)
       })
     }
 
@@ -933,14 +938,14 @@ ${(response.actions || []).join('\n')}`
       'I am fine', 'thanks', 'hello my friend', 'I just arrived home',
     ]
     for (const [index, text] of conversationalChatter.entries()) {
-      check('chatter-silence', text, () => {
+      check('chatter-reply-after-wake', text, () => {
         const result = incoming({
           jid: `766${index}@s.whatsapp.net`,
           text,
           explicitContentSession: true,
         })
-        assert.equal(result.shouldRespond, false)
-        assert.equal(result.text || '', '')
+        assert.equal(result.shouldRespond, true)
+        assert.ok(String(result.text || '').length > 0)
       })
     }
 
@@ -969,15 +974,15 @@ ${(response.actions || []).join('\n')}`
 
     const unknownInputs = Array.from({ length: 20 }, (_, index) => `zxqvnositefact${String(index).padStart(2, '0')}qplm`)
     for (const [index, text] of unknownInputs.entries()) {
-      check('unknown-silence', text, () => {
+      check('unknown-clarify-after-wake', text, () => {
         assert.equal(searchContent(db, text, { limit: 1 }).length, 0)
         const response = incoming({
           jid: `770${index}@s.whatsapp.net`,
           text,
           explicitContentSession: true,
         })
-        assert.equal(response.shouldRespond, false)
-        assert.equal(response.text || '', '')
+        assert.equal(response.shouldRespond, true)
+        assert.ok(String(response.text || '').length > 0)
       })
     }
 

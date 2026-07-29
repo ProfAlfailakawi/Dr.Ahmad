@@ -76,8 +76,8 @@ export const repliesToday = repliesInWindow
 
 /**
  * طلبٌ إنسانيّ: استشارة، موعد، إشراف، شكوى، صحافة.
- * هنا يصمت البوت صمتاً تاماً — بلا اعتذارٍ آليّ وبلا تنبيه — لأن الدكتور
- * يقرأ رسائله بنفسه، ولأن ردّاً آلياً على «أبي أستشيرك» أسوأ من الصمت.
+ * لا نرسله إلى محرك المحتوى ولا ندّعي أن فريقاً سيتابعه. بعد الإيقاظ يحصل
+ * على رد حدودٍ صادق ومفيد، لأن الصمت يبدو للمستخدم كأن الجسر انفصل.
  */
 /* ═══ ما لا تردّ عليه آلة ═══
  *
@@ -178,6 +178,6 @@ export function ensureBotRulesSchema(db) {
  */
 export function applyBotRules({ db, jid, normalizedText, hasMedia = false, opensDoor = false, at = new Date() }) {
   if (hasMedia) return { allowed: false, reason: 'وسائط — تحتاج عينك أنت' }
-  if (needsHumanOnly(normalizedText)) return { allowed: false, reason: 'طلبٌ إنسانيّ — لا تردّ عليه آلة' }
+  if (needsHumanOnly(normalizedText)) return { allowed: true, reason: 'طلب إنساني — رد حدود آمن بلا وعد متابعة' }
   return { allowed: true, reason: '' }
 }

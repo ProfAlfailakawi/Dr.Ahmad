@@ -368,6 +368,17 @@ function selfChatJid() {
   return String(client.info?.wid?._serialized || '').trim()
 }
 
+function isOwnerPrivateChat(value) {
+  const jid = String(value || '').trim().toLowerCase()
+  const candidates = [
+    String(config.ownerChatId || '').trim().toLowerCase(),
+    String(client.info?.wid?._serialized || '').trim().toLowerCase(),
+  ].filter(Boolean)
+  if (candidates.includes(jid)) return true
+  const number = jid.split('@', 1)[0].replace(/\D/g, '')
+  return Boolean(number && candidates.some((candidate) => candidate.split('@', 1)[0].replace(/\D/g, '') === number))
+}
+
 async function warmPhoneAliasesAndContactsInBackground() {
   try {
     const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('warmup-timeout')), 15_000))
@@ -469,6 +480,10 @@ async function safeGracefulCloseClient() {
 client.on('message', async (message) => {
   runtime.lastActivityAt = Date.now()
   if (message.fromMe || message.from === 'status@broadcast' || !isIndividualJid(message.from)) return
+  if (isOwnerPrivateChat(message.from)) {
+    log('info', 'owner_private_chat_ignored', { from: message.from })
+    return
+  }
   try {
     const result = await emit('incoming', {
       jid: message.from,
@@ -497,7 +512,7 @@ client.on('message_create', async (message) => {
   if (!message.fromMe) return
   const jid = String(message.to || '').trim()
   const text = String(message.body || '')
-  if (!isIndividualJid(jid) || consumeAutomatedSend(jid, text)) return
+  if (!isIndividualJid(jid) || isOwnerPrivateChat(jid) || consumeAutomatedSend(jid, text)) return
   try {
     await emit('manual', {
       jid,

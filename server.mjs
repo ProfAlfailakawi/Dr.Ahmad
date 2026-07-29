@@ -932,10 +932,13 @@ function glossaryAliasScore(input, alias) {
   if (target.startsWith(source) && source.length >= 3) return 118 - Math.min(20, target.length - source.length)
   if (source.startsWith(target) && target.length >= 3) return 108
   if (source.includes(target) && target.length >= 3) return 96
-  const inputTokens = source.split(/\s+/).filter((item) => item.length > 1)
-  const targetTokens = target.split(/\s+/).filter((item) => item.length > 1)
+  const bareToken = (token) => token.replace(/^ال(?=.{3,})/u, '')
+  const inputTokens = source.split(/\s+/).filter((item) => item.length > 1).map(bareToken)
+  const targetTokens = target.split(/\s+/).filter((item) => item.length > 1).map(bareToken)
   const overlap = targetTokens.filter((token) => inputTokens.some((candidate) => candidate === token || (candidate.length >= 3 && token.startsWith(candidate)) || (token.length >= 3 && candidate.startsWith(token)))).length
-  return overlap ? 55 + Math.round((overlap / Math.max(1, targetTokens.length)) * 35) : 0
+  if (!overlap) return 0
+  if (inputTokens.length === 1) return 92
+  return 55 + Math.round((overlap / Math.max(1, targetTokens.length)) * 35)
 }
 
 function requestGlossaryEntry(input) {
@@ -1338,6 +1341,7 @@ async function buildStudioSemanticBlueprint(input, accountId, apiToken, fetchImp
     'A compound title must show the intersection of all its subjects. Do not drop the second half of the title.',
     'Never use decorative flowers, random laptop groups, generic classrooms, chess, corridors, or mood-only photography unless the title explicitly requires them.',
     'Each route must use concrete visible objects and an unambiguous cause/effect relationship. No text or UI inside the generated image.',
+    'Translate the meaning, subjects, anchors, forbidden items, moods, and every scene into natural English. Every JSON string value must use Latin-script English only; never return Arabic script.',
     `Choose worldId values only from:\n${allowedWorlds}`,
     'Return JSON only with: canonicalMeaning, viewerInference, literalSubjects[], visibleAnchors[], forbidden[], emotionalValence (positive|neutral|serious), sceneRoutes[{worldId,scene,mustShow[],mood}].',
   ].join('\n')
@@ -1502,10 +1506,36 @@ export function buildEliteStudioImagePrompt(input) {
     : input.semanticBlueprint?.emotionalValence === 'serious'
       ? 'Use serious editorial restraint without horror, melodrama or automatic darkness.'
       : 'Use balanced contemporary editorial light; do not default to gloom.'
-  const literal = [...new Set([...(input.literalAnchors || []), ...(concept.literalAnchors || [])])]
+  /* The semantic director may receive Arabic, but the image model must never see
+     Arabic glyphs inside its prompt: image models often try to paint unfamiliar
+     glyphs when they are present in the conditioning text. Keep Arabic in the
+     editable typography layer and pass an English-only visual brief downstream. */
+  const hasArabicScript = (value) => /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/u.test(String(value || ''))
+  const englishFragment = (value, fallback = '') => {
+    const clean = boundedString(value, 1_300).replace(/\s+/g, ' ').trim()
+    if (clean && !hasArabicScript(clean)) return clean
+    const safeFallback = boundedString(fallback, 1_300).replace(/\s+/g, ' ').trim()
+    return hasArabicScript(safeFallback) ? '' : safeFallback
+  }
+  const exactMeaning = englishFragment(
+    input.semanticBlueprint?.canonicalMeaning,
+    englishFragment(input.glossaryCanonicalEn, englishFragment(concept.interpretation, fallbackStudioConcept.interpretation)),
+  )
+  const literal = [...new Set([
+    ...(input.semanticBlueprint?.literalSubjects || []),
+    ...(input.semanticBlueprint?.visibleAnchors || []),
+    ...(concept.literalAnchors || []),
+  ].map((item) => englishFragment(item)).filter(Boolean))]
+  const visibleObjects = literal.length
+    ? literal.join(' + ')
+    : englishFragment(concept.anchors, fallbackStudioConcept.anchors)
+  const scene = englishFragment(concept.scene, fallbackStudioConcept.scene)
+  const anchors = englishFragment(concept.anchors, fallbackStudioConcept.anchors)
+  const inference = englishFragment(concept.inference, fallbackStudioConcept.inference)
+  const freshVariation = englishFragment(input.variation)
   const forbidden = [
-    input.avoid,
-    concept.avoid,
+    englishFragment(input.avoid),
+    englishFragment(concept.avoid, fallbackStudioConcept.avoid),
     ...(input.semanticBlueprint?.forbidden || []),
     'any text, letters, numbers, captions, logos, watermarks, pseudo-writing, typographic marks, fake glyphs',
     'screens, monitors, floating panels, dashboards, projections, holograms, transparent interfaces, UI icons, equations, diagrams',
@@ -1514,23 +1544,24 @@ export function buildEliteStudioImagePrompt(input) {
     'random stock-photo smiles, chess, books covering faces',
     'glowing brains, robot hands, holograms, cyber grids',
     'plastic skin, bad anatomy, extra fingers',
-  ].filter(Boolean).join(', ')
-  return [
+  ].map((item) => englishFragment(item)).filter(Boolean).join(', ')
+  const prompt = [
     `Generate image only. Create one photorealistic world-class editorial image, ${orientation}.`,
     'ABSOLUTE OUTPUT RULE: ZERO writing in the pixels — no Arabic, no English, letters, words, digits, pseudo-writing or typographic symbols. Copy is added later in a separate editable layer.',
-    `EXACT COMPOUND IDEA — USER WORDING HAS HIGHEST AUTHORITY: ${input.idea || input.issue}.`,
-    input.variation ? `Fresh variation: ${input.variation}` : '',
-    input.semanticBlueprint?.canonicalMeaning ? `PRECISE MEANING: ${input.semanticBlueprint.canonicalMeaning}.` : '',
-    `VISIBLE OBJECTS THAT MUST APPEAR: ${literal.length ? literal.join(' + ') : concept.anchors}. Every required object or anchor must be unmistakably visible; omission invalidates the image.`,
-    `THE SCENE MUST BE EXACTLY THIS: ${concept.scene}`,
-    `MANDATORY VISIBLE ANCHORS: ${concept.anchors}. Every anchor must be visually testable, not merely implied by mood.`,
-    `THE VIEWER MUST INFER: ${concept.inference}.`,
-    `Art direction: ${world.direction}.`,
+    `EXACT COMPOUND IDEA: ${exactMeaning}.`,
+    freshVariation ? `Fresh variation: ${freshVariation}` : '',
+    `PRECISE MEANING: ${exactMeaning}.`,
+    `VISIBLE OBJECTS THAT MUST APPEAR: ${visibleObjects}. Every required object or anchor must be unmistakably visible; omission invalidates the image.`,
+    `THE SCENE MUST BE EXACTLY THIS: ${scene}`,
+    `MANDATORY VISIBLE ANCHORS: ${anchors}. Every anchor must be visually testable, not merely implied by mood.`,
+    `THE VIEWER MUST INFER: ${inference}.`,
+    `Art direction: ${englishFragment(world.direction, studioVisualWorlds[0]?.direction)}.`,
     moodDirection,
     `COMPOSITION: ${negativeSpace}, clear focal hierarchy, asymmetrical balance, no clutter. ${textSafeZone}`,
     `FORBIDDEN: ${forbidden}.`,
     'Semantic accuracy and visible anchors come before beauty. Do not substitute a generic metaphor, generic classroom, or generic people-with-laptops scene for the literal compound subject.',
   ].filter(Boolean).join(' ').slice(0, 1980)
+  return prompt.replace(/[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]+/gu, '').replace(/\s+/g, ' ').trim()
 }
 
 async function assessStudioImageWithCloudflareCaptionJudge({ accountId, apiToken, input, direction, image, imageMime }, fetchImpl = fetch) {
@@ -2014,6 +2045,23 @@ function cloudflareFailureDetail(payload) {
   return boundedString(firstError?.message || payload?.message || payload?.error || payload?.detail, 240)
 }
 
+function cloudflareFailureCode(payload) {
+  const firstError = Array.isArray(payload?.errors) ? payload.errors[0] : null
+  const code = Number(firstError?.code ?? payload?.code ?? payload?.errorCode)
+  return Number.isFinite(code) ? code : null
+}
+
+function cloudflareDailyReset() {
+  const now = new Date()
+  const reset = new Date(now)
+  reset.setUTCHours(0, 5, 0, 0)
+  if (reset.getTime() <= now.getTime()) reset.setUTCDate(reset.getUTCDate() + 1)
+  return {
+    at: reset.toISOString(),
+    seconds: Math.max(60, Math.ceil((reset.getTime() - now.getTime()) / 1_000)),
+  }
+}
+
 async function decodeCloudflareStudioImageResponse(response) {
   const contentType = String(response.headers.get('content-type') || '').toLowerCase()
   const cfRay = boundedString(response.headers.get('cf-ray'), 80)
@@ -2108,17 +2156,22 @@ async function requestCloudflareImage({ accountId, apiToken, model, prompt, seed
 
     if (!response.ok) {
       let detail = ''
+      let failureCode = null
       try {
         const raw = Buffer.from(await response.arrayBuffer()).toString('utf8')
         const failure = JSON.parse(raw || '{}')
         detail = cloudflareFailureDetail(failure)
+        failureCode = cloudflareFailureCode(failure)
       } catch { /* Cloudflare may return an empty error body */ }
       if (response.status === 429) {
-        const exhausted = /daily free allocation|10[,.]?000 neurons|used up your daily/i.test(detail)
+        const exhausted = failureCode === 3036 || /daily free allocation|10[,.]?000 neurons|used up your daily/i.test(detail)
+        const reset = exhausted ? cloudflareDailyReset() : null
         throw new HttpError(
           503,
-          exhausted ? 'Cloudflare daily free allocation exhausted' : 'Image generation is busy',
-          { 'retry-after': exhausted ? '3600' : '30' },
+          exhausted
+            ? `Cloudflare daily free allocation exhausted; errorCode=3036; resetAt=${reset.at}`
+            : `Image generation is busy${failureCode ? `; errorCode=${failureCode}` : ''}`,
+          { 'retry-after': exhausted ? String(reset.seconds) : '30' },
         )
       }
       lastError = new HttpError(502, detail ? `Image generation failed: ${detail}` : `Image generation failed with HTTP ${response.status}`)

@@ -1,16 +1,23 @@
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto'
 import { buildContentIndex } from '../../whatsapp-agent/content-index.mjs'
+import { LEXICON_SIZE, toRoot } from '../../whatsapp-agent/dialect-lexicon.mjs'
+import { classifyIntent, INTENTS } from '../../whatsapp-agent/intent-engine.mjs'
+import { DEFAULT_BOT_MESSAGES } from '../../whatsapp-agent/bot-messages.mjs'
 
 const SITE_URL = String(process.env.WHATSAPP_SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
 const OWNER_ALERT_FALLBACK = 'وصلت رسالة تحتاج تدخلك البشري. افتح محادثات واتساب من جهازك المرتبط.'
 const HUMAN_ACK = 'وصلتني رسالتك، وتحتاج تأكيداً بشرياً. سيكمل معك الدكتور أو أحد الفريق بأقرب وقت.'
-const DUPLICATE_ACK = 'وصلتني الرسالة نفسها وهي عندي بالفعل. إذا احتاجت متابعة بشرية سيكمل معك الفريق.'
-const WELCOME = `حياك الله في موقع د. أحمد حسين الفيلكاوي.\n\nالموقع هو المرجع المعتمد للمقالات والكتب والمواد المنشورة:\n${SITE_URL}`
+const BOT_SIGNATURE = DEFAULT_BOT_MESSAGES.signature || 'رد آلي من موقع د. أحمد حسين الفيلكاوي'
+const WELCOME = `${DEFAULT_BOT_MESSAGES.welcomeLine || 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي'}.\n\nأفهم سؤالك باللهجة الكويتية أو بالعربية الطبيعية، وأبحث لك في مقالات الدكتور وكتبه وأبحاثه والبودكاست.\n\nجرّب مثلاً: «شنو جديد الدكتور؟» · «عندك شي عن الذكاء الاصطناعي؟» · «لخّصها» · «عطني غيرها»\n\n${SITE_URL}`
+const CLARIFY = `${DEFAULT_BOT_MESSAGES.clarify || 'ما فهمت الطلب بدقة.'}\n\nاكتب الفكرة بطريقتك، أو قل: آخر مقالة · آخر بحث · آخر كتاب · آخر بودكاست · عندك شي عن…`
+const NO_MATCH = `${DEFAULT_BOT_MESSAGES.noMatch || 'ما لقيت مادة منشورة مطابقة الآن.'}\n\nجرّب كلمة أقرب للموضوع، أو قل لي: مقالة، كتاب، بحث، أو بودكاست.`
+const HELP = `أقدر أبحث لك في كل ما نشره د. أحمد، وأفهم المتابعة الطبيعية من غير أوامر جامدة.\n\n• آخر مقالة / كتاب / بحث / بودكاست\n• عندك شي عن موضوع معيّن؟\n• لخّصها / افتحها / عطني المصدر\n• عطني غيرها / اللي بعدها / الأولى\n• فاجئني / عندي دقيقة\n\n${SITE_URL}`
 const BRIDGE_ONLINE_MS = Math.max(30_000, Number(process.env.WHATSAPP_BRIDGE_ONLINE_MS || 90_000))
 const QR_FRESH_MS = Math.max(30_000, Number(process.env.WHATSAPP_QR_FRESH_MS || 75_000))
 const REPAIR_COOLDOWN_MS = Math.max(15 * 60_000, Number(process.env.WHATSAPP_REPAIR_COOLDOWN_MS || 60 * 60_000))
 const MAX_BODY_BYTES = 2 * 1024 * 1024
 const WAKE_PHRASES = new Set(['موقع د احمد', 'موقع د الفيلكاوي'])
+const OWNER_CHAT_ID = String(process.env.WHATSAPP_OWNER_CHAT_ID || '').trim().toLowerCase()
 
 const COLLECTIONS = Object.freeze({
   bridge: 'whatsapp_bridge_state',
@@ -84,6 +91,15 @@ function normalizeConversationJid(value) {
      نفسه، لكن نرفض المجموعات والنشرات وأي محارف غير متوقعة. */
   const jid = bounded(value, 180).toLowerCase()
   return /^\d{5,30}(?::\d{1,8})?@(?:c\.us|lid|s\.whatsapp\.net)$/.test(jid) ? jid : ''
+}
+
+function isOwnerPrivateChat(value) {
+  const jid = String(value || '').trim().toLowerCase()
+  if (!OWNER_CHAT_ID || !jid) return false
+  if (jid === OWNER_CHAT_ID) return true
+  const jidNumber = jid.split('@', 1)[0].replace(/\D/g, '')
+  const ownerNumber = OWNER_CHAT_ID.split('@', 1)[0].replace(/\D/g, '')
+  return Boolean(jidNumber && ownerNumber && jidNumber === ownerNumber)
 }
 
 function normalizeWhitespace(value) {
@@ -172,17 +188,37 @@ function isGreetingOnly(text) {
   return Boolean(normalizeArabicMessage(text)) && !stripArabicGreetings(text)
 }
 
+function signReply(value) {
+  const text = bounded(value, 2_000)
+  if (!text || text.includes(BOT_SIGNATURE)) return text
+  return `${text}\n\n${BOT_SIGNATURE}`
+}
+
+function semanticWord(value) {
+  const normalized = normalizeArabicMessage(value)
+  return toRoot(normalized) || normalized
+}
+
 function contentTokens(text) {
-  return [...new Set(stripArabicGreetings(text).split(' ')
-    .filter((token) => token.length >= 3 && !NOISE_WORDS.has(token)))]
+  const tokens = stripArabicGreetings(text).split(' ')
+    .filter((token) => token.length >= 2 && !NOISE_WORDS.has(token))
+  return [...new Set(tokens.flatMap((token) => {
+    const root = semanticWord(token)
+    return root && root !== token ? [token, root] : [token]
+  }))]
 }
 
 function scoreContent(item, queryTokens) {
   if (!queryTokens.length) return { score: 0, matched: 0, headingMatches: 0 }
-  const title = normalizeArabicMessage(item.title)
-  const excerpt = normalizeArabicMessage(item.excerpt)
-  const keywords = normalizeArabicMessage(item.keywords)
-  const body = normalizeArabicMessage(item.body).slice(0, 20_000)
+  const semanticText = (value, limit = 20_000) => {
+    const normalized = normalizeArabicMessage(value).slice(0, limit)
+    const roots = normalized.split(' ').map(semanticWord).filter(Boolean)
+    return `${normalized} ${roots.join(' ')}`
+  }
+  const title = semanticText(item.title, 2_000)
+  const excerpt = semanticText(item.excerpt, 6_000)
+  const keywords = semanticText(item.keywords, 4_000)
+  const body = semanticText(item.body, 20_000)
   let score = 0
   let matched = 0
   let headingMatches = 0
@@ -213,54 +249,181 @@ function siteIndex() {
   return contentIndexCache
 }
 
-function exactSiteResults(query, overrideQuery = '') {
+function exactSiteResults(query, overrideQuery = '', options = {}) {
   const tokens = contentTokens(overrideQuery || query).slice(0, 8)
   if (!tokens.length) return []
+  const excluded = new Set(Array.isArray(options.excludeIds) ? options.excludeIds : [])
+  const kinds = new Set(Array.isArray(options.kinds) ? options.kinds : [])
   const rows = siteIndex()
+    .filter((item) => !excluded.has(item.id) && (!kinds.size || kinds.has(item.kind)))
     .map((item) => ({ item, ...scoreContent(item, tokens) }))
     .filter((row) => {
-      if (tokens.length === 1) return row.score >= 8 && row.headingMatches >= 1
-      const neededMatches = Math.min(tokens.length, Math.max(2, Math.ceil(tokens.length * .6)))
-      return row.score >= 9 && row.matched >= neededMatches && row.headingMatches >= 1
+      if (tokens.length === 1) return row.score >= 5
+      const neededMatches = Math.min(tokens.length, Math.max(1, Math.ceil(tokens.length * .38)))
+      return row.score >= 7 && row.matched >= neededMatches
     })
     .sort((a, b) => b.score - a.score || String(b.item.date || '').localeCompare(String(a.item.date || '')))
-    .slice(0, 3)
+    .slice(0, Math.max(1, Math.min(5, Number(options.limit || 3))))
   return rows.map((row) => row.item)
 }
 
-function siteResultReply(items) {
-  const lines = items.map((item, index) => `${index + 1}) ${item.title}\n${item.url}`)
-  return `وجدت في موقع الدكتور مواد منشورة مرتبطة بسؤالك:\n\n${lines.join('\n\n')}\n\nهذه روابط الموقع كما هي، من دون إضافة معلومات من خارجها.`
+function itemLabel(item) {
+  return ({
+    article: 'مقالة',
+    book: 'كتاب',
+    paper: 'بحث',
+    podcast: 'بودكاست',
+    curated: 'مختارة',
+  })[item?.kind] || 'مادة'
 }
 
-export function decideGroundedResponse({ text, hasMedia = false, rules = [], priorReplyHash = '' } = {}) {
+function siteResultReply(items, intro = 'لقيت لك من موقع الدكتور:') {
+  const lines = items.map((item, index) => `${index + 1}) *${item.title}*\n${item.url}`)
+  return `${intro}\n\n${lines.join('\n\n')}\n\nقل لي «لخّص الأولى» أو «عطني غيرها» وأكمل معك.`
+}
+
+function latestSiteItems(kinds = [], limit = 1) {
+  const allowed = new Set(kinds)
+  return siteIndex()
+    .filter((item) => !allowed.size || allowed.has(item.kind))
+    .sort((left, right) => String(right.date || '').localeCompare(String(left.date || '')) || String(right.id).localeCompare(String(left.id)))
+    .slice(0, limit)
+}
+
+function conversationContextItems(conversation = {}) {
+  const ids = Array.isArray(conversation.contextItemIds) ? conversation.contextItemIds : []
+  const byId = new Map(siteIndex().map((item) => [item.id, item]))
+  return ids.map((id) => byId.get(id)).filter(Boolean)
+}
+
+function currentConversationItem(conversation = {}) {
+  const items = conversationContextItems(conversation)
+  const index = Math.max(0, Math.min(items.length - 1, Number(conversation.contextIndex || 0)))
+  return items[index] || null
+}
+
+function excerptReply(item, short = false) {
+  if (!item) return CLARIFY
+  const source = normalizeWhitespace(item.excerpt || item.body || '')
+  const words = source.split(/\s+/).filter(Boolean)
+  const limit = short ? 42 : 85
+  const excerpt = words.slice(0, limit).join(' ')
+  return `*${item.title}*\n\n${excerpt || 'هذه المادة متاحة كاملة في موقع الدكتور.'}${words.length > limit ? '…' : ''}\n\n${item.url}`
+}
+
+function intentKinds(intent) {
+  if ([INTENTS.LATEST_ARTICLE, INTENTS.LATEST_ARTICLES, INTENTS.MOST_VIEWED_ARTICLE].includes(intent)) return ['article']
+  if (intent === INTENTS.LATEST_BOOK) return ['book']
+  if (intent === INTENTS.LATEST_PAPER) return ['paper']
+  if (intent === INTENTS.LATEST_PODCAST) return ['podcast']
+  if (intent === INTENTS.LATEST_SELECTION || intent === INTENTS.CURATED_PICKS) return ['curated']
+  return []
+}
+
+export function decideGroundedResponse({ text, hasMedia = false, rules = [], priorReplyHash = '', conversation = {} } = {}) {
   const clean = normalizeArabicMessage(text)
-  if (hasMedia) return { kind: 'silent', reason: 'media' }
-  if (!clean) return { kind: 'silent', reason: 'empty-after-normalization' }
+  if (hasMedia) return { kind: 'escalate', reason: 'media', reply: signReply(HUMAN_ACK) }
+  if (!clean) return { kind: 'reply', reason: 'empty-after-normalization', reply: signReply(CLARIFY) }
   if (HUMAN_PATTERNS.some((pattern) => pattern.test(clean))) {
-    return { kind: 'silent', reason: 'human-request' }
+    return { kind: 'escalate', reason: 'human-request', reply: signReply(HUMAN_ACK) }
   }
 
   const rule = findRuleMatch(text, rules)
   if (rule) {
-    if (rule.actionType === 'transfer') return { kind: 'escalate', reason: `rule:${rule.id}`, reply: bounded(rule.responseText, 1_500) || HUMAN_ACK, rule }
+    if (rule.actionType === 'transfer') return { kind: 'escalate', reason: `rule:${rule.id}`, reply: signReply(bounded(rule.responseText, 1_500) || HUMAN_ACK), rule }
     if (rule.actionType === 'site-content') {
       const found = exactSiteResults(text, rule.contentQuery)
-      if (!found.length) return { kind: 'silent', reason: `rule-no-grounding:${rule.id}`, rule }
-      return { kind: 'reply', reason: `rule:${rule.id}`, reply: siteResultReply(found), rule, evidence: found.map((item) => item.id) }
+      if (!found.length) return { kind: 'reply', reason: `rule-no-grounding:${rule.id}`, reply: signReply(NO_MATCH), rule }
+      return { kind: 'reply', reason: `rule:${rule.id}`, reply: signReply(siteResultReply(found)), rule, evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0 }
     }
     const response = bounded(rule.responseText, 2_000)
-    if (response) return { kind: 'reply', reason: `rule:${rule.id}`, reply: response, rule }
+    if (response) return { kind: 'reply', reason: `rule:${rule.id}`, reply: signReply(response), rule }
   }
 
-  if (PRICE_PATTERNS.some((pattern) => pattern.test(clean)) || isGreetingOnly(text)) {
-    return { kind: 'reply', reason: isGreetingOnly(text) ? 'greeting' : 'site-is-source', reply: WELCOME }
+  const classification = classifyIntent(text)
+  const intent = classification.intent
+  const current = currentConversationItem(conversation)
+  const previousIds = Array.isArray(conversation.seenContentIds) ? conversation.seenContentIds.slice(-40) : []
+
+  if (PRICE_PATTERNS.some((pattern) => pattern.test(clean)) || isGreetingOnly(text) || intent === INTENTS.WELCOME) {
+    return { kind: 'reply', reason: isGreetingOnly(text) ? 'greeting' : 'welcome', intent, reply: signReply(WELCOME) }
+  }
+  if ([INTENTS.HELP, INTENTS.SHOW_OPTIONS, INTENTS.CONTENT_OVERVIEW].includes(intent)) {
+    return { kind: 'reply', reason: 'help', intent, reply: signReply(HELP) }
+  }
+  if (intent === INTENTS.ABOUT_DOCTOR) {
+    return { kind: 'reply', reason: 'about-doctor', intent, reply: signReply(`هذه السيرة الرسمية للدكتور أحمد حسين الفيلكاوي، ومؤلفاته وأبحاثه وخبراته:\n\n${SITE_URL}/about`) }
+  }
+  if ([INTENTS.SUMMARY, INTENTS.ONE_MINUTE, INTENTS.READ_SPEED].includes(intent)) {
+    return current
+      ? { kind: 'reply', reason: 'context-summary', intent, reply: signReply(excerptReply(current, true)), evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0 }
+      : { kind: 'reply', reason: 'context-missing', intent, reply: signReply('أرسل لك مادة أولاً: قل «آخر مقالة» أو اكتب الموضوع، وبعدها أختصرها لك.') }
+  }
+  if ([INTENTS.SOURCE_PROOF, INTENTS.READ_ARTICLE, INTENTS.LISTEN_FAHED, INTENTS.LISTEN_NOURA, INTENTS.LISTEN_DIALOGUE].includes(intent)) {
+    return current
+      ? { kind: 'reply', reason: 'context-source', intent, reply: signReply(`هذا رابط ${itemLabel(current)} في موقع الدكتور:\n\n*${current.title}*\n${current.url}`), evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0 }
+      : { kind: 'reply', reason: 'context-missing', intent, reply: signReply(CLARIFY) }
+  }
+  if ([INTENTS.MORE_LIKE_THIS, INTENTS.SIMILAR_CONTENT].includes(intent)) {
+    const topic = bounded(conversation.lastTopic, 500) || current?.title || text
+    const found = exactSiteResults(topic, topic, { excludeIds: previousIds, limit: 3 })
+    if (found.length) return {
+      kind: 'reply', reason: 'more-like-this', intent, reply: signReply(siteResultReply(found, 'أكيد، هذه مواد ثانية قريبة من الفكرة:')),
+      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: topic,
+    }
+    return { kind: 'reply', reason: 'no-more-results', intent, reply: signReply('خلصت المواد الأقرب لهذه الفكرة عندي. اكتب موضوعاً جديداً وأفتح لك مساراً مختلفاً.') }
+  }
+  if (intent === INTENTS.CONTEXT_REFERENCE && conversationContextItems(conversation).length) {
+    const items = conversationContextItems(conversation)
+    const request = classification.request || {}
+    let index = Number(conversation.contextIndex || 0)
+    if (Number.isInteger(request.ordinal) && request.ordinal > 0) index = request.ordinal - 1
+    else if (request.reference === 'next') index += 1
+    else if (request.reference === 'previous') index -= 1
+    index = Math.max(0, Math.min(items.length - 1, index))
+    const item = items[index]
+    return { kind: 'reply', reason: 'context-reference', intent, reply: signReply(excerptReply(item)), evidence: [item.id], contextItemIds: conversation.contextItemIds, contextIndex: index }
   }
 
-  const found = exactSiteResults(text)
-  if (found.length) return { kind: 'reply', reason: 'site-index', reply: siteResultReply(found), evidence: found.map((item) => item.id) }
+  const latestKinds = intentKinds(intent)
+  if (latestKinds.length || [INTENTS.LATEST_CONTENT, INTENTS.MISSED_CONTENT].includes(intent)) {
+    const count = [INTENTS.LATEST_ARTICLES, INTENTS.MISSED_CONTENT].includes(intent) ? 3 : 1
+    const found = latestSiteItems(latestKinds, count)
+    if (found.length) return {
+      kind: 'reply', reason: 'latest-content', intent,
+      reply: signReply(siteResultReply(found, count > 1 ? 'هذه أحدث المواد المنشورة:' : `هذا أحدث ${itemLabel(found[0])} منشور:`)),
+      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: found[0].title,
+    }
+  }
+  if ([INTENTS.SURPRISE_ME, INTENTS.CONTENT_BY_MOOD, INTENTS.CURATED_PICKS].includes(intent)) {
+    const pool = siteIndex().filter((item) => !previousIds.includes(item.id) && ['article', 'curated', 'podcast'].includes(item.kind))
+    const signature = Number.parseInt(hash(`${conversation.lastInboundAt || ''}:${text}:${previousIds.join('|')}`).slice(0, 8), 16)
+    const found = pool.length ? [pool[signature % pool.length]] : latestSiteItems([], 1)
+    if (found.length) return {
+      kind: 'reply', reason: 'surprise', intent, reply: signReply(siteResultReply(found, 'اخترت لك هذه؛ فيها فكرة تستحق الوقوف عندها:')),
+      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: found[0].title,
+    }
+  }
 
-  return { kind: 'silent', reason: 'no-grounded-answer', priorReplyHash }
+  const query = classification.request?.topic || text
+  const kinds = classification.request?.kind
+    ? [classification.request.kind === 'research' ? 'paper' : classification.request.kind]
+    : []
+  const found = exactSiteResults(query, '', { kinds, limit: 3 })
+  if (found.length) return {
+    kind: 'reply', reason: classification.fallback ? 'dialect-semantic-search' : 'site-index', intent,
+    reply: signReply(siteResultReply(found)), evidence: found.map((item) => item.id),
+    contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: query,
+  }
+
+  const asksQuestion = /[؟?]\s*$|(?:^|\s)(?:شنو|وش|ايش|كيف|متى|وين|هل|ليش|منو|كم|شلون|عطني|اعطني|ورني|ابي|ابغى|ودي|ممكن)(?:\s|$)/.test(clean)
+  return {
+    kind: 'reply',
+    reason: asksQuestion ? 'active-clarify' : 'no-grounded-answer',
+    intent,
+    reply: signReply(asksQuestion ? CLARIFY : NO_MATCH),
+    priorReplyHash,
+  }
 }
 
 function safeEqualSecret(actual, expected) {
@@ -528,10 +691,40 @@ async function getConversation(db, jid) {
   return { ref, data: snapshot.exists ? snapshot.data() || {} : {} }
 }
 
+let rulesCache = { expiresAt: 0, rows: [], pending: null }
+let runtimeCache = { expiresAt: 0, paused: false, pending: null }
+
+function invalidateRulesCache() {
+  rulesCache = { expiresAt: 0, rows: [], pending: null }
+}
+
 async function listRules(db) {
-  const snapshot = await db.collection(COLLECTIONS.rules).limit(250).get()
-  return snapshot.docs.map(serializeDoc).filter(Boolean)
-    .sort((a, b) => Number(b.priority || 0) - Number(a.priority || 0) || String(a.name || '').localeCompare(String(b.name || ''), 'ar'))
+  if (rulesCache.expiresAt > Date.now()) return rulesCache.rows
+  if (rulesCache.pending) return rulesCache.pending
+  rulesCache.pending = db.collection(COLLECTIONS.rules).limit(250).get().then((snapshot) => {
+    const rows = snapshot.docs.map(serializeDoc).filter(Boolean)
+      .sort((a, b) => Number(b.priority || 0) - Number(a.priority || 0) || String(a.name || '').localeCompare(String(b.name || ''), 'ar'))
+    rulesCache = { expiresAt: Date.now() + 30_000, rows, pending: null }
+    return rows
+  }).catch((error) => {
+    rulesCache.pending = null
+    throw error
+  })
+  return rulesCache.pending
+}
+
+async function runtimePaused(db) {
+  if (runtimeCache.expiresAt > Date.now()) return runtimeCache.paused
+  if (runtimeCache.pending) return runtimeCache.pending
+  runtimeCache.pending = db.collection(COLLECTIONS.settings).doc('runtime').get().then((snapshot) => {
+    const paused = Boolean(snapshot.exists && snapshot.data()?.paused)
+    runtimeCache = { expiresAt: Date.now() + 10_000, paused, pending: null }
+    return paused
+  }).catch((error) => {
+    runtimeCache.pending = null
+    throw error
+  })
+  return runtimeCache.pending
 }
 
 async function enqueueCommand(db, type, payload = {}, metadata = {}) {
@@ -872,7 +1065,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       await ref.set({
         jid,
         masked: maskJid(jid),
-        mode: 'silent',
+        mode: 'human',
         wakeActive: false,
         wakeVersion: 1,
         needsHuman: false,
@@ -897,12 +1090,19 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       return
     }
 
+    if (isOwnerPrivateChat(jid)) {
+      await ref.set({ jid, masked: maskJid(jid), mode: 'human', wakeActive: false, lastInboundAt: now, updatedAt: now }, { merge: true })
+      sendJson(res, 200, { ok: true, action: 'none', reason: 'owner-private-chat' })
+      return
+    }
+
     const text = bounded(body.text, 12_000)
     const incomingHash = hash(normalizeArabicMessage(text) || `media:${bounded(body.mediaType, 80)}`)
     const lastInboundAt = Date.parse(data.lastInboundAt || '')
     const duplicate = data.lastIncomingHash === incomingHash && Number.isFinite(lastInboundAt) && Date.now() - lastInboundAt < 10 * 60_000
     const wakePhrase = isWhatsAppWakePhrase(text)
     const manualTakeoverActive = data.mode === 'human'
+      || (data.mode === 'silent' && Boolean(data.lastManualAt) && data.wakeActive !== true)
 
     const basePatch = {
       jid,
@@ -919,17 +1119,11 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       return
     }
 
-    /* الرقم شخصي: الصمت هو الأصل. لا قاعدة، ولا تحية، ولا بحث في الموقع
-       يفتح الباب. وحدها الجملة المنشورة «موقع د. أحمد/الفيلكاوي» تفتح جلسة
-       هذه المحادثة. وعندما يكتب الدكتور بيده يرسل الجسر event=manual فيغلقها
-       فوراً، ولا يوجد مؤقت يعيد البوت من تلقاء نفسه. */
-    const wakeActive = data.wakeActive === true && Number(data.wakeVersion || 0) >= 1
-    if (!wakePhrase && !wakeActive) {
-      await ref.set({ ...basePatch, mode: 'silent', wakeActive: false, wakeVersion: 1 }, { merge: true })
-      sendJson(res, 200, { ok: true, action: 'none', reason: 'awaiting-wake-phrase' })
-      return
-    }
+    /* الوضع الطبيعي دائم التفاعل: أول رسالة وأي متابعة مفهومة تمران مباشرةً.
+       الاستثناء الوحيد هو أن يكتب الدكتور بيده؛ عندها يضع الجسر mode=human
+       وتبقى هذه المحادثة وحدها صامتة حتى جملة الإيقاظ المنشورة. */
     if (wakePhrase) {
+      const signedWelcome = signReply(WELCOME)
       await ref.set({
         ...basePatch,
         mode: 'bot',
@@ -939,40 +1133,39 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         needsHuman: false,
         manualUntil: null,
         autoResumeAt: null,
-        lastReplyHash: hash(WELCOME),
+        lastReplyHash: hash(signedWelcome),
         lastReplyAt: now,
       }, { merge: true })
-      sendJson(res, 200, { ok: true, action: 'reply', reason: 'wake-phrase', reply: { text: WELCOME } })
+      sendJson(res, 200, { ok: true, action: 'reply', reason: 'wake-phrase', reply: { text: signedWelcome } })
       return
     }
 
     if (duplicate) {
-      const replyHash = hash(DUPLICATE_ACK)
-      const reply = data.lastReplyHash === replyHash ? 'نعم، رسالتك محفوظة عندي.' : DUPLICATE_ACK
-      await ref.set({ ...basePatch, mode: 'bot', lastReplyHash: hash(reply), lastReplyAt: now }, { merge: true })
-      sendJson(res, 200, { ok: true, action: 'reply', reply: { text: reply }, reason: 'duplicate' })
+      /* إعادة التسليم حدث تقني وليست رسالة جديدة من الشخص. الرد عليها كان
+         يصنع محادثة مزعجة — وظهر بشكل أسوأ داخل محادثة المالك الذاتية. */
+      await ref.set(basePatch, { merge: true })
+      sendJson(res, 200, { ok: true, action: 'none', reason: 'duplicate-delivery' })
       return
     }
 
-    const settingsSnapshot = await db.collection(COLLECTIONS.settings).doc('runtime').get()
-    const runtimePaused = Boolean(settingsSnapshot.exists && settingsSnapshot.data()?.paused)
-    if (runtimePaused) {
+    const [paused, rules] = await Promise.all([runtimePaused(db), listRules(db)])
+    if (paused) {
       await ref.set(basePatch, { merge: true })
       sendJson(res, 200, { ok: true, action: 'none', reason: 'runtime-paused' })
       return
     }
 
-    const rules = await listRules(db)
     const decision = decideGroundedResponse({
       text,
       hasMedia: Boolean(body.hasMedia),
       rules,
       priorReplyHash: bounded(data.lastReplyHash, 80),
+      conversation: data,
     })
     const replyText = bounded(decision.reply, 2_000)
     const replyHash = hash(replyText)
     const safeReply = data.lastReplyHash === replyHash
-      ? 'وصلت فكرتك. حتى لا أكرر الرد، سأترك المتابعة للدكتور إذا احتاج السؤال تأكيداً.'
+      ? signReply('وصلت فكرتك. حتى لا أكرر الرد نفسه، اكتب الموضوع بكلمة أخرى أو قل «عطني غيرها» وأكمل معك.')
       : replyText
 
     if (decision.kind === 'silent') {
@@ -1007,7 +1200,9 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       await Promise.all([
         ref.set({
           ...basePatch,
-          mode: 'human',
+          mode: 'bot',
+          wakeActive: true,
+          wakeVersion: 1,
           needsHuman: true,
           manualUntil: null,
           autoResumeAt: null,
@@ -1043,6 +1238,8 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     await ref.set({
       ...basePatch,
       mode: 'bot',
+      wakeActive: true,
+      wakeVersion: 1,
       needsHuman: false,
       manualUntil: null,
       autoResumeAt: null,
@@ -1050,6 +1247,12 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       lastReplyAt: now,
       lastEvidence: decision.evidence || [],
       lastDecisionReason: decision.reason,
+      ...(Array.isArray(decision.contextItemIds) ? { contextItemIds: decision.contextItemIds.slice(0, 12) } : {}),
+      ...(Number.isInteger(decision.contextIndex) ? { contextIndex: decision.contextIndex } : {}),
+      ...(decision.lastTopic ? { lastTopic: bounded(decision.lastTopic, 500) } : {}),
+      ...(Array.isArray(decision.evidence) && decision.evidence.length ? {
+        seenContentIds: [...new Set([...(Array.isArray(data.seenContentIds) ? data.seenContentIds : []), ...decision.evidence])].slice(-40),
+      } : {}),
     }, { merge: true })
     sendJson(res, 200, { ok: true, action: 'reply', reason: decision.reason, reply: { text: safeReply } })
   }
@@ -1068,6 +1271,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         resumedAt: asIso(),
         updatedAt: asIso(),
       }, { merge: true })
+      runtimeCache = { expiresAt: Date.now() + 10_000, paused: false, pending: null }
       sendJson(res, 200, { ok: true, paused: false })
       return
     }
@@ -1238,6 +1442,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         updatedAt: asIso(),
       }
       await db.collection(COLLECTIONS.rules).doc(id).set(rule)
+      invalidateRulesCache()
       sendJson(res, 200, rule)
       return
     }
@@ -1253,6 +1458,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
           id: versionId, ruleId: id, snapshot: current.data(), createdAt: asIso(),
         })
         await ref.delete()
+        invalidateRulesCache()
       }
       sendJson(res, 200, { ok: true })
       return
@@ -1279,6 +1485,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         return
       }
       await db.collection(COLLECTIONS.rules).doc(id).set({ ...snapshot.data().snapshot, id, updatedAt: asIso() })
+      invalidateRulesCache()
       sendJson(res, 200, { ok: true })
       return
     }
@@ -1310,11 +1517,13 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     }
     if (path === '/agent/pause' && method === 'POST') {
       await db.collection(COLLECTIONS.settings).doc('runtime').set({ paused: true, updatedAt: asIso() }, { merge: true })
+      runtimeCache = { expiresAt: Date.now() + 10_000, paused: true, pending: null }
       sendJson(res, 200, { ok: true })
       return
     }
     if (path === '/agent/resume' && method === 'POST') {
       await db.collection(COLLECTIONS.settings).doc('runtime').set({ paused: false, updatedAt: asIso() }, { merge: true })
+      runtimeCache = { expiresAt: Date.now() + 10_000, paused: false, pending: null }
       sendJson(res, 200, { ok: true })
       return
     }
@@ -1885,7 +2094,20 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     }
 
     if (path === '/learning' && method === 'GET') {
-      sendJson(res, 200, { total: 0, learned: 0, observing: 0, ignored: 0, policy: 'لا يتعلم النظام من محادثات الناس تلقائياً؛ كل قاعدة تعتمدها أنت صراحة.', items: [] })
+      const rules = await listRules(db)
+      sendJson(res, 200, {
+        total: LEXICON_SIZE + rules.length,
+        learned: LEXICON_SIZE,
+        observing: 0,
+        ignored: 0,
+        policy: 'القاموس الكويتي والمصطلحات المعتمدة مفعّلة في الفهم الدلالي. لا يحفظ النظام كلام الناس ولا يتعلم منه قاعدة جديدة بلا اعتمادك.',
+        items: rules.slice(0, 100).map((rule) => ({
+          id: rule.id,
+          phrase: rule.name,
+          status: rule.enabled === false ? 'ignored' : 'learned',
+          kind: 'approved-rule',
+        })),
+      })
       return
     }
     if (path === '/knowledge' && method === 'GET') {
@@ -1915,7 +2137,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
           gaps: gapRows.slice(0, 20).map((item) => ({ topic: item.label, reason: item.label, total: item.total })),
           answers: answerRows.slice(0, 20).map((item) => ({ intent: item.label, total: item.total })),
         },
-        personality: { verbosity: 'brief', dialect: 'kuwaiti-light', initiative: 'none', signature: 'always', memoryConsent: 'explicit' },
+        personality: { verbosity: 'adaptive', dialect: 'kuwaiti-semantic', initiative: 'continuous-until-manual-reply', signature: 'always', memoryConsent: 'explicit' },
         privacy: 'هذه المؤشرات مجاميع فعلية من سجلات التشغيل الحالية فقط؛ لا تعرض نصوص الناس أو أرقامهم، ولا يتعلم البوت من كلامهم تلقائياً.',
       })
       return
@@ -1953,9 +2175,10 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
 
 export const whatsappPolicy = Object.freeze({
   siteUrl: SITE_URL,
+  defaultReplyMode: 'always-on',
   manualTakeoverMinutes: null,
   manualTakeoverAutoResume: false,
-  resumeMode: 'wake-phrase-only',
+  resumeMode: 'manual-takeover-wake-only',
   zeroHallucination: true,
   paidAiApis: false,
 })

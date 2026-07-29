@@ -204,9 +204,14 @@ function computeCandidateScore(item: Omit<ExternalVisualResult, 'score' | 'orien
   const literalHits = literalTokens.filter((token) => haystack.includes(token)).length
   const literalCoverage = literalTokens.length ? literalHits / literalTokens.length : 1
   const orientation = deriveOrientation(item.width, item.height)
+  const smallestSide = Math.min(Number(item.width || 0), Number(item.height || 0))
+  const genericStock = /generic|stock photo|business team|office meeting|people (?:using|with) laptop|smiling (?:student|people|team)/i.test(haystack)
   let score = 44 + matchBoost + conceptHits * 12 + Math.round(literalCoverage * 18) - avoidPenalty
   if (primaryConceptMissing) score -= 38
   if (literalTokens.length >= 2 && literalCoverage < .34) score -= 22
+  if (genericStock) score -= 26
+  if (smallestSide > 0 && smallestSide < 720) score -= 24
+  else if (smallestSide >= 1200) score += 8
   if (orientation === 'landscape') score += 12
   if (orientation === 'square') score += 8
   if (plan.tone === 'documentary' && item.provider === 'pexels') score += 12
@@ -323,7 +328,20 @@ async function searchOpenverse(query: string, plan: VisualSearchPlan, limit = 8)
 }
 
 export async function searchExternalVisualSources(plan: VisualSearchPlan, limit = 10): Promise<ExternalVisualResult[]> {
-  const bundle = unique([...plan.queries.slice(0, 3), ...plan.englishQueries.slice(0, 2)]).slice(0, 4)
+  /* مخازن الصور العالمية تفهرس أوصافها بالإنجليزية غالباً. البدء بالعبارة
+     العربية كان يملأ المجموعة بنتائج عامة قبل بلوغ الاستعلام الدلالي الإنجليزي. */
+  const latinQuery = (value: string) => clean(value)
+    .replace(/[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const englishFirst = unique([
+    ...plan.englishQueries.map(latinQuery),
+    ...plan.queries.map(latinQuery),
+  ]).filter((query) => query.length >= 3)
+  const bundle = unique([
+    ...englishFirst.slice(0, 4),
+    ...plan.queries.slice(0, 2),
+  ]).slice(0, 5)
   const collected: ExternalVisualResult[] = []
   for (const query of bundle) {
     const [wikimedia, pexels, openverse] = await Promise.allSettled([
@@ -334,7 +352,7 @@ export async function searchExternalVisualSources(plan: VisualSearchPlan, limit 
     if (wikimedia.status === 'fulfilled') collected.push(...wikimedia.value)
     if (pexels.status === 'fulfilled') collected.push(...pexels.value)
     if (openverse.status === 'fulfilled') collected.push(...openverse.value)
-    if (collected.length >= limit * 3) break
+    if (collected.filter((item) => item.score >= 70).length >= limit * 2) break
   }
   const deduped = new Map<string, ExternalVisualResult>()
   for (const item of collected) {
@@ -344,7 +362,7 @@ export async function searchExternalVisualSources(plan: VisualSearchPlan, limit 
   /* لا نعرض صورة جاهزة لمجرد أنها جميلة أو قريبة من كلمة عامة. المرشح الذي
      لا يحمل المفهوم الأساسي في وصفه يُستبعد بدل أن يُركّب على التصميم خطأً. */
   return [...deduped.values()]
-    .filter((item) => item.score >= 62)
+    .filter((item) => item.score >= 70)
     .sort((a, b) => b.score - a.score || a.providerLabel.localeCompare(b.providerLabel))
     .slice(0, limit)
 }

@@ -3119,6 +3119,130 @@ function firestoreTimeIso(value) {
   }
 }
 
+function controlCenterRecordId(prefix = 'event') {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+async function createControlCenterBackup(db, FieldValue, ownerId) {
+  const [rulesSnapshot, personalitySnapshot, messagesSnapshot] = await Promise.all([
+    db.collection('whatsapp_reply_rules').limit(250).get(),
+    db.collection('whatsapp_settings').doc('personality').get(),
+    db.collection('bot_messages').doc('templates').get(),
+  ])
+  const payload = {
+    schemaVersion: 1,
+    kind: 'admin-operating-settings',
+    rules: rulesSnapshot.docs.map((document) => ({ id: document.id, data: document.data() || {} })),
+    personality: personalitySnapshot.exists ? personalitySnapshot.data() || {} : null,
+    botMessages: messagesSnapshot.exists ? messagesSnapshot.data() || {} : null,
+  }
+  if (Buffer.byteLength(JSON.stringify(payload)) > 850_000) {
+    throw new HttpError(413, 'حجم إعدادات واتساب أكبر من سعة النسخة الواحدة؛ خفّف القواعد القديمة أولاً.')
+  }
+  const id = controlCenterRecordId('backup')
+  await db.collection('admin_control_backups').doc(id).set({
+    ...payload,
+    createdAt: FieldValue.serverTimestamp(),
+    createdBy: ownerId,
+    ruleCount: payload.rules.length,
+    hasPersonality: Boolean(payload.personality),
+    hasBotMessages: Boolean(payload.botMessages),
+  })
+  return {
+    id,
+    ruleCount: payload.rules.length,
+    hasPersonality: Boolean(payload.personality),
+    hasBotMessages: Boolean(payload.botMessages),
+  }
+}
+
+async function restoreControlCenterBackup(db, FieldValue, backupId, ownerId) {
+  const backupSnapshot = await db.collection('admin_control_backups').doc(backupId).get()
+  if (!backupSnapshot.exists) throw new HttpError(404, 'النسخة الاحتياطية غير موجودة.')
+  const backup = backupSnapshot.data() || {}
+  if (Number(backup.schemaVersion) !== 1 || backup.kind !== 'admin-operating-settings' || !Array.isArray(backup.rules)) {
+    throw new HttpError(409, 'صيغة النسخة الاحتياطية غير صالحة للاستعادة.')
+  }
+  const currentRules = await db.collection('whatsapp_reply_rules').limit(250).get()
+  let batch = db.batch()
+  let operations = 0
+  const commitChunk = async () => {
+    if (!operations) return
+    await batch.commit()
+    batch = db.batch()
+    operations = 0
+  }
+  for (const document of currentRules.docs) {
+    batch.delete(document.ref)
+    operations += 1
+    if (operations >= 400) await commitChunk()
+  }
+  await commitChunk()
+  for (const row of backup.rules.slice(0, 250)) {
+    const id = boundedString(row?.id, 180)
+    if (!id || !/^[A-Za-z0-9_.:-]+$/.test(id) || !row?.data || typeof row.data !== 'object') continue
+    batch.set(db.collection('whatsapp_reply_rules').doc(id), row.data)
+    operations += 1
+    if (operations >= 400) await commitChunk()
+  }
+  if (backup.personality && typeof backup.personality === 'object') {
+    batch.set(db.collection('whatsapp_settings').doc('personality'), {
+      ...backup.personality,
+      restoredAt: FieldValue.serverTimestamp(),
+    }, { merge: false })
+    operations += 1
+  }
+  if (backup.botMessages && typeof backup.botMessages === 'object') {
+    batch.set(db.collection('bot_messages').doc('templates'), {
+      ...backup.botMessages,
+      restoredAt: FieldValue.serverTimestamp(),
+    }, { merge: false })
+    operations += 1
+  }
+  await commitChunk()
+  await db.collection('admin_control_backups').doc(backupId).set({
+    lastRestoredAt: FieldValue.serverTimestamp(),
+    lastRestoredBy: ownerId,
+  }, { merge: true })
+  return { id: backupId, ruleCount: Math.min(250, backup.rules.length) }
+}
+
+async function runControlCenterProbe(db, FieldValue) {
+  const probeId = controlCenterRecordId('probe')
+  const nonce = createHash('sha256').update(`${probeId}:${Date.now()}`).digest('hex').slice(0, 24)
+  const ref = db.collection('admin_control_probes').doc(probeId)
+  const startedAt = Date.now()
+  await ref.set({ nonce, createdAt: FieldValue.serverTimestamp(), expiresAt: new Date(Date.now() + 5 * 60_000) })
+  const readBack = await ref.get()
+  const valid = readBack.exists && readBack.data()?.nonce === nonce
+  await ref.delete()
+  if (!valid) throw new HttpError(502, 'فشلت القراءة الراجعة لاختبار Firebase.')
+  return { ok: true, durationMs: Date.now() - startedAt }
+}
+
+async function writeControlCenterIncident(db, FieldValue, {
+  id = controlCenterRecordId('incident'),
+  action,
+  ownerId,
+  status,
+  steps = [],
+  scoreBefore = null,
+  scoreAfter = null,
+}) {
+  await db.collection('control_center_incidents').doc(id).set({
+    schemaVersion: 1,
+    action,
+    status,
+    steps,
+    scoreBefore: Number.isFinite(Number(scoreBefore)) ? Number(scoreBefore) : null,
+    scoreAfter: Number.isFinite(Number(scoreAfter)) ? Number(scoreAfter) : null,
+    requestedBy: ownerId,
+    requestedAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true })
+  return id
+}
+
 function safePublicPath(value) {
   const text = typeof value === 'string' ? value.trim() : ''
   if (!text || text.length > 300 || !text.startsWith('/') || text.includes('\0')) throw new HttpError(400, 'Invalid path')
@@ -3417,17 +3541,23 @@ export function createRequestHandler({
         let inventory = {}
         let sourceHealth = {}
         let lastControlCommand = {}
+        let incidentRows = []
+        let backupRows = []
         try {
           const { db } = await getAdminFirestore()
-          const [inventorySnapshot, sourceSnapshot, controlSnapshot] = await Promise.all([
+          const [inventorySnapshot, sourceSnapshot, controlSnapshot, incidentSnapshot, backupSnapshot] = await Promise.all([
             db.collection('site_settings').doc('audio_inventory').get(),
             db.collection('site_health').doc('sources').get(),
             db.collection('site_settings').doc('control_center').get(),
+            db.collection('control_center_incidents').orderBy('requestedAt', 'desc').limit(30).get(),
+            db.collection('admin_control_backups').orderBy('createdAt', 'desc').limit(8).get(),
           ])
           firebaseReady = true
           inventory = inventorySnapshot.exists ? inventorySnapshot.data() || {} : {}
           sourceHealth = sourceSnapshot.exists ? sourceSnapshot.data() || {} : {}
           lastControlCommand = controlSnapshot.exists ? controlSnapshot.data() || {} : {}
+          incidentRows = incidentSnapshot.docs.map((document) => ({ id: document.id, ...(document.data() || {}) }))
+          backupRows = backupSnapshot.docs.map((document) => ({ id: document.id, ...(document.data() || {}) }))
         } catch (error) {
           firebaseError = boundedString(error instanceof Error ? error.message : '', 280)
         }
@@ -3458,6 +3588,52 @@ export function createRequestHandler({
             : publishRun?.conclusion && publishRun.conclusion !== 'success'
               ? 'critical'
               : 'healthy'
+        const incidents = incidentRows.map((incident) => ({
+          id: boundedString(incident.id, 180),
+          action: boundedString(incident.action, 40),
+          status: boundedString(incident.status, 40),
+          requestedAt: firestoreTimeIso(incident.requestedAt),
+          updatedAt: firestoreTimeIso(incident.updatedAt),
+          scoreBefore: Number.isFinite(Number(incident.scoreBefore)) ? Number(incident.scoreBefore) : null,
+          scoreAfter: Number.isFinite(Number(incident.scoreAfter)) ? Number(incident.scoreAfter) : null,
+          steps: boundedArray(incident.steps, 12, (step) => ({
+            id: boundedString(step?.id || step?.workflow, 120),
+            label: boundedString(step?.label, 180),
+            ok: step?.ok === true,
+            durationMs: Number.isFinite(Number(step?.durationMs)) ? Math.max(0, Number(step.durationMs)) : null,
+            detail: boundedString(step?.detail || step?.error, 500),
+          })),
+        }))
+        const backups = backupRows.map((backup) => ({
+          id: boundedString(backup.id, 180),
+          createdAt: firestoreTimeIso(backup.createdAt),
+          lastRestoredAt: firestoreTimeIso(backup.lastRestoredAt),
+          ruleCount: Math.max(0, Number(backup.ruleCount || 0)),
+          hasPersonality: backup.hasPersonality !== false,
+          hasBotMessages: backup.hasBotMessages !== false,
+        }))
+        const weekStartMs = Date.now() - 7 * 86_400_000
+        const weekIncidents = incidents.filter((incident) => {
+          const time = new Date(incident.requestedAt || '').getTime()
+          return Number.isFinite(time) && time >= weekStartMs
+        })
+        const weekFailed = weekIncidents.filter((incident) => incident.status === 'failed' || incident.steps.some((step) => step.ok === false)).length
+        const durationSteps = weekIncidents.flatMap((incident) => incident.steps)
+          .filter((step) => Number.isFinite(Number(step.durationMs)))
+          .sort((left, right) => Number(right.durationMs) - Number(left.durationMs))
+        const weeklyReport = {
+          startsAt: new Date(weekStartMs).toISOString(),
+          incidents: weekIncidents.length,
+          successful: Math.max(0, weekIncidents.length - weekFailed),
+          failed: weekFailed,
+          verifications: weekIncidents.filter((incident) => incident.action === 'verify-all' || incident.action === 'record-proof').length,
+          availabilityScore: weekIncidents.length ? Math.max(0, Math.round(100 - (weekFailed / weekIncidents.length) * 100)) : null,
+          slowestCheck: durationSteps[0] ? {
+            label: durationSteps[0].label,
+            durationMs: durationSteps[0].durationMs,
+          } : null,
+          latestBackupAt: backups[0]?.createdAt || null,
+        }
 
         sendJson(res, 200, {
           ok: true,
@@ -3562,6 +3738,9 @@ export function createRequestHandler({
             requestedAt: firestoreTimeIso(lastControlCommand.requestedAt),
             requestedBy: boundedString(lastControlCommand.requestedBy, 180) || null,
           },
+          incidents,
+          backups,
+          weeklyReport,
         })
         return
       }
@@ -3578,6 +3757,142 @@ export function createRequestHandler({
       }
       const body = await readJsonBody(req, 8_192)
       const action = boundedString(body?.action, 40)
+      const scoreBefore = Number(body?.scoreBefore)
+      const scoreAfter = Number(body?.scoreAfter)
+
+      if (action === 'verify-all') {
+        const { db, FieldValue } = await getAdminFirestore()
+        const steps = []
+        try {
+          const probe = await runControlCenterProbe(db, FieldValue)
+          steps.push({ id: 'firebase-probe', label: 'Firebase كتابة وقراءة وحذف', ok: true, durationMs: probe.durationMs, detail: 'نجحت دورة كاملة بملف مؤقت وحُذف بعدها.' })
+        } catch (error) {
+          steps.push({ id: 'firebase-probe', label: 'Firebase كتابة وقراءة وحذف', ok: false, durationMs: null, detail: boundedString(error instanceof Error ? error.message : 'فشل الاختبار.', 500) })
+        }
+        const githubStartedAt = Date.now()
+        const workflowRuns = await latestAdminWorkflowRuns()
+        const failedRun = workflowRuns.find((run) => run.available === false || (run.status === 'completed' && run.conclusion && run.conclusion !== 'success'))
+        steps.push({
+          id: 'github-probe',
+          label: 'GitHub وسجل المهام',
+          ok: workflowRuns.length > 0 && !failedRun,
+          durationMs: Date.now() - githubStartedAt,
+          detail: !workflowRuns.length
+            ? 'ربط GitHub غير متاح.'
+            : failedRun ? `آخر مهمة ${failedRun.label} حالتها ${failedRun.conclusion || failedRun.status}.` : 'نجحت قراءة آخر تشغيل لكل مهمة محمية.',
+        })
+        const studioReady = Boolean(String(process.env.CLOUDFLARE_ACCOUNT_ID || '').trim() && String(process.env.CLOUDFLARE_API_TOKEN || '').trim())
+        steps.push({
+          id: 'studio-probe',
+          label: 'ربط استوديو التصاميم',
+          ok: studioReady,
+          durationMs: 0,
+          detail: studioReady ? 'حساب التوليد والرمز موجودان؛ لم تُستهلك صورة في هذا الاختبار.' : 'إعداد Cloudflare ناقص على الخادم.',
+        })
+        const ok = steps.every((step) => step.ok)
+        const incidentId = await writeControlCenterIncident(db, FieldValue, {
+          action,
+          ownerId: claims.sub,
+          status: ok ? 'succeeded' : 'failed',
+          steps,
+          scoreBefore,
+          scoreAfter,
+        })
+        sendJson(res, 200, {
+          ok,
+          action,
+          incidentId,
+          destructive: false,
+          steps,
+          message: ok ? 'اكتمل الاختبار الاصطناعي الآمن بنجاح.' : 'اكتمل الاختبار، ويوضح السجل الطبقة التي لم تجتز.',
+        })
+        return
+      }
+
+      if (action === 'record-proof') {
+        const { db, FieldValue } = await getAdminFirestore()
+        const steps = boundedArray(body?.steps, 10, (step) => ({
+          id: boundedString(step?.id, 120),
+          label: boundedString(step?.label, 180),
+          ok: step?.ok === true,
+          durationMs: Number.isFinite(Number(step?.durationMs)) ? Math.max(0, Math.min(120_000, Number(step.durationMs))) : null,
+          detail: boundedString(step?.detail, 500),
+        }))
+        if (!steps.length) throw new HttpError(400, 'لا توجد نتائج إثبات صالحة.')
+        const ok = steps.every((step) => step.ok)
+        const incidentId = await writeControlCenterIncident(db, FieldValue, {
+          action,
+          ownerId: claims.sub,
+          status: ok ? 'succeeded' : 'failed',
+          steps,
+          scoreBefore,
+          scoreAfter,
+        })
+        sendJson(res, 200, { ok, action, incidentId, destructive: false, steps, message: 'حُفظ إثبات الفحص في سجل الحوادث.' })
+        return
+      }
+
+      if (action === 'backup-settings') {
+        const { db, FieldValue } = await getAdminFirestore()
+        const startedAt = Date.now()
+        const backup = await createControlCenterBackup(db, FieldValue, claims.sub)
+        const steps = [{
+          id: 'settings-backup',
+          label: 'إعدادات واتساب ورسائل البوت',
+          ok: true,
+          durationMs: Date.now() - startedAt,
+          detail: `حُفظت ${backup.ruleCount} قاعدة مع الشخصية وقوالب الرسائل.`,
+        }]
+        const incidentId = await writeControlCenterIncident(db, FieldValue, {
+          action,
+          ownerId: claims.sub,
+          status: 'succeeded',
+          steps,
+        })
+        sendJson(res, 200, {
+          ok: true,
+          action,
+          incidentId,
+          backup,
+          destructive: false,
+          steps,
+          message: 'أُنشئت نسخة احتياطية خاصة للإعدادات ويمكن استعادتها من اللوحة.',
+        })
+        return
+      }
+
+      if (action === 'restore-settings') {
+        if (body?.confirm !== true) throw new HttpError(400, 'يلزم تأكيد استعادة الإعدادات.')
+        const backupId = boundedString(body?.backupId, 180)
+        if (!/^backup-[a-z0-9-]+$/.test(backupId)) throw new HttpError(400, 'معرف النسخة الاحتياطية غير صالح.')
+        const { db, FieldValue } = await getAdminFirestore()
+        const startedAt = Date.now()
+        const restored = await restoreControlCenterBackup(db, FieldValue, backupId, claims.sub)
+        const steps = [{
+          id: 'settings-restore',
+          label: 'استعادة إعدادات واتساب ورسائل البوت',
+          ok: true,
+          durationMs: Date.now() - startedAt,
+          detail: `عادت ${restored.ruleCount} قاعدة من النسخة المحددة، من دون لمس الجلسة أو المحادثات.`,
+        }]
+        const incidentId = await writeControlCenterIncident(db, FieldValue, {
+          action,
+          ownerId: claims.sub,
+          status: 'succeeded',
+          steps,
+        })
+        sendJson(res, 200, {
+          ok: true,
+          action,
+          incidentId,
+          restored,
+          destructive: false,
+          steps,
+          message: 'اكتملت الاستعادة. يلتقط البوت القواعد والقوالب خلال لحظات.',
+        })
+        return
+      }
+
       const actionWorkflows = {
         'repair-safe': [
           { workflow: 'audio-dashboard-sync.yml', label: 'مزامنة عدّاد الصوت من R2' },
@@ -3590,16 +3905,38 @@ export function createRequestHandler({
       const commands = actionWorkflows[action]
       if (!commands) throw new HttpError(400, 'أمر مركز التشغيل غير صالح')
       const settled = await Promise.allSettled(commands.map(async (command) => {
-        await dispatchAdminWorkflow({ workflow: command.workflow, inputs: {} })
-        return { ...command, ok: true }
+        const startedAt = Date.now()
+        let attempts = 0
+        while (attempts < 2) {
+          attempts += 1
+          try {
+            await dispatchAdminWorkflow({ workflow: command.workflow, inputs: {} })
+            return {
+              id: command.workflow,
+              ...command,
+              ok: true,
+              attempts,
+              durationMs: Date.now() - startedAt,
+              detail: attempts === 1 ? 'استلم GitHub الأمر.' : 'استلم GitHub الأمر بعد إعادة المحاولة الآمنة.',
+            }
+          } catch (error) {
+            if (attempts >= 2 || Number(error?.status || 0) !== 502) throw error
+            await new Promise((resolveRetry) => setTimeout(resolveRetry, 450))
+          }
+        }
+        throw new HttpError(502, 'تعذّر بدء المهمة بعد المحاولة الآمنة.')
       }))
       const steps = settled.map((result, index) => result.status === 'fulfilled'
         ? result.value
         : {
+            id: commands[index].workflow,
             ...commands[index],
             ok: false,
+            durationMs: null,
             error: boundedString(result.reason instanceof Error ? result.reason.message : 'تعذّر بدء المهمة.', 500),
+            detail: boundedString(result.reason instanceof Error ? result.reason.message : 'تعذّر بدء المهمة.', 500),
           })
+      let incidentId = null
       try {
         const { db, FieldValue } = await getAdminFirestore()
         await db.collection('site_settings').doc('control_center').set({
@@ -3608,11 +3945,20 @@ export function createRequestHandler({
           requestedBy: claims.sub,
           steps,
         }, { merge: true })
+        incidentId = await writeControlCenterIncident(db, FieldValue, {
+          action,
+          ownerId: claims.sub,
+          status: steps.every((step) => step.ok) ? 'accepted' : 'failed',
+          steps,
+          scoreBefore,
+          scoreAfter,
+        })
       } catch { /* نجاح الأمر لا يعتمد على كتابة سجل العرض */ }
       controlCenterRunsCache.expiresAt = 0
       sendJson(res, 200, {
         ok: steps.every((step) => step.ok),
         action,
+        incidentId,
         destructive: false,
         steps,
         message: action === 'deploy-site'

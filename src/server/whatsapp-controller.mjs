@@ -191,7 +191,12 @@ function isGreetingOnly(text) {
 function signReply(value) {
   const text = bounded(value, 2_000)
   if (!text || text.includes(BOT_SIGNATURE)) return text
-  return `${text}\n\n${BOT_SIGNATURE}`
+  const humanBoundary = /تحتاج تأكيداً بشرياً|سيرد عليك الدكتور|تحتاج تدخلك البشري/.test(text)
+  const alreadyInteractive = /قل لي|جرّب|اكتب|شنو يناسب|وش تحب|إذا تحب|وإن أحببت|وأكمل معك/.test(text)
+  const nudge = humanBoundary || alreadyInteractive
+    ? ''
+    : '\n\nشنو تحب أسوي بعدها: ألخّصها، أعطيك المصدر، أو أطلع لك غيرها؟'
+  return `${text}${nudge}\n\n${BOT_SIGNATURE}`
 }
 
 function semanticWord(value) {
@@ -279,7 +284,7 @@ function itemLabel(item) {
 
 function siteResultReply(items, intro = 'لقيت لك من موقع الدكتور:') {
   const lines = items.map((item, index) => `${index + 1}) *${item.title}*\n${item.url}`)
-  return `${intro}\n\n${lines.join('\n\n')}\n\nقل لي «لخّص الأولى» أو «عطني غيرها» وأكمل معك.`
+  return `${intro}\n\n${lines.join('\n\n')}\n\nشنو تحب أسوي بعدها؟ قل «لخّص الأولى» أو «عطني غيرها» وأكمل معك.`
 }
 
 function latestSiteItems(kinds = [], limit = 1) {
@@ -2296,6 +2301,54 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       return
     }
 
+    if (path === '/simulate-sequence' && method === 'POST') {
+      const body = await readJson(req)
+      const messages = Array.isArray(body.messages)
+        ? body.messages.slice(0, 8).map((message) => bounded(message, 2_000)).filter(Boolean)
+        : []
+      if (messages.length < 2) {
+        sendJson(res, 400, { error: 'يلزم سؤالان متتاليان على الأقل.' })
+        return
+      }
+      const rules = await listRules(db)
+      let conversation = {}
+      const turns = messages.map((text, index) => {
+        const startedAt = Date.now()
+        const decision = decideGroundedResponse({ text, rules, conversation })
+        const preview = bounded(decision.reply, 2_000)
+        conversation = {
+          ...conversation,
+          mode: 'bot',
+          wakeActive: true,
+          lastInboundAt: asIso(),
+          lastReplyAt: asIso(),
+          lastReplyHash: hash(preview),
+          lastDecisionReason: decision.reason,
+          ...(Array.isArray(decision.contextItemIds) ? { contextItemIds: decision.contextItemIds.slice(0, 12) } : {}),
+          ...(Number.isInteger(decision.contextIndex) ? { contextIndex: decision.contextIndex } : {}),
+          ...(decision.lastTopic ? { lastTopic: bounded(decision.lastTopic, 500) } : {}),
+          ...(Array.isArray(decision.evidence) ? { seenContentIds: [...new Set([...(conversation.seenContentIds || []), ...decision.evidence])].slice(-40) } : {}),
+        }
+        return {
+          turn: index + 1,
+          text,
+          willReply: decision.kind !== 'silent' && Boolean(preview),
+          action: decision.kind === 'escalate' ? 'reply-and-escalate' : 'reply',
+          reason: decision.reason,
+          durationMs: Date.now() - startedAt,
+          preview,
+        }
+      })
+      sendJson(res, 200, {
+        ok: turns.every((turn) => turn.willReply),
+        continuous: turns.every((turn) => turn.willReply),
+        sentToWhatsApp: false,
+        policy: 'كل رسالة جديدة في الوضع الطبيعي تحصل على رد؛ لا تتوقف المحادثة إلا بعد رد يدوي من المالك.',
+        turns,
+      })
+      return
+    }
+
     if (path === '/simulate' && method === 'POST') {
       const body = await readJson(req)
       const rules = await listRules(db)
@@ -2312,6 +2365,31 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         ruleName: decision.rule?.name || null,
         preview: decision.reply,
       })
+      return
+    }
+    if (path === '/personality' && method === 'GET') {
+      const snapshot = await db.collection(COLLECTIONS.settings).doc('personality').get()
+      sendJson(res, 200, snapshot.exists ? snapshot.data() || {} : {
+        verbosity: 'layered',
+        dialect: 'kuwaiti-light',
+        initiative: 'guided',
+        signature: 'always',
+        memoryConsent: 'explicit',
+      })
+      return
+    }
+    if (path === '/personality' && method === 'POST') {
+      const body = await readJson(req)
+      const personality = {
+        verbosity: ['brief', 'layered', 'detailed'].includes(body.verbosity) ? body.verbosity : 'layered',
+        dialect: ['formal-arabic', 'kuwaiti-light', 'neutral-arabic'].includes(body.dialect) ? body.dialect : 'kuwaiti-light',
+        initiative: ['none', 'one-question', 'guided'].includes(body.initiative) ? body.initiative : 'guided',
+        signature: 'always',
+        memoryConsent: 'explicit',
+        updatedAt: asIso(),
+      }
+      await db.collection(COLLECTIONS.settings).doc('personality').set(personality, { merge: true })
+      sendJson(res, 200, personality)
       return
     }
 
@@ -2334,9 +2412,10 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     }
     if (path === '/knowledge' && method === 'GET') {
       const index = siteIndex()
-      const [conversationSnapshot, eventSnapshot] = await Promise.all([
+      const [conversationSnapshot, eventSnapshot, personalitySnapshot] = await Promise.all([
         db.collection(COLLECTIONS.conversations).limit(1000).get(),
         db.collection(COLLECTIONS.events).limit(1000).get(),
+        db.collection(COLLECTIONS.settings).doc('personality').get(),
       ])
       const conversations = conversationSnapshot.docs.map(serializeDoc).filter(Boolean)
       const events = eventSnapshot.docs.map(serializeDoc).filter(Boolean)
@@ -2359,7 +2438,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
           gaps: gapRows.slice(0, 20).map((item) => ({ topic: item.label, reason: item.label, total: item.total })),
           answers: answerRows.slice(0, 20).map((item) => ({ intent: item.label, total: item.total })),
         },
-        personality: { verbosity: 'adaptive', dialect: 'kuwaiti-semantic', initiative: 'continuous-until-manual-reply', signature: 'always', memoryConsent: 'explicit' },
+        personality: personalitySnapshot.exists ? personalitySnapshot.data() || {} : { verbosity: 'layered', dialect: 'kuwaiti-light', initiative: 'guided', signature: 'always', memoryConsent: 'explicit' },
         privacy: 'هذه المؤشرات مجاميع فعلية من سجلات التشغيل الحالية فقط؛ لا تعرض نصوص الناس أو أرقامهم، ولا يتعلم البوت من كلامهم تلقائياً.',
       })
       return

@@ -29,6 +29,37 @@ type ControlSnapshot = {
   safeRepair?: { available?: boolean; destructive?: boolean; preservesWhatsAppSession?: boolean }
   services: ControlService[]
   lastCommand?: { action?: string | null; requestedAt?: string | null }
+  incidents?: ControlIncident[]
+  backups?: ControlBackup[]
+  weeklyReport?: WeeklyReport
+}
+type ControlIncident = {
+  id: string
+  action: string
+  status: string
+  requestedAt?: string | null
+  updatedAt?: string | null
+  scoreBefore?: number | null
+  scoreAfter?: number | null
+  steps?: { id?: string; label?: string; ok?: boolean; durationMs?: number | null; detail?: string }[]
+}
+type ControlBackup = {
+  id: string
+  createdAt?: string | null
+  lastRestoredAt?: string | null
+  ruleCount: number
+  hasPersonality?: boolean
+  hasBotMessages?: boolean
+}
+type WeeklyReport = {
+  startsAt?: string
+  incidents: number
+  successful: number
+  failed: number
+  verifications: number
+  availabilityScore?: number | null
+  slowestCheck?: { label?: string; durationMs?: number | null } | null
+  latestBackupAt?: string | null
 }
 type WhatsAppStatus = {
   status?: string
@@ -52,7 +83,16 @@ type WhatsAppStatus = {
     fix?: string
   }
 }
-type RepairStep = { id: string; label: string; ok: boolean; detail: string }
+type RepairStep = { id: string; label: string; ok: boolean; detail: string; durationMs?: number | null }
+type RepairProof = { before: number; after: number; checkedAt: string }
+type ControlActionResult = {
+  ok?: boolean
+  message?: string
+  incidentId?: string
+  backup?: ControlBackup
+  restored?: { id?: string; ruleCount?: number }
+  steps?: { id?: string; workflow?: string; label?: string; ok?: boolean; error?: string; detail?: string; durationMs?: number | null }[]
+}
 
 const levelMeta: Record<HealthLevel, {
   label: string
@@ -109,6 +149,17 @@ const repairLabel: Record<string, string> = {
   publishing: 'اختبر وأعد النشر',
 }
 
+const incidentActionLabel: Record<string, string> = {
+  'repair-safe': 'إصلاح آمن شامل',
+  'audio-sync': 'مزامنة الصوت',
+  'content-guardian': 'حارس المحتوى',
+  'deploy-site': 'بوابة النشر',
+  'verify-all': 'اختبار اصطناعي',
+  'record-proof': 'إثبات واتساب والسرعة',
+  'backup-settings': 'نسخة إعدادات',
+  'restore-settings': 'استعادة إعدادات',
+}
+
 const levelWeight: Record<HealthLevel, number> = {
   healthy: 100,
   attention: 84,
@@ -129,6 +180,16 @@ const safeDate = (value?: string | null) => {
   })
 }
 
+const servicesScore = (services: ControlService[]) => services.length
+  ? Math.round(services.reduce((total, service) => total + levelWeight[service.level], 0) / services.length)
+  : 0
+
+const durationLabel = (value?: number | null) => {
+  if (!Number.isFinite(Number(value))) return ''
+  const milliseconds = Math.max(0, Number(value))
+  return milliseconds < 1_000 ? `${Math.round(milliseconds)} ms` : `${(milliseconds / 1_000).toFixed(1)} ث`
+}
+
 const buildWhatsAppService = (status: WhatsAppStatus): ControlService => {
   const diagnosis = status.diagnostics
   const firstIssue = diagnosis?.checks?.find((check) => check.state === 'error' || check.state === 'warning')
@@ -141,8 +202,10 @@ const buildWhatsAppService = (status: WhatsAppStatus): ControlService => {
     title: 'مساعد واتساب الحي',
     eyebrow: 'LIVE WHATSAPP',
     level,
-    metric: status.health?.ready ? 'جاهز للرد' : status.health?.needsAuthScan ? 'ينتظر المسح' : status.bridgeOnline ? 'الجسر حي' : 'الجسر لا يجيب',
-    summary: diagnosis?.summary || status.health?.label || 'حالة واتساب لم تكتمل بعد.',
+    metric: status.health?.ready ? 'مستمر بلا حد' : status.health?.needsAuthScan ? 'ينتظر المسح' : status.bridgeOnline ? 'الجسر حي' : 'الجسر لا يجيب',
+    summary: status.health?.ready
+      ? 'متصل ويجيب السؤال الأول وكل متابعة بعده؛ لا يغلق الجلسة إلا ردّ المالك اليدوي.'
+      : diagnosis?.summary || status.health?.label || 'حالة واتساب لم تكتمل بعد.',
     reason: firstIssue?.detail || status.health?.why || 'تفحص اللوحة الجسر والنبض والطابور والردود معاً.',
     action: diagnosis?.action || status.health?.fix || (status.health?.ready ? 'لا يحتاج تدخلاً.' : 'استخدم الإحياء الآمن من هذه البطاقة.'),
     lastEventAt: diagnosis?.checkedAt || status.lastHeartbeatAt || status.updated_at || null,
@@ -151,7 +214,7 @@ const buildWhatsAppService = (status: WhatsAppStatus): ControlService => {
 }
 
 const previewServices: ControlService[] = [
-  { id: 'whatsapp', title: 'مساعد واتساب الحي', eyebrow: 'LIVE WHATSAPP', level: 'healthy', metric: 'جاهز للرد', summary: 'الجسر متصل والنبض حديث وطابور الردود خالٍ من التعليق.', reason: 'اكتمل فحص الاتصال والجلسة والطابور وآخر رد.', action: 'لا يحتاج تدخلاً.', lastEventAt: new Date().toISOString(), automation: 'فحص كل 15 ثانية' },
+  { id: 'whatsapp', title: 'مساعد واتساب الحي', eyebrow: 'LIVE WHATSAPP', level: 'healthy', metric: 'مستمر بلا حد', summary: 'يجيب السؤال الأول والثاني وكل متابعة؛ لا يغلق الجلسة إلا ردّ المالك اليدوي.', reason: 'اكتمل فحص الاتصال والجلسة والطابور واختبار 3 رسائل متتالية.', action: 'لا يحتاج تدخلاً.', lastEventAt: new Date().toISOString(), automation: 'فحص كل 15 ثانية' },
   { id: 'audio', title: 'الصوت والعدّاد الحي', eyebrow: 'AUDIO AUTOSYNC', level: 'healthy', metric: '201 ملف', summary: 'فهد 98 · نورة 99 · حوار 4، والرقم من R2 مباشرة.', reason: 'نجح المسح الحي والكتابة والقراءة الراجعة.', action: 'يتجدد تلقائياً كل 15 دقيقة.', lastEventAt: new Date().toISOString(), automation: 'كل 15 دقيقة' },
   { id: 'studio', title: 'استوديو التصاميم والتوليد', eyebrow: 'CREATIVE STUDIO', level: 'healthy', metric: 'المولّد جاهز', summary: 'التوليد والفحص البصري والأرشفة الخاصة تعمل.', reason: 'Cloudflare وFirebase Storage جاهزان.', action: 'لا يحتاج تدخلاً.', lastEventAt: new Date().toISOString() },
   { id: 'firebase', title: 'Firebase والبيانات الحية', eyebrow: 'LIVE DATA', level: 'healthy', metric: 'قراءة ناجحة', summary: 'قاعدة البيانات تقرأ سجلات التشغيل الحية.', reason: 'نجحت القراءة الراجعة من إعدادات النظام.', action: 'لا يحتاج تدخلاً.', lastEventAt: new Date().toISOString() },
@@ -159,6 +222,26 @@ const previewServices: ControlService[] = [
   { id: 'publishing', title: 'النشر والاستضافة', eyebrow: 'RELEASE PIPELINE', level: 'healthy', metric: 'آخر نشر ناجح', summary: 'بوابة الاختبارات والاستضافة أنهتا آخر دورة بنجاح.', reason: 'اجتازت النسخة الحراسة قبل وصولها إلى Hosting.', action: 'لا يحتاج تدخلاً.', lastEventAt: new Date().toISOString() },
   { id: 'control-plane', title: 'الخادم وغرفة الأوامر', eyebrow: 'CONTROL PLANE', level: 'healthy', metric: 'متصل', summary: 'واجهة التشخيص والإصلاح تستجيب الآن.', reason: 'تم التحقق من الخادم وجلسة المشرف.', action: 'لا يحتاج تدخلاً.', lastEventAt: new Date().toISOString() },
 ]
+const previewSnapshot: ControlSnapshot = {
+  checkedAt: new Date().toISOString(),
+  automaticRefreshSeconds: 30,
+  safeRepair: { available: true, destructive: false, preservesWhatsAppSession: true },
+  services: previewServices,
+  incidents: [{
+    id: 'preview-proof',
+    action: 'verify-all',
+    status: 'succeeded',
+    requestedAt: new Date().toISOString(),
+    scoreBefore: 96,
+    scoreAfter: 98,
+    steps: [
+      { id: 'wa-sequence', label: 'ثلاث رسائل واتساب متتالية', ok: true, durationMs: 41, detail: 'ردّ على 3/3 من دون انقطاع.' },
+      { id: 'firebase-probe', label: 'Firebase كتابة وقراءة وحذف', ok: true, durationMs: 88, detail: 'اكتملت القراءة الراجعة.' },
+    ],
+  }],
+  backups: [{ id: 'backup-preview', createdAt: new Date().toISOString(), ruleCount: 12, hasPersonality: true, hasBotMessages: true }],
+  weeklyReport: { incidents: 7, successful: 7, failed: 0, verifications: 3, availabilityScore: 100, slowestCheck: { label: 'Firebase', durationMs: 88 }, latestBackupAt: new Date().toISOString() },
+}
 
 const primary = 'rounded-full bg-white px-5 py-3 text-[.78rem] font-bold text-[#111821] shadow-sm transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-45'
 const darkSecondary = 'rounded-full border border-white/20 bg-white/[.055] px-5 py-3 text-[.78rem] font-semibold text-white transition hover:border-white/40 hover:bg-white/[.09] disabled:cursor-not-allowed disabled:opacity-45'
@@ -173,14 +256,14 @@ export function ProductionMonitor({
 }) {
   const { user } = useAdminAuth()
   const preview = import.meta.env.DEV && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('__ops_preview') === '1'
-  const [snapshot, setSnapshot] = useState<ControlSnapshot | null>(preview
-    ? { checkedAt: new Date().toISOString(), automaticRefreshSeconds: 30, safeRepair: { available: true, destructive: false, preservesWhatsAppSession: true }, services: previewServices }
-    : null)
+  const [snapshot, setSnapshot] = useState<ControlSnapshot | null>(preview ? previewSnapshot : null)
   const [whatsAppReady, setWhatsAppReady] = useState(preview)
   const [loading, setLoading] = useState(!preview)
   const [busy, setBusy] = useState('')
   const [notice, setNotice] = useState('')
   const [steps, setSteps] = useState<RepairStep[]>([])
+  const [proof, setProof] = useState<RepairProof | null>(preview ? { before: 96, after: 98, checkedAt: new Date().toISOString() } : null)
+  const [persistentAlert, setPersistentAlert] = useState('')
 
   const authorizedFetch = async (path: string, init: RequestInit = {}) => {
     if (!user) throw new Error('انتهت جلسة المشرف؛ سجّل الدخول من جديد.')
@@ -201,7 +284,7 @@ export function ProductionMonitor({
   }
 
   const refresh = async (quiet = false) => {
-    if (preview) return
+    if (preview) return snapshot
     if (!quiet) setLoading(true)
     try {
       const [centerResult, whatsAppResult] = await Promise.allSettled([
@@ -214,6 +297,7 @@ export function ProductionMonitor({
       const center = centerResult.status === 'fulfilled'
         ? centerResult.value as ControlSnapshot
         : { checkedAt: new Date().toISOString(), services: [] }
+      const centerServices = Array.isArray(center.services) ? center.services : []
       const whatsAppService = whatsAppResult.status === 'fulfilled'
         ? buildWhatsAppService(whatsAppResult.value as WhatsAppStatus)
         : {
@@ -228,13 +312,16 @@ export function ProductionMonitor({
             lastEventAt: null,
           }
       setWhatsAppReady(whatsAppResult.status === 'fulfilled' && Boolean((whatsAppResult.value as WhatsAppStatus).health?.ready))
-      setSnapshot({
+      const nextSnapshot = {
         ...center,
-        services: [whatsAppService, ...center.services.filter((service) => service.id !== 'whatsapp')],
-      })
+        services: [whatsAppService, ...centerServices.filter((service) => service.id !== 'whatsapp')],
+      } as ControlSnapshot
+      setSnapshot(nextSnapshot)
       setNotice('')
+      return nextSnapshot
     } catch (error) {
       setNotice(error instanceof Error ? error.message : 'تعذّر فحص المنظومة.')
+      return null
     } finally {
       if (!quiet) setLoading(false)
     }
@@ -255,10 +342,139 @@ export function ProductionMonitor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, preview])
 
-  const runControlAction = async (action: string) => authorizedFetch('/api/admin/control-center', {
+  const runControlAction = async (action: string, extra: Record<string, unknown> = {}) => authorizedFetch('/api/admin/control-center', {
     method: 'POST',
-    body: JSON.stringify({ action }),
-  }) as Promise<{ ok?: boolean; message?: string; steps?: { workflow?: string; label?: string; ok?: boolean; error?: string }[] }>
+    body: JSON.stringify({ action, ...extra }),
+  }) as Promise<ControlActionResult>
+
+  const verifyEverything = async () => {
+    const before = servicesScore(snapshot?.services || [])
+    if (preview) {
+      const checkedAt = new Date().toISOString()
+      setSteps([
+        { id: 'wa-sequence', label: 'واتساب · ثلاث رسائل متتالية', ok: true, durationMs: 41, detail: 'ردّ على السؤال الأول والثاني والثالث من نفس السياق بلا انقطاع.' },
+        { id: 'firebase-probe', label: 'Firebase · كتابة وقراءة وحذف', ok: true, durationMs: 88, detail: 'نجحت الدورة المؤقتة وحُذف ملف الاختبار.' },
+        { id: 'studio-probe', label: 'الاستوديو · ربط التوليد', ok: true, durationMs: 0, detail: 'الإعداد جاهز من دون استهلاك صورة.' },
+      ])
+      setProof({ before, after: 100, checkedAt })
+      setNotice('اكتمل إثبات الاستمرار: واتساب أجاب 3/3، وبقية الطبقات اجتازت القراءة الراجعة.')
+      return
+    }
+    setBusy('verify-all')
+    setSteps([])
+    setNotice('')
+    const whatsappStartedAt = Date.now()
+    const [infrastructureResult, whatsappResult] = await Promise.allSettled([
+      runControlAction('verify-all', { scoreBefore: before }),
+      authorizedFetch('/api/admin/whatsapp/simulate-sequence', {
+        method: 'POST',
+        body: JSON.stringify({ messages: ['آخر مقالة', 'لخصها', 'عطني غيرها'] }),
+      }) as Promise<{ ok?: boolean; continuous?: boolean; sentToWhatsApp?: boolean; turns?: { turn?: number; willReply?: boolean; durationMs?: number; reason?: string }[] }>,
+    ])
+    const nextSteps: RepairStep[] = []
+    if (infrastructureResult.status === 'fulfilled') {
+      for (const step of infrastructureResult.value.steps || []) {
+        nextSteps.push({
+          id: step.id || step.workflow || `probe-${nextSteps.length}`,
+          label: step.label || 'اختبار خدمة',
+          ok: step.ok !== false,
+          durationMs: step.durationMs,
+          detail: step.detail || step.error || 'اكتمل الاختبار.',
+        })
+      }
+    } else {
+      nextSteps.push({
+        id: 'infrastructure',
+        label: 'الخدمات السحابية',
+        ok: false,
+        detail: infrastructureResult.reason instanceof Error ? infrastructureResult.reason.message : 'تعذّر اختبار الخدمات.',
+      })
+    }
+    if (whatsappResult.status === 'fulfilled') {
+      const turns = whatsappResult.value.turns || []
+      const replied = turns.filter((turn) => turn.willReply).length
+      nextSteps.unshift({
+        id: 'wa-sequence',
+        label: 'واتساب · ثلاث رسائل متتالية',
+        ok: whatsappResult.value.continuous === true && replied === 3,
+        durationMs: Date.now() - whatsappStartedAt,
+        detail: `ردّ المحرك على ${replied}/3 من نفس المحادثة؛ لم تُرسل أي رسالة حقيقية.`,
+      })
+    } else {
+      nextSteps.unshift({
+        id: 'wa-sequence',
+        label: 'واتساب · ثلاث رسائل متتالية',
+        ok: false,
+        durationMs: Date.now() - whatsappStartedAt,
+        detail: whatsappResult.reason instanceof Error ? whatsappResult.reason.message : 'تعذّرت محاكاة المحادثة.',
+      })
+    }
+    const afterSnapshot = await refresh(true)
+    const after = servicesScore(afterSnapshot?.services || snapshot?.services || [])
+    const checkedAt = new Date().toISOString()
+    setSteps(nextSteps)
+    setProof({ before, after, checkedAt })
+    const allOk = nextSteps.every((step) => step.ok)
+    setNotice(allOk
+      ? 'اكتمل الإثبات: واتساب استمر 3/3، ونجحت اختبارات الطبقات الآمنة.'
+      : 'اكتمل الفحص؛ السجل يحدد بدقة الاختبار الذي لم يجتز.')
+    await runControlAction('record-proof', {
+      scoreBefore: before,
+      scoreAfter: after,
+      steps: nextSteps,
+    }).catch(() => undefined)
+    setBusy('')
+  }
+
+  const backupSettings = async () => {
+    if (preview) {
+      setSteps([{ id: 'settings-backup', label: 'نسخة إعدادات التشغيل', ok: true, durationMs: 62, detail: 'حُفظت القواعد والشخصية ورسائل البوت.' }])
+      setNotice('أُنشئت نسخة احتياطية خاصة قابلة للاستعادة.')
+      return
+    }
+    setBusy('backup-settings')
+    try {
+      const result = await runControlAction('backup-settings')
+      setSteps((result.steps || []).map((step, index) => ({
+        id: step.id || `backup-${index}`,
+        label: step.label || 'نسخة إعدادات التشغيل',
+        ok: step.ok !== false,
+        durationMs: step.durationMs,
+        detail: step.detail || result.message || 'اكتملت النسخة.',
+      })))
+      setNotice(result.message || 'أُنشئت النسخة الاحتياطية.')
+      await refresh(true)
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'تعذّر إنشاء النسخة.')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  const restoreBackup = async (backup: ControlBackup) => {
+    if (preview) {
+      setNotice('وضع المعاينة لا يغيّر الإعدادات.')
+      return
+    }
+    if (!window.confirm(`استعادة نسخة ${safeDate(backup.createdAt)}؟ ستعود قواعد الرد والشخصية ورسائل البوت، ولن تُمس جلسة واتساب أو المحادثات.`)) return
+    setBusy(`restore:${backup.id}`)
+    try {
+      const result = await runControlAction('restore-settings', { backupId: backup.id, confirm: true })
+      setSteps((result.steps || []).map((step, index) => ({
+        id: step.id || `restore-${index}`,
+        label: step.label || 'استعادة الإعدادات',
+        ok: step.ok !== false,
+        durationMs: step.durationMs,
+        detail: step.detail || result.message || 'اكتملت الاستعادة.',
+      })))
+      setNotice(result.message || 'اكتملت الاستعادة.')
+      await refresh(true)
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'تعذّرت الاستعادة.')
+    } finally {
+      setBusy('')
+    }
+  }
 
   const repairAll = async () => {
     if (preview) {
@@ -346,12 +562,35 @@ export function ProductionMonitor({
   }
 
   const services = snapshot?.services || []
+  const criticalSignature = services.filter((service) => service.level === 'critical').map((service) => service.id).sort().join(',')
+  useEffect(() => {
+    if (preview) return
+    const storageKey = 'control-center:critical-since:v1'
+    if (!criticalSignature) {
+      try { localStorage.removeItem(storageKey) } catch { /* private mode */ }
+      setPersistentAlert('')
+      return
+    }
+    let since = Date.now()
+    try {
+      const stored = Number(localStorage.getItem(storageKey))
+      if (Number.isFinite(stored) && stored > 0) since = stored
+      else localStorage.setItem(storageKey, String(since))
+    } catch { /* private mode */ }
+    const updateAlert = () => {
+      if (Date.now() - since < 3 * 60_000) return
+      const labels = services.filter((service) => service.level === 'critical').map((service) => service.title).join('، ')
+      setPersistentAlert(`استمر العطل الحرج أكثر من 3 دقائق: ${labels}. التشخيص والإصلاح الآمن جاهزان أدناه.`)
+    }
+    updateAlert()
+    const timer = window.setTimeout(updateAlert, Math.max(0, 3 * 60_000 - (Date.now() - since)) + 50)
+    return () => window.clearTimeout(timer)
+  }, [criticalSignature, preview, services])
+
   const summary = useMemo(() => {
     const healthy = services.filter((service) => service.level === 'healthy').length
     const attention = services.length - healthy
-    const score = services.length
-      ? Math.round(services.reduce((total, service) => total + levelWeight[service.level], 0) / services.length)
-      : 0
+    const score = servicesScore(services)
     const critical = services.some((service) => service.level === 'critical')
     const warning = services.some((service) => service.level === 'warning')
     return {
@@ -365,6 +604,9 @@ export function ProductionMonitor({
     }
   }, [services])
   const publishedArticles = articles.filter((article) => !article._cms.hidden).length
+  const weekly = snapshot?.weeklyReport
+  const incidents = snapshot?.incidents || []
+  const backups = snapshot?.backups || []
 
   return (
     <div className="grid min-w-0 gap-5" data-autopilot-control-center="true">
@@ -387,6 +629,9 @@ export function ProductionMonitor({
             <div className="mt-7 flex flex-wrap gap-2">
               <button type="button" className={primary} onClick={() => void repairAll()} disabled={Boolean(busy)} data-safe-repair-all="true">
                 {busy === 'repair-safe' ? 'يجري الفحص والإصلاح…' : 'افحص وأصلح الآمن كله'}
+              </button>
+              <button type="button" className={darkSecondary} onClick={() => void verifyEverything()} disabled={Boolean(busy)} data-continuous-whatsapp-proof="true">
+                {busy === 'verify-all' ? 'يختبر ثلاث رسائل…' : 'أثبت الاستمرار والسرعة'}
               </button>
               <button type="button" className={darkSecondary} onClick={() => void refresh()} disabled={loading || Boolean(busy)}>
                 {loading ? 'يفحص الآن…' : 'فحص جديد'}
@@ -413,6 +658,18 @@ export function ProductionMonitor({
         </div>
       </section>
 
+      {persistentAlert && (
+        <section className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4 text-rose-950" role="alert" data-persistent-critical-alert="true">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[.65rem] font-bold">تنبيه ذكي · عطل مستمر</p>
+              <p className="mt-1 text-[.74rem] leading-relaxed">{persistentAlert}</p>
+            </div>
+            <button type="button" className="rounded-full border border-rose-300 px-4 py-2 text-[.7rem] font-bold" onClick={() => void repairAll()} disabled={Boolean(busy)}>ابدأ الإصلاح الآمن</button>
+          </div>
+        </section>
+      )}
+
       {(notice || steps.length > 0) && (
         <section className="rounded-2xl border border-accent/20 bg-accent/[.035] p-4 sm:p-5" aria-live="polite">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -428,15 +685,124 @@ export function ProductionMonitor({
                 <div key={step.id} className="flex gap-3 rounded-xl border border-hair bg-canvas px-3 py-3">
                   <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${step.ok ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                   <div className="min-w-0">
-                    <strong className="block text-[.7rem] text-ink">{step.label}</strong>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <strong className="block text-[.7rem] text-ink">{step.label}</strong>
+                      {durationLabel(step.durationMs) && <span className="rounded-full bg-wash px-2 py-0.5 text-[.55rem] text-soft" dir="ltr">{durationLabel(step.durationMs)}</span>}
+                    </div>
                     <span className="mt-1 block text-[.64rem] leading-relaxed text-soft">{step.detail}</span>
                   </div>
                 </div>
               ))}
             </div>
           )}
+          {proof && (
+            <div className="mt-4 grid gap-2 rounded-xl border border-accent/15 bg-canvas p-3 sm:grid-cols-[1fr_auto_auto] sm:items-center">
+              <div>
+                <strong className="block text-[.68rem] text-ink">إثبات قبل / بعد</strong>
+                <span className="mt-1 block text-[.62rem] text-soft">قراءة راجعة موثقة في {safeDate(proof.checkedAt)}</span>
+              </div>
+              <div className="rounded-lg bg-wash px-3 py-2 text-center"><span className="block text-[.55rem] text-soft">قبل</span><strong className="text-sm text-ink">{proof.before}٪</strong></div>
+              <div className="rounded-lg bg-accent/[.07] px-3 py-2 text-center"><span className="block text-[.55rem] text-accent">بعد الفحص</span><strong className="text-sm text-accent">{proof.after}٪</strong></div>
+            </div>
+          )}
         </section>
       )}
+
+      <section className="grid gap-3 lg:grid-cols-2" data-weekly-operations-report="true">
+        <article className="rounded-2xl border border-hair bg-wash p-4 sm:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-[.65rem] font-bold text-accent">تقرير آخر 7 أيام</p>
+              <h3 className="mt-1 font-display text-lg font-bold text-ink">الدليل بدلاً من الانطباع.</h3>
+            </div>
+            <span className={`rounded-full border px-3 py-1 text-[.62rem] font-bold ${(weekly?.failed || 0) > 0 ? 'border-amber-200 bg-amber-50 text-amber-900' : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`}>
+              {weekly?.availabilityScore == null ? 'يبدأ التجميع الآن' : `جاهزية ${weekly.availabilityScore}٪`}
+            </span>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {[
+              ['الأحداث', weekly?.incidents ?? 0],
+              ['نجحت', weekly?.successful ?? 0],
+              ['فشلت', weekly?.failed ?? 0],
+              ['إثباتات', weekly?.verifications ?? 0],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-xl border border-hair bg-canvas px-3 py-3 text-center">
+                <strong className="block text-base text-ink">{value}</strong>
+                <span className="mt-0.5 block text-[.57rem] text-soft">{label}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-[.63rem] leading-relaxed text-soft">
+            {weekly?.slowestCheck?.label
+              ? `أبطأ فحص: ${weekly.slowestCheck.label} · ${durationLabel(weekly.slowestCheck.durationMs)}.`
+              : 'بعد أول اختبار شامل ستظهر أبطأ طبقة والزمن الفعلي هنا.'}
+          </p>
+        </article>
+
+        <article className="rounded-2xl border border-hair bg-wash p-4 sm:p-5" data-admin-settings-backup="true">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-[.65rem] font-bold text-accent">نسخة رجوع خاصة</p>
+              <h3 className="mt-1 font-display text-lg font-bold text-ink">قواعد البوت وشخصيته ورسائله.</h3>
+            </div>
+            <button type="button" className={lightButton} onClick={() => void backupSettings()} disabled={Boolean(busy)}>
+              {busy === 'backup-settings' ? 'يحفظ الآن…' : 'أنشئ نسخة الآن'}
+            </button>
+          </div>
+          <p className="mt-3 text-[.67rem] leading-relaxed text-soft">لا تشمل الجلسة أو أرقام الناس أو المحادثات. الاستعادة تعيد إعدادات التشغيل فقط.</p>
+          <details className="group mt-3 rounded-xl border border-hair bg-canvas">
+            <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-3 text-[.68rem] font-semibold text-ink [&::-webkit-details-marker]:hidden">
+              <span>{backups.length === 1 ? 'نسخة واحدة محفوظة' : backups.length ? `${backups.length} نسخ محفوظة` : 'لا توجد نسخة بعد'}</span>
+              <span className="text-soft transition group-open:rotate-45">＋</span>
+            </summary>
+            <div className="grid gap-2 border-t border-hair p-3">
+              {backups.map((backup) => (
+                <div key={backup.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-wash px-3 py-2">
+                  <div>
+                    <strong className="block text-[.64rem] text-ink">{safeDate(backup.createdAt)}</strong>
+                    <span className="text-[.56rem] text-soft">{backup.ruleCount} قاعدة · الشخصية والرسائل</span>
+                  </div>
+                  <button type="button" className={lightButton} disabled={Boolean(busy)} onClick={() => void restoreBackup(backup)}>
+                    {busy === `restore:${backup.id}` ? 'يستعيد…' : 'استعد هذه النسخة'}
+                  </button>
+                </div>
+              ))}
+              {!backups.length && <p className="text-[.62rem] text-soft">اضغط «أنشئ نسخة الآن» قبل أي تعديل كبير.</p>}
+            </div>
+          </details>
+        </article>
+      </section>
+
+      <section className="rounded-2xl border border-hair bg-wash p-4 sm:p-5" data-incident-history="true">
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 [&::-webkit-details-marker]:hidden">
+            <div>
+              <p className="text-[.65rem] font-bold text-accent">سجل الحوادث والإصلاحات</p>
+              <h3 className="mt-1 font-display text-lg font-bold text-ink">ماذا حدث ومتى وكيف انتهى؟</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.6rem] text-soft">{incidents.length} سجل</span>
+              <span className="text-soft transition group-open:rotate-45">＋</span>
+            </div>
+          </summary>
+          <div className="mt-4 grid gap-2 border-t border-hair pt-4">
+            {incidents.map((incident) => {
+              const failed = incident.status === 'failed' || incident.steps?.some((step) => step.ok === false)
+              return (
+                <div key={incident.id} className="grid gap-2 rounded-xl border border-hair bg-canvas p-3 sm:grid-cols-[auto_1fr_auto] sm:items-center">
+                  <span className={`h-2.5 w-2.5 rounded-full ${failed ? 'bg-rose-500' : incident.status === 'accepted' ? 'bg-amber-400' : 'bg-emerald-500'}`} />
+                  <div>
+                    <strong className="block text-[.67rem] text-ink">{incidentActionLabel[incident.action] || incident.action || 'أمر تشغيل'}</strong>
+                    <span className="mt-0.5 block text-[.58rem] text-soft">{incident.steps?.[0]?.detail || (failed ? 'يوجد جزء لم يجتز.' : 'اكتمل أو استُلم بنجاح.')}</span>
+                  </div>
+                  <span className="text-[.58rem] text-soft">{safeDate(incident.requestedAt)}</span>
+                </div>
+              )
+            })}
+            {!incidents.length && <p className="text-[.65rem] text-soft">سيبدأ السجل من أول فحص أو إصلاح تنفذه هنا.</p>}
+          </div>
+        </details>
+      </section>
 
       <section>
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3 px-1">

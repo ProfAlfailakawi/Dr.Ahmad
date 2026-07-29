@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import {
   decideGroundedResponse,
   findRuleMatch,
+  buildWhatsAppDiagnostics,
   normalizeArabicMessage,
   isWhatsAppWakePhrase,
   isInvalidBridgeRegression,
@@ -33,6 +34,52 @@ assert.match(controllerSource, /mode: 'silent', wakeActive: false, wakeVersion: 
 assert.match(controllerSource, /resumes: 'wake-phrase-only'/)
 assert.match(controllerSource, /reason: 'owner-private-chat'/)
 assert.match(controllerSource, /reason: 'duplicate-delivery'/)
+assert.match(controllerSource, /path === '\/recover'/)
+
+const now = Date.parse('2026-07-29T18:30:00.000Z')
+const healthyDiagnostics = buildWhatsAppDiagnostics({
+  now,
+  status: {
+    status: 'connected',
+    bridgeOnline: true,
+    heartbeatAgeMs: 4_000,
+    indexed: 196,
+    runtimePaused: false,
+    health: { ready: true, needsAuthScan: false, why: '' },
+  },
+  conversations: [{ lastInboundAt: '2026-07-29T18:29:50.000Z', lastReplyAt: '2026-07-29T18:29:52.000Z' }],
+  commands: [],
+})
+assert.equal(healthyDiagnostics.code, 'healthy')
+assert.equal(healthyDiagnostics.level, 'healthy')
+assert.equal(healthyDiagnostics.checks.length, 5)
+assert.equal(healthyDiagnostics.queue.staleLeased, 0)
+
+const offlineDiagnostics = buildWhatsAppDiagnostics({
+  now,
+  status: { status: 'disconnected', bridgeOnline: false, indexed: 196, health: { ready: false, needsAuthScan: false, why: 'لا توجد نبضة' } },
+})
+assert.equal(offlineDiagnostics.code, 'resident-offline')
+assert.equal(offlineDiagnostics.level, 'critical')
+
+const pausedDiagnostics = buildWhatsAppDiagnostics({
+  now,
+  status: { status: 'connected', bridgeOnline: true, indexed: 196, runtimePaused: true, health: { ready: true, needsAuthScan: false } },
+})
+assert.equal(pausedDiagnostics.code, 'replies-paused')
+
+const stalledDiagnostics = buildWhatsAppDiagnostics({
+  now,
+  status: { status: 'connected', bridgeOnline: true, indexed: 196, runtimePaused: false, health: { ready: true, needsAuthScan: false } },
+  commands: [{ status: 'leased', leasedAt: '2026-07-29T18:20:00.000Z' }],
+})
+assert.equal(stalledDiagnostics.code, 'queue-stalled')
+assert.equal(stalledDiagnostics.queue.staleLeased, 1)
+
+const panelSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../src/components/admin/WhatsAppAgentPanel.tsx', import.meta.url), 'utf8'))
+assert.match(panelSource, /data-whatsapp-recovery-center="true"/)
+assert.match(panelSource, /\/admin\/recover/)
+assert.match(panelSource, /مركز التشخيص والإحياء/)
 
 const rules = [{
   id: 'hours',

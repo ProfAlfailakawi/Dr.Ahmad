@@ -3,6 +3,24 @@ import AudienceStudio from './AudienceStudio'
 import { BroadcastStudio } from './BroadcastStudio'
 import { useAdminAuth } from '../../lib/admin-auth'
 
+type DiagnosticCheck = {
+  id: string
+  label: string
+  state: 'ok' | 'warning' | 'error' | 'info'
+  detail: string
+}
+type WhatsAppDiagnostics = {
+  code: string
+  level: 'healthy' | 'attention' | 'warning' | 'critical'
+  title: string
+  summary: string
+  action: string
+  checkedAt: string
+  checks: DiagnosticCheck[]
+  queue: { active: number; pending: number; leased: number; held: number; failed: number; staleLeased: number }
+  activity: { lastInboundAt: string | null; lastReplyAt: string | null; lastManualAt: string | null }
+  privacy: string
+}
 type AgentStatus = {
   status?: string
   indexed?: number
@@ -26,6 +44,11 @@ type AgentStatus = {
   repairBlockedUntil?: string | null
   repairCooldownMs?: number
   repairAllowed?: boolean
+  bridgeVersion?: string | null
+  bridgeInstanceId?: string | null
+  bridgeStateAt?: string | null
+  lastRecoveryRequestedAt?: string | null
+  diagnostics?: WhatsAppDiagnostics
   health?: {
     code: string; label: string; why: string; fix: string
     ready: boolean; needsAuthScan: boolean; pollFailures: number
@@ -132,6 +155,20 @@ function ageLabel(ms?: number | null) {
   return `${Math.round(ms / 60_000)} دقيقة`
 }
 
+function activityLabel(value?: string | null) {
+  if (!value) return 'لا يوجد بعد'
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) return 'غير معروف'
+  return date.toLocaleString('ar-KW-u-nu-latn', {
+    timeZone: 'Asia/Kuwait',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 function keywordsText(rule: Partial<ReplyRule>) {
   return Array.isArray(rule.keywords) ? rule.keywords.join('، ') : ''
 }
@@ -146,6 +183,7 @@ export function WhatsAppAgentPanel() {
   const [busy, setBusy] = useState(false)
   const [restarting, setRestarting] = useState(false)
   const [repairing, setRepairing] = useState(false)
+  const [recoveringAll, setRecoveringAll] = useState(false)
   const [notice, setNotice] = useState('')
   const [manualJid, setManualJid] = useState('')
   const [rules, setRules] = useState<ReplyRule[]>([])
@@ -324,6 +362,24 @@ export function WhatsAppAgentPanel() {
     await restartBridge()
   }
 
+  const recoverEverything = async () => {
+    setRecoveringAll(true)
+    try {
+      const result = await request<{ requeued?: number; message?: string }>('/admin/recover', {
+        method: 'POST',
+        body: JSON.stringify({ confirm: true }),
+      })
+      setNotice(`${result.message || 'أُرسل الإحياء الآمن.'}${result.requeued ? ` وأُعيد ${result.requeued} أمر عالق إلى الطابور.` : ''}`)
+      window.setTimeout(() => void refresh(), 3500)
+    } catch (error) {
+      setNotice(error instanceof Error && error.message
+        ? `تعذّر الإحياء الآمن: ${error.message}`
+        : 'تعذّر الإحياء الآمن. حدّث التشخيص لمعرفة الطبقة المتوقفة.')
+    } finally {
+      setRecoveringAll(false)
+    }
+  }
+
   const repairSession = async () => {
     if (!status.bridgeOnline) {
       setNotice('لا يمكن إعادة الربط والجسر متوقف. انتظر عودة خدمة الحراسة ثم حدّث الحالة.')
@@ -449,6 +505,19 @@ export function WhatsAppAgentPanel() {
     ['4', 'فاجئني وشنو فاتني داخل جلسة', flags.autoReply],
     ['5', 'التذكيرات وبطاقات الاقتباس', flags.reminders || flags.quoteCard],
   ] as const
+  const diagnostics = status.diagnostics
+  const diagnosticTone = {
+    healthy: 'border-emerald-300/70 bg-emerald-50/70 text-emerald-800',
+    attention: 'border-sky-300/70 bg-sky-50/70 text-sky-800',
+    warning: 'border-amber-300/70 bg-amber-50/70 text-amber-900',
+    critical: 'border-red-300/70 bg-red-50/70 text-red-800',
+  }[diagnostics?.level || 'warning']
+  const diagnosticCheckTone = (state: DiagnosticCheck['state']) => ({
+    ok: 'border-emerald-200 bg-emerald-50/45 text-emerald-800',
+    info: 'border-sky-200 bg-sky-50/45 text-sky-800',
+    warning: 'border-amber-200 bg-amber-50/55 text-amber-900',
+    error: 'border-red-200 bg-red-50/55 text-red-800',
+  }[state])
 
   return (
     <div className="admin-dashboard grid min-w-0 gap-4">
@@ -656,6 +725,52 @@ export function WhatsAppAgentPanel() {
 
       {screen === 'live' && (
         <>
+      <section data-whatsapp-recovery-center="true" className={`${card} border-accent/25`}>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[.7rem] font-bold uppercase tracking-[.16em] text-accent">مركز التشخيص والإحياء</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <h2 className="font-display text-2xl font-semibold text-ink">{diagnostics?.title || 'أفحص طبقات واتساب…'}</h2>
+              <span className={`rounded-full border px-3 py-1 text-[.68rem] font-semibold ${diagnosticTone}`}>
+                {diagnostics?.level === 'healthy' ? 'سليم' : diagnostics?.level === 'critical' ? 'يحتاج تدخلاً' : diagnostics?.level === 'warning' ? 'يحتاج انتباهاً' : 'ملاحظة'}
+              </span>
+            </div>
+            <p className="mt-2 max-w-3xl text-[.8rem] leading-relaxed text-soft">{diagnostics?.summary || 'يجمع حالة الخادم والجسر وجلسة واتساب ومحرك الرد وطابور الأوامر.'}</p>
+            {diagnostics?.action && <p className="mt-2 max-w-3xl text-[.76rem] font-medium leading-relaxed text-ink">{diagnostics.action}</p>}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className={primary} disabled={recoveringAll || repairing || diagnostics?.code === 'scan-qr'} onClick={() => void recoverEverything()}>
+              {recoveringAll ? 'يُحيي النظام…' : diagnostics?.code === 'scan-qr' ? 'QR ظاهر أدناه' : 'إحياء آمن'}
+            </button>
+            <button type="button" className={secondary} disabled={busy} onClick={() => void refresh()}>{busy ? 'يفحص…' : 'فحص شامل'}</button>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          {(diagnostics?.checks || []).map((check) => (
+            <article key={check.id} className={`rounded-xl border p-3 ${diagnosticCheckTone(check.state)}`}>
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-[.76rem] font-semibold">{check.label}</h3>
+                <span aria-hidden="true" className="text-[.78rem]">{check.state === 'ok' ? '●' : check.state === 'info' ? '◆' : '!'}</span>
+              </div>
+              <p className="mt-2 text-[.68rem] leading-relaxed opacity-80">{check.detail}</p>
+            </article>
+          ))}
+          {!diagnostics?.checks?.length && <p className="rounded-xl border border-dashed border-hair p-4 text-[.74rem] text-soft">اضغط «فحص شامل» لعرض تشخيص الطبقات الخمس.</p>}
+        </div>
+
+        {diagnostics && (
+          <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_1fr_1fr_1.15fr]">
+            <div className="rounded-xl border border-hair bg-canvas px-3 py-3"><p className="text-[.66rem] text-soft">آخر رسالة وصلت</p><p className="mt-1 text-[.72rem] font-semibold text-ink">{activityLabel(diagnostics.activity.lastInboundAt)}</p></div>
+            <div className="rounded-xl border border-hair bg-canvas px-3 py-3"><p className="text-[.66rem] text-soft">آخر رد آلي</p><p className="mt-1 text-[.72rem] font-semibold text-ink">{activityLabel(diagnostics.activity.lastReplyAt)}</p></div>
+            <div className="rounded-xl border border-hair bg-canvas px-3 py-3"><p className="text-[.66rem] text-soft">آخر تدخل يدوي</p><p className="mt-1 text-[.72rem] font-semibold text-ink">{activityLabel(diagnostics.activity.lastManualAt)}</p></div>
+            <div className="rounded-xl border border-hair bg-canvas px-3 py-3"><p className="text-[.66rem] text-soft">طابور الأوامر</p><p className="mt-1 text-[.72rem] font-semibold text-ink">{diagnostics.queue.active} نشط · {diagnostics.queue.failed} فاشل · {diagnostics.queue.staleLeased} عالق</p></div>
+          </div>
+        )}
+        <p className="mt-3 text-[.66rem] leading-relaxed text-soft">{diagnostics?.privacy || 'لا تظهر هذه اللوحة نصوص المحادثات أو أرقام أصحابها.'}</p>
+        {notice && <p role="status" className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{notice}</p>}
+      </section>
+
       {/* حتى قسم الحالة يُطوى بأمر الدكتور. لكن الحالة نفسها (متصل/غير متصل)
           تبقى في العنوان — فما فائدة كرتٍ يخفي الخبر الوحيد الذي تريده بنظرة؟ */}
       <details className={`${card} group`}>
@@ -778,7 +893,6 @@ export function WhatsAppAgentPanel() {
           </ol>
         </details>
         {status.last_error && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.8rem] text-soft">{status.last_error}</p>}
-        {notice && <p role="status" className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{notice}</p>}
       </details>
 
       {/* حُذف «بوابة الإطلاق» بأمر الدكتور — إزعاجٌ بصريّ بلا فائدة. */}

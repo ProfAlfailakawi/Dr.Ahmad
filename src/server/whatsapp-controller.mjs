@@ -630,6 +630,10 @@ function bridgeStatus(data = {}) {
     heartbeatAgeMs,
     last_error: lastError,
     device_name: bounded(data.deviceName, 120) || 'جسر واتساب المركزي',
+    bridgeVersion: bounded(data.version, 80) || null,
+    bridgeInstanceId: bounded(data.instanceId, 100) || null,
+    bridgeStateAt: bounded(data.stateAt, 80) || null,
+    lastRecoveryRequestedAt: bounded(data.lastRecoveryRequestedAt, 80) || null,
     updated_at: bounded(data.updatedAt, 80) || null,
     qr: hasQr ? savedQr : null,
     qrImage: hasQr ? savedQrImage : null,
@@ -682,6 +686,175 @@ function bridgeStatus(data = {}) {
       silenced: 0,
       pollFailures: 0,
     },
+  }
+}
+
+function diagnosticTimestamp(value) {
+  if (value && typeof value.toDate === 'function') return value.toDate().getTime()
+  const parsed = value instanceof Date ? value.getTime() : Date.parse(String(value || ''))
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function newestDiagnosticTime(rows, keys) {
+  let latest = null
+  for (const row of rows) {
+    for (const key of keys) {
+      const value = diagnosticTimestamp(row?.[key])
+      if (value != null && (latest == null || value > latest)) latest = value
+    }
+  }
+  return latest == null ? null : asIso(latest)
+}
+
+export function buildWhatsAppDiagnostics({
+  status = {},
+  conversations = [],
+  commands = [],
+  now = Date.now(),
+} = {}) {
+  const rows = Array.isArray(conversations) ? conversations : []
+  const queueRows = Array.isArray(commands) ? commands : []
+  const silenced = rows.filter((row) => row?.mode === 'human').length
+  const pending = queueRows.filter((row) => row?.status === 'pending').length
+  const leased = queueRows.filter((row) => row?.status === 'leased').length
+  const held = queueRows.filter((row) => row?.status === 'held').length
+  const failed = queueRows.filter((row) => row?.status === 'failed').length
+  const staleLeased = queueRows.filter((row) => {
+    if (row?.status !== 'leased') return false
+    const leasedAt = diagnosticTimestamp(row?.leasedAt || row?.updatedAt)
+    return leasedAt != null && now - leasedAt > 90_000
+  }).length
+  const active = pending + leased + held
+  const lastInboundAt = newestDiagnosticTime(rows, ['lastInboundAt'])
+  const lastReplyAt = newestDiagnosticTime(rows, ['lastReplyAt'])
+  const lastManualAt = newestDiagnosticTime(rows, ['lastManualAt'])
+  const lastFailed = queueRows
+    .filter((row) => row?.status === 'failed')
+    .sort((left, right) => (diagnosticTimestamp(right?.updatedAt) || 0) - (diagnosticTimestamp(left?.updatedAt) || 0))[0]
+  const connected = status?.health?.ready === true || (status?.bridgeOnline === true && status?.status === 'connected')
+  const indexed = Number(status?.indexed || 0)
+  const runtimePaused = status?.runtimePaused === true
+  const needsAuthScan = status?.health?.needsAuthScan === true
+  const bridgeOnline = status?.bridgeOnline === true
+
+  const checks = [
+    {
+      id: 'control-plane',
+      label: 'لوحة التحكم',
+      state: 'ok',
+      detail: 'الخادم استجاب للفحص وصلاحية المشرف سليمة.',
+    },
+    {
+      id: 'resident-bridge',
+      label: 'خدمة الماك المقيمة',
+      state: bridgeOnline ? 'ok' : 'error',
+      detail: bridgeOnline
+        ? `النبض يصل بانتظام${status?.heartbeatAgeMs != null ? `؛ آخر نبضة قبل ${Math.max(1, Math.round(Number(status.heartbeatAgeMs) / 1000))} ثانية` : ''}.`
+        : 'لا تصل نبضة من الماك؛ قد يكون الجهاز مطفأً أو نائماً، الإنترنت مقطوعاً، أو خدمة التشغيل متوقفة.',
+    },
+    {
+      id: 'whatsapp-session',
+      label: 'جلسة واتساب',
+      state: connected ? 'ok' : needsAuthScan ? 'warning' : 'error',
+      detail: connected
+        ? 'واتساب موثّق ومتصل.'
+        : needsAuthScan
+          ? 'الخدمة تعمل لكنها تنتظر مسح رمز QR من الهاتف.'
+          : (status?.last_error || status?.health?.why || 'جلسة واتساب لم تصل إلى الجاهزية.'),
+    },
+    {
+      id: 'reply-engine',
+      label: 'محرك الرد',
+      state: runtimePaused ? 'error' : indexed > 0 ? (silenced > 0 ? 'warning' : 'ok') : 'error',
+      detail: runtimePaused
+        ? 'الردود الآلية موقوفة من لوحة التحكم.'
+        : indexed <= 0
+          ? 'فهرس الموقع فارغ؛ لا توجد مادة موثقة يبني عليها الرد.'
+          : silenced > 0
+            ? `المحرك يعمل، لكن ${silenced} محادثة تحت الاستلام اليدوي ولن تعود إلا بعد إتاحة الإيقاظ.`
+            : `المحرك يعمل ومعه ${indexed} مادة موثقة.`,
+    },
+    {
+      id: 'command-queue',
+      label: 'طابور الأوامر',
+      state: staleLeased > 0 ? 'error' : failed > 0 ? 'warning' : active > 0 ? 'info' : 'ok',
+      detail: staleLeased > 0
+        ? `${staleLeased} أمر عالق بعد استلامه من الجسر.`
+        : failed > 0
+          ? `${failed} أمر فشل مؤخراً${lastFailed?.error ? `: ${bounded(lastFailed.error, 180)}` : '.'}`
+          : active > 0
+            ? `${active} أمر قيد الانتظار أو التنفيذ.`
+            : 'لا توجد أوامر عالقة.',
+    },
+  ]
+
+  let code = 'healthy'
+  let level = 'healthy'
+  let title = 'كل الأنظمة جاهزة'
+  let summary = 'الجسر متصل، جلسة واتساب جاهزة، ومحرك الرد يعمل من فهرس الموقع.'
+  let action = 'لا يلزم تدخل. استخدم «فحص شامل» متى أردت التأكد.'
+
+  if (!bridgeOnline) {
+    code = 'resident-offline'
+    level = 'critical'
+    title = 'خدمة الماك لا ترسل نبضاً'
+    summary = 'العطل قبل واتساب نفسه: لوحة التحكم لا ترى الجسر المقيم على الماك.'
+    action = 'اضغط «إحياء آمن» ليُحفظ طلب التشغيل، وتأكد أن الماك يعمل ومتصل بالإنترنت. خدمة النظام تعيده تلقائياً من دون مسح الجلسة.'
+  } else if (needsAuthScan) {
+    code = 'scan-qr'
+    level = 'warning'
+    title = 'واتساب ينتظر ربط الهاتف'
+    summary = 'الجسر سليم، لكن جلسة واتساب تحتاج مصادقة من الأجهزة المرتبطة.'
+    action = 'امسح رمز QR الظاهر في اللوحة مرة واحدة وانتظر حتى تظهر «جاهز».'
+  } else if (!connected) {
+    code = 'session-not-ready'
+    level = 'critical'
+    title = 'الجسر يعمل لكن واتساب غير جاهز'
+    summary = status?.last_error || status?.health?.why || 'الاتصال متوقف في مرحلة التهيئة.'
+    action = 'اضغط «إحياء آمن». إذا ظهر «فشل التوثيق» فقط، استخدم «إعادة ربط من الصفر».'
+  } else if (runtimePaused) {
+    code = 'replies-paused'
+    level = 'warning'
+    title = 'الاتصال سليم والردود موقوفة'
+    summary = 'واتساب متصل، لكن مفتاح الإيقاف العام يمنع البوت من الرد.'
+    action = 'اضغط «إحياء آمن» أو «تشغيل الردود» لإعادته فوراً.'
+  } else if (staleLeased > 0) {
+    code = 'queue-stalled'
+    level = 'warning'
+    title = 'هناك أمر عالق'
+    summary = 'الجسر متصل، لكن أمراً بقي مستلماً من دون إكمال.'
+    action = 'اضغط «إحياء آمن» لإعادة الأمر إلى الطابور وإعادة تشغيل الجسر مع إبقاء الجلسة.'
+  } else if (indexed <= 0) {
+    code = 'knowledge-empty'
+    level = 'critical'
+    title = 'محرك الرد بلا فهرس'
+    summary = 'الاتصال سليم، لكن فهرس الموقع الذي يمنع التخمين فارغ.'
+    action = 'حدّث الموقع ثم شغّل «فحص شامل». لا تستخدم إعادة ربط واتساب لهذا العطل.'
+  } else if (failed > 0) {
+    code = 'recent-command-failures'
+    level = 'warning'
+    title = 'الاتصال سليم مع فشل أوامر سابقة'
+    summary = 'البوت جاهز الآن، لكن توجد أوامر فشلت ويظهر سبب آخر فشل في طابور الأوامر.'
+    action = 'شغّل «إحياء آمن» إذا استمر الفشل؛ لا تمسح جلسة واتساب.'
+  } else if (silenced > 0) {
+    code = 'manual-takeover'
+    level = 'attention'
+    title = 'البوت حي مع محادثات مستلمة يدوياً'
+    summary = `الاتصال سليم، لكن ${silenced} محادثة أُغلقت فيها جلسة البوت بعد رد بشري.`
+    action = 'استخدم «اسمح بالإيقاظ»؛ بعدها يعود فقط عندما يكتب الشخص جملة الإيقاظ.'
+  }
+
+  return {
+    code,
+    level,
+    title,
+    summary,
+    action,
+    checkedAt: asIso(now),
+    checks,
+    queue: { active, pending, leased, held, failed, staleLeased },
+    activity: { lastInboundAt, lastReplyAt, lastManualAt },
+    privacy: 'التشخيص يعرض الحالة والتوقيت والعدادات فقط؛ لا يعرض نصوص الناس أو أرقامهم.',
   }
 }
 
@@ -1385,19 +1558,24 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
 
     if (path === '/status' && method === 'GET') {
       await sweepExpiredManualStates(db)
-      const [bridgeSnapshot, runtimeSnapshot, conversations] = await Promise.all([
+      const [bridgeSnapshot, runtimeSnapshot, conversations, commands] = await Promise.all([
         db.collection(COLLECTIONS.bridge).doc('primary').get(),
         db.collection(COLLECTIONS.settings).doc('runtime').get(),
         db.collection(COLLECTIONS.conversations).limit(250).get(),
+        db.collection(COLLECTIONS.commands).limit(250).get(),
       ])
       const data = bridgeSnapshot.exists ? bridgeSnapshot.data() || {} : {}
       const status = bridgeStatus({ ...data, runtimePaused: Boolean(runtimeSnapshot.data()?.paused) })
-      const silenced = conversations.docs.filter((doc) => {
-        const row = doc.data() || {}
-        return row.mode === 'human'
-      }).length
+      const conversationRows = conversations.docs.map((doc) => doc.data() || {})
+      const commandRows = commands.docs.map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
+      const silenced = conversationRows.filter((row) => row.mode === 'human').length
       status.health.silenced = silenced
       status.health.quietNow = status.runtimePaused || silenced > 0
+      status.diagnostics = buildWhatsAppDiagnostics({
+        status,
+        conversations: conversationRows,
+        commands: commandRows,
+      })
       res.setHeader('Cache-Control', 'no-store, max-age=0')
       sendJson(res, 200, status)
       return
@@ -1492,6 +1670,50 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
 
     if (path === '/restart' && method === 'POST') {
       sendJson(res, 200, { ok: true, command: await enqueueCommand(db, 'restart') })
+      return
+    }
+    if (path === '/recover' && method === 'POST') {
+      const body = await readJson(req)
+      if (body.confirm !== true) {
+        sendJson(res, 400, { error: 'يلزم تأكيد الإحياء الآمن.' })
+        return
+      }
+      const requestedAt = asIso()
+      const commandSnapshot = await db.collection(COLLECTIONS.commands).limit(250).get()
+      let requeued = 0
+      let batch = db.batch()
+      for (const doc of commandSnapshot.docs) {
+        const command = doc.data() || {}
+        const leasedAt = diagnosticTimestamp(command.leasedAt || command.updatedAt)
+        if (command.status !== 'leased' || leasedAt == null || Date.now() - leasedAt <= 90_000) continue
+        batch.set(doc.ref, {
+          status: 'pending',
+          leasedAt: null,
+          availableAt: requestedAt,
+          updatedAt: requestedAt,
+          error: null,
+        }, { merge: true })
+        requeued += 1
+      }
+      batch.set(db.collection(COLLECTIONS.settings).doc('runtime'), {
+        paused: false,
+        lastRecoveryRequestedAt: requestedAt,
+        updatedAt: requestedAt,
+      }, { merge: true })
+      batch.set(db.collection(COLLECTIONS.bridge).doc('primary'), {
+        lastRecoveryRequestedAt: requestedAt,
+        updatedAt: requestedAt,
+      }, { merge: true })
+      await batch.commit()
+      runtimeCache = { expiresAt: Date.now() + 10_000, paused: false, pending: null }
+      const command = await enqueueCommand(db, 'restart', { recovery: true })
+      sendJson(res, 200, {
+        ok: true,
+        requestedAt,
+        requeued,
+        command,
+        message: 'أُعيد تشغيل الردود وحُفظ طلب إعادة تشغيل آمن للجسر من دون مسح جلسة واتساب.',
+      })
       return
     }
     if (path === '/repair' && method === 'POST') {

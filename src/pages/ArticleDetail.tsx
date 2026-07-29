@@ -520,7 +520,7 @@ function StudentArchive({ a, articles, books, papers }: { a: ArticleRecord; arti
         : null
   return (
     <FadeUp>
-      <details id="student-archive" className="mt-14 rounded-2xl border border-hair bg-wash px-6 py-5">
+      <details id="student-archive" className="mt-8 rounded-2xl border border-hair bg-wash px-6 py-5">
         <summary className="cursor-pointer list-none font-display text-[1.15rem] font-semibold text-ink marker:hidden">
           للطلاب والباحثين <span className="text-accent">＋</span>
         </summary>
@@ -830,29 +830,43 @@ export default function ArticleDetail() {
             <IdeaLife article={article} articles={articles} books={books} papers={papers} media={media} />
           </FadeUp>
 
-          {/* نُقل «خيط الفكرة» بكامل وظيفته إلى نافذة «حياة هذه الفكرة» لتخفيف نهاية المقال من دون حذف الميزة. */}
-
-          <FadeUp className="serenity-hide">
-            <section className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-hair pt-5" aria-label="مشاركة المقال والاستشهاد به">
-              <Share compact title={a.title} path={`/articles/${a.slug}`} />
-              <div className="article-source-tools" aria-label="المصدر والاستشهاد">
-                {liveLink(article.source) && <a href={liveLink(article.source)} target="_blank" rel="noreferrer" className="article-tool-icon" aria-label="فتح المصدر الأصلي" title="المصدر الأصلي"><span aria-hidden className="text-[1.05rem]">↗</span></a>}
-                <CiteButton compact title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} contextUrl={liveLink(article.source) || ''} />
-              </div>
-            </section>
-          </FadeUp>
-
+          {/* «حياة الفكرة» ثم أدوات الباحث: رحلة واحدة متصلة قبل خاتمة المشاركة. */}
           {article.body && (
             <FadeUp className="serenity-hide">
               <ArticleExtensions article={article} articles={articles} books={books} papers={papers} />
             </FadeUp>
           )}
 
+          {/* نُقل «خيط الفكرة» و«أثر الفكرة» بكامل وظيفتهما إلى نافذة «حياة هذه الفكرة» من دون حذف أي مسار. */}
+
+          <FadeUp className="serenity-hide">
+            <section className="mt-8 border-y border-hair py-5" aria-label="مشاركة المقال والاستشهاد به">
+              <div className="flex flex-wrap items-center justify-between gap-5">
+                <Share compact title={a.title} path={`/articles/${a.slug}`} />
+                <div className="flex flex-wrap items-center gap-2" aria-label="المصدر والاستشهاد">
+                  {liveLink(article.source) && (
+                    <a
+                      href={liveLink(article.source)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex min-h-11 items-center gap-2 rounded-full border border-hair bg-canvas px-4 text-[.78rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent"
+                      aria-label="فتح المصدر الأصلي"
+                    >
+                      <span>المصدر الأصلي</span>
+                      <span aria-hidden>↗</span>
+                    </a>
+                  )}
+                  <CiteButton compact compactLabel="استشهاد" title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} contextUrl={liveLink(article.source) || ''} />
+                </div>
+              </div>
+            </section>
+          </FadeUp>
+
           <FadeUp className="serenity-hide">
             {/* صفٌّ واحدٌ على الجوّال كالكمبيوتر (أمر الدكتور): يمين «السابق»،
                وسطٌ «جميع المقالات»، يسار «التالي» — بعنوانٍ مختصرٍ سطراً واحداً
                وخطٍّ أصغر أجمل. */}
-            <nav className="mt-16 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-t border-hair pt-8 sm:gap-6">
+            <nav className="mt-14 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-t border-hair pt-8 sm:gap-6">
               {next ? (
                 <Link to={`/articles/${next.slug}`} className="group min-w-0">
                   <span className="text-[.64rem] text-soft sm:text-[.78rem]">السابق</span>

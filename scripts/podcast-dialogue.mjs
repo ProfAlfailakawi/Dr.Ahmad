@@ -517,7 +517,7 @@ const DIALOGUE_MODEL = env.PODCAST_DIALOGUE_MODEL || env.GEMINI_MODEL || 'gemini
 const ANALYSIS_MODEL = env.PODCAST_ANALYSIS_MODEL || DIALOGUE_MODEL
 const JUDGE_MODEL = env.PODCAST_JUDGE_MODEL || DIALOGUE_MODEL
 const PIPELINE_HASH = createHash('sha256').update(JSON.stringify({
-  version: 'arabic-podcast-v8-audible-music-identity',
+  version: 'arabic-podcast-v9-editorial-bridges-only',
   dialoguePrompt: AR_SYSTEM,
   pronunciationPrompt: PRONOUNCE_SYSTEM,
   judgePrompt: JUDGE_SYSTEM,
@@ -2507,34 +2507,15 @@ function trimGeneratedBoundaryPadding(file, intendedText) {
 
 
 function selectMusicBridgeIndexes(utterances) {
-  const total = utterances.length
-  if (total < 8) return []
-  const explicit = utterances.map((utterance, index) => ({ utterance, index }))
-    .filter(({ utterance, index }) => utterance.musicBridgeAfter === true
-      && index >= 2 && index < total - 2 && !utterance.allowOverlap)
-    .slice(0, total >= 22 ? 2 : 1)
-    .map((item) => item.index)
-  if (explicit.length) return explicit
-
-  const usable = utterances.map((utterance, index) => ({ utterance, index }))
-    .filter(({ utterance, index }) => index >= Math.max(2, Math.floor(total * 0.28))
-      && index <= Math.min(total - 3, Math.floor(total * 0.82))
-      && !utterance.allowOverlap)
-  const semantic = usable.filter(({ utterance }) =>
-    ['question', 'reflection', 'reflective', 'gentleObjection', 'clarification', 'conclusion'].includes(utterance.delivery))
-  const candidates = semantic.length ? semantic : usable
-  const primaryTarget = total * 0.52
-  const primary = [...candidates].sort((left, right) =>
-    Math.abs(left.index - primaryTarget) - Math.abs(right.index - primaryTarget))[0]
-  if (!primary) return []
-  const result = [primary.index]
-  if (total >= 22) {
-    const secondaryTarget = total * 0.78
-    const secondary = candidates.filter((item) => Math.abs(item.index - primary.index) >= 5)
-      .sort((left, right) => Math.abs(left.index - secondaryTarget) - Math.abs(right.index - secondaryTarget))[0]
-    if (secondary) result.push(secondary.index)
-  }
-  return result.sort((a, b) => a - b)
+  /*
+   * مصدر الحقيقة الوحيد للجسور هو اختيار المحرّر المحفوظ في الحوار نفسه.
+   * لا نخترع موضعاً دلالياً، ولا ننقل الجسر، ولا نختصر الاختيارات بحسب طول الحلقة.
+   * المقدمة والخاتمة هوية عامة لكل حلقة؛ أما الجسر فقرار تحريري صريح فقط.
+   */
+  return utterances
+    .map((utterance, index) => ({ utterance, index }))
+    .filter(({ utterance }) => utterance.musicBridgeAfter === true)
+    .map(({ index }) => index)
 }
 
 function createMusicClip(track, outPath, durationSec, volume, { fadeInSec = 0.4, fadeOutSec = 0.8, startSec = 0 } = {}) {
@@ -3532,7 +3513,7 @@ async function produce(article, lang) {
     }
     if (inconsistent.length) return quarantine(`اختلاف نطق الكلمة نفسها: ${[...new Set(inconsistent)].join('، ')}`)
 
-    /* ٤) مسار مرخّص للجسور الدلالية فقط؛ لا توجد موسيقى مستمرة تحت الحلقة. */
+    /* ٤) مسار مرخّص للمقدمة والخاتمة العامة، وللجسور التي اعتمدها المحرّر فقط. */
     let music = null
     if (existsSync(MUSIC_LIB)) {
       const library = JSON.parse(readFileSync(MUSIC_LIB, 'utf8'))
@@ -3542,7 +3523,7 @@ async function produce(article, lang) {
     }
     if (!music) console.log('  ♪ إخراج بلا موسيقى — لا يوجد مسار مرخّص مطابق')
 
-    /* ٥) جسور موسيقية دلالية ثم تركيب مؤقت؛ لا صمت ميت ولا موسيقى بعد كل جملة. */
+    /* ٥) إدراج الجسور المحددة صراحةً فقط، ثم تركيب المقدمة والخاتمة العامتين. */
     let bridged = insertSemanticMusicBridges(segments.map((segment) => ({ ...segment })), transcript, music, TMP)
     auditRecord.musicBridges = bridged.bridges
     const candidateMp3 = resolve(TMP, `${article.slug}.accepted-candidate.mp3`)
@@ -3984,11 +3965,22 @@ if (SELF_TEST) {
     'ar-KW-NouraNeural').rate < performanceDirector({ speaker: 'B', text: 'سؤال قصير',
       delivery: 'question' }, 0, 'ar', 'ar-AE-FatimaNeural').rate,
   'نورة تحتاج إبطاءً أدائياً أكبر من فاطمة وفق الاختبار السمعي')
-  assert(selectMusicBridgeIndexes(normalizedSample.utterances).length <= 1, 'العينة القصيرة لا تحتمل أكثر من جسر موسيقي واحد')
-  const compactMusicFixture = Array.from({ length: 10 }, (_, index) => ({ speaker: index % 2 ? 'A' : 'B', delivery: index === 5 ? 'question' : 'statement', allowOverlap: false }))
-  assert.equal(selectMusicBridgeIndexes(compactMusicFixture).length, 1, 'كل حوار مكتمل من عشر مداخلات يحصل على جسر موسيقي مسموع واحد')
+  const noBridgeFixture = Array.from({ length: 24 }, (_, index) => ({
+    speaker: index % 2 ? 'A' : 'B', delivery: index === 12 ? 'reflection' : 'statement',
+    allowOverlap: false, musicBridgeAfter: false,
+  }))
+  assert.deepEqual(selectMusicBridgeIndexes(noBridgeFixture), [],
+    'لا يُنشأ أي جسر تلقائياً مهما كان طول الحوار أو موضع الانتقال الدلالي')
+  const explicitBridgeFixture = noBridgeFixture.map((utterance, index) => ({
+    ...utterance,
+    musicBridgeAfter: index === 1 || index === 19,
+    allowOverlap: index === 19,
+  }))
+  assert.deepEqual(selectMusicBridgeIndexes(explicitBridgeFixture), [1, 19],
+    'الجسور تتبع اختيارات المحرّر حرفياً بلا نقل أو حذف أو حدّ تلقائي')
   const musicConfigFixture = selectLicensedMusic('تأملي')
-  assert(!musicConfigFixture || (musicConfigFixture.introSec >= 4.5 && musicConfigFixture.outroSec >= 5 && musicConfigFixture.bridgeVol >= 0.1), 'الهوية الموسيقية تضمن مقدمة وجسراً وخاتمة بمستوى مسموع')
+  assert(!musicConfigFixture || (musicConfigFixture.introSec >= 4.5 && musicConfigFixture.outroSec >= 5),
+    'الهوية الموسيقية العامة تضمن المقدمة والخاتمة حتى عندما لا يحدد المحرّر جسراً')
   const silenceTimelineFixture = [
     { start: 0, dur: 4, pauseAfterMs: 700 },
     { start: 4.7, dur: 1.7, isMusicBridge: true },

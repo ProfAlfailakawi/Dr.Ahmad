@@ -11,9 +11,11 @@ const requiredFiles = [
   'src/lib/podcast-generation.ts',
   'src/lib/audio-management.ts',
   'src/components/admin/AudioLibrary.tsx',
+  'src/components/admin/SoundCaravanBoard.tsx',
   'src/components/admin/ProductionMonitor.tsx',
   'src/components/admin/admin-navigation.ts',
   'scripts/audio-control-status.mjs',
+  'scripts/sync-audio-firestore.mjs',
   'scripts/clear-audio-assets.mjs',
   '.github/workflows/admin-audio-clear.yml',
   '.github/workflows/audio-dashboard-sync.yml',
@@ -58,6 +60,8 @@ const podcastEngine = await readFile(resolve(root, 'scripts/podcast-dialogue.mjs
 const ideaFeatures = await readFile(resolve(root, 'src/components/IdeaFeatures.tsx'), 'utf8')
 const contentManager = await readFile(resolve(root, 'src/components/admin/ContentManager.tsx'), 'utf8')
 const audioLibrary = await readFile(resolve(root, 'src/components/admin/AudioLibrary.tsx'), 'utf8')
+const soundCaravan = await readFile(resolve(root, 'src/components/admin/SoundCaravanBoard.tsx'), 'utf8')
+const audioFirestoreSync = await readFile(resolve(root, 'scripts/sync-audio-firestore.mjs'), 'utf8')
 const productionMonitor = await readFile(resolve(root, 'src/components/admin/ProductionMonitor.tsx'), 'utf8')
 const adminPage = await readFile(resolve(root, 'src/pages/Admin.tsx'), 'utf8')
 const adminArchitecture = await readFile(resolve(root, 'src/components/admin/AdminArchitecture.tsx'), 'utf8')
@@ -120,6 +124,21 @@ const assertions = [
   [audioClearWorkflow.includes('reading) FILES=') && audioClearWorkflow.includes('.noura.mp3') && audioClearWorkflow.includes('clear-audio-assets.mjs') && !audioClearWorkflow.includes("description: 'fahed") && !autoAudioWorkflow.includes('github.event.inputs.voice') && autoAudioWorkflow.includes('MODE="reading"'), 'audio cancellation and regeneration must use generic reading/dialogue modes, clear both compatible reading files, and expose no internal voice selector'],
   [hostingWorkflow.includes('workflow_run:') && hostingWorkflow.includes('توليد الصوت تلقائياً إلى R2'), 'successful audio ledger workflows must trigger a fresh site deployment'],
   [audioDashboardWorkflow.includes("'*/15 * * * *'") && audioDashboardWorkflow.includes('--from-r2') && audioDashboardWorkflow.includes('audio:firestore:sync'), 'audio dashboard must independently rescan live R2 every 15 minutes without waiting for a long generation run'],
+  [audioDashboardWorkflow.includes('CLOUDFLARE_R2_ACCESS_KEY_ID')
+    && audioDashboardWorkflow.includes('CLOUDFLARE_R2_SECRET_ACCESS_KEY')
+    && audioFirestoreSync.includes('listR2Objects()')
+    && audioFirestoreSync.includes("'r2-signed-list'")
+    && audioFirestoreSync.includes('lastAttemptComplete: false')
+    && audioFirestoreSync.includes('حُفظ آخر عدّاد صحيح')
+    && audioFirestoreSync.includes('bySlug'),
+  'audio inventory must use one signed R2 listing, preserve the last complete count on transient failure, and persist per-article truth'],
+  [soundCaravan.includes('data-audio-self-healing-inventory="true"')
+    && soundCaravan.includes("doc(db, 'site_settings', 'audio_inventory')")
+    && soundCaravan.includes("action: 'audio-sync'")
+    && soundCaravan.includes('AUTO_SYNC_COOLDOWN_MS')
+    && soundCaravan.includes('authoritative ? exists(cloud.fahed)')
+    && soundCaravan.includes('افحص R2 الآن'),
+  'audio caravan must subscribe to authoritative R2 inventory, automatically dispatch stale reconciliation, and expose manual recovery without code'],
   [productionMonitor.includes('data-autopilot-control-center="true"')
     && productionMonitor.includes('data-safe-repair-all="true"')
     && productionMonitor.includes('data-continuous-whatsapp-proof="true"')

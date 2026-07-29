@@ -34,6 +34,7 @@ assert.match(audio, /ARTICLE_VOICE_PREFERENCE_KEY/)
 assert.ok(extras.indexOf("voices.fahed ?") < extras.indexOf("voices.noura ?"), 'فهد يجب أن يسبق نورة في ترتيب القراءة')
 assert.match(audio, /sources\.find\(\(item\) => item\.avatar === 'man'\)/)
 assert.doesNotMatch(audio, />◀ العبارة<|>العبارة ▶</)
+assert.doesNotMatch(audio, /activeSentenceText|article-audio-active-sentence/, 'لا يُكرر المشغل العبارة المنطوقة داخل بطاقة مستقلة فوق أدوات الاستماع')
 assert.match(audio, /aria-label="السابق"[^>]*>◀<\/button>/)
 assert.match(audio, /aria-label="التالي"[^>]*>▶<\/button>/)
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AUDIO_SPEEDS, usePersistentAudio } from '../lib/persistent-audio'
+import { usePersistentAudio } from '../lib/persistent-audio'
 
 const ar = (n: number) => String(n).replace(/[0-9]/g, (digit) => '0123456789'[+digit])
 const ARTICLE_VOICE_PREFERENCE_KEY = 'article-audio-reading-voice-v1'
@@ -139,12 +139,6 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
   const isDialogue = source.key === 'dialogue' || source.avatar === 'dialogue'
   const canFollowArticle = typeof window !== 'undefined' && window.location.pathname.startsWith('/articles/') && !isDialogue
 
-  const jumpSentence = (direction: 'next' | 'prev') => {
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('article-audio-jump-sentence', { detail: { direction } }))
-    }
-  }
-
   const play = () => player.playTrack({
     id: source.src,
     src: source.src,
@@ -219,7 +213,6 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
               </p>
               <p className="mt-0.5 text-[.68rem] text-soft">{active ? `${clock(current)} / ${clock(duration)}` : 'جاهز للاستماع'}</p>
             </div>
-            <button type="button" onClick={player.cycleSpeed} disabled={!active} className="rounded-full border border-hair px-3 py-1.5 text-[.7rem] text-soft disabled:opacity-40">{AUDIO_SPEEDS.includes(player.speed) ? player.speed : 1}x</button>
           </div>
 
           <button
@@ -263,16 +256,6 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
                   : <VoiceFigure kind={(item as { avatar?: 'man' | 'woman' }).avatar === 'woman' ? 'woman' : 'man'} size={17} />}
               </button>
             ))}
-            <span className="ms-auto flex items-center gap-1.5">
-              {canFollowArticle && articleFollow && active && (
-                <>
-                  <button type="button" onClick={() => jumpSentence('prev')} title="السابق" aria-label="السابق" className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-[.78rem] text-soft hover:border-accent hover:text-accent">◀</button>
-                  <button type="button" onClick={() => jumpSentence('next')} title="التالي" aria-label="التالي" className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-[.78rem] text-soft hover:border-accent hover:text-accent">▶</button>
-                </>
-              )}
-              <button type="button" onClick={() => player.jump(-15)} disabled={!active} className="rounded-full border border-hair px-2.5 py-1.5 text-[.68rem] text-soft disabled:opacity-35">15−</button>
-              <button type="button" onClick={() => player.jump(15)} disabled={!active} className="rounded-full border border-hair px-2.5 py-1.5 text-[.68rem] text-soft disabled:opacity-35">15+</button>
-            </span>
           </div>
 
 

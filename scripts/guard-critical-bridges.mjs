@@ -24,6 +24,7 @@ const requiredFiles = [
   'src/pages/CvFile.tsx',
   '.github/workflows/firebase-hosting-live.yml',
   'src/components/admin/WhatsAppAgentPanel.tsx',
+  'whatsapp-agent/intent-engine.mjs',
   'src/components/admin/SocialDesignStudio.tsx',
   'whatsapp-bridge/bridge.mjs',
   'whatsapp-web-bridge/index.mjs',
@@ -81,6 +82,7 @@ const whatsappWebBridge = await readFile(resolve(root, 'whatsapp-web-bridge/inde
 const whatsappResidentRunner = await readFile(resolve(root, 'whatsapp-web-bridge/service-runner.mjs'), 'utf8')
 const whatsappResidentInstaller = await readFile(resolve(root, 'whatsapp-web-bridge/install-autostart-mac.command'), 'utf8')
 const whatsappController = await readFile(resolve(root, 'src/server/whatsapp-controller.mjs'), 'utf8')
+const whatsappIntentEngine = await readFile(resolve(root, 'whatsapp-agent/intent-engine.mjs'), 'utf8')
 const designStudio = await readFile(resolve(root, 'src/components/admin/SocialDesignStudio.tsx'), 'utf8')
 const liveSource = (await Promise.all((await textFiles(resolve(root, 'src'))).map((file) => readFile(file, 'utf8')))).join('\n')
 
@@ -120,18 +122,34 @@ const assertions = [
   [audioDashboardWorkflow.includes("'*/15 * * * *'") && audioDashboardWorkflow.includes('--from-r2') && audioDashboardWorkflow.includes('audio:firestore:sync'), 'audio dashboard must independently rescan live R2 every 15 minutes without waiting for a long generation run'],
   [productionMonitor.includes('data-autopilot-control-center="true"')
     && productionMonitor.includes('data-safe-repair-all="true"')
+    && productionMonitor.includes('data-continuous-whatsapp-proof="true"')
+    && productionMonitor.includes('data-weekly-operations-report="true"')
+    && productionMonitor.includes('data-admin-settings-backup="true"')
+    && productionMonitor.includes('data-incident-history="true"')
+    && productionMonitor.includes('data-persistent-critical-alert="true"')
     && productionMonitor.includes('/api/admin/control-center')
     && productionMonitor.includes('/api/admin/whatsapp/recover')
+    && productionMonitor.includes('/api/admin/whatsapp/simulate-sequence')
     && productionMonitor.includes('لا يحذف محتوى، ولا يمس جلسة واتساب')
     && serverSource.includes("const controlCenterPath = '/api/admin/control-center'")
     && serverSource.includes("'repair-safe'")
+    && serverSource.includes("action === 'verify-all'")
+    && serverSource.includes("action === 'backup-settings'")
+    && serverSource.includes("action === 'restore-settings'")
+    && serverSource.includes("collection('control_center_incidents')")
     && serverSource.includes("'audio-dashboard-sync.yml'")
     && serverSource.includes("'site-guardian.yml'"),
-  'admin control center must keep live diagnosis and one non-destructive repair action for WhatsApp, audio and content'],
+  'admin control center must keep live diagnosis, multi-turn proof, incidents, alerts, weekly evidence, backups and one non-destructive repair action'],
   [whatsappPanel.includes('إصلاح الاتصال تلقائياً') && whatsappPanel.includes('/admin/repair') && whatsappPanel.includes('window.confirm'), 'WhatsApp admin must expose safe recovery and explicit destructive re-pairing'],
   [whatsappPanel.includes('data-whatsapp-recovery-center="true"') && whatsappPanel.includes('/admin/recover') && whatsappPanel.includes('مركز التشخيص والإحياء') && whatsappController.includes('buildWhatsAppDiagnostics') && whatsappController.includes("path === '/recover'"), 'WhatsApp admin must diagnose every operating layer and expose one safe non-destructive recovery action without code access'],
   [whatsappBridge.includes('watchdog_restart_stuck_authenticated') && whatsappBridge.includes("process.exit(75)") && whatsappBridge.includes("WHATSAPP_BRIDGE_SECRET || ''") && whatsappWebBridge.includes('sendTextWithRecovery') && whatsappWebBridge.includes("'send-self-message'") && whatsappWebBridge.includes('waitUntilMsgSent: true') && whatsappWebBridge.includes('duplicate_command_acknowledged_without_resend') && whatsappWebBridge.includes('manual_message_closed_bot_session') && whatsappWebBridge.includes('owner_private_chat_ignored') && whatsappWebBridge.includes('late_loading_screen_ignored') && whatsappController.includes("path === '/emergency-stop'") && whatsappController.includes("defaultReplyMode: 'always-on'") && whatsappController.includes("reason: 'duplicate-delivery'") && whatsappController.includes('WAKE_PHRASES'), 'WhatsApp bridge must self-restart when stuck, reply from the first public message, stay silent after a manual owner reply until the exact wake phrase, ignore the owner private chat and duplicate deliveries, stop queued sends, deduplicate commands, and never ship a fallback secret'],
   [whatsappController.includes('REPAIR_COOLDOWN_MS') && whatsappController.includes('repairAllowed') && whatsappController.includes('رفضت اللوحة مسحها'), 'WhatsApp destructive recovery must keep its connected-session lock and scan-rate cooldown'],
+  [whatsappController.includes("path === '/simulate-sequence'")
+    && whatsappController.includes('كل رسالة جديدة في الوضع الطبيعي تحصل على رد')
+    && whatsappController.includes('شنو تحب أسوي بعدها')
+    && whatsappIntentEngine.includes('CONTEXT_ACTION_INTENTS')
+    && whatsappIntentEngine.includes('عطني|اعطني|ابي|اريد'),
+  'WhatsApp must prove continuous multi-turn replies, prefer explicit follow-up actions over pronoun references, and ask a useful next question'],
   [whatsappResidentRunner.includes('loadBridgeSecret') && whatsappResidentRunner.includes('ensureDependencies') && whatsappResidentRunner.includes('session_quarantined_for_repair'), 'resident WhatsApp service must self-heal dependencies, fetch its secret, and quarantine repaired sessions'],
   [whatsappResidentInstaller.includes('DrAhmadWhatsAppBridge') && whatsappResidentInstaller.includes('com.alturath.whatsapp-bridge') && whatsappResidentInstaller.includes('legacy-launch-agents'), 'WhatsApp installer must keep one resident launch service and retire conflicting legacy services'],
   [designStudio.includes('BufferedIdeaTextarea') && designStudio.includes('data-performance-island="studio-idea"') && designStudio.includes("'generate' | 'ready'") && designStudio.includes("'latest-approved'") && !designStudio.includes("setVisualMode('library')"), 'design studio must keep zero-render typing, the original/curated source choice, and latest-approved-only complete-design storage'],

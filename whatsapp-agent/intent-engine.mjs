@@ -135,7 +135,7 @@ const patterns = [
   [INTENTS.ABOUT_DOCTOR, [/(السيره|سيره ذاتيه|سيرتك|من هو|منو|تعريف|نبذه عن|هويه|cv)\s*(ال)?(د|دكتور)?\s*(احمد)?/, 0.92]],
   [INTENTS.CURATED_PICKS, [/(مختارات|المختارات|اختياراتك|ترشيحات|ماذا تقرا|شنو تقرا)/, 0.92]],
   /* داخل الجلسة يريد الناس المزيد والمقارنة والتنقّل — لا أوامر جافّة فقط */
-  [INTENTS.MORE_LIKE_THIS, [/^(في\s*)?(غيره|غيرها|زدني|كمان|بعد|المزيد|عطني اكثر|شي ثاني|شيء ثاني|في بعد|واحد ثاني|ماده ثانيه)/, 0.93],
+  [INTENTS.MORE_LIKE_THIS, [/^(?:(?:عطني|اعطني|ابي|اريد)\s+)?(?:في\s*)?(غيره|غيرها|زدني|كمان|بعد|المزيد|اكثر|شي ثاني|شيء ثاني|في بعد|واحد ثاني|ماده ثانيه)/, 0.93],
     /* «شنو عنده بعد الدكتور؟» «عنده بعد؟» «شنو بعد؟» — طلب المزيد بصياغةٍ سؤالية */
     [/(شنو|وش|ايش)\s*(عنده|عندكم|فيه|بعد)\s*(بعد|شي|ثاني|غيره)?|عنده\s*(شي\s*)?بعد|بعده\s*شي/, 0.92],
     /* «وين ال٨؟» «وين الباقي؟» «ورني البقية» «وينهم» — بعد أن يقول البوت «عاد
@@ -577,6 +577,30 @@ export function classifyIntent(text) {
   if (directMatch && STANDALONE_INTENTS.has(directMatch.intent)) {
     return directMatch
   }
+
+  /* أفعال المتابعة الصريحة أقوى من الضمير السياقي. «لخّصها» فيها مرجع للحالية
+     فعلاً، لكن مقصدها التلخيص لا إعادة عرض المادة. تقديم CONTEXT_REFERENCE هنا
+     كان يجعل المحادثة تبدو عالقة بعد الرد الأول. */
+  const CONTEXT_ACTION_INTENTS = new Set([
+    INTENTS.SUMMARY,
+    INTENTS.ONE_MINUTE,
+    INTENTS.READ_SPEED,
+    INTENTS.SOURCE_PROOF,
+    INTENTS.READ_ARTICLE,
+    INTENTS.LISTEN_FAHED,
+    INTENTS.LISTEN_NOURA,
+    INTENTS.LISTEN_DIALOGUE,
+    INTENTS.MORE_LIKE_THIS,
+    INTENTS.SIMILAR_CONTENT,
+    INTENTS.EXPLAIN_MODE,
+    INTENTS.DIALOGUE_MODE,
+    INTENTS.QUOTE,
+    INTENTS.QUOTE_CARD,
+  ])
+  const orderedReference = Number.isInteger(request.ordinal)
+    || request.reference === 'next'
+    || request.reference === 'previous'
+  if (directMatch && CONTEXT_ACTION_INTENTS.has(directMatch.intent) && !orderedReference) return directMatch
 
   if (request.reference && !request.more) {
     return { intent: INTENTS.CONTEXT_REFERENCE, confidence: 0.97, normalized: value, request }

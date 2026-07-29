@@ -35,6 +35,8 @@ assert.match(controllerSource, /resumes: 'wake-phrase-only'/)
 assert.match(controllerSource, /reason: 'owner-private-chat'/)
 assert.match(controllerSource, /reason: 'duplicate-delivery'/)
 assert.match(controllerSource, /path === '\/recover'/)
+assert.match(controllerSource, /path === '\/simulate-sequence'/)
+assert.match(controllerSource, /كل رسالة جديدة في الوضع الطبيعي تحصل على رد/)
 
 const now = Date.parse('2026-07-29T18:30:00.000Z')
 const healthyDiagnostics = buildWhatsAppDiagnostics({
@@ -120,5 +122,51 @@ assert.equal(archive.kind, 'reply')
 assert.match(archive.reply, /https:\/\/dr-alfailakawi\.com\//)
 assert.match(archive.reply, /لخّص الأولى|عطني غيرها/)
 assert.match(archive.reply, /رد آلي من موقع/)
+
+/* محادثة واحدة لا ثلاثة اختبارات منفصلة: يفتح مادة، يتذكرها عند «لخصها»،
+   ثم ينتقل إلى مادة أخرى من دون أن يسكت بعد الرد الأول. */
+let continuousConversation = {}
+const continuousInputs = ['آخر مقالة', 'لخصها', 'عطني غيرها']
+const continuousTurns = []
+const continuousStartedAt = Date.now()
+for (const text of continuousInputs) {
+  const decision = decideGroundedResponse({ text, conversation: continuousConversation })
+  continuousTurns.push(decision)
+  assert.equal(decision.kind === 'reply' || decision.kind === 'escalate', true, `${text} must receive a reply`)
+  assert.ok(String(decision.reply || '').length > 20, `${text} reply must not be empty`)
+  continuousConversation = {
+    ...continuousConversation,
+    mode: 'bot',
+    wakeActive: true,
+    lastReplyHash: 'test',
+    lastDecisionReason: decision.reason,
+    ...(Array.isArray(decision.contextItemIds) ? { contextItemIds: decision.contextItemIds } : {}),
+    ...(Number.isInteger(decision.contextIndex) ? { contextIndex: decision.contextIndex } : {}),
+    ...(decision.lastTopic ? { lastTopic: decision.lastTopic } : {}),
+    ...(Array.isArray(decision.evidence) ? { seenContentIds: [...new Set([...(continuousConversation.seenContentIds || []), ...decision.evidence])] } : {}),
+  }
+}
+assert.equal(continuousTurns.length, 3)
+assert.equal(continuousTurns[1].reason, 'context-summary')
+assert.equal(['more-like-this', 'no-more-results'].includes(continuousTurns[2].reason), true)
+assert.ok(Date.now() - continuousStartedAt < 5_000, 'three-turn local reasoning must remain fast')
+assert.match(decideGroundedResponse({ text: 'من هو الدكتور أحمد؟' }).reply, /شنو تحب أسوي بعدها/)
+
+let navigationConversation = {}
+const navigationReasons = []
+for (const text of ['آخر مقالاته', 'الثانية', 'لخصها', 'المصدر', 'عطني غيرها']) {
+  const decision = decideGroundedResponse({ text, conversation: navigationConversation })
+  navigationReasons.push(decision.reason)
+  assert.ok(decision.reply, `${text} must keep the five-turn conversation alive`)
+  navigationConversation = {
+    ...navigationConversation,
+    ...(Array.isArray(decision.contextItemIds) ? { contextItemIds: decision.contextItemIds } : {}),
+    ...(Number.isInteger(decision.contextIndex) ? { contextIndex: decision.contextIndex } : {}),
+    ...(decision.lastTopic ? { lastTopic: decision.lastTopic } : {}),
+    ...(Array.isArray(decision.evidence) ? { seenContentIds: [...new Set([...(navigationConversation.seenContentIds || []), ...decision.evidence])] } : {}),
+  }
+}
+assert.deepEqual(navigationReasons.slice(0, 4), ['latest-content', 'context-reference', 'context-summary', 'context-source'])
+assert.ok(['more-like-this', 'no-more-results'].includes(navigationReasons[4]))
 
 console.log('WhatsApp central policy: passed')

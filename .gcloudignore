@@ -29,4 +29,3 @@ whatsapp-agent/*
 !whatsapp-agent/content-index.mjs
 !whatsapp-agent/config.mjs
 !whatsapp-agent/dialect-lexicon.mjs
-!whatsapp-agent/audience.mjs

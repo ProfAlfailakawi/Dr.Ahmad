@@ -122,8 +122,8 @@ export async function runSelfTest(root) {
   assert.equal(agent.listReplyRules().some((rule) => rule.id === transferRule.id), true)
   const transferSimulation = agent.simulateReply({ text: 'صورة من اللقاء', inSession: true })
   assert.equal(transferSimulation.ruleId, transferRule.id)
-  /* بأمر الدكتور (٢٠٢٦-٠٧-٢٣): لا صمت — إشعار استلام ثابت، لا كلام مؤلف باسمه */
-  assert.equal(transferSimulation.preview, 'وصلت رسالتك، وسيردّ عليك الدكتور بنفسه.', '★ قاعدة النص الحر تُقرّ بالاستلام بعبارة ثابتة لا كلاماً مؤلفاً')
+  /* لا ندّعي أن فريقاً أو الدكتور سيكمل تلقائياً؛ نصرّح بالحد بلا وعد كاذب. */
+  assert.equal(transferSimulation.preview, 'أفهم أنك تريد التواصل مع الدكتور مباشرة. اكتب رسالتك كاملة هنا؛ لا أستطيع أن أعدك بموعد رد.', '★ التحويل صادق ولا يَعِد بمتابعة بشرية تلقائية')
   assert.equal(transferSimulation.needsHuman, true, '★ وتصل الرسالة للدكتور نفسه')
   assert.equal(agent.replyRuleVersions(transferRule.id).length, 0)
   agent.saveReplyRule({ ...transferRule, responseText: 'نسخة جديدة' })
@@ -229,18 +229,13 @@ export async function runSelfTest(root) {
   assert.equal(onMessage({ jid: persistent, text: 'آخر مقالة', message: {} }).shouldRespond, true,
     '★ الجلسة تبقى حيّة بلا مؤقّت حتى يتدخل الدكتور')
 
-  /* ═══ ★ لا يُعلن فشلاً في وجه إنسان ═══
-   *
-   * داخل جلسةٍ مفتوحة يصل إلى محرك البحث كلُّ ما يُكتب — ومنه ما ليس سؤالاً.
-   * كتب رجلٌ بالإنجليزية أنه رُفض توظيفه لهويّته وأنه يعيش في فقر، فردّ عليه
-   * البوت: «ما لقيت تطابقاً دقيقاً في أرشيف الموقع». والصمتُ خيرٌ من هذا.
-   */
+  /* ═══ ★ لا يصمت ولا يعلن فشل بحثٍ في وجه إنسان ═══ */
   const griever = '97007@s.whatsapp.net'
   onMessage({ jid: griever, text: 'موقع د. أحمد', message: {} })   // جلسة مفتوحة
   const grief = onMessage({ jid: griever, text: 'I have tried to find a job but they rejected me because of my identity. Im fed up. poverty. my salary is very low.', message: {} })
-  assert.equal(grief.shouldRespond, false, '★ شكوى إنسانية لا يردّ عليها البوت')
+  assert.equal(grief.shouldRespond, true, '★ الجلسة المستيقظة ترد حتى على كلام غير مصنف')
+  assert.ok(String(grief.text || '').length > 20, '★ الرد يطلب توضيحاً أو يفتح مسار مساعدة')
   assert.ok(!/ما لقيت تطابق/.test(grief.text || ''), '★ ولا يُعلن فشل بحثٍ في وجهها')
-  assert.ok(db.get("SELECT COUNT(*) c FROM audit_log WHERE action IN ('needs-human-silent','auto-reply-skipped')").c >= 1, 'ويُحوَّل للدكتور')
   /* والسؤال الحقيقي يبقى مُجاباً */
   agent.returnToBot(griever)
   onMessage({ jid: griever, text: 'موقع د. أحمد', message: {} })

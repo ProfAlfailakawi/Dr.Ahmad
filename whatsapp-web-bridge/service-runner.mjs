@@ -16,6 +16,8 @@ const pidFile = join(sessionDir, `bridge-${deviceId}.pid`)
 const dependencyMarker = join(root, 'node_modules', 'whatsapp-web.js', 'package.json')
 const secretProject = String(process.env.WHATSAPP_SECRET_PROJECT || 'gen-lang-client-0200723670').trim()
 const secretName = String(process.env.WHATSAPP_SECRET_NAME || 'whatsapp-bridge-secret').trim()
+const keychainService = 'com.alturath.whatsapp-bridge.secret'
+const keychainAccount = `${deviceId}:${secretProject}:${secretName}`
 
 let child = null
 let stopping = false
@@ -32,12 +34,56 @@ function findExecutable(explicit, candidates) {
 
 /*
  * الخدمة المقيمة لا تعتمد على ملف .env داخل مجلد مشروع قابل للاستبدال.
- * السر يُقرأ لحظة الإقلاع من Secret Manager ولا يُطبع ولا يُحفظ على القرص.
- * هذه النقطة بالذات تمنع أن يؤدي فك ZIP أو تحديث المشروع إلى قتل الجسر.
+ * السر يُقرأ من البيئة أو macOS Keychain، ثم Secret Manager عند الحاجة فقط.
+ * لا يُطبع ولا يُحفظ في ملف. نسخة Keychain المشفّرة تمنع تأخر gcloud العابر من
+ * إبقاء الجسر متوقفاً بعد إعادة تشغيل الجهاز أو launchd.
  */
+function readKeychainSecret() {
+  const security = '/usr/bin/security'
+  if (!existsSync(security)) return ''
+  try {
+    const secret = execFileSync(security, [
+      'find-generic-password',
+      '-s', keychainService,
+      '-a', keychainAccount,
+      '-w',
+    ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 5_000 }).trim()
+    return secret.length >= 24 ? secret : ''
+  } catch {
+    return ''
+  }
+}
+
+function cacheKeychainSecret(secret) {
+  const security = '/usr/bin/security'
+  if (!existsSync(security) || String(secret || '').length < 24) return false
+  try {
+    execFileSync(security, [
+      'add-generic-password',
+      '-U',
+      '-T', security,
+      '-s', keychainService,
+      '-a', keychainAccount,
+      '-w', secret,
+    ], { stdio: 'ignore', timeout: 5_000 })
+    return true
+  } catch {
+    return false
+  }
+}
+
 function loadBridgeSecret() {
   const existing = String(process.env.WHATSAPP_BRIDGE_SECRET || '').trim()
-  if (existing.length >= 24) return existing
+  if (existing.length >= 24) {
+    cacheKeychainSecret(existing)
+    return existing
+  }
+  const cached = readKeychainSecret()
+  if (cached) {
+    process.env.WHATSAPP_BRIDGE_SECRET = cached
+    out('info', 'bridge_secret_loaded_from_keychain')
+    return cached
+  }
   const gcloud = findExecutable(process.env.GCLOUD_BIN, [
     '/opt/homebrew/share/google-cloud-sdk/bin/gcloud',
     '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/bin/gcloud',
@@ -51,6 +97,8 @@ function loadBridgeSecret() {
   ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 30_000 }).trim()
   if (secret.length < 24) throw new Error('bridge-secret-missing')
   process.env.WHATSAPP_BRIDGE_SECRET = secret
+  cacheKeychainSecret(secret)
+  out('info', 'bridge_secret_loaded_from_secret_manager')
   return secret
 }
 

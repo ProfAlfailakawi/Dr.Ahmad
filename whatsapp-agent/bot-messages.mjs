@@ -25,13 +25,13 @@ export const DEFAULT_BOT_MESSAGES = Object.freeze({
   stopHint: 'ولإيقاف الرسائل اكتب: أوقف الرسائل.',
   signature: 'رد آلي من موقع د. أحمد حسين الفيلكاوي',
   doorsPrefix: 'أبواب الأرشيف الحاضرة: ',
-  notPublishedReached: 'سؤالك خارج المحتوى المنشور في الموقع، وقد وصل للدكتور يجيبك بنفسه.',
-  notPublishedReachedCta: 'وإن أحببت الآن: اكتب «بوابة اليوم» أو اسأل عن أي موضوعٍ من مقالاته.',
-  notPublishedNew: 'هذا الموضوع لم يُنشر عنه في الموقع بعد، ووصلت رسالتك للدكتور نفسه.',
+  notPublishedReached: 'سؤالك خارج المحتوى المنشور في الموقع. أعطني زاوية أو كلمة أدق، وسأحاول معك من جديد من دون اختلاق جواب.',
+  notPublishedReachedCta: 'تقدر أيضاً تكتب «بوابة اليوم» أو تسأل عن أي موضوعٍ من مقالاته.',
+  notPublishedNew: 'هذا الموضوع لم يُنشر عنه في الموقع بعد. أقدر أبحث لك عن أقرب فكرة منشورة أو أوضح حدود ما هو متاح.',
   notPublishedNewCta: 'اسأل داخل أي بابٍ منها، أو اكتب «آخر مقالاته».',
   noMatch: 'ما لقيت مادة منشورة مطابقة الآن. اكتب لي الموضوع أو النوع الذي تريده، وأبحث لك من جديد.',
   clarify: 'ما فهمت الطلب بدقة. هل تبحث في المقالات، الكتب، الأبحاث، أم البودكاست؟',
-  humanHandoff: 'وصلت رسالتك، وسيردّ عليك الدكتور بنفسه.',
+  humanHandoff: 'أفهم أنك تريد التواصل مع الدكتور مباشرة. اكتب رسالتك كاملة هنا؛ لا أستطيع أن أعدك بموعد رد.',
   stopConfirm: 'تم، لن تصلك رسائل محتوى جديدة. إذا رغبت بالعودة اكتب: رجع الرسائل.',
   resumeConfirm: 'عاد الاشتراك في رسائل المحتوى.',
 })
@@ -45,13 +45,13 @@ export const BOT_MESSAGE_FIELDS = [
   { key: 'stopHint', label: 'تذكير إيقاف الرسائل', hint: 'سطرٌ يذكّر الزائر كيف يوقف الرسائل.', multiline: false, group: 'welcome' },
   { key: 'signature', label: 'توقيع الردّ الآلي', hint: 'يُلحق بكل ردٍّ آليّ (عدا ردود الخصوصية).', multiline: false, group: 'reply' },
   { key: 'doorsPrefix', label: 'تمهيد أبواب الأرشيف', hint: 'يسبق قائمة الأبواب في رسالة «لم يُنشر عنه». احتفظ بالمسافة في آخره.', multiline: false, group: 'reply' },
-  { key: 'notPublishedReached', label: 'خارج المنشور — وقد وصلَته رسالتك', hint: 'حين يكون الموضوع خارج المحتوى المنشور وقد سبق وصول رسالة الزائر للدكتور.', multiline: true, group: 'reply' },
+  { key: 'notPublishedReached', label: 'خارج المحتوى المنشور', hint: 'حين يكون الموضوع خارج المحتوى المنشور؛ يطلب زاوية أدق ولا يدّعي وصول الرسالة إلى شخص.', multiline: true, group: 'reply' },
   { key: 'notPublishedReachedCta', label: 'دعوة تالية (خارج المنشور)', hint: 'سطرٌ يقترح بوابة اليوم أو موضوعاً من المقالات.', multiline: true, group: 'reply' },
   { key: 'notPublishedNew', label: 'لم يُنشر عنه بعد', hint: 'حين لا يوجد محتوى منشور عن الموضوع أصلاً.', multiline: true, group: 'reply' },
   { key: 'notPublishedNewCta', label: 'دعوة تالية (لم يُنشر)', hint: 'سطرٌ يقترح باباً من الأرشيف أو «آخر مقالاته».', multiline: true, group: 'reply' },
   { key: 'noMatch', label: 'لا مادة مطابقة', hint: 'حين لا يجد بحثُ الأرشيف مادةً منشورةً مطابقة.', multiline: true, group: 'reply' },
   { key: 'clarify', label: 'لم أفهم الطلب', hint: 'حين لا يفهم البوت الطلب بثقة كافية، يسأل عن المقصود.', multiline: true, group: 'reply' },
-  { key: 'humanHandoff', label: 'وصلت رسالتك للدكتور', hint: 'ردّ التحويل حين تُطابق رسالةٌ قاعدةً تحيلها للدكتور نفسه.', multiline: false, group: 'reply' },
+  { key: 'humanHandoff', label: 'طلب التواصل المباشر', hint: 'ردّ صادق بلا وعد بموعد أو ادعاء أن فريقاً سيتابع تلقائياً.', multiline: false, group: 'reply' },
   { key: 'stopConfirm', label: 'تأكيد إيقاف الرسائل', hint: 'يُعرض حين يطلب الزائر إيقاف رسائل المحتوى.', multiline: true, group: 'control' },
   { key: 'resumeConfirm', label: 'تأكيد عودة الرسائل', hint: 'يُعرض حين يعيد الزائر تفعيل الرسائل.', multiline: false, group: 'control' },
 ]
@@ -84,7 +84,10 @@ export async function refreshBotMessages({ force = false } = {}) {
         const next = { ...DEFAULT_BOT_MESSAGES }
         for (const key of Object.keys(DEFAULT_BOT_MESSAGES)) {
           const value = fields[key] && typeof fields[key].stringValue === 'string' ? fields[key].stringValue : ''
-          if (value && value.trim()) next[key] = value
+          if (value && value.trim()) {
+            const legacyPromise = /(?:احتاجت|تحتاج)\s+متابعه\s+بشريه|سيكمل\s+معك\s+الفريق|سيرد\s+عليك\s+الدكتور|وصلت\s+رسالتك\s+للدكتور/i.test(value.normalize('NFKD').replace(/[\u064B-\u065F\u0670]/g, '').replace(/ة/g, 'ه'))
+            next[key] = legacyPromise ? DEFAULT_BOT_MESSAGES[key] : value
+          }
         }
         current = next
       }

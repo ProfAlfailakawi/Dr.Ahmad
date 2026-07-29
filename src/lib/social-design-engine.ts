@@ -209,9 +209,9 @@ export interface LayoutFamily extends DesignLibraryEntry<LayoutFamilyId> {
 }
 
 export interface TypographyMode extends DesignLibraryEntry<TypographyModeId> {
-  displayFamily: 'El Messiri' | 'Tajawal'
-  bodyFamily: 'Tajawal' | 'El Messiri'
-  titleWeight: 400 | 500 | 600 | 700
+  displayFamily: 'Alexandria Variable' | 'Tajawal'
+  bodyFamily: 'Tajawal' | 'Alexandria Variable'
+  titleWeight: 400 | 500 | 600 | 700 | 800
   titleScale: number
   lineHeight: number
   maxLines: number
@@ -806,14 +806,14 @@ export const LAYOUT_FAMILIES: Record<LayoutFamilyId, LayoutFamily> = {
 }
 
 export const TYPOGRAPHY_MODES: Record<TypographyModeId, TypographyMode> = {
-  'display-monumental': { id: 'display-monumental', label: 'عنوان نُصبي', description: 'كلمات قليلة بحضور قوي ومسافة أسطر متماسكة.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 700, titleScale: 1.16, lineHeight: 1.38, maxLines: 4 },
-  'editorial-serif': { id: 'editorial-serif', label: 'تحريري', description: 'هرمية مجلة فاخرة للعنوان والمتن.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 600, titleScale: 1, lineHeight: 1.55, maxLines: 6 },
-  'rational-sans': { id: 'rational-sans', label: 'هندسي واضح', description: 'وضوح مؤسسي سريع القراءة بوزن محسوب.', displayFamily: 'Tajawal', bodyFamily: 'Tajawal', titleWeight: 700, titleScale: 0.95, lineHeight: 1.45, maxLines: 5 },
-  'number-led': { id: 'number-led', label: 'الرقم أولاً', description: 'رقم أو نسبة كبيرة يعقبها تفسير مختصر.', displayFamily: 'Tajawal', bodyFamily: 'Tajawal', titleWeight: 700, titleScale: 1.2, lineHeight: 1.35, maxLines: 4 },
-  'quotation-signature': { id: 'quotation-signature', label: 'اقتباس وتوقيع', description: 'صوت هادئ مع علامات اقتباس وهوية مؤلف مقتصدة.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 500, titleScale: 1.03, lineHeight: 1.72, maxLines: 7 },
-  'academic-index': { id: 'academic-index', label: 'فهرس أكاديمي', description: 'عناوين دقيقة وترقيم صغير يشبه أوراق البحث.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 600, titleScale: 0.9, lineHeight: 1.58, maxLines: 6 },
-  'cinematic-title': { id: 'cinematic-title', label: 'عنوان سينمائي', description: 'كتلة عنوان قصيرة عالية التباين للغلاف.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 700, titleScale: 1.12, lineHeight: 1.34, maxLines: 4 },
-  conversational: { id: 'conversational', label: 'صوت قريب', description: 'إيقاع عربي مريح يناسب السؤال والنبرة الإنسانية.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 500, titleScale: 0.98, lineHeight: 1.66, maxLines: 7 },
+  'display-monumental': { id: 'display-monumental', label: 'عنوان نُصبي', description: 'كلمات قليلة بحضور قوي ومسافة أسطر متماسكة.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 700, titleScale: 1.1, lineHeight: 1.34, maxLines: 4 },
+  'editorial-serif': { id: 'editorial-serif', label: 'تحريري معاصر', description: 'هرمية مجلة عربية معاصرة بوزن ومسافات تحريرية دقيقة.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 600, titleScale: .98, lineHeight: 1.48, maxLines: 6 },
+  'rational-sans': { id: 'rational-sans', label: 'هندسي واضح', description: 'وضوح مؤسسي سريع القراءة بوزن محسوب.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 700, titleScale: 0.93, lineHeight: 1.4, maxLines: 5 },
+  'number-led': { id: 'number-led', label: 'الرقم أولاً', description: 'رقم أو نسبة كبيرة يعقبها تفسير مختصر.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 800, titleScale: 1.16, lineHeight: 1.3, maxLines: 4 },
+  'quotation-signature': { id: 'quotation-signature', label: 'اقتباس وتوقيع', description: 'صوت هادئ مع علامات اقتباس وهوية مؤلف مقتصدة.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 500, titleScale: 1, lineHeight: 1.62, maxLines: 7 },
+  'academic-index': { id: 'academic-index', label: 'فهرس أكاديمي', description: 'عناوين دقيقة وترقيم صغير يشبه أوراق البحث.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 600, titleScale: 0.88, lineHeight: 1.5, maxLines: 6 },
+  'cinematic-title': { id: 'cinematic-title', label: 'عنوان سينمائي', description: 'كتلة عنوان قصيرة عالية التباين للغلاف.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 800, titleScale: 1.08, lineHeight: 1.3, maxLines: 4 },
+  conversational: { id: 'conversational', label: 'صوت قريب', description: 'إيقاع عربي مريح يناسب السؤال والنبرة الإنسانية.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 500, titleScale: .96, lineHeight: 1.58, maxLines: 7 },
 }
 
 export const SPATIAL_PATTERNS: Record<SpatialPatternId, SpatialPattern> = {
@@ -1130,6 +1130,13 @@ const extractKeywords = (text: string, limit = 8) => {
 
 const titleCandidate = (text: string, sentences: readonly string[]) => {
   const firstLine = text.split('\n').map((part) => part.trim()).find(Boolean) || ''
+  const opening = sentences[0]?.trim() || ''
+  /* الجملة الأولى القصيرة هي العنوان الطبيعي، وخصوصاً السؤال. كان السطر الواحد
+     «سؤال؟ ثم شرح» يُعامل كله عنواناً لأنه دون 16 كلمة، فتختفي الهرمية ويتكرر
+     الشرح في المتن. نفصل المعنى قبل حساب طول السطر. */
+  if (wordsOf(opening).length >= 2 && wordsOf(opening).length <= 16 && (sentences.length > 1 || /[؟?]/.test(opening))) {
+    return opening.replace(/[.:؛]+$/u, '')
+  }
   if (wordsOf(firstLine).length >= 3 && wordsOf(firstLine).length <= 16) return firstLine.replace(/[.:؛]+$/u, '')
   const candidates = sentences
     .map((sentence, index) => ({
@@ -2291,6 +2298,7 @@ export function professionalReleaseGate(plan: CompositionPlan, peers: readonly C
   if (quality.readability < 82 || quality.lineFit < 82 || quality.fit < 80) blockers.push('القراءة الهاتفية ليست في مستوى التسليم الاحترافي.')
   if (quality.textContrast < 82 || quality.backgroundContrast < 80) blockers.push('التباين لا يجتاز حد التسليم الاحترافي.')
   if (quality.whitespace < 60 || quality.density < 55 || quality.visualWeight < 50 || quality.rtlAlignment < 75) blockers.push('الإيقاع أو الوزن أو محاذاة RTL تحتاج إعادة إخراج قبل التسليم.')
+  if (layout.id === 'infographic' && (plan.content.points?.length || 0) < 3) blockers.push('الإنفوجرافيك لا يملك ثلاث نقاط مستقلة على الأقل؛ يجب تحويله إلى تخطيط تحريري أو بناء نقاط حقيقية.')
   if (briefFidelity < 82) blockers.push('التكوين جميل لكنه لا يخدم العبارة ونوع المحتوى بما يكفي.')
   if (provenance < 100) blockers.push('جواز الصورة ناقص ولا يسمح بالتسليم النهائي.')
   if (closestPeer >= .78) blockers.push('الاتجاه قريب بصرياً من مرشح آخر ولا يضيف فكرة إخراجية جديدة.')

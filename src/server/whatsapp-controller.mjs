@@ -5,14 +5,15 @@ import { classifyIntent, INTENTS } from '../../whatsapp-agent/intent-engine.mjs'
 import { DEFAULT_BOT_MESSAGES } from '../../whatsapp-agent/bot-messages.mjs'
 
 const SITE_URL = String(process.env.WHATSAPP_SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
-const OWNER_ALERT_FALLBACK = 'وصلت رسالة تحتاج تدخلك البشري. افتح محادثات واتساب من جهازك المرتبط.'
-const HUMAN_ACK = 'وصلتني رسالتك، وتحتاج تأكيداً بشرياً. سيكمل معك الدكتور أو أحد الفريق بأقرب وقت.'
+const OWNER_ALERT_FALLBACK = 'طلب صاحب هذه الرسالة التواصل معك مباشرة. افتح محادثات واتساب من جهازك المرتبط.'
+const HUMAN_ACK = 'أفهم أنك تريد التواصل مع الدكتور مباشرة. اكتب رسالتك كاملة هنا؛ لا أستطيع أن أعدك بموعد رد، وبإمكاني الآن مساعدتك في محتوى الموقع أو البحث عن موضوع محدد.'
+const MEDIA_CLARIFY = 'وصلني ملف أو صورة من دون وصفٍ كافٍ. اكتب لي بجملة واحدة ماذا تريد منها، وسأكمل معك مباشرة.'
 const BOT_SIGNATURE = DEFAULT_BOT_MESSAGES.signature || 'رد آلي من موقع د. أحمد حسين الفيلكاوي'
 const WELCOME = `${DEFAULT_BOT_MESSAGES.welcomeLine || 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي'}.\n\nأفهم سؤالك باللهجة الكويتية أو بالعربية الطبيعية، وأبحث لك في مقالات الدكتور وكتبه وأبحاثه والبودكاست.\n\nجرّب مثلاً: «شنو جديد الدكتور؟» · «عندك شي عن الذكاء الاصطناعي؟» · «لخّصها» · «عطني غيرها»\n\n${SITE_URL}`
 const CLARIFY = `${DEFAULT_BOT_MESSAGES.clarify || 'ما فهمت الطلب بدقة.'}\n\nاكتب الفكرة بطريقتك، أو قل: آخر مقالة · آخر بحث · آخر كتاب · آخر بودكاست · عندك شي عن…`
 const NO_MATCH = `${DEFAULT_BOT_MESSAGES.noMatch || 'ما لقيت مادة منشورة مطابقة الآن.'}\n\nجرّب كلمة أقرب للموضوع، أو قل لي: مقالة، كتاب، بحث، أو بودكاست.`
 const HELP = `أقدر أبحث لك في كل ما نشره د. أحمد، وأفهم المتابعة الطبيعية من غير أوامر جامدة.\n\n• آخر مقالة / كتاب / بحث / بودكاست\n• عندك شي عن موضوع معيّن؟\n• لخّصها / افتحها / عطني المصدر\n• عطني غيرها / اللي بعدها / الأولى\n• فاجئني / عندي دقيقة\n\n${SITE_URL}`
-const BRIDGE_ONLINE_MS = Math.max(30_000, Number(process.env.WHATSAPP_BRIDGE_ONLINE_MS || 90_000))
+const BRIDGE_ONLINE_MS = Math.max(60_000, Number(process.env.WHATSAPP_BRIDGE_ONLINE_MS || 180_000))
 const QR_FRESH_MS = Math.max(30_000, Number(process.env.WHATSAPP_QR_FRESH_MS || 75_000))
 const REPAIR_COOLDOWN_MS = Math.max(15 * 60_000, Number(process.env.WHATSAPP_REPAIR_COOLDOWN_MS || 60 * 60_000))
 const MAX_BODY_BYTES = 2 * 1024 * 1024
@@ -141,6 +142,22 @@ export function isWhatsAppWakePhrase(value) {
   return WAKE_PHRASES.has(normalizeArabicMessage(value))
 }
 
+export function isDuplicateInboundDelivery({
+  messageIdHash = '',
+  recentMessageIds = [],
+  incomingHash = '',
+  previousIncomingHash = '',
+  previousInboundAt = '',
+  now = Date.now(),
+} = {}) {
+  if (messageIdHash) return Array.isArray(recentMessageIds) && recentMessageIds.includes(messageIdHash)
+  const previousAt = Date.parse(previousInboundAt || '')
+  return Boolean(incomingHash
+    && previousIncomingHash === incomingHash
+    && Number.isFinite(previousAt)
+    && Number(now) - previousAt < 15_000)
+}
+
 function sharedPrefix(left, right) {
   const limit = Math.min(left.length, right.length)
   let index = 0
@@ -191,7 +208,7 @@ function isGreetingOnly(text) {
 function signReply(value) {
   const text = bounded(value, 2_000)
   if (!text || text.includes(BOT_SIGNATURE)) return text
-  const humanBoundary = /تحتاج تأكيداً بشرياً|سيرد عليك الدكتور|تحتاج تدخلك البشري/.test(text)
+  const humanBoundary = /تريد التواصل مع الدكتور مباشرة|لا أستطيع أن أعدك بموعد رد/.test(text)
   const alreadyInteractive = /قل لي|جرّب|اكتب|شنو يناسب|وش تحب|إذا تحب|وإن أحببت|وأكمل معك/.test(text)
   const nudge = humanBoundary || alreadyInteractive
     ? ''
@@ -327,7 +344,7 @@ function intentKinds(intent) {
 
 export function decideGroundedResponse({ text, hasMedia = false, rules = [], priorReplyHash = '', conversation = {} } = {}) {
   const clean = normalizeArabicMessage(text)
-  if (hasMedia) return { kind: 'escalate', reason: 'media', reply: signReply(HUMAN_ACK) }
+  if (hasMedia) return { kind: 'reply', reason: 'media-description-needed', reply: signReply(MEDIA_CLARIFY) }
   if (!clean) return { kind: 'reply', reason: 'empty-after-normalization', reply: signReply(CLARIFY) }
   if (HUMAN_PATTERNS.some((pattern) => pattern.test(clean))) {
     return { kind: 'escalate', reason: 'human-request', reply: signReply(HUMAN_ACK) }
@@ -638,6 +655,9 @@ function bridgeStatus(data = {}) {
     bridgeVersion: bounded(data.version, 80) || null,
     bridgeInstanceId: bounded(data.instanceId, 100) || null,
     bridgeStateAt: bounded(data.stateAt, 80) || null,
+    lastCatchupAt: bounded(data.lastCatchupAt, 80) || null,
+    lastCatchupRecovered: Math.max(0, Number(data.lastCatchupRecovered || 0)),
+    lastCatchupError: bounded(data.lastCatchupError, 300) || null,
     lastRecoveryRequestedAt: bounded(data.lastRecoveryRequestedAt, 80) || null,
     updated_at: bounded(data.updatedAt, 80) || null,
     qr: hasQr ? savedQr : null,
@@ -766,6 +786,16 @@ export function buildWhatsAppDiagnostics({
         : needsAuthScan
           ? 'الخدمة تعمل لكنها تنتظر مسح رمز QR من الهاتف.'
           : (status?.last_error || status?.health?.why || 'جلسة واتساب لم تصل إلى الجاهزية.'),
+    },
+    {
+      id: 'missed-message-recovery',
+      label: 'استرجاع الرسائل المتأخرة',
+      state: status?.lastCatchupError ? 'warning' : status?.lastCatchupAt ? 'ok' : 'info',
+      detail: status?.lastCatchupError
+        ? `تعذّر آخر فحص استرجاع: ${bounded(status.lastCatchupError, 180)}`
+        : status?.lastCatchupAt
+          ? `آخر فحص ${status.lastCatchupAt}؛ استعاد ${Math.max(0, Number(status.lastCatchupRecovered || 0))} رسالة فاتتها الأحداث الحية.`
+          : 'يعمل الفحص بعد اكتمال اتصال الجسر ثم كل خمس دقائق.',
     },
     {
       id: 'reply-engine',
@@ -1145,6 +1175,9 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         updatedAt: now,
         deviceName: bounded(body.deviceName, 120),
         version: bounded(body.version, 80),
+        lastCatchupAt: bounded(body.lastCatchupAt, 80) || null,
+        lastCatchupRecovered: Math.max(0, Number(body.lastCatchupRecovered || 0)),
+        lastCatchupError: bounded(body.lastCatchupError, 300) || null,
       }
 
       await db.runTransaction(async (transaction) => {
@@ -1276,8 +1309,35 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
 
     const text = bounded(body.text, 12_000)
     const incomingHash = hash(normalizeArabicMessage(text) || `media:${bounded(body.mediaType, 80)}`)
-    const lastInboundAt = Date.parse(data.lastInboundAt || '')
-    const duplicate = data.lastIncomingHash === incomingHash && Number.isFinite(lastInboundAt) && Date.now() - lastInboundAt < 10 * 60_000
+    const incomingMessageId = bounded(body.messageId, 240)
+    const incomingMessageIdHash = incomingMessageId ? hash(`message-id:${incomingMessageId}`) : ''
+    const recentIncomingMessageIds = Array.isArray(data.recentIncomingMessageIds)
+      ? data.recentIncomingMessageIds.filter((value) => typeof value === 'string' && value).slice(-99)
+      : []
+    const recentInboundResponses = data.recentInboundResponses && typeof data.recentInboundResponses === 'object' && !Array.isArray(data.recentInboundResponses)
+      ? data.recentInboundResponses
+      : {}
+    const deliveryResponsePatch = (action, reason, replyText = '') => {
+      if (!incomingMessageIdHash) return {}
+      const recentResponses = Object.fromEntries(Object.entries(recentInboundResponses).slice(-23))
+      recentResponses[incomingMessageIdHash] = {
+        action: bounded(action, 40),
+        reason: bounded(reason, 100),
+        replyText: bounded(replyText, 2_000),
+        createdAt: now,
+      }
+      return { recentInboundResponses: recentResponses }
+    }
+    /* التكرار التقني يُعرف من معرّف تسليم واتساب، لا من نص الرسالة. كان
+       تكرار «آخر المقالات» برسالة جديدة يُعامَل كإعادة تسليم فيسكت أو يرسل
+       fallback بشرياً. كل messageId جديد هو دور حوار جديد ولو كان النص نفسه. */
+    const duplicate = isDuplicateInboundDelivery({
+      messageIdHash: incomingMessageIdHash,
+      recentMessageIds: recentIncomingMessageIds,
+      incomingHash,
+      previousIncomingHash: data.lastIncomingHash,
+      previousInboundAt: data.lastInboundAt,
+    })
     const wakePhrase = isWhatsAppWakePhrase(text)
     const manualTakeoverActive = data.mode === 'human'
       || (data.mode === 'silent' && Boolean(data.lastManualAt) && data.wakeActive !== true)
@@ -1287,6 +1347,10 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       masked: maskJid(jid),
       lastInboundAt: now,
       lastIncomingHash: incomingHash,
+      ...(incomingMessageIdHash ? {
+        lastIncomingMessageIdHash: incomingMessageIdHash,
+        recentIncomingMessageIds: [...new Set([...recentIncomingMessageIds, incomingMessageIdHash])].slice(-100),
+      } : {}),
       lastMessageType: bounded(body.mediaType, 80) || 'text',
       updatedAt: now,
     }
@@ -1313,15 +1377,28 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         autoResumeAt: null,
         lastReplyHash: hash(signedWelcome),
         lastReplyAt: now,
+        ...deliveryResponsePatch('reply', 'wake-phrase', signedWelcome),
       }, { merge: true })
       sendJson(res, 200, { ok: true, action: 'reply', reason: 'wake-phrase', reply: { text: signedWelcome } })
       return
     }
 
     if (duplicate) {
-      /* إعادة التسليم حدث تقني وليست رسالة جديدة من الشخص. الرد عليها كان
-         يصنع محادثة مزعجة — وظهر بشكل أسوأ داخل محادثة المالك الذاتية. */
+      /* إن وصل رد الخادم ثم انقطع الجسر قبل إرسال واتساب، يعيد الاسترجاع
+         messageId نفسه. نعيد الرد المخزن حتى لا تضيع الرسالة؛ أما إعادة
+         التسليم بعد إرسال ناجح فيوقفها checkpoint المحلي قبل بلوغ الخادم. */
+      const cached = incomingMessageIdHash ? recentInboundResponses[incomingMessageIdHash] : null
       await ref.set(basePatch, { merge: true })
+      if (cached?.replyText) {
+        sendJson(res, 200, {
+          ok: true,
+          action: ['reply', 'reply-and-escalate'].includes(cached.action) ? cached.action : 'reply',
+          reason: 'duplicate-delivery-replay',
+          reply: { text: bounded(cached.replyText, 2_000) },
+          replayed: true,
+        })
+        return
+      }
       sendJson(res, 200, { ok: true, action: 'none', reason: 'duplicate-delivery' })
       return
     }
@@ -1341,10 +1418,9 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       conversation: data,
     })
     const replyText = bounded(decision.reply, 2_000)
-    const replyHash = hash(replyText)
-    const safeReply = data.lastReplyHash === replyHash
-      ? signReply('وصلت فكرتك. حتى لا أكرر الرد نفسه، اكتب الموضوع بكلمة أخرى أو قل «عطني غيرها» وأكمل معك.')
-      : replyText
+    /* إذا كرر الشخص الطلب في رسالة جديدة نجيبه من جديد. تشابه الرد ليس دليلاً
+       على إعادة تسليم، ولا مبرراً لاستبداله برسالة متابعة بشرية أو رد عام. */
+    const safeReply = replyText
 
     if (decision.kind === 'silent') {
       const eventId = randomUUID()
@@ -1389,6 +1465,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
           escalatedAt: now,
           lastReplyHash: hash(safeReply),
           lastReplyAt: now,
+          ...deliveryResponsePatch('reply-and-escalate', decision.reason, safeReply),
         }, { merge: true }),
         db.collection(COLLECTIONS.events).doc(eventId).set({
           id: eventId,
@@ -1431,6 +1508,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       ...(Array.isArray(decision.evidence) && decision.evidence.length ? {
         seenContentIds: [...new Set([...(Array.isArray(data.seenContentIds) ? data.seenContentIds : []), ...decision.evidence])].slice(-40),
       } : {}),
+      ...deliveryResponsePatch('reply', decision.reason, safeReply),
     }, { merge: true })
     sendJson(res, 200, { ok: true, action: 'reply', reason: decision.reason, reply: { text: safeReply } })
   }

@@ -26,7 +26,9 @@ const requiredFiles = [
   'src/pages/CvFile.tsx',
   '.github/workflows/firebase-hosting-live.yml',
   'src/components/admin/WhatsAppAgentPanel.tsx',
+  'src/components/admin/BotMessagesPanel.tsx',
   'whatsapp-agent/intent-engine.mjs',
+  'whatsapp-agent/bot-messages.mjs',
   'src/components/admin/SocialDesignStudio.tsx',
   'whatsapp-bridge/bridge.mjs',
   'whatsapp-web-bridge/index.mjs',
@@ -81,13 +83,17 @@ const homePage = await readFile(resolve(root, 'src/pages/Home.tsx'), 'utf8')
 const uiSource = await readFile(resolve(root, 'src/components/ui.tsx'), 'utf8')
 const cvSource = await readFile(resolve(root, 'src/pages/CV.tsx'), 'utf8')
 const whatsappPanel = await readFile(resolve(root, 'src/components/admin/WhatsAppAgentPanel.tsx'), 'utf8')
+const whatsappMessagesPanel = await readFile(resolve(root, 'src/components/admin/BotMessagesPanel.tsx'), 'utf8')
 const whatsappBridge = await readFile(resolve(root, 'whatsapp-bridge/bridge.mjs'), 'utf8')
 const whatsappWebBridge = await readFile(resolve(root, 'whatsapp-web-bridge/index.mjs'), 'utf8')
 const whatsappResidentRunner = await readFile(resolve(root, 'whatsapp-web-bridge/service-runner.mjs'), 'utf8')
 const whatsappResidentInstaller = await readFile(resolve(root, 'whatsapp-web-bridge/install-autostart-mac.command'), 'utf8')
 const whatsappController = await readFile(resolve(root, 'src/server/whatsapp-controller.mjs'), 'utf8')
 const whatsappIntentEngine = await readFile(resolve(root, 'whatsapp-agent/intent-engine.mjs'), 'utf8')
+const whatsappBotMessages = await readFile(resolve(root, 'whatsapp-agent/bot-messages.mjs'), 'utf8')
 const designStudio = await readFile(resolve(root, 'src/components/admin/SocialDesignStudio.tsx'), 'utf8')
+const socialDesignEngine = await readFile(resolve(root, 'src/lib/social-design-engine.ts'), 'utf8')
+const socialDesignRenderer = await readFile(resolve(root, 'src/lib/social-design-renderer.ts'), 'utf8')
 const liveSource = (await Promise.all((await textFiles(resolve(root, 'src'))).map((file) => readFile(file, 'utf8')))).join('\n')
 
 const assertions = [
@@ -118,7 +124,14 @@ const assertions = [
   [audioLibrary.includes('مكتبة الصوت') && audioLibrary.includes('نورة') && audioLibrary.includes('فهد') && audioLibrary.includes('الحوار') && audioLibrary.includes("'clear'") && audioManagement.includes("'reading' | 'dialogue'"), 'admin audio library must expose Noura, Fahed and dialogue while keeping article-facing labels generic'],
   [audioLibrary.includes('<audio') && audioLibrary.includes('سماع') && audioLibrary.includes('قراءة المقال') && audioLibrary.includes('الحوار') && audioLibrary.includes('12_000'), 'central audio library must preview reading/dialogue files with generic labels and refresh generation status'],
   [adminPage.includes("'audio-library': <AudioLibrary") && adminNavigation.includes("tab: 'audio-library'") && adminNavigation.includes('السماع وإعادة التوليد والحذف'), 'audio lifecycle must remain a dedicated visible admin tab generated from the official registry'],
-  [adminArchitecture.includes('data-admin-desktop-accordion="true"') && adminArchitecture.includes('aria-expanded={expanded}') && adminArchitecture.includes('openSection') && adminArchitecture.includes('AdminMobileSubnav') && adminArchitecture.includes('lg:hidden'), 'desktop admin navigation must stay progressively collapsed while the approved mobile navigation remains independent'],
+  [adminArchitecture.includes('data-admin-desktop-rail="true"')
+    && adminArchitecture.includes('data-admin-desktop-flyout="true"')
+    && adminArchitecture.includes('useState<AdminArea | null>(null)')
+    && adminArchitecture.includes('setOpenArea(null)')
+    && adminPage.includes('lg:grid-cols-[76px_minmax(0,1fr)]')
+    && adminArchitecture.includes('AdminMobileSubnav')
+    && adminArchitecture.includes('lg:hidden'),
+  'desktop admin navigation must stay as a non-crowding closed rail/flyout while the approved mobile navigation remains independent'],
   [!contentManager.includes('<ArticleAudioManager') && !contentManager.includes('إدارة صوت المقال'), 'audio controls must stay out of the article editor and inside the dedicated library'],
   [serverSource.includes('audioManagePath') && serverSource.includes('admin-audio-clear.yml') && autoAudio.includes('ALL_VOICES') && serverSource.includes("requestedMode === 'fahed' ? 'reading'"), 'server must dispatch protected generic reading/dialogue lifecycle workflows while accepting the legacy alias'],
   [audioClearWorkflow.includes('reading) FILES=') && audioClearWorkflow.includes('.noura.mp3') && audioClearWorkflow.includes('clear-audio-assets.mjs') && !audioClearWorkflow.includes("description: 'fahed") && !autoAudioWorkflow.includes('github.event.inputs.voice') && autoAudioWorkflow.includes('MODE="reading"'), 'audio cancellation and regeneration must use generic reading/dialogue modes, clear both compatible reading files, and expose no internal voice selector'],
@@ -161,7 +174,7 @@ const assertions = [
   'admin control center must keep live diagnosis, multi-turn proof, incidents, alerts, weekly evidence, backups and one non-destructive repair action'],
   [whatsappPanel.includes('إصلاح الاتصال تلقائياً') && whatsappPanel.includes('/admin/repair') && whatsappPanel.includes('window.confirm'), 'WhatsApp admin must expose safe recovery and explicit destructive re-pairing'],
   [whatsappPanel.includes('data-whatsapp-recovery-center="true"') && whatsappPanel.includes('/admin/recover') && whatsappPanel.includes('مركز التشخيص والإحياء') && whatsappController.includes('buildWhatsAppDiagnostics') && whatsappController.includes("path === '/recover'"), 'WhatsApp admin must diagnose every operating layer and expose one safe non-destructive recovery action without code access'],
-  [whatsappBridge.includes('watchdog_restart_stuck_authenticated') && whatsappBridge.includes("process.exit(75)") && whatsappBridge.includes("WHATSAPP_BRIDGE_SECRET || ''") && whatsappWebBridge.includes('sendTextWithRecovery') && whatsappWebBridge.includes("'send-self-message'") && whatsappWebBridge.includes('waitUntilMsgSent: true') && whatsappWebBridge.includes('duplicate_command_acknowledged_without_resend') && whatsappWebBridge.includes('manual_message_closed_bot_session') && whatsappWebBridge.includes('owner_private_chat_ignored') && whatsappWebBridge.includes('late_loading_screen_ignored') && whatsappController.includes("path === '/emergency-stop'") && whatsappController.includes("defaultReplyMode: 'always-on'") && whatsappController.includes("reason: 'duplicate-delivery'") && whatsappController.includes('WAKE_PHRASES'), 'WhatsApp bridge must self-restart when stuck, reply from the first public message, stay silent after a manual owner reply until the exact wake phrase, ignore the owner private chat and duplicate deliveries, stop queued sends, deduplicate commands, and never ship a fallback secret'],
+  [whatsappBridge.includes('watchdog_restart_stuck_authenticated') && whatsappBridge.includes("process.exit(75)") && whatsappBridge.includes("WHATSAPP_BRIDGE_SECRET || ''") && whatsappWebBridge.includes('sendTextWithRecovery') && whatsappWebBridge.includes("'send-self-message'") && whatsappWebBridge.includes('waitUntilMsgSent: true') && whatsappWebBridge.includes('duplicate_command_acknowledged_without_resend') && whatsappWebBridge.includes('manual_message_closed_bot_session') && whatsappWebBridge.includes('owner_private_chat_ignored') && whatsappWebBridge.includes('late_loading_screen_ignored') && whatsappWebBridge.includes('catchUpMissedMessages') && whatsappWebBridge.includes('inbound-checkpoint.json') && whatsappWebBridge.includes('heartbeatBusy') && whatsappWebBridge.includes('sanitizeServerReply') && whatsappWebBridge.includes('legacy_duplicate_decision_retrying_as_distinct_turn') && whatsappController.includes("path === '/emergency-stop'") && whatsappController.includes("defaultReplyMode: 'always-on'") && whatsappController.includes("reason: 'duplicate-delivery'") && whatsappController.includes("reason: 'duplicate-delivery-replay'") && whatsappController.includes('recentInboundResponses') && whatsappController.includes('isDuplicateInboundDelivery') && whatsappController.includes('WAKE_PHRASES'), 'WhatsApp bridge must self-restart when stuck, catch up missed messages, reply from the first public message, stay silent after a manual owner reply until the exact wake phrase, ignore the owner private chat, neutralize legacy silent/human-promise responses, replay exact duplicate deliveries safely, stop queued sends, deduplicate commands, and never ship a fallback secret'],
   [whatsappController.includes('REPAIR_COOLDOWN_MS') && whatsappController.includes('repairAllowed') && whatsappController.includes('رفضت اللوحة مسحها'), 'WhatsApp destructive recovery must keep its connected-session lock and scan-rate cooldown'],
   [whatsappController.includes("path === '/simulate-sequence'")
     && whatsappController.includes('كل رسالة جديدة في الوضع الطبيعي تحصل على رد')
@@ -169,7 +182,20 @@ const assertions = [
     && whatsappIntentEngine.includes('CONTEXT_ACTION_INTENTS')
     && whatsappIntentEngine.includes('عطني|اعطني|ابي|اريد'),
   'WhatsApp must prove continuous multi-turn replies, prefer explicit follow-up actions over pronoun references, and ask a useful next question'],
-  [whatsappResidentRunner.includes('loadBridgeSecret') && whatsappResidentRunner.includes('ensureDependencies') && whatsappResidentRunner.includes('session_quarantined_for_repair'), 'resident WhatsApp service must self-heal dependencies, fetch its secret, and quarantine repaired sessions'],
+  [whatsappPanel.includes('data-whatsapp-catchup-status="true"')
+    && whatsappController.includes("'missed-message-recovery'")
+    && whatsappMessagesPanel.includes('LEGACY_HUMAN_PROMISE')
+    && whatsappMessagesPanel.includes('safeTemplateValue')
+    && whatsappBotMessages.includes('legacyPromise')
+    && whatsappIntentEngine.includes("reason: 'active-clarify'"),
+  'WhatsApp admin and runtime must expose missed-message recovery, quarantine legacy human-follow-up promises, and answer every active-session turn'],
+  [whatsappResidentRunner.includes('loadBridgeSecret')
+    && whatsappResidentRunner.includes('readKeychainSecret')
+    && whatsappResidentRunner.includes('cacheKeychainSecret')
+    && whatsappResidentRunner.includes('bridge_secret_loaded_from_keychain')
+    && whatsappResidentRunner.includes('ensureDependencies')
+    && whatsappResidentRunner.includes('session_quarantined_for_repair'),
+  'resident WhatsApp service must self-heal dependencies, keep an encrypted Keychain fallback for its secret, and quarantine repaired sessions'],
   [whatsappResidentInstaller.includes('DrAhmadWhatsAppBridge') && whatsappResidentInstaller.includes('com.alturath.whatsapp-bridge') && whatsappResidentInstaller.includes('legacy-launch-agents'), 'WhatsApp installer must keep one resident launch service and retire conflicting legacy services'],
   [designStudio.includes('BufferedIdeaTextarea')
     && designStudio.includes('data-performance-island="studio-idea"')
@@ -178,8 +204,15 @@ const assertions = [
     && designStudio.includes('data-professional-visual-gate="true"')
     && designStudio.includes('premiumReadyQueries')
     && designStudio.includes('cheapStockPenalty')
+    && designStudio.includes('maxAttempts = 4')
+    && designStudio.includes('browser-original-editorial')
+    && designStudio.includes('repairRound < 2')
     && !designStudio.includes("setVisualMode('library')"),
-  'design studio must keep zero-render typing, exactly two original/curated routes, premium ready-image curation, a professional release gate, and latest-approved-only storage'],
+  'design studio must keep zero-render typing, exactly two original/curated routes, premium ready-image curation, automatic image/release repair, a professional release gate, and latest-approved-only storage'],
+  [socialDesignEngine.includes("'Alexandria Variable'")
+    && socialDesignRenderer.includes('alexandriaArabicFontUrl')
+    && socialDesignRenderer.includes("font-family:'Alexandria Variable'"),
+  'social studio must keep its modern Arabic display face embedded in exported raster artwork'],
   [cvFile.includes("'site_cv_files'") && cvFile.includes('cv-files-v1'), 'public CV reconstruction and local cache must remain active'],
   [firestoreRules.includes('match /site_cv_files/{kind}') && firestoreRules.includes('match /chunks/{chunkId}'), 'Firestore CV file rules must remain deployed'],
   [publishingStudio.includes('مكتبة القوالب كاملة — 24 تكويناً')

@@ -5,6 +5,7 @@ import {
   buildWhatsAppDiagnostics,
   normalizeArabicMessage,
   isWhatsAppWakePhrase,
+  isDuplicateInboundDelivery,
   isInvalidBridgeRegression,
   stripArabicGreetings,
   whatsappPolicy,
@@ -34,6 +35,9 @@ assert.match(controllerSource, /mode: 'silent', wakeActive: false, wakeVersion: 
 assert.match(controllerSource, /resumes: 'wake-phrase-only'/)
 assert.match(controllerSource, /reason: 'owner-private-chat'/)
 assert.match(controllerSource, /reason: 'duplicate-delivery'/)
+assert.match(controllerSource, /reason: 'duplicate-delivery-replay'/)
+assert.match(controllerSource, /recentInboundResponses/)
+assert.doesNotMatch(controllerSource, /احتاجت متابعة بشرية|سيكمل معك الفريق|سيكمل معك الدكتور أو أحد الفريق/)
 assert.match(controllerSource, /path === '\/recover'/)
 assert.match(controllerSource, /path === '\/simulate-sequence'/)
 assert.match(controllerSource, /كل رسالة جديدة في الوضع الطبيعي تحصل على رد/)
@@ -54,7 +58,8 @@ const healthyDiagnostics = buildWhatsAppDiagnostics({
 })
 assert.equal(healthyDiagnostics.code, 'healthy')
 assert.equal(healthyDiagnostics.level, 'healthy')
-assert.equal(healthyDiagnostics.checks.length, 5)
+assert.equal(healthyDiagnostics.checks.length, 6)
+assert.equal(healthyDiagnostics.checks.some((check) => check.id === 'missed-message-recovery'), true)
 assert.equal(healthyDiagnostics.queue.staleLeased, 0)
 
 const offlineDiagnostics = buildWhatsAppDiagnostics({
@@ -82,6 +87,16 @@ const panelSource = await import('node:fs').then(({ readFileSync }) => readFileS
 assert.match(panelSource, /data-whatsapp-recovery-center="true"/)
 assert.match(panelSource, /\/admin\/recover/)
 assert.match(panelSource, /مركز التشخيص والإحياء/)
+assert.match(panelSource, /data-whatsapp-catchup-status="true"/)
+
+const bridgeSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../whatsapp-web-bridge/index.mjs', import.meta.url), 'utf8'))
+assert.match(bridgeSource, /catchUpMissedMessages/)
+assert.match(bridgeSource, /inbound-checkpoint\.json/)
+assert.match(bridgeSource, /setInterval\(\(\) => void catchUpMissedMessages\(\), 5 \* 60_000\)/)
+assert.match(bridgeSource, /retries: 2, timeoutMs: 8_000/)
+assert.match(bridgeSource, /sanitizeServerReply/)
+assert.match(bridgeSource, /legacy_duplicate_decision_retrying_as_distinct_turn/)
+assert.match(bridgeSource, /SAFE_CLARIFY_REPLY/)
 
 const rules = [{
   id: 'hours',
@@ -99,13 +114,28 @@ assert.match(decideGroundedResponse({ text: 'مواعيد الدوام', rules }
 assert.match(decideGroundedResponse({ text: 'مواعيد الدوام', rules }).reply, /رد آلي من موقع/)
 
 const media = decideGroundedResponse({ text: 'شوف الملف', hasMedia: true })
-assert.equal(media.kind, 'escalate')
-assert.equal(media.reason, 'media')
-assert.match(media.reply, /تأكيداً بشرياً/)
+assert.equal(media.kind, 'reply')
+assert.equal(media.reason, 'media-description-needed')
+assert.match(media.reply, /اكتب لي بجملة واحدة/)
+assert.doesNotMatch(media.reply, /متابعة بشرية|الفريق/)
 
 const human = decideGroundedResponse({ text: 'أبي أكلم موظف' })
 assert.equal(human.kind, 'escalate')
 assert.equal(human.reason, 'human-request')
+assert.doesNotMatch(human.reply, /سيكمل معك الفريق|سيرد عليك الدكتور/)
+
+assert.equal(isDuplicateInboundDelivery({
+  messageIdHash: 'message-b',
+  recentMessageIds: ['message-a'],
+  incomingHash: 'same-text',
+  previousIncomingHash: 'same-text',
+  previousInboundAt: '2026-07-29T20:10:00.000Z',
+  now: Date.parse('2026-07-29T20:10:03.000Z'),
+}), false, 'same text in a new WhatsApp message is a new conversation turn')
+assert.equal(isDuplicateInboundDelivery({
+  messageIdHash: 'message-a',
+  recentMessageIds: ['message-a'],
+}), true, 'the exact WhatsApp delivery id is deduplicated')
 
 const price = decideGroundedResponse({ text: 'أبي قائمة الأسعار' })
 assert.equal(price.kind, 'reply')
@@ -151,6 +181,24 @@ assert.equal(continuousTurns[1].reason, 'context-summary')
 assert.equal(['more-like-this', 'no-more-results'].includes(continuousTurns[2].reason), true)
 assert.ok(Date.now() - continuousStartedAt < 5_000, 'three-turn local reasoning must remain fast')
 assert.match(decideGroundedResponse({ text: 'من هو الدكتور أحمد؟' }).reply, /شنو تحب أسوي بعدها/)
+
+/* التسلسل الظاهر في صور الدكتور: اختيار ٣٠ ثانية ثم طلب أحدث المقالات
+   مرتين. كل ضغطة/رسالة مستقلة يجب أن تحصل على رد، ولا تتحول إلى duplicate
+   نصي أو وعد بمتابعة بشرية. */
+let screenshotConversation = {}
+for (const text of ['آخر مقالة', '٣٠ ثانية', 'آخر المقالات', 'آخر المقالات']) {
+  const decision = decideGroundedResponse({ text, conversation: screenshotConversation })
+  assert.equal(decision.kind, 'reply', `${text} must receive a useful reply`)
+  assert.ok(String(decision.reply || '').length > 20)
+  assert.doesNotMatch(decision.reply, /متابعة بشرية|سيكمل معك الفريق|سيرد عليك الدكتور/)
+  screenshotConversation = {
+    ...screenshotConversation,
+    ...(Array.isArray(decision.contextItemIds) ? { contextItemIds: decision.contextItemIds } : {}),
+    ...(Number.isInteger(decision.contextIndex) ? { contextIndex: decision.contextIndex } : {}),
+    ...(decision.lastTopic ? { lastTopic: decision.lastTopic } : {}),
+    ...(Array.isArray(decision.evidence) ? { seenContentIds: [...new Set([...(screenshotConversation.seenContentIds || []), ...decision.evidence])] } : {}),
+  }
+}
 
 let navigationConversation = {}
 const navigationReasons = []

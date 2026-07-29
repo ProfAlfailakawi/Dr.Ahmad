@@ -251,20 +251,19 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
         reason: 'grounding-rescue',
       }
     }
-    if (isPrivateChat(jid)) markManualTakeover(db, jid)
     db.addAudit('grounding-firewall-blocked', db.jidKey(jid), `reason=${verdict.code}`)
     return {
       ...response,
-      text: '',
+      text: 'ما قدرت أثبت جواباً آمناً لهذا الطلب من المصادر المتاحة. وضّح لي المقصود بكلمة أو زاوية ثانية، أو قل: آخر مقالة · آخر بحث · آخر كتاب.',
       actions: [],
       contentId: null,
       contextItems: [],
       seenContentIds: [],
       evidenceQuotes: [],
-      shouldRespond: false,
-      silent: true,
-      needsHuman: true,
-      reason: 'grounding-firewall',
+      shouldRespond: true,
+      silent: false,
+      needsHuman: false,
+      reason: 'grounding-firewall-clarify',
       groundingFailure: verdict.code,
     }
   }
@@ -387,19 +386,16 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     if (!response.shouldRespond || !flags.autoReply || !flags.send) return response
     if (response.needsHuman) ringOwnerBell(jid, incomingText, 'answered')
     if (response.text && state.transport?.sendText) {
-      /* حارس التكرار (من مواصفة صديق الدكتور): السؤال المعاد الذي أنتج
-         الجواب الحرفي نفسه خلال عشر دقائق لا يستحق نسخه — إشارةٌ مختصرة
-         للأعلى تكفي أدباً، ولا صمت. الأجوبة المتجددة (فاجئني ونحوها)
-         تختلف نصاً كل مرة فلا يمسها الحارس أصلاً. */
+      /* تكرار السؤال في messageId جديد دورٌ حواري جديد، لا عطل. نحتفظ
+         بمؤشر التكرار لمنع حجز مادة عشوائية مرتين فقط، لكن نرسل الجواب
+         المطلوب نفسه ولا نستبدله برسالة «وصلتني الرسالة» أو متابعة بشرية. */
       const repeatKey = `repeat-guard:${db.jidKey(jid)}`
       const priorReply = db.getSetting(repeatKey, null)
       const repeatedVerbatim = Boolean(
         priorReply && priorReply.text === response.text
         && Date.now() - Number(priorReply.at) < 10 * 60 * 1000,
       )
-      const outgoingText = repeatedVerbatim
-        ? 'أرسلتُ لك هذا الجواب قبل قليل ⬆️ — وإن كنتَ تقصد شيئاً آخر فوضّح لي أكثر.'
-        : response.text
+      const outgoingText = response.text
       /* الحجز يمنع سباق «اختيارٍ جديد» فقط. الطلب الصريح لأحدث مقالة أو
          تلخيص مادة بعينها يجوز أن يكررها عمداً، فلا نرفضه لمجرد أن إرسالاً
          آخر للمادة نفسها ما زال في الطريق. */

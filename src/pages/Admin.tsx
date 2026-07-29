@@ -319,7 +319,7 @@ function Panel({ email }: { email: string }) {
         {cms.error && <p className="mb-5 rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.85rem] text-soft">تعذّر تحديث المحتوى الحي: {cms.error}</p>}
         {cms.loading && <p className="mb-5 text-[.84rem] text-soft">أحمّل آخر تعديلات المحتوى…</p>}
 
-        <div className="grid min-w-0 gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
+        <div className="grid min-w-0 gap-4 lg:grid-cols-[76px_minmax(0,1fr)] lg:items-start">
           <AdminSidebar tab={tab} onSelect={chooseTab} />
           <section className="min-w-0">
             <AdminMobileSubnav tab={tab} onSelect={chooseTab} />

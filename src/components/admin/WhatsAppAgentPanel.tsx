@@ -47,6 +47,9 @@ type AgentStatus = {
   bridgeVersion?: string | null
   bridgeInstanceId?: string | null
   bridgeStateAt?: string | null
+  lastCatchupAt?: string | null
+  lastCatchupRecovered?: number
+  lastCatchupError?: string | null
   lastRecoveryRequestedAt?: string | null
   diagnostics?: WhatsAppDiagnostics
   health?: {
@@ -760,11 +763,12 @@ export function WhatsAppAgentPanel() {
         </div>
 
         {diagnostics && (
-          <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_1fr_1fr_1.15fr]">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <div className="rounded-xl border border-hair bg-canvas px-3 py-3"><p className="text-[.66rem] text-soft">آخر رسالة وصلت</p><p className="mt-1 text-[.72rem] font-semibold text-ink">{activityLabel(diagnostics.activity.lastInboundAt)}</p></div>
             <div className="rounded-xl border border-hair bg-canvas px-3 py-3"><p className="text-[.66rem] text-soft">آخر رد آلي</p><p className="mt-1 text-[.72rem] font-semibold text-ink">{activityLabel(diagnostics.activity.lastReplyAt)}</p></div>
             <div className="rounded-xl border border-hair bg-canvas px-3 py-3"><p className="text-[.66rem] text-soft">آخر تدخل يدوي</p><p className="mt-1 text-[.72rem] font-semibold text-ink">{activityLabel(diagnostics.activity.lastManualAt)}</p></div>
             <div className="rounded-xl border border-hair bg-canvas px-3 py-3"><p className="text-[.66rem] text-soft">طابور الأوامر</p><p className="mt-1 text-[.72rem] font-semibold text-ink">{diagnostics.queue.active} نشط · {diagnostics.queue.failed} فاشل · {diagnostics.queue.staleLeased} عالق</p></div>
+            <div className="rounded-xl border border-hair bg-canvas px-3 py-3" data-whatsapp-catchup-status="true"><p className="text-[.66rem] text-soft">استرجاع ما فات أثناء الانقطاع</p><p className="mt-1 text-[.72rem] font-semibold text-ink">{status.lastCatchupAt ? `${activityLabel(status.lastCatchupAt)} · ${status.lastCatchupRecovered || 0} مستعادة` : 'يبدأ بعد الاتصال'}</p>{status.lastCatchupError && <p className="mt-1 text-[.64rem] text-red-700">{status.lastCatchupError}</p>}</div>
           </div>
         )}
         <p className="mt-3 text-[.66rem] leading-relaxed text-soft">{diagnostics?.privacy || 'لا تظهر هذه اللوحة نصوص المحادثات أو أرقام أصحابها.'}</p>
@@ -804,7 +808,7 @@ export function WhatsAppAgentPanel() {
             </div>
           )}
           {status.health?.ready && (
-            <p className="mt-4 text-[.78rem] text-soft">متصل وصامت افتراضياً · لا يبدأ إلا بعد كلمة الإيقاظ{status.health.silenced ? ` · أُغلق في ${status.health.silenced} محادثة بعد تدخل يدوي` : ''}</p>
+            <p className="mt-4 text-[.78rem] text-soft">متصل؛ بعد كلمة الإيقاظ يرد على كل رسالة ويفحص تلقائياً ما فاته أثناء أي انقطاع{status.health.silenced ? ` · أُغلق في ${status.health.silenced} محادثة بعد تدخل يدوي` : ''}</p>
           )}
 
           {status.qrImage && !status.health?.ready && (

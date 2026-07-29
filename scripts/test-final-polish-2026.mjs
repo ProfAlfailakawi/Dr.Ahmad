@@ -35,8 +35,7 @@ assert.ok(extras.indexOf("voices.fahed ?") < extras.indexOf("voices.noura ?"), '
 assert.match(audio, /sources\.find\(\(item\) => item\.avatar === 'man'\)/)
 assert.doesNotMatch(audio, />◀ العبارة<|>العبارة ▶</)
 assert.doesNotMatch(audio, /activeSentenceText|article-audio-active-sentence/, 'لا يُكرر المشغل العبارة المنطوقة داخل بطاقة مستقلة فوق أدوات الاستماع')
-assert.match(audio, /aria-label="السابق"[^>]*>◀<\/button>/)
-assert.match(audio, /aria-label="التالي"[^>]*>▶<\/button>/)
+assert.doesNotMatch(audio, /player\.cycleSpeed|player\.jump\(-15\)|player\.jump\(15\)|aria-label="السابق"[^>]*>◀<\/button>|aria-label="التالي"[^>]*>▶<\/button>/, 'بطاقة استمع الكبيرة لا تكرر أدوات المشغل المصغر')
 
 assert.match(dock, /canJumpArticleSentence/)
 assert.match(dock, /article-audio-jump-sentence/)

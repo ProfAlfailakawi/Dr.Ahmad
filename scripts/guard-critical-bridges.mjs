@@ -15,6 +15,7 @@ const requiredFiles = [
   'scripts/audio-control-status.mjs',
   'scripts/clear-audio-assets.mjs',
   '.github/workflows/admin-audio-clear.yml',
+  '.github/workflows/audio-dashboard-sync.yml',
   'src/lib/social-templates.ts',
   'manual-dialogues/success-that-does-not-bring-joy-to-its-ownerarabic.json',
   'storage.rules',
@@ -66,6 +67,7 @@ const autoAudio = await readFile(resolve(root, 'scripts/auto-audio.mjs'), 'utf8'
 const audioManagement = await readFile(resolve(root, 'src/lib/audio-management.ts'), 'utf8')
 const audioClearWorkflow = await readFile(resolve(root, '.github/workflows/admin-audio-clear.yml'), 'utf8')
 const autoAudioWorkflow = await readFile(resolve(root, '.github/workflows/auto-audio-r2.yml'), 'utf8')
+const audioDashboardWorkflow = await readFile(resolve(root, '.github/workflows/audio-dashboard-sync.yml'), 'utf8')
 const publishingStudio = await readFile(resolve(root, 'src/components/admin/PublishingStudio.tsx'), 'utf8')
 const articleDetail = await readFile(resolve(root, 'src/pages/ArticleDetail.tsx'), 'utf8')
 const homePage = await readFile(resolve(root, 'src/pages/Home.tsx'), 'utf8')
@@ -108,10 +110,12 @@ const assertions = [
   [audioLibrary.includes('مكتبة الصوت') && audioLibrary.includes('نورة') && audioLibrary.includes('فهد') && audioLibrary.includes('الحوار') && audioLibrary.includes("'clear'") && audioManagement.includes("'reading' | 'dialogue'"), 'admin audio library must expose Noura, Fahed and dialogue while keeping article-facing labels generic'],
   [audioLibrary.includes('<audio') && audioLibrary.includes('سماع') && audioLibrary.includes('قراءة المقال') && audioLibrary.includes('الحوار') && audioLibrary.includes('12_000'), 'central audio library must preview reading/dialogue files with generic labels and refresh generation status'],
   [adminPage.includes("'audio-library': <AudioLibrary") && adminNavigation.includes("tab: 'audio-library'") && adminNavigation.includes('السماع وإعادة التوليد والحذف'), 'audio lifecycle must remain a dedicated visible admin tab generated from the official registry'],
+  [adminArchitecture.includes('data-admin-desktop-accordion="true"') && adminArchitecture.includes('aria-expanded={expanded}') && adminArchitecture.includes('openSection') && adminArchitecture.includes('AdminMobileSubnav') && adminArchitecture.includes('lg:hidden'), 'desktop admin navigation must stay progressively collapsed while the approved mobile navigation remains independent'],
   [!contentManager.includes('<ArticleAudioManager') && !contentManager.includes('إدارة صوت المقال'), 'audio controls must stay out of the article editor and inside the dedicated library'],
   [serverSource.includes('audioManagePath') && serverSource.includes('admin-audio-clear.yml') && autoAudio.includes('ALL_VOICES') && serverSource.includes("requestedMode === 'fahed' ? 'reading'"), 'server must dispatch protected generic reading/dialogue lifecycle workflows while accepting the legacy alias'],
   [audioClearWorkflow.includes('reading) FILES=') && audioClearWorkflow.includes('.noura.mp3') && audioClearWorkflow.includes('clear-audio-assets.mjs') && !audioClearWorkflow.includes("description: 'fahed") && !autoAudioWorkflow.includes('github.event.inputs.voice') && autoAudioWorkflow.includes('MODE="reading"'), 'audio cancellation and regeneration must use generic reading/dialogue modes, clear both compatible reading files, and expose no internal voice selector'],
   [hostingWorkflow.includes('workflow_run:') && hostingWorkflow.includes('توليد الصوت تلقائياً إلى R2'), 'successful audio ledger workflows must trigger a fresh site deployment'],
+  [audioDashboardWorkflow.includes("'*/15 * * * *'") && audioDashboardWorkflow.includes('--from-r2') && audioDashboardWorkflow.includes('audio:firestore:sync'), 'audio dashboard must independently rescan live R2 every 15 minutes without waiting for a long generation run'],
   [whatsappPanel.includes('إصلاح الاتصال تلقائياً') && whatsappPanel.includes('/admin/repair') && whatsappPanel.includes('window.confirm'), 'WhatsApp admin must expose safe recovery and explicit destructive re-pairing'],
   [whatsappPanel.includes('data-whatsapp-recovery-center="true"') && whatsappPanel.includes('/admin/recover') && whatsappPanel.includes('مركز التشخيص والإحياء') && whatsappController.includes('buildWhatsAppDiagnostics') && whatsappController.includes("path === '/recover'"), 'WhatsApp admin must diagnose every operating layer and expose one safe non-destructive recovery action without code access'],
   [whatsappBridge.includes('watchdog_restart_stuck_authenticated') && whatsappBridge.includes("process.exit(75)") && whatsappBridge.includes("WHATSAPP_BRIDGE_SECRET || ''") && whatsappWebBridge.includes('sendTextWithRecovery') && whatsappWebBridge.includes("'send-self-message'") && whatsappWebBridge.includes('waitUntilMsgSent: true') && whatsappWebBridge.includes('duplicate_command_acknowledged_without_resend') && whatsappWebBridge.includes('manual_message_closed_bot_session') && whatsappWebBridge.includes('owner_private_chat_ignored') && whatsappWebBridge.includes('late_loading_screen_ignored') && whatsappController.includes("path === '/emergency-stop'") && whatsappController.includes("defaultReplyMode: 'always-on'") && whatsappController.includes("reason: 'duplicate-delivery'") && whatsappController.includes('WAKE_PHRASES'), 'WhatsApp bridge must self-restart when stuck, reply from the first public message, stay silent after a manual owner reply until the exact wake phrase, ignore the owner private chat and duplicate deliveries, stop queued sends, deduplicate commands, and never ship a fallback secret'],

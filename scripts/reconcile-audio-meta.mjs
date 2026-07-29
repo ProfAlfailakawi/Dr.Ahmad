@@ -45,6 +45,7 @@ export function discoveryCandidates(knownNames = [], slugs = []) {
   const candidates = new Set(knownNames.filter((name) => name.endsWith('.mp3') || name.endsWith('.dialogue.json')))
   for (const slug of slugs.filter(Boolean)) {
     candidates.add(`${slug}.mp3`)
+    candidates.add(`${slug}.noura.mp3`)
     candidates.add(`${slug}.dialogue.mp3`)
     candidates.add(`${slug}.dialogue.json`)
   }
@@ -67,9 +68,9 @@ if (SELF_TEST) {
   const candidates = discoveryCandidates(['a.noura.mp3', 'legacy.dialogue.mp3'], ['a', 'b'])
   assert(candidates.includes('a.noura.mp3'), 'الملف القديم المحفوظ لا يُحذف من السجل')
   assert(candidates.includes('a.mp3') && candidates.includes('b.mp3'), 'كل مقالات المصدر تدخل اكتشاف قراءة المقال')
+  assert(candidates.includes('b.noura.mp3'), '★ كل مقال يدخل اكتشاف صوت نورة؛ وجوده في R2 يكفي لاستعادته ولو ضاع من metadata')
   assert(candidates.includes('a.dialogue.mp3') && candidates.includes('b.dialogue.mp3'), '★ كل مقال يدخل اكتشاف ملف الحوار حتى لو ضاع من metadata')
   assert(candidates.includes('a.dialogue.json') && candidates.includes('b.dialogue.json'), '★ نص الحوار يُستعاد من R2 أيضاً كي لا يختفي الحوار من اللوحة')
-  assert(!candidates.includes('b.noura.mp3'), 'لا يُنشأ اسم قراءة قديم جديد')
 
   console.log('✓ اختبارات مصالحة سجلّ الصوت: 11/11')
   process.exit(0)
@@ -117,7 +118,8 @@ async function probeSeconds(url) {
 /* اكتشافٌ من R2 (العلاج الجذري): المُصالِح القديم كان يتحقّق فقط من مداخل السجلّ
    الموجودة، فإن فقد السجلُّ مداخلَ — تشغيلةٌ ملغاة تكتب سجلاً جزئياً، أو دهسٌ من
    جلسةٍ متزامنة، أو حسم تعارضٍ يأخذ نسخةً أصغر — لم يستطع استعادتها، فتنهار الخلاصة
-   (شوهد: ١٠٤→٢٥، والخلاصة نزلت ٥٦→١٣). الآن نسأل R2 عن كل ملفٍ ممكن (مقال × صوت)
+   (شوهد: ١٠٤→٢٥، والخلاصة نزلت ٥٦→١٣). الآن نسأل R2 عن كل ملفٍ ممكن
+   (فهد + نورة + الحوار + نص الحوار لكل مقال)
    ونضيف ما وُجِد وغاب عن السجلّ. فيصير السجلّ دائماً ⩾ ما في R2 ولا يُحذف إلا ما
    غاب فعلاً (404) — فالدهس يصير غير مؤذٍ: أيّ تشغيلةٍ تعيد بناءه من الحقيقة. */
 const bodiesPath = resolve(ROOT, 'src/data/bodies.json')

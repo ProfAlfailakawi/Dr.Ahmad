@@ -212,16 +212,21 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${AUDIO_PUBLIC_BASE_URL:-}" ]; then
-            echo "::warning::AUDIO_PUBLIC_BASE_URL غير مضبوط؛ تخطّي المصالحة الحية من دون إسقاط النشر."
-            exit 0
+            echo "::error::AUDIO_PUBLIC_BASE_URL غير مضبوط؛ لا يمكن إثبات عدّاد الصوت الحي."
+            exit 1
           fi
           # استعادة انتقائية فقط: الملف يُعاد إن كان موجوداً فعلاً على R2،
-          # والمحذوف عمداً (404) لا يُبعث. ثم تُصالح الأحجام والمدد مع الواقع.
+          # والمحذوف عمداً (404) لا يُبعث. يشمل الاكتشاف فهد ونورة والحوار،
+          # ثم يُبنى السجلّ وتُحدّث لوحة التحكم من الحقيقة نفسها قبل النشر.
           node scripts/guard-audio-meta-regression.mjs --apply
           node scripts/reconcile-audio-meta.mjs --apply
+          node scripts/sync-audio.mjs
+          npm run audio:firestore:sync -- --from-r2
         env:
           AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
           VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
 
       - name: Build static site
         run: npm run build

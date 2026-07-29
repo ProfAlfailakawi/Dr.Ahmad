@@ -2,12 +2,22 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ArticleAudioControl, ArticleRecord } from '../../lib/cms'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { manageArticleAudio, type ArticleAudioAction, type ArticleAudioMode } from '../../lib/audio-management'
+import { getDb } from '../../lib/firebase'
 import supervisorSnapshot from '../../data/audio-supervisor.json'
 import { Pagination, usePagedList } from '../Pagination'
 import { categoryLabel } from '../../lib/content-taxonomy'
 
 type Filter = 'all' | 'ready' | 'dialogue' | 'working' | 'missing'
 type PlayerState = { slug: string; voice: ArticleAudioMode } | null
+type CloudInventory = {
+  fahed?: number
+  noura?: number
+  dialogue?: number
+  readingArticles?: number
+  totalAudioFiles?: number
+  source?: string
+  lastSyncAt?: unknown
+}
 
 type Props = {
   articles: ArticleRecord[]
@@ -114,6 +124,21 @@ export function AudioLibrary({ articles, onChanged }: Props) {
   const [busyKey, setBusyKey] = useState('')
   const [notice, setNotice] = useState('')
   const [localControls, setLocalControls] = useState<Record<string, ArticleAudioControl>>({})
+  const [cloudInventory, setCloudInventory] = useState<CloudInventory | null>(null)
+
+  useEffect(() => {
+    let active = true
+    let unsubscribe = () => {}
+    ;(async () => {
+      const db = await getDb()
+      if (!db || !active) return
+      const { doc, onSnapshot } = await import('firebase/firestore')
+      unsubscribe = onSnapshot(doc(db, 'site_settings', 'audio_inventory'), (snapshot) => {
+        if (active && snapshot.exists()) setCloudInventory(snapshot.data() as CloudInventory)
+      })
+    })().catch(() => { /* تبقى أرقام CMS الحية هي البديل الآمن */ })
+    return () => { active = false; unsubscribe() }
+  }, [])
 
   const allArticles = useMemo(() => [...articles]
     .filter((article) => !article._cms.deleted)
@@ -194,8 +219,16 @@ export function AudioLibrary({ articles, onChanged }: Props) {
   const liveNouraVoices = allArticles.reduce((sum, article) => sum + Number(exists(article.audio?.noura)), 0)
   const liveFahedVoices = allArticles.reduce((sum, article) => sum + Number(exists(article.audio?.fahed)), 0)
   const liveReadyVoices = allArticles.reduce((sum, article) => sum + Number(exists(article.audio?.fahed) || exists(article.audio?.noura)), 0)
-  const liveRemainingVoices = Math.max(0, liveExpectedVoices - liveReadyVoices)
-  const liveProgressPercent = Math.round((liveReadyVoices / Math.max(1, liveExpectedVoices)) * 1000) / 10
+  /* وثيقة الجرد تأتي من مسح R2 نفسه كل 15 دقيقة. نأخذ الأعلى بينها وبين
+     Firestore التفصيلي كي تظهر الدفعة الجديدة فوراً ولا نخفي أصوات مقالات
+     Firestore الإضافية التي لا تعيش في R2. */
+  const displayedNouraVoices = Math.max(liveNouraVoices, Number(cloudInventory?.noura || 0))
+  const displayedFahedVoices = Math.max(liveFahedVoices, Number(cloudInventory?.fahed || 0))
+  const displayedDialogueVoices = Math.max(totals.voices.dialogue, Number(cloudInventory?.dialogue || 0))
+  const displayedReadyVoices = Math.max(liveReadyVoices, Number(cloudInventory?.readingArticles || 0))
+  const coveredReadingArticles = Math.min(liveExpectedVoices, displayedReadyVoices)
+  const liveRemainingVoices = Math.max(0, liveExpectedVoices - coveredReadingArticles)
+  const liveProgressPercent = Math.round((coveredReadingArticles / Math.max(1, liveExpectedVoices)) * 1000) / 10
   const nextReadingTitle = allArticles.find((article) => !exists(article.audio?.fahed) && !exists(article.audio?.noura))?.title
 
   useEffect(() => {
@@ -349,10 +382,11 @@ export function AudioLibrary({ articles, onChanged }: Props) {
             كل مقال يحتفظ بقراءات فهد ونورة وبالحوار. في واجهة المقال العامة يظهر الاسم المحايد «قراءة المقال»، أما هنا فتظهر الأصوات الحقيقية وحالتها بالتفصيل.
           </p>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[.7rem] text-soft">
-            <span>نورة جاهزة: {liveNouraVoices}</span>
-            <span>فهد جاهز: {liveFahedVoices}</span>
-            <span>مقال لديه قراءة: {liveReadyVoices}</span>
-            <span>حوار جاهز: {totals.voices.dialogue}</span>
+            <span>نورة جاهزة: {displayedNouraVoices}</span>
+            <span>فهد جاهز: {displayedFahedVoices}</span>
+            <span>مقال لديه قراءة: {displayedReadyVoices}</span>
+            <span>حوار جاهز: {displayedDialogueVoices}</span>
+            <span className="font-semibold text-accent">يفحص Cloud تلقائياً كل 15 دقيقة</span>
           </div>
         </div>
         <button type="button" onClick={() => void onChanged()} className="min-h-11 justify-self-start text-[.76rem] font-semibold text-soft transition-colors hover:text-accent md:justify-self-end">تحديث الحالات</button>

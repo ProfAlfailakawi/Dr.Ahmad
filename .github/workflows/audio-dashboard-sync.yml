@@ -1,0 +1,55 @@
+name: مزامنة عدّاد الصوت الحي
+
+on:
+  # جسر خفيف مستقل عن جولة التوليد الطويلة: ما يصل إلى R2 يظهر في اللوحة
+  # تلقائياً خلال ربع ساعة حتى لو بقيت جولة الصوت الأساسية تعمل لساعات.
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: audio-dashboard-live-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --registry=https://registry.npmjs.org/ --prefer-online
+
+      - name: Write Firebase service account
+        run: |
+          set -euo pipefail
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 مفقود؛ لا يمكن تحديث عدّاد اللوحة."
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
+      - name: Scan live R2 and update the dashboard
+        run: npm run audio:firestore:sync -- --from-r2
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+
+      - name: Remove credentials
+        if: always()
+        run: rm -f sa.json

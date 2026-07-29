@@ -508,7 +508,9 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
               </span>
             </span>
           </span>
-          <span className="shrink-0 text-accent transition-transform duration-300 group-hover:-translate-x-1"><ArrowIcon /></span>
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-hair px-3 py-1.5 text-[.72rem] font-semibold text-accent transition-colors group-hover:border-accent/40 group-hover:bg-accent/5">
+            استكشف <ArrowIcon />
+          </span>
         </button>
       </section>
       {typeof document !== 'undefined' ? createPortal(modal, document.body) : null}

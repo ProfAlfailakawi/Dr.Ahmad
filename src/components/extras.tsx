@@ -227,6 +227,7 @@ export function CiteButton({
   authors = 'الفيلكاوي، أحمد حسين',
   compact = false,
   contextLabel = 'فتح المصدر الأصلي',
+  compactLabel,
 }: {
   title: string
   year: string
@@ -236,6 +237,7 @@ export function CiteButton({
   authors?: string
   compact?: boolean
   contextLabel?: string
+  compactLabel?: string
 }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -393,8 +395,19 @@ export function CiteButton({
   if (compact) {
     return (
       <>
-        <button type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-haspopup="dialog" aria-label="عرض الاستشهاد المرجعي" title="الاستشهاد المرجعي" className="article-tool-icon">
-          <span aria-hidden className="font-display text-[1.35rem] leading-none">“</span>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-expanded={open}
+          aria-haspopup="dialog"
+          aria-label="عرض الاستشهاد المرجعي"
+          title="الاستشهاد المرجعي"
+          className={compactLabel
+            ? 'inline-flex min-h-11 items-center gap-2 rounded-full border border-hair bg-canvas px-4 text-[.78rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent'
+            : 'article-tool-icon'}
+        >
+          <span aria-hidden className="font-display text-[1.12rem] leading-none">“</span>
+          {compactLabel && <span>{compactLabel}</span>}
         </button>
         {portalElement}
       </>

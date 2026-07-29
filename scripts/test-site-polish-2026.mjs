@@ -142,9 +142,11 @@ ok(ideaLife.includes('<IdeaTrace article={article} model={model} embedded />')
 ok(podcastManual.includes("musicClip('intro', 4.8, 0.08)") && podcastManual.includes("music/still-light.mp3"), 'المقدمة الموسيقية الأصلية لمسار البودكاست اليدوي محفوظة')
 ok(podcastDialogue.includes('addEpisodeMusicIdentity')
   && podcastDialogue.includes('introSec: 4.8')
-  && podcastDialogue.includes('outroSec: 5.5')
-  && podcastDialogue.includes('bridgeVol: 0.11')
-  && podcastDialogue.includes('insertSemanticMusicBridges'), 'الحوار التلقائي يدمج مقدمة وجسوراً وخاتمة موسيقية فعلية داخل ملف MP3')
+  && podcastDialogue.includes('outroSec: 5.5'), 'المقدمة والخاتمة الموسيقية ثابتتان لكل حوار داخل ملف MP3')
+ok(podcastDialogue.includes(".filter(({ utterance }) => utterance.musicBridgeAfter === true)")
+  && podcastDialogue.includes("version: 'arabic-podcast-v9-editorial-bridges-only'")
+  && !podcastDialogue.includes('primaryTarget = total * 0.52')
+  && !podcastDialogue.includes('secondaryTarget = total * 0.78'), 'الجسور لا تُختار تلقائياً؛ تُدرج فقط في المواضع التي اعتمدها المحرّر')
 
 console.log('\nWhatsApp detached-frame recovery')
 const broadcast = read('src/components/admin/BroadcastStudio.tsx')
@@ -192,5 +194,16 @@ const tanweenGuard = read('scripts/guard-arabic-tanween.mjs')
 const instructions = read('instructions.md')
 ok(tanweenGuard.includes('FATHATAN') && tanweenGuard.includes('DAMMATAN') && tanweenGuard.includes('KASRATAN'), 'الحارس يغطي تنوين الفتح والضم والكسر معاً')
 ok(instructions.includes('مشروعاً') && instructions.includes('ممدوحٌ') && instructions.includes('كتابٍ') && instructions.includes('guard-arabic-tanween.mjs'), 'قاعدة التنوين الثلاثية موثقة للمستقبل')
+
+
+// نهاية المقال: حياة الفكرة ثم أدوات الباحث ثم المشاركة، بلا أزرار يتيمة.
+{
+  const articleDetail = read('src/pages/ArticleDetail.tsx')
+  const lifeAt = articleDetail.indexOf('<IdeaLife article={article}')
+  const studentAt = articleDetail.indexOf('<ArticleExtensions article={article}')
+  const shareAt = articleDetail.indexOf('<Share compact title={a.title}')
+  ok(lifeAt >= 0 && studentAt > lifeAt && shareAt > studentAt, 'ترتيب نهاية المقال: حياة الفكرة ← للطلاب والباحثين ← المشاركة')
+  ok(articleDetail.includes('compactLabel="استشهاد"') && articleDetail.includes('المصدر الأصلي'), 'أدوات المصدر والاستشهاد مسماة بوضوح وليست أيقونات يتيمة')
+}
 
 console.log('\nAll requested polish guards passed.')

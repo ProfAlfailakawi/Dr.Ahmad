@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-29T21:17:55.386Z",
+  "updatedAt": "2026-07-29T22:21:31.679Z",
   "items": [
     {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
       "voice": "fahed",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 4,
+      "attempts": 5,
       "firstFailedAt": "2026-07-23T09:10:12.164Z",
-      "lastFailedAt": "2026-07-29T01:54:59.346Z",
+      "lastFailedAt": "2026-07-29T22:20:46.166Z",
       "message": "r002 فشل بعد 3 محاولات: STT 0٪، السرعة 78/145"
     },
     {
@@ -17,9 +17,9 @@
       "voice": "noura",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 4,
+      "attempts": 5,
       "firstFailedAt": "2026-07-23T09:10:36.007Z",
-      "lastFailedAt": "2026-07-29T01:55:17.558Z",
+      "lastFailedAt": "2026-07-29T22:20:58.868Z",
       "message": "r002 فشل بعد 3 محاولات: STT 0٪، السرعة 78/146"
     },
     {
@@ -77,9 +77,9 @@
       "voice": "noura",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 14,
+      "attempts": 15,
       "firstFailedAt": "2026-07-22T02:30:52.334Z",
-      "lastFailedAt": "2026-07-29T01:26:16.094Z",
+      "lastFailedAt": "2026-07-29T22:19:08.786Z",
       "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
     },
     {
@@ -107,9 +107,9 @@
       "voice": "noura",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 2,
+      "attempts": 3,
       "firstFailedAt": "2026-07-23T11:32:51.077Z",
-      "lastFailedAt": "2026-07-29T01:54:32.584Z",
+      "lastFailedAt": "2026-07-29T22:20:32.937Z",
       "message": "r002 فشل بعد 3 محاولات: STT 0٪، السرعة 84/141"
     },
     {
@@ -127,9 +127,9 @@
       "voice": "noura",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 14,
+      "attempts": 15,
       "firstFailedAt": "2026-07-22T02:21:40.233Z",
-      "lastFailedAt": "2026-07-29T01:22:03.363Z",
+      "lastFailedAt": "2026-07-29T22:18:53.606Z",
       "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
     },
     {
@@ -177,9 +177,9 @@
       "voice": "fahed",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 3,
+      "attempts": 4,
       "firstFailedAt": "2026-07-23T16:50:39.500Z",
-      "lastFailedAt": "2026-07-29T01:43:46.495Z",
+      "lastFailedAt": "2026-07-29T22:19:54.543Z",
       "message": "r010 فشل بعد 3 محاولات: STT 0٪، السرعة 84/134"
     },
     {
@@ -187,9 +187,9 @@
       "voice": "noura",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 2,
+      "attempts": 3,
       "firstFailedAt": "2026-07-23T16:50:47.859Z",
-      "lastFailedAt": "2026-07-29T01:45:38.067Z",
+      "lastFailedAt": "2026-07-29T22:20:05.701Z",
       "message": "r010 فشل بعد 3 محاولات: STT 0٪، السرعة 83/139"
     },
     {
@@ -207,9 +207,9 @@
       "voice": "noura",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 4,
+      "attempts": 5,
       "firstFailedAt": "2026-07-23T08:32:26.967Z",
-      "lastFailedAt": "2026-07-29T01:42:33.054Z",
+      "lastFailedAt": "2026-07-29T22:19:39.444Z",
       "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
     },
     {
@@ -217,9 +217,9 @@
       "voice": "noura",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 14,
+      "attempts": 15,
       "firstFailedAt": "2026-07-22T02:37:53.598Z",
-      "lastFailedAt": "2026-07-29T01:30:09.539Z",
+      "lastFailedAt": "2026-07-29T22:19:18.056Z",
       "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 84/134"
     },
     {
@@ -837,9 +837,9 @@
       "voice": "noura",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 4,
+      "attempts": 5,
       "firstFailedAt": "2026-07-23T08:59:27.810Z",
-      "lastFailedAt": "2026-07-29T01:50:14.645Z",
+      "lastFailedAt": "2026-07-29T22:20:22.404Z",
       "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
     },
     {
@@ -997,9 +997,9 @@
       "voice": "noura",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 7,
+      "attempts": 8,
       "firstFailedAt": "2026-07-22T05:45:11.823Z",
-      "lastFailedAt": "2026-07-29T01:38:26.238Z",
+      "lastFailedAt": "2026-07-29T22:19:25.552Z",
       "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 73/141"
     },
     {
@@ -1057,9 +1057,9 @@
       "voice": "fahed",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 4,
+      "attempts": 5,
       "firstFailedAt": "2026-07-23T09:12:16.099Z",
-      "lastFailedAt": "2026-07-29T01:59:29.250Z",
+      "lastFailedAt": "2026-07-29T22:21:15.327Z",
       "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
     },
     {
@@ -1067,9 +1067,9 @@
       "voice": "noura",
       "kind": "original",
       "stage": "generate-reading",
-      "attempts": 4,
+      "attempts": 5,
       "firstFailedAt": "2026-07-23T09:18:11.724Z",
-      "lastFailedAt": "2026-07-29T02:05:11.166Z",
+      "lastFailedAt": "2026-07-29T22:21:31.679Z",
       "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
     },
     {

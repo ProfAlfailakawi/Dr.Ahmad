@@ -6,4 +6,6 @@ const engine=read('src/lib/social-design-engine.ts'); assert.match(engine,/finge
 const studio=read('src/components/admin/SocialDesignStudio.tsx'); assert.match(studio,/QUALITY_THRESHOLD_KEY/); assert.match(studio,/منع محرك الجودة التصدير/); assert.match(studio,/الخط الزمني المقترح للحملة/)
 const whatsapp=read('whatsapp-agent/content-index.mjs'); assert.match(whatsapp,/رسم معرفة خفيف داخل الفهرس/); assert.match(whatsapp,/item\.related/)
 const admin=read('src/pages/Admin.tsx'); assert.match(admin,/ProductionMonitor/); assert.match(admin,/(tab === 'monitor'|monitor:\s*<ProductionMonitor)/)
-console.log(JSON.stringify({ok:true,systems:10,knowledgeNodes:graph.nodes.length,knowledgeEdges:graph.edges.length,guardianArticles:guardian.counts.articles},null,2))
+const control=read('src/components/admin/ProductionMonitor.tsx'); assert.match(control,/data-autopilot-control-center="true"/); assert.match(control,/data-safe-repair-all="true"/); assert.match(control,/\/api\/admin\/control-center/); assert.match(control,/\/api\/admin\/whatsapp\/recover/)
+const server=read('server.mjs'); assert.match(server,/controlCenterPath/); assert.match(server,/'repair-safe'/); assert.match(server,/preservesWhatsAppSession: true/)
+console.log(JSON.stringify({ok:true,systems:11,knowledgeNodes:graph.nodes.length,knowledgeEdges:graph.edges.length,guardianArticles:guardian.counts.articles},null,2))

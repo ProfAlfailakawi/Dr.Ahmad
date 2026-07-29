@@ -57,7 +57,7 @@ export const ADMIN_GROUPS: AdminNavGroup[] = [
       id: 'system-core',
       items: [
         { tab: 'dashboard', label: 'غرفة القيادة', note: 'ما يحتاج قرارك الآن فقط' },
-        { tab: 'monitor', label: 'مراقب الإنتاج', note: 'حالة المنظومة الآن بلا تكرار الأدوات' },
+        { tab: 'monitor', label: 'مركز التشغيل الذاتي', note: 'افحص وافهم وأصلح كل خدمة من مكان واحد' },
         { tab: 'content-health', label: 'صحة المحتوى', note: 'المصادر والنواقص واكتمال الأرشيف' },
         { tab: 'lab', label: 'المختبر المتقدم', note: 'التجارب والذاكرة وتطوير الفكرة' },
       ],

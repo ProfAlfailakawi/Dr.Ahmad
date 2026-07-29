@@ -72,6 +72,7 @@ const adminJourneysPath = '/api/admin/journeys'
 const podcastDispatchPath = '/api/admin/podcast/dispatch'
 const audioManagePath = '/api/admin/audio/manage'
 const sourcesCheckPath = '/api/admin/sources/check'
+const controlCenterPath = '/api/admin/control-center'
 const maxArticleRequestBytes = 128 * 1024
 const firebaseJwksUrl = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
 const articleCategories = Object.freeze(['التعليم', 'التربية', 'مجتمع', 'تكنولوجيا', 'هوية', 'إعلام', 'بحث'])
@@ -3063,6 +3064,61 @@ async function dispatchAdminWorkflow({ workflow, inputs }) {
   return { workflow }
 }
 
+const controlCenterWorkflowDefinitions = Object.freeze([
+  { id: 'audio-sync', workflow: 'audio-dashboard-sync.yml', label: 'مزامنة عدّاد الصوت الحي' },
+  { id: 'content-guardian', workflow: 'site-guardian.yml', label: 'حارس المحتوى' },
+  { id: 'site-publish', workflow: 'firebase-hosting-live.yml', label: 'النشر العام' },
+])
+
+let controlCenterRunsCache = { expiresAt: 0, items: [] }
+async function latestAdminWorkflowRuns() {
+  if (controlCenterRunsCache.expiresAt > Date.now()) return controlCenterRunsCache.items
+  const githubToken = String(process.env.GITHUB_WORKFLOW_TOKEN || process.env.GITHUB_ACTIONS_TOKEN || '').trim()
+  const githubRepository = String(process.env.PODCAST_GITHUB_REPOSITORY || 'ProfAlfailakawi/Dr.Ahmad').trim()
+  if (!githubToken || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(githubRepository)) return []
+  const items = await Promise.all(controlCenterWorkflowDefinitions.map(async (definition) => {
+    try {
+      const response = await fetchWithTimeout(fetch,
+        `https://api.github.com/repos/${githubRepository}/actions/workflows/${encodeURIComponent(definition.workflow)}/runs?per_page=1`, {
+          headers: {
+            accept: 'application/vnd.github+json',
+            authorization: `Bearer ${githubToken}`,
+            'user-agent': 'dr-alfailakawi-control-center/1.0',
+            'x-github-api-version': '2026-03-10',
+          },
+        }, 8_000)
+      if (!response.ok) return { ...definition, available: false, status: 'unknown', conclusion: null }
+      const payload = await response.json()
+      const run = Array.isArray(payload?.workflow_runs) ? payload.workflow_runs[0] : null
+      return {
+        ...definition,
+        available: true,
+        status: boundedString(run?.status, 40) || 'never',
+        conclusion: boundedString(run?.conclusion, 40) || null,
+        createdAt: boundedString(run?.created_at, 80) || null,
+        updatedAt: boundedString(run?.updated_at, 80) || null,
+        url: /^https:\/\/github\.com\//.test(String(run?.html_url || '')) ? String(run.html_url) : null,
+      }
+    } catch {
+      return { ...definition, available: false, status: 'unknown', conclusion: null }
+    }
+  }))
+  controlCenterRunsCache = { expiresAt: Date.now() + 20_000, items }
+  return items
+}
+
+function firestoreTimeIso(value) {
+  try {
+    if (value instanceof Date) return value.toISOString()
+    if (typeof value?.toDate === 'function') return value.toDate().toISOString()
+    if (Number.isFinite(Number(value?.seconds))) return new Date(Number(value.seconds) * 1000).toISOString()
+    const date = new Date(value)
+    return Number.isFinite(date.getTime()) ? date.toISOString() : null
+  } catch {
+    return null
+  }
+}
+
 function safePublicPath(value) {
   const text = typeof value === 'string' ? value.trim() : ''
   if (!text || text.length > 300 || !text.startsWith('/') || text.includes('\0')) throw new HttpError(400, 'Invalid path')
@@ -3341,6 +3397,228 @@ export function createRequestHandler({
         updatedAt: FieldValue.serverTimestamp(),
       })
       sendJson(res, 200, { ok: true, id: ref.id }, { 'cache-control': 'no-store' })
+      return
+    }
+
+    /* مركز التشغيل الذاتي: تشخيص موحّد، وأوامر إصلاح آمنة لا تمس جلسة
+       واتساب ولا تحذف محتوى. الأوامر الثقيلة أو المتلفة تبقى في أدواتها
+       المتخصصة ولا تدخل أبداً في زر «أصلح الآمن كله». */
+    if (url.pathname === controlCenterPath) {
+      const token = bearerToken(req.headers.authorization)
+      const claims = await verifyToken(token)
+      if (claims?.admin !== true || typeof claims.sub !== 'string' || !claims.sub) {
+        req.resume()
+        throw new HttpError(403, 'Admin access required')
+      }
+
+      if (method === 'GET') {
+        let firebaseReady = false
+        let firebaseError = ''
+        let inventory = {}
+        let sourceHealth = {}
+        let lastControlCommand = {}
+        try {
+          const { db } = await getAdminFirestore()
+          const [inventorySnapshot, sourceSnapshot, controlSnapshot] = await Promise.all([
+            db.collection('site_settings').doc('audio_inventory').get(),
+            db.collection('site_health').doc('sources').get(),
+            db.collection('site_settings').doc('control_center').get(),
+          ])
+          firebaseReady = true
+          inventory = inventorySnapshot.exists ? inventorySnapshot.data() || {} : {}
+          sourceHealth = sourceSnapshot.exists ? sourceSnapshot.data() || {} : {}
+          lastControlCommand = controlSnapshot.exists ? controlSnapshot.data() || {} : {}
+        } catch (error) {
+          firebaseError = boundedString(error instanceof Error ? error.message : '', 280)
+        }
+
+        const githubReady = Boolean(String(process.env.GITHUB_WORKFLOW_TOKEN || process.env.GITHUB_ACTIONS_TOKEN || '').trim())
+        const studioReady = Boolean(String(process.env.CLOUDFLARE_ACCOUNT_ID || '').trim() && String(process.env.CLOUDFLARE_API_TOKEN || '').trim())
+        const workflowRuns = githubReady ? await latestAdminWorkflowRuns() : []
+        const runById = Object.fromEntries(workflowRuns.map((run) => [run.id, run]))
+        const audioLastSyncAt = firestoreTimeIso(inventory.lastSyncAt)
+        const audioSyncAgeMs = audioLastSyncAt ? Math.max(0, Date.now() - new Date(audioLastSyncAt).getTime()) : null
+        const totalAudioFiles = Number(inventory.totalAudioFiles || 0)
+        const audioLevel = !firebaseReady || !audioLastSyncAt
+          ? 'warning'
+          : audioSyncAgeMs <= 45 * 60_000
+            ? 'healthy'
+            : audioSyncAgeMs <= 120 * 60_000 ? 'attention' : 'critical'
+        const contentProblems = Number(sourceHealth.problems || 0)
+        const contentWarnings = Number(sourceHealth.warnings || 0)
+        const sourceCheckedAt = firestoreTimeIso(sourceHealth.checkedAt)
+          || boundedString(sourceHealth.checkedAt, 80)
+          || runById['content-guardian']?.updatedAt
+          || null
+        const publishRun = runById['site-publish']
+        const publishLevel = !githubReady
+          ? 'critical'
+          : publishRun?.status && publishRun.status !== 'completed'
+            ? 'attention'
+            : publishRun?.conclusion && publishRun.conclusion !== 'success'
+              ? 'critical'
+              : 'healthy'
+
+        sendJson(res, 200, {
+          ok: true,
+          checkedAt: new Date().toISOString(),
+          automaticRefreshSeconds: 30,
+          safeRepair: {
+            available: githubReady,
+            destructive: false,
+            preservesWhatsAppSession: true,
+            workflows: ['audio-dashboard-sync.yml', 'site-guardian.yml'],
+          },
+          services: [
+            {
+              id: 'control-plane',
+              title: 'الخادم وغرفة الأوامر',
+              eyebrow: 'CONTROL PLANE',
+              level: 'healthy',
+              metric: 'متصل',
+              summary: 'واجهة التشخيص والإصلاح تستجيب الآن.',
+              reason: 'هذا الفحص وصل إلى الخادم وتحقق من جلسة المشرف.',
+              action: 'لا يحتاج تدخلاً.',
+              lastEventAt: new Date().toISOString(),
+            },
+            {
+              id: 'firebase',
+              title: 'Firebase والبيانات الحية',
+              eyebrow: 'LIVE DATA',
+              level: firebaseReady ? 'healthy' : 'critical',
+              metric: firebaseReady ? 'قراءة ناجحة' : 'غير متاح',
+              summary: firebaseReady ? 'قاعدة البيانات تقرأ سجلات التشغيل الحية.' : 'الخادم لم يستطع قراءة قاعدة البيانات.',
+              reason: firebaseReady ? 'نجحت قراءة إعدادات الصوت والصحة ومركز الأوامر.' : (firebaseError || 'بيانات اعتماد Firebase أو الاتصال غير متاحين.'),
+              action: firebaseReady ? 'لا يحتاج تدخلاً.' : 'افتح تفاصيل الخدمة ثم أعد الفحص؛ إذا استمر العطل راجع إعداد الخدمة مرة واحدة.',
+              lastEventAt: new Date().toISOString(),
+            },
+            {
+              id: 'audio',
+              title: 'الصوت والعدّاد الحي',
+              eyebrow: 'AUDIO AUTOSYNC',
+              level: audioLevel,
+              metric: totalAudioFiles ? `${totalAudioFiles} ملف` : 'بانتظار أول جرد',
+              summary: audioLastSyncAt
+                ? `آخر جرد حي سجّل فهد ${Number(inventory.fahed || 0)} · نورة ${Number(inventory.noura || 0)} · حوار ${Number(inventory.dialogue || 0)}.`
+                : 'لا توجد بصمة حديثة لجرد R2 في اللوحة.',
+              reason: audioLastSyncAt
+                ? 'الرقم مصدره مسح R2 ثم القراءة الراجعة من Firestore، وليس عدّاداً محلياً.'
+                : 'لم تصل بعد نتيجة مهمة المزامنة التلقائية إلى Firestore.',
+              action: audioLevel === 'healthy' ? 'يتجدد تلقائياً كل 15 دقيقة.' : 'اضغط إصلاح هذه الخدمة لبدء مسح R2 الآن.',
+              lastEventAt: audioLastSyncAt,
+              automation: 'كل 15 دقيقة',
+              workflow: runById['audio-sync'] || null,
+            },
+            {
+              id: 'studio',
+              title: 'استوديو التصاميم والتوليد',
+              eyebrow: 'CREATIVE STUDIO',
+              level: studioReady && firebaseReady ? 'healthy' : studioReady || firebaseReady ? 'warning' : 'critical',
+              metric: studioReady ? 'المولّد جاهز' : 'الربط ناقص',
+              summary: studioReady
+                ? 'مولّد الصور وفاحص الرؤية جاهزان، والأرشفة تتصل بالبيانات الحية.'
+                : 'خدمة توليد الصور تحتاج ربط Cloudflare على الخادم.',
+              reason: studioReady
+                ? 'وجد الخادم حساب Cloudflare والرمز، وفصل النص العربي عن الصورة المولدة.'
+                : 'CLOUDFLARE_ACCOUNT_ID أو CLOUDFLARE_API_TOKEN غير موجود.',
+              action: studioReady && firebaseReady ? 'لا يحتاج تدخلاً.' : 'افتح الاستوديو؛ ستظهر طبقة الربط الناقصة بوضوح.',
+              lastEventAt: new Date().toISOString(),
+            },
+            {
+              id: 'content',
+              title: 'المحتوى والمصادر',
+              eyebrow: 'SITE GUARDIAN',
+              level: contentProblems > 0 ? 'warning' : contentWarnings > 0 ? 'attention' : 'healthy',
+              metric: contentProblems > 0 ? `${contentProblems} مشكلة` : contentWarnings > 0 ? `${contentWarnings} تنبيه` : 'سليم',
+              summary: contentProblems > 0
+                ? 'يوجد مصدر أو رابط يحتاج قراراً.'
+                : 'لا توجد مشكلة مؤكدة تمنع النشر في آخر فحص.',
+              reason: sourceCheckedAt ? 'الحالة مأخوذة من آخر تقرير حي لفاحص المصادر.' : 'سيظهر التقرير الحي بعد أول دورة للحارس.',
+              action: contentProblems > 0 || contentWarnings > 0 ? 'شغّل حارس المحتوى من هذه البطاقة.' : 'الحارس يعمل يومياً تلقائياً.',
+              lastEventAt: sourceCheckedAt,
+              workflow: runById['content-guardian'] || null,
+            },
+            {
+              id: 'publishing',
+              title: 'النشر والاستضافة',
+              eyebrow: 'RELEASE PIPELINE',
+              level: publishLevel,
+              metric: !githubReady ? 'غير مربوط' : publishRun?.status === 'in_progress' ? 'ينشر الآن' : publishRun?.conclusion === 'success' ? 'آخر نشر ناجح' : 'جاهز',
+              summary: !githubReady
+                ? 'لا يمكن للوحة تشغيل مهام GitHub الآن.'
+                : publishRun?.conclusion === 'success'
+                  ? 'آخر بوابة فحص ونشر انتهت بنجاح.'
+                  : 'ربط GitHub موجود ويمكن تشغيل النشر من اللوحة.',
+              reason: !githubReady
+                ? 'GITHUB_WORKFLOW_TOKEN غير موجود في خدمة الخادم.'
+                : 'كل نشر يمر أولاً عبر بوابة الاختبارات ثم Firebase Hosting.',
+              action: !githubReady ? 'أضف رمز GitHub مرة واحدة إلى خدمة الخادم.' : 'استخدم إعادة النشر فقط عند الحاجة؛ لا تدخل في الإصلاح العام.',
+              lastEventAt: publishRun?.updatedAt || null,
+              workflow: publishRun || null,
+            },
+          ],
+          lastCommand: {
+            action: boundedString(lastControlCommand.action, 40) || null,
+            requestedAt: firestoreTimeIso(lastControlCommand.requestedAt),
+            requestedBy: boundedString(lastControlCommand.requestedBy, 180) || null,
+          },
+        })
+        return
+      }
+
+      if (method !== 'POST') {
+        req.resume()
+        sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'GET, POST' })
+        return
+      }
+      const contentType = String(req.headers['content-type'] || '').toLowerCase()
+      if (contentType.split(';', 1)[0].trim() !== 'application/json') {
+        req.resume()
+        throw new HttpError(415, 'Content-Type must be application/json')
+      }
+      const body = await readJsonBody(req, 8_192)
+      const action = boundedString(body?.action, 40)
+      const actionWorkflows = {
+        'repair-safe': [
+          { workflow: 'audio-dashboard-sync.yml', label: 'مزامنة عدّاد الصوت من R2' },
+          { workflow: 'site-guardian.yml', label: 'فحص المحتوى والمصادر' },
+        ],
+        'audio-sync': [{ workflow: 'audio-dashboard-sync.yml', label: 'مزامنة عدّاد الصوت من R2' }],
+        'content-guardian': [{ workflow: 'site-guardian.yml', label: 'فحص المحتوى والمصادر' }],
+        'deploy-site': [{ workflow: 'firebase-hosting-live.yml', label: 'بوابة الفحص وإعادة النشر' }],
+      }
+      const commands = actionWorkflows[action]
+      if (!commands) throw new HttpError(400, 'أمر مركز التشغيل غير صالح')
+      const settled = await Promise.allSettled(commands.map(async (command) => {
+        await dispatchAdminWorkflow({ workflow: command.workflow, inputs: {} })
+        return { ...command, ok: true }
+      }))
+      const steps = settled.map((result, index) => result.status === 'fulfilled'
+        ? result.value
+        : {
+            ...commands[index],
+            ok: false,
+            error: boundedString(result.reason instanceof Error ? result.reason.message : 'تعذّر بدء المهمة.', 500),
+          })
+      try {
+        const { db, FieldValue } = await getAdminFirestore()
+        await db.collection('site_settings').doc('control_center').set({
+          action,
+          requestedAt: FieldValue.serverTimestamp(),
+          requestedBy: claims.sub,
+          steps,
+        }, { merge: true })
+      } catch { /* نجاح الأمر لا يعتمد على كتابة سجل العرض */ }
+      controlCenterRunsCache.expiresAt = 0
+      sendJson(res, 200, {
+        ok: steps.every((step) => step.ok),
+        action,
+        destructive: false,
+        steps,
+        message: action === 'deploy-site'
+          ? 'بدأت بوابة الاختبارات؛ لن يُنشر الموقع إلا إذا اجتازها بالكامل.'
+          : 'بدأ الإصلاح الآمن. ستتحدث البطاقات تلقائياً عند وصول النتائج.',
+      })
       return
     }
 

@@ -2422,10 +2422,24 @@ function socialPackInput(value) {
   if (!title || body.length < minimumBodyLength) {
     throw new HttpError(400, standalone ? 'Standalone idea is incomplete' : 'Article content is incomplete')
   }
+  const rawDirectives = value.creativeDirectives && typeof value.creativeDirectives === 'object' && !Array.isArray(value.creativeDirectives)
+    ? value.creativeDirectives
+    : {}
+  const creativeDirectives = {
+    tone: boundedString(rawDirectives.tone, 40),
+    density: boundedString(rawDirectives.density, 40),
+    format: boundedString(rawDirectives.format, 40),
+    platform: boundedString(rawDirectives.platform, 40),
+    layout: boundedString(rawDirectives.layout, 60),
+    palette: boundedString(rawDirectives.palette, 60),
+    styleRoute: boundedString(rawDirectives.styleRoute, 60),
+    timeZone: boundedString(rawDirectives.timeZone, 60),
+  }
   return {
     standalone, title, excerpt, body,
     purpose: boundedString(value.purpose, 120),
     audience: boundedString(value.audience, 200),
+    creativeDirectives,
     styleProfile: value.styleProfile && typeof value.styleProfile === 'object' ? value.styleProfile : {},
     selectedEventIds: boundedArray(value.selectedEventIds, 12, (item) => typeof item === 'string' ? boundedString(item, 200) : null),
   }
@@ -2760,11 +2774,87 @@ function trimAtWord(value, maximum) {
   return `${slice.replace(/\s+\S*$/, '').trim()}…`
 }
 
+function socialCreativeTokens(value) {
+  return new Set(String(value || '')
+    .toLowerCase()
+    .replace(/[ًٌٍَُِّْـ]/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
+    .split(/\s+/)
+    .filter((token) => token.length > 2))
+}
+
+function socialCreativeSimilarity(left, right) {
+  const a = socialCreativeTokens(left)
+  const b = socialCreativeTokens(right)
+  if (!a.size || !b.size) return 0
+  let overlap = 0
+  for (const token of a) if (b.has(token)) overlap += 1
+  return overlap / Math.max(1, new Set([...a, ...b]).size)
+}
+
+function socialPackCreativeAudit(response) {
+  const blockers = []
+  const warnings = []
+  const groups = [
+    ['X', response?.x, 3],
+    ['LinkedIn', response?.linkedin, 2],
+    ['Instagram', response?.instagramCaptions, 3],
+    ['Stories', response?.stories, 4],
+  ]
+  for (const [label, items, minimum] of groups) {
+    const count = Array.isArray(items) ? items.filter((item) => String(item || '').trim()).length : 0
+    if (count < minimum) blockers.push(`${label}: المطلوب ${minimum} صيغ مختلفة، الموجود ${count}`)
+  }
+  const slides = Array.isArray(response?.carouselSlides) ? response.carouselSlides : []
+  if (slides.length < 6) blockers.push(`Carousel: المطلوب 6 شرائح، الموجود ${slides.length}`)
+  const directions = Array.isArray(response?.visualDirections) ? response.visualDirections : []
+  if (directions.length < 6) blockers.push(`Visual directions: المطلوب 6 اتجاهات، الموجود ${directions.length}`)
+  const uniqueLayouts = new Set(directions.map((item) => String(item?.layout || '').trim().toLowerCase()).filter(Boolean))
+  if (uniqueLayouts.size < Math.min(5, directions.length)) blockers.push('الاتجاهات البصرية متقاربة؛ المطلوب خمس عائلات تكوين مختلفة على الأقل')
+
+  const copy = [
+    ...(Array.isArray(response?.x) ? response.x : []),
+    ...(Array.isArray(response?.linkedin) ? response.linkedin : []),
+    ...(Array.isArray(response?.instagramCaptions) ? response.instagramCaptions : []),
+    ...(Array.isArray(response?.threads) ? response.threads : []),
+    ...(Array.isArray(response?.stories) ? response.stories : []),
+  ].map((item) => String(item || '').trim()).filter(Boolean)
+  let closest = 0
+  for (let left = 0; left < copy.length; left += 1) {
+    for (let right = left + 1; right < copy.length; right += 1) {
+      closest = Math.max(closest, socialCreativeSimilarity(copy[left], copy[right]))
+    }
+  }
+  if (closest >= .78) blockers.push('بعض نصوص المنصات تعيد الصياغة نفسها بدل امتلاك فكرة وإيقاع مستقلين')
+  else if (closest >= .62) warnings.push('التنوع بين بعض المنصات مقبول لكنه يمكن أن يكون أجرأ')
+
+  if (String(response?.reelScript || '').trim().length < 180) blockers.push('نص Reel أقصر من أداء 45–60 ثانية')
+  if (String(response?.whatsapp || '').trim().length < 35) blockers.push('نسخة WhatsApp غير مكتملة')
+  if (String(response?.newsletter || '').trim().length < 120) blockers.push('نسخة النشرة غير مكتملة')
+
+  const score = clamp(Math.round(
+    100
+    - blockers.length * 11
+    - warnings.length * 4
+    - Math.max(0, .62 - Math.min(.62, closest)) * 4,
+  ), 0, 100)
+  return { ready: blockers.length === 0 && score >= 86, score, blockers, warnings, closestSimilarity: Number(closest.toFixed(3)) }
+}
+
 export async function generatePerfectSocialPack(input, fetchImpl = fetch) {
   const events = await currentContextForIdea(`${input.title} ${input.excerpt} ${input.body.slice(0, 500)}`, input.selectedEventIds, fetchImpl)
   const contentKind = input.standalone ? 'فكرة مستقلة' : 'مقال منشور'
-  const response = await callGeminiStructured({
-    instruction: `أنت مدير محتوى للدكتور أحمد حسين الفيلكاوي. حوّل ${contentKind} إلى منظومة سوشيال متنوعة، لا نسخ متكرر بين المنصات. حافظ على أسلوبه الإنساني والفكري وثيم موقعه الهادئ.
+  let response = null
+  let audit = { ready: false, score: 0, blockers: [], warnings: [], closestSimilarity: 0 }
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const repair = attempt && audit.blockers.length
+      ? `\nهذه محاولة تحسين إلزامية. أخفقت النسخة السابقة في: ${audit.blockers.join('؛ ')}. أعد بناء الحزمة كاملة من زوايا وصور ذهنية جديدة، لا ترقيع الجمل القديمة.`
+      : ''
+    response = await callGeminiStructured({
+      instruction: `أنت مدير محتوى ومخرج إبداعي أول للدكتور أحمد حسين الفيلكاوي. حوّل ${contentKind} إلى منظومة سوشيال ذكية وجميلة ومتنوعة؛ لكل منصة فكرة وإيقاع وصورة ذهنية تخصها، لا نسخاً معاداً. افهم العبارة والمقصد والجمهور قبل الصياغة، وحافظ على أسلوبه الإنساني والفكري وثيم موقعه الهادئ.
 
 قواعد:
 
@@ -2786,13 +2876,28 @@ export async function generatePerfectSocialPack(input, fetchImpl = fetch) {
 
 - أعط 6 اتجاهات بصرية متباعدة فعلاً، ولا تكرر القالب. اختر من: editorial, orbit, quote, signal, split, window, dark, timeline, question, manifesto, event, signature.
 
-- أعد JSON فقط.`,
-    prompt: JSON.stringify({ contentKind, content: { title: input.title, excerpt: input.excerpt, body: input.body, purpose: input.purpose }, audience: input.audience, styleProfile: input.styleProfile, currentEvents: events }),
-    properties: socialSchema(),
-    required: ['x','linkedin','threads','instagramCaptions','carouselSlides','stories','reelScript','whatsapp','newsletter','hashtags','eventId','eventHook','visualDirections'],
-    maxOutputTokens: 6_000,
-    temperature: .72,
-  }, fetchImpl)
+- نفّذ الأوامر الإبداعية الصريحة في creativeDirectives كقيد حاكم: اللون والأسلوب والكثافة والمقاس والمنصة والتوقيت. لا تطبع أسماء هذه الأوامر داخل النص.
+
+- جودة المصمم: كل اتجاه بصري يجب أن يشرح لقطة أو مادة أو فراغاً أو تسلسلاً بصرياً مختلفاً، لا مجرد تغيير لون.
+
+- أعد JSON فقط.${repair}`,
+      prompt: JSON.stringify({
+        contentKind,
+        content: { title: input.title, excerpt: input.excerpt, body: input.body, purpose: input.purpose },
+        audience: input.audience,
+        creativeDirectives: input.creativeDirectives || {},
+        styleProfile: input.styleProfile,
+        currentEvents: events,
+        previousAudit: attempt ? audit : null,
+      }),
+      properties: socialSchema(),
+      required: ['x','linkedin','threads','instagramCaptions','carouselSlides','stories','reelScript','whatsapp','newsletter','hashtags','eventId','eventHook','visualDirections'],
+      maxOutputTokens: 6_000,
+      temperature: attempt ? .82 : .72,
+    }, fetchImpl)
+    audit = socialPackCreativeAudit(response)
+    if (audit.ready) break
+  }
   const event = events.find((item) => item.id === response.eventId) || null
   const x = boundedArray(response.x, 4, (item) => trimAtWord(item, 280)).filter(Boolean)
   const slides = boundedArray(response.carouselSlides, 8, (slide) => slide && typeof slide === 'object' ? {
@@ -2811,6 +2916,9 @@ export async function generatePerfectSocialPack(input, fetchImpl = fetch) {
     visualDirections: boundedArray(response.visualDirections, 6, (item) => item && typeof item === 'object' ? {
       layout: boundedString(item.layout, 30), tone: boundedString(item.tone, 80), headline: boundedString(item.headline, 180), subline: boundedString(item.subline, 300),
     } : null),
+    qualityScore: audit.score,
+    qualityChecks: audit.blockers.length ? audit.blockers : ['تنوع المنصات', 'اكتمال المقاسات', 'تباعد الاتجاهات البصرية', 'سلامة النسخة من التكرار'],
+    creativeDirectives: input.creativeDirectives || {},
     generatedAt: new Date().toISOString(),
   }
 }

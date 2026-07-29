@@ -30,6 +30,16 @@ assert.equal(lecture.primaryKind, 'lecture')
 assert.ok(lecture.recommendedFormats.some((item) => item.format === 'story'))
 assert.ok(lecture.structure.cta)
 
+const parsedBrief = engine.parseStudioCommand('أبي منشور مجلاتي باللون أحمر للجمهور المعلمين عن مستقبل التعلم الساعة ٣ بتوقيت الكويت')
+assert.equal(parsedBrief.styleRoute, 'editorial')
+assert.equal(parsedBrief.preferLayout, 'editorial-axis')
+assert.equal(parsedBrief.preferPalette, 'museum-red')
+assert.equal(parsedBrief.audienceHint, 'المعلمين')
+assert.equal(parsedBrief.timeZone, 'Asia/Kuwait')
+assert.match(parsedBrief.content, /مستقبل التعلم/)
+assert.doesNotMatch(parsedBrief.content, /للجمهور|بتوقيت الكويت|باللون/)
+assert.ok(parsedBrief.confidence >= .9, 'فهم العبارة المركبة يجب أن يعلن ثقة عالية')
+
 const longText = Array.from({ length: 10 }, (_, index) => `الفكرة ${index + 1}: لا يكفي أن نضيف التقنية إلى الصف، بل يجب أن نعيد بناء السؤال التربوي حول الإنسان.`).join(' ')
 const long = engine.analyzeSocialContent(longText)
 assert.ok(long.structure.slides.length >= 4)
@@ -49,6 +59,15 @@ assert.equal(first.generation.requestedCount, 8)
 assert.equal(new Set(first.plans.map((plan) => plan.layout)).size, 4, 'أقوى أربعة يجب أن تبقى مختلفة في منطق التكوين')
 assert.equal(new Set(first.plans.map((plan) => plan.fingerprint)).size, 4)
 assert.ok(first.plans.every((plan) => engine.validateCompositionPlan(plan).every((issue) => issue.severity !== 'error')))
+
+const paletteDirected = engine.generateSocialDesigns({
+  ...request,
+  seed: 'explicit-palette-brief',
+  preferPalette: 'electric-cobalt',
+})
+assert.ok(paletteDirected.plans.every((plan) => plan.palette === 'electric-cobalt'), 'أمر اللون الصريح يجب أن يحكم كل الاتجاهات')
+const shortBriefDirections = engine.generateSocialDesigns({ text: 'فكرة قصيرة تستحق أن تُقال الآن', seed: 'short-brief-directions' })
+assert.ok(shortBriefDirections.plans.length >= 3, 'حتى العبارة القصيرة يجب أن تمنح المخرج ثلاث رؤى قابلة للمقارنة')
 
 const withHistory = engine.generateSocialDesigns({
   ...request,
@@ -101,6 +120,12 @@ const overloadedQuality = engine.critiqueCompositionPlan(overloaded)
 assert.ok(overloadedQuality.score < (base.quality?.score || 100))
 assert.ok(overloadedQuality.issues.length > 0)
 assert.ok(overloadedQuality.lineFit < (base.quality?.lineFit || 100), 'النص المزدحم يخفض ملاءمة الأسطر')
+const professionalBase = engine.professionalReleaseGate(base)
+const professionalOverloaded = engine.professionalReleaseGate(overloaded)
+assert.ok(professionalBase.score >= 70)
+assert.equal(professionalOverloaded.ready, false, 'عين المصمم تمنع تسليم التكوين المزدحم')
+assert.ok(professionalOverloaded.score < professionalBase.score)
+assert.ok(['masterpiece', 'professional', 'publishable', 'rejected'].includes(professionalBase.tier))
 
 const campaign = engine.generateSocialCampaign({ ...request, basePlan: base, tasteProfile: reinforcedTaste, seed: 'campaign-test' })
 assert.equal(campaign.assets.length, 8)
@@ -119,9 +144,9 @@ assert.ok(studioSource.includes('previousSignal === signal'), 'الإشارة ا
 console.log(JSON.stringify({
   ok: true,
   engineVersion: engine.SOCIAL_DESIGN_ENGINE_VERSION,
-  cases: 25,
+  cases: 35,
   generatedDirections: first.plans.length,
   uniqueLayouts: audit.uniqueLayouts,
   carouselSlides: long.structure.slides.length,
-  guards: ['arabic-analysis', 'deterministic-output', 'real-layout-diversity', 'history-novelty', 'lock-semantics', 'format-transform', 'contrast-and-overflow-audit', 'visual-critic', 'rendered-line-fit', 'taste-memory', 'taste-deduplication', 'campaign-release-gate', 'campaign-coherence', 'campaign-diversity'],
+  guards: ['arabic-analysis', 'compound-phrase-brief', 'explicit-palette-sovereignty', 'kuwait-timezone', 'deterministic-output', 'real-layout-diversity', 'history-novelty', 'lock-semantics', 'format-transform', 'contrast-and-overflow-audit', 'visual-critic', 'professional-release-gate', 'rendered-line-fit', 'taste-memory', 'taste-deduplication', 'campaign-release-gate', 'campaign-coherence', 'campaign-diversity'],
 }, null, 2))

@@ -68,8 +68,13 @@ export default function Admin() {
   const operationsPreview = import.meta.env.DEV
     && typeof window !== 'undefined'
     && new URLSearchParams(window.location.search).get('__ops_preview') === '1'
+  const creativePreview = import.meta.env.DEV && typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('__creative_preview')
+    : ''
 
   if (operationsPreview) return <Page><div className="mx-auto w-full max-w-[1220px] px-4 pb-24 pt-28 sm:px-6 md:px-10 md:pt-32"><ProductionMonitor articles={[]} onOpen={() => undefined} /></div></Page>
+  if (creativePreview === 'publishing') return <Page><div className="mx-auto w-full max-w-[1500px] px-4 pb-24 pt-28 sm:px-6 md:px-10 md:pt-32"><PublishingStudio articles={[]} /></div></Page>
+  if (creativePreview === 'design') return <Page><div className="mx-auto w-full max-w-[1500px] px-4 pb-24 pt-28 sm:px-6 md:px-10 md:pt-32"><SocialDesignStudio /></div></Page>
   if (!firebaseEnabled) return <SetupGuide />
   if (checking) return <Page><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
   if (!user) return <Login />

@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useAdminAuth } from '../../lib/admin-auth'
+import { getDb } from '../../lib/firebase'
 import audio from '../../data/audio.json'
 
 /*
@@ -11,11 +13,54 @@ type Article = { slug: string; title?: string; ar?: string; audio?: Voice }
 type Row = { n: number; slug: string; title: string; fahed: boolean; noura: boolean; dialogue: boolean }
 type VoiceKey = 'fahed' | 'noura' | 'dialogue'
 type DetailSelection = { voice: VoiceKey | 'all'; state: 'ready' | 'missing' }
+type CloudInventory = {
+  fahed?: number
+  noura?: number
+  dialogue?: number
+  totalAudioFiles?: number
+  articleCount?: number
+  source?: string
+  scanComplete?: boolean
+  lastAttemptComplete?: boolean
+  scanMethod?: string
+  scanMessage?: string
+  unknownObjects?: number
+  bySlug?: Record<string, Voice>
+  lastAttemptAt?: unknown
+  lastSyncAt?: unknown
+}
+type SyncState = 'idle' | 'checking' | 'queued' | 'error'
 
 const FAHED = '#2E7D8A'
 const NOURA = '#6B5A8E'
 const DIALOGUE = '#C2913C'
 const exists = (value: unknown) => value === true || (typeof value === 'string' && Boolean(value.trim()))
+const AUTO_SYNC_COOLDOWN_MS = 8 * 60 * 1000
+const INVENTORY_STALE_MS = 20 * 60 * 1000
+const AUTO_SYNC_KEY = 'dr-ahmad-audio-auto-sync-request-v2'
+
+const timestampMs = (value: unknown) => {
+  if (!value) return 0
+  if (typeof value === 'object' && value && 'toDate' in value && typeof value.toDate === 'function') {
+    return value.toDate().getTime()
+  }
+  if (typeof value === 'object' && value && 'seconds' in value) {
+    return Number(value.seconds || 0) * 1000
+  }
+  const parsed = new Date(String(value)).getTime()
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+const timeLabel = (value: unknown) => {
+  const millis = timestampMs(value)
+  if (!millis) return 'لم يكتمل بعد'
+  return new Intl.DateTimeFormat('ar-KW-u-nu-latn', {
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(millis))
+}
 
 const voiceMeta: Record<VoiceKey, { label: string; color: string }> = {
   fahed: { label: 'صوت فهد', color: FAHED },
@@ -157,17 +202,102 @@ function ArticlePreview({ row, onClose }: { row: Row; onClose: () => void }) {
 }
 
 export function SoundCaravanBoard({ articles }: { articles: Article[] }) {
+  const { user } = useAdminAuth()
   const snapshot = audio as Record<string, Voice>
   const [detail, setDetail] = useState<DetailSelection | null>(null)
   const [selectedRow, setSelectedRow] = useState<Row | null>(null)
+  const [cloudInventory, setCloudInventory] = useState<CloudInventory | null>(null)
+  const [inventoryLoaded, setInventoryLoaded] = useState(false)
+  const [syncState, setSyncState] = useState<SyncState>('idle')
+  const [syncNotice, setSyncNotice] = useState('')
+  const [clock, setClock] = useState(() => Date.now())
+  const syncBusy = useRef(false)
+
+  useEffect(() => {
+    let active = true
+    let unsubscribe = () => {}
+    ;(async () => {
+      const db = await getDb()
+      if (!db || !active) {
+        if (active) setInventoryLoaded(true)
+        return
+      }
+      const { doc, onSnapshot } = await import('firebase/firestore')
+      unsubscribe = onSnapshot(
+        doc(db, 'site_settings', 'audio_inventory'),
+        (inventorySnapshot) => {
+          if (!active) return
+          setCloudInventory(inventorySnapshot.exists() ? inventorySnapshot.data() as CloudInventory : null)
+          setInventoryLoaded(true)
+        },
+        () => {
+          if (active) setInventoryLoaded(true)
+        },
+      )
+    })().catch(() => {
+      if (active) setInventoryLoaded(true)
+    })
+    return () => { active = false; unsubscribe() }
+  }, [])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  const requestCloudSync = useCallback(async (automatic = false) => {
+    if (!user || syncBusy.current) return
+    if (automatic) {
+      const lastRequest = Number(window.localStorage.getItem(AUTO_SYNC_KEY) || 0)
+      if (Date.now() - lastRequest < AUTO_SYNC_COOLDOWN_MS) return
+    }
+    syncBusy.current = true
+    setSyncState('checking')
+    setSyncNotice(automatic ? 'اكتُشف تأخر في الجرد؛ جارٍ تشغيل المصالحة تلقائياً…' : 'جارٍ طلب جرد R2 الآن…')
+    window.localStorage.setItem(AUTO_SYNC_KEY, String(Date.now()))
+    try {
+      const token = await user.getIdToken()
+      const response = await fetch('/api/admin/control-center', {
+        method: 'POST',
+        cache: 'no-store',
+        headers: {
+          accept: 'application/json',
+          authorization: `Bearer ${token}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'audio-sync' }),
+      })
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(String(payload?.error || 'تعذّر تشغيل مصالحة الصوت.'))
+      setSyncState('queued')
+      setSyncNotice('بدأ جرد R2 الموقّع. ستتغير الأرقام هنا تلقائياً عند اكتماله من دون إعادة تحميل الصفحة.')
+    } catch (error) {
+      setSyncState('error')
+      setSyncNotice(error instanceof Error ? error.message : 'تعذّر تشغيل مصالحة الصوت.')
+    } finally {
+      syncBusy.current = false
+    }
+  }, [user])
+
+  const lastSyncMillis = timestampMs(cloudInventory?.lastSyncAt)
+  const inventoryStale = !lastSyncMillis || clock - lastSyncMillis > INVENTORY_STALE_MS
+  useEffect(() => {
+    if (!inventoryLoaded || !user) return
+    if (!cloudInventory?.scanComplete || cloudInventory.lastAttemptComplete === false || inventoryStale) {
+      void requestCloudSync(true)
+    }
+  }, [clock, cloudInventory?.lastAttemptComplete, cloudInventory?.scanComplete, inventoryLoaded, inventoryStale, requestCloudSync, user])
+
+  const authoritative = cloudInventory?.scanComplete === true && Boolean(cloudInventory.bySlug)
   const rows = useMemo(() => articles.map((article, index) => {
     const fallback = snapshot[article.slug] || {}
     const live = article.audio || {}
-    const fahed = exists(live.fahed) || exists(fallback.fahed)
-    const noura = exists(live.noura) || exists(fallback.noura)
-    const dialogue = exists(live.dialogue) || exists(fallback.dialogue)
+    const cloud = cloudInventory?.bySlug?.[article.slug] || {}
+    const fahed = authoritative ? exists(cloud.fahed) : exists(live.fahed) || exists(fallback.fahed)
+    const noura = authoritative ? exists(cloud.noura) : exists(live.noura) || exists(fallback.noura)
+    const dialogue = authoritative ? exists(cloud.dialogue) : exists(live.dialogue) || exists(fallback.dialogue)
     return { n: index + 1, slug: article.slug, title: article.title || article.ar || article.slug, fahed, noura, dialogue }
-  }), [articles, snapshot])
+  }), [articles, authoritative, cloudInventory?.bySlug, snapshot])
 
   const total = rows.length
   const fahed = rows.filter((row) => row.fahed).length
@@ -187,11 +317,42 @@ export function SoundCaravanBoard({ articles }: { articles: Article[] }) {
   }, [detail, rows])
 
   return (
-    <div className="grid gap-5">
-      <header>
-        <h2 className="text-2xl font-extrabold text-ink">قافلة الصوت</h2>
-        <p className="mt-1 text-sm text-soft">لكل مقال ثلاثة مسارات إنتاج ظاهرة للإدارة: فهد، نورة، والحوار — {done} من {target} مساراً جاهزاً ({overall}٪). كل رقم قابل للفتح لمعرفة المقالات التي وراءه.</p>
+    <div className="grid gap-5" data-audio-self-healing-inventory="true">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-extrabold text-ink">قافلة الصوت</h2>
+          <p className="mt-1 text-sm text-soft">لكل مقال ثلاثة مسارات إنتاج ظاهرة للإدارة: فهد، نورة، والحوار — {done} من {target} مساراً جاهزاً ({overall}٪). كل رقم قابل للفتح لمعرفة المقالات التي وراءه.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void requestCloudSync(false)}
+          disabled={!user || syncState === 'checking'}
+          className="inline-flex min-h-10 shrink-0 items-center rounded-full border border-hair bg-canvas px-4 text-[.72rem] font-bold text-accent transition-colors hover:border-accent disabled:cursor-not-allowed disabled:opacity-50"
+          data-audio-manual-r2-sync="true"
+        >
+          {syncState === 'checking' ? 'جارٍ تشغيل الجرد…' : 'افحص R2 الآن'}
+        </button>
       </header>
+
+      <section className={`rounded-2xl border px-4 py-3 ${authoritative && !inventoryStale ? 'border-emerald-200 bg-emerald-50/55' : 'border-amber-200 bg-amber-50/60'}`} aria-live="polite">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <strong className="text-[.76rem] text-ink">
+            {authoritative ? 'الأرقام من جرد R2 المباشر' : 'اللوحة تعمل على آخر لقطة متاحة'}
+          </strong>
+          <span className="text-[.7rem] text-soft">آخر جرد صحيح: {timeLabel(cloudInventory?.lastSyncAt)}</span>
+          {cloudInventory?.scanMethod && <span className="rounded-full bg-canvas/80 px-2 py-1 text-[.64rem] text-soft">{cloudInventory.scanMethod}</span>}
+          {authoritative && Number(cloudInventory?.articleCount || 0) !== total && (
+            <span className="text-[.68rem] font-semibold text-amber-800">اختلاف فهرس المقالات: R2 يعرف {Number(cloudInventory?.articleCount || 0)} والواجهة تعرض {total}</span>
+          )}
+        </div>
+        <p className="mt-1 text-[.7rem] leading-5 text-soft">
+          {syncNotice || (cloudInventory?.lastAttemptComplete === false
+            ? `آخر محاولة لم تكتمل، فاحتفظ النظام بآخر عدّاد صحيح وسيعيد المحاولة تلقائياً. ${cloudInventory.scanMessage || ''}`
+            : inventoryStale
+              ? 'الجرد متأخر؛ ستشغّل اللوحة المصالحة تلقائياً عند دخول المشرف.'
+              : 'أي دفعة صوت جديدة تظهر تلقائياً من Firestore فور انتهاء الجرد، بلا تعديل كود أو إعادة نشر.')}
+        </p>
+      </section>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Meter name="صوت فهد" note="قراءة صوتية" val={fahed} total={total} color={FAHED} onReady={() => setDetail({ voice: 'fahed', state: 'ready' })} onMissing={() => setDetail({ voice: 'fahed', state: 'missing' })} />
@@ -259,7 +420,7 @@ export function SoundCaravanBoard({ articles }: { articles: Article[] }) {
       </div>
 
       <p className="text-[.72rem] leading-relaxed text-soft">
-        الحالة الحية القادمة من لوحة المحتوى تتقدّم على لقطة البناء؛ لذلك يرتفع الرقم فور مزامنة R2 مع Firestore، ولا ينتظر نشر الموقع التالي.
+        جرد R2 الموقّع هو مصدر الحقيقة للأرقام. إذا تأخر أو فشل فحص مؤقت، تحتفظ اللوحة بآخر نتيجة مكتملة وتطلب الإصلاح تلقائياً؛ لذلك لا تنخفض الأرقام بسبب 429 ولا تنتظر نشر الموقع التالي.
       </p>
     </div>
   )

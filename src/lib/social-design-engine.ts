@@ -7,7 +7,7 @@
  * الاستوديو المستقل عن تقنية الرسم، وأن يبقي النص الأصلي محفوظاً دائماً.
  */
 
-export const SOCIAL_DESIGN_ENGINE_VERSION = '2.1.0'
+export const SOCIAL_DESIGN_ENGINE_VERSION = '3.0.0'
 
 export type ContentKind =
   | 'quote'
@@ -59,6 +59,18 @@ export type ContentTopic =
   | 'general'
 
 export type DesignDensity = 'minimal' | 'balanced' | 'rich'
+
+export type StudioVisualRoute = 'generate' | 'upload' | 'typographic'
+
+export type StudioStyleRoute =
+  | 'editorial'
+  | 'swiss'
+  | 'kinetic'
+  | 'cinematic'
+  | 'tactile'
+  | 'architectural'
+  | 'evidence'
+  | 'poetic'
 
 export type SocialPlatform =
   | 'instagram'
@@ -163,6 +175,10 @@ export type PaletteId =
   | 'graphite-gold'
   | 'quiet-stone'
   | 'signal-ivory'
+  | 'museum-red'
+  | 'electric-cobalt'
+  | 'emerald-sand'
+  | 'plum-lime'
 
 export type SlideRole = 'cover' | 'context' | 'insight' | 'evidence' | 'question' | 'action' | 'closing'
 
@@ -516,9 +532,15 @@ export type StudioCommandParse = {
   content: string
   contextHint: string
   tone?: ContentTone
+  density?: DesignDensity
   format?: SocialFormatId
   platform?: SocialPlatform
   preferLayout?: LayoutFamilyId
+  preferPalette?: PaletteId
+  visualRoute?: StudioVisualRoute
+  styleRoute?: StudioStyleRoute
+  audienceHint?: string
+  timeZone?: 'Asia/Kuwait'
   heroWord?: string
   noBody: boolean
   noCta: boolean
@@ -557,6 +579,32 @@ const COMMAND_KIND_HINTS: [RegExp, string, string][] = [
   [/(?:^|\s)(?:اقتباس|مقولة|مقوله)(?:\s|$)/, 'اقتباس', 'بطاقة اقتباس'],
 ]
 
+const COMMAND_VISUAL_ROUTES: [RegExp, StudioVisualRoute, string][] = [
+  [/(?:^|\s)(?:(?:بدون|بلا|من\s+غير)\s*(?:أي\s*)?(?:صورة|صور|صوره)|تايبوجرافي|تيبوغرافي|تصميم\s+نصي)(?:\s|$)/, 'typographic', 'تكوين بلا صورة'],
+  [/(?:^|\s)(?:من\s+(?:هذي|هذه|هالصورة|الصورة)\s*(?:المرفوعة)?|استخدم\s+(?:هذي|هذه|هالصورة|الصورة)|بهالصورة|بصورتي|على\s+صورتي)(?:\s|$)/, 'upload', 'إخراج من الصورة المرفوعة'],
+  [/(?:^|\s)(?:توليد\s+(?:صورة\s+)?من\s+الصفر|ول[ّ]?د\s+(?:لي\s+)?صورة|صورة\s+(?:أصلية|اصليه|جديدة|جديده)\s+من\s+الصفر)(?:\s|$)/, 'generate', 'صورة أصلية من الصفر'],
+]
+
+const COMMAND_STYLE_ROUTES: [RegExp, StudioStyleRoute, LayoutFamilyId, ContentTone, DesignDensity, string][] = [
+  [/(?:^|\s)(?:تحريري|مجلاتي|غلاف\s+مجلة|editorial)(?:\s|$)/i, 'editorial', 'editorial-axis', 'intellectual', 'balanced', 'تحريري عالمي'],
+  [/(?:^|\s)(?:سويسري|شبكة\s+سويسرية|مينيمال|بسيط\s+جداً|minimal)(?:\s|$)/i, 'swiss', 'editorial-axis', 'formal', 'minimal', 'سويسري صارم'],
+  [/(?:^|\s)(?:حركي|تايبوجرافي\s+جريء|طباعي\s+جريء|kinetic)(?:\s|$)/i, 'kinetic', 'hero-word', 'bold', 'minimal', 'طباعي حركي'],
+  [/(?:^|\s)(?:سينمائي|فيلم|cinematic)(?:\s|$)/i, 'cinematic', 'cinematic-window', 'bold', 'minimal', 'سينمائي'],
+  [/(?:^|\s)(?:كولاج|ورقي|ملمسي|قصاصات|tactile|collage)(?:\s|$)/i, 'tactile', 'human-note', 'human', 'balanced', 'كولاج ملمسي'],
+  [/(?:^|\s)(?:معماري|هندسي\s+فاخر|architectural)(?:\s|$)/i, 'architectural', 'dual-thesis', 'luxury', 'balanced', 'معماري فاخر'],
+  [/(?:^|\s)(?:برهاني|بياني|مبني\s+على\s+البيانات|data-led)(?:\s|$)/i, 'evidence', 'evidence-ledger', 'academic', 'rich', 'برهاني معرفي'],
+  [/(?:^|\s)(?:شاعري|تأملي|poetic)(?:\s|$)/i, 'poetic', 'quiet-orbit', 'deep', 'minimal', 'شاعري تأملي'],
+]
+
+const COMMAND_PALETTES: [RegExp, PaletteId, string][] = [
+  [/(?:^|\s)(?:بلون|باللون|بألوان|بالوان|لوحة\s+ألوان)\s+(?:أحمر|احمر|قرمزي)(?:\s+(?:وكريمي|وكريم|وعاجي))?(?:\s|$)/, 'museum-red', 'أحمر متحفي وكريمي'],
+  [/(?:^|\s)(?:بلون|باللون|بألوان|بالوان|لوحة\s+ألوان)\s+(?:كوبالت|أزرق\s+كهربائي|ازرق\s+كهربائي)(?:\s|$)/, 'electric-cobalt', 'كوبالت كهربائي'],
+  [/(?:^|\s)(?:بلون|باللون|بألوان|بالوان|لوحة\s+ألوان)\s+(?:زمردي|أخضر|اخضر)(?:\s+(?:ورملي|وعاجي))?(?:\s|$)/, 'emerald-sand', 'زمردي ورملي'],
+  [/(?:^|\s)(?:بلون|باللون|بألوان|بالوان|لوحة\s+ألوان)\s+(?:بنفسجي|برقوقي)(?:\s+(?:وليموني|وفوسفوري))?(?:\s|$)/, 'plum-lime', 'برقوقي وليموني'],
+  [/(?:^|\s)(?:بلون|باللون|بألوان|بالوان|لوحة\s+ألوان)\s+(?:أسود|اسود)\s+(?:وذهبي|مع\s+ذهبي)(?:\s|$)/, 'graphite-gold', 'جرافيت وذهبي'],
+  [/(?:^|\s)(?:بلون|باللون|بألوان|بالوان|لوحة\s+ألوان)\s+(?:أزرق|ازرق)(?:\s|$)/, 'scholar-blue', 'أزرق باحث'],
+]
+
 const COMMAND_OPENERS = /^\s*(?:أبي|ابي|أبغى|ابغى|ابغي|أبا|ابا|أريد|اريد|بغيت|ودي|سوّ لي|سو لي|سوي لي|سويلي|صمم لي|صمملي|اصنع لي|اعمل لي|اعطني|عطني)\s+/
 const COMMAND_ARTIFACTS = /^\s*(?:تصميم|بوستر|بوست|منشور|صورة|صوره|بطاقة|بطاقه)\s*/
 const COMMAND_CONNECTORS = /^\s*(?:عن|حول|بخصوص|إلى|الى|بعنوان|عنوانه|عنوانها)[:\s]+/
@@ -568,9 +616,15 @@ export function parseStudioCommand(raw: string): StudioCommandParse {
   let working = original
   let signals = 0
   let tone: ContentTone | undefined
+  let density: DesignDensity | undefined
   let format: SocialFormatId | undefined
   let platform: SocialPlatform | undefined
   let preferLayout: LayoutFamilyId | undefined
+  let preferPalette: PaletteId | undefined
+  let visualRoute: StudioVisualRoute | undefined
+  let styleRoute: StudioStyleRoute | undefined
+  let audienceHint: string | undefined
+  let timeZone: 'Asia/Kuwait' | undefined
   let heroWord: string | undefined
   let contextParts: string[] = []
   let noBody = false
@@ -586,6 +640,51 @@ export function parseStudioCommand(raw: string): StudioCommandParse {
   /* القيود أولاً — تصلح في أي موضع من الجملة */
   if (consume(/(?:^|\s)(?:بدون|بلا)\s*(?:متن|نص طويل)(?:\s|$)/)) { noBody = true; signals += 1; understood.push({ label: 'قيد', value: 'بدون متن' }) }
   if (consume(/(?:^|\s)(?:بدون|بلا)\s*(?:دعوة|دعوه|زر)(?:\s|$)/)) { noCta = true; signals += 1; understood.push({ label: 'قيد', value: 'بدون دعوة' }) }
+
+  for (const [pattern, route, label] of COMMAND_VISUAL_ROUTES) {
+    if (consume(pattern)) {
+      visualRoute = route
+      signals += 1
+      understood.push({ label: 'المسار البصري', value: label })
+      break
+    }
+  }
+
+  for (const [pattern, route, layout, routeTone, routeDensity, label] of COMMAND_STYLE_ROUTES) {
+    if (consume(pattern)) {
+      styleRoute = route
+      preferLayout = layout
+      tone = routeTone
+      density = routeDensity
+      signals += 1
+      understood.push({ label: 'المدرسة الفنية', value: label })
+      break
+    }
+  }
+
+  for (const [pattern, palette, label] of COMMAND_PALETTES) {
+    if (consume(pattern)) {
+      preferPalette = palette
+      signals += 1
+      understood.push({ label: 'لوحة اللون', value: label })
+      break
+    }
+  }
+
+  const audience = working.match(/(?:موج[ّه]?|مخصص|للجمهور|لـ)\s+(?:إلى|الى)?\s*([^،,.؟?]{3,48}?)(?=\s+(?:عن|حول|بخصوص|بعنوان)|[،,.؟?]|$)/)
+  if (audience) {
+    audienceHint = audience[1].trim()
+    contextParts.push(`الجمهور المقصود: ${audienceHint}`)
+    signals += 1
+    understood.push({ label: 'الجمهور', value: audienceHint })
+    working = working.replace(audience[0], ' ').replace(/\s+/g, ' ').trim()
+  }
+  if (consume(/(?:^|\s)(?:بتوقيت|توقيت)\s+الكويت(?:\s|$)/)) {
+    timeZone = 'Asia/Kuwait'
+    contextParts.push('اعرض الوقت صراحةً بتوقيت الكويت (Asia/Kuwait) ولا تحوّله إلى منطقة أخرى')
+    signals += 1
+    understood.push({ label: 'المنطقة الزمنية', value: 'توقيت الكويت' })
+  }
 
   /* الكلمة البطلة: «خل النجاح بطل» أو «اجعل الإنسان كلمة بطلة» */
   const hero = working.match(/(?:اجعل|خل|خلي|خله)\s+(?:كلمة\s+)?([؀-ۿ]{2,})\s+(?:كلمة\s+)?بطل(?:ة|ه)?/)
@@ -628,10 +727,13 @@ export function parseStudioCommand(raw: string): StudioCommandParse {
   if (noBody) assumptions.push('سأخفض الكثافة لأدنى درجة — إسقاط المتن كلياً يتم من محرر التصميم.')
   if (noCta) assumptions.push('إسقاط الدعوة نهائياً يتم من محرر التصميم؛ خففت حضورها هنا.')
   if (tone === 'deep') assumptions.push('«داكن/عميق» يميل باللوحات نحو العمق الليلي المتاح في هذه النبرة.')
+  if (visualRoute === 'typographic') assumptions.push('الصورة مستبعدة كلياً؛ التكوين واللون والخط والفراغ تحمل الفكرة.')
+  if (visualRoute === 'upload') assumptions.push('الصورة المرفوعة هي الأصل البصري؛ لن يستبدلها الاستوديو بصورة جاهزة أو مولدة.')
+  if (timeZone) assumptions.push('أي ساعة مذكورة ستبقى موسومة صراحةً بتوقيت الكويت.')
   if (content !== original) understood.push({ label: 'المحتوى الحقيقي', value: content.length > 60 ? `${content.slice(0, 57)}…` : content })
 
   const confidence = Math.min(.95, .5 + signals * .11)
-  return { content, contextHint: contextParts.join(' · '), tone, format, platform, preferLayout, heroWord, noBody, noCta, understood, assumptions, confidence }
+  return { content, contextHint: contextParts.join(' · '), tone, density, format, platform, preferLayout, preferPalette, visualRoute, styleRoute, audienceHint, timeZone, heroWord, noBody, noCta, understood, assumptions, confidence }
 }
 
 export interface SocialDesignRequest {
@@ -652,6 +754,8 @@ export interface SocialDesignRequest {
   tasteProfile?: DesignTasteProfile
   /** رغبة صريحة من المستخدم بعائلة تكوين بعينها (زر «اجعلها كلمة بطلة» مثلاً) */
   preferLayout?: LayoutFamilyId
+  /** اللون المذكور صراحةً في العبارة يتقدّم على الاختيار الاحتمالي. */
+  preferPalette?: PaletteId
 }
 
 export interface SocialDesignResult {
@@ -767,6 +871,10 @@ export const PALETTES: Record<PaletteId, Palette> = {
   'graphite-gold': { id: 'graphite-gold', label: 'جرافيت وذهب', background: '#202226', surface: '#292C31', ink: '#F4F1E9', muted: '#BCB8AE', accent: '#C5A76C', accentSoft: '#443D31', rule: '#494A4C', isDark: true },
   'quiet-stone': { id: 'quiet-stone', label: 'حجر هادئ', background: '#ECECEA', surface: '#F8F8F6', ink: '#202225', muted: '#6C7073', accent: '#566B78', accentSoft: '#D5DADC', rule: '#CFD0CD', isDark: false },
   'signal-ivory': { id: 'signal-ivory', label: 'عاج وإشارة', background: '#FFFDF7', surface: '#F7F1E4', ink: '#181A1E', muted: '#706B61', accent: '#9B713D', accentSoft: '#EFE0C5', rule: '#E0D7C8', isDark: false },
+  'museum-red': { id: 'museum-red', label: 'أحمر متحفي', background: '#F7EEE8', surface: '#FFF9F5', ink: '#261816', muted: '#765B55', accent: '#A92E27', accentSoft: '#EBCDC6', rule: '#D9C5BE', isDark: false },
+  'electric-cobalt': { id: 'electric-cobalt', label: 'كوبالت كهربائي', background: '#F0F3FF', surface: '#FFFFFF', ink: '#111A38', muted: '#536184', accent: '#1645CE', accentSoft: '#DCE4FF', rule: '#C9D3F0', isDark: false },
+  'emerald-sand': { id: 'emerald-sand', label: 'زمرد ورمل', background: '#F2F1E7', surface: '#FEFCF5', ink: '#14251F', muted: '#526A61', accent: '#176A54', accentSoft: '#CFE5DC', rule: '#CBD6D0', isDark: false },
+  'plum-lime': { id: 'plum-lime', label: 'برقوق وليمون', background: '#211525', surface: '#2E1D33', ink: '#FAF4ED', muted: '#D2C1D2', accent: '#D5EF6A', accentSoft: '#414628', rule: '#5A425E', isDark: true },
 }
 
 /** اللوحة الفعلية للتصميم: البصمة البصرية المرفوعة إن وُجدت، وإلا لوحة الهوية المختارة. */
@@ -1388,18 +1496,18 @@ const FRAME_BY_LAYOUT: Record<LayoutFamilyId, readonly FramingModeId[]> = {
 }
 
 const PALETTE_BY_TONE: Record<ContentTone, readonly PaletteId[]> = {
-  formal: ['brand-paper', 'ink-white', 'scholar-blue', 'quiet-stone'],
-  institutional: ['scholar-blue', 'brand-paper', 'brand-night', 'quiet-stone'],
-  luxury: ['graphite-gold', 'signal-ivory', 'brand-night', 'warm-parchment'],
-  human: ['warm-parchment', 'brand-paper', 'signal-ivory', 'quiet-stone'],
-  inspiring: ['signal-ivory', 'scholar-blue', 'brand-night', 'brand-paper'],
-  deep: ['brand-night', 'graphite-gold', 'warm-parchment', 'ink-white'],
-  bold: ['brand-night', 'ink-white', 'graphite-gold', 'scholar-blue'],
-  calm: ['quiet-stone', 'brand-paper', 'warm-parchment', 'ink-white'],
-  academic: ['scholar-blue', 'ink-white', 'brand-paper', 'brand-night'],
-  media: ['brand-night', 'scholar-blue', 'ink-white', 'graphite-gold'],
-  promotional: ['brand-paper', 'brand-night', 'signal-ivory', 'scholar-blue'],
-  intellectual: ['brand-paper', 'ink-white', 'brand-night', 'warm-parchment'],
+  formal: ['brand-paper', 'ink-white', 'scholar-blue', 'quiet-stone', 'electric-cobalt'],
+  institutional: ['scholar-blue', 'brand-paper', 'brand-night', 'quiet-stone', 'emerald-sand'],
+  luxury: ['graphite-gold', 'signal-ivory', 'brand-night', 'warm-parchment', 'plum-lime'],
+  human: ['warm-parchment', 'brand-paper', 'signal-ivory', 'quiet-stone', 'museum-red'],
+  inspiring: ['signal-ivory', 'electric-cobalt', 'emerald-sand', 'scholar-blue', 'brand-paper'],
+  deep: ['brand-night', 'graphite-gold', 'plum-lime', 'warm-parchment', 'ink-white'],
+  bold: ['brand-night', 'plum-lime', 'museum-red', 'electric-cobalt', 'graphite-gold'],
+  calm: ['quiet-stone', 'brand-paper', 'warm-parchment', 'emerald-sand', 'ink-white'],
+  academic: ['scholar-blue', 'ink-white', 'brand-paper', 'electric-cobalt', 'brand-night'],
+  media: ['brand-night', 'electric-cobalt', 'museum-red', 'scholar-blue', 'ink-white'],
+  promotional: ['museum-red', 'electric-cobalt', 'brand-paper', 'brand-night', 'signal-ivory'],
+  intellectual: ['brand-paper', 'ink-white', 'brand-night', 'emerald-sand', 'warm-parchment'],
 }
 
 const DIRECTION_LABELS: Record<LayoutFamilyId, string> = {
@@ -1611,12 +1719,13 @@ const makeCandidate = (
   seed: string,
   variant: number,
   history: readonly DesignHistoryEntry[],
+  preferredPalette?: PaletteId,
 ): CompositionPlan => {
   const typography = chooseFirst(TYPOGRAPHY_BY_BIAS[layout.textBias], seed, `${layout.id}:type:${variant}`)
   const spatial = chooseFirst(SPATIAL_BY_LAYOUT[layout.id], seed, `${layout.id}:space:${variant}`)
   const accent = chooseFirst(ACCENT_BY_LAYOUT[layout.id], seed, `${layout.id}:accent:${variant}`)
   const framing = chooseFirst(FRAME_BY_LAYOUT[layout.id], seed, `${layout.id}:frame:${variant}`)
-  const palette = chooseFirst(PALETTE_BY_TONE[analysis.primaryTone], seed, `${layout.id}:palette:${variant}`)
+  const palette = preferredPalette || chooseFirst(PALETTE_BY_TONE[analysis.primaryTone], seed, `${layout.id}:palette:${variant}`)
   const ctaPlacement = ctaPlacementFor(analysis, format, layout.id, `${seed}:${variant}`)
   const signature: DesignSignature = { layout: layout.id, typography, spatial, accent, framing, cta: ctaPlacement, palette, format: format.id }
   const novelty = noveltyAgainst(signature, history)
@@ -1773,7 +1882,7 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
   const candidates: CompositionPlan[] = []
   for (const [layoutIndex, layout] of rankedLayouts.entries()) {
     for (let variant = 0; variant < 6; variant += 1) {
-      const candidate = makeCandidate(layout, analysis, format, density, seed, layoutIndex * 7 + variant, history)
+      const candidate = makeCandidate(layout, analysis, format, density, seed, layoutIndex * 7 + variant, history, request.preferPalette)
       const boosted = preferenceBoost(layout.id) ? { ...candidate, fitness: roundScore(candidate.fitness + preferenceBoost(layout.id)) } : candidate
       candidates.push(request.basePlan ? applyDesignLocks(request.basePlan, boosted, locks) : boosted)
     }
@@ -1788,6 +1897,18 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
     .map((plan) => ({ ...plan, quality: critiqueCompositionPlan(plan, finalists), tasteAffinity: tasteAffinity(request.tasteProfile, plan) }))
     .sort((left, right) => ((right.quality?.score || 0) + (right.tasteAffinity || 0) * 8) - ((left.quality?.score || 0) + (left.tasteAffinity || 0) * 8))
   let plans = selectVisibleThemeDiversity(rankedVisible, visibleCount).slice(0, visibleCount)
+  // في النصوص القصيرة جداً قد تكون مسافة التشابه الصارمة أقسى من اللازم فتترك
+  // الواجهة برؤيتين فقط. نكمل العدد من أفضل النهائيات السليمة، مع اشتراط بصمة
+  // وعائلة مختلفتين، كي يبقى للمخرج مجال مقارنة حقيقي من دون إدخال نتيجة ضعيفة.
+  if (plans.length < visibleCount) {
+    const completionPool = [...rankedVisible, ...candidatePool, ...critiqued]
+      .sort((left, right) => (right.quality?.score || 0) - (left.quality?.score || 0))
+    for (const candidate of completionPool) {
+      if (plans.some((plan) => plan.fingerprint === candidate.fingerprint || plan.layout === candidate.layout)) continue
+      plans.push(candidate)
+      if (plans.length === visibleCount) break
+    }
+  }
   // وعد الزر يُنفَّذ حرفياً: إن طلب المستخدم عائلة بعينها ولم تصعد بجودتها،
   // نصعد أقوى مرشح منها إلى الصدارة بدل أن يضيع الطلب في فرز الجودة العام.
   if (request.preferLayout && !plans.some((plan) => plan.layout === request.preferLayout)) {
@@ -2114,6 +2235,86 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
     && issues.length === 0
   if (!deservesExceptional) score = Math.min(score, 95)
   return { score, band: qualityBand(score), readability, hierarchy, whitespace, contrast, textContrast, backgroundContrast, density, visualWeight, rtlAlignment, fit, lineFit, originality, platformFit, issues, strengths }
+}
+
+export interface ProfessionalReleaseGate {
+  ready: boolean
+  score: number
+  tier: 'masterpiece' | 'professional' | 'publishable' | 'rejected'
+  blockers: string[]
+  warnings: string[]
+  metrics: {
+    craft: number
+    briefFidelity: number
+    distinctiveness: number
+    mobileReadiness: number
+    provenance: number
+  }
+}
+
+/**
+ * بوابة «عين المصمم» مستقلة عن الناقد التقني. الناقد يقيس التباين والفيضان
+ * والمحاذاة؛ هذه البوابة تسأل أيضاً: هل التكوين يخدم نوع الفكرة ونبرتها؟ هل
+ * له حضور متمايز؟ وهل يمكن تسليمه للنشر بلا اعتذار أو معالجة إسعافية؟
+ */
+export function professionalReleaseGate(plan: CompositionPlan, peers: readonly CompositionPlan[] = []): ProfessionalReleaseGate {
+  // لا نثق بدرجة مخزنة؛ قد يكون النص أو الصورة أو التكوين قد تغيّر بعد حسابها.
+  // قرار التسليم يعيد الفحص على الحالة المرئية الحالية دائماً.
+  const quality = critiqueCompositionPlan(plan, peers)
+  const layout = LAYOUT_FAMILIES[plan.layout]
+  const heroImage = plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background' && item.src)
+  const kindFit = layout.idealKinds.includes(plan.analysis.primaryKind) ? 100 : 78
+  const toneFit = layout.idealTones.includes(plan.analysis.primaryTone) ? 100 : 80
+  const densityFit = layout.preferredDensities.includes(plan.density) ? 100 : 82
+  const semanticTitle = plan.content.title.trim().length >= 4 && Boolean(plan.content.heroWord || plan.content.keywords?.length)
+  const briefFidelity = boundedQuality(kindFit * .38 + toneFit * .28 + densityFit * .18 + (semanticTitle ? 100 : 68) * .16)
+  const closestPeer = peers.length
+    ? Math.max(0, ...peers.filter((peer) => peer.id !== plan.id).map((peer) => designSimilarity(plan, peer)))
+    : 0
+  const distinctiveness = boundedQuality(quality.originality * .64 + plan.novelty * 100 * .24 + (1 - closestPeer) * 100 * .12)
+  const mobileReadiness = boundedQuality(quality.readability * .36 + quality.lineFit * .34 + quality.fit * .18 + quality.rtlAlignment * .12)
+  const provenance = heroImage
+    ? heroImage.sourceUrl && heroImage.owner && heroImage.license ? 100 : 55
+    : 100
+  const craft = boundedQuality(
+    quality.hierarchy * .22
+    + quality.whitespace * .18
+    + quality.contrast * .18
+    + quality.visualWeight * .16
+    + quality.density * .12
+    + quality.platformFit * .14,
+  )
+  const score = boundedQuality(craft * .31 + briefFidelity * .22 + distinctiveness * .17 + mobileReadiness * .24 + provenance * .06)
+  const blockers: string[] = []
+  const warnings: string[] = []
+  if (quality.issues.some((issue) => issue.startsWith('خطأ:'))) blockers.push('يوجد خطأ تكويني أو عنصر خارج منطقة الأمان.')
+  if (quality.readability < 82 || quality.lineFit < 82 || quality.fit < 80) blockers.push('القراءة الهاتفية ليست في مستوى التسليم الاحترافي.')
+  if (quality.textContrast < 82 || quality.backgroundContrast < 80) blockers.push('التباين لا يجتاز حد التسليم الاحترافي.')
+  if (quality.whitespace < 60 || quality.density < 55 || quality.visualWeight < 50 || quality.rtlAlignment < 75) blockers.push('الإيقاع أو الوزن أو محاذاة RTL تحتاج إعادة إخراج قبل التسليم.')
+  if (briefFidelity < 82) blockers.push('التكوين جميل لكنه لا يخدم العبارة ونوع المحتوى بما يكفي.')
+  if (provenance < 100) blockers.push('جواز الصورة ناقص ولا يسمح بالتسليم النهائي.')
+  if (closestPeer >= .78) blockers.push('الاتجاه قريب بصرياً من مرشح آخر ولا يضيف فكرة إخراجية جديدة.')
+  if (distinctiveness < 76) warnings.push('الأصالة مقبولة لكن يمكن دفع المسافة عن السجل البصري أكثر.')
+  if (quality.score < 84) warnings.push('الحرفة التقنية قوية، لكنها دون مستوى الاعتماد الأعلى.')
+  // الدرجة الجامعة قد تنخفض بسبب تحذير أسلوبي بسيط رغم اجتياز الحرفة الفعلية؛
+  // لذلك يحكم حدّ التسليم على المقاييس الصريحة أعلاه، مع أرضية تقنية لا تسمح
+  // بدخول تصميم ضعيف. هذا يبقي البوابة صارمة من دون رفض تصميم قوي بسبب تحذير واحد.
+  const ready = blockers.length === 0 && score >= 84 && quality.score >= 72
+  const tier: ProfessionalReleaseGate['tier'] = !ready
+    ? 'rejected'
+    : score >= 92 && quality.score >= 90
+      ? 'masterpiece'
+      : score >= 87
+        ? 'professional'
+        : 'publishable'
+  return {
+    ready,
+    score,
+    tier,
+    blockers,
+    warnings,
+    metrics: { craft, briefFidelity, distinctiveness, mobileReadiness, provenance },
+  }
 }
 
 /* ═══════════ مختبر الأداء: متنبّئ التفاعل (مقترح البناء أ-٣) ═══════════
@@ -2552,4 +2753,3 @@ export function auditDesignBatch(plans: readonly CompositionPlan[]) {
     issues,
   }
 }
-

@@ -12,7 +12,14 @@ import { PublishingStudioNavigation, type PublishingStudioView } from './Publish
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
 import { buildSocialVisuals, compositionNameOf, analyzeSocialCopy,
   detectVisualTopic, downloadSocialPng, renderSocialPng, visualTopicLabel, type SocialVisualTemplate, type VisualTopic } from '../../lib/social-templates'
-import { SocialDesignStudio } from './SocialDesignStudio'
+import {
+  designSimilarity,
+  generateSocialDesigns,
+  parseStudioCommand,
+  professionalReleaseGate,
+  type CompositionPlan,
+} from '../../lib/social-design-engine'
+import { downloadCompositionRaster, renderCompositionSvg } from '../../lib/social-design-renderer'
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
@@ -70,6 +77,9 @@ type PerfectSocialPack = {
   event?: CurrentEvent | null
   eventHook?: string
   visualDirections: { layout: string; tone: string; headline: string; subline: string }[]
+  qualityScore?: number
+  qualityChecks?: string[]
+  creativeDirectives?: Record<string, string>
   generatedAt?: string
   visualSeed?: string
 }
@@ -1615,6 +1625,39 @@ function VisualTemplateCard({ template }: { template: SocialVisualTemplate }) {
   )
 }
 
+function ProfessionalStandaloneDesignCard({ plan, rank }: { plan: CompositionPlan; rank: number }) {
+  const svg = useMemo(() => renderCompositionSvg(plan), [plan])
+  const preview = useMemo(() => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`, [svg])
+  const release = useMemo(() => professionalReleaseGate(plan), [plan])
+  const tier = release.tier === 'masterpiece'
+    ? 'Masterpiece'
+    : release.tier === 'professional'
+      ? 'Professional'
+      : release.tier === 'publishable'
+        ? 'Publishable'
+        : 'Needs direction'
+  return (
+    <article className="overflow-hidden rounded-[1.35rem] border border-hair bg-canvas shadow-[0_16px_46px_rgba(15,23,42,.06)]">
+      <div className="relative overflow-hidden bg-wash" style={{ aspectRatio: `${plan.format.width} / ${plan.format.height}` }}>
+        <img src={preview} alt={`الاتجاه الاحترافي ${rank}: ${plan.content.title}`} draggable={false} className="h-full w-full select-none object-cover" />
+        <span className="absolute right-3 top-3 rounded-full border border-white/30 bg-black/55 px-2.5 py-1 text-[.56rem] font-black uppercase tracking-[.08em] text-white backdrop-blur">{tier}</span>
+      </div>
+      <div className="p-3.5">
+        <div className="flex items-start justify-between gap-3">
+          <div><span className="text-[.58rem] font-bold text-accent">رؤية {rank}</span><strong className="mt-1 block text-[.78rem] text-ink">{plan.directionLabel}</strong></div>
+          <span className={`rounded-full px-2.5 py-1 text-[.6rem] font-black ${release.ready ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>{release.score}٪</span>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
+          <span className="rounded-lg bg-paper px-2 py-2 text-[.55rem] text-soft"><strong className="block text-[.68rem] text-ink">{release.metrics.craft}</strong>الحرفة</span>
+          <span className="rounded-lg bg-paper px-2 py-2 text-[.55rem] text-soft"><strong className="block text-[.68rem] text-ink">{release.metrics.briefFidelity}</strong>فهم العبارة</span>
+          <span className="rounded-lg bg-paper px-2 py-2 text-[.55rem] text-soft"><strong className="block text-[.68rem] text-ink">{release.metrics.distinctiveness}</strong>الأصالة</span>
+        </div>
+        <button type="button" onClick={() => void downloadCompositionRaster(plan, 'png')} disabled={!release.ready} className={`${release.ready ? primary : ghost} mt-3 w-full text-[.7rem]`}>{release.ready ? 'تنزيل PNG المعتمد' : 'محجوب حتى يجتاز البوابة'}</button>
+      </div>
+    </article>
+  )
+}
+
 function PerfectSocialPackCard({
   pack,
   article,
@@ -1641,10 +1684,12 @@ function PerfectSocialPackCard({
             <p className="mt-2 text-[.82rem] leading-relaxed text-soft">يقرأ النظام الفكرة أولاً، ثم يختار تكوينات تناسب التعليم أو التكنولوجيا أو الأسرة أو البحث أو الإعلام أو المستقبل — مع تنويع جديد في كل مرة.</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            {typeof pack.qualityScore === 'number' && <span className={`rounded-full border px-3 py-2 text-[.7rem] font-bold ${pack.qualityScore >= 86 ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>بوابة الذكاء والجمال {pack.qualityScore}٪</span>}
             <button type="button" disabled={busy} onClick={onRegenerate} className={ghost}>{busy ? 'أعيد البناء…' : 'تنويع جديد'}</button>
             <button type="button" disabled={saveBusy} onClick={onSave} className={primary}>{saveBusy ? 'أحفظ…' : 'حفظ الحزمة'}</button>
           </div>
         </div>
+        {pack.qualityChecks?.length ? <p className="mt-3 text-[.7rem] leading-relaxed text-soft">فحص التسليم: {pack.qualityChecks.slice(0, 4).join(' · ')}</p> : null}
         {pack.event && (
           <a href={pack.event.url} target="_blank" rel="noreferrer" className="mt-5 block rounded-2xl border border-accent/30 bg-accent/[.05] p-4 transition-colors hover:border-accent">
             <span className="text-[.72rem] font-semibold text-accent">ربط راهن موثق · {pack.event.source}</span>
@@ -1762,6 +1807,56 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const articleSuggestions = useMemo(() => suggestArticleIdeas(richArticles, radar, privateLinks), [privateLinks, radar, richArticles])
   const pulseTemplateShowcase = useMemo(() => standaloneVisualTemplates(pulsePreviewCopy.idea, pulsePreviewCopy.purpose), [pulsePreviewCopy])
   const pulseCopyAnalysis = useMemo(() => analyzeSocialCopy(`${pulsePreviewCopy.idea} ${pulsePreviewCopy.purpose}`), [pulsePreviewCopy])
+  const pulseCommand = useMemo(() => parseStudioCommand(pulsePreviewCopy.idea), [pulsePreviewCopy.idea])
+  const pulseDesignResult = useMemo(() => {
+    const content = pulseCommand.content.trim() || pulsePreviewCopy.idea.trim() || 'فكرة قصيرة تستحق أن تُقال الآن'
+    const effectiveAudience = pulseCommand.audienceHint || pulseAudience
+    const request = {
+      text: content,
+      context: [pulsePreviewCopy.purpose, effectiveAudience, pulseCommand.contextHint].filter(Boolean).join(' · '),
+      author: 'د. أحمد حسين الفيلكاوي',
+      tone: pulseCommand.tone || 'auto',
+      density: pulseCommand.density || (pulseCommand.noBody ? 'minimal' : 'auto'),
+      platform: pulseCommand.platform || 'instagram',
+      ...(pulseCommand.format ? { format: pulseCommand.format } : {}),
+      ...(pulseCommand.preferLayout ? { preferLayout: pulseCommand.preferLayout } : {}),
+      ...(pulseCommand.preferPalette ? { preferPalette: pulseCommand.preferPalette } : {}),
+      count: 8,
+      seed: `standalone-professional:${pulsePack?.visualSeed || `${content}:${pulsePreviewCopy.purpose}:${effectiveAudience}`}`,
+      noveltyThreshold: .48,
+    } as const
+    const directed = generateSocialDesigns(request)
+    // مسار ثانٍ يحرر المخرج من العائلة المطلوبة بعد أن يضمن حضورها في المسار
+    // الأول؛ هكذا نحترم الأمر ولا نحول الرؤى الثلاث إلى القالب نفسه.
+    const exploratory = generateSocialDesigns({
+      ...request,
+      density: content.split(/\s+/).length <= 18 ? 'minimal' : request.density,
+      preferLayout: undefined,
+      seed: `${request.seed}:independent-art-direction`,
+      noveltyThreshold: .42,
+    })
+    const plans = [...directed.plans, ...exploratory.plans]
+      .filter((plan, index, all) => all.findIndex((candidate) => candidate.fingerprint === plan.fingerprint) === index)
+    return { ...directed, plans }
+  }, [pulseAudience, pulseCommand, pulsePack?.visualSeed, pulsePreviewCopy.idea, pulsePreviewCopy.purpose])
+  const pulseProfessionalPlans = useMemo(() => {
+    const ranked = pulseDesignResult.plans
+      .map((plan) => ({ plan, release: professionalReleaseGate(plan) }))
+      .sort((left, right) => Number(right.release.ready) - Number(left.release.ready) || right.release.score - left.release.score)
+    const selected: typeof ranked = []
+    for (const candidate of ranked) {
+      if (selected.every((item) => item.plan.layout !== candidate.plan.layout && designSimilarity(item.plan, candidate.plan) < .74)) selected.push(candidate)
+      if (selected.length === 3) break
+    }
+    if (selected.length < 3) {
+      for (const candidate of ranked) {
+        if (selected.some((item) => item.plan.id === candidate.plan.id)) continue
+        selected.push(candidate)
+        if (selected.length === 3) break
+      }
+    }
+    return selected.slice(0, 3)
+  }, [pulseDesignResult])
   const pulseTemplatePages = usePagedList(pulseTemplateShowcase, 8, `${pulsePreviewCopy.idea}|${pulsePreviewCopy.purpose}`)
 
   useEffect(() => {
@@ -2159,6 +2254,10 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
     pulseVariation.current += 1
     const variation = pulseVariation.current
     try {
+      const parsedCommand = parseStudioCommand(pulseIdea)
+      const cleanIdea = parsedCommand.content.trim() || pulseIdea.trim()
+      const effectiveAudience = parsedCommand.audienceHint || pulseAudience
+      const effectivePurpose = [pulsePurpose.trim(), parsedCommand.contextHint].filter(Boolean).join(' · ')
       const events = pulseEvents.length ? pulseEvents : await loadPulseContext()
       const selectedEvent = pulseSelectedEventIds.length
         ? events.find((item) => item.id === pulseSelectedEventIds[0]) || null
@@ -2168,27 +2267,38 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
         try {
           const token = await user.getIdToken()
           pack = await adminAiRequest<PerfectSocialPack>('/api/ai/social-pack', {
-            title: pulseIdea.trim(),
-            excerpt: pulsePurpose.trim(),
-            body: `${pulseIdea.trim()}
+            title: cleanIdea,
+            excerpt: effectivePurpose,
+            body: `${cleanIdea}
 
-${pulsePurpose.trim()}`,
-            purpose: pulsePurpose.trim(),
-            audience: pulseAudience,
+${effectivePurpose}`,
+            purpose: effectivePurpose,
+            audience: effectiveAudience,
             styleProfile: style,
             selectedEventIds: pulseSelectedEventIds,
             standalone: true,
+            creativeDirectives: {
+              tone: parsedCommand.tone || '',
+              density: parsedCommand.density || '',
+              format: parsedCommand.format || '',
+              platform: parsedCommand.platform || '',
+              layout: parsedCommand.preferLayout || '',
+              palette: parsedCommand.preferPalette || '',
+              styleRoute: parsedCommand.styleRoute || '',
+              timeZone: parsedCommand.timeZone || '',
+            },
           }, token)
         } catch {
           pack = null
         }
       }
-      const local = buildStandaloneSocialPack(pulseIdea, pulsePurpose, pulseAudience, selectedEvent, variation)
+      const local = buildStandaloneSocialPack(cleanIdea, effectivePurpose, effectiveAudience, selectedEvent, variation)
       if (pack) {
         pack = mergeSocialPacks(local, pack, variation, selectedEvent)
       } else pack = local
       setPulsePack(pack)
-      setNotice(`بُنيت حزمة مستقلة متنوّعة لموضوع «${visualTopicLabel(detectVisualTopic(`${pulseIdea} ${pulsePurpose}`))}» ✓`)
+      const approvedCount = pulseProfessionalPlans.filter((item) => item.release.ready).length
+      setNotice(`فهم المخرج العبارة وبنى حزمة مستقلة لموضوع «${visualTopicLabel(detectVisualTopic(`${cleanIdea} ${effectivePurpose}`))}»، ومعها ${approvedCount || 3} اتجاهات بصرية خضعت لبوابة المصمم ✓`)
       task.needsInput('المنشور جاهز للمراجعة')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر بناء المنشور المستقل.')
@@ -2332,6 +2442,7 @@ ${pulsePurpose.trim()}`,
               <Field label="الجمهور"><select className={input} value={pulseAudience} onChange={(event) => setPulseAudience(event.target.value)}><option>الجمهور العام</option><option>المعلمون</option><option>أولياء الأمور</option><option>القيادات التعليمية</option><option>الباحثون</option></select></Field>
               <div className="flex items-end"><button type="button" disabled={pulseBusy} className={`${primary} w-full`} onClick={() => void generatePulse()}>{pulseBusy ? 'أبني الحزمة…' : 'ابنِ المنشور'}</button></div>
             </div>
+            {pulseCommand.understood.length > 0 && <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3" data-standalone-phrase-understanding="true"><div className="flex flex-wrap items-center gap-2"><strong className="text-[.7rem] text-emerald-800">فهمتُ من عبارتك:</strong>{pulseCommand.understood.map((item) => <span key={`${item.label}-${item.value}`} className="rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-[.6rem] text-emerald-800">{item.label}: {item.value}</span>)}<span className="ms-auto text-[.6rem] font-bold text-emerald-700">ثقة {Math.round(pulseCommand.confidence * 100)}٪</span></div>{pulseCommand.assumptions.length > 0 && <p className="mt-2 text-[.62rem] leading-relaxed text-emerald-900/70">{pulseCommand.assumptions.join(' · ')}</p>}</div>}
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <button type="button" onClick={() => void loadPulseContext()} disabled={pulseEventsLoading || !pulseIdea.trim()} className={ghost}>{pulseEventsLoading ? 'أحدّث الأحداث…' : 'اقترح حدثاً راهناً'}</button>
               <span className="text-[.76rem] text-soft">الربط اختياري؛ لا يُستخدم إلا إذا كان طبيعياً ومفيداً.</span>
@@ -2341,11 +2452,11 @@ ${pulsePurpose.trim()}`,
           <section id="standalone-template-library" className={card} aria-labelledby="standalone-templates-title">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-[.76rem] font-semibold uppercase text-accent">الطبعة الفاخرة</p>
-                <h2 id="standalone-templates-title" className="mt-1 font-display text-2xl font-semibold text-ink">مكتبة القوالب كاملة — 24 تكويناً.</h2>
-                <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">المحرك لا يقرأ الموضوع فقط؛ يميّز السؤال والمقارنة والأرقام والتسلسل والنبرة، ثم يقدّم التكوينات الأنسب أولاً. تعرض الصفحة ثمانية قوالب فقط للمحافظة على الهدوء، وتبقى المكتبة كاملة عبر الترقيم.</p>
+                <p className="text-[.76rem] font-semibold uppercase text-accent">Professional Art Direction</p>
+                <h2 id="standalone-templates-title" className="mt-1 font-display text-2xl font-semibold text-ink">ثلاث رؤى اعتمدها المخرج، لا مكتبة ترمي القوالب أمامك.</h2>
+                <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">يفهم المحرك القضية والنبرة والجمهور وأوامر اللون والأسلوب من عبارتك، ويبني عشرات الاحتمالات ثم يعرض ثلاث نتائج متباعدة فقط بعد فحص الحرفة، فهم العبارة، القراءة الهاتفية والأصالة.</p>
               </div>
-              <span className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.72rem] text-soft">{pulseCopyAnalysis.topicLabel}</span>
+              <div className="flex flex-wrap gap-2"><span className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.72rem] text-soft">{pulseCopyAnalysis.topicLabel}</span><span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[.68rem] font-bold text-emerald-700">بوابة المصمم {pulseProfessionalPlans.filter((item) => item.release.ready).length}/3</span></div>
             </div>
 
             <div className="mt-5 grid gap-3 rounded-2xl border border-hair bg-canvas p-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="قراءة المخرج البصري للنص">
@@ -2355,10 +2466,13 @@ ${pulsePurpose.trim()}`,
               <div className="min-w-0"><span className="block text-[.67rem] text-soft">العبارة المحورية</span><strong className="mt-1 line-clamp-2 block text-[.8rem] leading-relaxed text-ink">{pulseCopyAnalysis.keyPhrase || 'اكتب الفكرة ليقرأها المخرج البصري.'}</strong></div>
             </div>
 
-            <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-              {pulseTemplatePages.pageItems.map((template) => <VisualTemplateCard key={template.id} template={template} />)}
+            <div className="mt-5 grid gap-4 md:grid-cols-3" data-professional-standalone-directions="true">
+              {pulseProfessionalPlans.map(({ plan }, index) => <ProfessionalStandaloneDesignCard key={plan.id} plan={plan} rank={index + 1} />)}
             </div>
-            <Pagination page={pulseTemplatePages.page} pageCount={pulseTemplatePages.pageCount} onChange={pulseTemplatePages.setPage} totalItems={pulseTemplateShowcase.length} firstItem={pulseTemplatePages.firstItem} lastItem={pulseTemplatePages.lastItem} scrollTargetId="standalone-template-library" label="صفحات قوالب السوشال ميديا" className="mt-7" />
+            <details className="mt-5 rounded-2xl border border-hair bg-canvas">
+              <summary className="cursor-pointer list-none px-4 py-3 text-[.7rem] font-semibold text-soft">مختبر التكوينات الكامل — مكتبة القوالب كاملة — 24 تكويناً</summary>
+              <div className="border-t border-hair p-4"><p className="mb-4 text-[.68rem] leading-relaxed text-soft">هذه التكوينات تبقى مختبراً اختيارياً للمقارنة اليدوية؛ القرار الاحترافي الأساسي هو الرؤى الثلاث أعلاه.</p><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{pulseTemplatePages.pageItems.map((template) => <VisualTemplateCard key={template.id} template={template} />)}</div><Pagination page={pulseTemplatePages.page} pageCount={pulseTemplatePages.pageCount} onChange={pulseTemplatePages.setPage} totalItems={pulseTemplateShowcase.length} firstItem={pulseTemplatePages.firstItem} lastItem={pulseTemplatePages.lastItem} scrollTargetId="standalone-template-library" label="صفحات قوالب السوشال ميديا" className="mt-7" /></div>
+            </details>
           </section>
 
           {pulseEvents.length > 0 && <CurrentEventsCard items={pulseEvents} selected={pulseSelectedEventIds} loading={pulseEventsLoading} onToggle={(id) => setPulseSelectedEventIds((previous) => previous.includes(id) ? previous.filter((item) => item !== id) : [id])} />}

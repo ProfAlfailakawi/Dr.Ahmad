@@ -152,10 +152,26 @@ const assertions = [
   'WhatsApp must prove continuous multi-turn replies, prefer explicit follow-up actions over pronoun references, and ask a useful next question'],
   [whatsappResidentRunner.includes('loadBridgeSecret') && whatsappResidentRunner.includes('ensureDependencies') && whatsappResidentRunner.includes('session_quarantined_for_repair'), 'resident WhatsApp service must self-heal dependencies, fetch its secret, and quarantine repaired sessions'],
   [whatsappResidentInstaller.includes('DrAhmadWhatsAppBridge') && whatsappResidentInstaller.includes('com.alturath.whatsapp-bridge') && whatsappResidentInstaller.includes('legacy-launch-agents'), 'WhatsApp installer must keep one resident launch service and retire conflicting legacy services'],
-  [designStudio.includes('BufferedIdeaTextarea') && designStudio.includes('data-performance-island="studio-idea"') && designStudio.includes("'generate' | 'ready'") && designStudio.includes("'latest-approved'") && !designStudio.includes("setVisualMode('library')"), 'design studio must keep zero-render typing, the original/curated source choice, and latest-approved-only complete-design storage'],
+  [designStudio.includes('BufferedIdeaTextarea')
+    && designStudio.includes('data-performance-island="studio-idea"')
+    && designStudio.includes("'generate' | 'ready'")
+    && designStudio.includes("'latest-approved'")
+    && designStudio.includes('data-professional-visual-gate="true"')
+    && designStudio.includes('premiumReadyQueries')
+    && designStudio.includes('cheapStockPenalty')
+    && !designStudio.includes("setVisualMode('library')"),
+  'design studio must keep zero-render typing, exactly two original/curated routes, premium ready-image curation, a professional release gate, and latest-approved-only storage'],
   [cvFile.includes("'site_cv_files'") && cvFile.includes('cv-files-v1'), 'public CV reconstruction and local cache must remain active'],
   [firestoreRules.includes('match /site_cv_files/{kind}') && firestoreRules.includes('match /chunks/{chunkId}'), 'Firestore CV file rules must remain deployed'],
-  [publishingStudio.includes('مكتبة القوالب كاملة — 24 تكويناً') && publishingStudio.includes("key: 'iqtibas'") && publishingStudio.includes("key: 'masfufa'") && publishingStudio.includes("key: 'mizan'"), 'all 24 standalone social layouts must remain visible in the publishing studio'],
+  [publishingStudio.includes('مكتبة القوالب كاملة — 24 تكويناً')
+    && publishingStudio.includes("key: 'iqtibas'")
+    && publishingStudio.includes("key: 'masfufa'")
+    && publishingStudio.includes("key: 'mizan'")
+    && publishingStudio.includes('data-standalone-phrase-understanding="true"')
+    && publishingStudio.includes('data-professional-standalone-directions="true"')
+    && serverSource.includes('socialPackCreativeAudit')
+    && serverSource.includes('creativeDirectives'),
+  'standalone publishing must preserve all 24 laboratory layouts while promoting phrase-aware professional directions and server-side creative quality repair'],
   [articleDetail.includes('<StudentArchive') && articleDetail.includes('openAudioPlayer(`article-audio-${slug}`)') && (articleDetail.match(/<ArticleExtensions/g) || []).length === 1, 'article features must remain preserved inside the single related-content ending layer'],
   [homePage.includes('home:selected-works:v2') && !homePage.includes('لا مواعيد معلنة حالياً') && !homePage.includes('عرض بصري واحد بلا تكرار'), 'home selections must vary and empty/upholstery copy must remain hidden'],
   [uiSource.includes('جميع المقالات') && uiSource.includes("expanded ? 'إغلاق' : 'فروع'") && uiSource.includes('EnglishOverlay'), 'menus must keep clear all-content links and discoverable branches in both languages'],

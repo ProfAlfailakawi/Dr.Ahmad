@@ -9,6 +9,7 @@ import {
   transformDesignFormat,
   updateTasteProfile,
   designSimilarity,
+  professionalReleaseGate,
   SOCIAL_FORMATS,
   type CompositionPlan,
   type ContentTone,
@@ -90,7 +91,7 @@ const STUDIO_STAGES = [
 type StudioStage = typeof STUDIO_STAGES[number]['id']
 type MobileEditorPanel = 'preview' | 'layers' | 'properties'
 
-type AutoPilotModeId = 'safe' | 'editorial' | 'luxury' | 'impact' | 'evidence'
+type AutoPilotModeId = 'safe' | 'editorial' | 'luxury' | 'impact' | 'evidence' | 'human' | 'architectural' | 'kinetic'
 type AutoPilotCandidate = {
   id: AutoPilotModeId
   label: string
@@ -99,6 +100,8 @@ type AutoPilotCandidate = {
   worldScore: number
   qualityScore: number
   stopScore: number
+  professionalScore: number
+  professionalReady: boolean
 }
 
 type ReleaseVariant = {
@@ -113,6 +116,7 @@ type ZeroDecisionSummary = {
   approved: ReleaseVariant
   campaignReady: boolean
   campaignQuality: number
+  professionalScore: number
   note: string
   visualOrigin: StudioVisualOrigin
 }
@@ -320,6 +324,9 @@ const AUTOPILOT_PRESETS: { id: AutoPilotModeId; label: string; note: string; ton
   { id: 'luxury', label: 'الفاخر الدافئ', note: 'فخامة هادئة بمواد دافئة لا بسواد متكرر.', tone: 'luxury', density: 'minimal', preferLayout: 'quiet-orbit', palette: 'warm-parchment', platform: 'instagram', imageTreatment: 'duotone' },
   { id: 'impact', label: 'السينمائي الجريء', note: 'توتر بصري قوي يُستخدم حين يخدم المعنى فقط.', tone: 'bold', density: 'minimal', preferLayout: 'hero-word', palette: 'brand-night', platform: 'instagram', imageTreatment: 'cinematic' },
   { id: 'evidence', label: 'المعرفي البرهاني', note: 'دليل واضح وتكوين مادي منضبط بعيد عن الدراما.', tone: 'academic', density: 'balanced', preferLayout: 'evidence-ledger', palette: 'quiet-stone', platform: 'linkedin', imageTreatment: 'editorial' },
+  { id: 'human', label: 'الإنساني الوثائقي', note: 'قرب إنساني وحركة طبيعية ومساحة كتابة صادقة.', tone: 'human', density: 'balanced', preferLayout: 'human-note', palette: 'emerald-sand', platform: 'instagram', imageTreatment: 'documentary' },
+  { id: 'architectural', label: 'المتحفي المعماري', note: 'كتل دقيقة وفراغ ناضج وحضور يشبه أغلفة المعارض.', tone: 'intellectual', density: 'minimal', preferLayout: 'dual-thesis', palette: 'museum-red', platform: 'instagram', imageTreatment: 'duotone' },
+  { id: 'kinetic', label: 'الحركة المعرفية', note: 'إيقاع معاصر جريء يوقف التمرير من دون ضجيج.', tone: 'inspiring', density: 'minimal', preferLayout: 'cinematic-window', palette: 'electric-cobalt', platform: 'instagram', imageTreatment: 'editorial' },
 ]
 
 function selectDistinctTriptych(plans: CompositionPlan[]) {
@@ -1168,11 +1175,20 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   }, [selected])
 
   const hasInput = text.trim().length >= 2
-  const domainUnderstanding = useMemo(() => interpretDrAhmadDomain(text, context), [context, text])
-  const expertContext = useMemo(() => [context, domainUnderstanding.expandedContext].filter(Boolean).join(' · '), [context, domainUnderstanding.expandedContext])
-  const analysis = useMemo(() => analyzeSocialContent(hasInput ? text : 'فكرة معرفية جديدة', expertContext, { author: 'د. أحمد حسين الفيلكاوي' }), [expertContext, hasInput, text])
-  const creativeBrief = useMemo(() => buildCreativeBrief(text || 'فكرة معرفية جديدة', `${expertContext} · ${identityContext(creativeIdentity)}`, analysis), [analysis, creativeIdentity, expertContext, text])
-  const visualSearchPlan = useMemo(() => buildVisualSearchPlan(text || 'فكرة معرفية جديدة', expertContext, creativeBrief, creativeIdentity), [creativeBrief, creativeIdentity, expertContext, text])
+  const liveCommand = useMemo(() => parseStudioCommand(text), [text])
+  const interpretedText = liveCommand.content.trim() || text.trim() || 'فكرة معرفية جديدة'
+  const commandContext = useMemo(() => [
+    context,
+    liveCommand.contextHint,
+    liveCommand.audienceHint ? `الجمهور المقصود: ${liveCommand.audienceHint}` : '',
+    liveCommand.timeZone ? `التوقيت المطلوب: ${liveCommand.timeZone}` : '',
+    liveCommand.styleRoute ? `المسار الفني المطلوب: ${liveCommand.styleRoute}` : '',
+  ].filter(Boolean).join(' · '), [context, liveCommand])
+  const domainUnderstanding = useMemo(() => interpretDrAhmadDomain(interpretedText, commandContext), [commandContext, interpretedText])
+  const expertContext = useMemo(() => [commandContext, domainUnderstanding.expandedContext].filter(Boolean).join(' · '), [commandContext, domainUnderstanding.expandedContext])
+  const analysis = useMemo(() => analyzeSocialContent(hasInput ? interpretedText : 'فكرة معرفية جديدة', expertContext, { author: 'د. أحمد حسين الفيلكاوي' }), [expertContext, hasInput, interpretedText])
+  const creativeBrief = useMemo(() => buildCreativeBrief(interpretedText, `${expertContext} · ${identityContext(creativeIdentity)}`, analysis), [analysis, creativeIdentity, expertContext, interpretedText])
+  const visualSearchPlan = useMemo(() => buildVisualSearchPlan(interpretedText, expertContext, creativeBrief, creativeIdentity), [creativeBrief, creativeIdentity, expertContext, interpretedText])
   const artDirections = useMemo<ArtDirection[]>(() => buildArtDirections(creativeBrief), [creativeBrief])
   const externalProviderLabels = useMemo(() => [...new Set(externalVisuals.map((item) => item.providerLabel))], [externalVisuals])
   const hasPexelsProvider = useMemo(() => externalVisuals.some((item) => item.provider === 'pexels'), [externalVisuals])
@@ -1336,7 +1352,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       context: [expertContext, parsed.contextHint].filter(Boolean).join(' · '),
       author: 'د. أحمد حسين الفيلكاوي',
       tone: overrides.tone ?? (parsed.tone || tone),
-      density: overrides.density ?? (parsed.noBody ? 'minimal' : density),
+      density: overrides.density ?? (parsed.density || (parsed.noBody ? 'minimal' : density)),
       platform: overrides.platform ?? (parsed.platform || platform),
       ...(parsed.format ? { format: parsed.format } : {}),
       count: 8,
@@ -1345,6 +1361,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       noveltyThreshold: .36,
       tasteProfile,
       ...((overrides.preferLayout || parsed.preferLayout) ? { preferLayout: overrides.preferLayout || parsed.preferLayout } : {}),
+      ...(parsed.preferPalette ? { preferPalette: parsed.preferPalette } : {}),
     })
     setGeneration(nextGeneration)
     localStorage.setItem('dr-ahmad-social-design-generated-count', String(Number(localStorage.getItem('dr-ahmad-social-design-generated-count') || 0) + result.generation.requestedCount))
@@ -1968,10 +1985,11 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         presentation: 'widescreen-cover',
         thumbnail: 'video-thumbnail',
       }
-      const targetFormat = selected?.format || SOCIAL_FORMATS[platformFormat[platform]]
+      const targetPlatform = liveCommand.platform || platform
+      const targetFormat = selected?.format || SOCIAL_FORMATS[platformFormat[targetPlatform]]
       const requestBody = JSON.stringify({
-        idea: text.trim(),
-        context: context.trim(),
+        idea: interpretedText,
+        context: expertContext,
         issue: creativeBrief.issue,
         tension: creativeBrief.tension,
         emotion: creativeBrief.emotion,
@@ -3034,6 +3052,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     setVisualFailure('')
     setGeneratedPrompt('')
     setZeroDecisionPhase('understand')
+    setCommandParse(liveCommand.understood.length ? liveCommand : null)
     setNotice('أفهم المعنى العميق للفكرة الآن… لا أبحث عن شكل جميل فقط، بل عن مشهد يلامس الإنسان.')
     try {
       let passport: StudioImagePassport | null = null
@@ -3089,8 +3108,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         metadata = generatedSet[0].metadata
       } else {
         setNotice('أبحث الآن عن صورة جاهزة قوية، ثم أتحقق من صلاحية رابطها ومصدرها قبل أن تدخل التصميم.')
+        const premiumReadyQueries = [
+          visualSearchPlan.englishQueries[0] ? `${visualSearchPlan.englishQueries[0]} contemporary editorial photography natural light negative space` : '',
+          visualSearchPlan.englishQueries[1] ? `${visualSearchPlan.englishQueries[1]} museum grade conceptual still life art direction` : '',
+          visualSearchPlan.englishQueries[2] ? `${visualSearchPlan.englishQueries[2]} authentic documentary photography sophisticated composition` : '',
+        ]
         const queries = [...new Set([
-          ...visualSearchPlan.englishQueries.slice(0, 3),
+          ...premiumReadyQueries,
           externalQuery,
           visualSearchPlan.queries[0],
           visualSearchPlan.headline,
@@ -3107,12 +3131,40 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         }
         const verified = [...merged.values()].sort((left, right) => right.score - left.score)
         setExternalVisuals(verified)
-        let chosen: ExternalVisualResult | null = null
-        let resolved: Awaited<ReturnType<typeof resolveExternalVisualPassport>> = null
-        for (const candidate of verified.slice(0, 6)) {
-          resolved = await resolveExternalVisualPassport(candidate)
-          if (resolved) { chosen = candidate; break }
-        }
+        const targetPlatform = liveCommand.platform || platform
+        const targetOrientation: StudioImagePassport['orientation'] = ['story', 'reel', 'pinterest'].includes(targetPlatform)
+          ? 'portrait'
+          : ['linkedin', 'x', 'presentation', 'thumbnail'].includes(targetPlatform)
+            ? 'landscape'
+            : 'portrait'
+        const inspected = (await Promise.all(verified.slice(0, 6).map(async (candidate) => {
+          const resolvedCandidate = await resolveExternalVisualPassport(candidate)
+          if (!resolvedCandidate) return null
+          const { passport: candidatePassport } = resolvedCandidate
+          const orientationFit = candidatePassport.orientation === targetOrientation ? 100 : candidatePassport.orientation === 'square' ? 82 : 55
+          const textSpace = Math.max(...Object.values(candidatePassport.zoneScores))
+          const cropSafety = candidatePassport.cropRisk === 'low' ? 100 : candidatePassport.cropRisk === 'medium' ? 78 : 48
+          const provenance = candidate.author && candidate.license && (candidate.pageUrl || candidate.imageUrl) ? 100 : 55
+          const resolution = Math.min(100, Math.round(Math.min(candidate.width || candidatePassport.width, candidate.height || candidatePassport.height) / 10))
+          const textureBalance = Math.max(35, 100 - Math.abs(candidatePassport.edgeDensity - 42) * 1.55)
+          const cheapStockPenalty = /stock\s*photo|business\s*(people|team)|handshake|customer\s*service|generic|template/i.test(`${candidate.title} ${candidate.description}`) ? 12 : 0
+          const directorScore = Math.round(
+            candidate.score * .22
+            + candidatePassport.visualScore * .22
+            + orientationFit * .15
+            + textSpace * .1
+            + cropSafety * .09
+            + provenance * .08
+            + resolution * .08
+            + textureBalance * .06
+            - cheapStockPenalty,
+          )
+          return { candidate, resolved: resolvedCandidate, directorScore }
+        }))).filter((item): item is NonNullable<typeof item> => item !== null && item.directorScore >= 70)
+          .sort((left, right) => right.directorScore - left.directorScore)
+        const chosenInspection = inspected[0] || null
+        const chosen = chosenInspection?.candidate || null
+        const resolved = chosenInspection?.resolved || null
         if (!chosen || !resolved) {
           const failure = 'لم أجد صورة جاهزة صالحة وموثقة لهذه الفكرة ضمن المهلة. لم أستبدلها بصورة مولدة أو بتصميم قديم.'
           setVisualOrigin('none')
@@ -3134,7 +3186,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         setGeneratedRelevanceReason('')
         setVisualOrigin('ready')
         setVisualFailure('')
-        setNotice(`اختار المخرج صورة جاهزة من ${chosen.providerLabel} بعد فحص ${verified.length} مرشحين صالحين.`)
+        setNotice(`اختار المخرج صورة جاهزة من ${chosen.providerLabel} بدرجة إخراج ${chosenInspection?.directorScore || chosen.score}٪ بعد فحص المعنى، جودة البكسل، مساحة النص، القص والمصدر.`)
       }
 
       setZeroDecisionPhase('compose')
@@ -3154,7 +3206,20 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         if (analysis.primaryKind === 'announcement' || analysis.primaryKind === 'invitation') return variant.id === 'safer' ? 3 : 0
         return variant.id === 'final' ? 2 : 0
       }
-      const approved = [...computedPack].sort((a, b) => (b.score + emotionalBonus(b)) - (a.score + emotionalBonus(a)))[0]
+      const rankedRelease = computedPack
+        .map((variant) => ({ variant, professional: professionalReleaseGate(variant.plan) }))
+        .sort((left, right) => (
+          Number(right.professional.ready) - Number(left.professional.ready)
+          || (right.professional.score + right.variant.score + emotionalBonus(right.variant))
+            - (left.professional.score + left.variant.score + emotionalBonus(left.variant))
+        ))
+      const approvedDecision = rankedRelease.find((item) => item.professional.ready) || null
+      if (!approvedDecision) {
+        const best = rankedRelease[0]?.professional
+        const reason = best?.blockers[0] || 'لم تصل أي نسخة إلى حد الحرفة والقراءة والأصالة المطلوب.'
+        throw new Error(`studio_visual_failure:رفض المخرج اعتماد النتيجة الحالية: ${reason} أعد المحاولة ليُبنى عالم بصري جديد.`)
+      }
+      const approved = approvedDecision.variant
       if (generatedSet.length) {
         const approvedImage = approved.plan.overlays?.find((overlay) => overlay.kind === 'image' && overlay.imageRole === 'background')?.src
         const approvedGenerated = generatedSet.find((item) => item.passport.dataUrl === approvedImage)
@@ -3168,6 +3233,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         approved,
         campaignReady: Boolean(completeCampaign?.ready),
         campaignQuality: completeCampaign?.qualityScore || 0,
+        professionalScore: approvedDecision.professional.score,
         visualOrigin: requestedMode === 'generate' ? 'generated' : 'ready',
         note: approved.id === 'viral'
           ? 'اختار النظام النسخة الأعلى توقفاً لأن الفكرة تحتاج لحظة بصرية تسبق القراءة، مع الحفاظ على الوقار.'
@@ -3244,42 +3310,56 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         }
       }
       const positiveSemantic = visualSearchPlan.moods.some((mood) => ['bright', 'playful', 'energetic', 'optimistic', 'creative', 'warm', 'collaborative', 'curious', 'dynamic'].includes(mood))
-      const brightPalettes: PaletteId[] = ['scholar-blue', 'signal-ivory', 'warm-parchment', 'quiet-stone', 'brand-paper']
+      const brightPalettes: PaletteId[] = ['scholar-blue', 'signal-ivory', 'warm-parchment', 'quiet-stone', 'brand-paper', 'museum-red', 'electric-cobalt', 'emerald-sand', 'plum-lime']
       const pool: AutoPilotCandidate[] = []
       const visualSet = (options.visualSet || []).filter((item) => item?.passport?.dataUrl)
       for (const [presetIndex, preset] of AUTOPILOT_PRESETS.entries()) {
         const visualCandidate = visualSet.length ? visualSet[presetIndex % visualSet.length] : null
         const presetPassport = visualCandidate?.passport || passport
         const presetMetadata = visualCandidate?.metadata || sourceMeta
-        const effectiveLayout = presetMetadata?.layoutHint || preset.preferLayout
+        const effectiveLayout = parsed.preferLayout || presetMetadata?.layoutHint || preset.preferLayout
         const effectiveTreatment = presetMetadata?.imageTreatment || (positiveSemantic && preset.imageTreatment === 'cinematic' ? 'editorial' : preset.imageTreatment)
-        const effectivePalette = presetMetadata?.paletteHint || (positiveSemantic && PALETTES[preset.palette]?.isDark ? brightPalettes[presetIndex % brightPalettes.length] : preset.palette)
+        const effectivePalette = parsed.preferPalette || presetMetadata?.paletteHint || (positiveSemantic && PALETTES[preset.palette]?.isDark ? brightPalettes[presetIndex % brightPalettes.length] : preset.palette)
         let attempts = 0
         let winner: AutoPilotCandidate | null = null
-        while (attempts < 2 && !winner) {
+        while (attempts < 3 && !winner) {
           const result = generateSocialDesigns({
             text: parsed.content,
-            context: [expertContext, parsed.contextHint].filter(Boolean).join(' · '),
+            context: [expertContext, parsed.contextHint, parsed.audienceHint ? `الجمهور: ${parsed.audienceHint}` : '', parsed.timeZone ? `التوقيت: ${parsed.timeZone}` : ''].filter(Boolean).join(' · '),
             author: 'د. أحمد حسين الفيلكاوي',
-            tone: preset.tone,
-            density: preset.density,
-            platform: preset.platform ?? (parsed.platform || platform),
+            tone: parsed.tone || preset.tone,
+            density: parsed.density || (parsed.noBody ? 'minimal' : preset.density),
+            platform: parsed.platform || preset.platform || platform,
+            ...(parsed.format ? { format: parsed.format } : {}),
             count: 8,
             seed: `autopilot:${preset.id}:${text}:${context}:${nextGeneration}:${Date.now()}:${attempts}`,
             history: localHistory,
-            noveltyThreshold: .42,
+            noveltyThreshold: .5,
             tasteProfile,
             preferLayout: effectiveLayout,
+            preferPalette: effectivePalette,
           })
           const candidates = result.plans.map((plan) => {
             const withImage = presetPassport && effectiveTreatment ? buildImageLedPlan(plan, effectiveTreatment, presetPassport, presetMetadata, { treatment: effectiveTreatment, layout: effectiveLayout, palette: effectivePalette, ignoreServerStyle: false }) : { ...plan, layout: effectiveLayout, palette: effectivePalette }
             const quality = critiqueCompositionPlan(withImage, result.plans.filter((peer) => peer.id !== plan.id))
             const enriched = { ...withImage, quality }
             const stop = predictEngagement(enriched)
-            const worldScore = Math.round(quality.score * .62 + stop.score * .24 + enriched.novelty * 9 + (enriched.tasteAffinity || 0) * 5 + (presetPassport ? 3 : 0))
-            return { id: preset.id, label: preset.label, note: preset.note, plan: enriched, worldScore, qualityScore: quality.score, stopScore: stop.score }
+            const professional = professionalReleaseGate(enriched)
+            const worldScore = Math.round(quality.score * .35 + professional.score * .34 + stop.score * .17 + enriched.novelty * 9 + (enriched.tasteAffinity || 0) * 3 + (presetPassport ? 2 : 0))
+            return {
+              id: preset.id,
+              label: preset.label,
+              note: preset.note,
+              plan: enriched,
+              worldScore,
+              qualityScore: quality.score,
+              stopScore: stop.score,
+              professionalScore: professional.score,
+              professionalReady: professional.ready,
+            }
           }).sort((left, right) => right.worldScore - left.worldScore)
-          if (candidates[0]?.worldScore >= 85 || attempts === 1) winner = candidates[0] || null
+          const approvedCandidate = candidates.find((candidate) => candidate.professionalReady && candidate.worldScore >= 84)
+          if (approvedCandidate || attempts === 2) winner = approvedCandidate || candidates[0] || null
           attempts += 1
         }
         if (winner) pool.push(winner)
@@ -3289,12 +3369,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         if (distinct.every((item) => designSimilarity(item.plan, candidate.plan) < .72)) distinct.push(candidate)
         if (distinct.length === 5) break
       }
-      const finalPack = (distinct.length ? distinct : pool).slice(0, 5)
+      const professionalPool = distinct.filter((candidate) => candidate.professionalReady)
+      const finalPack = (professionalPool.length >= 3 ? professionalPool : distinct.length ? distinct : pool).slice(0, 5)
       const championPlans = finalPack.map((item, index) => ({
         ...item.plan,
         directionIndex: index + 1,
         directionLabel: `${item.label}`,
-        rationale: [`نسخة الطيار الآلي: ${item.note}`, `تقييم عالمي ${item.worldScore}٪ · جودة داخلية ${item.qualityScore}٪ · قوة توقف ${item.stopScore}٪.`, ...(item.plan.rationale || []).slice(0, 3)],
+        rationale: [`نسخة الطيار الآلي: ${item.note}`, `عين المصمم ${item.professionalScore}٪ · تقييم عالمي ${item.worldScore}٪ · جودة داخلية ${item.qualityScore}٪ · قوة توقف ${item.stopScore}٪.`, ...(item.plan.rationale || []).slice(0, 3)],
       }))
       const triptych = selectDistinctTriptych(championPlans)
       setPlans(triptych)
@@ -3309,8 +3390,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       if (!options.quiet) setNotice((visualSet.length > 0 || passport)
         ? visualSet.length > 1
           ? `بنى الطيار الآلي خمس نهايات من ${visualSet.length} مشاهد مولدة مستقلة، مع اختلاف الصورة والبنية واللون والمعالجة — لا ثيم واحد مكرر.`
-          : 'بنى الطيار الآلي خمس نهايات عالمية، اختار الصورة الأقوى تلقائياً، وأعاد المحاولة عند ضعف النسخة حتى خرج بأفضل عرض.'
-        : 'بنى الطيار الآلي خمس نهايات عالمية، وأعاد المحاولة داخلياً عند ضعف النسخة حتى رفع الجودة قدر الإمكان.')
+          : `بنى الطيار الآلي ${finalPack.length} نهايات عالمية، ورفض كل نتيجة لم تجتز عين المصمم ثم أعادها حتى ثلاث مرات.`
+        : `بنى الطيار الآلي ${finalPack.length} نهايات عالمية، ورفض النتائج العادية وأعاد البناء حتى ثلاث مرات.`)
       return finalPack
     } finally {
       setAutopilotBusy(false)
@@ -3690,7 +3771,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             <div className="rounded-[1.65rem] border border-hair bg-canvas p-3 shadow-[0_24px_70px_rgba(15,23,42,.08)]"><Preview plan={approvedPlan} className="w-full" /></div>
             <div className="grid content-start gap-4">
               <div><div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[.62rem] font-black uppercase tracking-[.12em] text-emerald-700">Approved by Zero-Decision</div><h3 className="mt-4 font-display text-3xl font-bold leading-tight text-ink">هذه هي النتيجة التي اعتمدها المخرج.</h3><p className="mt-3 text-[.82rem] leading-loose text-soft">{zeroDecision?.note || 'تم اختيارها بعد مقارنة الجودة وقوة التوقف والقراءة والأصالة وملاءمة الفكرة والجمهور.'}</p></div>
-              <div className="grid grid-cols-3 gap-2"><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{approvedPlan.quality?.score || 0}٪</strong><span className="text-[.62rem] text-soft">جودة التكوين</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{predictEngagement(approvedPlan).score}٪</strong><span className="text-[.62rem] text-soft">قوة التوقف</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{zeroDecision?.campaignQuality || campaign?.qualityScore || 0}٪</strong><span className="text-[.62rem] text-soft">جودة الحملة</span></div></div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" data-professional-visual-gate="true"><div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-center"><strong className="block font-display text-2xl text-emerald-700">{zeroDecision?.professionalScore || professionalReleaseGate(approvedPlan).score}٪</strong><span className="text-[.62rem] text-emerald-800">عين المصمم</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{approvedPlan.quality?.score || 0}٪</strong><span className="text-[.62rem] text-soft">جودة التكوين</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{predictEngagement(approvedPlan).score}٪</strong><span className="text-[.62rem] text-soft">قوة التوقف</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{zeroDecision?.campaignQuality || campaign?.qualityScore || 0}٪</strong><span className="text-[.62rem] text-soft">جودة الحملة</span></div></div>
               <div className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.66rem] font-bold text-accent">لماذا هذه النسخة؟</p><ul className="mt-2 grid gap-1.5">{approvedPlan.rationale.slice(0,4).map((line) => <li key={line} className="text-[.7rem] leading-relaxed text-ink/80">• {line}</li>)}</ul></div>
               <div className={`overflow-hidden rounded-2xl border p-4 ${approvedVisualOrigin === 'generated' ? 'border-violet-200 bg-[linear-gradient(135deg,rgba(124,58,237,.07),rgba(255,255,255,.7))]' : approvedVisualOrigin === 'ready' ? 'border-accent/25 bg-[linear-gradient(135deg,rgba(62,92,120,.07),rgba(255,255,255,.7))]' : 'border-hair bg-canvas'}`}>
                 <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.66rem] font-bold text-accent">هوية الصورة</p><h4 className="mt-1 text-[.88rem] font-bold text-ink">{approvedVisualOrigin === 'generated' ? 'مولدة من الصفر بالذكاء الاصطناعي' : approvedVisualOrigin === 'ready' ? 'صورة جاهزة منتقاة وموثقة' : 'تكوين بصري بلا صورة'}</h4><p className="mt-1.5 text-[.66rem] leading-relaxed text-soft">{approvedImageOwner || 'لا يوجد مالك خارجي'} · {approvedImageLicense || 'لا يوجد ترخيص خارجي'}</p></div><span className={`rounded-full px-3 py-1.5 text-[.6rem] font-black ${approvedVisualOrigin === 'generated' ? 'bg-violet-100 text-violet-700' : approvedVisualOrigin === 'ready' ? 'bg-accent/10 text-accent' : 'bg-paper text-soft'}`}>{approvedVisualOrigin === 'generated' ? 'AI GENERATED' : approvedVisualOrigin === 'ready' ? 'READY SOURCE' : 'TYPOGRAPHIC'}</span></div>

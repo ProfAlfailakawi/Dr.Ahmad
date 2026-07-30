@@ -154,6 +154,21 @@ service cloud.firestore {
       allow read, create, update, delete: if isAdmin();
     }
 
+    // الذاكرة التحريرية الشخصية: مصادر خاصة، أجندة فكرية، سلسلة الدليل، ومعمار الكتب.
+    // كلها admin-only ولا تدخل أي استعلام عام للموقع.
+    match /admin_source_desk/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+    match /admin_intellectual_agenda/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+    match /admin_content_intelligence/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+    match /admin_book_architecture/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
     // فهرس خاص بالتصاميم الكاملة المولدة؛ لا يظهر للعامة ولا يملكه إلا المشرف.
     match /admin_generated_designs/{id} {
       allow read, create, update, delete: if isAdmin();

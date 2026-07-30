@@ -1,4 +1,5 @@
 import type { IdeaDna } from './idea-dna'
+import type { AgendaAlignment, PersonalSourceMatch } from './editorial-memory'
 
 export type EditorialVerdict = 'write_now' | 'change_angle' | 'wait' | 'update_existing' | 'reject'
 export type EditorialSourceType = 'self' | 'friend' | 'colleague' | 'reader' | 'student' | 'meeting' | 'whatsapp' | 'encounter' | 'other'
@@ -105,6 +106,8 @@ export type EditorialBoardInput = {
   audienceEvidence: EditorialAudienceEvidence
   portfolioEvidence: EditorialPortfolioEvidence
   personalMode?: boolean
+  personalSourceMatches?: PersonalSourceMatch[]
+  agendaEvidence?: AgendaAlignment
   suggestedTitle: string
   calibrationProfile?: EditorialCalibrationProfile
   generatedAt?: string
@@ -113,7 +116,7 @@ export type EditorialBoardInput = {
 export type EditorialScore = number | null
 
 export type EditorialBoardDecision = {
-  version: 1 | 2
+  version: 1 | 2 | 3
   id: string
   fingerprint: string
   status: EditorialVerdict
@@ -135,6 +138,7 @@ export type EditorialBoardDecision = {
     identityFit: EditorialScore
     audienceInterest: EditorialScore
     articlePotential: EditorialScore
+    agendaAlignment: EditorialScore
   }
   why: string[]
   archiveCourt: {
@@ -153,6 +157,8 @@ export type EditorialBoardDecision = {
   }
   audienceRadar: EditorialAudienceEvidence
   portfolio: EditorialPortfolioEvidence
+  agenda: AgendaAlignment
+  personalSources: PersonalSourceMatch[]
   scoreEvidence: EditorialScoreEvidence[]
   scenarios: {
     preferred: EditorialScenario['id']
@@ -332,22 +338,27 @@ function buildEvidenceGate(input: EditorialBoardInput, timingScore: number | nul
   const strongPaper = input.archiveMaterials.find((item) => item.kind === 'paper' && item.score >= 35)
   const strongArchive = input.archiveMaterials.filter((item) => item.score >= 35).length
   const freshCurrent = input.currentEvents.find((item) => Number(item.relevance || 0) >= 4)
+  const activePersonalSource = (input.personalSourceMatches || []).find((item) => item.status === 'active' && item.score >= 24)
+  const riskyPersonalSource = (input.personalSourceMatches || []).find((item) => ['corrected', 'retracted', 'needs_review'].includes(item.status) && item.score >= 20)
   const strengths = unique([
     input.dna.evidence.score >= 62 ? `Idea DNA يقدّر قوة الدليل الأولي بـ${clamp(input.dna.evidence.score)}/100.` : '',
     strongPaper ? `يوجد بحث مرتبط في الأرشيف: «${strongPaper.title}».` : '',
+    activePersonalSource ? `لديك في مكتب المصادر مادة شخصية مرتبطة: «${activePersonalSource.title}».` : '',
     strongArchive >= 2 ? `يوجد ${strongArchive} مواد أرشيفية قريبة يمكن البناء عليها من دون بدء البحث من الصفر.` : '',
     freshCurrent ? `يوجد سياق راهن موثوق يمكن التحقق منه عبر «${freshCurrent.source}».` : '',
-  ], 5)
+  ], 6)
   const missing = unique([
     input.dna.evidence.score < 55 && !strongPaper ? 'دراسة حديثة أو مراجعة منهجية قبل تثبيت الادعاء المركزي.' : '',
     input.dna.time.mode === 'current' && !input.currentContextAvailable ? 'تحقق راهن من الحدث أو التطور الذي يجعل المقال مناسباً الآن.' : '',
     input.dna.depth.score >= 68 && !strongPaper && strongArchive < 2 ? 'مصدر أكاديمي أو مادة أصلية إضافية تناسب عمق الأطروحة.' : '',
     input.similarity.highest >= .45 && !input.archiveMaterials.some((item) => item.kind === 'article') ? 'المقال السابق الأقرب حتى يمكن تحديد ما يجب ألا يتكرر بدقة.' : '',
-  ], 5)
+    riskyPersonalSource ? `راجع حالة المصدر الشخصي «${riskyPersonalSource.title}» قبل استخدامه؛ حالته الحالية ${riskyPersonalSource.status === 'retracted' ? 'منسحب' : riskyPersonalSource.status === 'corrected' ? 'مصحح' : 'تحتاج مراجعة'}.` : '',
+  ], 6)
   const evidenceStrength = mean([
     clamp(input.dna.evidence.score),
     strongPaper ? Math.min(92, 64 + strongPaper.score / 3) : null,
     strongArchive ? Math.min(82, 48 + strongArchive * 8) : null,
+    activePersonalSource ? Math.min(90, 55 + activePersonalSource.score * .35) : null,
     input.currentContextAvailable && timingScore != null ? Math.min(88, 45 + timingScore * .45) : null,
   ])
   const ready = missing.length === 0
@@ -463,7 +474,8 @@ function buildScoreEvidence(
         scores.identityFit == null ? '' : `ملاءمة الهوية ${scores.identityFit}/100.`,
         scores.timing == null ? '' : `التوقيت ${scores.timing}/100.`,
         input.portfolioEvidence.strategicNeedScore == null ? '' : `حاجة المحفظة ${input.portfolioEvidence.strategicNeedScore}/100.`,
-      ], 5),
+        input.agendaEvidence?.score == null ? '' : `اتساق الأجندة الفكرية ${input.agendaEvidence.score}/100.`,
+      ], 6),
     },
     {
       key: 'novelty', label: 'الجِدة بالنسبة لأرشيفك', value: scores.novelty,
@@ -577,6 +589,7 @@ function planFor(input: EditorialBoardInput, verdict: EditorialVerdict, gap: Ret
     input.currentEvents.length ? `المصدر الراهن الأقوى: ${input.currentEvents[0].source} — للتحقق من السياق لا لبناء المقال كله على الترند.` : '',
     !input.personalMode && input.audienceEvidence.messageMatches.length ? 'استخدم إشارة الجمهور كمؤشر حاجة فقط، من دون نقل أي رسالة أو بيانات شخصية.' : '',
     input.graphMatches.some((item) => item.kind === 'paper') ? 'راجع البحث المرتبط في الأرشيف قبل صياغة الفقرة الأكاديمية.' : '',
+    (input.personalSourceMatches || []).find((item) => item.status === 'active' && item.score >= 24) ? `ارجع إلى المصدر الشخصي «${(input.personalSourceMatches || []).find((item) => item.status === 'active' && item.score >= 24)?.title}» قبل تثبيت الأطروحة.` : '',
   ])
   return {
     primaryTitle,
@@ -620,12 +633,14 @@ export function buildEditorialBoardDecision(input: EditorialBoardInput): Editori
     identity,
     timing.score,
     input.portfolioEvidence.strategicNeedScore,
+    input.agendaEvidence?.score ?? null,
   ])
   const strengthRaw = mean([
     articlePotentialRaw,
     identity,
     timing.score,
     input.portfolioEvidence.strategicNeedScore,
+    input.agendaEvidence?.score ?? null,
   ])
   // حلقة المعايرة لا تدّعي تعلماً آلياً: لا تبدأ قبل ثلاث نتائج فعلية،
   // ولا يسمح لها بتغيير أي درجة بأكثر من 8 نقاط حتى لا يطغى الأداء التاريخي
@@ -653,9 +668,11 @@ export function buildEditorialBoardDecision(input: EditorialBoardInput): Editori
     identity == null ? 'لا توجد بيانات كافية لدرجة ملاءمة الهوية.' : `خريطة المعرفة أعطت ملاءمة ${identity}٪ بناءً على صلات حقيقية بين المقالات والكتب والأبحاث.`,
     timing.explanation,
     input.portfolioEvidence.explanation,
+    input.agendaEvidence?.explanation || '',
+    (input.personalSourceMatches || []).length ? `وجد مكتب المصادر الشخصي ${(input.personalSourceMatches || []).length} مادة مرتبطة يمكن العودة إليها؛ لم تُحسب أي مادة منسحبة كدليل قوي.` : '',
     !input.personalMode ? input.audienceEvidence.explanation : '',
     verdict === 'update_existing' && nearestArticle ? `الأقرب «${nearestArticle.title}» قريب بما يكفي لأن يكون تحديثه أفضل من تقسيم الفكرة.` : '',
-  ], 6)
+  ], 8)
   const waitingRoom = verdict === 'wait' ? {
     reason: timing.score != null && timing.score < 35 ? 'الفكرة قابلة للحياة، لكن لا توجد نافذة نشر قوية الآن.' : 'الفكرة تحتاج إشارة خارجية أو دليلاً إضافياً قبل استهلاكها في مقال.',
     trigger: input.dna.evidence.score < 58 ? 'ارجع إليها عند ظهور دراسة جديدة موثوقة أو تغير واضح في السياق الحالي.' : 'ارجع إليها عند ظهور حدث أو تطور يجعل الزاوية الحالية ضرورية لا اختيارية.',
@@ -666,11 +683,12 @@ export function buildEditorialBoardDecision(input: EditorialBoardInput): Editori
     !input.currentContextAvailable ? 'السياق الحالي لم يدخل في الدرجة لأن الرادار لم يكن متاحاً.' : '',
     input.personalMode ? 'مجلس التحرير في الوضع الشخصي: لا يستخدم ردود الجمهور أو رسائلهم في القرار.' : (!input.audienceEvidence.available ? 'لا توجد بيانات جمهور كافية؛ لم تُخترع درجة اهتمام.' : ''),
     !input.graphMatches.length ? 'لم تُرجع خريطة المعرفة صلة كافية؛ اعتمد المجلس على فحص التشابه والأرشيف المباشر.' : '',
+    !input.agendaEvidence?.available ? 'لا توجد أجندة فكرية خاصة بعد؛ لم يخترع المجلس اتجاهاً استراتيجياً نيابةً عنك.' : '',
     calibration ? `عُيّرت الدرجات تدريجياً من ${calibration.sampleSize} نتيجة منشورة سابقة، وبحد أقصى ±8 نقاط؛ هذه معايرة أداء وليست Machine Learning.` : '',
   ])
   const fingerprint = `editorial-${hash(`${normalize(input.idea)}::${input.sourceMode}::${normalize(input.sourceContext || '')}`)}`
   return {
-    version: 2,
+    version: 3,
     id: `${fingerprint}-${hash(generatedAt)}`,
     fingerprint,
     status: verdict,
@@ -692,6 +710,7 @@ export function buildEditorialBoardDecision(input: EditorialBoardInput): Editori
       identityFit: identity,
       audienceInterest: input.personalMode ? null : input.audienceEvidence.score,
       articlePotential,
+      agendaAlignment: input.agendaEvidence?.score ?? null,
     },
     why,
     archiveCourt: {
@@ -716,6 +735,8 @@ export function buildEditorialBoardDecision(input: EditorialBoardInput): Editori
       ? { available: false, score: null, messageMatches: [], readingMatches: [], explanation: 'الوضع الشخصي لا يستخدم بيانات الجمهور.' }
       : input.audienceEvidence,
     portfolio: input.portfolioEvidence,
+    agenda: input.agendaEvidence || { available: false, score: null, matches: [], explanation: 'لم تُحدّد أجندة فكرية خاصة بعد.' },
+    personalSources: (input.personalSourceMatches || []).slice(0, 6),
     scoreEvidence,
     scenarios,
     evidenceGate,

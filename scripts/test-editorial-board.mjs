@@ -197,7 +197,7 @@ test('17) no regression في استوديو النشر الحالي', () => {
 
 test('18) بصمة الدليل قابلة للتدقيق ولا تحتوي درجة جمهور', () => {
   const result = board.buildEditorialBoardDecision(input())
-  assert.equal(result.version, 2)
+  assert.equal(result.version, 3)
   assert.deepEqual(result.scoreEvidence.map((row) => row.key), ['strength', 'novelty', 'repetitionRisk', 'timing', 'identityFit', 'articlePotential'])
   assert.ok(result.scoreEvidence.every((row) => Array.isArray(row.signals)))
   assert.match(studio, /data-editorial-evidence-trace="true"/)
@@ -216,6 +216,7 @@ test('20) وعي المحفظة الفكرية يدخل القرار من الأ
   assert.equal(result.portfolio.strategicNeedScore, 66)
   assert.match(result.why.join(' '), /المحفظة/)
   assert.match(studio, /data-editorial-portfolio="true"/)
+  assert.match(studio, /data-editorial-personal-context="true"/)
   assert.match(studio, /حاجة المحفظة لهذا الاتجاه/)
 })
 
@@ -243,6 +244,21 @@ test('22) الأداة شخصية بالكامل ولا تقرأ messages أو v
   assert.doesNotMatch(runBlock, /collection\([^\n]*['"](?:messages|views)['"]/, 'لا يجوز استدعاء بيانات جمهور في مجلس التحرير الشخصي')
 })
 
+test('23) الأجندة الفكرية الخاصة تدخل القرار دون اختراع درجة عند غيابها', () => {
+  const withAgenda = board.buildEditorialBoardDecision(input({ agendaEvidence: { available: true, score: 82, matches: [{ id: 'agenda-1', title: 'استقلالية المتعلم', note: 'حدود تفويض القرار', status: 'writing', priority: 5, score: 82 }], explanation: 'الفكرة تخدم اتجاهاً فكرياً حدده المالك.' } }))
+  assert.equal(withAgenda.scores.agendaAlignment, 82)
+  assert.equal(withAgenda.agenda.available, true)
+  const withoutAgenda = board.buildEditorialBoardDecision(input({ agendaEvidence: undefined }))
+  assert.equal(withoutAgenda.scores.agendaAlignment, null)
+})
+
+test('24) المصادر الشخصية تقوي الدليل الفعّال وتمنع الثقة بالمصدر المسحوب', () => {
+  const active = board.buildEditorialBoardDecision(input({ personalSourceMatches: [{ id: 's1', title: 'دراسة محفوظة', kind: 'doi', status: 'active', score: 78, reference: '10.1000/example', summary: 'دليل مباشر', linkedArticles: [], linkedBooks: [], linkedPapers: [] }] }))
+  assert.equal(active.personalSources[0]?.status, 'active')
+  const retracted = board.buildEditorialBoardDecision(input({ personalSourceMatches: [{ id: 's2', title: 'دراسة مسحوبة', kind: 'doi', status: 'retracted', score: 78, reference: '10.1000/retracted', summary: 'مصدر غير صالح للاعتماد', linkedArticles: [], linkedBooks: [], linkedPapers: [] }] }))
+  assert.ok(retracted.evidenceGate.missing.some((line) => /مسحوب|منسحب|مراجعة/.test(line)))
+})
+
 // حلقة المعايرة: لا تؤثر قبل وجود عينة كافية، ثم تُحَدّ بثماني نقاط فقط.
 const baseline = board.buildEditorialBoardDecision(input())
 const calibrated = board.buildEditorialBoardDecision(input({ calibrationProfile: { sampleSize: 4, strengthBias: 8, articlePotentialBias: -8 } }))
@@ -251,4 +267,4 @@ assert.equal(calibrated.scores.articlePotential, Math.max(0, baseline.scores.art
 assert.match(calibrated.dataNotes.join(' '), /معايرة أداء وليست Machine Learning/)
 
 rmSync(out, { recursive: true, force: true })
-console.log(`Editorial board decision intelligence: ${tests.length}/22 passed`)
+console.log(`Editorial board decision intelligence: ${tests.length}/${tests.length} passed`)

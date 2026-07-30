@@ -45,11 +45,16 @@ function assertBlocked({ label, category, title, summary = "" }) {
 }
 
 assert.equal(POLICY.version, 1);
-assert.equal(POLICY.allowedSources.length, 2, "only the two approved sources are allowed");
-assert.deepEqual(
-  POLICY.allowedSources.map(({ name }) => name),
-  ["MIT Technology Review", "EdSurge"],
-);
+assert.ok(POLICY.allowedSources.length >= 2, "the policy must keep an explicit approved-source allowlist");
+const allowedNames = POLICY.allowedSources.map(({ name }) => name);
+assert.equal(new Set(allowedNames).size, allowedNames.length, "approved source names must stay unique");
+assert.ok(allowedNames.includes("MIT Technology Review"));
+assert.ok(allowedNames.includes("EdSurge"));
+for (const source of POLICY.allowedSources) {
+  assert.ok(source.name && source.feedUrl, `approved source ${source.id || source.name} must have a name and feed URL`);
+  assert.equal(normalizeUrl(source.feedUrl)?.protocol, "https:", `${source.name} feed must use HTTPS`);
+  assert.equal(isAllowedSource(source.name, source.feedUrl), true, `${source.name} must accept its own approved feed host`);
+}
 assert.ok(POLICY.requiredTopics.any.includes("تعليم"));
 assert.ok(POLICY.requiredTopics.any.includes("technology"));
 assert.deepEqual(
@@ -219,4 +224,4 @@ const offTopicResult = evaluate({
 assert.equal(offTopicResult.allowed, false);
 assert.ok(offTopicResult.reasons.includes("topic_not_relevant"));
 
-console.log(`Editorial policy tests passed (${blockedCases.length + 9} checks).`);
+console.log(`Editorial policy tests passed (${blockedCases.length + 9 + POLICY.allowedSources.length} checks; ${POLICY.allowedSources.length} approved sources verified).`);

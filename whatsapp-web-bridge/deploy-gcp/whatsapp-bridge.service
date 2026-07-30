@@ -10,9 +10,8 @@ Type=simple
 User=bridge
 WorkingDirectory=/opt/dr-bridge/app
 RuntimeDirectory=dr-bridge
-ExecStartPre=/opt/dr-bridge/prestart.sh
-ExecStart=/usr/bin/node /opt/dr-bridge/app/service-runner.mjs
-EnvironmentFile=/run/dr-bridge/env
+# (أُدمج التحضير داخل start.sh)
+ExecStart=/opt/dr-bridge/start.sh
 Environment=WHATSAPP_MAIN_SERVER_URL=https://dr-alfailakawi.com
 Environment=WHATSAPP_BRIDGE_DEVICE_ID=primary
 Environment=WHATSAPP_BRIDGE_DEVICE_NAME=Dr Ahmad WhatsApp Bridge (Cloud)

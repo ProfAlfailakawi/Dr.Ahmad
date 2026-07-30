@@ -1671,6 +1671,100 @@ const paintInkVeil: Painter = (s) => {
   return { defs, markup: [inkWord, drops, stack, identityFooter(s, { mode: 'center' })].join('') }
 }
 
+/** ١٦ — كوكبة عصبية: عقدٌ ووصلاتٌ تُحسب حتمياً من بذرة التصميم، ومسارٌ واحد
+    مضيء يحمل الفكرة عبر الشبكة — لغة أستاذ الذكاء الاصطناعي بلا أيقونات مبتذلة. */
+const paintNeuralConstellation: Painter = (s) => {
+  const { palette: p, w, h, min, uid } = s
+  const seed = uid.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)
+  const pseudo = (index: number) => {
+    const value = Math.sin(seed * 7919 + index * 104729) * 43758.5453
+    return value - Math.floor(value)
+  }
+  const nodes = Array.from({ length: 14 }, (_, index) => ({
+    x: w * (.06 + pseudo(index) * .42),
+    y: h * (.14 + pseudo(index + 40) * .7),
+    r: min * (.0045 + pseudo(index + 80) * .006),
+  }))
+  const edges: string[] = []
+  for (let index = 0; index < nodes.length; index += 1) {
+    const from = nodes[index]
+    const neighbors = nodes
+      .map((candidate, candidateIndex) => ({ candidateIndex, distance: Math.hypot(candidate.x - from.x, candidate.y - from.y) }))
+      .filter((row) => row.candidateIndex !== index)
+      .sort((left, right) => left.distance - right.distance)
+      .slice(0, 2)
+    for (const neighbor of neighbors) {
+      if (neighbor.candidateIndex > index) {
+        const to = nodes[neighbor.candidateIndex]
+        edges.push(`<line x1="${round(from.x)}" y1="${round(from.y)}" x2="${round(to.x)}" y2="${round(to.y)}" stroke="${p.rule}" stroke-width="1" opacity=".55"/>`)
+      }
+    }
+  }
+  const pathNodes = [...nodes].sort((left, right) => left.y - right.y).filter((_, index) => index % 3 === 0).slice(0, 4)
+  const glowPath = pathNodes.map((node, index) => `${index === 0 ? 'M' : 'L'} ${round(node.x)} ${round(node.y)}`).join(' ')
+  const constellation = [
+    ...edges,
+    `<path d="${glowPath}" fill="none" stroke="${p.accent}" stroke-width="${round(min * .006)}" opacity=".2" stroke-linecap="round"/>`,
+    `<path d="${glowPath}" fill="none" stroke="${p.accent}" stroke-width="2" opacity=".9" stroke-linecap="round"/>`,
+    ...nodes.map((node) => `<circle cx="${round(node.x)}" cy="${round(node.y)}" r="${round(node.r)}" fill="${p.accentSoft}" stroke="${p.rule}" stroke-width="1"/>`),
+    ...pathNodes.map((node) => `<circle cx="${round(node.x)}" cy="${round(node.y)}" r="${round(node.r * 1.7)}" fill="${p.accent}"/>`),
+  ].join('')
+  const zoneW = w * .46
+  const title = fitTitle(s, zoneW, { base: min * .062 })
+  const body = fitBody(s, zoneW * .92, { maxLines: 3 })
+  const stack = drawStack([
+    kickerItem(s),
+    textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: p.ink, weight: 700, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent, gap: min * .04 }),
+    ruleItem(s, { gap: min * .045 }),
+    textItem({ lines: body.lines, x: w - s.safeX, size: body.size, fill: p.muted, weight: 400, family: s.bodyFamily, lineHeight: 1.6, gap: min * .05 }),
+    ctaItem(s, { gap: min * .055 }),
+    carouselItem(s),
+  ], contentBand(s), .34)
+  return { markup: [constellation, stack, identityFooter(s)].join('') }
+}
+
+/** ١٧ — زخرفة السيليكون: النجمة الثمانية تُرسم مساراتِ دوائرَ إلكترونية
+    بلحاماتها وانعطافاتها المتعامدة — التراث الهندسي بلغة الرقاقة. */
+const paintSiliconArabesque: Painter = (s) => {
+  const { palette: p, w, h, min, uid } = s
+  const seed = uid.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)
+  const cx = w * .25
+  const cy = h * (s.isTall ? .3 : .36)
+  const R = min * .17
+  const rings = [
+    `<path d="${octagramPath(cx, cy, R, R * .42)}" fill="none" stroke="${p.accent}" stroke-width="1.8" opacity=".9"/>`,
+    `<path d="${octagramPath(cx, cy, R * .72, R * .3)}" fill="none" stroke="${p.rule}" stroke-width="1.2" opacity=".85"/>`,
+    `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(R * .16)}" fill="none" stroke="${p.accent}" stroke-width="1.6"/>`,
+    `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(min * .006)}" fill="${p.accent}"/>`,
+  ].join('')
+  const traces: string[] = []
+  for (let index = 0; index < 6; index += 1) {
+    const angle = (index * Math.PI) / 3 - Math.PI / 2 + ((seed % 8) * Math.PI) / 64
+    const startX = cx + Math.cos(angle) * R
+    const startY = cy + Math.sin(angle) * R
+    const bendX = startX + Math.cos(angle) * min * (.06 + (index % 3) * .03)
+    const bendY = startY + Math.sin(angle) * min * (.06 + (index % 3) * .03)
+    const endY = bendY + (bendY > cy ? 1 : -1) * min * (.05 + ((seed >>> index) % 4) * .02)
+    traces.push(
+      `<path d="M ${round(startX)} ${round(startY)} L ${round(bendX)} ${round(bendY)} L ${round(bendX)} ${round(endY)}" fill="none" stroke="${p.accent}" stroke-width="1.3" opacity=".8"/>`,
+      `<rect x="${round(bendX - min * .004)}" y="${round(bendY - min * .004)}" width="${round(min * .008)}" height="${round(min * .008)}" fill="${p.accentSoft}" stroke="${p.accent}" stroke-width="1"/>`,
+      `<circle cx="${round(bendX)}" cy="${round(endY)}" r="${round(min * .006)}" fill="${p.accentSoft}" stroke="${p.accent}" stroke-width="1.2"/>`,
+    )
+  }
+  const zoneW = w * .48
+  const title = fitTitle(s, zoneW, { base: min * .063 })
+  const body = fitBody(s, zoneW * .9, { maxLines: 3 })
+  const stack = drawStack([
+    kickerItem(s),
+    textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: p.ink, weight: 700, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent, gap: min * .04 }),
+    ruleItem(s, { gap: min * .045 }),
+    textItem({ lines: body.lines, x: w - s.safeX, size: body.size, fill: p.muted, weight: 400, family: s.bodyFamily, lineHeight: 1.6, gap: min * .05 }),
+    ctaItem(s, { gap: min * .055 }),
+    carouselItem(s),
+  ], contentBand(s), .36)
+  return { markup: [rings, traces.join(''), stack, identityFooter(s)].join('') }
+}
+
 const PAINTERS: Record<CompositionPlan['layout'], Painter> = {
   'editorial-axis': paintEditorialAxis,
   'hero-word': paintHeroWord,
@@ -1687,6 +1781,8 @@ const PAINTERS: Record<CompositionPlan['layout'], Painter> = {
   infographic: paintInfographic,
   'sadu-weave': paintSaduWeave,
   'ink-veil': paintInkVeil,
+  'neural-constellation': paintNeuralConstellation,
+  'silicon-arabesque': paintSiliconArabesque,
 }
 
 /* ------------------------------------------------------------------ */
@@ -1831,7 +1927,7 @@ export function renderCompositionSvg(plan: CompositionPlan, options: RenderSvgOp
   const s = sceneOf(plan)
   const glow = plan.layout === 'hero-word' || plan.layout === 'quiet-orbit' || plan.layout === 'ink-veil' ? 'center'
     : plan.layout === 'quote-stage' || plan.layout === 'human-note' ? 'top-right'
-      : plan.layout === 'cinematic-window' || plan.layout === 'sadu-weave' ? 'none'
+      : plan.layout === 'cinematic-window' || plan.layout === 'sadu-weave' || plan.layout === 'neural-constellation' ? 'none'
         : 'top-left'
   const bg = backdrop(s, { glow })
   const heroImage = plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background' && item.src)

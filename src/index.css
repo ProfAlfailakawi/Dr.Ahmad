@@ -1506,6 +1506,25 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
   }
   .archive-dialogue-rail > * { display: flex; align-self: stretch; }
   .archive-dialogue-rail article { width: 100%; min-height: 100%; touch-action: pan-x pan-y; }
+  /* الكتب حالة مختلفة عن سكك المقالات: مجموعة محدودة تُقارن بصرياً، لذلك
+     كرتان متجاوران على الهاتف أسرع في المسح ولا يخفيان بقية المؤلفات خلف سحب أفقي. */
+  .content-books .mobile-card-rail {
+    display: grid !important;
+    direction: rtl;
+    width: 100%;
+    max-width: none;
+    margin-inline: auto;
+    padding: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 1rem .85rem !important;
+    overflow: visible !important;
+  }
+  .content-books .mobile-card-rail > * {
+    width: auto;
+    min-width: 0;
+    flex: initial;
+  }
+
   .mobile-card-rail::-webkit-scrollbar,
   .mobile-paired-grid::-webkit-scrollbar { display: none; }
   .mobile-card-rail > *,
@@ -3129,13 +3148,35 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
 }
 
 /* ============================================================
-   وضع السكينة — قراءةٌ كأنها ورقة: كل شيء يغيب إلا النص
+   وضع السكينة — قراءة مستقلة: ورق كريمي أو داكن كامل
    ============================================================ */
+html.serenity-mode.serenity-sepia {
+  --c-canvas: 246 240 226;
+  --c-ink: 50 44 36;
+  --c-soft: 105 91 74;
+  --c-accent: 112 83 55;
+  --c-accent-deep: 88 63 42;
+  --c-wash: 239 231 214;
+  --c-hair: rgba(74, 59, 43, .13);
+  color-scheme: light;
+}
+
+html.serenity-mode.serenity-dark {
+  --c-canvas: 7 9 12;
+  --c-ink: 230 229 224;
+  --c-soft: 159 164 171;
+  --c-accent: 145 177 205;
+  --c-accent-deep: 180 203 223;
+  --c-wash: 13 16 20;
+  --c-hair: rgba(236, 238, 240, .11);
+  color-scheme: dark;
+}
+
 html.serenity-mode .site-nav,
 html.serenity-mode .site-footer,
 html.serenity-mode .floating-actions,
 html.serenity-mode .persistent-audio-dock,
-/* الخط المتحرك جميل في كل الموقع — إلا في السكينة (أمر الدكتور): يسكن معها */
+/* الخط المتحرك جميل في كل الموقع — إلا في السكينة: يسكن معها */
 html.serenity-mode .site-scroll-progress,
 html.serenity-mode .serenity-hide {
   display: none !important;
@@ -3148,29 +3189,85 @@ html.serenity-mode .article-journey article {
 html.serenity-mode body {
   background: rgb(var(--c-canvas));
 }
+html.serenity-mode body::before { display: none; }
 
-.serenity-exit {
+.serenity-controls {
   position: fixed;
-  bottom: calc(1.4rem + env(safe-area-inset-bottom));
-  left: 50%;
+  inset-inline-start: 50%;
+  bottom: calc(1.2rem + env(safe-area-inset-bottom));
   translate: -50% 0;
   z-index: 300;
-  padding: .62rem 1.5rem;
-  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  width: max-content;
+  max-width: calc(100vw - 1.5rem);
+  padding: .35rem;
   border: 1px solid rgb(var(--c-hair));
-  background: rgb(var(--c-canvas) / .94);
-  color: rgb(var(--c-soft));
-  font-size: .78rem;
-  font-weight: 600;
-  backdrop-filter: blur(8px);
-  opacity: .82;
-  transition: opacity .25s var(--E), color .25s var(--E), border-color .25s var(--E);
+  border-radius: 999px;
+  background: rgb(var(--c-canvas) / .92);
+  box-shadow: 0 16px 45px -26px rgb(var(--c-ink) / .5);
+  -webkit-backdrop-filter: blur(12px) saturate(1.15);
+  backdrop-filter: blur(12px) saturate(1.15);
 }
 
+.serenity-surface-switch {
+  display: flex;
+  align-items: center;
+  gap: .2rem;
+  padding: .18rem;
+  border-radius: 999px;
+  background: rgb(var(--c-wash));
+}
+
+.serenity-surface-switch button,
+.serenity-exit {
+  min-height: 2.25rem;
+  border-radius: 999px;
+  color: rgb(var(--c-soft));
+  font-size: .72rem;
+  font-weight: 600;
+  transition: color .22s var(--E), background-color .22s var(--E), border-color .22s var(--E), opacity .22s var(--E);
+}
+
+.serenity-surface-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: .42rem;
+  padding: .42rem .78rem;
+}
+
+.serenity-surface-switch button.is-active {
+  background: rgb(var(--c-canvas));
+  color: rgb(var(--c-ink));
+  box-shadow: 0 1px 0 rgb(var(--c-ink) / .04), 0 5px 14px -10px rgb(var(--c-ink) / .45);
+}
+
+.serenity-swatch {
+  display: inline-block;
+  width: .7rem;
+  height: .7rem;
+  border: 1px solid rgb(var(--c-ink) / .16);
+  border-radius: 50%;
+}
+.serenity-swatch--sepia { background: #eee2c8; }
+.serenity-swatch--dark { background: #090b0e; border-color: rgba(255,255,255,.22); }
+
+.serenity-exit {
+  padding: .42rem .82rem;
+  border: 1px solid transparent;
+  opacity: .78;
+}
 .serenity-exit:hover {
   opacity: 1;
   color: rgb(var(--c-accent));
-  border-color: rgb(var(--c-accent) / .5);
+  border-color: rgb(var(--c-accent) / .35);
+}
+
+@media (max-width: 420px) {
+  .serenity-controls { bottom: calc(.75rem + env(safe-area-inset-bottom)); }
+  .serenity-surface-switch button { padding-inline: .62rem; font-size: .68rem; }
+  .serenity-exit { padding-inline: .68rem; }
 }
 
 /* توقيع الختام — يظهر بهدوء حين يبلغ القارئ نهاية النص */

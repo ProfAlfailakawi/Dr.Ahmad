@@ -70,12 +70,19 @@ ok(home.includes('archive-editorial-cover') && home.includes("item.kind === 'pap
 ok(home.includes('home-idea-thread-line') && home.includes('<i /><i /><i /><i />'), 'خيط الفكرة موجود كصلة بصرية هادئة بين المحطات')
 ok(!home.includes('function QuietEnding()') && !home.includes('الخاتمة الهادئة') && !home.includes('يفتح طريقاً إلى الفكرة'), 'الخاتمة الهادئة محذوفة بالكامل من الرئيسية')
 ok(!homeExperience.includes('الخاتمة الهادئة') && !homeExperience.includes('يفتح طريقاً إلى الفكرة'), 'لا توجد نسخة قديمة مخفية من الخاتمة الهادئة')
+const publications = read('src/pages/Publications.tsx')
+const stylesheetForBooks = read('src/index.css')
+ok(publications.includes('grid-cols-2') && home.includes('grid-cols-2') && stylesheetForBooks.includes('.content-books .mobile-card-rail') && stylesheetForBooks.includes('grid-template-columns: repeat(2, minmax(0, 1fr))'), 'الكتب تبقى كرتين متجاورين فعلياً على الهاتف في الرئيسية وصفحة المؤلفات')
 
 console.log('\nStudio generation library')
 ok(firestore.includes('match /admin_generated_assets/{id}') && firestore.includes('match /admin_generated_designs/{id}'), 'Firestore يفهرس الصور والتصاميم المولدة للمشرف فقط')
 ok(storage.includes('match /admin-generated/{fileName}') && storage.includes('match /admin-generated-designs/{fileName}'), 'Storage يحفظ أصول الصور وJSON التصميم الكامل في مساحات خاصة')
 const storageDeployStart = workflow.indexOf('# Storage يخدم مكتبة التوليد')
-const storageDeployEnd = workflow.indexOf('- name: Deploy to Firebase Hosting live')
+// لا نمدّ الفحص حتى Hosting؛ بينهما نشر Cloud Run المتعمد أن يفشل بصوت عالٍ
+// عند غياب credentials. المطلوب هنا حصراً: Storage الإداري نفسه لا يسقط الموقع.
+const cloudRunDeployStart = workflow.indexOf('# الواجهة و /api/**', storageDeployStart)
+const hostingDeployStart = workflow.indexOf('- name: Deploy to Firebase Hosting live', storageDeployStart)
+const storageDeployEnd = cloudRunDeployStart > storageDeployStart ? cloudRunDeployStart : hostingDeployStart
 const storageDeployBlock = workflow.slice(storageDeployStart, storageDeployEnd)
 ok(storageDeployStart > -1 && storageDeployEnd > storageDeployStart
   && storageDeployBlock.includes('Generation Library Storage unavailable')
@@ -219,6 +226,25 @@ ok(instructions.includes('مشروعاً') && instructions.includes('ممدوح�
   const shareAt = articleDetail.indexOf('<Share compact title={a.title}')
   ok(lifeAt >= 0 && studentAt > lifeAt && shareAt > studentAt, 'ترتيب نهاية المقال: حياة الفكرة ← للطلاب والباحثين ← المشاركة')
   ok(!articleDetail.includes('compactLabel="استشهاد"') && articleDetail.includes('aria-label="فتح المصدر الأصلي"') && articleDetail.includes('<CiteButton compact'), 'أدوات المصدر والاستشهاد أيقونات فقط مع أسماء وصول واضحة كما اعتمدت الواجهة الجديدة')
+}
+
+
+console.log('\nFirst-visit onboarding + Serenity reading surfaces')
+{
+  const onboarding = read('src/components/FirstVisitOnboarding.tsx')
+  const homePage = read('src/pages/Home.tsx')
+  const articleDetail = read('src/pages/ArticleDetail.tsx')
+  const stylesheet = read('src/index.css')
+  ok(homePage.includes('<FirstVisitOnboarding />')
+    && onboarding.includes("site:first-visit-onboarding:seen")
+    && onboarding.includes('ابدأ التصفح')
+    && onboarding.includes('حياة الفكرة')
+    && onboarding.includes('اسأل المكتبة'), 'الترحيب التفاعلي يظهر من الرئيسية مرة واحدة ويكشف قدرات الموقع غير الظاهرة بلا تحويله إلى إعلان')
+  ok(articleDetail.includes("reader:serenity-surface")
+    && articleDetail.includes("serenitySurface === 'sepia'")
+    && articleDetail.includes("serenitySurface === 'dark'")
+    && stylesheet.includes('html.serenity-mode.serenity-sepia')
+    && stylesheet.includes('html.serenity-mode.serenity-dark'), 'وضع السكينة يبدّل محلياً بين الورق الكريمي والداكن الكامل من دون تغيير ثيم الموقع الأساسي')
 }
 
 console.log('\nAll requested polish guards passed.')

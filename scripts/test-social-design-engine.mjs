@@ -7,6 +7,9 @@ import ts from 'typescript'
 const sourcePath = resolve('src/lib/social-design-engine.ts')
 const source = await readFile(sourcePath, 'utf8')
 const studioSource = await readFile(resolve('src/components/admin/SocialDesignStudio.tsx'), 'utf8')
+const rendererSource = await readFile(resolve('src/lib/social-design-renderer.ts'), 'utf8')
+const publishingSource = await readFile(resolve('src/components/admin/PublishingStudio.tsx'), 'utf8')
+const visualDnaSource = await readFile(resolve('src/lib/visual-dna.ts'), 'utf8')
 const glossaryPath = resolve('src/lib/dr-ahmad-domain-glossary.ts')
 const glossaryJson = await readFile(resolve('src/data/dr-ahmad-domain-glossary.json'), 'utf8')
 const glossarySource = (await readFile(glossaryPath, 'utf8'))
@@ -18,6 +21,16 @@ const glossaryCompiled = ts.transpileModule(glossarySource, {
 })
 assert.equal((glossaryCompiled.diagnostics || []).filter((item) => item.category === ts.DiagnosticCategory.Error).length, 0, 'قاموس التخصص يجب أن يترجم بلا أخطاء')
 const glossaryDataUrl = `data:text/javascript;base64,${Buffer.from(glossaryCompiled.outputText).toString('base64')}`
+const ideaDnaPath = resolve('src/lib/idea-dna.ts')
+const ideaDnaSource = await readFile(ideaDnaPath, 'utf8')
+const ideaDnaCompiled = ts.transpileModule(ideaDnaSource, {
+  compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.ES2020, strict: true },
+  reportDiagnostics: true,
+  fileName: ideaDnaPath,
+})
+assert.equal((ideaDnaCompiled.diagnostics || []).filter((item) => item.category === ts.DiagnosticCategory.Error).length, 0, 'بصمة الفكرة يجب أن تترجم بلا أخطاء')
+const ideaDnaOutput = ideaDnaCompiled.outputText.replace('./dr-ahmad-domain-glossary', glossaryDataUrl)
+const ideaDnaDataUrl = `data:text/javascript;base64,${Buffer.from(ideaDnaOutput).toString('base64')}`
 const compiled = ts.transpileModule(source, {
   compilerOptions: {
     target: ts.ScriptTarget.ES2020,
@@ -29,7 +42,9 @@ const compiled = ts.transpileModule(source, {
 })
 const diagnostics = compiled.diagnostics || []
 assert.equal(diagnostics.filter((item) => item.category === ts.DiagnosticCategory.Error).length, 0, 'المحرك يجب أن يترجم بلا أخطاء')
-const engineOutput = compiled.outputText.replace('./dr-ahmad-domain-glossary', glossaryDataUrl)
+const engineOutput = compiled.outputText
+  .replace('./dr-ahmad-domain-glossary', glossaryDataUrl)
+  .replace('./idea-dna', ideaDnaDataUrl)
 const engine = await import(`data:text/javascript;base64,${Buffer.from(engineOutput).toString('base64')}`)
 
 const virtualReality = engine.analyzeSocialContent('الواقع الافتراضي')
@@ -87,6 +102,11 @@ const paletteDirected = engine.generateSocialDesigns({
 assert.ok(paletteDirected.plans.every((plan) => plan.palette === 'electric-cobalt'), 'أمر اللون الصريح يجب أن يحكم كل الاتجاهات')
 const shortBriefDirections = engine.generateSocialDesigns({ text: 'فكرة قصيرة تستحق أن تُقال الآن', seed: 'short-brief-directions' })
 assert.ok(shortBriefDirections.plans.length >= 3, 'حتى العبارة القصيرة يجب أن تمنح المخرج ثلاث رؤى قابلة للمقارنة')
+
+assert.equal(engine.TYPOGRAPHY_MODES['studio-clean']?.displayFamily, 'Tajawal', 'المنشور المستقل يملك وجهاً عربياً نظيفاً مستقلاً عن El Messiri')
+const standaloneTypography = engine.generateSocialDesigns({ ...request, seed: 'standalone-clean-type', preferTypography: 'studio-clean' })
+assert.ok(standaloneTypography.plans.every((plan) => plan.typography === 'studio-clean'), 'المخرج المستقل يفرض الخط العربي النظيف على كل الرؤى')
+assert.ok(publishingSource.includes("preferTypography: 'studio-clean'"), 'مسار المنشور المستقل نفسه يطلب الخط الجديد صراحةً')
 
 const withHistory = engine.generateSocialDesigns({
   ...request,
@@ -159,13 +179,16 @@ assert.equal(campaign.ready, true, 'لا تُصدّر الحملة قبل اجت
 assert.deepEqual(campaign.warnings, [])
 assert.ok(studioSource.includes('TASTE_LEDGER_KEY'), 'ذاكرة الذوق تمنع تكرار التنزيل من تضخيم نفس الاختيار')
 assert.ok(studioSource.includes('previousSignal === signal'), 'الإشارة المكررة لا تضاعف وزن التصميم')
+assert.ok(studioSource.includes('اسم المؤلف / التوقيع') && studioSource.includes('المصدر / النطاق') && studioSource.includes('إخفاء المصدر'), 'المحرر المباشر يتيح تعديل أو إخفاء النصوص الثانوية والهوية')
+assert.ok(rendererSource.includes('sourceHidden') && rendererSource.includes('authorHidden') && rendererSource.includes('s.source ? textBlock'), 'الرسم النهائي يحترم إخفاء التوقيع والمصدر ولا يعيد نصاً ثابتاً')
+assert.ok(visualDnaSource.includes('contrast(candidate, background) < 4.5'), 'البصمة البصرية تفرض تبايناً عملياً أقوى مع الخلفية')
 
 console.log(JSON.stringify({
   ok: true,
   engineVersion: engine.SOCIAL_DESIGN_ENGINE_VERSION,
-  cases: 36,
+  cases: 42,
   generatedDirections: first.plans.length,
   uniqueLayouts: audit.uniqueLayouts,
   carouselSlides: long.structure.slides.length,
-  guards: ['domain-glossary-bridge', 'arabic-analysis', 'compound-phrase-brief', 'explicit-palette-sovereignty', 'kuwait-timezone', 'deterministic-output', 'real-layout-diversity', 'history-novelty', 'lock-semantics', 'format-transform', 'contrast-and-overflow-audit', 'visual-critic', 'professional-release-gate', 'rendered-line-fit', 'taste-memory', 'taste-deduplication', 'campaign-release-gate', 'campaign-coherence', 'campaign-diversity'],
+  guards: ['domain-glossary-bridge', 'arabic-analysis', 'compound-phrase-brief', 'explicit-palette-sovereignty', 'kuwait-timezone', 'deterministic-output', 'real-layout-diversity', 'history-novelty', 'lock-semantics', 'format-transform', 'contrast-and-overflow-audit', 'visual-critic', 'professional-release-gate', 'rendered-line-fit', 'taste-memory', 'taste-deduplication', 'campaign-release-gate', 'campaign-coherence', 'campaign-diversity', 'standalone-clean-typography', 'editable-secondary-text', 'image-derived-contrast'],
 }, null, 2))

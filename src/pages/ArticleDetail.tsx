@@ -693,15 +693,26 @@ export default function ArticleDetail() {
     rememberIdeaVisit({ slug: a.slug, title: a.title, cat: a.cat, excerpt: a.excerpt, body: a.body || staticBody })
   }, [a, staticBody])
 
-  /* وضع السكينة: زرٌّ واحد يُغيّب كل شيء إلا النص — قراءةٌ كأنها ورقة.
-     Escape أو زر الخروج يعيد الصفحة كما كانت، ومغادرة المقال تنهيه تلقائياً. */
+  /* وضع السكينة: يعزل النص عن الموقع، لكن لا يفرض مزاجاً واحداً على العين.
+     الورق الكريمي والداكن الكامل طبقتان محليتان لهذا الوضع فقط؛ ثيم الموقع
+     الأساسي يبقى كما كان فور الخروج. */
   const [serenity, setSerenity] = useState(false)
+  const [serenitySurface, setSerenitySurface] = useState<'sepia' | 'dark'>(() => {
+    if (typeof window === 'undefined') return 'sepia'
+    try { return localStorage.getItem('reader:serenity-surface') === 'dark' ? 'dark' : 'sepia' } catch { return 'sepia' }
+  })
   useEffect(() => {
     const root = document.documentElement
-    if (serenity) root.classList.add('serenity-mode')
-    else root.classList.remove('serenity-mode')
-    return () => root.classList.remove('serenity-mode')
-  }, [serenity])
+    root.classList.toggle('serenity-mode', serenity)
+    root.classList.toggle('serenity-sepia', serenity && serenitySurface === 'sepia')
+    root.classList.toggle('serenity-dark', serenity && serenitySurface === 'dark')
+    if (serenity) {
+      try { localStorage.setItem('reader:serenity-surface', serenitySurface) } catch { /* noop */ }
+    }
+    return () => {
+      root.classList.remove('serenity-mode', 'serenity-sepia', 'serenity-dark')
+    }
+  }, [serenity, serenitySurface])
   useEffect(() => {
     if (!serenity) return
     const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setSerenity(false) }
@@ -897,9 +908,19 @@ export default function ArticleDetail() {
       </article>
 
       {serenity && (
-        <button type="button" onClick={() => setSerenity(false)} className="serenity-exit" aria-label="الخروج من وضع السكينة">
-          خروج من السكينة
-        </button>
+        <div className="serenity-controls" role="group" aria-label="إعدادات وضع السكينة">
+          <div className="serenity-surface-switch" role="radiogroup" aria-label="مظهر القراءة">
+            <button type="button" role="radio" aria-checked={serenitySurface === 'sepia'} onClick={() => setSerenitySurface('sepia')} className={serenitySurface === 'sepia' ? 'is-active' : ''}>
+              <span aria-hidden className="serenity-swatch serenity-swatch--sepia" />
+              ورق كريمي
+            </button>
+            <button type="button" role="radio" aria-checked={serenitySurface === 'dark'} onClick={() => setSerenitySurface('dark')} className={serenitySurface === 'dark' ? 'is-active' : ''}>
+              <span aria-hidden className="serenity-swatch serenity-swatch--dark" />
+              داكن
+            </button>
+          </div>
+          <button type="button" onClick={() => setSerenity(false)} className="serenity-exit" aria-label="الخروج من وضع السكينة">خروج</button>
+        </div>
       )}
     </Page>
   )

@@ -71,6 +71,8 @@ export type StudioStyleRoute =
   | 'architectural'
   | 'evidence'
   | 'poetic'
+  | 'heritage'
+  | 'calligraphic'
 
 export type SocialPlatform =
   | 'instagram'
@@ -110,6 +112,8 @@ export type LayoutFamilyId =
   | 'human-note'
   | 'modular-brief'
   | 'infographic'
+  | 'sadu-weave'
+  | 'ink-veil'
 
 /** الاتجاهات الفنية للإنفوجرافيك — تُنتقى تلقائياً أو يختارها الدكتور يدوياً. */
 export type InfographicVariantId = 'rail' | 'ordinal' | 'cards' | 'timeline' | 'ring' | 'spotlight'
@@ -179,6 +183,9 @@ export type PaletteId =
   | 'electric-cobalt'
   | 'emerald-sand'
   | 'plum-lime'
+  | 'sadu-loom'
+  | 'majlis-teal'
+  | 'saffron-shadow'
 
 export type SlideRole = 'cover' | 'context' | 'insight' | 'evidence' | 'question' | 'action' | 'closing'
 
@@ -440,7 +447,7 @@ export type OverlayBlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 's
 export type OverlayImageFit = 'cover' | 'contain'
 export type OverlayMask = 'none' | 'rounded' | 'circle'
 export type OverlayImageRole = 'foreground' | 'background'
-export type OverlayImageTreatment = 'none' | 'cinematic' | 'documentary' | 'duotone' | 'editorial'
+export type OverlayImageTreatment = 'none' | 'cinematic' | 'documentary' | 'duotone' | 'editorial' | 'arch-scrim' | 'split-canvas'
 export type OverlayTextZone = 'right' | 'left' | 'top' | 'bottom' | 'center'
 
 export interface PlanOverlay {
@@ -594,6 +601,8 @@ const COMMAND_STYLE_ROUTES: [RegExp, StudioStyleRoute, LayoutFamilyId, ContentTo
   [/(?:^|\s)(?:معماري|هندسي\s+فاخر|architectural)(?:\s|$)/i, 'architectural', 'dual-thesis', 'luxury', 'balanced', 'معماري فاخر'],
   [/(?:^|\s)(?:برهاني|بياني|مبني\s+على\s+البيانات|data-led)(?:\s|$)/i, 'evidence', 'evidence-ledger', 'academic', 'rich', 'برهاني معرفي'],
   [/(?:^|\s)(?:شاعري|تأملي|poetic)(?:\s|$)/i, 'poetic', 'quiet-orbit', 'deep', 'minimal', 'شاعري تأملي'],
+  [/(?:^|\s)(?:سدو|تراثي|كويتي\s+الروح|نول|بدوي|هوية\s+كويتية|هويه\s+كويتيه)(?:\s|$)/, 'heritage', 'sadu-weave', 'luxury', 'balanced', 'تراثي كويتي — نول السدو'],
+  [/(?:^|\s)(?:خطي|خط\s+عربي|حبر|كاليغرافي|خطاط[ةه]?|calligraphy)(?:\s|$)/i, 'calligraphic', 'ink-veil', 'bold', 'minimal', 'نَفَس الحبر — خط عربي'],
 ]
 
 const COMMAND_PALETTES: [RegExp, PaletteId, string][] = [
@@ -603,6 +612,9 @@ const COMMAND_PALETTES: [RegExp, PaletteId, string][] = [
   [/(?:^|\s)(?:بلون|باللون|بألوان|بالوان|لوحة\s+ألوان)\s+(?:بنفسجي|برقوقي)(?:\s+(?:وليموني|وفوسفوري))?(?:\s|$)/, 'plum-lime', 'برقوقي وليموني'],
   [/(?:^|\s)(?:بلون|باللون|بألوان|بالوان|لوحة\s+ألوان)\s+(?:أسود|اسود)\s+(?:وذهبي|مع\s+ذهبي)(?:\s|$)/, 'graphite-gold', 'جرافيت وذهبي'],
   [/(?:^|\s)(?:بلون|باللون|بألوان|بالوان|لوحة\s+ألوان)\s+(?:أزرق|ازرق)(?:\s|$)/, 'scholar-blue', 'أزرق باحث'],
+  [/(?:^|\s)(?:بلون|باللون|بألوان|بالوان|لوحة\s+ألوان)\s+(?:فيروزي|فيروز|تركواز|تيفاني)(?:\s|$)/, 'majlis-teal', 'فيروز الديوانية'],
+  [/(?:^|\s)(?:بلون|باللون|بألوان|بالوان|لوحة\s+ألوان)\s+(?:زعفراني|زعفران|ذهبي\s+داكن|عنبري)(?:\s|$)/, 'saffron-shadow', 'زعفران وظل'],
+  [/(?:^|\s)(?:بلون|باللون|بألوان|بالوان|لوحة\s+ألوان)\s+(?:رملي|صحراوي|سدو)(?:\s|$)/, 'sadu-loom', 'نول السدو'],
 ]
 
 const COMMAND_OPENERS = /^\s*(?:أبي|ابي|أبغى|ابغى|ابغي|أبا|ابا|أريد|اريد|بغيت|ودي|سوّ لي|سو لي|سوي لي|سويلي|صمم لي|صمملي|اصنع لي|اعمل لي|اعطني|عطني)\s+/
@@ -803,6 +815,8 @@ export const LAYOUT_FAMILIES: Record<LayoutFamilyId, LayoutFamily> = {
   'human-note': { id: 'human-note', label: 'الملاحظة الإنسانية', description: 'ورقة شخصية راقية وهوامش لينة لصوت إنساني قريب.', idealKinds: ['quote', 'recommendation', 'consultation', 'impression-card'], idealTones: ['human', 'calm', 'inspiring'], preferredDensities: ['minimal', 'balanced'], textBias: 'quote', decorationBudget: 1 },
   'modular-brief': { id: 'modular-brief', label: 'الملخص المركب', description: 'وحدات متفاوتة المقاس تختصر إعلاناً أو معرفة كثيفة من دون تكديس.', idealKinds: ['course', 'consultation', 'book', 'research', 'information', 'linkedin-post'], idealTones: ['institutional', 'academic', 'promotional', 'formal'], preferredDensities: ['balanced', 'rich'], textBias: 'body', decorationBudget: 2 },
   infographic: { id: 'infographic', label: 'إنفوجرافيك معلوماتي', description: 'عنوان ثم رقم/إحصاءة بارزة وثلاث إلى خمس نقاط مرقّمة بعمود فهرسي هادئ — للمعلومة المركّبة والقائمة.', idealKinds: ['statistic', 'summary', 'information', 'research', 'knowledge-design', 'carousel'], idealTones: ['institutional', 'academic', 'formal', 'media'], preferredDensities: ['balanced', 'rich'], textBias: 'data', decorationBudget: 2 },
+  'sadu-weave': { id: 'sadu-weave', label: 'نول السدو', description: 'هوية كويتية معاصرة: حزامان منسوجان من مثلثات السدو يؤطران الفكرة، وقارٌ تراثي لا يشبه أحداً.', idealKinds: ['core-idea', 'quote', 'announcement', 'impression-card', 'book', 'invitation'], idealTones: ['luxury', 'human', 'deep', 'formal', 'inspiring'], preferredDensities: ['minimal', 'balanced'], textBias: 'title', decorationBudget: 3 },
+  'ink-veil': { id: 'ink-veil', label: 'نَفَس الحبر', description: 'كلمة واحدة بحبرٍ ضخم يتنفس خلف العنوان — بلاغة الخطّ العربي بروح معاصرة وتكثيف صارم.', idealKinds: ['quote', 'core-idea', 'provocative-question', 'impression-card', 'reel-cover'], idealTones: ['bold', 'deep', 'intellectual', 'luxury'], preferredDensities: ['minimal'], textBias: 'title', decorationBudget: 2 },
 }
 
 export const TYPOGRAPHY_MODES: Record<TypographyModeId, TypographyMode> = {
@@ -875,6 +889,9 @@ export const PALETTES: Record<PaletteId, Palette> = {
   'electric-cobalt': { id: 'electric-cobalt', label: 'كوبالت كهربائي', background: '#F0F3FF', surface: '#FFFFFF', ink: '#111A38', muted: '#536184', accent: '#1645CE', accentSoft: '#DCE4FF', rule: '#C9D3F0', isDark: false },
   'emerald-sand': { id: 'emerald-sand', label: 'زمرد ورمل', background: '#F2F1E7', surface: '#FEFCF5', ink: '#14251F', muted: '#526A61', accent: '#176A54', accentSoft: '#CFE5DC', rule: '#CBD6D0', isDark: false },
   'plum-lime': { id: 'plum-lime', label: 'برقوق وليمون', background: '#211525', surface: '#2E1D33', ink: '#FAF4ED', muted: '#D2C1D2', accent: '#D5EF6A', accentSoft: '#414628', rule: '#5A425E', isDark: true },
+  'sadu-loom': { id: 'sadu-loom', label: 'نول السدو', background: '#F4EDE1', surface: '#FBF7EE', ink: '#231A14', muted: '#7A6A57', accent: '#A5342A', accentSoft: '#E9D5C4', rule: '#D8C6AE', isDark: false },
+  'majlis-teal': { id: 'majlis-teal', label: 'فيروز الديوانية', background: '#0F2B2E', surface: '#16393D', ink: '#F2EFE6', muted: '#A9BDBB', accent: '#4FB3A9', accentSoft: '#1E4A4C', rule: '#2A5457', isDark: true },
+  'saffron-shadow': { id: 'saffron-shadow', label: 'زعفران وظل', background: '#221C14', surface: '#2C251A', ink: '#F7F1E4', muted: '#C4B79F', accent: '#E0A93E', accentSoft: '#453923', rule: '#4A4130', isDark: true },
 }
 
 /** اللوحة الفعلية للتصميم: البصمة البصرية المرفوعة إن وُجدت، وإلا لوحة الهوية المختارة. */
@@ -1468,6 +1485,8 @@ const SPATIAL_BY_LAYOUT: Record<LayoutFamilyId, readonly SpatialPatternId[]> = {
   'human-note': ['asymmetric-air', 'right-rail', 'layered-depth'],
   'modular-brief': ['modular-grid', 'right-rail', 'split-balance'],
   infographic: ['modular-grid', 'topographic-stack', 'right-rail'],
+  'sadu-weave': ['centered-monument', 'low-horizon', 'right-rail'],
+  'ink-veil': ['centered-monument', 'asymmetric-air', 'low-horizon'],
 }
 
 const ACCENT_BY_LAYOUT: Record<LayoutFamilyId, readonly AccentStrategyId[]> = {
@@ -1484,6 +1503,8 @@ const ACCENT_BY_LAYOUT: Record<LayoutFamilyId, readonly AccentStrategyId[]> = {
   'human-note': ['paper-note', 'quiet-seal', 'single-rule'],
   'modular-brief': ['data-marker', 'corner-signal', 'editorial-index'],
   infographic: ['data-marker', 'editorial-index', 'single-rule'],
+  'sadu-weave': ['quiet-seal', 'single-rule', 'none'],
+  'ink-veil': ['hero-keyword', 'none', 'single-rule'],
 }
 
 const FRAME_BY_LAYOUT: Record<LayoutFamilyId, readonly FramingModeId[]> = {
@@ -1500,25 +1521,27 @@ const FRAME_BY_LAYOUT: Record<LayoutFamilyId, readonly FramingModeId[]> = {
   'human-note': ['floating-sheet', 'open-canvas', 'editorial-folio'],
   'modular-brief': ['hairline-inset', 'corner-marks', 'floating-sheet'],
   infographic: ['hairline-inset', 'corner-marks', 'editorial-folio'],
+  'sadu-weave': ['full-bleed', 'open-canvas', 'hairline-inset'],
+  'ink-veil': ['open-canvas', 'full-bleed', 'cinematic-crop'],
 }
 
 const PALETTE_BY_TONE: Record<ContentTone, readonly PaletteId[]> = {
-  formal: ['brand-paper', 'ink-white', 'scholar-blue', 'quiet-stone', 'electric-cobalt'],
+  formal: ['brand-paper', 'ink-white', 'scholar-blue', 'quiet-stone', 'electric-cobalt', 'sadu-loom'],
   institutional: ['scholar-blue', 'brand-paper', 'brand-night', 'quiet-stone', 'emerald-sand'],
-  luxury: ['graphite-gold', 'signal-ivory', 'brand-night', 'warm-parchment', 'plum-lime'],
-  human: ['warm-parchment', 'brand-paper', 'signal-ivory', 'quiet-stone', 'museum-red'],
+  luxury: ['graphite-gold', 'signal-ivory', 'brand-night', 'warm-parchment', 'plum-lime', 'sadu-loom', 'saffron-shadow'],
+  human: ['warm-parchment', 'brand-paper', 'signal-ivory', 'quiet-stone', 'museum-red', 'sadu-loom'],
   inspiring: ['signal-ivory', 'electric-cobalt', 'emerald-sand', 'scholar-blue', 'brand-paper'],
-  deep: ['brand-night', 'graphite-gold', 'plum-lime', 'warm-parchment', 'ink-white'],
-  bold: ['brand-night', 'plum-lime', 'museum-red', 'electric-cobalt', 'graphite-gold'],
-  calm: ['quiet-stone', 'brand-paper', 'warm-parchment', 'emerald-sand', 'ink-white'],
+  deep: ['brand-night', 'graphite-gold', 'plum-lime', 'warm-parchment', 'ink-white', 'majlis-teal', 'saffron-shadow'],
+  bold: ['brand-night', 'plum-lime', 'museum-red', 'electric-cobalt', 'graphite-gold', 'saffron-shadow'],
+  calm: ['quiet-stone', 'brand-paper', 'warm-parchment', 'emerald-sand', 'ink-white', 'majlis-teal'],
   academic: ['scholar-blue', 'ink-white', 'brand-paper', 'electric-cobalt', 'brand-night'],
   media: ['brand-night', 'electric-cobalt', 'museum-red', 'scholar-blue', 'ink-white'],
   promotional: ['museum-red', 'electric-cobalt', 'brand-paper', 'brand-night', 'signal-ivory'],
-  intellectual: ['brand-paper', 'ink-white', 'brand-night', 'emerald-sand', 'warm-parchment'],
+  intellectual: ['brand-paper', 'ink-white', 'brand-night', 'emerald-sand', 'warm-parchment', 'majlis-teal'],
 }
 
 const DIRECTION_LABELS: Record<LayoutFamilyId, string> = {
-  'editorial-axis': 'تحريرية صافية', 'hero-word': 'كلمة تقود المشهد', 'quote-stage': 'اقتباس يتنفس', 'dual-thesis': 'مواجهة فكرية', 'evidence-ledger': 'الدليل أولاً', 'event-marquee': 'واجهة إعلامية', 'knowledge-map': 'خريطة المعنى', 'quiet-orbit': 'مدار هادئ', 'chapter-stack': 'فصول متتابعة', 'cinematic-window': 'غلاف سينمائي', 'human-note': 'صوت إنساني', 'modular-brief': 'ملخص مؤسسي', infographic: 'إنفوجرافيك مرقّم',
+  'editorial-axis': 'تحريرية صافية', 'hero-word': 'كلمة تقود المشهد', 'quote-stage': 'اقتباس يتنفس', 'dual-thesis': 'مواجهة فكرية', 'evidence-ledger': 'الدليل أولاً', 'event-marquee': 'واجهة إعلامية', 'knowledge-map': 'خريطة المعنى', 'quiet-orbit': 'مدار هادئ', 'chapter-stack': 'فصول متتابعة', 'cinematic-window': 'غلاف سينمائي', 'human-note': 'صوت إنساني', 'modular-brief': 'ملخص مؤسسي', infographic: 'إنفوجرافيك مرقّم', 'sadu-weave': 'نول السدو', 'ink-veil': 'نفَس الحبر',
 }
 
 const platformFormats = (platform: SocialPlatform) => (Object.values(SOCIAL_FORMATS) as SocialFormatSpec[]).filter((format) => format.platform === platform)
@@ -1919,13 +1942,20 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
   // وعد الزر يُنفَّذ حرفياً: إن طلب المستخدم عائلة بعينها ولم تصعد بجودتها،
   // نصعد أقوى مرشح منها إلى الصدارة بدل أن يضيع الطلب في فرز الجودة العام.
   if (request.preferLayout && !plans.some((plan) => plan.layout === request.preferLayout)) {
-    const champion = [...finalists, ...candidatePool]
+    /* مظلة الوعد تشمل كل المرشحين المفحوصين لا الناجين فقط: عائلةٌ جديدة قد
+       يقسو عليها الناقد بدرجة دون العتبة فتختفي من الصدارة رغم طلبها الصريح. */
+    const champion = [...finalists, ...candidatePool, ...critiqued]
       .filter((plan) => plan.layout === request.preferLayout)
       .sort((left, right) => (right.quality?.score || 0) - (left.quality?.score || 0))[0]
     if (champion) {
       const enriched = { ...champion, quality: critiqueCompositionPlan(champion, finalists), tasteAffinity: tasteAffinity(request.tasteProfile, champion) }
       plans = [enriched, ...plans.filter((plan) => plan.fingerprint !== enriched.fingerprint)].slice(0, visibleCount)
     }
+  }
+  /* والمطلوب صراحةً يتصدر العرض لا يتذيله: أول ما يراه الدكتور هو ما طلبه،
+     وتبقى بقية الاتجاهات حوله للمقارنة. */
+  if (request.preferLayout && plans.some((plan) => plan.layout === request.preferLayout)) {
+    plans = [...plans.filter((plan) => plan.layout === request.preferLayout), ...plans.filter((plan) => plan.layout !== request.preferLayout)]
   }
   plans = plans.map((plan, index) => ({ ...plan, directionIndex: index + 1 }))
   if (plans.some((plan) => plan.novelty < noveltyThreshold)) warnings.push('السجل البصري كثيف؛ اختير أبعد تكوين ممكن مع المحافظة على ملاءمة النص.')

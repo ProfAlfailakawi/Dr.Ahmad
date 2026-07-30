@@ -1603,6 +1603,74 @@ const paintInfographic: Painter = (s) => {
   return { defs: infoDefs, markup: [stack, identityFooter(s, variant === 'spotlight' ? { mode: 'center' } : {})].join('') }
 }
 
+/** ١٤ — نول السدو: حزامان منسوجان من مثلثات السدو الكويتي يحرسان الفكرة —
+    هوية خليجية معاصرة إجرائية بالكامل (لا صور، لا خطوط زخرفية جاهزة)، فلا
+    تتكرر نسجةٌ بين تصميمين لاختلاف المقاس واللوحة والإيقاع. */
+const paintSaduWeave: Painter = (s) => {
+  const { palette: p, w, h, min } = s
+  const rowH = Math.max(9, min * .021)
+  const unit = rowH * 2
+  const cols = Math.ceil(w / unit) + 1
+  const tris = (y: number, flip: boolean) => {
+    let d = ''
+    for (let i = 0; i < cols; i += 1) {
+      const x0 = i * unit
+      d += flip
+        ? `M ${round(x0)} ${round(y)} L ${round(x0 + unit / 2)} ${round(y + rowH)} L ${round(x0 + unit)} ${round(y)} Z `
+        : `M ${round(x0)} ${round(y + rowH)} L ${round(x0 + unit / 2)} ${round(y)} L ${round(x0 + unit)} ${round(y + rowH)} Z `
+    }
+    return d
+  }
+  const weaveH = rowH * 3.95
+  const band = (top: number) => [
+    `<line x1="0" y1="${round(top - rowH * .7)}" x2="${w}" y2="${round(top - rowH * .7)}" stroke="${p.rule}" stroke-width="1.2" opacity=".9"/>`,
+    `<path d="${tris(top, false)}" fill="${p.accent}"/>`,
+    `<path d="${tris(top + rowH * 1.3, true)}" fill="${p.ink}" opacity="${p.isDark ? .5 : .82}"/>`,
+    `<path d="${tris(top + rowH * 2.6, false)}" fill="${p.accentSoft}"/>`,
+    `<line x1="0" y1="${round(top + weaveH + rowH * .35)}" x2="${w}" y2="${round(top + weaveH + rowH * .35)}" stroke="${p.rule}" stroke-width="1.2" opacity=".9"/>`,
+  ].join('')
+  const topBandY = s.safeY * .85
+  const bottomBandY = h - s.safeY - weaveH - min * .052
+  const title = fitTitle(s, w * .74, { base: min * .069 })
+  const body = fitBody(s, w * .58, { maxLines: 3 })
+  const stack = drawStack([
+    kickerItem(s, { x: w / 2, anchor: 'middle' }),
+    textItem({ lines: title.lines, x: w / 2, size: title.size, fill: p.ink, weight: 700, anchor: 'middle', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent, gap: min * .045 }),
+    ruleItem(s, { x: w / 2, anchor: 'middle', width: min * .09, gap: min * .04 }),
+    textItem({ lines: body.lines, x: w / 2, size: body.size, fill: p.muted, weight: 400, anchor: 'middle', family: s.bodyFamily, lineHeight: 1.6, gap: min * .05 }),
+    ctaItem(s, { align: 'center', gap: min * .055 }),
+    carouselItem(s),
+  ], contentBand(s), .46)
+  return { markup: [band(topBandY), band(bottomBandY), stack, identityFooter(s, { mode: 'center' })].join('') }
+}
+
+/** ١٥ — نَفَس الحبر: الكلمة الأقوى بحبرٍ ممتلئ يتنفس خلف العنوان عبر إزاحة
+    اضطرابية حتمية (بذرتها من بصمة الخطة نفسها)، فلكل تصميم نزفُ حبرٍ يخصّه. */
+const paintInkVeil: Painter = (s) => {
+  const { palette: p, w, h, min, uid } = s
+  const hero = s.hero || [...words(s.titleText)].sort((a, b) => b.length - a.length)[0] || ''
+  const seed = uid.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)
+  const filterId = `${uid}-inkbleed`
+  const defs = `<filter id="${filterId}" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="${round(.008 + (seed % 5) * .002)}" numOctaves="2" seed="${seed % 97}" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="${round(min * .015)}"/></filter>`
+  const heroSize = Math.min(min * .5, (w * 1.02) / Math.max(1, textUnits(hero) * .555))
+  const inkWord = `<g filter="url(#${filterId})" opacity="${p.isDark ? .22 : .12}">${textBlock({ lines: [hero], x: w / 2, y: h * (s.isTall ? .33 : .39), size: heroSize, fill: p.ink, anchor: 'middle', family: 'Alexandria Variable', weight: 800 })}</g>`
+  const drops = [
+    `<circle cx="${round(w * (.14 + (seed % 7) * .09))}" cy="${round(h * .14)}" r="${round(min * .011)}" fill="${p.accent}" filter="url(#${filterId})" opacity=".5"/>`,
+    `<circle cx="${round(w * .84)}" cy="${round(h * .82)}" r="${round(min * .007)}" fill="${p.ink}" filter="url(#${filterId})" opacity=".4"/>`,
+  ].join('')
+  const title = fitTitle(s, w * .76, { base: min * .067 })
+  const body = fitBody(s, w * .58, { maxLines: 2 })
+  const stack = drawStack([
+    kickerItem(s, { x: w / 2, anchor: 'middle' }),
+    textItem({ lines: title.lines, x: w / 2, size: title.size, fill: p.ink, weight: 800, anchor: 'middle', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: hero, emphasisFill: p.accent, gap: min * .05 }),
+    ruleItem(s, { x: w / 2, anchor: 'middle', width: min * .06, gap: min * .034 }),
+    textItem({ lines: body.lines, x: w / 2, size: body.size, fill: p.muted, weight: 400, anchor: 'middle', family: s.bodyFamily, lineHeight: 1.6, gap: min * .05 }),
+    ctaItem(s, { align: 'center', gap: min * .06 }),
+    carouselItem(s),
+  ], contentBand(s), .5)
+  return { defs, markup: [inkWord, drops, stack, identityFooter(s, { mode: 'center' })].join('') }
+}
+
 const PAINTERS: Record<CompositionPlan['layout'], Painter> = {
   'editorial-axis': paintEditorialAxis,
   'hero-word': paintHeroWord,
@@ -1617,6 +1685,8 @@ const PAINTERS: Record<CompositionPlan['layout'], Painter> = {
   'human-note': paintHumanNote,
   'modular-brief': paintModularBrief,
   infographic: paintInfographic,
+  'sadu-weave': paintSaduWeave,
+  'ink-veil': paintInkVeil,
 }
 
 /* ------------------------------------------------------------------ */
@@ -1657,7 +1727,7 @@ function imageUnderlayLayer(s: Scene) {
     const alignX = focusX < .34 ? 'xMin' : focusX > .66 ? 'xMax' : 'xMid'
     const alignY = focusY < .34 ? 'YMin' : focusY > .66 ? 'YMax' : 'YMid'
     const preserve = `${alignX}${alignY} slice`
-    const saturation = treatment === 'documentary' ? .82 : treatment === 'editorial' ? .62 : treatment === 'duotone' ? .18 : treatment === 'none' ? 1 : .48
+    const saturation = treatment === 'documentary' ? .82 : treatment === 'editorial' ? .62 : treatment === 'duotone' ? .18 : treatment === 'none' ? 1 : treatment === 'arch-scrim' ? .58 : treatment === 'split-canvas' ? .76 : .48
     const contrast = treatment === 'none' ? 1 : treatment === 'documentary' ? 1.06 : 1.16
     const filterId = `${id}-filter`
     definitions.push(`<filter id="${filterId}" x="-10%" y="-10%" width="120%" height="120%"><feColorMatrix type="saturate" values="${round(saturation)}"/><feComponentTransfer><feFuncR type="linear" slope="${round(contrast)}" intercept="${round((1 - contrast) / 2)}"/><feFuncG type="linear" slope="${round(contrast)}" intercept="${round((1 - contrast) / 2)}"/><feFuncB type="linear" slope="${round(contrast)}" intercept="${round((1 - contrast) / 2)}"/></feComponentTransfer></filter>`)
@@ -1679,6 +1749,32 @@ function imageUnderlayLayer(s: Scene) {
     definitions.push(`<radialGradient id="${vignetteId}" cx="50%" cy="44%" r="72%"><stop offset="48%" stop-color="#000000" stop-opacity="0"/><stop offset="100%" stop-color="#000000" stop-opacity="${round(vignette)}"/></radialGradient>`)
     const opacity = clamp(overlay.opacity ?? 1, .1, 1)
     const tint = treatment === 'duotone' ? `<rect width="${w}" height="${h}" fill="${p.accent}" opacity=".22" style="mix-blend-mode:color"/>` : ''
+    /* معالجتان تُخرجان الصورة من فخّ «صورة خلف نص»:
+       - قوس المحراب (arch-scrim): الصورة كاملة، ولوحٌ مقوّس بلون الخلفية يحتضن
+         منطقة النص كأن الكلام في محرابٍ يطل على المشهد.
+       - نصفا اللوحة (split-canvas): الصورة تسكن نصفاً وتترك للنص نصفاً صريحاً
+         بفاصل شعري وعقدتين — إخراج معارض لا ملصق. */
+    const minWH = Math.min(w, h)
+    if (treatment === 'arch-scrim') {
+      const textRight = textZone !== 'left'
+      const panelW = w * .52
+      const px = textRight ? w - panelW : 0
+      const r = panelW / 2
+      const capY = h * .17 + r
+      const panelPath = `M ${round(px)} ${h} L ${round(px)} ${round(capY)} A ${round(r)} ${round(r)} 0 0 1 ${round(px + panelW)} ${round(capY)} L ${round(px + panelW)} ${h} Z`
+      const inset = minWH * .018
+      const archLine = `M ${round(px + inset)} ${round(capY)} A ${round(r - inset)} ${round(r - inset)} 0 0 1 ${round(px + panelW - inset)} ${round(capY)}`
+      return `<g data-hero-image="true" opacity="${round(opacity)}"><image href="${esc(overlay.src)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="${preserve}" filter="url(#${filterId})"/>${tint}<rect width="${w}" height="${h}" fill="url(#${vignetteId})"/><path d="${panelPath}" fill="${p.background}" opacity=".94"/><path d="${archLine}" fill="none" stroke="${p.accent}" stroke-width="1.6" opacity=".75"/></g>`
+    }
+    if (treatment === 'split-canvas') {
+      const textRight = textZone !== 'left'
+      const imgW = w * .55
+      const imgX = textRight ? 0 : w - imgW
+      const clipId = `${id}-split`
+      definitions.push(`<clipPath id="${clipId}"><rect x="${round(imgX)}" y="0" width="${round(imgW)}" height="${h}"/></clipPath>`)
+      const divider = round(textRight ? imgW : w - imgW)
+      return `<g data-hero-image="true" opacity="${round(opacity)}"><g clip-path="url(#${clipId})"><image href="${esc(overlay.src)}" x="${round(imgX)}" y="0" width="${round(imgW)}" height="${h}" preserveAspectRatio="${preserve}" filter="url(#${filterId})"/><rect x="${round(imgX)}" width="${round(imgW)}" height="${h}" fill="url(#${vignetteId})"/></g><line x1="${divider}" y1="${round(h * .05)}" x2="${divider}" y2="${round(h * .95)}" stroke="${p.accent}" stroke-width="2.4" opacity=".85"/><circle cx="${divider}" cy="${round(h * .05)}" r="${round(minWH * .006)}" fill="${p.accent}"/><circle cx="${divider}" cy="${round(h * .95)}" r="${round(minWH * .006)}" fill="${p.accent}"/></g>`
+    }
     return `<g data-hero-image="true" opacity="${round(opacity)}"><image href="${esc(overlay.src)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="${preserve}" filter="url(#${filterId})"/>${tint}<rect width="${w}" height="${h}" fill="${p.background}" opacity=".07"/><rect width="${w}" height="${h}" fill="url(#${gradientId})"/><rect width="${w}" height="${h}" fill="url(#${vignetteId})"/></g>`
   }).join('')
   return { defs: definitions.join(''), markup }
@@ -1733,9 +1829,9 @@ function overlaysLayer(s: Scene) {
 
 export function renderCompositionSvg(plan: CompositionPlan, options: RenderSvgOptions = {}) {
   const s = sceneOf(plan)
-  const glow = plan.layout === 'hero-word' || plan.layout === 'quiet-orbit' ? 'center'
+  const glow = plan.layout === 'hero-word' || plan.layout === 'quiet-orbit' || plan.layout === 'ink-veil' ? 'center'
     : plan.layout === 'quote-stage' || plan.layout === 'human-note' ? 'top-right'
-      : plan.layout === 'cinematic-window' ? 'none'
+      : plan.layout === 'cinematic-window' || plan.layout === 'sadu-weave' ? 'none'
         : 'top-left'
   const bg = backdrop(s, { glow })
   const heroImage = plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background' && item.src)

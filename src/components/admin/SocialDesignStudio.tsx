@@ -316,6 +316,10 @@ const FRESH_GENERATION_VARIATIONS = [
   'Use a precise evidence-led still life with neutral daylight, clear cause and effect, and no melodramatic shadows.',
   'Create a cinematic image only when the idea truly needs tension; otherwise prefer balanced light, visible possibility and a contemporary international magazine mood.',
   'Invent a completely different visual world from the recent generations: change emotional valence, material language, spatial structure and color family while preserving semantic accuracy.',
+  'Compose a woven bedouin sadu-textile inspired abstraction: deep crimson, sand and black triangular geometry, macro thread texture, contemporary gallery lighting — heritage without folklore clichés.',
+  'Paint with arabic calligraphy ink energy: one bold black ink bloom breathing on warm ivory paper, slow diffusion edges, museum minimalism, no readable letters.',
+  'Cast islamic geometric rosette shadow-play on a warm plaster wall at golden hour: crisp octagram shadows, architectural serenity, generous negative space.',
+  'Photograph a minimal desert dune ridge at dusk with one human-scale detail: vast negative space, gradient sky from amber to teal, quiet monumental mood.',
 ] as const
 
 const AUTOPILOT_PRESETS: { id: AutoPilotModeId; label: string; note: string; tone: ContentTone; density: DesignDensity; preferLayout: LayoutFamilyId; palette: PaletteId; platform?: SocialPlatform | 'auto'; imageTreatment?: NonNullable<PlanOverlay['imageTreatment']> }[] = [
@@ -2570,6 +2574,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       editorial: 'signal-ivory',
       duotone: 'warm-parchment',
       cinematic: 'brand-night',
+      'arch-scrim': 'sadu-loom',
+      'split-canvas': 'majlis-teal',
     }
     const fallbackLayout: Record<NonNullable<PlanOverlay['imageTreatment']>, LayoutFamilyId> = {
       none: 'editorial-axis',
@@ -2577,6 +2583,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       editorial: 'editorial-axis',
       duotone: 'quiet-orbit',
       cinematic: 'cinematic-window',
+      'arch-scrim': 'cinematic-window',
+      'split-canvas': 'cinematic-window',
     }
     const serverLayoutHint = !styleOverride?.ignoreServerStyle
       ? metadata?.layoutHint
@@ -3930,7 +3938,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 <div className="grid gap-2 sm:grid-cols-2"><input className={input} value={imageDescription} onChange={(event) => setImageDescription(event.target.value)} placeholder="صف المشهد لاختبار الكليشيه" /><input className={input} value={imageSource} onChange={(event) => setImageSource(event.target.value)} placeholder="المصدر أو الرابط" /><input className={input} value={imageOwner} onChange={(event) => setImageOwner(event.target.value)} placeholder="المالك أو المصور" /><input className={input} value={imageLicense} onChange={(event) => setImageLicense(event.target.value)} placeholder="نوع الترخيص" /></div>
                 <ul className="grid gap-1">{imagePassport.cropNotes.map((note) => <li key={note} className="text-[.69rem] leading-relaxed text-soft">— {note}</li>)}</ul>
                 {clicheWarnings.length > 0 ? <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[.7rem] leading-relaxed text-amber-900"><strong>تنبيه ضد الكليشيه:</strong> {clicheWarnings.map((item) => `${item.label}: ${item.alternative}`).join(' · ')}</div> : imageDescription && <p className="rounded-xl border border-accent/20 bg-accent/[.04] px-3 py-2 text-[.68rem] text-accent">لم يلتقط الفحص الوصفي أحد الكليشيهات الثمانية المعروفة. هذا فحص وصفي، لا حكم فني نهائي.</p>}
-                <div className="grid gap-3"><div className="flex flex-wrap gap-2"><button type="button" className={primary} disabled={!selected} onClick={() => applyImageLedDirection('cinematic')}>مشهد سينمائي كامل</button><button type="button" className={ghost} disabled={!selected} onClick={() => applyImageLedDirection('documentary')}>وثائقي إنساني</button><button type="button" className={ghost} disabled={!selected} onClick={() => applyImageLedDirection('editorial')}>غلاف تحريري</button><button type="button" className={ghost} disabled={!selected} onClick={() => applyImageLedDirection('duotone')}>ثنائي اللون فاخر</button><button type="button" className={ghost} disabled={!selected} onClick={() => addOverlay('image')}>أضفها كطبقة حرة</button></div><div className="flex flex-wrap gap-2"><span className="rounded-full border border-hair px-3 py-2 text-[.62rem] text-soft">المخرج يحدد منطقة النص من المساحة الهادئة ويثبت نقطة التركيز تلقائياً.</span><span className="self-center text-[.62rem] text-soft">المصدر: {imageSource || 'غير مسجل'} · الترخيص: {imageLicense || 'غير مسجل'}</span></div></div>
+                <div className="grid gap-3"><div className="flex flex-wrap gap-2"><button type="button" className={primary} disabled={!selected} onClick={() => applyImageLedDirection('cinematic')}>مشهد سينمائي كامل</button><button type="button" className={ghost} disabled={!selected} onClick={() => applyImageLedDirection('documentary')}>وثائقي إنساني</button><button type="button" className={ghost} disabled={!selected} onClick={() => applyImageLedDirection('editorial')}>غلاف تحريري</button><button type="button" className={ghost} disabled={!selected} onClick={() => applyImageLedDirection('duotone')}>ثنائي اللون فاخر</button><button type="button" className={ghost} disabled={!selected} onClick={() => applyImageLedDirection('arch-scrim')}>قوس المحراب</button><button type="button" className={ghost} disabled={!selected} onClick={() => applyImageLedDirection('split-canvas')}>نصفا اللوحة</button><button type="button" className={ghost} disabled={!selected} onClick={() => addOverlay('image')}>أضفها كطبقة حرة</button></div><div className="flex flex-wrap gap-2"><span className="rounded-full border border-hair px-3 py-2 text-[.62rem] text-soft">المخرج يحدد منطقة النص من المساحة الهادئة ويثبت نقطة التركيز تلقائياً.</span><span className="self-center text-[.62rem] text-soft">المصدر: {imageSource || 'غير مسجل'} · الترخيص: {imageLicense || 'غير مسجل'}</span></div></div>
               </div>
             </div> : <p className="mt-3 rounded-xl border border-dashed border-hair px-4 py-5 text-center text-[.72rem] text-soft">ابدأ بصورة من مكتبتك أو صور المقالات والفعاليات. لا تُرفع الصورة إلى أي خادم.</p>}
           </section>

@@ -31,6 +31,7 @@ const requiredFiles = [
   'whatsapp-agent/intent-engine.mjs',
   'whatsapp-agent/bot-messages.mjs',
   'src/components/admin/SocialDesignStudio.tsx',
+  'public/sw.js',
   'whatsapp-bridge/bridge.mjs',
   'whatsapp-web-bridge/index.mjs',
   'whatsapp-web-bridge/service-runner.mjs',
@@ -94,6 +95,7 @@ const whatsappController = await readFile(resolve(root, 'src/server/whatsapp-con
 const whatsappIntentEngine = await readFile(resolve(root, 'whatsapp-agent/intent-engine.mjs'), 'utf8')
 const whatsappBotMessages = await readFile(resolve(root, 'whatsapp-agent/bot-messages.mjs'), 'utf8')
 const designStudio = await readFile(resolve(root, 'src/components/admin/SocialDesignStudio.tsx'), 'utf8')
+const serviceWorkerSource = await readFile(resolve(root, 'public/sw.js'), 'utf8')
 const socialDesignEngine = await readFile(resolve(root, 'src/lib/social-design-engine.ts'), 'utf8')
 const socialDesignRenderer = await readFile(resolve(root, 'src/lib/social-design-renderer.ts'), 'utf8')
 const liveSource = (await Promise.all((await textFiles(resolve(root, 'src'))).map((file) => readFile(file, 'utf8')))).join('\n')
@@ -140,6 +142,18 @@ const assertions = [
     && adminArchitecture.includes('AdminMobileSubnav')
     && adminArchitecture.includes('lg:hidden'),
   'desktop admin navigation must stay as a non-crowding closed rail/flyout while the approved mobile navigation remains independent'],
+  [adminArchitecture.includes('data-admin-rail-visible')
+    && adminArchitecture.includes('scheduleRailHide')
+    && adminArchitecture.includes("translate-x-[52px]")
+    && adminArchitecture.includes('onPointerEnter={revealRail}'),
+  'desktop admin rail must auto-hide when idle and reveal contextually without covering the workspace'],
+  [adminPage.includes('useAdminInboxNotifications()')
+    && adminPage.includes("collection(db, 'subscribers')")
+    && adminPage.includes('showNewSubscriberNotification')
+    && adminPage.includes('إشعارات الرسائل والاشتراكات')
+    && serviceWorkerSource.includes("self.addEventListener('notificationclick'")
+    && serviceWorkerSource.includes('/admin?tab=inbox'),
+  'admin inbox notifications must cover both private messages and newsletter subscriptions and open the inbox on click'],
   [!contentManager.includes('<ArticleAudioManager') && !contentManager.includes('إدارة صوت المقال'), 'audio controls must stay out of the article editor and inside the dedicated library'],
   [serverSource.includes('audioManagePath') && serverSource.includes('admin-audio-clear.yml') && autoAudio.includes('ALL_VOICES') && serverSource.includes("requestedMode === 'fahed' ? 'reading'"), 'server must dispatch protected generic reading/dialogue lifecycle workflows while accepting the legacy alias'],
   [audioClearWorkflow.includes('reading) FILES=') && audioClearWorkflow.includes('.noura.mp3') && audioClearWorkflow.includes('clear-audio-assets.mjs') && !audioClearWorkflow.includes("description: 'fahed") && !autoAudioWorkflow.includes('github.event.inputs.voice') && autoAudioWorkflow.includes('MODE="reading"'), 'audio cancellation and regeneration must use generic reading/dialogue modes, clear both compatible reading files, and expose no internal voice selector'],

@@ -230,6 +230,7 @@ export function MySpace({ variant = 'floating' }: { variant?: 'floating' | 'foot
   const audio = usePersistentAudio();
   const [open, setOpen] = useState(false);
   const [version, setVersion] = useState(0);
+  const [showAllQuotes, setShowAllQuotes] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
@@ -371,7 +372,6 @@ export function MySpace({ variant = 'floating' }: { variant?: 'floating' | 'foot
                         مساحتك الهادئة
                       </h2>
                       <p className="mt-1 text-[.8rem] font-light text-soft">
-                        قراءاتك واستماعك ومحفوظاتك، بلا حساب وبلا إرسال للخادم.
                       </p>
                     </div>
                     <button
@@ -514,9 +514,6 @@ export function MySpace({ variant = 'floating' }: { variant?: 'floating' | 'foot
                             <h3 className="font-display text-[1rem] font-semibold text-ink">
                               آخر القراءات
                             </h3>
-                            <span className="text-[.7rem] text-soft">
-                              مسار لا سجلّ مراقبة
-                            </span>
                           </div>
                           <ol className="mt-3 divide-y divide-hair rounded-xl border border-hair px-4">
                             {snapshot.recent.slice(0, 5).map((item) => (
@@ -541,30 +538,60 @@ export function MySpace({ variant = 'floating' }: { variant?: 'floating' | 'foot
 
                       {snapshot.quotes.length > 0 && (
                         <section className="rounded-2xl border border-accent/20 bg-accent/[.045] p-5">
-                          <div className="flex items-start justify-between gap-4">
+                          <button
+                            type="button"
+                            onClick={() => setShowAllQuotes((current) => !current)}
+                            className="flex w-full items-start justify-between gap-4 text-right"
+                            aria-expanded={showAllQuotes}
+                          >
                             <div>
                               <p className="text-[.7rem] font-semibold text-accent">
                                 دفتر الاقتباسات
                               </p>
                               <p className="mt-1 text-[.78rem] text-soft">
                                 {snapshot.quotes.length.toLocaleString("en-US")}{" "}
-                                جملة احتفظت بها
+                                جملة احتفظت بها ·{" "}
+                                {showAllQuotes ? "أخفِ الدفتر" : "اعرضها كلها"}
                               </p>
                             </div>
                             <span className="font-display text-[2rem] leading-none text-accent/35">
                               ”
                             </span>
-                          </div>
-                          <blockquote className="mt-4 line-clamp-3 font-display text-[.94rem] leading-[1.8] text-ink">
-                            «{snapshot.quotes[0].quote}»
-                          </blockquote>
-                          <Link
-                            to={`/articles/${snapshot.quotes[0].slug}`}
-                            onClick={() => setOpen(false)}
-                            className="mt-3 inline-flex text-[.74rem] font-semibold text-accent"
-                          >
-                            عد إلى مصدرها ←
-                          </Link>
+                          </button>
+                          {showAllQuotes ? (
+                            <ol className="mt-4 space-y-4">
+                              {snapshot.quotes.map((item, index) => (
+                                <li
+                                  key={`${item.slug}-${index}`}
+                                  className="border-r-2 border-accent/25 pr-4"
+                                >
+                                  <blockquote className="font-display text-[.92rem] leading-[1.8] text-ink">
+                                    «{item.quote}»
+                                  </blockquote>
+                                  <Link
+                                    to={`/articles/${item.slug}`}
+                                    onClick={() => setOpen(false)}
+                                    className="mt-2 inline-flex text-[.72rem] font-semibold text-accent"
+                                  >
+                                    {item.title || "عد إلى مصدرها"} ←
+                                  </Link>
+                                </li>
+                              ))}
+                            </ol>
+                          ) : (
+                            <>
+                              <blockquote className="mt-4 line-clamp-3 font-display text-[.94rem] leading-[1.8] text-ink">
+                                «{snapshot.quotes[0].quote}»
+                              </blockquote>
+                              <Link
+                                to={`/articles/${snapshot.quotes[0].slug}`}
+                                onClick={() => setOpen(false)}
+                                className="mt-3 inline-flex text-[.74rem] font-semibold text-accent"
+                              >
+                                عد إلى مصدرها ←
+                              </Link>
+                            </>
+                          )}
                         </section>
                       )}
                     </div>

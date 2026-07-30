@@ -29,7 +29,7 @@ export default function Contact() {
               <Reveal>لنعمل معاً.</Reveal>
             </h1>
             <p className="mx-auto mt-6 max-w-[520px] text-[1.12rem] font-light leading-[1.9] text-ink/80">
-              استشارات في تكنولوجيا التعليم، محاضرات وورش عمل، ومشاريع تحوّل رقمي في المؤسسات التعليمية.
+              استشارات في تكنولوجيا التعليم والذكاء الاصطناعي، محاضرات وورش عمل، ومشاريع تحوّل رقمي في المؤسسات التعليمية.
             </p>
 
             <div className="mt-10">
@@ -38,7 +38,6 @@ export default function Contact() {
               </a>
             </div>
 
-            <p className="mt-8 text-[.85rem] text-soft">{place.label} · {place.city}</p>
           </FadeUp>
 
 

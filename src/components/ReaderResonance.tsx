@@ -90,21 +90,23 @@ export function ArticlePulse({ slug, body }: { slug: string; body: string }) {
   // لا يظهر «نبض المقال» لمجرد وجود عدّاد؛ لا بد من جملة محددة صالحة
   // يمكن استخراجها من المقال نفسه، وإلا تبقى نهاية المقال نظيفة تماماً.
   if (!quote) return null
+  /* بأمر الدكتور (٣٠ يوليو): النبض «مسكّر» افتراضياً — سطرٌ رقيق واحد بلا
+     زحمة، ومن أراد الجملة فتحها بنقرة. */
   return (
-    <a
-      href="#article-body"
-      className="group mt-10 flex items-center gap-4 rounded-2xl border border-hair bg-wash/40 px-5 py-4 transition-colors hover:border-accent/40"
-      aria-label={`نبض المقال — ${quote}`}
-    >
-      <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden>
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent/30" />
-        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-accent/80" />
-      </span>
-      <span className="text-[.85rem] font-light leading-relaxed text-soft">
-        <span className="font-semibold text-accent">نبض المقال —</span>{' '}
-        «{quote}»
-      </span>
-    </a>
+    <details className="group mt-10 rounded-2xl border border-hair bg-wash/40 px-5 py-4 transition-colors open:border-accent/40 hover:border-accent/40">
+      <summary
+        className="flex cursor-pointer list-none items-center gap-4 [&::-webkit-details-marker]:hidden"
+        aria-label="نبض المقال"
+      >
+        <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden>
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent/30" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-accent/80" />
+        </span>
+        <span className="text-[.85rem] font-semibold text-accent">نبض المقال</span>
+        <span className="mr-auto text-[.72rem] font-light text-soft transition-transform group-open:rotate-180" aria-hidden>⌄</span>
+      </summary>
+      <p className="mt-3 pr-6 text-[.85rem] font-light leading-relaxed text-soft">«{quote}»</p>
+    </details>
   )
 }
 

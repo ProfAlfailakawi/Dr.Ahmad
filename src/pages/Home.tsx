@@ -936,7 +936,19 @@ function HomeSocialFooter() {
             </div>
           </div>
           <div className="flex items-center justify-center gap-2.5" aria-label="أدوات الموقع">
-            <button type="button" onClick={() => setNewsletterOpen((value) => !value)} aria-expanded={newsletterOpen} aria-label="النشرة البريدية" title="النشرة البريدية" className={`${iconButton} ${newsletterOpen ? 'border-accent bg-accent text-white hover:text-white' : ''}`}>
+            <button
+              type="button"
+              onClick={() => {
+                const willOpen = !newsletterOpen
+                setNewsletterOpen(willOpen)
+                /* بأمر الدكتور: ضغطة البريد توصل المؤشر مباشرة إلى حقل البريد */
+                if (willOpen) window.setTimeout(() => document.getElementById('newsletter-inline-email')?.focus(), 320)
+              }}
+              aria-expanded={newsletterOpen}
+              aria-label="النشرة البريدية"
+              title="النشرة البريدية"
+              className={`${iconButton} ${newsletterOpen ? 'border-accent bg-accent text-white hover:text-white' : ''}`}
+            >
               <SocialIcon name="Mail" size={16} />
             </button>
             <TebyanProjectLink />

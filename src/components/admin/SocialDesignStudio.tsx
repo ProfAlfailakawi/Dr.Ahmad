@@ -1226,7 +1226,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     if (/analysis_failed/i.test(message)) return 'وصلت الصورة المولدة، لكن الجهاز لم يتمكن من فتحها داخل المحرر. سيعيد النظام فكها بمسار آمن في المحاولة التالية.'
     if (/semantic_rejected|تعذّر اعتماد الصورة دلالياً|HTTP 422/i.test(message)) return 'رُفضت الصورة لأنها لم تمثّل المعنى الكامل أو أسقطت عنصراً أساسياً من الفكرة. لم تُركّب داخل التصميم؛ أعد التوليد ليُبنى مشهد مختلف فعلياً.'
     if (/no usable image|empty/i.test(message)) return 'خدمة التوليد لم ترسل بيانات صورة قابلة للفتح؛ سيعيد النظام الطلب ببذرة جديدة بدل استخدام صورة جاهزة.'
-    return `تعذّر توليد الصورة الأصلية: ${message || 'فشل غير معروف في خدمة التوليد'}. لم يستخدم النظام صورة جاهزة بدلاً منها.`
+    return `تعذّر توليد الصورة الأصلية: ${message || 'فشل غير معروف في خدمة التوليد'}. جرّب المسار الجاهز تلقائياً قبل إعلان هذا التعذّر.`
   }
 
   const archiveGeneratedDesigns = async (generatedPlans: CompositionPlan[], generationKind = 'توليد') => {
@@ -3265,9 +3265,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           generatedSet = [generated]
         } catch (error) {
           const failure = describeGeneratorFailure(error)
-          setVisualOrigin('none')
-          setVisualFailure(failure)
-          throw new Error(`studio_visual_failure:${failure}`)
+          /* أمر الدكتور (٣٠ يوليو): تعذُّر التوليد لا يوقف المشهد — نحن داخل
+             فرع التوليد حصراً، فنسقط تلقائياً إلى مسار الصورة الجاهزة الموثقة؛
+             وفشل الجاهز نفسه له إعلانه في فرعه. */
+          console.warn('studio-generate-fallback:', failure)
+          setVisualFailure('')
+          setNotice('تعذّر توليد الصورة الأصلية الآن، فانتقلت تلقائياً إلى صورة جاهزة موثقة المصدر — المشهد يكتمل بلا توقف.')
+          return runZeroDecisionMode('ready')
         }
         const uniqueGenerated = new Map<string, GeneratedStudioImage>()
         for (const generated of generatedSet) {
@@ -4300,9 +4304,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                     <EditableText label="العنوان الفرعي" value={selected.content.subtitle} onCommit={(next) => editContent({ subtitle: next })} />
                     <EditableText label="المتن" multiline value={selected.content.body} onCommit={(next) => editContent({ body: next })} />
                     <div className="grid grid-cols-2 gap-2.5">
-                      <EditableText label="الدعوة" value={selected.content.cta} onCommit={(next) => editContent({ cta: next })} />
+                      <EditableText label="الدعوة (فرّغها لإخفاء الزر)" value={selected.content.cta} onCommit={(next) => editContent({ cta: next })} />
                       <EditableText label="الكلمة البطلة" value={selected.content.heroWord} onCommit={(next) => editContent({ heroWord: next })} />
                     </div>
+                    <EditableText label="الشارة أعلى التصميم — «كتاب/مقال…» (فرّغها لإخفائها)" value={selected.content.kicker} onCommit={(next) => editContent({ kicker: next })} />
                   </div>
                   <div className="mt-3">
                     <p className="text-[.64rem] font-semibold text-soft">المنظومة اللونية — بنقرة، والناقد يعيد الحكم فوراً</p>

@@ -277,12 +277,13 @@ const assertions = [
     && designStudio.includes('repairRound < 2')
     && !designStudio.includes("setVisualMode('library')"),
   'design studio must keep zero-render typing, exactly two original/curated routes, premium ready-image curation, automatic image/release repair, a professional release gate, and latest-approved-only storage'],
-  [socialDesignEngine.includes("displayFamily: 'El Messiri'")
+  [socialDesignEngine.includes("displayFamily: 'Alexandria Variable'")
+    && socialDesignEngine.includes("'studio-clean':")
     && socialDesignRenderer.includes("fetch('/fonts/fonts.css')")
-    && socialDesignRenderer.includes('/El Messiri|Tajawal/.test(block)')
-    && socialDesignRenderer.includes('U\\+0000-00FF')
-    && socialDesignRenderer.includes("family: 'El Messiri'"),
-  'social studio must keep its approved Arabic display face embedded in exported raster artwork'],
+    && socialDesignRenderer.includes('document.styleSheets')
+    && socialDesignRenderer.includes('/Alexandria|El Messiri|Tajawal/.test(block)')
+    && socialDesignRenderer.includes('data:font/woff2;base64'),
+  'social studio must keep its approved Alexandria Arabic display face embedded in exported raster artwork'],
   [cvFile.includes("'site_cv_files'") && cvFile.includes('cv-files-v1'), 'public CV reconstruction and local cache must remain active'],
   [firestoreRules.includes('match /site_cv_files/{kind}') && firestoreRules.includes('match /chunks/{chunkId}'), 'Firestore CV file rules must remain deployed'],
   [publishingStudio.includes('مكتبة القوالب كاملة — 24 تكويناً')

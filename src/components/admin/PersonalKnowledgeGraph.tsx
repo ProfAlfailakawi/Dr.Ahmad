@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import graphData from '../../data/knowledge-graph-index.json'
 import { getDb } from '../../lib/firebase'
 import { interpretDrAhmadDomain, DR_AHMAD_GLOSSARY_CONCEPT_CAPACITY } from '../../lib/dr-ahmad-domain-glossary'
+import { LegacyModePanel } from './LegacyModePanel'
 
 type Node = { id: string; kind: string; slug?: string; title: string; url?: string; tokens?: string[]; excerpt?: string; linkedTo?: string }
 type SocialNode = Node & { kind: 'social' }
@@ -35,6 +36,7 @@ export function PersonalKnowledgeGraph() {
     } catch { return 'الذكاء الاصطناعي في التعليم' }
   })
   const [social, setSocial] = useState<SocialNode[]>([])
+  const [mode, setMode] = useState<'graph' | 'legacy'>('graph')
   const staticNodes = (graphData as { nodes?: Node[] }).nodes || []
 
   useEffect(() => {
@@ -83,6 +85,12 @@ export function PersonalKnowledgeGraph() {
         </div>
       </div>
 
+      <div className="mt-5 flex w-fit rounded-full border border-hair bg-canvas p-1" role="tablist" aria-label="منظور عقل الأرشيف">
+        <button type="button" role="tab" aria-selected={mode === 'graph'} onClick={() => setMode('graph')} className={`rounded-full px-4 py-2 text-[.74rem] font-semibold transition-colors ${mode === 'graph' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>عقل الأرشيف</button>
+        <button type="button" role="tab" aria-selected={mode === 'legacy'} onClick={() => setMode('legacy')} className={`rounded-full px-4 py-2 text-[.74rem] font-semibold transition-colors ${mode === 'legacy' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>وضع الإرث</button>
+      </div>
+
+      {mode === 'legacy' ? <LegacyModePanel /> : <>
       <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
         <input className={input} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="اكتب فكرة أو مصطلحاً: الواقع الافتراضي، بر الأبناء، الذكاء الاصطناعي…" />
         <div className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.76rem] leading-relaxed text-soft">
@@ -113,6 +121,7 @@ export function PersonalKnowledgeGraph() {
         ))}
       </div>
       {!results.length && <p className="mt-5 rounded-xl border border-hair bg-canvas p-4 text-[.82rem] text-soft">لم يجد الرسم صلة مباشرة بعد. جرّب صياغة أوسع؛ القاموس سيظل يحفظ المعنى المتخصص حتى عندما لا توجد مادة سابقة.</p>}
+      </>}
     </section>
   )
 }

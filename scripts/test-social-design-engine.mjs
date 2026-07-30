@@ -103,7 +103,7 @@ assert.ok(paletteDirected.plans.every((plan) => plan.palette === 'electric-cobal
 const shortBriefDirections = engine.generateSocialDesigns({ text: 'فكرة قصيرة تستحق أن تُقال الآن', seed: 'short-brief-directions' })
 assert.ok(shortBriefDirections.plans.length >= 3, 'حتى العبارة القصيرة يجب أن تمنح المخرج ثلاث رؤى قابلة للمقارنة')
 
-assert.equal(engine.TYPOGRAPHY_MODES['studio-clean']?.displayFamily, 'Tajawal', 'المنشور المستقل يملك وجهاً عربياً نظيفاً مستقلاً عن El Messiri')
+assert.equal(engine.TYPOGRAPHY_MODES['studio-clean']?.displayFamily, 'Alexandria Variable', 'المنشور المستقل يملك وجهاً عربياً معاصراً مستقلاً عن El Messiri مع Alexandria Variable')
 const standaloneTypography = engine.generateSocialDesigns({ ...request, seed: 'standalone-clean-type', preferTypography: 'studio-clean' })
 assert.ok(standaloneTypography.plans.every((plan) => plan.typography === 'studio-clean'), 'المخرج المستقل يفرض الخط العربي النظيف على كل الرؤى')
 assert.ok(publishingSource.includes("preferTypography: 'studio-clean'"), 'مسار المنشور المستقل نفسه يطلب الخط الجديد صراحةً')

@@ -7,6 +7,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const stop = new Set('من في على الى عن هذا هذه ذلك التي الذي مع او ثم ما ماذا كيف هل لم لن قد كل بين عند بعد قبل عبر نحو حول داخل خارج'.split(' '))
 const tok = (value) => [...new Set(normalizeArabic(String(value || '')).split(' ').filter((x) => x.length > 2 && !stop.has(x)))].slice(0, 140)
 const overlap = (a, b) => { const bs = new Set(b); return a.filter((x) => bs.has(x)).length }
+const yearOf = (value) => String(value || '').match(/(?:19|20)\d{2}/)?.[0] || ''
 const addEdge = (edges, from, to, score, reasons = []) => { edges.push({ from, to, score, reasons }); edges.push({ from: to, to: from, score, reasons }) }
 
 function baseNodes() {
@@ -18,6 +19,7 @@ function baseNodes() {
     title: item.title,
     excerpt: String(item.excerpt || '').slice(0, 900),
     url: item.url,
+    year: yearOf(item.date),
     tokens: tok(`${item.title} ${item.excerpt} ${item.body} ${item.keywords}`),
   }))
 
@@ -35,6 +37,7 @@ function baseNodes() {
         excerpt: `امتداد صوتي للمادة «${item.title}».`,
         url: item.url,
         linkedTo: item.id,
+        year: yearOf(item.date),
         tokens: tok(`${item.title} ${item.excerpt} ${item.keywords} ${label}`),
       })
     }
@@ -81,6 +84,7 @@ async function liveSocialNodes() {
         title,
         excerpt: `${data.idea || ''} ${postText}`.slice(0, 1_200),
         url: '/admin?tab=studio',
+        year: yearOf(data.createdAt?.toDate?.()?.toISOString?.() || data.createdAt || ''),
         tokens: tok(`${title} ${data.idea || ''} ${postText}`),
       }
     })
@@ -122,6 +126,77 @@ function buildEdges(nodes) {
   })
 }
 
+function buildLegacyProfile(nodes, edges, builtAt) {
+  const byId = new Map(nodes.map((node) => [node.id, node]))
+  const contentKinds = new Set(['article', 'book', 'paper', 'curated', 'podcast', 'social', 'media'])
+  const themes = []
+  for (const concept of nodes.filter((node) => node.kind === 'concept')) {
+    const links = edges
+      .filter((edge) => edge.from === concept.id)
+      .map((edge) => ({ edge, node: byId.get(edge.to) }))
+      .filter((row) => row.node && contentKinds.has(row.node.kind))
+    if (!links.length) continue
+    const unique = new Map()
+    for (const row of links) {
+      const current = unique.get(row.node.id)
+      if (!current || row.edge.score > current.edge.score) unique.set(row.node.id, row)
+    }
+    const supported = [...unique.values()]
+    const years = [...new Set(supported.map((row) => row.node.year).filter(Boolean))].sort()
+    const kinds = [...new Set(supported.map((row) => row.node.kind))]
+    themes.push({
+      id: concept.id,
+      title: concept.title,
+      support: supported.length,
+      score: supported.reduce((sum, row) => sum + Number(row.edge.score || 0), 0),
+      kinds,
+      years,
+      firstYear: years[0] || '',
+      lastYear: years.at(-1) || '',
+      examples: supported.sort((a, b) => b.edge.score - a.edge.score).slice(0, 4).map((row) => ({ id: row.node.id, kind: row.node.kind, title: row.node.title, url: row.node.url, year: row.node.year || '' })),
+    })
+  }
+  themes.sort((a, b) => b.support - a.support || b.score - a.score)
+
+  const representatives = nodes
+    .filter((node) => contentKinds.has(node.kind))
+    .map((node) => {
+      const links = edges.filter((edge) => edge.from === node.id)
+      const concepts = links.map((edge) => byId.get(edge.to)).filter((linked) => linked?.kind === 'concept')
+      const kindSpread = new Set(links.map((edge) => byId.get(edge.to)?.kind).filter(Boolean)).size
+      const centrality = links.reduce((sum, edge) => sum + Number(edge.score || 0), 0) + concepts.length * 7 + kindSpread * 4
+      return { id: node.id, kind: node.kind, title: node.title, url: node.url, year: node.year || '', centrality, concepts: concepts.slice(0, 4).map((item) => item.title) }
+    })
+    .sort((a, b) => b.centrality - a.centrality)
+    .slice(0, 10)
+
+  const timelineMap = new Map()
+  for (const node of nodes.filter((item) => contentKinds.has(item.kind) && item.year)) {
+    const row = timelineMap.get(node.year) || { year: node.year, count: 0, kinds: {}, titles: [] }
+    row.count += 1
+    row.kinds[node.kind] = (row.kinds[node.kind] || 0) + 1
+    if (row.titles.length < 5) row.titles.push({ id: node.id, kind: node.kind, title: node.title, url: node.url })
+    timelineMap.set(node.year, row)
+  }
+  const timeline = [...timelineMap.values()].sort((a, b) => a.year.localeCompare(b.year))
+  const arcs = themes
+    .filter((theme) => theme.firstYear && theme.lastYear && theme.firstYear !== theme.lastYear)
+    .sort((a, b) => Number(b.lastYear) - Number(a.lastYear) || b.support - a.support)
+    .slice(0, 8)
+    .map((theme) => ({ id: theme.id, title: theme.title, firstYear: theme.firstYear, lastYear: theme.lastYear, support: theme.support, examples: theme.examples }))
+
+  return {
+    version: 1,
+    builtAt,
+    note: 'وضع الإرث يصف الأنماط الموثقة في الأرشيف فقط؛ لا يفترض موقفاً أو تحولاً غير مسجل في المواد.',
+    stats: { themes: themes.length, representatives: representatives.length, years: timeline.length },
+    themes: themes.slice(0, 12),
+    representatives,
+    timeline,
+    arcs,
+  }
+}
+
 const nodes = [...baseNodes(), ...glossaryNodes(), ...(await liveSocialNodes())]
 const edges = buildEdges(nodes)
 const kinds = Object.fromEntries([...new Set(nodes.map((node) => node.kind))].sort().map((kind) => [kind, nodes.filter((node) => node.kind === kind).length]))
@@ -140,9 +215,12 @@ const browserIndex = {
     excerpt: String(node.excerpt || '').slice(0, 520),
     url: node.url,
     linkedTo: node.linkedTo,
+    year: node.year || '',
     tokens: (node.tokens || []).slice(0, 80),
   })),
 }
 fs.writeFileSync(path.join(root, 'src/data/knowledge-graph.json'), `${JSON.stringify(graph, null, 2)}\n`)
 fs.writeFileSync(path.join(root, 'src/data/knowledge-graph-index.json'), `${JSON.stringify(browserIndex)}\n`)
-console.log(`Knowledge graph v2: ${nodes.length} nodes / ${edges.length} directed edges — ${Object.entries(kinds).map(([kind, count]) => `${kind}:${count}`).join(' · ')}`)
+const legacyProfile = buildLegacyProfile(nodes, edges, builtAt)
+fs.writeFileSync(path.join(root, 'src/data/legacy-profile.json'), `${JSON.stringify(legacyProfile, null, 2)}\n`)
+console.log(`Knowledge graph v2: ${nodes.length} nodes / ${edges.length} directed edges — ${Object.entries(kinds).map(([kind, count]) => `${kind}:${count}`).join(' · ')} · legacy:${legacyProfile.themes.length} themes/${legacyProfile.timeline.length} years`)

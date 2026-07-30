@@ -153,29 +153,58 @@ export function buildDnaPalette(input: { hue: number; isDark: boolean; chroma: n
   return buildDnaPaletteFromSwatches(seed, input.isDark)
 }
 
+function ensureTextContrast(value: string, background: string, target: number, preferLight: boolean) {
+  if (contrast(value, background) >= target) return value
+  const hsl = rgbToHsl(hexRgb(value))
+  let lightness = hsl.l
+  for (let index = 0; index < 16; index += 1) {
+    lightness = clamp(lightness + (preferLight ? .045 : -.045), .06, .94)
+    const candidate = hslHex(hsl.h, hsl.s, lightness)
+    if (contrast(candidate, background) >= target) return candidate
+  }
+  const white = '#f8fafc', dark = '#111820'
+  return contrast(white, background) >= contrast(dark, background) ? white : dark
+}
+
 function buildDnaPaletteFromSwatches(swatches: string[], isDark: boolean): Palette {
   const base = swatches[0] || '#365a7a'
-  const background = isDark ? mix(base, '#071018', .78) : mix(base, '#ffffff', .92)
-  const surface = isDark ? mix(base, '#ffffff', .06) : mix(base, '#ffffff', .975)
-  const spectrum = (swatches.length ? swatches : [base]).slice(0, 4).map((color) => readableAccent(color, background, isDark))
-  while (spectrum.length < 4) {
-    const hsl = rgbToHsl(hexRgb(spectrum[0] || base))
-    spectrum.push(readableAccent(hslHex(hsl.h + spectrum.length * 67, Math.max(.36, hsl.s), hsl.l), background, isDark))
-  }
-  const ink = isDark ? '#f7f8fa' : '#111820'
-  const muted = isDark ? mix(ink, background, .30) : mix(ink, background, .42)
+  const baseHsl = rgbToHsl(hexRgb(base))
+  const background = isDark ? mix(base, '#071018', .80) : mix(base, '#ffffff', .925)
+  const surface = isDark ? mix(base, '#ffffff', .075) : mix(base, '#ffffff', .98)
+
+  // لون الصورة يقود الهوية، لكننا لا نسمح للون ثانوي بعيد (أخضر فوق صورة حمراء
+  // مثلاً) أن يصبح لون النص. نُبقي النص ضمن عائلة لونية متناغمة مع اللون الغالب،
+  // وتظل الألوان البعيدة للزخارف الخافتة فقط.
+  const nearby = swatches
+    .slice(1)
+    .map((color) => ({ color, hsl: rgbToHsl(hexRgb(color)) }))
+    .filter((item) => item.hsl.s < .16 || hueDistance(item.hsl.h, baseHsl.h) <= 52)
+    .map((item) => item.color)
+  const harmoniousSeeds = [
+    base,
+    nearby[0] || hslHex(baseHsl.h + 18, Math.max(.34, baseHsl.s * .92), isDark ? .68 : .40),
+    nearby[1] || hslHex(baseHsl.h - 22, Math.max(.30, baseHsl.s * .78), isDark ? .72 : .36),
+    hslHex(baseHsl.h + 8, Math.max(.22, baseHsl.s * .58), isDark ? .76 : .32),
+  ]
+  const spectrum = harmoniousSeeds.map((color) => readableAccent(color, background, isDark))
+
+  const rawInk = isDark ? '#f8fafc' : '#111820'
+  const ink = ensureTextContrast(rawInk, background, 7, isDark)
+  const rawMuted = isDark ? mix(ink, background, .26) : mix(ink, background, .34)
+  const muted = ensureTextContrast(rawMuted, background, 4.5, isDark)
+  const accent = ensureTextContrast(spectrum[0], background, 4.5, isDark)
   return {
     id: isDark ? 'brand-night' : 'brand-paper',
-    label: 'بصمة بصرية متعددة',
+    label: 'بصمة بصرية متناغمة',
     background,
     surface,
     ink,
     muted,
-    accent: spectrum[0],
-    accentSoft: mix(spectrum[1], background, isDark ? .58 : .76),
-    rule: mix(spectrum[2], background, isDark ? .64 : .78),
+    accent,
+    accentSoft: mix(spectrum[1], background, isDark ? .60 : .78),
+    rule: mix(spectrum[2], background, isDark ? .66 : .82),
     isDark,
-    spectrum,
+    spectrum: [accent, ...spectrum.slice(1)],
     dna: true,
   }
 }

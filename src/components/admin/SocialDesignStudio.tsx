@@ -1745,6 +1745,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     syncPlanEverywhere(requalified)
   }
   const editContent = (patch: Partial<PlanContent>) => editPlan((plan) => ({ ...plan, content: { ...plan.content, ...patch } }))
+  const editCarouselSlide = (index: number, patch: Partial<PlanContent['slides'][number]>) => editPlan((plan) => ({
+    ...plan,
+    content: {
+      ...plan.content,
+      slides: plan.content.slides.map((slide, slideIndex) => slideIndex === index ? { ...slide, ...patch } : slide),
+    },
+  }))
   // اختيار لوحة هوية بنقرة يرفع البصمة البصرية عن هذا التصميم (لا يتزاحمان).
   const editPalette = (palette: PaletteId) => editPlan((plan) => ({ ...plan, palette, paletteOverride: undefined }))
 
@@ -2601,8 +2608,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     const darkSurface = imagePalette?.isDark ?? Boolean(PALETTES[palette]?.isDark)
     const vignette = resolvedTreatment === 'cinematic' ? .44 : resolvedTreatment === 'duotone' ? .32 : resolvedTreatment === 'editorial' ? .18 : .10
     const readabilityShade = darkSurface
-      ? resolvedTreatment === 'cinematic' ? .78 : resolvedTreatment === 'duotone' ? .70 : .62
-      : resolvedTreatment === 'cinematic' ? .66 : resolvedTreatment === 'duotone' ? .58 : resolvedTreatment === 'editorial' ? .56 : .50
+      ? resolvedTreatment === 'cinematic' ? .84 : resolvedTreatment === 'duotone' ? .78 : resolvedTreatment === 'editorial' ? .74 : .72
+      : resolvedTreatment === 'cinematic' ? .78 : resolvedTreatment === 'duotone' ? .74 : resolvedTreatment === 'editorial' ? .72 : .70
     const background: PlanOverlay = {
       id: roleId,
       kind: 'image',
@@ -4307,6 +4314,12 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                     <EditableText label="العنوان" value={selected.content.title} onCommit={(next) => editContent({ title: next })} />
                     <EditableText label="العنوان الفرعي" value={selected.content.subtitle} onCommit={(next) => editContent({ subtitle: next })} />
                     <EditableText label="المتن" multiline value={selected.content.body} onCommit={(next) => editContent({ body: next })} />
+                    <div className="grid gap-1.5">
+                      <EditableText label="الاقتباس" multiline value={selected.content.quote} onCommit={(next) => editContent({ quote: next })} />
+                      <button type="button" onClick={() => editContent({ quote: '' })} disabled={!selected.content.quote} className="justify-self-start rounded-full border border-hair px-2.5 py-1 text-[.6rem] font-semibold text-soft transition hover:border-accent hover:text-accent disabled:opacity-35">إخفاء الاقتباس</button>
+                    </div>
+                    {selected.content.points?.length ? <EditableText label="نقاط الإنفوجرافيك — سطر لكل نقطة" multiline value={selected.content.points.join('\n')} onCommit={(next) => editContent({ points: next.split('\n').map((item) => item.trim()).filter(Boolean) })} /> : null}
+                    {selected.content.slides.length > 1 && <details className="rounded-xl border border-hair bg-paper/70 p-2.5" data-studio-carousel-text-editor="true"><summary className="cursor-pointer list-none text-[.64rem] font-semibold text-ink [&::-webkit-details-marker]:hidden">تحرير كلمات شرائح الكاروسيل ({selected.content.slides.length})</summary><div className="mt-2 grid gap-2">{selected.content.slides.map((slide, index) => <div key={slide.id} className="grid gap-2 rounded-xl border border-hair bg-canvas p-2.5"><span className="text-[.58rem] font-semibold text-accent">شريحة {index + 1}</span><EditableText label="الشارة" value={slide.kicker} onCommit={(next) => editCarouselSlide(index, { kicker: next })} /><EditableText label="العنوان" multiline value={slide.title} onCommit={(next) => editCarouselSlide(index, { title: next })} /><EditableText label="النص" multiline value={slide.body} onCommit={(next) => editCarouselSlide(index, { body: next })} /></div>)}</div></details>}
                     <div className="grid grid-cols-2 gap-2.5">
                       <div className="grid gap-1.5">
                         <EditableText label="الدعوة — مثل «اقرأ المادة كاملة»" value={selected.content.cta} onCommit={(next) => editContent({ cta: next })} />

@@ -60,7 +60,7 @@ export function AdminSidebar({ tab, onSelect }: { tab: AdminTab; onSelect: (tab:
 
   return (
     <aside className="hidden w-[76px] lg:block" aria-label="أقسام لوحة التحكم">
-      <div ref={railRef} data-admin-desktop-rail="true" className="sticky top-24 z-[310]">
+      <div ref={railRef} data-admin-desktop-rail="true" className="sticky top-24 z-[60]">
         <div className="relative rounded-[1.5rem] border border-hair bg-canvas/92 p-2 shadow-[0_24px_70px_-48px_rgba(21,22,26,.48)] backdrop-blur-xl">
           <div className="grid gap-2">
           {ADMIN_GROUPS.map((group) => {
@@ -103,7 +103,7 @@ export function AdminSidebar({ tab, onSelect }: { tab: AdminTab; onSelect: (tab:
                   animate={{ opacity: 1, x: 0, scale: 1 }}
                   exit={{ opacity: 0, x: 8, scale: .99 }}
                   transition={{ duration: .18, ease: EASE }}
-                  className="absolute right-[calc(100%+0.8rem)] top-0 z-[320] max-h-[calc(100vh-7rem)] w-[min(340px,calc(100vw-8rem))] overflow-y-auto rounded-[1.6rem] border border-hair bg-canvas p-3 shadow-[0_34px_90px_-34px_rgba(21,22,26,.58)]"
+                  className="absolute right-[calc(100%+0.8rem)] top-0 z-[70] max-h-[calc(100vh-7rem)] w-[min(340px,calc(100vw-8rem))] overflow-y-auto rounded-[1.6rem] border border-hair bg-canvas p-3 shadow-[0_34px_90px_-34px_rgba(21,22,26,.58)]"
                 >
                   <div className="mb-2 flex items-center justify-between gap-4 px-2 py-1">
                     <div className="min-w-0">

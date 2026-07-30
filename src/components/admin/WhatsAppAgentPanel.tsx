@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import AudienceStudio from './AudienceStudio'
 import { BroadcastStudio } from './BroadcastStudio'
 import { useAdminAuth } from '../../lib/admin-auth'
+import { getDb } from '../../lib/firebase'
 
 type DiagnosticCheck = {
   id: string
@@ -466,12 +467,34 @@ export function WhatsAppAgentPanel() {
   }
 
   const savePersonality = async () => {
+    const normalized: KnowledgePersonality = {
+      verbosity: ['brief', 'layered', 'detailed'].includes(personality.verbosity) ? personality.verbosity : 'layered',
+      dialect: ['formal-arabic', 'kuwaiti-light', 'neutral-arabic'].includes(personality.dialect) ? personality.dialect : 'kuwaiti-light',
+      initiative: ['none', 'one-question', 'guided'].includes(personality.initiative) ? personality.initiative : 'guided',
+      signature: 'always',
+      memoryConsent: 'explicit',
+    }
     try {
-      const saved = await request<KnowledgePersonality>('/admin/personality', { method: 'POST', body: JSON.stringify(personality) })
+      const saved = await request<KnowledgePersonality>('/admin/personality', { method: 'POST', body: JSON.stringify(normalized) })
       setPersonality(saved)
       setKnowledge((current) => ({ ...current, personality: saved }))
       setNotice('حُفظ إيقاع الحوار وحدوده في الوكيل المحلي.')
-    } catch { setNotice('تعذّر حفظ شخصية الحوار.') }
+      return
+    } catch {
+      // إذا كانت واجهة اللوحة أحدث من خدمة الوكيل المنشورة، لا نخسر التعديل:
+      // نحفظه في نفس مستند Firestore الذي تقرؤه الخدمة عند التشغيل.
+    }
+    try {
+      const db = await getDb()
+      if (!db) throw new Error('Firebase unavailable')
+      const { doc, setDoc } = await import('firebase/firestore')
+      await setDoc(doc(db, 'whatsapp_settings', 'personality'), { ...normalized, updatedAt: new Date().toISOString() }, { merge: true })
+      setPersonality(normalized)
+      setKnowledge((current) => ({ ...current, personality: normalized }))
+      setNotice('حُفظت شخصية الحوار مباشرةً في الإعدادات السحابية.')
+    } catch {
+      setNotice('تعذّر حفظ شخصية الحوار.')
+    }
   }
 
   const saveEvidence = async () => {

@@ -1,3 +1,5 @@
+import { interpretDrAhmadDomain } from './dr-ahmad-domain-glossary'
+
 /* ⚠️ محرك «الطبعة الفاخرة» — لا يُستبدل بنسخة مبسّطة.
    استُعيد ٢٠٢٦-٠٧-١٩ بعد أن قلّصته دفعةٌ موازية من 1060 سطراً إلى 572، ففقدت
    القوالبُ فهمَها الموزون للمحتوى (TOPIC_SIGNALS) و550 سطراً من الرسم الفني
@@ -131,6 +133,27 @@ const TOPIC_SIGNALS: Record<Exclude<VisualTopic, 'general'>, RegExp[]> = {
   human: [/انسان/, /معني/, /وعي/, /كرام/, /اخلاق/, /هويه/, /قيم/, /حريه/, /ضمير/, /روح/, /نفس/, /تعاطف/, /حكم/],
 }
 
+function visualTopicFromDomainGlossary(value: string): VisualTopic | null {
+  const understanding = interpretDrAhmadDomain(value)
+  if (!understanding.primary && understanding.confidence < 60) return null
+  const corpus = normalizeArabic([
+    understanding.primary?.domain,
+    understanding.primary?.canonicalAr,
+    understanding.primary?.canonicalEn,
+    understanding.recognizedFrom,
+    understanding.compoundMeaning,
+    understanding.moods.join(' '),
+  ].filter(Boolean).join(' '))
+  if (/(?:اسره|طفل|والد|تربيه منزليه|مراهق)/.test(corpus)) return 'family'
+  if (/(?:بحث|اكاديمي|منهج|احصا|بيانات|قياس)/.test(corpus)) return 'research'
+  if (/(?:اعلام|ميديا|صحاف|اتصال|مجتمع رقمي)/.test(corpus)) return 'media'
+  if (/(?:تعليم|تعلم|تربوي|مدرس|جامع|متعلم|منصات التعلم)/.test(corpus)) return 'education'
+  if (/(?:بيئات غامره|واقع افتراضي|واقع معزز|ميتافيرس|مستقبل|ابتكار|تحول|استشراف|قياد)/.test(corpus)) return 'future'
+  if (/(?:ذكاء اصطناعي|تقني|تكنولوج|رقمي|روبوت|خوارزم)/.test(corpus)) return 'ai'
+  if (/(?:انسان|نفسي|علم النفس|رفاه|قيم|اخلاق|هويه|تعاطف|وعي)/.test(corpus)) return 'human'
+  return null
+}
+
 export function detectVisualTopic(value: string): VisualTopic {
   const text = normalizeArabic(value)
   let best: VisualTopic = 'general'
@@ -139,7 +162,8 @@ export function detectVisualTopic(value: string): VisualTopic {
     const score = signals.reduce((sum, pattern) => sum + (pattern.test(text) ? 1 : 0), 0)
     if (score > bestScore) { bestScore = score; best = topic }
   }
-  return best
+  if (best !== 'general') return best
+  return visualTopicFromDomainGlossary(value) || 'general'
 }
 
 export function visualTopicLabel(topic: VisualTopic) {
@@ -446,7 +470,7 @@ function drawWrapped(ctx: CanvasRenderingContext2D, text: string, x: number, y: 
 function fittedTitleSize(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maximumLines: number, preferred: number, minimum: number) {
   let size = preferred
   while (size > minimum) {
-    ctx.font = `700 ${Math.round(size)}px "Alexandria Variable", "Tajawal", sans-serif`
+    ctx.font = `700 ${Math.round(size)}px "El Messiri", "Tajawal", sans-serif`
     if (wrapLines(ctx, text, maxWidth).length <= maximumLines) return Math.round(size)
     size -= 2
   }
@@ -604,7 +628,7 @@ const sealStamp = (ctx: CanvasRenderingContext2D, cx: number, cy: number, radius
     ctx.restore()
   }
   ctx.globalAlpha = 0.95
-  ctx.font = `700 ${Math.round(radius * 0.95)}px "Alexandria Variable", "Tajawal", sans-serif`
+  ctx.font = `700 ${Math.round(radius * 0.95)}px "El Messiri", "Tajawal", sans-serif`
   ctx.textAlign = 'center'
   ctx.fillText(monogram, cx, cy + radius * 0.34)
   ctx.restore()
@@ -667,7 +691,7 @@ export async function renderSocialPng(inputTemplate: SocialVisualTemplate) {
   const ink = INKS[comp]
   const seed = hashSeed(template.id + template.title)
   const pad = Math.round(W * 0.09)
-  const display = (weight: number, size: number) => `${weight} ${Math.round(size)}px "Alexandria Variable", "Tajawal", sans-serif`
+  const display = (weight: number, size: number) => `${weight} ${Math.round(size)}px "El Messiri", "Tajawal", sans-serif`
   const sans = (weight: number, size: number) => `${weight} ${Math.round(size)}px Tajawal, sans-serif`
   const hairline = (x1: number, y1: number, x2: number, y2: number, color: string, widthPx: number, alpha = 1) => {
     ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = widthPx; ctx.globalAlpha = alpha

@@ -7,6 +7,17 @@ import ts from 'typescript'
 const sourcePath = resolve('src/lib/social-design-engine.ts')
 const source = await readFile(sourcePath, 'utf8')
 const studioSource = await readFile(resolve('src/components/admin/SocialDesignStudio.tsx'), 'utf8')
+const glossaryPath = resolve('src/lib/dr-ahmad-domain-glossary.ts')
+const glossaryJson = await readFile(resolve('src/data/dr-ahmad-domain-glossary.json'), 'utf8')
+const glossarySource = (await readFile(glossaryPath, 'utf8'))
+  .replace("import glossaryData from '../data/dr-ahmad-domain-glossary.json'", `const glossaryData = ${glossaryJson}`)
+const glossaryCompiled = ts.transpileModule(glossarySource, {
+  compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.ES2020, strict: true },
+  reportDiagnostics: true,
+  fileName: glossaryPath,
+})
+assert.equal((glossaryCompiled.diagnostics || []).filter((item) => item.category === ts.DiagnosticCategory.Error).length, 0, 'قاموس التخصص يجب أن يترجم بلا أخطاء')
+const glossaryDataUrl = `data:text/javascript;base64,${Buffer.from(glossaryCompiled.outputText).toString('base64')}`
 const compiled = ts.transpileModule(source, {
   compilerOptions: {
     target: ts.ScriptTarget.ES2020,
@@ -18,7 +29,11 @@ const compiled = ts.transpileModule(source, {
 })
 const diagnostics = compiled.diagnostics || []
 assert.equal(diagnostics.filter((item) => item.category === ts.DiagnosticCategory.Error).length, 0, 'المحرك يجب أن يترجم بلا أخطاء')
-const engine = await import(`data:text/javascript;base64,${Buffer.from(compiled.outputText).toString('base64')}`)
+const engineOutput = compiled.outputText.replace('./dr-ahmad-domain-glossary', glossaryDataUrl)
+const engine = await import(`data:text/javascript;base64,${Buffer.from(engineOutput).toString('base64')}`)
+
+const virtualReality = engine.analyzeSocialContent('الواقع الافتراضي')
+assert.notEqual(virtualReality.topic, 'general', 'المصطلح التخصصي المعروف في القاموس المركزي لا يسقط إلى «عام»')
 
 const question = engine.analyzeSocialContent('كيف نقيس التعلم دون أن نحول الطالب إلى رقم؟')
 assert.equal(question.primaryKind, 'provocative-question')
@@ -148,9 +163,9 @@ assert.ok(studioSource.includes('previousSignal === signal'), 'الإشارة ا
 console.log(JSON.stringify({
   ok: true,
   engineVersion: engine.SOCIAL_DESIGN_ENGINE_VERSION,
-  cases: 35,
+  cases: 36,
   generatedDirections: first.plans.length,
   uniqueLayouts: audit.uniqueLayouts,
   carouselSlides: long.structure.slides.length,
-  guards: ['arabic-analysis', 'compound-phrase-brief', 'explicit-palette-sovereignty', 'kuwait-timezone', 'deterministic-output', 'real-layout-diversity', 'history-novelty', 'lock-semantics', 'format-transform', 'contrast-and-overflow-audit', 'visual-critic', 'professional-release-gate', 'rendered-line-fit', 'taste-memory', 'taste-deduplication', 'campaign-release-gate', 'campaign-coherence', 'campaign-diversity'],
+  guards: ['domain-glossary-bridge', 'arabic-analysis', 'compound-phrase-brief', 'explicit-palette-sovereignty', 'kuwait-timezone', 'deterministic-output', 'real-layout-diversity', 'history-novelty', 'lock-semantics', 'format-transform', 'contrast-and-overflow-audit', 'visual-critic', 'professional-release-gate', 'rendered-line-fit', 'taste-memory', 'taste-deduplication', 'campaign-release-gate', 'campaign-coherence', 'campaign-diversity'],
 }, null, 2))

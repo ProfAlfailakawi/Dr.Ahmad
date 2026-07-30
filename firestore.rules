@@ -115,6 +115,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // إعدادات شخصية وكيل واتساب: خاصة بالمشرف، وتقرأها خدمة الوكيل من الخادم.
+    match /whatsapp_settings/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
     // ملفات السيرة البديلة: تُجزّأ داخل Firestore حتى لا يعتمد رفع السيرة
     // على تفعيل Firebase Storage. القراءة عامة للملف المنشور، والكتابة للمشرف فقط.
     match /site_cv_files/{kind} {

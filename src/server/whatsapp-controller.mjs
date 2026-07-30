@@ -552,21 +552,9 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     ]), messages) }
   }
 
-  /* ─── احترام رغبة المستلم أولاً ─── */
-  if (intent === INTENTS.STOP_MESSAGES) {
-    return {
-      kind: 'reply', reason: 'stop-messages', intent,
-      reply: signReply(messages.stopConfirm || 'تم، لن تصلك رسائل محتوى جديدة. إذا رغبت بالعودة اكتب: رجع الرسائل.', messages),
-      patch: { contentOptOut: true, contentOptOutAt: asIso() }, audienceSuppressed: true,
-    }
-  }
-  if (intent === INTENTS.RESUME_MESSAGES) {
-    return {
-      kind: 'reply', reason: 'resume-messages', intent,
-      reply: signReply(messages.resumeConfirm || 'عاد الاشتراك في رسائل المحتوى.', messages),
-      patch: { contentOptOut: false, contentOptInAt: asIso() }, audienceSuppressed: false,
-    }
-  }
+  /* «أوقف الرسائل» حُذفت نهائياً بأمر الدكتور (٣٠ يوليو): البوت لا يعرض
+     إيقاف الحملات ولا ينفذه؛ من كتبها تُعامل رسالته كأي نصٍّ عادي.
+     أما مسح التفضيلات فباقٍ — خصوصية المحادثة شأن آخر. */
   if (intent === INTENTS.DELETE_PREFERENCES) {
     return {
       kind: 'reply', reason: 'delete-preferences', intent,
@@ -1509,8 +1497,6 @@ function decisionLabel(reason = '') {
     acknowledged: 'إقرار قصير',
     'who-are-you': 'سؤال عن هوية المساعد',
     praise: 'ثناء',
-    'stop-messages': 'طلب إيقاف الرسائل',
-    'resume-messages': 'طلب عودة الرسائل',
     'delete-preferences': 'مسح التفضيلات',
     'correction-retry': 'تصحيح وبحث من زاوية ثانية',
     'correction-clarify': 'تصحيح يحتاج توضيحاً',
@@ -2019,22 +2005,6 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       ...(decision.patch && typeof decision.patch === 'object' ? decision.patch : {}),
       ...deliveryResponsePatch('reply', decision.reason, safeReply),
     }, { merge: true })
-    if (typeof decision.audienceSuppressed === 'boolean') {
-      /* «أوقف الرسائل» وعدٌ يجب الوفاء به فعلاً: صف الحملات يتخطى جهات الاتصال
-         الموسومة suppressed، فنسم جهة اتصال الجمهور المطابقة إن وُجدت. */
-      try {
-        const contactRef = db.collection(COLLECTIONS.audienceContacts).doc(audienceContactId(jid))
-        const contactSnapshot = await contactRef.get()
-        if (contactSnapshot.exists) {
-          await contactRef.set({
-            suppressed: decision.audienceSuppressed,
-            suppressedAt: decision.audienceSuppressed ? now : null,
-            suppressionSource: 'recipient-request',
-            updatedAt: now,
-          }, { merge: true })
-        }
-      } catch { /* رغبة المستلم محفوظة في وثيقة المحادثة على كل حال */ }
-    }
     sendJson(res, 200, { ok: true, action: 'reply', reason: decision.reason, reply: { text: safeReply } })
   }
 

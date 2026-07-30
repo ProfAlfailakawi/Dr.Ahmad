@@ -73,6 +73,8 @@ export type StudioStyleRoute =
   | 'poetic'
   | 'heritage'
   | 'calligraphic'
+  | 'tech'
+  | 'digital-heritage'
 
 export type SocialPlatform =
   | 'instagram'
@@ -114,6 +116,8 @@ export type LayoutFamilyId =
   | 'infographic'
   | 'sadu-weave'
   | 'ink-veil'
+  | 'neural-constellation'
+  | 'silicon-arabesque'
 
 /** الاتجاهات الفنية للإنفوجرافيك — تُنتقى تلقائياً أو يختارها الدكتور يدوياً. */
 export type InfographicVariantId = 'rail' | 'ordinal' | 'cards' | 'timeline' | 'ring' | 'spotlight'
@@ -186,6 +190,7 @@ export type PaletteId =
   | 'sadu-loom'
   | 'majlis-teal'
   | 'saffron-shadow'
+  | 'silicon-night'
 
 export type SlideRole = 'cover' | 'context' | 'insight' | 'evidence' | 'question' | 'action' | 'closing'
 
@@ -601,8 +606,11 @@ const COMMAND_STYLE_ROUTES: [RegExp, StudioStyleRoute, LayoutFamilyId, ContentTo
   [/(?:^|\s)(?:معماري|هندسي\s+فاخر|architectural)(?:\s|$)/i, 'architectural', 'dual-thesis', 'luxury', 'balanced', 'معماري فاخر'],
   [/(?:^|\s)(?:برهاني|بياني|مبني\s+على\s+البيانات|data-led)(?:\s|$)/i, 'evidence', 'evidence-ledger', 'academic', 'rich', 'برهاني معرفي'],
   [/(?:^|\s)(?:شاعري|تأملي|poetic)(?:\s|$)/i, 'poetic', 'quiet-orbit', 'deep', 'minimal', 'شاعري تأملي'],
-  [/(?:^|\s)(?:سدو|تراثي|كويتي\s+الروح|نول|بدوي|هوية\s+كويتية|هويه\s+كويتيه)(?:\s|$)/, 'heritage', 'sadu-weave', 'luxury', 'balanced', 'تراثي كويتي — نول السدو'],
-  [/(?:^|\s)(?:خطي|خط\s+عربي|حبر|كاليغرافي|خطاط[ةه]?|calligraphy)(?:\s|$)/i, 'calligraphic', 'ink-veil', 'bold', 'minimal', 'نَفَس الحبر — خط عربي'],
+  /* الحدّ الأيسر متسامح مع الترقيم: «تقني:» و«تراثي،» تُفهم كما تُفهم بلا ترقيم. */
+  [/(?:^|\s)(?:سدو|تراثي|كويتي\s+الروح|نول|بدوي|هوية\s+كويتية|هويه\s+كويتيه)(?=$|[\s:،,.!؟…-])/, 'heritage', 'sadu-weave', 'luxury', 'balanced', 'تراثي كويتي — نول السدو'],
+  [/(?:^|\s)(?:خطي|خط\s+عربي|حبر|كاليغرافي|خطاط[ةه]?|calligraphy)(?=$|[\s:،,.!؟…-])/i, 'calligraphic', 'ink-veil', 'bold', 'minimal', 'نَفَس الحبر — خط عربي'],
+  [/(?:^|\s)(?:تقني|ذكاء\s+اصطناعي|شبكه\s+عصبيه|شبكة\s+عصبية|رقمي|مستقبلي|تكنولوجي|بيانات|خوارزمي)(?=$|[\s:،,.!؟…-])/, 'tech', 'neural-constellation', 'intellectual', 'balanced', 'كوكبة عصبية — لغة الذكاء الاصطناعي'],
+  [/(?:^|\s)(?:تراث\s+رقمي|زخرفه\s+رقميه|زخرفة\s+رقمية|سيليكون|رقاقه|رقاقة|شريحه\s+الكترونيه)(?=$|[\s:،,.!؟…-])/, 'digital-heritage', 'silicon-arabesque', 'luxury', 'minimal', 'زخرفة السيليكون — تراثٌ يلتقي بالرقاقة'],
 ]
 
 const COMMAND_PALETTES: [RegExp, PaletteId, string][] = [
@@ -615,6 +623,7 @@ const COMMAND_PALETTES: [RegExp, PaletteId, string][] = [
   [/(?:^|\s)(?:بلون|باللون|بألوان|بالوان|لوحة\s+ألوان)\s+(?:فيروزي|فيروز|تركواز|تيفاني)(?:\s|$)/, 'majlis-teal', 'فيروز الديوانية'],
   [/(?:^|\s)(?:بلون|باللون|بألوان|بالوان|لوحة\s+ألوان)\s+(?:زعفراني|زعفران|ذهبي\s+داكن|عنبري)(?:\s|$)/, 'saffron-shadow', 'زعفران وظل'],
   [/(?:^|\s)(?:بلون|باللون|بألوان|بالوان|لوحة\s+ألوان)\s+(?:رملي|صحراوي|سدو)(?:\s|$)/, 'sadu-loom', 'نول السدو'],
+  [/(?:^|\s)(?:بلون|باللون|بألوان|بالوان|لوحة\s+ألوان)\s+(?:سيليكوني|سيليكون|نيون|سماوي\s+ليلي)(?:\s|$)/, 'silicon-night', 'ليل السيليكون'],
 ]
 
 const COMMAND_OPENERS = /^\s*(?:أبي|ابي|أبغى|ابغى|ابغي|أبا|ابا|أريد|اريد|بغيت|ودي|سوّ لي|سو لي|سوي لي|سويلي|صمم لي|صمملي|اصنع لي|اعمل لي|اعطني|عطني)\s+/
@@ -682,6 +691,8 @@ export function parseStudioCommand(raw: string): StudioCommandParse {
       break
     }
   }
+  /* بقايا ترقيمٍ في صدر الجملة بعد التهام كلمات الأسلوب («تقني:» تترك «:») */
+  working = working.replace(/^[\s:،,.!؟…-]+/, '')
 
   const audience = working.match(/(?:موج[ّه]?|مخصص|للجمهور|لـ)\s+(?:إلى|الى)?\s*([^،,.؟?]{3,48}?)(?=\s+(?:عن|حول|بخصوص|بعنوان)|[،,.؟?]|$)/)
   if (audience) {
@@ -733,6 +744,8 @@ export function parseStudioCommand(raw: string): StudioCommandParse {
     if (consume(COMMAND_CONNECTORS)) stripped = true
     if (!stripped) break
   }
+  /* بقايا ترقيمٍ يتيمة بعد التهام كلمات الأمر والأسلوب («تصميم تقني: X» تترك «: X») */
+  working = working.replace(/^[\s:،,.!؟…-]+/, '')
 
   const content = working.trim() || original
   if (!working.trim()) assumptions.push('الجملة كلها كلمات أمر؛ استعملت النص كما هو محتوىً.')
@@ -817,6 +830,8 @@ export const LAYOUT_FAMILIES: Record<LayoutFamilyId, LayoutFamily> = {
   infographic: { id: 'infographic', label: 'إنفوجرافيك معلوماتي', description: 'عنوان ثم رقم/إحصاءة بارزة وثلاث إلى خمس نقاط مرقّمة بعمود فهرسي هادئ — للمعلومة المركّبة والقائمة.', idealKinds: ['statistic', 'summary', 'information', 'research', 'knowledge-design', 'carousel'], idealTones: ['institutional', 'academic', 'formal', 'media'], preferredDensities: ['balanced', 'rich'], textBias: 'data', decorationBudget: 2 },
   'sadu-weave': { id: 'sadu-weave', label: 'نول السدو', description: 'هوية كويتية معاصرة: حزامان منسوجان من مثلثات السدو يؤطران الفكرة، وقارٌ تراثي لا يشبه أحداً.', idealKinds: ['core-idea', 'quote', 'announcement', 'impression-card', 'book', 'invitation'], idealTones: ['luxury', 'human', 'deep', 'formal', 'inspiring'], preferredDensities: ['minimal', 'balanced'], textBias: 'title', decorationBudget: 3 },
   'ink-veil': { id: 'ink-veil', label: 'نَفَس الحبر', description: 'كلمة واحدة بحبرٍ ضخم يتنفس خلف العنوان — بلاغة الخطّ العربي بروح معاصرة وتكثيف صارم.', idealKinds: ['quote', 'core-idea', 'provocative-question', 'impression-card', 'reel-cover'], idealTones: ['bold', 'deep', 'intellectual', 'luxury'], preferredDensities: ['minimal'], textBias: 'title', decorationBudget: 2 },
+  'neural-constellation': { id: 'neural-constellation', label: 'كوكبة عصبية', description: 'شبكة عقدٍ ومساراتٍ تُرسم من بذرة التصميم نفسها، ومسارٌ واحد مضيء يحمل الفكرة — لغة أستاذ الذكاء الاصطناعي.', idealKinds: ['core-idea', 'statistic', 'research', 'knowledge-design', 'information', 'provocative-question'], idealTones: ['media', 'intellectual', 'academic', 'bold'], preferredDensities: ['minimal', 'balanced'], textBias: 'title', decorationBudget: 3 },
+  'silicon-arabesque': { id: 'silicon-arabesque', label: 'زخرفة السيليكون', description: 'النجمة الثمانية تُرسم بلغة مسارات الدوائر الإلكترونية ولحاماتها — تراثٌ يلتقي بالرقاقة، لم يصنعه أحد.', idealKinds: ['core-idea', 'quote', 'announcement', 'impression-card', 'knowledge-design', 'book'], idealTones: ['luxury', 'intellectual', 'deep', 'formal', 'media'], preferredDensities: ['minimal', 'balanced'], textBias: 'title', decorationBudget: 3 },
 }
 
 export const TYPOGRAPHY_MODES: Record<TypographyModeId, TypographyMode> = {
@@ -892,6 +907,7 @@ export const PALETTES: Record<PaletteId, Palette> = {
   'sadu-loom': { id: 'sadu-loom', label: 'نول السدو', background: '#F4EDE1', surface: '#FBF7EE', ink: '#231A14', muted: '#7A6A57', accent: '#A5342A', accentSoft: '#E9D5C4', rule: '#D8C6AE', isDark: false },
   'majlis-teal': { id: 'majlis-teal', label: 'فيروز الديوانية', background: '#0F2B2E', surface: '#16393D', ink: '#F2EFE6', muted: '#A9BDBB', accent: '#4FB3A9', accentSoft: '#1E4A4C', rule: '#2A5457', isDark: true },
   'saffron-shadow': { id: 'saffron-shadow', label: 'زعفران وظل', background: '#221C14', surface: '#2C251A', ink: '#F7F1E4', muted: '#C4B79F', accent: '#E0A93E', accentSoft: '#453923', rule: '#4A4130', isDark: true },
+  'silicon-night': { id: 'silicon-night', label: 'ليل السيليكون', background: '#0B1220', surface: '#111A2C', ink: '#EAF2FB', muted: '#93A5BC', accent: '#37D2E2', accentSoft: '#123A46', rule: '#233650', isDark: true },
 }
 
 /** اللوحة الفعلية للتصميم: البصمة البصرية المرفوعة إن وُجدت، وإلا لوحة الهوية المختارة. */
@@ -1487,6 +1503,8 @@ const SPATIAL_BY_LAYOUT: Record<LayoutFamilyId, readonly SpatialPatternId[]> = {
   infographic: ['modular-grid', 'topographic-stack', 'right-rail'],
   'sadu-weave': ['centered-monument', 'low-horizon', 'right-rail'],
   'ink-veil': ['centered-monument', 'asymmetric-air', 'low-horizon'],
+  'neural-constellation': ['asymmetric-air', 'right-rail', 'split-balance'],
+  'silicon-arabesque': ['asymmetric-air', 'right-rail', 'layered-depth'],
 }
 
 const ACCENT_BY_LAYOUT: Record<LayoutFamilyId, readonly AccentStrategyId[]> = {
@@ -1505,6 +1523,8 @@ const ACCENT_BY_LAYOUT: Record<LayoutFamilyId, readonly AccentStrategyId[]> = {
   infographic: ['data-marker', 'editorial-index', 'single-rule'],
   'sadu-weave': ['quiet-seal', 'single-rule', 'none'],
   'ink-veil': ['hero-keyword', 'none', 'single-rule'],
+  'neural-constellation': ['soft-orbit', 'hero-keyword', 'single-rule'],
+  'silicon-arabesque': ['corner-signal', 'single-rule', 'quiet-seal'],
 }
 
 const FRAME_BY_LAYOUT: Record<LayoutFamilyId, readonly FramingModeId[]> = {
@@ -1523,6 +1543,8 @@ const FRAME_BY_LAYOUT: Record<LayoutFamilyId, readonly FramingModeId[]> = {
   infographic: ['hairline-inset', 'corner-marks', 'editorial-folio'],
   'sadu-weave': ['full-bleed', 'open-canvas', 'hairline-inset'],
   'ink-veil': ['open-canvas', 'full-bleed', 'cinematic-crop'],
+  'neural-constellation': ['open-canvas', 'full-bleed', 'hairline-inset'],
+  'silicon-arabesque': ['open-canvas', 'corner-marks', 'hairline-inset'],
 }
 
 const PALETTE_BY_TONE: Record<ContentTone, readonly PaletteId[]> = {
@@ -1531,17 +1553,17 @@ const PALETTE_BY_TONE: Record<ContentTone, readonly PaletteId[]> = {
   luxury: ['graphite-gold', 'signal-ivory', 'brand-night', 'warm-parchment', 'plum-lime', 'sadu-loom', 'saffron-shadow'],
   human: ['warm-parchment', 'brand-paper', 'signal-ivory', 'quiet-stone', 'museum-red', 'sadu-loom'],
   inspiring: ['signal-ivory', 'electric-cobalt', 'emerald-sand', 'scholar-blue', 'brand-paper'],
-  deep: ['brand-night', 'graphite-gold', 'plum-lime', 'warm-parchment', 'ink-white', 'majlis-teal', 'saffron-shadow'],
-  bold: ['brand-night', 'plum-lime', 'museum-red', 'electric-cobalt', 'graphite-gold', 'saffron-shadow'],
+  deep: ['brand-night', 'graphite-gold', 'plum-lime', 'warm-parchment', 'ink-white', 'majlis-teal', 'saffron-shadow', 'silicon-night'],
+  bold: ['brand-night', 'plum-lime', 'museum-red', 'electric-cobalt', 'graphite-gold', 'saffron-shadow', 'silicon-night'],
   calm: ['quiet-stone', 'brand-paper', 'warm-parchment', 'emerald-sand', 'ink-white', 'majlis-teal'],
   academic: ['scholar-blue', 'ink-white', 'brand-paper', 'electric-cobalt', 'brand-night'],
-  media: ['brand-night', 'electric-cobalt', 'museum-red', 'scholar-blue', 'ink-white'],
+  media: ['brand-night', 'electric-cobalt', 'museum-red', 'scholar-blue', 'ink-white', 'silicon-night'],
   promotional: ['museum-red', 'electric-cobalt', 'brand-paper', 'brand-night', 'signal-ivory'],
   intellectual: ['brand-paper', 'ink-white', 'brand-night', 'emerald-sand', 'warm-parchment', 'majlis-teal'],
 }
 
 const DIRECTION_LABELS: Record<LayoutFamilyId, string> = {
-  'editorial-axis': 'تحريرية صافية', 'hero-word': 'كلمة تقود المشهد', 'quote-stage': 'اقتباس يتنفس', 'dual-thesis': 'مواجهة فكرية', 'evidence-ledger': 'الدليل أولاً', 'event-marquee': 'واجهة إعلامية', 'knowledge-map': 'خريطة المعنى', 'quiet-orbit': 'مدار هادئ', 'chapter-stack': 'فصول متتابعة', 'cinematic-window': 'غلاف سينمائي', 'human-note': 'صوت إنساني', 'modular-brief': 'ملخص مؤسسي', infographic: 'إنفوجرافيك مرقّم', 'sadu-weave': 'نول السدو', 'ink-veil': 'نفَس الحبر',
+  'editorial-axis': 'تحريرية صافية', 'hero-word': 'كلمة تقود المشهد', 'quote-stage': 'اقتباس يتنفس', 'dual-thesis': 'مواجهة فكرية', 'evidence-ledger': 'الدليل أولاً', 'event-marquee': 'واجهة إعلامية', 'knowledge-map': 'خريطة المعنى', 'quiet-orbit': 'مدار هادئ', 'chapter-stack': 'فصول متتابعة', 'cinematic-window': 'غلاف سينمائي', 'human-note': 'صوت إنساني', 'modular-brief': 'ملخص مؤسسي', infographic: 'إنفوجرافيك مرقّم', 'sadu-weave': 'نول السدو', 'ink-veil': 'نفَس الحبر', 'neural-constellation': 'كوكبة عصبية', 'silicon-arabesque': 'زخرفة السيليكون',
 }
 
 const platformFormats = (platform: SocialPlatform) => (Object.values(SOCIAL_FORMATS) as SocialFormatSpec[]).filter((format) => format.platform === platform)

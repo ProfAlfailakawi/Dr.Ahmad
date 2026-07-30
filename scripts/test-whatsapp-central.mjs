@@ -225,13 +225,13 @@ assert.equal(decideGroundedResponse({ text: 'مع السلامة' }).reason, 'fa
 assert.equal(decideGroundedResponse({ text: 'منو انت؟' }).reason, 'who-are-you')
 assert.equal(decideGroundedResponse({ text: 'تمام' }).reason, 'acknowledged')
 
+/* «أوقف الرسائل» محذوفة نهائياً بأمر الدكتور: لا وسم إيقاف، ولا تأكيد إيقاف،
+   والرسالة تُعامل كأي نص عادي. مسح التفضيلات (خصوصية) باقٍ. */
 const stop = decideGroundedResponse({ text: 'أوقف الرسائل' })
-assert.equal(stop.reason, 'stop-messages')
-assert.equal(stop.audienceSuppressed, true)
-assert.equal(stop.patch.contentOptOut, true)
-const resume = decideGroundedResponse({ text: 'رجع الرسائل' })
-assert.equal(resume.reason, 'resume-messages')
-assert.equal(resume.audienceSuppressed, false)
+assert.notEqual(stop.reason, 'stop-messages')
+assert.equal(stop.audienceSuppressed, undefined)
+assert.doesNotMatch(String(stop.reply), /لن تصلك رسائل/)
+assert.equal(decideGroundedResponse({ text: 'رجع الرسائل' }).audienceSuppressed, undefined)
 assert.equal(decideGroundedResponse({ text: 'امسح بياناتي' }).reason, 'delete-preferences')
 
 let quizConversation = {}

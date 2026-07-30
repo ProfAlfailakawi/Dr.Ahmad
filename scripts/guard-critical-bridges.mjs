@@ -23,6 +23,7 @@ const requiredFiles = [
   'manual-dialogues/success-that-does-not-bring-joy-to-its-ownerarabic.json',
   'storage.rules',
   'firestore.rules',
+  'scripts/deploy-firestore-rules-admin.mjs',
   'src/pages/CvFile.tsx',
   '.github/workflows/firebase-hosting-live.yml',
   'src/components/admin/WhatsAppAgentPanel.tsx',
@@ -57,6 +58,7 @@ const manualEditor = await readFile(resolve(root, 'src/components/admin/ManualDi
 const fetchBridge = await readFile(resolve(root, 'scripts/fetch-manual-dialogues.mjs'), 'utf8')
 const socialTemplates = await readFile(resolve(root, 'src/lib/social-templates.ts'), 'utf8')
 const hostingWorkflow = await readFile(resolve(root, '.github/workflows/firebase-hosting-live.yml'), 'utf8')
+const firestoreRulesDeploy = await readFile(resolve(root, 'scripts/deploy-firestore-rules-admin.mjs'), 'utf8')
 const podcastWorkflow = await readFile(resolve(root, '.github/workflows/podcast-pilot-release.yml'), 'utf8')
 const podcastEngine = await readFile(resolve(root, 'scripts/podcast-dialogue.mjs'), 'utf8')
 const ideaFeatures = await readFile(resolve(root, 'src/components/IdeaFeatures.tsx'), 'utf8')
@@ -116,8 +118,14 @@ const assertions = [
   /* الصيغة المدموجة firestore:rules,storage كانت العطل نفسه: فشل تفعيل Storage يُسقط
      قواعد Firestore معه بصمت فيتعطل رفع السيرة. الفصل: قواعد Firestore وحدها بصوت
      عالٍ (فشلها يفشل النشر)، وStorage محاولة اختيارية بعدها. */
-  [hostingWorkflow.includes('--only firestore:rules') && hostingWorkflow.includes('--only storage'),
-    'hosting deploy must publish Firestore rules standalone (loud) and still attempt Storage rules'],
+  [
+    (hostingWorkflow.includes('--only firestore:rules')
+      || (hostingWorkflow.includes('node scripts/deploy-firestore-rules-admin.mjs')
+        && firestoreRulesDeploy.includes('releaseFirestoreRulesetFromSource')
+        && firestoreRulesDeploy.includes('account.project_id !== projectId')))
+      && hostingWorkflow.includes('--only storage'),
+    'hosting deploy must publish Firestore rules standalone (CLI or guarded Admin SDK, loud) and still attempt Storage rules',
+  ],
   [ideaFeatures.includes('window.visualViewport') && ideaFeatures.includes('firstPress'), 'PWA selection toolbar and first-tap quote controls must remain protected'],
   [contentManager.includes('uploadCvPdfToFirestore') && contentManager.includes("'site_cv_files'"), 'CV upload must keep its Storage-independent Firestore bridge'],
   [contentManager.includes('النص المُشكَّل لتوليد الصوت') && contentManager.includes("'bodyVocalized'") && autoAudio.includes('fields.bodyVocalized'), 'vocalized article text must remain visible in admin and connected to audio generation'],

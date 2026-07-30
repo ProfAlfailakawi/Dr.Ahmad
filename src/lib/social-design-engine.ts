@@ -8,8 +8,9 @@
  */
 
 import { interpretDrAhmadDomain } from './dr-ahmad-domain-glossary'
+import { createIdeaDna, type IdeaDna } from './idea-dna'
 
-export const SOCIAL_DESIGN_ENGINE_VERSION = '3.1.0'
+export const SOCIAL_DESIGN_ENGINE_VERSION = '3.2.0'
 
 export type ContentKind =
   | 'quote'
@@ -133,6 +134,7 @@ export type TypographyModeId =
   | 'academic-index'
   | 'cinematic-title'
   | 'conversational'
+  | 'studio-clean'
 
 export type SpatialPatternId =
   | 'asymmetric-air'
@@ -314,6 +316,9 @@ export interface ParsedContentStructure {
   cta: string
   author: string
   source: string
+  /** تحكم تحريري صريح: يمكن إخفاء الهوية أو المصدر من تصميم بعينه دون مسح القيمة الأصلية. */
+  authorHidden?: boolean
+  sourceHidden?: boolean
   category: string
   keywords: string[]
   slides: CarouselSlide[]
@@ -783,10 +788,15 @@ export interface SocialDesignRequest {
   preferLayout?: LayoutFamilyId
   /** اللون المذكور صراحةً في العبارة يتقدّم على الاختيار الاحتمالي. */
   preferPalette?: PaletteId
+  /** الخط الصريح يتقدّم، وإلا تقود بصمة الفكرة عائلة الخطوط من دون تجميد كل النتائج. */
+  preferTypography?: TypographyModeId
+  /** بصمة الفكرة الدلالية؛ إن لم تُمرر يحسبها المحرك داخلياً من النص والسياق. */
+  ideaDna?: IdeaDna
 }
 
 export interface SocialDesignResult {
   analysis: SocialContentAnalysis
+  ideaDna: IdeaDna
   plans: CompositionPlan[]
   generation: {
     seed: string
@@ -845,6 +855,7 @@ export const TYPOGRAPHY_MODES: Record<TypographyModeId, TypographyMode> = {
   'academic-index': { id: 'academic-index', label: 'فهرس أكاديمي', description: 'عناوين دقيقة وترقيم صغير يشبه أوراق البحث.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 600, titleScale: 0.88, lineHeight: 1.5, maxLines: 6 },
   'cinematic-title': { id: 'cinematic-title', label: 'عنوان سينمائي', description: 'كتلة عنوان قصيرة عالية التباين للغلاف.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 800, titleScale: 1.08, lineHeight: 1.3, maxLines: 4 },
   conversational: { id: 'conversational', label: 'صوت قريب', description: 'إيقاع عربي مريح يناسب السؤال والنبرة الإنسانية.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 500, titleScale: .96, lineHeight: 1.58, maxLines: 7 },
+  'studio-clean': { id: 'studio-clean', label: 'عربي معاصر', description: 'خط عربي نظيف ومباشر للمنشور المستقل؛ بلا زخرفة زائدة وبوزن متزن على الهاتف.', displayFamily: 'Tajawal', bodyFamily: 'Tajawal', titleWeight: 500, titleScale: 1.02, lineHeight: 1.46, maxLines: 6 },
 }
 
 export const SPATIAL_PATTERNS: Record<SpatialPatternId, SpatialPattern> = {
@@ -1800,12 +1811,18 @@ const makeCandidate = (
   variant: number,
   history: readonly DesignHistoryEntry[],
   preferredPalette?: PaletteId,
+  preferredTypography?: TypographyModeId,
+  ideaDna?: IdeaDna,
 ): CompositionPlan => {
-  const typography = chooseFirst(TYPOGRAPHY_BY_BIAS[layout.textBias], seed, `${layout.id}:type:${variant}`)
+  const dnaTypography = ideaDna?.direction.typography
+  const typographyPool = [dnaTypography?.primary, ...(dnaTypography?.alternates || [])].filter((item): item is TypographyModeId => Boolean(item && item in TYPOGRAPHY_MODES))
+  const typography = preferredTypography || (typographyPool.length ? typographyPool[Math.abs(variant) % typographyPool.length] : chooseFirst(TYPOGRAPHY_BY_BIAS[layout.textBias], seed, `${layout.id}:type:${variant}`))
   const spatial = chooseFirst(SPATIAL_BY_LAYOUT[layout.id], seed, `${layout.id}:space:${variant}`)
   const accent = chooseFirst(ACCENT_BY_LAYOUT[layout.id], seed, `${layout.id}:accent:${variant}`)
   const framing = chooseFirst(FRAME_BY_LAYOUT[layout.id], seed, `${layout.id}:frame:${variant}`)
-  const palette = preferredPalette || chooseFirst(PALETTE_BY_TONE[analysis.primaryTone], seed, `${layout.id}:palette:${variant}`)
+  const dnaPalette = ideaDna?.direction.palette
+  const palettePool = [dnaPalette?.primary, ...(dnaPalette?.alternates || [])].filter((item): item is PaletteId => Boolean(item && item in PALETTES))
+  const palette = preferredPalette || (palettePool.length ? palettePool[Math.abs(variant + layout.id.length) % palettePool.length] : chooseFirst(PALETTE_BY_TONE[analysis.primaryTone], seed, `${layout.id}:palette:${variant}`))
   const ctaPlacement = ctaPlacementFor(analysis, format, layout.id, `${seed}:${variant}`)
   const signature: DesignSignature = { layout: layout.id, typography, spatial, accent, framing, cta: ctaPlacement, palette, format: format.id }
   const novelty = noveltyAgainst(signature, history)
@@ -1941,30 +1958,47 @@ const selectVisibleThemeDiversity = (ranked: readonly CompositionPlan[], count: 
 }
 
 export function generateSocialDesigns(request: SocialDesignRequest): SocialDesignResult {
-  const analysis = overrideAnalysis(analyzeSocialContent(request.text, request.context, { author: request.author, source: request.source }), request)
+  const ideaDna = request.ideaDna || createIdeaDna(request.text, { context: request.context })
+  const dnaTone = ideaDna.tone.id as ContentTone
+  const dnaDensity = ideaDna.direction.density as DesignDensity
+  const dnaPlatform = ideaDna.direction.platform.primary as SocialPlatform
+  const directedRequest: SocialDesignRequest = {
+    ...request,
+    tone: request.tone && request.tone !== 'auto' ? request.tone : dnaTone,
+    density: request.density && request.density !== 'auto' ? request.density : dnaDensity,
+    platform: request.platform && request.platform !== 'auto' ? request.platform : dnaPlatform,
+    ideaDna,
+  }
+  const analysis = overrideAnalysis(analyzeSocialContent(directedRequest.text, directedRequest.context, { author: directedRequest.author, source: directedRequest.source }), directedRequest)
   // لجنة الجودة تعمل دائماً على ثمانية اتجاهات نهائية داخلياً، ولا تعرض إلا أقوى أربعة.
   const requestedCount = 8
   const visibleCount = 4
-  const seed = String(request.seed ?? `${normalizeArabicForDesign(request.text)}:${analysis.primaryKind}:${analysis.primaryTone}`)
-  const format = resolveFormat(request, analysis)
-  const density = request.density && request.density !== 'auto' ? request.density : analysis.density
-  const history = normalizeHistory(request.history)
-  const noveltyThreshold = clamp(request.noveltyThreshold ?? 0.42, 0, 0.9)
-  const locks = { ...DEFAULT_LOCKS, ...request.locks }
+  const seed = String(directedRequest.seed ?? `${normalizeArabicForDesign(directedRequest.text)}:${analysis.primaryKind}:${analysis.primaryTone}`)
+  const format = resolveFormat(directedRequest, analysis)
+  const density = directedRequest.density && directedRequest.density !== 'auto' ? directedRequest.density : analysis.density
+  const history = normalizeHistory(directedRequest.history)
+  const noveltyThreshold = clamp(directedRequest.noveltyThreshold ?? 0.42, 0, 0.9)
+  const locks = { ...DEFAULT_LOCKS, ...directedRequest.locks }
   const warnings: string[] = []
-  if (Object.values(locks).some(Boolean) && !request.basePlan) warnings.push('طُلب قفل عناصر من دون تصميم أساس؛ أُهملت الأقفال لهذه الدفعة.')
+  if (Object.values(locks).some(Boolean) && !directedRequest.basePlan) warnings.push('طُلب قفل عناصر من دون تصميم أساس؛ أُهملت الأقفال لهذه الدفعة.')
 
-  // الرغبة الصريحة سلطة: العائلة المطلوبة تتصدر الترتيب ويرتفع لياقة مرشحيها
-  // بما يضمن حضورها في الأربعة المعروضة — من دون إلغاء التنويع حولها.
-  const preferenceBoost = (layoutId: LayoutFamilyId) => request.preferLayout === layoutId ? 55 : 0
+  // بصمة الفكرة لا تجمّد الاستوديو على قالب واحد: تعطي ثلاث عائلات متقاربة
+  // في المعنى، ثم تترك لجنة التنوع تختار اختلافات حقيقية في البنية واللون والخط.
+  const dnaLayouts = [ideaDna.direction.layout.primary, ...ideaDna.direction.layout.alternates] as LayoutFamilyId[]
+  const preferenceBoost = (layoutId: LayoutFamilyId) => {
+    if (directedRequest.preferLayout === layoutId) return 55
+    if (directedRequest.preferLayout) return 0
+    const dnaIndex = dnaLayouts.indexOf(layoutId)
+    return dnaIndex === 0 ? 24 : dnaIndex === 1 ? 15 : dnaIndex === 2 ? 9 : 0
+  }
   const rankedLayouts = seededOrder(Object.values(LAYOUT_FAMILIES), seed, 'layout-order')
     .sort((left, right) => (layoutFitness(right, analysis, density, format) + preferenceBoost(right.id)) - (layoutFitness(left, analysis, density, format) + preferenceBoost(left.id)))
   const candidates: CompositionPlan[] = []
   for (const [layoutIndex, layout] of rankedLayouts.entries()) {
     for (let variant = 0; variant < 6; variant += 1) {
-      const candidate = makeCandidate(layout, analysis, format, density, seed, layoutIndex * 7 + variant, history, request.preferPalette)
+      const candidate = makeCandidate(layout, analysis, format, density, seed, layoutIndex * 7 + variant, history, directedRequest.preferPalette, directedRequest.preferTypography, ideaDna)
       const boosted = preferenceBoost(layout.id) ? { ...candidate, fitness: roundScore(candidate.fitness + preferenceBoost(layout.id)) } : candidate
-      candidates.push(request.basePlan ? applyDesignLocks(request.basePlan, boosted, locks) : boosted)
+      candidates.push(directedRequest.basePlan ? applyDesignLocks(directedRequest.basePlan, boosted, locks) : boosted)
     }
   }
 
@@ -1972,9 +2006,9 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
   const valid = critiqued.filter((candidate) => !candidate.quality?.issues.some((issue) => issue.startsWith('خطأ:')) && (candidate.quality?.score || 0) >= 72 && (candidate.quality?.lineFit || 0) >= 74)
   const strong = valid.filter((candidate) => (candidate.quality?.score || 0) >= 82 && (candidate.quality?.lineFit || 0) >= 82 && candidate.novelty >= Math.min(noveltyThreshold, 0.5))
   const candidatePool = strong.length >= requestedCount ? strong : valid.length ? valid : critiqued
-  const finalists = selectDiverse(candidatePool, requestedCount, history, noveltyThreshold, request.tasteProfile)
+  const finalists = selectDiverse(candidatePool, requestedCount, history, noveltyThreshold, directedRequest.tasteProfile)
   const rankedVisible = finalists
-    .map((plan) => ({ ...plan, quality: critiqueCompositionPlan(plan, finalists), tasteAffinity: tasteAffinity(request.tasteProfile, plan) }))
+    .map((plan) => ({ ...plan, quality: critiqueCompositionPlan(plan, finalists), tasteAffinity: tasteAffinity(directedRequest.tasteProfile, plan) }))
     .sort((left, right) => ((right.quality?.score || 0) + (right.tasteAffinity || 0) * 8) - ((left.quality?.score || 0) + (left.tasteAffinity || 0) * 8))
   let plans = selectVisibleThemeDiversity(rankedVisible, visibleCount).slice(0, visibleCount)
   // في النصوص القصيرة جداً قد تكون مسافة التشابه الصارمة أقسى من اللازم فتترك
@@ -1985,33 +2019,30 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
       .sort((left, right) => (right.quality?.score || 0) - (left.quality?.score || 0))
     for (const candidate of completionPool) {
       if (plans.some((plan) => plan.fingerprint === candidate.fingerprint || plan.layout === candidate.layout)) continue
-      plans.push(candidate)
+      plans.push({ ...candidate, tasteAffinity: tasteAffinity(directedRequest.tasteProfile, candidate) })
       if (plans.length === visibleCount) break
     }
   }
   // وعد الزر يُنفَّذ حرفياً: إن طلب المستخدم عائلة بعينها ولم تصعد بجودتها،
   // نصعد أقوى مرشح منها إلى الصدارة بدل أن يضيع الطلب في فرز الجودة العام.
-  if (request.preferLayout && !plans.some((plan) => plan.layout === request.preferLayout)) {
-    /* مظلة الوعد تشمل كل المرشحين المفحوصين لا الناجين فقط: عائلةٌ جديدة قد
-       يقسو عليها الناقد بدرجة دون العتبة فتختفي من الصدارة رغم طلبها الصريح. */
+  if (directedRequest.preferLayout && !plans.some((plan) => plan.layout === directedRequest.preferLayout)) {
     const champion = [...finalists, ...candidatePool, ...critiqued]
-      .filter((plan) => plan.layout === request.preferLayout)
+      .filter((plan) => plan.layout === directedRequest.preferLayout)
       .sort((left, right) => (right.quality?.score || 0) - (left.quality?.score || 0))[0]
     if (champion) {
-      const enriched = { ...champion, quality: critiqueCompositionPlan(champion, finalists), tasteAffinity: tasteAffinity(request.tasteProfile, champion) }
+      const enriched = { ...champion, quality: critiqueCompositionPlan(champion, finalists), tasteAffinity: tasteAffinity(directedRequest.tasteProfile, champion) }
       plans = [enriched, ...plans.filter((plan) => plan.fingerprint !== enriched.fingerprint)].slice(0, visibleCount)
     }
   }
-  /* والمطلوب صراحةً يتصدر العرض لا يتذيله: أول ما يراه الدكتور هو ما طلبه،
-     وتبقى بقية الاتجاهات حوله للمقارنة. */
-  if (request.preferLayout && plans.some((plan) => plan.layout === request.preferLayout)) {
-    plans = [...plans.filter((plan) => plan.layout === request.preferLayout), ...plans.filter((plan) => plan.layout !== request.preferLayout)]
+  if (directedRequest.preferLayout && plans.some((plan) => plan.layout === directedRequest.preferLayout)) {
+    plans = [...plans.filter((plan) => plan.layout === directedRequest.preferLayout), ...plans.filter((plan) => plan.layout !== directedRequest.preferLayout)]
   }
   plans = plans.map((plan, index) => ({ ...plan, directionIndex: index + 1 }))
   if (plans.some((plan) => plan.novelty < noveltyThreshold)) warnings.push('السجل البصري كثيف؛ اختير أبعد تكوين ممكن مع المحافظة على ملاءمة النص.')
   if (finalists.length < requestedCount) warnings.push(`الأقفال الحالية سمحت بفحص ${finalists.length} اتجاهات متمايزة فقط قبل اختيار أقوى أربعة.`)
   return {
     analysis,
+    ideaDna,
     plans,
     generation: { seed, requestedCount, producedCount: plans.length, historyCompared: history.length, noveltyThreshold, warnings, candidateCount: candidates.length, rejectedCount: candidates.length - candidatePool.length, averageQuality: plans.length ? Math.round(plans.reduce((sum, plan) => sum + (plan.quality?.score || 0), 0) / plans.length) : 0 },
   }

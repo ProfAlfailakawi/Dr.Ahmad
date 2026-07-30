@@ -1818,6 +1818,8 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
       tone: pulseCommand.tone || 'auto',
       density: pulseCommand.density || (pulseCommand.noBody ? 'minimal' : 'auto'),
       platform: pulseCommand.platform || 'instagram',
+      // المنشور المستقل يستخدم وجهاً عربياً أنظف من خط العناوين التحريري للموقع.
+      preferTypography: 'studio-clean',
       ...(pulseCommand.format ? { format: pulseCommand.format } : {}),
       ...(pulseCommand.preferLayout ? { preferLayout: pulseCommand.preferLayout } : {}),
       ...(pulseCommand.preferPalette ? { preferPalette: pulseCommand.preferPalette } : {}),

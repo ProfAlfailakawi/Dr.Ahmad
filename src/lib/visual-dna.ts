@@ -74,7 +74,7 @@ function readableAccent(value: string, background: string, isDark: boolean) {
   const hsl = rgbToHsl(hexRgb(value))
   let lightness = isDark ? Math.max(.61, hsl.l) : Math.min(.43, hsl.l)
   let candidate = hslHex(hsl.h, Math.max(.36, hsl.s), lightness)
-  for (let i = 0; i < 8 && contrast(candidate, background) < 3.2; i += 1) {
+  for (let i = 0; i < 10 && contrast(candidate, background) < 4.5; i += 1) {
     lightness += isDark ? .045 : -.045
     candidate = hslHex(hsl.h, Math.max(.36, hsl.s), clamp(lightness, .16, .82))
   }

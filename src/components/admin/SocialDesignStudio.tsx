@@ -4318,6 +4318,16 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                       <EditableText label="الشارة أعلى التصميم — مثل «كتاب/مقال…»" value={selected.content.kicker} onCommit={(next) => editContent({ kicker: next })} />
                       <button type="button" onClick={() => editContent({ kicker: '' })} disabled={!selected.content.kicker} className="justify-self-start rounded-full border border-hair px-2.5 py-1 text-[.6rem] font-semibold text-soft transition hover:border-accent hover:text-accent disabled:opacity-35">إخفاء الشارة</button>
                     </div>
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                      <div className="grid gap-1.5">
+                        <EditableText label="اسم المؤلف / التوقيع" value={selected.content.author} onCommit={(next) => editContent({ author: next, authorHidden: false })} />
+                        <button type="button" onClick={() => editContent({ authorHidden: !selected.content.authorHidden })} className="justify-self-start rounded-full border border-hair px-2.5 py-1 text-[.6rem] font-semibold text-soft transition hover:border-accent hover:text-accent">{selected.content.authorHidden ? 'إظهار التوقيع' : 'إخفاء التوقيع'}</button>
+                      </div>
+                      <div className="grid gap-1.5">
+                        <EditableText label="المصدر / النطاق" value={selected.content.source || 'dr-alfailakawi.com'} onCommit={(next) => editContent({ source: next, sourceHidden: false })} />
+                        <button type="button" onClick={() => editContent({ sourceHidden: !selected.content.sourceHidden })} className="justify-self-start rounded-full border border-hair px-2.5 py-1 text-[.6rem] font-semibold text-soft transition hover:border-accent hover:text-accent">{selected.content.sourceHidden ? 'إظهار المصدر' : 'إخفاء المصدر'}</button>
+                      </div>
+                    </div>
                   </div>
                   <div className="mt-3">
                     <p className="text-[.64rem] font-semibold text-soft">المنظومة اللونية — بنقرة، والناقد يعيد الحكم فوراً</p>

@@ -348,6 +348,7 @@ interface Scene {
   hero: string
   cta: string
   author: string
+  source: string
   slides: number
   displayFamily: string
   bodyFamily: string
@@ -387,7 +388,8 @@ function sceneOf(plan: CompositionPlan): Scene {
     bodyText,
     hero: plan.content.heroWord || '',
     cta,
-    author: plan.content.author || 'د. أحمد حسين الفيلكاوي',
+    author: plan.content.authorHidden ? '' : (plan.content.author || 'د. أحمد حسين الفيلكاوي'),
+    source: plan.content.sourceHidden ? '' : (plan.content.source || 'dr-alfailakawi.com'),
     slides: plan.content.slides.length,
     displayFamily: typography.displayFamily,
     bodyFamily: typography.bodyFamily,
@@ -557,15 +559,15 @@ function identityFooter(s: Scene, options: { mode?: 'standard' | 'center' | 'non
      فلا يتكرر اسم الدكتور مرتين في التصميم الواحد (ملاحظته بالحرف) */
   if (mode === 'center') {
     return [
-      options.nameless ? '' : textBlock({ lines: [s.author], x: w / 2, y: y - min * .036, size: nameSize, fill: p.ink, weight: 600, anchor: 'middle', family: 'Tajawal', opacity: .92 }),
-      textBlock({ lines: ['dr-alfailakawi.com'], x: w / 2, y, size: domainSize, fill: p.muted, weight: 500, anchor: 'middle', family: 'Tajawal', letterSpacing: 2.2, opacity: .9 }),
+      options.nameless || !s.author ? '' : textBlock({ lines: [s.author], x: w / 2, y: y - min * .036, size: nameSize, fill: p.ink, weight: 600, anchor: 'middle', family: 'Tajawal', opacity: .92 }),
+      s.source ? textBlock({ lines: [s.source], x: w / 2, y, size: domainSize, fill: p.muted, weight: 500, anchor: 'middle', family: 'Tajawal', letterSpacing: 2.2, opacity: .9 }) : '',
     ].join('')
   }
   const ruleY = y - nameSize * 1.55
   return `
     <line x1="${s.safeX}" y1="${round(ruleY)}" x2="${w - s.safeX}" y2="${round(ruleY)}" stroke="${p.rule}" stroke-width="1.1" opacity=".9"/>
-    ${options.nameless ? '' : textBlock({ lines: [s.author], x: w - s.safeX, y, size: nameSize, fill: p.ink, weight: 600, anchor: 'end', family: 'Tajawal', opacity: .94 })}
-    ${textBlock({ lines: ['dr-alfailakawi.com'], x: options.nameless ? w - s.safeX : s.safeX, y, size: domainSize, fill: p.muted, weight: 500, anchor: options.nameless ? 'end' : 'start', family: 'Tajawal', letterSpacing: 2 })}`
+    ${options.nameless || !s.author ? '' : textBlock({ lines: [s.author], x: w - s.safeX, y, size: nameSize, fill: p.ink, weight: 600, anchor: 'end', family: 'Tajawal', opacity: .94 })}
+    ${s.source ? textBlock({ lines: [s.source], x: options.nameless ? w - s.safeX : s.safeX, y, size: domainSize, fill: p.muted, weight: 500, anchor: options.nameless ? 'end' : 'start', family: 'Tajawal', letterSpacing: 2 }) : ''}`
 }
 
 /** النطاق الرأسي المتاح للمحتوى فوق سطر الهوية. */
@@ -980,7 +982,7 @@ const paintEventMarquee: Painter = (s) => {
       `<rect x="0" y="0" width="${w}" height="${round(bandH)}" fill="${p.accent}"/>`,
       `<rect x="0" y="${round(bandH)}" width="${w}" height="${round(min * .006)}" fill="${p.isDark ? p.rule : p.accentSoft}"/>`,
       textBlock({ lines: [s.kicker], x: w - s.safeX, y: bandH * .62, size: Math.max(15, min * .024), fill: '#FFFFFF', weight: 700, family: 'Tajawal' }),
-      textBlock({ lines: ['dr-alfailakawi.com'], x: s.safeX, y: bandH * .6, size: Math.max(11, min * .016), fill: 'rgba(255,255,255,.8)', weight: 500, anchor: 'start', family: 'Tajawal', letterSpacing: 1.8 }),
+      s.source ? textBlock({ lines: [s.source], x: s.safeX, y: bandH * .6, size: Math.max(11, min * .016), fill: 'rgba(255,255,255,.8)', weight: 500, anchor: 'start', family: 'Tajawal', letterSpacing: 1.8 }) : '',
       stack,
       identityFooter(s),
     ].join(''),
@@ -1220,8 +1222,8 @@ const paintCinematicWindow: Painter = (s) => {
       `<rect x="0" y="${round(h - barH)}" width="${w}" height="${round(barH)}" fill="${ink}"/>`,
       textBlock({ lines: [s.kicker], x: w - s.safeX, y: barH * .64, size: Math.max(13, min * .02), fill: 'rgba(247,245,239,.92)', weight: 700, family: 'Tajawal' }),
       stack,
-      textBlock({ lines: [s.author], x: w - s.safeX, y: h - barH * .36, size: Math.max(13, min * .02), fill: 'rgba(247,245,239,.9)', weight: 600, family: 'Tajawal' }),
-      textBlock({ lines: ['dr-alfailakawi.com'], x: s.safeX, y: h - barH * .36, size: Math.max(11, min * .015), fill: 'rgba(247,245,239,.62)', weight: 500, anchor: 'start', family: 'Tajawal', letterSpacing: 1.8 }),
+      s.author ? textBlock({ lines: [s.author], x: w - s.safeX, y: h - barH * .36, size: Math.max(13, min * .02), fill: 'rgba(247,245,239,.9)', weight: 600, family: 'Tajawal' }) : '',
+      s.source ? textBlock({ lines: [s.source], x: s.safeX, y: h - barH * .36, size: Math.max(11, min * .015), fill: 'rgba(247,245,239,.62)', weight: 500, anchor: 'start', family: 'Tajawal', letterSpacing: 1.8 }) : '',
     ].join(''),
   }
 }
@@ -1285,7 +1287,7 @@ const paintModularBrief: Painter = (s) => {
       `<rect x="${round(x1 - kickerW)}" y="${round(top)}" width="${round(kickerW)}" height="${round(kickerH)}" rx="${round(min * .018)}" fill="${p.accent}"/>`,
       textBlock({ lines: [s.kicker], x: x1 - kickerW / 2, y: top + kickerH * .62, size: Math.max(14, min * .022), fill: '#FFFFFF', weight: 700, anchor: 'middle', family: 'Tajawal' }),
       `<rect x="${round(x0)}" y="${round(top)}" width="${round(contentW - kickerW - gap)}" height="${round(kickerH)}" rx="${round(min * .018)}" fill="${p.surface}" stroke="${p.rule}" stroke-width="1"/>`,
-      textBlock({ lines: ['dr-alfailakawi.com'], x: x0 + (contentW - kickerW - gap) / 2, y: top + kickerH * .6, size: Math.max(11, min * .016), fill: p.muted, weight: 500, anchor: 'middle', family: 'Tajawal', letterSpacing: 1.6 }),
+      s.source ? textBlock({ lines: [s.source], x: x0 + (contentW - kickerW - gap) / 2, y: top + kickerH * .6, size: Math.max(11, min * .016), fill: p.muted, weight: 500, anchor: 'middle', family: 'Tajawal', letterSpacing: 1.6 }) : '',
     ].join(''),
   }
   const titleItem: StackItem = {
@@ -2001,7 +2003,7 @@ function renderCarouselSlideSvg(plan: CompositionPlan, slideIndex: number, optio
       : ''
 
   const closingCta: StackItem = isClosing
-    ? (s.cta ? ctaItem(s, { align: 'center', gap: min * .06 }) : textItem({ lines: ['dr-alfailakawi.com'], x: w / 2, size: Math.max(13, min * .02), fill: p.accent, weight: 700, anchor: 'middle', family: 'Tajawal', letterSpacing: 2, gap: min * .06 }))
+    ? (s.cta ? ctaItem(s, { align: 'center', gap: min * .06 }) : s.source ? textItem({ lines: [s.source], x: w / 2, size: Math.max(13, min * .02), fill: p.accent, weight: 700, anchor: 'middle', family: 'Tajawal', letterSpacing: 2, gap: min * .06 }) : { h: 0, draw: () => '' })
     : { h: 0, draw: () => '' }
 
   const stack = drawStack([

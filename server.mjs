@@ -8,6 +8,7 @@ import { pathToFileURL } from 'node:url'
 import { createGzip } from 'node:zlib'
 import { POLICY, evaluateCandidate } from './scripts/editorial-policy.mjs'
 import { createWhatsAppController } from './src/server/whatsapp-controller.mjs'
+import { communicationsHealth, createAdminCommunications } from './src/server/admin-communications.mjs'
 
 // Node لا يقرأ .env تلقائياً. نحمّله محلياً فقط، من دون استبدال متغيرات بيئة النشر.
 const localEnvFile = resolve(process.cwd(), '.env')
@@ -3500,6 +3501,14 @@ export function createRequestHandler({
       return claims?.admin === true
     },
   })
+  const handleCommunicationsRequest = createAdminCommunications({
+    getFirestore: getAdminFirestore,
+    verifyAdminRequest: async (req) => {
+      const token = bearerToken(req.headers.authorization)
+      const claims = await verifyToken(token)
+      return claims
+    },
+  })
 
   return async (req, res) => {
     const method = req.method || 'GET'
@@ -3517,6 +3526,7 @@ export function createRequestHandler({
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`)
 
     if (await handleWhatsAppRequest(req, res, url, method)) return
+    if (await handleCommunicationsRequest(req, res, url, method)) return
 
     if (url.pathname === journeyPath) {
       if (method !== 'POST') { sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' }); return }
@@ -3651,14 +3661,18 @@ export function createRequestHandler({
         let lastControlCommand = {}
         let incidentRows = []
         let backupRows = []
+        let subscriberCount = 0
+        let pushDeviceCount = 0
         try {
           const { db } = await getAdminFirestore()
-          const [inventorySnapshot, sourceSnapshot, controlSnapshot, incidentSnapshot, backupSnapshot] = await Promise.all([
+          const [inventorySnapshot, sourceSnapshot, controlSnapshot, incidentSnapshot, backupSnapshot, subscribersSnapshot, pushSnapshot] = await Promise.all([
             db.collection('site_settings').doc('audio_inventory').get(),
             db.collection('site_health').doc('sources').get(),
             db.collection('site_settings').doc('control_center').get(),
             db.collection('control_center_incidents').orderBy('requestedAt', 'desc').limit(30).get(),
             db.collection('admin_control_backups').orderBy('createdAt', 'desc').limit(8).get(),
+            db.collection('subscribers').limit(5_000).get(),
+            db.collection('admin_push_tokens').limit(50).get(),
           ])
           firebaseReady = true
           inventory = inventorySnapshot.exists ? inventorySnapshot.data() || {} : {}
@@ -3666,12 +3680,25 @@ export function createRequestHandler({
           lastControlCommand = controlSnapshot.exists ? controlSnapshot.data() || {} : {}
           incidentRows = incidentSnapshot.docs.map((document) => ({ id: document.id, ...(document.data() || {}) }))
           backupRows = backupSnapshot.docs.map((document) => ({ id: document.id, ...(document.data() || {}) }))
+          subscriberCount = subscribersSnapshot.size
+          pushDeviceCount = pushSnapshot.size
         } catch (error) {
           firebaseError = boundedString(error instanceof Error ? error.message : '', 280)
         }
 
+        let hostingReachable = false
+        let hostingStatus = 0
+        try {
+          const hostingResponse = await fetchWithTimeout(fetch, 'https://dr-alfailakawi.com/', { method: 'HEAD', redirect: 'manual', headers: { 'user-agent': 'DrAhmad-ControlCenter/1.0' } }, 5_000)
+          hostingStatus = hostingResponse.status
+          hostingReachable = hostingResponse.status >= 200 && hostingResponse.status < 500
+        } catch { hostingReachable = false }
         const githubReady = Boolean(String(process.env.GITHUB_WORKFLOW_TOKEN || process.env.GITHUB_ACTIONS_TOKEN || '').trim())
         const studioReady = Boolean(String(process.env.CLOUDFLARE_ACCOUNT_ID || '').trim() && String(process.env.CLOUDFLARE_API_TOKEN || '').trim())
+        const communications = communicationsHealth()
+        const r2Configured = Boolean(String(process.env.AUDIO_PUBLIC_BASE_URL || '').trim() && String(process.env.CLOUDFLARE_R2_BUCKET || '').trim())
+        const pushLevel = communications.vapidReady && pushDeviceCount > 0 ? 'healthy' : pushDeviceCount > 0 ? 'attention' : 'warning'
+        const newsletterLevel = communications.newsletterReady ? 'healthy' : communications.resendReady ? 'attention' : 'warning'
         const workflowRuns = githubReady ? await latestAdminWorkflowRuns() : []
         const runById = Object.fromEntries(workflowRuns.map((run) => [run.id, run]))
         const audioLastSyncAt = firestoreTimeIso(inventory.lastSyncAt)
@@ -3766,6 +3793,17 @@ export function createRequestHandler({
               lastEventAt: new Date().toISOString(),
             },
             {
+              id: 'hosting',
+              title: 'Firebase Hosting والنطاق',
+              eyebrow: 'HOSTING',
+              level: hostingReachable ? 'healthy' : 'critical',
+              metric: hostingReachable ? `HTTP ${hostingStatus}` : 'لا يستجيب',
+              summary: hostingReachable ? 'النطاق العام يرد من الإنترنت الآن.' : 'فشل فحص الوصول إلى النطاق العام من الخادم.',
+              reason: hostingReachable ? 'هذا فحص HTTP حي وليس اعتماداً على آخر سجل نشر فقط.' : 'قد يكون Hosting أو النطاق أو الشبكة في حالة انقطاع.',
+              action: hostingReachable ? 'لا يحتاج تدخلاً.' : 'افحص مسار النشر والاستضافة قبل أي تغيير في المحتوى.',
+              lastEventAt: new Date().toISOString(),
+            },
+            {
               id: 'firebase',
               title: 'Firebase والبيانات الحية',
               eyebrow: 'LIVE DATA',
@@ -3774,6 +3812,49 @@ export function createRequestHandler({
               summary: firebaseReady ? 'قاعدة البيانات تقرأ سجلات التشغيل الحية.' : 'الخادم لم يستطع قراءة قاعدة البيانات.',
               reason: firebaseReady ? 'نجحت قراءة إعدادات الصوت والصحة ومركز الأوامر.' : (firebaseError || 'بيانات اعتماد Firebase أو الاتصال غير متاحين.'),
               action: firebaseReady ? 'لا يحتاج تدخلاً.' : 'افتح تفاصيل الخدمة ثم أعد الفحص؛ إذا استمر العطل راجع إعداد الخدمة مرة واحدة.',
+              lastEventAt: new Date().toISOString(),
+            },
+            {
+              id: 'push',
+              title: 'الإشعارات الفورية',
+              eyebrow: 'REAL PUSH',
+              level: pushLevel,
+              metric: pushDeviceCount ? `${pushDeviceCount} جهاز` : 'لا جهاز مسجل',
+              summary: pushDeviceCount
+                ? 'لوحة التحكم مسجلة لاستقبال إشعارات الرسائل والاشتراكات حتى عند إغلاق الصفحة.'
+                : 'لم يُسجل جهاز المشرف بعد لاستقبال Push حقيقي.',
+              reason: communications.vapidReady
+                ? 'FCM وWeb Push يملكان مفتاح VAPID، والخادم يحتفظ بأجهزة المشرف فقط.'
+                : 'مفتاح FIREBASE_WEB_PUSH_VAPID_KEY المخصص غير مضبوط؛ سيحاول Firebase استخدام الإعداد الافتراضي، لكن ضبط VAPID مخصص يعطي توافقاً أوضح.',
+              action: pushDeviceCount && communications.vapidReady ? 'لا يحتاج تدخلاً.' : 'افتح الرسائل واضغط تفعيل الإشعارات الفورية مرة واحدة.',
+              lastEventAt: new Date().toISOString(),
+            },
+            {
+              id: 'r2',
+              title: 'Cloudflare R2',
+              eyebrow: 'OBJECT STORAGE',
+              level: r2Configured && audioLastSyncAt ? audioLevel : r2Configured ? 'attention' : 'warning',
+              metric: r2Configured ? 'مربوط' : 'الربط ناقص',
+              summary: r2Configured
+                ? 'مسار الصوت الخارجي وBucket معروفان للخادم، وتُثبت مزامنة الصوت القراءة من R2.'
+                : 'متغيرات R2 أو AUDIO_PUBLIC_BASE_URL غير مكتملة على الخادم.',
+              reason: audioLastSyncAt ? `آخر إثبات حي: ${audioLastSyncAt}.` : 'لا توجد قراءة راجعة حديثة من جرد R2.',
+              action: r2Configured ? 'راقب جرد الصوت؛ أي انقطاع سيظهر هنا.' : 'راجع أسرار R2 في خدمة dr-api.',
+              lastEventAt: audioLastSyncAt,
+            },
+            {
+              id: 'newsletter',
+              title: 'النشرة البريدية',
+              eyebrow: 'NEWSLETTER',
+              level: newsletterLevel,
+              metric: `${subscriberCount} مشترك`,
+              summary: communications.newsletterReady
+                ? 'المعاينة والاختبار والإرسال الجماعي وسجل الإرسال جاهزة من صندوق الرسائل.'
+                : 'واجهة التحرير جاهزة، لكن الإرسال الحقيقي ينتظر اكتمال إعداد مزود البريد والحماية.',
+              reason: communications.newsletterReady
+                ? `مزوّد الإرسال مربوط من ${communications.from}.`
+                : 'يلزم RESEND_API_KEY وNEWSLETTER_FROM_EMAIL وNEWSLETTER_UNSUBSCRIBE_SECRET على dr-api.',
+              action: communications.newsletterReady ? 'أرسل اختباراً لنفسك قبل كل نشرة.' : 'أكمل أسرار النشرة مرة واحدة ثم أعد الفحص.',
               lastEventAt: new Date().toISOString(),
             },
             {

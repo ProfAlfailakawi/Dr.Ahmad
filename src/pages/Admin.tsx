@@ -35,6 +35,9 @@ import { UploadField } from '../components/admin/ContentManager'
 import { WhatsAppAgentPanel } from '../components/admin/WhatsAppAgentPanel'
 import { BotMessagesPanel } from '../components/admin/BotMessagesPanel'
 import { ProductionMonitor } from '../components/admin/ProductionMonitor'
+import { NewsletterCenter } from '../components/admin/NewsletterCenter'
+import { InboxIntelligence, InboxInsightBadges } from '../components/admin/InboxIntelligence'
+import { registerAdminPush } from '../lib/admin-push'
 import { VisitorJourneySuggestion } from '../components/admin/VisitorJourneySuggestion'
 import { SoundCaravanBoard } from '../components/admin/SoundCaravanBoard'
 import { useSeo } from '../components/seo'
@@ -425,7 +428,7 @@ function useAdminInboxNotifications() {
         query(collection(db, 'messages'), orderBy('createdAt', 'desc'), limit(20)),
         (snapshot) => {
           if (!active) return
-          if (messagesPrimed.current) {
+          if (messagesPrimed.current && localStorage.getItem('admin:push-registered') !== '1') {
             snapshot.docChanges()
               .filter((change) => change.type === 'added')
               .slice(0, 3)
@@ -439,7 +442,7 @@ function useAdminInboxNotifications() {
         query(collection(db, 'subscribers'), orderBy('createdAt', 'desc'), limit(20)),
         (snapshot) => {
           if (!active) return
-          if (subscribersPrimed.current) {
+          if (subscribersPrimed.current && localStorage.getItem('admin:push-registered') !== '1') {
             snapshot.docChanges()
               .filter((change) => change.type === 'added')
               .slice(0, 3)
@@ -459,6 +462,7 @@ function useAdminInboxNotifications() {
 }
 
 function InboxPanel() {
+  const { user } = useAdminAuth()
   const [items, setItems] = useState<Message[]>([])
   const [subscribers, setSubscribers] = useState<Subscriber[]>([])
   const [newsletterDraft, setNewsletterDraft] = useState<NewsletterDraft | null>(null)
@@ -466,8 +470,27 @@ function InboxPanel() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => (
     typeof Notification === 'undefined' ? 'unsupported' : Notification.permission
   ))
+  const [pushNotice, setPushNotice] = useState('')
+  const [pushRegistered, setPushRegistered] = useState(() => typeof window !== 'undefined' && localStorage.getItem('admin:push-registered') === '1')
   const paged = usePagedList(items, 10, String(items.length))
   const subscriberPaged = usePagedList(subscribers, 8, `subscribers|${subscribers.length}`)
+
+  useEffect(() => {
+    if (!user || !pushRegistered || typeof Notification === 'undefined' || Notification.permission !== 'granted') return
+    let active = true
+    void registerAdminPush(user).then((result) => {
+      if (!active) return
+      if (result.ok) return
+      localStorage.removeItem('admin:push-registered')
+      setPushRegistered(false)
+      setPushNotice(result.message)
+    }).catch(() => {
+      if (!active) return
+      localStorage.removeItem('admin:push-registered')
+      setPushRegistered(false)
+    })
+    return () => { active = false }
+  }, [user, pushRegistered])
 
   useEffect(() => {
     let active = true
@@ -536,10 +559,17 @@ function InboxPanel() {
 
   const enableNotifications = async () => {
     if (typeof Notification === 'undefined') { setNotificationPermission('unsupported'); return }
+    if (!user) { setPushNotice('تعذّر التحقق من جلسة المشرف.'); return }
+    setPushNotice('جاري ربط هذا الجهاز بالإشعارات الفورية…')
     try {
-      const result = await Notification.requestPermission()
-      setNotificationPermission(result)
-    } catch { setNotificationPermission(Notification.permission) }
+      const result = await registerAdminPush(user)
+      setNotificationPermission(Notification.permission)
+      setPushNotice(result.message)
+      if (result.ok) { localStorage.setItem('admin:push-registered', '1'); setPushRegistered(true) }
+    } catch (error) {
+      setNotificationPermission(Notification.permission)
+      setPushNotice(error instanceof Error ? error.message : 'تعذّر ربط Push على هذا الجهاز.')
+    }
   }
 
   const remove = async (id: string) => {
@@ -618,34 +648,24 @@ function InboxPanel() {
           ) : <p className="mt-5 text-[.88rem] text-soft">لا يوجد مشتركون مسجلون حالياً.</p>}
         </section>
 
-        <section className={card}>
-          <p className="text-[.78rem] font-semibold text-accent">النشرة البريدية</p>
-          <h2 className="mt-1 font-display text-xl font-bold text-ink">آخر صيغة جاهزة للمراجعة</h2>
-          <p className="mt-2 text-[.82rem] leading-relaxed text-soft">لا يوجد إرسال بريد آلي مفعّل حالياً؛ هذه معاينة النص المحفوظ الذي سيُراجع قبل أي إرسال مستقبلي.</p>
-          {newsletterDraft ? (
-            <div className="mt-5 rounded-xl border border-hair bg-canvas p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hair pb-3">
-                <strong className="text-[.9rem] text-ink">{newsletterDraft.title}</strong>
-                <span className="text-[.74rem] text-soft">{timestampLabel(newsletterDraft.createdAt)}</span>
-              </div>
-              <p className="mt-4 whitespace-pre-wrap text-[.87rem] leading-loose text-ink">{newsletterDraft.text}</p>
-            </div>
-          ) : <p className="mt-5 text-[.88rem] text-soft">لا توجد صيغة نشرة محفوظة في طابور النشر حتى الآن.</p>}
-        </section>
+        <NewsletterCenter draft={newsletterDraft} />
       </div>
+
+      <InboxIntelligence messages={items} />
 
       <div className="rounded-2xl border border-accent/25 bg-accent/[.045] p-4 text-[.84rem] leading-relaxed text-soft">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p><strong className="text-ink">التحديث مباشر الآن.</strong> رسائل التواصل الخاصة تظهر هنا فوراً، من دون إعادة تحميل الصفحة.</p>
-          {notificationPermission === 'granted' ? (
-            <span className="rounded-full border border-accent/25 bg-canvas px-4 py-2 text-[.78rem] font-semibold text-accent">إشعارات الرسائل والاشتراكات مفعّلة</span>
-          ) : notificationPermission === 'unsupported' ? (
-            <span className="text-[.78rem] text-soft">هذا المتصفح لا يدعم إشعارات سطح المكتب.</span>
+          {notificationPermission === 'unsupported' ? (
+            <span className="text-[.78rem] text-soft">هذا المتصفح لا يدعم Push على الويب.</span>
+          ) : pushRegistered && notificationPermission === 'granted' ? (
+            <span className="rounded-full border border-accent/25 bg-canvas px-4 py-2 text-[.78rem] font-semibold text-accent">Push الحقيقي مربوط بهذا الجهاز</span>
           ) : (
-            <button type="button" onClick={() => void enableNotifications()} className="rounded-full border border-accent/30 bg-canvas px-4 py-2 text-[.78rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">فعّل إشعارات الرسائل والاشتراكات</button>
+            <button type="button" onClick={() => void enableNotifications()} className="rounded-full border border-accent/30 bg-canvas px-4 py-2 text-[.78rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">فعّل Push الحقيقي</button>
           )}
         </div>
-        <p className="mt-2 text-[.76rem] text-soft">بعد السماح للمتصفح، يصلك تنبيه عند وصول رسالة خاصة أو اشتراك جديد ما دامت جلسة لوحة التحكم عاملة في المتصفح أو الـPWA. الضغط على التنبيه يفتح صندوق الرسائل والمشتركين مباشرة.</p>
+        <p className="mt-2 text-[.76rem] text-soft">بعد ربط الجهاز، تصل إشعارات الرسائل والاشتراكات عبر Firebase Cloud Messaging حتى عندما لا تكون صفحة لوحة التحكم مفتوحة، بحسب دعم نظام التشغيل والمتصفح للإشعارات الخلفية. الضغط على التنبيه يفتح صندوق الوارد مباشرة.</p>
+        {pushNotice && <p className="mt-2 rounded-lg border border-hair bg-canvas px-3 py-2 text-[.74rem] text-soft">{pushNotice}</p>}
       </div>
 
       {loading ? (
@@ -671,6 +691,7 @@ function InboxPanel() {
                 <span className="text-[.78rem] text-soft">{when(m)}</span>
               </div>
               <p className="mt-4 whitespace-pre-wrap leading-relaxed text-ink">{m.message}</p>
+              <InboxInsightBadges message={m} />
               <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-hair pt-3 text-[.82rem]">
                 <a href={`mailto:${m.email}?subject=${encodeURIComponent('رد على رسالتك — د. أحمد حسين الفيلكاوي')}`} className="font-semibold text-accent transition-colors hover:text-accent-deep">الردّ بالبريد ←</a>
                 {m.approvedForTestimonial && !m.testimonialHidden ? (

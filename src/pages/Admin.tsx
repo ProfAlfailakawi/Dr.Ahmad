@@ -8,7 +8,7 @@
  * ٣) ثلاث بطاقات: مقال جديد · سؤال الأسبوع · لقاء قادم.
  *    كل ما يُنشر هنا يظهر في الموقع فوراً — بلا رفع ملفات.
  */
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Page } from '../components/ui'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { firebaseEnabled, getDb, getFirebaseApp } from '../lib/firebase'
@@ -211,6 +211,7 @@ function Panel({ email }: { email: string }) {
   const [tab, setTab] = useState<AdminTab>(initialTab)
   const [commandsOpen, setCommandsOpen] = useState(false)
   const cms = useCmsContent({ includeHidden: true })
+  useAdminIncomingMessageNotifications()
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
@@ -361,10 +362,80 @@ async function testimonialDocId(messageId: string) {
   return `msg-${hex.slice(0, 14)}`
 }
 
+type Subscriber = {
+  id: string
+  email: string
+  createdAt?: { seconds: number }
+}
+
+type NewsletterDraft = {
+  id: string
+  title: string
+  text: string
+  source: string
+  createdAt?: { seconds: number }
+}
+
+function timestampLabel(value?: { seconds: number }) {
+  if (!value?.seconds) return ''
+  try {
+    return new Date(value.seconds * 1000).toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' })
+  } catch { return '' }
+}
+
+async function showIncomingMessageNotification(message: Message) {
+  if (typeof window === 'undefined' || typeof Notification === 'undefined' || Notification.permission !== 'granted') return
+  const title = 'رسالة جديدة وصلت إلى الموقع'
+  const body = [message.name, message.topic].filter(Boolean).join(' — ') || 'افتح لوحة التحكم لقراءتها.'
+  const options: NotificationOptions = { body, tag: `site-message-${message.id}` }
+  try {
+    if ('serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.ready
+      await registration.showNotification(title, options)
+      return
+    }
+  } catch { /* fallback below */ }
+  try { new Notification(title, options) } catch { /* unsupported browser */ }
+}
+
+function useAdminIncomingMessageNotifications() {
+  const primed = useRef(false)
+  useEffect(() => {
+    let active = true
+    let unsubscribe = () => {}
+    ;(async () => {
+      const db = await getDb()
+      if (!db || !active) return
+      const { collection, limit, onSnapshot, orderBy, query } = await import('firebase/firestore')
+      unsubscribe = onSnapshot(
+        query(collection(db, 'messages'), orderBy('createdAt', 'desc'), limit(20)),
+        (snapshot) => {
+          if (!active) return
+          if (primed.current) {
+            snapshot.docChanges()
+              .filter((change) => change.type === 'added')
+              .slice(0, 3)
+              .forEach((change) => void showIncomingMessageNotification({ id: change.doc.id, ...(change.doc.data() as object) } as Message))
+          } else {
+            primed.current = true
+          }
+        },
+      )
+    })()
+    return () => { active = false; unsubscribe() }
+  }, [])
+}
+
 function InboxPanel() {
   const [items, setItems] = useState<Message[]>([])
+  const [subscribers, setSubscribers] = useState<Subscriber[]>([])
+  const [newsletterDraft, setNewsletterDraft] = useState<NewsletterDraft | null>(null)
   const [loading, setLoading] = useState(true)
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => (
+    typeof Notification === 'undefined' ? 'unsupported' : Notification.permission
+  ))
   const paged = usePagedList(items, 10, String(items.length))
+  const subscriberPaged = usePagedList(subscribers, 8, `subscribers|${subscribers.length}`)
 
   useEffect(() => {
     let active = true
@@ -377,7 +448,8 @@ function InboxPanel() {
         query(collection(db, 'messages'), orderBy('createdAt', 'desc')),
         (snapshot) => {
           if (!active) return
-          setItems(snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as object) })))
+          const nextItems = snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as object) })) as Message[]
+          setItems(nextItems)
           setLoading(false)
         },
         () => { if (active) setLoading(false) },
@@ -385,6 +457,58 @@ function InboxPanel() {
     })()
     return () => { active = false; unsubscribe() }
   }, [])
+
+  useEffect(() => {
+    let active = true
+    let unsubscribeSubscribers = () => {}
+    let unsubscribeQueue = () => {}
+    ;(async () => {
+      const db = await getDb()
+      if (!db || !active) return
+      const { collection, limit, onSnapshot, orderBy, query } = await import('firebase/firestore')
+      unsubscribeSubscribers = onSnapshot(
+        query(collection(db, 'subscribers'), orderBy('createdAt', 'desc')),
+        (snapshot) => {
+          if (!active) return
+          setSubscribers(snapshot.docs.map((document) => ({ id: document.id, ...(document.data() as object) })) as Subscriber[])
+        },
+        () => { if (active) setSubscribers([]) },
+      )
+      unsubscribeQueue = onSnapshot(
+        query(collection(db, 'social_queue'), orderBy('createdAt', 'desc'), limit(30)),
+        (snapshot) => {
+          if (!active) return
+          const draft = snapshot.docs.map((document) => {
+            const data = document.data() as {
+              articleTitle?: string
+              idea?: string
+              source?: string
+              posts?: { newsletter?: string }
+              createdAt?: { seconds: number }
+            }
+            return {
+              id: document.id,
+              title: data.articleTitle || data.idea || 'نشرة بلا عنوان',
+              text: String(data.posts?.newsletter || '').trim(),
+              source: data.source || '',
+              createdAt: data.createdAt,
+            }
+          }).find((item) => item.text)
+          setNewsletterDraft(draft || null)
+        },
+        () => { if (active) setNewsletterDraft(null) },
+      )
+    })()
+    return () => { active = false; unsubscribeSubscribers(); unsubscribeQueue() }
+  }, [])
+
+  const enableNotifications = async () => {
+    if (typeof Notification === 'undefined') { setNotificationPermission('unsupported'); return }
+    try {
+      const result = await Notification.requestPermission()
+      setNotificationPermission(result)
+    } catch { setNotificationPermission(Notification.permission) }
+  }
 
   const remove = async (id: string) => {
     const db = await getDb()
@@ -434,50 +558,101 @@ function InboxPanel() {
     }
   }
 
-  const when = (m: Message) => {
-    if (!m.createdAt?.seconds) return ''
-    try { return new Date(m.createdAt.seconds * 1000).toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }) } catch { return '' }
-  }
-
-  if (loading) return <div className={card}>لحظة… أجلب رسائلك وأراقب الجديد لحظياً.</div>
-  if (!items.length) return (
-    <div className={`${card} text-center`}>
-      <p className="text-[1.05rem] text-ink">صندوقك فارغ حالياً.</p>
-      <p className="mt-2 text-[.88rem] text-soft">أي استشارة أو طلب تعاون يُرسل من صفحة «التواصل» يظهر هنا فوراً، من دون إعادة تحميل الصفحة.</p>
-    </div>
-  )
+  const when = (m: Message) => timestampLabel(m.createdAt)
 
   return (
-    <div className="grid gap-4">
-      <div className="rounded-2xl border border-accent/25 bg-accent/[.045] p-4 text-[.84rem] leading-relaxed text-soft">
-        <strong className="text-ink">التحديث مباشر الآن.</strong> رسائل التواصل الخاصة تظهر هنا فقط. أمّا «رسائل على الهامش» و«أسئلة تصلني» فيولّدهما النظام من أرشيفك نفسه — رسائلُ حول مقالاتك وكتبك، وأسئلةٌ من مجالاتك، وأجوبتها من متونك حرفياً. وما تنشره أنت من هنا يتقدّم عليها ويُخفيها.
-      </div>
-      <p className="text-[.85rem] text-soft">{String(items.length).replace(/[0-9]/g, (d) => '0123456789'[+d])} رسالة — الأحدث أولاً</p>
-      {paged.pageItems.map((m) => (
-        <div key={m.id} className={card}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="rounded-full bg-accent/10 px-3 py-1 text-[.75rem] font-semibold text-accent">{m.topic || 'أخرى'}</span>
-              {m.intent && <span className="rounded-full border border-hair px-3 py-1 text-[.72rem] text-soft">{m.intent}</span>}
-              {m.quality && <span className="rounded-full border border-hair px-3 py-1 text-[.72rem] text-soft">{m.quality}</span>}
-              <span className="font-semibold text-ink">{m.name}</span>
-              <span className="text-[.85rem] text-soft" dir="ltr">{m.email}</span>
+    <div className="grid gap-6">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,.85fr)]">
+        <section className={card}>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-[.78rem] font-semibold text-accent">مشتركو البريد</p>
+              <h2 className="mt-1 font-display text-xl font-bold text-ink">{subscribers.length} مشترك</h2>
+              <p className="mt-2 text-[.84rem] leading-relaxed text-soft">هذه هي العناوين المسجلة فعلياً في النشرة، والأحدث أولاً.</p>
             </div>
-            <span className="text-[.78rem] text-soft">{when(m)}</span>
           </div>
-          <p className="mt-4 whitespace-pre-wrap leading-relaxed text-ink">{m.message}</p>
-          <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-hair pt-3 text-[.82rem]">
-            <a href={`mailto:${m.email}?subject=${encodeURIComponent('رد على رسالتك — د. أحمد حسين الفيلكاوي')}`} className="font-semibold text-accent transition-colors hover:text-accent-deep">الردّ بالبريد ←</a>
-            {m.approvedForTestimonial && !m.testimonialHidden ? (
-              <button onClick={() => void setTestimonial(m, false)} className="text-soft transition-colors hover:text-accent">إخفاء من «ماذا قالوا»</button>
-            ) : (
-              <button onClick={() => void setTestimonial(m, true)} className="text-soft transition-colors hover:text-accent">اعتماد كشهادة مجهولة</button>
-            )}
-            <button onClick={() => { if (confirm('حذف الرسالة نهائياً؟')) void remove(m.id) }} className="text-soft transition-colors hover:text-red-500">حذف</button>
-          </div>
+          {subscribers.length ? (
+            <>
+              <div className="mt-5 grid gap-2">
+                {subscriberPaged.pageItems.map((subscriber) => (
+                  <div key={subscriber.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hair bg-canvas px-4 py-3">
+                    <span dir="ltr" className="text-[.88rem] font-medium text-ink">{subscriber.email}</span>
+                    <span className="text-[.75rem] text-soft">{timestampLabel(subscriber.createdAt)}</span>
+                  </div>
+                ))}
+              </div>
+              <Pagination page={subscriberPaged.page} pageCount={subscriberPaged.pageCount} onChange={subscriberPaged.setPage} totalItems={subscribers.length} firstItem={subscriberPaged.firstItem} lastItem={subscriberPaged.lastItem} label="صفحات مشتركي البريد" className="mt-4" />
+            </>
+          ) : <p className="mt-5 text-[.88rem] text-soft">لا يوجد مشتركون مسجلون حالياً.</p>}
+        </section>
+
+        <section className={card}>
+          <p className="text-[.78rem] font-semibold text-accent">النشرة البريدية</p>
+          <h2 className="mt-1 font-display text-xl font-bold text-ink">آخر صيغة جاهزة للمراجعة</h2>
+          <p className="mt-2 text-[.82rem] leading-relaxed text-soft">لا يوجد إرسال بريد آلي مفعّل حالياً؛ هذه معاينة النص المحفوظ الذي سيُراجع قبل أي إرسال مستقبلي.</p>
+          {newsletterDraft ? (
+            <div className="mt-5 rounded-xl border border-hair bg-canvas p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hair pb-3">
+                <strong className="text-[.9rem] text-ink">{newsletterDraft.title}</strong>
+                <span className="text-[.74rem] text-soft">{timestampLabel(newsletterDraft.createdAt)}</span>
+              </div>
+              <p className="mt-4 whitespace-pre-wrap text-[.87rem] leading-loose text-ink">{newsletterDraft.text}</p>
+            </div>
+          ) : <p className="mt-5 text-[.88rem] text-soft">لا توجد صيغة نشرة محفوظة في طابور النشر حتى الآن.</p>}
+        </section>
+      </div>
+
+      <div className="rounded-2xl border border-accent/25 bg-accent/[.045] p-4 text-[.84rem] leading-relaxed text-soft">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <p><strong className="text-ink">التحديث مباشر الآن.</strong> رسائل التواصل الخاصة تظهر هنا فوراً، من دون إعادة تحميل الصفحة.</p>
+          {notificationPermission === 'granted' ? (
+            <span className="rounded-full border border-accent/25 bg-canvas px-4 py-2 text-[.78rem] font-semibold text-accent">إشعارات الرسائل مفعّلة</span>
+          ) : notificationPermission === 'unsupported' ? (
+            <span className="text-[.78rem] text-soft">هذا المتصفح لا يدعم إشعارات سطح المكتب.</span>
+          ) : (
+            <button type="button" onClick={() => void enableNotifications()} className="rounded-full border border-accent/30 bg-canvas px-4 py-2 text-[.78rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">فعّل إشعارات الرسائل</button>
+          )}
         </div>
-      ))}
-      <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={items.length} firstItem={paged.firstItem} lastItem={paged.lastItem} label="صفحات رسائل التواصل" className="mt-4" />
+        <p className="mt-2 text-[.76rem] text-soft">بعد السماح للمتصفح، يصلك تنبيه عند وصول رسالة جديدة ما دامت جلسة لوحة التحكم عاملة في المتصفح أو الـPWA.</p>
+      </div>
+
+      {loading ? (
+        <div className={card}>لحظة… أجلب رسائلك وأراقب الجديد لحظياً.</div>
+      ) : !items.length ? (
+        <div className={`${card} text-center`}>
+          <p className="text-[1.05rem] text-ink">صندوقك فارغ حالياً.</p>
+          <p className="mt-2 text-[.88rem] text-soft">أي استشارة أو طلب تعاون يُرسل من صفحة «التواصل» يظهر هنا فوراً.</p>
+        </div>
+      ) : (
+        <>
+          <p className="text-[.85rem] text-soft">{items.length} رسالة — الأحدث أولاً</p>
+          {paged.pageItems.map((m) => (
+            <div key={m.id} className={card}>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="rounded-full bg-accent/10 px-3 py-1 text-[.75rem] font-semibold text-accent">{m.topic || 'أخرى'}</span>
+                  {m.intent && <span className="rounded-full border border-hair px-3 py-1 text-[.72rem] text-soft">{m.intent}</span>}
+                  {m.quality && <span className="rounded-full border border-hair px-3 py-1 text-[.72rem] text-soft">{m.quality}</span>}
+                  <span className="font-semibold text-ink">{m.name}</span>
+                  <span className="text-[.85rem] text-soft" dir="ltr">{m.email}</span>
+                </div>
+                <span className="text-[.78rem] text-soft">{when(m)}</span>
+              </div>
+              <p className="mt-4 whitespace-pre-wrap leading-relaxed text-ink">{m.message}</p>
+              <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-hair pt-3 text-[.82rem]">
+                <a href={`mailto:${m.email}?subject=${encodeURIComponent('رد على رسالتك — د. أحمد حسين الفيلكاوي')}`} className="font-semibold text-accent transition-colors hover:text-accent-deep">الردّ بالبريد ←</a>
+                {m.approvedForTestimonial && !m.testimonialHidden ? (
+                  <button onClick={() => void setTestimonial(m, false)} className="text-soft transition-colors hover:text-accent">إخفاء من «ماذا قالوا»</button>
+                ) : (
+                  <button onClick={() => void setTestimonial(m, true)} className="text-soft transition-colors hover:text-accent">اعتماد كشهادة مجهولة</button>
+                )}
+                <button onClick={() => { if (confirm('حذف الرسالة نهائياً؟')) void remove(m.id) }} className="text-soft transition-colors hover:text-red-500">حذف</button>
+              </div>
+            </div>
+          ))}
+          <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={items.length} firstItem={paged.firstItem} lastItem={paged.lastItem} label="صفحات رسائل التواصل" className="mt-4" />
+        </>
+      )}
     </div>
   )
 }

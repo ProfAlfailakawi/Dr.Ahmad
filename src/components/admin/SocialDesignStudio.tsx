@@ -2594,7 +2594,11 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     const layout: LayoutFamilyId = styleOverride?.layout
       || serverLayoutHint
       || fallbackLayout[resolvedTreatment]
-    const darkSurface = Boolean(PALETTES[palette]?.isDark)
+    // الصورة نفسها تحكم اللوحة افتراضياً: هذا يمنع نصاً أخضر مثلاً فوق صورة
+    // حمراء/برتقالية لا تنتمي إلى هويته. يبقى اختيار لوحة يدوية لاحقاً قادراً
+    // على إلغاء البصمة عبر editPalette كما كان.
+    const imagePalette = passport.visualDna?.palette
+    const darkSurface = imagePalette?.isDark ?? Boolean(PALETTES[palette]?.isDark)
     const vignette = resolvedTreatment === 'cinematic' ? .44 : resolvedTreatment === 'duotone' ? .32 : resolvedTreatment === 'editorial' ? .18 : .10
     const readabilityShade = darkSurface
       ? resolvedTreatment === 'cinematic' ? .78 : resolvedTreatment === 'duotone' ? .70 : .62
@@ -2633,7 +2637,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       ...plan,
       layout,
       palette,
-      paletteOverride: undefined,
+      paletteOverride: imagePalette,
       density: resolvedTreatment === 'cinematic' || resolvedTreatment === 'duotone' ? 'minimal' : plan.density,
       content: { ...plan.content, source: /dr-?alfailakawi\.com/i.test(plan.content.source || '') ? '' : plan.content.source },
       framing: resolvedTreatment === 'cinematic' || resolvedTreatment === 'duotone' ? 'cinematic-crop' : 'open-canvas',
@@ -4304,10 +4308,16 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                     <EditableText label="العنوان الفرعي" value={selected.content.subtitle} onCommit={(next) => editContent({ subtitle: next })} />
                     <EditableText label="المتن" multiline value={selected.content.body} onCommit={(next) => editContent({ body: next })} />
                     <div className="grid grid-cols-2 gap-2.5">
-                      <EditableText label="الدعوة (فرّغها لإخفاء الزر)" value={selected.content.cta} onCommit={(next) => editContent({ cta: next })} />
+                      <div className="grid gap-1.5">
+                        <EditableText label="الدعوة — مثل «اقرأ المادة كاملة»" value={selected.content.cta} onCommit={(next) => editContent({ cta: next })} />
+                        <button type="button" onClick={() => editContent({ cta: '' })} disabled={!selected.content.cta} className="justify-self-start rounded-full border border-hair px-2.5 py-1 text-[.6rem] font-semibold text-soft transition hover:border-accent hover:text-accent disabled:opacity-35">إخفاء الدعوة</button>
+                      </div>
                       <EditableText label="الكلمة البطلة" value={selected.content.heroWord} onCommit={(next) => editContent({ heroWord: next })} />
                     </div>
-                    <EditableText label="الشارة أعلى التصميم — «كتاب/مقال…» (فرّغها لإخفائها)" value={selected.content.kicker} onCommit={(next) => editContent({ kicker: next })} />
+                    <div className="grid gap-1.5">
+                      <EditableText label="الشارة أعلى التصميم — مثل «كتاب/مقال…»" value={selected.content.kicker} onCommit={(next) => editContent({ kicker: next })} />
+                      <button type="button" onClick={() => editContent({ kicker: '' })} disabled={!selected.content.kicker} className="justify-self-start rounded-full border border-hair px-2.5 py-1 text-[.6rem] font-semibold text-soft transition hover:border-accent hover:text-accent disabled:opacity-35">إخفاء الشارة</button>
+                    </div>
                   </div>
                   <div className="mt-3">
                     <p className="text-[.64rem] font-semibold text-soft">المنظومة اللونية — بنقرة، والناقد يعيد الحكم فوراً</p>

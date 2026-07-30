@@ -227,6 +227,8 @@ export interface StudioImagePassport {
   recommendedFit: 'cover' | 'contain'
   cropRisk: 'low' | 'medium' | 'high'
   cropNotes: string[]
+  /** لوحة مستخرجة من الصورة نفسها لضمان انسجام النص والهوية معها تلقائياً. */
+  visualDna?: VisualDna
 }
 
 function imagePassport(source: HTMLImageElement, file: File): StudioImagePassport | null {
@@ -311,6 +313,7 @@ function imagePassport(source: HTMLImageElement, file: File): StudioImagePasspor
     : aspectRatio > 1.58 || aspectRatio < .72
       ? 'medium'
       : 'low'
+  const visualDna = extractVisualDna(source) || undefined
   const cropNotes = [
     negativeSpace === 'balanced' ? 'المساحات متوازنة؛ ضع النص في طبقة مستقلة واختبر التباين.' : `أهدأ مساحة للنص تبدو في جهة ${negativeSpace === 'right' ? 'اليمين' : negativeSpace === 'left' ? 'اليسار' : negativeSpace === 'top' ? 'الأعلى' : 'الأسفل'}.`,
     `نقطة التركيز التكنولوجية قرب ${Math.round(focalX * 100)}٪ أفقياً و${Math.round(focalY * 100)}٪ عمودياً.`,
@@ -340,6 +343,7 @@ function imagePassport(source: HTMLImageElement, file: File): StudioImagePasspor
     recommendedFit: aspectRatio > .72 && aspectRatio < 1.65 ? 'cover' : 'contain',
     cropRisk,
     cropNotes,
+    visualDna,
   }
 }
 

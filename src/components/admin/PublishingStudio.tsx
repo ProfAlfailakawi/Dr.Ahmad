@@ -1766,8 +1766,8 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
     return () => window.removeEventListener('studio:campaign-seed', openDesign)
   }, [])
   const [pulseIdea, setPulseIdea] = useState('')
-  const [pulsePurpose, setPulsePurpose] = useState('فكرة قصيرة تستحق أن تُقال الآن')
-  const [pulsePreviewCopy, setPulsePreviewCopy] = useState({ idea: '', purpose: 'فكرة قصيرة تستحق أن تُقال الآن' })
+  const [pulsePurpose, setPulsePurpose] = useState('')
+  const [pulsePreviewCopy, setPulsePreviewCopy] = useState({ idea: '', purpose: '' })
   const [pulseAudience, setPulseAudience] = useState('الجمهور العام')
   const [pulsePack, setPulsePack] = useState<PerfectSocialPack | null>(null)
   const [pulseBusy, setPulseBusy] = useState(false)
@@ -1857,6 +1857,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
     }
     return selected.slice(0, 3)
   }, [pulseDesignResult])
+  const pulseApprovedCount = pulseProfessionalPlans.filter((item) => item.release.ready).length
   const pulseTemplatePages = usePagedList(pulseTemplateShowcase, 8, `${pulsePreviewCopy.idea}|${pulsePreviewCopy.purpose}`)
 
   useEffect(() => {
@@ -2298,7 +2299,7 @@ ${effectivePurpose}`,
       } else pack = local
       setPulsePack(pack)
       const approvedCount = pulseProfessionalPlans.filter((item) => item.release.ready).length
-      setNotice(`فهم المخرج العبارة وبنى حزمة مستقلة لموضوع «${visualTopicLabel(detectVisualTopic(`${cleanIdea} ${effectivePurpose}`))}»، ومعها ${approvedCount || 3} اتجاهات بصرية خضعت لبوابة المصمم ✓`)
+      setNotice(`فهم المخرج العبارة وبنى حزمة مستقلة لموضوع «${visualTopicLabel(detectVisualTopic(`${cleanIdea} ${effectivePurpose}`))}»، ومعها ${approvedCount} اتجاهات اجتازت بوابة المصمم من أصل 3 ✓`)
       task.needsInput('المنشور جاهز للمراجعة')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر بناء المنشور المستقل.')
@@ -2453,10 +2454,10 @@ ${effectivePurpose}`,
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-[.76rem] font-semibold uppercase text-accent">Professional Art Direction</p>
-                <h2 id="standalone-templates-title" className="mt-1 font-display text-2xl font-semibold text-ink">ثلاث رؤى اعتمدها المخرج، لا مكتبة ترمي القوالب أمامك.</h2>
+                <h2 id="standalone-templates-title" className="mt-1 font-display text-2xl font-semibold text-ink">{pulseApprovedCount === 3 ? 'ثلاث رؤى اعتمدها المخرج، لا مكتبة ترمي القوالب أمامك.' : `ثلاث رؤى رشّحها المخرج؛ ${pulseApprovedCount} اجتازت البوابة الاحترافية.`}</h2>
                 <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">يفهم المحرك القضية والنبرة والجمهور وأوامر اللون والأسلوب من عبارتك، ويبني عشرات الاحتمالات ثم يعرض ثلاث نتائج متباعدة فقط بعد فحص الحرفة، فهم العبارة، القراءة الهاتفية والأصالة.</p>
               </div>
-              <div className="flex flex-wrap gap-2"><span className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.72rem] text-soft">{pulseCopyAnalysis.topicLabel}</span><span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[.68rem] font-bold text-emerald-700">بوابة المصمم {pulseProfessionalPlans.filter((item) => item.release.ready).length}/3</span></div>
+              <div className="flex flex-wrap gap-2"><span className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.72rem] text-soft">{pulseCopyAnalysis.topicLabel}</span><span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[.68rem] font-bold text-emerald-700">بوابة المصمم {pulseApprovedCount}/3</span></div>
             </div>
 
             <div className="mt-5 grid gap-3 rounded-2xl border border-hair bg-canvas p-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="قراءة المخرج البصري للنص">

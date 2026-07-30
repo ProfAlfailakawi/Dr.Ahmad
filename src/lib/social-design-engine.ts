@@ -225,8 +225,8 @@ export interface LayoutFamily extends DesignLibraryEntry<LayoutFamilyId> {
 }
 
 export interface TypographyMode extends DesignLibraryEntry<TypographyModeId> {
-  displayFamily: 'El Messiri' | 'Tajawal'
-  bodyFamily: 'Tajawal' | 'El Messiri'
+  displayFamily: 'Alexandria Variable' | 'El Messiri' | 'Tajawal'
+  bodyFamily: 'Tajawal' | 'Alexandria Variable' | 'El Messiri'
   titleWeight: 400 | 500 | 600 | 700 | 800
   titleScale: number
   lineHeight: number
@@ -847,15 +847,15 @@ export const LAYOUT_FAMILIES: Record<LayoutFamilyId, LayoutFamily> = {
 }
 
 export const TYPOGRAPHY_MODES: Record<TypographyModeId, TypographyMode> = {
-  'display-monumental': { id: 'display-monumental', label: 'عنوان نُصبي', description: 'كلمات قليلة بحضور قوي ومسافة أسطر متماسكة.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 700, titleScale: 1.1, lineHeight: 1.34, maxLines: 4 },
-  'editorial-serif': { id: 'editorial-serif', label: 'تحريري معاصر', description: 'هرمية مجلة عربية معاصرة بوزن ومسافات تحريرية دقيقة.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 600, titleScale: .98, lineHeight: 1.48, maxLines: 6 },
-  'rational-sans': { id: 'rational-sans', label: 'هندسي واضح', description: 'وضوح مؤسسي سريع القراءة بوزن محسوب.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 700, titleScale: 0.93, lineHeight: 1.4, maxLines: 5 },
-  'number-led': { id: 'number-led', label: 'الرقم أولاً', description: 'رقم أو نسبة كبيرة يعقبها تفسير مختصر.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 800, titleScale: 1.16, lineHeight: 1.3, maxLines: 4 },
-  'quotation-signature': { id: 'quotation-signature', label: 'اقتباس وتوقيع', description: 'صوت هادئ مع علامات اقتباس وهوية مؤلف مقتصدة.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 500, titleScale: 1, lineHeight: 1.62, maxLines: 7 },
-  'academic-index': { id: 'academic-index', label: 'فهرس أكاديمي', description: 'عناوين دقيقة وترقيم صغير يشبه أوراق البحث.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 600, titleScale: 0.88, lineHeight: 1.5, maxLines: 6 },
-  'cinematic-title': { id: 'cinematic-title', label: 'عنوان سينمائي', description: 'كتلة عنوان قصيرة عالية التباين للغلاف.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 800, titleScale: 1.08, lineHeight: 1.3, maxLines: 4 },
-  conversational: { id: 'conversational', label: 'صوت قريب', description: 'إيقاع عربي مريح يناسب السؤال والنبرة الإنسانية.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 500, titleScale: .96, lineHeight: 1.58, maxLines: 7 },
-  'studio-clean': { id: 'studio-clean', label: 'عربي معاصر', description: 'خط عربي نظيف ومباشر للمنشور المستقل؛ بلا زخرفة زائدة وبوزن متزن على الهاتف.', displayFamily: 'Tajawal', bodyFamily: 'Tajawal', titleWeight: 500, titleScale: 1.02, lineHeight: 1.46, maxLines: 6 },
+  'display-monumental': { id: 'display-monumental', label: 'عنوان نُصبي', description: 'كلمات قليلة بحضور قوي ومسافة أسطر متماسكة.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 700, titleScale: 1.1, lineHeight: 1.34, maxLines: 4 },
+  'editorial-serif': { id: 'editorial-serif', label: 'تحريري معاصر', description: 'هرمية مجلة عربية معاصرة بوزن ومسافات تحريرية دقيقة.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 600, titleScale: .98, lineHeight: 1.48, maxLines: 6 },
+  'rational-sans': { id: 'rational-sans', label: 'هندسي واضح', description: 'وضوح مؤسسي سريع القراءة بوزن محسوب.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 700, titleScale: 0.93, lineHeight: 1.4, maxLines: 5 },
+  'number-led': { id: 'number-led', label: 'الرقم أولاً', description: 'رقم أو نسبة كبيرة يعقبها تفسير مختصر.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 800, titleScale: 1.16, lineHeight: 1.3, maxLines: 4 },
+  'quotation-signature': { id: 'quotation-signature', label: 'اقتباس وتوقيع', description: 'صوت هادئ مع علامات اقتباس وهوية مؤلف مقتصدة.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 500, titleScale: 1, lineHeight: 1.62, maxLines: 7 },
+  'academic-index': { id: 'academic-index', label: 'فهرس أكاديمي', description: 'عناوين دقيقة وترقيم صغير يشبه أوراق البحث.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 600, titleScale: 0.88, lineHeight: 1.5, maxLines: 6 },
+  'cinematic-title': { id: 'cinematic-title', label: 'عنوان سينمائي', description: 'كتلة عنوان قصيرة عالية التباين للغلاف.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 800, titleScale: 1.08, lineHeight: 1.3, maxLines: 4 },
+  conversational: { id: 'conversational', label: 'صوت قريب', description: 'إيقاع عربي مريح يناسب السؤال والنبرة الإنسانية.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 500, titleScale: .96, lineHeight: 1.58, maxLines: 7 },
+  'studio-clean': { id: 'studio-clean', label: 'عربي معاصر', description: 'خط عربي نظيف ومباشر للمنشور المستقل؛ بلا زخرفة زائدة وبوزن متزن على الهاتف.', displayFamily: 'Alexandria Variable', bodyFamily: 'Alexandria Variable', titleWeight: 600, titleScale: 1.02, lineHeight: 1.46, maxLines: 6 },
 }
 
 export const SPATIAL_PATTERNS: Record<SpatialPatternId, SpatialPattern> = {

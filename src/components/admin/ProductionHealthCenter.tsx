@@ -9,6 +9,7 @@ import { dispatchPodcastGeneration } from '../../lib/podcast-generation'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { Pagination, usePagedList } from '../Pagination'
 import { AudioSystemOverview } from './AudioSystemOverview'
+import { SystemHealthOverview } from './SystemHealthOverview'
 
 const card = 'min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const pill = 'min-w-0 rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.74rem] font-semibold leading-tight text-soft'
@@ -286,6 +287,7 @@ export function ProductionHealthCenter({
 
   return (
     <div className="grid min-w-0 max-w-full gap-5">
+      {view === 'health' && <SystemHealthOverview />}
       {view === 'production' && <section className={card}>
         <div className="grid min-w-0 gap-4 sm:flex sm:items-start sm:justify-between">
           <div className="min-w-0">

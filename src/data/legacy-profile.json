@@ -1,0 +1,1292 @@
+{
+  "version": 1,
+  "builtAt": "2026-07-30T17:18:08.427Z",
+  "note": "وضع الإرث يصف الأنماط الموثقة في الأرشيف فقط؛ لا يفترض موقفاً أو تحولاً غير مسجل في المواد.",
+  "stats": {
+    "themes": 198,
+    "representatives": 10,
+    "years": 8
+  },
+  "themes": [
+    {
+      "id": "concept:youth-initiatives",
+      "title": "المبادرات والإبداع الشبابي",
+      "support": 17,
+      "score": 179,
+      "kinds": [
+        "paper",
+        "article"
+      ],
+      "years": [
+        "2017",
+        "2018",
+        "2021",
+        "2025",
+        "2026"
+      ],
+      "firstYear": "2017",
+      "lastYear": "2026",
+      "examples": [
+        {
+          "id": "paper:obstacles-to-the-employment-of-education-technology-and-means-for-students-with-special-needs-from-the-point-of-view-of-faculty-members-at-the-public-authority-for-applied-2",
+          "kind": "paper",
+          "title": "Obstacles to the Employment of Education Technology and Means for Students with Special Needs from the Point of View of Faculty Members at the Public Authority for Applied Education and Training in Kuwait",
+          "url": "https://dr-alfailakawi.com/research/obstacles-to-the-employment-of-education-technology-and-means-for-students-with-special-needs-from-the-point-of-view-of-faculty-members-at-the-public-authority-for-applied-2",
+          "year": ""
+        },
+        {
+          "id": "paper:the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+          "kind": "paper",
+          "title": "The Reality of Using Cloud Computing in University Education from The Point of View of Faculty Members in Kuwait",
+          "url": "https://dr-alfailakawi.com/research/the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+          "year": ""
+        },
+        {
+          "id": "paper:trends-of-college-of-basic-education-students-towards-the-use-of-photography-to-develop-learning-skills-in-kuwait-2",
+          "kind": "paper",
+          "title": "Trends of College of Basic Education students towards the use of photography to develop learning skills in Kuwait",
+          "url": "https://dr-alfailakawi.com/research/trends-of-college-of-basic-education-students-towards-the-use-of-photography-to-develop-learning-skills-in-kuwait-2",
+          "year": ""
+        },
+        {
+          "id": "article:expectations-that-shape-a-studentarabic",
+          "kind": "article",
+          "title": "التوقّعات التي تصنع طالباً",
+          "url": "https://dr-alfailakawi.com/articles/expectations-that-shape-a-studentarabic",
+          "year": "2026"
+        }
+      ]
+    },
+    {
+      "id": "concept:pls-sem",
+      "title": "PLS-SEM",
+      "support": 16,
+      "score": 118,
+      "kinds": [
+        "book",
+        "paper",
+        "article"
+      ],
+      "years": [
+        "2016",
+        "2017",
+        "2018",
+        "2020",
+        "2025"
+      ],
+      "firstYear": "2016",
+      "lastYear": "2025",
+      "examples": [
+        {
+          "id": "book:mega-data",
+          "kind": "book",
+          "title": "حوكمة الذكاء الاصطناعي والبيانات الضخمة",
+          "url": "https://dr-alfailakawi.com/publications/mega-data",
+          "year": ""
+        },
+        {
+          "id": "paper:web-navigation-learning-skills",
+          "kind": "paper",
+          "title": "فاعلية الإبحار في المواقع الإلكترونية على تحسين مهارات الطلبة نحو التعلم في كلية التربية الأساسية من وجهة نظر الطلبة أنفسهم في الهيئة العامة للتعليم التطبيقي والتدريب في دولة الكويت",
+          "url": "https://dr-alfailakawi.com/research/web-navigation-learning-skills",
+          "year": ""
+        },
+        {
+          "id": "article:a-generation-without-rootsarabic",
+          "kind": "article",
+          "title": "جيلٌ بلا جذور",
+          "url": "https://dr-alfailakawi.com/articles/a-generation-without-rootsarabic",
+          "year": "2025"
+        },
+        {
+          "id": "article:i-earned-more-than-harvard-but-it-doesnt-teach-brains",
+          "kind": "article",
+          "title": "ربحت أكثر من «هارفارد»… لكنها لا تدرّس عقلاً!",
+          "url": "https://dr-alfailakawi.com/articles/i-earned-more-than-harvard-but-it-doesnt-teach-brains",
+          "year": "2025"
+        }
+      ]
+    },
+    {
+      "id": "concept:usability-navigation",
+      "title": "قابلية الاستخدام والتنقّل في المواقع",
+      "support": 15,
+      "score": 165,
+      "kinds": [
+        "paper",
+        "article"
+      ],
+      "years": [
+        "2017",
+        "2019",
+        "2020",
+        "2021",
+        "2025",
+        "2026"
+      ],
+      "firstYear": "2017",
+      "lastYear": "2026",
+      "examples": [
+        {
+          "id": "paper:web-navigation-learning-skills",
+          "kind": "paper",
+          "title": "فاعلية الإبحار في المواقع الإلكترونية على تحسين مهارات الطلبة نحو التعلم في كلية التربية الأساسية من وجهة نظر الطلبة أنفسهم في الهيئة العامة للتعليم التطبيقي والتدريب في دولة الكويت",
+          "url": "https://dr-alfailakawi.com/research/web-navigation-learning-skills",
+          "year": ""
+        },
+        {
+          "id": "article:a-society-that-fears-the-different-arabic",
+          "kind": "article",
+          "title": "المجتمع الذي يخاف من المختلف",
+          "url": "https://dr-alfailakawi.com/articles/a-society-that-fears-the-different-arabic",
+          "year": "2025"
+        },
+        {
+          "id": "paper:faculty-attitudes-edtech",
+          "kind": "paper",
+          "title": "اتجاهات الهيئة التدريسية نحو استخدام تكنولوجيا التعليم في كلية التربية الأساسية في الهيئة العامة للتعليم التطبيقي والتدريب بدولة الكويت",
+          "url": "https://dr-alfailakawi.com/research/faculty-attitudes-edtech",
+          "year": ""
+        },
+        {
+          "id": "paper:the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+          "kind": "paper",
+          "title": "The Reality of Using Cloud Computing in University Education from The Point of View of Faculty Members in Kuwait",
+          "url": "https://dr-alfailakawi.com/research/the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+          "year": ""
+        }
+      ]
+    },
+    {
+      "id": "concept:minecraft-education",
+      "title": "Minecraft Education",
+      "support": 14,
+      "score": 170,
+      "kinds": [
+        "paper",
+        "article",
+        "book"
+      ],
+      "years": [
+        "2017",
+        "2020"
+      ],
+      "firstYear": "2017",
+      "lastYear": "2020",
+      "examples": [
+        {
+          "id": "paper:the-impact-of-the-working-environment-and-learning-science-in-the-electronic-learning-systems-used-in-education-2",
+          "kind": "paper",
+          "title": "The Impact of The Working Environment and Learning Science in The Electronic Learning Systems Used in Education",
+          "url": "https://dr-alfailakawi.com/research/the-impact-of-the-working-environment-and-learning-science-in-the-electronic-learning-systems-used-in-education-2",
+          "year": ""
+        },
+        {
+          "id": "paper:the-reality-of-using-smart-device-applications-in-learning-applications-by-university-students-at-the-college-of-basic-education-in-kuwait-2",
+          "kind": "paper",
+          "title": "The Reality of Using Smart Device Applications in Learning Applications by University Students at the College of Basic Education in Kuwait",
+          "url": "https://dr-alfailakawi.com/research/the-reality-of-using-smart-device-applications-in-learning-applications-by-university-students-at-the-college-of-basic-education-in-kuwait-2",
+          "year": ""
+        },
+        {
+          "id": "article:qabas-201706-002",
+          "kind": "article",
+          "title": "هذه المرة نقف مع التلفاز…",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201706-002",
+          "year": "2017"
+        },
+        {
+          "id": "paper:the-availability-of-e-learning-qualifications-among-faculty-members-at-the-faculty-of-basic-education-in-kuwait-2",
+          "kind": "paper",
+          "title": "The Availability of E-Learning Qualifications Among Faculty Members at The Faculty of Basic Education in Kuwait",
+          "url": "https://dr-alfailakawi.com/research/the-availability-of-e-learning-qualifications-among-faculty-members-at-the-faculty-of-basic-education-in-kuwait-2",
+          "year": ""
+        }
+      ]
+    },
+    {
+      "id": "concept:teaching-methods",
+      "title": "مناهج وطرق التدريس",
+      "support": 13,
+      "score": 271,
+      "kinds": [
+        "book",
+        "paper",
+        "article",
+        "curated"
+      ],
+      "years": [
+        "2016",
+        "2018",
+        "2025"
+      ],
+      "firstYear": "2016",
+      "lastYear": "2025",
+      "examples": [
+        {
+          "id": "book:teaching",
+          "kind": "book",
+          "title": "مناهج وطرق التدريس (تكنولوجيا التعليم)",
+          "url": "https://dr-alfailakawi.com/publications/teaching",
+          "year": ""
+        },
+        {
+          "id": "book:encyclopedia",
+          "kind": "book",
+          "title": "موسوعة تكنولوجيا التعليم",
+          "url": "https://dr-alfailakawi.com/publications/encyclopedia",
+          "year": ""
+        },
+        {
+          "id": "book:mega-data",
+          "kind": "book",
+          "title": "حوكمة الذكاء الاصطناعي والبيانات الضخمة",
+          "url": "https://dr-alfailakawi.com/publications/mega-data",
+          "year": ""
+        },
+        {
+          "id": "book:handy-tech",
+          "kind": "book",
+          "title": "تكنولوجيا ذوي الاحتياجات الخاصة",
+          "url": "https://dr-alfailakawi.com/publications/handy-tech",
+          "year": ""
+        }
+      ]
+    },
+    {
+      "id": "concept:plagiarism-detection",
+      "title": "كشف الانتحال",
+      "support": 13,
+      "score": 181,
+      "kinds": [
+        "article",
+        "book",
+        "curated"
+      ],
+      "years": [
+        "2018",
+        "2025"
+      ],
+      "firstYear": "2018",
+      "lastYear": "2025",
+      "examples": [
+        {
+          "id": "article:students-minds-are-on-vacation-while-chatgpt-works-full-time-2",
+          "kind": "article",
+          "title": "عقول الطلاب في إجازة… وChatGPT يشتغل بدوام كامل!",
+          "url": "https://dr-alfailakawi.com/articles/students-minds-are-on-vacation-while-chatgpt-works-full-time-2",
+          "year": "2025"
+        },
+        {
+          "id": "article:when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m",
+          "kind": "article",
+          "title": "حين أختبرُ مدرسةَ بناتي… قبل أن تختبرَهنّ",
+          "url": "https://dr-alfailakawi.com/articles/when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m",
+          "year": "2025"
+        },
+        {
+          "id": "book:mega-data",
+          "kind": "book",
+          "title": "حوكمة الذكاء الاصطناعي والبيانات الضخمة",
+          "url": "https://dr-alfailakawi.com/publications/mega-data",
+          "year": ""
+        },
+        {
+          "id": "article:the-blackboard-that-no-longer-sees-anyone-2",
+          "kind": "article",
+          "title": "السبورة التي لم تعد ترى أحداً!",
+          "url": "https://dr-alfailakawi.com/articles/the-blackboard-that-no-longer-sees-anyone-2",
+          "year": "2025"
+        }
+      ]
+    },
+    {
+      "id": "concept:electronic-courses",
+      "title": "المقررات الإلكترونية",
+      "support": 13,
+      "score": 166,
+      "kinds": [
+        "paper",
+        "article",
+        "curated"
+      ],
+      "years": [
+        "2017",
+        "2020",
+        "2021",
+        "2025"
+      ],
+      "firstYear": "2017",
+      "lastYear": "2025",
+      "examples": [
+        {
+          "id": "paper:web-navigation-learning-skills",
+          "kind": "paper",
+          "title": "فاعلية الإبحار في المواقع الإلكترونية على تحسين مهارات الطلبة نحو التعلم في كلية التربية الأساسية من وجهة نظر الطلبة أنفسهم في الهيئة العامة للتعليم التطبيقي والتدريب في دولة الكويت",
+          "url": "https://dr-alfailakawi.com/research/web-navigation-learning-skills",
+          "year": ""
+        },
+        {
+          "id": "article:qabas-201707-003",
+          "kind": "article",
+          "title": "الجوازات الذكية (الإلكترونية) أدوات تقتحم الخصوصية",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201707-003",
+          "year": "2017"
+        },
+        {
+          "id": "paper:the-availability-of-e-learning-qualifications-among-faculty-members-at-the-faculty-of-basic-education-in-kuwait-2",
+          "kind": "paper",
+          "title": "The Availability of E-Learning Qualifications Among Faculty Members at The Faculty of Basic Education in Kuwait",
+          "url": "https://dr-alfailakawi.com/research/the-availability-of-e-learning-qualifications-among-faculty-members-at-the-faculty-of-basic-education-in-kuwait-2",
+          "year": ""
+        },
+        {
+          "id": "paper:perceptions-of-university-students-at-the-college-of-basic-education-toward-implementing-moodle-in-managing-e-courses-to-enhance-learning-in-kuwait-2",
+          "kind": "paper",
+          "title": "Perceptions of University Students at the College of Basic Education Toward Implementing Moodle in Managing E-Courses to Enhance Learning in Kuwait",
+          "url": "https://dr-alfailakawi.com/research/perceptions-of-university-students-at-the-college-of-basic-education-toward-implementing-moodle-in-managing-e-courses-to-enhance-learning-in-kuwait-2",
+          "year": ""
+        }
+      ]
+    },
+    {
+      "id": "concept:educational-technology",
+      "title": "تكنولوجيا التعليم",
+      "support": 11,
+      "score": 212,
+      "kinds": [
+        "article",
+        "book",
+        "paper",
+        "curated"
+      ],
+      "years": [
+        "2017",
+        "2019",
+        "2021"
+      ],
+      "firstYear": "2017",
+      "lastYear": "2021",
+      "examples": [
+        {
+          "id": "article:qabas-201709-002",
+          "kind": "article",
+          "title": "أدخل إلى عالم التعليم الالكتروني من أبسط تطبيقات جوالك…",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201709-002",
+          "year": "2017"
+        },
+        {
+          "id": "article:qabas-201707-001",
+          "kind": "article",
+          "title": "تقنية النظارات3D تغزو التعليم الجامعي",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201707-001",
+          "year": "2017"
+        },
+        {
+          "id": "book:encyclopedia",
+          "kind": "book",
+          "title": "موسوعة تكنولوجيا التعليم",
+          "url": "https://dr-alfailakawi.com/publications/encyclopedia",
+          "year": ""
+        },
+        {
+          "id": "book:teaching",
+          "kind": "book",
+          "title": "مناهج وطرق التدريس (تكنولوجيا التعليم)",
+          "url": "https://dr-alfailakawi.com/publications/teaching",
+          "year": ""
+        }
+      ]
+    },
+    {
+      "id": "concept:technology-acceptance",
+      "title": "قبول التكنولوجيا",
+      "support": 11,
+      "score": 161,
+      "kinds": [
+        "article"
+      ],
+      "years": [
+        "2016",
+        "2017"
+      ],
+      "firstYear": "2016",
+      "lastYear": "2017",
+      "examples": [
+        {
+          "id": "article:qabas-201704-001",
+          "kind": "article",
+          "title": "الترجمة بين التكنولوجيا ومجالات الحياة …",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201704-001",
+          "year": "2017"
+        },
+        {
+          "id": "article:qabas-201611-001",
+          "kind": "article",
+          "title": "ثقافة تغزو التكنولوجيا أم تكنولوجيا تغزو الثقافة",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201611-001",
+          "year": "2016"
+        },
+        {
+          "id": "article:qabas-201706-003",
+          "kind": "article",
+          "title": "هل وضعت البشرية بيضها في سلة واحدة عندما رهنت التكنولوجيا بالكهرباء",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201706-003",
+          "year": "2017"
+        },
+        {
+          "id": "article:qabas-201703-004",
+          "kind": "article",
+          "title": "ماذا سيحدث لو تحررت التكنولوجيا من الرأسمالية؟",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201703-004",
+          "year": "2017"
+        }
+      ]
+    },
+    {
+      "id": "concept:speech-to-text",
+      "title": "تحويل الكلام إلى نص",
+      "support": 11,
+      "score": 149,
+      "kinds": [
+        "article",
+        "book"
+      ],
+      "years": [
+        "2016",
+        "2017",
+        "2018",
+        "2019",
+        "2021",
+        "2025"
+      ],
+      "firstYear": "2016",
+      "lastYear": "2025",
+      "examples": [
+        {
+          "id": "article:turning-video-game-obsession-into-creative-meditation-2",
+          "kind": "article",
+          "title": "تحويل هوس ألعاب الفيديو إلى تأمل خلاق",
+          "url": "https://dr-alfailakawi.com/articles/turning-video-game-obsession-into-creative-meditation-2",
+          "year": "2021"
+        },
+        {
+          "id": "article:artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+          "kind": "article",
+          "title": "الذكاء الاصطناعي يُدرّس… والعقل البشري يُقصى",
+          "url": "https://dr-alfailakawi.com/articles/artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+          "year": "2025"
+        },
+        {
+          "id": "article:from-the-schoolyard-to-the-food-court-2",
+          "kind": "article",
+          "title": "من الساحة المدرسية… إلى ساحة المطاعم!",
+          "url": "https://dr-alfailakawi.com/articles/from-the-schoolyard-to-the-food-court-2",
+          "year": "2025"
+        },
+        {
+          "id": "article:i-earned-more-than-harvard-but-it-doesnt-teach-brains",
+          "kind": "article",
+          "title": "ربحت أكثر من «هارفارد»… لكنها لا تدرّس عقلاً!",
+          "url": "https://dr-alfailakawi.com/articles/i-earned-more-than-harvard-but-it-doesnt-teach-brains",
+          "year": "2025"
+        }
+      ]
+    },
+    {
+      "id": "concept:leadership-management",
+      "title": "القيادة والإدارة",
+      "support": 11,
+      "score": 137,
+      "kinds": [
+        "paper",
+        "article"
+      ],
+      "years": [
+        "2021",
+        "2025",
+        "2026"
+      ],
+      "firstYear": "2021",
+      "lastYear": "2026",
+      "examples": [
+        {
+          "id": "paper:how-important-is-the-use-of-e-learning-management-systems-in-building-a-smart-university-in-kuwait-2",
+          "kind": "paper",
+          "title": "How Important Is the Use of E-Learning Management Systems in Building a Smart University in Kuwait?",
+          "url": "https://dr-alfailakawi.com/research/how-important-is-the-use-of-e-learning-management-systems-in-building-a-smart-university-in-kuwait-2",
+          "year": ""
+        },
+        {
+          "id": "paper:the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+          "kind": "paper",
+          "title": "The Reality of Using Cloud Computing in University Education from The Point of View of Faculty Members in Kuwait",
+          "url": "https://dr-alfailakawi.com/research/the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+          "year": ""
+        },
+        {
+          "id": "article:the-teacher-the-last-to-know-2",
+          "kind": "article",
+          "title": "المعلّم… آخرُ من يعلم!",
+          "url": "https://dr-alfailakawi.com/articles/the-teacher-the-last-to-know-2",
+          "year": "2025"
+        },
+        {
+          "id": "article:the-media-is-a-vital-partner-in-the-educational-process",
+          "kind": "article",
+          "title": "الإعلام الشريك العضيد للعملية التعليمية",
+          "url": "https://dr-alfailakawi.com/articles/the-media-is-a-vital-partner-in-the-educational-process",
+          "year": "2021"
+        }
+      ]
+    },
+    {
+      "id": "concept:smart-schools",
+      "title": "المدارس الذكية",
+      "support": 11,
+      "score": 134,
+      "kinds": [
+        "book",
+        "article",
+        "paper",
+        "curated"
+      ],
+      "years": [
+        "2017",
+        "2018",
+        "2020",
+        "2025"
+      ],
+      "firstYear": "2017",
+      "lastYear": "2025",
+      "examples": [
+        {
+          "id": "book:smart-school",
+          "kind": "book",
+          "title": "المدارس الذكية",
+          "url": "https://dr-alfailakawi.com/publications/smart-school",
+          "year": ""
+        },
+        {
+          "id": "article:qabas-201707-003",
+          "kind": "article",
+          "title": "الجوازات الذكية (الإلكترونية) أدوات تقتحم الخصوصية",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201707-003",
+          "year": "2017"
+        },
+        {
+          "id": "article:artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+          "kind": "article",
+          "title": "الذكاء الاصطناعي يُدرّس… والعقل البشري يُقصى",
+          "url": "https://dr-alfailakawi.com/articles/artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+          "year": "2025"
+        },
+        {
+          "id": "article:smartphone-child-a-creative-mind-or-a-child-being-driven",
+          "kind": "article",
+          "title": "طفل الهواتف الذكية.. عقل خلاق أم طفل يساق؟!",
+          "url": "https://dr-alfailakawi.com/articles/smartphone-child-a-creative-mind-or-a-child-being-driven",
+          "year": "2020"
+        }
+      ]
+    }
+  ],
+  "representatives": [
+    {
+      "id": "paper:trends-of-college-of-basic-education-students-towards-the-use-of-photography-to-develop-learning-skills-in-kuwait-2",
+      "kind": "paper",
+      "title": "Trends of College of Basic Education students towards the use of photography to develop learning skills in Kuwait",
+      "url": "https://dr-alfailakawi.com/research/trends-of-college-of-basic-education-students-towards-the-use-of-photography-to-develop-learning-skills-in-kuwait-2",
+      "year": "",
+      "centrality": 2579,
+      "concepts": []
+    },
+    {
+      "id": "paper:perceptions-of-university-students-at-the-college-of-basic-education-toward-implementing-moodle-in-managing-e-courses-to-enhance-learning-in-kuwait-2",
+      "kind": "paper",
+      "title": "Perceptions of University Students at the College of Basic Education Toward Implementing Moodle in Managing E-Courses to Enhance Learning in Kuwait",
+      "url": "https://dr-alfailakawi.com/research/perceptions-of-university-students-at-the-college-of-basic-education-toward-implementing-moodle-in-managing-e-courses-to-enhance-learning-in-kuwait-2",
+      "year": "",
+      "centrality": 2572,
+      "concepts": []
+    },
+    {
+      "id": "paper:obstacles-to-the-employment-of-education-technology-and-means-for-students-with-special-needs-from-the-point-of-view-of-faculty-members-at-the-public-authority-for-applied-2",
+      "kind": "paper",
+      "title": "Obstacles to the Employment of Education Technology and Means for Students with Special Needs from the Point of View of Faculty Members at the Public Authority for Applied Education and Training in Kuwait",
+      "url": "https://dr-alfailakawi.com/research/obstacles-to-the-employment-of-education-technology-and-means-for-students-with-special-needs-from-the-point-of-view-of-faculty-members-at-the-public-authority-for-applied-2",
+      "year": "",
+      "centrality": 2489,
+      "concepts": []
+    },
+    {
+      "id": "paper:faculty-members-degree-of-awareness-of-augmented-reality-concept-in-the-college-of-basic-education-public-authority-for-applied-education-and-training-in-kuwait-2",
+      "kind": "paper",
+      "title": "Faculty Members Degree of Awareness of Augmented Reality Concept in the College of Basic Education, Public Authority for Applied Education and Training in Kuwait",
+      "url": "https://dr-alfailakawi.com/research/faculty-members-degree-of-awareness-of-augmented-reality-concept-in-the-college-of-basic-education-public-authority-for-applied-education-and-training-in-kuwait-2",
+      "year": "",
+      "centrality": 2289,
+      "concepts": []
+    },
+    {
+      "id": "paper:the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+      "kind": "paper",
+      "title": "The Reality of Using Cloud Computing in University Education from The Point of View of Faculty Members in Kuwait",
+      "url": "https://dr-alfailakawi.com/research/the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+      "year": "",
+      "centrality": 2272,
+      "concepts": []
+    },
+    {
+      "id": "paper:elearning-research-skills",
+      "kind": "paper",
+      "title": "أهمية التعلم الإلكتروني في اكتساب مهارات البحث العلمي من وجهة نظر طلبة البكالوريوس والدراسات العليا في دولة الكويت",
+      "url": "https://dr-alfailakawi.com/research/elearning-research-skills",
+      "year": "",
+      "centrality": 2260,
+      "concepts": []
+    },
+    {
+      "id": "paper:investigating-the-role-of-e-learning-management-systems-in-the-learning-process-from-the-point-of-view-of-the-faculty-at-the-faculty-of-basic-education-in-kuwait-2",
+      "kind": "paper",
+      "title": "Investigating The Role of E-Learning Management Systems in The Learning Process from The Point of View of The Faculty at The Faculty of Basic Education in Kuwait",
+      "url": "https://dr-alfailakawi.com/research/investigating-the-role-of-e-learning-management-systems-in-the-learning-process-from-the-point-of-view-of-the-faculty-at-the-faculty-of-basic-education-in-kuwait-2",
+      "year": "",
+      "centrality": 2251,
+      "concepts": []
+    },
+    {
+      "id": "paper:university-students-perceptions-at-the-college-of-basic-education-regarding-the-use-of-interactive-blackboard-technology-in-education-in-kuwait-for-the-academic-year-2020-2021-2",
+      "kind": "paper",
+      "title": "University Students' Perceptions at the College of Basic Education Regarding the Use of Interactive Blackboard Technology in Education in Kuwait for the Academic Year 2020/2021",
+      "url": "https://dr-alfailakawi.com/research/university-students-perceptions-at-the-college-of-basic-education-regarding-the-use-of-interactive-blackboard-technology-in-education-in-kuwait-for-the-academic-year-2020-2021-2",
+      "year": "",
+      "centrality": 2231,
+      "concepts": []
+    },
+    {
+      "id": "paper:the-role-of-technological-creative-photography-in-contemporary-education-frameworks-in-developing-the-knowledge-skills-and-abilities-of-university-professors-at-the-college-of-basic-education-in-kuw-2",
+      "kind": "paper",
+      "title": "The Role of Technological Creative Photography in Contemporary Education Frameworks in Developing the Knowledge, Skills, and Abilities of University Professors at the College of Basic Education in Kuwait",
+      "url": "https://dr-alfailakawi.com/research/the-role-of-technological-creative-photography-in-contemporary-education-frameworks-in-developing-the-knowledge-skills-and-abilities-of-university-professors-at-the-college-of-basic-education-in-kuw-2",
+      "year": "",
+      "centrality": 2189,
+      "concepts": []
+    },
+    {
+      "id": "paper:the-reality-of-using-smart-device-applications-in-learning-applications-by-university-students-at-the-college-of-basic-education-in-kuwait-2",
+      "kind": "paper",
+      "title": "The Reality of Using Smart Device Applications in Learning Applications by University Students at the College of Basic Education in Kuwait",
+      "url": "https://dr-alfailakawi.com/research/the-reality-of-using-smart-device-applications-in-learning-applications-by-university-students-at-the-college-of-basic-education-in-kuwait-2",
+      "year": "",
+      "centrality": 2189,
+      "concepts": []
+    }
+  ],
+  "timeline": [
+    {
+      "year": "2016",
+      "count": 9,
+      "kinds": {
+        "article": 9
+      },
+      "titles": [
+        {
+          "id": "article:qabas-201612-001",
+          "kind": "article",
+          "title": "هل العبرة في صحة الخبر… أم كثرة المتابعين",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201612-001"
+        },
+        {
+          "id": "article:qabas-201612-002",
+          "kind": "article",
+          "title": "إلى أي مدى يمكن أن تذهب التكنولوجيا بالتعليم؟",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201612-002"
+        },
+        {
+          "id": "article:qabas-201612-003",
+          "kind": "article",
+          "title": "زخم المعلومات يفقد الدماغ صوابه",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201612-003"
+        },
+        {
+          "id": "article:qabas-201612-004",
+          "kind": "article",
+          "title": "توليد الثقافة –ما بين الأمس والحاضر",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201612-004"
+        },
+        {
+          "id": "article:qabas-201611-002",
+          "kind": "article",
+          "title": "سياسة الصانع تحدد ثقافة المنتج",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201611-002"
+        }
+      ]
+    },
+    {
+      "year": "2017",
+      "count": 40,
+      "kinds": {
+        "article": 40
+      },
+      "titles": [
+        {
+          "id": "article:qabas-201712-004",
+          "kind": "article",
+          "title": "نحن… ما بعد التكنولوجيا…",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201712-004"
+        },
+        {
+          "id": "article:qabas-201712-001",
+          "kind": "article",
+          "title": "مجلس علم… للشيخ جوجل",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201712-001"
+        },
+        {
+          "id": "article:qabas-201712-002",
+          "kind": "article",
+          "title": "تكنولوجيا الواقع المعزز… هل هي صديقة الإنسان أم خروج عن السيطرة؟",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201712-002"
+        },
+        {
+          "id": "article:qabas-201712-003",
+          "kind": "article",
+          "title": "هل وظيفتك مهددة بالانقراض؟",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201712-003"
+        },
+        {
+          "id": "article:qabas-201711-004",
+          "kind": "article",
+          "title": "أحدث صيحات الموضة التكنولوجية",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201711-004"
+        }
+      ]
+    },
+    {
+      "year": "2018",
+      "count": 26,
+      "kinds": {
+        "article": 26
+      },
+      "titles": [
+        {
+          "id": "article:qabas-201811-001",
+          "kind": "article",
+          "title": "وسائل الإعلام… بين المجاملة والتمثيل",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201811-001"
+        },
+        {
+          "id": "article:qabas-201811-002",
+          "kind": "article",
+          "title": "انجازات تغرق وفساد يعوم",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201811-002"
+        },
+        {
+          "id": "article:qabas-201810-001",
+          "kind": "article",
+          "title": "أصول التوجيه للطلبة… فلكل مقام مقال…",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201810-001"
+        },
+        {
+          "id": "article:qabas-201810-002",
+          "kind": "article",
+          "title": "سر اليوتيوب… وغموض المحتوى",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201810-002"
+        },
+        {
+          "id": "article:qabas-201810-003",
+          "kind": "article",
+          "title": "مواقع الإلحاد في السوشيال ميديا… وقد فاحت راحئتها",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201810-003"
+        }
+      ]
+    },
+    {
+      "year": "2019",
+      "count": 8,
+      "kinds": {
+        "article": 8
+      },
+      "titles": [
+        {
+          "id": "article:the-social-media-swamp-and-plastic-surgery-addiction-2",
+          "kind": "article",
+          "title": "مستنقع «السوشيال ميديا» وإدمان عمليات التجميل",
+          "url": "https://dr-alfailakawi.com/articles/the-social-media-swamp-and-plastic-surgery-addiction-2"
+        },
+        {
+          "id": "article:lets-achieve-a-higher-level-of-quality-education",
+          "kind": "article",
+          "title": "لنصل إلى مستوى جودة تعليم عالٍ!",
+          "url": "https://dr-alfailakawi.com/articles/lets-achieve-a-higher-level-of-quality-education"
+        },
+        {
+          "id": "article:the-teacher-what-do-you-know-about-the-teacher",
+          "kind": "article",
+          "title": "المعلم.. وما أدراك ما المعلم",
+          "url": "https://dr-alfailakawi.com/articles/the-teacher-what-do-you-know-about-the-teacher"
+        },
+        {
+          "id": "article:qabas-201911-001",
+          "kind": "article",
+          "title": "الشدادية فخامة معمارية… ولكن نحو جودة التعليم",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201911-001"
+        },
+        {
+          "id": "article:qabas-201909-001",
+          "kind": "article",
+          "title": "السوشيل ميديا والثراء الكاذب",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201909-001"
+        }
+      ]
+    },
+    {
+      "year": "2020",
+      "count": 8,
+      "kinds": {
+        "article": 8
+      },
+      "titles": [
+        {
+          "id": "article:private-lesson-in-the-age-of-digital-educational-intelligence",
+          "kind": "article",
+          "title": "الدروس الخصوصية.. في زمن الذكاء التعليمي الرقمي",
+          "url": "https://dr-alfailakawi.com/articles/private-lesson-in-the-age-of-digital-educational-intelligence"
+        },
+        {
+          "id": "article:e-learning-culture-2",
+          "kind": "article",
+          "title": "ثقافة التعليم الإلكتروني",
+          "url": "https://dr-alfailakawi.com/articles/e-learning-culture-2"
+        },
+        {
+          "id": "article:lets-work-towards-scientific-research",
+          "kind": "article",
+          "title": "لنعمل من أجل بحث علمي",
+          "url": "https://dr-alfailakawi.com/articles/lets-work-towards-scientific-research"
+        },
+        {
+          "id": "article:e-learning-initiatives-and-solutions-2",
+          "kind": "article",
+          "title": "مبادرات وحلول للتعليم الإلكتروني",
+          "url": "https://dr-alfailakawi.com/articles/e-learning-initiatives-and-solutions-2"
+        },
+        {
+          "id": "article:alternative-plans-for-distance-education",
+          "kind": "article",
+          "title": "الخطط البديلة للتعليم عن بعد",
+          "url": "https://dr-alfailakawi.com/articles/alternative-plans-for-distance-education"
+        }
+      ]
+    },
+    {
+      "year": "2021",
+      "count": 4,
+      "kinds": {
+        "article": 4
+      },
+      "titles": [
+        {
+          "id": "article:ethical-hacking-culture",
+          "kind": "article",
+          "title": "ثقافة الاختراق الأخلاقي.. قراصنة على خلق",
+          "url": "https://dr-alfailakawi.com/articles/ethical-hacking-culture"
+        },
+        {
+          "id": "article:turning-video-game-obsession-into-creative-meditation-2",
+          "kind": "article",
+          "title": "تحويل هوس ألعاب الفيديو إلى تأمل خلاق",
+          "url": "https://dr-alfailakawi.com/articles/turning-video-game-obsession-into-creative-meditation-2"
+        },
+        {
+          "id": "article:past-mistakes-still-persist-in-the-age",
+          "kind": "article",
+          "title": "أخطاء الماضي مازالت في زمن التعليم الإلكتروني",
+          "url": "https://dr-alfailakawi.com/articles/past-mistakes-still-persist-in-the-age"
+        },
+        {
+          "id": "article:the-media-is-a-vital-partner-in-the-educational-process",
+          "kind": "article",
+          "title": "الإعلام الشريك العضيد للعملية التعليمية",
+          "url": "https://dr-alfailakawi.com/articles/the-media-is-a-vital-partner-in-the-educational-process"
+        }
+      ]
+    },
+    {
+      "year": "2025",
+      "count": 34,
+      "kinds": {
+        "article": 34
+      },
+      "titles": [
+        {
+          "id": "article:when-truth-died-and-the-narrative-survivedarabic",
+          "kind": "article",
+          "title": "حين ماتت الحقيقة ونجت الرواية",
+          "url": "https://dr-alfailakawi.com/articles/when-truth-died-and-the-narrative-survivedarabic"
+        },
+        {
+          "id": "article:a-generation-without-rootsarabic",
+          "kind": "article",
+          "title": "جيلٌ بلا جذور",
+          "url": "https://dr-alfailakawi.com/articles/a-generation-without-rootsarabic"
+        },
+        {
+          "id": "article:a-society-that-fears-the-different-arabic",
+          "kind": "article",
+          "title": "المجتمع الذي يخاف من المختلف",
+          "url": "https://dr-alfailakawi.com/articles/a-society-that-fears-the-different-arabic"
+        },
+        {
+          "id": "article:the-human-who-forgot-himselfarabic",
+          "kind": "article",
+          "title": "الإنسان الذي نسي نفسه",
+          "url": "https://dr-alfailakawi.com/articles/the-human-who-forgot-himselfarabic"
+        },
+        {
+          "id": "article:intelligence-without-a-consciencearabic",
+          "kind": "article",
+          "title": "ذكاءٌ بلا ضمير",
+          "url": "https://dr-alfailakawi.com/articles/intelligence-without-a-consciencearabic"
+        }
+      ]
+    },
+    {
+      "year": "2026",
+      "count": 14,
+      "kinds": {
+        "article": 14
+      },
+      "titles": [
+        {
+          "id": "article:success-that-does-not-bring-joy-to-its-ownerarabic",
+          "kind": "article",
+          "title": "النجاح الذي لا يفرح صاحبه",
+          "url": "https://dr-alfailakawi.com/articles/success-that-does-not-bring-joy-to-its-ownerarabic"
+        },
+        {
+          "id": "article:when-the-exam-becomes-the-goalarabic",
+          "kind": "article",
+          "title": "حين يصبح الامتحان هو الهدف",
+          "url": "https://dr-alfailakawi.com/articles/when-the-exam-becomes-the-goalarabic"
+        },
+        {
+          "id": "article:expectations-that-shape-a-studentarabic",
+          "kind": "article",
+          "title": "التوقّعات التي تصنع طالباً",
+          "url": "https://dr-alfailakawi.com/articles/expectations-that-shape-a-studentarabic"
+        },
+        {
+          "id": "article:the-classroom-that-fears-mistakesarabic",
+          "kind": "article",
+          "title": "الصفُّ الذي يخاف من الخطأ",
+          "url": "https://dr-alfailakawi.com/articles/the-classroom-that-fears-mistakesarabic"
+        },
+        {
+          "id": "article:the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic",
+          "kind": "article",
+          "title": "الوطن ليس وجهةَ نظرٍ وقتَ الأزمات",
+          "url": "https://dr-alfailakawi.com/articles/the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic"
+        }
+      ]
+    }
+  ],
+  "arcs": [
+    {
+      "id": "concept:youth-initiatives",
+      "title": "المبادرات والإبداع الشبابي",
+      "firstYear": "2017",
+      "lastYear": "2026",
+      "support": 17,
+      "examples": [
+        {
+          "id": "paper:obstacles-to-the-employment-of-education-technology-and-means-for-students-with-special-needs-from-the-point-of-view-of-faculty-members-at-the-public-authority-for-applied-2",
+          "kind": "paper",
+          "title": "Obstacles to the Employment of Education Technology and Means for Students with Special Needs from the Point of View of Faculty Members at the Public Authority for Applied Education and Training in Kuwait",
+          "url": "https://dr-alfailakawi.com/research/obstacles-to-the-employment-of-education-technology-and-means-for-students-with-special-needs-from-the-point-of-view-of-faculty-members-at-the-public-authority-for-applied-2",
+          "year": ""
+        },
+        {
+          "id": "paper:the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+          "kind": "paper",
+          "title": "The Reality of Using Cloud Computing in University Education from The Point of View of Faculty Members in Kuwait",
+          "url": "https://dr-alfailakawi.com/research/the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+          "year": ""
+        },
+        {
+          "id": "paper:trends-of-college-of-basic-education-students-towards-the-use-of-photography-to-develop-learning-skills-in-kuwait-2",
+          "kind": "paper",
+          "title": "Trends of College of Basic Education students towards the use of photography to develop learning skills in Kuwait",
+          "url": "https://dr-alfailakawi.com/research/trends-of-college-of-basic-education-students-towards-the-use-of-photography-to-develop-learning-skills-in-kuwait-2",
+          "year": ""
+        },
+        {
+          "id": "article:expectations-that-shape-a-studentarabic",
+          "kind": "article",
+          "title": "التوقّعات التي تصنع طالباً",
+          "url": "https://dr-alfailakawi.com/articles/expectations-that-shape-a-studentarabic",
+          "year": "2026"
+        }
+      ]
+    },
+    {
+      "id": "concept:usability-navigation",
+      "title": "قابلية الاستخدام والتنقّل في المواقع",
+      "firstYear": "2017",
+      "lastYear": "2026",
+      "support": 15,
+      "examples": [
+        {
+          "id": "paper:web-navigation-learning-skills",
+          "kind": "paper",
+          "title": "فاعلية الإبحار في المواقع الإلكترونية على تحسين مهارات الطلبة نحو التعلم في كلية التربية الأساسية من وجهة نظر الطلبة أنفسهم في الهيئة العامة للتعليم التطبيقي والتدريب في دولة الكويت",
+          "url": "https://dr-alfailakawi.com/research/web-navigation-learning-skills",
+          "year": ""
+        },
+        {
+          "id": "article:a-society-that-fears-the-different-arabic",
+          "kind": "article",
+          "title": "المجتمع الذي يخاف من المختلف",
+          "url": "https://dr-alfailakawi.com/articles/a-society-that-fears-the-different-arabic",
+          "year": "2025"
+        },
+        {
+          "id": "paper:faculty-attitudes-edtech",
+          "kind": "paper",
+          "title": "اتجاهات الهيئة التدريسية نحو استخدام تكنولوجيا التعليم في كلية التربية الأساسية في الهيئة العامة للتعليم التطبيقي والتدريب بدولة الكويت",
+          "url": "https://dr-alfailakawi.com/research/faculty-attitudes-edtech",
+          "year": ""
+        },
+        {
+          "id": "paper:the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+          "kind": "paper",
+          "title": "The Reality of Using Cloud Computing in University Education from The Point of View of Faculty Members in Kuwait",
+          "url": "https://dr-alfailakawi.com/research/the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+          "year": ""
+        }
+      ]
+    },
+    {
+      "id": "concept:leadership-management",
+      "title": "القيادة والإدارة",
+      "firstYear": "2021",
+      "lastYear": "2026",
+      "support": 11,
+      "examples": [
+        {
+          "id": "paper:how-important-is-the-use-of-e-learning-management-systems-in-building-a-smart-university-in-kuwait-2",
+          "kind": "paper",
+          "title": "How Important Is the Use of E-Learning Management Systems in Building a Smart University in Kuwait?",
+          "url": "https://dr-alfailakawi.com/research/how-important-is-the-use-of-e-learning-management-systems-in-building-a-smart-university-in-kuwait-2",
+          "year": ""
+        },
+        {
+          "id": "paper:the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+          "kind": "paper",
+          "title": "The Reality of Using Cloud Computing in University Education from The Point of View of Faculty Members in Kuwait",
+          "url": "https://dr-alfailakawi.com/research/the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+          "year": ""
+        },
+        {
+          "id": "article:the-teacher-the-last-to-know-2",
+          "kind": "article",
+          "title": "المعلّم… آخرُ من يعلم!",
+          "url": "https://dr-alfailakawi.com/articles/the-teacher-the-last-to-know-2",
+          "year": "2025"
+        },
+        {
+          "id": "article:the-media-is-a-vital-partner-in-the-educational-process",
+          "kind": "article",
+          "title": "الإعلام الشريك العضيد للعملية التعليمية",
+          "url": "https://dr-alfailakawi.com/articles/the-media-is-a-vital-partner-in-the-educational-process",
+          "year": "2021"
+        }
+      ]
+    },
+    {
+      "id": "concept:big-data",
+      "title": "البيانات الضخمة",
+      "firstYear": "2025",
+      "lastYear": "2026",
+      "support": 11,
+      "examples": [
+        {
+          "id": "book:mega-data",
+          "kind": "book",
+          "title": "حوكمة الذكاء الاصطناعي والبيانات الضخمة",
+          "url": "https://dr-alfailakawi.com/publications/mega-data",
+          "year": ""
+        },
+        {
+          "id": "article:when-seriousness-becomes-a-mask-for-escapearabic",
+          "kind": "article",
+          "title": "حين تصبح الجدية قناعاً للهروب",
+          "url": "https://dr-alfailakawi.com/articles/when-seriousness-becomes-a-mask-for-escapearabic",
+          "year": "2026"
+        },
+        {
+          "id": "paper:web-navigation-learning-skills",
+          "kind": "paper",
+          "title": "فاعلية الإبحار في المواقع الإلكترونية على تحسين مهارات الطلبة نحو التعلم في كلية التربية الأساسية من وجهة نظر الطلبة أنفسهم في الهيئة العامة للتعليم التطبيقي والتدريب في دولة الكويت",
+          "url": "https://dr-alfailakawi.com/research/web-navigation-learning-skills",
+          "year": ""
+        },
+        {
+          "id": "paper:the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+          "kind": "paper",
+          "title": "The Reality of Using Cloud Computing in University Education from The Point of View of Faculty Members in Kuwait",
+          "url": "https://dr-alfailakawi.com/research/the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
+          "year": ""
+        }
+      ]
+    },
+    {
+      "id": "concept:gamification",
+      "title": "التلعيب",
+      "firstYear": "2021",
+      "lastYear": "2026",
+      "support": 10,
+      "examples": [
+        {
+          "id": "book:gamification",
+          "kind": "book",
+          "title": "التلعيب Gamification وعالم الألعاب",
+          "url": "https://dr-alfailakawi.com/publications/gamification",
+          "year": ""
+        },
+        {
+          "id": "article:when-the-teacher-knows-why-he-teachesarabic",
+          "kind": "article",
+          "title": "حين يعرف المعلّم لماذا يعلّم",
+          "url": "https://dr-alfailakawi.com/articles/when-the-teacher-knows-why-he-teachesarabic",
+          "year": "2026"
+        },
+        {
+          "id": "book:digital-education",
+          "kind": "book",
+          "title": "التعليم ومتطلبات العصر.. (التعلم الرقمي)",
+          "url": "https://dr-alfailakawi.com/publications/digital-education",
+          "year": ""
+        },
+        {
+          "id": "book:smart-school",
+          "kind": "book",
+          "title": "المدارس الذكية",
+          "url": "https://dr-alfailakawi.com/publications/smart-school",
+          "year": ""
+        }
+      ]
+    },
+    {
+      "id": "concept:pedagogy",
+      "title": "علم التربية والتعليم",
+      "firstYear": "2018",
+      "lastYear": "2026",
+      "support": 8,
+      "examples": [
+        {
+          "id": "article:qabas-201802-004",
+          "kind": "article",
+          "title": "كليات التربية ومتطلبات العصر",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201802-004",
+          "year": "2018"
+        },
+        {
+          "id": "paper:faculty-attitudes-edtech",
+          "kind": "paper",
+          "title": "اتجاهات الهيئة التدريسية نحو استخدام تكنولوجيا التعليم في كلية التربية الأساسية في الهيئة العامة للتعليم التطبيقي والتدريب بدولة الكويت",
+          "url": "https://dr-alfailakawi.com/research/faculty-attitudes-edtech",
+          "year": ""
+        },
+        {
+          "id": "paper:multimedia-higher-education",
+          "kind": "paper",
+          "title": "فاعلية استخدام أعضاء هيئة التدريس للوسائط المتعددة في التعليم الجامعي من وجهة نظر الطلبة في كلية التربية الأساسية بدولة الكويت",
+          "url": "https://dr-alfailakawi.com/research/multimedia-higher-education",
+          "year": ""
+        },
+        {
+          "id": "paper:web-navigation-learning-skills",
+          "kind": "paper",
+          "title": "فاعلية الإبحار في المواقع الإلكترونية على تحسين مهارات الطلبة نحو التعلم في كلية التربية الأساسية من وجهة نظر الطلبة أنفسهم في الهيئة العامة للتعليم التطبيقي والتدريب في دولة الكويت",
+          "url": "https://dr-alfailakawi.com/research/web-navigation-learning-skills",
+          "year": ""
+        }
+      ]
+    },
+    {
+      "id": "concept:connectivism",
+      "title": "الاتصالية",
+      "firstYear": "2017",
+      "lastYear": "2026",
+      "support": 7,
+      "examples": [
+        {
+          "id": "article:children-who-know-what-is-required-but-do-not-know-whyarabic-2",
+          "kind": "article",
+          "title": "أبناءٌ يعرفون المطلوب… لكن من علّمهم المعنى؟",
+          "url": "https://dr-alfailakawi.com/articles/children-who-know-what-is-required-but-do-not-know-whyarabic-2",
+          "year": "2026"
+        },
+        {
+          "id": "article:when-the-teacher-knows-why-he-teachesarabic",
+          "kind": "article",
+          "title": "حين يعرف المعلّم لماذا يعلّم",
+          "url": "https://dr-alfailakawi.com/articles/when-the-teacher-knows-why-he-teachesarabic",
+          "year": "2026"
+        },
+        {
+          "id": "article:children-who-know-what-is-required-but-do-not-know-whyarabic",
+          "kind": "article",
+          "title": "أبناءٌ يعرفون المطلوب… ويجهلون لماذا",
+          "url": "https://dr-alfailakawi.com/articles/children-who-know-what-is-required-but-do-not-know-whyarabic",
+          "year": "2026"
+        },
+        {
+          "id": "article:artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+          "kind": "article",
+          "title": "الذكاء الاصطناعي يُدرّس… والعقل البشري يُقصى",
+          "url": "https://dr-alfailakawi.com/articles/artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+          "year": "2025"
+        }
+      ]
+    },
+    {
+      "id": "concept:student-engagement",
+      "title": "انخراط المتعلمين",
+      "firstYear": "2017",
+      "lastYear": "2026",
+      "support": 7,
+      "examples": [
+        {
+          "id": "curated:cc82ea097979",
+          "kind": "curated",
+          "title": "«إنّ الشدة على المتعلمين مُضرّةٌ بهم.»",
+          "url": "https://dr-alfailakawi.com/curated",
+          "year": ""
+        },
+        {
+          "id": "article:expectations-that-shape-a-studentarabic",
+          "kind": "article",
+          "title": "التوقّعات التي تصنع طالباً",
+          "url": "https://dr-alfailakawi.com/articles/expectations-that-shape-a-studentarabic",
+          "year": "2026"
+        },
+        {
+          "id": "article:the-mind-present-in-absence-absent-in-presence-2",
+          "kind": "article",
+          "title": "العقل حاضر في الغياب… وغائب في الحضور!",
+          "url": "https://dr-alfailakawi.com/articles/the-mind-present-in-absence-absent-in-presence-2",
+          "year": "2025"
+        },
+        {
+          "id": "article:qabas-201707-002",
+          "kind": "article",
+          "title": "العالم إلى أين… نظرة مستقبلية",
+          "url": "https://dr-alfailakawi.com/articles/qabas-201707-002",
+          "year": "2017"
+        }
+      ]
+    }
+  ]
+}

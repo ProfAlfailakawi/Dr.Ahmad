@@ -9,6 +9,8 @@ import { normalizeArabicTypography } from '../../lib/arabic-typography'
 import { analyzeResearch, DEFAULT_RESEARCH_ORCID, evaluateResearchQuality } from '../../lib/research-intelligence'
 import { Pagination, usePagedList } from '../Pagination'
 import { ContentManagerHeader } from './ContentManagerHeader'
+import { IdeaDnaPanel } from './IdeaDnaPanel'
+import { createIdeaDna } from '../../lib/idea-dna'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
 
@@ -719,6 +721,40 @@ function Editor({
     [echoIndex, form.body, kind],
   )
 
+  const ideaDna = useMemo(() => {
+    const title = String(form.titleAr || form.title || '').trim()
+    if (!title) return null
+    const materialText = kind === 'article'
+      ? `${title}
+${form.excerpt || ''}
+${form.body || ''}`
+      : kind === 'book'
+        ? `${title}
+${form.desc || ''}`
+        : kind === 'paper'
+          ? `${title}
+${form.abstractAr || ''}
+${form.meta || ''}
+${form.keyFinding || ''}`
+          : `${title}
+${form.outlet || ''}`
+    const archive = allItems
+      .filter((item) => item.slug !== current?.slug)
+      .map((item) => ({
+        slug: item.slug,
+        title: String(item.title || ''),
+        text: String(item.body || item.desc || item.abstractAr || item.meta || item.excerpt || ''),
+        iso: String(item.iso || item.date || ''),
+        year: String(item.year || item.iso || item.date || '').match(/(?:19|20)\d{2}/)?.[0] || '',
+      }))
+    const year = String(form.year || form.iso || form.date || '').match(/(?:19|20)\d{2}/)?.[0] || undefined
+    return createIdeaDna(materialText, {
+      context: `${labels[kind].singular} داخل أرشيف د. أحمد`,
+      archive,
+      year,
+    })
+  }, [allItems, current?.slug, form.abstractAr, form.body, form.date, form.desc, form.excerpt, form.iso, form.keyFinding, form.meta, form.outlet, form.title, form.titleAr, form.year, kind])
+
   const articleMemory = useMemo(() => {
     if (kind !== 'article') return null
     const comparable = allItems.filter((item) => item.slug !== current?.slug)
@@ -788,6 +824,7 @@ function Editor({
           <Field label="الرابط المختصر (slug)" hint={current ? 'يثبت بعد النشر حتى لا تنكسر الروابط والصوت والإحصاءات.' : 'تولّد تلقائياً، ويمكنك مراجعته قبل النشر.'}>
             <input className={input} dir="ltr" value={form.slug || ''} disabled={Boolean(current)} onChange={(event) => set('slug', slugify(event.target.value))} />
           </Field>
+          {ideaDna && <IdeaDnaPanel dna={ideaDna} />}
 
           {kind === 'article' && (
             <>

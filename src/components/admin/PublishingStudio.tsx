@@ -1626,9 +1626,24 @@ function VisualTemplateCard({ template }: { template: SocialVisualTemplate }) {
 }
 
 function ProfessionalStandaloneDesignCard({ plan, rank }: { plan: CompositionPlan; rank: number }) {
-  const svg = useMemo(() => renderCompositionSvg(plan), [plan])
+  const [draftPlan, setDraftPlan] = useState<CompositionPlan>(plan)
+  useEffect(() => setDraftPlan(plan), [plan.id, plan.fingerprint])
+
+  const patchContent = (patch: Partial<CompositionPlan['content']>) => {
+    setDraftPlan((current) => ({ ...current, content: { ...current.content, ...patch } }))
+  }
+  const patchSlide = (index: number, patch: Partial<CompositionPlan['content']['slides'][number]>) => {
+    setDraftPlan((current) => ({
+      ...current,
+      content: {
+        ...current.content,
+        slides: current.content.slides.map((slide, slideIndex) => slideIndex === index ? { ...slide, ...patch } : slide),
+      },
+    }))
+  }
+  const svg = useMemo(() => renderCompositionSvg(draftPlan), [draftPlan])
   const preview = useMemo(() => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`, [svg])
-  const release = useMemo(() => professionalReleaseGate(plan), [plan])
+  const release = useMemo(() => professionalReleaseGate(draftPlan), [draftPlan])
   const tier = release.tier === 'masterpiece'
     ? 'Masterpiece'
     : release.tier === 'professional'
@@ -1636,15 +1651,26 @@ function ProfessionalStandaloneDesignCard({ plan, rank }: { plan: CompositionPla
       : release.tier === 'publishable'
         ? 'Publishable'
         : 'Needs direction'
+  const fields: { key: keyof Pick<CompositionPlan['content'], 'kicker' | 'title' | 'subtitle' | 'body' | 'quote' | 'heroWord' | 'cta' | 'author' | 'source'>; label: string; rows?: number }[] = [
+    { key: 'kicker', label: 'الشارة / نوع المادة' },
+    { key: 'title', label: 'العنوان', rows: 2 },
+    { key: 'subtitle', label: 'العنوان الفرعي', rows: 2 },
+    { key: 'body', label: 'النص / الشرح', rows: 3 },
+    { key: 'quote', label: 'الاقتباس', rows: 3 },
+    { key: 'heroWord', label: 'الكلمة البطلة' },
+    { key: 'cta', label: 'الدعوة — مثل «اقرأ المادة كاملة»' },
+    { key: 'author', label: 'الاسم / التوقيع' },
+    { key: 'source', label: 'المصدر / الرابط' },
+  ]
   return (
     <article className="overflow-hidden rounded-[1.35rem] border border-hair bg-canvas shadow-[0_16px_46px_rgba(15,23,42,.06)]">
-      <div className="relative overflow-hidden bg-wash" style={{ aspectRatio: `${plan.format.width} / ${plan.format.height}` }}>
-        <img src={preview} alt={`الاتجاه الاحترافي ${rank}: ${plan.content.title}`} draggable={false} className="h-full w-full select-none object-cover" />
+      <div className="relative overflow-hidden bg-wash" style={{ aspectRatio: `${draftPlan.format.width} / ${draftPlan.format.height}` }}>
+        <img src={preview} alt={`الاتجاه الاحترافي ${rank}: ${draftPlan.content.title}`} draggable={false} className="h-full w-full select-none object-cover" />
         <span className="absolute right-3 top-3 rounded-full border border-white/30 bg-black/55 px-2.5 py-1 text-[.56rem] font-black uppercase tracking-[.08em] text-white backdrop-blur">{tier}</span>
       </div>
       <div className="p-3.5">
         <div className="flex items-start justify-between gap-3">
-          <div><span className="text-[.58rem] font-bold text-accent">رؤية {rank}</span><strong className="mt-1 block text-[.78rem] text-ink">{plan.directionLabel}</strong></div>
+          <div><span className="text-[.58rem] font-bold text-accent">رؤية {rank}</span><strong className="mt-1 block text-[.78rem] text-ink">{draftPlan.directionLabel}</strong></div>
           <span className={`rounded-full px-2.5 py-1 text-[.6rem] font-black ${release.ready ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>{release.score}٪</span>
         </div>
         <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
@@ -1652,7 +1678,32 @@ function ProfessionalStandaloneDesignCard({ plan, rank }: { plan: CompositionPla
           <span className="rounded-lg bg-paper px-2 py-2 text-[.55rem] text-soft"><strong className="block text-[.68rem] text-ink">{release.metrics.briefFidelity}</strong>فهم العبارة</span>
           <span className="rounded-lg bg-paper px-2 py-2 text-[.55rem] text-soft"><strong className="block text-[.68rem] text-ink">{release.metrics.distinctiveness}</strong>الأصالة</span>
         </div>
-        <button type="button" onClick={() => void downloadCompositionRaster(plan, 'png')} disabled={!release.ready} className={`${release.ready ? primary : ghost} mt-3 w-full text-[.7rem]`}>{release.ready ? 'تنزيل PNG المعتمد' : 'محجوب حتى يجتاز البوابة'}</button>
+
+        <details className="group mt-3 rounded-xl border border-hair bg-paper" data-standalone-text-editor="true">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 text-[.66rem] font-semibold text-accent [&::-webkit-details-marker]:hidden">
+            <span>تحرير كل الكلمات الظاهرة في هذا التصميم</span><span className="text-soft transition group-open:rotate-45">＋</span>
+          </summary>
+          <div className="grid gap-2 border-t border-hair p-3">
+            <p className="text-[.6rem] leading-relaxed text-soft">أي حقل تتركه فارغاً يختفي من التصميم. التغيير خاص بهذه الرؤية فقط ولا يمس المقال أو الفكرة الأصلية.</p>
+            {fields.map(({ key, label, rows = 1 }) => {
+              const value = String(draftPlan.content[key] || '')
+              const originalValue = String(plan.content[key] || '')
+              return (
+                <label key={key} className="grid gap-1 rounded-lg border border-hair bg-canvas p-2.5 text-[.6rem] text-soft">
+                  <span className="flex items-center justify-between gap-2"><strong className="text-ink">{label}</strong><span className="flex gap-1"><button type="button" onClick={() => patchContent({ [key]: '' } as Partial<CompositionPlan['content']>)} className="rounded-full border border-hair px-2 py-0.5 text-[.54rem] hover:border-red-300 hover:text-red-600">إخفاء</button>{value !== originalValue && <button type="button" onClick={() => patchContent({ [key]: originalValue } as Partial<CompositionPlan['content']>)} className="rounded-full border border-hair px-2 py-0.5 text-[.54rem] hover:border-accent hover:text-accent">استعادة</button>}</span></span>
+                  {rows > 1
+                    ? <textarea rows={rows} className={`${input} min-h-0 resize-y px-3 py-2 text-[.72rem]`} value={value} onChange={(event) => patchContent({ [key]: event.target.value } as Partial<CompositionPlan['content']>)} />
+                    : <input className={`${input} px-3 py-2 text-[.72rem]`} value={value} onChange={(event) => patchContent({ [key]: event.target.value } as Partial<CompositionPlan['content']>)} />}
+                </label>
+              )
+            })}
+            {draftPlan.content.points?.length ? <label className="grid gap-1 rounded-lg border border-hair bg-canvas p-2.5 text-[.6rem] text-soft"><strong className="text-ink">نقاط الإنفوجرافيك — سطر لكل نقطة</strong><textarea rows={Math.min(6, Math.max(3, draftPlan.content.points.length))} className={`${input} min-h-0 resize-y px-3 py-2 text-[.72rem]`} value={draftPlan.content.points.join('\n')} onChange={(event) => patchContent({ points: event.target.value.split('\n').map((item) => item.trim()).filter(Boolean) })} /></label> : null}
+            {draftPlan.content.slides.length > 1 && <details className="rounded-lg border border-hair bg-canvas"><summary className="cursor-pointer list-none px-3 py-2 text-[.6rem] font-semibold text-ink [&::-webkit-details-marker]:hidden">نصوص شرائح الكاروسيل ({draftPlan.content.slides.length})</summary><div className="grid gap-2 border-t border-hair p-2">{draftPlan.content.slides.map((slide, index) => <div key={slide.id} className="grid gap-1 rounded-lg bg-paper p-2"><span className="text-[.56rem] font-semibold text-accent">شريحة {index + 1}</span><input className={`${input} px-2.5 py-1.5 text-[.68rem]`} value={slide.kicker} onChange={(event) => patchSlide(index, { kicker: event.target.value })} placeholder="الشارة" /><textarea rows={2} className={`${input} min-h-0 resize-y px-2.5 py-1.5 text-[.68rem]`} value={slide.title} onChange={(event) => patchSlide(index, { title: event.target.value })} placeholder="العنوان" /><textarea rows={2} className={`${input} min-h-0 resize-y px-2.5 py-1.5 text-[.68rem]`} value={slide.body} onChange={(event) => patchSlide(index, { body: event.target.value })} placeholder="النص" /></div>)}</div></details>}
+            <button type="button" className={`${ghost} justify-self-start text-[.62rem]`} onClick={() => setDraftPlan(plan)}>استعادة نصوص المخرج الأصلية</button>
+          </div>
+        </details>
+
+        <button type="button" onClick={() => void downloadCompositionRaster(draftPlan, 'png')} disabled={!release.ready} className={`${release.ready ? primary : ghost} mt-3 w-full text-[.7rem]`}>{release.ready ? 'تنزيل PNG المعتمد' : 'محجوب حتى يجتاز البوابة'}</button>
       </div>
     </article>
   )

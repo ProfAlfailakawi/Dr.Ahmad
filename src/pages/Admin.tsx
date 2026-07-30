@@ -211,7 +211,7 @@ function Panel({ email }: { email: string }) {
   const [tab, setTab] = useState<AdminTab>(initialTab)
   const [commandsOpen, setCommandsOpen] = useState(false)
   const cms = useCmsContent({ includeHidden: true })
-  useAdminIncomingMessageNotifications()
+  useAdminInboxNotifications()
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
@@ -383,11 +383,13 @@ function timestampLabel(value?: { seconds: number }) {
   } catch { return '' }
 }
 
-async function showIncomingMessageNotification(message: Message) {
+async function showAdminInboxNotification(title: string, body: string, tag: string) {
   if (typeof window === 'undefined' || typeof Notification === 'undefined' || Notification.permission !== 'granted') return
-  const title = 'رسالة جديدة وصلت إلى الموقع'
-  const body = [message.name, message.topic].filter(Boolean).join(' — ') || 'افتح لوحة التحكم لقراءتها.'
-  const options: NotificationOptions = { body, tag: `site-message-${message.id}` }
+  const options: NotificationOptions = {
+    body,
+    tag,
+    data: { url: '/admin?tab=inbox' },
+  }
   try {
     if ('serviceWorker' in navigator) {
       const registration = await navigator.serviceWorker.ready
@@ -398,31 +400,61 @@ async function showIncomingMessageNotification(message: Message) {
   try { new Notification(title, options) } catch { /* unsupported browser */ }
 }
 
-function useAdminIncomingMessageNotifications() {
-  const primed = useRef(false)
+async function showIncomingMessageNotification(message: Message) {
+  const body = [message.name, message.topic].filter(Boolean).join(' — ') || 'افتح لوحة التحكم لقراءتها.'
+  await showAdminInboxNotification('رسالة جديدة وصلت إلى الموقع', body, `site-message-${message.id}`)
+}
+
+async function showNewSubscriberNotification(subscriber: Subscriber) {
+  const body = subscriber.email ? `${subscriber.email} اشترك في النشرة البريدية.` : 'يوجد مشترك جديد في النشرة البريدية.'
+  await showAdminInboxNotification('مشترك جديد في النشرة', body, `newsletter-subscriber-${subscriber.id}`)
+}
+
+function useAdminInboxNotifications() {
+  const messagesPrimed = useRef(false)
+  const subscribersPrimed = useRef(false)
   useEffect(() => {
     let active = true
-    let unsubscribe = () => {}
+    let unsubscribeMessages = () => {}
+    let unsubscribeSubscribers = () => {}
     ;(async () => {
       const db = await getDb()
       if (!db || !active) return
       const { collection, limit, onSnapshot, orderBy, query } = await import('firebase/firestore')
-      unsubscribe = onSnapshot(
+      unsubscribeMessages = onSnapshot(
         query(collection(db, 'messages'), orderBy('createdAt', 'desc'), limit(20)),
         (snapshot) => {
           if (!active) return
-          if (primed.current) {
+          if (messagesPrimed.current) {
             snapshot.docChanges()
               .filter((change) => change.type === 'added')
               .slice(0, 3)
               .forEach((change) => void showIncomingMessageNotification({ id: change.doc.id, ...(change.doc.data() as object) } as Message))
           } else {
-            primed.current = true
+            messagesPrimed.current = true
+          }
+        },
+      )
+      unsubscribeSubscribers = onSnapshot(
+        query(collection(db, 'subscribers'), orderBy('createdAt', 'desc'), limit(20)),
+        (snapshot) => {
+          if (!active) return
+          if (subscribersPrimed.current) {
+            snapshot.docChanges()
+              .filter((change) => change.type === 'added')
+              .slice(0, 3)
+              .forEach((change) => void showNewSubscriberNotification({ id: change.doc.id, ...(change.doc.data() as object) } as Subscriber))
+          } else {
+            subscribersPrimed.current = true
           }
         },
       )
     })()
-    return () => { active = false; unsubscribe() }
+    return () => {
+      active = false
+      unsubscribeMessages()
+      unsubscribeSubscribers()
+    }
   }, [])
 }
 
@@ -606,14 +638,14 @@ function InboxPanel() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p><strong className="text-ink">التحديث مباشر الآن.</strong> رسائل التواصل الخاصة تظهر هنا فوراً، من دون إعادة تحميل الصفحة.</p>
           {notificationPermission === 'granted' ? (
-            <span className="rounded-full border border-accent/25 bg-canvas px-4 py-2 text-[.78rem] font-semibold text-accent">إشعارات الرسائل مفعّلة</span>
+            <span className="rounded-full border border-accent/25 bg-canvas px-4 py-2 text-[.78rem] font-semibold text-accent">إشعارات الرسائل والاشتراكات مفعّلة</span>
           ) : notificationPermission === 'unsupported' ? (
             <span className="text-[.78rem] text-soft">هذا المتصفح لا يدعم إشعارات سطح المكتب.</span>
           ) : (
-            <button type="button" onClick={() => void enableNotifications()} className="rounded-full border border-accent/30 bg-canvas px-4 py-2 text-[.78rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">فعّل إشعارات الرسائل</button>
+            <button type="button" onClick={() => void enableNotifications()} className="rounded-full border border-accent/30 bg-canvas px-4 py-2 text-[.78rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">فعّل إشعارات الرسائل والاشتراكات</button>
           )}
         </div>
-        <p className="mt-2 text-[.76rem] text-soft">بعد السماح للمتصفح، يصلك تنبيه عند وصول رسالة جديدة ما دامت جلسة لوحة التحكم عاملة في المتصفح أو الـPWA.</p>
+        <p className="mt-2 text-[.76rem] text-soft">بعد السماح للمتصفح، يصلك تنبيه عند وصول رسالة خاصة أو اشتراك جديد ما دامت جلسة لوحة التحكم عاملة في المتصفح أو الـPWA. الضغط على التنبيه يفتح صندوق الرسائل والمشتركين مباشرة.</p>
       </div>
 
       {loading ? (

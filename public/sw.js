@@ -25,6 +25,28 @@ self.addEventListener('activate', (e) => {
   )
 })
 
+
+// إشعارات لوحة التحكم تُنشأ من جلسة الأدمن عبر registration.showNotification.
+// الضغط عليها يعيد استخدام نافذة لوحة التحكم إن كانت مفتوحة، أو يفتح صندوق الوارد مباشرة.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const target = String(event.notification?.data?.url || '/admin?tab=inbox')
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (clients) => {
+      for (const client of clients) {
+        try {
+          const url = new URL(client.url)
+          if (url.origin === self.location.origin && 'focus' in client) {
+            if ('navigate' in client) await client.navigate(target)
+            return client.focus()
+          }
+        } catch { /* جرّب النافذة التالية */ }
+      }
+      return self.clients.openWindow ? self.clients.openWindow(target) : undefined
+    }),
+  )
+})
+
 self.addEventListener('fetch', (e) => {
   const { request } = e
   if (request.method !== 'GET' || new URL(request.url).origin !== location.origin) return

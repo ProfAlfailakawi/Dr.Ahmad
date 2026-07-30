@@ -40,12 +40,32 @@ export function AdminSectionTabs({ tab, onSelect }: { tab: AdminTab; onSelect: (
 export function AdminSidebar({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
   const activeArea = areaOfTab(tab)
   const [openArea, setOpenArea] = useState<AdminArea | null>(null)
+  const [railVisible, setRailVisible] = useState(false)
   const railRef = useRef<HTMLDivElement | null>(null)
+  const hideRailTimer = useRef<number | null>(null)
+
+  const revealRail = () => {
+    if (hideRailTimer.current != null) window.clearTimeout(hideRailTimer.current)
+    hideRailTimer.current = null
+    setRailVisible(true)
+  }
+
+  const scheduleRailHide = () => {
+    if (openArea) return
+    if (hideRailTimer.current != null) window.clearTimeout(hideRailTimer.current)
+    hideRailTimer.current = window.setTimeout(() => {
+      setRailVisible(false)
+      hideRailTimer.current = null
+    }, 360)
+  }
 
   useEffect(() => {
     if (!openArea) return
     const closeOutside = (event: PointerEvent) => {
-      if (event.target instanceof Node && !railRef.current?.contains(event.target)) setOpenArea(null)
+      if (event.target instanceof Node && !railRef.current?.contains(event.target)) {
+        setOpenArea(null)
+        setRailVisible(false)
+      }
     }
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setOpenArea(null)
@@ -58,10 +78,35 @@ export function AdminSidebar({ tab, onSelect }: { tab: AdminTab; onSelect: (tab:
     }
   }, [openArea])
 
+  useEffect(() => () => {
+    if (hideRailTimer.current != null) window.clearTimeout(hideRailTimer.current)
+  }, [])
+
+  useEffect(() => {
+    setOpenArea(null)
+    setRailVisible(false)
+  }, [tab])
+
+  const railExpanded = railVisible || Boolean(openArea)
+
   return (
     <aside className="hidden w-[76px] lg:block" aria-label="أقسام لوحة التحكم">
-      <div ref={railRef} data-admin-desktop-rail="true" className="sticky top-24 z-[60]">
-        <div className="relative rounded-[1.5rem] border border-hair bg-canvas/92 p-2 shadow-[0_24px_70px_-48px_rgba(21,22,26,.48)] backdrop-blur-xl">
+      <div
+        ref={railRef}
+        data-admin-desktop-rail="true"
+        data-admin-rail-visible={railExpanded ? 'true' : 'false'}
+        className="sticky top-24 z-[40] h-[min(70vh,620px)]"
+        onPointerEnter={revealRail}
+        onPointerLeave={scheduleRailHide}
+        onFocusCapture={revealRail}
+        onBlurCapture={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) scheduleRailHide()
+        }}
+      >
+        <div
+          className={`relative rounded-[1.5rem] border border-hair bg-canvas/92 p-2 shadow-[0_24px_70px_-48px_rgba(21,22,26,.48)] backdrop-blur-xl transition-[transform,opacity,box-shadow] duration-300 ease-out ${railExpanded ? 'translate-x-0 opacity-100' : 'translate-x-[52px] opacity-30 shadow-none'}`}
+          aria-label={railExpanded ? 'قائمة الإدارة مفتوحة' : 'مرّر المؤشر هنا لإظهار قائمة الإدارة'}
+        >
           <div className="grid gap-2">
           {ADMIN_GROUPS.map((group) => {
             const expanded = group.area === openArea

@@ -3,9 +3,10 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 
-const root = resolve(new URL('..', import.meta.url).pathname)
+const root = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const out = mkdtempSync(join(tmpdir(), 'editorial-memory-'))
 const fixture = join(out, 'fixture')
 const compiled = join(out, 'compiled')
@@ -17,7 +18,19 @@ export type ArticleRecord = { slug:string; title:string; excerpt?:string; body?:
 export type BookRecord = { slug:string; title:string; desc:string; [key:string]: any }
 export type PaperRecord = { slug:string; title:string; titleAr?:string; meta:string; abstractAr?:string; journal?:string; keyFinding?:string; keywords?:string; analysisNeedsReview?:boolean; url?:string; source?:string; pdf?:string; doi?:string; [key:string]: any }
 `)
-const compile = spawnSync('tsc', [
+// لا نعتمد على tsc العالمي في GitHub Runner: قد تكون نسخته مختلفة عن
+// النسخة المقفلة في package-lock، وهذا كان يجعل الاختبار يمر محلياً ويفشل في CI.
+// بعد npm ci يجب أن نستخدم TypeScript الخاص بالمشروع حصراً.
+const requireFromRoot = createRequire(join(root, 'package.json'))
+let localTsc = ''
+try {
+  localTsc = requireFromRoot.resolve('typescript/bin/tsc')
+} catch {
+  // fallback للبيئات المحلية التي تملك TypeScript فقط على PATH؛ CI لا يصل لهذا المسار.
+  localTsc = ''
+}
+const compileArgs = [
+  ...(localTsc ? [localTsc] : []),
   join(fixture, 'editorial-memory.ts'),
   '--target', 'ES2022',
   '--module', 'commonjs',
@@ -25,8 +38,14 @@ const compile = spawnSync('tsc', [
   '--skipLibCheck',
   '--noEmitOnError',
   '--outDir', compiled,
-], { cwd: root, encoding: 'utf8' })
-assert.equal(compile.status, 0, compile.stderr || compile.stdout)
+]
+const compile = localTsc
+  ? spawnSync(process.execPath, compileArgs, { cwd: root, encoding: 'utf8' })
+  : spawnSync('tsc', compileArgs, { cwd: root, encoding: 'utf8' })
+if (compile.status !== 0) {
+  const diagnostics = [compile.stdout, compile.stderr].filter(Boolean).join('\n').trim()
+  throw new Error(`Editorial-memory fixture TypeScript compilation failed${diagnostics ? `:\n${diagnostics}` : ''}`)
+}
 const memory = createRequire(import.meta.url)(join(compiled, 'editorial-memory.js'))
 
 const source = (patch = {}) => ({

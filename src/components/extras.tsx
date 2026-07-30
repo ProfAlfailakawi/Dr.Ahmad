@@ -63,6 +63,7 @@ export function Newsletter({ compact = false }: { compact?: boolean }) {
       )}
       <div className={compact ? 'flex items-center gap-2' : 'mt-3 flex flex-col gap-2 sm:flex-row'}>
         <input
+          id="newsletter-inline-email"
           type="email"
           dir="ltr"
           value={email}

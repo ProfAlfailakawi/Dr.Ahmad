@@ -32,6 +32,24 @@ function timeGreeting(at = new Date()) {
 function botSignature(messages = botMessagesNow()) {
   return messages.signature || 'رد آلي من موقع د. أحمد حسين الفيلكاوي'
 }
+/* بوابة اليوم: مادةُ يومٍ واحدة تُختار حتمياً من تاريخ الكويت، وتُحفظ في سياق
+   المحادثة لحظة الترحيب — فيصير «٣٠ ثانية» و«لخصها» بعد الترحيب مباشرةً
+   عملاً على مادةٍ حاضرة لا سؤالاً معلقاً في الفراغ (عطب ٣٠ يوليو ٠٨:٤١). */
+function dailyGateItem(at = new Date()) {
+  const pool = siteIndex().filter((item) => item.kind === 'article' && normalizeWhitespace(item.excerpt || item.body || '').length >= 40)
+  if (!pool.length) return null
+  const dayKey = new Intl.DateTimeFormat('en-CA', { timeZone: KUWAIT_TZ }).format(at)
+  return pool[Number.parseInt(hash(`daily-gate:${dayKey}`).slice(0, 8), 16) % pool.length]
+}
+function buildWakeWelcome(messages = botMessagesNow(), at = new Date()) {
+  const gate = dailyGateItem(at)
+  const header = `${timeGreeting(at)} · ${messages.welcomeLine || 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي'}.`
+  const options = messages.optionsPrompt || 'شنو يناسب وقتك؟ ٣٠ ثانية · دقيقتان · تعمّق · اختبرني'
+  if (!gate) return { text: `${header}\n\n${options}`, contextItemIds: [], evidence: [] }
+  const quote = normalizeWhitespace(gate.excerpt || gate.body || '').split(/\s+/).slice(0, 26).join(' ')
+  const text = `${header}\n\n${messages.dailyGateLabel || 'بوابة اليوم:'}\n*${gate.title}*\n${quote ? `«${quote}…»\n` : ''}${gate.url}\n\n${options}`
+  return { text, contextItemIds: [gate.id], evidence: [gate.id], lastTopic: gate.title }
+}
 function welcomeText(messages = botMessagesNow(), at = new Date()) {
   const line = messages.welcomeLine || 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي'
   return `${timeGreeting(at)}. ${line}.\n\nأفهم سؤالك باللهجة الكويتية أو بالعربية الطبيعية، وأبحث لك في مقالات الدكتور وكتبه وأبحاثه والبودكاست.\n\nجرّب مثلاً: «شنو جديد الدكتور؟» · «عندك شي عن الذكاء الاصطناعي؟» · «لخّصها» · «عطني غيرها»\n\n${SITE_URL}`
@@ -64,6 +82,7 @@ const COLLECTIONS = Object.freeze({
   audienceLists: 'whatsapp_audience_lists',
   audienceMembers: 'whatsapp_audience_members',
   campaigns: 'whatsapp_broadcast_campaigns',
+  learning: 'whatsapp_learning_patterns',
 })
 
 const GREETINGS = [
@@ -564,7 +583,12 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
   }
 
   if (PRICE_PATTERNS.some((pattern) => pattern.test(clean)) || isGreetingOnly(text) || intent === INTENTS.WELCOME) {
-    return { kind: 'reply', reason: isGreetingOnly(text) ? 'greeting' : 'welcome', intent, reply: signReply(welcomeText(messages), messages) }
+    const welcome = buildWakeWelcome(messages)
+    return {
+      kind: 'reply', reason: isGreetingOnly(text) ? 'greeting' : 'welcome', intent,
+      reply: signReply(welcome.text, messages),
+      ...(welcome.contextItemIds.length ? { contextItemIds: welcome.contextItemIds, contextIndex: 0, evidence: welcome.evidence, lastTopic: welcome.lastTopic } : {}),
+    }
   }
   if ([INTENTS.HELP, INTENTS.SHOW_OPTIONS, INTENTS.CONTENT_OVERVIEW].includes(intent)) {
     return { kind: 'reply', reason: 'help', intent, reply: signReply(helpText(), messages) }
@@ -1859,7 +1883,8 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
        الاستثناء الوحيد هو أن يكتب الدكتور بيده؛ عندها يضع الجسر mode=human
        وتبقى هذه المحادثة وحدها صامتة حتى جملة الإيقاظ المنشورة. */
     if (wakePhrase) {
-      const signedWelcome = signReply(welcomeText())
+      const welcome = buildWakeWelcome()
+      const signedWelcome = signReply(welcome.text)
       await ref.set({
         ...basePatch,
         mode: 'bot',
@@ -1871,6 +1896,14 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         autoResumeAt: null,
         lastReplyHash: hash(signedWelcome),
         lastReplyAt: now,
+        /* بوابة اليوم تدخل السياق لحظة الإيقاظ: «٣٠ ثانية/لخصها/المصدر» بعد
+           الترحيب مباشرة تعمل على مادة البوابة نفسها. */
+        ...(welcome.contextItemIds.length ? {
+          contextItemIds: welcome.contextItemIds,
+          contextIndex: 0,
+          lastTopic: bounded(welcome.lastTopic, 500),
+          seenContentIds: [...new Set([...(Array.isArray(data.seenContentIds) ? data.seenContentIds : []), ...welcome.evidence])].slice(-40),
+        } : {}),
         ...deliveryResponsePatch('reply', 'wake-phrase', signedWelcome),
       }, { merge: true })
       sendJson(res, 200, { ok: true, action: 'reply', reason: 'wake-phrase', reply: { text: signedWelcome } })
@@ -2005,6 +2038,31 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       ...(decision.patch && typeof decision.patch === 'object' ? decision.patch : {}),
       ...deliveryResponsePatch('reply', decision.reason, safeReply),
     }, { merge: true })
+    /* ذاكرة اللهجة الحيّة: الصياغة التي لم تُفهم بثقة تُرصد للمراقبة في اللوحة
+       (كما كانت أيام الوكيل المحلي). رصدٌ خلفي لا يؤخر الرد، ولا يتعلم البوت
+       منها جواباً — الاعتماد يبقى للدكتور صراحةً. */
+    if (['active-clarify', 'no-grounded-answer', 'near-suggestions', 'correction-clarify'].includes(decision.reason)) {
+      const phrase = bounded(stripArabicGreetings(text) || normalizeArabicMessage(text), 160)
+      if (phrase.length >= 2) {
+        const patternId = hash(`learn:${phrase}`).slice(0, 32)
+        void (async () => {
+          const patternRef = db.collection(COLLECTIONS.learning).doc(patternId)
+          const snapshot = await patternRef.get()
+          const previous = snapshot.exists ? (snapshot.data() || {}) : {}
+          if (previous.status === 'ignored') return
+          await patternRef.set({
+            id: patternId,
+            phrase,
+            status: previous.status === 'learned' ? 'learned' : 'observing',
+            reason: bounded(decision.reason, 60),
+            hits: Number(previous.hits || 0) + 1,
+            firstSeenAt: previous.firstSeenAt || now,
+            lastSeenAt: now,
+            updatedAt: now,
+          }, { merge: true })
+        })().catch(() => {})
+      }
+    }
     sendJson(res, 200, { ok: true, action: 'reply', reason: decision.reason, reply: { text: safeReply } })
   }
 
@@ -2967,21 +3025,47 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     }
 
     if (path === '/learning' && method === 'GET') {
-      const rules = await listRules(db)
+      /* الذاكرة الحيّة تعرض الصياغات المرصودة فعلاً (ما لم يُفهم بثقة) —
+         كانت اللوحة تقرأ أصفاراً لأن العقل المركزي لم يكن يرصد شيئاً. */
+      const [rules, observedSnapshot] = await Promise.all([
+        listRules(db),
+        db.collection(COLLECTIONS.learning).orderBy('lastSeenAt', 'desc').limit(120).get().catch(() => ({ docs: [] })),
+      ])
+      const observed = observedSnapshot.docs.map(serializeDoc).filter(Boolean)
+      const observing = observed.filter((row) => row.status === 'observing')
+      const ignored = observed.filter((row) => row.status === 'ignored')
       sendJson(res, 200, {
-        total: LEXICON_SIZE + rules.length,
+        total: LEXICON_SIZE + rules.length + observed.length,
         learned: LEXICON_SIZE,
-        observing: 0,
-        ignored: 0,
-        policy: 'القاموس الكويتي والمصطلحات المعتمدة مفعّلة في الفهم الدلالي. لا يحفظ النظام كلام الناس ولا يتعلم منه قاعدة جديدة بلا اعتمادك.',
-        items: rules.slice(0, 100).map((rule) => ({
-          id: rule.id,
-          phrase: rule.name,
-          status: rule.enabled === false ? 'ignored' : 'learned',
-          kind: 'approved-rule',
-        })),
+        observing: observing.length,
+        ignored: ignored.length,
+        policy: 'القاموس الكويتي والمصطلحات المعتمدة مفعّلة في الفهم الدلالي. الصياغات غير المفهومة تُرصد هنا للمراقبة فقط، ولا يتعلم البوت منها قاعدة أو جواباً بلا اعتمادك الصريح.',
+        items: [
+          ...observed.slice(0, 80).map((row) => ({
+            id: String(row.id),
+            phrase: bounded(row.phrase, 160),
+            status: row.status === 'ignored' ? 'ignored' : 'observing',
+            kind: 'observed-phrase',
+            hits: Number(row.hits || 1),
+            lastSeenAt: row.lastSeenAt || null,
+          })),
+          ...rules.slice(0, 40).map((rule) => ({
+            id: String(rule.id),
+            phrase: rule.name,
+            status: rule.enabled === false ? 'ignored' : 'learned',
+            kind: 'approved-rule',
+          })),
+        ],
       })
       return
+    }
+    {
+      const learningAction = path.match(/^\/learning\/([A-Za-z0-9_-]{4,64})\/(observing|ignored)$/)
+      if (learningAction && method === 'POST') {
+        await db.collection(COLLECTIONS.learning).doc(learningAction[1])
+          .set({ status: learningAction[2], updatedAt: asIso() }, { merge: true })
+        return handleAdmin(req, res, new URL('/api/whatsapp/admin/learning', 'http://localhost'), 'GET')
+      }
     }
     if (path === '/knowledge' && method === 'GET') {
       const index = siteIndex()

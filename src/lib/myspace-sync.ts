@@ -110,7 +110,25 @@ function unionArrays(local: unknown[], remote: unknown[]): unknown[] {
 /** دمج قيمة مفتاحٍ واحد: القوائم تُوحَّد، وغيرها يفوز فيه الأحدث (البعيد دفعاً). */
 export function mergeValue(key: string, localRaw: string, remoteRaw: string): string {
   if (key.startsWith('reader:progress:v2:')) {
-    return String(Math.max(Number(parse(localRaw)) || 0, Number(parse(remoteRaw)) || 0))
+    /* العطب الذي صفّر «أكمل القراءة»: القيمة المخزنة كائن {progress, updatedAt}
+       وكان الدمج يحوّله برقمٍ مباشر Number(object)=NaN فيكتب "0" فوق كل تقدم
+       مع كل مزامنة. الدمج الصحيح: الأحدث زمنياً يفوز (يحترم «من البداية»
+       المتعمدة)، مع قبول الشكل الرقمي القديم ومعالجة القيم الفاسدة. */
+    const normalize = (raw: string) => {
+      const value = parse(raw) as { progress?: number; updatedAt?: number } | number | string
+      if (typeof value === 'number') return { progress: Math.min(1, Math.max(0, value)), updatedAt: 0 }
+      if (value && typeof value === 'object') {
+        return {
+          progress: Math.min(1, Math.max(0, Number((value as { progress?: number }).progress || 0))),
+          updatedAt: Math.max(0, Number((value as { updatedAt?: number }).updatedAt || 0)),
+        }
+      }
+      return { progress: 0, updatedAt: 0 }
+    }
+    const local = normalize(localRaw)
+    const remote = normalize(remoteRaw)
+    const winner = remote.updatedAt > local.updatedAt ? remote : local
+    return JSON.stringify({ progress: winner.progress, updatedAt: Math.max(local.updatedAt, remote.updatedAt) })
   }
   const local = parse(localRaw)
   const remote = parse(remoteRaw)

@@ -1484,11 +1484,14 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
     touch-action: pan-x pan-y;
   }
   :is(.home-page, .inbox-page, .content-articles) :is(.rail, .mobile-card-rail, .mobile-paired-grid) {
-    /* الرئيسية وصندوق الوارد: الكروت تتحرّك يمين/يسار فقط عند السحب. نلغي أي
-       ترجمة رأسية من حركات الدخول داخل السكك الأفقية، فيبقى الإحساس أفخم
-       وأهدأ ولا يشعر الزائر أن البطاقة «تنقز» أو تصعد وتنزل تحت إصبعه. */
-    touch-action: pan-x;
-    overscroll-behavior-y: contain;
+    /* كانت pan-x وحدها مع contain رأسي، فصار الإصبع الذي يبدأ فوق أي سكة
+       بطاقات محتجزاً: لا يقدر الزائر يصعد أو ينزل في الصفحة (شكوى الدكتور
+       ٣٠ يوليو من التلفون). الوصفة الصحيحة هي وصفة خيوط الأرشيف نفسها:
+       pan-x pan-y — المتصفح يقفل المحور حسب اتجاه الحركة، فالسحب الأفقي
+       يحرك البطاقات والرأسي يحرك الصفحة؛ ومنع «النقزة» باقٍ عبر إلغاء
+       الترجمة الرأسية أدناه لا عبر خنق الإيماءة. */
+    touch-action: pan-x pan-y;
+    overscroll-behavior-y: auto;
   }
   :is(.home-page, .inbox-page, .content-articles) :is(.rail, .mobile-card-rail, .mobile-paired-grid) > [style*="transform"] {
     transform: none !important;

@@ -49,13 +49,26 @@ const inboundCheckpoint = (() => {
     return {
       lastTimestamp: Math.max(0, Number(value?.lastTimestamp || 0)),
       messageIds: Array.isArray(value?.messageIds) ? value.messageIds.filter((id) => typeof id === 'string' && id).slice(-2_000) : [],
+      contentKeys: Array.isArray(value?.contentKeys) ? value.contentKeys.filter((key) => typeof key === 'string' && key).slice(-2_000) : [],
     }
   } catch {
     // أول تركيب لا يعود إلى محادثات قديمة؛ من هذه اللحظة يصبح الاسترجاع دائماً.
-    return { lastTimestamp: Math.floor(Date.now() / 1000) - 90, messageIds: [] }
+    return { lastTimestamp: Math.floor(Date.now() / 1000) - 90, messageIds: [], contentKeys: [] }
   }
 })()
 const processedInboundIds = new Set(inboundCheckpoint.messageIds)
+/* واتساب ويب صار يسلّم الرسائل الحية أحياناً بلا معرّف مسلسل (id فارغ خصوصاً
+   في محادثات @lid). حينها لا يُثبَّت المعرف، فيأتي الاسترجاع الدوري بنفس
+   الرسالة بمعرّفها الحقيقي فتُعالج من جديد ويُرسل الرد مكرراً خمس مرات
+   (حادثة ٣٠ يوليو ٠٨:٤٥). مفتاح المحتوى (المرسل+الطابع الزمني+بصمة النص)
+   يطابق الرسالة نفسها بين التسليمين فيمنع التكرار مهما غاب المعرف. */
+const processedContentKeys = new Set(inboundCheckpoint.contentKeys)
+function contentKeyOf(message) {
+  const from = String(message?.from || '').trim()
+  const timestamp = Number(message?.timestamp || 0)
+  const bodyDigest = createHash('sha256').update(String(message?.body || '').slice(0, 500)).digest('hex').slice(0, 16)
+  return `${from}|${timestamp}|${bodyDigest}`
+}
 const startupCatchupFloor = Math.max(0, inboundCheckpoint.lastTimestamp - 5 * 60)
 
 function rememberDeliveredCommand(id) {
@@ -76,10 +89,14 @@ function persistInboundCheckpoint() {
   const recent = [...processedInboundIds].slice(-2_000)
   processedInboundIds.clear()
   recent.forEach((value) => processedInboundIds.add(value))
+  const recentKeys = [...processedContentKeys].slice(-2_000)
+  processedContentKeys.clear()
+  recentKeys.forEach((value) => processedContentKeys.add(value))
   const temp = `${inboundCheckpointPath}.tmp-${process.pid}`
   writeFileSync(temp, `${JSON.stringify({
     lastTimestamp: inboundCheckpoint.lastTimestamp,
     messageIds: recent,
+    contentKeys: recentKeys,
     updatedAt: new Date().toISOString(),
   })}\n`, { mode: 0o600 })
   renameSync(temp, inboundCheckpointPath)
@@ -88,6 +105,7 @@ function persistInboundCheckpoint() {
 function rememberProcessedInbound(message) {
   const id = messageIdOf(message)
   if (id) processedInboundIds.add(id)
+  processedContentKeys.add(contentKeyOf(message))
   const timestamp = Number(message?.timestamp || 0)
   if (Number.isFinite(timestamp) && timestamp > 0) inboundCheckpoint.lastTimestamp = Math.max(inboundCheckpoint.lastTimestamp, timestamp)
   persistInboundCheckpoint()
@@ -586,12 +604,18 @@ async function processIncomingMessage(message, source = 'live') {
     return
   }
   const messageId = messageIdOf(message)
+  const contentKey = contentKeyOf(message)
   if (messageId && processedInboundIds.has(messageId)) {
     if (source === 'catchup') log('info', 'catchup_message_already_processed', { from: message.from, messageId })
     return
   }
-  if (messageId && inboundInFlight.has(messageId)) return
-  if (messageId) inboundInFlight.add(messageId)
+  if (processedContentKeys.has(contentKey)) {
+    log('info', 'inbound_skipped_by_content_key', { from: message.from, messageId, source })
+    return
+  }
+  const flightKey = messageId || contentKey
+  if (inboundInFlight.has(flightKey)) return
+  inboundInFlight.add(flightKey)
   try {
     let result = await emit('incoming', {
       jid: message.from,
@@ -623,7 +647,7 @@ async function processIncomingMessage(message, source = 'live') {
     log('error', source === 'catchup' ? 'catchup_message_failed' : 'incoming_message_failed', { from: message.from, error: runtime.lastError, messageId })
     if (DETACHED_CONTEXT.test(runtime.lastError)) await selfHealDetachedContext('incoming-reply', runtime.lastError)
   } finally {
-    if (messageId) inboundInFlight.delete(messageId)
+    inboundInFlight.delete(flightKey)
   }
 }
 

@@ -382,7 +382,9 @@ function sceneOf(plan: CompositionPlan): Scene {
     safeX: Math.max(plan.format.safeInset * w, w * .055),
     safeY: Math.max(plan.format.safeInset * min, h * .045),
     uid: `n-${plan.fingerprint.replace(/[^a-z0-9_-]/gi, '').slice(0, 16) || 'plan'}`,
-    kicker: subtitleKey && subtitleKey !== bodyKey ? plan.content.subtitle : plan.content.kicker || plan.directionLabel,
+    /* الشارة قابلة للحذف بأمر الدكتور: تفريغ حقلها في المحرر ('') يخفيها
+       نهائياً بدل أن يسقط الرسم إلى تسمية الاتجاه. */
+    kicker: plan.content.kicker === '' ? '' : (subtitleKey && subtitleKey !== bodyKey ? plan.content.subtitle : plan.content.kicker || plan.directionLabel),
     titleText: plan.content.title,
     bodyText,
     hero: plan.content.heroWord || '',
@@ -578,6 +580,7 @@ function contentBand(s: Scene, options: { top?: number; bottom?: number } = {}) 
 
 /** شارة افتتاحية: نقطة معدنية + نص التصنيف — بديل أنيق عن الشريط الملون الفج. */
 function kickerItem(s: Scene, options: { x?: number; anchor?: Anchor; fill?: string; gap?: number } = {}): StackItem {
+  if (!s.kicker) return { h: 0, draw: () => '' }
   const { palette: p, w, min } = s
   const size = Math.max(14, min * .0215)
   const fill = options.fill ?? p.accent

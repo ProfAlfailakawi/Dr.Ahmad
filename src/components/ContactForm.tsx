@@ -46,7 +46,11 @@ export function ContactForm({ locale = 'ar' }: { locale?: Locale }) {
 
   useEffect(() => {
     try {
+      /* بأمر الدكتور: الدخول إلى النموذج يبدأ دائماً بصفحة اختيار نوع الطلب
+         (استشارة/إعلامي/محاضرة…)؛ نستعيد الاسم والبريد والرسالة من المسودة
+         ولا نستعيد النوع كي لا يقفز الزائر فوق صفحة الاختيار. */
       const draft = JSON.parse(localStorage.getItem(draftKey) || 'null')
+      if (draft && typeof draft === 'object') draft.topic = null
       if (draft && typeof draft === 'object') {
         if (draft.name) setName(String(draft.name))
         if (draft.email) setEmail(String(draft.email))

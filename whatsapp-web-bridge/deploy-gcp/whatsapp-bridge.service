@@ -1,0 +1,29 @@
+# جسر واتساب د. أحمد — خدمة سحابية مقيمة (مواصفة ٣٠ يوليو ٢٠٢٦)
+# Restart=always: يرجع بروحه بعد أي سقوط أو إعادة تشغيل للجهاز.
+[Unit]
+Description=Dr Ahmad WhatsApp Bridge (cloud resident)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=bridge
+WorkingDirectory=/opt/dr-bridge/app
+RuntimeDirectory=dr-bridge
+ExecStartPre=/opt/dr-bridge/prestart.sh
+ExecStart=/usr/bin/node /opt/dr-bridge/app/service-runner.mjs
+EnvironmentFile=/run/dr-bridge/env
+Environment=WHATSAPP_MAIN_SERVER_URL=https://dr-alfailakawi.com
+Environment=WHATSAPP_BRIDGE_DEVICE_ID=primary
+Environment=WHATSAPP_BRIDGE_DEVICE_NAME=Dr Ahmad WhatsApp Bridge (Cloud)
+Environment=WHATSAPP_SESSION_DIR=/opt/dr-bridge/session
+Environment=WHATSAPP_BRIDGE_HEALTH_PORT=34322
+Environment=PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+Environment=NPM_BIN=/usr/bin/npm
+Restart=always
+RestartSec=10
+TimeoutStartSec=420
+KillMode=mixed
+
+[Install]
+WantedBy=multi-user.target

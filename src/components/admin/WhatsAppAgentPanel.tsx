@@ -73,7 +73,9 @@ type ReplyRule = {
 }
 type RuleVersion = { id: number; createdAt: string }
 type Simulation = { willReply?: boolean; why?: string; quietNow?: boolean; intent?: string; mode?: string; confidence?: number; needsHuman?: boolean; ruleId?: string | null; ruleName?: string | null; preview?: string }
-type LearningPattern = { id: number; phrase: string; hits: number; intent: string; confirmations: number; evidenceSources?: number; evidenceDays?: number; status: 'learned' | 'observing' | 'ignored'; firstSeenAt?: string; lastSeenAt?: string; learnedAt?: string | null }
+/* معرفات الأنماط صارت بصماتٍ نصية من العقل المركزي، وحقول القرائن اختيارية
+   لأن الرصد المركزي يسجل الصياغة وتكرارها فقط (لا تعلّم تلقائياً). */
+type LearningPattern = { id: string | number; phrase: string; hits?: number; intent?: string; confirmations?: number; evidenceSources?: number; evidenceDays?: number; kind?: string; status: 'learned' | 'observing' | 'ignored'; firstSeenAt?: string; lastSeenAt?: string; learnedAt?: string | null }
 type LearningState = { total: number; learned: number; observing: number; ignored: number; policy: string; items: LearningPattern[] }
 type AgentScreen = 'live' | 'campaigns' | 'knowledge' | 'conversations' | 'personality' | 'protection'
 type KnowledgePersonality = {
@@ -450,7 +452,7 @@ export function WhatsAppAgentPanel() {
     try { setSimulation(await request<Simulation>('/admin/simulate', { method: 'POST', body: JSON.stringify({ text: simulateText, jid: manualJid || 'simulator@s.whatsapp.net' }) })) } catch { setNotice('تعذّر تشغيل المحاكي.') }
   }
 
-  const updateLearningPattern = async (id: number, status: 'observing' | 'ignored') => {
+  const updateLearningPattern = async (id: string | number, status: 'observing' | 'ignored') => {
     setLearningBusy(true)
     try {
       const next = await request<LearningState>(`/admin/learning/${id}/${status}`, { method: 'POST' })
@@ -967,10 +969,10 @@ export function WhatsAppAgentPanel() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[.84rem] font-semibold text-ink">{item.phrase || 'صياغة مشفّرة'}</p>
                       <p className="mt-1 text-[.7rem] text-soft">{item.status === 'learned'
-                        ? `تعلّمها كنية ${item.intent} · ${item.confirmations} قرائن · ${item.evidenceSources || 0} مصادر`
+                        ? (item.kind === 'approved-rule' ? 'قاعدة معتمدة من اللوحة' : `تعلّمها${item.intent ? ` كنية ${item.intent}` : ''}${item.confirmations ? ` · ${item.confirmations} قرائن` : ''}`)
                         : item.status === 'ignored'
                           ? 'متجاهلة'
-                          : `تحت المراقبة · ظهرت ${item.hits} مرة · ${item.confirmations}/3 قرائن · ${item.evidenceSources || 0} مصادر · ${item.evidenceDays || 0} أيام`}</p>
+                          : `تحت المراقبة · ظهرت ${item.hits || 1} ${Number(item.hits || 1) === 1 ? 'مرة' : 'مرات'}${item.lastSeenAt ? ` · آخرها ${new Date(item.lastSeenAt).toLocaleString('ar-KW', { dateStyle: 'short', timeStyle: 'short' })}` : ''}`}</p>
                     </div>
                     <button type="button" disabled={learningBusy} className={secondary} onClick={() => void updateLearningPattern(item.id, item.status === 'ignored' ? 'observing' : 'ignored')}>
                       {item.status === 'ignored' ? 'أعد للمراقبة' : 'لا تتعلمها'}

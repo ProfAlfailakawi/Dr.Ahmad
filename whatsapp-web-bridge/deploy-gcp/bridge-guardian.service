@@ -1,0 +1,6 @@
+[Unit]
+Description=Dr Ahmad bridge guardian check
+
+[Service]
+Type=oneshot
+ExecStart=/opt/dr-bridge/bridge-guardian.sh

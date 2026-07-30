@@ -29,3 +29,12 @@ whatsapp-agent/*
 !whatsapp-agent/content-index.mjs
 !whatsapp-agent/config.mjs
 !whatsapp-agent/dialect-lexicon.mjs
+!whatsapp-agent/intent-engine.mjs
+!whatsapp-agent/bot-messages.mjs
+!whatsapp-agent/bot-rules.mjs
+!whatsapp-agent/crypto.mjs
+!whatsapp-agent/reminders.mjs
+!whatsapp-agent/scholar.mjs
+!whatsapp-agent/knowledge-modes.mjs
+!whatsapp-agent/conversation-context.mjs
+!whatsapp-agent/daily-experience.mjs

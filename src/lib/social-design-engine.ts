@@ -362,6 +362,9 @@ export interface PlanGeometry {
 }
 
 export interface PlanContent {
+  /** إخفاء توقيع المؤلف/سطر المصدر بأمر المحرر — «كتاب/اقرأ المادة كاملة» صارا بيد الدكتور حذفاً وتحريراً */
+  authorHidden?: boolean
+  sourceHidden?: boolean
   original: string
   kicker: string
   title: string

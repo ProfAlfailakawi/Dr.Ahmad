@@ -23,8 +23,16 @@ export function Newsletter({ compact = false }: { compact?: boolean }) {
     if (!/^\S+@\S+\.\S+$/.test(email)) return setState('error')
     setState('sending')
     try {
-      // ١) Firestore إن كان مفعّلاً
+      // ١) API الموقع: يحفظ الاشتراك ويرسل Push حقيقياً للمشرف إن كان مفعّلاً.
       if (firebaseEnabled) {
+        const response = await fetch('/api/newsletter/subscribe', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', accept: 'application/json' },
+          body: JSON.stringify({ email: email.toLowerCase() }),
+        }).catch(() => null)
+        if (response?.ok) { setEmail(''); setState('done'); return }
+
+        // رجوع آمن: الاشتراك نفسه لا يضيع إذا تعطل dr-api، لكن التنبيه الفوري قد ينتظر رجوعه.
         const db = await getDb()
         if (db) {
           const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')

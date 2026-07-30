@@ -32,6 +32,15 @@ const requiredFiles = [
   'whatsapp-agent/bot-messages.mjs',
   'src/components/admin/SocialDesignStudio.tsx',
   'public/sw.js',
+  'src/server/admin-communications.mjs',
+  'Dockerfile',
+  'src/lib/admin-push.ts',
+  'src/lib/inbox-intelligence.ts',
+  'src/components/admin/NewsletterCenter.tsx',
+  'src/components/admin/InboxIntelligence.tsx',
+  'src/components/admin/PersonalKnowledgeGraph.tsx',
+  'scripts/build-knowledge-graph.mjs',
+  'src/data/knowledge-graph-index.json',
   'whatsapp-bridge/bridge.mjs',
   'whatsapp-web-bridge/index.mjs',
   'whatsapp-web-bridge/service-runner.mjs',
@@ -96,6 +105,13 @@ const whatsappIntentEngine = await readFile(resolve(root, 'whatsapp-agent/intent
 const whatsappBotMessages = await readFile(resolve(root, 'whatsapp-agent/bot-messages.mjs'), 'utf8')
 const designStudio = await readFile(resolve(root, 'src/components/admin/SocialDesignStudio.tsx'), 'utf8')
 const serviceWorkerSource = await readFile(resolve(root, 'public/sw.js'), 'utf8')
+const communicationsSource = await readFile(resolve(root, 'src/server/admin-communications.mjs'), 'utf8')
+const dockerfileSource = await readFile(resolve(root, 'Dockerfile'), 'utf8')
+const adminPushSource = await readFile(resolve(root, 'src/lib/admin-push.ts'), 'utf8')
+const inboxIntelligenceSource = await readFile(resolve(root, 'src/lib/inbox-intelligence.ts'), 'utf8')
+const newsletterCenterSource = await readFile(resolve(root, 'src/components/admin/NewsletterCenter.tsx'), 'utf8')
+const knowledgeGraphPanelSource = await readFile(resolve(root, 'src/components/admin/PersonalKnowledgeGraph.tsx'), 'utf8')
+const knowledgeGraphBuilderSource = await readFile(resolve(root, 'scripts/build-knowledge-graph.mjs'), 'utf8')
 const socialDesignEngine = await readFile(resolve(root, 'src/lib/social-design-engine.ts'), 'utf8')
 const socialDesignRenderer = await readFile(resolve(root, 'src/lib/social-design-renderer.ts'), 'utf8')
 const liveSource = (await Promise.all((await textFiles(resolve(root, 'src'))).map((file) => readFile(file, 'utf8')))).join('\n')
@@ -154,6 +170,36 @@ const assertions = [
     && serviceWorkerSource.includes("self.addEventListener('notificationclick'")
     && serviceWorkerSource.includes('/admin?tab=inbox'),
   'admin inbox notifications must cover both private messages and newsletter subscriptions and open the inbox on click'],
+  [communicationsSource.includes("url.pathname === '/api/contact'")
+    && communicationsSource.includes("url.pathname === '/api/newsletter/subscribe'")
+    && communicationsSource.includes("url.pathname === '/api/admin/push'")
+    && communicationsSource.includes("url.pathname === '/api/admin/newsletter'")
+    && adminPushSource.includes("getToken(messaging")
+    && serviceWorkerSource.includes("self.addEventListener('push'")
+    && adminPage.includes('فعّل Push الحقيقي')
+    && firestoreRules.includes('match /admin_push_tokens/{id}')
+    && firestoreRules.includes('match /newsletter_sends/{id}')
+    && dockerfileSource.includes('COPY src/server/admin-communications.mjs /app/src/server/admin-communications.mjs'),
+  'private messages and newsletter subscriptions must reach the admin through real server push, and newsletter send history must remain private'],
+  [newsletterCenterSource.includes('معاينة ← تعديل ← اختبار لنفسك ← إرسال')
+    && newsletterCenterSource.includes("send('test')")
+    && newsletterCenterSource.includes("send('send')")
+    && newsletterCenterSource.includes('مقبول')
+    && adminPage.includes('<NewsletterCenter draft={newsletterDraft} />'),
+  'newsletter center must preserve explicit preview, test, confirmed send, and per-recipient provider acceptance history'],
+  [hostingWorkflow.includes('Deploy matching dr-api revision before Hosting')
+    && hostingWorkflow.includes('gcloud run deploy dr-api')
+    && hostingWorkflow.indexOf('gcloud run deploy dr-api') < hostingWorkflow.indexOf('Deploy to Firebase Hosting live'),
+  'Cloud Run dr-api must deploy from the same commit before Hosting so frontend and backend cannot drift'],
+  [knowledgeGraphBuilderSource.includes("kind: 'concept'")
+    && knowledgeGraphBuilderSource.includes("kind: 'audio'")
+    && knowledgeGraphBuilderSource.includes("collection('social_queue')")
+    && knowledgeGraphBuilderSource.includes('knowledge-graph-index.json')
+    && knowledgeGraphPanelSource.includes('DR_AHMAD_GLOSSARY_CONCEPT_CAPACITY')
+    && knowledgeGraphPanelSource.includes('عقل الأرشيف')
+    && adminPage.includes('<InboxIntelligence messages={items} />')
+    && inboxIntelligenceSource.includes('buildAudienceSignals'),
+  'personal knowledge graph and inbox intelligence must keep concepts, archive, audio, social history, and repeated audience signals connected'],
   [!contentManager.includes('<ArticleAudioManager') && !contentManager.includes('إدارة صوت المقال'), 'audio controls must stay out of the article editor and inside the dedicated library'],
   [serverSource.includes('audioManagePath') && serverSource.includes('admin-audio-clear.yml') && autoAudio.includes('ALL_VOICES') && serverSource.includes("requestedMode === 'fahed' ? 'reading'"), 'server must dispatch protected generic reading/dialogue lifecycle workflows while accepting the legacy alias'],
   [audioClearWorkflow.includes('reading) FILES=') && audioClearWorkflow.includes('.noura.mp3') && audioClearWorkflow.includes('clear-audio-assets.mjs') && !audioClearWorkflow.includes("description: 'fahed") && !autoAudioWorkflow.includes('github.event.inputs.voice') && autoAudioWorkflow.includes('MODE="reading"'), 'audio cancellation and regeneration must use generic reading/dialogue modes, clear both compatible reading files, and expose no internal voice selector'],

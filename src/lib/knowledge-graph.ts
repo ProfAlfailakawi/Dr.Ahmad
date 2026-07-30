@@ -1,9 +1,9 @@
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from './cms'
 
-export type KnowledgeKind = 'article' | 'book' | 'paper' | 'media'
+export type KnowledgeKind = 'article' | 'book' | 'paper' | 'media' | 'curated' | 'podcast' | 'audio' | 'social' | 'concept'
 export type KnowledgeNode = { id:string; kind:KnowledgeKind; slug:string; title:string; text:string; url:string; year?:string; tokens:string[] }
 export type KnowledgeEdge = { from:string; to:string; score:number; reasons:string[] }
-export type KnowledgeGraph = { version:1; builtAt:string; nodes:KnowledgeNode[]; edges:KnowledgeEdge[]; byId:Record<string,KnowledgeNode>; neighbors:Record<string,KnowledgeEdge[]> }
+export type KnowledgeGraph = { version:1|2; builtAt:string; nodes:KnowledgeNode[]; edges:KnowledgeEdge[]; byId:Record<string,KnowledgeNode>; neighbors:Record<string,KnowledgeEdge[]> }
 
 const normalize = (value='') => value.toLowerCase().normalize('NFKD').replace(/[\u064B-\u065F\u0670]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/[ؤئ]/g,'ء').replace(/[^\p{L}\p{N}\s]/gu,' ').replace(/\s+/g,' ').trim()
 const stop = new Set('من في على الى عن هذا هذه ذلك التي الذي مع او ثم ما ماذا كيف هل لم لن قد كل بين عند بعد قبل هو هي كان تكون يكون'.split(' '))

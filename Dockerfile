@@ -14,6 +14,7 @@ COPY server.mjs /app/server.mjs
 COPY scripts/daily-radar.mjs /app/scripts/daily-radar.mjs
 COPY scripts/editorial-policy.mjs /app/scripts/editorial-policy.mjs
 COPY src/server/whatsapp-controller.mjs /app/src/server/whatsapp-controller.mjs
+COPY src/server/admin-communications.mjs /app/src/server/admin-communications.mjs
 COPY src/data.ts /app/src/data.ts
 COPY src/data-curated.ts /app/src/data-curated.ts
 COPY src/data/bodies.json /app/src/data/bodies.json
@@ -42,7 +43,8 @@ RUN node --check /app/whatsapp-agent/intent-engine.mjs \
  && node --check /app/server.mjs \
  && node --check /app/scripts/daily-radar.mjs \
  && node --check /app/scripts/editorial-policy.mjs \
- && node --check /app/src/server/whatsapp-controller.mjs
+ && node --check /app/src/server/whatsapp-controller.mjs \
+ && node --check /app/src/server/admin-communications.mjs
 
 EXPOSE 8080
 CMD ["node", "/app/server.mjs"]

@@ -26,11 +26,34 @@ self.addEventListener('activate', (e) => {
 })
 
 
-// إشعارات لوحة التحكم تُنشأ من جلسة الأدمن عبر registration.showNotification.
-// الضغط عليها يعيد استخدام نافذة لوحة التحكم إن كانت مفتوحة، أو يفتح صندوق الوارد مباشرة.
+// Push حقيقي للوحة التحكم: الخادم يرسل payload بيانات عبر Firebase Cloud Messaging،
+// والـService Worker يعرضه حتى إن لم تكن صفحة /admin مفتوحة. يبقى المسار القديم
+// registration.showNotification داخل اللوحة fallback للأجهزة غير المسجلة في FCM.
+self.addEventListener('push', (event) => {
+  let packet = {}
+  try { packet = event.data ? event.data.json() : {} } catch {
+    packet = { body: event.data ? event.data.text() : '' }
+  }
+  const data = packet?.data || packet?.notification || packet || {}
+  const title = String(data.title || packet?.notification?.title || 'تنبيه جديد من الموقع').slice(0, 120)
+  const body = String(data.body || packet?.notification?.body || 'افتح لوحة التحكم للاطلاع على التفاصيل.').slice(0, 360)
+  const target = String(data.url || data.link || '/admin?tab=inbox').slice(0, 500)
+  const tag = String(data.tag || 'admin-alert').slice(0, 120)
+  event.waitUntil(self.registration.showNotification(title, {
+    body,
+    tag,
+    data: { url: target },
+    icon: '/icon-192.png',
+    badge: '/favicon.png',
+  }))
+})
+
+// الضغط على إشعار Push أو fallback يعيد استخدام نافذة لوحة التحكم إن كانت مفتوحة،
+// أو يفتح صندوق الوارد مباشرة.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const target = String(event.notification?.data?.url || '/admin?tab=inbox')
+  const targetPath = String(event.notification?.data?.url || '/admin?tab=inbox')
+  const target = new URL(targetPath, self.location.origin).href
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (clients) => {
       for (const client of clients) {

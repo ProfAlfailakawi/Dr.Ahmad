@@ -16,6 +16,19 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // أجهزة المشرف المسجلة لاستقبال Push الحقيقي — خاصة بالمشرف والخادم فقط.
+    match /admin_push_tokens/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    // سجل النشرات وحالة كل مستلم. لا يظهر للعامة ولا يُكتب من واجهة الزائر.
+    match /newsletter_sends/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+    match /newsletter_deliveries/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
     // محتوى لوحة التحكم /admin: قراءة عامة (يعرضه الموقع)،
     // والكتابة والتعديل والحذف للمشرف المصادَق عليه حصراً.
     match /site_articles/{id} {

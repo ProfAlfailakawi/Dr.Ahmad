@@ -77,12 +77,20 @@ export function ContactForm({ locale = 'ar' }: { locale?: Locale }) {
     if (!firebaseEnabled) { setErr(ui.disabled); setState('error'); return }
     setState('sending')
     try {
-      const db = await getDb()
-      if (!db) throw new Error('no-db')
-      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
       const insight = contactInsight(topic, message)
       const referenceNumber = `AH-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${String(Math.floor(1000 + Math.random() * 9000))}`
-      await addDoc(collection(db, 'messages'), { name: name.trim(), email: email.trim(), topic: topic || 'أخرى', message: message.trim(), intent: insight.intent, quality: insight.quality, reference: referenceNumber, createdAt: serverTimestamp() })
+      const apiResponse = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), topic: topic || 'أخرى', message: message.trim(), intent: insight.intent, quality: insight.quality, reference: referenceNumber }),
+      }).catch(() => null)
+      if (!apiResponse?.ok) {
+        // رجوع آمن للكتابة المباشرة حتى لا تضيع رسالة الزائر إذا تعطل dr-api مؤقتاً.
+        const db = await getDb()
+        if (!db) throw new Error('no-db')
+        const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
+        await addDoc(collection(db, 'messages'), { name: name.trim(), email: email.trim(), topic: topic || 'أخرى', message: message.trim(), intent: insight.intent, quality: insight.quality, reference: referenceNumber, createdAt: serverTimestamp() })
+      }
       try { localStorage.setItem('contact:last-submit', String(Date.now())); localStorage.removeItem(draftKey) } catch { /* private mode */ }
       setReference(referenceNumber); setState('done'); setName(''); setEmail(''); setMessage('')
     } catch { setErr(ui.failed); setState('error') }

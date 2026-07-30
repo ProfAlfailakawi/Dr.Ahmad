@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { createIdeaDna } from '../lib/idea-dna'
@@ -14,14 +14,21 @@ function Disclosure({
   title,
   meta,
   children,
+  lockOpen = false,
 }: {
   eyebrow: string
   title: string
   meta?: string
   children: ReactNode
+  lockOpen?: boolean
 }) {
   return (
-    <details className="group rounded-2xl border border-hair bg-canvas">
+    <details
+      className="group rounded-2xl border border-hair bg-canvas"
+      onToggle={(event) => {
+        if (lockOpen && !event.currentTarget.open) event.currentTarget.open = true
+      }}
+    >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 sm:px-5">
         <span className="min-w-0">
           <span className="block text-[.66rem] font-semibold text-accent">{eyebrow}</span>
@@ -69,43 +76,53 @@ export function BookWorld({
       .filter((row) => row.score > 0)
       .sort((a, b) => b.score - a.score)
 
-    const ideas = Array.from(new Set([
+    const candidateIdeas = Array.from(new Set([
       dna.topic.label,
       ...dna.keywords,
       ...articleMatches.slice(0, 5).flatMap(({ item }) => ideaWords(`${item.title} ${item.cat || ''}`).slice(0, 2)),
-    ].map((item) => String(item || '').trim()).filter((item) => item.length >= 3 && item !== 'فكرة عامة'))).slice(0, 7)
+    ].map((item) => String(item || '').trim()).filter((item) => item.length >= 3 && item !== 'فكرة عامة')))
 
-    while (ideas.length < 7) {
-      const fallback = ['السؤال المركزي', 'التطبيق', 'الإنسان', 'التعليم', 'المستقبل', 'القرار', 'الأثر'][ideas.length]
-      if (!ideas.includes(fallback)) ideas.push(fallback)
-      else break
-    }
+    const paths = candidateIdeas
+      .map((idea) => {
+        const words = new Set(ideaWords(idea))
+        if (!words.size) return null
+        const pathArticles = articles
+          .map((item) => ({ item, score: scoreAgainst(words, `${item.title} ${item.excerpt || ''} ${item.cat || ''}`) }))
+          .filter((row) => row.score > 0)
+          .sort((a, b) => b.score - a.score || bookArchiveDate(b.item).localeCompare(bookArchiveDate(a.item)))
+        const pathPapers = papers
+          .map((item) => ({ item, score: scoreAgainst(words, `${item.title} ${item.titleAr || ''} ${item.abstractAr || ''} ${item.meta || ''}`) }))
+          .filter((row) => row.score > 0)
+          .sort((a, b) => b.score - a.score)
+        if (!pathArticles.length && !pathPapers.length) return null
+        return { idea, articles: pathArticles, papers: pathPapers }
+      })
+      .filter((row): row is { idea: string; articles: typeof articleMatches; papers: typeof paperMatches } => Boolean(row))
+      .slice(0, 7)
 
     return {
       dna,
-      ideas,
-      articles: articleMatches.slice(0, 5),
-      papers: paperMatches.slice(0, 3),
-      timeline: buildBookWorldTimeline(articleMatches, 6),
+      paths,
+      ideas: paths.map((path) => path.idea),
     }
   }, [articles, book.desc, book.title, papers, seed])
 
   const selectedIdea = activeIdea || model.ideas[0] || ''
-  const selectedWords = useMemo(() => new Set(ideaWords(selectedIdea)), [selectedIdea])
-  const activeConnections = useMemo(() => {
-    if (!selectedWords.size) return { articles: model.articles.slice(0, 2), papers: model.papers.slice(0, 1) }
-    const articleRows = articles
-      .map((item) => ({ item, score: scoreAgainst(selectedWords, `${item.title} ${item.excerpt || ''} ${item.cat || ''}`) }))
-      .filter((row) => row.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3)
-    const paperRows = papers
-      .map((item) => ({ item, score: scoreAgainst(selectedWords, `${item.title} ${item.titleAr || ''} ${item.abstractAr || ''} ${item.meta || ''}`) }))
-      .filter((row) => row.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 2)
-    return { articles: articleRows, papers: paperRows }
-  }, [articles, model.articles, model.papers, papers, selectedWords])
+  const activePath = useMemo(
+    () => model.paths.find((path) => path.idea === selectedIdea) || model.paths[0] || null,
+    [model.paths, selectedIdea],
+  )
+  const activeConnections = useMemo(() => ({
+    articles: activePath?.articles.slice(0, 3) || [],
+    papers: activePath?.papers.slice(0, 2) || [],
+    timeline: activePath ? buildBookWorldTimeline(activePath.articles, 6) : [],
+  }), [activePath])
+
+  useEffect(() => {
+    if (activeIdea && !model.ideas.includes(activeIdea)) setActiveIdea('')
+  }, [activeIdea, model.ideas])
+
+  if (!model.paths.length) return null
 
   return (
     <section className="border-t border-hair bg-wash px-6 py-12 md:px-11 md:py-16" aria-labelledby="book-world-title">
@@ -120,10 +137,11 @@ export function BookWorld({
         </div>
 
         <div className="mt-6 grid gap-3">
-          <Disclosure
+          {model.ideas.length > 0 && <Disclosure
             eyebrow={`Idea DNA · ${model.dna.fingerprint.replace('idea-', '').toUpperCase()}`}
             title="بصمة الكتاب ومساراته الفكرية"
             meta={`${model.dna.topic.label} · ${model.dna.tone.label} · عمق ${model.dna.depth.score}% · دليل ${model.dna.evidence.score}%`}
+            lockOpen={Boolean(activeIdea)}
           >
             <div className="flex flex-wrap gap-2" aria-label="مسارات أفكار الكتاب">
               {model.ideas.map((idea, index) => {
@@ -153,14 +171,13 @@ export function BookWorld({
                 {activeConnections.papers.map(({ item }) => (
                   <Link key={`active-p-${item.slug}`} to={`/research/${item.slug}`} className="rounded-full border border-hair bg-wash px-3 py-1.5 text-[.66rem] text-ink transition-colors hover:border-accent hover:text-accent">بحث · {item.titleAr || item.title}</Link>
                 ))}
-                {!activeConnections.articles.length && !activeConnections.papers.length && <span className="text-[.68rem] text-soft">لا توجد وصلة أرشيفية قوية لهذا المسار بعد.</span>}
               </div>
             </div>
-          </Disclosure>
+          </Disclosure>}
 
-          <Disclosure eyebrow="استمرار الفكرة" title="مواد قريبة في المقالات والأبحاث" meta="صلة موضوعية فقط؛ لا نفترض أنها فصول من الكتاب.">
+          {activePath && <Disclosure eyebrow="استمرار الفكرة" title="مواد قريبة في المقالات والأبحاث" meta="صلة موضوعية فقط؛ لا نفترض أنها فصول من الكتاب.">
             <div className="grid gap-2">
-              {model.articles.map(({ item, score }) => (
+              {activeConnections.articles.map(({ item, score }) => (
                 <Link key={item.slug} to={`/articles/${item.slug}`} className="group grid gap-1 rounded-xl border border-hair px-3.5 py-3 transition-colors hover:border-accent/45 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                   <span className="min-w-0">
                     <strong className="block text-[.8rem] leading-relaxed text-ink transition-colors group-hover:text-accent">{item.title}</strong>
@@ -169,27 +186,25 @@ export function BookWorld({
                   <span className="w-fit rounded-full bg-wash px-2.5 py-1 text-[.62rem] text-soft">صلة {score}</span>
                 </Link>
               ))}
-              {model.papers.map(({ item, score }) => (
+              {activeConnections.papers.map(({ item, score }) => (
                 <Link key={item.slug} to={`/research/${item.slug}`} className="group grid gap-1 rounded-xl border border-hair px-3.5 py-3 transition-colors hover:border-accent/45 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                   <strong className="text-[.8rem] leading-relaxed text-ink transition-colors group-hover:text-accent">{item.titleAr || item.title}</strong>
                   <span className="w-fit rounded-full bg-wash px-2.5 py-1 text-[.62rem] text-soft">صلة {score}</span>
                 </Link>
               ))}
-              {!model.articles.length && !model.papers.length && <p className="text-[.76rem] leading-relaxed text-soft">لا توجد مادة منشورة ذات صلة كافية حتى الآن.</p>}
             </div>
-          </Disclosure>
+          </Disclosure>}
 
-          <Disclosure eyebrow="الزمن داخل الأرشيف" title="امتدادات مؤرخة للفكرة" meta="يختار أقوى محطة من كل سنة ويوزّعها على كامل عمر الأرشيف؛ لا يثبت على أحدث سنة.">
+          {activeConnections.timeline.length > 0 && <Disclosure eyebrow="الزمن داخل الأرشيف" title="امتدادات مؤرخة للفكرة" meta="يختار أقوى محطة من كل سنة ويوزّعها على كامل عمر الأرشيف؛ لا يثبت على أحدث سنة.">
             <div className="grid gap-1">
-              {model.timeline.map(({ item, year, date }) => (
+              {activeConnections.timeline.map(({ item, year, date }) => (
                 <Link key={`${item.slug}-${year}`} to={`/articles/${item.slug}`} className="grid gap-1 rounded-xl px-2 py-2.5 transition-colors hover:bg-wash sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:items-start sm:gap-3">
                   <span className="text-[.68rem] font-semibold text-accent">{date || year}</span>
                   <span className="text-[.76rem] leading-relaxed text-ink">{item.title}</span>
                 </Link>
               ))}
-              {!model.timeline.length && <p className="text-[.76rem] leading-relaxed text-soft">ستظهر هنا المحطات حين تتوافر مواد مؤرخة مرتبطة بما يكفي.</p>}
             </div>
-          </Disclosure>
+          </Disclosure>}
         </div>
       </div>
     </section>

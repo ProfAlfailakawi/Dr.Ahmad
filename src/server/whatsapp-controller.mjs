@@ -7,7 +7,7 @@ import { DEFAULT_BOT_MESSAGES, getBotMessages, refreshBotMessages } from '../../
 const SITE_URL = String(process.env.WHATSAPP_SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
 const OWNER_ALERT_FALLBACK = 'طلب صاحب هذه الرسالة التواصل معك مباشرة. افتح محادثات واتساب من جهازك المرتبط.'
 const HUMAN_ACK = 'أفهم أنك تريد التواصل مع الدكتور مباشرة. اكتب رسالتك كاملة هنا؛ لا أستطيع أن أعدك بموعد رد، وبإمكاني الآن مساعدتك في محتوى الموقع أو البحث عن موضوع محدد.'
-const MEDIA_CLARIFY = 'وصلني ملف أو صورة من دون وصفٍ كافٍ. اكتب لي بجملة واحدة ماذا تريد منها، وسأكمل معك مباشرة.'
+const MEDIA_CLARIFY = 'وصلتني الصورة أو الملف. حتى ما أخمّن محتواه أو مقصدك، اكتب المطلوب بجملة واحدة: «لخّصها» · «ابحث عن موضوعها» · «أعطني المادة الأصلية».'
 /* القوالب حيّة لا مسبوكة: كانت تُبنى مرةً واحدة عند تحميل الملف من البدائل
    المضمّنة، فتحرير الدكتور لها في لوحة «رسائل البوت» يصل Firestore ولا يصل
    الردود أبداً. الآن كلُّ بناءِ ردٍّ يقرأ القوالب الحاضرة (getBotMessages —
@@ -54,8 +54,12 @@ function welcomeText(messages = botMessagesNow(), at = new Date()) {
   const line = messages.welcomeLine || 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي'
   return `${timeGreeting(at)}. ${line}.\n\nأفهم سؤالك باللهجة الكويتية أو بالعربية الطبيعية، وأبحث لك في مقالات الدكتور وكتبه وأبحاثه والبودكاست.\n\nجرّب مثلاً: «شنو جديد الدكتور؟» · «عندك شي عن الذكاء الاصطناعي؟» · «لخّصها» · «عطني غيرها»\n\n${SITE_URL}`
 }
-function clarifyText(messages = botMessagesNow()) {
-  return `${messages.clarify || 'ما فهمت الطلب بدقة.'}\n\nاكتب الفكرة بطريقتك، أو قل: آخر مقالة · آخر بحث · آخر كتاب · آخر بودكاست · عندك شي عن…`
+function clarifyText(messages = botMessagesNow(), conversation = {}) {
+  const current = currentConversationItem(conversation)
+  if (current) {
+    return `${messages.clarify || 'لم يتضح المقصود بدقة.'}\n\nإذا كنت تقصد «${current.title}»، اكتب: لخّصها · المصدر · غيرها. وإن كان طلباً جديداً، اكتب الموضوع مباشرة.`
+  }
+  return `${messages.clarify || 'لم يتضح المقصود بدقة.'}\n\nاكتب الموضوع مباشرة، أو اطلب: آخر مقالة · آخر بحث · آخر كتاب · آخر بودكاست.`
 }
 function noMatchText(messages = botMessagesNow()) {
   return `${messages.noMatch || 'ما لقيت مادة منشورة مطابقة الآن.'}\n\nجرّب كلمة أقرب للموضوع، أو قل لي: مقالة، كتاب، بحث، أو بودكاست.`
@@ -379,9 +383,15 @@ function itemMetaLine(item) {
   return parts.join(' · ')
 }
 
-function siteResultReply(items, intro = 'لقيت لك من موقع الدكتور:') {
+function siteResultReply(items, intro = 'وجدت لك من موقع الدكتور:') {
+  if (items.length === 1) {
+    const item = items[0]
+    const source = normalizeWhitespace(item.excerpt || item.body || '')
+    const preview = source.split(/\s+/).filter(Boolean).slice(0, 30).join(' ')
+    return `${intro}\n\n*${item.title}*\n${itemMetaLine(item)}${preview ? `\n\n${preview}${source.split(/\s+/).filter(Boolean).length > 30 ? '…' : ''}` : ''}\n\n${item.url}\n\nماذا تريد بعدها؟ لخّصها · أعطني المصدر · أطلع لي غيرها.`
+  }
   const lines = items.map((item, index) => `${arabicNumber(index + 1)}) *${item.title}*\n${itemMetaLine(item)}\n${item.url}`)
-  return `${intro}\n\n${lines.join('\n\n')}\n\nشنو تحب أسوي بعدها؟ قل «لخّص الأولى» أو «عطني غيرها» وأكمل معك.`
+  return `${intro}\n\n${lines.join('\n\n')}\n\nاختر رقماً، أو اكتب: لخّص الأولى · أعطني غيرها.`
 }
 
 /* حين لا يطابق البحثُ الدقيق شيئاً، لا نكتفي بـ«ما لقيت»: نعرض أقرب المواد
@@ -516,8 +526,20 @@ function intentKinds(intent) {
 export function decideGroundedResponse({ text, hasMedia = false, rules = [], priorReplyHash = '', conversation = {} } = {}) {
   const clean = normalizeArabicMessage(text)
   const messages = botMessagesNow()
-  if (hasMedia) return { kind: 'reply', reason: 'media-description-needed', reply: signReply(MEDIA_CLARIFY, messages) }
-  if (!clean) return { kind: 'reply', reason: 'empty-after-normalization', reply: signReply(clarifyText(messages), messages) }
+  if (hasMedia) {
+    const now = Date.now()
+    const previousMediaReplyAt = Date.parse(conversation.lastMediaReplyAt || '')
+    if (Number.isFinite(previousMediaReplyAt) && now - previousMediaReplyAt < 5 * 60_000) {
+      return { kind: 'no-reply', reason: 'media-burst-suppressed', patch: { lastMediaSeenAt: asIso(now) } }
+    }
+    return {
+      kind: 'reply',
+      reason: 'media-description-needed',
+      reply: signReply(MEDIA_CLARIFY, messages),
+      patch: { lastMediaReplyAt: asIso(now), lastMediaSeenAt: asIso(now) },
+    }
+  }
+  if (!clean) return { kind: 'reply', reason: 'empty-after-normalization', reply: signReply(clarifyText(messages, conversation), messages) }
   if (HUMAN_PATTERNS.some((pattern) => pattern.test(clean))) {
     return { kind: 'escalate', reason: 'human-request', reply: signReply(HUMAN_ACK, messages) }
   }
@@ -755,7 +777,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
         evidence: [target.id], contextItemIds: [target.id], contextIndex: 0, lastTopic: target.title,
       }
     }
-    return { kind: 'reply', reason: 'context-missing', intent, reply: signReply(clarifyText(messages), messages) }
+    return { kind: 'reply', reason: 'context-missing', intent, reply: signReply(clarifyText(messages, conversation), messages) }
   }
   if (intent === INTENTS.DIALOGUE_MODE) {
     const target = current || latestSiteItems(['article'], 1)[0]
@@ -825,7 +847,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
       : { kind: 'reply', reason: 'context-missing', intent, reply: signReply('أرسل لك مادة أولاً: قل «آخر مقالة» أو اكتب الموضوع، وبعدها أختصرها لك.', messages) }
   }
   if ([INTENTS.SOURCE_PROOF, INTENTS.READ_ARTICLE, INTENTS.LISTEN_FAHED, INTENTS.LISTEN_NOURA, INTENTS.LISTEN_DIALOGUE].includes(intent)) {
-    if (!current) return { kind: 'reply', reason: 'context-missing', intent, reply: signReply(clarifyText(messages), messages) }
+    if (!current) return { kind: 'reply', reason: 'context-missing', intent, reply: signReply(clarifyText(messages, conversation), messages) }
     const listenIntents = [INTENTS.LISTEN_FAHED, INTENTS.LISTEN_NOURA, INTENTS.LISTEN_DIALOGUE]
     const audioLine = listenIntents.includes(intent)
       ? (current.audio?.dialogue || current.audio?.fahed || current.audio?.noura
@@ -905,7 +927,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
 
   const asksQuestion = /[؟?]\s*$|(?:^|\s)(?:شنو|وش|ايش|كيف|متى|وين|هل|ليش|منو|كم|شلون|عطني|اعطني|ورني|ابي|ابغى|ودي|ممكن)(?:\s|$)/.test(clean)
   if (asksQuestion) {
-    return { kind: 'reply', reason: 'active-clarify', intent, reply: signReply(clarifyText(messages), messages), priorReplyHash }
+    return { kind: 'reply', reason: 'active-clarify', intent, reply: signReply(clarifyText(messages, conversation), messages), priorReplyHash }
   }
   /* لا مطابقة دقيقة: نعرض الأقرب بعتبة متساهلة، فإن غاب فأبواب الأرشيف الحقيقية. */
   const near = nearestSuggestions(query, previousIds, 3)
@@ -990,8 +1012,22 @@ function normalizeAudienceSearch(value) {
   return normalizeArabicMessage(value).replace(/\s+/g, ' ').trim()
 }
 
+function cleanAudienceName(value = '') {
+  const raw = bounded(value, 120).replace(/[‎‏]/g, '').replace(/\s+/g, ' ').trim()
+  if (!raw) return ''
+  // أسماء WhatsApp المزامنة قد تحتوي معرفاً تقنياً أو صفراً أو JID. لا نمسح
+  // القيمة الأصلية من Firestore؛ نخفيها فقط من العرض حتى لا تتشوّه القوائم.
+  if (/^(?:0+|undefined|null|unknown|none|blank)$/i.test(raw)) return ''
+  if (/@(?:c\.us|s\.whatsapp\.net)$/i.test(raw) || /^BLINK@/i.test(raw)) return ''
+  if (/^[+\d٠-٩۰-۹ .()_-]{5,}$/.test(raw)) return ''
+  return raw
+}
+
 function audienceDisplayName(row = {}) {
-  return bounded(row.nickname || row.waName || row.displayName, 120) || `••${bounded(row.tail, 4)}`
+  return cleanAudienceName(row.nickname)
+    || cleanAudienceName(row.waName)
+    || cleanAudienceName(row.displayName)
+    || `••${bounded(row.tail, 4)}`
 }
 
 function audienceVocative(row = {}) {
@@ -1077,6 +1113,20 @@ export function isStaleBridgeState(current = {}, incomingInstanceId = '', incomi
     && nextSeq >= 0
     && nextSeq < currentSeq
   )
+}
+
+export function isStaleInboundMessage({ timestamp = 0, bridgeReadyAt = '', bridgeStartedAt = '', graceMs = 60_000, now = Date.now() } = {}) {
+  const raw = Number(timestamp)
+  if (!Number.isFinite(raw) || raw <= 0) return false
+  const messageAt = raw < 10_000_000_000 ? raw * 1_000 : raw
+  const readyAt = Date.parse(bridgeReadyAt || '')
+  const startedAt = Date.parse(bridgeStartedAt || '')
+  const boundary = Number.isFinite(readyAt) ? readyAt : startedAt
+  if (!Number.isFinite(boundary)) return false
+  // لا نعاقب فروق الساعة البسيطة؛ الهدف فقط منع تاريخ المحادثات القديم الذي
+  // يعيده WhatsApp Web بعد تشغيل الجسر أو استكمال المزامنة.
+  const safeGrace = Math.max(5_000, Math.min(5 * 60_000, Number(graceMs) || 60_000))
+  return messageAt < Math.min(boundary - safeGrace, Number(now) + safeGrace)
 }
 
 export function isInvalidBridgeRegression(current = {}, incomingInstanceId = '', nextStatus = '') {
@@ -1822,6 +1872,25 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       return
     }
 
+    // دفاع ثانٍ خلف الجسر: WhatsApp Web قد يعيد بث تاريخ المحادثة بعد مزامنة
+    // جلسة جديدة. الرسالة الأقدم من جاهزية *هذه العملية* لا تفتح بوابة الإيقاظ
+    // ولا تغيّر سياق المحادثة ولا تستحق رداً، مهما كان نوعها أو محتواها.
+    if (isStaleInboundMessage({
+      timestamp: body.timestamp,
+      bridgeReadyAt: bounded(body.bridgeReadyAt, 80),
+      bridgeStartedAt: bounded(body.bridgeStartedAt, 80),
+    })) {
+      await ref.set({
+        jid,
+        masked: maskJid(jid),
+        lastIgnoredBackfillAt: now,
+        lastIgnoredBackfillType: bounded(body.mediaType, 80) || 'text',
+        updatedAt: now,
+      }, { merge: true })
+      sendJson(res, 200, { ok: true, action: 'none', reason: 'stale-after-bridge-start' })
+      return
+    }
+
     const text = bounded(body.text, 12_000)
     const incomingHash = hash(normalizeArabicMessage(text) || `media:${bounded(body.mediaType, 80)}`)
     const incomingMessageId = bounded(body.messageId, 240)
@@ -1961,6 +2030,18 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     /* إذا كرر الشخص الطلب في رسالة جديدة نجيبه من جديد. تشابه الرد ليس دليلاً
        على إعادة تسليم، ولا مبرراً لاستبداله برسالة متابعة بشرية أو رد عام. */
     const safeReply = replyText
+
+    if (decision.kind === 'no-reply') {
+      await ref.set({
+        ...basePatch,
+        mode: 'bot',
+        wakeActive: true,
+        wakeVersion: 2,
+        ...(decision.patch && typeof decision.patch === 'object' ? decision.patch : {}),
+      }, { merge: true })
+      sendJson(res, 200, { ok: true, action: 'none', reason: decision.reason })
+      return
+    }
 
     if (decision.kind === 'silent') {
       const eventId = randomUUID()

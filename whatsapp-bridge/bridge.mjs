@@ -52,6 +52,7 @@ const runtime = {
   readyAt: null,
   lastSocketState: null,
   selfRecoveryRequested: false,
+  ignoredBackfill: 0,
 }
 
 const PROGRESSIVE_STATES = Object.freeze({
@@ -422,9 +423,56 @@ async function safeGracefulCloseClient() {
   await new Promise((r) => setTimeout(r, 1000))
 }
 
+function messageTimestampMs(message) {
+  const raw = Number(message?.timestamp || 0)
+  if (!Number.isFinite(raw) || raw <= 0) return 0
+  return raw < 10_000_000_000 ? raw * 1_000 : raw
+}
+
+function isFreshInboundForCurrentRuntime(message, graceMs = 60_000) {
+  if (!readyHandled || !runtime.connected) return false
+  const messageAt = messageTimestampMs(message)
+  if (!messageAt) return true
+  const readyAt = Date.parse(runtime.readyAt || '')
+  if (!Number.isFinite(readyAt)) return true
+  return messageAt >= readyAt - Math.max(5_000, Math.min(5 * 60_000, Number(graceMs) || 60_000))
+}
+
+function digitsFromPrivateJid(value) {
+  const raw = String(value || '').trim()
+  const head = raw.split('@', 1)[0].replace(/\D/g, '')
+  return /^\d{7,15}$/.test(head) ? head : ''
+}
+
+async function resolvePrivateRecipient(value) {
+  const digits = digitsFromPrivateJid(value)
+  if (!digits) throw new Error('invalid-private-recipient')
+  const resolved = await client.getNumberId(digits)
+  const jid = String(resolved?._serialized || '')
+  if (!jid) throw new Error('number-not-registered-on-whatsapp')
+  return jid
+}
+
+async function acknowledgeCommand(commandId, ok, error = '') {
+  return serverRequest('/api/whatsapp/commands', {
+    body: { commandId, ok, ...(error ? { error } : {}) },
+    retries: 1,
+  })
+}
+
 client.on('message', async (message) => {
   runtime.lastActivityAt = Date.now()
   if (message.fromMe || message.from === 'status@broadcast' || !message.from?.endsWith('@c.us')) return
+  if (!isFreshInboundForCurrentRuntime(message)) {
+    runtime.ignoredBackfill += 1
+    log('info', 'backfilled_message_ignored', {
+      from: message.from,
+      messageAt: messageTimestampMs(message) || null,
+      bridgeReadyAt: runtime.readyAt,
+      ignoredBackfill: runtime.ignoredBackfill,
+    })
+    return
+  }
   try {
     const result = await emit('incoming', {
       jid: message.from,
@@ -433,6 +481,8 @@ client.on('message', async (message) => {
       mediaType: String(message.type || 'text').slice(0, 80),
       messageId: String(message.id?._serialized || '').slice(0, 240),
       timestamp: Number(message.timestamp || 0),
+      bridgeStartedAt: runtime.startedAt,
+      bridgeReadyAt: runtime.readyAt,
     })
     if (result?.reply?.text && ['reply', 'reply-and-escalate'].includes(result.action)) {
       await client.sendMessage(message.from, String(result.reply.text))
@@ -600,31 +650,45 @@ async function pollCommands() {
 
 async function executeCommand(command) {
   if (!command?.id || !command.type) return
-  let ok = true
-  let error = ''
   try {
     if (command.type === 'restart') {
       shuttingDown = true
       await safeEmit('status', transitionState('restarting', false, 'command_restart'))
-      await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 1 })
+      await acknowledgeCommand(command.id, true)
       await safeGracefulCloseClient()
       process.exit(75)
-    } else if (command.type === 'repair-session' || command.type === 'repair') {
+    }
+    if (command.type === 'repair-session' || command.type === 'repair') {
       shuttingDown = true
       await safeEmit('status', transitionState('pairing', false, 'command_repair'))
-      await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 1 })
+      await acknowledgeCommand(command.id, true)
       try { await client.logout() } catch { /* ignore */ }
       await safeGracefulCloseClient()
       process.exit(76)
-    } else if (command.type === 'send-message') {
-      const jid = command.payload?.jid
-      const text = String(command.payload?.text || '').trim()
-      if (jid && text) await client.sendMessage(jid, text)
     }
+    if (command.type === 'send-message') {
+      const text = String(command.payload?.text || '').trim()
+      if (!text) throw new Error('empty-message')
+      const jid = await resolvePrivateRecipient(command.payload?.jid)
+      await client.sendMessage(jid, text)
+      // النجاح يجب أن يغلق lease فوراً؛ تركه leased كان يعيد نفس الإرسال بعد
+      // 90 ثانية ويمنع حملة البث من الانتقال إلى الرقم التالي.
+      await acknowledgeCommand(command.id, true)
+      return
+    }
+    if (command.type === 'send-self-message') {
+      const text = String(command.payload?.text || '').trim()
+      if (!text) throw new Error('empty-message')
+      const selfCandidate = config.ownerChatId || String(client.info?.wid?._serialized || '')
+      const jid = await resolvePrivateRecipient(selfCandidate)
+      await client.sendMessage(jid, text)
+      await acknowledgeCommand(command.id, true)
+      return
+    }
+    throw new Error(`unsupported-command:${command.type}`)
   } catch (caught) {
-    ok = false
-    error = caught instanceof Error ? caught.message : String(caught)
-    await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: false, error }, retries: 1 })
+    const error = caught instanceof Error ? caught.message : String(caught)
+    await acknowledgeCommand(command.id, false, error)
   }
 }
 

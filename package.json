@@ -115,7 +115,10 @@
     "studio-image:deploy-self-test": "node scripts/test-cloudflare-deploy-fallback.mjs",
     "audio:firestore:sync": "node scripts/sync-audio-firestore.mjs",
     "typography:tanween:guard": "node scripts/guard-arabic-tanween.mjs",
-    "architecture:self-test": "node scripts/guard-site-architecture.mjs"
+    "architecture:self-test": "node scripts/guard-site-architecture.mjs",
+    "editorial-board:self-test": "node scripts/test-editorial-board.mjs",
+    "book-world:self-test": "node scripts/test-book-world.mjs",
+    "round9:self-test": "node scripts/test-editorial-board.mjs && node scripts/test-book-world.mjs && node scripts/test-whatsapp-central.mjs && npm --prefix whatsapp-bridge run check"
   },
   "dependencies": {
     "@fontsource-variable/alexandria": "5.3.0",

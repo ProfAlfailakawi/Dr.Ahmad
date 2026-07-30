@@ -149,6 +149,11 @@ service cloud.firestore {
       allow read, create, update, delete: if isAdmin();
     }
 
+    // سجل قرارات مجلس التحرير: بيانات داخلية للمشرف فقط، ولا تعرض على الموقع العام.
+    match /admin_editorial_board/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
     // فهرس خاص بالتصاميم الكاملة المولدة؛ لا يظهر للعامة ولا يملكه إلا المشرف.
     match /admin_generated_designs/{id} {
       allow read, create, update, delete: if isAdmin();

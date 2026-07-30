@@ -141,6 +141,16 @@ function maskJid(jid) {
   return number.length > 4 ? `${'*'.repeat(Math.max(4, number.length - 4))}${number.slice(-4)}` : '****'
 }
 
+function privateRecipientDigits(value) {
+  const digits = bounded(value, 180).split('@', 1)[0].replace(/\D/g, '')
+  return /^\d{7,15}$/.test(digits) ? digits : ''
+}
+
+function outboundRecipientFingerprint(value) {
+  const digits = privateRecipientDigits(value)
+  return digits ? hash(`wa-recipient:${digits}`) : ''
+}
+
 function normalizeConversationJid(value) {
   /* إصدارات Multi-Device الحديثة قد تضيف رقم الجهاز قبل @c.us/@lid،
      أو تستخدم s.whatsapp.net. لا نحوّل LID إلى رقم هاتف؛ نحفظ العنوان الحي
@@ -1115,7 +1125,7 @@ export function isStaleBridgeState(current = {}, incomingInstanceId = '', incomi
   )
 }
 
-export function isStaleInboundMessage({ timestamp = 0, bridgeReadyAt = '', bridgeStartedAt = '', graceMs = 60_000, now = Date.now() } = {}) {
+export function isStaleInboundMessage({ timestamp = 0, bridgeReadyAt = '', bridgeStartedAt = '', graceMs = 1_500, now = Date.now() } = {}) {
   const raw = Number(timestamp)
   if (!Number.isFinite(raw) || raw <= 0) return false
   const messageAt = raw < 10_000_000_000 ? raw * 1_000 : raw
@@ -1123,9 +1133,9 @@ export function isStaleInboundMessage({ timestamp = 0, bridgeReadyAt = '', bridg
   const startedAt = Date.parse(bridgeStartedAt || '')
   const boundary = Number.isFinite(readyAt) ? readyAt : startedAt
   if (!Number.isFinite(boundary)) return false
-  // لا نعاقب فروق الساعة البسيطة؛ الهدف فقط منع تاريخ المحادثات القديم الذي
-  // يعيده WhatsApp Web بعد تشغيل الجسر أو استكمال المزامنة.
-  const safeGrace = Math.max(5_000, Math.min(5 * 60_000, Number(graceMs) || 60_000))
+  // cutover حازم: الرسالة التي وصلت قبل جاهزية العملية تخص فترة التوقف ولا
+  // يجوز أن توقظ البوت عند استعادة الجسر. السماح فقط بهامش 0–2 ثانية لدقة timestamp.
+  const safeGrace = Math.max(0, Math.min(2_000, Number(graceMs) || 0))
   return messageAt < Math.min(boundary - safeGrace, Number(now) + safeGrace)
 }
 
@@ -1467,16 +1477,24 @@ async function runtimePaused(db) {
 }
 
 async function enqueueCommand(db, type, payload = {}, metadata = {}) {
-  const id = randomUUID()
+  const idempotencyKey = bounded(metadata.idempotencyKey, 240)
+  const id = idempotencyKey ? hash(`whatsapp-command:${idempotencyKey}`).slice(0, 40) : randomUUID()
+  const ref = db.collection(COLLECTIONS.commands).doc(id)
+  if (idempotencyKey) {
+    const existing = await ref.get()
+    if (existing.exists) return { id, type: bounded(existing.data()?.type, 80) || type, reused: true, status: bounded(existing.data()?.status, 40) || 'pending' }
+  }
   const now = asIso()
-  await db.collection(COLLECTIONS.commands).doc(id).set({
-    id, type, payload, status: 'pending', attempts: 0, createdAt: now, updatedAt: now,
+  await ref.set({
+    id, type, payload, status: 'pending', attempts: 0, accountingVersion: 2, createdAt: now, updatedAt: now,
     availableAt: bounded(metadata.availableAt, 80) || now,
     campaignId: bounded(metadata.campaignId, 100) || null,
     campaignIndex: Number.isFinite(Number(metadata.campaignIndex)) ? Number(metadata.campaignIndex) : null,
+    recipientFingerprint: bounded(metadata.recipientFingerprint, 80) || bounded(payload.recipientFingerprint, 80) || null,
+    idempotencyKey: idempotencyKey || null,
     retryFailure: metadata.retryFailure === true,
   })
-  return { id, type }
+  return { id, type, reused: false, status: 'pending' }
 }
 
 async function queueNextCampaignMessage(db, campaignId, delayMs = 0) {
@@ -1506,10 +1524,22 @@ async function queueNextCampaignMessage(db, campaignId, delayMs = 0) {
     return null
   }
   const availableAt = asIso(Date.now() + Math.max(0, Number(delayMs || 0)))
+  const recipientFingerprint = outboundRecipientFingerprint(contact.jid)
+  if (!recipientFingerprint) {
+    await ref.set({ failed: Number(campaign.failed || 0) + 1, cursor: cursor + 1, lastError: 'رقم غير صالح للإرسال.', updatedAt: asIso() }, { merge: true })
+    return queueNextCampaignMessage(db, campaignId, delayMs)
+  }
   const command = await enqueueCommand(db, 'send-message', {
     jid: contact.jid,
     text: personalizeAudienceText(campaign.message, contact),
-  }, { campaignId: ref.id, campaignIndex: cursor, availableAt })
+    recipientFingerprint,
+  }, {
+    campaignId: ref.id,
+    campaignIndex: cursor,
+    availableAt,
+    recipientFingerprint,
+    idempotencyKey: `broadcast:${ref.id}:${cursor}:${recipientFingerprint}`,
+  })
   await ref.set({
     cursor: cursor + 1,
     pendingCommandId: command.id,
@@ -1517,6 +1547,205 @@ async function queueNextCampaignMessage(db, campaignId, delayMs = 0) {
     updatedAt: asIso(),
   }, { merge: true })
   return command
+}
+
+let lastBroadcastReconcileAt = 0
+let broadcastReconcilePending = null
+
+async function settleRetryCampaignState(db, campaignId) {
+  const id = bounded(campaignId, 100)
+  if (!id) return
+  const campaignRef = db.collection(COLLECTIONS.campaigns).doc(id)
+  const [campaignSnapshot, commandRows] = await Promise.all([
+    campaignRef.get(),
+    db.collection(COLLECTIONS.commands).where('campaignId', '==', id).limit(5000).get(),
+  ])
+  if (!campaignSnapshot.exists) return
+  const campaign = campaignSnapshot.data() || {}
+  const retryCommands = commandRows.docs.map(serializeDoc).filter((item) => item?.retryFailure === true)
+  const pendingRetries = retryCommands.filter((item) => ['pending', 'leased', 'held'].includes(item.status))
+  const nextAt = pendingRetries
+    .filter((item) => item.status === 'pending')
+    .map((item) => bounded(item.availableAt, 80))
+    .filter(Boolean)
+    .sort()[0] || null
+
+  // إذا أوقف الدكتور الحملة مؤقتاً لا نغيّر قرار الوقف بسبب ACK متأخر.
+  if (campaign.state === 'paused') {
+    await campaignRef.set({ nextAt: null, updatedAt: asIso() }, { merge: true })
+    return
+  }
+  if (campaign.state !== 'retrying') return
+  if (!pendingRetries.length) {
+    await campaignRef.set({
+      state: Number(campaign.failed || 0) > 0 ? 'partial' : 'completed',
+      nextAt: null,
+      retryCompletedAt: asIso(),
+      updatedAt: asIso(),
+    }, { merge: true })
+  } else {
+    await campaignRef.set({ nextAt, updatedAt: asIso() }, { merge: true })
+  }
+}
+
+async function accountCampaignCommand(db, commandId) {
+  const id = bounded(commandId, 80)
+  if (!id) return { accounted: false, reason: 'missing-command-id' }
+  const commandRef = db.collection(COLLECTIONS.commands).doc(id)
+  let outcome = { accounted: false, reason: 'not-terminal' }
+
+  await db.runTransaction(async (transaction) => {
+    const commandSnapshot = await transaction.get(commandRef)
+    if (!commandSnapshot.exists) {
+      outcome = { accounted: false, reason: 'missing-command' }
+      return
+    }
+    const command = { id: commandSnapshot.id, ...(commandSnapshot.data() || {}) }
+    if (!command.campaignId || !['completed', 'failed'].includes(command.status)) {
+      outcome = { accounted: false, reason: 'not-terminal', command }
+      return
+    }
+    if (command.campaignAccountedAt) {
+      outcome = { accounted: false, alreadyAccounted: true, reason: 'already-accounted', command }
+      return
+    }
+
+    const campaignRef = db.collection(COLLECTIONS.campaigns).doc(bounded(command.campaignId, 100))
+    const campaignSnapshot = await transaction.get(campaignRef)
+    if (!campaignSnapshot.exists) {
+      transaction.set(commandRef, { campaignAccountedAt: asIso(), campaignAccountingError: 'campaign-missing', updatedAt: asIso() }, { merge: true })
+      outcome = { accounted: false, reason: 'campaign-missing', command }
+      return
+    }
+
+    const campaign = campaignSnapshot.data() || {}
+    const retryFailure = command.retryFailure === true
+    const accountingVersion = Number(command.accountingVersion || 0)
+    if (accountingVersion < 2 && retryFailure) {
+      // حملات retry القديمة كانت تعدّل العدادات قبل وجود marker ذري؛ إعادة
+      // احتسابها هنا قد تضاعف الأرقام. لا نخاطر بأثر رجعي، وكل retry جديد
+      // يُرقّى إلى accountingVersion:2 أدناه.
+      transaction.set(commandRef, { legacyAccountingSkippedAt: asIso(), updatedAt: asIso() }, { merge: true })
+      outcome = { accounted: false, reason: 'legacy-retry-accounting-unknown', command }
+      return
+    }
+    if (accountingVersion < 2 && !retryFailure) {
+      const campaignIndex = Number(command.campaignIndex)
+      const alreadyReflected = Number.isFinite(campaignIndex)
+        && (Number(campaign.sent || 0) + Number(campaign.failed || 0)) > campaignIndex
+      if (alreadyReflected) {
+        const inferredAt = asIso()
+        transaction.set(commandRef, { campaignAccountedAt: inferredAt, legacyAccountingInferred: true, updatedAt: inferredAt }, { merge: true })
+        outcome = { accounted: false, alreadyAccounted: true, reason: 'legacy-accounting-inferred', command }
+        return
+      }
+    }
+    const succeeded = command.status === 'completed'
+    const sent = Number(campaign.sent || 0) + (succeeded ? 1 : 0)
+    const failed = retryFailure
+      ? Math.max(0, Number(campaign.failed || 0) - (succeeded ? 1 : 0))
+      : Number(campaign.failed || 0) + (succeeded ? 0 : 1)
+    const accountedAt = asIso()
+
+    transaction.set(campaignRef, {
+      ...(retryFailure ? {} : { pendingCommandId: null }),
+      sent,
+      failed,
+      lastError: succeeded ? null : bounded(command.error, 600) || 'تعذّر تسليم الرسالة.',
+      lastDeliveredAt: succeeded ? (bounded(command.deliveredAt, 80) || accountedAt) : campaign.lastDeliveredAt || null,
+      updatedAt: accountedAt,
+    }, { merge: true })
+    transaction.set(commandRef, {
+      campaignAccountedAt: accountedAt,
+      campaignAccountingError: null,
+      updatedAt: accountedAt,
+    }, { merge: true })
+
+    outcome = {
+      accounted: true,
+      campaignId: bounded(command.campaignId, 100),
+      retryFailure,
+      succeeded,
+      sent,
+      failed,
+      intervalSeconds: Number(campaign.intervalSeconds || 45),
+      campaignState: bounded(campaign.state, 40),
+    }
+  })
+
+  if (!outcome.accounted) return outcome
+  if (outcome.retryFailure) {
+    await settleRetryCampaignState(db, outcome.campaignId)
+  } else if (outcome.campaignState === 'sending') {
+    const intervalMs = Math.max(20_000, Math.min(15 * 60_000, Number(outcome.intervalSeconds || 45) * 1_000))
+    await queueNextCampaignMessage(db, outcome.campaignId, intervalMs)
+  }
+  return outcome
+}
+
+function broadcastReconcileDelayMs(campaign = {}, command = {}) {
+  const intervalMs = Math.max(20_000, Math.min(15 * 60_000, Number(campaign.intervalSeconds || 45) * 1_000))
+  const deliveredAt = Date.parse(command.deliveredAt || campaign.lastDeliveredAt || '')
+  if (!Number.isFinite(deliveredAt)) return Number(campaign.sent || 0) > 0 ? intervalMs : 0
+  return Math.max(0, intervalMs - Math.max(0, Date.now() - deliveredAt))
+}
+
+async function reconcileBroadcastState(db, { force = false } = {}) {
+  const now = Date.now()
+  if (!force && now - lastBroadcastReconcileAt < 30_000) return { skipped: true }
+  if (broadcastReconcilePending) return broadcastReconcilePending
+  lastBroadcastReconcileAt = now
+
+  broadcastReconcilePending = (async () => {
+    const campaignsSnapshot = await db.collection(COLLECTIONS.campaigns).limit(100).get()
+    const active = campaignsSnapshot.docs
+      .map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
+      .filter((campaign) => ['sending', 'retrying'].includes(campaign.state))
+
+    let repaired = 0
+    for (const campaign of active) {
+      if (campaign.state === 'sending') {
+        const campaignRef = db.collection(COLLECTIONS.campaigns).doc(campaign.id)
+        const pendingId = bounded(campaign.pendingCommandId, 80)
+        if (!pendingId) {
+          await queueNextCampaignMessage(db, campaign.id, broadcastReconcileDelayMs(campaign))
+          repaired += 1
+          continue
+        }
+        const commandRef = db.collection(COLLECTIONS.commands).doc(pendingId)
+        const commandSnapshot = await commandRef.get()
+        if (!commandSnapshot.exists) {
+          await campaignRef.set({ pendingCommandId: null, nextAt: null, lastError: 'تم إصلاح مؤشر إرسال مفقود.', updatedAt: asIso() }, { merge: true })
+          await queueNextCampaignMessage(db, campaign.id, 0)
+          repaired += 1
+          continue
+        }
+        const command = { id: commandSnapshot.id, ...(commandSnapshot.data() || {}) }
+        if (['completed', 'failed'].includes(command.status)) {
+          if (command.campaignAccountedAt) {
+            await campaignRef.set({ pendingCommandId: null, updatedAt: asIso() }, { merge: true })
+            await queueNextCampaignMessage(db, campaign.id, broadcastReconcileDelayMs(campaign, command))
+          } else {
+            await accountCampaignCommand(db, command.id)
+          }
+          repaired += 1
+        }
+      } else if (campaign.state === 'retrying') {
+        const rows = await db.collection(COLLECTIONS.commands).where('campaignId', '==', campaign.id).limit(5000).get()
+        for (const doc of rows.docs) {
+          const command = { id: doc.id, ...(doc.data() || {}) }
+          if (command.retryFailure === true && Number(command.accountingVersion || 0) >= 2 && ['completed', 'failed'].includes(command.status) && !command.campaignAccountedAt) {
+            await accountCampaignCommand(db, command.id)
+            repaired += 1
+          }
+        }
+        await settleRetryCampaignState(db, campaign.id)
+      }
+    }
+    return { skipped: false, repaired }
+  })().finally(() => { broadcastReconcilePending = null })
+
+  return broadcastReconcilePending
 }
 
 function campaignPublicState(snapshot) {
@@ -1885,6 +2114,8 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         masked: maskJid(jid),
         lastIgnoredBackfillAt: now,
         lastIgnoredBackfillType: bounded(body.mediaType, 80) || 'text',
+        lastQuarantineReason: 'pre-ready-backfill',
+        quarantinedBackfillCount: Math.max(0, Number(data.quarantinedBackfillCount || 0)) + 1,
         updatedAt: now,
       }, { merge: true })
       sendJson(res, 200, { ok: true, action: 'none', reason: 'stale-after-bridge-start' })
@@ -2179,6 +2410,9 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       return
     }
     if (method === 'GET') {
+      // كل poll يصلح أي حالة بث بقيت بين ACK وFirestore بسبب restart/انقطاع شبك.
+      // الفحص throttled ولا يلمس القوائم أو جهات الاتصال.
+      await reconcileBroadcastState(db).catch(() => {})
       const snapshot = await db.collection(COLLECTIONS.commands).limit(100).get()
       const now = Date.now()
       const pending = snapshot.docs.map(serializeDoc).filter((command) => {
@@ -2207,6 +2441,20 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       const commandRef = db.collection(COLLECTIONS.commands).doc(id)
       const commandSnapshot = await commandRef.get()
       const command = serializeDoc(commandSnapshot)
+      if (!command) {
+        sendJson(res, 404, { error: 'command not found' })
+        return
+      }
+
+      // إذا وصل ACK ثانٍ بعد أن ثبتنا حالة الأمر، لا نسمح له بقلب النجاح
+      // إلى فشل أو العكس. وإن حدث restart بين تثبيت الأمر واحتساب الحملة، نكمل
+      // الاحتساب مرة واحدة فقط من الحالة المثبتة.
+      if (['completed', 'failed'].includes(command.status)) {
+        if (command.campaignId && !command.campaignAccountedAt) await accountCampaignCommand(db, id)
+        sendJson(res, 200, { ok: true, duplicateAck: true, status: command.status })
+        return
+      }
+
       const rawBridgeError = bounded(body.error, 600)
       const transientBridgeError = /detached\s+frame|execution context (?:was )?destroyed|target closed|session closed|most likely because of a navigation/i.test(rawBridgeError)
       const retryableBridgeFailure = body.retry === true
@@ -2223,59 +2471,43 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         sendJson(res, 200, { ok: true, requeued: true })
         return
       }
-      const safeBridgeError = transientBridgeError
-        ? 'أعاد واتساب تهيئة الجلسة ولم يكتمل التسليم بعد عدة محاولات.'
-        : rawBridgeError
-      await commandRef.set({
-        status: body.ok === false ? 'failed' : 'completed',
-        error: safeBridgeError || null,
-        completedAt: asIso(),
-        updatedAt: asIso(),
-      }, { merge: true })
-      if (command?.campaignId) {
-        const campaignRef = db.collection(COLLECTIONS.campaigns).doc(command.campaignId)
-        const campaignSnapshot = await campaignRef.get()
-        const campaign = campaignSnapshot.data() || {}
-        const succeeded = body.ok !== false
-        const retryFailure = command.retryFailure === true
-        const nextSent = Number(campaign.sent || 0) + (succeeded ? 1 : 0)
-        const nextFailed = retryFailure
-          ? Math.max(0, Number(campaign.failed || 0) - (succeeded ? 1 : 0))
-          : Number(campaign.failed || 0) + (succeeded ? 0 : 1)
-        await campaignRef.set({
-          ...(retryFailure ? {} : { pendingCommandId: null }),
-          sent: nextSent,
-          failed: nextFailed,
-          lastError: succeeded ? null : safeBridgeError || 'تعذّر تسليم الرسالة.',
-          lastDeliveredAt: succeeded ? asIso() : campaign.lastDeliveredAt || null,
-          updatedAt: asIso(),
-        }, { merge: true })
 
-        if (retryFailure) {
-          const commandRows = await db.collection(COLLECTIONS.commands).where('campaignId', '==', command.campaignId).limit(5000).get()
-          const pendingRetries = commandRows.docs.map(serializeDoc).filter((item) =>
-            item?.retryFailure === true && ['pending', 'leased', 'held'].includes(item.status))
-          const nextAt = pendingRetries
-            .filter((item) => item.status === 'pending')
-            .map((item) => bounded(item.availableAt, 80))
-            .filter(Boolean)
-            .sort()[0] || null
-          if (!pendingRetries.length) {
-            await campaignRef.set({
-              state: nextFailed > 0 ? 'partial' : 'completed',
-              nextAt: null,
-              retryCompletedAt: asIso(),
-              updatedAt: asIso(),
-            }, { merge: true })
-          } else {
-            await campaignRef.set({ nextAt, updatedAt: asIso() }, { merge: true })
-          }
-        } else {
-          const intervalMs = Math.max(20_000, Math.min(15 * 60_000, Number(campaign.intervalSeconds || 45) * 1_000))
-          await queueNextCampaignMessage(db, command.campaignId, intervalMs)
-        }
-      }
-      sendJson(res, 200, { ok: true })
+      const expectedFingerprint = bounded(command.recipientFingerprint, 80)
+        || outboundRecipientFingerprint(command.payload?.jid)
+      const deliveredFingerprint = bounded(body.delivery?.recipientFingerprint, 80)
+      const isSendCommand = ['send-message', 'send-self-message'].includes(command.type)
+      const deliveryMismatch = body.ok !== false && isSendCommand && expectedFingerprint
+        && deliveredFingerprint !== expectedFingerprint
+      const safeBridgeError = deliveryMismatch
+        ? 'recipient-delivery-verification-failed'
+        : transientBridgeError
+          ? 'أعاد واتساب تهيئة الجلسة ولم يكتمل التسليم بعد عدة محاولات.'
+          : rawBridgeError
+      const succeeded = body.ok !== false && !deliveryMismatch
+      const completedAt = asIso()
+
+      await commandRef.set({
+        status: succeeded ? 'completed' : 'failed',
+        error: safeBridgeError || null,
+        completedAt,
+        updatedAt: completedAt,
+        ...(isSendCommand ? {
+          deliveryVerification: succeeded ? 'verified' : (deliveryMismatch ? 'mismatch' : 'failed'),
+          deliveryMessageId: bounded(body.delivery?.messageId, 240) || null,
+          deliveryRecipientFingerprint: deliveredFingerprint || null,
+          deliveredAt: succeeded ? (bounded(body.delivery?.at, 80) || completedAt) : null,
+        } : {}),
+      }, { merge: true })
+
+      if (command.campaignId) await accountCampaignCommand(db, id)
+
+      // لا نطلب من الجسر إعادة إرسال رسالة وصلت لرقم غير متطابق. نسجلها فشلاً
+      // تشغيلياً واضحاً؛ طبقة الجسر نفسها تمنع هذا قبل sendMessage أيضاً.
+      sendJson(res, 200, {
+        ok: true,
+        accepted: succeeded,
+        ...(deliveryMismatch ? { warning: 'recipient-delivery-verification-failed' } : {}),
+      })
       return
     }
     sendJson(res, 405, { error: 'Method Not Allowed' })
@@ -2828,7 +3060,14 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         return
       }
       const members = await listAudienceMembers(db, listId)
-      const targetIds = members.filter((contact) => !contact.suppressed).map((contact) => contact.id)
+      const seenRecipients = new Set()
+      const targetIds = members.filter((contact) => {
+        if (contact.suppressed) return false
+        const fingerprint = outboundRecipientFingerprint(contact.jid)
+        if (!fingerprint || seenRecipients.has(fingerprint)) return false
+        seenRecipients.add(fingerprint)
+        return true
+      }).map((contact) => contact.id)
       const id = randomUUID()
       await db.collection(COLLECTIONS.campaigns).doc(id).set({
         id,
@@ -2971,7 +3210,9 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       for (let index = 0; index < failed.length; index += 1) {
         const doc = failed[index]
         batch.set(doc.ref, {
-          status: 'pending', attempts: 0, retryFailure: true, leasedAt: null, completedAt: null,
+          status: 'pending', attempts: 0, retryFailure: true, accountingVersion: 2, leasedAt: null, completedAt: null,
+          campaignAccountedAt: null, campaignAccountingError: null, legacyAccountingSkippedAt: null, deliveryVerification: null,
+          deliveryMessageId: null, deliveryRecipientFingerprint: null, deliveredAt: null,
           error: null, availableAt: asIso(Date.now() + index * intervalMs), updatedAt: asIso(),
         }, { merge: true })
         writes += 1

@@ -40,7 +40,12 @@ assert.equal(isStaleInboundMessage({
   timestamp: Date.parse('2026-07-30T18:09:30.000Z') / 1000,
   bridgeReadyAt: '2026-07-30T18:10:00.000Z',
   now: Date.parse('2026-07-30T18:10:05.000Z'),
-}), false, 'small sync/clock grace must remain accepted')
+}), true, 'even a message only 30 seconds before ready belongs to downtime and must be quarantined')
+assert.equal(isStaleInboundMessage({
+  timestamp: Date.parse('2026-07-30T18:09:59.000Z') / 1000,
+  bridgeReadyAt: '2026-07-30T18:10:00.000Z',
+  now: Date.parse('2026-07-30T18:10:05.000Z'),
+}), false, 'only the bounded clock/timestamp grace may cross the ready cutover')
 
 const controllerSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../src/server/whatsapp-controller.mjs', import.meta.url), 'utf8'))
 assert.match(controllerSource, /runtime-resume/)
@@ -120,12 +125,32 @@ assert.match(bridgeSource, /legacy_duplicate_decision_retrying_as_distinct_turn/
 assert.match(bridgeSource, /SAFE_CLARIFY_REPLY/)
 
 const cloudBridgeSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../whatsapp-bridge/bridge.mjs', import.meta.url), 'utf8'))
-assert.match(cloudBridgeSource, /backfilled_message_ignored/)
+assert.match(cloudBridgeSource, /backfilled_message_quarantined/)
 assert.match(cloudBridgeSource, /bridgeReadyAt: runtime\.readyAt/)
 assert.match(cloudBridgeSource, /client\.getNumberId\(digits\)/)
 assert.match(cloudBridgeSource, /command\.type === 'send-self-message'/)
 assert.match(cloudBridgeSource, /await acknowledgeCommand\(command\.id, true\)/)
+assert.match(cloudBridgeSource, /delivery-checkpoints\.json/, 'successful sends must survive bridge restart without resend')
+assert.match(cloudBridgeSource, /outbound_delivery_checkpoint_replayed/)
+assert.match(cloudBridgeSource, /recipient-fingerprint-mismatch/)
+assert.match(cloudBridgeSource, /recipient-resolution-mismatch/)
+assert.match(cloudBridgeSource, /inboundReplyCheckpoints/)
+assert.match(cloudBridgeSource, /inboundInFlight/)
+assert.doesNotMatch(cloudBridgeSource, /join\(config\.sessionDir[^\n]*delivery-checkpoints/, 'delivery state must remain outside the live WhatsApp session directory')
 assert.doesNotMatch(cloudBridgeSource, /\.getChat\(/, 'broadcast delivery must not depend on an undefined chat object')
+
+assert.match(controllerSource, /idempotencyKey: `broadcast:\$\{ref\.id\}:\$\{cursor\}:\$\{recipientFingerprint\}`/)
+assert.match(controllerSource, /campaignAccountedAt/, 'campaign counts must be idempotent across duplicate ACKs')
+assert.match(controllerSource, /reconcileBroadcastState/, 'active campaigns must reconcile after restart')
+assert.match(controllerSource, /broadcastReconcileDelayMs/, 'restart repair must preserve the quiet-send interval instead of bursting')
+assert.match(controllerSource, /recipient-delivery-verification-failed/, 'server must independently verify exact broadcast recipient')
+assert.match(controllerSource, /outboundRecipientFingerprint/, 'broadcast recipients must use a non-reversible fingerprint')
+assert.match(controllerSource, /const seenRecipients = new Set\(\)/, 'campaign target construction must suppress duplicate numbers without deleting saved contacts')
+assert.match(controllerSource, /campaignAccountedAt: null/, 'retry-failed must open a fresh accounting cycle instead of reusing the old failure count')
+assert.match(controllerSource, /accountingVersion: 2/, 'new commands must opt into atomic campaign accounting explicitly')
+assert.match(controllerSource, /legacy-retry-accounting-unknown/, 'legacy retries must never be double-counted during reconciliation')
+assert.match(controllerSource, /legacyAccountingInferred/, 'legacy normal sends use safe count inference instead of blind re-accounting')
+assert.match(controllerSource, /تم إصلاح مؤشر إرسال مفقود/, 'reconciliation must repair orphaned pending pointers')
 
 const rules = [{
   id: 'hours',

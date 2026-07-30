@@ -12,9 +12,7 @@ import { PublishingStudioNavigation, type PublishingStudioView } from './Publish
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
 import { createIdeaDna } from '../../lib/idea-dna'
 import { buildKnowledgeGraph, graphSearch } from '../../lib/knowledge-graph'
-import { buildAudienceSignals, type AudienceSignal, type InboxMessageInput } from '../../lib/inbox-intelligence'
-import { buildRows as buildReaderRows, windowDays, type Row as ReaderRow, type ViewDoc } from '../readerPulseLogic'
-import { buildEditorialBoardDecision, editorialScoreLabel, type EditorialArchiveMaterial, type EditorialAudienceEvidence, type EditorialBoardDecision, type EditorialCalibrationProfile, type EditorialSourceType } from '../../lib/editorial-board'
+import { buildEditorialBoardDecision, editorialScoreLabel, type EditorialArchiveMaterial, type EditorialAudienceEvidence, type EditorialBoardDecision, type EditorialCalibrationProfile, type EditorialPortfolioEvidence, type EditorialSourceType } from '../../lib/editorial-board'
 import { buildSocialVisuals, compositionNameOf, analyzeSocialCopy,
   detectVisualTopic, downloadSocialPng, renderSocialPng, visualTopicLabel, type SocialVisualTemplate, type VisualTopic } from '../../lib/social-templates'
 import {
@@ -68,7 +66,7 @@ type CurrentEvent = {
   relevance?: number
 }
 
-type EditorialProgress = 'idle' | 'archive' | 'graph' | 'current' | 'audience' | 'decision' | 'done'
+type EditorialProgress = 'idle' | 'archive' | 'graph' | 'current' | 'portfolio' | 'decision' | 'done'
 type EditorialPerformanceMeasure = {
   windowDays?: number
   views?: number
@@ -101,41 +99,77 @@ const EDITORIAL_PROGRESS_LABELS: Record<EditorialProgress, string> = {
   archive: 'يفحص الأرشيف والمحتوى الكامل…',
   graph: 'يربط الفكرة بخريطة المعرفة وIdea DNA…',
   current: 'يفحص اللحظة الحالية من المصادر الموثوقة…',
-  audience: 'يفحص نبض القراء والرسائل من دون كشف بيانات شخصية…',
+  portfolio: 'يفحص توازن أرشيفك وما يحتاجه مشروعك الفكري…',
   decision: 'يبني الحكم ويشغّل محامي الشيطان…',
   done: 'اكتمل القرار.',
 }
 
-function scoreAudienceEvidence(idea: string, signals: AudienceSignal[], readerRows: ReaderRow[], availability: { messages: boolean; views: boolean }): EditorialAudienceEvidence {
-  const signalItems = signals.map((item) => ({ ...item, title: item.theme }))
-  const matchedSignals = relatedForIdea(idea, signalItems, (item) => `${item.theme} ${item.suggestion}`, 5)
-  const matchedRows = relatedForIdea(idea, readerRows, (item) => `${item.title} ${item.path}`, 5)
-  const parts: number[] = []
-  if (availability.messages) {
-    const mentions = matchedSignals.reduce((sum, item) => sum + Number(item.count || 0), 0)
-    parts.push(mentions ? Math.min(100, 20 + mentions * 12) : 0)
-  }
-  if (availability.views) {
-    const maxRecent = Math.max(0, ...readerRows.map((row) => Number(row.recent || 0)))
-    const maxTotal = Math.max(0, ...readerRows.map((row) => Number(row.total || 0)))
-    const matchedRecent = matchedRows.reduce((sum, row) => sum + Number(row.recent || 0), 0)
-    const matchedTotal = matchedRows.reduce((sum, row) => sum + Number(row.total || 0), 0)
-    const recentScore = maxRecent ? Math.min(100, (matchedRecent / maxRecent) * 100) : 0
-    const totalScore = maxTotal ? Math.min(100, (matchedTotal / maxTotal) * 100) : 0
-    parts.push(Math.round(recentScore * .7 + totalScore * .3))
-  }
-  const available = availability.messages || availability.views
-  const score = parts.length ? Math.round(parts.reduce((sum, value) => sum + value, 0) / parts.length) : null
-  const explanation = !available
-    ? 'لا تتوفر بيانات جمهور كافية الآن؛ لم تُخترع درجة اهتمام.'
-    : matchedSignals.length || matchedRows.length
-      ? `ظهرت ${matchedSignals.reduce((sum, item) => sum + item.count, 0)} إشارة رسائل و${matchedRows.reduce((sum, row) => sum + row.recent, 0)} قراءة حديثة مرتبطة بالفكرة في البيانات المتاحة.`
-      : 'بيانات الجمهور متاحة، لكن لا توجد إشارة مباشرة قوية لهذا الموضوع في الرسائل أو القراءة الحالية.'
+function personalAudienceEvidence(): EditorialAudienceEvidence {
   return {
-    available,
-    score,
-    messageMatches: matchedSignals.map((item) => ({ theme: item.theme, count: item.count, strength: item.strength })),
-    readingMatches: matchedRows.map((item) => ({ path: item.path, title: item.title, recent: item.recent, total: item.total })),
+    available: false,
+    score: null,
+    messageMatches: [],
+    readingMatches: [],
+    explanation: 'الوضع الشخصي لا يستخدم ردود الجمهور أو الرسائل في القرار.',
+  }
+}
+
+function buildEditorialPortfolioEvidence(idea: string, articles: ArticleRecord[]): EditorialPortfolioEvidence {
+  const totalArticles = articles.length
+  if (!totalArticles) {
+    return {
+      available: false,
+      totalArticles: 0,
+      focusCategory: '',
+      focusCategoryCount: 0,
+      focusCategoryShare: null,
+      relatedArticleCount: 0,
+      relatedBookCount: 0,
+      relatedPaperCount: 0,
+      saturationScore: null,
+      strategicNeedScore: null,
+      dominantCategories: [],
+      explanation: 'لا توجد مقالات كافية لبناء وعي المحفظة الفكرية.',
+    }
+  }
+  const categoryCounts = new Map<string, number>()
+  for (const article of articles) {
+    const category = article.cat || 'غير مصنّف'
+    categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1)
+  }
+  const focusCategory = chooseCat(idea)
+  const focusCategoryCount = categoryCounts.get(focusCategory) || 0
+  const focusCategoryShare = Math.round((focusCategoryCount / totalArticles) * 100)
+  const similarityRows = articleSimilarityReport(idea, '', articles, Math.max(1, totalArticles)).matches
+  const meaningful = similarityRows.filter((item) => item.score >= .18)
+  const relatedArticleCount = meaningful.length
+  const relatedBookCount = relatedForIdea(idea, books, (book) => book.desc || '', Math.max(1, books.length)).length
+  const relatedPaperCount = relatedForIdea(idea, papers, (paper) => `${paper.meta || ''} ${paper.abstractAr || ''} ${paper.journal || ''}`, Math.max(1, papers.length)).length
+  const highestSimilarity = Math.round((similarityRows[0]?.score || 0) * 100)
+  const relatedDensity = Math.min(100, Math.round((relatedArticleCount / Math.max(1, Math.min(totalArticles, 20))) * 100))
+  const saturationScore = Math.max(0, Math.min(100, Math.round((focusCategoryShare * .35) + (relatedDensity * .35) + (highestSimilarity * .30))))
+  const strategicNeedScore = Math.max(0, Math.min(100, 100 - saturationScore))
+  const dominantCategories = [...categoryCounts.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0], 'ar'))
+    .slice(0, 4)
+    .map(([category, count]) => ({ category, count, share: Math.round((count / totalArticles) * 100) }))
+  const explanation = saturationScore >= 68
+    ? `محور «${focusCategory}» مشبع نسبياً داخل الأرشيف (${focusCategoryCount} من ${totalArticles} مقالاً)، لذلك لا تكفي جودة الفكرة وحدها؛ يجب أن تضيف زاوية جديدة بوضوح.`
+    : saturationScore <= 34
+      ? `محور «${focusCategory}» أقل حضوراً داخل الأرشيف؛ إذا كانت الفكرة ملائمة لهويتك فهي تسد فراغاً في المحفظة بدلاً من زيادة محور مكتمل.`
+      : `محور «${focusCategory}» متوازن داخل الأرشيف؛ القرار يعتمد على الجِدة والتوقيت أكثر من الحاجة العددية للمحور.`
+  return {
+    available: true,
+    totalArticles,
+    focusCategory,
+    focusCategoryCount,
+    focusCategoryShare,
+    relatedArticleCount,
+    relatedBookCount,
+    relatedPaperCount,
+    saturationScore,
+    strategicNeedScore,
+    dominantCategories,
     explanation,
   }
 }
@@ -1351,14 +1385,18 @@ function EditorialBoardPanel({
   busy,
   historyCount,
   onStart,
+  onForceStart,
   onOpenExisting,
+  evidenceHold,
 }: {
   decision: EditorialBoardDecision | null
   progress: EditorialProgress
   busy: boolean
   historyCount: number
   onStart: (decision: EditorialBoardDecision) => void
+  onForceStart: (decision: EditorialBoardDecision) => void
   onOpenExisting: (decision: EditorialBoardDecision) => void
+  evidenceHold: boolean
 }) {
   if (busy && !decision) {
     return (
@@ -1377,7 +1415,7 @@ function EditorialBoardPanel({
     ['خطر التكرار', decision.scores.repetitionRisk],
     ['قوة التوقيت', decision.scores.timing],
     ['ملاءمة الموضوع لهويتك', decision.scores.identityFit],
-    ['اهتمام الجمهور', decision.scores.audienceInterest],
+    ['حاجة المحفظة لهذا الاتجاه', decision.portfolio.strategicNeedScore],
     ['قابلية التحول إلى مقال قوي', decision.scores.articlePotential],
   ] as const
   const canStart = ['write_now', 'change_angle'].includes(decision.verdict)
@@ -1422,8 +1460,20 @@ function EditorialBoardPanel({
           </div>
         </details>
         <details className="group rounded-xl border border-hair bg-canvas px-4 py-3">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">رادار اللحظة وصوت الجمهور</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
-          <div className="mt-3 border-t border-hair pt-3"><p className="text-[.78rem] leading-relaxed text-soft">{decision.timingRadar.explanation}</p><p className="mt-2 text-[.78rem] leading-relaxed text-soft">{decision.audienceRadar.explanation}</p>{decision.dataNotes.map((note) => <p key={note} className="mt-2 text-[.72rem] leading-relaxed text-soft">{note}</p>)}</div>
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">رادار اللحظة</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
+          <div className="mt-3 border-t border-hair pt-3"><p className="text-[.78rem] leading-relaxed text-soft">{decision.timingRadar.explanation}</p>{decision.dataNotes.map((note) => <p key={note} className="mt-2 text-[.72rem] leading-relaxed text-soft">{note}</p>)}</div>
+        </details>
+        <details className="group rounded-xl border border-hair bg-canvas px-4 py-3" data-editorial-evidence-trace="true">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">بصمة الدليل</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
+          <div className="mt-3 grid gap-3 border-t border-hair pt-3">{decision.scoreEvidence.map((item) => <div key={item.key} className="border-b border-hair/70 pb-3 last:border-0 last:pb-0"><div className="flex items-baseline justify-between gap-4"><strong className="text-[.78rem] text-ink">{item.label}</strong><span className="text-[.72rem] text-soft">{editorialScoreLabel(item.value)} · {item.confidence === 'high' ? 'دليل قوي' : item.confidence === 'medium' ? 'دليل متوسط' : 'دليل محدود'}</span></div>{item.signals.map((signal) => <p key={signal} className="mt-1 text-[.72rem] leading-relaxed text-soft">{signal}</p>)}</div>)}</div>
+        </details>
+        <details className="group rounded-xl border border-hair bg-canvas px-4 py-3" data-editorial-portfolio="true">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">وعي المحفظة الفكرية</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
+          <div className="mt-3 border-t border-hair pt-3"><p className="text-[.8rem] leading-relaxed text-ink">{decision.portfolio.explanation}</p>{decision.portfolio.available && <p className="mt-2 text-[.72rem] leading-relaxed text-soft">المحور: {decision.portfolio.focusCategory} · حضوره {decision.portfolio.focusCategoryCount}/{decision.portfolio.totalArticles} · مواد قريبة: {decision.portfolio.relatedArticleCount} مقال، {decision.portfolio.relatedBookCount} كتاب، {decision.portfolio.relatedPaperCount} بحث.</p>}</div>
+        </details>
+        <details className="group rounded-xl border border-hair bg-canvas px-4 py-3" data-editorial-scenarios="true">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">محاكاة القرار</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
+          <div className="mt-3 grid gap-2 border-t border-hair pt-3">{decision.scenarios.items.map((scenario) => <div key={scenario.id} className="grid gap-1 border-b border-hair/70 py-2 last:border-0"><div className="flex items-baseline justify-between gap-4"><strong className={scenario.preferred ? 'text-[.78rem] text-accent' : 'text-[.78rem] text-ink'}>{scenario.label}{scenario.preferred ? ' · المسار المفضّل' : ''}</strong><span className="text-[.72rem] text-soft">{editorialScoreLabel(scenario.strength)}</span></div><p className="text-[.72rem] leading-relaxed text-soft">{scenario.explanation}</p></div>)}</div>
         </details>
         <details className="group rounded-xl border border-hair bg-canvas px-4 py-3">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">محامي الشيطان</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
@@ -1442,6 +1492,7 @@ function EditorialBoardPanel({
       </div>
 
       {decision.waitingRoom && <div className="mt-5 rounded-xl border border-hair bg-canvas px-4 py-3"><p className="text-[.72rem] font-semibold text-accent">غرفة الانتظار التحريرية</p><p className="mt-1 text-[.8rem] leading-relaxed text-ink">{decision.waitingRoom.reason}</p><p className="mt-2 text-[.74rem] leading-relaxed text-soft">إشارة العودة: {decision.waitingRoom.trigger}</p></div>}
+      {evidenceHold && !decision.evidenceGate.ready && <div className="mt-5 rounded-xl border border-accent/35 bg-canvas px-4 py-3" data-editorial-evidence-gate="needs-evidence"><p className="text-[.72rem] font-semibold text-accent">قبل المسودة</p><p className="mt-1 text-[.8rem] leading-relaxed text-ink">{decision.evidenceGate.explanation}</p>{decision.evidenceGate.missing.map((item) => <p key={item} className="mt-1 text-[.74rem] leading-relaxed text-soft">{item}</p>)}<button type="button" className={`${ghost} mt-3`} onClick={() => onForceStart(decision)}>ابدأ المسودة مع تسجيل النقص</button></div>}
 
       <div className="mt-6 flex flex-wrap gap-3">
         {canStart && <button type="button" className={primary} onClick={() => onStart(decision)}>ابدأ المقال</button>}
@@ -2034,6 +2085,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const [editorialCalibrationByDecision, setEditorialCalibrationByDecision] = useState<Record<string, EditorialCalibrationRecord>>({})
   const [editorialProgress, setEditorialProgress] = useState<EditorialProgress>('idle')
   const [editorialBusy, setEditorialBusy] = useState(false)
+  const [editorialEvidenceHold, setEditorialEvidenceHold] = useState('')
 
   // بذرة «حملة من مقال»: عند وصولها نفتح استوديو التصاميم فوراً، وعند وجودها
   // مخزنة (وصل الحدث قبل تركيب هذا المكوّن) نلتقطها في أول تركيب.
@@ -2276,43 +2328,9 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
         currentContextError = reason instanceof Error ? reason.message : 'current-context unavailable'
       }
 
-      setEditorialProgress('audience')
-      let audienceSignals: AudienceSignal[] = []
-      let readerRows: ReaderRow[] = []
-      let messagesAvailable = false
-      let viewsAvailable = false
-      let db = await getDb()
-      if (db) {
-        const { collection, getDocs, limit, query } = await import('firebase/firestore')
-        const [messagesResult, viewsResult] = await Promise.allSettled([
-          getDocs(query(collection(db, 'messages'), limit(900))),
-          getDocs(query(collection(db, 'views'), limit(5000))),
-        ])
-        if (messagesResult.status === 'fulfilled') {
-          messagesAvailable = true
-          const messages: InboxMessageInput[] = messagesResult.value.docs.map((row) => {
-            const data = row.data() as Record<string, any>
-            return {
-              id: row.id,
-              topic: String(data.topic || ''),
-              intent: String(data.intent || ''),
-              quality: String(data.quality || ''),
-              message: String(data.message || data.text || data.body || ''),
-              createdAt: data.createdAt && typeof data.createdAt.seconds === 'number' ? { seconds: data.createdAt.seconds } : undefined,
-            }
-          })
-          audienceSignals = buildAudienceSignals(messages)
-        }
-        if (viewsResult.status === 'fulfilled') {
-          viewsAvailable = true
-          const viewDocs: ViewDoc[] = viewsResult.value.docs.map((row) => {
-            const data = row.data() as Record<string, any>
-            return { id: row.id, count: Number(data.count || 0), title: String(data.title || ''), updatedAt: data.updatedAt }
-          })
-          readerRows = buildReaderRows(viewDocs, windowDays())
-        }
-      }
-      const audienceEvidence = scoreAudienceEvidence(cleanIdea, audienceSignals, readerRows, { messages: messagesAvailable, views: viewsAvailable })
+      setEditorialProgress('portfolio')
+      const audienceEvidence = personalAudienceEvidence()
+      const portfolioEvidence = buildEditorialPortfolioEvidence(cleanIdea, richArticles)
 
       setEditorialProgress('decision')
       const decision = buildEditorialBoardDecision({
@@ -2331,15 +2349,18 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
         currentContextAvailable,
         currentContextError,
         audienceEvidence,
+        portfolioEvidence,
+        personalMode: true,
         suggestedTitle: suggestStrongTitle(cleanIdea),
         calibrationProfile: editorialCalibrationProfile,
       })
       const previous = editorialHistory.find((item) => item.fingerprint === decision.fingerprint)
       if (previous) decision.why.push(`سبق عرض الفكرة نفسها على المجلس بتاريخ ${new Date(previous.generatedAt).toLocaleDateString('ar-KW')}؛ حُفظ هذا التحليل كتاريخ قرار جديد لا كنسخة تمحو السابق.`)
       setEditorialDecision(decision)
+      setEditorialEvidenceHold('')
       setEditorialHistory((items) => [decision, ...items.filter((item) => item.id !== decision.id)].slice(0, 24))
 
-      if (!db) db = await getDb()
+      const db = await getDb()
       if (db) {
         const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
         const safeDecision = JSON.parse(JSON.stringify(decision)) as EditorialBoardDecision
@@ -2376,17 +2397,31 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
     }
   }
 
-  const startEditorialArticle = (decision: EditorialBoardDecision) => {
+  const launchEditorialArticle = (decision: EditorialBoardDecision, evidenceOverride = false) => {
     if (!['write_now', 'change_angle'].includes(decision.verdict)) return
     const handoffAngle = [
       decision.plan.angle,
       `الأطروحة: ${decision.plan.thesis}`,
       decision.plan.doNotRepeat.length ? `لا تكرر: ${decision.plan.doNotRepeat.join(' ')}` : '',
       decision.plan.referencesNeeded.length ? `تحقق قبل الحسم من: ${decision.plan.referencesNeeded.join(' ')}` : '',
+      evidenceOverride && decision.evidenceGate.missing.length ? `بوابة الدليل — أكمل قبل النشر: ${decision.evidenceGate.missing.join(' ')}` : '',
     ].filter(Boolean).join('\n')
+    setEditorialEvidenceHold('')
     setAngle(handoffAngle)
     void rebuild({ title: decision.plan.primaryTitle, angle: handoffAngle })
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const startEditorialArticle = (decision: EditorialBoardDecision) => {
+    if (!decision.evidenceGate.ready) {
+      setEditorialEvidenceHold(decision.id)
+      return
+    }
+    launchEditorialArticle(decision)
+  }
+
+  const forceStartEditorialArticle = (decision: EditorialBoardDecision) => {
+    launchEditorialArticle(decision, true)
   }
 
   const openExistingEditorialArticle = async (decision: EditorialBoardDecision) => {
@@ -2570,6 +2605,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
     setIdea(title)
     setAngle(suggestion)
     setEditorialDecision(null)
+    setEditorialEvidenceHold('')
     setEditorialProgress('idle')
     setView('idea')
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -2885,7 +2921,7 @@ ${effectivePurpose}`,
               <div>
                 <p className="text-[.72rem] font-semibold uppercase text-accent">مجلس التحرير · قبل الكتابة</p>
                 <h2 className="mt-1 font-display text-2xl font-semibold text-ink">هل تستحق الفكرة مقالاً أصلاً؟</h2>
-                <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">يفحص الأرشيف، خريطة المعرفة، اللحظة الحالية وصوت الجمهور، ثم يصدر حكماً واحداً. لا يبدأ الكتابة من تلقاء نفسه.</p>
+                <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">يفحص الأرشيف، خريطة المعرفة، اللحظة الحالية وتوازن مشروعك الفكري، ثم يصدر حكماً واحداً لك أنت. لا يعتمد على ردود جمهور ولا يبدأ الكتابة من تلقاء نفسه.</p>
               </div>
               <div className="inline-flex rounded-full border border-hair bg-canvas p-1" aria-label="مصدر الفكرة">
                 <button type="button" aria-pressed={proposalMode === 'self'} onClick={() => { setProposalMode('self'); setEditorialDecision(null) }} className={`rounded-full px-4 py-2 text-[.76rem] font-semibold transition-colors ${proposalMode === 'self' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>فكرة مني</button>
@@ -2912,7 +2948,7 @@ ${effectivePurpose}`,
             {notice && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.84rem] text-accent">{notice}</p>}
             {error && <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.84rem] text-soft">{error}</p>}
           </section>
-          <EditorialBoardPanel decision={editorialDecision} progress={editorialProgress} busy={editorialBusy} historyCount={editorialHistory.length} onStart={startEditorialArticle} onOpenExisting={openExistingEditorialArticle} />
+          <EditorialBoardPanel decision={editorialDecision} progress={editorialProgress} busy={editorialBusy} historyCount={editorialHistory.length} onStart={startEditorialArticle} onForceStart={forceStartEditorialArticle} onOpenExisting={openExistingEditorialArticle} evidenceHold={Boolean(editorialDecision && editorialEvidenceHold === editorialDecision.id)} />
           {editorialHistory.length > 0 && <details className={`${card} group`}>
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block text-[.72rem] font-semibold text-accent">سجل قرارات مجلس التحرير</span><span className="mt-1 block text-[.82rem] text-soft">آخر {editorialHistory.length} قرار محفوظ{editorialCalibrationProfile.sampleSize >= 1 ? ` · ${editorialCalibrationProfile.sampleSize} نتيجة دخلت المعايرة` : ''}</span></span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
             <div className="mt-4 grid gap-2 border-t border-hair pt-4">{editorialHistory.slice(0, 12).map((item) => {

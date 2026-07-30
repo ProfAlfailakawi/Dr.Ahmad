@@ -36,6 +36,11 @@ const KIND_BADGE: Record<UnifiedKind, string> = {
   book: 'كتاب',
   media: 'إعلام',
   question: 'سؤال',
+  audio: 'صوت',
+  curated: 'مختارة',
+  podcast: 'بودكاست',
+  social: 'منشور',
+  concept: 'مفهوم',
 }
 
 /* مرادفات عربية شائعة: «التنشئة الرقمية» تجد «التربية الرقمية» وأخواتها */
@@ -155,12 +160,18 @@ export default function Search() {
     const paper = graphResults.filter((row) => row.node.kind === 'paper').length
     const book = graphResults.filter((row) => row.node.kind === 'book').length
     const mediaCount = graphResults.filter((row) => row.node.kind === 'media').length
+    const kindCount = (kind: UnifiedKind) => graphResults.filter((row) => row.node.kind === kind).length
     return {
       article: articleResults.length,
       paper,
       book,
       media: mediaCount,
       question: questionResults.length,
+      audio: kindCount('audio'),
+      curated: kindCount('curated'),
+      podcast: kindCount('podcast'),
+      social: kindCount('social'),
+      concept: kindCount('concept'),
       all: articleResults.length + paper + book + mediaCount + questionResults.length,
     }
   }, [articleResults, graphResults, questionResults])

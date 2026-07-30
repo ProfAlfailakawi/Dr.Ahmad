@@ -51,6 +51,8 @@ assert.match(worldSource, /if \(!pathArticles\.length && !pathPapers\.length\) r
 assert.match(worldSource, /if \(!model\.paths\.length\) return null/, 'Book World itself must disappear when there are no real paths')
 assert.match(worldSource, /lockOpen=\{Boolean\(activeIdea\)\}/, 'an explicitly selected path must pin its disclosure open')
 assert.match(worldSource, /if \(lockOpen && !event\.currentTarget\.open\) event\.currentTarget\.open = true/, 'pinned path disclosure must resist accidental closing while other cards are opened')
+assert.match(worldSource, /data-allow-multiple=\{lockOpen \? 'true' : undefined\}/, 'the pinned path disclosure must opt out of the global exclusive-details guard so another Book World card can open beside it')
+assert.match(readFileSync(join(root, 'src/App.tsx'), 'utf8'), /item\.hasAttribute\('data-allow-multiple'\)/, 'the global details guard must honor the pinned Book World exception')
 assert.match(worldSource, /articles: activePath\?\.articles\.slice\(0, 3\)/, 'downstream material cards must follow the selected path')
 assert.match(worldSource, /timeline: activePath \? buildBookWorldTimeline\(activePath\.articles, 6\) : \[\]/, 'archive timeline must follow the selected path')
 assert.doesNotMatch(worldSource, /لا توجد وصلة أرشيفية قوية لهذا المسار بعد/, 'an empty path must be hidden rather than rendered with an empty-state message')

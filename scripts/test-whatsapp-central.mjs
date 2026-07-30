@@ -15,7 +15,11 @@ assert.equal(normalizeArabicMessage('إلى مدرسةٍ ١٢ — جميلة'), 
 assert.equal(stripArabicGreetings('السلام عليكم ورحمة الله وبركاته، أبي الذكاء الاصطناعي'), 'ابي الذكاء الاصطناعي')
 assert.equal(whatsappPolicy.manualTakeoverMinutes, null)
 assert.equal(whatsappPolicy.manualTakeoverAutoResume, false)
-assert.equal(whatsappPolicy.defaultReplyMode, 'always-on')
+/* قاعدة الدكتور المطلقة بعد كارثة ٣٠ يوليو (ردّ آلي على بثّ مدرسة إعلاني):
+   لا ردّ لأحد إطلاقاً إلا بجملة الإيقاظ، ونسخة الإيقاظ المعتمدة هي ٢ —
+   فكل جلسةٍ فتحها وضع «دائم التفاعل» القديم دون الجملة لاغية. */
+assert.equal(whatsappPolicy.defaultReplyMode, 'wake-phrase-only')
+assert.equal(whatsappPolicy.wakeEpoch, 2)
 assert.equal(whatsappPolicy.resumeMode, 'manual-takeover-wake-only')
 assert.equal(whatsappPolicy.zeroHallucination, true)
 assert.equal(whatsappPolicy.paidAiApis, false)
@@ -40,7 +44,10 @@ assert.match(controllerSource, /recentInboundResponses/)
 assert.doesNotMatch(controllerSource, /احتاجت متابعة بشرية|سيكمل معك الفريق|سيكمل معك الدكتور أو أحد الفريق/)
 assert.match(controllerSource, /path === '\/recover'/)
 assert.match(controllerSource, /path === '\/simulate-sequence'/)
-assert.match(controllerSource, /كل رسالة جديدة في الوضع الطبيعي تحصل على رد/)
+assert.match(controllerSource, /الوضع الطبيعي تُقابل بالصمت التام/)
+assert.match(controllerSource, /reason: 'awaiting-wake-phrase'/)
+assert.match(controllerSource, /Number\(data\.wakeVersion \|\| 0\) >= 2/)
+assert.doesNotMatch(controllerSource, /wakeActive: true,\s*\n\s*wakeVersion: 1,/, 'لا فتح جلسات بنسخة الإيقاظ الملغاة')
 
 const now = Date.parse('2026-07-29T18:30:00.000Z')
 const healthyDiagnostics = buildWhatsAppDiagnostics({

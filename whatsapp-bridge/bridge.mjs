@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { createServer } from 'node:http'
-import { mkdirSync, existsSync, rmSync } from 'node:fs'
+import { mkdirSync, existsSync, rmSync, readFileSync, writeFileSync, renameSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import process from 'node:process'
 import qrcode from 'qrcode'
@@ -15,6 +15,7 @@ const config = Object.freeze({
   serverUrl: String(process.env.WHATSAPP_MAIN_SERVER_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, ''),
   secret: String(process.env.WHATSAPP_BRIDGE_SECRET || ''),
   sessionDir: resolve(String(process.env.WHATSAPP_SESSION_DIR || './session')),
+  stateDir: resolve(String(process.env.WHATSAPP_BRIDGE_STATE_DIR || './runtime-state')),
   deviceId,
   clientId: deviceId,
   ownerChatId: String(process.env.WHATSAPP_OWNER_CHAT_ID || '').trim(),
@@ -33,6 +34,7 @@ if (config.secret.length < 24) {
 }
 
 mkdirSync(config.sessionDir, { recursive: true, mode: 0o700 })
+mkdirSync(config.stateDir, { recursive: true, mode: 0o700 })
 
 const runtime = {
   status: 'starting',
@@ -132,6 +134,54 @@ let readyHandled = false
 let authHandled = false
 let forcedSyncRecoveryAt = 0
 let contactsWarmupStarted = false
+
+const deliveryCheckpointPath = join(config.stateDir, 'delivery-checkpoints.json')
+const sentCommandCheckpoints = new Map()
+const inboundReplyCheckpoints = new Map()
+const inboundInFlight = new Set()
+
+function loadDeliveryCheckpoints() {
+  try {
+    const rows = JSON.parse(readFileSync(deliveryCheckpointPath, 'utf8'))
+    if (!Array.isArray(rows)) return
+    for (const row of rows.slice(-500)) {
+      if (!row?.commandId) continue
+      sentCommandCheckpoints.set(String(row.commandId), {
+        messageId: String(row.messageId || ''),
+        recipientFingerprint: String(row.recipientFingerprint || ''),
+        at: String(row.at || ''),
+      })
+    }
+  } catch {
+    /* أول تشغيل أو ملف غير صالح: لا نخاطر بإيقاف الجسر. */
+  }
+}
+
+function persistDeliveryCheckpoints() {
+  const rows = [...sentCommandCheckpoints.entries()].slice(-500).map(([commandId, value]) => ({ commandId, ...value }))
+  const temporary = `${deliveryCheckpointPath}.tmp`
+  writeFileSync(temporary, JSON.stringify(rows), { mode: 0o600 })
+  renameSync(temporary, deliveryCheckpointPath)
+}
+
+function recipientFingerprint(jid) {
+  const digits = digitsFromPrivateJid(jid)
+  return digits ? createHash('sha256').update(`wa-recipient:${digits}`).digest('hex') : ''
+}
+
+function inboundDeliveryKey(message) {
+  const id = String(message?.id?._serialized || '').trim()
+  if (id) return `id:${id}`
+  const fallback = `${String(message?.from || '')}|${messageTimestampMs(message)}|${String(message?.type || '')}|${String(message?.body || '').slice(0, 500)}`
+  return `fallback:${createHash('sha256').update(fallback).digest('hex')}`
+}
+
+function rememberInboundReply(key) {
+  inboundReplyCheckpoints.set(key, Date.now())
+  while (inboundReplyCheckpoints.size > 500) inboundReplyCheckpoints.delete(inboundReplyCheckpoints.keys().next().value)
+}
+
+loadDeliveryCheckpoints()
 
 async function serverRequest(path, { method = 'POST', body, timeoutMs = 15_000, retries = 2 } = {}) {
   let lastError
@@ -429,13 +479,16 @@ function messageTimestampMs(message) {
   return raw < 10_000_000_000 ? raw * 1_000 : raw
 }
 
-function isFreshInboundForCurrentRuntime(message, graceMs = 60_000) {
+function isFreshInboundForCurrentRuntime(message, graceMs = 1_500) {
   if (!readyHandled || !runtime.connected) return false
-  const messageAt = messageTimestampMs(message)
-  if (!messageAt) return true
   const readyAt = Date.parse(runtime.readyAt || '')
-  if (!Number.isFinite(readyAt)) return true
-  return messageAt >= readyAt - Math.max(5_000, Math.min(5 * 60_000, Number(graceMs) || 60_000))
+  if (!Number.isFinite(readyAt)) return false
+  const messageAt = messageTimestampMs(message)
+  // الرسائل بلا timestamp أثناء أول 30 ثانية تُعامل كـ backfill مشكوك فيه؛
+  // WhatsApp العادي يوفّر timestamp، لذلك هذا الحاجز يحمي التشغيل ولا يضر المسار الطبيعي.
+  if (!messageAt) return Date.now() - readyAt >= 30_000
+  const safeGrace = Math.max(0, Math.min(2_000, Number(graceMs) || 0))
+  return messageAt >= readyAt - safeGrace
 }
 
 function digitsFromPrivateJid(value) {
@@ -450,22 +503,29 @@ async function resolvePrivateRecipient(value) {
   const resolved = await client.getNumberId(digits)
   const jid = String(resolved?._serialized || '')
   if (!jid) throw new Error('number-not-registered-on-whatsapp')
+  const resolvedDigits = digitsFromPrivateJid(jid)
+  if (!resolvedDigits || resolvedDigits !== digits) throw new Error('recipient-resolution-mismatch')
   return jid
 }
 
-async function acknowledgeCommand(commandId, ok, error = '') {
+async function acknowledgeCommand(commandId, ok, error = '', delivery = null) {
   return serverRequest('/api/whatsapp/commands', {
-    body: { commandId, ok, ...(error ? { error } : {}) },
-    retries: 1,
+    body: { commandId, ok, ...(error ? { error } : {}), ...(delivery ? { delivery } : {}) },
+    retries: 2,
   })
 }
 
 client.on('message', async (message) => {
   runtime.lastActivityAt = Date.now()
   if (message.fromMe || message.from === 'status@broadcast' || !message.from?.endsWith('@c.us')) return
+  const deliveryKey = inboundDeliveryKey(message)
+  if (inboundReplyCheckpoints.has(deliveryKey) || inboundInFlight.has(deliveryKey)) {
+    log('info', 'inbound_delivery_checkpoint_hit', { from: message.from })
+    return
+  }
   if (!isFreshInboundForCurrentRuntime(message)) {
     runtime.ignoredBackfill += 1
-    log('info', 'backfilled_message_ignored', {
+    log('info', 'backfilled_message_quarantined', {
       from: message.from,
       messageAt: messageTimestampMs(message) || null,
       bridgeReadyAt: runtime.readyAt,
@@ -473,6 +533,7 @@ client.on('message', async (message) => {
     })
     return
   }
+  inboundInFlight.add(deliveryKey)
   try {
     const result = await emit('incoming', {
       jid: message.from,
@@ -486,10 +547,17 @@ client.on('message', async (message) => {
     })
     if (result?.reply?.text && ['reply', 'reply-and-escalate'].includes(result.action)) {
       await client.sendMessage(message.from, String(result.reply.text))
+      // checkpoint بعد نجاح واتساب نفسه، قبل أي دورة event جديدة.
+      rememberInboundReply(deliveryKey)
+    } else if (result?.action === 'none') {
+      // لا نعيد نفس delivery إلى الخادم مراراً؛ الرسائل الجديدة لها messageId مختلف.
+      rememberInboundReply(deliveryKey)
     }
   } catch (error) {
     runtime.lastError = error instanceof Error ? error.message : String(error)
     log('error', 'incoming_message_failed', { from: message.from, error: runtime.lastError })
+  } finally {
+    inboundInFlight.delete(deliveryKey)
   }
 })
 
@@ -666,23 +734,34 @@ async function executeCommand(command) {
       await safeGracefulCloseClient()
       process.exit(76)
     }
-    if (command.type === 'send-message') {
+    if (command.type === 'send-message' || command.type === 'send-self-message') {
       const text = String(command.payload?.text || '').trim()
       if (!text) throw new Error('empty-message')
-      const jid = await resolvePrivateRecipient(command.payload?.jid)
-      await client.sendMessage(jid, text)
-      // النجاح يجب أن يغلق lease فوراً؛ تركه leased كان يعيد نفس الإرسال بعد
-      // 90 ثانية ويمنع حملة البث من الانتقال إلى الرقم التالي.
-      await acknowledgeCommand(command.id, true)
-      return
-    }
-    if (command.type === 'send-self-message') {
-      const text = String(command.payload?.text || '').trim()
-      if (!text) throw new Error('empty-message')
-      const selfCandidate = config.ownerChatId || String(client.info?.wid?._serialized || '')
-      const jid = await resolvePrivateRecipient(selfCandidate)
-      await client.sendMessage(jid, text)
-      await acknowledgeCommand(command.id, true)
+      const prior = sentCommandCheckpoints.get(String(command.id))
+      if (prior) {
+        await acknowledgeCommand(command.id, true, '', prior)
+        log('info', 'outbound_delivery_checkpoint_replayed', { commandId: command.id })
+        return
+      }
+      const candidate = command.type === 'send-self-message'
+        ? (config.ownerChatId || String(client.info?.wid?._serialized || ''))
+        : command.payload?.jid
+      const jid = await resolvePrivateRecipient(candidate)
+      const expectedFingerprint = String(command.recipientFingerprint || command.payload?.recipientFingerprint || '')
+      const actualFingerprint = recipientFingerprint(jid)
+      if (expectedFingerprint && expectedFingerprint !== actualFingerprint) throw new Error('recipient-fingerprint-mismatch')
+      const sent = await client.sendMessage(jid, text)
+      const delivery = {
+        messageId: String(sent?.id?._serialized || '').slice(0, 240),
+        recipientFingerprint: actualFingerprint,
+        at: new Date().toISOString(),
+      }
+      // نثبت النجاح محلياً على قرص منفصل عن session قبل ACK. إذا انقطع الشبك
+      // بعد إرسال واتساب، يعاد ACK فقط ولا يعاد إرسال الرسالة.
+      sentCommandCheckpoints.set(String(command.id), delivery)
+      while (sentCommandCheckpoints.size > 500) sentCommandCheckpoints.delete(sentCommandCheckpoints.keys().next().value)
+      persistDeliveryCheckpoints()
+      await acknowledgeCommand(command.id, true, '', delivery)
       return
     }
     throw new Error(`unsupported-command:${command.type}`)

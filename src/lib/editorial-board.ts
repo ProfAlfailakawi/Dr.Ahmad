@@ -46,6 +46,47 @@ export type EditorialAudienceEvidence = {
   explanation: string
 }
 
+export type EditorialPortfolioEvidence = {
+  available: boolean
+  totalArticles: number
+  focusCategory: string
+  focusCategoryCount: number
+  focusCategoryShare: number | null
+  relatedArticleCount: number
+  relatedBookCount: number
+  relatedPaperCount: number
+  saturationScore: number | null
+  strategicNeedScore: number | null
+  dominantCategories: Array<{ category: string; count: number; share: number }>
+  explanation: string
+}
+
+export type EditorialScoreEvidence = {
+  key: 'strength' | 'novelty' | 'repetitionRisk' | 'timing' | 'identityFit' | 'articlePotential'
+  label: string
+  value: number | null
+  confidence: 'high' | 'medium' | 'limited'
+  signals: string[]
+}
+
+export type EditorialScenario = {
+  id: 'publish_now' | 'wait' | 'update_existing'
+  label: string
+  strength: number | null
+  preferred: boolean
+  explanation: string
+  evidence: string[]
+}
+
+export type EditorialEvidenceGate = {
+  ready: boolean
+  status: 'ready' | 'needs_evidence'
+  evidenceStrength: number | null
+  strengths: string[]
+  missing: string[]
+  explanation: string
+}
+
 export type EditorialBoardInput = {
   idea: string
   audience: string
@@ -62,6 +103,8 @@ export type EditorialBoardInput = {
   currentContextAvailable: boolean
   currentContextError?: string
   audienceEvidence: EditorialAudienceEvidence
+  portfolioEvidence: EditorialPortfolioEvidence
+  personalMode?: boolean
   suggestedTitle: string
   calibrationProfile?: EditorialCalibrationProfile
   generatedAt?: string
@@ -70,7 +113,7 @@ export type EditorialBoardInput = {
 export type EditorialScore = number | null
 
 export type EditorialBoardDecision = {
-  version: 1
+  version: 1 | 2
   id: string
   fingerprint: string
   status: EditorialVerdict
@@ -109,6 +152,13 @@ export type EditorialBoardDecision = {
     events: EditorialCurrentEvent[]
   }
   audienceRadar: EditorialAudienceEvidence
+  portfolio: EditorialPortfolioEvidence
+  scoreEvidence: EditorialScoreEvidence[]
+  scenarios: {
+    preferred: EditorialScenario['id']
+    items: EditorialScenario[]
+  }
+  evidenceGate: EditorialEvidenceGate
   editorialGap: {
     headline: string
     covered: string[]
@@ -278,15 +328,194 @@ function buildGap(input: EditorialBoardInput) {
   }
 }
 
+function buildEvidenceGate(input: EditorialBoardInput, timingScore: number | null): EditorialEvidenceGate {
+  const strongPaper = input.archiveMaterials.find((item) => item.kind === 'paper' && item.score >= 35)
+  const strongArchive = input.archiveMaterials.filter((item) => item.score >= 35).length
+  const freshCurrent = input.currentEvents.find((item) => Number(item.relevance || 0) >= 4)
+  const strengths = unique([
+    input.dna.evidence.score >= 62 ? `Idea DNA يقدّر قوة الدليل الأولي بـ${clamp(input.dna.evidence.score)}/100.` : '',
+    strongPaper ? `يوجد بحث مرتبط في الأرشيف: «${strongPaper.title}».` : '',
+    strongArchive >= 2 ? `يوجد ${strongArchive} مواد أرشيفية قريبة يمكن البناء عليها من دون بدء البحث من الصفر.` : '',
+    freshCurrent ? `يوجد سياق راهن موثوق يمكن التحقق منه عبر «${freshCurrent.source}».` : '',
+  ], 5)
+  const missing = unique([
+    input.dna.evidence.score < 55 && !strongPaper ? 'دراسة حديثة أو مراجعة منهجية قبل تثبيت الادعاء المركزي.' : '',
+    input.dna.time.mode === 'current' && !input.currentContextAvailable ? 'تحقق راهن من الحدث أو التطور الذي يجعل المقال مناسباً الآن.' : '',
+    input.dna.depth.score >= 68 && !strongPaper && strongArchive < 2 ? 'مصدر أكاديمي أو مادة أصلية إضافية تناسب عمق الأطروحة.' : '',
+    input.similarity.highest >= .45 && !input.archiveMaterials.some((item) => item.kind === 'article') ? 'المقال السابق الأقرب حتى يمكن تحديد ما يجب ألا يتكرر بدقة.' : '',
+  ], 5)
+  const evidenceStrength = mean([
+    clamp(input.dna.evidence.score),
+    strongPaper ? Math.min(92, 64 + strongPaper.score / 3) : null,
+    strongArchive ? Math.min(82, 48 + strongArchive * 8) : null,
+    input.currentContextAvailable && timingScore != null ? Math.min(88, 45 + timingScore * .45) : null,
+  ])
+  const ready = missing.length === 0
+  return {
+    ready,
+    status: ready ? 'ready' : 'needs_evidence',
+    evidenceStrength,
+    strengths,
+    missing,
+    explanation: ready
+      ? 'بوابة الدليل جاهزة؛ لن تظهر للمستخدم عند بدء المقال لأن الأدلة الأساسية موجودة.'
+      : `قبل المسودة ينقص ${missing.length === 1 ? 'عنصر واحد' : `${missing.length} عناصر`} من الدليل. لا يُمنع الكاتب، لكن يلزم قرار واعٍ قبل المتابعة.`,
+  }
+}
+
+function buildScenarios(
+  input: EditorialBoardInput,
+  verdict: EditorialVerdict,
+  timingScore: number | null,
+  identityScore: number | null,
+  articlePotential: number | null,
+  repetitionRisk: number,
+): { preferred: EditorialScenario['id']; items: EditorialScenario[] } {
+  const nearest = input.archiveMaterials.find((item) => item.kind === 'article')
+  const portfolioNeed = input.portfolioEvidence.strategicNeedScore
+  const publishStrength = mean([articlePotential, timingScore, identityScore, portfolioNeed])
+  const waitStrength = (timingScore != null || input.dna.evidence.score < 60 || input.dna.time.mode === 'future')
+    ? mean([
+      timingScore == null ? null : 100 - timingScore,
+      input.dna.evidence.score < 60 ? 100 - input.dna.evidence.score : null,
+      input.dna.time.mode === 'future' ? 82 : null,
+    ])
+    : null
+  const updateStrength = nearest
+    ? mean([repetitionRisk, 100 - clamp(input.dna.novelty.score), clamp(nearest.score)])
+    : null
+  const preferred: EditorialScenario['id'] = verdict === 'wait'
+    ? 'wait'
+    : verdict === 'update_existing'
+      ? 'update_existing'
+      : 'publish_now'
+  const items: EditorialScenario[] = [
+    {
+      id: 'publish_now',
+      label: verdict === 'change_angle' ? 'اكتب الآن بالزاوية الجديدة' : 'اكتب الآن',
+      strength: publishStrength,
+      preferred: preferred === 'publish_now',
+      explanation: publishStrength == null
+        ? 'لا توجد إشارات كافية لمقارنة هذا المسار رقمياً؛ الحكم يبقى نوعياً.'
+        : 'قوة هذا المسار تجمع قابلية المقال، التوقيت، ملاءمة الهوية وحاجة المحفظة الفكرية؛ ليست توقعاً للمشاهدات.',
+      evidence: unique([
+        articlePotential == null ? '' : `قابلية المقال ${articlePotential}/100.`,
+        timingScore == null ? '' : `قوة التوقيت ${timingScore}/100.`,
+        identityScore == null ? '' : `ملاءمة الهوية ${identityScore}/100.`,
+        portfolioNeed == null ? '' : `حاجة المحفظة لهذا الاتجاه ${portfolioNeed}/100.`,
+      ], 4),
+    },
+    {
+      id: 'wait',
+      label: 'انتظر',
+      strength: waitStrength,
+      preferred: preferred === 'wait',
+      explanation: waitStrength == null
+        ? 'لا يوجد سبب واقعي قوي للانتظار في البيانات الحالية.'
+        : 'هذه قوة حجة الانتظار بناءً على ضعف التوقيت أو نقص الدليل أو كون الفكرة مستقبلية؛ وليست تنبؤاً زمنياً.',
+      evidence: unique([
+        timingScore != null && timingScore < 55 ? `التوقيت الحالي ${timingScore}/100.` : '',
+        input.dna.evidence.score < 60 ? `قوة الدليل الأولي ${clamp(input.dna.evidence.score)}/100.` : '',
+        input.dna.time.mode === 'future' ? 'Idea DNA يصنف الفكرة مستقبلية.' : '',
+      ], 4),
+    },
+    {
+      id: 'update_existing',
+      label: 'حدّث مقالاً سابقاً',
+      strength: updateStrength,
+      preferred: preferred === 'update_existing',
+      explanation: nearest
+        ? 'قوة هذا المسار تأتي من التشابه الفعلي مع أقرب مقال ومن انخفاض الجِدة؛ لا تُقترح عملية تحديث بلا مادة سابقة واضحة.'
+        : 'لا توجد مادة سابقة قريبة بما يكفي لبناء مسار تحديث موثوق.',
+      evidence: nearest ? unique([
+        `خطر التكرار ${repetitionRisk}/100.`,
+        `أقرب مادة «${nearest.title}» بصلة ${clamp(nearest.score)}/100.`,
+        `الجِدة ${clamp(input.dna.novelty.score)}/100.`,
+      ], 4) : [],
+    },
+  ]
+  return { preferred, items }
+}
+
+function buildScoreEvidence(
+  input: EditorialBoardInput,
+  scores: {
+    strength: number | null
+    novelty: number
+    repetitionRisk: number
+    timing: number | null
+    identityFit: number | null
+    articlePotential: number | null
+  },
+): EditorialScoreEvidence[] {
+  const confidence = (signals: string[], value: number | null): EditorialScoreEvidence['confidence'] => {
+    if (value == null) return 'limited'
+    if (signals.length >= 3) return 'high'
+    if (signals.length >= 2) return 'medium'
+    return 'limited'
+  }
+  const nearest = input.similarity.matches[0]
+  const scoreRows: Array<Omit<EditorialScoreEvidence, 'confidence'>> = [
+    {
+      key: 'strength', label: 'قوة القرار', value: scores.strength,
+      signals: unique([
+        scores.articlePotential == null ? '' : `قابلية المقال ${scores.articlePotential}/100.`,
+        scores.identityFit == null ? '' : `ملاءمة الهوية ${scores.identityFit}/100.`,
+        scores.timing == null ? '' : `التوقيت ${scores.timing}/100.`,
+        input.portfolioEvidence.strategicNeedScore == null ? '' : `حاجة المحفظة ${input.portfolioEvidence.strategicNeedScore}/100.`,
+      ], 5),
+    },
+    {
+      key: 'novelty', label: 'الجِدة بالنسبة لأرشيفك', value: scores.novelty,
+      signals: unique([
+        `Idea DNA: ${scores.novelty}/100.`,
+        input.dna.novelty.nearest ? `أقرب صدى: «${input.dna.novelty.nearest.title}».` : 'لم يجد Idea DNA صدى قريباً واضحاً.',
+      ], 4),
+    },
+    {
+      key: 'repetitionRisk', label: 'خطر التكرار', value: scores.repetitionRisk,
+      signals: unique([
+        nearest ? `أعلى تشابه فعلي مع «${nearest.title}»: ${scores.repetitionRisk}/100.` : 'لم يظهر تطابق مقالي قريب في محرك التشابه.',
+        nearest?.titleScore != null ? `تشابه العنوان ${clamp(nearest.titleScore * 100)}/100.` : '',
+        nearest?.ideaScore != null ? `تشابه الفكرة ${clamp(nearest.ideaScore * 100)}/100.` : '',
+        nearest?.phraseScore != null ? `تشابه العبارات ${clamp(nearest.phraseScore * 100)}/100.` : '',
+      ], 5),
+    },
+    {
+      key: 'timing', label: 'قوة التوقيت', value: scores.timing,
+      signals: unique([
+        input.currentContextAvailable ? `فُحص current-context ووجد ${input.currentEvents.length} إشارة مرتبطة.` : 'current-context غير متاح؛ لم تدخل درجة مصطنعة.',
+        input.currentEvents[0] ? `أقوى مصدر راهن: ${input.currentEvents[0].source}.` : '',
+      ], 4),
+    },
+    {
+      key: 'identityFit', label: 'ملاءمة الموضوع لهويتك', value: scores.identityFit,
+      signals: unique([
+        input.graphMatches.length ? `خريطة المعرفة أعادت ${input.graphMatches.length} صلات حقيقية.` : 'خريطة المعرفة لم تُرجع صلة؛ استُخدم الأرشيف المباشر فقط.',
+        input.archiveMaterials.length ? `المجلس وجد ${input.archiveMaterials.length} مواد أرشيفية مرتبطة.` : '',
+      ], 4),
+    },
+    {
+      key: 'articlePotential', label: 'قابلية التحول إلى مقال قوي', value: scores.articlePotential,
+      signals: unique([
+        `عمق الفكرة ${clamp(input.dna.depth.score)}/100 وقوة الدليل الأولي ${clamp(input.dna.evidence.score)}/100.`,
+        `الجِدة ${scores.novelty}/100 مقابل خطر تكرار ${scores.repetitionRisk}/100.`,
+        input.portfolioEvidence.strategicNeedScore == null ? '' : `حاجة المحفظة الفكرية ${input.portfolioEvidence.strategicNeedScore}/100.`,
+      ], 5),
+    },
+  ]
+  return scoreRows.map((row) => ({ ...row, confidence: confidence(row.signals, row.value) }))
+}
+
 function selectVerdict(input: EditorialBoardInput, timingScore: number | null, identityScore: number | null): EditorialVerdict {
   const repetition = clamp(input.similarity.highest * 100)
   const novelty = input.dna.novelty.score
   const wordCount = tokens(input.idea).length
-  const audienceScore = input.audienceEvidence.score
+  const audienceScore = input.personalMode ? null : input.audienceEvidence.score
 
   if (repetition >= 72 && novelty <= 48 && input.similarity.matches[0]) return 'update_existing'
   if (wordCount <= 2 && input.dna.depth.score <= 32 && input.dna.evidence.score <= 30 && repetition >= 45) return 'reject'
-  if (wordCount <= 3 && input.dna.depth.score <= 30 && (audienceScore == null || audienceScore < 20) && (identityScore == null || identityScore < 45)) return 'reject'
+  if (wordCount <= 3 && input.dna.depth.score <= 30 && (input.personalMode || audienceScore == null || audienceScore < 20) && (identityScore == null || identityScore < 45)) return 'reject'
   if (input.dna.time.mode === 'future' && (timingScore == null || timingScore < 45)) return 'wait'
   if (input.dna.time.mode === 'current' && timingScore != null && timingScore < 30 && input.dna.novelty.score < 70) return 'wait'
   if (repetition >= 48 || (repetition >= 38 && novelty < 67)) return 'change_angle'
@@ -346,7 +575,7 @@ function planFor(input: EditorialBoardInput, verdict: EditorialVerdict, gap: Ret
   const referencesNeeded = unique([
     input.dna.evidence.score < 58 ? 'دراسة حديثة أو مراجعة منهجية تثبت حجم الظاهرة قبل بناء استنتاج قوي.' : '',
     input.currentEvents.length ? `المصدر الراهن الأقوى: ${input.currentEvents[0].source} — للتحقق من السياق لا لبناء المقال كله على الترند.` : '',
-    input.audienceEvidence.messageMatches.length ? 'استخدم إشارة الجمهور كمؤشر حاجة فقط، من دون نقل أي رسالة أو بيانات شخصية.' : '',
+    !input.personalMode && input.audienceEvidence.messageMatches.length ? 'استخدم إشارة الجمهور كمؤشر حاجة فقط، من دون نقل أي رسالة أو بيانات شخصية.' : '',
     input.graphMatches.some((item) => item.kind === 'paper') ? 'راجع البحث المرتبط في الأرشيف قبل صياغة الفقرة الأكاديمية.' : '',
   ])
   return {
@@ -389,14 +618,14 @@ export function buildEditorialBoardDecision(input: EditorialBoardInput): Editori
     input.dna.depth.score,
     input.dna.evidence.score,
     identity,
-    input.audienceEvidence.score,
     timing.score,
+    input.portfolioEvidence.strategicNeedScore,
   ])
   const strengthRaw = mean([
     articlePotentialRaw,
     identity,
-    input.audienceEvidence.score,
     timing.score,
+    input.portfolioEvidence.strategicNeedScore,
   ])
   // حلقة المعايرة لا تدّعي تعلماً آلياً: لا تبدأ قبل ثلاث نتائج فعلية،
   // ولا يسمح لها بتغيير أي درجة بأكثر من 8 نقاط حتى لا يطغى الأداء التاريخي
@@ -409,28 +638,39 @@ export function buildEditorialBoardDecision(input: EditorialBoardInput): Editori
   const devilAdvocate = devil(input, verdict)
   const plan = planFor(input, verdict, gap, timing.score)
   const nearestArticle = input.archiveMaterials.find((item) => item.kind === 'article')
+  const evidenceGate = buildEvidenceGate(input, timing.score)
+  const scenarios = buildScenarios(input, verdict, timing.score, identity, articlePotential, repetitionRisk)
+  const scoreEvidence = buildScoreEvidence(input, {
+    strength,
+    novelty,
+    repetitionRisk,
+    timing: timing.score,
+    identityFit: identity,
+    articlePotential,
+  })
   const why = unique([
     `الجِدة بالنسبة إلى الأرشيف ${novelty}٪ وفق Idea DNA، وخطر التكرار ${repetitionRisk}٪ وفق فحص التشابه الفعلي للمحتوى.`,
     identity == null ? 'لا توجد بيانات كافية لدرجة ملاءمة الهوية.' : `خريطة المعرفة أعطت ملاءمة ${identity}٪ بناءً على صلات حقيقية بين المقالات والكتب والأبحاث.`,
     timing.explanation,
-    input.audienceEvidence.explanation,
+    input.portfolioEvidence.explanation,
+    !input.personalMode ? input.audienceEvidence.explanation : '',
     verdict === 'update_existing' && nearestArticle ? `الأقرب «${nearestArticle.title}» قريب بما يكفي لأن يكون تحديثه أفضل من تقسيم الفكرة.` : '',
   ], 6)
   const waitingRoom = verdict === 'wait' ? {
     reason: timing.score != null && timing.score < 35 ? 'الفكرة قابلة للحياة، لكن لا توجد نافذة نشر قوية الآن.' : 'الفكرة تحتاج إشارة خارجية أو دليلاً إضافياً قبل استهلاكها في مقال.',
-    trigger: input.dna.evidence.score < 58 ? 'ارجع إليها عند ظهور دراسة جديدة موثوقة أو سؤال جمهور متكرر.' : 'ارجع إليها عند ظهور حدث أو تطور يجعل الزاوية الحالية ضرورية لا اختيارية.',
+    trigger: input.dna.evidence.score < 58 ? 'ارجع إليها عند ظهور دراسة جديدة موثوقة أو تغير واضح في السياق الحالي.' : 'ارجع إليها عند ظهور حدث أو تطور يجعل الزاوية الحالية ضرورية لا اختيارية.',
     reviewAt: datePlusDays(generatedAt, input.dna.time.mode === 'future' ? 30 : 14),
-    triggers: unique(['event', input.dna.evidence.score < 58 ? 'research' : '', input.audienceEvidence.available ? 'audience' : ''].filter(Boolean) as Array<'event' | 'research' | 'audience'>, 3) as Array<'event' | 'research' | 'audience'>,
+    triggers: unique(['event', input.dna.evidence.score < 58 ? 'research' : '', !input.personalMode && input.audienceEvidence.available ? 'audience' : ''].filter(Boolean) as Array<'event' | 'research' | 'audience'>, 3) as Array<'event' | 'research' | 'audience'>,
   } : null
   const dataNotes = unique([
     !input.currentContextAvailable ? 'السياق الحالي لم يدخل في الدرجة لأن الرادار لم يكن متاحاً.' : '',
-    !input.audienceEvidence.available ? 'لا توجد بيانات جمهور كافية؛ لم تُخترع درجة اهتمام.' : '',
+    input.personalMode ? 'مجلس التحرير في الوضع الشخصي: لا يستخدم ردود الجمهور أو رسائلهم في القرار.' : (!input.audienceEvidence.available ? 'لا توجد بيانات جمهور كافية؛ لم تُخترع درجة اهتمام.' : ''),
     !input.graphMatches.length ? 'لم تُرجع خريطة المعرفة صلة كافية؛ اعتمد المجلس على فحص التشابه والأرشيف المباشر.' : '',
     calibration ? `عُيّرت الدرجات تدريجياً من ${calibration.sampleSize} نتيجة منشورة سابقة، وبحد أقصى ±8 نقاط؛ هذه معايرة أداء وليست Machine Learning.` : '',
   ])
   const fingerprint = `editorial-${hash(`${normalize(input.idea)}::${input.sourceMode}::${normalize(input.sourceContext || '')}`)}`
   return {
-    version: 1,
+    version: 2,
     id: `${fingerprint}-${hash(generatedAt)}`,
     fingerprint,
     status: verdict,
@@ -450,7 +690,7 @@ export function buildEditorialBoardDecision(input: EditorialBoardInput): Editori
       repetitionRisk,
       timing: timing.score,
       identityFit: identity,
-      audienceInterest: input.audienceEvidence.score,
+      audienceInterest: input.personalMode ? null : input.audienceEvidence.score,
       articlePotential,
     },
     why,
@@ -472,7 +712,13 @@ export function buildEditorialBoardDecision(input: EditorialBoardInput): Editori
       explanation: timing.explanation,
       events: input.currentEvents.slice(0, 4),
     },
-    audienceRadar: input.audienceEvidence,
+    audienceRadar: input.personalMode
+      ? { available: false, score: null, messageMatches: [], readingMatches: [], explanation: 'الوضع الشخصي لا يستخدم بيانات الجمهور.' }
+      : input.audienceEvidence,
+    portfolio: input.portfolioEvidence,
+    scoreEvidence,
+    scenarios,
+    evidenceGate,
     editorialGap: gap,
     devilAdvocate,
     plan,

@@ -14,7 +14,7 @@ import { createIdeaDna } from '../../lib/idea-dna'
 import { buildKnowledgeGraph, graphSearch } from '../../lib/knowledge-graph'
 import { buildAudienceSignals, type AudienceSignal, type InboxMessageInput } from '../../lib/inbox-intelligence'
 import { buildRows as buildReaderRows, windowDays, type Row as ReaderRow, type ViewDoc } from '../readerPulseLogic'
-import { buildEditorialBoardDecision, editorialScoreLabel, type EditorialArchiveMaterial, type EditorialAudienceEvidence, type EditorialBoardDecision, type EditorialSourceType } from '../../lib/editorial-board'
+import { buildEditorialBoardDecision, editorialScoreLabel, type EditorialArchiveMaterial, type EditorialAudienceEvidence, type EditorialBoardDecision, type EditorialCalibrationProfile, type EditorialSourceType } from '../../lib/editorial-board'
 import { buildSocialVisuals, compositionNameOf, analyzeSocialCopy,
   detectVisualTopic, downloadSocialPng, renderSocialPng, visualTopicLabel, type SocialVisualTemplate, type VisualTopic } from '../../lib/social-templates'
 import {
@@ -69,6 +69,21 @@ type CurrentEvent = {
 }
 
 type EditorialProgress = 'idle' | 'archive' | 'graph' | 'current' | 'audience' | 'decision' | 'done'
+type EditorialPerformanceMeasure = {
+  windowDays?: number
+  views?: number
+  siteAverage?: number
+  vsSiteAveragePct?: number | null
+  performanceScore?: number | null
+  measuredAt?: string
+}
+type EditorialCalibrationRecord = {
+  status?: string
+  predictedStrength?: number | null
+  predictedArticlePotential?: number | null
+  actual7?: EditorialPerformanceMeasure | null
+  actual30?: EditorialPerformanceMeasure | null
+}
 
 const EDITORIAL_SOURCE_LABELS: Array<{ value: EditorialSourceType; label: string }> = [
   { value: 'friend', label: 'صديق' },
@@ -127,6 +142,27 @@ function scoreAudienceEvidence(idea: string, signals: AudienceSignal[], readerRo
 
 function archiveMaterialFromArticle(article: ArticleRecord, score: number): EditorialArchiveMaterial {
   return { kind: 'article', slug: article.slug, title: article.title, url: `/articles/${article.slug}`, score, date: article.date || article.iso || '', excerpt: article.excerpt || '' }
+}
+
+function editorialCalibrationProfileFromRows(rows: Array<Record<string, any>>): EditorialCalibrationProfile {
+  const strengthErrors: number[] = []
+  const potentialErrors: number[] = []
+  for (const row of rows) {
+    const decision = row.decision as EditorialBoardDecision | undefined
+    const calibration = row.calibration as Record<string, any> | undefined
+    const actual = calibration?.actual30 || calibration?.actual7
+    const performance = Number(actual?.performanceScore)
+    if (!decision || !Number.isFinite(performance)) continue
+    if (decision.scores.strength != null) strengthErrors.push(performance - decision.scores.strength)
+    if (decision.scores.articlePotential != null) potentialErrors.push(performance - decision.scores.articlePotential)
+  }
+  const average = (values: number[]) => values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : 0
+  const cap = (value: number) => Math.max(-8, Math.min(8, value))
+  return {
+    sampleSize: Math.max(strengthErrors.length, potentialErrors.length),
+    strengthBias: cap(average(strengthErrors)),
+    articlePotentialBias: cap(average(potentialErrors)),
+  }
 }
 
 type PerfectSocialPack = {
@@ -1994,6 +2030,8 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const [proposalSourceContext, setProposalSourceContext] = useState('')
   const [editorialDecision, setEditorialDecision] = useState<EditorialBoardDecision | null>(null)
   const [editorialHistory, setEditorialHistory] = useState<EditorialBoardDecision[]>([])
+  const [editorialCalibrationProfile, setEditorialCalibrationProfile] = useState<EditorialCalibrationProfile>({ sampleSize: 0, strengthBias: 0, articlePotentialBias: 0 })
+  const [editorialCalibrationByDecision, setEditorialCalibrationByDecision] = useState<Record<string, EditorialCalibrationRecord>>({})
   const [editorialProgress, setEditorialProgress] = useState<EditorialProgress>('idle')
   const [editorialBusy, setEditorialBusy] = useState(false)
 
@@ -2035,11 +2073,22 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
         const db = await getDb()
         if (!db) return
         const { collection, getDocs, limit, orderBy, query } = await import('firebase/firestore')
-        const snapshot = await getDocs(query(collection(db, 'admin_editorial_board'), orderBy('generatedAt', 'desc'), limit(24)))
+        const snapshot = await getDocs(query(collection(db, 'admin_editorial_board'), orderBy('generatedAt', 'desc'), limit(100)))
         if (!active) return
-        setEditorialHistory(snapshot.docs.map((item) => item.data()?.decision).filter(Boolean) as EditorialBoardDecision[])
+        const rows = snapshot.docs.map((item) => item.data() as Record<string, any>)
+        setEditorialHistory(rows.map((item) => item.decision).filter(Boolean).slice(0, 24) as EditorialBoardDecision[])
+        setEditorialCalibrationProfile(editorialCalibrationProfileFromRows(rows))
+        const calibrationEntries: Array<[string, EditorialCalibrationRecord]> = rows.flatMap((item): Array<[string, EditorialCalibrationRecord]> => {
+          const decisionId = String((item.decision as EditorialBoardDecision | undefined)?.id || item.id || '')
+          return decisionId && item.calibration ? [[decisionId, item.calibration as EditorialCalibrationRecord]] : []
+        })
+        setEditorialCalibrationByDecision(Object.fromEntries(calibrationEntries))
       } catch {
-        if (active) setEditorialHistory([])
+        if (active) {
+          setEditorialHistory([])
+          setEditorialCalibrationProfile({ sampleSize: 0, strengthBias: 0, articlePotentialBias: 0 })
+          setEditorialCalibrationByDecision({})
+        }
       }
     })()
     return () => { active = false }
@@ -2209,7 +2258,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
           return item ? [{ kind: 'book' as const, slug: item.slug, title: item.title, url: `/publications/${item.slug}`, score: Math.min(100, row.score * 6), date: '', excerpt: item.desc || '' }] : []
         }
         const item = papers.find((paper) => paper.slug === row.slug)
-        return item ? [{ kind: 'paper' as const, slug: item.slug, title: item.titleAr || item.title, url: `/research/${item.slug}`, score: Math.min(100, row.score * 6), date: item.date || item.iso || '', excerpt: item.abstractAr || item.meta || '' }] : []
+        return item ? [{ kind: 'paper' as const, slug: item.slug, title: item.titleAr || item.title, url: `/research/${item.slug}`, score: Math.min(100, row.score * 6), date: item.year || '', excerpt: item.abstractAr || item.meta || '' }] : []
       })
       const archiveMaterials = [...nearestArticles, ...graphMaterials].slice(0, 10)
 
@@ -2283,6 +2332,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
         currentContextError,
         audienceEvidence,
         suggestedTitle: suggestStrongTitle(cleanIdea),
+        calibrationProfile: editorialCalibrationProfile,
       })
       const previous = editorialHistory.find((item) => item.fingerprint === decision.fingerprint)
       if (previous) decision.why.push(`سبق عرض الفكرة نفسها على المجلس بتاريخ ${new Date(previous.generatedAt).toLocaleDateString('ar-KW')}؛ حُفظ هذا التحليل كتاريخ قرار جديد لا كنسخة تمحو السابق.`)
@@ -2520,7 +2570,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
     setIdea(title)
     setAngle(suggestion)
     setEditorialDecision(null)
-    setEditorialProgress([])
+    setEditorialProgress('idle')
     setView('idea')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -2820,7 +2870,7 @@ ${effectivePurpose}`,
   }
 
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-5" dir="rtl">
       <section className={card}>
         <p className="text-[.76rem] font-semibold uppercase text-accent">استوديو النشر الذكي</p>
         <h1 className="mt-1 font-display text-2xl font-bold text-ink md:text-3xl">من فكرة واحدة إلى مقال ومنظومة نشر.</h1>
@@ -2864,8 +2914,14 @@ ${effectivePurpose}`,
           </section>
           <EditorialBoardPanel decision={editorialDecision} progress={editorialProgress} busy={editorialBusy} historyCount={editorialHistory.length} onStart={startEditorialArticle} onOpenExisting={openExistingEditorialArticle} />
           {editorialHistory.length > 0 && <details className={`${card} group`}>
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block text-[.72rem] font-semibold text-accent">سجل قرارات مجلس التحرير</span><span className="mt-1 block text-[.82rem] text-soft">آخر {editorialHistory.length} قرار محفوظ</span></span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
-            <div className="mt-4 grid gap-2 border-t border-hair pt-4">{editorialHistory.slice(0, 12).map((item) => <div key={item.id} className="grid gap-1 rounded-xl border border-hair bg-canvas px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><span className="min-w-0"><strong className="block truncate text-[.8rem] text-ink">{item.idea}</strong><span className="mt-1 block text-[.68rem] text-soft">{new Date(item.generatedAt).toLocaleDateString('ar-KW')}</span></span><span className="text-[.72rem] font-semibold text-accent">{item.verdictLabel}</span></div>)}</div>
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block text-[.72rem] font-semibold text-accent">سجل قرارات مجلس التحرير</span><span className="mt-1 block text-[.82rem] text-soft">آخر {editorialHistory.length} قرار محفوظ{editorialCalibrationProfile.sampleSize >= 1 ? ` · ${editorialCalibrationProfile.sampleSize} نتيجة دخلت المعايرة` : ''}</span></span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
+            <div className="mt-4 grid gap-2 border-t border-hair pt-4">{editorialHistory.slice(0, 12).map((item) => {
+              const calibration = editorialCalibrationByDecision[item.id]
+              const actual = calibration?.actual30 || calibration?.actual7
+              const windowLabel = calibration?.actual30 ? '30 يوم' : calibration?.actual7 ? '7 أيام' : ''
+              const comparison = actual?.vsSiteAveragePct == null ? '' : `${actual.vsSiteAveragePct >= 0 ? 'أعلى' : 'أقل'} من متوسط الموقع بـ${Math.abs(actual.vsSiteAveragePct)}٪`
+              return <div key={item.id} className="grid gap-1 rounded-xl border border-hair bg-canvas px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><span className="min-w-0"><strong className="block truncate text-[.8rem] text-ink">{item.idea}</strong><span className="mt-1 block text-[.68rem] text-soft">{new Date(item.generatedAt).toLocaleDateString('ar-KW')}{actual?.performanceScore != null ? ` · توقع ${item.scores.strength ?? '—'}/100 · أداء ${windowLabel} ${actual.performanceScore}/100${comparison ? ` · ${comparison}` : ''}` : ''}</span></span><span className="text-[.72rem] font-semibold text-accent">{item.verdictLabel}</span></div>
+            })}</div>
           </details>}
           <CurrentEventsCard items={currentEvents} selected={selectedEventIds} loading={eventsLoading} onToggle={(id) => setSelectedEventIds((previous) => previous.includes(id) ? previous.filter((item) => item !== id) : [...previous, id].slice(0, 3))} />
           <IdeaSuggestionsCard suggestions={articleSuggestions} onPick={pickSuggestion} />

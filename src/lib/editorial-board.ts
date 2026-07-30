@@ -32,6 +32,12 @@ export type EditorialCurrentEvent = {
   relevance?: number
 }
 
+export type EditorialCalibrationProfile = {
+  sampleSize: number
+  strengthBias: number
+  articlePotentialBias: number
+}
+
 export type EditorialAudienceEvidence = {
   available: boolean
   score: number | null
@@ -57,6 +63,7 @@ export type EditorialBoardInput = {
   currentContextError?: string
   audienceEvidence: EditorialAudienceEvidence
   suggestedTitle: string
+  calibrationProfile?: EditorialCalibrationProfile
   generatedAt?: string
 }
 
@@ -376,7 +383,7 @@ export function buildEditorialBoardDecision(input: EditorialBoardInput): Editori
   const identity = identityFit(input)
   const novelty = clamp(input.dna.novelty.score)
   const repetitionRisk = clamp((input.similarity.highest || 0) * 100)
-  const articlePotential = mean([
+  const articlePotentialRaw = mean([
     novelty,
     100 - repetitionRisk,
     input.dna.depth.score,
@@ -385,12 +392,18 @@ export function buildEditorialBoardDecision(input: EditorialBoardInput): Editori
     input.audienceEvidence.score,
     timing.score,
   ])
-  const strength = mean([
-    articlePotential,
+  const strengthRaw = mean([
+    articlePotentialRaw,
     identity,
     input.audienceEvidence.score,
     timing.score,
   ])
+  // حلقة المعايرة لا تدّعي تعلماً آلياً: لا تبدأ قبل ثلاث نتائج فعلية،
+  // ولا يسمح لها بتغيير أي درجة بأكثر من 8 نقاط حتى لا يطغى الأداء التاريخي
+  // على أدلة الفكرة الحالية.
+  const calibration = input.calibrationProfile && input.calibrationProfile.sampleSize >= 3 ? input.calibrationProfile : null
+  const articlePotential = articlePotentialRaw == null ? null : clamp(articlePotentialRaw + (calibration ? Math.max(-8, Math.min(8, calibration.articlePotentialBias)) : 0))
+  const strength = strengthRaw == null ? null : clamp(strengthRaw + (calibration ? Math.max(-8, Math.min(8, calibration.strengthBias)) : 0))
   const verdict = selectVerdict(input, timing.score, identity)
   const gap = buildGap(input)
   const devilAdvocate = devil(input, verdict)
@@ -413,6 +426,7 @@ export function buildEditorialBoardDecision(input: EditorialBoardInput): Editori
     !input.currentContextAvailable ? 'السياق الحالي لم يدخل في الدرجة لأن الرادار لم يكن متاحاً.' : '',
     !input.audienceEvidence.available ? 'لا توجد بيانات جمهور كافية؛ لم تُخترع درجة اهتمام.' : '',
     !input.graphMatches.length ? 'لم تُرجع خريطة المعرفة صلة كافية؛ اعتمد المجلس على فحص التشابه والأرشيف المباشر.' : '',
+    calibration ? `عُيّرت الدرجات تدريجياً من ${calibration.sampleSize} نتيجة منشورة سابقة، وبحد أقصى ±8 نقاط؛ هذه معايرة أداء وليست Machine Learning.` : '',
   ])
   const fingerprint = `editorial-${hash(`${normalize(input.idea)}::${input.sourceMode}::${normalize(input.sourceContext || '')}`)}`
   return {

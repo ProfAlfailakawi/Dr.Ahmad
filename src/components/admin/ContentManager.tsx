@@ -1277,10 +1277,13 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
         } catch { /* السجل مساعِد؛ لا يمنع الحفظ إن فشل */ }
       }
 
+      const firstPublication = kind === 'article' && data.status === 'published' && !(current && 'publishedAt' in current && current.publishedAt)
+        ? { publishedAt: serverTimestamp() }
+        : {}
       if (!current) {
-        await setDoc(doc(db, collections[kind], slug), { ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
+        await setDoc(doc(db, collections[kind], slug), { ...data, ...firstPublication, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
       } else if (current._cms.origin === 'added') {
-        await setDoc(doc(db, collections[kind], current._cms.docId || current.slug), { ...data, updatedAt: serverTimestamp() }, { merge: true })
+        await setDoc(doc(db, collections[kind], current._cms.docId || current.slug), { ...data, ...firstPublication, updatedAt: serverTimestamp() }, { merge: true })
       } else {
         const base = getBaseRecord(kind, current._cms.baseSlug || current.slug)
         if (!base) throw new Error('تعذّر العثور على نسخة الأصل لهذا العنصر')

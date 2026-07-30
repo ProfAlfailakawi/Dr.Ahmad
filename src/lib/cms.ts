@@ -57,6 +57,8 @@ export type ArticleRecord = {
   url?: string
   status?: string
   scheduledAt?: string
+  /** وقت النشر الفعلي للمقالات الحية؛ لا يغيّر تاريخ المقال التحريري iso. */
+  publishedAt?: string
   audio?: ArticleAudio
   audioControl?: ArticleAudioControl
   words: number
@@ -235,6 +237,7 @@ function buildArticle(value: Record<string, unknown>, cms: CmsMeta): ArticleReco
     url: stringValue(value.url) || undefined,
     status: stringValue(value.status) || undefined,
     scheduledAt: stringValue(value.scheduledAt) || undefined,
+    publishedAt: stringValue(value.publishedAt) || undefined,
     audio,
     audioControl,
     words: wordCount(body || stringValue(value.excerpt)),

@@ -24,6 +24,7 @@ src/data/*
 !src/server/
 src/server/*
 !src/server/whatsapp-controller.mjs
+!src/server/admin-communications.mjs
 !whatsapp-agent/
 whatsapp-agent/*
 !whatsapp-agent/content-index.mjs

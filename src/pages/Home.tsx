@@ -15,7 +15,6 @@ import { ideaContinuation } from '../lib/idea-memory'
 import { sortUpcomingEvents } from '../lib/events'
 import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
 import { PROJECT_START_YEAR } from '../lib/project-meta'
-import FirstVisitOnboarding from '../components/FirstVisitOnboarding'
 
 const arNum = (n: number) => String(n).padStart(2, '0')
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
@@ -994,7 +993,6 @@ export default function Home() {
 
   return (
     <Page className="home-page">
-      <FirstVisitOnboarding />
       <JsonLd data={{
         '@context': 'https://schema.org',
         '@graph': [

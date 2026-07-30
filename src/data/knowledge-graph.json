@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "builtAt": "2026-07-26T23:11:30.392Z",
+  "builtAt": "2026-07-30T04:20:02.327Z",
   "nodes": [
     {
       "id": "article:success-that-does-not-bring-joy-to-its-ownerarabic",
@@ -13458,9 +13458,9 @@
       ]
     },
     {
-      "id": "curated:21b0856acc2e",
+      "id": "curated:7aa135257292",
       "kind": "curated",
-      "slug": "21b0856acc2e",
+      "slug": "7aa135257292",
       "title": "إديوتوبيا — ما الذي ينجح فعلاً داخل الصف؟",
       "url": "https://dr-alfailakawi.com/curated",
       "tokens": [
@@ -57536,11 +57536,11 @@
     },
     {
       "from": "curated:6cd873bdb048",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 32
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "curated:6cd873bdb048",
       "score": 32
     },
@@ -61386,11 +61386,11 @@
     },
     {
       "from": "article:the-classroom-that-fears-mistakesarabic",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 28
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:the-classroom-that-fears-mistakesarabic",
       "score": 28
     },
@@ -65156,11 +65156,11 @@
     },
     {
       "from": "article:the-media-is-a-vital-partner-in-the-educational-process",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 25
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:the-media-is-a-vital-partner-in-the-educational-process",
       "score": 25
     },
@@ -68256,11 +68256,11 @@
     },
     {
       "from": "article:qabas-201803-001",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 23
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201803-001",
       "score": 23
     },
@@ -70536,11 +70536,11 @@
     },
     {
       "from": "curated:cc82ea097979",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 22
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "curated:cc82ea097979",
       "score": 22
     },
@@ -70836,11 +70836,11 @@
     },
     {
       "from": "article:a-society-that-fears-the-different-arabic",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 21
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:a-society-that-fears-the-different-arabic",
       "score": 21
     },
@@ -71376,11 +71376,11 @@
     },
     {
       "from": "article:qabas-201810-004",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 21
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201810-004",
       "score": 21
     },
@@ -71486,11 +71486,11 @@
     },
     {
       "from": "article:qabas-201803-003",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 21
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201803-003",
       "score": 21
     },
@@ -74556,11 +74556,11 @@
     },
     {
       "from": "article:a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 19
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2",
       "score": 19
     },
@@ -74756,11 +74756,11 @@
     },
     {
       "from": "article:qabas-201810-001",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 19
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201810-001",
       "score": 19
     },
@@ -75226,11 +75226,11 @@
     },
     {
       "from": "article:qabas-201706-002",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 19
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201706-002",
       "score": 19
     },
@@ -75586,11 +75586,11 @@
     },
     {
       "from": "curated:ce93bde35880",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 19
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "curated:ce93bde35880",
       "score": 19
     },
@@ -78006,11 +78006,11 @@
     },
     {
       "from": "article:success-that-does-not-bring-joy-to-its-ownerarabic",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 17
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:success-that-does-not-bring-joy-to-its-ownerarabic",
       "score": 17
     },
@@ -79026,11 +79026,11 @@
     },
     {
       "from": "article:qabas-201802-001",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 17
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201802-001",
       "score": 17
     },
@@ -84416,11 +84416,11 @@
     },
     {
       "from": "article:qabas-201707-001",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 15
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201707-001",
       "score": 15
     },
@@ -88156,11 +88156,11 @@
     },
     {
       "from": "curated:3227dbac111b",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 14
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "curated:3227dbac111b",
       "score": 14
     },
@@ -88926,21 +88926,21 @@
     },
     {
       "from": "article:coming-soon-a-certificate-without-a-mind-2",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 13
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:coming-soon-a-certificate-without-a-mind-2",
       "score": 13
     },
     {
       "from": "article:a-certificate-of-excellence-for-a-lifeless-doll-2",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 13
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:a-certificate-of-excellence-for-a-lifeless-doll-2",
       "score": 13
     },
@@ -89146,11 +89146,11 @@
     },
     {
       "from": "article:the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 13
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis",
       "score": 13
     },
@@ -89186,11 +89186,11 @@
     },
     {
       "from": "article:qabas-201810-002",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 13
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201810-002",
       "score": 13
     },
@@ -89336,11 +89336,11 @@
     },
     {
       "from": "article:qabas-201802-004",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 13
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201802-004",
       "score": 13
     },
@@ -89626,11 +89626,11 @@
     },
     {
       "from": "article:qabas-201703-003",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 13
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201703-003",
       "score": 13
     },
@@ -89646,11 +89646,11 @@
     },
     {
       "from": "article:qabas-201702-001",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 13
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201702-001",
       "score": 13
     },
@@ -92696,11 +92696,11 @@
     },
     {
       "from": "article:the-mind-present-in-absence-absent-in-presence-2",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 11
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:the-mind-present-in-absence-absent-in-presence-2",
       "score": 11
     },
@@ -92736,11 +92736,11 @@
     },
     {
       "from": "article:the-republic-of-degrees-and-the-fall-of-thought-2",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 11
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:the-republic-of-degrees-and-the-fall-of-thought-2",
       "score": 11
     },
@@ -92946,11 +92946,11 @@
     },
     {
       "from": "article:i-earned-more-than-harvard-but-it-doesnt-teach-brains",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 11
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:i-earned-more-than-harvard-but-it-doesnt-teach-brains",
       "score": 11
     },
@@ -93006,21 +93006,21 @@
     },
     {
       "from": "article:we-graduated-with-a-degree-but-the-language-was-lost-2",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 11
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:we-graduated-with-a-degree-but-the-language-was-lost-2",
       "score": 11
     },
     {
       "from": "article:rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 11
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
       "score": 11
     },
@@ -93576,11 +93576,11 @@
     },
     {
       "from": "article:qabas-201804-001",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 11
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201804-001",
       "score": 11
     },
@@ -93696,11 +93696,11 @@
     },
     {
       "from": "article:qabas-201802-002",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 11
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201802-002",
       "score": 11
     },
@@ -93826,11 +93826,11 @@
     },
     {
       "from": "article:qabas-201709-008",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 11
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201709-008",
       "score": 11
     },
@@ -94046,11 +94046,11 @@
     },
     {
       "from": "article:qabas-201704-001",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 11
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201704-001",
       "score": 11
     },
@@ -94126,11 +94126,11 @@
     },
     {
       "from": "article:qabas-201612-004",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 11
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201612-004",
       "score": 11
     },
@@ -96396,11 +96396,11 @@
     },
     {
       "from": "curated:5cadd8345e56",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 10
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "curated:5cadd8345e56",
       "score": 10
     },
@@ -96426,11 +96426,11 @@
     },
     {
       "from": "curated:c5af4128412e",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 10
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "curated:c5af4128412e",
       "score": 10
     },
@@ -96546,11 +96546,11 @@
     },
     {
       "from": "article:when-the-teacher-knows-why-he-teachesarabic",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 9
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:when-the-teacher-knows-why-he-teachesarabic",
       "score": 9
     },
@@ -96876,11 +96876,11 @@
     },
     {
       "from": "article:the-excellence-epidemic-or-the-cult-of-grades-2",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 9
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:the-excellence-epidemic-or-the-cult-of-grades-2",
       "score": 9
     },
@@ -97066,11 +97066,11 @@
     },
     {
       "from": "article:i-write-to-awaken-you-not-to-discourage-you-2",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 9
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:i-write-to-awaken-you-not-to-discourage-you-2",
       "score": 9
     },
@@ -97386,11 +97386,11 @@
     },
     {
       "from": "article:competency-based-approach-to-the-trash",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 9
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:competency-based-approach-to-the-trash",
       "score": 9
     },
@@ -97726,11 +97726,11 @@
     },
     {
       "from": "article:qabas-201806-003",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 9
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201806-003",
       "score": 9
     },
@@ -98056,11 +98056,11 @@
     },
     {
       "from": "article:qabas-201712-003",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 9
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201712-003",
       "score": 9
     },
@@ -98196,11 +98196,11 @@
     },
     {
       "from": "article:qabas-201709-006",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 9
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201709-006",
       "score": 9
     },
@@ -98266,11 +98266,11 @@
     },
     {
       "from": "article:qabas-201709-007",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 9
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201709-007",
       "score": 9
     },
@@ -98396,11 +98396,11 @@
     },
     {
       "from": "article:qabas-201709-001",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 9
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201709-001",
       "score": 9
     },
@@ -98716,11 +98716,11 @@
     },
     {
       "from": "article:qabas-201611-002",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 9
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201611-002",
       "score": 9
     },
@@ -98816,11 +98816,11 @@
     },
     {
       "from": "paper:faculty-attitudes-edtech",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 9
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "paper:faculty-attitudes-edtech",
       "score": 9
     },
@@ -98876,11 +98876,11 @@
     },
     {
       "from": "paper:university-students-perceptions-at-the-college-of-basic-education-regarding-the-use-of-interactive-blackboard-technology-in-education-in-kuwait-for-the-academic-year-2020-2021-2",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 9
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "paper:university-students-perceptions-at-the-college-of-basic-education-regarding-the-use-of-interactive-blackboard-technology-in-education-in-kuwait-for-the-academic-year-2020-2021-2",
       "score": 9
     },
@@ -101946,11 +101946,11 @@
     },
     {
       "from": "curated:6ae8bc1e832f",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 8
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "curated:6ae8bc1e832f",
       "score": 8
     },
@@ -102056,11 +102056,11 @@
     },
     {
       "from": "article:when-the-exam-becomes-the-goalarabic",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:when-the-exam-becomes-the-goalarabic",
       "score": 7
     },
@@ -102736,11 +102736,11 @@
     },
     {
       "from": "article:the-teacher-the-last-to-know-2",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:the-teacher-the-last-to-know-2",
       "score": 7
     },
@@ -102976,11 +102976,11 @@
     },
     {
       "from": "article:from-the-schoolyard-to-the-food-court-2",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:from-the-schoolyard-to-the-food-court-2",
       "score": 7
     },
@@ -103386,11 +103386,11 @@
     },
     {
       "from": "article:when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2",
       "score": 7
     },
@@ -103486,11 +103486,11 @@
     },
     {
       "from": "article:ethical-hacking-culture",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:ethical-hacking-culture",
       "score": 7
     },
@@ -103556,11 +103556,11 @@
     },
     {
       "from": "article:private-lesson-in-the-age-of-digital-educational-intelligence",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:private-lesson-in-the-age-of-digital-educational-intelligence",
       "score": 7
     },
@@ -103646,11 +103646,11 @@
     },
     {
       "from": "article:e-learning-initiatives-and-solutions-2",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:e-learning-initiatives-and-solutions-2",
       "score": 7
     },
@@ -103786,11 +103786,11 @@
     },
     {
       "from": "article:lets-achieve-a-higher-level-of-quality-education",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:lets-achieve-a-higher-level-of-quality-education",
       "score": 7
     },
@@ -103816,11 +103816,11 @@
     },
     {
       "from": "article:the-teacher-what-do-you-know-about-the-teacher",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:the-teacher-what-do-you-know-about-the-teacher",
       "score": 7
     },
@@ -103996,11 +103996,11 @@
     },
     {
       "from": "article:qabas-201811-002",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201811-002",
       "score": 7
     },
@@ -104336,11 +104336,11 @@
     },
     {
       "from": "article:qabas-201806-005",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201806-005",
       "score": 7
     },
@@ -104406,11 +104406,11 @@
     },
     {
       "from": "article:qabas-201806-002",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201806-002",
       "score": 7
     },
@@ -104546,11 +104546,11 @@
     },
     {
       "from": "article:qabas-201805-004",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201805-004",
       "score": 7
     },
@@ -104596,11 +104596,11 @@
     },
     {
       "from": "article:qabas-201805-001",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201805-001",
       "score": 7
     },
@@ -104876,11 +104876,11 @@
     },
     {
       "from": "article:qabas-201712-004",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201712-004",
       "score": 7
     },
@@ -105066,11 +105066,11 @@
     },
     {
       "from": "article:qabas-201711-004",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201711-004",
       "score": 7
     },
@@ -105106,11 +105106,11 @@
     },
     {
       "from": "article:qabas-201711-001",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201711-001",
       "score": 7
     },
@@ -105166,11 +105166,11 @@
     },
     {
       "from": "article:qabas-201711-003",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201711-003",
       "score": 7
     },
@@ -105326,11 +105326,11 @@
     },
     {
       "from": "article:qabas-201709-002",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201709-002",
       "score": 7
     },
@@ -105346,11 +105346,11 @@
     },
     {
       "from": "article:qabas-201709-003",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201709-003",
       "score": 7
     },
@@ -105406,11 +105406,11 @@
     },
     {
       "from": "article:qabas-201709-005",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201709-005",
       "score": 7
     },
@@ -105676,11 +105676,11 @@
     },
     {
       "from": "article:qabas-201706-003",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201706-003",
       "score": 7
     },
@@ -105846,11 +105846,11 @@
     },
     {
       "from": "article:qabas-201703-001",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201703-001",
       "score": 7
     },
@@ -105996,11 +105996,11 @@
     },
     {
       "from": "article:qabas-201703-004",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201703-004",
       "score": 7
     },
@@ -106076,11 +106076,11 @@
     },
     {
       "from": "article:qabas-201702-003",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201702-003",
       "score": 7
     },
@@ -106186,11 +106186,11 @@
     },
     {
       "from": "article:qabas-201612-003",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "article:qabas-201612-003",
       "score": 7
     },
@@ -106406,11 +106406,11 @@
     },
     {
       "from": "book:teaching",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "book:teaching",
       "score": 7
     },
@@ -106696,11 +106696,11 @@
     },
     {
       "from": "paper:multimedia-higher-education",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "paper:multimedia-higher-education",
       "score": 7
     },
@@ -106726,11 +106726,11 @@
     },
     {
       "from": "paper:elearning-research-skills",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "paper:elearning-research-skills",
       "score": 7
     },
@@ -106776,11 +106776,11 @@
     },
     {
       "from": "paper:the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "paper:the-reality-of-using-cloud-computing-in-university-education-from-the-point-of-view-of-faculty-members-in-kuwait-2",
       "score": 7
     },
@@ -106806,11 +106806,11 @@
     },
     {
       "from": "paper:the-role-of-technological-creative-photography-in-contemporary-education-frameworks-in-developing-the-knowledge-skills-and-abilities-of-university-professors-at-the-college-of-basic-education-in-kuw-2",
-      "to": "curated:21b0856acc2e",
+      "to": "curated:7aa135257292",
       "score": 7
     },
     {
-      "from": "curated:21b0856acc2e",
+      "from": "curated:7aa135257292",
       "to": "paper:the-role-of-technological-creative-photography-in-contemporary-education-frameworks-in-developing-the-knowledge-skills-and-abilities-of-university-professors-at-the-college-of-basic-education-in-kuw-2",
       "score": 7
     },

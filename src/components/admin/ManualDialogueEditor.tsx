@@ -6,6 +6,7 @@ import { getDb } from '../../lib/firebase'
 import podcastAdmin from '../../data/podcast-admin.json'
 import { fingerprintDialogue } from '../../lib/podcast-dialogue-lock'
 import { dispatchPodcastGeneration } from '../../lib/podcast-generation'
+import { reviewMeaningDrift, type MeaningDriftReview, type MeaningFingerprint } from '../../lib/editorial-memory'
 
 type Speaker = 'male' | 'female'
 type DialogueTurn = {
@@ -248,6 +249,7 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
   const [queuedProof, setQueuedProof] = useState<{ turnCount: number; sha: string; runId?: string } | null>(null)
   const [audioAvailable, setAudioAvailable] = useState(false)
   const [audioChecking, setAudioChecking] = useState(false)
+  const [meaningFingerprint, setMeaningFingerprint] = useState<MeaningFingerprint | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const article = sortedArticles.find((item) => item.slug === slug)
@@ -267,6 +269,9 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
     if (turns.length < 2) result.push('الحوار يحتاج مداخلتين على الأقل.')
     return result
   }, [turns])
+  const meaningReview = useMemo<MeaningDriftReview | null>(() => meaningFingerprint
+    ? reviewMeaningDrift(meaningFingerprint, turns.map((turn) => turn.text).join(' '))
+    : null, [meaningFingerprint, turns])
 
   useEffect(() => {
     try {
@@ -321,6 +326,21 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
     }
     return () => { active = false }
   }, [article?.body, article?.excerpt, isAdmin, slug])
+
+  useEffect(() => {
+    let active = true
+    setMeaningFingerprint(null)
+    if (!isAdmin || !slug) return () => { active = false }
+    void getDb().then(async (db) => {
+      if (!db || !active) return
+      const { doc, getDoc } = await import('firebase/firestore')
+      const snapshot = await getDoc(doc(db, 'admin_content_intelligence', `article:${slug}`))
+      if (!active || !snapshot.exists()) return
+      const candidate = snapshot.data().meaningFingerprint as MeaningFingerprint | undefined
+      if (candidate?.version === 1 && candidate.slug === slug) setMeaningFingerprint(candidate)
+    }).catch(() => undefined)
+    return () => { active = false }
+  }, [isAdmin, slug])
 
   useEffect(() => {
     let active = true
@@ -383,6 +403,7 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
         revisionSha256: proof.revisionSha256,
         revisionId: proof.revisionId,
         turnCount: proof.turnCount,
+        ...(meaningFingerprint ? { meaningFingerprintHash: meaningFingerprint.hash, meaningGuard: meaningReview } : {}),
         status: 'draft',
         savedAtClient: new Date().toISOString(),
         updatedAt: serverTimestamp(),
@@ -431,6 +452,10 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
       setNotice('أكمل الحوار أولاً؛ لن يُرسل أي نص ناقص إلى Azure.')
       return
     }
+    if (meaningFingerprint && meaningReview && !meaningReview.ready) {
+      setNotice(`بصمة المعنى أوقفت التوليد قبل Azure: ${meaningReview.explanation}`)
+      return
+    }
     setQueueBusy(true)
     try {
       const proof = await save(false, true)
@@ -446,6 +471,7 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
         expectedDialogueRevisionSha256: proof.revisionSha256,
         expectedDialogueRevisionId: proof.revisionId,
         expectedTurnCount: proof.turnCount,
+        ...(meaningFingerprint ? { meaningFingerprintHash: meaningFingerprint.hash, meaningGuard: meaningReview } : {}),
         queuedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         note: 'الحوار اليدوي مقفول بالبصمة؛ ممنوع استخدام المقال أو نسخة أخرى.',
@@ -609,6 +635,7 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
           </div>
         </div>
 
+        {meaningFingerprint && meaningReview && !meaningReview.ready && <div className="mt-4 rounded-xl border border-accent/35 bg-canvas px-4 py-3" data-meaning-drift-warning="true"><p className="text-[.76rem] font-semibold text-accent">بصمة المعنى</p><p className="mt-1 text-[.74rem] leading-relaxed text-soft">{meaningReview.explanation} لن يُرسل الحوار للتوليد حتى تبقى الأطروحة والتحفظات الجوهرية محفوظة.</p></div>}
         <div className="mt-4 rounded-2xl border border-accent/20 bg-canvas px-4 py-4 text-[.8rem] leading-relaxed text-soft">
           <p className="font-semibold text-accent">في الوضع اليدوي</p>
           <ul className="mt-2 grid gap-1.5 pr-4">

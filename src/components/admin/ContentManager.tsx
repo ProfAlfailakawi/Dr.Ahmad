@@ -11,6 +11,7 @@ import { Pagination, usePagedList } from '../Pagination'
 import { ContentManagerHeader } from './ContentManagerHeader'
 import { IdeaDnaPanel } from './IdeaDnaPanel'
 import { createIdeaDna } from '../../lib/idea-dna'
+import { buildBookArchitecture, buildEvidenceChain, buildMeaningFingerprint, type BookArchitecture, type PersonalSourceRecord } from '../../lib/editorial-memory'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
 
@@ -636,7 +637,11 @@ function Editor({
   onSave: () => void
   allItems: ManagedRecord[]
 }) {
-  const { books, papers } = useCmsContent()
+  const { articles: cmsArticles, books, papers } = useCmsContent()
+  const [bookArchitecture, setBookArchitecture] = useState<BookArchitecture | null>(null)
+  const [bookArchitectureBusy, setBookArchitectureBusy] = useState(false)
+  const [bookArchitectureNotice, setBookArchitectureNotice] = useState('')
+  const [articleEvidenceReview, setArticleEvidenceReview] = useState<{ needsReview: boolean; alerts: string[] } | null>(null)
   // أي رقم هندي يكتبه الدكتور يتحوّل غربياً فوراً — قاعدة الموقع في كل الخانات
   const west = (s: string) => s.replace(/[٠-٩]/g, (d) => '0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)])
   const set = (field: string, value: string) => setForm((previous) => {
@@ -668,6 +673,86 @@ function Editor({
     }
     return next
   })
+
+  useEffect(() => {
+    if (kind !== 'book' || !current?.slug) { setBookArchitecture(null); setBookArchitectureNotice(''); return }
+    let active = true
+    void getDb().then(async (db) => {
+      if (!db || !active) return
+      const { doc, getDoc } = await import('firebase/firestore')
+      const snapshot = await getDoc(doc(db, 'admin_book_architecture', current.slug))
+      if (!active || !snapshot.exists()) return
+      const saved = snapshot.data().architecture as BookArchitecture | undefined
+      if (saved?.version === 1) setBookArchitecture(saved)
+    }).catch(() => undefined)
+    return () => { active = false }
+  }, [current?.slug, kind])
+
+  useEffect(() => {
+    if (kind !== 'article' || !current?.slug) { setArticleEvidenceReview(null); return }
+    let active = true
+    void getDb().then(async (db) => {
+      if (!db || !active) return
+      const { doc, getDoc } = await import('firebase/firestore')
+      const snapshot = await getDoc(doc(db, 'admin_content_intelligence', `article:${current.slug}`))
+      if (!active || !snapshot.exists()) { if (active) setArticleEvidenceReview(null); return }
+      const data = snapshot.data() as Record<string, unknown>
+      const rawAlerts = [
+        ...(Array.isArray(data.sourceWatchAlerts) ? data.sourceWatchAlerts : []),
+        ...(Array.isArray(data.evidenceAlerts) ? data.evidenceAlerts : []),
+      ].map((item) => String(item || '').replace(/^\[personal:[^\]]+\]\s*/, '').trim()).filter(Boolean)
+      setArticleEvidenceReview({ needsReview: data.needsEvidenceReview === true, alerts: [...new Set(rawAlerts)].slice(0, 8) })
+    }).catch(() => { if (active) setArticleEvidenceReview(null) })
+    return () => { active = false }
+  }, [current?.slug, kind])
+
+  const resolveArticleEvidenceReview = async () => {
+    if (kind !== 'article' || !current?.slug) return
+    try {
+      const db = await getDb(); if (!db) return
+      const { doc, getDoc, serverTimestamp, setDoc } = await import('firebase/firestore')
+      const ref = doc(db, 'admin_content_intelligence', `article:${current.slug}`)
+      const snapshot = await getDoc(ref)
+      const data = snapshot.exists() ? snapshot.data() as Record<string, any> : {}
+      const chainAlerts = Array.isArray(data?.evidenceChain?.alerts) ? data.evidenceChain.alerts.map((item: unknown) => String(item || '').trim()).filter(Boolean) : []
+      await setDoc(ref, {
+        sourceWatchAlerts: [],
+        evidenceAlerts: chainAlerts,
+        needsEvidenceReview: chainAlerts.length > 0,
+        evidenceReviewedAt: serverTimestamp(),
+      }, { merge: true })
+      setArticleEvidenceReview({ needsReview: chainAlerts.length > 0, alerts: chainAlerts })
+    } catch { /* التنبيه يبقى ظاهراً إذا تعذّر إثبات المراجعة */ }
+  }
+
+  const rebuildBookArchitecture = async () => {
+    if (kind !== 'book' || !form.title?.trim() || !form.slug?.trim()) return
+    setBookArchitectureBusy(true); setBookArchitectureNotice('')
+    try {
+      const architecture = buildBookArchitecture({
+        title: form.title.trim(),
+        desc: form.desc || '',
+        articles: cmsArticles,
+        papers,
+        books,
+      })
+      const db = await getDb()
+      if (!db) throw new Error('Firebase غير متاح.')
+      const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
+      await setDoc(doc(db, 'admin_book_architecture', form.slug.trim()), {
+        slug: form.slug.trim(),
+        title: form.title.trim(),
+        architecture,
+        sourceCounts: { articles: cmsArticles.length, papers: papers.length, books: books.length },
+        updatedAtClient: new Date().toISOString(),
+        updatedAt: serverTimestamp(),
+      }, { merge: true })
+      setBookArchitecture(architecture)
+      setBookArchitectureNotice('اكتملت خريطة الكتاب من أرشيفك الحقيقي وحُفظت داخلياً.')
+    } catch (reason) {
+      setBookArchitectureNotice(reason instanceof Error ? reason.message : 'تعذّر بناء معمار الكتاب.')
+    } finally { setBookArchitectureBusy(false) }
+  }
 
   const suggest = async (automatic = false) => {
     if (form._aiBusy === '1') return
@@ -825,6 +910,12 @@ ${form.outlet || ''}`
             <input className={input} dir="ltr" value={form.slug || ''} disabled={Boolean(current)} onChange={(event) => set('slug', slugify(event.target.value))} />
           </Field>
           {ideaDna && <IdeaDnaPanel dna={ideaDna} />}
+          {kind === 'article' && articleEvidenceReview?.needsReview && <div className="rounded-2xl border border-accent/35 bg-wash p-4" data-private-evidence-review="true">
+            <p className="text-[.78rem] font-semibold text-accent">مراجعة دليل خاصة مطلوبة</p>
+            <p className="mt-1 text-[.76rem] leading-relaxed text-soft">تغيّرت حالة مصدر تعتمد عليه هذه المادة. لا يظهر هذا التنبيه للزوار، ولا يغيّر المقال تلقائياً.</p>
+            {articleEvidenceReview.alerts.map((alert) => <p key={alert} className="mt-2 text-[.7rem] leading-relaxed text-ink">{alert}</p>)}
+            <button type="button" className={`${secondary} mt-3`} onClick={() => void resolveArticleEvidenceReview()}>اعتمدت مراجعة الدليل</button>
+          </div>}
 
           {kind === 'article' && (
             <>
@@ -959,6 +1050,15 @@ ${form.outlet || ''}`
               <UploadField label="الغلاف" value={form.cover || ''} accept="image/jpeg,image/png,image/webp" folder="covers" slug={form.slug || form.title} maxMb={12} onChange={(value) => set('cover', value)} />
               <UploadField label="ملف PDF" value={form.pdf || ''} accept="application/pdf" folder="files" slug={form.slug || form.title} maxMb={100} onChange={(value) => set('pdf', value)} />
               <Field label="مؤلفون مشاركون (اختياري)" hint="افصل بين الأسماء بفاصلة — تظهر «بالاشتراك مع…» في صفحة الكتاب."><input className={input} placeholder="مثال: د. فلان الفلاني، د. علّان العلّاني" value={form.coAuthors || ''} onChange={(event) => set('coAuthors', event.target.value)} /></Field>
+              <details className="group rounded-2xl border border-hair bg-wash px-4 py-3" data-book-architect="true">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span><strong className="text-[.82rem] text-ink">معمار الكتاب</strong>{bookArchitecture && <span className="ms-2 text-[.7rem] text-soft">جاهزية {bookArchitecture.readiness}/100</span>}</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
+                <div className="mt-4 grid gap-3 border-t border-hair pt-4">
+                  <p className="text-[.74rem] leading-relaxed text-soft">خريطة خاصة لا تظهر للقراء: تقيس ما لديك فعلاً من مقالات وأبحاث، وتقترح محاور قابلة للبناء من دون كتابة الكتاب عنك.</p>
+                  <div><button type="button" className={secondary} disabled={bookArchitectureBusy || !form.slug?.trim()} onClick={() => void rebuildBookArchitecture()}>{bookArchitectureBusy ? 'أبني الخريطة…' : 'حلّل بنية الكتاب من الأرشيف'}</button></div>
+                  {bookArchitectureNotice && <p className="text-[.72rem] leading-relaxed text-soft">{bookArchitectureNotice}</p>}
+                  {bookArchitecture && <div className="grid gap-2">{bookArchitecture.chapters.map((chapter) => <div key={chapter.id} className="rounded-xl border border-hair bg-canvas px-3 py-2.5"><div className="flex items-baseline justify-between gap-4"><strong className="text-[.76rem] text-ink">{chapter.title}</strong><span className="shrink-0 text-[.66rem] text-soft">تغطية {chapter.coverage}/100</span></div><p className="mt-1 text-[.68rem] leading-relaxed text-soft">{chapter.articles.length} مقال · {chapter.papers.length} بحث مرتبط</p></div>)}{bookArchitecture.gaps.map((gap) => <p key={gap} className="rounded-lg border border-accent/20 bg-canvas px-3 py-2 text-[.7rem] leading-relaxed text-soft">{gap}</p>)}</div>}
+                </div>
+              </details>
             </>
           )}
 
@@ -1123,6 +1223,7 @@ ${form.outlet || ''}`
 }
 
 export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlug }: Props) {
+  const { papers: intelligencePapers } = useCmsContent()
   const [query, setQuery] = useState('')
   const [descending, setDescending] = useState(true)
   const [current, setCurrent] = useState<ManagedRecord | null | undefined>(undefined)
@@ -1295,6 +1396,53 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
         const overrideRef = doc(db, 'content_overrides', `${kind}:${current._cms.baseSlug || current.slug}`)
         if (!Object.keys(patch).length && !current._cms.hidden) await deleteDoc(overrideRef)
         else await setDoc(overrideRef, { patch, hidden: Boolean(current._cms.hidden), updatedAt: serverTimestamp() })
+      }
+      if (kind === 'article') {
+        try {
+          const intelligenceRef = doc(db, 'admin_content_intelligence', `article:${slug}`)
+          const { collection, getDoc, getDocs } = await import('firebase/firestore')
+          const [existingSnapshot, sourceSnapshot] = await Promise.all([
+            getDoc(intelligenceRef),
+            getDocs(collection(db, 'admin_source_desk')),
+          ])
+          const sources = sourceSnapshot.docs.map((row) => ({ id: row.id, ...(row.data() as object) })) as PersonalSourceRecord[]
+          const evidenceChain = buildEvidenceChain({
+            slug,
+            title: data.title || slug,
+            body: data.body || '',
+            articleSource: data.source || data.url || '',
+            personalSources: sources,
+            papers: intelligencePapers,
+          })
+          const existing = existingSnapshot.exists() ? existingSnapshot.data() as Record<string, unknown> : {}
+          const existingFingerprint = existing.meaningFingerprint && typeof existing.meaningFingerprint === 'object' ? existing.meaningFingerprint : null
+          const sourceWatchAlerts = Array.isArray(existing.sourceWatchAlerts) ? existing.sourceWatchAlerts.map((item) => String(item || '').trim()).filter(Boolean) : []
+          const sourceWatchMessages = sourceWatchAlerts.map((item) => item.replace(/^\[personal:[^\]]+\]\s*/, '').trim()).filter(Boolean)
+          const evidenceAlerts = [...new Set([...sourceWatchMessages, ...evidenceChain.alerts])]
+          const meaningFingerprint = existingFingerprint || buildMeaningFingerprint({
+            slug,
+            title: data.title || slug,
+            body: data.body || '',
+            excerpt: data.excerpt || '',
+            sourceIds: evidenceChain.sourceIds,
+          })
+          await setDoc(intelligenceRef, {
+            kind: 'article',
+            slug,
+            title: data.title || slug,
+            meaningFingerprint,
+            evidenceChain,
+            sourceIds: evidenceChain.sourceIds,
+            evidenceAlerts,
+            needsEvidenceReview: evidenceAlerts.length > 0,
+            contentStatus: data.status || 'published',
+            updatedAtClient: new Date().toISOString(),
+            updatedAt: serverTimestamp(),
+            ...(!existingSnapshot.exists() ? { createdAt: serverTimestamp() } : {}),
+          }, { merge: true })
+        } catch {
+          // طبقة الذكاء خاصة ومساعدة؛ تعطلها لا يمنع حفظ المقال العام الذي اكتمل بالفعل.
+        }
       }
       setCurrent(undefined)
       await done(kind === 'article' && data.status === 'scheduled' ? '✓ حُفظ المقال مجدولاً ولن يظهر للزوار قبل موعده.' : kind === 'article' && data.status === 'draft' ? '✓ حُفظ المقال كمسودة ولم يظهر للزوار.' : '✓ حُفظ التعديل ويظهر للزوار فوراً.')

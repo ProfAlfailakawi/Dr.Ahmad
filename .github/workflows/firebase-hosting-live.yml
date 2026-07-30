@@ -108,6 +108,9 @@ jobs:
           check "FAQ repair self-test" node scripts/faq-repair.mjs --self-test
           check "Automatic site content self-test" node scripts/auto-site-content.mjs --self-test
           check "Idea life self-test" node scripts/idea-life-sync.mjs --self-test
+          check "Editorial source policy" node scripts/test-editorial-policy.mjs
+          check "Personal editorial intelligence" node scripts/test-editorial-memory.mjs
+          check "Source desk watch self-test" node scripts/source-desk-watch.mjs --self-test
           check "Social design engine self-test" node scripts/test-social-design-engine.mjs
           check "Social templates self-test" node scripts/test-social-templates.mjs
           check "Studio image backend self-test" node scripts/test-studio-image-generation.mjs

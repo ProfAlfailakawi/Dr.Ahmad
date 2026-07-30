@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Pagination, usePagedList } from '../Pagination'
 import { articleCats, books, papers } from '../../data'
 import privateBookLinks from '../../data/private-book-links.json'
@@ -9,10 +9,12 @@ import { useAdminAuth } from '../../lib/admin-auth'
 import { fetchPublishedExtras, getDb } from '../../lib/firebase'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { PublishingStudioNavigation, type PublishingStudioView } from './PublishingStudioNavigation'
+import { EditorialMemoryPanel } from './EditorialMemoryPanel'
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
 import { createIdeaDna } from '../../lib/idea-dna'
 import { buildKnowledgeGraph, graphSearch } from '../../lib/knowledge-graph'
 import { buildEditorialBoardDecision, editorialScoreLabel, type EditorialArchiveMaterial, type EditorialAudienceEvidence, type EditorialBoardDecision, type EditorialCalibrationProfile, type EditorialPortfolioEvidence, type EditorialSourceType } from '../../lib/editorial-board'
+import { buildAgendaAlignment, buildEvidenceChain, buildMeaningFingerprint, matchPersonalSources, reviewMeaningDrift, type IntellectualAgendaItem, type PersonalSourceRecord } from '../../lib/editorial-memory'
 import { buildSocialVisuals, compositionNameOf, analyzeSocialCopy,
   detectVisualTopic, downloadSocialPng, renderSocialPng, visualTopicLabel, type SocialVisualTemplate, type VisualTopic } from '../../lib/social-templates'
 import {
@@ -1471,6 +1473,13 @@ function EditorialBoardPanel({
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">وعي المحفظة الفكرية</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
           <div className="mt-3 border-t border-hair pt-3"><p className="text-[.8rem] leading-relaxed text-ink">{decision.portfolio.explanation}</p>{decision.portfolio.available && <p className="mt-2 text-[.72rem] leading-relaxed text-soft">المحور: {decision.portfolio.focusCategory} · حضوره {decision.portfolio.focusCategoryCount}/{decision.portfolio.totalArticles} · مواد قريبة: {decision.portfolio.relatedArticleCount} مقال، {decision.portfolio.relatedBookCount} كتاب، {decision.portfolio.relatedPaperCount} بحث.</p>}</div>
         </details>
+        <details className="group rounded-xl border border-hair bg-canvas px-4 py-3" data-editorial-personal-context="true">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">السياق الشخصي الخاص</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
+          <div className="mt-3 border-t border-hair pt-3">
+            <p className="text-[.8rem] leading-relaxed text-ink">{decision.agenda.explanation}</p>
+            {decision.personalSources.length ? <div className="mt-3 grid gap-2">{decision.personalSources.map((source) => <div key={source.id} className="flex items-start justify-between gap-3 border-b border-hair/70 pb-2 last:border-0"><span className="min-w-0 text-[.74rem] leading-relaxed text-soft">{source.title}</span><span className="shrink-0 text-[.68rem] text-soft">{source.status === 'active' ? 'فعّال' : source.status === 'retracted' ? 'منسحب' : source.status === 'corrected' ? 'مصحح' : 'يحتاج مراجعة'}</span></div>)}</div> : <p className="mt-2 text-[.72rem] leading-relaxed text-soft">لا توجد مادة محفوظة قريبة من هذه الفكرة في مكتب المصادر الشخصي.</p>}
+          </div>
+        </details>
         <details className="group rounded-xl border border-hair bg-canvas px-4 py-3" data-editorial-scenarios="true">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">محاكاة القرار</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
           <div className="mt-3 grid gap-2 border-t border-hair pt-3">{decision.scenarios.items.map((scenario) => <div key={scenario.id} className="grid gap-1 border-b border-hair/70 py-2 last:border-0"><div className="flex items-baseline justify-between gap-4"><strong className={scenario.preferred ? 'text-[.78rem] text-accent' : 'text-[.78rem] text-ink'}>{scenario.label}{scenario.preferred ? ' · المسار المفضّل' : ''}</strong><span className="text-[.72rem] text-soft">{editorialScoreLabel(scenario.strength)}</span></div><p className="text-[.72rem] leading-relaxed text-soft">{scenario.explanation}</p></div>)}</div>
@@ -1501,6 +1510,23 @@ function EditorialBoardPanel({
         {decision.verdict === 'wait' && <span className="text-[.78rem] leading-relaxed text-soft">حُفظت الفكرة تلقائياً في سجل المجلس مع موعد إعادة المراجعة.</span>}
       </div>
     </section>
+  )
+}
+
+function EvidenceChainCard({ chain }: { chain: ReturnType<typeof buildEvidenceChain> }) {
+  const sourceById = new Map(chain.sources.map((source) => [source.id, source]))
+  return (
+    <details className={`${card} group`} data-evidence-chain="true">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
+        <span><span className="block text-[.72rem] font-semibold text-accent">سلسلة الدليل الخاصة</span><span className="mt-1 block text-[.76rem] text-soft">{chain.claims.length ? `تغطية ${chain.coverage}/100 · ${chain.claims.length} ادعاء مفحوص` : 'لا توجد ادعاءات قابلة للربط في النص الحالي'}</span></span>
+        <span className="text-accent transition-transform group-open:rotate-45">+</span>
+      </summary>
+      <div className="mt-4 grid gap-3 border-t border-hair pt-4">
+        {chain.alerts.map((alert) => <p key={alert} className="rounded-xl border border-accent/30 bg-canvas px-3 py-2 text-[.7rem] leading-relaxed text-accent">{alert}</p>)}
+        {chain.claims.map((claim) => <div key={claim.id} className="border-b border-hair/70 pb-3 last:border-0 last:pb-0"><div className="flex flex-wrap items-start justify-between gap-2"><p className="max-w-3xl text-[.74rem] leading-relaxed text-ink">{claim.text}</p><span className="shrink-0 text-[.64rem] font-semibold text-soft">{claim.support === 'strong' ? 'دعم قوي' : claim.support === 'partial' ? 'دعم جزئي' : 'لا سند مرتبط بعد'}</span></div>{claim.sourceIds.length > 0 && <p className="mt-1 text-[.64rem] leading-relaxed text-soft">{claim.sourceIds.map((id) => sourceById.get(id)?.title || id).join(' · ')}</p>}</div>)}
+        {!chain.claims.length && <p className="text-[.72rem] leading-relaxed text-soft">تُبنى السلسلة تلقائياً من النسخة النهائية والمصادر الخاصة والأبحاث المرتبطة، من دون نشر بياناتها للزوار.</p>}
+      </div>
+    </details>
   )
 }
 
@@ -2086,6 +2112,12 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const [editorialProgress, setEditorialProgress] = useState<EditorialProgress>('idle')
   const [editorialBusy, setEditorialBusy] = useState(false)
   const [editorialEvidenceHold, setEditorialEvidenceHold] = useState('')
+  const [personalSources, setPersonalSources] = useState<PersonalSourceRecord[]>([])
+  const [intellectualAgenda, setIntellectualAgenda] = useState<IntellectualAgendaItem[]>([])
+  const handleEditorialMemoryData = useCallback((data: { sources: PersonalSourceRecord[]; agenda: IntellectualAgendaItem[] }) => {
+    setPersonalSources(data.sources)
+    setIntellectualAgenda(data.agenda)
+  }, [])
 
   // بذرة «حملة من مقال»: عند وصولها نفتح استوديو التصاميم فوراً، وعند وجودها
   // مخزنة (وصل الحدث قبل تركيب هذا المكوّن) نلتقطها في أول تركيب.
@@ -2152,6 +2184,22 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const privateLinks = (privateBookLinks as { books?: PrivateBookLink[] }).books || []
   const gate = useMemo(() => qualityGate(bundle, richArticles, targetWords, skipOriginality), [bundle, richArticles, skipOriginality, targetWords])
   const similarity = useMemo(() => articleSimilarityReport(bundle.title, bundle.body, richArticles), [bundle.title, bundle.body, richArticles])
+  const editorialEvidenceChain = useMemo(() => buildEvidenceChain({
+    slug: bundle.slug,
+    title: bundle.title,
+    body: bundle.body,
+    personalSources,
+    papers: papers as any,
+    preferredPaperSlugs: bundle.papers.map((paper) => paper.slug),
+  }), [bundle.body, bundle.papers, bundle.slug, bundle.title, personalSources])
+  const meaningFingerprint = useMemo(() => buildMeaningFingerprint({
+    slug: bundle.slug,
+    title: bundle.title,
+    body: bundle.body,
+    excerpt: bundle.excerpt,
+    thesis: editorialDecision?.plan.thesis,
+    sourceIds: editorialEvidenceChain.sourceIds,
+  }), [bundle.body, bundle.excerpt, bundle.slug, bundle.title, editorialDecision?.plan.thesis, editorialEvidenceChain.sourceIds])
   const weeklyPack = useMemo(() => buildWeeklyPack(bundle, richArticles, radar), [bundle, radar, richArticles])
   const styleInsight = useMemo(() => styleReview(bundle, style), [bundle, style])
   const sevenDayCampaign = useMemo(() => buildSevenDayCampaign(bundle, weeklyPack), [bundle, weeklyPack])
@@ -2331,6 +2379,8 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
       setEditorialProgress('portfolio')
       const audienceEvidence = personalAudienceEvidence()
       const portfolioEvidence = buildEditorialPortfolioEvidence(cleanIdea, richArticles)
+      const personalSourceMatches = matchPersonalSources(`${cleanIdea} ${angle} ${proposalContext}`, personalSources, 6)
+      const agendaEvidence = buildAgendaAlignment(`${cleanIdea} ${angle}`, intellectualAgenda)
 
       setEditorialProgress('decision')
       const decision = buildEditorialBoardDecision({
@@ -2350,6 +2400,8 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
         currentContextError,
         audienceEvidence,
         portfolioEvidence,
+        personalSourceMatches,
+        agendaEvidence,
         personalMode: true,
         suggestedTitle: suggestStrongTitle(cleanIdea),
         calibrationProfile: editorialCalibrationProfile,
@@ -2694,6 +2746,20 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       })
+      await setDoc(doc(db, 'admin_content_intelligence', `article:${bundle.slug}`), {
+        kind: 'article',
+        slug: bundle.slug,
+        title: bundle.title.trim(),
+        meaningFingerprint,
+        evidenceChain: editorialEvidenceChain,
+        sourceIds: editorialEvidenceChain.sourceIds,
+        ...(editorialEvidenceChain.alerts.length ? { evidenceAlerts: editorialEvidenceChain.alerts, needsEvidenceReview: true } : {}),
+        editorialDecisionId: editorialDecision?.id || null,
+        builtFrom: 'publishing-studio',
+        updatedAtClient: new Date().toISOString(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }, { merge: true })
       if (editorialDecision) {
         await setDoc(doc(db, 'admin_editorial_board', editorialDecision.id), {
           lifecycleStatus: 'draft_started',
@@ -2725,11 +2791,18 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
       const db = await getDb()
       if (!db) throw new Error('Firebase غير متاح الآن.')
       const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
+      const socialText = bundle.socialPack
+        ? [bundle.socialPack.linkedin, bundle.socialPack.x, bundle.socialPack.threads, ...(bundle.socialPack.instagramCaptions || []), ...(bundle.socialPack.carouselSlides || []).map((slide) => `${slide.kicker} ${slide.title} ${slide.body}`), ...(bundle.socialPack.stories || []), bundle.socialPack.reelScript, bundle.socialPack.whatsapp, bundle.socialPack.newsletter].filter(Boolean).join(' ')
+        : [weeklyPack.linkedin, weeklyPack.x, weeklyPack.generalX, weeklyPack.instagram, weeklyPack.question, weeklyPack.quote, weeklyPack.radarComment].filter(Boolean).join(' ')
+      const meaningGuard = reviewMeaningDrift(meaningFingerprint, socialText)
+      if (!meaningGuard.ready) throw new Error(`بصمة المعنى أوقفت الحزمة قبل الطابور: ${meaningGuard.explanation}`)
       await addDoc(collection(db, 'social_queue'), {
         status: 'ready_for_review',
         source: 'publishing_studio',
         articleSlug: bundle.slug,
         articleTitle: bundle.title,
+        meaningFingerprintHash: meaningFingerprint.hash,
+        meaningGuard,
         idea,
         audience,
         posts: bundle.socialPack ? {
@@ -2948,6 +3021,7 @@ ${effectivePurpose}`,
             {notice && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.84rem] text-accent">{notice}</p>}
             {error && <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.84rem] text-soft">{error}</p>}
           </section>
+          <EditorialMemoryPanel idea={`${idea} ${angle}`} articles={richArticles} books={books as any} papers={papers as any} onDataChange={handleEditorialMemoryData} />
           <EditorialBoardPanel decision={editorialDecision} progress={editorialProgress} busy={editorialBusy} historyCount={editorialHistory.length} onStart={startEditorialArticle} onForceStart={forceStartEditorialArticle} onOpenExisting={openExistingEditorialArticle} evidenceHold={Boolean(editorialDecision && editorialEvidenceHold === editorialDecision.id)} />
           {editorialHistory.length > 0 && <details className={`${card} group`}>
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block text-[.72rem] font-semibold text-accent">سجل قرارات مجلس التحرير</span><span className="mt-1 block text-[.82rem] text-soft">آخر {editorialHistory.length} قرار محفوظ{editorialCalibrationProfile.sampleSize >= 1 ? ` · ${editorialCalibrationProfile.sampleSize} نتيجة دخلت المعايرة` : ''}</span></span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
@@ -3001,7 +3075,10 @@ ${effectivePurpose}`,
         <>
           <EditorialDecisionRoom suite={editorialDecisionSuite} />
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,.72fr)]">
-            <QualityGateCard gate={gate} />
+            <div className="grid content-start gap-5">
+              <QualityGateCard gate={gate} />
+              <EvidenceChainCard chain={editorialEvidenceChain} />
+            </div>
             <div className="grid content-start gap-5">
               <StyleEditorCard review={styleInsight} />
               <PrivateBookMemoryCard matches={privateMemoryMatches} />

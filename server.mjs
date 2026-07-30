@@ -654,6 +654,23 @@ function localResearchPdf(raw) {
   return null
 }
 
+async function privateResearchPdf(raw) {
+  const value = String(raw || '').trim()
+  if (!/^admin-source-desk\/[A-Za-z0-9][A-Za-z0-9._-]{0,180}\.pdf$/.test(value)) return null
+  const { app } = await getAdminFirestore()
+  const { getStorage } = await import('firebase-admin/storage')
+  const bucketName = String(process.env.FIREBASE_STORAGE_BUCKET || process.env.VITE_FIREBASE_STORAGE_BUCKET || '').replace(/^gs:\/\//, '').replace(/\/$/, '')
+  const bucket = bucketName ? getStorage(app).bucket(bucketName) : getStorage(app).bucket()
+  const file = bucket.file(value)
+  const [metadata] = await file.getMetadata()
+  const size = Number(metadata.size || 0)
+  if (!Number.isFinite(size) || size <= 0 || size > 24 * 1024 * 1024) throw new HttpError(413, 'Research PDF is too large')
+  const [bytes] = await file.download()
+  if (bytes.length > 24 * 1024 * 1024) throw new HttpError(413, 'Research PDF is too large')
+  if (bytes.subarray(0, 5).toString('ascii') !== '%PDF-') throw new HttpError(400, 'Private source is not a valid PDF')
+  return { bytes, finalUrl: value, contentType: 'application/pdf' }
+}
+
 async function crossrefMetadata(doi, fetchImpl = fetch) {
   const cleanDoi = boundedString(doi, 300).replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, '')
   if (!cleanDoi) return ''
@@ -710,7 +727,7 @@ async function generatePaperAnalysis(input, fetchImpl = fetch) {
   const pdfCandidate = discovered.pdf || input.pdf
   if (pdfCandidate) {
     try {
-      const resource = localResearchPdf(pdfCandidate) || (/^https?:\/\//i.test(pdfCandidate)
+      const resource = localResearchPdf(pdfCandidate) || await privateResearchPdf(pdfCandidate) || (/^https?:\/\//i.test(pdfCandidate)
         ? await fetchResearchSource(pdfCandidate, 24 * 1024 * 1024, 'application/pdf,*/*;q=0.5', fetchImpl)
         : null)
       if (resource && (/application\/pdf/i.test(resource.contentType) || resource.bytes.subarray(0, 5).toString('ascii') === '%PDF-')) {
@@ -3083,7 +3100,7 @@ async function getAdminFirestore() {
       credential = applicationDefault()
     }
     const app = getApps()[0] || initializeApp({ credential, ...(projectId ? { projectId } : {}) })
-    return { db: getFirestore(app), FieldValue, Timestamp }
+    return { app, db: getFirestore(app), FieldValue, Timestamp }
   })()
   return adminFirestorePromise
 }

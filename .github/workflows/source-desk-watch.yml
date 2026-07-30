@@ -1,0 +1,42 @@
+name: حارس مكتب المصادر الشخصي
+
+on:
+  schedule:
+    # أسبوعياً؛ تغير حالة دراسة لا يحتاج polling كثيف، ويظل الحمل على Crossref منخفضاً.
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: personal-source-desk-watch
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: تثبيت اعتمادات التشغيل
+        run: npm ci --omit=dev --registry=https://registry.npmjs.org/ --prefer-online
+      - name: اختبار الحارس بلا شبكة
+        run: node scripts/source-desk-watch.mjs --self-test
+      - name: تحضير حساب الخدمة
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 مفقود؛ لن يُنفذ حارس المصادر."
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+      - name: مراجعة DOI وربط أي تصحيح أو سحب بالمحتوى المتأثر
+        run: node scripts/source-desk-watch.mjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+      - name: حذف ملف حساب الخدمة
+        if: always()
+        run: rm -f sa.json

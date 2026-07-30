@@ -34,6 +34,17 @@ service firebase.storage {
     }
 
 
+    // ملفات مكتب المصادر الشخصي: PDF خاص للمشرف وحده، ولا يحصل على رابط قراءة عام.
+    match /admin-source-desk/{fileName} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && isValidFileName(fileName)
+        && fileName.matches('^.+[.]pdf$')
+        && request.resource.size > 0
+        && request.resource.size <= 24 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+      allow delete: if isAdmin();
+    }
+
     // مكتبة التوليد الخاصة بالاستوديو: لا يقرأها ولا يكتبها إلا المشرف.
     // تحفظ المخرجات الأصلية لإعادة الاستخدام والتحرير مستقبلاً، من دون نشرها للعامة.
     match /admin-generated/{fileName} {

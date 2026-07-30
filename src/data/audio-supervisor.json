@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-30T06:46:07.367Z",
+  "generatedAt": "2026-07-30T09:47:34.755Z",
   "state": "repairing",
   "articles": {
     "total": 143,
@@ -2137,9 +2137,9 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 4,
+            "attempts": 5,
             "firstFailedAt": "2026-07-23T20:21:21.408Z",
-            "lastFailedAt": "2026-07-29T12:25:46.530Z",
+            "lastFailedAt": "2026-07-30T09:44:18.296Z",
             "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
           }
         },
@@ -2224,9 +2224,9 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 4,
+            "attempts": 5,
             "firstFailedAt": "2026-07-23T20:22:13.472Z",
-            "lastFailedAt": "2026-07-29T12:27:39.834Z",
+            "lastFailedAt": "2026-07-30T09:44:26.490Z",
             "message": "بوابة الصوت رفضت القراءة: proxy=88/100، الحكم السمعي غير متاح"
           }
         },
@@ -4405,5 +4405,5 @@
       "complete": false
     }
   ],
-  "fingerprint": "79e4b403f3b0b3fc8c9cc1573b21601bb48843cd0f0156d9500bc3c408f257ee"
+  "fingerprint": "ae1ab504a52da06bc3266ca1c1798b7e33f9d56c70cd584ca61ded1a35bedd18"
 }

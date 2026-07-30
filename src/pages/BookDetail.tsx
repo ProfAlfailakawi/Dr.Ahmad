@@ -126,16 +126,19 @@ export default function BookDetail() {
                 </dl>
               )}
 
-              <div className="mt-9 grid gap-3">
+              <div className="mt-9 grid gap-2">
                 {[
                   ['فكرة الكتاب', guide?.idea || book.desc],
                   ['لمن يناسب؟', guide?.audience || 'للمهتمين بموضوع الكتاب.'],
                   ['طريقة الدخول', guide?.entry || 'ابدأ بالفكرة العامة، ثم انتقل إلى الفهرس لتختار الفصل الأقرب لسؤالك.'],
                 ].map(([title, text]) => (
-                  <div key={title} className="rounded-2xl border border-hair bg-wash p-4">
-                    <p className="text-[.78rem] font-semibold text-accent">{title}</p>
-                    <p className="mt-1 text-[.9rem] leading-relaxed text-soft">{text}</p>
-                  </div>
+                  <details key={title} className="group rounded-2xl border border-hair bg-wash">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3.5">
+                      <span className="text-[.78rem] font-semibold text-accent">{title}</span>
+                      <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span>
+                    </summary>
+                    <p className="border-t border-hair px-4 py-4 text-[.88rem] leading-relaxed text-soft">{text}</p>
+                  </details>
                 ))}
               </div>
 

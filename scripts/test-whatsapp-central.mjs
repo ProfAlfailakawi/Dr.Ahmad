@@ -7,6 +7,7 @@ import {
   isWhatsAppWakePhrase,
   isDuplicateInboundDelivery,
   isInvalidBridgeRegression,
+  isStaleInboundMessage,
   stripArabicGreetings,
   whatsappPolicy,
 } from '../src/server/whatsapp-controller.mjs'
@@ -30,6 +31,16 @@ for (const phrase of ['السلام عليكم', 'آخر مقالة', 'اسأل 
 }
 assert.equal(isInvalidBridgeRegression({ instanceId: 'one', connected: true, status: 'connected' }, 'one', 'syncing'), true)
 assert.equal(isInvalidBridgeRegression({ instanceId: 'one', connected: true, status: 'connected' }, 'two', 'syncing'), false)
+assert.equal(isStaleInboundMessage({
+  timestamp: Date.parse('2026-07-30T18:00:00.000Z') / 1000,
+  bridgeReadyAt: '2026-07-30T18:10:00.000Z',
+  now: Date.parse('2026-07-30T18:10:05.000Z'),
+}), true, 'messages from before this bridge runtime must never wake/reply after sync')
+assert.equal(isStaleInboundMessage({
+  timestamp: Date.parse('2026-07-30T18:09:30.000Z') / 1000,
+  bridgeReadyAt: '2026-07-30T18:10:00.000Z',
+  now: Date.parse('2026-07-30T18:10:05.000Z'),
+}), false, 'small sync/clock grace must remain accepted')
 
 const controllerSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../src/server/whatsapp-controller.mjs', import.meta.url), 'utf8'))
 assert.match(controllerSource, /runtime-resume/)
@@ -47,6 +58,9 @@ assert.match(controllerSource, /path === '\/simulate-sequence'/)
 assert.match(controllerSource, /الوضع الطبيعي تُقابل بالصمت التام/)
 assert.match(controllerSource, /reason: 'awaiting-wake-phrase'/)
 assert.match(controllerSource, /Number\(data\.wakeVersion \|\| 0\) >= 2/)
+assert.match(controllerSource, /reason: 'stale-after-bridge-start'/)
+assert.match(controllerSource, /media-burst-suppressed/)
+assert.match(controllerSource, /cleanAudienceName/)
 assert.doesNotMatch(controllerSource, /wakeActive: true,\s*\n\s*wakeVersion: 1,/, 'لا فتح جلسات بنسخة الإيقاظ الملغاة')
 
 const now = Date.parse('2026-07-29T18:30:00.000Z')
@@ -105,6 +119,14 @@ assert.match(bridgeSource, /sanitizeServerReply/)
 assert.match(bridgeSource, /legacy_duplicate_decision_retrying_as_distinct_turn/)
 assert.match(bridgeSource, /SAFE_CLARIFY_REPLY/)
 
+const cloudBridgeSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../whatsapp-bridge/bridge.mjs', import.meta.url), 'utf8'))
+assert.match(cloudBridgeSource, /backfilled_message_ignored/)
+assert.match(cloudBridgeSource, /bridgeReadyAt: runtime\.readyAt/)
+assert.match(cloudBridgeSource, /client\.getNumberId\(digits\)/)
+assert.match(cloudBridgeSource, /command\.type === 'send-self-message'/)
+assert.match(cloudBridgeSource, /await acknowledgeCommand\(command\.id, true\)/)
+assert.doesNotMatch(cloudBridgeSource, /\.getChat\(/, 'broadcast delivery must not depend on an undefined chat object')
+
 const rules = [{
   id: 'hours',
   name: 'الدوام',
@@ -123,8 +145,11 @@ assert.match(decideGroundedResponse({ text: 'مواعيد الدوام', rules }
 const media = decideGroundedResponse({ text: 'شوف الملف', hasMedia: true })
 assert.equal(media.kind, 'reply')
 assert.equal(media.reason, 'media-description-needed')
-assert.match(media.reply, /اكتب لي بجملة واحدة/)
+assert.match(media.reply, /اكتب المطلوب بجملة واحدة/)
 assert.doesNotMatch(media.reply, /متابعة بشرية|الفريق/)
+const mediaBurst = decideGroundedResponse({ text: '', hasMedia: true, conversation: { lastMediaReplyAt: new Date().toISOString() } })
+assert.equal(mediaBurst.kind, 'no-reply')
+assert.equal(mediaBurst.reason, 'media-burst-suppressed')
 
 const human = decideGroundedResponse({ text: 'أبي أكلم موظف' })
 assert.equal(human.kind, 'escalate')
@@ -152,12 +177,12 @@ assert.doesNotMatch(price.reply, /\d+\s*(?:د\.ك|دينار)/)
 const unknown = decideGroundedResponse({ text: 'شنو طقس كوكب نبتون باچر؟' })
 assert.equal(unknown.kind, 'reply')
 assert.ok(['active-clarify', 'no-grounded-answer'].includes(unknown.reason))
-assert.match(unknown.reply, /اكتب الفكرة|كلمة أقرب/)
+assert.match(unknown.reply, /اكتب الفكرة|اكتب الموضوع|كلمة أقرب/)
 
 const archive = decideGroundedResponse({ text: 'الذكاء الاصطناعي في التعليم' })
 assert.equal(archive.kind, 'reply')
 assert.match(archive.reply, /https:\/\/dr-alfailakawi\.com\//)
-assert.match(archive.reply, /لخّص الأولى|عطني غيرها/)
+assert.match(archive.reply, /لخّصها|لخّص الأولى|غيرها/)
 assert.match(archive.reply, /رد آلي من موقع/)
 
 /* محادثة واحدة لا ثلاثة اختبارات منفصلة: يفتح مادة، يتذكرها عند «لخصها»،
@@ -187,7 +212,7 @@ assert.equal(continuousTurns.length, 3)
 assert.equal(continuousTurns[1].reason, 'context-summary')
 assert.equal(['more-like-this', 'no-more-results'].includes(continuousTurns[2].reason), true)
 assert.ok(Date.now() - continuousStartedAt < 5_000, 'three-turn local reasoning must remain fast')
-assert.match(decideGroundedResponse({ text: 'من هو الدكتور أحمد؟' }).reply, /شنو تحب أسوي بعدها/)
+assert.match(decideGroundedResponse({ text: 'من هو الدكتور أحمد؟' }).reply, /ماذا تريد بعدها|شنو تحب أسوي بعدها/)
 
 /* التسلسل الظاهر في صور الدكتور: اختيار ٣٠ ثانية ثم طلب أحدث المقالات
    مرتين. كل ضغطة/رسالة مستقلة يجب أن تحصل على رد، ولا تتحول إلى duplicate

@@ -10,6 +10,11 @@ import { fetchPublishedExtras, getDb } from '../../lib/firebase'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { PublishingStudioNavigation, type PublishingStudioView } from './PublishingStudioNavigation'
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
+import { createIdeaDna } from '../../lib/idea-dna'
+import { buildKnowledgeGraph, graphSearch } from '../../lib/knowledge-graph'
+import { buildAudienceSignals, type AudienceSignal, type InboxMessageInput } from '../../lib/inbox-intelligence'
+import { buildRows as buildReaderRows, windowDays, type Row as ReaderRow, type ViewDoc } from '../readerPulseLogic'
+import { buildEditorialBoardDecision, editorialScoreLabel, type EditorialArchiveMaterial, type EditorialAudienceEvidence, type EditorialBoardDecision, type EditorialSourceType } from '../../lib/editorial-board'
 import { buildSocialVisuals, compositionNameOf, analyzeSocialCopy,
   detectVisualTopic, downloadSocialPng, renderSocialPng, visualTopicLabel, type SocialVisualTemplate, type VisualTopic } from '../../lib/social-templates'
 import {
@@ -61,6 +66,67 @@ type CurrentEvent = {
   publishedAt?: string
   ageHours?: number | null
   relevance?: number
+}
+
+type EditorialProgress = 'idle' | 'archive' | 'graph' | 'current' | 'audience' | 'decision' | 'done'
+
+const EDITORIAL_SOURCE_LABELS: Array<{ value: EditorialSourceType; label: string }> = [
+  { value: 'friend', label: 'صديق' },
+  { value: 'colleague', label: 'زميل' },
+  { value: 'reader', label: 'قارئ' },
+  { value: 'student', label: 'طالب' },
+  { value: 'meeting', label: 'اجتماع' },
+  { value: 'whatsapp', label: 'واتساب' },
+  { value: 'encounter', label: 'لقاء' },
+  { value: 'other', label: 'أخرى' },
+]
+
+const EDITORIAL_PROGRESS_LABELS: Record<EditorialProgress, string> = {
+  idle: '',
+  archive: 'يفحص الأرشيف والمحتوى الكامل…',
+  graph: 'يربط الفكرة بخريطة المعرفة وIdea DNA…',
+  current: 'يفحص اللحظة الحالية من المصادر الموثوقة…',
+  audience: 'يفحص نبض القراء والرسائل من دون كشف بيانات شخصية…',
+  decision: 'يبني الحكم ويشغّل محامي الشيطان…',
+  done: 'اكتمل القرار.',
+}
+
+function scoreAudienceEvidence(idea: string, signals: AudienceSignal[], readerRows: ReaderRow[], availability: { messages: boolean; views: boolean }): EditorialAudienceEvidence {
+  const signalItems = signals.map((item) => ({ ...item, title: item.theme }))
+  const matchedSignals = relatedForIdea(idea, signalItems, (item) => `${item.theme} ${item.suggestion}`, 5)
+  const matchedRows = relatedForIdea(idea, readerRows, (item) => `${item.title} ${item.path}`, 5)
+  const parts: number[] = []
+  if (availability.messages) {
+    const mentions = matchedSignals.reduce((sum, item) => sum + Number(item.count || 0), 0)
+    parts.push(mentions ? Math.min(100, 20 + mentions * 12) : 0)
+  }
+  if (availability.views) {
+    const maxRecent = Math.max(0, ...readerRows.map((row) => Number(row.recent || 0)))
+    const maxTotal = Math.max(0, ...readerRows.map((row) => Number(row.total || 0)))
+    const matchedRecent = matchedRows.reduce((sum, row) => sum + Number(row.recent || 0), 0)
+    const matchedTotal = matchedRows.reduce((sum, row) => sum + Number(row.total || 0), 0)
+    const recentScore = maxRecent ? Math.min(100, (matchedRecent / maxRecent) * 100) : 0
+    const totalScore = maxTotal ? Math.min(100, (matchedTotal / maxTotal) * 100) : 0
+    parts.push(Math.round(recentScore * .7 + totalScore * .3))
+  }
+  const available = availability.messages || availability.views
+  const score = parts.length ? Math.round(parts.reduce((sum, value) => sum + value, 0) / parts.length) : null
+  const explanation = !available
+    ? 'لا تتوفر بيانات جمهور كافية الآن؛ لم تُخترع درجة اهتمام.'
+    : matchedSignals.length || matchedRows.length
+      ? `ظهرت ${matchedSignals.reduce((sum, item) => sum + item.count, 0)} إشارة رسائل و${matchedRows.reduce((sum, row) => sum + row.recent, 0)} قراءة حديثة مرتبطة بالفكرة في البيانات المتاحة.`
+      : 'بيانات الجمهور متاحة، لكن لا توجد إشارة مباشرة قوية لهذا الموضوع في الرسائل أو القراءة الحالية.'
+  return {
+    available,
+    score,
+    messageMatches: matchedSignals.map((item) => ({ theme: item.theme, count: item.count, strength: item.strength })),
+    readingMatches: matchedRows.map((item) => ({ path: item.path, title: item.title, recent: item.recent, total: item.total })),
+    explanation,
+  }
+}
+
+function archiveMaterialFromArticle(article: ArticleRecord, score: number): EditorialArchiveMaterial {
+  return { kind: 'article', slug: article.slug, title: article.title, url: `/articles/${article.slug}`, score, date: article.date || article.iso || '', excerpt: article.excerpt || '' }
 }
 
 type PerfectSocialPack = {
@@ -1161,15 +1227,16 @@ function IdeaSuggestionsCard({
   onPick: (title: string, idea: string) => void
 }) {
   return (
-    <section className={card}>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-[.76rem] font-semibold uppercase text-accent">ما لم أكتب فيه بعد</p>
-          <h2 className="mt-1 font-display text-2xl font-semibold text-ink">اقتراحات مقالات جديدة قبل الكتابة.</h2>
-        </div>
-        <p className="max-w-xl text-[.84rem] leading-relaxed text-soft">يراقب الرادار المنشور + كتبك الخاصة المشتقة + فجوات الأرشيف، ثم يقترح عناوين لا تزاحم ما كتبته.</p>
-      </div>
-      <div className="grid gap-3 md:grid-cols-2">
+    <details className={`${card} group`}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
+        <span>
+          <span className="block text-[.76rem] font-semibold uppercase text-accent">ما لم أكتب فيه بعد</span>
+          <span className="mt-1 block font-display text-xl font-semibold text-ink">اقتراحات مقالات جديدة قبل الكتابة.</span>
+          <span className="mt-1 block text-[.82rem] leading-relaxed text-soft">{suggestions.length} اقتراحات من فجوات الأرشيف — افتحها عند الحاجة.</span>
+        </span>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span>
+      </summary>
+      <div className="mt-5 grid gap-3 border-t border-hair pt-5 md:grid-cols-2">
         {suggestions.map((item) => (
           <button
             key={`${item.title}-${item.idea}`}
@@ -1185,7 +1252,7 @@ function IdeaSuggestionsCard({
           </button>
         ))}
       </div>
-    </section>
+    </details>
   )
 }
 
@@ -1238,6 +1305,115 @@ function ArchiveWakeCard({
         })}
       </div>
     </details>
+  )
+}
+
+
+function EditorialBoardPanel({
+  decision,
+  progress,
+  busy,
+  historyCount,
+  onStart,
+  onOpenExisting,
+}: {
+  decision: EditorialBoardDecision | null
+  progress: EditorialProgress
+  busy: boolean
+  historyCount: number
+  onStart: (decision: EditorialBoardDecision) => void
+  onOpenExisting: (decision: EditorialBoardDecision) => void
+}) {
+  if (busy && !decision) {
+    return (
+      <section className={`${card} border-accent/25`} aria-live="polite" data-editorial-board-analyzing="true">
+        <p className="text-[.72rem] font-semibold uppercase text-accent">مجلس التحرير</p>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-hair/60"><div className="h-full w-2/3 animate-pulse rounded-full bg-accent" /></div>
+        <p className="mt-4 font-display text-xl font-semibold text-ink">{EDITORIAL_PROGRESS_LABELS[progress] || 'يبدأ التحليل…'}</p>
+        <p className="mt-2 text-[.8rem] leading-relaxed text-soft">كل خطوة هنا مرتبطة بفحص حقيقي؛ لا توجد حركة تحميل وهمية.</p>
+      </section>
+    )
+  }
+  if (!decision) return null
+  const scoreRows = [
+    ['قوة الفكرة', decision.scores.strength],
+    ['الجِدة بالنسبة لأرشيفك', decision.scores.novelty],
+    ['خطر التكرار', decision.scores.repetitionRisk],
+    ['قوة التوقيت', decision.scores.timing],
+    ['ملاءمة الموضوع لهويتك', decision.scores.identityFit],
+    ['اهتمام الجمهور', decision.scores.audienceInterest],
+    ['قابلية التحول إلى مقال قوي', decision.scores.articlePotential],
+  ] as const
+  const canStart = ['write_now', 'change_angle'].includes(decision.verdict)
+  return (
+    <section className={`${card} border-accent/25`} data-editorial-board-decision="true">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-hair pb-5">
+        <div className="max-w-3xl">
+          <p className="text-[.72rem] font-semibold uppercase text-accent">قرار مجلس التحرير</p>
+          <h2 className="mt-1 font-display text-[clamp(1.55rem,3vw,2.3rem)] font-semibold leading-tight text-ink">{decision.verdictLabel}</h2>
+          <p className="mt-3 text-[.84rem] leading-[1.85] text-soft">{decision.why[0]}</p>
+        </div>
+        <div className="text-left">
+          <span className="block font-display text-3xl font-semibold text-accent">{editorialScoreLabel(decision.scores.strength)}</span>
+          <span className="mt-1 block text-[.66rem] text-soft">قوة القرار · {historyCount ? `${historyCount} قرار محفوظ` : 'أول قرار محفوظ'}</span>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-x-8 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
+        {scoreRows.map(([label, value]) => (
+          <div key={label} className="flex items-baseline justify-between gap-4 border-b border-hair/70 py-2.5">
+            <span className="text-[.76rem] text-soft">{label}</span>
+            <strong className="text-[.8rem] text-ink">{editorialScoreLabel(value)}</strong>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 grid gap-2">
+        <details className="group rounded-xl border border-hair bg-canvas px-4 py-3">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">لماذا هذا الحكم؟</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
+          <div className="mt-3 border-t border-hair pt-3">{decision.why.map((line) => <p key={line} className="mt-2 text-[.8rem] leading-relaxed text-soft">{line}</p>)}</div>
+        </details>
+        <details className="group rounded-xl border border-hair bg-canvas px-4 py-3">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">الفراغ التحريري</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
+          <div className="mt-3 border-t border-hair pt-3"><p className="text-[.84rem] font-semibold leading-relaxed text-ink">{decision.editorialGap.headline}</p>{decision.editorialGap.gap.map((line) => <p key={line} className="mt-2 text-[.78rem] leading-relaxed text-soft">{line}</p>)}</div>
+        </details>
+        <details className="group rounded-xl border border-hair bg-canvas px-4 py-3">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">محكمة الأرشيف</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
+          <div className="mt-3 border-t border-hair pt-3">
+            <p className="text-[.8rem] leading-relaxed text-soft">{decision.archiveCourt.summary}</p>
+            <div className="mt-3 grid gap-2">{decision.archiveCourt.nearest.map((item) => <a key={`${item.kind}-${item.slug}`} href={item.url} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-3 rounded-lg border border-hair px-3 py-2 text-[.76rem] text-ink transition-colors hover:border-accent hover:text-accent"><span className="min-w-0 truncate">{item.kind === 'article' ? 'مقال' : item.kind === 'book' ? 'كتاب' : 'بحث'} · {item.title}</span><span className="shrink-0 text-soft">صلة {item.score}</span></a>)}</div>
+            {decision.archiveCourt.contradictionOpportunity && <p className="mt-3 text-[.78rem] leading-relaxed text-accent">{decision.archiveCourt.contradictionOpportunity}</p>}
+          </div>
+        </details>
+        <details className="group rounded-xl border border-hair bg-canvas px-4 py-3">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">رادار اللحظة وصوت الجمهور</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
+          <div className="mt-3 border-t border-hair pt-3"><p className="text-[.78rem] leading-relaxed text-soft">{decision.timingRadar.explanation}</p><p className="mt-2 text-[.78rem] leading-relaxed text-soft">{decision.audienceRadar.explanation}</p>{decision.dataNotes.map((note) => <p key={note} className="mt-2 text-[.72rem] leading-relaxed text-soft">{note}</p>)}</div>
+        </details>
+        <details className="group rounded-xl border border-hair bg-canvas px-4 py-3">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">محامي الشيطان</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
+          <div className="mt-3 border-t border-hair pt-3"><p className="text-[.82rem] font-semibold leading-relaxed text-ink">{decision.devilAdvocate.objection}</p><p className="mt-2 text-[.78rem] leading-relaxed text-soft">{decision.devilAdvocate.answer}</p></div>
+        </details>
+        <details className="group rounded-xl border border-hair bg-canvas px-4 py-3">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">الخطة المقترحة</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
+          <div className="mt-3 border-t border-hair pt-3">
+            <p className="text-[.72rem] font-semibold text-accent">العنوان الذي يرشحه المجلس</p><p className="mt-1 font-display text-xl font-semibold leading-relaxed text-ink">{decision.plan.primaryTitle}</p>
+            {decision.plan.alternatives.length > 0 && <div className="mt-3 grid gap-1">{decision.plan.alternatives.map((title) => <p key={title} className="text-[.76rem] leading-relaxed text-soft">بديل · {title}</p>)}</div>}
+            <p className="mt-4 text-[.8rem] leading-relaxed text-ink"><strong>الأطروحة:</strong> {decision.plan.thesis}</p>
+            <p className="mt-2 text-[.78rem] leading-relaxed text-soft"><strong className="text-ink">القناة:</strong> {decision.plan.channel} · <strong className="text-ink">الطول:</strong> {decision.plan.expectedLength}</p>
+            <div className="mt-4 grid gap-2">{decision.plan.outline.map((line, index) => <p key={line} className="text-[.76rem] leading-relaxed text-soft"><span className="me-2 font-semibold text-accent">{index + 1}</span>{line}</p>)}</div>
+          </div>
+        </details>
+      </div>
+
+      {decision.waitingRoom && <div className="mt-5 rounded-xl border border-hair bg-canvas px-4 py-3"><p className="text-[.72rem] font-semibold text-accent">غرفة الانتظار التحريرية</p><p className="mt-1 text-[.8rem] leading-relaxed text-ink">{decision.waitingRoom.reason}</p><p className="mt-2 text-[.74rem] leading-relaxed text-soft">إشارة العودة: {decision.waitingRoom.trigger}</p></div>}
+
+      <div className="mt-6 flex flex-wrap gap-3">
+        {canStart && <button type="button" className={primary} onClick={() => onStart(decision)}>ابدأ المقال</button>}
+        {decision.verdict === 'update_existing' && decision.archiveCourt.nearest.some((item) => item.kind === 'article') && <button type="button" className={primary} onClick={() => onOpenExisting(decision)}>افتح المقال السابق للتحديث</button>}
+        {decision.verdict === 'reject' && <span className="text-[.78rem] leading-relaxed text-soft">لم يُنشئ المجلس مسودة؛ الرفض قرار تحريري محفوظ وليس حذفاً للفكرة.</span>}
+        {decision.verdict === 'wait' && <span className="text-[.78rem] leading-relaxed text-soft">حُفظت الفكرة تلقائياً في سجل المجلس مع موعد إعادة المراجعة.</span>}
+      </div>
+    </section>
   )
 }
 
@@ -1480,36 +1656,42 @@ function CurrentEventsCard({
   const rest = items.filter((item) => !kuwait.some((local) => local.id === item.id))
   const shown = [...kuwait, ...rest].slice(0, 8)
   return (
-    <section className={card}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-[.76rem] font-semibold uppercase text-accent">أحداث الساعة</p>
-          <h2 className="mt-1 font-display text-xl font-semibold text-ink">يربط الحدث فقط عندما يخدم الفكرة.</h2>
-          <p className="mt-2 text-[.8rem] leading-relaxed text-soft">رادار الكويت يظهر أولاً عند وجود مادة محلية موثوقة، ثم تأتي المصادر العالمية.</p>
-        </div>
-        <span className="rounded-full border border-hair px-3 py-1.5 text-[.72rem] text-soft">{loading ? 'أحدّث المصادر…' : selected.length ? `${selected.length} محدد` : 'اختيار ذكي'}</span>
+    <details className={`${card} group`}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
+        <span>
+          <span className="block text-[.76rem] font-semibold uppercase text-accent">أحداث الساعة</span>
+          <span className="mt-1 block font-display text-xl font-semibold text-ink">يربط الحدث فقط عندما يخدم الفكرة.</span>
+          <span className="mt-1 block text-[.8rem] leading-relaxed text-soft">{loading ? 'أحدّث المصادر…' : selected.length ? `${selected.length} حدث مثبت` : items.length ? `${shown.length} إشارات راهنة متاحة` : 'لا توجد إشارة راهنة مناسبة الآن'}</span>
+        </span>
+        <span className="flex items-center gap-2">
+          {selected.length > 0 && <span className="rounded-full border border-hair px-3 py-1 text-[.7rem] text-soft">{selected.length} محدد</span>}
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span>
+        </span>
+      </summary>
+      <div className="mt-5 border-t border-hair pt-5">
+        <p className="mb-4 text-[.78rem] leading-relaxed text-soft">رادار الكويت يظهر أولاً عند وجود مادة محلية موثوقة، ثم تأتي المصادر العالمية.</p>
+        {items.length ? (
+          <div className="grid gap-3 md:grid-cols-2">
+            {shown.map((item) => {
+              const active = selected.includes(item.id)
+              const local = kuwait.some((candidate) => candidate.id === item.id)
+              return (
+                <article key={item.id} className={`rounded-2xl border p-4 text-right transition-colors ${active ? 'border-accent bg-accent/[.06]' : 'border-hair bg-canvas hover:border-accent'}`}>
+                  <button type="button" onClick={() => onToggle(item.id)} className="block w-full text-right">
+                    <span className="flex items-center justify-between gap-2 text-[.7rem] font-semibold text-accent"><span>{local ? `رادار الكويت · ${item.source}` : item.source}</span><span>{item.ageHours != null ? `قبل ${item.ageHours} س` : 'حديث'}</span></span>
+                    <span className="mt-2 line-clamp-2 block font-display text-[.96rem] font-semibold leading-[1.55] text-ink">{item.title}</span>
+                    <span className="mt-3 block text-[.72rem] text-soft">{active ? 'مثبّت للربط ✓' : 'اضغط لتثبيته'}</span>
+                  </button>
+                  <a href={item.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-[.7rem] font-semibold text-accent hover:underline">فتح المصدر ↗</a>
+                </article>
+              )
+            })}
+          </div>
+        ) : (
+          <p className="rounded-xl border border-hair bg-canvas p-4 text-[.82rem] text-soft">{loading ? 'أقرأ المصادر الموثوقة الآن…' : 'لا يوجد حدث راهن مناسب لهذه الفكرة، وهذا أفضل من ربط مصطنع.'}</p>
+        )}
       </div>
-      {items.length ? (
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          {shown.map((item) => {
-            const active = selected.includes(item.id)
-            const local = kuwait.some((candidate) => candidate.id === item.id)
-            return (
-              <article key={item.id} className={`rounded-2xl border p-4 text-right transition-colors ${active ? 'border-accent bg-accent/[.06]' : 'border-hair bg-canvas hover:border-accent'}`}>
-                <button type="button" onClick={() => onToggle(item.id)} className="block w-full text-right">
-                  <span className="flex items-center justify-between gap-2 text-[.7rem] font-semibold text-accent"><span>{local ? `رادار الكويت · ${item.source}` : item.source}</span><span>{item.ageHours != null ? `قبل ${item.ageHours} س` : 'حديث'}</span></span>
-                  <span className="mt-2 line-clamp-2 block font-display text-[.96rem] font-semibold leading-[1.55] text-ink">{item.title}</span>
-                  <span className="mt-3 block text-[.72rem] text-soft">{active ? 'مثبّت للربط ✓' : 'اضغط لتثبيته'}</span>
-                </button>
-                <a href={item.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-[.7rem] font-semibold text-accent hover:underline">فتح المصدر ↗</a>
-              </article>
-            )
-          })}
-        </div>
-      ) : (
-        <p className="mt-4 rounded-xl border border-hair bg-canvas p-4 text-[.82rem] text-soft">{loading ? 'أقرأ المصادر الموثوقة الآن…' : 'لا يوجد حدث راهن مناسب لهذه الفكرة، وهذا أفضل من ربط مصطنع.'}</p>
-      )}
-    </section>
+    </details>
   )
 }
 
@@ -1806,6 +1988,14 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([])
   const [eventsLoading, setEventsLoading] = useState(false)
   const [view, setView] = useState<PublishingStudioView>('idea')
+  const [proposalMode, setProposalMode] = useState<'self' | 'received'>('self')
+  const [proposalSourcePerson, setProposalSourcePerson] = useState('')
+  const [proposalSourceType, setProposalSourceType] = useState<EditorialSourceType>('friend')
+  const [proposalSourceContext, setProposalSourceContext] = useState('')
+  const [editorialDecision, setEditorialDecision] = useState<EditorialBoardDecision | null>(null)
+  const [editorialHistory, setEditorialHistory] = useState<EditorialBoardDecision[]>([])
+  const [editorialProgress, setEditorialProgress] = useState<EditorialProgress>('idle')
+  const [editorialBusy, setEditorialBusy] = useState(false)
 
   // بذرة «حملة من مقال»: عند وصولها نفتح استوديو التصاميم فوراً، وعند وجودها
   // مخزنة (وصل الحدث قبل تركيب هذا المكوّن) نلتقطها في أول تركيب.
@@ -1836,6 +2026,24 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
     }).catch(() => undefined)
     return () => { active = false }
   }, [articles])
+
+  useEffect(() => {
+    if (!user) return
+    let active = true
+    void (async () => {
+      try {
+        const db = await getDb()
+        if (!db) return
+        const { collection, getDocs, limit, orderBy, query } = await import('firebase/firestore')
+        const snapshot = await getDocs(query(collection(db, 'admin_editorial_board'), orderBy('generatedAt', 'desc'), limit(24)))
+        if (!active) return
+        setEditorialHistory(snapshot.docs.map((item) => item.data()?.decision).filter(Boolean) as EditorialBoardDecision[])
+      } catch {
+        if (active) setEditorialHistory([])
+      }
+    })()
+    return () => { active = false }
+  }, [user])
 
   const style = useMemo(() => editorialStyleProfile(richArticles), [richArticles])
   const styleSamples = useMemo(() => representativeStyleSamples(richArticles, 6), [richArticles])
@@ -1943,6 +2151,199 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
     }, 650)
     return () => { active = false; window.clearTimeout(timer) }
   }, [idea, user])
+
+  const runEditorialBoard = async () => {
+    const task = beginAdminTask('مجلس التحرير')
+    setError('')
+    setNotice('')
+    setEditorialBusy(true)
+    setEditorialProgress('archive')
+    try {
+      const ok = isAdmin || await refresh()
+      if (!ok || !user) throw new Error('جلسة المشرف تحتاج تحديثاً. سجّل خروجك وادخل من جديد.')
+      const cleanIdea = idea.trim()
+      if (cleanIdea.length < 3) throw new Error('اكتب الفكرة أو العنوان المقترح أولاً.')
+
+      const proposalContext = proposalMode === 'received' ? proposalSourceContext.trim() : ''
+      const archive = richArticles.map((article) => ({
+        slug: article.slug,
+        title: article.title,
+        text: `${article.excerpt || ''} ${article.body || ''}`,
+        iso: article.iso,
+        year: article.year,
+      }))
+      const dna = createIdeaDna(cleanIdea, { context: proposalContext, audience, archive })
+      const similarityReport = articleSimilarityReport(cleanIdea, `${angle} ${proposalContext}`, richArticles, 5)
+      const nearestArticles = similarityReport.matches.flatMap((match) => {
+        const article = richArticles.find((item) => item.slug === match.slug)
+        return article ? [archiveMaterialFromArticle(article, Math.round(match.score * 100))] : []
+      })
+
+      setEditorialProgress('graph')
+      let graphRows: Array<{ kind: string; slug: string; title: string; score: number; url: string; year?: string }> = []
+      try {
+        const graph = buildKnowledgeGraph({ articles: richArticles, books: books as any, papers: papers as any })
+        graphRows = graphSearch(graph, `${cleanIdea} ${angle} ${proposalContext}`, 10).map(({ node, score }) => ({
+          kind: node.kind,
+          slug: node.slug,
+          title: node.title,
+          score,
+          url: node.url,
+          year: node.year,
+        }))
+      } catch {
+        graphRows = []
+      }
+      const seenArchive = new Set(nearestArticles.map((item) => `${item.kind}:${item.slug}`))
+      const graphMaterials: EditorialArchiveMaterial[] = graphRows.flatMap((row) => {
+        if (!['article', 'book', 'paper'].includes(row.kind)) return []
+        const key = `${row.kind}:${row.slug}`
+        if (seenArchive.has(key)) return []
+        seenArchive.add(key)
+        if (row.kind === 'article') {
+          const article = richArticles.find((item) => item.slug === row.slug)
+          return article ? [archiveMaterialFromArticle(article, Math.min(100, row.score * 6))] : []
+        }
+        if (row.kind === 'book') {
+          const item = books.find((book) => book.slug === row.slug)
+          return item ? [{ kind: 'book' as const, slug: item.slug, title: item.title, url: `/publications/${item.slug}`, score: Math.min(100, row.score * 6), date: '', excerpt: item.desc || '' }] : []
+        }
+        const item = papers.find((paper) => paper.slug === row.slug)
+        return item ? [{ kind: 'paper' as const, slug: item.slug, title: item.titleAr || item.title, url: `/research/${item.slug}`, score: Math.min(100, row.score * 6), date: item.date || item.iso || '', excerpt: item.abstractAr || item.meta || '' }] : []
+      })
+      const archiveMaterials = [...nearestArticles, ...graphMaterials].slice(0, 10)
+
+      setEditorialProgress('current')
+      let boardEvents: CurrentEvent[] = []
+      let currentContextAvailable = false
+      let currentContextError = ''
+      try {
+        const token = await user.getIdToken()
+        const result = await adminAiRequest<{ items: CurrentEvent[] }>('/api/ai/current-context', { idea: cleanIdea, selectedEventIds: [] }, token)
+        boardEvents = result.items || []
+        currentContextAvailable = true
+        setCurrentEvents(boardEvents)
+      } catch (reason) {
+        currentContextError = reason instanceof Error ? reason.message : 'current-context unavailable'
+      }
+
+      setEditorialProgress('audience')
+      let audienceSignals: AudienceSignal[] = []
+      let readerRows: ReaderRow[] = []
+      let messagesAvailable = false
+      let viewsAvailable = false
+      let db = await getDb()
+      if (db) {
+        const { collection, getDocs, limit, query } = await import('firebase/firestore')
+        const [messagesResult, viewsResult] = await Promise.allSettled([
+          getDocs(query(collection(db, 'messages'), limit(900))),
+          getDocs(query(collection(db, 'views'), limit(5000))),
+        ])
+        if (messagesResult.status === 'fulfilled') {
+          messagesAvailable = true
+          const messages: InboxMessageInput[] = messagesResult.value.docs.map((row) => {
+            const data = row.data() as Record<string, any>
+            return {
+              id: row.id,
+              topic: String(data.topic || ''),
+              intent: String(data.intent || ''),
+              quality: String(data.quality || ''),
+              message: String(data.message || data.text || data.body || ''),
+              createdAt: data.createdAt && typeof data.createdAt.seconds === 'number' ? { seconds: data.createdAt.seconds } : undefined,
+            }
+          })
+          audienceSignals = buildAudienceSignals(messages)
+        }
+        if (viewsResult.status === 'fulfilled') {
+          viewsAvailable = true
+          const viewDocs: ViewDoc[] = viewsResult.value.docs.map((row) => {
+            const data = row.data() as Record<string, any>
+            return { id: row.id, count: Number(data.count || 0), title: String(data.title || ''), updatedAt: data.updatedAt }
+          })
+          readerRows = buildReaderRows(viewDocs, windowDays())
+        }
+      }
+      const audienceEvidence = scoreAudienceEvidence(cleanIdea, audienceSignals, readerRows, { messages: messagesAvailable, views: viewsAvailable })
+
+      setEditorialProgress('decision')
+      const decision = buildEditorialBoardDecision({
+        idea: cleanIdea,
+        audience,
+        angle,
+        sourceMode: proposalMode,
+        sourcePerson: proposalSourcePerson,
+        sourceType: proposalMode === 'received' ? proposalSourceType : 'self',
+        sourceContext: proposalContext,
+        dna,
+        similarity: similarityReport,
+        graphMatches: graphRows,
+        archiveMaterials,
+        currentEvents: boardEvents,
+        currentContextAvailable,
+        currentContextError,
+        audienceEvidence,
+        suggestedTitle: suggestStrongTitle(cleanIdea),
+      })
+      const previous = editorialHistory.find((item) => item.fingerprint === decision.fingerprint)
+      if (previous) decision.why.push(`سبق عرض الفكرة نفسها على المجلس بتاريخ ${new Date(previous.generatedAt).toLocaleDateString('ar-KW')}؛ حُفظ هذا التحليل كتاريخ قرار جديد لا كنسخة تمحو السابق.`)
+      setEditorialDecision(decision)
+      setEditorialHistory((items) => [decision, ...items.filter((item) => item.id !== decision.id)].slice(0, 24))
+
+      if (!db) db = await getDb()
+      if (db) {
+        const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
+        const safeDecision = JSON.parse(JSON.stringify(decision)) as EditorialBoardDecision
+        await setDoc(doc(db, 'admin_editorial_board', decision.id), {
+          id: decision.id,
+          fingerprint: decision.fingerprint,
+          proposal: cleanIdea,
+          verdict: decision.verdict,
+          lifecycleStatus: decision.verdict === 'wait' ? 'wait' : decision.verdict === 'reject' ? 'rejected' : 'analyzed',
+          sourceMode: proposalMode,
+          sourcePerson: proposalMode === 'received' ? proposalSourcePerson.trim() : '',
+          sourceType: proposalMode === 'received' ? proposalSourceType : 'self',
+          sourceContext: proposalContext,
+          decision: safeDecision,
+          duplicateOf: previous?.id || null,
+          linkedArticleId: null,
+          publishedAt: null,
+          calibration: { mode: 'feedback-loop', status: 'awaiting-article', due7At: null, due30At: null, actual7: null, actual30: null },
+          generatedAt: decision.generatedAt,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        })
+      } else {
+        setNotice('اكتمل قرار المجلس، لكن تعذّر حفظ السجل لأن Firestore غير متاح الآن.')
+      }
+      setEditorialProgress('done')
+      task.needsInput(`قرار المجلس: ${decision.verdictLabel}`)
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'تعذّر تشغيل مجلس التحرير.')
+      task.fail(reason, 'تعذّر تشغيل مجلس التحرير')
+      setEditorialProgress('idle')
+    } finally {
+      setEditorialBusy(false)
+    }
+  }
+
+  const startEditorialArticle = (decision: EditorialBoardDecision) => {
+    if (!['write_now', 'change_angle'].includes(decision.verdict)) return
+    const handoffAngle = [
+      decision.plan.angle,
+      `الأطروحة: ${decision.plan.thesis}`,
+      decision.plan.doNotRepeat.length ? `لا تكرر: ${decision.plan.doNotRepeat.join(' ')}` : '',
+      decision.plan.referencesNeeded.length ? `تحقق قبل الحسم من: ${decision.plan.referencesNeeded.join(' ')}` : '',
+    ].filter(Boolean).join('\n')
+    setAngle(handoffAngle)
+    void rebuild({ title: decision.plan.primaryTitle, angle: handoffAngle })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const openExistingEditorialArticle = async (decision: EditorialBoardDecision) => {
+    const nearest = decision.archiveCourt.nearest.find((item) => item.kind === 'article')
+    if (!nearest) return
+    await onTransferToArticles?.(nearest.slug)
+  }
 
   const requestSocialPack = async (articleBundle: Bundle, announce = true) => {
     const task = announce ? beginAdminTask('بناء منظومة التوزيع') : null
@@ -2067,7 +2468,7 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
       }
       generated = {
         ...generated,
-        title: distinctEditorialTitle(generated.title, requestedIdea, bundle.title, richArticles, generationRun.current),
+        title: override?.title || distinctEditorialTitle(generated.title, requestedIdea, bundle.title, richArticles, generationRun.current),
       }
       const related = relatedForIdea(`${generated.title} ${generated.excerpt}`, richArticles, (article) => `${article.excerpt || ''} ${article.body || ''}`, 5)
       const relatedBooks = relatedForIdea(`${generated.title} ${generated.excerpt}`, books, (book) => book.desc || '', 3)
@@ -2114,9 +2515,13 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   }
 
   const pickSuggestion = (title: string, suggestion: string) => {
+    // الاقتراح يملأ الفكرة فقط. المرور على مجلس التحرير مقصود قبل أي توليد،
+    // حتى لا تتحول بطاقات الاقتراح القديمة إلى باب خلفي يتجاوز قرار المجلس.
     setIdea(title)
     setAngle(suggestion)
-    void rebuild({ title, angle: suggestion })
+    setEditorialDecision(null)
+    setEditorialProgress([])
+    setView('idea')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -2189,10 +2594,29 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
           eventConnection: bundle.eventConnection || '',
           socialPack: bundle.socialPack || null,
           generatedBy: bundle.generatedBy || 'local-archive-studio',
+          editorialBoard: editorialDecision ? {
+            decisionId: editorialDecision.id,
+            fingerprint: editorialDecision.fingerprint,
+            verdict: editorialDecision.verdict,
+            recommendedTitle: editorialDecision.plan.primaryTitle,
+            thesis: editorialDecision.plan.thesis,
+            angle: editorialDecision.plan.angle,
+            doNotRepeat: editorialDecision.plan.doNotRepeat,
+            source: editorialDecision.source,
+          } : null,
         },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       })
+      if (editorialDecision) {
+        await setDoc(doc(db, 'admin_editorial_board', editorialDecision.id), {
+          lifecycleStatus: 'draft_started',
+          linkedArticleId: bundle.slug,
+          draftStartedAt: serverTimestamp(),
+          calibration: { mode: 'feedback-loop', status: 'awaiting-publication', due7At: null, due30At: null, actual7: null, actual30: null },
+          updatedAt: serverTimestamp(),
+        }, { merge: true })
+      }
       setNotice('نُقل المقال كاملاً إلى «المقالات» كمسودة. من هناك تستطيع مراجعته أو جدولته أو نشره ✓')
       await onTransferToArticles?.(bundle.slug)
       task.complete('تم نقل المقال')
@@ -2406,23 +2830,43 @@ ${effectivePurpose}`,
 
       {view === 'idea' && (
         <>
-          <section className={card}>
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_13rem_13rem_8rem_auto]">
-              <Field label="الفكرة الخام"><input className={input} value={idea} onChange={(event) => setIdea(event.target.value)} placeholder="مثال: الخوف من الامتحان" /></Field>
-              <Field label="الجمهور"><select className={input} value={audience} onChange={(event) => setAudience(event.target.value)}><option>المعلمين والقيادات التعليمية</option><option>أولياء الأمور</option><option>الطلاب والباحثين</option><option>الإعلاميين</option><option>الجمهور العام</option></select></Field>
-              <Field label="الزاوية"><select className={input} value={angle} onChange={(event) => setAngle(event.target.value)}><option>الأثر الإنساني قبل بريق الأداة</option><option>زاوية تربوية عملية</option><option>سؤال أخلاقي وفكري</option><option>مدخل إعلامي سريع</option><option>امتداد أكاديمي من الأرشيف</option></select></Field>
-              <Field label="طول التوليد المبدئي (350–4000 كلمة)"><input className={input} inputMode="numeric" aria-label="طول التوليد المبدئي" value={targetWordsInput} onChange={(event) => { const raw = fromArabicDigits(event.target.value).replace(/[^0-9]/g, ''); setTargetWordsInput(raw); const value = Number(raw); if (raw && Number.isFinite(value)) setTargetWords(Math.max(MIN_ARTICLE_WORDS, Math.min(MAX_GENERATION_WORDS, value))) }} onBlur={() => { const value = Number(targetWordsInput); const normalizedValue = Math.max(MIN_ARTICLE_WORDS, Math.min(MAX_GENERATION_WORDS, Number.isFinite(value) && value > 0 ? value : targetWords)); setTargetWords(normalizedValue); setTargetWordsInput(String(normalizedValue)) }} /></Field>
-              <div className="flex items-end"><button type="button" disabled={generating} className={`${primary} w-full`} onClick={() => void rebuild()}>{generating ? 'أكتب وأراجع…' : 'ابنِ المقال الكامل'}</button></div>
+          <section className={card} data-editorial-board-entry="true">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-[.72rem] font-semibold uppercase text-accent">مجلس التحرير · قبل الكتابة</p>
+                <h2 className="mt-1 font-display text-2xl font-semibold text-ink">هل تستحق الفكرة مقالاً أصلاً؟</h2>
+                <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">يفحص الأرشيف، خريطة المعرفة، اللحظة الحالية وصوت الجمهور، ثم يصدر حكماً واحداً. لا يبدأ الكتابة من تلقاء نفسه.</p>
+              </div>
+              <div className="inline-flex rounded-full border border-hair bg-canvas p-1" aria-label="مصدر الفكرة">
+                <button type="button" aria-pressed={proposalMode === 'self'} onClick={() => { setProposalMode('self'); setEditorialDecision(null) }} className={`rounded-full px-4 py-2 text-[.76rem] font-semibold transition-colors ${proposalMode === 'self' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>فكرة مني</button>
+                <button type="button" aria-pressed={proposalMode === 'received'} onClick={() => { setProposalMode('received'); setEditorialDecision(null) }} className={`rounded-full px-4 py-2 text-[.76rem] font-semibold transition-colors ${proposalMode === 'received' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>مقترح وصلني</button>
+              </div>
             </div>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.articleCount}</strong><span className="text-[.76rem] text-soft">مقالاً يحلل أسلوبها</span></div>
-              <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.avgSentenceWords || '—'}</strong><span className="text-[.76rem] text-soft">متوسط الجملة</span></div>
-              <div className="rounded-xl border border-hair bg-canvas p-4"><strong className="block font-display text-2xl text-accent">{style.avgParagraphs || '—'}</strong><span className="text-[.76rem] text-soft">متوسط الفقرات</span></div>
-              <div className="rounded-xl border border-accent/40 bg-accent/[.05] p-4"><strong className="block font-display text-2xl text-accent">{targetWordsInput || '—'}</strong><span className="text-[.76rem] text-soft">للتوليد الأول فقط — ليس سقفاً للتحرير</span></div>
+
+            {proposalMode === 'received' && <div className="mt-5 grid gap-4 md:grid-cols-3">
+              <Field label="من اقترحها؟ — اختياري"><input className={input} value={proposalSourcePerson} onChange={(event) => { setProposalSourcePerson(event.target.value); setEditorialDecision(null) }} placeholder="اسم داخلي لا يُنشر" /></Field>
+              <Field label="نوع المصدر"><select className={input} value={proposalSourceType} onChange={(event) => { setProposalSourceType(event.target.value as EditorialSourceType); setEditorialDecision(null) }}>{EDITORIAL_SOURCE_LABELS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field>
+              <Field label="سياق مختصر — اختياري"><input className={input} value={proposalSourceContext} onChange={(event) => { setProposalSourceContext(event.target.value); setEditorialDecision(null) }} placeholder="مثال: نقاش بعد اجتماع" /></Field>
+            </div>}
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_13rem_13rem_9rem]">
+              <Field label="اكتب الفكرة أو العنوان المقترح"><textarea className={`${input} min-h-28 leading-loose`} value={idea} onChange={(event) => { setIdea(event.target.value); setEditorialDecision(null) }} placeholder="مثال: هل الذكاء الاصطناعي يجعل الطالب أقل استقلالية؟" /></Field>
+              <Field label="الجمهور"><select className={input} value={audience} onChange={(event) => { setAudience(event.target.value); setEditorialDecision(null) }}><option>المعلمين والقيادات التعليمية</option><option>أولياء الأمور</option><option>الطلاب والباحثين</option><option>الإعلاميين</option><option>الجمهور العام</option></select></Field>
+              <Field label="فرضية الزاوية"><select className={input} value={angle} onChange={(event) => { setAngle(event.target.value); setEditorialDecision(null) }}><option>الأثر الإنساني قبل بريق الأداة</option><option>زاوية تربوية عملية</option><option>سؤال أخلاقي وفكري</option><option>مدخل إعلامي سريع</option><option>امتداد أكاديمي من الأرشيف</option></select></Field>
+              <Field label="طول أول مسودة"><input className={input} inputMode="numeric" aria-label="طول التوليد المبدئي" value={targetWordsInput} onChange={(event) => { const raw = fromArabicDigits(event.target.value).replace(/[^0-9]/g, ''); setTargetWordsInput(raw); const value = Number(raw); if (raw && Number.isFinite(value)) setTargetWords(Math.max(MIN_ARTICLE_WORDS, Math.min(MAX_GENERATION_WORDS, value))) }} onBlur={() => { const value = Number(targetWordsInput); const normalizedValue = Math.max(MIN_ARTICLE_WORDS, Math.min(MAX_GENERATION_WORDS, Number.isFinite(value) && value > 0 ? value : targetWords)); setTargetWords(normalizedValue); setTargetWordsInput(String(normalizedValue)) }} /></Field>
+            </div>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <button type="button" disabled={editorialBusy || generating || idea.trim().length < 3} className={primary} onClick={() => void runEditorialBoard()}>{editorialBusy ? 'المجلس يحلل…' : 'اعرض الفكرة على مجلس التحرير'}</button>
+              <span className="text-[.74rem] leading-relaxed text-soft">القرار يُحفظ داخلياً، ولا ينشر أو يغيّر أي مادة.</span>
             </div>
             {notice && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.84rem] text-accent">{notice}</p>}
             {error && <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.84rem] text-soft">{error}</p>}
           </section>
+          <EditorialBoardPanel decision={editorialDecision} progress={editorialProgress} busy={editorialBusy} historyCount={editorialHistory.length} onStart={startEditorialArticle} onOpenExisting={openExistingEditorialArticle} />
+          {editorialHistory.length > 0 && <details className={`${card} group`}>
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block text-[.72rem] font-semibold text-accent">سجل قرارات مجلس التحرير</span><span className="mt-1 block text-[.82rem] text-soft">آخر {editorialHistory.length} قرار محفوظ</span></span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
+            <div className="mt-4 grid gap-2 border-t border-hair pt-4">{editorialHistory.slice(0, 12).map((item) => <div key={item.id} className="grid gap-1 rounded-xl border border-hair bg-canvas px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><span className="min-w-0"><strong className="block truncate text-[.8rem] text-ink">{item.idea}</strong><span className="mt-1 block text-[.68rem] text-soft">{new Date(item.generatedAt).toLocaleDateString('ar-KW')}</span></span><span className="text-[.72rem] font-semibold text-accent">{item.verdictLabel}</span></div>)}</div>
+          </details>}
           <CurrentEventsCard items={currentEvents} selected={selectedEventIds} loading={eventsLoading} onToggle={(id) => setSelectedEventIds((previous) => previous.includes(id) ? previous.filter((item) => item !== id) : [...previous, id].slice(0, 3))} />
           <IdeaSuggestionsCard suggestions={articleSuggestions} onPick={pickSuggestion} />
           <ArchiveWakeCard articles={richArticles} onPick={pickSuggestion} />

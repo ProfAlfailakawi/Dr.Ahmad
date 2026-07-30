@@ -25,6 +25,7 @@ function Disclosure({
   return (
     <details
       className="group rounded-2xl border border-hair bg-canvas"
+      data-allow-multiple={lockOpen ? 'true' : undefined}
       onToggle={(event) => {
         if (lockOpen && !event.currentTarget.open) event.currentTarget.open = true
       }}

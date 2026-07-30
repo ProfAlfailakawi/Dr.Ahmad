@@ -1879,9 +1879,10 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       return
     }
 
-    /* الوضع الطبيعي دائم التفاعل: أول رسالة وأي متابعة مفهومة تمران مباشرةً.
-       الاستثناء الوحيد هو أن يكتب الدكتور بيده؛ عندها يضع الجسر mode=human
-       وتبقى هذه المحادثة وحدها صامتة حتى جملة الإيقاظ المنشورة. */
+    /* البوابة المطلقة (أمر الدكتور بعد كارثة ٣٠ يوليو): كل رسالة جديدة في
+       الوضع الطبيعي تُقابل بالصمت التام — لا ردّ لأحدٍ إطلاقاً إلا داخل جلسةٍ
+       فتحها صاحبها بكتابة «موقع د. أحمد» بنفسه. wakeVersion=2 هي نسخة
+       الإيقاظ المعتمدة؛ ما فتحه الوضع القديم تلقائياً (نسخة ١) لاغٍ. */
     if (wakePhrase) {
       const welcome = buildWakeWelcome()
       const signedWelcome = signReply(welcome.text)
@@ -1889,7 +1890,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         ...basePatch,
         mode: 'bot',
         wakeActive: true,
-        wakeVersion: 1,
+        wakeVersion: 2,
         wakeOpenedAt: now,
         needsHuman: false,
         manualUntil: null,
@@ -1907,6 +1908,18 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         ...deliveryResponsePatch('reply', 'wake-phrase', signedWelcome),
       }, { merge: true })
       sendJson(res, 200, { ok: true, action: 'reply', reason: 'wake-phrase', reply: { text: signedWelcome } })
+      return
+    }
+
+    /* ═══ البوابة المقدسة — قبل أي مسارٍ آخر حتى إعادة التسليم ═══
+       جلسة غير مفتوحة بنسخة الإيقاظ المعتمدة (٢) = صمتٌ مطبق، ولا يُعاد بثّ
+       أي ردٍّ مخزونٍ من حقبة «دائم التفاعل» الملغاة. */
+    const wakeGateOpen = data.mode !== 'human'
+      && data.wakeActive === true
+      && Number(data.wakeVersion || 0) >= 2
+    if (!wakeGateOpen) {
+      await ref.set(basePatch, { merge: true })
+      sendJson(res, 200, { ok: true, action: 'none', reason: 'awaiting-wake-phrase' })
       return
     }
 
@@ -1956,7 +1969,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
           ...basePatch,
           mode: 'bot',
           wakeActive: true,
-          wakeVersion: 1,
+          wakeVersion: 2,
           needsHuman: true,
           escalationReason: decision.reason,
           escalatedAt: now,
@@ -1983,7 +1996,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
           ...basePatch,
           mode: 'bot',
           wakeActive: true,
-          wakeVersion: 1,
+          wakeVersion: 2,
           needsHuman: true,
           manualUntil: null,
           autoResumeAt: null,
@@ -2021,7 +2034,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       ...basePatch,
       mode: 'bot',
       wakeActive: true,
-      wakeVersion: 1,
+      wakeVersion: 2,
       needsHuman: false,
       manualUntil: null,
       autoResumeAt: null,
@@ -3133,7 +3146,12 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
 
 export const whatsappPolicy = Object.freeze({
   siteUrl: SITE_URL,
-  defaultReplyMode: 'always-on',
+  /* قاعدة الدكتور المطلقة (كارثة ٣٠ يوليو: البوت ردّ على بثٍّ إعلاني لمدرسة):
+     لا ردّ على أي رسالة إطلاقاً إلا داخل جلسةٍ فتحها صاحبها بكتابة جملة
+     الإيقاظ بنفسه. wakeEpoch=2 يُبطل كل الجلسات التي فتحها وضع «دائم
+     التفاعل» القديم دون كتابة الجملة. */
+  defaultReplyMode: 'wake-phrase-only',
+  wakeEpoch: 2,
   manualTakeoverMinutes: null,
   manualTakeoverAutoResume: false,
   resumeMode: 'manual-takeover-wake-only',

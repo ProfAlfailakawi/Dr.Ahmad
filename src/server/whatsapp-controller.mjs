@@ -2,17 +2,49 @@ import { createHash, randomUUID, timingSafeEqual } from 'node:crypto'
 import { buildContentIndex } from '../../whatsapp-agent/content-index.mjs'
 import { LEXICON_SIZE, toRoot } from '../../whatsapp-agent/dialect-lexicon.mjs'
 import { classifyIntent, INTENTS } from '../../whatsapp-agent/intent-engine.mjs'
-import { DEFAULT_BOT_MESSAGES } from '../../whatsapp-agent/bot-messages.mjs'
+import { DEFAULT_BOT_MESSAGES, getBotMessages, refreshBotMessages } from '../../whatsapp-agent/bot-messages.mjs'
 
 const SITE_URL = String(process.env.WHATSAPP_SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
 const OWNER_ALERT_FALLBACK = 'طلب صاحب هذه الرسالة التواصل معك مباشرة. افتح محادثات واتساب من جهازك المرتبط.'
 const HUMAN_ACK = 'أفهم أنك تريد التواصل مع الدكتور مباشرة. اكتب رسالتك كاملة هنا؛ لا أستطيع أن أعدك بموعد رد، وبإمكاني الآن مساعدتك في محتوى الموقع أو البحث عن موضوع محدد.'
 const MEDIA_CLARIFY = 'وصلني ملف أو صورة من دون وصفٍ كافٍ. اكتب لي بجملة واحدة ماذا تريد منها، وسأكمل معك مباشرة.'
-const BOT_SIGNATURE = DEFAULT_BOT_MESSAGES.signature || 'رد آلي من موقع د. أحمد حسين الفيلكاوي'
-const WELCOME = `${DEFAULT_BOT_MESSAGES.welcomeLine || 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي'}.\n\nأفهم سؤالك باللهجة الكويتية أو بالعربية الطبيعية، وأبحث لك في مقالات الدكتور وكتبه وأبحاثه والبودكاست.\n\nجرّب مثلاً: «شنو جديد الدكتور؟» · «عندك شي عن الذكاء الاصطناعي؟» · «لخّصها» · «عطني غيرها»\n\n${SITE_URL}`
-const CLARIFY = `${DEFAULT_BOT_MESSAGES.clarify || 'ما فهمت الطلب بدقة.'}\n\nاكتب الفكرة بطريقتك، أو قل: آخر مقالة · آخر بحث · آخر كتاب · آخر بودكاست · عندك شي عن…`
-const NO_MATCH = `${DEFAULT_BOT_MESSAGES.noMatch || 'ما لقيت مادة منشورة مطابقة الآن.'}\n\nجرّب كلمة أقرب للموضوع، أو قل لي: مقالة، كتاب، بحث، أو بودكاست.`
-const HELP = `أقدر أبحث لك في كل ما نشره د. أحمد، وأفهم المتابعة الطبيعية من غير أوامر جامدة.\n\n• آخر مقالة / كتاب / بحث / بودكاست\n• عندك شي عن موضوع معيّن؟\n• لخّصها / افتحها / عطني المصدر\n• عطني غيرها / اللي بعدها / الأولى\n• فاجئني / عندي دقيقة\n\n${SITE_URL}`
+/* القوالب حيّة لا مسبوكة: كانت تُبنى مرةً واحدة عند تحميل الملف من البدائل
+   المضمّنة، فتحرير الدكتور لها في لوحة «رسائل البوت» يصل Firestore ولا يصل
+   الردود أبداً. الآن كلُّ بناءِ ردٍّ يقرأ القوالب الحاضرة (getBotMessages —
+   قراءةٌ متزامنة من الذاكرة، والتحديث خلفيٌّ من مدخل الويبهوك)، فتسري تعديلات
+   اللوحة خلال دقائق وبلا أي طلبٍ شبكيٍّ في مسار الرد أو في الاختبار الوهمي. */
+const KUWAIT_TZ = 'Asia/Kuwait'
+function botMessagesNow() {
+  return { ...DEFAULT_BOT_MESSAGES, ...getBotMessages() }
+}
+function kuwaitHour(at = new Date()) {
+  const hour = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: KUWAIT_TZ }).format(at))
+  return Number.isFinite(hour) ? hour % 24 : 12
+}
+/* التحية نفسها المصرّفة في حملات المكتبة (personalizeAudienceText) حتى يبقى
+   صوت البوت واحداً صباحاً ومساءً، مع سطرٍ لطيفٍ لساهر الليل. */
+function timeGreeting(at = new Date()) {
+  const hour = kuwaitHour(at)
+  if (hour < 4) return 'أسعد الله ليلك'
+  if (hour < 12) return 'صباح الخير'
+  return 'مساء الخير'
+}
+function botSignature(messages = botMessagesNow()) {
+  return messages.signature || 'رد آلي من موقع د. أحمد حسين الفيلكاوي'
+}
+function welcomeText(messages = botMessagesNow(), at = new Date()) {
+  const line = messages.welcomeLine || 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي'
+  return `${timeGreeting(at)}. ${line}.\n\nأفهم سؤالك باللهجة الكويتية أو بالعربية الطبيعية، وأبحث لك في مقالات الدكتور وكتبه وأبحاثه والبودكاست.\n\nجرّب مثلاً: «شنو جديد الدكتور؟» · «عندك شي عن الذكاء الاصطناعي؟» · «لخّصها» · «عطني غيرها»\n\n${SITE_URL}`
+}
+function clarifyText(messages = botMessagesNow()) {
+  return `${messages.clarify || 'ما فهمت الطلب بدقة.'}\n\nاكتب الفكرة بطريقتك، أو قل: آخر مقالة · آخر بحث · آخر كتاب · آخر بودكاست · عندك شي عن…`
+}
+function noMatchText(messages = botMessagesNow()) {
+  return `${messages.noMatch || 'ما لقيت مادة منشورة مطابقة الآن.'}\n\nجرّب كلمة أقرب للموضوع، أو قل لي: مقالة، كتاب، بحث، أو بودكاست.`
+}
+function helpText() {
+  return `أقدر أبحث لك في كل ما نشره د. أحمد، وأفهم المتابعة الطبيعية من غير أوامر جامدة.\n\n• آخر مقالة / كتاب / بحث / بودكاست\n• عندك شي عن موضوع معيّن؟\n• لخّصها / افتحها / عطني المصدر\n• عطني غيرها / اللي بعدها / الأولى\n• فاجئني / عندي دقيقة / اختبرني\n\n${SITE_URL}`
+}
 const BRIDGE_ONLINE_MS = Math.max(60_000, Number(process.env.WHATSAPP_BRIDGE_ONLINE_MS || 180_000))
 const QR_FRESH_MS = Math.max(30_000, Number(process.env.WHATSAPP_QR_FRESH_MS || 75_000))
 const REPAIR_COOLDOWN_MS = Math.max(15 * 60_000, Number(process.env.WHATSAPP_REPAIR_COOLDOWN_MS || 60 * 60_000))
@@ -205,15 +237,16 @@ function isGreetingOnly(text) {
   return Boolean(normalizeArabicMessage(text)) && !stripArabicGreetings(text)
 }
 
-function signReply(value) {
+function signReply(value, messages = botMessagesNow()) {
+  const signature = botSignature(messages)
   const text = bounded(value, 2_000)
-  if (!text || text.includes(BOT_SIGNATURE)) return text
+  if (!text || text.includes(signature)) return text
   const humanBoundary = /تريد التواصل مع الدكتور مباشرة|لا أستطيع أن أعدك بموعد رد/.test(text)
-  const alreadyInteractive = /قل لي|جرّب|اكتب|شنو يناسب|وش تحب|إذا تحب|وإن أحببت|وأكمل معك/.test(text)
+  const alreadyInteractive = /قل لي|جرّب|اكتب|شنو يناسب|وش تحب|إذا تحب|وإن أحببت|وأكمل معك|في أمان الله|وإياك|حيّاك/.test(text)
   const nudge = humanBoundary || alreadyInteractive
     ? ''
     : '\n\nشنو تحب أسوي بعدها: ألخّصها، أعطيك المصدر، أو أطلع لك غيرها؟'
-  return `${text}${nudge}\n\n${BOT_SIGNATURE}`
+  return `${text}${nudge}\n\n${signature}`
 }
 
 function semanticWord(value) {
@@ -299,9 +332,128 @@ function itemLabel(item) {
   })[item?.kind] || 'مادة'
 }
 
+const AR_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
+function arabicNumber(value) {
+  return String(value).replace(/\d/g, (digit) => AR_DIGITS[Number(digit)])
+}
+
+/* اختيارٌ حتميّ لا عشوائي: نفس البذرة تعطي نفس الصياغة (قابل للاختبار)،
+   وبذرةُ كل دورٍ مختلفة فتتنوّع الصياغات بين الرسائل تنوّعاً طبيعياً. */
+function variantOf(seed, options) {
+  if (!Array.isArray(options) || !options.length) return ''
+  const number = Number.parseInt(hash(String(seed)).slice(0, 8), 16)
+  return options[number % options.length]
+}
+
+function readingMinutes(item) {
+  const words = Number(item?.words || 0)
+  return words ? Math.max(1, Math.round(words / 200)) : 0
+}
+
+function itemMetaLine(item) {
+  const parts = [itemLabel(item)]
+  const minutes = readingMinutes(item)
+  if (minutes) parts.push(`قراءة ~${arabicNumber(minutes)} ${minutes === 1 ? 'دقيقة' : minutes === 2 ? 'دقيقتين' : 'دقائق'}`)
+  const audio = item?.audio || null
+  if (audio?.dialogue) parts.push('فيها حوار مسموع')
+  else if (audio?.fahed || audio?.noura) parts.push('فيها قراءة صوتية')
+  return parts.join(' · ')
+}
+
 function siteResultReply(items, intro = 'لقيت لك من موقع الدكتور:') {
-  const lines = items.map((item, index) => `${index + 1}) *${item.title}*\n${item.url}`)
+  const lines = items.map((item, index) => `${arabicNumber(index + 1)}) *${item.title}*\n${itemMetaLine(item)}\n${item.url}`)
   return `${intro}\n\n${lines.join('\n\n')}\n\nشنو تحب أسوي بعدها؟ قل «لخّص الأولى» أو «عطني غيرها» وأكمل معك.`
+}
+
+/* حين لا يطابق البحثُ الدقيق شيئاً، لا نكتفي بـ«ما لقيت»: نعرض أقرب المواد
+   بعتبةٍ متساهلة، فإن غابت عرضنا أبواب الأرشيف الفعلية (من عناوين المقالات
+   المنشورة نفسها) — كله مؤرّضٌ بالموقع، ولا اختلاق. */
+function nearestSuggestions(query, excludeIds = [], limit = 3) {
+  const tokens = contentTokens(query).slice(0, 8)
+  if (!tokens.length) return []
+  const excluded = new Set(excludeIds)
+  return siteIndex()
+    .filter((item) => !excluded.has(item.id))
+    .map((item) => ({ item, ...scoreContent(item, tokens) }))
+    .filter((row) => row.score >= 3)
+    .sort((a, b) => b.score - a.score || String(b.item.date || '').localeCompare(String(a.item.date || '')))
+    .slice(0, limit)
+    .map((row) => row.item)
+}
+
+function archiveDoors(limit = 4) {
+  const counts = new Map()
+  for (const item of siteIndex()) {
+    if (item.kind !== 'article') continue
+    for (const token of normalizeArabicMessage(item.title).split(' ')) {
+      if (token.length < 4 || NOISE_WORDS.has(token)) continue
+      const root = semanticWord(token)
+      const row = counts.get(root) || { count: 0, display: token }
+      row.count += 1
+      if (token.length < row.display.length) row.display = token
+      counts.set(root, row)
+    }
+  }
+  return [...counts.values()]
+    .filter((row) => row.count >= 2)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit)
+    .map((row) => `ال${row.display}`.replace(/^الال/, 'ال'))
+}
+
+function requestedListCount(cleanText) {
+  const match = cleanText.match(/(?:^|\s)(\d{1,2})(?:\s|$)/)
+  const count = match ? Number(match[1]) : 0
+  return count >= 2 && count <= 5 ? count : 0
+}
+
+/* مجاملاتُ الناس ليست موضوع بحث. كانت «شكراً» و«تمام» و«مع السلامة» تسقط
+   في محرك البحث فيجيب «ما لقيت مادة» — جفاءٌ في موضع الدفء. */
+const THANKS_PATTERN = /^(?:شكرا(?: جزيلا| لك)?|مشكور(?:ين)?(?: وايد)?|تسلم(?:ون)?|يعطيك العافيه|الله يعطيك العافيه|جزاك الله خير(?:ا)?|جزاكم الله خير(?:ا)?|بارك الله فيك(?:م)?|ما قصرت(?:وا)?|يزاك الله خير|شكرا وايد|thanks|thank you)\s*$/
+const FAREWELL_PATTERN = /^(?:مع السلامه|في امان الله|الله يحفظك|تصبح على خير|تصبحون على خير|باي|وداعا|الى اللقاء|سلامات|استودعك الله)\s*$/
+const ACK_PATTERN = /^(?:تمام|اوكي|اوك|ok|okay|زين|طيب|ممتاز|جميل|رائع|واضح|فهمت|اها|ايه|نعم|ان شاء الله|خلاص|ماشي|تم)\s*$/
+const WHO_ARE_YOU_PATTERN = /^(?:من انت|منو انت|انت منو|شنو انت|وش انت|مين انت|هل انت روبوت|هل انت بوت|انت بوت|انت روبوت|انت انسان|معاي انسان او روبوت)\s*$/
+const PRAISE_PATTERN = /^(?:ما شاء الله|ماشاء الله|كفو|ابدعت|مبدع|وايد حلو|حلو وايد|روعه|يا سلام|احسنت|برافو|عجيب)\s*$/
+
+const MOOD_MAP = [
+  [/(ضايق|متضايق|حزين|مهموم|زعلان|مكتئب|طفران|مقهور)/, 'أحس بثقل كلمتك. اخترت لك من مكتبة الدكتور ما يفتح نافذة:', ['طمانينه سعاده راحه', 'صبر امل', 'حزن تجاوز']],
+  [/(خايف|قلقان|متوتر|مرعوب|وسواس|مرتبك)/, 'للقلق دواء من فكرة هادئة. هذه أقرب مواد الدكتور لحالك:', ['خوف قلق طمانينه', 'ثقه نفس', 'هدوء توازن']],
+  [/(متحمس|منجز|نشيط|متفائل|مبسوط|فرحان)/, 'حماسك يستاهل فكرة توازيه:', ['نجاح تفوق انجاز', 'ابداع موهبه', 'مستقبل طموح']],
+  [/(تعبان|مرهق|مضغوط|مخنوق|ملل|طفشان)/, 'خذ نفساً عميقاً، وهذه مادة تريّح البال:', ['ضغط ارهاق راحه', 'توازن حياه', 'سكينه']],
+]
+
+function compareSides(cleanText) {
+  /* واو العطف تلتصق بالكلمة عربياً («المعلم والتقنية»)، فالفاصل يقبل الواو
+     الملتصقة والمنفصلة و«أو» معاً. */
+  const match = cleanText.match(/(?:الفرق بين|قارن(?: لي)?(?: بين)?|مقارنه بين|ايهما افضل)\s+(.+?)\s+(?:او\s+|و\s*)(.+)$/)
+  if (!match) return null
+  const sides = [match[1], match[2]].map((side) => side.trim()).filter((side) => side.length >= 2)
+  return sides.length === 2 ? sides : null
+}
+
+/* تحدي ١٥ ثانية: سؤالٌ مبنيّ من اقتباسٍ حرفيّ من مقالٍ منشور وثلاثة عناوين
+   حقيقية — لا توليد ولا اختلاق، والإجابة تُحفظ في وثيقة المحادثة. */
+function buildChallenge(conversation = {}, seedText = '') {
+  const pool = siteIndex().filter((item) => item.kind === 'article'
+    && normalizeWhitespace(item.excerpt || item.body || '').split(/\s+/).filter(Boolean).length >= 14)
+  if (pool.length < 3) return null
+  const seed = Number.parseInt(hash(`challenge:${seedText}:${conversation.lastInboundAt || ''}:${(conversation.seenContentIds || []).length}`).slice(0, 8), 16)
+  const correct = pool[seed % pool.length]
+  const others = pool.filter((item) => item.id !== correct.id)
+  const second = others[seed % others.length]
+  const rest = others.filter((item) => item.id !== second.id)
+  const third = rest[(seed >>> 3) % rest.length]
+  const rotation = seed % 3
+  const base = [correct, second, third]
+  const arranged = [...base.slice(rotation), ...base.slice(0, rotation)]
+  const answerIndex = arranged.findIndex((item) => item.id === correct.id)
+  const fragment = normalizeWhitespace(correct.excerpt || correct.body).split(/\s+/).slice(0, 18).join(' ')
+  const lines = arranged.map((item, index) => `${arabicNumber(index + 1)}) ${item.title}`)
+  return {
+    reply: `تحدي ١٥ ثانية — من أي مادة أُخذت هذه العبارة؟\n\n«${fragment}…»\n\n${lines.join('\n')}\n\nاكتب رقم إجابتك: ١ أو ٢ أو ٣.`,
+    state: { answerIndex, itemIds: arranged.map((item) => item.id), askedAt: asIso() },
+    evidence: [correct.id],
+  }
 }
 
 function latestSiteItems(kinds = [], limit = 1) {
@@ -325,12 +477,12 @@ function currentConversationItem(conversation = {}) {
 }
 
 function excerptReply(item, short = false) {
-  if (!item) return CLARIFY
+  if (!item) return clarifyText()
   const source = normalizeWhitespace(item.excerpt || item.body || '')
   const words = source.split(/\s+/).filter(Boolean)
   const limit = short ? 42 : 85
   const excerpt = words.slice(0, limit).join(' ')
-  return `*${item.title}*\n\n${excerpt || 'هذه المادة متاحة كاملة في موقع الدكتور.'}${words.length > limit ? '…' : ''}\n\n${item.url}`
+  return `*${item.title}*\n${itemMetaLine(item)}\n\n${excerpt || 'هذه المادة متاحة كاملة في موقع الدكتور.'}${words.length > limit ? '…' : ''}\n\n${item.url}`
 }
 
 function intentKinds(intent) {
@@ -344,76 +496,377 @@ function intentKinds(intent) {
 
 export function decideGroundedResponse({ text, hasMedia = false, rules = [], priorReplyHash = '', conversation = {} } = {}) {
   const clean = normalizeArabicMessage(text)
-  if (hasMedia) return { kind: 'reply', reason: 'media-description-needed', reply: signReply(MEDIA_CLARIFY) }
-  if (!clean) return { kind: 'reply', reason: 'empty-after-normalization', reply: signReply(CLARIFY) }
+  const messages = botMessagesNow()
+  if (hasMedia) return { kind: 'reply', reason: 'media-description-needed', reply: signReply(MEDIA_CLARIFY, messages) }
+  if (!clean) return { kind: 'reply', reason: 'empty-after-normalization', reply: signReply(clarifyText(messages), messages) }
   if (HUMAN_PATTERNS.some((pattern) => pattern.test(clean))) {
-    return { kind: 'escalate', reason: 'human-request', reply: signReply(HUMAN_ACK) }
+    return { kind: 'escalate', reason: 'human-request', reply: signReply(HUMAN_ACK, messages) }
   }
 
   const rule = findRuleMatch(text, rules)
   if (rule) {
-    if (rule.actionType === 'transfer') return { kind: 'escalate', reason: `rule:${rule.id}`, reply: signReply(bounded(rule.responseText, 1_500) || HUMAN_ACK), rule }
+    if (rule.actionType === 'transfer') return { kind: 'escalate', reason: `rule:${rule.id}`, reply: signReply(bounded(rule.responseText, 1_500) || HUMAN_ACK, messages), rule }
     if (rule.actionType === 'site-content') {
       const found = exactSiteResults(text, rule.contentQuery)
-      if (!found.length) return { kind: 'reply', reason: `rule-no-grounding:${rule.id}`, reply: signReply(NO_MATCH), rule }
-      return { kind: 'reply', reason: `rule:${rule.id}`, reply: signReply(siteResultReply(found)), rule, evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0 }
+      if (!found.length) return { kind: 'reply', reason: `rule-no-grounding:${rule.id}`, reply: signReply(noMatchText(messages), messages), rule }
+      return { kind: 'reply', reason: `rule:${rule.id}`, reply: signReply(siteResultReply(found), messages), rule, evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0 }
     }
     const response = bounded(rule.responseText, 2_000)
-    if (response) return { kind: 'reply', reason: `rule:${rule.id}`, reply: signReply(response), rule }
+    if (response) return { kind: 'reply', reason: `rule:${rule.id}`, reply: signReply(response, messages), rule }
   }
 
   const classification = classifyIntent(text)
   const intent = classification.intent
   const current = currentConversationItem(conversation)
   const previousIds = Array.isArray(conversation.seenContentIds) ? conversation.seenContentIds.slice(-40) : []
+  const stripped = stripArabicGreetings(text)
+  const politeSeed = `${conversation.lastInboundAt || ''}:${clean}`
+
+  /* ─── دفء المجاملة قبل آلة البحث ─── */
+  if (THANKS_PATTERN.test(stripped || clean)) {
+    return { kind: 'reply', reason: 'thanks', intent, reply: signReply(variantOf(politeSeed, [
+      'العفو، حيّاك الله. وإن احتجت مادة أو فكرة من مكتبة الدكتور فأنا حاضر.',
+      'وإياك، أسعدني أن أفيدك. اكتب لي أي موضوع يشغلك وأدوّر لك عنه.',
+      'على الرحب والسعة. متى ما خطر ببالك سؤال عن مقالات الدكتور فأنا هنا.',
+    ]), messages) }
+  }
+  if (FAREWELL_PATTERN.test(stripped || clean)) {
+    return { kind: 'reply', reason: 'farewell', intent, reply: signReply(variantOf(politeSeed, [
+      'في أمان الله، وأهلاً بك متى ما رجعت.',
+      'الله يحفظك. مكتبة الدكتور تبقى مفتوحة لك في أي وقت.',
+    ]), messages) }
+  }
+  if (WHO_ARE_YOU_PATTERN.test(stripped || clean)) {
+    return { kind: 'reply', reason: 'who-are-you', intent, reply: signReply(`أنا المساعد الآلي لمكتبة د. أحمد الفيلكاوي — أجيب من محتوى الموقع المنشور فقط، ولا أدّعي علماً خارجه. اكتب أي موضوع وأبحث لك عنه، أو قل «آخر مقالة».\n\n${SITE_URL}`, messages) }
+  }
+  if (PRAISE_PATTERN.test(stripped || clean)) {
+    return { kind: 'reply', reason: 'praise', intent, reply: signReply(variantOf(politeSeed, [
+      'الفضل لمحتوى الدكتور، أنا مجرد دليل عليه. تحب أختار لك مادة تعجبك؟ قل «فاجئني».',
+      'كلامك يسرّ، والجمال جمال الفكرة. عندي غيرها كثير — قل «عطني غيرها».',
+    ]), messages) }
+  }
+  if (ACK_PATTERN.test(stripped || clean)) {
+    return { kind: 'reply', reason: 'acknowledged', intent, reply: signReply(variantOf(politeSeed, [
+      'تمام. إذا حبيت نكمل: «لخّصها» أو «عطني غيرها» أو اكتب موضوعاً جديداً.',
+      'زين. أنا حاضر متى ما أردت — موضوع جديد أو «فاجئني».',
+    ]), messages) }
+  }
+
+  /* ─── احترام رغبة المستلم أولاً ─── */
+  if (intent === INTENTS.STOP_MESSAGES) {
+    return {
+      kind: 'reply', reason: 'stop-messages', intent,
+      reply: signReply(messages.stopConfirm || 'تم، لن تصلك رسائل محتوى جديدة. إذا رغبت بالعودة اكتب: رجع الرسائل.', messages),
+      patch: { contentOptOut: true, contentOptOutAt: asIso() }, audienceSuppressed: true,
+    }
+  }
+  if (intent === INTENTS.RESUME_MESSAGES) {
+    return {
+      kind: 'reply', reason: 'resume-messages', intent,
+      reply: signReply(messages.resumeConfirm || 'عاد الاشتراك في رسائل المحتوى.', messages),
+      patch: { contentOptOut: false, contentOptInAt: asIso() }, audienceSuppressed: false,
+    }
+  }
+  if (intent === INTENTS.DELETE_PREFERENCES) {
+    return {
+      kind: 'reply', reason: 'delete-preferences', intent,
+      reply: signReply('تم. مسحت ما احتفظت به لهذه المحادثة من سياق وتفضيلات ومحفوظات. نبدأ من صفحة بيضاء متى ما أردت.', messages),
+      patch: { contextItemIds: [], contextIndex: 0, seenContentIds: [], savedItemIds: [], lastTopic: null, challenge: null },
+    }
+  }
 
   if (PRICE_PATTERNS.some((pattern) => pattern.test(clean)) || isGreetingOnly(text) || intent === INTENTS.WELCOME) {
-    return { kind: 'reply', reason: isGreetingOnly(text) ? 'greeting' : 'welcome', intent, reply: signReply(WELCOME) }
+    return { kind: 'reply', reason: isGreetingOnly(text) ? 'greeting' : 'welcome', intent, reply: signReply(welcomeText(messages), messages) }
   }
   if ([INTENTS.HELP, INTENTS.SHOW_OPTIONS, INTENTS.CONTENT_OVERVIEW].includes(intent)) {
-    return { kind: 'reply', reason: 'help', intent, reply: signReply(HELP) }
+    return { kind: 'reply', reason: 'help', intent, reply: signReply(helpText(), messages) }
   }
   if (intent === INTENTS.ABOUT_DOCTOR) {
-    return { kind: 'reply', reason: 'about-doctor', intent, reply: signReply(`هذه السيرة الرسمية للدكتور أحمد حسين الفيلكاوي، ومؤلفاته وأبحاثه وخبراته:\n\n${SITE_URL}/about`) }
+    return { kind: 'reply', reason: 'about-doctor', intent, reply: signReply(`هذه السيرة الرسمية للدكتور أحمد حسين الفيلكاوي، ومؤلفاته وأبحاثه وخبراته:\n\n${SITE_URL}/about`, messages) }
   }
+
+  /* ─── التصحيح: «مو صح» أو «مو عن هذا» اعتذارٌ وبحثٌ من زاوية أخرى ─── */
+  if (intent === INTENTS.CORRECTION) {
+    const notAbout = clean.match(/(?:مو|مب|ليس|مهوب)\s+(?:عن|قصدي|اقصد)\s+(.{2,60})$/)?.[1]
+      || clean.match(/قصدي\s+(.{2,60})$/)?.[1] || ''
+    const retryQuery = bounded(notAbout, 120) || bounded(conversation.lastTopic, 200) || stripped
+    const excluded = [...previousIds, ...(current ? [current.id] : [])]
+    const found = retryQuery ? exactSiteResults(retryQuery, retryQuery, { excludeIds: excluded, limit: 3 }) : []
+    if (found.length) return {
+      kind: 'reply', reason: 'correction-retry', intent,
+      reply: signReply(siteResultReply(found, 'واضح، فهمي الأول ما أصاب. جربت زاوية ثانية:'), messages),
+      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: retryQuery,
+    }
+    return { kind: 'reply', reason: 'correction-clarify', intent, reply: signReply('معك حق، وأعتذر عن سوء الفهم. اكتب المقصود بكلمة أو زاوية أوضح وأبحث من جديد — ولا أدّعي ما لا أجده منشوراً.', messages) }
+  }
+
+  /* ─── تحدي المعرفة ───
+     رقمُ الإجابة يُحكم من حالة المحادثة لا من تصنيف النية: «٢» قد يصنّفها
+     محلل المراجع تنقّلاً بين النتائج، لكن وجود تحدٍّ معلّق يجعلها إجابته. */
+  const pureDigitAnswer = /^[1-3]$/.test(clean) ? Number(clean) : 0
+  if ((pureDigitAnswer || intent === INTENTS.CHALLENGE_ANSWER) && conversation.challenge && Array.isArray(conversation.challenge.itemIds)) {
+    const answer = (pureDigitAnswer || Number(clean.replace(/[^0-9]/g, ''))) - 1
+    const stateIds = conversation.challenge.itemIds
+    const byId = new Map(siteIndex().map((item) => [item.id, item]))
+    const correctItem = byId.get(stateIds[Number(conversation.challenge.answerIndex) || 0])
+    const wasRight = answer === Number(conversation.challenge.answerIndex)
+    if (correctItem) {
+      const opener = wasRight
+        ? variantOf(politeSeed, ['أحسنت، إجابة صحيحة!', 'كفو، أصبت!'])
+        : `قريبة! الإجابة الصحيحة: ${arabicNumber(Number(conversation.challenge.answerIndex) + 1)}.`
+      return {
+        kind: 'reply', reason: wasRight ? 'challenge-correct' : 'challenge-missed', intent,
+        reply: signReply(`${opener}\n\nالعبارة من:\n*${correctItem.title}*\n${correctItem.url}\n\nتحب تحدياً ثانياً؟ اكتب «اختبرني».`, messages),
+        evidence: [correctItem.id], contextItemIds: [correctItem.id], contextIndex: 0,
+        patch: { challenge: null }, lastTopic: correctItem.title,
+      }
+    }
+  }
+  if (intent === INTENTS.CHALLENGE || (intent === INTENTS.CHALLENGE_ANSWER && !conversation.challenge)) {
+    const challenge = buildChallenge(conversation, clean)
+    if (challenge) return {
+      kind: 'reply', reason: 'challenge-question', intent, reply: signReply(challenge.reply, messages),
+      evidence: challenge.evidence, patch: { challenge: challenge.state },
+    }
+  }
+
+  /* ─── رفّ المحفوظات ─── */
+  const savedIds = Array.isArray(conversation.savedItemIds) ? conversation.savedItemIds : []
+  if (intent === INTENTS.SAVE_CONTENT) {
+    if (!current) return { kind: 'reply', reason: 'save-context-missing', intent, reply: signReply('افتح مادة أولاً — قل «آخر مقالة» أو اكتب موضوعاً — وبعدها قل «احفظها» وأضمها لرفّك.', messages) }
+    const nextSaved = [...new Set([...savedIds, current.id])].slice(-20)
+    return {
+      kind: 'reply', reason: 'saved-to-shelf', intent,
+      reply: signReply(`حفظتها لك في رفّك:\n*${current.title}*\n\nرفّك فيه الآن ${arabicNumber(nextSaved.length)} ${nextSaved.length === 1 ? 'مادة' : 'مواد'}. قل «رفي» متى ما أردت استعراضه.`, messages),
+      evidence: [current.id], patch: { savedItemIds: nextSaved },
+    }
+  }
+  if (intent === INTENTS.LIST_SAVED) {
+    if (!savedIds.length) return { kind: 'reply', reason: 'shelf-empty', intent, reply: signReply('رفّك فاضي حالياً. افتح أي مادة ثم قل «احفظها» وأضمها لك هنا.', messages) }
+    const byId = new Map(siteIndex().map((item) => [item.id, item]))
+    const items = savedIds.map((id) => byId.get(id)).filter(Boolean)
+    const lines = items.map((item, index) => `${arabicNumber(index + 1)}) *${item.title}*\n${item.url}`)
+    return {
+      kind: 'reply', reason: 'shelf-list', intent,
+      reply: signReply(`رفّك المحفوظ (${arabicNumber(items.length)}):\n\n${lines.join('\n\n')}\n\nقل «شيلها من رفي» وأنت واقف على مادة لحذفها.`, messages),
+      contextItemIds: items.map((item) => item.id).slice(0, 12), contextIndex: 0,
+    }
+  }
+  if (intent === INTENTS.REMOVE_SAVED) {
+    if (!current || !savedIds.includes(current.id)) return { kind: 'reply', reason: 'shelf-remove-missing', intent, reply: signReply('حدد المادة أولاً: قل «رفي» ثم «الأولى» أو «الثانية»، وبعدها «شيلها من رفي».', messages) }
+    const nextSaved = savedIds.filter((id) => id !== current.id)
+    return {
+      kind: 'reply', reason: 'shelf-removed', intent,
+      reply: signReply(`شلتها من رفّك:\n*${current.title}*\n\nباقي في الرف ${arabicNumber(nextSaved.length)}.`, messages),
+      patch: { savedItemIds: nextSaved },
+    }
+  }
+
+  /* ─── اقتباس من المختارات المنشورة ─── */
+  if ([INTENTS.QUOTE, INTENTS.QUOTE_CARD].includes(intent)) {
+    const pool = siteIndex().filter((item) => item.kind === 'curated' && !previousIds.includes(item.id))
+    const fallbackPool = pool.length ? pool : siteIndex().filter((item) => item.kind === 'curated')
+    if (fallbackPool.length) {
+      const pick = fallbackPool[Number.parseInt(hash(`quote:${politeSeed}`).slice(0, 8), 16) % fallbackPool.length]
+      const note = normalizeWhitespace(pick.excerpt || '')
+      const cardHint = intent === INTENTS.QUOTE_CARD ? '\n\nوبطاقات الاقتباس المصمّمة تجدها في صفحة المختارات نفسها.' : ''
+      return {
+        kind: 'reply', reason: 'curated-quote', intent,
+        reply: signReply(`«${pick.title}»${note ? `\n\n${note}` : ''}${cardHint}\n\n${pick.url}`, messages),
+        evidence: [pick.id], contextItemIds: [pick.id], contextIndex: 0,
+      }
+    }
+  }
+
+  /* ─── مقارنة بين فكرتين من المنشور ───
+     البنية أصدق من التصنيف هنا: «قارن بين المعلم والتقنية» كان يخطفها نمط
+     «لمعلم» في محرك الشرح، فنُحكِم صيغة المقارنة الصريحة قبل النيات الأخرى. */
+  if (intent === INTENTS.COMPARE || /(?:قارن|الفرق بين|مقارنه بين|ايهما افضل)/.test(clean)) {
+    const sides = compareSides(stripped || clean)
+    if (sides) {
+      const [leftItems, rightItems] = sides.map((side) => exactSiteResults(side, side, { limit: 2 }))
+      if (leftItems.length || rightItems.length) {
+        const block = (label, items) => items.length
+          ? `*${label}:*\n${items.map((item) => `• ${item.title}\n${item.url}`).join('\n')}`
+          : `*${label}:* ما لقيت مادة منشورة مباشرة عنها.`
+        const all = [...leftItems, ...rightItems]
+        return {
+          kind: 'reply', reason: 'compare-topics', intent,
+          reply: signReply(`جمعت لك طرفي المقارنة من منشورات الدكتور — والحكم لقراءتك:\n\n${block(sides[0], leftItems)}\n\n${block(sides[1], rightItems)}`, messages),
+          evidence: all.map((item) => item.id), contextItemIds: all.map((item) => item.id).slice(0, 12), contextIndex: 0, lastTopic: `${sides[0]} و${sides[1]}`,
+        }
+      }
+    }
+  }
+
+  /* ─── مزاج القارئ ─── */
+  const mood = MOOD_MAP.find(([pattern]) => pattern.test(clean))
+  if (mood && (intent === INTENTS.CONTENT_BY_MOOD || intent === INTENTS.SEARCH_TOPIC || classification.fallback)) {
+    const [, intro, seeds] = mood
+    for (const seedQuery of seeds) {
+      const found = exactSiteResults(seedQuery, seedQuery, { excludeIds: previousIds, limit: 2 })
+      if (found.length) return {
+        kind: 'reply', reason: 'mood-match', intent, reply: signReply(siteResultReply(found, intro), messages),
+        evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0,
+      }
+    }
+  }
+
+  /* ─── شبكة الفكرة: الامتدادات الحقيقية للمادة الحالية ─── */
+  if (intent === INTENTS.IDEA_NETWORK) {
+    if (current && Array.isArray(current.related) && current.related.length) {
+      const byId = new Map(siteIndex().map((item) => [item.id, item]))
+      const related = current.related.map((id) => byId.get(id)).filter(Boolean).slice(0, 4)
+      if (related.length) {
+        const lines = related.map((item, index) => `${arabicNumber(index + 1)}) *${item.title}* (${itemLabel(item)})\n${item.url}`)
+        return {
+          kind: 'reply', reason: 'idea-network', intent,
+          reply: signReply(`خيوط الفكرة الممتدة من *${current.title}*:\n\n${lines.join('\n\n')}`, messages),
+          evidence: related.map((item) => item.id), contextItemIds: related.map((item) => item.id), contextIndex: 0,
+        }
+      }
+    }
+    return { kind: 'reply', reason: 'idea-network-missing', intent, reply: signReply('افتح مادة أولاً وبعدها قل «شبكة الأفكار» وأمد لك خيوطها من بقية المنشور.', messages) }
+  }
+
+  /* ─── شرح وحوار مؤرّضان بالمادة ─── */
+  if (intent === INTENTS.EXPLAIN_MODE) {
+    const target = current || exactSiteResults(classification.request?.topic || stripped, '', { limit: 1 })[0]
+    if (target) {
+      const audience = clean.match(/(لطالب|لولي امر|لمعلم|لباحث)/)?.[1] || ''
+      const intro = audience ? `على قدر ${audience.replace('ل', '')} — ` : ''
+      const source = normalizeWhitespace(target.excerpt || target.body || '')
+      const sentences = source.split(/(?<=[.!؟])/u).map((part) => part.trim()).filter(Boolean).slice(0, 3).join(' ')
+      return {
+        kind: 'reply', reason: 'explain-grounded', intent,
+        reply: signReply(`${intro}هذا جوهر المادة بكلام الدكتور نفسه:\n\n*${target.title}*\n\n${sentences || 'التفصيل الكامل في الصفحة.'}\n\nوالسياق الكامل هنا:\n${target.url}`, messages),
+        evidence: [target.id], contextItemIds: [target.id], contextIndex: 0, lastTopic: target.title,
+      }
+    }
+    return { kind: 'reply', reason: 'context-missing', intent, reply: signReply(clarifyText(messages), messages) }
+  }
+  if (intent === INTENTS.DIALOGUE_MODE) {
+    const target = current || latestSiteItems(['article'], 1)[0]
+    if (target) {
+      const source = normalizeWhitespace(target.excerpt || target.body || '')
+      const firstSentence = source.split(/(?<=[.!؟])/u).map((part) => part.trim()).filter(Boolean)[0] || target.title
+      return {
+        kind: 'reply', reason: 'dialogue-opener', intent,
+        reply: signReply(`خذ هذه من *${target.title}*:\n\n«${firstSentence}»\n\nشرايك — توافق الدكتور أم عندك زاوية أخرى؟ اكتب رأيك، وأنا أقابل رأيك بما كتبه في بقية المادة:\n${target.url}`, messages),
+        evidence: [target.id], contextItemIds: [target.id], contextIndex: 0, lastTopic: target.title,
+      }
+    }
+  }
+
+  /* ─── الصدق فيما لا نملكه، مع بديلٍ نافع ─── */
+  if (intent === INTENTS.REMIND_ME) {
+    return { kind: 'reply', reason: 'reminder-honest', intent, reply: signReply('ما عندي جدولة تذكير هنا — أصدقك القول. البديل الأقرب: قل «احفظها» وأضم المادة لرفّك، فترجع لها متى شئت بكلمة «رفي».', messages) }
+  }
+  if (intent === INTENTS.WEEKLY_DIGEST) {
+    const found = latestSiteItems([], 3)
+    return {
+      kind: 'reply', reason: 'digest-now', intent,
+      reply: signReply(siteResultReply(found, 'النشرات تصل حين يبثها فريق المكتبة، وهذه خلاصة الأحدث الآن:'), messages),
+      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0,
+    }
+  }
+  if (intent === INTENTS.CONTINUE_LISTENING) {
+    const target = current || latestSiteItems(['article'], 1)[0]
+    if (target) {
+      const audioNote = target.audio?.dialogue || target.audio?.fahed || target.audio?.noura
+        ? 'التشغيل يكمل من داخل الصفحة نفسها — المشغّل يحفظ موضعك على نفس الجهاز.'
+        : 'هذه المادة نصية؛ قراءتها تكمل من حيث وقفت في الصفحة.'
+      return {
+        kind: 'reply', reason: 'continue-listening', intent,
+        reply: signReply(`آخر مادة كنا عندها:\n*${target.title}*\n${itemMetaLine(target)}\n\n${audioNote}\n${target.url}`, messages),
+        evidence: [target.id], contextItemIds: [target.id], contextIndex: 0,
+      }
+    }
+  }
+  if (intent === INTENTS.UPCOMING_EVENTS) {
+    return { kind: 'reply', reason: 'upcoming-events', intent, reply: signReply(`اللقاءات والمشاركات القادمة المعلنة تجدها محدّثة هنا — والصفحة لا تعرض إلا ما أُعلن فعلاً:\n\n${SITE_URL}/upcoming`, messages) }
+  }
+  if (intent === INTENTS.TOP_ARTICLE_TOPIC) {
+    const doors = archiveDoors(3)
+    if (doors.length) return { kind: 'reply', reason: 'top-topics', intent, reply: signReply(`أكثر المحاور حضوراً في عناوين مقالات الدكتور: ${doors.join(' · ')}.\n\nاكتب أي محور منها وأفتح لك موادّه.`, messages) }
+  }
+  if (intent === INTENTS.MOST_VIEWED_ARTICLE) {
+    const found = latestSiteItems(['article'], 3)
+    return {
+      kind: 'reply', reason: 'most-viewed-honest', intent,
+      reply: signReply(siteResultReply(found, 'ما أملك عدّاد مشاهدات موثقاً أستند إليه هنا — فلا أخترع ترتيباً. هذه أحدث المقالات، وكلها مما يُقبل عليه القراء:'), messages),
+      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0,
+    }
+  }
+  if (intent === INTENTS.VERIFIED_RESEARCH) {
+    const found = latestSiteItems(['paper'], 3)
+    if (found.length) return {
+      kind: 'reply', reason: 'verified-research', intent,
+      reply: signReply(siteResultReply(found, 'أوثق ما أقدمه لك أبحاث الدكتور المحكّمة المنشورة — لا أستشهد بمصادر خارج الموقع:'), messages),
+      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0,
+    }
+  }
+
   if ([INTENTS.SUMMARY, INTENTS.ONE_MINUTE, INTENTS.READ_SPEED].includes(intent)) {
     return current
-      ? { kind: 'reply', reason: 'context-summary', intent, reply: signReply(excerptReply(current, true)), evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0 }
-      : { kind: 'reply', reason: 'context-missing', intent, reply: signReply('أرسل لك مادة أولاً: قل «آخر مقالة» أو اكتب الموضوع، وبعدها أختصرها لك.') }
+      ? { kind: 'reply', reason: 'context-summary', intent, reply: signReply(excerptReply(current, true), messages), evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0 }
+      : { kind: 'reply', reason: 'context-missing', intent, reply: signReply('أرسل لك مادة أولاً: قل «آخر مقالة» أو اكتب الموضوع، وبعدها أختصرها لك.', messages) }
   }
   if ([INTENTS.SOURCE_PROOF, INTENTS.READ_ARTICLE, INTENTS.LISTEN_FAHED, INTENTS.LISTEN_NOURA, INTENTS.LISTEN_DIALOGUE].includes(intent)) {
-    return current
-      ? { kind: 'reply', reason: 'context-source', intent, reply: signReply(`هذا رابط ${itemLabel(current)} في موقع الدكتور:\n\n*${current.title}*\n${current.url}`), evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0 }
-      : { kind: 'reply', reason: 'context-missing', intent, reply: signReply(CLARIFY) }
+    if (!current) return { kind: 'reply', reason: 'context-missing', intent, reply: signReply(clarifyText(messages), messages) }
+    const listenIntents = [INTENTS.LISTEN_FAHED, INTENTS.LISTEN_NOURA, INTENTS.LISTEN_DIALOGUE]
+    const audioLine = listenIntents.includes(intent)
+      ? (current.audio?.dialogue || current.audio?.fahed || current.audio?.noura
+        ? '\nالاستماع من داخل الصفحة: ستجد المشغّل أعلى المادة.'
+        : '\nهذه المادة لم تصدر لها نسخة صوتية بعد؛ النص كامل في الصفحة.')
+      : ''
+    return { kind: 'reply', reason: 'context-source', intent, reply: signReply(`هذا رابط ${itemLabel(current)} في موقع الدكتور:\n\n*${current.title}*\n${current.url}${audioLine}`, messages), evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0 }
   }
   if ([INTENTS.MORE_LIKE_THIS, INTENTS.SIMILAR_CONTENT].includes(intent)) {
     const topic = bounded(conversation.lastTopic, 500) || current?.title || text
     const found = exactSiteResults(topic, topic, { excludeIds: previousIds, limit: 3 })
     if (found.length) return {
-      kind: 'reply', reason: 'more-like-this', intent, reply: signReply(siteResultReply(found, 'أكيد، هذه مواد ثانية قريبة من الفكرة:')),
+      kind: 'reply', reason: 'more-like-this', intent, reply: signReply(siteResultReply(found, 'أكيد، هذه مواد ثانية قريبة من الفكرة:'), messages),
       evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: topic,
     }
-    return { kind: 'reply', reason: 'no-more-results', intent, reply: signReply('خلصت المواد الأقرب لهذه الفكرة عندي. اكتب موضوعاً جديداً وأفتح لك مساراً مختلفاً.') }
+    return { kind: 'reply', reason: 'no-more-results', intent, reply: signReply('خلصت المواد الأقرب لهذه الفكرة عندي. اكتب موضوعاً جديداً وأفتح لك مساراً مختلفاً.', messages) }
   }
-  if (intent === INTENTS.CONTEXT_REFERENCE && conversationContextItems(conversation).length) {
-    const items = conversationContextItems(conversation)
+  const contextItems = conversationContextItems(conversation)
+  if ((intent === INTENTS.CONTEXT_REFERENCE || (intent === INTENTS.CHALLENGE_ANSWER && contextItems.length)) && contextItems.length) {
+    const items = contextItems
     const request = classification.request || {}
     let index = Number(conversation.contextIndex || 0)
+    const numericPick = intent === INTENTS.CHALLENGE_ANSWER ? Number(clean.replace(/[^0-9]/g, '')) : 0
     if (Number.isInteger(request.ordinal) && request.ordinal > 0) index = request.ordinal - 1
+    else if (numericPick > 0) index = numericPick - 1
     else if (request.reference === 'next') index += 1
     else if (request.reference === 'previous') index -= 1
     index = Math.max(0, Math.min(items.length - 1, index))
     const item = items[index]
-    return { kind: 'reply', reason: 'context-reference', intent, reply: signReply(excerptReply(item)), evidence: [item.id], contextItemIds: conversation.contextItemIds, contextIndex: index }
+    return { kind: 'reply', reason: 'context-reference', intent, reply: signReply(excerptReply(item), messages), evidence: [item.id], contextItemIds: conversation.contextItemIds, contextIndex: index }
+  }
+
+  /* «عطني ٤ مقالات» — عددٌ ونوعٌ صريحان يستحقان قائمة، لا استيضاحاً. */
+  const countedKind = clean.match(/(?:عطني|اعطني|ابي|اريد|ابغي|ورني|وريني|اعرض|هات)\s+(\d{1,2})\s*(مقالات|مقاله|مقال|ابحاث|بحوث|بحث|كتب|كتاب|بودكاست|حلقات|مختارات)/)
+  if (countedKind) {
+    const kindMap = { مقالات: 'article', مقاله: 'article', مقال: 'article', ابحاث: 'paper', بحوث: 'paper', بحث: 'paper', كتب: 'book', كتاب: 'book', بودكاست: 'podcast', حلقات: 'podcast', مختارات: 'curated' }
+    const count = Math.max(1, Math.min(5, Number(countedKind[1]) || 3))
+    const found = latestSiteItems([kindMap[countedKind[2]] || 'article'], count)
+    if (found.length) return {
+      kind: 'reply', reason: 'latest-content', intent,
+      reply: signReply(siteResultReply(found, found.length > 1 ? 'هذه أحدث المواد المنشورة:' : `هذا أحدث ${itemLabel(found[0])} منشور:`), messages),
+      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: found[0].title,
+    }
   }
 
   const latestKinds = intentKinds(intent)
   if (latestKinds.length || [INTENTS.LATEST_CONTENT, INTENTS.MISSED_CONTENT].includes(intent)) {
-    const count = [INTENTS.LATEST_ARTICLES, INTENTS.MISSED_CONTENT].includes(intent) ? 3 : 1
+    const requested = requestedListCount(clean)
+    const count = requested || ([INTENTS.LATEST_ARTICLES, INTENTS.MISSED_CONTENT].includes(intent) ? 3 : 1)
     const found = latestSiteItems(latestKinds, count)
     if (found.length) return {
       kind: 'reply', reason: 'latest-content', intent,
-      reply: signReply(siteResultReply(found, count > 1 ? 'هذه أحدث المواد المنشورة:' : `هذا أحدث ${itemLabel(found[0])} منشور:`)),
+      reply: signReply(siteResultReply(found, count > 1 ? 'هذه أحدث المواد المنشورة:' : `هذا أحدث ${itemLabel(found[0])} منشور:`), messages),
       evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: found[0].title,
     }
   }
@@ -422,7 +875,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     const signature = Number.parseInt(hash(`${conversation.lastInboundAt || ''}:${text}:${previousIds.join('|')}`).slice(0, 8), 16)
     const found = pool.length ? [pool[signature % pool.length]] : latestSiteItems([], 1)
     if (found.length) return {
-      kind: 'reply', reason: 'surprise', intent, reply: signReply(siteResultReply(found, 'اخترت لك هذه؛ فيها فكرة تستحق الوقوف عندها:')),
+      kind: 'reply', reason: 'surprise', intent, reply: signReply(siteResultReply(found, 'اخترت لك هذه؛ فيها فكرة تستحق الوقوف عندها:'), messages),
       evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: found[0].title,
     }
   }
@@ -434,16 +887,32 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
   const found = exactSiteResults(query, '', { kinds, limit: 3 })
   if (found.length) return {
     kind: 'reply', reason: classification.fallback ? 'dialect-semantic-search' : 'site-index', intent,
-    reply: signReply(siteResultReply(found)), evidence: found.map((item) => item.id),
+    reply: signReply(siteResultReply(found), messages), evidence: found.map((item) => item.id),
     contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: query,
   }
 
   const asksQuestion = /[؟?]\s*$|(?:^|\s)(?:شنو|وش|ايش|كيف|متى|وين|هل|ليش|منو|كم|شلون|عطني|اعطني|ورني|ابي|ابغى|ودي|ممكن)(?:\s|$)/.test(clean)
+  if (asksQuestion) {
+    return { kind: 'reply', reason: 'active-clarify', intent, reply: signReply(clarifyText(messages), messages), priorReplyHash }
+  }
+  /* لا مطابقة دقيقة: نعرض الأقرب بعتبة متساهلة، فإن غاب فأبواب الأرشيف الحقيقية. */
+  const near = nearestSuggestions(query, previousIds, 3)
+  if (near.length) {
+    const lines = near.map((item, index) => `${arabicNumber(index + 1)}) *${item.title}*\n${item.url}`)
+    return {
+      kind: 'reply', reason: 'near-suggestions', intent,
+      reply: signReply(`${messages.noMatch || 'ما لقيت مادة منشورة مطابقة الآن.'}\n\nلكن هذه أقرب المواد المنشورة لفكرتك — جرّب كلمة أقرب للموضوع إن لم تصب:\n\n${lines.join('\n\n')}`, messages),
+      evidence: near.map((item) => item.id), contextItemIds: near.map((item) => item.id), contextIndex: 0,
+      priorReplyHash,
+    }
+  }
+  const doors = archiveDoors(4)
+  const doorsLine = doors.length ? `\n\n${messages.doorsPrefix || 'أبواب الأرشيف الحاضرة: '}${doors.join(' · ')}` : ''
   return {
     kind: 'reply',
-    reason: asksQuestion ? 'active-clarify' : 'no-grounded-answer',
+    reason: 'no-grounded-answer',
     intent,
-    reply: signReply(asksQuestion ? CLARIFY : NO_MATCH),
+    reply: signReply(`${noMatchText(messages)}${doorsLine}`, messages),
     priorReplyHash,
   }
 }
@@ -1035,6 +1504,42 @@ function decisionLabel(reason = '') {
     'empty-after-normalization': 'رسالة بلا محتوى قابل للمعالجة',
     'awaiting-wake-phrase': 'بانتظار جملة الإيقاظ',
     'runtime-paused': 'التشغيل متوقف مؤقتاً',
+    thanks: 'شكر ومجاملة',
+    farewell: 'وداع',
+    acknowledged: 'إقرار قصير',
+    'who-are-you': 'سؤال عن هوية المساعد',
+    praise: 'ثناء',
+    'stop-messages': 'طلب إيقاف الرسائل',
+    'resume-messages': 'طلب عودة الرسائل',
+    'delete-preferences': 'مسح التفضيلات',
+    'correction-retry': 'تصحيح وبحث من زاوية ثانية',
+    'correction-clarify': 'تصحيح يحتاج توضيحاً',
+    'challenge-question': 'تحدي معرفي',
+    'challenge-correct': 'إجابة تحدٍ صحيحة',
+    'challenge-missed': 'إجابة تحدٍ غير مصيبة',
+    'saved-to-shelf': 'حفظ في الرف',
+    'shelf-list': 'استعراض الرف',
+    'shelf-removed': 'حذف من الرف',
+    'curated-quote': 'اقتباس من المختارات',
+    'compare-topics': 'مقارنة موضوعين',
+    'mood-match': 'مواساة بمادة مناسبة',
+    'idea-network': 'شبكة الفكرة',
+    'explain-grounded': 'شرح مؤرّض بالمادة',
+    'dialogue-opener': 'فتح حوار حول مادة',
+    'reminder-honest': 'اعتذار صادق عن التذكير',
+    'digest-now': 'خلاصة الأحدث',
+    'continue-listening': 'مواصلة الاستماع',
+    'upcoming-events': 'اللقاءات القادمة',
+    'top-topics': 'أبرز المحاور',
+    'most-viewed-honest': 'الأكثر مشاهدة (بصدق الحدود)',
+    'verified-research': 'أبحاث محكّمة',
+    'near-suggestions': 'أقرب المواد المنشورة',
+    'context-reference': 'تنقّل داخل النتائج',
+    'context-summary': 'تلخيص المادة الحالية',
+    'context-source': 'رابط المصدر',
+    'more-like-this': 'المزيد من المشابه',
+    'latest-content': 'أحدث المنشور',
+    surprise: 'اختيار مفاجئ',
   }
   return labels[value] || value.replace(/[-_:]+/g, ' ')
 }
@@ -1338,6 +1843,9 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       previousIncomingHash: data.lastIncomingHash,
       previousInboundAt: data.lastInboundAt,
     })
+    /* تحديث قوالب اللوحة خلفيّ لا يؤخر رداً: يجلب bot_messages/templates ضمن
+       TTL داخلي، فيسري تحرير الدكتور من لوحة «رسائل البوت» خلال دقائق. */
+    void refreshBotMessages().catch(() => {})
     const wakePhrase = isWhatsAppWakePhrase(text)
     const manualTakeoverActive = data.mode === 'human'
       || (data.mode === 'silent' && Boolean(data.lastManualAt) && data.wakeActive !== true)
@@ -1365,7 +1873,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
        الاستثناء الوحيد هو أن يكتب الدكتور بيده؛ عندها يضع الجسر mode=human
        وتبقى هذه المحادثة وحدها صامتة حتى جملة الإيقاظ المنشورة. */
     if (wakePhrase) {
-      const signedWelcome = signReply(WELCOME)
+      const signedWelcome = signReply(welcomeText())
       await ref.set({
         ...basePatch,
         mode: 'bot',
@@ -1508,8 +2016,25 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       ...(Array.isArray(decision.evidence) && decision.evidence.length ? {
         seenContentIds: [...new Set([...(Array.isArray(data.seenContentIds) ? data.seenContentIds : []), ...decision.evidence])].slice(-40),
       } : {}),
+      ...(decision.patch && typeof decision.patch === 'object' ? decision.patch : {}),
       ...deliveryResponsePatch('reply', decision.reason, safeReply),
     }, { merge: true })
+    if (typeof decision.audienceSuppressed === 'boolean') {
+      /* «أوقف الرسائل» وعدٌ يجب الوفاء به فعلاً: صف الحملات يتخطى جهات الاتصال
+         الموسومة suppressed، فنسم جهة اتصال الجمهور المطابقة إن وُجدت. */
+      try {
+        const contactRef = db.collection(COLLECTIONS.audienceContacts).doc(audienceContactId(jid))
+        const contactSnapshot = await contactRef.get()
+        if (contactSnapshot.exists) {
+          await contactRef.set({
+            suppressed: decision.audienceSuppressed,
+            suppressedAt: decision.audienceSuppressed ? now : null,
+            suppressionSource: 'recipient-request',
+            updatedAt: now,
+          }, { merge: true })
+        }
+      } catch { /* رغبة المستلم محفوظة في وثيقة المحادثة على كل حال */ }
+    }
     sendJson(res, 200, { ok: true, action: 'reply', reason: decision.reason, reply: { text: safeReply } })
   }
 

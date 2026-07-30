@@ -290,7 +290,7 @@ function Panel({ email }: { email: string }) {
   return (
     <Page>
       <AdminTaskFavicon />
-      <div className="admin-shell mx-auto box-border w-full max-w-[1440px] overflow-x-hidden px-4 pb-32 pt-28 sm:px-6 md:px-10 md:pb-24 md:pt-32">
+      <div className="admin-shell mx-auto box-border w-full max-w-[1440px] overflow-x-clip px-4 pb-32 pt-28 sm:px-6 md:px-10 md:pb-24 md:pt-32">
         <div className="mb-7 grid min-w-0 gap-4 sm:flex sm:flex-wrap sm:items-center sm:justify-between md:mb-9">
           <div className="min-w-0">
             <p className="mb-1 text-[.78rem] font-semibold uppercase text-accent">لوحة التحكم</p>

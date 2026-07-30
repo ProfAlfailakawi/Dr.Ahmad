@@ -217,4 +217,57 @@ for (const text of ['آخر مقالاته', 'الثانية', 'لخصها', 'ا
 assert.deepEqual(navigationReasons.slice(0, 4), ['latest-content', 'context-reference', 'context-summary', 'context-source'])
 assert.ok(['more-like-this', 'no-more-results'].includes(navigationReasons[4]))
 
+/* ─── الذكاء الموسّع (٣٠ يوليو): مجاملات، تحكم بالرسائل، تحدي، رف، تصحيح، مقارنة، صدق الحدود ─── */
+const thanks = decideGroundedResponse({ text: 'مشكور وايد' })
+assert.equal(thanks.reason, 'thanks')
+assert.doesNotMatch(thanks.reply, /ما لقيت|ما فهمت/)
+assert.equal(decideGroundedResponse({ text: 'مع السلامة' }).reason, 'farewell')
+assert.equal(decideGroundedResponse({ text: 'منو انت؟' }).reason, 'who-are-you')
+assert.equal(decideGroundedResponse({ text: 'تمام' }).reason, 'acknowledged')
+
+const stop = decideGroundedResponse({ text: 'أوقف الرسائل' })
+assert.equal(stop.reason, 'stop-messages')
+assert.equal(stop.audienceSuppressed, true)
+assert.equal(stop.patch.contentOptOut, true)
+const resume = decideGroundedResponse({ text: 'رجع الرسائل' })
+assert.equal(resume.reason, 'resume-messages')
+assert.equal(resume.audienceSuppressed, false)
+assert.equal(decideGroundedResponse({ text: 'امسح بياناتي' }).reason, 'delete-preferences')
+
+let quizConversation = {}
+const quiz = decideGroundedResponse({ text: 'اختبرني', conversation: quizConversation })
+assert.equal(quiz.reason, 'challenge-question')
+assert.equal(quiz.patch.challenge.itemIds.length, 3)
+assert.match(quiz.reply, /«/)
+quizConversation = { challenge: quiz.patch.challenge }
+const graded = decideGroundedResponse({ text: '٢', conversation: quizConversation })
+assert.ok(['challenge-correct', 'challenge-missed'].includes(graded.reason), 'الرقم بعد تحدٍّ معلق يُحكم إجابةً لا تنقلاً')
+assert.equal(graded.patch.challenge, null)
+assert.match(graded.reply, /dr-alfailakawi\.com/)
+
+assert.equal(decideGroundedResponse({ text: 'قارن بين المعلم والتقنية' }).reason, 'compare-topics')
+assert.equal(decideGroundedResponse({ text: 'الفرق بين الحفظ والفهم' }).reason, 'compare-topics')
+
+const corrected = decideGroundedResponse({ text: 'مو صح قصدي الذكاء الاصطناعي', conversation: { lastTopic: 'الحفظ' } })
+assert.ok(['correction-retry', 'correction-clarify'].includes(corrected.reason))
+
+const counted = decideGroundedResponse({ text: 'عطني ٤ مقالات' })
+assert.equal(counted.reason, 'latest-content')
+assert.ok((counted.reply.match(/dr-alfailakawi\.com/g) || []).length >= 4, 'أربع مواد كما طلب')
+
+const honest = decideGroundedResponse({ text: 'أكثر مقالة مشاهدة' })
+assert.equal(honest.reason, 'most-viewed-honest')
+assert.match(honest.reply, /لا أخترع/)
+
+assert.equal(decideGroundedResponse({ text: 'عطني اقتباس' }).reason, 'curated-quote')
+assert.equal(decideGroundedResponse({ text: 'احفظها' }).reason, 'save-context-missing')
+assert.equal(decideGroundedResponse({ text: 'ذكرني بكرة' }).reason, 'reminder-honest')
+assert.equal(decideGroundedResponse({ text: 'أنا اليوم متضايق' }).reason, 'mood-match')
+
+/* القوالب الحية: تحرير اللوحة يجب أن يصل الردود (كان مسبوكاً عند التحميل) */
+const controllerNow = controllerSource
+assert.match(controllerNow, /getBotMessages/)
+assert.match(controllerNow, /refreshBotMessages/)
+assert.doesNotMatch(controllerNow, /^const WELCOME = /m)
+
 console.log('WhatsApp central policy: passed')

@@ -168,12 +168,16 @@ html.dark body::before {
   border-radius: 3px;
 }
 
-/* لوحة التحكم: حماية من أي تمدد أفقي في الجداول أو المسارات الطويلة */
+/* لوحة التحكم: حماية من أي تمدد أفقي في الجداول أو المسارات الطويلة.
+   overflow-x: clip (لا hidden) لأن hidden يجعل العنصر حاوية تمرير فيكسر
+   التصاق شريط الأيقونات (sticky) ويقصّ القائمة المنبثقة؛ وclip يمنع التمدد
+   الأفقي نفسه بلا هذين الأثرين. والعرض 1440 موحّد مع صنف Tailwind على العنصر
+   نفسه — كانا متعارضين (1320 هنا و1440 هناك) فتختل حسابات الشاشات الكبيرة. */
 .admin-shell {
   box-sizing: border-box;
   width: 100%;
-  max-width: min(1320px, calc(100vw - 1px));
-  overflow-x: hidden;
+  max-width: min(1440px, calc(100vw - 1px));
+  overflow-x: clip;
 }
 .admin-dashboard * {
   min-width: 0;
@@ -1891,7 +1895,9 @@ body.reader-resume-open .floating-actions {
   max-inline-size: 100%;
 }
 
-.admin-shell :where(h1, h2, h3, h4, p, span, strong, button, a) {
+/* الكسر في أي موضع يبقى للنصوص الجارية والأزرار والروابط؛ العناوين خرجت منه:
+   كسر «استوديو النشر الذكي» في منتصف الكلمة كان يشوّه رأس اللوحة على الكمبيوتر. */
+.admin-shell :where(p, span, strong, button, a) {
   overflow-wrap: anywhere;
 }
 

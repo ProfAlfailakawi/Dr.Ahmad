@@ -53,6 +53,13 @@ async function fetchHealth() {
 
 const health = await fetchHealth()
 
+/* حالة رابعة غير صحية — «الإطار المنفصل» المزمن: الجسر متصل ونبضه أخضر لكن
+   استرجاع الرسائل يفشل بخطأ الإطار المنفصل جولةً بعد جولة، أي أن صفحة واتساب
+   داخله انفصلت وقد لا تصل الردود. الجسر نفسه يعالجها الآن ذاتياً؛ هذا الحارس
+   شبكة الأمان الخارجية: رصدُها في فحصين متتاليين (≈ ٦ دقائق) يعيد التشغيل. */
+const DETACHED_CONTEXT = /detached\s*Frame|Execution context (?:was )?destroyed|Target closed|webjs-reinjection-timeout|Cannot find context with specified id/i
+const detachedSeen = Boolean(health.ok && health.body && DETACHED_CONTEXT.test(String(health.body.lastCatchupError || '')))
+
 let reason = null
 if (!health.reachable) {
   reason = 'health-unreachable'
@@ -65,6 +72,8 @@ if (!health.reachable) {
   if (!withinGrace) {
     if (b.connected !== true) {
       reason = `not-connected:${b.status || 'unknown'}`
+    } else if (detachedSeen && st.detachedSeen) {
+      reason = 'detached-catchup-persistent'
     } else if (b.lastWebhookAt) {
       const hbAge = now - new Date(b.lastWebhookAt).getTime()
       if (hbAge > STALE_MS) reason = `stale-heartbeat:${Math.round(hbAge / 1000)}s`
@@ -76,17 +85,17 @@ const healthy = reason === null
 
 if (healthy) {
   if (!st.wasHealthy) { notify('البوت رجع سليمًا يعمل ✓'); wlog('recovered → healthy') }
-  else wlog(`healthy connected=${health.body?.connected} sync=${health.body?.syncPercent}`)
-  saveState({ ...st, wasHealthy: true })
+  else wlog(`healthy connected=${health.body?.connected} sync=${health.body?.syncPercent}${detachedSeen ? ' detached-catchup=observing' : ''}`)
+  saveState({ ...st, wasHealthy: true, detachedSeen })
 } else {
   const sinceRestart = now - Number(st.lastRestartAt || 0)
   if (sinceRestart < COOLDOWN_MS) {
     wlog(`unhealthy (${reason}) — in cooldown ${Math.round((COOLDOWN_MS - sinceRestart) / 1000)}s, skip`)
-    saveState({ ...st, wasHealthy: false })
+    saveState({ ...st, wasHealthy: false, detachedSeen })
   } else {
     wlog(`RESTART (${reason}) → kickstart ${LABEL}`)
     sh(`launchctl kickstart -k gui/${uid}/${LABEL}`)
     notify(`أعدت تشغيل البوت تلقائيًا (${reason})`)
-    saveState({ lastRestartAt: now, wasHealthy: false })
+    saveState({ lastRestartAt: now, wasHealthy: false, detachedSeen: false })
   }
 }

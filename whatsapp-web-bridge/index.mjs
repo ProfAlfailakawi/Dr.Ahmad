@@ -158,6 +158,25 @@ let catchupTimer = null
 let catchupPromise = null
 let heartbeatBusy = false
 let reinjectionPromise = null
+let consecutiveDetachedCatchups = 0
+const DETACHED_CONTEXT = /detached\s*Frame|Execution context (?:was )?destroyed|Target closed|webjs-reinjection-timeout|Cannot find context with specified id|Session closed|most likely because of a navigation/i
+
+/* عطب «الإطار المنفصل» كان يُشفى ذاتياً في مسار أوامر اللوحة فقط، بينما بقي
+   مساران أعزلان: ردُّ الرسالة الواردة الحية، واسترجاعُ الفائت كل خمس دقائق.
+   فيبدو الجسر متصلاً ونبضُه أخضر وهو أخرس فعلياً. الخروج بالرمز 75 يعيد
+   التشغيل نظيفاً عبر launchd بلا مساسٍ بالجلسة؛ والرسالة التي لم يكتمل ردُّها
+   لا تُثبَّت في checkpoint، فيعيدها الاسترجاع بعد الإقلاع ويعيد الخادم ردَّها
+   المخزون لنفس messageId بلا فقدٍ ولا تكرار. */
+async function selfHealDetachedContext(source, error) {
+  if (shuttingDown) return
+  const uptimeMs = Date.now() - Date.parse(runtime.startedAt)
+  if (!Number.isFinite(uptimeMs) || uptimeMs < 120_000) return
+  shuttingDown = true
+  log('warn', 'detached_context_selfheal_restart', { source, error: String(error).slice(0, 200) })
+  await safeEmit('status', transitionState('restarting', false, `detached_context:${source}`), { retries: 0 })
+  await safeGracefulCloseClient()
+  process.exit(75)
+}
 const recentAutomatedSends = new Map()
 const recentAutomatedBodies = new Map()
 const inboundQueues = new Map()
@@ -602,6 +621,7 @@ async function processIncomingMessage(message, source = 'live') {
   } catch (error) {
     runtime.lastError = error instanceof Error ? error.message : String(error)
     log('error', source === 'catchup' ? 'catchup_message_failed' : 'incoming_message_failed', { from: message.from, error: runtime.lastError, messageId })
+    if (DETACHED_CONTEXT.test(runtime.lastError)) await selfHealDetachedContext('incoming-reply', runtime.lastError)
   } finally {
     if (messageId) inboundInFlight.delete(messageId)
   }
@@ -726,12 +746,19 @@ async function catchUpMissedMessages() {
       runtime.lastCatchupAt = new Date().toISOString()
       runtime.lastCatchupRecovered = recovered
       runtime.lastCatchupError = ''
+      consecutiveDetachedCatchups = 0
       log('info', 'missed_message_catchup_completed', { recovered, chats: recentChats.length, candidates: candidates.length })
     } catch (error) {
       runtime.lastCatchupAt = new Date().toISOString()
       const detail = String(error?.stack || error?.message || error || 'unknown')
       runtime.lastCatchupError = `${stage}: ${detail}`.slice(0, 300)
       log('warn', 'missed_message_catchup_failed', { error: runtime.lastCatchupError })
+      if (DETACHED_CONTEXT.test(runtime.lastCatchupError)) {
+        consecutiveDetachedCatchups += 1
+        if (consecutiveDetachedCatchups >= 2) await selfHealDetachedContext('catchup', runtime.lastCatchupError)
+      } else {
+        consecutiveDetachedCatchups = 0
+      }
     } finally {
       catchupPromise = null
     }

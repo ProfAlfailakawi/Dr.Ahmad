@@ -139,7 +139,10 @@ export function BookWorld({
 
         <div className="mt-6 grid gap-3">
           {model.ideas.length > 0 && <Disclosure
-            eyebrow={`Idea DNA · ${model.dna.fingerprint.replace('idea-', '').toUpperCase()}`}
+            /* «Idea DNA · 2E7078EF» بصمةٌ تقنية لا تقول للزائر شيئاً — وأخواتها
+               في هذه الصفحة عربياتٌ مفهومة («استمرار الفكرة»، «الزمن داخل
+               الأرشيف»). البصمة نفسها تبقى في لوحة التحكم حيث تنفع. */
+            eyebrow="بصمة الفكرة"
             title="بصمة الكتاب ومساراته الفكرية"
             meta={`${model.dna.topic.label} · ${model.dna.tone.label} · عمق ${model.dna.depth.score}% · دليل ${model.dna.evidence.score}%`}
             lockOpen={Boolean(activeIdea)}

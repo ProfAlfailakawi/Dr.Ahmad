@@ -236,10 +236,10 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     label: 'ابدأ من هنا',
     items: [
       { to: '/articles', label: 'المقالات الفكرية', allLabel: 'جميع المقالات' },
-      { to: '/search', label: 'البحث في المعرفة', description: 'مادة منشورة أو سؤال موثّق', showAllLink: false, sub: [
-        { to: '/search', label: 'أبحث عن مادة', description: 'في المقالات والكتب والأبحاث والإعلام' },
-        { to: '/ask', label: 'أسأل الأرشيف', description: 'جواب من مواد الموقع فقط' },
-      ] },
+      /* «أبحث عن مادة» و«أسأل الأرشيف» يظهران داخل الأداة نفسها (KnowledgeEntry
+         في /search و/ask)، فسردهما هنا تكرارٌ لما سيراه بعد نقرةٍ واحدة.
+         الوصلة الآن مباشرةٌ إلى الأداة، والطريقان يُختاران داخلها. */
+      { to: '/search', label: 'البحث في المعرفة', description: 'مادة منشورة أو سؤال موثّق' },
       { to: '/thought', label: 'الخريطة الفكرية', allLabel: 'افتح الخريطة الفكرية', sub: [
         { to: '/atlas', label: 'سماء المقالات', description: 'المشهد البصري للأرشيف' },
         { to: '/thought-paths', label: 'مسارات الفكرة', description: 'كيف تطوّرت الموضوعات' },
@@ -253,7 +253,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { to: '/research', label: 'الأبحاث المحكمة' },
       { to: '/publications', label: 'الكتب المنشورة' },
-      { to: '/inbox', label: 'رسائل على الهامش', description: 'رسائل من الأرشيف الحي' },
+      { to: '/inbox', label: 'رسائل على الهامش' },
       { to: '/curated', label: 'المختارات', allLabel: 'جميع المختارات', sub: [
         { to: '/questions', label: 'سؤال يُقلق التعليم', description: 'أسئلة تربوية' },
         { to: '/radar', label: 'أرشيف الرادار', description: 'ما يستحق المتابعة' },

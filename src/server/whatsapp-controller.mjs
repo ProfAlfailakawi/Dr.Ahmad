@@ -41,6 +41,23 @@ function dailyGateItem(at = new Date()) {
   const dayKey = new Intl.DateTimeFormat('en-CA', { timeZone: KUWAIT_TZ }).format(at)
   return pool[Number.parseInt(hash(`daily-gate:${dayKey}`).slice(0, 8), 16) % pool.length]
 }
+/* ترقية ١ — ذاكرة عبر الأيام: من عاد بعد غياب يستحق أن يُعرَف، لا أن يبدأ من
+   الصفر كأن شيئاً لم يكن. سطرٌ واحد يذكّره بآخر ما وقفنا عنده — بلا حشو،
+   وبلا أن يعرض بياناتٍ عن نفسه لم يطلبها. */
+const RETURNING_READER_GAP_MS = 20 * 60 * 60_000
+export function returningReaderLine(conversation = {}, at = Date.now()) {
+  const lastSeen = Date.parse(conversation.lastInboundAt || conversation.updatedAt || '')
+  if (!Number.isFinite(lastSeen)) return ''
+  const gap = at - lastSeen
+  if (gap < RETURNING_READER_GAP_MS) return ''
+  const days = Math.floor(gap / 86_400_000)
+  const when = days >= 30 ? 'بعد غيبة' : days >= 7 ? `بعد ${arabicNumber(Math.floor(days / 7))} أسبوع` : days >= 1 ? `بعد ${arabicNumber(days)} ${days === 1 ? 'يوم' : days === 2 ? 'يومين' : 'أيام'}` : 'اليوم'
+  const current = currentConversationItem(conversation)
+  const topic = current?.title || bounded(conversation.lastTopic, 90)
+  if (topic) return `أهلاً بعودتك ${when}. آخر مرة وقفنا عند «${topic}» — نكمل منها أم نفتح جديداً؟`
+  return `أهلاً بعودتك ${when}.`
+}
+
 function buildWakeWelcome(messages = botMessagesNow(), at = new Date()) {
   const gate = dailyGateItem(at)
   const header = `${timeGreeting(at)} · ${messages.welcomeLine || 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي'}.`
@@ -54,12 +71,19 @@ function welcomeText(messages = botMessagesNow(), at = new Date()) {
   const line = messages.welcomeLine || 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي'
   return `${timeGreeting(at)}. ${line}.\n\nأفهم سؤالك باللهجة الكويتية أو بالعربية الطبيعية، وأبحث لك في مقالات الدكتور وكتبه وأبحاثه والبودكاست.\n\nجرّب مثلاً: «شنو جديد الدكتور؟» · «عندك شي عن الذكاء الاصطناعي؟» · «لخّصها» · «عطني غيرها»\n\n${SITE_URL}`
 }
+/* ترقية ٥ — سؤالٌ مرتدّ بدل القائمة: القائمة تشبه الآلة، والسؤال يشبه الإنسان.
+   حين تكون بين يدينا مادة حاضرة نسأل عنها سؤالاً واحداً مباشراً؛ وحين لا يكون
+   شيء نسأل عن الوجهة بجملةٍ واحدة. تبقى القائمة الكاملة تحت «شنو تقدر تسوي». */
 function clarifyText(messages = botMessagesNow(), conversation = {}) {
   const current = currentConversationItem(conversation)
   if (current) {
-    return `${messages.clarify || 'لم يتضح المقصود بدقة.'}\n\nإذا كنت تقصد «${current.title}»، اكتب: لخّصها · المصدر · غيرها. وإن كان طلباً جديداً، اكتب الموضوع مباشرة.`
+    return `${messages.clarify || 'لم يتضح المقصود بدقة.'}\n\nتقصد «${current.title}»؟ قل «نعم» وأكمل معك عليها، أو اكتب موضوعك الجديد مباشرة.`
   }
-  return `${messages.clarify || 'لم يتضح المقصود بدقة.'}\n\nاكتب الموضوع مباشرة، أو اطلب: آخر مقالة · آخر بحث · آخر كتاب · آخر بودكاست.`
+  const lastTopic = bounded(conversation.lastTopic, 120)
+  if (lastTopic) {
+    return `${messages.clarify || 'لم يتضح المقصود بدقة.'}\n\nنكمل في «${lastTopic}»، أو تفتح موضوعاً جديداً؟ اكتبه مباشرة.`
+  }
+  return `${messages.clarify || 'لم يتضح المقصود بدقة.'}\n\nاكتب الموضوع الذي في بالك بكلمة واحدة، وأبحث لك عنه في كل ما نشره الدكتور.`
 }
 function noMatchText(messages = botMessagesNow()) {
   return `${messages.noMatch || 'ما لقيت مادة منشورة مطابقة الآن.'}\n\nجرّب كلمة أقرب للموضوع، أو قل لي: مقالة، كتاب، بحث، أو بودكاست.`
@@ -285,6 +309,28 @@ function systemTerminology(value) {
     .replace(/تقنية|تقنيه/g, 'تكنولوجيا')
 }
 
+/* ترقية ٧ — خفض التوقيع: «رد آلي من موقع د. أحمد» تحت كل رسالة يثقل المحادثة
+   الطويلة ويجعلها تبدو آلةً تكرر نفسها. القاعدة: يُوقَّع أول ردٍّ في كل جلسة،
+   والجلسة تنتهي بصمتٍ ثلاثين دقيقة فيعود التوقيع. الحدود الإنسانية (طلب
+   التواصل مع الدكتور) تبقى موقّعةً دائماً لأن مصدر الكلام يجب أن يكون بيّناً.
+   يُطبَّق عند حافة الإرسال لا داخل العقل، فيبقى العقل واختباراته كما هما. */
+const SESSION_SIGNATURE_GAP_MS = 30 * 60_000
+function shouldSignReply(conversation = {}, at = Date.now()) {
+  const lastSignedAt = Date.parse(conversation.lastSignedAt || '')
+  if (!Number.isFinite(lastSignedAt)) return true
+  return at - lastSignedAt >= SESSION_SIGNATURE_GAP_MS
+}
+
+export function trimSessionSignature(reply, conversation = {}, at = Date.now()) {
+  const text = String(reply || '')
+  if (!text) return text
+  const signature = botSignature()
+  if (!signature || !text.includes(signature)) return text
+  if (shouldSignReply(conversation, at)) return text
+  if (/تريد التواصل مع الدكتور مباشرة|لا أستطيع أن أعدك بموعد رد/.test(text)) return text
+  return text.replace(new RegExp(`\\n*${signature.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`), '').trimEnd()
+}
+
 function signReply(value, messages = botMessagesNow()) {
   const signature = botSignature(messages)
   const text = systemTerminology(bounded(value, 2_000))
@@ -352,12 +398,71 @@ function siteIndex() {
   return contentIndexCache
 }
 
+/* ترقية ٣ — السؤال المركّب: «عندك بحث محكّم عن التعلم عن بُعد بعد ٢٠٢٠؟» فيه
+   ثلاثة شروط: موضوع ونوع وزمن. كان البوت يفهم الموضوع وحده فيعود بمقالٍ من
+   ٢٠١٤. نستخرج النوع والزمن من نص السؤال نفسه ونطبّقهما مرشِّحَين حقيقيين،
+   ونعلن في الرد أننا فهمنا الشرطين — بلا اختلاق مادةٍ غير موجودة. */
+const KIND_HINTS = [
+  [/بحث|ابحاث|بحوث|محكم|محكمه|دراسه|دراسات|ورقه علميه/, 'paper'],
+  [/كتاب|كتب|مؤلف|مؤلفات/, 'book'],
+  [/بودكاست|حلقه|حلقات|بودكاستات/, 'podcast'],
+  [/مقال|مقاله|مقالات/, 'article'],
+  [/مختارات|مختاره/, 'curated'],
+]
+export function parseCompoundFilters(text = '') {
+  const clean = normalizeArabicMessage(text)
+  const kinds = KIND_HINTS.filter(([pattern]) => pattern.test(clean)).map(([, kind]) => kind)
+  let after = null
+  let before = null
+  let exact = null
+  const yearOf = (value) => {
+    const year = Number(String(value).replace(/[٠-٩]/g, (digit) => String(AR_DIGITS.indexOf(digit))))
+    return Number.isFinite(year) && year >= 1980 && year <= 2100 ? year : null
+  }
+  const afterMatch = clean.match(/(?:بعد|من بعد|منذ|ابتداء من|من)\s*(?:عام|سنه|سنة)?\s*([٠-٩0-9]{4})/)
+  const beforeMatch = clean.match(/(?:قبل|حتى|لغايه|الى)\s*(?:عام|سنه|سنة)?\s*([٠-٩0-9]{4})/)
+  const exactMatch = clean.match(/(?:في|سنه|سنة|عام)\s*([٠-٩0-9]{4})/)
+  if (afterMatch) after = yearOf(afterMatch[1])
+  if (beforeMatch) before = yearOf(beforeMatch[1])
+  if (!after && !before && exactMatch) exact = yearOf(exactMatch[1])
+  const recent = /الاحدث|الاجدد|الجديده|حديثه|هالسنه|هذه السنه|مؤخرا/.test(clean) && !after && !before && !exact
+  return { kinds, after, before, exact, recent, active: Boolean(kinds.length || after || before || exact || recent) }
+}
+
+function itemYear(item) {
+  return Number(String(item?.date || item?.iso || item?.year || '').match(/(?:19|20)\d{2}/)?.[0] || 0)
+}
+
+function matchesCompoundFilters(item, filters) {
+  if (!filters?.active) return true
+  if (filters.kinds.length && !filters.kinds.includes(item.kind)) return false
+  const year = itemYear(item)
+  if (filters.after && (!year || year < filters.after)) return false
+  if (filters.before && (!year || year > filters.before)) return false
+  if (filters.exact && year !== filters.exact) return false
+  if (filters.recent && year && year < new Date().getFullYear() - 2) return false
+  return true
+}
+
+export function describeCompoundFilters(filters) {
+  if (!filters?.active) return ''
+  const parts = []
+  if (filters.kinds.length) parts.push(filters.kinds.map((kind) => ({ paper: 'أبحاث', book: 'كتب', podcast: 'بودكاست', article: 'مقالات', curated: 'مختارات' })[kind] || kind).join(' و'))
+  if (filters.after) parts.push(`بعد ${arabicNumber(filters.after)}`)
+  if (filters.before) parts.push(`قبل ${arabicNumber(filters.before)}`)
+  if (filters.exact) parts.push(`في ${arabicNumber(filters.exact)}`)
+  if (filters.recent) parts.push('الأحدث')
+  return parts.join(' · ')
+}
+
 function exactSiteResults(query, overrideQuery = '', options = {}) {
   const tokens = contentTokens(overrideQuery || query).slice(0, 8)
   if (!tokens.length) return []
   const excluded = new Set(Array.isArray(options.excludeIds) ? options.excludeIds : [])
   const kinds = new Set(Array.isArray(options.kinds) ? options.kinds : [])
+  const filters = options.filters || null
   const rows = siteIndex()
+    .filter((item) => matchesCompoundFilters(item, filters))
     .filter((item) => !excluded.has(item.id) && (!kinds.size || kinds.has(item.kind)))
     .map((item) => ({ item, ...scoreContent(item, tokens) }))
     .filter((row) => {
@@ -557,13 +662,25 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     const now = Date.now()
     const previousMediaReplyAt = Date.parse(conversation.lastMediaReplyAt || '')
     if (Number.isFinite(previousMediaReplyAt) && now - previousMediaReplyAt < 5 * 60_000) {
-      return { kind: 'no-reply', reason: 'media-burst-suppressed', patch: { lastMediaSeenAt: asIso(now) } }
+      /* ترقية ٢ — رشقة الصور: الصمت التام أمام أربع صورٍ متتالية يبدو عطلاً.
+         نعترف بالرشقة مرةً واحدة (عند ثانيةِ صورةٍ في النافذة) ثم نصمت عن
+         بقيتها، فلا فيضان ولا تجاهل. */
+      const burst = Math.max(1, Number(conversation.mediaBurstCount || 1)) + 1
+      if (burst === 2) {
+        return {
+          kind: 'reply',
+          reason: 'media-burst-acknowledged',
+          reply: signReply('وصلتني بقية الصور. اكتب لي بجملة واحدة ماذا تريد منها — تلخيصاً، بحثاً عن موضوعها، أو المادة الأصلية — وأتصرف على أساسها.', messages),
+          patch: { lastMediaSeenAt: asIso(now), mediaBurstCount: burst },
+        }
+      }
+      return { kind: 'no-reply', reason: 'media-burst-suppressed', patch: { lastMediaSeenAt: asIso(now), mediaBurstCount: burst } }
     }
     return {
       kind: 'reply',
       reason: 'media-description-needed',
       reply: signReply(MEDIA_CLARIFY, messages),
-      patch: { lastMediaReplyAt: asIso(now), lastMediaSeenAt: asIso(now) },
+      patch: { lastMediaReplyAt: asIso(now), lastMediaSeenAt: asIso(now), mediaBurstCount: 1 },
     }
   }
   if (!clean) return { kind: 'reply', reason: 'empty-after-normalization', reply: signReply(clarifyText(messages, conversation), messages) }
@@ -923,7 +1040,20 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
         ? '\nالاستماع من داخل الصفحة: ستجد المشغّل أعلى المادة.'
         : '\nهذه المادة لم تصدر لها نسخة صوتية بعد؛ النص كامل في الصفحة.')
       : ''
-    return { kind: 'reply', reason: 'context-source', intent, reply: signReply(`هذا رابط ${itemLabel(current)} في موقع الدكتور:\n\n*${current.title}*\n${current.url}${audioLine}`, messages), evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0 }
+    /* ترقية ٤ — الصوت داخل واتساب: من طلب الاستماع يستحق أن يسمع في مكانه،
+       لا أن يُدفع إلى المتصفح. الملف يُرسَل خلف الرد النصي كأمرٍ مستقل، فإن
+       تعذّر بقي الرابط في يده ولم يخسر شيئاً. */
+    const audioFile = listenIntents.includes(intent)
+      ? (intent === INTENTS.LISTEN_DIALOGUE ? current.audio?.files?.dialogue
+        : intent === INTENTS.LISTEN_NOURA ? current.audio?.files?.noura
+          : current.audio?.files?.fahed) || current.audio?.files?.fahed || current.audio?.files?.dialogue || current.audio?.files?.noura || ''
+      : ''
+    return {
+      kind: 'reply', reason: 'context-source', intent,
+      reply: signReply(`هذا رابط ${itemLabel(current)} في موقع الدكتور:\n\n*${current.title}*\n${current.url}${audioLine}`, messages),
+      evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+      ...(audioFile ? { audioAttachment: { url: audioFile, title: bounded(current.title, 120) } } : {}),
+    }
   }
   if ([INTENTS.MORE_LIKE_THIS, INTENTS.SIMILAR_CONTENT].includes(intent)) {
     const topic = bounded(conversation.lastTopic, 500) || current?.title || text
@@ -987,11 +1117,26 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
   const kinds = classification.request?.kind
     ? [classification.request.kind === 'research' ? 'paper' : classification.request.kind]
     : []
-  const found = exactSiteResults(query, '', { kinds, limit: 3 })
+  /* ترقية ٣: شرطا النوع والزمن يُقرآن من نص السؤال نفسه ويُطبَّقان مرشِّحَين. */
+  const filters = parseCompoundFilters(text)
+  const filterLabel = describeCompoundFilters(filters)
+  const found = exactSiteResults(query, '', { kinds, limit: 3, filters })
   if (found.length) return {
     kind: 'reply', reason: classification.fallback ? 'dialect-semantic-search' : 'site-index', intent,
-    reply: signReply(siteResultReply(found), messages), evidence: found.map((item) => item.id),
+    reply: signReply(siteResultReply(found, filterLabel ? `فهمت شرطك (${filterLabel}). هذا ما يطابقه من موقع الدكتور:` : undefined), messages),
+    evidence: found.map((item) => item.id),
     contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: query,
+  }
+  /* الشرط مفهوم لكن لا مادة تطابقه: نصارح بالشرط ونعرض ما يطابق الموضوع
+     وحده — أصدق من الصمت، وأنظف من تقديم مادةٍ تخالف شرطه بلا تنبيه. */
+  if (filters.active) {
+    const withoutFilters = exactSiteResults(query, '', { kinds, limit: 3 })
+    if (withoutFilters.length) return {
+      kind: 'reply', reason: 'compound-filter-empty', intent,
+      reply: signReply(siteResultReply(withoutFilters, `ما عندي مادة تجمع شرطك كاملاً (${filterLabel}). هذا أقرب ما نشره الدكتور في الموضوع نفسه:`), messages),
+      evidence: withoutFilters.map((item) => item.id),
+      contextItemIds: withoutFilters.map((item) => item.id), contextIndex: 0, lastTopic: query,
+    }
   }
 
   const asksQuestion = /[؟?]\s*$|(?:^|\s)(?:شنو|وش|ايش|كيف|متى|وين|هل|ليش|منو|كم|شلون|عطني|اعطني|ورني|ابي|ابغى|ودي|ممكن)(?:\s|$)/.test(clean)
@@ -2290,7 +2435,10 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
        الإيقاظ المعتمدة؛ ما فتحه الوضع القديم تلقائياً (نسخة ١) لاغٍ. */
     if (wakePhrase) {
       const welcome = buildWakeWelcome()
-      const signedWelcome = signReply(welcome.text)
+      /* ترقية ١: العائد بعد غياب يُستقبل باسم ما وقفنا عنده، لا كزائرٍ أول
+         مرة. البوابة نفسها لم تُمس — هذا سطرٌ فوق ترحيبٍ استحقه بإيقاظه. */
+      const returningLine = returningReaderLine(data)
+      const signedWelcome = signReply(returningLine ? `${returningLine}\n\n${welcome.text}` : welcome.text)
       await ref.set({
         ...basePatch,
         mode: 'bot',
@@ -2310,6 +2458,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
           lastTopic: bounded(welcome.lastTopic, 500),
           seenContentIds: [...new Set([...(Array.isArray(data.seenContentIds) ? data.seenContentIds : []), ...welcome.evidence])].slice(-40),
         } : {}),
+        lastSignedAt: now,
         ...deliveryResponsePatch('reply', 'wake-phrase', signedWelcome),
       }, { merge: true })
       sendJson(res, 200, { ok: true, action: 'reply', reason: 'wake-phrase', reply: { text: signedWelcome } })
@@ -2362,10 +2511,27 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       priorReplyHash: bounded(data.lastReplyHash, 80),
       conversation: data,
     })
-    const replyText = bounded(decision.reply, 2_000)
+    /* ترقية ٧: التوقيع يُحذف من ردود الجلسة الواحدة بعد أوّله — عند حافة
+       الإرسال حصراً، فيبقى العقل واختباراته كما هما. */
+    const signedNow = shouldSignReply(data)
+    const replyText = bounded(trimSessionSignature(decision.reply, data), 2_000)
     /* إذا كرر الشخص الطلب في رسالة جديدة نجيبه من جديد. تشابه الرد ليس دليلاً
        على إعادة تسليم، ولا مبرراً لاستبداله برسالة متابعة بشرية أو رد عام. */
     const safeReply = replyText
+
+    /* ترقية ٤: مرفق صوتي خلف الرد النصي — أمرٌ مستقل في الطابور، فشله لا
+       يمس الرد الذي وصل، ونجاحه يجعل القراءة تُسمع داخل واتساب. */
+    if (decision.audioAttachment?.url) {
+      try {
+        await enqueueCommand(db, 'send-audio', {
+          jid,
+          url: bounded(decision.audioAttachment.url, 600),
+          caption: bounded(decision.audioAttachment.title, 120),
+        }, { idempotencyKey: `audio:${hash(`${jid}:${decision.audioAttachment.url}`)}` })
+      } catch (error) {
+        console.warn('[whatsapp-audio-attachment]', error instanceof Error ? error.message : error)
+      }
+    }
 
     if (decision.kind === 'no-reply') {
       await ref.set({
@@ -2466,6 +2632,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         seenContentIds: [...new Set([...(Array.isArray(data.seenContentIds) ? data.seenContentIds : []), ...decision.evidence])].slice(-40),
       } : {}),
       ...(decision.patch && typeof decision.patch === 'object' ? decision.patch : {}),
+      ...(signedNow ? { lastSignedAt: now } : {}),
       ...deliveryResponsePatch('reply', decision.reason, safeReply),
     }, { merge: true })
     /* ذاكرة اللهجة الحيّة: الصياغة التي لم تُفهم بثقة تُرصد للمراقبة في اللوحة
@@ -3481,6 +3648,50 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       }
       await db.collection(COLLECTIONS.settings).doc('personality').set(personality, { merge: true })
       sendJson(res, 200, personality)
+      return
+    }
+
+    /* ترقية ٦ — تقرير الدكتور الأسبوعي: ما سأل عنه الناس هذا الأسبوع، وما
+       طلبوه ولم يجده البوت. الثاني أثمن من الأول: كل عبارة لم تُطابق مادةً
+       منشورة هي فكرة مقالٍ ينتظر — تُقرأ من الرصد نفسه بلا تتبّعٍ لأحد،
+       وبلا أسماء ولا أرقام. */
+    if (path === '/weekly-report' && method === 'GET') {
+      const days = Math.max(1, Math.min(30, Number(url.searchParams.get('days') || 7)))
+      const since = Date.now() - days * 86_400_000
+      const [observedSnapshot, conversationsSnapshot] = await Promise.all([
+        db.collection(COLLECTIONS.learning).orderBy('lastSeenAt', 'desc').limit(300).get().catch(() => ({ docs: [] })),
+        db.collection(COLLECTIONS.conversations).orderBy('updatedAt', 'desc').limit(300).get().catch(() => ({ docs: [] })),
+      ])
+      const inWindow = (value) => {
+        const at = Date.parse(String(value || ''))
+        return Number.isFinite(at) && at >= since
+      }
+      const observed = observedSnapshot.docs.map(serializeDoc).filter(Boolean).filter((row) => inWindow(row.lastSeenAt))
+      const conversations = conversationsSnapshot.docs.map(serializeDoc).filter(Boolean).filter((row) => inWindow(row.updatedAt))
+      const topicCounts = new Map()
+      for (const row of conversations) {
+        const topic = bounded(row.lastTopic, 120)
+        if (topic) topicCounts.set(topic, Number(topicCounts.get(topic) || 0) + 1)
+      }
+      const gapCounts = new Map()
+      for (const row of observed) {
+        const phrase = bounded(row.phrase, 160)
+        if (phrase) gapCounts.set(phrase, Number(gapCounts.get(phrase) || 0) + Number(row.hits || 1))
+      }
+      const rank = (map) => [...map.entries()]
+        .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0], 'ar'))
+        .slice(0, 10)
+        .map(([label, count]) => ({ label, count }))
+      const awakened = conversations.filter((row) => row.wakeActive === true).length
+      sendJson(res, 200, {
+        days,
+        generatedAt: asIso(),
+        conversations: conversations.length,
+        awakened,
+        askedAbout: rank(topicCounts),
+        notFound: rank(gapCounts),
+        note: 'يُبنى من الرصد المجهول: لا أسماء ولا أرقام. «ما لم يجده» قائمة أفكارٍ تنتظر الكتابة — اعرضها على مجلس التحرير.',
+      })
       return
     }
 

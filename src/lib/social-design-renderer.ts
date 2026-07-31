@@ -36,9 +36,82 @@ export interface RenderPreferences {
   seasonal: boolean
   /** نمط خلفيةٍ راقٍ اختياري: نقطية · خطوط · زخرفة إسلامية · تدرّج شبكي */
   pattern: BackgroundPattern
+  /** بصمة الموسم: خيطٌ سفليّ واحد بلون الفصل يرث كل تصاميم الفترة (هوية عائلة) */
+  familySignature: boolean
+  /** الأرقام الهندية (٢٠٢٦) بدل العربية الغربية في البيانات الوصفية */
+  arabicNumerals: boolean
 }
 
-let renderPreferences: RenderPreferences = { seal: false, seasonal: false, pattern: 'none' }
+let renderPreferences: RenderPreferences = { seal: false, seasonal: false, pattern: 'none', familySignature: true, arabicNumerals: true }
+
+/* ------------------------------------------------------------------ */
+/*   بصمة الموسم: ما يجعل منشورات الشهر عائلةً واحدة لا أفراداً يتامى     */
+/* ------------------------------------------------------------------ */
+
+export type SeasonIdentity = { id: string; label: string; tint: string; index: number }
+
+/** أربع بصماتٍ في السنة، حتميّة من التاريخ فتتشاركها كل تصاميم الفترة. */
+export function seasonIdentityFor(date = new Date()): SeasonIdentity {
+  const month = date.getMonth()
+  const year = date.getFullYear()
+  const table: Array<{ id: string; label: string; tint: string }> = [
+    { id: 'winter', label: 'شتاء', tint: '#3F6C8E' },
+    { id: 'spring', label: 'ربيع', tint: '#5C7F63' },
+    { id: 'summer', label: 'صيف', tint: '#B08343' },
+    { id: 'autumn', label: 'خريف', tint: '#8A5B4B' },
+  ]
+  const index = month <= 1 || month === 11 ? 0 : month <= 4 ? 1 : month <= 7 ? 2 : 3
+  const season = table[index]
+  return { ...season, label: `${season.label} ${year}`, index }
+}
+
+/** الخيط السفلي: حضورٌ يُحسّ ولا يُرى — عرضه ثلث القاعدة وسمكه شعرة. */
+function familySignatureMark(s: Scene): string {
+  if (!renderPreferences.familySignature) return ''
+  const identity = seasonIdentityFor()
+  const { w, h, min } = s
+  const width = w * .18
+  const x = s.safeX
+  const y = h - Math.max(s.safeY * .55, min * .045)
+  return `<g aria-hidden="true" opacity=".55">
+    <rect x="${round(x)}" y="${round(y)}" width="${round(width)}" height="${round(Math.max(1.4, min * .0035))}" rx="${round(min * .002)}" fill="${identity.tint}"/>
+  </g>`
+}
+
+/* ------------------------------------------------------------------ */
+/*        الطباعة العربية المتقدمة: أرقام هندية وكشيدة صحيحة            */
+/* ------------------------------------------------------------------ */
+
+const ARABIC_INDIC = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
+
+/** يحوّل الأرقام الغربية إلى هندية — للبيانات الوصفية لا لنص الدكتور. */
+export function toArabicIndic(value: string): string {
+  if (!renderPreferences.arabicNumerals) return value
+  return String(value || '').replace(/[0-9]/g, (digit) => ARABIC_INDIC[Number(digit)])
+}
+
+/* الحروف التي لا تتصل بما بعدها: لا تُمدّ الكشيدة خلفها أبداً وإلا انفصلت
+   الكلمة وبدت خطأً إملائياً. هذه هي القاعدة التي تفرق بين مدٍّ خطّي أصيل
+   وتشويهٍ آليٍّ يفضح صانعه. */
+const NON_CONNECTING_FORWARD = new Set(['ا', 'أ', 'إ', 'آ', 'د', 'ذ', 'ر', 'ز', 'و', 'ؤ', 'ة', 'ى', 'ء'])
+
+/** مدّ الكلمة بالكشيدة إلى طولٍ مطلوب، بلا كسر اتصال الحروف. */
+export function elongateArabic(word: string, extra = 1): string {
+  const letters = Array.from(String(word || ''))
+  if (letters.length < 3 || extra < 1) return word
+  const slots: number[] = []
+  for (let index = 0; index < letters.length - 1; index += 1) {
+    const current = letters[index]
+    const next = letters[index + 1]
+    if (NON_CONNECTING_FORWARD.has(current)) continue
+    if (next === 'ء' || /\s/.test(next) || !/[ء-ي]/.test(current) || !/[ء-ي]/.test(next)) continue
+    slots.push(index + 1)
+  }
+  if (!slots.length) return word
+  /* نمدّ عند الموضع الأوسط: أقرب إلى ذائقة الخطّاط من المدّ عند الطرف. */
+  const pick = slots[Math.floor((slots.length - 1) / 2)]
+  return `${letters.slice(0, pick).join('')}${'ـ'.repeat(Math.min(4, extra))}${letters.slice(pick).join('')}`
+}
 
 export function setRenderPreferences(preferences: Partial<RenderPreferences>) {
   renderPreferences = { ...renderPreferences, ...preferences }
@@ -593,7 +666,9 @@ function kickerItem(s: Scene, options: { x?: number; anchor?: Anchor; fill?: str
       const baseline = top + size * .85
       const dot = anchor === 'middle' ? '' : `<circle cx="${round(x - size * .28)}" cy="${round(baseline - size * .3)}" r="${round(size * .21)}" fill="${fill}"/>`
       const textX = anchor === 'middle' ? x : x - size * 1.05
-      return `${dot}${textBlock({ lines: [s.kicker], x: textX, y: baseline, size, fill, weight: 700, anchor, family: 'Tajawal', opacity: .95 })}`
+      /* الأرقام الهندية في الشارة (سنة، عدد، تاريخ): تفصيلٌ صغير يفرق بين
+         تصميمٍ عربي مترجَم وتصميمٍ وُلد عربياً. */
+      return `${dot}${textBlock({ lines: [toArabicIndic(s.kicker)], x: textX, y: baseline, size, fill, weight: 700, anchor, family: 'Tajawal', opacity: .95 })}`
     },
   }
 }
@@ -1805,6 +1880,7 @@ function identityLayer(s: Scene, options: RenderSvgOptions) {
   return [
     sealVisible ? identitySeal(s, options.sealHref || '/logo.png') : '',
     renderPreferences.seasonal ? seasonalDecor(s, sealVisible) : '',
+    familySignatureMark(s),
   ].join('')
 }
 

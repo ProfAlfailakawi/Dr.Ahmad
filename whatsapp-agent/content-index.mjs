@@ -70,11 +70,22 @@ function audioFor(slug, audio, audioMeta) {
     noura: voices.noura ? secondsOf(nouraMeta) : null,
     dialogue: voices.dialogue ? secondsOf(dialogueMp3Meta || legacyMeta) : null,
   }
+  /* روابط الملفات الصوتية المنشورة (ترقية ٣١ يوليو): يحتاجها البوت ليرسل
+     القراءة داخل واتساب لا كرابطٍ يقتضي فتح المتصفح. تُبنى من قاعدة النشر
+     نفسها التي يستعملها الموقع، وتغيب بأمان إن لم تُضبط. */
+  const base = String(process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
+  const fileUrl = (name) => base ? `${base}/${encodeURIComponent(name)}` : ''
+  const files = {
+    fahed: voices.fahed ? fileUrl(`${slug}.mp3`) : '',
+    noura: voices.noura ? fileUrl(`${slug}.noura.mp3`) : '',
+    dialogue: voices.dialogue ? fileUrl(`${slug}.dialogue.mp3`) : '',
+  }
   return {
     fahed: Boolean(voices.fahed),
     noura: Boolean(voices.noura),
     dialogue: Boolean(voices.dialogue),
     durations,
+    files,
     duration: durations.dialogue || durations.fahed || durations.noura || null,
   }
 }

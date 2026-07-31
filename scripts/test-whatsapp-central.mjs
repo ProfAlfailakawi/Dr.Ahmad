@@ -416,6 +416,19 @@ if (/أفتحها لك؟/.test(offered.reply)) {
   assert.doesNotMatch(again.reply, /أفتحها لك؟/, 'لا تتكرّر المبادرة داخل مهلتها')
 }
 
+/* ٨) القراءة الصوتية: «قراءة صوتية للمقالة ما يعمل» (شكوى ١ أغسطس).
+   الجذر أن الصيغة كانت تشترط أداة التعريف، فتسقط «قراءه صوتيه» — وهي ما
+   يكتبه الناس وما يظهر في الموقع — إلى بحثٍ أعمى بلا صوت. */
+const { classifyIntent: classify, INTENTS: I } = await import('../whatsapp-agent/intent-engine.mjs')
+for (const ask of ['قراءة صوتية', 'القراءة الصوتية', 'قراءة صوتية للمقالة', 'اقرأ لي المقالة',
+  'اقرأ لي', 'سمعني', 'اسمعها', 'ابي اسمعها', 'شغلها', 'استماع', 'اقرأها لي', 'ابغى قراءة صوتية']) {
+  assert.equal(classify(ask).intent, I.LISTEN_FAHED, `«${ask}» يجب أن تُفهم طلبَ قراءةٍ صوتية`)
+}
+/* ولا تخطف ما ليس طلبَ صوت */
+assert.notEqual(classify('عندك شي عن القراءة').intent, I.LISTEN_FAHED)
+assert.notEqual(classify('لخصها').intent, I.LISTEN_FAHED)
+assert.equal(classify('الحوار').intent, I.LISTEN_DIALOGUE, 'الحوار يبقى للحوار')
+
 /* القوالب الحية: تحرير اللوحة يجب أن يصل الردود (كان مسبوكاً عند التحميل) */
 const controllerNow = controllerSource
 assert.match(controllerNow, /getBotMessages/)

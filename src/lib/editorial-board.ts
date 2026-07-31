@@ -37,6 +37,9 @@ export type EditorialCalibrationProfile = {
   sampleSize: number
   strengthBias: number
   articlePotentialBias: number
+  /* انتصارات العناد: أفكار رُفضت/أُجّلت ثم كتبها الدكتور ونُشرت — إشارة
+     معايرة محدودة السقف تُعرض بعددها الصريح، لا تعلماً آلياً مزعوماً. */
+  stubbornWins?: number
 }
 
 export type EditorialAudienceEvidence = {
@@ -56,6 +59,8 @@ export type EditorialPortfolioEvidence = {
   relatedArticleCount: number
   relatedBookCount: number
   relatedPaperCount: number
+  /* المواد القريبة التي لصوت الدكتور فيها قراءة أو حوار منطوق (فكرة المجلس ٤). */
+  relatedAudioCount?: number
   saturationScore: number | null
   strategicNeedScore: number | null
   dominantCategories: Array<{ category: string; count: number; share: number }>

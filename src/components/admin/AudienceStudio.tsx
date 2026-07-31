@@ -57,6 +57,11 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
   const [manualName, setManualName] = useState('')
   const [bulk, setBulk] = useState('')
   const [newcomers, setNewcomers] = useState<{ id: string; name: string; tail: string }[]>([])
+  /* المتسللون المعزولون (التقطتهم المزامنة القديمة بلا اسم): عدّهم يصل مع كل
+     تحميل، وقائمتهم تُجلب كسولةً عند فتح قسمهم فقط. */
+  const [autoHidden, setAutoHidden] = useState(0)
+  const [autoRows, setAutoRows] = useState<Contact[]>([])
+  const [autoLoaded, setAutoLoaded] = useState(false)
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [imported, setImported] = useState<{ added: number; known: number; skipped: number } | null>(null)
   const [draft, setDraft] = useState('{تحية} {الاسم}،\n\nنشرتُ اليوم مقالاً جديداً، أرجو أن ينفعك:\n')
@@ -84,11 +89,12 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
 
   const loadContacts = async (term: string, which = page) => {
     try {
-      const data = await request<{ contacts: Contact[]; total: number }>(
+      const data = await request<{ contacts: Contact[]; total: number; autoHidden?: number }>(
         `/admin/audience/contacts?q=${encodeURIComponent(term)}&limit=${PAGE_SIZE}&offset=${which * PAGE_SIZE}`,
       )
       setContacts(data.contacts || [])
       setTotal(Number(data.total || 0))
+      setAutoHidden(Number(data.autoHidden || 0))
     } catch { setContacts([]); setTotal(0) }
   }
 
@@ -488,6 +494,44 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                 </div>
               </div>
             </details>
+
+            {/* المتسللون: أرقام التقطتها مزامنة واتساب القديمة بلا اسم ولم
+                يضفها الدكتور بيده («ضاف من كيفه» — شكوى ٣١ يوليو). لا نحذف
+                رقماً أبداً؛ نعزلهم هنا مطويين، ومن أضافه لقائمةٍ رقّى نفسه
+                إلى الدفتر. المزامنة الجديدة أقفلت الباب أصلاً. */}
+            {autoHidden > 0 && (
+              <details className="rounded-xl border border-hair bg-wash px-4 py-3" onToggle={(event) => {
+                if ((event.target as HTMLDetailsElement).open && !autoLoaded) {
+                  setAutoLoaded(true)
+                  void (async () => {
+                    try {
+                      const data = await request<{ contacts: Contact[] }>('/admin/audience/contacts?bucket=auto&limit=500&q=')
+                      setAutoRows(data.contacts || [])
+                    } catch { setAutoRows([]) }
+                  })()
+                }
+              }}>
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[.8rem] text-soft">
+                  <span>أرقام التقطها واتساب تلقائياً بلا اسم — معزولة عن دفترك</span>
+                  <span className="text-[.75rem] text-accent">{autoHidden}</span>
+                </summary>
+                <p className="mt-2 text-[.72rem] leading-relaxed text-soft">
+                  لم يُحذف منها شيء. أهملها كما هي، أو اختر منها وأضفه لقائمةٍ فينضم للدفتر باسمٍ تكتبه له.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {autoRows.map((contact) => {
+                    const isPicked = picked.has(contact.id)
+                    return (
+                      <button key={contact.id} type="button" onClick={() => toggle(contact.id)}
+                        className={`rounded-full border px-3 py-1.5 text-[.74rem] transition-colors ${isPicked ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent'}`}>
+                        ••{contact.tail}
+                      </button>
+                    )
+                  })}
+                  {autoLoaded && !autoRows.length && <span className="text-[.72rem] text-soft">اكتمل تحميلها… لا شيء هنا.</span>}
+                </div>
+              </details>
+            )}
           </div>
         </div>
       </div>

@@ -594,10 +594,13 @@ async function warmPhoneAliasesAndContactsInBackground() {
       const compact = contacts.flatMap((contact) => {
         const jid = String(contact?.id?._serialized || '')
         if (!jid.endsWith('@c.us') || !/^\d{7,15}@c\.us$/.test(jid)) return []
-        return [{
-          jid,
-          name: String(contact.name || contact.pushname || contact.shortName || '').slice(0, 120),
-        }]
+        /* دفتر هاتف الدكتور الحقيقي فقط (شكوى ٣١ يوليو: امتلأ دفتر الأسماء
+           بمجهولين «ضافهم من كيفه»): جهة محفوظة عنده فعلاً وباسمٍ حقيقي —
+           لا كل من راسله يوماً باسمه الذي سمّى به نفسه. */
+        if (contact?.isMyContact !== true) return []
+        const name = String(contact.name || contact.shortName || '').trim().slice(0, 120)
+        if (!name) return []
+        return [{ jid, name }]
       })
       if (compact.length > 0) {
         let accepted = 0

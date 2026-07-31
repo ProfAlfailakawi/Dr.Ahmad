@@ -2081,13 +2081,17 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         const ref = db.collection(COLLECTIONS.audienceContacts).doc(id)
         const waName = bounded(item?.name || item?.pushname || item?.shortName, 120)
         const displayName = bounded(item?.displayName, 120)
+        /* شكوى ٣١ يوليو: «ضاف من كيفه أرقام مجهولين الاسم». المزامنة صارت
+           تُثري الأسماء فقط ولا تُنشئ سكاناً جدداً بلا اسم في دفتر الدكتور؛
+           كما توقفت عن دهس حقل source الذي كان يطمس أصل المستوردين يدوياً. */
+        if (!waName && !displayName) continue
         batch.set(ref, {
           id,
           jid,
           tail: digits.slice(-4),
           ...(waName ? { waName } : {}),
           ...(displayName ? { displayName } : {}),
-          source: 'whatsapp-sync',
+          syncedAt: now,
           lastSeenAt: now,
           updatedAt: now,
         }, { merge: true })
@@ -2800,7 +2804,8 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         const id = bounded(membership.data()?.contactId, 100)
         if (id) listCounts.set(id, Number(listCounts.get(id) || 0) + 1)
       }
-      const contacts = contactSnapshot.docs.map(serializeDoc).filter(Boolean)
+      const bucket = url.searchParams.get('bucket') === 'auto' ? 'auto' : 'book'
+      const allContacts = contactSnapshot.docs.map(serializeDoc).filter(Boolean)
         .map((contact) => ({
           id: contact.id,
           name: audienceDisplayName(contact),
@@ -2809,7 +2814,15 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
           tail: bounded(contact.tail, 4),
           suppressed: Boolean(contact.suppressed),
           lists: Number(listCounts.get(contact.id) || 0),
+          /* التقطته المزامنة لا يدُ الدكتور: بلا اسم إطلاقاً، وبلا createdAt
+             (الاستيراد واليدوي يكتبانه دائماً والمزامنة لا تكتبه أبداً)،
+             وليس في أي قائمة. هؤلاء يُعزلون عن الدفتر الافتراضي بلا حذف. */
+          autoCaptured: !contact.nickname && !contact.waName && !contact.displayName
+            && !contact.createdAt && !Number(listCounts.get(contact.id) || 0),
         }))
+      const autoHidden = allContacts.filter((contact) => contact.autoCaptured).length
+      const contacts = allContacts
+        .filter((contact) => bucket === 'auto' ? contact.autoCaptured : !contact.autoCaptured)
         .filter((contact) => !term
           || normalizeAudienceSearch(contact.name).includes(term)
           || contact.tail.includes(term))
@@ -2829,6 +2842,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         total: contacts.length,
         offset,
         limit,
+        autoHidden,
       })
       return
     }
